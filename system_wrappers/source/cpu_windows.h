@@ -62,12 +62,12 @@ private:
     ThreadWrapper* cpu_polling_thread;
 
     bool initialize_;
-    bool initialized_;
+    bool has_initialized_;
     CriticalSectionWrapper* init_crit_;
     ConditionVariableWrapper* init_cond_;
 
     bool terminate_;
-    bool terminated_;
+    bool has_terminated_;
     CriticalSectionWrapper* terminate_crit_;
     ConditionVariableWrapper* terminate_cond_;
 
@@ -92,6 +92,7 @@ private:
     unsigned __int64* previous_100ns_timestamp_;
 
     IWbemServices* wbem_service_;
+    IWbemServices* wbem_service_proxy_;
 
     IWbemRefresher* wbem_refresher_;
 

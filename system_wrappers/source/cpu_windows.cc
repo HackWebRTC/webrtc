@@ -26,7 +26,7 @@
 namespace webrtc {
 WebRtc_Word32 CpuWindows::CpuUsage()
 {
-    if (!initialized_)
+    if (!has_initialized_)
     {
         return -1;
     }
@@ -37,7 +37,7 @@ WebRtc_Word32 CpuWindows::CpuUsage()
 WebRtc_Word32 CpuWindows::CpuUsageMultiCore(WebRtc_UWord32& num_cores,
                                                   WebRtc_UWord32*& cpu_usage)
 {
-    if (!initialized_)
+    if (!has_initialized_)
     {
         return -1;
     }
@@ -49,8 +49,9 @@ WebRtc_Word32 CpuWindows::CpuUsageMultiCore(WebRtc_UWord32& num_cores,
 CpuWindows::CpuWindows()
     : cpu_polling_thread(NULL),
       initialize_(true),
-      initialized_(false),
+      has_initialized_(false),
       terminate_(false),
+      has_terminated_(false),
       cpu_usage_(NULL),
       wbem_enum_access_(NULL),
       number_of_objects_(0),
@@ -59,6 +60,7 @@ CpuWindows::CpuWindows()
       timestamp_sys_100_ns_handle_(0),
       previous_100ns_timestamp_(NULL),
       wbem_service_(NULL),
+      wbem_service_proxy_(NULL),
       wbem_refresher_(NULL),
       wbem_enum_(NULL)
 {
@@ -147,24 +149,24 @@ bool CpuWindows::StartPollingCpu()
             init_cond_->SleepCS(*init_crit_);
         }
     }
-    if (!initialized_)
+    if (!has_initialized_)
     {
         cpu_polling_thread->Stop();
         return false;
     }
-    return initialized_;
+    return has_initialized_;
 }
 
 bool CpuWindows::StopPollingCpu()
 {
-    if (!initialized_)
+    if (!has_initialized_)
     {
         return false;
     }
     CriticalSectionScoped cs(*terminate_crit_);
     terminate_ = true;
     sleep_event->Set();
-    while (!terminated_)
+    while (!has_terminated_)
     {
         terminate_cond_->SleepCS(*terminate_crit_);
     }
@@ -187,7 +189,6 @@ bool CpuWindows::ProcessImpl()
         {
             const bool success = Terminate();
             assert(success);
-            terminated_ = true;
             terminate_cond_->WakeAll();
             return false;
         }
@@ -199,9 +200,9 @@ bool CpuWindows::ProcessImpl()
         initialize_ = false;
         const bool success = Initialize();
         init_cond_->WakeAll();
-        if (!success || !initialized_)
+        if (!success || !has_initialized_)
         {
-            initialized_ = false;
+            has_initialized_ = false;
             terminate_ = true;
             return false;
         }
@@ -269,9 +270,31 @@ bool CpuWindows::CreatePerfOsRefresher()
     {
         return false;
     }
+
+    // Create a proxy to the IWbemServices so that a local authentication
+    // can be set up (this is needed to be able to successfully call 
+    // IWbemConfigureRefresher::AddEnum). Setting authentication with
+    // CoInitializeSecurity is process-wide (which is too intrusive).
+    hr = CoCopyProxy(static_cast<IUnknown*> (wbem_service_),
+                     reinterpret_cast<IUnknown**> (&wbem_service_proxy_));
+    if(FAILED(hr))
+    {
+        return false;
+    }
+    // Set local authentication.
+    // RPC_C_AUTHN_WINNT means using NTLM instead of Kerberos which is default.
+    hr = CoSetProxyBlanket(static_cast<IUnknown*> (wbem_service_proxy_),
+                           RPC_C_AUTHN_WINNT, RPC_C_AUTHZ_NONE, NULL,
+                           RPC_C_AUTHN_LEVEL_DEFAULT,
+                           RPC_C_IMP_LEVEL_IMPERSONATE, NULL, EOAC_NONE);
+    if(FAILED(hr))
+    {
+        return false;
+    }
+
     // Don't care about the particular id for the enum.
     long enum_id = 0;
-    hr = wbem_refresher_config->AddEnum(wbem_service_,
+    hr = wbem_refresher_config->AddEnum(wbem_service_proxy_,
                                         L"Win32_PerfRawData_PerfOS_Processor",
                                         0, NULL, &wbem_enum_, &enum_id);
     wbem_refresher_config->Release();
@@ -359,8 +382,6 @@ bool CpuWindows::Initialize()
     {
         return false;
     }
-    hr = CoInitializeSecurity(NULL, -1, NULL, NULL, RPC_C_AUTHN_LEVEL_NONE,
-                              RPC_C_IMP_LEVEL_IMPERSONATE, NULL, EOAC_NONE, 0);
     if (FAILED(hr))
     {
         return false;
@@ -378,12 +399,16 @@ bool CpuWindows::Initialize()
     {
         return false;
     }
-    initialized_ = true;
+    has_initialized_ = true;
     return true;
 }
 
 bool CpuWindows::Terminate()
 {
+    if (has_terminated_)
+    {
+        return false;
+    }
     // Reverse order of Initialize().
     // Some compilers complain about deleting NULL though it's well defined
     if (previous_100ns_timestamp_ != NULL)
@@ -417,11 +442,16 @@ bool CpuWindows::Terminate()
     {
         wbem_enum_->Release();
         wbem_enum_ = NULL;
-    }
+    }    
     if (wbem_refresher_ != NULL)
     {
         wbem_refresher_->Release();
         wbem_refresher_ = NULL;
+    }
+    if (wbem_service_proxy_ != NULL)
+    {
+        wbem_service_proxy_->Release();
+        wbem_service_proxy_ = NULL;
     }
     if (wbem_service_ != NULL)
     {
@@ -431,7 +461,8 @@ bool CpuWindows::Terminate()
     // CoUninitialized should be called once for every CoInitializeEx.
     // Regardless if it failed or not.
     CoUninitialize();
-    return false;
+    has_terminated_ = true;
+    return true;
 }
 
 bool CpuWindows::UpdateCpuUsage()
