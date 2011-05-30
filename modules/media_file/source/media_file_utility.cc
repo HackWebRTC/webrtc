@@ -115,18 +115,6 @@ WebRtc_Word32 ModuleFileUtility::InitAviWriting(
     AVISTREAMHEADER videoStreamHeader;
     videoStreamHeader.fccType = AviFile::MakeFourCc('v', 'i', 'd', 's');
 
-#ifdef VIDEOCODEC_H263
-    if (strncmp(videoCodecInst.plName, "H263", 7) == 0)
-    {
-        videoStreamHeader.fccHandler = AviFile::MakeFourCc('H','2','6','3');
-    }
-#endif
-#ifdef VIDEOCODEC_MPEG4
-    if (strncmp(videoCodecInst.plName, "MP4V-ES", 7) == 0)
-    {
-        videoStreamHeader.fccHandler = AviFile::MakeFourCc('M','4','S','2');
-    }
-#endif
 #ifdef VIDEOCODEC_I420
     if (strncmp(videoCodecInst.plName, "I420", 7) == 0)
     {
