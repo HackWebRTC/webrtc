@@ -1,0 +1,174 @@
+######################################################################
+#                             Makefile.txt
+#
+# Output path   : LIB_DIR        (copy of library is stored here)
+# Include path  : INC_DIR        (additional search path for headers)
+#           
+# I N S T R U C T I O N S :
+#
+#    The following actions can always be done:
+#
+#	- set or modify globally defined variables
+#	- delete object files in current catalog
+#	- list current settings
+#	
+#    If no settings or file names are changed:
+#
+#	- make -f Makefile.txt => run makefile and create library
+#	- make -s -f Makefile.txt => as above but no echo
+#	- make -q -f Makefile.txt => don't execute commands
+#
+#    If settings or filenames are changed:
+#
+#	- Add/remove/change list of required files in SRC_CPP
+#       - Remove old list of dependecies (last section in this file)
+#	- Run 'make -depend -f Makefile.txt', to generate a list 
+#	  of dependencies (appended at the end of this file)
+# 	- Ensure that dependecies are added correctly
+#	- Run 'make -f Makefile.txt' to build the library
+#
+#    Additional options:
+#
+#	- make echo -f Makefile.txt => list utilized settings#
+#	- make clean -f Makefile.txt => delete all object files
+#		   
+######################################################################
+
+# Start by reading common settings from config file.
+# A list of defined variables is given below. Note that,
+# the user may override these settings once they are set.
+# 
+#    MAKEFLAGS, CP, CC, AR, RANLIB, STRIP
+#    RM, DEFINES, CFLAGS, OPTFLAG, INC_DIR, LIB_DIR
+#
+include ../../../../../../global_make_variables.txt
+
+# All make files will store a copy of the generated archive (library) 
+# file in this catalog. These files can then be used for deliveries
+# or for building test projects based on GIPS components
+#
+LIB_DIR  = ../../../../../../build/libraries/
+
+#======================================================
+# user must define/modify variables in this section ...
+#======================================================
+
+# Include directories.
+#
+INC_DIR  =                                                  \
+    ../../interface                                         \
+    ../../../../interface                                   \
+    ../../../../../../GIPSStandardUtility/main/interface    \
+    ../../../../../../splib/main/interface                  \
+	../../../../../../tools/gtest/interface
+
+# Output executable name. 
+#
+PROG_NAME = apm_unit_test
+
+# Relative path for the test binary
+#
+BIN_DIR = ./
+
+BUILD_DIR = build
+
+# define input C source files (.cpp)
+#
+SRC_CPP =  					            \
+	unit_test.cpp
+
+LIB_NAME = APM
+
+#============================================
+# ... end of user input section
+#============================================
+
+# -------------------------------
+# derive internal/local variables
+# -------------------------------
+
+out_name = $(addprefix $(BIN_DIR),$(PROG_NAME))
+lib_name = $(addsuffix $(FNAME_EXT),$(LIB_NAME))
+
+defines  = $(addprefix -D,$(DEFINES))
+includes = $(addprefix -I,$(INC_DIR))
+
+cflags   = $(CFLAGS) $(OPTFLAG) $(defines) $(includes)
+lflags	 = $(LFLAGS) $(OPTFLAG) 
+
+obj_cpp := $(SRC_CPP:%.cpp=$(BUILD_DIR)/%.o)
+dep_cpp := $(SRC_CPP:%.cpp=$(BUILD_DIR)/%.d)
+
+ifeq (${TARGET},MAC)
+libs	:= -lm
+endif
+
+ifeq (${TARGET},MAC_INTEL)
+libs	:= -lm
+endif
+
+ifeq (${TARGET},LINUX)
+libs    := -lm -lrt -lpthread
+endif
+
+all:  build
+
+build:	$(out_name)
+
+# -----------------------
+# pattern rules
+# -----------------------
+
+$(BUILD_DIR)/%.o: %.cpp
+	$(CCPP) $(cflags) $< -o $@
+
+$(out_name): $(obj_cpp) $(obj_c) $(LIB_DIR)$(lib_name) $(LIB_DIR)$(GTEST_LIB_NAME)
+	$(CCPP) $(lflags) $(obj_cpp) $(obj_c) $(LIB_DIR)$(lib_name) $(LIB_DIR)$(GTEST_LIB_NAME) $(libs) -o $(out_name)
+
+# Creates dependency files
+$(BUILD_DIR)/%.d: %.cpp
+	@mkdir -p $(BUILD_DIR)
+	@$(CCPP) -w -MM $(cflags) $< > $@
+	@mv -f $@ $@.tmp
+	@sed -e 's|.*:|$(BUILD_DIR)/$*.o:|' < $@.tmp > $@
+	@sed -e 's/.*://' -e 's/\\$$//' < $@.tmp | fmt -1 | \
+	sed -e 's/^ *//' -e 's/$$/:/' >> $@
+	@rm -f $@.tmp
+
+ifneq ($(MAKECMDGOALS), clean)
+-include $(dep_cpp)
+endif
+
+# ----------------------
+# selectable PHONY rules
+# ----------------------
+
+.PHONY: echo
+echo:
+	@echo
+	@echo '>>' Output library: $(lib_name)
+	@echo '>>' Copy of library is stored at: $(LIB_DIR)
+	@echo '>>' Additional include directory: $(INC_DIR)
+	@echo
+	@echo '>>' Preprocessor defines: $(DEFINES)
+	@echo '>>' Optimization flag: $(OPTFLAG)
+	@echo
+	@echo '>>' Current working directory: $(CURDIR)
+	@echo '>>' Utilized make flags: $(MAKEFLAGS)
+	@echo
+	@echo '>>' Compiler command: $(CCPP) $(cflags)
+	@echo '>>' Archive command: $(AR)
+	@echo
+	@echo '>>' Included '.cpp' source files: $(SRC_CPP)
+	@echo '>>' Included '.c' source files: $(SRC_C)
+	@echo
+	@echo '>>' Generated object files: $(obj_cpp) $(obj_c)
+
+.PHONY: clean
+clean:
+	@echo $(obj_cpp) $(obj_c) $(dep_cpp) $(dep_c)
+	@$(RM) $(obj_cpp) $(obj_c) $(dep_cpp) $(dep_c)
+	@echo $(lib_name)
+	@$(RM) $(lib_name)
+	@echo all object files are now removed
+

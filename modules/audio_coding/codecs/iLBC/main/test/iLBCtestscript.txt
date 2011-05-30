@@ -1,0 +1,69 @@
+#!/bin/bash
+(set -o igncr) 2>/dev/null && set -o igncr; # force bash to ignore \r character
+
+#
+# This script can be used to verify the bit exatness of iLBC fixpoint version 1.0.6
+#
+
+
+./iLBCtest 20 ./inFiles/F00.INP ./GeneratedFiles/F00.BIT20 ./GeneratedFiles/F00.OUT20 ./inFiles/clean.chn
+./iLBCtest 20 ./inFiles/F01.INP ./GeneratedFiles/F01.BIT20 ./GeneratedFiles/F01.OUT20 ./inFiles/clean.chn
+./iLBCtest 20 ./inFiles/F02.INP ./GeneratedFiles/F02.BIT20 ./GeneratedFiles/F02.OUT20 ./inFiles/clean.chn
+./iLBCtest 20 ./inFiles/F03.INP ./GeneratedFiles/F03.BIT20 ./GeneratedFiles/F03.OUT20 ./inFiles/clean.chn
+./iLBCtest 20 ./inFiles/F04.INP ./GeneratedFiles/F04.BIT20 ./GeneratedFiles/F04.OUT20 ./inFiles/clean.chn
+./iLBCtest 20 ./inFiles/F05.INP ./GeneratedFiles/F05.BIT20 ./GeneratedFiles/F05.OUT20 ./inFiles/clean.chn
+./iLBCtest 20 ./inFiles/F06.INP ./GeneratedFiles/F06.BIT20 ./GeneratedFiles/F06.OUT20 ./inFiles/clean.chn
+
+./iLBCtest 30 ./inFiles/F00.INP ./GeneratedFiles/F00.BIT30 ./GeneratedFiles/F00.OUT30 ./inFiles/clean.chn
+./iLBCtest 30 ./inFiles/F01.INP ./GeneratedFiles/F01.BIT30 ./GeneratedFiles/F01.OUT30 ./inFiles/clean.chn
+./iLBCtest 30 ./inFiles/F02.INP ./GeneratedFiles/F02.BIT30 ./GeneratedFiles/F02.OUT30 ./inFiles/clean.chn
+./iLBCtest 30 ./inFiles/F03.INP ./GeneratedFiles/F03.BIT30 ./GeneratedFiles/F03.OUT30 ./inFiles/clean.chn
+./iLBCtest 30 ./inFiles/F04.INP ./GeneratedFiles/F04.BIT30 ./GeneratedFiles/F04.OUT30 ./inFiles/clean.chn
+./iLBCtest 30 ./inFiles/F05.INP ./GeneratedFiles/F05.BIT30 ./GeneratedFiles/F05.OUT30 ./inFiles/clean.chn
+./iLBCtest 30 ./inFiles/F06.INP ./GeneratedFiles/F06.BIT30 ./GeneratedFiles/F06.OUT30 ./inFiles/clean.chn
+
+./iLBCtest 20 ./inFiles/F00.INP ./GeneratedFiles/F00.BIT20 ./GeneratedFiles/F00_tlm10.OUT20 ./inFiles/tlm10.chn
+./iLBCtest 20 ./inFiles/F01.INP ./GeneratedFiles/F01.BIT20 ./GeneratedFiles/F01_tlm10.OUT20 ./inFiles/tlm10.chn
+./iLBCtest 20 ./inFiles/F02.INP ./GeneratedFiles/F02.BIT20 ./GeneratedFiles/F02_tlm10.OUT20 ./inFiles/tlm10.chn
+./iLBCtest 30 ./inFiles/F00.INP ./GeneratedFiles/F00.BIT30 ./GeneratedFiles/F00_tlm10.OUT30 ./inFiles/tlm10.chn
+./iLBCtest 30 ./inFiles/F01.INP ./GeneratedFiles/F01.BIT30 ./GeneratedFiles/F01_tlm10.OUT30 ./inFiles/tlm10.chn
+./iLBCtest 30 ./inFiles/F02.INP ./GeneratedFiles/F02.BIT30 ./GeneratedFiles/F02_tlm10.OUT30 ./inFiles/tlm10.chn
+
+
+diff ./GeneratedFiles/F00.BIT20 ./ReferenceVectors/F00.BIT20
+diff ./GeneratedFiles/F01.BIT20 ./ReferenceVectors/F01.BIT20
+diff ./GeneratedFiles/F02.BIT20 ./ReferenceVectors/F02.BIT20
+diff ./GeneratedFiles/F03.BIT20 ./ReferenceVectors/F03.BIT20
+diff ./GeneratedFiles/F04.BIT20 ./ReferenceVectors/F04.BIT20
+diff ./GeneratedFiles/F05.BIT20 ./ReferenceVectors/F05.BIT20
+diff ./GeneratedFiles/F06.BIT20 ./ReferenceVectors/F06.BIT20
+diff ./GeneratedFiles/F00.OUT20 ./ReferenceVectors/F00.OUT20
+diff ./GeneratedFiles/F01.OUT20 ./ReferenceVectors/F01.OUT20
+diff ./GeneratedFiles/F02.OUT20 ./ReferenceVectors/F02.OUT20
+diff ./GeneratedFiles/F03.OUT20 ./ReferenceVectors/F03.OUT20
+diff ./GeneratedFiles/F04.OUT20 ./ReferenceVectors/F04.OUT20
+diff ./GeneratedFiles/F05.OUT20 ./ReferenceVectors/F05.OUT20
+diff ./GeneratedFiles/F06.OUT20 ./ReferenceVectors/F06.OUT20
+
+diff ./GeneratedFiles/F00.BIT30 ./ReferenceVectors/F00.BIT30
+diff ./GeneratedFiles/F01.BIT30 ./ReferenceVectors/F01.BIT30
+diff ./GeneratedFiles/F02.BIT30 ./ReferenceVectors/F02.BIT30
+diff ./GeneratedFiles/F03.BIT30 ./ReferenceVectors/F03.BIT30
+diff ./GeneratedFiles/F04.BIT30 ./ReferenceVectors/F04.BIT30
+diff ./GeneratedFiles/F05.BIT30 ./ReferenceVectors/F05.BIT30
+diff ./GeneratedFiles/F06.BIT30 ./ReferenceVectors/F06.BIT30
+diff ./GeneratedFiles/F00.OUT30 ./ReferenceVectors/F00.OUT30
+diff ./GeneratedFiles/F01.OUT30 ./ReferenceVectors/F01.OUT30
+diff ./GeneratedFiles/F02.OUT30 ./ReferenceVectors/F02.OUT30
+diff ./GeneratedFiles/F03.OUT30 ./ReferenceVectors/F03.OUT30
+diff ./GeneratedFiles/F04.OUT30 ./ReferenceVectors/F04.OUT30
+diff ./GeneratedFiles/F05.OUT30 ./ReferenceVectors/F05.OUT30
+diff ./GeneratedFiles/F06.OUT30 ./ReferenceVectors/F06.OUT30
+
+diff ./GeneratedFiles/F00_tlm10.OUT20 ./ReferenceVectors/F00_tlm10.OUT20
+diff ./GeneratedFiles/F01_tlm10.OUT20 ./ReferenceVectors/F01_tlm10.OUT20
+diff ./GeneratedFiles/F02_tlm10.OUT20 ./ReferenceVectors/F02_tlm10.OUT20
+diff ./GeneratedFiles/F00_tlm10.OUT30 ./ReferenceVectors/F00_tlm10.OUT30
+diff ./GeneratedFiles/F01_tlm10.OUT30 ./ReferenceVectors/F01_tlm10.OUT30
+diff ./GeneratedFiles/F02_tlm10.OUT30 ./ReferenceVectors/F02_tlm10.OUT30
+
