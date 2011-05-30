@@ -1,12 +1,32 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ * Copyright(c)1995,97 Mark Olesen <olesen@me.QueensU.CA>
+ *    Queen's Univ at Kingston (Canada)
  *
- *  Use of this source code is governed by a BSD-style license
- *  that can be found in the LICENSE file in the root of the source
- *  tree. An additional intellectual property rights grant can be found
- *  in the file PATENTS.  All contributing project authors may
- *  be found in the AUTHORS file in the root of the source tree.
+ * Permission to use, copy, modify, and distribute this software for
+ * any purpose without fee is hereby granted, provided that this
+ * entire notice is included in all copies of any software which is
+ * or includes a copy or modification of this software and in all
+ * copies of the supporting documentation for such software.
+ *
+ * THIS SOFTWARE IS BEING PROVIDED "AS IS", WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTY.  IN PARTICULAR, NEITHER THE AUTHOR NOR QUEEN'S
+ * UNIVERSITY AT KINGSTON MAKES ANY REPRESENTATION OR WARRANTY OF ANY
+ * KIND CONCERNING THE MERCHANTABILITY OF THIS SOFTWARE OR ITS
+ * FITNESS FOR ANY PARTICULAR PURPOSE.
+ *
+ * All of which is to say that you can do what you like with this
+ * source code provided you don't try to sell it as your own and you
+ * include an unaltered copy of this message (including the
+ * copyright).
+ *
+ * It is also implicitly understood that bug fixes and improvements
+ * should make their way back to the general Internet community so
+ * that everyone benefits.
+ *
+ * Changes:
+ *   Trivial type modifications by the WebRTC authors.
  */
+
 
 /*
  * File:
@@ -924,3 +944,4 @@ Permute_Results_Label:
   return 0;   /* exit point here */
 }
 /* ---------------------- end-of-file (c source) ---------------------- */
+
