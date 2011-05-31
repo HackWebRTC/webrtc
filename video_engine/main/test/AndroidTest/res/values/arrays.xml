@@ -1,10 +1,7 @@
 <resources>
 
     <string-array name="codectype">
-        <item>H.263</item>
-        <item>H.263-1998</item>
-        <item>LSVX</item>
-        <item>H.264</item>
+        <item>vp8</item>
     </string-array>
     
 <string-array name="codecSize"><item>176x144</item><item>320x240</item>
