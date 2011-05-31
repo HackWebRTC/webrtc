@@ -18,12 +18,26 @@
         'voice_engine.gyp:voe_auto_test',
         'video_engine.gyp:vie_auto_test',
       ],
-    },
-
+    },    
     {
-      'target_name': 'peerconnection_client',
-      'conditions': [
-        ['OS=="win"', {
+      'target_name': 'peerconnection_server',
+      'type': 'executable',
+      'sources': [
+        'peerconnection/samples/server/data_socket.cc',
+        'peerconnection/samples/server/data_socket.h',
+        'peerconnection/samples/server/main.cc',
+        'peerconnection/samples/server/peer_channel.cc',
+        'peerconnection/samples/server/peer_channel.h',
+        'peerconnection/samples/server/utils.cc',
+        'peerconnection/samples/server/utils.h',
+      ],
+    },
+  ],
+  'conditions': [
+    ['OS=="win"', {
+      'targets': [
+        {
+          'target_name': 'peerconnection_client',
           'type': 'executable',
           'sources': [
             'peerconnection/samples/client/conductor.cc',
@@ -43,30 +57,14 @@
              'SubSystem': '2',   # Windows
             },
           },
-        }, {
-          'type': 'none',
-        }],
-      ],  # conditions
-      'dependencies': [
-        '../third_party/libjingle/libjingle.gyp:libjingle_app',
-      ],
-      'include_dirs': [
-        '../third_party/libjingle/source',
-      ],
-    },
-    
-    {
-      'target_name': 'peerconnection_server',
-      'type': 'executable',
-      'sources': [
-        'peerconnection/samples/server/data_socket.cc',
-        'peerconnection/samples/server/data_socket.h',
-        'peerconnection/samples/server/main.cc',
-        'peerconnection/samples/server/peer_channel.cc',
-        'peerconnection/samples/server/peer_channel.h',
-        'peerconnection/samples/server/utils.cc',
-        'peerconnection/samples/server/utils.h',
-      ],
-    },
-  ],
+          'dependencies': [
+            '../third_party/libjingle/libjingle.gyp:libjingle_app',
+          ],
+          'include_dirs': [
+            '../third_party/libjingle/source',
+          ],
+        },
+      ],  # targets
+    }, ],  # OS="win"
+  ],  # conditions  
 }
