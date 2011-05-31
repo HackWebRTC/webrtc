@@ -1,7 +1,7 @@
 vars = {
   "webrtc_trunk" : "https://webrtc.googlecode.com/svn/trunk",
   "chromium_trunk" : "http://src.chromium.org/svn/trunk",
-  "chromium_revision": "86252",
+  "chromium_revision": "77593",
   # Use this googlecode_url variable only if there is an internal mirror for it.
   # If you do not know, use the full path while defining your new deps entry.
   "googlecode_url": "http://%s.googlecode.com/svn",
