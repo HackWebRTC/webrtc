@@ -152,7 +152,7 @@
               ],
               'action': [
                 'cmd', '/c',
-                'mdkdir \\tmp\\vie_auto_test'    
+                'mkdir \\tmp\\vie_auto_test'    
               ],
             },
             {
