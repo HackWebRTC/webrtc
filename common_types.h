@@ -62,7 +62,7 @@ enum TraceModule
     kTraceAudioMixerServer   = 0x0008,
     kTraceAudioMixerClient   = 0x0009,
     kTraceFile               = 0x000a,
-    kTraceVqe                = 0x000b,
+    kTraceAudioProcessing    = 0x000b,
     kTraceVideoCoding        = 0x0010,
     kTraceVideoMixer         = 0x0011,
     kTraceAudioDevice        = 0x0012,

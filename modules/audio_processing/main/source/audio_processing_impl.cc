@@ -42,7 +42,7 @@ const char kMagicNumber[] = "#!vqetrace1.2";
 
 AudioProcessing* AudioProcessing::Create(int id) {
   /*WEBRTC_TRACE(webrtc::kTraceModuleCall,
-             webrtc::kTraceVqe,
+             webrtc::kTraceAudioProcessing,
              id,
              "AudioProcessing::Create()");*/
 
@@ -571,7 +571,7 @@ WebRtc_Word32 AudioProcessingImpl::Version(WebRtc_Word8* version,
     WebRtc_UWord32& bytes_remaining, WebRtc_UWord32& position) const {
   if (version == NULL) {
     /*WEBRTC_TRACE(webrtc::kTraceError,
-               webrtc::kTraceVqe,
+               webrtc::kTraceAudioProcessing,
                -1,
                "Null version pointer");*/
     return kNullPointerError;
@@ -583,7 +583,7 @@ WebRtc_Word32 AudioProcessingImpl::Version(WebRtc_Word8* version,
   WebRtc_UWord32 length = static_cast<WebRtc_UWord32>(strlen(my_version));
   if (bytes_remaining < length) {
     /*WEBRTC_TRACE(webrtc::kTraceError,
-               webrtc::kTraceVqe,
+               webrtc::kTraceAudioProcessing,
                -1,
                "Buffer of insufficient length");*/
     return kBadParameterError;
@@ -609,7 +609,7 @@ WebRtc_Word32 AudioProcessingImpl::Version(WebRtc_Word8* version,
     length = static_cast<WebRtc_UWord32>(strlen(component_version));
     if (bytes_remaining < length) {
       /*WEBRTC_TRACE(webrtc::kTraceError,
-                 webrtc::kTraceVqe,
+                 webrtc::kTraceAudioProcessing,
                  -1,
                  "Buffer of insufficient length");*/
       return kBadParameterError;
@@ -625,7 +625,7 @@ WebRtc_Word32 AudioProcessingImpl::Version(WebRtc_Word8* version,
 WebRtc_Word32 AudioProcessingImpl::ChangeUniqueId(const WebRtc_Word32 id) {
   CriticalSectionScoped crit_scoped(*crit_);
   /*WEBRTC_TRACE(webrtc::kTraceModuleCall,
-             webrtc::kTraceVqe,
+             webrtc::kTraceAudioProcessing,
              id_,
              "ChangeUniqueId(new id = %d)",
              id);*/

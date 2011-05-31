@@ -393,8 +393,8 @@ WebRtc_Word32 TraceImpl::AddModuleAndId(char* traceMessage,
                 sprintf(traceMessage, "        FILE:%5ld %5ld;", idEngine,
                         idChannel);
                 break;
-            case kTraceVqe:
-                sprintf(traceMessage, "         VQE:%5ld %5ld;", idEngine,
+            case kTraceAudioProcessing:
+                sprintf(traceMessage, "  AUDIO PROC:%5ld %5ld;", idEngine,
                         idChannel);
                 break;
             case kTraceAudioDevice:
@@ -456,8 +456,8 @@ WebRtc_Word32 TraceImpl::AddModuleAndId(char* traceMessage,
             case kTraceFile:
                 sprintf (traceMessage, "        FILE:%11ld;", idl);
                 break;
-            case kTraceVqe:
-                sprintf (traceMessage, "         VQE:%11ld;", idl);
+            case kTraceAudioProcessing:
+                sprintf (traceMessage, "  AUDIO PROC:%11ld;", idl);
                 break;
             case kTraceAudioDevice:
                 sprintf (traceMessage, "AUDIO DEVICE:%11ld;", idl);
