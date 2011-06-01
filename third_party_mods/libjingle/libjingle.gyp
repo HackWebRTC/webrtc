@@ -466,7 +466,7 @@
         'source/talk/session/phone/devicemanager.cc',
         'source/talk/session/phone/devicemanager.h',
         'source/talk/session/phone/filemediaengine.cc',
-        'source/talk/session/phone/filemediaengine.h',       
+        'source/talk/session/phone/filemediaengine.h',   
         'source/talk/session/phone/mediachannel.h',
         'source/talk/session/phone/mediaengine.cc',
         'source/talk/session/phone/mediaengine.h',
@@ -494,9 +494,17 @@
         'source/talk/session/tunnel/tunnelsessionclient.cc',
         'source/talk/session/tunnel/tunnelsessionclient.h',
       ],
-      'conditions': [        
+      'conditions': [
+        ['OS=="win"', {
+          'sources': [
+            'source/talk/session/phone/gdivideorenderer.cc',
+            'source/talk/session/phone/gdivideorenderer.h',
+          ],
+        }],   
         ['OS=="linux"', {
           'sources': [
+            #'source/talk/session/phone/gtkvideorenderer.cc',
+            #'source/talk/session/phone/gtkvideorenderer.h', 
             'source/talk/session/phone/libudevsymboltable.cc',
             'source/talk/session/phone/libudevsymboltable.h',
             'source/talk/session/phone/v4llookup.cc',
@@ -539,8 +547,6 @@
         'source/talk/app/voicemediaengine.h',
         'source/talk/app/webrtc_json.cc',
         'source/talk/app/webrtc_json.h',
-        'source/talk/app/webrtcchannelmanager.cc',
-        'source/talk/app/webrtcchannelmanager.h',
         'source/talk/app/webrtcsession.cc',
         'source/talk/app/webrtcsession.h',
         'source/talk/app/webrtcsessionimpl.cc',
@@ -556,8 +562,8 @@
             ],
           },{
             'sources': [        
-	          'source/talk/app/p2p_transport_manager.cc',
-	          'source/talk/app/p2p_transport_manager.h',
+              'source/talk/app/p2p_transport_manager.cc',
+              'source/talk/app/p2p_transport_manager.h',
             ],
           }],
         ],

@@ -14,6 +14,7 @@
 #include "talk/app/voicemediaengine.h"
 
 #include "modules/video_capture/main/interface/video_capture.h"
+#include "vplib.h"
 
 #ifndef ARRAYSIZE
 #define ARRAYSIZE(a)  (sizeof(a) / sizeof((a)[0]))
@@ -24,6 +25,213 @@ namespace webrtc {
 static const int kDefaultLogSeverity = 3;
 static const int kStartVideoBitrate = 300;
 static const int kMaxVideoBitrate = 1000;
+
+CricketWebRTCVideoFrame::CricketWebRTCVideoFrame() {
+}
+
+CricketWebRTCVideoFrame::~CricketWebRTCVideoFrame() {
+  // TODO(ronghuawu): should the CricketWebRTCVideoFrame owns the buffer?
+  WebRtc_UWord8* newMemory = NULL;
+  WebRtc_UWord32 newLength = 0;
+  WebRtc_UWord32 newSize = 0;
+  video_frame_.Swap(newMemory, newLength, newSize);
+}
+
+void CricketWebRTCVideoFrame::Attach(unsigned char* buffer, int bufferSize,
+                                     int w, int h) {
+  WebRtc_UWord8* newMemory = buffer;
+  WebRtc_UWord32 newLength = bufferSize;
+  WebRtc_UWord32 newSize = bufferSize;
+  video_frame_.Swap(newMemory, newLength, newSize);
+  video_frame_.SetWidth(w);
+  video_frame_.SetHeight(h);
+}
+
+size_t CricketWebRTCVideoFrame::GetWidth() const { 
+  return video_frame_.Width();
+}
+size_t CricketWebRTCVideoFrame::GetHeight() const { 
+  return video_frame_.Height();
+}
+
+const uint8* CricketWebRTCVideoFrame::GetYPlane() const {
+  WebRtc_UWord8* buffer = video_frame_.Buffer();
+  return buffer;
+}
+
+const uint8* CricketWebRTCVideoFrame::GetUPlane() const {
+  WebRtc_UWord8* buffer = video_frame_.Buffer();
+  if (buffer)
+    buffer += (video_frame_.Width() * video_frame_.Height());
+  return buffer;
+}
+
+const uint8* CricketWebRTCVideoFrame::GetVPlane() const {
+  WebRtc_UWord8* buffer = video_frame_.Buffer();
+  if (buffer)
+    buffer += (video_frame_.Width() * video_frame_.Height() * 5 / 4);
+  return buffer;
+}
+
+uint8* CricketWebRTCVideoFrame::GetYPlane() {
+  WebRtc_UWord8* buffer = video_frame_.Buffer();
+  return buffer;
+}
+
+uint8* CricketWebRTCVideoFrame::GetUPlane() {
+  WebRtc_UWord8* buffer = video_frame_.Buffer();
+  if (buffer)
+    buffer += (video_frame_.Width() * video_frame_.Height());
+  return buffer;
+}
+
+uint8* CricketWebRTCVideoFrame::GetVPlane() {
+  WebRtc_UWord8* buffer = video_frame_.Buffer();
+  if (buffer)
+    buffer += (video_frame_.Width() * video_frame_.Height() * 3 / 2);
+  return buffer;
+}
+
+cricket::VideoFrame* CricketWebRTCVideoFrame::Copy() const {
+  WebRtc_UWord8* buffer = video_frame_.Buffer();
+  if (buffer) {
+    int new_buffer_size = video_frame_.Length();
+    unsigned char* new_buffer = new unsigned char[new_buffer_size];
+    memcpy(new_buffer, buffer, new_buffer_size);
+    CricketWebRTCVideoFrame* copy = new CricketWebRTCVideoFrame();
+    copy->Attach(new_buffer, new_buffer_size,
+                 video_frame_.Width(), video_frame_.Height());
+    copy->SetTimeStamp(video_frame_.TimeStamp());
+    copy->SetElapsedTime(elapsed_time_);
+    return copy;
+  }
+  return NULL;
+}
+
+size_t CricketWebRTCVideoFrame::CopyToBuffer(
+    uint8* buffer, size_t size) const {
+  if (!video_frame_.Buffer()) {
+    return 0;
+  }
+
+  size_t needed = video_frame_.Length();
+  if (needed <= size) {
+    memcpy(buffer, video_frame_.Buffer(), needed);
+  }
+  return needed;
+}
+
+size_t CricketWebRTCVideoFrame::ConvertToRgbBuffer(uint32 to_fourcc,
+                                                   uint8* buffer,
+                                                   size_t size,
+                                                   size_t pitch_rgb) const {
+  if (!video_frame_.Buffer()) {
+    return 0;
+  }
+
+  size_t width = video_frame_.Width();
+  size_t height = video_frame_.Height();
+  // See http://www.virtualdub.org/blog/pivot/entry.php?id=190 for a good
+  // explanation of pitch and why this is the amount of space we need.
+  size_t needed = pitch_rgb * (height - 1) + 4 * width;
+
+  if (needed > size) {
+    LOG(LS_WARNING) << "RGB buffer is not large enough";
+    return needed;
+  }
+
+  VideoType outgoingVideoType = kUnknown;
+  switch (to_fourcc) {
+    case cricket::FOURCC_ARGB:
+      outgoingVideoType = kARGB;
+      break;
+    default:
+      LOG(LS_WARNING) << "RGB type not supported: " << to_fourcc;
+      break;
+  }
+
+  if (outgoingVideoType != kUnknown)
+    ConvertFromI420(outgoingVideoType, video_frame_.Buffer(),
+                    width, height, buffer);
+
+  return needed;
+}
+
+// TODO(ronghuawu): Implement StretchToPlanes
+void CricketWebRTCVideoFrame::StretchToPlanes(
+    uint8* y, uint8* u, uint8* v,
+    int32 dst_pitch_y, int32 dst_pitch_u, int32 dst_pitch_v,
+    size_t width, size_t height, bool interpolate, bool crop) const {
+}
+
+size_t CricketWebRTCVideoFrame::StretchToBuffer(size_t w, size_t h,
+                                                uint8* buffer, size_t size,
+                                                bool interpolate,
+                                                bool crop) const {
+  if (!video_frame_.Buffer()) {
+    return 0;
+  }
+
+  size_t needed = video_frame_.Length();
+
+  if (needed <= size) {
+    uint8* bufy = buffer;
+    uint8* bufu = bufy + w * h;
+    uint8* bufv = bufu + ((w + 1) >> 1) * ((h + 1) >> 1);
+    StretchToPlanes(bufy, bufu, bufv, w, (w + 1) >> 1, (w + 1) >> 1, w, h,
+                    interpolate, crop);
+  }
+  return needed;
+}
+
+void CricketWebRTCVideoFrame::StretchToFrame(cricket::VideoFrame *target,
+                                             bool interpolate, bool crop) const {
+  if (!target) return;
+
+  StretchToPlanes(target->GetYPlane(),
+                  target->GetUPlane(),
+                  target->GetVPlane(),
+                  target->GetYPitch(),
+                  target->GetUPitch(),
+                  target->GetVPitch(),
+                  target->GetWidth(),
+                  target->GetHeight(),
+                  interpolate, crop);
+  target->SetElapsedTime(GetElapsedTime());
+  target->SetTimeStamp(GetTimeStamp());
+}
+
+cricket::VideoFrame* CricketWebRTCVideoFrame::Stretch(size_t w, size_t h,
+                                                      bool interpolate, bool crop) const {
+  // TODO(ronghuawu): implement
+  CricketWebRTCVideoFrame* frame = new CricketWebRTCVideoFrame();
+  return frame;
+}
+
+CricketWebRTCVideoRenderer::CricketWebRTCVideoRenderer
+    (cricket::VideoRenderer* renderer)
+  :renderer_(renderer) {
+}
+
+CricketWebRTCVideoRenderer::~CricketWebRTCVideoRenderer() {
+}
+
+int CricketWebRTCVideoRenderer::FrameSizeChange(unsigned int width,
+                                                unsigned int height,
+                                                unsigned int numberOfStreams) {
+  ASSERT(renderer_ != NULL);
+  width_ = width;
+  height_ = height;
+  number_of_streams_ = numberOfStreams;
+  return renderer_->SetSize(width_, height_, 0) ? 0 : -1;
+}
+
+int CricketWebRTCVideoRenderer::DeliverFrame(unsigned char* buffer,
+                                             int bufferSize) {
+  ASSERT(renderer_ != NULL);
+  video_frame_.Attach(buffer, bufferSize, width_, height_);
+  return renderer_->RenderFrame(&video_frame_) ? 0 : -1;
+}
 
 const RtcVideoEngine::VideoCodecPref RtcVideoEngine::kVideoCodecPrefs[] = {
     {"VP8", 104, 0},
@@ -231,29 +439,23 @@ bool RtcVideoEngine::SetCaptureDevice(const cricket::Device* cam) {
   return (capture_id_ != -1);
 }
 
-bool RtcVideoEngine::SetVideoRenderer(int channel_id,
-                                      void* window,
-                                      unsigned int zOrder,
-                                      float left,
-                                      float top,
-                                      float right,
-                                      float bottom) {
-  int ret;
-  if (channel_id == -1)
-    channel_id = capture_id_;
-  ret = video_engine_->render()->AddRenderer(
-      channel_id, window, zOrder, left, top, right, bottom);
-  if (ret !=0 )
-    return false;
-  ret = video_engine_->render()->StartRender(channel_id);
-  if (ret !=0 )
-      return false;
-  return true;
-}
-
 bool RtcVideoEngine::SetLocalRenderer(cricket::VideoRenderer* renderer) {
-  LOG(LS_WARNING) << "Not required call SetLocalRenderer for webrtc";
-  return false;
+  if (!local_renderer_.get()) {
+    local_renderer_.reset(new CricketWebRTCVideoRenderer(renderer));
+  } else {
+    // Renderer already set
+    return true;
+  }
+
+  int ret;
+  ret = video_engine_->render()->AddRenderer(capture_id_,
+                                             kVideoI420,
+                                             local_renderer_.get());
+  if (ret != 0)
+    return false;
+  ret = video_engine_->render()->StartRender(capture_id_);
+
+  return (ret == 0);
 }
 
 cricket::CaptureResult RtcVideoEngine::SetCapture(bool capture) {
@@ -565,7 +767,22 @@ bool RtcVideoMediaChannel::RemoveStream(uint32 ssrc) {
 
 bool RtcVideoMediaChannel::SetRenderer(
     uint32 ssrc, cricket::VideoRenderer* renderer) {
-  return false;
+  if (!remote_renderer_.get()) {
+    remote_renderer_.reset(new CricketWebRTCVideoRenderer(renderer));
+  } else {
+    // Renderer already set
+    return true;
+  }
+
+  int ret;
+  ret = engine_->video_engine()->render()->AddRenderer(video_channel_,
+                                                       kVideoI420,
+                                                       remote_renderer_.get());
+  if (ret != 0)
+    return false;
+  ret = engine_->video_engine()->render()->StartRender(video_channel_);
+
+  return (ret == 0);
 }
 
 bool RtcVideoMediaChannel::SetExternalRenderer(uint32 ssrc, void* renderer)
@@ -575,12 +792,11 @@ bool RtcVideoMediaChannel::SetExternalRenderer(uint32 ssrc, void* renderer)
       video_channel_,
       kVideoI420,
       static_cast<ExternalRenderer*>(renderer));
-  if (ret !=0 )
+  if (ret != 0)
     return false;
   ret = engine_->video_engine()->render()->StartRender(video_channel_);
-  if (ret !=0 )
-      return false;
-  return true;
+
+  return (ret == 0);
 }
 
 bool RtcVideoMediaChannel::GetStats(cricket::VideoMediaInfo* info) {

@@ -20,6 +20,7 @@
 #include "talk/app/peerconnection.h"
 #include "talk/app/session_test/main_wnd.h"
 #include "talk/base/logging.h"
+#include "talk/session/phone/videorendererfactory.h"
 
 static const char kAudioLabel[] = "audio_label";
 static const char kVideoLabel[] = "video_label";
@@ -217,6 +218,7 @@ class PeerConnectionClient : public sigslot::has_slots<> {
   }
 
   void OnConnect(talk_base::AsyncSocket* socket) {
+    ASSERT(!onconnect_data_.empty());
     int sent = socket->Send(onconnect_data_.c_str(), onconnect_data_.length());
     ASSERT(sent == onconnect_data_.length());
     onconnect_data_.clear();
@@ -385,8 +387,10 @@ class PeerConnectionClient : public sigslot::has_slots<> {
       notification_data_.clear();
     }
 
-    if (hanging_get_.GetState() == talk_base::Socket::CS_CLOSED)
+    if (hanging_get_.GetState() == talk_base::Socket::CS_CLOSED &&
+        state_ == CONNECTED) {
       hanging_get_.Connect(server_address_);
+    }
   }
 
   // Parses a single line entry in the form "<name>,<id>,<connected>"
@@ -446,7 +450,9 @@ class PeerConnectionClient : public sigslot::has_slots<> {
 
   void OnClose(talk_base::AsyncSocket* socket, int err) {
     LOG(INFO) << __FUNCTION__;
+
     socket->Close();
+
     if (err != WSAECONNREFUSED) {
       if (socket == &hanging_get_) {
         if (state_ == CONNECTED) {
@@ -553,6 +559,7 @@ class ConnectionObserver
 
   void DeletePeerConnection() {
     peer_connection_.reset();
+    handshake_ = NONE;
   }
 
   void StartCaptureDevice() {
@@ -561,8 +568,11 @@ class ConnectionObserver
       main_wnd_->SwitchToStreamingUI();
 
       if (peer_connection_->SetVideoCapture("")) {
-        peer_connection_->SetVideoRenderer(-1, main_wnd_->handle(), 0,
-                                           0.7f, 0.7f, 0.95f, 0.95f);
+        if (!local_renderer_.get()) {
+          local_renderer_.reset(
+              cricket::VideoRendererFactory::CreateGuiVideoRenderer(176, 144));
+        }
+        peer_connection_->SetLocalVideoRenderer(local_renderer_.get());
       } else {
         ASSERT(false);
       }
@@ -612,8 +622,12 @@ class ConnectionObserver
       video_channel_ = channel_id;
       waiting_for_video_ = false;
       LOG(INFO) << "Setting video renderer for channel: " << channel_id;
-      bool ok = peer_connection_->SetVideoRenderer(channel_id,
-          main_wnd_->handle(), 1, 0.0f, 0.0f, 1.0f, 1.0f);
+      if (!remote_renderer_.get()) {
+          remote_renderer_.reset(
+              cricket::VideoRendererFactory::CreateGuiVideoRenderer(352, 288));
+      }
+      bool ok = peer_connection_->SetVideoRenderer(stream_id,
+                                                   remote_renderer_.get());
       ASSERT(ok);
     } else {
       ASSERT(audio_channel_ == -1);
@@ -774,7 +788,6 @@ class ConnectionObserver
       LOG(INFO) << "PEER_CONNECTION_CLOSED";
       DeletePeerConnection();
       ::InvalidateRect(main_wnd_->handle(), NULL, TRUE);
-      handshake_ = NONE;
       waiting_for_audio_ = false;
       waiting_for_video_ = false;
       peer_id_ = -1;
@@ -790,7 +803,12 @@ class ConnectionObserver
         DisconnectFromServer();
       }
     } else if (msg == SEND_MESSAGE_TO_PEER) {
-      client_->SendToPeer(peer_id_, *reinterpret_cast<std::string*>(lp));
+      bool ok = client_->SendToPeer(peer_id_,
+                                    *reinterpret_cast<std::string*>(lp));
+      if (!ok) {
+        LOG(LS_ERROR) << "SendToPeer failed";
+        DisconnectFromServer();
+      }
     } else {
       ret = false;
     }
@@ -808,6 +826,8 @@ class ConnectionObserver
   MainWnd* main_wnd_;
   int video_channel_;
   int audio_channel_;
+  scoped_ptr<cricket::VideoRenderer> local_renderer_;
+  scoped_ptr<cricket::VideoRenderer> remote_renderer_;
 };
 
 int PASCAL wWinMain(HINSTANCE instance, HINSTANCE prev_instance,

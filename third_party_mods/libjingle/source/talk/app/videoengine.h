@@ -31,6 +31,7 @@
 
 #include "talk/base/common.h"
 #include "common_types.h"
+#include "modules/interface/module_common_types.h"
 #include "video_engine/main/interface/vie_base.h"
 #include "video_engine/main/interface/vie_capture.h"
 #include "video_engine/main/interface/vie_codec.h"

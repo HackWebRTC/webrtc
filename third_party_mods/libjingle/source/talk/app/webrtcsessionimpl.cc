@@ -29,20 +29,19 @@
 #include <string>
 #include <vector>
 
+#include "talk/app/pc_transport_impl.h"
+#include "talk/app/peerconnection.h"
+#include "talk/app/webrtc_json.h"
 #include "talk/base/common.h"
 #include "talk/base/json.h"
 #include "talk/base/scoped_ptr.h"
 #include "talk/p2p/base/constants.h"
 #include "talk/p2p/base/sessiondescription.h"
 #include "talk/p2p/base/p2ptransport.h"
-#include "talk/session/phone/mediasessionclient.h"
 #include "talk/session/phone/channel.h"
-#include "talk/session/phone/voicechannel.h"
 #include "talk/session/phone/channelmanager.h"
-#include "talk/app/webrtc_json.h"
-#include "talk/app/webrtcchannelmanager.h"
-#include "talk/app/peerconnection.h"
-#include "talk/app/pc_transport_impl.h"
+#include "talk/session/phone/mediasessionclient.h"
+#include "talk/session/phone/voicechannel.h"
 
 using namespace cricket;
 
@@ -55,7 +54,7 @@ enum {
   MSG_RTC_SETVIDEOCAPTURE = 4,
   MSG_RTC_CANDIDATETIMEOUT = 5,
   MSG_RTC_SETEXTERNALRENDERER = 6,
-  MSG_RTC_SETRENDERER = 7,
+  MSG_RTC_SETCRICKETRENDERER = 7,
   MSG_RTC_CHANNELENABLE = 8,
   MSG_RTC_SIGNALONWRITABLESTATE = 9,
   MSG_RTC_DESTROYVOICECHANNEL = 10,
@@ -107,29 +106,15 @@ struct ExternalRenderParams : public talk_base::MessageData {
   bool result;
 };
 
-struct RenderParams : public talk_base::MessageData {
-  RenderParams(int channel_id,
-               void* window,
-               unsigned int zOrder,
-               float left,
-               float top,
-               float right,
-               float bottom)
-  :channel_id(channel_id)
-  ,window(window)
-  ,zOrder(zOrder)
-  ,left(left)
-  ,top(top)
-  ,right(right)
-  ,bottom(bottom) {}
+struct CricketRenderParams : public talk_base::MessageData {
+  CricketRenderParams(const std::string& stream_id,
+                      cricket::VideoRenderer* renderer)
+      : stream_id(stream_id),
+        renderer(renderer),
+        result(false) {}
 
-  int channel_id;
-  void* window;
-  unsigned int zOrder;
-  float left;
-  float top;
-  float right;
-  float bottom;
+  const std::string stream_id;
+  cricket::VideoRenderer* renderer;
   bool result;
 };
 
@@ -159,7 +144,7 @@ WebRTCSessionImpl::WebRTCSessionImpl(
     const std::string& id,
     const std::string& direction,
     cricket::PortAllocator* allocator,
-    WebRtcChannelManager* channelmgr,
+    cricket::ChannelManager* channelmgr,
     PeerConnection* connection,
     talk_base::Thread* signaling_thread)
   : WebRTCSession(id, direction, allocator, connection, signaling_thread),
@@ -203,7 +188,7 @@ bool WebRTCSessionImpl::CreateVoiceChannel(const std::string& stream_id) {
       this, &WebRTCSessionImpl::OnVoiceChannelCreated);
 
   signaling_thread_->Post(this, MSG_RTC_CREATEAUDIOCHANNEL,
-                          new CreateChannelParams(stream_id, false, NULL));
+                          new CreateChannelParams(stream_id, true, NULL));
   return true;
 }
 
@@ -255,7 +240,7 @@ bool WebRTCSessionImpl::CreateVideoChannel(const std::string& stream_id) {
       this, &WebRTCSessionImpl::OnVideoChannelCreated);
 
   signaling_thread_->Post(this, MSG_RTC_CREATEVIDEOCHANNEL,
-                          new CreateChannelParams(stream_id, false, NULL));
+                          new CreateChannelParams(stream_id, true, NULL));
   return true;
 }
 
@@ -304,6 +289,33 @@ void WebRTCSessionImpl::OnVideoChannelCreated(
 }
 
 bool WebRTCSessionImpl::SetVideoRenderer(const std::string& stream_id,
+    cricket::VideoRenderer* renderer) {
+  if(signaling_thread_ != talk_base::Thread::Current()) {
+    signaling_thread_->Post(this, MSG_RTC_SETCRICKETRENDERER,
+                            new CricketRenderParams(stream_id, renderer),
+                            true);
+    return true;
+  }
+
+  ASSERT(signaling_thread_ == talk_base::Thread::Current());
+
+  bool ret = false;
+  StreamMap::iterator iter;
+  for (iter = streams_.begin(); iter != streams_.end(); ++iter) {
+    StreamInfo* stream_info = (*iter);
+    if (stream_info->stream_id.compare(stream_id) == 0) {
+      ASSERT(stream_info->channel != NULL);
+      ASSERT(stream_info->video);
+      cricket::VideoChannel* channel = static_cast<cricket::VideoChannel*>(
+          stream_info->channel);
+      ret = channel->SetRenderer(0, renderer);
+      break;
+    }
+  }
+  return ret;
+}
+
+bool WebRTCSessionImpl::SetVideoRenderer(const std::string& stream_id,
     ExternalRenderer* external_renderer) {
   if(signaling_thread_ != talk_base::Thread::Current()) {
     signaling_thread_->Post(this, MSG_RTC_SETEXTERNALRENDERER,
@@ -328,30 +340,6 @@ bool WebRTCSessionImpl::SetVideoRenderer(const std::string& stream_id,
     }
   }
   return ret;
-}
-
-bool WebRTCSessionImpl::SetVideoRenderer(int channel_id,
-                                         void* window,
-                                         unsigned int zOrder,
-                                         float left,
-                                         float top,
-                                         float right,
-                                         float bottom) {
-  signaling_thread_->Post(this, MSG_RTC_SETRENDERER,
-                          new RenderParams(channel_id, window, zOrder, left, top, right, bottom),
-                          true);
-  return true;
-}
-
-bool WebRTCSessionImpl::SetVideoRenderer_w(int channel_id,
-                                           void* window,
-                                           unsigned int zOrder,
-                                           float left,
-                                           float top,
-                                           float right,
-                                           float bottom) {
-  ASSERT(signaling_thread_ == talk_base::Thread::Current());
-  return channel_manager_->SetVideoRenderer(channel_id, window, zOrder, left, top, right, bottom);
 }
 
 void WebRTCSessionImpl::OnMessage(talk_base::Message* message) {
@@ -420,31 +408,25 @@ void WebRTCSessionImpl::OnMessage(talk_base::Message* message) {
       break;
     }
     case MSG_RTC_SETVIDEOCAPTURE : {
-      CaptureParams* p = static_cast<CaptureParams*>(data);
+      CaptureParams* p = reinterpret_cast<CaptureParams*>(data);
       p->result = SetVideoCapture_w(p->capture);
       delete p;
       break;
     }
     case MSG_RTC_SETEXTERNALRENDERER : {
-      ExternalRenderParams* p = static_cast<ExternalRenderParams*> (data);
+      ExternalRenderParams* p = reinterpret_cast<ExternalRenderParams*>(data);
       p->result = SetVideoRenderer(p->stream_id, p->external_renderer);
       delete p;
       break;
     }
-    case MSG_RTC_SETRENDERER : {
-      RenderParams* p = static_cast<RenderParams*> (data);
-      p->result = SetVideoRenderer_w(p->channel_id,
-                                     p->window,
-                                     p->zOrder,
-                                     p->left,
-                                     p->top,
-                                     p->right,
-                                     p->bottom);
+    case MSG_RTC_SETCRICKETRENDERER : {
+      CricketRenderParams* p = reinterpret_cast<CricketRenderParams*>(data);
+      p->result = SetVideoRenderer(p->stream_id, p->renderer);
       delete p;
       break;
     }
     case MSG_RTC_CHANNELENABLE : {
-      ChannelEnableParams* p = static_cast<ChannelEnableParams*> (data);
+      ChannelEnableParams* p = reinterpret_cast<ChannelEnableParams*>(data);
       ChannelEnable_w(p->channel, p->enable);
       delete p;
       break;
@@ -707,8 +689,6 @@ void WebRTCSessionImpl::DestroyChannel(
       break;
     }
   }
-
-  ASSERT(found);
 }
 
 void WebRTCSessionImpl::DestroyVoiceChannel_w(
