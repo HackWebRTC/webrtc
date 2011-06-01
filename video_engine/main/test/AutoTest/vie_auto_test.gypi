@@ -131,42 +131,30 @@
                 'media',
               ],
               'outputs': [
-                'media_files_in_tmp',
+                '/tmp/*.jpg',
+                '/tmp/*.bmp',
               ],
               'action': [
                 '/bin/sh', '-c',
-                'mkdir -p /tmp/vie_auto_test; cp -f video_engine/main/test/AutoTest/media/* /tmp/vie_auto_test'    
+                'cp -f video_engine/main/test/AutoTest/media/* /tmp/',
               ],
             },
           ],
         }],
         ['OS=="win"', {
           'actions': [
-            {
-             'action_name': 'create vie test folder',
-              'inputs': [
-                'media',
-              ],
-              'outputs': [
-                'tmp/vie_auto_test/',
-              ],
-              'action': [
-                'cmd', '/c',
-                'mkdir \\tmp\\vie_auto_test'    
-              ],
-            },
-            {
+             {
               'action_name': 'copy media files',
               'inputs': [
                 'media',
               ],
               'outputs': [
-                '\\tmp\\vie_auto_test\\*.jpg',
-                '\\tmp\\vie_auto_test\\*.yuv',
+                '\\tmp\\*.jpg',
+                '\\tmp\\*.bmp',
               ],
               'action': [
                 'cmd', '/c',
-                'xcopy /Y /R video_engine\\main\\test\\AutoTest\\media\\* \\tmp\\vie_auto_test'    
+                'xcopy /Y /R video_engine\\main\\test\\AutoTest\\media\\* \\tmp',
               ],
             },
           ],

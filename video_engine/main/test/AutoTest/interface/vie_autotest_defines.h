@@ -238,7 +238,7 @@ namespace
 #ifdef ANDROID
 #define VIE_TEST_FILES_ROOT "/sdcard/vie_auto_test/"
 #else
-#define VIE_TEST_FILES_ROOT "/tmp/vie_auto_test/"
+#define VIE_TEST_FILES_ROOT "/tmp/"
 #endif
 
 namespace
