@@ -16,7 +16,7 @@
 #include "device_info_impl.h"
 
 #define AndroidJavaCaptureDeviceInfoClass "org/webrtc/videoengine/VideoCaptureDeviceInfoAndroid"
-#define AndroidJavaCaptureCapabilityClass "org/webrtc/videoengine/VideoCaptureCapabilityAndroid"
+#define AndroidJavaCaptureCapabilityClass "org/webrtc/videoengine/CaptureCapabilityAndroid"
 
 namespace webrtc
 {
