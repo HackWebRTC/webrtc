@@ -328,9 +328,12 @@ int main(int argc, char* argv[])
 
 #ifdef NETEQ_DELAY_LOGGING
 	char delayfile[MY_MAX_PATH];
-	
+#ifdef WIN32
 	_splitpath(outfilename,outdrive,outpath,outfile,outext);
 	_makepath(delayfile,outdrive,outpath,outfile,"d");
+#else
+    sprintf(delayfile, "%s.d", outfilename);
+#endif
 	delay_fid2 = fopen(delayfile,"wb");
 	fprintf(delay_fid2, "#!NetEQ_Delay_Logging%s\n", NETEQ_DELAY_LOGGING_VERSION_STRING);
 #endif
