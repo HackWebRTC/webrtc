@@ -18,7 +18,6 @@
 
 #include "aec_core.h"
 #include "ring_buffer.h"
-#include "system_wrappers/interface/cpu_features_wrapper.h"
 
 #define IP_LEN PART_LEN // this must be at least ceil(2 + sqrt(PART_LEN))
 #define W_LEN PART_LEN
@@ -216,49 +215,6 @@ int WebRtcAec_FreeAec(aec_t *aec)
     return 0;
 }
 
-static void FilterFar(aec_t *aec, float yf[2][PART_LEN1])
-{
-  for (int i = 0; i < NR_PART; i++) {
-    int xPos = (i + aec->xfBufBlockPos) * PART_LEN1;
-    // Check for wrap
-    if (i + aec->xfBufBlockPos >= NR_PART) {
-      xPos -= NR_PART*(PART_LEN1);
-    }
-
-    int pos = i * PART_LEN1;
-    for (int j = 0; j < PART_LEN1; j++) {
-      yf[0][j] += MulRe(aec->xfBuf[0][xPos + j], aec->xfBuf[1][xPos + j],
-                        aec->wfBuf[0][ pos + j], aec->wfBuf[1][ pos + j]);
-      yf[1][j] += MulIm(aec->xfBuf[0][xPos + j], aec->xfBuf[1][xPos + j],
-                        aec->wfBuf[0][ pos + j], aec->wfBuf[1][ pos + j]);
-    }
-  }
-}
-
-static void ScaleErrorSignal(aec_t *aec, float ef[2][PART_LEN1])
-{
-  for (int i = 0; i < (PART_LEN1); i++) {
-    ef[0][i] /= (aec->xPow[i] + 1e-10f);
-    ef[1][i] /= (aec->xPow[i] + 1e-10f);
-    float absEf = sqrtf(ef[0][i] * ef[0][i] + ef[1][i] * ef[1][i]);
-
-    if (absEf > aec->errThresh) {
-      absEf = aec->errThresh / (absEf + 1e-10f);
-      ef[0][i] *= absEf;
-      ef[1][i] *= absEf;
-    }
-
-    // Stepsize factor
-    ef[0][i] *= aec->mu;
-    ef[1][i] *= aec->mu;
-  }
-}
-
-WebRtcAec_FilterFar_t WebRtcAec_FilterFar;
-WebRtcAec_ScaleErrorSignal_t WebRtcAec_ScaleErrorSignal;
-
-extern void WebRtcAec_InitAec_SSE2(void);
-
 int WebRtcAec_InitAec(aec_t *aec, int sampFreq)
 {
     int i;
@@ -335,8 +291,7 @@ int WebRtcAec_InitAec(aec_t *aec, int sampFreq)
 
     // Holds the last block written to
     aec->xfBufBlockPos = 0;
-    // TODO: Investigate need for these initializations. Deleting them doesn't
-    //       change the output at all and yields 0.4% overall speedup.
+
     memset(aec->xfBuf, 0, sizeof(complex_t) * NR_PART * PART_LEN1);
     memset(aec->wfBuf, 0, sizeof(complex_t) * NR_PART * PART_LEN1);
     memset(aec->sde, 0, sizeof(complex_t) * PART_LEN1);
@@ -380,15 +335,6 @@ int WebRtcAec_InitAec(aec_t *aec, int sampFreq)
     // Metrics disabled by default
     aec->metricsMode = 0;
     WebRtcAec_InitMetrics(aec);
-
-    // Assembly optimization
-    WebRtcAec_FilterFar = FilterFar;
-    WebRtcAec_ScaleErrorSignal = ScaleErrorSignal;
-    if (WebRtc_GetCPUInfo(kSSE2)) {
-#if defined(__SSE2__)
-      WebRtcAec_InitAec_SSE2();
-#endif
-    }
 
     return 0;
 }
@@ -488,8 +434,7 @@ static void ProcessBlock(aec_t *aec, const short *farend,
     float absEf;
 
     float fft[PART_LEN2];
-    float xf[2][PART_LEN1], yf[2][PART_LEN1], ef[2][PART_LEN1];
-    complex_t df[PART_LEN1];
+    complex_t xf[PART_LEN1], df[PART_LEN1], yf[PART_LEN1], ef[PART_LEN1];
     int ip[IP_LEN];
     float wfft[W_LEN];
 
@@ -534,14 +479,14 @@ static void ProcessBlock(aec_t *aec, const short *farend,
     rdft(PART_LEN2, 1, fft, ip, wfft);
 
     // Far fft
-    xf[1][0] = 0;
-    xf[1][PART_LEN] = 0;
+    xf[0][1] = 0;
+    xf[PART_LEN][1] = 0;
     xf[0][0] = fft[0];
-    xf[0][PART_LEN] = fft[1];
+    xf[PART_LEN][0] = fft[1];
 
     for (i = 1; i < PART_LEN; i++) {
-        xf[0][i] = fft[2 * i];
-        xf[1][i] = fft[2 * i + 1];
+        xf[i][0] = fft[2 * i];
+        xf[i][1] = fft[2 * i + 1];
     }
 
     // Near fft
@@ -560,7 +505,7 @@ static void ProcessBlock(aec_t *aec, const short *farend,
     // Power smoothing
     for (i = 0; i < PART_LEN1; i++) {
         aec->xPow[i] = gPow[0] * aec->xPow[i] + gPow[1] * NR_PART *
-            (xf[0][i] * xf[0][i] + xf[1][i] * xf[1][i]);
+            (xf[i][0] * xf[i][0] + xf[i][1] * xf[i][1]);
         aec->dPow[i] = gPow[0] * aec->dPow[i] + gPow[1] *
             (df[i][0] * df[i][0] + df[i][1] * df[i][1]);
     }
@@ -605,22 +550,34 @@ static void ProcessBlock(aec_t *aec, const short *farend,
     }
 
     // Buffer xf
-    memcpy(aec->xfBuf[0] + aec->xfBufBlockPos * PART_LEN1, xf[0],
-           sizeof(float) * PART_LEN1);
-    memcpy(aec->xfBuf[1] + aec->xfBufBlockPos * PART_LEN1, xf[1],
-           sizeof(float) * PART_LEN1);
+    memcpy(aec->xfBuf + aec->xfBufBlockPos * PART_LEN1, xf, sizeof(complex_t) *
+        PART_LEN1);
 
-    memset(yf[0], 0, sizeof(float) * (PART_LEN1 * 2));
+    memset(yf, 0, sizeof(complex_t) * (PART_LEN1));
 
     // Filter far
-    WebRtcAec_FilterFar(aec, yf);
+    for (i = 0; i < NR_PART; i++) {
+        xPos = (i + aec->xfBufBlockPos) * PART_LEN1;
+        // Check for wrap
+        if (i + aec->xfBufBlockPos >= NR_PART) {
+            xPos -= NR_PART*(PART_LEN1);
+        }
+
+        pos = i * PART_LEN1;
+        for (j = 0; j < PART_LEN1; j++) {
+            yf[j][0] += MulRe(aec->xfBuf[xPos + j][0], aec->xfBuf[xPos + j][1],
+                aec->wfBuf[pos + j][0], aec->wfBuf[pos + j][1]);
+            yf[j][1] += MulIm(aec->xfBuf[xPos + j][0], aec->xfBuf[xPos + j][1],
+                aec->wfBuf[pos + j][0], aec->wfBuf[pos + j][1]);
+        }
+    }
 
     // Inverse fft to obtain echo estimate and error.
     fft[0] = yf[0][0];
-    fft[1] = yf[0][PART_LEN];
+    fft[1] = yf[PART_LEN][0];
     for (i = 1; i < PART_LEN; i++) {
-        fft[2 * i] = yf[0][i];
-        fft[2 * i + 1] = yf[1][i];
+        fft[2 * i] = yf[i][0];
+        fft[2 * i + 1] = yf[i][1];
     }
     rdft(PART_LEN2, -1, fft, ip, wfft);
 
@@ -639,17 +596,32 @@ static void ProcessBlock(aec_t *aec, const short *farend,
     memcpy(fft + PART_LEN, e, sizeof(float) * PART_LEN);
     rdft(PART_LEN2, 1, fft, ip, wfft);
 
-    ef[1][0] = 0;
-    ef[1][PART_LEN] = 0;
+    ef[0][1] = 0;
+    ef[PART_LEN][1] = 0;
     ef[0][0] = fft[0];
-    ef[0][PART_LEN] = fft[1];
+    ef[PART_LEN][0] = fft[1];
     for (i = 1; i < PART_LEN; i++) {
-        ef[0][i] = fft[2 * i];
-        ef[1][i] = fft[2 * i + 1];
+        ef[i][0] = fft[2 * i];
+        ef[i][1] = fft[2 * i + 1];
     }
 
     // Scale error signal inversely with far power.
-    WebRtcAec_ScaleErrorSignal(aec, ef);
+    for (i = 0; i < (PART_LEN1); i++) {
+        ef[i][0] /= (aec->xPow[i] + 1e-10f);
+        ef[i][1] /= (aec->xPow[i] + 1e-10f);
+        absEf = sqrtf(ef[i][0] * ef[i][0] + ef[i][1] * ef[i][1]);
+
+        if (absEf > aec->errThresh) {
+            absEf = aec->errThresh / (absEf + 1e-10f);
+            ef[i][0] *= absEf;
+            ef[i][1] *= absEf;
+        }
+
+        // Stepsize factor
+        ef[i][0] *= aec->mu;
+        ef[i][1] *= aec->mu;
+    }
+
 #ifdef G167
     if (aec->adaptToggle) {
 #endif
@@ -671,20 +643,16 @@ static void ProcessBlock(aec_t *aec, const short *farend,
                     -aec->xfBuf[xPos + j][1], ef[j][0], ef[j][1]);
             }
 #else
-            fft[0] = MulRe(aec->xfBuf[0][xPos], -aec->xfBuf[1][xPos],
-                           ef[0][0], ef[1][0]);
-            fft[1] = MulRe(aec->xfBuf[0][xPos + PART_LEN],
-                           -aec->xfBuf[1][xPos + PART_LEN],
-                           ef[0][PART_LEN], ef[1][PART_LEN]);
+            fft[0] = MulRe(aec->xfBuf[xPos][0], -aec->xfBuf[xPos][1], ef[0][0], ef[0][1]);
+            fft[1] = MulRe(aec->xfBuf[xPos + PART_LEN][0], -aec->xfBuf[xPos + PART_LEN][1],
+                ef[PART_LEN][0], ef[PART_LEN][1]);
 
             for (j = 1; j < PART_LEN; j++) {
 
-                fft[2 * j] = MulRe(aec->xfBuf[0][xPos + j],
-                                   -aec->xfBuf[1][xPos + j],
-                                   ef[0][j], ef[1][j]);
-                fft[2 * j + 1] = MulIm(aec->xfBuf[0][xPos + j],
-                                       -aec->xfBuf[1][xPos + j],
-                                       ef[0][j], ef[1][j]);
+                fft[2 * j] = MulRe(aec->xfBuf[xPos + j][0], -aec->xfBuf[xPos + j][1],
+                    ef[j][0], ef[j][1]);
+                fft[2 * j + 1] = MulIm(aec->xfBuf[xPos + j][0], -aec->xfBuf[xPos + j][1],
+                    ef[j][0], ef[j][1]);
             }
             rdft(PART_LEN2, -1, fft, ip, wfft);
             memset(fft + PART_LEN, 0, sizeof(float)*PART_LEN);
@@ -695,12 +663,12 @@ static void ProcessBlock(aec_t *aec, const short *farend,
             }
             rdft(PART_LEN2, 1, fft, ip, wfft);
 
-            aec->wfBuf[0][pos] += fft[0];
-            aec->wfBuf[0][pos + PART_LEN] += fft[1];
+            aec->wfBuf[pos][0] += fft[0];
+            aec->wfBuf[pos + PART_LEN][0] += fft[1];
 
             for (j = 1; j < PART_LEN; j++) {
-                aec->wfBuf[0][pos + j] += fft[2 * j];
-                aec->wfBuf[1][pos + j] += fft[2 * j + 1];
+                aec->wfBuf[pos + j][0] += fft[2 * j];
+                aec->wfBuf[pos + j][1] += fft[2 * j + 1];
             }
 #endif // UNCONSTR
         }
@@ -791,8 +759,8 @@ static void NonLinearProcessing(aec_t *aec, int *ip, float *wfft, short *output,
             pos = i * PART_LEN1;
             wfEn = 0;
             for (j = 0; j < PART_LEN1; j++) {
-                wfEn += aec->wfBuf[0][pos + j] * aec->wfBuf[0][pos + j] +
-                    aec->wfBuf[1][pos + j] * aec->wfBuf[1][pos + j];
+                wfEn += aec->wfBuf[pos + j][0] * aec->wfBuf[pos + j][0] +
+                    aec->wfBuf[pos + j][1] * aec->wfBuf[pos + j][1];
             }
 
             if (wfEn > wfEnMax) {

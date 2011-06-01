@@ -37,13 +37,6 @@
 #define BLOCKL_MAX FRAME_LEN
 
 typedef float complex_t[2];
-// For performance reasons, some arrays of complex numbers are replaced by twice
-// as long arrays of float, all the real parts followed by all the imaginary
-// ones (complex_t[SIZE] -> float[2][SIZE]). This allows SIMD optimizations and
-// is better than two arrays (one for the real parts and one for the imaginary
-// parts) as this other way would require two pointers instead of one and cause
-// extra register spilling. This also allows the offsets to be calculated at
-// compile time.
 
 // Metrics
 enum {offsetLevel = -100};
@@ -102,8 +95,8 @@ typedef struct {
     fftw_complex wfBuf[NR_PART * PART_LEN1];
     fftw_complex sde[PART_LEN1];
 #else
-    float xfBuf[2][NR_PART * PART_LEN1]; // farend fft buffer
-    float wfBuf[2][NR_PART * PART_LEN1]; // filter fft
+    complex_t xfBuf[NR_PART * PART_LEN1]; // farend fft buffer
+    complex_t wfBuf[NR_PART * PART_LEN1]; // filter fft
     complex_t sde[PART_LEN1]; // cross-psd of nearend and error
     complex_t sxd[PART_LEN1]; // cross-psd of farend and nearend
     complex_t xfwBuf[NR_PART * PART_LEN1]; // farend windowed fft buffer
@@ -165,11 +158,6 @@ typedef struct {
     FILE *outLpFile;
 #endif
 } aec_t;
-
-typedef void (*WebRtcAec_FilterFar_t)(aec_t *aec, float yf[2][PART_LEN1]);
-extern WebRtcAec_FilterFar_t WebRtcAec_FilterFar;
-typedef void (*WebRtcAec_ScaleErrorSignal_t)(aec_t *aec, float ef[2][PART_LEN1]);
-extern WebRtcAec_ScaleErrorSignal_t WebRtcAec_ScaleErrorSignal;
 
 int WebRtcAec_CreateAec(aec_t **aec);
 int WebRtcAec_FreeAec(aec_t *aec);
