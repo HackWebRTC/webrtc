@@ -10,7 +10,7 @@
 #include "talk/base/thread.h"
 #include "talk/base/scoped_ptr.h"
 #include "talk/base/basicpacketsocketfactory.h"
-#include "talk/app/webrtcchannelmanager.h"
+#include "talk/session/phone/channelmanager.h"
 
 namespace Json {
 class Value;
@@ -18,6 +18,8 @@ class Value;
 
 namespace cricket {
 class BasicPortAllocator;
+class ChannelManager;
+class VideoRenderer;
 }
 
 #ifdef PLATFORM_CHROMIUM
@@ -76,16 +78,13 @@ class PeerConnection : public sigslot::has_slots<> {
   bool SetAudioDevice(const std::string& wave_in_device,
                       const std::string& wave_out_device, int opts);
   // Set the video renderer
+  bool SetLocalVideoRenderer(cricket::VideoRenderer* renderer);
+  bool SetVideoRenderer(const std::string& stream_id,
+                        cricket::VideoRenderer* renderer);
+
   bool SetVideoRenderer(const std::string& stream_id,
                         ExternalRenderer* external_renderer);
-  // Set channel_id to -1 for the local preview
-  bool SetVideoRenderer(int channel_id,
-                        void* window,
-                        unsigned int zOrder,
-                        float left,
-                        float top,
-                        float right,
-                        float bottom);
+
   // Set video capture device
   // For Chromium the cam_device should use the capture session id.
   // For standalone app, cam_device is the camera name. It will try to
@@ -120,7 +119,7 @@ class PeerConnection : public sigslot::has_slots<> {
 
   std::string config_;
   talk_base::scoped_ptr<talk_base::Thread> media_thread_;
-  talk_base::scoped_ptr<WebRtcChannelManager> channel_manager_;
+  talk_base::scoped_ptr<cricket::ChannelManager> channel_manager_;
   talk_base::scoped_ptr<talk_base::NetworkManager> network_manager_;
   talk_base::scoped_ptr<cricket::BasicPortAllocator> port_allocator_;
   talk_base::scoped_ptr<talk_base::BasicPacketSocketFactory> socket_factory_;
