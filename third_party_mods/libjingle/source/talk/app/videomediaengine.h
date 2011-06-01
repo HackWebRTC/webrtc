@@ -49,74 +49,6 @@ class RtcVideoMediaChannel;
 class RtcVoiceEngine;
 class ExternalRenderer;
 
-// CricketWebRTCVideoFrame only supports I420
-class CricketWebRTCVideoFrame : public cricket::VideoFrame {
- public:
-  CricketWebRTCVideoFrame();
-  ~CricketWebRTCVideoFrame();
-
-  void Attach(unsigned char* buffer, int bufferSize, int w, int h);
-
-  virtual size_t GetWidth() const;
-  virtual size_t GetHeight() const;
-  virtual const uint8* GetYPlane() const;
-  virtual const uint8* GetUPlane() const;
-  virtual const uint8* GetVPlane() const;
-  virtual uint8* GetYPlane();
-  virtual uint8* GetUPlane();
-  virtual uint8* GetVPlane();
-  virtual int32 GetYPitch() const { return video_frame_.Width(); }
-  virtual int32 GetUPitch() const { return video_frame_.Width() / 2; }
-  virtual int32 GetVPitch() const { return video_frame_.Width() / 2; }
-
-  virtual size_t GetPixelWidth() const { return 1; }
-  virtual size_t GetPixelHeight() const { return 1; }
-  virtual int64 GetElapsedTime() const { return elapsed_time_; }
-  virtual int64 GetTimeStamp() const { return video_frame_.TimeStamp(); }
-  virtual void SetElapsedTime(int64 elapsed_time) {
-    elapsed_time_ = elapsed_time;
-  }
-  virtual void SetTimeStamp(int64 time_stamp) {
-    video_frame_.SetTimeStamp(time_stamp);
-  }
-
-  virtual VideoFrame* Copy() const;
-  virtual size_t CopyToBuffer(uint8* buffer, size_t size) const;
-  virtual size_t ConvertToRgbBuffer(uint32 to_fourcc, uint8* buffer,
-                                    size_t size, size_t pitch_rgb) const;
-  virtual void StretchToPlanes(uint8* y, uint8* u, uint8* v,
-                               int32 pitchY, int32 pitchU, int32 pitchV,
-                               size_t width, size_t height,
-                               bool interpolate, bool crop) const;
-  virtual size_t StretchToBuffer(size_t w, size_t h, uint8* buffer, size_t size,
-                                 bool interpolate, bool crop) const;
-  virtual void StretchToFrame(VideoFrame* target, bool interpolate,
-                              bool crop) const;
-  virtual VideoFrame* Stretch(size_t w, size_t h, bool interpolate,
-                              bool crop) const;
-
- private:
-  webrtc::VideoFrame video_frame_;
-  int64 elapsed_time_;
-};
-
-class CricketWebRTCVideoRenderer : public ExternalRenderer {
- public:
-  CricketWebRTCVideoRenderer(cricket::VideoRenderer* renderer);
-
-  virtual int FrameSizeChange(unsigned int width, unsigned int height,
-                              unsigned int numberOfStreams);
-  virtual int DeliverFrame(unsigned char* buffer, int bufferSize);
-  virtual ~CricketWebRTCVideoRenderer();
-
- private:
-  cricket::VideoRenderer*  renderer_;
-  CricketWebRTCVideoFrame  video_frame_;
-  unsigned int width_;
-  unsigned int height_;
-  unsigned int number_of_streams_;
-};
-
 class RtcVideoEngine : public ViEBaseObserver, public TraceCallback {
  public:
   RtcVideoEngine();
@@ -140,6 +72,13 @@ class RtcVideoEngine : public ViEBaseObserver, public TraceCallback {
   bool SetOptions(int options);
   //TODO - need to change this interface for webrtc
   bool SetCaptureDevice(const cricket::Device* device);
+  bool SetVideoRenderer(int channel_id,
+                        void* window,
+                        unsigned int zOrder,
+                        float left,
+                        float top,
+                        float right,
+                        float bottom);
   bool SetLocalRenderer(cricket::VideoRenderer* renderer);
   cricket::CaptureResult SetCapture(bool capture);
   const std::vector<cricket::VideoCodec>& codecs() const;
@@ -194,7 +133,6 @@ class RtcVideoEngine : public ViEBaseObserver, public TraceCallback {
   cricket::VideoEncoderConfig default_encoder_config_;
   cricket::VideoCodec default_codec_;
   bool capture_started_;
-  talk_base::scoped_ptr<CricketWebRTCVideoRenderer> local_renderer_;
 };
 
 class RtcVideoMediaChannel: public cricket::VideoMediaChannel,
@@ -250,7 +188,6 @@ class RtcVideoMediaChannel: public cricket::VideoMediaChannel,
   bool sending_;
   bool render_started_;
   webrtc::VideoCodec send_codec_;
-  talk_base::scoped_ptr<CricketWebRTCVideoRenderer> remote_renderer_;
 };
 
 }

@@ -115,7 +115,7 @@ bool PeerConnection::Init() {
                              cricket::PORTALLOCATOR_DISABLE_RELAY);
 
   // create channel manager
-  channel_manager_.reset(new cricket::ChannelManager(media_thread_.get()));
+  channel_manager_.reset(new WebRtcChannelManager(media_thread_.get()));
 
   //start the media thread
   media_thread_->SetPriority(talk_base::PRIORITY_HIGH);
@@ -244,20 +244,22 @@ bool PeerConnection::SetAudioDevice(const std::string& wave_in_device,
   return channel_manager_->SetAudioOptions(wave_in_device, wave_out_device, opts);
 }
 
-bool PeerConnection::SetLocalVideoRenderer(cricket::VideoRenderer* renderer) {
-  return channel_manager_->SetLocalRenderer(renderer);
-}
-
-bool PeerConnection::SetVideoRenderer(const std::string& stream_id,
-    cricket::VideoRenderer* renderer) {
-  ASSERT(session_ != NULL);
-  return session_->SetVideoRenderer(stream_id, renderer);
-}
-
 bool PeerConnection::SetVideoRenderer(const std::string& stream_id,
     ExternalRenderer* external_renderer) {
   ASSERT(session_ != NULL);
   return session_->SetVideoRenderer(stream_id, external_renderer);
+}
+
+bool PeerConnection::SetVideoRenderer(int channel_id,
+                                      void* window,
+                                      unsigned int zOrder,
+                                      float left,
+                                      float top,
+                                      float right,
+                                      float bottom) {
+  ASSERT(session_ != NULL);
+  return session_->SetVideoRenderer(channel_id, window, zOrder, left, top,
+                                    right, bottom);
 }
 
 bool PeerConnection::SetVideoCapture(const std::string& cam_device) {

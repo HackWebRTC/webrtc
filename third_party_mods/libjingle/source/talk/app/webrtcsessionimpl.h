@@ -79,6 +79,7 @@ typedef std::vector<cricket::VideoCodec> VideoCodecs;
 
 class ExternalRenderer;
 class PeerConnection;
+class WebRtcChannelManager;
 
 class WebRTCSessionImpl: public WebRTCSession {
 
@@ -87,7 +88,7 @@ class WebRTCSessionImpl: public WebRTCSession {
   WebRTCSessionImpl(const std::string& id,
                     const std::string& direction,
                     cricket::PortAllocator* allocator,
-                    cricket::ChannelManager* channelmgr,
+                    WebRtcChannelManager* channelmgr,
                     PeerConnection* connection,
                     talk_base::Thread* signaling_thread);
 
@@ -130,10 +131,14 @@ class WebRTCSessionImpl: public WebRTCSession {
                      cricket::TransportChannel* channel);
   void OnMessageReceived(const char* data, size_t data_size);
   bool SetVideoRenderer(const std::string& stream_id,
-                        cricket::VideoRenderer* renderer);
-  bool SetVideoRenderer(const std::string& stream_id,
                         ExternalRenderer* external_renderer);
-
+  bool SetVideoRenderer(int channel_id,
+                        void* window,
+                        unsigned int zOrder,
+                        float left,
+                        float top,
+                        float right,
+                        float bottom);
   sigslot::signal2<cricket::VideoChannel*, std::string&> SignalVideoChannel;
   sigslot::signal2<cricket::VoiceChannel*, std::string&> SignalVoiceChannel;
   sigslot::signal1<WebRTCSessionImpl*> SignalOnRemoveStream;
@@ -150,6 +155,13 @@ class WebRTCSessionImpl: public WebRTCSession {
   }
 
  private:
+  bool SetVideoRenderer_w(int channel_id,
+                          void* window,
+                          unsigned int zOrder,
+                          float left,
+                          float top,
+                          float right,
+                          float bottom);
   void ChannelEnable_w(cricket::BaseChannel* channel, bool enable);
 
   void OnVoiceChannelError(cricket::VoiceChannel* voice_channel, uint32 ssrc,
@@ -220,7 +232,7 @@ class WebRTCSessionImpl: public WebRTCSession {
 
   void SendLocalDescription_w();
 
-  cricket::ChannelManager* channel_manager_;
+  WebRtcChannelManager* channel_manager_;
   std::vector<StreamInfo*> streams_;
   TransportChannelMap transport_channels_;
   bool all_writable_;
