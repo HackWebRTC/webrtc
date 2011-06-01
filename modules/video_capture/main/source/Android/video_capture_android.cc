@@ -136,7 +136,7 @@ WebRtc_Word32 VideoCaptureAndroid::SetAndroidObjects(void* javaVM,
         // get the method ID for the Android Java CaptureClass static
         //CreateVideoCaptureAndroid factory method.
         jmethodID cid = env->GetStaticMethodID(g_javaCmDevInfoClass,
-                                               "CreateAndroid",
+                                               "CreateVideoCaptureDeviceInfoAndroid",
                                                "(ILandroid/content/Context;)"
                                                "Lorg/webrtc/videoengine/VideoCaptureDeviceInfoAndroid;");
         if (cid == NULL)
