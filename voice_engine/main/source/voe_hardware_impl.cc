@@ -732,7 +732,7 @@ int VoEHardwareImpl::GetLoudspeakerStatus(bool& enabled)
         return -1;
     }
 
-    if (_audioDevicePtr->GetLoudspeakerStatus(enabled) < 0)
+    if (_audioDevicePtr->GetLoudspeakerStatus(&enabled) < 0)
     {
         _engineStatistics.SetLastError(VE_IGNORED_FUNCTION, kTraceError,
                                        "  Failed to get loudspeaker status");
