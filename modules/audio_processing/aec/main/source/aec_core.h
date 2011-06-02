@@ -170,10 +170,17 @@ typedef void (*WebRtcAec_FilterFar_t)(aec_t *aec, float yf[2][PART_LEN1]);
 extern WebRtcAec_FilterFar_t WebRtcAec_FilterFar;
 typedef void (*WebRtcAec_ScaleErrorSignal_t)(aec_t *aec, float ef[2][PART_LEN1]);
 extern WebRtcAec_ScaleErrorSignal_t WebRtcAec_ScaleErrorSignal;
+#define IP_LEN PART_LEN // this must be at least ceil(2 + sqrt(PART_LEN))
+#define W_LEN PART_LEN
+typedef void (*WebRtcAec_FilterAdaptation_t)
+  (aec_t *aec, float *fft, float ef[2][PART_LEN1], int ip[IP_LEN],
+   float wfft[W_LEN]);
+extern WebRtcAec_FilterAdaptation_t WebRtcAec_FilterAdaptation;
 
 int WebRtcAec_CreateAec(aec_t **aec);
 int WebRtcAec_FreeAec(aec_t *aec);
 int WebRtcAec_InitAec(aec_t *aec, int sampFreq);
+void WebRtcAec_InitAec_SSE2(void);
 
 void WebRtcAec_InitMetrics(aec_t *aec);
 void WebRtcAec_ProcessFrame(aec_t *aec, const short *farend,

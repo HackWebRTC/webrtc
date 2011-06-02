@@ -20,9 +20,6 @@
 #include "ring_buffer.h"
 #include "system_wrappers/interface/cpu_features_wrapper.h"
 
-#define IP_LEN PART_LEN // this must be at least ceil(2 + sqrt(PART_LEN))
-#define W_LEN PART_LEN
-
 // Noise suppression
 static const int converged = 250;
 
@@ -218,15 +215,16 @@ int WebRtcAec_FreeAec(aec_t *aec)
 
 static void FilterFar(aec_t *aec, float yf[2][PART_LEN1])
 {
-  int i, j, pos;
+  int i;
   for (i = 0; i < NR_PART; i++) {
+    int j;
     int xPos = (i + aec->xfBufBlockPos) * PART_LEN1;
+    int pos = i * PART_LEN1;
     // Check for wrap
     if (i + aec->xfBufBlockPos >= NR_PART) {
       xPos -= NR_PART*(PART_LEN1);
     }
 
-    pos = i * PART_LEN1;
     for (j = 0; j < PART_LEN1; j++) {
       yf[0][j] += MulRe(aec->xfBuf[0][xPos + j], aec->xfBuf[1][xPos + j],
                         aec->wfBuf[0][ pos + j], aec->wfBuf[1][ pos + j]);
@@ -257,10 +255,68 @@ static void ScaleErrorSignal(aec_t *aec, float ef[2][PART_LEN1])
   }
 }
 
+static void FilterAdaptation(aec_t *aec, float *fft, float ef[2][PART_LEN1],
+                      int ip[IP_LEN], float wfft[W_LEN]) {
+  int i, j;
+  for (i = 0; i < NR_PART; i++) {
+    int xPos = (i + aec->xfBufBlockPos)*(PART_LEN1);
+    int pos;
+    // Check for wrap
+    if (i + aec->xfBufBlockPos >= NR_PART) {
+      xPos -= NR_PART * PART_LEN1;
+    }
+
+    pos = i * PART_LEN1;
+
+#ifdef UNCONSTR
+    for (j = 0; j < PART_LEN1; j++) {
+      aec->wfBuf[pos + j][0] += MulRe(aec->xfBuf[xPos + j][0],
+                                      -aec->xfBuf[xPos + j][1],
+                                      ef[j][0], ef[j][1]);
+      aec->wfBuf[pos + j][1] += MulIm(aec->xfBuf[xPos + j][0],
+                                      -aec->xfBuf[xPos + j][1],
+                                      ef[j][0], ef[j][1]);
+    }
+#else
+    for (j = 0; j < PART_LEN; j++) {
+
+      fft[2 * j] = MulRe(aec->xfBuf[0][xPos + j],
+                         -aec->xfBuf[1][xPos + j],
+                         ef[0][j], ef[1][j]);
+      fft[2 * j + 1] = MulIm(aec->xfBuf[0][xPos + j],
+                             -aec->xfBuf[1][xPos + j],
+                             ef[0][j], ef[1][j]);
+    }
+    fft[1] = MulRe(aec->xfBuf[0][xPos + PART_LEN],
+                   -aec->xfBuf[1][xPos + PART_LEN],
+                   ef[0][PART_LEN], ef[1][PART_LEN]);
+
+    rdft(PART_LEN2, -1, fft, ip, wfft);
+    memset(fft + PART_LEN, 0, sizeof(float) * PART_LEN);
+
+    // fft scaling
+    {
+      float scale = 2.0f / PART_LEN2;
+      for (j = 0; j < PART_LEN; j++) {
+        fft[j] *= scale;
+      }
+    }
+    rdft(PART_LEN2, 1, fft, ip, wfft);
+
+    aec->wfBuf[0][pos] += fft[0];
+    aec->wfBuf[0][pos + PART_LEN] += fft[1];
+
+    for (j = 1; j < PART_LEN; j++) {
+      aec->wfBuf[0][pos + j] += fft[2 * j];
+      aec->wfBuf[1][pos + j] += fft[2 * j + 1];
+    }
+#endif // UNCONSTR
+  }
+}
+
 WebRtcAec_FilterFar_t WebRtcAec_FilterFar;
 WebRtcAec_ScaleErrorSignal_t WebRtcAec_ScaleErrorSignal;
-
-extern void WebRtcAec_InitAec_SSE2(void);
+WebRtcAec_FilterAdaptation_t WebRtcAec_FilterAdaptation;
 
 int WebRtcAec_InitAec(aec_t *aec, int sampFreq)
 {
@@ -387,6 +443,7 @@ int WebRtcAec_InitAec(aec_t *aec, int sampFreq)
     // Assembly optimization
     WebRtcAec_FilterFar = FilterFar;
     WebRtcAec_ScaleErrorSignal = ScaleErrorSignal;
+    WebRtcAec_FilterAdaptation = FilterAdaptation;
     if (WebRtc_GetCPUInfo(kSSE2)) {
 #if defined(__SSE2__)
       WebRtcAec_InitAec_SSE2();
@@ -483,11 +540,10 @@ static void ProcessBlock(aec_t *aec, const short *farend,
                               const short *nearend, const short *nearendH,
                               short *output, short *outputH)
 {
-    int i, j, pos;
+    int i;
     float d[PART_LEN], y[PART_LEN], e[PART_LEN], dH[PART_LEN];
     short eInt16[PART_LEN];
     float scale;
-    int xPos;
 
     float fft[PART_LEN2];
     float xf[2][PART_LEN1], yf[2][PART_LEN1], ef[2][PART_LEN1];
@@ -656,56 +712,7 @@ static void ProcessBlock(aec_t *aec, const short *farend,
     if (aec->adaptToggle) {
 #endif
         // Filter adaptation
-        for (i = 0; i < NR_PART; i++) {
-            xPos = (i + aec->xfBufBlockPos)*(PART_LEN1);
-            // Check for wrap
-            if (i + aec->xfBufBlockPos >= NR_PART) {
-                xPos -= NR_PART*(PART_LEN1);
-            }
-
-            pos = i * PART_LEN1;
-
-#ifdef UNCONSTR
-            for (j = 0; j < PART_LEN1; j++) {
-                aec->wfBuf[pos + j][0] += MulRe(aec->xfBuf[xPos + j][0],
-                    -aec->xfBuf[xPos + j][1], ef[j][0], ef[j][1]);
-                aec->wfBuf[pos + j][1] += MulIm(aec->xfBuf[xPos + j][0],
-                    -aec->xfBuf[xPos + j][1], ef[j][0], ef[j][1]);
-            }
-#else
-            fft[0] = MulRe(aec->xfBuf[0][xPos], -aec->xfBuf[1][xPos],
-                           ef[0][0], ef[1][0]);
-            fft[1] = MulRe(aec->xfBuf[0][xPos + PART_LEN],
-                           -aec->xfBuf[1][xPos + PART_LEN],
-                           ef[0][PART_LEN], ef[1][PART_LEN]);
-
-            for (j = 1; j < PART_LEN; j++) {
-
-                fft[2 * j] = MulRe(aec->xfBuf[0][xPos + j],
-                                   -aec->xfBuf[1][xPos + j],
-                                   ef[0][j], ef[1][j]);
-                fft[2 * j + 1] = MulIm(aec->xfBuf[0][xPos + j],
-                                       -aec->xfBuf[1][xPos + j],
-                                       ef[0][j], ef[1][j]);
-            }
-            rdft(PART_LEN2, -1, fft, ip, wfft);
-            memset(fft + PART_LEN, 0, sizeof(float)*PART_LEN);
-
-            scale = 2.0f / PART_LEN2;
-            for (j = 0; j < PART_LEN; j++) {
-                fft[j] *= scale; // fft scaling
-            }
-            rdft(PART_LEN2, 1, fft, ip, wfft);
-
-            aec->wfBuf[0][pos] += fft[0];
-            aec->wfBuf[0][pos + PART_LEN] += fft[1];
-
-            for (j = 1; j < PART_LEN; j++) {
-                aec->wfBuf[0][pos + j] += fft[2 * j];
-                aec->wfBuf[1][pos + j] += fft[2 * j + 1];
-            }
-#endif // UNCONSTR
-        }
+        WebRtcAec_FilterAdaptation(aec, fft, ef, ip, wfft);
 #ifdef G167
     }
 #endif
