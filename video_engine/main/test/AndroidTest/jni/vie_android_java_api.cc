@@ -346,7 +346,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_GetVideoEngine(
  * Method:    Init
  * Signature: (IIIZ)I
  */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1Init(
+JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_Init(
                                                                   JNIEnv *,
                                                                   jobject,
                                                                   jboolean enableTrace)
@@ -407,7 +407,7 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1Init(
  * Method:    Terminate
  * Signature: ()I
  */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1Terminate(
+JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_Terminate(
                                                                        JNIEnv *,
                                                                        jobject)
 {
@@ -471,7 +471,7 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1Termina
  * Method:    StartSend
  * Signature: (I)I
  */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1StartSend(
+JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StartSend(
                                                                            JNIEnv *,
                                                                            jobject,
                                                                            jint channel)
@@ -494,7 +494,7 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1StartSe
  * Method:    StopRender
  * Signature: (I)I
  */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1StopRender(
+JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StopRender(
                                                                             JNIEnv *,
                                                                             jobject,
                                                                             jint channel)
@@ -516,7 +516,7 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1StopRen
  * Method:    Stop
  * Signature: ()I
  */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1StopSend(
+JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StopSend(
                                                                           JNIEnv *,
                                                                           jobject,
                                                                           jint channel)
@@ -538,7 +538,7 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1StopSen
  * Method:    StartReceive
  * Signature: ()I
  */
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1StartReceive(
+JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StartReceive(
                                                                               JNIEnv *,
                                                                               jobject,
                                                                               jint channel)
@@ -562,7 +562,7 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1StartRe
  */
 
 JNIEXPORT jint JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1StopReceive(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StopReceive(
                                                                  JNIEnv *,
                                                                  jobject,
                                                                  jint channel)
@@ -584,7 +584,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1StopReceive(
  * Signature: ()I
  */
 JNIEXPORT jint JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1CreateChannel(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_CreateChannel(
                                                                JNIEnv *,
                                                                jobject,
                                                                jint voiceChannel)
@@ -617,7 +617,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1CreateChannel(
  * Signature: (II)I
  */
 JNIEXPORT jint JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1SetLocalReceiver(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetLocalReceiver(
                                                                       JNIEnv *,
                                                                       jobject,
                                                                       jint channel,
@@ -642,7 +642,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1SetLocalReceiver(
  * Signature: (II[B)I
  */
 JNIEXPORT jint JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1SetSendDestination(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetSendDestination(
                                                                 JNIEnv * env,
                                                                 jobject,
                                                                 jint channel,
@@ -664,7 +664,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1SetSendDestination(
                         "SetSendDestination: channel=%d, port=%d, ip=%s\n",
                         channel, port, ip);
 
-    int ret = vieData.netw->SetSendDestination(channel, ip, port);
+    int ret = vieData.netw->SetSendDestination(channel, "127.0.0.1"/*ip*/, port);
     return ret;
 }
 
@@ -674,7 +674,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1SetSendDestination(
  * Signature: (IIIIII)I
  */
 JNIEXPORT jint JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1SetReceiveCodec(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetReceiveCodec(
                                                                  JNIEnv *,
                                                                  jobject,
                                                                  jint channel,
@@ -711,7 +711,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1SetReceiveCodec(
  * Signature: (IIIIII)I
  */
 JNIEXPORT jint JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1SetSendCodec(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetSendCodec(
                                                                   JNIEnv *,
                                                                   jobject,
                                                                   jint channel,
@@ -765,7 +765,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1SetSendCodec(
  * Signature: (ILandroid/view/SurfaceView;)I
  */
 JNIEXPORT jint JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1AddRemoteRenderer(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_AddRemoteRenderer(
                                                                JNIEnv *,
                                                                jobject,
                                                                jint channel,
@@ -787,12 +787,14 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1AddRemoteRenderer(
  * Method:    RemoveRemoteRenderer
  * Signature: (I)I
  */
-JNIEXPORT jint
-JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1RemoveRemoteRenderer(
-                                                                      JNIEnv *,
-                                                                      jobject,
-                                                                      jint channel)
+JNIEXPORT jint JNICALL
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_RemoveRemoteRenderer(
+    JNIEnv *,
+    jobject,
+    jint channel)
 {
+    __android_log_write(ANDROID_LOG_DEBUG, WEBRTC_LOG_TAG, "RemoveRemoteRenderer");
+
     if (vieData.vie)
     {
         return vieData.render->RemoveRenderer(channel);
@@ -801,6 +803,7 @@ JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1RemoveRemoteRenderer(
     {
         return -1;
     }
+    return 0;
 }
 
 /*
@@ -809,7 +812,7 @@ JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1RemoveRemoteRenderer(
  * Signature: (I)I
  */
 JNIEXPORT jint JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1StartRender(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StartRender(
                                                                  JNIEnv *,
                                                                  jobject,
                                                                  jint channel)
@@ -832,7 +835,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1StartRender(
  * Signature: (II)I
  */
 JNIEXPORT jint JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1StartCamera(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StartCamera(
                                                                  JNIEnv * env,
                                                                  jobject,
                                                                  jint channel,
@@ -888,7 +891,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1StartCamera(
  * Signature: ()I
  */
 JNIEXPORT jint JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1StopCamera(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_StopCamera(
                                                                 JNIEnv *,
                                                                 jobject,
                                                                 jint cameraId)
@@ -911,7 +914,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1StopCamera(
  * Signature: (I)I
  */
 JNIEXPORT jint JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1GetCameraOrientation(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_GetCameraOrientation(
                                                                   JNIEnv *,
                                                                   jobject,
                                                                   jint cameraNum)
@@ -944,7 +947,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1GetCameraOrientation(
  * Signature: (II)I
  */
 JNIEXPORT jint JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1SetRotation(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetRotation(
                                                                  JNIEnv *,
                                                                  jobject,
                                                                  jint captureId,
@@ -971,7 +974,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1SetRotation(
  * Signature: (IZ)I
  */
 JNIEXPORT jint JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1EnableNACK(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_EnableNACK(
                                                                 JNIEnv *,
                                                                 jobject,
                                                                 jint channel,
@@ -997,7 +1000,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1EnableNACK(
  * Signature: (IZ)I
  */
 JNIEXPORT jint JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1EnablePLI(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_EnablePLI(
                                                                JNIEnv *,
                                                                jobject,
                                                                jint channel,
@@ -1024,7 +1027,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1EnablePLI(
  * Signature: (ILorg/webrtc/videoengineapp/IViEAndroidCallback;)I
  */
 JNIEXPORT jint JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1SetCallback(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetCallback(
                                                                  JNIEnv * env,
                                                                  jobject,
                                                                  jint channel,
@@ -1057,7 +1060,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_1SetCallback(
 // Create VoiceEngine instance
 //
 JNIEXPORT jboolean JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1Create(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_Create(
                                                                JNIEnv *env,
                                                                jobject,
                                                                jobject context)
@@ -1103,7 +1106,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1Create(
 // Delete VoiceEngine instance
 //
 JNIEXPORT jboolean JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1Delete(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_Delete(
                                                                JNIEnv *,
                                                                jobject)
 {
@@ -1138,7 +1141,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1Delete(
 // [Base] Initialize VoiceEngine
 //
 JNIEXPORT jint JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1Init(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_Init(
                                                          JNIEnv *,
                                                          jobject,
                                                          jboolean enableTrace,
@@ -1161,7 +1164,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1Init(
 // [Base] Terminate VoiceEngine
 //
 JNIEXPORT jint
-JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1Terminate(
+JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_Terminate(
                                                                           JNIEnv *,
                                                                           jobject)
 {
@@ -1174,7 +1177,7 @@ JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1Terminate(
 /////////////////////////////////////////////
 // [Base] Create channel
 //
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1CreateChannel(
+JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_CreateChannel(
                                                                                           JNIEnv *,
                                                                                           jobject)
 {
@@ -1204,7 +1207,7 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1Crea
 // [Base] Delete channel
 //
 JNIEXPORT jint JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1DeleteChannel(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_DeleteChannel(
                                                                       JNIEnv *,
                                                                       jobject,
                                                                       jint channel)
@@ -1216,7 +1219,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1DeleteChannel(
 /////////////////////////////////////////////
 // [Base] SetLocalReceiver
 JNIEXPORT jint JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1SetLocalReceiver(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_SetLocalReceiver(
                                                                          JNIEnv *,
                                                                          jobject,
                                                                          jint channel,
@@ -1231,7 +1234,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1SetLocalReceiver(
 // [Base] SetSendDestination
 //
 JNIEXPORT jint JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1SetSendDestination(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_SetSendDestination(
                                                                    JNIEnv *env,
                                                                    jobject,
                                                                    jint channel,
@@ -1256,7 +1259,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1SetSendDestination(
 /////////////////////////////////////////////
 // [Base] StartListen
 //
-JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1StartListen(
+JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_StartListen(
                                                                     JNIEnv *,
                                                                     jobject,
                                                                     jint channel)
@@ -1270,7 +1273,7 @@ JNIEXPORT jint JNICALL Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1Star
 // [Base] Start playout
 //
 JNIEXPORT jint JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1StartPlayout(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_StartPlayout(
                                                                  JNIEnv *,
                                                                  jobject,
                                                                  jint channel)
@@ -1284,7 +1287,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1StartPlayout(
 // [Base] Start send
 //
 JNIEXPORT jint JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1StartSend(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_StartSend(
                                                                   JNIEnv *,
                                                                   jobject,
                                                                   jint channel)
@@ -1298,7 +1301,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1StartSend(
 // [Base] Stop listen
 //
 JNIEXPORT jint JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1StopListen(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_StopListen(
                                                                    JNIEnv *,
                                                                    jobject,
                                                                    jint channel)
@@ -1311,7 +1314,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1StopListen(
 // [Base] Stop playout
 //
 JNIEXPORT jint JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1StopPlayout(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_StopPlayout(
                                                                     JNIEnv *,
                                                                     jobject,
                                                                     jint channel)
@@ -1324,7 +1327,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1StopPlayout(
 // [Base] Stop send
 //
 JNIEXPORT jint JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1StopSend(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_StopSend(
                                                                  JNIEnv *,
                                                                  jobject,
                                                                  jint channel)
@@ -1337,7 +1340,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1StopSend(
 // [codec] Number of codecs
 //
 JNIEXPORT jint JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1NumOfCodecs(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_NumOfCodecs(
                                                                     JNIEnv *,
                                                                     jobject)
 {
@@ -1349,7 +1352,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1NumOfCodecs(
 // [codec] Set send codec
 //
 JNIEXPORT jint JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1SetSendCodec(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_SetSendCodec(
                                                                      JNIEnv *,
                                                                      jobject,
                                                                      jint channel,
@@ -1384,7 +1387,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1SetSendCodec(
 // [audioprocessing] SetNSStatus
 //
 JNIEXPORT jint JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1SetNSStatus(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_SetNSStatus(
                                                                     JNIEnv *,
                                                                     jobject,
                                                                     jboolean enable,
@@ -1398,7 +1401,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1SetNSStatus(
 // [audioprocessing] SetAGCStatus
 //
 JNIEXPORT jint JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1SetAGCStatus(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_SetAGCStatus(
                                                                      JNIEnv *,
                                                                      jobject,
                                                                      jboolean enable,
@@ -1412,7 +1415,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1SetAGCStatus(
 // [audioprocessing] SetECStatus
 //
 JNIEXPORT jint JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1SetECStatus(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_SetECStatus(
                                                             JNIEnv *,
                                                             jobject,
                                                             jboolean enable,
@@ -1428,7 +1431,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1SetECStatus(
 // [File] Start play file locally
 //
 JNIEXPORT jint JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1StartPlayingFileLocally(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_StartPlayingFileLocally(
                                                                 JNIEnv * env,
                                                                 jobject,
                                                                 jint channel,
@@ -1457,7 +1460,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1StartPlayingFileLocally(
 // [File] Stop play file locally
 //
 JNIEXPORT jint JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SVE_1StopPlayingFileLocally(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_StopPlayingFileLocally(
                                                                     JNIEnv *,
                                                                     jobject,
                                                                     jint channel)
@@ -1470,7 +1473,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SVE_1StopPlayingFileLocally(
 // [File] Start playing file as microphone
 //
 JNIEXPORT jint JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1StartPlayingFileAsMicrophone(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_StartPlayingFileAsMicrophone(
                                                                  JNIEnv *env,
                                                                  jobject,
                                                                  jint channel,
@@ -1500,7 +1503,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1StartPlayingFileAsMicrophon
 // [File] Stop playing file as microphone
 //
 JNIEXPORT jint JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1StopPlayingFileAsMicrophone(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_StopPlayingFileAsMicrophone(
                                                                     JNIEnv *,
                                                                     jobject,
                                                                     jint channel)
@@ -1513,7 +1516,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1StopPlayingFileAsMicrophone
 // [Volume] Set speaker volume
 //
 JNIEXPORT jint JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1SetSpeakerVolume(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_SetSpeakerVolume(
                                                                      JNIEnv *,
                                                                      jobject,
                                                                      jint level)
@@ -1543,7 +1546,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1SetSpeakerVolume(
 // [Hardware] Set speaker volume
 //
 JNIEXPORT jint JNICALL
-Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_1SetLoudspeakerStatus(
+Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_VE_SetLoudspeakerStatus(
                                                                  JNIEnv *,
                                                                  jobject,
                                                                  jboolean enable)
