@@ -131,8 +131,7 @@
                 'media',
               ],
               'outputs': [
-                '/tmp/*.jpg',
-                '/tmp/*.bmp',
+                'captureDeviceImage.bmp',
               ],
               'action': [
                 '/bin/sh', '-c',
