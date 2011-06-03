@@ -1,3 +1,13 @@
+/*
+ *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *
+ *  Use of this source code is governed by a BSD-style license
+ *  that can be found in the LICENSE file in the root of the source
+ *  tree. An additional intellectual property rights grant can be found
+ *  in the file PATENTS.  All contributing project authors may
+ *  be found in the AUTHORS file in the root of the source tree.
+ */
+
 package org.webrtc.vieautotest;
 
 import org.webrtc.vieautotest.R;
@@ -14,7 +24,6 @@ import android.opengl.GLSurfaceView;
 import android.widget.Spinner;
 import android.widget.ArrayAdapter;
 import android.widget.AdapterView;
-
 
 public class ViEAutotest extends Activity
     implements
@@ -53,20 +62,20 @@ public class ViEAutotest extends Activity
     _testSpinner = (Spinner) findViewById(R.id.testSpinner);
     ArrayAdapter<CharSequence> adapter =
         ArrayAdapter.createFromResource(this, R.array.test_array,
-            android.R.layout.simple_spinner_item);
+                                        android.R.layout.simple_spinner_item);
 
-    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+    int resource = android.R.layout.simple_spinner_dropdown_item;
+    adapter.setDropDownViewResource(resource);
     _testSpinner.setAdapter(adapter);
     _testSpinner.setOnItemSelectedListener(this);
-
 
     // Set sub test spinner
     _subtestSpinner = (Spinner) findViewById(R.id.subtestSpinner);
     ArrayAdapter<CharSequence> subtestAdapter =
         ArrayAdapter.createFromResource(this, R.array.subtest_array,
-            android.R.layout.simple_spinner_item);
+                                        android.R.layout.simple_spinner_item);
 
-    subtestAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+    subtestAdapter.setDropDownViewResource(resource);
     _subtestSpinner.setAdapter(subtestAdapter);
     _subtestSpinner.setOnItemSelectedListener(this);
 
@@ -79,7 +88,6 @@ public class ViEAutotest extends Activity
     _localSurfaceView.setZOrderMediaOverlay(true);
     _localSurface.addView(_localSurfaceView);
 
-
     // Set members
     _testSelection = 0;
     _subTestSelection = 0;
@@ -89,20 +97,19 @@ public class ViEAutotest extends Activity
     Log.d("*WEBRTC*", "Button clicked...");
     switch (v.getId()) {
       case R.id.Button01:
-
-
         new Thread(new Runnable() {
-          public void run() {
-            //
-            Log.d("*WEBRTC*", "Calling RunTest...");
-            RunTest(_testSelection, _subTestSelection, _localSurfaceView, _surfaceView);//
-            Log.d("*WEBRTC*", "RunTest done");
-          }
-        }).start();
+            public void run() {
+              Log.d("*WEBRTC*", "Calling RunTest...");
+              RunTest(_testSelection, _subTestSelection,
+                      _localSurfaceView, _surfaceView);
+              Log.d("*WEBRTC*", "RunTest done");
+            }
+          }).start();
     }
-  };
+  }
 
-  public void onItemSelected(AdapterView<?> parent, View v, int position, long id) {
+  public void onItemSelected(AdapterView<?> parent, View v,
+                             int position, long id) {
 
     if (parent == (Spinner) findViewById(R.id.testSpinner)) {
       _testSelection = position;
@@ -112,7 +119,6 @@ public class ViEAutotest extends Activity
   }
 
   public void onNothingSelected(AdapterView<?> parent) {
-    ;
   }
 
   @Override
@@ -144,16 +150,13 @@ public class ViEAutotest extends Activity
   // C++ function performing the chosen test
   // private native int RunTest(int testSelection, int subtestSelection,
   // GLSurfaceView window1, GLSurfaceView window2);
-  private native int RunTest(int testSelection, int subtestSelection, SurfaceView window1,
-      SurfaceView window2);
+  private native int RunTest(int testSelection, int subtestSelection,
+                             SurfaceView window1, SurfaceView window2);
 
-
-  /*
-   * this is used to load the 'ViEAutotestJNIAPI' library on application
-   * startup.
-   */
+  // this is used to load the 'ViEAutotestJNIAPI' library on application
+  // startup.
   static {
     Log.d("*WEBRTC*", "Loading ViEAutotest...");
-    System.loadLibrary("ViEAutotestJNIAPI");
+    System.loadLibrary("webrtc-video-autotest-jni");
   }
 }
