@@ -52,7 +52,7 @@
         'spectrum_ar_model_tables.c',
         'transform.c',
         'arith_routins.h',
-        'bandwidth_estimator.b',
+        'bandwidth_estimator.h',
         'codec.h',
         'entropy_coding.h',
         'fft.h',

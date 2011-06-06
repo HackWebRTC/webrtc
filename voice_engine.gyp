@@ -149,7 +149,7 @@
             {
               'action_name': 'copy audio_long16noise.pcm',
               'inputs': [
-                'voice_engine/main/test/win_test/saudio_long16noise.pcm',
+                'voice_engine/main/test/win_test/audio_long16noise.pcm',
               ],
               'outputs': [
                 '/tmp/audio_long16noise.pcm',

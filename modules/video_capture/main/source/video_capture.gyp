@@ -99,7 +99,7 @@
             'Windows/sink_filter_windows.h',
             'Windows/video_capture_windows.h',
             'Windows/device_info_windows.h',
-            'Windows/capture_delay_values.h',
+            'Windows/capture_delay_values_windows.h',
             'Windows/help_functions_windows.cc',
             'Windows/sink_filter_windows.cc',
             'Windows/video_capture_windows.cc',
