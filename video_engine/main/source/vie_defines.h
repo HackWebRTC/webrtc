@@ -47,7 +47,7 @@ enum { kViEMinKeyRequestIntervalMs = 300};
 
 // ViEBase
 enum { kViEMaxNumberOfChannels = 4};
-enum { kViEVersionMaxMessageSize = 1024 }; 
+enum { kViEVersionMaxMessageSize = 1024 };
 enum { kViEMaxModuleVersionSize = 960 };
 
 // ViECapture
@@ -107,7 +107,7 @@ enum {
 };
 
 // Module id
-// Create a unique id based on the ViE instance id and the 
+// Create a unique id based on the ViE instance id and the
 // channel id. ViE id > 0 and 0 <= channel id <= 255
 
 inline int ViEId(const int vieId, const int channelId = -1)
@@ -153,19 +153,22 @@ inline int ChannelId(const int moduleId)
     #else
     #define BUILDMODE TEXT("?")
     #endif
-    
+
     #define BUILDTIME TEXT(__TIME__)
     #define BUILDDATE TEXT(__DATE__)
-    
+
     // example: "Oct 10 2002 12:05:30 r"
     #define BUILDINFO BUILDDATE TEXT(" ") BUILDTIME TEXT(" ") BUILDMODE
 
 
     #define RENDER_MODULE_TYPE kRenderWindows
     // Warning pragmas
-    #pragma warning(disable: 4351)  // new behavior: elements of array 'XXX' will be default initialized
-    #pragma warning(disable: 4355) // 'this' : used in base member initializer list
-    #pragma warning(disable: 4731)  // frame pointer register 'ebp' modified by inline assembly code
+    // new behavior: elements of array 'XXX' will be default initialized
+    #pragma warning(disable: 4351)
+    // 'this' : used in base member initializer list
+    #pragma warning(disable: 4355)
+    // frame pointer register 'ebp' modified by inline assembly code
+    #pragma warning(disable: 4731)
 
     // Include libraries
     #pragma comment( lib, "winmm.lib" )
@@ -204,7 +207,7 @@ ODE TEXT("d")
 	#define BUILDINFO BUILDDATE TEXT(" ") BUILDTIME TEXT(" ") BUILDMODE
 
 	#define RENDER_MODULE_TYPE kRenderWindows
-#endif  
+#endif
 
 //#define webrtc::kFileFormatAviFile 3
 //#define __LINUX__ // needed for InterObjects
@@ -213,7 +216,7 @@ ODE TEXT("d")
 // Linux
 //-------------------------------------
 
-#ifndef ANDROID
+#ifndef WEBRTC_ANDROID
 #ifdef WEBRTC_LINUX
 
 //  Build information macros
@@ -226,23 +229,18 @@ ODE TEXT("d")
 #else
     #define BUILDMODE "?"
 #endif
- 
+
 #define BUILDTIME __TIME__
 #define BUILDDATE __DATE__
- 
+
 // example: "Oct 10 2002 12:05:30 r"
 #define BUILDINFO BUILDDATE " " BUILDTIME " " BUILDMODE
 
 #endif  // ifdef WEBRTC_LINUX
 #endif  // ifndef ANDROID
 
-#ifdef ANDROID
+#ifdef WEBRTC_ANDROID
 
-    #define DWORD unsigned long int
-    #define FALSE 0
-    #define TRUE 1
-    #define LONG int
-    #define LONGLONG long long
     #define FAR
     #define __cdecl
 
@@ -262,33 +260,7 @@ ODE TEXT("d")
     // example: "Oct 10 2002 12:05:30 r"
     #define BUILDINFO BUILDDATE " " BUILDTIME " " BUILDMODE
 
-    namespace
-    {
-        void Sleep(unsigned long x)
-        {
-            timespec t;
-            t.tv_sec = x/1000;
-            t.tv_nsec = (x-(x/1000)*1000)*1000000;
-            nanosleep(&t,NULL);
-        }
-
-        DWORD timeGetTime()
-        {
-            struct timeval tv;
-            struct timezone tz;
-            unsigned long val;
-
-            gettimeofday(&tv, &tz);
-            val= tv.tv_sec*1000+ tv.tv_usec/1000;
-            return(val);
-        }
-    }
-
-    #define SLEEP(x) ::Sleep(x)
-    #define GET_TIME_IN_MS timeGetTime
-
 #endif  // #ifdef ANDROID
 
 } //namespace webrtc
 #endif  // WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_DEFINES_H_
-

@@ -24,9 +24,9 @@
 
 #if defined(_WIN32)
 #include <windows.h>
-#elif defined (ANDROID)
+#elif defined (WEBRTC_ANDROID)
 #include <android/log.h>
-#include <string.h>
+#include <string>
 #elif defined(WEBRTC_LINUX)
 #include <string.h>
 #include <time.h>
@@ -222,20 +222,28 @@ public:
 #elif defined(WEBRTC_MAC_INTEL)
 #define AutoTestSleep(x) usleep(x * 1000)
 #elif defined(WEBRTC_LINUX)
-namespace
-{
-    void Sleep(unsigned long x)
-    {
-        timespec t;
-        t.tv_sec = x/1000;
-        t.tv_nsec = (x-(x/1000)*1000)*1000000;
-        nanosleep(&t,NULL);
-    }
+namespace {
+void Sleep(unsigned long x) {
+  timespec t;
+  t.tv_sec = x/1000;
+  t.tv_nsec = (x-(x/1000)*1000)*1000000;
+  nanosleep(&t,NULL);
+}
 }
 #define AutoTestSleep ::Sleep
 #endif
 
-#ifdef ANDROID
+#ifdef WEBRTC_ANDROID
+namespace {
+void Sleep(unsigned long x) {
+  timespec t;
+  t.tv_sec = x/1000;
+  t.tv_nsec = (x-(x/1000)*1000)*1000000;
+  nanosleep(&t,NULL);
+}
+}
+
+#define AutoTestSleep ::Sleep
 #define VIE_TEST_FILES_ROOT "/sdcard/vie_auto_test/"
 #else
 #define VIE_TEST_FILES_ROOT "/tmp/"
