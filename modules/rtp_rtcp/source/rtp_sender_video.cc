@@ -1106,14 +1106,17 @@ RTPSenderVideo::SendVP8(const FrameType frameType,
     WebRtc_UWord16 maxPayloadLengthVP8 = _rtpSender.MaxPayloadLength()
         - FECPacketOverhead() - rtpHeaderLength;
 
-    RTPFormatVP8 packetizer(data, payloadBytesToSend, fragmentation, kStrict);
+    RtpFormatVp8 packetizer(data, payloadBytesToSend, fragmentation, kStrict);
 
     bool last = false;
     while (!last)
     {
         // Write VP8 Payload Descriptor and VP8 payload.
-        last = packetizer.NextPacket(maxPayloadLengthVP8,
-            &dataBuffer[rtpHeaderLength], &payloadBytesInPacket);
+        if (packetizer.NextPacket(maxPayloadLengthVP8,
+            &dataBuffer[rtpHeaderLength], &payloadBytesInPacket, &last) < 0)
+        {
+            return -1;
+        }
 
         // Write RTP header.
         // Set marker bit true if this is the last packet in frame.

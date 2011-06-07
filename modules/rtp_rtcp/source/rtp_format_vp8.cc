@@ -8,10 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * This file contains the implementation of the VP8 packetizer class.
- */
-
 #include "rtp_format_vp8.h"
 
 #include <cassert>  // assert
@@ -19,18 +15,17 @@
 
 namespace webrtc {
 
-RTPFormatVP8::RTPFormatVP8(const WebRtc_UWord8* payload_data,
-                           const WebRtc_UWord32 payload_size,
+RtpFormatVp8::RtpFormatVp8(const WebRtc_UWord8* payload_data,
+                           WebRtc_UWord32 payload_size,
                            const RTPFragmentationHeader* fragmentation,
-                           const VP8PacketizerMode mode)
-:
-    payload_data_(payload_data),
-    payload_size_(payload_size),
-    bytes_sent_(0),
-    mode_(mode),
-    beginning_(true),
-    first_fragment_(true),
-    vp8_header_bytes_(1)
+                           VP8PacketizerMode mode)
+    : payload_data_(payload_data),
+      payload_size_(payload_size),
+      payload_bytes_sent_(0),
+      mode_(mode),
+      beginning_(true),
+      first_fragment_(true),
+      vp8_header_bytes_(1)
 {
     if (fragmentation == NULL)
     {
@@ -44,23 +39,38 @@ RTPFormatVP8::RTPFormatVP8(const WebRtc_UWord8* payload_data,
     }
 }
 
-bool RTPFormatVP8::NextPacket(const int max_payload_len, WebRtc_UWord8* buffer,
-                              int* bytes_to_send)
-{
-    // Convenience variables
-    const int num_fragments = frag_info_.fragmentationVectorSize;
+RtpFormatVp8::RtpFormatVp8(const WebRtc_UWord8* payload_data,
+                           WebRtc_UWord32 payload_size)
+    : payload_data_(payload_data),
+      payload_size_(payload_size),
+      frag_info_(),
+      payload_bytes_sent_(0),
+      mode_(kSloppy),
+      beginning_(true),
+      first_fragment_(true),
+      vp8_header_bytes_(1)
+{}
 
+int RtpFormatVp8::GetFragIdx()
+{
     // Which fragment are we in?
     int frag_ix = 0;
-    while ((frag_ix + 1 < num_fragments) &&
-        (bytes_sent_ >= frag_info_.fragmentationOffset[frag_ix + 1]))
+    while ((frag_ix + 1 < frag_info_.fragmentationVectorSize) &&
+        (payload_bytes_sent_ >= frag_info_.fragmentationOffset[frag_ix + 1]))
     {
         ++frag_ix;
     }
+    return frag_ix;
+}
 
-    // How much data to send in this packet?
-    int send_bytes = 0;
-    bool last_fragment = false;
+int RtpFormatVp8::NextPacket(int max_payload_len, WebRtc_UWord8* buffer,
+                             int* bytes_to_send, bool* last_packet)
+{
+    // Convenience variables
+    const int num_fragments = frag_info_.fragmentationVectorSize;
+    int frag_ix = GetFragIdx(); //TODO (hlundin): Store frag_ix as a member?
+    int send_bytes = 0; // How much data to send in this packet.
+    bool end_of_fragment = false;
 
     switch (mode_)
     {
@@ -75,16 +85,17 @@ bool RTPFormatVP8::NextPacket(const int max_payload_len, WebRtc_UWord8* buffer,
                 {
                     // Pack as many whole partitions we can into this packet;
                     // don't fragment.
-                    while (send_bytes + vp8_header_bytes_
+                    while ((frag_ix < num_fragments) &&
+                        (send_bytes + vp8_header_bytes_
                         + frag_info_.fragmentationLength[frag_ix]
-                        <= max_payload_len)
+                        <= max_payload_len))
                     {
                         send_bytes += frag_info_.fragmentationLength[frag_ix];
                         ++frag_ix;
                     }
 
                     // This packet ends on a complete fragment.
-                    last_fragment = true;
+                    end_of_fragment = true;
                     break; // Jump out of case statement.
                 }
             }
@@ -99,7 +110,7 @@ bool RTPFormatVP8::NextPacket(const int max_payload_len, WebRtc_UWord8* buffer,
         {
             // Find out how much is left to send in the current partition.
             const int remaining_bytes = frag_info_.fragmentationOffset[frag_ix]
-                - bytes_sent_ + frag_info_.fragmentationLength[frag_ix];
+                - payload_bytes_sent_ + frag_info_.fragmentationLength[frag_ix];
             assert(remaining_bytes > 0);
             assert(remaining_bytes <= frag_info_.fragmentationLength[frag_ix]);
 
@@ -112,7 +123,7 @@ bool RTPFormatVP8::NextPacket(const int max_payload_len, WebRtc_UWord8* buffer,
             {
                 // last packet from this partition
                 send_bytes = remaining_bytes;
-                last_fragment = true;
+                end_of_fragment = true;
             }
             break;
         }
@@ -120,17 +131,17 @@ bool RTPFormatVP8::NextPacket(const int max_payload_len, WebRtc_UWord8* buffer,
         case kSloppy:
         {
             // Send a full packet, or what is left of the payload.
-            const int remaining_bytes = payload_size_ - bytes_sent_;
+            const int remaining_bytes = payload_size_ - payload_bytes_sent_;
 
             if (remaining_bytes + vp8_header_bytes_ > max_payload_len)
             {
                 send_bytes = max_payload_len - vp8_header_bytes_;
-                last_fragment = false;
+                end_of_fragment = false;
             }
             else
             {
                 send_bytes = remaining_bytes;
-                last_fragment = true;
+                end_of_fragment = true;
             }
             break;
         }
@@ -138,20 +149,23 @@ bool RTPFormatVP8::NextPacket(const int max_payload_len, WebRtc_UWord8* buffer,
         default:
             // Should not end up here
             assert(false);
+            return -1;
     }
 
     // Write the payload header and the payload to buffer.
-    *bytes_to_send = WriteHeaderAndPayload(send_bytes, last_fragment, buffer);
+    *bytes_to_send = WriteHeaderAndPayload(send_bytes, end_of_fragment, buffer);
+    if (*bytes_to_send < 0)
+    {
+        return -1;
+    }
 
-    // Anything left to send?
-    if (bytes_sent_ < payload_size_)
-        return false;
-    else
-        return true;
+    *last_packet = payload_bytes_sent_ >= payload_size_;
+    assert(!*last_packet || (payload_bytes_sent_ == payload_size_));
+    return 0;
 }
 
-int RTPFormatVP8::WriteHeaderAndPayload(const int send_bytes,
-                                        const bool last_fragment,
+int RtpFormatVp8::WriteHeaderAndPayload(int send_bytes,
+                                        bool end_of_fragment,
                                         WebRtc_UWord8* buffer)
 {
     // Write the VP8 payload header.
@@ -160,25 +174,34 @@ int RTPFormatVP8::WriteHeaderAndPayload(const int send_bytes,
     // | RSV |I|N|FI |B|
     // +-+-+-+-+-+-+-+-+
 
+    if (send_bytes < 0)
+    {
+        return -1;
+    }
+    if (payload_bytes_sent_ + send_bytes > payload_size_)
+    {
+        return -1;
+    }
+
     // PictureID always present in first packet
-    const int pictureid_present = beginning_;
+    const int picture_id_present = beginning_;
     // TODO(hlundin): must pipe this info from VP8 encoder
-    const int nonref_frame = 0;
+    const int kNonrefFrame = 0;
 
-    buffer[0] = 0 | (pictureid_present << 4) // I
-                | (nonref_frame << 3) // N
-                | (!first_fragment_ << 2) | (!last_fragment << 1) // FI
-                | (beginning_);
+    buffer[0] = 0;
+    if (picture_id_present) buffer[0] |= (0x01 << 4); // I
+    if (kNonrefFrame)       buffer[0] |= (0x01 << 3); // N
+    if (!first_fragment_)   buffer[0] |= (0x01 << 2); // FI
+    if (!end_of_fragment)   buffer[0] |= (0x01 << 1); // FI
+    if (beginning_)         buffer[0] |= 0x01; // B
 
-    // Copy the payload.
-    assert(bytes_sent_ + send_bytes <= payload_size_);
-    memcpy(&buffer[vp8_header_bytes_], &payload_data_[bytes_sent_], send_bytes);
+    memcpy(&buffer[vp8_header_bytes_], &payload_data_[payload_bytes_sent_],
+           send_bytes);
 
-    // Update state variables.
     beginning_ = false; // next packet cannot be first packet in frame
     // next packet starts new fragment if this ended one
-    first_fragment_ = last_fragment;
-    bytes_sent_ += send_bytes;
+    first_fragment_ = end_of_fragment;
+    payload_bytes_sent_ += send_bytes;
 
     // Return total length of written data.
     return send_bytes + vp8_header_bytes_;
