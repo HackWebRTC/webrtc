@@ -44,17 +44,18 @@ include $(MY_WEBRTC_ROOT_PATH)/modules/video_coding/codecs/i420/main/source/Andr
 include $(MY_WEBRTC_ROOT_PATH)/modules/video_coding/codecs/vp8/main/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/modules/video_coding/main/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/modules/video_processing/main/source/Android.mk
-include $(MY_WEBRTC_ROOT_PATH)/modules/video_mixer/main/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/modules/video_render/main/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/video_engine/main/source/Android.mk
 
 # third party
-#include $(MY_WEBRTC_ROOT_PATH)/third_party/libvpx/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/libvpx.mk
 
 # build .so
 include $(MY_WEBRTC_ROOT_PATH)/android-webrtc.mk
 
-# build test app
-include $(MY_WEBRTC_ROOT_PATH)/voice_engine/main/test/Android/native_test/Android.mk 
-include $(MY_WEBRTC_ROOT_PATH)/video_engine/main/test/AutoTest/source/Android.mk
+# build test apps
+#include $(MY_WEBRTC_ROOT_PATH)/modules/audio_processing/main/test/process_test/Android.mk
+#include $(MY_WEBRTC_ROOT_PATH)/voice_engine/main/test/ui_linux_test/Android.mk
+#include $(MY_WEBRTC_ROOT_PATH)/voice_engine/main/test/auto_test/Android.mk
+#include $(MY_WEBRTC_ROOT_PATH)/video_engine/main/test/AutoTest/Android/Android.mk
+#include $(MY_WEBRTC_ROOT_PATH)/video_engine/main/test/AndroidTest/Android.mk
