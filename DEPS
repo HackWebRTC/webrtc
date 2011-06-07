@@ -67,7 +67,7 @@ hooks = [
   },
   {
     "pattern": ".",
-    "action": ["svn", "export", Var("webrtc_trunk") + "/third_party_mods/libjingle", "third_party/libjingle", "--force"],
+    "action": ["svn", "export", Var("webrtc_trunk") + "/third_party_mods/libjingle@29", "third_party/libjingle", "--force"],
   },
   {
     "pattern": ".",

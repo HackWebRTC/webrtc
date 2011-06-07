@@ -19,9 +19,6 @@
 #include "talk/app/peerconnection.h"
 #include "talk/base/scoped_ptr.h"
 
-namespace cricket {
-class VideoRenderer;
-}  // namespace cricket
 
 class Conductor
   : public webrtc::PeerConnectionObserver,
@@ -115,8 +112,6 @@ class Conductor
   MainWnd* main_wnd_;
   int video_channel_;
   int audio_channel_;
-  talk_base::scoped_ptr<cricket::VideoRenderer> local_renderer_;
-  talk_base::scoped_ptr<cricket::VideoRenderer> remote_renderer_;
 };
 
 #endif  // PEERCONNECTION_SAMPLES_CLIENT_CONDUCTOR_H_

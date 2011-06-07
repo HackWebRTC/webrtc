@@ -12,7 +12,6 @@
 
 #include "peerconnection/samples/client/defaults.h"
 #include "talk/base/logging.h"
-#include "talk/session/phone/videorendererfactory.h"
 
 Conductor::Conductor(PeerConnectionClient* client, MainWnd* main_wnd)
   : handshake_(NONE),
@@ -71,8 +70,6 @@ bool Conductor::InitializePeerConnection() {
 
 void Conductor::DeletePeerConnection() {
   peer_connection_.reset();
-  local_renderer_.reset();
-  remote_renderer_.reset();
   handshake_ = NONE;
 }
 
@@ -82,14 +79,8 @@ void Conductor::StartCaptureDevice() {
     main_wnd_->SwitchToStreamingUI();
 
     if (peer_connection_->SetVideoCapture("")) {
-      if (!local_renderer_.get()) {
-        // The window will be resized according to the stream properties
-        // when streaming starts.
-        local_renderer_.reset(
-            cricket::VideoRendererFactory::CreateGuiVideoRenderer(100, 100));
-      }
-      if (local_renderer_.get())
-        peer_connection_->SetLocalVideoRenderer(local_renderer_.get());
+      peer_connection_->SetVideoRenderer(-1, main_wnd_->handle(), 0,
+                                         0.7f, 0.7f, 0.95f, 0.95f);
     } else {
       ASSERT(false);
     }
@@ -139,13 +130,8 @@ void Conductor::OnAddStream(const std::string& stream_id, int channel_id,
     video_channel_ = channel_id;
     waiting_for_video_ = false;
     LOG(INFO) << "Setting video renderer for channel: " << channel_id;
-    if (!remote_renderer_.get()) {
-      // The window size will be automatically corrected.
-      remote_renderer_.reset(
-          cricket::VideoRendererFactory::CreateGuiVideoRenderer(100, 100));
-    }
-    bool ok = peer_connection_->SetVideoRenderer(stream_id,
-                                                 remote_renderer_.get());
+    bool ok = peer_connection_->SetVideoRenderer(channel_id,
+        main_wnd_->handle(), 1, 0.0f, 0.0f, 1.0f, 1.0f);
     ASSERT(ok);
   } else {
     ASSERT(audio_channel_ == -1);
