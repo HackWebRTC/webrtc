@@ -2,7 +2,7 @@
 <resources>
     
 <string name="app_name">ViEAutotest</string>
-<string name="TitleName">ViE Autotest Android</string>
+<string name="TitleName">ViEAutotest</string>
 <string name="run_button">Run Test</string>
 <string name="SpinnerTitle">Test type...</string>
 <string-array name="test_array">
