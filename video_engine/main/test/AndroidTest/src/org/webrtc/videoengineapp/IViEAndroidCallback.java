@@ -8,12 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * TODO, refactoring
- */
-
 package org.webrtc.videoengineapp;
 
 public interface IViEAndroidCallback {
-	public int UpdateStats(int frameRateI, int bitRateI, int packetLoss, int frameRateO, int bitRateO);
+  public int UpdateStats(int frameRateI, int bitRateI,
+                         int packetLoss, int frameRateO,
+                         int bitRateO);
 }
