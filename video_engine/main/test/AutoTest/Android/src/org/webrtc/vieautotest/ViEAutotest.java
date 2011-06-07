@@ -30,20 +30,20 @@ public class ViEAutotest extends Activity
       AdapterView.OnItemSelectedListener,
       View.OnClickListener {
 
-  private Thread _testThread;
-  private Spinner _testSpinner;
-  private Spinner _subtestSpinner;
-  private int _testSelection;
-  private int _subTestSelection;
+  private Thread testThread;
+  private Spinner testSpinner;
+  private Spinner subtestSpinner;
+  private int testSelection;
+  private int subTestSelection;
 
   // View for remote video
-  private LinearLayout _remoteSurface = null;
-  private GLSurfaceView _glSurfaceView = null;
-  private SurfaceView _surfaceView = null;
+  private LinearLayout remoteSurface = null;
+  private GLSurfaceView glSurfaceView = null;
+  private SurfaceView surfaceView = null;
 
-  private LinearLayout _localSurface = null;
-  private GLSurfaceView _glLocalSurfaceView = null;
-  private SurfaceView _localSurfaceView = null;
+  private LinearLayout localSurface = null;
+  private GLSurfaceView glLocalSurfaceView = null;
+  private SurfaceView localSurfaceView = null;
 
   /** Called when the activity is first created. */
   @Override
@@ -59,38 +59,38 @@ public class ViEAutotest extends Activity
     buttonStart.setOnClickListener(this);
 
     // Set test spinner
-    _testSpinner = (Spinner) findViewById(R.id.testSpinner);
+    testSpinner = (Spinner) findViewById(R.id.testSpinner);
     ArrayAdapter<CharSequence> adapter =
         ArrayAdapter.createFromResource(this, R.array.test_array,
                                         android.R.layout.simple_spinner_item);
 
     int resource = android.R.layout.simple_spinner_dropdown_item;
     adapter.setDropDownViewResource(resource);
-    _testSpinner.setAdapter(adapter);
-    _testSpinner.setOnItemSelectedListener(this);
+    testSpinner.setAdapter(adapter);
+    testSpinner.setOnItemSelectedListener(this);
 
     // Set sub test spinner
-    _subtestSpinner = (Spinner) findViewById(R.id.subtestSpinner);
+    subtestSpinner = (Spinner) findViewById(R.id.subtestSpinner);
     ArrayAdapter<CharSequence> subtestAdapter =
         ArrayAdapter.createFromResource(this, R.array.subtest_array,
                                         android.R.layout.simple_spinner_item);
 
     subtestAdapter.setDropDownViewResource(resource);
-    _subtestSpinner.setAdapter(subtestAdapter);
-    _subtestSpinner.setOnItemSelectedListener(this);
+    subtestSpinner.setAdapter(subtestAdapter);
+    subtestSpinner.setOnItemSelectedListener(this);
 
-    _remoteSurface = (LinearLayout) findViewById(R.id.RemoteView);
-    _surfaceView = new SurfaceView(this);
-    _remoteSurface.addView(_surfaceView);
+    remoteSurface = (LinearLayout) findViewById(R.id.RemoteView);
+    surfaceView = new SurfaceView(this);
+    remoteSurface.addView(surfaceView);
 
-    _localSurface = (LinearLayout) findViewById(R.id.LocalView);
-    _localSurfaceView = new SurfaceView(this);
-    _localSurfaceView.setZOrderMediaOverlay(true);
-    _localSurface.addView(_localSurfaceView);
+    localSurface = (LinearLayout) findViewById(R.id.LocalView);
+    localSurfaceView = new SurfaceView(this);
+    localSurfaceView.setZOrderMediaOverlay(true);
+    localSurface.addView(localSurfaceView);
 
     // Set members
-    _testSelection = 0;
-    _subTestSelection = 0;
+    testSelection = 0;
+    subTestSelection = 0;
   }
 
   public void onClick(View v) {
@@ -100,8 +100,8 @@ public class ViEAutotest extends Activity
         new Thread(new Runnable() {
             public void run() {
               Log.d("*WEBRTC*", "Calling RunTest...");
-              RunTest(_testSelection, _subTestSelection,
-                      _localSurfaceView, _surfaceView);
+              RunTest(testSelection, subTestSelection,
+                      localSurfaceView, surfaceView);
               Log.d("*WEBRTC*", "RunTest done");
             }
           }).start();
@@ -112,9 +112,9 @@ public class ViEAutotest extends Activity
                              int position, long id) {
 
     if (parent == (Spinner) findViewById(R.id.testSpinner)) {
-      _testSelection = position;
+      testSelection = position;
     } else {
-      _subTestSelection = position;
+      subTestSelection = position;
     }
   }
 
