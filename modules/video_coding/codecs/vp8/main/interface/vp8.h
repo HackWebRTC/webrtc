@@ -138,6 +138,7 @@ private:
     WebRtc_Word32             _maxBitRateKbit;
     int                       _maxFrameRate;
     bool                      _inited;
+    WebRtc_UWord32            _timeStamp;
     WebRtc_UWord16            _pictureID;
     bool                      _pictureLossIndicationOn;
     bool                      _feedbackModeOn;

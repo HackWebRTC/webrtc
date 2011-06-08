@@ -41,6 +41,7 @@ VP8Encoder::VP8Encoder():
     _height(0),
     _maxBitRateKbit(0),
     _inited(false),
+    _timeStamp(0),
     _pictureID(0),
     _pictureLossIndicationOn(false),
     _feedbackModeOn(false),
@@ -132,6 +133,8 @@ VP8Encoder::Reset()
         _encoder = NULL;
     }
 
+    _timeStamp = 0;
+
     _encoder = new vpx_codec_ctx_t;
 
     return InitAndSetSpeed();
@@ -166,7 +169,7 @@ VP8Encoder::SetRates(WebRtc_UWord32 newBitRateKbit, WebRtc_UWord32 newFrameRate)
     {
         _maxFrameRate = static_cast<int>(newFrameRate);
         _cfg->g_timebase.num = 1;
-        _cfg->g_timebase.den = _maxFrameRate;//VP8_FREQ_HZ;
+        _cfg->g_timebase.den = _maxFrameRate;
     }
 
     // update encoder context
@@ -231,6 +234,7 @@ VP8Encoder::InitEncode(const VideoCodec* inst,
         _raw = new vpx_image_t;
     }
 
+    _timeStamp = 0;
     _maxBitRateKbit = inst->maxBitrate;
     _maxFrameRate = inst->maxFramerate;
     _width = inst->width;
@@ -351,8 +355,8 @@ VP8Encoder::InitAndSetSpeed()
 
 WebRtc_Word32
 VP8Encoder::Encode(const RawImage& inputImage,
-                             const void* codecSpecificInfo,
-                             VideoFrameType frameTypes)
+                   const void* codecSpecificInfo,
+                   VideoFrameType frameTypes)
 {
     if (!_inited)
     {
@@ -494,10 +498,11 @@ VP8Encoder::Encode(const RawImage& inputImage,
         _encodedImage._frameType = kDeltaFrame;
     }
 
-    if (vpx_codec_encode(_encoder, _raw, _maxFrameRate * inputImage._timeStamp / VP8_FREQ_HZ, 1, flags, VPX_DL_REALTIME))
+    if (vpx_codec_encode(_encoder, _raw, _timeStamp, 1, flags, VPX_DL_REALTIME))
     {
         return WEBRTC_VIDEO_CODEC_ERROR;
     }
+    _timeStamp++;
 
     const vpx_codec_cx_pkt_t *pkt= vpx_codec_get_cx_data(_encoder, &iter); // no lagging => 1 frame at a time
     if (pkt == NULL && !_encoder->err)
@@ -732,7 +737,7 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
     img = vpx_codec_get_frame(_decoder, &_iter);
 
     // Allocate memory for decoded image
-    WebRtc_UWord32 requiredSize = (3*img->h*img->w) >> 1;
+    WebRtc_UWord32 requiredSize = (3*img->h * img->w) >> 1;
     if (_decodedImage._buffer != NULL)
     {
         delete [] _decodedImage._buffer;
@@ -773,8 +778,8 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
 
     // we need to communicate that we should send a RPSI with a specific picture ID
 
-    // TODO(pw): how do we know it's a golden or alt reference frame? On2 will provide an API
-    // for now I added it temporarily
+    // TODO(pw): how do we know it's a golden or alt reference frame? libvpx will
+    // provide an API for now I added it temporarily
     if((lastRefUpdates & VP8_GOLD_FRAME) || (lastRefUpdates & VP8_ALTR_FRAME))
     {
         if (!missingFrames && (inputImage._completeFrame == true))
