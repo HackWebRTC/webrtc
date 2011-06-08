@@ -49,6 +49,7 @@ VP8Encoder::VP8Encoder():
     _haveReceivedAcknowledgement(false),
     _pictureIDLastSentRef(0),
     _pictureIDLastAcknowledgedRef(0),
+    _cpuSpeed(-6), // default value
     _encoder(NULL),
     _cfg(NULL),
     _raw(NULL)
@@ -120,13 +121,20 @@ VP8Encoder::Reset()
     {
         return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
     }
-    // reinitialize encoder to initial state
-    if (vpx_codec_enc_init(_encoder, vpx_codec_vp8_cx(), _cfg, 0))
+
+    if (_encoder != NULL)
     {
-        return WEBRTC_VIDEO_CODEC_ERROR;
+        if (vpx_codec_destroy(_encoder))
+        {
+            return WEBRTC_VIDEO_CODEC_MEMORY;
+        }
+        delete _encoder;
+        _encoder = NULL;
     }
 
-    return WEBRTC_VIDEO_CODEC_OK;
+    _encoder = new vpx_codec_ctx_t;
+
+    return InitAndSetSpeed();
 }
 
 WebRtc_Word32
@@ -146,7 +154,8 @@ VP8Encoder::SetRates(WebRtc_UWord32 newBitRateKbit, WebRtc_UWord32 newFrameRate)
     }
 
     // update bit rate
-    if (_maxBitRateKbit > 0 && newBitRateKbit > static_cast<WebRtc_UWord32>(_maxBitRateKbit))
+    if (_maxBitRateKbit > 0 &&
+        newBitRateKbit > static_cast<WebRtc_UWord32>(_maxBitRateKbit))
     {
         newBitRateKbit = _maxBitRateKbit;
     }
@@ -295,34 +304,46 @@ VP8Encoder::InitEncode(const VideoCodec* inst,
         _cfg->kf_max_dist = 300;
     }
 
-    // construct encoder context
-    if (vpx_codec_enc_init(_encoder, vpx_codec_vp8_cx(), _cfg, 0))
-    {
-        return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
-    }
     switch (inst->codecSpecific.VP8.complexity)
     {
         case kComplexityHigh:
         {
-            vpx_codec_control(_encoder, VP8E_SET_CPUUSED, -5);
+            _cpuSpeed = -5;
             break;
         }
         case kComplexityHigher:
         {
-            vpx_codec_control(_encoder, VP8E_SET_CPUUSED, -4);
+            _cpuSpeed = -4;
             break;
         }
         case kComplexityMax:
         {
-            vpx_codec_control(_encoder, VP8E_SET_CPUUSED, -3);
-           break;
+            _cpuSpeed = -3;
+            break;
         }
         default:
         {
-            vpx_codec_control(_encoder, VP8E_SET_CPUUSED, -6);
+            _cpuSpeed = -6;
             break;
         }
     }
+
+    return InitAndSetSpeed();
+}
+
+WebRtc_Word32
+VP8Encoder::InitAndSetSpeed()
+{
+    // construct encoder context
+    vpx_codec_enc_cfg_t cfg_copy = *_cfg;
+    if (vpx_codec_enc_init(_encoder, vpx_codec_vp8_cx(), _cfg, 0))
+    {
+        return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
+    }
+
+    vpx_codec_control(_encoder, VP8E_SET_CPUUSED, _cpuSpeed);
+
+    *_cfg = cfg_copy;
 
     _inited = true;
     return WEBRTC_VIDEO_CODEC_OK;

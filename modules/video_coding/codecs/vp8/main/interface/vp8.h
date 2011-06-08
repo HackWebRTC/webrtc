@@ -128,6 +128,9 @@ public:
     static WebRtc_Word32  VersionStatic(WebRtc_Word8 *version, WebRtc_Word32 length);
 
 private:
+// Call encoder initialize function and set speed.
+    WebRtc_Word32 InitAndSetSpeed();
+
     EncodedImage              _encodedImage;
     EncodedImageCallback*     _encodedCompleteCallback;
     WebRtc_Word32             _width;
@@ -143,6 +146,7 @@ private:
     bool                      _haveReceivedAcknowledgement;
     WebRtc_UWord16            _pictureIDLastSentRef;
     WebRtc_UWord16            _pictureIDLastAcknowledgedRef;
+    int                       _cpuSpeed;
 
     vpx_codec_ctx_t*          _encoder;
     vpx_codec_enc_cfg_t*      _cfg;
