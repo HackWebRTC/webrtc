@@ -55,7 +55,7 @@ int GetResource(char* resource, char* dest, int destLen);
 char* GetResource(char* resource);
 const char* GetResource(const char* resource);
 // #ifdef MAC_IPHONE
-#elif defined(ANDROID)
+#elif defined(WEBRTC_ANDROID)
 char filenameStr[2][256] = {0};
 int currentStr = 0;
 
@@ -369,7 +369,7 @@ void MyTraceCallback::Print(const TraceLevel level, const char *traceString,
     {
         char* tmp = new char[length];
         memcpy(tmp, traceString, length);
-        TEST_LOG(tmp);
+        TEST_LOG("%s", tmp);
         TEST_LOG("\n");
         delete [] tmp;
     }
@@ -4138,7 +4138,7 @@ unsigned int WINAPI mainTest::StartSend()
 
 using namespace voetest;
 
-#if !defined(MAC_IPHONE) && !defined(ANDROID)
+#if !defined(MAC_IPHONE)
 int main(int , char** )
 {
     SubAPIManager apiMgr;

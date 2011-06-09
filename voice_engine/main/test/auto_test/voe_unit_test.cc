@@ -405,7 +405,7 @@ void VoEUnitTest::Wait()
 
 void VoEUnitTest::Test(const char* msg)
 {
-    printf(msg); fflush(NULL);
+    printf("%s", msg); fflush(NULL);
     printf("\n"); fflush(NULL);
 }
 
