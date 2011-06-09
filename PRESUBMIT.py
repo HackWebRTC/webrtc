@@ -24,12 +24,13 @@ def CheckChangeOnUpload(input_api, output_api):
   
 
 
+def CheckChangeOnCommit (input_api, output_api):
+  results = []
+  results.extend(input_api.canned_checks.CheckOwners(input_api, output_api))
+  return results
 
 
-#def CheckChangeOnCommit (input_api, output_api):
-#  results = []
-#  sources = lambda x: input_api.FilterSourceFile(x, black_list=black_list)
-#  results.extend(input_api.canned_checks.CheckOwners(input_api, output_api, source_file_filter=sources))
-#  return results
 
+
+#sources = lambda x: input_api.FilterSourceFile(x, black_list=black_list)
 
