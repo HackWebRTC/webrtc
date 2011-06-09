@@ -24,8 +24,9 @@ extern "C" {
  * Method:    RunTest
  * Signature: (IILandroid/view/SurfaceView;Landroid/view/SurfaceView;)I
  */
-JNIEXPORT jint JNICALL Java_org_webrtc_vieautotest_ViEAutotest_RunTest__IILandroid_view_SurfaceView_2Landroid_view_SurfaceView_2
-  (JNIEnv *, jobject, jint, jint, jobject, jobject);
+JNIEXPORT jint JNICALL
+Java_org_webrtc_vieautotest_ViEAutotest_RunTest__IILandroid_view_SurfaceView_2Landroid_view_SurfaceView_2
+(JNIEnv *, jobject, jint, jint, jobject, jobject);
 
 #ifdef __cplusplus
 }
