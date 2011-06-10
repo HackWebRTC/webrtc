@@ -126,10 +126,13 @@ SHOW_MENU:
 			case 12: 
 				testType = TTLoopback;
 				break;
-            case 14:
-                testType = TTMobileAPI;
-                break;
-            case 66:
+                        case 13:
+                                testType = TTDeviceRemoval;
+                                break;
+                        case 14:
+                                testType = TTMobileAPI;
+                                break;
+                        case 66:
 				testType = TTTest;
 				break;
 			default:

@@ -1272,7 +1272,7 @@ WebRtc_Word32 FuncTestManager::TestAudioTransport()
         if (audioDevice->Playing())
         {
             TEST_LOG("\n> Listen to the file being played (fs=%d) out "
-                "and verify that the audio quality is OK.\n "
+                "and verify that the audio quality is OK.\n"
                 "> Press any key to stop playing...\n \n",
                 samplesPerSec);
             PAUSE(DEFAULT_PAUSE_TIME);
@@ -2005,12 +2005,12 @@ WebRtc_Word32 FuncTestManager::TestMicrophoneBoost()
     if (audioDevice->Recording() && audioDevice->Playing())
     {
         TEST_LOG("\n> Speak into the microphone and verify that the selected "
-            "microphone boost control is toggled between [BOOST ON] and [BOOST OFF].\n\
-            > You should hear your own voice with an increased volume level "
-            "during the 'BOOST ON' periods.\n \n\
-            > After a finalized test (and if file recording was enabled) verify"
-            " the recorded result off line.\n\
-        > Press any key to stop...\n \n");
+            "microphone boost control is toggled between [BOOST ON] and [BOOST OFF].\n"
+            "> You should hear your own voice with an increased volume level "
+            "during the 'BOOST ON' periods.\n \n"
+            "> After a finalized test (and if file recording was enabled) verify"
+            " the recorded result off line.\n"
+        "> Press any key to stop...\n \n");
         PAUSE(DEFAULT_PAUSE_TIME);
     }
 
@@ -2142,12 +2142,12 @@ WebRtc_Word32 FuncTestManager::TestMicrophoneAGC()
     if (audioDevice->Recording() && audioDevice->Playing())
     {
         TEST_LOG("\n> Speak into the microphone and verify that the volume of"
-            " the selected microphone is varied between [~0] and [~MAX].\n\
-            > You should hear your own voice with an increasing volume level"
-            " correlated to an emulated AGC setting.\n\
-            > After a finalized test (and if file recording was enabled) verify"
-            " the recorded result off line.\n\
-            > Press any key to stop...\n \n");
+            " the selected microphone is varied between [~0] and [~MAX].\n"
+            "> You should hear your own voice with an increasing volume level"
+            " correlated to an emulated AGC setting.\n"
+            "> After a finalized test (and if file recording was enabled) verify"
+            " the recorded result off line.\n"
+            "> Press any key to stop...\n \n");
         PAUSE(DEFAULT_PAUSE_TIME);
     }
 
@@ -2404,14 +2404,14 @@ WebRtc_Word32 FuncTestManager::TestDeviceRemoval()
 
             if (audioLayer == AudioDeviceModule::kLinuxPulseAudio)
             {
-                TEST_LOG("\n \n> PulseAudio loopback audio is now active.\n\
-                    > Rec : fs=%u, #channels=%u.\n\
-                    > Play: fs=%u, #channels=%u.\n\
-                    > Speak into the microphone and verify that your voice is"
-                    " played out in loopback.\n\
-                    > Unplug the device and make sure that your voice is played"
-                    " out in loop back on the built-in soundcard.\n\
-                    > Then press any key...\n",
+                TEST_LOG("\n \n> PulseAudio loopback audio is now active.\n"
+                    "> Rec : fs=%u, #channels=%u.\n"
+                    "> Play: fs=%u, #channels=%u.\n"
+                    "> Speak into the microphone and verify that your voice is"
+                    " played out in loopback.\n"
+                    "> Unplug the device and make sure that your voice is played"
+                    " out in loop back on the built-in soundcard.\n"
+                    "> Then press any key...\n",
                          recSamplesPerSecRec, nRecChannels, playSamplesPerSec,
                          nPlayChannels);
 
@@ -2420,12 +2420,12 @@ WebRtc_Word32 FuncTestManager::TestDeviceRemoval()
             {
                 if (loopCount < 1)
                 {
-                    TEST_LOG("\n \n> Loopback audio is now active.\n\
-                        > Rec : fs=%u, #channels=%u.\n\
-                        > Play: fs=%u, #channels=%u.\n\
-                        > Speak into the microphone and verify that your voice"
-                        " is played out in loopback.\n\
-                        > Unplug the device and wait for the error message...\n",
+                    TEST_LOG("\n \n> Loopback audio is now active.\n"
+                        "> Rec : fs=%u, #channels=%u.\n"
+                        "> Play: fs=%u, #channels=%u.\n"
+                        "> Speak into the microphone and verify that your voice"
+                        " is played out in loopback.\n"
+                        "> Unplug the device and wait for the error message...\n",
                         recSamplesPerSecRec, nRecChannels,
                         playSamplesPerSec, nPlayChannels);
 
@@ -2438,12 +2438,12 @@ WebRtc_Word32 FuncTestManager::TestDeviceRemoval()
                     }
                 } else
                 {
-                    TEST_LOG("\n \n> Loopback audio is now active.\n\
-                        > Rec : fs=%u, #channels=%u.\n\
-                        > Play: fs=%u, #channels=%u.\n\
-                        > Speak into the microphone and verify that your voice"
-                        " is played out in loopback.\n\
-                        > Press any key to stop...\n",
+                    TEST_LOG("\n \n> Loopback audio is now active.\n"
+                        "> Rec : fs=%u, #channels=%u.\n"
+                        "> Play: fs=%u, #channels=%u.\n"
+                        "> Speak into the microphone and verify that your voice"
+                        " is played out in loopback.\n"
+                        "> Press any key to stop...\n",
                              recSamplesPerSecRec, nRecChannels,
                              playSamplesPerSec, nPlayChannels);
 
