@@ -24,6 +24,7 @@
       ],
       'sources': [
         'list_unittest.cc',
+        'map_unittest.cc',
       ],
     },
   ],
