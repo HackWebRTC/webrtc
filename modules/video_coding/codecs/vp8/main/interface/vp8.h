@@ -24,6 +24,7 @@ typedef struct vpx_codec_ctx vpx_codec_ctx_t;
 typedef struct vpx_codec_ctx vpx_dec_ctx_t;
 typedef struct vpx_codec_enc_cfg vpx_codec_enc_cfg_t;
 typedef struct vpx_image vpx_image_t;
+typedef struct vpx_ref_frame vpx_ref_frame_t;
 
 namespace webrtc
 {
@@ -214,12 +215,26 @@ public:
     virtual WebRtc_Word32 Reset();
     virtual WebRtc_Word32 SetCodecConfigParameters(WebRtc_UWord8* /*buffer*/, WebRtc_Word32 /*size*/) { return -1; }
 
+// Create a copy of the codec and its internal state.
+//
+// Return value                : A copy of the instance if OK, NULL otherwise.
+    virtual VideoDecoder* Copy();
+
 private:
+// Copy reference image from this _decoder to the _decoder in copyTo. Set which
+// frame type to copy in _refFrame->frame_type before the call to this function.
+    int CopyReference(VP8Decoder* copyTo);
+
     RawImage                   _decodedImage;
     DecodedImageCallback*      _decodeCompleteCallback;
     bool                       _inited;
     bool                       _feedbackModeOn;
     vpx_dec_ctx_t*             _decoder;
+    VideoCodec*                _inst;
+    WebRtc_Word32              _numCores;
+    EncodedImage               _lastKeyFrame;
+    int                        _imageFormat;
+    vpx_ref_frame_t*           _refFrame;
 
 };// end of VP8Decoder class
 

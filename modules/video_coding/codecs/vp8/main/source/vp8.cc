@@ -250,10 +250,6 @@ VP8Encoder::InitEncode(const VideoCodec* inst,
     }
     _encodedImage._size = (3 * inst->width * inst->height) >> 1;
     _encodedImage._buffer = new WebRtc_UWord8[_encodedImage._size];
-    if (_encodedImage._buffer == NULL)
-    {
-        return WEBRTC_VIDEO_CODEC_MEMORY;
-    }
 
     vpx_img_alloc(_raw, IMG_FMT_I420, inst->width, inst->height, 1);
     // populate encoder configuration with default values
@@ -590,9 +586,15 @@ VP8Encoder::RegisterEncodeCompleteCallback(EncodedImageCallback* callback)
 }
 
 VP8Decoder::VP8Decoder():
+    _decodeCompleteCallback(NULL),
     _inited(false),
     _feedbackModeOn(false),
-    _decoder(NULL)
+    _decoder(NULL),
+    _inst(NULL),
+    _numCores(1),
+    _lastKeyFrame(),
+    _imageFormat(VPX_IMG_FMT_NONE),
+    _refFrame(NULL)
 {
 }
 
@@ -615,7 +617,7 @@ VP8Decoder::Reset()
 
 WebRtc_Word32
 VP8Decoder::InitDecode(const VideoCodec* inst,
-                                 WebRtc_Word32 numberOfCores)
+                       WebRtc_Word32 numberOfCores)
 {
     vp8_postproc_cfg_t  ppcfg;
     WebRtc_Word32 retVal = Release();
@@ -647,6 +649,17 @@ VP8Decoder::InitDecode(const VideoCodec* inst,
     ppcfg.deblocking_level = 5; //Strength of deblocking filter. Valid range:[0,16]
     //ppcfg.NoiseLevel     = 1; //Noise intensity. Valid range: [0,7]
     vpx_codec_control(_decoder, VP8_SET_POSTPROC, &ppcfg);
+
+    // Save the VideoCodec instance for later; mainly for duplicating the decoder.
+    if (inst)
+    {
+        if (!_inst)
+        {
+            _inst = new VideoCodec;
+        }
+        *_inst = *inst;
+    }
+    _numCores = numberOfCores;
 
     _inited = true;
     return WEBRTC_VIDEO_CODEC_OK;
@@ -721,6 +734,33 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
         return WEBRTC_VIDEO_CODEC_ERROR;
     }
 
+    // Store encoded frame if key frame. (Used in Copy method.)
+    if (inputImage._frameType == kKeyFrame)
+    {
+        // Reduce size due to PictureID that we won't copy.
+        const int bytesToCopy = inputImage._length - numberOfBytes;
+        if (_lastKeyFrame._size < bytesToCopy)
+        {
+            delete [] _lastKeyFrame._buffer;
+            _lastKeyFrame._buffer = NULL;
+            _lastKeyFrame._size = 0;
+        }
+
+        WebRtc_UWord8* tempBuffer = _lastKeyFrame._buffer; // Save buffer ptr.
+        _lastKeyFrame = inputImage; // Shallow copy.
+        _lastKeyFrame._buffer = tempBuffer; // Restore buffer ptr.
+        _lastKeyFrame._length = bytesToCopy;
+        if (!_lastKeyFrame._buffer)
+        {
+            // Allocate memory.
+            _lastKeyFrame._size = bytesToCopy;
+            _lastKeyFrame._buffer = new WebRtc_UWord8[_lastKeyFrame._size];
+        }
+        // Copy encoded frame.
+        memcpy(_lastKeyFrame._buffer, inputImage._buffer + numberOfBytes,
+               _lastKeyFrame._length);
+    }
+
     int lastRefUpdates = 0;
 #ifdef DEV_PIC_LOSS
     if (vpx_codec_control(_decoder, VP8D_GET_LAST_REF_UPDATES, &lastRefUpdates))
@@ -776,6 +816,9 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
     _decodedImage._timeStamp = inputImage._timeStamp;
     _decodeCompleteCallback->Decoded(_decodedImage);
 
+    // Remember image format for later
+    _imageFormat = img->fmt;
+
     // we need to communicate that we should send a RPSI with a specific picture ID
 
     // TODO(pw): how do we know it's a golden or alt reference frame? libvpx will
@@ -815,6 +858,11 @@ VP8Decoder::Release()
         delete [] _decodedImage._buffer;
         _decodedImage._buffer = NULL;
     }
+    if (_lastKeyFrame._buffer != NULL)
+    {
+        delete [] _lastKeyFrame._buffer;
+        _lastKeyFrame._buffer = NULL;
+    }
     if (_decoder != NULL)
     {
         if(vpx_codec_destroy(_decoder))
@@ -824,9 +872,133 @@ VP8Decoder::Release()
         delete _decoder;
         _decoder = NULL;
     }
+    if (_inst != NULL)
+    {
+        delete _inst;
+        _inst = NULL;
+    }
+    if (_refFrame != NULL)
+    {
+        vpx_img_free(&_refFrame->img);
+        delete _refFrame;
+        _refFrame = NULL;
+    }
 
     _inited = false;
     return WEBRTC_VIDEO_CODEC_OK;
 }
 
+VideoDecoder*
+VP8Decoder::Copy()
+{
+    // Sanity checks.
+    if (!_inited)
+    {
+        // Not initialized.
+        assert(false);
+        return NULL;
+    }
+    if (_decodedImage._buffer == NULL)
+    {
+        // Nothing has been decoded before; cannot clone.
+        assert(false);
+        return NULL;
+    }
+    if (_lastKeyFrame._buffer == NULL)
+    {
+        // Cannot clone if we have no key frame to start with.
+        assert(false);
+        return NULL;
+    }
+
+    // Create a new VideoDecoder object
+    VP8Decoder *copyTo = new VP8Decoder;
+
+    // Initialize the new decoder
+    if (copyTo->InitDecode(_inst, _numCores) != WEBRTC_VIDEO_CODEC_OK)
+    {
+        delete copyTo;
+        return NULL;
+    }
+
+    // Inject last key frame into new decoder.
+    if (vpx_codec_decode(copyTo->_decoder, _lastKeyFrame._buffer,
+        _lastKeyFrame._length, NULL, VPX_DL_REALTIME))
+    {
+        delete copyTo;
+        return NULL;
+    }
+
+    // Allocate memory for reference image copy
+    assert(_decodedImage._width > 0);
+    assert(_decodedImage._height > 0);
+    assert(_imageFormat > VPX_IMG_FMT_NONE);
+    // Check if frame format has changed.
+    if (_refFrame &&
+        (_decodedImage._width != _refFrame->img.d_w ||
+            _decodedImage._height != _refFrame->img.d_h ||
+            _imageFormat != _refFrame->img.fmt))
+    {
+        vpx_img_free(&_refFrame->img);
+        delete _refFrame;
+        _refFrame = NULL;
+    }
+
+
+    if (!_refFrame)
+    {
+        _refFrame = new vpx_ref_frame_t;
+
+        if(!vpx_img_alloc(&_refFrame->img,
+            static_cast<vpx_img_fmt_t>(_imageFormat),
+            _decodedImage._width, _decodedImage._height, 1))
+        {
+            assert(false);
+            delete copyTo;
+            return NULL;
+        }
+    }
+
+    const vpx_ref_frame_type_t typeVec[] = { VP8_LAST_FRAME, VP8_GOLD_FRAME,
+                                             VP8_ALTR_FRAME };
+    for (int ix = 0; ix < sizeof(typeVec) / sizeof(vpx_ref_frame_type_t); ++ix)
+    {
+        _refFrame->frame_type = typeVec[ix];
+        if (CopyReference(copyTo) < 0)
+        {
+            delete copyTo;
+            return NULL;
+        }
+    }
+
+    // Copy all member variables (that are not set in initialization).
+    copyTo->_feedbackModeOn = _feedbackModeOn;
+    copyTo->_imageFormat = _imageFormat;
+    copyTo->_lastKeyFrame = _lastKeyFrame; // Shallow copy.
+    // Allocate memory. (Discard copied _buffer pointer.)
+    copyTo->_lastKeyFrame._buffer = new WebRtc_UWord8[_lastKeyFrame._size];
+    memcpy(copyTo->_lastKeyFrame._buffer, _lastKeyFrame._buffer,
+           _lastKeyFrame._length);
+
+    return static_cast<VideoDecoder*>(copyTo);
 }
+
+int VP8Decoder::CopyReference(VP8Decoder* copyTo)
+{
+    // The type of frame to copy should be set in _refFrame->frame_type
+    // before the call to this function.
+    if (vpx_codec_control(_decoder, VP8_COPY_REFERENCE, _refFrame)
+        != VPX_CODEC_OK)
+    {
+        return -1;
+    }
+    if (vpx_codec_control(copyTo->_decoder, VP8_SET_REFERENCE, _refFrame)
+        != VPX_CODEC_OK)
+    {
+        return -1;
+    }
+    return 0;
+}
+
+
+} // namespace webrtc
