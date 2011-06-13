@@ -114,6 +114,9 @@ private:
     void TraceControlStatusAndSupportFlags(DWORD fdwControl) const;
     void TraceWaveInError(MMRESULT error) const;
     void TraceWaveOutError(MMRESULT error) const;
+    // Converts from wide-char to UTF-8 if UNICODE is defined.
+    // Does nothing if UNICODE is undefined.
+    char* WideToUTF8(const TCHAR* src) const;
 
 public:
     AudioMixerManager(const WebRtc_Word32 id);
@@ -128,6 +131,7 @@ private:
     UINT                    _inputMixerID;
     SpeakerLineInfo         _speakerState[MAX_NUMBER_MIXER_DEVICES];
     MicrophoneLineInfo      _microphoneState[MAX_NUMBER_MIXER_DEVICES];
+    mutable char            _str[MAXERRORLENGTH];
 };
 
 }  // namespace webrtc
