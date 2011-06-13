@@ -82,7 +82,7 @@ static const float sqrtHanning[65] = {
 weightCurve = [0 ; 0.3 * sqrt(linspace(0,1,64))' + 0.1];
 fprintf(1, '\t%.4f, %.4f, %.4f, %.4f, %.4f, %.4f,\n', weightCurve);
 */
-static const float weightCurve[65] = {
+const float WebRtcAec_weightCurve[65] = {
     0.0000f, 0.1000f, 0.1378f, 0.1535f, 0.1655f, 0.1756f,
     0.1845f, 0.1926f, 0.2000f, 0.2069f, 0.2134f, 0.2195f,
     0.2254f, 0.2309f, 0.2363f, 0.2414f, 0.2464f, 0.2512f,
@@ -100,7 +100,7 @@ static const float weightCurve[65] = {
 overDriveCurve = [sqrt(linspace(0,1,65))' + 1];
 fprintf(1, '\t%.4f, %.4f, %.4f, %.4f, %.4f, %.4f,\n', overDriveCurve);
 */
-static const float overDriveCurve[65] = {
+const float WebRtcAec_overDriveCurve[65] = {
     1.0000f, 1.1250f, 1.1768f, 1.2165f, 1.2500f, 1.2795f,
     1.3062f, 1.3307f, 1.3536f, 1.3750f, 1.3953f, 1.4146f,
     1.4330f, 1.4507f, 1.4677f, 1.4841f, 1.5000f, 1.5154f,
@@ -128,7 +128,7 @@ static void NonLinearProcessing(aec_t *aec, int *ip, float *wfft, short *output,
 static void GetHighbandGain(const float *lambda, float *nlpGainHband);
 
 // Comfort_noise also computes noise for H band returned in comfortNoiseHband
-static void ComfortNoise(aec_t *aec, complex_t *efw,
+static void ComfortNoise(aec_t *aec, float efw[2][PART_LEN1],
                                   complex_t *comfortNoiseHband,
                                   const float *noisePow, const float *lambda);
 
@@ -314,9 +314,32 @@ static void FilterAdaptation(aec_t *aec, float *fft, float ef[2][PART_LEN1],
   }
 }
 
+static void OverdriveAndSuppress(aec_t *aec, float hNl[PART_LEN1],
+                                 const float hNlFb,
+                                 float efw[2][PART_LEN1]) {
+  int i;
+  for (i = 0; i < PART_LEN1; i++) {
+    // Weight subbands
+    if (hNl[i] > hNlFb) {
+      hNl[i] = WebRtcAec_weightCurve[i] * hNlFb +
+          (1 - WebRtcAec_weightCurve[i]) * hNl[i];
+    }
+    hNl[i] = powf(hNl[i], aec->overDriveSm * WebRtcAec_overDriveCurve[i]);
+
+    // Suppress error signal
+    efw[0][i] *= hNl[i];
+    efw[1][i] *= hNl[i];
+
+    // Ooura fft returns incorrect sign on imaginary component. It matters here
+    // because we are making an additive change with comfort noise.
+    efw[1][i] *= -1;
+  }
+}
+
 WebRtcAec_FilterFar_t WebRtcAec_FilterFar;
 WebRtcAec_ScaleErrorSignal_t WebRtcAec_ScaleErrorSignal;
 WebRtcAec_FilterAdaptation_t WebRtcAec_FilterAdaptation;
+WebRtcAec_OverdriveAndSuppress_t WebRtcAec_OverdriveAndSuppress;
 
 int WebRtcAec_InitAec(aec_t *aec, int sampFreq)
 {
@@ -444,6 +467,7 @@ int WebRtcAec_InitAec(aec_t *aec, int sampFreq)
     WebRtcAec_FilterFar = FilterFar;
     WebRtcAec_ScaleErrorSignal = ScaleErrorSignal;
     WebRtcAec_FilterAdaptation = FilterAdaptation;
+    WebRtcAec_OverdriveAndSuppress = OverdriveAndSuppress;
     if (WebRtc_GetCPUInfo(kSSE2)) {
 #if defined(__SSE2__)
       WebRtcAec_InitAec_SSE2();
@@ -753,7 +777,8 @@ static void ProcessBlock(aec_t *aec, const short *farend,
 
 static void NonLinearProcessing(aec_t *aec, int *ip, float *wfft, short *output, short *outputH)
 {
-    complex_t dfw[PART_LEN1], efw[PART_LEN1], xfw[PART_LEN1];
+    float efw[2][PART_LEN1], dfw[2][PART_LEN1];
+    complex_t xfw[PART_LEN1];
     complex_t comfortNoiseHband[PART_LEN1];
     float fft[PART_LEN2];
     float scale, dtmp;
@@ -841,13 +866,13 @@ static void NonLinearProcessing(aec_t *aec, int *ip, float *wfft, short *output,
     }
     rdft(PART_LEN2, 1, fft, ip, wfft);
 
-    dfw[0][1] = 0;
-    dfw[PART_LEN][1] = 0;
+    dfw[1][0] = 0;
+    dfw[1][PART_LEN] = 0;
     dfw[0][0] = fft[0];
-    dfw[PART_LEN][0] = fft[1];
+    dfw[0][PART_LEN] = fft[1];
     for (i = 1; i < PART_LEN; i++) {
-        dfw[i][0] = fft[2 * i];
-        dfw[i][1] = fft[2 * i + 1];
+        dfw[0][i] = fft[2 * i];
+        dfw[1][i] = fft[2 * i + 1];
     }
 
     // Windowed error fft
@@ -856,21 +881,21 @@ static void NonLinearProcessing(aec_t *aec, int *ip, float *wfft, short *output,
         fft[PART_LEN + i] = aec->eBuf[PART_LEN + i] * sqrtHanning[PART_LEN - i];
     }
     rdft(PART_LEN2, 1, fft, ip, wfft);
-    efw[0][1] = 0;
-    efw[PART_LEN][1] = 0;
+    efw[1][0] = 0;
+    efw[1][PART_LEN] = 0;
     efw[0][0] = fft[0];
-    efw[PART_LEN][0] = fft[1];
+    efw[0][PART_LEN] = fft[1];
     for (i = 1; i < PART_LEN; i++) {
-        efw[i][0] = fft[2 * i];
-        efw[i][1] = fft[2 * i + 1];
+        efw[0][i] = fft[2 * i];
+        efw[1][i] = fft[2 * i + 1];
     }
 
     // Smoothed PSD
     for (i = 0; i < PART_LEN1; i++) {
         aec->sd[i] = ptrGCoh[0] * aec->sd[i] + ptrGCoh[1] *
-            (dfw[i][0] * dfw[i][0] + dfw[i][1] * dfw[i][1]);
+            (dfw[0][i] * dfw[0][i] + dfw[1][i] * dfw[1][i]);
         aec->se[i] = ptrGCoh[0] * aec->se[i] + ptrGCoh[1] *
-            (efw[i][0] * efw[i][0] + efw[i][1] * efw[i][1]);
+            (efw[0][i] * efw[0][i] + efw[1][i] * efw[1][i]);
         // We threshold here to protect against the ill-effects of a zero farend.
         // The threshold is not arbitrarily chosen, but balances protection and
         // adverse interaction with the algorithm's tuning.
@@ -879,14 +904,14 @@ static void NonLinearProcessing(aec_t *aec, int *ip, float *wfft, short *output,
             WEBRTC_SPL_MAX(xfw[i][0] * xfw[i][0] + xfw[i][1] * xfw[i][1], 15);
 
         aec->sde[i][0] = ptrGCoh[0] * aec->sde[i][0] + ptrGCoh[1] *
-            (dfw[i][0] * efw[i][0] + dfw[i][1] * efw[i][1]);
+            (dfw[0][i] * efw[0][i] + dfw[1][i] * efw[1][i]);
         aec->sde[i][1] = ptrGCoh[0] * aec->sde[i][1] + ptrGCoh[1] *
-            (dfw[i][0] * efw[i][1] - dfw[i][1] * efw[i][0]);
+            (dfw[0][i] * efw[1][i] - dfw[1][i] * efw[0][i]);
 
         aec->sxd[i][0] = ptrGCoh[0] * aec->sxd[i][0] + ptrGCoh[1] *
-            (dfw[i][0] * xfw[i][0] + dfw[i][1] * xfw[i][1]);
+            (dfw[0][i] * xfw[i][0] + dfw[1][i] * xfw[i][1]);
         aec->sxd[i][1] = ptrGCoh[0] * aec->sxd[i][1] + ptrGCoh[1] *
-            (dfw[i][0] * xfw[i][1] - dfw[i][1] * xfw[i][0]);
+            (dfw[0][i] * xfw[i][1] - dfw[1][i] * xfw[i][0]);
 
         sdSum += aec->sd[i];
         seSum += aec->se[i];
@@ -1007,29 +1032,13 @@ static void NonLinearProcessing(aec_t *aec, int *ip, float *wfft, short *output,
 
     // Smooth the overdrive.
     if (aec->overDrive < aec->overDriveSm) {
-        aec->overDriveSm = 0.99f * aec->overDriveSm + 0.01f * aec->overDrive;
+      aec->overDriveSm = 0.99f * aec->overDriveSm + 0.01f * aec->overDrive;
     }
     else {
-        aec->overDriveSm = 0.9f * aec->overDriveSm + 0.1f * aec->overDrive;
+      aec->overDriveSm = 0.9f * aec->overDriveSm + 0.1f * aec->overDrive;
     }
 
-    for (i = 0; i < PART_LEN1; i++) {
-        // Weight subbands
-        if (hNl[i] > hNlFb) {
-            hNl[i] = weightCurve[i] * hNlFb + (1 - weightCurve[i]) * hNl[i];
-        }
-
-        hNl[i] = (float)pow(hNl[i], aec->overDriveSm * overDriveCurve[i]);
-
-        // Suppress error signal
-        efw[i][0] *= hNl[i];
-        efw[i][1] *= hNl[i];
-
-        // Ooura fft returns incorrect sign on imaginary component.
-        // It matters here because we are making an additive change with comfort noise.
-        efw[i][1] *= -1;
-    }
-
+    WebRtcAec_OverdriveAndSuppress(aec, hNl, hNlFb, efw);
 
 #ifdef G167
     if (aec->cnToggle) {
@@ -1042,11 +1051,11 @@ static void NonLinearProcessing(aec_t *aec, int *ip, float *wfft, short *output,
 
     // Inverse error fft.
     fft[0] = efw[0][0];
-    fft[1] = efw[PART_LEN][0];
+    fft[1] = efw[0][PART_LEN];
     for (i = 1; i < PART_LEN; i++) {
-        fft[2*i] = efw[i][0];
+        fft[2*i] = efw[0][i];
         // Sign change required by Ooura fft.
-        fft[2*i + 1] = -efw[i][1];
+        fft[2*i + 1] = -efw[1][i];
     }
     rdft(PART_LEN2, -1, fft, ip, wfft);
 
@@ -1126,7 +1135,7 @@ static void GetHighbandGain(const float *lambda, float *nlpGainHband)
     nlpGainHband[0] /= (float)(PART_LEN1 - 1 - freqAvgIc);
 }
 
-static void ComfortNoise(aec_t *aec, complex_t *efw,
+static void ComfortNoise(aec_t *aec, float efw[2][PART_LEN1],
     complex_t *comfortNoiseHband, const float *noisePow, const float *lambda)
 {
     int i, num;
@@ -1159,8 +1168,8 @@ static void ComfortNoise(aec_t *aec, complex_t *efw,
         // This is the proper weighting to match the background noise power
         tmp = sqrtf(WEBRTC_SPL_MAX(1 - lambda[i] * lambda[i], 0));
         //tmp = 1 - lambda[i];
-        efw[i][0] += tmp * u[i][0];
-        efw[i][1] += tmp * u[i][1];
+        efw[0][i] += tmp * u[i][0];
+        efw[1][i] += tmp * u[i][1];
     }
 
     // For H band comfort noise

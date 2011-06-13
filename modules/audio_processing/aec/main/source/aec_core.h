@@ -176,6 +176,9 @@ typedef void (*WebRtcAec_FilterAdaptation_t)
   (aec_t *aec, float *fft, float ef[2][PART_LEN1], int ip[IP_LEN],
    float wfft[W_LEN]);
 extern WebRtcAec_FilterAdaptation_t WebRtcAec_FilterAdaptation;
+typedef void (*WebRtcAec_OverdriveAndSuppress_t)
+  (aec_t *aec, float hNl[PART_LEN1], const float hNlFb, float efw[2][PART_LEN1]);
+extern WebRtcAec_OverdriveAndSuppress_t WebRtcAec_OverdriveAndSuppress;
 
 int WebRtcAec_CreateAec(aec_t **aec);
 int WebRtcAec_FreeAec(aec_t *aec);
