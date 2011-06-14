@@ -1461,9 +1461,9 @@ int JitterBufferTest(CmdArgs& args)
     //  ---------------------------------------------------------------------------------------------
     // | 3 | 4 | 5 | 6 | 7 | 9 | x | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | x | 21 |.....| 102 |
     //  ---------------------------------------------------------------------------------------------
-    jb.SetNackStatus(true);
+    jb.SetNackMode(kNackInfinite);
 
-    TEST(jb.GetNackStatus());
+    TEST(jb.GetNackMode() == kNackInfinite);
 
     // insert first packet
     timeStamp += 33*90;
@@ -1880,7 +1880,7 @@ int JitterBufferTest(CmdArgs& args)
     //Test incomplete NALU frames
 
     jb.Flush();
-    jb.SetNackStatus(false);
+    jb.SetNackMode(kNoNack);
     seqNum ++;
     timeStamp += 33*90;
     int insertedLength=0;

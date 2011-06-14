@@ -26,10 +26,16 @@ public:
 
     VCMSessionInfo(const VCMSessionInfo& rhs);
 
-    WebRtc_Word32 ZeroOutSeqNum(WebRtc_Word32* list, WebRtc_Word32 num);
+    WebRtc_Word32 ZeroOutSeqNum(WebRtc_Word32* list, WebRtc_Word32 numberOfSeqNum);
+    // Hybrid version: Zero out seq num for NACK list
+    // apply a score based on the packet location and the external rttScore
+    WebRtc_Word32 ZeroOutSeqNumHybrid(WebRtc_Word32* list,
+                                      WebRtc_Word32 numberOfSeqNum,
+                                      float rttScore);
     virtual void Reset();
 
     WebRtc_Word64 InsertPacket(const VCMPacket& packet, WebRtc_UWord8* ptrStartOfLayer);
+    WebRtc_Word32 InformOfEmptyPacket(const WebRtc_UWord16 seqNum);
 
     virtual bool IsSessionComplete();
     WebRtc_UWord32 MakeSessionDecodable(WebRtc_UWord8* ptrStartOfLayer);
@@ -75,18 +81,20 @@ protected:
     bool _sessionNACK;          // If this session has been NACKed by JB
     bool _completeSession;
     webrtc::FrameType  _frameType;
-    bool           _previousFrameLoss;
+    bool               _previousFrameLoss;
 
-    WebRtc_Word32  _lowSeqNum;          // Lowest packet sequence number in a session
-    WebRtc_Word32  _highSeqNum;         // Highest packet sequence number in a session
+    WebRtc_Word32      _lowSeqNum;          // Lowest packet sequence number in a session
+    WebRtc_Word32      _highSeqNum;         // Highest packet sequence number in a session
 
     // Highest packet index in this frame
-    WebRtc_UWord16 _highestPacketIndex;
+    WebRtc_UWord16     _highestPacketIndex;
     // Length of packet (used for reordering)
-    WebRtc_UWord32 _packetSizeBytes[kMaxPacketsInJitterBuffer];
-    // Completness of packets. Used for deciding if the frame is decodable.
-    WebRtc_UWord8  _naluCompleteness[kMaxPacketsInJitterBuffer];
-    bool           _ORwithPrevByte[kMaxPacketsInJitterBuffer];
+    WebRtc_UWord32     _packetSizeBytes[kMaxPacketsInJitterBuffer];
+    // Completeness of packets. Used for deciding if the frame is decodable.
+    WebRtc_UWord8      _naluCompleteness[kMaxPacketsInJitterBuffer];
+    WebRtc_Word32      _emptySeqNumLow;
+    WebRtc_Word32      _emptySeqNumHigh;
+    bool               _ORwithPrevByte[kMaxPacketsInJitterBuffer];
 };
 
 } // namespace webrtc

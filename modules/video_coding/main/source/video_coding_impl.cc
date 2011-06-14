@@ -269,7 +269,7 @@ VideoCodingModuleImpl::TimeUntilNextProcess()
 {
     WebRtc_UWord32 timeUntilNextProcess = VCM_MIN(_receiveStatsTimer.TimeUntilProcess(),
                                                   _sendStatsTimer.TimeUntilProcess());
-    if ((_receiver.NackMode() == kNackInfinite) || (_dualReceiver.State() != kPassive))
+    if ((_receiver.NackMode() != kNoNack) || (_dualReceiver.State() != kPassive))
     {
         // We need a Process call more often if we are relying on retransmissions
         timeUntilNextProcess = VCM_MIN(timeUntilNextProcess,
@@ -576,6 +576,7 @@ VideoCodingModuleImpl::SetVideoProtection(VCMVideoProtection videoProtection, bo
 {
     WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id),
                "SetVideoProtection()");
+
     switch (videoProtection)
     {
 
@@ -664,16 +665,18 @@ VideoCodingModuleImpl::SetVideoProtection(VCMVideoProtection videoProtection, bo
     case kProtectionNackFEC:
         {
             {
+              // Receive side
                 CriticalSectionScoped cs(_receiveCritSect);
                 if (enable)
                 {
-                    _receiver.SetNackMode(kNackInfinite);
+                    _receiver.SetNackMode(kNackHybrid);
                 }
                 else
                 {
                     _receiver.SetNackMode(kNoNack);
                 }
             }
+            // Send Side
             {
                 CriticalSectionScoped cs(_sendCritSect);
                 _mediaOpt.EnableNackFEC(enable);
@@ -1298,7 +1301,7 @@ VideoCodingModuleImpl::NackList(WebRtc_UWord16* nackList, WebRtc_UWord16& size)
     // Collect sequence numbers from the default receiver
     // if in normal nack mode. Otherwise collect them from
     // the dual receiver if the dual receiver is receiving.
-    if (_receiver.NackMode() == kNackInfinite)
+    if (_receiver.NackMode() != kNoNack)
     {
         nackStatus = _receiver.NackList(nackList, size);
     }

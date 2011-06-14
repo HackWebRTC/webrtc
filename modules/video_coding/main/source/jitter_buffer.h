@@ -24,6 +24,13 @@
 namespace webrtc
 {
 
+enum VCMNackMode
+{
+    kNackInfinite,
+    kNackHybrid,
+    kNoNack
+};
+
 // forward declarations
 class VCMFrameBuffer;
 class VCMPacket;
@@ -90,7 +97,7 @@ public:
     WebRtc_Word32 GetFrame(const VCMPacket& packet, VCMEncodedFrame*&);
     VCMEncodedFrame* GetFrame(const VCMPacket& packet); // deprecated
 
-    // Returns the time in ms when the latest packet was insterted into the frame.
+    // Returns the time in ms when the latest packet was inserted into the frame.
     // Retransmitted is set to true if any of the packets belonging to the frame
     // has been retransmitted.
     WebRtc_Word64 LastPacketTime(VCMEncodedFrame* frame, bool& retransmitted) const;
@@ -103,8 +110,8 @@ public:
     void UpdateRtt(WebRtc_UWord32 rttMs);
 
     // NACK
-    void SetNackStatus(bool enable); // Enable/disable nack
-    bool GetNackStatus();            // Get nack status (enabled/disabled)
+    void SetNackMode(VCMNackMode mode); // Enable/disable nack
+    VCMNackMode GetNackMode() const;    // Get nack mode
     // Get list of missing sequence numbers (size in number of elements)
     WebRtc_UWord16* GetNackList(WebRtc_UWord16& nackSize, bool& listExtended);
 
@@ -162,18 +169,23 @@ protected:
 private:
 
     static bool FrameEqualTimestamp(VCMFrameBuffer* frame, const void* timestamp);
-    static bool CompleteKeyFrameCriteria(VCMFrameBuffer* frame, const void* notUsed);
+    static bool CompleteDecodableKeyFrameCriteria(VCMFrameBuffer* frame,
+                                                  const void* notUsed);
+    // Decide whether should wait for NACK (mainly relevant for hybrid mode)
+    bool WaitForNack();
 
     WebRtc_Word32                 _vcmId;
     WebRtc_Word32                 _receiverId;
-    bool                          _running;     // If we are running (have started) or not
-    CriticalSectionWrapper&          _critSect;
+    // If we are running (have started) or not
+    bool                          _running;
+    CriticalSectionWrapper&       _critSect;
     bool                          _master;
     // Event to signal when we have a frame ready for decoder
     VCMEvent                      _frameEvent;
     // Event to signal when we have received a packet
     VCMEvent                      _packetEvent;
-    WebRtc_Word32                 _maxNumberOfFrames; // Number of allocated frames
+    // Number of allocated frames
+    WebRtc_Word32                 _maxNumberOfFrames;
     // Array of pointers to the frames in JB
     VCMFrameBuffer*               _frameBuffers[kMaxNumberOfFrames];
     VCMFrameListTimestampOrderAsc _frameBuffersTSOrder;
@@ -189,10 +201,12 @@ private:
     WebRtc_UWord8           _receiveStatistics[4];
     // Latest calculated frame rates of incoming stream
     WebRtc_UWord8           _incomingFrameRate;
-    WebRtc_UWord32          _incomingFrameCount;   // Frame counter, reset in GetUpdate
+    // Frame counter, reset in GetUpdate
+    WebRtc_UWord32          _incomingFrameCount;
     // Real time for last _frameCount reset
     WebRtc_Word64           _timeLastIncomingFrameCount;
-    WebRtc_UWord32          _incomingBitCount;     // Received bits counter, reset in GetUpdate
+    // Received bits counter, reset in GetUpdate
+    WebRtc_UWord32          _incomingBitCount;
     WebRtc_UWord32          _incomingBitRate;
     WebRtc_UWord32          _dropCount;            // Frame drop counter
     // Number of frames in a row that have been too old
@@ -204,9 +218,10 @@ private:
     // Calculates network delays used for jitter calculations
     VCMInterFrameDelay      _delayEstimate;
     VCMJitterSample         _waitingForCompletion;
+    WebRtc_UWord32          _rttMs;
 
     // NACK
-    bool                    _usingNACK; // If we are using nack
+    VCMNackMode             _nackMode;
     // Holds the internal nack list (the missing seqence numbers)
     WebRtc_Word32           _NACKSeqNumInternal[kNackHistoryLength];
     WebRtc_UWord16          _NACKSeqNum[kNackHistoryLength];

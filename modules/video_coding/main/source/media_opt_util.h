@@ -34,6 +34,13 @@ enum VCMFecTypes
     kXORFec
 };
 
+// Thresholds for hybrid NACK/FEC
+// common to media optimization and the jitter buffer.
+enum HybridNackTH {
+    kHighRttNackMs = 100,
+    kLowRttNackMs = 20
+};
+
 struct VCMProtectionParameters
 {
     VCMProtectionParameters() : rtt(0), lossPr(0), bitRate(0), packetsPerFrame(0),
@@ -134,16 +141,16 @@ public:
     WebRtc_UWord8                        _effectivePacketLoss;
     WebRtc_UWord8                        _protectionFactorK;
     WebRtc_UWord8                        _protectionFactorD;
-    float                              _residualPacketLoss;
-    float                              _scaleProtKey;
+    float                                _residualPacketLoss;
+    float                                _scaleProtKey;
     WebRtc_Word32                        _maxPayloadSize;
 
 protected:
-    float                              _efficiency;
-    float                              _score;
+    float                                _efficiency;
+    float                                _score;
 
 private:
-    const enum VCMProtectionMethodEnum     _type;
+    const enum VCMProtectionMethodEnum   _type;
 
 };
 

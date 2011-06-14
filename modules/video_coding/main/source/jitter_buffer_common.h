@@ -46,7 +46,8 @@ enum VCMFrameBufferStateEnum
     kStateEmpty,              // frame popped by the RTP receiver
     kStateIncomplete,         // frame that have one or more packet(s) stored
     kStateComplete,           // frame that have all packets
-    kStateDecoding            // frame popped by the decoding thread
+    kStateDecoding,           // frame popped by the decoding thread
+    kStateDecodable           // Hybrid mode - frame can be decoded
 };
 
 enum { kH264StartCodeLengthBytes = 4};

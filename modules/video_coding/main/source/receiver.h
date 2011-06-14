@@ -28,11 +28,6 @@ enum VCMNackStatus
     kNackKeyFrameRequest
 };
 
-enum VCMNackMode
-{
-    kNackInfinite,
-    kNoNack
-};
 
 enum VCMReceiverState
 {
@@ -91,7 +86,6 @@ private:
     VCMJitterBuffer         _jitterBuffer;
     VCMTiming&              _timing;
     VCMEvent&               _renderWaitEvent;
-    VCMNackMode             _nackMode;
     VCMReceiverState        _state;
 
     static WebRtc_Word32    _receiverIdCounter;

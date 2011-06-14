@@ -64,6 +64,10 @@ public:
     // NACK
     // Zero out all entries in list up to and including the entry equal to _lowSeqNum
     WebRtc_Word32 ZeroOutSeqNum(WebRtc_Word32* list, WebRtc_Word32 num);
+    // Hybrid extension: only NACK important packets, discard FEC packets
+    WebRtc_Word32 ZeroOutSeqNumHybrid(WebRtc_Word32* list,
+                                      WebRtc_Word32 num,
+                                      float rttScore);
     void IncrementNackCount();
     WebRtc_Word16 GetNackCount() const;
 

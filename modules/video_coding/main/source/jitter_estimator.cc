@@ -422,7 +422,7 @@ VCMJitterEstimator::UpdateMaxFrameSize(WebRtc_UWord32 frameSizeBytes)
 // Returns the current filtered estimate if available,
 // otherwise tries to calculate an estimate.
 double
-VCMJitterEstimator::GetJitterEstimate()
+VCMJitterEstimator::GetJitterEstimate(double rttMultiplier)
 {
     double jitterMS = CalculateEstimate();
     if (_filterJitterEstimate > jitterMS)
@@ -431,7 +431,7 @@ VCMJitterEstimator::GetJitterEstimate()
     }
     if (_nackCount >= _nackLimit)
     {
-        return jitterMS + _rttFilter.RttMs();
+        return jitterMS + _rttFilter.RttMs() * rttMultiplier;
     }
     return jitterMS;
 }

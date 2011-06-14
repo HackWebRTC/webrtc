@@ -31,7 +31,6 @@ _master(master),
 _jitterBuffer(vcmId, receiverId, master),
 _timing(timing),
 _renderWaitEvent(*new VCMEvent()),
-_nackMode(kNoNack),
 _state(kPassive)
 {
 }
@@ -164,6 +163,7 @@ VCMReceiver::InsertPacket(const VCMPacket& packet,
         }
 
         // Insert packet into jitter buffer
+        // both data and empty packets
         const VCMFrameBufferEnum ret = _jitterBuffer.InsertPacket(buffer, packet);
 
         if (ret < 0)
@@ -178,7 +178,8 @@ VCMReceiver::InsertPacket(const VCMPacket& packet,
 }
 
 VCMEncodedFrame*
-VCMReceiver::FrameForDecoding(WebRtc_UWord16 maxWaitTimeMs, WebRtc_Word64& nextRenderTimeMs, bool renderTiming, VCMReceiver* dualReceiver)
+VCMReceiver::FrameForDecoding(WebRtc_UWord16 maxWaitTimeMs, WebRtc_Word64& nextRenderTimeMs,
+                              bool renderTiming, VCMReceiver* dualReceiver)
 {
     // No need to enter the critical section here since the jitter buffer
     // is thread-safe.
@@ -348,20 +349,7 @@ void
 VCMReceiver::SetNackMode(VCMNackMode nackMode)
 {
     CriticalSectionScoped cs(_critSect);
-    _nackMode = nackMode;
-    switch (_nackMode)
-    {
-    case kNackInfinite:
-        {
-            _jitterBuffer.SetNackStatus(true);
-            break;
-        }
-    case kNoNack:
-        {
-            _jitterBuffer.SetNackStatus(false);
-            break;
-        }
-    }
+    _jitterBuffer.SetNackMode(nackMode);
     if (!_master)
     {
         _state = kPassive; // The dual decoder defaults to passive
@@ -372,7 +360,7 @@ VCMNackMode
 VCMReceiver::NackMode() const
 {
     CriticalSectionScoped cs(_critSect);
-    return _nackMode;
+    return _jitterBuffer.GetNackMode();
 }
 
 VCMNackStatus
@@ -418,14 +406,6 @@ void
 VCMReceiver::CopyJitterBufferStateFromReceiver(const VCMReceiver& receiver)
 {
     _jitterBuffer = receiver._jitterBuffer;
-
-    {
-        CriticalSectionScoped cs(_critSect);
-        if (_nackMode != kNoNack)
-        {
-            _jitterBuffer.SetNackStatus(true);
-        }
-    }
 }
 
 VCMReceiverState
@@ -447,7 +427,7 @@ VCMReceiver::UpdateState(VCMReceiverState newState)
 void
 VCMReceiver::UpdateState(VCMEncodedFrame& frame)
 {
-    if (_nackMode == kNoNack)
+    if (_jitterBuffer.GetNackMode() == kNoNack)
     {
         // Dual decoder mode has not been enabled.
         return;

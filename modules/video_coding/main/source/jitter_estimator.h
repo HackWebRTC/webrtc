@@ -41,9 +41,11 @@ public:
 
     // Returns the current jitter estimate in milliseconds and adds
     // also adds an RTT dependent term in cases of retransmission.
+    //  Input:
+    //          - rttMultiplier  : RTT param multiplier (when applicable).
     //
     // Return value                   : Jitter estimate in milliseconds
-    double GetJitterEstimate();
+    double GetJitterEstimate(double rttMultiplier);
 
     // Updates the nack counter/timer.
     //

@@ -133,14 +133,19 @@ VCMFrameBuffer::InsertPacket(const VCMPacket& packet, WebRtc_Word64 timeInMs)
 
     if (kStateEmpty == _state)
     {
-        // This is the first packet inserted into this frame,
+        // This is the first packet (empty and/or data) inserted into this frame.
         // store some info and set some initial values.
         _timeStamp = packet.timestamp;
         _codec = packet.codec;
-        SetState(kStateIncomplete);
+        // for the first media packet
+        if (packet.frameType != kFrameEmpty)
+        {
+            SetState(kStateIncomplete);
+        }
     }
 
-    WebRtc_UWord32 requiredSizeBytes = Length() + packet.sizeBytes + (packet.insertStartCode?kH264StartCodeLengthBytes:0);
+    WebRtc_UWord32 requiredSizeBytes = Length() + packet.sizeBytes +
+                   (packet.insertStartCode ? kH264StartCodeLengthBytes : 0);
     if (requiredSizeBytes >= _size)
     {
         const WebRtc_UWord32 increments = requiredSizeBytes / kBufferIncStepSizeBytes +
@@ -156,7 +161,7 @@ VCMFrameBuffer::InsertPacket(const VCMPacket& packet, WebRtc_Word64 timeInMs)
         }
     }
     WebRtc_Word64 retVal = _sessionInfo.InsertPacket(packet, _buffer);
-    if(retVal == -1)
+    if (retVal == -1)
     {
         return kSizeError;
     }
@@ -201,6 +206,17 @@ WebRtc_Word32 VCMFrameBuffer::ZeroOutSeqNum(WebRtc_Word32* list, WebRtc_Word32 n
     return 0;
 }
 
+// Zero out all entries in list up to and including the (first) entry equal to
+// _lowSeqNum. Hybrid mode: 1. Don't NACK FEC packets 2. Make a smart decision
+// on whether to NACK or not
+
+WebRtc_Word32 VCMFrameBuffer::ZeroOutSeqNumHybrid(WebRtc_Word32* list,
+                                                  WebRtc_Word32 num,
+                                                  float rttScore)
+{
+    return _sessionInfo.ZeroOutSeqNumHybrid(list, num, rttScore);
+}
+
 void VCMFrameBuffer::IncrementNackCount()
 {
     _nackCount++;
@@ -227,7 +243,6 @@ void VCMFrameBuffer::Reset()
 {
     _length = 0;
     _timeStamp = 0;
-
     _sessionInfo.Reset();
     _frameCounted = false;
     _payloadType = 0;
@@ -237,7 +252,7 @@ void VCMFrameBuffer::Reset()
     VCMEncodedFrame::Reset();
 }
 
-// Makes sure the session contain a decodable stream.
+// Makes sure the session contains a decodable stream.
 void
 VCMFrameBuffer::MakeSessionDecodable()
 {
@@ -275,7 +290,8 @@ VCMFrameBuffer::SetState(VCMFrameBufferStateEnum state)
 
     case kStateComplete:
         assert(_state == kStateEmpty ||
-               _state == kStateIncomplete);
+               _state == kStateIncomplete ||
+               _state == kStateDecodable);
 
         break;
 
@@ -286,9 +302,20 @@ VCMFrameBuffer::SetState(VCMFrameBufferStateEnum state)
 
     case kStateDecoding:
         // we can go to this state from state kStateComplete kStateIncomplete
-        assert(_state == kStateComplete || _state == kStateIncomplete);
+        assert(_state == kStateComplete || _state == kStateIncomplete ||
+               _state == kStateDecodable);
         // Transfer frame information to EncodedFrame and create any codec specific information
         RestructureFrameInformation();
+        break;
+
+    case kStateDecodable:
+        if (_state == kStateComplete)
+        {
+            // if complete, obviously decodable, keep as is.
+            return;
+        }
+        assert(_state == kStateEmpty ||
+               _state == kStateIncomplete);
         break;
 
     default:
