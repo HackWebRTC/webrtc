@@ -28,9 +28,7 @@ _psi(0.9999),
 _alphaCountMax(400),
 _beta(0.9994),
 _thetaLow(0.000001),
-_nackLimit(3), // This should be 1 if the old
-               // retransmition estimate is used.
-_nackWindowMS(15000),
+_nackLimit(3),
 _numStdDevDelayOutlier(15),
 _numStdDevFrameSizeOutlier(3),
 _noiseStdDevs(2.33), // ~Less than 1% chance
@@ -213,33 +211,18 @@ VCMJitterEstimator::UpdateEstimate(WebRtc_Word64 frameDelayMS, WebRtc_UWord32 fr
 
 // Updates the nack/packet ratio
 void
-VCMJitterEstimator::UpdateNackEstimate(bool retransmitted, WebRtc_Word64 /*wallClockMS = -1*/)
+VCMJitterEstimator::FrameNacked()
 {
-    // Simplified since it seems to be hard to be sure if a
-    // packet actually has been retransmitted or not, resulting
-    // in a delay which varies up and down with one RTT.
-    // The solution is to wait until _nackLimit retransmitts
-    // has been received, then always add an RTT to the estimate.
-    if (retransmitted && _nackCount < _nackLimit)
+    // Wait until _nackLimit retransmissions has been received,
+    // then always add ~1 RTT delay.
+    // TODO(holmer): Should we ever remove the additional delay if the
+    // the packet losses seem to have stopped? We could for instance scale
+    // the number of RTTs to add with the amount of retransmissions in a given
+    // time interval, or similar.
+    if (_nackCount < _nackLimit)
     {
         _nackCount++;
     }
-    //if (wallClockMS == -1)
-    //{
-    //    wallClockMS = VCMTickTime::MillisecondTimestamp();
-    //}
-    //if (retransmitted)
-    //{
-    //    if (_nackCount < _nackLimit)
-    //    {
-    //        _nackCount++;
-    //    }
-    //    _latestNackTimestamp = wallClockMS;
-    //}
-    //else if (_nackCount > 0 && wallClockMS - _latestNackTimestamp > _nackWindowMS)
-    //{
-    //    _nackCount = 0;
-    //}
 }
 
 // Updates Kalman estimate of the channel

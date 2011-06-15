@@ -47,12 +47,8 @@ public:
     // Return value                   : Jitter estimate in milliseconds
     double GetJitterEstimate(double rttMultiplier);
 
-    // Updates the nack counter/timer.
-    //
-    // Input:
-    //          - retransmitted       : True for a nacked frames, false otherwise
-    //          - wallClockMS         : Used for testing
-    void UpdateNackEstimate(bool retransmitted, WebRtc_Word64 wallClockMS = -1);
+    // Updates the nack counter.
+    void FrameNacked();
 
     // Updates the RTT filter.
     //
@@ -122,7 +118,6 @@ private:
     const double          _beta;
     const double          _thetaLow;
     const WebRtc_UWord32  _nackLimit;
-    const WebRtc_UWord32  _nackWindowMS;
     const WebRtc_Word32   _numStdDevDelayOutlier;
     const WebRtc_Word32   _numStdDevFrameSizeOutlier;
     const double          _noiseStdDevs;

@@ -213,7 +213,9 @@ VCMJitterBuffer::Start()
     _waitingForCompletion.latestPacketTime = -1;
     _missingMarkerBits = false;
     _firstPacket = true;
+    _NACKSeqNumLength = 0;
     _rttMs = 0;
+
     WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, VCMId(_vcmId, _receiverId), "JB(0x%x): Jitter buffer: start", this);
 }
 
@@ -285,6 +287,8 @@ VCMJitterBuffer::FlushInternal()
 
     _missingMarkerBits = false;
     _firstPacket = true;
+
+    _NACKSeqNumLength = 0;
 
     WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, VCMId(_vcmId, _receiverId),
                "JB(0x%x): Jitter buffer: flush", this);
@@ -846,17 +850,20 @@ VCMJitterBuffer::GetCompleteFrameForDecoding(WebRtc_UWord32 maxWaitTimeMS)
     }
 
     // we have a frame
-        // store seqnum
+    // store seqnum
     _lastDecodedSeqNum = oldestFrame->GetHighSeqNum();
     // store current timestamp
     _lastDecodedTimeStamp = oldestFrame->TimeStamp();
 
     // Update jitter estimate
     const bool retransmitted = (oldestFrame->GetNackCount() > 0);
-    _jitterEstimate.UpdateNackEstimate(retransmitted);
-    // Ignore retransmitted frames also ignore empty frames.
-    if (!retransmitted && oldestFrame->Length() > 0)
+    if (retransmitted)
     {
+        _jitterEstimate.FrameNacked();
+    }
+    else if (oldestFrame->Length() > 0)
+    {
+        // Ignore retransmitted and empty frames.
         UpdateJitterAndDelayEstimates(*oldestFrame, false);
     }
 
@@ -1061,10 +1068,13 @@ VCMJitterBuffer::GetFrameForDecoding()
     // This frame shouldn't have been retransmitted, but if we recently
     // turned off NACK this might still happen.
     const bool retransmitted = (oldestFrame->GetNackCount() > 0);
-    _jitterEstimate.UpdateNackEstimate(retransmitted);
-    // Ignore retransmitted frames also ignore empty frames.
-    if (!retransmitted && oldestFrame->Length() > 0)
+    if (retransmitted)
     {
+        _jitterEstimate.FrameNacked();
+    }
+    else if (oldestFrame->Length() > 0)
+    {
+        // Ignore retransmitted and empty frames.
         // Update with the previous incomplete frame first
         if (_waitingForCompletion.latestPacketTime >= 0)
         {
@@ -1137,10 +1147,13 @@ VCMJitterBuffer::GetFrameForDecodingNACK()
 
     // Update jitter estimate
     const bool retransmitted = (oldestFrame->GetNackCount() > 0);
-    _jitterEstimate.UpdateNackEstimate(retransmitted);
-    // Ignore retransmitted frames also ignore empty frames.
-    if (!retransmitted && oldestFrame->Length() > 0)
+    if (retransmitted)
     {
+        _jitterEstimate.FrameNacked();
+    }
+    else if (oldestFrame->Length() > 0)
+    {
+        // Ignore retransmitted and empty frames.
         UpdateJitterAndDelayEstimates(*oldestFrame, false);
     }
 
