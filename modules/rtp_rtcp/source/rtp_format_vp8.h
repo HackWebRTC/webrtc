@@ -33,10 +33,9 @@ namespace webrtc
 
 enum VP8PacketizerMode
 {
-    kStrict = 0, // split partitions if too large; never aggregate, balance size
-    kAggregate,  // split partitions if too large; aggregate whole partitions
-    kSloppy,     // split entire payload without considering partition limits
-    kNumModes,
+    kStrict = 0, // split partitions if too large; never aggregate partitions
+    kAggregate, // split partitions if too large; aggregate whole partitions
+    kSloppy, // split entire payload without considering partition boundaries
 };
 
 // Packetizer for VP8.
@@ -47,7 +46,7 @@ public:
     // The payload_data must be exactly one encoded VP8 frame.
     RtpFormatVp8(const WebRtc_UWord8* payload_data,
                  WebRtc_UWord32 payload_size,
-                 const RTPFragmentationHeader& fragmentation,
+                 const RTPFragmentationHeader* fragmentation,
                  VP8PacketizerMode mode);
 
     // Initialize without fragmentation info. Mode kSloppy will be used.
@@ -66,20 +65,8 @@ public:
                    int* bytes_to_send, bool* last_packet);
 
 private:
-    enum AggregationMode
-    {
-        kAggrNone = 0,   // no aggregation
-        kAggrPartitions, // aggregate intact partitions
-        kAggrFragments   // aggregate intact and fragmented partitions
-    };
-
-    static const AggregationMode aggr_modes_[kNumModes];
-    static const bool bal_modes_[kNumModes];
-    static const bool sep_first_modes_[kNumModes];
-
-    // Calculate size of next chunk to send. Returns 0 if none can be sent.
-    int CalcNextSize(int max_payload_len, int remaining_bytes,
-                     bool split_payload) const;
+    // Determine from which fragment the next byte to send will be taken.
+    int GetFragIdx();
 
     // Write the payload header and copy the payload to the buffer.
     // Will copy send_bytes bytes from the current position on the payload data.
@@ -90,15 +77,12 @@ private:
 
     const WebRtc_UWord8* payload_data_;
     const WebRtc_UWord32 payload_size_;
-    RTPFragmentationHeader part_info_;
+    RTPFragmentationHeader frag_info_;
     int payload_bytes_sent_;
-    int part_ix_;
+    VP8PacketizerMode mode_;
     bool beginning_; // first partition in this frame
     bool first_fragment_; // first fragment of a partition
     const int vp8_header_bytes_; // length of VP8 payload header
-    AggregationMode aggr_mode_;
-    bool balance_;
-    bool separate_first_;
 };
 
 }
