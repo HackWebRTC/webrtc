@@ -64,6 +64,14 @@ typedef struct NsxInst_t_
     WebRtc_UWord32          sumMagn;
     WebRtc_UWord32          curAvgMagnEnergy;
     WebRtc_UWord32          timeAvgMagnEnergy;
+    WebRtc_UWord32          timeAvgMagnEnergyTmp;
+
+    WebRtc_UWord32          whiteNoiseLevel;              //initial noise estimate
+    WebRtc_UWord32          initMagnEst[HALF_ANAL_BLOCKL];//initial magnitude spectrum estimate
+    WebRtc_Word32           pinkNoiseNumerator;           //pink noise parameter: numerator
+    WebRtc_Word32           pinkNoiseExp;                 //pink noise parameter: power of freq
+    int                     minNorm;                      //smallest normalization factor
+    int                     zeroInputSignal;              //zero input signal flag
 
     WebRtc_UWord32          prevNoiseU32[HALF_ANAL_BLOCKL]; //noise spectrum from previous frame
     WebRtc_UWord16          prevMagnU16[HALF_ANAL_BLOCKL]; //magnitude spectrum from previous frame
