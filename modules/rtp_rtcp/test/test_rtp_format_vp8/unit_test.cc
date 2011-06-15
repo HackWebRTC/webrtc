@@ -75,18 +75,18 @@ TEST_F(RtpFormatVp8Test, TestStrictMode)
     bool last;
 
     RtpFormatVp8 packetizer = RtpFormatVp8(payload_data, kPayloadSize,
-        fragmentation, webrtc::kStrict);
+        *fragmentation, webrtc::kStrict);
 
-    // get first packet
+    // get first packet, expect balanced size = same as second packet
     EXPECT_EQ(0, packetizer.NextPacket(8, buffer, &send_bytes, &last));
     EXPECT_FALSE(last);
-    EXPECT_EQ(send_bytes,8);
+    EXPECT_EQ(send_bytes,6);
     EXPECT_RSV_ZERO(buffer[0]);
     EXPECT_BIT_I_EQ(buffer[0], 1);
     EXPECT_BIT_N_EQ(buffer[0], 0);
     EXPECT_FI_EQ(buffer[0], 0x01);
     EXPECT_BIT_B_EQ(buffer[0], 1);
-    for (int i = 1; i < 8; i++)
+    for (int i = 1; i < 6; i++)
     {
         EXPECT_EQ(buffer[i], 0);
     }
@@ -94,13 +94,13 @@ TEST_F(RtpFormatVp8Test, TestStrictMode)
     // get second packet
     EXPECT_EQ(0, packetizer.NextPacket(8, buffer, &send_bytes, &last));
     EXPECT_FALSE(last);
-    EXPECT_EQ(send_bytes,4); // 3 remaining from partition, 1 header
+    EXPECT_EQ(send_bytes,6); // 5 remaining from partition, 1 header
     EXPECT_RSV_ZERO(buffer[0]);
     EXPECT_BIT_I_EQ(buffer[0], 0);
     EXPECT_BIT_N_EQ(buffer[0], 0);
     EXPECT_FI_EQ(buffer[0], 0x02);
     EXPECT_BIT_B_EQ(buffer[0], 0);
-    for (int i = 1; i < 4; i++)
+    for (int i = 1; i < 6; i++)
     {
         EXPECT_EQ(buffer[i], 0);
     }
@@ -121,36 +121,50 @@ TEST_F(RtpFormatVp8Test, TestStrictMode)
     }
 
     // Third partition
-    // Get first packet (of three)
-    EXPECT_EQ(0, packetizer.NextPacket(5, buffer, &send_bytes, &last));
+    // Get first packet (of four)
+    EXPECT_EQ(0, packetizer.NextPacket(4, buffer, &send_bytes, &last));
     EXPECT_FALSE(last);
-    EXPECT_EQ(send_bytes,5);
+    EXPECT_EQ(send_bytes,4);
     EXPECT_RSV_ZERO(buffer[0]);
     EXPECT_BIT_I_EQ(buffer[0], 0);
     EXPECT_BIT_N_EQ(buffer[0], 0);
     EXPECT_FI_EQ(buffer[0], 0x01); // first fragment
     EXPECT_BIT_B_EQ(buffer[0], 0);
-    for (int i = 1; i < 5; i++)
+    for (int i = 1; i < 4; i++)
     {
         EXPECT_EQ(buffer[i], 2);
     }
 
-    // Get second packet (of three)
-    EXPECT_EQ(0, packetizer.NextPacket(5, buffer, &send_bytes, &last));
+    // Get second packet (of four)
+    EXPECT_EQ(0, packetizer.NextPacket(4, buffer, &send_bytes, &last));
     EXPECT_FALSE(last);
-    EXPECT_EQ(send_bytes,5);
+    EXPECT_EQ(send_bytes,3);
     EXPECT_RSV_ZERO(buffer[0]);
     EXPECT_BIT_I_EQ(buffer[0], 0);
     EXPECT_BIT_N_EQ(buffer[0], 0);
     EXPECT_FI_EQ(buffer[0], 0x03); // middle fragment
     EXPECT_BIT_B_EQ(buffer[0], 0);
-    for (int i = 1; i < 5; i++)
+    for (int i = 1; i < 3; i++)
     {
         EXPECT_EQ(buffer[i], 2);
     }
 
-    // Get third and last packet
-    EXPECT_EQ(0, packetizer.NextPacket(5, buffer, &send_bytes, &last));
+    // Get third packet (of four)
+    EXPECT_EQ(0, packetizer.NextPacket(4, buffer, &send_bytes, &last));
+    EXPECT_FALSE(last);
+    EXPECT_EQ(send_bytes,4);
+    EXPECT_RSV_ZERO(buffer[0]);
+    EXPECT_BIT_I_EQ(buffer[0], 0);
+    EXPECT_BIT_N_EQ(buffer[0], 0);
+    EXPECT_FI_EQ(buffer[0], 0x03); // middle fragment
+    EXPECT_BIT_B_EQ(buffer[0], 0);
+    for (int i = 1; i < 4; i++)
+    {
+        EXPECT_EQ(buffer[i], 2);
+    }
+
+    // Get fourth and last packet
+    EXPECT_EQ(0, packetizer.NextPacket(4, buffer, &send_bytes, &last));
     EXPECT_TRUE(last); // last packet in frame
     EXPECT_EQ(send_bytes,3); // 2 bytes payload left, 1 header
     EXPECT_RSV_ZERO(buffer[0]);
@@ -172,7 +186,7 @@ TEST_F(RtpFormatVp8Test, TestAggregateMode)
     bool last;
 
     RtpFormatVp8 packetizer = RtpFormatVp8(payload_data, kPayloadSize,
-        fragmentation, webrtc::kAggregate);
+        *fragmentation, webrtc::kAggregate);
 
     // get first packet
     // first half of first partition
@@ -232,7 +246,7 @@ TEST_F(RtpFormatVp8Test, TestSloppyMode)
     bool last;
 
     RtpFormatVp8 packetizer = RtpFormatVp8(payload_data, kPayloadSize,
-        fragmentation, webrtc::kSloppy);
+        *fragmentation, webrtc::kSloppy);
 
     // get first packet
     EXPECT_EQ(0, packetizer.NextPacket(9, buffer, &send_bytes, &last));
@@ -310,8 +324,7 @@ TEST_F(RtpFormatVp8Test, TestSloppyModeFallback)
     int send_bytes = 0;
     bool last;
 
-    RtpFormatVp8 packetizer = RtpFormatVp8(payload_data, kPayloadSize,
-        NULL /*fragInfo*/, webrtc::kStrict); // should be changed to kSloppy
+    RtpFormatVp8 packetizer = RtpFormatVp8(payload_data, kPayloadSize);
 
     // get first packet
     EXPECT_EQ(0, packetizer.NextPacket(9, buffer, &send_bytes, &last));
