@@ -30,7 +30,7 @@ RtpFormatVp8::RtpFormatVp8(const WebRtc_UWord8* payload_data,
                            const RTPFragmentationHeader& fragmentation,
                            VP8PacketizerMode mode)
     : payload_data_(payload_data),
-      payload_size_(payload_size),
+      payload_size_(static_cast<int>(payload_size)),
       payload_bytes_sent_(0),
       part_ix_(0),
       beginning_(true),
@@ -46,7 +46,7 @@ RtpFormatVp8::RtpFormatVp8(const WebRtc_UWord8* payload_data,
 RtpFormatVp8::RtpFormatVp8(const WebRtc_UWord8* payload_data,
                            WebRtc_UWord32 payload_size)
     : payload_data_(payload_data),
-      payload_size_(payload_size),
+      payload_size_(static_cast<int>(payload_size)),
       part_info_(),
       payload_bytes_sent_(0),
       part_ix_(0),
@@ -58,7 +58,7 @@ RtpFormatVp8::RtpFormatVp8(const WebRtc_UWord8* payload_data,
       separate_first_(sep_first_modes_[kSloppy])
 {
     part_info_.VerifyAndAllocateFragmentationHeader(1);
-    part_info_.fragmentationLength[0] = payload_size_;
+    part_info_.fragmentationLength[0] = payload_size;
     part_info_.fragmentationOffset[0] = 0;
 }
 

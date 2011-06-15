@@ -89,7 +89,7 @@ private:
                               WebRtc_UWord8* buffer);
 
     const WebRtc_UWord8* payload_data_;
-    const WebRtc_UWord32 payload_size_;
+    const int payload_size_;
     RTPFragmentationHeader part_info_;
     int payload_bytes_sent_;
     int part_ix_;
