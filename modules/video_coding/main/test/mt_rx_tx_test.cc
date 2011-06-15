@@ -107,6 +107,7 @@ int MTRxTxTest(CmdArgs& args)
     WebRtc_Word32   numberOfCores = 1;
 
     // error resilience/network
+    // Nack support is currently not implemented in this test.
     bool          nackEnabled = false;
     bool          fecEnabled = false;
     WebRtc_UWord8   rttMS = 20;
@@ -216,6 +217,8 @@ int MTRxTxTest(CmdArgs& args)
     vcm->RegisterProtectionCallback(&protectionCallback);
 
     outgoingTransport->SetLossPct(lossRate);
+    // Nack support is currently not implemented in this test
+    assert(nackEnabled == false);
     vcm->SetVideoProtection(kProtectionNack, nackEnabled);
     vcm->SetVideoProtection(kProtectionFEC, fecEnabled);
 
