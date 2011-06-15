@@ -11,147 +11,133 @@
 #include "rtp_format_vp8.h"
 
 #include <cassert>  // assert
+#include <math.h>   // ceil
 #include <string.h> // memcpy
 
 namespace webrtc {
 
+// Define how the VP8PacketizerModes are implemented.
+// Modes are: kStrict, kAggregate, kSloppy.
+const RtpFormatVp8::AggregationMode RtpFormatVp8::aggr_modes_[kNumModes] =
+    { kAggrNone, kAggrPartitions, kAggrFragments };
+const bool RtpFormatVp8::bal_modes_[kNumModes] =
+    { true, false, false };
+const bool RtpFormatVp8::sep_first_modes_[kNumModes] =
+    { true, false, false };
+
 RtpFormatVp8::RtpFormatVp8(const WebRtc_UWord8* payload_data,
                            WebRtc_UWord32 payload_size,
-                           const RTPFragmentationHeader* fragmentation,
+                           const RTPFragmentationHeader& fragmentation,
                            VP8PacketizerMode mode)
     : payload_data_(payload_data),
       payload_size_(payload_size),
       payload_bytes_sent_(0),
-      mode_(mode),
+      part_ix_(0),
       beginning_(true),
       first_fragment_(true),
-      vp8_header_bytes_(1)
+      vp8_header_bytes_(1),
+      aggr_mode_(aggr_modes_[mode]),
+      balance_(bal_modes_[mode]),
+      separate_first_(sep_first_modes_[mode])
 {
-    if (fragmentation == NULL)
-    {
-        // Cannot do kStrict or kAggregate without fragmentation info.
-        // Change to kSloppy.
-        mode_ = kSloppy;
-    }
-    else
-    {
-        frag_info_ = *fragmentation;
-    }
+    part_info_ = fragmentation;
 }
 
 RtpFormatVp8::RtpFormatVp8(const WebRtc_UWord8* payload_data,
                            WebRtc_UWord32 payload_size)
     : payload_data_(payload_data),
       payload_size_(payload_size),
-      frag_info_(),
+      part_info_(),
       payload_bytes_sent_(0),
-      mode_(kSloppy),
+      part_ix_(0),
       beginning_(true),
       first_fragment_(true),
-      vp8_header_bytes_(1)
-{}
-
-int RtpFormatVp8::GetFragIdx()
+      vp8_header_bytes_(1),
+      aggr_mode_(aggr_modes_[kSloppy]),
+      balance_(bal_modes_[kSloppy]),
+      separate_first_(sep_first_modes_[kSloppy])
 {
-    // Which fragment are we in?
-    int frag_ix = 0;
-    while ((frag_ix + 1 < frag_info_.fragmentationVectorSize) &&
-        (payload_bytes_sent_ >= frag_info_.fragmentationOffset[frag_ix + 1]))
+    part_info_.VerifyAndAllocateFragmentationHeader(1);
+    part_info_.fragmentationLength[0] = payload_size_;
+    part_info_.fragmentationOffset[0] = 0;
+}
+
+int RtpFormatVp8::CalcNextSize(int max_payload_len, int remaining_bytes,
+                               bool split_payload) const
+{
+    if (max_payload_len == 0 || remaining_bytes == 0)
     {
-        ++frag_ix;
+        return 0;
     }
-    return frag_ix;
+    if (!split_payload)
+    {
+        return max_payload_len >= remaining_bytes ? remaining_bytes : 0;
+    }
+
+    if (balance_)
+    {
+        // Balance payload sizes to produce (almost) equal size
+        // fragments.
+        // Number of fragments for remaining_bytes:
+        int num_frags = ceil(
+            static_cast<double>(remaining_bytes) / max_payload_len);
+        // Number of bytes in this fragment:
+        return static_cast<int>(static_cast<double>(remaining_bytes)
+            / num_frags + 0.5);
+    }
+    else
+    {
+        return max_payload_len >= remaining_bytes ? remaining_bytes
+            : max_payload_len;
+    }
 }
 
 int RtpFormatVp8::NextPacket(int max_payload_len, WebRtc_UWord8* buffer,
                              int* bytes_to_send, bool* last_packet)
 {
-    // Convenience variables
-    const int num_fragments = frag_info_.fragmentationVectorSize;
-    int frag_ix = GetFragIdx(); //TODO (hlundin): Store frag_ix as a member?
+    const int num_partitions = part_info_.fragmentationVectorSize;
     int send_bytes = 0; // How much data to send in this packet.
-    bool end_of_fragment = false;
+    bool split_payload = true; // Splitting of partitions is initially allowed.
+    int remaining_in_partition = part_info_.fragmentationOffset[part_ix_]
+        - payload_bytes_sent_ + part_info_.fragmentationLength[part_ix_];
+    int rem_payload_len = max_payload_len - vp8_header_bytes_;
 
-    switch (mode_)
+    while (int next_size = CalcNextSize(rem_payload_len, remaining_in_partition,
+        split_payload))
     {
-        case kAggregate:
+        send_bytes += next_size;
+        rem_payload_len -= next_size;
+        remaining_in_partition -= next_size;
+
+        if (remaining_in_partition == 0 && !(beginning_ && separate_first_))
         {
-            // Check if we are at the beginning of a new partition.
-            if (first_fragment_)
+            // Advance to next partition?
+            // Check that there are more partitions; verify that we are either
+            // allowed to aggregate fragments, or that we are allowed to
+            // aggregate intact partitions and that we started this packet
+            // with an intact partition (indicated by first_fragment_ == true).
+            if (part_ix_ + 1 < num_partitions &&
+                ((aggr_mode_ == kAggrFragments) ||
+                 (aggr_mode_ == kAggrPartitions && first_fragment_)))
             {
-                // Check if this fragment fits in one packet.
-                if (frag_info_.fragmentationLength[frag_ix] + vp8_header_bytes_
-                    <= max_payload_len)
-                {
-                    // Pack as many whole partitions we can into this packet;
-                    // don't fragment.
-                    while ((frag_ix < num_fragments) &&
-                        (send_bytes + vp8_header_bytes_
-                        + frag_info_.fragmentationLength[frag_ix]
-                        <= max_payload_len))
-                    {
-                        send_bytes += frag_info_.fragmentationLength[frag_ix];
-                        ++frag_ix;
-                    }
-
-                    // This packet ends on a complete fragment.
-                    end_of_fragment = true;
-                    break; // Jump out of case statement.
-                }
+                remaining_in_partition
+                    = part_info_.fragmentationLength[++part_ix_];
+                // Disallow splitting unless kAggrFragments. In kAggrPartitions,
+                // we can only aggregate intact partitions.
+                split_payload = (aggr_mode_ == kAggrFragments);
             }
-
-            // Either we are not starting this packet with a new partition,
-            // or the partition is too large for a packet.
-            // Move on to "case kStrict".
-            // NOTE: break intentionally omitted!
         }
-
-        case kStrict: // Can also continue to here from kAggregate.
+        else if (balance_ && remaining_in_partition > 0)
         {
-            // Find out how much is left to send in the current partition.
-            const int remaining_bytes = frag_info_.fragmentationOffset[frag_ix]
-                - payload_bytes_sent_ + frag_info_.fragmentationLength[frag_ix];
-            assert(remaining_bytes > 0);
-            assert(remaining_bytes <= frag_info_.fragmentationLength[frag_ix]);
-
-            if (remaining_bytes + vp8_header_bytes_ > max_payload_len)
-            {
-                // send one full packet
-                send_bytes = max_payload_len - vp8_header_bytes_;
-            }
-            else
-            {
-                // last packet from this partition
-                send_bytes = remaining_bytes;
-                end_of_fragment = true;
-            }
             break;
         }
-
-        case kSloppy:
-        {
-            // Send a full packet, or what is left of the payload.
-            const int remaining_bytes = payload_size_ - payload_bytes_sent_;
-
-            if (remaining_bytes + vp8_header_bytes_ > max_payload_len)
-            {
-                send_bytes = max_payload_len - vp8_header_bytes_;
-                end_of_fragment = false;
-            }
-            else
-            {
-                send_bytes = remaining_bytes;
-                end_of_fragment = true;
-            }
-            break;
-        }
-
-        default:
-            // Should not end up here
-            assert(false);
-            return -1;
+    }
+    if (remaining_in_partition == 0)
+    {
+        ++part_ix_; // Advance to next partition.
     }
 
+    const bool end_of_fragment = (remaining_in_partition == 0);
     // Write the payload header and the payload to buffer.
     *bytes_to_send = WriteHeaderAndPayload(send_bytes, end_of_fragment, buffer);
     if (*bytes_to_send < 0)
@@ -159,7 +145,7 @@ int RtpFormatVp8::NextPacket(int max_payload_len, WebRtc_UWord8* buffer,
         return -1;
     }
 
-    *last_packet = payload_bytes_sent_ >= payload_size_;
+    *last_packet = (payload_bytes_sent_ >= payload_size_);
     assert(!*last_packet || (payload_bytes_sent_ == payload_size_));
     return 0;
 }
