@@ -49,11 +49,6 @@
         'udp_socket2_windows.h',
         'traffic_control_windows.cc',
         'traffic_control_windows.h',
-        # WinCE
-        # FIXME don't think we need CE any more
-        #'udp_socket_manager_windows_ce.cc',
-        #'udp_socket2_manager_windows_ce.cc',
-        #'udp_socket2_windows_ce.cc',
       ], # source
       'conditions': [
         # DEFINE PLATFORM SPECIFIC SOURCE FILES
