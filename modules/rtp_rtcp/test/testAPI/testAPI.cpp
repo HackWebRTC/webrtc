@@ -93,7 +93,7 @@ public:
     RtpRtcp* _rtpRtcpModule;
 };
 
-
+// Dummy comment, shall be removed
 class LoopBackTransportVideo : public webrtc::Transport
 {
 public:
