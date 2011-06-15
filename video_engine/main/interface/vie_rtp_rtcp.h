@@ -171,7 +171,7 @@ public:
         unsigned int name, const char* data,
         unsigned short dataLengthInBytes) = 0;
 
-    // This function enables Negative Acknowledgement (NACK) using RTCP,
+    // This function enables Negative Acknowledgment (NACK) using RTCP,
     // implemented based on RFC 4585. NACK retransmits RTP packets if lost on
     // the network. This creates a lossless transport at the expense of delay.
     // If using NACK, NACK should be enabled on both endpoints in a call.
@@ -184,6 +184,19 @@ public:
     virtual int SetFECStatus(const int videoChannel, const bool enable,
                              const unsigned char payloadTypeRED,
                              const unsigned char payloadTypeFEC) = 0;
+
+    // This function enables hybrid Negative Acknowledgment using RTCP
+    // and Forward Error Correction (FEC) implemented based on RFC 5109,
+    // to improve packet loss robustness. Extra
+    // FEC packets are sent together with the usual media packets, hence will
+    // part of the bitrate be used for FEC packets.
+    // The hybrid mode will choose between nack only, fec only and both based on
+    // network conditions. When both are applied, only packets that were not
+    // recovered by the FEC will be nacked.
+    virtual int SetHybridNACKFECStatus(const int videoChannel,
+                                       const bool enable,
+                                       const unsigned char payloadTypeRED,
+                                       const unsigned char payloadTypeFEC) = 0;
 
     // This function enables RTCP key frame requests.
     virtual int SetKeyFrameRequestMethod(

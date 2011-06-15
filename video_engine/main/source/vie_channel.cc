@@ -419,7 +419,7 @@ WebRtc_Word32 ViEChannel::RegisterCodecObserver(ViEDecoderObserver* observer)
         if (_codecObserver)
         {
             WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                       ViEId(_engineId, _channelId), "%s: alread added",
+                       ViEId(_engineId, _channelId), "%s: already added",
                        __FUNCTION__);
             return -1;
         }
@@ -615,23 +615,44 @@ WebRtc_Word32 ViEChannel::GetRTCPMode(RTCPMethod& rtcpMode)
 
 WebRtc_Word32 ViEChannel::SetNACKStatus(const bool enable)
 {
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_engineId, _channelId),
-               "%s(enable: %d)", __FUNCTION__, enable);
+    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
+                 ViEId(_engineId, _channelId),
+                 "%s(enable: %d)", __FUNCTION__, enable);
 
     // Update the decoding VCM
     if (_vcm.SetVideoProtection(kProtectionNack, enable) != VCM_OK)
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(_engineId, _channelId),
-                   "%s: Could not set VCM NACK protection: %d", __FUNCTION__,
-                   enable);
+                     ViEId(_engineId, _channelId),
+                     "%s: Could not set VCM NACK protection: %d", __FUNCTION__,
+                     enable);
         return -1;
     }
     if (enable)
     {
         // Disable possible FEC
         SetFECStatus(false, 0, 0);
+    }
+    // Update the decoding VCM
+    if (_vcm.SetVideoProtection(kProtectionNack, enable) != VCM_OK)
+    {
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
+                     ViEId(_engineId, _channelId),
+                     "%s: Could not set VCM NACK protection: %d", __FUNCTION__,
+                     enable);
+        return -1;
+   }
+    return ProcessNACKRequest(enable);
+}
 
+WebRtc_Word32 ViEChannel::ProcessNACKRequest(const bool enable)
+{
+    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
+                 ViEId(_engineId, _channelId),
+                 "%s(enable: %d)", __FUNCTION__, enable);
+
+    if (enable)
+    {
         // Turn on NACK,
         NACKMethod nackMethod = kNackRtcp;
         if (_rtpRtcp.RTCP() == kRtcpOff)
@@ -649,8 +670,9 @@ WebRtc_Word32 ViEChannel::SetNACKStatus(const bool enable)
                        nackMethod);
             return -1;
         }
-        WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_engineId, _channelId),
-                   "%s: Using NACK method %d", __FUNCTION__, nackMethod);
+        WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
+                     ViEId(_engineId, _channelId),
+                      "%s: Using NACK method %d", __FUNCTION__, nackMethod);
         _rtpRtcp.SetStorePacketsStatus(true, kNackHistorySize);
         _vcm.RegisterPacketRequestCallback(this);
     }
@@ -677,15 +699,24 @@ WebRtc_Word32 ViEChannel::SetFECStatus(const bool enable,
                                        const unsigned char payloadTypeRED,
                                        const unsigned char payloadTypeFEC)
 {
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(_engineId, _channelId),
-               "%s(enable: %d, payloadTypeRED: %u, payloadTypeFEC: %u)",
-               __FUNCTION__, enable, payloadTypeRED, payloadTypeFEC);
-
     // Disable possible NACK
     if (enable)
     {
         SetNACKStatus(false);
     }
+
+    return ProcessFECRequest(enable, payloadTypeRED, payloadTypeFEC);
+
+}
+WebRtc_Word32
+ViEChannel::ProcessFECRequest(const bool enable,
+                              const unsigned char payloadTypeRED,
+                              const unsigned char payloadTypeFEC)
+{
+    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
+                 ViEId(_engineId, _channelId),
+                 "%s(enable: %d, payloadTypeRED: %u, payloadTypeFEC: %u)",
+                 __FUNCTION__, enable, payloadTypeRED, payloadTypeFEC);
 
     if (_rtpRtcp.SetGenericFECStatus(enable, payloadTypeRED, payloadTypeFEC)
         != 0)
@@ -698,6 +729,34 @@ WebRtc_Word32 ViEChannel::SetFECStatus(const bool enable,
     }
 
     return 0;
+}
+
+// ----------------------------------------------------------------------------
+// EnableNACKFECStatus
+// ----------------------------------------------------------------------------
+
+WebRtc_Word32
+ViEChannel::SetHybridNACKFECStatus(const bool enable,
+                                   const unsigned char payloadTypeRED,
+                                   const unsigned char payloadTypeFEC)
+{
+    // Update the decoding VCM with hybrid mode
+    if (_vcm.SetVideoProtection(kProtectionNackFEC, enable) != VCM_OK)
+    {
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
+                   ViEId(_engineId, _channelId),
+                   "%s: Could not set VCM NACK protection: %d", __FUNCTION__,
+                   enable);
+        return -1;
+    }
+
+    WebRtc_Word32 retVal = 0;
+    retVal = ProcessNACKRequest(enable);
+    if (retVal < 0)
+    {
+        return retVal;
+    }
+    return ProcessFECRequest(enable, payloadTypeRED, payloadTypeFEC);
 }
 
 // ----------------------------------------------------------------------------

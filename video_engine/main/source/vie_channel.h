@@ -111,6 +111,9 @@ public:
     WebRtc_Word32 SetFECStatus(const bool enable,
                                const unsigned char payloadTypeRED,
                                const unsigned char payloadTypeFEC);
+    WebRtc_Word32 SetHybridNACKFECStatus(const bool enable,
+                                         const unsigned char payloadTypeRED,
+                                         const unsigned char payloadTypeFEC);
 
     WebRtc_Word32
         SetKeyFrameRequestMethod(const KeyFrameRequestMethod method);
@@ -409,6 +412,13 @@ private:
 
     WebRtc_Word32 StartDecodeThread();
     WebRtc_Word32 StopDecodeThread();
+
+    // Protection
+    WebRtc_Word32 ProcessNACKRequest(const bool enable);
+
+    WebRtc_Word32 ProcessFECRequest(const bool enable,
+                                    const unsigned char payloadTypeRED,
+                                    const unsigned char payloadTypeFEC);
 
     // General members
     WebRtc_Word32 _channelId;

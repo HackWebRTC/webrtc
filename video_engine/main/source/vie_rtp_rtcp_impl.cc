@@ -651,6 +651,7 @@ int ViERTP_RTCPImpl::SetFECStatus(const int videoChannel, const bool enable,
                                   const unsigned char payloadTypeRED,
                                   const unsigned char payloadTypeFEC)
 {
+
     WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
                  ViEId(_instanceId, videoChannel),
                  "%s(channel: %d, enable: %d, payloadTypeRED: %u, "
@@ -675,6 +676,64 @@ int ViERTP_RTCPImpl::SetFECStatus(const int videoChannel, const bool enable,
     // Update the channel status
     if (ptrViEChannel->SetFECStatus(enable, payloadTypeRED, payloadTypeFEC)
         != 0)
+    {
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
+                     ViEId(_instanceId, videoChannel),
+                     "%s: failed for channel %d", __FUNCTION__, videoChannel);
+        SetLastError(kViERtpRtcpUnknownError);
+        return -1;
+    }
+
+    // Update the encoder
+    ViEEncoder* ptrViEEncoder = cs.Encoder(videoChannel);
+    if (ptrViEEncoder == NULL)
+    {
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
+                     ViEId(_instanceId, videoChannel),
+                     "%s: Could not get encoder for channel %d", __FUNCTION__,
+                     videoChannel);
+        SetLastError(kViERtpRtcpUnknownError);
+        return -1;
+    }
+    ptrViEEncoder->UpdateProtectionMethod();
+    return 0;
+}
+
+// ----------------------------------------------------------------------------
+// SetHybridNACKFECStatus
+//
+// Enables/disables hybrid NACK/FEC and sets the payloadtypes
+// ----------------------------------------------------------------------------
+
+int ViERTP_RTCPImpl::SetHybridNACKFECStatus(const int videoChannel,
+                                            const bool enable,
+                                            const unsigned char payloadTypeRED,
+                                            const unsigned char payloadTypeFEC)
+{
+    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
+                 ViEId(_instanceId, videoChannel),
+                 "%s(channel: %d, enable: %d, payloadTypeRED: %u, "
+                 "payloadTypeFEC: %u)",
+                 __FUNCTION__, videoChannel, enable, payloadTypeRED,
+                 payloadTypeFEC);
+
+    // Get the channel
+    ViEChannelManagerScoped cs(_channelManager);
+    ViEChannel* ptrViEChannel = cs.Channel(videoChannel);
+    if (ptrViEChannel == NULL)
+    {
+        // The channel doesn't exists
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
+                     ViEId(_instanceId, videoChannel),
+                     "%s: Channel %d doesn't exist", __FUNCTION__,
+                     videoChannel);
+        SetLastError(kViERtpRtcpInvalidChannelId);
+        return -1;
+    }
+
+    // Update the channel status with hybrid NACK FEC mode
+    if (ptrViEChannel->SetHybridNACKFECStatus(enable, payloadTypeRED,
+                                              payloadTypeFEC) != 0)
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
                      ViEId(_instanceId, videoChannel),

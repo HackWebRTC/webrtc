@@ -279,12 +279,7 @@ WebRtc_Word32 ViEReceiver::OnReceivedPayloadData(const WebRtc_UWord8* payloadDat
     {
         return 0;
     }
-    if (rtpHeader->frameType == webrtc::kFrameEmpty)
-    {
-        // Don't care about empty rtp packets, we might
-        // get this e.g. when using FEC
-        return 0;
-    }
+
     if (_vcm.IncomingPacket(payloadData, payloadSize, *rtpHeader) != 0)
     {
         // Check this...

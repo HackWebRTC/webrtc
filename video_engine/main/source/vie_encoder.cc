@@ -40,8 +40,10 @@ ViEEncoder::ViEEncoder(WebRtc_Word32 engineId, WebRtc_Word32 channelId,
         _engineId(engineId),
         _channelId(channelId),
         _numberOfCores(numberOfCores),
-        _vcm(*webrtc::VideoCodingModule::Create(ViEModuleId(engineId, channelId))),
-        _vpm(*webrtc::VideoProcessingModule::Create(ViEModuleId(engineId, channelId))),
+        _vcm(*webrtc::VideoCodingModule::Create(ViEModuleId(engineId,
+                                                            channelId))),
+        _vpm(*webrtc::VideoProcessingModule::Create(ViEModuleId(engineId,
+                                                                channelId))),
         _rtpRtcp(*RtpRtcp::CreateRtpRtcp(ViEModuleId(engineId,
                                                      channelId),
                                                      false)),
@@ -49,14 +51,15 @@ ViEEncoder::ViEEncoder(WebRtc_Word32 engineId, WebRtc_Word32 channelId,
         _dataCritsect(*CriticalSectionWrapper::CreateCriticalSection()),
         _paused(false), _timeLastIntraRequestMs(0),
         _channelsDroppingDeltaFrames(0), _dropNextFrame(false),
-        _fecEnabled(false), _codecObserver(NULL), _effectFilter(NULL),
-        _moduleProcessThread(moduleProcessThread), _hasReceivedSLI(false),
-        _pictureIdSLI(0), _hasReceivedRPSI(false), _pictureIdRPSI(0),
-        _fileRecorder(channelId)
+        _fecEnabled(false), _nackEnabled(false), _codecObserver(NULL),
+        _effectFilter(NULL), _moduleProcessThread(moduleProcessThread),
+        _hasReceivedSLI(false), _pictureIdSLI(0), _hasReceivedRPSI(false),
+        _pictureIdRPSI(0), _fileRecorder(channelId)
 {
-    WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideo, ViEId(engineId, channelId),
-               "%s(engineId: %d) 0x%p - Constructor", __FUNCTION__, engineId,
-               this);
+    WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideo,
+                 ViEId(engineId, channelId),
+                 "%s(engineId: %d) 0x%p - Constructor", __FUNCTION__, engineId,
+                 this);
 
     _vcm.InitializeSender();
     _vpm.EnableTemporalDecimation(true);
@@ -80,7 +83,8 @@ ViEEncoder::ViEEncoder(WebRtc_Word32 engineId, WebRtc_Word32 channelId,
     VideoCodec videoCodec;
     if (_vcm.Codec(webrtc::kVideoCodecVP8, &videoCodec) == VCM_OK)
     {
-        _vcm.RegisterSendCodec(&videoCodec, _numberOfCores, _rtpRtcp.MaxDataPayloadLength());
+        _vcm.RegisterSendCodec(&videoCodec, _numberOfCores,
+                               _rtpRtcp.MaxDataPayloadLength());
         _rtpRtcp.RegisterSendPayload(videoCodec.plName, videoCodec.plType);
     }
     else
@@ -91,7 +95,8 @@ ViEEncoder::ViEEncoder(WebRtc_Word32 engineId, WebRtc_Word32 channelId,
     VideoCodec videoCodec;
     if (_vcm.Codec(webrtc::kVideoCodecI420, &videoCodec) == VCM_OK)
     {
-        _vcm.RegisterSendCodec(&videoCodec, _numberOfCores, _rtpRtcp.MaxDataPayloadLength());
+        _vcm.RegisterSendCodec(&videoCodec, _numberOfCores,
+                               _rtpRtcp.MaxDataPayloadLength());
         _rtpRtcp.RegisterSendPayload(videoCodec.plName, videoCodec.plType);
     }
     else
@@ -127,8 +132,9 @@ ViEEncoder::ViEEncoder(WebRtc_Word32 engineId, WebRtc_Word32 channelId,
 
 ViEEncoder::~ViEEncoder()
 {
-    WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideo, ViEId(_engineId, _channelId),
-               "ViEEncoder Destructor 0x%p, engineId: %d", this, _engineId);
+    WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideo,
+                 ViEId(_engineId, _channelId),
+                 "ViEEncoder Destructor 0x%p, engineId: %d", this, _engineId);
 
     if (_rtpRtcp.NumberChildModules() > 0)
     {
@@ -161,16 +167,18 @@ ViEEncoder::~ViEEncoder()
 
 void ViEEncoder::Pause()
 {
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_engineId, _channelId),
-               "%s", __FUNCTION__);
+    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
+                 ViEId(_engineId, _channelId),
+                 "%s", __FUNCTION__);
     CriticalSectionScoped cs(_dataCritsect);
     _paused = true;
 }
 
 void ViEEncoder::Restart()
 {
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_engineId, _channelId),
-               "%s", __FUNCTION__);
+    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
+                 ViEId(_engineId, _channelId),
+                 "%s", __FUNCTION__);
     CriticalSectionScoped cs(_dataCritsect);
     _paused = false;
 }
@@ -183,8 +191,9 @@ void ViEEncoder::Restart()
 
 WebRtc_Word32 ViEEncoder::DropDeltaAfterKey(bool enable)
 {
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_engineId, _channelId),
-               "%s(%d)", __FUNCTION__, enable);
+    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
+                 ViEId(_engineId, _channelId),
+                 "%s(%d)", __FUNCTION__, enable);
     CriticalSectionScoped cs(_dataCritsect);
 
     if (enable)
@@ -196,9 +205,9 @@ WebRtc_Word32 ViEEncoder::DropDeltaAfterKey(bool enable)
         if (_channelsDroppingDeltaFrames < 0)
         {
             _channelsDroppingDeltaFrames = 0;
-            WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_engineId,
-                                                            _channelId),
-                       "%s: Called too many times", __FUNCTION__, enable);
+            WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
+                         ViEId(_engineId, _channelId),
+                         "%s: Called too many times", __FUNCTION__, enable);
             return -1;
         }
     }
@@ -238,12 +247,12 @@ WebRtc_Word32 ViEEncoder::GetCodec(WebRtc_UWord8 listIndex,
 // ----------------------------------------------------------------------------
 // External encoder
 // ----------------------------------------------------------------------------
-WebRtc_Word32 ViEEncoder::RegisterExternalEncoder(
-                                                  webrtc::VideoEncoder* encoder,
+WebRtc_Word32 ViEEncoder::RegisterExternalEncoder(webrtc::VideoEncoder* encoder,
                                                   WebRtc_UWord8 plType)
 {
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_engineId, _channelId),
-               "%s: pltype %u", __FUNCTION__, plType);
+    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
+                 ViEId(_engineId, _channelId),
+                  "%s: pltype %u", __FUNCTION__, plType);
 
     if (encoder == NULL)
         return -1;
@@ -260,8 +269,9 @@ WebRtc_Word32 ViEEncoder::RegisterExternalEncoder(
 
 WebRtc_Word32 ViEEncoder::DeRegisterExternalEncoder(WebRtc_UWord8 plType)
 {
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_engineId, _channelId),
-               "%s: pltype %u", __FUNCTION__, plType);
+    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
+                 ViEId(_engineId, _channelId),
+                 "%s: pltype %u", __FUNCTION__, plType);
 
     webrtc::VideoCodec currentSendCodec;
     if (_vcm.SendCodec(&currentSendCodec) == VCM_OK)
@@ -284,9 +294,9 @@ WebRtc_Word32 ViEEncoder::DeRegisterExternalEncoder(WebRtc_UWord8 plType)
         if (_vcm.RegisterSendCodec(&currentSendCodec, _numberOfCores,
                                    maxDataPayloadLength) != VCM_OK)
         {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId,
-                                                             _channelId),
-                       "Could not use internal encoder");
+            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
+                         ViEId(_engineId, _channelId),
+                         "Could not use internal encoder");
             return -1;
         }
     }
@@ -299,8 +309,9 @@ WebRtc_Word32 ViEEncoder::DeRegisterExternalEncoder(WebRtc_UWord8 plType)
 
 WebRtc_Word32 ViEEncoder::SetEncoder(const webrtc::VideoCodec& videoCodec)
 {
-    WEBRTC_TRACE( webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_engineId, _channelId),
-               "%s: CodecType: %d, width: %u, height: %u, maxPayloadLength: %u",
+    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
+                 ViEId(_engineId, _channelId),
+                 "%s: CodecType: %d, width: %u, height: %u, maxPayloadLength: %u",
                __FUNCTION__, videoCodec.codecType, videoCodec.width,
                videoCodec.height);
 
@@ -687,6 +698,7 @@ WebRtc_Word32 ViEEncoder::UpdateProtectionMethod()
     WebRtc_UWord8 dummyPTypeRed = 0;
     WebRtc_UWord8 dummyPTypeFEC = 0;
 
+    // check if fec is enabled
     WebRtc_Word32 error = _rtpRtcp.GenericFECStatus(fecEnabled, dummyPTypeRed,
                                                     dummyPTypeFEC);
     if (error)
@@ -694,19 +706,35 @@ WebRtc_Word32 ViEEncoder::UpdateProtectionMethod()
         return -1;
     }
 
-    if (_fecEnabled != fecEnabled)
+    // check if nack is enabled
+    bool nackEnabled = (_rtpRtcp.NACK() == kNackOff) ? false : true;
+    if (_fecEnabled == fecEnabled && _nackEnabled == nackEnabled)
     {
-        WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_engineId, _channelId),
-                   "%s: FEC status ", __FUNCTION__, fecEnabled);
+        // no change to current state
+        return 0;
+    }
+    _fecEnabled = fecEnabled;
+    _nackEnabled = nackEnabled;
 
-        _vcm.SetVideoProtection(webrtc::kProtectionFEC, fecEnabled);
-        if (fecEnabled)
-        {
-            _vcm.RegisterProtectionCallback(this);
-        } else
-        {
-            _vcm.RegisterProtectionCallback(NULL);
-        }
+    // Set Video Protection for VCM
+    if (fecEnabled && nackEnabled)
+    {
+        _vcm.SetVideoProtection(webrtc::kProtectionNackFEC, true);
+    }
+    else
+    {
+        _vcm.SetVideoProtection(webrtc::kProtectionFEC, _fecEnabled);
+        _vcm.SetVideoProtection(webrtc::kProtectionNack, _nackEnabled);
+        _vcm.SetVideoProtection(webrtc::kProtectionNackFEC, false);
+    }
+
+    // If nack and/or fec is enalbed, the following should be triggered
+    if (fecEnabled || nackEnabled)
+    {
+        WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
+                     ViEId(_engineId, _channelId),
+                     "%s: FEC status ", __FUNCTION__, fecEnabled);
+        _vcm.RegisterProtectionCallback(this);
         // Need to reregister the send codec in order to set the new MTU
         webrtc::VideoCodec codec;
         if (_vcm.SendCodec(&codec) == 0)
@@ -715,19 +743,20 @@ WebRtc_Word32 ViEEncoder::UpdateProtectionMethod()
             codec.startBitrate = _vcm.Bitrate();
             if (_vcm.RegisterSendCodec(&codec, _numberOfCores, maxPayLoad) != 0)
             {
-                WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId,
-                                                                 _channelId),
-                           "%s: Failed to update Sendcodec when enabling FEC",
-                           __FUNCTION__, fecEnabled);
+                WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
+                             ViEId(_engineId, _channelId),
+                             "%s: Failed to update Sendcodec when enabling FEC",
+                             __FUNCTION__, fecEnabled);
                 return -1;
             }
         }
-        _fecEnabled = fecEnabled;
+        return 0;
     }
-
-    // Update NACK status
-    _vcm.SetVideoProtection(webrtc::kProtectionNack, _rtpRtcp.NACK() != kNackOff);
-
+    else
+    {
+        // FEC and NACK are disabled
+        _vcm.RegisterProtectionCallback(NULL);
+    }
     return 0;
 }
 

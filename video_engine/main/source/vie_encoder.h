@@ -162,6 +162,7 @@ private:
     bool _dropNextFrame;
     //Loss protection
     bool _fecEnabled;
+    bool _nackEnabled;
     // Uses
     ViEEncoderObserver* _codecObserver;
     ViEEffectFilter* _effectFilter;

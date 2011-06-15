@@ -76,6 +76,9 @@ public:
     virtual int SetFECStatus(const int videoChannel, const bool enable,
                              const unsigned char payloadTypeRED,
                              const unsigned char payloadTypeFEC);
+    virtual int SetHybridNACKFECStatus(const int videoChannel, const bool enable,
+                                       const unsigned char payloadTypeRED,
+                                       const unsigned char payloadTypeFEC);
 
     virtual int SetKeyFrameRequestMethod(const int videoChannel,
                                          const ViEKeyFrameRequestMethod method);
