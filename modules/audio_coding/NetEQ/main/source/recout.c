@@ -341,11 +341,13 @@ int WebRtcNetEQ_RecOutInternal(DSPInst_t *inst, WebRtc_Word16 *pw16_outData,
             inst->codec_ptr_inst.funcDecodeInit(inst->codec_ptr_inst.codec_state);
         }
 
+#ifdef NETEQ_CNG_CODEC
         /* And reset CNG */
         if (inst->CNG_Codec_inst != NULL)
         {
             WebRtcCng_InitDec(inst->CNG_Codec_inst);
         }
+#endif /*NETEQ_CNG_CODEC*/
     }
 
     fs_mult = WebRtcNetEQ_CalcFsMult(inst->fs);
