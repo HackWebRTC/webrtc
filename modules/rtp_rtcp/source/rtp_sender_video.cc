@@ -42,6 +42,7 @@ RTPSenderVideo::RTPSenderVideo(const WebRtc_Word32 id, RTPSenderInterface* rtpSe
     _codeRateKey(0),
     _codeRateDelta(0),
     _fecProtectionFactor(0),
+    _numberFirstPartition(0),
 
     // H263
     _savedByte(0),
@@ -69,6 +70,7 @@ RTPSenderVideo::Init()
     _codeRateKey = 0;
     _codeRateDelta = 0;
     _fecProtectionFactor = 0;
+    _numberFirstPartition = 0;
     return 0;
 }
 
@@ -176,7 +178,8 @@ RTPSenderVideo::SendVideoPacket(const FrameType frameType,
             lastMediaRtpHeader.data[1] = _payloadTypeRED; // Replace payload and clear
                                                           // marker bit.
 
-            retVal = _fec.GenerateFEC(_mediaPacketListFec, fecPacketList,_fecProtectionFactor);
+            retVal = _fec.GenerateFEC(_mediaPacketListFec, _fecProtectionFactor,
+                                      _numberFirstPartition, fecPacketList);
             while(!_rtpPacketListFec.Empty())
             {
                 WebRtc_UWord8 newDataBuffer[IP_PACKET_SIZE];
@@ -346,6 +349,10 @@ RTPSenderVideo::SendVideo(const RtpVideoCodecTypes videoType,
     {
         _fecProtectionFactor = _codeRateDelta;
     }
+
+    // Default setting for number of first partition packets:
+    // Will be extracted in SendVP8 for VP8 codec; other codecs use 0
+    _numberFirstPartition = 0;
 
     WebRtc_Word32 retVal = -1;
     switch(videoType)
@@ -1122,6 +1129,9 @@ RTPSenderVideo::SendVP8(const FrameType frameType,
         // Set marker bit true if this is the last packet in frame.
         _rtpSender.BuildRTPheader(dataBuffer, payloadType, last,
             captureTimeStamp);
+
+        // TODO (marpan): Set _numberFirstPartition here:
+        // Equal to the first packet that contains last fragment of first partition
 
         if (-1 == SendVideoPacket(frameType, dataBuffer, payloadBytesInPacket,
             rtpHeaderLength))

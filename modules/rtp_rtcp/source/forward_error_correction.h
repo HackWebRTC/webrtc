@@ -84,27 +84,35 @@ public:
 
     /**
      * Destructor. Before freeing an instance of the class, #DecodeFEC() must be called
-     * in a particular fashion to free oustanding memory. Refer to #DecodeFEC().
+     * in a particular fashion to free outstanding memory. Refer to #DecodeFEC().
      */
     virtual ~ForwardErrorCorrection();
 
     /**
      * Generates a list of FEC packets from supplied media packets.
      *
-     * \param[in]  mediaPacketList  List of media packets to protect, of type #Packet.
-     *                               All packets must belong to the same frame and the
-     *                               list must not be empty.
-     * \param[out] fecPacketList    List of FEC packets, of type #Packet. Must be empty
-     *                               on entry. The memory available through the list
-     *                               will be valid until the next call to GenerateFEC().
-     * \param[in]  protectionFactor FEC protection overhead in the [0, 255] domain. To
-     *                               obtain 100% overhead, or an equal number of FEC
-     *                               packets as media packets, use 255.
+     * \param[in]  mediaPacketList     List of media packets to protect, of type #Packet.
+     *                                 All packets must belong to the same frame and the
+     *                                 list must not be empty.
+     * \param[in]  protectionFactor    FEC protection overhead in the [0, 255] domain. To
+     *                                 obtain 100% overhead, or an equal number of FEC
+     *                                 packets as media packets, use 255.
+     * \param[in] numImportantPackets  The number of "important" packets in the frame.
+     *                                 These packets may receive greater protection than
+     *                                 the remaining packets. The important packets must
+     *                                 be located at the start of the media packet list.
+     *                                 For codecs with data partitioning, the important
+     *                                 packets may correspond to first partition packets.
+     * \param[out] fecPacketList       List of FEC packets, of type #Packet. Must be empty
+     *                                 on entry. The memory available through the list
+     *                                 will be valid until the next call to GenerateFEC().
      *
      * \return 0 on success, -1 on failure.
      */
-     WebRtc_Word32 GenerateFEC(const ListWrapper& mediaPacketList, ListWrapper& fecPacketList,
-         WebRtc_UWord8 protectionFactor);
+     WebRtc_Word32 GenerateFEC(const ListWrapper& mediaPacketList,
+                               WebRtc_UWord8 protectionFactor,
+                               WebRtc_UWord32 numImportantPackets,
+                               ListWrapper& fecPacketList);
 
     /**
      * Decodes a list of media and FEC packets. It will parse the input received packet

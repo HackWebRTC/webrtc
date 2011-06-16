@@ -65,6 +65,8 @@
         'fec_private_tables.h',
         'forward_error_correction.cc',
         'forward_error_correction.h',
+        'forward_error_correction_internal.cc',
+        'forward_error_correction_internal.h',
         'overuse_detector.cc',
         'overuse_detector.h',
         'h263_information.cc',

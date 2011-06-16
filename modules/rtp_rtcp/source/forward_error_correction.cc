@@ -13,67 +13,47 @@
 #include "rtp_utility.h"
 
 #include "trace.h"
-
 #include <cassert>
 #include <cstring>
 
-#define RtpHeaderSize 12    /**> Minimum RTP header size in bytes. */
-#define FecHeaderSize 10    /**> FEC header size in bytes. */
-#define MaskSizeLBitSet 6   /**> Packet mask size in bytes (L bit is set). */
-#define MaskSizeLBitClear 2 /**> Packet mask size in bytes (L bit is cleared). */
-
-#define UlpHeaderSizeLBitSet  (2+MaskSizeLBitSet)      /**> ULP header size in bytes (L bit is set). */
-#define UlpHeaderSizeLBitClear (2 + MaskSizeLBitClear) /**> ULP header size in bytes (L bit is cleared). */
-#define TransportOverhead 28  /**> Transport header size in bytes. Assume UDP/IPv4 as a reasonable minimum. */
+#include "forward_error_correction_internal.h"
 
 namespace webrtc {
-/**
- * Used for internal storage of FEC packets in a list.
- */
+
+// Minimum RTP header size in bytes.
+const WebRtc_UWord8 kRtpHeaderSize = 12;
+
+// FEC header size in bytes.
+const WebRtc_UWord8 kFecHeaderSize = 10;
+
+// ULP header size in bytes (L bit is set).
+const WebRtc_UWord8 kUlpHeaderSizeLBitSet = (2 + kMaskSizeLBitSet);
+
+// ULP header size in bytes (L bit is cleared).
+const WebRtc_UWord8 kUlpHeaderSizeLBitClear = (2 + kMaskSizeLBitClear);
+
+//Transport header size in bytes. Assume UDP/IPv4 as a reasonable minimum.
+const WebRtc_UWord8 kTransportOverhead = 28;
+
+//
+// Used for internal storage of FEC packets in a list.
+//
 struct FecPacket
 {
-    ListWrapper protectedPktList;           /**> List containing #ProtectedPacket types. */
+    ListWrapper protectedPktList;        /**> List containing #ProtectedPacket types.*/
     WebRtc_UWord16 seqNum;               /**> Sequence number. */
     WebRtc_UWord32 ssrc;                 /**> SSRC of the current frame. */
     ForwardErrorCorrection::Packet* pkt; /**> Pointer to the packet storage. */
 };
 
-/**
- * Used to link media packets to their protecting FEC packets.
- */
+//
+// Used to link media packets to their protecting FEC packets.
+//
 struct ProtectedPacket
 {
     WebRtc_UWord16 seqNum;               /**> Sequence number. */
     ForwardErrorCorrection::Packet* pkt; /**> Pointer to the packet storage. */
 };
-
-namespace // Unnamed namespace gives internal linkage.
-{
-    /**
-     * Returns an array of packet masks. Every NumMaskBytes-bytes of the array
-     * corresponds to the mask of a single FEC packet. The mask indicates which
-     * media packets should be protected by the FEC packet.
-     *
-     * \param[out] packetMask      A pointer to hold the packet mask array, of size
-     *                              numFecPackets * NumMaskBytes;
-     * \param[in]  numMediaPackets The number of media packets to protect.
-     *                              [1, maxMediaPackets].
-     * \param[in]  numFecPackets   The number of FEC packets which will be generated.
-     *                              [1, numMediaPackets].
-     */
-    void
-    GeneratePacketMasks(const WebRtc_UWord8*& packetMask,
-                        const WebRtc_UWord32 numMediaPackets,
-                        const WebRtc_UWord32 numFecPackets)
-    {
-        assert(numMediaPackets <= sizeof(packetMaskTbl)/sizeof(*packetMaskTbl) &&
-            numMediaPackets > 0);
-        assert(numFecPackets <= numMediaPackets && numFecPackets > 0);
-
-        // Retrieve corresponding mask table.
-        packetMask = packetMaskTbl[numMediaPackets - 1][numFecPackets - 1];
-    }
-}
 
 ForwardErrorCorrection::ForwardErrorCorrection(const WebRtc_Word32 id) :
     _id(id),
@@ -112,8 +92,9 @@ ForwardErrorCorrection::~ForwardErrorCorrection()
 //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 WebRtc_Word32
 ForwardErrorCorrection::GenerateFEC(const ListWrapper& mediaPacketList,
-                                    ListWrapper& fecPacketList,
-                                    WebRtc_UWord8 protectionFactor)
+                                    WebRtc_UWord8 protectionFactor,
+                                    WebRtc_UWord32 numImportantPackets,
+                                    ListWrapper& fecPacketList)
 {
     if (mediaPacketList.Empty())
     {
@@ -131,9 +112,12 @@ ForwardErrorCorrection::GenerateFEC(const ListWrapper& mediaPacketList,
 
     const WebRtc_UWord16 numMediaPackets = mediaPacketList.GetSize();
     const WebRtc_UWord8 lBit = numMediaPackets > 16 ? 1 : 0;
-    const WebRtc_UWord16 numMaskBytes = (lBit == 1)? MaskSizeLBitSet : MaskSizeLBitClear;
-    const WebRtc_UWord16 ulpHeaderSize = (lBit == 1)? UlpHeaderSizeLBitSet : UlpHeaderSizeLBitClear;
-    const WebRtc_UWord16 fecRtpOffset = FecHeaderSize + ulpHeaderSize - RtpHeaderSize;
+    const WebRtc_UWord16 numMaskBytes =
+        (lBit == 1)? kMaskSizeLBitSet : kMaskSizeLBitClear;
+    const WebRtc_UWord16 ulpHeaderSize =
+        (lBit == 1)? kUlpHeaderSizeLBitSet : kUlpHeaderSizeLBitClear;
+    const WebRtc_UWord16 fecRtpOffset =
+        kFecHeaderSize + ulpHeaderSize - kRtpHeaderSize;
     const WebRtc_UWord16 maxMediaPackets = numMaskBytes * 8;
 
     if (numMediaPackets > maxMediaPackets)
@@ -144,6 +128,23 @@ ForwardErrorCorrection::GenerateFEC(const ListWrapper& mediaPacketList,
         return -1;
     }
 
+    // Error checking on the number of important packets.
+    // Can't have more important packets than media packets.
+    if (numImportantPackets > numMediaPackets)
+    {
+        WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
+            "Number of Important packet greater than number of Media Packets %d %d",
+            numImportantPackets, numMediaPackets);
+        return -1;
+    }
+    if (numImportantPackets < 0)
+    {
+        WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
+            "Number of Important packets less than zero %d %d",
+            numImportantPackets, numMediaPackets);
+        return -1;
+    }
+
     // Do some error checking on the media packets.
     Packet* mediaPacket;
     ListItem* mediaListItem = mediaPacketList.First();
@@ -151,7 +152,7 @@ ForwardErrorCorrection::GenerateFEC(const ListWrapper& mediaPacketList,
     {
         mediaPacket = static_cast<Packet*>(mediaListItem->GetItem());
 
-        if (mediaPacket->length < RtpHeaderSize)
+        if (mediaPacket->length < kRtpHeaderSize)
         {
             WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
                 "%s media packet (%d bytes) is smaller than RTP header",
@@ -160,7 +161,7 @@ ForwardErrorCorrection::GenerateFEC(const ListWrapper& mediaPacketList,
         }
 
         // Ensure our FEC packets will fit in a typical MTU.
-        if (mediaPacket->length + PacketOverhead() + TransportOverhead >
+        if (mediaPacket->length + PacketOverhead() + kTransportOverhead >
             IP_PACKET_SIZE)
         {
             WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
@@ -197,8 +198,10 @@ ForwardErrorCorrection::GenerateFEC(const ListWrapper& mediaPacketList,
     }
 
     // -- Generate packet masks --
-    const WebRtc_UWord8* packetMask;
-    GeneratePacketMasks(packetMask, numMediaPackets, numFecPackets);
+    WebRtc_UWord8 packetMask[numFecPackets * numMaskBytes];
+    memset(packetMask, 0, numFecPackets * numMaskBytes);
+    internal::GeneratePacketMasks(numMediaPackets, numFecPackets,
+        numImportantPackets, packetMask);
 
     // -- Generate FEC bit strings --
     WebRtc_UWord8 mediaPayloadLength[2];
@@ -218,7 +221,7 @@ ForwardErrorCorrection::GenerateFEC(const ListWrapper& mediaPacketList,
 
                 // Assign network-ordered media payload length.
                 ModuleRTPUtility::AssignUWord16ToBuffer(mediaPayloadLength,
-                    mediaPacket->length - RtpHeaderSize);
+                    mediaPacket->length - kRtpHeaderSize);
                 fecPacketLength = mediaPacket->length + fecRtpOffset;
                 // On the first protected packet, we don't need to XOR.
                 if (_generatedFecPackets[i].length == 0)
@@ -231,9 +234,9 @@ ForwardErrorCorrection::GenerateFEC(const ListWrapper& mediaPacketList,
                     memcpy(&_generatedFecPackets[i].data[8], mediaPayloadLength, 2);
 
                     // Copy RTP payload, leaving room for the ULP header.
-                    memcpy(&_generatedFecPackets[i].data[FecHeaderSize + ulpHeaderSize],
-                        &mediaPacket->data[RtpHeaderSize],
-                        mediaPacket->length - RtpHeaderSize);
+                    memcpy(&_generatedFecPackets[i].data[kFecHeaderSize + ulpHeaderSize],
+                        &mediaPacket->data[kRtpHeaderSize],
+                        mediaPacket->length - kRtpHeaderSize);
                 }
                 else
                 {
@@ -252,7 +255,7 @@ ForwardErrorCorrection::GenerateFEC(const ListWrapper& mediaPacketList,
                     _generatedFecPackets[i].data[9] ^= mediaPayloadLength[1];
 
                     // XOR with RTP payload, leaving room for the ULP header.
-                    for (WebRtc_Word32 j = FecHeaderSize + ulpHeaderSize;
+                    for (WebRtc_Word32 j = kFecHeaderSize + ulpHeaderSize;
                         j < fecPacketLength; j++)
                     {
                         _generatedFecPackets[i].data[j] ^=
@@ -278,9 +281,12 @@ ForwardErrorCorrection::GenerateFEC(const ListWrapper& mediaPacketList,
 
         if (_generatedFecPackets[i].length == 0)
         {
-            // This will occur in the event of an all-zero mask.
-            // Ensure we still mark the length of the headers.
-            _generatedFecPackets[i].length = FecHeaderSize + ulpHeaderSize;
+            //Note: This shouldn't happen: means packet mask is wrong or poorly designed
+            WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
+                "Packet mask has row of zeros %d %d",
+                numMediaPackets, numFecPackets);
+            return -1;
+
         }
     }
 
@@ -330,7 +336,7 @@ ForwardErrorCorrection::GenerateFEC(const ListWrapper& mediaPacketList,
         // Copy the payload size to the protection length field.
         // (We protect the entire packet.)
         ModuleRTPUtility::AssignUWord16ToBuffer(&_generatedFecPackets[i].data[10],
-            _generatedFecPackets[i].length - FecHeaderSize - ulpHeaderSize);
+            _generatedFecPackets[i].length - kFecHeaderSize - ulpHeaderSize);
 
         // Copy the packet mask.
         memcpy(&_generatedFecPackets[i].data[12], &packetMask[i * numMaskBytes],
@@ -517,7 +523,7 @@ ForwardErrorCorrection::DecodeFEC(ListWrapper& receivedPacketList,
                 // We store this for determining frame completion later.
                 _seqNumBase = ModuleRTPUtility::BufferToUWord16(&fecPacket->pkt->data[2]);
                 const WebRtc_UWord16 maskSizeBytes = (fecPacket->pkt->data[0] & 0x40) ?
-                    MaskSizeLBitSet : MaskSizeLBitClear; // L bit set?
+                    kMaskSizeLBitSet : kMaskSizeLBitClear; // L bit set?
 
                 for (WebRtc_UWord16 byteIdx = 0; byteIdx < maskSizeBytes; byteIdx++)
                 {
@@ -617,7 +623,7 @@ ForwardErrorCorrection::DecodeFEC(ListWrapper& receivedPacketList,
             // Recovery possible.
             WebRtc_UWord8 lengthRecovery[2];
             const WebRtc_UWord16 ulpHeaderSize = fecPacket->pkt->data[0] & 0x40 ?
-                UlpHeaderSizeLBitSet : UlpHeaderSizeLBitClear; // L bit set?
+                kUlpHeaderSizeLBitSet : kUlpHeaderSizeLBitClear; // L bit set?
 
             RecoveredPacket* recPacketToInsert = new RecoveredPacket;
             recPacketToInsert->wasRecovered = true;
@@ -641,8 +647,8 @@ ForwardErrorCorrection::DecodeFEC(ListWrapper& receivedPacketList,
             memcpy(&lengthRecovery, &fecPacket->pkt->data[8], 2);
 
             // Copy FEC payload, skipping the ULP header.
-            memcpy(&recPacketToInsert->pkt->data[RtpHeaderSize],
-                &fecPacket->pkt->data[FecHeaderSize + ulpHeaderSize],
+            memcpy(&recPacketToInsert->pkt->data[kRtpHeaderSize],
+                &fecPacket->pkt->data[kFecHeaderSize + ulpHeaderSize],
                 ModuleRTPUtility::BufferToUWord16(protectionLength));
 
             protectedPacketListItem = fecPacket->protectedPktList.First();
@@ -672,13 +678,13 @@ ForwardErrorCorrection::DecodeFEC(ListWrapper& receivedPacketList,
 
                     // XOR with the network-ordered payload size.
                     ModuleRTPUtility::AssignUWord16ToBuffer(mediaPayloadLength,
-                        protectedPacket->pkt->length - RtpHeaderSize);
+                        protectedPacket->pkt->length - kRtpHeaderSize);
                     lengthRecovery[0] ^= mediaPayloadLength[0];
                     lengthRecovery[1] ^= mediaPayloadLength[1];
 
                     // XOR with RTP payload.
                     // TODO: Are we doing more XORs than required here?
-                    for (WebRtc_Word32 i = RtpHeaderSize; i < protectedPacket->pkt->length;
+                    for (WebRtc_Word32 i = kRtpHeaderSize; i < protectedPacket->pkt->length;
                         i++)
                     {
                         recPacketToInsert->pkt->data[i] ^= protectedPacket->pkt->data[i];
@@ -712,7 +718,7 @@ ForwardErrorCorrection::DecodeFEC(ListWrapper& receivedPacketList,
 
             // Recover the packet length.
             recPacketToInsert->pkt->length =
-                ModuleRTPUtility::BufferToUWord16(lengthRecovery) + RtpHeaderSize;
+                ModuleRTPUtility::BufferToUWord16(lengthRecovery) + kRtpHeaderSize;
 
             // Insert into recovered list in correct position.
             recPacketListItem = recoveredPacketList.Last();
@@ -823,6 +829,6 @@ ForwardErrorCorrection::DecodeFEC(ListWrapper& receivedPacketList,
 WebRtc_UWord16
 ForwardErrorCorrection::PacketOverhead()
 {
-    return FecHeaderSize + UlpHeaderSizeLBitSet;
+    return kFecHeaderSize + kUlpHeaderSizeLBitSet;
 }
 } // namespace webrtc

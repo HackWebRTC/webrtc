@@ -152,8 +152,9 @@ private:
     WebRtc_UWord8             _codeRateKey;
     WebRtc_UWord8             _codeRateDelta;
     WebRtc_UWord8             _fecProtectionFactor;
-    ListWrapper                _mediaPacketListFec;
-    ListWrapper                _rtpPacketListFec;
+    WebRtc_UWord32            _numberFirstPartition;
+    ListWrapper               _mediaPacketListFec;
+    ListWrapper               _rtpPacketListFec;
 
     // H263
     WebRtc_UWord8             _savedByte;
