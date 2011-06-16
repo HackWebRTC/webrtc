@@ -198,7 +198,7 @@ ForwardErrorCorrection::GenerateFEC(const ListWrapper& mediaPacketList,
     }
 
     // -- Generate packet masks --
-    WebRtc_UWord8 packetMask[numFecPackets * numMaskBytes];
+    WebRtc_UWord8* packetMask = new WebRtc_UWord8[numFecPackets * numMaskBytes];
     memset(packetMask, 0, numFecPackets * numMaskBytes);
     internal::GeneratePacketMasks(numMediaPackets, numFecPackets,
         numImportantPackets, packetMask);
@@ -285,6 +285,7 @@ ForwardErrorCorrection::GenerateFEC(const ListWrapper& mediaPacketList,
             WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
                 "Packet mask has row of zeros %d %d",
                 numMediaPackets, numFecPackets);
+            delete packetMask;
             return -1;
 
         }
@@ -342,7 +343,7 @@ ForwardErrorCorrection::GenerateFEC(const ListWrapper& mediaPacketList,
         memcpy(&_generatedFecPackets[i].data[12], &packetMask[i * numMaskBytes],
             numMaskBytes);
     }
-
+    delete packetMask; 
     return 0;
 }
 
