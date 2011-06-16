@@ -22,7 +22,7 @@
 
 static const int kInitCheck = 42;
 
-WebRtc_Word16 WebRtcVad_get_version(char *version, int length_bytes)
+WebRtc_Word16 WebRtcVad_get_version(char *version, size_t size_bytes)
 {
     const char my_version[] = "VAD 1.2.0";
 
@@ -31,7 +31,7 @@ WebRtc_Word16 WebRtcVad_get_version(char *version, int length_bytes)
         return -1;
     }
 
-    if (length_bytes < sizeof(my_version))
+    if (size_bytes < sizeof(my_version))
     {
         return -1;
     }

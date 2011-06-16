@@ -21,6 +21,10 @@
 namespace webrtc {
 namespace {
 
+// If false, this will write out a new statistics file.
+// For usual testing we normally want to read the file.
+const bool kReadStatFile = true;
+
 struct ThreadData {
   ThreadData(int thread_num_, AudioProcessing* ap_)
       : thread_num(thread_num_),
@@ -104,19 +108,33 @@ ApmTest::ApmTest()
       far_file_(NULL),
       near_file_(NULL),
       stat_file_(NULL),
-      read_stat_(true) {
-}
+      frame_(NULL),
+      reverse_frame_(NULL) {}
 
 void ApmTest::SetUp() {
   apm_ = AudioProcessing::Create(0);
   ASSERT_TRUE(apm_ != NULL);
+  
+  frame_ = new AudioFrame();
+  reverse_frame_ = new AudioFrame();
+
+  ASSERT_EQ(apm_->kNoError, apm_->set_sample_rate_hz(32000));
+  ASSERT_EQ(apm_->kNoError, apm_->set_num_channels(2, 2));
+  ASSERT_EQ(apm_->kNoError, apm_->set_num_reverse_channels(2));
+
+  frame_->_payloadDataLengthInSamples = 320;
+  frame_->_audioChannel = 2;
+  frame_->_frequencyInHz = 32000;
+  reverse_frame_->_payloadDataLengthInSamples = 320;
+  reverse_frame_->_audioChannel = 2;
+  reverse_frame_->_frequencyInHz = 32000;
 
   far_file_ = fopen("aecFar.pcm", "rb");
   ASSERT_TRUE(far_file_ != NULL) << "Cannot read source file aecFar.pcm\n";
   near_file_ = fopen("aecNear.pcm", "rb");
   ASSERT_TRUE(near_file_ != NULL) << "Cannot read source file aecNear.pcm\n";
 
-  if (read_stat_) {
+  if (kReadStatFile) {
     stat_file_  = fopen("statData.dat", "rb");
     ASSERT_TRUE(stat_file_ != NULL) <<
       "Cannot write to source file statData.dat\n";
@@ -124,15 +142,27 @@ void ApmTest::SetUp() {
 }
 
 void ApmTest::TearDown() {
-  if (far_file_ != NULL) {
+  if (frame_) {
+    delete frame_;
+  }
+  frame_ = NULL;
+  
+  if (reverse_frame_) {
+    delete reverse_frame_;
+  }
+  reverse_frame_ = NULL;
+  
+  if (far_file_) {
     ASSERT_EQ(0, fclose(far_file_));
   }
   far_file_ = NULL;
-  if (near_file_ != NULL) {
+  
+  if (near_file_) {
     ASSERT_EQ(0, fclose(near_file_));
   }
   near_file_ = NULL;
-  if (stat_file_ != NULL) {
+  
+  if (stat_file_) {
     ASSERT_EQ(0, fclose(stat_file_));
   }
   stat_file_ = NULL;
@@ -143,7 +173,7 @@ void ApmTest::TearDown() {
   apm_ = NULL;
 }
 
-TEST_F(ApmTest, Deadlock) {
+/*TEST_F(ApmTest, Deadlock) {
   const int num_threads = 16;
   std::vector<ThreadWrapper*> threads(num_threads);
   std::vector<ThreadData*> thread_data(num_threads);
@@ -177,43 +207,110 @@ TEST_F(ApmTest, Deadlock) {
     delete thread_data[i];
     thread_data[i] = NULL;
   }
+}*/
+
+TEST_F(ApmTest, StreamParameters) {
+  // No errors when the components are disabled.
+  EXPECT_EQ(apm_->kNoError,
+            apm_->ProcessStream(frame_));
+
+  // Missing agc level
+  EXPECT_EQ(apm_->kNoError, apm_->Initialize());
+  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->Enable(true));
+  EXPECT_EQ(apm_->kStreamParameterNotSetError,
+            apm_->ProcessStream(frame_));
+  EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(100));
+  EXPECT_EQ(apm_->kNoError,
+            apm_->echo_cancellation()->set_stream_drift_samples(0));
+  EXPECT_EQ(apm_->kStreamParameterNotSetError,
+            apm_->ProcessStream(frame_));
+  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->Enable(false));
+
+  // Missing delay
+  EXPECT_EQ(apm_->kNoError, apm_->Initialize());
+  EXPECT_EQ(apm_->kNoError, apm_->echo_cancellation()->Enable(true));
+  EXPECT_EQ(apm_->kStreamParameterNotSetError,
+            apm_->ProcessStream(frame_));
+  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->Enable(true));
+  EXPECT_EQ(apm_->kNoError,
+            apm_->echo_cancellation()->set_stream_drift_samples(0));
+  EXPECT_EQ(apm_->kNoError,
+            apm_->gain_control()->set_stream_analog_level(127));
+  EXPECT_EQ(apm_->kStreamParameterNotSetError,
+            apm_->ProcessStream(frame_));
+  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->Enable(false));
+
+  // Missing drift
+  EXPECT_EQ(apm_->kNoError, apm_->Initialize());
+  EXPECT_EQ(apm_->kNoError,
+            apm_->echo_cancellation()->enable_drift_compensation(true));
+  EXPECT_EQ(apm_->kStreamParameterNotSetError,
+            apm_->ProcessStream(frame_));
+  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->Enable(true));
+  EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(100));
+  EXPECT_EQ(apm_->kNoError,
+            apm_->gain_control()->set_stream_analog_level(127));
+  EXPECT_EQ(apm_->kStreamParameterNotSetError,
+            apm_->ProcessStream(frame_));
+
+  // No stream parameters
+  EXPECT_EQ(apm_->kNoError, apm_->Initialize());
+  EXPECT_EQ(apm_->kNoError,
+            apm_->AnalyzeReverseStream(reverse_frame_));
+  EXPECT_EQ(apm_->kStreamParameterNotSetError,
+            apm_->ProcessStream(frame_));
+
+  // All there
+  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->Enable(true));
+  EXPECT_EQ(apm_->kNoError, apm_->Initialize());
+  EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(100));
+  EXPECT_EQ(apm_->kNoError,
+            apm_->echo_cancellation()->set_stream_drift_samples(0));
+  EXPECT_EQ(apm_->kNoError,
+            apm_->gain_control()->set_stream_analog_level(127));
+  EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
+}
+
+TEST_F(ApmTest, Channels) {
+  // Testing number of invalid channels
+  EXPECT_EQ(apm_->kBadParameterError, apm_->set_num_channels(0, 1));
+  EXPECT_EQ(apm_->kBadParameterError, apm_->set_num_channels(1, 0));
+  EXPECT_EQ(apm_->kBadParameterError, apm_->set_num_channels(3, 1));
+  EXPECT_EQ(apm_->kBadParameterError, apm_->set_num_channels(1, 3));
+  EXPECT_EQ(apm_->kBadParameterError, apm_->set_num_reverse_channels(0));
+  EXPECT_EQ(apm_->kBadParameterError, apm_->set_num_reverse_channels(3));
+  // Testing number of valid channels
+  for (int i = 1; i < 3; i++) {
+    for (int j = 1; j < 3; j++) {
+      if (j > i) {
+        EXPECT_EQ(apm_->kBadParameterError, apm_->set_num_channels(i, j));
+      } else {
+        EXPECT_EQ(apm_->kNoError, apm_->set_num_channels(i, j));
+        EXPECT_EQ(j, apm_->num_output_channels());
+      }
+    }
+    EXPECT_EQ(i, apm_->num_input_channels());
+    EXPECT_EQ(apm_->kNoError, apm_->set_num_reverse_channels(i));
+    EXPECT_EQ(i, apm_->num_reverse_channels());
+  }
+}
+
+TEST_F(ApmTest, SampleRates) {
+  // Testing invalid sample rates
+  EXPECT_EQ(apm_->kBadParameterError, apm_->set_sample_rate_hz(10000));
+  // Testing valid sample rates
+  int fs[] = {8000, 16000, 32000};
+  for (size_t i = 0; i < sizeof(fs) / sizeof(*fs); i++) {
+    EXPECT_EQ(apm_->kNoError, apm_->set_sample_rate_hz(fs[i]));
+    EXPECT_EQ(fs[i], apm_->sample_rate_hz());
+  }
 }
 
 TEST_F(ApmTest, Process) {
-  if (!read_stat_) {
+  if (!kReadStatFile) {
     stat_file_  = fopen("statData.dat", "wb");
     ASSERT_TRUE(stat_file_ != NULL)
       << "Cannot write to source file statData.dat\n";
-  }
-  // Testing number of invalid channels
-  ASSERT_EQ(apm_->kBadParameterError, apm_->set_num_channels(0, 1));
-  ASSERT_EQ(apm_->kBadParameterError, apm_->set_num_channels(1, 0));
-  ASSERT_EQ(apm_->kBadParameterError, apm_->set_num_channels(3, 1));
-  ASSERT_EQ(apm_->kBadParameterError, apm_->set_num_channels(1, 3));
-  ASSERT_EQ(apm_->kBadParameterError, apm_->set_num_reverse_channels(0));
-  ASSERT_EQ(apm_->kBadParameterError, apm_->set_num_reverse_channels(3));
-  // Testing number of valid channels
-  for (int ii = 1; ii < 3; ++ii) {
-    for (int jj = 1; jj < 3; ++jj) {
-      if (jj > ii ) {
-        ASSERT_EQ(apm_->kBadParameterError, apm_->set_num_channels(ii, jj));
-      } else {
-        ASSERT_EQ(apm_->kNoError, apm_->set_num_channels(ii, jj));
-        ASSERT_EQ(jj, apm_->num_output_channels());
-      }
-    }
-    ASSERT_EQ(ii, apm_->num_input_channels());
-    ASSERT_EQ(apm_->kNoError, apm_->set_num_reverse_channels(ii));
-    ASSERT_EQ(ii, apm_->num_reverse_channels());
-  }
-
-  // Testing invalid sample rates
-  ASSERT_EQ(apm_->kBadParameterError, apm_->set_sample_rate_hz(10000));
-  // Testing valid sample rates
-  int fs[] = {8000, 16000, 32000};
-  for (int ii = 0; ii < sizeof(fs)/sizeof(*fs); ++ii) {
-    ASSERT_EQ(apm_->kNoError, apm_->set_sample_rate_hz(fs[ii]));
-    ASSERT_EQ(fs[ii], apm_->sample_rate_hz());
   }
 
   AudioFrame render_audio;
@@ -279,82 +376,44 @@ TEST_F(ApmTest, Process) {
 
     apm_->voice_detection()->stream_has_voice();
   }
-  // Wrong order tests
-  // No stream parameter
-  EXPECT_EQ(apm_->kNoError,
-            apm_->AnalyzeReverseStream(&render_audio));
-  EXPECT_EQ(apm_->kStreamParameterNotSetError,
-            apm_->ProcessStream(&capture_audio));
-
-  // Missing agc level
-  EXPECT_EQ(apm_->kNoError, apm_->Initialize());
-  EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(100));
-  EXPECT_EQ(apm_->kNoError,
-            apm_->echo_cancellation()->set_stream_drift_samples(0));
-  EXPECT_EQ(apm_->kStreamParameterNotSetError,
-            apm_->ProcessStream(&capture_audio));
-
-  // Missing delay
-  EXPECT_EQ(apm_->kNoError, apm_->Initialize());
-  EXPECT_EQ(apm_->kNoError,
-            apm_->echo_cancellation()->set_stream_drift_samples(0));
-  EXPECT_EQ(apm_->kNoError,
-            apm_->gain_control()->set_stream_analog_level(127));
-  EXPECT_EQ(apm_->kStreamParameterNotSetError,
-            apm_->ProcessStream(&capture_audio));
-
-  // Missing drift
-  EXPECT_EQ(apm_->kNoError, apm_->Initialize());
-  EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(100));
-  EXPECT_EQ(apm_->kNoError,
-            apm_->gain_control()->set_stream_analog_level(127));
-  EXPECT_EQ(apm_->kStreamParameterNotSetError,
-            apm_->ProcessStream(&capture_audio));
-  // All there
-  EXPECT_EQ(apm_->kNoError, apm_->Initialize());
-  EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(100));
-  EXPECT_EQ(apm_->kNoError,
-            apm_->echo_cancellation()->set_stream_drift_samples(0));
-  EXPECT_EQ(apm_->kNoError,
-            apm_->gain_control()->set_stream_analog_level(127));
-  EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(&capture_audio));
 
   // Test with real audio
   // Loop through all possible combinations
   // (# reverse channels, # channels, sample rates)
-  int revCh[] = {1, 2};
-  int nRevCh = 2;
+  int rev_ch[] = {1, 2};
   int ch[] = {1, 2};
-  int nCh = 2;
-  int nFs = (int)(sizeof(fs)/sizeof(*fs));
-  if (read_stat_) {
-    fread(&nRevCh, sizeof(int), 1, stat_file_);
-    fread(revCh, sizeof(int), nRevCh, stat_file_);
-    fread(&nCh, sizeof(int), 1, stat_file_);
-    fread(ch, sizeof(int), nCh, stat_file_);
-    fread(&nFs, sizeof(int), 1, stat_file_);
-    fread(fs, 1, sizeof(fs), stat_file_);
+  int fs[] = {8000, 16000, 32000};
+  size_t rev_ch_size = sizeof(rev_ch) / sizeof(*rev_ch);
+  size_t ch_size = sizeof(ch) / sizeof(*ch);
+  size_t fs_size = sizeof(fs) / sizeof(*fs);
+  if (kReadStatFile) {
+    fread(&rev_ch_size, sizeof(rev_ch_size), 1, stat_file_);
+    fread(rev_ch, sizeof(int), rev_ch_size, stat_file_);
+    fread(&ch_size, sizeof(ch_size), 1, stat_file_);
+    fread(ch, sizeof(int), ch_size, stat_file_);
+    fread(&fs_size, sizeof(fs_size), 1, stat_file_);
+    fread(fs, sizeof(int), fs_size, stat_file_);
   } else {
-    fwrite(&nRevCh, sizeof(int), 1, stat_file_);
-    fwrite(revCh, sizeof(int), nRevCh, stat_file_);
-    fwrite(&nCh, sizeof(int), 1, stat_file_);
-    fwrite(ch, sizeof(int), nCh, stat_file_);
-    fwrite(&nFs, sizeof(int), 1, stat_file_);
-    fwrite(fs, 1, sizeof(fs), stat_file_);
+    fwrite(&rev_ch_size, sizeof(int), 1, stat_file_);
+    fwrite(rev_ch, sizeof(int), rev_ch_size, stat_file_);
+    fwrite(&ch_size, sizeof(int), 1, stat_file_);
+    fwrite(ch, sizeof(int), ch_size, stat_file_);
+    fwrite(&fs_size, sizeof(int), 1, stat_file_);
+    fwrite(fs, sizeof(int), fs_size, stat_file_);
   }
-  int testCnt = 0;
-  for (int iRevCh = 0; iRevCh < nRevCh; ++iRevCh) {
-    for (int iCh = 0; iCh < nCh; ++iCh) {
-      for (int iFs = 0; iFs < nFs; ++iFs) {
-        render_audio._payloadDataLengthInSamples = fs[iFs]/100;
-        render_audio._audioChannel = revCh[iRevCh];
-        render_audio._frequencyInHz = fs[iFs];
-        capture_audio._payloadDataLengthInSamples = fs[iFs]/100;
-        capture_audio._audioChannel = ch[iCh];
-        capture_audio._frequencyInHz = fs[iFs];
+  int test_count = 0;
+  for (size_t i_rev_ch = 0; i_rev_ch < rev_ch_size; i_rev_ch++) {
+    for (size_t i_ch = 0; i_ch < ch_size; i_ch++) {
+      for (size_t i_fs = 0; i_fs < fs_size; i_fs++) {
+        render_audio._payloadDataLengthInSamples = fs[i_fs] / 100;
+        render_audio._audioChannel = rev_ch[i_rev_ch];
+        render_audio._frequencyInHz = fs[i_fs];
+        capture_audio._payloadDataLengthInSamples = fs[i_fs] / 100;
+        capture_audio._audioChannel = ch[i_ch];
+        capture_audio._frequencyInHz = fs[i_fs];
 
         EXPECT_EQ(apm_->kNoError, apm_->Initialize());
-        ASSERT_EQ(apm_->kNoError, apm_->set_sample_rate_hz(fs[iFs]));
+        ASSERT_EQ(apm_->kNoError, apm_->set_sample_rate_hz(fs[i_fs]));
         ASSERT_EQ(apm_->kNoError,
             apm_->set_num_channels(capture_audio._audioChannel,
                                    capture_audio._audioChannel));
@@ -384,7 +443,6 @@ TEST_F(ApmTest, Process) {
         EXPECT_EQ(apm_->kNoError,
                   apm_->voice_detection()->Enable(true));
         bool runningFiles = true;
-        int i = 0;
         int echo_count = 0;
         int vad_count = 0;
         int sat_count = 0;
@@ -402,21 +460,22 @@ TEST_F(ApmTest, Process) {
         EchoCancellation::Metrics echo_metrics_ref_;
 
         while (runningFiles) {
-          i++;
           // Read far end frame
-          read_count = fread(&tmpData[0],
+          read_count = fread(tmpData,
                              sizeof(WebRtc_Word16),
                              render_audio._payloadDataLengthInSamples * 2,
                              far_file_);
-          if (read_count != render_audio._payloadDataLengthInSamples * 2) {
+          if (read_count != 
+              static_cast<size_t>
+              (render_audio._payloadDataLengthInSamples * 2)) {
             break; // This is expected.
           }
           if (render_audio._audioChannel == 1) {
-            for (int jj = 0; jj < render_audio._payloadDataLengthInSamples;
-                ++jj) {
-              tmp_int = (static_cast<int>(tmpData[jj * 2]) +
-                  static_cast<int>(tmpData[jj * 2 + 1])) >> 1;
-              render_audio._payloadData[jj] =
+            for (int i = 0; i < render_audio._payloadDataLengthInSamples;
+                i++) {
+              tmp_int = (static_cast<int>(tmpData[i * 2]) +
+                  static_cast<int>(tmpData[i * 2 + 1])) >> 1;
+              render_audio._payloadData[i] =
                   static_cast<WebRtc_Word16>(tmp_int);
             }
           } else {
@@ -432,18 +491,21 @@ TEST_F(ApmTest, Process) {
               apm_->gain_control()->set_stream_analog_level(analog_level));
 
           // Read near end frame
-          read_count = fread(&tmpData[0],
+          read_count = fread(tmpData,
                              sizeof(WebRtc_Word16),
                              capture_audio._payloadDataLengthInSamples * 2,
                              near_file_);
-          if (read_count != capture_audio._payloadDataLengthInSamples * 2) {
+          if (read_count !=
+              static_cast<size_t>
+              (capture_audio._payloadDataLengthInSamples * 2)) {
             break; // This is expected.
           }
           if (capture_audio._audioChannel == 1) {
-            for (int jj = 0; jj < capture_audio._payloadDataLengthInSamples; ++jj) {
-              tmp_int = (static_cast<int>(tmpData[jj * 2]) +
-                  static_cast<int>(tmpData[jj * 2 + 1])) >> 1;
-              capture_audio._payloadData[jj] =
+            for (int i = 0;
+                i < capture_audio._payloadDataLengthInSamples; i++) {
+              tmp_int = (static_cast<int>(tmpData[i * 2]) +
+                  static_cast<int>(tmpData[i * 2 + 1])) >> 1;
+              capture_audio._payloadData[i] =
                   static_cast<WebRtc_Word16>(tmp_int);
             }
           } else {
@@ -452,14 +514,14 @@ TEST_F(ApmTest, Process) {
                    sizeof(WebRtc_Word16) * read_count);
           }
           WebRtc_Word32 tmpF = 0;
-          for (int jj = 0; jj < read_count; ++jj) {
-            tmpF = (WebRtc_Word32)capture_audio._payloadData[jj] * sat_gain;
+          for (size_t i = 0; i < read_count; i++) {
+            tmpF = (WebRtc_Word32)capture_audio._payloadData[i] * sat_gain;
             if (tmpF > WEBRTC_SPL_WORD16_MAX) {
-              capture_audio._payloadData[jj] = WEBRTC_SPL_WORD16_MAX;
+              capture_audio._payloadData[i] = WEBRTC_SPL_WORD16_MAX;
             } else if (tmpF < WEBRTC_SPL_WORD16_MIN) {
-              capture_audio._payloadData[jj] = WEBRTC_SPL_WORD16_MIN;
+              capture_audio._payloadData[i] = WEBRTC_SPL_WORD16_MIN;
             } else {
-              capture_audio._payloadData[jj] = (WebRtc_Word16)tmpF;
+              capture_audio._payloadData[i] = static_cast<WebRtc_Word16>(tmpF);
             }
           }
           EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(&capture_audio));
@@ -485,7 +547,7 @@ TEST_F(ApmTest, Process) {
 
         // TODO(ajm): Perhaps we don't have to check every value? The average
         //            could be sufficient. Or, how about hashing the output?
-        if (read_stat_) {
+        if (kReadStatFile) {
           // Read from statData
           fread(&echo_count_ref_, 1, sizeof(echo_count), stat_file_);
           EXPECT_EQ(echo_count_ref_, echo_count);
@@ -607,12 +669,12 @@ TEST_F(ApmTest, Process) {
 
         rewind(far_file_);
         rewind(near_file_);
-        testCnt++;
-        printf("Loop %d of %d\n", testCnt, nRevCh * nCh * nFs);
+        test_count++;
+        printf("Loop %d of %lu\n", test_count, rev_ch_size * ch_size * fs_size);
       }
     }
   }
-  if (!read_stat_) {
+  if (!kReadStatFile) {
     if (stat_file_ != NULL) {
       ASSERT_EQ(0, fclose(stat_file_));
     }
@@ -679,6 +741,10 @@ TEST_F(ApmTest, EchoCancellation) {
 }
 
 TEST_F(ApmTest, EchoControlMobile) {
+  // AECM won't use super-wideband.
+  EXPECT_EQ(apm_->kNoError, apm_->set_sample_rate_hz(32000));
+  EXPECT_EQ(apm_->kBadSampleRateError, apm_->echo_control_mobile()->Enable(true));
+  EXPECT_EQ(apm_->kNoError, apm_->set_sample_rate_hz(16000));
   // Turn AECM on (and AEC off)
   EXPECT_EQ(apm_->kNoError, apm_->echo_control_mobile()->Enable(true));
   EXPECT_TRUE(apm_->echo_control_mobile()->is_enabled());

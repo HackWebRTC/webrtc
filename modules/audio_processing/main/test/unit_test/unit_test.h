@@ -16,6 +16,7 @@
 namespace webrtc {
 
 class AudioProcessing;
+class AudioFrame;
 
 class ApmTest : public ::testing::Test {
  protected:
@@ -27,7 +28,8 @@ class ApmTest : public ::testing::Test {
   FILE* far_file_;
   FILE* near_file_;
   FILE* stat_file_;
-  bool read_stat_;
+  AudioFrame* frame_;
+  AudioFrame* reverse_frame_;
 };
 } // namespace webrtc
 

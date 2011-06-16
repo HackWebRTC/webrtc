@@ -34,10 +34,10 @@ extern "C"
  *      - version       : Pointer to a buffer where the version info will
  *                        be stored.
  * Input:
- *      - size_in_bytes : Size of the buffer.
+ *      - size_bytes    : Size of the buffer.
  *
  */
-WebRtc_Word16 WebRtcVad_get_version(char *version, int size_in_bytes);
+WebRtc_Word16 WebRtcVad_get_version(char *version, size_t size_bytes);
 
 /****************************************************************************
  * WebRtcVad_AssignSize(...) 

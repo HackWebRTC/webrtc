@@ -86,7 +86,7 @@ LevelEstimatorImpl::LevelEstimatorImpl(const AudioProcessingImpl* apm)
 
 LevelEstimatorImpl::~LevelEstimatorImpl() {}
 
-int LevelEstimatorImpl::AnalyzeReverseStream(AudioBuffer* audio) {
+int LevelEstimatorImpl::AnalyzeReverseStream(AudioBuffer* /*audio*/) {
   return apm_->kUnsupportedComponentError;
   /*if (!is_component_enabled()) {
     return apm_->kNoError;
@@ -95,7 +95,7 @@ int LevelEstimatorImpl::AnalyzeReverseStream(AudioBuffer* audio) {
   return EstimateLevel(audio, static_cast<Handle*>(handle(1)));*/
 }
 
-int LevelEstimatorImpl::ProcessCaptureAudio(AudioBuffer* audio) {
+int LevelEstimatorImpl::ProcessCaptureAudio(AudioBuffer* /*audio*/) {
   return apm_->kUnsupportedComponentError;
   /*if (!is_component_enabled()) {
     return apm_->kNoError;
@@ -104,7 +104,7 @@ int LevelEstimatorImpl::ProcessCaptureAudio(AudioBuffer* audio) {
   return EstimateLevel(audio, static_cast<Handle*>(handle(0)));*/
 }
 
-int LevelEstimatorImpl::Enable(bool enable) {
+int LevelEstimatorImpl::Enable(bool /*enable*/) {
   CriticalSectionScoped crit_scoped(*apm_->crit());
   return apm_->kUnsupportedComponentError;
   //return EnableComponent(enable);
@@ -114,8 +114,8 @@ bool LevelEstimatorImpl::is_enabled() const {
   return is_component_enabled();
 }
 
-int LevelEstimatorImpl::GetMetrics(LevelEstimator::Metrics* metrics,
-                                   LevelEstimator::Metrics* reverse_metrics) {
+int LevelEstimatorImpl::GetMetrics(LevelEstimator::Metrics* /*metrics*/,
+                                   LevelEstimator::Metrics* /*reverse_metrics*/) {
   return apm_->kUnsupportedComponentError;
   /*if (!is_component_enabled()) {
     return apm_->kNotEnabledError;
@@ -152,12 +152,12 @@ void* LevelEstimatorImpl::CreateHandle() const {
   return handle;
 }
 
-int LevelEstimatorImpl::DestroyHandle(void* handle) const {
+int LevelEstimatorImpl::DestroyHandle(void* /*handle*/) const {
   return apm_->kUnsupportedComponentError;
   //return FreeLvlEst(static_cast<Handle*>(handle));
 }
 
-int LevelEstimatorImpl::InitializeHandle(void* handle) const {
+int LevelEstimatorImpl::InitializeHandle(void* /*handle*/) const {
   return apm_->kUnsupportedComponentError;
   /*const double kIntervalSeconds = 1.5;
   return InitLvlEst(static_cast<Handle*>(handle),

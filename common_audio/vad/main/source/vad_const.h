@@ -18,39 +18,42 @@
 
 #include "typedefs.h"
 
+// TODO(ajm): give these internal-linkage by moving to the appropriate file
+// where possible, and otherwise tag with WebRtcVad_.
+
 // Spectrum Weighting
-WEBRTC_EXTERN const WebRtc_Word16 kSpectrumWeight[];
-WEBRTC_EXTERN const WebRtc_Word16 kCompVar;
+extern const WebRtc_Word16 kSpectrumWeight[];
+extern const WebRtc_Word16 kCompVar;
 // Logarithm constant
-WEBRTC_EXTERN const WebRtc_Word16 kLogConst;
-WEBRTC_EXTERN const WebRtc_Word16 kLog10Const;
+extern const WebRtc_Word16 kLogConst;
+extern const WebRtc_Word16 kLog10Const;
 // Q15
-WEBRTC_EXTERN const WebRtc_Word16 kNoiseUpdateConst;
-WEBRTC_EXTERN const WebRtc_Word16 kSpeechUpdateConst;
+extern const WebRtc_Word16 kNoiseUpdateConst;
+extern const WebRtc_Word16 kSpeechUpdateConst;
 // Q8
-WEBRTC_EXTERN const WebRtc_Word16 kBackEta;
+extern const WebRtc_Word16 kBackEta;
 // Coefficients used by WebRtcVad_HpOutput, Q14
-WEBRTC_EXTERN const WebRtc_Word16 kHpZeroCoefs[];
-WEBRTC_EXTERN const WebRtc_Word16 kHpPoleCoefs[];
+extern const WebRtc_Word16 kHpZeroCoefs[];
+extern const WebRtc_Word16 kHpPoleCoefs[];
 // Allpass filter coefficients, upper and lower, in Q15 resp. Q13
-WEBRTC_EXTERN const WebRtc_Word16 kAllPassCoefsQ15[];
-WEBRTC_EXTERN const WebRtc_Word16 kAllPassCoefsQ13[];
+extern const WebRtc_Word16 kAllPassCoefsQ15[];
+extern const WebRtc_Word16 kAllPassCoefsQ13[];
 // Minimum difference between the two models, Q5
-WEBRTC_EXTERN const WebRtc_Word16 kMinimumDifference[];
+extern const WebRtc_Word16 kMinimumDifference[];
 // Maximum value when updating the speech model, Q7
-WEBRTC_EXTERN const WebRtc_Word16 kMaximumSpeech[];
+extern const WebRtc_Word16 kMaximumSpeech[];
 // Minimum value for mean value
-WEBRTC_EXTERN const WebRtc_Word16 kMinimumMean[];
+extern const WebRtc_Word16 kMinimumMean[];
 // Upper limit of mean value for noise model, Q7
-WEBRTC_EXTERN const WebRtc_Word16 kMaximumNoise[];
+extern const WebRtc_Word16 kMaximumNoise[];
 // Adjustment for division with two in WebRtcVad_SplitFilter
-WEBRTC_EXTERN const WebRtc_Word16 kOffsetVector[];
+extern const WebRtc_Word16 kOffsetVector[];
 // Start values for the Gaussian models, Q7
-WEBRTC_EXTERN const WebRtc_Word16 kNoiseDataWeights[];
-WEBRTC_EXTERN const WebRtc_Word16 kSpeechDataWeights[];
-WEBRTC_EXTERN const WebRtc_Word16 kNoiseDataMeans[];
-WEBRTC_EXTERN const WebRtc_Word16 kSpeechDataMeans[];
-WEBRTC_EXTERN const WebRtc_Word16 kNoiseDataStds[];
-WEBRTC_EXTERN const WebRtc_Word16 kSpeechDataStds[];
+extern const WebRtc_Word16 kNoiseDataWeights[];
+extern const WebRtc_Word16 kSpeechDataWeights[];
+extern const WebRtc_Word16 kNoiseDataMeans[];
+extern const WebRtc_Word16 kSpeechDataMeans[];
+extern const WebRtc_Word16 kNoiseDataStds[];
+extern const WebRtc_Word16 kSpeechDataStds[];
 
 #endif // WEBRTC_VAD_CONST_H_
