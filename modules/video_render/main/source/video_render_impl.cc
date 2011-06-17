@@ -397,6 +397,8 @@ WebRtc_Word32 ModuleVideoRenderImpl::ChangeWindow(void* window)
     WEBRTC_TRACE(kTraceModuleCall, kTraceVideoRenderer, _id,
                  "%s", __FUNCTION__);
 
+#ifndef WEBRTC_VIDEO_EXTERNAL_CAPTURE_AND_RENDER
+
 #if defined(MAC_IPHONE) // MAC_IPHONE must go before WEBRTC_MAC or WEBRTC_MAC_INTEL
     _ptrRenderer = NULL;
     delete _ptrRenderer;
@@ -440,6 +442,9 @@ WebRtc_Word32 ModuleVideoRenderImpl::ChangeWindow(void* window)
 
 #endif
 
+#else  // WEBRTC_VIDEO_EXTERNAL_CAPTURE_AND_RENDER
+    return -1;
+#endif
 }
 
 WebRtc_Word32 ModuleVideoRenderImpl::Id()
