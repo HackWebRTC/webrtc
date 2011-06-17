@@ -9,16 +9,15 @@
  */
 
 
-/*
- * This header file includes the inline functions in the fix point signal processing library.
- */
+// This header file includes the inline functions in
+// the fix point signal processing library.
 
 #ifndef WEBRTC_SPL_SPL_INL_H_
 #define WEBRTC_SPL_SPL_INL_H_
 
 #ifdef WEBRTC_SPL_INLINE_CALLS
 
-#ifdef ANDROID_ISACOPT
+#ifdef WEBRTC_ANDROID
 
 WEBRTC_INLINE WebRtc_Word32 WEBRTC_SPL_MUL(WebRtc_Word32 a, WebRtc_Word32 b)
 {
@@ -27,7 +26,8 @@ WEBRTC_INLINE WebRtc_Word32 WEBRTC_SPL_MUL(WebRtc_Word32 a, WebRtc_Word32 b)
     return tmp;
 }
 
-WEBRTC_INLINE WebRtc_Word32 WEBRTC_SPL_MUL_16_32_RSFT16(WebRtc_Word16 a, WebRtc_Word32 b)
+WEBRTC_INLINE WebRtc_Word32 WEBRTC_SPL_MUL_16_32_RSFT16(WebRtc_Word16 a,
+                                                        WebRtc_Word32 b)
 {
     WebRtc_Word32 tmp;
     __asm__("smulwb %0, %1, %2":"=r"(tmp):"r"(b), "r"(a));
@@ -53,14 +53,16 @@ WEBRTC_INLINE WebRtc_Word32 WEBRTC_SPL_MUL_32_32_RSFT32BI(
     return tmp;
 }
 
-WEBRTC_INLINE WebRtc_Word32 WEBRTC_SPL_MUL_16_16(WebRtc_Word16 a,WebRtc_Word16 b)
+WEBRTC_INLINE WebRtc_Word32 WEBRTC_SPL_MUL_16_16(WebRtc_Word16 a,
+                                                 WebRtc_Word16 b)
 {
     WebRtc_Word32 tmp;
     __asm__("smulbb %0, %1, %2":"=r"(tmp):"r"(a), "r"(b));
     return tmp;
 }
 
-WEBRTC_INLINE WebRtc_Word16 WebRtcSpl_AddSatW16(WebRtc_Word16 a, WebRtc_Word16 b)
+WEBRTC_INLINE WebRtc_Word16 WebRtcSpl_AddSatW16(WebRtc_Word16 a,
+                                                WebRtc_Word16 b)
 {
     WebRtc_Word32 s_sum;
 
@@ -69,7 +71,8 @@ WEBRTC_INLINE WebRtc_Word16 WebRtcSpl_AddSatW16(WebRtc_Word16 a, WebRtc_Word16 b
     return (WebRtc_Word16) s_sum;
 }
 
-WEBRTC_INLINE WebRtc_Word32 WebRtcSpl_AddSatW32(WebRtc_Word32 l_var1, WebRtc_Word32 l_var2)
+WEBRTC_INLINE WebRtc_Word32 WebRtcSpl_AddSatW32(WebRtc_Word32 l_var1,
+                                                WebRtc_Word32 l_var2)
 {
     WebRtc_Word32 l_sum;
 
@@ -78,7 +81,8 @@ WEBRTC_INLINE WebRtc_Word32 WebRtcSpl_AddSatW32(WebRtc_Word32 l_var1, WebRtc_Wor
     return l_sum;
 }
 
-WEBRTC_INLINE WebRtc_Word16 WebRtcSpl_SubSatW32(WebRtc_Word16 var1, WebRtc_Word16 var2)
+WEBRTC_INLINE WebRtc_Word16 WebRtcSpl_SubSatW16(WebRtc_Word16 var1,
+                                                WebRtc_Word16 var2)
 {
     WebRtc_Word32 s_sub;
 
@@ -87,7 +91,8 @@ WEBRTC_INLINE WebRtc_Word16 WebRtcSpl_SubSatW32(WebRtc_Word16 var1, WebRtc_Word1
     return (WebRtc_Word16)s_sub;
 }
 
-WEBRTC_INLINE WebRtc_Word32 WebRtcSpl_SubSatW32(WebRtc_Word32 l_var1, WebRtc_Word32 l_var2)
+WEBRTC_INLINE WebRtc_Word32 WebRtcSpl_SubSatW32(WebRtc_Word32 l_var1,
+                                                WebRtc_Word32 l_var2)
 {
     WebRtc_Word32 l_sub;
 
@@ -143,7 +148,8 @@ WEBRTC_INLINE int WebRtcSpl_NormU32(WebRtc_UWord32 a)
 
 #else
 
-WEBRTC_INLINE WebRtc_Word16 WebRtcSpl_AddSatW16(WebRtc_Word16 a, WebRtc_Word16 b)
+WEBRTC_INLINE WebRtc_Word16 WebRtcSpl_AddSatW16(WebRtc_Word16 a,
+                                                WebRtc_Word16 b)
 {
     WebRtc_Word32 s_sum = (WebRtc_Word32) a + (WebRtc_Word32) b;
 
@@ -155,7 +161,8 @@ WEBRTC_INLINE WebRtc_Word16 WebRtcSpl_AddSatW16(WebRtc_Word16 a, WebRtc_Word16 b
     return (WebRtc_Word16)s_sum;
 }
 
-WEBRTC_INLINE WebRtc_Word32 WebRtcSpl_AddSatW32(WebRtc_Word32 l_var1, WebRtc_Word32 l_var2)
+WEBRTC_INLINE WebRtc_Word32 WebRtcSpl_AddSatW32(WebRtc_Word32 l_var1,
+                                                WebRtc_Word32 l_var2)
 {
     WebRtc_Word32 l_sum;
 
@@ -181,7 +188,8 @@ WEBRTC_INLINE WebRtc_Word32 WebRtcSpl_AddSatW32(WebRtc_Word32 l_var1, WebRtc_Wor
     return l_sum;
 }
 
-WEBRTC_INLINE WebRtc_Word16 WebRtcSpl_SubSatW16( WebRtc_Word16 var1, WebRtc_Word16 var2)
+WEBRTC_INLINE WebRtc_Word16 WebRtcSpl_SubSatW16( WebRtc_Word16 var1,
+                                                 WebRtc_Word16 var2)
 {
     WebRtc_Word32 l_diff;
     WebRtc_Word16 s_diff;
@@ -203,7 +211,8 @@ WEBRTC_INLINE WebRtc_Word16 WebRtcSpl_SubSatW16( WebRtc_Word16 var1, WebRtc_Word
     return s_diff;
 }
 
-WEBRTC_INLINE WebRtc_Word32 WebRtcSpl_SubSatW32(WebRtc_Word32 l_var1, WebRtc_Word32 l_var2)
+WEBRTC_INLINE WebRtc_Word32 WebRtcSpl_SubSatW32(WebRtc_Word32 l_var1,
+                                                WebRtc_Word32 l_var2)
 {
     WebRtc_Word32 l_diff;
 
@@ -279,6 +288,6 @@ WEBRTC_INLINE int WebRtcSpl_NormU32(WebRtc_UWord32 a)
     return zeros;
 }
 
-#endif // ANDROID_ISACOPT
+#endif // WEBRTC_ANDROID
 #endif // WEBRTC_SPL_INLINE_CALLS
 #endif // WEBRTC_SPL_SPL_INL_H_

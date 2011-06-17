@@ -25,7 +25,7 @@
 #include <Armintr.h> // intrinsic file for windows mobile
 #endif
 
-#ifdef ANDROID_ISACOPT
+#ifdef WEBRTC_ANDROID
 #define WEBRTC_SPL_INLINE_CALLS
 #define SPL_NO_DOUBLE_IMPLEMENTATIONS
 #endif
@@ -46,26 +46,32 @@
 
 #if (defined WEBRTC_TARGET_PC)||(defined __TARGET_XSCALE)
 #define WEBRTC_SPL_GET_BYTE(a, nr)  (((WebRtc_Word8 *)a)[nr])
-#define WEBRTC_SPL_SET_BYTE(d_ptr, val, index)  (((WebRtc_Word8 *)d_ptr)[index] = (val))
+#define WEBRTC_SPL_SET_BYTE(d_ptr, val, index)  \
+  (((WebRtc_Word8 *)d_ptr)[index] = (val))
 #elif defined WEBRTC_BIG_ENDIAN
 #define WEBRTC_SPL_GET_BYTE(a, nr)\
     ((((WebRtc_Word16 *)a)[nr >> 1]) >> (((nr + 1) & 0x1) * 8) & 0x00ff)
-#define WEBRTC_SPL_SET_BYTE(d_ptr, val, index)\
-    ((WebRtc_Word16 *)d_ptr)[index >> 1] = ((((WebRtc_Word16 *)d_ptr)[index >> 1])\
-            & (0x00ff << (8 * ((index) & 0x1)))) | (val << (8 * ((index + 1) & 0x1)))
+#define WEBRTC_SPL_SET_BYTE(d_ptr, val, index)                          \
+  ((WebRtc_Word16 *)d_ptr)[index >> 1] = \
+      ((((WebRtc_Word16 *)d_ptr)[index >> 1])                           \
+       & (0x00ff << (8 * ((index) & 0x1)))) | (val << (8 * ((index + 1) & 0x1)))
 #else
-#define WEBRTC_SPL_GET_BYTE(a,nr)\
-    ((((WebRtc_Word16 *)(a))[(nr) >> 1]) >> (((nr) & 0x1) * 8) & 0x00ff)
-#define WEBRTC_SPL_SET_BYTE(d_ptr, val, index)\
-    ((WebRtc_Word16 *)(d_ptr))[(index) >> 1] = ((((WebRtc_Word16 *)(d_ptr))[(index) >> 1])\
-            & (0x00ff << (8 * (((index) + 1) & 0x1)))) | ((val) << (8 * ((index) & 0x1)))
+#define WEBRTC_SPL_GET_BYTE(a,nr)                                       \
+  ((((WebRtc_Word16 *)(a))[(nr) >> 1]) >> (((nr) & 0x1) * 8) & 0x00ff)
+#define WEBRTC_SPL_SET_BYTE(d_ptr, val, index)                          \
+  ((WebRtc_Word16 *)(d_ptr))[(index) >> 1] = \
+      ((((WebRtc_Word16 *)(d_ptr))[(index) >> 1])                       \
+       & (0x00ff << (8 * (((index) + 1) & 0x1)))) |                     \
+      ((val) << (8 * ((index) & 0x1)))
 #endif
 
-#ifndef ANDROID_ISACOPT
-#define WEBRTC_SPL_MUL(a, b)    ((WebRtc_Word32) ((WebRtc_Word32)(a) * (WebRtc_Word32)(b)))
+#ifndef WEBRTC_ANDROID
+#define WEBRTC_SPL_MUL(a, b)                                    \
+  ((WebRtc_Word32) ((WebRtc_Word32)(a) * (WebRtc_Word32)(b)))
 #endif
 
-#define WEBRTC_SPL_UMUL(a, b)   ((WebRtc_UWord32) ((WebRtc_UWord32)(a) * (WebRtc_UWord32)(b)))
+#define WEBRTC_SPL_UMUL(a, b)                                           \
+  ((WebRtc_UWord32) ((WebRtc_UWord32)(a) * (WebRtc_UWord32)(b)))
 #define WEBRTC_SPL_UMUL_RSFT16(a, b)\
     ((WebRtc_UWord32) ((WebRtc_UWord32)(a) * (WebRtc_UWord32)(b)) >> 16)
 #define WEBRTC_SPL_UMUL_16_16(a, b)\
@@ -78,49 +84,55 @@
     ((WebRtc_UWord32) ((WebRtc_UWord32)(a) * (WebRtc_UWord16)(b)) >> 16)
 #define WEBRTC_SPL_MUL_16_U16(a, b)\
     ((WebRtc_Word32)(WebRtc_Word16)(a) * (WebRtc_UWord16)(b))
-#define WEBRTC_SPL_DIV(a, b)    ((WebRtc_Word32) ((WebRtc_Word32)(a) / (WebRtc_Word32)(b)))
-#define WEBRTC_SPL_UDIV(a, b)   ((WebRtc_UWord32) ((WebRtc_UWord32)(a) / (WebRtc_UWord32)(b)))
+#define WEBRTC_SPL_DIV(a, b)    \
+  ((WebRtc_Word32) ((WebRtc_Word32)(a) / (WebRtc_Word32)(b)))
+#define WEBRTC_SPL_UDIV(a, b)   \
+  ((WebRtc_UWord32) ((WebRtc_UWord32)(a) / (WebRtc_UWord32)(b)))
 
 #define WEBRTC_SPL_MUL_16_32_RSFT11(a, b)\
-    ((WEBRTC_SPL_MUL_16_16(a, (b) >> 16) << 5)\
-            + (((WEBRTC_SPL_MUL_16_U16(a, (WebRtc_UWord16)(b)) >> 1) + 0x0200) >> 10))
+  ((WEBRTC_SPL_MUL_16_16(a, (b) >> 16) << 5)                            \
+     + (((WEBRTC_SPL_MUL_16_U16(a, (WebRtc_UWord16)(b)) >> 1) + 0x0200) >> 10))
 #define WEBRTC_SPL_MUL_16_32_RSFT14(a, b)\
-    ((WEBRTC_SPL_MUL_16_16(a, (b) >> 16) << 2)\
-            + (((WEBRTC_SPL_MUL_16_U16(a, (WebRtc_UWord16)(b)) >> 1) + 0x1000) >> 13))
-#define WEBRTC_SPL_MUL_16_32_RSFT15(a, b)\
-    ((WEBRTC_SPL_MUL_16_16(a, (b) >> 16) << 1)\
-            + (((WEBRTC_SPL_MUL_16_U16(a, (WebRtc_UWord16)(b)) >> 1) + 0x2000) >> 14))
+  ((WEBRTC_SPL_MUL_16_16(a, (b) >> 16) << 2)                            \
+   + (((WEBRTC_SPL_MUL_16_U16(a, (WebRtc_UWord16)(b)) >> 1) + 0x1000) >> 13))
+#define WEBRTC_SPL_MUL_16_32_RSFT15(a, b)                               \
+  ((WEBRTC_SPL_MUL_16_16(a, (b) >> 16) << 1)                            \
+   + (((WEBRTC_SPL_MUL_16_U16(a, (WebRtc_UWord16)(b)) >> 1) + 0x2000) >> 14))
 
-#ifndef ANDROID_ISACOPT
-#define WEBRTC_SPL_MUL_16_32_RSFT16(a, b)\
-    (WEBRTC_SPL_MUL_16_16(a, b >> 16)\
-            + ((WEBRTC_SPL_MUL_16_16(a, (b & 0xffff) >> 1) + 0x4000) >> 15))
-#define WEBRTC_SPL_MUL_32_32_RSFT32(a32a, a32b, b32)\
-    ((WebRtc_Word32)(WEBRTC_SPL_MUL_16_32_RSFT16(a32a, b32)\
-            + (WEBRTC_SPL_MUL_16_32_RSFT16(a32b, b32) >> 16)))
-#define WEBRTC_SPL_MUL_32_32_RSFT32BI(a32, b32)\
-    ((WebRtc_Word32)(WEBRTC_SPL_MUL_16_32_RSFT16(((WebRtc_Word16)(a32 >> 16)), b32)\
-            + (WEBRTC_SPL_MUL_16_32_RSFT16(((WebRtc_Word16)((a32 & 0x0000FFFF) >> 1)), b32)\
-                    >> 15)))
+#ifndef WEBRTC_ANDROID
+#define WEBRTC_SPL_MUL_16_32_RSFT16(a, b)                               \
+  (WEBRTC_SPL_MUL_16_16(a, b >> 16)                                     \
+   + ((WEBRTC_SPL_MUL_16_16(a, (b & 0xffff) >> 1) + 0x4000) >> 15))
+#define WEBRTC_SPL_MUL_32_32_RSFT32(a32a, a32b, b32)                    \
+  ((WebRtc_Word32)(WEBRTC_SPL_MUL_16_32_RSFT16(a32a, b32)               \
+                   + (WEBRTC_SPL_MUL_16_32_RSFT16(a32b, b32) >> 16)))
+#define WEBRTC_SPL_MUL_32_32_RSFT32BI(a32, b32)                         \
+  ((WebRtc_Word32)(WEBRTC_SPL_MUL_16_32_RSFT16((                        \
+      (WebRtc_Word16)(a32 >> 16)), b32) +                               \
+                   (WEBRTC_SPL_MUL_16_32_RSFT16((                       \
+                       (WebRtc_Word16)((a32 & 0x0000FFFF) >> 1)), b32) >> 15)))
 #endif
 
 #ifdef ARM_WINM
-#define WEBRTC_SPL_MUL_16_16(a, b)  _SmulLo_SW_SL((WebRtc_Word16)(a), (WebRtc_Word16)(b))
-#elif !defined (ANDROID_ISACOPT)
-#define WEBRTC_SPL_MUL_16_16(a, b)\
+#define WEBRTC_SPL_MUL_16_16(a, b)                      \
+  _SmulLo_SW_SL((WebRtc_Word16)(a), (WebRtc_Word16)(b))
+#elif !defined (WEBRTC_ANDROID)
+#define WEBRTC_SPL_MUL_16_16(a, b)                                      \
     ((WebRtc_Word32) (((WebRtc_Word16)(a)) * ((WebRtc_Word16)(b))))
 #endif
 
-#define WEBRTC_SPL_MUL_16_16_RSFT(a, b, c)  (WEBRTC_SPL_MUL_16_16(a, b) >> (c))
+#define WEBRTC_SPL_MUL_16_16_RSFT(a, b, c)      \
+  (WEBRTC_SPL_MUL_16_16(a, b) >> (c))
 
-#define WEBRTC_SPL_MUL_16_16_RSFT_WITH_ROUND(a, b, c)\
-    ((WEBRTC_SPL_MUL_16_16(a, b) + ((WebRtc_Word32) (((WebRtc_Word32)1) << ((c) - 1)))) >> (c))
+#define WEBRTC_SPL_MUL_16_16_RSFT_WITH_ROUND(a, b, c)                   \
+  ((WEBRTC_SPL_MUL_16_16(a, b) + ((WebRtc_Word32) \
+                                  (((WebRtc_Word32)1) << ((c) - 1)))) >> (c))
 #define WEBRTC_SPL_MUL_16_16_RSFT_WITH_FIXROUND(a, b)\
     ((WEBRTC_SPL_MUL_16_16(a, b) + ((WebRtc_Word32) (1 << 14))) >> 15)
 
 // C + the 32 most significant bits of A * B
-#define WEBRTC_SPL_SCALEDIFF32(A, B, C)\
-    (C + (B >> 16) * A + (((WebRtc_UWord32)(0x0000FFFF & B) * A) >> 16))
+#define WEBRTC_SPL_SCALEDIFF32(A, B, C)                                 \
+  (C + (B >> 16) * A + (((WebRtc_UWord32)(0x0000FFFF & B) * A) >> 16))
 
 #define WEBRTC_SPL_ADD_SAT_W32(a, b)    WebRtcSpl_AddSatW32(a, b)
 #define WEBRTC_SPL_SAT(a, b, c)         (b > a ? a : b < c ? c : b)
@@ -134,8 +146,10 @@
 #define WEBRTC_SPL_IS_NEG(a)            ((a) & 0x80000000)
 // Shifting with negative numbers allowed
 // Positive means left shift
-#define WEBRTC_SPL_SHIFT_W16(x, c)      (((c) >= 0) ? ((x) << (c)) : ((x) >> (-(c))))
-#define WEBRTC_SPL_SHIFT_W32(x, c)      (((c) >= 0) ? ((x) << (c)) : ((x) >> (-(c))))
+#define WEBRTC_SPL_SHIFT_W16(x, c)              \
+  (((c) >= 0) ? ((x) << (c)) : ((x) >> (-(c))))
+#define WEBRTC_SPL_SHIFT_W32(x, c)              \
+  (((c) >= 0) ? ((x) << (c)) : ((x) >> (-(c))))
 
 // Shifting with negative numbers not allowed
 // We cannot do casting here due to signed/unsigned problem
@@ -153,17 +167,20 @@
 #define WEBRTC_SPL_FREE                 free
 
 #define WEBRTC_SPL_RAND(a)\
-    ((WebRtc_Word16)(WEBRTC_SPL_MUL_16_16_RSFT((a), 18816, 7) & 0x00007fff))
+  ((WebRtc_Word16)(WEBRTC_SPL_MUL_16_16_RSFT((a), 18816, 7) & 0x00007fff))
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-#define WEBRTC_SPL_MEMCPY_W8(v1, v2, length)   memcpy(v1, v2, (length) * sizeof(char))
-#define WEBRTC_SPL_MEMCPY_W16(v1, v2, length)  memcpy(v1, v2, (length) * sizeof(WebRtc_Word16))
+#define WEBRTC_SPL_MEMCPY_W8(v1, v2, length)    \
+  memcpy(v1, v2, (length) * sizeof(char))
+#define WEBRTC_SPL_MEMCPY_W16(v1, v2, length)           \
+  memcpy(v1, v2, (length) * sizeof(WebRtc_Word16))
 
-#define WEBRTC_SPL_MEMMOVE_W16(v1, v2, length)  memmove(v1, v2, (length) * sizeof(WebRtc_Word16))
+#define WEBRTC_SPL_MEMMOVE_W16(v1, v2, length)          \
+  memmove(v1, v2, (length) * sizeof(WebRtc_Word16))
 
 // Trigonometric tables used for quick lookup
 // default declarations
@@ -189,90 +206,154 @@ int WebRtcSpl_NormU32(WebRtc_UWord32 value);
 #endif
 
 // Get SPL Version
-WebRtc_Word16 WebRtcSpl_get_version(char* version, WebRtc_Word16 length_in_bytes);
+WebRtc_Word16 WebRtcSpl_get_version(char* version,
+                                    WebRtc_Word16 length_in_bytes);
 
-int WebRtcSpl_GetScalingSquare(WebRtc_Word16* in_vector, int in_vector_length, int times);
+int WebRtcSpl_GetScalingSquare(WebRtc_Word16* in_vector,
+                               int in_vector_length,
+                               int times);
 
-// Copy and set operations. Implementation in copy_set_operations.c. Descriptions at bottom of
-// file.
-void WebRtcSpl_MemSetW16(WebRtc_Word16* vector, WebRtc_Word16 set_value, int vector_length);
-void WebRtcSpl_MemSetW32(WebRtc_Word32* vector, WebRtc_Word32 set_value, int vector_length);
-void WebRtcSpl_MemCpyReversedOrder(WebRtc_Word16* out_vector, WebRtc_Word16* in_vector, int vector_length);
-WebRtc_Word16 WebRtcSpl_CopyFromEndW16(G_CONST WebRtc_Word16* in_vector, WebRtc_Word16 in_vector_length,
-                                       WebRtc_Word16 samples, WebRtc_Word16* out_vector);
-WebRtc_Word16 WebRtcSpl_ZerosArrayW16(WebRtc_Word16* vector, WebRtc_Word16 vector_length);
-WebRtc_Word16 WebRtcSpl_ZerosArrayW32(WebRtc_Word32* vector, WebRtc_Word16 vector_length);
-WebRtc_Word16 WebRtcSpl_OnesArrayW16(WebRtc_Word16* vector, WebRtc_Word16 vector_length);
-WebRtc_Word16 WebRtcSpl_OnesArrayW32(WebRtc_Word32* vector, WebRtc_Word16 vector_length);
+// Copy and set operations. Implementation in copy_set_operations.c.
+// Descriptions at bottom of file.
+void WebRtcSpl_MemSetW16(WebRtc_Word16* vector,
+                         WebRtc_Word16 set_value,
+                         int vector_length);
+void WebRtcSpl_MemSetW32(WebRtc_Word32* vector,
+                         WebRtc_Word32 set_value,
+                         int vector_length);
+void WebRtcSpl_MemCpyReversedOrder(WebRtc_Word16* out_vector,
+                                   WebRtc_Word16* in_vector,
+                                   int vector_length);
+WebRtc_Word16 WebRtcSpl_CopyFromEndW16(G_CONST WebRtc_Word16* in_vector,
+                                       WebRtc_Word16 in_vector_length,
+                                       WebRtc_Word16 samples,
+                                       WebRtc_Word16* out_vector);
+WebRtc_Word16 WebRtcSpl_ZerosArrayW16(WebRtc_Word16* vector,
+                                      WebRtc_Word16 vector_length);
+WebRtc_Word16 WebRtcSpl_ZerosArrayW32(WebRtc_Word32* vector,
+                                      WebRtc_Word16 vector_length);
+WebRtc_Word16 WebRtcSpl_OnesArrayW16(WebRtc_Word16* vector,
+                                     WebRtc_Word16 vector_length);
+WebRtc_Word16 WebRtcSpl_OnesArrayW32(WebRtc_Word32* vector,
+                                     WebRtc_Word16 vector_length);
 // End: Copy and set operations.
 
-// Minimum and maximum operations. Implementation in min_max_operations.c. Descriptions at
-// bottom of file.
-WebRtc_Word16 WebRtcSpl_MaxAbsValueW16(G_CONST WebRtc_Word16* vector, WebRtc_Word16 length);
-WebRtc_Word32 WebRtcSpl_MaxAbsValueW32(G_CONST WebRtc_Word32* vector, WebRtc_Word16 length);
-WebRtc_Word16 WebRtcSpl_MinValueW16(G_CONST WebRtc_Word16* vector, WebRtc_Word16 length);
-WebRtc_Word32 WebRtcSpl_MinValueW32(G_CONST WebRtc_Word32* vector, WebRtc_Word16 length);
-WebRtc_Word16 WebRtcSpl_MaxValueW16(G_CONST WebRtc_Word16* vector, WebRtc_Word16 length);
+// Minimum and maximum operations. Implementation in min_max_operations.c.
+// Descriptions at bottom of file.
+WebRtc_Word16 WebRtcSpl_MaxAbsValueW16(G_CONST WebRtc_Word16* vector,
+                                       WebRtc_Word16 length);
+WebRtc_Word32 WebRtcSpl_MaxAbsValueW32(G_CONST WebRtc_Word32* vector,
+                                       WebRtc_Word16 length);
+WebRtc_Word16 WebRtcSpl_MinValueW16(G_CONST WebRtc_Word16* vector,
+                                    WebRtc_Word16 length);
+WebRtc_Word32 WebRtcSpl_MinValueW32(G_CONST WebRtc_Word32* vector,
+                                    WebRtc_Word16 length);
+WebRtc_Word16 WebRtcSpl_MaxValueW16(G_CONST WebRtc_Word16* vector,
+                                    WebRtc_Word16 length);
 
-WebRtc_Word16 WebRtcSpl_MaxAbsIndexW16(G_CONST WebRtc_Word16* vector, WebRtc_Word16 length);
-WebRtc_Word32 WebRtcSpl_MaxValueW32(G_CONST WebRtc_Word32* vector, WebRtc_Word16 length);
-WebRtc_Word16 WebRtcSpl_MinIndexW16(G_CONST WebRtc_Word16* vector, WebRtc_Word16 length);
-WebRtc_Word16 WebRtcSpl_MinIndexW32(G_CONST WebRtc_Word32* vector, WebRtc_Word16 length);
-WebRtc_Word16 WebRtcSpl_MaxIndexW16(G_CONST WebRtc_Word16* vector, WebRtc_Word16 length);
-WebRtc_Word16 WebRtcSpl_MaxIndexW32(G_CONST WebRtc_Word32* vector, WebRtc_Word16 length);
+WebRtc_Word16 WebRtcSpl_MaxAbsIndexW16(G_CONST WebRtc_Word16* vector,
+                                       WebRtc_Word16 length);
+WebRtc_Word32 WebRtcSpl_MaxValueW32(G_CONST WebRtc_Word32* vector,
+                                    WebRtc_Word16 length);
+WebRtc_Word16 WebRtcSpl_MinIndexW16(G_CONST WebRtc_Word16* vector,
+                                    WebRtc_Word16 length);
+WebRtc_Word16 WebRtcSpl_MinIndexW32(G_CONST WebRtc_Word32* vector,
+                                    WebRtc_Word16 length);
+WebRtc_Word16 WebRtcSpl_MaxIndexW16(G_CONST WebRtc_Word16* vector,
+                                    WebRtc_Word16 length);
+WebRtc_Word16 WebRtcSpl_MaxIndexW32(G_CONST WebRtc_Word32* vector,
+                                    WebRtc_Word16 length);
 // End: Minimum and maximum operations.
 
-// Vector scaling operations. Implementation in vector_scaling_operations.c. Description at
-// bottom of file.
-void WebRtcSpl_VectorBitShiftW16(WebRtc_Word16* out_vector, WebRtc_Word16 vector_length,
-                                 G_CONST WebRtc_Word16* in_vector, WebRtc_Word16 right_shifts);
-void WebRtcSpl_VectorBitShiftW32(WebRtc_Word32* out_vector, WebRtc_Word16 vector_length,
-                                 G_CONST WebRtc_Word32* in_vector, WebRtc_Word16 right_shifts);
-void WebRtcSpl_VectorBitShiftW32ToW16(WebRtc_Word16* out_vector, WebRtc_Word16 vector_length,
-                                      G_CONST WebRtc_Word32* in_vector, WebRtc_Word16 right_shifts);
+// Vector scaling operations. Implementation in vector_scaling_operations.c.
+// Description at bottom of file.
+void WebRtcSpl_VectorBitShiftW16(WebRtc_Word16* out_vector,
+                                 WebRtc_Word16 vector_length,
+                                 G_CONST WebRtc_Word16* in_vector,
+                                 WebRtc_Word16 right_shifts);
+void WebRtcSpl_VectorBitShiftW32(WebRtc_Word32* out_vector,
+                                 WebRtc_Word16 vector_length,
+                                 G_CONST WebRtc_Word32* in_vector,
+                                 WebRtc_Word16 right_shifts);
+void WebRtcSpl_VectorBitShiftW32ToW16(WebRtc_Word16* out_vector,
+                                      WebRtc_Word16 vector_length,
+                                      G_CONST WebRtc_Word32* in_vector,
+                                      WebRtc_Word16 right_shifts);
 
-void WebRtcSpl_ScaleVector(G_CONST WebRtc_Word16* in_vector, WebRtc_Word16* out_vector, WebRtc_Word16 gain,
-                           WebRtc_Word16 vector_length, WebRtc_Word16 right_shifts);
-void WebRtcSpl_ScaleVectorWithSat(G_CONST WebRtc_Word16* in_vector, WebRtc_Word16* out_vector,
-                                  WebRtc_Word16 gain, WebRtc_Word16 vector_length,
+void WebRtcSpl_ScaleVector(G_CONST WebRtc_Word16* in_vector,
+                           WebRtc_Word16* out_vector,
+                           WebRtc_Word16 gain,
+                           WebRtc_Word16 vector_length,
+                           WebRtc_Word16 right_shifts);
+void WebRtcSpl_ScaleVectorWithSat(G_CONST WebRtc_Word16* in_vector,
+                                  WebRtc_Word16* out_vector,
+                                  WebRtc_Word16 gain,
+                                  WebRtc_Word16 vector_length,
                                   WebRtc_Word16 right_shifts);
-void WebRtcSpl_ScaleAndAddVectors(G_CONST WebRtc_Word16* in_vector1, WebRtc_Word16 gain1, int right_shifts1,
-                                  G_CONST WebRtc_Word16* in_vector2, WebRtc_Word16 gain2, int right_shifts2,
-                                  WebRtc_Word16* out_vector, int vector_length);
+void WebRtcSpl_ScaleAndAddVectors(G_CONST WebRtc_Word16* in_vector1,
+                                  WebRtc_Word16 gain1, int right_shifts1,
+                                  G_CONST WebRtc_Word16* in_vector2,
+                                  WebRtc_Word16 gain2, int right_shifts2,
+                                  WebRtc_Word16* out_vector,
+                                  int vector_length);
 // End: Vector scaling operations.
 
-// iLBC specific functions. Implementations in ilbc_specific_functions.c. Description at
-// bottom of file.
-void WebRtcSpl_ScaleAndAddVectorsWithRound(WebRtc_Word16* in_vector1, WebRtc_Word16 scale1,
-                                           WebRtc_Word16* in_vector2, WebRtc_Word16 scale2,
-                                           WebRtc_Word16 right_shifts, WebRtc_Word16* out_vector,
+// iLBC specific functions. Implementations in ilbc_specific_functions.c.
+// Description at bottom of file.
+void WebRtcSpl_ScaleAndAddVectorsWithRound(WebRtc_Word16* in_vector1,
+                                           WebRtc_Word16 scale1,
+                                           WebRtc_Word16* in_vector2,
+                                           WebRtc_Word16 scale2,
+                                           WebRtc_Word16 right_shifts,
+                                           WebRtc_Word16* out_vector,
                                            WebRtc_Word16 vector_length);
-void WebRtcSpl_ReverseOrderMultArrayElements(WebRtc_Word16* out_vector, G_CONST WebRtc_Word16* in_vector,
+void WebRtcSpl_ReverseOrderMultArrayElements(WebRtc_Word16* out_vector,
+                                             G_CONST WebRtc_Word16* in_vector,
                                              G_CONST WebRtc_Word16* window,
                                              WebRtc_Word16 vector_length,
                                              WebRtc_Word16 right_shifts);
-void WebRtcSpl_ElementwiseVectorMult(WebRtc_Word16* out_vector, G_CONST WebRtc_Word16* in_vector,
-                                     G_CONST WebRtc_Word16* window, WebRtc_Word16 vector_length,
+void WebRtcSpl_ElementwiseVectorMult(WebRtc_Word16* out_vector,
+                                     G_CONST WebRtc_Word16* in_vector,
+                                     G_CONST WebRtc_Word16* window,
+                                     WebRtc_Word16 vector_length,
                                      WebRtc_Word16 right_shifts);
-void WebRtcSpl_AddVectorsAndShift(WebRtc_Word16* out_vector, G_CONST WebRtc_Word16* in_vector1,
-                                  G_CONST WebRtc_Word16* in_vector2, WebRtc_Word16 vector_length,
+void WebRtcSpl_AddVectorsAndShift(WebRtc_Word16* out_vector,
+                                  G_CONST WebRtc_Word16* in_vector1,
+                                  G_CONST WebRtc_Word16* in_vector2,
+                                  WebRtc_Word16 vector_length,
                                   WebRtc_Word16 right_shifts);
-void WebRtcSpl_AddAffineVectorToVector(WebRtc_Word16* out_vector, WebRtc_Word16* in_vector,
-                                       WebRtc_Word16 gain, WebRtc_Word32 add_constant,
-                                       WebRtc_Word16 right_shifts, int vector_length);
-void WebRtcSpl_AffineTransformVector(WebRtc_Word16* out_vector, WebRtc_Word16* in_vector,
-                                     WebRtc_Word16 gain, WebRtc_Word32 add_constant,
-                                     WebRtc_Word16 right_shifts, int vector_length);
+void WebRtcSpl_AddAffineVectorToVector(WebRtc_Word16* out_vector,
+                                       WebRtc_Word16* in_vector,
+                                       WebRtc_Word16 gain,
+                                       WebRtc_Word32 add_constant,
+                                       WebRtc_Word16 right_shifts,
+                                       int vector_length);
+void WebRtcSpl_AffineTransformVector(WebRtc_Word16* out_vector,
+                                     WebRtc_Word16* in_vector,
+                                     WebRtc_Word16 gain,
+                                     WebRtc_Word32 add_constant,
+                                     WebRtc_Word16 right_shifts,
+                                     int vector_length);
 // End: iLBC specific functions.
 
 // Signal processing operations. Descriptions at bottom of this file.
-int WebRtcSpl_AutoCorrelation(G_CONST WebRtc_Word16* vector, int vector_length, int order,
-                              WebRtc_Word32* result_vector, int* scale);
-WebRtc_Word16 WebRtcSpl_LevinsonDurbin(WebRtc_Word32* auto_corr, WebRtc_Word16* lpc_coef, WebRtc_Word16* refl_coef,
+int WebRtcSpl_AutoCorrelation(G_CONST WebRtc_Word16* vector,
+                              int vector_length, int order,
+                              WebRtc_Word32* result_vector,
+                              int* scale);
+WebRtc_Word16 WebRtcSpl_LevinsonDurbin(WebRtc_Word32* auto_corr,
+                                       WebRtc_Word16* lpc_coef,
+                                       WebRtc_Word16* refl_coef,
                                        WebRtc_Word16 order);
-void WebRtcSpl_ReflCoefToLpc(G_CONST WebRtc_Word16* refl_coef, int use_order, WebRtc_Word16* lpc_coef);
-void WebRtcSpl_LpcToReflCoef(WebRtc_Word16* lpc_coef, int use_order, WebRtc_Word16* refl_coef);
-void WebRtcSpl_AutoCorrToReflCoef(G_CONST WebRtc_Word32* auto_corr, int use_order, WebRtc_Word16* refl_coef);
+void WebRtcSpl_ReflCoefToLpc(G_CONST WebRtc_Word16* refl_coef,
+                             int use_order,
+                             WebRtc_Word16* lpc_coef);
+void WebRtcSpl_LpcToReflCoef(WebRtc_Word16* lpc_coef,
+                             int use_order,
+                             WebRtc_Word16* refl_coef);
+void WebRtcSpl_AutoCorrToReflCoef(G_CONST WebRtc_Word32* auto_corr,
+                                  int use_order,
+                                  WebRtc_Word16* refl_coef);
 void WebRtcSpl_CrossCorrelation(WebRtc_Word32* cross_corr,
                                 WebRtc_Word16* vector1,
                                 WebRtc_Word16* vector2,
@@ -281,7 +362,9 @@ void WebRtcSpl_CrossCorrelation(WebRtc_Word32* cross_corr,
                                 WebRtc_Word16 right_shifts,
                                 WebRtc_Word16 step_vector2);
 void WebRtcSpl_GetHanningWindow(WebRtc_Word16* window, WebRtc_Word16 size);
-void WebRtcSpl_SqrtOfOneMinusXSquared(WebRtc_Word16* in_vector, int vector_length, WebRtc_Word16* out_vector);
+void WebRtcSpl_SqrtOfOneMinusXSquared(WebRtc_Word16* in_vector,
+                                      int vector_length,
+                                      WebRtc_Word16* out_vector);
 // End: Signal processing operations.
 
 // Randomization functions. Implementations collected in randomization_functions.c and
@@ -289,15 +372,16 @@ void WebRtcSpl_SqrtOfOneMinusXSquared(WebRtc_Word16* in_vector, int vector_lengt
 WebRtc_UWord32 WebRtcSpl_IncreaseSeed(WebRtc_UWord32* seed);
 WebRtc_Word16 WebRtcSpl_RandU(WebRtc_UWord32* seed);
 WebRtc_Word16 WebRtcSpl_RandN(WebRtc_UWord32* seed);
-WebRtc_Word16 WebRtcSpl_RandUArray(WebRtc_Word16* vector, WebRtc_Word16 vector_length,
+WebRtc_Word16 WebRtcSpl_RandUArray(WebRtc_Word16* vector,
+                                   WebRtc_Word16 vector_length,
                                    WebRtc_UWord32* seed);
 // End: Randomization functions.
 
 // Math functions
 WebRtc_Word32 WebRtcSpl_Sqrt(WebRtc_Word32 value);
 
-// Divisions. Implementations collected in division_operations.c and descriptions at bottom
-// of this file.
+// Divisions. Implementations collected in division_operations.c and
+// descriptions at bottom of this file.
 WebRtc_UWord32 WebRtcSpl_DivU32U16(WebRtc_UWord32 num, WebRtc_UWord16 den);
 WebRtc_Word32 WebRtcSpl_DivW32W16(WebRtc_Word32 num, WebRtc_Word16 den);
 WebRtc_Word16 WebRtcSpl_DivW32W16ResW16(WebRtc_Word32 num, WebRtc_Word16 den);
@@ -306,24 +390,40 @@ WebRtc_Word32 WebRtcSpl_DivW32HiLow(WebRtc_Word32 num, WebRtc_Word16 den_hi,
                                     WebRtc_Word16 den_low);
 // End: Divisions.
 
-WebRtc_Word32 WebRtcSpl_Energy(WebRtc_Word16* vector, int vector_length, int* scale_factor);
+WebRtc_Word32 WebRtcSpl_Energy(WebRtc_Word16* vector,
+                               int vector_length,
+                               int* scale_factor);
 
-WebRtc_Word32 WebRtcSpl_DotProductWithScale(WebRtc_Word16* vector1, WebRtc_Word16* vector2,
-                                            int vector_length, int scaling);
+WebRtc_Word32 WebRtcSpl_DotProductWithScale(WebRtc_Word16* vector1,
+                                            WebRtc_Word16* vector2,
+                                            int vector_length,
+                                            int scaling);
 
 // Filter operations.
-int WebRtcSpl_FilterAR(G_CONST WebRtc_Word16* ar_coef, int ar_coef_length, G_CONST WebRtc_Word16* in_vector, int in_vector_length,
-                       WebRtc_Word16* filter_state, int filter_state_length, WebRtc_Word16* filter_state_low,
+int WebRtcSpl_FilterAR(G_CONST WebRtc_Word16* ar_coef, int ar_coef_length,
+                       G_CONST WebRtc_Word16* in_vector, int in_vector_length,
+                       WebRtc_Word16* filter_state, int filter_state_length,
+                       WebRtc_Word16* filter_state_low,
                        int filter_state_low_length, WebRtc_Word16* out_vector,
                        WebRtc_Word16* out_vector_low, int out_vector_low_length);
 
-void WebRtcSpl_FilterMAFastQ12(WebRtc_Word16* in_vector, WebRtc_Word16* out_vector, WebRtc_Word16* ma_coef,
-                               WebRtc_Word16 ma_coef_length, WebRtc_Word16 vector_length);
-void WebRtcSpl_FilterARFastQ12(WebRtc_Word16* in_vector, WebRtc_Word16* out_vector, WebRtc_Word16* ar_coef,
-                               WebRtc_Word16 ar_coef_length, WebRtc_Word16 vector_length);
-int WebRtcSpl_DownsampleFast(WebRtc_Word16* in_vector, WebRtc_Word16 in_vector_length,
-                             WebRtc_Word16* out_vector, WebRtc_Word16 out_vector_length,
-                             WebRtc_Word16* ma_coef, WebRtc_Word16 ma_coef_length, WebRtc_Word16 factor,
+void WebRtcSpl_FilterMAFastQ12(WebRtc_Word16* in_vector,
+                               WebRtc_Word16* out_vector,
+                               WebRtc_Word16* ma_coef,
+                               WebRtc_Word16 ma_coef_length,
+                               WebRtc_Word16 vector_length);
+void WebRtcSpl_FilterARFastQ12(WebRtc_Word16* in_vector,
+                               WebRtc_Word16* out_vector,
+                               WebRtc_Word16* ar_coef,
+                               WebRtc_Word16 ar_coef_length,
+                               WebRtc_Word16 vector_length);
+int WebRtcSpl_DownsampleFast(WebRtc_Word16* in_vector,
+                             WebRtc_Word16 in_vector_length,
+                             WebRtc_Word16* out_vector,
+                             WebRtc_Word16 out_vector_length,
+                             WebRtc_Word16* ma_coef,
+                             WebRtc_Word16 ma_coef_length,
+                             WebRtc_Word16 factor,
                              WebRtc_Word16 delay);
 // End: Filter operations.
 
@@ -331,8 +431,12 @@ int WebRtcSpl_DownsampleFast(WebRtc_Word16* in_vector, WebRtc_Word16 in_vector_l
 int WebRtcSpl_ComplexFFT(WebRtc_Word16 vector[], int stages, int mode);
 int WebRtcSpl_ComplexIFFT(WebRtc_Word16 vector[], int stages, int mode);
 #if (defined ARM9E_GCC) || (defined ARM_WINM) || (defined ANDROID_AECOPT)
-int WebRtcSpl_ComplexFFT2(WebRtc_Word16 in_vector[], WebRtc_Word16 out_vector[], int stages, int mode);
-int WebRtcSpl_ComplexIFFT2(WebRtc_Word16 in_vector[], WebRtc_Word16 out_vector[], int stages, int mode);
+int WebRtcSpl_ComplexFFT2(WebRtc_Word16 in_vector[],
+                          WebRtc_Word16 out_vector[],
+                          int stages, int mode);
+int WebRtcSpl_ComplexIFFT2(WebRtc_Word16 in_vector[],
+                           WebRtc_Word16 out_vector[],
+                           int stages, int mode);
 #endif
 void WebRtcSpl_ComplexBitReverse(WebRtc_Word16 vector[], int stages);
 // End: FFT operations
