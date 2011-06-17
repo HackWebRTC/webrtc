@@ -94,7 +94,8 @@ public:
 //          - callback         : Callback object which handles encoded images.
 //
 // Return value                : WEBRTC_VIDEO_CODEC_OK if OK, < 0 otherwise.
-    virtual WebRtc_Word32 RegisterEncodeCompleteCallback(EncodedImageCallback* callback);
+    virtual WebRtc_Word32 RegisterEncodeCompleteCallback(EncodedImageCallback*
+                                                         callback);
 
 // Inform the encoder of the new packet loss rate in the network
 //
@@ -112,7 +113,8 @@ public:
 //          - frameRate        : The target frame rate
 //
 // Return value                : WEBRTC_VIDEO_CODEC_OK if OK, < 0 otherwise.
-    virtual WebRtc_Word32 SetRates(WebRtc_UWord32 newBitRateKbit, WebRtc_UWord32 frameRate);
+    virtual WebRtc_Word32 SetRates(WebRtc_UWord32 newBitRateKbit,
+                                   WebRtc_UWord32 frameRate);
 
 // Get version number for the codec.
 //
@@ -125,12 +127,22 @@ public:
 //
 // Return value         : >0 - Length of written string.
 //                        <0 - WEBRTC_VIDEO_CODEC_ERR_SIZE
-    virtual WebRtc_Word32 Version(WebRtc_Word8 *version, WebRtc_Word32 length) const;
-    static WebRtc_Word32  VersionStatic(WebRtc_Word8 *version, WebRtc_Word32 length);
+    virtual WebRtc_Word32 Version(WebRtc_Word8 *version,
+                                  WebRtc_Word32 length) const;
+    static WebRtc_Word32  VersionStatic(WebRtc_Word8 *version,
+                                        WebRtc_Word32 length);
 
 private:
 // Call encoder initialize function and set speed.
     WebRtc_Word32 InitAndSetSpeed();
+
+// Determine maximum target for Intra frames
+//
+// Input:
+//    - optimalBuffersize  : Optimal buffer size
+// Return Value            : Max target size for Intra frames represented as
+//                           percentage of the per frame bandwidth
+    WebRtc_Word32 MaxIntraTarget(WebRtc_Word32 optimalBuffersize);
 
     EncodedImage              _encodedImage;
     EncodedImageCallback*     _encodedCompleteCallback;
@@ -197,7 +209,8 @@ public:
 //          - callback         : Callback object which handles decoded images.
 //
 // Return value                : WEBRTC_VIDEO_CODEC_OK if OK, < 0 otherwise.
-    virtual WebRtc_Word32 RegisterDecodeCompleteCallback(DecodedImageCallback* callback);
+    virtual WebRtc_Word32 RegisterDecodeCompleteCallback(DecodedImageCallback*
+                                                         callback);
 
 // Free decoder memory.
 //
@@ -213,7 +226,9 @@ public:
 //                                  WEBRTC_VIDEO_CODEC_UNINITIALIZED
 //                                  WEBRTC_VIDEO_CODEC_ERROR
     virtual WebRtc_Word32 Reset();
-    virtual WebRtc_Word32 SetCodecConfigParameters(WebRtc_UWord8* /*buffer*/, WebRtc_Word32 /*size*/) { return -1; }
+    virtual WebRtc_Word32 SetCodecConfigParameters(WebRtc_UWord8* /*buffer*/,
+                                                   WebRtc_Word32 /*size*/)
+                                                   { return -1; }
 
 // Create a copy of the codec and its internal state.
 //

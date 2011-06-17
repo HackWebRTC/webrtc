@@ -260,7 +260,8 @@ VP8Encoder::InitEncode(const VideoCodec* inst,
 
     _cfg->g_w = inst->width;
     _cfg->g_h = inst->height;
-    if (_maxBitRateKbit > 0 && inst->startBitrate > static_cast<unsigned int>(_maxBitRateKbit))
+    if (_maxBitRateKbit > 0 &&
+        inst->startBitrate > static_cast<unsigned int>(_maxBitRateKbit))
     {
         _cfg->rc_target_bitrate = _maxBitRateKbit;
     }
@@ -285,17 +286,21 @@ VP8Encoder::InitEncode(const VideoCodec* inst,
     _cfg->rc_resize_allowed = 0;
     _cfg->rc_min_quantizer = 4;
     _cfg->rc_max_quantizer = 56;
-    _cfg->rc_undershoot_pct = 98;
+    _cfg->rc_undershoot_pct = 100;
+    _cfg->rc_overshoot_pct = 15;
     _cfg->rc_buf_initial_sz = 500;
     _cfg->rc_buf_optimal_sz = 600;
     _cfg->rc_buf_sz = 1000;
+    _cfg->rc_max_intra_bitrate_pct = MaxIntraTarget(_cfg->rc_buf_optimal_sz);
+
 
 
 #ifdef DEV_PIC_LOSS
     // this can only be off if we know we use feedback
     if (_pictureLossIndicationOn)
     {
-        _cfg->kf_mode = VPX_KF_DISABLED; // don't generate key frame unless we tell you
+        // don't generate key frame unless we tell you
+        _cfg->kf_mode = VPX_KF_DISABLED;
     }
     else
 #endif
@@ -350,6 +355,23 @@ VP8Encoder::InitAndSetSpeed()
 }
 
 WebRtc_Word32
+VP8Encoder::MaxIntraTarget(WebRtc_Word32 optimalBuffersize)
+{
+    // Set max to 1 / 2 of the optimal buffer level (normalize by target BR).
+    // Max target size = 0.5 * optimalBufferSize * targetBR[Kbps].
+    // This values is presented in percentage of perFrameBw.
+    // perFrameBw = targetBR[Kbps] * 1000 / frameRate.
+    // The target in % is as follows:
+    WebRtc_Word32 targetPct = (optimalBuffersize >> 1) * _maxFrameRate / 10;
+
+    // Don't go below 3 times the per frame bandwidth.
+    const WebRtc_Word32 minIntraTh = 300;
+    targetPct = (targetPct < minIntraTh) ? minIntraTh: targetPct;
+
+    return  targetPct;
+}
+
+WebRtc_Word32
 VP8Encoder::Encode(const RawImage& inputImage,
                    const void* codecSpecificInfo,
                    VideoFrameType frameTypes)
@@ -386,11 +408,13 @@ VP8Encoder::Encode(const RawImage& inputImage,
 #ifdef DEV_PIC_LOSS
         if (_feedbackModeOn && codecSpecificInfo)
         {
-            const CodecSpecificInfo* info = static_cast<const CodecSpecificInfo*>(codecSpecificInfo);
+            const CodecSpecificInfo* info = static_cast<const
+                                     CodecSpecificInfo*>(codecSpecificInfo);
             if (info->codecType == kVideoCodecVP8)
             {
-                // codecSpecificInfo will contain received RPSI and SLI picture IDs
-                // this will help us decide on when to switch type of reference frame
+                // codecSpecificInfo will contain received RPSI and SLI
+                // picture IDs. This will help us decide on when to switch type
+                // of reference frame
 
                 // if we receive SLI
                 // force using an old golden or altref as a reference
@@ -644,10 +668,13 @@ VP8Decoder::InitDecode(const VideoCodec* inst,
     {
         return WEBRTC_VIDEO_CODEC_MEMORY;
     }
+
+    // TODO(mikhal): evaluate post-proc settings
     // config post-processing settings for decoder
     ppcfg.post_proc_flag   = VP8_DEBLOCK;
-    ppcfg.deblocking_level = 5; //Strength of deblocking filter. Valid range:[0,16]
-    //ppcfg.NoiseLevel     = 1; //Noise intensity. Valid range: [0,7]
+    // Strength of deblocking filter. Valid range:[0,16]
+    ppcfg.deblocking_level = 5;
+    // ppcfg.NoiseLevel     = 1; //Noise intensity. Valid range: [0,7]
     vpx_codec_control(_decoder, VP8_SET_POSTPROC, &ppcfg);
 
     // Save the VideoCodec instance for later; mainly for duplicating the decoder.
@@ -706,7 +733,8 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
 
     // scan for number of bytes used for picture ID
     WebRtc_UWord8 numberOfBytes;
-    for (numberOfBytes = 0;(inputImage._buffer[numberOfBytes] & 0x80 )&& numberOfBytes < 8; numberOfBytes++)
+    for (numberOfBytes = 0;(inputImage._buffer[numberOfBytes] & 0x80 ) &&
+         numberOfBytes < 8; numberOfBytes++)
     {
         pictureID += inputImage._buffer[numberOfBytes] & 0x7f;
         pictureID <<= 7;
@@ -726,8 +754,8 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
 
     // we remove the picture ID here
     if (vpx_codec_decode(_decoder,
-                         inputImage._buffer+numberOfBytes,
-                         inputImage._length-numberOfBytes,
+                         inputImage._buffer + numberOfBytes,
+                         inputImage._length - numberOfBytes,
                          0,
                          VPX_DL_REALTIME))
     {
@@ -777,7 +805,7 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
     img = vpx_codec_get_frame(_decoder, &_iter);
 
     // Allocate memory for decoded image
-    WebRtc_UWord32 requiredSize = (3*img->h * img->w) >> 1;
+    WebRtc_UWord32 requiredSize = (3 * img->h * img->w) >> 1;
     if (_decodedImage._buffer != NULL)
     {
         delete [] _decodedImage._buffer;
