@@ -142,8 +142,9 @@ private:
 //    - optimalBuffersize  : Optimal buffer size
 // Return Value            : Max target size for Intra frames represented as
 //                           percentage of the per frame bandwidth
+#ifdef VP8_LATEST
     WebRtc_Word32 MaxIntraTarget(WebRtc_Word32 optimalBuffersize);
-
+#endif
     EncodedImage              _encodedImage;
     EncodedImageCallback*     _encodedCompleteCallback;
     WebRtc_Word32             _width;

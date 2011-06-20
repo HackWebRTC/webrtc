@@ -30,6 +30,7 @@
 
 #define VP8_FREQ_HZ 90000
 //#define DEV_PIC_LOSS
+//#define VP8_LATEST
 
 namespace webrtc
 {
@@ -291,8 +292,9 @@ VP8Encoder::InitEncode(const VideoCodec* inst,
     _cfg->rc_buf_initial_sz = 500;
     _cfg->rc_buf_optimal_sz = 600;
     _cfg->rc_buf_sz = 1000;
+#ifdef VP8_LATEST
     _cfg->rc_max_intra_bitrate_pct = MaxIntraTarget(_cfg->rc_buf_optimal_sz);
-
+#endif
 
 
 #ifdef DEV_PIC_LOSS
@@ -354,6 +356,7 @@ VP8Encoder::InitAndSetSpeed()
     return WEBRTC_VIDEO_CODEC_OK;
 }
 
+#ifdef VP8_LATEST
 WebRtc_Word32
 VP8Encoder::MaxIntraTarget(WebRtc_Word32 optimalBuffersize)
 {
@@ -370,6 +373,7 @@ VP8Encoder::MaxIntraTarget(WebRtc_Word32 optimalBuffersize)
 
     return  targetPct;
 }
+#endif 
 
 WebRtc_Word32
 VP8Encoder::Encode(const RawImage& inputImage,
