@@ -59,14 +59,16 @@ int main(int argc, char* argv[])
     fgets(tempStr, 100, statFile);
 
     // define map
-    std::map<std::pair<WebRtc_UWord16, WebRtc_UWord32>, WebRtc_Word32> packetStats;
+    std::map<std::pair<WebRtc_UWord16, WebRtc_UWord32>, WebRtc_UWord32>
+        packetStats;
     WebRtc_UWord16 seqNo;
     WebRtc_UWord32 ts;
-    WebRtc_Word32 sendTime;
+    WebRtc_UWord32 sendTime;
 
-    while(fscanf(statFile, "%hu %lu %ld\n", &seqNo, &ts, &sendTime) == 3)
+    while(fscanf(statFile, "%u %u %u %*i\n", &seqNo, &ts, &sendTime) == 3)
     {
-        std::pair<WebRtc_UWord16, WebRtc_UWord32> tempPair = std::pair<WebRtc_UWord16, WebRtc_UWord32>(seqNo, ts);
+        std::pair<WebRtc_UWord16, WebRtc_UWord32> tempPair =
+            std::pair<WebRtc_UWord16, WebRtc_UWord32>(seqNo, ts);
 
         packetStats[tempPair] = sendTime;
     }
@@ -97,7 +99,7 @@ int main(int argc, char* argv[])
         std::pair<WebRtc_UWord16, WebRtc_UWord32> tempPair = 
             std::pair<WebRtc_UWord16, WebRtc_UWord32>(newPacket->sequenceNumber(), newPacket->timeStamp());
 
-        WebRtc_Word32 newSendTime = packetStats[tempPair];
+        WebRtc_UWord32 newSendTime = packetStats[tempPair];
         if (newSendTime >= 0) 
         {
             newPacket->setTime(newSendTime); // set new send time
