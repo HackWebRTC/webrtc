@@ -14,7 +14,8 @@
 #include "typedefs.h"
 #include "rtp_rtcp_config.h"     // misc. defines (e.g. MAX_PACKET_LENGTH)
 #include "common_types.h"            // Transport
-#include "list_wrapper.h"
+#include <stdio.h>
+#include <list>
 
 namespace webrtc {
 class Bitrate
@@ -54,10 +55,11 @@ private:
 
 struct DataTimeSizeTuple
 {
-    DataTimeSizeTuple(WebRtc_Word64 sizeBytes, WebRtc_Word64 timeCompleteMs) :
-                            _sizeBytes(sizeBytes), _timeCompleteMs(timeCompleteMs) {}
+    DataTimeSizeTuple(WebRtc_UWord32 sizeBytes, WebRtc_Word64 timeCompleteMs) :
+                            _sizeBytes(sizeBytes),
+                            _timeCompleteMs(timeCompleteMs) {}
 
-    WebRtc_Word64     _sizeBytes;
+    WebRtc_UWord32    _sizeBytes;
     WebRtc_Word64     _timeCompleteMs;
 };
 
@@ -68,12 +70,14 @@ public:
     ~BitRateStats();
 
     void Init();
-    void Update(WebRtc_Word64 packetSizeBytes, WebRtc_Word64 nowMs);
-    WebRtc_UWord32 BitRateNow();
+    void Update(WebRtc_UWord32 packetSizeBytes, WebRtc_Word64 nowMs);
+    WebRtc_UWord32 BitRate(WebRtc_Word64 nowMs);
 
 private:
-    ListWrapper              _dataSamples;
-    WebRtc_UWord32        _avgSentBitRateBps;
+    void EraseOld(WebRtc_Word64 nowMs);
+
+    std::list<DataTimeSizeTuple*> _dataSamples;
+    WebRtc_UWord32                _accumulatedBytes;
 };
 } // namespace webrtc
 

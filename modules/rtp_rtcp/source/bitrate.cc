@@ -127,81 +127,77 @@ Bitrate::Process()
     }
 }
 
-
 BitRateStats::BitRateStats()
-    :_dataSamples(), _avgSentBitRateBps(0)
+    :_dataSamples(), _accumulatedBytes(0)
 {
 }
 
 BitRateStats::~BitRateStats()
 {
-    ListItem* item = _dataSamples.First();
-    while (item != NULL)
+    while (_dataSamples.size() > 0)
     {
-        delete static_cast<DataTimeSizeTuple*>(item->GetItem());
-        _dataSamples.Erase(item);
-        item = _dataSamples.First();
+        delete _dataSamples.front();
+        _dataSamples.pop_front();
     }
 }
 
 void BitRateStats::Init()
 {
-    _avgSentBitRateBps = 0;
-
-    ListItem* item = _dataSamples.First();
-    while (item != NULL)
+    _accumulatedBytes = 0;
+    while (_dataSamples.size() > 0)
     {
-        delete static_cast<DataTimeSizeTuple*>(item->GetItem());
-        _dataSamples.Erase(item);
-        item = _dataSamples.First();
+        delete _dataSamples.front();
+        _dataSamples.pop_front();
     }
 }
 
-void BitRateStats::Update(WebRtc_Word64 packetSizeBytes, WebRtc_Word64 nowMs)
+void BitRateStats::Update(WebRtc_UWord32 packetSizeBytes, WebRtc_Word64 nowMs)
 {
-    WebRtc_UWord32 sumBytes = 0;
-    WebRtc_Word64 timeOldest = nowMs;
     // Find an empty slot for storing the new sample and at the same time
     // accumulate the history.
-    _dataSamples.PushFront(new DataTimeSizeTuple(packetSizeBytes, nowMs));
-    ListItem* item = _dataSamples.First();
-    while (item != NULL)
+    _dataSamples.push_back(new DataTimeSizeTuple(packetSizeBytes, nowMs));
+    _accumulatedBytes += packetSizeBytes;
+    EraseOld(nowMs);
+}
+
+void BitRateStats::EraseOld(WebRtc_Word64 nowMs)
+{
+    while (_dataSamples.size() > 0)
     {
-        const DataTimeSizeTuple* sample = static_cast<DataTimeSizeTuple*>(item->GetItem());
-        if (nowMs - sample->_timeCompleteMs < BITRATE_AVERAGE_WINDOW)
+        if (nowMs - _dataSamples.front()->_timeCompleteMs >
+                                                        BITRATE_AVERAGE_WINDOW)
         {
-            sumBytes += static_cast<WebRtc_UWord32>(sample->_sizeBytes);
-            item = _dataSamples.Next(item);
+            // Delete old sample
+            _accumulatedBytes -= _dataSamples.front()->_sizeBytes;
+            delete _dataSamples.front();
+            _dataSamples.pop_front();
         }
         else
         {
-            // Delete old sample
-            delete sample;
-            ListItem* itemToErase = item;
-            item = _dataSamples.Next(item);
-            _dataSamples.Erase(itemToErase);
+            break;
         }
     }
-    const ListItem* oldest = _dataSamples.Last();
-    if (oldest != NULL)
+}
+
+WebRtc_UWord32 BitRateStats::BitRate(WebRtc_Word64 nowMs)
+{
+    // Calculate the average bit rate the past BITRATE_AVERAGE_WINDOW ms.
+    // Removes any old samples from the list.
+    EraseOld(nowMs);
+    WebRtc_Word64 timeOldest = nowMs;
+    if (_dataSamples.size() > 0)
     {
-        timeOldest =
-           static_cast<DataTimeSizeTuple*>(oldest->GetItem())->_timeCompleteMs;
+        timeOldest = _dataSamples.front()->_timeCompleteMs;
     }
     // Update average bit rate
     float denom = static_cast<float>(nowMs - timeOldest);
-    if (denom < 1.0)
+    if (nowMs == timeOldest)
     {
         // Calculate with a one second window when we haven't
         // received more than one packet.
         denom = 1000.0;
     }
-    _avgSentBitRateBps = static_cast<WebRtc_UWord32>(sumBytes * 8.0f * 1000.0f / denom + 0.5f);
-}
-
-WebRtc_UWord32 BitRateStats::BitRateNow()
-{
-    Update(-1, TickTime::MillisecondTimestamp());
-    return static_cast<WebRtc_UWord32>(_avgSentBitRateBps + 0.5f);
+    return static_cast<WebRtc_UWord32>(_accumulatedBytes * 8.0f * 1000.0f /
+                                       denom + 0.5f);
 }
 } // namespace webrtc

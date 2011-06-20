@@ -298,7 +298,10 @@ RTPReceiverVideo::ParseVideoCodecSpecific(WebRtcRTPHeader* rtpHeader,
     // Update the remote rate control object and update the overuse
     // detector with the current rate control region.
     _criticalSectionReceiverVideo.Enter();
-    const RateControlInput input(_overUseDetector.State(), _videoBitRate.BitRateNow(), _overUseDetector.NoiseVar());
+    const RateControlInput input(_overUseDetector.State(),
+                                 _videoBitRate.BitRate(
+                                         TickTime::MillisecondTimestamp()),
+                                 _overUseDetector.NoiseVar());
     _criticalSectionReceiverVideo.Leave();
 
     // Call the callback outside critical section
