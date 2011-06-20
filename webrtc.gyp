@@ -18,6 +18,13 @@
         'voice_engine.gyp:voe_auto_test',
         'video_engine.gyp:vie_auto_test',
       ],
+    },
+    {
+      'target_name': 'cmd_test',
+      'type': 'none',
+      'dependencies': [
+        'voice_engine.gyp:voe_cmd_test',
+      ],
     },    
     {
       'target_name': 'peerconnection_server',

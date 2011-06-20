@@ -15,7 +15,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE_TAGS := tests
 LOCAL_CPP_EXTENSION := .cc
 LOCAL_SRC_FILES:= \
-    ui_linux_test.cc
+    voe_cmd_test.cc
 
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \

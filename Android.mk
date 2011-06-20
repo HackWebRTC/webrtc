@@ -55,7 +55,7 @@ include $(MY_WEBRTC_ROOT_PATH)/android-webrtc.mk
 
 # build test apps
 #include $(MY_WEBRTC_ROOT_PATH)/modules/audio_processing/main/test/process_test/Android.mk
-#include $(MY_WEBRTC_ROOT_PATH)/voice_engine/main/test/ui_linux_test/Android.mk
+#include $(MY_WEBRTC_ROOT_PATH)/voice_engine/main/test/cmd_test/Android.mk
 #include $(MY_WEBRTC_ROOT_PATH)/voice_engine/main/test/auto_test/Android.mk
 #include $(MY_WEBRTC_ROOT_PATH)/video_engine/main/test/AutoTest/android/Android.mk
 #include $(MY_WEBRTC_ROOT_PATH)/video_engine/main/test/android_test/Android.mk

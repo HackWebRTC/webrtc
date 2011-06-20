@@ -92,6 +92,18 @@
         }],
       ],
     },
+    {
+      # command line test that should work on linux/mac/win
+      'target_name': 'voe_cmd_test',
+      'type': 'executable',
+      'dependencies': [
+        'voice_engine/main/source/voice_engine_core.gyp:voice_engine_core',
+        'system_wrappers/source/system_wrappers.gyp:system_wrappers',
+      ],
+      'sources': [
+        'voice_engine/main/test/cmd_test/voe_cmd_test.cc',
+      ],
+    },
   ],
   'conditions': [
     ['OS=="win"', {
