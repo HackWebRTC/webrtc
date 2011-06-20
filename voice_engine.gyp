@@ -163,7 +163,13 @@
           'configurations': {
             'Common_Base': {
               'msvs_configuration_attributes': {
-                'UseOfMFC': '1',  # Static
+                'conditions': [
+                  ['component=="shared_library"', {
+                    'UseOfMFC': '2',  # Shared DLL
+                  },{
+                    'UseOfMFC': '1',  # Static
+                  }],
+                ],
               },
             },
           },
