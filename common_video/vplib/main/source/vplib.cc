@@ -27,7 +27,8 @@ namespace webrtc
 {
 
 //Verify and allocate buffer
-static WebRtc_Word32 VerifyAndAllocate(WebRtc_UWord8*& buffer, WebRtc_UWord32 currentSize,
+static WebRtc_Word32 VerifyAndAllocate(WebRtc_UWord8*& buffer,
+                                       WebRtc_UWord32 currentSize,
                                        WebRtc_UWord32 newSize);
 // clip value to [0,255]
 inline WebRtc_UWord8 Clip(WebRtc_Word32 val);
@@ -198,30 +199,34 @@ ConvertI420ToRGB24(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
     {  // 2 rows at a time, 2 y's at a time
         for (w = 0; w < (width >> 1); w++)
         {// vertical and horizontal sub-sampling
-            tmpR = (WebRtc_Word32)((mapYc[y1[0]] +                mapVcr[v[0]] + 128) >> 8);
-            tmpG = (WebRtc_Word32)((mapYc[y1[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-            tmpB = (WebRtc_Word32)((mapYc[y1[0]] + mapUcb[u[0]]                + 128) >> 8);
+            tmpR = (WebRtc_Word32)((mapYc[y1[0]] + mapVcr[v[0]] + 128) >> 8);
+            tmpG = (WebRtc_Word32)((mapYc[y1[0]] + mapUcg[u[0]] + mapVcg[v[0]]
+                                    + 128) >> 8);
+            tmpB = (WebRtc_Word32)((mapYc[y1[0]] + mapUcb[u[0]] + 128) >> 8);
             out[2] = Clip(tmpR);
             out[1] = Clip(tmpG);
             out[0] = Clip(tmpB);
 
-            tmpR = (WebRtc_Word32)((mapYc[y2[0]] +                mapVcr[v[0]] + 128) >> 8);
-            tmpG = (WebRtc_Word32)((mapYc[y2[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-            tmpB = (WebRtc_Word32)((mapYc[y2[0]] + mapUcb[u[0]]                + 128) >> 8);
+            tmpR = (WebRtc_Word32)((mapYc[y2[0]] + mapVcr[v[0]] + 128) >> 8);
+            tmpG = (WebRtc_Word32)((mapYc[y2[0]] + mapUcg[u[0]] + mapVcg[v[0]]
+                                    + 128) >> 8);
+            tmpB = (WebRtc_Word32)((mapYc[y2[0]] + mapUcb[u[0]] + 128) >> 8);
             out2[2] = Clip(tmpR);
             out2[1] = Clip(tmpG);
             out2[0] = Clip(tmpB);
 
-            tmpR = (WebRtc_Word32)((mapYc[y1[1]] +                mapVcr[v[0]] + 128) >> 8);
-            tmpG = (WebRtc_Word32)((mapYc[y1[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-            tmpB = (WebRtc_Word32)((mapYc[y1[1]] + mapUcb[u[0]]                + 128) >> 8);
+            tmpR = (WebRtc_Word32)((mapYc[y1[1]] + mapVcr[v[0]] + 128) >> 8);
+            tmpG = (WebRtc_Word32)((mapYc[y1[1]] + mapUcg[u[0]] + mapVcg[v[0]]
+                                    + 128) >> 8);
+            tmpB = (WebRtc_Word32)((mapYc[y1[1]] + mapUcb[u[0]] + 128) >> 8);
             out[5] = Clip(tmpR);
             out[4] = Clip(tmpG);
             out[3] = Clip(tmpB);
 
-            tmpR = (WebRtc_Word32)((mapYc[y2[1]] +                mapVcr[v[0]] + 128) >> 8);
-            tmpG = (WebRtc_Word32)((mapYc[y2[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-            tmpB = (WebRtc_Word32)((mapYc[y2[1]] + mapUcb[u[0]] +                128) >> 8);
+            tmpR = (WebRtc_Word32)((mapYc[y2[1]] + mapVcr[v[0]] + 128) >> 8);
+            tmpG = (WebRtc_Word32)((mapYc[y2[1]] + mapUcg[u[0]] + mapVcg[v[0]]
+                                    + 128) >> 8);
+            tmpB = (WebRtc_Word32)((mapYc[y2[1]] + mapUcb[u[0]] + 128) >> 8);
             out2[5] = Clip(tmpR);
             out2[4] = Clip(tmpG);
             out2[3] = Clip(tmpB);
@@ -243,8 +248,9 @@ ConvertI420ToRGB24(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
 }
 
 WebRtc_Word32
-ConvertI420ToARGB(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame, WebRtc_UWord32 width,
-                  WebRtc_UWord32 height, WebRtc_UWord32 strideOut)
+ConvertI420ToARGB(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
+                  WebRtc_UWord32 width, WebRtc_UWord32 height,
+                  WebRtc_UWord32 strideOut)
 {
     if (width < 1 || height < 1)
     {
@@ -276,7 +282,8 @@ ConvertI420ToARGB(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame, WebRtc_
         {   // vertical and horizontal sub-sampling
 
             tmpR = (WebRtc_UWord32)((mapYc[y1[0]] + mapVcr[v[0]] + 128) >> 8);
-            tmpG = (WebRtc_UWord32)((mapYc[y1[0]] + mapUcg[u[0]] + mapVcg[v[0]] +128) >> 8);
+            tmpG = (WebRtc_UWord32)((mapYc[y1[0]] + mapUcg[u[0]] + mapVcg[v[0]]
+                                     +128) >> 8);
             tmpB = (WebRtc_UWord32)((mapYc[y1[0]] + mapUcb[u[0]] + 128) >> 8);
             out1[3] = 0xff;
             out1[2] = Clip(tmpR);
@@ -284,7 +291,8 @@ ConvertI420ToARGB(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame, WebRtc_
             out1[0] = Clip(tmpB);
 
             tmpR = (WebRtc_UWord32)((mapYc[y2[0]] + mapVcr[v[0]] + 128) >> 8);
-            tmpG = (WebRtc_UWord32)((mapYc[y2[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+            tmpG = (WebRtc_UWord32)((mapYc[y2[0]] + mapUcg[u[0]] + mapVcg[v[0]]
+                                     + 128) >> 8);
             tmpB = (WebRtc_UWord32)((mapYc[y2[0]] + mapUcb[u[0]] + 128) >> 8);
             out2[3] = 0xff;
             out2[2] = Clip(tmpR);
@@ -292,7 +300,8 @@ ConvertI420ToARGB(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame, WebRtc_
             out2[0] = Clip(tmpB);
 
             tmpR = (WebRtc_UWord32)((mapYc[y1[1]] + mapVcr[v[0]] + 128) >> 8);
-            tmpG = (WebRtc_UWord32)((mapYc[y1[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+            tmpG = (WebRtc_UWord32)((mapYc[y1[1]] + mapUcg[u[0]] + mapVcg[v[0]]
+                                     + 128) >> 8);
             tmpB = (WebRtc_UWord32)((mapYc[y1[1]] + mapUcb[u[0]] + 128) >> 8);
             out1[7] = 0xff;
             out1[6] = Clip(tmpR);
@@ -300,7 +309,8 @@ ConvertI420ToARGB(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame, WebRtc_
             out1[4] = Clip(tmpB);
 
             tmpR = (WebRtc_UWord32)((mapYc[y2[1]] + mapVcr[v[0]] + 128) >> 8);
-            tmpG = (WebRtc_UWord32)((mapYc[y2[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+            tmpG = (WebRtc_UWord32)((mapYc[y2[1]] + mapUcg[u[0]] + mapVcg[v[0]]
+                                     + 128) >> 8);
             tmpB = (WebRtc_UWord32)((mapYc[y2[1]] + mapUcb[u[0]] + 128) >> 8);
             out2[7] = 0xff;
             out2[6] = Clip(tmpR);
@@ -325,7 +335,8 @@ ConvertI420ToARGB(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame, WebRtc_
 
 WebRtc_Word32
 ConvertI420ToRGBAMac(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
-                     WebRtc_UWord32 width, WebRtc_UWord32 height, WebRtc_UWord32 strideOut)
+                     WebRtc_UWord32 width, WebRtc_UWord32 height,
+                     WebRtc_UWord32 strideOut)
 {
     if (height < 1 || width < 1)
     {
@@ -357,28 +368,32 @@ ConvertI420ToRGBAMac(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
         for (w = 0; w < (width >> 1); w++)
         {
             tmpR = (WebRtc_Word32)((mapYc[y1[0]] + mapVcr[v[0]] + 128  ) >> 8);
-            tmpG = (WebRtc_Word32)((mapYc[y1[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+            tmpG = (WebRtc_Word32)((mapYc[y1[0]] + mapUcg[u[0]] + mapVcg[v[0]]
+                                    + 128) >> 8);
             tmpB = (WebRtc_Word32)((mapYc[y1[0]] + mapUcb[u[0]] + 128 ) >> 8);
             out[1] = Clip(tmpR);
             out[2] = Clip(tmpG);
             out[3] = Clip(tmpB);
 
             tmpR = (WebRtc_Word32)((mapYc[y2[0]] + mapVcr[v[0]] + 128) >> 8);
-            tmpG = (WebRtc_Word32)((mapYc[y2[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+            tmpG = (WebRtc_Word32)((mapYc[y2[0]] + mapUcg[u[0]] + mapVcg[v[0]]
+                                    + 128) >> 8);
             tmpB = (WebRtc_Word32)((mapYc[y2[0]] + mapUcb[u[0]] + 128) >> 8);
             out2[1] = Clip(tmpR);
             out2[2] = Clip(tmpG);
             out2[3] = Clip(tmpB);
 
             tmpR = (WebRtc_Word32)((mapYc[y1[1]] + mapVcr[v[0]] + 128) >> 8);
-            tmpG = (WebRtc_Word32)((mapYc[y1[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+            tmpG = (WebRtc_Word32)((mapYc[y1[1]] + mapUcg[u[0]] + mapVcg[v[0]]
+                                    + 128) >> 8);
             tmpB = (WebRtc_Word32)((mapYc[y1[1]] + mapUcb[u[0]] + 128) >> 8);
             out[5] = Clip(tmpR);
             out[6] = Clip(tmpG);
             out[7] = Clip(tmpB);
 
             tmpR = (WebRtc_Word32)((mapYc[y2[1]] + mapVcr[v[0]] + 128) >> 8);
-            tmpG = (WebRtc_Word32)((mapYc[y2[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+            tmpG = (WebRtc_Word32)((mapYc[y2[1]] + mapUcg[u[0]] + mapVcg[v[0]]
+                                    + 128) >> 8);
             tmpB = (WebRtc_Word32)((mapYc[y2[1]] + mapUcb[u[0]] + 128) >> 8);
             out2[5] = Clip(tmpR);
             out2[6] = Clip(tmpG);
@@ -407,7 +422,8 @@ ConvertI420ToRGBAMac(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
 // Little Endian...
 WebRtc_Word32
 ConvertI420ToARGB4444(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
-                      WebRtc_UWord32 width, WebRtc_UWord32 height, WebRtc_UWord32 strideOut)
+                      WebRtc_UWord32 width, WebRtc_UWord32 height,
+                      WebRtc_UWord32 strideOut)
 {
     if (width < 1 || height < 1)
     {
@@ -416,7 +432,8 @@ ConvertI420ToARGB4444(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
     if (strideOut == 0)
     {
         strideOut = width;
-    } else if (strideOut < width)
+    }
+    else if (strideOut < width)
     {
         return -1;
     }
@@ -437,25 +454,29 @@ ConvertI420ToARGB4444(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
         {   // vertical and horizontal sub-sampling
             // Convert to RGB888 and re-scale to 4 bits
             tmpR = (WebRtc_Word32)((mapYc[y1[0]] + mapVcr[v[0]] + 128) >> 8);
-            tmpG = (WebRtc_Word32)((mapYc[y1[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+            tmpG = (WebRtc_Word32)((mapYc[y1[0]] + mapUcg[u[0]] + mapVcg[v[0]]
+                                    + 128) >> 8);
             tmpB = (WebRtc_Word32)((mapYc[y1[0]] + mapUcb[u[0]] + 128) >> 8);
             out[0] =(WebRtc_UWord8)((Clip(tmpG) & 0xf0) + (Clip(tmpB) >> 4));
             out[1] = (WebRtc_UWord8)(0xf0 + (Clip(tmpR) >> 4));
 
             tmpR = (WebRtc_Word32)((mapYc[y2[0]] + mapVcr[v[0]] + 128) >> 8);
-            tmpG = (WebRtc_Word32)((mapYc[y2[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+            tmpG = (WebRtc_Word32)((mapYc[y2[0]] + mapUcg[u[0]] + mapVcg[v[0]]
+                                    + 128) >> 8);
             tmpB = (WebRtc_Word32)((mapYc[y2[0]] + mapUcb[u[0]] + 128) >> 8);
             out2[0] = (WebRtc_UWord8)((Clip(tmpG) & 0xf0 ) + (Clip(tmpB) >> 4));
             out2[1] = (WebRtc_UWord8) (0xf0 + (Clip(tmpR) >> 4));
 
             tmpR = (WebRtc_Word32)((mapYc[y1[1]] + mapVcr[v[0]] + 128) >> 8);
-            tmpG = (WebRtc_Word32)((mapYc[y1[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+            tmpG = (WebRtc_Word32)((mapYc[y1[1]] + mapUcg[u[0]] + mapVcg[v[0]]
+                                    + 128) >> 8);
             tmpB = (WebRtc_Word32)((mapYc[y1[1]] + mapUcb[u[0]] + 128) >> 8);
             out[2] = (WebRtc_UWord8)((Clip(tmpG) & 0xf0 ) + (Clip(tmpB) >> 4));
             out[3] = (WebRtc_UWord8)(0xf0 + (Clip(tmpR) >> 4));
 
             tmpR = (WebRtc_Word32)((mapYc[y2[1]] + mapVcr[v[0]] + 128) >> 8);
-            tmpG = (WebRtc_Word32)((mapYc[y2[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+            tmpG = (WebRtc_Word32)((mapYc[y2[1]] + mapUcg[u[0]] + mapVcg[v[0]]
+                                    + 128) >> 8);
             tmpB = (WebRtc_Word32)((mapYc[y2[1]] + mapUcb[u[0]] + 128) >> 8);
             out2[2] = (WebRtc_UWord8)((Clip(tmpG) & 0xf0 ) + (Clip(tmpB) >> 4));
             out2[3] = (WebRtc_UWord8)(0xf0 + (Clip(tmpR) >> 4));
@@ -495,7 +516,7 @@ ConvertI420ToRGB565(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
     v = u + (width * height >> 2);
     WebRtc_UWord32 h, w;
 
-    for (h = (height >>1); h > 0; h--)
+    for (h = (height >> 1); h > 0; h--)
     {  // 2 rows at a time, 2 y's at a time
         for (w = 0; w < (width >> 1); w++)
         {   // vertical and horizontal sub-sampling
@@ -503,28 +524,32 @@ ConvertI420ToRGB565(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
             // 2. Shift to adequate location (in the 16 bit word) - RGB 565
 
             tmpR = (WebRtc_Word32)((mapYc[y1[0]] + mapVcr[v[0]] + 128) >> 8);
-            tmpG = (WebRtc_Word32)((mapYc[y1[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+            tmpG = (WebRtc_Word32)((mapYc[y1[0]] + mapUcg[u[0]] + mapVcg[v[0]]
+                                    + 128) >> 8);
             tmpB = (WebRtc_Word32)((mapYc[y1[0]] + mapUcb[u[0]] + 128) >> 8);
-            out[0]  = (WebRtc_UWord16)((Clip(tmpR) & 0xf8) << 8) + ((Clip(tmpG) & 0xfc) << 3)
-                                        + (Clip(tmpB) >> 3);
+            out[0]  = (WebRtc_UWord16)((Clip(tmpR) & 0xf8) << 8) + ((Clip(tmpG)
+                                        & 0xfc) << 3) + (Clip(tmpB) >> 3);
 
             tmpR = (WebRtc_Word32)((mapYc[y2[0]] + mapVcr[v[0]] + 128) >> 8);
-            tmpG = (WebRtc_Word32)((mapYc[y2[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+            tmpG = (WebRtc_Word32)((mapYc[y2[0]] + mapUcg[u[0]] + mapVcg[v[0]]
+                                    + 128) >> 8);
             tmpB = (WebRtc_Word32)((mapYc[y2[0]] + mapUcb[u[0]] + 128) >> 8);
-            out2[0] = (WebRtc_UWord16)((Clip(tmpR) & 0xf8) << 8) + ((Clip(tmpG) & 0xfc) << 3)
-                                        + (Clip(tmpB) >> 3);
+            out2[0] = (WebRtc_UWord16)((Clip(tmpR) & 0xf8) << 8) + ((Clip(tmpG)
+                                        & 0xfc) << 3) + (Clip(tmpB) >> 3);
 
             tmpR = (WebRtc_Word32)((mapYc[y1[1]] + mapVcr[v[0]] + 128) >> 8);
-            tmpG = (WebRtc_Word32)((mapYc[y1[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+            tmpG = (WebRtc_Word32)((mapYc[y1[1]] + mapUcg[u[0]] + mapVcg[v[0]]
+                                    + 128) >> 8);
             tmpB = (WebRtc_Word32)((mapYc[y1[1]] + mapUcb[u[0]] + 128) >> 8);
-            out[1] = (WebRtc_UWord16)((Clip(tmpR) & 0xf8) << 8) + ((Clip(tmpG) & 0xfc) << 3)
-                                       + (Clip(tmpB ) >> 3);
+            out[1] = (WebRtc_UWord16)((Clip(tmpR) & 0xf8) << 8) + ((Clip(tmpG)
+                                       & 0xfc) << 3) + (Clip(tmpB ) >> 3);
 
             tmpR = (WebRtc_Word32)((mapYc[y2[1]] + mapVcr[v[0]] + 128) >> 8);
-            tmpG = (WebRtc_Word32)((mapYc[y2[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+            tmpG = (WebRtc_Word32)((mapYc[y2[1]] + mapUcg[u[0]] + mapVcg[v[0]]
+                                    + 128) >> 8);
             tmpB = (WebRtc_Word32)((mapYc[y2[1]] + mapUcb[u[0]] + 128) >> 8);
-            out2[1] = (WebRtc_UWord16)((Clip(tmpR) & 0xf8) << 8) + ((Clip(tmpG) & 0xfc) << 3)
-                                        + (Clip(tmpB) >> 3);
+            out2[1] = (WebRtc_UWord16)((Clip(tmpR) & 0xf8) << 8) + ((Clip(tmpG)
+                                        & 0xfc) << 3) + (Clip(tmpB) >> 3);
 
             y1 += 2;
             y2 += 2;
@@ -573,28 +598,32 @@ ConvertI420ToRGB565Android(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame
             // 2. Shift to adequate location (in the 16 bit word) - RGB 565
 
             tmpR = (WebRtc_Word32)((mapYc[y1[0]] + mapVcr[v[0]] + 128) >> 8);
-            tmpG = (WebRtc_Word32)((mapYc[y1[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+            tmpG = (WebRtc_Word32)((mapYc[y1[0]] + mapUcg[u[0]] + mapVcg[v[0]]
+                                    + 128) >> 8);
             tmpB = (WebRtc_Word32)((mapYc[y1[0]] + mapUcb[u[0]] + 128) >> 8);
-            out[0]  = (WebRtc_UWord16)((Clip(tmpR) & 0xf8) << 8) + ((Clip(tmpG) & 0xfc) << 3)
-                                        + (Clip(tmpB) >> 3);
+            out[0]  = (WebRtc_UWord16)((Clip(tmpR) & 0xf8) << 8) + ((Clip(tmpG)
+                                        & 0xfc) << 3) + (Clip(tmpB) >> 3);
 
             tmpR = (WebRtc_Word32)((mapYc[y2[0]] + mapVcr[v[0]] + 128) >> 8);
-            tmpG = (WebRtc_Word32)((mapYc[y2[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+            tmpG = (WebRtc_Word32)((mapYc[y2[0]] + mapUcg[u[0]] + mapVcg[v[0]]
+                                    + 128) >> 8);
             tmpB = (WebRtc_Word32)((mapYc[y2[0]] + mapUcb[u[0]] + 128) >> 8);
-            out2[0] = (WebRtc_UWord16)((Clip(tmpR) & 0xf8) << 8) + ((Clip(tmpG) & 0xfc) << 3)
-                                        + (Clip(tmpB) >> 3);
+            out2[0] = (WebRtc_UWord16)((Clip(tmpR) & 0xf8) << 8) + ((Clip(tmpG)
+                                        & 0xfc) << 3) + (Clip(tmpB) >> 3);
 
             tmpR = (WebRtc_Word32)((mapYc[y1[1]] + mapVcr[v[0]] + 128) >> 8);
-            tmpG = (WebRtc_Word32)((mapYc[y1[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+            tmpG = (WebRtc_Word32)((mapYc[y1[1]] + mapUcg[u[0]] + mapVcg[v[0]]
+                                    + 128) >> 8);
             tmpB = (WebRtc_Word32)((mapYc[y1[1]] + mapUcb[u[0]] + 128) >> 8);
-            out[1] = (WebRtc_UWord16)((Clip(tmpR) & 0xf8) << 8) + ((Clip(tmpG) & 0xfc) << 3)
-                                       + (Clip(tmpB ) >> 3);
+            out[1] = (WebRtc_UWord16)((Clip(tmpR) & 0xf8) << 8) + ((Clip(tmpG)
+                                        & 0xfc) << 3) + (Clip(tmpB ) >> 3);
 
             tmpR = (WebRtc_Word32)((mapYc[y2[1]] + mapVcr[v[0]] + 128) >> 8);
-            tmpG = (WebRtc_Word32)((mapYc[y2[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+            tmpG = (WebRtc_Word32)((mapYc[y2[1]] + mapUcg[u[0]] + mapVcg[v[0]]
+                                    + 128) >> 8);
             tmpB = (WebRtc_Word32)((mapYc[y2[1]] + mapUcb[u[0]] + 128) >> 8);
-            out2[1] = (WebRtc_UWord16)((Clip(tmpR) & 0xf8) << 8) + ((Clip(tmpG) & 0xfc) << 3)
-                                        + (Clip(tmpB) >> 3);
+            out2[1] = (WebRtc_UWord16)((Clip(tmpR) & 0xf8) << 8) + ((Clip(tmpG)
+                                        & 0xfc) << 3) + (Clip(tmpB) >> 3);
 
             y1 += 2;
             y2 += 2;
@@ -614,7 +643,8 @@ ConvertI420ToRGB565Android(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame
 
 WebRtc_Word32
 ConvertI420ToARGB1555(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
-                      WebRtc_UWord32 width, WebRtc_UWord32 height, WebRtc_UWord32 strideOut)
+                      WebRtc_UWord32 width, WebRtc_UWord32 height,
+                      WebRtc_UWord32 strideOut)
 {
     if (width < 1 || height < 1)
     {
@@ -649,28 +679,32 @@ ConvertI420ToARGB1555(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
             // 2. shift to adequate location (in the 16 bit word) - RGB 555
             // 3. Add 1 for alpha value
             tmpR = (WebRtc_Word32)((mapYc[y1[0]] + mapVcr[v[0]] + 128) >> 8);
-            tmpG = (WebRtc_Word32)((mapYc[y1[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+            tmpG = (WebRtc_Word32)((mapYc[y1[0]] + mapUcg[u[0]] + mapVcg[v[0]]
+                                    + 128) >> 8);
             tmpB = (WebRtc_Word32)((mapYc[y1[0]] + mapUcb[u[0]] + 128) >> 8);
-            out[0]  = (WebRtc_UWord16)(0x8000 + ((Clip(tmpR) & 0xf8) << 10) + ((Clip(tmpG) & 0xf8) << 3)
-                                       + (Clip(tmpB) >> 3));
+            out[0]  = (WebRtc_UWord16)(0x8000 + ((Clip(tmpR) & 0xf8) << 10) +
+                      ((Clip(tmpG) & 0xf8) << 3) + (Clip(tmpB) >> 3));
 
             tmpR = (WebRtc_Word32)((mapYc[y2[0]] + mapVcr[v[0]] + 128) >> 8);
-            tmpG = (WebRtc_Word32)((mapYc[y2[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+            tmpG = (WebRtc_Word32)((mapYc[y2[0]] + mapUcg[u[0]] + mapVcg[v[0]]
+                                    + 128) >> 8);
             tmpB = (WebRtc_Word32)((mapYc[y2[0]] + mapUcb[u[0]] + 128) >> 8);
-            out2[0]  = (WebRtc_UWord16)(0x8000 + ((Clip(tmpR) & 0xf8) << 10) + ((Clip(tmpG) & 0xf8) << 3)
-                                        + (Clip(tmpB) >> 3));
+            out2[0]  = (WebRtc_UWord16)(0x8000 + ((Clip(tmpR) & 0xf8) << 10) +
+                       ((Clip(tmpG) & 0xf8) << 3) + (Clip(tmpB) >> 3));
 
             tmpR = (WebRtc_Word32)((mapYc[y1[1]] + mapVcr[v[0]] + 128) >> 8);
-            tmpG = (WebRtc_Word32)((mapYc[y1[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+            tmpG = (WebRtc_Word32)((mapYc[y1[1]] + mapUcg[u[0]] + mapVcg[v[0]]
+                                    + 128) >> 8);
             tmpB = (WebRtc_Word32)((mapYc[y1[1]] + mapUcb[u[0]] + 128) >> 8);
-            out[1]  = (WebRtc_UWord16)(0x8000 + ((Clip(tmpR) & 0xf8) << 10) + ((Clip(tmpG) & 0xf8) << 3)
-                                       + (Clip(tmpB) >> 3));
+            out[1]  = (WebRtc_UWord16)(0x8000 + ((Clip(tmpR) & 0xf8) << 10) +
+                      ((Clip(tmpG) & 0xf8) << 3)  + (Clip(tmpB) >> 3));
 
             tmpR = (WebRtc_Word32)((mapYc[y2[1]] + mapVcr[v[0]] + 128) >> 8);
-            tmpG = (WebRtc_Word32)((mapYc[y2[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+            tmpG = (WebRtc_Word32)((mapYc[y2[1]] + mapUcg[u[0]] + mapVcg[v[0]]
+                                    + 128) >> 8);
             tmpB = (WebRtc_Word32)((mapYc[y2[1]] + mapUcb[u[0]] + 128) >> 8);
-            out2[1]  = (WebRtc_UWord16)(0x8000 + ((Clip(tmpR) & 0xf8) << 10) + ((Clip(tmpG) & 0xf8) << 3)
-                                        + (Clip(tmpB) >> 3));
+            out2[1]  = (WebRtc_UWord16)(0x8000 + ((Clip(tmpR) & 0xf8) << 10) +
+                       ((Clip(tmpG) & 0xf8) << 3)  + (Clip(tmpB) >> 3));
 
             y1 += 2;
             y2 += 2;
@@ -688,8 +722,9 @@ ConvertI420ToARGB1555(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
 }
 
 WebRtc_Word32
-ConvertI420ToYUY2(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame, WebRtc_UWord32 width,
-                  WebRtc_UWord32 height, WebRtc_UWord32 strideOut)
+ConvertI420ToYUY2(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
+                  WebRtc_UWord32 width, WebRtc_UWord32 height,
+                  WebRtc_UWord32 strideOut)
 {
     if (width < 1 || height < 1)
     {
@@ -710,7 +745,7 @@ ConvertI420ToYUY2(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame, WebRtc_
     const WebRtc_UWord8* inV = inU + width * (height >> 2);
 
     WebRtc_UWord8* out1 = outFrame;
-    WebRtc_UWord8* out2 = outFrame + 2*strideOut;
+    WebRtc_UWord8* out2 = outFrame + 2 * strideOut;
 
     //YUY2 - Macro-pixel = 2 image pixels
     //Y0U0Y1V0....Y2U2Y3V2...Y4U4Y5V4....
@@ -810,8 +845,9 @@ ConvertI420ToYUY2(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame, WebRtc_
 }
 
 WebRtc_Word32
-ConvertI420ToUYVY(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame, WebRtc_UWord32 width,
-                  WebRtc_UWord32 height, WebRtc_UWord32 strideOut)
+ConvertI420ToUYVY(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
+                  WebRtc_UWord32 width,WebRtc_UWord32 height,
+                  WebRtc_UWord32 strideOut)
 {
     if (width < 1 || height < 1)
     {
@@ -930,8 +966,9 @@ loop0:
 }
 
 WebRtc_Word32
-ConvertI420ToYV12(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame, WebRtc_UWord32 width,
-                  WebRtc_UWord32 height, WebRtc_UWord32 strideOut)
+ConvertI420ToYV12(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
+                  WebRtc_UWord32 width, WebRtc_UWord32 height,
+                  WebRtc_UWord32 strideOut)
 {
     if (height < 1 || width < 1 )
     {
@@ -969,7 +1006,7 @@ ConvertI420ToYV12(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame, WebRtc_
         inFrame += width >> 1;
         outFrame += strideOut >> 1;
     }
-    outFrame -= strideOut*height >> 1;
+    outFrame -= strideOut * height >> 1;
     // copy V
     for (WebRtc_UWord32 i = 0; i < height >> 1; i++)
     {
@@ -985,8 +1022,8 @@ ConvertI420ToYV12(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame, WebRtc_
 }
 
 WebRtc_Word32
-ConvertYV12ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord32 width, WebRtc_UWord32 height,
-                  WebRtc_UWord8* outFrame)
+ConvertYV12ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord32 width,
+                  WebRtc_UWord32 height, WebRtc_UWord8* outFrame)
 {
     if (height < 1 || width <1)
     {
@@ -1011,8 +1048,8 @@ ConvertYV12ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord32 width, WebRtc_UWo
 }
 
 WebRtc_Word32
-ConvertNV12ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame, WebRtc_UWord32 width,
-                  WebRtc_UWord32 height)
+ConvertNV12ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
+                  WebRtc_UWord32 width, WebRtc_UWord32 height)
 {
     if (width < 1 || height < 1)
     {
@@ -1037,7 +1074,8 @@ ConvertNV12ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame, WebRtc_
     return (width * height * 3 >> 1);
 }
 WebRtc_Word32
-ConvertNV12ToI420AndRotate180(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
+ConvertNV12ToI420AndRotate180(const WebRtc_UWord8* inFrame,
+                              WebRtc_UWord8* outFrame,
                               WebRtc_UWord32 width, WebRtc_UWord32 height)
 {
     if (width < 1 || height < 1)
@@ -1068,7 +1106,8 @@ ConvertNV12ToI420AndRotate180(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFr
 }
 
 WebRtc_Word32
-ConvertNV12ToI420AndRotateClockwise(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
+ConvertNV12ToI420AndRotateClockwise(const WebRtc_UWord8* inFrame,
+                                    WebRtc_UWord8* outFrame,
                                     WebRtc_UWord32 width, WebRtc_UWord32 height)
 {
     if (width < 1 || height < 1)
@@ -1098,10 +1137,10 @@ ConvertNV12ToI420AndRotateClockwise(const WebRtc_UWord8* inFrame, WebRtc_UWord8*
     {
         for (WebRtc_UWord32 rowInd = 0; rowInd < width >> 1; rowInd ++)
         {
-            u[rowInd * height / 2 + colInd] = interlacedSrc[(height / 2 - colInd - 1) * width
-                                                             + 2 * rowInd];
-            v[rowInd * height / 2 + colInd] = interlacedSrc[(height / 2 - colInd - 1) * width
-                                                             + 2 * rowInd + 1];
+            u[rowInd * height / 2 + colInd] =
+            interlacedSrc[(height / 2 - colInd - 1) * width  + 2 * rowInd];
+            v[rowInd * height / 2 + colInd] =
+            interlacedSrc[(height / 2 - colInd - 1) * width + 2 * rowInd + 1];
         }
     }
 
@@ -1109,8 +1148,10 @@ ConvertNV12ToI420AndRotateClockwise(const WebRtc_UWord8* inFrame, WebRtc_UWord8*
 }
 
 WebRtc_Word32
-ConvertNV12ToI420AndRotateAntiClockwise(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
-                                        WebRtc_UWord32 width, WebRtc_UWord32 height)
+ConvertNV12ToI420AndRotateAntiClockwise(const WebRtc_UWord8* inFrame,
+                                        WebRtc_UWord8* outFrame,
+                                        WebRtc_UWord32 width,
+                                        WebRtc_UWord32 height)
 {
     if (width < 1 || height < 1)
     {
@@ -1173,29 +1214,41 @@ ConvertNV12ToRGB565(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
             // 1. Convert to RGB888
             // 2. Shift to adequate location (in the 16 bit word) - RGB 565
 
-            tmpR = (WebRtc_Word32)((mapYc[y1[0]] + mapVcr[interlacedSrc[1]] + 128) >> 8);
+            tmpR = (WebRtc_Word32)((mapYc[y1[0]] + mapVcr[interlacedSrc[1]]
+                                    + 128) >> 8);
             tmpG = (WebRtc_Word32)((mapYc[y1[0]] + mapUcg[interlacedSrc[0]]
                                     + mapVcg[interlacedSrc[1]] + 128) >> 8);
-            tmpB = (WebRtc_Word32)((mapYc[y1[0]] + mapUcb[interlacedSrc[0]] + 128) >> 8);
-            out[0]  = (WebRtc_UWord16)((Clip(tmpR) & 0xf8) << 8) + ((Clip(tmpG) & 0xfc) << 3) + (Clip(tmpB) >> 3);
+            tmpB = (WebRtc_Word32)((mapYc[y1[0]] + mapUcb[interlacedSrc[0]]
+                                    + 128) >> 8);
+            out[0]  = (WebRtc_UWord16)((Clip(tmpR) & 0xf8) << 8) + ((Clip(tmpG)
+                                        & 0xfc) << 3) + (Clip(tmpB) >> 3);
 
-            tmpR = (WebRtc_Word32)((mapYc[y2[0]] + mapVcr[interlacedSrc[1]] + 128) >> 8);
+            tmpR = (WebRtc_Word32)((mapYc[y2[0]] + mapVcr[interlacedSrc[1]]
+                                    + 128) >> 8);
             tmpG = (WebRtc_Word32)((mapYc[y2[0]] + mapUcg[interlacedSrc[0]]
                                     + mapVcg[interlacedSrc[1]] + 128) >> 8);
-            tmpB = (WebRtc_Word32)((mapYc[y2[0]] + mapUcb[interlacedSrc[0]] + 128) >> 8);
-            out2[0] = (WebRtc_UWord16)((Clip(tmpR) & 0xf8) << 8) + ((Clip(tmpG) & 0xfc) << 3) + (Clip(tmpB) >> 3);
+            tmpB = (WebRtc_Word32)((mapYc[y2[0]] + mapUcb[interlacedSrc[0]]
+                                    + 128) >> 8);
+            out2[0] = (WebRtc_UWord16)((Clip(tmpR) & 0xf8) << 8) + ((Clip(tmpG)
+                                        & 0xfc) << 3) + (Clip(tmpB) >> 3);
 
-            tmpR = (WebRtc_Word32)((mapYc[y1[1]] + mapVcr[interlacedSrc[1]] + 128) >> 8);
+            tmpR = (WebRtc_Word32)((mapYc[y1[1]] + mapVcr[interlacedSrc[1]]
+                                    + 128) >> 8);
             tmpG = (WebRtc_Word32)((mapYc[y1[1]] + mapUcg[interlacedSrc[0]]
                                     + mapVcg[interlacedSrc[1]] + 128) >> 8);
-            tmpB = (WebRtc_Word32)((mapYc[y1[1]] + mapUcb[interlacedSrc[0]] + 128) >> 8);
-            out[1] = (WebRtc_UWord16)((Clip(tmpR) & 0xf8) << 8) + ((Clip(tmpG) & 0xfc) << 3) + (Clip(tmpB ) >> 3);
+            tmpB = (WebRtc_Word32)((mapYc[y1[1]] + mapUcb[interlacedSrc[0]]
+                                    + 128) >> 8);
+            out[1] = (WebRtc_UWord16)((Clip(tmpR) & 0xf8) << 8) + ((Clip(tmpG)
+                                       & 0xfc) << 3) + (Clip(tmpB ) >> 3);
 
-            tmpR = (WebRtc_Word32)((mapYc[y2[1]] + mapVcr[interlacedSrc[1]] + 128) >> 8);
+            tmpR = (WebRtc_Word32)((mapYc[y2[1]] + mapVcr[interlacedSrc[1]]
+                                    + 128) >> 8);
             tmpG = (WebRtc_Word32)((mapYc[y2[1]] + mapUcg[interlacedSrc[0]]
                                     + mapVcg[interlacedSrc[1]] + 128) >> 8);
-            tmpB = (WebRtc_Word32)((mapYc[y2[1]] + mapUcb[interlacedSrc[0]] + 128) >> 8);
-            out2[1] = (WebRtc_UWord16)((Clip(tmpR) & 0xf8) << 8) + ((Clip(tmpG) & 0xfc) << 3) + (Clip(tmpB) >> 3);
+            tmpB = (WebRtc_Word32)((mapYc[y2[1]] + mapUcb[interlacedSrc[0]]
+                                    + 128) >> 8);
+            out2[1] = (WebRtc_UWord16)((Clip(tmpR) & 0xf8) << 8) + ((Clip(tmpG)
+                                        & 0xfc) << 3) + (Clip(tmpB) >> 3);
 
             y1 += 2;
             y2 += 2;
@@ -1214,8 +1267,8 @@ ConvertNV12ToRGB565(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
 
 //NV21 Android Functions
 WebRtc_Word32
-ConvertNV21ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame, WebRtc_UWord32 width,
-                  WebRtc_UWord32 height)
+ConvertNV21ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
+                  WebRtc_UWord32 width, WebRtc_UWord32 height)
 {
     if (width < 1 || height < 1)
     {
@@ -1240,7 +1293,8 @@ ConvertNV21ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame, WebRtc_
     return (width * height * 3 >> 1);
 }
 WebRtc_Word32
-ConvertNV21ToI420AndRotate180(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
+ConvertNV21ToI420AndRotate180(const WebRtc_UWord8* inFrame,
+                              WebRtc_UWord8* outFrame,
                               WebRtc_UWord32 width, WebRtc_UWord32 height)
 {
     if (width < 1 || height < 1)
@@ -1270,7 +1324,8 @@ ConvertNV21ToI420AndRotate180(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFr
 }
 
 WebRtc_Word32
-ConvertNV21ToI420AndRotateClockwise(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
+ConvertNV21ToI420AndRotateClockwise(const WebRtc_UWord8* inFrame,
+                                    WebRtc_UWord8* outFrame,
                                     WebRtc_UWord32 width, WebRtc_UWord32 height)
 {
     if (width < 1 || height < 1)
@@ -1317,8 +1372,10 @@ ConvertNV21ToI420AndRotateClockwise(const WebRtc_UWord8* inFrame, WebRtc_UWord8*
 }
 
 WebRtc_Word32
-ConvertNV21ToI420AndRotateAntiClockwise(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
-                                        WebRtc_UWord32 width, WebRtc_UWord32 height)
+ConvertNV21ToI420AndRotateAntiClockwise(const WebRtc_UWord8* inFrame,
+                                        WebRtc_UWord8* outFrame,
+                                        WebRtc_UWord32 width,
+                                        WebRtc_UWord32 height)
 {
     if (width < 1 || height < 1)
     {
@@ -1365,7 +1422,8 @@ ConvertNV21ToI420AndRotateAntiClockwise(const WebRtc_UWord8* inFrame, WebRtc_UWo
 
 WebRtc_Word32
 ConvertI420ToRGBAIPhone(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
-                        WebRtc_UWord32 width, WebRtc_UWord32 height, WebRtc_UWord32 strideOut)
+                        WebRtc_UWord32 width, WebRtc_UWord32 height,
+                        WebRtc_UWord32 strideOut)
 {
     if (width < 1 || height < 1)
     {
@@ -1396,40 +1454,48 @@ ConvertI420ToRGBAIPhone(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
     {  // 2 rows at a time, 2 y's at a time
         for (w = 0; w < (width >> 1); w++)
         {   // vertical and horizontal sub-sampling
-            tmpR = (WebRtc_Word32)((298 * (y1[0] - 16) + 409 * (v[0] - 128) + 128) >> 8);
+            tmpR = (WebRtc_Word32)((298 * (y1[0] - 16) + 409 * (v[0] - 128)
+                                    + 128) >> 8);
             tmpG = (WebRtc_Word32)((298 * (y1[0] - 16) - 100 * (u[0] - 128)
                                     - 208 * (v[0] - 128) + 128 ) >> 8);
-            tmpB = (WebRtc_Word32)((298 * (y1[0] - 16) + 516 * (u[0] - 128) + 128 ) >> 8);
+            tmpB = (WebRtc_Word32)((298 * (y1[0] - 16) + 516 * (u[0] - 128)
+                                    + 128 ) >> 8);
 
             out[3] = 0xff;
             out[0] = Clip(tmpR);
             out[1] = Clip(tmpG);
             out[2] = Clip(tmpB);
 
-            tmpR = (WebRtc_Word32)((298 * (y2[0] - 16) + 409 * (v[0] - 128) + 128) >> 8);
+            tmpR = (WebRtc_Word32)((298 * (y2[0] - 16) + 409 * (v[0] - 128)
+                                    + 128) >> 8);
             tmpG = (WebRtc_Word32)((298 * (y2[0] - 16) - 100 * (u[0] - 128)
                                     - 208 * (v[0] - 128) + 128) >> 8);
-            tmpB = (WebRtc_Word32)((298 * (y2[0] - 16) + 516 * (u[0] - 128) + 128) >> 8);
+            tmpB = (WebRtc_Word32)((298 * (y2[0] - 16) + 516 * (u[0] - 128)
+                                    + 128) >> 8);
 
             out2[3] = 0xff;
             out2[0] = Clip(tmpR);
             out2[1] = Clip(tmpG);
             out2[2] = Clip(tmpB);
 
-            tmpR = (WebRtc_Word32)((298 * (y1[1] - 16) + 409 * (v[0] - 128) + 128 ) >> 8);
+            tmpR = (WebRtc_Word32)((298 * (y1[1] - 16) + 409 * (v[0] - 128)
+                                    + 128 ) >> 8);
             tmpG = (WebRtc_Word32)((298 * (y1[1] - 16) - 100 * (u[0] - 128)
                                     - 208 * (v[0] - 128) + 128 ) >> 8);
-            tmpB = (WebRtc_Word32)((298 * (y1[1] - 16) + 516 * (u[0] - 128) + 128) >> 8);
+            tmpB = (WebRtc_Word32)((298 * (y1[1] - 16) + 516 * (u[0] - 128)
+                                    + 128) >> 8);
 
             out[7] = 0xff;
             out[4] = Clip(tmpR);
             out[5] = Clip(tmpG);
             out[6] = Clip(tmpB);
 
-            tmpR = (WebRtc_Word32)((298 * (y2[1] - 16) + 409 * (v[0] - 128) + 128) >> 8);
+            tmpR = (WebRtc_Word32)((298 * (y2[1] - 16) + 409 * (v[0] - 128)
+                                    + 128) >> 8);
             tmpG = (WebRtc_Word32)((298 * (y2[1] - 16) - 100 * (u[0] - 128)
                                     - 208 * (v[0] - 128) + 128) >> 8);
-            tmpB = (WebRtc_Word32)((298 * (y2[1] - 16) + 516 * (u[0] - 128) + 128 ) >> 8);
+            tmpB = (WebRtc_Word32)((298 * (y2[1] - 16) + 516 * (u[0] - 128)
+                                    + 128 ) >> 8);
 
             out2[7] = 0xff;
             out2[4] = Clip(tmpR);
@@ -1454,7 +1520,8 @@ ConvertI420ToRGBAIPhone(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
 }
 
 WebRtc_Word32
-ConvertI420ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame, WebRtc_UWord32 width,
+ConvertI420ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
+                  WebRtc_UWord32 width,
                   WebRtc_UWord32 height, WebRtc_UWord32 strideOut)
 {
     if (strideOut == 0 || strideOut == width)
@@ -1490,8 +1557,9 @@ ConvertI420ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame, WebRtc_
 }
 
 WebRtc_Word32
-ConvertUYVYToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord32 inWidth, WebRtc_UWord32 inHeight,
-                  WebRtc_UWord8* outFrame, WebRtc_UWord32 outWidth, WebRtc_UWord32 outHeight)
+ConvertUYVYToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord32 inWidth,
+                  WebRtc_UWord32 inHeight, WebRtc_UWord8* outFrame,
+                  WebRtc_UWord32 outWidth, WebRtc_UWord32 outHeight)
 {
     if (inWidth < 1 || inHeight < 1 || outHeight < 1 || outWidth < 1)
     {
@@ -1504,7 +1572,8 @@ ConvertUYVYToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord32 inWidth, WebRtc_U
     WebRtc_Word32 padDiffHigh = 0; // in pixels
     WebRtc_UWord8* outI = outFrame;
     WebRtc_UWord8* outCr = outFrame + outWidth * outHeight;
-    WebRtc_UWord8* outCb = outFrame + outWidth * outHeight + outWidth * (outHeight >> 2);
+    WebRtc_UWord8* outCb = outFrame + outWidth * outHeight +
+                           outWidth * (outHeight >> 2);
 
     // cut height?
     if (inHeight > outHeight)
@@ -1517,7 +1586,8 @@ ConvertUYVYToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord32 inWidth, WebRtc_U
     {
         cutDiff = (inWidth - outWidth); // in pixels
         // start half of the width diff into the line
-        inFrame += cutDiff; // each pixel is 2 bytes hence diff is the correct value in bytes
+        // each pixel is 2 bytes hence diff is the correct value in bytes
+        inFrame += cutDiff;
     }
     // pad height?
     if (inHeight < outHeight)
@@ -1646,7 +1716,8 @@ ConvertUYVYToI420interlaced(const WebRtc_UWord8* inFrame, WebRtc_UWord32 inWidth
     WebRtc_Word32 padDiffHigh = 0; // in pixels
     WebRtc_UWord8* outI = outFrame;
     WebRtc_UWord8* outCr = outFrame + outWidth * outHeight;
-    WebRtc_UWord8* outCb = outFrame + outWidth * outHeight + outWidth * ( outHeight >> 2 );
+    WebRtc_UWord8* outCb = outFrame + outWidth * outHeight +
+                           outWidth * ( outHeight >> 2 );
 
     // cut height?
     if (inHeight > outHeight)
@@ -1659,7 +1730,8 @@ ConvertUYVYToI420interlaced(const WebRtc_UWord8* inFrame, WebRtc_UWord32 inWidth
     {
         cutDiff = (inWidth - outWidth); // in pixels
         // start half of the width diff into the line
-        inFrame += cutDiff; // each pixel is 2 bytes hence diff is the correct value in bytes
+        // each pixel is 2 bytes hence diff is the correct value in bytes
+        inFrame += cutDiff;
     }
     // pad height?
     if (inHeight < outHeight)
@@ -1698,8 +1770,8 @@ ConvertUYVYToI420interlaced(const WebRtc_UWord8* inFrame, WebRtc_UWord32 inWidth
         {
             // pad row
             memset(outI,0,padDiffLow);
-            memset(outCr,127,padDiffLow >> 1);
-            memset(outCb,127,padDiffLow >> 1);
+            memset(outCr, 127, padDiffLow >> 1);
+            memset(outCb, 127, padDiffLow >> 1);
             outI += padDiffLow;
             outCr += padDiffLow / 2;
             outCb += padDiffLow / 2;
@@ -1718,9 +1790,9 @@ ConvertUYVYToI420interlaced(const WebRtc_UWord8* inFrame, WebRtc_UWord32 inWidth
             // pad end of row?
             if (padDiffHigh)
             {
-                memset(outI,0,padDiffHigh);
-                memset(outCr,127,padDiffHigh >> 1);
-                memset(outCb,127,padDiffHigh >> 1);
+                memset(outI, 0, padDiffHigh);
+                memset(outCr, 127, padDiffHigh >> 1);
+                memset(outCb, 127, padDiffHigh >> 1);
                 outI += padDiffHigh;
                 outCr += padDiffHigh >> 1;
                 outCb += padDiffHigh >> 1;
@@ -1792,8 +1864,8 @@ ConvertUYVYToI420interlaced(const WebRtc_UWord8* inFrame, WebRtc_UWord32 inWidth
 }
 
 WebRtc_Word32
-ConvertUYVYToI420(WebRtc_UWord32 width,WebRtc_UWord32 height, const WebRtc_UWord8* inFrame,
-                  WebRtc_UWord8* outFrame)
+ConvertUYVYToI420(WebRtc_UWord32 width,WebRtc_UWord32 height,
+                  const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame)
 {
     if (width < 1 || height < 1)
     {
@@ -1844,9 +1916,11 @@ ConvertYUY2ToI420interlaced(const WebRtc_UWord8* inFrame, WebRtc_UWord32 inWidth
     WebRtc_Word32 padDiffLow = 0; // in pixels
     WebRtc_Word32 padDiffHigh = 0; // in pixels
     WebRtc_UWord8* outI = outFrame;
-    WebRtc_UWord8* inPtr3 = (WebRtc_UWord8*)inFrame + inWidth * 2 * 2; // ptr to third row
+    // ptr to third row
+    WebRtc_UWord8* inPtr3 = (WebRtc_UWord8*)inFrame + inWidth * 2 * 2;
     WebRtc_UWord8* outCr = outFrame + outWidth * outHeight;
-    WebRtc_UWord8* outCb = outFrame +outWidth * outHeight + outWidth * (outHeight >> 2);
+    WebRtc_UWord8* outCb = outFrame +outWidth * outHeight +
+                           outWidth * (outHeight >> 2);
 
     // cut height?
     if(inHeight > outHeight)
@@ -1861,7 +1935,8 @@ ConvertYUY2ToI420interlaced(const WebRtc_UWord8* inFrame, WebRtc_UWord32 inWidth
         cutDiff = (inWidth - outWidth); // in pixels
         // start half of the width diff into the line
         inPtr3 += cutDiff;
-        inFrame += cutDiff; // each pixel is 2 bytes hence diff is the correct value in bytes
+        // each pixel is 2 bytes hence diff is the correct value in bytes
+        inFrame += cutDiff;
     }
     // pad height?
     if(inHeight < outHeight)
@@ -1899,9 +1974,9 @@ ConvertYUY2ToI420interlaced(const WebRtc_UWord8* inFrame, WebRtc_UWord32 inWidth
         if(padDiffLow)
         {
             // pad row
-            memset(outI,0,padDiffLow);
-            memset(outCr,127,padDiffLow / 2);
-            memset(outCb,127,padDiffLow / 2);
+            memset(outI, 0, padDiffLow);
+            memset(outCr, 127, padDiffLow / 2);
+            memset(outCb, 127, padDiffLow / 2);
             outI += padDiffLow;
             outCr += padDiffLow / 2;
             outCb += padDiffLow / 2;
@@ -1920,9 +1995,9 @@ ConvertYUY2ToI420interlaced(const WebRtc_UWord8* inFrame, WebRtc_UWord32 inWidth
             // pad end of row?
             if (padDiffHigh)
             {
-                memset(outI,0,padDiffHigh);
-                memset(outCr,127,padDiffHigh / 2);
-                memset(outCb,127,padDiffHigh / 2);
+                memset(outI, 0, padDiffHigh);
+                memset(outCr, 127, padDiffHigh / 2);
+                memset(outCb, 127, padDiffHigh / 2);
                 outI += padDiffHigh;
                 outCr += padDiffHigh / 2;
                 outCb += padDiffHigh / 2;
@@ -2014,8 +2089,9 @@ ConvertYUY2ToI420interlaced(const WebRtc_UWord8* inFrame, WebRtc_UWord32 inWidth
 }
 
 WebRtc_Word32
-ConvertYUY2ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord32 inWidth, WebRtc_UWord32 inHeight,
-                  WebRtc_UWord8* outFrame, WebRtc_UWord32 outWidth, WebRtc_UWord32 outHeight)
+ConvertYUY2ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord32 inWidth,
+                  WebRtc_UWord32 inHeight, WebRtc_UWord8* outFrame,
+                  WebRtc_UWord32 outWidth, WebRtc_UWord32 outHeight)
 {
     if (inWidth < 1 || inHeight < 1 || outHeight < 1 || outWidth < 1)
     {
@@ -2028,7 +2104,8 @@ ConvertYUY2ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord32 inWidth, WebRtc_U
     WebRtc_Word32 padDiffHigh = 0; // in pixels
     WebRtc_UWord8* outI = outFrame;
     WebRtc_UWord8* outCr = outFrame + outWidth * outHeight;
-    WebRtc_UWord8* outCb = outFrame + outWidth * outHeight + outWidth * (outHeight >> 2);
+    WebRtc_UWord8* outCb = outFrame + outWidth * outHeight +
+                           outWidth * (outHeight >> 2);
 
     // cut height?
     if (inHeight > outHeight)
@@ -2041,7 +2118,8 @@ ConvertYUY2ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord32 inWidth, WebRtc_U
     {
         cutDiff = (inWidth - outWidth); // in pixels
         // start half of the width diff into the line
-        inFrame += cutDiff; // each pixel is 2 bytes hence diff is the correct value in bytes
+        // each pixel is 2 bytes hence diff is the correct value in bytes
+        inFrame += cutDiff;
     }
     // pad height?
     if (inHeight < outHeight)
@@ -2086,12 +2164,12 @@ ConvertYUY2ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord32 inWidth, WebRtc_U
             outCr += padDiffLow >> 1;
             outCb += padDiffLow >> 1;
 
-            for (j = 0; j< (inWidth >> 1);j++) // 2 pixels per loop
+            for (j = 0; j < (inWidth >> 1);j++) // 2 pixels per loop
             {
                 outI[0] = inFrame[0];
-                *outCr = inFrame[1];
+                *outCr = (inFrame[1] + inFrame[1 + inWidth] + 1) >> 1;
                 outI[1] = inFrame[2];
-                *outCb = inFrame[3];
+                *outCb = (inFrame[3] + inFrame[3 + inWidth] + 1) >> 1;;
                 inFrame += 4;
                 outI += 2;
                 outCr++;
@@ -2112,7 +2190,7 @@ ConvertYUY2ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord32 inWidth, WebRtc_U
             memset(outI,0,padDiffLow);
             outI += padDiffLow;
 
-            for (j = 0; j< (inWidth >> 1); j++)
+            for (j = 0; j < (inWidth >> 1); j++)
             {
                 outI[0] = inFrame[0];
                 outI[1] = inFrame[2];
@@ -2155,28 +2233,29 @@ ConvertYUY2ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord32 inWidth, WebRtc_U
 }
 
 WebRtc_Word32
-ConvertYUY2ToI420(WebRtc_UWord32 width, WebRtc_UWord32 height,const WebRtc_UWord8* inFrame,
-                  WebRtc_UWord8* outFrame)
+ConvertYUY2ToI420(WebRtc_UWord32 width, WebRtc_UWord32 height,
+                  const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame)
 {
-#ifndef SCALEOPT
     if (width < 1 || height < 1)
     {
         return -1;
     }
-    WebRtc_UWord32 i =0;
-    WebRtc_UWord32 j =0;
+    WebRtc_UWord32 i = 0;
+    WebRtc_UWord32 j = 0;
     WebRtc_UWord8* outI = outFrame;
     WebRtc_UWord8* outCr = outFrame + width * height;
-    WebRtc_UWord8* outCb = outFrame +width * height + width * (height >> 2);
+    WebRtc_UWord8* outCb = outFrame + width * height + width * (height >> 2);
+#ifndef SCALEOPT
+
 
     for (; i < (height >> 1); i++)
     {
         for (j = 0; j < (width >> 1); j++)
         {
             outI[0] = inFrame[0];
-            *outCr = inFrame[1];
+            *outCr = (inFrame[1] + inFrame[1 + width] + 1) >> 1;
             outI[1] = inFrame[2];
-            *outCb = inFrame[3];
+            *outCb = (inFrame[3] + inFrame[3 + width] + 1) >> 1;
             inFrame += 4;
             outI += 2;
             outCr++;
@@ -2191,123 +2270,117 @@ ConvertYUY2ToI420(WebRtc_UWord32 width, WebRtc_UWord32 height,const WebRtc_UWord
         }
     }
 #else
-    if (width < 1 || height < 1)
-    {
-        return -1;
-    }
-    WebRtc_Word32 i =0;
-    WebRtc_Word32 j =0;
-    WebRtc_UWord8* outI = outFrame;
-    WebRtc_UWord8* outCr = outFrame + width * height;
-    WebRtc_UWord8* outCb = outFrame + width * height + width * (height >> 2);
 
     WebRtc_Word32 height_half = height / 2;
 
     _asm{
-    mov       esi, DWORD PTR [width]
-    mov       edx, DWORD PTR [height_half]
+     mov       esi, DWORD PTR [width]
+     mov       edx, DWORD PTR [height_half]
 
-    ; prepare masks:
-    pxor      xmm0, xmm0
-    pcmpeqd   xmm1, xmm1
-    punpcklbw xmm1, xmm0
-    pcmpeqd   xmm2, xmm2
-    punpcklbw xmm0, xmm2
-    test      edx, edx
-    jle       exit_
+     ; prepare masks:
+     pxor      xmm0, xmm0
+     pcmpeqd   xmm1, xmm1
+     punpcklbw xmm1, xmm0
+     pcmpeqd   xmm2, xmm2
+     punpcklbw xmm0, xmm2
+     test      edx, edx
+     jle       exit_
 
-    xor       ebx, ebx
-    mov       edi, DWORD PTR [outFrame]
-    sar       esi, 4
-    test      esi, esi
-    jle       exit_
+     xor       ebx, ebx
+     mov       edi, DWORD PTR [outFrame]
+     test      esi, esi
+     jle       exit_
 
-    loop0:
-    add       ebx, 1
+     loop0:
+     add       ebx, 1
 
-    mov       DWORD PTR [i], ebx
-    mov       ebx, DWORD PTR [inFrame]
-    mov       edx, DWORD PTR [outCr]
-    mov       eax, DWORD PTR [outCb]
-    xor       ecx, ecx
+     mov       DWORD PTR [i], ebx
+     mov       ebx, DWORD PTR [inFrame]
+     mov       edx, DWORD PTR [outCr]
+     mov       eax, DWORD PTR [outCb]
+     xor       ecx, ecx
 
-    loop1:
+     loop1:
 
-    movdqa    xmm5, xmm1
+     movdqa    xmm5, xmm1
 
-    movdqa    xmm2, xmm1
-    movdqu    xmm4, XMMWORD PTR [ebx]
-    movdqu    xmm3, XMMWORD PTR [ebx+16]
+     movdqa    xmm2, xmm1
+     movdqu    xmm4, XMMWORD PTR [ebx]
+     movdqu    xmm3, XMMWORD PTR [ebx+16]
+     pand      xmm5, xmm4
+     pand      xmm2, xmm3
 
-    add       ebx, 32
-    pand      xmm5, xmm4
-    pand      xmm4, xmm0
-    psrldq    xmm4, 1
-    pand      xmm2, xmm3
-    pand      xmm3, xmm0
-    psrldq    xmm3, 1
+     pavgb     xmm4, XMMWORD PTR [ebx + esi * 2]
+     pavgb     xmm3, XMMWORD PTR [ebx + 16 + esi * 2]
 
-    packuswb  xmm5, xmm2
+     add       ebx, 32
+     pand      xmm4, xmm0
+     psrldq    xmm4, 1
+     pand      xmm3, xmm0
+     psrldq    xmm3, 1
 
-    movdqu    XMMWORD PTR [edi], xmm5
-    movdqa    xmm2, xmm1
-    packuswb  xmm4, xmm3
-    pand      xmm2, xmm4
-    pand      xmm4, xmm0
-    psrldq    xmm4, 1
-    packuswb  xmm2, xmm4
+     packuswb  xmm5, xmm2
 
-    movq      QWORD PTR [edx], xmm2
-    psrldq    xmm2, 8
-    movq      QWORD PTR [eax], xmm2
+     movdqu    XMMWORD PTR [edi], xmm5
+     movdqa    xmm2, xmm1
+     packuswb  xmm4, xmm3
+     pand      xmm2, xmm4
+     pand      xmm4, xmm0
+     psrldq    xmm4, 1
+     packuswb  xmm2, xmm4
 
-    add       edi, 16
-    add       edx, 8
-    add       eax, 8
-    add       ecx, 1
-    cmp       ecx, esi
-    jl        loop1
+     movq      QWORD PTR [edx], xmm2
+     psrldq    xmm2, 8
+     movq      QWORD PTR [eax], xmm2
 
-    mov       DWORD PTR [outCb], eax
-    mov       DWORD PTR [outCr], edx
-    mov       edx, DWORD PTR [height_half]
-    mov       DWORD PTR [inFrame], ebx
-    mov       ebx, DWORD PTR [i]
+     add       edi, 16
+     add       edx, 8
+     add       eax, 8
+     add       ecx, 16
+     cmp       ecx, esi
+     jl        loop1
 
-    test      esi, esi
-    jle       exit_
+     mov       DWORD PTR [outCb], eax
+     mov       DWORD PTR [outCr], edx
+     mov       edx, DWORD PTR [height_half]
+     mov       DWORD PTR [inFrame], ebx
+     mov       ebx, DWORD PTR [i]
 
-    mov       eax, DWORD PTR [inFrame] //now becomes 00568FE8
-    xor       ecx, ecx
+     test      esi, esi
+     jle       exit_
 
-    loop2:
+     mov       eax, DWORD PTR [inFrame] //now becomes 00568FE8
+     xor       ecx, ecx
 
-    movdqu    xmm3, XMMWORD PTR [eax]
-    movdqu    xmm2, XMMWORD PTR [eax+16]
-    add       eax, 32
-    pand      xmm3, xmm1
-    pand      xmm2, xmm1
-    packuswb  xmm3, xmm2
-    movdqu    XMMWORD PTR [edi], xmm3
+     loop2:
 
-    add       edi, 16
-    add       ecx, 1
-    cmp       ecx, esi
-    jl        loop2
+     movdqu    xmm3, XMMWORD PTR [eax]
+     movdqu    xmm2, XMMWORD PTR [eax+16]
+     add       eax, 32
+     pand      xmm3, xmm1
+     pand      xmm2, xmm1
+     packuswb  xmm3, xmm2
+     movdqu    XMMWORD PTR [edi], xmm3
 
-    mov       DWORD PTR [inFrame], eax //now 005692A8
-    mov       eax, DWORD PTR [width]
-    cmp       ebx, edx
-    jl        loop0
-    exit_:
-    }
+     add       edi, 16
+     add       ecx, 16
+     cmp       ecx, esi
+     jl        loop2
+
+     mov       DWORD PTR [inFrame], eax //now 005692A8
+     mov       eax, DWORD PTR [width]
+     cmp       ebx, edx
+     jl        loop0
+     exit_:
+     }
 #endif
     return width * (height >> 1) * 3;
 }
 
 // make a center cut
 WebRtc_Word32
-CutI420Frame(WebRtc_UWord8* frame, WebRtc_UWord32 fromWidth, WebRtc_UWord32 fromHeight,
+CutI420Frame(WebRtc_UWord8* frame,
+             WebRtc_UWord32 fromWidth, WebRtc_UWord32 fromHeight,
              WebRtc_UWord32 toWidth, WebRtc_UWord32 toHeight)
 {
     if (toWidth < 1 || fromWidth < 1 || toHeight < 1 || fromHeight < 1 )
@@ -2334,7 +2407,8 @@ CutI420Frame(WebRtc_UWord8* frame, WebRtc_UWord32 fromWidth, WebRtc_UWord32 from
     WebRtc_UWord32 cutHeight = ( fromHeight - toHeight ) / 2; //12
     WebRtc_UWord32 cutWidth = ( fromWidth - toWidth ) / 2; // 16
 
-    for (i = fromWidth * cutHeight + cutWidth; loop < toHeight ; loop++, i += fromWidth)
+    for (i = fromWidth * cutHeight + cutWidth; loop < toHeight ;
+        loop++, i += fromWidth)
     {
         memcpy(&frame[m],&frame[i],toWidth);
         m += toWidth;
@@ -2349,7 +2423,8 @@ CutI420Frame(WebRtc_UWord8* frame, WebRtc_UWord32 fromWidth, WebRtc_UWord32 from
     }
     loop = 0;
     i = fromWidth * fromHeight + halfFromHeight * halfFromWidth; // ilum +Cr
-    for( i += (halfFromWidth * cutHeight / 2 + cutWidth / 2); loop < halfToHeight; loop++, i += halfFromWidth)
+    for ( i += (halfFromWidth * cutHeight / 2 + cutWidth / 2);
+          loop < halfToHeight; loop++, i += halfFromWidth)
     {
         memcpy(&frame[m],&frame[i],halfToWidth);
         m += halfToWidth;
@@ -2359,8 +2434,8 @@ CutI420Frame(WebRtc_UWord8* frame, WebRtc_UWord32 fromWidth, WebRtc_UWord32 from
 
 WebRtc_Word32
 ConvertI420ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord32 inWidth,
-                  WebRtc_UWord32 inHeight, WebRtc_UWord8* outFrame, WebRtc_UWord32 outWidth,
-                  WebRtc_UWord32 outHeight)
+                  WebRtc_UWord32 inHeight, WebRtc_UWord8* outFrame,
+                  WebRtc_UWord32 outWidth, WebRtc_UWord32 outHeight)
 {
     if (inWidth < 1 || outWidth < 1 || inHeight < 1 || outHeight < 1 )
     {
@@ -2369,9 +2444,10 @@ ConvertI420ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord32 inWidth,
     if (inWidth == outWidth && inHeight == outHeight)
     {
         memcpy(outFrame, inFrame, 3*outWidth*(outHeight>>1));
-    } else
+    }
+    else
     {
-        if( inHeight < outHeight)
+        if ( inHeight < outHeight)
         {
             // pad height
             WebRtc_Word32 padH = outHeight - inHeight;
@@ -2383,7 +2459,8 @@ ConvertI420ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord32 inWidth,
             {
                 // pad width
                 padW = outWidth - inWidth;
-            } else
+            }
+            else
             {
               // cut width
               cutW = inWidth - outWidth;
@@ -2468,7 +2545,8 @@ ConvertI420ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord32 inWidth,
                 memset(outFrame, 127, (outWidth >> 2) * (padH >> 1));
                 outFrame +=  (outWidth >> 2) * (padH >> 1);
             }
-        } else
+        }
+        else
         {
             // cut height
             WebRtc_UWord32 i =0;
@@ -2554,7 +2632,8 @@ ConvertI420ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord32 inWidth,
 
 WebRtc_Word32
 ConvertRGB24ToARGB(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
-                   WebRtc_UWord32 width, WebRtc_UWord32 height, WebRtc_UWord32 strideOut)
+                   WebRtc_UWord32 width, WebRtc_UWord32 height,
+                   WebRtc_UWord32 strideOut)
 {
     if (width < 1 || height < 1)
     {
@@ -2589,16 +2668,20 @@ ConvertRGB24ToARGB(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
 }
 
 WebRtc_Word32
-ConvertRGB24ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord32 inWidth, WebRtc_UWord32 inHeight,
-                   WebRtc_UWord8* outFrame, WebRtc_UWord32 outWidth, WebRtc_UWord32 outHeight)
+ConvertRGB24ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord32 inWidth,
+                   WebRtc_UWord32 inHeight, WebRtc_UWord8* outFrame,
+                   WebRtc_UWord32 outWidth, WebRtc_UWord32 outHeight)
 {
     if (inWidth < 1 || outWidth < 1 || inHeight < 1 || outHeight < 1 )
     {
         return -1;
     }
-    WebRtc_UWord32* yStartPtr = (WebRtc_UWord32*)(outFrame + (outWidth * outHeight));
-    WebRtc_UWord8* uStartPtr = outFrame + (outWidth * outHeight) + ((outWidth * outHeight) >> 2);
-    WebRtc_UWord8* vStartPtr = outFrame + (outWidth * outHeight) +((outWidth * outHeight) >> 1);
+    WebRtc_UWord32* yStartPtr = (WebRtc_UWord32*)(outFrame +
+                                                 (outWidth * outHeight));
+    WebRtc_UWord8* uStartPtr = outFrame + (outWidth * outHeight) +
+                               ((outWidth * outHeight) >> 2);
+    WebRtc_UWord8* vStartPtr = outFrame + (outWidth * outHeight) +
+                               ((outWidth * outHeight) >> 1);
 
     yStartPtr--;
     uStartPtr--;
@@ -2614,7 +2697,8 @@ ConvertRGB24ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord32 inWidth, WebRtc_
     if (inHeight > outHeight)
     {
         // cut height
-        inFramePtr += inWidth*3 * ((inHeight - outHeight) >> 1); // skip the first diff/2 rows
+        // skip the first diff/2 rows
+        inFramePtr += inWidth * 3 * ((inHeight - outHeight) >> 1);
         height = outHeight;
     }
     if (outHeight > inHeight)
@@ -2688,30 +2772,32 @@ ConvertRGB24ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord32 inWidth, WebRtc_
         for (; i > 0; i--) // do 4 pixels wide in one loop
         {
 #ifdef  WEBRTC_BIG_ENDIAN
-            tmp = (WebRtc_UWord8)((66 * inpPtr[2] + 129 * inpPtr[1] + 25 * inpPtr[0] + 128)
+            tmp = (WebRtc_UWord8)((66 * inpPtr[2] + 129 * inpPtr[1] +
+                                   25 * inpPtr[0] + 128)
                    >> 8) + 16;
             tmp = tmp << 8;
-            tmp += (WebRtc_UWord8)((66 * inpPtr[5] + 129 * inpPtr[4] + 25 * inpPtr[3] + 128)
+            tmp += (WebRtc_UWord8)((66 * inpPtr[5] + 129 * inpPtr[4] +
+                                    25 * inpPtr[3] + 128)
                     >> 8) + 16;
             tmp = tmp << 8;
-            tmp += (WebRtc_UWord8)((66 *  inpPtr[8] + 129 * inpPtr[7] + 25 * inpPtr[6] + 128)
-                    >> 8) + 16;
+            tmp += (WebRtc_UWord8)((66 *  inpPtr[8] + 129 * inpPtr[7] +
+                                    25 * inpPtr[6] + 128) >> 8) + 16;
             tmp = tmp << 8;
-            tmp += (WebRtc_UWord8)((66 * inpPtr[11] + 129 * inpPtr[10] + 25 * inpPtr[9] + 128)
-                    >> 8) + 16;
+            tmp += (WebRtc_UWord8)((66 * inpPtr[11] + 129 * inpPtr[10] +
+                                    25 * inpPtr[9] + 128) >> 8) + 16;
 
 #else
-            tmp = (WebRtc_UWord8)((66 * inpPtr[11] + 129 * inpPtr[10] + 25 * inpPtr[9] + 128) >> 8)
-                   + 16;
+            tmp = (WebRtc_UWord8)((66 * inpPtr[11] + 129 * inpPtr[10] +
+                                   25 * inpPtr[9] + 128) >> 8) + 16;
             tmp = tmp << 8;
-            tmp += (WebRtc_UWord8)((66 * inpPtr[8] + 129 * inpPtr[7] + 25 * inpPtr[6] + 128) >> 8)
-                    + 16;
+            tmp += (WebRtc_UWord8)((66 * inpPtr[8] + 129 * inpPtr[7] +
+                                    25 * inpPtr[6] + 128) >> 8) + 16;
             tmp = tmp << 8;
-            tmp += (WebRtc_UWord8)((66 * inpPtr[5] + 129 * inpPtr[4] + 25 * inpPtr[3] + 128) >> 8)
-                    + 16;
+            tmp += (WebRtc_UWord8)((66 * inpPtr[5] + 129 * inpPtr[4] +
+                                    25 * inpPtr[3] + 128) >> 8) + 16;
             tmp = tmp << 8;
-            tmp += (WebRtc_UWord8)((66 * inpPtr[2] + 129 * inpPtr[1] + 25 * inpPtr[0] + 128) >> 8)
-                    + 16;
+            tmp += (WebRtc_UWord8)((66 * inpPtr[2] + 129 * inpPtr[1] +
+                                    25 * inpPtr[0] + 128) >> 8) + 16;
 #endif
             *yStartPtr = tmp;
             yStartPtr--;
@@ -2719,7 +2805,7 @@ ConvertRGB24ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord32 inWidth, WebRtc_
         }
         if (padDiffHigh)
         {
-            yStartPtr -= padDiffHigh >> 2; //div by 4 since its a WebRtc_Word32 ptr
+            yStartPtr -= padDiffHigh >> 2; // WebRtc_Word32 => div by 4
             memset(yStartPtr + 1, 0, padDiffHigh);
         }
         y++; // doing an ugly add to my loop variable
@@ -2730,7 +2816,7 @@ ConvertRGB24ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord32 inWidth, WebRtc_
 
         if (padDiffLow)
         {
-            yStartPtr -= padDiffLow >> 2; //div by 4 since its a WebRtc_Word32 ptr
+            yStartPtr -= padDiffLow >> 2; // WebRtc_Word32 => div by 4
             uStartPtr -= padDiffLow >> 1;
             vStartPtr -= padDiffLow >> 1;
             memset(yStartPtr + 1, 0, padDiffLow);
@@ -2739,42 +2825,42 @@ ConvertRGB24ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord32 inWidth, WebRtc_
         }
         for (; i > 0; i--)
         {
-            *uStartPtr = (WebRtc_UWord8)((-38 * inpPtr[8] - 74 * inpPtr[7] + 112 * inpPtr[6] + 128)
-                          >> 8) + 128;
+            *uStartPtr = (WebRtc_UWord8)((-38 * inpPtr[8] - 74 * inpPtr[7] +
+                                          112 * inpPtr[6] + 128) >> 8) + 128;
             uStartPtr--;
-            *vStartPtr = (WebRtc_UWord8)((112 * inpPtr[8] - 94 * inpPtr[7] - 18 * inpPtr[6] + 128)
-                          >> 8) + 128;
+            *vStartPtr = (WebRtc_UWord8)((112 * inpPtr[8] - 94 * inpPtr[7] -
+                                          18 * inpPtr[6] + 128) >> 8) + 128;
             vStartPtr--;
-            *uStartPtr = (WebRtc_UWord8)((-38 * inpPtr[2] - 74 * inpPtr[1] + 112 * inpPtr[0] + 128)
-                          >> 8) + 128;
+            *uStartPtr = (WebRtc_UWord8)((-38 * inpPtr[2] - 74 * inpPtr[1] +
+                                          112 * inpPtr[0] + 128) >> 8) + 128;
             uStartPtr--;
-            *vStartPtr = (WebRtc_UWord8)((112 * inpPtr[2] - 94 * inpPtr[1] - 18 * inpPtr[0] + 128)
-                          >> 8) + 128;
+            *vStartPtr = (WebRtc_UWord8)((112 * inpPtr[2] - 94 * inpPtr[1] -
+                                          18 * inpPtr[0] + 128) >> 8) + 128;
             vStartPtr--;
 #ifdef WEBRTC_BIG_ENDIAN
-            tmp = (WebRtc_UWord8)((66 * inpPtr[2] + 129 * inpPtr[1] + 25 * inpPtr[0] + 128 )
-                   >> 8) + 16;
+            tmp = (WebRtc_UWord8)((66 * inpPtr[2] + 129 * inpPtr[1] +
+                                   25 * inpPtr[0] + 128 ) >> 8) + 16;
             tmp = tmp << 8;
-            tmp += (WebRtc_UWord8)((66 * inpPtr[5] + 129 * inpPtr[4] + 25 * inpPtr[3] + 128)
-                    >> 8) + 16;
+            tmp += (WebRtc_UWord8)((66 * inpPtr[5] + 129 * inpPtr[4] +
+                                    25 * inpPtr[3] + 128) >> 8) + 16;
             tmp = tmp << 8;
-            tmp += (WebRtc_UWord8)((66 * inpPtr[8] + 129 * inpPtr[7] + 25 * inpPtr[6] + 128)
-                    >> 8) + 16;
+            tmp += (WebRtc_UWord8)((66 * inpPtr[8] + 129 * inpPtr[7] +
+                                    25 * inpPtr[6] + 128) >> 8) + 16;
             tmp = tmp << 8;
-            tmp += (WebRtc_UWord8)((66 * inpPtr[11] + 129 * inpPtr[10] + 25 * inpPtr[9] + 128)
-                    >> 8) + 16;
+            tmp += (WebRtc_UWord8)((66 * inpPtr[11] + 129 * inpPtr[10] +
+                                    25 * inpPtr[9] + 128) >> 8) + 16;
 #else
-            tmp = (WebRtc_UWord8)((66 * inpPtr[11] + 129 * inpPtr[10] + 25 * inpPtr[9]+ 128)
-                   >> 8) + 16;
+            tmp = (WebRtc_UWord8)((66 * inpPtr[11] + 129 * inpPtr[10] +
+                                   25 * inpPtr[9]+ 128) >> 8) + 16;
             tmp = tmp << 8;
-            tmp += (WebRtc_UWord8)((66 * inpPtr[8] + 129 * inpPtr[7] + 25 * inpPtr[6] + 128)
-                    >> 8) + 16;
+            tmp += (WebRtc_UWord8)((66 * inpPtr[8] + 129 * inpPtr[7] +
+                                    25 * inpPtr[6] + 128) >> 8) + 16;
             tmp = tmp << 8;
-            tmp += (WebRtc_UWord8)((66 * inpPtr[5] + 129 * inpPtr[4] + 25 * inpPtr[3] + 128 )
-                    >> 8) + 16;
+            tmp += (WebRtc_UWord8)((66 * inpPtr[5] + 129 * inpPtr[4] +
+                                    25 * inpPtr[3] + 128 ) >> 8) + 16;
             tmp = tmp << 8;
-            tmp += (WebRtc_UWord8)((66 * inpPtr[2] + 129 * inpPtr[1] + 25 * inpPtr[0] + 128)
-                    >> 8) + 16;
+            tmp += (WebRtc_UWord8)((66 * inpPtr[2] + 129 * inpPtr[1] +
+                                    25 * inpPtr[0] + 128) >> 8) + 16;
 #endif
             *yStartPtr = tmp;
             yStartPtr--;
@@ -2782,7 +2868,7 @@ ConvertRGB24ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord32 inWidth, WebRtc_
         }
         if (padDiffHigh)
         {
-            yStartPtr -= padDiffHigh >> 2; //div by 4 since its a WebRtc_Word32 ptr
+            yStartPtr -= padDiffHigh >> 2; // WebRtc_Word32 => div by 4
             uStartPtr -= padDiffHigh >> 1;
             vStartPtr -= padDiffHigh >> 1;
             memset(yStartPtr + 1, 0, padDiffHigh);
@@ -2795,8 +2881,8 @@ ConvertRGB24ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord32 inWidth, WebRtc_
 
 
 WebRtc_Word32
-ConvertRGB24ToI420(WebRtc_UWord32 width, WebRtc_UWord32 height, const WebRtc_UWord8* inFrame,
-                   WebRtc_UWord8* outFrame)
+ConvertRGB24ToI420(WebRtc_UWord32 width, WebRtc_UWord32 height,
+                   const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame)
 {
     if (height < 1 || width < 1)
     {
@@ -2823,21 +2909,21 @@ ConvertRGB24ToI420(WebRtc_UWord32 width, WebRtc_UWord32 height, const WebRtc_UWo
         for (WebRtc_UWord32 w = 0; w < (width >> 1); w++)
         {
             //Y
-            yStartPtr[0] =  (WebRtc_UWord8)((66 * inpPtr[2] + 129 * inpPtr[1] + 25 * inpPtr[0]
-                                             + 128) >> 8) + 16;
-            yStartPtr2[0] = (WebRtc_UWord8)((66 * inpPtr2[2] + 129 * inpPtr2[1] + 25 * inpPtr2[0]
-                                             + 128) >> 8) + 16;
+            yStartPtr[0] =  (WebRtc_UWord8)((66 * inpPtr[2] + 129 * inpPtr[1]
+                                            + 25 * inpPtr[0] + 128) >> 8) + 16;
+            yStartPtr2[0] = (WebRtc_UWord8)((66 * inpPtr2[2] + 129 * inpPtr2[1]
+                                            + 25 * inpPtr2[0] + 128) >> 8) + 16;
             // moving to next column
-            yStartPtr[1] = (WebRtc_UWord8)((66 * inpPtr[5] + 129 * inpPtr[4] + 25 * inpPtr[3]
-                                            + 128) >> 8) + 16;
-            yStartPtr2[1] = (WebRtc_UWord8)((66 * inpPtr2[5] + 129 * inpPtr2[4] + 25 * inpPtr2[3]
-                                             + 128) >> 8 ) + 16;
+            yStartPtr[1] = (WebRtc_UWord8)((66 * inpPtr[5] + 129 * inpPtr[4]
+                                           + 25 * inpPtr[3]  + 128) >> 8) + 16;
+            yStartPtr2[1] = (WebRtc_UWord8)((66 * inpPtr2[5] + 129 * inpPtr2[4]
+                                            + 25 * inpPtr2[3] + 128) >> 8 ) + 16;
             //U
-            uStartPtr[0] = (WebRtc_UWord8)((-38 * inpPtr[2] - 74 * inpPtr[1] + 112 * inpPtr[0]
-                                            + 128) >> 8) + 128;
+            uStartPtr[0] = (WebRtc_UWord8)((-38 * inpPtr[2] - 74 * inpPtr[1] +
+                                            112 * inpPtr[0] + 128) >> 8) + 128;
             //V
-            vStartPtr[0] = (WebRtc_UWord8)((112 * inpPtr[2] -94 * inpPtr[1] -18 * inpPtr[0]
-                                            + 128) >> 8) + 128;
+            vStartPtr[0] = (WebRtc_UWord8)((112 * inpPtr[2] -94 * inpPtr[1] -
+                                           18 * inpPtr[0] + 128) >> 8) + 128;
 
             yStartPtr += 2;
             yStartPtr2 += 2;
@@ -2856,7 +2942,8 @@ ConvertRGB24ToI420(WebRtc_UWord32 width, WebRtc_UWord32 height, const WebRtc_UWo
 
 WebRtc_Word32
 ConvertI420ToARGBMac(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
-                     WebRtc_UWord32 width, WebRtc_UWord32 height, WebRtc_UWord32 strideOut)
+                     WebRtc_UWord32 width, WebRtc_UWord32 height,
+                     WebRtc_UWord32 strideOut)
 {
     if (height < 1 || width < 1)
     {
@@ -2886,28 +2973,32 @@ ConvertI420ToARGBMac(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
         for (w = 0; w < (width >> 1); w++)
         {
             tmpR = (WebRtc_Word32)((mapYc[y1[0]] + mapVcr[v[0]] + 128  )>> 8);
-            tmpG = (WebRtc_Word32)((mapYc[y1[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+            tmpG = (WebRtc_Word32)((mapYc[y1[0]] + mapUcg[u[0]] + mapVcg[v[0]]
+                                    + 128) >> 8);
             tmpB = (WebRtc_Word32)((mapYc[y1[0]] + mapUcb[u[0]] + 128 )>> 8);
             out[2] = Clip(tmpR);
             out[1] = Clip(tmpG);
             out[0] = Clip(tmpB);
 
             tmpR = (WebRtc_Word32)((mapYc[y2[0]] + mapVcr[v[0]] + 128) >> 8);
-            tmpG = (WebRtc_Word32)((mapYc[y2[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+            tmpG = (WebRtc_Word32)((mapYc[y2[0]] + mapUcg[u[0]] + mapVcg[v[0]]
+                                    + 128) >> 8);
             tmpB = (WebRtc_Word32)((mapYc[y2[0]] + mapUcb[u[0]] + 128) >> 8);
             out2[2] = Clip(tmpR);
             out2[1] = Clip(tmpG);
             out2[0] = Clip(tmpB);
 
             tmpR = (WebRtc_Word32)((mapYc[y1[1]] + mapVcr[v[0]] + 128)>> 8);
-            tmpG = (WebRtc_Word32)((mapYc[y1[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+            tmpG = (WebRtc_Word32)((mapYc[y1[1]] + mapUcg[u[0]] + mapVcg[v[0]]
+                                    + 128) >> 8);
             tmpB = (WebRtc_Word32)((mapYc[y1[1]] + mapUcb[u[0]] + 128) >> 8);
             out[6] = Clip(tmpR);
             out[5] = Clip(tmpG);
             out[4] = Clip(tmpB);
 
             tmpR = (WebRtc_Word32)((mapYc[y2[1]] + mapVcr[v[0]] + 128) >> 8);
-            tmpG = (WebRtc_Word32)((mapYc[y2[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+            tmpG = (WebRtc_Word32)((mapYc[y2[1]] + mapUcg[u[0]] + mapVcg[v[0]]
+                                    + 128) >> 8);
             tmpB = (WebRtc_Word32)((mapYc[y2[1]] + mapUcb[u[0]] + 128) >> 8);
             out2[6] = Clip(tmpR);
             out2[5] = Clip(tmpG);
@@ -2935,8 +3026,8 @@ ConvertI420ToARGBMac(const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame,
 }
 
 WebRtc_Word32
-ConvertRGB565ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord32 width, WebRtc_UWord32 height,
-                    WebRtc_UWord8* outFrame)
+ConvertRGB565ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord32 width,
+                    WebRtc_UWord32 height, WebRtc_UWord8* outFrame)
 {
     if (width < 1 || height < 1 )
     {
@@ -2966,17 +3057,17 @@ ConvertRGB565ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord32 width, WebRtc_U
             tmpR2 = (WebRtc_UWord8)((inpPtr2[0] & 0xF800) >> 8);
 
             //Y
-            yStartPtr[0] = (WebRtc_UWord8)((66 * tmpR + 129 * tmpG + 25 * tmpB + 128) >> 8)
-                                            + 16;
+            yStartPtr[0] = (WebRtc_UWord8)((66 * tmpR + 129 * tmpG + 25 * tmpB
+                                            + 128) >> 8) + 16;
             //U
-            uStartPtr[0] = (WebRtc_UWord8)((-38 * tmpR - 74 * tmpG + 112 * tmpB + 128) >> 8)
-                                            + 128;
+            uStartPtr[0] = (WebRtc_UWord8)((-38 * tmpR - 74 * tmpG + 112 * tmpB
+                                            + 128) >> 8) + 128;
             //V
-            vStartPtr[0] = (WebRtc_UWord8)((112 * tmpR - 94 * tmpG - 18 * tmpB + 128) >> 8)
-                                            + 128;
+            vStartPtr[0] = (WebRtc_UWord8)((112 * tmpR - 94 * tmpG - 18 * tmpB
+                                            + 128) >> 8) + 128;
 
-            yStartPtr2[0] = (WebRtc_UWord8)((66 * tmpR2 + 129 * tmpG2 + 25 * tmpB2 + 128) >> 8)
-                                             + 16;
+            yStartPtr2[0] = (WebRtc_UWord8)((66 * tmpR2 + 129 * tmpG2 +
+                                             25 * tmpB2 + 128) >> 8) + 16;
 
             // moving to next column
             tmpB = (WebRtc_UWord8)((inpPtr[1] & 0x001F) << 3);
@@ -2987,8 +3078,10 @@ ConvertRGB565ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord32 width, WebRtc_U
             tmpG2 = (WebRtc_UWord8)((inpPtr2[1] & 0x07E0) >> 3);
             tmpR2 = (WebRtc_UWord8)((inpPtr2[1] & 0xF800) >> 8);
 
-            yStartPtr[1] =  (WebRtc_UWord8)((66 * tmpR + 129 * tmpG + 25 * tmpB + 128) >> 8) + 16;
-            yStartPtr2[1] =  (WebRtc_UWord8)((66 * tmpR2 +129 * tmpG2 + 25 * tmpB2 + 128) >> 8) + 16;
+            yStartPtr[1] =  (WebRtc_UWord8)((66 * tmpR + 129 * tmpG +
+                                             25 * tmpB + 128) >> 8) + 16;
+            yStartPtr2[1] =  (WebRtc_UWord8)((66 * tmpR2 +129 * tmpG2 +
+                                              25 * tmpB2 + 128) >> 8) + 16;
 
             yStartPtr += 2;
             yStartPtr2 += 2;
@@ -3006,8 +3099,8 @@ ConvertRGB565ToI420(const WebRtc_UWord8* inFrame, WebRtc_UWord32 width, WebRtc_U
 }
 
 WebRtc_Word32
-ConvertARGBMacToI420(WebRtc_UWord32 width, WebRtc_UWord32 height, const WebRtc_UWord8* inFrame,
-                  WebRtc_UWord8* outFrame)
+ConvertARGBMacToI420(WebRtc_UWord32 width, WebRtc_UWord32 height,
+                     const WebRtc_UWord8* inFrame, WebRtc_UWord8* outFrame)
 {
     if (height < 1 || width < 1)
     {
@@ -3065,8 +3158,9 @@ ConvertARGBMacToI420(WebRtc_UWord32 width, WebRtc_UWord32 height, const WebRtc_U
 
 
 WebRtc_Word32
-PadI420BottomRows(WebRtc_UWord8* inputVideoBuffer, WebRtc_UWord32 size, WebRtc_UWord32 width,
-                  WebRtc_UWord32 height, WebRtc_Word32 nrRows, WebRtc_UWord32& newLength)
+PadI420BottomRows(WebRtc_UWord8* inputVideoBuffer, WebRtc_UWord32 size,
+                  WebRtc_UWord32 width, WebRtc_UWord32 height,
+                  WebRtc_Word32 nrRows, WebRtc_UWord32& newLength)
 {
     // sanity
     WebRtc_UWord32 length = 3 * (width >> 1) * (height + nrRows);
@@ -3136,8 +3230,9 @@ PadI420Component(const WebRtc_UWord8* inBuf, WebRtc_UWord8* outBuf,
 }
 
 WebRtc_Word32
-PadI420Frame(const WebRtc_UWord8* inBuffer, WebRtc_UWord8* outBuffer, WebRtc_UWord32 fromWidth,
-             WebRtc_UWord32 fromHeight, WebRtc_UWord32 toWidth, WebRtc_UWord32 toHeight)
+PadI420Frame(const WebRtc_UWord8* inBuffer, WebRtc_UWord8* outBuffer,
+             WebRtc_UWord32 fromWidth, WebRtc_UWord32 fromHeight,
+             WebRtc_UWord32 toWidth, WebRtc_UWord32 toHeight)
 {
     if (toWidth < 1 || fromWidth < 1 || toHeight < 1 || fromHeight < 1)
     {
@@ -3179,8 +3274,8 @@ PadI420Frame(const WebRtc_UWord8* inBuffer, WebRtc_UWord8* outBuffer, WebRtc_UWo
     WebRtc_UWord32 padWidthL = 0;
     WebRtc_UWord32 padHeightT = 0;
 
-    // If one of the padded dimensions is a multiple of 16, we apply the padding in
-    // blocks of 16.
+    // If one of the padded dimensions is a multiple of 16, we apply the padding
+    // in blocks of 16.
     if (padHeight % 16 == 0)
     {
         WebRtc_UWord32 num16blocks = padHeight >> 4;
@@ -3206,7 +3301,8 @@ PadI420Frame(const WebRtc_UWord8* inBuffer, WebRtc_UWord8* outBuffer, WebRtc_UWo
     WebRtc_UWord32 inIdx = 0;
     WebRtc_UWord32 outIdx = 0;
     outIdx = PadI420Component(&inBuffer[inIdx], &outBuffer[outIdx], fromWidth,
-                              fromHeight, padWidth, padWidthL, padHeight, padHeightT, 0);
+                              fromHeight, padWidth, padWidthL, padHeight,
+                              padHeightT, 0);
     // -- Cr --
     inIdx = fromWidth * fromHeight;
     fromWidth >>= 1;
@@ -3216,18 +3312,20 @@ PadI420Frame(const WebRtc_UWord8* inBuffer, WebRtc_UWord8* outBuffer, WebRtc_UWo
     padHeight >>= 1;
     padHeightT >>= 1;
     outIdx += PadI420Component(&inBuffer[inIdx], &outBuffer[outIdx], fromWidth,
-                               fromHeight, padWidth, padWidthL, padHeight, padHeightT, 127);
+                               fromHeight, padWidth, padWidthL, padHeight,
+                               padHeightT, 127);
     // -- Cb --
     inIdx += fromWidth * fromHeight;
     outIdx += PadI420Component(&inBuffer[inIdx], &outBuffer[outIdx], fromWidth,
-                               fromHeight, padWidth, padWidthL, padHeight, padHeightT, 127);
+                               fromHeight, padWidth, padWidthL, padHeight,
+                               padHeightT, 127);
 
     return outIdx;
 }
 
 WebRtc_Word32
-PadI420Frame(WebRtc_UWord32 size, const WebRtc_UWord8* inBuffer, WebRtc_UWord8* outBuffer,
-             bool block16Bit)
+PadI420Frame(WebRtc_UWord32 size, const WebRtc_UWord8* inBuffer,
+             WebRtc_UWord8* outBuffer, bool block16Bit)
 {
     if (size < 1)
     {
@@ -3302,11 +3400,12 @@ PadI420Frame(WebRtc_UWord32 size, const WebRtc_UWord8* inBuffer, WebRtc_UWord8* 
     i = toWidth * toHeight; // ilum end
 
     // Cr
-    memset(&outBuffer[i],127,halfToWidth * (padHeightT >> 1) + (padWidthL >> 1) ); // black
+    // black
+    memset(&outBuffer[i],127,halfToWidth * (padHeightT >> 1) + (padWidthL >> 1));
     i += halfToWidth * (padHeightT >> 1) + (padWidthL >> 1);
 
     m += (dropHeightBits >> 2) * halfFromWidth;
-    for(loop =0 ; loop < (halfFromHeight - (dropHeightBits >> 1)); loop++)
+    for (loop =0 ; loop < (halfFromHeight - (dropHeightBits >> 1)); loop++)
     {
         memcpy(&outBuffer[i],&inBuffer[m],halfFromWidth);
         m += halfFromWidth;
@@ -3314,16 +3413,18 @@ PadI420Frame(WebRtc_UWord32 size, const WebRtc_UWord8* inBuffer, WebRtc_UWord8* 
         memset(&outBuffer[i],127,(padWidthL + padWidthR) >> 1); // black
         i += (padWidthL + padWidthR) >> 1;
     }
-    memset(&outBuffer[i],127,halfToWidth * (padHeightB >> 1) - (padWidthL >> 1) ); // black
+    // black
+    memset(&outBuffer[i],127,halfToWidth * (padHeightB >> 1) - (padWidthL >> 1) );
     m += (dropHeightBits>>2) * halfFromWidth;
     i = toWidth * toHeight + halfToHeight * halfToWidth; // ilum +Cr
 
     // Cb
-    memset(&outBuffer[i],127,halfToWidth * (padHeightT >> 1) + (padWidthL >> 2)); // black
+    // black
+    memset(&outBuffer[i],127,halfToWidth * (padHeightT >> 1) + (padWidthL >> 2));
     i += halfToWidth * (padHeightT >> 1) + (padWidthL >> 1);
 
     m += (dropHeightBits >> 2) * halfFromWidth;
-    for(loop = 0; loop < (halfFromHeight - (dropHeightBits >> 1)); loop++)
+    for (loop = 0; loop < (halfFromHeight - (dropHeightBits >> 1)); loop++)
     {
         memcpy(&outBuffer[i],&inBuffer[m],halfFromWidth);
         m += halfFromWidth;
@@ -3331,12 +3432,14 @@ PadI420Frame(WebRtc_UWord32 size, const WebRtc_UWord8* inBuffer, WebRtc_UWord8* 
         memset(&outBuffer[i],127,((padWidthL + padWidthR) >> 1)); // black
         i+=((padWidthL + padWidthR) >> 1);
     }
-    memset(&outBuffer[i],127,halfToWidth * (padHeightB >> 1) - (padWidthL >> 1) ); // black
+    // black
+    memset(&outBuffer[i],127,halfToWidth * (padHeightB >> 1) - (padWidthL >> 1));
     return halfToWidth * toHeight * 3;
 }
 
 WebRtc_Word32
-ScaleI420UpHalfFrame(WebRtc_UWord32 width, WebRtc_UWord32 height, WebRtc_UWord8* inFrame)
+ScaleI420UpHalfFrame(WebRtc_UWord32 width, WebRtc_UWord32 height,
+                     WebRtc_UWord8* inFrame)
 {
     if (width < 1 || height < 1)
     {
@@ -3361,7 +3464,8 @@ ScaleI420UpHalfFrame(WebRtc_UWord32 width, WebRtc_UWord32 height, WebRtc_UWord8*
 }
 
 WebRtc_Word32
-ScaleI420DownHalfFrame(WebRtc_UWord32 width, WebRtc_UWord32 height, WebRtc_UWord8* inFrame)
+ScaleI420DownHalfFrame(WebRtc_UWord32 width, WebRtc_UWord32 height,
+                       WebRtc_UWord8* inFrame)
 {
     if (width < 1 || height < 1)
     {
@@ -3372,9 +3476,9 @@ ScaleI420DownHalfFrame(WebRtc_UWord32 width, WebRtc_UWord32 height, WebRtc_UWord
     WebRtc_UWord32 y = 0;
     WebRtc_UWord32 x = 0;
     // ilum
-    for(; y < (height); y++)
+    for (; y < (height); y++)
     {
-        for(x = 0; x < (width >> 1); x++)
+        for (x = 0; x < (width >> 1); x++)
         {
             WebRtc_Word32 avg = inPtr1[0] + inPtr1[1];
             avg = avg >>1;
@@ -3386,10 +3490,10 @@ ScaleI420DownHalfFrame(WebRtc_UWord32 width, WebRtc_UWord32 height, WebRtc_UWord
     inPtr1 = inFrame + (width * height);
 
     // color
-    for(y = 0; y < height; y++)
+    for (y = 0; y < height; y++)
     {
         // 2 rows
-        for(x = 0; x < (width >> 2); x++)
+        for (x = 0; x < (width >> 2); x++)
         {
             WebRtc_Word32 avg = inPtr1[0] + inPtr1[1] ;
             *outPtr = (WebRtc_UWord8)(avg >> 1);
@@ -3401,7 +3505,8 @@ ScaleI420DownHalfFrame(WebRtc_UWord32 width, WebRtc_UWord32 height, WebRtc_UWord
 }
 
 WebRtc_Word32
-ScaleI420FrameQuarter(WebRtc_UWord32 width, WebRtc_UWord32 height, WebRtc_UWord8* inFrame)
+ScaleI420FrameQuarter(WebRtc_UWord32 width, WebRtc_UWord32 height,
+                      WebRtc_UWord8* inFrame)
 {
     if (width < 1 || height < 1)
     {
@@ -3452,8 +3557,9 @@ ScaleI420FrameQuarter(WebRtc_UWord32 width, WebRtc_UWord32 height, WebRtc_UWord8
 }
 
 WebRtc_Word32
-ScaleI420Up2(WebRtc_UWord32 width, WebRtc_UWord32 height, WebRtc_UWord8*& buffer,
-             WebRtc_UWord32 size, WebRtc_UWord32 &scaledWidth, WebRtc_UWord32 &scaledHeight)
+ScaleI420Up2(WebRtc_UWord32 width, WebRtc_UWord32 height,
+             WebRtc_UWord8*& buffer, WebRtc_UWord32 size,
+             WebRtc_UWord32 &scaledWidth, WebRtc_UWord32 &scaledHeight)
 {
     if (width <= 1 || height <= 1 || (width % 2) != 0 || (height % 2) != 0)
     {
@@ -3474,7 +3580,8 @@ ScaleI420Up2(WebRtc_UWord32 width, WebRtc_UWord32 height, WebRtc_UWord8*& buffer
     WebRtc_UWord8* inPtr1 = buffer + (3 * width * (height >> 1)) - 1;
     WebRtc_UWord8* inPtr2 = buffer + (3 * width * (height >> 1)) - (width >> 1) - 1;
     WebRtc_UWord8* outPtr1 = buffer + (3 * scaledWidth * (scaledHeight >> 1)) - 1;
-    WebRtc_UWord8* outPtr2 = buffer + (3 * scaledWidth * (scaledHeight >> 1)) - (scaledWidth >> 1) - 1;
+    WebRtc_UWord8* outPtr2 = buffer + (3 * scaledWidth * (scaledHeight >> 1)) -
+                             (scaledWidth >> 1) - 1;
 
     // Color
     for (WebRtc_Word32 i = 1; i <= 2; i++)
@@ -3592,15 +3699,17 @@ ScaleI420Up2(WebRtc_UWord32 width, WebRtc_UWord32 height, WebRtc_UWord8*& buffer
 }
 
 WebRtc_Word32
-ScaleI420Up3_2(WebRtc_UWord32 width, WebRtc_UWord32 height, WebRtc_UWord8*& buffer,
-               WebRtc_UWord32 size, WebRtc_UWord32 &scaledWidth, WebRtc_UWord32 &scaledHeight)
+ScaleI420Up3_2(WebRtc_UWord32 width, WebRtc_UWord32 height,
+               WebRtc_UWord8*& buffer, WebRtc_UWord32 size,
+               WebRtc_UWord32 &scaledWidth, WebRtc_UWord32 &scaledHeight)
 {
     if (width <= 1 || height <= 1)
     {
         return -1;
     }
 
-    if ((width % 2) != 0 || (height % 2) != 0 || ((width >> 1) % 2) != 0 || ((height >> 1) % 2) != 0)
+    if ((width % 2) != 0 || (height % 2) != 0 || ((width >> 1) % 2) != 0 ||
+        ((height >> 1) % 2) != 0)
     {
         return -1;
     }
@@ -3614,14 +3723,16 @@ ScaleI420Up3_2(WebRtc_UWord32 width, WebRtc_UWord32 height, WebRtc_UWord8*& buff
     scaledHeight = 3 * (height >> 1);
 
     // Verify new buffer size
-    WebRtc_UWord32 scaledBufferSize = webrtc::CalcBufferSize(kI420, scaledWidth, scaledHeight);
+    WebRtc_UWord32 scaledBufferSize = webrtc::CalcBufferSize(kI420, scaledWidth,
+                                                             scaledHeight);
     VerifyAndAllocate(buffer, size, scaledBufferSize);
 
     WebRtc_UWord8* inPtr1 = buffer + (3 * width * (height >> 1)) - 1;
     WebRtc_UWord8* inPtr2 = buffer + (3 * width*(height >> 1)) - (width >> 1) - 1;
 
     WebRtc_UWord8* outPtr1 = buffer + (3 * scaledWidth * (scaledHeight >> 1)) - 1;
-    WebRtc_UWord8* outPtr2 = buffer + (3 * scaledWidth * (scaledHeight >> 1)) - (scaledWidth >> 1) - 1;
+    WebRtc_UWord8* outPtr2 = buffer + (3 * scaledWidth * (scaledHeight >> 1)) -
+                             (scaledWidth >> 1) - 1;
 
     WebRtc_Word32 cy = 0;
     WebRtc_Word32 cx = 0;
@@ -3700,9 +3811,9 @@ ScaleI420Up3_2(WebRtc_UWord32 width, WebRtc_UWord32 height, WebRtc_UWord8*& buff
 }
 
 WebRtc_Word32
-ScaleI420Down1_3(WebRtc_UWord32 width, WebRtc_UWord32 height, WebRtc_UWord8*& buffer,
-                 WebRtc_UWord32 size, WebRtc_UWord32 &scaledWidth,
-                 WebRtc_UWord32 &scaledHeight)
+ScaleI420Down1_3(WebRtc_UWord32 width, WebRtc_UWord32 height,
+                 WebRtc_UWord8*& buffer, WebRtc_UWord32 size,
+                 WebRtc_UWord32 &scaledWidth, WebRtc_UWord32 &scaledHeight)
 {
     if (width <= 5 || height <= 5)
     {
@@ -3721,7 +3832,8 @@ ScaleI420Down1_3(WebRtc_UWord32 width, WebRtc_UWord32 height, WebRtc_UWord8*& bu
 
     scaledWidth = width / 3;
     scaledHeight = height / 3;
-    WebRtc_Word32 scaledBufferSize = CalcBufferSize(kI420, scaledWidth, scaledHeight);
+    WebRtc_Word32 scaledBufferSize = CalcBufferSize(kI420, scaledWidth,
+                                                    scaledHeight);
     VerifyAndAllocate(buffer, size, scaledBufferSize);
 
     WebRtc_UWord8* inPtr1 = buffer;
@@ -3736,7 +3848,8 @@ ScaleI420Down1_3(WebRtc_UWord32 width, WebRtc_UWord32 height, WebRtc_UWord8*& bu
         scaledWidth++;
         addWidth = true;
     }
-    WebRtc_Word32 remWidthCol = (width >> 1) - WebRtc_Word32((scaledWidth >> 1) * 3.0);
+    WebRtc_Word32 remWidthCol = (width >> 1) -
+                                 WebRtc_Word32((scaledWidth >> 1) * 3.0);
 
     // illum
     for (WebRtc_UWord32 y = 0; y < height / 3; y++)
@@ -3811,14 +3924,17 @@ ConvertToI420(VideoType incomingVideoType,
     switch(incomingVideoType)
     {
         case kRGB24:
-            outgoingLength = ConvertRGB24ToI420(width, height, incomingBuffer, outgoingBuffer);
+            outgoingLength = ConvertRGB24ToI420(width, height, incomingBuffer,
+                                                outgoingBuffer);
             break;
         case kRGB565:
-            outgoingLength = ConvertRGB565ToI420(incomingBuffer, width, height, outgoingBuffer);
+            outgoingLength = ConvertRGB565ToI420(incomingBuffer, width, height,
+                                                 outgoingBuffer);
             break;
 #ifdef WEBRTC_MAC
         case kARGB:
-            outgoingLength = ConvertARGBMacToI420(width, height, incomingBuffer, outgoingBuffer);
+            outgoingLength = ConvertARGBMacToI420(width, height, incomingBuffer,
+                                                  outgoingBuffer);
             break;
 #endif
         case kI420:
@@ -3830,18 +3946,22 @@ ConvertToI420(VideoType incomingVideoType,
                   memcpy(outgoingBuffer, incomingBuffer, length);
                   break;
               case kRotateClockwise:
-                  outgoingLength = ConvertToI420AndRotateClockwise(incomingBuffer, width,
-                                                                   height, outgoingBuffer,
-                                                                   height, width, kI420);
+                  outgoingLength = ConvertToI420AndRotateClockwise(
+                                    incomingBuffer, width,
+                                    height, outgoingBuffer,
+                                    height, width, kI420);
                   break;
               case kRotateAntiClockwise:
-                  outgoingLength = ConvertToI420AndRotateAntiClockwise(incomingBuffer, width,
-                                                                       height, outgoingBuffer,
-                                                                       height, width, kI420);
+                  outgoingLength = ConvertToI420AndRotateAntiClockwise(
+                                    incomingBuffer, width,
+                                    height, outgoingBuffer,
+                                    height, width, kI420);
                   break;
               case kRotate180:
-                  outgoingLength = ConvertToI420AndMirrorUpDown(incomingBuffer,outgoingBuffer,
-                                                                width, height, kI420);
+                  outgoingLength = ConvertToI420AndMirrorUpDown(incomingBuffer,
+                                                                outgoingBuffer,
+                                                                width, height,
+                                                                kI420);
                   break;
               default:
                   assert(false);
@@ -3850,8 +3970,10 @@ ConvertToI420(VideoType incomingVideoType,
             break;
         case kYUY2:
             if (interlaced) {
-                outgoingLength = ConvertYUY2ToI420interlaced(incomingBuffer, width, height,
-                                                             outgoingBuffer, width, height);
+                outgoingLength = ConvertYUY2ToI420interlaced(incomingBuffer,
+                                                             width, height,
+                                                             outgoingBuffer,
+                                                             width, height);
             } else {
                 outgoingLength = ConvertYUY2ToI420(incomingBuffer, width, height,
                                                    outgoingBuffer, width, height);
@@ -3859,8 +3981,10 @@ ConvertToI420(VideoType incomingVideoType,
             break;
         case kUYVY:
             if (interlaced) {
-                outgoingLength = ConvertUYVYToI420interlaced(incomingBuffer, width, height,
-                                                             outgoingBuffer, width, height);
+                outgoingLength = ConvertUYVYToI420interlaced(incomingBuffer,
+                                                             width, height,
+                                                             outgoingBuffer,
+                                                             width, height);
             } else {
                 outgoingLength = ConvertUYVYToI420(width, height, incomingBuffer,
                                                    outgoingBuffer);
@@ -3870,25 +3994,29 @@ ConvertToI420(VideoType incomingVideoType,
             switch(rotate)
                 {
                     case kRotateNone:
-                        outgoingLength = ConvertYV12ToI420(incomingBuffer, width, height,
+                        outgoingLength = ConvertYV12ToI420(incomingBuffer,
+                                                           width, height,
                                                            outgoingBuffer);
                         break;
                     case kRotateClockwise:
-                        outgoingLength = ConvertToI420AndRotateClockwise(incomingBuffer, width,
-                                                                         height, outgoingBuffer,
-                                                                         height,width, kYV12);
+                        outgoingLength = ConvertToI420AndRotateClockwise(
+                                          incomingBuffer, width,
+                                          height, outgoingBuffer,
+                                          height,width, kYV12);
                         break;
                     case kRotateAntiClockwise:
-                        outgoingLength = ConvertToI420AndRotateAntiClockwise(incomingBuffer,
-                                                                             width, height,
-                                                                             outgoingBuffer,
-                                                                             height, width,
-                                                                             kYV12);
+                        outgoingLength = ConvertToI420AndRotateAntiClockwise(
+                                          incomingBuffer,
+                                          width, height,
+                                          outgoingBuffer,
+                                          height, width,
+                                          kYV12);
                         break;
                     case kRotate180:
-                        outgoingLength = ConvertToI420AndMirrorUpDown(incomingBuffer,
-                                                                      outgoingBuffer,
-                                                                      width, height, kYV12);
+                        outgoingLength = ConvertToI420AndMirrorUpDown(
+                                          incomingBuffer,
+                                          outgoingBuffer,
+                                          width, height, kYV12);
                         break;
                     default:
                         assert(false);
@@ -3899,23 +4027,27 @@ ConvertToI420(VideoType incomingVideoType,
             switch(rotate)
             {
                 case kRotateNone:
-                    outgoingLength = ConvertNV12ToI420(incomingBuffer, outgoingBuffer, width,
-                                                       height);
+                    outgoingLength = ConvertNV12ToI420(incomingBuffer,
+                                                       outgoingBuffer,
+                                                       width, height);
                     break;
                 case kRotateClockwise:
-                    outgoingLength = ConvertNV12ToI420AndRotateClockwise(incomingBuffer,
-                                                                         outgoingBuffer,
-                                                                         width, height);
+                    outgoingLength = ConvertNV12ToI420AndRotateClockwise(
+                                      incomingBuffer,
+                                      outgoingBuffer,
+                                      width, height);
                     break;
                 case kRotateAntiClockwise:
-                    outgoingLength = ConvertNV12ToI420AndRotateAntiClockwise(incomingBuffer,
-                                                                             outgoingBuffer,
-                                                                             width, height);
+                    outgoingLength = ConvertNV12ToI420AndRotateAntiClockwise(
+                                      incomingBuffer,
+                                      outgoingBuffer,
+                                      width, height);
                     break;
                 case kRotate180:
-                    outgoingLength = ConvertNV12ToI420AndRotate180(incomingBuffer,
-                                                                   outgoingBuffer,
-                                                                   width, height);
+                    outgoingLength = ConvertNV12ToI420AndRotate180(
+                                      incomingBuffer,
+                                      outgoingBuffer,
+                                      width, height);
                     break;
                 default:
                     assert(false);
@@ -3926,23 +4058,27 @@ ConvertToI420(VideoType incomingVideoType,
             switch(rotate)
             {
                 case kRotateNone:
-                    outgoingLength = ConvertNV21ToI420(incomingBuffer, outgoingBuffer, width,
-                                                       height);
+                    outgoingLength = ConvertNV21ToI420(incomingBuffer,
+                                                       outgoingBuffer,
+                                                       width, height);
                     break;
                 case kRotateClockwise:
-                    outgoingLength = ConvertNV21ToI420AndRotateClockwise(incomingBuffer,
-                                                                         outgoingBuffer,
-                                                                         width, height);
+                    outgoingLength = ConvertNV21ToI420AndRotateClockwise(
+                                      incomingBuffer,
+                                      outgoingBuffer,
+                                      width, height);
                     break;
                 case kRotateAntiClockwise:
-                    outgoingLength = ConvertNV21ToI420AndRotateAntiClockwise(incomingBuffer,
-                                                                             outgoingBuffer,
-                                                                             width, height);
+                    outgoingLength = ConvertNV21ToI420AndRotateAntiClockwise(
+                                        incomingBuffer,
+                                        outgoingBuffer,
+                                        width, height);
                     break;
                 case kRotate180:
-                    outgoingLength = ConvertNV21ToI420AndRotate180(incomingBuffer,
-                                                                   outgoingBuffer,
-                                                                   width, height);
+                    outgoingLength = ConvertNV21ToI420AndRotate180(
+                                      incomingBuffer,
+                                      outgoingBuffer,
+                                      width, height);
                     break;
                 default:
                     assert(false);
@@ -3974,19 +4110,24 @@ WebRtc_Word32 ConvertFromI420(VideoType outgoingVideoType,
     switch(outgoingVideoType)
     {
       case kRGB24:
-          outgoingLength = ConvertI420ToRGB24(incomingBuffer, outgoingBuffer, width, height);
+          outgoingLength = ConvertI420ToRGB24(incomingBuffer, outgoingBuffer,
+                                              width, height);
           break;
       case kARGB:
-         outgoingLength = ConvertI420ToARGB(incomingBuffer, outgoingBuffer, width, height, 0);
+         outgoingLength = ConvertI420ToARGB(incomingBuffer, outgoingBuffer,
+                                            width, height, 0);
          break;
       case kARGB4444:
-          outgoingLength = ConvertI420ToARGB4444(incomingBuffer, outgoingBuffer, width, height, 0);
+          outgoingLength = ConvertI420ToARGB4444(incomingBuffer, outgoingBuffer,
+                                                 width, height, 0);
           break;
       case kARGB1555:
-          outgoingLength = ConvertI420ToARGB1555(incomingBuffer, outgoingBuffer, width, height,0);
+          outgoingLength = ConvertI420ToARGB1555(incomingBuffer, outgoingBuffer,
+                                                 width, height,0);
           break;
       case kRGB565:
-          outgoingLength = ConvertI420ToRGB565(incomingBuffer, outgoingBuffer, width, height);
+          outgoingLength = ConvertI420ToRGB565(incomingBuffer, outgoingBuffer,
+                                               width, height);
           break;
       case kI420:
           length = CalcBufferSize(kI420, width, height);
@@ -3994,20 +4135,25 @@ WebRtc_Word32 ConvertFromI420(VideoType outgoingVideoType,
           memcpy(outgoingBuffer, incomingBuffer, length);
           break;
       case kUYVY:
-          outgoingLength = ConvertI420ToUYVY(incomingBuffer, outgoingBuffer, width, height);
+          outgoingLength = ConvertI420ToUYVY(incomingBuffer, outgoingBuffer,
+                                             width, height);
           break;
       case kYUY2:
-          outgoingLength = ConvertI420ToYUY2(incomingBuffer, outgoingBuffer, width, height,0);
+          outgoingLength = ConvertI420ToYUY2(incomingBuffer, outgoingBuffer,
+                                             width, height,0);
           break;
       case kYV12:
-        outgoingLength = ConvertI420ToYV12(incomingBuffer, outgoingBuffer, width, height,0);
+        outgoingLength = ConvertI420ToYV12(incomingBuffer, outgoingBuffer,
+                                           width, height,0);
         break;
 #ifdef WEBRTC_MAC
       case kRGBAMac:
-        outgoingLength = ConvertI420ToRGBAMac(incomingBuffer, outgoingBuffer, width, height,0);
+        outgoingLength = ConvertI420ToRGBAMac(incomingBuffer, outgoingBuffer,
+                                              width, height,0);
         break;
       case kARGBMac:
-        outgoingLength = ConvertI420ToARGBMac(incomingBuffer, outgoingBuffer, width, height,0);
+        outgoingLength = ConvertI420ToARGBMac(incomingBuffer, outgoingBuffer,
+                                              width, height,0);
         break;
 #endif
       default:
@@ -4154,7 +4300,8 @@ ConvertToI420AndMirrorUpDown(const WebRtc_UWord8* srcBuffer, WebRtc_UWord8* dstB
     //Mirror Y component
     for (WebRtc_UWord32 newRow = 0; newRow < srcHeight; ++newRow)
     {
-        memcpy(targetBuffer, &sourcePtr[((srcHeight - newRow) - 1) * sourceWidth], sourceWidth);
+        memcpy(targetBuffer,
+               &sourcePtr[((srcHeight - newRow) - 1) * sourceWidth], sourceWidth);
         targetBuffer += sourceWidth;
     }
 
@@ -4166,7 +4313,8 @@ ConvertToI420AndMirrorUpDown(const WebRtc_UWord8* srcBuffer, WebRtc_UWord8* dstB
     }
     for (WebRtc_Word32 newRow = 0; newRow < halfHeight; ++newRow)
     {
-        memcpy(targetBuffer, &sourcePtr[((halfHeight - newRow) - 1) * halfWidth], halfWidth);
+        memcpy(targetBuffer, &sourcePtr[(
+               (halfHeight - newRow) - 1) * halfWidth], halfWidth);
         targetBuffer += halfWidth;
     }
 
@@ -4181,7 +4329,8 @@ ConvertToI420AndMirrorUpDown(const WebRtc_UWord8* srcBuffer, WebRtc_UWord8* dstB
     }
     for(WebRtc_Word32 newRow = 0; newRow < halfHeight; ++newRow)
     {
-        memcpy(targetBuffer, &sourcePtr[((halfHeight - newRow) - 1) * halfWidth], halfWidth);
+        memcpy(targetBuffer, &sourcePtr[(
+              (halfHeight - newRow) - 1) * halfWidth], halfWidth);
         targetBuffer += halfWidth;
     }
     return 0;
@@ -4189,9 +4338,12 @@ ConvertToI420AndMirrorUpDown(const WebRtc_UWord8* srcBuffer, WebRtc_UWord8* dstB
 
 
 WebRtc_Word32
-ConvertToI420AndRotateClockwise(const WebRtc_UWord8* srcBuffer, WebRtc_UWord32 srcWidth,
-                                WebRtc_UWord32 srcHeight, WebRtc_UWord8* dstBuffer,
-                                WebRtc_UWord32 dstWidth, WebRtc_UWord32 dstHeight,
+ConvertToI420AndRotateClockwise(const WebRtc_UWord8* srcBuffer,
+                                WebRtc_UWord32 srcWidth,
+                                WebRtc_UWord32 srcHeight,
+                                WebRtc_UWord8* dstBuffer,
+                                WebRtc_UWord32 dstWidth,
+                                WebRtc_UWord32 dstHeight,
                                 VideoType colorSpaceIn)
 {
     if (colorSpaceIn != kI420 && colorSpaceIn != kYV12)
@@ -4204,8 +4356,8 @@ ConvertToI420AndRotateClockwise(const WebRtc_UWord8* srcBuffer, WebRtc_UWord32 s
     const WebRtc_Word32 sourceHeight = srcHeight;
     const WebRtc_Word32 sourceWidth = srcWidth;
 
-    WebRtc_UWord8* targetBuffer=dstBuffer;
-    const WebRtc_UWord8* sourcePtr=srcBuffer;
+    WebRtc_UWord8* targetBuffer = dstBuffer;
+    const WebRtc_UWord8* sourcePtr = srcBuffer;
 
     // Paint the destination buffer black
     memset(dstBuffer,0,dstWidth * dstHeight);
@@ -4218,10 +4370,11 @@ ConvertToI420AndRotateClockwise(const WebRtc_UWord8* srcBuffer, WebRtc_UWord32 s
 
     //Rotate Y component
     targetBuffer += paddingHeight * targetWidth;
-    for(WebRtc_Word32 newRow = 0; newRow < sourceWidth; ++newRow)
+    for (WebRtc_Word32 newRow = 0; newRow < sourceWidth; ++newRow)
     {
         targetBuffer+=paddingWidth;
-        for(WebRtc_Word32 newColumn = sourceHeight - 1;newColumn >= 0;--newColumn)
+        for (WebRtc_Word32 newColumn = sourceHeight - 1;
+             newColumn >= 0;--newColumn)
         {
             (*targetBuffer++) = sourcePtr[newColumn * sourceWidth + newRow];
         }
@@ -4239,7 +4392,8 @@ ConvertToI420AndRotateClockwise(const WebRtc_UWord8* srcBuffer, WebRtc_UWord32 s
     for(WebRtc_Word32 newRow = 0;newRow < sourceWidth / 2; ++newRow)
     {
         targetBuffer += halfPaddingWidth;
-        for(WebRtc_Word32 newColumn=sourceHeight / 2 - 1; newColumn >= 0; --newColumn)
+        for(WebRtc_Word32 newColumn=sourceHeight / 2 - 1;
+            newColumn >= 0; --newColumn)
         {
             (*targetBuffer++) = sourcePtr[(newColumn * sourceWidth >> 1) + newRow];
         }
@@ -4256,12 +4410,14 @@ ConvertToI420AndRotateClockwise(const WebRtc_UWord8* srcBuffer, WebRtc_UWord32 s
         sourcePtr -= (sourceHeight * sourceWidth) >> 2;
     }
     targetBuffer += halfPaddingHeight * targetWidth / 2;
-    for(WebRtc_Word32 newRow = 0; newRow < sourceWidth / 2; ++newRow)
+    for (WebRtc_Word32 newRow = 0; newRow < sourceWidth / 2; ++newRow)
     {
         targetBuffer+=halfPaddingWidth;
-        for(WebRtc_Word32 newColumn = sourceHeight / 2 - 1; newColumn >= 0; --newColumn)
+        for (WebRtc_Word32 newColumn = sourceHeight / 2 - 1;
+            newColumn >= 0; --newColumn)
         {
-            (*targetBuffer++) = sourcePtr[(newColumn * sourceWidth >> 1) + newRow];
+            (*targetBuffer++) = sourcePtr[(newColumn * sourceWidth >> 1)
+                                          + newRow];
         }
         targetBuffer += halfPaddingWidth;
     }
@@ -4271,9 +4427,12 @@ ConvertToI420AndRotateClockwise(const WebRtc_UWord8* srcBuffer, WebRtc_UWord32 s
 
 
 WebRtc_Word32
-ConvertToI420AndRotateAntiClockwise(const WebRtc_UWord8* srcBuffer, WebRtc_UWord32 srcWidth,
-                                    WebRtc_UWord32 srcHeight, WebRtc_UWord8* dstBuffer,
-                                    WebRtc_UWord32 dstWidth, WebRtc_UWord32 dstHeight,
+ConvertToI420AndRotateAntiClockwise(const WebRtc_UWord8* srcBuffer,
+                                    WebRtc_UWord32 srcWidth,
+                                    WebRtc_UWord32 srcHeight,
+                                    WebRtc_UWord8* dstBuffer,
+                                    WebRtc_UWord32 dstWidth,
+                                    WebRtc_UWord32 dstHeight,
                                     VideoType colorSpaceIn)
 {
     if (colorSpaceIn != kI420 && colorSpaceIn != kYV12)
@@ -4305,10 +4464,10 @@ ConvertToI420AndRotateAntiClockwise(const WebRtc_UWord8* srcBuffer, WebRtc_UWord
 
     //Rotate Y component
     targetBuffer += paddingHeight*targetWidth;
-    for(WebRtc_Word32 newRow = sourceWidth - 1; newRow >= 0; --newRow)
+    for (WebRtc_Word32 newRow = sourceWidth - 1; newRow >= 0; --newRow)
     {
         targetBuffer+=paddingWidth;
-         for(WebRtc_Word32 newColumn = 0; newColumn < sourceHeight; ++newColumn)
+         for (WebRtc_Word32 newColumn = 0; newColumn < sourceHeight; ++newColumn)
          {
              (*targetBuffer++) = sourcePtr[newColumn * sourceWidth + newRow];
          }
@@ -4323,12 +4482,13 @@ ConvertToI420AndRotateAntiClockwise(const WebRtc_UWord8* srcBuffer, WebRtc_UWord
         sourcePtr += (sourceHeight * sourceWidth) >> 2;
     }
     targetBuffer += halfPaddingHeight * targetWidth / 2;
-    for(WebRtc_Word32 newRow = sourceWidth / 2 - 1; newRow >= 0;--newRow)
+    for (WebRtc_Word32 newRow = sourceWidth / 2 - 1; newRow >= 0;--newRow)
     {
         targetBuffer += halfPaddingWidth;
-        for(WebRtc_Word32 newColumn = 0; newColumn < sourceHeight / 2; ++newColumn)
+        for (WebRtc_Word32 newColumn = 0; newColumn < sourceHeight / 2; ++newColumn)
         {
-            (*targetBuffer++) = sourcePtr[(newColumn*sourceWidth >> 1) + newRow];
+            (*targetBuffer++) = sourcePtr[(newColumn * sourceWidth >> 1)
+                                          + newRow];
         }
         targetBuffer += halfPaddingWidth;
     }
@@ -4346,9 +4506,11 @@ ConvertToI420AndRotateAntiClockwise(const WebRtc_UWord8* srcBuffer, WebRtc_UWord
     for (WebRtc_Word32 newRow = sourceWidth / 2 - 1; newRow >= 0; --newRow)
     {
         targetBuffer += halfPaddingWidth;
-        for (WebRtc_Word32 newColumn = 0; newColumn < sourceHeight / 2; ++newColumn)
+        for (WebRtc_Word32 newColumn = 0;
+            newColumn < sourceHeight / 2; ++newColumn)
         {
-            (*targetBuffer++) = sourcePtr[(newColumn*sourceWidth >> 1) + newRow];
+            (*targetBuffer++) = sourcePtr[(newColumn * sourceWidth >> 1)
+                                          + newRow];
         }
         targetBuffer += halfPaddingWidth;
     }
@@ -4371,7 +4533,8 @@ WebRtc_UWord8 Clip(WebRtc_Word32 val)
 }
 
 WebRtc_Word32
-VerifyAndAllocate(WebRtc_UWord8*& buffer, WebRtc_UWord32 currentSize, WebRtc_UWord32 newSize)
+VerifyAndAllocate(WebRtc_UWord8*& buffer, WebRtc_UWord32 currentSize,
+                  WebRtc_UWord32 newSize)
 {
     if (newSize > currentSize)
     {
