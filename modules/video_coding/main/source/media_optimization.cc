@@ -29,6 +29,7 @@ _sendStatisticsZeroEncode(0),
 _maxPayloadSize(1460),
 _lastBitRate(0),
 _targetBitRate(0),
+_incomingFrameRate(0),
 _enableQm(false),
 _videoProtectionCallback(NULL),
 _videoQMSettingsCallback(NULL),
@@ -40,6 +41,7 @@ _lastQMUpdateTime(0),
 _lastChangeTime(0)
 {
     memset(_sendStatistics, 0, sizeof(_sendStatistics));
+    memset(_incomingFrameTimes, -1, sizeof(_incomingFrameTimes));
 
     _frameDropper  = new VCMFrameDropper(_id);
     _lossProtLogic = new VCMLossProtectionLogic();
@@ -59,12 +61,14 @@ VCMMediaOptimization::~VCMMediaOptimization(void)
 WebRtc_Word32
 VCMMediaOptimization::Reset()
 {
+    memset(_incomingFrameTimes, -1, sizeof(_incomingFrameTimes));
+    InputFrameRate(); // Resets _incomingFrameRate
     _frameDropper->Reset();
     _lossProtLogic->Reset();
     _frameDropper->SetRates(0, 0);
     _content->Reset();
     _qms->Reset();
-    _lossProtLogic->UpdateFrameRate(static_cast<float>(InputFrameRate()));
+    _lossProtLogic->UpdateFrameRate(_incomingFrameRate);
     _lossProtLogic->Reset();
     _sendStatisticsZeroEncode = 0;
     _lastBitRate = 0;
@@ -659,7 +663,7 @@ VCMMediaOptimization::ProcessIncomingFrameRate(WebRtc_Word64 now)
 {
     WebRtc_Word32 num = 0;
     WebRtc_Word32 nrOfFrames = 0;
-    for(num = 1; num < (kFrameCountHistorySize - 1); num++)
+    for (num = 1; num < (kFrameCountHistorySize - 1); num++)
     {
         if (_incomingFrameTimes[num] <= 0 ||
             // don't use data older than 2 s

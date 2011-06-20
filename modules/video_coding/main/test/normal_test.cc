@@ -102,6 +102,7 @@ VCMNTEncodeCompleteCallback::SendData(const FrameType frameType,
     rtpInfo.header.ssrc = 0;
     rtpInfo.header.timestamp = timeStamp;
     rtpInfo.frameType = frameType;
+    rtpInfo.type.Video.isFirstPacket = true;
     // Size should also be received from that table, since the payload type
     // defines the size.
 

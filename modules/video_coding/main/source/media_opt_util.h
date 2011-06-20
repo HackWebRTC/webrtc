@@ -350,7 +350,7 @@ private:
     // Sets the available loss protection methods.
     void UpdateMaxLossHistory(WebRtc_UWord8 lossPr255, WebRtc_Word64 now);
     WebRtc_UWord8 MaxFilteredLossPr(WebRtc_Word64 nowMs) const;
-    ListWrapper                  _availableMethods;
+    ListWrapper               _availableMethods;
     VCMProtectionMethod*      _selectedMethod;
     VCMProtectionMethod*      _bestNotOkMethod;
     VCMProtectionParameters   _currentParameters;
@@ -361,9 +361,9 @@ private:
     float                     _keyFrameSize;
     WebRtc_UWord8             _fecRateKey;
     WebRtc_UWord8             _fecRateDelta;
-    WebRtc_UWord32            _lastPrUpdateT;
-    WebRtc_UWord32            _lastPacketPerFrameUpdateT;
-    WebRtc_UWord32            _lastPacketPerFrameUpdateTKey;
+    WebRtc_Word64             _lastPrUpdateT;
+    WebRtc_Word64             _lastPacketPerFrameUpdateT;
+    WebRtc_Word64             _lastPacketPerFrameUpdateTKey;
     VCMExpFilter              _lossPr255;
     VCMLossProbabilitySample  _lossPrHistory[kLossPrHistorySize];
     WebRtc_UWord8             _shortMaxLossPr255;

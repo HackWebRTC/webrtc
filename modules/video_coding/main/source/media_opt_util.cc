@@ -699,8 +699,7 @@ VCMLossProtectionLogic::UpdateFecType(VCMFecTypes fecType)
 void
 VCMLossProtectionLogic::UpdateLossPr(WebRtc_UWord8 lossPr255)
 {
-    WebRtc_UWord32 now = static_cast<WebRtc_UWord32>
-                         (VCMTickTime::MillisecondTimestamp());
+    const WebRtc_Word64 now = VCMTickTime::MillisecondTimestamp();
     UpdateMaxLossHistory(lossPr255, now);
     _lossPr255.Apply(static_cast<float> (now - _lastPrUpdateT),
                      static_cast<float> (lossPr255));
@@ -787,8 +786,7 @@ VCMLossProtectionLogic::FilteredLoss() const
     //take the windowed max of the received loss
     if (_selectedMethod != NULL && _selectedMethod->Type() == kFEC)
     {
-        return MaxFilteredLossPr(static_cast<WebRtc_UWord32>
-              (VCMTickTime::MillisecondTimestamp()));
+        return MaxFilteredLossPr(VCMTickTime::MillisecondTimestamp());
     }
     else
     {
@@ -811,19 +809,17 @@ VCMLossProtectionLogic::UpdateBitRate(float bitRate)
 void
 VCMLossProtectionLogic::UpdatePacketsPerFrame(float nPackets)
 {
-    WebRtc_UWord32 now = static_cast<WebRtc_UWord32>
-                         (VCMTickTime::MillisecondTimestamp());
-    _packetsPerFrame.Apply(static_cast<float> (now -
-                           _lastPacketPerFrameUpdateT), nPackets);
+    const WebRtc_Word64 now = VCMTickTime::MillisecondTimestamp();
+    _packetsPerFrame.Apply(static_cast<float>(now - _lastPacketPerFrameUpdateT),
+                           nPackets);
     _lastPacketPerFrameUpdateT = now;
 }
 
 void
 VCMLossProtectionLogic::UpdatePacketsPerFrameKey(float nPackets)
 {
-    WebRtc_UWord32 now = static_cast<WebRtc_UWord32>
-                         (VCMTickTime::MillisecondTimestamp());
-    _packetsPerFrameKey.Apply(static_cast<float> (now -
+    const WebRtc_Word64 now = VCMTickTime::MillisecondTimestamp();
+    _packetsPerFrameKey.Apply(static_cast<float>(now -
                               _lastPacketPerFrameUpdateTKey), nPackets);
     _lastPacketPerFrameUpdateTKey = now;
 }
@@ -896,10 +892,10 @@ VCMLossProtectionLogic::SelectedMethod() const
 
 void VCMLossProtectionLogic::Reset()
 {
-    _lastPrUpdateT = static_cast<WebRtc_UWord32>
-                     (VCMTickTime::MillisecondTimestamp());
-    _lastPacketPerFrameUpdateT = static_cast<WebRtc_UWord32>
-                                (VCMTickTime::MillisecondTimestamp());
+    const WebRtc_Word64 now = VCMTickTime::MillisecondTimestamp();
+    _lastPrUpdateT = now;
+    _lastPacketPerFrameUpdateT = now;
+    _lastPacketPerFrameUpdateTKey = now;
     _lossPr255.Reset(0.9999f);
     _packetsPerFrame.Reset(0.9999f);
     _fecRateDelta = _fecRateKey = 0;
