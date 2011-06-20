@@ -4023,7 +4023,9 @@ WebRtc_Word32 AudioDeviceWindowsCore::_GetDefaultDeviceID(EDataFlow dir, ERole r
 //  _GetDeviceName
 // ----------------------------------------------------------------------------
 
-WebRtc_Word32 AudioDeviceWindowsCore::_GetDeviceName(IMMDevice* pDevice, LPWSTR pszBuffer, int bufferLen)
+WebRtc_Word32 AudioDeviceWindowsCore::_GetDeviceName(IMMDevice* pDevice,
+                                                     LPWSTR pszBuffer,
+                                                     int bufferLen)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "%s", __FUNCTION__);
 
@@ -4033,25 +4035,51 @@ WebRtc_Word32 AudioDeviceWindowsCore::_GetDeviceName(IMMDevice* pDevice, LPWSTR 
     IPropertyStore *pProps = NULL;
     PROPVARIANT varName;
 
-    // Initialize container for property value.
-    PropVariantInit(&varName);
-
     assert(pszBuffer != NULL);
     assert(bufferLen > 0);
 
     if (pDevice != NULL)
     {
         hr = pDevice->OpenPropertyStore(STGM_READ, &pProps);
-        if (hr == S_OK)
+        if (FAILED(hr))
         {
-            // Get the endpoint device's friendly-name property.
-            hr = pProps->GetValue(PKEY_Device_FriendlyName, &varName);
+            WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+                "IMMDevice::OpenPropertyStore failed, hr = 0x%08X", hr);
         }
     }
 
-    if (hr == S_OK)
+    // Initialize container for property value.
+    PropVariantInit(&varName);
+
+    if (SUCCEEDED(hr))
     {
-        // Found the device name.
+        // Get the endpoint device's friendly-name property.
+        hr = pProps->GetValue(PKEY_Device_FriendlyName, &varName);
+        if (FAILED(hr))
+        {
+            WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+                "IPropertyStore::GetValue failed, hr = 0x%08X", hr);
+        }
+    }
+
+    if ((SUCCEEDED(hr)) && (VT_EMPTY == varName.vt))
+    {
+        hr = E_FAIL;
+        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+            "IPropertyStore::GetValue returned no value, hr = 0x%08X", hr);
+    }
+
+    if ((SUCCEEDED(hr)) && (VT_LPWSTR != varName.vt))
+    {
+        // The returned value is not a wide null terminated string.
+        hr = E_UNEXPECTED;
+        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+            "IPropertyStore::GetValue returned unexpected type, hr = 0x%08X", hr);
+    }
+
+    if (SUCCEEDED(hr) && (varName.pwszVal != NULL))
+    {
+        // Copy the valid device name to the provided ouput buffer.
         wcsncpy_s(pszBuffer, bufferLen, varName.pwszVal, _TRUNCATE);
     }
     else
