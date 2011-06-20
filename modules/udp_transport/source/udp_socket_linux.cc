@@ -27,7 +27,7 @@ namespace webrtc {
 UdpSocketLinux::UdpSocketLinux(const WebRtc_Word32 id, UdpSocketManager* mgr,
                                bool ipV6Enable)
 {
-    WEBRTC_TRACE(kTraceMemory, kTraceTransport, _id,
+    WEBRTC_TRACE(kTraceMemory, kTraceTransport, id,
                  "UdpSocketLinux::UdpSocketLinux()");
 
     _wantsIncoming = false;
@@ -179,6 +179,7 @@ void UdpSocketLinux::HasIncoming()
     memset(&sockaddrfrom, 0, sizeof(sockaddrfrom));
     socklen_t fromlen = sizeof(sockaddrfrom);
 #else
+    memset(&from, 0, sizeof(from));
     socklen_t fromlen = sizeof(from);
 #endif
 
