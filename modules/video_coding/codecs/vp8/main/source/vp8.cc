@@ -30,7 +30,6 @@
 
 #define VP8_FREQ_HZ 90000
 //#define DEV_PIC_LOSS
-//#define VP8_LATEST
 
 namespace webrtc
 {
