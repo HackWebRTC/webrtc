@@ -28,6 +28,7 @@
 #ifndef WEBRTC_AUDIO_DEVICE_LATEBINDINGSYMBOLTABLE_H
 #define WEBRTC_AUDIO_DEVICE_LATEBINDINGSYMBOLTABLE_H
 
+#include <assert.h>
 #include <stddef.h>  // for NULL
 #include <string.h>
 
