@@ -82,8 +82,9 @@ WebRtc_Word32 TraceLinux::AddTime(char* traceMessage,
             dwDeltaTime = 99999;
         }
 
-        sprintf (traceMessage, "(%2u:%2u:%2u:%3u |%5lu) ", systemTime.tm_hour,
-                 systemTime.tm_min, systemTime.tm_sec, 0, dwDeltaTime);
+        sprintf(traceMessage, "(%2u:%2u:%2u:%3u |%5lu) ", systemTime.tm_hour,
+                systemTime.tm_min, systemTime.tm_sec, 0,
+                static_cast<unsigned long>(dwDeltaTime));
     } else {
         WebRtc_UWord32 dwDeltaTime = dwCurrentTimeInSeconds - _prevAPITickCount;
         _prevAPITickCount = dwCurrentTimeInSeconds;
@@ -100,8 +101,9 @@ WebRtc_Word32 TraceLinux::AddTime(char* traceMessage,
         {
             dwDeltaTime = 99999;
         }
-        sprintf (traceMessage, "(%2u:%2u:%2u:%3u |%5lu) ", systemTime.tm_hour,
-                 systemTime.tm_min, systemTime.tm_sec, 0, dwDeltaTime);
+        sprintf(traceMessage, "(%2u:%2u:%2u:%3u |%5lu) ", systemTime.tm_hour,
+                systemTime.tm_min, systemTime.tm_sec, 0,
+                static_cast<unsigned long>(dwDeltaTime));
     }
     // Messages is 22 characters.
     return 22;

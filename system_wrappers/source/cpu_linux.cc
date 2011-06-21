@@ -23,9 +23,13 @@ CpuLinux::CpuLinux()
     m_numCores = 0;
     m_numCores = GetNumCores();
     m_oldBusyTimeMulti = new long long[m_numCores];
+    memset(m_oldBusyTimeMulti, 0, sizeof(long long) * m_numCores);
     m_oldIdleTimeMulti = new long long[m_numCores];
+    memset(m_oldIdleTimeMulti, 0, sizeof(long long) * m_numCores);
     m_idleArray = new long long[m_numCores];
+    memset(m_idleArray, 0, sizeof(long long) * m_numCores);
     m_busyArray = new long long[m_numCores];
+    memset(m_busyArray, 0, sizeof(long long) * m_numCores);
     m_resultArray = new WebRtc_UWord32[m_numCores];
 
     GetData(m_oldBusyTime, m_oldIdleTime, m_busyArray, m_idleArray);
