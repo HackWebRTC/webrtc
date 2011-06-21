@@ -778,9 +778,10 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
         }
 
         WebRtc_UWord8* tempBuffer = _lastKeyFrame._buffer; // Save buffer ptr.
+        WebRtc_UWord32 tempSize = _lastKeyFrame._size; // Save size.
         _lastKeyFrame = inputImage; // Shallow copy.
         _lastKeyFrame._buffer = tempBuffer; // Restore buffer ptr.
-        _lastKeyFrame._length = bytesToCopy;
+        _lastKeyFrame._size = tempSize; // Restore buffer size.
         if (!_lastKeyFrame._buffer)
         {
             // Allocate memory.
@@ -789,7 +790,8 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
         }
         // Copy encoded frame.
         memcpy(_lastKeyFrame._buffer, inputImage._buffer + numberOfBytes,
-               _lastKeyFrame._length);
+               bytesToCopy);
+        _lastKeyFrame._length = bytesToCopy;
     }
 
     int lastRefUpdates = 0;
