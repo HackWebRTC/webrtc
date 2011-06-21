@@ -21,7 +21,6 @@
 
 namespace webrtc {
 namespace {
-
 const WebRtc_Word16 kFilterCoefficients8kHz[5] =
     {3798, -7596, 3798, 7807, -3733};
 
@@ -92,8 +91,8 @@ int Filter(FilterState* hpf, WebRtc_Word16* data, int length) {
 
     // Saturate (to 2^27) so that the HP filtered signal does not overflow
     tmp_int32 = WEBRTC_SPL_SAT(static_cast<WebRtc_Word32>(134217727),
-                                  tmp_int32,
-                                  static_cast<WebRtc_Word32>(-134217728));
+                               tmp_int32,
+                               static_cast<WebRtc_Word32>(-134217728));
 
     // Convert back to Q0 and use rounding
     data[i] = (WebRtc_Word16)WEBRTC_SPL_RSHIFT_W32(tmp_int32, 12);
@@ -122,13 +121,13 @@ int HighPassFilterImpl::ProcessCaptureAudio(AudioBuffer* audio) {
   assert(audio->samples_per_split_channel() <= 160);
 
   for (int i = 0; i < num_handles(); i++) {
-    err = Filter(static_cast<Handle*>(handle(i)),
+    Handle* my_handle = static_cast<Handle*>(handle(i));
+    err = Filter(my_handle,
                  audio->low_pass_split_data(i),
                  audio->samples_per_split_channel());
 
     if (err != apm_->kNoError) {
-      //return TranslateError(err);
-      return err;
+      return GetHandleError(my_handle);
     }
   }
 
@@ -165,21 +164,6 @@ int HighPassFilterImpl::InitializeHandle(void* handle) const {
                           apm_->sample_rate_hz());
 }
 
-/*int HighPassFilterImpl::InitializeHandles(
-    const vector<void*>& handles) const {
-  int err = apm_->kNoError;
-
-  for (size_t i = 0; i < num_handles(); i++) {
-    err = InitializeFilter(static_cast<Handle*>(handles[i]),
-                           apm_->SampleRateHz());
-    if (err != apm_->kNoError) {
-      return TranslateError(err);
-    }
-  }
-
-  return apm_->kNoError;
-}*/
-
 int HighPassFilterImpl::ConfigureHandle(void* /*handle*/) const {
   return apm_->kNoError; // Not configurable.
 }
@@ -188,8 +172,9 @@ int HighPassFilterImpl::num_handles_required() const {
   return apm_->num_output_channels();
 }
 
-// TODO(ajm): implement
-int HighPassFilterImpl::TranslateError(int /*err*/) const {
-  return -1;
+int HighPassFilterImpl::GetHandleError(void* handle) const {
+  // The component has no detailed errors.
+  assert(handle != NULL);
+  return apm_->kUnspecifiedError;
 }
 }  // namespace webrtc

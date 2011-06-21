@@ -25,7 +25,6 @@ namespace webrtc {
 typedef void Handle;
 
 namespace {
-
 /*int EstimateLevel(AudioBuffer* audio, Handle* my_handle) {
   assert(audio->samples_per_split_channel() <= 160);
 
@@ -39,7 +38,7 @@ namespace {
                          mixed_data,
                          audio->samples_per_split_channel());
   if (err != AudioProcessing::kNoError) {
-    return TranslateError(err);
+    return GetHandleError(my_handle);
   }
 
   return AudioProcessing::kNoError;
@@ -165,20 +164,6 @@ int LevelEstimatorImpl::InitializeHandle(void* /*handle*/) const {
                     kIntervalSeconds);*/
 }
 
-/*int LevelEstimatorImpl::InitializeHandles(
-    const vector<void*>& handles) const {
-  int err = apm_->kNoError;
-
-  for (size_t i = 0; i < num_handles(); i++) {
-    err = InitLvlEst(static_cast<Handle*>(handles[i]), apm_->SampleRateHz());
-    if (err != apm_->kNoError) {
-      return TranslateError(err);
-    }
-  }
-
-  return apm_->kNoError;
-}*/
-
 int LevelEstimatorImpl::ConfigureHandle(void* /*handle*/) const {
   return apm_->kUnsupportedComponentError;
   //return apm_->kNoError;
@@ -189,9 +174,9 @@ int LevelEstimatorImpl::num_handles_required() const {
   //return 2;
 }
 
-//int LevelEstimatorImpl::GetConfiguration() {
-//  // There are no configuration accessors.
-//  return apm_->kUnsupportedFunctionError;
-//}
-
+int LevelEstimatorImpl::GetHandleError(void* handle) const {
+  // The component has no detailed errors.
+  assert(handle != NULL);
+  return apm_->kUnspecifiedError;
+}
 }  // namespace webrtc

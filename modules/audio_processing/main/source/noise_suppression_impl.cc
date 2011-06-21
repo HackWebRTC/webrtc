@@ -30,6 +30,23 @@ typedef NsHandle Handle;
 typedef NsxHandle Handle;
 #endif
 
+namespace {
+int MapSetting(NoiseSuppression::Level level) {
+  switch (level) {
+    case NoiseSuppression::kLow:
+      return 0;
+    case NoiseSuppression::kModerate:
+      return 1;
+    case NoiseSuppression::kHigh:
+      return 2;
+    case NoiseSuppression::kVeryHigh:
+      return 3;
+    default:
+      return -1;
+  }
+}
+}  // namespace
+
 NoiseSuppressionImpl::NoiseSuppressionImpl(const AudioProcessingImpl* apm)
   : ProcessingComponent(apm),
     apm_(apm),
@@ -47,6 +64,7 @@ int NoiseSuppressionImpl::ProcessCaptureAudio(AudioBuffer* audio) {
   assert(audio->num_channels() == num_handles());
 
   for (int i = 0; i < num_handles(); i++) {
+    Handle* my_handle = static_cast<Handle*>(handle(i));
 #if defined(WEBRTC_NS_FLOAT)
     err = WebRtcNs_Process(static_cast<Handle*>(handle(i)),
                            audio->low_pass_split_data(i),
@@ -62,7 +80,7 @@ int NoiseSuppressionImpl::ProcessCaptureAudio(AudioBuffer* audio) {
 #endif
 
     if (err != apm_->kNoError) {
-      return TranslateError(err);
+      return GetHandleError(my_handle);
     }
   }
 
@@ -80,10 +98,7 @@ bool NoiseSuppressionImpl::is_enabled() const {
 
 int NoiseSuppressionImpl::set_level(Level level) {
   CriticalSectionScoped crit_scoped(*apm_->crit());
-  if (level != kLow &&
-      level != kModerate &&
-      level != kHigh &&
-      level != kVeryHigh) {
+  if (MapSetting(level) == -1) {
     return apm_->kBadParameterError;
   }
 
@@ -141,25 +156,13 @@ int NoiseSuppressionImpl::InitializeHandle(void* handle) const {
 #endif
 }
 
-/*int NoiseSuppressionImpl::InitializeHandles(
-    const vector<void*>& handles) const {
-  int err = apm_->kNoError;
-
-  for (size_t i = 0; i < num_handles(); i++) {
-    err = WebRtcNs_Init(static_cast<Handle*>(handles[i]), apm_->SampleRateHz());
-    if (err != apm_->kNoError) {
-      return TranslateError(err);
-    }
-  }
-
-  return apm_->kNoError;
-}*/
-
 int NoiseSuppressionImpl::ConfigureHandle(void* handle) const {
 #if defined(WEBRTC_NS_FLOAT)
-  return WebRtcNs_set_policy(static_cast<Handle*>(handle), level_);
+  return WebRtcNs_set_policy(static_cast<Handle*>(handle),
+                             MapSetting(level_));
 #elif defined(WEBRTC_NS_FIXED)
-  return WebRtcNsx_set_policy(static_cast<Handle*>(handle), level_);
+  return WebRtcNsx_set_policy(static_cast<Handle*>(handle),
+                              MapSetting(level_));
 #endif
 }
 
@@ -167,14 +170,10 @@ int NoiseSuppressionImpl::num_handles_required() const {
   return apm_->num_output_channels();
 }
 
-//int NoiseSuppressionImpl::GetConfiguration() {
-//  // There are no configuration accessors.
-//  return apm_->kUnsupportedFunctionError;
-//}
-
-// TODO(ajm): implement
-int NoiseSuppressionImpl::TranslateError(int /*err*/) const {
-  return -1;
+int NoiseSuppressionImpl::GetHandleError(void* handle) const {
+  // The NS has no get_error() function.
+  assert(handle != NULL);
+  return apm_->kUnspecifiedError;
 }
 }  // namespace webrtc
 

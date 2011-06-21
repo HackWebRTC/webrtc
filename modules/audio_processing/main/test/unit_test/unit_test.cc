@@ -146,22 +146,22 @@ void ApmTest::TearDown() {
     delete frame_;
   }
   frame_ = NULL;
-  
+
   if (reverse_frame_) {
     delete reverse_frame_;
   }
   reverse_frame_ = NULL;
-  
+
   if (far_file_) {
     ASSERT_EQ(0, fclose(far_file_));
   }
   far_file_ = NULL;
-  
+
   if (near_file_) {
     ASSERT_EQ(0, fclose(near_file_));
   }
   near_file_ = NULL;
-  
+
   if (stat_file_) {
     ASSERT_EQ(0, fclose(stat_file_));
   }
@@ -748,6 +748,14 @@ TEST_F(ApmTest, EchoControlMobile) {
   // Turn AECM on (and AEC off)
   EXPECT_EQ(apm_->kNoError, apm_->echo_control_mobile()->Enable(true));
   EXPECT_TRUE(apm_->echo_control_mobile()->is_enabled());
+
+  EXPECT_EQ(apm_->kBadParameterError,
+      apm_->echo_control_mobile()->set_routing_mode(
+      static_cast<EchoControlMobile::RoutingMode>(-1)));
+  EXPECT_EQ(apm_->kBadParameterError,
+      apm_->echo_control_mobile()->set_routing_mode(
+      static_cast<EchoControlMobile::RoutingMode>(5)));
+
   // Toggle routing modes
   EchoControlMobile::RoutingMode mode[] = {
       EchoControlMobile::kQuietEarpieceOrHeadset,

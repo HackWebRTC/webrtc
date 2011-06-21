@@ -86,13 +86,9 @@ int ProcessingComponent::Initialize() {
 
     int err = InitializeHandle(handles_[i]);
     if (err != apm_->kNoError) {
-      return err;
+      return GetHandleError(handles_[i]);
     }
   }
-  //int err = InitializeHandles(handles_);
-  //if (err != apm_->kNoError) {
-  //  return TranslateError(err);
-  //}
 
   initialized_ = true;
   return Configure();
@@ -107,9 +103,7 @@ int ProcessingComponent::Configure() {
   for (int i = 0; i < num_handles_; i++) {
     int err = ConfigureHandle(handles_[i]);
     if (err != apm_->kNoError) {
-      // Try to get the current valid state.
-      //GetConfiguration();
-      return err;
+      return GetHandleError(handles_[i]);
     }
   }
 

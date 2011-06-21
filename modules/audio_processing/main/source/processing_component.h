@@ -44,18 +44,13 @@ class ProcessingComponent {
   void* handle(int index) const;
   int num_handles() const;
 
-  // TODO(ajm): do we want this?
-  //virtual int GetConfiguration() = 0;
-
  private:
   virtual void* CreateHandle() const = 0;
   virtual int InitializeHandle(void* handle) const = 0;
-  //virtual int InitializeHandles(
-  //    const std::vector<void*>& handles) const = 0;
   virtual int ConfigureHandle(void* handle) const = 0;
   virtual int DestroyHandle(void* handle) const = 0;
   virtual int num_handles_required() const = 0;
-  //virtual int TranslateError(int err) const = 0;
+  virtual int GetHandleError(void* handle) const = 0;
 
   const AudioProcessingImpl* apm_;
   std::vector<void*> handles_;

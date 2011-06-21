@@ -22,6 +22,41 @@ namespace webrtc {
 
 typedef void Handle;
 
+namespace {
+WebRtc_Word16 MapSetting(EchoControlMobile::RoutingMode mode) {
+  switch (mode) {
+    case EchoControlMobile::kQuietEarpieceOrHeadset:
+      return 0;
+    case EchoControlMobile::kEarpiece:
+      return 1;
+    case EchoControlMobile::kLoudEarpiece:
+      return 2;
+    case EchoControlMobile::kSpeakerphone:
+      return 3;
+    case EchoControlMobile::kLoudSpeakerphone:
+      return 4;
+    default:
+      return -1;
+  }
+}
+
+int MapError(int err) {
+  switch (err) {
+    case AECM_UNSUPPORTED_FUNCTION_ERROR:
+      return AudioProcessing::kUnsupportedFunctionError;
+    case AECM_BAD_PARAMETER_ERROR:
+      return AudioProcessing::kBadParameterError;
+    case AECM_BAD_PARAMETER_WARNING:
+      return AudioProcessing::kBadStreamParameterWarning;
+    default:
+      // AECMOBFIX_UNSPECIFIED_ERROR
+      // AECMOBFIX_UNINITIALIZED_ERROR
+      // AECMOBFIX_NULL_POINTER_ERROR
+      return AudioProcessing::kUnspecifiedError;
+  }
+}
+}  // namespace
+
 EchoControlMobileImpl::EchoControlMobileImpl(const AudioProcessingImpl* apm)
   : ProcessingComponent(apm),
     apm_(apm),
@@ -44,13 +79,14 @@ int EchoControlMobileImpl::ProcessRenderAudio(const AudioBuffer* audio) {
   size_t handle_index = 0;
   for (int i = 0; i < apm_->num_output_channels(); i++) {
     for (int j = 0; j < audio->num_channels(); j++) {
+      Handle* my_handle = static_cast<Handle*>(handle(handle_index));
       err = WebRtcAecm_BufferFarend(
-          static_cast<Handle*>(handle(handle_index)),
+          my_handle,
           audio->low_pass_split_data(j),
           static_cast<WebRtc_Word16>(audio->samples_per_split_channel()));
 
       if (err != apm_->kNoError) {
-        return TranslateError(err);  // TODO(ajm): warning possible?
+        return GetHandleError(my_handle);  // TODO(ajm): warning possible?
       }
 
       handle_index++;
@@ -86,8 +122,9 @@ int EchoControlMobileImpl::ProcessCaptureAudio(AudioBuffer* audio) {
       clean = NULL;
     }
     for (int j = 0; j < apm_->num_reverse_channels(); j++) {
+      Handle* my_handle = static_cast<Handle*>(handle(handle_index));
       err = WebRtcAecm_Process(
-          static_cast<Handle*>(handle(handle_index)),
+          my_handle,
           noisy,
           clean,
           audio->low_pass_split_data(i),
@@ -95,7 +132,7 @@ int EchoControlMobileImpl::ProcessCaptureAudio(AudioBuffer* audio) {
           apm_->stream_delay_ms());
 
       if (err != apm_->kNoError) {
-        return TranslateError(err);  // TODO(ajm): warning possible?
+        return GetHandleError(my_handle);  // TODO(ajm): warning possible?
       }
 
       handle_index++;
@@ -121,11 +158,7 @@ bool EchoControlMobileImpl::is_enabled() const {
 
 int EchoControlMobileImpl::set_routing_mode(RoutingMode mode) {
   CriticalSectionScoped crit_scoped(*apm_->crit());
-  if (mode != kQuietEarpieceOrHeadset &&
-      mode != kEarpiece &&
-      mode != kLoudEarpiece &&
-      mode != kSpeakerphone &&
-      mode != kLoudSpeakerphone) {
+  if (MapSetting(mode) == -1) {
     return apm_->kBadParameterError;
   }
 
@@ -192,26 +225,10 @@ int EchoControlMobileImpl::InitializeHandle(void* handle) const {
                                  // required by AECM.
 }
 
-/*int EchoControlMobileImpl::InitializeHandles(
-    const vector<void*>& handles) const {
-  int err = apm_->kNoError;
-
-  for (size_t i = 0; i < num_handles(); i++) {
-    err = WebRtcAec_Init(static_cast<Handle*>(handles[i]),
-                        apm_->SampleRateHz(),
-                        device_sample_rate_hz_);
-    if (err != apm_->kNoError) {
-      return TranslateError(err);
-    }
-  }
-
-  return apm_->kNoError;
-}*/
-
 int EchoControlMobileImpl::ConfigureHandle(void* handle) const {
   AecmConfig config;
   config.cngMode = comfort_noise_enabled_;
-  config.echoMode = routing_mode_;
+  config.echoMode = MapSetting(routing_mode_);
 
   return WebRtcAecm_set_config(static_cast<Handle*>(handle), config);
 }
@@ -221,58 +238,8 @@ int EchoControlMobileImpl::num_handles_required() const {
          apm_->num_reverse_channels();
 }
 
-int EchoControlMobileImpl::TranslateError(int err) const {
-  if (err == AECM_UNSUPPORTED_FUNCTION_ERROR) {
-    return apm_->kUnsupportedFunctionError;
-  } else if (err == AECM_BAD_PARAMETER_ERROR) {
-    return apm_->kBadParameterError;
-  } else if (err == AECM_BAD_PARAMETER_WARNING) {
-    return apm_->kBadStreamParameterWarning;
-  } else {
-    // AECMOBFIX_UNSPECIFIED_ERROR
-    // AECMOBFIX_UNINITIALIZED_ERROR
-    // AECMOBFIX_NULL_POINTER_ERROR
-    return apm_->kUnspecifiedError;
-  }
+int EchoControlMobileImpl::GetHandleError(void* handle) const {
+  assert(handle != NULL);
+  return MapError(WebRtcAecm_get_error_code(static_cast<Handle*>(handle)));
 }
 }  // namespace webrtc
-
-/*int EchoControlMobileImpl::GetConfiguration(void* handle) {
-  if (!initialized_) {
-    return apm_->kNoError;
-  }
-
-  AecConfig config;
-  int err = WebRtcAec_get_config(handle, &config);
-  if (err != apm_->kNoError) {
-    return TranslateError(err);
-  }
-
-  if (config.metricsMode == 0) {
-    metrics_enabled_ = false;
-  } else if (config.metricsMode == 1) {
-    metrics_enabled_ = true;
-  } else {
-    return apm_->kUnspecifiedError;
-  }
-
-  if (config.nlpMode == kAecNlpConservative) {
-    routing_mode_ = kLowSuppression;
-  } else if (config.nlpMode == kAecNlpModerate) {
-    routing_mode_ = kMediumSuppression;
-  } else if (config.nlpMode == kAecNlpAggressive) {
-    routing_mode_ = kHighSuppression;
-  } else {
-    return apm_->kUnspecifiedError;
-  }
-
-  if (config.skewMode == 0) {
-    drift_compensation_enabled_ = false;
-  } else if (config.skewMode == 1) {
-    drift_compensation_enabled_ = true;
-  } else {
-    return apm_->kUnspecifiedError;
-  }
-
-  return apm_->kNoError;
-}*/

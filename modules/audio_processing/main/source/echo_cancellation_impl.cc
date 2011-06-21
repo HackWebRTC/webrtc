@@ -24,6 +24,19 @@ namespace webrtc {
 typedef void Handle;
 
 namespace {
+WebRtc_Word16 MapSetting(EchoCancellation::SuppressionLevel level) {
+  switch (level) {
+    case EchoCancellation::kLowSuppression:
+      return kAecNlpConservative;
+    case EchoCancellation::kModerateSuppression:
+      return kAecNlpModerate;
+    case EchoCancellation::kHighSuppression:
+      return kAecNlpAggressive;
+    default:
+      return -1;
+  }
+}
+
 int MapError(int err) {
   switch (err) {
     case AEC_UNSUPPORTED_FUNCTION_ERROR:
@@ -164,9 +177,7 @@ bool EchoCancellationImpl::is_enabled() const {
 
 int EchoCancellationImpl::set_suppression_level(SuppressionLevel level) {
   CriticalSectionScoped crit_scoped(*apm_->crit());
-  if (level != kLowSuppression &&
-      level != kModerateSuppression &&
-      level != kHighSuppression) {
+  if (MapSetting(level) == -1) {
     return apm_->kBadParameterError;
   }
 
@@ -315,27 +326,11 @@ int EchoCancellationImpl::InitializeHandle(void* handle) const {
                        device_sample_rate_hz_);
 }
 
-/*int EchoCancellationImpl::InitializeHandles(
-    const vector<void*>& handles) const {
-  int err = apm_->kNoError;
-
-  for (size_t i = 0; i < num_handles(); i++) {
-    err = WebRtcAec_Init(static_cast<Handle*>(handles[i]),
-                        apm_->SampleRateHz(),
-                        device_sample_rate_hz_);
-    if (err != apm_->kNoError) {
-      return TranslateError(err);
-    }
-  }
-
-  return apm_->kNoError;
-}*/
-
 int EchoCancellationImpl::ConfigureHandle(void* handle) const {
   assert(handle != NULL);
   AecConfig config;
   config.metricsMode = metrics_enabled_;
-  config.nlpMode = suppression_level_;
+  config.nlpMode = MapSetting(suppression_level_);
   config.skewMode = drift_compensation_enabled_;
 
   return WebRtcAec_set_config(static_cast<Handle*>(handle), config);
@@ -351,43 +346,3 @@ int EchoCancellationImpl::GetHandleError(void* handle) const {
   return MapError(WebRtcAec_get_error_code(static_cast<Handle*>(handle)));
 }
 }  // namespace webrtc
-
-/*int EchoCancellationImpl::GetConfiguration(void* handle) {
-  if (!initialized_) {
-    return apm_->kNoError;
-  }
-
-  AecConfig config;
-  int err = WebRtcAec_get_config(handle, &config);
-  if (err != apm_->kNoError) {
-    return TranslateError(err);
-  }
-
-  if (config.metricsMode == 0) {
-    metrics_enabled_ = false;
-  } else if (config.metricsMode == 1) {
-    metrics_enabled_ = true;
-  } else {
-    return apm_->kUnspecifiedError;
-  }
-
-  if (config.nlpMode == kAecNlpConservative) {
-    suppression_level_ = kLowSuppression;
-  } else if (config.nlpMode == kAecNlpModerate) {
-    suppression_level_ = kModerateSuppression;
-  } else if (config.nlpMode == kAecNlpAggressive) {
-    suppression_level_ = kHighSuppression;
-  } else {
-    return apm_->kUnspecifiedError;
-  }
-
-  if (config.skewMode == 0) {
-    drift_compensation_enabled_ = false;
-  } else if (config.skewMode == 1) {
-    drift_compensation_enabled_ = true;
-  } else {
-    return apm_->kUnspecifiedError;
-  }
-
-  return apm_->kNoError;
-}*/

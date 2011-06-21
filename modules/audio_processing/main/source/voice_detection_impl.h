@@ -46,12 +46,10 @@ class VoiceDetectionImpl : public VoiceDetection,
   // ProcessingComponent implementation.
   virtual void* CreateHandle() const;
   virtual int InitializeHandle(void* handle) const;
-  //virtual int InitializeHandles(
-  //    const std::vector<void*>& handles) const;
   virtual int ConfigureHandle(void* handle) const;
   virtual int DestroyHandle(void* handle) const;
   virtual int num_handles_required() const;
-  virtual int TranslateError(int err) const;
+  virtual int GetHandleError(void* handle) const;
 
   const AudioProcessingImpl* apm_;
   bool stream_has_voice_;

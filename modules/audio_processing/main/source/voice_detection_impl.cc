@@ -38,7 +38,6 @@ WebRtc_Word16 MapSetting(VoiceDetection::Likelihood likelihood) {
       return 0;
       break;
     default:
-      assert(false);
       return -1;
   }
 }
@@ -115,10 +114,7 @@ bool VoiceDetectionImpl::stream_has_voice() const {
 
 int VoiceDetectionImpl::set_likelihood(VoiceDetection::Likelihood likelihood) {
   CriticalSectionScoped crit_scoped(*apm_->crit());
-  if (likelihood != kVeryLowLikelihood &&
-      likelihood != kLowLikelihood &&
-      likelihood != kModerateLikelihood &&
-      likelihood != kHighLikelihood) {
+  if (MapSetting(likelihood) == -1) {
     return apm_->kBadParameterError;
   }
 
@@ -189,37 +185,18 @@ int VoiceDetectionImpl::InitializeHandle(void* handle) const {
   return WebRtcVad_Init(static_cast<Handle*>(handle));
 }
 
-/*int VoiceDetectionImpl::InitializeHandles(
-    const vector<void*>& handles) const {
-  int err = apm_->kNoError;
-
-  for (size_t i = 0; i < num_handles(); i++) {
-    err = WebRtcVad_Init(static_cast<Handle*>(handles[i]),
-                         apm_->SampleRateHz());
-    if (err != apm_->kNoError) {
-      return TranslateError(err);
-    }
-  }
-
-  return apm_->kNoError;
-}*/
-
 int VoiceDetectionImpl::ConfigureHandle(void* handle) const {
   return WebRtcVad_set_mode(static_cast<Handle*>(handle),
-                             MapSetting(likelihood_));
+                            MapSetting(likelihood_));
 }
 
 int VoiceDetectionImpl::num_handles_required() const {
   return 1;
 }
 
-//int VoiceDetectionImpl::GetConfiguration() {
-//  // There are no configuration accessors.
-//  return apm_->kUnsupportedFunctionError;
-//}
-
-// TODO(ajm): implement
-int VoiceDetectionImpl::TranslateError(int /*err*/) const {
-  return -1;
+int VoiceDetectionImpl::GetHandleError(void* handle) const {
+  // The VAD has no get_error() function.
+  assert(handle != NULL);
+  return apm_->kUnspecifiedError;
 }
 }  // namespace webrtc
