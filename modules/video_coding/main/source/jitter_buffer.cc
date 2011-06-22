@@ -58,7 +58,8 @@ VCMJitterBuffer::CompleteDecodableKeyFrameCriteria(VCMFrameBuffer* frame,
 }
 
 // Constructor
-VCMJitterBuffer::VCMJitterBuffer(WebRtc_Word32 vcmId, WebRtc_Word32 receiverId, bool master) :
+VCMJitterBuffer::VCMJitterBuffer(WebRtc_Word32 vcmId, WebRtc_Word32 receiverId,
+                                 bool master) :
     _vcmId(vcmId),
     _receiverId(receiverId),
     _running(false),
@@ -216,7 +217,8 @@ VCMJitterBuffer::Start()
     _NACKSeqNumLength = 0;
     _rttMs = 0;
 
-    WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, VCMId(_vcmId, _receiverId), "JB(0x%x): Jitter buffer: start", this);
+    WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, VCMId(_vcmId,
+                 _receiverId), "JB(0x%x): Jitter buffer: start", this);
 }
 
 
@@ -240,7 +242,8 @@ VCMJitterBuffer::Stop()
     _critSect.Leave();
     _frameEvent.Set(); // Make sure we exit from trying to get a frame to decoder
     _packetEvent.Set(); // Make sure we exit from trying to get a sequence number
-    WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, VCMId(_vcmId, _receiverId), "JB(0x%x): Jitter buffer: stop", this);
+    WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, VCMId(_vcmId,
+                 _receiverId), "JB(0x%x): Jitter buffer: stop", this);
 }
 
 bool
@@ -290,8 +293,8 @@ VCMJitterBuffer::FlushInternal()
 
     _NACKSeqNumLength = 0;
 
-    WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, VCMId(_vcmId, _receiverId),
-               "JB(0x%x): Jitter buffer: flush", this);
+    WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, VCMId(_vcmId,
+                 _receiverId), "JB(0x%x): Jitter buffer: flush", this);
 }
 
 // Set the frame state to free and remove it from the sorted
@@ -314,8 +317,9 @@ VCMJitterBuffer::UpdateFrameState(VCMFrameBuffer* frame)
 {
     if (frame == NULL)
     {
-        WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideoCoding, VCMId(_vcmId, _receiverId),
-                   "JB(0x%x) FB(0x%x): UpdateFrameState NULL frame pointer", this, frame);
+        WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideoCoding,
+                     VCMId(_vcmId, _receiverId), "JB(0x%x) FB(0x%x): "
+                         "UpdateFrameState NULL frame pointer", this, frame);
         return;
     }
 
@@ -518,8 +522,9 @@ VCMJitterBuffer::GetEmptyFrame()
         _maxNumberOfFrames++;
 
         _critSect.Leave();
-        WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, VCMId(_vcmId, _receiverId), "JB(0x%x) FB(0x%x): Jitter buffer increased to:%d frames",
-            this, ptrNewBuffer, _maxNumberOfFrames);
+        WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding,
+        VCMId(_vcmId, _receiverId), "JB(0x%x) FB(0x%x): Jitter buffer "
+        "increased to:%d frames", this, ptrNewBuffer, _maxNumberOfFrames);
         return ptrNewBuffer;
     }
     _critSect.Leave();
@@ -1084,9 +1089,8 @@ VCMJitterBuffer::GetFrameForDecoding()
         _waitingForCompletion.frameSize = oldestFrame->Length();
         _waitingForCompletion.latestPacketTime = oldestFrame->LatestPacketTimeMs();
         _waitingForCompletion.timestamp = oldestFrame->TimeStamp();
+        oldestFrame->SetState(kStateDecoding);
     }
-
-    oldestFrame->SetState(kStateDecoding);
     _frameBuffersTSOrder.Erase(oldestFrameListItem);
     oldestFrameListItem = NULL;
 
@@ -1098,7 +1102,7 @@ VCMJitterBuffer::GetFrameForDecoding()
     // store current time
     _lastDecodedTimeStamp = oldestFrame->TimeStamp();
 
-        // store seqnum
+    // store seqnum
     _lastDecodedSeqNum = oldestFrame->GetHighSeqNum();
 
     return oldestFrame;
@@ -1282,9 +1286,9 @@ VCMJitterBuffer::GetLowHighSequenceNumbers(WebRtc_Word32& lowSeqNum, WebRtc_Word
         VCMFrameBufferStateEnum state = _frameBuffers[i]->GetState();
 
         if ((kStateFree != state) &&
-           (kStateEmpty != state) &&
-           (kStateDecoding != state) &&
-            seqNum != -1)
+            (kStateEmpty != state) &&
+            (kStateDecoding != state) &&
+             seqNum != -1)
         {
             if (highSeqNum == -1)
             {

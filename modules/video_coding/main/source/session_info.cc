@@ -38,17 +38,20 @@ VCMSessionInfo::~VCMSessionInfo()
 {
 }
 
-WebRtc_Word32 VCMSessionInfo::GetLowSeqNum() const
+WebRtc_Word32
+VCMSessionInfo::GetLowSeqNum() const
 {
     return _lowSeqNum;
 }
 
-WebRtc_Word32 VCMSessionInfo::GetHighSeqNum() const
+WebRtc_Word32
+VCMSessionInfo::GetHighSeqNum() const
 {
     return _highSeqNum;
 }
 
-void VCMSessionInfo::Reset()
+void
+VCMSessionInfo::Reset()
 {
     _lowSeqNum = -1;
     _highSeqNum = -1;
@@ -93,9 +96,10 @@ VCMSessionInfo::HaveStartSeqNumber()
     return true;
 }
 
-WebRtc_UWord32 VCMSessionInfo::InsertBuffer(WebRtc_UWord8* ptrStartOfLayer,
-                                            WebRtc_Word32 packetIndex,
-                                            const VCMPacket& packet)
+WebRtc_UWord32
+VCMSessionInfo::InsertBuffer(WebRtc_UWord8* ptrStartOfLayer,
+                             WebRtc_Word32 packetIndex,
+                             const VCMPacket& packet)
 {
     WebRtc_UWord32 moveLength = 0;
     WebRtc_UWord32 returnLength = 0;
@@ -184,7 +188,8 @@ WebRtc_UWord32 VCMSessionInfo::InsertBuffer(WebRtc_UWord8* ptrStartOfLayer,
     return returnLength;
 }
 
-void VCMSessionInfo::UpdateCompleteSession()
+void
+VCMSessionInfo::UpdateCompleteSession()
 {
     if (_haveFirstPacket && _markerBit)
     {
@@ -209,19 +214,20 @@ bool VCMSessionInfo::IsSessionComplete()
 
 // Find the start and end index of packetIndex packet.
 // startIndex -1 if start not found endIndex=-1 if end index not found
-void VCMSessionInfo::FindNaluBorder(WebRtc_Word32 packetIndex,
-                                    WebRtc_Word32& startIndex,
-                                    WebRtc_Word32& endIndex)
+void
+VCMSessionInfo::FindNaluBorder(WebRtc_Word32 packetIndex,
+                               WebRtc_Word32& startIndex,
+                               WebRtc_Word32& endIndex)
 {
 
-        if(_naluCompleteness[packetIndex]==kNaluStart ||
-             _naluCompleteness[packetIndex]==kNaluComplete)
+        if (_naluCompleteness[packetIndex] == kNaluStart ||
+            _naluCompleteness[packetIndex] == kNaluComplete)
         {
             startIndex = packetIndex;
         }
         else // Need to find the start
         {
-            for(startIndex = packetIndex - 1; startIndex >= 0; --startIndex)
+            for (startIndex = packetIndex - 1; startIndex >= 0; --startIndex)
             {
 
                 if( (_naluCompleteness[startIndex] == kNaluComplete &&
@@ -233,7 +239,7 @@ void VCMSessionInfo::FindNaluBorder(WebRtc_Word32 packetIndex,
                     break;
                 }
                 // This is where the NALU start.
-                if( _naluCompleteness[startIndex] == kNaluStart)
+                if (_naluCompleteness[startIndex] == kNaluStart)
                 {
                     break;
                 }
@@ -248,38 +254,40 @@ void VCMSessionInfo::FindNaluBorder(WebRtc_Word32 packetIndex,
         else
         {
             // Find the next NALU
-            for(endIndex=packetIndex+1;endIndex<=_highestPacketIndex;++endIndex)
+            for (endIndex=packetIndex+1;endIndex<=_highestPacketIndex;++endIndex)
             {
-                if((_naluCompleteness[endIndex]==kNaluComplete &&
+                if ((_naluCompleteness[endIndex]==kNaluComplete &&
                     _packetSizeBytes[endIndex]>0) ||
                     _naluCompleteness[endIndex]==kNaluStart) // Found next NALU.
                 {
                     endIndex--;
                     break;
                 }
-                if( _naluCompleteness[endIndex]==kNaluEnd) // This is where the NALU end.
+                if ( _naluCompleteness[endIndex]==kNaluEnd)
                 {
+                    // This is where the NALU end.
                     break;
                 }
             }
-            if(endIndex > _highestPacketIndex)
+            if (endIndex > _highestPacketIndex)
                 endIndex = -1;
         }
 }
 
 // Deletes all packets between startIndex and endIndex
-WebRtc_UWord32 VCMSessionInfo::DeletePackets(WebRtc_UWord8* ptrStartOfLayer,
-                                             WebRtc_Word32 startIndex,
-                                             WebRtc_Word32 endIndex)
+WebRtc_UWord32
+VCMSessionInfo::DeletePackets(WebRtc_UWord8* ptrStartOfLayer,
+                              WebRtc_Word32 startIndex,
+                              WebRtc_Word32 endIndex)
 {
 
     //Get the number of bytes to delete.
     //Clear the size of these packets.
     WebRtc_UWord32 bytesToDelete = 0; /// The number of bytes to delete.
-    for(int j = startIndex;j <= endIndex; ++j)
+    for (int j = startIndex;j <= endIndex; ++j)
     {
         bytesToDelete += _packetSizeBytes[j];
-        _packetSizeBytes[j]=0;
+        _packetSizeBytes[j] = 0;
     }
     if (bytesToDelete > 0)
     {
@@ -291,7 +299,7 @@ WebRtc_UWord32 VCMSessionInfo::DeletePackets(WebRtc_UWord8* ptrStartOfLayer,
         }
 
         //Get the number of bytes to move
-        WebRtc_UWord32 numberOfBytesToMove=0;
+        WebRtc_UWord32 numberOfBytesToMove = 0;
         for (int j = endIndex + 1; j <= _highestPacketIndex; ++j)
         {
             numberOfBytesToMove += _packetSizeBytes[j];
@@ -307,10 +315,18 @@ WebRtc_UWord32 VCMSessionInfo::DeletePackets(WebRtc_UWord8* ptrStartOfLayer,
 
 // Makes the layer decodable. Ie only contain decodable NALU
 // return the number of bytes deleted from the session. -1 if an error occurs
-WebRtc_UWord32 VCMSessionInfo::MakeSessionDecodable(WebRtc_UWord8* ptrStartOfLayer)
+WebRtc_UWord32
+VCMSessionInfo::MakeSessionDecodable(WebRtc_UWord8* ptrStartOfLayer)
 {
     if(_lowSeqNum < 0) // No packets in this session
+    {
         return 0;
+    }
+    else if (_lowSeqNum == _emptySeqNumLow)
+    {
+        // no data packets in this session
+        return 0;
+    }
 
     WebRtc_Word32 startIndex = 0;
     WebRtc_Word32 endIndex = 0;
@@ -321,10 +337,14 @@ WebRtc_UWord32 VCMSessionInfo::MakeSessionDecodable(WebRtc_UWord8* ptrStartOfLay
         if (_naluCompleteness[packetIndex] == kNaluUnset) // Found a lost packet
         {
             FindNaluBorder(packetIndex,startIndex,endIndex);
-            if(startIndex == -1)
+            if (startIndex == -1)
+            {
                 startIndex = 0;
-            if(endIndex == -1)
+            }
+            if (endIndex == -1)
+            {
                 endIndex = _highestPacketIndex;
+            }
 
             returnLength += DeletePackets(ptrStartOfLayer,packetIndex,endIndex);
             packetIndex = endIndex;
@@ -332,9 +352,9 @@ WebRtc_UWord32 VCMSessionInfo::MakeSessionDecodable(WebRtc_UWord8* ptrStartOfLay
     }
 
     //Make sure the first packet is decodable (Either complete nalu or start of NALU)
-    if(_packetSizeBytes[0] > 0)
+    if (_packetSizeBytes[0] > 0)
     {
-        switch(_naluCompleteness[0])
+        switch (_naluCompleteness[0])
         {
             case kNaluComplete: //Packet can be decoded as is.
                 break;
@@ -363,8 +383,9 @@ WebRtc_UWord32 VCMSessionInfo::MakeSessionDecodable(WebRtc_UWord8* ptrStartOfLay
     return returnLength;
 }
 
-WebRtc_Word32 VCMSessionInfo::ZeroOutSeqNum(WebRtc_Word32* list,
-                                            WebRtc_Word32 numberOfSeqNum)
+WebRtc_Word32
+VCMSessionInfo::ZeroOutSeqNum(WebRtc_Word32* list,
+                              WebRtc_Word32 numberOfSeqNum)
 {
     if ((NULL == list) || (numberOfSeqNum < 1))
     {
@@ -402,16 +423,17 @@ WebRtc_Word32 VCMSessionInfo::ZeroOutSeqNum(WebRtc_Word32* list,
         i++;
         index++;
     }
-    if(!_haveFirstPacket)
+    if (!_haveFirstPacket)
     {
         _sessionNACK = true;
     }
     return 0;
 }
 
-WebRtc_Word32 VCMSessionInfo::ZeroOutSeqNumHybrid(WebRtc_Word32* list,
-                                                  WebRtc_Word32 numberOfSeqNum,
-                                                  float rttScore)
+WebRtc_Word32
+VCMSessionInfo::ZeroOutSeqNumHybrid(WebRtc_Word32* list,
+                                    WebRtc_Word32 numberOfSeqNum,
+                                    float rttScore)
 {
     if ((NULL == list) || (numberOfSeqNum < 1))
     {
@@ -508,31 +530,37 @@ WebRtc_Word32 VCMSessionInfo::ZeroOutSeqNumHybrid(WebRtc_Word32* list,
     return 0;
 }
 
-WebRtc_Word32 VCMSessionInfo::GetHighestPacketIndex()
+WebRtc_Word32
+VCMSessionInfo::GetHighestPacketIndex()
 {
     return _highestPacketIndex;
 }
 
-bool VCMSessionInfo::HaveLastPacket()
+bool
+VCMSessionInfo::HaveLastPacket()
 {
     return _markerBit;
 }
 
-void VCMSessionInfo::ForceSetHaveLastPacket()
+void
+VCMSessionInfo::ForceSetHaveLastPacket()
 {
     _markerBit = true;
     UpdateCompleteSession();
 }
 
-bool VCMSessionInfo::IsRetransmitted()
+bool
+VCMSessionInfo::IsRetransmitted()
 {
     return _sessionNACK;
 }
 
-void VCMSessionInfo::UpdatePacketSize(WebRtc_Word32 packetIndex, WebRtc_UWord32 length)
+void
+VCMSessionInfo::UpdatePacketSize(WebRtc_Word32 packetIndex,
+                                 WebRtc_UWord32 length)
 {
     // sanity
-    if(packetIndex >= kMaxPacketsInJitterBuffer || packetIndex < 0)
+    if (packetIndex >= kMaxPacketsInJitterBuffer || packetIndex < 0)
     {
         // not allowed
         assert(!"SessionInfo::UpdatePacketSize Error: invalid packetIndex");
@@ -541,11 +569,13 @@ void VCMSessionInfo::UpdatePacketSize(WebRtc_Word32 packetIndex, WebRtc_UWord32 
     _packetSizeBytes[packetIndex] = length;
 }
 
-void VCMSessionInfo::PrependPacketIndices(WebRtc_Word32 numberOfPacketIndices)
+void
+VCMSessionInfo::PrependPacketIndices(WebRtc_Word32 numberOfPacketIndices)
 {
     // sanity
-    if((numberOfPacketIndices + GetHighestPacketIndex() >= kMaxPacketsInJitterBuffer)
-        || numberOfPacketIndices < 0)
+    if ((numberOfPacketIndices +
+         GetHighestPacketIndex() >= kMaxPacketsInJitterBuffer)
+         || numberOfPacketIndices < 0)
     {
         // not allowed
         assert(!"SessionInfo::PrependPacketIndexes Error: invalid packetIndex");
@@ -560,10 +590,11 @@ void VCMSessionInfo::PrependPacketIndices(WebRtc_Word32 numberOfPacketIndices)
     _highestPacketIndex += (WebRtc_UWord16)numberOfPacketIndices;
 }
 
-void VCMSessionInfo::ClearPacketSize(WebRtc_Word32 packetIndex)
+void
+VCMSessionInfo::ClearPacketSize(WebRtc_Word32 packetIndex)
 {
     // sanity
-    if(packetIndex >= kMaxPacketsInJitterBuffer || packetIndex < 0)
+    if (packetIndex >= kMaxPacketsInJitterBuffer || packetIndex < 0)
     {
         // not allowed
         assert(!"SessionInfo::ClearPacketSize Error: invalid packetIndex");
@@ -572,10 +603,11 @@ void VCMSessionInfo::ClearPacketSize(WebRtc_Word32 packetIndex)
     _packetSizeBytes[packetIndex] = 0;
 }
 
-WebRtc_UWord32 VCMSessionInfo::GetPacketSize(WebRtc_Word32 packetIndex)
+WebRtc_UWord32
+VCMSessionInfo::GetPacketSize(WebRtc_Word32 packetIndex)
 {
     // sanity
-    if(packetIndex >= kMaxPacketsInJitterBuffer || packetIndex < 0)
+    if (packetIndex >= kMaxPacketsInJitterBuffer || packetIndex < 0)
     {
         //not allowed
         assert(!"SessionInfo::GetPacketSize Error: invalid packetIndex");
@@ -585,9 +617,10 @@ WebRtc_UWord32 VCMSessionInfo::GetPacketSize(WebRtc_Word32 packetIndex)
 }
 
 WebRtc_Word64
-VCMSessionInfo::InsertPacket(const VCMPacket& packet, WebRtc_UWord8* ptrStartOfLayer)
+VCMSessionInfo::InsertPacket(const VCMPacket& packet,
+                             WebRtc_UWord8* ptrStartOfLayer)
 {
-    //not allowed
+    // not allowed
     assert(!packet.insertStartCode || !packet.bits);
 
     if (packet.frameType == kFrameEmpty)
@@ -695,7 +728,8 @@ VCMSessionInfo::InsertPacket(const VCMPacket& packet, WebRtc_UWord8* ptrStartOfL
     }
 
     // update highest packet index
-    _highestPacketIndex = packetIndex > _highestPacketIndex ? packetIndex :_highestPacketIndex;
+    _highestPacketIndex = packetIndex > _highestPacketIndex ?
+                                        packetIndex :_highestPacketIndex;
 
     return InsertBuffer(ptrStartOfLayer, packetIndex, packet);
 }
@@ -743,7 +777,8 @@ VCMSessionInfo::InformOfEmptyPacket(const WebRtc_UWord16 seqNum)
 }
 
 WebRtc_UWord32
-VCMSessionInfo::PrepareForDecode(WebRtc_UWord8* ptrStartOfLayer, VideoCodecType codec)
+VCMSessionInfo::PrepareForDecode(WebRtc_UWord8* ptrStartOfLayer,
+                                 VideoCodecType codec)
 {
     WebRtc_UWord32 currentPacketOffset = 0;
     WebRtc_UWord32 length = GetSessionLength();
