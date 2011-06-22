@@ -15,7 +15,7 @@
  * video_capture.h
  */
 
-#include "modules/interface/module.h"
+#include "module.h"
 #include "video_capture_defines.h"
 
 namespace webrtc {

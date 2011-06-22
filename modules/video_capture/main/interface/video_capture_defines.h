@@ -13,7 +13,7 @@
 
 // Includes
 #include "typedefs.h"
-#include "modules/interface/module_common_types.h"
+#include "module_common_types.h"
 
 namespace webrtc
 {
