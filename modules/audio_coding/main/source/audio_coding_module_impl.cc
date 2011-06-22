@@ -72,7 +72,6 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(
     _lastDetectedTone(kACMToneEnd),
     _callbackCritSect(CriticalSectionWrapper::CreateCriticalSection())
 {
-    CriticalSectionScoped lock(*_acmCritSect);
     _lastTimestamp = 0xD87F3F9F;
     _lastInTimestamp = 0xD87F3F9F;
     // nullify the codec name
@@ -1722,7 +1721,6 @@ AudioCodingModuleImpl::IncomingPacket(
     const WebRtc_Word32    payloadLength,
     const WebRtcRTPHeader& rtpInfo)
 {
-    WebRtc_Word16 decCntr;
 
     if (payloadLength < 0)
     {
