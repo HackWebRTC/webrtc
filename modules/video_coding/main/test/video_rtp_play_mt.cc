@@ -54,7 +54,6 @@ bool DecodeThread(void* obj)
 {
     SharedState* state = static_cast<SharedState*>(obj);
     WebRtc_Word32 ret = state->_vcm.Decode(10000);
-    TEST(ret == VCM_OK || ret == VCM_UNINITIALIZED || ret == VCM_NO_CODEC_REGISTERED);
     while (state->_vcm.DecodeDualFrame(0) == 1);
     return true;
 }
