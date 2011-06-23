@@ -127,7 +127,7 @@ RTPSenderVideo::RegisterVideoPayload(const WebRtc_Word8 payloadName[RTP_PAYLOAD_
         return -1;
     }
     payload = new ModuleRTPUtility::Payload;
-    memcpy(payload->name, payloadName, RTP_PAYLOAD_NAME_SIZE);
+    strncpy(payload->name, payloadName, RTP_PAYLOAD_NAME_SIZE);
     payload->typeSpecific.Video.videoCodecType = videoType;
     payload->typeSpecific.Video.maxRate = maxBitRate;
     payload->audio = false;

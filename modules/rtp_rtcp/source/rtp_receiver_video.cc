@@ -143,7 +143,7 @@ RTPReceiverVideo::RegisterReceiveVideoPayload(const WebRtc_Word8 payloadName[RTP
     }
 
     ModuleRTPUtility::Payload* payload =  new ModuleRTPUtility::Payload;
-    memcpy(payload->name, payloadName, RTP_PAYLOAD_NAME_SIZE);
+    strncpy(payload->name, payloadName, RTP_PAYLOAD_NAME_SIZE);
     payload->typeSpecific.Video.videoCodecType = videoType;
     payload->typeSpecific.Video.maxRate = maxRate;
     payload->audio = false;
