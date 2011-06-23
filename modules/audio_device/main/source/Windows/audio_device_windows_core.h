@@ -162,11 +162,11 @@ public:
     virtual void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer);
 
 private:    // avrt function pointers
-    PAvRevertMmThreadCharacteristics _PAvRevertMmThreadCharacteristics;
-    PAvSetMmThreadCharacteristicsA   _PAvSetMmThreadCharacteristicsA;
-    PAvSetMmThreadPriority             _PAvSetMmThreadPriority;
+    PAvRevertMmThreadCharacteristics    _PAvRevertMmThreadCharacteristics;
+    PAvSetMmThreadCharacteristicsA      _PAvSetMmThreadCharacteristicsA;
+    PAvSetMmThreadPriority              _PAvSetMmThreadPriority;
     HMODULE                             _avrtLibrary;
-    bool                             _winSupportAvrt;
+    bool                                _winSupportAvrt;
 
 private:    // thread functions
     static DWORD WINAPI WSAPICaptureThread(LPVOID context);
@@ -204,6 +204,10 @@ private:
     WebRtc_Word32 _GetListDevice(EDataFlow dir, int index, IMMDevice** ppDevice);
 
     void _Get44kHzDrift();
+
+    // Converts from wide-char to UTF-8 if UNICODE is defined.
+    // Does nothing if UNICODE is undefined.
+    char* WideToUTF8(const TCHAR* src) const;
 
 private:
     AudioDeviceBuffer*                      _ptrAudioBuffer;
@@ -297,6 +301,8 @@ private:
     WebRtc_UWord16                          _playBufDelayFixed;
 
     WebRtc_UWord16                          _newMicLevel;
+
+    mutable char                            _str[512];
 };
 
 #endif    // #if (_MSC_VER >= 1400)

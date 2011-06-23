@@ -3602,12 +3602,12 @@ DWORD AudioDeviceWindowsCore::DoCaptureThread()
 
             //  Find out how much capture data is available
             //
-            hr = _ptrCaptureClient->GetBuffer(
-                                      &pData,               // packet which is ready to be read by used
-                                      &framesAvailable,     // #frames in the captured packet (can be zero)
-                                      &flags,               // support flags (check)
-                                      &recPos,              // device position of first audio frame in data packet
-                                      &recTime);            // value of performance counter at the time of recording the first audio frame
+            hr = _ptrCaptureClient->GetBuffer(&pData,           // packet which is ready to be read by used
+                                              &framesAvailable, // #frames in the captured packet (can be zero)
+                                              &flags,           // support flags (check)
+                                              &recPos,          // device position of first audio frame in data packet
+                                              &recTime);        // value of performance counter at the time of recording the first audio frame
+
             if (SUCCEEDED(hr))
             {
                 if (AUDCLNT_S_BUFFER_EMPTY == hr)
@@ -3619,12 +3619,21 @@ DWORD AudioDeviceWindowsCore::DoCaptureThread()
 
                 if (flags & AUDCLNT_BUFFERFLAGS_SILENT)
                 {
+                    // Treat all of the data in the packet as silence and ignore the actual data values.
                     WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id, "AUDCLNT_BUFFERFLAGS_SILENT");
+                    pData = NULL;
                 }
 
                 assert(framesAvailable != 0);
 
-                CopyMemory(&syncBuffer[syncBufIndex*_recAudioFrameSize], pData, framesAvailable*_recAudioFrameSize);
+                if (pData)
+                {
+                    CopyMemory(&syncBuffer[syncBufIndex*_recAudioFrameSize], pData, framesAvailable*_recAudioFrameSize);
+                }
+                else
+                {
+                    ZeroMemory(&syncBuffer[syncBufIndex*_recAudioFrameSize], framesAvailable*_recAudioFrameSize);
+                }
                 assert(syncBufferSize >= (syncBufIndex*_recAudioFrameSize)+framesAvailable*_recAudioFrameSize);
 
                 // Release the capture buffer
@@ -3724,6 +3733,8 @@ DWORD AudioDeviceWindowsCore::DoCaptureThread()
                 // of the failed GetBuffer calls. If GetBuffer returns this error repeatedly, the client
                 // can start a new processing loop after shutting down the current client by calling
                 // IAudioClient::Stop, IAudioClient::Reset, and releasing the audio client.
+                WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+                    "IAudioCaptureClient::GetBuffer returned AUDCLNT_E_BUFFER_ERROR, hr = 0x%08X",  hr);
                 goto Exit;
             }
 
@@ -4385,7 +4396,7 @@ void AudioDeviceWindowsCore::_TraceCOMError(HRESULT hr) const
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "Core Audio method failed (hr=0x%x)", hr);
     StringCchPrintf(buf, MAXERRORLENGTH, TEXT("Error details: "));
     StringCchCat(buf, MAXERRORLENGTH, errorText);
-    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "%s", buf);
+    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "%s", WideToUTF8(buf));
 }
 
 // ----------------------------------------------------------------------------
@@ -4433,6 +4444,28 @@ void AudioDeviceWindowsCore::_Get44kHzDrift()
     {
         _sampleDriftAt48kHz = -480.0f/441;
     }
+}
+
+// ----------------------------------------------------------------------------
+//  WideToUTF8
+// ----------------------------------------------------------------------------
+
+char* AudioDeviceWindowsCore::WideToUTF8(const TCHAR* src) const {
+#ifdef UNICODE
+    const size_t kStrLen = sizeof(_str);
+    memset(_str, 0, kStrLen);
+    // Get required size (in bytes) to be able to complete the conversion.
+    int required_size = WideCharToMultiByte(CP_UTF8, 0, src, -1, _str, 0, 0, 0);
+    if (required_size <= kStrLen)
+    {
+        // Process the entire input string, including the terminating null char.
+        if (WideCharToMultiByte(CP_UTF8, 0, src, -1, _str, kStrLen, 0, 0) == 0)
+            memset(_str, 0, kStrLen);
+    }
+    return _str;
+#else
+    return const_cast<char*>(src);
+#endif
 }
 
 }  // namespace webrtc
