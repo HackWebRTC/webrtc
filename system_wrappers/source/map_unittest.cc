@@ -210,6 +210,8 @@ TEST_F(MapWrapperTest, CopyTest) {
     ASSERT_TRUE(CreateAscendingMap(&compare_map));
     const int map_size = compare_map.Size();
     ASSERT_EQ(ascending_map_.Size(), map_size);
+    // CompareMaps compare the pointers not value of the pointers.
+    // (the values are the same since both are ascending maps).
     EXPECT_FALSE(CompareMaps(compare_map,ascending_map_));
 
     int copy_count = 0;
@@ -217,7 +219,7 @@ TEST_F(MapWrapperTest, CopyTest) {
     while (ascend_item != NULL) {
         MapItem* compare_item = compare_map.Find(ascend_item->GetId());
         ASSERT_FALSE(compare_item == NULL);
-        DeleteItemContent(ascend_item);
+        DeleteItemContent(compare_item);
         compare_item->SetItem(ascend_item->GetItem());
         ascend_item = ascending_map_.Next(ascend_item);
         ++copy_count;
