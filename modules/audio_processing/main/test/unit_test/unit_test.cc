@@ -95,7 +95,7 @@ class ApmEnvironment : public ::testing::Environment {
  public:
   virtual void SetUp() {
     Trace::CreateTrace();
-    ASSERT_EQ(0, Trace::SetTraceFile("ApmTrace.txt"));
+    ASSERT_EQ(0, Trace::SetTraceFile("apm_trace.txt"));
   }
 
   virtual void TearDown() {
@@ -114,7 +114,7 @@ ApmTest::ApmTest()
 void ApmTest::SetUp() {
   apm_ = AudioProcessing::Create(0);
   ASSERT_TRUE(apm_ != NULL);
-  
+
   frame_ = new AudioFrame();
   reverse_frame_ = new AudioFrame();
 
@@ -129,15 +129,15 @@ void ApmTest::SetUp() {
   reverse_frame_->_audioChannel = 2;
   reverse_frame_->_frequencyInHz = 32000;
 
-  far_file_ = fopen("aecFar.pcm", "rb");
-  ASSERT_TRUE(far_file_ != NULL) << "Cannot read source file aecFar.pcm\n";
-  near_file_ = fopen("aecNear.pcm", "rb");
-  ASSERT_TRUE(near_file_ != NULL) << "Cannot read source file aecNear.pcm\n";
+  far_file_ = fopen("aec_far.pcm", "rb");
+  ASSERT_TRUE(far_file_ != NULL) << "Cannot read source file aec_far.pcm\n";
+  near_file_ = fopen("aec_near.pcm", "rb");
+  ASSERT_TRUE(near_file_ != NULL) << "Cannot read source file aec_near.pcm\n";
 
   if (kReadStatFile) {
-    stat_file_  = fopen("statData.dat", "rb");
+    stat_file_  = fopen("stat_data.dat", "rb");
     ASSERT_TRUE(stat_file_ != NULL) <<
-      "Cannot write to source file statData.dat\n";
+      "Cannot write to source file stat_data.dat\n";
   }
 }
 
