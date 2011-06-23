@@ -21,7 +21,6 @@
 
 namespace webrtc {
 
-
 bool
 VCMProtectionMethod::BetterThan(VCMProtectionMethod *pm)
 {
@@ -317,8 +316,15 @@ VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters)
 {
     // FEC PROTECTION SETTINGS: varies with packet loss and bitrate
 
-    const float bitRate = parameters->bitRate;
     WebRtc_UWord8 packetLoss = (WebRtc_UWord8) (255 * parameters->lossPr);
+
+    // No protection if (filtered) packetLoss is 0
+    if (packetLoss == 0)
+    {
+        _protectionFactorK = 0;
+        _protectionFactorD = 0;
+         return true;
+    }
 
     // Size of tables
     const WebRtc_UWord16 maxFecTableSize = 6450;
@@ -327,36 +333,36 @@ VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters)
     const WebRtc_UWord8 ratePar2 = 49;
     const WebRtc_UWord8 plossMax = 129;
 
-    //
-    // Just for testing: for the case where we randomly lose slices instead of
-    // RTP packets and use SingleMode packetization in RTP module
-    // const WebRtc_UWord16 slice_size = 3000/6; //@ 1000k with 4 cores
+    const float bitRate = parameters->bitRate;
 
-    //float slice_mtu = (float)_maxPayloadSize/(float)slice_size;
-    const float slice_mtu = 1.0;
-    //
-
-    //Total (avg) bits available per frame: total rate over actual/sent frame
-    // rate. Units are kbits/frame
+    // Total (avg) bits available per frame: total rate over actual/frame_rate.
+    // Units are kbits/frame
     const WebRtc_UWord16 bitRatePerFrame = static_cast<WebRtc_UWord16>
-                                          (slice_mtu * bitRate
-                                          / (parameters->frameRate));
+                                                     (bitRate /
+                                                     (parameters->frameRate));
 
-    //Total (avg) number of packets per frame (source and fec):
+    // Total (avg) number of packets per frame (source and fec):
     const WebRtc_UWord8 avgTotPackets = 1 + (WebRtc_UWord8)
                                         ((float) bitRatePerFrame * 1000.0
                                        / (float) (8.0 * _maxPayloadSize) + 0.5);
 
-    // TODO(marpan): Tune model for FEC Protection.
-    // Better modulation of protection with available bits/frame
-    // (or avgTotpackets) using weight factors
-    // FEC Tables include this effect already, but need to tune model off-line
+
+    // First partition protection: ~ 20%
+    WebRtc_UWord8 firstPartitionProt = (WebRtc_UWord8) (255 * 0.20);
+
+    // Threshold on packetLoss and bitRrate/frameRate (=average #packets),
+    // above which we allocate protection to cover at least roughly
+    // first partition size.
+    WebRtc_UWord8 lossThr = 0;
+    WebRtc_UWord8 packetNumThr = 1;
+
+    // Modulation of protection with available bits/frame (or avgTotpackets)
     float weight1 = 0.5;
     float weight2 = 0.5;
     if (avgTotPackets > 4)
     {
-        weight1 = 1.0;
-        weight2 = 0.;
+        weight1 = 0.75;
+        weight2 = 0.25;
     }
     if (avgTotPackets > 6)
     {
@@ -364,41 +370,62 @@ VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters)
         weight2 = 0.;
     }
 
-    // Fec rate parameters: for P and I frame
+    // FEC rate parameters: for P and I frame
     WebRtc_UWord8 codeRateDelta = 0;
     WebRtc_UWord8 codeRateKey = 0;
 
-    // Get index for new table: the FEC protection depends on the (average)
-    // available bits/frame the range on the rate index corresponds to rates
+    // Get index for table: the FEC protection depends on the (average)
+    // available bits/frame. The range on the rate index corresponds to rates
     // (bps) from 200k to 8000k, for 30fps
     WebRtc_UWord8 rateIndexTable =
         (WebRtc_UWord8) VCM_MAX(VCM_MIN((bitRatePerFrame - ratePar1) /
                                         ratePar1, ratePar2), 0);
 
-    // Restrict packet loss range to 50 for now%: current tables defined only
-    // up to 50%
+    // Restrict packet loss range to 50:
+    // current tables defined only up to 50%
     if (packetLoss >= plossMax)
     {
         packetLoss = plossMax - 1;
     }
     WebRtc_UWord16 indexTable = rateIndexTable * plossMax + packetLoss;
 
-    // check on table index
-    if (indexTable >= maxFecTableSize)
+    // Check on table index
+    assert(indexTable < maxFecTableSize);
+
+    // Protection factor for P frame
+    codeRateDelta = VCMCodeRateXORTable[indexTable];
+
+    if (packetLoss > lossThr && avgTotPackets > packetNumThr)
     {
-        assert("FEC table index too large\n");
+        // Average with minimum protection level given by (average) total
+        // number of packets
+        codeRateDelta = static_cast<WebRtc_UWord8>((weight1 *
+            (float) codeRateDelta + weight2 * 255.0 / (float) avgTotPackets));
+
+        // Set a minimum based on first partition size.
+        if (codeRateDelta < firstPartitionProt)
+        {
+            codeRateDelta = firstPartitionProt;
+        }
     }
 
-    // For Key frame: effectively at a higher rate, so we scale/boost the rate
-    // index. The boost factor may depend on several factors: ratio of packet
+    // Check limit on amount of protection for P frame; 50% is max.
+    if (codeRateDelta >= plossMax)
+    {
+        codeRateDelta = plossMax - 1;
+    }
+
+    // For Key frame:
+    // Effectively at a higher rate, so we scale/boost the rate
+    // The boost factor may depend on several factors: ratio of packet
     // number of I to P frames, how much protection placed on P frames, etc.
-    // default is 2
     const WebRtc_UWord8 packetFrameDelta = (WebRtc_UWord8)
                                            (0.5 + parameters->packetsPerFrame);
     const WebRtc_UWord8 packetFrameKey = (WebRtc_UWord8)
                                          (0.5 + parameters->packetsPerFrameKey);
     const WebRtc_UWord8 boostKey = BoostCodeRateKey(packetFrameDelta,
                                                     packetFrameKey);
+
     rateIndexTable = (WebRtc_UWord8) VCM_MAX(VCM_MIN(
                       1 + (boostKey * bitRatePerFrame - ratePar1) /
                       ratePar1,ratePar2),0);
@@ -406,32 +433,25 @@ VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters)
 
     indexTableKey = VCM_MIN(indexTableKey, maxFecTableSize);
 
-    // protection factor for P frame
-    codeRateDelta = VCMCodeRateXORTable[indexTable];
-    // protection factor for I frame
+    // Check on table index
+    assert(indexTableKey < maxFecTableSize);
+
+    // Protection factor for I frame
     codeRateKey = VCMCodeRateXORTable[indexTableKey];
 
-    // average with minimum protection level given by (average) total
-    // number of packets
-    if (packetLoss > 0)
+    // Boosting for Key frame.
+    WebRtc_UWord32 boostKeyProt = _scaleProtKey * codeRateDelta;
+    if ( boostKeyProt >= plossMax)
     {
-        codeRateDelta = static_cast<WebRtc_UWord8> ((weight1 * (float)
-                        codeRateDelta + weight2 * 255.0
-                        / (float) avgTotPackets));
+        boostKeyProt = plossMax - 1;
     }
 
-    //check limit on amount of protection for P frame; 50% is max
-    if (codeRateDelta >= plossMax)
-    {
-        codeRateDelta = plossMax - 1;
-    }
-
-    // make sure I frame protection is at least larger than P frame protection,
-    // and at least as high as received loss
+    // Make sure I frame protection is at least larger than P frame protection,
+    // and at least as high as filtered packet loss.
     codeRateKey = static_cast<WebRtc_UWord8> (VCM_MAX(packetLoss,
-                  VCM_MAX(_scaleProtKey * codeRateDelta, codeRateKey)));
+            VCM_MAX(boostKeyProt, codeRateKey)));
 
-    //check limit on amount of protection for I frame: 50% is max
+    // Check limit on amount of protection for I frame: 50% is max.
     if (codeRateKey >= plossMax)
     {
         codeRateKey = plossMax - 1;
