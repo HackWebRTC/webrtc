@@ -95,9 +95,9 @@ bool ViEAutoTestMain::BeginOSIndependentTesting()
         }
         ViETest::Log("");
 
-        if (testType < 1 && testType > 7)
+        if (testType < 0 || testType > 8)
         {
-            ViETest::Log("ERROR: Invalid selection. Try again");
+            ViETest::Log("ERROR: Invalid selection. Try again\n");
             continue;
         }
 
@@ -394,5 +394,3 @@ bool ViEAutoTestMain::UseAnswerFile(const char* fileName)
      return _useAnswerFile;
      */
 }
-
-
