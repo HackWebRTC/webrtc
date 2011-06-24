@@ -18,12 +18,11 @@ namespace webrtc
 
 struct VideoContentMetrics;
 
-// QM interval time
+// QM interval time (in ms)
 enum { kQmMinIntervalMs = 10000 };
-enum { kCcMinIntervalMs = 5000 };
 
-//Flag for NFD metric vs motion metric
-enum { kNfdMetric  = 1 };
+// Flag for NFD metric vs motion metric
+enum { kNfdMetric = 1 };
 
 /**********************************/
 /* Content Metrics Processing     */
@@ -37,39 +36,41 @@ public:
     // Update class with latest metrics
     WebRtc_Word32 UpdateContentData(const VideoContentMetrics *contentMetrics);
 
-    // Check for content change detection
-    bool ContentChangeCheck();
+    // Reset the short-term averaged content data
+     void ResetShortTermAvgData();
 
-    //Initialize to
+    // Initialize to
     WebRtc_Word32 Reset();
 
     // Inform class of current frame rate
     void UpdateFrameRate(WebRtc_UWord32 frameRate);
 
-    // Get working (avg) value
-    VideoContentMetrics* Data();
+    // Returns the long-term averaged content data:
+    // recursive average over longer time scale
+    VideoContentMetrics* LongTermAvgData();
+
+    // Returns the short-term averaged content data:
+    // uniform average over shorter time scale
+     VideoContentMetrics* ShortTermAvgData();
 private:
 
     // Compute working avg
     WebRtc_UWord32 ProcessContent(const VideoContentMetrics *contentMetrics);
 
-    // Computation of global metric
-    void UpdateGlobalMetric(const VideoContentMetrics *contentMetrics);
+    // Update the recursive averaged metrics: longer time average (~5/10 secs).
+    void UpdateRecursiveAvg(const VideoContentMetrics *contentMetrics);
 
-    // Compute local average of certain metrics for content change detection
-    void UpdateLocalMetricCC(float motionVal, float spatialVal);
+    // Update the uniform averaged metrics: shorter time average (~RTCP reports).
+    void UpdateUniformAvg(const VideoContentMetrics *contentMetrics);
 
-    VideoContentMetrics*    _globalRecursiveAvg;
+    VideoContentMetrics*    _recursiveAvg;
+    VideoContentMetrics*    _uniformAvg;
     WebRtc_UWord32          _frameRate;
     float                   _recAvgFactor;
-    WebRtc_UWord32          _frameCnt;
-
-    float                   _prevAvgSizeZeroMotion;
-    float                   _avgSizeZeroMotion;
-    float                   _prevAvgSpatialPredErr;
-    float                   _avgSpatialPredErr;
-    WebRtc_UWord32          _frameCntForCC;
-    WebRtc_UWord64          _lastCCpdateTime;
+    WebRtc_UWord32          _frameCntRecursiveAvg;
+    WebRtc_UWord32          _frameCntUniformAvg;
+    float                   _avgMotionLevel;
+    float                   _avgSpatialLevel;
 };
 
 } // namespace webrtc

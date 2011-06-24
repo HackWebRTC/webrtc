@@ -204,6 +204,8 @@ VCMMediaOptimization::SetTargetRates(WebRtc_UWord32 bitRate,
         {
             SelectQuality();
         }
+        // Reset the short-term averaged content data.
+        _content->ResetShortTermAvgData();
     }
 
     return _targetBitRate;
@@ -537,7 +539,7 @@ VCMMediaOptimization::SelectQuality()
 
     // Select quality mode
     VCMQualityMode* qm = NULL;
-    WebRtc_Word32 ret = _qms->SelectQuality(_content->Data(), &qm);
+    WebRtc_Word32 ret = _qms->SelectQuality(_content->LongTermAvgData(), &qm);
     if (ret < 0)
     {
           return ret;
@@ -596,7 +598,7 @@ VCMMediaOptimization::QMUpdate(VCMQualityMode* qm)
     }
 
     // Content metrics hold native values
-    VideoContentMetrics* cm = _content->Data();
+    VideoContentMetrics* cm = _content->LongTermAvgData();
 
     // Temporal
     WebRtc_UWord32 frameRate  = static_cast<WebRtc_UWord32>(_incomingFrameRate + 0.5f);

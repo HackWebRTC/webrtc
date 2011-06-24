@@ -24,44 +24,77 @@ namespace webrtc {
 VCMContentMetricsProcessing::VCMContentMetricsProcessing():
 _frameRate(0),
 _recAvgFactor(1 / 150.0f), // matched to  30fps
-_frameCnt(0),
-_prevAvgSizeZeroMotion(0),
-_avgSizeZeroMotion(0),
-_prevAvgSpatialPredErr(0),
-_avgSpatialPredErr(0),
-_frameCntForCC(0),
-_lastCCpdateTime(0)
+_frameCntRecursiveAvg(0),
+_frameCntUniformAvg(0),
+_avgMotionLevel(0.0f),
+_avgSpatialLevel(0.0f)
 {
-    _globalRecursiveAvg = new VideoContentMetrics();
+    _recursiveAvg = new VideoContentMetrics();
+    _uniformAvg = new VideoContentMetrics();
 }
 
 VCMContentMetricsProcessing::~VCMContentMetricsProcessing()
 {
-    delete _globalRecursiveAvg;
+    delete _recursiveAvg;
+    delete _uniformAvg;
 }
 
 WebRtc_Word32
 VCMContentMetricsProcessing::Reset()
 {
-    _globalRecursiveAvg->Reset();
-    _frameCnt = 0;
+    _recursiveAvg->Reset();
+    _uniformAvg->Reset();
     _frameRate = 0;
-    //_recAvgFactor = 1 / 150.0f; // matched to 30 fps
-    _prevAvgSizeZeroMotion = 0;
-    _avgSizeZeroMotion = 0;
-    _prevAvgSpatialPredErr = 0;
-    _avgSpatialPredErr = 0;
-    _frameCntForCC = 0;
-
+    _frameCntRecursiveAvg = 0;
+    _frameCntUniformAvg = 0;
+    _avgMotionLevel  = 0.0f;
+    _avgSpatialLevel = 0.0f;
     return VCM_OK;
 }
+
 void
 VCMContentMetricsProcessing::UpdateFrameRate(WebRtc_UWord32 frameRate)
 {
     _frameRate = frameRate;
-    //Update recursive avg factor
-    _recAvgFactor = (float) 1000 / ((float)(_frameRate *  kQmMinIntervalMs));
+    // Update factor for recursive averaging.
+    _recAvgFactor = (float) 1000.0f / ((float)(_frameRate *  kQmMinIntervalMs));
 
+}
+
+VideoContentMetrics*
+VCMContentMetricsProcessing::LongTermAvgData()
+{
+    if (_frameCntRecursiveAvg == 0)
+    {
+        return NULL;
+    }
+    return _recursiveAvg;
+}
+
+VideoContentMetrics*
+VCMContentMetricsProcessing::ShortTermAvgData()
+{
+    if (_frameCntUniformAvg == 0)
+    {
+        return NULL;
+    }
+
+    // Two metrics are used: motion and spatial level.
+    _uniformAvg->motionMagnitudeNZ = _avgMotionLevel /
+        (float)(_frameCntUniformAvg);
+    _uniformAvg->spatialPredErr = _avgSpatialLevel /
+        (float)(_frameCntUniformAvg);
+
+    return _uniformAvg;
+}
+
+void
+VCMContentMetricsProcessing::ResetShortTermAvgData()
+{
+     // Reset
+    _avgMotionLevel = 0.0f;
+    _avgSpatialLevel = 0.0f;
+    _frameCntUniformAvg = 0;
 }
 
 WebRtc_Word32
@@ -75,151 +108,106 @@ VCMContentMetricsProcessing::UpdateContentData(const VideoContentMetrics *conten
 
 }
 
-VideoContentMetrics*
-VCMContentMetricsProcessing::Data()
-{
-    if (_frameCnt == 0)
-    {
-        return NULL;
-    }
-    return _globalRecursiveAvg;
-}
-
 WebRtc_UWord32
 VCMContentMetricsProcessing::ProcessContent(const VideoContentMetrics *contentMetrics)
 {
-    // update global metric
-    UpdateGlobalMetric(contentMetrics);
+    // Update the recursive averaged metrics
+    // average is over longer window of time: over QmMinIntervalMs ms.
+    UpdateRecursiveAvg(contentMetrics);
 
-    //Update metrics over local window for content change (CC) detection:
-    //two metrics are used for CC detection: size of zero motion, and spatial prediction error
-    //Not currently used:
-    //UpdateLocalMetricCC(contentMetrics->sizeZeroMotion, contentMetrics->spatialPredErr);
+    // Update the uniform averaged metrics:
+    // average is over shorter window of time: based on ~RTCP reports.
+    UpdateUniformAvg(contentMetrics);
 
     return VCM_OK;
 }
 
-bool
-VCMContentMetricsProcessing::ContentChangeCheck()
-{
-     bool result = false;
-
-    // Thresholds for bitrate and content change detection
-    float qmContentChangePercMotion = 0.4f;
-    float qmContentChangePercSpatial = 0.4f;
-
-    WebRtc_Word64 now = VCMTickTime::MillisecondTimestamp();
-    if ( (now - _lastCCpdateTime) < kCcMinIntervalMs)
-    {
-        //keep averaging
-        return result;
-    }
-    else //check for detection and reset
-    {
-        //normalize
-        _avgSizeZeroMotion = _avgSizeZeroMotion / (float)(_frameCntForCC);
-        _prevAvgSpatialPredErr = _prevAvgSpatialPredErr / (float)(_frameCntForCC);
-
-        //check for content change
-        float diffMotion = fabs(_avgSizeZeroMotion - _prevAvgSizeZeroMotion);
-        float diffSpatial = fabs(_avgSpatialPredErr -_prevAvgSpatialPredErr);
-        if ((diffMotion > (_avgSizeZeroMotion * qmContentChangePercMotion)) ||
-            (diffSpatial > (_prevAvgSpatialPredErr * qmContentChangePercSpatial)))
-        {
-            result = true;
-        }
-
-        //copy to previous
-        _prevAvgSizeZeroMotion = _avgSizeZeroMotion;
-        _prevAvgSpatialPredErr = _avgSpatialPredErr;
-
-        //reset
-        _avgSizeZeroMotion = 0.;
-        _avgSpatialPredErr = 0.;
-        _frameCntForCC = 0;
-
-         _lastCCpdateTime = now;
-
-    }
-
-    return result;
-}
-
-//update metrics for content change detection: update is uniform average over soem time window
-void VCMContentMetricsProcessing::UpdateLocalMetricCC(float motionVal, float spatialVal)
+void
+VCMContentMetricsProcessing::UpdateUniformAvg(const VideoContentMetrics *contentMetrics)
 {
 
-    _frameCntForCC += 1;
-    _avgSizeZeroMotion += motionVal;
-    _avgSpatialPredErr += spatialVal;
+    // Update frame counter
+    _frameCntUniformAvg += 1;
+
+    // Update averaged metrics: motion and spatial level are used.
+    _avgMotionLevel += contentMetrics->motionMagnitudeNZ;
+    _avgSpatialLevel +=  contentMetrics->spatialPredErr;
 
     return;
 
 }
 void
-VCMContentMetricsProcessing::UpdateGlobalMetric(const VideoContentMetrics *contentMetrics)
+VCMContentMetricsProcessing::UpdateRecursiveAvg(const VideoContentMetrics *contentMetrics)
 {
 
-    // Threshold for size of zero motion cluster: for updating 3 metrics:
-    // motion magnitude, cluster distortion, and horizontalness
+    // Threshold for size of zero motion cluster:
+    // Use for updating 3 motion vector derived metrics:
+    // motion magnitude, cluster distortion, and horizontalness.
     float nonZeroMvThr = 0.1f;
 
-    // first zero and one: take value as is (no motion search in frame zero).
     float tmpRecAvgFactor  = _recAvgFactor;
-    if (_frameCnt < 1)
+
+    // Take value as is for first frame (no motion search in frame zero).
+    if (_frameCntRecursiveAvg < 1)
     {
-        _recAvgFactor = 1;
+        tmpRecAvgFactor = 1;
     }
 
-    _globalRecursiveAvg->motionPredErr = (1 - _recAvgFactor) * _globalRecursiveAvg->motionPredErr +
-                                          _recAvgFactor * contentMetrics->motionPredErr;
+    _recursiveAvg->motionPredErr = (1 - tmpRecAvgFactor) *
+        _recursiveAvg->motionPredErr +
+        tmpRecAvgFactor * contentMetrics->motionPredErr;
 
-    _globalRecursiveAvg->sizeZeroMotion = (1 - _recAvgFactor) * _globalRecursiveAvg->sizeZeroMotion +
-                                           _recAvgFactor * contentMetrics->sizeZeroMotion;
+    _recursiveAvg->sizeZeroMotion = (1 - tmpRecAvgFactor) *
+        _recursiveAvg->sizeZeroMotion +
+        tmpRecAvgFactor * contentMetrics->sizeZeroMotion;
 
-    _globalRecursiveAvg->spatialPredErr = (1 - _recAvgFactor) * _globalRecursiveAvg->spatialPredErr +
-                                           _recAvgFactor * contentMetrics->spatialPredErr;
+    _recursiveAvg->spatialPredErr = (1 - tmpRecAvgFactor) *
+        _recursiveAvg->spatialPredErr +
+        tmpRecAvgFactor * contentMetrics->spatialPredErr;
 
-    _globalRecursiveAvg->spatialPredErrH = (1 - _recAvgFactor) * _globalRecursiveAvg->spatialPredErrH +
-                                           _recAvgFactor * contentMetrics->spatialPredErrH;
+    _recursiveAvg->spatialPredErrH = (1 - tmpRecAvgFactor) *
+        _recursiveAvg->spatialPredErrH +
+        tmpRecAvgFactor * contentMetrics->spatialPredErrH;
 
-    _globalRecursiveAvg->spatialPredErrV = (1 - _recAvgFactor) * _globalRecursiveAvg->spatialPredErrV +
-                                           _recAvgFactor * contentMetrics->spatialPredErrV;
+    _recursiveAvg->spatialPredErrV = (1 - tmpRecAvgFactor) *
+        _recursiveAvg->spatialPredErrV +
+        tmpRecAvgFactor * contentMetrics->spatialPredErrV;
 
-    //motionMag metric is derived from NFD (normalized frame difference)
+    // motionMag metric is derived from NFD (normalized frame difference).
     if (kNfdMetric == 1)
     {
-        _globalRecursiveAvg->motionMagnitudeNZ = (1 - _recAvgFactor) * _globalRecursiveAvg->motionMagnitudeNZ +
-                                                    _recAvgFactor * contentMetrics->motionMagnitudeNZ;
+        _recursiveAvg->motionMagnitudeNZ = (1 - tmpRecAvgFactor) *
+            _recursiveAvg->motionMagnitudeNZ +
+            tmpRecAvgFactor * contentMetrics->motionMagnitudeNZ;
     }
 
     if (contentMetrics->sizeZeroMotion > nonZeroMvThr)
     {
-        _globalRecursiveAvg->motionClusterDistortion = (1 - _recAvgFactor) * _globalRecursiveAvg->motionClusterDistortion +
-                                                    _recAvgFactor *contentMetrics->motionClusterDistortion;
+        _recursiveAvg->motionClusterDistortion = (1 - tmpRecAvgFactor) *
+            _recursiveAvg->motionClusterDistortion +
+            tmpRecAvgFactor *contentMetrics->motionClusterDistortion;
 
-        _globalRecursiveAvg->motionHorizontalness = (1 - _recAvgFactor) * _globalRecursiveAvg->motionHorizontalness +
-                                                _recAvgFactor * contentMetrics->motionHorizontalness;
+        _recursiveAvg->motionHorizontalness = (1 - _recAvgFactor) *
+            _recursiveAvg->motionHorizontalness +
+            tmpRecAvgFactor * contentMetrics->motionHorizontalness;
 
-        //motionMag metric is derived from motion vectors
+        // motionMag metric is derived from motion vectors.
         if (kNfdMetric == 0)
         {
-            _globalRecursiveAvg->motionMagnitudeNZ = (1 - _recAvgFactor) * _globalRecursiveAvg->motionMagnitudeNZ +
-                                                _recAvgFactor * contentMetrics->motionMagnitudeNZ;
+            _recursiveAvg->motionMagnitudeNZ = (1 - tmpRecAvgFactor) *
+                _recursiveAvg->motionMagnitudeNZ +
+                tmpRecAvgFactor * contentMetrics->motionMagnitudeNZ;
         }
     }
 
-    // update native values:
-    _globalRecursiveAvg->nativeHeight = contentMetrics->nativeHeight;
-    _globalRecursiveAvg->nativeWidth = contentMetrics->nativeWidth;
-    _globalRecursiveAvg->nativeFrameRate = contentMetrics->nativeFrameRate;
+    // Update native values:
+    // TODO (marpan): we don't need to update this every frame.
+    _recursiveAvg->nativeHeight = contentMetrics->nativeHeight;
+    _recursiveAvg->nativeWidth = contentMetrics->nativeWidth;
+    _recursiveAvg->nativeFrameRate = contentMetrics->nativeFrameRate;
 
-    if (_frameCnt < 1)
-    {
-        _recAvgFactor = tmpRecAvgFactor;
-    }
-    _frameCnt++;
+    _frameCntRecursiveAvg++;
+
     return;
 }
-
-}
+} //end of namespace
