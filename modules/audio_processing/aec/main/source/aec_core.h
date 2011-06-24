@@ -16,7 +16,6 @@
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AEC_MAIN_SOURCE_AEC_CORE_H_
 
 #include <stdio.h>
-#include "fft4g.h"
 #include "typedefs.h"
 #include "signal_processing_library.h"
 
@@ -190,6 +189,10 @@ void WebRtcAec_ProcessFrame(aec_t *aec, const short *farend,
                        const short *nearend, const short *nearendH,
                        short *out, short *outH,
                        int knownDelay);
+
+// aec_core_rdft.c
+void aec_rdft_128(int, float *, int *, float *);
+
 
 #endif // WEBRTC_MODULES_AUDIO_PROCESSING_AEC_MAIN_SOURCE_AEC_CORE_H_
 

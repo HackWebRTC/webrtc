@@ -174,7 +174,7 @@ static void FilterAdaptationSSE2(aec_t *aec, float *fft, float ef[2][PART_LEN1],
                    -aec->xfBuf[1][xPos + PART_LEN],
                    ef[0][PART_LEN], ef[1][PART_LEN]);
 
-    rdft(PART_LEN2, -1, fft, ip, wfft);
+    aec_rdft_128(-1, fft, ip, wfft);
     memset(fft + PART_LEN, 0, sizeof(float)*PART_LEN);
 
     // fft scaling
@@ -187,7 +187,7 @@ static void FilterAdaptationSSE2(aec_t *aec, float *fft, float ef[2][PART_LEN1],
         _mm_storeu_ps(&fft[j], fft_scale);
       }
     }
-    rdft(PART_LEN2, 1, fft, ip, wfft);
+    aec_rdft_128(1, fft, ip, wfft);
 
     {
       float wt1 = aec->wfBuf[1][pos];

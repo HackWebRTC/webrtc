@@ -31,6 +31,7 @@
         'echo_cancellation.c',
         'aec_core.c',
         'aec_core_sse2.c',
+        'aec_core_rdft.c',
         'aec_core.h',
         'resampler.c',
         'resampler.h',
