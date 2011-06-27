@@ -31,6 +31,7 @@ LOCAL_SRC_FILES := bitrate.cc \
     rtp_sender_audio.cc \
     bandwidth_management.cc \
     forward_error_correction.cc \
+    forward_error_correction_internal.cc \
     overuse_detector.cc \
     h263_information.cc \
     remote_rate_control.cc \
