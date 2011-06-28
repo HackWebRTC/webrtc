@@ -197,7 +197,8 @@ VCMMediaOptimization::SetTargetRates(WebRtc_UWord32 bitRate,
     if (_enableQm)
     {
         //Update QM with rates
-        _qms->UpdateRates((float)_targetBitRate, _avgSentBitRateBps, _incomingFrameRate);
+        _qms->UpdateRates((float)_targetBitRate, _avgSentBitRateBps,
+                          _incomingFrameRate, _fractionLost);
         //Check for QM selection
         bool selectQM = checkStatusForQMchange();
         if (selectQM)
@@ -537,9 +538,12 @@ VCMMediaOptimization::SelectQuality()
     // Reset quantities for QM select
     _qms->ResetQM();
 
+    // Update QM will long-term averaged content metrics.
+    _qms->UpdateContent(_content->LongTermAvgData());
+
     // Select quality mode
     VCMQualityMode* qm = NULL;
-    WebRtc_Word32 ret = _qms->SelectQuality(_content->LongTermAvgData(), &qm);
+    WebRtc_Word32 ret = _qms->SelectQuality(&qm);
     if (ret < 0)
     {
           return ret;

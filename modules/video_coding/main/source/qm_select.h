@@ -24,7 +24,8 @@ struct VideoContentMetrics;
 
 struct VCMQualityMode
 {
-    VCMQualityMode():spatialWidthFact(1), spatialHeightFact(1), temporalFact(1){}
+    VCMQualityMode():spatialWidthFact(1), spatialHeightFact(1),
+        temporalFact(1){}
     void Reset()
     {
         spatialWidthFact = 1;
@@ -65,22 +66,33 @@ public:
     ~VCMQmSelect();
 
     // Initialize:
-    WebRtc_Word32 Initialize(float bitRate, float userFrameRate, WebRtc_UWord32 width, WebRtc_UWord32 height);
+    WebRtc_Word32 Initialize(float bitRate, float userFrameRate,
+                             WebRtc_UWord32 width, WebRtc_UWord32 height);
 
     // Allow the user to set preferences: favor frame rate/resolution
     WebRtc_Word32 SetPreferences(WebRtc_Word8 resolPref);
 
-    // Extract ST QM behavior and make decision
-    // Inputs: Content Metrics per frame (averaged over time)
-    //         qm: Reference to the quality modes pointer
-    WebRtc_Word32 SelectQuality(const VideoContentMetrics* contentMetrics, VCMQualityMode** qm);
+    // Extract ST (spatio-temporal) QM behavior and make decision
+    // Inputs: qm: Reference to the quality modes pointer
+    WebRtc_Word32 SelectQuality(VCMQualityMode** qm);
 
-    // Update QMselect with actual bit rate (size of the latest encoded frame) and frame type
-    // -> update buffer level and frame-mismatch
-    void UpdateEncodedSize(WebRtc_Word64 encodedSize, FrameType encodedFrameType);
+    // Update QM with actual bit rate
+    // (size of the latest encoded frame) and frame type.
+    void UpdateEncodedSize(WebRtc_Word64 encodedSize,
+                           FrameType encodedFrameType);
 
-    // Update QM with new rates from SetTargetRates
-    void UpdateRates(float targetBitRate, float avgSentRate, float incomingFrameRate);
+    // Update QM with new bit/frame/loss rates from SetTargetRates
+    void UpdateRates(float targetBitRate, float avgSentRate,
+                     float incomingFrameRate, WebRtc_UWord8 packetLoss);
+
+    // Update QM with the content metrics
+    void UpdateContent(const VideoContentMetrics*  contentMetrics);
+
+    // Adjust FEC rate based on content
+    WebRtc_UWord8  AdjustFecFactor(WebRtc_UWord8 codeRateDelta, float totalRate,
+                                   float frameRate, WebRtc_UWord16 rttTime,
+                                   WebRtc_UWord8 packetLoss);
+
 
     // Select 1x2,2x2,2x2 spatial sampling mode
     WebRtc_Word32 SelectSpatialDirectionMode(float transRate);
@@ -113,7 +125,7 @@ private:
     // Content Data
     const VideoContentMetrics*    _contentMetrics;
 
-    // Encoder stats/rate-control metrics
+    // Encoder rate control parameters, network parameters
     float                        _targetBitRate;
     float                        _userFrameRate;
     float                        _incomingFrameRate;
@@ -123,9 +135,13 @@ private:
     float                        _sumIncomingFrameRate;
     float                        _sumSeqRateMM;
     float                        _sumFrameRateMM;
+    float                        _sumPacketLoss;
+    float                        _prevTotalRate;
+    WebRtc_UWord16               _prevRttTime;
+    WebRtc_UWord8                _prevPacketLoss;
     WebRtc_Word64                _sumEncodedBytes;
 
-    //Encoder and native frame sizes
+    // Encoder and native frame sizes
     WebRtc_UWord32               _width;
     WebRtc_UWord32               _height;
     WebRtc_UWord32               _nativeWidth;
@@ -135,26 +151,26 @@ private:
     WebRtc_UWord32               _nativeFrameRate;
     WebRtc_UWord8                _stateDecFactorTemp;
 
-    //Counters
+    // Counters
     WebRtc_UWord32               _frameCnt;
     WebRtc_UWord32               _frameCntDelta;
     WebRtc_UWord32               _updateRateCnt;
     WebRtc_UWord32               _lowBufferCnt;
 
-    //Content L/M/H values
+    // Content L/M/H values
     VCMContFeature               _motion;
     VCMContFeature               _spatial;
     VCMContFeature               _coherence;
     bool                         _stationaryMotion;
 
-    //aspect ratio
+    // Aspect ratio
     float                        _aspectRatio;
 
-    //Max rate to saturate the transitionalRate
+    // Max rate to saturate the transitionalRate
     WebRtc_UWord32               _maxRateQM;
     WebRtc_UWord8                _imageType;
 
-    //User preference for resolution or qmax change
+    // User preference for resolution or qmax change
     WebRtc_UWord8                _userResolutionPref;
     bool                         _init;
     VCMQualityMode*              _qm;
