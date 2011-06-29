@@ -10,8 +10,6 @@
 
 #include "unit_test.h"
 
-#include "tick_util.h"
-#include "cpu_features_wrapper.h"
 #include "event_wrapper.h"
 #include "module_common_types.h"
 #include "thread_wrapper.h"
@@ -24,8 +22,6 @@ using webrtc::AudioFrame;
 using webrtc::GainControl;
 using webrtc::NoiseSuppression;
 using webrtc::EchoCancellation;
-using webrtc::TickInterval;
-using webrtc::TickTime;
 using webrtc::EventWrapper;
 using webrtc::Trace;
 using webrtc::LevelEstimator;
