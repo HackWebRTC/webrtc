@@ -10,15 +10,29 @@
 
 #include "unit_test.h"
 
+#include "tick_util.h"
+#include "cpu_features_wrapper.h"
 #include "event_wrapper.h"
 #include "module_common_types.h"
 #include "thread_wrapper.h"
 #include "trace.h"
 #include "signal_processing_library.h"
-
 #include "audio_processing.h"
 
-namespace webrtc {
+using webrtc::AudioProcessing;
+using webrtc::AudioFrame;
+using webrtc::GainControl;
+using webrtc::NoiseSuppression;
+using webrtc::EchoCancellation;
+using webrtc::TickInterval;
+using webrtc::TickTime;
+using webrtc::EventWrapper;
+using webrtc::Trace;
+using webrtc::LevelEstimator;
+using webrtc::EchoCancellation;
+using webrtc::EchoControlMobile;
+using webrtc::VoiceDetection;
+
 namespace {
 
 // If false, this will write out a new statistics file.
@@ -465,7 +479,7 @@ TEST_F(ApmTest, Process) {
                              sizeof(WebRtc_Word16),
                              render_audio._payloadDataLengthInSamples * 2,
                              far_file_);
-          if (read_count != 
+          if (read_count !=
               static_cast<size_t>
               (render_audio._payloadDataLengthInSamples * 2)) {
             break; // This is expected.
@@ -1010,5 +1024,4 @@ int main(int argc, char** argv) {
   ::testing::AddGlobalTestEnvironment(env);
 
   return RUN_ALL_TESTS();
-}
 }

@@ -15,7 +15,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE_TAGS := tests
 LOCAL_CPP_EXTENSION := .cc
 LOCAL_SRC_FILES:= \
-    process_test.cc
+    unit_test.cc
 
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \
@@ -30,6 +30,7 @@ LOCAL_LDFLAGS :=
 LOCAL_C_INCLUDES := \
     external/gtest/include \
     $(LOCAL_PATH)/../../../../../system_wrappers/interface \
+    $(LOCAL_PATH)/../../../../../common_audio/signal_processing_library/main/interface \
     $(LOCAL_PATH)/../../interface \
     $(LOCAL_PATH)/../../../../interface \
     $(LOCAL_PATH)/../../../../..
@@ -42,7 +43,7 @@ LOCAL_SHARED_LIBRARIES := \
     libstlport \
     libwebrtc_audio_preprocessing 
 
-LOCAL_MODULE:= webrtc_apm_process_test
+LOCAL_MODULE:= webrtc_apm_unit_test
 
 include external/stlport/libstlport.mk
 include $(BUILD_EXECUTABLE)

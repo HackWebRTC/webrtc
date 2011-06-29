@@ -14,9 +14,9 @@
 #include <gtest/gtest.h>
 
 namespace webrtc {
-
 class AudioProcessing;
 class AudioFrame;
+}
 
 class ApmTest : public ::testing::Test {
  protected:
@@ -28,9 +28,8 @@ class ApmTest : public ::testing::Test {
   FILE* far_file_;
   FILE* near_file_;
   FILE* stat_file_;
-  AudioFrame* frame_;
-  AudioFrame* reverse_frame_;
+  webrtc::AudioFrame* frame_;
+  webrtc::AudioFrame* reverse_frame_;
 };
-} // namespace webrtc
 
 #endif  // WEBRTC_MODULES_AUDIO_PROCESSING_MAIN_TEST_UNIT_TEST_UNIT_TEST_H_
