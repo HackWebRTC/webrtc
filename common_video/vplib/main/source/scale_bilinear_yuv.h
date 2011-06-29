@@ -13,8 +13,8 @@
  * yuv bilinear scaler
  */
 
-#ifndef WEBRTC_COMMON_VIDEO_INTERFACE_SCALE_BILINEAR_YUV_H
-#define WEBRTC_COMMON_VIDEO_INTERFACE_SCALE_BILINEAR_YUV_H
+#ifndef WEBRTC_COMMON_VIDEO_VPLIB_SCALE_BILINEAR_YUV_H
+#define WEBRTC_COMMON_VIDEO_VPLIB_SCALE_BILINEAR_YUV_H
 
 #include "typedefs.h"
 #include "vplib.h"
@@ -22,10 +22,11 @@
 namespace webrtc
 {
 
-WebRtc_Word32 ScaleBilinear(const WebRtc_UWord8* src, WebRtc_UWord8*& dst,
-                            WebRtc_UWord32 sW, WebRtc_UWord32 sH,
-                            WebRtc_UWord32 dW, WebRtc_UWord32 dH);
-
+WebRtc_Word32
+ScaleBilinear(const WebRtc_UWord8* srcFrame, WebRtc_UWord8*& dstFrame,
+              WebRtc_UWord32 srcWidth, WebRtc_UWord32 srcHeight,
+              WebRtc_UWord32 dstWidth, WebRtc_UWord32 dstHeight,
+              WebRtc_UWord32& dstSize);
 }  // namespace webrtc
 
-#endif  // WEBRTC_COMMON_VIDEO_INTERFACE_SCALE_BILINEAR_YUV_H
+#endif  // WEBRTC_COMMON_VIDEO_VPLIB_SCALE_BILINEAR_YUV_H

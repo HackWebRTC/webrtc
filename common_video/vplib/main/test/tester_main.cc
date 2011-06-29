@@ -110,7 +110,7 @@ int main(int argc, char **argv)
         printf("\n");
         case 1:
             printf("VPLIB Interpolation Test\n");
-            ret = interpolationTest(args);
+            ret = interpolation_test(args);
             break;
         case 2:
             printf("VPLIB Scale Test\n");

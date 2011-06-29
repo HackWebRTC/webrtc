@@ -18,7 +18,7 @@
 
 using namespace webrtc;
 
-int interpolationTest(CmdArgs& args)
+int interpolation_test(CmdArgs& args)
 {
     // Read input file, interpolate first frame according to requested method
     // for now only YUV input and output
@@ -48,7 +48,7 @@ int interpolationTest(CmdArgs& args)
                      (webrtc::interpolatorType) args.intMethod);
     if (ret != 0)
     {
-        printf("Set ret = %d\n", ret);
+        printf("Error in set interpolator = %d\n", ret);
         delete inter;
         return ret;
     }
@@ -57,7 +57,6 @@ int interpolationTest(CmdArgs& args)
     if ((outputFile = fopen(outname.c_str(), "wb")) == NULL)
     {
         printf("Cannot write file %s.\n", outname.c_str());
-
         exit(1);
     }
 
@@ -71,21 +70,23 @@ int interpolationTest(CmdArgs& args)
     WebRtc_UWord32 inRequiredSize = args.width * args.height * 3 >> 1;
     WebRtc_UWord32 outRequiredSize = args.dstWidth * args.dstHeight * 3 >> 1;
     WebRtc_UWord8* inputBuffer = new WebRtc_UWord8[inRequiredSize];
-    WebRtc_UWord8* outputBuffer = NULL;
+    WebRtc_UWord8* outputBuffer = new WebRtc_UWord8[outRequiredSize];
+    WebRtc_UWord32 outputBufferSz = outRequiredSize;
 
-    //
     clock_t startClock, TotalClock;
     TotalClock = 0;
-    //
-    // running through entire sequence
     int frameCnt = 0;
-    while (feof(sourceFile)== 0)
+
+    // running through entire sequence
+    while (feof(sourceFile) == 0)
     {
         if (inRequiredSize != fread(inputBuffer, 1, inRequiredSize, sourceFile))
+        {
             break;
+        }
 
         startClock = clock();
-        ret = inter->Interpolate(inputBuffer, outputBuffer);
+        ret = inter->Interpolate(inputBuffer, outputBuffer, outputBufferSz);
         TotalClock += clock() - startClock;
 
         if (ret == args.dstHeight)
@@ -97,32 +98,86 @@ int interpolationTest(CmdArgs& args)
         {
             printf("frame #%d: Interpolation Error, ret = %d\n", frameCnt, ret);
         }
-
-        if (outputBuffer)
-        {
-            delete [] outputBuffer;
-            outputBuffer = NULL;
-        }
         frameCnt++;
         printf(".");
     }
 
     printf("\nProcessed %d frames\n", frameCnt);
     if (frameCnt)
+    {
         printf("\nAvg. Time per frame[mS]: %.2lf\n",
               (1000.0 * static_cast<double>(TotalClock + 0.0)
                /CLOCKS_PER_SEC)/frameCnt);
+    }
 
+    delete [] outputBuffer;
+    outputBuffer = NULL;
+    outputBufferSz = 0;
+
+    // running some sanity checks
+    ret = inter->Set(0, 10, 20, 30, kI420, kI420,
+                    (webrtc::interpolatorType) args.intMethod);
+    TEST(ret < 0);
+    ret = inter->Set(1, 10, 0, 30, kI420, kI420,
+                       (webrtc::interpolatorType) args.intMethod);
+    TEST(ret < 0);
+
+    rewind(sourceFile);
+    if (inRequiredSize != fread(inputBuffer, 1, inRequiredSize, sourceFile))
+    {
+        printf("Error reading input file\n");
+        return -1;
+    }
+
+    ret = inter->Set(20, 10, 20, 30, kI420, kI420,
+                     (webrtc::interpolatorType) 2);
+    TEST(ret < 0);
+    ret = inter->Interpolate(inputBuffer, outputBuffer, outputBufferSz);
+    TEST(ret < 0);
+
+    // computing required size for user-defined settings
+    WebRtc_UWord32 dstRequiredSize = args.dstWidth * args.dstHeight * 3 >> 1;
+    // null output buffer - should allocate required size
+    ret = inter->Set(args.width, args.height,
+                     args.dstWidth, args.dstHeight,
+                     kI420, kI420,
+                     (webrtc::interpolatorType) args.intMethod);
+    TEST(ret == 0);
+    ret = inter->Interpolate(inputBuffer, outputBuffer, outputBufferSz);
+    TEST(ret == args.dstHeight);
+    TEST(outputBufferSz == dstRequiredSize);
     if (outputBuffer)
+    {
         delete [] outputBuffer;
+    }
+
+    // output buffer too small (should reallocate)
+    outputBufferSz = dstRequiredSize / 2;
+    outputBuffer = new WebRtc_UWord8[outputBufferSz];
+    ret = inter->Interpolate(inputBuffer, outputBuffer, outputBufferSz);
+    TEST(ret == args.dstHeight);
+    TEST(outputBufferSz == dstRequiredSize);
+    if (outputBuffer)
+    {
+        delete [] outputBuffer;
+    }
+
+    // output buffer too large (should maintain existing buffer size)
+    outputBufferSz = dstRequiredSize + 20;
+    outputBuffer = new WebRtc_UWord8[outputBufferSz];
+    ret = inter->Interpolate(inputBuffer, outputBuffer, outputBufferSz);
+    TEST(ret == args.dstHeight);
+    TEST(outputBufferSz == dstRequiredSize + 20);
+    if (outputBuffer)
+    {
+        delete [] outputBuffer;
+    }
 
     fclose(sourceFile);
     fclose(outputFile);
 
-
-    // wrap up
     delete inter;
     delete [] inputBuffer;
 
-    return ret;
+    return 0;
 }

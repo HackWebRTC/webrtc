@@ -21,7 +21,8 @@ _method(kBilinear),
 _srcWidth(0),
 _srcHeight(0),
 _dstWidth(0),
-_dstHeight(0)
+_dstHeight(0),
+_set(false)
 {
 }
 
@@ -36,49 +37,73 @@ interpolator::Set(WebRtc_UWord32 srcWidth, WebRtc_UWord32 srcHeight,
                   VideoType srcVideoType, VideoType dstVideoType,
                   interpolatorType type)
 {
+    _set = false;
     if (srcWidth < 1 || srcHeight < 1 || dstWidth < 1 || dstHeight < 1 )
+    {
         return -1;
+    }
 
-    if (Method(type) < 0)
+    if (!Method(type))
+    {
         return -1;
+    }
 
     if (!SupportedVideoType(srcVideoType, dstVideoType))
+    {
         return -1;
+    }
 
     _srcWidth = srcWidth;
     _srcHeight = srcHeight;
     _dstWidth = dstWidth;
     _dstHeight = dstHeight;
+    _set = true;
     return 0;
 }
 
 
 WebRtc_Word32
 interpolator::Interpolate(const WebRtc_UWord8* srcFrame,
-                          WebRtc_UWord8*& dstFrame)
+                          WebRtc_UWord8*& dstFrame,
+                          WebRtc_UWord32& dstSize)
 {
     if (srcFrame == NULL)
+    {
         return -1;
+    }
+    if (!_set)
+    {
+        return -2;
+    }
 
+    WebRtc_Word32 ret = 0;
     switch (_method)
     {
         case kBilinear :
-            return ScaleBilinear (srcFrame, dstFrame,
-                                  _srcWidth, _srcHeight,
-                                  _dstWidth, _dstHeight);
+            ret = ScaleBilinear(srcFrame, dstFrame,
+                                _srcWidth, _srcHeight,
+                                _dstWidth, _dstHeight,
+                                dstSize);
+            break;
         default :
-            return -1;
+            ret = -1;
+            break;
     }
+    return ret;
 }
 
 
 
-WebRtc_Word32
+bool
 interpolator::Method(interpolatorType type)
 {
+  // currently only 1 supported
+    if (type != kBilinear)
+    {
+        return false;
+    }
     _method = type;
-
-    return 0;
+    return true;
 }
 
 
@@ -87,12 +112,16 @@ interpolator::SupportedVideoType(VideoType srcVideoType,
                                  VideoType dstVideoType)
 {
     if (srcVideoType != dstVideoType)
+    {
         return -1;
+    }
 
     if ((srcVideoType != kI420) ||
         (srcVideoType != kIYUV) ||
         (srcVideoType != kYV12))
+    {
         return -1;
+    }
 
     return 0;
 }

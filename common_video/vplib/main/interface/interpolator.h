@@ -13,8 +13,8 @@
  * Interface to the WebRTC's interpolation functionality
  */
 
-#ifndef WEBRTC_COMMON_VIDEO_INTERFACE_INTERPOLATOR_H
-#define WEBRTC_COMMON_VIDEO_INTERFACE_INTERPOLATOR_H
+#ifndef WEBRTC_COMMON_VIDEO_VPLIB_INTERFACE_INTERPOLATOR_H
+#define WEBRTC_COMMON_VIDEO_VPLIB_INTERFACE_INTERPOLATOR_H
 
 #include "typedefs.h"
 #include "vplib.h"
@@ -49,14 +49,17 @@ public:
     //
     // Return value     : Height of interpolated frame if OK,
     //                  : -1 - parameter error
-    //                  : -2 - general error
+    //                  : -2 - interpolator not set
     WebRtc_Word32 Interpolate(const WebRtc_UWord8* srcFrame,
-                              WebRtc_UWord8*& dstFrame);
+                              WebRtc_UWord8*& dstFrame,
+                              WebRtc_UWord32& dstSize);
 
 private:
 
     // Extract computation method given actual type
-    WebRtc_Word32 Method(interpolatorType type);
+    //
+    // Return value     : True if requested type is supported, false otherwise
+    bool Method(interpolatorType type);
 
     // Determine if the VideoTypes are currently supported
     WebRtc_Word32 SupportedVideoType(VideoType srcVideoType,
@@ -67,10 +70,11 @@ private:
     WebRtc_UWord32          _srcHeight;
     WebRtc_UWord32          _dstWidth;
     WebRtc_UWord32          _dstHeight;
+    bool                    _set;
 };
 
 
 }  // namespace webrtc
 
 
-#endif  // WEBRTC_COMMON_VIDEO_INTERFACE_INTERPOLATOR_H
+#endif  // WEBRTC_COMMON_VIDEO_VPLIB_INTERFACE_INTERPOLATOR_H

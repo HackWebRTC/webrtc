@@ -158,14 +158,11 @@ static void FilterVertical(WebRtc_UWord8* ybuf,
     }
 }
 
-
 WebRtc_Word32
-ScaleBilinear(const WebRtc_UWord8* srcFrame,
-              WebRtc_UWord8*& dstFrame,
-              WebRtc_UWord32 srcWidth,
-              WebRtc_UWord32 srcHeight,
-              WebRtc_UWord32 dstWidth,
-              WebRtc_UWord32 dstHeight)
+ScaleBilinear(const WebRtc_UWord8* srcFrame, WebRtc_UWord8*& dstFrame,
+              WebRtc_UWord32 srcWidth, WebRtc_UWord32 srcHeight,
+              WebRtc_UWord32 dstWidth, WebRtc_UWord32 dstHeight,
+              WebRtc_UWord32& dstSize)
 {
     // Setting source
     const WebRtc_UWord8* src = srcFrame;
@@ -175,8 +172,8 @@ ScaleBilinear(const WebRtc_UWord8* srcFrame,
     const WebRtc_UWord32 srcUvStride = (((srcStride + 1 >> 1) + 15) & ~15);
 
     const WebRtc_UWord32 srcStrideArray[3] = {srcStride,
-            srcUvStride,
-            srcUvStride
+                                              srcUvStride,
+                                              srcUvStride
                                              };
     const WebRtc_UWord32 srcWidthArray[3] = {srcWidth,
                                             (srcWidth + 1) >> 1,
@@ -184,15 +181,16 @@ ScaleBilinear(const WebRtc_UWord8* srcFrame,
                                             };
 
     // if srcFrame isn't aligned to nice boundaries then copy it over
-    // int another buffer
+    // in another buffer
     if ((srcStride > srcWidth) || (srcUvStride > ((srcWidth + 1) >> 1)))
     {
         // allocate buffer that can accommodate the stride
-        srcTmp = new WebRtc_UWord8[srcStride*srcHeight*3 >> 1];
+        srcTmp = new WebRtc_UWord8[srcStride * srcHeight * 3 >> 1];
         WebRtc_UWord8* tmpPlaneArray[3];
         tmpPlaneArray[0] = srcTmp;
         tmpPlaneArray[1] = tmpPlaneArray[0] + srcStride * srcHeight;
-        tmpPlaneArray[2] = tmpPlaneArray[1] + (srcStride >> 1)*(srcHeight >> 1);
+        tmpPlaneArray[2] = tmpPlaneArray[1] +
+                           (srcStride >> 1) * (srcHeight >> 1);
 
         WebRtc_UWord8* tmpPtr = srcTmp;
         const WebRtc_UWord8* srcPtr = srcFrame;
@@ -214,38 +212,52 @@ ScaleBilinear(const WebRtc_UWord8* srcFrame,
 
     const WebRtc_UWord8* srcPlaneArray[3];
     srcPlaneArray[0] = src;
-    srcPlaneArray[1] = srcPlaneArray[0] + srcStride*srcHeight;
-    srcPlaneArray[2] = srcPlaneArray[1] + (srcStride >> 1)*(srcHeight >> 1);
+    srcPlaneArray[1] = srcPlaneArray[0] + srcStride * srcHeight;
+    srcPlaneArray[2] = srcPlaneArray[1] + (srcStride >> 1) * (srcHeight >> 1);
 
     // Setting destination
     const WebRtc_UWord32 dstStride = (dstWidth + 31) & ~31;
     const WebRtc_UWord32 dstUvStride = (((dstStride + 1 >> 1) + 31) & ~31);
 
-    if (dstFrame)
+    WebRtc_UWord32 dstRequiredSize = dstStride * dstHeight +
+                                     2 * (dstUvStride * ((dstHeight + 1) >> 1));
+    WebRtc_UWord32 dstFinalRequiredSize = dstWidth * dstHeight * 3 >> 1;
+
+
+    if (dstFrame && dstFinalRequiredSize > dstSize)
     {
+        // allocated buffer is too small
         delete [] dstFrame;
         dstFrame = NULL;
     }
-
-    WebRtc_UWord32 dstRequiredSize = dstStride*dstHeight +
-                                     2*(dstUvStride*((dstHeight + 1) >> 1));
-    dstFrame = new WebRtc_UWord8[dstRequiredSize];
     if (dstFrame == NULL)
-        return -1;
+    {
+        dstFrame = new WebRtc_UWord8[dstFinalRequiredSize];
+        dstSize = dstFinalRequiredSize;
+    }
+    WebRtc_UWord8* dstPtr = dstFrame;
+    WebRtc_UWord8* tmpDst = NULL;
 
-    WebRtc_UWord8* dstPlaneArray[3] = {dstFrame,
-                                       dstPlaneArray[0] + dstStride*dstHeight,
+    if (dstFinalRequiredSize < dstRequiredSize)
+    {
+        // allocate a tmp buffer for destination
+        tmpDst = new WebRtc_UWord8[dstRequiredSize];
+        dstPtr = tmpDst;
+    }
+
+    WebRtc_UWord8* dstPlaneArray[3] = {dstPtr,
+                                       dstPlaneArray[0] + dstStride * dstHeight,
                                        dstPlaneArray[1] +
-                                       (dstUvStride*((dstHeight + 1) >> 1))
+                                       (dstUvStride * ((dstHeight + 1) >> 1))
                                       };
 
     const WebRtc_UWord32 dstStrideArray[3] = {dstStride,
-            dstUvStride,
-            dstUvStride
+                                              dstUvStride,
+                                              dstUvStride
                                              };
     const WebRtc_UWord32 dstWidthArray[3] = {dstWidth,
-                                            dstWidth>>1,
-                                            dstWidth>>1
+                                             dstWidth>>1,
+                                             dstWidth>>1
                                             };
 
     for (WebRtc_UWord32 p = 0; p < 3; p++)
@@ -257,7 +269,7 @@ ScaleBilinear(const WebRtc_UWord8* srcFrame,
         WebRtc_UWord8* intermediaryBuf = new WebRtc_UWord8[srcStrideArray[p]];
 
         const WebRtc_UWord32 hscale_fixed = (sh << kFractionBits) / dh;
-        const WebRtc_UWord32 source_dx = srcWidthArray[p]*kFractionMax /
+        const WebRtc_UWord32 source_dx = srcWidthArray[p] * kFractionMax /
                                          dstWidthArray[p];
 
 
@@ -266,18 +278,22 @@ ScaleBilinear(const WebRtc_UWord8* srcFrame,
             horizontalFilteredBuf = filteredBuf;
 
             if (source_dx != kFractionMax)
+            {
                 horizontalFilteredBuf = intermediaryBuf;
+            }
 
             // horizontal filter
             WebRtc_UWord32 source_h_subpixel = (h * hscale_fixed);
             if (hscale_fixed >= (kFractionMax * 2))
+            {
                 // For 1/2 or less, center filter.
                 source_h_subpixel += kFractionMax / 2;
+            }
 
             WebRtc_UWord32 source_h = source_h_subpixel >> kFractionBits;
 
             const WebRtc_UWord8* ptr_0 = srcPlaneArray[p] +
-                                         source_h*srcStrideArray[p];
+                                         source_h * srcStrideArray[p];
 
             const WebRtc_UWord8* ptr_1 = ptr_0 + srcStrideArray[p];
 
@@ -299,42 +315,47 @@ ScaleBilinear(const WebRtc_UWord8* srcFrame,
 
             // vertical filter only if necessary
             if (source_dx != kFractionMax)
+            {
                 FilterVertical(filteredBuf, horizontalFilteredBuf,
                                dstWidthArray[p], source_dx);
+            }
 
             filteredBuf += dstStrideArray[p];
         }
 
         if (intermediaryBuf != NULL)
+        {
             delete [] intermediaryBuf;
+        }
     }
 
     if (srcTmp != NULL)
+    {
         delete [] srcTmp;
-
+    }
     // Filtered image was placed in an aligned buffer.  If the
     // final output is not in an aligned buffer copy the image over.
     if (dstStride > dstWidth)
     {
-        WebRtc_UWord8* dstFinal =
-            new WebRtc_UWord8[(dstWidth*dstHeight*3) >> 1];
-        WebRtc_UWord8* dstPtr = dstFinal;
+        WebRtc_UWord8* dstFramePtr = dstFrame;
 
         for (WebRtc_UWord32 p = 0; p < 3; p++)
         {
-            WebRtc_UWord8* srcPtr = dstPlaneArray[p];
+            WebRtc_UWord8* dstPlanePtr = dstPlaneArray[p];
             const WebRtc_UWord32 h = (p == 0) ? dstHeight : dstHeight >> 1;
 
             for (WebRtc_UWord32 i = 0; i < h; i++)
             {
-                memcpy(dstPtr, srcPtr, dstWidthArray[p]);
-                dstPtr += dstWidthArray[p];
-                srcPtr += dstStrideArray[p];
+                memcpy(dstFramePtr, dstPlanePtr, dstWidthArray[p]);
+                dstFramePtr += dstWidthArray[p];
+                dstPlanePtr += dstStrideArray[p];
             }
         }
+    }
 
-        delete [] dstFrame;
-        dstFrame = dstFinal;
+    if (tmpDst != NULL)
+    {
+        delete [] tmpDst;
     }
 
     return dstHeight;

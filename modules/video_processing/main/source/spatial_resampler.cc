@@ -89,7 +89,8 @@ VPMSimpleSpatialResampler::ResampleFrame(const VideoFrame& inFrame,
     }
 
     // Check if re-sampling is needed
-    if ((inFrame.Width() == _targetWidth) && (inFrame.Height() == _targetHeight))
+    if ((inFrame.Width() == _targetWidth) &&
+        (inFrame.Height() == _targetHeight))
     {
         return outFrame.CopyFrame(inFrame);
     }
@@ -101,8 +102,8 @@ VPMSimpleSpatialResampler::ResampleFrame(const VideoFrame& inFrame,
     outFrame.SetTimeStamp(inFrame.TimeStamp());
 
     WebRtc_UWord32 currentLength = inFrame.Width() * inFrame.Height() * 3 / 2;
-    if (_targetWidth > inFrame.Width() && ( ExactMultiplier(inFrame.Width(),
-                                                            inFrame.Height())))
+    if (_targetWidth > inFrame.Width() &&
+        ( ExactMultiplier(inFrame.Width(), inFrame.Height())))
     {
         // The codec might want to pad this later... adding 8 pixels
         const WebRtc_UWord32 requiredSize = (_targetWidth + 8) *
@@ -118,7 +119,8 @@ VPMSimpleSpatialResampler::ResampleFrame(const VideoFrame& inFrame,
         WebRtc_UWord32 croppedHeight = inFrame.Height();
 
         //Calculates cropped dimensions
-        CropSize(inFrame.Width(), inFrame.Height(), croppedWidth, croppedHeight);
+        CropSize(inFrame.Width(), inFrame.Height(),
+                 croppedWidth, croppedHeight);
 
         VideoFrame* targetFrame;
         outFrame.VerifyAndAllocate(croppedWidth * croppedHeight * 3 / 2);
@@ -308,10 +310,6 @@ VPMSimpleSpatialResampler::BiLinearInterpolation(const VideoFrame& inFrame,
    if (_interpolatorPtr == NULL)
    {
        _interpolatorPtr = new interpolator();
-       if (_interpolatorPtr == NULL)
-       {
-           return VPM_MEMORY;
-       }
    }
    // set bi-linear interpolator
    retVal =  _interpolatorPtr->Set(inFrame.Width(), inFrame.Height(),
@@ -322,19 +320,26 @@ VPMSimpleSpatialResampler::BiLinearInterpolation(const VideoFrame& inFrame,
         return retVal;
     }
 
-    //Verify size of output buffer
-    outFrame.VerifyAndAllocate(_targetHeight * _targetWidth * 3 / 2);
+    // Verify size of output buffer
+    outFrame.VerifyAndAllocate(_targetHeight * _targetWidth * 3 >> 1);
+    WebRtc_UWord32 outSz = outFrame.Size();
 
-    //interpolate frame
-    retVal = _interpolatorPtr->Interpolate(inFrame.Buffer(), outFrame.Buffer());
-    //returns height
+    // interpolate frame
+    retVal = _interpolatorPtr->Interpolate(inFrame.Buffer(),
+                                           outFrame.Buffer(), outSz);
+
+    assert(outSz <= outFrame.Size());
+
+    // returns height
     if (retVal < 0)
+    {
         return retVal;
+    }
 
-    //Set output frame parameters
+    // Set output frame parameters
     outFrame.SetHeight(_targetHeight);
     outFrame.SetWidth(_targetWidth);
-    outFrame.SetLength(_targetHeight * _targetWidth * 3 / 2);
+    outFrame.SetLength(outSz);
     outFrame.SetTimeStamp(inFrame.TimeStamp());
     return VPM_OK;
 }
