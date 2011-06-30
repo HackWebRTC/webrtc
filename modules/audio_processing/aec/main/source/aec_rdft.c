@@ -449,36 +449,32 @@ static void rftfsub_128_C(float *a, float *c) {
   }
 }
 
-static void rftbsub_128(float *a, int nc, float *c) {
-  const int n = 128;
-  int j, k, kk, ks, m;
+static void rftbsub_128_C(float *a, float *c) {
+  int j1, j2, k1, k2;
   float wkr, wki, xr, xi, yr, yi;
 
   a[1] = -a[1];
-  m = n >> 1;
-  ks = 2 * nc / m;
-  kk = 0;
-  for (j = 2; j < m; j += 2) {
-    k = n - j;
-    kk += ks;
-    wkr = 0.5f - c[nc - kk];
-    wki = c[kk];
-    xr = a[j] - a[k];
-    xi = a[j + 1] + a[k + 1];
+  for (j1 = 1, j2 = 2; j2 < 64; j1 += 1, j2 += 2) {
+    k2 = 128 - j2;
+    k1 =  32 - j1;
+    wkr = 0.5f - c[k1];
+    wki = c[j1];
+    xr = a[j2 + 0] - a[k2 + 0];
+    xi = a[j2 + 1] + a[k2 + 1];
     yr = wkr * xr + wki * xi;
     yi = wkr * xi - wki * xr;
-    a[j] -= yr;
-    a[j + 1] = yi - a[j + 1];
-    a[k] += yr;
-    a[k + 1] = yi - a[k + 1];
+    a[j2 + 0] = a[j2 + 0] - yr;
+    a[j2 + 1] = yi - a[j2 + 1];
+    a[k2 + 0] = yr + a[k2 + 0];
+    a[k2 + 1] = yi - a[k2 + 1];
   }
-  a[m + 1] = -a[m + 1];
+  a[65] = -a[65];
 }
 
 void aec_rdft_128(int isgn, float *a, int *ip, float *w)
 {
   const int n = 128;
-  int nw, nc;
+  int nw;
   float xi;
 
   nw = ip[0];
@@ -486,9 +482,7 @@ void aec_rdft_128(int isgn, float *a, int *ip, float *w)
     nw = n >> 2;
     makewt(ip, w);
   }
-  nc = ip[1];
-  if (n > (nc << 2)) {
-    nc = n >> 2;
+  if (n > (ip[1] << 2)) {
     makect_32(ip, w + nw);
   }
   if (isgn >= 0) {
@@ -501,17 +495,19 @@ void aec_rdft_128(int isgn, float *a, int *ip, float *w)
   } else {
     a[1] = 0.5f * (a[0] - a[1]);
     a[0] -= a[1];
-    rftbsub_128(a, nc, w + nw);
+    rftbsub_128(a, w + nw);
     bitrv2_32or128(n, ip + 2, a);
     cftbsub_128(a, w);
   }
 }
 
 // code path selection
-rftfsub_128_t rftfsub_128;
+rft_sub_128_t rftfsub_128;
+rft_sub_128_t rftbsub_128;
 
 void aec_rdft_init(void) {
   rftfsub_128 = rftfsub_128_C;
+  rftbsub_128 = rftbsub_128_C;
   if (WebRtc_GetCPUInfo(kSSE2)) {
 #if defined(__SSE2__)
     aec_rdft_init_sse2();

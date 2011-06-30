@@ -9,8 +9,9 @@
  */
 
 // code path selection function pointers
-typedef void (*rftfsub_128_t)(float *a, float *c);
-extern rftfsub_128_t rftfsub_128;
+typedef void (*rft_sub_128_t)(float *a, float *c);
+extern rft_sub_128_t rftfsub_128;
+extern rft_sub_128_t rftbsub_128;
 
 // entry points
 void aec_rdft_init(void);
