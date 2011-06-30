@@ -14,8 +14,10 @@ LOCAL_MODULE_CLASS := STATIC_LIBRARIES
 LOCAL_MODULE := libwebrtc_aec
 LOCAL_MODULE_TAGS := optional
 LOCAL_GENERATED_SOURCES :=
-LOCAL_SRC_FILES := echo_cancellation.c \
+LOCAL_SRC_FILES := \
+    echo_cancellation.c \
     aec_core.c \
+    aec_rdft.c \
     resampler.c
 
 # Flags passed to both C and C++ files.
