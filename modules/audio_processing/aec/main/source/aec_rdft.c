@@ -21,7 +21,8 @@
 
 #include <math.h>
 
-#include "aec_core.h"
+#include "aec_rdft.h"
+#include "system_wrappers/interface/cpu_features_wrapper.h"
 
 static void bitrv2_32or128(int n, int *ip, float *a) {
   // n is 32 or 128
@@ -428,27 +429,23 @@ static void cftbsub_128(float *a, float *w) {
   }
 }
 
-static void rftfsub_128(float *a, int nc, float *c) {
-  const int n = 128;
-  int j, k, kk, ks, m;
+static void rftfsub_128_C(float *a, float *c) {
+  int j1, j2, k1, k2;
   float wkr, wki, xr, xi, yr, yi;
 
-  m = n >> 1;
-  ks = 2 * nc / m;
-  kk = 0;
-  for (j = 2; j < m; j += 2) {
-    k = n - j;
-    kk += ks;
-    wkr = 0.5f - c[nc - kk];
-    wki = c[kk];
-    xr = a[j] - a[k];
-    xi = a[j + 1] + a[k + 1];
+  for (j1 = 1, j2 = 2; j2 < 64; j1 += 1, j2 += 2) {
+    k2 = 128 - j2;
+    k1 =  32 - j1;
+    wkr = 0.5f - c[k1];
+    wki = c[j1];
+    xr = a[j2 + 0] - a[k2 + 0];
+    xi = a[j2 + 1] + a[k2 + 1];
     yr = wkr * xr - wki * xi;
     yi = wkr * xi + wki * xr;
-    a[j] -= yr;
-    a[j + 1] -= yi;
-    a[k] += yr;
-    a[k + 1] -= yi;
+    a[j2 + 0] -= yr;
+    a[j2 + 1] -= yi;
+    a[k2 + 0] += yr;
+    a[k2 + 1] -= yi;
   }
 }
 
@@ -497,7 +494,7 @@ void aec_rdft_128(int isgn, float *a, int *ip, float *w)
   if (isgn >= 0) {
     bitrv2_32or128(n, ip + 2, a);
     cftfsub_128(a, w);
-    rftfsub_128(a, nc, w + nw);
+    rftfsub_128(a, w + nw);
     xi = a[0] - a[1];
     a[0] += a[1];
     a[1] = xi;
@@ -507,5 +504,17 @@ void aec_rdft_128(int isgn, float *a, int *ip, float *w)
     rftbsub_128(a, nc, w + nw);
     bitrv2_32or128(n, ip + 2, a);
     cftbsub_128(a, w);
+  }
+}
+
+// code path selection
+rftfsub_128_t rftfsub_128;
+
+void aec_rdft_init(void) {
+  rftfsub_128 = rftfsub_128_C;
+  if (WebRtc_GetCPUInfo(kSSE2)) {
+#if defined(__SSE2__)
+    aec_rdft_init_sse2();
+#endif
   }
 }

@@ -17,6 +17,7 @@
 #include <math.h>
 
 #include "aec_core.h"
+#include "aec_rdft.h"
 
 __inline static float MulRe(float aRe, float aIm, float bRe, float bIm)
 {

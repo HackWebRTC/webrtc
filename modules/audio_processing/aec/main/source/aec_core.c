@@ -17,6 +17,7 @@
 #include <string.h>
 
 #include "aec_core.h"
+#include "aec_rdft.h"
 #include "ring_buffer.h"
 #include "system_wrappers/interface/cpu_features_wrapper.h"
 
@@ -473,6 +474,7 @@ int WebRtcAec_InitAec(aec_t *aec, int sampFreq)
       WebRtcAec_InitAec_SSE2();
 #endif
     }
+    aec_rdft_init();
 
     return 0;
 }
