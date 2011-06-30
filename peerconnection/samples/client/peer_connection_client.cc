@@ -12,6 +12,9 @@
 
 #include "peerconnection/samples/client/defaults.h"
 #include "talk/base/logging.h"
+#include "talk/base/stringutils.h"
+
+using talk_base::sprintfn;
 
 PeerConnectionClient::PeerConnectionClient()
   : callback_(NULL), my_id_(-1), state_(NOT_CONNECTED) {
@@ -78,7 +81,8 @@ bool PeerConnectionClient::Connect(const std::string& server, int port,
   }
 
   char buffer[1024];
-  wsprintfA(buffer, "GET /sign_in?%s HTTP/1.0\r\n\r\n", client_name.c_str());
+  sprintfn(buffer, sizeof(buffer),
+           "GET /sign_in?%s HTTP/1.0\r\n\r\n", client_name.c_str());
   onconnect_data_ = buffer;
 
   bool ret = ConnectControlSocket();
@@ -98,10 +102,11 @@ bool PeerConnectionClient::SendToPeer(int peer_id, const std::string& message) {
     return false;
 
   char headers[1024];
-  wsprintfA(headers, "POST /message?peer_id=%i&to=%i HTTP/1.0\r\n"
-                     "Content-Length: %i\r\n"
-                     "Content-Type: text/plain\r\n"
-                     "\r\n",
+  sprintfn(headers, sizeof(headers),
+      "POST /message?peer_id=%i&to=%i HTTP/1.0\r\n"
+      "Content-Length: %i\r\n"
+      "Content-Type: text/plain\r\n"
+      "\r\n",
       my_id_, peer_id, message.length());
   onconnect_data_ = headers;
   onconnect_data_ += message;
@@ -120,7 +125,8 @@ bool PeerConnectionClient::SignOut() {
     state_ = SIGNING_OUT;
 
     char buffer[1024];
-    wsprintfA(buffer, "GET /sign_out?peer_id=%i HTTP/1.0\r\n\r\n", my_id_);
+    sprintfn(buffer, sizeof(buffer),
+        "GET /sign_out?peer_id=%i HTTP/1.0\r\n\r\n", my_id_);
     onconnect_data_ = buffer;
     return ConnectControlSocket();
   } else {
@@ -158,7 +164,8 @@ void PeerConnectionClient::OnConnect(talk_base::AsyncSocket* socket) {
 
 void PeerConnectionClient::OnHangingGetConnect(talk_base::AsyncSocket* socket) {
   char buffer[1024];
-  wsprintfA(buffer, "GET /wait?peer_id=%i HTTP/1.0\r\n\r\n", my_id_);
+  sprintfn(buffer, sizeof(buffer),
+           "GET /wait?peer_id=%i HTTP/1.0\r\n\r\n", my_id_);
   int len = lstrlenA(buffer);
   int sent = socket->Send(buffer, len);
   ASSERT(sent == len);
