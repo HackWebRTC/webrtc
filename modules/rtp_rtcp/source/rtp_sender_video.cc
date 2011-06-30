@@ -163,7 +163,12 @@ RTPSenderVideo::SendVideoPacket(const FrameType frameType,
 
         // Add packet to FEC list
         _rtpPacketListFec.PushBack(ptrGenericFEC);
-        _mediaPacketListFec.PushBack(ptrGenericFEC->pkt);
+        // FEC can only protect up to kMaxMediaPackets packets
+        if (_mediaPacketListFec.GetSize() <
+            ForwardErrorCorrection::kMaxMediaPackets)
+        {
+            _mediaPacketListFec.PushBack(ptrGenericFEC->pkt);
+        }
 
         // Last packet in frame
         if (markerBit)
@@ -181,6 +186,14 @@ RTPSenderVideo::SendVideoPacket(const FrameType frameType,
             lastMediaRtpHeader.length = ptrGenericFEC->rtpHeaderLength;
             // Replace payload and clear marker bit.
             lastMediaRtpHeader.data[1] = _payloadTypeRED;
+
+            // Number of first partition packets cannot exceed kMaxMediaPackets
+            if (_numberFirstPartition >
+                    ForwardErrorCorrection::kMaxMediaPackets)
+            {
+                _numberFirstPartition =
+                    ForwardErrorCorrection::kMaxMediaPackets;
+            }
 
             retVal = _fec.GenerateFEC(_mediaPacketListFec, _fecProtectionFactor,
                                       _numberFirstPartition, fecPacketList);

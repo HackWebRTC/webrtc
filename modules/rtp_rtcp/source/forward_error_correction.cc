@@ -32,7 +32,7 @@ const WebRtc_UWord8 kUlpHeaderSizeLBitSet = (2 + kMaskSizeLBitSet);
 // ULP header size in bytes (L bit is cleared).
 const WebRtc_UWord8 kUlpHeaderSizeLBitClear = (2 + kMaskSizeLBitClear);
 
-//Transport header size in bytes. Assume UDP/IPv4 as a reasonable minimum.
+// Transport header size in bytes. Assume UDP/IPv4 as a reasonable minimum.
 const WebRtc_UWord8 kTransportOverhead = 28;
 
 //
@@ -118,13 +118,12 @@ ForwardErrorCorrection::GenerateFEC(const ListWrapper& mediaPacketList,
         (lBit == 1)? kUlpHeaderSizeLBitSet : kUlpHeaderSizeLBitClear;
     const WebRtc_UWord16 fecRtpOffset =
         kFecHeaderSize + ulpHeaderSize - kRtpHeaderSize;
-    const WebRtc_UWord16 maxMediaPackets = numMaskBytes * 8;
 
-    if (numMediaPackets > maxMediaPackets)
+    if (numMediaPackets > kMaxMediaPackets)
     {
         WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
             "%s can only protect %d media packets per frame; %d requested",
-            __FUNCTION__, maxMediaPackets, numMediaPackets);
+            __FUNCTION__, kMaxMediaPackets, numMediaPackets);
         return -1;
     }
 
@@ -174,7 +173,8 @@ ForwardErrorCorrection::GenerateFEC(const ListWrapper& mediaPacketList,
     }
 
     // Result in Q0 with an unsigned round.
-    WebRtc_UWord32 numFecPackets = (numMediaPackets * protectionFactor + (1 << 7)) >> 8;
+    WebRtc_UWord32 numFecPackets = (numMediaPackets * protectionFactor +
+                                   (1 << 7)) >> 8;
     if (numFecPackets == 0)
     {
         return 0;
@@ -283,8 +283,8 @@ ForwardErrorCorrection::GenerateFEC(const ListWrapper& mediaPacketList,
         {
             //Note: This shouldn't happen: means packet mask is wrong or poorly designed
             WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
-                "Packet mask has row of zeros %d %d",
-                numMediaPackets, numFecPackets);
+                "Packet mask has row of zeros %d %d %d ",
+                numMediaPackets, numImportantPackets, numFecPackets);
             delete packetMask;
             return -1;
 

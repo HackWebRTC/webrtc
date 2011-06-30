@@ -23,6 +23,10 @@ namespace webrtc {
 class ForwardErrorCorrection
 {
 public:
+
+    // Maximum number of media packets we can protect
+    static const int kMaxMediaPackets = 48;
+
     /**
      * The ListWrapper parameters of #GenerateFEC() should reference structs of this type.
      */
