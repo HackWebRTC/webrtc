@@ -47,16 +47,14 @@ public:
     webrtc::FrameType FrameType() const { return _frameType; }
 
     virtual WebRtc_Word32 GetHighestPacketIndex();
-    virtual WebRtc_UWord32 GetPacketSize(WebRtc_Word32 packetIndex);
-    virtual void ClearPacketSize(WebRtc_Word32 packetIndex);
     virtual void UpdatePacketSize(WebRtc_Word32 packetIndex, WebRtc_UWord32 length);
-    virtual void PrependPacketIndices(WebRtc_Word32 numberOfPacketIndexes);
 
     void SetStartSeqNumber(WebRtc_UWord16 seqNumber);
 
     bool HaveStartSeqNumber();
 
     WebRtc_Word32 GetLowSeqNum() const;
+    // returns highest seqNum, media or empty
     WebRtc_Word32 GetHighSeqNum() const;
 
     WebRtc_UWord32 PrepareForDecode(WebRtc_UWord8* ptrStartOfLayer, VideoCodecType codec);
@@ -94,6 +92,8 @@ protected:
     WebRtc_UWord8      _naluCompleteness[kMaxPacketsInJitterBuffer];
     WebRtc_Word32      _emptySeqNumLow;
     WebRtc_Word32      _emptySeqNumHigh;
+    // Store the sequence number that marks the last media packet
+    WebRtc_Word32      _markerSeqNum;
     bool               _ORwithPrevByte[kMaxPacketsInJitterBuffer];
 };
 

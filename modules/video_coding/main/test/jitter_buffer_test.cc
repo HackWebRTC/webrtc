@@ -1786,7 +1786,8 @@ int JitterBufferTest(CmdArgs& args)
     //printf("DONE fill JB - number of delta frames > max number of frames\n");
 
     //
-    // TEST fill JB with more than max number of frame (50 delta frames + 51 key frames) with wrap in seqNum
+    // TEST fill JB with more than max number of frame (50 delta frames +
+    // 51 key frames) with wrap in seqNum
     //
     //  --------------------------------------------------------------
     // | 65485 | 65486 | 65487 | .... | 65535 | 0 | 1 | 2 | .....| 50 |
@@ -1829,7 +1830,8 @@ int JitterBufferTest(CmdArgs& args)
         TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
         // Get packet notification, should be first inserted frame
-        TEST(timeStampStart == jb.GetNextTimeStamp(10, incomingFrameType, renderTimeMs));
+        TEST(timeStampStart == jb.GetNextTimeStamp(10, incomingFrameType,
+                                                   renderTimeMs));
 
         // check incoming frame type
         TEST(incomingFrameType == kVideoFrameDelta);
@@ -1849,13 +1851,15 @@ int JitterBufferTest(CmdArgs& args)
 
     // Now, no free frame - frames will be recycled until first key frame
     frameIn = jb.GetFrame(packet);
-    TEST(frameIn != 0 && frameIn && ptrLastDeltaFrame);  // ptr to last inserted delta frame should be returned
+    // ptr to last inserted delta frame should be returned
+    TEST(frameIn != 0 && frameIn && ptrLastDeltaFrame);
 
     // Insert frame
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
     // First inserted key frame should be oldest in buffer
-    TEST(timeStampFirstKey == jb.GetNextTimeStamp(10, incomingFrameType, renderTimeMs));
+    TEST(timeStampFirstKey == jb.GetNextTimeStamp(10, incomingFrameType,
+                                                  renderTimeMs));
 
     // check incoming frame type
     TEST(incomingFrameType == kVideoFrameKey);
@@ -1874,7 +1878,93 @@ int JitterBufferTest(CmdArgs& args)
 
     jb.Flush();
 
-    //printf("DONE fill JB - nr of delta + key frames (w/ wrap in seqNum) > max nr of frames\n");
+    // printf("DONE fill JB - nr of delta + key frames (w/ wrap in seqNum) >
+    // max nr of frames\n");
+
+    // Test handling empty packets
+    // first insert 2 empty packets
+    jb.ReleaseFrame(frameIn);
+    timeStamp = 33 * 90;
+    seqNum = 5;
+    packet.isFirstPacket = false;
+    packet.markerBit = false;
+    packet.seqNum = seqNum;
+    packet.timestamp = timeStamp;
+    packet.frameType = kFrameEmpty;
+    frameIn = jb.GetFrame(packet);
+    TEST(frameIn);
+    TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
+
+    seqNum = 6;
+    packet.isFirstPacket = false;
+    packet.markerBit = false;
+    packet.seqNum = seqNum;
+    packet.timestamp = timeStamp;
+    packet.frameType = kFrameEmpty;
+    TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
+    // now insert the first data packet
+    seqNum = 1;
+    packet.isFirstPacket = true;
+    packet.markerBit = false;
+    packet.seqNum = seqNum;
+    packet.timestamp = timeStamp;
+    packet.frameType = kVideoFrameDelta;
+    TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
+    // insert an additional data packet
+    seqNum = 2;
+    packet.isFirstPacket = false;
+    packet.markerBit = false;
+    packet.seqNum = seqNum;
+    packet.timestamp = timeStamp;
+    packet.frameType = kVideoFrameDelta;
+    TEST(kIncomplete == jb.InsertPacket(frameIn, packet));
+
+    // insert the last packet and verify frame completness
+    // (even though packet 4 (empty) is missing)
+    seqNum = 3;
+    packet.isFirstPacket = false;
+    packet.markerBit = true;
+    packet.seqNum = seqNum;
+    packet.timestamp = timeStamp;
+    packet.frameType = kVideoFrameDelta;
+    TEST(kCompleteSession == jb.InsertPacket(frameIn, packet));
+    jb.Flush();
+
+    // testing that empty packets do not clog the jitter buffer
+    // Set hybrid mode
+    jb.SetNackMode(kNackHybrid);
+    TEST(jb.GetNackMode() == kNackHybrid);
+
+    int maxSize = 100;
+    seqNum = 3;
+    VCMEncodedFrame* testFrame;
+    for (int i = 0; i < maxSize + 10; i++)
+    {
+        timeStamp += 33 * 90;
+        packet.isFirstPacket = false;
+        packet.markerBit = false;
+        packet.seqNum = seqNum;
+        packet.timestamp = timeStamp;
+        packet.frameType = kFrameEmpty;
+        testFrame = jb.GetFrame(packet);
+        TEST(frameIn != 0);
+        TEST(kFirstPacket == jb.InsertPacket(testFrame, packet));
+    }
+    // verify insertion of a data packet (old empty frames will be flushed)
+    timeStamp += 33 * 90;
+    packet.isFirstPacket = true;
+    packet.markerBit = false;
+    packet.seqNum = seqNum;
+    packet.timestamp = timeStamp;
+    packet.frameType = kFrameEmpty;
+    testFrame = jb.GetFrame(packet);
+    TEST(frameIn != 0);
+
+    jb.SetNackMode(kNoNack);
+
+
+    // printf(DONE testing inserting empty packets to the JB)
+
 
     // H.264 tests
     //Test incomplete NALU frames
@@ -1977,7 +2067,8 @@ int JitterBufferTest(CmdArgs& args)
     packet.completeNALU=kNaluStart;
     packet.markerBit=false;
     TEST(kIncomplete == jb.InsertPacket(frameIn, packet));
-    insertedLength+=packet.sizeBytes;  // This packet should be decoded since it's the beginning of a NAL
+    // This packet should be decoded since it's the beginning of a NAL
+    insertedLength+=packet.sizeBytes;
 
     seqNum+=2;
     packet.seqNum=seqNum;
@@ -1987,10 +2078,13 @@ int JitterBufferTest(CmdArgs& args)
     packet.completeNALU=kNaluEnd;
     packet.markerBit=true;
     TEST(kIncomplete == jb.InsertPacket(frameIn, packet));
-    insertedLength+=0;  // This packet should not be decoded because it is an incomplete NAL if it is the last
+    // This packet should not be decoded because it is an incomplete NAL if it
+    // is the last
+    insertedLength+=0;
 
     frameOut = jb.GetFrameForDecoding();
-    CheckOutFrame(frameOut, insertedLength, false); // Only last NALU is complete
+    // Only last NALU is complete
+    CheckOutFrame(frameOut, insertedLength, false);
     jb.ReleaseFrame(frameOut);
 
 
@@ -2006,7 +2100,9 @@ int JitterBufferTest(CmdArgs& args)
     emptypacket.markerBit=true;
     TEST(frameIn=jb.GetFrame(emptypacket));
     TEST(kFirstPacket == jb.InsertPacket(frameIn, emptypacket));
-    insertedLength+=0;  // This packet should not be decoded because it is an incomplete NAL if it is the last
+    // This packet should not be decoded because it is an incomplete NAL if it
+    // is the last
+    insertedLength+=0;
 
     TEST(-1 == jb.GetNextTimeStamp(10, incomingFrameType, renderTimeMs));
     TEST(NULL==jb.GetFrameForDecoding());
@@ -2036,8 +2132,8 @@ int JitterBufferTest(CmdArgs& args)
 
     // get the frame
     frameOut = jb.GetCompleteFrameForDecoding(10);
-    CheckOutFrame(frameOut, packet.sizeBytes, false); // Only last NALU is complete
-
+    // Only last NALU is complete
+    CheckOutFrame(frameOut, packet.sizeBytes, false);
     jb.Flush();
 
     // Three reordered H263 packets with bits.

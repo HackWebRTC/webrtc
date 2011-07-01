@@ -113,7 +113,7 @@ VCMReceiver::InsertPacket(const VCMPacket& packet,
 
         WebRtc_Word64 renderTimeMs = _timing.RenderTimeMs(packet.timestamp, nowMs);
 
-        if(renderTimeMs < 0)
+        if (renderTimeMs < 0)
         {
             // Render time error. Assume that this is due to some change in
             // the incoming video stream and reset the JB and the timing.
@@ -163,7 +163,7 @@ VCMReceiver::InsertPacket(const VCMPacket& packet,
         }
 
         // Insert packet into jitter buffer
-        // both data and empty packets
+        // both media and empty packets
         const VCMFrameBufferEnum ret = _jitterBuffer.InsertPacket(buffer, packet);
 
         if (ret < 0)

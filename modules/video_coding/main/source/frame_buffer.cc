@@ -113,8 +113,9 @@ VCMFrameBuffer::InsertPacket(const VCMPacket& packet, WebRtc_Word64 timeInMs)
     }
 
     // sanity checks
-    if (_size + packet.sizeBytes + (packet.insertStartCode?kH264StartCodeLengthBytes:0) >
-            kMaxJBFrameSizeBytes)
+    if (_size + packet.sizeBytes +
+        (packet.insertStartCode ?  kH264StartCodeLengthBytes : 0 )
+        > kMaxJBFrameSizeBytes)
     {
         return kSizeError;
     }
@@ -122,7 +123,8 @@ VCMFrameBuffer::InsertPacket(const VCMPacket& packet, WebRtc_Word64 timeInMs)
     {
         return kSizeError;
     }
-    if(!_sessionInfo.HaveStartSeqNumber())
+    if ((packet.frameType != kFrameEmpty) &&
+        (!_sessionInfo.HaveStartSeqNumber()))
     {
         _sessionInfo.SetStartSeqNumber(packet.seqNum);
     }
@@ -133,13 +135,13 @@ VCMFrameBuffer::InsertPacket(const VCMPacket& packet, WebRtc_Word64 timeInMs)
 
     if (kStateEmpty == _state)
     {
-        // This is the first packet (empty and/or data) inserted into this frame.
+        // First packet (empty and/or media) inserted into this frame.
         // store some info and set some initial values.
         _timeStamp = packet.timestamp;
         _codec = packet.codec;
-        // for the first media packet
         if (packet.frameType != kFrameEmpty)
         {
+            // first media packet
             SetState(kStateIncomplete);
         }
     }
@@ -148,9 +150,12 @@ VCMFrameBuffer::InsertPacket(const VCMPacket& packet, WebRtc_Word64 timeInMs)
                    (packet.insertStartCode ? kH264StartCodeLengthBytes : 0);
     if (requiredSizeBytes >= _size)
     {
-        const WebRtc_UWord32 increments = requiredSizeBytes / kBufferIncStepSizeBytes +
-                                        (requiredSizeBytes % kBufferIncStepSizeBytes > 0);
-        const WebRtc_UWord32 newSize = _size + increments * kBufferIncStepSizeBytes;
+        const WebRtc_UWord32 increments = requiredSizeBytes /
+                                          kBufferIncStepSizeBytes +
+                                        (requiredSizeBytes %
+                                         kBufferIncStepSizeBytes > 0);
+        const WebRtc_UWord32 newSize = _size +
+                                       increments * kBufferIncStepSizeBytes;
         if (newSize > kMaxJBFrameSizeBytes)
         {
             return kSizeError;
