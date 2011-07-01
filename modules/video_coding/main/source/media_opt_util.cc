@@ -341,6 +341,8 @@ VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters)
                                                      (bitRate /
                                                      (parameters->frameRate));
 
+    // TODO (marpan): Incorporate frame size (bpp) into FEC setting
+
     // Total (avg) number of packets per frame (source and fec):
     const WebRtc_UWord8 avgTotPackets = 1 + (WebRtc_UWord8)
                                         ((float) bitRatePerFrame * 1000.0
@@ -850,6 +852,14 @@ VCMLossProtectionLogic::UpdateKeyFrameSize(float keyFrameSize)
     _keyFrameSize = keyFrameSize;
 }
 
+void
+VCMLossProtectionLogic::UpdateFrameSize(WebRtc_UWord16 width,
+                                        WebRtc_UWord16 height)
+{
+    _codecWidth = width;
+    _codecHeight = height;
+}
+
 bool
 VCMLossProtectionLogic::UpdateMethod(VCMProtectionMethod *newMethod /*=NULL */)
 {
@@ -864,6 +874,8 @@ VCMLossProtectionLogic::UpdateMethod(VCMProtectionMethod *newMethod /*=NULL */)
     _currentParameters.packetsPerFrameKey = _packetsPerFrameKey.Value();
     _currentParameters.residualPacketLoss = _residualPacketLoss;
     _currentParameters.fecType = _fecType;
+    _currentParameters.codecWidth = _codecWidth;
+    _currentParameters.codecHeight = _codecHeight;
 
     if (newMethod == NULL)
     {

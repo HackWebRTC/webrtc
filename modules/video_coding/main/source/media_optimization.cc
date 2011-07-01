@@ -246,6 +246,7 @@ VCMMediaOptimization::SetEncodingData(VideoCodecType sendCodecType, WebRtc_Word3
     _targetBitRate = bitRate;
     _lossProtLogic->UpdateBitRate(static_cast<float>(bitRate));
     _lossProtLogic->UpdateFrameRate(static_cast<float>(frameRate));
+    _lossProtLogic->UpdateFrameSize(width, height);
     _frameDropper->Reset();
     _frameDropper->SetRates(static_cast<float>(bitRate), static_cast<float>(frameRate));
     _userFrameRate = (float)frameRate;

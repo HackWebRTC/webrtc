@@ -45,7 +45,8 @@ struct VCMProtectionParameters
 {
     VCMProtectionParameters() : rtt(0), lossPr(0), bitRate(0), packetsPerFrame(0),
         frameRate(0), keyFrameSize(0), fecRateDelta(0), fecRateKey(0),
-        residualPacketLoss(0.0), fecType(kXORFec) {}
+        residualPacketLoss(0.0), fecType(kXORFec), codecWidth(0),
+        codecHeight(0) {}
 
     WebRtc_UWord32      rtt;
     float               lossPr;
@@ -57,7 +58,10 @@ struct VCMProtectionParameters
     WebRtc_UWord8       fecRateDelta;
     WebRtc_UWord8       fecRateKey;
     float               residualPacketLoss;
-    VCMFecTypes           fecType;
+    VCMFecTypes         fecType;
+    WebRtc_UWord16      codecWidth;
+    WebRtc_UWord16      codecHeight;
+
 };
 
 
@@ -236,7 +240,7 @@ public:
         _keyFrameSize(0.0f), _fecRateKey(0), _fecRateDelta(0), _lastPrUpdateT(0),
         _lossPr255(0.9999f), _lossPrHistory(), _shortMaxLossPr255(0),
         _packetsPerFrame(0.9999f), _packetsPerFrameKey(0.9999f), _residualPacketLoss(0),
-        _boostRateKey(2)
+        _boostRateKey(2), _codecWidth(0), _codecHeight(0)
     { Reset(); }
 
     ~VCMLossProtectionLogic();
@@ -308,6 +312,13 @@ public:
     //          - frameRate        : The current target frame rate.
     void UpdateFrameRate(float frameRate) { _frameRate = frameRate; }
 
+    // Update the frame size
+    //
+    // Input:
+    //          - width        : The codec frame width.
+    //          - height       : The codec frame height.
+    void UpdateFrameSize(WebRtc_UWord16 width, WebRtc_UWord16 height);
+
     // The amount of packet loss to cover for with FEC.
     //
     // Input:
@@ -372,6 +383,8 @@ private:
     float                     _residualPacketLoss;
     WebRtc_UWord8             _boostRateKey;
     VCMFecTypes               _fecType;
+    WebRtc_UWord16            _codecWidth;
+    WebRtc_UWord16            _codecHeight;
 };
 
 } // namespace webrtc
