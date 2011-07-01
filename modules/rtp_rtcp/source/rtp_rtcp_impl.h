@@ -27,6 +27,7 @@ class MatlabPlot;
 #endif
 
 namespace webrtc {
+
 class ModuleRtpRtcpImpl : public ModuleRtpRtcpPrivate, private TMMBRHelp
 {
 public:
@@ -224,12 +225,14 @@ public:
     virtual WebRtc_Word32 RegisterSendTransport(Transport* outgoingTransport);
 
     // Used by the codec module to deliver a video or audio frame for packetization
-    virtual WebRtc_Word32 SendOutgoingData(const FrameType frameType,
-                                         const WebRtc_Word8 payloadType,
-                                         const WebRtc_UWord32 timeStamp,
-                                         const WebRtc_UWord8* payloadData,
-                                         const WebRtc_UWord32 payloadSize,
-                                         const RTPFragmentationHeader* fragmentation = NULL);
+    virtual WebRtc_Word32
+    SendOutgoingData(const FrameType frameType,
+                     const WebRtc_Word8 payloadType,
+                     const WebRtc_UWord32 timeStamp,
+                     const WebRtc_UWord8* payloadData,
+                     const WebRtc_UWord32 payloadSize,
+                     const RTPFragmentationHeader* fragmentation = NULL,
+                     const RTPVideoTypeHeader* rtpTypeHdr = NULL);
 
     /*
     *   RTCP

@@ -1076,7 +1076,8 @@ ModuleRtpRtcpImpl::SendOutgoingData(const FrameType frameType,
                                     const WebRtc_UWord32 timeStamp,
                                     const WebRtc_UWord8* payloadData,
                                     const WebRtc_UWord32 payloadSize,
-                                    const RTPFragmentationHeader* fragmentation)
+                                    const RTPFragmentationHeader* fragmentation,
+                                    const RTPVideoTypeHeader* rtpTypeHdr)
 {
     WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, _id,
                "SendOutgoingData(frameType:%d payloadType:%d timeStamp:%u payloadSize:%u)",
@@ -1095,11 +1096,13 @@ ModuleRtpRtcpImpl::SendOutgoingData(const FrameType frameType,
     if(!haveChildModules)
     {
         retVal = _rtpSender.SendOutgoingData(frameType,
-                                              payloadType,
+                                             payloadType,
                                              timeStamp,
                                              payloadData,
                                              payloadSize,
-                                             fragmentation);
+                                             fragmentation,
+                                             NULL,
+                                             rtpTypeHdr);
     } else
     {
         CriticalSectionScoped lock(_criticalSectionModulePtrs);
@@ -1115,7 +1118,9 @@ ModuleRtpRtcpImpl::SendOutgoingData(const FrameType frameType,
                                                 timeStamp,
                                                 payloadData,
                                                 payloadSize,
-                                                fragmentation);
+                                                fragmentation,
+                                                NULL,
+                                                rtpTypeHdr);
 
             item = _childModules.Next(item);
         }
@@ -1130,7 +1135,8 @@ ModuleRtpRtcpImpl::SendOutgoingData(const FrameType frameType,
                                                 payloadData,
                                                 payloadSize,
                                                 fragmentation,
-                                                codecInfo);
+                                                codecInfo,
+                                                rtpTypeHdr);
 
             item = _childModules.Next(item);
         }

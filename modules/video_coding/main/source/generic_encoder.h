@@ -32,8 +32,10 @@ public:
     /*
     * Callback implementation - codec encode complete
     */
-    WebRtc_Word32 Encoded(EncodedImage& encodedImage, const void* codecSpecificInfo = NULL,
-                          const RTPFragmentationHeader* fragmentationHeader = NULL);
+    WebRtc_Word32 Encoded(
+        EncodedImage& encodedImage,
+        const CodecSpecificInfo* codecSpecificInfo = NULL,
+        const RTPFragmentationHeader* fragmentationHeader = NULL);
     /*
     * Get number of encoded bytes
     */
@@ -52,14 +54,20 @@ public:
     void SetInternalSource(bool internalSource) { _internalSource = internalSource; };
 
 private:
-    VCMPacketizationCallback* _sendCallback;
-    VCMMediaOptimization*           _mediaOpt;
-    WebRtc_UWord32                  _encodedBytes;
-    WebRtc_UWord8                   _payloadType;
-    VideoCodecType              _codecType;
-    bool                            _internalSource;
-    FILE*                           _bitStreamAfterEncoder;
+    /*
+     * Map information from info into rtp. If no relevant information is found
+     * in info, rtp is set to NULL.
+     */
+    static void CopyCodecSpecific(const CodecSpecificInfo& info,
+                                  RTPVideoTypeHeader** rtp);
 
+    VCMPacketizationCallback* _sendCallback;
+    VCMMediaOptimization*     _mediaOpt;
+    WebRtc_UWord32            _encodedBytes;
+    WebRtc_UWord8             _payloadType;
+    VideoCodecType            _codecType;
+    bool                      _internalSource;
+    FILE*                     _bitStreamAfterEncoder;
 };// end of VCMEncodeFrameCallback class
 
 
@@ -94,7 +102,7 @@ public:
     *	frameType         : The requested frame type to encode
     */
     WebRtc_Word32 Encode(const VideoFrame& inputFrame,
-                         const void* codecSpecificInfo,
+                         const CodecSpecificInfo* codecSpecificInfo,
                          FrameType frameType);
     /**
     *	Set new target bit rate and frame rate

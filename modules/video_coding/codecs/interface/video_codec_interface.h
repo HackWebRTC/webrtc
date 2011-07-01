@@ -54,9 +54,10 @@ public:
     //                                          should be dropped to keep bit rate or frame rate.
     //                                   = 0,   if OK.
     //                                   < 0,   on error.
-    virtual WebRtc_Word32 Encoded(EncodedImage& encodedImage,
-                                  const void* codecSpecificInfo = NULL,
-                                  const RTPFragmentationHeader* fragmentation = NULL) = 0;
+    virtual WebRtc_Word32
+    Encoded(EncodedImage& encodedImage,
+            const CodecSpecificInfo* codecSpecificInfo = NULL,
+            const RTPFragmentationHeader* fragmentation = NULL) = 0;
 };
 
 class VideoEncoder
@@ -96,9 +97,10 @@ public:
     //          - frameType         : The frame type to encode
     //
     // Return value                 : WEBRTC_VIDEO_CODEC_OK if OK, < 0 otherwise.
-    virtual WebRtc_Word32 Encode(const RawImage& inputImage,
-                                 const void* codecSpecificInfo = NULL,
-                                 VideoFrameType frameType = kDeltaFrame) = 0;
+    virtual WebRtc_Word32
+    Encode(const RawImage& inputImage,
+           const CodecSpecificInfo* codecSpecificInfo = NULL,
+           VideoFrameType frameType = kDeltaFrame) = 0;
 
     // Register an encode complete callback object.
     //

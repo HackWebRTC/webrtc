@@ -367,7 +367,8 @@ RTPSenderVideo::SendVideo(const RtpVideoCodecTypes videoType,
                           const WebRtc_UWord8* payloadData,
                           const WebRtc_UWord32 payloadSize,
                           const RTPFragmentationHeader* fragmentation,
-                          VideoCodecInformation* codecInfo)
+                          VideoCodecInformation* codecInfo,
+                          const RTPVideoTypeHeader* rtpTypeHdr)
 {
     if( payloadSize == 0)
     {
@@ -406,8 +407,8 @@ RTPSenderVideo::SendVideo(const RtpVideoCodecTypes videoType,
                            payloadData, payloadSize);
         break;
     case kRtpVp8Video:
-        retVal = SendVP8(frameType, payloadType, captureTimeStamp, payloadData,
-                         payloadSize, fragmentation);
+        retVal = SendVP8(frameType, payloadType, captureTimeStamp,
+                payloadData, payloadSize, fragmentation, rtpTypeHdr);
         break;
     default:
         assert(false);
@@ -1211,7 +1212,8 @@ RTPSenderVideo::SendVP8(const FrameType frameType,
                         const WebRtc_UWord32 captureTimeStamp,
                         const WebRtc_UWord8* payloadData,
                         const WebRtc_UWord32 payloadSize,
-                        const RTPFragmentationHeader* fragmentation)
+                        const RTPFragmentationHeader* fragmentation,
+                        const RTPVideoTypeHeader* rtpTypeHdr)
 {
     const WebRtc_UWord16 rtpHeaderLength = _rtpSender.RTPHeaderLength();
     WebRtc_UWord16 vp8HeaderLength = 1;

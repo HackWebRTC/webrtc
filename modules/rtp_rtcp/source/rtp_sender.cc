@@ -644,7 +644,8 @@ RTPSender::SendOutgoingData(const FrameType frameType,
                             const WebRtc_UWord8* payloadData,
                             const WebRtc_UWord32 payloadSize,
                             const RTPFragmentationHeader* fragmentation,
-                            VideoCodecInformation* codecInfo)
+                            VideoCodecInformation* codecInfo,
+                            const RTPVideoTypeHeader* rtpTypeHdr)
 {
     {
         // Drop this packet if we're not sending media packets
@@ -686,7 +687,8 @@ RTPSender::SendOutgoingData(const FrameType frameType,
                                  payloadData,
                                  payloadSize,
                                  fragmentation,
-                                 codecInfo);
+                                 codecInfo,
+                                 rtpTypeHdr);
     }
 }
 

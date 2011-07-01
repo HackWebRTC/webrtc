@@ -708,7 +708,7 @@ VideoCodingModuleImpl::SetVideoProtection(VCMVideoProtection videoProtection, bo
 WebRtc_Word32
 VideoCodingModuleImpl::AddVideoFrame(const VideoFrame& videoFrame,
                                      const VideoContentMetrics* _contentMetrics,
-                                     const void* codecSpecificInfo)
+                                     const CodecSpecificInfo* codecSpecificInfo)
 {
     WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id), "AddVideoFrame()");
     CriticalSectionScoped cs(_sendCritSect);

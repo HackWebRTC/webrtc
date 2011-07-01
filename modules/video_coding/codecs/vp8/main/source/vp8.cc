@@ -376,7 +376,7 @@ VP8Encoder::MaxIntraTarget(WebRtc_Word32 optimalBuffersize)
 
 WebRtc_Word32
 VP8Encoder::Encode(const RawImage& inputImage,
-                   const void* codecSpecificInfo,
+                   const CodecSpecificInfo* codecSpecificInfo,
                    VideoFrameType frameTypes)
 {
     if (!_inited)

@@ -124,13 +124,15 @@ public:
     WebRtc_Word32 SetMaxPayloadLength(const WebRtc_UWord16 length,
                                     const WebRtc_UWord16 packetOverHead);
 
-    WebRtc_Word32 SendOutgoingData(const FrameType frameType,
-                                 const WebRtc_Word8 payloadType,
-                                 const WebRtc_UWord32 timeStamp,
-                                 const WebRtc_UWord8* payloadData,
-                                 const WebRtc_UWord32 payloadSize,
-                                 const RTPFragmentationHeader* fragmentation,
-                                 VideoCodecInformation* codecInfo = NULL);
+    WebRtc_Word32
+    SendOutgoingData(const FrameType frameType,
+                     const WebRtc_Word8 payloadType,
+                     const WebRtc_UWord32 timeStamp,
+                     const WebRtc_UWord8* payloadData,
+                     const WebRtc_UWord32 payloadSize,
+                     const RTPFragmentationHeader* fragmentation,
+                     VideoCodecInformation* codecInfo = NULL,
+                     const RTPVideoTypeHeader* rtpTypeHdr = NULL);
 
     /*
     *    NACK

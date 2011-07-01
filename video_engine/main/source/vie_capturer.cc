@@ -900,9 +900,10 @@ WebRtc_Word32 ViECapturer::InitEncode(const VideoCodec* codecSettings,
  * Encode
  * Orders the Capture device to create a certain frame type.
  */
-WebRtc_Word32 ViECapturer::Encode(const RawImage& inputImage,
-                                 const void* codecSpecificInfo, /*= NULL,*/
-                                 VideoFrameType frameType /*= kDeltaFrame*/)
+WebRtc_Word32
+ViECapturer::Encode(const RawImage& inputImage,
+                    const CodecSpecificInfo* codecSpecificInfo, /*= NULL,*/
+                    VideoFrameType frameType /*= kDeltaFrame*/)
 {
 
     CriticalSectionScoped cs(_encodingCritsect);

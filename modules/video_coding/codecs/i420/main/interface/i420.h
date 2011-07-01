@@ -47,7 +47,10 @@ public:
 //
 // Return value                 : WEBRTC_VIDEO_CODEC_OK if OK
 //                                <0 - Error
-    virtual WebRtc_Word32 Encode(const RawImage& inputImage, const void* /*codecSpecificInfo*/, VideoFrameType /*frameType*/);
+    virtual WebRtc_Word32
+        Encode(const RawImage& inputImage,
+               const CodecSpecificInfo* /*codecSpecificInfo*/,
+               VideoFrameType /*frameType*/);
 
 // Register an encode complete callback object.
 //

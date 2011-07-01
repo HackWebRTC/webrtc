@@ -64,7 +64,9 @@ VCMGenericEncoder::InitEncode(const VideoCodec* settings, WebRtc_Word32 numberOf
 }
 
 WebRtc_Word32
-VCMGenericEncoder::Encode(const VideoFrame& inputFrame, const void* codecSpecificInfo, FrameType frameType)
+VCMGenericEncoder::Encode(const VideoFrame& inputFrame,
+                          const CodecSpecificInfo* codecSpecificInfo,
+                          FrameType frameType)
 {
     RawImage rawImage(inputFrame.Buffer(), inputFrame.Length(), inputFrame.Size());
     rawImage._width     = inputFrame.Width();
@@ -174,8 +176,10 @@ VCMEncodedFrameCallback::SetTransportCallback(VCMPacketizationCallback* transpor
 }
 
 WebRtc_Word32
-VCMEncodedFrameCallback::Encoded(EncodedImage &encodedImage, const void* codecSpecificInfo,
-                                 const RTPFragmentationHeader* fragmentationHeader)
+VCMEncodedFrameCallback::Encoded(
+    EncodedImage &encodedImage,
+    const CodecSpecificInfo* codecSpecificInfo,
+    const RTPFragmentationHeader* fragmentationHeader)
 {
     FrameType frameType = VCMEncodedFrame::ConvertFrameType(encodedImage._frameType);
 
@@ -189,12 +193,25 @@ VCMEncodedFrameCallback::Encoded(EncodedImage &encodedImage, const void* codecSp
             fwrite(encodedImage._buffer, 1, encodedImage._length, _bitStreamAfterEncoder);
         }
 
-        WebRtc_Word32 callbackReturn = _sendCallback->SendData(frameType,
-                                                               _payloadType,
-                                                               encodedImage._timeStamp,
-                                                               encodedImage._buffer,
-                                                               encodedBytes,
-                                                               *fragmentationHeader);
+        RTPVideoTypeHeader rtpTypeHeader;
+        RTPVideoTypeHeader* rtpTypeHeaderPtr = &rtpTypeHeader;
+        if (codecSpecificInfo)
+        {
+            CopyCodecSpecific(*codecSpecificInfo, &rtpTypeHeaderPtr);
+        }
+        else
+        {
+            rtpTypeHeaderPtr = NULL;
+        }
+
+        WebRtc_Word32 callbackReturn = _sendCallback->SendData(
+            frameType,
+            _payloadType,
+            encodedImage._timeStamp,
+            encodedImage._buffer,
+            encodedBytes,
+            *fragmentationHeader,
+            rtpTypeHeaderPtr);
        if (callbackReturn < 0)
        {
            return callbackReturn;
@@ -226,4 +243,18 @@ VCMEncodedFrameCallback::SetMediaOpt(VCMMediaOptimization *mediaOpt)
     _mediaOpt = mediaOpt;
 }
 
+void VCMEncodedFrameCallback::CopyCodecSpecific(const CodecSpecificInfo& info,
+                                                RTPVideoTypeHeader** rtp) {
+    switch (info.codecType)
+    {
+        //TODO(hlundin): Implement case for kVideoCodecVP8.
+        default: {
+            // No codec specific info. Change RTP header pointer to NULL.
+            *rtp = NULL;
+            return;
+        }
+
+    }
 }
+
+} // namespace webrtc

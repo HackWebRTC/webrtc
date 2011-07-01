@@ -20,6 +20,7 @@ namespace webrtc
 
 class VideoEncoder;
 class VideoDecoder;
+struct CodecSpecificInfo;
 
 class VideoCodingModule : public Module
 {
@@ -234,9 +235,10 @@ public:
     //
     // Return value      : VCM_OK, on success.
     //                     < 0,         on error.
-    virtual WebRtc_Word32 AddVideoFrame(const VideoFrame& videoFrame,
-                                        const VideoContentMetrics* _contentMetrics = NULL,
-                                        const void* codecSpecificInfo = NULL) = 0;
+    virtual WebRtc_Word32 AddVideoFrame(
+        const VideoFrame& videoFrame,
+        const VideoContentMetrics* _contentMetrics = NULL,
+        const CodecSpecificInfo* codecSpecificInfo = NULL) = 0;
 
     // Next frame encoded should be of the type frameType.
     //

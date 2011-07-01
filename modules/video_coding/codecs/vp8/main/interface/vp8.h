@@ -87,7 +87,7 @@ public:
 //                                  WEBRTC_VIDEO_CODEC_TIMEOUT
 
     virtual WebRtc_Word32 Encode(const RawImage& inputImage,
-                                 const void* codecSpecificInfo,
+                                 const CodecSpecificInfo* codecSpecificInfo,
                                  VideoFrameType frameType);
 
 // Register an encode complete callback object.

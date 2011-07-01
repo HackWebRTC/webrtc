@@ -767,12 +767,14 @@ WebRtc_Word32 ViEEncoder::UpdateProtectionMethod()
 // ----------------------------------------------------------------------------
 // SendData
 // ----------------------------------------------------------------------------
-WebRtc_Word32 ViEEncoder::SendData(const FrameType frameType,
-                                   const WebRtc_UWord8 payloadType,
-                                   const WebRtc_UWord32 timeStamp,
-                                   const WebRtc_UWord8* payloadData,
-                                   const WebRtc_UWord32 payloadSize,
-                                   const webrtc::RTPFragmentationHeader& fragmentationHeader)
+WebRtc_Word32
+ViEEncoder::SendData(const FrameType frameType,
+                     const WebRtc_UWord8 payloadType,
+                     const WebRtc_UWord32 timeStamp,
+                     const WebRtc_UWord8* payloadData,
+                     const WebRtc_UWord32 payloadSize,
+                     const webrtc::RTPFragmentationHeader& fragmentationHeader,
+                     const RTPVideoTypeHeader* rtpTypeHdr)
 {
     {
         CriticalSectionScoped cs(_dataCritsect);
@@ -793,7 +795,8 @@ WebRtc_Word32 ViEEncoder::SendData(const FrameType frameType,
     WebRtc_Word32 retVal = _rtpRtcp.SendOutgoingData(frameType, payloadType,
                                                      timeStamp, payloadData,
                                                      payloadSize,
-                                                     &fragmentationHeader);
+                                                     &fragmentationHeader,
+                                                     rtpTypeHdr);
     return retVal;
 }
 

@@ -86,12 +86,14 @@ public:
     // Loss protection
     WebRtc_Word32 UpdateProtectionMethod();
     // Implements VCMPacketizationCallback
-    virtual WebRtc_Word32 SendData(const FrameType frameType,
-                                   const WebRtc_UWord8 payloadType,
-                                   const WebRtc_UWord32 timeStamp,
-                                   const WebRtc_UWord8* payloadData,
-                                   const WebRtc_UWord32 payloadSize,
-                                   const RTPFragmentationHeader& fragmentationHeader);
+    virtual WebRtc_Word32
+    SendData(const FrameType frameType,
+             const WebRtc_UWord8 payloadType,
+             const WebRtc_UWord32 timeStamp,
+             const WebRtc_UWord8* payloadData,
+             const WebRtc_UWord32 payloadSize,
+             const RTPFragmentationHeader& fragmentationHeader,
+             const RTPVideoTypeHeader* rtpTypeHdr);
     // Implements VideoProtectionCallback
     virtual WebRtc_Word32 ProtectionRequest(const WebRtc_UWord8 deltaFECRate,
                                             const WebRtc_UWord8 keyFECRate,

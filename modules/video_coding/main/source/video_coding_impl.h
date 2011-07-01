@@ -132,9 +132,10 @@ public:
    virtual WebRtc_Word32 SetVideoProtection(VCMVideoProtection videoProtection, bool enable);
 
     // Add one raw video frame to the encoder, blocking.
-    virtual WebRtc_Word32 AddVideoFrame(const VideoFrame& videoFrame,
-                                        const VideoContentMetrics* _contentMetrics = NULL,
-                                        const void* codecSpecificInfo = NULL);
+    virtual WebRtc_Word32 AddVideoFrame(
+        const VideoFrame& videoFrame,
+        const VideoContentMetrics* _contentMetrics = NULL,
+        const CodecSpecificInfo* codecSpecificInfo = NULL);
 
     // Next frame encoded should be of the type frameType.
     virtual WebRtc_Word32 FrameTypeRequest(FrameType frameType);

@@ -63,7 +63,8 @@ private:
         const WebRtc_UWord32 /*timeStamp*/,
         const WebRtc_UWord8* payloadData,
         const WebRtc_UWord32 payloadSize,
-        const RTPFragmentationHeader& /* fragmentationHeader*/);
+        const RTPFragmentationHeader& /* fragmentationHeader*/,
+        const RTPVideoTypeHeader* rtpTypeHdr);
 
     WebRtc_UWord32 _instanceID;
     VideoCodingModule* _vcm;
