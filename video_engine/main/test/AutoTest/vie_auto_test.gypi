@@ -22,6 +22,7 @@
         '../../interface',
         '../../source',
         '../../../../modules/video_coding/codecs/interface/',
+        '../../../../common_video/interface/',
       ],
       'sources': [
         # interfaces

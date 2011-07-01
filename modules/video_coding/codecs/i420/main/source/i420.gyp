@@ -16,10 +16,12 @@
       'include_dirs': [
         '../interface',
         '../../../interface',
+        '../../../../../../common_video/interface',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
           '../interface',
+          '../../../../../../common_video/interface',
         ],
       },
       'sources': [

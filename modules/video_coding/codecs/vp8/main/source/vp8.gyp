@@ -15,6 +15,7 @@
       ],
       'include_dirs': [
         '../interface',
+        '../../../../../../common_video/interface',
         '../../../interface',
         '../../../../../interface',
       ],
@@ -49,6 +50,7 @@
       'direct_dependent_settings': {
         'include_dirs': [
           '../interface',
+          '../../../../../../common_video/interface',
           '../../../interface',
         ],
       },

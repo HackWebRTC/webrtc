@@ -19,12 +19,10 @@
 #include <stdio.h>
 
 
-#include "test_buffer.h"
+#include "video_image.h"
 #include "jpeg.h"
 
 using namespace webrtc;
-
-#define PRINT_LINE std::cout << "-------------------------------" << std::endl;
 
 int
 main(int argc, char **argv)
@@ -37,12 +35,11 @@ main(int argc, char **argv)
     const char* fileNameDec = "TestJpegDec.yuv";
     const char* fileNameEnc = "TestJpegEnc.jpg";
 
-    std::string str;
+      std::string str;
     std::cout << "---------------------" << std::endl;
     std::cout << "----- Test JPEG -----" << std::endl;
     std::cout << "---------------------" << std::endl;
     std::cout << "  "  << std::endl;
-
 
     JpegDecoder* JpgDecPtr = new JpegDecoder( );
 
@@ -55,38 +52,31 @@ main(int argc, char **argv)
     int length = ftell(openFile);
     fseek(openFile, 0, SEEK_SET);
 
+
     // Read input file to buffer
-    TestBuffer encodedBuffer;
-    encodedBuffer.VerifyAndAllocate(length);
-    encodedBuffer.UpdateLength(length);
-    fread(encodedBuffer.GetBuffer(), 1, length, openFile);
+    EncodedImage encodedBuffer;
+    encodedBuffer._buffer = new WebRtc_UWord8[length];
+    encodedBuffer._size = length;
+    encodedBuffer._length = length;
+    fread(encodedBuffer._buffer, 1, length, openFile);
     fclose(openFile);
 
     // ------------------
     // Decode
     // ------------------
 
-    TestBuffer imageBuffer;
-    WebRtc_UWord32 width = 0;
-    WebRtc_UWord32 height = 0;
-    WebRtc_UWord8* tmp = NULL;
-    int error = JpgDecPtr->Decode(encodedBuffer.GetBuffer(),
-                                  encodedBuffer.GetSize(), tmp, width, height);
+    RawImage imageBuffer;
+    int error = JpgDecPtr->Decode(encodedBuffer, imageBuffer);
 
-    std::cout << error << " = Decode(" << fileName.c_str() << ", (" << width <<
-        "x" << height << "))" << std::endl;
-    PRINT_LINE;
+    std::cout << error << " = Decode(" << fileName.c_str() << ", "
+        "(" << imageBuffer._width <<
+        "x" << imageBuffer._height << "))" << std::endl;
 
     if (error == 0)
     {
-        int imageBufferSize = width*height*3/2;
-        //update buffer info
-        imageBuffer.VerifyAndAllocate( imageBufferSize);
-        imageBuffer.CopyBuffer(imageBufferSize, tmp);
-        delete [] tmp;
         // Save decoded image to file
         FILE* saveFile = fopen(fileNameDec, "wb");
-        fwrite(imageBuffer.GetBuffer(), 1, imageBuffer.GetLength(), saveFile);
+        fwrite(imageBuffer._buffer, 1, imageBuffer._length, saveFile);
         fclose(saveFile);
 
         // ------------------
@@ -96,39 +86,40 @@ main(int argc, char **argv)
         JpegEncoder* JpegEncoderPtr = new JpegEncoder();
 
         // Test invalid inputs
-
-        // Test buffer
-        TestBuffer empty;
-
+        RawImage empty;
+        empty._width = 164;
+        empty._height = 164;
         int error = JpegEncoderPtr->SetFileName(0);
         assert(error == -1);
-        error = JpegEncoderPtr->Encode(empty.GetBuffer(), empty.GetSize(),
-                                       164, 164);
+        error = JpegEncoderPtr->Encode(empty);
         assert(error == -1);
-        error = JpegEncoderPtr->Encode(empty.GetBuffer(), empty.GetSize(),
-                                       0, height);
+        empty._buffer = new WebRtc_UWord8[10];
+        empty._size = 0;
+        error = JpegEncoderPtr->Encode(empty);
         assert(error == -1);
-        error = JpegEncoderPtr->Encode(empty.GetBuffer(), empty.GetSize(),
-                                       width, 0);
+        empty._size = 10;
+        empty._height = 0;
+        error = JpegEncoderPtr->Encode(empty);
+        assert(error == -1);
+        empty._height = 164;
+        empty._width = 0;
+        error = JpegEncoderPtr->Encode(empty);
         assert(error == -1);
 
         error = JpegEncoderPtr->SetFileName(fileNameEnc);
         assert(error == 0);
 
+        delete [] empty._buffer;
+
         // Actual Encode
-        error = JpegEncoderPtr->Encode(imageBuffer.GetBuffer(),
-                                       imageBuffer.GetSize(), width, height);
+        error = JpegEncoderPtr->Encode(imageBuffer);
         assert(error == 0);
-
         std::cout << error << " = Encode(" << fileNameDec << ")" << std::endl;
-
-        PRINT_LINE;
-
         delete JpegEncoderPtr;
     }
 
-    imageBuffer.Free();
-    encodedBuffer.Free();
+    delete [] imageBuffer._buffer;
+    delete [] encodedBuffer._buffer;
     delete JpgDecPtr;
 
     std::cout << "Verify that the encoded and decoded images look correct."

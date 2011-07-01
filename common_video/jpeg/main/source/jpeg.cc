@@ -52,18 +52,19 @@ MyErrorExit (j_common_ptr cinfo)
     longjmp(myerr->setjmp_buffer, 1);
 }
 
-JpegEncoder::JpegEncoder():
-_width(0),
-_height(0)
+JpegEncoder::JpegEncoder()
 {
-    _cinfo = new jpeg_compress_struct;
+   _cinfo = new jpeg_compress_struct;
     strcpy(_fileName, "Snapshot.jpg");
 }
 
 JpegEncoder::~JpegEncoder()
 {
-    delete _cinfo;
-    _cinfo = NULL;
+    if (_cinfo != NULL)
+    {
+        delete _cinfo;
+        _cinfo = NULL;
+    }
 }
 
 
@@ -84,24 +85,21 @@ JpegEncoder::SetFileName(const WebRtc_Word8* fileName)
 
 
 WebRtc_Word32
-JpegEncoder::Encode(const WebRtc_UWord8* imageBuffer,
-                    const WebRtc_UWord32 imageBufferSize,
-                    const WebRtc_UWord32 width,
-                    const WebRtc_UWord32 height)
+JpegEncoder::Encode(const RawImage& inputImage)
 {
-    if ((imageBuffer == NULL) || (imageBufferSize == 0))
+    if (inputImage._buffer == NULL || inputImage._size == 0)
     {
         return -1;
     }
-    if (width < 1 || height < 1)
+    if (inputImage._width < 1 || inputImage._height < 1)
     {
         return -1;
     }
 
     FILE* outFile = NULL;
 
-    _width = width;
-    _height = height;
+    const WebRtc_Word32 width = inputImage._width;
+    const WebRtc_Word32 height = inputImage._height;
 
     // Set error handler
     myErrorMgr      jerr;
@@ -121,7 +119,6 @@ JpegEncoder::Encode(const WebRtc_UWord8* imageBuffer,
 
     if ((outFile = fopen(_fileName, "wb")) == NULL)
     {
-        fprintf(stderr, "can't open %s\n", _fileName);
         return -2;
     }
     // Create a compression object
@@ -130,51 +127,12 @@ JpegEncoder::Encode(const WebRtc_UWord8* imageBuffer,
     // Setting destination file
     jpeg_stdio_dest(_cinfo, outFile);
 
-    WebRtc_Word32 ret = 0;
-
-    // Height of image buffer should be  a multiple of 16
-    if (_height % 16 == 0)
-    {
-        ret = Encode(imageBuffer, imageBufferSize);
-    }
-    else
-    {
-         WebRtc_UWord32 height16 = ((_height + 15) - 16) & - 16;
-         height16 = (height16 < _height) ? height16 + 16 : height16;
-
-         // Copy image to an adequate size buffer
-         WebRtc_UWord32 requiredSize = height16 * _width * 3 >> 1;
-         WebRtc_UWord8* origImagePtr = new WebRtc_UWord8[requiredSize];
-         if (origImagePtr == NULL)
-         {
-             return -1;
-         }
-         memset(origImagePtr, 0, requiredSize);
-         memcpy(origImagePtr, imageBuffer, imageBufferSize);
-
-         ret = Encode(origImagePtr, requiredSize);
-
-         // delete allocated buffer
-         delete [] origImagePtr;
-         origImagePtr = NULL;
-    }
-
-
-    fclose(outFile);
-
-    return ret;
-}
-
-WebRtc_Word32
-JpegEncoder::Encode(const WebRtc_UWord8* imageBuffer,
-                    const WebRtc_UWord32 imageBufferSize)
-{
     // Set parameters for compression
     _cinfo->in_color_space = JCS_YCbCr;
     jpeg_set_defaults(_cinfo);
 
-    _cinfo->image_width = _width;
-    _cinfo->image_height = _height;
+    _cinfo->image_width = width;
+    _cinfo->image_height = height;
     _cinfo->input_components = 3;
 
     _cinfo->comp_info[0].h_samp_factor = 2;   // Y
@@ -196,29 +154,30 @@ JpegEncoder::Encode(const WebRtc_UWord8* imageBuffer,
 
     WebRtc_UWord32 i, j;
 
-    for (j = 0; j < _height; j += 16)
+    for (j = 0; j < height; j += 16)
     {
         for (i = 0; i < 16; i++)
         {
-            y[i] = (JSAMPLE*) imageBuffer + _width * (i + j);
+            y[i] = (JSAMPLE*) inputImage._buffer + width * (i + j);
 
             if (i % 2 == 0)
             {
-                u[i / 2] = (JSAMPLE*) imageBuffer + _width * _height +
-                            _width / 2 * ((i + j) / 2);
-                v[i / 2] = (JSAMPLE*) imageBuffer + _width * _height +
-                            _width * _height / 4 + _width / 2 * ((i + j) / 2);
+                u[i / 2] = (JSAMPLE*) inputImage._buffer + width * height +
+                            width / 2 * ((i + j) / 2);
+                v[i / 2] = (JSAMPLE*) inputImage._buffer + width * height +
+                            width * height / 4 + width / 2 * ((i + j) / 2);
             }
         }
-            jpeg_write_raw_data(_cinfo, data, 16);
+        jpeg_write_raw_data(_cinfo, data, 16);
     }
 
     jpeg_finish_compress(_cinfo);
     jpeg_destroy_compress(_cinfo);
 
+    fclose(outFile);
+
     return 0;
 }
-
 
 JpegDecoder::JpegDecoder()
 {
@@ -227,18 +186,20 @@ JpegDecoder::JpegDecoder()
 
 JpegDecoder::~JpegDecoder()
 {
-    delete _cinfo;
-    _cinfo = NULL;
+    if (_cinfo != NULL)
+    {
+        delete _cinfo;
+        _cinfo = NULL;
+    }
 }
 
 WebRtc_Word32
-JpegDecoder::Decode(const WebRtc_UWord8* encodedBuffer,
-                    const WebRtc_UWord32 encodedBufferSize,
-                    WebRtc_UWord8*& decodedBuffer,
-                    WebRtc_UWord32& width,
-                    WebRtc_UWord32& height)
+JpegDecoder::Decode(const EncodedImage& inputImage,
+                    RawImage& outputImage)
 {
-    // Set  error handler
+
+    WebRtc_UWord8* tmpBuffer = NULL;
+    // Set error handler
     myErrorMgr    jerr;
     _cinfo->err = jpeg_std_error(&jerr.pub);
     jerr.pub.error_exit = MyErrorExit;
@@ -250,6 +211,10 @@ JpegDecoder::Decode(const WebRtc_UWord8* encodedBuffer,
         {
             jpeg_destroy_decompress(_cinfo);
         }
+        if (tmpBuffer != NULL)
+        {
+            delete [] tmpBuffer;
+        }
         return -1;
     }
 
@@ -259,7 +224,7 @@ JpegDecoder::Decode(const WebRtc_UWord8* encodedBuffer,
     jpeg_create_decompress(_cinfo);
 
     // Specify data source
-    jpegSetSrcBuffer(_cinfo, (JOCTET*) encodedBuffer, encodedBufferSize);
+    jpegSetSrcBuffer(_cinfo, (JOCTET*) inputImage._buffer, inputImage._size);
 
     // Read header data
     jpeg_read_header(_cinfo, TRUE);
@@ -277,28 +242,47 @@ JpegDecoder::Decode(const WebRtc_UWord8* encodedBuffer,
         return -2; // not supported
     }
 
-    height = _cinfo->image_height;
-    width = _cinfo->image_width;
+
+    WebRtc_UWord32 height = _cinfo->image_height;
+    WebRtc_UWord32 width = _cinfo->image_width;
 
     // Making sure width and height are even
     if (height % 2)
+    {
         height++;
-    if (width % 2)
-         width++;
-
-    WebRtc_UWord32 height16 = ((height + 15) - 16) & - 16;
-    height16 = (height16 < height) ? height16 + 16 : height16;
-
-    // allocate buffer to output
-    if (decodedBuffer != NULL)
-    {
-        delete [] decodedBuffer;
-        decodedBuffer = NULL;
     }
-    decodedBuffer = new WebRtc_UWord8[width * height16 * 3 >> 1];
-    if (decodedBuffer == NULL)
+    if (width % 2)
     {
-        return -1;
+         width++;
+    }
+
+    WebRtc_UWord32 height16 = (height + 15) & ~15;
+    WebRtc_UWord32 stride = (width + 15) & ~15;
+    WebRtc_UWord32 uvStride = (((stride + 1 >> 1) + 15) & ~15);
+
+    WebRtc_UWord32 tmpRequiredSize =  stride * height16 +
+                                      2 * (uvStride * ((height16 + 1) >> 1));
+    WebRtc_UWord32 requiredSize = width * height * 3 >> 1;
+
+    // verify sufficient buffer size
+    if (outputImage._buffer && outputImage._size < requiredSize)
+    {
+        delete [] outputImage._buffer;
+        outputImage._buffer = NULL;
+    }
+
+    if (outputImage._buffer == NULL)
+    {
+        outputImage._buffer = new WebRtc_UWord8[requiredSize];
+        outputImage._size = requiredSize;
+    }
+
+    WebRtc_UWord8* outPtr = outputImage._buffer;
+
+    if (tmpRequiredSize > requiredSize)
+    {
+        tmpBuffer = new WebRtc_UWord8[(int) (tmpRequiredSize)];
+        outPtr = tmpBuffer;
     }
 
     JSAMPROW y[16],u[8],v[8];
@@ -310,19 +294,21 @@ JpegDecoder::Decode(const WebRtc_UWord8* encodedBuffer,
     WebRtc_UWord32 hInd, i;
     WebRtc_UWord32 numScanLines = 16;
     WebRtc_UWord32 numLinesProcessed = 0;
-    while(_cinfo->output_scanline < _cinfo->output_height)
+
+    while (_cinfo->output_scanline < _cinfo->output_height)
     {
         hInd = _cinfo->output_scanline;
         for (i = 0; i < numScanLines; i++)
         {
-            y[i] = decodedBuffer + width * (i + hInd);
+            y[i] = outPtr + stride * (i + hInd);
 
             if (i % 2 == 0)
             {
-                 u[i / 2] = decodedBuffer + width * height +
-                            width / 2 * ((i + hInd) / 2);
-                 v[i / 2] = decodedBuffer + width * height +
-                            width * height / 4 + width / 2 * ((i + hInd) / 2);
+                 u[i / 2] = outPtr + stride * height16 +
+                            stride / 2 * ((i + hInd) / 2);
+                 v[i / 2] = outPtr + stride * height16 +
+                            stride * height16 / 4 +
+                            stride / 2 * ((i + hInd) / 2);
             }
         }
         // Processes exactly one iMCU row per call
@@ -330,11 +316,42 @@ JpegDecoder::Decode(const WebRtc_UWord8* encodedBuffer,
         // Error in read
         if (numLinesProcessed == 0)
         {
-            delete [] decodedBuffer;
             jpeg_abort((j_common_ptr)_cinfo);
             return -1;
         }
     }
+
+    if (tmpRequiredSize > requiredSize)
+    {
+         WebRtc_UWord8* dstFramePtr = outputImage._buffer;
+         WebRtc_UWord8* tmpPtr = outPtr;
+
+         for (WebRtc_UWord32 p = 0; p < 3; p++)
+         {
+             const WebRtc_UWord32 h = (p == 0) ? height : height >> 1;
+             const WebRtc_UWord32 h16 = (p == 0) ? height16 : height16 >> 1;
+             const WebRtc_UWord32 w = (p == 0) ? width : width >> 1;
+             const WebRtc_UWord32 s = (p == 0) ? stride : stride >> 1;
+
+             for (WebRtc_UWord32 i = 0; i < h; i++)
+             {
+                 memcpy(dstFramePtr, tmpPtr, w);
+                 dstFramePtr += w;
+                 tmpPtr += s;
+             }
+             tmpPtr += (h16 - h) * s;
+         }
+    }
+
+    if (tmpBuffer != NULL)
+    {
+        delete [] tmpBuffer;
+    }
+    // Setting output Image parameter
+    outputImage._width = width;
+    outputImage._height =  height;
+    outputImage._length = requiredSize;
+    outputImage._timeStamp = inputImage._timeStamp;
 
     jpeg_finish_decompress(_cinfo);
     jpeg_destroy_decompress(_cinfo);

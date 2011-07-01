@@ -18,12 +18,14 @@
         '../../../vplib/main/source/vplib.gyp:webrtc_vplib',
       ],
       'include_dirs': [
+        '../../../interface',
         '../interface',
         '../../../../../../',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
           '../interface',
+          '../../../interface',
         ],
       },
       'conditions': [
@@ -78,12 +80,9 @@
       ],
       'sources': [
 
-        # headers
-        '../test/test_buffer.h',
-        
+        # headers        
         
         # sources
-        '../test/test_buffer.cc',
         '../test/test_jpeg.cc',
 
       ], # source

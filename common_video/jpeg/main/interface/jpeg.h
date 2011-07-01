@@ -16,6 +16,7 @@
 #define WEBRTC_COMMON_VIDEO_JPEG
 
 #include "typedefs.h"
+#include "video_image.h"
 
 // jpeg forward declaration
 struct jpeg_compress_struct;
@@ -47,19 +48,12 @@ public:
 //    Output:
 //    - 0             : OK
 //    - (-1)          : Error
-    WebRtc_Word32 Encode(const WebRtc_UWord8* imageBuffer,
-                         const WebRtc_UWord32 imageBufferSize,
-                         const WebRtc_UWord32 width,
-                         const WebRtc_UWord32 height);
+    WebRtc_Word32 Encode(const RawImage& inputImage);
 
 private:
-    WebRtc_Word32 Encode(const WebRtc_UWord8* imageBuffer,
-                         const WebRtc_UWord32 imageBufferSize);
 
     jpeg_compress_struct*   _cinfo;
     WebRtc_Word8            _fileName[256];
-    WebRtc_UWord32          _width;
-    WebRtc_UWord32          _height;
 };
 
 class JpegDecoder
@@ -68,25 +62,19 @@ class JpegDecoder
     JpegDecoder();
     ~JpegDecoder();
 
-//Decodes a JPEG-stream
-//Supports 1 image component. 3 interleaved image components, YCbCr sub-sampling 4:4:4, 4:2:2, 4:2:0.
+// Decodes a JPEG-stream
+// Supports 1 image component. 3 interleaved image components,
+// YCbCr sub-sampling  4:4:4, 4:2:2, 4:2:0.
 //
-//Input:
-//    - encodedBuffer     : Pointer to the encoded stream to be decoded.
-//    - encodedBufferSize : Size of the data to be decoded
-//    - decodedBuffer     : Reference to the destination of the decoded I420-image.
-//    - width             : Reference returning width of decoded image.
-//    - height            : Reference returning height of decoded image.
+// Input:
+//    - inputImage        : encoded image to be decoded.
+//    - outputImage       : RawImage to store decoded output
 //
 //    Output:
 //    - 0             : OK
 //    - (-1)          : Error
-//Note: decodedBuffer should be freed by user
-    WebRtc_Word32 Decode(const WebRtc_UWord8* encodedBuffer,
-                         const WebRtc_UWord32 encodedBufferSize,
-                         WebRtc_UWord8*& decodedBuffer,
-                         WebRtc_UWord32& width,
-                         WebRtc_UWord32& height);
+    WebRtc_Word32 Decode(const EncodedImage& inputImage,
+                         RawImage& outputImage);
  private:
     jpeg_decompress_struct*    _cinfo;
 };

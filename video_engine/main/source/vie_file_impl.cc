@@ -696,27 +696,39 @@ int ViEFileImpl::GetRenderSnapshot(const int videoChannel,
             // *** Thusly, we are not going to be writing to the disk here
 
             JpegEncoder jpegEncoder;
+            RawImage inputImage;
 
             if (-1 == jpegEncoder.SetFileName(fileNameUTF8))
             {
                 // could not set filename for whatever reason
-                WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, _instanceId,
+                WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
+                             _instanceId,
                              "\tCould not open output file '%s' for writing!",
                              fileNameUTF8);
                 return -1;
             }
 
-            if (-1 == jpegEncoder.Encode(videoFrame.Buffer(),
-                                         videoFrame.Length(),
-                                         videoFrame.Width(),
-                                         videoFrame.Height()))
+            inputImage._width = videoFrame.Width();
+            inputImage._height = videoFrame.Height();
+            videoFrame.Swap(inputImage._buffer, inputImage._length,
+                            inputImage._size);
+
+            if (-1 == jpegEncoder.Encode(inputImage))
             {
                 // could not encode i420->jpeg
-                WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, _instanceId,
+                WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
+                             _instanceId,
                              "\tCould not encode i420 -> jpeg file '%s' for "
                              "writing!", fileNameUTF8);
+                if (inputImage._buffer)
+                {
+                    delete [] inputImage._buffer;
+                }
                 return -1;
             }
+
+            delete [] inputImage._buffer;
+            inputImage._buffer = NULL;
 
             break;
         }
@@ -805,28 +817,45 @@ int ViEFileImpl::GetCaptureDeviceSnapshot(const int captureId,
             // *** Thusly, we are not going to be writing to the disk here
 
             JpegEncoder jpegEncoder;
+            RawImage inputImage;
+
+            inputImage._width = videoFrame.Width();
+            inputImage._height = videoFrame.Height();
+            videoFrame.Swap(inputImage._buffer, inputImage._length,
+                            inputImage._size);
 
             if (-1 == jpegEncoder.SetFileName(fileNameUTF8))
             {
                 // could not set filename for whatever reason
-                WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, _instanceId,
+                WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
+                             _instanceId,
                              "\tCould not open output file '%s' for writing!",
                              fileNameUTF8);
+
+                if (inputImage._buffer)
+                {
+                    delete [] inputImage._buffer;
+                }
                 return -1;
             }
 
-            if (-1 == jpegEncoder.Encode(videoFrame.Buffer(),
-                                         videoFrame.Length(),
-                                         videoFrame.Width(),
-                                         videoFrame.Height()))
+            if (-1 == jpegEncoder.Encode(inputImage))
             {
                 // could not encode i420->jpeg
-                WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, _instanceId,
+                WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
+                             _instanceId,
                              "\tCould not encode i420 -> jpeg file '%s' for "
                              "writing!", fileNameUTF8);
+
+                if (inputImage._buffer)
+                {
+                    delete [] inputImage._buffer;
+                }
                 return -1;
             }
 
+            delete [] inputImage._buffer;
+            inputImage._buffer = NULL;
             break;
         }
         default:

@@ -20,6 +20,7 @@
         '../interface',
         '../../../interface',
         '../../codecs/interface',
+        '../../../../common_video/interface',
       ],
       'direct_dependent_settings': {
         'include_dirs': [

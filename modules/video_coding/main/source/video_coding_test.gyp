@@ -21,6 +21,7 @@
          '../../../interface',
          '../../codecs/vp8/main/interface',
          '../../../../system_wrappers/interface',
+          '../../../../common_video/interface',
          '../source',
       ],
       'sources': [

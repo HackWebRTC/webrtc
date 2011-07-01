@@ -14,6 +14,7 @@
 
 #include <stdio.h>
 #include "vie_file_image.h"
+#include "video_image.h"
 #include "jpeg.h"
 #include "trace.h"
 
@@ -24,8 +25,8 @@ int ViEFileImage::ConvertJPEGToVideoFrame(int engineId,
                                           VideoFrame& videoFrame)
 {
     // read jpeg file into temporary buffer
-    WebRtc_UWord8* imageBuffer;
-    WebRtc_UWord32 imageBufferSize;
+    EncodedImage imageBuffer;
+
     FILE* imageFile = fopen(fileNameUTF8, "rb");
     if (NULL == imageFile)
     {
@@ -35,15 +36,15 @@ int ViEFileImage::ConvertJPEGToVideoFrame(int engineId,
         return -1;
     }
     fseek(imageFile, 0, SEEK_END);
-    imageBufferSize = ftell(imageFile);
+    imageBuffer._size = ftell(imageFile);
     fseek(imageFile, 0, SEEK_SET);
-    imageBuffer = new WebRtc_UWord8[imageBufferSize + 1];
-    if (imageBufferSize != fread(imageBuffer, sizeof(WebRtc_UWord8),
-                                 imageBufferSize, imageFile))
+    imageBuffer._buffer = new WebRtc_UWord8[ imageBuffer._size + 1];
+    if ( imageBuffer._size != fread(imageBuffer._buffer, sizeof(WebRtc_UWord8),
+                                    imageBuffer._size, imageFile))
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, engineId,
                    "%s could not read file %s", __FUNCTION__, fileNameUTF8);
-        delete imageBuffer;
+        delete [] imageBuffer._buffer;
         return -1;
     }
     fclose(imageFile);
@@ -52,13 +53,13 @@ int ViEFileImage::ConvertJPEGToVideoFrame(int engineId,
     JpegDecoder decoder;
 
     int ret = 0;
-    WebRtc_UWord8* imageDecodedBuffer = NULL;
-    WebRtc_UWord32 imageWidth, imageHeight = 0;
-    ret = decoder.Decode(imageBuffer, imageBufferSize, imageDecodedBuffer,
-                         imageWidth, imageHeight);
+
+    RawImage decodedImage;
+    ret = decoder.Decode(imageBuffer, decodedImage);
 
     // done with this.
-    delete imageBuffer;
+    delete [] imageBuffer._buffer;
+    imageBuffer._buffer = NULL;
 
     if (-1 == ret)
     {
@@ -74,20 +75,25 @@ int ViEFileImage::ConvertJPEGToVideoFrame(int engineId,
                    __FUNCTION__, fileNameUTF8);
     }
 
-    WebRtc_UWord32 imageLength = (WebRtc_UWord32)(imageWidth * imageHeight
-        * 1.5);
-    if (-1 == videoFrame.Swap(imageDecodedBuffer, imageLength, imageLength))
+    WebRtc_UWord32 imageLength = (WebRtc_UWord32)(decodedImage._width *
+                                                  decodedImage._height * 1.5);
+    if (-1 == videoFrame.Swap(decodedImage._buffer, imageLength, imageLength))
     {
-        WEBRTC_TRACE(
-                   webrtc::kTraceDebug,
-                   webrtc::kTraceVideo,
+        WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideo,
                    engineId,
-                   "%s could not copy frame imageDecodedBuffer to frame videoFrame ",
+                   "%s could not copy frame imageDecodedBuffer to videoFrame ",
                    __FUNCTION__, fileNameUTF8);
         return -1;
     }
-    videoFrame.SetWidth(imageWidth);
-    videoFrame.SetHeight(imageHeight);
+
+    if (decodedImage._buffer)
+    {
+        delete [] decodedImage._buffer;
+        decodedImage._buffer = NULL;
+    }
+
+    videoFrame.SetWidth(decodedImage._width);
+    videoFrame.SetHeight(decodedImage._height);
     return 0;
 }
 
@@ -96,7 +102,7 @@ int ViEFileImage::ConvertPictureToVideoFrame(int engineId,
                                              VideoFrame& videoFrame)
 {
     WebRtc_UWord32 pictureLength = (WebRtc_UWord32)(picture.width
-        * picture.height * 1.5);
+              * picture.height * 1.5);
     videoFrame.CopyFrame(pictureLength, picture.data);
     videoFrame.SetWidth(picture.width);
     videoFrame.SetHeight(picture.height);

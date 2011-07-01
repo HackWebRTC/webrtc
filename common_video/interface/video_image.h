@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VIDEO_IMAGE_H
-#define VIDEO_IMAGE_H
+#ifndef COMMON_VIDEO_INTERFACE_VIDEO_IMAGE_H
+#define COMMON_VIDEO_INTERFACE_VIDEO_IMAGE_H
 
 #include "typedefs.h"
 #include <stdlib.h>
@@ -33,7 +33,7 @@ public:
                     _length(0), _size(0) {}
 
     RawImage(WebRtc_UWord8* buffer, WebRtc_UWord32 length,
-        WebRtc_UWord32 size) :
+             WebRtc_UWord32 size) :
                     _width(0), _height(0), _timeStamp(0),
                     _buffer(buffer), _length(length), _size(size) {}
 
@@ -50,8 +50,8 @@ class EncodedImage
 public:
     EncodedImage() :
                      _encodedWidth(0), _encodedHeight(0), _timeStamp(0),
-                     _frameType(kDeltaFrame), _buffer(NULL), _length(0), _size(0),
-                     _completeFrame(false) {}
+                     _frameType(kDeltaFrame), _buffer(NULL), _length(0),
+                     _size(0), _completeFrame(false) {}
 
     EncodedImage(WebRtc_UWord8* buffer,
                  WebRtc_UWord32 length,
@@ -63,7 +63,7 @@ public:
     WebRtc_UWord32              _encodedWidth;
     WebRtc_UWord32              _encodedHeight;
     WebRtc_UWord32              _timeStamp;
-    VideoFrameType             _frameType;
+    VideoFrameType              _frameType;
     WebRtc_UWord8*              _buffer;
     WebRtc_UWord32              _length;
     WebRtc_UWord32              _size;
@@ -72,4 +72,4 @@ public:
 
 } // namespace webrtc
 
-#endif // VIDEO_IMAGE_H
+#endif // COMMON_VIDEO_INTERFACE_VIDEO_IMAGE_H
