@@ -49,7 +49,7 @@
               ],
               'action': [
                 '/bin/sh', '-c',
-                'cp -f test/data/voice_engint/audio_* /tmp/;'\
+                'cp -f test/data/voice_engine/audio_* /tmp/;'\
               ],
             },
           ],
