@@ -42,15 +42,14 @@
             {
               'action_name': 'copy audio file',
               'inputs': [
-                'voice_engine/main/test/auto_test/audio_long16.pcm',
+                'test/data/voice_engine/audio_long16.pcm',
               ],
               'outputs': [
                 '/tmp/audio_long16.pcm',
               ],
               'action': [
                 '/bin/sh', '-c',
-                'cp -f voice_engine/main/test/auto_test/audio_* /tmp/;'\
-                'cp -f voice_engine/main/test/auto_test/audio_short16.pcm /tmp/;',
+                'cp -f test/data/voice_engint/audio_* /tmp/;'\
               ],
             },
           ],
@@ -65,27 +64,14 @@
             {
               'action_name': 'copy audio file',
               'inputs': [
-                'voice_engine/main/test/auto_test/audio_long16.pcm',
+                'test/data/voice_engine/audio_long16.pcm',
               ],
               'outputs': [
                 '/tmp/audio_long16.pcm',
               ],
               'action': [
                 'cmd', '/c',
-                'xcopy /Y /R .\\voice_engine\\main\\test\\auto_test\\audio_* \\tmp',
-              ],
-            },
-            {
-              'action_name': 'copy audio audio_short16.pcm',
-              'inputs': [
-                'voice_engine/main/test/auto_test/audio_short16.pcm',
-              ],
-              'outputs': [
-                '/tmp/audio_short16.pcm',
-              ],
-              'action': [
-                'cmd', '/c',    
-                'xcopy /Y /R .\\voice_engine\\main\\test\\auto_test\\audio_short16.pcm \\tmp',
+                'xcopy /Y /R .\\test\\data\\voice_engine\\audio_* \\tmp',
               ],
             },
           ],
@@ -135,40 +121,14 @@
             {
               'action_name': 'copy audio file',
               'inputs': [
-                'voice_engine/main/test/win_test/audio_tiny11.wav',
+                'test/data/voice_engine/audio_tiny11.wav',
               ],
               'outputs': [
                 '/tmp/audio_tiny11.wav',
               ],
               'action': [
                 'cmd', '/c',
-                'xcopy /Y /R .\\voice_engine\\main\\test\\win_test\\audio_* \\tmp',
-              ],
-            },
-            {
-              'action_name': 'copy audio audio_short16.pcm',
-              'inputs': [
-                'voice_engine/main/test/win_test/audio_short16.pcm',
-              ],
-              'outputs': [
-                '/tmp/audio_short16.pcm',
-              ],
-              'action': [
-                'cmd', '/c',    
-                'xcopy /Y /R .\\voice_engine\\main\\test\\win_test\\audio_short16.pcm \\tmp',
-              ],
-            },
-            {
-              'action_name': 'copy audio_long16noise.pcm',
-              'inputs': [
-                'voice_engine/main/test/win_test/audio_long16noise.pcm',
-              ],
-              'outputs': [
-                '/tmp/audio_long16noise.pcm',
-              ],
-              'action': [
-                'cmd', '/c',    
-                'xcopy /Y /R .\\voice_engine\\main\\test\\win_test\\audio_long16noise.pcm \\tmp',
+                'xcopy /Y /R .\\test\\data\\voice_engine\\audio_* \\tmp',
               ],
             },
           ],
