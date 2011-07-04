@@ -71,8 +71,6 @@ bool Conductor::InitializePeerConnection() {
 
 void Conductor::DeletePeerConnection() {
   peer_connection_.reset();
-  local_renderer_.reset();
-  remote_renderer_.reset();
   handshake_ = NONE;
 }
 
@@ -82,14 +80,7 @@ void Conductor::StartCaptureDevice() {
     main_wnd_->SwitchToStreamingUI();
 
     if (peer_connection_->SetVideoCapture("")) {
-      if (!local_renderer_.get()) {
-        // The window will be resized according to the stream properties
-        // when streaming starts.
-        local_renderer_.reset(
-            cricket::VideoRendererFactory::CreateGuiVideoRenderer(100, 100));
-      }
-      if (local_renderer_.get())
-        peer_connection_->SetLocalVideoRenderer(local_renderer_.get());
+      peer_connection_->SetLocalVideoRenderer(main_wnd_->local_renderer());
     } else {
       ASSERT(false);
     }
@@ -139,13 +130,8 @@ void Conductor::OnAddStream(const std::string& stream_id, int channel_id,
     video_channel_ = channel_id;
     waiting_for_video_ = false;
     LOG(INFO) << "Setting video renderer for channel: " << channel_id;
-    if (!remote_renderer_.get()) {
-      // The window size will be automatically corrected.
-      remote_renderer_.reset(
-          cricket::VideoRendererFactory::CreateGuiVideoRenderer(100, 100));
-    }
     bool ok = peer_connection_->SetVideoRenderer(stream_id,
-                                                 remote_renderer_.get());
+                                                 main_wnd_->remote_renderer());
     ASSERT(ok);
   } else {
     ASSERT(audio_channel_ == -1);

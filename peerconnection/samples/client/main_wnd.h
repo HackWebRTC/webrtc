@@ -17,6 +17,8 @@
 
 #include "peerconnection/samples/client/peer_connection_client.h"
 #include "talk/base/win32.h"
+#include "talk/session/phone/mediachannel.h"
+#include "talk/session/phone/videocommon.h"
 
 class MainWndCallback {
  public:
@@ -38,6 +40,10 @@ class MainWnd {
     STREAMING,
   };
 
+  enum WindowMessages {
+    VIDEO_RENDERER_MESSAGE = WM_APP + 1,
+  };
+
   MainWnd();
   ~MainWnd();
 
@@ -55,6 +61,40 @@ class MainWnd {
 
   HWND handle() const { return wnd_; }
   UI current_ui() const { return ui_; }
+
+  cricket::VideoRenderer* local_renderer() const {
+    return local_video_.get();
+  }
+
+  cricket::VideoRenderer* remote_renderer() const {
+    return remote_video_.get();
+  }
+
+  class VideoRenderer : public cricket::VideoRenderer {
+   public:
+    VideoRenderer(HWND wnd, int width, int height);
+    virtual ~VideoRenderer();
+
+    virtual bool SetSize(int width, int height, int reserved);
+
+    // Called when a new frame is available for display.
+    virtual bool RenderFrame(const cricket::VideoFrame* frame);
+
+    void OnMessage(const MSG& msg);
+
+    const BITMAPINFO& bmi() const { return bmi_; }
+    const uint8* image() const { return image_.get(); }
+
+   protected:
+    enum {
+      SET_SIZE,
+      RENDER_FRAME,
+    };
+
+    HWND wnd_;
+    BITMAPINFO bmi_;
+    talk_base::scoped_array<uint8> image_;
+  };
 
  protected:
   enum ChildWindowID {
@@ -85,6 +125,8 @@ class MainWnd {
   void HandleTabbing();
 
  private:
+  talk_base::scoped_ptr<VideoRenderer> remote_video_;
+  talk_base::scoped_ptr<VideoRenderer> local_video_;
   UI ui_;
   HWND wnd_;
   HWND edit1_;
