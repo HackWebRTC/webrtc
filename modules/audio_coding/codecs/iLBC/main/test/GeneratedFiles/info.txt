@@ -1,4 +1,0 @@
-iLBC 1.0.4
-
-Folder is intentionally empty.
-This is the location where the test script will put the generated output files (.BITXX and .OUTXX).
