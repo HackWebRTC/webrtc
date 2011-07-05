@@ -17,7 +17,7 @@
 #include "list_wrapper.h"
 #include <stdio.h>
 
-#define DEBUG_FILE
+//#define DEBUG_FILE
 
 #ifdef MATLAB
 #include "../test/BWEStandAlone/MatlabPlot.h"
