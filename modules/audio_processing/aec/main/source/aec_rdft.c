@@ -477,26 +477,31 @@ static void rftbsub_128_C(float *a) {
   a[65] = -a[65];
 }
 
-void aec_rdft_128(int isgn, float *a) {
+void aec_rdft_forward_128(float *a) {
   const int n = 128;
   int nw;
   float xi;
 
   nw = ip[0];
-  if (isgn >= 0) {
-    bitrv2_32or128(n, ip + 2, a);
-    cftfsub_128(a);
-    rftfsub_128(a);
-    xi = a[0] - a[1];
-    a[0] += a[1];
-    a[1] = xi;
-  } else {
-    a[1] = 0.5f * (a[0] - a[1]);
-    a[0] -= a[1];
-    rftbsub_128(a);
-    bitrv2_32or128(n, ip + 2, a);
-    cftbsub_128(a);
-  }
+  bitrv2_32or128(n, ip + 2, a);
+  cftfsub_128(a);
+  rftfsub_128(a);
+  xi = a[0] - a[1];
+  a[0] += a[1];
+  a[1] = xi;
+}
+
+void aec_rdft_inverse_128(float *a) {
+  const int n = 128;
+  int nw;
+  float xi;
+
+  nw = ip[0];
+  a[1] = 0.5f * (a[0] - a[1]);
+  a[0] -= a[1];
+  rftbsub_128(a);
+  bitrv2_32or128(n, ip + 2, a);
+  cftbsub_128(a);
 }
 
 // code path selection

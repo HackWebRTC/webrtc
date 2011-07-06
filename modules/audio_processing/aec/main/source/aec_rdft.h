@@ -19,4 +19,5 @@ extern rft_sub_128_t rftbsub_128;
 // entry points
 void aec_rdft_init(void);
 void aec_rdft_init_sse2(void);
-void aec_rdft_128(int isgn, float *a);
+void aec_rdft_forward_128(float *a);
+void aec_rdft_inverse_128(float *a);
