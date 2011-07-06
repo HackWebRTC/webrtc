@@ -172,8 +172,7 @@ extern WebRtcAec_ScaleErrorSignal_t WebRtcAec_ScaleErrorSignal;
 #define IP_LEN PART_LEN // this must be at least ceil(2 + sqrt(PART_LEN))
 #define W_LEN PART_LEN
 typedef void (*WebRtcAec_FilterAdaptation_t)
-  (aec_t *aec, float *fft, float ef[2][PART_LEN1], int ip[IP_LEN],
-   float wfft[W_LEN]);
+  (aec_t *aec, float *fft, float ef[2][PART_LEN1]);
 extern WebRtcAec_FilterAdaptation_t WebRtcAec_FilterAdaptation;
 typedef void (*WebRtcAec_OverdriveAndSuppress_t)
   (aec_t *aec, float hNl[PART_LEN1], const float hNlFb, float efw[2][PART_LEN1]);

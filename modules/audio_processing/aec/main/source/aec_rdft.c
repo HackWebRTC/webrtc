@@ -24,6 +24,9 @@
 #include "aec_rdft.h"
 #include "system_wrappers/interface/cpu_features_wrapper.h"
 
+float rdft_w[64];
+static int ip[16];
+
 static void bitrv2_32or128(int n, int *ip, float *a) {
   // n is 32 or 128
   int j, j1, k, k1, m, m2;
@@ -98,7 +101,7 @@ static void bitrv2_32or128(int n, int *ip, float *a) {
   }
 }
 
-static void makewt(int *ip, float *w) {
+static void makewt_32() {
   const int nw = 32;
   int j, nwh;
   float delta, x, y;
@@ -107,22 +110,23 @@ static void makewt(int *ip, float *w) {
   ip[1] = 1;
   nwh = nw >> 1;
   delta = atanf(1.0f) / nwh;
-  w[0] = 1;
-  w[1] = 0;
-  w[nwh] = cosf(delta * nwh);
-  w[nwh + 1] = w[nwh];
+  rdft_w[0] = 1;
+  rdft_w[1] = 0;
+  rdft_w[nwh] = cosf(delta * nwh);
+  rdft_w[nwh + 1] = rdft_w[nwh];
   for (j = 2; j < nwh; j += 2) {
     x = cosf(delta * j);
     y = sinf(delta * j);
-    w[j] = x;
-    w[j + 1] = y;
-    w[nw - j] = y;
-    w[nw - j + 1] = x;
+    rdft_w[j] = x;
+    rdft_w[j + 1] = y;
+    rdft_w[nw - j] = y;
+    rdft_w[nw - j + 1] = x;
   }
-  bitrv2_32or128(nw, ip + 2, w);
+  bitrv2_32or128(nw, ip + 2, rdft_w);
 }
 
-static void makect_32(int *ip, float *c) {
+static void makect_32() {
+  float *c = rdft_w + 32;
   const int nc = 32;
   int j, nch;
   float delta;
@@ -138,7 +142,7 @@ static void makect_32(int *ip, float *c) {
   }
 }
 
-static void cft1st_128(float *a, float *w) {
+static void cft1st_128(float *a) {
   const int n = 128;
   int j, k1, k2;
   float wk1r, wk1i, wk2r, wk2i, wk3r, wk3i;
@@ -160,7 +164,7 @@ static void cft1st_128(float *a, float *w) {
   a[3] = x1i + x3r;
   a[6] = x1r + x3i;
   a[7] = x1i - x3r;
-  wk1r = w[2];
+  wk1r = rdft_w[2];
   x0r = a[8] + a[10];
   x0i = a[9] + a[11];
   x1r = a[8] - a[10];
@@ -185,10 +189,10 @@ static void cft1st_128(float *a, float *w) {
   for (j = 16; j < n; j += 16) {
     k1 += 2;
     k2 = 2 * k1;
-    wk2r = w[k1];
-    wk2i = w[k1 + 1];
-    wk1r = w[k2];
-    wk1i = w[k2 + 1];
+    wk2r = rdft_w[k1];
+    wk2i = rdft_w[k1 + 1];
+    wk1r = rdft_w[k2];
+    wk1i = rdft_w[k2 + 1];
     wk3r = wk1r - 2 * wk2i * wk1i;
     wk3i = 2 * wk2i * wk1r - wk1i;
     x0r = a[j] + a[j + 2];
@@ -213,8 +217,8 @@ static void cft1st_128(float *a, float *w) {
     x0i = x1i - x3r;
     a[j + 6] = wk3r * x0r - wk3i * x0i;
     a[j + 7] = wk3r * x0i + wk3i * x0r;
-    wk1r = w[k2 + 2];
-    wk1i = w[k2 + 3];
+    wk1r = rdft_w[k2 + 2];
+    wk1i = rdft_w[k2 + 3];
     wk3r = wk1r - 2 * wk2r * wk1i;
     wk3i = 2 * wk2r * wk1r - wk1i;
     x0r = a[j + 8] + a[j + 10];
@@ -242,7 +246,7 @@ static void cft1st_128(float *a, float *w) {
   }
 }
 
-static void cftmdl_128(int l, float *a, float *w) {
+static void cftmdl_128(int l, float *a) {
   const int n = 128;
   int j, j1, j2, j3, k, k1, k2, m, m2;
   float wk1r, wk1i, wk2r, wk2i, wk3r, wk3i;
@@ -270,7 +274,7 @@ static void cftmdl_128(int l, float *a, float *w) {
     a[j3] = x1r + x3i;
     a[j3 + 1] = x1i - x3r;
   }
-  wk1r = w[2];
+  wk1r = rdft_w[2];
   for (j = m; j < l + m; j += 2) {
     j1 = j + l;
     j2 = j1 + l;
@@ -301,10 +305,10 @@ static void cftmdl_128(int l, float *a, float *w) {
   for (k = m2; k < n; k += m2) {
     k1 += 2;
     k2 = 2 * k1;
-    wk2r = w[k1];
-    wk2i = w[k1 + 1];
-    wk1r = w[k2];
-    wk1i = w[k2 + 1];
+    wk2r = rdft_w[k1];
+    wk2i = rdft_w[k1 + 1];
+    wk1r = rdft_w[k2];
+    wk1i = rdft_w[k2 + 1];
     wk3r = wk1r - 2 * wk2i * wk1i;
     wk3i = 2 * wk2i * wk1r - wk1i;
     for (j = k; j < l + k; j += 2) {
@@ -334,8 +338,8 @@ static void cftmdl_128(int l, float *a, float *w) {
       a[j3] = wk3r * x0r - wk3i * x0i;
       a[j3 + 1] = wk3r * x0i + wk3i * x0r;
     }
-    wk1r = w[k2 + 2];
-    wk1i = w[k2 + 3];
+    wk1r = rdft_w[k2 + 2];
+    wk1i = rdft_w[k2 + 3];
     wk3r = wk1r - 2 * wk2r * wk1i;
     wk3i = 2 * wk2r * wk1r - wk1i;
     for (j = k + m; j < l + (k + m); j += 2) {
@@ -368,12 +372,12 @@ static void cftmdl_128(int l, float *a, float *w) {
   }
 }
 
-static void cftfsub_128(float *a, float *w) {
+static void cftfsub_128(float *a) {
   int j, j1, j2, j3, l;
   float x0r, x0i, x1r, x1i, x2r, x2i, x3r, x3i;
 
-  cft1st_128(a, w);
-  cftmdl_128(8, a, w);
+  cft1st_128(a);
+  cftmdl_128(8, a);
   l = 32;
   for (j = 0; j < l; j += 2) {
     j1 = j + l;
@@ -398,12 +402,12 @@ static void cftfsub_128(float *a, float *w) {
   }
 }
 
-static void cftbsub_128(float *a, float *w) {
+static void cftbsub_128(float *a) {
   int j, j1, j2, j3, l;
   float x0r, x0i, x1r, x1i, x2r, x2i, x3r, x3i;
 
-  cft1st_128(a, w);
-  cftmdl_128(8, a, w);
+  cft1st_128(a);
+  cftmdl_128(8, a);
   l = 32;
 
   for (j = 0; j < l; j += 2) {
@@ -429,7 +433,8 @@ static void cftbsub_128(float *a, float *w) {
   }
 }
 
-static void rftfsub_128_C(float *a, float *c) {
+static void rftfsub_128_C(float *a) {
+  const float *c = rdft_w + 32;
   int j1, j2, k1, k2;
   float wkr, wki, xr, xi, yr, yi;
 
@@ -449,7 +454,8 @@ static void rftfsub_128_C(float *a, float *c) {
   }
 }
 
-static void rftbsub_128_C(float *a, float *c) {
+static void rftbsub_128_C(float *a) {
+  const float *c = rdft_w + 32;
   int j1, j2, k1, k2;
   float wkr, wki, xr, xi, yr, yi;
 
@@ -471,33 +477,25 @@ static void rftbsub_128_C(float *a, float *c) {
   a[65] = -a[65];
 }
 
-void aec_rdft_128(int isgn, float *a, int *ip, float *w)
-{
+void aec_rdft_128(int isgn, float *a) {
   const int n = 128;
   int nw;
   float xi;
 
   nw = ip[0];
-  if (n > (nw << 2)) {
-    nw = n >> 2;
-    makewt(ip, w);
-  }
-  if (n > (ip[1] << 2)) {
-    makect_32(ip, w + nw);
-  }
   if (isgn >= 0) {
     bitrv2_32or128(n, ip + 2, a);
-    cftfsub_128(a, w);
-    rftfsub_128(a, w + nw);
+    cftfsub_128(a);
+    rftfsub_128(a);
     xi = a[0] - a[1];
     a[0] += a[1];
     a[1] = xi;
   } else {
     a[1] = 0.5f * (a[0] - a[1]);
     a[0] -= a[1];
-    rftbsub_128(a, w + nw);
+    rftbsub_128(a);
     bitrv2_32or128(n, ip + 2, a);
-    cftbsub_128(a, w);
+    cftbsub_128(a);
   }
 }
 
@@ -513,4 +511,7 @@ void aec_rdft_init(void) {
     aec_rdft_init_sse2();
 #endif
   }
+  // init library constants.
+  makewt_32();
+  makect_32();
 }

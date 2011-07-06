@@ -20,7 +20,8 @@
 # define ALIGN16_END __attribute__((aligned(16)))
 #endif
 
-static void rftfsub_128_SSE2(float *a, float *c) {
+static void rftfsub_128_SSE2(float *a) {
+  const float *c = rdft_w + 32;
   int j1, j2, k1, k2;
   float wkr, wki, xr, xi, yr, yi;
 
@@ -109,7 +110,8 @@ static void rftfsub_128_SSE2(float *a, float *c) {
   }
 }
 
-static void rftbsub_128_SSE2(float *a, float *c) {
+static void rftbsub_128_SSE2(float *a) {
+  const float *c = rdft_w + 32;
   int j1, j2, k1, k2;
   float wkr, wki, xr, xi, yr, yi;
 

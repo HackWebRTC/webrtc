@@ -123,8 +123,7 @@ static void ProcessBlock(aec_t *aec, const short *farend,
 static void BufferFar(aec_t *aec, const short *farend, int farLen);
 static void FetchFar(aec_t *aec, short *farend, int farLen, int knownDelay);
 
-static void NonLinearProcessing(aec_t *aec, int *ip, float *wfft, short *output,
-                         short *outputH);
+static void NonLinearProcessing(aec_t *aec, short *output, short *outputH);
 
 static void GetHighbandGain(const float *lambda, float *nlpGainHband);
 
@@ -256,8 +255,7 @@ static void ScaleErrorSignal(aec_t *aec, float ef[2][PART_LEN1])
   }
 }
 
-static void FilterAdaptation(aec_t *aec, float *fft, float ef[2][PART_LEN1],
-                      int ip[IP_LEN], float wfft[W_LEN]) {
+static void FilterAdaptation(aec_t *aec, float *fft, float ef[2][PART_LEN1]) {
   int i, j;
   for (i = 0; i < NR_PART; i++) {
     int xPos = (i + aec->xfBufBlockPos)*(PART_LEN1);
@@ -292,7 +290,7 @@ static void FilterAdaptation(aec_t *aec, float *fft, float ef[2][PART_LEN1],
                    -aec->xfBuf[1][xPos + PART_LEN],
                    ef[0][PART_LEN], ef[1][PART_LEN]);
 
-    aec_rdft_128(-1, fft, ip, wfft);
+    aec_rdft_128(-1, fft);
     memset(fft + PART_LEN, 0, sizeof(float) * PART_LEN);
 
     // fft scaling
@@ -302,7 +300,7 @@ static void FilterAdaptation(aec_t *aec, float *fft, float ef[2][PART_LEN1],
         fft[j] *= scale;
       }
     }
-    aec_rdft_128(1, fft, ip, wfft);
+    aec_rdft_128(1, fft);
 
     aec->wfBuf[0][pos] += fft[0];
     aec->wfBuf[0][pos + PART_LEN] += fft[1];
@@ -574,8 +572,6 @@ static void ProcessBlock(aec_t *aec, const short *farend,
     float fft[PART_LEN2];
     float xf[2][PART_LEN1], yf[2][PART_LEN1], ef[2][PART_LEN1];
     complex_t df[PART_LEN1];
-    int ip[IP_LEN];
-    float wfft[W_LEN];
 
     const float gPow[2] = {0.9f, 0.1f};
 
@@ -613,9 +609,7 @@ static void ProcessBlock(aec_t *aec, const short *farend,
         memcpy(aec->dBufH + PART_LEN, dH, sizeof(float) * PART_LEN);
     }
 
-    // Setting this on the first call initializes work arrays.
-    ip[0] = 0;
-    aec_rdft_128(1, fft, ip, wfft);
+    aec_rdft_128(1, fft);
 
     // Far fft
     xf[1][0] = 0;
@@ -630,7 +624,7 @@ static void ProcessBlock(aec_t *aec, const short *farend,
 
     // Near fft
     memcpy(fft, aec->dBuf, sizeof(float) * PART_LEN2);
-    aec_rdft_128(1, fft, ip, wfft);
+    aec_rdft_128(1, fft);
     df[0][1] = 0;
     df[PART_LEN][1] = 0;
     df[0][0] = fft[0];
@@ -706,7 +700,7 @@ static void ProcessBlock(aec_t *aec, const short *farend,
         fft[2 * i] = yf[0][i];
         fft[2 * i + 1] = yf[1][i];
     }
-    aec_rdft_128(-1, fft, ip, wfft);
+    aec_rdft_128(-1, fft);
 
     scale = 2.0f / PART_LEN2;
     for (i = 0; i < PART_LEN; i++) {
@@ -721,7 +715,7 @@ static void ProcessBlock(aec_t *aec, const short *farend,
     memcpy(aec->eBuf + PART_LEN, e, sizeof(float) * PART_LEN);
     memset(fft, 0, sizeof(float) * PART_LEN);
     memcpy(fft + PART_LEN, e, sizeof(float) * PART_LEN);
-    aec_rdft_128(1, fft, ip, wfft);
+    aec_rdft_128(1, fft);
 
     ef[1][0] = 0;
     ef[1][PART_LEN] = 0;
@@ -738,12 +732,12 @@ static void ProcessBlock(aec_t *aec, const short *farend,
     if (aec->adaptToggle) {
 #endif
         // Filter adaptation
-        WebRtcAec_FilterAdaptation(aec, fft, ef, ip, wfft);
+        WebRtcAec_FilterAdaptation(aec, fft, ef);
 #ifdef G167
     }
 #endif
 
-    NonLinearProcessing(aec, ip, wfft, output, outputH);
+    NonLinearProcessing(aec, output, outputH);
 
 #if defined(AEC_DEBUG) || defined(G167)
     for (i = 0; i < PART_LEN; i++) {
@@ -777,7 +771,7 @@ static void ProcessBlock(aec_t *aec, const short *farend,
 #endif
 }
 
-static void NonLinearProcessing(aec_t *aec, int *ip, float *wfft, short *output, short *outputH)
+static void NonLinearProcessing(aec_t *aec, short *output, short *outputH)
 {
     float efw[2][PART_LEN1], dfw[2][PART_LEN1];
     complex_t xfw[PART_LEN1];
@@ -844,7 +838,7 @@ static void NonLinearProcessing(aec_t *aec, int *ip, float *wfft, short *output,
         fft[i] = aec->xBuf[i] * sqrtHanning[i];
         fft[PART_LEN + i] = aec->xBuf[PART_LEN + i] * sqrtHanning[PART_LEN - i];
     }
-    aec_rdft_128(1, fft, ip, wfft);
+    aec_rdft_128(1, fft);
 
     xfw[0][1] = 0;
     xfw[PART_LEN][1] = 0;
@@ -866,7 +860,7 @@ static void NonLinearProcessing(aec_t *aec, int *ip, float *wfft, short *output,
         fft[i] = aec->dBuf[i] * sqrtHanning[i];
         fft[PART_LEN + i] = aec->dBuf[PART_LEN + i] * sqrtHanning[PART_LEN - i];
     }
-    aec_rdft_128(1, fft, ip, wfft);
+    aec_rdft_128(1, fft);
 
     dfw[1][0] = 0;
     dfw[1][PART_LEN] = 0;
@@ -882,7 +876,7 @@ static void NonLinearProcessing(aec_t *aec, int *ip, float *wfft, short *output,
         fft[i] = aec->eBuf[i] * sqrtHanning[i];
         fft[PART_LEN + i] = aec->eBuf[PART_LEN + i] * sqrtHanning[PART_LEN - i];
     }
-    aec_rdft_128(1, fft, ip, wfft);
+    aec_rdft_128(1, fft);
     efw[1][0] = 0;
     efw[1][PART_LEN] = 0;
     efw[0][0] = fft[0];
@@ -1059,7 +1053,7 @@ static void NonLinearProcessing(aec_t *aec, int *ip, float *wfft, short *output,
         // Sign change required by Ooura fft.
         fft[2*i + 1] = -efw[1][i];
     }
-    aec_rdft_128(-1, fft, ip, wfft);
+    aec_rdft_128(-1, fft);
 
     // Overlap and add to obtain output.
     scale = 2.0f / PART_LEN2;
@@ -1091,7 +1085,7 @@ static void NonLinearProcessing(aec_t *aec, int *ip, float *wfft, short *output,
                 fft[2*i] = comfortNoiseHband[i][0];
                 fft[2*i + 1] = comfortNoiseHband[i][1];
             }
-            aec_rdft_128(-1, fft, ip, wfft);
+            aec_rdft_128(-1, fft);
             scale = 2.0f / PART_LEN2;
         }
 
