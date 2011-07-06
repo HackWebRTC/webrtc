@@ -8,14 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "unit_test.h"
+#include <cstdio>
 
+#include <gtest/gtest.h>
+
+#include "audio_processing.h"
+#include "audio_processing_unittest.pb.h"
 #include "event_wrapper.h"
 #include "module_common_types.h"
 #include "thread_wrapper.h"
 #include "trace.h"
 #include "signal_processing_library.h"
-#include "audio_processing.h"
 
 using webrtc::AudioProcessing;
 using webrtc::AudioFrame;
@@ -30,10 +33,141 @@ using webrtc::EchoControlMobile;
 using webrtc::VoiceDetection;
 
 namespace {
+// When true, this will compare the output data with the results stored to
+// file. This is the typical case. When the file should be updated, it can
+// be set to false with the command-line switch --write_output_data.
+bool global_read_output_data = true;
 
-// If false, this will write out a new statistics file.
-// For usual testing we normally want to read the file.
-const bool kReadStatFile = true;
+class ApmEnvironment : public ::testing::Environment {
+ public:
+  virtual void SetUp() {
+    Trace::CreateTrace();
+    ASSERT_EQ(0, Trace::SetTraceFile("apm_trace.txt"));
+  }
+
+  virtual void TearDown() {
+    Trace::ReturnTrace();
+  }
+};
+
+class ApmTest : public ::testing::Test {
+ protected:
+  ApmTest();
+  virtual void SetUp();
+  virtual void TearDown();
+
+  webrtc::AudioProcessing* apm_;
+  webrtc::AudioFrame* frame_;
+  webrtc::AudioFrame* revframe_;
+  FILE* far_file_;
+  FILE* near_file_;
+  bool update_output_data_;
+};
+
+ApmTest::ApmTest()
+    : apm_(NULL),
+      far_file_(NULL),
+      near_file_(NULL),
+      frame_(NULL),
+      revframe_(NULL) {}
+
+void ApmTest::SetUp() {
+  apm_ = AudioProcessing::Create(0);
+  ASSERT_TRUE(apm_ != NULL);
+
+  frame_ = new AudioFrame();
+  revframe_ = new AudioFrame();
+
+  ASSERT_EQ(apm_->kNoError, apm_->set_sample_rate_hz(32000));
+  ASSERT_EQ(apm_->kNoError, apm_->set_num_channels(2, 2));
+  ASSERT_EQ(apm_->kNoError, apm_->set_num_reverse_channels(2));
+
+  frame_->_payloadDataLengthInSamples = 320;
+  frame_->_audioChannel = 2;
+  frame_->_frequencyInHz = 32000;
+  revframe_->_payloadDataLengthInSamples = 320;
+  revframe_->_audioChannel = 2;
+  revframe_->_frequencyInHz = 32000;
+
+  far_file_ = fopen("aec_far.pcm", "rb");
+  ASSERT_TRUE(far_file_ != NULL) << "Could not open input file aec_far.pcm\n";
+  near_file_ = fopen("aec_near.pcm", "rb");
+  ASSERT_TRUE(near_file_ != NULL) << "Could not open input file aec_near.pcm\n";
+}
+
+void ApmTest::TearDown() {
+  if (frame_) {
+    delete frame_;
+  }
+  frame_ = NULL;
+
+  if (revframe_) {
+    delete revframe_;
+  }
+  revframe_ = NULL;
+
+  if (far_file_) {
+    ASSERT_EQ(0, fclose(far_file_));
+  }
+  far_file_ = NULL;
+
+  if (near_file_) {
+    ASSERT_EQ(0, fclose(near_file_));
+  }
+  near_file_ = NULL;
+
+  if (apm_ != NULL) {
+    AudioProcessing::Destroy(apm_);
+  }
+  apm_ = NULL;
+}
+
+void MixStereoToMono(WebRtc_Word16* stereo,
+                     WebRtc_Word16* mono,
+                     int numSamples) {
+  for (int i = 0; i < numSamples; i++) {
+    int int32 = (static_cast<int>(stereo[i * 2]) +
+                 static_cast<int>(stereo[i * 2 + 1])) >> 1;
+    mono[i] = static_cast<WebRtc_Word16>(int32);
+  }
+}
+
+void WriteMessageLiteToFile(const char* filename,
+                            const ::google::protobuf::MessageLite& message) {
+  assert(filename != NULL);
+
+  FILE* file = fopen(filename, "wb");
+  ASSERT_TRUE(file != NULL) << "Could not open " << filename;
+  int size = message.ByteSize();
+  ASSERT_GT(size, 0);
+  unsigned char* array = new unsigned char[size];
+  ASSERT_TRUE(message.SerializeToArray(array, size));
+
+  ASSERT_EQ(1, fwrite(&size, sizeof(int), 1, file));
+  ASSERT_EQ(size, fwrite(array, sizeof(unsigned char), size, file));
+
+  delete [] array;
+  fclose(file);
+}
+
+void ReadMessageLiteFromFile(const char* filename,
+                             ::google::protobuf::MessageLite* message) {
+  assert(filename != NULL);
+  assert(message != NULL);
+
+  FILE* file = fopen(filename, "rb");
+  ASSERT_TRUE(file != NULL) << "Could not open " << filename;
+  int size = 0;
+  ASSERT_EQ(1, fread(&size, sizeof(int), 1, file));
+  ASSERT_GT(size, 0);
+  unsigned char* array = new unsigned char[size];
+  ASSERT_EQ(size, fread(array, sizeof(unsigned char), size, file));
+
+  ASSERT_TRUE(message->ParseFromArray(array, size));
+
+  delete [] array;
+  fclose(file);
+}
 
 struct ThreadData {
   ThreadData(int thread_num_, AudioProcessing* ap_)
@@ -98,89 +232,6 @@ bool DeadlockProc(void* thread_object) {
   event = NULL;
 
   return true;
-}
-}  // namespace
-
-class ApmEnvironment : public ::testing::Environment {
- public:
-  virtual void SetUp() {
-    Trace::CreateTrace();
-    ASSERT_EQ(0, Trace::SetTraceFile("apm_trace.txt"));
-  }
-
-  virtual void TearDown() {
-    Trace::ReturnTrace();
-  }
-};
-
-ApmTest::ApmTest()
-    : apm_(NULL),
-      far_file_(NULL),
-      near_file_(NULL),
-      stat_file_(NULL),
-      frame_(NULL),
-      reverse_frame_(NULL) {}
-
-void ApmTest::SetUp() {
-  apm_ = AudioProcessing::Create(0);
-  ASSERT_TRUE(apm_ != NULL);
-
-  frame_ = new AudioFrame();
-  reverse_frame_ = new AudioFrame();
-
-  ASSERT_EQ(apm_->kNoError, apm_->set_sample_rate_hz(32000));
-  ASSERT_EQ(apm_->kNoError, apm_->set_num_channels(2, 2));
-  ASSERT_EQ(apm_->kNoError, apm_->set_num_reverse_channels(2));
-
-  frame_->_payloadDataLengthInSamples = 320;
-  frame_->_audioChannel = 2;
-  frame_->_frequencyInHz = 32000;
-  reverse_frame_->_payloadDataLengthInSamples = 320;
-  reverse_frame_->_audioChannel = 2;
-  reverse_frame_->_frequencyInHz = 32000;
-
-  far_file_ = fopen("aec_far.pcm", "rb");
-  ASSERT_TRUE(far_file_ != NULL) << "Cannot read source file aec_far.pcm\n";
-  near_file_ = fopen("aec_near.pcm", "rb");
-  ASSERT_TRUE(near_file_ != NULL) << "Cannot read source file aec_near.pcm\n";
-
-  if (kReadStatFile) {
-    stat_file_  = fopen("stat_data.dat", "rb");
-    ASSERT_TRUE(stat_file_ != NULL) <<
-      "Cannot write to source file stat_data.dat\n";
-  }
-}
-
-void ApmTest::TearDown() {
-  if (frame_) {
-    delete frame_;
-  }
-  frame_ = NULL;
-
-  if (reverse_frame_) {
-    delete reverse_frame_;
-  }
-  reverse_frame_ = NULL;
-
-  if (far_file_) {
-    ASSERT_EQ(0, fclose(far_file_));
-  }
-  far_file_ = NULL;
-
-  if (near_file_) {
-    ASSERT_EQ(0, fclose(near_file_));
-  }
-  near_file_ = NULL;
-
-  if (stat_file_) {
-    ASSERT_EQ(0, fclose(stat_file_));
-  }
-  stat_file_ = NULL;
-
-  if (apm_ != NULL) {
-    AudioProcessing::Destroy(apm_);
-  }
-  apm_ = NULL;
 }
 
 /*TEST_F(ApmTest, Deadlock) {
@@ -266,7 +317,7 @@ TEST_F(ApmTest, StreamParameters) {
   // No stream parameters
   EXPECT_EQ(apm_->kNoError, apm_->Initialize());
   EXPECT_EQ(apm_->kNoError,
-            apm_->AnalyzeReverseStream(reverse_frame_));
+            apm_->AnalyzeReverseStream(revframe_));
   EXPECT_EQ(apm_->kStreamParameterNotSetError,
             apm_->ProcessStream(frame_));
 
@@ -317,21 +368,28 @@ TEST_F(ApmTest, SampleRates) {
 }
 
 TEST_F(ApmTest, Process) {
-  if (!kReadStatFile) {
-    stat_file_  = fopen("statData.dat", "wb");
-    ASSERT_TRUE(stat_file_ != NULL)
-      << "Cannot write to source file statData.dat\n";
+  GOOGLE_PROTOBUF_VERIFY_VERSION;
+  audio_processing_unittest::OutputData output_data;
+
+  if (global_read_output_data) {
+    ReadMessageLiteFromFile("output_data.pb", &output_data);
+
+  } else {
+    // We don't have a file; add the required tests to the protobuf.
+    int rev_ch[] = {1, 2};
+    int ch[] = {1, 2};
+    int fs[] = {8000, 16000, 32000};
+    for (size_t i = 0; i < sizeof(rev_ch) / sizeof(*rev_ch); i++) {
+      for (size_t j = 0; j < sizeof(ch) / sizeof(*ch); j++) {
+        for (size_t k = 0; k < sizeof(fs) / sizeof(*fs); k++) {
+          audio_processing_unittest::Test* test = output_data.add_test();
+          test->set_numreversechannels(rev_ch[i]);
+          test->set_numchannels(ch[j]);
+          test->set_samplerate(fs[k]);
+        }
+      }
+    }
   }
-
-  AudioFrame render_audio;
-  AudioFrame capture_audio;
-
-  render_audio._payloadDataLengthInSamples = 320;
-  render_audio._audioChannel = 2;
-  render_audio._frequencyInHz = 32000;
-  capture_audio._payloadDataLengthInSamples = 320;
-  capture_audio._audioChannel = 2;
-  capture_audio._frequencyInHz = 32000;
 
   EXPECT_EQ(apm_->kNoError,
             apm_->echo_cancellation()->enable_drift_compensation(true));
@@ -348,8 +406,8 @@ TEST_F(ApmTest, Process) {
   EXPECT_EQ(apm_->kNoError,
             apm_->high_pass_filter()->Enable(true));
 
-  EXPECT_EQ(apm_->kUnsupportedComponentError,
-            apm_->level_estimator()->Enable(true));
+  //EXPECT_EQ(apm_->kNoError,
+  //          apm_->level_estimator()->Enable(true));
 
   EXPECT_EQ(apm_->kNoError,
             apm_->noise_suppression()->Enable(true));
@@ -357,339 +415,132 @@ TEST_F(ApmTest, Process) {
   EXPECT_EQ(apm_->kNoError,
             apm_->voice_detection()->Enable(true));
 
-  LevelEstimator::Metrics far_metrics;
-  LevelEstimator::Metrics near_metrics;
-  EchoCancellation::Metrics echo_metrics;
-  for (int i = 0; i < 100; i++) {
-    EXPECT_EQ(apm_->kNoError,
-        apm_->AnalyzeReverseStream(&render_audio));
+  for (int i = 0; i < output_data.test_size(); i++) {
+    printf("Running test %d of %d...\n", i + 1, output_data.test_size());
 
-    EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(100));
-    EXPECT_EQ(apm_->kNoError,
-              apm_->echo_cancellation()->set_stream_drift_samples(0));
+    audio_processing_unittest::Test* test = output_data.mutable_test(i);
+    const int num_samples = test->samplerate() / 100;
+    revframe_->_payloadDataLengthInSamples = num_samples;
+    revframe_->_audioChannel = test->numreversechannels();
+    revframe_->_frequencyInHz = test->samplerate();
+    frame_->_payloadDataLengthInSamples = num_samples;
+    frame_->_audioChannel = test->numchannels();
+    frame_->_frequencyInHz = test->samplerate();
 
-    EXPECT_EQ(apm_->kNoError,
-              apm_->gain_control()->set_stream_analog_level(127));
+    EXPECT_EQ(apm_->kNoError, apm_->Initialize());
+    ASSERT_EQ(apm_->kNoError, apm_->set_sample_rate_hz(test->samplerate()));
+    ASSERT_EQ(apm_->kNoError, apm_->set_num_channels(frame_->_audioChannel,
+                                                     frame_->_audioChannel));
+    ASSERT_EQ(apm_->kNoError,
+        apm_->set_num_reverse_channels(revframe_->_audioChannel));
 
-    EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(&capture_audio));
 
-    apm_->echo_cancellation()->stream_has_echo();
-    EXPECT_EQ(apm_->kNoError,
-              apm_->echo_cancellation()->GetMetrics(&echo_metrics));
+    int has_echo_count = 0;
+    int has_voice_count = 0;
+    int is_saturated_count = 0;
 
-    apm_->gain_control()->stream_analog_level();
-    apm_->gain_control()->stream_is_saturated();
+    while (1) {
+      WebRtc_Word16 temp_data[640];
+      int analog_level = 127;
 
-    EXPECT_EQ(apm_->kUnsupportedComponentError,
-              apm_->level_estimator()->GetMetrics(&near_metrics,
-                                                  &far_metrics));
+      // Read far-end frame
+      size_t read_count = fread(temp_data,
+                                sizeof(WebRtc_Word16),
+                                num_samples * 2,
+                                far_file_);
+      if (read_count != static_cast<size_t>(num_samples * 2)) {
+        // Check that the file really ended.
+        ASSERT_NE(0, feof(far_file_));
+        break; // This is expected.
+      }
 
-    apm_->voice_detection()->stream_has_voice();
-  }
+      if (revframe_->_audioChannel == 1) {
+        MixStereoToMono(temp_data, revframe_->_payloadData,
+            revframe_->_payloadDataLengthInSamples);
+      } else {
+        memcpy(revframe_->_payloadData,
+               &temp_data[0],
+               sizeof(WebRtc_Word16) * read_count);
+      }
 
-  // Test with real audio
-  // Loop through all possible combinations
-  // (# reverse channels, # channels, sample rates)
-  int rev_ch[] = {1, 2};
-  int ch[] = {1, 2};
-  int fs[] = {8000, 16000, 32000};
-  size_t rev_ch_size = sizeof(rev_ch) / sizeof(*rev_ch);
-  size_t ch_size = sizeof(ch) / sizeof(*ch);
-  size_t fs_size = sizeof(fs) / sizeof(*fs);
-  if (kReadStatFile) {
-    fread(&rev_ch_size, sizeof(rev_ch_size), 1, stat_file_);
-    fread(rev_ch, sizeof(int), rev_ch_size, stat_file_);
-    fread(&ch_size, sizeof(ch_size), 1, stat_file_);
-    fread(ch, sizeof(int), ch_size, stat_file_);
-    fread(&fs_size, sizeof(fs_size), 1, stat_file_);
-    fread(fs, sizeof(int), fs_size, stat_file_);
-  } else {
-    fwrite(&rev_ch_size, sizeof(int), 1, stat_file_);
-    fwrite(rev_ch, sizeof(int), rev_ch_size, stat_file_);
-    fwrite(&ch_size, sizeof(int), 1, stat_file_);
-    fwrite(ch, sizeof(int), ch_size, stat_file_);
-    fwrite(&fs_size, sizeof(int), 1, stat_file_);
-    fwrite(fs, sizeof(int), fs_size, stat_file_);
-  }
-  int test_count = 0;
-  for (size_t i_rev_ch = 0; i_rev_ch < rev_ch_size; i_rev_ch++) {
-    for (size_t i_ch = 0; i_ch < ch_size; i_ch++) {
-      for (size_t i_fs = 0; i_fs < fs_size; i_fs++) {
-        render_audio._payloadDataLengthInSamples = fs[i_fs] / 100;
-        render_audio._audioChannel = rev_ch[i_rev_ch];
-        render_audio._frequencyInHz = fs[i_fs];
-        capture_audio._payloadDataLengthInSamples = fs[i_fs] / 100;
-        capture_audio._audioChannel = ch[i_ch];
-        capture_audio._frequencyInHz = fs[i_fs];
+      EXPECT_EQ(apm_->kNoError,
+          apm_->AnalyzeReverseStream(revframe_));
 
-        EXPECT_EQ(apm_->kNoError, apm_->Initialize());
-        ASSERT_EQ(apm_->kNoError, apm_->set_sample_rate_hz(fs[i_fs]));
-        ASSERT_EQ(apm_->kNoError,
-            apm_->set_num_channels(capture_audio._audioChannel,
-                                   capture_audio._audioChannel));
-        ASSERT_EQ(apm_->kNoError,
-                  apm_->set_num_reverse_channels(render_audio._audioChannel));
-        EXPECT_EQ(apm_->kNoError,
-                  apm_->echo_cancellation()->enable_drift_compensation(false));
-        EXPECT_EQ(apm_->kNoError,
-                  apm_->echo_cancellation()->enable_metrics(true));
-        EXPECT_EQ(apm_->kNoError, apm_->echo_cancellation()->Enable(true));
+      EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(0));
+      EXPECT_EQ(apm_->kNoError,
+          apm_->echo_cancellation()->set_stream_drift_samples(0));
+      EXPECT_EQ(apm_->kNoError,
+          apm_->gain_control()->set_stream_analog_level(analog_level));
 
-        EXPECT_EQ(apm_->kNoError,
-                  apm_->gain_control()->set_mode(GainControl::kAdaptiveAnalog));
-        EXPECT_EQ(apm_->kNoError,
-                  apm_->gain_control()->set_analog_level_limits(0, 255));
-        EXPECT_EQ(apm_->kNoError, apm_->gain_control()->Enable(true));
+      // Read near-end frame
+      read_count = fread(temp_data,
+                         sizeof(WebRtc_Word16),
+                         num_samples * 2,
+                         near_file_);
+      if (read_count != static_cast<size_t>(num_samples * 2)) {
+        // Check that the file really ended.
+        ASSERT_NE(0, feof(near_file_));
+        break; // This is expected.
+      }
 
-        EXPECT_EQ(apm_->kNoError,
-                  apm_->high_pass_filter()->Enable(true));
+      if (frame_->_audioChannel == 1) {
+        MixStereoToMono(temp_data, frame_->_payloadData, num_samples);
+      } else {
+        memcpy(frame_->_payloadData,
+               &temp_data[0],
+               sizeof(WebRtc_Word16) * read_count);
+      }
 
-        //EXPECT_EQ(apm_->kNoError,
-        //          apm_->level_estimator()->Enable(true));
+      EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
 
-        EXPECT_EQ(apm_->kNoError,
-                  apm_->noise_suppression()->Enable(true));
+      if (apm_->echo_cancellation()->stream_has_echo()) {
+        has_echo_count++;
+      }
 
-        EXPECT_EQ(apm_->kNoError,
-                  apm_->voice_detection()->Enable(true));
-        bool runningFiles = true;
-        int echo_count = 0;
-        int vad_count = 0;
-        int sat_count = 0;
-        int analog_level = 127;
-        int sat_gain = 2;
-        size_t read_count = 0;
-        WebRtc_Word16 tmpData[640];
-        int tmp_int;
-
-        int echo_count_ref_ = 0;
-        int vad_count_ref_ = 0;
-        int sat_count_ref_ = 0;
-        //LevelEstimator::Metrics far_metrics_ref_;
-        //LevelEstimator::Metrics near_metrics_ref_;
-        EchoCancellation::Metrics echo_metrics_ref_;
-
-        while (runningFiles) {
-          // Read far end frame
-          read_count = fread(tmpData,
-                             sizeof(WebRtc_Word16),
-                             render_audio._payloadDataLengthInSamples * 2,
-                             far_file_);
-          if (read_count !=
-              static_cast<size_t>
-              (render_audio._payloadDataLengthInSamples * 2)) {
-            break; // This is expected.
-          }
-          if (render_audio._audioChannel == 1) {
-            for (int i = 0; i < render_audio._payloadDataLengthInSamples;
-                i++) {
-              tmp_int = (static_cast<int>(tmpData[i * 2]) +
-                  static_cast<int>(tmpData[i * 2 + 1])) >> 1;
-              render_audio._payloadData[i] =
-                  static_cast<WebRtc_Word16>(tmp_int);
-            }
-          } else {
-            memcpy(render_audio._payloadData,
-                   &tmpData[0],
-                   sizeof(WebRtc_Word16) * read_count);
-          }
-          EXPECT_EQ(apm_->kNoError,
-              apm_->AnalyzeReverseStream(&render_audio));
-
-          EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(0));
-          EXPECT_EQ(apm_->kNoError,
-              apm_->gain_control()->set_stream_analog_level(analog_level));
-
-          // Read near end frame
-          read_count = fread(tmpData,
-                             sizeof(WebRtc_Word16),
-                             capture_audio._payloadDataLengthInSamples * 2,
-                             near_file_);
-          if (read_count !=
-              static_cast<size_t>
-              (capture_audio._payloadDataLengthInSamples * 2)) {
-            break; // This is expected.
-          }
-          if (capture_audio._audioChannel == 1) {
-            for (int i = 0;
-                i < capture_audio._payloadDataLengthInSamples; i++) {
-              tmp_int = (static_cast<int>(tmpData[i * 2]) +
-                  static_cast<int>(tmpData[i * 2 + 1])) >> 1;
-              capture_audio._payloadData[i] =
-                  static_cast<WebRtc_Word16>(tmp_int);
-            }
-          } else {
-            memcpy(capture_audio._payloadData,
-                   &tmpData[0],
-                   sizeof(WebRtc_Word16) * read_count);
-          }
-          WebRtc_Word32 tmpF = 0;
-          for (size_t i = 0; i < read_count; i++) {
-            tmpF = (WebRtc_Word32)capture_audio._payloadData[i] * sat_gain;
-            if (tmpF > WEBRTC_SPL_WORD16_MAX) {
-              capture_audio._payloadData[i] = WEBRTC_SPL_WORD16_MAX;
-            } else if (tmpF < WEBRTC_SPL_WORD16_MIN) {
-              capture_audio._payloadData[i] = WEBRTC_SPL_WORD16_MIN;
-            } else {
-              capture_audio._payloadData[i] = static_cast<WebRtc_Word16>(tmpF);
-            }
-          }
-          EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(&capture_audio));
-
-          if (apm_->echo_cancellation()->stream_has_echo()) {
-            echo_count++;
-          }
-
-          analog_level = apm_->gain_control()->stream_analog_level();
-          if (apm_->gain_control()->stream_is_saturated()) {
-            sat_count++;
-            sat_gain = 1;
-          }
-          if (apm_->voice_detection()->stream_has_voice()) {
-            vad_count++;
-          }
-        }
-        //<-- Statistics -->
-        EXPECT_EQ(apm_->kNoError,
-                  apm_->echo_cancellation()->GetMetrics(&echo_metrics));
-        //EXPECT_EQ(apm_->kNoError,
-        //          apm_->level_estimator()->GetMetrics(&near_metrics,
-
-        // TODO(ajm): Perhaps we don't have to check every value? The average
-        //            could be sufficient. Or, how about hashing the output?
-        if (kReadStatFile) {
-          // Read from statData
-          fread(&echo_count_ref_, 1, sizeof(echo_count), stat_file_);
-          EXPECT_EQ(echo_count_ref_, echo_count);
-          fread(&echo_metrics_ref_,
-                1,
-                sizeof(EchoCancellation::Metrics),
-                stat_file_);
-          EXPECT_EQ(echo_metrics_ref_.residual_echo_return_loss.instant,
-                    echo_metrics.residual_echo_return_loss.instant);
-          EXPECT_EQ(echo_metrics_ref_.residual_echo_return_loss.average,
-                    echo_metrics.residual_echo_return_loss.average);
-          EXPECT_EQ(echo_metrics_ref_.residual_echo_return_loss.maximum,
-                    echo_metrics.residual_echo_return_loss.maximum);
-          EXPECT_EQ(echo_metrics_ref_.residual_echo_return_loss.minimum,
-                    echo_metrics.residual_echo_return_loss.minimum);
-          EXPECT_EQ(echo_metrics_ref_.echo_return_loss.instant,
-                    echo_metrics.echo_return_loss.instant);
-          EXPECT_EQ(echo_metrics_ref_.echo_return_loss.average,
-                    echo_metrics.echo_return_loss.average);
-          EXPECT_EQ(echo_metrics_ref_.echo_return_loss.maximum,
-                    echo_metrics.echo_return_loss.maximum);
-          EXPECT_EQ(echo_metrics_ref_.echo_return_loss.minimum,
-                    echo_metrics.echo_return_loss.minimum);
-          EXPECT_EQ(echo_metrics_ref_.echo_return_loss_enhancement.instant,
-                    echo_metrics.echo_return_loss_enhancement.instant);
-          EXPECT_EQ(echo_metrics_ref_.echo_return_loss_enhancement.average,
-                    echo_metrics.echo_return_loss_enhancement.average);
-          EXPECT_EQ(echo_metrics_ref_.echo_return_loss_enhancement.maximum,
-                    echo_metrics.echo_return_loss_enhancement.maximum);
-          EXPECT_EQ(echo_metrics_ref_.echo_return_loss_enhancement.minimum,
-                    echo_metrics.echo_return_loss_enhancement.minimum);
-          EXPECT_EQ(echo_metrics_ref_.a_nlp.instant,
-                    echo_metrics.a_nlp.instant);
-          EXPECT_EQ(echo_metrics_ref_.a_nlp.average,
-                    echo_metrics.a_nlp.average);
-          EXPECT_EQ(echo_metrics_ref_.a_nlp.maximum,
-                    echo_metrics.a_nlp.maximum);
-          EXPECT_EQ(echo_metrics_ref_.a_nlp.minimum,
-                    echo_metrics.a_nlp.minimum);
-
-          fread(&vad_count_ref_, 1, sizeof(vad_count), stat_file_);
-          EXPECT_EQ(vad_count_ref_, vad_count);
-          fread(&sat_count_ref_, 1, sizeof(sat_count), stat_file_);
-          EXPECT_EQ(sat_count_ref_, sat_count);
-
-          /*fread(&far_metrics_ref_,
-                1,
-                sizeof(LevelEstimator::Metrics),
-                stat_file_);
-          EXPECT_EQ(far_metrics_ref_.signal.instant,
-                    far_metrics.signal.instant);
-          EXPECT_EQ(far_metrics_ref_.signal.average,
-                    far_metrics.signal.average);
-          EXPECT_EQ(far_metrics_ref_.signal.maximum,
-                    far_metrics.signal.maximum);
-          EXPECT_EQ(far_metrics_ref_.signal.minimum,
-                    far_metrics.signal.minimum);
-
-          EXPECT_EQ(far_metrics_ref_.speech.instant,
-                    far_metrics.speech.instant);
-          EXPECT_EQ(far_metrics_ref_.speech.average,
-                    far_metrics.speech.average);
-          EXPECT_EQ(far_metrics_ref_.speech.maximum,
-                    far_metrics.speech.maximum);
-          EXPECT_EQ(far_metrics_ref_.speech.minimum,
-                    far_metrics.speech.minimum);
-
-          EXPECT_EQ(far_metrics_ref_.noise.instant,
-                    far_metrics.noise.instant);
-          EXPECT_EQ(far_metrics_ref_.noise.average,
-                    far_metrics.noise.average);
-          EXPECT_EQ(far_metrics_ref_.noise.maximum,
-                    far_metrics.noise.maximum);
-          EXPECT_EQ(far_metrics_ref_.noise.minimum,
-                    far_metrics.noise.minimum);
-
-          fread(&near_metrics_ref_,
-                1,
-                sizeof(LevelEstimator::Metrics),
-                stat_file_);
-          EXPECT_EQ(near_metrics_ref_.signal.instant,
-                    near_metrics.signal.instant);
-          EXPECT_EQ(near_metrics_ref_.signal.average,
-                    near_metrics.signal.average);
-          EXPECT_EQ(near_metrics_ref_.signal.maximum,
-                    near_metrics.signal.maximum);
-          EXPECT_EQ(near_metrics_ref_.signal.minimum,
-                    near_metrics.signal.minimum);
-
-          EXPECT_EQ(near_metrics_ref_.speech.instant,
-                    near_metrics.speech.instant);
-          EXPECT_EQ(near_metrics_ref_.speech.average,
-                    near_metrics.speech.average);
-          EXPECT_EQ(near_metrics_ref_.speech.maximum,
-                    near_metrics.speech.maximum);
-          EXPECT_EQ(near_metrics_ref_.speech.minimum,
-                    near_metrics.speech.minimum);
-
-          EXPECT_EQ(near_metrics_ref_.noise.instant,
-                    near_metrics.noise.instant);
-          EXPECT_EQ(near_metrics_ref_.noise.average,
-                    near_metrics.noise.average);
-          EXPECT_EQ(near_metrics_ref_.noise.maximum,
-                    near_metrics.noise.maximum);
-          EXPECT_EQ(near_metrics_ref_.noise.minimum,
-                    near_metrics.noise.minimum);*/
-        } else {
-          // Write to statData
-          fwrite(&echo_count, 1, sizeof(echo_count), stat_file_);
-          fwrite(&echo_metrics,
-                 1,
-                 sizeof(EchoCancellation::Metrics),
-                 stat_file_);
-          fwrite(&vad_count, 1, sizeof(vad_count), stat_file_);
-          fwrite(&sat_count, 1, sizeof(sat_count), stat_file_);
-          //fwrite(&far_metrics, 1, sizeof(LevelEstimator::Metrics), stat_file_);
-          //fwrite(&near_metrics, 1, sizeof(LevelEstimator::Metrics), stat_file_);
-        }
-
-        rewind(far_file_);
-        rewind(near_file_);
-        test_count++;
-        printf("Loop %d of %lu\n", test_count, rev_ch_size * ch_size * fs_size);
+      analog_level = apm_->gain_control()->stream_analog_level();
+      if (apm_->gain_control()->stream_is_saturated()) {
+        is_saturated_count++;
+      }
+      if (apm_->voice_detection()->stream_has_voice()) {
+        has_voice_count++;
       }
     }
-  }
-  if (!kReadStatFile) {
-    if (stat_file_ != NULL) {
-      ASSERT_EQ(0, fclose(stat_file_));
+
+    //<-- Statistics -->
+    //LevelEstimator::Metrics far_metrics;
+    //LevelEstimator::Metrics near_metrics;
+    //EchoCancellation::Metrics echo_metrics;
+    //LevelEstimator::Metrics far_metrics_ref_;
+    //LevelEstimator::Metrics near_metrics_ref_;
+    //EchoCancellation::Metrics echo_metrics_ref_;
+    //EXPECT_EQ(apm_->kNoError,
+    //          apm_->echo_cancellation()->GetMetrics(&echo_metrics));
+    //EXPECT_EQ(apm_->kNoError,
+    //          apm_->level_estimator()->GetMetrics(&near_metrics,
+
+    // TODO(ajm): check echo metrics and output audio.
+    if (global_read_output_data) {
+      EXPECT_EQ(has_echo_count,
+                test->hasechocount());
+      EXPECT_EQ(has_voice_count,
+                test->hasvoicecount());
+      EXPECT_EQ(is_saturated_count,
+                test->issaturatedcount());
+    } else {
+      test->set_hasechocount(has_echo_count);
+      test->set_hasvoicecount(has_voice_count);
+      test->set_issaturatedcount(is_saturated_count);
     }
-    stat_file_ = NULL;
+
+    rewind(far_file_);
+    rewind(near_file_);
   }
+
+  if (!global_read_output_data) {
+    WriteMessageLiteToFile("output_data.pb", output_data);
+  }
+
+  google::protobuf::ShutdownProtobufLibrary();
 }
 
 TEST_F(ApmTest, EchoCancellation) {
@@ -1013,11 +864,18 @@ TEST_F(VideoProcessingModuleTest, IdenticalResultsAfterReset)
 {
 }
 */
+}  // namespace
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  ApmEnvironment* env = new ApmEnvironment;
+  ApmEnvironment* env = new ApmEnvironment; // GTest takes ownership.
   ::testing::AddGlobalTestEnvironment(env);
+
+  for (int i = 1; i < argc; i++) {
+    if (strcmp(argv[i], "--write_output_data") == 0) {
+      global_read_output_data = false;
+    }
+  }
 
   return RUN_ALL_TESTS();
 }

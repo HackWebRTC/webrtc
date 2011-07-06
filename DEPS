@@ -21,6 +21,9 @@ deps = {
   "tools/gyp":
     "http://gyp.googlecode.com/svn/trunk@930",
 
+  "third_party/protobuf/":
+    Var("chromium_trunk") + "/src/third_party/protobuf@" + Var("chromium_revision"),
+
   "third_party/libvpx/":
     "git://review.webmproject.org/libvpx.git@v0.9.6",
 

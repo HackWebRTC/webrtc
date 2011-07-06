@@ -21,13 +21,15 @@
 
         '../../../../testing/gtest.gyp:gtest',
         '../../../../testing/gtest.gyp:gtest_main',
+        '../../../../third_party/protobuf/protobuf.gyp:protobuf_lite',
       ],
       'include_dirs': [
         '../../../../testing/gtest/include',
       ],
       'sources': [
         'test/unit_test/unit_test.cc',
-        'test/unit_test/unit_test.h',
+        'test/unit_test/audio_processing_unittest.pb.cc',
+        'test/unit_test/audio_processing_unittest.pb.h',
       ],
     },
     {
