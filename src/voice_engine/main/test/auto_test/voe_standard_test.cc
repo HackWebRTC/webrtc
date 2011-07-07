@@ -143,9 +143,13 @@ char micFile[256] = {0}; // Filename copied to buffer in code
 const char* micFile = "audio_long16bigendian.pcm";
 #elif defined(ANDROID)
 const char* micFile = "/sdcard/audio_long16.pcm";
+#elif defined(_WIN32)
+// File path is relative to the location of 'voice_engine.gyp'.
+const char* micFile = "../test/data/voice_engine/audio_long16.pcm";
+#elif defined(WEBRTC_LINUX)
+const char* micFile = "./test/data/voice_engine/audio_long16.pcm";
+#elif (defined(WEBRTC_MAC_INTEL) || defined(WEBRTC_MAC))
 #else
-const char* micFile =
-    "/tmp/audio_long16.pcm";
 #endif
 
 #if !defined(MAC_IPHONE)

@@ -37,43 +37,9 @@
         'voice_engine/main/test/auto_test/voe_unit_test.h',
       ],
       'conditions': [
-        ['OS=="linux" or OS=="mac"', {
-          'actions': [
-            {
-              'action_name': 'copy audio file',
-              'inputs': [
-                'test/data/voice_engine/audio_long16.pcm',
-              ],
-              'outputs': [
-                '/tmp/audio_long16.pcm',
-              ],
-              'action': [
-                '/bin/sh', '-c',
-                'cp -f test/data/voice_engine/audio_* /tmp/;'\
-              ],
-            },
-          ],
-        }],
         ['OS=="win"', {
           'dependencies': [
             'voice_engine.gyp:voe_ui_win_test',
-          ],
-        }],
-        ['OS=="win"', { 
-          'actions': [
-            {
-              'action_name': 'copy audio file',
-              'inputs': [
-                'test/data/voice_engine/audio_long16.pcm',
-              ],
-              'outputs': [
-                '/tmp/audio_long16.pcm',
-              ],
-              'action': [
-                'cmd', '/c',
-                'xcopy /Y /R .\\test\\data\\voice_engine\\audio_* \\tmp',
-              ],
-            },
           ],
         }],
       ],
@@ -116,21 +82,6 @@
             'voice_engine/main/test/win_test/res/WinTest.rc2',
             'voice_engine/main/test/win_test/stdafx.cpp',
             'voice_engine/main/test/win_test/stdafx.h',
-          ],
-          'actions': [
-            {
-              'action_name': 'copy audio file',
-              'inputs': [
-                'test/data/voice_engine/audio_tiny11.wav',
-              ],
-              'outputs': [
-                '/tmp/audio_tiny11.wav',
-              ],
-              'action': [
-                'cmd', '/c',
-                'xcopy /Y /R .\\test\\data\\voice_engine\\audio_* \\tmp',
-              ],
-            },
           ],
           'configurations': {
             'Common_Base': {
