@@ -11,7 +11,6 @@
 #include "rtp_format_vp8.h"
 
 #include <cassert>  // assert
-#include <math.h>   // ceil
 #include <string.h> // memcpy
 
 namespace webrtc {
@@ -20,13 +19,14 @@ namespace webrtc {
 // Modes are: kStrict, kAggregate, kSloppy.
 const RtpFormatVp8::AggregationMode RtpFormatVp8::aggr_modes_[kNumModes] =
     { kAggrNone, kAggrPartitions, kAggrFragments };
-const bool RtpFormatVp8::bal_modes_[kNumModes] =
+const bool RtpFormatVp8::balance_modes_[kNumModes] =
     { true, false, false };
-const bool RtpFormatVp8::sep_first_modes_[kNumModes] =
+const bool RtpFormatVp8::separate_first_modes_[kNumModes] =
     { true, false, false };
 
 RtpFormatVp8::RtpFormatVp8(const WebRtc_UWord8* payload_data,
                            WebRtc_UWord32 payload_size,
+                           const RTPVideoHeaderVP8& hdr_info,
                            const RTPFragmentationHeader& fragmentation,
                            VP8PacketizerMode mode)
     : payload_data_(payload_data),
@@ -37,14 +37,16 @@ RtpFormatVp8::RtpFormatVp8(const WebRtc_UWord8* payload_data,
       first_fragment_(true),
       vp8_header_bytes_(1),
       aggr_mode_(aggr_modes_[mode]),
-      balance_(bal_modes_[mode]),
-      separate_first_(sep_first_modes_[mode])
+      balance_(balance_modes_[mode]),
+      separate_first_(separate_first_modes_[mode]),
+      hdr_info_(hdr_info)
 {
     part_info_ = fragmentation;
 }
 
 RtpFormatVp8::RtpFormatVp8(const WebRtc_UWord8* payload_data,
-                           WebRtc_UWord32 payload_size)
+                           WebRtc_UWord32 payload_size,
+                           const RTPVideoHeaderVP8& hdr_info)
     : payload_data_(payload_data),
       payload_size_(static_cast<int>(payload_size)),
       part_info_(),
@@ -54,8 +56,9 @@ RtpFormatVp8::RtpFormatVp8(const WebRtc_UWord8* payload_data,
       first_fragment_(true),
       vp8_header_bytes_(1),
       aggr_mode_(aggr_modes_[kSloppy]),
-      balance_(bal_modes_[kSloppy]),
-      separate_first_(sep_first_modes_[kSloppy])
+      balance_(balance_modes_[kSloppy]),
+      separate_first_(separate_first_modes_[kSloppy]),
+      hdr_info_(hdr_info)
 {
     part_info_.VerifyAndAllocateFragmentationHeader(1);
     part_info_.fragmentationLength[0] = payload_size;
@@ -79,8 +82,7 @@ int RtpFormatVp8::CalcNextSize(int max_payload_len, int remaining_bytes,
         // Balance payload sizes to produce (almost) equal size
         // fragments.
         // Number of fragments for remaining_bytes:
-        int num_frags = ceil(
-            static_cast<double>(remaining_bytes) / max_payload_len);
+        int num_frags = remaining_bytes / max_payload_len + 1;
         // Number of bytes in this fragment:
         return static_cast<int>(static_cast<double>(remaining_bytes)
             / num_frags + 0.5);
@@ -98,8 +100,9 @@ int RtpFormatVp8::NextPacket(int max_payload_len, WebRtc_UWord8* buffer,
     const int num_partitions = part_info_.fragmentationVectorSize;
     int send_bytes = 0; // How much data to send in this packet.
     bool split_payload = true; // Splitting of partitions is initially allowed.
-    int remaining_in_partition = part_info_.fragmentationOffset[part_ix_]
-        - payload_bytes_sent_ + part_info_.fragmentationLength[part_ix_];
+    int remaining_in_partition = part_info_.fragmentationOffset[part_ix_] -
+        payload_bytes_sent_ + part_info_.fragmentationLength[part_ix_] +
+        FirstHeaderExtraLength(); // Add header extra length to payload length.
     int rem_payload_len = max_payload_len - vp8_header_bytes_;
 
     while (int next_size = CalcNextSize(rem_payload_len, remaining_in_partition,
@@ -137,9 +140,12 @@ int RtpFormatVp8::NextPacket(int max_payload_len, WebRtc_UWord8* buffer,
         ++part_ix_; // Advance to next partition.
     }
 
+    send_bytes -= FirstHeaderExtraLength(); // Remove the extra length again.
+    assert(send_bytes > 0);
     const bool end_of_fragment = (remaining_in_partition == 0);
     // Write the payload header and the payload to buffer.
-    *bytes_to_send = WriteHeaderAndPayload(send_bytes, end_of_fragment, buffer);
+    *bytes_to_send = WriteHeaderAndPayload(send_bytes, end_of_fragment, buffer,
+        max_payload_len);
     if (*bytes_to_send < 0)
     {
         return -1;
@@ -150,46 +156,99 @@ int RtpFormatVp8::NextPacket(int max_payload_len, WebRtc_UWord8* buffer,
     return 0;
 }
 
-int RtpFormatVp8::WriteHeaderAndPayload(int send_bytes,
+int RtpFormatVp8::WriteHeaderAndPayload(int payload_bytes,
                                         bool end_of_fragment,
-                                        WebRtc_UWord8* buffer)
+                                        WebRtc_UWord8* buffer,
+                                        int buffer_length)
 {
     // Write the VP8 payload header.
-    //  0 1 2 3 4 5 6 7
-    // +-+-+-+-+-+-+-+-+
-    // | RSV |I|N|FI |B|
-    // +-+-+-+-+-+-+-+-+
+    //  0                   1                   2
+    //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // | RSV |I|N|FI |B|   PictureID (1 or 2 octets)   |
+    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-    if (send_bytes < 0)
+    if (payload_bytes < 0)
     {
         return -1;
     }
-    if (payload_bytes_sent_ + send_bytes > payload_size_)
+    if (payload_bytes_sent_ + payload_bytes > payload_size_)
     {
         return -1;
     }
-
-    // PictureID always present in first packet
-    const int picture_id_present = beginning_;
-    // TODO(hlundin): must pipe this info from VP8 encoder
-    const int kNonrefFrame = 0;
 
     buffer[0] = 0;
-    if (picture_id_present) buffer[0] |= (0x01 << 4); // I
-    if (kNonrefFrame)       buffer[0] |= (0x01 << 3); // N
-    if (!first_fragment_)   buffer[0] |= (0x01 << 2); // FI
-    if (!end_of_fragment)   buffer[0] |= (0x01 << 1); // FI
-    if (beginning_)         buffer[0] |= 0x01; // B
+    if (hdr_info_.nonReference) buffer[0] |= (0x01 << 3); // N
+    if (!first_fragment_)       buffer[0] |= (0x01 << 2); // FI
+    if (!end_of_fragment)       buffer[0] |= (0x01 << 1); // FI
+    if (beginning_)             buffer[0] |= 0x01; // B
 
-    memcpy(&buffer[vp8_header_bytes_], &payload_data_[payload_bytes_sent_],
-           send_bytes);
+    int pic_id_len = WritePictureID(&buffer[vp8_header_bytes_],
+        buffer_length - vp8_header_bytes_);
+    if (pic_id_len < 0) return pic_id_len; // error
+    if (pic_id_len > 0) buffer[0] |= (0x01 << 4); // I
+
+    if (vp8_header_bytes_ + pic_id_len + payload_bytes > buffer_length)
+    {
+        return -1;
+    }
+    memcpy(&buffer[vp8_header_bytes_ + pic_id_len],
+        &payload_data_[payload_bytes_sent_], payload_bytes);
 
     beginning_ = false; // next packet cannot be first packet in frame
     // next packet starts new fragment if this ended one
     first_fragment_ = end_of_fragment;
-    payload_bytes_sent_ += send_bytes;
+    payload_bytes_sent_ += payload_bytes;
 
     // Return total length of written data.
-    return send_bytes + vp8_header_bytes_;
+    return payload_bytes + vp8_header_bytes_ + pic_id_len;
 }
+
+int RtpFormatVp8::WritePictureID(WebRtc_UWord8* buffer, int buffer_length) const
+{
+    const WebRtc_UWord16 pic_id =
+        static_cast<WebRtc_UWord16> (hdr_info_.pictureId);
+    int picture_id_len = PictureIdLength();
+    if (picture_id_len > buffer_length) return -1; // error
+    if (picture_id_len == 2)
+    {
+        buffer[0] = 0x80 | ((pic_id >> 8) & 0x7F);
+        buffer[1] = pic_id & 0xFF;
+    }
+    else if (picture_id_len == 1)
+    {
+        buffer[0] = pic_id & 0x7F;
+    }
+    return picture_id_len;
+}
+
+int RtpFormatVp8::FirstHeaderExtraLength() const
+{
+    if (!beginning_)
+    {
+        return 0;
+    }
+    int length = 0;
+
+    length += PictureIdLength();
+
+    return length;
+}
+
+int RtpFormatVp8::PictureIdLength() const
+{
+    if (!beginning_ || hdr_info_.pictureId == kNoPictureId)
+    {
+        return 0;
+    }
+    if (hdr_info_.pictureId <= 0x7F)
+    {
+        return 1;
+    }
+    else
+    {
+        return 2;
+    }
+}
+
 } // namespace webrtc
