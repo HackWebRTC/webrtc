@@ -9,52 +9,52 @@ vars = {
 }
 
 deps = {
-  "build":
+  "trunk/build":
     Var("chromium_trunk") + "/src/build@" + Var("chromium_revision"),
 
-  "testing":
+  "trunk/testing":
     Var("chromium_trunk") + "/src/testing@" + Var("chromium_revision"),
 
-  "testing/gtest":
+  "trunk/testing/gtest":
     "http://googletest.googlecode.com/svn/trunk@539",
 
-  "tools/gyp":
+  "trunk/tools/gyp":
     "http://gyp.googlecode.com/svn/trunk@930",
 
-  "third_party/protobuf/":
+  "trunk/third_party/protobuf/":
     Var("chromium_trunk") + "/src/third_party/protobuf@" + Var("chromium_revision"),
 
-  "third_party/libvpx/":
+  "trunk/third_party/libvpx/":
     "git://review.webmproject.org/libvpx.git@v0.9.6",
 
-  "third_party/libjpeg_turbo/":
+  "trunk/third_party/libjpeg_turbo/":
     Var("chromium_trunk") + "/deps/third_party/libjpeg_turbo@78340",
 
-  "third_party/yasm/":
+  "trunk/third_party/yasm/":
     Var("chromium_trunk") + "/src/third_party/yasm@" + Var("chromium_revision"),
 
-  "third_party/expat/":
+  "trunk/third_party/expat/":
     Var("chromium_trunk") + "/src/third_party/expat@" + Var("chromium_revision"),
 
-  "third_party/libjingle/":
+  "trunk/third_party/libjingle/":
     Var("chromium_trunk") + "/src/third_party/libjingle@" + Var("chromium_revision"),
 
-  "third_party/libjingle/source":
+  "trunk/third_party/libjingle/source":
     (Var("googlecode_url") % "libjingle") + "/branches/chrome-sandbox@" + Var("libjingle_revision"),
 
-  "third_party/yasm/source/patched-yasm":
+  "trunk/third_party/yasm/source/patched-yasm":
     Var("chromium_trunk") + "/deps/third_party/yasm/patched-yasm@73761",
   # Used by libjpeg-turbo
-  "third_party/yasm/binaries":
+  "trunk/third_party/yasm/binaries":
     Var("chromium_trunk") + "/deps/third_party/yasm/binaries@74228",
 
-  "third_party/jsoncpp/":
+  "trunk/third_party/jsoncpp/":
     "https://jsoncpp.svn.sourceforge.net/svnroot/jsoncpp/tags/jsoncpp/0.5.0",
 }
 
 deps_os = {
   "win": {
-    "third_party/cygwin/":
+    "trunk/third_party/cygwin/":
       Var("chromium_trunk") + "/deps/third_party/cygwin@66844",
   }
 }
@@ -62,19 +62,19 @@ deps_os = {
 hooks = [
   {
     "pattern": ".",
-    "action": ["svn", "export", Var("webrtc_trunk") + "/third_party_mods/libvpx/libvpx.gyp", "third_party/libvpx/libvpx.gyp", "--force"],
+    "action": ["svn", "export", Var("webrtc_trunk") + "/third_party_mods/libvpx/libvpx.gyp", "trunk/third_party/libvpx/libvpx.gyp", "--force"],
   },
   {
     "pattern": ".",
-    "action": ["svn", "export", Var("webrtc_trunk") + "/third_party_mods/libvpx/source/config", "third_party/libvpx/config", "--force"],
+   "action": ["svn", "export", Var("webrtc_trunk") + "/third_party_mods/libvpx/source/config", "trunk/third_party/libvpx/config", "--force"],
   },
   {
     "pattern": ".",
-    "action": ["svn", "export", Var("webrtc_trunk") + "/third_party_mods/libjingle", "third_party/libjingle", "--force"],
+    "action": ["svn", "export", Var("webrtc_trunk") + "/third_party_mods/libjingle", "trunk/third_party/libjingle", "--force"],
   },
   {
     "pattern": ".",
-    "action": ["svn", "export", Var("webrtc_trunk") + "/third_party_mods/jsoncpp", "third_party/jsoncpp", "--force"],
+    "action": ["svn", "export", Var("webrtc_trunk") + "/third_party_mods/jsoncpp", "trunk/third_party/jsoncpp", "--force"],
   },
   {
     # Create a supplement.gypi file under trunk/.  This file will be picked up
