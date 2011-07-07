@@ -41,10 +41,14 @@ struct RTPVideoHeaderH263
     bool bits;                    // H.263 mode B, Xor the lasy byte of previus packet with the
                                   // first byte of this packet
 };
+enum {kNoPictureId = -1};
 struct RTPVideoHeaderVP8
 {
-    bool         startBit;                          // Start of partition
-    bool         stopBit;                           // Stop of partition
+    bool           startBit;        // Start of partition.
+    bool           stopBit;         // Stop of partition.
+    WebRtc_Word16  pictureId;       // Picture ID index, 15 bits;
+                                    // kNoPictureId if PictureID does not exist.
+    bool           nonReference;    // Frame is discardable.
 };
 union RTPVideoTypeHeader
 {

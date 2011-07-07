@@ -27,6 +27,8 @@ struct CodecSpecificInfoVP8
     WebRtc_UWord8    pictureIdSLI;
     bool             hasReceivedRPSI;
     WebRtc_UWord64   pictureIdRPSI;
+    WebRtc_Word16    pictureId;         // negative value to skip pictureId
+    bool             nonReference;
 };
 
 union CodecSpecificInfoUnion

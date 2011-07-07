@@ -120,8 +120,7 @@ private:
                         const WebRtc_UWord8* payloadData,
                         const WebRtc_UWord32 payloadSize,
                         const RTPFragmentationHeader* fragmentation,
-                        const RTPVideoTypeHeader* /*rtpTypeHdr*/);
-    // TODO(hlundin): Remove comments once we start using rtpTypeHdr.
+                        const RTPVideoTypeHeader* rtpTypeHdr);
 
     // MPEG 4
     WebRtc_Word32 FindMPEG4NALU(const WebRtc_UWord8* inData ,WebRtc_Word32 MaxPayloadLength);

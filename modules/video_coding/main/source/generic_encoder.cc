@@ -247,7 +247,18 @@ void VCMEncodedFrameCallback::CopyCodecSpecific(const CodecSpecificInfo& info,
                                                 RTPVideoTypeHeader** rtp) {
     switch (info.codecType)
     {
-        //TODO(hlundin): Implement case for kVideoCodecVP8.
+        case kVideoCodecVP8: {
+            if (info.codecSpecific.VP8.pictureId < 0)
+            {
+                (*rtp)->VP8.pictureId = kNoPictureId;
+            }
+            else
+            {
+                (*rtp)->VP8.pictureId = info.codecSpecific.VP8.pictureId;
+            }
+            (*rtp)->VP8.nonReference = info.codecSpecific.VP8.nonReference;
+            return;
+        }
         default: {
             // No codec specific info. Change RTP header pointer to NULL.
             *rtp = NULL;
