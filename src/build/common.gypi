@@ -29,7 +29,7 @@
   },
   'target_defaults': {
     'include_dirs': [
-      '..', # common_types.h, typedefs.h
+      '..','../..', # common_types.h, typedefs.h
     ],
     'conditions': [
       ['OS=="linux"', {
