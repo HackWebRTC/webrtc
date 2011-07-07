@@ -147,9 +147,13 @@ const char* micFile = "/sdcard/audio_long16.pcm";
 // File path is relative to the location of 'voice_engine.gyp'.
 const char* micFile = "../test/data/voice_engine/audio_long16.pcm";
 #elif defined(WEBRTC_LINUX)
+// Assumes launch from command line: $ ./out/<Debug><Release>/audio_device_test_func
 const char* micFile = "./test/data/voice_engine/audio_long16.pcm";
 #elif (defined(WEBRTC_MAC_INTEL) || defined(WEBRTC_MAC))
+// Assumes that the working directory in Xcode is set to <path-to-src>/xcodebuild/<Debug><Release>.
+const char* micFile = "../../test/data/voice_engine/audio_long16.pcm";
 #else
+const char* micFile = "audio_long16.pcm";
 #endif
 
 #if !defined(MAC_IPHONE)
