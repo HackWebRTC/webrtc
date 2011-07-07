@@ -17,9 +17,14 @@
 //#define AECM_WITH_ABS_APPROX
 //#define AECM_SHORT                // for 32 sample partition length (otherwise 64)
 
+// TODO(bjornv): These defines will be removed in final version.
+//#define STORE_CHANNEL_DATA
+//#define VAD_DATA
+
 #include "typedefs.h"
 #include "signal_processing_library.h"
-#include "typedefs.h"
+// TODO(bjornv): Will be removed in final version.
+//#include <stdio.h>
 
 // Algorithm parameters
 
@@ -54,8 +59,10 @@
 #define CONV_LEN2       (CONV_LEN << 1) // Convergence length * 2 used at startup
 // Energy parameters
 #define MAX_BUF_LEN     64              // History length of energy signals
+
 #define FAR_ENERGY_MIN  1025            // Lowest Far energy level: At least 2 in energy
-#define FAR_ENERGY_DIFF 511             // Difference between max and min should be at least 2 (Q8)
+#define FAR_ENERGY_DIFF 929             // Allowed difference between max and min
+
 #define ENERGY_DEV_OFFSET       0       // The energy error offset in Q8
 #define ENERGY_DEV_TOL  400             // The energy estimation tolerance in Q8
 #define FAR_ENERGY_VAD_REGION   230     // Far VAD tolerance region
@@ -102,6 +109,7 @@ typedef struct
     int farBufReadPos;
     int knownDelay;
     int lastKnownDelay;
+    int firstVAD; // Parameter to control poorly initialized channels
 
     void *farFrameBuf;
     void *nearNoisyFrameBuf;
@@ -186,6 +194,23 @@ typedef struct
     WebRtc_Word16 supGainErrParamD;
     WebRtc_Word16 supGainErrParamDiffAB;
     WebRtc_Word16 supGainErrParamDiffBD;
+
+    // TODO(bjornv): Will be removed after final version has been committed.
+#ifdef VAD_DATA
+    FILE *vad_file;
+    FILE *delay_file;
+    FILE *far_file;
+    FILE *far_cur_file;
+    FILE *far_min_file;
+    FILE *far_max_file;
+    FILE *far_vad_file;
+#endif
+
+    // TODO(bjornv): Will be removed after final version has been committed.
+#ifdef STORE_CHANNEL_DATA
+    FILE *channel_file;
+    FILE *channel_file_init;
+#endif
 
 #ifdef AEC_DEBUG
     FILE *farFile;

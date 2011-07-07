@@ -15,6 +15,9 @@
 #include "echo_control_mobile.h"
 #include "typedefs.h"
 
+// TODO(bjornv): Will be removed in final version.
+//#include <stdio.h>
+
 #ifdef ARM_WINM_LOG
 #include <stdio.h>
 #include <windows.h>
@@ -72,6 +75,32 @@ static const WebRtc_UWord16 kAlpha3 = 26951;
 //Q15 beta = 0.57762063060713   const Factor for magnitude approximation
 static const WebRtc_UWord16 kBeta3 = 18927;
 
+// Initialization table for echo channel in 8 kHz
+static const WebRtc_Word16 kChannelStored8kHz[PART_LEN1] = {
+    2040,   1815,   1590,   1498,   1405,   1395,   1385,   1418,
+    1451,   1506,   1562,   1644,   1726,   1804,   1882,   1918,
+    1953,   1982,   2010,   2025,   2040,   2034,   2027,   2021,
+    2014,   1997,   1980,   1925,   1869,   1800,   1732,   1683,
+    1635,   1604,   1572,   1545,   1517,   1481,   1444,   1405,
+    1367,   1331,   1294,   1270,   1245,   1239,   1233,   1247,
+    1260,   1282,   1303,   1338,   1373,   1407,   1441,   1470,
+    1499,   1524,   1549,   1565,   1582,   1601,   1621,   1649,
+    1676
+};
+
+// Initialization table for echo channel in 16 kHz
+static const WebRtc_Word16 kChannelStored16kHz[PART_LEN1] = {
+    2040,   1590,   1405,   1385,   1451,   1562,   1726,   1882,
+    1953,   2010,   2040,   2027,   2014,   1980,   1869,   1732,
+    1635,   1572,   1517,   1444,   1367,   1294,   1245,   1233,
+    1260,   1303,   1373,   1441,   1499,   1549,   1582,   1621,
+    1676,   1741,   1802,   1861,   1921,   1983,   2040,   2102,
+    2170,   2265,   2375,   2515,   2651,   2781,   2922,   3075,
+    3253,   3471,   3738,   3976,   4151,   4258,   4308,   4288,
+    4270,   4253,   4237,   4179,   4086,   3947,   3757,   3484,
+    3153
+};
+
 #ifdef ARM_WINM_LOG
 HANDLE logFile = NULL;
 #endif
@@ -106,7 +135,7 @@ static __inline WebRtc_UWord32 WebRtcAecm_SetBit(WebRtc_UWord32 in, WebRtc_Word3
 void WebRtcAecm_Hisser(const WebRtc_UWord32 specvec, const WebRtc_UWord32 * const specmat,
                        WebRtc_UWord32 * const bcount)
 {
-    int n, sum;
+    int n;
     WebRtc_UWord32 a, b;
     register WebRtc_UWord32 tmp;
 
@@ -114,7 +143,6 @@ void WebRtcAecm_Hisser(const WebRtc_UWord32 specvec, const WebRtc_UWord32 * cons
     // compare binary vector specvec with all rows of the binary matrix specmat
     for (n = 0; n < MAX_DELAY; n++)
     {
-        sum = 0;
         b = specmat[n];
         a = (specvec ^ b);
         // Returns bit counts in tmp
@@ -298,9 +326,22 @@ int WebRtcAecm_InitCore(AecmCore_t * const aecm, int samplingFreq)
     memset(aecm->echoAdaptLogEnergy, 0, sizeof(WebRtc_Word16) * MAX_BUF_LEN);
     memset(aecm->echoStoredLogEnergy, 0, sizeof(WebRtc_Word16) * MAX_BUF_LEN);
 
-    memset(aecm->channelAdapt16, 0, sizeof(WebRtc_Word16) * PART_LEN1);
-    memset(aecm->channelAdapt32, 0, sizeof(WebRtc_Word32) * PART_LEN1);
-    memset(aecm->channelStored, 0, sizeof(WebRtc_Word16) * PART_LEN1);
+    // Initialize the echo channels with a stored shape.
+    if (samplingFreq == 8000)
+    {
+        memcpy(aecm->channelAdapt16, kChannelStored8kHz, sizeof(WebRtc_Word16) * PART_LEN1);
+    }
+    else
+    {
+        memcpy(aecm->channelAdapt16, kChannelStored16kHz, sizeof(WebRtc_Word16) * PART_LEN1);
+    }
+    memcpy(aecm->channelStored, aecm->channelAdapt16, sizeof(WebRtc_Word16) * PART_LEN1);
+    for (i = 0; i < PART_LEN1; i++)
+    {
+        aecm->channelAdapt32[i] = WEBRTC_SPL_LSHIFT_W32(
+            (WebRtc_Word32)(aecm->channelAdapt16[i]), 16);
+    }
+
     memset(aecm->echoFilt, 0, sizeof(WebRtc_Word32) * PART_LEN1);
     memset(aecm->nearFilt, 0, sizeof(WebRtc_Word16) * PART_LEN1);
     aecm->noiseEstCtr = 0;
@@ -356,10 +397,12 @@ int WebRtcAecm_InitCore(AecmCore_t * const aecm, int samplingFreq)
     aecm->farEnergyMin = WEBRTC_SPL_WORD16_MAX;
     aecm->farEnergyMax = WEBRTC_SPL_WORD16_MIN;
     aecm->farEnergyMaxMin = 0;
-    aecm->farEnergyVAD = 0;
+    aecm->farEnergyVAD = FAR_ENERGY_MIN; // This prevents false speech detection at the
+                                         // beginning.
     aecm->farEnergyMSE = 0;
     aecm->currentVADValue = 0;
     aecm->vadUpdateCount = 0;
+    aecm->firstVAD = 1;
 
     aecm->delayCount = 0;
     aecm->newDelayCorrData = 0;
@@ -720,6 +763,10 @@ void WebRtcAecm_CalcEnergies(AecmCore_t * const aecm, const WebRtc_Word16 delayD
 
     WebRtc_Word16 zeros, frac;
     WebRtc_Word16 tmp16;
+    WebRtc_Word16 increase_max_shifts = 4;
+    WebRtc_Word16 decrease_max_shifts = 11;
+    WebRtc_Word16 increase_min_shifts = 11;
+    WebRtc_Word16 decrease_min_shifts = 3;
 
     // Get log of near end energy and store in buffer
 
@@ -731,8 +778,9 @@ void WebRtcAecm_CalcEnergies(AecmCore_t * const aecm, const WebRtc_Word16 delayD
     if (nearEner)
     {
         zeros = WebRtcSpl_NormU32(nearEner);
-        frac
-                = (WebRtc_Word16)WEBRTC_SPL_RSHIFT_U32((WEBRTC_SPL_LSHIFT_U32(nearEner, zeros) & 0x7FFFFFFF), 23);
+        frac = (WebRtc_Word16)WEBRTC_SPL_RSHIFT_U32(
+                              (WEBRTC_SPL_LSHIFT_U32(nearEner, zeros) & 0x7FFFFFFF),
+                              23);
         // log2 in Q8
         aecm->nearLogEnergy[0] = WEBRTC_SPL_LSHIFT_W16((31 - zeros), 8) + frac;
         aecm->nearLogEnergy[0] -= WEBRTC_SPL_LSHIFT_W16(aecm->dfaNoisyQDomain, 8);
@@ -751,7 +799,6 @@ void WebRtcAecm_CalcEnergies(AecmCore_t * const aecm, const WebRtc_Word16 delayD
 
     for (i = 0; i < PART_LEN1; i++)
     {
-        tmpFar += (WebRtc_UWord32)aecm->xfaHistory[i][delayDiff];
         // Get estimated echo energies for adaptive channel and stored channel
         echoEst[i] = WEBRTC_SPL_MUL_16_U16(aecm->channelStored[i],
                 aecm->xfaHistory[i][delayDiff]);
@@ -818,16 +865,17 @@ void WebRtcAecm_CalcEnergies(AecmCore_t * const aecm, const WebRtc_Word16 delayD
     // Update farend energy levels (min, max, vad, mse)
     if (aecm->farLogEnergy[0] > FAR_ENERGY_MIN)
     {
-        tmp16 = 11;
         if (aecm->startupState == 0)
         {
-            tmp16 = 8;
+            increase_max_shifts = 2;
+            decrease_min_shifts = 2;
+            increase_min_shifts = 8;
         }
 
         aecm->farEnergyMin = WebRtcAecm_AsymFilt(aecm->farEnergyMin, aecm->farLogEnergy[0],
-                                                 tmp16, 3);
-        aecm->farEnergyMax = WebRtcAecm_AsymFilt(aecm->farEnergyMax, aecm->farLogEnergy[0], 4,
-                                                 11);
+                                                 increase_min_shifts, decrease_min_shifts);
+        aecm->farEnergyMax = WebRtcAecm_AsymFilt(aecm->farEnergyMax, aecm->farLogEnergy[0],
+                                                 increase_max_shifts, decrease_max_shifts);
         aecm->farEnergyMaxMin = (aecm->farEnergyMax - aecm->farEnergyMin);
 
         // Dynamic VAD region size
@@ -873,7 +921,32 @@ void WebRtcAecm_CalcEnergies(AecmCore_t * const aecm, const WebRtc_Word16 delayD
     {
         aecm->currentVADValue = 0;
     }
+    if ((aecm->currentVADValue) && (aecm->firstVAD))
+    {
+        aecm->firstVAD = 0;
+        if (aecm->echoAdaptLogEnergy[0] > aecm->nearLogEnergy[0])
+        {
+            // The estimated echo has higher energy than the near end signal. This means that
+            // the initialization was too aggressive. Scale down by a factor 8
+            for (i = 0; i < PART_LEN1; i++)
+            {
+                aecm->channelAdapt16[i] >>= 3;
+            }
+            // Compensate the adapted echo energy level accordingly.
+            aecm->echoAdaptLogEnergy[0] -= (3 << 8);
+            aecm->firstVAD = 1;
+        }
+    }
     // END: Energies of delayed far, echo estimates
+    // TODO(bjornv): Will be removed in final version.
+#ifdef VAD_DATA
+    fwrite(&(aecm->currentVADValue), sizeof(WebRtc_Word16), 1, aecm->vad_file);
+    fwrite(&(aecm->currentDelay), sizeof(WebRtc_Word16), 1, aecm->delay_file);
+    fwrite(&(aecm->farLogEnergy[0]), sizeof(WebRtc_Word16), 1, aecm->far_cur_file);
+    fwrite(&(aecm->farEnergyMin), sizeof(WebRtc_Word16), 1, aecm->far_min_file);
+    fwrite(&(aecm->farEnergyMax), sizeof(WebRtc_Word16), 1, aecm->far_max_file);
+    fwrite(&(aecm->farEnergyVAD), sizeof(WebRtc_Word16), 1, aecm->far_vad_file);
+#endif
 }
 
 // WebRtcAecm_CalcStepSize(...)
@@ -928,7 +1001,7 @@ WebRtc_Word16 WebRtcAecm_CalcStepSize(AecmCore_t * const aecm)
 // This function performs channel estimation. NLMS and decision on channel storage.
 //
 //
-// @param  aecm          [i/o]   Handle of the AECM instance.
+// @param  aecm         [i/o]   Handle of the AECM instance.
 // @param  dfa          [in]    Absolute value of the nearend signal (Q[aecm->dfaQDomain])
 // @param  delayDiff    [in]    Delay position in farend buffer.
 // @param  mu           [in]    NLMS step size.
@@ -1075,6 +1148,10 @@ void WebRtcAecm_UpdateChannel(AecmCore_t * const aecm, const WebRtc_UWord16 * co
     {
         // During startup we store the channel every block.
         memcpy(aecm->channelStored, aecm->channelAdapt16, sizeof(WebRtc_Word16) * PART_LEN1);
+        // TODO(bjornv): Will be removed in final version.
+#ifdef STORE_CHANNEL_DATA
+        fwrite(aecm->channelStored, sizeof(WebRtc_Word16), PART_LEN1, aecm->channel_file_init);
+#endif
         // Recalculate echo estimate
 #if (!defined ARM_WINM) && (!defined ARM9E_GCC) && (!defined ANDROID_AECOPT)
         for (i = 0; i < PART_LEN1; i++)
@@ -1172,7 +1249,12 @@ void WebRtcAecm_UpdateChannel(AecmCore_t * const aecm, const WebRtc_UWord16 * co
                 // calculations. Store the adaptive channel.
                 memcpy(aecm->channelStored, aecm->channelAdapt16,
                        sizeof(WebRtc_Word16) * PART_LEN1);
-                // Recalculate echo estimate
+                // TODO(bjornv): Will be removed in final version.
+#ifdef STORE_CHANNEL_DATA
+                fwrite(aecm->channelStored, sizeof(WebRtc_Word16), PART_LEN1,
+                       aecm->channel_file);
+#endif
+// Recalculate echo estimate
 #if (!defined ARM_WINM) && (!defined ARM9E_GCC) && (!defined ANDROID_AECOPT)
                 for (i = 0; i < PART_LEN1; i++)
                 {
@@ -1507,6 +1589,10 @@ void WebRtcAecm_ProcessBlock(AecmCore_t * const aecm, const WebRtc_Word16 * cons
     {
         memcpy(aecm->dBufClean + PART_LEN, nearendClean, sizeof(WebRtc_Word16) * PART_LEN);
     }
+    // TODO(bjornv): Will be removed in final version.
+#ifdef VAD_DATA
+    fwrite(aecm->xBuf, sizeof(WebRtc_Word16), PART_LEN, aecm->far_file);
+#endif
 
 #ifdef AECM_DYNAMIC_Q
     tmp16no1 = WebRtcSpl_MaxAbsValueW16(aecm->dBufNoisy, PART_LEN2);
@@ -1973,8 +2059,6 @@ void WebRtcAecm_ProcessBlock(AecmCore_t * const aecm, const WebRtc_Word16 * cons
     // Calculate stepsize
     mu = WebRtcAecm_CalcStepSize(aecm);
 
-    // END: Update step size
-
     // Update counters
     aecm->totCount++;
     aecm->lastDelayUpdateCount++;
@@ -1992,8 +2076,6 @@ void WebRtcAecm_ProcessBlock(AecmCore_t * const aecm, const WebRtc_Word16 * cons
     milliseconds = (unsigned int)(diff__ & 0xffffffff);
     WriteFile (logFile, &milliseconds, sizeof(unsigned int), &temp, NULL);
 #endif
-
-    // END: Update suppression gain
 
 #ifdef ARM_WINM_LOG_
     // measure tick start
