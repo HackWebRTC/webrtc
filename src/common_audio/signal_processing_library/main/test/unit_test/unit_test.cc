@@ -147,6 +147,7 @@ TEST_F(SplTest, MathOperationsTest) {
     WebRtc_Word32 den = -5;
     WebRtc_UWord16 denU = 5;
     EXPECT_EQ(10, WebRtcSpl_Sqrt(A));
+    EXPECT_EQ(10, WebRtcSpl_SqrtFloor(A));
 
 
     EXPECT_EQ(-91772805, WebRtcSpl_DivResultInQ31(den, num));

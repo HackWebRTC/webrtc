@@ -379,6 +379,7 @@ WebRtc_Word16 WebRtcSpl_RandUArray(WebRtc_Word16* vector,
 
 // Math functions
 WebRtc_Word32 WebRtcSpl_Sqrt(WebRtc_Word32 value);
+WebRtc_Word32 WebRtcSpl_SqrtFloor(WebRtc_Word32 value);
 
 // Divisions. Implementations collected in division_operations.c and
 // descriptions at bottom of this file.
@@ -1312,6 +1313,23 @@ void WebRtcSpl_SynthesisQMF(const WebRtc_Word16* low_band,
 // x = y-1
 //   = 1+(x/2)-0.5*((x/2)^2+0.5*((x/2)^3-0.625*((x/2)^4+0.875*((x/2)^5)
 // 0.5 <= x < 1
+//
+// Input:
+//      - value     : Value to calculate sqrt of
+//
+// Return value     : Result of the sqrt calculation
+//
+
+//
+// WebRtcSpl_SqrtFloor(...)
+//
+// Returns the square root of the input value |value|. The precision of this
+// function is rounding down integer precision, i.e., sqrt(8) gives 2 as answer.
+// If |value| is a negative number then 0 is returned.
+//
+// Algorithm:
+//
+// An iterative 4 cylce/bit routine
 //
 // Input:
 //      - value     : Value to calculate sqrt of
