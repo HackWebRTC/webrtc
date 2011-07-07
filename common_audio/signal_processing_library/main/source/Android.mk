@@ -53,20 +53,13 @@ LOCAL_SRC_FILES := add_sat_w16.c \
     resample_fractional.c \
     sin_table.c \
     sin_table_1024.c \
+    spl_sqrt.c \
     spl_version.c \
     splitting_filter.c \
     sqrt_of_one_minus_x_squared.c \
     sub_sat_w16.c \
     sub_sat_w32.c \
     vector_scaling_operations.c
-
-ifeq ($(TARGET_ARCH), arm)
-LOCAL_SRC_FILES += \
-    spl_sqrt.s
-else
-LOCAL_SRC_FILES += \
-    spl_sqrt.c
-endif
 
 # Flags passed to both C and C++ files.
 MY_CFLAGS :=  
