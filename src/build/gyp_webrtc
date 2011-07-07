@@ -1,0 +1,91 @@
+#!/usr/bin/env python
+
+# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+#
+# Use of this source code is governed by a BSD-style license
+# that can be found in the LICENSE file in the root of the source
+# tree. An additional intellectual property rights grant can be found
+# in the file PATENTS.  All contributing project authors may
+# be found in the AUTHORS file in the root of the source tree.
+
+# This is a gyp wrapper for WebRTC that adds some support for how gyp
+# is invoked beyond what can be done in the gclient hooks.
+
+import glob
+import os
+import shlex
+import sys
+
+script_dir = os.path.dirname(__file__)
+webrtc_src = os.path.abspath(os.path.join(script_dir, os.pardir))
+
+sys.path.append(os.path.join(webrtc_src, '../', 'tools', 'gyp', 'pylib'))
+import gyp
+
+def additional_include_files(args=[]):
+  """
+  Returns a list of additional (.gypi) files to include, without
+  duplicating ones that are already specified on the command line.
+  """
+  # Determine the include files specified on the command line.
+  # This doesn't cover all the different option formats you can use,
+  # but it's mainly intended to avoid duplicating flags on the automatic
+  # makefile regeneration which only uses this format.
+  specified_includes = set()
+  for arg in args:
+    if arg.startswith('-I') and len(arg) > 2:
+      specified_includes.add(os.path.realpath(arg[2:]))
+
+  result = []
+  def AddInclude(path):
+    if os.path.realpath(path) not in specified_includes:
+      result.append(path)
+
+  # Always include common.gypi & features_override.gypi
+  AddInclude(os.path.join(script_dir, 'common_standalone.gypi'))
+  #AddInclude(os.path.join(script_dir, 'features_override.gypi'))
+
+  # Optionally add supplemental .gypi files if present.
+  supplements = glob.glob(os.path.join(webrtc_src, '*', 'supplement.gypi'))
+  for supplement in supplements:
+    AddInclude(supplement)
+
+  return result
+
+if __name__ == '__main__':
+  args = sys.argv[1:]
+
+  # This could give false positives since it doesn't actually do real option
+  # parsing.  Oh well.
+  gyp_file_specified = False
+  for arg in args:
+    if arg.endswith('.gyp'):
+      gyp_file_specified = True
+      break
+
+  # If we didn't get a file, check an env var, and then fall back to
+  # assuming 'all.gyp' from the same directory as the script.
+  if not gyp_file_specified:
+    gyp_file = os.environ.get('WEBRTC_GYP_FILE')
+    if gyp_file:
+      # Note that CHROMIUM_GYP_FILE values can't have backslashes as
+      # path separators even on Windows due to the use of shlex.split().
+      args.extend(shlex.split(gyp_file))
+    else:
+      # TODO(ajm): move webrtc.gyp to script_dir?
+      args.append(os.path.join(webrtc_src, 'webrtc.gyp'))
+
+  args.extend(['-I' + i for i in additional_include_files(args)])
+
+  # Pick depth explicitly.
+  args += ['--depth', '.']
+
+  #Building WebRTC as standalone (not as part of Chrome)
+  #args += ['-D', 'webrtc_standalone=1']
+  args += ['-D', 'build_with_chromium=0']
+
+  print 'Updating projects from gyp files...'
+  sys.stdout.flush()
+
+  # Off we go...
+  sys.exit(gyp.main(args))

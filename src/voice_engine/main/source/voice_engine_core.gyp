@@ -1,0 +1,127 @@
+# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+#
+# Use of this source code is governed by a BSD-style license
+# that can be found in the LICENSE file in the root of the source
+# tree. An additional intellectual property rights grant can be found
+# in the file PATENTS.  All contributing project authors may
+# be found in the AUTHORS file in the root of the source tree.
+
+{
+  'includes': [
+    '../../../common_settings.gypi',
+  ],
+  'targets': [
+    {
+      'target_name': 'voice_engine_core',
+      'type': '<(library)',
+      'dependencies': [
+        '../../../common_audio/resampler/main/source/resampler.gyp:resampler',
+        '../../../common_audio/signal_processing_library/main/source/spl.gyp:spl',
+        '../../../modules/audio_coding/main/source/audio_coding_module.gyp:audio_coding_module',
+        '../../../modules/audio_conference_mixer/source/audio_conference_mixer.gyp:audio_conference_mixer',
+        '../../../modules/audio_device/main/source/audio_device.gyp:audio_device',
+        '../../../modules/audio_processing/main/source/apm.gyp:audio_processing',
+        '../../../modules/media_file/source/media_file.gyp:media_file',
+        '../../../modules/rtp_rtcp/source/rtp_rtcp.gyp:rtp_rtcp',
+        '../../../modules/udp_transport/source/udp_transport.gyp:udp_transport',
+        '../../../modules/utility/source/utility.gyp:webrtc_utility',
+        '../../../system_wrappers/source/system_wrappers.gyp:system_wrappers',
+      ],
+      'include_dirs': [
+        '../../..',
+        '../interface',
+      ],
+      'direct_dependent_settings': {
+        'include_dirs': [
+          '../../..',
+          '../interface',
+        ],
+      },
+      'sources': [
+        '../../../common_types.h',
+        '../../../engine_configurations.h',
+        '../../../typedefs.h',
+        '../interface/voe_audio_processing.h',
+        '../interface/voe_base.h',
+        '../interface/voe_call_report.h',
+        '../interface/voe_codec.h',
+        '../interface/voe_dtmf.h',
+        '../interface/voe_encryption.h',
+        '../interface/voe_errors.h',
+        '../interface/voe_external_media.h',
+        '../interface/voe_file.h',
+        '../interface/voe_hardware.h',
+        '../interface/voe_neteq_stats.h',
+        '../interface/voe_network.h',
+        '../interface/voe_rtp_rtcp.h',
+        '../interface/voe_video_sync.h',
+        '../interface/voe_volume_control.h',
+        'audio_frame_operations.cc',
+        'audio_frame_operations.h',
+        'channel.cc',
+        'channel.h',
+        'channel_manager.cc',
+        'channel_manager.h',
+        'channel_manager_base.cc',
+        'channel_manager_base.h',
+        'dtmf_inband.cc',
+        'dtmf_inband.h',
+        'dtmf_inband_queue.cc',
+        'dtmf_inband_queue.h',
+        'level_indicator.cc',
+        'level_indicator.h',
+        'monitor_module.cc',
+        'monitor_module.h',
+        'output_mixer.cc',
+        'output_mixer.h',
+        'ref_count.cc',
+        'ref_count.h',
+        'shared_data.cc',
+        'shared_data.h',
+        'statistics.cc',
+        'statistics.h',
+        'transmit_mixer.cc',
+        'transmit_mixer.h',
+        'utility.cc',
+        'utility.h',
+        'voe_audio_processing_impl.cc',
+        'voe_audio_processing_impl.h',
+        'voe_base_impl.cc',
+        'voe_base_impl.h',
+        'voe_call_report_impl.cc',
+        'voe_call_report_impl.h',
+        'voe_codec_impl.cc',
+        'voe_codec_impl.h',
+        'voe_dtmf_impl.cc',
+        'voe_dtmf_impl.h',
+        'voe_encryption_impl.cc',
+        'voe_encryption_impl.h',
+        'voe_external_media_impl.cc',
+        'voe_external_media_impl.h',
+        'voe_file_impl.cc',
+        'voe_file_impl.h',
+        'voe_hardware_impl.cc',
+        'voe_hardware_impl.h',
+        'voe_neteq_stats_impl.cc',
+        'voe_neteq_stats_impl.h',
+        'voe_network_impl.cc',
+        'voe_network_impl.h',
+        'voe_rtp_rtcp_impl.cc',
+        'voe_rtp_rtcp_impl.h',
+        'voe_video_sync_impl.cc',
+        'voe_video_sync_impl.h',
+        'voe_volume_control_impl.cc',
+        'voe_volume_control_impl.h',
+        'voice_engine_defines.h',
+        'voice_engine_impl.cc',
+        'voice_engine_impl.h',
+      ],
+    },
+  ],
+}
+
+# Local Variables:
+# tab-width:2
+# indent-tabs-mode:nil
+# End:
+# vim: set expandtab tabstop=2 shiftwidth=2:
