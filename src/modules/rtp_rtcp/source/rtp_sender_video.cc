@@ -1195,17 +1195,6 @@ RTPSenderVideo::SendH263MBs(const FrameType frameType,
     return 0;
 }
 
-/*
-0                   1                   2                   3
-0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-| RSV |I|N|FI |B|     PictureID (integer #bytes)                |
-+-+-+-+-+-+-+-+-+                                               |
-:                                                               :
-|               +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|               : (VP8 data or VP8 payload header; byte aligned)|
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-*/
 WebRtc_Word32
 RTPSenderVideo::SendVP8(const FrameType frameType,
                         const WebRtc_Word8 payloadType,
@@ -1227,7 +1216,9 @@ RTPSenderVideo::SendVP8(const FrameType frameType,
     WebRtc_UWord16 maxPayloadLengthVP8 = _rtpSender.MaxPayloadLength()
         - FECPacketOverhead() - rtpHeaderLength;
 
-    RtpFormatVp8 packetizer(data, payloadBytesToSend, *fragmentation, kStrict);
+    assert(rtpTypeHdr);
+    RtpFormatVp8 packetizer(data, payloadBytesToSend, rtpTypeHdr->VP8,
+                            *fragmentation, kStrict);
 
     bool last = false;
     while (!last)

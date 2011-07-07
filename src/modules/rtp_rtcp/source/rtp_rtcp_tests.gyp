@@ -8,24 +8,23 @@
 
 {
   'includes': [
-    '../../../../common_settings.gypi', # Common settings
+    '../../../common_settings.gypi', # Common settings
   ],
   'targets': [
     {
-      'target_name': 'test_rtp_format_vp8',
+      'target_name': 'rtp_format_vp8_unittest',
       'type': 'executable',
       'dependencies': [
-        '../../source/rtp_rtcp.gyp:rtp_rtcp',
-        '../../../../../testing/gtest.gyp:gtest',
-        '../../../../../testing/gtest.gyp:gtest_main',
+        'rtp_rtcp.gyp:rtp_rtcp',
+        '../../../../testing/gtest.gyp:gtest',
+        '../../../../testing/gtest.gyp:gtest_main',
       ],
       'include_dirs': [
-        '../../source',
+        '.',
       ],
       'sources': [
-        'unit_test.h',
-        'unit_test.cc',
-        '../../source/rtp_format_vp8.cc',
+        'rtp_format_vp8_unittest.h',
+        'rtp_format_vp8_unittest.cc',
       ],
     },
   ],

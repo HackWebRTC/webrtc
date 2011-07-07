@@ -241,7 +241,7 @@ VP8Encoder::InitEncode(const VideoCodec* inst,
     _height = inst->height;
 
     // random start 16 bits is enough
-    _pictureID = (WebRtc_UWord16)rand();
+    _pictureID = ((WebRtc_UWord16)rand()) % 0x7FFF;
 
     // allocate memory for encoded image
     if (_encodedImage._buffer != NULL)
@@ -535,26 +535,16 @@ VP8Encoder::Encode(const RawImage& inputImage,
     }
     else if (pkt->kind == VPX_CODEC_CX_FRAME_PKT)
     {
-        // attach Picture ID
-        // we use 14 bits generating 1 or 2 bytes
-        // TODO(hlundin): update to follow latest RTP spec
-        WebRtc_UWord8 pictureIdSize = 2;
-        // TODO(hlundin): we should refactor this so that the pictureID is
-        // signaled through a codec specific struct and added in the RTP module.
-        if (_pictureID > 0x7f)
-        {
-            // more than 7 bits
-            _encodedImage._buffer[0] = 0x80 | (WebRtc_UWord8)(_pictureID >> 7);
-            _encodedImage._buffer[1] = (WebRtc_UWord8)(_pictureID & 0x7f);
-        }
-        else
-        {
-            _encodedImage._buffer[0] = (WebRtc_UWord8)_pictureID;
-            pictureIdSize = 1;
-        }
+        CodecSpecificInfo codecSpecific;
+        codecSpecific.codecType = kVideoCodecVP8;
+        CodecSpecificInfoVP8 *vp8Info = &(codecSpecific.codecSpecific.VP8);
 
-        memcpy(_encodedImage._buffer+pictureIdSize, pkt->data.frame.buf, pkt->data.frame.sz);
-        _encodedImage._length = WebRtc_UWord32(pkt->data.frame.sz) + pictureIdSize;
+        vp8Info->pictureId = _pictureID;
+        vp8Info->nonReference
+            = (pkt->data.frame.flags & VPX_FRAME_IS_DROPPABLE);
+
+        memcpy(_encodedImage._buffer, pkt->data.frame.buf, pkt->data.frame.sz);
+        _encodedImage._length = WebRtc_UWord32(pkt->data.frame.sz);
         _encodedImage._encodedHeight = _raw->h;
         _encodedImage._encodedWidth = _raw->w;
 
@@ -574,12 +564,10 @@ VP8Encoder::Encode(const RawImage& inputImage,
 
             // First partition
             fragInfo.fragmentationOffset[0] = 0;
-            WebRtc_UWord8 *firstByte = &_encodedImage._buffer[pictureIdSize];
+            WebRtc_UWord8 *firstByte = _encodedImage._buffer;
             WebRtc_UWord32 tmpSize = (firstByte[2] << 16) | (firstByte[1] << 8)
                 | firstByte[0];
             fragInfo.fragmentationLength[0] = (tmpSize >> 5) & 0x7FFFF;
-            // Let the PictureID belong to the first partition.
-            fragInfo.fragmentationLength[0] += pictureIdSize;
             fragInfo.fragmentationPlType[0] = 0; // not known here
             fragInfo.fragmentationTimeDiff[0] = 0;
 
@@ -590,10 +578,11 @@ VP8Encoder::Encode(const RawImage& inputImage,
             fragInfo.fragmentationPlType[1] = 0; // not known here
             fragInfo.fragmentationTimeDiff[1] = 0;
 
-            _encodedCompleteCallback->Encoded(_encodedImage, NULL, &fragInfo);
+            _encodedCompleteCallback->Encoded(_encodedImage, &codecSpecific,
+                &fragInfo);
         }
 
-        _pictureID++; // prepare next
+        _pictureID = (_pictureID + 1) % 0x7FFF; // prepare next
         return WEBRTC_VIDEO_CODEC_OK;
     }
     return WEBRTC_VIDEO_CODEC_ERROR;
@@ -732,18 +721,16 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
     }
     vpx_dec_iter_t _iter = NULL;
     vpx_image_t* img;
-    WebRtc_UWord64 pictureID = 0;
 
     // scan for number of bytes used for picture ID
-    WebRtc_UWord8 numberOfBytes;
-    for (numberOfBytes = 0;(inputImage._buffer[numberOfBytes] & 0x80 ) &&
-         numberOfBytes < 8; numberOfBytes++)
+    WebRtc_UWord64 pictureID = inputImage._buffer[0] & 0x7F;
+    WebRtc_UWord8 numberOfBytes = 1;
+    if (inputImage._buffer[0] & 0x80)
     {
-        pictureID += inputImage._buffer[numberOfBytes] & 0x7f;
-        pictureID <<= 7;
+        pictureID <<= 8;
+        pictureID += inputImage._buffer[1];
+        ++numberOfBytes;
     }
-    pictureID += inputImage._buffer[numberOfBytes] & 0x7f;
-    numberOfBytes++;
 
     // check for missing frames
     if (missingFrames)

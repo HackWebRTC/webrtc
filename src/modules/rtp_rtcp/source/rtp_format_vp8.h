@@ -47,21 +47,23 @@ public:
     // The payload_data must be exactly one encoded VP8 frame.
     RtpFormatVp8(const WebRtc_UWord8* payload_data,
                  WebRtc_UWord32 payload_size,
+                 const RTPVideoHeaderVP8& hdr_info,
                  const RTPFragmentationHeader& fragmentation,
                  VP8PacketizerMode mode);
 
     // Initialize without fragmentation info. Mode kSloppy will be used.
     // The payload_data must be exactly one encoded VP8 frame.
     RtpFormatVp8(const WebRtc_UWord8* payload_data,
-                 WebRtc_UWord32 payload_size);
+                 WebRtc_UWord32 payload_size,
+                 const RTPVideoHeaderVP8& hdr_info);
 
     // Get the next payload with VP8 payload header.
     // max_payload_len limits the sum length of payload and VP8 payload header.
     // buffer is a pointer to where the output will be written.
     // bytes_to_send is an output variable that will contain number of bytes
-    // written to buffer.
-    // Returns true for the last packet of the frame, false otherwise (i.e.,
-    // call the function again to get the next packet).
+    // written to buffer. Parameter last_packet is true for the last packet of
+    // the frame, false otherwise (i.e., call the function again to get the
+    // next packet). Returns negative on error, zero otherwise.
     int NextPacket(int max_payload_len, WebRtc_UWord8* buffer,
                    int* bytes_to_send, bool* last_packet);
 
@@ -74,8 +76,8 @@ private:
     };
 
     static const AggregationMode aggr_modes_[kNumModes];
-    static const bool bal_modes_[kNumModes];
-    static const bool sep_first_modes_[kNumModes];
+    static const bool balance_modes_[kNumModes];
+    static const bool separate_first_modes_[kNumModes];
 
     // Calculate size of next chunk to send. Returns 0 if none can be sent.
     int CalcNextSize(int max_payload_len, int remaining_bytes,
@@ -86,7 +88,20 @@ private:
     // last_fragment indicates that this packet ends with the last byte of a
     // partition.
     int WriteHeaderAndPayload(int send_bytes, bool end_of_fragment,
-                              WebRtc_UWord8* buffer);
+                              WebRtc_UWord8* buffer, int buffer_length);
+
+    // Write the PictureID from codec_specific_info_ to buffer. One or two
+    // bytes are written, depending on magnitude of PictureID. The function
+    // returns the number of bytes written.
+    int WritePictureID(WebRtc_UWord8* buffer, int buffer_length) const;
+
+    // Calculate and return length (octets) of the variable header fields in
+    // the next header (i.e., header length in addition to vp8_header_bytes_).
+    int FirstHeaderExtraLength() const;
+
+    // Calculate and return length (octets) of PictureID field in the next
+    // header. Can be 0, 1, or 2.
+    int PictureIdLength() const;
 
     const WebRtc_UWord8* payload_data_;
     const int payload_size_;
@@ -95,10 +110,11 @@ private:
     int part_ix_;
     bool beginning_; // first partition in this frame
     bool first_fragment_; // first fragment of a partition
-    const int vp8_header_bytes_; // length of VP8 payload header
+    const int vp8_header_bytes_; // length of VP8 payload header's fixed part
     AggregationMode aggr_mode_;
     bool balance_;
     bool separate_first_;
+    const RTPVideoHeaderVP8 hdr_info_;
 };
 
 }
