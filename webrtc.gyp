@@ -8,22 +8,22 @@
 
 {
   'includes': [
-    'common_settings.gypi', # Common settings
+    'src/common_settings.gypi', # Common settings
   ],
  'targets': [
     {
       'target_name': 'auto_tests',
       'type': 'none',
       'dependencies': [
-        'voice_engine.gyp:voe_auto_test',
-        'video_engine.gyp:vie_auto_test',
+        'src/voice_engine.gyp:voe_auto_test',
+        'src/video_engine.gyp:vie_auto_test',
       ],
     },
     {
       'target_name': 'cmd_test',
       'type': 'none',
       'dependencies': [
-        'voice_engine.gyp:voe_cmd_test',
+        'src/voice_engine.gyp:voe_cmd_test',
       ],
     },    
     {
@@ -56,8 +56,8 @@
             'peerconnection/samples/client/main_wnd.h',
             'peerconnection/samples/client/peer_connection_client.cc',
             'peerconnection/samples/client/peer_connection_client.h',
-            '../third_party/libjingle/source/talk/base/win32socketinit.cc',
-            '../third_party/libjingle/source/talk/base/win32socketserver.cc',
+            'third_party/libjingle/source/talk/base/win32socketinit.cc',
+            'third_party/libjingle/source/talk/base/win32socketserver.cc',
           ],
           'msvs_settings': {
             'VCLinkerTool': {
@@ -65,10 +65,10 @@
             },
           },
           'dependencies': [
-            '../third_party/libjingle/libjingle.gyp:libjingle_app',
+            'third_party/libjingle/libjingle.gyp:libjingle_app',
           ],
           'include_dirs': [
-            '../third_party/libjingle/source',
+            'third_party/libjingle/source',
           ],
         },
       ],  # targets

@@ -81,12 +81,12 @@ hooks = [
     # by gyp and we use it to set Chromium related variables (inside_chromium_build)
     # to 0 and enable the standalone build.
     "pattern": ".",
-    "action": ["python", "trunk/tools/create_supplement_gypi.py", "trunk/supplement.gypi"],
+    "action": ["python", "trunk/tools/create_supplement_gypi.py", "trunk/src/supplement.gypi"],
   },
   # A change to a .gyp, .gypi, or to GYP itself should run the generator.
   {
     "pattern": ".",
-    "action": ["python", "build/gyp_chromium", "--depth=.", "trunk/webrtc.gyp"],
+    "action": ["python", "trunk/build/gyp_chromium", "--depth=.", "trunk/webrtc.gyp"],
   },
 ]
 
