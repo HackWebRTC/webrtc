@@ -192,8 +192,8 @@ TEST_F(MapWrapperTest,RemoveTest) {
     EXPECT_TRUE(last_value == kNumberOfElements - 1);    
     EXPECT_EQ(last_value_id, last_value);
     EXPECT_FALSE(NULL == ascending_map_.Find(last_value_id));
-    ascending_map_.Erase(last_value_id);
     EXPECT_TRUE(DeleteItemContent(item_last));
+    ascending_map_.Erase(last_value_id);
     EXPECT_TRUE(NULL == ascending_map_.Find(last_value_id));
     EXPECT_EQ(kNumberOfElements-2,ascending_map_.Size());
 }
