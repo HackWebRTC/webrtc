@@ -1897,10 +1897,6 @@ int WebRtcNsx_ProcessCore(NsxInst_t *inst, short *speechFrame, short *speechFram
         return -1;
     }
 
-    // Update block index
-    inst->blockIndex++;
-    //
-
     // Store speechFrame and transform to frequency domain
     WebRtcNsx_DataAnalysis(inst, speechFrame, magnU16);
 
@@ -1923,6 +1919,10 @@ int WebRtcNsx_ProcessCore(NsxInst_t *inst, short *speechFrame, short *speechFram
         } // end of H band gain computation
         return 0;
     }
+
+    // Update block index when we have something to process
+    inst->blockIndex++;
+    //
 
     // Norm of magn
     qMagn = inst->normData - inst->stages;

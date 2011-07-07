@@ -872,8 +872,6 @@ int WebRtcNs_ProcessCore(NSinst_t *inst,
         deltaGainHB = deltaBweHB;
     }
     //
-    inst->blockInd++;
-    //
     updateParsFlag = inst->modelUpdatePars[0];
     //
 
@@ -980,6 +978,8 @@ int WebRtcNs_ProcessCore(NSinst_t *inst,
             return 0;
         }
 
+        //
+        inst->blockInd++; // Update the block index only when we process a block.
         // FFT
         rdft(inst->anaLen, 1, winData, inst->ip, inst->wfft);
 
