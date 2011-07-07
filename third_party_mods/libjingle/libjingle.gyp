@@ -526,8 +526,8 @@
         }, {
           'dependencies': [
               'libjingle',
-              '../../trunk/src/video_engine/main/source/video_engine_core.gyp:video_engine_core',
-              '../../trunk/src/voice_engine/main/source/voice_engine_core.gyp:voice_engine_core',
+              '../../src/video_engine/main/source/video_engine_core.gyp:video_engine_core',
+              '../../src/voice_engine/main/source/voice_engine_core.gyp:voice_engine_core',
           ],
         } ],  # inside_chromium_build
       ],  # conditions
@@ -586,10 +586,10 @@
         }, {
           'dependencies': [
             '../../third_party/jsoncpp/jsoncpp.gyp:jsoncpp',
-            '../../trunk/modules/video_capture/main/source/video_capture.gyp:video_capture_module',
-            '../../trunk/src/video_engine/main/source/video_engine_core.gyp:video_engine_core',
-            '../../trunk/src/voice_engine/main/source/voice_engine_core.gyp:voice_engine_core',
-            '../../trunk/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+            '../../src/modules/video_capture/main/source/video_capture.gyp:video_capture_module',
+            '../../src/video_engine/main/source/video_engine_core.gyp:video_engine_core',
+            '../../src/voice_engine/main/source/voice_engine_core.gyp:voice_engine_core',
+            '../../src/system_wrappers/source/system_wrappers.gyp:system_wrappers',
             'libjingle_p2p',
           ],
         } ],  # inside_chromium_build
@@ -627,9 +627,9 @@
         }, {
           'dependencies': [
             '../../third_party/jsoncpp/jsoncpp.gyp:jsoncpp',
-            '../../trunk/modules/video_capture/main/source/video_capture.gyp:video_capture_module',
-            '../../trunk/src/voice_engine/main/source/voice_engine_core.gyp:voice_engine_core',
-            '../../trunk/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+            '../../src/modules/video_capture/main/source/video_capture.gyp:video_capture_module',
+            '../../src/voice_engine/main/source/voice_engine_core.gyp:voice_engine_core',
+            '../../src/system_wrappers/source/system_wrappers.gyp:system_wrappers',
             'libjingle_app',
           ],
         } ],  # inside_chromium_build
