@@ -86,7 +86,7 @@ hooks = [
   # A change to a .gyp, .gypi, or to GYP itself should run the generator.
   {
     "pattern": ".",
-    "action": ["python", "trunk/build/gyp_chromium", "--depth=.", "trunk/webrtc.gyp"],
+    "action": ["python", "trunk/build/gyp_chromium", "--depth=trunk", "trunk/webrtc.gyp"],
   },
 ]
 
