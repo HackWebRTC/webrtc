@@ -226,8 +226,13 @@ WebRtc_Word32 VideoX11Channel::ReleaseWindow()
                  __FUNCTION__);
     CriticalSectionScoped cs(_crit);
 
-    return RemoveRenderer();
-
+    RemoveRenderer();
+    if (_display)
+    {
+        XCloseDisplay(_display);
+        _display = NULL;
+    }
+    return 0;
 }
 
 WebRtc_Word32 VideoX11Channel::CreateLocalRenderer(WebRtc_Word32 width,
@@ -290,6 +295,7 @@ WebRtc_Word32 VideoX11Channel::RemoveRenderer()
     XShmDetach(_display, &_shminfo);
     XDestroyImage( _image );
     shmdt(_shminfo.shmaddr);
+    XFreeGC(_display, _gc);
 
     return 0;
 }

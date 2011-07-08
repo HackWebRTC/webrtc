@@ -153,6 +153,7 @@ ViEEncoder::~ViEEncoder()
     delete &_rtpRtcp;
     delete &_callbackCritsect;
     delete &_dataCritsect;
+    delete _qmCallback;
 }
 
 // ============================================================================
