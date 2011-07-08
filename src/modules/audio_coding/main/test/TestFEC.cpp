@@ -58,7 +58,7 @@ void TestFEC::Perform()
         WEBRTC_TRACE(webrtc::kTraceStateInfo, webrtc::kTraceAudioCoding, -1,
                      "---------- TestFEC ----------");
     }
-    char fileName[] = "./modules/audio_coding/main/test/testfile32kHz.pcm";
+    char fileName[] = "./test/data/audio_coding/testfile32kHz.pcm";
     _inFileA.Open(fileName, 32000, "rb");
 
 
@@ -605,12 +605,12 @@ void TestFEC::Run()
 
 void TestFEC::OpenOutFile(WebRtc_Word16 testNumber)
 {
-    char fileName[500] = "./modules/audio_coding/main/test/res_tests/TestFEC_outFile_";
+    char fileName[500] = "./src/modules/audio_coding/main/test/TestFEC_outFile_";
     char cntrStr[10];
 
     if(_testMode == 0)
     {
-        sprintf(fileName, "./modules/audio_coding/main/test/res_autotests/TestFEC_outFile_");
+        sprintf(fileName, "./src/modules/audio_coding/main/test/TestFEC_autoFile_");
     }
     sprintf(cntrStr, "%02d.pcm", testNumber);
     strcat(fileName, cntrStr);

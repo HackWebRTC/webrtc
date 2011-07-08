@@ -48,14 +48,14 @@ void Receiver::Setup(AudioCodingModule *acm, RTPStream *rtpStream)
     {
       playSampFreq=recvCodec.plfreq;
       //output file for current run
-      sprintf(filename,"./modules/audio_coding/main/test/res_tests/out%dFile.pcm",codeId);
+      sprintf(filename,"./src/modules/audio_coding/main/test/out%dFile.pcm",codeId);
       _pcmFile.Open(filename, recvCodec.plfreq, "wb+");
     }
     else if (testMode == 0)
     {
         playSampFreq=32000;
       //output file for current run
-      sprintf(filename,"./modules/audio_coding/main/test/res_autotests/encodeDecode_out%d.pcm",codeId);
+      sprintf(filename,"./src/modules/audio_coding/main/test/encodeDecode_out%d.pcm",codeId);
       _pcmFile.Open(filename, 32000/*recvCodec.plfreq*/, "wb+");
     }
     else
@@ -64,7 +64,7 @@ void Receiver::Setup(AudioCodingModule *acm, RTPStream *rtpStream)
         printf("8000\n16000\n32000\n-1, which means output freq equal to received signal freq");
         printf("\n\nChoose output sampling frequency: ");       
         scanf("%d", &playSampFreq);
-        char fileName[] = "./modules/audio_coding/main/test/outFile.pcm";
+        char fileName[] = "./src/modules/audio_coding/main/test/outFile.pcm";
         _pcmFile.Open(fileName, 32000, "wb+");
     }
      

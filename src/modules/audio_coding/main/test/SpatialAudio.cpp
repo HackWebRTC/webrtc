@@ -55,7 +55,7 @@ SpatialAudio::Setup()
     WebRtc_Word8 audioFileName[MAX_FILE_NAME_LENGTH_BYTE];
     WebRtc_UWord16 sampFreqHz = 32000;
 
-    strncpy(audioFileName, "./modules/audio_coding/main/test/testfile32kHz.pcm",
+    strncpy(audioFileName, "./test/data/audio_coding/testfile32kHz.pcm",
             MAX_FILE_NAME_LENGTH_BYTE - 1);
     if(_testMode == 1)
     {
@@ -66,20 +66,20 @@ SpatialAudio::Setup()
 
     if(_testMode == 0)
     {
-        strncpy(audioFileName, "./modules/audio_coding/main/test/res_autotests/out_spatial_autotest.pcm",
+        strncpy(audioFileName, "./src/modules/audio_coding/main/test/out_spatial_autotest.pcm",
                 MAX_FILE_NAME_LENGTH_BYTE - 1);
     }
     else if(_testMode == 1)
     {
         printf("\n");
-        strncpy(audioFileName, "./modules/audio_coding/main/test/res_tests/testspatial_out.pcm",
+        strncpy(audioFileName, "./src/modules/audio_coding/main/test/testspatial_out.pcm",
                 MAX_FILE_NAME_LENGTH_BYTE - 1);
         printf("Enter the output file [%s]: ", audioFileName);
         PCMFile::ChooseFile(audioFileName, MAX_FILE_NAME_LENGTH_BYTE, &sampFreqHz);
     }
     else
     {
-        strncpy(audioFileName, "./modules/audio_coding/main/test/res_tests/testspatial_out.pcm",
+        strncpy(audioFileName, "./src/modules/audio_coding/main/test/testspatial_out.pcm",
                         MAX_FILE_NAME_LENGTH_BYTE - 1);
     }
     _outFile.Open(audioFileName, sampFreqHz, "wb", false);

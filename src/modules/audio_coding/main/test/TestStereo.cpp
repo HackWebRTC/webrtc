@@ -202,7 +202,7 @@ void TestStereo::Perform()
                        "---------- TestStereo ----------");
       }
 
-     strcpy(fileName, "./modules/audio_coding/main/test/teststereo32kHz.pcm");
+     strcpy(fileName, "./test/data/audio_coding/teststereo32kHz.pcm");
      frequencyHz = 32000;
 
     _inFileA.Open(fileName, frequencyHz, "rb");
@@ -529,7 +529,7 @@ void TestStereo::Run(TestPackStereo* channel)
 
 void TestStereo::OpenOutFile(WebRtc_Word16 testNumber)
 {
-    char fileName[500] = "./modules/audio_coding/main/test/res_tests/teststereo_out_";
+    char fileName[500] = "./src/modules/audio_coding/main/test/teststereo_out_";
     char cntrStr[10];
 
     sprintf(cntrStr, "%02d.pcm", testNumber);

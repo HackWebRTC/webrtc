@@ -195,7 +195,7 @@ WebRtc_Word16 TwoWayCommunication::SetUp()
     WebRtc_UWord16 frequencyHz;
     
     //--- Input A
-    strcpy(fileName, "./modules/audio_coding/main/test/testfile32kHz.pcm");
+    strcpy(fileName, "./test/data/audio_coding/testfile32kHz.pcm");
     frequencyHz = 32000;
     printf("Enter input file at side A [%s]: ", fileName);
     ChooseFile(fileName, 499, &frequencyHz);
@@ -214,7 +214,7 @@ WebRtc_Word16 TwoWayCommunication::SetUp()
     _outFileRefA.Open(refFileName, frequencyHz, "wb");
 
     //--- Input B
-    strcpy(fileName, "./modules/audio_coding/main/test/testfile32kHz.pcm");
+    strcpy(fileName, "./test/data/audio_coding/testfile32kHz.pcm");
     frequencyHz = 32000;
     printf("\n\nEnter input file at side B [%s]: ", fileName);
     ChooseFile(fileName, 499, &frequencyHz);
@@ -302,27 +302,27 @@ WebRtc_Word16 TwoWayCommunication::SetUpAutotest()
 
 
     //--- Input A
-    strcpy(fileName, "./modules/audio_coding/main/test/testfile32kHz.pcm");
+    strcpy(fileName, "./test/data/audio_coding/testfile32kHz.pcm");
     frequencyHz = 16000;
     _inFileA.Open(fileName, frequencyHz, "rb");
 
     //--- Output A
-    strcpy(fileName, "./modules/audio_coding/main/test/res_autotests/outAutotestA.pcm");
+    strcpy(fileName, "./src/modules/audio_coding/main/test/outAutotestA.pcm");
     frequencyHz = 16000;
     _outFileA.Open(fileName, frequencyHz, "wb");
-    strcpy(refFileName, "./modules/audio_coding/main/test/res_autotests/ref_outAutotestA.pcm");
+    strcpy(refFileName, "./src/modules/audio_coding/main/test/ref_outAutotestA.pcm");
     _outFileRefA.Open(refFileName, frequencyHz, "wb");
 
     //--- Input B
-    strcpy(fileName, "./modules/audio_coding/main/test/testfile32kHz.pcm");
+    strcpy(fileName, "./test/data/audio_coding/testfile32kHz.pcm");
     frequencyHz = 16000;
     _inFileB.Open(fileName, frequencyHz, "rb");
 
     //--- Output B
-    strcpy(fileName, "./modules/audio_coding/main/test/res_autotests/outAutotestB.pcm");
+    strcpy(fileName, "./src/modules/audio_coding/main/test/outAutotestB.pcm");
     frequencyHz = 16000;
     _outFileB.Open(fileName, frequencyHz, "wb");
-    strcpy(refFileName, "./modules/audio_coding/main/test/res_autotests/ref_outAutotestB.pcm");
+    strcpy(refFileName, "./src/modules/audio_coding/main/test/ref_outAutotestB.pcm");
     _outFileRefB.Open(refFileName, frequencyHz, "wb");
 
     //--- Set A-to-B channel

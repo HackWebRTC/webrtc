@@ -69,7 +69,7 @@ void Sender::Setup(AudioCodingModule *acm, RTPStream *rtpStream)
         //set the codec, input file, and parameters for the current test    
         codecNo = codeId;
         //use same input file for now
-        char fileName[] = "./modules/audio_coding/main/test/testfile32kHz.pcm";
+        char fileName[] = "./test/data/audio_coding/testfile32kHz.pcm";
         _pcmFile.Open(fileName, 32000, "rb");
     }
     else if (testMode == 0)
@@ -78,7 +78,7 @@ void Sender::Setup(AudioCodingModule *acm, RTPStream *rtpStream)
         codecNo = codeId;
         acm->Codec(codecNo, sendCodec);
         //use same input file for now
-        char fileName[] = "./modules/audio_coding/main/test/testfile32kHz.pcm";
+        char fileName[] = "./test/data/audio_coding/testfile32kHz.pcm";
         _pcmFile.Open(fileName, 32000, "rb");
     }
     else
@@ -92,7 +92,7 @@ void Sender::Setup(AudioCodingModule *acm, RTPStream *rtpStream)
         printf("Choose your codec:");
     
         scanf("%d", &codecNo);
-        char fileName[] = "./modules/audio_coding/main/test/testfile32kHz.pcm";
+        char fileName[] = "./test/data/audio_coding/testfile32kHz.pcm";
         _pcmFile.Open(fileName, 32000, "rb");
     }
 

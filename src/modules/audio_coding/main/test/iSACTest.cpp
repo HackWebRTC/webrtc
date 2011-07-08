@@ -183,7 +183,7 @@ ISACTest::Setup()
     CHECK_ERROR(_acmB->RegisterTransportCallback(_channel_B2A));
     _channel_B2A->RegisterReceiverACM(_acmA);
 
-    strncpy(_fileNameSWB, "./modules/audio_coding/main/test/testfile32kHz.pcm",
+    strncpy(_fileNameSWB, "./test/data/audio_coding/testfile32kHz.pcm",
             MAX_FILE_NAME_LENGTH_BYTE);
 
     _acmB->RegisterSendCodec(_paramISAC16kHz);
@@ -201,15 +201,15 @@ ISACTest::Setup()
     _inFileA.Open(_fileNameSWB, 32000, "rb");
     if(_testMode == 0)
     {
-        char fileNameA[] = "./modules/audio_coding/main/test/res_autotests/testisac_a.pcm";
-        char fileNameB[] = "./modules/audio_coding/main/test/res_autotests/testisac_b.pcm";
+        char fileNameA[] = "./src/modules/audio_coding/main/test/testisac_a.pcm";
+        char fileNameB[] = "./src/modules/audio_coding/main/test/testisac_b.pcm";
         _outFileA.Open(fileNameA, 32000, "wb");
         _outFileB.Open(fileNameB, 32000, "wb");
     }
     else
     {
-        char fileNameA[] = "./modules/audio_coding/main/test/res_tests/testisac_a.pcm";
-        char fileNameB[] = "./modules/audio_coding/main/test/res_tests/testisac_b.pcm";
+        char fileNameA[] = "./src/modules/audio_coding/main/test/testisac_a.pcm";
+        char fileNameB[] = "./src/modules/audio_coding/main/test/testisac_b.pcm";
         _outFileA.Open(fileNameA, 32000, "wb");
         _outFileB.Open(fileNameB, 32000, "wb");
     }
@@ -394,14 +394,14 @@ ISACTest::EncodeDecode(
     if(_testMode == 0)
     {
         sprintf(fileNameOut,
-                "./modules/audio_coding/main/test/res_autotests/out_iSACTest_%s_%02d.pcm",
+                "./src/modules/audio_coding/main/test/out_iSACTest_%s_%02d.pcm",
                 "A",
                 testNr);
     }
     else
     {
         sprintf(fileNameOut,
-                "./modules/audio_coding/main/test/res_tests/out%s_%02d.pcm",
+                "./src/modules/audio_coding/main/test/out%s_%02d.pcm",
                 "A",
                 testNr);
     }
@@ -412,14 +412,14 @@ ISACTest::EncodeDecode(
     if(_testMode == 0)
     {
         sprintf(fileNameOut,
-                "./modules/audio_coding/main/test/res_autotests/out_iSACTest_%s_%02d.pcm",
+                "./src/modules/audio_coding/main/test/out_iSACTest_%s_%02d.pcm",
                 "B",
                 testNr);
     }
     else
     {
         sprintf(fileNameOut,
-                "./modules/audio_coding/main/test/res_tests/out%s_%02d.pcm",
+                "./src/modules/audio_coding/main/test/out%s_%02d.pcm",
                 "B",
                 testNr);
     }
@@ -503,7 +503,7 @@ ISACTest::SwitchingSamplingRate(
     if(_testMode == 0)
     {
         sprintf(fileNameOut,
-                "./modules/audio_coding/main/test/res_autotests/out_iSACTest_%s_%02d.pcm",
+                "./src/modules/audio_coding/main/test/out_iSACTest_%s_%02d.pcm",
                 "A",
                 testNr);
     }
@@ -512,7 +512,7 @@ ISACTest::SwitchingSamplingRate(
         printf("\nTest %d", testNr);
         printf("    Alternate between WB and SWB at the sender Side\n\n");
         sprintf(fileNameOut,
-                "./modules/audio_coding/main/test/res_tests/out%s_%02d.pcm",
+                "./src/modules/audio_coding/main/test/out%s_%02d.pcm",
                 "A",
                 testNr);
     }
@@ -523,13 +523,13 @@ ISACTest::SwitchingSamplingRate(
     if(_testMode == 0)
     {
         sprintf(fileNameOut,
-                "./modules/audio_coding/main/test/res_autotests/out_iSACTest_%s_%02d.pcm",
+                "./src/modules/audio_coding/main/test/out_iSACTest_%s_%02d.pcm",
                 "B",
                 testNr);
     }
     else
     {
-        sprintf(fileNameOut, "./modules/audio_coding/main/test/res_tests/out%s_%02d.pcm",
+        sprintf(fileNameOut, "./src/modules/audio_coding/main/test/out%s_%02d.pcm",
                 "B",
                 testNr);
     }

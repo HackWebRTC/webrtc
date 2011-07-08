@@ -2,68 +2,72 @@
 (set -o igncr) 2>/dev/null && set -o igncr; # force bash to ignore \r character
 
 #
-# This script can be used to verify the bit exatness of iLBC fixpoint version 1.0.6
+# This script can be used to verify the bit exactness of iLBC fixed-point version 1.0.6
 #
 
+INP=../../../../../../../test/data/audio_coding
+EXEP=../../../../../../../out/Release
+OUTP=./GeneratedFiles
+mkdir ./GeneratedFiles
 
-./iLBCtest 20 ./inFiles/F00.INP ./GeneratedFiles/F00.BIT20 ./GeneratedFiles/F00.OUT20 ./inFiles/clean.chn
-./iLBCtest 20 ./inFiles/F01.INP ./GeneratedFiles/F01.BIT20 ./GeneratedFiles/F01.OUT20 ./inFiles/clean.chn
-./iLBCtest 20 ./inFiles/F02.INP ./GeneratedFiles/F02.BIT20 ./GeneratedFiles/F02.OUT20 ./inFiles/clean.chn
-./iLBCtest 20 ./inFiles/F03.INP ./GeneratedFiles/F03.BIT20 ./GeneratedFiles/F03.OUT20 ./inFiles/clean.chn
-./iLBCtest 20 ./inFiles/F04.INP ./GeneratedFiles/F04.BIT20 ./GeneratedFiles/F04.OUT20 ./inFiles/clean.chn
-./iLBCtest 20 ./inFiles/F05.INP ./GeneratedFiles/F05.BIT20 ./GeneratedFiles/F05.OUT20 ./inFiles/clean.chn
-./iLBCtest 20 ./inFiles/F06.INP ./GeneratedFiles/F06.BIT20 ./GeneratedFiles/F06.OUT20 ./inFiles/clean.chn
+$EXEP/iLBCtest 20 $INP/F00.INP $OUTP/F00.BIT20 $OUTP/F00.OUT20 $INP/clean.chn
+$EXEP/iLBCtest 20 $INP/F01.INP $OUTP/F01.BIT20 $OUTP/F01.OUT20 $INP/clean.chn
+$EXEP/iLBCtest 20 $INP/F02.INP $OUTP/F02.BIT20 $OUTP/F02.OUT20 $INP/clean.chn
+$EXEP/iLBCtest 20 $INP/F03.INP $OUTP/F03.BIT20 $OUTP/F03.OUT20 $INP/clean.chn
+$EXEP/iLBCtest 20 $INP/F04.INP $OUTP/F04.BIT20 $OUTP/F04.OUT20 $INP/clean.chn
+$EXEP/iLBCtest 20 $INP/F05.INP $OUTP/F05.BIT20 $OUTP/F05.OUT20 $INP/clean.chn
+$EXEP/iLBCtest 20 $INP/F06.INP $OUTP/F06.BIT20 $OUTP/F06.OUT20 $INP/clean.chn
 
-./iLBCtest 30 ./inFiles/F00.INP ./GeneratedFiles/F00.BIT30 ./GeneratedFiles/F00.OUT30 ./inFiles/clean.chn
-./iLBCtest 30 ./inFiles/F01.INP ./GeneratedFiles/F01.BIT30 ./GeneratedFiles/F01.OUT30 ./inFiles/clean.chn
-./iLBCtest 30 ./inFiles/F02.INP ./GeneratedFiles/F02.BIT30 ./GeneratedFiles/F02.OUT30 ./inFiles/clean.chn
-./iLBCtest 30 ./inFiles/F03.INP ./GeneratedFiles/F03.BIT30 ./GeneratedFiles/F03.OUT30 ./inFiles/clean.chn
-./iLBCtest 30 ./inFiles/F04.INP ./GeneratedFiles/F04.BIT30 ./GeneratedFiles/F04.OUT30 ./inFiles/clean.chn
-./iLBCtest 30 ./inFiles/F05.INP ./GeneratedFiles/F05.BIT30 ./GeneratedFiles/F05.OUT30 ./inFiles/clean.chn
-./iLBCtest 30 ./inFiles/F06.INP ./GeneratedFiles/F06.BIT30 ./GeneratedFiles/F06.OUT30 ./inFiles/clean.chn
+$EXEP/iLBCtest 30 $INP/F00.INP $OUTP/F00.BIT30 $OUTP/F00.OUT30 $INP/clean.chn
+$EXEP/iLBCtest 30 $INP/F01.INP $OUTP/F01.BIT30 $OUTP/F01.OUT30 $INP/clean.chn
+$EXEP/iLBCtest 30 $INP/F02.INP $OUTP/F02.BIT30 $OUTP/F02.OUT30 $INP/clean.chn
+$EXEP/iLBCtest 30 $INP/F03.INP $OUTP/F03.BIT30 $OUTP/F03.OUT30 $INP/clean.chn
+$EXEP/iLBCtest 30 $INP/F04.INP $OUTP/F04.BIT30 $OUTP/F04.OUT30 $INP/clean.chn
+$EXEP/iLBCtest 30 $INP/F05.INP $OUTP/F05.BIT30 $OUTP/F05.OUT30 $INP/clean.chn
+$EXEP/iLBCtest 30 $INP/F06.INP $OUTP/F06.BIT30 $OUTP/F06.OUT30 $INP/clean.chn
 
-./iLBCtest 20 ./inFiles/F00.INP ./GeneratedFiles/F00.BIT20 ./GeneratedFiles/F00_tlm10.OUT20 ./inFiles/tlm10.chn
-./iLBCtest 20 ./inFiles/F01.INP ./GeneratedFiles/F01.BIT20 ./GeneratedFiles/F01_tlm10.OUT20 ./inFiles/tlm10.chn
-./iLBCtest 20 ./inFiles/F02.INP ./GeneratedFiles/F02.BIT20 ./GeneratedFiles/F02_tlm10.OUT20 ./inFiles/tlm10.chn
-./iLBCtest 30 ./inFiles/F00.INP ./GeneratedFiles/F00.BIT30 ./GeneratedFiles/F00_tlm10.OUT30 ./inFiles/tlm10.chn
-./iLBCtest 30 ./inFiles/F01.INP ./GeneratedFiles/F01.BIT30 ./GeneratedFiles/F01_tlm10.OUT30 ./inFiles/tlm10.chn
-./iLBCtest 30 ./inFiles/F02.INP ./GeneratedFiles/F02.BIT30 ./GeneratedFiles/F02_tlm10.OUT30 ./inFiles/tlm10.chn
+$EXEP/iLBCtest 20 $INP/F00.INP $OUTP/F00.BIT20 $OUTP/F00_tlm10.OUT20 $INP/tlm10.chn
+$EXEP/iLBCtest 20 $INP/F01.INP $OUTP/F01.BIT20 $OUTP/F01_tlm10.OUT20 $INP/tlm10.chn
+$EXEP/iLBCtest 20 $INP/F02.INP $OUTP/F02.BIT20 $OUTP/F02_tlm10.OUT20 $INP/tlm10.chn
+$EXEP/iLBCtest 30 $INP/F00.INP $OUTP/F00.BIT30 $OUTP/F00_tlm10.OUT30 $INP/tlm10.chn
+$EXEP/iLBCtest 30 $INP/F01.INP $OUTP/F01.BIT30 $OUTP/F01_tlm10.OUT30 $INP/tlm10.chn
+$EXEP/iLBCtest 30 $INP/F02.INP $OUTP/F02.BIT30 $OUTP/F02_tlm10.OUT30 $INP/tlm10.chn
 
 
-diff ./GeneratedFiles/F00.BIT20 ./ReferenceVectors/F00.BIT20
-diff ./GeneratedFiles/F01.BIT20 ./ReferenceVectors/F01.BIT20
-diff ./GeneratedFiles/F02.BIT20 ./ReferenceVectors/F02.BIT20
-diff ./GeneratedFiles/F03.BIT20 ./ReferenceVectors/F03.BIT20
-diff ./GeneratedFiles/F04.BIT20 ./ReferenceVectors/F04.BIT20
-diff ./GeneratedFiles/F05.BIT20 ./ReferenceVectors/F05.BIT20
-diff ./GeneratedFiles/F06.BIT20 ./ReferenceVectors/F06.BIT20
-diff ./GeneratedFiles/F00.OUT20 ./ReferenceVectors/F00.OUT20
-diff ./GeneratedFiles/F01.OUT20 ./ReferenceVectors/F01.OUT20
-diff ./GeneratedFiles/F02.OUT20 ./ReferenceVectors/F02.OUT20
-diff ./GeneratedFiles/F03.OUT20 ./ReferenceVectors/F03.OUT20
-diff ./GeneratedFiles/F04.OUT20 ./ReferenceVectors/F04.OUT20
-diff ./GeneratedFiles/F05.OUT20 ./ReferenceVectors/F05.OUT20
-diff ./GeneratedFiles/F06.OUT20 ./ReferenceVectors/F06.OUT20
+diff $OUTP/F00.BIT20 $INP/F00.BIT20
+diff $OUTP/F01.BIT20 $INP/F01.BIT20
+diff $OUTP/F02.BIT20 $INP/F02.BIT20
+diff $OUTP/F03.BIT20 $INP/F03.BIT20
+diff $OUTP/F04.BIT20 $INP/F04.BIT20
+diff $OUTP/F05.BIT20 $INP/F05.BIT20
+diff $OUTP/F06.BIT20 $INP/F06.BIT20
+diff $OUTP/F00.OUT20 $INP/F00.OUT20
+diff $OUTP/F01.OUT20 $INP/F01.OUT20
+diff $OUTP/F02.OUT20 $INP/F02.OUT20
+diff $OUTP/F03.OUT20 $INP/F03.OUT20
+diff $OUTP/F04.OUT20 $INP/F04.OUT20
+diff $OUTP/F05.OUT20 $INP/F05.OUT20
+diff $OUTP/F06.OUT20 $INP/F06.OUT20
 
-diff ./GeneratedFiles/F00.BIT30 ./ReferenceVectors/F00.BIT30
-diff ./GeneratedFiles/F01.BIT30 ./ReferenceVectors/F01.BIT30
-diff ./GeneratedFiles/F02.BIT30 ./ReferenceVectors/F02.BIT30
-diff ./GeneratedFiles/F03.BIT30 ./ReferenceVectors/F03.BIT30
-diff ./GeneratedFiles/F04.BIT30 ./ReferenceVectors/F04.BIT30
-diff ./GeneratedFiles/F05.BIT30 ./ReferenceVectors/F05.BIT30
-diff ./GeneratedFiles/F06.BIT30 ./ReferenceVectors/F06.BIT30
-diff ./GeneratedFiles/F00.OUT30 ./ReferenceVectors/F00.OUT30
-diff ./GeneratedFiles/F01.OUT30 ./ReferenceVectors/F01.OUT30
-diff ./GeneratedFiles/F02.OUT30 ./ReferenceVectors/F02.OUT30
-diff ./GeneratedFiles/F03.OUT30 ./ReferenceVectors/F03.OUT30
-diff ./GeneratedFiles/F04.OUT30 ./ReferenceVectors/F04.OUT30
-diff ./GeneratedFiles/F05.OUT30 ./ReferenceVectors/F05.OUT30
-diff ./GeneratedFiles/F06.OUT30 ./ReferenceVectors/F06.OUT30
+diff $OUTP/F00.BIT30 $INP/F00.BIT30
+diff $OUTP/F01.BIT30 $INP/F01.BIT30
+diff $OUTP/F02.BIT30 $INP/F02.BIT30
+diff $OUTP/F03.BIT30 $INP/F03.BIT30
+diff $OUTP/F04.BIT30 $INP/F04.BIT30
+diff $OUTP/F05.BIT30 $INP/F05.BIT30
+diff $OUTP/F06.BIT30 $INP/F06.BIT30
+diff $OUTP/F00.OUT30 $INP/F00.OUT30
+diff $OUTP/F01.OUT30 $INP/F01.OUT30
+diff $OUTP/F02.OUT30 $INP/F02.OUT30
+diff $OUTP/F03.OUT30 $INP/F03.OUT30
+diff $OUTP/F04.OUT30 $INP/F04.OUT30
+diff $OUTP/F05.OUT30 $INP/F05.OUT30
+diff $OUTP/F06.OUT30 $INP/F06.OUT30
 
-diff ./GeneratedFiles/F00_tlm10.OUT20 ./ReferenceVectors/F00_tlm10.OUT20
-diff ./GeneratedFiles/F01_tlm10.OUT20 ./ReferenceVectors/F01_tlm10.OUT20
-diff ./GeneratedFiles/F02_tlm10.OUT20 ./ReferenceVectors/F02_tlm10.OUT20
-diff ./GeneratedFiles/F00_tlm10.OUT30 ./ReferenceVectors/F00_tlm10.OUT30
-diff ./GeneratedFiles/F01_tlm10.OUT30 ./ReferenceVectors/F01_tlm10.OUT30
-diff ./GeneratedFiles/F02_tlm10.OUT30 ./ReferenceVectors/F02_tlm10.OUT30
+diff $OUTP/F00_tlm10.OUT20 $INP/F00_tlm10.OUT20
+diff $OUTP/F01_tlm10.OUT20 $INP/F01_tlm10.OUT20
+diff $OUTP/F02_tlm10.OUT20 $INP/F02_tlm10.OUT20
+diff $OUTP/F00_tlm10.OUT30 $INP/F00_tlm10.OUT30
+diff $OUTP/F01_tlm10.OUT30 $INP/F01_tlm10.OUT30
+diff $OUTP/F02_tlm10.OUT30 $INP/F02_tlm10.OUT30
 
