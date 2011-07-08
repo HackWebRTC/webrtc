@@ -23,14 +23,14 @@ class FrameQueueTuple
 {
 public:
     FrameQueueTuple(TestVideoEncodedBuffer *frame,
-                    const void* codecSpecificInfo = NULL)
+                    const webrtc::CodecSpecificInfo* codecSpecificInfo = NULL)
     :
         _frame(frame),
         _codecSpecificInfo(codecSpecificInfo)
     {};
     ~FrameQueueTuple();
-    TestVideoEncodedBuffer*   _frame;
-    const void*               _codecSpecificInfo;
+    TestVideoEncodedBuffer*          _frame;
+    const webrtc::CodecSpecificInfo* _codecSpecificInfo;
 };
 
 class FrameQueue
@@ -49,7 +49,7 @@ public:
     }
 
     void PushFrame(TestVideoEncodedBuffer *frame,
-                   void* codecSpecificInfo = NULL);
+                   webrtc::CodecSpecificInfo* codecSpecificInfo = NULL);
     FrameQueueTuple* PopFrame();
     bool Empty();
 
@@ -83,13 +83,17 @@ public:
     virtual void Perform();
     virtual void Encoded(const webrtc::EncodedImage& encodedImage);
     virtual void Decoded(const webrtc::RawImage& decodedImage);
-    virtual void*
-    CopyCodecSpecificInfo(const void* /*codecSpecificInfo */) const
+    virtual webrtc::CodecSpecificInfo*
+    CopyCodecSpecificInfo(
+        const webrtc::CodecSpecificInfo* /*codecSpecificInfo */) const
     { return NULL; };
     virtual void CopyEncodedImage(TestVideoEncodedBuffer& dest,
                                   webrtc::EncodedImage& src,
                                   void* /*codecSpecificInfo*/) const;
-    virtual void* CreateEncoderSpecificInfo() const { return NULL; };
+    virtual webrtc::CodecSpecificInfo* CreateEncoderSpecificInfo() const
+    {
+        return NULL;
+    };
     virtual WebRtc_Word32
     ReceivedDecodedReferenceFrame(const WebRtc_UWord64 pictureId) { return 0;};
     virtual WebRtc_Word32
@@ -149,7 +153,7 @@ public:
 
     WebRtc_Word32
     Encoded(webrtc::EncodedImage& encodedImage,
-            const void* codecSpecificInfo = NULL,
+            const webrtc::CodecSpecificInfo* codecSpecificInfo = NULL,
             const webrtc::RTPFragmentationHeader* fragmentation = NULL);
     WebRtc_UWord32 EncodedBytes();
 private:

@@ -103,7 +103,7 @@ public:
       _decoderSpecificInfo(decoderSpecificInfo),
       _encodeComplete(false) {}
     WebRtc_Word32 Encoded(webrtc::EncodedImage& encodedImage,
-                          const void* codecSpecificInfo,
+                          const webrtc::CodecSpecificInfo* codecSpecificInfo,
                           const webrtc::RTPFragmentationHeader*
                           fragmentation = NULL);
     bool EncodeComplete();

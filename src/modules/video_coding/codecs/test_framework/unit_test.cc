@@ -87,7 +87,7 @@ UnitTest::~UnitTest()
 
 WebRtc_Word32
 UnitTestEncodeCompleteCallback::Encoded(EncodedImage& encodedImage,
-                                        const void* codecSpecificInfo,
+                                        const webrtc::CodecSpecificInfo* codecSpecificInfo,
                                         const webrtc::RTPFragmentationHeader*
                                         fragmentation)
 {

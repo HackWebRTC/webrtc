@@ -176,8 +176,6 @@ FrameQueueTuple::~FrameQueueTuple()
 {
     if (_codecSpecificInfo != NULL)
     {
-        // TODO(holmer): implement virtual function for deleting this and
-        // remove warnings
         delete _codecSpecificInfo;
     }
     if (_frame != NULL)
@@ -187,7 +185,7 @@ FrameQueueTuple::~FrameQueueTuple()
 }
 
 void FrameQueue::PushFrame(TestVideoEncodedBuffer *frame,
-                           void* codecSpecificInfo)
+                           webrtc::CodecSpecificInfo* codecSpecificInfo)
 {
     WriteLockScoped cs(_queueRWLock);
     _frameBufferQueue.push(new FrameQueueTuple(frame, codecSpecificInfo));
@@ -218,7 +216,7 @@ WebRtc_UWord32 VideoEncodeCompleteCallback::EncodedBytes()
 
 WebRtc_Word32
 VideoEncodeCompleteCallback::Encoded(EncodedImage& encodedImage,
-                                     const void* codecSpecificInfo,
+                                     const webrtc::CodecSpecificInfo* codecSpecificInfo,
                                      const webrtc::RTPFragmentationHeader*
                                      fragmentation)
 {
@@ -231,7 +229,7 @@ VideoEncodeCompleteCallback::Encoded(EncodedImage& encodedImage,
     // it for an empty frame and then just do:
     // emptyFrame->SwapBuffers(encodedBuffer);
     // This is how it should be done in Video Engine to save in on memcpys
-    void* codecSpecificInfoCopy =
+    webrtc::CodecSpecificInfo* codecSpecificInfoCopy =
         _test.CopyCodecSpecificInfo(codecSpecificInfo);
     _test.CopyEncodedImage(*newBuffer, encodedImage, codecSpecificInfoCopy);
     if (_encodedFile != NULL)
@@ -447,12 +445,10 @@ NormalAsyncTest::Encode()
         _hasReceivedSLI = false; // don't trigger both at once
     }
 
-    void* codecSpecificInfo = CreateEncoderSpecificInfo();
+    webrtc::CodecSpecificInfo* codecSpecificInfo = CreateEncoderSpecificInfo();
     int ret = _encoder->Encode(rawImage, codecSpecificInfo, frameType);
     if (codecSpecificInfo != NULL)
     {
-        // TODO(holmer): implement virtual function for deleting this and
-        // remove warnings
         delete codecSpecificInfo;
         codecSpecificInfo = NULL;
     }

@@ -66,7 +66,7 @@ VP8NormalAsyncTest::ReceivedDecodedReferenceFrame(const WebRtc_UWord64 pictureId
     return 0;
 }
 
-void*
+CodecSpecificInfo*
 VP8NormalAsyncTest::CreateEncoderSpecificInfo() const
 {
     CodecSpecificInfo* vp8CodecSpecificInfo = new CodecSpecificInfo();

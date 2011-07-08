@@ -582,5 +582,8 @@ VCMEncComplete_KeyReqTest::SendData(
     _timeStamp += 3000;
     rtpInfo.type.Video.isFirstPacket = false;
     rtpInfo.frameType = kVideoFrameKey;
+    // TODO(hlundin): Remove assert once we've piped PictureID into VCM
+    // through the WebRtcRTPHeader.
+    assert(rtpInfo.type.Video.codec != kRTPVideoVP8);
     return _vcm.IncomingPacket(payloadData, payloadSize, rtpInfo);
 }

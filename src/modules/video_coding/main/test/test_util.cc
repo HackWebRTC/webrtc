@@ -80,6 +80,9 @@ VCMEncodeCompleteCallback::SendData(
 
     _encodedBytes += payloadSize;
     // directly to receiver
+    // TODO(hlundin): Remove assert once we've piped PictureID into VCM
+    // through the WebRtcRTPHeader.
+    assert(rtpInfo.type.Video.codec != kRTPVideoVP8);
     _VCMReceiver->IncomingPacket(payloadData, payloadSize, rtpInfo);
     _encodeComplete = true;
 

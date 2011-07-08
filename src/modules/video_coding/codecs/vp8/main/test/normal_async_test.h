@@ -23,7 +23,7 @@ protected:
     VP8NormalAsyncTest(std::string name, std::string description, unsigned int testNo) : NormalAsyncTest(name, description, testNo) {}
     virtual void CodecSpecific_InitBitrate();
     virtual void CodecSettings(int width, int height, WebRtc_UWord32 frameRate=30, WebRtc_UWord32 bitRate=0);
-    virtual void* CreateEncoderSpecificInfo() const;
+    virtual webrtc::CodecSpecificInfo* CreateEncoderSpecificInfo() const;
     virtual WebRtc_Word32 ReceivedDecodedReferenceFrame(const WebRtc_UWord64 pictureId);
 private:
     mutable bool  _hasReceivedRPSI;
