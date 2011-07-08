@@ -562,12 +562,14 @@ RTPSendCallback_SizeTest::AveragePayloadSize() const
 }
 
 WebRtc_Word32
-VCMEncComplete_KeyReqTest::SendData(const FrameType frameType,
-                             const WebRtc_UWord8 payloadType,
-                             const WebRtc_UWord32 timeStamp,
-                             const WebRtc_UWord8* payloadData,
-                             const WebRtc_UWord32 payloadSize,
-                             const RTPFragmentationHeader& fragmentationHeader)
+VCMEncComplete_KeyReqTest::SendData(
+        const FrameType frameType,
+        const WebRtc_UWord8 payloadType,
+        const WebRtc_UWord32 timeStamp,
+        const WebRtc_UWord8* payloadData,
+        const WebRtc_UWord32 payloadSize,
+        const RTPFragmentationHeader& fragmentationHeader,
+        const webrtc::RTPVideoTypeHeader* videoTypeHdr)
 {
     WebRtcRTPHeader rtpInfo;
     rtpInfo.header.markerBit = true; // end of frame

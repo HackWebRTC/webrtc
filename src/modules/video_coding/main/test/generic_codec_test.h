@@ -85,12 +85,14 @@ class VCMEncComplete_KeyReqTest : public webrtc::VCMPacketizationCallback
 {
 public:
     VCMEncComplete_KeyReqTest(webrtc::VideoCodingModule &vcm) : _vcm(vcm), _seqNo(0), _timeStamp(0) {}
-    WebRtc_Word32 SendData(const webrtc::FrameType frameType,
-                                 const WebRtc_UWord8 payloadType,
-                                 const WebRtc_UWord32 timeStamp,
-                                 const WebRtc_UWord8* payloadData,
-                                 const WebRtc_UWord32 payloadSize,
-                                 const webrtc::RTPFragmentationHeader& fragmentationHeader);
+    WebRtc_Word32 SendData(
+            const webrtc::FrameType frameType,
+            const WebRtc_UWord8 payloadType,
+            WebRtc_UWord32 timeStamp,
+            const WebRtc_UWord8* payloadData,
+            const WebRtc_UWord32 payloadSize,
+            const webrtc::RTPFragmentationHeader& fragmentationHeader,
+            const webrtc::RTPVideoTypeHeader* videoTypeHdr);
 private:
     webrtc::VideoCodingModule& _vcm;
     WebRtc_UWord16 _seqNo;

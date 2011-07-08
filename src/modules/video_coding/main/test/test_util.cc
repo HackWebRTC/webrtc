@@ -43,12 +43,14 @@ VCMEncodeCompleteCallback::RegisterTransportCallback(VCMPacketizationCallback* t
 }
 
 WebRtc_Word32
-VCMEncodeCompleteCallback::SendData(const FrameType frameType,
-                                    const WebRtc_UWord8  payloadType,
-                                    const WebRtc_UWord32 timeStamp,
-                                    const WebRtc_UWord8* payloadData,
-                                    const WebRtc_UWord32 payloadSize,
-                                    const RTPFragmentationHeader& fragmentationHeader)
+VCMEncodeCompleteCallback::SendData(
+        const FrameType frameType,
+        const WebRtc_UWord8  payloadType,
+        const WebRtc_UWord32 timeStamp,
+        const WebRtc_UWord8* payloadData,
+        const WebRtc_UWord32 payloadSize,
+        const RTPFragmentationHeader& fragmentationHeader,
+        const webrtc::RTPVideoTypeHeader* videoTypeHdr)
 {
     // will call the VCMReceiver input packet
     _frameType = frameType;
@@ -124,18 +126,26 @@ VCMEncodeCompleteCallback::ResetByteCount()
 // Packetization callback implmentation
 
 WebRtc_Word32
-VCMRTPEncodeCompleteCallback::SendData(const FrameType frameType,
-                                       const WebRtc_UWord8  payloadType,
-                                       const WebRtc_UWord32 timeStamp,
-                                       const WebRtc_UWord8* payloadData,
-                                       const WebRtc_UWord32 payloadSize,
-                                       const RTPFragmentationHeader& fragmentationHeader)
+VCMRTPEncodeCompleteCallback::SendData(
+        const FrameType frameType,
+        const WebRtc_UWord8  payloadType,
+        const WebRtc_UWord32 timeStamp,
+        const WebRtc_UWord8* payloadData,
+        const WebRtc_UWord32 payloadSize,
+        const RTPFragmentationHeader& fragmentationHeader,
+        const webrtc::RTPVideoTypeHeader* videoTypeHdr)
 {
     _frameType = frameType;
     _encodedBytes+= payloadSize;
     _encodeComplete = true;
     //printf("encoded = %d Bytes\n", payloadSize);
-    return _RTPModule->SendOutgoingData(frameType, payloadType, timeStamp, payloadData, payloadSize, &fragmentationHeader);
+    return _RTPModule->SendOutgoingData(frameType,
+                                        payloadType,
+                                        timeStamp,
+                                        payloadData,
+                                        payloadSize,
+                                        &fragmentationHeader,
+                                        videoTypeHdr);
 }
 
  float

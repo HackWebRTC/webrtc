@@ -47,7 +47,7 @@ MainSenderThread(void* obj)
         {
             printf ("Error when opening file \n");
             delete &waitEvent;
-            delete tmpBuffer;
+            delete [] tmpBuffer;
             return false;
         }
     }
@@ -66,14 +66,14 @@ MainSenderThread(void* obj)
         {
             printf("Add Frame error: %d\n", ret);
             delete &waitEvent;
-            delete tmpBuffer;
+            delete [] tmpBuffer;
             return false;
         }
         waitEvent.Wait(33);
     }
 
     delete &waitEvent;
-    delete tmpBuffer;
+    delete [] tmpBuffer;
 
     return true;
 }

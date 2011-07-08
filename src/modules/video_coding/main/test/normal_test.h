@@ -30,11 +30,12 @@ public:
     void RegisterTransportCallback(webrtc::VCMPacketizationCallback* transport);
     // process encoded data received from the encoder, pass stream to the VCMReceiver module
     WebRtc_Word32 SendData(const webrtc::FrameType frameType,
-                                 const WebRtc_UWord8 payloadType,
-                                 const WebRtc_UWord32 timeStamp,
-                                 const WebRtc_UWord8* payloadData,
-                                 const WebRtc_UWord32 payloadSize,
-                                 const webrtc::RTPFragmentationHeader& fragmentationHeader);
+                           const WebRtc_UWord8 payloadType,
+                           const WebRtc_UWord32 timeStamp,
+                           const WebRtc_UWord8* payloadData,
+                           const WebRtc_UWord32 payloadSize,
+                           const webrtc::RTPFragmentationHeader& fragmentationHeader,
+                           const webrtc::RTPVideoTypeHeader* videoTypeHdr);
 
     // Register exisitng VCM. Currently - encode and decode with the same vcm module.
     void RegisterReceiverVCM(webrtc::VideoCodingModule *vcm);
