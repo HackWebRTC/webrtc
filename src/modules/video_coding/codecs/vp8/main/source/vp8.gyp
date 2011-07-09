@@ -43,7 +43,7 @@
             '../../../../../../../third_party/libvpx/libvpx.gyp:libvpx',
           ],
           'include_dirs': [
-            '../../../../../../../third_party/libvpx',
+            '../../../../../../../third_party/libvpx/source/libvpx',
           ],
         }],
       ],

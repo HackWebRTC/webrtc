@@ -24,7 +24,7 @@ deps = {
   "trunk/third_party/protobuf/":
     Var("chromium_trunk") + "/src/third_party/protobuf@" + Var("chromium_revision"),
 
-  "trunk/third_party/libvpx/":
+  "trunk/third_party/libvpx/source/libvpx":
     "git://review.webmproject.org/libvpx.git@v0.9.6",
 
   "trunk/third_party/libjpeg_turbo/":
@@ -60,14 +60,6 @@ deps_os = {
 }
 
 hooks = [
-  {
-    "pattern": ".",
-    "action": ["svn", "export", Var("webrtc_trunk") + "/third_party_mods/libvpx/libvpx.gyp", "trunk/third_party/libvpx/libvpx.gyp", "--force"],
-  },
-  {
-    "pattern": ".",
-   "action": ["svn", "export", Var("webrtc_trunk") + "/third_party_mods/libvpx/source/config", "trunk/third_party/libvpx/config", "--force"],
-  },
   {
     "pattern": ".",
     "action": ["svn", "export", Var("webrtc_trunk") + "/third_party_mods/libjingle", "trunk/third_party/libjingle", "--force"],
