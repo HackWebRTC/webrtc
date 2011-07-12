@@ -154,7 +154,7 @@ public:
         return 0;
     }
 
-    static void Log(char* fmt, ...)
+    static void Log(const char* fmt, ...)
     {
         va_list va;
         va_start(va, fmt);
@@ -192,7 +192,7 @@ public:
         return 0;
     }
 
-    static int TestError(bool expr, char* fmt, ...)
+    static int TestError(bool expr, const char* fmt, ...)
     {
 
         if (!expr)
@@ -251,7 +251,7 @@ void Sleep(unsigned long x) {
 
 namespace
 {
-FILE* OpenTestFile(char* fileName)
+FILE* OpenTestFile(const char* fileName)
 {
     char filePath[256];
     sprintf(filePath,"%s%s",VIE_TEST_FILES_ROOT,fileName);

@@ -161,7 +161,7 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
     // RTCP CName
     //
     ViETest::Log("Testing CName\n\n");
-    char* sendCName = "ViEAutoTestCName\0";
+    const char* sendCName = "ViEAutoTestCName\0";
     error = ViE.ptrViERtpRtcp->SetRTCPCName(tbChannel.videoChannel, sendCName);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
@@ -362,11 +362,11 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
     ViETest::Log("Testing RTP dump...\n\n");
 
 #ifdef ANDROID
-    char* inDumpName = "/sdcard/IncomingRTPDump.rtp";
-    char* outDumpName = "/sdcard/OutgoingRTPDump.rtp";
+    const char* inDumpName = "/sdcard/IncomingRTPDump.rtp";
+    const char* outDumpName = "/sdcard/OutgoingRTPDump.rtp";
 #else
-    char* inDumpName = "IncomingRTPDump.rtp";
-    char* outDumpName = "OutgoingRTPDump.rtp";
+    const char* inDumpName = "IncomingRTPDump.rtp";
+    const char* outDumpName = "OutgoingRTPDump.rtp";
 #endif
 
     error = ViE.ptrViERtpRtcp->StartRTPDump(tbChannel.videoChannel, inDumpName,
@@ -633,7 +633,7 @@ int ViEAutoTest::ViERtpRtcpAPITest()
     // CName is testedn in SimpleTest
     // Start sequence number is tested in SimplTEst
     //
-    char* testCName = "ViEAutotestCName";
+    const char* testCName = "ViEAutotestCName";
     error = ViE.ptrViERtpRtcp->SetRTCPCName(tbChannel.videoChannel, testCName);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
@@ -819,9 +819,9 @@ int ViEAutoTest::ViERtpRtcpAPITest()
     //
     {
 #ifdef ANDROID
-        char* dumpName = "/sdcard/DumpFileName.rtp";
+        const char* dumpName = "/sdcard/DumpFileName.rtp";
 #else
-        char* dumpName = "DumpFileName.rtp";
+        const char* dumpName = "DumpFileName.rtp";
 #endif
         error = ViE.ptrViERtpRtcp->StartRTPDump(tbChannel.videoChannel,
                                                 dumpName, kRtpIncoming);
