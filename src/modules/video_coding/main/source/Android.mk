@@ -61,6 +61,7 @@ LOCAL_C_INCLUDES := $(LOCAL_PATH)/../../../.. \
     $(LOCAL_PATH)/../../codecs/i420/main/interface \
     $(LOCAL_PATH)/../../codecs/vp8/main/interface \
     $(LOCAL_PATH)/../../../../common_video/vplib/main/interface \
+    $(LOCAL_PATH)/../../../../common_video/interface \
     $(LOCAL_PATH)/../../../../system_wrappers/interface 
 
 # Flags passed to only C++ (and not C) files.
