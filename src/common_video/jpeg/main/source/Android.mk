@@ -22,9 +22,12 @@ LOCAL_SRC_FILES := jpeg.cc \
 MY_CFLAGS :=  
 MY_CFLAGS_C :=
 MY_DEFS := '-DNO_TCMALLOC' \
-    '-DNO_HEAPCHECKER' \
+    '-DNO_HEAPCHECKER'
+ifeq ($(TARGET_ARCH),arm) 
+MY_DEFS += \
     '-DWEBRTC_ANDROID' \
     '-DANDROID' 
+endif
 LOCAL_CFLAGS := $(MY_CFLAGS_C) $(MY_CFLAGS) $(MY_DEFS)
 
 # Include paths placed before CFLAGS/CPPFLAGS
@@ -32,6 +35,7 @@ LOCAL_C_INCLUDES := $(LOCAL_PATH)/../../../.. \
     $(LOCAL_PATH)/../interface \
     $(LOCAL_PATH)/../../../../../../ \
     $(LOCAL_PATH)/../../../vplib/main/interface \
+    $(LOCAL_PATH)/../../../interface \
     external/jpeg
 
 # Flags passed to only C++ (and not C) files.
