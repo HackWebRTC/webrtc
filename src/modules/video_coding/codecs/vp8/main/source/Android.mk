@@ -34,6 +34,7 @@ LOCAL_C_INCLUDES := $(LOCAL_PATH)/../../../../../.. \
     $(LOCAL_PATH)/../interface \
     $(LOCAL_PATH)/../../../interface \
     $(LOCAL_PATH)/../../../../../../modules/interface \
+    $(LOCAL_PATH)/../../../../../../common_video/interface \
     $(LOCAL_PATH)/../../../../../../system_wrappers/interface \
     external/libvpx 
 

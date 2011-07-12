@@ -33,6 +33,7 @@ LOCAL_CFLAGS := $(MY_CFLAGS_C) $(MY_CFLAGS) $(MY_DEFS)
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/../../../../../.. \
     $(LOCAL_PATH)/../interface \
     $(LOCAL_PATH)/../../../interface \
+    $(LOCAL_PATH)/../../../../../../common_video/interface \
     $(LOCAL_PATH)/../../../../../../system_wrappers/interface 
 
 # Flags passed to only C++ (and not C) files.
