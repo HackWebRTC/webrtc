@@ -921,7 +921,7 @@ WebRtc_Word32 WebRtcAgc_ProcessAnalog(void *state, WebRtc_Word32 inMicLevel,
         stt->Rxx16_vectorw32[stt->Rxx16pos] = Rxx16w32;
 
         /* Circular buffer */
-        stt->Rxx16pos = stt->Rxx16pos++;
+        stt->Rxx16pos++;
         if (stt->Rxx16pos == RXX_BUFFER_LEN)
         {
             stt->Rxx16pos = 0;
