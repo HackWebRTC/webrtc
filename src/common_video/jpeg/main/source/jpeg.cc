@@ -22,11 +22,11 @@
 #if defined(WIN32)
  #include <basetsd.h>
 #endif
-#ifdef WEBRTC_ANDROID
+#ifdef ANDROID
 extern "C" {
 #endif
 #include "jpeglib.h"
-#ifdef WEBRTC_ANDROID
+#ifdef ANDROID
 }
 #endif
 #include <setjmp.h>
