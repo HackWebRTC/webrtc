@@ -31,8 +31,21 @@ public:
     int testNum;
 };
 
-int interpolationTest(CmdArgs& args);
+int interpolation_test(CmdArgs& args);
 int convert_test(CmdArgs& args);
 int scale_test();
+
+#define PRINT_ERR_MSG(msg)                              \
+    do {                                                \
+        fprintf(stderr, "Error at line %i of %s\n%s",   \
+            __LINE__, __FILE__, msg);                   \
+    } while(0)
+
+#define TEST(expr)                                              \
+    do {                                                        \
+        if (!(expr)) {                                          \
+            PRINT_ERR_MSG("Assertion failed: " #expr "\n\n");   \
+        }                                                       \
+    } while(0)
 
 #endif  // COMMON_VIDEO_VPLIB_TEST_UTIL_H
