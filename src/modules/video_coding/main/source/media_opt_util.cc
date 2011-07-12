@@ -21,6 +21,13 @@
 
 namespace webrtc {
 
+void
+VCMProtectionMethod::UpdateContentMetrics(
+                     const VideoContentMetrics*  contentMetrics)
+{
+   _qmRobustness->UpdateContent(contentMetrics);
+}
+
 bool
 VCMProtectionMethod::BetterThan(VCMProtectionMethod *pm)
 {
@@ -417,6 +424,10 @@ VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters)
         codeRateDelta = plossMax - 1;
     }
 
+    codeRateDelta = _qmRobustness->AdjustFecFactor(codeRateDelta, bitRate,
+                                                   parameters->frameRate,
+                                                   parameters->rtt, packetLoss);
+
     // For Key frame:
     // Effectively at a higher rate, so we scale/boost the rate
     // The boost factor may depend on several factors: ratio of packet
@@ -461,6 +472,14 @@ VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters)
 
     _protectionFactorK = codeRateKey;
     _protectionFactorD = codeRateDelta;
+
+
+     // Set the UEP protection on/off for Key and Delta frames
+    _uepKey = _qmRobustness->SetUepProtection(codeRateKey, bitRate,
+                                              packetLoss, 0);
+
+    _uepDelta = _qmRobustness->SetUepProtection(codeRateKey, bitRate,
+                                                packetLoss, 1);
 
     // DONE WITH FEC PROTECTION SETTINGS
     return true;

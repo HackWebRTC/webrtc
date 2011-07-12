@@ -17,6 +17,7 @@
 #include "exp_filter.h"
 #include "internal_defines.h"
 #include "tick_time.h"
+#include "qm_select.h"
 
 #include <cmath>
 #include <cstdlib>
@@ -97,8 +98,10 @@ public:
     //friend VCMProtectionMethod;
     VCMProtectionMethod(VCMProtectionMethodEnum type) : _protectionFactorK(0),
         _protectionFactorD(0), _residualPacketLoss(0.0), _scaleProtKey(2.0),
-        _maxPayloadSize(1460), _efficiency(0), _score(0), _type(type) {}
-    virtual ~VCMProtectionMethod() {}
+        _maxPayloadSize(1460), _efficiency(0), _score(0), _type(type),
+        _uepKey(0), _uepDelta(1)
+        {_qmRobustness = new VCMQmRobustness();}
+    virtual ~VCMProtectionMethod() { delete _qmRobustness;}
 
     // Updates the efficiency of the method using the parameters provided
     //
@@ -142,12 +145,19 @@ public:
     // Return value                 : Required protectionFactor for delta frame
     virtual WebRtc_UWord8 RequiredProtectionFactorD() { return _protectionFactorD; }
 
+    // Updates content metrics
+    void UpdateContentMetrics(const VideoContentMetrics*  contentMetrics);
+
     WebRtc_UWord8                        _effectivePacketLoss;
     WebRtc_UWord8                        _protectionFactorK;
     WebRtc_UWord8                        _protectionFactorD;
     float                                _residualPacketLoss;
     float                                _scaleProtKey;
     WebRtc_Word32                        _maxPayloadSize;
+
+    VCMQmRobustness*                     _qmRobustness;
+    bool                                 _uepKey;
+    bool                                 _uepDelta;
 
 protected:
     float                                _efficiency;

@@ -46,7 +46,7 @@ _lastChangeTime(0)
     _frameDropper  = new VCMFrameDropper(_id);
     _lossProtLogic = new VCMLossProtectionLogic();
     _content = new VCMContentMetricsProcessing();
-    _qms = new VCMQmSelect();
+    _qmResolution = new VCMQmResolution();
 }
 
 VCMMediaOptimization::~VCMMediaOptimization(void)
@@ -55,7 +55,7 @@ VCMMediaOptimization::~VCMMediaOptimization(void)
     delete _lossProtLogic;
     delete _frameDropper;
     delete _content;
-    delete _qms;
+    delete _qmResolution;
 }
 
 WebRtc_Word32
@@ -67,7 +67,7 @@ VCMMediaOptimization::Reset()
     _lossProtLogic->Reset();
     _frameDropper->SetRates(0, 0);
     _content->Reset();
-    _qms->Reset();
+    _qmResolution->Reset();
     _lossProtLogic->UpdateFrameRate(_incomingFrameRate);
     _lossProtLogic->Reset();
     _sendStatisticsZeroEncode = 0;
@@ -135,6 +135,10 @@ VCMMediaOptimization::SetTargetRates(WebRtc_UWord32 bitRate,
         selectedMethod->Type() == kNackFec ))
     {
 
+        // Update protection method with content metrics
+        selectedMethod->UpdateContentMetrics(_content->ShortTermAvgData());
+
+
         // Update method will compute the robustness settings for the given
         // protection method and the overhead cost
         // the protection method is set by the user via SetVideoProtection.
@@ -197,8 +201,8 @@ VCMMediaOptimization::SetTargetRates(WebRtc_UWord32 bitRate,
     if (_enableQm)
     {
         //Update QM with rates
-        _qms->UpdateRates((float)_targetBitRate, _avgSentBitRateBps,
-                          _incomingFrameRate, _fractionLost);
+        _qmResolution->UpdateRates((float)_targetBitRate, _avgSentBitRateBps,
+                                  _incomingFrameRate, _fractionLost);
         //Check for QM selection
         bool selectQM = checkStatusForQMchange();
         if (selectQM)
@@ -249,11 +253,12 @@ VCMMediaOptimization::SetEncodingData(VideoCodecType sendCodecType, WebRtc_Word3
     _lossProtLogic->UpdateFrameSize(width, height);
     _frameDropper->Reset();
     _frameDropper->SetRates(static_cast<float>(bitRate), static_cast<float>(frameRate));
-    _userFrameRate = (float)frameRate;
+    _userFrameRate = static_cast<float>(frameRate);
     _codecWidth = width;
     _codecHeight = height;
     WebRtc_Word32 ret = VCM_OK;
-    ret = _qms->Initialize((float)_targetBitRate, _userFrameRate, _codecWidth, _codecHeight);
+    ret = _qmResolution->Initialize((float)_targetBitRate, _userFrameRate,
+                                    _codecWidth, _codecHeight);
     return ret;
 }
 
@@ -420,7 +425,8 @@ VCMMediaOptimization::UpdateWithEncodedData(WebRtc_Word32 encodedLength,
             if (_enableQm)
             {
                 // update quality select with encoded length
-                _qms->UpdateEncodedSize(encodedLength, encodedFrameType);
+                _qmResolution->UpdateEncodedSize(encodedLength,
+                                                 encodedFrameType);
             }
         }
         if (!deltaFrame && encodedLength > 0)
@@ -525,7 +531,7 @@ VCMMediaOptimization::updateContentData(const VideoContentMetrics *contentMetric
     {
          //No QM if metrics are NULL
          _enableQm = false;
-         _qms->Reset();
+         _qmResolution->Reset();
     }
     else
     {
@@ -537,14 +543,14 @@ WebRtc_Word32
 VCMMediaOptimization::SelectQuality()
 {
     // Reset quantities for QM select
-    _qms->ResetQM();
+    _qmResolution->ResetQM();
 
     // Update QM will long-term averaged content metrics.
-    _qms->UpdateContent(_content->LongTermAvgData());
+    _qmResolution->UpdateContent(_content->LongTermAvgData());
 
     // Select quality mode
-    VCMQualityMode* qm = NULL;
-    WebRtc_Word32 ret = _qms->SelectQuality(&qm);
+    VCMResolutionScale* qm = NULL;
+    WebRtc_Word32 ret = _qmResolution->SelectResolution(&qm);
     if (ret < 0)
     {
           return ret;
@@ -554,7 +560,7 @@ VCMMediaOptimization::SelectQuality()
     QMUpdate(qm);
 
     // Reset all the rate and related frame counters quantities
-    _qms->ResetRates();
+    _qmResolution->ResetRates();
 
     // Reset counters
     _lastQMUpdateTime = VCMTickTime::MillisecondTimestamp();
@@ -592,7 +598,7 @@ VCMMediaOptimization::checkStatusForQMchange()
 }
 
 bool
-VCMMediaOptimization::QMUpdate(VCMQualityMode* qm)
+VCMMediaOptimization::QMUpdate(VCMResolutionScale* qm)
 {
     // Check for no change
     if (qm->spatialHeightFact == 1 &&
@@ -606,7 +612,9 @@ VCMMediaOptimization::QMUpdate(VCMQualityMode* qm)
     VideoContentMetrics* cm = _content->LongTermAvgData();
 
     // Temporal
-    WebRtc_UWord32 frameRate  = static_cast<WebRtc_UWord32>(_incomingFrameRate + 0.5f);
+    WebRtc_UWord32 frameRate = static_cast<WebRtc_UWord32>
+                               (_incomingFrameRate + 0.5f);
+
     // Check if go back up in temporal resolution
     if (qm->temporalFact == 0)
     {

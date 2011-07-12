@@ -28,6 +28,9 @@ namespace webrtc
 // Initial level of buffer in secs: should corresponds to wrapper settings
 #define INIT_BUFFER_LEVEL 0.5
 
+// Optimal level of buffer in secs: should corresponds to wrapper settings
+#define OPT_BUFFER_LEVEL 0.6
+
 // Threshold of (max) buffer size below which we consider too low (underflow)
 #define PERC_BUFFER_THR  0.10
 

@@ -159,7 +159,7 @@ private:
     * verify if QM settings differ from default, i.e. if an update is required
     * Compute actual values, as will be sent to the encoder
     */
-    bool QMUpdate(VCMQualityMode* qm);
+    bool QMUpdate(VCMResolutionScale* qm);
     /**
     * check if we should make a QM change
     * will return 1 if yes, 0 otherwise
@@ -207,7 +207,7 @@ private:
     WebRtc_UWord32                    _deltaFrameCnt;
 
     VCMContentMetricsProcessing*      _content;
-    VCMQmSelect*                      _qms;
+    VCMQmResolution*                  _qmResolution;
 
     WebRtc_Word64                     _lastQMUpdateTime;
     WebRtc_Word64                     _lastChangeTime; // content or user triggered

@@ -20,36 +20,204 @@
 
 namespace webrtc {
 
-VCMQmSelect::VCMQmSelect()
+// QM-METHOD class
+
+VCMQmMethod::VCMQmMethod()
 {
-    _qm = new VCMQualityMode();
     _contentMetrics = new VideoContentMetrics();
-     Reset();
+    ResetQM();
 }
 
-VCMQmSelect::~VCMQmSelect()
+VCMQmMethod::~VCMQmMethod()
 {
-    delete _qm;
     delete _contentMetrics;
 }
 
 void
-VCMQmSelect::ResetQM()
+VCMQmMethod::ResetQM()
 {
     _motion.Reset();
     _spatial.Reset();
     _coherence.Reset();
     _stationaryMotion = 0;
     _aspectRatio = 1;
-    _maxRateQM = 0;
-    _imageType = 1;
-    _userResolutionPref = 50; // Neutral
-    _qm->Reset();
+    _imageType = 2;
     return;
 }
 
 void
-VCMQmSelect::ResetRates()
+VCMQmMethod::UpdateContent(const VideoContentMetrics*  contentMetrics)
+{
+    _contentMetrics = contentMetrics;
+}
+
+void
+VCMQmMethod::MotionNFD()
+{
+    _motion.value = _contentMetrics->motionMagnitudeNZ;
+
+    // Determine motion level
+    if (_motion.value < LOW_MOTION_NFD)
+    {
+        _motion.level = kLow;
+    }
+    else if (_motion.value > HIGH_MOTION_NFD)
+    {
+        _motion.level  = kHigh;
+    }
+    else
+    {
+        _motion.level = kDefault;
+    }
+
+}
+
+void
+VCMQmMethod::Motion()
+{
+
+    float sizeZeroMotion = _contentMetrics->sizeZeroMotion;
+    float motionMagNZ = _contentMetrics->motionMagnitudeNZ;
+
+    // Take product of size and magnitude with equal weight
+    _motion.value = (1.0f - sizeZeroMotion) * motionMagNZ;
+
+    // Stabilize: motionMagNZ could be large when only a
+    // few motion blocks are non-zero
+    _stationaryMotion = false;
+    if (sizeZeroMotion > HIGH_ZERO_MOTION_SIZE)
+    {
+        _motion.value = 0.0f;
+        _stationaryMotion = true;
+    }
+    // Determine motion level
+    if (_motion.value < LOW_MOTION)
+    {
+        _motion.level = kLow;
+    }
+    else if (_motion.value > HIGH_MOTION)
+    {
+        _motion.level  = kHigh;
+    }
+    else
+    {
+        _motion.level = kDefault;
+    }
+}
+
+
+void
+VCMQmMethod::Spatial()
+{
+    float spatialErr =  _contentMetrics->spatialPredErr;
+    float spatialErrH = _contentMetrics->spatialPredErrH;
+    float spatialErrV = _contentMetrics->spatialPredErrV;
+    // Spatial measure: take average of 3 prediction errors
+    _spatial.value = (spatialErr + spatialErrH + spatialErrV) / 3.0f;
+
+    float scale = 1.0f;
+    // Reduce thresholds for HD scenes
+    if (_imageType > 3)
+    {
+        scale = (float)SCALE_TEXTURE_HD;
+    }
+
+    if (_spatial.value > scale * HIGH_TEXTURE)
+    {
+        _spatial.level = kHigh;
+    }
+    else if (_spatial.value < scale * LOW_TEXTURE)
+    {
+        _spatial.level = kLow;
+    }
+    else
+    {
+         _spatial.level = kDefault;
+    }
+}
+
+void
+VCMQmMethod::Coherence()
+{
+    float horizNZ  = _contentMetrics->motionHorizontalness;
+    float distortionNZ  = _contentMetrics->motionClusterDistortion;
+
+    // Coherence measure: combine horizontalness with cluster distortion
+    _coherence.value = COH_MAX;
+    if (distortionNZ > 0.)
+    {
+        _coherence.value = horizNZ / distortionNZ;
+    }
+    _coherence.value = VCM_MIN(COH_MAX, _coherence.value);
+
+    if (_coherence.value < COHERENCE_THR)
+    {
+        _coherence.level = kLow;
+    }
+    else
+    {
+        _coherence.level = kHigh;
+    }
+
+}
+
+WebRtc_Word8
+VCMQmMethod::GetImageType(WebRtc_UWord32 width, WebRtc_UWord32 height)
+{
+    // Match image type
+    WebRtc_UWord32 imageSize = width * height;
+    WebRtc_Word8 imageType;
+
+    if (imageSize < kFrameSizeTh[0])
+    {
+        imageType  = 0;
+    }
+    else if (imageSize < kFrameSizeTh[1])
+    {
+        imageType  = 1;
+    }
+    else if (imageSize < kFrameSizeTh[2])
+    {
+        imageType  = 2;
+    }
+    else if (imageSize < kFrameSizeTh[3])
+    {
+        imageType  = 3;
+    }
+    else if (imageSize < kFrameSizeTh[4])
+    {
+        imageType  = 4;
+    }
+    else if (imageSize < kFrameSizeTh[5])
+    {
+        imageType  = 5;
+    }
+    else
+    {
+        imageType  = 6;
+    }
+
+    return imageType;
+}
+
+// DONE WITH QM CLASS
+
+
+//RESOLUTION CLASS
+
+VCMQmResolution::VCMQmResolution()
+{
+     _qm = new VCMResolutionScale();
+     Reset();
+}
+
+VCMQmResolution::~VCMQmResolution()
+{
+    delete _qm;
+}
+
+void
+VCMQmResolution::ResetRates()
 {
     _sumEncodedBytes = 0;
     _sumTargetRate = 0.0f;
@@ -65,7 +233,7 @@ VCMQmSelect::ResetRates()
 }
 
 void
-VCMQmSelect::Reset()
+VCMQmResolution::Reset()
 {
     _stateDecFactorSpatial = 1;
     _stateDecFactorTemp  = 1;
@@ -74,17 +242,14 @@ VCMQmSelect::Reset()
     _incomingFrameRate = 0.0f;
     _userFrameRate = 0.0f;
     _perFrameBandwidth =0.0f;
-    _prevTotalRate = 0.0f;
-    _prevRttTime = 0;
-    _prevPacketLoss = 0;
-     ResetQM();
-     ResetRates();
-     return;
+    ResetRates();
+    ResetQM();
+    return;
 }
 
-//Initialize after reset of encoder
+// Initialize rate control quantities after reset of encoder
 WebRtc_Word32
-VCMQmSelect::Initialize(float bitRate, float userFrameRate,
+VCMQmResolution::Initialize(float bitRate, float userFrameRate,
                         WebRtc_UWord32 width, WebRtc_UWord32 height)
 {
     if (userFrameRate == 0.0f || width == 0 || height == 0)
@@ -97,6 +262,12 @@ VCMQmSelect::Initialize(float bitRate, float userFrameRate,
     // Encoder width and height
     _width = width;
     _height = height;
+
+    // Aspect ratio: used for selection of 1x2,2x1,2x2
+    _aspectRatio = static_cast<float>(_width) / static_cast<float>(_height);
+
+    // Set the imageType for the encoder width/height.
+    _imageType = GetImageType(_width, _height);
 
     // Initial buffer level
     _bufferLevel = INIT_BUFFER_LEVEL * _targetBitRate;
@@ -121,19 +292,9 @@ VCMQmSelect::Initialize(float bitRate, float userFrameRate,
     return VCM_OK;
 }
 
-WebRtc_Word32
-VCMQmSelect::SetPreferences(WebRtc_Word8 resolPref)
-{
-    // Preference setting for temporal over spatial resolution
-    // 100 means temporal, 0 means spatial, 50 is neutral
-    _userResolutionPref = resolPref;
-
-    return VCM_OK;
-}
-
-//Update after every encoded frame
+// Update after every encoded frame
 void
-VCMQmSelect::UpdateEncodedSize(WebRtc_Word64 encodedSize,
+VCMQmResolution::UpdateEncodedSize(WebRtc_Word64 encodedSize,
                                FrameType encodedFrameType)
 {
     // Update encoded size;
@@ -167,16 +328,16 @@ VCMQmSelect::UpdateEncodedSize(WebRtc_Word64 encodedSize,
     */
 
     // Counter for occurrences of low buffer level
-    if (_bufferLevel <= PERC_BUFFER_THR * INIT_BUFFER_LEVEL * _targetBitRate)
+    if (_bufferLevel <= PERC_BUFFER_THR * OPT_BUFFER_LEVEL * _targetBitRate)
     {
         _lowBufferCnt++;
     }
 
 }
 
-//Update various quantities after SetTargetRates in MediaOpt
+// Update various quantities after SetTargetRates in MediaOpt
 void
-VCMQmSelect::UpdateRates(float targetBitRate, float avgSentBitRate,
+VCMQmResolution::UpdateRates(float targetBitRate, float avgSentBitRate,
                          float incomingFrameRate, WebRtc_UWord8 packetLoss)
 {
 
@@ -219,42 +380,10 @@ VCMQmSelect::UpdateRates(float targetBitRate, float avgSentBitRate,
 
 }
 
-// Adjust the FEC rate based on the content and the network state
-// (packet loss rate, total rate/bandwidth, round trip time).
-// Note that packetLoss here is the filtered loss value.
-WebRtc_UWord8
-VCMQmSelect::AdjustFecFactor(WebRtc_UWord8 codeRateDelta, float totalRate,
-                             float frameRate,WebRtc_UWord16 rttTime,
-                             WebRtc_UWord8 packetLoss)
-{
-    // Default: no adjustment
-    WebRtc_UWord8 codeRateDeltaAdjust = codeRateDelta;
-    float adjustFec =  1.0f;
-
-    // TODO (marpan):
-    // Set FEC adjustment factor
-
-    codeRateDeltaAdjust = static_cast<WebRtc_UWord8>(codeRateDelta * adjustFec);
-
-     // Keep track of previous values of network state:
-     // adjustment may be also based on pattern of changes in network state
-    _prevTotalRate = totalRate;
-    _prevRttTime = rttTime;
-    _prevPacketLoss = packetLoss;
-
-    return codeRateDeltaAdjust;
-}
-
-void
-VCMQmSelect::UpdateContent(const VideoContentMetrics*  contentMetrics)
-{
-     _contentMetrics = contentMetrics;
-}
-
 // Select the resolution factors: frame size and frame rate change: (QM modes)
 // Selection is for going back up in resolution, or going down in.
 WebRtc_Word32
-VCMQmSelect::SelectQuality(VCMQualityMode** qm)
+VCMQmResolution::SelectResolution(VCMResolutionScale** qm)
 {
     if (!_init)
     {
@@ -272,14 +401,10 @@ VCMQmSelect::SelectQuality(VCMQualityMode** qm)
     _qm->spatialHeightFact = 1;
     _qm->temporalFact = 1;
 
-
     // Update native values
     _nativeWidth = _contentMetrics->nativeWidth;
     _nativeHeight = _contentMetrics->nativeHeight;
     _nativeFrameRate = _contentMetrics->nativeFrameRate;
-
-    // Aspect ratio: used for selection of 1x2,2x1,2x2
-    _aspectRatio = (float)_width / (float)_height;
 
     float avgTargetRate = 0.0f;
     float avgIncomingFrameRate = 0.0f;
@@ -317,13 +442,12 @@ VCMQmSelect::SelectQuality(VCMQualityMode** qm)
     // for up-sampled spatial dimensions.
     // This is needed to get the transRate for going back up in
     // spatial resolution (only 2x2 allowed in this version).
-    SetMaxRateForQM(2 * _width, 2 * _height);
-    WebRtc_UWord8  imageType2  = _imageType;
-    WebRtc_UWord32 maxRateQM2 = _maxRateQM;
+    WebRtc_UWord8  imageType2 = GetImageType(2 * _width, 2 * _height);
+    WebRtc_UWord32 maxRateQM2 = kMaxRateQm[imageType2];
 
     // Set the maximum transitional rate and image type:
     // for the encoder spatial dimensions.
-    SetMaxRateForQM(_width, _height);
+    WebRtc_UWord32 maxRateQM = kMaxRateQm[_imageType];
 
     // Compute class state of the content.
     MotionNFD();
@@ -342,18 +466,21 @@ VCMQmSelect::SelectQuality(VCMQualityMode** qm)
 
     // Get image class and content class: for going up spatially
     WebRtc_UWord8 imageClass2 = 1;
-    if (imageType2 <= 3) imageClass2 = 0;
+    if (imageType2 <= 3)
+    {
+        imageClass2 = 0;
+    }
     WebRtc_UWord8 tableIndex2 = imageClass2 * 9 + contentClass;
     float scaleTransRate2 = kScaleTransRateQm[tableIndex2];
 
     // Transitonal rate for going down
     WebRtc_UWord32 estimatedTransRateDown = static_cast<WebRtc_UWord32>
-        (_incomingFrameRate * scaleTransRate * _maxRateQM / 30);
+        (_incomingFrameRate * scaleTransRate * maxRateQM / 30);
 
     // Transitional rate for going up temporally
     WebRtc_UWord32 estimatedTransRateUpT = static_cast<WebRtc_UWord32>
         (TRANS_RATE_SCALE_UP_TEMP * 2 * _incomingFrameRate *
-         scaleTransRate * _maxRateQM / 30);
+         scaleTransRate * maxRateQM / 30);
 
    // Transitional rate for going up spatially
     WebRtc_UWord32 estimatedTransRateUpS = static_cast<WebRtc_UWord32>
@@ -530,7 +657,7 @@ VCMQmSelect::SelectQuality(VCMQualityMode** qm)
 }
 
 WebRtc_Word32
-VCMQmSelect::SelectSpatialDirectionMode(float transRate)
+VCMQmResolution::SelectSpatialDirectionMode(float transRate)
 {
     // Default is 1x2 (H)
 
@@ -579,156 +706,82 @@ VCMQmSelect::SelectSpatialDirectionMode(float transRate)
     return VCM_OK;
 }
 
-void
-VCMQmSelect::Coherence()
+// DONE WITH RESOLUTION CLASS
+
+
+// ROBUSTNESS CLASS
+
+VCMQmRobustness::VCMQmRobustness()
 {
-    float horizNZ  = _contentMetrics->motionHorizontalness;
-    float distortionNZ  = _contentMetrics->motionClusterDistortion;
+    Reset();
+}
 
-    // Coherence measure: combine horizontalness with cluster distortion
-    _coherence.value = COH_MAX;
-    if (distortionNZ > 0.)
-    {
-        _coherence.value = horizNZ / distortionNZ;
-    }
-    _coherence.value = VCM_MIN(COH_MAX, _coherence.value);
-
-    if (_coherence.value < COHERENCE_THR)
-    {
-        _coherence.level = kLow;
-    }
-    else
-    {
-        _coherence.level = kHigh;
-    }
+VCMQmRobustness::~VCMQmRobustness()
+{
 
 }
 
 void
-VCMQmSelect::MotionNFD()
+VCMQmRobustness::Reset()
 {
-    _motion.value = _contentMetrics->motionMagnitudeNZ;
-
-    // Determine motion level
-    if (_motion.value < LOW_MOTION_NFD)
-    {
-        _motion.level = kLow;
-    }
-    else if (_motion.value > HIGH_MOTION_NFD)
-    {
-        _motion.level  = kHigh;
-    }
-    else
-    {
-        _motion.level = kDefault;
-    }
-
+    _prevTotalRate = 0.0f;
+    _prevRttTime = 0;
+    _prevPacketLoss = 0;
+    ResetQM();
+    return;
 }
 
-void
-VCMQmSelect::Motion()
+// Adjust the FEC rate based on the content and the network state
+// (packet loss rate, total rate/bandwidth, round trip time).
+// Note that packetLoss here is the filtered loss value.
+WebRtc_UWord8
+VCMQmRobustness::AdjustFecFactor(WebRtc_UWord8 codeRateDelta, float totalRate,
+                                 float frameRate,WebRtc_UWord32 rttTime,
+                                 WebRtc_UWord8 packetLoss)
 {
+    if (_contentMetrics == NULL)
+    {
+        return VCM_OK;
+    }
 
-    float sizeZeroMotion = _contentMetrics->sizeZeroMotion;
-    float motionMagNZ = _contentMetrics->motionMagnitudeNZ;
+    // Default: no adjustment
+    WebRtc_UWord8 codeRateDeltaAdjust = codeRateDelta;
+    float adjustFec =  1.0f;
 
-    // Take product of size and magnitude with equal weight
-    _motion.value = (1.0f - sizeZeroMotion) * motionMagNZ;
+    // Compute class state of the content.
+    MotionNFD();
+    Spatial();
 
-    // Stabilize: motionMagNZ could be large when only a
-    // few motion blocks are non-zero
-    _stationaryMotion = false;
-    if (sizeZeroMotion > HIGH_ZERO_MOTION_SIZE)
-    {
-        _motion.value = 0.0f;
-        _stationaryMotion = true;
-    }
-    // Determine motion level
-    if (_motion.value < LOW_MOTION)
-    {
-        _motion.level = kLow;
-    }
-    else if (_motion.value > HIGH_MOTION)
-    {
-        _motion.level  = kHigh;
-    }
-    else
-    {
-        _motion.level = kDefault;
-    }
+    // TODO (marpan):
+    // Set FEC adjustment factor
+
+    codeRateDeltaAdjust = static_cast<WebRtc_UWord8>(codeRateDelta * adjustFec);
+
+    // Keep track of previous values of network state:
+    // adjustment may be also based on pattern of changes in network state
+    _prevTotalRate = totalRate;
+    _prevRttTime = rttTime;
+    _prevPacketLoss = packetLoss;
+
+    _prevCodeRateDelta = codeRateDelta;
+
+    return codeRateDeltaAdjust;
 }
 
-
-void
-VCMQmSelect::Spatial()
+// Set the UEP (unequal-protection) on/off for the FEC
+bool
+VCMQmRobustness::SetUepProtection(WebRtc_UWord8 codeRateDelta, float totalRate,
+                                  WebRtc_UWord8 packetLoss, bool frameType)
 {
-    float spatialErr =  _contentMetrics->spatialPredErr;
-    float spatialErrH = _contentMetrics->spatialPredErrH;
-    float spatialErrV = _contentMetrics->spatialPredErrV;
-    // Spatial measure: take average of 3 prediction errors
-    _spatial.value = (spatialErr + spatialErrH + spatialErrV) / 3.0f;
-
-    float scale = 1.0f;
-    // Reduce thresholds for HD scenes
-    if (_imageType > 3)
+    if (_contentMetrics == NULL)
     {
-        scale = (float)SCALE_TEXTURE_HD;
+        return VCM_OK;
     }
 
-    if (_spatial.value > scale * HIGH_TEXTURE)
-    {
-        _spatial.level = kHigh;
-    }
-    else if (_spatial.value < scale * LOW_TEXTURE)
-    {
-        _spatial.level = kLow;
-    }
-    else
-    {
-         _spatial.level = kDefault;
-    }
-}
+    // Default: UEP on
+    bool uepProtection  = true;
 
-
-WebRtc_Word32
-VCMQmSelect::SetMaxRateForQM(WebRtc_UWord32 width, WebRtc_UWord32 height)
-{
-    // Match image type
-    WebRtc_UWord32 imageSize = width * height;
-
-    if (imageSize < kFrameSizeTh[0])
-    {
-        _imageType  = 0;
-    }
-    else if (imageSize < kFrameSizeTh[1])
-    {
-        _imageType  = 1;
-    }
-    else if (imageSize < kFrameSizeTh[2])
-    {
-        _imageType  = 2;
-    }
-    else if (imageSize < kFrameSizeTh[3])
-    {
-        _imageType  = 3;
-    }
-    else if (imageSize < kFrameSizeTh[4])
-    {
-        _imageType  = 4;
-    }
-    else if (imageSize < kFrameSizeTh[5])
-    {
-        _imageType  = 5;
-    }
-    else
-    {
-        _imageType  = 6;
-    }
-
-    // Set max rate based on image size
-    _maxRateQM = kMaxRateQm[_imageType];
-
-    return VCM_OK;
+    return uepProtection;
 }
 
 } // end of namespace
