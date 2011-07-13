@@ -217,7 +217,7 @@ ScaleBilinear(const WebRtc_UWord8* srcFrame, WebRtc_UWord8*& dstFrame,
 
     // Setting destination
     const WebRtc_UWord32 dstStride = (dstWidth + 31) & ~31;
-    const WebRtc_UWord32 dstUvStride = (((dstStride + 1 >> 1) + 31) & ~31);
+    const WebRtc_UWord32 dstUvStride = dstStride >> 1;
 
     WebRtc_UWord32 dstRequiredSize = dstStride * dstHeight +
                                      2 * (dstUvStride * ((dstHeight + 1) >> 1));
@@ -311,7 +311,7 @@ ScaleBilinear(const WebRtc_UWord8* srcFrame, WebRtc_UWord8*& dstFrame,
             {
                 memcpy(horizontalFilteredBuf, ptr_1, srcWidthArray[p]);
             }
-            filteredBuf[srcWidthArray[p]] = filteredBuf[srcWidthArray[p]-1];
+            filteredBuf[(srcWidthArray[p]-1)] = filteredBuf[(srcWidthArray[p]-2)];
 
             // vertical filter only if necessary
             if (source_dx != kFractionMax)
