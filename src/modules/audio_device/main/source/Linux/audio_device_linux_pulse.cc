@@ -2046,7 +2046,7 @@ void AudioDeviceLinuxPulse::PaSourceInfoCallbackHandler(
     }
 
     // We don't want to list output devices
-    if (!strncmp(i->name, "alsa_input", 10))
+    if (i->monitor_of_sink == PA_INVALID_INDEX)
     {
         if (_numRecDevices == _deviceIndex)
         {
