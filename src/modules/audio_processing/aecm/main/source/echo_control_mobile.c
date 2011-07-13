@@ -159,7 +159,7 @@ WebRtc_Word32 WebRtcAecm_Free(void *aecmInst)
     return 0;
 }
 
-WebRtc_Word32 WebRtcAecm_Init(void *aecmInst, WebRtc_Word32 sampFreq, WebRtc_Word32 scSampFreq)
+WebRtc_Word32 WebRtcAecm_Init(void *aecmInst, WebRtc_Word32 sampFreq)
 {
     aecmob_t *aecm = aecmInst;
     AecmConfig aecConfig;
@@ -175,13 +175,6 @@ WebRtc_Word32 WebRtcAecm_Init(void *aecmInst, WebRtc_Word32 sampFreq, WebRtc_Wor
         return -1;
     }
     aecm->sampFreq = sampFreq;
-
-    if (scSampFreq < 1 || scSampFreq > 96000)
-    {
-        aecm->lastError = AECM_BAD_PARAMETER_ERROR;
-        return -1;
-    }
-    aecm->scSampFreq = scSampFreq;
 
     // Initialize AECM core
     if (WebRtcAecm_InitCore(aecm->aecmCore, aecm->sampFreq) == -1)
@@ -625,6 +618,68 @@ WebRtc_Word32 WebRtcAecm_get_config(void *aecmInst, AecmConfig *config)
     config->echoMode = aecm->echoMode;
 
     return 0;
+}
+
+WebRtc_Word32 WebRtcAecm_InitEchoPath(void* aecmInst,
+                                      const void* echo_path,
+                                      int size_bytes)
+{
+    aecmob_t *aecm = aecmInst;
+    const WebRtc_Word16* echo_path_ptr = echo_path;
+
+    if ((aecm == NULL) || (echo_path == NULL))
+    {
+        aecm->lastError = AECM_NULL_POINTER_ERROR;
+        return -1;
+    }
+    if (size_bytes != WebRtcAecm_echo_path_size_bytes())
+    {
+        // Input channel size does not match the size of AECM
+        aecm->lastError = AECM_BAD_PARAMETER_ERROR;
+        return -1;
+    }
+    if (aecm->initFlag != kInitCheck)
+    {
+        aecm->lastError = AECM_UNINITIALIZED_ERROR;
+        return -1;
+    }
+
+    WebRtcAecm_InitEchoPathCore(aecm->aecmCore, echo_path_ptr);
+
+    return 0;
+}
+
+WebRtc_Word32 WebRtcAecm_GetEchoPath(void* aecmInst,
+                                     void* echo_path,
+                                     int size_bytes)
+{
+    aecmob_t *aecm = aecmInst;
+    WebRtc_Word16* echo_path_ptr = echo_path;
+
+    if ((aecm == NULL) || (echo_path == NULL))
+    {
+        aecm->lastError = AECM_NULL_POINTER_ERROR;
+        return -1;
+    }
+    if (size_bytes != WebRtcAecm_echo_path_size_bytes())
+    {
+        // Input channel size does not match the size of AECM
+        aecm->lastError = AECM_BAD_PARAMETER_ERROR;
+        return -1;
+    }
+    if (aecm->initFlag != kInitCheck)
+    {
+        aecm->lastError = AECM_UNINITIALIZED_ERROR;
+        return -1;
+    }
+
+    memcpy(echo_path_ptr, aecm->aecmCore->channelStored, size_bytes);
+    return 0;
+}
+
+int WebRtcAecm_echo_path_size_bytes()
+{
+    return (PART_LEN1 * sizeof(WebRtc_Word16));
 }
 
 WebRtc_Word32 WebRtcAecm_get_version(WebRtc_Word8 *versionStr, WebRtc_Word16 len)

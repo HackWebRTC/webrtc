@@ -11,6 +11,7 @@
 #include "echo_control_mobile_impl.h"
 
 #include <cassert>
+#include <cstring>
 
 #include "critical_section_wrapper.h"
 #include "echo_control_mobile.h"
@@ -44,14 +45,15 @@ int MapError(int err) {
   switch (err) {
     case AECM_UNSUPPORTED_FUNCTION_ERROR:
       return AudioProcessing::kUnsupportedFunctionError;
+    case AECM_NULL_POINTER_ERROR:
+      return AudioProcessing::kNullPointerError;
     case AECM_BAD_PARAMETER_ERROR:
       return AudioProcessing::kBadParameterError;
     case AECM_BAD_PARAMETER_WARNING:
       return AudioProcessing::kBadStreamParameterWarning;
     default:
-      // AECMOBFIX_UNSPECIFIED_ERROR
-      // AECMOBFIX_UNINITIALIZED_ERROR
-      // AECMOBFIX_NULL_POINTER_ERROR
+      // AECM_UNSPECIFIED_ERROR
+      // AECM_UNINITIALIZED_ERROR
       return AudioProcessing::kUnspecifiedError;
   }
 }
@@ -61,9 +63,16 @@ EchoControlMobileImpl::EchoControlMobileImpl(const AudioProcessingImpl* apm)
   : ProcessingComponent(apm),
     apm_(apm),
     routing_mode_(kSpeakerphone),
-    comfort_noise_enabled_(true) {}
+    comfort_noise_enabled_(true),
+    echo_path_size_bytes_(WebRtcAecm_echo_path_size_bytes()),
+    external_echo_path_(NULL) {}
 
-EchoControlMobileImpl::~EchoControlMobileImpl() {}
+EchoControlMobileImpl::~EchoControlMobileImpl() {
+    if (external_echo_path_ != NULL) {
+      delete [] external_echo_path_;
+      external_echo_path_ = NULL;
+    }
+}
 
 int EchoControlMobileImpl::ProcessRenderAudio(const AudioBuffer* audio) {
   if (!is_component_enabled()) {
@@ -181,6 +190,52 @@ bool EchoControlMobileImpl::is_comfort_noise_enabled() const {
   return comfort_noise_enabled_;
 }
 
+int EchoControlMobileImpl::SetEchoPath(const void* echo_path,
+                                       int size_bytes) {
+  CriticalSectionScoped crit_scoped(*apm_->crit());
+  if (echo_path == NULL) {
+    return apm_->kNullPointerError;
+  }
+  if (size_bytes != echo_path_size_bytes_) {
+    // Size mismatch
+    return apm_->kBadParameterError;
+  }
+
+  if (external_echo_path_ == NULL) {
+    external_echo_path_ = new unsigned char[size_bytes];
+  }
+  memcpy(external_echo_path_, echo_path, size_bytes);
+
+  return Initialize();
+}
+
+int EchoControlMobileImpl::GetEchoPath(void* echo_path,
+                                       int size_bytes) const {
+  CriticalSectionScoped crit_scoped(*apm_->crit());
+  if (echo_path == NULL) {
+    return apm_->kNullPointerError;
+  }
+  if (size_bytes != echo_path_size_bytes_) {
+    // Size mismatch
+    return apm_->kBadParameterError;
+  }
+  if (!is_component_enabled()) {
+    return apm_->kNotEnabledError;
+  }
+
+  // Get the echo path from the first channel
+  Handle* my_handle = static_cast<Handle*>(handle(0));
+  if (WebRtcAecm_GetEchoPath(my_handle, echo_path, size_bytes) != 0) {
+      return GetHandleError(my_handle);
+  }
+
+  return apm_->kNoError;
+}
+
+const int EchoControlMobileImpl::echo_path_size_bytes() const {
+    return echo_path_size_bytes_;
+}
+
 int EchoControlMobileImpl::Initialize() {
   if (!is_component_enabled()) {
     return apm_->kNoError;
@@ -197,7 +252,7 @@ int EchoControlMobileImpl::Initialize() {
 int EchoControlMobileImpl::get_version(char* version,
                                        int version_len_bytes) const {
   if (WebRtcAecm_get_version(version, version_len_bytes) != 0) {
-      return apm_->kBadParameterError;
+    return apm_->kBadParameterError;
   }
 
   return apm_->kNoError;
@@ -219,10 +274,20 @@ int EchoControlMobileImpl::DestroyHandle(void* handle) const {
 }
 
 int EchoControlMobileImpl::InitializeHandle(void* handle) const {
-  return WebRtcAecm_Init(static_cast<Handle*>(handle),
-                         apm_->sample_rate_hz(),
-                         48000); // Dummy value. This isn't actually
-                                 // required by AECM.
+  assert(handle != NULL);
+  Handle* my_handle = static_cast<Handle*>(handle);
+  if (WebRtcAecm_Init(my_handle, apm_->sample_rate_hz()) != 0) {
+    return GetHandleError(my_handle);
+  }
+  if (external_echo_path_ != NULL) {
+    if (WebRtcAecm_InitEchoPath(my_handle,
+                                external_echo_path_,
+                                echo_path_size_bytes_) != 0) {
+      return GetHandleError(my_handle);
+    }
+  }
+
+  return apm_->kNoError;
 }
 
 int EchoControlMobileImpl::ConfigureHandle(void* handle) const {

@@ -56,6 +56,8 @@ void usage() {
   printf("  --drift_compensation\n");
   printf("  --no_drift_compensation\n");
   printf("\n  -aecm    Echo control mobile\n");
+  printf("  --aecm_echo_path_in_file FILE");
+  printf("  --aecm_echo_path_out_file FILE");
   printf("\n  -agc     Gain control\n");
   printf("  --analog\n");
   printf("  --adaptive_digital\n");
@@ -103,6 +105,8 @@ void void_main(int argc, char* argv[]) {
   const char* near_filename = NULL;
   const char* out_filename = NULL;
   const char* vad_out_filename = NULL;
+  const char* aecm_echo_path_in_filename = NULL;
+  const char* aecm_echo_path_out_filename = NULL;
 
   int32_t sample_rate_hz = 16000;
   int32_t device_sample_rate_hz = 16000;
@@ -184,6 +188,16 @@ void void_main(int argc, char* argv[]) {
 
     } else if (strcmp(argv[i], "-aecm") == 0) {
       ASSERT_EQ(apm->kNoError, apm->echo_control_mobile()->Enable(true));
+
+    } else if (strcmp(argv[i], "--aecm_echo_path_in_file") == 0) {
+      i++;
+      ASSERT_LT(i, argc) << "Specify filename after --aecm_echo_path_in_file";
+      aecm_echo_path_in_filename = argv[i];
+
+    } else if (strcmp(argv[i], "--aecm_echo_path_out_file") == 0) {
+      i++;
+      ASSERT_LT(i, argc) << "Specify filename after --aecm_echo_path_out_file";
+      aecm_echo_path_out_filename = argv[i];
 
     } else if (strcmp(argv[i], "-agc") == 0) {
       ASSERT_EQ(apm->kNoError, apm->gain_control()->Enable(true));
@@ -323,6 +337,8 @@ void void_main(int argc, char* argv[]) {
   FILE* delay_file = NULL;
   FILE* drift_file = NULL;
   FILE* vad_out_file = NULL;
+  FILE* aecm_echo_path_in_file = NULL;
+  FILE* aecm_echo_path_out_file = NULL;
 
   if (far_filename != NULL) {
     far_file = fopen(far_filename, "rb");
@@ -359,6 +375,30 @@ void void_main(int argc, char* argv[]) {
     vad_out_file = fopen(vad_out_filename, "wb");
     ASSERT_TRUE(NULL != vad_out_file) << "Unable to open VAD output file "
                                       << vad_out_file;
+  }
+
+  if (aecm_echo_path_in_filename != NULL) {
+    aecm_echo_path_in_file = fopen(aecm_echo_path_in_filename, "rb");
+    ASSERT_TRUE(NULL != aecm_echo_path_in_file) << "Unable to open file "
+                                                << aecm_echo_path_in_filename;
+
+    const int path_size = apm->echo_control_mobile()->echo_path_size_bytes();
+    unsigned char echo_path[path_size];
+    ASSERT_EQ(path_size, fread(echo_path,
+                               sizeof(unsigned char),
+                               path_size,
+                               aecm_echo_path_in_file));
+    EXPECT_EQ(apm->kNoError,
+              apm->echo_control_mobile()->SetEchoPath(echo_path, path_size));
+    fclose(aecm_echo_path_in_file);
+    aecm_echo_path_in_file = NULL;
+  }
+
+  if (aecm_echo_path_out_filename != NULL) {
+    aecm_echo_path_out_file = fopen(aecm_echo_path_out_filename, "wb");
+    ASSERT_TRUE(NULL != aecm_echo_path_out_file) << "Unable to open file "
+                                                 << aecm_echo_path_out_filename;
+
   }
 
   enum Events {
@@ -577,6 +617,18 @@ void void_main(int argc, char* argv[]) {
     else {
       FAIL() << "Event " << event << " is unrecognized";
     }
+  }
+
+  if (aecm_echo_path_out_file != NULL) {
+    const int path_size = apm->echo_control_mobile()->echo_path_size_bytes();
+    unsigned char echo_path[path_size];
+    apm->echo_control_mobile()->GetEchoPath(echo_path, path_size);
+    ASSERT_EQ(path_size, fwrite(echo_path,
+                                sizeof(unsigned char),
+                                path_size,
+                                aecm_echo_path_out_file));
+    fclose(aecm_echo_path_out_file);
+    aecm_echo_path_out_file = NULL;
   }
 
   if (verbose) {

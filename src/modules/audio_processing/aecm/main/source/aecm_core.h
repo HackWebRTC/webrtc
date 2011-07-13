@@ -24,7 +24,7 @@
 #include "typedefs.h"
 #include "signal_processing_library.h"
 // TODO(bjornv): Will be removed in final version.
-//#include <stdio.h>
+#include <stdio.h>
 
 // Algorithm parameters
 
@@ -266,6 +266,19 @@ int WebRtcAecm_InitCore(AecmCore_t * const aecm, int samplingFreq);
 int WebRtcAecm_FreeCore(AecmCore_t *aecm);
 
 int WebRtcAecm_Control(AecmCore_t *aecm, int delay, int nlpFlag, int delayOffsetFlag);
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+// WebRtcAecm_InitEchoPathCore(...)
+//
+// This function resets the echo channel adaptation with the specified channel.
+// Input:
+//      - aecm          : Pointer to the AECM instance
+//      - echo_path     : Pointer to the data that should initialize the echo path
+//
+// Output:
+//      - aecm          : Initialized instance
+//
+void WebRtcAecm_InitEchoPathCore(AecmCore_t* aecm, const WebRtc_Word16* echo_path);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // WebRtcAecm_ProcessFrame(...)

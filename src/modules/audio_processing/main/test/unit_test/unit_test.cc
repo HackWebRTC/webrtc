@@ -638,6 +638,31 @@ TEST_F(ApmTest, EchoControlMobile) {
   EXPECT_EQ(apm_->kNoError,
       apm_->echo_control_mobile()->enable_comfort_noise(true));
   EXPECT_TRUE(apm_->echo_control_mobile()->is_comfort_noise_enabled());
+  // Set and get echo path
+  const int echo_path_size = apm_->echo_control_mobile()->echo_path_size_bytes();
+  unsigned char echo_path_in[echo_path_size];
+  unsigned char echo_path_out[echo_path_size];
+  EXPECT_EQ(apm_->kNullPointerError,
+            apm_->echo_control_mobile()->SetEchoPath(NULL, echo_path_size));
+  EXPECT_EQ(apm_->kNullPointerError,
+            apm_->echo_control_mobile()->GetEchoPath(NULL, echo_path_size));
+  EXPECT_EQ(apm_->kBadParameterError,
+            apm_->echo_control_mobile()->GetEchoPath(echo_path_out, 1));
+  EXPECT_EQ(apm_->kNoError,
+            apm_->echo_control_mobile()->GetEchoPath(echo_path_out,
+                                                     echo_path_size));
+  for (int i = 0; i < echo_path_size; i++) {
+    echo_path_in[i] = echo_path_out[i] + 1;
+  }
+  EXPECT_EQ(apm_->kBadParameterError,
+            apm_->echo_control_mobile()->SetEchoPath(echo_path_in, 1));
+  EXPECT_EQ(apm_->kNoError,
+            apm_->echo_control_mobile()->SetEchoPath(echo_path_in, echo_path_size));
+  EXPECT_EQ(apm_->kNoError,
+            apm_->echo_control_mobile()->GetEchoPath(echo_path_out, echo_path_size));
+  for (int i = 0; i < echo_path_size; i++) {
+    EXPECT_EQ(echo_path_in[i], echo_path_out[i]);
+  }
   // Turn AECM off
   EXPECT_EQ(apm_->kNoError, apm_->echo_control_mobile()->Enable(false));
   EXPECT_FALSE(apm_->echo_control_mobile()->is_enabled());

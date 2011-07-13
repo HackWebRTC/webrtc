@@ -74,16 +74,14 @@ WebRtc_Word32 WebRtcAecm_Free(void *aecmInst);
  * -------------------------------------------------------------------
  * void           *aecmInst     Pointer to the AECM instance
  * WebRtc_Word32  sampFreq      Sampling frequency of data
- * WebRtc_Word32  scSampFreq    Soundcard sampling frequency
  *
  * Outputs                      Description
  * -------------------------------------------------------------------
- * WebRtc_Word32  return          0: OK
+ * WebRtc_Word32  return        0: OK
  *                             -1: error
  */
 WebRtc_Word32 WebRtcAecm_Init(void* aecmInst,
-                              WebRtc_Word32 sampFreq,
-                              WebRtc_Word32 scSampFreq);
+                              WebRtc_Word32 sampFreq);
 
 /*
  * Inserts an 80 or 160 sample block of data into the farend buffer.
@@ -169,6 +167,52 @@ WebRtc_Word32 WebRtcAecm_set_config(void* aecmInst,
  */
 WebRtc_Word32 WebRtcAecm_get_config(void *aecmInst,
                                     AecmConfig *config);
+
+/*
+ * This function enables the user to set the echo path on-the-fly.
+ *
+ * Inputs                       Description
+ * -------------------------------------------------------------------
+ * void*        aecmInst        Pointer to the AECM instance
+ * void*        echo_path       Pointer to the echo path to be set
+ * int          size_bytes      Size in bytes of the echo path
+ *
+ * Outputs                      Description
+ * -------------------------------------------------------------------
+ * WebRtc_Word32  return        0: OK
+ *                             -1: error
+ */
+WebRtc_Word32 WebRtcAecm_InitEchoPath(void* aecmInst,
+                                      const void* echo_path,
+                                      int size_bytes);
+
+/*
+ * This function enables the user to get the currently used echo path
+ * on-the-fly
+ *
+ * Inputs                       Description
+ * -------------------------------------------------------------------
+ * void*        aecmInst        Pointer to the AECM instance
+ * void*        echo_path       Pointer to echo path
+ * int          size_bytes      Size in bytes of the echo path
+ *
+ * Outputs                      Description
+ * -------------------------------------------------------------------
+ * WebRtc_Word32  return        0: OK
+ *                             -1: error
+ */
+WebRtc_Word32 WebRtcAecm_GetEchoPath(void* aecmInst,
+                                     void* echo_path,
+                                     int size_bytes);
+
+/*
+ * This function enables the user to get the echo path size in bytes
+ *
+ * Outputs                      Description
+ * -------------------------------------------------------------------
+ * int          return           : size in bytes
+ */
+int WebRtcAecm_echo_path_size_bytes();
 
 /*
  * Gets the last error code.

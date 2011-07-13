@@ -253,6 +253,27 @@ int WebRtcAecm_CreateCore(AecmCore_t **aecmInst)
     return 0;
 }
 
+void WebRtcAecm_InitEchoPathCore(AecmCore_t* aecm, const WebRtc_Word16* echo_path)
+{
+    int i = 0;
+
+    // Reset the stored channel
+    memcpy(aecm->channelStored, echo_path, sizeof(WebRtc_Word16) * PART_LEN1);
+    // Reset the adapted channels
+    memcpy(aecm->channelAdapt16, echo_path, sizeof(WebRtc_Word16) * PART_LEN1);
+    for (i = 0; i < PART_LEN1; i++)
+    {
+        aecm->channelAdapt32[i] = WEBRTC_SPL_LSHIFT_W32(
+            (WebRtc_Word32)(aecm->channelAdapt16[i]), 16);
+    }
+
+    // Reset channel storing variables
+    aecm->mseAdaptOld = 1000;
+    aecm->mseStoredOld = 1000;
+    aecm->mseThreshold = WEBRTC_SPL_WORD32_MAX;
+    aecm->mseChannelCount = 0;
+}
+
 // WebRtcAecm_InitCore(...)
 //
 // This function initializes the AECM instant created with WebRtcAecm_CreateCore(...)
@@ -329,17 +350,11 @@ int WebRtcAecm_InitCore(AecmCore_t * const aecm, int samplingFreq)
     // Initialize the echo channels with a stored shape.
     if (samplingFreq == 8000)
     {
-        memcpy(aecm->channelAdapt16, kChannelStored8kHz, sizeof(WebRtc_Word16) * PART_LEN1);
+        WebRtcAecm_InitEchoPathCore(aecm, kChannelStored8kHz);
     }
     else
     {
-        memcpy(aecm->channelAdapt16, kChannelStored16kHz, sizeof(WebRtc_Word16) * PART_LEN1);
-    }
-    memcpy(aecm->channelStored, aecm->channelAdapt16, sizeof(WebRtc_Word16) * PART_LEN1);
-    for (i = 0; i < PART_LEN1; i++)
-    {
-        aecm->channelAdapt32[i] = WEBRTC_SPL_LSHIFT_W32(
-            (WebRtc_Word32)(aecm->channelAdapt16[i]), 16);
+        WebRtcAecm_InitEchoPathCore(aecm, kChannelStored16kHz);
     }
 
     memset(aecm->echoFilt, 0, sizeof(WebRtc_Word32) * PART_LEN1);
@@ -390,10 +405,6 @@ int WebRtcAecm_InitCore(AecmCore_t * const aecm, int samplingFreq)
     }
 #endif
 
-    aecm->mseAdaptOld = 1000;
-    aecm->mseStoredOld = 1000;
-    aecm->mseThreshold = WEBRTC_SPL_WORD32_MAX;
-
     aecm->farEnergyMin = WEBRTC_SPL_WORD16_MAX;
     aecm->farEnergyMax = WEBRTC_SPL_WORD16_MIN;
     aecm->farEnergyMaxMin = 0;
@@ -410,7 +421,6 @@ int WebRtcAecm_InitCore(AecmCore_t * const aecm, int samplingFreq)
     memset(aecm->delayCorrelation, 0, sizeof(WebRtc_Word16) * ((CORR_MAX << 1) + 1));
 
     aecm->startupState = 0;
-    aecm->mseChannelCount = 0;
     aecm->supGain = SUPGAIN_DEFAULT;
     aecm->supGainOld = SUPGAIN_DEFAULT;
     aecm->delayOffsetFlag = 0;
