@@ -32,11 +32,71 @@ void protobuf_AssignDesc_audio_5fprocessing_5funittest_2eproto();
 void protobuf_ShutdownFile_audio_5fprocessing_5funittest_2eproto();
 
 class Test;
+class Test_Frame;
 class Test_Statistic;
 class Test_EchoMetrics;
 class OutputData;
 
 // ===================================================================
+
+class Test_Frame : public ::google::protobuf::MessageLite {
+ public:
+  Test_Frame();
+  virtual ~Test_Frame();
+  
+  Test_Frame(const Test_Frame& from);
+  
+  inline Test_Frame& operator=(const Test_Frame& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  
+  static const Test_Frame& default_instance();
+  
+  void Swap(Test_Frame* other);
+  
+  // implements Message ----------------------------------------------
+  
+  Test_Frame* New() const;
+  void CheckTypeAndMergeFrom(const ::google::protobuf::MessageLite& from);
+  void CopyFrom(const Test_Frame& from);
+  void MergeFrom(const Test_Frame& from);
+  void Clear();
+  bool IsInitialized() const;
+  
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+  
+  ::std::string GetTypeName() const;
+  
+  // nested types ----------------------------------------------------
+  
+  // accessors -------------------------------------------------------
+  
+  // @@protoc_insertion_point(class_scope:audio_processing_unittest.Test.Frame)
+ private:
+  
+  
+  mutable int _cached_size_;
+  ::google::protobuf::uint32 _has_bits_[1];
+  
+  friend void  protobuf_AddDesc_audio_5fprocessing_5funittest_2eproto();
+  friend void protobuf_AssignDesc_audio_5fprocessing_5funittest_2eproto();
+  friend void protobuf_ShutdownFile_audio_5fprocessing_5funittest_2eproto();
+  
+  void InitAsDefaultInstance();
+  static Test_Frame* default_instance_;
+};
+// -------------------------------------------------------------------
 
 class Test_Statistic : public ::google::protobuf::MessageLite {
  public:
@@ -180,53 +240,53 @@ class Test_EchoMetrics : public ::google::protobuf::MessageLite {
   
   // accessors -------------------------------------------------------
   
-  // optional .audio_processing_unittest.Test.Statistic residualEchoReturnLoss = 1;
-  inline bool has_residualechoreturnloss() const;
-  inline void clear_residualechoreturnloss();
+  // optional .audio_processing_unittest.Test.Statistic residual_echo_return_loss = 1;
+  inline bool has_residual_echo_return_loss() const;
+  inline void clear_residual_echo_return_loss();
   static const int kResidualEchoReturnLossFieldNumber = 1;
-  inline const ::audio_processing_unittest::Test_Statistic& residualechoreturnloss() const;
-  inline ::audio_processing_unittest::Test_Statistic* mutable_residualechoreturnloss();
-  inline ::audio_processing_unittest::Test_Statistic* release_residualechoreturnloss();
+  inline const ::audio_processing_unittest::Test_Statistic& residual_echo_return_loss() const;
+  inline ::audio_processing_unittest::Test_Statistic* mutable_residual_echo_return_loss();
+  inline ::audio_processing_unittest::Test_Statistic* release_residual_echo_return_loss();
   
-  // optional .audio_processing_unittest.Test.Statistic echoReturnLoss = 2;
-  inline bool has_echoreturnloss() const;
-  inline void clear_echoreturnloss();
+  // optional .audio_processing_unittest.Test.Statistic echo_return_loss = 2;
+  inline bool has_echo_return_loss() const;
+  inline void clear_echo_return_loss();
   static const int kEchoReturnLossFieldNumber = 2;
-  inline const ::audio_processing_unittest::Test_Statistic& echoreturnloss() const;
-  inline ::audio_processing_unittest::Test_Statistic* mutable_echoreturnloss();
-  inline ::audio_processing_unittest::Test_Statistic* release_echoreturnloss();
+  inline const ::audio_processing_unittest::Test_Statistic& echo_return_loss() const;
+  inline ::audio_processing_unittest::Test_Statistic* mutable_echo_return_loss();
+  inline ::audio_processing_unittest::Test_Statistic* release_echo_return_loss();
   
-  // optional .audio_processing_unittest.Test.Statistic echoReturnLossEnhancement = 3;
-  inline bool has_echoreturnlossenhancement() const;
-  inline void clear_echoreturnlossenhancement();
+  // optional .audio_processing_unittest.Test.Statistic echo_return_loss_enhancement = 3;
+  inline bool has_echo_return_loss_enhancement() const;
+  inline void clear_echo_return_loss_enhancement();
   static const int kEchoReturnLossEnhancementFieldNumber = 3;
-  inline const ::audio_processing_unittest::Test_Statistic& echoreturnlossenhancement() const;
-  inline ::audio_processing_unittest::Test_Statistic* mutable_echoreturnlossenhancement();
-  inline ::audio_processing_unittest::Test_Statistic* release_echoreturnlossenhancement();
+  inline const ::audio_processing_unittest::Test_Statistic& echo_return_loss_enhancement() const;
+  inline ::audio_processing_unittest::Test_Statistic* mutable_echo_return_loss_enhancement();
+  inline ::audio_processing_unittest::Test_Statistic* release_echo_return_loss_enhancement();
   
-  // optional .audio_processing_unittest.Test.Statistic aNlp = 4;
-  inline bool has_anlp() const;
-  inline void clear_anlp();
+  // optional .audio_processing_unittest.Test.Statistic a_nlp = 4;
+  inline bool has_a_nlp() const;
+  inline void clear_a_nlp();
   static const int kANlpFieldNumber = 4;
-  inline const ::audio_processing_unittest::Test_Statistic& anlp() const;
-  inline ::audio_processing_unittest::Test_Statistic* mutable_anlp();
-  inline ::audio_processing_unittest::Test_Statistic* release_anlp();
+  inline const ::audio_processing_unittest::Test_Statistic& a_nlp() const;
+  inline ::audio_processing_unittest::Test_Statistic* mutable_a_nlp();
+  inline ::audio_processing_unittest::Test_Statistic* release_a_nlp();
   
   // @@protoc_insertion_point(class_scope:audio_processing_unittest.Test.EchoMetrics)
  private:
-  inline void set_has_residualechoreturnloss();
-  inline void clear_has_residualechoreturnloss();
-  inline void set_has_echoreturnloss();
-  inline void clear_has_echoreturnloss();
-  inline void set_has_echoreturnlossenhancement();
-  inline void clear_has_echoreturnlossenhancement();
-  inline void set_has_anlp();
-  inline void clear_has_anlp();
+  inline void set_has_residual_echo_return_loss();
+  inline void clear_has_residual_echo_return_loss();
+  inline void set_has_echo_return_loss();
+  inline void clear_has_echo_return_loss();
+  inline void set_has_echo_return_loss_enhancement();
+  inline void clear_has_echo_return_loss_enhancement();
+  inline void set_has_a_nlp();
+  inline void clear_has_a_nlp();
   
-  ::audio_processing_unittest::Test_Statistic* residualechoreturnloss_;
-  ::audio_processing_unittest::Test_Statistic* echoreturnloss_;
-  ::audio_processing_unittest::Test_Statistic* echoreturnlossenhancement_;
-  ::audio_processing_unittest::Test_Statistic* anlp_;
+  ::audio_processing_unittest::Test_Statistic* residual_echo_return_loss_;
+  ::audio_processing_unittest::Test_Statistic* echo_return_loss_;
+  ::audio_processing_unittest::Test_Statistic* echo_return_loss_enhancement_;
+  ::audio_processing_unittest::Test_Statistic* a_nlp_;
   
   mutable int _cached_size_;
   ::google::protobuf::uint32 _has_bits_[(4 + 31) / 32];
@@ -281,88 +341,132 @@ class Test : public ::google::protobuf::MessageLite {
   
   // nested types ----------------------------------------------------
   
+  typedef Test_Frame Frame;
   typedef Test_Statistic Statistic;
   typedef Test_EchoMetrics EchoMetrics;
   
   // accessors -------------------------------------------------------
   
-  // optional int32 numReverseChannels = 1;
-  inline bool has_numreversechannels() const;
-  inline void clear_numreversechannels();
+  // optional int32 num_reverse_channels = 1;
+  inline bool has_num_reverse_channels() const;
+  inline void clear_num_reverse_channels();
   static const int kNumReverseChannelsFieldNumber = 1;
-  inline ::google::protobuf::int32 numreversechannels() const;
-  inline void set_numreversechannels(::google::protobuf::int32 value);
+  inline ::google::protobuf::int32 num_reverse_channels() const;
+  inline void set_num_reverse_channels(::google::protobuf::int32 value);
   
-  // optional int32 numChannels = 2;
-  inline bool has_numchannels() const;
-  inline void clear_numchannels();
-  static const int kNumChannelsFieldNumber = 2;
-  inline ::google::protobuf::int32 numchannels() const;
-  inline void set_numchannels(::google::protobuf::int32 value);
+  // optional int32 num_input_channels = 2;
+  inline bool has_num_input_channels() const;
+  inline void clear_num_input_channels();
+  static const int kNumInputChannelsFieldNumber = 2;
+  inline ::google::protobuf::int32 num_input_channels() const;
+  inline void set_num_input_channels(::google::protobuf::int32 value);
   
-  // optional int32 sampleRate = 3;
-  inline bool has_samplerate() const;
-  inline void clear_samplerate();
-  static const int kSampleRateFieldNumber = 3;
-  inline ::google::protobuf::int32 samplerate() const;
-  inline void set_samplerate(::google::protobuf::int32 value);
+  // optional int32 num_output_channels = 3;
+  inline bool has_num_output_channels() const;
+  inline void clear_num_output_channels();
+  static const int kNumOutputChannelsFieldNumber = 3;
+  inline ::google::protobuf::int32 num_output_channels() const;
+  inline void set_num_output_channels(::google::protobuf::int32 value);
   
-  // optional int32 hasEchoCount = 4;
-  inline bool has_hasechocount() const;
-  inline void clear_hasechocount();
-  static const int kHasEchoCountFieldNumber = 4;
-  inline ::google::protobuf::int32 hasechocount() const;
-  inline void set_hasechocount(::google::protobuf::int32 value);
+  // optional int32 sample_rate = 4;
+  inline bool has_sample_rate() const;
+  inline void clear_sample_rate();
+  static const int kSampleRateFieldNumber = 4;
+  inline ::google::protobuf::int32 sample_rate() const;
+  inline void set_sample_rate(::google::protobuf::int32 value);
   
-  // optional int32 hasVoiceCount = 5;
-  inline bool has_hasvoicecount() const;
-  inline void clear_hasvoicecount();
-  static const int kHasVoiceCountFieldNumber = 5;
-  inline ::google::protobuf::int32 hasvoicecount() const;
-  inline void set_hasvoicecount(::google::protobuf::int32 value);
+  // repeated .audio_processing_unittest.Test.Frame frame = 5;
+  inline int frame_size() const;
+  inline void clear_frame();
+  static const int kFrameFieldNumber = 5;
+  inline const ::audio_processing_unittest::Test_Frame& frame(int index) const;
+  inline ::audio_processing_unittest::Test_Frame* mutable_frame(int index);
+  inline ::audio_processing_unittest::Test_Frame* add_frame();
+  inline const ::google::protobuf::RepeatedPtrField< ::audio_processing_unittest::Test_Frame >&
+      frame() const;
+  inline ::google::protobuf::RepeatedPtrField< ::audio_processing_unittest::Test_Frame >*
+      mutable_frame();
   
-  // optional int32 isSaturatedCount = 6;
-  inline bool has_issaturatedcount() const;
-  inline void clear_issaturatedcount();
-  static const int kIsSaturatedCountFieldNumber = 6;
-  inline ::google::protobuf::int32 issaturatedcount() const;
-  inline void set_issaturatedcount(::google::protobuf::int32 value);
+  // optional int32 analog_level_average = 6;
+  inline bool has_analog_level_average() const;
+  inline void clear_analog_level_average();
+  static const int kAnalogLevelAverageFieldNumber = 6;
+  inline ::google::protobuf::int32 analog_level_average() const;
+  inline void set_analog_level_average(::google::protobuf::int32 value);
   
-  // optional .audio_processing_unittest.Test.EchoMetrics echoMetrics = 7;
-  inline bool has_echometrics() const;
-  inline void clear_echometrics();
-  static const int kEchoMetricsFieldNumber = 7;
-  inline const ::audio_processing_unittest::Test_EchoMetrics& echometrics() const;
-  inline ::audio_processing_unittest::Test_EchoMetrics* mutable_echometrics();
-  inline ::audio_processing_unittest::Test_EchoMetrics* release_echometrics();
+  // optional int32 max_output_average = 7;
+  inline bool has_max_output_average() const;
+  inline void clear_max_output_average();
+  static const int kMaxOutputAverageFieldNumber = 7;
+  inline ::google::protobuf::int32 max_output_average() const;
+  inline void set_max_output_average(::google::protobuf::int32 value);
+  
+  // optional int32 has_echo_count = 8;
+  inline bool has_has_echo_count() const;
+  inline void clear_has_echo_count();
+  static const int kHasEchoCountFieldNumber = 8;
+  inline ::google::protobuf::int32 has_echo_count() const;
+  inline void set_has_echo_count(::google::protobuf::int32 value);
+  
+  // optional int32 has_voice_count = 9;
+  inline bool has_has_voice_count() const;
+  inline void clear_has_voice_count();
+  static const int kHasVoiceCountFieldNumber = 9;
+  inline ::google::protobuf::int32 has_voice_count() const;
+  inline void set_has_voice_count(::google::protobuf::int32 value);
+  
+  // optional int32 is_saturated_count = 10;
+  inline bool has_is_saturated_count() const;
+  inline void clear_is_saturated_count();
+  static const int kIsSaturatedCountFieldNumber = 10;
+  inline ::google::protobuf::int32 is_saturated_count() const;
+  inline void set_is_saturated_count(::google::protobuf::int32 value);
+  
+  // optional .audio_processing_unittest.Test.EchoMetrics echo_metrics = 11;
+  inline bool has_echo_metrics() const;
+  inline void clear_echo_metrics();
+  static const int kEchoMetricsFieldNumber = 11;
+  inline const ::audio_processing_unittest::Test_EchoMetrics& echo_metrics() const;
+  inline ::audio_processing_unittest::Test_EchoMetrics* mutable_echo_metrics();
+  inline ::audio_processing_unittest::Test_EchoMetrics* release_echo_metrics();
   
   // @@protoc_insertion_point(class_scope:audio_processing_unittest.Test)
  private:
-  inline void set_has_numreversechannels();
-  inline void clear_has_numreversechannels();
-  inline void set_has_numchannels();
-  inline void clear_has_numchannels();
-  inline void set_has_samplerate();
-  inline void clear_has_samplerate();
-  inline void set_has_hasechocount();
-  inline void clear_has_hasechocount();
-  inline void set_has_hasvoicecount();
-  inline void clear_has_hasvoicecount();
-  inline void set_has_issaturatedcount();
-  inline void clear_has_issaturatedcount();
-  inline void set_has_echometrics();
-  inline void clear_has_echometrics();
+  inline void set_has_num_reverse_channels();
+  inline void clear_has_num_reverse_channels();
+  inline void set_has_num_input_channels();
+  inline void clear_has_num_input_channels();
+  inline void set_has_num_output_channels();
+  inline void clear_has_num_output_channels();
+  inline void set_has_sample_rate();
+  inline void clear_has_sample_rate();
+  inline void set_has_analog_level_average();
+  inline void clear_has_analog_level_average();
+  inline void set_has_max_output_average();
+  inline void clear_has_max_output_average();
+  inline void set_has_has_echo_count();
+  inline void clear_has_has_echo_count();
+  inline void set_has_has_voice_count();
+  inline void clear_has_has_voice_count();
+  inline void set_has_is_saturated_count();
+  inline void clear_has_is_saturated_count();
+  inline void set_has_echo_metrics();
+  inline void clear_has_echo_metrics();
   
-  ::google::protobuf::int32 numreversechannels_;
-  ::google::protobuf::int32 numchannels_;
-  ::google::protobuf::int32 samplerate_;
-  ::google::protobuf::int32 hasechocount_;
-  ::google::protobuf::int32 hasvoicecount_;
-  ::google::protobuf::int32 issaturatedcount_;
-  ::audio_processing_unittest::Test_EchoMetrics* echometrics_;
+  ::google::protobuf::int32 num_reverse_channels_;
+  ::google::protobuf::int32 num_input_channels_;
+  ::google::protobuf::int32 num_output_channels_;
+  ::google::protobuf::int32 sample_rate_;
+  ::google::protobuf::RepeatedPtrField< ::audio_processing_unittest::Test_Frame > frame_;
+  ::google::protobuf::int32 analog_level_average_;
+  ::google::protobuf::int32 max_output_average_;
+  ::google::protobuf::int32 has_echo_count_;
+  ::google::protobuf::int32 has_voice_count_;
+  ::audio_processing_unittest::Test_EchoMetrics* echo_metrics_;
+  ::google::protobuf::int32 is_saturated_count_;
   
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(7 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(11 + 31) / 32];
   
   friend void  protobuf_AddDesc_audio_5fprocessing_5funittest_2eproto();
   friend void protobuf_AssignDesc_audio_5fprocessing_5funittest_2eproto();
@@ -447,6 +551,10 @@ class OutputData : public ::google::protobuf::MessageLite {
 
 
 // ===================================================================
+
+// Test_Frame
+
+// -------------------------------------------------------------------
 
 // Test_Statistic
 
@@ -542,119 +650,119 @@ inline void Test_Statistic::set_minimum(::google::protobuf::int32 value) {
 
 // Test_EchoMetrics
 
-// optional .audio_processing_unittest.Test.Statistic residualEchoReturnLoss = 1;
-inline bool Test_EchoMetrics::has_residualechoreturnloss() const {
+// optional .audio_processing_unittest.Test.Statistic residual_echo_return_loss = 1;
+inline bool Test_EchoMetrics::has_residual_echo_return_loss() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
-inline void Test_EchoMetrics::set_has_residualechoreturnloss() {
+inline void Test_EchoMetrics::set_has_residual_echo_return_loss() {
   _has_bits_[0] |= 0x00000001u;
 }
-inline void Test_EchoMetrics::clear_has_residualechoreturnloss() {
+inline void Test_EchoMetrics::clear_has_residual_echo_return_loss() {
   _has_bits_[0] &= ~0x00000001u;
 }
-inline void Test_EchoMetrics::clear_residualechoreturnloss() {
-  if (residualechoreturnloss_ != NULL) residualechoreturnloss_->::audio_processing_unittest::Test_Statistic::Clear();
-  clear_has_residualechoreturnloss();
+inline void Test_EchoMetrics::clear_residual_echo_return_loss() {
+  if (residual_echo_return_loss_ != NULL) residual_echo_return_loss_->::audio_processing_unittest::Test_Statistic::Clear();
+  clear_has_residual_echo_return_loss();
 }
-inline const ::audio_processing_unittest::Test_Statistic& Test_EchoMetrics::residualechoreturnloss() const {
-  return residualechoreturnloss_ != NULL ? *residualechoreturnloss_ : *default_instance_->residualechoreturnloss_;
+inline const ::audio_processing_unittest::Test_Statistic& Test_EchoMetrics::residual_echo_return_loss() const {
+  return residual_echo_return_loss_ != NULL ? *residual_echo_return_loss_ : *default_instance_->residual_echo_return_loss_;
 }
-inline ::audio_processing_unittest::Test_Statistic* Test_EchoMetrics::mutable_residualechoreturnloss() {
-  set_has_residualechoreturnloss();
-  if (residualechoreturnloss_ == NULL) residualechoreturnloss_ = new ::audio_processing_unittest::Test_Statistic;
-  return residualechoreturnloss_;
+inline ::audio_processing_unittest::Test_Statistic* Test_EchoMetrics::mutable_residual_echo_return_loss() {
+  set_has_residual_echo_return_loss();
+  if (residual_echo_return_loss_ == NULL) residual_echo_return_loss_ = new ::audio_processing_unittest::Test_Statistic;
+  return residual_echo_return_loss_;
 }
-inline ::audio_processing_unittest::Test_Statistic* Test_EchoMetrics::release_residualechoreturnloss() {
-  clear_has_residualechoreturnloss();
-  ::audio_processing_unittest::Test_Statistic* temp = residualechoreturnloss_;
-  residualechoreturnloss_ = NULL;
+inline ::audio_processing_unittest::Test_Statistic* Test_EchoMetrics::release_residual_echo_return_loss() {
+  clear_has_residual_echo_return_loss();
+  ::audio_processing_unittest::Test_Statistic* temp = residual_echo_return_loss_;
+  residual_echo_return_loss_ = NULL;
   return temp;
 }
 
-// optional .audio_processing_unittest.Test.Statistic echoReturnLoss = 2;
-inline bool Test_EchoMetrics::has_echoreturnloss() const {
+// optional .audio_processing_unittest.Test.Statistic echo_return_loss = 2;
+inline bool Test_EchoMetrics::has_echo_return_loss() const {
   return (_has_bits_[0] & 0x00000002u) != 0;
 }
-inline void Test_EchoMetrics::set_has_echoreturnloss() {
+inline void Test_EchoMetrics::set_has_echo_return_loss() {
   _has_bits_[0] |= 0x00000002u;
 }
-inline void Test_EchoMetrics::clear_has_echoreturnloss() {
+inline void Test_EchoMetrics::clear_has_echo_return_loss() {
   _has_bits_[0] &= ~0x00000002u;
 }
-inline void Test_EchoMetrics::clear_echoreturnloss() {
-  if (echoreturnloss_ != NULL) echoreturnloss_->::audio_processing_unittest::Test_Statistic::Clear();
-  clear_has_echoreturnloss();
+inline void Test_EchoMetrics::clear_echo_return_loss() {
+  if (echo_return_loss_ != NULL) echo_return_loss_->::audio_processing_unittest::Test_Statistic::Clear();
+  clear_has_echo_return_loss();
 }
-inline const ::audio_processing_unittest::Test_Statistic& Test_EchoMetrics::echoreturnloss() const {
-  return echoreturnloss_ != NULL ? *echoreturnloss_ : *default_instance_->echoreturnloss_;
+inline const ::audio_processing_unittest::Test_Statistic& Test_EchoMetrics::echo_return_loss() const {
+  return echo_return_loss_ != NULL ? *echo_return_loss_ : *default_instance_->echo_return_loss_;
 }
-inline ::audio_processing_unittest::Test_Statistic* Test_EchoMetrics::mutable_echoreturnloss() {
-  set_has_echoreturnloss();
-  if (echoreturnloss_ == NULL) echoreturnloss_ = new ::audio_processing_unittest::Test_Statistic;
-  return echoreturnloss_;
+inline ::audio_processing_unittest::Test_Statistic* Test_EchoMetrics::mutable_echo_return_loss() {
+  set_has_echo_return_loss();
+  if (echo_return_loss_ == NULL) echo_return_loss_ = new ::audio_processing_unittest::Test_Statistic;
+  return echo_return_loss_;
 }
-inline ::audio_processing_unittest::Test_Statistic* Test_EchoMetrics::release_echoreturnloss() {
-  clear_has_echoreturnloss();
-  ::audio_processing_unittest::Test_Statistic* temp = echoreturnloss_;
-  echoreturnloss_ = NULL;
+inline ::audio_processing_unittest::Test_Statistic* Test_EchoMetrics::release_echo_return_loss() {
+  clear_has_echo_return_loss();
+  ::audio_processing_unittest::Test_Statistic* temp = echo_return_loss_;
+  echo_return_loss_ = NULL;
   return temp;
 }
 
-// optional .audio_processing_unittest.Test.Statistic echoReturnLossEnhancement = 3;
-inline bool Test_EchoMetrics::has_echoreturnlossenhancement() const {
+// optional .audio_processing_unittest.Test.Statistic echo_return_loss_enhancement = 3;
+inline bool Test_EchoMetrics::has_echo_return_loss_enhancement() const {
   return (_has_bits_[0] & 0x00000004u) != 0;
 }
-inline void Test_EchoMetrics::set_has_echoreturnlossenhancement() {
+inline void Test_EchoMetrics::set_has_echo_return_loss_enhancement() {
   _has_bits_[0] |= 0x00000004u;
 }
-inline void Test_EchoMetrics::clear_has_echoreturnlossenhancement() {
+inline void Test_EchoMetrics::clear_has_echo_return_loss_enhancement() {
   _has_bits_[0] &= ~0x00000004u;
 }
-inline void Test_EchoMetrics::clear_echoreturnlossenhancement() {
-  if (echoreturnlossenhancement_ != NULL) echoreturnlossenhancement_->::audio_processing_unittest::Test_Statistic::Clear();
-  clear_has_echoreturnlossenhancement();
+inline void Test_EchoMetrics::clear_echo_return_loss_enhancement() {
+  if (echo_return_loss_enhancement_ != NULL) echo_return_loss_enhancement_->::audio_processing_unittest::Test_Statistic::Clear();
+  clear_has_echo_return_loss_enhancement();
 }
-inline const ::audio_processing_unittest::Test_Statistic& Test_EchoMetrics::echoreturnlossenhancement() const {
-  return echoreturnlossenhancement_ != NULL ? *echoreturnlossenhancement_ : *default_instance_->echoreturnlossenhancement_;
+inline const ::audio_processing_unittest::Test_Statistic& Test_EchoMetrics::echo_return_loss_enhancement() const {
+  return echo_return_loss_enhancement_ != NULL ? *echo_return_loss_enhancement_ : *default_instance_->echo_return_loss_enhancement_;
 }
-inline ::audio_processing_unittest::Test_Statistic* Test_EchoMetrics::mutable_echoreturnlossenhancement() {
-  set_has_echoreturnlossenhancement();
-  if (echoreturnlossenhancement_ == NULL) echoreturnlossenhancement_ = new ::audio_processing_unittest::Test_Statistic;
-  return echoreturnlossenhancement_;
+inline ::audio_processing_unittest::Test_Statistic* Test_EchoMetrics::mutable_echo_return_loss_enhancement() {
+  set_has_echo_return_loss_enhancement();
+  if (echo_return_loss_enhancement_ == NULL) echo_return_loss_enhancement_ = new ::audio_processing_unittest::Test_Statistic;
+  return echo_return_loss_enhancement_;
 }
-inline ::audio_processing_unittest::Test_Statistic* Test_EchoMetrics::release_echoreturnlossenhancement() {
-  clear_has_echoreturnlossenhancement();
-  ::audio_processing_unittest::Test_Statistic* temp = echoreturnlossenhancement_;
-  echoreturnlossenhancement_ = NULL;
+inline ::audio_processing_unittest::Test_Statistic* Test_EchoMetrics::release_echo_return_loss_enhancement() {
+  clear_has_echo_return_loss_enhancement();
+  ::audio_processing_unittest::Test_Statistic* temp = echo_return_loss_enhancement_;
+  echo_return_loss_enhancement_ = NULL;
   return temp;
 }
 
-// optional .audio_processing_unittest.Test.Statistic aNlp = 4;
-inline bool Test_EchoMetrics::has_anlp() const {
+// optional .audio_processing_unittest.Test.Statistic a_nlp = 4;
+inline bool Test_EchoMetrics::has_a_nlp() const {
   return (_has_bits_[0] & 0x00000008u) != 0;
 }
-inline void Test_EchoMetrics::set_has_anlp() {
+inline void Test_EchoMetrics::set_has_a_nlp() {
   _has_bits_[0] |= 0x00000008u;
 }
-inline void Test_EchoMetrics::clear_has_anlp() {
+inline void Test_EchoMetrics::clear_has_a_nlp() {
   _has_bits_[0] &= ~0x00000008u;
 }
-inline void Test_EchoMetrics::clear_anlp() {
-  if (anlp_ != NULL) anlp_->::audio_processing_unittest::Test_Statistic::Clear();
-  clear_has_anlp();
+inline void Test_EchoMetrics::clear_a_nlp() {
+  if (a_nlp_ != NULL) a_nlp_->::audio_processing_unittest::Test_Statistic::Clear();
+  clear_has_a_nlp();
 }
-inline const ::audio_processing_unittest::Test_Statistic& Test_EchoMetrics::anlp() const {
-  return anlp_ != NULL ? *anlp_ : *default_instance_->anlp_;
+inline const ::audio_processing_unittest::Test_Statistic& Test_EchoMetrics::a_nlp() const {
+  return a_nlp_ != NULL ? *a_nlp_ : *default_instance_->a_nlp_;
 }
-inline ::audio_processing_unittest::Test_Statistic* Test_EchoMetrics::mutable_anlp() {
-  set_has_anlp();
-  if (anlp_ == NULL) anlp_ = new ::audio_processing_unittest::Test_Statistic;
-  return anlp_;
+inline ::audio_processing_unittest::Test_Statistic* Test_EchoMetrics::mutable_a_nlp() {
+  set_has_a_nlp();
+  if (a_nlp_ == NULL) a_nlp_ = new ::audio_processing_unittest::Test_Statistic;
+  return a_nlp_;
 }
-inline ::audio_processing_unittest::Test_Statistic* Test_EchoMetrics::release_anlp() {
-  clear_has_anlp();
-  ::audio_processing_unittest::Test_Statistic* temp = anlp_;
-  anlp_ = NULL;
+inline ::audio_processing_unittest::Test_Statistic* Test_EchoMetrics::release_a_nlp() {
+  clear_has_a_nlp();
+  ::audio_processing_unittest::Test_Statistic* temp = a_nlp_;
+  a_nlp_ = NULL;
   return temp;
 }
 
@@ -662,164 +770,255 @@ inline ::audio_processing_unittest::Test_Statistic* Test_EchoMetrics::release_an
 
 // Test
 
-// optional int32 numReverseChannels = 1;
-inline bool Test::has_numreversechannels() const {
+// optional int32 num_reverse_channels = 1;
+inline bool Test::has_num_reverse_channels() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
-inline void Test::set_has_numreversechannels() {
+inline void Test::set_has_num_reverse_channels() {
   _has_bits_[0] |= 0x00000001u;
 }
-inline void Test::clear_has_numreversechannels() {
+inline void Test::clear_has_num_reverse_channels() {
   _has_bits_[0] &= ~0x00000001u;
 }
-inline void Test::clear_numreversechannels() {
-  numreversechannels_ = 0;
-  clear_has_numreversechannels();
+inline void Test::clear_num_reverse_channels() {
+  num_reverse_channels_ = 0;
+  clear_has_num_reverse_channels();
 }
-inline ::google::protobuf::int32 Test::numreversechannels() const {
-  return numreversechannels_;
+inline ::google::protobuf::int32 Test::num_reverse_channels() const {
+  return num_reverse_channels_;
 }
-inline void Test::set_numreversechannels(::google::protobuf::int32 value) {
-  set_has_numreversechannels();
-  numreversechannels_ = value;
+inline void Test::set_num_reverse_channels(::google::protobuf::int32 value) {
+  set_has_num_reverse_channels();
+  num_reverse_channels_ = value;
 }
 
-// optional int32 numChannels = 2;
-inline bool Test::has_numchannels() const {
+// optional int32 num_input_channels = 2;
+inline bool Test::has_num_input_channels() const {
   return (_has_bits_[0] & 0x00000002u) != 0;
 }
-inline void Test::set_has_numchannels() {
+inline void Test::set_has_num_input_channels() {
   _has_bits_[0] |= 0x00000002u;
 }
-inline void Test::clear_has_numchannels() {
+inline void Test::clear_has_num_input_channels() {
   _has_bits_[0] &= ~0x00000002u;
 }
-inline void Test::clear_numchannels() {
-  numchannels_ = 0;
-  clear_has_numchannels();
+inline void Test::clear_num_input_channels() {
+  num_input_channels_ = 0;
+  clear_has_num_input_channels();
 }
-inline ::google::protobuf::int32 Test::numchannels() const {
-  return numchannels_;
+inline ::google::protobuf::int32 Test::num_input_channels() const {
+  return num_input_channels_;
 }
-inline void Test::set_numchannels(::google::protobuf::int32 value) {
-  set_has_numchannels();
-  numchannels_ = value;
+inline void Test::set_num_input_channels(::google::protobuf::int32 value) {
+  set_has_num_input_channels();
+  num_input_channels_ = value;
 }
 
-// optional int32 sampleRate = 3;
-inline bool Test::has_samplerate() const {
+// optional int32 num_output_channels = 3;
+inline bool Test::has_num_output_channels() const {
   return (_has_bits_[0] & 0x00000004u) != 0;
 }
-inline void Test::set_has_samplerate() {
+inline void Test::set_has_num_output_channels() {
   _has_bits_[0] |= 0x00000004u;
 }
-inline void Test::clear_has_samplerate() {
+inline void Test::clear_has_num_output_channels() {
   _has_bits_[0] &= ~0x00000004u;
 }
-inline void Test::clear_samplerate() {
-  samplerate_ = 0;
-  clear_has_samplerate();
+inline void Test::clear_num_output_channels() {
+  num_output_channels_ = 0;
+  clear_has_num_output_channels();
 }
-inline ::google::protobuf::int32 Test::samplerate() const {
-  return samplerate_;
+inline ::google::protobuf::int32 Test::num_output_channels() const {
+  return num_output_channels_;
 }
-inline void Test::set_samplerate(::google::protobuf::int32 value) {
-  set_has_samplerate();
-  samplerate_ = value;
+inline void Test::set_num_output_channels(::google::protobuf::int32 value) {
+  set_has_num_output_channels();
+  num_output_channels_ = value;
 }
 
-// optional int32 hasEchoCount = 4;
-inline bool Test::has_hasechocount() const {
+// optional int32 sample_rate = 4;
+inline bool Test::has_sample_rate() const {
   return (_has_bits_[0] & 0x00000008u) != 0;
 }
-inline void Test::set_has_hasechocount() {
+inline void Test::set_has_sample_rate() {
   _has_bits_[0] |= 0x00000008u;
 }
-inline void Test::clear_has_hasechocount() {
+inline void Test::clear_has_sample_rate() {
   _has_bits_[0] &= ~0x00000008u;
 }
-inline void Test::clear_hasechocount() {
-  hasechocount_ = 0;
-  clear_has_hasechocount();
+inline void Test::clear_sample_rate() {
+  sample_rate_ = 0;
+  clear_has_sample_rate();
 }
-inline ::google::protobuf::int32 Test::hasechocount() const {
-  return hasechocount_;
+inline ::google::protobuf::int32 Test::sample_rate() const {
+  return sample_rate_;
 }
-inline void Test::set_hasechocount(::google::protobuf::int32 value) {
-  set_has_hasechocount();
-  hasechocount_ = value;
-}
-
-// optional int32 hasVoiceCount = 5;
-inline bool Test::has_hasvoicecount() const {
-  return (_has_bits_[0] & 0x00000010u) != 0;
-}
-inline void Test::set_has_hasvoicecount() {
-  _has_bits_[0] |= 0x00000010u;
-}
-inline void Test::clear_has_hasvoicecount() {
-  _has_bits_[0] &= ~0x00000010u;
-}
-inline void Test::clear_hasvoicecount() {
-  hasvoicecount_ = 0;
-  clear_has_hasvoicecount();
-}
-inline ::google::protobuf::int32 Test::hasvoicecount() const {
-  return hasvoicecount_;
-}
-inline void Test::set_hasvoicecount(::google::protobuf::int32 value) {
-  set_has_hasvoicecount();
-  hasvoicecount_ = value;
+inline void Test::set_sample_rate(::google::protobuf::int32 value) {
+  set_has_sample_rate();
+  sample_rate_ = value;
 }
 
-// optional int32 isSaturatedCount = 6;
-inline bool Test::has_issaturatedcount() const {
+// repeated .audio_processing_unittest.Test.Frame frame = 5;
+inline int Test::frame_size() const {
+  return frame_.size();
+}
+inline void Test::clear_frame() {
+  frame_.Clear();
+}
+inline const ::audio_processing_unittest::Test_Frame& Test::frame(int index) const {
+  return frame_.Get(index);
+}
+inline ::audio_processing_unittest::Test_Frame* Test::mutable_frame(int index) {
+  return frame_.Mutable(index);
+}
+inline ::audio_processing_unittest::Test_Frame* Test::add_frame() {
+  return frame_.Add();
+}
+inline const ::google::protobuf::RepeatedPtrField< ::audio_processing_unittest::Test_Frame >&
+Test::frame() const {
+  return frame_;
+}
+inline ::google::protobuf::RepeatedPtrField< ::audio_processing_unittest::Test_Frame >*
+Test::mutable_frame() {
+  return &frame_;
+}
+
+// optional int32 analog_level_average = 6;
+inline bool Test::has_analog_level_average() const {
   return (_has_bits_[0] & 0x00000020u) != 0;
 }
-inline void Test::set_has_issaturatedcount() {
+inline void Test::set_has_analog_level_average() {
   _has_bits_[0] |= 0x00000020u;
 }
-inline void Test::clear_has_issaturatedcount() {
+inline void Test::clear_has_analog_level_average() {
   _has_bits_[0] &= ~0x00000020u;
 }
-inline void Test::clear_issaturatedcount() {
-  issaturatedcount_ = 0;
-  clear_has_issaturatedcount();
+inline void Test::clear_analog_level_average() {
+  analog_level_average_ = 0;
+  clear_has_analog_level_average();
 }
-inline ::google::protobuf::int32 Test::issaturatedcount() const {
-  return issaturatedcount_;
+inline ::google::protobuf::int32 Test::analog_level_average() const {
+  return analog_level_average_;
 }
-inline void Test::set_issaturatedcount(::google::protobuf::int32 value) {
-  set_has_issaturatedcount();
-  issaturatedcount_ = value;
+inline void Test::set_analog_level_average(::google::protobuf::int32 value) {
+  set_has_analog_level_average();
+  analog_level_average_ = value;
 }
 
-// optional .audio_processing_unittest.Test.EchoMetrics echoMetrics = 7;
-inline bool Test::has_echometrics() const {
+// optional int32 max_output_average = 7;
+inline bool Test::has_max_output_average() const {
   return (_has_bits_[0] & 0x00000040u) != 0;
 }
-inline void Test::set_has_echometrics() {
+inline void Test::set_has_max_output_average() {
   _has_bits_[0] |= 0x00000040u;
 }
-inline void Test::clear_has_echometrics() {
+inline void Test::clear_has_max_output_average() {
   _has_bits_[0] &= ~0x00000040u;
 }
-inline void Test::clear_echometrics() {
-  if (echometrics_ != NULL) echometrics_->::audio_processing_unittest::Test_EchoMetrics::Clear();
-  clear_has_echometrics();
+inline void Test::clear_max_output_average() {
+  max_output_average_ = 0;
+  clear_has_max_output_average();
 }
-inline const ::audio_processing_unittest::Test_EchoMetrics& Test::echometrics() const {
-  return echometrics_ != NULL ? *echometrics_ : *default_instance_->echometrics_;
+inline ::google::protobuf::int32 Test::max_output_average() const {
+  return max_output_average_;
 }
-inline ::audio_processing_unittest::Test_EchoMetrics* Test::mutable_echometrics() {
-  set_has_echometrics();
-  if (echometrics_ == NULL) echometrics_ = new ::audio_processing_unittest::Test_EchoMetrics;
-  return echometrics_;
+inline void Test::set_max_output_average(::google::protobuf::int32 value) {
+  set_has_max_output_average();
+  max_output_average_ = value;
 }
-inline ::audio_processing_unittest::Test_EchoMetrics* Test::release_echometrics() {
-  clear_has_echometrics();
-  ::audio_processing_unittest::Test_EchoMetrics* temp = echometrics_;
-  echometrics_ = NULL;
+
+// optional int32 has_echo_count = 8;
+inline bool Test::has_has_echo_count() const {
+  return (_has_bits_[0] & 0x00000080u) != 0;
+}
+inline void Test::set_has_has_echo_count() {
+  _has_bits_[0] |= 0x00000080u;
+}
+inline void Test::clear_has_has_echo_count() {
+  _has_bits_[0] &= ~0x00000080u;
+}
+inline void Test::clear_has_echo_count() {
+  has_echo_count_ = 0;
+  clear_has_has_echo_count();
+}
+inline ::google::protobuf::int32 Test::has_echo_count() const {
+  return has_echo_count_;
+}
+inline void Test::set_has_echo_count(::google::protobuf::int32 value) {
+  set_has_has_echo_count();
+  has_echo_count_ = value;
+}
+
+// optional int32 has_voice_count = 9;
+inline bool Test::has_has_voice_count() const {
+  return (_has_bits_[0] & 0x00000100u) != 0;
+}
+inline void Test::set_has_has_voice_count() {
+  _has_bits_[0] |= 0x00000100u;
+}
+inline void Test::clear_has_has_voice_count() {
+  _has_bits_[0] &= ~0x00000100u;
+}
+inline void Test::clear_has_voice_count() {
+  has_voice_count_ = 0;
+  clear_has_has_voice_count();
+}
+inline ::google::protobuf::int32 Test::has_voice_count() const {
+  return has_voice_count_;
+}
+inline void Test::set_has_voice_count(::google::protobuf::int32 value) {
+  set_has_has_voice_count();
+  has_voice_count_ = value;
+}
+
+// optional int32 is_saturated_count = 10;
+inline bool Test::has_is_saturated_count() const {
+  return (_has_bits_[0] & 0x00000200u) != 0;
+}
+inline void Test::set_has_is_saturated_count() {
+  _has_bits_[0] |= 0x00000200u;
+}
+inline void Test::clear_has_is_saturated_count() {
+  _has_bits_[0] &= ~0x00000200u;
+}
+inline void Test::clear_is_saturated_count() {
+  is_saturated_count_ = 0;
+  clear_has_is_saturated_count();
+}
+inline ::google::protobuf::int32 Test::is_saturated_count() const {
+  return is_saturated_count_;
+}
+inline void Test::set_is_saturated_count(::google::protobuf::int32 value) {
+  set_has_is_saturated_count();
+  is_saturated_count_ = value;
+}
+
+// optional .audio_processing_unittest.Test.EchoMetrics echo_metrics = 11;
+inline bool Test::has_echo_metrics() const {
+  return (_has_bits_[0] & 0x00000400u) != 0;
+}
+inline void Test::set_has_echo_metrics() {
+  _has_bits_[0] |= 0x00000400u;
+}
+inline void Test::clear_has_echo_metrics() {
+  _has_bits_[0] &= ~0x00000400u;
+}
+inline void Test::clear_echo_metrics() {
+  if (echo_metrics_ != NULL) echo_metrics_->::audio_processing_unittest::Test_EchoMetrics::Clear();
+  clear_has_echo_metrics();
+}
+inline const ::audio_processing_unittest::Test_EchoMetrics& Test::echo_metrics() const {
+  return echo_metrics_ != NULL ? *echo_metrics_ : *default_instance_->echo_metrics_;
+}
+inline ::audio_processing_unittest::Test_EchoMetrics* Test::mutable_echo_metrics() {
+  set_has_echo_metrics();
+  if (echo_metrics_ == NULL) echo_metrics_ = new ::audio_processing_unittest::Test_EchoMetrics;
+  return echo_metrics_;
+}
+inline ::audio_processing_unittest::Test_EchoMetrics* Test::release_echo_metrics() {
+  clear_has_echo_metrics();
+  ::audio_processing_unittest::Test_EchoMetrics* temp = echo_metrics_;
+  echo_metrics_ = NULL;
   return temp;
 }
 

@@ -2,13 +2,23 @@ package audio_processing_unittest;
 option optimize_for = LITE_RUNTIME;
 
 message Test {
-  optional int32 numReverseChannels = 1;
-  optional int32 numChannels = 2;
-  optional int32 sampleRate = 3;
+  optional int32 num_reverse_channels = 1;
+  optional int32 num_input_channels = 2;
+  optional int32 num_output_channels = 3;
+  optional int32 sample_rate = 4;
 
-  optional int32 hasEchoCount = 4;
-  optional int32 hasVoiceCount = 5;
-  optional int32 isSaturatedCount = 6;
+  message Frame {
+  }
+
+  repeated Frame frame = 5;
+
+  optional int32 analog_level_average = 6;
+  optional int32 max_output_average = 7;
+
+  optional int32 has_echo_count = 8;
+  optional int32 has_voice_count = 9;
+  optional int32 is_saturated_count = 10;
+
 
   message Statistic {
     optional int32 instant = 1;
@@ -18,13 +28,13 @@ message Test {
   }
 
   message EchoMetrics {
-    optional Statistic residualEchoReturnLoss = 1;
-    optional Statistic echoReturnLoss = 2;
-    optional Statistic echoReturnLossEnhancement = 3;
-    optional Statistic aNlp = 4;
+    optional Statistic residual_echo_return_loss = 1;
+    optional Statistic echo_return_loss = 2;
+    optional Statistic echo_return_loss_enhancement = 3;
+    optional Statistic a_nlp = 4;
   }
 
-  optional EchoMetrics echoMetrics = 7;
+  optional EchoMetrics echo_metrics = 11;
 }
 
 message OutputData {

@@ -61,7 +61,6 @@ class ApmTest : public ::testing::Test {
   webrtc::AudioFrame* revframe_;
   FILE* far_file_;
   FILE* near_file_;
-  bool update_output_data_;
 };
 
 ApmTest::ApmTest()
@@ -122,14 +121,50 @@ void ApmTest::TearDown() {
   apm_ = NULL;
 }
 
-void MixStereoToMono(WebRtc_Word16* stereo,
+void MixStereoToMono(const WebRtc_Word16* stereo,
                      WebRtc_Word16* mono,
-                     int numSamples) {
-  for (int i = 0; i < numSamples; i++) {
+                     int num_samples) {
+  for (int i = 0; i < num_samples; i++) {
     int int32 = (static_cast<int>(stereo[i * 2]) +
                  static_cast<int>(stereo[i * 2 + 1])) >> 1;
     mono[i] = static_cast<WebRtc_Word16>(int32);
   }
+}
+
+template <class T>
+T MaxValue(T a, T b) {
+  return a > b ? a : b;
+}
+
+template <class T>
+T AbsValue(T a) {
+  return a > 0 ? a : -a;
+}
+
+WebRtc_Word16 MaxAudioFrame(const AudioFrame& frame) {
+  const int length = frame._payloadDataLengthInSamples * frame._audioChannel;
+  WebRtc_Word16 max = AbsValue(frame._payloadData[0]);
+  for (int i = 1; i < length; i++) {
+    max = MaxValue(max, AbsValue(frame._payloadData[i]));
+  }
+
+  return max;
+}
+
+void TestStats(const AudioProcessing::Statistic& test,
+               const audio_processing_unittest::Test::Statistic& reference) {
+  EXPECT_EQ(reference.instant(), test.instant);
+  EXPECT_EQ(reference.average(), test.average);
+  EXPECT_EQ(reference.maximum(), test.maximum);
+  EXPECT_EQ(reference.minimum(), test.minimum);
+}
+
+void WriteStatsMessage(const AudioProcessing::Statistic& output,
+                       audio_processing_unittest::Test::Statistic* message) {
+  message->set_instant(output.instant);
+  message->set_average(output.average);
+  message->set_maximum(output.maximum);
+  message->set_minimum(output.minimum);
 }
 
 void WriteMessageLiteToFile(const char* filename,
@@ -376,16 +411,19 @@ TEST_F(ApmTest, Process) {
 
   } else {
     // We don't have a file; add the required tests to the protobuf.
-    int rev_ch[] = {1, 2};
-    int ch[] = {1, 2};
-    int fs[] = {8000, 16000, 32000};
-    for (size_t i = 0; i < sizeof(rev_ch) / sizeof(*rev_ch); i++) {
-      for (size_t j = 0; j < sizeof(ch) / sizeof(*ch); j++) {
-        for (size_t k = 0; k < sizeof(fs) / sizeof(*fs); k++) {
+    // TODO(ajm): vary the output channels as well?
+    const int channels[] = {1, 2};
+    const int channels_size = sizeof(channels) / sizeof(*channels);
+    const int sample_rates[] = {8000, 16000, 32000};
+    const int sample_rates_size = sizeof(sample_rates) / sizeof(*sample_rates);
+    for (size_t i = 0; i < channels_size; i++) {
+      for (size_t j = 0; j < channels_size; j++) {
+        for (size_t k = 0; k < sample_rates_size; k++) {
           audio_processing_unittest::Test* test = output_data.add_test();
-          test->set_numreversechannels(rev_ch[i]);
-          test->set_numchannels(ch[j]);
-          test->set_samplerate(fs[k]);
+          test->set_num_reverse_channels(channels[i]);
+          test->set_num_input_channels(channels[j]);
+          test->set_num_output_channels(channels[j]);
+          test->set_sample_rate(sample_rates[k]);
         }
       }
     }
@@ -419,29 +457,31 @@ TEST_F(ApmTest, Process) {
     printf("Running test %d of %d...\n", i + 1, output_data.test_size());
 
     audio_processing_unittest::Test* test = output_data.mutable_test(i);
-    const int num_samples = test->samplerate() / 100;
+    const int num_samples = test->sample_rate() / 100;
     revframe_->_payloadDataLengthInSamples = num_samples;
-    revframe_->_audioChannel = test->numreversechannels();
-    revframe_->_frequencyInHz = test->samplerate();
+    revframe_->_audioChannel = test->num_reverse_channels();
+    revframe_->_frequencyInHz = test->sample_rate();
     frame_->_payloadDataLengthInSamples = num_samples;
-    frame_->_audioChannel = test->numchannels();
-    frame_->_frequencyInHz = test->samplerate();
+    frame_->_audioChannel = test->num_input_channels();
+    frame_->_frequencyInHz = test->sample_rate();
 
     EXPECT_EQ(apm_->kNoError, apm_->Initialize());
-    ASSERT_EQ(apm_->kNoError, apm_->set_sample_rate_hz(test->samplerate()));
+    ASSERT_EQ(apm_->kNoError, apm_->set_sample_rate_hz(test->sample_rate()));
     ASSERT_EQ(apm_->kNoError, apm_->set_num_channels(frame_->_audioChannel,
                                                      frame_->_audioChannel));
     ASSERT_EQ(apm_->kNoError,
         apm_->set_num_reverse_channels(revframe_->_audioChannel));
 
-
+    int frame_count = 0;
     int has_echo_count = 0;
     int has_voice_count = 0;
     int is_saturated_count = 0;
+    int analog_level = 127;
+    int analog_level_average = 0;
+    int max_output_average = 0;
 
     while (1) {
       WebRtc_Word16 temp_data[640];
-      int analog_level = 127;
 
       // Read far-end frame
       size_t read_count = fread(temp_data,
@@ -493,43 +533,73 @@ TEST_F(ApmTest, Process) {
 
       EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
 
+      max_output_average += MaxAudioFrame(*frame_);
+
       if (apm_->echo_cancellation()->stream_has_echo()) {
         has_echo_count++;
       }
 
       analog_level = apm_->gain_control()->stream_analog_level();
+      analog_level_average += analog_level;
       if (apm_->gain_control()->stream_is_saturated()) {
         is_saturated_count++;
       }
       if (apm_->voice_detection()->stream_has_voice()) {
         has_voice_count++;
       }
-    }
 
-    //<-- Statistics -->
+      frame_count++;
+    }
+    max_output_average /= frame_count;
+    analog_level_average /= frame_count;
+
     //LevelEstimator::Metrics far_metrics;
     //LevelEstimator::Metrics near_metrics;
-    //EchoCancellation::Metrics echo_metrics;
-    //LevelEstimator::Metrics far_metrics_ref_;
-    //LevelEstimator::Metrics near_metrics_ref_;
-    //EchoCancellation::Metrics echo_metrics_ref_;
-    //EXPECT_EQ(apm_->kNoError,
-    //          apm_->echo_cancellation()->GetMetrics(&echo_metrics));
     //EXPECT_EQ(apm_->kNoError,
     //          apm_->level_estimator()->GetMetrics(&near_metrics,
 
+    EchoCancellation::Metrics echo_metrics;
+    EXPECT_EQ(apm_->kNoError,
+              apm_->echo_cancellation()->GetMetrics(&echo_metrics));
+
     // TODO(ajm): check echo metrics and output audio.
     if (global_read_output_data) {
-      EXPECT_EQ(has_echo_count,
-                test->hasechocount());
-      EXPECT_EQ(has_voice_count,
-                test->hasvoicecount());
-      EXPECT_EQ(is_saturated_count,
-                test->issaturatedcount());
+      EXPECT_EQ(test->has_echo_count(), has_echo_count);
+      EXPECT_EQ(test->has_voice_count(), has_voice_count);
+      EXPECT_EQ(test->is_saturated_count(), is_saturated_count);
+
+      EXPECT_EQ(test->analog_level_average(), analog_level_average);
+      EXPECT_EQ(test->max_output_average(), max_output_average);
+
+      audio_processing_unittest::Test::EchoMetrics reference =
+          test->echo_metrics();
+      TestStats(echo_metrics.residual_echo_return_loss,
+                reference.residual_echo_return_loss());
+      TestStats(echo_metrics.echo_return_loss,
+                reference.echo_return_loss());
+      TestStats(echo_metrics.echo_return_loss_enhancement,
+                reference.echo_return_loss_enhancement());
+      TestStats(echo_metrics.a_nlp,
+                reference.a_nlp());
+
     } else {
-      test->set_hasechocount(has_echo_count);
-      test->set_hasvoicecount(has_voice_count);
-      test->set_issaturatedcount(is_saturated_count);
+      test->set_has_echo_count(has_echo_count);
+      test->set_has_voice_count(has_voice_count);
+      test->set_is_saturated_count(is_saturated_count);
+
+      test->set_analog_level_average(analog_level_average);
+      test->set_max_output_average(max_output_average);
+
+      audio_processing_unittest::Test::EchoMetrics* message =
+          test->mutable_echo_metrics();
+      WriteStatsMessage(echo_metrics.residual_echo_return_loss,
+                        message->mutable_residual_echo_return_loss());
+      WriteStatsMessage(echo_metrics.echo_return_loss,
+                        message->mutable_echo_return_loss());
+      WriteStatsMessage(echo_metrics.echo_return_loss_enhancement,
+                        message->mutable_echo_return_loss_enhancement());
+      WriteStatsMessage(echo_metrics.a_nlp,
+                        message->mutable_a_nlp());
     }
 
     rewind(far_file_);

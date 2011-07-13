@@ -14,6 +14,7 @@ namespace audio_processing_unittest {
 
 void protobuf_ShutdownFile_audio_5fprocessing_5funittest_2eproto() {
   delete Test::default_instance_;
+  delete Test_Frame::default_instance_;
   delete Test_Statistic::default_instance_;
   delete Test_EchoMetrics::default_instance_;
   delete OutputData::default_instance_;
@@ -26,10 +27,12 @@ void protobuf_AddDesc_audio_5fprocessing_5funittest_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   Test::default_instance_ = new Test();
+  Test_Frame::default_instance_ = new Test_Frame();
   Test_Statistic::default_instance_ = new Test_Statistic();
   Test_EchoMetrics::default_instance_ = new Test_EchoMetrics();
   OutputData::default_instance_ = new OutputData();
   Test::default_instance_->InitAsDefaultInstance();
+  Test_Frame::default_instance_->InitAsDefaultInstance();
   Test_Statistic::default_instance_->InitAsDefaultInstance();
   Test_EchoMetrics::default_instance_->InitAsDefaultInstance();
   OutputData::default_instance_->InitAsDefaultInstance();
@@ -45,6 +48,117 @@ struct StaticDescriptorInitializer_audio_5fprocessing_5funittest_2eproto {
 
 
 // ===================================================================
+
+#ifndef _MSC_VER
+#endif  // !_MSC_VER
+
+Test_Frame::Test_Frame()
+  : ::google::protobuf::MessageLite() {
+  SharedCtor();
+}
+
+void Test_Frame::InitAsDefaultInstance() {
+}
+
+Test_Frame::Test_Frame(const Test_Frame& from)
+  : ::google::protobuf::MessageLite() {
+  SharedCtor();
+  MergeFrom(from);
+}
+
+void Test_Frame::SharedCtor() {
+  _cached_size_ = 0;
+  ::memset(_has_bits_, 0, sizeof(_has_bits_));
+}
+
+Test_Frame::~Test_Frame() {
+  SharedDtor();
+}
+
+void Test_Frame::SharedDtor() {
+  if (this != default_instance_) {
+  }
+}
+
+void Test_Frame::SetCachedSize(int size) const {
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+}
+const Test_Frame& Test_Frame::default_instance() {
+  if (default_instance_ == NULL) protobuf_AddDesc_audio_5fprocessing_5funittest_2eproto();  return *default_instance_;
+}
+
+Test_Frame* Test_Frame::default_instance_ = NULL;
+
+Test_Frame* Test_Frame::New() const {
+  return new Test_Frame;
+}
+
+void Test_Frame::Clear() {
+  ::memset(_has_bits_, 0, sizeof(_has_bits_));
+}
+
+bool Test_Frame::MergePartialFromCodedStream(
+    ::google::protobuf::io::CodedInputStream* input) {
+#define DO_(EXPRESSION) if (!(EXPRESSION)) return false
+  ::google::protobuf::uint32 tag;
+  while ((tag = input->ReadTag()) != 0) {
+    if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+        ::google::protobuf::internal::WireFormatLite::WIRETYPE_END_GROUP) {
+      return true;
+    }
+    DO_(::google::protobuf::internal::WireFormatLite::SkipField(input, tag, NULL));
+  }
+  return true;
+#undef DO_
+}
+
+void Test_Frame::SerializeWithCachedSizes(
+    ::google::protobuf::io::CodedOutputStream* output) const {
+}
+
+int Test_Frame::ByteSize() const {
+  int total_size = 0;
+  
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = total_size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+  return total_size;
+}
+
+void Test_Frame::CheckTypeAndMergeFrom(
+    const ::google::protobuf::MessageLite& from) {
+  MergeFrom(*::google::protobuf::down_cast<const Test_Frame*>(&from));
+}
+
+void Test_Frame::MergeFrom(const Test_Frame& from) {
+  GOOGLE_CHECK_NE(&from, this);
+}
+
+void Test_Frame::CopyFrom(const Test_Frame& from) {
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool Test_Frame::IsInitialized() const {
+  
+  return true;
+}
+
+void Test_Frame::Swap(Test_Frame* other) {
+  if (other != this) {
+    std::swap(_cached_size_, other->_cached_size_);
+  }
+}
+
+::std::string Test_Frame::GetTypeName() const {
+  return "audio_processing_unittest.Test.Frame";
+}
+
+
+// -------------------------------------------------------------------
 
 #ifndef _MSC_VER
 const int Test_Statistic::kInstantFieldNumber;
@@ -322,10 +436,10 @@ Test_EchoMetrics::Test_EchoMetrics()
 }
 
 void Test_EchoMetrics::InitAsDefaultInstance() {
-  residualechoreturnloss_ = const_cast< ::audio_processing_unittest::Test_Statistic*>(&::audio_processing_unittest::Test_Statistic::default_instance());
-  echoreturnloss_ = const_cast< ::audio_processing_unittest::Test_Statistic*>(&::audio_processing_unittest::Test_Statistic::default_instance());
-  echoreturnlossenhancement_ = const_cast< ::audio_processing_unittest::Test_Statistic*>(&::audio_processing_unittest::Test_Statistic::default_instance());
-  anlp_ = const_cast< ::audio_processing_unittest::Test_Statistic*>(&::audio_processing_unittest::Test_Statistic::default_instance());
+  residual_echo_return_loss_ = const_cast< ::audio_processing_unittest::Test_Statistic*>(&::audio_processing_unittest::Test_Statistic::default_instance());
+  echo_return_loss_ = const_cast< ::audio_processing_unittest::Test_Statistic*>(&::audio_processing_unittest::Test_Statistic::default_instance());
+  echo_return_loss_enhancement_ = const_cast< ::audio_processing_unittest::Test_Statistic*>(&::audio_processing_unittest::Test_Statistic::default_instance());
+  a_nlp_ = const_cast< ::audio_processing_unittest::Test_Statistic*>(&::audio_processing_unittest::Test_Statistic::default_instance());
 }
 
 Test_EchoMetrics::Test_EchoMetrics(const Test_EchoMetrics& from)
@@ -336,10 +450,10 @@ Test_EchoMetrics::Test_EchoMetrics(const Test_EchoMetrics& from)
 
 void Test_EchoMetrics::SharedCtor() {
   _cached_size_ = 0;
-  residualechoreturnloss_ = NULL;
-  echoreturnloss_ = NULL;
-  echoreturnlossenhancement_ = NULL;
-  anlp_ = NULL;
+  residual_echo_return_loss_ = NULL;
+  echo_return_loss_ = NULL;
+  echo_return_loss_enhancement_ = NULL;
+  a_nlp_ = NULL;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -349,10 +463,10 @@ Test_EchoMetrics::~Test_EchoMetrics() {
 
 void Test_EchoMetrics::SharedDtor() {
   if (this != default_instance_) {
-    delete residualechoreturnloss_;
-    delete echoreturnloss_;
-    delete echoreturnlossenhancement_;
-    delete anlp_;
+    delete residual_echo_return_loss_;
+    delete echo_return_loss_;
+    delete echo_return_loss_enhancement_;
+    delete a_nlp_;
   }
 }
 
@@ -373,17 +487,17 @@ Test_EchoMetrics* Test_EchoMetrics::New() const {
 
 void Test_EchoMetrics::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (has_residualechoreturnloss()) {
-      if (residualechoreturnloss_ != NULL) residualechoreturnloss_->::audio_processing_unittest::Test_Statistic::Clear();
+    if (has_residual_echo_return_loss()) {
+      if (residual_echo_return_loss_ != NULL) residual_echo_return_loss_->::audio_processing_unittest::Test_Statistic::Clear();
     }
-    if (has_echoreturnloss()) {
-      if (echoreturnloss_ != NULL) echoreturnloss_->::audio_processing_unittest::Test_Statistic::Clear();
+    if (has_echo_return_loss()) {
+      if (echo_return_loss_ != NULL) echo_return_loss_->::audio_processing_unittest::Test_Statistic::Clear();
     }
-    if (has_echoreturnlossenhancement()) {
-      if (echoreturnlossenhancement_ != NULL) echoreturnlossenhancement_->::audio_processing_unittest::Test_Statistic::Clear();
+    if (has_echo_return_loss_enhancement()) {
+      if (echo_return_loss_enhancement_ != NULL) echo_return_loss_enhancement_->::audio_processing_unittest::Test_Statistic::Clear();
     }
-    if (has_anlp()) {
-      if (anlp_ != NULL) anlp_->::audio_processing_unittest::Test_Statistic::Clear();
+    if (has_a_nlp()) {
+      if (a_nlp_ != NULL) a_nlp_->::audio_processing_unittest::Test_Statistic::Clear();
     }
   }
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
@@ -395,54 +509,54 @@ bool Test_EchoMetrics::MergePartialFromCodedStream(
   ::google::protobuf::uint32 tag;
   while ((tag = input->ReadTag()) != 0) {
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // optional .audio_processing_unittest.Test.Statistic residualEchoReturnLoss = 1;
+      // optional .audio_processing_unittest.Test.Statistic residual_echo_return_loss = 1;
       case 1: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
           DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-               input, mutable_residualechoreturnloss()));
+               input, mutable_residual_echo_return_loss()));
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(18)) goto parse_echoReturnLoss;
+        if (input->ExpectTag(18)) goto parse_echo_return_loss;
         break;
       }
       
-      // optional .audio_processing_unittest.Test.Statistic echoReturnLoss = 2;
+      // optional .audio_processing_unittest.Test.Statistic echo_return_loss = 2;
       case 2: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
-         parse_echoReturnLoss:
+         parse_echo_return_loss:
           DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-               input, mutable_echoreturnloss()));
+               input, mutable_echo_return_loss()));
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(26)) goto parse_echoReturnLossEnhancement;
+        if (input->ExpectTag(26)) goto parse_echo_return_loss_enhancement;
         break;
       }
       
-      // optional .audio_processing_unittest.Test.Statistic echoReturnLossEnhancement = 3;
+      // optional .audio_processing_unittest.Test.Statistic echo_return_loss_enhancement = 3;
       case 3: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
-         parse_echoReturnLossEnhancement:
+         parse_echo_return_loss_enhancement:
           DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-               input, mutable_echoreturnlossenhancement()));
+               input, mutable_echo_return_loss_enhancement()));
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(34)) goto parse_aNlp;
+        if (input->ExpectTag(34)) goto parse_a_nlp;
         break;
       }
       
-      // optional .audio_processing_unittest.Test.Statistic aNlp = 4;
+      // optional .audio_processing_unittest.Test.Statistic a_nlp = 4;
       case 4: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
-         parse_aNlp:
+         parse_a_nlp:
           DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-               input, mutable_anlp()));
+               input, mutable_a_nlp()));
         } else {
           goto handle_uninterpreted;
         }
@@ -467,28 +581,28 @@ bool Test_EchoMetrics::MergePartialFromCodedStream(
 
 void Test_EchoMetrics::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // optional .audio_processing_unittest.Test.Statistic residualEchoReturnLoss = 1;
-  if (has_residualechoreturnloss()) {
+  // optional .audio_processing_unittest.Test.Statistic residual_echo_return_loss = 1;
+  if (has_residual_echo_return_loss()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessage(
-      1, this->residualechoreturnloss(), output);
+      1, this->residual_echo_return_loss(), output);
   }
   
-  // optional .audio_processing_unittest.Test.Statistic echoReturnLoss = 2;
-  if (has_echoreturnloss()) {
+  // optional .audio_processing_unittest.Test.Statistic echo_return_loss = 2;
+  if (has_echo_return_loss()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessage(
-      2, this->echoreturnloss(), output);
+      2, this->echo_return_loss(), output);
   }
   
-  // optional .audio_processing_unittest.Test.Statistic echoReturnLossEnhancement = 3;
-  if (has_echoreturnlossenhancement()) {
+  // optional .audio_processing_unittest.Test.Statistic echo_return_loss_enhancement = 3;
+  if (has_echo_return_loss_enhancement()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessage(
-      3, this->echoreturnlossenhancement(), output);
+      3, this->echo_return_loss_enhancement(), output);
   }
   
-  // optional .audio_processing_unittest.Test.Statistic aNlp = 4;
-  if (has_anlp()) {
+  // optional .audio_processing_unittest.Test.Statistic a_nlp = 4;
+  if (has_a_nlp()) {
     ::google::protobuf::internal::WireFormatLite::WriteMessage(
-      4, this->anlp(), output);
+      4, this->a_nlp(), output);
   }
   
 }
@@ -497,32 +611,32 @@ int Test_EchoMetrics::ByteSize() const {
   int total_size = 0;
   
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    // optional .audio_processing_unittest.Test.Statistic residualEchoReturnLoss = 1;
-    if (has_residualechoreturnloss()) {
+    // optional .audio_processing_unittest.Test.Statistic residual_echo_return_loss = 1;
+    if (has_residual_echo_return_loss()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
-          this->residualechoreturnloss());
+          this->residual_echo_return_loss());
     }
     
-    // optional .audio_processing_unittest.Test.Statistic echoReturnLoss = 2;
-    if (has_echoreturnloss()) {
+    // optional .audio_processing_unittest.Test.Statistic echo_return_loss = 2;
+    if (has_echo_return_loss()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
-          this->echoreturnloss());
+          this->echo_return_loss());
     }
     
-    // optional .audio_processing_unittest.Test.Statistic echoReturnLossEnhancement = 3;
-    if (has_echoreturnlossenhancement()) {
+    // optional .audio_processing_unittest.Test.Statistic echo_return_loss_enhancement = 3;
+    if (has_echo_return_loss_enhancement()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
-          this->echoreturnlossenhancement());
+          this->echo_return_loss_enhancement());
     }
     
-    // optional .audio_processing_unittest.Test.Statistic aNlp = 4;
-    if (has_anlp()) {
+    // optional .audio_processing_unittest.Test.Statistic a_nlp = 4;
+    if (has_a_nlp()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
-          this->anlp());
+          this->a_nlp());
     }
     
   }
@@ -540,17 +654,17 @@ void Test_EchoMetrics::CheckTypeAndMergeFrom(
 void Test_EchoMetrics::MergeFrom(const Test_EchoMetrics& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from.has_residualechoreturnloss()) {
-      mutable_residualechoreturnloss()->::audio_processing_unittest::Test_Statistic::MergeFrom(from.residualechoreturnloss());
+    if (from.has_residual_echo_return_loss()) {
+      mutable_residual_echo_return_loss()->::audio_processing_unittest::Test_Statistic::MergeFrom(from.residual_echo_return_loss());
     }
-    if (from.has_echoreturnloss()) {
-      mutable_echoreturnloss()->::audio_processing_unittest::Test_Statistic::MergeFrom(from.echoreturnloss());
+    if (from.has_echo_return_loss()) {
+      mutable_echo_return_loss()->::audio_processing_unittest::Test_Statistic::MergeFrom(from.echo_return_loss());
     }
-    if (from.has_echoreturnlossenhancement()) {
-      mutable_echoreturnlossenhancement()->::audio_processing_unittest::Test_Statistic::MergeFrom(from.echoreturnlossenhancement());
+    if (from.has_echo_return_loss_enhancement()) {
+      mutable_echo_return_loss_enhancement()->::audio_processing_unittest::Test_Statistic::MergeFrom(from.echo_return_loss_enhancement());
     }
-    if (from.has_anlp()) {
-      mutable_anlp()->::audio_processing_unittest::Test_Statistic::MergeFrom(from.anlp());
+    if (from.has_a_nlp()) {
+      mutable_a_nlp()->::audio_processing_unittest::Test_Statistic::MergeFrom(from.a_nlp());
     }
   }
 }
@@ -568,10 +682,10 @@ bool Test_EchoMetrics::IsInitialized() const {
 
 void Test_EchoMetrics::Swap(Test_EchoMetrics* other) {
   if (other != this) {
-    std::swap(residualechoreturnloss_, other->residualechoreturnloss_);
-    std::swap(echoreturnloss_, other->echoreturnloss_);
-    std::swap(echoreturnlossenhancement_, other->echoreturnlossenhancement_);
-    std::swap(anlp_, other->anlp_);
+    std::swap(residual_echo_return_loss_, other->residual_echo_return_loss_);
+    std::swap(echo_return_loss_, other->echo_return_loss_);
+    std::swap(echo_return_loss_enhancement_, other->echo_return_loss_enhancement_);
+    std::swap(a_nlp_, other->a_nlp_);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
     std::swap(_cached_size_, other->_cached_size_);
   }
@@ -586,8 +700,12 @@ void Test_EchoMetrics::Swap(Test_EchoMetrics* other) {
 
 #ifndef _MSC_VER
 const int Test::kNumReverseChannelsFieldNumber;
-const int Test::kNumChannelsFieldNumber;
+const int Test::kNumInputChannelsFieldNumber;
+const int Test::kNumOutputChannelsFieldNumber;
 const int Test::kSampleRateFieldNumber;
+const int Test::kFrameFieldNumber;
+const int Test::kAnalogLevelAverageFieldNumber;
+const int Test::kMaxOutputAverageFieldNumber;
 const int Test::kHasEchoCountFieldNumber;
 const int Test::kHasVoiceCountFieldNumber;
 const int Test::kIsSaturatedCountFieldNumber;
@@ -600,7 +718,7 @@ Test::Test()
 }
 
 void Test::InitAsDefaultInstance() {
-  echometrics_ = const_cast< ::audio_processing_unittest::Test_EchoMetrics*>(&::audio_processing_unittest::Test_EchoMetrics::default_instance());
+  echo_metrics_ = const_cast< ::audio_processing_unittest::Test_EchoMetrics*>(&::audio_processing_unittest::Test_EchoMetrics::default_instance());
 }
 
 Test::Test(const Test& from)
@@ -611,13 +729,16 @@ Test::Test(const Test& from)
 
 void Test::SharedCtor() {
   _cached_size_ = 0;
-  numreversechannels_ = 0;
-  numchannels_ = 0;
-  samplerate_ = 0;
-  hasechocount_ = 0;
-  hasvoicecount_ = 0;
-  issaturatedcount_ = 0;
-  echometrics_ = NULL;
+  num_reverse_channels_ = 0;
+  num_input_channels_ = 0;
+  num_output_channels_ = 0;
+  sample_rate_ = 0;
+  analog_level_average_ = 0;
+  max_output_average_ = 0;
+  has_echo_count_ = 0;
+  has_voice_count_ = 0;
+  is_saturated_count_ = 0;
+  echo_metrics_ = NULL;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -627,7 +748,7 @@ Test::~Test() {
 
 void Test::SharedDtor() {
   if (this != default_instance_) {
-    delete echometrics_;
+    delete echo_metrics_;
   }
 }
 
@@ -648,16 +769,22 @@ Test* Test::New() const {
 
 void Test::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    numreversechannels_ = 0;
-    numchannels_ = 0;
-    samplerate_ = 0;
-    hasechocount_ = 0;
-    hasvoicecount_ = 0;
-    issaturatedcount_ = 0;
-    if (has_echometrics()) {
-      if (echometrics_ != NULL) echometrics_->::audio_processing_unittest::Test_EchoMetrics::Clear();
+    num_reverse_channels_ = 0;
+    num_input_channels_ = 0;
+    num_output_channels_ = 0;
+    sample_rate_ = 0;
+    analog_level_average_ = 0;
+    max_output_average_ = 0;
+    has_echo_count_ = 0;
+  }
+  if (_has_bits_[8 / 32] & (0xffu << (8 % 32))) {
+    has_voice_count_ = 0;
+    is_saturated_count_ = 0;
+    if (has_echo_metrics()) {
+      if (echo_metrics_ != NULL) echo_metrics_->::audio_processing_unittest::Test_EchoMetrics::Clear();
     }
   }
+  frame_.Clear();
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -667,108 +794,171 @@ bool Test::MergePartialFromCodedStream(
   ::google::protobuf::uint32 tag;
   while ((tag = input->ReadTag()) != 0) {
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // optional int32 numReverseChannels = 1;
+      // optional int32 num_reverse_channels = 1;
       case 1: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
-                 input, &numreversechannels_)));
-          set_has_numreversechannels();
+                 input, &num_reverse_channels_)));
+          set_has_num_reverse_channels();
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(16)) goto parse_numChannels;
+        if (input->ExpectTag(16)) goto parse_num_input_channels;
         break;
       }
       
-      // optional int32 numChannels = 2;
+      // optional int32 num_input_channels = 2;
       case 2: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
-         parse_numChannels:
+         parse_num_input_channels:
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
-                 input, &numchannels_)));
-          set_has_numchannels();
+                 input, &num_input_channels_)));
+          set_has_num_input_channels();
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(24)) goto parse_sampleRate;
+        if (input->ExpectTag(24)) goto parse_num_output_channels;
         break;
       }
       
-      // optional int32 sampleRate = 3;
+      // optional int32 num_output_channels = 3;
       case 3: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
-         parse_sampleRate:
+         parse_num_output_channels:
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
-                 input, &samplerate_)));
-          set_has_samplerate();
+                 input, &num_output_channels_)));
+          set_has_num_output_channels();
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(32)) goto parse_hasEchoCount;
+        if (input->ExpectTag(32)) goto parse_sample_rate;
         break;
       }
       
-      // optional int32 hasEchoCount = 4;
+      // optional int32 sample_rate = 4;
       case 4: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
-         parse_hasEchoCount:
+         parse_sample_rate:
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
-                 input, &hasechocount_)));
-          set_has_hasechocount();
+                 input, &sample_rate_)));
+          set_has_sample_rate();
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(40)) goto parse_hasVoiceCount;
+        if (input->ExpectTag(42)) goto parse_frame;
         break;
       }
       
-      // optional int32 hasVoiceCount = 5;
+      // repeated .audio_processing_unittest.Test.Frame frame = 5;
       case 5: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
-            ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
-         parse_hasVoiceCount:
-          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-                   ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
-                 input, &hasvoicecount_)));
-          set_has_hasvoicecount();
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+         parse_frame:
+          DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
+                input, add_frame()));
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(48)) goto parse_isSaturatedCount;
+        if (input->ExpectTag(42)) goto parse_frame;
+        if (input->ExpectTag(48)) goto parse_analog_level_average;
         break;
       }
       
-      // optional int32 isSaturatedCount = 6;
+      // optional int32 analog_level_average = 6;
       case 6: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
-         parse_isSaturatedCount:
+         parse_analog_level_average:
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
-                 input, &issaturatedcount_)));
-          set_has_issaturatedcount();
+                 input, &analog_level_average_)));
+          set_has_analog_level_average();
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(58)) goto parse_echoMetrics;
+        if (input->ExpectTag(56)) goto parse_max_output_average;
         break;
       }
       
-      // optional .audio_processing_unittest.Test.EchoMetrics echoMetrics = 7;
+      // optional int32 max_output_average = 7;
       case 7: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
+         parse_max_output_average:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
+                 input, &max_output_average_)));
+          set_has_max_output_average();
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(64)) goto parse_has_echo_count;
+        break;
+      }
+      
+      // optional int32 has_echo_count = 8;
+      case 8: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
+         parse_has_echo_count:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
+                 input, &has_echo_count_)));
+          set_has_has_echo_count();
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(72)) goto parse_has_voice_count;
+        break;
+      }
+      
+      // optional int32 has_voice_count = 9;
+      case 9: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
+         parse_has_voice_count:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
+                 input, &has_voice_count_)));
+          set_has_has_voice_count();
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(80)) goto parse_is_saturated_count;
+        break;
+      }
+      
+      // optional int32 is_saturated_count = 10;
+      case 10: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
+         parse_is_saturated_count:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
+                 input, &is_saturated_count_)));
+          set_has_is_saturated_count();
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(90)) goto parse_echo_metrics;
+        break;
+      }
+      
+      // optional .audio_processing_unittest.Test.EchoMetrics echo_metrics = 11;
+      case 11: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
-         parse_echoMetrics:
+         parse_echo_metrics:
           DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-               input, mutable_echometrics()));
+               input, mutable_echo_metrics()));
         } else {
           goto handle_uninterpreted;
         }
@@ -793,40 +983,61 @@ bool Test::MergePartialFromCodedStream(
 
 void Test::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // optional int32 numReverseChannels = 1;
-  if (has_numreversechannels()) {
-    ::google::protobuf::internal::WireFormatLite::WriteInt32(1, this->numreversechannels(), output);
+  // optional int32 num_reverse_channels = 1;
+  if (has_num_reverse_channels()) {
+    ::google::protobuf::internal::WireFormatLite::WriteInt32(1, this->num_reverse_channels(), output);
   }
   
-  // optional int32 numChannels = 2;
-  if (has_numchannels()) {
-    ::google::protobuf::internal::WireFormatLite::WriteInt32(2, this->numchannels(), output);
+  // optional int32 num_input_channels = 2;
+  if (has_num_input_channels()) {
+    ::google::protobuf::internal::WireFormatLite::WriteInt32(2, this->num_input_channels(), output);
   }
   
-  // optional int32 sampleRate = 3;
-  if (has_samplerate()) {
-    ::google::protobuf::internal::WireFormatLite::WriteInt32(3, this->samplerate(), output);
+  // optional int32 num_output_channels = 3;
+  if (has_num_output_channels()) {
+    ::google::protobuf::internal::WireFormatLite::WriteInt32(3, this->num_output_channels(), output);
   }
   
-  // optional int32 hasEchoCount = 4;
-  if (has_hasechocount()) {
-    ::google::protobuf::internal::WireFormatLite::WriteInt32(4, this->hasechocount(), output);
+  // optional int32 sample_rate = 4;
+  if (has_sample_rate()) {
+    ::google::protobuf::internal::WireFormatLite::WriteInt32(4, this->sample_rate(), output);
   }
   
-  // optional int32 hasVoiceCount = 5;
-  if (has_hasvoicecount()) {
-    ::google::protobuf::internal::WireFormatLite::WriteInt32(5, this->hasvoicecount(), output);
-  }
-  
-  // optional int32 isSaturatedCount = 6;
-  if (has_issaturatedcount()) {
-    ::google::protobuf::internal::WireFormatLite::WriteInt32(6, this->issaturatedcount(), output);
-  }
-  
-  // optional .audio_processing_unittest.Test.EchoMetrics echoMetrics = 7;
-  if (has_echometrics()) {
+  // repeated .audio_processing_unittest.Test.Frame frame = 5;
+  for (int i = 0; i < this->frame_size(); i++) {
     ::google::protobuf::internal::WireFormatLite::WriteMessage(
-      7, this->echometrics(), output);
+      5, this->frame(i), output);
+  }
+  
+  // optional int32 analog_level_average = 6;
+  if (has_analog_level_average()) {
+    ::google::protobuf::internal::WireFormatLite::WriteInt32(6, this->analog_level_average(), output);
+  }
+  
+  // optional int32 max_output_average = 7;
+  if (has_max_output_average()) {
+    ::google::protobuf::internal::WireFormatLite::WriteInt32(7, this->max_output_average(), output);
+  }
+  
+  // optional int32 has_echo_count = 8;
+  if (has_has_echo_count()) {
+    ::google::protobuf::internal::WireFormatLite::WriteInt32(8, this->has_echo_count(), output);
+  }
+  
+  // optional int32 has_voice_count = 9;
+  if (has_has_voice_count()) {
+    ::google::protobuf::internal::WireFormatLite::WriteInt32(9, this->has_voice_count(), output);
+  }
+  
+  // optional int32 is_saturated_count = 10;
+  if (has_is_saturated_count()) {
+    ::google::protobuf::internal::WireFormatLite::WriteInt32(10, this->is_saturated_count(), output);
+  }
+  
+  // optional .audio_processing_unittest.Test.EchoMetrics echo_metrics = 11;
+  if (has_echo_metrics()) {
+    ::google::protobuf::internal::WireFormatLite::WriteMessage(
+      11, this->echo_metrics(), output);
   }
   
 }
@@ -835,56 +1046,87 @@ int Test::ByteSize() const {
   int total_size = 0;
   
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    // optional int32 numReverseChannels = 1;
-    if (has_numreversechannels()) {
+    // optional int32 num_reverse_channels = 1;
+    if (has_num_reverse_channels()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::Int32Size(
-          this->numreversechannels());
+          this->num_reverse_channels());
     }
     
-    // optional int32 numChannels = 2;
-    if (has_numchannels()) {
+    // optional int32 num_input_channels = 2;
+    if (has_num_input_channels()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::Int32Size(
-          this->numchannels());
+          this->num_input_channels());
     }
     
-    // optional int32 sampleRate = 3;
-    if (has_samplerate()) {
+    // optional int32 num_output_channels = 3;
+    if (has_num_output_channels()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::Int32Size(
-          this->samplerate());
+          this->num_output_channels());
     }
     
-    // optional int32 hasEchoCount = 4;
-    if (has_hasechocount()) {
+    // optional int32 sample_rate = 4;
+    if (has_sample_rate()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::Int32Size(
-          this->hasechocount());
+          this->sample_rate());
     }
     
-    // optional int32 hasVoiceCount = 5;
-    if (has_hasvoicecount()) {
+    // optional int32 analog_level_average = 6;
+    if (has_analog_level_average()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::Int32Size(
-          this->hasvoicecount());
+          this->analog_level_average());
     }
     
-    // optional int32 isSaturatedCount = 6;
-    if (has_issaturatedcount()) {
+    // optional int32 max_output_average = 7;
+    if (has_max_output_average()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::Int32Size(
-          this->issaturatedcount());
+          this->max_output_average());
     }
     
-    // optional .audio_processing_unittest.Test.EchoMetrics echoMetrics = 7;
-    if (has_echometrics()) {
+    // optional int32 has_echo_count = 8;
+    if (has_has_echo_count()) {
       total_size += 1 +
-        ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
-          this->echometrics());
+        ::google::protobuf::internal::WireFormatLite::Int32Size(
+          this->has_echo_count());
     }
     
   }
+  if (_has_bits_[8 / 32] & (0xffu << (8 % 32))) {
+    // optional int32 has_voice_count = 9;
+    if (has_has_voice_count()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::Int32Size(
+          this->has_voice_count());
+    }
+    
+    // optional int32 is_saturated_count = 10;
+    if (has_is_saturated_count()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::Int32Size(
+          this->is_saturated_count());
+    }
+    
+    // optional .audio_processing_unittest.Test.EchoMetrics echo_metrics = 11;
+    if (has_echo_metrics()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
+          this->echo_metrics());
+    }
+    
+  }
+  // repeated .audio_processing_unittest.Test.Frame frame = 5;
+  total_size += 1 * this->frame_size();
+  for (int i = 0; i < this->frame_size(); i++) {
+    total_size +=
+      ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
+        this->frame(i));
+  }
+  
   GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
   _cached_size_ = total_size;
   GOOGLE_SAFE_CONCURRENT_WRITES_END();
@@ -898,27 +1140,39 @@ void Test::CheckTypeAndMergeFrom(
 
 void Test::MergeFrom(const Test& from) {
   GOOGLE_CHECK_NE(&from, this);
+  frame_.MergeFrom(from.frame_);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from.has_numreversechannels()) {
-      set_numreversechannels(from.numreversechannels());
+    if (from.has_num_reverse_channels()) {
+      set_num_reverse_channels(from.num_reverse_channels());
     }
-    if (from.has_numchannels()) {
-      set_numchannels(from.numchannels());
+    if (from.has_num_input_channels()) {
+      set_num_input_channels(from.num_input_channels());
     }
-    if (from.has_samplerate()) {
-      set_samplerate(from.samplerate());
+    if (from.has_num_output_channels()) {
+      set_num_output_channels(from.num_output_channels());
     }
-    if (from.has_hasechocount()) {
-      set_hasechocount(from.hasechocount());
+    if (from.has_sample_rate()) {
+      set_sample_rate(from.sample_rate());
     }
-    if (from.has_hasvoicecount()) {
-      set_hasvoicecount(from.hasvoicecount());
+    if (from.has_analog_level_average()) {
+      set_analog_level_average(from.analog_level_average());
     }
-    if (from.has_issaturatedcount()) {
-      set_issaturatedcount(from.issaturatedcount());
+    if (from.has_max_output_average()) {
+      set_max_output_average(from.max_output_average());
     }
-    if (from.has_echometrics()) {
-      mutable_echometrics()->::audio_processing_unittest::Test_EchoMetrics::MergeFrom(from.echometrics());
+    if (from.has_has_echo_count()) {
+      set_has_echo_count(from.has_echo_count());
+    }
+  }
+  if (from._has_bits_[8 / 32] & (0xffu << (8 % 32))) {
+    if (from.has_has_voice_count()) {
+      set_has_voice_count(from.has_voice_count());
+    }
+    if (from.has_is_saturated_count()) {
+      set_is_saturated_count(from.is_saturated_count());
+    }
+    if (from.has_echo_metrics()) {
+      mutable_echo_metrics()->::audio_processing_unittest::Test_EchoMetrics::MergeFrom(from.echo_metrics());
     }
   }
 }
@@ -936,13 +1190,17 @@ bool Test::IsInitialized() const {
 
 void Test::Swap(Test* other) {
   if (other != this) {
-    std::swap(numreversechannels_, other->numreversechannels_);
-    std::swap(numchannels_, other->numchannels_);
-    std::swap(samplerate_, other->samplerate_);
-    std::swap(hasechocount_, other->hasechocount_);
-    std::swap(hasvoicecount_, other->hasvoicecount_);
-    std::swap(issaturatedcount_, other->issaturatedcount_);
-    std::swap(echometrics_, other->echometrics_);
+    std::swap(num_reverse_channels_, other->num_reverse_channels_);
+    std::swap(num_input_channels_, other->num_input_channels_);
+    std::swap(num_output_channels_, other->num_output_channels_);
+    std::swap(sample_rate_, other->sample_rate_);
+    frame_.Swap(&other->frame_);
+    std::swap(analog_level_average_, other->analog_level_average_);
+    std::swap(max_output_average_, other->max_output_average_);
+    std::swap(has_echo_count_, other->has_echo_count_);
+    std::swap(has_voice_count_, other->has_voice_count_);
+    std::swap(is_saturated_count_, other->is_saturated_count_);
+    std::swap(echo_metrics_, other->echo_metrics_);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
     std::swap(_cached_size_, other->_cached_size_);
   }
