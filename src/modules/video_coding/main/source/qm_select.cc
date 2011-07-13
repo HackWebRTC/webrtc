@@ -734,28 +734,24 @@ VCMQmRobustness::Reset()
 // Adjust the FEC rate based on the content and the network state
 // (packet loss rate, total rate/bandwidth, round trip time).
 // Note that packetLoss here is the filtered loss value.
-WebRtc_UWord8
+float
 VCMQmRobustness::AdjustFecFactor(WebRtc_UWord8 codeRateDelta, float totalRate,
                                  float frameRate,WebRtc_UWord32 rttTime,
                                  WebRtc_UWord8 packetLoss)
 {
+    // Default: no adjustment
+    float adjustFec =  1.0f;
+
     if (_contentMetrics == NULL)
     {
-        return VCM_OK;
+        return adjustFec;
     }
-
-    // Default: no adjustment
-    WebRtc_UWord8 codeRateDeltaAdjust = codeRateDelta;
-    float adjustFec =  1.0f;
 
     // Compute class state of the content.
     MotionNFD();
     Spatial();
 
-    // TODO (marpan):
-    // Set FEC adjustment factor
-
-    codeRateDeltaAdjust = static_cast<WebRtc_UWord8>(codeRateDelta * adjustFec);
+    // TODO (marpan): Set FEC adjustment factor
 
     // Keep track of previous values of network state:
     // adjustment may be also based on pattern of changes in network state
@@ -765,7 +761,8 @@ VCMQmRobustness::AdjustFecFactor(WebRtc_UWord8 codeRateDelta, float totalRate,
 
     _prevCodeRateDelta = codeRateDelta;
 
-    return codeRateDeltaAdjust;
+    return adjustFec;
+
 }
 
 // Set the UEP (unequal-protection) on/off for the FEC
@@ -773,13 +770,14 @@ bool
 VCMQmRobustness::SetUepProtection(WebRtc_UWord8 codeRateDelta, float totalRate,
                                   WebRtc_UWord8 packetLoss, bool frameType)
 {
+     // Default:
+    bool uepProtection  = true;
+
     if (_contentMetrics == NULL)
     {
-        return VCM_OK;
+        return uepProtection;
     }
 
-    // Default: UEP on
-    bool uepProtection  = true;
 
     return uepProtection;
 }

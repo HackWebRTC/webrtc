@@ -99,7 +99,7 @@ public:
     VCMProtectionMethod(VCMProtectionMethodEnum type) : _protectionFactorK(0),
         _protectionFactorD(0), _residualPacketLoss(0.0), _scaleProtKey(2.0),
         _maxPayloadSize(1460), _efficiency(0), _score(0), _type(type),
-        _uepKey(0), _uepDelta(1)
+        _useUepProtectionK(false), _useUepProtectionD(true)
         {_qmRobustness = new VCMQmRobustness();}
     virtual ~VCMProtectionMethod() { delete _qmRobustness;}
 
@@ -145,6 +145,16 @@ public:
     // Return value                 : Required protectionFactor for delta frame
     virtual WebRtc_UWord8 RequiredProtectionFactorD() { return _protectionFactorD; }
 
+    // Extracts whether the FEC Unequal protection (UEP) is used for Key frame.
+    //
+    // Return value                 : Required Unequal protection on/off state.
+    virtual WebRtc_UWord8 RequiredUepProtectionK() { return _useUepProtectionK; }
+
+    // Extracts whether the the FEC Unequal protection (UEP) is used for Delta frame.
+    //
+    // Return value                 : Required Unequal protection on/off state.
+    virtual WebRtc_UWord8 RequiredUepProtectionD() { return _useUepProtectionD; }
+
     // Updates content metrics
     void UpdateContentMetrics(const VideoContentMetrics*  contentMetrics);
 
@@ -156,8 +166,8 @@ public:
     WebRtc_Word32                        _maxPayloadSize;
 
     VCMQmRobustness*                     _qmRobustness;
-    bool                                 _uepKey;
-    bool                                 _uepDelta;
+    bool                                 _useUepProtectionK;
+    bool                                 _useUepProtectionD;
 
 protected:
     float                                _efficiency;

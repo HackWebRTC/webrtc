@@ -179,10 +179,11 @@ public:
 
    virtual void Reset();
 
-   // Adjust FEC rate based on content: every ~1 sec from SetTargetRates
-   WebRtc_UWord8  AdjustFecFactor(WebRtc_UWord8 codeRateDelta, float totalRate,
-                                  float frameRate, WebRtc_UWord32 rttTime,
-                                  WebRtc_UWord8 packetLoss);
+   // Adjust FEC rate based on content: every ~1 sec from SetTargetRates.
+   // Returns an adjustment factor.
+   float AdjustFecFactor(WebRtc_UWord8 codeRateDelta, float totalRate,
+                         float frameRate, WebRtc_UWord32 rttTime,
+                         WebRtc_UWord8 packetLoss);
 
    // Set the UEP protection on/off
    bool  SetUepProtection(WebRtc_UWord8 codeRateDelta, float totalRate,

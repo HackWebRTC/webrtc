@@ -424,9 +424,11 @@ VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters)
         codeRateDelta = plossMax - 1;
     }
 
-    codeRateDelta = _qmRobustness->AdjustFecFactor(codeRateDelta, bitRate,
-                                                   parameters->frameRate,
-                                                   parameters->rtt, packetLoss);
+    float adjustFec = _qmRobustness->AdjustFecFactor(codeRateDelta, bitRate,
+                                                     parameters->frameRate,
+                                                     parameters->rtt, packetLoss);
+
+    codeRateDelta = static_cast<WebRtc_UWord8>(codeRateDelta * adjustFec);
 
     // For Key frame:
     // Effectively at a higher rate, so we scale/boost the rate
@@ -474,12 +476,12 @@ VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters)
     _protectionFactorD = codeRateDelta;
 
 
-     // Set the UEP protection on/off for Key and Delta frames
-    _uepKey = _qmRobustness->SetUepProtection(codeRateKey, bitRate,
-                                              packetLoss, 0);
+     // TODO (marpan): Set the UEP protection on/off for Key and Delta frames
+    _useUepProtectionK = _qmRobustness->SetUepProtection(codeRateKey, bitRate,
+                                                         packetLoss, 0);
 
-    _uepDelta = _qmRobustness->SetUepProtection(codeRateKey, bitRate,
-                                                packetLoss, 1);
+    _useUepProtectionD = _qmRobustness->SetUepProtection(codeRateKey, bitRate,
+                                                         packetLoss, 1);
 
     // DONE WITH FEC PROTECTION SETTINGS
     return true;
