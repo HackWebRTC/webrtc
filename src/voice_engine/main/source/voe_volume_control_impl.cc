@@ -399,6 +399,9 @@ int VoEVolumeControlImpl::GetSpeechInputLevel(unsigned int& level)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1),
                "GetSpeechInputLevel()");
+    ANDROID_NOT_SUPPORTED();
+    IPHONE_NOT_SUPPORTED();
+
     if (!_engineStatistics.Initialized())
     {
         _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
@@ -415,7 +418,10 @@ int VoEVolumeControlImpl::GetSpeechOutputLevel(int channel,
                                                unsigned int& level)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1),
-               "GetSpeechOutputLevel(channel=%d, level=?)", channel);	
+               "GetSpeechOutputLevel(channel=%d, level=?)", channel);
+    ANDROID_NOT_SUPPORTED();
+    IPHONE_NOT_SUPPORTED();
+	
     if (!_engineStatistics.Initialized())
     {
         _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
@@ -445,6 +451,8 @@ int VoEVolumeControlImpl::GetSpeechInputLevelFullRange(unsigned int& level)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1),
                "GetSpeechInputLevelFullRange(level=?)");
+    ANDROID_NOT_SUPPORTED();
+    IPHONE_NOT_SUPPORTED();
     if (!_engineStatistics.Initialized())
     {
         _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
@@ -462,6 +470,8 @@ int VoEVolumeControlImpl::GetSpeechOutputLevelFullRange(int channel,
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1),
                "GetSpeechOutputLevelFullRange(channel=%d, level=?)", channel);
+    ANDROID_NOT_SUPPORTED();
+    IPHONE_NOT_SUPPORTED();
     if (!_engineStatistics.Initialized())
     {
         _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
