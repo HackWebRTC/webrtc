@@ -91,8 +91,8 @@ LOCAL_SRC_FILES = \
      $(MY_LIBVPX_PATH)/vp8/decoder/arm/arm_dsystemdependent.c \
 
 LOCAL_CFLAGS := \
-	-DHAVE_CONFIG_H=vpx_config.h \
-	-include $(LOCAL_PATH)/third_party_mods/libvpx/source/config/android/vpx_config.h
+    -DHAVE_CONFIG_H=vpx_config.h \
+    -include $(LOCAL_PATH)/third_party/libvpx/source/config/android/vpx_config.h
 
 LOCAL_MODULE := libwebrtc_vpx
 
