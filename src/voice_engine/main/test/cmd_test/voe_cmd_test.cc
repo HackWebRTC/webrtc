@@ -217,7 +217,7 @@ void run_test() {
   strcpy(ip, "127.0.0.1");
 #else
   char localip[64];
-  netw->GetLocalIP(localip, 64);
+  netw->GetLocalIP(localip);
   printf("local IP:%s\n", localip);
 
   printf("1. 127.0.0.1 \n");
@@ -305,7 +305,7 @@ void run_test() {
     res = hardware->GetNumOfPlayoutDevices(pd);
     VALIDATE;
 
-    char dn[64] = { 0 };
+    char dn[128] = { 0 };
     char guid[128] = { 0 };
     printf("\nPlayout devices (%d): \n", pd);
     for (j=0; j<pd; ++j) {
@@ -534,7 +534,7 @@ void run_test() {
         res = hardware->GetNumOfPlayoutDevices(num_pd);
         VALIDATE;
 
-        char dn[64] = { 0 };
+        char dn[128] = { 0 };
         char guid[128] = { 0 };
 
         printf("\nPlayout devices (%d): \n", num_pd);
@@ -556,7 +556,7 @@ void run_test() {
         res = hardware->GetNumOfRecordingDevices(num_rd);
         VALIDATE;
 
-        char dn[64] = { 0 };
+        char dn[128] = { 0 };
         char guid[128] = { 0 };
 
         printf("Recording devices (%d): \n", num_rd);
