@@ -157,8 +157,8 @@ int WebRtcAec_GetSkew(void *resampInst, int rawSkew, float *skewEst)
 }
 
 int EstimateSkew(const int* rawSkew,
-                 const int size,
-                 const int deviceSampleRateHz,
+                 int size,
+                 int deviceSampleRateHz,
                  float *skewEst)
 {
     const int absLimitOuter = (int)(0.04f * deviceSampleRateHz);
