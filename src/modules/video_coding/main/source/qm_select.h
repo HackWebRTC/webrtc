@@ -59,7 +59,7 @@ class VCMQmMethod
 {
 public:
     VCMQmMethod();
-    ~VCMQmMethod();
+    virtual ~VCMQmMethod();
 
     // Reset values
     void ResetQM();
