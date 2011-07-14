@@ -18,9 +18,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <OpenSLES.h>
-#include <OpenSLES_Android.h>
-#include <OpenSLES_AndroidConfiguration.h>
+#include <SLES/OpenSLES.h>
+#include <SLES/OpenSLES_Android.h>
+#include <SLES/OpenSLES_AndroidConfiguration.h>
 
 namespace webrtc
 {

@@ -52,7 +52,7 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../../../../common_audio/resampler/main/interface \
     $(LOCAL_PATH)/../../../../common_audio/signal_processing_library/main/interface \
     $(LOCAL_PATH)/../../../../system_wrappers/interface \
-    system/media/wilhelm/include/SLES
+    system/media/wilhelm/include
 
 # Flags passed to only C++ (and not C) files.
 LOCAL_CPPFLAGS := 
