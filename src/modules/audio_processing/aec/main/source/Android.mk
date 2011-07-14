@@ -16,9 +16,9 @@ LOCAL_MODULE_TAGS := optional
 LOCAL_GENERATED_SOURCES :=
 LOCAL_SRC_FILES := \
     echo_cancellation.c \
+    resampler.c \
     aec_core.c \
-    aec_rdft.c \
-    resampler.c
+    aec_rdft.c 
 
 # Flags passed to both C and C++ files.
 MY_CFLAGS :=  
@@ -27,9 +27,16 @@ MY_DEFS := '-DNO_TCMALLOC' \
     '-DNO_HEAPCHECKER' \
     '-DWEBRTC_TARGET_PC' \
     '-DWEBRTC_LINUX' \
-    '-DWEBRTC_THREAD_RR' \
+    '-DWEBRTC_THREAD_RR'
+ifeq ($(TARGET_ARCH),arm) 
+MY_DEFS += \
     '-DWEBRTC_ANDROID' \
     '-DANDROID' 
+else
+LOCAL_SRC_FILES += \
+    aec_core_sse2.c \
+    aec_rdft_sse2.c
+endif
 LOCAL_CFLAGS := $(MY_CFLAGS_C) $(MY_CFLAGS) $(MY_DEFS)
 
 # Include paths placed before CFLAGS/CPPFLAGS

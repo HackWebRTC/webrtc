@@ -35,11 +35,14 @@ MY_DEFS := '-DNO_TCMALLOC' \
     '-DWEBRTC_TARGET_PC' \
     '-DWEBRTC_LINUX' \
     '-DWEBRTC_THREAD_RR' \
-    '-DWEBRTC_ANDROID' \
-    '-DANDROID' \
     '-DWEBRTC_NS_FIXED'
 #   floating point
 #   -DWEBRTC_NS_FLOAT'
+ifeq ($(TARGET_ARCH),arm) 
+MY_DEFS += \
+    '-DWEBRTC_ANDROID' \
+    '-DANDROID' 
+endif
 LOCAL_CFLAGS := $(MY_CFLAGS_C) $(MY_CFLAGS) $(MY_DEFS)
 
 # Include paths placed before CFLAGS/CPPFLAGS
