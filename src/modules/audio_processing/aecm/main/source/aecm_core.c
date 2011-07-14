@@ -9,14 +9,12 @@
  */
 
 #include <stdlib.h>
+#include <assert.h>
 
 #include "aecm_core.h"
 #include "ring_buffer.h"
 #include "echo_control_mobile.h"
 #include "typedefs.h"
-
-// TODO(bjornv): Will be removed in final version.
-//#include <stdio.h>
 
 #ifdef ARM_WINM_LOG
 #include <stdio.h>
@@ -1570,6 +1568,10 @@ void WebRtcAecm_ProcessBlock(AecmCore_t * const aecm, const WebRtc_Word16 * cons
     WebRtc_Word16 zerosDBufNoisy, zerosDBufClean, zerosXBuf;
     WebRtc_Word16 resolutionDiff, qDomainDiff;
 
+    const int kMinPrefBand = 4;
+    const int kMaxPrefBand = 24;
+    WebRtc_Word32 avgHnl32 = 0;
+
 #ifdef ARM_WINM_LOG_
     DWORD temp;
     static int flag0 = 0;
@@ -2200,6 +2202,32 @@ void WebRtcAecm_ProcessBlock(AecmCore_t * const aecm, const WebRtc_Word16 * cons
         if (hnl[i])
         {
             numPosCoef++;
+        }
+    }
+    // Only in wideband. Prevent the gain in upper band from being larger than
+    // in lower band.
+    if (aecm->mult == 2)
+    {
+        // TODO(bjornv): Investigate if the scaling of hnl[i] below can cause
+        //               speech distortion in double-talk.
+        for (i = 0; i < PART_LEN1; i++)
+        {
+            hnl[i] = (WebRtc_Word16)WEBRTC_SPL_MUL_16_16_RSFT(hnl[i], hnl[i], 14);
+        }
+
+        for (i = kMinPrefBand; i <= kMaxPrefBand; i++)
+        {
+            avgHnl32 += (WebRtc_Word32)hnl[i];
+        }
+        assert(kMaxPrefBand - kMinPrefBand + 1 > 0);
+        avgHnl32 /= (kMaxPrefBand - kMinPrefBand + 1);
+
+        for (i = kMaxPrefBand; i < PART_LEN1; i++)
+        {
+            if (hnl[i] > (WebRtc_Word16)avgHnl32)
+            {
+                hnl[i] = (WebRtc_Word16)avgHnl32;
+            }
         }
     }
 
