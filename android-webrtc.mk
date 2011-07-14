@@ -37,6 +37,8 @@ LOCAL_SHARED_LIBRARIES := \
 
 LOCAL_ADDITIONAL_DEPENDENCIES :=
 
+LOCAL_PRELINK_MODULE := false
+
 include external/stlport/libstlport.mk
 include $(BUILD_SHARED_LIBRARY)
 
@@ -91,6 +93,8 @@ LOCAL_SHARED_LIBRARIES := \
     libwebrtc_audio_preprocessing
 
 LOCAL_ADDITIONAL_DEPENDENCIES :=
+
+LOCAL_PRELINK_MODULE := false
 
 include external/stlport/libstlport.mk
 include $(BUILD_SHARED_LIBRARY)
