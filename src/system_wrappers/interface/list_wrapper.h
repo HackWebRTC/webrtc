@@ -34,7 +34,6 @@ protected:
 private:
     const void*         item_ptr_;
     const unsigned int  item_;
-    DISALLOW_COPY_AND_ASSIGN(ListItem);
 };
 
 class ListWrapper
@@ -102,7 +101,6 @@ private:
     ListItem* first_;
     ListItem* last_;
     unsigned int size_;
-    DISALLOW_COPY_AND_ASSIGN(ListWrapper);
 };
 } //namespace webrtc
 

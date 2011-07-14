@@ -31,7 +31,6 @@ public:
 private:
     int   item_id_;
     void* item_pointer_;
-    DISALLOW_COPY_AND_ASSIGN(MapItem);
 };
 
 class MapWrapper
@@ -70,7 +69,6 @@ public:
 
 private:
     std::map<int, MapItem*>    map_;
-    DISALLOW_COPY_AND_ASSIGN(MapWrapper);
 };
 } // namespace webrtc
 
