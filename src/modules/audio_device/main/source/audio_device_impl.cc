@@ -20,11 +20,11 @@
  #if defined(WEBRTC_WINDOWS_CORE_AUDIO_BUILD)
     #include "audio_device_windows_core.h"
  #endif
-#elif defined(WEBRTC_ANDROID_NATIVE)
+#elif defined(WEBRTC_ANDROID_OPENSLES)
     #include <stdlib.h>
     #include "audio_device_utility_android.h"
-    #include "audio_device_android_native.h"
-#elif defined(ANDROID)
+    #include "audio_device_android_opensles.h"
+#elif defined(WEBRTC_ANDROID)
     #include <stdlib.h>
     #include "audio_device_utility_android.h"
     #include "audio_device_android_jni.h"
@@ -153,7 +153,7 @@ WebRtc_Word32 AudioDeviceModule::GetVersion(WebRtc_Word8* version, WebRtc_UWord3
 
 WebRtc_Word32 AudioDeviceModule::SetAndroidObjects(void* javaVM, void* env, void* context)
 {
-#if defined(ANDROID) && !defined(WEBRTC_ANDROID_NATIVE)
+#if defined(WEBRTC_ANDROID) && !defined(WEBRTC_ANDROID_OPENSLES)
     return SetAndroidAudioDeviceObjects(javaVM, env, context);
 #else
     return -1;
@@ -285,15 +285,15 @@ WebRtc_Word32 AudioDeviceModuleImpl::CreatePlatformSpecificObjects()
     }
 #endif  // #if defined(_WIN32)
 
-    // Create the *Android Native* implementation of the Audio Device
+    // Create the *Android OpenSLES* implementation of the Audio Device
     //
-#if defined(WEBRTC_ANDROID_NATIVE) 
+#if defined(WEBRTC_ANDROID_OPENSLES)
     if (audioLayer == kPlatformDefaultAudio)
     {
-        // Create *Android Native Audio* implementation
-        ptrAudioDevice = new AudioDeviceAndroidNative(Id());
-        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, 
-                     "Android NATIVE Audio APIs will be utilized");
+        // Create *Android OpenELSE Audio* implementation
+        ptrAudioDevice = new AudioDeviceAndroidOpenSLES(Id());
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
+                     "Android OpenSLES Audio APIs will be utilized");
     }
 
     if (ptrAudioDevice != NULL)
@@ -301,11 +301,11 @@ WebRtc_Word32 AudioDeviceModuleImpl::CreatePlatformSpecificObjects()
         // Create the Android implementation of the Device Utility.
         ptrAudioDeviceUtility = new AudioDeviceUtilityAndroid(Id());
     }
-    // END #if defined(WEBRTC_ANDROID_NATIVE)
+    // END #if defined(WEBRTC_ANDROID_OPENSLES)
 
     // Create the *Android Java* implementation of the Audio Device
     //
-#elif defined(ANDROID)
+#elif defined(WEBRTC_ANDROID)
     if (audioLayer == kPlatformDefaultAudio)
     {
         // Create *Android JNI Audio* implementation
@@ -318,7 +318,7 @@ WebRtc_Word32 AudioDeviceModuleImpl::CreatePlatformSpecificObjects()
         // Create the Android implementation of the Device Utility.
         ptrAudioDeviceUtility = new AudioDeviceUtilityAndroid(Id());
     }
-    // END #if defined(ANDROID)
+    // END #if defined(WEBRTC_ANDROID)
 
     // Create the *Linux* implementation of the Audio Device
     //
@@ -2182,4 +2182,3 @@ AudioDeviceModule::AudioLayer AudioDeviceModuleImpl::PlatformAudioLayer() const
 }
 
 }  // namespace webrtc
-

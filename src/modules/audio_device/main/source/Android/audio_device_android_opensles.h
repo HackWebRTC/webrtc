@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_ANDROID_NATIVE_H
-#define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_ANDROID_NATIVE_H
+#ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_ANDROID_OPENSLES_H
+#define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_ANDROID_OPENSLES_H
 
 #include "audio_device_generic.h"
 #include "critical_section_wrapper.h"
@@ -48,11 +48,11 @@ const WebRtc_UWord16 N_REC_BUFFERS = 20;
 
 class ThreadWrapper;
 
-class AudioDeviceAndroidNative: public AudioDeviceGeneric
+class AudioDeviceAndroidOpenSLES: public AudioDeviceGeneric
 {
 public:
-    AudioDeviceAndroidNative(const WebRtc_Word32 id);
-    ~AudioDeviceAndroidNative();
+    AudioDeviceAndroidOpenSLES(const WebRtc_Word32 id);
+    ~AudioDeviceAndroidOpenSLES();
 
     // Retrieve the currently utilized audio layer
     virtual WebRtc_Word32
@@ -307,4 +307,4 @@ private:
 
 } // namespace webrtc
 
-#endif  // WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_ANDROID_NATIVE_H
+#endif  // WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_ANDROID_OPENSLES_H

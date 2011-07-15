@@ -20,7 +20,7 @@ LOCAL_SRC_FILES := audio_device_buffer.cc \
     audio_device_generic.cc \
     audio_device_utility.cc \
     audio_device_impl.cc \
-    Android/audio_device_android_native.cc \
+    Android/audio_device_android_opensles.cc \
     Android/audio_device_utility_android.cc \
     Linux/audio_device_utility_linux.cc \
     Dummy/audio_device_dummy.cc
@@ -33,9 +33,8 @@ MY_DEFS := '-DNO_TCMALLOC' \
     '-DWEBRTC_TARGET_PC' \
     '-DWEBRTC_THREAD_RR' \
     '-DWEBRTC_LINUX' \
-    '-DWEBRTC_ANDROID' \
-    '-DWEBRTC_ANDROID_NATIVE' \
-    '-DANDROID' 
+    '-DWEBRTC_ANDROID_OPENSLES' \
+    '-DWEBRTC_ANDROID'
 
 LOCAL_CFLAGS := $(MY_CFLAGS_C) $(MY_CFLAGS) $(MY_DEFS)
 
