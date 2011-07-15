@@ -1240,7 +1240,9 @@ RTPSenderVideo::SendVP8(const FrameType frameType,
         if (-1 == SendVideoPacket(frameType, dataBuffer, payloadBytesInPacket,
             rtpHeaderLength))
         {
-            return -1;
+            WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
+                         "RTPSenderVideo::SendVP8 failed to send packet number"
+                         " %d", _rtpSender.SequenceNumber());
         }
     }
     return 0;
