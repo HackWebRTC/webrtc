@@ -56,8 +56,8 @@ void usage() {
   printf("  --drift_compensation\n");
   printf("  --no_drift_compensation\n");
   printf("\n  -aecm    Echo control mobile\n");
-  printf("  --aecm_echo_path_in_file FILE");
-  printf("  --aecm_echo_path_out_file FILE");
+  printf("  --aecm_echo_path_in_file FILE\n");
+  printf("  --aecm_echo_path_out_file FILE\n");
   printf("\n  -agc     Gain control\n");
   printf("  --analog\n");
   printf("  --adaptive_digital\n");
