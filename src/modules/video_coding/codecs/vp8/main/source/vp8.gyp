@@ -21,23 +21,32 @@
       ],
       'conditions': [
         ['build_with_chromium==1', {
-          'conditions': [
-            ['OS=="win"', {
-              'dependencies': [
-                # We don't want to link with the static library inside Chromium
-                # on Windows. Chromium uses the ffmpeg DLL and exports the
-                # necessary libvpx symbols for us.
-                '../../../../../../../libvpx/libvpx.gyp:libvpx_include',
-              ],
-            },{
-              'dependencies': [
-                '../../../../../../../libvpx/libvpx.gyp:libvpx',
-              ],
-              'include_dirs': [
-                '../../../../../../../libvpx/source/libvpx',
-              ],
-            }],
-          ],
+           'conditions': [
+             ['target_arch=="arm"', {
+               'dependencies': [
+                 '../../../../../../../libvpx/libvpx.gyp:libvpx_lib',
+                 '../../../../../../../libvpx/libvpx.gyp:libvpx_include',
+               ],
+             }, {  # arm
+               'conditions': [
+                 ['OS=="win"', {
+                   'dependencies': [
+                     # We don't want to link with the static library inside Chromium
+                     # on Windows. Chromium uses the ffmpeg DLL and exports the
+                     # necessary libvpx symbols for us.
+                     '../../../../../../../libvpx/libvpx.gyp:libvpx_include',
+                   ],
+                 },{ # non-arm, win
+                   'dependencies': [
+                     '../../../../../../../libvpx/libvpx.gyp:libvpx',
+                   ],
+                   'include_dirs': [
+                     '../../../../../../../libvpx/source/libvpx',
+                   ],
+                 }], # non-arm, non-win
+               ],
+             }],
+           ],
         },{
           'dependencies': [
             '../../../../../../../third_party/libvpx/libvpx.gyp:libvpx',
