@@ -48,13 +48,14 @@ LOCAL_C_INCLUDES := \
     external/gtest/include \
     $(LOCAL_PATH)/../interface \
     $(LOCAL_PATH)/../../interface \
-    $(LOCAL_PATH)/../../../../interface \
     $(LOCAL_PATH)/../../../../../.. \
+    $(LOCAL_PATH)/../../../../interface \
     $(LOCAL_PATH)/../../../../source \
-    $(LOCAL_PATH)/../../../../../../modules/video_render/main/interface \
+    $(LOCAL_PATH)/../../../../../../common_video/interface \
     $(LOCAL_PATH)/../../../../../../modules/interface \
     $(LOCAL_PATH)/../../../../../../modules/video_capture/main/interface \
     $(LOCAL_PATH)/../../../../../../modules/video_coding/codecs/interface \
+    $(LOCAL_PATH)/../../../../../../modules/video_render/main/interface \
     $(LOCAL_PATH)/../../../../../../voice_engine/main/interface \
     $(LOCAL_PATH)/../../../../../../system_wrappers/interface 
 
