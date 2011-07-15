@@ -446,7 +446,10 @@ public:
 
 
     virtual WebRtc_Word32 SetFECCodeRate(const WebRtc_UWord8 keyFrameCodeRate,
-                                       const WebRtc_UWord8 deltaFrameCodeRate);
+                                         const WebRtc_UWord8 deltaFrameCodeRate);
+
+    virtual WebRtc_Word32 SetFECUepProtection(const bool keyUseUepProtection,
+                                              const bool deltaUseUepProtection);
 
     virtual WebRtc_Word32 SetH263InverseLogic(const bool enable);
 

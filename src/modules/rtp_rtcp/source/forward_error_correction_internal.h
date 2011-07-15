@@ -24,19 +24,24 @@ namespace internal {
   * corresponds to a number of mask bytes. The mask indicates which
   * media packets should be protected by the FEC packet.
 
-  * \param[in]  numMediaPackets The number of media packets to protect.
-  *                              [1, maxMediaPackets].
-  * \param[in]  numFecPackets   The number of FEC packets which will be generated.
-  *                              [1, numMediaPackets].
-  * \param[in]  numImpPackets   The number of important packets.
-  *                              [0, numMediaPackets].
-  *                             numImpPackets = 0 is the equal protection scenario.
-  * \param[out] packetMask      A pointer to hold the packet mask array, of size
-  *                              numFecPackets * "number of mask bytes".
+  * \param[in]  numMediaPackets       The number of media packets to protect.
+  *                                    [1, maxMediaPackets].
+  * \param[in]  numFecPackets         The number of FEC packets which will
+  *                                    be generated. [1, numMediaPackets].
+  * \param[in]  numImpPackets         The number of important packets.
+  *                                    [0, numMediaPackets].
+  *                                   numImpPackets = 0 is the equal
+  *                                    protection scenario.
+  * \param[in]  useUnequalProtection  Enables unequal protection: allocates
+  *                                    more protection to the numImpPackets.
+  * \param[out] packetMask            A pointer to hold the packet mask array,
+  *                                    of size:
+  *                                    numFecPackets * "number of mask bytes".
   */
 void GeneratePacketMasks(const WebRtc_UWord32 numMediaPackets,
                          const WebRtc_UWord32 numFecPackets,
                          const WebRtc_UWord32 numImpPackets,
+                         const bool useUnequalProtection,
                          WebRtc_UWord8* packetMask);
 
 

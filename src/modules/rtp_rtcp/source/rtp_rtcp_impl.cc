@@ -1989,6 +1989,40 @@ ModuleRtpRtcpImpl::SetFECCodeRate(const WebRtc_UWord8 keyFrameCodeRate,
     }
 }
 
+WebRtc_Word32
+ModuleRtpRtcpImpl::SetFECUepProtection(const bool keyUseUepProtection,
+                                       const bool deltaUseUepProtection)
+{
+    WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, _id,
+                 "SetFECUepProtection(%d, %d)", keyUseUepProtection,
+                  deltaUseUepProtection);
+
+    const bool defaultInstance(_childModules.Empty()?false:true);
+    if (defaultInstance)
+    {
+        // for default we need to update all child modules too
+        CriticalSectionScoped lock(_criticalSectionModulePtrs);
+
+        ListItem* item = _childModules.First();
+        while (item)
+        {
+            RtpRtcp* module = (RtpRtcp*)item->GetItem();
+            if (module)
+            {
+                module->SetFECUepProtection(keyUseUepProtection,
+                                            deltaUseUepProtection);
+            }
+            item = _childModules.Next(item);
+        }
+        return 0;
+
+    } else
+    {
+        return _rtpSender.SetFECUepProtection(keyUseUepProtection,
+                                              deltaUseUepProtection);
+    }
+}
+
     /*
     *   Implementation of ModuleRtpRtcpPrivate
     */

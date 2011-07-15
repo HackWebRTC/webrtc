@@ -811,17 +811,29 @@ ViEEncoder::SendData(const FrameType frameType,
 
 WebRtc_Word32 ViEEncoder::ProtectionRequest(const WebRtc_UWord8 deltaFECRate,
                                             const WebRtc_UWord8 keyFECRate,
+                                            const bool deltaUseUepProtection,
+                                            const bool keyUseUepProtection,
                                             const bool nack)
 {
-    WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceVideo, ViEId(_engineId, _channelId),
-               "%s: deltaFECRate: %u, keyFECRate: %u, nack: %d", __FUNCTION__,
-               deltaFECRate, keyFECRate, nack);
+    WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceVideo,
+                 ViEId(_engineId, _channelId),"%s, "
+                 "deltaFECRate: %u, keyFECRate: %u, deltaUseUepProtection: "
+                 "%d, keyUseUepProtection: %d, nack: %d", __FUNCTION__,
+                 deltaFECRate, keyFECRate, deltaUseUepProtection,
+                 keyUseUepProtection, nack);
 
     if (_rtpRtcp.SetFECCodeRate(keyFECRate, deltaFECRate) != 0)
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
                    ViEId(_engineId, _channelId),
                    "%s: Could not update FEC code rate", __FUNCTION__);
+    }
+    if (_rtpRtcp.SetFECUepProtection(keyUseUepProtection,
+                                     deltaUseUepProtection) != 0)
+    {
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
+                     ViEId(_engineId, _channelId),
+                     "%s: Could not update FEC-UEP protection", __FUNCTION__);
     }
     return 0;
 }

@@ -97,7 +97,10 @@ public:
     // Implements VideoProtectionCallback
     virtual WebRtc_Word32 ProtectionRequest(const WebRtc_UWord8 deltaFECRate,
                                             const WebRtc_UWord8 keyFECRate,
+                                            const bool deltaUseUepProtection,
+                                            const bool keyUseUepProtection,
                                             const bool nack);
+
     // Implements VideoSendStatisticsCallback
     virtual WebRtc_Word32 SendStatistics(const WebRtc_UWord32 bitRate,
                                          const WebRtc_UWord32 frameRate);

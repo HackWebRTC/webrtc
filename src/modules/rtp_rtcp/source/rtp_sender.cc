@@ -1546,4 +1546,17 @@ RTPSender::SetFECCodeRate(const WebRtc_UWord8 keyFrameCodeRate,
     }
     return _video->SetFECCodeRate(keyFrameCodeRate, deltaFrameCodeRate);
 }
+
+WebRtc_Word32
+RTPSender::SetFECUepProtection(const bool keyUseUepProtection,
+                               const bool deltaUseUepProtection)
+
+{
+    if(_audioConfigured)
+    {
+        return -1;
+    }
+    return _video->SetFECUepProtection(keyUseUepProtection,
+                                       deltaUseUepProtection);
+}
 } // namespace webrtc

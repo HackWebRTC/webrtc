@@ -248,7 +248,10 @@ public:
                                  WebRtc_UWord8& payloadTypeFEC) const;
 
     WebRtc_Word32 SetFECCodeRate(const WebRtc_UWord8 keyFrameCodeRate,
-                               const WebRtc_UWord8 deltaFrameCodeRate);
+                                 const WebRtc_UWord8 deltaFrameCodeRate);
+
+    WebRtc_Word32 SetFECUepProtection(const bool keyUseUepProtection,
+                                      const bool deltaUseUepProtection);
 
 protected:
     WebRtc_Word32 CheckPayloadType(const WebRtc_Word8 payloadType, RtpVideoCodecTypes& videoType);

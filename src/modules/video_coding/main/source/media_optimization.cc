@@ -138,7 +138,6 @@ VCMMediaOptimization::SetTargetRates(WebRtc_UWord32 bitRate,
         // Update protection method with content metrics
         selectedMethod->UpdateContentMetrics(_content->ShortTermAvgData());
 
-
         // Update method will compute the robustness settings for the given
         // protection method and the overhead cost
         // the protection method is set by the user via SetVideoProtection.
@@ -146,11 +145,17 @@ VCMMediaOptimization::SetTargetRates(WebRtc_UWord32 bitRate,
         // FEC protection settings
         _lossProtLogic->UpdateMethod();
 
-        // Get the code rate for Key frames
+        // Get the FEC code rate for Key frames
         const WebRtc_UWord8 codeRateKeyRTP  = selectedMethod->RequiredProtectionFactorK();
 
-        // Get the code rate for Delta frames
+        // Get the FEC code rate for Delta frames
         const WebRtc_UWord8 codeRateDeltaRTP = selectedMethod->RequiredProtectionFactorD();
+
+        // Get the FEC-UEP protection status for Key frames: UEP on/off
+        const bool useUepProtectionKeyRTP  = selectedMethod->RequiredUepProtectionK();
+
+        // Get the FEC-UEP protection status for Delta frames: UEP on/off
+        const bool useUepProtectionDeltaRTP = selectedMethod->RequiredUepProtectionD();
 
         // Get the effective packet loss for ER
         packetLossEnc = selectedMethod->RequiredPacketLossER();
@@ -163,6 +168,8 @@ VCMMediaOptimization::SetTargetRates(WebRtc_UWord32 bitRate,
         {
             _videoProtectionCallback->ProtectionRequest(codeRateDeltaRTP,
                                                         codeRateKeyRTP,
+                                                        useUepProtectionDeltaRTP,
+                                                        useUepProtectionKeyRTP,
                                                         nackStatus);
         }
     }

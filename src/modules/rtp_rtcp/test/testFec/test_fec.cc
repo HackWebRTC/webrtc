@@ -28,14 +28,13 @@ int main()
 
     // Use same values as set in forward_correction.cc
     const WebRtc_UWord8  rtpHeaderSize = 12;
-    const bool kUEP = true;
-    const WebRtc_UWord32 kForceFecThr = 1;
+
+    // FOR UEP
+    const bool kUseUnequalProtection = true;
+    WebRtc_UWord32 numImpPackets = 0;
 
     WebRtc_UWord32 id = 0;
     webrtc::ForwardErrorCorrection fec(id);
-
-    // FOR UEP test
-    WebRtc_UWord32 numImpPackets = 0;
 
     webrtc::ListWrapper mediaPacketList;
     webrtc::ListWrapper fecPacketList;
@@ -96,8 +95,11 @@ int main()
                     WebRtc_UWord8 packetMask[numFecPackets * maskBytesPerFecPacket];
                     memset(packetMask, 0, numFecPackets * maskBytesPerFecPacket);
 
-                     webrtc::internal::GeneratePacketMasks(numMediaPackets,numFecPackets,
-                                                           numImpPackets, packetMask);
+                     webrtc::internal::GeneratePacketMasks(numMediaPackets,
+                                                           numFecPackets,
+                                                           numImpPackets,
+                                                           kUseUnequalProtection,
+                                                           packetMask);
 
 #ifdef VERBOSE_OUTPUT
                     printf("%u media packets, %u FEC packets, %u numImpPackets, "
@@ -128,7 +130,8 @@ int main()
 #endif
                     // Check for all zero rows or columns: indicates incorrect mask
                     WebRtc_UWord32 rowLimit = numMediaPackets;
-                    if (numFecPackets <= numImpPackets && kUEP == true)
+                    if (numFecPackets <= numImpPackets &&
+                        kUseUnequalProtection == true)
                     {
                         rowLimit = numImpPackets;
                     }
@@ -195,7 +198,7 @@ int main()
                     mediaPacket->data[1] |= 0x80; // Set the marker bit of the last packet.
 
                     if (fec.GenerateFEC(mediaPacketList, protectionFactor, numImpPackets,
-                        fecPacketList) != 0)
+                        kUseUnequalProtection, fecPacketList) != 0)
                     {
                         printf("Error: GenerateFEC() failed\n");
                         return -1;

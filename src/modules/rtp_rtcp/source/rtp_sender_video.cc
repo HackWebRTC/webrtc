@@ -42,7 +42,10 @@ RTPSenderVideo::RTPSenderVideo(const WebRtc_Word32 id,
     _payloadTypeFEC(-1),
     _codeRateKey(0),
     _codeRateDelta(0),
+    _useUepProtectionKey(false),
+    _useUepProtectionDelta(false),
     _fecProtectionFactor(0),
+    _fecUseUepProtection(false),
     _numberFirstPartition(0),
 
     // H263
@@ -70,7 +73,10 @@ RTPSenderVideo::Init()
     _payloadTypeFEC = -1;
     _codeRateKey = 0;
     _codeRateDelta = 0;
+    _useUepProtectionKey = false;
+    _useUepProtectionDelta = false;
     _fecProtectionFactor = 0;
+    _fecUseUepProtection = false;
     _numberFirstPartition = 0;
     return 0;
 }
@@ -195,8 +201,11 @@ RTPSenderVideo::SendVideoPacket(const FrameType frameType,
                     ForwardErrorCorrection::kMaxMediaPackets;
             }
 
-            retVal = _fec.GenerateFEC(_mediaPacketListFec, _fecProtectionFactor,
-                                      _numberFirstPartition, fecPacketList);
+            retVal = _fec.GenerateFEC(_mediaPacketListFec,
+                                      _fecProtectionFactor,
+                                      _numberFirstPartition,
+                                      _fecUseUepProtection,
+                                      fecPacketList);
             while(!_rtpPacketListFec.Empty())
             {
                 WebRtc_UWord8 newDataBuffer[IP_PACKET_SIZE];
@@ -324,7 +333,8 @@ RTPSenderVideo::SetGenericFECStatus(const bool enable,
     _payloadTypeFEC = payloadTypeFEC;
     _codeRateKey = 0;
     _codeRateDelta = 0;
-
+    _useUepProtectionKey = false;
+    _useUepProtectionDelta = false;
     return 0;
 }
 
@@ -360,6 +370,15 @@ RTPSenderVideo::SetFECCodeRate(const WebRtc_UWord8 keyFrameCodeRate,
 }
 
 WebRtc_Word32
+RTPSenderVideo::SetFECUepProtection(const bool keyUseUepProtection,
+                                    const bool deltaUseUepProtection)
+{
+    _useUepProtectionKey = keyUseUepProtection;
+    _useUepProtectionDelta = deltaUseUepProtection;
+    return 0;
+}
+
+WebRtc_Word32
 RTPSenderVideo::SendVideo(const RtpVideoCodecTypes videoType,
                           const FrameType frameType,
                           const WebRtc_Word8 payloadType,
@@ -378,9 +397,11 @@ RTPSenderVideo::SendVideo(const RtpVideoCodecTypes videoType,
     if (frameType == kVideoFrameKey)
     {
         _fecProtectionFactor = _codeRateKey;
+        _fecUseUepProtection = _useUepProtectionKey;
     } else
     {
         _fecProtectionFactor = _codeRateDelta;
+        _fecUseUepProtection = _useUepProtectionDelta;
     }
 
     // Default setting for number of first partition packets:

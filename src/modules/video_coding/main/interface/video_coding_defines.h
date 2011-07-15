@@ -138,13 +138,18 @@ protected:
     virtual ~VCMReceiveStatisticsCallback() {}
 };
 
-// Callback class used for telling the user about the requested amount of bit stream protection
-// Key frame FEC rate, delta frame and whether NACK should be on or off.
+// Callback class used for telling the user about the requested amount of
+// bit stream protection: FEC rate for key and delta frame;
+// whether the FEC uses unequal protection (UEP) across packets,
+// for key and delta frame;
+// and whether NACK should be on or off.
 class VCMProtectionCallback
 {
 public:
     virtual WebRtc_Word32 ProtectionRequest(const WebRtc_UWord8 deltaFECRate,
                                             const WebRtc_UWord8 keyFECRate,
+                                            const bool deltaUseUepProtection,
+                                            const bool keyUseUepProtection,
                                             const bool nack) = 0;
 
 protected:

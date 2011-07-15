@@ -94,6 +94,7 @@ WebRtc_Word32
 ForwardErrorCorrection::GenerateFEC(const ListWrapper& mediaPacketList,
                                     WebRtc_UWord8 protectionFactor,
                                     WebRtc_UWord32 numImportantPackets,
+                                    const bool useUnequalProtection,
                                     ListWrapper& fecPacketList)
 {
     if (mediaPacketList.Empty())
@@ -201,7 +202,7 @@ ForwardErrorCorrection::GenerateFEC(const ListWrapper& mediaPacketList,
     WebRtc_UWord8* packetMask = new WebRtc_UWord8[numFecPackets * numMaskBytes];
     memset(packetMask, 0, numFecPackets * numMaskBytes);
     internal::GeneratePacketMasks(numMediaPackets, numFecPackets,
-        numImportantPackets, packetMask);
+        numImportantPackets, useUnequalProtection, packetMask);
 
     // -- Generate FEC bit strings --
     WebRtc_UWord8 mediaPayloadLength[2];

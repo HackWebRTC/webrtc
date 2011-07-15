@@ -18,7 +18,10 @@
 
 namespace webrtc {
 /**
- * Performs codec-independent forward error correction.
+ * Performs codec-independent forward error correction (FEC), based on RFC 5109.
+ * Option exists to enable unequal protection (UEP) across packets.
+ * This is not to be confused with protection within packets
+ * (referred to as uneven level protection (ULP) in RFC 5109).
  */
 class ForwardErrorCorrection
 {
@@ -107,6 +110,10 @@ public:
      *                                 be located at the start of the media packet list.
      *                                 For codecs with data partitioning, the important
      *                                 packets may correspond to first partition packets.
+     * \param[in] useUnequalProtection Parameter to enable/disable unequal protection
+     *                                 (UEP) across packets. Enabling UEP will allocate more
+     *                                 protection to the numImportantPackets from
+     *                                 the start of the mediaPacketList.
      * \param[out] fecPacketList       List of FEC packets, of type #Packet. Must be empty
      *                                 on entry. The memory available through the list
      *                                 will be valid until the next call to GenerateFEC().
@@ -116,6 +123,7 @@ public:
      WebRtc_Word32 GenerateFEC(const ListWrapper& mediaPacketList,
                                WebRtc_UWord8 protectionFactor,
                                WebRtc_UWord32 numImportantPackets,
+                               const bool useUnequalProtection,
                                ListWrapper& fecPacketList);
 
     /**

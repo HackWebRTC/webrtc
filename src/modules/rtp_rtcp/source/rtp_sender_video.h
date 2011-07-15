@@ -80,7 +80,10 @@ public:
                                  WebRtc_UWord8& payloadTypeFEC) const;
 
     WebRtc_Word32 SetFECCodeRate(const WebRtc_UWord8 keyFrameCodeRate,
-                               const WebRtc_UWord8 deltaFrameCodeRate);
+                                 const WebRtc_UWord8 deltaFrameCodeRate);
+
+    WebRtc_Word32 SetFECUepProtection(const bool keyUseUepProtection,
+                                      const bool deltaUseUepProtection);
 
 protected:
     virtual WebRtc_Word32 SendVideoPacket(const FrameType frameType,
@@ -153,7 +156,10 @@ private:
     WebRtc_Word8              _payloadTypeFEC;
     WebRtc_UWord8             _codeRateKey;
     WebRtc_UWord8             _codeRateDelta;
+    bool                      _useUepProtectionKey;
+    bool                      _useUepProtectionDelta;
     WebRtc_UWord8             _fecProtectionFactor;
+    bool                      _fecUseUepProtection;
     WebRtc_UWord32            _numberFirstPartition;
     ListWrapper               _mediaPacketListFec;
     ListWrapper               _rtpPacketListFec;

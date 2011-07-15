@@ -16,13 +16,6 @@
 
 namespace {
 
-// This parameter enables/disables unequal protection (UEP) across packets.
-// This is not to be confused with protection within packets (referred to as ULP).
-// One use case of UEP across packets is for codecs with data partitioning,
-// e.g., VP8, H264 XP profile, where important packets would be first partition.
-// TODO (marpan): Pass this parameter from MediaOpt (VCM).
-const bool kUseUnequalProtection = true;
-
 // Allow for two different modes of protection for residual packets.
 // The residual packets are the remaining packets beyond the important ones.
 enum ResidualProtectionMode
@@ -299,6 +292,7 @@ void UnequalProtectionMask(const WebRtc_UWord16 numMediaPackets,
 void GeneratePacketMasks(const WebRtc_UWord32 numMediaPackets,
                          const WebRtc_UWord32 numFecPackets,
                          const WebRtc_UWord32 numImpPackets,
+                         const bool useUnequalProtection,
                          WebRtc_UWord8* packetMask)
 {
     assert(numMediaPackets <= sizeof(packetMaskTbl)/sizeof(*packetMaskTbl) &&
@@ -317,7 +311,7 @@ void GeneratePacketMasks(const WebRtc_UWord32 numMediaPackets,
     // Equal protection is also used for: (numImpPackets == 1 && numFecPackets == 1).
     // UEP=off would generally be more efficient than the UEP=on for this case.
     // TODO (marpan): check/test this condition.
-    if (!kUseUnequalProtection || numImpPackets == 0 ||
+    if (!useUnequalProtection || numImpPackets == 0 ||
         (numImpPackets == 1 && numFecPackets == 1))
     {
         // Retrieve corresponding mask table directly: for equal-protection case.
