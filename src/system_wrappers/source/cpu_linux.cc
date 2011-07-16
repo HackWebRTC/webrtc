@@ -153,7 +153,10 @@ int CpuLinux::GetNumCores()
     }
     // Skip first line
     char line[100];
-    char* dummy = fgets(line, 100, fp);
+    if (!fgets(line, 100, fp))
+    {
+        return -1;
+    }
     int numCores = -1;
     char firstWord[100];
     do

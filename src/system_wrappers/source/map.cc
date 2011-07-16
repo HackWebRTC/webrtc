@@ -13,7 +13,7 @@
 #include "trace.h"
 
 namespace webrtc {
-MapItem::MapItem(int id, void* item) : item_pointer_(item), item_id_(id)
+MapItem::MapItem(int id, void* item) : item_id_(id), item_pointer_(item)
 {
 }
 
