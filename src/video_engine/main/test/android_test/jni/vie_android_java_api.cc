@@ -607,8 +607,7 @@ Java_org_webrtc_videoengineapp_ViEAndroidJavaAPI_SetSendDestination(
                       "SetSendDestination: channel=%d, port=%d, ip=%s\n",
                       channel, port, ip);
 
-  int ret = vieData.netw->SetSendDestination(channel, "127.0.0.1"/*ip*/, port);
-  return ret;
+  return vieData.netw->SetSendDestination(channel, ip, port);
 }
 
 
