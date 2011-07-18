@@ -159,7 +159,8 @@ typedef struct
     WebRtc_Word32 echoFilt[PART_LEN1];
     WebRtc_Word16 nearFilt[PART_LEN1];
     WebRtc_Word32 noiseEst[PART_LEN1];
-    WebRtc_Word16 noiseEstQDomain[PART_LEN1];
+    int           noiseEstTooLowCtr[PART_LEN1];
+    int           noiseEstTooHighCtr[PART_LEN1];
     WebRtc_Word16 noiseEstCtr;
     WebRtc_Word16 cngMode;
 

@@ -99,6 +99,9 @@ static const WebRtc_Word16 kChannelStored16kHz[PART_LEN1] = {
     3153
 };
 
+static const WebRtc_Word16 kNoiseEstQDomain = 15;
+static const WebRtc_Word16 kNoiseEstIncCount = 5;
+
 #ifdef ARM_WINM_LOG
 HANDLE logFile = NULL;
 #endif
@@ -288,8 +291,9 @@ void WebRtcAecm_InitEchoPathCore(AecmCore_t* aecm, const WebRtc_Word16* echo_pat
 int WebRtcAecm_InitCore(AecmCore_t * const aecm, int samplingFreq)
 {
     int retVal = 0;
-    WebRtc_Word16 i;
-    WebRtc_Word16 tmp16;
+    int i = 0;
+    WebRtc_Word32 tmp32 = PART_LEN1 * PART_LEN1;
+    WebRtc_Word16 tmp16 = PART_LEN1;
 
     if (samplingFreq != 8000 && samplingFreq != 16000)
     {
@@ -361,47 +365,19 @@ int WebRtcAecm_InitCore(AecmCore_t * const aecm, int samplingFreq)
 
     aecm->cngMode = AecmTrue;
 
-    // Increase the noise Q domain with increasing frequency, to correspond to the
-    // expected energy levels.
-    // Also shape the initial noise level with this consideration.
-#if (!defined ARM_WINM) && (!defined ARM9E_GCC) && (!defined ANDROID_AECOPT)
-    for (i = 0; i < PART_LEN1; i++)
+    memset(aecm->noiseEstTooLowCtr, 0, sizeof(int) * PART_LEN1);
+    memset(aecm->noiseEstTooHighCtr, 0, sizeof(int) * PART_LEN1);
+    // Shape the initial noise level to an approximate pink noise.
+    for (i = 0; i < (PART_LEN1 >> 1) - 1; i++)
     {
-        if (i < PART_LEN1 >> 2)
-        {
-            aecm->noiseEstQDomain[i] = 10;
-            tmp16 = PART_LEN1 - i;
-            aecm->noiseEst[i] = (tmp16 * tmp16) << 4;
-        } else if (i < PART_LEN1 >> 1)
-        {
-            aecm->noiseEstQDomain[i] = 11;
-            tmp16 = PART_LEN1 - i;
-            aecm->noiseEst[i] = ((tmp16 * tmp16) << 4) << 1;
-        } else
-        {
-            aecm->noiseEstQDomain[i] = 12;
-            aecm->noiseEst[i] = aecm->noiseEst[(PART_LEN1 >> 1) - 1] << 1;
-        }
-    }
-#else
-    for (i = 0; i < PART_LEN1 >> 2; i++)
-    {
-        aecm->noiseEstQDomain[i] = 10;
-        tmp16 = PART_LEN1 - i;
-        aecm->noiseEst[i] = (tmp16 * tmp16) << 4;
-    }
-    for (; i < PART_LEN1 >> 1; i++)
-    {
-        aecm->noiseEstQDomain[i] = 11;
-        tmp16 = PART_LEN1 - i;
-        aecm->noiseEst[i] = ((tmp16 * tmp16) << 4) << 1;
+        aecm->noiseEst[i] = (tmp32 << 8);
+        tmp16--;
+        tmp32 -= (WebRtc_Word32)((tmp16 << 1) + 1);
     }
     for (; i < PART_LEN1; i++)
     {
-        aecm->noiseEstQDomain[i] = 12;
-        aecm->noiseEst[i] = aecm->noiseEst[(PART_LEN1 >> 1) - 1] << 1;
+        aecm->noiseEst[i] = (tmp32 << 8);
     }
-#endif
 
     aecm->farEnergyMin = WEBRTC_SPL_WORD16_MAX;
     aecm->farEnergyMax = WEBRTC_SPL_WORD16_MIN;
@@ -2407,19 +2383,22 @@ static void WebRtcAecm_ComfortNoise(AecmCore_t * const aecm, const WebRtc_UWord1
     WebRtc_Word16 randW16[PART_LEN];
     WebRtc_Word16 uReal[PART_LEN1];
     WebRtc_Word16 uImag[PART_LEN1];
-    WebRtc_Word32 outLShift32[PART_LEN1];
+    WebRtc_Word32 outLShift32;
     WebRtc_Word16 noiseRShift16[PART_LEN1];
 
-    WebRtc_Word16 shiftFromNearToNoise[PART_LEN1];
+    WebRtc_Word16 shiftFromNearToNoise = kNoiseEstQDomain - aecm->dfaCleanQDomain;
     WebRtc_Word16 minTrackShift;
     WebRtc_Word32 upper32;
     WebRtc_Word32 lower32;
+
+    assert(shiftFromNearToNoise >= 0);
+    assert(shiftFromNearToNoise < 16);
 
     if (aecm->noiseEstCtr < 100)
     {
         // Track the minimum more quickly initially.
         aecm->noiseEstCtr++;
-        minTrackShift = 7;
+        minTrackShift = 6;
     } else
     {
         minTrackShift = 9;
@@ -2428,40 +2407,72 @@ static void WebRtcAecm_ComfortNoise(AecmCore_t * const aecm, const WebRtc_UWord1
     // Estimate noise power.
     for (i = 0; i < PART_LEN1; i++)
     {
-        shiftFromNearToNoise[i] = aecm->noiseEstQDomain[i] - aecm->dfaCleanQDomain;
 
         // Shift to the noise domain.
         tmp32 = (WebRtc_Word32)dfa[i];
-        outLShift32[i] = WEBRTC_SPL_SHIFT_W32(tmp32, shiftFromNearToNoise[i]);
+        outLShift32 = WEBRTC_SPL_LSHIFT_W32(tmp32, shiftFromNearToNoise);
 
-        if (outLShift32[i] < aecm->noiseEst[i])
+        if (outLShift32 < aecm->noiseEst[i])
         {
+            // Reset "too low" counter
+            aecm->noiseEstTooLowCtr[i] = 0;
             // Track the minimum.
-            aecm->noiseEst[i] += ((outLShift32[i] - aecm->noiseEst[i]) >> minTrackShift);
+            if (aecm->noiseEst[i] < (1 << minTrackShift))
+            {
+                // For small values, decrease noiseEst[i] every
+                // |kNoiseEstIncCount| block. The regular approach below can not
+                // go further down due to truncation.
+                aecm->noiseEstTooHighCtr[i]++;
+                if (aecm->noiseEstTooHighCtr[i] >= kNoiseEstIncCount)
+                {
+                    aecm->noiseEst[i]--;
+                    aecm->noiseEstTooHighCtr[i] = 0; // Reset the counter
+                }
+            }
+            else
+            {
+                aecm->noiseEst[i] -= ((aecm->noiseEst[i] - outLShift32) >> minTrackShift);
+            }
         } else
         {
+            // Reset "too high" counter
+            aecm->noiseEstTooHighCtr[i] = 0;
             // Ramp slowly upwards until we hit the minimum again.
-
-            // Avoid overflow.
-            if (aecm->noiseEst[i] < 2146435583)
+            if ((aecm->noiseEst[i] >> 19) > 0)
             {
-                // Store the fractional portion.
-                upper32 = (aecm->noiseEst[i] & 0xffff0000) >> 16;
-                lower32 = aecm->noiseEst[i] & 0x0000ffff;
-                upper32 = ((upper32 * 2049) >> 11);
-                lower32 = ((lower32 * 2049) >> 11);
-                aecm->noiseEst[i] = WEBRTC_SPL_ADD_SAT_W32(upper32 << 16, lower32);
+                // Avoid overflow.
+                // Multiplication with 2049 will cause wrap around. Scale
+                // down first and then multiply
+                aecm->noiseEst[i] >>= 11;
+                aecm->noiseEst[i] *= 2049;
+            }
+            else if ((aecm->noiseEst[i] >> 11) > 0)
+            {
+                // Large enough for relative increase
+                aecm->noiseEst[i] *= 2049;
+                aecm->noiseEst[i] >>= 11;
+            }
+            else
+            {
+                // Make incremental increases based on size every
+                // |kNoiseEstIncCount| block
+                aecm->noiseEstTooLowCtr[i]++;
+                if (aecm->noiseEstTooLowCtr[i] >= kNoiseEstIncCount)
+                {
+                    aecm->noiseEst[i] += (aecm->noiseEst[i] >> 9) + 1;
+                    aecm->noiseEstTooLowCtr[i] = 0; // Reset counter
+                }
             }
         }
     }
 
     for (i = 0; i < PART_LEN1; i++)
     {
-        tmp32 = WEBRTC_SPL_SHIFT_W32(aecm->noiseEst[i], -shiftFromNearToNoise[i]);
+        tmp32 = WEBRTC_SPL_RSHIFT_W32(aecm->noiseEst[i], shiftFromNearToNoise);
         if (tmp32 > 32767)
         {
             tmp32 = 32767;
-            aecm->noiseEst[i] = WEBRTC_SPL_SHIFT_W32(tmp32, shiftFromNearToNoise[i]);
+            aecm->noiseEst[i] = WEBRTC_SPL_LSHIFT_W32(tmp32, shiftFromNearToNoise);
         }
         noiseRShift16[i] = (WebRtc_Word16)tmp32;
 
