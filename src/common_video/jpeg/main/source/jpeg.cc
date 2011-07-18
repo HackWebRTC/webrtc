@@ -13,19 +13,23 @@
  */
 
 
+#if defined(WIN32)
+ #include <basetsd.h>
+#endif
+#include <setjmp.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "vplib.h"
 #include "jpeg.h"
 #include "data_manager.h"
-#if defined(WIN32)
- #include <basetsd.h>
-#endif
 extern "C" {
+#if defined(USE_SYSTEM_LIBJPEG)
+#include <jpeglib.h>
+#else
 #include "jpeglib.h"
+#endif
 }
-#include <setjmp.h>
 
 
 namespace webrtc

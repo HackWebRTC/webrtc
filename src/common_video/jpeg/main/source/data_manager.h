@@ -17,7 +17,11 @@
 
 #include <stdio.h>
 extern "C" {
+#if defined(USE_SYSTEM_LIBJPEG)
+#include <jpeglib.h>
+#else
 #include "jpeglib.h"
+#endif
 }
 
 namespace webrtc
