@@ -36,9 +36,6 @@ int WebRtcSpl_FilterAR(G_CONST WebRtc_Word16* a,
     WebRtc_Word16* filteredFINAL_ptr = filtered;
     WebRtc_Word16* filteredFINAL_LOW_ptr = filtered_low;
 
-    state_low_length = state_low_length;
-    filtered_low_length = filtered_low_length;
-
     for (i = 0; i < x_length; i++)
     {
         // Calculate filtered[i] and filtered_low[i]

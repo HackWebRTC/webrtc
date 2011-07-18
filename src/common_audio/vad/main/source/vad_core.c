@@ -651,10 +651,10 @@ WebRtc_Word16 WebRtcVad_GmmProbability(VadInstT *inst, WebRtc_Word16 *feature_ve
                 *nmean2ptr -= tmp16_2;
             }
 
-            *nmean1ptr++;
-            *smean1ptr++;
-            *nstd1ptr++;
-            *sstd1ptr++;
+            nmean1ptr++;
+            smean1ptr++;
+            nstd1ptr++;
+            sstd1ptr++;
         }
         inst->frame_counter++;
     } else
