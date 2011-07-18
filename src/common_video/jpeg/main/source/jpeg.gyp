@@ -10,6 +10,9 @@
   'includes': [
     '../../../../common_settings.gypi', # Common settings
   ],
+  'variables': {
+    'use_libjpeg_turbo%': '<(use_libjpeg_turbo)',
+  },
   'targets': [
     {
       'target_name': 'webrtc_jpeg',
@@ -31,28 +34,20 @@
       'conditions': [
         ['build_with_chromium==1', {
           'dependencies': [
-            '../../../../../libjpeg_turbo/libjpeg.gyp:libjpeg',
+            '<(libjpeg_gyp_path):libjpeg',
           ],
-		  'include_dirs': [
-            '../../../../../libjpeg_turbo',
+        }, {
+          'conditions': [
+            ['use_libjpeg_turbo==1', {
+              'dependencies': [
+                '../../../../../third_party/libjpeg_turbo/libjpeg.gyp:libjpeg',
+              ],
+            }, {
+              'dependencies': [
+                '../../../../../third_party/libjpeg/libjpeg.gyp:libjpeg',
+              ],
+            }],
           ],
-		  'direct_dependent_settings': {
-			'include_dirs': [
-			  '../../../../../libjpeg_turbo', 
-			],
-		  },
-        },{
-          'dependencies': [
-            '../../../../../third_party/libjpeg_turbo/libjpeg.gyp:libjpeg',
-          ],
-          'include_dirs': [
-            '../../../../third_party/libjpeg_turbo',
-          ],
-          'direct_dependent_settings': {
-			'include_dirs': [
-			  '../../../../third_party/libjpeg_turbo', 
-			],
-		  },
         }],
       ],
       'sources': [

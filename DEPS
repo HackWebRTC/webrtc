@@ -30,6 +30,9 @@ deps = {
   "trunk/third_party/libjpeg_turbo/":
     Var("chromium_trunk") + "/deps/third_party/libjpeg_turbo@78340",
 
+  "trunk/third_party/libjpeg/":
+    Var("chromium_trunk") + "/src/third_party/libjpeg@" + Var("chromium_revision"),
+
   "trunk/third_party/yasm/":
     Var("chromium_trunk") + "/src/third_party/yasm@" + Var("chromium_revision"),
 

@@ -22,13 +22,9 @@
 #if defined(WIN32)
  #include <basetsd.h>
 #endif
-#ifdef ANDROID
 extern "C" {
-#endif
 #include "jpeglib.h"
-#ifdef ANDROID
 }
-#endif
 #include <setjmp.h>
 
 

@@ -14,16 +14,6 @@
 
 #include "data_manager.h"
 
-#ifdef ANDROID
-extern "C" {
-#endif
-#include "jpeglib.h"
-#ifdef ANDROID
-}
-#endif
-#include "jmorecfg.h"
-
-
 namespace webrtc
 {
 

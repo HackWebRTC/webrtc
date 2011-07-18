@@ -16,13 +16,9 @@
 #define WEBRTC_COMMON_VIDEO_JPEG_DATA_MANAGER
 
 #include <stdio.h>
-
-// jpeg forward declaration
-struct jpeg_source_mgr;
-typedef unsigned char JOCTET;
-typedef int boolean;
-typedef struct jpeg_decompress_struct* j_decompress_ptr;
-typedef struct jpeg_compress_struct* j_compress_ptr;
+extern "C" {
+#include "jpeglib.h"
+}
 
 namespace webrtc
 {
