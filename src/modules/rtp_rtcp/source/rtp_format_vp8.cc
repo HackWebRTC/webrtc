@@ -104,6 +104,7 @@ int RtpFormatVp8::NextPacket(int max_payload_len, WebRtc_UWord8* buffer,
         payload_bytes_sent_ + part_info_.fragmentationLength[part_ix_] +
         FirstHeaderExtraLength(); // Add header extra length to payload length.
     int rem_payload_len = max_payload_len - vp8_header_bytes_;
+    const int first_partition_in_packet = part_ix_;
 
     while (int next_size = CalcNextSize(rem_payload_len, remaining_in_partition,
         split_payload))
@@ -153,7 +154,7 @@ int RtpFormatVp8::NextPacket(int max_payload_len, WebRtc_UWord8* buffer,
 
     *last_packet = (payload_bytes_sent_ >= payload_size_);
     assert(!*last_packet || (payload_bytes_sent_ == payload_size_));
-    return 0;
+    return first_partition_in_packet;
 }
 
 int RtpFormatVp8::WriteHeaderAndPayload(int payload_bytes,

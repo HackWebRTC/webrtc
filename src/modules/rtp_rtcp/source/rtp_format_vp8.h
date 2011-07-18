@@ -63,7 +63,9 @@ public:
     // bytes_to_send is an output variable that will contain number of bytes
     // written to buffer. Parameter last_packet is true for the last packet of
     // the frame, false otherwise (i.e., call the function again to get the
-    // next packet). Returns negative on error, zero otherwise.
+    // next packet). Returns the partition index from which the first payload
+    // byte in the packet is taken, with the first partition having index 0;
+    // returns negative on error.
     int NextPacket(int max_payload_len, WebRtc_UWord8* buffer,
                    int* bytes_to_send, bool* last_packet);
 

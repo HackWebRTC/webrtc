@@ -1226,14 +1226,10 @@ RTPSenderVideo::SendVP8(const FrameType frameType,
                         const RTPVideoTypeHeader* rtpTypeHdr)
 {
     const WebRtc_UWord16 rtpHeaderLength = _rtpSender.RTPHeaderLength();
-    WebRtc_UWord16 vp8HeaderLength = 1;
-    int payloadBytesInPacket = 0;
-    WebRtc_Word32 bytesSent = 0;
 
     WebRtc_Word32 payloadBytesToSend = payloadSize;
     const WebRtc_UWord8* data = payloadData;
 
-    WebRtc_UWord8 dataBuffer[IP_PACKET_SIZE];
     WebRtc_UWord16 maxPayloadLengthVP8 = _rtpSender.MaxPayloadLength()
         - FECPacketOverhead() - rtpHeaderLength;
 
@@ -1242,13 +1238,29 @@ RTPSenderVideo::SendVP8(const FrameType frameType,
                             *fragmentation, kStrict);
 
     bool last = false;
+    _numberFirstPartition = 0;
+    int numberFirstPartition = 0; // local counter
     while (!last)
     {
         // Write VP8 Payload Descriptor and VP8 payload.
-        if (packetizer.NextPacket(maxPayloadLengthVP8,
-            &dataBuffer[rtpHeaderLength], &payloadBytesInPacket, &last) < 0)
+        WebRtc_UWord8 dataBuffer[IP_PACKET_SIZE] = {0};
+        int payloadBytesInPacket = 0;
+        int packetStartPartition =
+            packetizer.NextPacket(maxPayloadLengthVP8,
+                                  &dataBuffer[rtpHeaderLength],
+                                  &payloadBytesInPacket, &last);
+        if (packetStartPartition == 0)
+        {
+            ++numberFirstPartition;
+        }
+        else if (packetStartPartition < 0)
         {
             return -1;
+        }
+        else
+        {
+            // numberFirstPartition has reached the final value.
+            _numberFirstPartition = numberFirstPartition;
         }
 
         // Write RTP header.
@@ -1256,14 +1268,10 @@ RTPSenderVideo::SendVP8(const FrameType frameType,
         _rtpSender.BuildRTPheader(dataBuffer, payloadType, last,
             captureTimeStamp);
 
-        //TODO (marpan): Set the _numberFirstPartition
-
         if (-1 == SendVideoPacket(frameType, dataBuffer, payloadBytesInPacket,
             rtpHeaderLength))
         {
-            WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
-                         "RTPSenderVideo::SendVP8 failed to send packet number"
-                         " %d", _rtpSender.SequenceNumber());
+            return -1;
         }
     }
     return 0;

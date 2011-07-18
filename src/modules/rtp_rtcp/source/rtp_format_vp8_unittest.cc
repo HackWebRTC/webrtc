@@ -160,7 +160,7 @@ TEST_F(RtpFormatVp8Test, TestStrictMode)
 
     // Second partition
     // Get first (and only) packet
-    EXPECT_EQ(0, packetizer.NextPacket(20, buffer_, &send_bytes, &last));
+    EXPECT_EQ(1, packetizer.NextPacket(20, buffer_, &send_bytes, &last));
     CheckPacket(send_bytes, 11, last,
                 first_in_frame,
                 /* frag_start */ true,
@@ -168,33 +168,32 @@ TEST_F(RtpFormatVp8Test, TestStrictMode)
 
     // Third partition
     // Get first packet (of four)
-    EXPECT_EQ(0, packetizer.NextPacket(4, buffer_, &send_bytes, &last));
+    EXPECT_EQ(2, packetizer.NextPacket(4, buffer_, &send_bytes, &last));
     CheckPacket(send_bytes, 4, last,
                 first_in_frame,
                 /* frag_start */ true,
                 /* frag_end */ false);
 
     // Get second packet (of four)
-    EXPECT_EQ(0, packetizer.NextPacket(4, buffer_, &send_bytes, &last));
+    EXPECT_EQ(2, packetizer.NextPacket(4, buffer_, &send_bytes, &last));
     CheckPacket(send_bytes, 3, last,
                 first_in_frame,
                 /* frag_start */ false,
                 /* frag_end */ false);
 
     // Get third packet (of four)
-    EXPECT_EQ(0, packetizer.NextPacket(4, buffer_, &send_bytes, &last));
+    EXPECT_EQ(2, packetizer.NextPacket(4, buffer_, &send_bytes, &last));
     CheckPacket(send_bytes, 4, last,
                 first_in_frame,
                 /* frag_start */ false,
                 /* frag_end */ false);
 
     // Get fourth and last packet
-    EXPECT_EQ(0, packetizer.NextPacket(4, buffer_, &send_bytes, &last));
+    EXPECT_EQ(2, packetizer.NextPacket(4, buffer_, &send_bytes, &last));
     CheckPacket(send_bytes, 3, last,
                 first_in_frame,
                 /* frag_start */ false,
                 /* frag_end */ true);
-
 }
 
 TEST_F(RtpFormatVp8Test, TestAggregateMode)
@@ -226,12 +225,11 @@ TEST_F(RtpFormatVp8Test, TestAggregateMode)
 
     // get third packet
     // last two partitions aggregated
-    EXPECT_EQ(0, packetizer.NextPacket(25, buffer_, &send_bytes, &last));
+    EXPECT_EQ(1, packetizer.NextPacket(25, buffer_, &send_bytes, &last));
     CheckPacket(send_bytes, 21, last,
                 first_in_frame,
                 /* frag_start */ true,
                 /* frag_end */ true);
-
 }
 
 TEST_F(RtpFormatVp8Test, TestSloppyMode)
@@ -262,7 +260,7 @@ TEST_F(RtpFormatVp8Test, TestSloppyMode)
 
     // get third packet
     // fragments of second and third partitions
-    EXPECT_EQ(0, packetizer.NextPacket(9, buffer_, &send_bytes, &last));
+    EXPECT_EQ(1, packetizer.NextPacket(9, buffer_, &send_bytes, &last));
     CheckPacket(send_bytes, 9, last,
                 first_in_frame,
                 /* frag_start */ false,
@@ -270,12 +268,11 @@ TEST_F(RtpFormatVp8Test, TestSloppyMode)
 
     // get fourth packet
     // second half of last partition
-    EXPECT_EQ(0, packetizer.NextPacket(9, buffer_, &send_bytes, &last));
+    EXPECT_EQ(2, packetizer.NextPacket(9, buffer_, &send_bytes, &last));
     CheckPacket(send_bytes, 7, last,
                 first_in_frame,
                 /* frag_start */ false,
                 /* frag_end */ true);
-
 }
 
 // Verify that sloppy mode is forced if fragmentation info is missing.
@@ -320,7 +317,6 @@ TEST_F(RtpFormatVp8Test, TestSloppyModeFallback)
                 first_in_frame,
                 /* frag_start */ false,
                 /* frag_end */ true);
-
 }
 
 // Verify that non-reference bit is set.
