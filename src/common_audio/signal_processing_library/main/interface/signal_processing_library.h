@@ -65,7 +65,7 @@
       ((val) << (8 * ((index) & 0x1)))
 #endif
 
-#ifndef WEBRTC_ANDROID
+#if (defined WEBRTC_ANDROID) && !(defined WEBRTC_ANDROID_ARCH_ARM)
 #define WEBRTC_SPL_MUL(a, b)                                    \
   ((WebRtc_Word32) ((WebRtc_Word32)(a) * (WebRtc_Word32)(b)))
 #endif
@@ -99,7 +99,7 @@
   ((WEBRTC_SPL_MUL_16_16(a, (b) >> 16) << 1)                            \
    + (((WEBRTC_SPL_MUL_16_U16(a, (WebRtc_UWord16)(b)) >> 1) + 0x2000) >> 14))
 
-#ifndef WEBRTC_ANDROID
+#if (defined WEBRTC_ANDROID) && !(defined WEBRTC_ANDROID_ARCH_ARM)
 #define WEBRTC_SPL_MUL_16_32_RSFT16(a, b)                               \
   (WEBRTC_SPL_MUL_16_16(a, b >> 16)                                     \
    + ((WEBRTC_SPL_MUL_16_16(a, (b & 0xffff) >> 1) + 0x4000) >> 15))
@@ -116,7 +116,7 @@
 #ifdef ARM_WINM
 #define WEBRTC_SPL_MUL_16_16(a, b)                      \
   _SmulLo_SW_SL((WebRtc_Word16)(a), (WebRtc_Word16)(b))
-#elif !defined (WEBRTC_ANDROID)
+#elif defined(WEBRTC_ANDROID) && !defined(WEBRTC_ANDROID_ARCH_ARM)
 #define WEBRTC_SPL_MUL_16_16(a, b)                                      \
     ((WebRtc_Word32) (((WebRtc_Word16)(a)) * ((WebRtc_Word16)(b))))
 #endif
@@ -431,14 +431,6 @@ int WebRtcSpl_DownsampleFast(WebRtc_Word16* in_vector,
 // FFT operations
 int WebRtcSpl_ComplexFFT(WebRtc_Word16 vector[], int stages, int mode);
 int WebRtcSpl_ComplexIFFT(WebRtc_Word16 vector[], int stages, int mode);
-#if (defined ARM9E_GCC) || (defined ARM_WINM) || (defined ANDROID_AECOPT)
-int WebRtcSpl_ComplexFFT2(WebRtc_Word16 in_vector[],
-                          WebRtc_Word16 out_vector[],
-                          int stages, int mode);
-int WebRtcSpl_ComplexIFFT2(WebRtc_Word16 in_vector[],
-                           WebRtc_Word16 out_vector[],
-                           int stages, int mode);
-#endif
 void WebRtcSpl_ComplexBitReverse(WebRtc_Word16 vector[], int stages);
 // End: FFT operations
 
@@ -1575,43 +1567,6 @@ void WebRtcSpl_SynthesisQMF(const WebRtc_Word16* low_band,
 //                    value of -1, indicating error.
 //
 
-#if (defined ARM9E_GCC) || (defined ARM_WINM) || (defined ANDROID_AECOPT)
-//
-// WebRtcSpl_ComplexIFFT2(...)
-//
-// Complex or Real inverse FFT, for ARM processor only
-//
-// Computes a 2^|stages|-point FFT on the input vector, which can be or not be
-// in bit-reversed order. If it is bit-reversed, the original content of the
-// vector could be overwritten by the output by setting the first two arguments
-// the same. With X as the input complex vector, y as the output complex vector
-// and with M = 2^|stages|, the following is computed:
-//
-//        M-1
-// y(k) = sum[X(i)*[cos(2*pi*i*k/M) + j*sin(2*pi*i*k/M)]]
-//        i=0
-//
-// The implementations are optimized for speed, not for code size. It uses the
-// decimation-in-time algorithm with radix-2 butterfly technique.
-//
-// Arguments:
-//      - in_vector     : In pointer to complex vector containing 2^|stages|
-//                        real elements interleaved with 2^|stages| imaginary
-//                        elements. [ReImReImReIm....]
-//                        The elements are in Q(-scale) domain.
-//      - out_vector    : Output pointer to vector containing 2^|stages| real
-//                        elements interleaved with 2^|stages| imaginary
-//                        elements. [ReImReImReIm....]
-//                        The output is in the Q0 domain.
-//      - stages        : Number of FFT stages. Must be at least 3 and at most
-//                        10.
-//      - mode          : Dummy input.
-//
-// Return value         : The scale parameter is always 0, except if N>1024,
-//                        which returns a scale value of -1, indicating error.
-//
-#endif
-
 //
 // WebRtcSpl_ComplexFFT(...)
 //
@@ -1656,42 +1611,6 @@ void WebRtcSpl_SynthesisQMF(const WebRtc_Word16* low_band,
 // Return value     : The scale parameter is always 0, except if N>1024,
 //                    which returns a scale value of -1, indicating error.
 //
-
-#if (defined ARM9E_GCC) || (defined ARM_WINM) || (defined ANDROID_AECOPT)
-//
-// WebRtcSpl_ComplexFFT2(...)
-//
-// Complex or Real FFT, for ARM processor only
-//
-// Computes a 2^|stages|-point FFT on the input vector, which can be or not be
-// in bit-reversed order. If it is bit-reversed, the original content of the
-// vector could be overwritten by the output by setting the first two arguments
-// the same. With x as the input complex vector, Y as the output complex vector
-// and with M = 2^|stages|, the following is computed:
-//
-//              M-1
-// Y(k) = 1/M * sum[x(i)*[cos(2*pi*i*k/M) + j*sin(2*pi*i*k/M)]]
-//              i=0
-//
-// The implementations are optimized for speed, not for code size. It uses the
-// decimation-in-time algorithm with radix-2 butterfly technique.
-//
-// Arguments:
-//      - in_vector     : In pointer to complex vector containing 2^|stages|
-//                        real elements interleaved with 2^|stages| imaginary
-//                        elements. [ReImReImReIm....]
-//      - out_vector    : Output pointer to vector containing 2^|stages| real
-//                        elements interleaved with 2^|stages| imaginary
-//                        elements. [ReImReImReIm....]
-//                        The output is in the Q0 domain.
-//      - stages        : Number of FFT stages. Must be at least 3 and at most
-//                        10.
-//      - mode          : Dummy input
-//
-// Return value         : The scale parameter is always 0, except if N>1024,
-//                        which returns a scale value of -1, indicating error.
-//
-#endif
 
 //
 // WebRtcSpl_ComplexBitReverse(...)

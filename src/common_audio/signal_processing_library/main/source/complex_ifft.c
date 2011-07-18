@@ -20,17 +20,6 @@
 #define CIFFTSFT 14
 #define CIFFTRND 1
 
-#if (defined ARM9E_GCC) || (defined ARM_WINM) || (defined ANDROID_AECOPT)
-extern "C" int FFT_4OIQ14(void *src, void *dest, int NC, int shift);
-
-// For detailed description of the fft functions, check the readme files in fft_ARM9E folder.
-int WebRtcSpl_ComplexIFFT2(WebRtc_Word16 frfi[], WebRtc_Word16 frfiOut[], int stages, int mode)
-{
-    FFT_4OIQ14(frfi, frfiOut, 1 << stages, 0);
-    return 0;
-}
-#endif
-
 int WebRtcSpl_ComplexIFFT(WebRtc_Word16 frfi[], int stages, int mode)
 {
     int i, j, l, k, istep, n, m, scale, shift;

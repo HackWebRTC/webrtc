@@ -1517,11 +1517,7 @@ void WebRtcAecm_ProcessBlock(AecmCore_t * const aecm, const WebRtc_Word16 * cons
     int outCFFT;
 
     WebRtc_Word16 fft[PART_LEN4];
-#if (defined ARM_WINM) || (defined ARM9E_GCC) || (defined ANDROID_AECOPT)
-    WebRtc_Word16 postFft[PART_LEN4];
-#else
     WebRtc_Word16 postFft[PART_LEN2];
-#endif
     WebRtc_Word16 dfwReal[PART_LEN1];
     WebRtc_Word16 dfwImag[PART_LEN1];
     WebRtc_Word16 xfwReal[PART_LEN1];
@@ -1635,18 +1631,6 @@ void WebRtcAecm_ProcessBlock(AecmCore_t * const aecm, const WebRtc_Word16 * cons
     // Fourier transformation of near end signal.
     // The result is scaled with 1/PART_LEN2, that is, the result is in Q(-6) for PART_LEN = 32
 
-#if (defined ARM_WINM) || (defined ARM9E_GCC) || (defined ANDROID_AECOPT)
-    outCFFT = WebRtcSpl_ComplexFFT2(fft, postFft, PART_LEN_SHIFT, 1);
-
-    // The imaginary part has to switch sign
-    for(i = 1; i < PART_LEN2-1;)
-    {
-        postFft[i] = -postFft[i];
-        i += 2;
-        postFft[i] = -postFft[i];
-        i += 2;
-    }
-#else
     WebRtcSpl_ComplexBitReverse(fft, PART_LEN_SHIFT);
     outCFFT = WebRtcSpl_ComplexFFT(fft, PART_LEN_SHIFT, 1);
 
@@ -1661,17 +1645,12 @@ void WebRtcAecm_ProcessBlock(AecmCore_t * const aecm, const WebRtc_Word16 * cons
         postFft[i] = -postFft[i];
         i += 2;
     }
-#endif
 
     // Extract imaginary and real part, calculate the magnitude for all frequency bins
     dfwImag[0] = 0;
     dfwImag[PART_LEN] = 0;
     dfwReal[0] = postFft[0];
-#if (defined ARM_WINM) || (defined ARM9E_GCC) || (defined ANDROID_AECOPT)
-    dfwReal[PART_LEN] = postFft[PART_LEN2];
-#else
     dfwReal[PART_LEN] = fft[PART_LEN2];
-#endif
     dfaNoisy[0] = (WebRtc_UWord16)WEBRTC_SPL_ABS_W16(dfwReal[0]);
     dfaNoisy[PART_LEN] = (WebRtc_UWord16)WEBRTC_SPL_ABS_W16(dfwReal[PART_LEN]);
     dfaNoisySum = (WebRtc_UWord32)(dfaNoisy[0]);
@@ -1758,19 +1737,6 @@ void WebRtcAecm_ProcessBlock(AecmCore_t * const aecm, const WebRtc_Word16 * cons
 
         // Fourier transformation of near end signal.
         // The result is scaled with 1/PART_LEN2, that is, in Q(-6) for PART_LEN = 32
-
-#if (defined ARM_WINM) || (defined ARM9E_GCC) || (defined ANDROID_AECOPT)
-        outCFFT = WebRtcSpl_ComplexFFT2(fft, postFft, PART_LEN_SHIFT, 1);
-
-        // The imaginary part has to switch sign
-        for(i = 1; i < PART_LEN2-1;)
-        {
-            postFft[i] = -postFft[i];
-            i += 2;
-            postFft[i] = -postFft[i];
-            i += 2;
-        }
-#else
         WebRtcSpl_ComplexBitReverse(fft, PART_LEN_SHIFT);
         outCFFT = WebRtcSpl_ComplexFFT(fft, PART_LEN_SHIFT, 1);
 
@@ -1785,17 +1751,12 @@ void WebRtcAecm_ProcessBlock(AecmCore_t * const aecm, const WebRtc_Word16 * cons
             postFft[i] = -postFft[i];
             i += 2;
         }
-#endif
 
         // Extract imaginary and real part, calculate the magnitude for all frequency bins
         dfwImag[0] = 0;
         dfwImag[PART_LEN] = 0;
         dfwReal[0] = postFft[0];
-#if (defined ARM_WINM) || (defined ARM9E_GCC) || (defined ANDROID_AECOPT)
-        dfwReal[PART_LEN] = postFft[PART_LEN2];
-#else
         dfwReal[PART_LEN] = fft[PART_LEN2];
-#endif
         dfaClean[0] = (WebRtc_UWord16)WEBRTC_SPL_ABS_W16(dfwReal[0]);
         dfaClean[PART_LEN] = (WebRtc_UWord16)WEBRTC_SPL_ABS_W16(dfwReal[PART_LEN]);
 
@@ -1874,18 +1835,6 @@ void WebRtcAecm_ProcessBlock(AecmCore_t * const aecm, const WebRtc_Word16 * cons
     }
     // Fourier transformation of far end signal.
     // The result is scaled with 1/PART_LEN2, that is the result is in Q(-6) for PART_LEN = 32
-#if (defined ARM_WINM) || (defined ARM9E_GCC) || (defined ANDROID_AECOPT)
-    outCFFT = WebRtcSpl_ComplexFFT2(fft, postFft, PART_LEN_SHIFT, 1);
-
-    // The imaginary part has to switch sign
-    for(i = 1; i < PART_LEN2-1;)
-    {
-        postFft[i] = -postFft[i];
-        i += 2;
-        postFft[i] = -postFft[i];
-        i += 2;
-    }
-#else
     WebRtcSpl_ComplexBitReverse(fft, PART_LEN_SHIFT);
     outCFFT = WebRtcSpl_ComplexFFT(fft, PART_LEN_SHIFT, 1);
 
@@ -1900,17 +1849,12 @@ void WebRtcAecm_ProcessBlock(AecmCore_t * const aecm, const WebRtc_Word16 * cons
         postFft[i] = -postFft[i];
         i += 2;
     }
-#endif
 
     // Extract imaginary and real part, calculate the magnitude for all frequency bins
     xfwImag[0] = 0;
     xfwImag[PART_LEN] = 0;
     xfwReal[0] = postFft[0];
-#if (defined ARM_WINM) || (defined ARM9E_GCC) || (defined ANDROID_AECOPT)
-    xfwReal[PART_LEN] = postFft[PART_LEN2];
-#else
     xfwReal[PART_LEN] = fft[PART_LEN2];
-#endif
     xfa[0] = (WebRtc_UWord16)WEBRTC_SPL_ABS_W16(xfwReal[0]);
     xfa[PART_LEN] = (WebRtc_UWord16)WEBRTC_SPL_ABS_W16(xfwReal[PART_LEN]);
     xfaSum = (WebRtc_UWord32)(xfa[0]) + (WebRtc_UWord32)(xfa[PART_LEN]);
@@ -2296,7 +2240,6 @@ void WebRtcAecm_ProcessBlock(AecmCore_t * const aecm, const WebRtc_Word16 * cons
     fft[PART_LEN2] = efwReal[PART_LEN];
     fft[PART_LEN2 + 1] = -efwImag[PART_LEN];
 
-#if (!defined ARM_WINM) && (!defined ARM9E_GCC) && (!defined ANDROID_AECOPT)
     // inverse FFT, result should be scaled with outCFFT
     WebRtcSpl_ComplexBitReverse(fft, PART_LEN_SHIFT);
     outCFFT = WebRtcSpl_ComplexIFFT(fft, PART_LEN_SHIFT, 1);
@@ -2307,20 +2250,6 @@ void WebRtcAecm_ProcessBlock(AecmCore_t * const aecm, const WebRtc_Word16 * cons
         j = WEBRTC_SPL_LSHIFT_W32(i, 1);
         fft[i] = fft[j];
     }
-#else
-    outCFFT = WebRtcSpl_ComplexIFFT2(fft, postFft, PART_LEN_SHIFT, 1);
-
-    //take only the real values and scale with outCFFT
-    for(i = 0, j = 0; i < PART_LEN2;)
-    {
-        fft[i] = postFft[j];
-        i += 1;
-        j += 2;
-        fft[i] = postFft[j];
-        i += 1;
-        j += 2;
-    }
-#endif
 
     for (i = 0; i < PART_LEN; i++)
     {

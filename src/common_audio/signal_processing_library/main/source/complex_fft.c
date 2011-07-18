@@ -21,16 +21,6 @@
 #define CFFTRND 1
 #define CFFTRND2 16384
 
-#if (defined ARM9E_GCC) || (defined ARM_WINM) || (defined ANDROID_AECOPT)
-extern "C" int FFT_4OFQ14(void *src, void *dest, int NC, int shift);
-
-// For detailed description of the fft functions, check the readme files in fft_ARM9E folder.
-int WebRtcSpl_ComplexFFT2(WebRtc_Word16 frfi[], WebRtc_Word16 frfiOut[], int stages, int mode)
-{
-    return FFT_4OFQ14(frfi, frfiOut, 1 << stages, 0);
-}
-#endif
-
 int WebRtcSpl_ComplexFFT(WebRtc_Word16 frfi[], int stages, int mode)
 {
     int i, j, l, k, istep, n, m;
