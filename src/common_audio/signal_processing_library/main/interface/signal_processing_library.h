@@ -65,7 +65,7 @@
       ((val) << (8 * ((index) & 0x1)))
 #endif
 
-#if (defined WEBRTC_ANDROID) && !(defined WEBRTC_ANDROID_ARCH_ARM)
+#ifndef WEBRTC_ANDROID
 #define WEBRTC_SPL_MUL(a, b)                                    \
   ((WebRtc_Word32) ((WebRtc_Word32)(a) * (WebRtc_Word32)(b)))
 #endif
@@ -99,7 +99,7 @@
   ((WEBRTC_SPL_MUL_16_16(a, (b) >> 16) << 1)                            \
    + (((WEBRTC_SPL_MUL_16_U16(a, (WebRtc_UWord16)(b)) >> 1) + 0x2000) >> 14))
 
-#if (defined WEBRTC_ANDROID) && !(defined WEBRTC_ANDROID_ARCH_ARM)
+#ifndef WEBRTC_ANDROID
 #define WEBRTC_SPL_MUL_16_32_RSFT16(a, b)                               \
   (WEBRTC_SPL_MUL_16_16(a, b >> 16)                                     \
    + ((WEBRTC_SPL_MUL_16_16(a, (b & 0xffff) >> 1) + 0x4000) >> 15))
@@ -116,7 +116,7 @@
 #ifdef ARM_WINM
 #define WEBRTC_SPL_MUL_16_16(a, b)                      \
   _SmulLo_SW_SL((WebRtc_Word16)(a), (WebRtc_Word16)(b))
-#elif defined(WEBRTC_ANDROID) && !defined(WEBRTC_ANDROID_ARCH_ARM)
+#elif !defined (WEBRTC_ANDROID)
 #define WEBRTC_SPL_MUL_16_16(a, b)                                      \
     ((WebRtc_Word32) (((WebRtc_Word16)(a)) * ((WebRtc_Word16)(b))))
 #endif
