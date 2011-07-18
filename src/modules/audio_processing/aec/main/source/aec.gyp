@@ -30,13 +30,19 @@
         '../interface/echo_cancellation.h',
         'echo_cancellation.c',
         'aec_core.c',
-        'aec_core_sse2.c',
         'aec_rdft.h',
         'aec_rdft.c',
-        'aec_rdft_sse2.c',
         'aec_core.h',
         'resampler.c',
         'resampler.h',
+      ],
+      'conditions': [
+        ['target_arch == "ia32" or target_arch == "x64"', {
+          'sources': [
+            'aec_core_sse2.c',
+            'aec_rdft_sse2.c',
+          ],
+        }],
       ],
     },
   ],

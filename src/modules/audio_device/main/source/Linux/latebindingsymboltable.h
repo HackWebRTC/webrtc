@@ -32,11 +32,8 @@
 #include <stddef.h>  // for NULL
 #include <string.h>
 
+#include "constructor_magic.h"
 #include "trace.h"
-
-#define DISALLOW_COPY_AND_ASSIGN(TypeName) \
-  TypeName(const TypeName&);               \
-  void operator=(const TypeName&)
 
 // This file provides macros for creating "symbol table" classes to simplify the
 // dynamic loading of symbols from DLLs. Currently the implementation only
