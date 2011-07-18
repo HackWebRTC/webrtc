@@ -124,7 +124,7 @@ TEST_F(SplTest, InlineTest) {
     WebRtc_Word16 b = -17;
     WebRtc_Word32 A = 111121;
     WebRtc_Word32 B = -1711;
-    char* bVersion = (char*) malloc(8);
+    char bVersion[8];
 
     EXPECT_EQ(104, WebRtcSpl_AddSatW16(a, b));
     EXPECT_EQ(138, WebRtcSpl_SubSatW16(a, b));
@@ -160,81 +160,82 @@ TEST_F(SplTest, MathOperationsTest) {
 TEST_F(SplTest, BasicArrayOperationsTest) {
 
 
+    const int kVectorSize = 4;
     int B[] = {4, 12, 133, 1100};
     int Bs[] = {2, 6, 66, 550};
-    WebRtc_UWord8* b8 = (WebRtc_UWord8*) malloc(4);
-    WebRtc_Word16* b16 = (WebRtc_Word16*) malloc(4);
-    WebRtc_Word32* b32 = (WebRtc_Word32*) malloc(4);
+    WebRtc_UWord8 b8[kVectorSize];
+    WebRtc_Word16 b16[kVectorSize];
+    WebRtc_Word32 b32[kVectorSize];
 
-    WebRtc_UWord8* bTmp8 = (WebRtc_UWord8*) malloc(4);
-    WebRtc_Word16* bTmp16 = (WebRtc_Word16*) malloc(4);
-    WebRtc_Word32* bTmp32 = (WebRtc_Word32*) malloc(4);
+    WebRtc_UWord8 bTmp8[kVectorSize];
+    WebRtc_Word16 bTmp16[kVectorSize];
+    WebRtc_Word32 bTmp32[kVectorSize];
 
-    WebRtcSpl_MemSetW16(b16, 3, 4);
-    for (int kk = 0; kk < 4; ++kk) {
+    WebRtcSpl_MemSetW16(b16, 3, kVectorSize);
+    for (int kk = 0; kk < kVectorSize; ++kk) {
         EXPECT_EQ(3, b16[kk]);
     }
-    EXPECT_EQ(4, WebRtcSpl_ZerosArrayW16(b16, 4));
-    for (int kk = 0; kk < 4; ++kk) {
+    EXPECT_EQ(kVectorSize, WebRtcSpl_ZerosArrayW16(b16, kVectorSize));
+    for (int kk = 0; kk < kVectorSize; ++kk) {
         EXPECT_EQ(0, b16[kk]);
     }
-    EXPECT_EQ(4, WebRtcSpl_OnesArrayW16(b16, 4));
-    for (int kk = 0; kk < 4; ++kk) {
+    EXPECT_EQ(kVectorSize, WebRtcSpl_OnesArrayW16(b16, kVectorSize));
+    for (int kk = 0; kk < kVectorSize; ++kk) {
         EXPECT_EQ(1, b16[kk]);
     }
-    WebRtcSpl_MemSetW32(b32, 3, 4);
-    for (int kk = 0; kk < 4; ++kk) {
+    WebRtcSpl_MemSetW32(b32, 3, kVectorSize);
+    for (int kk = 0; kk < kVectorSize; ++kk) {
         EXPECT_EQ(3, b32[kk]);
     }
-    EXPECT_EQ(4, WebRtcSpl_ZerosArrayW32(b32, 4));
-    for (int kk = 0; kk < 4; ++kk) {
+    EXPECT_EQ(kVectorSize, WebRtcSpl_ZerosArrayW32(b32, kVectorSize));
+    for (int kk = 0; kk < kVectorSize; ++kk) {
         EXPECT_EQ(0, b32[kk]);
     }
-    EXPECT_EQ(4, WebRtcSpl_OnesArrayW32(b32, 4));
-    for (int kk = 0; kk < 4; ++kk) {
+    EXPECT_EQ(kVectorSize, WebRtcSpl_OnesArrayW32(b32, kVectorSize));
+    for (int kk = 0; kk < kVectorSize; ++kk) {
         EXPECT_EQ(1, b32[kk]);
     }
-    for (int kk = 0; kk < 4; ++kk) {
+    for (int kk = 0; kk < kVectorSize; ++kk) {
         bTmp8[kk] = (WebRtc_Word8)kk;
         bTmp16[kk] = (WebRtc_Word16)kk;
         bTmp32[kk] = (WebRtc_Word32)kk;
     }
-    WEBRTC_SPL_MEMCPY_W8(b8, bTmp8, 4);
-    for (int kk = 0; kk < 4; ++kk) {
+    WEBRTC_SPL_MEMCPY_W8(b8, bTmp8, kVectorSize);
+    for (int kk = 0; kk < kVectorSize; ++kk) {
         EXPECT_EQ(b8[kk], bTmp8[kk]);
     }
-    WEBRTC_SPL_MEMCPY_W16(b16, bTmp16, 4);
-    for (int kk = 0; kk < 4; ++kk) {
+    WEBRTC_SPL_MEMCPY_W16(b16, bTmp16, kVectorSize);
+    for (int kk = 0; kk < kVectorSize; ++kk) {
         EXPECT_EQ(b16[kk], bTmp16[kk]);
     }
-//    WEBRTC_SPL_MEMCPY_W32(b32, bTmp32, 4);
-//    for (int kk = 0; kk < 4; ++kk) {
+//    WEBRTC_SPL_MEMCPY_W32(b32, bTmp32, kVectorSize);
+//    for (int kk = 0; kk < kVectorSize; ++kk) {
 //        EXPECT_EQ(b32[kk], bTmp32[kk]);
 //    }
-    EXPECT_EQ(2, WebRtcSpl_CopyFromEndW16(b16, 4, 2, bTmp16));
+    EXPECT_EQ(2, WebRtcSpl_CopyFromEndW16(b16, kVectorSize, 2, bTmp16));
     for (int kk = 0; kk < 2; ++kk) {
         EXPECT_EQ(kk+2, bTmp16[kk]);
     }
 
-    for (int kk = 0; kk < 4; ++kk) {
+    for (int kk = 0; kk < kVectorSize; ++kk) {
         b32[kk] = B[kk];
         b16[kk] = (WebRtc_Word16)B[kk];
     }
-    WebRtcSpl_VectorBitShiftW32ToW16(bTmp16, 4, b32, 1);
-    for (int kk = 0; kk < 4; ++kk) {
+    WebRtcSpl_VectorBitShiftW32ToW16(bTmp16, kVectorSize, b32, 1);
+    for (int kk = 0; kk < kVectorSize; ++kk) {
         EXPECT_EQ((B[kk]>>1), bTmp16[kk]);
     }
-    WebRtcSpl_VectorBitShiftW16(bTmp16, 4, b16, 1);
-    for (int kk = 0; kk < 4; ++kk) {
+    WebRtcSpl_VectorBitShiftW16(bTmp16, kVectorSize, b16, 1);
+    for (int kk = 0; kk < kVectorSize; ++kk) {
         EXPECT_EQ((B[kk]>>1), bTmp16[kk]);
     }
-    WebRtcSpl_VectorBitShiftW32(bTmp32, 4, b32, 1);
-    for (int kk = 0; kk < 4; ++kk) {
+    WebRtcSpl_VectorBitShiftW32(bTmp32, kVectorSize, b32, 1);
+    for (int kk = 0; kk < kVectorSize; ++kk) {
         EXPECT_EQ((B[kk]>>1), bTmp32[kk]);
     }
 
-    WebRtcSpl_MemCpyReversedOrder(&bTmp16[3], b16, 4);
-    for (int kk = 0; kk < 4; ++kk) {
+    WebRtcSpl_MemCpyReversedOrder(&bTmp16[3], b16, kVectorSize);
+    for (int kk = 0; kk < kVectorSize; ++kk) {
         EXPECT_EQ(b16[3-kk], bTmp16[kk]);
     }
 
@@ -243,109 +244,112 @@ TEST_F(SplTest, BasicArrayOperationsTest) {
 TEST_F(SplTest, MinMaxOperationsTest) {
 
 
+    const int kVectorSize = 4;
     int B[] = {4, 12, 133, -1100};
-    WebRtc_Word16* b16 = (WebRtc_Word16*) malloc(4);
-    WebRtc_Word32* b32 = (WebRtc_Word32*) malloc(4);
+    WebRtc_Word16 b16[kVectorSize];
+    WebRtc_Word32 b32[kVectorSize];
 
-    for (int kk = 0; kk < 4; ++kk) {
+    for (int kk = 0; kk < kVectorSize; ++kk) {
         b16[kk] = B[kk];
         b32[kk] = B[kk];
     }
 
-    EXPECT_EQ(1100, WebRtcSpl_MaxAbsValueW16(b16, 4));
-    EXPECT_EQ(1100, WebRtcSpl_MaxAbsValueW32(b32, 4));
-    EXPECT_EQ(133, WebRtcSpl_MaxValueW16(b16, 4));
-    EXPECT_EQ(133, WebRtcSpl_MaxValueW32(b32, 4));
-    EXPECT_EQ(3, WebRtcSpl_MaxAbsIndexW16(b16, 4));
-    EXPECT_EQ(2, WebRtcSpl_MaxIndexW16(b16, 4));
-    EXPECT_EQ(2, WebRtcSpl_MaxIndexW32(b32, 4));
+    EXPECT_EQ(1100, WebRtcSpl_MaxAbsValueW16(b16, kVectorSize));
+    EXPECT_EQ(1100, WebRtcSpl_MaxAbsValueW32(b32, kVectorSize));
+    EXPECT_EQ(133, WebRtcSpl_MaxValueW16(b16, kVectorSize));
+    EXPECT_EQ(133, WebRtcSpl_MaxValueW32(b32, kVectorSize));
+    EXPECT_EQ(3, WebRtcSpl_MaxAbsIndexW16(b16, kVectorSize));
+    EXPECT_EQ(2, WebRtcSpl_MaxIndexW16(b16, kVectorSize));
+    EXPECT_EQ(2, WebRtcSpl_MaxIndexW32(b32, kVectorSize));
 
-    EXPECT_EQ(-1100, WebRtcSpl_MinValueW16(b16, 4));
-    EXPECT_EQ(-1100, WebRtcSpl_MinValueW32(b32, 4));
-    EXPECT_EQ(3, WebRtcSpl_MinIndexW16(b16, 4));
-    EXPECT_EQ(3, WebRtcSpl_MinIndexW32(b32, 4));
+    EXPECT_EQ(-1100, WebRtcSpl_MinValueW16(b16, kVectorSize));
+    EXPECT_EQ(-1100, WebRtcSpl_MinValueW32(b32, kVectorSize));
+    EXPECT_EQ(3, WebRtcSpl_MinIndexW16(b16, kVectorSize));
+    EXPECT_EQ(3, WebRtcSpl_MinIndexW32(b32, kVectorSize));
 
-    EXPECT_EQ(0, WebRtcSpl_GetScalingSquare(b16, 4, 1));
+    EXPECT_EQ(0, WebRtcSpl_GetScalingSquare(b16, kVectorSize, 1));
 
 }
 
 TEST_F(SplTest, VectorOperationsTest) {
 
 
+    const int kVectorSize = 4;
     int B[] = {4, 12, 133, 1100};
-    WebRtc_Word16* a16 = (WebRtc_Word16*) malloc(4);
-    WebRtc_Word16* b16 = (WebRtc_Word16*) malloc(4);
-    WebRtc_Word32* b32 = (WebRtc_Word32*) malloc(4);
-    WebRtc_Word16* bTmp16 = (WebRtc_Word16*) malloc(4);
+    WebRtc_Word16 a16[kVectorSize];
+    WebRtc_Word16 b16[kVectorSize];
+    WebRtc_Word32 b32[kVectorSize];
+    WebRtc_Word16 bTmp16[kVectorSize];
 
-    for (int kk = 0; kk < 4; ++kk) {
+    for (int kk = 0; kk < kVectorSize; ++kk) {
         a16[kk] = B[kk];
         b16[kk] = B[kk];
     }
 
-    WebRtcSpl_AffineTransformVector(bTmp16, b16, 3, 7, 2, 4);
-    for (int kk = 0; kk < 4; ++kk) {
+    WebRtcSpl_AffineTransformVector(bTmp16, b16, 3, 7, 2, kVectorSize);
+    for (int kk = 0; kk < kVectorSize; ++kk) {
         EXPECT_EQ((B[kk]*3+7)>>2, bTmp16[kk]);
     }
-    WebRtcSpl_ScaleAndAddVectorsWithRound(b16, 3, b16, 2, 2, bTmp16, 4);
-    for (int kk = 0; kk < 4; ++kk) {
+    WebRtcSpl_ScaleAndAddVectorsWithRound(b16, 3, b16, 2, 2, bTmp16, kVectorSize);
+    for (int kk = 0; kk < kVectorSize; ++kk) {
         EXPECT_EQ((B[kk]*3+B[kk]*2+2)>>2, bTmp16[kk]);
     }
 
-    WebRtcSpl_AddAffineVectorToVector(bTmp16, b16, 3, 7, 2, 4);
-    for (int kk = 0; kk < 4; ++kk) {
+    WebRtcSpl_AddAffineVectorToVector(bTmp16, b16, 3, 7, 2, kVectorSize);
+    for (int kk = 0; kk < kVectorSize; ++kk) {
         EXPECT_EQ(((B[kk]*3+B[kk]*2+2)>>2)+((b16[kk]*3+7)>>2), bTmp16[kk]);
     }
 
-    WebRtcSpl_CrossCorrelation(b32, b16, bTmp16, 4, 2, 2, 0);
+    WebRtcSpl_CrossCorrelation(b32, b16, bTmp16, kVectorSize, 2, 2, 0);
     for (int kk = 0; kk < 2; ++kk) {
         EXPECT_EQ(614236, b32[kk]);
     }
 //    EXPECT_EQ(, WebRtcSpl_DotProduct(b16, bTmp16, 4));
-    EXPECT_EQ(306962, WebRtcSpl_DotProductWithScale(b16, b16, 4, 2));
+    EXPECT_EQ(306962, WebRtcSpl_DotProductWithScale(b16, b16, kVectorSize, 2));
 
-    WebRtcSpl_ScaleVector(b16, bTmp16, 13, 4, 2);
-    for (int kk = 0; kk < 4; ++kk) {
+    WebRtcSpl_ScaleVector(b16, bTmp16, 13, kVectorSize, 2);
+    for (int kk = 0; kk < kVectorSize; ++kk) {
         EXPECT_EQ((b16[kk]*13)>>2, bTmp16[kk]);
     }
-    WebRtcSpl_ScaleVectorWithSat(b16, bTmp16, 13, 4, 2);
-    for (int kk = 0; kk < 4; ++kk) {
+    WebRtcSpl_ScaleVectorWithSat(b16, bTmp16, 13, kVectorSize, 2);
+    for (int kk = 0; kk < kVectorSize; ++kk) {
         EXPECT_EQ((b16[kk]*13)>>2, bTmp16[kk]);
     }
-    WebRtcSpl_ScaleAndAddVectors(a16, 13, 2, b16, 7, 2, bTmp16, 4);
-    for (int kk = 0; kk < 4; ++kk) {
+    WebRtcSpl_ScaleAndAddVectors(a16, 13, 2, b16, 7, 2, bTmp16, kVectorSize);
+    for (int kk = 0; kk < kVectorSize; ++kk) {
         EXPECT_EQ(((a16[kk]*13)>>2)+((b16[kk]*7)>>2), bTmp16[kk]);
     }
 
-    WebRtcSpl_AddVectorsAndShift(bTmp16, a16, b16, 4, 2);
-    for (int kk = 0; kk < 4; ++kk) {
+    WebRtcSpl_AddVectorsAndShift(bTmp16, a16, b16, kVectorSize, 2);
+    for (int kk = 0; kk < kVectorSize; ++kk) {
         EXPECT_EQ(B[kk] >> 1, bTmp16[kk]);
     }
-    WebRtcSpl_ReverseOrderMultArrayElements(bTmp16, a16, &b16[3], 4, 2);
-    for (int kk = 0; kk < 4; ++kk) {
+    WebRtcSpl_ReverseOrderMultArrayElements(bTmp16, a16, &b16[3], kVectorSize, 2);
+    for (int kk = 0; kk < kVectorSize; ++kk) {
         EXPECT_EQ((a16[kk]*b16[3-kk])>>2, bTmp16[kk]);
     }
-    WebRtcSpl_ElementwiseVectorMult(bTmp16, a16, b16, 4, 6);
-    for (int kk = 0; kk < 4; ++kk) {
+    WebRtcSpl_ElementwiseVectorMult(bTmp16, a16, b16, kVectorSize, 6);
+    for (int kk = 0; kk < kVectorSize; ++kk) {
         EXPECT_EQ((a16[kk]*b16[kk])>>6, bTmp16[kk]);
     }
 
-    WebRtcSpl_SqrtOfOneMinusXSquared(b16, 4, bTmp16);
-    for (int kk = 0; kk < 3; ++kk) {
+    WebRtcSpl_SqrtOfOneMinusXSquared(b16, kVectorSize, bTmp16);
+    for (int kk = 0; kk < kVectorSize - 1; ++kk) {
         EXPECT_EQ(32767, bTmp16[kk]);
     }
-    EXPECT_EQ(32749, bTmp16[3]);
+    EXPECT_EQ(32749, bTmp16[kVectorSize - 1]);
 }
 
 TEST_F(SplTest, EstimatorsTest) {
 
 
+    const int kVectorSize = 4;
     int B[] = {4, 12, 133, 1100};
-    WebRtc_Word16* b16 = (WebRtc_Word16*) malloc(4);
-    WebRtc_Word32* b32 = (WebRtc_Word32*) malloc(4);
-    WebRtc_Word16* bTmp16 = (WebRtc_Word16*) malloc(4);
+    WebRtc_Word16 b16[kVectorSize];
+    WebRtc_Word32 b32[kVectorSize];
+    WebRtc_Word16 bTmp16[kVectorSize];
 
-    for (int kk = 0; kk < 4; ++kk) {
+    for (int kk = 0; kk < kVectorSize; ++kk) {
         b16[kk] = B[kk];
         b32[kk] = B[kk];
     }
@@ -357,51 +361,61 @@ TEST_F(SplTest, EstimatorsTest) {
 TEST_F(SplTest, FilterTest) {
 
 
+    const int kVectorSize = 4;
     WebRtc_Word16 A[] = {1, 2, 33, 100};
     WebRtc_Word16 A5[] = {1, 2, 33, 100, -5};
     WebRtc_Word16 B[] = {4, 12, 133, 110};
-    WebRtc_Word16* b16 = (WebRtc_Word16*) malloc(4);
-    WebRtc_Word16* bTmp16 = (WebRtc_Word16*) malloc(4);
-    WebRtc_Word16* bTmp16Low = (WebRtc_Word16*) malloc(4);
-    WebRtc_Word16* bState = (WebRtc_Word16*) malloc(4);
-    WebRtc_Word16* bStateLow = (WebRtc_Word16*) malloc(4);
+    WebRtc_Word16 b16[kVectorSize];
+    WebRtc_Word16 bTmp16[kVectorSize];
+    WebRtc_Word16 bTmp16Low[kVectorSize];
+    WebRtc_Word16 bState[kVectorSize];
+    WebRtc_Word16 bStateLow[kVectorSize];
 
-    WebRtcSpl_ZerosArrayW16(bState, 4);
-    WebRtcSpl_ZerosArrayW16(bStateLow, 4);
+    WebRtcSpl_ZerosArrayW16(bState, kVectorSize);
+    WebRtcSpl_ZerosArrayW16(bStateLow, kVectorSize);
 
-    for (int kk = 0; kk < 4; ++kk) {
+    for (int kk = 0; kk < kVectorSize; ++kk) {
         b16[kk] = A[kk];
     }
 
     // MA filters
-    WebRtcSpl_FilterMAFastQ12(b16, bTmp16, B, 4, 4);
-    for (int kk = 0; kk < 4; ++kk) {
+    WebRtcSpl_FilterMAFastQ12(b16, bTmp16, B, kVectorSize, kVectorSize);
+    for (int kk = 0; kk < kVectorSize; ++kk) {
         //EXPECT_EQ(aTmp16[kk], bTmp16[kk]);
     }
     // AR filters
-    WebRtcSpl_FilterARFastQ12(b16, bTmp16, A, 4, 4);
-    for (int kk = 0; kk < 4; ++kk) {
+    WebRtcSpl_FilterARFastQ12(b16, bTmp16, A, kVectorSize, kVectorSize);
+    for (int kk = 0; kk < kVectorSize; ++kk) {
 //        EXPECT_EQ(aTmp16[kk], bTmp16[kk]);
     }
-    EXPECT_EQ(4, WebRtcSpl_FilterAR(A5, 5, b16, 4, bState, 4, bStateLow, 4, bTmp16, bTmp16Low, 4));
+    EXPECT_EQ(kVectorSize, WebRtcSpl_FilterAR(A5,
+                                              5,
+                                              b16,
+                                              kVectorSize,
+                                              bState,
+                                              kVectorSize,
+                                              bStateLow,
+                                              kVectorSize,
+                                              bTmp16,
+                                              bTmp16Low,
+                                              kVectorSize));
 
 }
 
 TEST_F(SplTest, RandTest) {
 
 
+    const int kVectorSize = 4;
     WebRtc_Word16 BU[] = {3653, 12446, 8525, 30691};
     WebRtc_Word16 BN[] = {3459, -11689, -258, -3738};
-    WebRtc_Word16* b16 = (WebRtc_Word16*) malloc(4);
-    WebRtc_UWord32* bSeed = (WebRtc_UWord32*) malloc(1);
+    WebRtc_Word16 b16[kVectorSize];
+    WebRtc_UWord32 bSeed = 100000;
 
-    bSeed[0] = 100000;
-
-    EXPECT_EQ(464449057, WebRtcSpl_IncreaseSeed(bSeed));
-    EXPECT_EQ(31565, WebRtcSpl_RandU(bSeed));
-    EXPECT_EQ(-9786, WebRtcSpl_RandN(bSeed));
-    EXPECT_EQ(4, WebRtcSpl_RandUArray(b16, 4, bSeed));
-    for (int kk = 0; kk < 4; ++kk) {
+    EXPECT_EQ(464449057, WebRtcSpl_IncreaseSeed(&bSeed));
+    EXPECT_EQ(31565, WebRtcSpl_RandU(&bSeed));
+    EXPECT_EQ(-9786, WebRtcSpl_RandN(&bSeed));
+    EXPECT_EQ(kVectorSize, WebRtcSpl_RandUArray(b16, kVectorSize, &bSeed));
+    for (int kk = 0; kk < kVectorSize; ++kk) {
         EXPECT_EQ(BU[kk], b16[kk]);
     }
 }
@@ -409,42 +423,43 @@ TEST_F(SplTest, RandTest) {
 TEST_F(SplTest, SignalProcessingTest) {
 
 
+    const int kVectorSize = 4;
     int A[] = {1, 2, 33, 100};
-    WebRtc_Word16* b16 = (WebRtc_Word16*) malloc(4);
-    WebRtc_Word32* b32 = (WebRtc_Word32*) malloc(4);
+    WebRtc_Word16 b16[kVectorSize];
+    WebRtc_Word32 b32[kVectorSize];
 
-    WebRtc_Word16* bTmp16 = (WebRtc_Word16*) malloc(4);
-    WebRtc_Word32* bTmp32 = (WebRtc_Word32*) malloc(4);
+    WebRtc_Word16 bTmp16[kVectorSize];
+    WebRtc_Word32 bTmp32[kVectorSize];
 
     int bScale = 0;
 
-    for (int kk = 0; kk < 4; ++kk) {
+    for (int kk = 0; kk < kVectorSize; ++kk) {
         b16[kk] = A[kk];
         b32[kk] = A[kk];
     }
 
-    EXPECT_EQ(2, WebRtcSpl_AutoCorrelation(b16, 4, 1, bTmp32, &bScale));
-    WebRtcSpl_ReflCoefToLpc(b16, 4, bTmp16);
-//    for (int kk = 0; kk < 4; ++kk) {
+    EXPECT_EQ(2, WebRtcSpl_AutoCorrelation(b16, kVectorSize, 1, bTmp32, &bScale));
+    WebRtcSpl_ReflCoefToLpc(b16, kVectorSize, bTmp16);
+//    for (int kk = 0; kk < kVectorSize; ++kk) {
 //        EXPECT_EQ(aTmp16[kk], bTmp16[kk]);
 //    }
-    WebRtcSpl_LpcToReflCoef(bTmp16, 4, b16);
-//    for (int kk = 0; kk < 4; ++kk) {
+    WebRtcSpl_LpcToReflCoef(bTmp16, kVectorSize, b16);
+//    for (int kk = 0; kk < kVectorSize; ++kk) {
 //        EXPECT_EQ(a16[kk], b16[kk]);
 //    }
-    WebRtcSpl_AutoCorrToReflCoef(b32, 4, bTmp16);
-//    for (int kk = 0; kk < 4; ++kk) {
+    WebRtcSpl_AutoCorrToReflCoef(b32, kVectorSize, bTmp16);
+//    for (int kk = 0; kk < kVectorSize; ++kk) {
 //        EXPECT_EQ(aTmp16[kk], bTmp16[kk]);
 //    }
-    WebRtcSpl_GetHanningWindow(bTmp16, 4);
-//    for (int kk = 0; kk < 4; ++kk) {
+    WebRtcSpl_GetHanningWindow(bTmp16, kVectorSize);
+//    for (int kk = 0; kk < kVectorSize; ++kk) {
 //        EXPECT_EQ(aTmp16[kk], bTmp16[kk]);
 //    }
 
-    for (int kk = 0; kk < 4; ++kk) {
+    for (int kk = 0; kk < kVectorSize; ++kk) {
         b16[kk] = A[kk];
     }
-    EXPECT_EQ(11094 , WebRtcSpl_Energy(b16, 4, &bScale));
+    EXPECT_EQ(11094 , WebRtcSpl_Energy(b16, kVectorSize, &bScale));
     EXPECT_EQ(0, bScale);
 }
 
