@@ -175,7 +175,7 @@ WebRtc_Word32 WebRtcAecm_get_config(void *aecmInst,
  * -------------------------------------------------------------------
  * void*        aecmInst        Pointer to the AECM instance
  * void*        echo_path       Pointer to the echo path to be set
- * int          size_bytes      Size in bytes of the echo path
+ * size_t       size_bytes      Size in bytes of the echo path
  *
  * Outputs                      Description
  * -------------------------------------------------------------------
@@ -184,7 +184,7 @@ WebRtc_Word32 WebRtcAecm_get_config(void *aecmInst,
  */
 WebRtc_Word32 WebRtcAecm_InitEchoPath(void* aecmInst,
                                       const void* echo_path,
-                                      int size_bytes);
+                                      size_t size_bytes);
 
 /*
  * This function enables the user to get the currently used echo path
@@ -194,7 +194,7 @@ WebRtc_Word32 WebRtcAecm_InitEchoPath(void* aecmInst,
  * -------------------------------------------------------------------
  * void*        aecmInst        Pointer to the AECM instance
  * void*        echo_path       Pointer to echo path
- * int          size_bytes      Size in bytes of the echo path
+ * size_t       size_bytes      Size in bytes of the echo path
  *
  * Outputs                      Description
  * -------------------------------------------------------------------
@@ -203,16 +203,16 @@ WebRtc_Word32 WebRtcAecm_InitEchoPath(void* aecmInst,
  */
 WebRtc_Word32 WebRtcAecm_GetEchoPath(void* aecmInst,
                                      void* echo_path,
-                                     int size_bytes);
+                                     size_t size_bytes);
 
 /*
  * This function enables the user to get the echo path size in bytes
  *
  * Outputs                      Description
  * -------------------------------------------------------------------
- * int          return           : size in bytes
+ * size_t       return           : size in bytes
  */
-int WebRtcAecm_echo_path_size_bytes();
+size_t WebRtcAecm_echo_path_size_bytes();
 
 /*
  * Gets the last error code.

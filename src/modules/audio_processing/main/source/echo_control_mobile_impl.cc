@@ -59,12 +59,15 @@ int MapError(int err) {
 }
 }  // namespace
 
+size_t EchoControlMobile::echo_path_size_bytes() {
+    return WebRtcAecm_echo_path_size_bytes();
+}
+
 EchoControlMobileImpl::EchoControlMobileImpl(const AudioProcessingImpl* apm)
   : ProcessingComponent(apm),
     apm_(apm),
     routing_mode_(kSpeakerphone),
     comfort_noise_enabled_(true),
-    echo_path_size_bytes_(WebRtcAecm_echo_path_size_bytes()),
     external_echo_path_(NULL) {}
 
 EchoControlMobileImpl::~EchoControlMobileImpl() {
@@ -191,12 +194,12 @@ bool EchoControlMobileImpl::is_comfort_noise_enabled() const {
 }
 
 int EchoControlMobileImpl::SetEchoPath(const void* echo_path,
-                                       int size_bytes) {
+                                       size_t size_bytes) {
   CriticalSectionScoped crit_scoped(*apm_->crit());
   if (echo_path == NULL) {
     return apm_->kNullPointerError;
   }
-  if (size_bytes != echo_path_size_bytes_) {
+  if (size_bytes != echo_path_size_bytes()) {
     // Size mismatch
     return apm_->kBadParameterError;
   }
@@ -210,12 +213,12 @@ int EchoControlMobileImpl::SetEchoPath(const void* echo_path,
 }
 
 int EchoControlMobileImpl::GetEchoPath(void* echo_path,
-                                       int size_bytes) const {
+                                       size_t size_bytes) const {
   CriticalSectionScoped crit_scoped(*apm_->crit());
   if (echo_path == NULL) {
     return apm_->kNullPointerError;
   }
-  if (size_bytes != echo_path_size_bytes_) {
+  if (size_bytes != echo_path_size_bytes()) {
     // Size mismatch
     return apm_->kBadParameterError;
   }
@@ -230,10 +233,6 @@ int EchoControlMobileImpl::GetEchoPath(void* echo_path,
   }
 
   return apm_->kNoError;
-}
-
-const int EchoControlMobileImpl::echo_path_size_bytes() const {
-    return echo_path_size_bytes_;
 }
 
 int EchoControlMobileImpl::Initialize() {
@@ -282,7 +281,7 @@ int EchoControlMobileImpl::InitializeHandle(void* handle) const {
   if (external_echo_path_ != NULL) {
     if (WebRtcAecm_InitEchoPath(my_handle,
                                 external_echo_path_,
-                                echo_path_size_bytes_) != 0) {
+                                echo_path_size_bytes()) != 0) {
       return GetHandleError(my_handle);
     }
   }

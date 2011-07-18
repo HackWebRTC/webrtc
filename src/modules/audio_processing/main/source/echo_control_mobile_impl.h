@@ -41,9 +41,8 @@ class EchoControlMobileImpl : public EchoControlMobile,
   virtual RoutingMode routing_mode() const;
   virtual int enable_comfort_noise(bool enable);
   virtual bool is_comfort_noise_enabled() const;
-  virtual int SetEchoPath(const void* echo_path, int size_bytes);
-  virtual int GetEchoPath(void* echo_path, int size_bytes) const;
-  virtual const int echo_path_size_bytes() const;
+  virtual int SetEchoPath(const void* echo_path, size_t size_bytes);
+  virtual int GetEchoPath(void* echo_path, size_t size_bytes) const;
 
   // ProcessingComponent implementation.
   virtual void* CreateHandle() const;
@@ -56,7 +55,6 @@ class EchoControlMobileImpl : public EchoControlMobile,
   const AudioProcessingImpl* apm_;
   RoutingMode routing_mode_;
   bool comfort_noise_enabled_;
-  const int echo_path_size_bytes_;
   unsigned char* external_echo_path_;
 };
 }  // namespace webrtc

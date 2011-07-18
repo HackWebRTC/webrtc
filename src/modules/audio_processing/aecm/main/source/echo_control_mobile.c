@@ -622,7 +622,7 @@ WebRtc_Word32 WebRtcAecm_get_config(void *aecmInst, AecmConfig *config)
 
 WebRtc_Word32 WebRtcAecm_InitEchoPath(void* aecmInst,
                                       const void* echo_path,
-                                      int size_bytes)
+                                      size_t size_bytes)
 {
     aecmob_t *aecm = aecmInst;
     const WebRtc_Word16* echo_path_ptr = echo_path;
@@ -651,7 +651,7 @@ WebRtc_Word32 WebRtcAecm_InitEchoPath(void* aecmInst,
 
 WebRtc_Word32 WebRtcAecm_GetEchoPath(void* aecmInst,
                                      void* echo_path,
-                                     int size_bytes)
+                                     size_t size_bytes)
 {
     aecmob_t *aecm = aecmInst;
     WebRtc_Word16* echo_path_ptr = echo_path;
@@ -677,7 +677,7 @@ WebRtc_Word32 WebRtcAecm_GetEchoPath(void* aecmInst,
     return 0;
 }
 
-int WebRtcAecm_echo_path_size_bytes()
+size_t WebRtcAecm_echo_path_size_bytes()
 {
     return (PART_LEN1 * sizeof(WebRtc_Word16));
 }

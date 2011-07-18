@@ -494,7 +494,6 @@ void aec_rdft_forward_128(float *a) {
 void aec_rdft_inverse_128(float *a) {
   const int n = 128;
   int nw;
-  float xi;
 
   nw = ip[0];
   a[1] = 0.5f * (a[0] - a[1]);

@@ -382,7 +382,8 @@ void void_main(int argc, char* argv[]) {
     ASSERT_TRUE(NULL != aecm_echo_path_in_file) << "Unable to open file "
                                                 << aecm_echo_path_in_filename;
 
-    const int path_size = apm->echo_control_mobile()->echo_path_size_bytes();
+    const size_t path_size =
+        apm->echo_control_mobile()->echo_path_size_bytes();
     unsigned char echo_path[path_size];
     ASSERT_EQ(path_size, fread(echo_path,
                                sizeof(unsigned char),
@@ -620,7 +621,8 @@ void void_main(int argc, char* argv[]) {
   }
 
   if (aecm_echo_path_out_file != NULL) {
-    const int path_size = apm->echo_control_mobile()->echo_path_size_bytes();
+    const size_t path_size =
+        apm->echo_control_mobile()->echo_path_size_bytes();
     unsigned char echo_path[path_size];
     apm->echo_control_mobile()->GetEchoPath(echo_path, path_size);
     ASSERT_EQ(path_size, fwrite(echo_path,

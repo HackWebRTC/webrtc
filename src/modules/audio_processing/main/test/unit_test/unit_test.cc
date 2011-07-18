@@ -65,10 +65,10 @@ class ApmTest : public ::testing::Test {
 
 ApmTest::ApmTest()
     : apm_(NULL),
-      far_file_(NULL),
-      near_file_(NULL),
       frame_(NULL),
-      revframe_(NULL) {}
+      revframe_(NULL),
+      far_file_(NULL),
+      near_file_(NULL) {}
 
 void ApmTest::SetUp() {
   apm_ = AudioProcessing::Create(0);
@@ -178,8 +178,9 @@ void WriteMessageLiteToFile(const char* filename,
   unsigned char* array = new unsigned char[size];
   ASSERT_TRUE(message.SerializeToArray(array, size));
 
-  ASSERT_EQ(1, fwrite(&size, sizeof(int), 1, file));
-  ASSERT_EQ(size, fwrite(array, sizeof(unsigned char), size, file));
+  ASSERT_EQ(1u, fwrite(&size, sizeof(int), 1, file));
+  ASSERT_EQ(static_cast<size_t>(size),
+      fwrite(array, sizeof(unsigned char), size, file));
 
   delete [] array;
   fclose(file);
@@ -193,10 +194,11 @@ void ReadMessageLiteFromFile(const char* filename,
   FILE* file = fopen(filename, "rb");
   ASSERT_TRUE(file != NULL) << "Could not open " << filename;
   int size = 0;
-  ASSERT_EQ(1, fread(&size, sizeof(int), 1, file));
+  ASSERT_EQ(1u, fread(&size, sizeof(int), 1, file));
   ASSERT_GT(size, 0);
   unsigned char* array = new unsigned char[size];
-  ASSERT_EQ(size, fread(array, sizeof(unsigned char), size, file));
+  ASSERT_EQ(static_cast<size_t>(size),
+      fread(array, sizeof(unsigned char), size, file));
 
   ASSERT_TRUE(message->ParseFromArray(array, size));
 
@@ -413,9 +415,9 @@ TEST_F(ApmTest, Process) {
     // We don't have a file; add the required tests to the protobuf.
     // TODO(ajm): vary the output channels as well?
     const int channels[] = {1, 2};
-    const int channels_size = sizeof(channels) / sizeof(*channels);
+    const size_t channels_size = sizeof(channels) / sizeof(*channels);
     const int sample_rates[] = {8000, 16000, 32000};
-    const int sample_rates_size = sizeof(sample_rates) / sizeof(*sample_rates);
+    const size_t sample_rates_size = sizeof(sample_rates) / sizeof(*sample_rates);
     for (size_t i = 0; i < channels_size; i++) {
       for (size_t j = 0; j < channels_size; j++) {
         for (size_t k = 0; k < sample_rates_size; k++) {
@@ -709,7 +711,8 @@ TEST_F(ApmTest, EchoControlMobile) {
       apm_->echo_control_mobile()->enable_comfort_noise(true));
   EXPECT_TRUE(apm_->echo_control_mobile()->is_comfort_noise_enabled());
   // Set and get echo path
-  const int echo_path_size = apm_->echo_control_mobile()->echo_path_size_bytes();
+  const size_t echo_path_size =
+      apm_->echo_control_mobile()->echo_path_size_bytes();
   unsigned char echo_path_in[echo_path_size];
   unsigned char echo_path_out[echo_path_size];
   EXPECT_EQ(apm_->kNullPointerError,
@@ -721,7 +724,7 @@ TEST_F(ApmTest, EchoControlMobile) {
   EXPECT_EQ(apm_->kNoError,
             apm_->echo_control_mobile()->GetEchoPath(echo_path_out,
                                                      echo_path_size));
-  for (int i = 0; i < echo_path_size; i++) {
+  for (size_t i = 0; i < echo_path_size; i++) {
     echo_path_in[i] = echo_path_out[i] + 1;
   }
   EXPECT_EQ(apm_->kBadParameterError,
@@ -730,7 +733,7 @@ TEST_F(ApmTest, EchoControlMobile) {
             apm_->echo_control_mobile()->SetEchoPath(echo_path_in, echo_path_size));
   EXPECT_EQ(apm_->kNoError,
             apm_->echo_control_mobile()->GetEchoPath(echo_path_out, echo_path_size));
-  for (int i = 0; i < echo_path_size; i++) {
+  for (size_t i = 0; i < echo_path_size; i++) {
     EXPECT_EQ(echo_path_in[i], echo_path_out[i]);
   }
   // Turn AECM off
