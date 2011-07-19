@@ -32,7 +32,8 @@ public:
 
     virtual void Reset();
 
-    VCMFrameBufferEnum InsertPacket(const VCMPacket& packet, WebRtc_Word64 timeInMs);
+    VCMFrameBufferEnum InsertPacket(const VCMPacket& packet,
+                                    WebRtc_Word64 timeInMs);
 
     // State
     // Get current state of frame
@@ -54,15 +55,12 @@ public:
     // Get highest packet sequence number in frame
     WebRtc_Word32 GetHighSeqNum();
 
-    // Get highest sequence number of complete session
-    WebRtc_Word32 GetHighSeqNumComplete();
-
     // Set counted status (as counted by JB or not)
     void SetCountedFrame(bool frameCounted);
     bool GetCountedFrame();
 
     // NACK
-    // Zero out all entries in list up to and including the entry equal to _lowSeqNum
+    // Zero out all entries in list up to and including _lowSeqNum
     WebRtc_Word32 ZeroOutSeqNum(WebRtc_Word32* list, WebRtc_Word32 num);
     // Hybrid extension: only NACK important packets, discard FEC packets
     WebRtc_Word32 ZeroOutSeqNumHybrid(WebRtc_Word32* list,
@@ -84,7 +82,7 @@ protected:
 
 private:
     VCMFrameBufferStateEnum    _state;         // Current state of the frame
-    bool                       _frameCounted;  // If this frame has been counted by JB
+    bool                       _frameCounted;  // Was this frame counted by JB?
     VCMSessionInfo             _sessionInfo;
     WebRtc_UWord16             _nackCount;
     WebRtc_Word64              _latestPacketTimeMs;

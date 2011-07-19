@@ -67,17 +67,6 @@ VCMFrameBuffer::GetLowSeqNum()
     return _sessionInfo.GetLowSeqNum();
 }
 
-// Get highest sequence number for complete sessions
-WebRtc_Word32
-VCMFrameBuffer::GetHighSeqNumComplete()
-{
-    if (_sessionInfo.IsSessionComplete())
-    {
-        return _sessionInfo.GetHighSeqNum();
-    }
-    return -1;
-}
-
 WebRtc_Word32
 VCMFrameBuffer::GetHighSeqNum()
 {
@@ -101,7 +90,7 @@ VCMFrameBuffer::InsertPacket(const VCMPacket& packet, WebRtc_Word64 timeInMs)
     }
 
     // Sanity to check if the frame has been freed. (Too old for example)
-    if(_state == kStateFree)
+    if (_state == kStateFree)
     {
         return kStateError;
     }
@@ -179,7 +168,7 @@ VCMFrameBuffer::InsertPacket(const VCMPacket& packet, WebRtc_Word64 timeInMs)
 
     _latestPacketTimeMs = timeInMs;
 
-    if(_sessionInfo.IsSessionComplete())
+    if (_sessionInfo.IsSessionComplete())
     {
         return kCompleteSession;
     }
@@ -196,15 +185,18 @@ VCMFrameBuffer::InsertPacket(const VCMPacket& packet, WebRtc_Word64 timeInMs)
     return kIncomplete;
 }
 
-WebRtc_Word64 VCMFrameBuffer::LatestPacketTimeMs()
+WebRtc_Word64
+VCMFrameBuffer::LatestPacketTimeMs()
 {
     return _latestPacketTimeMs;
 }
 
-// Zero out all entries in list up to and including the (first) entry equal to _lowSeqNum
-WebRtc_Word32 VCMFrameBuffer::ZeroOutSeqNum(WebRtc_Word32* list, WebRtc_Word32 num)
+// Zero out all entries in list up to and including the (first)
+// entry equal to _lowSeqNum
+WebRtc_Word32
+VCMFrameBuffer::ZeroOutSeqNum(WebRtc_Word32* list, WebRtc_Word32 num)
 {
-    if(_sessionInfo.ZeroOutSeqNum(list, num) != 0)
+    if (_sessionInfo.ZeroOutSeqNum(list, num) != 0)
     {
        return -1;
     }
@@ -215,24 +207,28 @@ WebRtc_Word32 VCMFrameBuffer::ZeroOutSeqNum(WebRtc_Word32* list, WebRtc_Word32 n
 // _lowSeqNum. Hybrid mode: 1. Don't NACK FEC packets 2. Make a smart decision
 // on whether to NACK or not
 
-WebRtc_Word32 VCMFrameBuffer::ZeroOutSeqNumHybrid(WebRtc_Word32* list,
-                                                  WebRtc_Word32 num,
-                                                  float rttScore)
+WebRtc_Word32
+VCMFrameBuffer::ZeroOutSeqNumHybrid(WebRtc_Word32* list,
+                                    WebRtc_Word32 num,
+                                    float rttScore)
 {
     return _sessionInfo.ZeroOutSeqNumHybrid(list, num, rttScore);
 }
 
-void VCMFrameBuffer::IncrementNackCount()
+void
+VCMFrameBuffer::IncrementNackCount()
 {
     _nackCount++;
 }
 
-WebRtc_Word16 VCMFrameBuffer::GetNackCount() const
+WebRtc_Word16
+VCMFrameBuffer::GetNackCount() const
 {
     return _nackCount;
 }
 
-bool VCMFrameBuffer::HaveLastPacket()
+bool
+VCMFrameBuffer::HaveLastPacket()
 {
     return _sessionInfo.HaveLastPacket();
 }
@@ -244,7 +240,8 @@ VCMFrameBuffer::ForceSetHaveLastPacket()
     return _sessionInfo.IsSessionComplete();
 }
 
-void VCMFrameBuffer::Reset()
+void
+VCMFrameBuffer::Reset()
 {
     _length = 0;
     _timeStamp = 0;
@@ -270,7 +267,7 @@ VCMFrameBuffer::MakeSessionDecodable()
 void
 VCMFrameBuffer::SetState(VCMFrameBufferStateEnum state)
 {
-    if(_state == state)
+    if (_state == state)
     {
         return;
     }
@@ -309,7 +306,8 @@ VCMFrameBuffer::SetState(VCMFrameBufferStateEnum state)
         // we can go to this state from state kStateComplete kStateIncomplete
         assert(_state == kStateComplete || _state == kStateIncomplete ||
                _state == kStateDecodable);
-        // Transfer frame information to EncodedFrame and create any codec specific information
+        // Transfer frame information to EncodedFrame and create any codec
+        // specific information
         RestructureFrameInformation();
         break;
 
