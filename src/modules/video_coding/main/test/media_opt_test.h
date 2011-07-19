@@ -35,13 +35,21 @@ class VCMTestProtectionCallback: public webrtc::VCMProtectionCallback
 public:
     VCMTestProtectionCallback();
     virtual ~VCMTestProtectionCallback();
-    WebRtc_Word32 ProtectionRequest(const WebRtc_UWord8 deltaFECRate, const WebRtc_UWord8 keyFECRate, const bool nack);
+    WebRtc_Word32 ProtectionRequest(const WebRtc_UWord8 deltaFECRate,
+                                    const WebRtc_UWord8 keyFECRate,
+                                    const bool deltaUseUepProtection,
+                                    const bool keyUseUepProtection,
+                                    const bool nack);
     enum webrtc::NACKMethod NACKMethod();
     WebRtc_UWord8 FECDeltaRate();
     WebRtc_UWord8 FECKeyRate();
+    bool          FECDeltaUepProtection();
+    bool          FECKeyUepProtection();
 private:
     WebRtc_UWord8     _deltaFECRate;
     WebRtc_UWord8     _keyFECRate;
+    bool              _deltaUseUepProtection;
+    bool              _keyUseUepProtection;
     enum webrtc::NACKMethod   _nack;
 
 };

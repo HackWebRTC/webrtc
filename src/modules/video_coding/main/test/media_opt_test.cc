@@ -555,6 +555,8 @@ MediaOptTest::TearDown()
 VCMTestProtectionCallback::VCMTestProtectionCallback():
 _deltaFECRate(0),
 _keyFECRate(0),
+_deltaUseUepProtection(0),
+_keyUseUepProtection(0),
 _nack(kNackOff)
 {
     //
@@ -566,10 +568,16 @@ VCMTestProtectionCallback::~VCMTestProtectionCallback()
 }
 
 WebRtc_Word32
-VCMTestProtectionCallback::ProtectionRequest(const WebRtc_UWord8 deltaFECRate, const WebRtc_UWord8 keyFECRate, const bool nack)
+VCMTestProtectionCallback::ProtectionRequest(const WebRtc_UWord8 deltaFECRate,
+                                             const WebRtc_UWord8 keyFECRate,
+                                             const bool deltaUseUepProtection,
+                                             const bool keyUseUepProtection,
+                                             const bool nack)
 {
     _deltaFECRate = deltaFECRate;
     _keyFECRate = keyFECRate;
+    _deltaUseUepProtection = deltaUseUepProtection;
+    _keyUseUepProtection = keyUseUepProtection;
     if (nack == true)
     {
         _nack = kNackRtcp;
@@ -598,6 +606,19 @@ VCMTestProtectionCallback::FECKeyRate()
 {
     return _keyFECRate;
 }
+
+bool
+VCMTestProtectionCallback::FECDeltaUepProtection()
+{
+    return _deltaUseUepProtection;
+}
+
+bool
+VCMTestProtectionCallback::FECKeyUepProtection()
+{
+    return _keyUseUepProtection;
+}
+
 
 
 void
