@@ -2317,8 +2317,6 @@ static void WebRtcAecm_ComfortNoise(AecmCore_t * const aecm, const WebRtc_UWord1
 
     WebRtc_Word16 shiftFromNearToNoise = kNoiseEstQDomain - aecm->dfaCleanQDomain;
     WebRtc_Word16 minTrackShift;
-    WebRtc_Word32 upper32;
-    WebRtc_Word32 lower32;
 
     assert(shiftFromNearToNoise >= 0);
     assert(shiftFromNearToNoise < 16);
