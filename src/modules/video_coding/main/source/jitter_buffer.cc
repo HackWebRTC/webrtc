@@ -37,7 +37,8 @@ namespace webrtc {
 
 // Criteria used when searching for frames in the frame buffer list
 bool
-VCMJitterBuffer::FrameEqualTimestamp(VCMFrameBuffer* frame, const void* timestamp)
+VCMJitterBuffer::FrameEqualTimestamp(VCMFrameBuffer* frame,
+                                     const void* timestamp)
 {
     if (timestamp == NULL)
     {
@@ -142,8 +143,10 @@ VCMJitterBuffer::operator=(const VCMJitterBuffer& rhs)
         _missingMarkerBits = rhs._missingMarkerBits;
         _firstPacket = rhs._firstPacket;
         _lastDecodedSeqNum =  rhs._lastDecodedSeqNum;
-        memcpy(_receiveStatistics, rhs._receiveStatistics, sizeof(_receiveStatistics));
-        memcpy(_NACKSeqNumInternal, rhs._NACKSeqNumInternal, sizeof(_NACKSeqNumInternal));
+        memcpy(_receiveStatistics, rhs._receiveStatistics,
+               sizeof(_receiveStatistics));
+        memcpy(_NACKSeqNumInternal, rhs._NACKSeqNumInternal,
+               sizeof(_NACKSeqNumInternal));
         memcpy(_NACKSeqNum, rhs._NACKSeqNum, sizeof(_NACKSeqNum));
         for (int i = 0; i < kMaxNumberOfFrames; i++)
         {
@@ -153,7 +156,8 @@ VCMJitterBuffer::operator=(const VCMJitterBuffer& rhs)
                 _frameBuffers[i] = NULL;
             }
         }
-        while(_frameBuffersTSOrder.Erase(_frameBuffersTSOrder.First()) != -1) { }
+        while(_frameBuffersTSOrder.Erase(_frameBuffersTSOrder.First()) != -1)
+        { }
         for (int i = 0; i < _maxNumberOfFrames; i++)
         {
             _frameBuffers[i] = new VCMFrameBuffer(*(rhs._frameBuffers[i]));
@@ -267,7 +271,7 @@ VCMJitterBuffer::FlushInternal()
 {
     // Erase all frames from the sorted list and set their state to free.
     _frameBuffersTSOrder.Flush();
-    for (int i = 0; i < _maxNumberOfFrames; i++)
+    for (WebRtc_Word32 i = 0; i < _maxNumberOfFrames; i++)
     {
         ReleaseFrameInternal(_frameBuffers[i]);
     }
@@ -326,10 +330,13 @@ VCMJitterBuffer::UpdateFrameState(VCMFrameBuffer* frame)
     int length = frame->Length();
     if (_master)
     {
-        // Only trace the primary jitter buffer to make it possible to parse and plot the trace file.
-        WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, VCMId(_vcmId, _receiverId),
-                   "JB(0x%x) FB(0x%x): Complete frame added to jitter buffer, size:%d type %d",
-                   this, frame,length,frame->FrameType());
+        // Only trace the primary jitter buffer to make it possible to parse
+        // and plot the trace file.
+        WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding,
+                     VCMId(_vcmId, _receiverId),
+                     "JB(0x%x) FB(0x%x): Complete frame added to jitter buffer,"
+                     " size:%d type %d",
+                     this, frame,length,frame->FrameType());
     }
 
     if (length != 0 && !frame->GetCountedFrame())
@@ -341,7 +348,7 @@ VCMJitterBuffer::UpdateFrameState(VCMFrameBuffer* frame)
 
     // Check if we should drop frame
     // an old complete frame can arrive too late
-    if(_lastDecodedTimeStamp > 0 &&
+    if (_lastDecodedTimeStamp > 0 &&
             LatestTimestamp(static_cast<WebRtc_UWord32>(_lastDecodedTimeStamp),
                             frame->TimeStamp()) == _lastDecodedTimeStamp)
     {
@@ -350,11 +357,15 @@ VCMJitterBuffer::UpdateFrameState(VCMFrameBuffer* frame)
         frame->Reset();
         frame->SetState(kStateEmpty);
 
-        WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, VCMId(_vcmId, _receiverId),
-            "JB(0x%x) FB(0x%x): Dropping old frame in Jitter buffer", this, frame);
+        WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding,
+                     VCMId(_vcmId, _receiverId),
+                     "JB(0x%x) FB(0x%x): Dropping old frame in Jitter buffer",
+                     this, frame);
         _dropCount++;
-        WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideoCoding, VCMId(_vcmId, _receiverId),
-            "Jitter buffer drop count: %d, consecutive drops: %u", _dropCount, _numConsecutiveOldFrames);
+        WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideoCoding,
+                     VCMId(_vcmId, _receiverId),
+                     "Jitter buffer drop count: %d, consecutive drops: %u",
+                     _dropCount, _numConsecutiveOldFrames);
         // Flush() if this happens consistently.
         _numConsecutiveOldFrames++;
         if (_numConsecutiveOldFrames > kMaxConsecutiveOldFrames)
@@ -437,9 +448,10 @@ VCMJitterBuffer::GetFrame(const VCMPacket& packet, VCMEncodedFrame*& frame)
     }
 
     _critSect.Enter();
-    if (LatestTimestamp(static_cast<WebRtc_UWord32>(_lastDecodedTimeStamp), packet.timestamp)
-        == _lastDecodedTimeStamp
-        && packet.sizeBytes > 0) // Make sure that old filler packets are inserted.
+    if (LatestTimestamp(static_cast<WebRtc_UWord32>(_lastDecodedTimeStamp),
+                        packet.timestamp) == _lastDecodedTimeStamp
+        && packet.sizeBytes > 0)
+      // Make sure that old Empty packets are inserted.
     {
         // Trying to get an old frame.
         _numConsecutiveOldPackets++;
@@ -452,7 +464,9 @@ VCMJitterBuffer::GetFrame(const VCMPacket& packet, VCMEncodedFrame*& frame)
     }
     _numConsecutiveOldPackets = 0;
 
-    frame = _frameBuffersTSOrder.FindFrame(FrameEqualTimestamp, &packet.timestamp);
+    frame = _frameBuffersTSOrder.FindFrame(FrameEqualTimestamp,
+                                           &packet.timestamp);
+
     _critSect.Leave();
 
     if (frame != NULL)
@@ -626,18 +640,17 @@ VCMJitterBuffer::FindOldestCompleteContinuousFrame()
     // Use seqNum not timestamp since a full frame might be lost
     if (_lastDecodedSeqNum != -1)
     {
-        // it's not enough that we have complete frame we need the seq numbers
-        // to be continuous too for layers it's not enough that we have complete
-        // frame we need the layers to be continuous too
+        // it's not enough that we have complete frame we need the layers to
+        // be continuous too
         currentLow = oldestFrame->GetLowSeqNum();
 
         WebRtc_UWord16 lastDecodedSeqNum = (WebRtc_UWord16)_lastDecodedSeqNum;
 
-        // we could have received the first packet of the last frame before a
+        // We could have received the first packet of the last frame before a
         // long period if drop, that case is handled by GetNackList
         if (((WebRtc_UWord16)(lastDecodedSeqNum + 1)) != currentLow)
         {
-            // wait since we want a complete continuous frame
+            // Wait since we want a complete continuous frame
             return NULL;
         }
     }
@@ -651,7 +664,8 @@ VCMJitterBuffer::FindOldestCompleteContinuousFrame()
 bool
 VCMJitterBuffer::CheckForCompleteFrame(VCMFrameListItem* oldestFrameItem)
 {
-    const VCMFrameListItem* nextFrameItem = _frameBuffersTSOrder.Next(oldestFrameItem);
+    const VCMFrameListItem*
+          nextFrameItem = _frameBuffersTSOrder.Next(oldestFrameItem);
     VCMFrameBuffer* oldestFrame = NULL;
     if (oldestFrameItem != NULL)
     {
@@ -659,12 +673,12 @@ VCMJitterBuffer::CheckForCompleteFrame(VCMFrameListItem* oldestFrameItem)
     }
     if (nextFrameItem != NULL)
     {
-        // We have received at least one packet from a later frame.
-        if(!oldestFrame->HaveLastPacket()) // If we don't have the markerbit
+       // We have received at least one packet from a later frame.
+       if(!oldestFrame->HaveLastPacket()) // If we don't have the markerbit
         {
             VCMFrameBuffer* nextFrame = nextFrameItem->GetItem();
-            // Verify that we have received the first packet of the next frame.
-            // This is the only way we can be sure we're not missing the last packet.
+            // Verify that we have received the first packet of the next frame,
+            // so we're not missing the last packet.
             if (nextFrame != NULL && nextFrame->GetLowSeqNum() ==
                 static_cast<WebRtc_UWord16>(oldestFrame->GetHighSeqNum() + 1))
             {
@@ -677,7 +691,7 @@ VCMJitterBuffer::CheckForCompleteFrame(VCMFrameListItem* oldestFrameItem)
                 const VCMFrameBufferStateEnum state = oldestFrame->GetState();
                 if (state == kStateComplete)
                 {
-                    if(oldestFrame->Length() > 0)
+                    if (oldestFrame->Length() > 0)
                     {
                         UpdateJitterAndDelayEstimates(*oldestFrame, false);
                     }
@@ -698,9 +712,10 @@ VCMJitterBuffer::RecycleFrame(VCMFrameBuffer* frame)
         return;
     }
 
-    WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, VCMId(_vcmId, _receiverId),
-               "JB(0x%x) FB(0x%x): RecycleFrame, size:%d",
-               this, frame, frame->Length());
+    WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding,
+                 VCMId(_vcmId, _receiverId),
+                 "JB(0x%x) FB(0x%x): RecycleFrame, size:%d",
+                 this, frame, frame->Length());
 
     ReleaseFrameInternal(frame);
 }
@@ -738,8 +753,10 @@ VCMJitterBuffer::GetUpdate(WebRtc_UWord32& frameRate, WebRtc_UWord32& bitRate)
 
         // Calculate frame rate
         // Let r be rate.
-        // r(0) = 1000*framecount/delta_time. (I.e. frames per second since last calculation.)
-        // frameRate = r(0)/2 + r(-1)/2      (I.e. fr/s average this and the previous calculation.)
+        // r(0) = 1000*framecount/delta_time.
+        // (I.e. frames per second since last calculation.)
+        // frameRate = r(0)/2 + r(-1)/2
+        // (I.e. fr/s average this and the previous calculation.)
         frameRate = (_incomingFrameRate + (WebRtc_Word32)rate) >> 1;
         _incomingFrameRate = (WebRtc_UWord8)rate;
 
@@ -750,7 +767,8 @@ VCMJitterBuffer::GetUpdate(WebRtc_UWord32& frameRate, WebRtc_UWord32& bitRate)
         }
         else
         {
-            bitRate = 10 * ((100 * _incomingBitCount) / static_cast<WebRtc_UWord32>(diff));
+            bitRate = 10 * ((100 * _incomingBitCount) /
+                      static_cast<WebRtc_UWord32>(diff));
         }
         _incomingBitRate = bitRate;
 
@@ -772,7 +790,8 @@ VCMJitterBuffer::GetUpdate(WebRtc_UWord32& frameRate, WebRtc_UWord32& bitRate)
     return 0;
 }
 
-// Returns immediately or a X ms event hang waiting for a decodable frame, X decided by caller
+// Returns immediately or a X ms event hang waiting for a decodable frame,
+// X decided by caller
 VCMEncodedFrame*
 VCMJitterBuffer::GetCompleteFrameForDecoding(WebRtc_UWord32 maxWaitTimeMS)
 {
@@ -806,7 +825,8 @@ VCMJitterBuffer::GetCompleteFrameForDecoding(WebRtc_UWord32 maxWaitTimeMS)
         while (waitTimeMs > 0)
         {
             _critSect.Leave();
-            const EventTypeWrapper ret = _frameEvent.Wait(static_cast<WebRtc_UWord32>(waitTimeMs));
+            const EventTypeWrapper ret =
+                  _frameEvent.Wait(static_cast<WebRtc_UWord32>(waitTimeMs));
             _critSect.Enter();
             if (ret == kEventSignaled)
             {
@@ -817,7 +837,8 @@ VCMJitterBuffer::GetCompleteFrameForDecoding(WebRtc_UWord32 maxWaitTimeMS)
                     return NULL;
                 }
 
-                // Finding oldest frame ready for decoder, but check sequence number and size
+                // Finding oldest frame ready for decoder, but check
+                // sequence number and size
                 CleanUpOldFrames();
                 CleanUpSizeZeroFrames();
                 oldestFrameListItem = FindOldestCompleteContinuousFrame();
@@ -827,7 +848,8 @@ VCMJitterBuffer::GetCompleteFrameForDecoding(WebRtc_UWord32 maxWaitTimeMS)
                 }
                 if (oldestFrame == NULL)
                 {
-                    waitTimeMs = endWaitTimeMs - VCMTickTime::MillisecondTimestamp();
+                    waitTimeMs = endWaitTimeMs -
+                                 VCMTickTime::MillisecondTimestamp();
                 }
                 else
                 {
@@ -850,16 +872,10 @@ VCMJitterBuffer::GetCompleteFrameForDecoding(WebRtc_UWord32 maxWaitTimeMS)
 
     if (oldestFrame == NULL)
     {
-        // Even after signaling we're still missing a complete _continuous_ frame
+        // Even after signaling we're still missing a complete continuous frame
         _critSect.Leave();
         return NULL;
     }
-
-    // we have a frame
-    // store seqnum
-    _lastDecodedSeqNum = oldestFrame->GetHighSeqNum();
-    // store current timestamp
-    _lastDecodedTimeStamp = oldestFrame->TimeStamp();
 
     // Update jitter estimate
     const bool retransmitted = (oldestFrame->GetNackCount() > 0);
@@ -884,6 +900,10 @@ VCMJitterBuffer::GetCompleteFrameForDecoding(WebRtc_UWord32 maxWaitTimeMS)
 
     _critSect.Leave();
 
+    // We have a frame - store seqnum & timestamp
+    _lastDecodedSeqNum = oldestFrame->GetHighSeqNum();
+    _lastDecodedTimeStamp = oldestFrame->TimeStamp();
+
     return oldestFrame;
 }
 
@@ -899,7 +919,7 @@ VCMJitterBuffer::GetEstimatedJitterMsInternal()
 {
     WebRtc_UWord32 estimate = VCMJitterEstimator::OPERATING_SYSTEM_JITTER;
 
-    // compute RTT multiplier for estimation
+    // Compute RTT multiplier for estimation
     double rttMult = 1.0f;
     if (_nackMode == kNackHybrid && _rttMs > kLowRttNackMs)
     {
@@ -912,8 +932,8 @@ VCMJitterBuffer::GetEstimatedJitterMsInternal()
     {
         // Since the incoming packets are all missing marker bits we have to
         // wait until the first packet of the next frame arrives, before we can
-        // safely say that the frame is complete. Therefore we have to compensate
-        // the jitter buffer level with one frame period.
+        // safely say that the frame is complete. Therefore we have to
+        // compensate the jitter buffer level with one frame period.
         // TODO(holmer): The timestamp diff should probably be filtered
         // (max filter) since the diff can alternate between e.g. 3000 and 6000
         // if we have a frame rate between 15 and 30 frames per seconds.
@@ -943,7 +963,7 @@ VCMJitterBuffer::GetNextTimeStamp(WebRtc_UWord32 maxWaitTimeMS,
 
     _critSect.Enter();
 
-    // Finding oldest frame ready for decoder, but check sequence number and size
+    // Finding oldest frame ready for decoder, check sequence number and size
     CleanUpOldFrames();
     CleanUpSizeZeroFrames();
 
@@ -952,7 +972,7 @@ VCMJitterBuffer::GetNextTimeStamp(WebRtc_UWord32 maxWaitTimeMS,
     if (oldestFrame == NULL)
     {
         _critSect.Leave();
-        if(_packetEvent.Wait(maxWaitTimeMS) == kEventSignaled)
+        if (_packetEvent.Wait(maxWaitTimeMS) == kEventSignaled)
         {
             // are we closing down the Jitter buffer
             if (!_running)
@@ -964,7 +984,8 @@ VCMJitterBuffer::GetNextTimeStamp(WebRtc_UWord32 maxWaitTimeMS,
             CleanUpOldFrames();
             CleanUpSizeZeroFrames();
             oldestFrame = _frameBuffersTSOrder.FirstFrame();
-        }else
+        }
+        else
         {
             _critSect.Enter();
         }
@@ -979,7 +1000,8 @@ VCMJitterBuffer::GetNextTimeStamp(WebRtc_UWord32 maxWaitTimeMS,
     // we have a frame
 
     // return frame type
-    incomingFrameType = oldestFrame->FrameType(); // All layers are assumed to have the same type
+    // All layers are assumed to have the same type
+    incomingFrameType = oldestFrame->FrameType();
 
     renderTimeMs = oldestFrame->RenderTimeMs();
 
@@ -992,14 +1014,15 @@ VCMJitterBuffer::GetNextTimeStamp(WebRtc_UWord32 maxWaitTimeMS,
 }
 
 // Answers the question:
-// Will the packet sequence be complete if the next frame is grabbed for decoding right now?
-// That is, have we lost a frame between the last decoded frame and the next, or is the next
+// Will the packet sequence be complete if the next frame is grabbed for
+// decoding right now? That is, have we lost a frame between the last decoded
+// frame and the next, or is the next
 // frame missing one or more packets?
 bool
 VCMJitterBuffer::CompleteSequenceWithNextFrame()
 {
     CriticalSectionScoped cs(_critSect);
-    // Finding oldest frame ready for decoder, but check sequence number and size
+    // Finding oldest frame ready for decoder, check sequence number and size
     CleanUpOldFrames();
     CleanUpSizeZeroFrames();
 
@@ -1011,7 +1034,8 @@ VCMJitterBuffer::CompleteSequenceWithNextFrame()
     }
 
     VCMFrameBuffer* oldestFrame = oldestFrameListItem->GetItem();
-    const VCMFrameListItem* nextFrameItem = _frameBuffersTSOrder.Next(oldestFrameListItem);
+    const VCMFrameListItem* nextFrameItem =
+                            _frameBuffersTSOrder.Next(oldestFrameListItem);
     if (nextFrameItem == NULL && !oldestFrame->HaveLastPacket())
     {
         // Frame not ready to be decoded.
@@ -1031,7 +1055,8 @@ VCMJitterBuffer::CompleteSequenceWithNextFrame()
     {
         return false;
     }
-    else if (oldestFrame->GetLowSeqNum() != (_lastDecodedSeqNum + 1) % 0x00010000)
+    else if (oldestFrame->GetLowSeqNum() != (_lastDecodedSeqNum + 1)
+                                             % 0x00010000)
     {
         return false;
     }
@@ -1063,7 +1088,8 @@ VCMJitterBuffer::GetFrameForDecoding()
     }
     VCMFrameBuffer* oldestFrame = oldestFrameListItem->GetItem();
 
-    const VCMFrameListItem* nextFrameItem = _frameBuffersTSOrder.Next(oldestFrameListItem);
+    const VCMFrameListItem* nextFrameItem =
+                            _frameBuffersTSOrder.Next(oldestFrameListItem);
     if (nextFrameItem == NULL && !oldestFrame->HaveLastPacket())
     {
         return NULL;
@@ -1088,7 +1114,8 @@ VCMJitterBuffer::GetFrameForDecoding()
         }
         // Then wait for this one to get complete
         _waitingForCompletion.frameSize = oldestFrame->Length();
-        _waitingForCompletion.latestPacketTime = oldestFrame->LatestPacketTimeMs();
+        _waitingForCompletion.latestPacketTime =
+                              oldestFrame->LatestPacketTimeMs();
         _waitingForCompletion.timestamp = oldestFrame->TimeStamp();
         oldestFrame->SetState(kStateDecoding);
     }
@@ -1100,11 +1127,9 @@ VCMJitterBuffer::GetFrameForDecoding()
 
     VerifyAndSetPreviousFrameLost(*oldestFrame);
 
-    // store current time
-    _lastDecodedTimeStamp = oldestFrame->TimeStamp();
-
-    // store seqnum
+    // Store current seqnum & time
     _lastDecodedSeqNum = oldestFrame->GetHighSeqNum();
+    _lastDecodedTimeStamp = oldestFrame->TimeStamp();
 
     return oldestFrame;
 }
@@ -1143,13 +1168,6 @@ VCMJitterBuffer::GetFrameForDecodingNACK()
             return NULL;
         }
     }
-
-    // We have a complete/decodable continuous frame, decode it.
-    // store seqnum
-    _lastDecodedSeqNum = oldestFrame->GetHighSeqNum();
-    // store current time
-    _lastDecodedTimeStamp = oldestFrame->TimeStamp();
-
     // Update jitter estimate
     const bool retransmitted = (oldestFrame->GetNackCount() > 0);
     if (retransmitted)
@@ -1171,13 +1189,19 @@ VCMJitterBuffer::GetFrameForDecodingNACK()
     CleanUpOldFrames();
     CleanUpSizeZeroFrames();
 
+    // We have a complete/decodable continuous frame, decode it.
+    // Store seqnum & timestamp
+    _lastDecodedSeqNum = oldestFrame->GetHighSeqNum();
+    _lastDecodedTimeStamp = oldestFrame->TimeStamp();
+
     return oldestFrame;
 }
 
 // Must be called under the critical section _critSect. Should never be called with
 // retransmitted frames, they must be filtered out before this function is called.
 void
-VCMJitterBuffer::UpdateJitterAndDelayEstimates(VCMJitterSample& sample, bool incompleteFrame)
+VCMJitterBuffer::UpdateJitterAndDelayEstimates(VCMJitterSample& sample,
+                                               bool incompleteFrame)
 {
     if (sample.latestPacketTime == -1)
     {
@@ -1185,17 +1209,19 @@ VCMJitterBuffer::UpdateJitterAndDelayEstimates(VCMJitterSample& sample, bool inc
     }
     if (incompleteFrame)
     {
-        WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, VCMId(_vcmId, _receiverId),
-                   "Received incomplete frame timestamp %u frame size %u at time %u",
-                   sample.timestamp, sample.frameSize,
-                   MaskWord64ToUWord32(sample.latestPacketTime));
+        WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding,
+                     VCMId(_vcmId, _receiverId), "Received incomplete frame "
+                     "timestamp %u frame size %u at time %u",
+                     sample.timestamp, sample.frameSize,
+                     MaskWord64ToUWord32(sample.latestPacketTime));
     }
     else
     {
-        WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, VCMId(_vcmId, _receiverId),
-                   "Received complete frame timestamp %u frame size %u at time %u",
-                   sample.timestamp, sample.frameSize,
-                   MaskWord64ToUWord32(sample.latestPacketTime));
+        WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding,
+                     VCMId(_vcmId, _receiverId), "Received complete frame "
+                     "timestamp %u frame size %u at time %u",
+                     sample.timestamp, sample.frameSize,
+                     MaskWord64ToUWord32(sample.latestPacketTime));
     }
     UpdateJitterAndDelayEstimates(sample.latestPacketTime,
                                   sample.timestamp,
@@ -1203,10 +1229,12 @@ VCMJitterBuffer::UpdateJitterAndDelayEstimates(VCMJitterSample& sample, bool inc
                                   incompleteFrame);
 }
 
-// Must be called under the critical section _critSect. Should never be called with
-// retransmitted frames, they must be filtered out before this function is called.
+// Must be called under the critical section _critSect. Should never be
+// called with retransmitted frames, they must be filtered out before this
+// function is called.
 void
-VCMJitterBuffer::UpdateJitterAndDelayEstimates(VCMFrameBuffer& frame, bool incompleteFrame)
+VCMJitterBuffer::UpdateJitterAndDelayEstimates(VCMFrameBuffer& frame,
+                                               bool incompleteFrame)
 {
     if (frame.LatestPacketTimeMs() == -1)
     {
@@ -1216,28 +1244,31 @@ VCMJitterBuffer::UpdateJitterAndDelayEstimates(VCMFrameBuffer& frame, bool incom
     // estimate.
     if (incompleteFrame)
     {
-        WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, VCMId(_vcmId, _receiverId),
-                   "Received incomplete frame timestamp %u frame type %d frame size %u"
-                   " at time %u, jitter estimate was %u",
+        WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding,
+                     VCMId(_vcmId, _receiverId),
+                   "Received incomplete frame timestamp %u frame type %d "
+                   "frame size %u at time %u, jitter estimate was %u",
                    frame.TimeStamp(), frame.FrameType(), frame.Length(),
                    MaskWord64ToUWord32(frame.LatestPacketTimeMs()),
                    GetEstimatedJitterMsInternal());
     }
     else
     {
-        WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, VCMId(_vcmId, _receiverId),
-                   "Received complete frame timestamp %u frame type %d frame size %u "
-                   "at time %u, jitter estimate was %u",
-                   frame.TimeStamp(), frame.FrameType(), frame.Length(),
-                   MaskWord64ToUWord32(frame.LatestPacketTimeMs()),
-                   GetEstimatedJitterMsInternal());
+        WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding,
+                     VCMId(_vcmId, _receiverId),"Received complete frame "
+                     "timestamp %u frame type %d frame size %u at time %u, "
+                     "jitter estimate was %u",
+                     frame.TimeStamp(), frame.FrameType(), frame.Length(),
+                     MaskWord64ToUWord32(frame.LatestPacketTimeMs()),
+                     GetEstimatedJitterMsInternal());
     }
     UpdateJitterAndDelayEstimates(frame.LatestPacketTimeMs(), frame.TimeStamp(),
                                   frame.Length(), incompleteFrame);
 }
 
-// Must be called under the critical section _critSect. Should never be called with
-// retransmitted frames, they must be filtered out before this function is called.
+// Must be called under the critical section _critSect. Should never be called
+// with retransmitted frames, they must be filtered out before this function
+// is called.
 void
 VCMJitterBuffer::UpdateJitterAndDelayEstimates(WebRtc_Word64 latestPacketTimeMs,
                                                WebRtc_UWord32 timestamp,
@@ -1250,10 +1281,14 @@ VCMJitterBuffer::UpdateJitterAndDelayEstimates(WebRtc_Word64 latestPacketTimeMs,
     }
     WebRtc_Word64 frameDelay;
     // Calculate the delay estimate
-    WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, VCMId(_vcmId, _receiverId),
-               "Packet received and sent to jitter estimate with: timestamp=%u wallClock=%u",
-               timestamp, MaskWord64ToUWord32(latestPacketTimeMs));
-    bool notReordered = _delayEstimate.CalculateDelay(timestamp, &frameDelay, latestPacketTimeMs);
+    WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding,
+                 VCMId(_vcmId, _receiverId),
+                 "Packet received and sent to jitter estimate with: "
+                 "timestamp=%u wallClock=%u", timestamp,
+                 MaskWord64ToUWord32(latestPacketTimeMs));
+    bool notReordered = _delayEstimate.CalculateDelay(timestamp,
+                                                      &frameDelay,
+                                                      latestPacketTimeMs);
     // Filter out frames which have been reordered in time by the network
     if (notReordered)
     {
@@ -1273,8 +1308,8 @@ WebRtc_Word32
 VCMJitterBuffer::GetLowHighSequenceNumbers(WebRtc_Word32& lowSeqNum,
                                            WebRtc_Word32& highSeqNum) const
 {
-    int i = 0;
-    int seqNum = -1;
+    WebRtc_Word32 i = 0;
+    WebRtc_Word32 seqNum = -1;
 
     highSeqNum = -1;
     lowSeqNum = _lastDecodedSeqNum;
@@ -1325,7 +1360,7 @@ VCMJitterBuffer::CreateNackList(WebRtc_UWord16& nackSize, bool& listExtended)
     WebRtc_Word32 highSeqNum = -1;
     listExtended = false;
 
-    // don't create list, if we won't wait for it
+    // Don't create list, if we won't wait for it
     if (!WaitForNack())
     {
         nackSize = 0;
@@ -1341,7 +1376,7 @@ VCMJitterBuffer::CreateNackList(WebRtc_UWord16& nackSize, bool& listExtended)
     // write a list of all seq num we have
     if (lowSeqNum == -1 || highSeqNum == -1)
     {
-        //This happens if we lose the first packet, nothing is popped
+        // This happens if we lose the first packet, nothing is popped
         if (highSeqNum == -1)
         {
             // we have not received any packets yet
@@ -1429,8 +1464,8 @@ VCMJitterBuffer::CreateNackList(WebRtc_UWord16& nackSize, bool& listExtended)
             nackSize = 0xffff;
             listExtended = true;
             WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, -1,
-                    "\tNo key frame found, request one. _lastDecodedSeqNum[0] %d",
-                    _lastDecodedSeqNum);
+                    "\tNo key frame found, request one. _lastDecodedSeqNum[0] "
+                    "%d", _lastDecodedSeqNum);
         }
         else
         {
@@ -1479,15 +1514,15 @@ VCMJitterBuffer::CreateNackList(WebRtc_UWord16& nackSize, bool& listExtended)
                                                       rttScore);
                 if (_frameBuffers[i]->IsRetransmitted() == false)
                 {
-                    // if no retransmission required,set the state to decodable
-                    // meaning that we will not wait for NACK
+                    // If no retransmission required,set the state to decodable
+                    // meaning that we will not wait for NACK.
                     _frameBuffers[i]->SetState(kStateDecodable);
                 }
             }
             else
             {
-                // used when the frame is being processed by the decoding thread
-                // don't need to use that info in this loop
+                // Used when the frame is being processed by the decoding thread
+                // don't need to use that info in this loop.
                 _frameBuffers[i]->ZeroOutSeqNum(_NACKSeqNumInternal,
                                                 numberOfSeqNum);
             }
@@ -1532,10 +1567,10 @@ VCMJitterBuffer::CreateNackList(WebRtc_UWord16& nackSize, bool& listExtended)
     {
         nackSize = emptyIndex;
     }
-    // convert to unsigned short 16 bit and store in a list to be used externally.
+
     if (nackSize > _NACKSeqNumLength)
     {
-        // Larger list means that the nack list was extended since the last call.
+        // Larger list: nack list was extended since the last call.
         listExtended = true;
     }
 
@@ -1580,7 +1615,8 @@ VCMJitterBuffer::ReleaseFrame(VCMEncodedFrame* frame)
 }
 
 WebRtc_Word64
-VCMJitterBuffer::LastPacketTime(VCMEncodedFrame* frame, bool& retransmitted) const
+VCMJitterBuffer::LastPacketTime(VCMEncodedFrame* frame,
+                                bool& retransmitted) const
 {
     CriticalSectionScoped cs(_critSect);
     retransmitted = (static_cast<VCMFrameBuffer*>(frame)->GetNackCount() > 0);
@@ -1638,14 +1674,18 @@ VCMJitterBuffer::InsertPacket(VCMEncodedFrame* buffer, const VCMPacket& packet)
     if (frame != NULL)
     {
         VCMFrameBufferStateEnum state = frame->GetState();
-        if (state == kStateDecoding && packet.sizeBytes == 0)
-        {
-            // Filler packet, make sure we update the last decoded seq num
-            // since this packet should've been a part of the frame being decoded.
-            // If the filler packet belongs to a very old frame (already decoded
-            // and freed) a new frame will be created for the filler packet.
-            // That frame will be empty and later on cleaned up.
-            UpdateLastDecodedWithFiller(packet);
+        if ((packet.sizeBytes == 0) &&
+            ((state == kStateDecoding) ||
+             (state == kStateEmpty &&
+              _lastDecodedTimeStamp == packet.timestamp)))
+       {
+            // Empty packet (sizeBytes = 0), make sure we update the last
+            // decoded seq num since this packet belongs either to a frame
+            // being decoded (condition 1) or to a frame which was already
+            // decoded and freed (condition 2). A new frame will be created
+            // for the empty packet. That frame will be empty and later on
+            // cleaned up.
+            UpdateLastDecodedWithEmpty(packet);
         }
 
         // Insert packet
@@ -1715,9 +1755,9 @@ VCMJitterBuffer::InsertPacket(VCMEncodedFrame* buffer, const VCMPacket& packet)
 }
 
 void
-VCMJitterBuffer::UpdateLastDecodedWithFiller(const VCMPacket& packet)
+VCMJitterBuffer::UpdateLastDecodedWithEmpty(const VCMPacket& packet)
 {
-    // Empty packet (filler) inserted to a frame which
+    // Empty packet inserted to a frame which
     // is already decoding. Update the last decoded seq no.
     if (_lastDecodedTimeStamp == packet.timestamp &&
         (packet.seqNum > _lastDecodedSeqNum ||
@@ -1866,10 +1906,10 @@ VCMJitterBuffer::CleanUpOldFrames()
                 ((frameLowSeqNum == 0) &&
                 (_lastDecodedSeqNum == 0xffff))))
             {
-                // Could happen when sending filler data.
-                // Filler packet (size = 0) belonging to last decoded frame.
+                // Could happen when sending empty packets
+                // Empty packet (size = 0) belonging to last decoded frame.
                 // Frame: | packet | packet | packet M=1 |
-                // filler data (size = 0) | filler data (size = 0)| ...
+                // empty data (size = 0) | empty data (size = 0)| ...
 
                 // This frame follows the last decoded frame
                 _lastDecodedSeqNum = frameHighSeqNum;
@@ -1914,18 +1954,22 @@ VCMJitterBuffer::CleanUpSizeZeroFrames()
             else
             {
                 bool releaseFrame = false;
-                const WebRtc_Word32 frameHighSeqNum = ptrTempBuffer->GetHighSeqNum();
-                const WebRtc_Word32 frameLowSeqNum = ptrTempBuffer->GetLowSeqNum();
+                const WebRtc_Word32 frameHighSeqNum =
+                                    ptrTempBuffer->GetHighSeqNum();
+                const WebRtc_Word32 frameLowSeqNum =
+                                    ptrTempBuffer->GetLowSeqNum();
 
-                if ((frameLowSeqNum == (_lastDecodedSeqNum + 1)) || // Frame is next in line
+                if ((frameLowSeqNum == (_lastDecodedSeqNum + 1)) ||
+                    // Frame is next in line
                     ((frameLowSeqNum == 0) && (_lastDecodedSeqNum== 0xffff)))
                 {
                     // This frame follows the last decoded frame, release it.
                     _lastDecodedSeqNum = frameHighSeqNum;
                     releaseFrame = true;
                 }
-                // If frameHighSeqNum < _lastDecodedSeqNum but need to take wrap into account.
-                else if(frameHighSeqNum < _lastDecodedSeqNum)
+                // If frameHighSeqNum < _lastDecodedSeqNum
+                // but need to take wrap into account.
+                else if (frameHighSeqNum < _lastDecodedSeqNum)
                 {
                     if (frameHighSeqNum < 0x0fff &&
                         _lastDecodedSeqNum> 0xf000)
@@ -1939,7 +1983,7 @@ VCMJitterBuffer::CleanUpSizeZeroFrames()
                         releaseFrame = true;
                     }
                 }
-                else if(frameHighSeqNum > _lastDecodedSeqNum &&
+                else if (frameHighSeqNum > _lastDecodedSeqNum &&
                         _lastDecodedSeqNum < 0x0fff &&
                         frameHighSeqNum > 0xf000)
                 {
@@ -1970,7 +2014,7 @@ VCMJitterBuffer::CleanUpSizeZeroFrames()
     }
 }
 
-// used in GetFrameForDecoding
+// Used in GetFrameForDecoding
 void
 VCMJitterBuffer::VerifyAndSetPreviousFrameLost(VCMFrameBuffer& frame)
 {
@@ -1980,8 +2024,8 @@ VCMJitterBuffer::VerifyAndSetPreviousFrameLost(VCMFrameBuffer& frame)
         // First frame
         frame.SetPreviousFrameLoss();
     }
-    else if (frame.GetLowSeqNum() != ((WebRtc_UWord16)_lastDecodedSeqNum +
-                                      (WebRtc_UWord16)1))
+    else if ((WebRtc_UWord16)frame.GetLowSeqNum() !=
+             ((WebRtc_UWord16)_lastDecodedSeqNum + (WebRtc_UWord16)1))
     {
         // Frame loss
         frame.SetPreviousFrameLoss();

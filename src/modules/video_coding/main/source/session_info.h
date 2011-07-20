@@ -26,7 +26,8 @@ public:
 
     VCMSessionInfo(const VCMSessionInfo& rhs);
 
-    WebRtc_Word32 ZeroOutSeqNum(WebRtc_Word32* list, WebRtc_Word32 numberOfSeqNum);
+    WebRtc_Word32 ZeroOutSeqNum(WebRtc_Word32* list,
+                                WebRtc_Word32 numberOfSeqNum);
     // Hybrid version: Zero out seq num for NACK list
     // apply a score based on the packet location and the external rttScore
     WebRtc_Word32 ZeroOutSeqNumHybrid(WebRtc_Word32* list,
@@ -34,7 +35,8 @@ public:
                                       float rttScore);
     virtual void Reset();
 
-    WebRtc_Word64 InsertPacket(const VCMPacket& packet, WebRtc_UWord8* ptrStartOfLayer);
+    WebRtc_Word64 InsertPacket(const VCMPacket& packet,
+                               WebRtc_UWord8* ptrStartOfLayer);
     WebRtc_Word32 InformOfEmptyPacket(const WebRtc_UWord16 seqNum);
 
     virtual bool IsSessionComplete();
@@ -47,7 +49,8 @@ public:
     webrtc::FrameType FrameType() const { return _frameType; }
 
     virtual WebRtc_Word32 GetHighestPacketIndex();
-    virtual void UpdatePacketSize(WebRtc_Word32 packetIndex, WebRtc_UWord32 length);
+    virtual void UpdatePacketSize(WebRtc_Word32 packetIndex,
+                                  WebRtc_UWord32 length);
 
     void SetStartSeqNumber(WebRtc_UWord16 seqNumber);
 
@@ -57,7 +60,8 @@ public:
     // returns highest seqNum, media or empty
     WebRtc_Word32 GetHighSeqNum() const;
 
-    WebRtc_UWord32 PrepareForDecode(WebRtc_UWord8* ptrStartOfLayer, VideoCodecType codec);
+    WebRtc_UWord32 PrepareForDecode(WebRtc_UWord8* ptrStartOfLayer,
+                                    VideoCodecType codec);
 
     void SetPreviousFrameLoss() { _previousFrameLoss = true; }
     bool PreviousFrameLoss() const { return _previousFrameLoss; }
@@ -73,16 +77,18 @@ protected:
                                  WebRtc_Word32 startIndex,
                                  WebRtc_Word32 endIndex);
     void UpdateCompleteSession();
-
-    bool _haveFirstPacket;      // If we have inserted the first packet into this frame
-    bool _markerBit;            // If we have inserted a packet with markerbit into this frame
-    bool _sessionNACK;          // If this session has been NACKed by JB
+    // If we have inserted the first packet into this frame
+    bool _haveFirstPacket;
+    // If we have inserted a packet with markerbit into this frame
+    bool _markerBit;
+    // If this session has been NACKed by JB
+    bool _sessionNACK;
     bool _completeSession;
     webrtc::FrameType  _frameType;
     bool               _previousFrameLoss;
-
-    WebRtc_Word32      _lowSeqNum;          // Lowest packet sequence number in a session
-    WebRtc_Word32      _highSeqNum;         // Highest packet sequence number in a session
+    // Lowest/Highest packet sequence number in a session
+    WebRtc_Word32      _lowSeqNum;
+    WebRtc_Word32      _highSeqNum;
 
     // Highest packet index in this frame
     WebRtc_UWord16     _highestPacketIndex;

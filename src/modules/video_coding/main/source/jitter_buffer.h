@@ -71,7 +71,8 @@ public:
     // Statistics, Calculate frame and bit rates
     WebRtc_Word32 GetUpdate(WebRtc_UWord32& frameRate, WebRtc_UWord32& bitRate);
 
-    // Wait for the first packet in the next frame to arrive, blocks for <= maxWaitTimeMS ms
+    // Wait for the first packet in the next frame to arrive, blocks
+    // for <= maxWaitTimeMS ms
     WebRtc_Word64 GetNextTimeStamp(WebRtc_UWord32 maxWaitTimeMS,
                                    FrameType& incomingFrameType,
                                    WebRtc_Word64& renderTimeMs);
@@ -82,7 +83,8 @@ public:
     // or more packets?
     bool CompleteSequenceWithNextFrame();
 
-    // Wait maxWaitTimeMS for a complete frame to arrive. After timeout NULL is returned.
+    // Wait maxWaitTimeMS for a complete frame to arrive. After timeout NULL
+    // is returned.
     VCMEncodedFrame* GetCompleteFrameForDecoding(WebRtc_UWord32 maxWaitTimeMS);
 
     // Get a frame for decoding (even an incomplete) without delay.
@@ -100,10 +102,12 @@ public:
     // Returns the time in ms when the latest packet was inserted into the frame.
     // Retransmitted is set to true if any of the packets belonging to the frame
     // has been retransmitted.
-    WebRtc_Word64 LastPacketTime(VCMEncodedFrame* frame, bool& retransmitted) const;
+    WebRtc_Word64 LastPacketTime(VCMEncodedFrame* frame,
+                                 bool& retransmitted) const;
 
     // Insert a packet into a frame
-    VCMFrameBufferEnum InsertPacket(VCMEncodedFrame* frame, const VCMPacket& packet);
+    VCMFrameBufferEnum InsertPacket(VCMEncodedFrame* frame,
+                                    const VCMPacket& packet);
 
     // Sync
     WebRtc_UWord32 GetEstimatedJitterMS();
@@ -113,7 +117,8 @@ public:
     void SetNackMode(VCMNackMode mode); // Enable/disable nack
     VCMNackMode GetNackMode() const;    // Get nack mode
     // Get list of missing sequence numbers (size in number of elements)
-    WebRtc_UWord16* GetNackList(WebRtc_UWord16& nackSize, bool& listExtended);
+    WebRtc_UWord16* GetNackList(WebRtc_UWord16& nackSize,
+                                bool& listExtended);
 
     WebRtc_Word64 LastDecodedTimestamp() const;
     static WebRtc_UWord32 LatestTimestamp(const WebRtc_UWord32 existingTimestamp,
@@ -134,7 +139,8 @@ protected:
     VCMFrameBuffer* GetEmptyFrame();
     // Recycle oldest frames up to a key frame, used if JB is completely full
     bool RecycleFramesUntilKeyFrame();
-    // Update frame state (set as complete or reconstructable if conditions are met)
+    // Update frame state
+    // (set as complete or reconstructable if conditions are met)
     void UpdateFrameState(VCMFrameBuffer* frameListItem);
 
     // Help functions for getting a frame
@@ -150,8 +156,10 @@ protected:
 
     void VerifyAndSetPreviousFrameLost(VCMFrameBuffer& frame);
     bool IsPacketRetransmitted(const VCMPacket& packet) const;
-    void UpdateJitterAndDelayEstimates(VCMJitterSample& sample, bool incompleteFrame);
-    void UpdateJitterAndDelayEstimates(VCMFrameBuffer& frame, bool incompleteFrame);
+    void UpdateJitterAndDelayEstimates(VCMJitterSample& sample,
+                                       bool incompleteFrame);
+    void UpdateJitterAndDelayEstimates(VCMFrameBuffer& frame,
+                                       bool incompleteFrame);
     void UpdateJitterAndDelayEstimates(WebRtc_Word64 latestPacketTimeMs,
                                        WebRtc_UWord32 timestamp,
                                        WebRtc_UWord32 frameSize,
@@ -160,15 +168,17 @@ protected:
     WebRtc_UWord32 GetEstimatedJitterMsInternal();
 
     // NACK help
-    WebRtc_UWord16* CreateNackList(WebRtc_UWord16& nackSize, bool& listExtended);
+    WebRtc_UWord16* CreateNackList(WebRtc_UWord16& nackSize,
+                                   bool& listExtended);
     WebRtc_Word32 GetLowHighSequenceNumbers(WebRtc_Word32& lowSeqNum,
                                             WebRtc_Word32& highSeqNum) const;
 
-    void UpdateLastDecodedWithFiller(const VCMPacket& packet);
+    void UpdateLastDecodedWithEmpty(const VCMPacket& packet);
 
 private:
 
-    static bool FrameEqualTimestamp(VCMFrameBuffer* frame, const void* timestamp);
+    static bool FrameEqualTimestamp(VCMFrameBuffer* frame,
+                                    const void* timestamp);
     static bool CompleteDecodableKeyFrameCriteria(VCMFrameBuffer* frame,
                                                   const void* notUsed);
     // Decide whether should wait for NACK (mainly relevant for hybrid mode)
@@ -222,7 +232,7 @@ private:
 
     // NACK
     VCMNackMode             _nackMode;
-    // Holds the internal nack list (the missing seqence numbers)
+    // Holds the internal nack list (the missing sequence numbers)
     WebRtc_Word32           _NACKSeqNumInternal[kNackHistoryLength];
     WebRtc_UWord16          _NACKSeqNum[kNackHistoryLength];
     WebRtc_UWord32          _NACKSeqNumLength;
