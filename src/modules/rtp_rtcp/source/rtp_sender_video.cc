@@ -1239,7 +1239,6 @@ RTPSenderVideo::SendVP8(const FrameType frameType,
 
     bool last = false;
     _numberFirstPartition = 0;
-    int numberFirstPartition = 0; // local counter
     while (!last)
     {
         // Write VP8 Payload Descriptor and VP8 payload.
@@ -1251,16 +1250,11 @@ RTPSenderVideo::SendVP8(const FrameType frameType,
                                   &payloadBytesInPacket, &last);
         if (packetStartPartition == 0)
         {
-            ++numberFirstPartition;
+            ++_numberFirstPartition;
         }
         else if (packetStartPartition < 0)
         {
             return -1;
-        }
-        else
-        {
-            // numberFirstPartition has reached the final value.
-            _numberFirstPartition = numberFirstPartition;
         }
 
         // Write RTP header.
