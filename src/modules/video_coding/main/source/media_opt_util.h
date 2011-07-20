@@ -44,10 +44,10 @@ enum HybridNackTH {
 
 struct VCMProtectionParameters
 {
-    VCMProtectionParameters() : rtt(0), lossPr(0), bitRate(0), packetsPerFrame(0),
-        frameRate(0), keyFrameSize(0), fecRateDelta(0), fecRateKey(0),
-        residualPacketLoss(0.0), fecType(kXORFec), codecWidth(0),
-        codecHeight(0) {}
+    VCMProtectionParameters() : rtt(0), lossPr(0), bitRate(0),
+        packetsPerFrame(0), frameRate(0), keyFrameSize(0), fecRateDelta(0),
+        fecRateKey(0), residualPacketLossFec(0.0), fecType(kXORFec),
+        codecWidth(0), codecHeight(0) {}
 
     WebRtc_UWord32      rtt;
     float               lossPr;
@@ -58,7 +58,7 @@ struct VCMProtectionParameters
     float               keyFrameSize;
     WebRtc_UWord8       fecRateDelta;
     WebRtc_UWord8       fecRateKey;
-    float               residualPacketLoss;
+    float               residualPacketLossFec;
     VCMFecTypes         fecType;
     WebRtc_UWord16      codecWidth;
     WebRtc_UWord16      codecHeight;
@@ -97,8 +97,8 @@ class VCMProtectionMethod
 public:
     //friend VCMProtectionMethod;
     VCMProtectionMethod(VCMProtectionMethodEnum type) : _protectionFactorK(0),
-        _protectionFactorD(0), _residualPacketLoss(0.0), _scaleProtKey(2.0),
-        _maxPayloadSize(1460), _efficiency(0), _score(0), _type(type),
+        _protectionFactorD(0), _residualPacketLossFec(0.0), _scaleProtKey(2.0),
+        _maxPayloadSize(1460), _efficiency(0), _type(type),
         _useUepProtectionK(false), _useUepProtectionD(true)
         {_qmRobustness = new VCMQmRobustness();}
     virtual ~VCMProtectionMethod() { delete _qmRobustness;}
@@ -116,13 +116,6 @@ public:
     //
     // Return value                 : The protection type
     enum VCMProtectionMethodEnum Type() const { return _type; }
-
-    // Evaluates if this protection method is considered
-    // better than the provided method.
-    //
-    // Input:
-    //          - pm                : The protection method to compare with
-    bool BetterThan(VCMProtectionMethod *pm);
 
     // Returns the bit rate required by this protection method
     // during these conditions.
@@ -161,7 +154,8 @@ public:
     WebRtc_UWord8                        _effectivePacketLoss;
     WebRtc_UWord8                        _protectionFactorK;
     WebRtc_UWord8                        _protectionFactorD;
-    float                                _residualPacketLoss;
+    // Estimation of residual loss after the FEC
+    float                                _residualPacketLossFec;
     float                                _scaleProtKey;
     WebRtc_Word32                        _maxPayloadSize;
 
@@ -171,7 +165,6 @@ public:
 
 protected:
     float                                _efficiency;
-    float                                _score;
 
 private:
     const enum VCMProtectionMethodEnum   _type;
@@ -184,9 +177,9 @@ public:
     VCMNackMethod() : VCMProtectionMethod(kNACK), _NACK_MAX_RTT(200) {}
     virtual ~VCMNackMethod() {}
     virtual bool UpdateParameters(const VCMProtectionParameters* parameters);
-    //get the effective packet loss for ER
-    bool EffectivePacketLoss(WebRtc_UWord8 effPacketLoss, WebRtc_UWord16 rttTime);
-    //get the threshold for NACK
+    // Get the effective packet loss for ER
+    bool EffectivePacketLoss(WebRtc_UWord8 packetLoss, WebRtc_UWord16 rttTime);
+    // Get the threshold for NACK
     WebRtc_UWord16 MaxRttNack() const;
 private:
     const WebRtc_UWord16 _NACK_MAX_RTT;
@@ -198,16 +191,16 @@ public:
     VCMFecMethod() : VCMProtectionMethod(kFEC) {}
     virtual ~VCMFecMethod() {}
     virtual bool UpdateParameters(const VCMProtectionParameters* parameters);
-    //get the effective packet loss for ER
+    // Get the effective packet loss for ER
     bool EffectivePacketLoss(const VCMProtectionParameters* parameters);
-    //get the FEC protection factors
+    // Get the FEC protection factors
     bool ProtectionFactor(const VCMProtectionParameters* parameters);
-    //get the boost for key frame protection
+    // Get the boost for key frame protection
     WebRtc_UWord8 BoostCodeRateKey(WebRtc_UWord8 packetFrameDelta,
                                    WebRtc_UWord8 packetFrameKey) const;
-    //convert the rates: defined relative to total# packets or source# packets
+    // Convert the rates: defined relative to total# packets or source# packets
     WebRtc_UWord8 ConvertFECRate(WebRtc_UWord8 codeRate) const;
-    //get the average effective recovery from FEC: for random loss model
+    // Get the average effective recovery from FEC: for random loss model
     float AvgRecoveryFEC(const VCMProtectionParameters* parameters) const;
 };
 
@@ -217,9 +210,9 @@ class VCMNackFecMethod : public VCMProtectionMethod
 public:
     VCMNackFecMethod() : VCMProtectionMethod(kNackFec) {}
     virtual bool UpdateParameters(const VCMProtectionParameters* parameters);
-    //get the effective packet loss for ER
+    // Get the effective packet loss for ER
     bool EffectivePacketLoss(const VCMProtectionParameters* parameters);
-    //get the FEC protection factors
+    // Get the FEC protection factors
     bool ProtectionFactor(const VCMProtectionParameters* parameters);
 
 };
@@ -228,7 +221,8 @@ public:
 class VCMIntraReqMethod : public VCMProtectionMethod
 {
 public:
-    VCMIntraReqMethod() : VCMProtectionMethod(kIntraRequest), _IREQ_MAX_RTT(150) {}
+    VCMIntraReqMethod() : VCMProtectionMethod(kIntraRequest), _IREQ_MAX_RTT(150)
+    {}
     virtual bool UpdateParameters(const VCMProtectionParameters* parameters);
 private:
     const WebRtc_UWord32 _IREQ_MAX_RTT;
@@ -256,10 +250,11 @@ class VCMLossProtectionLogic
 {
 public:
     VCMLossProtectionLogic() : _availableMethods(), _selectedMethod(NULL),
-        _bestNotOkMethod(NULL), _rtt(0), _lossPr(0.0f), _bitRate(0.0f), _frameRate(0.0f),
-        _keyFrameSize(0.0f), _fecRateKey(0), _fecRateDelta(0), _lastPrUpdateT(0),
-        _lossPr255(0.9999f), _lossPrHistory(), _shortMaxLossPr255(0),
-        _packetsPerFrame(0.9999f), _packetsPerFrameKey(0.9999f), _residualPacketLoss(0),
+        _bestNotOkMethod(NULL), _rtt(0), _lossPr(0.0f), _bitRate(0.0f),
+        _frameRate(0.0f), _keyFrameSize(0.0f), _fecRateKey(0), _fecRateDelta(0),
+        _lastPrUpdateT(0), _lossPr255(0.9999f), _lossPrHistory(),
+        _shortMaxLossPr255(0), _packetsPerFrame(0.9999f),
+        _packetsPerFrameKey(0.9999f), _residualPacketLossFec(0),
         _boostRateKey(2), _codecWidth(0), _codecHeight(0)
     { Reset(); }
 
@@ -280,8 +275,9 @@ public:
     // Update residual packet loss
     //
     // Input:
-    //          - residualPacketLoss  : residual packet loss: effective loss after FEC recovery
-    void UpdateResidualPacketLoss(float residualPacketLoss);
+    //          - residualPacketLoss  : residual packet loss:
+    //                                  effective loss after FEC recovery
+    void UpdateResidualPacketLoss(float _residualPacketLoss);
 
     // Update fecType
     //
@@ -292,14 +288,15 @@ public:
     // Update the loss probability.
     //
     // Input:
-    //          - lossPr255        : The packet loss probability in the interval [0, 255],
+    //          - lossPr255        : The packet loss probability [0, 255],
     //                               reported by RTCP.
     void UpdateLossPr(WebRtc_UWord8 lossPr255);
 
     // Update the filtered packet loss.
     //
     // Input:
-    //          - packetLossEnc :  The reported packet loss filtered (max window or average)
+    //          - packetLossEnc :  The reported packet loss filtered
+    //                             (max window or average)
     void UpdateFilteredLossPr(WebRtc_UWord8 packetLossEnc);
 
     // Update the current target bit rate.
@@ -311,13 +308,13 @@ public:
     // Update the number of packets per frame estimate, for delta frames
     //
     // Input:
-    //          - nPackets         : Number of packets used to send the latest frame.
+    //          - nPackets         : Number of packets in the latest sent frame.
     void UpdatePacketsPerFrame(float nPackets);
 
    // Update the number of packets per frame estimate, for key frames
     //
     // Input:
-    //          - nPackets         : Number of packets used to send the latest frame.
+    //          - nPackets         : umber of packets in the latest sent frame.
     void UpdatePacketsPerFrameKey(float nPackets);
 
     // Update the keyFrameSize estimate
@@ -400,7 +397,7 @@ private:
     WebRtc_UWord8             _shortMaxLossPr255;
     VCMExpFilter              _packetsPerFrame;
     VCMExpFilter              _packetsPerFrameKey;
-    float                     _residualPacketLoss;
+    float                     _residualPacketLossFec;
     WebRtc_UWord8             _boostRateKey;
     VCMFecTypes               _fecType;
     WebRtc_UWord16            _codecWidth;

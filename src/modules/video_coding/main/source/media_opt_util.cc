@@ -22,39 +22,15 @@
 namespace webrtc {
 
 void
-VCMProtectionMethod::UpdateContentMetrics(
-                     const VideoContentMetrics*  contentMetrics)
+VCMProtectionMethod::UpdateContentMetrics(const
+                                          VideoContentMetrics* contentMetrics)
 {
    _qmRobustness->UpdateContent(contentMetrics);
 }
 
 bool
-VCMProtectionMethod::BetterThan(VCMProtectionMethod *pm)
-{
-  if (pm == NULL)
-  {
-      return true;
-  }
-  return pm->_score > _score;
-}
-
-bool
-VCMNackFecMethod::ProtectionFactor(const VCMProtectionParameters* /*parameters*/)
-{
-    // use FEC model with modification with RTT for now
-    return true;
-}
-
-bool
-VCMNackFecMethod::EffectivePacketLoss(const
-                                      VCMProtectionParameters* /*parameters*/)
-{
-    // use FEC model with modification with RTT for now
-    return true;
-}
-
-bool
-VCMNackFecMethod::UpdateParameters(const VCMProtectionParameters* parameters)
+VCMNackFecMethod::ProtectionFactor(const
+                                   VCMProtectionParameters* parameters)
 {
     // Hybrid Nack FEC has three operational modes:
     // 1. Low RTT - Nack only (Set FEC rates to zero)
@@ -68,97 +44,93 @@ VCMNackFecMethod::UpdateParameters(const VCMProtectionParameters* parameters)
         // Set the FEC parameters to 0
         _protectionFactorK = 0;
         _protectionFactorD = 0;
-
-        // assume packets will be restored via NACK
-        // TODO: relax this assumption?
-        _effectivePacketLoss = 0;
-        _score = _efficiency;
         return true;
     }
-    // otherwise: we count on FEC; if the RTT is below a threshold, then we can
+
+    // Otherwise: we count on FEC; if the RTT is below a threshold, then we
     // nack the residual, based on a decision made in the JB.
-    // TODO(mikhal): adapt the FEC rate based on the RTT, i.e. the the level on
-    // which we will rely on NACK, e.g. less as we approach upper threshold.
+
     VCMFecMethod fecMethod;
 
-    const WebRtc_UWord8 plossMax = 129;
-
-    // Compute the protection factor
+    // Compute the protection factors
     fecMethod.ProtectionFactor(parameters);
 
-    // Compute the effective packet loss
-    fecMethod.EffectivePacketLoss(parameters);
+    _protectionFactorK = fecMethod._protectionFactorK;
+    _protectionFactorD = fecMethod._protectionFactorD;
 
-    WebRtc_UWord8 protFactorK = fecMethod._protectionFactorK;
-    WebRtc_UWord8 protFactorD = fecMethod._protectionFactorD;
-    WebRtc_UWord8 effPacketLoss = fecMethod._effectivePacketLoss;
-    float resPacketLoss = fecMethod._residualPacketLoss;
-
-    // Correct FEC rates based on the RTT ( NACK effectiveness)
-    WebRtc_Word16 rttIndex= (WebRtc_UWord16) parameters->rtt;
-    float softnessRtt = 1.0;
+    // When in Hybrid mode, correct FEC rates based on the
+    // RTT (NACK effectiveness)
     if (parameters->rtt < kHighRttNackMs)
     {
+        WebRtc_UWord16 rttIndex = (WebRtc_UWord16) parameters->rtt;
         // TODO(mikhal): update table
-         softnessRtt = (float)VCMNackFecTable[rttIndex] / (float)4096.0;
+        float softnessRtt = (float)VCMNackFecTable[rttIndex] / (float)4096.0;
 
-        // soften ER with NACK on
+        // Soften FEC with NACK on (for delta frame only)
         // table depends on RTT relative to rttMax (NACK Threshold)
-        _effectivePacketLoss = (WebRtc_UWord8)(effPacketLoss * softnessRtt);
-
-        // soften FEC with NACK on
-        // table depends on RTT relative to rttMax (NACK Threshold)
-        _protectionFactorK = (WebRtc_UWord8) (protFactorK * softnessRtt);
-        _protectionFactorD = (WebRtc_UWord8) (protFactorD * softnessRtt);
+        _protectionFactorD *= static_cast<WebRtc_UWord8> (softnessRtt);
     }
-    // else - NACK is disabled, rely on FEC only
+    return true;
+}
 
+bool
+VCMNackFecMethod::EffectivePacketLoss(const
+                                      VCMProtectionParameters* parameters)
+{
+    // NACK only mode
+    if (parameters->rtt < kLowRttNackMs)
+    {
+        // Effective Packet Loss, NA in current version.
+        _effectivePacketLoss = 0;
+        // No FEC applied.
+        _residualPacketLossFec = 255 * parameters->lossPr;
+        return true;
+    }
 
-    // make sure I frame protection is at least larger than P frame protection,
-    // and at least as high as received loss
-    WebRtc_UWord8 packetLoss = (WebRtc_UWord8) (255 * parameters->lossPr);
-    _protectionFactorK = static_cast<WebRtc_UWord8> (VCM_MAX(packetLoss,
-        VCM_MAX(_scaleProtKey * protFactorD, protFactorK)));
+    // Set the effective packet loss for encoder (based on FEC code).
+    VCMFecMethod fecMethod;
+    // Compute the effective packet loss and residual packet loss due to FEC.
+    fecMethod.EffectivePacketLoss(parameters);
+    _effectivePacketLoss = fecMethod._effectivePacketLoss;
+    _residualPacketLossFec = fecMethod._residualPacketLossFec;
 
-    // check limit on amount of protection for I frame: 50% is max
-    if (_protectionFactorK >= plossMax)
-        _protectionFactorK = plossMax - 1;
+    return true;
+}
 
-    // Bit cost for NackFec
+bool
+VCMNackFecMethod::UpdateParameters(const VCMProtectionParameters* parameters)
+{
+    ProtectionFactor(parameters);
+    EffectivePacketLoss(parameters);
 
-    // NACK cost: based on residual packet loss (since we should only NACK
-    // packets not recovered by FEC)
-    _efficiency = 0.0f;
+    // Efficiency computation is based on FEC and NACK
+
+    // Add FEC cost: ignore I frames for now
+    float fecRate = static_cast<float> (_protectionFactorD) / 255.0f;
+    _efficiency = parameters->bitRate * fecRate;
+
+    // Add NACK cost, when applicable
     if (parameters->rtt < kHighRttNackMs)
     {
-        _efficiency = parameters->bitRate * resPacketLoss /
-                                  (1.0f + resPacketLoss);
+        // nackCost  = (bitRate - nackCost) * (lossPr)
+        _efficiency += parameters->bitRate * _residualPacketLossFec /
+                       (1.0f + _residualPacketLossFec);
     }
-    else
-    {
-        // efficiency based on FEC only
-        // add FEC cost: ignore I frames for now
-        float fecRate = static_cast<float> (_protectionFactorD) / 255.0f;
-        if (fecRate >= 0.0f)
-            _efficiency += parameters->bitRate * fecRate;
-    }
-    _score = _efficiency;
 
     // Protection/fec rates obtained above are defined relative to total number
     // of packets (total rate: source + fec) FEC in RTP module assumes
     // protection factor is defined relative to source number of packets so we
     // should convert the factor to reduce mismatch between mediaOpt's rate and
     // the actual one
-    WebRtc_UWord8 codeRate = protFactorK;
-    _protectionFactorK = fecMethod.ConvertFECRate(codeRate);
-    codeRate = protFactorD;
-    _protectionFactorD = fecMethod.ConvertFECRate(codeRate);
+    VCMFecMethod fecMethod;
+    _protectionFactorK = fecMethod.ConvertFECRate(_protectionFactorK);
+    _protectionFactorD = fecMethod.ConvertFECRate(_protectionFactorK);
 
     return true;
 }
 
 bool
-VCMNackMethod::EffectivePacketLoss(WebRtc_UWord8 effPacketLoss,
+VCMNackMethod::EffectivePacketLoss(WebRtc_UWord8 packetLoss,
                                    WebRtc_UWord16 rttTime)
 {
     WebRtc_UWord16 rttMax = MaxRttNack();
@@ -167,9 +139,12 @@ VCMNackMethod::EffectivePacketLoss(WebRtc_UWord8 effPacketLoss,
     // packetLossEnc = 0 for RTT less than the NACK threshold
     if (rttTime < rttMax)
     {
-        effPacketLoss = 0; //may want a softer transition here
+        _effectivePacketLoss = 0; // may want a softer transition here
     }
-    _effectivePacketLoss = effPacketLoss;
+    else
+    {
+        _effectivePacketLoss = packetLoss;
+    }
 
     return true;
 }
@@ -183,14 +158,14 @@ VCMNackMethod::UpdateParameters(const VCMProtectionParameters* parameters)
     EffectivePacketLoss(effPacketLoss, rttTime);
 
     // Compute the NACK bit cost
-    _efficiency = parameters->bitRate * parameters->lossPr /
-                              (1.0f + parameters->lossPr);
-    _score = _efficiency;
-    if (parameters->rtt > _NACK_MAX_RTT)
+    if (rttTime > _NACK_MAX_RTT)
     {
-        _score = 0.0f;
+        _efficiency = 0.0f;
         return false;
     }
+
+    _efficiency = parameters->bitRate * parameters->lossPr /
+                  (1.0f + parameters->lossPr);
     return true;
 }
 
@@ -199,7 +174,7 @@ VCMFecMethod::BoostCodeRateKey(WebRtc_UWord8 packetFrameDelta,
                                WebRtc_UWord8 packetFrameKey) const
 {
     WebRtc_UWord8 boostRateKey = 2;
-    // default: ratio scales the FEC protection up for I frames
+    // Default: ratio scales the FEC protection up for I frames
     WebRtc_UWord8 ratio = 1;
 
     if (packetFrameDelta > 0)
@@ -263,13 +238,13 @@ VCMFecMethod::AvgRecoveryFEC(const VCMProtectionParameters* parameters) const
 
     // index for ER tables: up to codeSizexcodeSize mask
     WebRtc_UWord16 codeIndexTable[codeSize * codeSize];
-    WebRtc_UWord16 k = -1;
+    WebRtc_UWord16 k = 0;
     for (WebRtc_UWord8 i = 1; i <= codeSize; i++)
     {
         for (WebRtc_UWord8 j = 1; j <= i; j++)
         {
-            k += 1;
             codeIndexTable[(j - 1) * codeSize + i - 1] = k;
+            k += 1;
         }
     }
 
@@ -426,7 +401,8 @@ VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters)
 
     float adjustFec = _qmRobustness->AdjustFecFactor(codeRateDelta, bitRate,
                                                      parameters->frameRate,
-                                                     parameters->rtt, packetLoss);
+                                                     parameters->rtt,
+                                                     packetLoss);
 
     codeRateDelta = static_cast<WebRtc_UWord8>(codeRateDelta * adjustFec);
 
@@ -480,7 +456,7 @@ VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters)
     _useUepProtectionK = _qmRobustness->SetUepProtection(codeRateKey, bitRate,
                                                          packetLoss, 0);
 
-    _useUepProtectionD = _qmRobustness->SetUepProtection(codeRateKey, bitRate,
+    _useUepProtectionD = _qmRobustness->SetUepProtection(codeRateDelta, bitRate,
                                                          packetLoss, 1);
 
     // DONE WITH FEC PROTECTION SETTINGS
@@ -490,39 +466,22 @@ VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters)
 bool
 VCMFecMethod::EffectivePacketLoss(const VCMProtectionParameters* parameters)
 {
-    // ER SETTINGS:
     // Effective packet loss to encoder is based on RPL (residual packet loss)
     // this is a soft setting based on degree of FEC protection
     // RPL = received/input packet loss - average_FEC_recovery
     // note: received/input packet loss may be filtered based on FilteredLoss
 
-    // The input packet loss:
-    WebRtc_UWord8 effPacketLoss = (WebRtc_UWord8) (255 * parameters->lossPr);
+    // The packet loss:
+    WebRtc_UWord8 packetLoss = (WebRtc_UWord8) (255 * parameters->lossPr);
 
-    float scaleErRS = 0.5;
-    float scaleErXOR = 0.5;
-    float minErLevel = (float) 0.025;
-    // float scaleErRS = 1.0;
-    // float scaleErXOR = 1.0;
-    // float minErLevel = (float) 0.0;
-
-    float avgFecRecov = 0.;
-    // Effective packet loss for ER:
-    float scaleEr = scaleErXOR;
-    avgFecRecov = AvgRecoveryFEC(parameters);
+    float avgFecRecov = AvgRecoveryFEC(parameters);
 
     // Residual Packet Loss:
-    _residualPacketLoss = (float) (effPacketLoss - avgFecRecov) / (float) 255.0;
+    _residualPacketLossFec = (float) (packetLoss - avgFecRecov) / 255.0f;
 
-    //Effective Packet Loss for encoder:
+    // Effective Packet Loss, NA in current version.
     _effectivePacketLoss = 0;
-    if (effPacketLoss > 0) {
-      _effectivePacketLoss = VCM_MAX((effPacketLoss -
-              (WebRtc_UWord8)(scaleEr * avgFecRecov)),
-          static_cast<WebRtc_UWord8>(minErLevel * 255));
-    }
 
-    // DONE WITH ER SETTING
     return true;
 }
 
@@ -553,7 +512,6 @@ VCMFecMethod::UpdateParameters(const VCMProtectionParameters* parameters)
     {
         _efficiency = 0.0f;
     }
-    _score = _efficiency;
 
     // Protection/fec rates obtained above is defined relative to total number
     // of packets (total rate: source+fec) FEC in RTP module assumes protection
@@ -574,11 +532,9 @@ VCMIntraReqMethod::UpdateParameters(const VCMProtectionParameters* parameters)
     float lossRate = parameters->lossPr * packetRate;
     if (parameters->keyFrameSize <= 1e-3)
     {
-        _score = FLT_MAX;
         return false;
     }
     _efficiency = lossRate * parameters->keyFrameSize;
-    _score = _efficiency;
     if (parameters->lossPr >= 1.0f / parameters->keyFrameSize ||
         parameters->rtt > _IREQ_MAX_RTT)
     {
@@ -593,7 +549,6 @@ VCMPeriodicIntraMethod::UpdateParameters(const
 {
     // Periodic I-frames. The last thing we want to use.
     _efficiency = 0.0f;
-    _score = FLT_MAX;
     return true;
 }
 
@@ -604,7 +559,6 @@ VCMMbIntraRefreshMethod::UpdateParameters(const
     // Assume optimal for now.
     _efficiency = parameters->bitRate * parameters->lossPr /
                   (1.0f + parameters->lossPr);
-    _score = _efficiency;
     if (parameters->bitRate < _MBREF_MIN_BITRATE)
     {
         return false;
@@ -730,7 +684,7 @@ VCMLossProtectionLogic::UpdateRtt(WebRtc_UWord32 rtt)
 void
 VCMLossProtectionLogic::UpdateResidualPacketLoss(float residualPacketLoss)
 {
-    _residualPacketLoss = residualPacketLoss;
+    _residualPacketLossFec = residualPacketLoss;
 }
 
 void
@@ -893,7 +847,7 @@ VCMLossProtectionLogic::UpdateMethod(VCMProtectionMethod *newMethod /*=NULL */)
     _currentParameters.fecRateKey = _fecRateKey;
     _currentParameters.packetsPerFrame = _packetsPerFrame.Value();
     _currentParameters.packetsPerFrameKey = _packetsPerFrameKey.Value();
-    _currentParameters.residualPacketLoss = _residualPacketLoss;
+    _currentParameters.residualPacketLossFec = _residualPacketLossFec;
     _currentParameters.fecType = _fecType;
     _currentParameters.codecWidth = _codecWidth;
     _currentParameters.codecHeight = _codecHeight;
@@ -943,7 +897,8 @@ VCMLossProtectionLogic::SelectedMethod() const
     return _selectedMethod;
 }
 
-void VCMLossProtectionLogic::Reset()
+void
+VCMLossProtectionLogic::Reset()
 {
     const WebRtc_Word64 now = VCMTickTime::MillisecondTimestamp();
     _lastPrUpdateT = now;
