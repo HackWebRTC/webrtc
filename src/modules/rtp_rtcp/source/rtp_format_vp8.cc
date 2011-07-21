@@ -20,7 +20,7 @@ namespace webrtc {
 const RtpFormatVp8::AggregationMode RtpFormatVp8::aggr_modes_[kNumModes] =
     { kAggrNone, kAggrPartitions, kAggrFragments };
 const bool RtpFormatVp8::balance_modes_[kNumModes] =
-    { true, false, false };
+    { true, true, false };
 const bool RtpFormatVp8::separate_first_modes_[kNumModes] =
     { true, false, false };
 

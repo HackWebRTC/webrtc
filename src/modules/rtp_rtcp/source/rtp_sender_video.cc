@@ -1235,7 +1235,7 @@ RTPSenderVideo::SendVP8(const FrameType frameType,
 
     assert(rtpTypeHdr);
     RtpFormatVp8 packetizer(data, payloadBytesToSend, rtpTypeHdr->VP8,
-                            *fragmentation, kStrict);
+                            *fragmentation, kAggregate);
 
     bool last = false;
     _numberFirstPartition = 0;
