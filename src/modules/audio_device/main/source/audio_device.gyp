@@ -52,18 +52,12 @@
         'Linux/alsasymboltable.h',
         'Linux/audio_device_linux_alsa.cc',
         'Linux/audio_device_linux_alsa.h',
-        'Linux/audio_device_linux_pulse.cc',
-        'Linux/audio_device_linux_pulse.h',
         'Linux/audio_device_utility_linux.cc',
         'Linux/audio_device_utility_linux.h',
         'Linux/audio_mixer_manager_linux_alsa.cc',
         'Linux/audio_mixer_manager_linux_alsa.h',
-        'Linux/audio_mixer_manager_linux_pulse.cc',
-        'Linux/audio_mixer_manager_linux_pulse.h',
         'Linux/latebindingsymboltable.cc',
         'Linux/latebindingsymboltable.h',
-        'Linux/pulseaudiosymboltable.cc',
-        'Linux/pulseaudiosymboltable.h',
         'Mac/audio_device_mac.cc',
         'Mac/audio_device_mac.h',
         'Mac/audio_device_utility_mac.cc',
@@ -89,16 +83,10 @@
             'Linux/alsasymboltable.h',
             'Linux/audio_device_linux_alsa.cc',
             'Linux/audio_device_linux_alsa.h',
-            'Linux/audio_device_linux_pulse.cc',
-            'Linux/audio_device_linux_pulse.h',
             'Linux/audio_mixer_manager_linux_alsa.cc',
             'Linux/audio_mixer_manager_linux_alsa.h',
-            'Linux/audio_mixer_manager_linux_pulse.cc',
-            'Linux/audio_mixer_manager_linux_pulse.h',
             'Linux/latebindingsymboltable.cc',
             'Linux/latebindingsymboltable.h',
-            'Linux/pulseaudiosymboltable.cc',
-            'Linux/pulseaudiosymboltable.h',
             # Don't remove these, needed for dummy device
             # 'Linux/audio_device_utility_linux.cc',
             # 'Linux/audio_device_utility_linux.h',
@@ -131,7 +119,6 @@
         }],
         ['OS=="linux"', {
           'defines': [
-            'LINUX_PULSE',
             'LINUX_ALSA',
           ],
           'include_dirs': [
@@ -141,9 +128,28 @@
             'libraries': [
               '-ldl',
               '-lasound',
-              '-lpulse',
             ],
           },
+          'conditions': [
+            ['include_pulse_audio==1', {
+              'defines': [
+                'LINUX_PULSE',
+              ],
+              'sources': [
+                'Linux/audio_device_linux_pulse.cc',
+                'Linux/audio_device_linux_pulse.h',
+                'Linux/audio_mixer_manager_linux_pulse.cc',
+                'Linux/audio_mixer_manager_linux_pulse.h',
+                'Linux/pulseaudiosymboltable.cc',
+                'Linux/pulseaudiosymboltable.h',
+              ],
+              'link_settings': {
+                'libraries': [
+                  '-lpulse',
+                ],
+              },
+            }],
+          ],
         }],
         ['OS=="mac"', {
           'include_dirs': [

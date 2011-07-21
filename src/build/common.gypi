@@ -25,6 +25,13 @@
         'direct_show_base_classes':
           'C:/Program Files/Microsoft SDKs/Windows/v7.1/Samples/multimedia/directshow/baseclasses/',
       }],
+      ['build_with_chromium==1', {
+        # Exclude pulse audio on Chromium since its prerequisites don't
+        # include pulse audio.
+        'include_pulse_audio%': 0,
+      }, {
+        'include_pulse_audio%': 1,
+      }],
     ], # conditions
   },
   'target_defaults': {
