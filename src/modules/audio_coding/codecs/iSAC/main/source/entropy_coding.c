@@ -21,7 +21,6 @@
 #include "settings.h"
 #include "arith_routines.h"
 #include "signal_processing_library.h"
-#include "spl_inl.h"
 #include "spectrum_ar_model_tables.h"
 #include "lpc_tables.h"
 #include "pitch_gain_tables.h"
