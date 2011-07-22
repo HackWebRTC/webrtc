@@ -98,7 +98,7 @@ int WebRtcNs_set_policy(NsHandle *NS_inst, int mode);
  * input and output signals should always be 10ms (80 or 160 samples).
  *
  * Input
- *      - NS_inst       : VAD Instance. Needs to be initiated before call.
+ *      - NS_inst       : NS Instance. Needs to be initiated before call.
  *      - spframe       : Pointer to speech frame buffer for L band
  *      - spframe_H     : Pointer to speech frame buffer for H band
  *      - fs            : sampling frequency
