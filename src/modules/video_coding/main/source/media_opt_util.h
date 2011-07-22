@@ -208,12 +208,15 @@ public:
 class VCMNackFecMethod : public VCMProtectionMethod
 {
 public:
-    VCMNackFecMethod() : VCMProtectionMethod(kNackFec) {}
+    VCMNackFecMethod();
+    ~VCMNackFecMethod();
     virtual bool UpdateParameters(const VCMProtectionParameters* parameters);
     // Get the effective packet loss for ER
     bool EffectivePacketLoss(const VCMProtectionParameters* parameters);
     // Get the FEC protection factors
     bool ProtectionFactor(const VCMProtectionParameters* parameters);
+private:
+    VCMFecMethod* _fecMethod;
 
 };
 

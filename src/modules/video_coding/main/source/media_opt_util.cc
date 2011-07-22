@@ -28,6 +28,16 @@ VCMProtectionMethod::UpdateContentMetrics(const
    _qmRobustness->UpdateContent(contentMetrics);
 }
 
+
+VCMNackFecMethod::VCMNackFecMethod() : VCMProtectionMethod(kNackFec)
+{
+    _fecMethod = new VCMFecMethod();
+}
+
+VCMNackFecMethod::~VCMNackFecMethod()
+{
+    delete _fecMethod;
+}
 bool
 VCMNackFecMethod::ProtectionFactor(const
                                    VCMProtectionParameters* parameters)
@@ -50,13 +60,11 @@ VCMNackFecMethod::ProtectionFactor(const
     // Otherwise: we count on FEC; if the RTT is below a threshold, then we
     // nack the residual, based on a decision made in the JB.
 
-    VCMFecMethod fecMethod;
-
     // Compute the protection factors
-    fecMethod.ProtectionFactor(parameters);
+    _fecMethod->ProtectionFactor(parameters);
 
-    _protectionFactorK = fecMethod._protectionFactorK;
-    _protectionFactorD = fecMethod._protectionFactorD;
+    _protectionFactorK = _fecMethod->_protectionFactorK;
+    _protectionFactorD = _fecMethod->_protectionFactorD;
 
     // When in Hybrid mode, correct FEC rates based on the
     // RTT (NACK effectiveness)
@@ -88,11 +96,10 @@ VCMNackFecMethod::EffectivePacketLoss(const
     }
 
     // Set the effective packet loss for encoder (based on FEC code).
-    VCMFecMethod fecMethod;
     // Compute the effective packet loss and residual packet loss due to FEC.
-    fecMethod.EffectivePacketLoss(parameters);
-    _effectivePacketLoss = fecMethod._effectivePacketLoss;
-    _residualPacketLossFec = fecMethod._residualPacketLossFec;
+    _fecMethod->EffectivePacketLoss(parameters);
+    _effectivePacketLoss = _fecMethod->_effectivePacketLoss;
+    _residualPacketLossFec = _fecMethod->_residualPacketLossFec;
 
     return true;
 }
@@ -122,9 +129,8 @@ VCMNackFecMethod::UpdateParameters(const VCMProtectionParameters* parameters)
     // protection factor is defined relative to source number of packets so we
     // should convert the factor to reduce mismatch between mediaOpt's rate and
     // the actual one
-    VCMFecMethod fecMethod;
-    _protectionFactorK = fecMethod.ConvertFECRate(_protectionFactorK);
-    _protectionFactorD = fecMethod.ConvertFECRate(_protectionFactorK);
+    _protectionFactorK = _fecMethod->ConvertFECRate(_protectionFactorK);
+    _protectionFactorD = _fecMethod->ConvertFECRate(_protectionFactorK);
 
     return true;
 }
