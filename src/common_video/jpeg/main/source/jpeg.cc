@@ -143,6 +143,19 @@ JpegEncoder::Encode(const RawImage& inputImage)
     _cinfo->comp_info[2].v_samp_factor = 1;
     _cinfo->raw_data_in = TRUE;
 
+    WebRtc_UWord32 height16 = (height + 15) & ~15;
+    WebRtc_UWord8* imgPtr = inputImage._buffer;
+    WebRtc_UWord8* origImagePtr = NULL;
+    if (height16 != height)
+    {
+        // Copy image to an adequate size buffer
+        WebRtc_UWord32 requiredSize = height16 * width * 3 >> 1;
+        origImagePtr = new WebRtc_UWord8[requiredSize];
+        memset(origImagePtr, 0, requiredSize);
+        memcpy(origImagePtr, inputImage._buffer, inputImage._length);
+        imgPtr = origImagePtr;
+    }
+
     jpeg_start_compress(_cinfo, TRUE);
 
     JSAMPROW y[16],u[8],v[8];
@@ -158,13 +171,13 @@ JpegEncoder::Encode(const RawImage& inputImage)
     {
         for (i = 0; i < 16; i++)
         {
-            y[i] = (JSAMPLE*) inputImage._buffer + width * (i + j);
+            y[i] = (JSAMPLE*)imgPtr + width * (i + j);
 
             if (i % 2 == 0)
             {
-                u[i / 2] = (JSAMPLE*) inputImage._buffer + width * height +
+                u[i / 2] = (JSAMPLE*) imgPtr + width * height +
                             width / 2 * ((i + j) / 2);
-                v[i / 2] = (JSAMPLE*) inputImage._buffer + width * height +
+                v[i / 2] = (JSAMPLE*) imgPtr + width * height +
                             width * height / 4 + width / 2 * ((i + j) / 2);
             }
         }
@@ -175,6 +188,11 @@ JpegEncoder::Encode(const RawImage& inputImage)
     jpeg_destroy_compress(_cinfo);
 
     fclose(outFile);
+
+    if (origImagePtr != NULL)
+    {
+        delete [] origImagePtr;
+    }
 
     return 0;
 }
