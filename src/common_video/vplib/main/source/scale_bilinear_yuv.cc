@@ -277,6 +277,8 @@ ScaleBilinear(const WebRtc_UWord8* srcFrame, WebRtc_UWord8*& dstFrame,
         {
             horizontalFilteredBuf = filteredBuf;
 
+            // If vertical filtering must be done then put the results
+            // from the horizontal filtering in an intermediary buffer
             if (source_dx != kFractionMax)
             {
                 horizontalFilteredBuf = intermediaryBuf;
@@ -290,14 +292,13 @@ ScaleBilinear(const WebRtc_UWord8* srcFrame, WebRtc_UWord8*& dstFrame,
                 source_h_subpixel += kFractionMax / 2;
             }
 
+            // Choose the two lines that are going to be bilinear filtered.
             WebRtc_UWord32 source_h = source_h_subpixel >> kFractionBits;
-
             const WebRtc_UWord8* ptr_0 = srcPlaneArray[p] +
                                          source_h * srcStrideArray[p];
-
             const WebRtc_UWord8* ptr_1 = ptr_0 + srcStrideArray[p];
 
-            // vertical scaler uses 16.8 fixed point
+            // scaler uses 16.8 fixed point
             WebRtc_UWord32 source_h_fraction =
                 (source_h_subpixel & kFractionMask) >> 8;
 
@@ -311,7 +312,6 @@ ScaleBilinear(const WebRtc_UWord8* srcFrame, WebRtc_UWord8*& dstFrame,
             {
                 memcpy(horizontalFilteredBuf, ptr_1, srcWidthArray[p]);
             }
-            filteredBuf[(srcWidthArray[p]-1)] = filteredBuf[(srcWidthArray[p]-2)];
 
             // vertical filter only if necessary
             if (source_dx != kFractionMax)
