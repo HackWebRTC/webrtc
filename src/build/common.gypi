@@ -10,8 +10,18 @@
 
 {
   'variables': {
-    # TODO(ajm): use webrtc_standalone to match NaCl?
-    'build_with_chromium%': 1, # 1 to build webrtc with chromium
+    # Putting a variables dict inside another variables dict looks kind of
+    # weird.  This is done so that 'build_with_chromium' is defined as
+    # variable within the outer variables dict here.  This is necessary
+    # to get these variables defined for the conditions within this variables
+    # dict that operate on these variables (e.g., for setting
+    # 'include_pulse_audio', we need to have 'build_with_chromium' already set).
+    'variables': {
+      # TODO(ajm): use webrtc_standalone to match NaCl?
+      'build_with_chromium%': 1, # 1 to build webrtc with chromium
+    },
+
+    'build_with_chromium%': '<(build_with_chromium)',
 
     # Selects fixed-point code where possible.
     # TODO(ajm): we'd like to set this based on the target OS/architecture.
