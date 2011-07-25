@@ -15,35 +15,33 @@ include $(CLEAR_VARS)
 LOCAL_MODULE_TAGS := tests
 LOCAL_CPP_EXTENSION := .cc
 LOCAL_SRC_FILES:= \
-    unit_test.cc
+    unit_test.cc \
+    audio_processing_unittest_android.pb.cc
 
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \
-    '-DWEBRTC_TARGET_PC' \
-    '-DWEBRTC_LINUX' \
-    '-DWEBRTC_THREAD_RR' \
-    '-DWEBRTC_ANDROID' \
-    '-DANDROID' 
+    $(MY_WEBRTC_COMMON_DEFS)
 
-LOCAL_CPPFLAGS := 
-LOCAL_LDFLAGS :=
 LOCAL_C_INCLUDES := \
-    external/gtest/include \
-    $(LOCAL_PATH)/../../../../../system_wrappers/interface \
-    $(LOCAL_PATH)/../../../../../common_audio/signal_processing_library/main/interface \
     $(LOCAL_PATH)/../../interface \
     $(LOCAL_PATH)/../../../../interface \
-    $(LOCAL_PATH)/../../../../..
+    $(LOCAL_PATH)/../../../../.. \
+    $(LOCAL_PATH)/../../../../../system_wrappers/interface \
+    $(LOCAL_PATH)/../../../../../common_audio/signal_processing_library/main/interface \
+    external/gtest/include \
+    external/protobuf/src 
 
 LOCAL_STATIC_LIBRARIES := \
-    libgtest 
+    libgtest \
+    libprotobuf-cpp-2.3.0-lite
 
 LOCAL_SHARED_LIBRARIES := \
-    libutils \
     libstlport \
     libwebrtc_audio_preprocessing 
 
 LOCAL_MODULE:= webrtc_apm_unit_test
 
+ifndef NDK_ROOT
 include external/stlport/libstlport.mk
+endif
 include $(BUILD_EXECUTABLE)

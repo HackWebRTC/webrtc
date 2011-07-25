@@ -13,7 +13,11 @@
 #include <gtest/gtest.h>
 
 #include "audio_processing.h"
+#ifdef WEBRTC_ANDROID
+#include "audio_processing_unittest_android.pb.h"
+#else
 #include "audio_processing_unittest.pb.h"
+#endif
 #include "event_wrapper.h"
 #include "module_common_types.h"
 #include "thread_wrapper.h"
