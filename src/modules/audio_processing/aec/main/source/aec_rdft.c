@@ -24,7 +24,19 @@
 #include "aec_rdft.h"
 #include "system_wrappers/interface/cpu_features_wrapper.h"
 
+// constants shared by all paths (C, SSE2).
 float rdft_w[64];
+// constants used by the C path.
+float rdft_wk3ri_first[32];
+float rdft_wk3ri_second[32];
+// constants used by SSE2 but initialized in C path.
+ALIGN16_BEG float ALIGN16_END rdft_wk1r[32];
+ALIGN16_BEG float ALIGN16_END rdft_wk2r[32];
+ALIGN16_BEG float ALIGN16_END rdft_wk3r[32];
+ALIGN16_BEG float ALIGN16_END rdft_wk1i[32];
+ALIGN16_BEG float ALIGN16_END rdft_wk2i[32];
+ALIGN16_BEG float ALIGN16_END rdft_wk3i[32];
+
 static int ip[16];
 
 static void bitrv2_32or128(int n, int *ip, float *a) {
@@ -101,7 +113,7 @@ static void bitrv2_32or128(int n, int *ip, float *a) {
   }
 }
 
-static void makewt_32() {
+static void makewt_32(void) {
   const int nw = 32;
   int j, nwh;
   float delta, x, y;
@@ -123,9 +135,55 @@ static void makewt_32() {
     rdft_w[nw - j + 1] = x;
   }
   bitrv2_32or128(nw, ip + 2, rdft_w);
+
+  // pre-calculate constants used by cft1st_128 ...
+  {
+    int k1;
+
+    for (k1 = 0, j = 0; j < 128; j += 16, k1 += 2) {
+      const int k2 = 2 * k1;
+      const float wk2r = rdft_w[k1 + 0];
+      const float wk2i = rdft_w[k1 + 1];
+      float wk1r, wk1i;
+      // ... scalar version.
+      wk1r = rdft_w[k2 + 0];
+      wk1i = rdft_w[k2 + 1];
+      rdft_wk3ri_first[k1 + 0] = wk1r - 2 * wk2i * wk1i;
+      rdft_wk3ri_first[k1 + 1] = 2 * wk2i * wk1r - wk1i;
+      wk1r = rdft_w[k2 + 2];
+      wk1i = rdft_w[k2 + 3];
+      rdft_wk3ri_second[k1 + 0] = wk1r - 2 * wk2r * wk1i;
+      rdft_wk3ri_second[k1 + 1] = 2 * wk2r * wk1r - wk1i;
+      // ... vector version.
+      rdft_wk1r[k2 + 0] = rdft_w[k2 + 0];
+      rdft_wk1r[k2 + 1] = rdft_w[k2 + 0];
+      rdft_wk1r[k2 + 2] = rdft_w[k2 + 2];
+      rdft_wk1r[k2 + 3] = rdft_w[k2 + 2];
+      rdft_wk2r[k2 + 0] = rdft_w[k1 + 0];
+      rdft_wk2r[k2 + 1] = rdft_w[k1 + 0];
+      rdft_wk2r[k2 + 2] = -rdft_w[k1 + 1];
+      rdft_wk2r[k2 + 3] = -rdft_w[k1 + 1];
+      rdft_wk3r[k2 + 0] = rdft_wk3ri_first[k1 + 0];
+      rdft_wk3r[k2 + 1] = rdft_wk3ri_first[k1 + 0];
+      rdft_wk3r[k2 + 2] = rdft_wk3ri_second[k1 + 0];
+      rdft_wk3r[k2 + 3] = rdft_wk3ri_second[k1 + 0];
+      rdft_wk1i[k2 + 0] = -rdft_w[k2 + 1];
+      rdft_wk1i[k2 + 1] = rdft_w[k2 + 1];
+      rdft_wk1i[k2 + 2] = -rdft_w[k2 + 3];
+      rdft_wk1i[k2 + 3] = rdft_w[k2 + 3];
+      rdft_wk2i[k2 + 0] = -rdft_w[k1 + 1];
+      rdft_wk2i[k2 + 1] = rdft_w[k1 + 1];
+      rdft_wk2i[k2 + 2] = -rdft_w[k1 + 0];
+      rdft_wk2i[k2 + 3] = rdft_w[k1 + 0];
+      rdft_wk3i[k2 + 0] = -rdft_wk3ri_first[k1 + 1];
+      rdft_wk3i[k2 + 1] = rdft_wk3ri_first[k1 + 1];
+      rdft_wk3i[k2 + 2] = -rdft_wk3ri_second[k1 + 1];
+      rdft_wk3i[k2 + 3] = rdft_wk3ri_second[k1 + 1];
+    }
+  }
 }
 
-static void makect_32() {
+static void makect_32(void) {
   float *c = rdft_w + 32;
   const int nc = 32;
   int j, nch;
@@ -142,7 +200,7 @@ static void makect_32() {
   }
 }
 
-static void cft1st_128(float *a) {
+static void cft1st_128_C(float *a) {
   const int n = 128;
   int j, k1, k2;
   float wk1r, wk1i, wk2r, wk2i, wk3r, wk3i;
@@ -189,21 +247,21 @@ static void cft1st_128(float *a) {
   for (j = 16; j < n; j += 16) {
     k1 += 2;
     k2 = 2 * k1;
-    wk2r = rdft_w[k1];
+    wk2r = rdft_w[k1 + 0];
     wk2i = rdft_w[k1 + 1];
-    wk1r = rdft_w[k2];
+    wk1r = rdft_w[k2 + 0];
     wk1i = rdft_w[k2 + 1];
-    wk3r = wk1r - 2 * wk2i * wk1i;
-    wk3i = 2 * wk2i * wk1r - wk1i;
-    x0r = a[j] + a[j + 2];
+    wk3r = rdft_wk3ri_first[k1 + 0];
+    wk3i = rdft_wk3ri_first[k1 + 1];
+    x0r = a[j + 0] + a[j + 2];
     x0i = a[j + 1] + a[j + 3];
-    x1r = a[j] - a[j + 2];
+    x1r = a[j + 0] - a[j + 2];
     x1i = a[j + 1] - a[j + 3];
     x2r = a[j + 4] + a[j + 6];
     x2i = a[j + 5] + a[j + 7];
     x3r = a[j + 4] - a[j + 6];
     x3i = a[j + 5] - a[j + 7];
-    a[j] = x0r + x2r;
+    a[j + 0] = x0r + x2r;
     a[j + 1] = x0i + x2i;
     x0r -= x2r;
     x0i -= x2i;
@@ -219,8 +277,8 @@ static void cft1st_128(float *a) {
     a[j + 7] = wk3r * x0i + wk3i * x0r;
     wk1r = rdft_w[k2 + 2];
     wk1i = rdft_w[k2 + 3];
-    wk3r = wk1r - 2 * wk2r * wk1i;
-    wk3i = 2 * wk2r * wk1r - wk1i;
+    wk3r = rdft_wk3ri_second[k1 + 0];
+    wk3i = rdft_wk3ri_second[k1 + 1];
     x0r = a[j + 8] + a[j + 10];
     x0i = a[j + 9] + a[j + 11];
     x1r = a[j + 8] - a[j + 10];
@@ -504,10 +562,12 @@ void aec_rdft_inverse_128(float *a) {
 }
 
 // code path selection
+rft_sub_128_t cft1st_128;
 rft_sub_128_t rftfsub_128;
 rft_sub_128_t rftbsub_128;
 
 void aec_rdft_init(void) {
+  cft1st_128 = cft1st_128_C;
   rftfsub_128 = rftfsub_128_C;
   rftbsub_128 = rftbsub_128_C;
   if (WebRtc_GetCPUInfo(kSSE2)) {

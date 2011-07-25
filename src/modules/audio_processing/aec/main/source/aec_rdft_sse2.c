@@ -13,13 +13,64 @@
 
 #include "aec_rdft.h"
 
-#ifdef _MSC_VER /* visual c++ */
-# define ALIGN16_BEG __declspec(align(16))
-# define ALIGN16_END
-#else /* gcc or icc */
-# define ALIGN16_BEG
-# define ALIGN16_END __attribute__((aligned(16)))
-#endif
+static void cft1st_128_SSE2(float *a) {
+  static const ALIGN16_BEG float ALIGN16_END k_swap_sign[4] =
+    {-1.f, 1.f, -1.f, 1.f};
+  const __m128 mm_swap_sign = _mm_load_ps(k_swap_sign);
+  int j, k2;
+
+  for (k2 = 0, j = 0; j < 128; j += 16, k2 += 4) {
+          __m128 a00v   = _mm_loadu_ps(&a[j +  0]);
+          __m128 a04v   = _mm_loadu_ps(&a[j +  4]);
+          __m128 a08v   = _mm_loadu_ps(&a[j +  8]);
+          __m128 a12v   = _mm_loadu_ps(&a[j + 12]);
+          __m128 a01v   = _mm_shuffle_ps(a00v, a08v, _MM_SHUFFLE(1, 0, 1 ,0));
+          __m128 a23v   = _mm_shuffle_ps(a00v, a08v, _MM_SHUFFLE(3, 2, 3 ,2));
+          __m128 a45v   = _mm_shuffle_ps(a04v, a12v, _MM_SHUFFLE(1, 0, 1 ,0));
+          __m128 a67v   = _mm_shuffle_ps(a04v, a12v, _MM_SHUFFLE(3, 2, 3 ,2));
+
+    const __m128 wk1rv  = _mm_load_ps(&rdft_wk1r[k2]);
+    const __m128 wk1iv  = _mm_load_ps(&rdft_wk1i[k2]);
+    const __m128 wk2rv  = _mm_load_ps(&rdft_wk2r[k2]);
+    const __m128 wk2iv  = _mm_load_ps(&rdft_wk2i[k2]);
+    const __m128 wk3rv  = _mm_load_ps(&rdft_wk3r[k2]);
+    const __m128 wk3iv  = _mm_load_ps(&rdft_wk3i[k2]);
+          __m128 x0v    = _mm_add_ps(a01v, a23v);
+    const __m128 x1v    = _mm_sub_ps(a01v, a23v);
+    const __m128 x2v    = _mm_add_ps(a45v, a67v);
+    const __m128 x3v    = _mm_sub_ps(a45v, a67v);
+                 a01v   = _mm_add_ps(x0v, x2v);
+                 x0v    = _mm_sub_ps(x0v, x2v);
+          __m128 x0w    = _mm_shuffle_ps(x0v, x0v, _MM_SHUFFLE(2, 3, 0 ,1));
+
+    const __m128 a45_0v = _mm_mul_ps(wk2rv, x0v);
+    const __m128 a45_1v = _mm_mul_ps(wk2iv, x0w);
+                 a45v   = _mm_add_ps(a45_0v, a45_1v);
+
+    const __m128 x3w    = _mm_shuffle_ps(x3v, x3v, _MM_SHUFFLE(2, 3, 0 ,1));
+    const __m128 x3s    = _mm_mul_ps(mm_swap_sign, x3w);
+                 x0v    = _mm_add_ps(x1v, x3s);
+                 x0w    = _mm_shuffle_ps(x0v, x0v, _MM_SHUFFLE(2, 3, 0 ,1));
+    const __m128 a23_0v = _mm_mul_ps(wk1rv, x0v);
+    const __m128 a23_1v = _mm_mul_ps(wk1iv, x0w);
+                 a23v   = _mm_add_ps(a23_0v, a23_1v);
+
+                 x0v    = _mm_sub_ps(x1v, x3s);
+                 x0w    = _mm_shuffle_ps(x0v, x0v, _MM_SHUFFLE(2, 3, 0 ,1));
+    const __m128 a67_0v = _mm_mul_ps(wk3rv, x0v);
+    const __m128 a67_1v = _mm_mul_ps(wk3iv, x0w);
+                 a67v   = _mm_add_ps(a67_0v, a67_1v);
+
+                 a00v   = _mm_shuffle_ps(a01v, a23v, _MM_SHUFFLE(1, 0, 1 ,0));
+                 a04v   = _mm_shuffle_ps(a45v, a67v, _MM_SHUFFLE(1, 0, 1 ,0));
+                 a08v   = _mm_shuffle_ps(a01v, a23v, _MM_SHUFFLE(3, 2, 3 ,2));
+                 a12v   = _mm_shuffle_ps(a45v, a67v, _MM_SHUFFLE(3, 2, 3 ,2));
+    _mm_storeu_ps(&a[j +  0], a00v);
+    _mm_storeu_ps(&a[j +  4], a04v);
+    _mm_storeu_ps(&a[j +  8], a08v);
+    _mm_storeu_ps(&a[j + 12], a12v);
+  }
+}
 
 static void rftfsub_128_SSE2(float *a) {
   const float *c = rdft_w + 32;
@@ -205,6 +256,7 @@ static void rftbsub_128_SSE2(float *a) {
 }
 
 void aec_rdft_init_sse2(void) {
+  cft1st_128 = cft1st_128_SSE2;
   rftfsub_128 = rftfsub_128_SSE2;
   rftbsub_128 = rftbsub_128_SSE2;
 }
