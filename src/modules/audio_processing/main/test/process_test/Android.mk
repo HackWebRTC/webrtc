@@ -19,20 +19,14 @@ LOCAL_SRC_FILES:= \
 
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \
-    '-DWEBRTC_TARGET_PC' \
-    '-DWEBRTC_LINUX' \
-    '-DWEBRTC_THREAD_RR' \
-    '-DWEBRTC_ANDROID' \
-    '-DANDROID' 
+    $(MY_WEBRTC_COMMON_DEFS)
 
-LOCAL_CPPFLAGS := 
-LOCAL_LDFLAGS :=
 LOCAL_C_INCLUDES := \
-    external/gtest/include \
-    $(LOCAL_PATH)/../../../../../system_wrappers/interface \
     $(LOCAL_PATH)/../../interface \
     $(LOCAL_PATH)/../../../../interface \
-    $(LOCAL_PATH)/../../../../..
+    $(LOCAL_PATH)/../../../../.. \
+    $(LOCAL_PATH)/../../../../../system_wrappers/interface \
+    external/gtest/include \
 
 LOCAL_STATIC_LIBRARIES := \
     libgtest 
@@ -44,5 +38,7 @@ LOCAL_SHARED_LIBRARIES := \
 
 LOCAL_MODULE:= webrtc_apm_process_test
 
+ifndef NDK_ROOT
 include external/stlport/libstlport.mk
+endif
 include $(BUILD_EXECUTABLE)

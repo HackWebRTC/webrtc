@@ -13,7 +13,6 @@ include $(CLEAR_VARS)
 LOCAL_MODULE_CLASS := STATIC_LIBRARIES
 LOCAL_MODULE := libwebrtc_aec
 LOCAL_MODULE_TAGS := optional
-LOCAL_GENERATED_SOURCES :=
 LOCAL_SRC_FILES := \
     echo_cancellation.c \
     resampler.c \
@@ -21,41 +20,32 @@ LOCAL_SRC_FILES := \
     aec_rdft.c 
 
 # Flags passed to both C and C++ files.
-MY_CFLAGS :=  
-MY_CFLAGS_C :=
-MY_DEFS := '-DNO_TCMALLOC' \
-    '-DNO_HEAPCHECKER' \
-    '-DWEBRTC_TARGET_PC' \
-    '-DWEBRTC_LINUX' \
-    '-DWEBRTC_THREAD_RR'
-ifeq ($(TARGET_ARCH),arm) 
-MY_DEFS += \
-    '-DWEBRTC_ANDROID' \
-    '-DANDROID' 
-else
+LOCAL_CFLAGS := \
+    $(MY_WEBRTC_COMMON_DEFS)
+
+ifeq ($(TARGET_ARCH),x86)
 LOCAL_SRC_FILES += \
     aec_core_sse2.c \
     aec_rdft_sse2.c
+# TODO(leozwang): __SSE2__ is defined by chromium/webrtc
+# Remove it when we have a platform-independent SSE2 flag.
+# And it should be in common flags.
+LOCAL_CFLAGS += \
+    '-D__SSE2__'
 endif
-LOCAL_CFLAGS := $(MY_CFLAGS_C) $(MY_CFLAGS) $(MY_DEFS)
 
-# Include paths placed before CFLAGS/CPPFLAGS
-LOCAL_C_INCLUDES := $(LOCAL_PATH)/../../../../.. \
+LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../interface \
     $(LOCAL_PATH)/../../../utility \
+    $(LOCAL_PATH)/../../../../.. \
     $(LOCAL_PATH)/../../../../../common_audio/signal_processing_library/main/interface 
 
-# Flags passed to only C++ (and not C) files.
-LOCAL_CPPFLAGS := 
-
-LOCAL_LDFLAGS :=
-
-LOCAL_STATIC_LIBRARIES :=
-
-LOCAL_SHARED_LIBRARIES := libcutils \
+LOCAL_SHARED_LIBRARIES := \
+    libcutils \
     libdl \
     libstlport
-LOCAL_ADDITIONAL_DEPENDENCIES :=
 
+ifndef NDK_ROOT
 include external/stlport/libstlport.mk
+endif
 include $(BUILD_STATIC_LIBRARY)

@@ -16,37 +16,22 @@ LOCAL_SRC_FILES := \
 # noise_suppression.c ns_core.c 
 
 # Flags passed to both C and C++ files.
-MY_CFLAGS :=  
-MY_CFLAGS_C :=
-MY_DEFS := '-DNO_TCMALLOC' \
-    '-DNO_HEAPCHECKER' \
-    '-DWEBRTC_TARGET_PC' \
-    '-DWEBRTC_LINUX' \
-    '-DWEBRTC_THREAD_RR'
-ifeq ($(TARGET_ARCH),arm) 
-MY_DEFS += \
-    '-DWEBRTC_ANDROID' \
-    '-DANDROID' 
-endif
-LOCAL_CFLAGS := $(MY_CFLAGS_C) $(MY_CFLAGS) $(MY_DEFS)
+LOCAL_CFLAGS := \
+    $(MY_WEBRTC_COMMON_DEFS)
 
 # Include paths placed before CFLAGS/CPPFLAGS
-LOCAL_C_INCLUDES := $(LOCAL_PATH)/../../../../.. \
+LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../interface \
     $(LOCAL_PATH)/../../../utility \
+    $(LOCAL_PATH)/../../../../.. \
     $(LOCAL_PATH)/../../../../../common_audio/signal_processing_library/main/interface 
 
-# Flags passed to only C++ (and not C) files.
-LOCAL_CPPFLAGS := 
-
-LOCAL_LDFLAGS :=
-
-LOCAL_STATIC_LIBRARIES :=
-
-LOCAL_SHARED_LIBRARIES := libcutils \
+LOCAL_SHARED_LIBRARIES := \
+    libcutils \
     libdl \
     libstlport
-LOCAL_ADDITIONAL_DEPENDENCIES :=
 
+ifndef NDK_ROOT
 include external/stlport/libstlport.mk
+endif
 include $(BUILD_STATIC_LIBRARY)

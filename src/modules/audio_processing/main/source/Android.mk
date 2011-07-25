@@ -14,8 +14,8 @@ LOCAL_ARM_MODE := arm
 LOCAL_MODULE := libwebrtc_apm
 LOCAL_MODULE_TAGS := optional
 LOCAL_CPP_EXTENSION := .cc
-LOCAL_GENERATED_SOURCES :=
-LOCAL_SRC_FILES := audio_buffer.cc \
+LOCAL_SRC_FILES := \
+    audio_buffer.cc \
     audio_processing_impl.cc \
     echo_cancellation_impl.cc \
     echo_control_mobile_impl.cc \
@@ -28,48 +28,31 @@ LOCAL_SRC_FILES := audio_buffer.cc \
     voice_detection_impl.cc
 
 # Flags passed to both C and C++ files.
-MY_CFLAGS :=  
-MY_CFLAGS_C :=
-MY_DEFS := '-DNO_TCMALLOC' \
-    '-DNO_HEAPCHECKER' \
-    '-DWEBRTC_TARGET_PC' \
-    '-DWEBRTC_LINUX' \
-    '-DWEBRTC_THREAD_RR' \
+LOCAL_CFLAGS := \
+    $(MY_WEBRTC_COMMON_DEFS) \
     '-DWEBRTC_NS_FIXED'
 #   floating point
 #   -DWEBRTC_NS_FLOAT'
-ifeq ($(TARGET_ARCH),arm) 
-MY_DEFS += \
-    '-DWEBRTC_ANDROID' \
-    '-DANDROID' 
-endif
-LOCAL_CFLAGS := $(MY_CFLAGS_C) $(MY_CFLAGS) $(MY_DEFS)
 
-# Include paths placed before CFLAGS/CPPFLAGS
-LOCAL_C_INCLUDES := $(LOCAL_PATH)/../../../.. \
+LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../interface \
-    $(LOCAL_PATH)/../../../interface \
-    $(LOCAL_PATH)/../../../../system_wrappers/interface \
     $(LOCAL_PATH)/../../aec/main/interface \
     $(LOCAL_PATH)/../../aecm/main/interface \
     $(LOCAL_PATH)/../../agc/main/interface \
     $(LOCAL_PATH)/../../ns/main/interface \
+    $(LOCAL_PATH)/../../../interface \
+    $(LOCAL_PATH)/../../../.. \
     $(LOCAL_PATH)/../../../../common_audio/signal_processing_library/main/interface \
-    $(LOCAL_PATH)/../../../../common_audio/vad/main/interface 
+    $(LOCAL_PATH)/../../../../common_audio/vad/main/interface \
+    $(LOCAL_PATH)/../../../../system_wrappers/interface
 
-# Flags passed to only C++ (and not C) files.
-LOCAL_CPPFLAGS := 
-
-LOCAL_LDFLAGS :=
-
-LOCAL_STATIC_LIBRARIES := 
-
-LOCAL_SHARED_LIBRARIES := libcutils \
+LOCAL_SHARED_LIBRARIES := \
+    libcutils \
     libdl \
     libstlport 
 
-LOCAL_ADDITIONAL_DEPENDENCIES :=
-
+ifndef NDK_ROOT
 include external/stlport/libstlport.mk
+endif
 include $(BUILD_STATIC_LIBRARY)
 
