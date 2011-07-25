@@ -8,6 +8,21 @@
 
 MY_WEBRTC_ROOT_PATH := $(call my-dir)
 
+# These defines will apply to all source files
+# Think again before changing it
+MY_WEBRTC_COMMON_DEFS := \
+    '-DWEBRTC_TARGET_PC' \
+    '-DWEBRTC_LINUX' \
+    '-DWEBRTC_THREAD_RR' \
+    '-DWEBRTC_CLOCK_TYPE_REALTIME' \
+    '-DWEBRTC_ANDROID' \
+    '-DWEBRTC_ANDROID_OPENSLES'
+ifeq ($(TARGET_ARCH),arm)
+MY_WEBRTC_COMMON_DEFS += \
+    '-DWEBRTC_SPL_ARM_INLINE_CALLS' \
+    '-DWEBRTC_ARCH_ARM'
+endif
+
 # voice
 include $(MY_WEBRTC_ROOT_PATH)/src/common_audio/resampler/main/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/common_audio/signal_processing_library/main/source/Android.mk
@@ -53,10 +68,13 @@ include $(MY_WEBRTC_ROOT_PATH)/libvpx.mk
 # build .so
 include $(MY_WEBRTC_ROOT_PATH)/android-webrtc.mk
 
-# build test apps
-include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_processing/main/test/process_test/Android.mk
-include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_processing/main/test/unit_test/Android.mk 
-include $(MY_WEBRTC_ROOT_PATH)/src/voice_engine/main/test/cmd_test/Android.mk
-include $(MY_WEBRTC_ROOT_PATH)/src/voice_engine/main/test/auto_test/Android.mk
-include $(MY_WEBRTC_ROOT_PATH)/src/video_engine/main/test/AutoTest/android/Android.mk
-include $(MY_WEBRTC_ROOT_PATH)/src/video_engine/main/test/android_test/Android.mk
+# test apps, they're for test only; all these test apps have LOCAL_MODULE_TAGS:=tests
+# audio processing test apps
+# include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_processing/main/test/process_test/Android.mk
+# include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_processing/main/test/unit_test/Android.mk 
+# voice engine test apps
+# include $(MY_WEBRTC_ROOT_PATH)/src/voice_engine/main/test/cmd_test/Android.mk
+# include $(MY_WEBRTC_ROOT_PATH)/src/voice_engine/main/test/auto_test/Android.mk
+# video engien test apps
+# include $(MY_WEBRTC_ROOT_PATH)/src/video_engine/main/test/AutoTest/android/Android.mk
+# include $(MY_WEBRTC_ROOT_PATH)/src/video_engine/main/test/android_test/Android.mk

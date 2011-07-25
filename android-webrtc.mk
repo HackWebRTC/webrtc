@@ -24,22 +24,21 @@ include $(CLEAR_VARS)
 LOCAL_ARM_MODE := arm
 LOCAL_MODULE := libwebrtc_audio_preprocessing
 LOCAL_MODULE_TAGS := optional
-LOCAL_LDFLAGS :=
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \
-	$(MY_APM_WHOLE_STATIC_LIBRARIES) \
-	libwebrtc_system_wrappers \
+    $(MY_APM_WHOLE_STATIC_LIBRARIES) \
+    libwebrtc_system_wrappers \
 
 LOCAL_SHARED_LIBRARIES := \
     libcutils \
     libdl \
     libstlport 
 
-LOCAL_ADDITIONAL_DEPENDENCIES :=
-
 LOCAL_PRELINK_MODULE := false
 
+ifndef NDK_ROOT
 include external/stlport/libstlport.mk
+endif
 include $(BUILD_SHARED_LIBRARY)
 
 ###
@@ -51,7 +50,6 @@ include $(CLEAR_VARS)
 LOCAL_ARM_MODE := arm
 LOCAL_MODULE := libwebrtc
 LOCAL_MODULE_TAGS := optional
-LOCAL_LDFLAGS :=
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \
     libwebrtc_system_wrappers \
@@ -82,7 +80,6 @@ LOCAL_WHOLE_STATIC_LIBRARIES := \
     libwebrtc_jpeg \
     libwebrtc_vpx
 
-LOCAL_STATIC_LIBRARIES := 	
 LOCAL_SHARED_LIBRARIES := \
     libcutils \
     libdl \
@@ -92,9 +89,9 @@ LOCAL_SHARED_LIBRARIES := \
     libOpenSLES \
     libwebrtc_audio_preprocessing
 
-LOCAL_ADDITIONAL_DEPENDENCIES :=
-
 LOCAL_PRELINK_MODULE := false
 
+ifndef NDK_ROOT
 include external/stlport/libstlport.mk
+endif
 include $(BUILD_SHARED_LIBRARY)
