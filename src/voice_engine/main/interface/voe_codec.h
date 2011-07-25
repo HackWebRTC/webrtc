@@ -19,7 +19,7 @@
 //  using namespace webrtc;
 //  VoiceEngine* voe = VoiceEngine::Create();
 //  VoEBase* base = VoEBase::GetInterface(voe);
-//  VoECodec codec = VoECodec::GetInterface(voe);
+//  VoECodec* codec = VoECodec::GetInterface(voe);
 //  base->Init();
 //  int num_of_codecs = codec->NumOfCodecs()
 //  ...
