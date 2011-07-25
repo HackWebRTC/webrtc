@@ -225,12 +225,6 @@ int ViEAutoTest::ViECustomCall()
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
-        error = ptrVECodec->SetVADStatus(audioChannel, true,
-                                         webrtc::kVadAggressiveHigh);
-        numberOfErrors += ViETest::TestError(error == 0,
-                                             "ERROR: %s at line %d",
-                                             __FUNCTION__, __LINE__);
-
         error = ptrVEAPM->SetAgcStatus(true, kAgcDefault);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
