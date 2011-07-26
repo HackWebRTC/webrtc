@@ -1,4 +1,4 @@
-function apmtest(task, testname, casenumber, legacy)
+function apmtest(task, testname, filepath, casenumber, legacy)
 %APMTEST is a tool to process APM file sets and easily display the output.
 %   APMTEST(TASK, TESTNAME, CASENUMBER) performs one of several TASKs:
 %     'test'  Processes the files to produce test output.
@@ -17,25 +17,31 @@ function apmtest(task, testname, casenumber, legacy)
 %     'ns'    The NS test set.
 %     'vad'   The VAD test set.
 %
+%   FILEPATH specifies the path to the test data files.
+%
 %   CASENUMBER can be used to select a single test case. Omit CASENUMBER,
 %   or set to zero, to use all test cases.
 %
 
-if nargin < 4
+if nargin < 5 || isempty(legacy)
   % Set to true to run old VQE recordings.
   legacy = false;
 end
 
-if nargin < 3
+if nargin < 4 || isempty(casenumber)
   casenumber = 0;
 end
 
-if nargin < 2
-  task = 'test';
+if nargin < 3 || isempty(filepath)
+  filepath = 'data/';
 end
 
-if nargin < 1
+if nargin < 2 || isempty(testname)
   testname = 'all';
+end
+
+if nargin < 1 || isempty(task)
+  task = 'test';
 end
 
 if ~strcmp(task, 'test') && ~strcmp(task, 'list') && ~strcmp(task, 'show')
@@ -46,16 +52,9 @@ if casenumber == 0 && strcmp(task, 'show')
   error(['CASENUMBER must be specified for TASK ' task]);
 end
 
-filepath = 'data/';
 inpath = [filepath 'input/'];
 outpath = [filepath 'output/'];
 refpath = [filepath 'reference/'];
-
-% Temporary
-if legacy
-  refpath = [filepath 'output/'];
-  outpath = [filepath 'reference/'];
-end
 
 if strcmp(testname, 'all')
   tests = {'apm','apmm','aec','aecm','agc','ns','vad'};
@@ -64,7 +63,7 @@ else
 end
 
 if legacy
-  progname = '/usr/local/google/p4/dev/depot/test';
+  progname = './test';
 else
   progname = './process_test';
 end
@@ -127,24 +126,24 @@ for i=1:length(tests)
     error(['TESTNAME ' tests{i} ' is not recognized']);
   end
 
-  inpath = [inpath testdir];
-  outpath = [outpath testdir];
-  refpath = [refpath testdir];
+  inpathtest = [inpath testdir];
+  outpathtest = [outpath testdir];
+  refpathtest = [refpath testdir];
 
-  if ~exist(inpath,'dir')
-    error(['Input directory ' inpath ' does not exist']);
+  if ~exist(inpathtest,'dir')
+    error(['Input directory ' inpathtest ' does not exist']);
   end
 
-  if ~exist(refpath,'dir')
-    warning(['Reference directory ' refpath ' does not exist']);
+  if ~exist(refpathtest,'dir')
+    warning(['Reference directory ' refpathtest ' does not exist']);
   end
 
-  [status, errMsg] = mkdir(outpath);
+  [status, errMsg] = mkdir(outpathtest);
   if (status == 0)
     error(errMsg);
   end
 
-  [nErr, nCases] = recurseDir(inpath, outpath, refpath, outfile, ...
+  [nErr, nCases] = recurseDir(inpathtest, outpathtest, refpathtest, outfile, ...
       progname, opt, simulateMode, nErr, nCases, task, casenumber, legacy);
 
   if strcmp(task, 'test') || strcmp(task, 'show')
@@ -221,13 +220,13 @@ if nDirs == 0
 
       if exist([inpath 'vqeEvent.dat'])
         system(['ln -s -f ' inpath 'vqeEvent.dat ' eventFile]);
-      elseif exist([inpath 'apm_event.day'])
+      elseif exist([inpath 'apm_event.dat'])
         system(['ln -s -f ' inpath 'apm_event.dat ' eventFile]);
       end
 
       if exist([inpath 'vqeBuf.dat'])
         system(['ln -s -f ' inpath 'vqeBuf.dat ' delayFile]);
-      elseif exist([inpath 'apm_delay.day'])
+      elseif exist([inpath 'apm_delay.dat'])
         system(['ln -s -f ' inpath 'apm_delay.dat ' delayFile]);
       end
 
@@ -295,10 +294,6 @@ if nDirs == 0
           spclab(fs, nearFile, [refpath outfile], [outpath outfile], ...
               diffvector);
           %spclab(fs, diffvector);
-        end
-
-        if vadTest == 1
-          spclab([refpath vadoutfile], [outpath vadoutfile]);
         end
       end
     end
