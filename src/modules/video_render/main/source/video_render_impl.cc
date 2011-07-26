@@ -39,7 +39,7 @@
 #include "mac/video_render_mac_carbon_impl.h"
 #endif
 
-#elif defined(ANDROID)
+#elif defined(WEBRTC_ANDROID)
 #include "Android/video_render_android_impl.h"
 #include "Android/video_render_android_surface_view.h"
 #include "Android/video_render_android_native_opengl2.h"
@@ -99,7 +99,7 @@ void VideoRender::DestroyVideoRender(
 
 WebRtc_Word32 VideoRender::SetAndroidObjects(void *javaVM)
 {
-#ifdef ANDROID
+#ifdef WEBRTC_ANDROID
     return VideoRenderAndroid::SetAndroidEnvVariables(javaVM);
 #else
     return -1;
@@ -170,7 +170,7 @@ ModuleVideoRenderImpl::ModuleVideoRenderImpl(
         break;
 #endif
 
-#elif defined(ANDROID)
+#elif defined(WEBRTC_ANDROID)
         case kRenderAndroid:
         {
             if(AndroidNativeOpenGl2Renderer::UseOpenGL2(window))
@@ -298,7 +298,7 @@ ModuleVideoRenderImpl::~ModuleVideoRenderImpl()
             case kRenderiPhone:
             break;
 
-#elif defined(ANDROID)
+#elif defined(WEBRTC_ANDROID)
             case kRenderAndroid:
             {
                 VideoRenderAndroid* ptrRenderer = reinterpret_cast<VideoRenderAndroid*> (_ptrRenderer);

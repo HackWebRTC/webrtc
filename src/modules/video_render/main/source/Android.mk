@@ -14,8 +14,8 @@ LOCAL_MODULE_CLASS := STATIC_LIBRARIES
 LOCAL_MODULE := libwebrtc_video_render
 LOCAL_MODULE_TAGS := optional
 LOCAL_CPP_EXTENSION := .cc
-LOCAL_GENERATED_SOURCES :=
-LOCAL_SRC_FILES := incoming_video_stream.cc \
+LOCAL_SRC_FILES := \
+    incoming_video_stream.cc \
     video_render_frames.cc \
     video_render_impl.cc \
     external/video_render_external_impl.cc \
@@ -25,40 +25,27 @@ LOCAL_SRC_FILES := incoming_video_stream.cc \
     Android/video_render_opengles20.cc 
 
 # Flags passed to both C and C++ files.
-MY_CFLAGS :=  
-MY_CFLAGS_C :=
-MY_DEFS := '-DNO_TCMALLOC' \
-    '-DNO_HEAPCHECKER' \
-    '-DWEBRTC_TARGET_PC' \
-    '-DWEBRTC_LINUX' \
-    '-DWEBRTC_THREAD_RR' \
-    '-DWEBRTC_ANDROID' \
-    '-DANDROID' 
+LOCAL_CFLAGS := \
+    $(MY_WEBRTC_COMMON_DEFS)
 
-LOCAL_CFLAGS := $(MY_CFLAGS_C) $(MY_CFLAGS) $(MY_DEFS)
-
-# Include paths placed before CFLAGS/CPPFLAGS
-LOCAL_C_INCLUDES := $(LOCAL_PATH)/../../../.. \
-    $(LOCAL_PATH)/. \
+LOCAL_C_INCLUDES := \
+    $(LOCAL_PATH) \
+    $(LOCAL_PATH)/Android \
     $(LOCAL_PATH)/../interface \
-    $(LOCAL_PATH)/../../../interface \
-    $(LOCAL_PATH)/../../../../common_video/vplib/main/interface \
-    $(LOCAL_PATH)/../../../../system_wrappers/interface \
-    $(LOCAL_PATH)/../../../utility/interface \
+    $(LOCAL_PATH)/../../../.. \
     $(LOCAL_PATH)/../../../audio_coding/main/interface \
-    $(LOCAL_PATH)/Android
+    $(LOCAL_PATH)/../../../interface \
+    $(LOCAL_PATH)/../../../utility/interface \
+    $(LOCAL_PATH)/../../../../common_video/vplib/main/interface \
+    $(LOCAL_PATH)/../../../../system_wrappers/interface 
 
-# Flags passed to only C++ (and not C) files.
-LOCAL_CPPFLAGS := 
-
-LOCAL_LDFLAGS :=
-
-LOCAL_STATIC_LIBRARIES :=
-
-LOCAL_SHARED_LIBRARIES := libcutils \
+# TODO(leozwang) organize shared library in a better way
+LOCAL_SHARED_LIBRARIES := \
+    libcutils \
     libdl \
     libstlport
-LOCAL_ADDITIONAL_DEPENDENCIES :=
 
+ifndef NDK_ROOT
 include external/stlport/libstlport.mk
+endif
 include $(BUILD_STATIC_LIBRARY)
