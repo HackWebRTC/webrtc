@@ -14,7 +14,7 @@
 
 #include "audio_processing.h"
 #ifdef WEBRTC_ANDROID
-#include "audio_processing_unittest_android.pb.h"
+#include "external/webrtc/src/modules/audio_processing/main/test/unit_test/audio_processing_unittest.pb.h"
 #else
 #include "audio_processing_unittest.pb.h"
 #endif

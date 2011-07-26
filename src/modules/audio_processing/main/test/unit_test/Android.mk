@@ -15,8 +15,8 @@ include $(CLEAR_VARS)
 LOCAL_MODULE_TAGS := tests
 LOCAL_CPP_EXTENSION := .cc
 LOCAL_SRC_FILES:= \
-    unit_test.cc \
-    audio_processing_unittest_android.pb.cc
+    $(call all-proto-files-under, .) \
+    unit_test.cc
 
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \
