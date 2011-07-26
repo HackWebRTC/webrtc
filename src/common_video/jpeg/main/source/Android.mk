@@ -14,41 +14,28 @@ LOCAL_MODULE_CLASS := STATIC_LIBRARIES
 LOCAL_MODULE := libwebrtc_jpeg
 LOCAL_MODULE_TAGS := optional
 LOCAL_CPP_EXTENSION := .cc
-LOCAL_GENERATED_SOURCES :=
-LOCAL_SRC_FILES := jpeg.cc \
+LOCAL_SRC_FILES := \
+    jpeg.cc \
     data_manager.cc
 
 # Flags passed to both C and C++ files.
-MY_CFLAGS :=  
-MY_CFLAGS_C :=
-MY_DEFS := '-DNO_TCMALLOC' \
-    '-DNO_HEAPCHECKER'
-ifeq ($(TARGET_ARCH),arm) 
-MY_DEFS += \
-    '-DWEBRTC_ANDROID' \
-    '-DANDROID' 
-endif
-LOCAL_CFLAGS := $(MY_CFLAGS_C) $(MY_CFLAGS) $(MY_DEFS)
+LOCAL_CFLAGS := \
+    $(MY_WEBRTC_COMMON_DEFS)
 
-# Include paths placed before CFLAGS/CPPFLAGS
-LOCAL_C_INCLUDES := $(LOCAL_PATH)/../../../.. \
+LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../interface \
-    $(LOCAL_PATH)/../../../../../../ \
+    $(LOCAL_PATH)/../../../.. \
     $(LOCAL_PATH)/../../../vplib/main/interface \
     $(LOCAL_PATH)/../../../interface \
+    $(LOCAL_PATH)/../../../../../../ \
     external/jpeg
 
-# Flags passed to only C++ (and not C) files.
-LOCAL_CPPFLAGS := 
-
-LOCAL_LDFLAGS :=
-
-LOCAL_STATIC_LIBRARIES :=
-
-LOCAL_SHARED_LIBRARIES := libcutils \
+LOCAL_SHARED_LIBRARIES := \
+    libcutils \
     libdl \
     libstlport
-LOCAL_ADDITIONAL_DEPENDENCIES :=
 
+ifndef NDK_ROOT
 include external/stlport/libstlport.mk
+endif
 include $(BUILD_STATIC_LIBRARY)
