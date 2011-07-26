@@ -14,7 +14,7 @@
 
 #if defined(_WIN32)
     #include "rw_lock_windows.h"
-#elif defined(ANDROID)
+#elif defined(WEBRTC_ANDROID)
     #include <stdlib.h>
     #include "rw_lock_generic.h"
 #else
@@ -26,7 +26,7 @@ RWLockWrapper* RWLockWrapper::CreateRWLock()
 {
 #ifdef _WIN32
     RWLockWrapper* lock =  new RWLockWindows();
-#elif defined(ANDROID)
+#elif defined(WEBRTC_ANDROID)
     RWLockWrapper* lock =  new RWLockWrapperGeneric();
 #else
     RWLockWrapper* lock =  new RWLockLinux();

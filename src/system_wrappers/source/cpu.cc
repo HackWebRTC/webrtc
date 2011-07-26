@@ -20,7 +20,7 @@
     #include "cpu_mac.h"
 #elif defined(WEBRTC_MAC_INTEL)
     #include "cpu_mac.h"
-#elif defined(ANDROID)
+#elif defined(WEBRTC_ANDROID)
     // Not implemented yet, might be possible to use Linux implementation
 #else // defined(WEBRTC_LINUX)
     #include <sys/sysinfo.h>
@@ -43,7 +43,7 @@ WebRtc_UWord32 CpuWrapper::DetectNumberOfCores()
         WEBRTC_TRACE(kTraceStateInfo, kTraceUtility, -1,
                      "Available number of cores:%d", _numberOfCores);
 
-#elif defined(WEBRTC_LINUX) && !defined(ANDROID)
+#elif defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID)
         _numberOfCores = get_nprocs();
         WEBRTC_TRACE(kTraceStateInfo, kTraceUtility, -1,
                      "Available number of cores:%d", _numberOfCores);
@@ -78,7 +78,7 @@ CpuWrapper* CpuWrapper::CreateCpu()
    return new CpuWindows();
 #elif (defined(WEBRTC_MAC) || defined(WEBRTC_MAC_INTEL))
     return new CpuWrapperMac();
-#elif defined(ANDROID)
+#elif defined(WEBRTC_ANDROID)
     return 0;
 #else
     return new CpuLinux();

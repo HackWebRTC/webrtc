@@ -16,7 +16,7 @@
 #include <string.h>
 #include <time.h>
 
-#ifdef ANDROID
+#ifdef WEBRTC_ANDROID
     #include <pthread.h>
 #else
     #include <iostream>

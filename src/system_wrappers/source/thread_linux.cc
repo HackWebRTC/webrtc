@@ -35,7 +35,7 @@ extern "C"
     }
 }
 
-#if (defined(WEBRTC_LINUX) && !defined(ANDROID))
+#if (defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID))
 static pid_t gettid()
 {
 #if defined(__NR_gettid)
@@ -86,7 +86,7 @@ ThreadLinux::ThreadLinux(ThreadRunFunction func, ThreadObj obj,
 int ThreadLinux::Construct()
 {
     int result = 0;
-#if !defined(ANDROID)
+#if !defined(WEBRTC_ANDROID)
     // Enable immediate cancellation if requested, see Shutdown()
     result = pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
     if (result != 0)
@@ -191,7 +191,7 @@ bool ThreadLinux::Start(unsigned int& /*threadID*/)
     return true;
 }
 
-#if (defined(WEBRTC_LINUX) && !defined(ANDROID))
+#if (defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID))
 bool ThreadLinux::SetAffinity(const int* processorNumbers,
                               const unsigned int amountOfProcessors)
 {
@@ -235,7 +235,7 @@ void ThreadLinux::SetNotAlive()
 
 bool ThreadLinux::Shutdown()
 {
-#if !defined(ANDROID)
+#if !defined(WEBRTC_ANDROID)
     if (_thread && (0 != pthread_cancel(_thread)))
     {
         return false;
