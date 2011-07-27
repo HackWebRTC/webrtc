@@ -38,8 +38,8 @@ _codecSpecificInfoLength(0),
 _codec(kVideoCodecUnknown)
 {
     _buffer = NULL;
-    _size = NULL;
-    _length = NULL;
+    _size = 0;
+    _length = 0;
     if (rhs._buffer != NULL)
     {
         VerifyAndAllocate(rhs._length);
@@ -58,8 +58,8 @@ _codecSpecificInfoLength(0),
 _codec(rhs._codec)
 {
     _buffer = NULL;
-    _size = NULL;
-    _length = NULL;
+    _size = 0;
+    _length = 0;
     if (rhs._buffer != NULL)
     {
         VerifyAndAllocate(rhs._size);
