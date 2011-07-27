@@ -17,9 +17,7 @@
 
 #include "signal_processing_library.h"
 
-#ifndef SPL_NO_DOUBLE_IMPLEMENTATIONS
 #ifndef XSCALE_OPT
-
 WebRtc_Word16 WebRtcSpl_SubSatW16(WebRtc_Word16 var1, WebRtc_Word16 var2)
 {
     WebRtc_Word32 l_diff;
@@ -41,8 +39,6 @@ WebRtc_Word16 WebRtcSpl_SubSatW16(WebRtc_Word16 var1, WebRtc_Word16 var2)
 
     return s_diff;
 }
-
 #else
 #pragma message(">> WebRtcSpl_SubSatW16.c is excluded from this build")
 #endif // XSCALE_OPT
-#endif // SPL_NO_DOUBLE_IMPLEMENTATIONS

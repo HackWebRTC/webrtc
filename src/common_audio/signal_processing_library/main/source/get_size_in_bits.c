@@ -17,8 +17,6 @@
 
 #include "signal_processing_library.h"
 
-#ifndef SPL_NO_DOUBLE_IMPLEMENTATIONS
-
 WebRtc_Word16 WebRtcSpl_GetSizeInBits(WebRtc_UWord32 value)
 {
 
@@ -40,5 +38,3 @@ WebRtc_Word16 WebRtcSpl_GetSizeInBits(WebRtc_UWord32 value)
 
     return bits;
 }
-
-#endif

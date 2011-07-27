@@ -15,9 +15,7 @@
 #ifndef WEBRTC_SPL_SPL_INL_H_
 #define WEBRTC_SPL_SPL_INL_H_
 
-#ifdef WEBRTC_SPL_INLINE_CALLS
-
-#ifdef WEBRTC_ANDROID
+#ifdef WEBRTC_ARM_INLINE_CALLS
 
 WEBRTC_INLINE WebRtc_Word32 WEBRTC_SPL_MUL(WebRtc_Word32 a, WebRtc_Word32 b)
 {
@@ -35,8 +33,8 @@ WEBRTC_INLINE WebRtc_Word32 WEBRTC_SPL_MUL_16_32_RSFT16(WebRtc_Word16 a,
 }
 
 WEBRTC_INLINE WebRtc_Word32 WEBRTC_SPL_MUL_32_32_RSFT32(WebRtc_Word16 a,
-                                                      WebRtc_Word16 b,
-                                                      WebRtc_Word32 c)
+                                                        WebRtc_Word16 b,
+                                                        WebRtc_Word32 c)
 {
     WebRtc_Word32 tmp;
     __asm__("pkhbt %0, %1, %2, lsl #16" : "=r"(tmp) : "r"(b), "r"(a));
@@ -44,9 +42,8 @@ WEBRTC_INLINE WebRtc_Word32 WEBRTC_SPL_MUL_32_32_RSFT32(WebRtc_Word16 a,
     return tmp;
 }
 
-WEBRTC_INLINE WebRtc_Word32 WEBRTC_SPL_MUL_32_32_RSFT32BI(
-        WebRtc_Word32 a,
-        WebRtc_Word32 b)
+WEBRTC_INLINE WebRtc_Word32 WEBRTC_SPL_MUL_32_32_RSFT32BI(WebRtc_Word32 a,
+                                                          WebRtc_Word32 b)
 {
     WebRtc_Word32 tmp;
     __asm__("smmul %0, %1, %2":"=r"(tmp):"r"(a), "r"(b));
@@ -288,6 +285,5 @@ WEBRTC_INLINE int WebRtcSpl_NormU32(WebRtc_UWord32 a)
     return zeros;
 }
 
-#endif // WEBRTC_ANDROID
-#endif // WEBRTC_SPL_INLINE_CALLS
+#endif // WEBRTC_ARM_INLINE_CALLS
 #endif // WEBRTC_SPL_SPL_INL_H_

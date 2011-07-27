@@ -17,8 +17,6 @@
 
 #include "signal_processing_library.h"
 
-#ifndef SPL_NO_DOUBLE_IMPLEMENTATIONS
-
 int WebRtcSpl_NormW32(WebRtc_Word32 value)
 {
     int zeros = 0;
@@ -41,5 +39,3 @@ int WebRtcSpl_NormW32(WebRtc_Word32 value)
 
     return zeros;
 }
-
-#endif

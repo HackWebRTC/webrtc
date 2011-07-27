@@ -17,8 +17,6 @@
 
 #include "signal_processing_library.h"
 
-#ifndef SPL_NO_DOUBLE_IMPLEMENTATIONS
-
 WebRtc_Word32 WebRtcSpl_AddSatW32(WebRtc_Word32 var1, WebRtc_Word32 var2)
 {
     WebRtc_Word32 l_sum;
@@ -43,5 +41,3 @@ WebRtc_Word32 WebRtcSpl_AddSatW32(WebRtc_Word32 var1, WebRtc_Word32 var2)
 
     return l_sum;
 }
-
-#endif

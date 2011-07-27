@@ -25,11 +25,6 @@
 #include <Armintr.h> // intrinsic file for windows mobile
 #endif
 
-#ifdef WEBRTC_ANDROID
-#define WEBRTC_SPL_INLINE_CALLS
-#define SPL_NO_DOUBLE_IMPLEMENTATIONS
-#endif
-
 // Macros specific for the fixed point implementation
 #define WEBRTC_SPL_WORD16_MAX       32767
 #define WEBRTC_SPL_WORD16_MIN       -32768
@@ -65,11 +60,6 @@
       ((val) << (8 * ((index) & 0x1)))
 #endif
 
-#ifndef WEBRTC_ANDROID
-#define WEBRTC_SPL_MUL(a, b)                                    \
-  ((WebRtc_Word32) ((WebRtc_Word32)(a) * (WebRtc_Word32)(b)))
-#endif
-
 #define WEBRTC_SPL_UMUL(a, b)                                           \
   ((WebRtc_UWord32) ((WebRtc_UWord32)(a) * (WebRtc_UWord32)(b)))
 #define WEBRTC_SPL_UMUL_RSFT16(a, b)\
@@ -99,26 +89,9 @@
   ((WEBRTC_SPL_MUL_16_16(a, (b) >> 16) << 1)                            \
    + (((WEBRTC_SPL_MUL_16_U16(a, (WebRtc_UWord16)(b)) >> 1) + 0x2000) >> 14))
 
-#ifndef WEBRTC_ANDROID
-#define WEBRTC_SPL_MUL_16_32_RSFT16(a, b)                               \
-  (WEBRTC_SPL_MUL_16_16(a, b >> 16)                                     \
-   + ((WEBRTC_SPL_MUL_16_16(a, (b & 0xffff) >> 1) + 0x4000) >> 15))
-#define WEBRTC_SPL_MUL_32_32_RSFT32(a32a, a32b, b32)                    \
-  ((WebRtc_Word32)(WEBRTC_SPL_MUL_16_32_RSFT16(a32a, b32)               \
-                   + (WEBRTC_SPL_MUL_16_32_RSFT16(a32b, b32) >> 16)))
-#define WEBRTC_SPL_MUL_32_32_RSFT32BI(a32, b32)                         \
-  ((WebRtc_Word32)(WEBRTC_SPL_MUL_16_32_RSFT16((                        \
-      (WebRtc_Word16)(a32 >> 16)), b32) +                               \
-                   (WEBRTC_SPL_MUL_16_32_RSFT16((                       \
-                       (WebRtc_Word16)((a32 & 0x0000FFFF) >> 1)), b32) >> 15)))
-#endif
-
 #ifdef ARM_WINM
 #define WEBRTC_SPL_MUL_16_16(a, b)                      \
   _SmulLo_SW_SL((WebRtc_Word16)(a), (WebRtc_Word16)(b))
-#elif !defined (WEBRTC_ANDROID)
-#define WEBRTC_SPL_MUL_16_16(a, b)                                      \
-    ((WebRtc_Word32) (((WebRtc_Word16)(a)) * ((WebRtc_Word16)(b))))
 #endif
 
 #define WEBRTC_SPL_MUL_16_16_RSFT(a, b, c)      \
@@ -192,7 +165,7 @@ extern WebRtc_Word16 WebRtcSpl_kHanningTable[];
 // Random table
 extern WebRtc_Word16 WebRtcSpl_kRandNTable[];
 
-#ifndef WEBRTC_SPL_INLINE_CALLS
+#ifndef WEBRTC_ARM_INLINE_CALLS
 WebRtc_Word16 WebRtcSpl_AddSatW16(WebRtc_Word16 var1, WebRtc_Word16 var2);
 WebRtc_Word16 WebRtcSpl_SubSatW16(WebRtc_Word16 var1, WebRtc_Word16 var2);
 WebRtc_Word32 WebRtcSpl_AddSatW32(WebRtc_Word32 var1, WebRtc_Word32 var2);
@@ -201,9 +174,24 @@ WebRtc_Word16 WebRtcSpl_GetSizeInBits(WebRtc_UWord32 value);
 int WebRtcSpl_NormW32(WebRtc_Word32 value);
 int WebRtcSpl_NormW16(WebRtc_Word16 value);
 int WebRtcSpl_NormU32(WebRtc_UWord32 value);
+#define WEBRTC_SPL_MUL(a, b)                                            \
+  ((WebRtc_Word32) ((WebRtc_Word32)(a) * (WebRtc_Word32)(b)))
+#define WEBRTC_SPL_MUL_16_16(a, b)                                      \
+    ((WebRtc_Word32) (((WebRtc_Word16)(a)) * ((WebRtc_Word16)(b))))
+#define WEBRTC_SPL_MUL_16_32_RSFT16(a, b)                               \
+  (WEBRTC_SPL_MUL_16_16(a, b >> 16)                                     \
+   + ((WEBRTC_SPL_MUL_16_16(a, (b & 0xffff) >> 1) + 0x4000) >> 15))
+#define WEBRTC_SPL_MUL_32_32_RSFT32(a32a, a32b, b32)                    \
+  ((WebRtc_Word32)(WEBRTC_SPL_MUL_16_32_RSFT16(a32a, b32)               \
+                   + (WEBRTC_SPL_MUL_16_32_RSFT16(a32b, b32) >> 16)))
+#define WEBRTC_SPL_MUL_32_32_RSFT32BI(a32, b32)                         \
+  ((WebRtc_Word32)(WEBRTC_SPL_MUL_16_32_RSFT16((                        \
+      (WebRtc_Word16)(a32 >> 16)), b32) +                               \
+                   (WEBRTC_SPL_MUL_16_32_RSFT16((                       \
+                       (WebRtc_Word16)((a32 & 0x0000FFFF) >> 1)), b32) >> 15)))
 #else
 #include "spl_inl.h"
-#endif
+#endif // WEBRTC_ARM_INLINE_CALLS
 
 // Get SPL Version
 WebRtc_Word16 WebRtcSpl_get_version(char* version,
