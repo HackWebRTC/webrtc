@@ -18,6 +18,9 @@
 
 #include <iostream>
 
+#define VCM_RED_PAYLOAD_TYPE        96
+#define VCM_ULPFEC_PAYLOAD_TYPE     97
+
 int ViEAutoTest::ViECustomCall()
 {
 
@@ -114,6 +117,7 @@ int ViEAutoTest::ViECustomCall()
     int audioRxPort = 0;
     webrtc::CodecInst audioCodec;
     int audioChannel = -1;
+    int protectionMethod = 0;
 
     while(1)
     {
@@ -135,6 +139,16 @@ int ViEAutoTest::ViECustomCall()
         // video codecs
         memset((void*)&videoCodec, 0, sizeof(videoCodec));
         GetVideoCodec(ptrViECodec, videoCodec);
+
+        // Choose video protection mode
+        std::cout << "Enter Video Protection Method:" << std::endl;
+        std::cout << "0. None" << std::endl;
+        std::cout << "1. FEC" << std::endl;
+        std::cout << "2. NACK" << std::endl;
+        std::cout << "3. NACK+FEC" << std::endl;
+        std::string method;
+        std::getline(std::cin, method);
+        protectionMethod = atoi(method.c_str());
 
         // audio devices
         memset(audioCaptureDeviceName, 0, KMaxUniqueIdLength);
@@ -291,6 +305,54 @@ int ViEAutoTest::ViECustomCall()
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
+        // Set video protection for FEC and/or NACK
+        switch (protectionMethod)
+        {
+            case 0: // None
+            error = ptrViERtpRtcp->SetFECStatus(videoChannel, false,
+                                                VCM_RED_PAYLOAD_TYPE,
+                                                VCM_ULPFEC_PAYLOAD_TYPE);
+            numberOfErrors += ViETest::TestError(error == 0,
+                                                 "ERROR: %s at line %d",
+                                                 __FUNCTION__, __LINE__);
+
+            error = ptrViERtpRtcp->SetNACKStatus(videoChannel, false);
+            numberOfErrors += ViETest::TestError(error == 0,
+                                                 "ERROR: %s at line %d",
+                                                 __FUNCTION__, __LINE__);
+              break;
+
+            case 1: // FEC only
+            error = ptrViERtpRtcp->SetFECStatus(videoChannel, true,
+                                                VCM_RED_PAYLOAD_TYPE,
+                                                VCM_ULPFEC_PAYLOAD_TYPE);
+            numberOfErrors += ViETest::TestError(error == 0,
+                                                 "ERROR: %s at line %d",
+                                                 __FUNCTION__, __LINE__);
+
+            error = ptrViERtpRtcp->SetNACKStatus(videoChannel, false);
+            numberOfErrors += ViETest::TestError(error == 0,
+                                                 "ERROR: %s at line %d",
+                                                 __FUNCTION__, __LINE__);
+              break;
+
+            case 2: // NACK only
+            error = ptrViERtpRtcp->SetNACKStatus(videoChannel, true);
+            numberOfErrors += ViETest::TestError(error == 0,
+                                                 "ERROR: %s at line %d",
+                                                 __FUNCTION__, __LINE__);
+              break;
+
+            case 3: // Hybrid NACK and FEC
+            error = ptrViERtpRtcp->SetHybridNACKFECStatus(videoChannel, true,
+                                                      VCM_RED_PAYLOAD_TYPE,
+                                                      VCM_ULPFEC_PAYLOAD_TYPE);
+            numberOfErrors += ViETest::TestError(error == 0,
+                                                 "ERROR: %s at line %d",
+                                                 __FUNCTION__, __LINE__);
+            break;
+        }
+
         error = ptrViERtpRtcp->SetTMMBRStatus(videoChannel, true);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
@@ -328,6 +390,34 @@ int ViEAutoTest::ViECustomCall()
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
+
+        // Set receive codecs for FEC and hybrid NACK/FEC
+        if (protectionMethod == 1 || protectionMethod == 3)
+        {
+            // RED
+            error = ptrViECodec->GetCodec(ptrViECodec->NumberOfCodecs() - 2,
+                                          videoCodec);
+            numberOfErrors += ViETest::TestError(error == 0,
+                                                 "ERROR: %s at line %d",
+                                                 __FUNCTION__, __LINE__);
+
+            error = ptrViECodec->SetReceiveCodec(videoChannel, videoCodec);
+            numberOfErrors += ViETest::TestError(error == 0,
+                                                 "ERROR: %s at line %d",
+                                                 __FUNCTION__, __LINE__);
+
+            // ULPFEC
+            error = ptrViECodec->GetCodec(ptrViECodec->NumberOfCodecs() - 1,
+                                             videoCodec);
+            numberOfErrors += ViETest::TestError(error == 0,
+                                                 "ERROR: %s at line %d",
+                                                 __FUNCTION__, __LINE__);
+
+            error = ptrViECodec->SetReceiveCodec(videoChannel, videoCodec);
+            numberOfErrors += ViETest::TestError(error == 0,
+                                                 "ERROR: %s at line %d",
+                                                 __FUNCTION__, __LINE__);
+        }
 
         // **** start the engines
         // VE first
