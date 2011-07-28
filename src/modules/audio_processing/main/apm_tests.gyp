@@ -14,6 +14,13 @@
     {
       'target_name': 'unit_test',
       'type': 'executable',
+      'conditions': [
+        ['prefer_fixed_point==1', {
+          'defines': ['WEBRTC_APM_UNIT_TEST_FIXED_PROFILE'],
+        }, {
+          'defines': ['WEBRTC_APM_UNIT_TEST_FLOAT_PROFILE'],
+        }],
+      ],
       'dependencies': [
         'source/apm.gyp:audio_processing',
         '../../../system_wrappers/source/system_wrappers.gyp:system_wrappers',
@@ -49,7 +56,6 @@
         'test/process_test/process_test.cc',
       ],
     },
-
   ],
 }
 

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <cstdio>
+#include <stdio.h>
 
 #include <gtest/gtest.h>
 
@@ -20,9 +20,9 @@
 #endif
 #include "event_wrapper.h"
 #include "module_common_types.h"
+#include "signal_processing_library.h"
 #include "thread_wrapper.h"
 #include "trace.h"
-#include "signal_processing_library.h"
 
 using webrtc::AudioProcessing;
 using webrtc::AudioFrame;
@@ -37,10 +37,16 @@ using webrtc::EchoControlMobile;
 using webrtc::VoiceDetection;
 
 namespace {
-// When true, this will compare the output data with the results stored to
+// When false, this will compare the output data with the results stored to
 // file. This is the typical case. When the file should be updated, it can
-// be set to false with the command-line switch --write_output_data.
-bool global_read_output_data = true;
+// be set to true with the command-line switch --write_output_data.
+bool write_output_data = false;
+
+#if defined(WEBRTC_APM_UNIT_TEST_FIXED_PROFILE)
+const char kOutputFileName[] = "output_data_fixed.pb";
+#elif defined(WEBRTC_APM_UNIT_TEST_FLOAT_PROFILE)
+const char kOutputFileName[] = "output_data_float.pb";
+#endif
 
 class ApmEnvironment : public ::testing::Environment {
  public:
@@ -412,15 +418,19 @@ TEST_F(ApmTest, Process) {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
   audio_processing_unittest::OutputData output_data;
 
-  if (global_read_output_data) {
-    ReadMessageLiteFromFile("output_data.pb", &output_data);
-
+  if (!write_output_data) {
+    ReadMessageLiteFromFile(kOutputFileName, &output_data);
   } else {
     // We don't have a file; add the required tests to the protobuf.
     // TODO(ajm): vary the output channels as well?
     const int channels[] = {1, 2};
     const size_t channels_size = sizeof(channels) / sizeof(*channels);
+#if defined(WEBRTC_APM_UNIT_TEST_FIXED_PROFILE)
+    // AECM doesn't support super-wb.
+    const int sample_rates[] = {8000, 16000};
+#elif defined(WEBRTC_APM_UNIT_TEST_FLOAT_PROFILE)
     const int sample_rates[] = {8000, 16000, 32000};
+#endif
     const size_t sample_rates_size = sizeof(sample_rates) / sizeof(*sample_rates);
     for (size_t i = 0; i < channels_size; i++) {
       for (size_t j = 0; j < channels_size; j++) {
@@ -435,6 +445,14 @@ TEST_F(ApmTest, Process) {
     }
   }
 
+#if defined(WEBRTC_APM_UNIT_TEST_FIXED_PROFILE)
+  EXPECT_EQ(apm_->kNoError, apm_->set_sample_rate_hz(16000));
+  EXPECT_EQ(apm_->kNoError, apm_->echo_control_mobile()->Enable(true));
+
+  EXPECT_EQ(apm_->kNoError,
+            apm_->gain_control()->set_mode(GainControl::kAdaptiveDigital));
+  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->Enable(true));
+#elif defined(WEBRTC_APM_UNIT_TEST_FLOAT_PROFILE)
   EXPECT_EQ(apm_->kNoError,
             apm_->echo_cancellation()->enable_drift_compensation(true));
   EXPECT_EQ(apm_->kNoError,
@@ -446,6 +464,7 @@ TEST_F(ApmTest, Process) {
   EXPECT_EQ(apm_->kNoError,
             apm_->gain_control()->set_analog_level_limits(0, 255));
   EXPECT_EQ(apm_->kNoError, apm_->gain_control()->Enable(true));
+#endif
 
   EXPECT_EQ(apm_->kNoError,
             apm_->high_pass_filter()->Enable(true));
@@ -564,12 +583,13 @@ TEST_F(ApmTest, Process) {
     //EXPECT_EQ(apm_->kNoError,
     //          apm_->level_estimator()->GetMetrics(&near_metrics,
 
+#if defined(WEBRTC_APM_UNIT_TEST_FLOAT_PROFILE)
     EchoCancellation::Metrics echo_metrics;
     EXPECT_EQ(apm_->kNoError,
               apm_->echo_cancellation()->GetMetrics(&echo_metrics));
+#endif
 
-    // TODO(ajm): check echo metrics and output audio.
-    if (global_read_output_data) {
+    if (!write_output_data) {
       EXPECT_EQ(test->has_echo_count(), has_echo_count);
       EXPECT_EQ(test->has_voice_count(), has_voice_count);
       EXPECT_EQ(test->is_saturated_count(), is_saturated_count);
@@ -577,6 +597,7 @@ TEST_F(ApmTest, Process) {
       EXPECT_EQ(test->analog_level_average(), analog_level_average);
       EXPECT_EQ(test->max_output_average(), max_output_average);
 
+#if defined(WEBRTC_APM_UNIT_TEST_FLOAT_PROFILE)
       audio_processing_unittest::Test::EchoMetrics reference =
           test->echo_metrics();
       TestStats(echo_metrics.residual_echo_return_loss,
@@ -587,7 +608,7 @@ TEST_F(ApmTest, Process) {
                 reference.echo_return_loss_enhancement());
       TestStats(echo_metrics.a_nlp,
                 reference.a_nlp());
-
+#endif
     } else {
       test->set_has_echo_count(has_echo_count);
       test->set_has_voice_count(has_voice_count);
@@ -596,6 +617,7 @@ TEST_F(ApmTest, Process) {
       test->set_analog_level_average(analog_level_average);
       test->set_max_output_average(max_output_average);
 
+#if defined(WEBRTC_APM_UNIT_TEST_FLOAT_PROFILE)
       audio_processing_unittest::Test::EchoMetrics* message =
           test->mutable_echo_metrics();
       WriteStatsMessage(echo_metrics.residual_echo_return_loss,
@@ -606,14 +628,15 @@ TEST_F(ApmTest, Process) {
                         message->mutable_echo_return_loss_enhancement());
       WriteStatsMessage(echo_metrics.a_nlp,
                         message->mutable_a_nlp());
+#endif
     }
 
     rewind(far_file_);
     rewind(near_file_);
   }
 
-  if (!global_read_output_data) {
-    WriteMessageLiteToFile("output_data.pb", output_data);
+  if (write_output_data) {
+    WriteMessageLiteToFile(kOutputFileName, output_data);
   }
 
   google::protobuf::ShutdownProtobufLibrary();
@@ -975,7 +998,7 @@ int main(int argc, char** argv) {
 
   for (int i = 1; i < argc; i++) {
     if (strcmp(argv[i], "--write_output_data") == 0) {
-      global_read_output_data = false;
+      write_output_data = true;
     }
   }
 
