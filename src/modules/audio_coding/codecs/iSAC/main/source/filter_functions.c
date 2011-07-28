@@ -9,7 +9,7 @@
  */
 
 #include <memory.h>
-#ifdef ANDROID
+#ifdef WEBRTC_ANDROID
 #include <stdlib.h>
 #endif
 #include "pitch_estimator.h"
