@@ -1871,9 +1871,6 @@ int WebRtcNsx_ProcessCore(NsxInst_t *inst, short *speechFrame, short *speechFram
 
     WebRtc_Word16 qMagn, qNoise;
     WebRtc_Word16 avgProbSpeechHB, gainModHB, avgFilterGainHB, gainTimeDomainHB;
-    WebRtc_Word16 tmp16no1;
-    WebRtc_Word16 int_part = 0;
-    WebRtc_Word16 frac_part = 0;
     WebRtc_Word16 pink_noise_exp_avg = 0;
 
     int i;
