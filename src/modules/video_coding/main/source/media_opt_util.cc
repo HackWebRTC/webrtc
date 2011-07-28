@@ -306,9 +306,8 @@ VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters)
 {
     // FEC PROTECTION SETTINGS: varies with packet loss and bitrate
 
-    WebRtc_UWord8 packetLoss = (WebRtc_UWord8) (255 * parameters->lossPr);
-
     // No protection if (filtered) packetLoss is 0
+    WebRtc_UWord8 packetLoss = (WebRtc_UWord8) (255 * parameters->lossPr);
     if (packetLoss == 0)
     {
         _protectionFactorK = 0;
@@ -316,62 +315,57 @@ VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters)
          return true;
     }
 
-    // Size of tables
+    // Parameters for FEC setting:
+    // first partition size, thresholds, table pars, spatial resoln fac.
+
+    // First partition protection: ~ 20%
+    WebRtc_UWord8 firstPartitionProt = (WebRtc_UWord8) (255 * 0.20);
+
+    // Threshold on packetLoss and bitRrate/frameRate (=average #packets),
+    // above which we allocate protection to cover at least first partition.
+    WebRtc_UWord8 lossThr = 0;
+    WebRtc_UWord8 packetNumThr = 1;
+
+    // Size of table
     const WebRtc_UWord16 maxFecTableSize = 6450;
     // Parameters for range of rate and packet loss for tables
     const WebRtc_UWord8 ratePar1 = 5;
     const WebRtc_UWord8 ratePar2 = 49;
     const WebRtc_UWord8 plossMax = 129;
 
+    // Spatial resolution size, relative to a reference size.
+    float spatialSizeToRef = static_cast<float>
+                           (parameters->codecWidth * parameters->codecHeight) /
+                           (static_cast<float>(704 * 576));
+    // resolnFac: This parameter will generally increase/decrease the FEC rate
+    // (for fixed bitRate and packetLoss) based on system size.
+    // Use a smaller exponent (< 1) to control/soften system size effect.
+    const float resolnFac = 1.0 / pow(spatialSizeToRef, 0.3);
+
     const float bitRate = parameters->bitRate;
+    const float frameRate = parameters->frameRate;
 
-    // Total (avg) bits available per frame: total rate over actual/frame_rate.
-    // Units are kbits/frame
+    // Average bits per frame (units of kbits)
     const WebRtc_UWord16 bitRatePerFrame = static_cast<WebRtc_UWord16>
-                                                     (bitRate /
-                                                     (parameters->frameRate));
+                                           (bitRate / frameRate);
 
-    // TODO (marpan): Incorporate frame size (bpp) into FEC setting
-
-    // Total (avg) number of packets per frame (source and fec):
+    // Average number of packets per frame (source and fec):
     const WebRtc_UWord8 avgTotPackets = 1 + (WebRtc_UWord8)
                                         ((float) bitRatePerFrame * 1000.0
                                        / (float) (8.0 * _maxPayloadSize) + 0.5);
-
-
-    // First partition protection: ~ 20%
-    WebRtc_UWord8 firstPartitionProt = (WebRtc_UWord8) (255 * 0.20);
-
-    // Threshold on packetLoss and bitRrate/frameRate (=average #packets),
-    // above which we allocate protection to cover at least roughly
-    // first partition size.
-    WebRtc_UWord8 lossThr = 0;
-    WebRtc_UWord8 packetNumThr = 1;
-
-    // Modulation of protection with available bits/frame (or avgTotpackets)
-    float weight1 = 0.5;
-    float weight2 = 0.5;
-    if (avgTotPackets > 4)
-    {
-        weight1 = 0.75;
-        weight2 = 0.25;
-    }
-    if (avgTotPackets > 6)
-    {
-        weight1 = 1.5;
-        weight2 = 0.;
-    }
 
     // FEC rate parameters: for P and I frame
     WebRtc_UWord8 codeRateDelta = 0;
     WebRtc_UWord8 codeRateKey = 0;
 
-    // Get index for table: the FEC protection depends on the (average)
-    // available bits/frame. The range on the rate index corresponds to rates
-    // (bps) from 200k to 8000k, for 30fps
+    // Get index for table: the FEC protection depends on an effective rate.
+    // The range on the rate index corresponds to rates (bps)
+    // from ~200k to ~8000k, for 30fps
+    const WebRtc_UWord16 effRateFecTable = static_cast<WebRtc_UWord16>
+                                           (resolnFac * bitRatePerFrame);
     WebRtc_UWord8 rateIndexTable =
-        (WebRtc_UWord8) VCM_MAX(VCM_MIN((bitRatePerFrame - ratePar1) /
-                                        ratePar1, ratePar2), 0);
+        (WebRtc_UWord8) VCM_MAX(VCM_MIN((effRateFecTable - ratePar1) /
+                                         ratePar1, ratePar2), 0);
 
     // Restrict packet loss range to 50:
     // current tables defined only up to 50%
@@ -389,11 +383,6 @@ VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters)
 
     if (packetLoss > lossThr && avgTotPackets > packetNumThr)
     {
-        // Average with minimum protection level given by (average) total
-        // number of packets
-        codeRateDelta = static_cast<WebRtc_UWord8>((weight1 *
-            (float) codeRateDelta + weight2 * 255.0 / (float) avgTotPackets));
-
         // Set a minimum based on first partition size.
         if (codeRateDelta < firstPartitionProt)
         {
@@ -407,8 +396,9 @@ VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters)
         codeRateDelta = plossMax - 1;
     }
 
-    float adjustFec = _qmRobustness->AdjustFecFactor(codeRateDelta, bitRate,
-                                                     parameters->frameRate,
+    float adjustFec = _qmRobustness->AdjustFecFactor(codeRateDelta,
+                                                     bitRate,
+                                                     frameRate,
                                                      parameters->rtt,
                                                      packetLoss);
 
@@ -426,7 +416,7 @@ VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters)
                                                     packetFrameKey);
 
     rateIndexTable = (WebRtc_UWord8) VCM_MAX(VCM_MIN(
-                      1 + (boostKey * bitRatePerFrame - ratePar1) /
+                      1 + (boostKey * effRateFecTable - ratePar1) /
                       ratePar1,ratePar2),0);
     WebRtc_UWord16 indexTableKey = rateIndexTable * plossMax + packetLoss;
 
