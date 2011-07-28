@@ -340,7 +340,7 @@ VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters)
     // resolnFac: This parameter will generally increase/decrease the FEC rate
     // (for fixed bitRate and packetLoss) based on system size.
     // Use a smaller exponent (< 1) to control/soften system size effect.
-    const float resolnFac = 1.0 / pow(spatialSizeToRef, 0.3);
+    const float resolnFac = 1.0 / powf(spatialSizeToRef, 0.3f);
 
     const float bitRate = parameters->bitRate;
     const float frameRate = parameters->frameRate;
