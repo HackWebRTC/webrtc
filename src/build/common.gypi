@@ -25,7 +25,7 @@
 
     # Selects fixed-point code where possible.
     # TODO(ajm): we'd like to set this based on the target OS/architecture.
-    'prefer_fixed_point%': 0,
+    'prefer_fixed_point%': 1,
 
     'conditions': [
       ['OS=="win"', {
@@ -41,6 +41,26 @@
         'include_pulse_audio%': 0,
       }, {
         'include_pulse_audio%': 1,
+
+         # The Chromium common.gypi we use treats all gyp files without
+         # chromium_code==1 as third party code. This disables many of the
+         # preferred warning settings.
+         #
+         # In a standalone build, we can set this here to have WebRTC code
+         # treated as Chromium code. Our third party code will still have the
+         # reduced warning settings.
+         #
+         # TODO(ajm): Chromium uses pattern lists to automatically exclude
+         # platform-specific files. This breaks our Mac and Windows builds in
+         # which we still make use of some _linux.cc files. One solution is to
+         # rename these to _posix.cc.
+         #
+         # Remove the condition when this is fixed.
+         'conditions': [
+           ['OS=="linux"', {
+             'chromium_code%': 1,
+           }],
+         ],
       }],
     ], # conditions
   },
@@ -81,6 +101,33 @@
         ],
       }],
     ], # conditions
+
+    'target_conditions': [
+      ['chromium_code==1', {
+        # TODO(ajm): This block disables some warnings from the chromium_code
+        #            configuration. Remove when possible.
+        'conditions': [
+          ['OS=="linux"', {
+            'cflags!': [
+              '-Werror',
+            ],
+          }],
+          ['OS=="mac"', {
+            'xcode_settings': {
+              'GCC_TREAT_WARNINGS_AS_ERRORS': 'NO',
+            },
+          }],
+          ['OS=="win"', {
+            'msvs_disabled_warnings': [4389], # Signed/unsigned mismatch.
+            'msvs_settings': {
+              'VCCLCompilerTool': {
+                'WarnAsError': 'false',
+              },
+            },
+          }],
+        ], # conditions
+      }],
+    ], # target_conditions
   }, # target_defaults
 }
 
