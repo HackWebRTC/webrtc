@@ -101,7 +101,6 @@ VPMSimpleSpatialResampler::ResampleFrame(const VideoFrame& inFrame,
 
     outFrame.SetTimeStamp(inFrame.TimeStamp());
 
-    WebRtc_UWord32 currentLength = inFrame.Width() * inFrame.Height() * 3 / 2;
     if (_targetWidth > inFrame.Width() &&
         ( ExactMultiplier(inFrame.Width(), inFrame.Height())))
     {
@@ -155,7 +154,6 @@ VPMSimpleSpatialResampler::UpsampleFrame(const VideoFrame& inFrame,
 
     WebRtc_UWord32 scaledWidth = 0;
     WebRtc_UWord32 scaledHeight = 0;
-    bool scaled = true;
 
     if(ratioWidth > 1 || ratioHeight > 1)
     {
@@ -290,10 +288,10 @@ VPMSimpleSpatialResampler::ExactMultiplier(WebRtc_UWord32 width,
         // we have a multiple, is it an even multiple?
         WebRtc_Word32 widthMultiple = _targetWidth / width;
         WebRtc_Word32 heightMultiple = _targetHeight / height;
-        if (widthMultiple == 2 && heightMultiple == 2 ||
-            widthMultiple == 4 && heightMultiple == 4 ||
-            widthMultiple == 8 && heightMultiple == 8 ||
-            widthMultiple == 1 && heightMultiple == 1)
+        if ((widthMultiple == 2 && heightMultiple == 2) ||
+            (widthMultiple == 4 && heightMultiple == 4) ||
+            (widthMultiple == 8 && heightMultiple == 8) ||
+            (widthMultiple == 1 && heightMultiple == 1))
         {
             exactMultiplier = true;
         }

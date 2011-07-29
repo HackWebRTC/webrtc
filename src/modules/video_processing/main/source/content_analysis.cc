@@ -19,7 +19,6 @@ namespace webrtc {
 VPMContentAnalysis::VPMContentAnalysis():
 _origFrame(NULL),
 _prevFrame(NULL),
-_firstFrame(true),
 _width(0),
 _height(0),
 _motionMagnitudeNZ(0.0f),
@@ -30,6 +29,7 @@ _sizeZeroMotion(0.0f),
 _motionPredErr(0.0f),
 _motionHorizontalness(0.0f),
 _motionClusterDistortion(0.0f),
+_firstFrame(true),
 _CAInit(false),
 _cMetrics(NULL)
 {
