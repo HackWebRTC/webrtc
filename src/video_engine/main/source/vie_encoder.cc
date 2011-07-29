@@ -312,7 +312,7 @@ WebRtc_Word32 ViEEncoder::SetEncoder(const webrtc::VideoCodec& videoCodec)
 {
     WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
                  ViEId(_engineId, _channelId),
-                 "%s: CodecType: %d, width: %u, height: %u, maxPayloadLength: %u",
+                 "%s: CodecType: %d, width: %u, height: %u",
                __FUNCTION__, videoCodec.codecType, videoCodec.width,
                videoCodec.height);
 

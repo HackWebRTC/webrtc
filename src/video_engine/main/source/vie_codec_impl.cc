@@ -134,7 +134,8 @@ int ViECodecImpl::GetCodec(const unsigned char listNumber,
                            VideoCodec& videoCodec) const
 {
     WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(_instanceId),
-               "%s(listNumber: %d, codecType: %d)", __FUNCTION__, listNumber);
+               "%s(listNumber: %d, codecType: %d)", __FUNCTION__,
+               listNumber, videoCodec.codecType);
     if (!IsInitialized())
     {
         SetLastError(kViENotInitialized);

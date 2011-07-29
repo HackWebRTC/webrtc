@@ -206,10 +206,10 @@ int ViENetworkImpl::SetSendDestination(const int videoChannel,
 {
     WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
                  ViEId(_instanceId, videoChannel),
-                 "%s(channel: %d, ipAddress: x, rtpPort: %u, rtcpPort: %u, "
+                 "%s(channel: %d, ipAddress: %s, rtpPort: %u, rtcpPort: %u, "
                  "sourceRtpPort: %u, sourceRtcpPort: %u)",
-                 __FUNCTION__, rtpPort, rtcpPort, sourceRtpPort,
-                 sourceRtcpPort);
+                 __FUNCTION__, videoChannel, ipAddress, rtpPort, rtcpPort,
+                 sourceRtpPort, sourceRtcpPort);
     if (!IsInitialized())
     {
         SetLastError(kViENotInitialized);
