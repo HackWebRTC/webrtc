@@ -10,6 +10,9 @@
   'includes': [
     '../../../common_settings.gypi',
   ],
+  'variables': {
+    'protoc_out_dir': '<(SHARED_INTERMEDIATE_DIR)/protoc_out',
+  },
   'targets': [
     {
       'target_name': 'unit_test',
@@ -22,22 +25,60 @@
         }],
       ],
       'dependencies': [
+        'apm_unittest_proto',
         'source/apm.gyp:audio_processing',
-        '../../../system_wrappers/source/system_wrappers.gyp:system_wrappers',
         '../../../common_audio/signal_processing_library/main/source/spl.gyp:spl',
-
+        '../../../system_wrappers/source/system_wrappers.gyp:system_wrappers',
         '../../../../testing/gtest.gyp:gtest',
         '../../../../testing/gtest.gyp:gtest_main',
         '../../../../third_party/protobuf/protobuf.gyp:protobuf_lite',
       ],
       'include_dirs': [
         '../../../../testing/gtest/include',
+        '<(protoc_out_dir)',
       ],
       'sources': [
         'test/unit_test/unit_test.cc',
-        'test/unit_test/audio_processing_unittest.pb.cc',
-        'test/unit_test/audio_processing_unittest.pb.h',
+        '<(protoc_out_dir)/audio_processing_unittest.pb.cc',
+        '<(protoc_out_dir)/audio_processing_unittest.pb.h',
       ],
+    },
+    {
+      # Protobuf compiler / generate rule for unit_test
+      'target_name': 'apm_unittest_proto',
+      'type': 'none',
+      'variables': {
+        'proto_relpath': 'test/unit_test',
+      },
+      'sources': [
+        '<(proto_relpath)/audio_processing_unittest.proto',
+      ],
+      'rules': [
+        {
+          'rule_name': 'genproto',
+          'extension': 'proto',
+          'inputs': [
+            '<(PRODUCT_DIR)/<(EXECUTABLE_PREFIX)protoc<(EXECUTABLE_SUFFIX)',
+          ],
+          'outputs': [
+            '<(protoc_out_dir)/<(RULE_INPUT_ROOT).pb.cc',
+            '<(protoc_out_dir)/<(RULE_INPUT_ROOT).pb.h',
+          ],
+          'action': [
+            '<(PRODUCT_DIR)/<(EXECUTABLE_PREFIX)protoc<(EXECUTABLE_SUFFIX)',
+            '--proto_path=<(proto_relpath)',
+            '<(proto_relpath)/<(RULE_INPUT_NAME)',
+            '--cpp_out=<(protoc_out_dir)',
+          ],
+          'message': 'Generating C++ code from <(RULE_INPUT_PATH)',
+        },
+      ],
+      'dependencies': [
+        '../../../../third_party/protobuf/protobuf.gyp:protoc#host',
+      ],
+      # This target exports a hard dependency because it generates header
+      # files.
+      'hard_dependency': 1,
     },
     {
       'target_name': 'process_test',
@@ -45,7 +86,6 @@
       'dependencies': [
         'source/apm.gyp:audio_processing',
         '../../../system_wrappers/source/system_wrappers.gyp:system_wrappers',
-
         '../../../../testing/gtest.gyp:gtest',
         '../../../../testing/gtest.gyp:gtest_main',
       ],

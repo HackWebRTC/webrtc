@@ -8,7 +8,7 @@
 
 {
   'includes': [
-    '../../../../common_settings.gypi', # Common settings
+    '../../../../common_settings.gypi',
   ],
   'targets': [
     {
@@ -18,18 +18,18 @@
         ['prefer_fixed_point==1', {
           'dependencies': ['../../ns/main/source/ns.gyp:ns_fix'],
           'defines': ['WEBRTC_NS_FIXED'],
-        }, { # else: prefer_fixed_point==0
+        }, {
           'dependencies': ['../../ns/main/source/ns.gyp:ns'],
           'defines': ['WEBRTC_NS_FLOAT'],
         }],
       ],
       'dependencies': [
-        '../../../../system_wrappers/source/system_wrappers.gyp:system_wrappers',
         '../../aec/main/source/aec.gyp:aec',
         '../../aecm/main/source/aecm.gyp:aecm',
         '../../agc/main/source/agc.gyp:agc',
         '../../../../common_audio/signal_processing_library/main/source/spl.gyp:spl',
         '../../../../common_audio/vad/main/source/vad.gyp:vad',
+        '../../../../system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
       'include_dirs': [
         '../interface',
