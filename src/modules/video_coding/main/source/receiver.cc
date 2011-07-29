@@ -108,7 +108,6 @@ VCMReceiver::InsertPacket(const VCMPacket& packet,
                        MaskWord64ToUWord32(VCMTickTime::MillisecondTimestamp()));
         }
 
-        const bool emptyFrame = (buffer->Length() == 0);
         const WebRtc_Word64 nowMs = VCMTickTime::MillisecondTimestamp();
 
         WebRtc_Word64 renderTimeMs = _timing.RenderTimeMs(packet.timestamp, nowMs);

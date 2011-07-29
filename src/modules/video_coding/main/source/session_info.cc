@@ -760,7 +760,6 @@ VCMSessionInfo::PrepareForDecode(WebRtc_UWord8* ptrStartOfLayer,
 {
     WebRtc_UWord32 currentPacketOffset = 0;
     WebRtc_UWord32 length = GetSessionLength();
-    WebRtc_UWord32 idSum = 0;
     WebRtc_UWord32 realDataBytes = 0;
     if (length == 0)
     {

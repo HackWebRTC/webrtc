@@ -955,8 +955,6 @@ VideoCodingModuleImpl::Decode(WebRtc_UWord16 maxWaitTimeMs)
     {
         CriticalSectionScoped cs(_receiveCritSect);
 
-        const WebRtc_UWord32 timestamp = frame->TimeStamp();
-
         // If this frame was too late, we should adjust the delay accordingly
         _timing.UpdateCurrentDelay(frame->RenderTimeMs(), VCMTickTime::MillisecondTimestamp());
 

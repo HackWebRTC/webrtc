@@ -152,7 +152,7 @@ private:
     WebRtc_Word32             _width;
     WebRtc_Word32             _height;
     WebRtc_Word32             _maxBitRateKbit;
-    int                       _maxFrameRate;
+    WebRtc_UWord32            _maxFrameRate;
     bool                      _inited;
     WebRtc_UWord32            _timeStamp;
     WebRtc_UWord16            _pictureID;

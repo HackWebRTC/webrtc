@@ -167,7 +167,7 @@ VP8Encoder::SetRates(WebRtc_UWord32 newBitRateKbit, WebRtc_UWord32 newFrameRate)
     // update frame rate
     if (newFrameRate != _maxFrameRate)
     {
-        _maxFrameRate = static_cast<int>(newFrameRate);
+        _maxFrameRate = newFrameRate;
         _cfg->g_timebase.num = 1;
         _cfg->g_timebase.den = _maxFrameRate;
     }
@@ -656,7 +656,7 @@ VP8Decoder::InitDecode(const VideoCodec* inst,
     cfg.threads = numberOfCores;
     cfg.h = cfg.w = 0; // set after decode
 
-    if(vpx_codec_dec_init(_decoder, vpx_codec_vp8_dx(), NULL, 0))
+    if (vpx_codec_dec_init(_decoder, vpx_codec_vp8_dx(), NULL, 0))
     {
         return WEBRTC_VIDEO_CODEC_MEMORY;
     }
@@ -669,7 +669,7 @@ VP8Decoder::InitDecode(const VideoCodec* inst,
     // ppcfg.NoiseLevel     = 1; //Noise intensity. Valid range: [0,7]
     vpx_codec_control(_decoder, VP8_SET_POSTPROC, &ppcfg);
 
-    // Save the VideoCodec instance for later; mainly for duplicating the decoder.
+    // Save VideoCodec instance for later; mainly for duplicating the decoder.
     if (inst)
     {
         if (!_inst)
@@ -686,9 +686,9 @@ VP8Decoder::InitDecode(const VideoCodec* inst,
 
 WebRtc_Word32
 VP8Decoder::Decode(const EncodedImage& inputImage,
-                             bool missingFrames,
-                             const void* /*codecSpecificInfo*/,
-                             WebRtc_Word64 /*renderTimeMs*/)
+                   bool missingFrames,
+                   const void* /*codecSpecificInfo*/,
+                   WebRtc_Word64 /*renderTimeMs*/)
  {
     if (!_inited)
     {
@@ -756,7 +756,7 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
     if (inputImage._frameType == kKeyFrame)
     {
         // Reduce size due to PictureID that we won't copy.
-        const int bytesToCopy = inputImage._length - numberOfBytes;
+        const WebRtc_UWord32 bytesToCopy = inputImage._length - numberOfBytes;
         if (_lastKeyFrame._size < bytesToCopy)
         {
             delete [] _lastKeyFrame._buffer;
@@ -981,7 +981,8 @@ VP8Decoder::Copy()
 
     const vpx_ref_frame_type_t typeVec[] = { VP8_LAST_FRAME, VP8_GOLD_FRAME,
                                              VP8_ALTR_FRAME };
-    for (int ix = 0; ix < sizeof(typeVec) / sizeof(vpx_ref_frame_type_t); ++ix)
+    for (WebRtc_UWord32 ix = 0;
+         ix < sizeof(typeVec) / sizeof(vpx_ref_frame_type_t); ++ix)
     {
         _refFrame->frame_type = typeVec[ix];
         if (CopyReference(copyTo) < 0)
