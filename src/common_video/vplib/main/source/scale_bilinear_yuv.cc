@@ -169,7 +169,7 @@ ScaleBilinear(const WebRtc_UWord8* srcFrame, WebRtc_UWord8*& dstFrame,
     WebRtc_UWord8* srcTmp = NULL;
 
     const WebRtc_UWord32 srcStride = (srcWidth  + 15) & ~15;
-    const WebRtc_UWord32 srcUvStride = (((srcStride + 1 >> 1) + 15) & ~15);
+    const WebRtc_UWord32 srcUvStride = ((((srcStride + 1) >> 1) + 15) & ~15);
 
     const WebRtc_UWord32 srcStrideArray[3] = {srcStride,
                                               srcUvStride,
@@ -192,7 +192,6 @@ ScaleBilinear(const WebRtc_UWord8* srcFrame, WebRtc_UWord8*& dstFrame,
         tmpPlaneArray[2] = tmpPlaneArray[1] +
                            (srcStride >> 1) * (srcHeight >> 1);
 
-        WebRtc_UWord8* tmpPtr = srcTmp;
         const WebRtc_UWord8* srcPtr = srcFrame;
 
         for (WebRtc_UWord32 p = 0; p < 3; p++)

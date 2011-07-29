@@ -98,8 +98,8 @@ JpegEncoder::Encode(const RawImage& inputImage)
 
     FILE* outFile = NULL;
 
-    const WebRtc_Word32 width = inputImage._width;
-    const WebRtc_Word32 height = inputImage._height;
+    const WebRtc_UWord32 width = inputImage._width;
+    const WebRtc_UWord32 height = inputImage._height;
 
     // Set error handler
     myErrorMgr      jerr;
@@ -276,7 +276,7 @@ JpegDecoder::Decode(const EncodedImage& inputImage,
 
     WebRtc_UWord32 height16 = (height + 15) & ~15;
     WebRtc_UWord32 stride = (width + 15) & ~15;
-    WebRtc_UWord32 uvStride = (((stride + 1 >> 1) + 15) & ~15);
+    WebRtc_UWord32 uvStride = ((((stride + 1) >> 1) + 15) & ~15);
 
     WebRtc_UWord32 tmpRequiredSize =  stride * height16 +
                                       2 * (uvStride * ((height16 + 1) >> 1));
