@@ -343,7 +343,7 @@ bool UdpSocket2Windows::Bind(const SocketAddress& name)
         returnValue = false;
     }
     ReleaseSocket();
-    return true;
+    return returnValue;
 }
 
 WebRtc_Word32 UdpSocket2Windows::SendTo(const WebRtc_Word8* buf,
