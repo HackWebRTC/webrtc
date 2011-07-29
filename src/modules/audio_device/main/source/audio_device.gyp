@@ -24,7 +24,6 @@
         '../../../interface',
         '../interface',
         'Dummy', # Dummy audio device
-        'Linux', # Dummy audio device uses linux utility (empty)
       ],
       'direct_dependent_settings': {
         'include_dirs': [
@@ -48,6 +47,8 @@
         'audio_device_config.h',
         'Dummy/audio_device_dummy.cc',
         'Dummy/audio_device_dummy.h',
+        'Dummy/audio_device_utility_dummy.cc',
+        'Dummy/audio_device_utility_dummy.h',
         'Linux/alsasymboltable.cc',
         'Linux/alsasymboltable.h',
         'Linux/audio_device_linux_alsa.cc',
@@ -87,9 +88,8 @@
             'Linux/audio_mixer_manager_linux_alsa.h',
             'Linux/latebindingsymboltable.cc',
             'Linux/latebindingsymboltable.h',
-            # Don't remove these, needed for dummy device
-            # 'Linux/audio_device_utility_linux.cc',
-            # 'Linux/audio_device_utility_linux.h',
+            'Linux/audio_device_utility_linux.cc',
+            'Linux/audio_device_utility_linux.h',
           ],
         }],
         ['OS!="mac"', {
@@ -168,7 +168,7 @@
             '../../../../../..',
           ],
         }],
-	    ] # conditions
+      ] # conditions
     },
     {
       'target_name': 'audio_device_test_api',

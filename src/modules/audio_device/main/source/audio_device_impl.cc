@@ -44,8 +44,7 @@
     #include "audio_device_mac.h"
 #endif
 #include "audio_device_dummy.h"
-// audio_device_utility_linux.h is used for both linux device and dummy device
-#include "audio_device_utility_linux.h"
+#include "audio_device_utility_dummy.h"
 
 #include <cassert>
 
@@ -416,8 +415,7 @@ WebRtc_Word32 AudioDeviceModuleImpl::CreatePlatformSpecificObjects()
 
         if (ptrAudioDevice != NULL)
         {
-            // Create the Linux implementation of the Device Utility. (It's empty.)
-            ptrAudioDeviceUtility = new AudioDeviceUtilityLinux(Id());
+            ptrAudioDeviceUtility = new AudioDeviceUtilityDummy(Id());
         }
     }
 
