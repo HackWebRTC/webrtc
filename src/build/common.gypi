@@ -25,7 +25,7 @@
 
     # Selects fixed-point code where possible.
     # TODO(ajm): we'd like to set this based on the target OS/architecture.
-    'prefer_fixed_point%': 1,
+    'prefer_fixed_point%': 0,
 
     'conditions': [
       ['OS=="win"', {
