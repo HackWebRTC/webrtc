@@ -154,6 +154,11 @@ public:
 
 private:
 
+    /*
+     *  Update protection callback with protection settings
+     */
+    WebRtc_UWord32 UpdateProtectionCallback(VCMProtectionMethod *selectedMethod);
+
     void UpdateBitRateEstimate(WebRtc_Word64 encodedLength, WebRtc_Word64 nowMs);
     /*
     * verify if QM settings differ from default, i.e. if an update is required

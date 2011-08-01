@@ -91,7 +91,7 @@ VCMNackFecMethod::EffectivePacketLoss(const
         // Effective Packet Loss, NA in current version.
         _effectivePacketLoss = 0;
         // No FEC applied.
-        _residualPacketLossFec = 255 * parameters->lossPr;
+        _residualPacketLossFec = parameters->lossPr;
         return true;
     }
 
@@ -130,27 +130,16 @@ VCMNackFecMethod::UpdateParameters(const VCMProtectionParameters* parameters)
     // should convert the factor to reduce mismatch between mediaOpt's rate and
     // the actual one
     _protectionFactorK = _fecMethod->ConvertFECRate(_protectionFactorK);
-    _protectionFactorD = _fecMethod->ConvertFECRate(_protectionFactorK);
+    _protectionFactorD = _fecMethod->ConvertFECRate(_protectionFactorD);
 
     return true;
 }
 
 bool
-VCMNackMethod::EffectivePacketLoss(WebRtc_UWord8 packetLoss,
-                                   WebRtc_UWord16 rttTime)
+VCMNackMethod::EffectivePacketLoss(const VCMProtectionParameters* parameter)
 {
-    WebRtc_UWord16 rttMax = MaxRttNack();
-
-    // For large RTT, we should rely on some Error Resilience, so we set
-    // packetLossEnc = 0 for RTT less than the NACK threshold
-    if (rttTime < rttMax)
-    {
-        _effectivePacketLoss = 0; // may want a softer transition here
-    }
-    else
-    {
-        _effectivePacketLoss = packetLoss;
-    }
+    // Effective Packet Loss, NA in current version.
+    _effectivePacketLoss = 0;
 
     return true;
 }
@@ -158,18 +147,10 @@ VCMNackMethod::EffectivePacketLoss(WebRtc_UWord8 packetLoss,
 bool
 VCMNackMethod::UpdateParameters(const VCMProtectionParameters* parameters)
 {
-    // Compute the effective packet loss for ER
-    WebRtc_UWord8 effPacketLoss = (WebRtc_UWord8) (255 * parameters->lossPr);
-    WebRtc_UWord16 rttTime = (WebRtc_UWord16) parameters->rtt;
-    EffectivePacketLoss(effPacketLoss, rttTime);
+    // Compute the effective packet loss
+    EffectivePacketLoss(parameters);
 
-    // Compute the NACK bit cost
-    if (rttTime > _NACK_MAX_RTT)
-    {
-        _efficiency = 0.0f;
-        return false;
-    }
-
+    // nackCost  = (bitRate - nackCost) * (lossPr)
     _efficiency = parameters->bitRate * parameters->lossPr /
                   (1.0f + parameters->lossPr);
     return true;
@@ -564,12 +545,6 @@ VCMMbIntraRefreshMethod::UpdateParameters(const
     return true;
 }
 
-WebRtc_UWord16
-VCMNackMethod::MaxRttNack() const
-{
-    return _NACK_MAX_RTT;
-}
-
 VCMLossProtectionLogic::~VCMLossProtectionLogic()
 {
     ClearLossProtections();
@@ -579,14 +554,15 @@ void
 VCMLossProtectionLogic::ClearLossProtections()
 {
     ListItem *item;
-    while ((item = _availableMethods.First()) != 0) {
-      VCMProtectionMethod *method = static_cast<VCMProtectionMethod*>
+    while ((item = _availableMethods.First()) != 0)
+    {
+        VCMProtectionMethod *method = static_cast<VCMProtectionMethod*>
                                     (item->GetItem());
-      if (method != NULL)
-      {
-          delete method;
-      }
-      _availableMethods.PopFront();
+        if (method != NULL)
+        {
+            delete method;
+        }
+        _availableMethods.PopFront();
     }
     _selectedMethod = NULL;
 }
@@ -683,12 +659,6 @@ void
 VCMLossProtectionLogic::UpdateResidualPacketLoss(float residualPacketLoss)
 {
     _residualPacketLossFec = residualPacketLoss;
-}
-
-void
-VCMLossProtectionLogic::UpdateFecType(VCMFecTypes fecType)
-{
-    _fecType = fecType;
 }
 
 void
@@ -846,13 +816,11 @@ VCMLossProtectionLogic::UpdateMethod(VCMProtectionMethod *newMethod /*=NULL */)
     _currentParameters.packetsPerFrame = _packetsPerFrame.Value();
     _currentParameters.packetsPerFrameKey = _packetsPerFrameKey.Value();
     _currentParameters.residualPacketLossFec = _residualPacketLossFec;
-    _currentParameters.fecType = _fecType;
     _currentParameters.codecWidth = _codecWidth;
     _currentParameters.codecHeight = _codecHeight;
 
     if (newMethod == NULL)
     {
-        //_selectedMethod = _bestNotOkMethod = NULL;
         VCMProtectionMethod *method;
         ListItem *item;
         for (item = _availableMethods.First(); item != NULL;

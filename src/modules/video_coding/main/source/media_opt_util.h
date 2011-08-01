@@ -28,12 +28,8 @@ namespace webrtc
 class ListWrapper;
 
 enum { kLossPrHistorySize = 30 }; // 30 time periods
-enum { kLossPrShortFilterWinMs = 1000 }; // 1000 ms, total filter length is 30 000 ms
-
-enum VCMFecTypes
-{
-    kXORFec
-};
+// 1000 ms, total filter length is 30 000 ms
+enum { kLossPrShortFilterWinMs = 1000 };
 
 // Thresholds for hybrid NACK/FEC
 // common to media optimization and the jitter buffer.
@@ -46,8 +42,8 @@ struct VCMProtectionParameters
 {
     VCMProtectionParameters() : rtt(0), lossPr(0), bitRate(0),
         packetsPerFrame(0), frameRate(0), keyFrameSize(0), fecRateDelta(0),
-        fecRateKey(0), residualPacketLossFec(0.0), fecType(kXORFec),
-        codecWidth(0), codecHeight(0) {}
+        fecRateKey(0), residualPacketLossFec(0.0), codecWidth(0), codecHeight(0)
+        {}
 
     WebRtc_UWord32      rtt;
     float               lossPr;
@@ -59,7 +55,6 @@ struct VCMProtectionParameters
     WebRtc_UWord8       fecRateDelta;
     WebRtc_UWord8       fecRateKey;
     float               residualPacketLossFec;
-    VCMFecTypes         fecType;
     WebRtc_UWord16      codecWidth;
     WebRtc_UWord16      codecHeight;
 
@@ -91,16 +86,16 @@ public:
 };
 
 
-
 class VCMProtectionMethod
 {
 public:
-    //friend VCMProtectionMethod;
-    VCMProtectionMethod(VCMProtectionMethodEnum type) : _protectionFactorK(0),
-        _protectionFactorD(0), _residualPacketLossFec(0.0), _scaleProtKey(2.0),
-        _maxPayloadSize(1460), _efficiency(0), _type(type),
-        _useUepProtectionK(false), _useUepProtectionD(true)
+    VCMProtectionMethod(VCMProtectionMethodEnum type) : _effectivePacketLoss(0),
+        _protectionFactorK(0), _protectionFactorD(0),
+        _residualPacketLossFec(0.0), _scaleProtKey(2.0), _maxPayloadSize(1460),
+        _useUepProtectionK(false), _useUepProtectionD(true), _efficiency(0),
+        _type(type)
         {_qmRobustness = new VCMQmRobustness();}
+
     virtual ~VCMProtectionMethod() { delete _qmRobustness;}
 
     // Updates the efficiency of the method using the parameters provided
@@ -149,7 +144,7 @@ public:
     virtual WebRtc_UWord8 RequiredUepProtectionD() { return _useUepProtectionD; }
 
     // Updates content metrics
-    void UpdateContentMetrics(const VideoContentMetrics*  contentMetrics);
+    void UpdateContentMetrics(const VideoContentMetrics* contentMetrics);
 
     WebRtc_UWord8                        _effectivePacketLoss;
     WebRtc_UWord8                        _protectionFactorK;
@@ -174,15 +169,11 @@ private:
 class VCMNackMethod : public VCMProtectionMethod
 {
 public:
-    VCMNackMethod() : VCMProtectionMethod(kNACK), _NACK_MAX_RTT(200) {}
+    VCMNackMethod() : VCMProtectionMethod(kNACK) {}
     virtual ~VCMNackMethod() {}
     virtual bool UpdateParameters(const VCMProtectionParameters* parameters);
-    // Get the effective packet loss for ER
-    bool EffectivePacketLoss(WebRtc_UWord8 packetLoss, WebRtc_UWord16 rttTime);
-    // Get the threshold for NACK
-    WebRtc_UWord16 MaxRttNack() const;
-private:
-    const WebRtc_UWord16 _NACK_MAX_RTT;
+    // Get the effective packet loss
+    bool EffectivePacketLoss(const VCMProtectionParameters* parameter);
 };
 
 class VCMFecMethod : public VCMProtectionMethod
@@ -253,10 +244,10 @@ class VCMLossProtectionLogic
 {
 public:
     VCMLossProtectionLogic() : _availableMethods(), _selectedMethod(NULL),
-        _bestNotOkMethod(NULL), _rtt(0), _lossPr(0.0f), _bitRate(0.0f),
-        _frameRate(0.0f), _keyFrameSize(0.0f), _fecRateKey(0), _fecRateDelta(0),
-        _lastPrUpdateT(0), _lossPr255(0.9999f), _lossPrHistory(),
-        _shortMaxLossPr255(0), _packetsPerFrame(0.9999f),
+        _bestNotOkMethod(NULL), _currentParameters(), _rtt(0), _lossPr(0.0f),
+        _bitRate(0.0f), _frameRate(0.0f), _keyFrameSize(0.0f), _fecRateKey(0),
+        _fecRateDelta(0), _lastPrUpdateT(0), _lossPr255(0.9999f),
+        _lossPrHistory(), _shortMaxLossPr255(0), _packetsPerFrame(0.9999f),
         _packetsPerFrameKey(0.9999f), _residualPacketLossFec(0),
         _boostRateKey(2), _codecWidth(0), _codecHeight(0)
     { Reset(); }
@@ -281,12 +272,6 @@ public:
     //          - residualPacketLoss  : residual packet loss:
     //                                  effective loss after FEC recovery
     void UpdateResidualPacketLoss(float _residualPacketLoss);
-
-    // Update fecType
-    //
-    // Input:
-    //          - fecType           : kXORFec for generic XOR FEC
-    void UpdateFecType(VCMFecTypes fecType);
 
     // Update the loss probability.
     //
@@ -342,22 +327,22 @@ public:
     // The amount of packet loss to cover for with FEC.
     //
     // Input:
-    //          - fecRateKey      : Packet loss to cover for with FEC when sending key frames.
-    //          - fecRateDelta    : Packet loss to cover for with FEC when sending delta frames.
+    //          - fecRateKey      : Packet loss to cover for with FEC when
+    //                              sending key frames.
+    //          - fecRateDelta    : Packet loss to cover for with FEC when
+    //                              sending delta frames.
     void UpdateFECRates(WebRtc_UWord8 fecRateKey, WebRtc_UWord8 fecRateDelta)
-                       { _fecRateKey = fecRateKey; _fecRateDelta = fecRateDelta; }
+                       { _fecRateKey = fecRateKey;
+                         _fecRateDelta = fecRateDelta; }
 
-    // Update the protection methods with the current VCMProtectionParameters and
-    // choose the best method available. The update involves computing the robustness settings
-    // for the protection method.
+    // Update the protection methods with the current VCMProtectionParameters
+    // and choose the best method available. The update involves computing the
+    // robustness settings for the protection method.
     //
     // Input:
-    //          - newMethod         : If not NULL, this is method will be selected by force.
+    //          - newMethod         : If not NULL, this method will be selected.
     //
-    // Return value     : True if the selected method is recommended using these settings,
-    //                    false if it's the best method, but still not recommended to be used.
-    //                    E.g. if NACK is the best available, but the RTT is too large, false
-    //                    will be returned.
+    // Return value     : Returns true on update
     bool UpdateMethod(VCMProtectionMethod *newMethod = NULL);
 
     // Returns the method currently selected.
@@ -369,11 +354,6 @@ public:
     //
     // Return value                 : The filtered loss probability
     WebRtc_UWord8 FilteredLoss() const;
-
-    // Get constraint on NACK
-    //
-    // return value                : RTT threshold for using NACK
-   WebRtc_UWord8  GetNackThreshold() const;
 
     void Reset();
 
@@ -402,7 +382,6 @@ private:
     VCMExpFilter              _packetsPerFrameKey;
     float                     _residualPacketLossFec;
     WebRtc_UWord8             _boostRateKey;
-    VCMFecTypes               _fecType;
     WebRtc_UWord16            _codecWidth;
     WebRtc_UWord16            _codecHeight;
 };

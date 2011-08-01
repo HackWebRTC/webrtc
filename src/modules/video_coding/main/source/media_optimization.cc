@@ -101,9 +101,6 @@ VCMMediaOptimization::SetTargetRates(WebRtc_UWord32 bitRate,
     _lossProtLogic->UpdateRtt(roundTripTimeMs);
     _lossProtLogic->UpdateResidualPacketLoss(static_cast<float>(fractionLost));
 
-    VCMFecTypes fecType = kXORFec;  // generic FEC
-    _lossProtLogic->UpdateFecType(fecType);
-
     // Get frame rate for encoder: this is the actual/sent frame rate
     float actualFrameRate = SentFrameRate();
 
@@ -125,92 +122,51 @@ VCMMediaOptimization::SetTargetRates(WebRtc_UWord32 bitRate,
     // low/high loss rates, etc.
     WebRtc_UWord8 packetLossEnc = _lossProtLogic->FilteredLoss();
 
-    //For now use the filtered loss for computing the robustness settings
+    // For now use the filtered loss for computing the robustness settings
     _lossProtLogic->UpdateFilteredLossPr(packetLossEnc);
 
     // Rate cost of the protection methods
     _lossProtOverhead = 0;
 
-    if (selectedMethod && (selectedMethod->Type() == kFEC ||
-        selectedMethod->Type() == kNackFec ))
+    // Update protection settings, when applicable
+    if (selectedMethod)
     {
-
         // Update protection method with content metrics
         selectedMethod->UpdateContentMetrics(_content->ShortTermAvgData());
 
         // Update method will compute the robustness settings for the given
         // protection method and the overhead cost
         // the protection method is set by the user via SetVideoProtection.
-        // The robustness settings are: the effective packet loss for ER and the
-        // FEC protection settings
         _lossProtLogic->UpdateMethod();
 
-        // Get the FEC code rate for Key frames
-        const WebRtc_UWord8 codeRateKeyRTP  = selectedMethod->RequiredProtectionFactorK();
+        // Update protection callback with protection settings
+        UpdateProtectionCallback(selectedMethod);
 
-        // Get the FEC code rate for Delta frames
-        const WebRtc_UWord8 codeRateDeltaRTP = selectedMethod->RequiredProtectionFactorD();
+        // Get the bit cost of protection method
+        _lossProtOverhead = static_cast<WebRtc_UWord32>
+                            (_lossProtLogic->HighestOverhead() + 0.5f);
 
-        // Get the FEC-UEP protection status for Key frames: UEP on/off
-        const bool useUepProtectionKeyRTP  = selectedMethod->RequiredUepProtectionK();
-
-        // Get the FEC-UEP protection status for Delta frames: UEP on/off
-        const bool useUepProtectionDeltaRTP = selectedMethod->RequiredUepProtectionD();
-
-        // Get the effective packet loss for ER
+        // Get the effective packet loss for encoder ER
+        // when applicable, should be passed to encoder via fractionLost
         packetLossEnc = selectedMethod->RequiredPacketLossER();
-
-        // NACK is on for NACK and NackFec protection method: off for FEC method
-        bool nackStatus = (selectedMethod->Type() == kNackFec ||
-                           selectedMethod->Type() == kNACK);
-
-        if(_videoProtectionCallback)
-        {
-            _videoProtectionCallback->ProtectionRequest(codeRateDeltaRTP,
-                                                        codeRateKeyRTP,
-                                                        useUepProtectionDeltaRTP,
-                                                        useUepProtectionKeyRTP,
-                                                        nackStatus);
-        }
     }
 
-    // Get the bit cost of protection method
-    _lossProtOverhead = static_cast<WebRtc_UWord32>(_lossProtLogic->HighestOverhead() + 0.5f);
-
-    // Update effective packet loss for encoder: note: fractionLost was passed as reference
-    fractionLost = packetLossEnc;
-
-    WebRtc_UWord32 nackBitRate=0;
-    if(selectedMethod && _lossProtLogic->FindMethod(kNACK) != NULL)
-    {
-        // TODO(mikhal): update frame dropper with bit rate including both nack and fec
-        // Make sure we don't over-use the channel momentarily. This is
-        // necessary for NACK since it can be very bursty.
-        nackBitRate = (_lastBitRate * fractionLost) / 255;
-        if (nackBitRate > _targetBitRate)
-        {
-            nackBitRate = _targetBitRate;
-        }
-        _frameDropper->SetRates(static_cast<float>(bitRate - nackBitRate), 0);
-    }
-    else
-    {
-        _frameDropper->SetRates(static_cast<float>(bitRate - _lossProtOverhead), 0);
-    }
-
+    // Update encoding rates following protection settings
+    _frameDropper->SetRates(static_cast<float>(bitRate -
+                                                 _lossProtOverhead), 0);
     // This may be used for UpdateEncoderBitRate: lastBitRate is total rate,
     // before compensation
     _lastBitRate = _targetBitRate;
 
-    //Source coding rate: total rate - protection overhead
+    // Source coding rate: total rate - protection overhead
     _targetBitRate = bitRate - _lossProtOverhead;
 
     if (_enableQm)
     {
-        //Update QM with rates
+        // Update QM with rates
         _qmResolution->UpdateRates((float)_targetBitRate, _avgSentBitRateBps,
                                   _incomingFrameRate, _fractionLost);
-        //Check for QM selection
+        // Check for QM selection
         bool selectQM = checkStatusForQMchange();
         if (selectQM)
         {
@@ -223,6 +179,40 @@ VCMMediaOptimization::SetTargetRates(WebRtc_UWord32 bitRate,
     return _targetBitRate;
 }
 
+WebRtc_UWord32
+VCMMediaOptimization::UpdateProtectionCallback(VCMProtectionMethod
+                                               *selectedMethod)
+{
+    if (!_videoProtectionCallback)
+    {
+        return VCM_OK;
+    }
+    // Get the FEC code rate for Key frames (set to 0 when NA)
+    const WebRtc_UWord8
+    codeRateKeyRTP  = selectedMethod->RequiredProtectionFactorK();
+
+    // Get the FEC code rate for Delta frames (set to 0 when NA)
+    const WebRtc_UWord8
+    codeRateDeltaRTP = selectedMethod->RequiredProtectionFactorD();
+
+    // Get the FEC-UEP protection status for Key frames: UEP on/off
+    const bool
+    useUepProtectionKeyRTP  = selectedMethod->RequiredUepProtectionK();
+
+    // Get the FEC-UEP protection status for Delta frames: UEP on/off
+    const bool
+    useUepProtectionDeltaRTP = selectedMethod->RequiredUepProtectionD();
+
+    // NACK is on for NACK and NackFec protection method: off for FEC method
+    bool nackStatus = (selectedMethod->Type() == kNackFec ||
+                       selectedMethod->Type() == kNACK);
+
+   return _videoProtectionCallback->ProtectionRequest(codeRateDeltaRTP,
+                                                      codeRateKeyRTP,
+                                                      useUepProtectionDeltaRTP,
+                                                      useUepProtectionKeyRTP,
+                                                      nackStatus);
+}
 
 bool
 VCMMediaOptimization::DropFrame()
@@ -245,9 +235,10 @@ VCMMediaOptimization::SetEncodingData(VideoCodecType sendCodecType, WebRtc_Word3
                                       WebRtc_UWord32 frameRate, WebRtc_UWord32 bitRate,
                                       WebRtc_UWord16 width, WebRtc_UWord16 height)
 {
-    // Everything codec specific should be reset here since this means the codec has changed.
-    // If native dimension values have changed, then either user initiated change, or QM
-    // initiated change. Will be able to determine only after the processing of the first frame
+    // Everything codec specific should be reset here since this means the codec
+    // has changed. If native dimension values have changed, then either user
+    // initiated change, or QM initiated change. Will be able to determine only
+    // after the processing of the first frame.
     _lastChangeTime = VCMTickTime::MillisecondTimestamp();
     _content->Reset();
     _content->UpdateFrameRate(frameRate);
@@ -259,7 +250,8 @@ VCMMediaOptimization::SetEncodingData(VideoCodecType sendCodecType, WebRtc_Word3
     _lossProtLogic->UpdateFrameRate(static_cast<float>(frameRate));
     _lossProtLogic->UpdateFrameSize(width, height);
     _frameDropper->Reset();
-    _frameDropper->SetRates(static_cast<float>(bitRate), static_cast<float>(frameRate));
+    _frameDropper->SetRates(static_cast<float>(bitRate),
+                            static_cast<float>(frameRate));
     _userFrameRate = static_cast<float>(frameRate);
     _codecWidth = width;
     _codecHeight = height;
@@ -270,7 +262,8 @@ VCMMediaOptimization::SetEncodingData(VideoCodecType sendCodecType, WebRtc_Word3
 }
 
 WebRtc_Word32
-VCMMediaOptimization::RegisterProtectionCallback(VCMProtectionCallback* protectionCallback)
+VCMMediaOptimization::RegisterProtectionCallback(VCMProtectionCallback*
+                                                 protectionCallback)
 {
     _videoProtectionCallback = protectionCallback;
     return VCM_OK;
@@ -383,9 +376,10 @@ VCMMediaOptimization::SetMtu(WebRtc_Word32 mtu)
 float
 VCMMediaOptimization::SentFrameRate()
 {
-    if(_frameDropper)
+    if (_frameDropper)
     {
-        return _frameDropper->ActualFrameRate((WebRtc_UWord32)(InputFrameRate() + 0.5f));
+        return _frameDropper->ActualFrameRate((WebRtc_UWord32)(InputFrameRate()
+                                                               + 0.5f));
     }
 
     return VCM_CODEC_ERROR;
@@ -442,9 +436,12 @@ VCMMediaOptimization::UpdateWithEncodedData(WebRtc_Word32 encodedLength,
         }
 
         // updating counters
-        if (deltaFrame){
+        if (deltaFrame)
+        {
             _deltaFrameCnt++;
-        } else {
+        }
+        else
+        {
             _keyFrameCnt++;
         }
 
@@ -469,9 +466,11 @@ void VCMMediaOptimization::UpdateBitRateEstimate(WebRtc_Word64 encodedLength,
             // Found empty slot
             break;
         }
-        if (nowMs - _encodedFrameSamples[i]._timeCompleteMs < kBitrateAverageWinMs)
+        if (nowMs - _encodedFrameSamples[i]._timeCompleteMs <
+            kBitrateAverageWinMs)
         {
-            frameSizeSum += static_cast<WebRtc_UWord32>(_encodedFrameSamples[i]._sizeBytes);
+            frameSizeSum += static_cast<WebRtc_UWord32>
+                            (_encodedFrameSamples[i]._sizeBytes);
             if (timeOldest == -1)
             {
                 timeOldest = _encodedFrameSamples[i]._timeCompleteMs;
@@ -515,7 +514,8 @@ void VCMMediaOptimization::UpdateBitRateEstimate(WebRtc_Word64 encodedLength,
 
 
 WebRtc_Word32
-VCMMediaOptimization::RegisterVideoQMCallback(VCMQMSettingsCallback *videoQMSettings)
+VCMMediaOptimization::RegisterVideoQMCallback(VCMQMSettingsCallback*
+                                              videoQMSettings)
 {
     _videoQMSettingsCallback = videoQMSettings;
     // Callback setting controls QM
@@ -531,12 +531,13 @@ VCMMediaOptimization::RegisterVideoQMCallback(VCMQMSettingsCallback *videoQMSett
 }
 
 void
-VCMMediaOptimization::updateContentData(const VideoContentMetrics *contentMetrics)
+VCMMediaOptimization::updateContentData(const VideoContentMetrics*
+                                        contentMetrics)
 {
-    //Updating content metrics
+    // Updating content metrics
     if (contentMetrics == NULL)
     {
-         //No QM if metrics are NULL
+         // Disable QM if metrics are NULL
          _enableQm = false;
          _qmResolution->Reset();
     }
@@ -664,7 +665,7 @@ void
 VCMMediaOptimization::UpdateIncomingFrameRate()
 {
     WebRtc_Word64 now = VCMTickTime::MillisecondTimestamp();
-    if(_incomingFrameTimes[0] == 0)
+    if (_incomingFrameTimes[0] == 0)
     {
         // first no shift
     } else
