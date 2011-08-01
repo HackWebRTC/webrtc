@@ -22,11 +22,11 @@ LOCAL_SRC_FILES := audio_device_buffer.cc \
     audio_device_impl.cc \
     Android/audio_device_android_opensles.cc \
     Android/audio_device_utility_android.cc \
-    Linux/audio_device_utility_linux.cc \
+    Dummy/audio_device_utility_dummy.cc \
     Dummy/audio_device_dummy.cc
 
 # Flags passed to both C and C++ files.
-MY_CFLAGS :=  
+MY_CFLAGS :=
 MY_CFLAGS_C :=
 MY_DEFS := '-DNO_TCMALLOC' \
     '-DNO_HEAPCHECKER' \
@@ -54,11 +54,11 @@ LOCAL_C_INCLUDES := \
     system/media/wilhelm/include
 
 # Flags passed to only C++ (and not C) files.
-LOCAL_CPPFLAGS := 
+LOCAL_CPPFLAGS :=
 
 LOCAL_LDFLAGS :=
 
-LOCAL_STATIC_LIBRARIES := 
+LOCAL_STATIC_LIBRARIES :=
 
 LOCAL_SHARED_LIBRARIES := libcutils \
     libdl \
