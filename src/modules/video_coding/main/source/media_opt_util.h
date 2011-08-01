@@ -194,6 +194,8 @@ public:
     WebRtc_UWord8 ConvertFECRate(WebRtc_UWord8 codeRate) const;
     // Get the average effective recovery from FEC: for random loss model
     float AvgRecoveryFEC(const VCMProtectionParameters* parameters) const;
+    // Update FEC with protectionFactorD
+    void UpdateProtectionFactorD(WebRtc_UWord8 protectionFactorD);
 };
 
 

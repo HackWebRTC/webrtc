@@ -43,19 +43,12 @@ VCMNackFecMethod::ProtectionFactor(const
                                    VCMProtectionParameters* parameters)
 {
     // Hybrid Nack FEC has three operational modes:
-    // 1. Low RTT - Nack only (Set FEC rates to zero)
-    // 2. High RTT - FEC Only
-    // 3. Medium RTT values - Hybrid ; in hybrid mode, we will only nack the
-    //    residual following the decoding of the FEC (refer to JB logic)
-
-    // Low RTT - NACK only mode
-    if (parameters->rtt < kLowRttNackMs)
-    {
-        // Set the FEC parameters to 0
-        _protectionFactorK = 0;
-        _protectionFactorD = 0;
-        return true;
-    }
+    // 1. Low RTT (below kLowRttNackMs) - Nack only: Set FEC rate
+    //    (_protectionFactorD) to zero.
+    // 2. High RTT (above kHighRttNackMs) - FEC Only: Keep FEC factors.
+    // 3. Medium RTT values - Hybrid mode: We will only nack the
+    //    residual following the decoding of the FEC (refer to JB logic). FEC
+    //    delta protection factor will be adjusted based on the RTT.
 
     // Otherwise: we count on FEC; if the RTT is below a threshold, then we
     // nack the residual, based on a decision made in the JB.
@@ -66,18 +59,22 @@ VCMNackFecMethod::ProtectionFactor(const
     _protectionFactorK = _fecMethod->_protectionFactorK;
     _protectionFactorD = _fecMethod->_protectionFactorD;
 
-    // When in Hybrid mode, correct FEC rates based on the
-    // RTT (NACK effectiveness)
+    // When in Hybrid mode (RTT range), adjust FEC rates based on the
+    // RTT (NACK effectiveness) - adjustment factor is in the range [0,1].
     if (parameters->rtt < kHighRttNackMs)
     {
         WebRtc_UWord16 rttIndex = (WebRtc_UWord16) parameters->rtt;
-        // TODO(mikhal): update table
-        float softnessRtt = (float)VCMNackFecTable[rttIndex] / (float)4096.0;
+        float adjustRtt = (float)VCMNackFecTable[rttIndex] / 100.0f;
 
-        // Soften FEC with NACK on (for delta frame only)
+        // Adjust FEC with NACK on (for delta frame only)
         // table depends on RTT relative to rttMax (NACK Threshold)
-        _protectionFactorD *= static_cast<WebRtc_UWord8> (softnessRtt);
+        _protectionFactorD = static_cast<WebRtc_UWord8>
+                            (adjustRtt *
+                             static_cast<float>(_protectionFactorD));
+        // update FEC rates after applyingadjustment softness parameter
+        _fecMethod->UpdateProtectionFactorD(_protectionFactorD);
     }
+
     return true;
 }
 
@@ -85,16 +82,6 @@ bool
 VCMNackFecMethod::EffectivePacketLoss(const
                                       VCMProtectionParameters* parameters)
 {
-    // NACK only mode
-    if (parameters->rtt < kLowRttNackMs)
-    {
-        // Effective Packet Loss, NA in current version.
-        _effectivePacketLoss = 0;
-        // No FEC applied.
-        _residualPacketLossFec = parameters->lossPr;
-        return true;
-    }
-
     // Set the effective packet loss for encoder (based on FEC code).
     // Compute the effective packet loss and residual packet loss due to FEC.
     _fecMethod->EffectivePacketLoss(parameters);
@@ -178,6 +165,14 @@ VCMFecMethod::ConvertFECRate(WebRtc_UWord8 codeRateRTP) const
 {
     return static_cast<WebRtc_UWord8> (VCM_MIN(255,(0.5 + 255.0 * codeRateRTP /
                                       (float)(255 - codeRateRTP))));
+}
+
+// Update FEC with protectionFactorD
+void
+VCMFecMethod::UpdateProtectionFactorD(WebRtc_UWord8 protectionFactorD)
+{
+    _protectionFactorD = protectionFactorD;
+
 }
 
 // AvgRecoveryFEC: computes the residual packet loss function.
