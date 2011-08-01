@@ -903,7 +903,7 @@ WebRtc_Word32 ModuleFileUtility::ReadWavDataAsMono(
     // Output data is should be mono.
     if(codec_info_.channels == 2)
     {
-        for (WebRtc_UWord32 i = 0; i < bytesRequested; i++)
+        for (WebRtc_UWord32 i = 0; i < bytesRequested / _bytesPerSample; i++)
         {
             // Sample value is the average of left and right buffer rounded to
             // closest integer value. Note samples can be either 1 or 2 byte.
