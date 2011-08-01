@@ -114,7 +114,7 @@ VCMNackFecMethod::UpdateParameters(const VCMProtectionParameters* parameters)
 
     // Add FEC cost: ignore I frames for now
     float fecRate = static_cast<float> (_protectionFactorD) / 255.0f;
-    _efficiency = parameters->bitRate * fecRate;
+    _efficiency = parameters->bitRate * fecRate * _corrFecCost;
 
     // Add NACK cost, when applicable
     if (parameters->rtt < kHighRttNackMs)
@@ -430,6 +430,27 @@ VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters)
     _protectionFactorK = codeRateKey;
     _protectionFactorD = codeRateDelta;
 
+    // Generally there is a rate mis-match between the FEC cost estimated
+    // in mediaOpt and the actual FEC cost sent out in RTP module.
+    // This is more significant at low rates (small # of source packets), where
+    // the granularity of the FEC decreases. In this case, non-zero protection
+    // in mediaOpt may generate 0 FEC packets in RTP sender (since actual #FEC
+    // is based on rounding off protectionFactor on actual source packet number).
+    // The correction factor (_corrFecCost) attempts to corrects this, at least
+    // for cases of low rates/low # of packets.
+    const float estNumFecGen = 0.5f + static_cast<float> (_protectionFactorD *
+                                                        avgTotPackets / 255.0f);
+    // Note we reduce cost factor (which will reduce overhead for FEC and
+    // hybrid method) and not the protectionFactor.
+    _corrFecCost = 1.0f;
+    if (estNumFecGen < 1.5f)
+    {
+        _corrFecCost = 0.5f;
+    }
+    if (estNumFecGen < 1.0f)
+    {
+        _corrFecCost = 0.0f;
+    }
 
      // TODO (marpan): Set the UEP protection on/off for Key and Delta frames
     _useUepProtectionK = _qmRobustness->SetUepProtection(codeRateKey, bitRate,
@@ -485,7 +506,7 @@ VCMFecMethod::UpdateParameters(const VCMProtectionParameters* parameters)
 
         // in the new tables, the fecRate is defined relative to total number of
         // packets (total rate), so overhead cost is:
-        _efficiency = parameters->bitRate * fecRate;
+        _efficiency = parameters->bitRate * fecRate * _corrFecCost;
     }
     else
     {

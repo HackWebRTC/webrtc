@@ -92,8 +92,8 @@ public:
     VCMProtectionMethod(VCMProtectionMethodEnum type) : _effectivePacketLoss(0),
         _protectionFactorK(0), _protectionFactorD(0),
         _residualPacketLossFec(0.0), _scaleProtKey(2.0), _maxPayloadSize(1460),
-        _useUepProtectionK(false), _useUepProtectionD(true), _efficiency(0),
-        _type(type)
+        _useUepProtectionK(false), _useUepProtectionD(true), _corrFecCost(1.0),
+        _efficiency(0), _type(type)
         {_qmRobustness = new VCMQmRobustness();}
 
     virtual ~VCMProtectionMethod() { delete _qmRobustness;}
@@ -157,6 +157,7 @@ public:
     VCMQmRobustness*                     _qmRobustness;
     bool                                 _useUepProtectionK;
     bool                                 _useUepProtectionD;
+    float                                _corrFecCost;
 
 protected:
     float                                _efficiency;
