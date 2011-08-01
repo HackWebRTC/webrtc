@@ -180,9 +180,8 @@ int RtpFormatVp8::WriteHeaderAndPayload(int payload_bytes,
 
     buffer[0] = 0;
     if (hdr_info_.nonReference) buffer[0] |= (0x01 << 3); // N
-    if (!first_fragment_)       buffer[0] |= (0x01 << 2); // FI
-    if (!end_of_fragment)       buffer[0] |= (0x01 << 1); // FI
-    if (beginning_)             buffer[0] |= 0x01; // B
+    buffer[0] |= (GetFIFlag(end_of_fragment) << 1); // FI
+    if (beginning_) buffer[0] |= 0x01; // B
 
     int pic_id_len = WritePictureID(&buffer[vp8_header_bytes_],
         buffer_length - vp8_header_bytes_);
@@ -249,6 +248,22 @@ int RtpFormatVp8::PictureIdLength() const
     else
     {
         return 2;
+    }
+}
+
+int RtpFormatVp8::GetFIFlag(bool end_of_fragment) const
+{
+    if (first_fragment_ && end_of_fragment) {
+        return 0x0;
+    }
+    else if (first_fragment_ && !end_of_fragment) {
+        return 0x1;
+    }
+    else if (!first_fragment_ && !end_of_fragment) {
+        return 0x2;
+    }
+    else if (!first_fragment_ && end_of_fragment) {
+        return 0x3;
     }
 }
 

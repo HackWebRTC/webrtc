@@ -105,6 +105,8 @@ private:
     // header. Can be 0, 1, or 2.
     int PictureIdLength() const;
 
+    int GetFIFlag(bool end_of_fragment) const;
+
     const WebRtc_UWord8* payload_data_;
     const int payload_size_;
     RTPFragmentationHeader part_info_;
