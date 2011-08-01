@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_SOURCE_TRACE_LINUX_H_
-#define WEBRTC_SYSTEM_WRAPPERS_SOURCE_TRACE_LINUX_H_
+#ifndef WEBRTC_SYSTEM_WRAPPERS_SOURCE_TRACE_POSIX_H_
+#define WEBRTC_SYSTEM_WRAPPERS_SOURCE_TRACE_POSIX_H_
 
 #include "critical_section_wrapper.h"
 #include "trace_impl.h"
 
 namespace webrtc {
-class TraceLinux : public TraceImpl
+class TracePosix : public TraceImpl
 {
 public:
-    TraceLinux();
-    virtual ~TraceLinux();
+    TracePosix();
+    virtual ~TracePosix();
 
     virtual WebRtc_Word32 AddThreadId(char *traceMessage) const;
     virtual WebRtc_Word32 AddTime(char* traceMessage,
@@ -34,4 +34,4 @@ private:
 };
 } // namespace webrtc
 
-#endif // WEBRTC_SYSTEM_WRAPPERS_SOURCE_TRACE_LINUX_H_
+#endif // WEBRTC_SYSTEM_WRAPPERS_SOURCE_TRACE_POSIX_H_

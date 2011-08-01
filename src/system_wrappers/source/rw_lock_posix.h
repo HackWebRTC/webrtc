@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_SOURCE_RW_LOCK_LINUX_H_
-#define WEBRTC_SYSTEM_WRAPPERS_SOURCE_RW_LOCK_LINUX_H_
+#ifndef WEBRTC_SYSTEM_WRAPPERS_SOURCE_RW_LOCK_POSIX_H_
+#define WEBRTC_SYSTEM_WRAPPERS_SOURCE_RW_LOCK_POSIX_H_
 
 #include "rw_lock_wrapper.h"
 
 #include <pthread.h>
 
 namespace webrtc {
-class RWLockLinux : public RWLockWrapper
+class RWLockPosix : public RWLockWrapper
 {
 public:
-    RWLockLinux();
-    virtual ~RWLockLinux();
+    RWLockPosix();
+    virtual ~RWLockPosix();
 
     virtual void AcquireLockExclusive();
     virtual void ReleaseLockExclusive();
@@ -36,4 +36,4 @@ private:
 };
 } // namespace webrtc
 
-#endif // WEBRTC_SYSTEM_WRAPPERS_SOURCE_RW_LOCK_LINUX_H_
+#endif // WEBRTC_SYSTEM_WRAPPERS_SOURCE_RW_LOCK_POSIX_H_

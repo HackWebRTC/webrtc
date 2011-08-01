@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_SOURCE_CONDITION_VARIABLE_LINUX_H_
-#define WEBRTC_SYSTEM_WRAPPERS_SOURCE_CONDITION_VARIABLE_LINUX_H_
+#ifndef WEBRTC_SYSTEM_WRAPPERS_SOURCE_CONDITION_VARIABLE_POSIX_H_
+#define WEBRTC_SYSTEM_WRAPPERS_SOURCE_CONDITION_VARIABLE_POSIX_H_
 
 #include "condition_variable_wrapper.h"
 
 #include <pthread.h>
 
 namespace webrtc {
-class ConditionVariableLinux : public ConditionVariableWrapper
+class ConditionVariablePosix : public ConditionVariableWrapper
 {
 public:
     static ConditionVariableWrapper* Create();
-    ~ConditionVariableLinux();
+    ~ConditionVariablePosix();
 
     void SleepCS(CriticalSectionWrapper& critSect);
     bool SleepCS(CriticalSectionWrapper& critSect, unsigned long maxTimeInMS);
@@ -28,7 +28,7 @@ public:
     void WakeAll();
 
 private:
-    ConditionVariableLinux();
+    ConditionVariablePosix();
     int Construct();
 
 private:
@@ -36,4 +36,4 @@ private:
 };
 } // namespace webrtc
 
-#endif // WEBRTC_SYSTEM_WRAPPERS_SOURCE_CONDITION_VARIABLE_LINUX_H_
+#endif // WEBRTC_SYSTEM_WRAPPERS_SOURCE_CONDITION_VARIABLE_POSIX_H_

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "udp_socket_linux.h"
+#include "udp_socket_posix.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -24,11 +24,11 @@
 #include "udp_socket_wrapper.h"
 
 namespace webrtc {
-UdpSocketLinux::UdpSocketLinux(const WebRtc_Word32 id, UdpSocketManager* mgr,
+UdpSocketPosix::UdpSocketPosix(const WebRtc_Word32 id, UdpSocketManager* mgr,
                                bool ipV6Enable)
 {
     WEBRTC_TRACE(kTraceMemory, kTraceTransport, id,
-                 "UdpSocketLinux::UdpSocketLinux()");
+                 "UdpSocketPosix::UdpSocketPosix()");
 
     _wantsIncoming = false;
     _error = 0;
@@ -60,7 +60,7 @@ UdpSocketLinux::UdpSocketLinux(const WebRtc_Word32 id, UdpSocketManager* mgr,
     fcntl(_socket,F_SETFD,FD_CLOEXEC);
 }
 
-UdpSocketLinux::~UdpSocketLinux()
+UdpSocketPosix::~UdpSocketPosix()
 {
     if(_socket != INVALID_SOCKET)
     {
@@ -83,35 +83,35 @@ UdpSocketLinux::~UdpSocketLinux()
     }
 }
 
-WebRtc_Word32 UdpSocketLinux::ChangeUniqueId(const WebRtc_Word32 id)
+WebRtc_Word32 UdpSocketPosix::ChangeUniqueId(const WebRtc_Word32 id)
 {
     _id = id;
     return 0;
 }
 
-bool UdpSocketLinux::SetCallback(CallbackObj obj, IncomingSocketCallback cb)
+bool UdpSocketPosix::SetCallback(CallbackObj obj, IncomingSocketCallback cb)
 {
     _obj = obj;
     _incomingCb = cb;
 
     WEBRTC_TRACE(kTraceDebug, kTraceTransport, _id,
-                 "UdpSocketLinux(%p)::SetCallback", this);
+                 "UdpSocketPosix(%p)::SetCallback", this);
 
     if (_mgr->AddSocket(this))
       {
         WEBRTC_TRACE(kTraceDebug, kTraceTransport, _id,
-                     "UdpSocketLinux(%p)::SetCallback socket added to manager",
+                     "UdpSocketPosix(%p)::SetCallback socket added to manager",
                      this);
         return true;   // socket is now ready for action
       }
 
     WEBRTC_TRACE(kTraceDebug, kTraceTransport, _id,
-                 "UdpSocketLinux(%p)::SetCallback error adding me to mgr",
+                 "UdpSocketPosix(%p)::SetCallback error adding me to mgr",
                  this);
     return false;
 }
 
-bool UdpSocketLinux::SetSockopt(WebRtc_Word32 level, WebRtc_Word32 optname,
+bool UdpSocketPosix::SetSockopt(WebRtc_Word32 level, WebRtc_Word32 optname,
                             const WebRtc_Word8* optval, WebRtc_Word32 optlen)
 {
    if(0 == setsockopt(_socket, level, optname, optval, optlen ))
@@ -121,11 +121,11 @@ bool UdpSocketLinux::SetSockopt(WebRtc_Word32 level, WebRtc_Word32 optname,
 
    _error = errno;
    WEBRTC_TRACE(kTraceError, kTraceTransport, _id,
-                "UdpSocketLinux::SetSockopt(), error:%d", _error);
+                "UdpSocketPosix::SetSockopt(), error:%d", _error);
    return false;
 }
 
-WebRtc_Word32 UdpSocketLinux::SetTOS(WebRtc_Word32 serviceType)
+WebRtc_Word32 UdpSocketPosix::SetTOS(WebRtc_Word32 serviceType)
 {
     if (SetSockopt(IPPROTO_IP, IP_TOS ,(WebRtc_Word8*)&serviceType ,4) != 0)
     {
@@ -134,7 +134,7 @@ WebRtc_Word32 UdpSocketLinux::SetTOS(WebRtc_Word32 serviceType)
     return 0;
 }
 
-bool UdpSocketLinux::Bind(const SocketAddress& name)
+bool UdpSocketPosix::Bind(const SocketAddress& name)
 {
     int size = sizeof(sockaddr);
     if (0 == bind(_socket, reinterpret_cast<const sockaddr*>(&name),size))
@@ -143,11 +143,11 @@ bool UdpSocketLinux::Bind(const SocketAddress& name)
     }
     _error = errno;
     WEBRTC_TRACE(kTraceError, kTraceTransport, _id,
-                 "UdpSocketLinux::Bind() error: %d",_error);
+                 "UdpSocketPosix::Bind() error: %d",_error);
     return false;
 }
 
-WebRtc_Word32 UdpSocketLinux::SendTo(const WebRtc_Word8* buf, WebRtc_Word32 len,
+WebRtc_Word32 UdpSocketPosix::SendTo(const WebRtc_Word8* buf, WebRtc_Word32 len,
                                      const SocketAddress& to)
 {
     int size = sizeof(sockaddr);
@@ -157,18 +157,18 @@ WebRtc_Word32 UdpSocketLinux::SendTo(const WebRtc_Word8* buf, WebRtc_Word32 len,
     {
         _error = errno;
         WEBRTC_TRACE(kTraceError, kTraceTransport, _id,
-                     "UdpSocketLinux::SendTo() error: %d", _error);
+                     "UdpSocketPosix::SendTo() error: %d", _error);
     }
 
     return retVal;
 }
 
-bool UdpSocketLinux::ValidHandle()
+bool UdpSocketPosix::ValidHandle()
 {
     return _socket != INVALID_SOCKET;
 }
 
-void UdpSocketLinux::HasIncoming()
+void UdpSocketPosix::HasIncoming()
 {
     char buf[2048];
     int retval;
@@ -209,7 +209,7 @@ void UdpSocketLinux::HasIncoming()
     }
 }
 
-void UdpSocketLinux::CloseBlocking()
+void UdpSocketPosix::CloseBlocking()
 {
     _cs->Enter();
     _closeBlockingActive = true;
@@ -229,7 +229,7 @@ void UdpSocketLinux::CloseBlocking()
     _cs->Leave();
 }
 
-void UdpSocketLinux::ReadyForDeletion()
+void UdpSocketPosix::ReadyForDeletion()
 {
     _cs->Enter();
     if(!_closeBlockingActive)
@@ -248,7 +248,7 @@ void UdpSocketLinux::ReadyForDeletion()
     _cs->Leave();
 }
 
-bool UdpSocketLinux::CleanUp()
+bool UdpSocketPosix::CleanUp()
 {
     _wantsIncoming = false;
 

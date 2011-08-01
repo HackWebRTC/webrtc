@@ -43,7 +43,7 @@
         'atomic32_mac.h',
         'atomic32_windows.h',
         'condition_variable.cc',
-        'condition_variable_linux.h',
+        'condition_variable_posix.h',
         'condition_variable_windows.h',
         'cpu.cc',
         'cpu_linux.h',
@@ -51,37 +51,41 @@
         'cpu_windows.h',
         'cpu_features.cc',
         'critical_section.cc',
-        'critical_section_linux.h',
+        'critical_section_posix.h',
         'critical_section_windows.h',
         'event.cc',
-        'event_linux.h',
+        'event_posix.h',
         'event_windows.h',
         'file_impl.cc',
         'file_impl.h',
         'list_no_stl.cc',
         'map.cc',
         'rw_lock.cc',
-        'rw_lock_linux.h',
+        'rw_lock_posix.h',
         'rw_lock_windows.h',
         'sort.cc',
         'thread.cc',
-        'thread_linux.h',
+        'thread_posix.h',
         'thread_windows.h',
         'trace_impl.cc',
         'trace_impl.h',
-        'trace_linux.h',
+        'trace_posix.h',
         'trace_windows.h',
       ],
       'conditions': [
+        ['os_posix==1', {
+          'sources': [
+            'condition_variable_posix.cc',
+            'critical_section_posix.cc',
+            'event_posix.cc',
+            'rw_lock_posix.cc',
+            'thread_posix.cc',
+            'trace_posix.cc',
+          ],
+        }],
         ['OS=="linux"', {
           'sources': [
-            'condition_variable_linux.cc',
             'cpu_linux.cc',
-            'critical_section_linux.cc',
-            'event_linux.cc',
-            'thread_linux.cc',
-            'trace_linux.cc',
-            'rw_lock_linux.cc',
           ],
           'link_settings': {
             'libraries': [
@@ -91,32 +95,18 @@
         }],
         ['OS=="mac"', {
           'sources': [
-            'condition_variable_linux.cc',
             'cpu_mac.cc',
-            'critical_section_linux.cc',
-            'event_linux.cc',
-            'rw_lock_linux.cc',
-            'thread_linux.cc',
-            'trace_linux.cc',
           ],
         }],
         ['OS=="win"', {
           'sources': [
-            'atomic32_windows.h',
             'condition_variable_windows.cc',
-            'condition_variable_windows.h',
             'cpu_windows.cc',
-            'cpu_windows.h',
             'critical_section_windows.cc',
-            'critical_section_windows.h',
             'event_windows.cc',
-            'event_windows.h',
             'rw_lock_windows.cc',
-            'rw_lock_windows.h',
             'thread_windows.cc',
-            'thread_windows.h',
             'trace_windows.cc',
-            'trace_windows.h',
           ],
           'link_settings': {
             'libraries': [
@@ -124,7 +114,7 @@
             ],
           },
         }],
-	    ] # conditions
+      ] # conditions
     },
     {
       'target_name': 'system_wrappersTest',

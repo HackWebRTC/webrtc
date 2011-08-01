@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_SOURCE_THREAD_LINUX_H_
-#define WEBRTC_SYSTEM_WRAPPERS_SOURCE_THREAD_LINUX_H_
+#ifndef WEBRTC_SYSTEM_WRAPPERS_SOURCE_THREAD_POSIX_H_
+#define WEBRTC_SYSTEM_WRAPPERS_SOURCE_THREAD_POSIX_H_
 
 #include "thread_wrapper.h"
 #include <pthread.h>
@@ -17,15 +17,15 @@
 namespace webrtc {
 class EventWrapper;
 
-class ThreadLinux : public ThreadWrapper
+class ThreadPosix : public ThreadWrapper
 {
 public:
     static ThreadWrapper* Create(ThreadRunFunction func, ThreadObj obj,
                                  ThreadPriority prio, const char* threadName);
 
-    ThreadLinux(ThreadRunFunction func, ThreadObj obj, ThreadPriority prio,
+    ThreadPosix(ThreadRunFunction func, ThreadObj obj, ThreadPriority prio,
                 const char* threadName);
-    ~ThreadLinux();
+    ~ThreadPosix();
 
     // From ThreadWrapper
     virtual void SetNotAlive();
@@ -66,4 +66,4 @@ private:
 };
 } // namespace webrtc
 
-#endif // WEBRTC_SYSTEM_WRAPPERS_SOURCE_THREAD_LINUX_H_
+#endif // WEBRTC_SYSTEM_WRAPPERS_SOURCE_THREAD_POSIX_H_

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "thread_linux.h"
+#include "thread_posix.h"
 
 #include <errno.h>
 #include <string.h> // strncpy
@@ -30,7 +30,7 @@ extern "C"
 {
     static void* StartThread(void* lpParameter)
     {
-        static_cast<ThreadLinux*>(lpParameter)->Run();
+        static_cast<ThreadPosix*>(lpParameter)->Run();
         return 0;
     }
 }
@@ -46,10 +46,10 @@ static pid_t gettid()
 }
 #endif
 
-ThreadWrapper* ThreadLinux::Create(ThreadRunFunction func, ThreadObj obj,
+ThreadWrapper* ThreadPosix::Create(ThreadRunFunction func, ThreadObj obj,
                                    ThreadPriority prio, const char* threadName)
 {
-    ThreadLinux* ptr = new ThreadLinux(func, obj, prio, threadName);
+    ThreadPosix* ptr = new ThreadPosix(func, obj, prio, threadName);
     if (!ptr)
     {
         return NULL;
@@ -63,7 +63,7 @@ ThreadWrapper* ThreadLinux::Create(ThreadRunFunction func, ThreadObj obj,
     return ptr;
 }
 
-ThreadLinux::ThreadLinux(ThreadRunFunction func, ThreadObj obj,
+ThreadPosix::ThreadPosix(ThreadRunFunction func, ThreadObj obj,
                          ThreadPriority prio, const char* threadName)
     : _runFunction(func),
       _obj(obj),
@@ -83,7 +83,7 @@ ThreadLinux::ThreadLinux(ThreadRunFunction func, ThreadObj obj,
     }
 }
 
-int ThreadLinux::Construct()
+int ThreadPosix::Construct()
 {
     int result = 0;
 #if !defined(WEBRTC_ANDROID)
@@ -108,7 +108,7 @@ int ThreadLinux::Construct()
     return 0;
 }
 
-ThreadLinux::~ThreadLinux()
+ThreadPosix::~ThreadPosix()
 {
     pthread_attr_destroy(&_attr);
     delete _event;
@@ -118,9 +118,9 @@ ThreadLinux::~ThreadLinux()
                       !defined(WEBRTC_MAC) && !defined(WEBRTC_MAC_INTEL) && \
                       !defined(MAC_DYLIB)  && !defined(MAC_INTEL_DYLIB)
 #if HAS_THREAD_ID
-bool ThreadLinux::Start(unsigned int& threadID)
+bool ThreadPosix::Start(unsigned int& threadID)
 #else
-bool ThreadLinux::Start(unsigned int& /*threadID*/)
+bool ThreadPosix::Start(unsigned int& /*threadID*/)
 #endif
 {
     if (!_runFunction)
@@ -192,7 +192,7 @@ bool ThreadLinux::Start(unsigned int& /*threadID*/)
 }
 
 #if (defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID))
-bool ThreadLinux::SetAffinity(const int* processorNumbers,
+bool ThreadPosix::SetAffinity(const int* processorNumbers,
                               const unsigned int amountOfProcessors)
 {
     if (!processorNumbers || (amountOfProcessors == 0))
@@ -222,18 +222,18 @@ bool ThreadLinux::SetAffinity(const int* processorNumbers,
 // NOTE: On Mac OS X, use the Thread affinity API in
 // /usr/include/mach/thread_policy.h: thread_policy_set and mach_thread_self()
 // instead of Linux gettid() syscall.
-bool ThreadLinux::SetAffinity(const int* , const unsigned int)
+bool ThreadPosix::SetAffinity(const int* , const unsigned int)
 {
     return false;
 }
 #endif
 
-void ThreadLinux::SetNotAlive()
+void ThreadPosix::SetNotAlive()
 {
     _alive = false;
 }
 
-bool ThreadLinux::Shutdown()
+bool ThreadPosix::Shutdown()
 {
 #if !defined(WEBRTC_ANDROID)
     if (_thread && (0 != pthread_cancel(_thread)))
@@ -247,7 +247,7 @@ bool ThreadLinux::Shutdown()
 #endif
 }
 
-bool ThreadLinux::Stop()
+bool ThreadPosix::Stop()
 {
     _alive = false;
 
@@ -270,7 +270,7 @@ bool ThreadLinux::Stop()
     }
 }
 
-void ThreadLinux::Run()
+void ThreadPosix::Run()
 {
     _alive = true;
     _dead  = false;

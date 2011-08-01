@@ -30,13 +30,13 @@ LOCAL_SRC_FILES := \
     rw_lock.cc \
     thread.cc \
     trace_impl.cc \
-    condition_variable_linux.cc \
+    condition_variable_posix.cc \
     cpu_linux.cc \
-    critical_section_linux.cc \
-    event_linux.cc \
-    thread_linux.cc \
-    trace_linux.cc \
-    rw_lock_linux.cc 
+    critical_section_posix.cc \
+    event_posix.cc \
+    thread_posix.cc \
+    trace_posix.cc \
+    rw_lock_posix.cc 
 
 LOCAL_CFLAGS := \
     $(MY_WEBRTC_COMMON_DEFS)

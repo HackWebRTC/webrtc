@@ -15,7 +15,7 @@
     #include "event_windows.h"
 #else
     #include <pthread.h>
-    #include "event_linux.h"
+    #include "event_posix.h"
 #endif
 
 namespace webrtc {
@@ -24,7 +24,7 @@ EventWrapper* EventWrapper::Create()
 #if defined(_WIN32)
     return new EventWindows();
 #else
-    return EventLinux::Create();
+    return EventPosix::Create();
 #endif
 }
 

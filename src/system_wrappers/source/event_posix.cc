@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "event_linux.h"
+#include "event_posix.h"
 
 #include <errno.h>
 #include <pthread.h>
@@ -22,9 +22,9 @@ namespace webrtc {
 const long int E6 = 1000000;
 const long int E9 = 1000 * E6;
 
-EventWrapper* EventLinux::Create()
+EventWrapper* EventPosix::Create()
 {
-    EventLinux* ptr = new EventLinux;
+    EventPosix* ptr = new EventPosix;
     if (!ptr)
     {
         return NULL;
@@ -40,7 +40,7 @@ EventWrapper* EventLinux::Create()
 }
 
 
-EventLinux::EventLinux()
+EventPosix::EventPosix()
     : _timerThread(0),
       _timerEvent(0),
       _periodic(false),
@@ -50,7 +50,7 @@ EventLinux::EventLinux()
 {
 }
 
-int EventLinux::Construct()
+int EventPosix::Construct()
 {
     // Set start time to zero
     memset(&_tCreate, 0, sizeof(_tCreate));
@@ -92,14 +92,14 @@ int EventLinux::Construct()
     return 0;
 }
 
-EventLinux::~EventLinux()
+EventPosix::~EventPosix()
 {
     StopTimer();
     pthread_cond_destroy(&cond);
     pthread_mutex_destroy(&mutex);
 }
 
-bool EventLinux::Reset()
+bool EventPosix::Reset()
 {
     if (0 != pthread_mutex_lock(&mutex))
     {
@@ -110,7 +110,7 @@ bool EventLinux::Reset()
     return true;
 }
 
-bool EventLinux::Set()
+bool EventPosix::Set()
 {
     if (0 != pthread_mutex_lock(&mutex))
     {
@@ -123,7 +123,7 @@ bool EventLinux::Set()
     return true;
 }
 
-EventTypeWrapper EventLinux::Wait(unsigned long timeout)
+EventTypeWrapper EventPosix::Wait(unsigned long timeout)
 {
     int retVal = 0;
     if (0 != pthread_mutex_lock(&mutex))
@@ -178,7 +178,7 @@ EventTypeWrapper EventLinux::Wait(unsigned long timeout)
     }
 }
 
-EventTypeWrapper EventLinux::Wait(timespec& tPulse)
+EventTypeWrapper EventPosix::Wait(timespec& tPulse)
 {
     int retVal = 0;
     if (0 != pthread_mutex_lock(&mutex))
@@ -205,7 +205,7 @@ EventTypeWrapper EventLinux::Wait(timespec& tPulse)
     }
 }
 
-bool EventLinux::StartTimer(bool periodic, unsigned long time)
+bool EventPosix::StartTimer(bool periodic, unsigned long time)
 {
     if (_timerThread)
     {
@@ -223,7 +223,7 @@ bool EventLinux::StartTimer(bool periodic, unsigned long time)
     }
 
     // Start the timer thread
-    _timerEvent = static_cast<EventLinux*>(EventWrapper::Create());
+    _timerEvent = static_cast<EventPosix*>(EventWrapper::Create());
     const char* threadName = "WebRtc_event_timer_thread";
     _timerThread = ThreadWrapper::CreateThread(Run, this, kRealtimePriority,
                                                threadName);
@@ -237,12 +237,12 @@ bool EventLinux::StartTimer(bool periodic, unsigned long time)
     return false;
 }
 
-bool EventLinux::Run(ThreadObj obj)
+bool EventPosix::Run(ThreadObj obj)
 {
-    return static_cast<EventLinux*>(obj)->Process();
+    return static_cast<EventPosix*>(obj)->Process();
 }
 
-bool EventLinux::Process()
+bool EventPosix::Process()
 {
     if (_tCreate.tv_sec == 0)
     {
@@ -290,7 +290,7 @@ bool EventLinux::Process()
     return true;
 }
 
-bool EventLinux::StopTimer()
+bool EventPosix::StopTimer()
 {
     if(_timerThread)
     {

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_UDP_TRANSPORT_SOURCE_UDP_SOCKET_LINUX_H_
-#define WEBRTC_MODULES_UDP_TRANSPORT_SOURCE_UDP_SOCKET_LINUX_H_
+#ifndef WEBRTC_MODULES_UDP_TRANSPORT_SOURCE_UDP_SOCKET_POSIX_H_
+#define WEBRTC_MODULES_UDP_TRANSPORT_SOURCE_UDP_SOCKET_POSIX_H_
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -23,13 +23,13 @@
 #define SOCKET_ERROR -1
 
 namespace webrtc {
-class UdpSocketLinux : public UdpSocketWrapper
+class UdpSocketPosix : public UdpSocketWrapper
 {
 public:
-    UdpSocketLinux(const WebRtc_Word32 id, UdpSocketManager* mgr,
+    UdpSocketPosix(const WebRtc_Word32 id, UdpSocketManager* mgr,
                    bool ipV6Enable = false);
 
-    virtual ~UdpSocketLinux();
+    virtual ~UdpSocketPosix();
 
     virtual WebRtc_Word32 ChangeUniqueId(const WebRtc_Word32 id);
 
@@ -68,7 +68,7 @@ public:
     bool WantsIncoming() {return _wantsIncoming;}
     void ReadyForDeletion();
 private:
-    friend class UdpSocketManagerLinux;
+    friend class UdpSocketManagerPosix;
 
     WebRtc_Word32 _id;
     IncomingSocketCallback _incomingCb;
@@ -88,4 +88,4 @@ private:
 };
 } // namespace webrtc
 
-#endif // WEBRTC_MODULES_UDP_TRANSPORT_SOURCE_UDP_SOCKET_LINUX_H_
+#endif // WEBRTC_MODULES_UDP_TRANSPORT_SOURCE_UDP_SOCKET_POSIX_H_

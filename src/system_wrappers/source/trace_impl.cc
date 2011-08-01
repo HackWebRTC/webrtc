@@ -20,7 +20,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdarg.h>
-#include "trace_linux.h"
+#include "trace_posix.h"
 #endif // _WIN32
 
 #define KEY_LEN_CHARS 31
@@ -199,7 +199,7 @@ Trace* TraceImpl::CreateTrace()
 #if defined(_WIN32)
     return new TraceWindows();
 #else
-    return new TraceLinux();
+    return new TracePosix();
 #endif
 }
 

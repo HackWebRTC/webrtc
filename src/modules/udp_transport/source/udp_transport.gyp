@@ -33,11 +33,11 @@
         'udp_socket_wrapper.h',
         'udp_socket_manager_wrapper.h',
         # PLATFORM SPECIFIC SOURCE FILES - Will be filtered below
-        # Linux/Mac
-        'udp_socket_linux.cc',
-        'udp_socket_linux.h',
-        'udp_socket_manager_linux.cc',
-        'udp_socket_manager_linux.h',
+        # Posix (Linux/Mac)
+        'udp_socket_posix.cc',
+        'udp_socket_posix.h',
+        'udp_socket_manager_posix.cc',
+        'udp_socket_manager_posix.h',
         # Windows
         'udp_socket_manager_windows.cc',
         'udp_socket_manager_windows.h',
@@ -52,12 +52,12 @@
       ], # source
       'conditions': [
         # DEFINE PLATFORM SPECIFIC SOURCE FILES
-        ['OS!="linux" and OS!="mac"', {
+        ['os_posix==0', {
           'sources!': [
-            'udp_socket_linux.cc',
-            'udp_socket_linux.h',
-            'udp_socket_manager_linux.cc',
-            'udp_socket_manager_linux.h',
+            'udp_socket_posix.cc',
+            'udp_socket_posix.h',
+            'udp_socket_manager_posix.cc',
+            'udp_socket_manager_posix.h',
           ],
         }],
         ['OS!="win"', {
@@ -78,7 +78,7 @@
           'cflags': [
             '-fno-strict-aliasing',
           ],
-        }],        
+        }],
         ['OS=="mac"', {
           'xcode_settings': {
             'OTHER_CPLUSPLUSFLAGS': '-fno-strict-aliasing',

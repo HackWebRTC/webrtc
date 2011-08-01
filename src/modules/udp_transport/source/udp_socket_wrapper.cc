@@ -21,7 +21,7 @@
     #include "udp_socket_windows.h"
     #include "udp_socket2_windows.h"
 #else
-    #include "udp_socket_linux.h"
+    #include "udp_socket_posix.h"
 #endif
 
 
@@ -111,10 +111,10 @@ UdpSocketWrapper* UdpSocketWrapper::CreateSocket(const WebRtc_Word32 id,
     {
         _initiated = true;
     }
-    s = new UdpSocketLinux(id, mgr, ipV6Enable);
+    s = new UdpSocketPosix(id, mgr, ipV6Enable);
     if (s)
     {
-        UdpSocketLinux* sl = static_cast<UdpSocketLinux*>(s);
+        UdpSocketPosix* sl = static_cast<UdpSocketPosix*>(s);
         if (sl->GetFd() != INVALID_SOCKET && sl->GetFd() < FD_SETSIZE)
         {
             // ok

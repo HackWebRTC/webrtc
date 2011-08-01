@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_SYSTEM_WRAPPERS_SOURCE_EVENT_LINUX_H_
-#define WEBRTC_SYSTEM_WRAPPERS_SOURCE_EVENT_LINUX_H_
+#ifndef WEBRTC_SYSTEM_WRAPPERS_SOURCE_EVENT_POSIX_H_
+#define WEBRTC_SYSTEM_WRAPPERS_SOURCE_EVENT_POSIX_H_
 
 #include "event_wrapper.h"
 
@@ -25,12 +25,12 @@ enum State
     kDown = 2
 };
 
-class EventLinux : public EventWrapper
+class EventPosix : public EventWrapper
 {
 public:
     static EventWrapper* Create();
 
-    virtual ~EventLinux();
+    virtual ~EventPosix();
 
     virtual EventTypeWrapper Wait(unsigned long maxTime);
     virtual bool Set();
@@ -40,7 +40,7 @@ public:
     virtual bool StopTimer();
 
 private:
-    EventLinux();
+    EventPosix();
     int Construct();
 
     static bool Run(ThreadObj obj);
@@ -53,7 +53,7 @@ private:
     pthread_mutex_t mutex;
 
     ThreadWrapper* _timerThread;
-    EventLinux*    _timerEvent;
+    EventPosix*    _timerEvent;
     timespec       _tCreate;
 
     bool          _periodic;
@@ -63,4 +63,4 @@ private:
 };
 } // namespace webrtc
 
-#endif // WEBRTC_SYSTEM_WRAPPERS_SOURCE_EVENT_LINUX_H_
+#endif // WEBRTC_SYSTEM_WRAPPERS_SOURCE_EVENT_POSIX_H_

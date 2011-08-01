@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "condition_variable_linux.h"
+#include "condition_variable_posix.h"
 
 #if defined(WEBRTC_LINUX)
 #include <ctime>
@@ -18,12 +18,12 @@
 
 #include <errno.h>
 
-#include "critical_section_linux.h"
+#include "critical_section_posix.h"
 
 namespace webrtc {
-ConditionVariableWrapper* ConditionVariableLinux::Create()
+ConditionVariableWrapper* ConditionVariablePosix::Create()
 {
-    ConditionVariableLinux* ptr = new ConditionVariableLinux;
+    ConditionVariablePosix* ptr = new ConditionVariablePosix;
     if (!ptr)
     {
         return NULL;
@@ -39,11 +39,11 @@ ConditionVariableWrapper* ConditionVariableLinux::Create()
     return ptr;
 }
 
-ConditionVariableLinux::ConditionVariableLinux()
+ConditionVariablePosix::ConditionVariablePosix()
 {
 }
 
-int ConditionVariableLinux::Construct()
+int ConditionVariablePosix::Construct()
 {
     int result = 0;
 #ifdef WEBRTC_CLOCK_TYPE_REALTIME
@@ -74,21 +74,21 @@ int ConditionVariableLinux::Construct()
     return 0;
 }
 
-ConditionVariableLinux::~ConditionVariableLinux()
+ConditionVariablePosix::~ConditionVariablePosix()
 {
     pthread_cond_destroy(&_cond);
 }
 
-void ConditionVariableLinux::SleepCS(CriticalSectionWrapper& critSect)
+void ConditionVariablePosix::SleepCS(CriticalSectionWrapper& critSect)
 {
-    CriticalSectionLinux* cs = reinterpret_cast<CriticalSectionLinux*>(
+    CriticalSectionPosix* cs = reinterpret_cast<CriticalSectionPosix*>(
                                    &critSect);
     pthread_cond_wait(&_cond, &cs->_mutex);
 }
 
 
 bool
-ConditionVariableLinux::SleepCS(
+ConditionVariablePosix::SleepCS(
     CriticalSectionWrapper& critSect,
     unsigned long maxTimeInMS)
 {
@@ -101,7 +101,7 @@ ConditionVariableLinux::SleepCS(
     const int NANOSECONDS_PER_SECOND       = 1000000000;
     const int NANOSECONDS_PER_MILLISECOND  = 1000000;
 
-    CriticalSectionLinux* cs = reinterpret_cast<CriticalSectionLinux*>(
+    CriticalSectionPosix* cs = reinterpret_cast<CriticalSectionPosix*>(
                                    &critSect);
 
     if (maxTimeInMS != INFINITE)
@@ -139,12 +139,12 @@ ConditionVariableLinux::SleepCS(
     }
 }
 
-void ConditionVariableLinux::Wake()
+void ConditionVariablePosix::Wake()
 {
     pthread_cond_signal(&_cond);
 }
 
-void ConditionVariableLinux::WakeAll()
+void ConditionVariablePosix::WakeAll()
 {
     pthread_cond_broadcast(&_cond);
 }

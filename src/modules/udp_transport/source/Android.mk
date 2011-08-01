@@ -19,8 +19,8 @@ LOCAL_GENERATED_SOURCES :=
 LOCAL_SRC_FILES := udp_transport_impl.cc \
     udp_socket_wrapper.cc \
     udp_socket_manager_wrapper.cc \
-    udp_socket_manager_linux.cc \
-    udp_socket_linux.cc
+    udp_socket_manager_posix.cc \
+    udp_socket_posix.cc
 
 # Flags passed to both C and C++ files.
 MY_CFLAGS :=  

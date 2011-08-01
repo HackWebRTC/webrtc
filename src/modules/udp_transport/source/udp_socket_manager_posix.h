@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_UDP_TRANSPORT_SOURCE_UDP_SOCKET_MANAGER_LINUX_H_
-#define WEBRTC_MODULES_UDP_TRANSPORT_SOURCE_UDP_SOCKET_MANAGER_LINUX_H_
+#ifndef WEBRTC_MODULES_UDP_TRANSPORT_SOURCE_UDP_SOCKET_MANAGER_POSIX_H_
+#define WEBRTC_MODULES_UDP_TRANSPORT_SOURCE_UDP_SOCKET_MANAGER_POSIX_H_
 
 #include <sys/types.h>
 #include <unistd.h>
@@ -24,14 +24,14 @@
 #define MAX_NUMBER_OF_SOCKET_MANAGERS_LINUX 8
 
 namespace webrtc {
-class UdpSocketManagerLinuxImpl;
+class UdpSocketManagerPosixImpl;
 
-class UdpSocketManagerLinux : public UdpSocketManager
+class UdpSocketManagerPosix : public UdpSocketManager
 {
 public:
-    UdpSocketManagerLinux(const WebRtc_Word32 id,
+    UdpSocketManagerPosix(const WebRtc_Word32 id,
                           WebRtc_UWord8& numOfWorkThreads);
-    virtual ~UdpSocketManagerLinux();
+    virtual ~UdpSocketManagerPosix();
 
     virtual WebRtc_Word32 ChangeUniqueId(const WebRtc_Word32 id);
 
@@ -46,14 +46,14 @@ private:
     WebRtc_UWord8 _numberOfSocketMgr;
     WebRtc_UWord8 _incSocketMgrNextTime;
     WebRtc_UWord8 _nextSocketMgrToAssign;
-    UdpSocketManagerLinuxImpl* _socketMgr[MAX_NUMBER_OF_SOCKET_MANAGERS_LINUX];
+    UdpSocketManagerPosixImpl* _socketMgr[MAX_NUMBER_OF_SOCKET_MANAGERS_LINUX];
 };
 
-class UdpSocketManagerLinuxImpl
+class UdpSocketManagerPosixImpl
 {
 public:
-    UdpSocketManagerLinuxImpl();
-    virtual ~UdpSocketManagerLinuxImpl();
+    UdpSocketManagerPosixImpl();
+    virtual ~UdpSocketManagerPosixImpl();
 
     virtual bool Start();
     virtual bool Stop();
@@ -78,4 +78,4 @@ private:
 };
 } // namespace webrtc
 
-#endif // WEBRTC_MODULES_UDP_TRANSPORT_SOURCE_UDP_SOCKET_MANAGER_LINUX_H_
+#endif // WEBRTC_MODULES_UDP_TRANSPORT_SOURCE_UDP_SOCKET_MANAGER_POSIX_H_

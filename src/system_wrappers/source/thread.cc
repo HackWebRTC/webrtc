@@ -13,7 +13,7 @@
 #if defined(_WIN32)
     #include "thread_windows.h"
 #else
-    #include "thread_linux.h"
+    #include "thread_posix.h"
 #endif
 
 namespace webrtc {
@@ -24,7 +24,7 @@ ThreadWrapper* ThreadWrapper::CreateThread(ThreadRunFunction func,
 #if defined(_WIN32)
     return new ThreadWindows(func, obj, prio, threadName);
 #else
-    return ThreadLinux::Create(func, obj, prio, threadName);
+    return ThreadPosix::Create(func, obj, prio, threadName);
 #endif
 }
 } // namespace webrtc

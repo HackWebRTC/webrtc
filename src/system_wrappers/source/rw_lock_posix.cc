@@ -8,39 +8,39 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rw_lock_linux.h"
+#include "rw_lock_posix.h"
 
 namespace webrtc {
-RWLockLinux::RWLockLinux() : _lock()
+RWLockPosix::RWLockPosix() : _lock()
 {
 }
 
-RWLockLinux::~RWLockLinux()
+RWLockPosix::~RWLockPosix()
 {
     pthread_rwlock_destroy(&_lock);
 }
 
-int RWLockLinux::Init()
+int RWLockPosix::Init()
 {
     return pthread_rwlock_init(&_lock, 0);
 }
 
-void RWLockLinux::AcquireLockExclusive()
+void RWLockPosix::AcquireLockExclusive()
 {
     pthread_rwlock_wrlock(&_lock);
 }
 
-void RWLockLinux::ReleaseLockExclusive()
+void RWLockPosix::ReleaseLockExclusive()
 {
     pthread_rwlock_unlock(&_lock);
 }
 
-void RWLockLinux::AcquireLockShared()
+void RWLockPosix::AcquireLockShared()
 {
     pthread_rwlock_rdlock(&_lock);
 }
 
-void RWLockLinux::ReleaseLockShared()
+void RWLockPosix::ReleaseLockShared()
 {
     pthread_rwlock_unlock(&_lock);
 }

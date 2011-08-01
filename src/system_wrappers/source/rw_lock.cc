@@ -18,7 +18,7 @@
     #include <stdlib.h>
     #include "rw_lock_generic.h"
 #else
-    #include "rw_lock_linux.h"
+    #include "rw_lock_posix.h"
 #endif
 
 namespace webrtc {
@@ -29,7 +29,7 @@ RWLockWrapper* RWLockWrapper::CreateRWLock()
 #elif defined(WEBRTC_ANDROID)
     RWLockWrapper* lock =  new RWLockWrapperGeneric();
 #else
-    RWLockWrapper* lock =  new RWLockLinux();
+    RWLockWrapper* lock =  new RWLockPosix();
 #endif
     if(lock->Init() != 0)
     {

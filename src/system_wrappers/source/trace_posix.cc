@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "trace_linux.h"
+#include "trace_posix.h"
 
 #include <cassert>
 #include <stdarg.h>
@@ -37,18 +37,18 @@
 #define BUILDINFO BUILDDATE " " BUILDTIME " " BUILDMODE
 
 namespace webrtc {
-TraceLinux::TraceLinux()
+TracePosix::TracePosix()
 {
     _prevAPITickCount = time(NULL);
     _prevTickCount = _prevAPITickCount;
 }
 
-TraceLinux::~TraceLinux()
+TracePosix::~TracePosix()
 {
     StopThread();
 }
 
-WebRtc_Word32 TraceLinux::AddThreadId(char* traceMessage) const
+WebRtc_Word32 TracePosix::AddThreadId(char* traceMessage) const
 {
     WebRtc_UWord64 threadId = (WebRtc_UWord64)pthread_self();
     sprintf(traceMessage, "%10llu; ", threadId);
@@ -56,7 +56,7 @@ WebRtc_Word32 TraceLinux::AddThreadId(char* traceMessage) const
     return 12;
 }
 
-WebRtc_Word32 TraceLinux::AddTime(char* traceMessage,
+WebRtc_Word32 TracePosix::AddTime(char* traceMessage,
                                   const TraceLevel level) const
 {
     time_t dwCurrentTimeInSeconds = time(NULL);
@@ -109,14 +109,14 @@ WebRtc_Word32 TraceLinux::AddTime(char* traceMessage,
     return 22;
 }
 
-WebRtc_Word32 TraceLinux::AddBuildInfo(char* traceMessage) const
+WebRtc_Word32 TracePosix::AddBuildInfo(char* traceMessage) const
 {
     sprintf(traceMessage, "Build info: %s", BUILDINFO);
     // Include NULL termination (hence + 1).
     return strlen(traceMessage) + 1;
 }
 
-WebRtc_Word32 TraceLinux::AddDateTimeInfo(char* traceMessage) const
+WebRtc_Word32 TracePosix::AddDateTimeInfo(char* traceMessage) const
 {
     time_t t;
     time(&t);

@@ -17,7 +17,7 @@
 #include "udp_socket_manager_windows.h"
 #include "udp_socket2_manager_windows.h"
 #else
-#include "udp_socket_manager_linux.h"
+#include "udp_socket_manager_posix.h"
 #endif
 
 #ifndef _WIN32
@@ -41,7 +41,7 @@ UdpSocketManager* UdpSocketManager::CreateSocketManager(
             new UdpSocketManagerWindows(id, numOfWorkThreads));
     #endif
 #else
-    return new UdpSocketManagerLinux(id, numOfWorkThreads);
+    return new UdpSocketManagerPosix(id, numOfWorkThreads);
 #endif
 }
 

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "udp_socket_manager_linux.h"
+#include "udp_socket_manager_posix.h"
 
 #include <strings.h>
 #include <sys/time.h>
@@ -17,10 +17,10 @@
 #include <unistd.h>
 
 #include "trace.h"
-#include "udp_socket_linux.h"
+#include "udp_socket_posix.h"
 
 namespace webrtc {
-UdpSocketManagerLinux::UdpSocketManagerLinux(const WebRtc_Word32 id,
+UdpSocketManagerPosix::UdpSocketManagerPosix(const WebRtc_Word32 id,
                                              WebRtc_UWord8& numOfWorkThreads)
     : UdpSocketManager(id, numOfWorkThreads),
       _id(id),
@@ -36,18 +36,18 @@ UdpSocketManagerLinux::UdpSocketManagerLinux(const WebRtc_Word32 id,
     }
     for(int i = 0;i < _numberOfSocketMgr; i++)
     {
-        _socketMgr[i] = new UdpSocketManagerLinuxImpl();
+        _socketMgr[i] = new UdpSocketManagerPosixImpl();
     }
 
     WEBRTC_TRACE(kTraceDebug, kTraceTransport, _id,
-                 "UdpSocketManagerLinux(%d)::UdpSocketManagerLinux()",
+                 "UdpSocketManagerPosix(%d)::UdpSocketManagerPosix()",
                  _numberOfSocketMgr);
 }
 
-UdpSocketManagerLinux::~UdpSocketManagerLinux()
+UdpSocketManagerPosix::~UdpSocketManagerPosix()
 {
     WEBRTC_TRACE(kTraceDebug, kTraceTransport, _id,
-                 "UdpSocketManagerLinux(%d)::UdpSocketManagerLinux()",
+                 "UdpSocketManagerPosix(%d)::UdpSocketManagerPosix()",
                  _numberOfSocketMgr);
 
     for(int i = 0;i < _numberOfSocketMgr; i++)
@@ -57,16 +57,16 @@ UdpSocketManagerLinux::~UdpSocketManagerLinux()
     delete _critSect;
 }
 
-WebRtc_Word32 UdpSocketManagerLinux::ChangeUniqueId(const WebRtc_Word32 id)
+WebRtc_Word32 UdpSocketManagerPosix::ChangeUniqueId(const WebRtc_Word32 id)
 {
     _id = id;
     return 0;
 }
 
-bool UdpSocketManagerLinux::Start()
+bool UdpSocketManagerPosix::Start()
 {
     WEBRTC_TRACE(kTraceDebug, kTraceTransport, _id,
-                 "UdpSocketManagerLinux(%d)::Start()",
+                 "UdpSocketManagerPosix(%d)::Start()",
                  _numberOfSocketMgr);
 
     _critSect->Enter();
@@ -81,17 +81,17 @@ bool UdpSocketManagerLinux::Start()
             kTraceError,
             kTraceTransport,
             _id,
-            "UdpSocketManagerLinux(%d)::Start() error starting socket managers",
+            "UdpSocketManagerPosix(%d)::Start() error starting socket managers",
             _numberOfSocketMgr);
     }
     _critSect->Leave();
     return retVal;
 }
 
-bool UdpSocketManagerLinux::Stop()
+bool UdpSocketManagerPosix::Stop()
 {
     WEBRTC_TRACE(kTraceDebug, kTraceTransport, _id,
-                 "UdpSocketManagerLinux(%d)::Stop()",_numberOfSocketMgr);
+                 "UdpSocketManagerPosix(%d)::Stop()",_numberOfSocketMgr);
 
     _critSect->Enter();
     bool retVal = true;
@@ -105,7 +105,7 @@ bool UdpSocketManagerLinux::Stop()
             kTraceError,
             kTraceTransport,
             _id,
-            "UdpSocketManagerLinux(%d)::Stop() there are still active socket\
+            "UdpSocketManagerPosix(%d)::Stop() there are still active socket\
  managers",
             _numberOfSocketMgr);
     }
@@ -113,10 +113,10 @@ bool UdpSocketManagerLinux::Stop()
     return retVal;
 }
 
-bool UdpSocketManagerLinux::AddSocket(UdpSocketWrapper* s)
+bool UdpSocketManagerPosix::AddSocket(UdpSocketWrapper* s)
 {
     WEBRTC_TRACE(kTraceDebug, kTraceTransport, _id,
-                 "UdpSocketManagerLinux(%d)::AddSocket()",_numberOfSocketMgr);
+                 "UdpSocketManagerPosix(%d)::AddSocket()",_numberOfSocketMgr);
 
     _critSect->Enter();
     bool retVal = _socketMgr[_nextSocketMgrToAssign]->AddSocket(s);
@@ -126,12 +126,12 @@ bool UdpSocketManagerLinux::AddSocket(UdpSocketWrapper* s)
             kTraceError,
             kTraceTransport,
             _id,
-            "UdpSocketManagerLinux(%d)::AddSocket() failed to add socket to\
+            "UdpSocketManagerPosix(%d)::AddSocket() failed to add socket to\
  manager",
             _numberOfSocketMgr);
     }
 
-    // Distribute sockets on UdpSocketManagerLinuxImpls in a round-robin
+    // Distribute sockets on UdpSocketManagerPosixImpls in a round-robin
     // fashion.
     if(_incSocketMgrNextTime == 0)
     {
@@ -148,10 +148,10 @@ bool UdpSocketManagerLinux::AddSocket(UdpSocketWrapper* s)
     return retVal;
 }
 
-bool UdpSocketManagerLinux::RemoveSocket(UdpSocketWrapper* s)
+bool UdpSocketManagerPosix::RemoveSocket(UdpSocketWrapper* s)
 {
     WEBRTC_TRACE(kTraceDebug, kTraceTransport, _id,
-                 "UdpSocketManagerLinux(%d)::RemoveSocket()",
+                 "UdpSocketManagerPosix(%d)::RemoveSocket()",
                  _numberOfSocketMgr);
 
     _critSect->Enter();
@@ -166,7 +166,7 @@ bool UdpSocketManagerLinux::RemoveSocket(UdpSocketWrapper* s)
             kTraceError,
             kTraceTransport,
             _id,
-            "UdpSocketManagerLinux(%d)::RemoveSocket() failed to remove socket\
+            "UdpSocketManagerPosix(%d)::RemoveSocket() failed to remove socket\
  from manager",
             _numberOfSocketMgr);
     }
@@ -175,18 +175,18 @@ bool UdpSocketManagerLinux::RemoveSocket(UdpSocketWrapper* s)
 }
 
 
-UdpSocketManagerLinuxImpl::UdpSocketManagerLinuxImpl()
+UdpSocketManagerPosixImpl::UdpSocketManagerPosixImpl()
 {
     _critSectList = CriticalSectionWrapper::CreateCriticalSection();
-    _thread = ThreadWrapper::CreateThread(UdpSocketManagerLinuxImpl::Run, this,
+    _thread = ThreadWrapper::CreateThread(UdpSocketManagerPosixImpl::Run, this,
                                           kRealtimePriority,
-                                          "UdpSocketManagerLinuxImplThread");
+                                          "UdpSocketManagerPosixImplThread");
     FD_ZERO(&_readFds);
     WEBRTC_TRACE(kTraceMemory,  kTraceTransport, -1,
-                 "UdpSocketManagerLinux created");
+                 "UdpSocketManagerPosix created");
 }
 
-UdpSocketManagerLinuxImpl::~UdpSocketManagerLinuxImpl()
+UdpSocketManagerPosixImpl::~UdpSocketManagerPosixImpl()
 {
     if(_thread != NULL)
     {
@@ -202,7 +202,7 @@ UdpSocketManagerLinuxImpl::~UdpSocketManagerLinuxImpl()
         MapItem* item = _socketMap.First();
         while(item)
         {
-            UdpSocketLinux* s = static_cast<UdpSocketLinux*>(item->GetItem());
+            UdpSocketPosix* s = static_cast<UdpSocketPosix*>(item->GetItem());
             _socketMap.Erase(item);
             item = _socketMap.First();
             delete s;
@@ -213,10 +213,10 @@ UdpSocketManagerLinuxImpl::~UdpSocketManagerLinuxImpl()
     }
 
     WEBRTC_TRACE(kTraceMemory,  kTraceTransport, -1,
-                 "UdpSocketManagerLinux deleted");
+                 "UdpSocketManagerPosix deleted");
 }
 
-bool UdpSocketManagerLinuxImpl::Start()
+bool UdpSocketManagerPosixImpl::Start()
 {
     unsigned int id = 0;
     if (_thread == NULL)
@@ -225,11 +225,11 @@ bool UdpSocketManagerLinuxImpl::Start()
     }
 
     WEBRTC_TRACE(kTraceStateInfo,  kTraceTransport, -1,
-                 "Start UdpSocketManagerLinux");
+                 "Start UdpSocketManagerPosix");
     return _thread->Start(id);
 }
 
-bool UdpSocketManagerLinuxImpl::Stop()
+bool UdpSocketManagerPosixImpl::Stop()
 {
     if (_thread == NULL)
     {
@@ -237,11 +237,11 @@ bool UdpSocketManagerLinuxImpl::Stop()
     }
 
     WEBRTC_TRACE(kTraceStateInfo,  kTraceTransport, -1,
-                 "Stop UdpSocketManagerLinux");
+                 "Stop UdpSocketManagerPosix");
     return _thread->Stop();
 }
 
-bool UdpSocketManagerLinuxImpl::Process()
+bool UdpSocketManagerPosixImpl::Process()
 {
     bool doSelect = false;
     // Timeout = 1 second.
@@ -257,7 +257,7 @@ bool UdpSocketManagerLinuxImpl::Process()
     unsigned int maxFd = 0;
     for (it = _socketMap.First(); it != NULL; it=_socketMap.Next(it))
     {
-        UdpSocketLinux* s = static_cast<UdpSocketLinux*>(it->GetItem());
+        UdpSocketPosix* s = static_cast<UdpSocketPosix*>(it->GetItem());
         doSelect = true;
         maxFd = maxFd > it->GetUnsignedId() ? maxFd : it->GetUnsignedId();
         FD_SET(it->GetUnsignedId(), &_readFds);
@@ -293,7 +293,7 @@ bool UdpSocketManagerLinuxImpl::Process()
     for (it = _socketMap.First(); it != NULL && num > 0;
          it = _socketMap.Next(it))
     {
-        UdpSocketLinux* s = static_cast<UdpSocketLinux*>(it->GetItem());
+        UdpSocketPosix* s = static_cast<UdpSocketPosix*>(it->GetItem());
         if (FD_ISSET(it->GetUnsignedId(), &_readFds))
         {
             s->HasIncoming();
@@ -303,16 +303,16 @@ bool UdpSocketManagerLinuxImpl::Process()
     return true;
 }
 
-bool UdpSocketManagerLinuxImpl::Run(ThreadObj obj)
+bool UdpSocketManagerPosixImpl::Run(ThreadObj obj)
 {
-    UdpSocketManagerLinuxImpl* mgr =
-        static_cast<UdpSocketManagerLinuxImpl*>(obj);
+    UdpSocketManagerPosixImpl* mgr =
+        static_cast<UdpSocketManagerPosixImpl*>(obj);
     return mgr->Process();
 }
 
-bool UdpSocketManagerLinuxImpl::AddSocket(UdpSocketWrapper* s)
+bool UdpSocketManagerPosixImpl::AddSocket(UdpSocketWrapper* s)
 {
-    UdpSocketLinux* sl = static_cast<UdpSocketLinux*>(s);
+    UdpSocketPosix* sl = static_cast<UdpSocketPosix*>(s);
     if(sl->GetFd() == INVALID_SOCKET || !(sl->GetFd() < FD_SETSIZE))
     {
         return false;
@@ -323,18 +323,18 @@ bool UdpSocketManagerLinuxImpl::AddSocket(UdpSocketWrapper* s)
     return true;
 }
 
-bool UdpSocketManagerLinuxImpl::RemoveSocket(UdpSocketWrapper* s)
+bool UdpSocketManagerPosixImpl::RemoveSocket(UdpSocketWrapper* s)
 {
-    // Put in remove list if this is the correct UdpSocketManagerLinuxImpl.
+    // Put in remove list if this is the correct UdpSocketManagerPosixImpl.
     _critSectList->Enter();
 
     // If the socket is in the add list it's safe to remove and delete it.
     ListItem* addListItem = _addList.First();
     while(addListItem)
     {
-        UdpSocketLinux* addSocket = (UdpSocketLinux*)addListItem->GetItem();
+        UdpSocketPosix* addSocket = (UdpSocketPosix*)addListItem->GetItem();
         unsigned int addFD = addSocket->GetFd();
-        unsigned int removeFD = static_cast<UdpSocketLinux*>(s)->GetFd();
+        unsigned int removeFD = static_cast<UdpSocketPosix*>(s)->GetFd();
         if(removeFD == addFD)
         {
             _removeList.PushBack(removeFD);
@@ -346,9 +346,9 @@ bool UdpSocketManagerLinuxImpl::RemoveSocket(UdpSocketWrapper* s)
 
     // Checking the socket map is safe since all Erase and Insert calls to this
     // map are also protected by _critSectList.
-    if(_socketMap.Find(static_cast<UdpSocketLinux*>(s)->GetFd()) != NULL)
+    if(_socketMap.Find(static_cast<UdpSocketPosix*>(s)->GetFd()) != NULL)
     {
-        _removeList.PushBack(static_cast<UdpSocketLinux*>(s)->GetFd());
+        _removeList.PushBack(static_cast<UdpSocketPosix*>(s)->GetFd());
         _critSectList->Leave();
          return true;
     }
@@ -356,13 +356,13 @@ bool UdpSocketManagerLinuxImpl::RemoveSocket(UdpSocketWrapper* s)
     return false;
 }
 
-void UdpSocketManagerLinuxImpl::UpdateSocketMap()
+void UdpSocketManagerPosixImpl::UpdateSocketMap()
 {
     // Remove items in remove list.
     _critSectList->Enter();
     while(!_removeList.Empty())
     {
-        UdpSocketLinux* deleteSocket = NULL;
+        UdpSocketPosix* deleteSocket = NULL;
         unsigned int removeFD = _removeList.First()->GetUnsignedItem();
 
         // If the socket is in the add list it hasn't been added to the socket
@@ -370,7 +370,7 @@ void UdpSocketManagerLinuxImpl::UpdateSocketMap()
         ListItem* addListItem = _addList.First();
         while(addListItem)
         {
-            UdpSocketLinux* addSocket = (UdpSocketLinux*)addListItem->GetItem();
+            UdpSocketPosix* addSocket = (UdpSocketPosix*)addListItem->GetItem();
             unsigned int addFD = addSocket->GetFd();
             if(removeFD == addFD)
             {
@@ -385,8 +385,8 @@ void UdpSocketManagerLinuxImpl::UpdateSocketMap()
         MapItem* it = _socketMap.Find(removeFD);
         if(it != NULL)
         {
-            UdpSocketLinux* socket =
-                static_cast<UdpSocketLinux*>(it->GetItem());
+            UdpSocketPosix* socket =
+                static_cast<UdpSocketPosix*>(it->GetItem());
             if(socket)
             {
                 deleteSocket = socket;
@@ -404,8 +404,8 @@ void UdpSocketManagerLinuxImpl::UpdateSocketMap()
     // Add sockets from add list.
     while(!_addList.Empty())
     {
-        UdpSocketLinux* s =
-            static_cast<UdpSocketLinux*>(_addList.First()->GetItem());
+        UdpSocketPosix* s =
+            static_cast<UdpSocketPosix*>(_addList.First()->GetItem());
         if(s)
         {
             _socketMap.Insert(s->GetFd(), s);
