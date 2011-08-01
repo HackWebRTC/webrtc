@@ -30,7 +30,11 @@ ViEFrameProviderBase::~ViEFrameProviderBase()
 {
     if(_frameCallbackMap.Size()>0)
     {
-        WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideo, ViEId(_engineId,_id), "FramCallbacks still exist when Provider deleted %d",_frameCallbackMap.Size());
+        WEBRTC_TRACE(webrtc::kTraceWarning,
+                     webrtc::kTraceVideo,
+                     ViEId(_engineId,_id),
+                     "FrameCallbacks still exist when Provider deleted %d",
+                     _frameCallbackMap.Size());
     }
     for(MapItem* item=_frameCallbackMap.First();item!=NULL;item=_frameCallbackMap.Next(item))
     {
@@ -178,7 +182,7 @@ int ViEFrameProviderBase::RegisterFrameCallback(int observerId,ViEFrameCallback*
         return -1;
     }
     WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_engineId, _id),
-        "%s(0x%p)", callbackObject);
+        "%s(0x%p)", __FUNCTION__, callbackObject);
 
     {
         CriticalSectionScoped cs(_providerCritSect);
@@ -230,7 +234,7 @@ int ViEFrameProviderBase::DeregisterFrameCallback(const ViEFrameCallback* callba
         return -1;
     }
     WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_engineId, _id),
-        "%s(0x%p)", callbackObject);
+        "%s(0x%p)", __FUNCTION__, callbackObject);
 
 
     {
@@ -279,7 +283,7 @@ bool ViEFrameProviderBase::IsFrameCallbackRegistered(const ViEFrameCallback* cal
         return false;
     }
     WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_engineId, _id),
-        "%s(0x%p)", callbackObject);
+        "%s(0x%p)", __FUNCTION__, callbackObject);
 
     for (MapItem* mapItem = _frameCallbackMap.First();
          mapItem != NULL;
