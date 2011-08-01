@@ -54,7 +54,7 @@ class VoENetEqStats;
 }
 #endif
 
-#if defined(ANDROID)
+#if defined(WEBRTC_ANDROID)
 extern char mobileLogMsg[640];
 #endif
 

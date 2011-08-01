@@ -48,7 +48,7 @@ extern char micFile[256];
 extern const char* micFile;
 #endif
 
-#ifdef ANDROID
+#ifdef WEBRTC_ANDROID
 // Global pointers
 extern void* globalJavaVM;
 extern void* globalContext;
@@ -433,7 +433,7 @@ int VoEExtendedTest::TestBase()
     TEST_MUSTPASS(base->Init());
     MARK();
     TEST_MUSTPASS(base->Terminate());
-#if (!defined(MAC_IPHONE) && !defined(ANDROID))
+#if (!defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID))
     // verify AEC recording
     TEST_MUSTPASS(base->Init());
     MARK(); // verify output dat-files
@@ -3452,7 +3452,7 @@ int VoEExtendedTest::TestDtmf()
     SLEEP(1000);
     // Switch codec
     CodecInst ci;
-#if (!defined(MAC_IPHONE) && !defined(ANDROID))
+#if (!defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID))
     ci.channels = 1;
     ci.pacsize = 480;
     ci.plfreq = 16000;
@@ -4720,7 +4720,7 @@ int VoEExtendedTest::TestFile()
     // Record mixed (speaker + microphone) signal to file
 
 
-#if !defined(MAC_IPHONE) && !defined(ANDROID)
+#if !defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID)
     TEST(StartRecordingSpeakerStereo);
     ANL();
     TEST(StopRecordingSpeakerStereo);
@@ -4757,11 +4757,11 @@ int VoEExtendedTest::TestFile()
     ANL();
 #else
     TEST_LOG("Skipping stereo record tests -"
-        " MAC_IPHONE or ANDROID is defined \n");
-#endif // #if !defined(MAC_IPHONE) && !defined(ANDROID)
+        " MAC_IPHONE or WEBRTC_ANDROID is defined \n");
+#endif // #if !defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID)
     // Conversion between different file formats
 
-#if defined(MAC_IPHONE) || defined(ANDROID)
+#if defined(MAC_IPHONE) || defined(WEBRTC_ANDROID)
     TEST_MUSTPASS(base->StopPlayout(0));
     TEST_MUSTPASS(base->StopSend(0));
 #endif
@@ -4818,7 +4818,7 @@ int VoEExtendedTest::TestFile()
         GetFilename("singleUserDemoConv_dummy.pcm"))); MARK();
     AOK(); ANL();
 
-#if defined(MAC_IPHONE) || defined(ANDROID)
+#if defined(MAC_IPHONE) || defined(WEBRTC_ANDROID)
     TEST_MUSTPASS(base->StartPlayout(0));
     TEST_MUSTPASS(base->StartSend(0));
 #endif
@@ -4966,7 +4966,7 @@ int VoEExtendedTest::TestHardware()
 
     TEST_MUSTPASS(base->Terminate());
     // end _WIN32
-#elif defined(WEBRTC_LINUX) && !defined(ANDROID)
+#elif defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID)
     wantedLayer = kAudioLinuxPulse;
     TEST_MUSTPASS(hardware->SetAudioDeviceLayer(wantedLayer));
     TEST_LOG("If you run on Linux with no/unsupported PA version, PulseAudio "
@@ -5006,7 +5006,7 @@ int VoEExtendedTest::TestHardware()
     }
 
     TEST_MUSTPASS(base->Terminate());
-#endif // defined(WEBRTC_LINUX) && !defined(ANDROID)
+#endif // defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID)
     // Invalid arguments
     wantedLayer = (AudioLayers) 17;
     TEST_MUSTPASS(-1 != hardware->SetAudioDeviceLayer(wantedLayer));
@@ -5052,7 +5052,7 @@ int VoEExtendedTest::TestHardware()
     }
     ANL();
 
-#if !defined(MAC_IPHONE) && !defined(ANDROID)
+#if !defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID)
     // GetRecording/PlayoutDeviceStatus
     TEST(Getrecording/PlayoutDeviceStatus);
     ANL();
@@ -5154,7 +5154,7 @@ int VoEExtendedTest::TestHardware()
     MARK();
 #endif
     ANL();
-#endif // #if !defined(MAC_IPHONE) && !defined(ANDROID)
+#endif // #if !defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID)
 #if defined(MAC_IPHONE)
     TEST(ResetSoundDevice); ANL();
 
@@ -5232,7 +5232,7 @@ int VoEExtendedTest::TestNetwork()
 {
     PrepareTest("Network");
 
-#ifdef ANDROID
+#ifdef WEBRTC_ANDROID
     int sleepTime = 200;
     int sleepTime2 = 250;
 #elif defined(MAC_IPHONE) // MAC_IPHONE needs more delay for getSourceInfo()
@@ -5298,7 +5298,7 @@ int VoEExtendedTest::TestNetwork()
     TEST_MUSTPASS(netw->GetLocalIP(localIP));
     MARK();
 
-#if !defined(WEBRTC_MAC) && !defined(ANDROID)
+#if !defined(WEBRTC_MAC) && !defined(WEBRTC_ANDROID)
     // default function calls (IPv6)
     TEST_MUSTPASS(netw->GetLocalIP(localIP, true));
     MARK();
@@ -5590,7 +5590,7 @@ int VoEExtendedTest::TestNetwork()
     MARK();
 
     // STATE: external transport is disabled
-#if defined(ANDROID) || defined(MAC_IPHONE)
+#if defined(WEBRTC_ANDROID) || defined(MAC_IPHONE)
     int testError = VE_FUNC_NOT_SUPPORTED;
 #else
     int testError = VE_EXTERNAL_TRANSPORT_ENABLED;
@@ -6425,7 +6425,7 @@ int VoEExtendedTest::TestNetwork()
     // END #if defined(_WIN32) || defined(WEBRTC_MAC) || defined(WEBRTC_LINUX)
 #else
     TEST_LOG( "Skipping ToS tests -  _WIN32, LINUX, MAC is not defined or "
-        "ANDROID is defined");
+        "WEBRTC_ANDROID is defined");
 #endif
 
     // >> end of SetSendTOS
@@ -6731,7 +6731,7 @@ int VoEExtendedTest::TestRTP_RTCP()
 
     XRTPObserver rtpObserver;
 
-#ifdef ANDROID
+#ifdef WEBRTC_ANDROID
     int sleepTime = 200;
 #else
     int sleepTime = 100;
@@ -7119,7 +7119,7 @@ int VoEExtendedTest::TestRTP_RTCP()
     VoECodec* codec = _mgr.CodecPtr();
     TEST_MUSTPASS(NULL == codec);
     CodecInst cinst;
-#if (!defined(MAC_IPHONE) && !defined(ANDROID))
+#if (!defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID))
     cinst.pltype = 104;
     strcpy(cinst.plname, "isac");
     cinst.plfreq = 32000;
@@ -7295,7 +7295,7 @@ TEST(RTCPStatistics #2);
     cinst.channels = 1;
     cinst.rate = 0;
     TEST_MUSTPASS(codec->SetRecPayloadType(0, cinst));
-#if (!defined(MAC_IPHONE) && !defined(ANDROID))
+#if (!defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID))
     cinst.pltype = 104;
     strcpy(cinst.plname, "isac");
     cinst.plfreq = 32000;
@@ -7473,7 +7473,7 @@ int VoEExtendedTest::TestVolumeControl()
 
     TEST_MUSTPASS(base->Init());
     TEST_MUSTPASS(base->CreateChannel());
-#if (defined _TEST_HARDWARE_ && (!defined(MAC_IPHONE) && !defined(ANDROID)))
+#if (defined _TEST_HARDWARE_ && (!defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID)))
 #if defined(_WIN32)
     TEST_MUSTPASS(hardware->SetRecordingDevice(-1));
     TEST_MUSTPASS(hardware->SetPlayoutDevice(-1));
@@ -7503,12 +7503,12 @@ int VoEExtendedTest::TestVolumeControl()
     ANL();
 #endif // #if !defined(MAC_IPHONE)
 
-#if (!defined(MAC_IPHONE) && !defined(ANDROID))
+#if (!defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID))
     TEST(SetMicVolume); ANL();
     TEST_MUSTPASS(-1 != volume->SetMicVolume(256)); MARK();
     TEST_MUSTPASS(VE_INVALID_ARGUMENT != base->LastError());
     ANL();
-#endif // #if (!defined(MAC_IPHONE) && !defined(ANDROID))
+#endif // #if (!defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID))
 
 #if !defined(MAC_IPHONE)
     TEST(SetChannelOutputVolumeScaling);
@@ -7521,7 +7521,7 @@ int VoEExtendedTest::TestVolumeControl()
     TEST_MUSTPASS(VE_INVALID_ARGUMENT != base->LastError());
     ANL();
 #endif // #if !defined(MAC_IPHONE)
-#if (!defined(MAC_IPHONE) && !defined(ANDROID))
+#if (!defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID))
     TEST(SetOutputVolumePan);
     ANL();
     TEST_MUSTPASS(-1 != volume->SetOutputVolumePan(-1, (float)-0.1,
@@ -7561,7 +7561,7 @@ int VoEExtendedTest::TestVolumeControl()
     MARK();
     TEST_MUSTPASS(VE_INVALID_ARGUMENT != base->LastError());
     ANL();
-#endif // #if (!defined(MAC_IPHONE) && !defined(ANDROID))
+#endif // #if (!defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID))
 #ifdef _TEST_FILE_
     TEST_MUSTPASS(file->StopPlayingFileAsMicrophone(0));
 #endif
@@ -7618,7 +7618,7 @@ int VoEExtendedTest::TestAPM()
     AecmModes AECMmode(kAecmSpeakerphone);
     bool enabledCNG(false);
 
-#if (defined(MAC_IPHONE) || defined(ANDROID))
+#if (defined(MAC_IPHONE) || defined(WEBRTC_ANDROID))
     const EcModes ECmodeDefault(kEcAecm);
 #else
     const EcModes ECmodeDefault(kEcAec);
@@ -7638,7 +7638,7 @@ int VoEExtendedTest::TestAPM()
     TEST_MUSTPASS(ECmode != ECmodeDefault);
     SLEEP(ECSleep);
 
-#if (!defined(MAC_IPHONE) && !defined(ANDROID))
+#if (!defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID))
     // set kEcAec mode
     TEST_MUSTPASS(apm->SetEcStatus(true, kEcAec));
     TEST_MUSTPASS(apm->GetEcStatus(enabled, ECmode));
@@ -7654,7 +7654,7 @@ int VoEExtendedTest::TestAPM()
     TEST_MUSTPASS(enabled != true);
     TEST_MUSTPASS(ECmode != kEcAec);
     SLEEP(ECSleep);
-#endif // #if (!defined(MAC_IPHONE) && !defined(ANDROID))
+#endif // #if (!defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID))
     // get default AECM mode, should the kAecmSpeakerphone as default
     TEST_MUSTPASS(apm->GetAecmMode(AECMmode, enabledCNG));
     TEST_MUSTPASS(AECMmode != kAecmSpeakerphone);
@@ -7746,7 +7746,7 @@ int VoEExtendedTest::TestAPM()
 
     AgcModes AGCmode(kAgcAdaptiveAnalog);
 
-#if (defined(MAC_IPHONE) || defined(ANDROID))
+#if (defined(MAC_IPHONE) || defined(WEBRTC_ANDROID))
     bool enabledDefault = false;
     AgcModes AGCmodeDefault(kAgcAdaptiveDigital);
 #else
@@ -7775,14 +7775,14 @@ int VoEExtendedTest::TestAPM()
     TEST_MUSTPASS(AGCmode != kAgcFixedDigital);
     SLEEP(AGCSleep);
 
-#if (!defined(MAC_IPHONE) && !defined(ANDROID))
+#if (!defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID))
     // set kAgcAdaptiveAnalog mode
     TEST_MUSTPASS(apm->SetAgcStatus(true, kAgcAdaptiveAnalog));
     TEST_MUSTPASS(apm->GetAgcStatus(enabled, AGCmode));
     TEST_LOG("AGC: enabled=%d, AGCmode=%d\n", enabled, AGCmode);
     TEST_MUSTPASS(AGCmode != kAgcAdaptiveAnalog);
     SLEEP(AGCSleep);
-#endif // #if (!defined(MAC_IPHONE) && !defined(ANDROID))
+#endif // #if (!defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID))
     // set kAgcAdaptiveDigital mode
     TEST_MUSTPASS(apm->SetAgcStatus(true, kAgcAdaptiveDigital));
     TEST_MUSTPASS(apm->GetAgcStatus(enabled, AGCmode));
@@ -7972,7 +7972,7 @@ digitalCompressionGaindBDefault);
     //////////////////////////////////
     // Speech, Noise and Echo Metrics
 
-#if (!defined(MAC_IPHONE) && !defined(ANDROID))
+#if (!defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID))
     // TODO(xians), enable the tests when APM is ready
     /*
     TEST(GetMetricsStatus);
@@ -8055,7 +8055,7 @@ digitalCompressionGaindBDefault);
     AOK();
     ANL();
     */
-#endif // #if (!defined(MAC_IPHONE) && !defined(ANDROID))
+#endif // #if (!defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID))
     // far-end AudioProcessing
     ///////
     // AGC

@@ -198,7 +198,7 @@ int VoEAudioProcessingImpl::SetAgcStatus(bool enable, AgcModes mode)
         return -1;
     }
 
-#if defined(MAC_IPHONE) || defined(ATA) || defined(ANDROID)
+#if defined(MAC_IPHONE) || defined(ATA) || defined(WEBRTC_ANDROID)
     if (mode == kAgcAdaptiveAnalog)
     {
         _engineStatistics.SetLastError(

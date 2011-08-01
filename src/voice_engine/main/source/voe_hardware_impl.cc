@@ -702,7 +702,7 @@ int VoEHardwareImpl::SetLoudspeakerStatus(bool enable)
         _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-#if defined(ANDROID)
+#if defined(WEBRTC_ANDROID)
     if (_audioDevicePtr->SetLoudspeakerStatus(enable) < 0)
     {
         _engineStatistics.SetLastError(VE_IGNORED_FUNCTION, kTraceError,
@@ -725,7 +725,7 @@ int VoEHardwareImpl::GetLoudspeakerStatus(bool& enabled)
                  "GetLoudspeakerStatus()");
     IPHONE_NOT_SUPPORTED();
 
-#if defined(ANDROID)
+#if defined(WEBRTC_ANDROID)
     if (!_engineStatistics.Initialized())
     {
         _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);

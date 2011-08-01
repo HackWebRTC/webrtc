@@ -10,7 +10,7 @@
 
 #include "voice_engine_impl.h"
 #include "trace.h"
-#ifdef ANDROID
+#ifdef WEBRTC_ANDROID
 #include "audio_device.h" // SetAndroidObjects
 #endif
 
@@ -300,7 +300,7 @@ bool VoiceEngine::Delete(VoiceEngine*& voiceEngine, bool ignoreRefCounters)
 
 int VoiceEngine::SetAndroidObjects(void* javaVM, void* env, void* context)
 {
-#ifdef ANDROID
+#ifdef WEBRTC_ANDROID
     return AudioDeviceModule::SetAndroidObjects(javaVM, env, context);
 #else
     return -1;

@@ -14,7 +14,7 @@
 // Read WEBRTC_VOICE_ENGINE_XXX_API compiler flags
 #include "engine_configurations.h"
 
-#ifdef ANDROID
+#ifdef WEBRTC_ANDROID
  #include <android/log.h>
  #define ANDROID_LOG_TAG "VoiceEngine Auto Test"
  #define TEST_LOG(...) \

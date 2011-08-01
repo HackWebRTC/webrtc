@@ -141,7 +141,7 @@ const char* GetResource(const char* resource)
 char micFile[256] = {0}; // Filename copied to buffer in code
 #elif defined(WEBRTC_MAC) && !defined(WEBRTC_MAC_INTEL)
 const char* micFile = "audio_long16bigendian.pcm";
-#elif defined(ANDROID)
+#elif defined(WEBRTC_ANDROID)
 const char* micFile = "/sdcard/audio_long16.pcm";
 #elif defined(_WIN32)
 // File path is relative to the location of 'voice_engine.gyp'.
@@ -959,7 +959,7 @@ int VoETestManager::DoStandardTest()
    TEST_MUSTPASS( base->Init());
 #endif
 
-#if defined(ANDROID)
+#if defined(WEBRTC_ANDROID)
     TEST_LOG("Setting loudspeaker status to false \n");
     TEST_MUSTPASS(hardware->SetLoudspeakerStatus(false));
 #endif
@@ -1077,12 +1077,12 @@ int VoETestManager::DoStandardTest()
 #else
     TEST_MUSTPASS(!hardware->GetCPULoad(loadPercent));
 #endif
-#if !defined(MAC_IPHONE) & !defined(ANDROID)
+#if !defined(MAC_IPHONE) & !defined(WEBRTC_ANDROID)
     TEST_MUSTPASS(hardware->GetSystemCPULoad(loadPercent));
     TEST_LOG("GetSystemCPULoad => %d%%\n", loadPercent);
 #endif
     
-#if !defined(MAC_IPHONE) && !defined(ANDROID)
+#if !defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID)
     bool playAvail = false, recAvail = false;
     TEST_LOG("Get device status \n");
     TEST_MUSTPASS(hardware->GetPlayoutDeviceStatus(playAvail));
@@ -1091,7 +1091,7 @@ int VoETestManager::DoStandardTest()
 #endif
     
     // Win, Mac and Linux sound device tests
-#if (defined(WEBRTC_MAC) && !defined(MAC_IPHONE)) || defined(_WIN32) || (defined(WEBRTC_LINUX) && !defined(ANDROID))
+#if (defined(WEBRTC_MAC) && !defined(MAC_IPHONE)) || defined(_WIN32) || (defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID))
     int idx, nRec = 0, nPlay = 0;
     char devName[128] = {0};
     char guidName[128] = {0};
@@ -1157,7 +1157,7 @@ int VoETestManager::DoStandardTest()
     TEST_MUSTPASS(hardware->SetRecordingDevice(-1));
     TEST_MUSTPASS(hardware->SetPlayoutDevice(-1));
 #else
-#if !defined(MAC_IPHONE) && !defined(ANDROID)
+#if !defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID)
     TEST_MUSTPASS(hardware->SetRecordingDevice(0));
     TEST_MUSTPASS(hardware->SetPlayoutDevice(0));
 #endif
@@ -1955,7 +1955,7 @@ int VoETestManager::DoStandardTest()
     TEST_LOG("\n\n+++ More hardware tests +++\n\n");
 
 
-#if !defined(MAC_IPHONE) && !defined(ANDROID)
+#if !defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID)
 #ifdef _WIN32
     // should works also while already recording
     TEST_MUSTPASS(hardware->SetRecordingDevice(-1));
@@ -1982,7 +1982,7 @@ int VoETestManager::DoStandardTest()
     TEST_MUSTPASS(!hardware->GetCPULoad(load));
 #endif
 
-#if !defined(WEBRTC_MAC) && !defined(ANDROID)
+#if !defined(WEBRTC_MAC) && !defined(WEBRTC_ANDROID)
     // Not supported on Mac yet
     load = -1;
     TEST_MUSTPASS(hardware->GetSystemCPULoad(load));
@@ -2223,7 +2223,7 @@ int VoETestManager::DoStandardTest()
         SLEEP(1000);
     }
 
-#if (!defined(MAC_IPHONE) && !defined(ANDROID))
+#if (!defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID))
     // Mic volume test
 #if defined(_TEST_AUDIO_PROCESSING_) && defined(WEBRTC_VOICE_ENGINE_AGC)
     bool agcTemp(true);
@@ -2248,7 +2248,7 @@ int VoETestManager::DoStandardTest()
     TEST_LOG("Reset AGC to previous state\n");
     TEST_MUSTPASS(apm->SetAgcStatus(agcTemp, agcModeTemp));
 #endif
-#endif // #if (!defined(MAC_IPHONE) && !defined(ANDROID))
+#endif // #if (!defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID))
 
     // Input mute test
     TEST_LOG("Enabling input muting\n");
@@ -2265,7 +2265,7 @@ int VoETestManager::DoStandardTest()
     TEST_MUSTPASS(mute);
     SLEEP(1000);
 
-#if (!defined(MAC_IPHONE) && !defined(ANDROID))
+#if (!defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID))
     // System output mute test
     TEST_LOG("Enabling system output muting\n");
     bool outputMute = true;
@@ -2299,9 +2299,9 @@ int VoETestManager::DoStandardTest()
     TEST_MUSTPASS(volume->GetSystemInputMute(inputMute));
     TEST_MUSTPASS(inputMute);
     SLEEP(1000);
-#endif // #if (!defined(MAC_IPHONE) && !defined(ANDROID))
+#endif // #if (!defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID))
 
-#if(!defined(MAC_IPHONE) && !defined(ANDROID))
+#if(!defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID))
     // Test Input & Output levels
     TEST_LOG("Testing input & output levels for 10 seconds (dT=1 second)\n");
     TEST_LOG("Speak in microphone to vary the levels...\n");
@@ -2324,7 +2324,7 @@ int VoETestManager::DoStandardTest()
         TEST_LOG("    linear levels (0-32768): in=%5d, out=%5d\n",
                  inputLevelFullRange, outputLevelFullRange);
     }
-#endif // #if (!defined(MAC_IPHONE) && !defined(ANDROID))
+#endif // #if (!defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID))
 
     if (file)
     {
@@ -2351,7 +2351,7 @@ int VoETestManager::DoStandardTest()
     TEST_MUSTPASS(1.0 != scaling);
 #endif // #if !defined(MAC_IPHONE)
 
-#if !defined(MAC_IPHONE) && !defined(ANDROID)
+#if !defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID)
     // Channel panning test
     TEST_LOG("Channel panning\n");
     float left = -1.0, right = -1.0;
@@ -2381,7 +2381,7 @@ int VoETestManager::DoStandardTest()
     SLEEP(1000);
 #else
     TEST_LOG("Skipping stereo tests\n");
-#endif // #if !defined(MAC_IPHONE) && !defined(ANDROID))
+#endif // #if !defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID))
 
 #else
     TEST_LOG("\n\n+++ Volume tests NOT ENABLED +++\n");
@@ -2395,7 +2395,7 @@ int VoETestManager::DoStandardTest()
 #ifdef WEBRTC_VOICE_ENGINE_AGC
     bool test;
     TEST_LOG("AGC calls\n");
-#if (defined(MAC_IPHONE) || defined(ANDROID))
+#if (defined(MAC_IPHONE) || defined(WEBRTC_ANDROID))
     TEST_LOG("Must be OFF by default\n");
     test = true;
     AgcModes agcMode = kAgcAdaptiveAnalog;
@@ -2417,10 +2417,10 @@ int VoETestManager::DoStandardTest()
     TEST_MUSTPASS(apm->GetAgcStatus(test, agcMode));
     TEST_MUSTPASS(test);
     TEST_MUSTPASS(kAgcAdaptiveAnalog != agcMode);
-#endif // #if (defined(MAC_IPHONE) || defined(ANDROID))
+#endif // #if (defined(MAC_IPHONE) || defined(WEBRTC_ANDROID))
 
     TEST_LOG("Turn ON AGC\n");
-#if (defined(MAC_IPHONE) || defined(ANDROID))
+#if (defined(MAC_IPHONE) || defined(WEBRTC_ANDROID))
     TEST_MUSTPASS(apm->SetAgcStatus(true, kAgcAdaptiveDigital));
 #else
     TEST_MUSTPASS(apm->SetAgcStatus(true));
@@ -2428,13 +2428,13 @@ int VoETestManager::DoStandardTest()
     TEST_LOG("Should be ON now\n");
     TEST_MUSTPASS(apm->GetAgcStatus(test, agcMode));
     TEST_MUSTPASS(!test);
-#if (defined(MAC_IPHONE) || defined(ANDROID))
+#if (defined(MAC_IPHONE) || defined(WEBRTC_ANDROID))
     TEST_MUSTPASS(kAgcAdaptiveDigital != agcMode);
 #else
     TEST_MUSTPASS(kAgcAdaptiveAnalog != agcMode);
 #endif
 
-#if (defined(MAC_IPHONE) || defined(ANDROID))
+#if (defined(MAC_IPHONE) || defined(WEBRTC_ANDROID))
     TEST_LOG("Testing Type settings\n");
     // Should fail
     TEST_MUSTPASS(!apm->SetAgcStatus(true, kAgcAdaptiveAnalog));
@@ -2460,7 +2460,7 @@ int VoETestManager::DoStandardTest()
     TEST_MUSTPASS(apm->SetAgcStatus(true, kAgcAdaptiveAnalog));
     TEST_MUSTPASS(apm->GetAgcStatus(test, agcMode));
     TEST_MUSTPASS(kAgcAdaptiveAnalog != agcMode);
-#endif // #if (defined(MAC_IPHONE) || defined(ANDROID))
+#endif // #if (defined(MAC_IPHONE) || defined(WEBRTC_ANDROID))
 
     TEST_LOG("rxAGC calls\n");
     // Note the following test is not tested in iphone, android and wince,
@@ -2522,7 +2522,7 @@ int VoETestManager::DoStandardTest()
 #ifdef WEBRTC_VOICE_ENGINE_ECHO
     TEST_LOG("EC calls\n");
     TEST_LOG("Must be OFF by default\n");
-#if (defined(MAC_IPHONE) || defined(ANDROID))
+#if (defined(MAC_IPHONE) || defined(WEBRTC_ANDROID))
     const EcModes ecModeDefault = kEcAecm;
 #else
     const EcModes ecModeDefault = kEcAec;
@@ -2551,7 +2551,7 @@ int VoETestManager::DoStandardTest()
     TEST_MUSTPASS(!test);
     TEST_MUSTPASS(ecModeDefault != ecMode);
 
-#if (!defined(MAC_IPHONE) && !defined(ANDROID))
+#if (!defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID))
     TEST_MUSTPASS(apm->SetEcStatus(true, kEcAec));
     TEST_MUSTPASS(apm->GetEcStatus(test, ecMode));
     TEST_MUSTPASS(kEcAec != ecMode);
@@ -2708,7 +2708,7 @@ int VoETestManager::DoStandardTest()
 
     // TODO(xians), enable the metrics test when APM is ready
     /*
-#if (!defined(MAC_IPHONE) && !defined(ANDROID) && defined(WEBRTC_VOICE_ENGINE_NR))
+#if (!defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID) && defined(WEBRTC_VOICE_ENGINE_NR))
     TEST_LOG("Speech, Noise and Echo Metric calls\n");
     TEST_MUSTPASS(apm->GetMetricsStatus(enabled));   // check default
     TEST_MUSTPASS(enabled != false);
@@ -2741,7 +2741,7 @@ int VoETestManager::DoStandardTest()
     }
     TEST_MUSTPASS(apm->SetMetricsStatus(false));     // disable metrics
 #else
-    TEST_LOG("Skipping apm metrics tests - MAC_IPHONE/ANDROID defined \n");
+    TEST_LOG("Skipping apm metrics tests - MAC_IPHONE/WEBRTC_ANDROID defined \n");
 #endif // #if (!defined(MAC_IPHONE) && !d...
 */
     // VAD/DTX indication
@@ -2758,7 +2758,7 @@ int VoETestManager::DoStandardTest()
     {
         TEST_LOG ("RX VAD detections may vary depending on current signal"
             " and mic input \n");
-#if !defined(ANDROID) && !defined(MAC_IPHONE)
+#if !defined(WEBRTC_ANDROID) && !defined(MAC_IPHONE)
         RxCallback rxc;
         TEST_MUSTPASS(apm->RegisterRxVadObserver(0, rxc));
 #endif
@@ -2770,7 +2770,7 @@ int VoETestManager::DoStandardTest()
         }
         SLEEP(500); // After sleeping we should have detected silence
         TEST_MUSTPASS(0 != apm->VoiceActivityIndicator(0));
-#if !defined(ANDROID) && !defined(MAC_IPHONE)
+#if !defined(WEBRTC_ANDROID) && !defined(MAC_IPHONE)
         TEST_MUSTPASS(0 != rxc._vadDecision);
 #endif
         if (file)
@@ -2790,7 +2790,7 @@ int VoETestManager::DoStandardTest()
         SLEEP(500); // Sleep time selected by looking in mic play file, after
                     // sleep we should have detected voice
         TEST_MUSTPASS(1 != apm->VoiceActivityIndicator(0));
-#if !defined(ANDROID) && !defined(MAC_IPHONE)
+#if !defined(WEBRTC_ANDROID) && !defined(MAC_IPHONE)
         TEST_MUSTPASS(1 != rxc._vadDecision);
         TEST_LOG("Disabling RX VAD detection, make sure you see no "
             "detections\n");
@@ -3322,7 +3322,7 @@ int VoETestManager::DoStandardTest()
         SLEEP(1000);
     }
 
-#if (defined (_WIN32) || (defined(WEBRTC_LINUX)) && !defined(ANDROID))
+#if (defined (_WIN32) || (defined(WEBRTC_LINUX)) && !defined(WEBRTC_ANDROID))
     valInt = -1;
     TEST_MUSTPASS(vsync->GetPlayoutBufferSize(valInt));
     TEST_LOG("Soundcard buffer size = %d ms\n", valInt);
@@ -3802,11 +3802,11 @@ void createSummary(VoiceEngine* ve)
     sprintf(str, "WebRTc VoiceEngine ");
 #if defined(_WIN32)
     strcat(str, "Win");
-#elif defined(WEBRTC_LINUX) && defined(WEBRTC_TARGET_PC) && !defined(ANDROID)
+#elif defined(WEBRTC_LINUX) && defined(WEBRTC_TARGET_PC) && !defined(WEBRTC_ANDROID)
     strcat(str, "Linux");
 #elif defined(WEBRTC_MAC) && !defined(MAC_IPHONE)
     strcat(str, "Mac");
-#elif defined(ANDROID)
+#elif defined(WEBRTC_ANDROID)
     strcat(str, "Android");
 #elif defined(MAC_IPHONE)
     strcat(str, "iPhone");
