@@ -257,7 +257,6 @@ bool UdpSocketManagerPosixImpl::Process()
     unsigned int maxFd = 0;
     for (it = _socketMap.First(); it != NULL; it=_socketMap.Next(it))
     {
-        UdpSocketPosix* s = static_cast<UdpSocketPosix*>(it->GetItem());
         doSelect = true;
         maxFd = maxFd > it->GetUnsignedId() ? maxFd : it->GetUnsignedId();
         FD_SET(it->GetUnsignedId(), &_readFds);
