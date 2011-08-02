@@ -31,6 +31,11 @@
 #include "vie_render.h"
 #include "vie_rtp_rtcp.h"
 
+#include <iostream>
+#include "tb_external_transport.h"
+#define VCM_RED_PAYLOAD_TYPE        96
+#define VCM_ULPFEC_PAYLOAD_TYPE     97
+
 int VideoEngineSampleCode(void* window1, void* window2)
 {
     //********************************************************
@@ -317,11 +322,58 @@ int VideoEngineSampleCode(void* window1, void* window2)
         return -1;
     }
 
-    // try to keep the test frame size small when I420
+    // Set spatial resolution option
+    std::string str;
+    std::cout << std::endl;
+    std::cout << "Enter frame size option (default is CIF):" << std::endl;
+    std::cout << "1. QCIF (176X144) " << std::endl;
+    std::cout << "2. CIF  (352X288) " << std::endl;
+    std::cout << "3. VGA  (640X480) " << std::endl;
+    std::cout << "4. 4CIF (704X576) " << std::endl;
+    std::cout << "5. WHD  (1280X720) " << std::endl;
+    std::getline(std::cin, str);
+    int resolnOption = atoi(str.c_str());
+    // Try to keep the test frame size small when I420
     if (videoCodec.codecType == webrtc::kVideoCodecI420)
     {
+       resolnOption = 1;
+    }
+    switch (resolnOption)
+    {
+        case 1:
         videoCodec.width = 176;
         videoCodec.height = 144;
+          break;
+
+        case 2:
+        videoCodec.width = 352;
+        videoCodec.height = 288;
+          break;
+
+        case 3:
+        videoCodec.width = 640;
+        videoCodec.height = 480;
+          break;
+
+        case 4:
+        videoCodec.width = 704;
+        videoCodec.height = 576;
+          break;
+
+        case 5:
+        videoCodec.width = 1280;
+        videoCodec.height = 720;
+          break;
+    }
+
+    // Set start bit rate
+    std::cout << std::endl;
+    std::cout << "Choose start rate (in kbps). Press enter for default:  ";
+    std::getline(std::cin, str);
+    int startRate = atoi(str.c_str());
+    if(startRate != 0)
+    {
+        videoCodec.startBitrate=startRate;
     }
 
     error = ptrViECodec->SetSendCodec(videoChannel, videoCodec);
@@ -330,6 +382,47 @@ int VideoEngineSampleCode(void* window1, void* window2)
         printf("ERROR in ViECodec::SetSendCodec\n");
         return -1;
     }
+
+    //
+    // Choose Protection Mode
+    //
+    std::cout << std::endl;
+    std::cout << "Enter Protection Method:" << std::endl;
+    std::cout << "0. None" << std::endl;
+    std::cout << "1. FEC" << std::endl;
+    std::cout << "2. NACK" << std::endl;
+    std::cout << "3. NACK+FEC" << std::endl;
+    std::getline(std::cin, str);
+    int protectionMethod = atoi(str.c_str());
+    error = 0;
+    switch (protectionMethod)
+    {
+        case 0: // None: default is no protection
+          break;
+
+        case 1: // FEC only
+        error = ptrViERtpRtcp->SetFECStatus(videoChannel, true,
+                                            VCM_RED_PAYLOAD_TYPE,
+                                            VCM_ULPFEC_PAYLOAD_TYPE);
+          break;
+
+        case 2: // Nack only
+        error = ptrViERtpRtcp->SetNACKStatus(videoChannel, true);
+
+          break;
+
+        case 3: // Hybrid NAck and FEC
+        error = ptrViERtpRtcp->SetHybridNACKFECStatus(videoChannel, true,
+                                                      VCM_RED_PAYLOAD_TYPE,
+                                                      VCM_ULPFEC_PAYLOAD_TYPE);
+          break;
+     }
+
+    if (error < 0)
+    {
+        printf("ERROR in ViERTP_RTCP::SetProtectionStatus\n");
+    }
+
 
     //
     // Address settings
@@ -341,26 +434,66 @@ int VideoEngineSampleCode(void* window1, void* window2)
         return -1;
     }
 
-    const char* ipAddress = "127.0.0.1";
-    const unsigned short rtpPort = 6000;
-    error = ptrViENetwork->SetLocalReceiver(videoChannel, rtpPort);
-    if (error == -1)
+    // Setting External transport
+    tbExternalTransport extTransport(*(ptrViENetwork));
+
+    int testMode = 0;
+    std::cout << std::endl;
+    std::cout << "Enter 1 for testing packet loss and delay with "
+        "external transport: ";
+    std::string test_str;
+    std::getline(std::cin, test_str);
+    testMode = atoi(test_str.c_str());
+    if (testMode == 1)
     {
-        printf("ERROR in ViENetwork::SetLocalReceiver\n");
-        return -1;
+        error = ptrViENetwork->RegisterSendTransport(videoChannel,
+                                                      extTransport);
+        if (error == -1)
+        {
+            printf("ERROR in ViECodec::RegisterSendTransport \n");
+            return -1;
+        }
+
+        // Set up packet loss value
+        std::cout << "Enter Packet Loss Percentage" << std::endl;
+        std::string rate_str;
+        std::getline(std::cin, rate_str);
+        int rate = atoi(rate_str.c_str());
+        extTransport.SetPacketLoss(rate);
+
+        // Set network delay value
+        std::cout << "Enter network delay value [mS]" << std::endl;
+        std::string delay_str;
+        std::getline(std::cin, delay_str);
+        int delayMs = atoi(delay_str.c_str());
+        extTransport.SetNetworkDelay(delayMs);
+    }
+    else
+    {
+        const char* ipAddress = "127.0.0.1";
+        const unsigned short rtpPort = 6000;
+        std::cout << std::endl;
+        std::cout << "Using rtp port: " << rtpPort << std::endl;
+        std::cout << std::endl;
+        error = ptrViENetwork->SetLocalReceiver(videoChannel, rtpPort);
+        if (error == -1)
+        {
+            printf("ERROR in ViENetwork::SetLocalReceiver\n");
+            return -1;
+        }
+        error = ptrViENetwork->SetSendDestination(videoChannel,
+                                                  ipAddress, rtpPort);
+        if (error == -1)
+        {
+            printf("ERROR in ViENetwork::SetSendDestination\n");
+            return -1;
+        }
     }
 
     error = ptrViEBase->StartReceive(videoChannel);
     if (error == -1)
     {
         printf("ERROR in ViENetwork::StartReceive\n");
-        return -1;
-    }
-
-    error = ptrViENetwork->SetSendDestination(videoChannel, ipAddress, rtpPort);
-    if (error == -1)
-    {
-        printf("ERROR in ViENetwork::SetSendDestination\n");
         return -1;
     }
 
