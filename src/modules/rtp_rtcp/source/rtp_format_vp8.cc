@@ -256,15 +256,14 @@ int RtpFormatVp8::GetFIFlag(bool end_of_fragment) const
     if (first_fragment_ && end_of_fragment) {
         return 0x0;
     }
-    else if (first_fragment_ && !end_of_fragment) {
+    if (first_fragment_ && !end_of_fragment) {
         return 0x1;
     }
-    else if (!first_fragment_ && !end_of_fragment) {
+    if (!first_fragment_ && !end_of_fragment) {
         return 0x2;
     }
-    else if (!first_fragment_ && end_of_fragment) {
-        return 0x3;
-    }
+    // if (!first_fragment_ && end_of_fragment)
+    return 0x3;
 }
 
 } // namespace webrtc
