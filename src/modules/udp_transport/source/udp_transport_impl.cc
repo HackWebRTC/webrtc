@@ -2588,7 +2588,7 @@ WebRtc_Word32 UdpTransport::LocalHostAddressIPV6(WebRtc_UWord8 localIP[16])
     }
     freeifaddrs(ptrIfAddrsStart);
     return -1;
-#elif defined(ANDROID)
+#elif defined(WEBRTC_ANDROID)
     return -1;
 #else // WEBRTC_LINUX
     struct
