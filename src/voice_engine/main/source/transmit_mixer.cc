@@ -162,18 +162,11 @@ TransmitMixer::Destroy(TransmitMixer*& mixer)
 }
 
 TransmitMixer::TransmitMixer(const WebRtc_UWord32 instanceId) :
-    _instanceId(instanceId),
     _engineStatisticsPtr(NULL),
     _channelManagerPtr(NULL),
     _audioProcessingModulePtr(NULL),
-    _critSect(*CriticalSectionWrapper::CreateCriticalSection()),
-    _callbackCritSect(*CriticalSectionWrapper::CreateCriticalSection()),
-
-#ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
-    _timeActive(0),
-    _penaltyCounter(0),
-    _typingNoiseWarning(0),
-#endif
+    _voiceEngineObserverPtr(NULL),
+    _processThreadPtr(NULL),
     _filePlayerPtr(NULL),
     _fileRecorderPtr(NULL),
     _fileCallRecorderPtr(NULL),
@@ -185,18 +178,24 @@ TransmitMixer::TransmitMixer(const WebRtc_UWord32 instanceId) :
     _filePlaying(false),
     _fileRecording(false),
     _fileCallRecording(false),
+    _audioLevel(),
+    _critSect(*CriticalSectionWrapper::CreateCriticalSection()),
+    _callbackCritSect(*CriticalSectionWrapper::CreateCriticalSection()),
+#ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
+    _timeActive(0),
+    _penaltyCounter(0),
+    _typingNoiseWarning(0),
+#endif
+    _saturationWarning(0),
+    _noiseWarning(0),
+    _instanceId(instanceId),
     _mixFileWithMicrophone(false),
     _captureLevel(0),
-    _audioLevel(),
     _externalMedia(false),
     _externalMediaCallbackPtr(NULL),
     _mute(false),
     _remainingMuteMicTimeMs(0),
     _mixingFrequency(0),
-    _voiceEngineObserverPtr(NULL),
-    _processThreadPtr(NULL),
-    _saturationWarning(0),
-    _noiseWarning(0),
     _includeAudioLevelIndication(false),
     _audioLevel_dBov(100)
 {

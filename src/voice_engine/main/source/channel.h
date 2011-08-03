@@ -584,8 +584,8 @@ private:
     bool _outputFileRecording;
     DtmfInbandQueue _inbandDtmfQueue;
     DtmfInband _inbandDtmfGenerator;
-    bool _outputExternalMedia;
     bool _inputExternalMedia;
+    bool _outputExternalMedia;
     VoEMediaProcess* _inputExternalMediaCallbackPtr;
     VoEMediaProcess* _outputExternalMediaCallbackPtr;
     WebRtc_UWord8* _encryptionRTPBufferPtr;

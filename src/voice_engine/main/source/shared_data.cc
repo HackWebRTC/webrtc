@@ -25,13 +25,13 @@ static WebRtc_Word32 _gInstanceCounter = 0;
 
 SharedData::SharedData() :
     _instanceId(++_gInstanceCounter),
+    _apiCritPtr(CriticalSectionWrapper::CreateCriticalSection()),
     _channelManager(_gInstanceCounter),
     _engineStatistics(_gInstanceCounter),
     _usingExternalAudioDevice(false),
     _audioDevicePtr(NULL),
     _audioProcessingModulePtr(NULL),
     _moduleProcessThreadPtr(ProcessThread::CreateProcessThread()),
-    _apiCritPtr(CriticalSectionWrapper::CreateCriticalSection()),
     _externalRecording(false),
     _externalPlayout(false)
 {

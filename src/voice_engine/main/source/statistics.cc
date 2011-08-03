@@ -23,8 +23,8 @@ namespace voe {
 Statistics::Statistics(const WebRtc_UWord32 instanceId) :
     _critPtr(CriticalSectionWrapper::CreateCriticalSection()),
     _instanceId(instanceId),
-    _isInitialized(false),
-    _lastError(0)
+    _lastError(0),
+    _isInitialized(false)
 {
 }
 	

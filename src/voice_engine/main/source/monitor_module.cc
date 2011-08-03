@@ -16,8 +16,8 @@ namespace webrtc  {
 namespace voe  {
 
 MonitorModule::MonitorModule() :
-    _callbackCritSect(*CriticalSectionWrapper::CreateCriticalSection()),
     _observerPtr(NULL),
+    _callbackCritSect(*CriticalSectionWrapper::CreateCriticalSection()),
     _lastProcessTime(GET_TIME_IN_MS())
 {
 }

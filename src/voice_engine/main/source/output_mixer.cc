@@ -120,18 +120,18 @@ OutputMixer::Create(OutputMixer*& mixer, const WebRtc_UWord32 instanceId)
 OutputMixer::OutputMixer(const WebRtc_UWord32 instanceId) :
     _callbackCritSect(*CriticalSectionWrapper::CreateCriticalSection()),
     _fileCritSect(*CriticalSectionWrapper::CreateCriticalSection()),
-    _instanceId(instanceId),
-    _outputFileRecorderPtr(NULL),
-    _outputFileRecording(false),
-    _dtmfGenerator(instanceId),
     _mixerModule(*AudioConferenceMixer::
                  CreateAudioConferenceMixer(instanceId)),
-    _externalMediaCallbackPtr(NULL),
     _audioLevel(),
+    _dtmfGenerator(instanceId),
+    _instanceId(instanceId),
+    _externalMediaCallbackPtr(NULL),
     _externalMedia(false),
     _panLeft(1.0f),
     _panRight(1.0f),
-    _mixingFrequencyHz(8000)
+    _mixingFrequencyHz(8000),
+    _outputFileRecorderPtr(NULL),
+    _outputFileRecording(false)
 {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId,-1),
                  "OutputMixer::OutputMixer() - ctor");

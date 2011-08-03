@@ -65,17 +65,17 @@ const WebRtc_Word16 Dtmf_dBm0kHz[37]=
 
 
 DtmfInband::DtmfInband(const WebRtc_Word32 id) :
-    _id(id),
     _critSect(*CriticalSectionWrapper::CreateCriticalSection()),
+    _id(id),
     _outputFrequencyHz(8000),
-    _reinit(true),
-    _remainingSamples(0),
     _frameLengthSamples(0),
+    _remainingSamples(0),
     _eventCode(0),
     _attenuationDb(0),
+    _lengthMs(0),
+    _reinit(true),
     _playing(false),
-    _delaySinceLastToneMS(1000),
-    _lengthMs(0)
+    _delaySinceLastToneMS(1000)
 {
     memset(_oldOutputLow, 0, sizeof(_oldOutputLow));
     memset(_oldOutputHigh, 0, sizeof(_oldOutputHigh));
