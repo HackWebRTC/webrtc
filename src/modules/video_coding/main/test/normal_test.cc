@@ -13,6 +13,7 @@
 #include "tick_time.h"
 #include "common_types.h"
 #include "trace.h"
+#include "test_macros.h"
 #include "test_util.h"
 #include <assert.h>
 #include <iostream>
@@ -44,14 +45,14 @@ int NormalTest::RunTest(CmdArgs& args)
 // Callback Implementation
 //////////////
 
-VCMNTEncodeCompleteCallback::VCMNTEncodeCompleteCallback(FILE* encodedFile, NormalTest& test):
-_seqNo(0),
-_layerPacketId(1),
-_encodedFile(encodedFile),
-_encodedBytes(0),
-_skipCnt(0),
-_VCMReceiver(NULL),
-_test(test)
+VCMNTEncodeCompleteCallback::VCMNTEncodeCompleteCallback(FILE* encodedFile,
+                                                         NormalTest& test):
+    _encodedFile(encodedFile),
+    _encodedBytes(0),
+    _skipCnt(0),
+    _VCMReceiver(NULL),
+    _seqNo(0),
+    _test(test)
 {
     //
 }
@@ -98,6 +99,9 @@ VCMNTEncodeCompleteCallback::SendData(
     case kVideoCodecI420:
         rtpInfo.type.Video.codec = kRTPVideoI420;
         break;
+    default:
+        assert(false);
+        return -1;
     }
     rtpInfo.header.payloadType = payloadType;
     rtpInfo.header.sequenceNumber = _seqNo++;
@@ -173,6 +177,8 @@ VCMNTDecodeCompleCallback::DecodedBytes()
 NormalTest::NormalTest(VideoCodingModule* vcm)
 :
 _vcm(vcm),
+_sumEncBytes(0),
+_timeStamp(0),
 _totalEncodeTime(0),
 _totalDecodeTime(0),
 _decodeCompleteTime(0),
@@ -180,11 +186,8 @@ _encodeCompleteTime(0),
 _totalEncodePipeTime(0),
 _totalDecodePipeTime(0),
 _frameCnt(0),
-_timeStamp(0),
 _encFrameCnt(0),
-_decFrameCnt(0),
-_sumEncBytes(0)
-
+_decFrameCnt(0)
 {
     //
 }
@@ -268,7 +271,9 @@ NormalTest::Perform(CmdArgs& args)
 
     while (feof(_sourceFile)== 0)
     {
+#if !(defined(TICK_TIME_DEBUG) || defined(EVENT_DEBUG))
         WebRtc_Word64 processStartTime = VCMTickTime::MillisecondTimestamp();
+#endif
         fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile);
         _frameCnt++;
         sourceFrame.CopyFrame(_lengthSourceFrame, tmpBuffer);
@@ -299,7 +304,7 @@ NormalTest::Perform(CmdArgs& args)
         }
         WebRtc_UWord32 framePeriod = static_cast<WebRtc_UWord32>(1000.0f/static_cast<float>(_sendCodec.maxFramerate) + 0.5f);
 #if defined(TICK_TIME_DEBUG) || defined(EVENT_DEBUG)
-        for (int i=0; i < framePeriod; i++)
+        for (unsigned int i=0; i < framePeriod; i++)
         {
             VCMTickTime::IncrementDebugClock();
         }
@@ -364,6 +369,16 @@ NormalTest::Print()
     printf("PSNR: %f \n", psnr);
     ( _log) << "PSNR: " << psnr << std::endl;
     (_log) << std::endl;
+
+    printf("\nVCM Normal Test: \n\n%i tests completed\n", vcmMacrosTests);
+    if (vcmMacrosErrors > 0)
+    {
+        printf("%i FAILED\n\n", vcmMacrosErrors);
+    }
+    else
+    {
+        printf("ALL PASSED\n\n");
+    }
 }
 void
 NormalTest::Teardown()

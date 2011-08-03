@@ -14,7 +14,6 @@
 #include "trace.h"
 #include "tick_time.h"
 #include "../source/event.h"
-#include "test_macros.h"
 #include "rtp_player.h"
 
 using namespace webrtc;

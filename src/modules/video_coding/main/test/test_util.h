@@ -16,7 +16,6 @@
 #include "trace.h"
 #include "module_common_types.h"
 #include "tick_time.h"
-#include "test_macros.h"
 #include "test_util.h"
 
 #include <string.h>
@@ -109,7 +108,6 @@ private:
     WebRtc_Word32 _width;
     WebRtc_Word32 _height;
     webrtc::RTPVideoCodecTypes _codecType;
-    WebRtc_UWord8 _layerPacketId;
 
 }; // end of VCMEncodeCompleteCallback
 
@@ -118,7 +116,11 @@ class VCMRTPEncodeCompleteCallback: public webrtc::VCMPacketizationCallback
 {
 public:
     VCMRTPEncodeCompleteCallback(webrtc::RtpRtcp* rtp) :
-        _seqNo(0), _encodedBytes(0), _RTPModule(rtp), _encodeComplete(false) {}
+        _encodedBytes(0),
+        _seqNo(0),
+        _encodeComplete(false),
+        _RTPModule(rtp) {}
+
     virtual ~VCMRTPEncodeCompleteCallback() {}
     // process encoded data received from the encoder, pass stream to the RTP module
     WebRtc_Word32 SendData(const webrtc::FrameType frameType,
@@ -201,11 +203,15 @@ class SendSharedState
 public:
     SendSharedState(webrtc::VideoCodingModule& vcm, webrtc::RtpRtcp& rtp,
             CmdArgs args) :
-        _rtp(rtp), _vcm(vcm), _args(args), _sourceFile(NULL), _frameCnt(0),
-                _timestamp(0) {}
+            _vcm(vcm),
+            _rtp(rtp),
+            _args(args),
+            _sourceFile(NULL),
+            _frameCnt(0),
+            _timestamp(0) {}
 
     webrtc::VideoCodingModule&  _vcm;
-    webrtc::RtpRtcp&          _rtp;
+    webrtc::RtpRtcp&            _rtp;
     CmdArgs                     _args;
     FILE*                       _sourceFile;
     WebRtc_Word32               _frameCnt;

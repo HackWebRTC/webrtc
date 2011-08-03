@@ -15,6 +15,7 @@
 #include "../source/event.h"
 #include "rtp_rtcp.h"
 #include "module_common_types.h"
+#include "test_macros.h"
 #include "test_util.h"
 
 using namespace webrtc;
@@ -38,14 +39,12 @@ int GenericCodecTest::RunTest(CmdArgs& args)
 }
 
 GenericCodecTest::GenericCodecTest(VideoCodingModule* vcm):
+_vcm(vcm),
 _width(0),
 _height(0),
-_timeStamp(0),
-_lengthSourceFrame(0),
 _frameRate(0),
-vcmMacrosTests(0),
-vcmMacrosErrors(0),
-_vcm(vcm)
+_lengthSourceFrame(0),
+_timeStamp(0)
 {
 }
 
@@ -255,7 +254,7 @@ GenericCodecTest::Perform(CmdArgs& args)
     //NOTE: time requirements are not part of the release tests
     */
     double FullReq   =  0.1;
-    double OneSecReq = 0.15;
+    //double OneSecReq = 0.15;
     printf("\n RATE CONTROL TEST\n");
     // initializing....
     _vcm->InitializeSender();
@@ -336,13 +335,12 @@ GenericCodecTest::Perform(CmdArgs& args)
             currentTime = VCMTickTime::MicrosecondTimestamp();
             totalBytes = _encodeCompleteCallback->EncodedBytes();
             actualBitrate = (float)(8.0/1000)*(totalBytes / (_frameCnt / _frameRate));
-            WebRtc_Word64 timeDiff = (currentTime - startTime)/1000;
-            //actualBitrate = (float)(8.0*totalBytes)/timeDiff;
+
             printf("Complete Seq.: target bitrate: %.0f kbps, actual bitrate: %.1f kbps\n", _bitRate, actualBitrate);
             TEST((fabs(actualBitrate - _bitRate) < FullReq * _bitRate) ||
                  (strncmp(_sendCodec.plName, "I420", 4) == 0));
 
-           // 1 Sec.
+            // 1 Sec.
             actualBitrate = (float)(8.0/1000)*(totalBytesOneSec);
             //actualBitrate = (float)(8.0*totalBytesOneSec)/(oneSecTime - startTime);
             //printf("First 1Sec: target bitrate: %.0f kbps, actual bitrate: %.1f kbps\n", _bitRate, actualBitrate);

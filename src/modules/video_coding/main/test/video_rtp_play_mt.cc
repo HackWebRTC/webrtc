@@ -53,7 +53,7 @@ bool RtpReaderThread(void* obj)
 bool DecodeThread(void* obj)
 {
     SharedState* state = static_cast<SharedState*>(obj);
-    WebRtc_Word32 ret = state->_vcm.Decode(10000);
+    state->_vcm.Decode(10000);
     while (state->_vcm.DecodeDualFrame(0) == 1);
     return true;
 }

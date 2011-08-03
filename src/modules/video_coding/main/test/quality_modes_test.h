@@ -22,14 +22,14 @@ class QualityModesTest : public NormalTest
 public:
     QualityModesTest(webrtc::VideoCodingModule* vcm);
     virtual ~QualityModesTest();
-     WebRtc_Word32    Perform();
+    WebRtc_Word32 Perform();
 
 private:
 
-    void			Setup();
-    void			Print();
-    void			Teardown();
-    void			SsimComp();
+    void Setup();
+    void Print();
+    void Teardown();
+    void SsimComp();
 
     webrtc::VideoProcessingModule*  _vpm;
 
@@ -61,10 +61,10 @@ private:
     FILE*                _decodedFile;
     WebRtc_UWord32       _decodedBytes;
    // QualityModesTest&  _test;
-    WebRtc_Word32		 _origWidth;
-    WebRtc_Word32        _origHeight;
-    WebRtc_Word32        _decWidth;
-    WebRtc_Word32        _decHeight;
+    WebRtc_UWord32       _origWidth;
+    WebRtc_UWord32       _origHeight;
+    WebRtc_UWord32       _decWidth;
+    WebRtc_UWord32       _decHeight;
 //    VideoInterpolator* _interpolator;
     WebRtc_UWord8*       _decBuffer;
     WebRtc_UWord32       _frameCnt; // debug

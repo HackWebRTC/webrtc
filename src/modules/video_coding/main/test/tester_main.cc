@@ -37,6 +37,9 @@ using namespace webrtc;
 WebRtc_Word64 VCMTickTime::_timeNowDebug = 0; // current time in ms
 #endif
 
+int vcmMacrosTests = 0;
+int vcmMacrosErrors = 0;
+
 int ParseArguments(int argc, char **argv, CmdArgs& args)
 {
     int i = 1;

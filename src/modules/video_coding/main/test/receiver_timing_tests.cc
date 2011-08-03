@@ -65,9 +65,9 @@ int ReceiverTimingTests(CmdArgs& args)
     VCMTiming timing;
     float clockInMs = 0.0;
     WebRtc_UWord32 waitTime = 0;
-    WebRtc_Word32 jitterDelayMs = 0;
-    WebRtc_Word32 maxDecodeTimeMs = 0;
-    WebRtc_Word32 extraDelayMs = 0;
+    WebRtc_UWord32 jitterDelayMs = 0;
+    WebRtc_UWord32 maxDecodeTimeMs = 0;
+    WebRtc_UWord32 extraDelayMs = 0;
     WebRtc_UWord32 timeStamp = 0;
 
     timing.Reset(static_cast<WebRtc_Word64>(clockInMs + 0.5));
@@ -222,6 +222,17 @@ int ReceiverTimingTests(CmdArgs& args)
                    MaskWord64ToUWord32(renderTimeMs));
     }
     WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, -1,  "End Stochastic test 1");
+
+    printf("\nVCM Timing Test: \n\n%i tests completed\n", vcmMacrosTests);
+    if (vcmMacrosErrors > 0)
+    {
+        printf("%i FAILED\n\n", vcmMacrosErrors);
+    }
+    else
+    {
+        printf("ALL PASSED\n\n");
+    }
+
     Trace::ReturnTrace();
     return 0;
 }

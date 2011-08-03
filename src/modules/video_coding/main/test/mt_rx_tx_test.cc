@@ -19,6 +19,7 @@
 #include "rtp_rtcp.h"
 #include "thread_wrapper.h"
 #include "../source/event.h"
+#include "test_macros.h"
 #include "test_util.h" // send side callback
 #include "media_opt_test.h"
 
@@ -100,7 +101,6 @@ int MTRxTxTest(CmdArgs& args)
 
     WebRtc_UWord16  width = args.width;
     WebRtc_UWord16  height = args.height;
-    WebRtc_UWord32  lengthSourceFrame  = 3*width*height/2;
 
     float         frameRate = args.frameRate;
     float         bitRate = args.bitRate;
@@ -114,8 +114,6 @@ int MTRxTxTest(CmdArgs& args)
     float         lossRate = 0.0*255; // no packet loss
     WebRtc_UWord32  renderDelayMs = 0;
     WebRtc_UWord32  minPlayoutDelayMs = 0;
-    WebRtc_UWord8   deltaFECRate = 0;
-    WebRtc_UWord8   keyFECRate = 0;
 
     /* TEST SET-UP */
 
@@ -242,7 +240,7 @@ int MTRxTxTest(CmdArgs& args)
     ThreadWrapper* intSenderThread = ThreadWrapper::CreateThread(IntSenderThread,
             &mtSendState, kNormalPriority, "IntThread");
 
-    if (MainSenderThread != NULL)
+    if (mainSenderThread != NULL)
     {
         unsigned int tid;
         mainSenderThread->Start(tid);
@@ -253,7 +251,7 @@ int MTRxTxTest(CmdArgs& args)
         return -1;
     }
 
-    if (IntSenderThread != NULL)
+    if (intSenderThread != NULL)
     {
         unsigned int tid;
         intSenderThread->Start(tid);
@@ -318,6 +316,16 @@ int MTRxTxTest(CmdArgs& args)
     while (!decodeThread->Stop())
     {
         ;
+    }
+
+    printf("\nVCM MT RX/TX Test: \n\n%i tests completed\n", vcmMacrosTests);
+    if (vcmMacrosErrors > 0)
+    {
+        printf("%i FAILED\n\n", vcmMacrosErrors);
+    }
+    else
+    {
+        printf("ALL PASSED\n\n");
     }
 
     delete &waitEvent;

@@ -27,10 +27,10 @@ VideoSource::VideoSource(std::string fileName, VideoSize size,
     float frameRate, webrtc::VideoType type /*= webrtc::kI420*/)
 :
 _fileName(fileName),
-_type(type),
-_frameRate(frameRate),
 _width(0),
-_height(0)
+_height(0),
+_type(type),
+_frameRate(frameRate)
 {
     assert(size != kUndefined && size != kNumberOfVideoSizes);
     assert(type != webrtc::kUnknown);

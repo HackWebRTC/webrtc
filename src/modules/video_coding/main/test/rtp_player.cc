@@ -40,7 +40,6 @@ LostPackets::LostPackets()
 :
 _critSect(*CriticalSectionWrapper::CreateCriticalSection()),
 _lossCount(0),
-ListWrapper(),
 _debugFile(NULL)
 {
     _debugFile = fopen("PacketLossDebug.txt", "w");

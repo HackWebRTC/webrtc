@@ -50,8 +50,8 @@ public:
     void Unlock()   {_critSect.Leave();};
 private:
     webrtc::CriticalSectionWrapper& _critSect;
-    WebRtc_UWord32 _lossCount;
-    FILE*        _debugFile;
+    WebRtc_UWord32                  _lossCount;
+    FILE*                           _debugFile;
 };
 
 struct PayloadCodecTuple

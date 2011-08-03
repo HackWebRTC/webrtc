@@ -17,20 +17,20 @@
 #include "../source/event.h"
 #include "frame_buffer.h"
 #include "jitter_estimate_test.h"
-#include "test_macros.h"
 #include "test_util.h"
+#include "test_macros.h"
 #include <stdio.h>
 #include <math.h>
 
 using namespace webrtc;
 
-void CheckOutFrame(VCMEncodedFrame* frameOut, int size, bool startCode)
+void CheckOutFrame(VCMEncodedFrame* frameOut, unsigned int size, bool startCode)
 {
     TEST(frameOut != 0);
 
     const WebRtc_UWord8* outData = frameOut->Buffer();
 
-    int i = 0;
+    unsigned int i = 0;
 
     if(startCode)
     {
@@ -43,7 +43,6 @@ void CheckOutFrame(VCMEncodedFrame* frameOut, int size, bool startCode)
 
     // check the frame data
     int count = 3;
-    int layer = 0;
 
     // check the frame length
     TEST(frameOut->Length() == size);
@@ -64,10 +63,6 @@ void CheckOutFrame(VCMEncodedFrame* frameOut, int size, bool startCode)
         }
         else
         {
-            if (outData[i] != count)
-            {
-                int a=0;
-            }
             TEST(outData[i] == count);
             count++;
             if(count == 10)
@@ -114,7 +109,8 @@ int JitterBufferTest(CmdArgs& args)
         item = frameList.First();
         fb = static_cast<VCMFrameBuffer*>(item->GetItem());
         TEST(i > 0 || fb->TimeStamp() == 0xfffffff0); // Frame 0 has no prev
-        TEST(prevTimestamp - fb->TimeStamp() == -1 || i == 0);
+        TEST(prevTimestamp - fb->TimeStamp() == static_cast<WebRtc_UWord32>(-1)
+             || i == 0);
         prevTimestamp = fb->TimeStamp();
         frameList.Erase(item);
         delete fb;
@@ -127,11 +123,9 @@ int JitterBufferTest(CmdArgs& args)
 
     seqNum = 1234;
     timeStamp = 123*90;
-    VCMFrameBufferEnum retVal(kNoError);
     FrameType incomingFrameType(kVideoFrameKey);
     VCMEncodedFrame* frameOut=NULL;
     WebRtc_Word64 renderTimeMs = 0;
-    WebRtc_UWord8 payloadType = 0;
     packet.timestamp = timeStamp;
     packet.seqNum = seqNum;
 
@@ -140,7 +134,7 @@ int JitterBufferTest(CmdArgs& args)
     data[1] = 0;
     data[2] = 0x80;
     int count = 3;
-    for(int i = 3; i < sizeof(data) - 3; ++i )
+    for (unsigned int i = 3; i < sizeof(data) - 3; ++i)
     {
         data[i] = count;
         count++;
@@ -2244,6 +2238,18 @@ int JitterBufferTest(CmdArgs& args)
     jb.Stop();
 
     printf("DONE !!!\n");
+
+    printf("\nVCM Jitter Buffer Test: \n\n%i tests completed\n",
+           vcmMacrosTests);
+    if (vcmMacrosErrors > 0)
+    {
+        printf("%i FAILED\n\n", vcmMacrosErrors);
+    }
+    else
+    {
+        printf("ALL PASSED\n\n");
+    }
+
     EventWrapper* waitEvent = EventWrapper::Create();
     waitEvent->Wait(5000);
 

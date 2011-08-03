@@ -14,6 +14,7 @@
 #include "receiver_tests.h" // receive side callbacks
 #include "video_coding.h"
 #include "rtp_rtcp.h"
+#include "test_macros.h"
 #include "test_util.h" // send side callback
 #include "media_opt_test.h"
 #include "../source/event.h"
@@ -21,8 +22,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <vector>
-
-//#include <Windows.h>
 #include <time.h>
 
 using namespace webrtc;
@@ -74,15 +73,13 @@ _frameRate(30.0f),
 _nackEnabled(false),
 _fecEnabled(false),
 _rttMS(0),
-_renderDelayMs(0),
 _bitRate(300.0f),
 _lossRate(0.0f),
+_renderDelayMs(0),
 _frameCnt(0),
 _sumEncBytes(0),
 _numFramesDropped(0),
-_numberOfCores(4),
-vcmMacrosTests(0),
-vcmMacrosErrors(0)
+_numberOfCores(4)
 {
     _rtp = RtpRtcp::CreateRtpRtcp(1, false);
 }
@@ -160,7 +157,6 @@ MediaOptTest::Setup(int testType, CmdArgs& args)
    //
 
     _renderDelayMs = 0;
-    WebRtc_UWord32 minPlayoutDelayMs = 0;
     /* test settings end*/
 
    _lengthSourceFrame  = 3*_width*_height/2;
@@ -171,10 +167,7 @@ MediaOptTest::Setup(int testType, CmdArgs& args)
 void
 MediaOptTest::GeneralSetup()
 {
-
-   WebRtc_UWord8 deltaFECRate = 0;
-   WebRtc_UWord8 keyFECRate = 0;
-   WebRtc_UWord32 minPlayoutDelayMs = 0;
+    WebRtc_UWord32 minPlayoutDelayMs = 0;
 
     if ((_sourceFile = fopen(_inname.c_str(), "rb")) == NULL)
     {
@@ -240,7 +233,6 @@ MediaOptTest::GeneralSetup()
         exit(1);
     }
 
-    WebRtc_UWord8 i= 0;
     if (_vcm->Codec(_sendCodecType, &sendCodec) != 0)
     {
         printf("Unknown codec\n");
@@ -384,7 +376,6 @@ MediaOptTest::RTTest()
     // constant settings (valid for entire run time)
     _rttMS = 20;
     _renderDelayMs = 0;
-    WebRtc_UWord32 minPlayoutDelayMs = 0;
 
     _outname = "../RTMOTest_out.yuv"; // same out name for all
     _actualSourcename = "../RTMOTestSource.yuv"; // actual source after frame dropping

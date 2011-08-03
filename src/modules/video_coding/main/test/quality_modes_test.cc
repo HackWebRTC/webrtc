@@ -10,6 +10,7 @@
 
 #include "quality_modes_test.h"
 #include "../source/event.h"
+#include "test_macros.h"
 #include "vplib.h"
 
 #include <iostream>
@@ -124,6 +125,16 @@ QualityModesTest::Print()
         printf("SSIM: %f \n", ssim);
     }
     (_log) << std::endl;
+
+    printf("\nVCM Qualit Modes Test: \n\n%i tests completed\n", vcmMacrosTests);
+    if (vcmMacrosErrors > 0)
+    {
+        printf("%i FAILED\n\n", vcmMacrosErrors);
+    }
+    else
+    {
+        printf("ALL PASSED\n\n");
+    }
 }
 void
 QualityModesTest::Teardown()

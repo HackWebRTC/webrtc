@@ -57,8 +57,8 @@ class SharedState
 {
 public:
     SharedState(webrtc::VideoCodingModule& vcm, RTPPlayer& rtpPlayer) :
-        _rtpPlayer(rtpPlayer),
-        _vcm(vcm) {}
+        _vcm(vcm),
+        _rtpPlayer(rtpPlayer) {}
     webrtc::VideoCodingModule&  _vcm;
     RTPPlayer&              _rtpPlayer;
 };
@@ -67,10 +67,10 @@ class SharedRTPState
 {
 public:
     SharedRTPState(webrtc::VideoCodingModule& vcm, webrtc::RtpRtcp& rtp) :
-        _rtp(rtp),
-        _vcm(vcm) {}
+        _vcm(vcm),
+        _rtp(rtp) {}
     webrtc::VideoCodingModule&  _vcm;
-    webrtc::RtpRtcp&      _rtp;
+    webrtc::RtpRtcp&            _rtp;
 };
 
 int RtpPlay(CmdArgs& args);

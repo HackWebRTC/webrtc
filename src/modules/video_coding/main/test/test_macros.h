@@ -14,8 +14,8 @@
 #include <cstdio>
 #include <cstdlib>
 
-static int vcmMacrosTests = 0;
-static int vcmMacrosErrors = 0;
+extern int vcmMacrosTests;
+extern int vcmMacrosErrors;
 
 #define PRINT_ERR_MSG(msg)                              \
     do {                                                \

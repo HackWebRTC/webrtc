@@ -14,6 +14,7 @@
 #include "codec_database_test.h"
 #include "vp8.h" // for external codecs test
 #include "../source/event.h"
+#include "test_macros.h"
 #include "test_util.h"
 #include "../../../../engine_configurations.h"
 
@@ -34,13 +35,11 @@ int CodecDataBaseTest::RunTest(CmdArgs& args)
 }
 
 CodecDataBaseTest::CodecDataBaseTest(VideoCodingModule* vcm):
+_vcm(vcm),
 _width(0),
 _height(0),
-_timeStamp(0),
 _lengthSourceFrame(0),
-vcmMacrosTests(0),
-vcmMacrosErrors(0),
-_vcm(vcm)
+_timeStamp(0)
 {
     //
 }

@@ -9,6 +9,7 @@
  */
 
 #include "test_util.h"
+#include "test_macros.h"
 #include "rtp_dump.h"
 #include <cmath>
 
@@ -21,15 +22,14 @@ using namespace webrtc;
 // passes the encoded frame directly to the encoder
 // Packetization callback implmentation
 VCMEncodeCompleteCallback::VCMEncodeCompleteCallback(FILE* encodedFile):
-_seqNo(0),
-_encodedFile(encodedFile),
-_encodedBytes(0),
-_VCMReceiver(NULL),
-_encodeComplete(false),
-_width(0),
-_height(0),
-_codecType(kRTPVideoNoVideo),
-_layerPacketId(1)
+    _encodedFile(encodedFile),
+    _encodedBytes(0),
+    _VCMReceiver(NULL),
+    _seqNo(0),
+    _encodeComplete(false),
+    _width(0),
+    _height(0),
+    _codecType(kRTPVideoNoVideo)
 {
     //
 }
@@ -38,7 +38,8 @@ VCMEncodeCompleteCallback::~VCMEncodeCompleteCallback()
 }
 
 void
-VCMEncodeCompleteCallback::RegisterTransportCallback(VCMPacketizationCallback* transport)
+VCMEncodeCompleteCallback::RegisterTransportCallback(
+                                            VCMPacketizationCallback* transport)
 {
 }
 
@@ -68,6 +69,11 @@ VCMEncodeCompleteCallback::SendData(
         rtpInfo.type.Video.height = (WebRtc_UWord16)_height;
         rtpInfo.type.Video.width = (WebRtc_UWord16)_width;
         break;
+    case webrtc::kRTPVideoVP8:
+        break;
+    default:
+        assert(false);
+        return -1;
     }
 
     rtpInfo.header.payloadType = payloadType;
@@ -121,9 +127,9 @@ VCMEncodeCompleteCallback::ResetByteCount()
     _encodedBytes = 0;
 }
 
-/**********************************/
-/*  VCMRTPEncodeCompleteCallback  /
-/********************************/
+/***********************************/
+/*   VCMRTPEncodeCompleteCallback  */
+/***********************************/
 // Encode Complete callback implementation
 // passes the encoded frame via the RTP module to the decoder
 // Packetization callback implmentation
@@ -220,32 +226,32 @@ VCMDecodeCompleteCallback::PSNRLastFrame(const VideoFrame& sourceFrame,  double 
     return 0;
 }
 
- WebRtc_Word32
- VCMDecodeCompleteCallback::DecodedBytes()
- {
-     return _decodedBytes;
- }
+WebRtc_Word32
+VCMDecodeCompleteCallback::DecodedBytes()
+{
+    return _decodedBytes;
+}
 
- RTPSendCompleteCallback::RTPSendCompleteCallback(RtpRtcp* rtp, const char* filename):
- _rtp(rtp),
- _sendCount(0),
- _lossPct(0),
- _rtpDump(NULL)
- {
-     if (filename != NULL)
-     {
-         _rtpDump = RtpDump::CreateRtpDump();
-         _rtpDump->Start(filename);
-     }
- }
- RTPSendCompleteCallback::~RTPSendCompleteCallback()
- {
-     if (_rtpDump != NULL)
-     {
-         _rtpDump->Stop();
-         RtpDump::DestroyRtpDump(_rtpDump);
-     }
- }
+RTPSendCompleteCallback::RTPSendCompleteCallback(RtpRtcp* rtp, const char* filename):
+    _sendCount(0),
+    _rtp(rtp),
+    _lossPct(0),
+    _rtpDump(NULL)
+{
+    if (filename != NULL)
+    {
+        _rtpDump = RtpDump::CreateRtpDump();
+        _rtpDump->Start(filename);
+    }
+}
+RTPSendCompleteCallback::~RTPSendCompleteCallback()
+{
+    if (_rtpDump != NULL)
+    {
+        _rtpDump->Stop();
+        RtpDump::DestroyRtpDump(_rtpDump);
+    }
+}
 int
 RTPSendCompleteCallback::SendPacket(int channel, const void *data, int len)
 {

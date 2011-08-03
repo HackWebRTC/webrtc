@@ -13,7 +13,6 @@
 #define WEBRTC_MODULES_VIDEO_CODING_TEST_MEDIA_OPT_TEST_H_
 
 #include "video_coding.h"
-#include "test_macros.h"
 #include "test_util.h"
 #include "video_source.h"
 
@@ -104,8 +103,6 @@ private:
     string                           _codecName;
     webrtc::VideoCodecType           _sendCodecType;
     WebRtc_Word32                    _numberOfCores;
-    int                              vcmMacrosTests;
-    int                              vcmMacrosErrors;
 
     //for release test#2
     FILE*                            _fpinp;

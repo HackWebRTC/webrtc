@@ -12,7 +12,6 @@
 #define WEBRTC_MODULES_VIDEO_CODING_TEST_GENERIC_CODEC_TEST_H_
 
 #include "video_coding.h"
-#include "test_macros.h"
 #include "test_util.h"
 
 #include <string.h>
@@ -46,22 +45,20 @@ private:
     webrtc::VideoCodingModule*           _vcm;
     webrtc::VideoCodec                   _sendCodec;
     webrtc::VideoCodec                   _receiveCodec;
-    std::string                      _inname;
-    std::string                      _outname;
-    std::string                      _encodedName;
-    WebRtc_Word32                      _sumEncBytes;
-    FILE*                            _sourceFile;
-    FILE*                            _decodedFile;
-    FILE*                            _encodedFile;
-    WebRtc_UWord16                     _width;
-    WebRtc_UWord16                     _height;
-    float                            _frameRate;
-    WebRtc_UWord32                     _lengthSourceFrame;
-    WebRtc_UWord32                     _timeStamp;
-    int                              vcmMacrosTests;
-    int                              vcmMacrosErrors;
-    VCMDecodeCompleteCallback*         _decodeCallback;
-    VCMEncodeCompleteCallback*       _encodeCompleteCallback;
+    std::string                          _inname;
+    std::string                          _outname;
+    std::string                          _encodedName;
+    WebRtc_Word32                        _sumEncBytes;
+    FILE*                                _sourceFile;
+    FILE*                                _decodedFile;
+    FILE*                                _encodedFile;
+    WebRtc_UWord16                       _width;
+    WebRtc_UWord16                       _height;
+    float                                _frameRate;
+    WebRtc_UWord32                       _lengthSourceFrame;
+    WebRtc_UWord32                       _timeStamp;
+    VCMDecodeCompleteCallback*           _decodeCallback;
+    VCMEncodeCompleteCallback*           _encodeCompleteCallback;
 
 }; // end of GenericCodecTest class definition
 

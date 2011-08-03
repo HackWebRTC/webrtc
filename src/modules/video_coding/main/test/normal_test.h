@@ -12,7 +12,6 @@
 #define WEBRTC_MODULES_VIDEO_CODING_TEST_NORMAL_TEST_H_
 
 #include "video_coding.h"
-#include "test_macros.h"
 #include "test_util.h"
 
 #include <map>
@@ -54,19 +53,15 @@ private:
     webrtc::FrameType           _frameType;
     WebRtc_UWord8*              _payloadData; // max payload size??
     WebRtc_UWord16              _seqNo;
-    WebRtc_UWord8               _layerPacketId;
     NormalTest&                 _test;
-   // int                       _vcmMacrosTests;
-   // int                       _vcmMacrosErrors;
-
 }; // end of VCMEncodeCompleteCallback
 
 class VCMNTDecodeCompleCallback: public webrtc::VCMReceiveCallback
 {
 public:
     VCMNTDecodeCompleCallback(std::string outname): // or should it get a name?
-        _outname(outname),
         _decodedFile(NULL),
+        _outname(outname),
         _decodedBytes(0),
         _currentWidth(0),
         _currentHeight(0) {}

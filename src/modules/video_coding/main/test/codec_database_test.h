@@ -12,7 +12,6 @@
 #define WEBRTC_MODULES_VIDEO_CODING_TEST_CODEC_DATABASE_TEST_H_
 
 #include "video_coding.h"
-#include "test_macros.h"
 #include "test_util.h"
 
 #include <string.h>
@@ -46,9 +45,7 @@ private:
     WebRtc_UWord16                   _height;
     WebRtc_UWord32                   _lengthSourceFrame;
     WebRtc_UWord32                   _timeStamp;
-    int                              vcmMacrosTests;
-    int                              vcmMacrosErrors;
-    float                           _frameRate;
+    float                            _frameRate;
 }; // end of codecDBTest class definition
 
 #endif // WEBRTC_MODULES_VIDEO_CODING_TEST_CODEC_DATABASE_TEST_H_
