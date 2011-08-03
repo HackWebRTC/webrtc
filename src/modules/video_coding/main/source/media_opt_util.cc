@@ -59,6 +59,9 @@ VCMNackFecMethod::ProtectionFactor(const
     _protectionFactorK = _fecMethod->_protectionFactorK;
     _protectionFactorD = _fecMethod->_protectionFactorD;
 
+    _useUepProtectionD = _fecMethod->_useUepProtectionD;
+    _useUepProtectionK = _fecMethod->_useUepProtectionK;
+
     // When in Hybrid mode (RTT range), adjust FEC rates based on the
     // RTT (NACK effectiveness) - adjustment factor is in the range [0,1].
     if (parameters->rtt < kHighRttNackMs)
