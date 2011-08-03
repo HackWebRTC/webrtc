@@ -14,35 +14,62 @@
 #include <sys/stat.h>
 #endif
 
-#include "tick_util.h"
 #include "gtest/gtest.h"
-#include "module_common_types.h"
 
 #include "audio_processing.h"
-
 #include "cpu_features_wrapper.h"
+#include "module_common_types.h"
+#include "tick_util.h"
+#include "webrtc/audio_processing/debug.pb.h"
 
 using webrtc::AudioFrame;
-using webrtc::TickInterval;
-using webrtc::TickTime;
-
 using webrtc::AudioProcessing;
 using webrtc::GainControl;
 using webrtc::NoiseSuppression;
+using webrtc::TickInterval;
+using webrtc::TickTime;
+using webrtc::audioproc::Event;
+using webrtc::audioproc::Init;
+using webrtc::audioproc::ReverseStream;
+using webrtc::audioproc::Stream;
+
+namespace {
+// Returns true on success, false on error or end-of-file.
+bool ReadMessageFromFile(FILE* file,
+                        ::google::protobuf::MessageLite* msg) {
+  // The "wire format" for the size is little-endian.
+  // Assume process_test is running on a little-endian machine.
+  int32_t size;
+  if (fread(&size, sizeof(int32_t), 1, file) != 1) {
+    return false;
+  }
+  if (size <= 0) {
+    return false;
+  }
+  size_t usize = static_cast<size_t>(size);
+
+  char array[usize];
+  if (fread(array, sizeof(char), usize, file) != usize) {
+    return false;
+  }
+
+  msg->Clear();
+  return msg->ParseFromArray(array, usize);
+}
 
 void usage() {
   printf(
-  "Usage: process_test [options] [-ir REVERSE_FILE] [-i PRIMARY_FILE]\n");
-  printf(
-  "  [-o OUT_FILE]\n");
+  "Usage: process_test [options] [-pb PROTOBUF_FILE]\n"
+  "  [-ir REVERSE_FILE] [-i PRIMARY_FILE] [-o OUT_FILE]\n");
   printf(
   "process_test is a test application for AudioProcessing.\n\n"
-  "When -ir or -i is specified the files will be processed directly in a\n"
-  "simulation mode. Otherwise the full set of test files is expected to be\n"
-  "present in the working directory.\n");
+  "When a protobuf debug file is available, specify it with -pb.\n"
+  "Alternately, when -ir or -i is used, the specified files will be\n"
+  "processed directly in a simulation mode. Otherwise the full set of\n"
+  "legacy test files is expected to be present in the working directory.\n");
   printf("\n");
   printf("Options\n");
-  printf("General configuration:\n");
+  printf("General configuration (only used for the simulation mode):\n");
   printf("  -fs SAMPLE_RATE_HZ\n");
   printf("  -ch CHANNELS_IN CHANNELS_OUT\n");
   printf("  -rch REVERSE_CHANNELS\n");
@@ -73,7 +100,7 @@ void usage() {
   printf("  --ns_high\n");
   printf("  --ns_very_high\n");
   printf("\n  -vad     Voice activity detection\n");
-  printf("  --vad_out_file FILE");
+  printf("  --vad_out_file FILE\n");
   printf("\n");
   printf("Modifiers:\n");
   printf("  --perf          Measure performance.\n");
@@ -101,6 +128,7 @@ void void_main(int argc, char* argv[]) {
   WebRtc_UWord32 version_bytes_remaining = sizeof(version);
   WebRtc_UWord32 version_position = 0;
 
+  const char* pb_filename = NULL;
   const char* far_filename = NULL;
   const char* near_filename = NULL;
   const char* out_filename = NULL;
@@ -124,7 +152,12 @@ void void_main(int argc, char* argv[]) {
   //bool interleaved = true;
 
   for (int i = 1; i < argc; i++) {
-     if (strcmp(argv[i], "-ir") == 0) {
+     if (strcmp(argv[i], "-pb") == 0) {
+      i++;
+      ASSERT_LT(i, argc) << "Specify protobuf filename after -pb";
+      pb_filename = argv[i];
+
+    } else if (strcmp(argv[i], "-ir") == 0) {
       i++;
       ASSERT_LT(i, argc) << "Specify filename after -ir";
       far_filename = argv[i];
@@ -296,10 +329,17 @@ void void_main(int argc, char* argv[]) {
       printf("%s\n", version);
       return;
 
+    } else if (strcmp(argv[i], "--debug_recording") == 0) {
+      i++;
+      ASSERT_LT(i, argc) << "Specify filename after --debug_recording";
+      ASSERT_EQ(apm->kNoError, apm->StartDebugRecording(argv[i]));
     } else {
       FAIL() << "Unrecognized argument " << argv[i];
     }
   }
+  // If we're reading a protobuf file, ensure a simulation hasn't also
+  // been requested (which makes no sense...)
+  ASSERT_FALSE(pb_filename && simulating);
 
   if (verbose) {
     printf("Sample rate: %d Hz\n", sample_rate_hz);
@@ -322,14 +362,15 @@ void void_main(int argc, char* argv[]) {
     near_filename = near_file_default;
   }
 
-  if (out_filename == NULL) {
+  if (!out_filename) {
     out_filename = out_file_default;
   }
 
-  if (vad_out_filename == NULL) {
+  if (!vad_out_filename) {
     vad_out_filename = vad_file_default;
   }
 
+  FILE* pb_file = NULL;
   FILE* far_file = NULL;
   FILE* near_file = NULL;
   FILE* out_file = NULL;
@@ -340,35 +381,49 @@ void void_main(int argc, char* argv[]) {
   FILE* aecm_echo_path_in_file = NULL;
   FILE* aecm_echo_path_out_file = NULL;
 
-  if (far_filename != NULL) {
-    far_file = fopen(far_filename, "rb");
-    ASSERT_TRUE(NULL != far_file) << "Unable to open far-end audio file "
-                                  << far_filename;
-  }
+  if (pb_filename) {
+    pb_file = fopen(pb_filename, "rb");
+    ASSERT_TRUE(NULL != pb_file) << "Unable to open protobuf file "
+                                 << pb_filename;
+  } else {
+    if (far_filename) {
+      far_file = fopen(far_filename, "rb");
+      ASSERT_TRUE(NULL != far_file) << "Unable to open far-end audio file "
+                                    << far_filename;
+    }
 
-  near_file = fopen(near_filename, "rb");
-  ASSERT_TRUE(NULL != near_file) << "Unable to open near-end audio file "
-                                 << near_filename;
-  struct stat st;
-  stat(near_filename, &st);
-  int near_size_samples = st.st_size / sizeof(int16_t);
+    near_file = fopen(near_filename, "rb");
+    ASSERT_TRUE(NULL != near_file) << "Unable to open near-end audio file "
+                                   << near_filename;
+    if (!simulating) {
+      event_file = fopen(event_filename, "rb");
+      ASSERT_TRUE(NULL != event_file) << "Unable to open event file "
+                                      << event_filename;
+
+      delay_file = fopen(delay_filename, "rb");
+      ASSERT_TRUE(NULL != delay_file) << "Unable to open buffer file "
+                                      << delay_filename;
+
+      drift_file = fopen(drift_filename, "rb");
+      ASSERT_TRUE(NULL != drift_file) << "Unable to open drift file "
+                                      << drift_filename;
+    }
+  }
 
   out_file = fopen(out_filename, "wb");
   ASSERT_TRUE(NULL != out_file) << "Unable to open output audio file "
                                 << out_filename;
 
-  if (!simulating) {
-    event_file = fopen(event_filename, "rb");
-    ASSERT_TRUE(NULL != event_file) << "Unable to open event file "
-                                    << event_filename;
-
-    delay_file = fopen(delay_filename, "rb");
-    ASSERT_TRUE(NULL != delay_file) << "Unable to open buffer file "
-                                    << delay_filename;
-
-    drift_file = fopen(drift_filename, "rb");
-    ASSERT_TRUE(NULL != drift_file) << "Unable to open drift file "
-                                    << drift_filename;
+  int near_size_samples = 0;
+  if (pb_file) {
+    struct stat st;
+    stat(pb_filename, &st);
+    // Crude estimate, but should be good enough.
+    near_size_samples = st.st_size / 3 / sizeof(int16_t);
+  } else {
+    struct stat st;
+    stat(near_filename, &st);
+    near_size_samples = st.st_size / sizeof(int16_t);
   }
 
   if (apm->voice_detection()->is_enabled()) {
@@ -399,7 +454,6 @@ void void_main(int argc, char* argv[]) {
     aecm_echo_path_out_file = fopen(aecm_echo_path_out_filename, "wb");
     ASSERT_TRUE(NULL != aecm_echo_path_out_file) << "Unable to open file "
                                                  << aecm_echo_path_out_filename;
-
   }
 
   enum Events {
@@ -433,190 +487,341 @@ void void_main(int argc, char* argv[]) {
   WebRtc_Word64 min_time_us = 1e6;
   WebRtc_Word64 min_time_reverse_us = 1e6;
 
-  while (simulating || feof(event_file) == 0) {
-    std::ostringstream trace_stream;
-    trace_stream << "Processed frames: " << reverse_count << " (reverse), "
-                 << primary_count << " (primary)";
-    SCOPED_TRACE(trace_stream.str());
+  // TODO(ajm): Ideally we would refactor this block into separate functions,
+  //            but for now we want to share the variables.
+  if (pb_file) {
+    Event event_msg;
+    while (ReadMessageFromFile(pb_file, &event_msg)) {
+      std::ostringstream trace_stream;
+      trace_stream << "Processed frames: " << reverse_count << " (reverse), "
+                   << primary_count << " (primary)";
+      SCOPED_TRACE(trace_stream.str());
 
+      if (event_msg.type() == Event::INIT) {
+        ASSERT_TRUE(event_msg.has_init());
+        const Init msg = event_msg.init();
 
-    if (simulating) {
-      if (far_file == NULL) {
-        event = kCaptureEvent;
-      } else {
-        if (event == kRenderEvent) {
+        ASSERT_TRUE(msg.has_sample_rate());
+        ASSERT_EQ(apm->kNoError,
+            apm->set_sample_rate_hz(msg.sample_rate()));
+
+        ASSERT_TRUE(msg.has_device_sample_rate());
+        ASSERT_EQ(apm->kNoError,
+                  apm->echo_cancellation()->set_device_sample_rate_hz(
+                      msg.device_sample_rate()));
+
+        ASSERT_TRUE(msg.has_num_input_channels());
+        ASSERT_TRUE(msg.has_num_output_channels());
+        ASSERT_EQ(apm->kNoError,
+            apm->set_num_channels(msg.num_input_channels(),
+                                  msg.num_output_channels()));
+
+        ASSERT_TRUE(msg.has_num_reverse_channels());
+        ASSERT_EQ(apm->kNoError,
+            apm->set_num_reverse_channels(msg.num_reverse_channels()));
+
+        samples_per_channel = msg.sample_rate() / 100;
+        far_frame._frequencyInHz = msg.sample_rate();
+        far_frame._payloadDataLengthInSamples =
+            msg.num_reverse_channels() * samples_per_channel;
+        near_frame._frequencyInHz = msg.sample_rate();
+
+        if (verbose) {
+          printf("Init at frame: %d (primary), %d (reverse)\n",
+              primary_count, reverse_count);
+          printf("  Sample rate: %d Hz\n", sample_rate_hz);
+        }
+
+      } else if (event_msg.type() == Event::REVERSE_STREAM) {
+        ASSERT_TRUE(event_msg.has_reverse_stream());
+        const ReverseStream msg = event_msg.reverse_stream();
+        reverse_count++;
+
+        ASSERT_TRUE(msg.has_data());
+        ASSERT_EQ(sizeof(int16_t) * far_frame._payloadDataLengthInSamples,
+                  msg.data().size());
+        memcpy(far_frame._payloadData, msg.data().data(), msg.data().size());
+
+        if (perf_testing) {
+          t0 = TickTime::Now();
+        }
+
+        ASSERT_EQ(apm->kNoError,
+                  apm->AnalyzeReverseStream(&far_frame));
+
+        if (perf_testing) {
+          t1 = TickTime::Now();
+          TickInterval tick_diff = t1 - t0;
+          acc_ticks += tick_diff;
+          if (tick_diff.Microseconds() > max_time_reverse_us) {
+            max_time_reverse_us = tick_diff.Microseconds();
+          }
+          if (tick_diff.Microseconds() < min_time_reverse_us) {
+            min_time_reverse_us = tick_diff.Microseconds();
+          }
+        }
+
+      } else if (event_msg.type() == Event::STREAM) {
+        ASSERT_TRUE(event_msg.has_stream());
+        const Stream msg = event_msg.stream();
+        primary_count++;
+
+        near_frame._audioChannel = apm->num_input_channels();
+        near_frame._payloadDataLengthInSamples =
+            apm->num_input_channels() * samples_per_channel;
+
+        ASSERT_TRUE(msg.has_input_data());
+        ASSERT_EQ(sizeof(int16_t) * near_frame._payloadDataLengthInSamples,
+                  msg.input_data().size());
+        memcpy(near_frame._payloadData,
+               msg.input_data().data(),
+               msg.input_data().size());
+
+        near_read_samples += near_frame._payloadDataLengthInSamples;
+        if (progress && primary_count % 100 == 0) {
+          printf("%.0f%% complete\r",
+              (near_read_samples * 100.0) / near_size_samples);
+          fflush(stdout);
+        }
+
+        if (perf_testing) {
+          t0 = TickTime::Now();
+        }
+
+        ASSERT_EQ(apm->kNoError,
+                  apm->gain_control()->set_stream_analog_level(msg.level()));
+        ASSERT_EQ(apm->kNoError,
+                  apm->set_stream_delay_ms(msg.delay()));
+        ASSERT_EQ(apm->kNoError,
+            apm->echo_cancellation()->set_stream_drift_samples(msg.drift()));
+
+        int err = apm->ProcessStream(&near_frame);
+        if (err == apm->kBadStreamParameterWarning) {
+          printf("Bad parameter warning. %s\n", trace_stream.str().c_str());
+        }
+        ASSERT_TRUE(err == apm->kNoError ||
+                    err == apm->kBadStreamParameterWarning);
+
+        capture_level = apm->gain_control()->stream_analog_level();
+
+        stream_has_voice =
+            static_cast<int8_t>(apm->voice_detection()->stream_has_voice());
+        if (vad_out_file != NULL) {
+          ASSERT_EQ(1u, fwrite(&stream_has_voice,
+                               sizeof(stream_has_voice),
+                               1,
+                               vad_out_file));
+        }
+
+        if (apm->gain_control()->mode() != GainControl::kAdaptiveAnalog) {
+          ASSERT_EQ(msg.level(), capture_level);
+        }
+
+        if (perf_testing) {
+          t1 = TickTime::Now();
+          TickInterval tick_diff = t1 - t0;
+          acc_ticks += tick_diff;
+          if (tick_diff.Microseconds() > max_time_us) {
+            max_time_us = tick_diff.Microseconds();
+          }
+          if (tick_diff.Microseconds() < min_time_us) {
+            min_time_us = tick_diff.Microseconds();
+          }
+        }
+
+        ASSERT_EQ(near_frame._payloadDataLengthInSamples,
+                  fwrite(near_frame._payloadData,
+                         sizeof(int16_t),
+                         near_frame._payloadDataLengthInSamples,
+                         out_file));
+      }
+    }
+
+    ASSERT_TRUE(feof(pb_file));
+    printf("100%% complete\r");
+
+  } else {
+    while (simulating || feof(event_file) == 0) {
+      std::ostringstream trace_stream;
+      trace_stream << "Processed frames: " << reverse_count << " (reverse), "
+                   << primary_count << " (primary)";
+      SCOPED_TRACE(trace_stream.str());
+
+      if (simulating) {
+        if (far_file == NULL) {
           event = kCaptureEvent;
         } else {
-          event = kRenderEvent;
-        }
-      }
-    } else {
-      read_count = fread(&event, sizeof(event), 1, event_file);
-      if (read_count != 1) {
-        break;
-      }
-      //if (fread(&event, sizeof(event), 1, event_file) != 1) {
-      //  break; // This is expected.
-      //}
-    }
-
-    if (event == kInitializeEvent || event == kResetEventDeprecated) {
-      ASSERT_EQ(1u,
-          fread(&sample_rate_hz, sizeof(sample_rate_hz), 1, event_file));
-      samples_per_channel = sample_rate_hz / 100;
-
-      ASSERT_EQ(1u,
-          fread(&device_sample_rate_hz,
-                sizeof(device_sample_rate_hz),
-                1,
-                event_file));
-
-      ASSERT_EQ(apm->kNoError,
-          apm->set_sample_rate_hz(sample_rate_hz));
-
-      ASSERT_EQ(apm->kNoError,
-                apm->echo_cancellation()->set_device_sample_rate_hz(
-                    device_sample_rate_hz));
-
-      far_frame._frequencyInHz = sample_rate_hz;
-      near_frame._frequencyInHz = sample_rate_hz;
-
-      if (verbose) {
-        printf("Init at frame: %d (primary), %d (reverse)\n",
-            primary_count, reverse_count);
-        printf("  Sample rate: %d Hz\n", sample_rate_hz);
-      }
-
-    } else if (event == kRenderEvent) {
-      reverse_count++;
-      far_frame._audioChannel = num_render_channels;
-      far_frame._payloadDataLengthInSamples =
-          num_render_channels * samples_per_channel;
-
-      read_count = fread(far_frame._payloadData,
-                         sizeof(WebRtc_Word16),
-                         far_frame._payloadDataLengthInSamples,
-                         far_file);
-
-      if (simulating) {
-        if (read_count != far_frame._payloadDataLengthInSamples) {
-          break; // This is expected.
+          if (event == kRenderEvent) {
+            event = kCaptureEvent;
+          } else {
+            event = kRenderEvent;
+          }
         }
       } else {
-        ASSERT_EQ(read_count,
-            far_frame._payloadDataLengthInSamples);
-      }
-
-      if (perf_testing) {
-        t0 = TickTime::Now();
-      }
-
-      ASSERT_EQ(apm->kNoError,
-                apm->AnalyzeReverseStream(&far_frame));
-
-      if (perf_testing) {
-        t1 = TickTime::Now();
-        TickInterval tick_diff = t1 - t0;
-        acc_ticks += tick_diff;
-        if (tick_diff.Microseconds() > max_time_reverse_us) {
-          max_time_reverse_us = tick_diff.Microseconds();
-        }
-        if (tick_diff.Microseconds() < min_time_reverse_us) {
-          min_time_reverse_us = tick_diff.Microseconds();
+        read_count = fread(&event, sizeof(event), 1, event_file);
+        if (read_count != 1) {
+          break;
         }
       }
 
-    } else if (event == kCaptureEvent) {
-      primary_count++;
-      near_frame._audioChannel = num_capture_input_channels;
-      near_frame._payloadDataLengthInSamples =
-          num_capture_input_channels * samples_per_channel;
+      if (event == kInitializeEvent || event == kResetEventDeprecated) {
+        ASSERT_EQ(1u,
+            fread(&sample_rate_hz, sizeof(sample_rate_hz), 1, event_file));
+        samples_per_channel = sample_rate_hz / 100;
 
-      read_count = fread(near_frame._payloadData,
+        ASSERT_EQ(1u,
+            fread(&device_sample_rate_hz,
+                  sizeof(device_sample_rate_hz),
+                  1,
+                  event_file));
+
+        ASSERT_EQ(apm->kNoError,
+            apm->set_sample_rate_hz(sample_rate_hz));
+
+        ASSERT_EQ(apm->kNoError,
+                  apm->echo_cancellation()->set_device_sample_rate_hz(
+                      device_sample_rate_hz));
+
+        far_frame._frequencyInHz = sample_rate_hz;
+        near_frame._frequencyInHz = sample_rate_hz;
+
+        if (verbose) {
+          printf("Init at frame: %d (primary), %d (reverse)\n",
+              primary_count, reverse_count);
+          printf("  Sample rate: %d Hz\n", sample_rate_hz);
+        }
+
+      } else if (event == kRenderEvent) {
+        reverse_count++;
+        far_frame._audioChannel = num_render_channels;
+        far_frame._payloadDataLengthInSamples =
+            num_render_channels * samples_per_channel;
+
+        read_count = fread(far_frame._payloadData,
+                           sizeof(WebRtc_Word16),
+                           far_frame._payloadDataLengthInSamples,
+                           far_file);
+
+        if (simulating) {
+          if (read_count != far_frame._payloadDataLengthInSamples) {
+            break; // This is expected.
+          }
+        } else {
+          ASSERT_EQ(read_count,
+              far_frame._payloadDataLengthInSamples);
+        }
+
+        if (perf_testing) {
+          t0 = TickTime::Now();
+        }
+
+        ASSERT_EQ(apm->kNoError,
+                  apm->AnalyzeReverseStream(&far_frame));
+
+        if (perf_testing) {
+          t1 = TickTime::Now();
+          TickInterval tick_diff = t1 - t0;
+          acc_ticks += tick_diff;
+          if (tick_diff.Microseconds() > max_time_reverse_us) {
+            max_time_reverse_us = tick_diff.Microseconds();
+          }
+          if (tick_diff.Microseconds() < min_time_reverse_us) {
+            min_time_reverse_us = tick_diff.Microseconds();
+          }
+        }
+
+      } else if (event == kCaptureEvent) {
+        primary_count++;
+        near_frame._audioChannel = num_capture_input_channels;
+        near_frame._payloadDataLengthInSamples =
+            num_capture_input_channels * samples_per_channel;
+
+        read_count = fread(near_frame._payloadData,
+                           sizeof(WebRtc_Word16),
+                           near_frame._payloadDataLengthInSamples,
+                           near_file);
+
+        near_read_samples += read_count;
+        if (progress && primary_count % 100 == 0) {
+          printf("%.0f%% complete\r",
+              (near_read_samples * 100.0) / near_size_samples);
+          fflush(stdout);
+        }
+        if (simulating) {
+          if (read_count != near_frame._payloadDataLengthInSamples) {
+            break; // This is expected.
+          }
+
+          delay_ms = 0;
+          drift_samples = 0;
+        } else {
+          ASSERT_EQ(read_count,
+              near_frame._payloadDataLengthInSamples);
+
+          // TODO(ajm): sizeof(delay_ms) for current files?
+          ASSERT_EQ(1u,
+              fread(&delay_ms, 2, 1, delay_file));
+          ASSERT_EQ(1u,
+              fread(&drift_samples, sizeof(drift_samples), 1, drift_file));
+        }
+
+        if (perf_testing) {
+          t0 = TickTime::Now();
+        }
+
+        // TODO(ajm): fake an analog gain while simulating.
+
+        int capture_level_in = capture_level;
+        ASSERT_EQ(apm->kNoError,
+                  apm->gain_control()->set_stream_analog_level(capture_level));
+        ASSERT_EQ(apm->kNoError,
+                  apm->set_stream_delay_ms(delay_ms));
+        ASSERT_EQ(apm->kNoError,
+            apm->echo_cancellation()->set_stream_drift_samples(drift_samples));
+
+        int err = apm->ProcessStream(&near_frame);
+        if (err == apm->kBadStreamParameterWarning) {
+          printf("Bad parameter warning. %s\n", trace_stream.str().c_str());
+        }
+        ASSERT_TRUE(err == apm->kNoError ||
+                    err == apm->kBadStreamParameterWarning);
+
+        capture_level = apm->gain_control()->stream_analog_level();
+
+        stream_has_voice =
+            static_cast<int8_t>(apm->voice_detection()->stream_has_voice());
+        if (vad_out_file != NULL) {
+          ASSERT_EQ(1u, fwrite(&stream_has_voice,
+                               sizeof(stream_has_voice),
+                               1,
+                               vad_out_file));
+        }
+
+        if (apm->gain_control()->mode() != GainControl::kAdaptiveAnalog) {
+          ASSERT_EQ(capture_level_in, capture_level);
+        }
+
+        if (perf_testing) {
+          t1 = TickTime::Now();
+          TickInterval tick_diff = t1 - t0;
+          acc_ticks += tick_diff;
+          if (tick_diff.Microseconds() > max_time_us) {
+            max_time_us = tick_diff.Microseconds();
+          }
+          if (tick_diff.Microseconds() < min_time_us) {
+            min_time_us = tick_diff.Microseconds();
+          }
+        }
+
+        ASSERT_EQ(near_frame._payloadDataLengthInSamples,
+                  fwrite(near_frame._payloadData,
                          sizeof(WebRtc_Word16),
                          near_frame._payloadDataLengthInSamples,
-                         near_file);
-
-      near_read_samples += read_count;
-      if (progress && primary_count % 100 == 0) {
-        printf("%.0f%% complete\r",
-            (near_read_samples * 100.0) / near_size_samples);
-        fflush(stdout);
+                         out_file));
       }
-      if (simulating) {
-        if (read_count != near_frame._payloadDataLengthInSamples) {
-          break; // This is expected.
-        }
-
-        delay_ms = 0;
-        drift_samples = 0;
-      } else {
-        ASSERT_EQ(read_count,
-            near_frame._payloadDataLengthInSamples);
-
-        // TODO(ajm): sizeof(delay_ms) for current files?
-        ASSERT_EQ(1u,
-            fread(&delay_ms, 2, 1, delay_file));
-        ASSERT_EQ(1u,
-            fread(&drift_samples, sizeof(drift_samples), 1, drift_file));
+      else {
+        FAIL() << "Event " << event << " is unrecognized";
       }
-
-      if (perf_testing) {
-        t0 = TickTime::Now();
-      }
-
-      // TODO(ajm): fake an analog gain while simulating.
-
-      int capture_level_in = capture_level;
-      ASSERT_EQ(apm->kNoError,
-                apm->gain_control()->set_stream_analog_level(capture_level));
-      ASSERT_EQ(apm->kNoError,
-                apm->set_stream_delay_ms(delay_ms));
-      ASSERT_EQ(apm->kNoError,
-          apm->echo_cancellation()->set_stream_drift_samples(drift_samples));
-
-      int err = apm->ProcessStream(&near_frame);
-      if (err == apm->kBadStreamParameterWarning) {
-        printf("Bad parameter warning. %s\n", trace_stream.str().c_str());
-      }
-      ASSERT_TRUE(err == apm->kNoError ||
-                  err == apm->kBadStreamParameterWarning);
-
-      capture_level = apm->gain_control()->stream_analog_level();
-
-      stream_has_voice =
-          static_cast<int8_t>(apm->voice_detection()->stream_has_voice());
-      if (vad_out_file != NULL) {
-        ASSERT_EQ(1u, fwrite(&stream_has_voice,
-                             sizeof(stream_has_voice),
-                             1,
-                             vad_out_file));
-      }
-
-      if (apm->gain_control()->mode() != GainControl::kAdaptiveAnalog) {
-        ASSERT_EQ(capture_level_in, capture_level);
-      }
-
-      if (perf_testing) {
-        t1 = TickTime::Now();
-        TickInterval tick_diff = t1 - t0;
-        acc_ticks += tick_diff;
-        if (tick_diff.Microseconds() > max_time_us) {
-          max_time_us = tick_diff.Microseconds();
-        }
-        if (tick_diff.Microseconds() < min_time_us) {
-          min_time_us = tick_diff.Microseconds();
-        }
-      }
-
-      ASSERT_EQ(near_frame._payloadDataLengthInSamples,
-                fwrite(near_frame._payloadData,
-                       sizeof(WebRtc_Word16),
-                       near_frame._payloadDataLengthInSamples,
-                       out_file));
-    }
-    else {
-      FAIL() << "Event " << event << " is unrecognized";
     }
   }
 
@@ -638,21 +843,24 @@ void void_main(int argc, char* argv[]) {
         primary_count, reverse_count);
   }
 
-  int8_t temp_int8;
-  if (far_file != NULL) {
-    read_count = fread(&temp_int8, sizeof(temp_int8), 1, far_file);
-    EXPECT_NE(0, feof(far_file)) << "Far-end file not fully processed";
-  }
-  read_count = fread(&temp_int8, sizeof(temp_int8), 1, near_file);
-  EXPECT_NE(0, feof(near_file)) << "Near-end file not fully processed";
+  if (!pb_file) {
+    int8_t temp_int8;
+    if (far_file) {
+      read_count = fread(&temp_int8, sizeof(temp_int8), 1, far_file);
+      EXPECT_NE(0, feof(far_file)) << "Far-end file not fully processed";
+    }
 
-  if (!simulating) {
-    read_count = fread(&temp_int8, sizeof(temp_int8), 1, event_file);
-    EXPECT_NE(0, feof(event_file)) << "Event file not fully processed";
-    read_count = fread(&temp_int8, sizeof(temp_int8), 1, delay_file);
-    EXPECT_NE(0, feof(delay_file)) << "Delay file not fully processed";
-    read_count = fread(&temp_int8, sizeof(temp_int8), 1, drift_file);
-    EXPECT_NE(0, feof(drift_file)) << "Drift file not fully processed";
+    read_count = fread(&temp_int8, sizeof(temp_int8), 1, near_file);
+    EXPECT_NE(0, feof(near_file)) << "Near-end file not fully processed";
+
+    if (!simulating) {
+      read_count = fread(&temp_int8, sizeof(temp_int8), 1, event_file);
+      EXPECT_NE(0, feof(event_file)) << "Event file not fully processed";
+      read_count = fread(&temp_int8, sizeof(temp_int8), 1, delay_file);
+      EXPECT_NE(0, feof(delay_file)) << "Delay file not fully processed";
+      read_count = fread(&temp_int8, sizeof(temp_int8), 1, drift_file);
+      EXPECT_NE(0, feof(drift_file)) << "Drift file not fully processed";
+    }
   }
 
   if (perf_testing) {
@@ -673,6 +881,7 @@ void void_main(int argc, char* argv[]) {
   AudioProcessing::Destroy(apm);
   apm = NULL;
 }
+}  // namespace
 
 int main(int argc, char* argv[])
 {

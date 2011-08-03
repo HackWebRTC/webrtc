@@ -12,6 +12,7 @@
   ],
   'variables': {
     'protoc_out_dir': '<(SHARED_INTERMEDIATE_DIR)/protoc_out',
+    'protoc_out_relpath': 'webrtc/audio_processing',
   },
   'targets': [
     {
@@ -25,7 +26,7 @@
         }],
       ],
       'dependencies': [
-        'apm_unittest_proto',
+        'unittest_proto',
         'source/apm.gyp:audio_processing',
         '../../../common_audio/signal_processing_library/main/source/spl.gyp:spl',
         '../../../system_wrappers/source/system_wrappers.gyp:system_wrappers',
@@ -39,19 +40,19 @@
       ],
       'sources': [
         'test/unit_test/unit_test.cc',
-        '<(protoc_out_dir)/audio_processing_unittest.pb.cc',
-        '<(protoc_out_dir)/audio_processing_unittest.pb.h',
+        '<(protoc_out_dir)/<(protoc_out_relpath)/unittest.pb.cc',
+        '<(protoc_out_dir)/<(protoc_out_relpath)/unittest.pb.h',
       ],
     },
     {
       # Protobuf compiler / generate rule for unit_test
-      'target_name': 'apm_unittest_proto',
+      'target_name': 'unittest_proto',
       'type': 'none',
       'variables': {
         'proto_relpath': 'test/unit_test',
       },
       'sources': [
-        '<(proto_relpath)/audio_processing_unittest.proto',
+        '<(proto_relpath)/unittest.proto',
       ],
       'rules': [
         {
@@ -61,14 +62,14 @@
             '<(PRODUCT_DIR)/<(EXECUTABLE_PREFIX)protoc<(EXECUTABLE_SUFFIX)',
           ],
           'outputs': [
-            '<(protoc_out_dir)/<(RULE_INPUT_ROOT).pb.cc',
+            '<(protoc_out_dir)/<(protoc_out_relpath)/<(RULE_INPUT_ROOT).pb.cc',
             '<(protoc_out_dir)/<(RULE_INPUT_ROOT).pb.h',
           ],
           'action': [
             '<(PRODUCT_DIR)/<(EXECUTABLE_PREFIX)protoc<(EXECUTABLE_SUFFIX)',
             '--proto_path=<(proto_relpath)',
             '<(proto_relpath)/<(RULE_INPUT_NAME)',
-            '--cpp_out=<(protoc_out_dir)',
+            '--cpp_out=<(protoc_out_dir)/<(protoc_out_relpath)',
           ],
           'message': 'Generating C++ code from <(RULE_INPUT_PATH)',
         },
@@ -88,9 +89,11 @@
         '../../../system_wrappers/source/system_wrappers.gyp:system_wrappers',
         '../../../../testing/gtest.gyp:gtest',
         '../../../../testing/gtest.gyp:gtest_main',
+        '../../../../third_party/protobuf/protobuf.gyp:protobuf_lite',
       ],
       'include_dirs': [
         '../../../../testing/gtest/include',
+        '<(protoc_out_dir)',
       ],
       'sources': [
         'test/process_test/process_test.cc',

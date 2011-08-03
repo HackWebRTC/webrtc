@@ -10,36 +10,24 @@
 
 #include "audio_processing_impl.h"
 
-#include <cassert>
-
-#include "module_common_types.h"
-
-#include "critical_section_wrapper.h"
-#include "file_wrapper.h"
+#include <assert.h>
 
 #include "audio_buffer.h"
+#include "critical_section_wrapper.h"
 #include "echo_cancellation_impl.h"
 #include "echo_control_mobile_impl.h"
+#include "file_wrapper.h"
 #include "high_pass_filter_impl.h"
 #include "gain_control_impl.h"
 #include "level_estimator_impl.h"
+#include "module_common_types.h"
 #include "noise_suppression_impl.h"
 #include "processing_component.h"
 #include "splitting_filter.h"
 #include "voice_detection_impl.h"
+#include "webrtc/audio_processing/debug.pb.h"
 
 namespace webrtc {
-namespace {
-
-enum Events {
-  kInitializeEvent,
-  kRenderEvent,
-  kCaptureEvent
-};
-
-const char kMagicNumber[] = "#!vqetrace1.2";
-}  // namespace
-
 AudioProcessing* AudioProcessing::Create(int id) {
   /*WEBRTC_TRACE(webrtc::kTraceModuleCall,
              webrtc::kTraceAudioProcessing,
@@ -69,6 +57,7 @@ AudioProcessingImpl::AudioProcessingImpl(int id)
       noise_suppression_(NULL),
       voice_detection_(NULL),
       debug_file_(FileWrapper::Create()),
+      event_msg_(new audioproc::Event()),
       crit_(CriticalSectionWrapper::CreateCriticalSection()),
       render_audio_(NULL),
       capture_audio_(NULL),
@@ -77,9 +66,9 @@ AudioProcessingImpl::AudioProcessingImpl(int id)
       samples_per_channel_(sample_rate_hz_ / 100),
       stream_delay_ms_(0),
       was_stream_delay_set_(false),
-      num_render_input_channels_(1),
-      num_capture_input_channels_(1),
-      num_capture_output_channels_(1) {
+      num_reverse_channels_(1),
+      num_input_channels_(1),
+      num_output_channels_(1) {
 
   echo_cancellation_ = new EchoCancellationImpl(this);
   component_list_.push_back(echo_cancellation_);
@@ -117,15 +106,18 @@ AudioProcessingImpl::~AudioProcessingImpl() {
   delete debug_file_;
   debug_file_ = NULL;
 
+  delete event_msg_;
+  event_msg_ = NULL;
+
   delete crit_;
   crit_ = NULL;
 
-  if (render_audio_ != NULL) {
+  if (render_audio_) {
     delete render_audio_;
     render_audio_ = NULL;
   }
 
-  if (capture_audio_ != NULL) {
+  if (capture_audio_) {
     delete capture_audio_;
     capture_audio_ = NULL;
   }
@@ -155,9 +147,9 @@ int AudioProcessingImpl::InitializeLocked() {
     capture_audio_ = NULL;
   }
 
-  render_audio_ = new AudioBuffer(num_render_input_channels_,
+  render_audio_ = new AudioBuffer(num_reverse_channels_,
                                   samples_per_channel_);
-  capture_audio_ = new AudioBuffer(num_capture_input_channels_,
+  capture_audio_ = new AudioBuffer(num_input_channels_,
                                    samples_per_channel_);
 
   was_stream_delay_set_ = false;
@@ -166,6 +158,13 @@ int AudioProcessingImpl::InitializeLocked() {
   std::list<ProcessingComponent*>::iterator it;
   for (it = component_list_.begin(); it != component_list_.end(); it++) {
     int err = (*it)->Initialize();
+    if (err != kNoError) {
+      return err;
+    }
+  }
+
+  if (debug_file_->Open()) {
+    int err = WriteInitMessage();
     if (err != kNoError) {
       return err;
     }
@@ -205,13 +204,13 @@ int AudioProcessingImpl::set_num_reverse_channels(int channels) {
     return kBadParameterError;
   }
 
-  num_render_input_channels_ = channels;
+  num_reverse_channels_ = channels;
 
   return InitializeLocked();
 }
 
 int AudioProcessingImpl::num_reverse_channels() const {
-  return num_render_input_channels_;
+  return num_reverse_channels_;
 }
 
 int AudioProcessingImpl::set_num_channels(
@@ -231,18 +230,18 @@ int AudioProcessingImpl::set_num_channels(
     return kBadParameterError;
   }
 
-  num_capture_input_channels_ = input_channels;
-  num_capture_output_channels_ = output_channels;
+  num_input_channels_ = input_channels;
+  num_output_channels_ = output_channels;
 
   return InitializeLocked();
 }
 
 int AudioProcessingImpl::num_input_channels() const {
-  return num_capture_input_channels_;
+  return num_input_channels_;
 }
 
 int AudioProcessingImpl::num_output_channels() const {
-  return num_capture_output_channels_;
+  return num_output_channels_;
 }
 
 int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
@@ -258,7 +257,7 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
     return kBadSampleRateError;
   }
 
-  if (frame->_audioChannel != num_capture_input_channels_) {
+  if (frame->_audioChannel != num_input_channels_) {
     return kBadNumberChannelsError;
   }
 
@@ -267,44 +266,28 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
   }
 
   if (debug_file_->Open()) {
-    WebRtc_UWord8 event = kCaptureEvent;
-    if (!debug_file_->Write(&event, sizeof(event))) {
-      return kFileError;
-    }
-
-    if (!debug_file_->Write(&frame->_frequencyInHz,
-                                   sizeof(frame->_frequencyInHz))) {
-      return kFileError;
-    }
-
-    if (!debug_file_->Write(&frame->_audioChannel,
-                                   sizeof(frame->_audioChannel))) {
-      return kFileError;
-    }
-
-    if (!debug_file_->Write(&frame->_payloadDataLengthInSamples,
-        sizeof(frame->_payloadDataLengthInSamples))) {
-      return kFileError;
-    }
-
-    if (!debug_file_->Write(frame->_payloadData,
-        sizeof(WebRtc_Word16) * frame->_payloadDataLengthInSamples *
-        frame->_audioChannel)) {
-      return kFileError;
-    }
+    event_msg_->set_type(audioproc::Event::STREAM);
+    audioproc::Stream* msg = event_msg_->mutable_stream();
+    const size_t data_size = sizeof(WebRtc_Word16) *
+                             frame->_payloadDataLengthInSamples *
+                             frame->_audioChannel;
+    msg->set_input_data(frame->_payloadData, data_size);
+    msg->set_delay(stream_delay_ms_);
+    msg->set_drift(echo_cancellation_->stream_drift_samples());
+    msg->set_level(gain_control_->stream_analog_level());
   }
 
   capture_audio_->DeinterleaveFrom(frame);
 
   // TODO(ajm): experiment with mixing and AEC placement.
-  if (num_capture_output_channels_ < num_capture_input_channels_) {
-    capture_audio_->Mix(num_capture_output_channels_);
+  if (num_output_channels_ < num_input_channels_) {
+    capture_audio_->Mix(num_output_channels_);
 
-    frame->_audioChannel = num_capture_output_channels_;
+    frame->_audioChannel = num_output_channels_;
   }
 
   if (sample_rate_hz_ == kSampleRate32kHz) {
-    for (int i = 0; i < num_capture_input_channels_; i++) {
+    for (int i = 0; i < num_input_channels_; i++) {
       // Split into a low and high band.
       SplittingFilterAnalysis(capture_audio_->data(i),
                               capture_audio_->low_pass_split_data(i),
@@ -360,7 +343,7 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
   //}
 
   if (sample_rate_hz_ == kSampleRate32kHz) {
-    for (int i = 0; i < num_capture_output_channels_; i++) {
+    for (int i = 0; i < num_output_channels_; i++) {
       // Recombine low and high bands.
       SplittingFilterSynthesis(capture_audio_->low_pass_split_data(i),
                                capture_audio_->high_pass_split_data(i),
@@ -371,6 +354,18 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
   }
 
   capture_audio_->InterleaveTo(frame);
+
+  if (debug_file_->Open()) {
+    audioproc::Stream* msg = event_msg_->mutable_stream();
+    const size_t data_size = sizeof(WebRtc_Word16) *
+                             frame->_payloadDataLengthInSamples *
+                             frame->_audioChannel;
+    msg->set_output_data(frame->_payloadData, data_size);
+    err = WriteMessageToDebugFile();
+    if (err != kNoError) {
+      return err;
+    }
+  }
 
   return kNoError;
 }
@@ -388,7 +383,7 @@ int AudioProcessingImpl::AnalyzeReverseStream(AudioFrame* frame) {
     return kBadSampleRateError;
   }
 
-  if (frame->_audioChannel != num_render_input_channels_) {
+  if (frame->_audioChannel != num_reverse_channels_) {
     return kBadNumberChannelsError;
   }
 
@@ -397,30 +392,15 @@ int AudioProcessingImpl::AnalyzeReverseStream(AudioFrame* frame) {
   }
 
   if (debug_file_->Open()) {
-    WebRtc_UWord8 event = kRenderEvent;
-    if (!debug_file_->Write(&event, sizeof(event))) {
-      return kFileError;
-    }
-
-    if (!debug_file_->Write(&frame->_frequencyInHz,
-                                   sizeof(frame->_frequencyInHz))) {
-      return kFileError;
-    }
-
-    if (!debug_file_->Write(&frame->_audioChannel,
-                                   sizeof(frame->_audioChannel))) {
-      return kFileError;
-    }
-
-    if (!debug_file_->Write(&frame->_payloadDataLengthInSamples,
-        sizeof(frame->_payloadDataLengthInSamples))) {
-      return kFileError;
-    }
-
-    if (!debug_file_->Write(frame->_payloadData,
-        sizeof(WebRtc_Word16) * frame->_payloadDataLengthInSamples *
-        frame->_audioChannel)) {
-      return kFileError;
+    event_msg_->set_type(audioproc::Event::REVERSE_STREAM);
+    audioproc::ReverseStream* msg = event_msg_->mutable_reverse_stream();
+    const size_t data_size = sizeof(WebRtc_Word16) *
+                             frame->_payloadDataLengthInSamples *
+                             frame->_audioChannel;
+    msg->set_data(frame->_payloadData, data_size);
+    err = WriteMessageToDebugFile();
+    if (err != kNoError) {
+      return err;
     }
   }
 
@@ -428,7 +408,7 @@ int AudioProcessingImpl::AnalyzeReverseStream(AudioFrame* frame) {
 
   // TODO(ajm): turn the splitting filter into a component?
   if (sample_rate_hz_ == kSampleRate32kHz) {
-    for (int i = 0; i < num_render_input_channels_; i++) {
+    for (int i = 0; i < num_reverse_channels_; i++) {
       // Split into low and high band.
       SplittingFilterAnalysis(render_audio_->data(i),
                               render_audio_->low_pass_split_data(i),
@@ -508,20 +488,9 @@ int AudioProcessingImpl::StartDebugRecording(
     return kFileError;
   }
 
-  if (debug_file_->WriteText("%s\n", kMagicNumber) == -1) {
-    debug_file_->CloseFile();
-    return kFileError;
-  }
-
-  // TODO(ajm): should we do this? If so, we need the number of channels etc.
-  // Record the default sample rate.
-  WebRtc_UWord8 event = kInitializeEvent;
-  if (!debug_file_->Write(&event, sizeof(event))) {
-    return kFileError;
-  }
-
-  if (!debug_file_->Write(&sample_rate_hz_, sizeof(sample_rate_hz_))) {
-    return kFileError;
+  int err = WriteInitMessage();
+  if (err != kNoError) {
+    return err;
   }
 
   return kNoError;
@@ -578,7 +547,7 @@ WebRtc_Word32 AudioProcessingImpl::Version(WebRtc_Word8* version,
   }
   memset(&version[position], 0, bytes_remaining);
 
-  WebRtc_Word8 my_version[] = "AudioProcessing 1.0.0";
+  char my_version[] = "AudioProcessing 1.0.0";
   // Includes null termination.
   WebRtc_UWord32 length = static_cast<WebRtc_UWord32>(strlen(my_version));
   if (bytes_remaining < length) {
@@ -630,6 +599,50 @@ WebRtc_Word32 AudioProcessingImpl::ChangeUniqueId(const WebRtc_Word32 id) {
              "ChangeUniqueId(new id = %d)",
              id);*/
   id_ = id;
+
+  return kNoError;
+}
+
+int AudioProcessingImpl::WriteMessageToDebugFile() {
+  int32_t size = event_msg_->ByteSize();
+  if (size <= 0) {
+    return kUnspecifiedError;
+  }
+#if defined(WEBRTC_BIG_ENDIAN)
+  // TODO(ajm): Use little-endian "on the wire". For the moment, we can be
+  //            pretty safe in assuming little-endian.
+#endif
+
+  if (!event_msg_->SerializeToString(&event_str_)) {
+    return kUnspecifiedError;
+  }
+
+  // Write message preceded by its size.
+  if (!debug_file_->Write(&size, sizeof(int32_t))) {
+    return kFileError;
+  }
+  if (!debug_file_->Write(event_str_.data(), event_str_.length())) {
+    return kFileError;
+  }
+
+  event_msg_->Clear();
+
+  return 0;
+}
+
+int AudioProcessingImpl::WriteInitMessage() {
+  event_msg_->set_type(audioproc::Event::INIT);
+  audioproc::Init* msg = event_msg_->mutable_init();
+  msg->set_sample_rate(sample_rate_hz_);
+  msg->set_device_sample_rate(echo_cancellation_->device_sample_rate_hz());
+  msg->set_num_input_channels(num_input_channels_);
+  msg->set_num_output_channels(num_output_channels_);
+  msg->set_num_reverse_channels(num_reverse_channels_);
+
+  int err = WriteMessageToDebugFile();
+  if (err != kNoError) {
+    return err;
+  }
 
   return kNoError;
 }

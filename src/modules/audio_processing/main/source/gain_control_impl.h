@@ -36,12 +36,12 @@ class GainControlImpl : public GainControl,
 
   // GainControl implementation.
   virtual bool is_enabled() const;
+  virtual int stream_analog_level();
 
  private:
   // GainControl implementation.
   virtual int Enable(bool enable);
   virtual int set_stream_analog_level(int level);
-  virtual int stream_analog_level();
   virtual int set_mode(Mode mode);
   virtual Mode mode() const;
   virtual int set_target_level_dbfs(int level);

@@ -13,16 +13,16 @@
 #include <gtest/gtest.h>
 
 #include "audio_processing.h"
-#ifdef WEBRTC_ANDROID
-#include "external/webrtc/src/modules/audio_processing/main/test/unit_test/audio_processing_unittest.pb.h"
-#else
-#include "audio_processing_unittest.pb.h"
-#endif
 #include "event_wrapper.h"
 #include "module_common_types.h"
 #include "signal_processing_library.h"
 #include "thread_wrapper.h"
 #include "trace.h"
+#ifdef WEBRTC_ANDROID
+#include "external/webrtc/src/modules/audio_processing/main/test/unit_test/unittest.pb.h"
+#else
+#include "webrtc/audio_processing/unittest.pb.h"
+#endif
 
 using webrtc::AudioProcessing;
 using webrtc::AudioFrame;
@@ -162,7 +162,7 @@ WebRtc_Word16 MaxAudioFrame(const AudioFrame& frame) {
 }
 
 void TestStats(const AudioProcessing::Statistic& test,
-               const audio_processing_unittest::Test::Statistic& reference) {
+               const webrtc::audioproc::Test::Statistic& reference) {
   EXPECT_EQ(reference.instant(), test.instant);
   EXPECT_EQ(reference.average(), test.average);
   EXPECT_EQ(reference.maximum(), test.maximum);
@@ -170,7 +170,7 @@ void TestStats(const AudioProcessing::Statistic& test,
 }
 
 void WriteStatsMessage(const AudioProcessing::Statistic& output,
-                       audio_processing_unittest::Test::Statistic* message) {
+                       webrtc::audioproc::Test::Statistic* message) {
   message->set_instant(output.instant);
   message->set_average(output.average);
   message->set_maximum(output.maximum);
@@ -416,7 +416,7 @@ TEST_F(ApmTest, SampleRates) {
 
 TEST_F(ApmTest, Process) {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
-  audio_processing_unittest::OutputData output_data;
+  webrtc::audioproc::OutputData output_data;
 
   if (!write_output_data) {
     ReadMessageLiteFromFile(kOutputFileName, &output_data);
@@ -435,7 +435,7 @@ TEST_F(ApmTest, Process) {
     for (size_t i = 0; i < channels_size; i++) {
       for (size_t j = 0; j < channels_size; j++) {
         for (size_t k = 0; k < sample_rates_size; k++) {
-          audio_processing_unittest::Test* test = output_data.add_test();
+          webrtc::audioproc::Test* test = output_data.add_test();
           test->set_num_reverse_channels(channels[i]);
           test->set_num_input_channels(channels[j]);
           test->set_num_output_channels(channels[j]);
@@ -481,7 +481,7 @@ TEST_F(ApmTest, Process) {
   for (int i = 0; i < output_data.test_size(); i++) {
     printf("Running test %d of %d...\n", i + 1, output_data.test_size());
 
-    audio_processing_unittest::Test* test = output_data.mutable_test(i);
+    webrtc::audioproc::Test* test = output_data.mutable_test(i);
     const int num_samples = test->sample_rate() / 100;
     revframe_->_payloadDataLengthInSamples = num_samples;
     revframe_->_audioChannel = test->num_reverse_channels();
@@ -598,7 +598,7 @@ TEST_F(ApmTest, Process) {
       EXPECT_EQ(test->max_output_average(), max_output_average);
 
 #if defined(WEBRTC_APM_UNIT_TEST_FLOAT_PROFILE)
-      audio_processing_unittest::Test::EchoMetrics reference =
+      webrtc::audioproc::Test::EchoMetrics reference =
           test->echo_metrics();
       TestStats(echo_metrics.residual_echo_return_loss,
                 reference.residual_echo_return_loss());
@@ -618,7 +618,7 @@ TEST_F(ApmTest, Process) {
       test->set_max_output_average(max_output_average);
 
 #if defined(WEBRTC_APM_UNIT_TEST_FLOAT_PROFILE)
-      audio_processing_unittest::Test::EchoMetrics* message =
+      webrtc::audioproc::Test::EchoMetrics* message =
           test->mutable_echo_metrics();
       WriteStatsMessage(echo_metrics.residual_echo_return_loss,
                         message->mutable_residual_echo_return_loss());

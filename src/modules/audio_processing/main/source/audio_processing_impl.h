@@ -12,16 +12,19 @@
 #define WEBRTC_MODULES_AUDIO_PROCESSING_MAIN_SOURCE_AUDIO_PROCESSING_IMPL_H_
 
 #include <list>
+#include <string>
 
 #include "audio_processing.h"
 
 namespace webrtc {
-class CriticalSectionWrapper;
-class FileWrapper;
-
+namespace audioproc {
+class Event;
+}  // audioproc
 class AudioBuffer;
+class CriticalSectionWrapper;
 class EchoCancellationImpl;
 class EchoControlMobileImpl;
+class FileWrapper;
 class GainControlImpl;
 class HighPassFilterImpl;
 class LevelEstimatorImpl;
@@ -76,6 +79,9 @@ class AudioProcessingImpl : public AudioProcessing {
   virtual WebRtc_Word32 ChangeUniqueId(const WebRtc_Word32 id);
 
  private:
+  int WriteMessageToDebugFile();
+  int WriteInitMessage();
+
   int id_;
 
   EchoCancellationImpl* echo_cancellation_;
@@ -89,6 +95,8 @@ class AudioProcessingImpl : public AudioProcessing {
   std::list<ProcessingComponent*> component_list_;
 
   FileWrapper* debug_file_;
+  audioproc::Event* event_msg_; // Protobuf message.
+  std::string event_str_; // Memory for protobuf serialization.
   CriticalSectionWrapper* crit_;
 
   AudioBuffer* render_audio_;
@@ -100,9 +108,9 @@ class AudioProcessingImpl : public AudioProcessing {
   int stream_delay_ms_;
   bool was_stream_delay_set_;
 
-  int num_render_input_channels_;
-  int num_capture_input_channels_;
-  int num_capture_output_channels_;
+  int num_reverse_channels_;
+  int num_input_channels_;
+  int num_output_channels_;
 };
 }  // namespace webrtc
 

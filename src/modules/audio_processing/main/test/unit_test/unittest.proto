@@ -1,5 +1,6 @@
-package audio_processing_unittest;
+syntax = "proto2";
 option optimize_for = LITE_RUNTIME;
+package webrtc.audioproc;
 
 message Test {
   optional int32 num_reverse_channels = 1;
@@ -18,7 +19,6 @@ message Test {
   optional int32 has_echo_count = 8;
   optional int32 has_voice_count = 9;
   optional int32 is_saturated_count = 10;
-
 
   message Statistic {
     optional int32 instant = 1;

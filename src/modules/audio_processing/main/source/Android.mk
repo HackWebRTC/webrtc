@@ -15,6 +15,7 @@ LOCAL_MODULE := libwebrtc_apm
 LOCAL_MODULE_TAGS := optional
 LOCAL_CPP_EXTENSION := .cc
 LOCAL_SRC_FILES := \
+    $(call all-proto-files-under, .) \
     audio_buffer.cc \
     audio_processing_impl.cc \
     echo_cancellation_impl.cc \
@@ -44,12 +45,14 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../../../.. \
     $(LOCAL_PATH)/../../../../common_audio/signal_processing_library/main/interface \
     $(LOCAL_PATH)/../../../../common_audio/vad/main/interface \
-    $(LOCAL_PATH)/../../../../system_wrappers/interface
+    $(LOCAL_PATH)/../../../../system_wrappers/interface \
+    external/protobuf/src
 
 LOCAL_SHARED_LIBRARIES := \
     libcutils \
     libdl \
-    libstlport 
+    libstlport \
+    libprotobuf-cpp-2.3.0-lite
 
 ifndef NDK_ROOT
 include external/stlport/libstlport.mk

@@ -10,6 +10,10 @@
   'includes': [
     '../../../../common_settings.gypi',
   ],
+  'variables': {
+    'protoc_out_dir': '<(SHARED_INTERMEDIATE_DIR)/protoc_out',
+    'protoc_out_relpath': 'webrtc/audio_processing',
+  },
   'targets': [
     {
       'target_name': 'audio_processing',
@@ -22,8 +26,18 @@
           'dependencies': ['../../ns/main/source/ns.gyp:ns'],
           'defines': ['WEBRTC_NS_FLOAT'],
         }],
+        ['build_with_chromium==1', {
+          'dependencies': [
+            '../../../../third_party/protobuf/protobuf.gyp:protobuf_lite',
+          ],
+        }, {
+          'dependencies': [
+            '../../../../../third_party/protobuf/protobuf.gyp:protobuf_lite',
+          ],
+        }],
       ],
       'dependencies': [
+        'debug_proto',
         '../../aec/main/source/aec.gyp:aec',
         '../../aecm/main/source/aecm.gyp:aecm',
         '../../agc/main/source/agc.gyp:agc',
@@ -34,6 +48,7 @@
       'include_dirs': [
         '../interface',
         '../../../interface',
+        '<(protoc_out_dir)',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
@@ -65,7 +80,54 @@
         'processing_component.h',
         'voice_detection_impl.cc',
         'voice_detection_impl.h',
+        '<(protoc_out_dir)/<(protoc_out_relpath)/debug.pb.cc',
+        '<(protoc_out_dir)/<(protoc_out_relpath)/debug.pb.h',
       ],
+    },
+    {
+      # Protobuf compiler / generate rule for audio_processing
+      'target_name': 'debug_proto',
+      'type': 'none',
+      'variables': {
+        'proto_relpath': '.',
+      },
+      'sources': [
+        '<(proto_relpath)/debug.proto',
+      ],
+      'rules': [
+        {
+          'rule_name': 'genproto',
+          'extension': 'proto',
+          'inputs': [
+            '<(PRODUCT_DIR)/<(EXECUTABLE_PREFIX)protoc<(EXECUTABLE_SUFFIX)',
+          ],
+          'outputs': [
+            '<(protoc_out_dir)/<(protoc_out_relpath)/<(RULE_INPUT_ROOT).pb.cc',
+            '<(protoc_out_dir)/<(protoc_out_relpath)/<(RULE_INPUT_ROOT).pb.h',
+          ],
+          'action': [
+            '<(PRODUCT_DIR)/<(EXECUTABLE_PREFIX)protoc<(EXECUTABLE_SUFFIX)',
+            '--proto_path=<(proto_relpath)',
+            '<(proto_relpath)/<(RULE_INPUT_NAME)',
+            '--cpp_out=<(protoc_out_dir)/<(protoc_out_relpath)',
+          ],
+          'message': 'Generating C++ code from <(RULE_INPUT_PATH)',
+        },
+      ],
+      'conditions': [
+        ['build_with_chromium==1', {
+          'dependencies': [
+            '../../../../third_party/protobuf/protobuf.gyp:protoc#host',
+          ],
+        }, {
+          'dependencies': [
+            '../../../../../third_party/protobuf/protobuf.gyp:protoc#host',
+          ],
+        }],
+      ],
+      # This target exports a hard dependency because it generates header
+      # files.
+      'hard_dependency': 1,
     },
   ],
 }

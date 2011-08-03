@@ -29,7 +29,7 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../../../../../system_wrappers/interface \
     $(LOCAL_PATH)/../../../../../common_audio/signal_processing_library/main/interface \
     external/gtest/include \
-    external/protobuf/src 
+    external/protobuf/src
 
 LOCAL_STATIC_LIBRARIES := \
     libgtest \
@@ -37,7 +37,7 @@ LOCAL_STATIC_LIBRARIES := \
 
 LOCAL_SHARED_LIBRARIES := \
     libstlport \
-    libwebrtc_audio_preprocessing 
+    libwebrtc_audio_preprocessing
 
 LOCAL_MODULE:= webrtc_apm_unit_test
 
