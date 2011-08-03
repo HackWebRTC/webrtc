@@ -16,7 +16,7 @@
 #include "video_capture_config.h"
 #include "module_common_types.h"
 
-#ifdef ANDROID
+#ifdef WEBRTC_ANDROID
 #include "video_capture_android.h" // Need inclusion here to set Java environment.
 #endif
 
@@ -38,7 +38,7 @@ void VideoCaptureModule::Destroy(VideoCaptureModule* module)
     delete module;
 }
 
-#ifdef ANDROID
+#ifdef WEBRTC_ANDROID
 WebRtc_Word32 VideoCaptureModule::SetAndroidObjects(void* javaVM,void* javaContext)
 {
     WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, 0, "SetAndroidObjects");
