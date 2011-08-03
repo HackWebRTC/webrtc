@@ -25,7 +25,11 @@
 #include "processing_component.h"
 #include "splitting_filter.h"
 #include "voice_detection_impl.h"
+#ifdef WEBRTC_ANDROID
+#include "external/webrtc/src/modules/audio_processing/main/source/debug.pb.h"
+#else
 #include "webrtc/audio_processing/debug.pb.h"
+#endif
 
 namespace webrtc {
 AudioProcessing* AudioProcessing::Create(int id) {
