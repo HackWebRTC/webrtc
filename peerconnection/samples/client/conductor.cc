@@ -12,6 +12,7 @@
 
 #include "peerconnection/samples/client/defaults.h"
 #include "talk/base/logging.h"
+#include "talk/p2p/client/basicportallocator.h"
 #include "talk/session/phone/videorendererfactory.h"
 
 Conductor::Conductor(PeerConnectionClient* client, MainWnd* main_wnd)
@@ -19,8 +20,8 @@ Conductor::Conductor(PeerConnectionClient* client, MainWnd* main_wnd)
     waiting_for_audio_(false),
     waiting_for_video_(false),
     peer_id_(-1),
-    video_channel_(-1),
-    audio_channel_(-1),
+    video_channel_(""),
+    audio_channel_(""),
     client_(client),
     main_wnd_(main_wnd) {
   // Create a window for posting notifications back to from other threads.
@@ -37,11 +38,11 @@ Conductor::~Conductor() {
 }
 
 bool Conductor::has_video() const {
-  return video_channel_ != -1;
+  return !video_channel_.empty();
 }
 
 bool Conductor::has_audio() const {
-  return audio_channel_ != -1;
+  return !audio_channel_.empty();
 }
 
 bool Conductor::connection_active() const {
@@ -51,6 +52,8 @@ bool Conductor::connection_active() const {
 void Conductor::Close() {
   if (peer_connection_.get()) {
     peer_connection_->Close();
+    video_channel_ = "";
+    audio_channel_ = "";
   } else {
     client_->SignOut();
   }
@@ -58,7 +61,25 @@ void Conductor::Close() {
 
 bool Conductor::InitializePeerConnection() {
   ASSERT(peer_connection_.get() == NULL);
-  peer_connection_.reset(new webrtc::PeerConnection(GetPeerConnectionString()));
+  ASSERT(port_allocator_.get() == NULL);
+  ASSERT(worker_thread_.get() == NULL);
+
+  port_allocator_.reset(new cricket::BasicPortAllocator(
+      new talk_base::BasicNetworkManager(),
+      talk_base::SocketAddress("stun.l.google.com", 19302),
+      talk_base::SocketAddress(),
+      talk_base::SocketAddress(), talk_base::SocketAddress()));
+
+  worker_thread_.reset(new talk_base::Thread());
+  if (!worker_thread_->SetName("workder thread", this) ||
+      !worker_thread_->Start()) {
+    LOG(WARNING) << "Failed to start libjingle workder thread";
+  }
+
+  peer_connection_.reset(
+      webrtc::PeerConnection::Create(GetPeerConnectionString(),
+                                     port_allocator_.get(),
+                                     worker_thread_.get()));
   peer_connection_->RegisterObserver(this);
   if (!peer_connection_->Init()) {
     DeletePeerConnection();
@@ -91,6 +112,10 @@ void Conductor::StartCaptureDevice() {
 // PeerConnectionObserver implementation.
 //
 
+void Conductor::OnInitialized() {
+  PostMessage(handle(), PEER_CONNECTION_ADDSTREAMS, 0, 0);
+}
+
 void Conductor::OnError() {
   LOG(INFO) << __FUNCTION__;
   ASSERT(false);
@@ -99,7 +124,7 @@ void Conductor::OnError() {
 void Conductor::OnSignalingMessage(const std::string& msg) {
   LOG(INFO) << __FUNCTION__;
 
-  bool shutting_down = (video_channel_ == -1 && audio_channel_ == -1);
+  bool shutting_down = (video_channel_.empty() && audio_channel_.empty());
 
   if (handshake_ == OFFER_RECEIVED && !shutting_down)
     StartCaptureDevice();
@@ -120,38 +145,67 @@ void Conductor::OnSignalingMessage(const std::string& msg) {
   }
 }
 
-// Called when a remote stream is added
-void Conductor::OnAddStream(const std::string& stream_id, int channel_id,
-                            bool video) {
+// Called when a local stream is added and initialized
+void Conductor::OnLocalStreamInitialized(const std::string& stream_id,
+    bool video) {
   LOG(INFO) << __FUNCTION__ << " " << stream_id;
   bool send_notification = (waiting_for_video_ || waiting_for_audio_);
   if (video) {
-    ASSERT(video_channel_ == -1);
-    video_channel_ = channel_id;
+    ASSERT(video_channel_.empty());
+    video_channel_ = stream_id;
     waiting_for_video_ = false;
-    LOG(INFO) << "Setting video renderer for channel: " << channel_id;
+    LOG(INFO) << "Setting video renderer for stream: " << stream_id;
     bool ok = peer_connection_->SetVideoRenderer(stream_id,
                                                  main_wnd_->remote_renderer());
     ASSERT(ok);
   } else {
-    ASSERT(audio_channel_ == -1);
-    audio_channel_ = channel_id;
+    ASSERT(audio_channel_.empty());
+    audio_channel_ = stream_id;
     waiting_for_audio_ = false;
   }
 
   if (send_notification && !waiting_for_audio_ && !waiting_for_video_)
     PostMessage(handle(), MEDIA_CHANNELS_INITIALIZED, 0, 0);
+
+  if (!waiting_for_audio_ && !waiting_for_video_) {
+    PostMessage(handle(), PEER_CONNECTION_CONNECT, 0, 0);
+  }
 }
 
-void Conductor::OnRemoveStream(const std::string& stream_id, int channel_id,
-                               bool video) {
+// Called when a remote stream is added
+void Conductor::OnAddStream(const std::string& stream_id, bool video) {
+  LOG(INFO) << __FUNCTION__ << " " << stream_id;
+  bool send_notification = (waiting_for_video_ || waiting_for_audio_);
+  if (video) {
+    ASSERT(video_channel_.empty());
+    video_channel_ = stream_id;
+    waiting_for_video_ = false;
+    LOG(INFO) << "Setting video renderer for stream: " << stream_id;
+    bool ok = peer_connection_->SetVideoRenderer(stream_id,
+                                                 main_wnd_->remote_renderer());
+    ASSERT(ok);
+  } else {
+    ASSERT(audio_channel_.empty());
+    audio_channel_ = stream_id;
+    waiting_for_audio_ = false;
+  }
+
+  if (send_notification && !waiting_for_audio_ && !waiting_for_video_)
+    PostMessage(handle(), MEDIA_CHANNELS_INITIALIZED, 0, 0);
+
+  if (!waiting_for_audio_ && !waiting_for_video_) {
+    PostMessage(handle(), PEER_CONNECTION_CONNECT, 0, 0);
+  }
+}
+
+void Conductor::OnRemoveStream(const std::string& stream_id, bool video) {
   LOG(INFO) << __FUNCTION__;
   if (video) {
-    ASSERT(channel_id == video_channel_);
-    video_channel_ = -1;
+    ASSERT(video_channel_.compare(stream_id) == 0);
+    video_channel_ = "";
   } else {
-    ASSERT(channel_id == audio_channel_);
-    audio_channel_ = -1;
+    ASSERT(audio_channel_.compare(stream_id) == 0);
+    audio_channel_ = "";
   }
 }
 
@@ -214,9 +268,6 @@ void Conductor::OnMessageFromPeer(int peer_id, const std::string& message) {
   } else if (handshake_ == INITIATOR) {
     LOG(INFO) << "Remote peer sent us an answer";
     handshake_ = ANSWER_RECEIVED;
-  } else {
-    LOG(INFO) << "Remote peer is disconnecting";
-    handshake_ = QUIT_SENT;
   }
 
   peer_connection_->SignalingMessage(message);
@@ -255,17 +306,22 @@ void Conductor::ConnectToPeer(int peer_id) {
 
   if (InitializePeerConnection()) {
     peer_id_ = peer_id;
-    waiting_for_video_ = peer_connection_->AddStream(kVideoLabel, true);
-    waiting_for_audio_ = peer_connection_->AddStream(kAudioLabel, false);
-    if (waiting_for_video_ || waiting_for_audio_)
-      handshake_ = INITIATOR;
-    ASSERT(waiting_for_video_ || waiting_for_audio_);
-  }
-
-  if (handshake_ == NONE) {
+  } else {
     ::MessageBoxA(main_wnd_->handle(), "Failed to initialize PeerConnection",
                   "Error", MB_OK | MB_ICONERROR);
   }
+}
+
+void Conductor::AddStreams() {
+  waiting_for_video_ = peer_connection_->AddStream(kVideoLabel, true);
+  waiting_for_audio_ = peer_connection_->AddStream(kAudioLabel, false);
+  if (waiting_for_video_ || waiting_for_audio_)
+    handshake_ = INITIATOR;
+  ASSERT(waiting_for_video_ || waiting_for_audio_);
+}
+
+void Conductor::PeerConnectionConnect() {
+  peer_connection_->Connect();
 }
 
 void Conductor::DisconnectFromCurrentPeer() {
@@ -295,8 +351,8 @@ bool Conductor::OnMessage(UINT msg, WPARAM wp, LPARAM lp,
     waiting_for_audio_ = false;
     waiting_for_video_ = false;
     peer_id_ = -1;
-    ASSERT(video_channel_ == -1);
-    ASSERT(audio_channel_ == -1);
+    ASSERT(video_channel_.empty());
+    ASSERT(audio_channel_.empty());
     if (main_wnd_->IsWindow()) {
       if (client_->is_connected()) {
         main_wnd_->SwitchToPeerList(client_->peers());
@@ -313,6 +369,10 @@ bool Conductor::OnMessage(UINT msg, WPARAM wp, LPARAM lp,
       LOG(LS_ERROR) << "SendToPeer failed";
       DisconnectFromServer();
     }
+  } else if (msg == PEER_CONNECTION_ADDSTREAMS) {
+    AddStreams();
+  } else if (msg == PEER_CONNECTION_CONNECT) {
+    PeerConnectionConnect();
   } else {
     ret = false;
   }

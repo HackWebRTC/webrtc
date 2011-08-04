@@ -168,53 +168,68 @@ void MainWnd::OnPaint() {
     long height = abs(bmi.bmiHeader.biHeight);
     long width = bmi.bmiHeader.biWidth;
 
-    HDC dc_mem = ::CreateCompatibleDC(ps.hdc);
+    if (remote_video_.get()->image() != NULL) {
+      HDC dc_mem = ::CreateCompatibleDC(ps.hdc);
 
-    // Set the map mode so that the ratio will be maintained for us.
-    HDC all_dc[] = { ps.hdc, dc_mem };
-    for (int i = 0; i < ARRAY_SIZE(all_dc); ++i) {
-      SetMapMode(all_dc[i], MM_ISOTROPIC);
-      SetWindowExtEx(all_dc[i], width, height, NULL);
-      SetViewportExtEx(all_dc[i], rc.right, rc.bottom, NULL);
+      // Set the map mode so that the ratio will be maintained for us.
+      HDC all_dc[] = { ps.hdc, dc_mem };
+      for (int i = 0; i < ARRAY_SIZE(all_dc); ++i) {
+        SetMapMode(all_dc[i], MM_ISOTROPIC);
+        SetWindowExtEx(all_dc[i], width, height, NULL);
+        SetViewportExtEx(all_dc[i], rc.right, rc.bottom, NULL);
+      }
+
+      HBITMAP bmp_mem = ::CreateCompatibleBitmap(ps.hdc, rc.right, rc.bottom);
+      HGDIOBJ bmp_old = ::SelectObject(dc_mem, bmp_mem);
+
+      POINT logical_area = { rc.right, rc.bottom };
+      DPtoLP(ps.hdc, &logical_area, 1);
+
+      HBRUSH brush = ::CreateSolidBrush(RGB(0, 0, 0));
+      RECT logical_rect = {0, 0, logical_area.x, logical_area.y };
+      ::FillRect(dc_mem, &logical_rect, brush);
+      ::DeleteObject(brush);
+
+      const uint8* image = remote_video_->image();
+      int max_unit = std::max(width, height);
+      int x = (logical_area.x / 2) - (width / 2);
+      int y = (logical_area.y / 2) - (height / 2);
+
+      StretchDIBits(dc_mem, x, y, width, height,
+                    0, 0, width, height, image, &bmi, DIB_RGB_COLORS, SRCCOPY);
+
+      if ((rc.right - rc.left) > 200 && (rc.bottom - rc.top) > 200) {
+        const BITMAPINFO& bmi = local_video_->bmi();
+        image = local_video_->image();
+        long thumb_width = bmi.bmiHeader.biWidth / 4;
+        long thumb_height = abs(bmi.bmiHeader.biHeight) / 4;
+        StretchDIBits(dc_mem,
+            logical_area.x - thumb_width - 10,
+            logical_area.y - thumb_height - 10,
+            thumb_width, thumb_height,
+            0, 0, bmi.bmiHeader.biWidth, -bmi.bmiHeader.biHeight,
+            image, &bmi, DIB_RGB_COLORS, SRCCOPY);
+      }
+
+      BitBlt(ps.hdc, 0, 0, logical_area.x, logical_area.y,
+             dc_mem, 0, 0, SRCCOPY);
+
+      // Cleanup.
+      ::SelectObject(dc_mem, bmp_old);
+      ::DeleteObject(bmp_mem);
+      ::DeleteDC(dc_mem);
+    } else {
+      // We're still waiting for the video stream to be initialized.
+      HBRUSH brush = ::CreateSolidBrush(RGB(0, 0, 0));
+      ::FillRect(ps.hdc, &rc, brush);
+      ::DeleteObject(brush);
+      HGDIOBJ old_font = ::SelectObject(ps.hdc, GetDefaultFont());
+      ::SetTextColor(ps.hdc, RGB(0xff, 0xff, 0xff));
+      ::SetBkMode(ps.hdc, TRANSPARENT);
+      ::DrawTextA(ps.hdc, "Connecting...", -1, &rc,
+          DT_SINGLELINE | DT_CENTER | DT_VCENTER);
+      ::SelectObject(ps.hdc, old_font);
     }
-
-    HBITMAP bmp_mem = ::CreateCompatibleBitmap(ps.hdc, rc.right, rc.bottom);
-    HGDIOBJ bmp_old = ::SelectObject(dc_mem, bmp_mem);
-    HBRUSH brush = ::CreateSolidBrush(RGB(0, 0, 0));
-    ::FillRect(dc_mem, &rc, brush);
-    ::DeleteObject(brush);
-
-    POINT logical_area = { rc.right, rc.bottom };
-    DPtoLP(ps.hdc, &logical_area, 1);
-
-    const uint8* image = remote_video_->image();
-    int max_unit = std::max(width, height);
-    int x = (logical_area.x / 2) - (width / 2);
-    int y = (logical_area.y / 2) - (height / 2);
-
-    StretchDIBits(dc_mem, x, y, width, height,
-                  0, 0, width, height, image, &bmi, DIB_RGB_COLORS, SRCCOPY);
-
-    if ((rc.right - rc.left) > 200 && (rc.bottom - rc.top) > 200) {
-      const BITMAPINFO& bmi = local_video_->bmi();
-      image = local_video_->image();
-      long thumb_width = bmi.bmiHeader.biWidth / 4;
-      long thumb_height = abs(bmi.bmiHeader.biHeight) / 4;
-      StretchDIBits(dc_mem,
-          logical_area.x - thumb_width - 10,
-          logical_area.y - thumb_height - 10,
-          thumb_width, thumb_height,
-          0, 0, bmi.bmiHeader.biWidth, -bmi.bmiHeader.biHeight,
-          image, &bmi, DIB_RGB_COLORS, SRCCOPY);
-    }
-
-    BitBlt(ps.hdc, 0, 0, logical_area.x, logical_area.y,
-           dc_mem, 0, 0, SRCCOPY);
-
-    // Cleanup.
-    ::SelectObject(dc_mem, bmp_old);
-    ::DeleteObject(bmp_mem);
-    ::DeleteDC(dc_mem);
   } else {
     HBRUSH brush = ::CreateSolidBrush(::GetSysColor(COLOR_WINDOW));
     ::FillRect(ps.hdc, &rc, brush);
@@ -481,7 +496,6 @@ MainWnd::VideoRenderer::VideoRenderer(HWND wnd, int width, int height)
   bmi_.bmiHeader.biHeight = -height;
   bmi_.bmiHeader.biSizeImage = width * height *
                               (bmi_.bmiHeader.biBitCount >> 3);
-  image_.reset(new uint8[bmi_.bmiHeader.biSizeImage]);
 }
 
 MainWnd::VideoRenderer::~VideoRenderer() {
@@ -529,6 +543,7 @@ void MainWnd::VideoRenderer::OnMessage(const MSG& msg) {
       break;
 
     case WM_PAINT: {
+      ASSERT(image_.get() != NULL);
       const cricket::VideoFrame* frame =
           reinterpret_cast<const cricket::VideoFrame*>(msg.lParam);
       frame->ConvertToRgbBuffer(cricket::FOURCC_ARGB, image_.get(),

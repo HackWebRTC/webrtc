@@ -1,0 +1,56 @@
+# -*- Python -*-
+import talk
+
+Import('env')
+
+# local sources
+talk.Library(
+  env,
+  name = 'webrtc',
+  srcs = [
+    'peerconnection.cc',
+    'peerconnection_impl.cc',
+    'webrtc_json.cc',
+    'webrtcsession.cc',
+  ],
+)
+
+talk.Unittest(
+  env,
+  name = 'webrtc',
+  srcs = [
+    'webrtcsession_unittest.cc',
+    'testing/timing.cc'
+  ],
+  libs = [
+    'srtp',
+    'base',
+    'jpeg',
+    'json',
+    'webrtc',
+    'p2p',
+    'phone',
+    'xmpp',
+    'xmllite',
+    'yuvscaler'
+  ],
+  include_talk_media_libs = True,
+  mac_libs = [
+    'crypto',
+    'ssl',
+  ],
+  mac_FRAMEWORKS = [
+    'Foundation',
+    'IOKit',
+    'QTKit',
+  ],
+  lin_libs = [
+    'rt',
+    'dl',
+    'sound',
+    'X11',
+    'Xext',
+    'Xfixes',
+    'Xrandr'
+  ],
+)

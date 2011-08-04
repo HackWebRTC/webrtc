@@ -1,11 +1,11 @@
 vars = {
   "webrtc_trunk" : "https://webrtc.googlecode.com/svn/trunk",
   "chromium_trunk" : "http://src.chromium.org/svn/trunk",
-  "chromium_revision": "86252",
+  "chromium_revision": "95033",
   # Use this googlecode_url variable only if there is an internal mirror for it.
   # If you do not know, use the full path while defining your new deps entry.
   "googlecode_url": "http://%s.googlecode.com/svn",
-  "libjingle_revision": "59",
+  "libjingle_revision": "77",
 }
 
 deps = {
@@ -43,7 +43,7 @@ deps = {
     Var("chromium_trunk") + "/src/third_party/libjingle@" + Var("chromium_revision"),
 
   "trunk/third_party/libjingle/source":
-    (Var("googlecode_url") % "libjingle") + "/branches/chrome-sandbox@" + Var("libjingle_revision"),
+    (Var("googlecode_url") % "libjingle") + "/trunk@" + Var("libjingle_revision"),
 
   "trunk/third_party/yasm/source/patched-yasm":
     Var("chromium_trunk") + "/deps/third_party/yasm/patched-yasm@73761",

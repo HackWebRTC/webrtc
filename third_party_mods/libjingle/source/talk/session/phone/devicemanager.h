@@ -42,8 +42,7 @@ namespace cricket {
 class DeviceWatcher;
 
 // Used to represent an audio or video capture or render device.
-class Device {
- public:
+struct Device {
   Device() {}
   Device(const std::string& first, int second)
       : name(first),

@@ -8,6 +8,7 @@
     # We declare a default value of 0 for standalone builds.
     'inside_chromium_build%': 0,
     'no_libjingle_logging%': 0,
+    'peer_connection_dev%': 0,
   },
   'target_defaults': {
     'defines': [
@@ -16,6 +17,7 @@
       '_USE_32BIT_TIME_T',
       'SAFE_TO_DEFINE_TALK_BASE_LOGGING_MACROS',
       'EXPAT_RELATIVE_PATH',
+      'WEBRTC_RELATIVE_PATH',
       'HAVE_WEBRTC',
     ],
     'configurations': {
@@ -30,11 +32,15 @@
     'dependencies': [
       '../expat/expat.gyp:expat',
     ],
+    'export_dependent_settings': [
+      '../expat/expat.gyp:expat',
+    ],
     'direct_dependent_settings': {
       'defines': [
         'FEATURE_ENABLE_SSL',
         'FEATURE_ENABLE_VOICEMAIL',
         'EXPAT_RELATIVE_PATH',
+        'WEBRTC_RELATIVE_PATH',
       ],
       'conditions': [
         ['OS=="win"', {
@@ -64,7 +70,7 @@
             'OSX',
           ],
         }],
-        ['OS=="linux" or OS=="mac" or OS=="freebsd" or OS=="openbsd"', {
+        ['os_posix == 1', {
           'defines': [
             'POSIX',
           ],
@@ -114,7 +120,7 @@
       },{
         'include_dirs': [
           # the third_party folder for webrtc/ includes (non-chromium).
-          '../../trunk',
+          '../../src',
           './source',
           '../../third_party/expat/files',
         ],
@@ -134,7 +140,7 @@
           'OSX',
         ],
       }],
-      ['OS=="linux" or OS=="mac" or OS=="freebsd" or OS=="openbsd"', {
+      ['os_posix == 1', {
         'defines': [
           'POSIX',
         ],
@@ -158,7 +164,7 @@
           }],
         ],
       },
-      'type': '<(library)',
+      'type': 'static_library',
       'sources': [
         '<(overrides)/talk/base/basictypes.h',
         '<(overrides)/talk/base/constructormagic.h',
@@ -353,7 +359,7 @@
             'source/talk/base/winping.h',
           ],
         }],
-        ['OS=="linux" or OS=="mac" or OS=="freebsd" or OS=="openbsd"', {
+        ['os_posix == 1', {
           'sources': [
             'source/talk/base/latebindingsymboltable.cc',
             'source/talk/base/latebindingsymboltable.h',
@@ -463,6 +469,8 @@
         'source/talk/session/phone/codec.cc',
         'source/talk/session/phone/codec.h',
         'source/talk/session/phone/cryptoparams.h',
+        'source/talk/session/phone/currentspeakermonitor.cc',
+        'source/talk/session/phone/currentspeakermonitor.h',
         'source/talk/session/phone/devicemanager.cc',
         'source/talk/session/phone/devicemanager.h',
         'source/talk/session/phone/filemediaengine.cc',
@@ -489,6 +497,15 @@
         'source/talk/session/phone/srtpfilter.h',
         'source/talk/session/phone/videocommon.h',
         'source/talk/session/phone/voicechannel.h',
+        'source/talk/session/phone/webrtccommon.h',
+        'source/talk/session/phone/webrtcvideoengine.cc',
+        'source/talk/session/phone/webrtcvideoengine.h',
+        'source/talk/session/phone/webrtcvideoframe.cc',
+        'source/talk/session/phone/webrtcvideoframe.h',
+        'source/talk/session/phone/webrtcvie.h',
+        'source/talk/session/phone/webrtcvoe.h',
+        'source/talk/session/phone/webrtcvoiceengine.cc',
+        'source/talk/session/phone/webrtcvoiceengine.h',
         'source/talk/session/tunnel/pseudotcpchannel.cc',
         'source/talk/session/tunnel/pseudotcpchannel.h',
         'source/talk/session/tunnel/tunnelsessionclient.cc',
@@ -503,8 +520,8 @@
         }],   
         ['OS=="linux"', {
           'sources': [
-            #'source/talk/session/phone/gtkvideorenderer.cc',
-            #'source/talk/session/phone/gtkvideorenderer.h', 
+            'source/talk/session/phone/gtkvideorenderer.cc',
+            'source/talk/session/phone/gtkvideorenderer.h', 
             'source/talk/session/phone/libudevsymboltable.cc',
             'source/talk/session/phone/libudevsymboltable.h',
             'source/talk/session/phone/v4llookup.cc',
@@ -513,21 +530,29 @@
           'include_dirs': [
             'source/talk/third_party/libudev',
           ],
+          'cflags': [
+             '<!@(pkg-config --cflags gtk+-2.0)',
+          ],
         }],        
         ['inside_chromium_build==1', {
           'dependencies': [
-            'libjingle',
+            '../webrtc/modules/audio_device/main/source/audio_device.gyp:audio_device',
+            '../webrtc/modules/video_capture/main/source/video_capture.gyp:video_capture_module',
+            '../webrtc/modules/video_render/main/source/video_render.gyp:video_render_module',
+            '../webrtc/system_wrappers/source/system_wrappers.gyp:system_wrappers',
             '../webrtc/video_engine/main/source/video_engine_core.gyp:video_engine_core',
             '../webrtc/voice_engine/main/source/voice_engine_core.gyp:voice_engine_core',
-          ],
-          'defines': [
-            'PLATFORM_CHROMIUM',
+            'libjingle',
           ],
         }, {
           'dependencies': [
-              'libjingle',
-              '../../src/video_engine/main/source/video_engine_core.gyp:video_engine_core',
-              '../../src/voice_engine/main/source/voice_engine_core.gyp:voice_engine_core',
+            '../../src/modules/audio_device/main/source/audio_device.gyp:audio_device',
+            '../../src/modules/video_capture/main/source/video_capture.gyp:video_capture_module',
+            '../../src/modules/video_render/main/source/video_render.gyp:video_render_module',
+            '../../src/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+            '../../src/video_engine/main/source/video_engine_core.gyp:video_engine_core',
+            '../../src/voice_engine/main/source/voice_engine_core.gyp:voice_engine_core',
+            'libjingle',
           ],
         } ],  # inside_chromium_build
       ],  # conditions
@@ -535,101 +560,93 @@
     # seperate project for app
     {
       'target_name': 'libjingle_app',
-      'type': '<(library)',
-      'sources': [
-        'source/talk/app/peerconnection.cc',
-        'source/talk/app/peerconnection.h',
-        'source/talk/app/videoengine.h',
-        'source/talk/app/videomediaengine.cc',
-        'source/talk/app/videomediaengine.h',
-        'source/talk/app/voiceengine.h',
-        'source/talk/app/voicemediaengine.cc',
-        'source/talk/app/voicemediaengine.h',
-        'source/talk/app/webrtc_json.cc',
-        'source/talk/app/webrtc_json.h',
-        'source/talk/app/webrtcsession.cc',
-        'source/talk/app/webrtcsession.h',
-        'source/talk/app/webrtcsessionimpl.cc',
-        'source/talk/app/webrtcsessionimpl.h',
-        'source/talk/app/pc_transport_impl.cc',   
-        'source/talk/app/pc_transport_impl.h',                   
-      ],
-      'direct_dependent_settings': {
+      'variables': {
         'conditions': [
           ['inside_chromium_build==1', {
-            'defines': [
-              'PLATFORM_CHROMIUM',
-            ],
+            'overrides': 'overrides',
           },{
-            'sources': [        
-              'source/talk/app/p2p_transport_manager.cc',
-              'source/talk/app/p2p_transport_manager.h',
-            ],
+            'overrides': 'source',
           }],
         ],
       },
-      'dependencies': [
+      'type': '<(library)',
+      'sources': [
+        'source/talk/app/webrtc/peerconnection.cc',
+        'source/talk/app/webrtc/peerconnection.h',
+        'source/talk/app/webrtc/peerconnectionimpl_callbacks.h',
+        'source/talk/app/webrtc/peerconnection_impl.cc',
+        'source/talk/app/webrtc/peerconnection_impl.h',
+        'source/talk/app/webrtc/webrtcsession.cc',
+        'source/talk/app/webrtc/webrtcsession.h',
+        'source/talk/app/webrtc/webrtc_json.cc',
+        'source/talk/app/webrtc/webrtc_json.h',                  
       ],
       'conditions': [
-        ['inside_chromium_build==1', {
+        ['inside_chromium_build==1', {        
           'dependencies': [
             '../webrtc/modules/video_capture/main/source/video_capture.gyp:video_capture_module',
+            '../webrtc/modules/video_render/main/source/video_render.gyp:video_render_module',
             '../webrtc/video_engine/main/source/video_engine_core.gyp:video_engine_core',
             '../webrtc/voice_engine/main/source/voice_engine_core.gyp:voice_engine_core',
             '../webrtc/system_wrappers/source/system_wrappers.gyp:system_wrappers',
             'libjingle_p2p',
             'source/talk/third_party/jsoncpp/jsoncpp.gyp:jsoncpp',
-          ],
-          'defines': [
-            'PLATFORM_CHROMIUM',
-          ],
+          ],          
         }, {
           'dependencies': [
             '../../third_party/jsoncpp/jsoncpp.gyp:jsoncpp',
             '../../src/modules/video_capture/main/source/video_capture.gyp:video_capture_module',
+            '../../src/modules/video_render/main/source/video_render.gyp:video_render_module',
             '../../src/video_engine/main/source/video_engine_core.gyp:video_engine_core',
             '../../src/voice_engine/main/source/voice_engine_core.gyp:voice_engine_core',
             '../../src/system_wrappers/source/system_wrappers.gyp:system_wrappers',
             'libjingle_p2p',
+          ],          
+        } ],  # inside_chromium_build        
+        ['peer_connection_dev==1', {
+          'sources': [
+            '<(overrides)/talk/app/webrtc/scoped_refptr.h',
+            'source/talk/app/webrtc/audio_device_dev.cc',
+            'source/talk/app/webrtc/local_audio_track_impl_dev.cc',
+            'source/talk/app/webrtc/local_stream_dev.h',
+            'source/talk/app/webrtc/local_stream_dev.cc',
+            'source/talk/app/webrtc/local_video_track_impl_dev.cc',
+            'source/talk/app/webrtc/peerconnection_dev.h',
+            'source/talk/app/webrtc/peerconnection_impl_dev.cc',
+            'source/talk/app/webrtc/peerconnection_impl_dev.h',
+            'source/talk/app/webrtc/peerconnectionmanager.cc',
+            'source/talk/app/webrtc/peerconnectionmanager.h',
+            'source/talk/app/webrtc/peerconnectiontransport.cc',
+            'source/talk/app/webrtc/peerconnectiontransport.h',
+            'source/talk/app/webrtc/ref_count.h',
+            'source/talk/app/webrtc/stream_dev.h',
+            'source/talk/app/webrtc/video_device_dev.cc',
+            'source/talk/app/webrtc/video_renderer_dev.cc',
           ],
-        } ],  # inside_chromium_build
+        }], # peer_connection_dev
       ],  # conditions
     },
-
     {
-      'target_name': 'session_test_app',
+      'target_name': 'peerconnection_client_dev',
       'conditions': [
-        ['OS=="win"', {
+        ['peer_connection_dev==1 and OS=="linux"', {
           'type': 'executable',
-          'sources': [        
-            'source/talk/app/session_test/main_wnd.cc',
-            'source/talk/app/session_test/main_wnd.h',
-            'source/talk/app/session_test/session_test_main.cc',
+          'sources': [
+            'source/talk/app/webrtc/peerconnection_client_dev.cc',
           ],
-          'msvs_settings': {
-            'VCLinkerTool': {
-             'SubSystem': '2',   # Windows
-            },
-          },
+          'libraries': [
+            '-lXext',
+            '-lX11',
+          ],
         }, {
           'type': 'none',
-        }],
+        } ],  # peer_connection_dev
         ['inside_chromium_build==1', {
           'dependencies': [
-            '../webrtc/modules/video_capture/main/source/video_capture.gyp:video_capture_module',
-            '../webrtc/video_engine/main/source/video_engine_core.gyp:video_engine_core',
-            '../webrtc/voice_engine/main/source/voice_engine_core.gyp:voice_engine_core',
-            '../webrtc/system_wrappers/source/system_wrappers.gyp:system_wrappers',
             'libjingle_app',
-            'libjingle_p2p',
-            'source/talk/third_party/jsoncpp/jsoncpp.gyp:jsoncpp',
           ],
         }, {
           'dependencies': [
-            '../../third_party/jsoncpp/jsoncpp.gyp:jsoncpp',
-            '../../src/modules/video_capture/main/source/video_capture.gyp:video_capture_module',
-            '../../src/voice_engine/main/source/voice_engine_core.gyp:voice_engine_core',
-            '../../src/system_wrappers/source/system_wrappers.gyp:system_wrappers',
             'libjingle_app',
           ],
         } ],  # inside_chromium_build
@@ -637,9 +654,3 @@
     },
   ],
 }
-
-# Local Variables:
-# tab-width:2
-# indent-tabs-mode:nil
-# End:
-# vim: set expandtab tabstop=2 shiftwidth=2:

@@ -16,7 +16,7 @@
 
 #include "peerconnection/samples/client/main_wnd.h"
 #include "peerconnection/samples/client/peer_connection_client.h"
-#include "talk/app/peerconnection.h"
+#include "talk/app/webrtc/peerconnection.h"
 #include "talk/base/scoped_ptr.h"
 
 namespace cricket {
@@ -33,6 +33,8 @@ class Conductor
     MEDIA_CHANNELS_INITIALIZED = WM_APP + 1,
     PEER_CONNECTION_CLOSED,
     SEND_MESSAGE_TO_PEER,
+    PEER_CONNECTION_ADDSTREAMS,
+    PEER_CONNECTION_CONNECT,
   };
 
   enum HandshakeState {
@@ -56,20 +58,25 @@ class Conductor
   bool InitializePeerConnection();
   void DeletePeerConnection();
   void StartCaptureDevice();
+  void AddStreams();
+  void PeerConnectionConnect();
 
   //
   // PeerConnectionObserver implementation.
   //
 
+  virtual void OnInitialized();
   virtual void OnError();
   virtual void OnSignalingMessage(const std::string& msg);
 
+  // Called when a local stream is added and initialized
+  virtual void OnLocalStreamInitialized(const std::string& stream_id,
+      bool video);
+
   // Called when a remote stream is added
-  virtual void OnAddStream(const std::string& stream_id, int channel_id,
-                           bool video);
+  virtual void OnAddStream(const std::string& stream_id, bool video);
 
   virtual void OnRemoveStream(const std::string& stream_id,
-                              int channel_id,
                               bool video);
 
   //
@@ -111,10 +118,12 @@ class Conductor
   bool waiting_for_video_;
   int peer_id_;
   talk_base::scoped_ptr<webrtc::PeerConnection> peer_connection_;
+  talk_base::scoped_ptr<cricket::PortAllocator> port_allocator_;
+  talk_base::scoped_ptr<talk_base::Thread> worker_thread_;
   PeerConnectionClient* client_;
   MainWnd* main_wnd_;
-  int video_channel_;
-  int audio_channel_;
+  std::string video_channel_;
+  std::string audio_channel_;
 };
 
 #endif  // PEERCONNECTION_SAMPLES_CLIENT_CONDUCTOR_H_

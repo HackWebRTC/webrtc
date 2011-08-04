@@ -121,7 +121,7 @@ bool GetValueFromJsonArray(const Json::Value& in, size_t n,
     return false;
   }
 
-  *out = in[n];
+  *out = in[static_cast<unsigned int>(n)];
   return true;
 }
 
@@ -199,7 +199,7 @@ bool JsonValueToStringVector(const Json::Value& value,
     return false;
   }
 
-  for (size_t i = 0; i < value.size(); ++i) {
+  for (unsigned int i = 0; i < value.size(); ++i) {
     if (value[i].isString()) {
       strings->push_back(value[i].asString());
     } else {

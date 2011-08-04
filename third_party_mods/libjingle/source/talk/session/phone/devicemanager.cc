@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2004--2011, Google Inc.
+ * Copyright 2004--2008, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -31,25 +31,15 @@
 #include <atlbase.h>
 #include <dbt.h>
 #include <strmif.h>  // must come before ks.h
-#include <mmsystem.h>
 #include <ks.h>
 #include <ksmedia.h>
+#define INITGUID  // For PKEY_AudioEndpoint_GUID
 #include <mmdeviceapi.h>
+#include <MMSystem.h>
 #include <functiondiscoverykeys_devpkey.h>
 #include <uuids.h>
 #include "talk/base/win32.h"  // ToUtf8
 #include "talk/base/win32window.h"
-
-// PKEY_AudioEndpoint_GUID isn't included in uuid.lib and we don't want
-// to define INITGUID in order to define all the uuids in this object file
-// as it will conflict with uuid.lib (multiply defined symbols).
-// So our workaround is to define this one missing symbol here manually.
-EXTERN_C const PROPERTYKEY PKEY_AudioEndpoint_GUID = { {
-  0x1da5d803, 0xd492, 0x4edd, {
-    0x8c, 0x23, 0xe0, 0xc0, 0xff, 0xee, 0x7f, 0x0e
-  } }, 4
-};
-
 #elif OSX
 #include <CoreAudio/CoreAudio.h>
 #include <QuickTime/QuickTime.h>
@@ -79,14 +69,7 @@ namespace cricket {
 // Initialize to empty string.
 const std::string DeviceManager::kDefaultDeviceName;
 
-#ifdef PLATFORM_CHROMIUM
-class DeviceWatcher {
- public:
-  explicit DeviceWatcher(DeviceManager* dm);
-  bool Start();
-  void Stop();
-};
-#elif defined(WIN32)
+#ifdef WIN32
 class DeviceWatcher : public talk_base::Win32Window {
  public:
   explicit DeviceWatcher(DeviceManager* dm);
@@ -135,8 +118,11 @@ class DeviceWatcher {
 };
 #endif
 
+#if defined(CHROMEOS)
+static bool ShouldAudioDeviceBeIgnored(const std::string& device_name);
+#endif
 #if !defined(LINUX) && !defined(IOS)
-static bool ShouldDeviceBeIgnored(const std::string& device_name);
+static bool ShouldVideoDeviceBeIgnored(const std::string& device_name);
 #endif
 #ifndef OSX
 static bool GetVideoDevices(std::vector<Device>* out);
@@ -180,7 +166,7 @@ DeviceManager::~DeviceManager() {
 
 bool DeviceManager::Init() {
   if (!initialized_) {
-#if defined(WIN32) && !defined(PLATFORM_CHROMIUM)
+#if defined(WIN32)
     HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
     need_couninitialize_ = SUCCEEDED(hr);
     if (FAILED(hr)) {
@@ -201,7 +187,7 @@ bool DeviceManager::Init() {
 void DeviceManager::Terminate() {
   if (initialized_) {
     watcher_->Stop();
-#if defined(WIN32) && !defined(PLATFORM_CHROMIUM)
+#if defined(WIN32)
     if (need_couninitialize_) {
       CoUninitialize();
       need_couninitialize_ = false;
@@ -244,16 +230,13 @@ bool DeviceManager::GetAudioOutputDevice(const std::string& name, Device* out) {
 
 #ifdef OSX
 static bool FilterDevice(const Device& d) {
-  return ShouldDeviceBeIgnored(d.name);
+  return ShouldVideoDeviceBeIgnored(d.name);
 }
 #endif
 
 bool DeviceManager::GetVideoCaptureDevices(std::vector<Device>* devices) {
   devices->clear();
-#ifdef PLATFORM_CHROMIUM
-  devices->push_back(Device("", -1));
-  return true;
-#elif OSX
+#ifdef OSX
   if (GetQTKitVideoDevices(devices)) {
     // Now filter out any known incompatible devices
     devices->erase(remove_if(devices->begin(), devices->end(), FilterDevice),
@@ -268,10 +251,7 @@ bool DeviceManager::GetVideoCaptureDevices(std::vector<Device>* devices) {
 
 bool DeviceManager::GetDefaultVideoCaptureDevice(Device* device) {
   bool ret = false;
-#ifdef PLATFORM_CHROMIUM
-  *device = Device("", -1);
-  ret = true;
-#elif WIN32
+#if WIN32
   // If there are multiple capture devices, we want the first USB one.
   // This avoids issues with defaulting to virtual cameras or grabber cards.
   std::vector<Device> devices;
@@ -309,10 +289,6 @@ bool DeviceManager::GetVideoCaptureDevice(const std::string& name,
     return false;
   }
 
-#ifdef PLATFORM_CHROMIUM
-  *out = Device(name, name);
-  return true;
-#else
   for (std::vector<Device>::const_iterator it = devices.begin();
       it != devices.end(); ++it) {
     if (name == it->name) {
@@ -320,7 +296,6 @@ bool DeviceManager::GetVideoCaptureDevice(const std::string& name,
       return true;
     }
   }
-#endif
 
   return false;
 }
@@ -352,10 +327,7 @@ bool DeviceManager::GetAudioDevice(bool is_input, const std::string& name,
 bool DeviceManager::GetAudioDevicesByPlatform(bool input,
                                               std::vector<Device>* devs) {
   devs->clear();
-#ifdef PLATFORM_CHROMIUM
-  devs->push_back(Device("", -1));
-  return true;
-#elif defined(LINUX_SOUND_USED)
+#if defined(LINUX_SOUND_USED)
   if (!sound_system_.get()) {
     return false;
   }
@@ -378,7 +350,14 @@ bool DeviceManager::GetAudioDevicesByPlatform(bool input,
   for (SoundSystemInterface::SoundDeviceLocatorList::iterator i = list.begin();
        i != list.end();
        ++i, ++index) {
-    devs->push_back(Device((*i)->name(), index));
+#if defined(CHROMEOS)
+    // On ChromeOS, we ignore ALSA surround and S/PDIF devices.
+    if (!ShouldAudioDeviceBeIgnored((*i)->device_name())) {
+#endif
+      devs->push_back(Device((*i)->name(), index));
+#if defined(CHROMEOS)
+    }
+#endif
   }
   SoundSystemInterface::ClearSoundDeviceLocatorList(&list);
   sound_system_.release();
@@ -409,18 +388,7 @@ bool DeviceManager::GetAudioDevicesByPlatform(bool input,
 #endif
 }
 
-#if defined(PLATFORM_CHROMIUM)
-DeviceWatcher::DeviceWatcher(DeviceManager* manager) {
-}
-
-bool DeviceWatcher::Start() {
-  return true;
-}
-
-void DeviceWatcher::Stop() {
-}
-
-#elif defined(WIN32)
+#if defined(WIN32)
 bool GetVideoDevices(std::vector<Device>* devices) {
   return GetDevices(CLSID_VideoInputDeviceCategory, devices);
 }
@@ -452,7 +420,7 @@ bool GetDevices(const CLSID& catid, std::vector<Device>* devices) {
         if (SUCCEEDED(bag->Read(kFriendlyName, &name, 0)) &&
             name.vt == VT_BSTR) {
           name_str = talk_base::ToUtf8(name.bstrVal);
-          if (!ShouldDeviceBeIgnored(name_str)) {
+          if (!ShouldVideoDeviceBeIgnored(name_str)) {
             // Get the device id if one exists.
             if (SUCCEEDED(bag->Read(kDevicePath, &path, 0)) &&
                 path.vt == VT_BSTR) {
@@ -999,11 +967,32 @@ bool DeviceWatcher::IsDescriptorClosed() {
 
 #endif
 
+#if defined(CHROMEOS)
+// Checks if we want to ignore this audio device.
+static bool ShouldAudioDeviceBeIgnored(const std::string& device_name) {
+  static const char* const kFilteredAudioDevicesName[] =  {
+      "surround40:",
+      "surround41:",
+      "surround50:",
+      "surround51:",
+      "surround71:",
+      "iec958:"       // S/PDIF
+  };
+  for (int i = 0; i < ARRAY_SIZE(kFilteredAudioDevicesName); ++i) {
+    if (0 == device_name.find(kFilteredAudioDevicesName[i])) {
+      LOG(LS_INFO) << "Ignoring device " << device_name;
+      return true;
+    }
+  }
+  return false;
+}
+#endif
+
 // TODO: Try to get hold of a copy of Final Cut to understand why we
 //               crash while scanning their components on OS X.
 #if !defined(LINUX) && !defined(IOS)
-static bool ShouldDeviceBeIgnored(const std::string& device_name) {
-  static const char* const kFilteredDevices[] =  {
+static bool ShouldVideoDeviceBeIgnored(const std::string& device_name) {
+  static const char* const kFilteredVideoDevicesName[] =  {
       "Google Camera Adapter",   // Our own magiccams
 #ifdef WIN32
       "Asus virtual Camera",     // Bad Asus desktop virtual cam
@@ -1014,9 +1003,9 @@ static bool ShouldDeviceBeIgnored(const std::string& device_name) {
 #endif
   };
 
-  for (int i = 0; i < ARRAY_SIZE(kFilteredDevices); ++i) {
-    if (strnicmp(device_name.c_str(), kFilteredDevices[i],
-        strlen(kFilteredDevices[i])) == 0) {
+  for (int i = 0; i < ARRAY_SIZE(kFilteredVideoDevicesName); ++i) {
+    if (strnicmp(device_name.c_str(), kFilteredVideoDevicesName[i],
+        strlen(kFilteredVideoDevicesName[i])) == 0) {
       LOG(LS_INFO) << "Ignoring device " << device_name;
       return true;
     }
