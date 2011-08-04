@@ -8,7 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+// Parts of this file derived from Chromium's base/cpu.cc.
+
 #include "cpu_features_wrapper.h"
+
+#include "typedefs.h"
+
+#if defined(WEBRTC_ARCH_X86_FAMILY)
+#if defined(_MSC_VER)
+#include <intrin.h>
+#endif
+#endif
 
 // No CPU feature is available => straight C path.
 int GetCPUInfoNoASM(CPUFeature feature) {
@@ -16,9 +26,11 @@ int GetCPUInfoNoASM(CPUFeature feature) {
   return 0;
 }
 
+#if defined(WEBRTC_ARCH_X86_FAMILY)
+#ifndef _MSC_VER
 // Intrinsic for "cpuid".
 #if defined(__pic__) && defined(__i386__)
-static inline void cpuid(int cpu_info[4], int info_type) {
+static inline void __cpuid(int cpu_info[4], int info_type) {
   __asm__ volatile (
     "mov %%ebx, %%edi\n"
     "cpuid\n"
@@ -26,20 +38,22 @@ static inline void cpuid(int cpu_info[4], int info_type) {
     : "=a"(cpu_info[0]), "=D"(cpu_info[1]), "=c"(cpu_info[2]), "=d"(cpu_info[3])
     : "a"(info_type));
 }
-#elif defined(__i386__) || defined(__x86_64__)
-static inline void cpuid(int cpu_info[4], int info_type) {
+#else
+static inline void __cpuid(int cpu_info[4], int info_type) {
   __asm__ volatile (
     "cpuid\n"
     : "=a"(cpu_info[0]), "=b"(cpu_info[1]), "=c"(cpu_info[2]), "=d"(cpu_info[3])
     : "a"(info_type));
 }
 #endif
+#endif  // _MSC_VER
+#endif  // WEBRTC_ARCH_X86_FAMILY
 
-#if defined(__i386__) || defined(__x86_64__)
+#if defined(WEBRTC_ARCH_X86_FAMILY)
 // Actual feature detection for x86.
 static int GetCPUInfo(CPUFeature feature) {
   int cpu_info[4];
-  cpuid(cpu_info, 1);
+  __cpuid(cpu_info, 1);
   if (feature == kSSE2) {
     return 0 != (cpu_info[3] & 0x04000000);
   }

@@ -8,6 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC_MAIN_SOURCE_AEC_RDFT_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_AEC_MAIN_SOURCE_AEC_RDFT_H_
+
 #ifdef _MSC_VER /* visual c++ */
 # define ALIGN16_BEG __declspec(align(16))
 # define ALIGN16_END
@@ -40,3 +43,5 @@ void aec_rdft_init(void);
 void aec_rdft_init_sse2(void);
 void aec_rdft_forward_128(float *a);
 void aec_rdft_inverse_128(float *a);
+
+#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AEC_MAIN_SOURCE_AEC_RDFT_H_

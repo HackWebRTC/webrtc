@@ -8,21 +8,23 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- *
- * This file contains type definitions used in all WebRtc APIs.
- * 
- */
+// This file contains platform-specific typedefs and defines.
 
-/* Reserved words definitions */
+#ifndef WEBRTC_TYPEDEFS_H_
+#define WEBRTC_TYPEDEFS_H_
+
+// Reserved words definitions
 #define WEBRTC_EXTERN extern
 #define G_CONST const
 #define WEBRTC_INLINE extern __inline
 
-#ifndef WEBRTC_TYPEDEFS_H
-#define WEBRTC_TYPEDEFS_H
-
-/* Define WebRtc preprocessor identifiers based on the current build platform */
+// Define WebRTC preprocessor identifiers based on the current build platform.
+// TODO(ajm): Clean these up. We can probably remove everything in this block.
+//   - TARGET_MAC_INTEL and TARGET_MAC aren't used anywhere.
+//   - In the few places where TARGET_PC is used, it should be replaced by
+//     something more specific.
+//   - Do we really support PowerPC? Probably not. Remove WEBRTC_MAC_INTEL
+//     from build/common.gypi as well.
 #if defined(WIN32)
     // Windows & Windows Mobile
     #if !defined(WEBRTC_TARGET_PC)
@@ -33,17 +35,51 @@
     #if defined(__LITTLE_ENDIAN__ ) //TODO: is this used?
         #if !defined(WEBRTC_TARGET_MAC_INTEL)
             #define WEBRTC_TARGET_MAC_INTEL
-        #endif  
+        #endif
     #else
         #if !defined(WEBRTC_TARGET_MAC)
             #define WEBRTC_TARGET_MAC
-        #endif  
+        #endif
     #endif
 #else
     // Linux etc.
     #if !defined(WEBRTC_TARGET_PC)
         #define WEBRTC_TARGET_PC
     #endif
+#endif
+
+// Derived from Chromium's build/build_config.h
+// Processor architecture detection.  For more info on what's defined, see:
+//   http://msdn.microsoft.com/en-us/library/b0084kay.aspx
+//   http://www.agner.org/optimize/calling_conventions.pdf
+//   or with gcc, run: "echo | gcc -E -dM -"
+// TODO(ajm): replace WEBRTC_LITTLE_ENDIAN with WEBRTC_ARCH_LITTLE_ENDIAN?
+#if defined(_M_X64) || defined(__x86_64__)
+#define WEBRTC_ARCH_X86_FAMILY
+#define WEBRTC_ARCH_X86_64
+#define WEBRTC_ARCH_64_BITS
+#define WEBRTC_ARCH_LITTLE_ENDIAN
+#elif defined(_M_IX86) || defined(__i386__)
+#define WEBRTC_ARCH_X86_FAMILY
+#define WEBRTC_ARCH_X86
+#define WEBRTC_ARCH_32_BITS
+#define WEBRTC_ARCH_LITTLE_ENDIAN
+#elif defined(__ARMEL__)
+// TODO(ajm): Chromium uses the two commented defines. Should we switch?
+#define WEBRTC_ARCH_ARM
+//#define WEBRTC_ARCH_ARM_FAMILY
+//#define WEBRTC_ARCH_ARMEL
+#define WEBRTC_ARCH_32_BITS
+#define WEBRTC_ARCH_LITTLE_ENDIAN
+#else
+#error Please add support for your architecture in typedefs.h
+#endif
+
+// TODO(ajm): SSE2 is disabled on Windows for the moment, because AEC
+// optimization is broken. Enable it as soon as AEC is fixed.
+//#if defined(__SSE2__) || defined(_MSC_VER)
+#if defined(__SSE2__)
+#define WEBRTC_USE_SSE2
 #endif
 
 #if defined(WEBRTC_TARGET_PC)
@@ -79,7 +115,7 @@
     typedef char                WebRtc_Word8;
     typedef uint8_t             WebRtc_UWord8;
 
-    /* Define endian for the platform */
+    // Define endian for the platform
     #define WEBRTC_LITTLE_ENDIAN
 
 #elif defined(WEBRTC_TARGET_MAC_INTEL)
@@ -94,14 +130,11 @@
     typedef uint16_t            WebRtc_UWord16;
     typedef uint8_t             WebRtc_UWord8;
 
-    /* Define endian for the platform */
+    // Define endian for the platform
     #define WEBRTC_LITTLE_ENDIAN
 
 #else
-
-    #error "No platform defined for WebRtc type definitions (webrtc_typedefs.h)"
-
+    #error "No platform defined for WebRTC type definitions (typedefs.h)"
 #endif
 
-
-#endif // WEBRTC_TYPEDEFS_H
+#endif  // WEBRTC_TYPEDEFS_H_

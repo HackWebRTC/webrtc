@@ -12,7 +12,9 @@
  * The core AEC algorithm, SSE2 version of speed-critical functions.
  */
 
-#if defined(__SSE2__)
+#include "typedefs.h"
+
+#if defined(WEBRTC_USE_SSE2)
 #include <emmintrin.h>
 #include <math.h>
 
@@ -209,14 +211,6 @@ static void FilterAdaptationSSE2(aec_t *aec, float *fft, float ef[2][PART_LEN1])
 #endif // UNCONSTR
   }
 }
-
-#ifdef _MSC_VER /* visual c++ */
-# define ALIGN16_BEG __declspec(align(16))
-# define ALIGN16_END
-#else /* gcc or icc */
-# define ALIGN16_BEG
-# define ALIGN16_END __attribute__((aligned(16)))
-#endif
 
 static __m128 mm_pow_ps(__m128 a, __m128 b)
 {
@@ -432,4 +426,4 @@ void WebRtcAec_InitAec_SSE2(void) {
   WebRtcAec_OverdriveAndSuppress = OverdriveAndSuppressSSE2;
 }
 
-#endif   //__SSE2__
+#endif   // WEBRTC_USE_SSE2

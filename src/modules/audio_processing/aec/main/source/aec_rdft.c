@@ -19,10 +19,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "aec_rdft.h"
+
 #include <math.h>
 
-#include "aec_rdft.h"
 #include "system_wrappers/interface/cpu_features_wrapper.h"
+#include "typedefs.h"
 
 // constants shared by all paths (C, SSE2).
 float rdft_w[64];
@@ -571,7 +573,7 @@ void aec_rdft_init(void) {
   rftfsub_128 = rftfsub_128_C;
   rftbsub_128 = rftbsub_128_C;
   if (WebRtc_GetCPUInfo(kSSE2)) {
-#if defined(__SSE2__)
+#if defined(WEBRTC_USE_SSE2)
     aec_rdft_init_sse2();
 #endif
   }

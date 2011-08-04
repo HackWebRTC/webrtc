@@ -8,7 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#if defined(__SSE2__)
+#include "typedefs.h"
+
+#if defined(WEBRTC_USE_SSE2)
 #include <emmintrin.h>
 
 #include "aec_rdft.h"
@@ -261,4 +263,4 @@ void aec_rdft_init_sse2(void) {
   rftbsub_128 = rftbsub_128_SSE2;
 }
 
-#endif  // __SSE2__
+#endif  // WEBRTC_USE_SS2

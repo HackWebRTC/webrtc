@@ -468,7 +468,7 @@ int WebRtcAec_InitAec(aec_t *aec, int sampFreq)
     WebRtcAec_FilterAdaptation = FilterAdaptation;
     WebRtcAec_OverdriveAndSuppress = OverdriveAndSuppress;
     if (WebRtc_GetCPUInfo(kSSE2)) {
-#if defined(__SSE2__)
+#if defined(WEBRTC_USE_SSE2)
       WebRtcAec_InitAec_SSE2();
 #endif
     }
@@ -561,8 +561,8 @@ void WebRtcAec_ProcessFrame(aec_t *aec, const short *farend,
 }
 
 static void ProcessBlock(aec_t *aec, const short *farend,
-                              const short *nearend, const short *nearendH,
-                              short *output, short *outputH)
+                         const short *nearend, const short *nearendH,
+                         short *output, short *outputH)
 {
     int i;
     float d[PART_LEN], y[PART_LEN], e[PART_LEN], dH[PART_LEN];
@@ -600,7 +600,6 @@ static void ProcessBlock(aec_t *aec, const short *farend,
             dH[i] = (float)nearendH[i];
         }
     }
-
 
     memcpy(fft, aec->xBuf, sizeof(float) * PART_LEN2);
     memcpy(aec->dBuf + PART_LEN, d, sizeof(float) * PART_LEN);

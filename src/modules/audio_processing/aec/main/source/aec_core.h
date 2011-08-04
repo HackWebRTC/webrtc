@@ -16,8 +16,9 @@
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AEC_MAIN_SOURCE_AEC_CORE_H_
 
 #include <stdio.h>
-#include "typedefs.h"
+
 #include "signal_processing_library.h"
+#include "typedefs.h"
 
 //#define G167 // for running G167 tests
 //#define UNCONSTR // time-unconstrained filter
@@ -92,21 +93,13 @@ typedef struct {
     float dMinPow[PART_LEN1];
     float dInitMinPow[PART_LEN1];
     float *noisePow;
-#ifdef FFTW
-    float fftR[PART_LEN2];
-    fftw_complex fftC[PART_LEN2];
-    fftw_plan fftPlan, ifftPlan;
 
-    fftw_complex xfBuf[NR_PART * PART_LEN1];
-    fftw_complex wfBuf[NR_PART * PART_LEN1];
-    fftw_complex sde[PART_LEN1];
-#else
     float xfBuf[2][NR_PART * PART_LEN1]; // farend fft buffer
     float wfBuf[2][NR_PART * PART_LEN1]; // filter fft
     complex_t sde[PART_LEN1]; // cross-psd of nearend and error
     complex_t sxd[PART_LEN1]; // cross-psd of farend and nearend
     complex_t xfwBuf[NR_PART * PART_LEN1]; // farend windowed fft buffer
-#endif
+
     float sx[PART_LEN1], sd[PART_LEN1], se[PART_LEN1]; // far, near and error psd
     float hNs[PART_LEN1];
     float hNlFbMin, hNlFbLocalMin;
@@ -169,8 +162,6 @@ typedef void (*WebRtcAec_FilterFar_t)(aec_t *aec, float yf[2][PART_LEN1]);
 extern WebRtcAec_FilterFar_t WebRtcAec_FilterFar;
 typedef void (*WebRtcAec_ScaleErrorSignal_t)(aec_t *aec, float ef[2][PART_LEN1]);
 extern WebRtcAec_ScaleErrorSignal_t WebRtcAec_ScaleErrorSignal;
-#define IP_LEN PART_LEN // this must be at least ceil(2 + sqrt(PART_LEN))
-#define W_LEN PART_LEN
 typedef void (*WebRtcAec_FilterAdaptation_t)
   (aec_t *aec, float *fft, float ef[2][PART_LEN1]);
 extern WebRtcAec_FilterAdaptation_t WebRtcAec_FilterAdaptation;
