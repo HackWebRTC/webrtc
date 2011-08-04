@@ -17,8 +17,14 @@
 //#define AECM_WITH_ABS_APPROX
 //#define AECM_SHORT                // for 32 sample partition length (otherwise 64)
 
+// TODO(bjornv): These defines will be removed in final version.
+//#define STORE_CHANNEL_DATA
+//#define VAD_DATA
+
 #include "typedefs.h"
 #include "signal_processing_library.h"
+// TODO(bjornv): Will be removed in final version.
+#include <stdio.h>
 
 // Algorithm parameters
 
@@ -121,21 +127,29 @@ typedef struct
     WebRtc_UWord32 seed;
 
     // Delay estimation variables
-    void* delay_estimator;
+    WebRtc_UWord16 medianYlogspec[PART_LEN1];
+    WebRtc_UWord16 medianXlogspec[PART_LEN1];
+    WebRtc_UWord16 medianBCount[MAX_DELAY];
+    WebRtc_UWord16 xfaHistory[PART_LEN1][MAX_DELAY];
+    WebRtc_Word16 delHistoryPos;
+    WebRtc_UWord32 bxHistory[MAX_DELAY];
     WebRtc_UWord16 currentDelay;
+    WebRtc_UWord16 previousDelay;
+    WebRtc_Word16 delayAdjust;
 
     WebRtc_Word16 nlpFlag;
     WebRtc_Word16 fixedDelay;
 
     WebRtc_UWord32 totCount;
 
+    WebRtc_Word16 xfaQDomainBuf[MAX_DELAY];
     WebRtc_Word16 dfaCleanQDomain;
     WebRtc_Word16 dfaCleanQDomainOld;
     WebRtc_Word16 dfaNoisyQDomain;
     WebRtc_Word16 dfaNoisyQDomainOld;
 
     WebRtc_Word16 nearLogEnergy[MAX_BUF_LEN];
-    WebRtc_Word16 farLogEnergy;
+    WebRtc_Word16 farLogEnergy[MAX_BUF_LEN];
     WebRtc_Word16 echoAdaptLogEnergy[MAX_BUF_LEN];
     WebRtc_Word16 echoStoredLogEnergy[MAX_BUF_LEN];
 
@@ -162,15 +176,42 @@ typedef struct
     WebRtc_Word16 currentVADValue;
     WebRtc_Word16 vadUpdateCount;
 
+    WebRtc_Word16 delayHistogram[MAX_DELAY];
+    WebRtc_Word16 delayVadCount;
+    WebRtc_Word16 maxDelayHistIdx;
+    WebRtc_Word16 lastMinPos;
+
     WebRtc_Word16 startupState;
     WebRtc_Word16 mseChannelCount;
+    WebRtc_Word16 delayCount;
+    WebRtc_Word16 newDelayCorrData;
+    WebRtc_Word16 lastDelayUpdateCount;
+    WebRtc_Word16 delayCorrelation[CORR_BUF_LEN];
     WebRtc_Word16 supGain;
     WebRtc_Word16 supGainOld;
+    WebRtc_Word16 delayOffsetFlag;
 
     WebRtc_Word16 supGainErrParamA;
     WebRtc_Word16 supGainErrParamD;
     WebRtc_Word16 supGainErrParamDiffAB;
     WebRtc_Word16 supGainErrParamDiffBD;
+
+    // TODO(bjornv): Will be removed after final version has been committed.
+#ifdef VAD_DATA
+    FILE *vad_file;
+    FILE *delay_file;
+    FILE *far_file;
+    FILE *far_cur_file;
+    FILE *far_min_file;
+    FILE *far_max_file;
+    FILE *far_vad_file;
+#endif
+
+    // TODO(bjornv): Will be removed after final version has been committed.
+#ifdef STORE_CHANNEL_DATA
+    FILE *channel_file;
+    FILE *channel_file_init;
+#endif
 
 #ifdef AEC_DEBUG
     FILE *farFile;
@@ -225,7 +266,7 @@ int WebRtcAecm_InitCore(AecmCore_t * const aecm, int samplingFreq);
 //
 int WebRtcAecm_FreeCore(AecmCore_t *aecm);
 
-int WebRtcAecm_Control(AecmCore_t *aecm, int delay, int nlpFlag);
+int WebRtcAecm_Control(AecmCore_t *aecm, int delay, int nlpFlag, int delayOffsetFlag);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // WebRtcAecm_InitEchoPathCore(...)
