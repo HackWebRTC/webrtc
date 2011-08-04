@@ -212,8 +212,8 @@ private:
     EventWrapper& _recStartEvent;
     EventWrapper& _playStartEvent;
 
-    ThreadWrapper* _ptrThreadPlay;
     ThreadWrapper* _ptrThreadRec;
+    ThreadWrapper* _ptrThreadPlay;
     WebRtc_UWord32 _recThreadID;
     WebRtc_UWord32 _playThreadID;
 
@@ -221,10 +221,6 @@ private:
 
     AudioMixerManagerLinuxALSA _mixerManager;
 
-    bool _usingInputDeviceIndex;
-    bool _usingOutputDeviceIndex;
-    AudioDeviceModule::WindowsDeviceType _inputDevice;
-    AudioDeviceModule::WindowsDeviceType _outputDevice;
     WebRtc_UWord16 _inputDeviceIndex;
     WebRtc_UWord16 _outputDeviceIndex;
     bool _inputDeviceIsSpecified;

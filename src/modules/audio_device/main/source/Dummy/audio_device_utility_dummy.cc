@@ -17,7 +17,8 @@ namespace webrtc
 {
 
 AudioDeviceUtilityDummy::AudioDeviceUtilityDummy(const WebRtc_Word32 id) :
-    _critSect(*CriticalSectionWrapper::CreateCriticalSection()), _id(id),
+    _critSect(*CriticalSectionWrapper::CreateCriticalSection()),
+    _id(id),
     _lastError(AudioDeviceModule::kAdmErrNone)
 {
     WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, id,

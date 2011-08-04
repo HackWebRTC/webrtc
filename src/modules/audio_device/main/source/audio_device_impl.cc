@@ -172,14 +172,14 @@ AudioDeviceModuleImpl::AudioDeviceModuleImpl(const WebRtc_Word32 id, const Audio
     _critSectEventCb(*CriticalSectionWrapper::CreateCriticalSection()),
     _critSectAudioCb(*CriticalSectionWrapper::CreateCriticalSection()),
     _ptrCbAudioDeviceObserver(NULL),
+    _ptrAudioDeviceUtility(NULL),
+    _ptrAudioDevice(NULL),
     _id(id),
     _platformAudioLayer(audioLayer),
     _lastProcessTime(AudioDeviceUtility::GetTimeInMS()),
-    _lastError(kAdmErrNone),
     _platformType(kPlatformNotSupported),
-    _ptrAudioDeviceUtility(NULL),
-    _ptrAudioDevice(NULL),
-    _initialized(false)
+    _initialized(false),
+    _lastError(kAdmErrNone)
 {
     WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, id, "%s created", __FUNCTION__);
 }

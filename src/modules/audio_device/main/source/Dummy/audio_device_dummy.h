@@ -155,8 +155,8 @@ private:
     EventWrapper&                                  _recStartEvent;
     EventWrapper&                                  _playStartEvent;
     
-    ThreadWrapper*                                 _ptrThreadPlay;
     ThreadWrapper*                                 _ptrThreadRec;
+    ThreadWrapper*                                 _ptrThreadPlay;
     WebRtc_UWord32                                _recThreadID;
     WebRtc_UWord32                                _playThreadID;
     

@@ -101,11 +101,20 @@ void AudioEventObserver::OnWarningIsReported(const WarningCode warning)
 ;
 
 AudioTransportImpl::AudioTransportImpl(AudioDeviceModule* audioDevice) :
-    _audioDevice(audioDevice), _playFromFile(false), _fullDuplex(false),
-        _speakerVolume(false), _microphoneVolume(false), _speakerMute(false),
-        _microphoneMute(false), _microphoneBoost(false),
-        _loopBackMeasurements(false), _microphoneAGC(false), _recCount(0),
-        _playCount(0), _playFile(*FileWrapper::Create()), _audioList()
+    _audioDevice(audioDevice),
+    _playFromFile(false),
+    _fullDuplex(false),
+    _speakerVolume(false),
+    _speakerMute(false),
+    _microphoneVolume(false),
+    _microphoneMute(false),
+    _microphoneBoost(false),
+    _microphoneAGC(false),
+    _loopBackMeasurements(false),
+    _playFile(*FileWrapper::Create()),
+    _recCount(0),
+    _playCount(0),
+    _audioList()
 {
     _resampler.Reset(48000, 48000, kResamplerSynchronousStereo);
 }
@@ -568,8 +577,10 @@ WebRtc_Word32 AudioTransportImpl::NeedMorePlayData(
 ;
 
 FuncTestManager::FuncTestManager() :
-    _audioDevice(NULL), _processThread(NULL), _audioEventObserver(NULL),
-        _audioTransport(NULL)
+    _processThread(NULL),
+    _audioDevice(NULL),
+    _audioEventObserver(NULL),
+    _audioTransport(NULL)
 {
 }
 ;

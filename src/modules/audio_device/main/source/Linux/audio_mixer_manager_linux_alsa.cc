@@ -25,9 +25,12 @@ namespace webrtc
 {
 
 AudioMixerManagerLinuxALSA::AudioMixerManagerLinuxALSA(const WebRtc_Word32 id) :
-    _critSect(*CriticalSectionWrapper::CreateCriticalSection()), _id(id),
-    _inputMixerHandle(NULL), _outputMixerHandle(NULL),
-    _inputMixerElement(NULL), _outputMixerElement(NULL)
+    _critSect(*CriticalSectionWrapper::CreateCriticalSection()),
+    _id(id),
+    _outputMixerHandle(NULL),
+    _inputMixerHandle(NULL),
+    _outputMixerElement(NULL),
+    _inputMixerElement(NULL)
 {
     WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, _id,
                  "%s constructed", __FUNCTION__);
