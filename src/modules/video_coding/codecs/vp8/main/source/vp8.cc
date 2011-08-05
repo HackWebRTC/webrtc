@@ -51,6 +51,7 @@ VP8Encoder::VP8Encoder():
     _pictureIDLastSentRef(0),
     _pictureIDLastAcknowledgedRef(0),
     _cpuSpeed(-6), // default value
+    _rcMaxIntraTarget(0),
     _encoder(NULL),
     _cfg(NULL),
     _raw(NULL)
@@ -137,7 +138,7 @@ VP8Encoder::Reset()
 
     _encoder = new vpx_codec_ctx_t;
 
-    return InitAndSetSpeed();
+    return InitAndSetControlSettings();
 }
 
 WebRtc_Word32
@@ -291,10 +292,8 @@ VP8Encoder::InitEncode(const VideoCodec* inst,
     _cfg->rc_buf_initial_sz = 500;
     _cfg->rc_buf_optimal_sz = 600;
     _cfg->rc_buf_sz = 1000;
-#ifdef VP8_LATEST
-    _cfg->rc_max_intra_bitrate_pct = MaxIntraTarget(_cfg->rc_buf_optimal_sz);
-#endif
-
+     // set the maximum target size of any key-frame.
+    _rcMaxIntraTarget = MaxIntraTarget(_cfg->rc_buf_optimal_sz);
 
 #ifdef DEV_PIC_LOSS
     // this can only be off if we know we use feedback
@@ -307,7 +306,7 @@ VP8Encoder::InitEncode(const VideoCodec* inst,
 #endif
     {
         _cfg->kf_mode = VPX_KF_AUTO;
-        _cfg->kf_max_dist = 300;
+        _cfg->kf_max_dist = 3000;
     }
 
     switch (inst->codecSpecific.VP8.complexity)
@@ -334,11 +333,13 @@ VP8Encoder::InitEncode(const VideoCodec* inst,
         }
     }
 
-    return InitAndSetSpeed();
+    return InitAndSetControlSettings();
+
+
 }
 
 WebRtc_Word32
-VP8Encoder::InitAndSetSpeed()
+VP8Encoder::InitAndSetControlSettings()
 {
     // construct encoder context
     vpx_codec_enc_cfg_t cfg_copy = *_cfg;
@@ -346,9 +347,12 @@ VP8Encoder::InitAndSetSpeed()
     {
         return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
     }
-
+    vpx_codec_control(_encoder, VP8E_SET_STATIC_THRESHOLD, 800);
     vpx_codec_control(_encoder, VP8E_SET_CPUUSED, _cpuSpeed);
-
+#ifdef VP8_LATEST
+    vpx_codec_control(_encoder, VP8E_SET_MAX_INTRA_BITRATE_PCT,
+                      _rcMaxIntraTarget);
+#endif
     *_cfg = cfg_copy;
 
     _inited = true;
@@ -356,18 +360,22 @@ VP8Encoder::InitAndSetSpeed()
 }
 
 #ifdef VP8_LATEST
-WebRtc_Word32
-VP8Encoder::MaxIntraTarget(WebRtc_Word32 optimalBuffersize)
+WebRtc_UWord32
+VP8Encoder::MaxIntraTarget(WebRtc_UWord32 optimalBuffersize)
 {
-    // Set max to 1 / 2 of the optimal buffer level (normalize by target BR).
-    // Max target size = 0.5 * optimalBufferSize * targetBR[Kbps].
-    // This values is presented in percentage of perFrameBw.
+    // Set max to the optimal buffer level (normalized by target BR),
+    // and scaled by a scalePar.
+    // Max target size = scalePar * optimalBufferSize * targetBR[Kbps].
+    // This values is presented in percentage of perFrameBw:
     // perFrameBw = targetBR[Kbps] * 1000 / frameRate.
     // The target in % is as follows:
-    WebRtc_Word32 targetPct = (optimalBuffersize >> 1) * _maxFrameRate / 10;
+
+    float scalePar = 0.5;
+    WebRtc_UWord32 targetPct = (optimalBuffersize * scalePar) *
+                              _maxFrameRate / 10;
 
     // Don't go below 3 times the per frame bandwidth.
-    const WebRtc_Word32 minIntraTh = 300;
+    const WebRtc_UWord32 minIntraTh = 300;
     targetPct = (targetPct < minIntraTh) ? minIntraTh: targetPct;
 
     return  targetPct;
@@ -663,7 +671,7 @@ VP8Decoder::InitDecode(const VideoCodec* inst,
 
     // TODO(mikhal): evaluate post-proc settings
     // config post-processing settings for decoder
-    ppcfg.post_proc_flag   = VP8_DEBLOCK;
+    ppcfg.post_proc_flag = VP8_DEBLOCK;
     // Strength of deblocking filter. Valid range:[0,16]
     ppcfg.deblocking_level = 5;
     // ppcfg.NoiseLevel     = 1; //Noise intensity. Valid range: [0,7]
@@ -706,19 +714,7 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
     {
         return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
     }
-    if (inputImage._completeFrame == false)
-    {
-        // future improvement
-        // we can't decode this frame
-        if (_feedbackModeOn)
-        {
-            return WEBRTC_VIDEO_CODEC_ERR_REQUEST_SLI;
-        }
-        else
-        {
-            return WEBRTC_VIDEO_CODEC_ERROR;
-        }
-    }
+
     vpx_dec_iter_t _iter = NULL;
     vpx_image_t* img;
 

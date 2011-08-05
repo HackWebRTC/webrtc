@@ -135,8 +135,8 @@ public:
                                         WebRtc_Word32 length);
 
 private:
-// Call encoder initialize function and set speed.
-    WebRtc_Word32 InitAndSetSpeed();
+// Call encoder initialize function and set control settings.
+    WebRtc_Word32 InitAndSetControlSettings();
 
 // Determine maximum target for Intra frames
 //
@@ -144,9 +144,8 @@ private:
 //    - optimalBuffersize  : Optimal buffer size
 // Return Value            : Max target size for Intra frames represented as
 //                           percentage of the per frame bandwidth
-#ifdef VP8_LATEST
-    WebRtc_Word32 MaxIntraTarget(WebRtc_Word32 optimalBuffersize);
-#endif
+    WebRtc_UWord32 MaxIntraTarget(WebRtc_UWord32 optimalBuffersize);
+
     EncodedImage              _encodedImage;
     EncodedImageCallback*     _encodedCompleteCallback;
     WebRtc_Word32             _width;
@@ -164,6 +163,7 @@ private:
     WebRtc_UWord16            _pictureIDLastSentRef;
     WebRtc_UWord16            _pictureIDLastAcknowledgedRef;
     int                       _cpuSpeed;
+    WebRtc_UWord32            _rcMaxIntraTarget;
 
     vpx_codec_ctx_t*          _encoder;
     vpx_codec_enc_cfg_t*      _cfg;
