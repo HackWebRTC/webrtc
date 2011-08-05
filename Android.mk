@@ -26,7 +26,7 @@ include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_device/main/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_processing/aec/main/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_processing/aecm/main/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_processing/agc/main/source/Android.mk
-include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_processing/main/source/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_processing/main/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_processing/ns/main/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_processing/utility/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/media_file/source/Android.mk
@@ -142,9 +142,6 @@ endif
 include $(BUILD_SHARED_LIBRARY)
 
 # test apps, they're for test only; all these test apps have LOCAL_MODULE_TAGS:=tests
-# audio processing test apps
-include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_processing/main/test/process_test/Android.mk
-include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_processing/main/test/unit_test/Android.mk
 # voice engine test apps
 include $(MY_WEBRTC_ROOT_PATH)/src/voice_engine/main/test/cmd_test/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/voice_engine/main/test/auto_test/Android.mk

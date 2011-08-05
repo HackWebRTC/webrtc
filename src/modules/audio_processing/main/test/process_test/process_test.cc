@@ -20,7 +20,11 @@
 #include "cpu_features_wrapper.h"
 #include "module_common_types.h"
 #include "tick_util.h"
+#ifdef WEBRTC_ANDROID
+#include "external/webrtc/src/modules/audio_processing/main/source/debug.pb.h"
+#else
 #include "webrtc/audio_processing/debug.pb.h"
+#endif
 
 using webrtc::AudioFrame;
 using webrtc::AudioProcessing;
