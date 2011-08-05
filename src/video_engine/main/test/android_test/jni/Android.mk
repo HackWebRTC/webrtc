@@ -14,15 +14,12 @@ LIBS_PATH := $(LOCAL_PATH)/../../../../../../../build/libraries
 include $(CLEAR_VARS)
 
 LOCAL_MODULE_TAGS := tests
-LOCAL_MODULE    := libwebrtc-video-demo-jni
+LOCAL_MODULE := libwebrtc-video-demo-jni
 LOCAL_CPP_EXTENSION := .cc
 LOCAL_SRC_FILES := vie_android_java_api.cc
-LOCAL_CPPFLAGS := 
-LOCAL_LDFLAGS :=
-LOCAL_CFLAGS += \
+LOCAL_CFLAGS := \
     '-DWEBRTC_TARGET_PC' \
-    '-DWEBRTC_ANDROID' \
-    '-DANDROID' 
+    '-DWEBRTC_ANDROID'
 
 LOCAL_C_INCLUDES := \
     external/gtest/include \
@@ -31,7 +28,6 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../../../../../voice_engine/main/interface 
 
 LOCAL_PRELINK_MODULE := false
-LOCAL_STATIC_LIBRARIES := 
 
 LOCAL_SHARED_LIBRARIES := \
     libutils \
@@ -39,7 +35,7 @@ LOCAL_SHARED_LIBRARIES := \
     libandroid \
     libwebrtc \
     libGLESv2
-LOCAL_LDLIBS     := $(LIBS_PATH)/VideoEngine_android_gcc.a -llog -lgcc 
+LOCAL_LDLIBS := $(LIBS_PATH)/VideoEngine_android_gcc.a -llog -lgcc 
 
 include $(BUILD_SHARED_LIBRARY)
 

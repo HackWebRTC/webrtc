@@ -10,30 +10,23 @@ LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
 
+include $(LOCAL_PATH)/../../../../../android-webrtc.mk
+
 LOCAL_ARM_MODE := arm
 LOCAL_MODULE_CLASS := STATIC_LIBRARIES
 LOCAL_MODULE := libwebrtc_audio_coding
 LOCAL_MODULE_TAGS := optional
 LOCAL_CPP_EXTENSION := .cc
-LOCAL_GENERATED_SOURCES :=
-LOCAL_SRC_FILES := acm_amr.cc \
-    acm_amrwb.cc \
+LOCAL_SRC_FILES := \
     acm_cng.cc \
     acm_codec_database.cc \
     acm_dtmf_detection.cc \
     acm_dtmf_playout.cc \
     acm_g722.cc \
-    acm_g7221.cc \
-    acm_g7221c.cc \
-    acm_g729.cc \
-    acm_g7291.cc \
     acm_generic_codec.cc \
-    acm_gsmfr.cc \
     acm_ilbc.cc \
     acm_isac.cc \
     acm_neteq.cc \
-    acm_opus.cc \
-    acm_speex.cc \
     acm_pcm16b.cc \
     acm_pcma.cc \
     acm_pcmu.cc \
@@ -43,22 +36,11 @@ LOCAL_SRC_FILES := acm_amr.cc \
     audio_coding_module_impl.cc
 
 # Flags passed to both C and C++ files.
-MY_CFLAGS :=  
-MY_CFLAGS_C :=
-MY_DEFS := '-DNO_TCMALLOC' \
-    '-DNO_HEAPCHECKER' \
-    '-DWEBRTC_TARGET_PC' \
-    '-DWEBRTC_LINUX' \
-    '-DWEBRTC_THREAD_RR' \
-    '-DWEBRTC_ANDROID' \
-    '-DANDROID' 
+LOCAL_CFLAGS := \
+    $(MY_WEBRTC_COMMON_DEFS)
 
-LOCAL_CFLAGS := $(MY_CFLAGS_C) $(MY_CFLAGS) $(MY_DEFS)
-
-# Include paths placed before CFLAGS/CPPFLAGS
-LOCAL_C_INCLUDES := $(LOCAL_PATH)/../../../.. \
+LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../interface \
-    $(LOCAL_PATH)/../../../interface \
     $(LOCAL_PATH)/../../codecs/CNG/main/interface \
     $(LOCAL_PATH)/../../codecs/G711/main/interface \
     $(LOCAL_PATH)/../../codecs/G722/main/interface \
@@ -67,24 +49,19 @@ LOCAL_C_INCLUDES := $(LOCAL_PATH)/../../../.. \
     $(LOCAL_PATH)/../../codecs/iSAC/fix/interface \
     $(LOCAL_PATH)/../../codecs/PCM16B/main/interface \
     $(LOCAL_PATH)/../../NetEQ/main/interface \
+    $(LOCAL_PATH)/../../../.. \
+    $(LOCAL_PATH)/../../../interface \
     $(LOCAL_PATH)/../../../../common_audio/resampler/main/interface \
     $(LOCAL_PATH)/../../../../common_audio/signal_processing_library/main/interface \
     $(LOCAL_PATH)/../../../../common_audio/vad/main/interface \
     $(LOCAL_PATH)/../../../../system_wrappers/interface 
 
-# Flags passed to only C++ (and not C) files.
-LOCAL_CPPFLAGS := 
-
-LOCAL_LDFLAGS :=
-
-LOCAL_STATIC_LIBRARIES :=
-
-LOCAL_SHARED_LIBRARIES := libcutils \
+LOCAL_SHARED_LIBRARIES := \
+    libcutils \
     libdl \
     libstlport
-LOCAL_ADDITIONAL_DEPENDENCIES :=
 
-ifneq ($(MY_WEBRTC_NDK_BUILD),true)
+ifndef NDK_ROOT
 include external/stlport/libstlport.mk
-include $(BUILD_STATIC_LIBRARY)
 endif
+include $(BUILD_STATIC_LIBRARY)

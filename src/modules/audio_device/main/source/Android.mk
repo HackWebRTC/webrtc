@@ -10,13 +10,15 @@ LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
 
+include $(LOCAL_PATH)/../../../../../android-webrtc.mk
+
 LOCAL_ARM_MODE := arm
 LOCAL_MODULE_CLASS := STATIC_LIBRARIES
 LOCAL_MODULE := libwebrtc_audio_device
 LOCAL_MODULE_TAGS := optional
 LOCAL_CPP_EXTENSION := .cc
-LOCAL_GENERATED_SOURCES :=
-LOCAL_SRC_FILES := audio_device_buffer.cc \
+LOCAL_SRC_FILES := \
+    audio_device_buffer.cc \
     audio_device_generic.cc \
     audio_device_utility.cc \
     audio_device_impl.cc \
@@ -26,46 +28,30 @@ LOCAL_SRC_FILES := audio_device_buffer.cc \
     Dummy/audio_device_dummy.cc
 
 # Flags passed to both C and C++ files.
-MY_CFLAGS :=
-MY_CFLAGS_C :=
-MY_DEFS := '-DNO_TCMALLOC' \
-    '-DNO_HEAPCHECKER' \
-    '-DWEBRTC_TARGET_PC' \
-    '-DWEBRTC_THREAD_RR' \
-    '-DWEBRTC_LINUX' \
-    '-DWEBRTC_ANDROID_OPENSLES' \
-    '-DWEBRTC_ANDROID'
+LOCAL_CFLAGS := \
+    $(MY_WEBRTC_COMMON_DEFS) \
+   '-DWEBRTC_ANDROID_OPENSLES'
 
-LOCAL_CFLAGS := $(MY_CFLAGS_C) $(MY_CFLAGS) $(MY_DEFS)
-
-# Include paths placed before CFLAGS/CPPFLAGS
 LOCAL_C_INCLUDES := \
-    $(JNI_H_INCLUDE) \
-    $(LOCAL_PATH)/../../../.. \
-    $(LOCAL_PATH)/. \
-    $(LOCAL_PATH)/../../../interface \
-    $(LOCAL_PATH)/../interface \
+    $(LOCAL_PATH) \
     $(LOCAL_PATH)/Android \
     $(LOCAL_PATH)/Dummy \
     $(LOCAL_PATH)/Linux \
+    $(LOCAL_PATH)/../interface \
+    $(LOCAL_PATH)/../../../.. \
+    $(LOCAL_PATH)/../../../interface \
     $(LOCAL_PATH)/../../../../common_audio/resampler/main/interface \
     $(LOCAL_PATH)/../../../../common_audio/signal_processing_library/main/interface \
     $(LOCAL_PATH)/../../../../system_wrappers/interface \
     system/media/wilhelm/include
 
-# Flags passed to only C++ (and not C) files.
-LOCAL_CPPFLAGS :=
-
-LOCAL_LDFLAGS :=
-
-LOCAL_STATIC_LIBRARIES :=
-
-LOCAL_SHARED_LIBRARIES := libcutils \
+LOCAL_SHARED_LIBRARIES := \
+    libcutils \
     libdl \
     libstlport \
     libOpenSLES
 
-LOCAL_ADDITIONAL_DEPENDENCIES :=
-
+ifndef NDK_ROOT
 include external/stlport/libstlport.mk
+endif
 include $(BUILD_STATIC_LIBRARY)

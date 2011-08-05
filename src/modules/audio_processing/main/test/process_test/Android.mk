@@ -12,6 +12,8 @@ LOCAL_PATH:= $(call my-dir)
 
 include $(CLEAR_VARS)
 
+include $(LOCAL_PATH)/../../../../../../android-webrtc.mk
+
 LOCAL_MODULE_TAGS := tests
 LOCAL_CPP_EXTENSION := .cc
 LOCAL_SRC_FILES:= \
@@ -26,7 +28,7 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../../../../interface \
     $(LOCAL_PATH)/../../../../.. \
     $(LOCAL_PATH)/../../../../../system_wrappers/interface \
-    external/gtest/include \
+    external/gtest/include
 
 LOCAL_STATIC_LIBRARIES := \
     libgtest 
@@ -34,11 +36,13 @@ LOCAL_STATIC_LIBRARIES := \
 LOCAL_SHARED_LIBRARIES := \
     libutils \
     libstlport \
-    libwebrtc_audio_preprocessing 
+    libwebrtc_audio_preprocessing
 
 LOCAL_MODULE:= webrtc_apm_process_test
 
-ifndef NDK_ROOT
-include external/stlport/libstlport.mk
-endif
+ifdef NDK_ROOT
 include $(BUILD_EXECUTABLE)
+else
+include external/stlport/libstlport.mk
+include $(BUILD_NATIVE_TEST)
+endif

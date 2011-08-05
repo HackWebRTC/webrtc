@@ -12,6 +12,8 @@ LOCAL_PATH:= $(call my-dir)
 
 include $(CLEAR_VARS)
 
+include $(LOCAL_PATH)/../../../../../../android-webrtc.mk
+
 LOCAL_MODULE_TAGS := tests
 LOCAL_CPP_EXTENSION := .cc
 LOCAL_SRC_FILES:= \
@@ -31,10 +33,8 @@ LOCAL_SRC_FILES:= \
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \
     '-DWEBRTC_TARGET_PC' \
-    '-DWEBRTC_ANDROID' \
-    '-DANDROID'
-LOCAL_CPPFLAGS :=
-LOCAL_LDFLAGS :=
+    '-DWEBRTC_ANDROID'
+
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../interface \
     $(LOCAL_PATH)/../../../../.. \
@@ -49,8 +49,6 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../../../../../common_video/vplib/main/interface \
     $(LOCAL_PATH)/../../../../../voice_engine/main/interface
 
-LOCAL_STATIC_LIBRARIES := 
-
 LOCAL_SHARED_LIBRARIES := \
     libutils \
     libstlport \
@@ -58,5 +56,7 @@ LOCAL_SHARED_LIBRARIES := \
 
 LOCAL_MODULE:= webrtc_video_test
 
+ifndef NDK_ROOT
 include external/stlport/libstlport.mk
+endif
 include $(BUILD_EXECUTABLE)

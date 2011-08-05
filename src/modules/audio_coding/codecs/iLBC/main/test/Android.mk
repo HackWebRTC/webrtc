@@ -11,6 +11,8 @@ LOCAL_PATH:= $(call my-dir)
 # iLBC test app
 include $(CLEAR_VARS)
 
+include $(LOCAL_PATH)/../../../../../../../android-webrtc.mk
+
 LOCAL_MODULE_TAGS := tests
 LOCAL_CPP_EXTENSION := .cc
 LOCAL_SRC_FILES:= \
@@ -18,17 +20,11 @@ LOCAL_SRC_FILES:= \
 
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \
-    '-DWEBRTC_TARGET_PC' \
-    '-DWEBRTC_LINUX' \
-    '-DWEBRTC_THREAD_RR'
+    $(MY_WEBRTC_COMMON_DEFS)
 
-LOCAL_CPPFLAGS := 
-LOCAL_LDFLAGS :=
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../interface \
     $(LOCAL_PATH)/../../../../../..
-
-LOCAL_STATIC_LIBRARIES := 
 
 LOCAL_SHARED_LIBRARIES := \
     libutils \
@@ -36,7 +32,11 @@ LOCAL_SHARED_LIBRARIES := \
 
 LOCAL_MODULE:= webrtc_iLBC_test
 
+ifdef NDK_ROOT
 include $(BUILD_EXECUTABLE)
+else
+include $(BUILD_NATIVE_TEST)
+endif
 
 # iLBC_testLib test app
 include $(CLEAR_VARS)
@@ -48,17 +48,11 @@ LOCAL_SRC_FILES:= \
 
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \
-    '-DWEBRTC_TARGET_PC' \
-    '-DWEBRTC_LINUX' \
-    '-DWEBRTC_THREAD_RR'
+    $(MY_WEBRTC_COMMON_DEFS)
 
-LOCAL_CPPFLAGS := 
-LOCAL_LDFLAGS :=
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../interface \
     $(LOCAL_PATH)/../../../../../..
-
-LOCAL_STATIC_LIBRARIES := 
 
 LOCAL_SHARED_LIBRARIES := \
     libutils \
@@ -66,4 +60,8 @@ LOCAL_SHARED_LIBRARIES := \
 
 LOCAL_MODULE:= webrtc_iLBC_testLib
 
+ifdef NDK_ROOT
 include $(BUILD_EXECUTABLE)
+else
+include $(BUILD_NATIVE_TEST)
+endif

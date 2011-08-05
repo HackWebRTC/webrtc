@@ -10,6 +10,8 @@ LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
 
+include $(LOCAL_PATH)/../../../../../android-webrtc.mk
+
 LOCAL_MODULE_CLASS := STATIC_LIBRARIES
 LOCAL_MODULE := libwebrtc_video_render
 LOCAL_MODULE_TAGS := optional
@@ -39,7 +41,6 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../../../../common_video/vplib/main/interface \
     $(LOCAL_PATH)/../../../../system_wrappers/interface 
 
-# TODO(leozwang) organize shared library in a better way
 LOCAL_SHARED_LIBRARIES := \
     libcutils \
     libdl \

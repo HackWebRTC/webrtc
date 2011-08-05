@@ -10,6 +10,8 @@ LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
 
+include $(LOCAL_PATH)/../../../../../android-webrtc.mk
+
 LOCAL_ARM_MODE := arm
 LOCAL_MODULE := libwebrtc_apm
 LOCAL_MODULE_TAGS := optional

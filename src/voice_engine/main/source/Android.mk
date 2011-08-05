@@ -10,12 +10,14 @@ LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
 
+include $(LOCAL_PATH)/../../../../android-webrtc.mk
+
 LOCAL_ARM_MODE := arm
 LOCAL_MODULE := libwebrtc_voe_core
 LOCAL_MODULE_TAGS := optional
 LOCAL_CPP_EXTENSION := .cc
-LOCAL_GENERATED_SOURCES :=
-LOCAL_SRC_FILES := audio_frame_operations.cc \
+LOCAL_SRC_FILES := \
+    audio_frame_operations.cc \
     channel.cc \
     channel_manager.cc \
     channel_manager_base.cc \
@@ -46,24 +48,16 @@ LOCAL_SRC_FILES := audio_frame_operations.cc \
     voice_engine_impl.cc
 
 # Flags passed to both C and C++ files.
-MY_CFLAGS :=  
-MY_CFLAGS_C :=
-MY_DEFS := '-DNO_TCMALLOC' \
-    '-DNO_HEAPCHECKER' \
-    '-DWEBRTC_TARGET_PC' \
-    '-DWEBRTC_LINUX' \
-    '-DWEBRTC_THREAD_RR' \
-    '-DWEBRTC_ANDROID' \
-    '-DANDROID' 
-LOCAL_CFLAGS := $(MY_CFLAGS_C) $(MY_CFLAGS) $(MY_DEFS)
+LOCAL_CFLAGS := \
+    $(MY_WEBRTC_COMMON_DEFS)
 
-# Include paths placed before CFLAGS/CPPFLAGS
-LOCAL_C_INCLUDES := $(LOCAL_PATH)/../../.. \
+LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../interface \
+    $(LOCAL_PATH)/../../.. \
     $(LOCAL_PATH)/../../../common_audio/resampler/main/interface \
     $(LOCAL_PATH)/../../../common_audio/signal_processing_library/main/interface \
-    $(LOCAL_PATH)/../../../modules/audio_coding/main/interface \
     $(LOCAL_PATH)/../../../modules/interface \
+    $(LOCAL_PATH)/../../../modules/audio_coding/main/interface \
     $(LOCAL_PATH)/../../../modules/audio_conference_mixer/interface \
     $(LOCAL_PATH)/../../../modules/audio_device/main/interface \
     $(LOCAL_PATH)/../../../modules/audio_processing/main/interface \
@@ -73,17 +67,10 @@ LOCAL_C_INCLUDES := $(LOCAL_PATH)/../../.. \
     $(LOCAL_PATH)/../../../modules/utility/interface \
     $(LOCAL_PATH)/../../../system_wrappers/interface 
 
-# Flags passed to only C++ (and not C) files.
-LOCAL_CPPFLAGS := 
-
-LOCAL_LDFLAGS :=
-
-LOCAL_STATIC_LIBRARIES := 
-
-LOCAL_SHARED_LIBRARIES := libcutils \
+LOCAL_SHARED_LIBRARIES := \
+    libcutils \
     libdl \
     libstlport 
-LOCAL_ADDITIONAL_DEPENDENCIES :=
 
 ifeq ($(TARGET_OS)-$(TARGET_SIMULATOR),linux-true)
 LOCAL_LDLIBS += -ldl -lpthread
@@ -93,6 +80,7 @@ ifneq ($(TARGET_SIMULATOR),true)
 LOCAL_SHARED_LIBRARIES += libdl
 endif
 
+ifndef NDK_ROOT
 include external/stlport/libstlport.mk
+endif
 include $(BUILD_STATIC_LIBRARY)
-#include $(BUILD_SHARED_LIBRARY)

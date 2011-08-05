@@ -12,6 +12,8 @@ LOCAL_PATH:= $(call my-dir)
 
 include $(CLEAR_VARS)
 
+include $(LOCAL_PATH)/../../../../../../android-webrtc.mk
+
 LOCAL_MODULE_TAGS := tests
 LOCAL_CPP_EXTENSION := .cc
 LOCAL_SRC_FILES:= \
@@ -20,7 +22,8 @@ LOCAL_SRC_FILES:= \
 
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \
-    $(MY_WEBRTC_COMMON_DEFS)
+    $(MY_WEBRTC_COMMON_DEFS) \
+    '-DWEBRTC_APM_UNIT_TEST_FIXED_PROFILE'
 
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../../interface \
@@ -41,7 +44,9 @@ LOCAL_SHARED_LIBRARIES := \
 
 LOCAL_MODULE:= webrtc_apm_unit_test
 
-ifndef NDK_ROOT
-include external/stlport/libstlport.mk
-endif
+ifdef NDK_ROOT
 include $(BUILD_EXECUTABLE)
+else
+include external/stlport/libstlport.mk
+include $(BUILD_NATIVE_TEST)
+endif

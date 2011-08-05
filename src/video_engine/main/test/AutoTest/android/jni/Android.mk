@@ -15,7 +15,7 @@ LIBS_PATH := $(LOCAL_PATH)/../../../../../../../build/libraries
 include $(CLEAR_VARS)
 
 LOCAL_MODULE_TAGS := tests
-LOCAL_MODULE    := libwebrtc-video-autotest-jni
+LOCAL_MODULE := libwebrtc-video-autotest-jni
 LOCAL_CPP_EXTENSION := .cc
 LOCAL_SRC_FILES := \
     vie_autotest_jni.cc \
@@ -37,12 +37,9 @@ LOCAL_SRC_FILES := \
     ../../source/tb_interfaces.cc \
     ../../source/tb_video_channel.cc 
 
-LOCAL_CPPFLAGS := 
-LOCAL_LDFLAGS :=
-LOCAL_CFLAGS += \
+LOCAL_CFLAGS := \
     '-DWEBRTC_TARGET_PC' \
-    '-DWEBRTC_ANDROID' \
-    '-DANDROID' 
+    '-DWEBRTC_ANDROID'
 
 LOCAL_C_INCLUDES := \
     external/gtest/include \
@@ -59,9 +56,7 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../../../../../../voice_engine/main/interface \
     $(LOCAL_PATH)/../../../../../../system_wrappers/interface 
 
-
 LOCAL_PRELINK_MODULE := false
-LOCAL_STATIC_LIBRARIES := 
 
 LOCAL_SHARED_LIBRARIES := \
     libutils \
@@ -73,5 +68,7 @@ LOCAL_SHARED_LIBRARIES := \
 # the following line is for NDK build
 LOCAL_LDLIBS     := $(LIBS_PATH)/VideoEngine_android_gcc.a -llog -lgcc 
 
+ifndef NDK_ROOT
 include external/stlport/libstlport.mk
+endif
 include $(BUILD_SHARED_LIBRARY)
