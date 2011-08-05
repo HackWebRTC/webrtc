@@ -458,12 +458,24 @@ WebRtc_Word32 WebRtcAecm_Process(void *aecmInst, const WebRtc_Word16 *nearendNoi
              &out[FRAME_LEN * i], aecm->knownDelay);*/
             if (nearendClean == NULL)
             {
-                WebRtcAecm_ProcessFrame(aecm->aecmCore, farend, &nearendNoisy[FRAME_LEN * i],
-                                        NULL, &out[FRAME_LEN * i]);
+                if (WebRtcAecm_ProcessFrame(aecm->aecmCore,
+                                            farend,
+                                            &nearendNoisy[FRAME_LEN * i],
+                                            NULL,
+                                            &out[FRAME_LEN * i]) == -1)
+                {
+                    return -1;
+                }
             } else
             {
-                WebRtcAecm_ProcessFrame(aecm->aecmCore, farend, &nearendNoisy[FRAME_LEN * i],
-                                        &nearendClean[FRAME_LEN * i], &out[FRAME_LEN * i]);
+                if (WebRtcAecm_ProcessFrame(aecm->aecmCore,
+                                            farend,
+                                            &nearendNoisy[FRAME_LEN * i],
+                                            &nearendClean[FRAME_LEN * i],
+                                            &out[FRAME_LEN * i]) == -1)
+                {
+                    return -1;
+                }
             }
 
 #ifdef ARM_WINM_LOG
