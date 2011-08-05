@@ -29,24 +29,31 @@
         'g722_enc_dec.h',
       ],
     },
-    {
-      'target_name': 'G722Test',
-      'type': 'executable',
-      'dependencies': [
-        'G722',
-      ],
-      'sources': [
-        '../testG722/testG722.cpp',
-      ],
-      'conditions': [
-        ['OS=="linux"', {
-          'cflags': [
-            '-fexceptions', # enable exceptions
+  ], # targets
+  # Exclude the test target when building with chromium.
+  'conditions': [   
+    ['build_with_chromium==0', {
+      'targets': [
+        {
+          'target_name': 'G722Test',
+          'type': 'executable',
+          'dependencies': [
+            'G722',
           ],
-        }],
-      ],
-    },
-  ],
+          'sources': [
+            '../testG722/testG722.cpp',
+          ],
+          'conditions': [
+            ['OS=="linux"', {
+              'cflags': [
+                '-fexceptions', # enable exceptions
+              ],
+            }],
+          ],
+        },
+      ], # targets
+    }], # build_with_chromium
+  ], # conditions
 }
 
 # Local Variables:
