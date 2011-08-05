@@ -62,27 +62,33 @@
         'data_manager.cc',
       ],
     },
-    {
-      'target_name': 'jpeg_test',
-      'type': 'executable',
-      'dependencies': [
-         'webrtc_jpeg',
-      ],
-      'include_dirs': [
-         '../interface',
-         '../../../vplib/main/interface',
-         '../source',
-      ],
-      'sources': [
+  ], # targets
+  # Exclude the test target when building with chromium.
+  'conditions': [   
+    ['build_with_chromium==0', {
+      'targets': [
+        {
+          'target_name': 'jpeg_test',
+          'type': 'executable',
+          'dependencies': [
+             'webrtc_jpeg',
+          ],
+          'include_dirs': [
+            '../interface',
+             '../../../vplib/main/interface',
+             '../source',
+          ],
+          'sources': [
 
-        # headers        
-        
-        # sources
-        '../test/test_jpeg.cc',
+            # headers        
 
-      ], # source
-    },
-  ],
+            # sources
+            '../test/test_jpeg.cc',
+          ], # source
+        },
+      ] # targets
+    }], # build_with_chromium
+  ], # conditions
 }
 
 # Local Variables:
