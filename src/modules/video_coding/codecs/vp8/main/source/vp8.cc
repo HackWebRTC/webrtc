@@ -359,7 +359,6 @@ VP8Encoder::InitAndSetControlSettings()
     return WEBRTC_VIDEO_CODEC_OK;
 }
 
-#ifdef VP8_LATEST
 WebRtc_UWord32
 VP8Encoder::MaxIntraTarget(WebRtc_UWord32 optimalBuffersize)
 {
@@ -380,7 +379,6 @@ VP8Encoder::MaxIntraTarget(WebRtc_UWord32 optimalBuffersize)
 
     return  targetPct;
 }
-#endif 
 
 WebRtc_Word32
 VP8Encoder::Encode(const RawImage& inputImage,
