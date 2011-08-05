@@ -29,25 +29,31 @@
         'g711.h',
       ],
     },
-
-      {
-      'target_name': 'g711_test',
-      'type': 'executable',
-      'dependencies': [
-        'G711',
-      ],
-      'sources': [
-           '../testG711/testG711.cpp',
-      ],
- #     'conditions': [
- #       ['OS=="linux"', {
- #         'cflags': [
- #           '-fexceptions', # enable exceptions
- #         ],
- #       }],
- #     ],
-    },
-      ],
+  ], # targets
+  # Exclude the test target when building with chromium.
+  'conditions': [   
+    ['build_with_chromium==0', {
+      'targets': [
+        {
+          'target_name': 'g711_test',
+          'type': 'executable',
+          'dependencies': [
+            'G711',
+          ],
+          'sources': [
+               '../testG711/testG711.cpp',
+          ],
+ #        'conditions': [
+ #          ['OS=="linux"', {
+ #          'cflags': [
+ #            '-fexceptions', # enable exceptions
+ #            ],
+ #          }],
+ #        ],
+        },
+      ], # targets
+    }], # build_with_chromium
+  ], # conditions
 }
 
 # Local Variables:
