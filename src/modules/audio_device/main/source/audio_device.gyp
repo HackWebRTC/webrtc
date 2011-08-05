@@ -171,32 +171,37 @@
       ] # conditions
     },
     {
-      'target_name': 'audio_device_test_api',
-      'type': 'executable',
-      'dependencies': [
-        'audio_device',
-        '../../../../system_wrappers/source/system_wrappers.gyp:system_wrappers',
-        '../../../utility/source/utility.gyp:webrtc_utility',
-      ],
-      'sources': [
-        '../test/audio_device_test_api.cc',
-        '../test/audio_device_test_defines.h',
-      ],
-    },
-    {
-      'target_name': 'audio_device_test_func',
-      'type': 'executable',
-      'dependencies': [
-        'audio_device',
-        '../../../../common_audio/resampler/main/source/resampler.gyp:resampler',
-        '../../../../system_wrappers/source/system_wrappers.gyp:system_wrappers',
-        '../../../utility/source/utility.gyp:webrtc_utility',
-      ],
-      'sources': [
-        '../test/audio_device_test_func.cc',
-        '../test/audio_device_test_defines.h',
-        '../test/func_test_manager.cc',
-        '../test/func_test_manager.h',
+      # Exclude the test targets when building with chromium.
+      'conditions': [
+        ['build_with_chromium==0', {
+         'target_name': 'audio_device_test_api',
+          'type': 'executable',
+          'dependencies': [
+            'audio_device',
+            '../../../../system_wrappers/source/system_wrappers.gyp:system_wrappers',
+            '../../../utility/source/utility.gyp:webrtc_utility',
+          ],
+          'sources': [
+            '../test/audio_device_test_api.cc',
+            '../test/audio_device_test_defines.h',
+          ],
+        },
+        {
+          'target_name': 'audio_device_test_func',
+          'type': 'executable',
+          'dependencies': [
+            'audio_device',
+            '../../../../common_audio/resampler/main/source/resampler.gyp:resampler',
+            '../../../../system_wrappers/source/system_wrappers.gyp:system_wrappers',
+            '../../../utility/source/utility.gyp:webrtc_utility',
+          ],
+          'sources': [
+            '../test/audio_device_test_func.cc',
+            '../test/audio_device_test_defines.h',
+            '../test/func_test_manager.cc',
+            '../test/func_test_manager.h',
+          ],
+        }],
       ],
     },
   ],
