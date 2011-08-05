@@ -65,9 +65,10 @@
             },
           },
           'dependencies': [
-            'third_party/libjingle/libjingle.gyp:libjingle_app',
+            'third_party_mods/libjingle/libjingle.gyp:libjingle_app',
           ],
           'include_dirs': [
+            'third_party_mods/libjingle/source',
             'third_party/libjingle/source',
           ],
         },

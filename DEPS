@@ -65,10 +65,6 @@ deps_os = {
 hooks = [
   {
     "pattern": ".",
-    "action": ["svn", "export", Var("webrtc_trunk") + "/third_party_mods/libjingle", "trunk/third_party/libjingle", "--force"],
-  },
-  {
-    "pattern": ".",
     "action": ["svn", "export", Var("webrtc_trunk") + "/third_party_mods/jsoncpp", "trunk/third_party/jsoncpp", "--force"],
   },
   {
