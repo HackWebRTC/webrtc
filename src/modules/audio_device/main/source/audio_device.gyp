@@ -170,13 +170,15 @@
         }],
       ] # conditions
     },
-    {
-      # Exclude the test targets when building with chromium.
-      'conditions': [
-        ['build_with_chromium==0', {
-         'target_name': 'audio_device_test_api',
-          'type': 'executable',
-          'dependencies': [
+  ],
+  # Exclude the test targets when building with chromium.
+  'conditions': [   
+    ['build_with_chromium==0', {
+      'targets': [
+        {
+          'target_name': 'audio_device_test_api',
+         'type': 'executable',
+         'dependencies': [
             'audio_device',
             '../../../../system_wrappers/source/system_wrappers.gyp:system_wrappers',
             '../../../utility/source/utility.gyp:webrtc_utility',
@@ -201,9 +203,9 @@
             '../test/func_test_manager.cc',
             '../test/func_test_manager.h',
           ],
-        }],
+        },
       ],
-    },
+    }],
   ],
 }
 
