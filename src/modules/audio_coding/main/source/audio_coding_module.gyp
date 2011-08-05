@@ -94,40 +94,47 @@
         'audio_coding_module_impl.h',
       ],
     },
-    {
-      'target_name': 'audio_coding_module_test',
-      'type': 'executable',
-      'dependencies': [
-        'audio_coding_module',
-        '../../../../system_wrappers/source/system_wrappers.gyp:system_wrappers',
-      ],
-      'sources': [
-           '../test/ACMTest.cpp',
-           '../test/APITest.cpp',
-           '../test/Channel.cpp',
-           '../test/EncodeDecodeTest.cpp',
-           '../test/EncodeToFileTest.cpp',
-           '../test/iSACTest.cpp',
-           '../test/PCMFile.cpp',
-           '../test/RTPFile.cpp',
-           '../test/SpatialAudio.cpp',
-           '../test/TestAllCodecs.cpp',
-           '../test/Tester.cpp',
-           '../test/TestFEC.cpp',
-           '../test/TestStereo.cpp',
-           '../test/TestVADDTX.cpp',
-           '../test/TimedTrace.cpp',
-           '../test/TwoWayCommunication.cpp',
-           '../test/utility.cpp',
-      ],
-      'conditions': [
-        ['OS=="linux"', {
-          'cflags': [
-            '-fexceptions', # enable exceptions
+  ],
+  # Exclude the test targets when building with chromium.
+  'conditions': [
+    ['build_with_chromium==0', {
+      'targets': [
+        {
+          'target_name': 'audio_coding_module_test',
+          'type': 'executable',
+          'dependencies': [
+            'audio_coding_module',
+            '../../../../system_wrappers/source/system_wrappers.gyp:system_wrappers',
           ],
-        }],
+          'sources': [
+             '../test/ACMTest.cpp',
+             '../test/APITest.cpp',
+             '../test/Channel.cpp',
+             '../test/EncodeDecodeTest.cpp',
+             '../test/EncodeToFileTest.cpp',
+             '../test/iSACTest.cpp',
+             '../test/PCMFile.cpp',
+             '../test/RTPFile.cpp',
+             '../test/SpatialAudio.cpp',
+             '../test/TestAllCodecs.cpp',
+             '../test/Tester.cpp',
+             '../test/TestFEC.cpp',
+             '../test/TestStereo.cpp',
+             '../test/TestVADDTX.cpp',
+             '../test/TimedTrace.cpp',
+             '../test/TwoWayCommunication.cpp',
+             '../test/utility.cpp',
+          ],
+          'conditions': [
+            ['OS=="linux"', {
+              'cflags': [
+                '-fexceptions', # enable exceptions
+              ],
+            }],
+          ],
+        },
       ],
-    },
+    }],
   ],
 }
 
