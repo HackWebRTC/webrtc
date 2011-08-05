@@ -28,7 +28,7 @@
         }],
         ['build_with_chromium==1', {
           'dependencies': [
-            '../../../../third_party/protobuf/protobuf.gyp:protobuf_lite',
+            '../../../../../protobuf/protobuf.gyp:protobuf_lite',
           ],
         }, {
           'dependencies': [
@@ -117,7 +117,7 @@
       'conditions': [
         ['build_with_chromium==1', {
           'dependencies': [
-            '../../../../third_party/protobuf/protobuf.gyp:protoc#host',
+            '../../../../../protobuf/protobuf.gyp:protoc#host',
           ],
         }, {
           'dependencies': [
