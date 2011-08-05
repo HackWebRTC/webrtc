@@ -714,6 +714,16 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
     {
         return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
     }
+    if (inputImage._completeFrame == false)
+    {
+        // future improvement
+        // we can't decode this frame
+        if (_feedbackModeOn)
+        {
+            return WEBRTC_VIDEO_CODEC_ERR_REQUEST_SLI;
+        }
+        // otherwise allow for incomplete frames to be decoded.
+    }
 
     vpx_dec_iter_t _iter = NULL;
     vpx_image_t* img;
