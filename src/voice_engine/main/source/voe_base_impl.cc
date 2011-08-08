@@ -282,7 +282,8 @@ WebRtc_Word32 VoEBaseImpl::NeedMorePlayData(
     _outputMixerPtr->GetMixedAudio(samplesPerSec, nChannels, audioFrame);
 
     assert(nSamples == audioFrame._payloadDataLengthInSamples);
-    assert(samplesPerSec == audioFrame._frequencyInHz);
+    assert(samplesPerSec ==
+        static_cast<WebRtc_UWord32>(audioFrame._frequencyInHz));
 
     // Deliver audio (PCM) samples to the ADM
     memcpy(
@@ -585,7 +586,6 @@ int VoEBaseImpl::Init()
     }
 
     bool available(false);
-    WebRtc_Word32 ret(0);
 
     // --------------------
     // Reinitialize the ADM

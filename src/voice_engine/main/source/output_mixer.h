@@ -142,12 +142,12 @@ private:  // owns
     Resampler _apmResampler;    // converts mixed audio to fit APM rate
     AudioLevel _audioLevel;    // measures audio level for the combined signal
     DtmfInband _dtmfGenerator;
-    WebRtc_UWord32 _instanceId;
+    int _instanceId;
     VoEMediaProcess* _externalMediaCallbackPtr;
     bool _externalMedia;
     float _panLeft;
     float _panRight;
-    WebRtc_UWord32 _mixingFrequencyHz;
+    int _mixingFrequencyHz;
     FileRecorder* _outputFileRecorderPtr;
     bool _outputFileRecording;
 };

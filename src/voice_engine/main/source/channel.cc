@@ -630,7 +630,7 @@ Channel::OnInitializeDecoder(
     const WebRtc_Word32 id,
     const WebRtc_Word8 payloadType,
     const WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
-    const WebRtc_UWord32 frequency,
+    const int frequency,
     const WebRtc_UWord8 channels,
     const WebRtc_UWord32 rate)
 {
@@ -5860,7 +5860,7 @@ Channel::Demultiplex(const AudioFrame& audioFrame,
 }
 
 WebRtc_UWord32
-Channel::PrepareEncodeAndSend(WebRtc_UWord32 mixingFrequency)
+Channel::PrepareEncodeAndSend(int mixingFrequency)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::PrepareEncodeAndSend()");
@@ -6216,7 +6216,7 @@ Channel::GetRtpRtcp(RtpRtcp* &rtpRtcpModule) const
 }
 
 WebRtc_Word32
-Channel::MixOrReplaceAudioWithFile(const WebRtc_UWord32 mixingFrequency)
+Channel::MixOrReplaceAudioWithFile(const int mixingFrequency)
 {
     WebRtc_Word16 fileBuffer[320];
     WebRtc_UWord32 fileSamples(0);
@@ -6278,7 +6278,7 @@ Channel::MixOrReplaceAudioWithFile(const WebRtc_UWord32 mixingFrequency)
 
 WebRtc_Word32
 Channel::MixAudioWithFile(AudioFrame& audioFrame,
-                          const WebRtc_UWord32 mixingFrequency)
+                          const int mixingFrequency)
 {
     assert(mixingFrequency <= 32000);
 

@@ -314,7 +314,7 @@ TransmitMixer::PrepareDemux(const WebRtc_Word8* audioSamples,
                  totalDelayMS, clockDrift, currentMicLevel);
 
 
-    const WebRtc_UWord32 mixingFrequency = _mixingFrequency;
+    const int mixingFrequency = _mixingFrequency;
 
     ScopedChannel sc(*_channelManagerPtr);
     void* iterator(NULL);
@@ -326,7 +326,7 @@ TransmitMixer::PrepareDemux(const WebRtc_Word8* audioSamples,
         {
             CodecInst tmpCdc;
             channelPtr->GetSendCodec(tmpCdc);
-            if ((WebRtc_UWord32) tmpCdc.plfreq > _mixingFrequency)
+            if (tmpCdc.plfreq > _mixingFrequency)
                 _mixingFrequency = tmpCdc.plfreq;
         }
         channelPtr = sc.GetNextChannel(iterator);
@@ -1151,7 +1151,7 @@ TransmitMixer::GenerateAudioFrame(const WebRtc_Word16 audioSamples[],
                                   const WebRtc_UWord32 nSamples,
                                   const WebRtc_UWord8 nChannels,
                                   const WebRtc_UWord32 samplesPerSec,
-                                  const WebRtc_UWord32 mixingFrequency)
+                                  const int mixingFrequency)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, -1),
                  "TransmitMixer::GenerateAudioFrame(nSamples=%u,"
@@ -1214,12 +1214,11 @@ WebRtc_Word32 TransmitMixer::RecordAudioToFile(
 }
 
 WebRtc_Word32 TransmitMixer::MixOrReplaceAudioWithFile(
-    const WebRtc_UWord32 mixingFrequency)
+    const int mixingFrequency)
 {
     WebRtc_Word16 fileBuffer[320];
 
     WebRtc_UWord32 fileSamples(0);
-    WebRtc_Word32 outSamples(0);
 
     {
         CriticalSectionScoped cs(_critSect);
@@ -1387,7 +1386,6 @@ int TransmitMixer::TypingDetection()
     {
         return (-1);
     }
-    bool vad = (_audioFrame._vadActivity == AudioFrame::kVadActive);
 
     if (_audioFrame._vadActivity == AudioFrame::kVadActive)
         _timeActive++;
@@ -1423,7 +1421,7 @@ int TransmitMixer::TypingDetection()
 }
 #endif
 
-WebRtc_UWord32 TransmitMixer::GetMixingFrequency()
+int TransmitMixer::GetMixingFrequency()
 {
     assert(_mixingFrequency!=0);
     return (_mixingFrequency);

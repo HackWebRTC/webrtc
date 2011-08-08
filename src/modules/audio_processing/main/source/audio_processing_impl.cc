@@ -256,8 +256,7 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
     return kNullPointerError;
   }
 
-  if (frame->_frequencyInHz !=
-      static_cast<WebRtc_UWord32>(sample_rate_hz_)) {
+  if (frame->_frequencyInHz != sample_rate_hz_) {
     return kBadSampleRateError;
   }
 
@@ -382,8 +381,7 @@ int AudioProcessingImpl::AnalyzeReverseStream(AudioFrame* frame) {
     return kNullPointerError;
   }
 
-  if (frame->_frequencyInHz !=
-      static_cast<WebRtc_UWord32>(sample_rate_hz_)) {
+  if (frame->_frequencyInHz != sample_rate_hz_) {
     return kBadSampleRateError;
   }
 

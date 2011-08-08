@@ -81,7 +81,7 @@ public:
 
     int DeRegisterExternalMediaProcessing();
 
-    WebRtc_UWord32 GetMixingFrequency();
+    int GetMixingFrequency();
 
     // VoEVolumeControl
     int SetMute(const bool enable);
@@ -160,11 +160,11 @@ private:
                                      const WebRtc_UWord32 nSamples,
                                      const WebRtc_UWord8 nChannels,
                                      const WebRtc_UWord32 samplesPerSec,
-                                     const WebRtc_UWord32 mixingFrequency);
+                                     const int mixingFrequency);
     WebRtc_Word32 RecordAudioToFile(const WebRtc_UWord32 mixingFrequency);
 
     WebRtc_Word32 MixOrReplaceAudioWithFile(
-        const WebRtc_UWord32 mixingFrequency);
+        const int mixingFrequency);
 
     WebRtc_Word32 APMProcessStream(const WebRtc_UWord16 totalDelayMS,
                                    const WebRtc_Word32 clockDrift,
@@ -188,9 +188,9 @@ private:  // owns
     FilePlayer*	_filePlayerPtr;
     FileRecorder* _fileRecorderPtr;
     FileRecorder* _fileCallRecorderPtr;
-    WebRtc_UWord32 _filePlayerId;
-    WebRtc_UWord32 _fileRecorderId;
-    WebRtc_UWord32 _fileCallRecorderId;
+    int _filePlayerId;
+    int _fileRecorderId;
+    int _fileCallRecorderId;
     bool _filePlaying;
     bool _fileRecording;
     bool _fileCallRecording;
@@ -208,14 +208,14 @@ private:  // owns
     WebRtc_UWord32 _noiseWarning;
 
 private:
-    WebRtc_UWord32 _instanceId;
+    int _instanceId;
     bool _mixFileWithMicrophone;
     WebRtc_UWord32 _captureLevel;
     bool _externalMedia;
     VoEMediaProcess* _externalMediaCallbackPtr;
     bool _mute;
     WebRtc_Word32 _remainingMuteMicTimeMs;
-    WebRtc_UWord32 _mixingFrequency;
+    int _mixingFrequency;
     bool _includeAudioLevelIndication;
     WebRtc_UWord8 _audioLevel_dBov;
 };

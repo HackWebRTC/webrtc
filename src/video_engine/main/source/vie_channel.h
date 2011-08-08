@@ -193,7 +193,7 @@ public:
         const WebRtc_Word32 id,
         const WebRtc_Word8 payloadType,
         const WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
-        const WebRtc_UWord32 frequency,
+        const int frequency,
         const WebRtc_UWord8 channels,
         const WebRtc_UWord32 rate);
 

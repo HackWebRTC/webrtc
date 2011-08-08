@@ -3142,7 +3142,7 @@ void ViEChannel::OnApplicationDataReceived(const WebRtc_Word32 id,
 WebRtc_Word32 ViEChannel::OnInitializeDecoder(
     const WebRtc_Word32 id, const WebRtc_Word8 payloadType,
     const WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
-    const WebRtc_UWord32 frequency, const WebRtc_UWord8 channels,
+    const int frequency, const WebRtc_UWord8 channels,
     const WebRtc_UWord32 rate)
 {
     WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_engineId, _channelId),

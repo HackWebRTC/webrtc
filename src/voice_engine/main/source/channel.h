@@ -389,7 +389,7 @@ public:
             const WebRtc_Word32 id,
             const WebRtc_Word8 payloadType,
             const WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
-            const WebRtc_UWord32 frequency,
+            const int frequency,
             const WebRtc_UWord8 channels,
             const WebRtc_UWord32 rate);
 
@@ -533,15 +533,15 @@ public:
 #endif
     WebRtc_UWord32 Demultiplex(const AudioFrame& audioFrame,
                                const WebRtc_UWord8 audioLevel_dBov);
-    WebRtc_UWord32 PrepareEncodeAndSend(WebRtc_UWord32 mixingFrequency);
+    WebRtc_UWord32 PrepareEncodeAndSend(int mixingFrequency);
     WebRtc_UWord32 EncodeAndSend();
 
 private:
     int InsertInbandDtmfTone();
     WebRtc_Word32
-            MixOrReplaceAudioWithFile(const WebRtc_UWord32 mixingFrequency);
+            MixOrReplaceAudioWithFile(const int mixingFrequency);
     WebRtc_Word32 MixAudioWithFile(AudioFrame& audioFrame,
-                                   const WebRtc_UWord32 mixingFrequency);
+                                   const int mixingFrequency);
     WebRtc_Word32 GetPlayoutTimeStamp(WebRtc_UWord32& playoutTimestamp);
     void UpdateDeadOrAliveCounters(bool alive);
     WebRtc_Word32 SendPacketRaw(const void *data, int len, bool RTCP);
@@ -576,9 +576,9 @@ private:
     FilePlayer* _inputFilePlayerPtr;
     FilePlayer* _outputFilePlayerPtr;
     FileRecorder* _outputFileRecorderPtr;
-    WebRtc_UWord32 _inputFilePlayerId;
-    WebRtc_UWord32 _outputFilePlayerId;
-    WebRtc_UWord32 _outputFileRecorderId;
+    int _inputFilePlayerId;
+    int _outputFilePlayerId;
+    int _outputFileRecorderId;
     bool _inputFilePlaying;
     bool _outputFilePlaying;
     bool _outputFileRecording;

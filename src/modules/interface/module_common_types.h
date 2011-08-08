@@ -697,7 +697,7 @@ public:
         const WebRtc_UWord32 timeStamp,
         const WebRtc_Word16* payloadData,
         const WebRtc_UWord16 payloadDataLengthInSamples,
-        const WebRtc_UWord32 frequencyInHz,
+        const int frequencyInHz,
         const SpeechType     speechType,
         const VADActivity    vadActivity,
         const WebRtc_UWord8  audioChannel = 1,
@@ -719,7 +719,7 @@ public:
     // Supporting Stereo, stereo samples are interleaved
     mutable WebRtc_Word16 _payloadData[kMaxAudioFrameSizeSamples];
     WebRtc_UWord16 _payloadDataLengthInSamples;
-    WebRtc_UWord32 _frequencyInHz;
+    int _frequencyInHz;
     WebRtc_UWord8  _audioChannel;
     SpeechType   _speechType;
     VADActivity  _vadActivity;
@@ -756,7 +756,7 @@ AudioFrame::UpdateFrame(
     const WebRtc_UWord32 timeStamp,
     const WebRtc_Word16* payloadData,
     const WebRtc_UWord16 payloadDataLengthInSamples,
-    const WebRtc_UWord32 frequencyInHz,
+    const int frequencyInHz,
     const SpeechType     speechType,
     const VADActivity    vadActivity,
     const WebRtc_UWord8  audioChannel,

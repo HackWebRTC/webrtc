@@ -85,8 +85,6 @@ int VoECallReportImpl::ResetCallReportStatistics(int channel)
     }
     assert(_audioProcessingModulePtr != NULL);
 
-    int res1(0);
-    int res2(0);
     bool levelMode =
         _audioProcessingModulePtr->level_estimator()->is_enabled();
     bool echoMode =
