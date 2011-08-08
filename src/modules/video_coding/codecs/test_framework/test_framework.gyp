@@ -6,53 +6,57 @@
   'includes': [
     '../../../../common_settings.gypi', # Common settings
   ],
-  'targets': [
-    {
-      'target_name': 'test_framework',
-      'type': '<(library)',
+  # Exclude the test target when building with chromium.
+  'conditions': [   
+    ['build_with_chromium==0', {
+      'targets': [
+        {
+          'target_name': 'test_framework',
+          'type': '<(library)',
 
-      'dependencies': [
-        '../../../../system_wrappers/source/system_wrappers.gyp:system_wrappers',
-        '../../../../common_video/vplib/main/source/vplib.gyp:webrtc_vplib',
-      ],
+          'dependencies': [
+            '../../../../system_wrappers/source/system_wrappers.gyp:system_wrappers',
+            '../../../../common_video/vplib/main/source/vplib.gyp:webrtc_vplib',
+          ],
 
-      'include_dirs': [
-        '../interface',
-        '../../../../common_video/interface',
-      ],
+          'include_dirs': [
+            '../interface',
+            '../../../../common_video/interface',
+          ],
 
-      'direct_dependent_settings': {
-        'include_dirs': [
-          '../interface',
-        ],
-      },
+          'direct_dependent_settings': {
+            'include_dirs': [
+              '../interface',
+            ],
+          },
 
-      'sources': [
-        # header files
-        'benchmark.h',
-        'normal_async_test.h',
-        'normal_test.h',
-        'packet_loss_test.h',
-        'performance_test.h',
-        'test.h',
-        'unit_test.h',
-        'video_buffer.h',
-        'video_source.h',
+          'sources': [
+            # header files
+            'benchmark.h',
+            'normal_async_test.h',
+            'normal_test.h',
+            'packet_loss_test.h',
+            'performance_test.h',
+            'test.h',
+            'unit_test.h',
+            'video_buffer.h',
+            'video_source.h',
 
-        # source files
-        'benchmark.cc',
-        'normal_async_test.cc',
-        'normal_test.cc',
-        'packet_loss_test.cc',
-        'performance_test.cc',
-        'test.cc',
-        'unit_test.cc',
-        'video_buffer.cc',
-        'video_source.cc',
-
-      ],
-    },
-  ],
+            # source files
+            'benchmark.cc',
+            'normal_async_test.cc',
+            'normal_test.cc',
+            'packet_loss_test.cc',
+            'performance_test.cc',
+            'test.cc',
+            'unit_test.cc',
+            'video_buffer.cc',
+            'video_source.cc',
+          ],
+        },
+      ], # targets
+    }], # build_with_chromium
+  ], # conditions
 }
 
 # Local Variables:

@@ -68,33 +68,39 @@
         'vp8.cc',
       ],
     },
+  ], # targets
+  # Exclude the test target when building with chromium.
+  'conditions': [   
+    ['build_with_chromium==0', {
+      'targets': [
+        {
+          'target_name': 'vp8_test',
+          'type': 'executable',
+          'dependencies': [
+            'webrtc_vp8',
+            '../../../../../../system_wrappers/source/system_wrappers.gyp:system_wrappers',
+            '../../../test_framework/test_framework.gyp:test_framework',
+            '../../../../../../common_video/vplib/main/source/vplib.gyp:webrtc_vplib'
+          ],
+         'sources': [
+            # header files
+            '../test/benchmark.h',
+            '../test/normal_async_test.h',
+            '../test/packet_loss_test.h',
+            '../test/unit_test.h',
+            '../test/dual_decoder_test.h',
 
-    {
-      'target_name': 'vp8_test',
-      'type': 'executable',
-      'dependencies': [
-        'webrtc_vp8',
-        '../../../../../../system_wrappers/source/system_wrappers.gyp:system_wrappers',
-        '../../../test_framework/test_framework.gyp:test_framework',
-        '../../../../../../common_video/vplib/main/source/vplib.gyp:webrtc_vplib'
-      ],
-      'sources': [
-        # header files
-        '../test/benchmark.h',
-        '../test/normal_async_test.h',
-        '../test/packet_loss_test.h',
-        '../test/unit_test.h',
-        '../test/dual_decoder_test.h',
-
-        # source files
-        '../test/benchmark.cc',
-        '../test/normal_async_test.cc',
-        '../test/packet_loss_test.cc',
-        '../test/tester.cc',
-        '../test/unit_test.cc',
-        '../test/dual_decoder_test.cc',
-      ],
-    },
+           # source files
+            '../test/benchmark.cc',
+            '../test/normal_async_test.cc',
+            '../test/packet_loss_test.cc',
+            '../test/tester.cc',
+            '../test/unit_test.cc',
+            '../test/dual_decoder_test.cc',
+          ],
+        },
+      ], # targets
+    }], # build_with_chromium
   ],
 }
 
