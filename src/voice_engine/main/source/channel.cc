@@ -879,7 +879,6 @@ WebRtc_Word32 Channel::GetAudioFrame(const WebRtc_Word32 id,
     // Mix decoded PCM output with file if file mixing is enabled
     if (_outputFilePlaying)
     {
-        assert(audioFrame._audioChannel == 1);
         MixAudioWithFile(audioFrame, audioFrame._frequencyInHz);
     }
 
@@ -6282,7 +6281,7 @@ Channel::MixAudioWithFile(AudioFrame& audioFrame,
 {
     assert(mixingFrequency <= 32000);
 
-    WebRtc_Word16 fileBuffer[320];
+    WebRtc_Word16 fileBuffer[640];
     WebRtc_UWord32 fileSamples(0);
 
     {
@@ -6310,6 +6309,25 @@ Channel::MixAudioWithFile(AudioFrame& audioFrame,
 
     if (audioFrame._payloadDataLengthInSamples == fileSamples)
     {
+        // In case the incoming stream is stereo and file stream is mono,
+        // turn the file stream into stereo.
+        // TODO(xians): remove the code when FilePlayer supports real stereo.
+        if (audioFrame._audioChannel == 2)
+        {
+            // The mono file stream is copied to be stereo.
+            WebRtc_Word16* FileBufferCopy = new WebRtc_Word16[fileSamples];
+            memcpy(FileBufferCopy, fileBuffer,
+                   sizeof(WebRtc_Word16) * fileSamples);
+            for (unsigned int i = 0; i < fileSamples; i++)
+            {
+                fileBuffer[2*i]   = FileBufferCopy[i];
+                fileBuffer[2*i+1] = FileBufferCopy[i];
+            }
+            fileSamples = 2*fileSamples;
+            delete [] FileBufferCopy;
+        }
+
+        // Mix the incoming stream and file stream.
         Utility::MixWithSat(audioFrame._payloadData,
                             fileBuffer,
                             (WebRtc_UWord16)fileSamples);
