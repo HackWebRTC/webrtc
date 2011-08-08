@@ -23,13 +23,16 @@ ifeq ($(TARGET_ARCH),arm)
 MY_WEBRTC_COMMON_DEFS += \
     '-DWEBRTC_ARM_INLINE_CALLS' \
     '-DWEBRTC_ARCH_ARM'
-# TODO: test if the code under next two MACROs works with generic GCC compilers
+
+# TODO(kma): test if the code under next two macros works with generic GCC compilers
 ifeq ($(ARCH_ARM_HAVE_NEON),true)
 MY_WEBRTC_COMMON_DEFS += \
-    '-DWEBRTC_ANDROID_ARMV7A_NEON'
-else ifeq ($(ARCH_ARM_HAVE_ARMV7A),true)
+    '-DWEBRTC_ARCH_ARM_NEON'
+endif
+
+ifeq ($(ARCH_ARM_HAVE_ARMV7A),true)
 MY_WEBRTC_COMMON_DEFS += \
-    '-DWEBRTC_ANDROID_ARMV7A'
+    '-DWEBRTC_ARCH_ARM_V7A'
 endif
 else ifeq ($(TARGET_ARCH),x86)
 MY_WEBRTC_COMMON_DEFS += \

@@ -36,43 +36,66 @@ void WebRtcSpl_DownsampleBy2(const WebRtc_Word16* in, const WebRtc_Word16 len,
     outptr = out; // output array (of length len/2)
     state = filtState; // filter state array; length = 8
 
+    register WebRtc_Word32 state0 = state[0];
+    register WebRtc_Word32 state1 = state[1];
+    register WebRtc_Word32 state2 = state[2];
+    register WebRtc_Word32 state3 = state[3];
+    register WebRtc_Word32 state4 = state[4];
+    register WebRtc_Word32 state5 = state[5];
+    register WebRtc_Word32 state6 = state[6];
+    register WebRtc_Word32 state7 = state[7];
+
     for (i = (len >> 1); i > 0; i--)
     {
         // lower allpass filter
         in32 = (WebRtc_Word32)(*inptr++) << 10;
-        diff = in32 - state[1];
-        tmp1 = WEBRTC_SPL_SCALEDIFF32( kResampleAllpass2[0], diff, state[0] );
-        state[0] = in32;
-        diff = tmp1 - state[2];
-        tmp2 = WEBRTC_SPL_SCALEDIFF32( kResampleAllpass2[1], diff, state[1] );
-        state[1] = tmp1;
-        diff = tmp2 - state[3];
-        state[3] = WEBRTC_SPL_SCALEDIFF32( kResampleAllpass2[2], diff, state[2] );
-        state[2] = tmp2;
+        diff = in32 - state1;
+        tmp1 = WEBRTC_SPL_SCALEDIFF32( kResampleAllpass2[0], diff, state0 );
+        state0 = in32;
+        diff = tmp1 - state2;
+        tmp2 = WEBRTC_SPL_SCALEDIFF32( kResampleAllpass2[1], diff, state1 );
+        state1 = tmp1;
+        diff = tmp2 - state3;
+        state3 = WEBRTC_SPL_SCALEDIFF32( kResampleAllpass2[2], diff, state2 );
+        state2 = tmp2;
 
         // upper allpass filter
         in32 = (WebRtc_Word32)(*inptr++) << 10;
-        diff = in32 - state[5];
-        tmp1 = WEBRTC_SPL_SCALEDIFF32( kResampleAllpass1[0], diff, state[4] );
-        state[4] = in32;
-        diff = tmp1 - state[6];
-        tmp2 = WEBRTC_SPL_SCALEDIFF32( kResampleAllpass1[1], diff, state[5] );
-        state[5] = tmp1;
-        diff = tmp2 - state[7];
-        state[7] = WEBRTC_SPL_SCALEDIFF32( kResampleAllpass1[2], diff, state[6] );
-        state[6] = tmp2;
+        diff = in32 - state5;
+        tmp1 = WEBRTC_SPL_SCALEDIFF32( kResampleAllpass1[0], diff, state4 );
+        state4 = in32;
+        diff = tmp1 - state6;
+        tmp2 = WEBRTC_SPL_SCALEDIFF32( kResampleAllpass1[1], diff, state5 );
+        state5 = tmp1;
+        diff = tmp2 - state7;
+        state7 = WEBRTC_SPL_SCALEDIFF32( kResampleAllpass1[2], diff, state6 );
+        state6 = tmp2;
 
         // add two allpass outputs, divide by two and round
-        out32 = (state[3] + state[7] + 1024) >> 11;
+        out32 = (state3 + state7 + 1024) >> 11;
 
         // limit amplitude to prevent wrap-around, and write to output array
+#ifdef WEBRTC_ARCH_ARM_V7A
+        __asm__("ssat %r0, #16, %r1" : "=r"(*outptr) : "r"(out32));
+        outptr++;
+#else
         if (out32 > 32767)
             *outptr++ = 32767;
         else if (out32 < -32768)
             *outptr++ = -32768;
         else
             *outptr++ = (WebRtc_Word16)out32;
+#endif
     }
+
+    state[0]=state0;
+    state[1]=state1;
+    state[2]=state2;
+    state[3]=state3;
+    state[4]=state4;
+    state[5]=state5;
+    state[6]=state6;
+    state[7]=state7;
 }
 
 void WebRtcSpl_UpsampleBy2(const WebRtc_Word16* in, WebRtc_Word16 len, WebRtc_Word16* out,
@@ -89,47 +112,75 @@ void WebRtcSpl_UpsampleBy2(const WebRtc_Word16* in, WebRtc_Word16 len, WebRtc_Wo
     outptr = out; // output array (of length len*2)
     state = filtState; // filter state array; length = 8
 
+    register WebRtc_Word32 state0 = state[0];
+    register WebRtc_Word32 state1 = state[1];
+    register WebRtc_Word32 state2 = state[2];
+    register WebRtc_Word32 state3 = state[3];
+    register WebRtc_Word32 state4 = state[4];
+    register WebRtc_Word32 state5 = state[5];
+    register WebRtc_Word32 state6 = state[6];
+    register WebRtc_Word32 state7 = state[7];
+
     for (i = len; i > 0; i--)
     {
         // lower allpass filter
         in32 = (WebRtc_Word32)(*inptr++) << 10;
-        diff = in32 - state[1];
-        tmp1 = WEBRTC_SPL_SCALEDIFF32( kResampleAllpass1[0], diff, state[0] );
-        state[0] = in32;
-        diff = tmp1 - state[2];
-        tmp2 = WEBRTC_SPL_SCALEDIFF32( kResampleAllpass1[1], diff, state[1] );
-        state[1] = tmp1;
-        diff = tmp2 - state[3];
-        state[3] = WEBRTC_SPL_SCALEDIFF32( kResampleAllpass1[2], diff, state[2] );
-        state[2] = tmp2;
+        diff = in32 - state1;
+        tmp1 = WEBRTC_SPL_SCALEDIFF32( kResampleAllpass1[0], diff, state0 );
+        state0 = in32;
+        diff = tmp1 - state2;
+        tmp2 = WEBRTC_SPL_SCALEDIFF32( kResampleAllpass1[1], diff, state1 );
+        state1 = tmp1;
+        diff = tmp2 - state3;
+        state3 = WEBRTC_SPL_SCALEDIFF32( kResampleAllpass1[2], diff, state2 );
+        state2 = tmp2;
 
         // round; limit amplitude to prevent wrap-around; write to output array
-        out32 = (state[3] + 512) >> 10;
+        out32 = (state3 + 512) >> 10;
+#ifdef WEBRTC_ARCH_ARM_V7A
+        __asm__("ssat %r0, #16, %r1":"=r"(*outptr): "r"(out32));
+        outptr++;
+#else
         if (out32 > 32767)
             *outptr++ = 32767;
         else if (out32 < -32768)
             *outptr++ = -32768;
         else
             *outptr++ = (WebRtc_Word16)out32;
+#endif
 
         // upper allpass filter
-        diff = in32 - state[5];
-        tmp1 = WEBRTC_SPL_SCALEDIFF32( kResampleAllpass2[0], diff, state[4] );
-        state[4] = in32;
-        diff = tmp1 - state[6];
-        tmp2 = WEBRTC_SPL_SCALEDIFF32( kResampleAllpass2[1], diff, state[5] );
-        state[5] = tmp1;
-        diff = tmp2 - state[7];
-        state[7] = WEBRTC_SPL_SCALEDIFF32( kResampleAllpass2[2], diff, state[6] );
-        state[6] = tmp2;
+        diff = in32 - state5;
+        tmp1 = WEBRTC_SPL_SCALEDIFF32( kResampleAllpass2[0], diff, state4 );
+        state4 = in32;
+        diff = tmp1 - state6;
+        tmp2 = WEBRTC_SPL_SCALEDIFF32( kResampleAllpass2[1], diff, state5 );
+        state5 = tmp1;
+        diff = tmp2 - state7;
+        state7 = WEBRTC_SPL_SCALEDIFF32( kResampleAllpass2[2], diff, state6 );
+        state6 = tmp2;
 
         // round; limit amplitude to prevent wrap-around; write to output array
-        out32 = (state[7] + 512) >> 10;
+        out32 = (state7 + 512) >> 10;
+#ifdef WEBRTC_ARCH_ARM_V7A
+        __asm__("ssat %r0, #16, %r1":"=r"(*outptr): "r"(out32));
+        outptr++;
+#else
         if (out32 > 32767)
             *outptr++ = 32767;
         else if (out32 < -32768)
             *outptr++ = -32768;
         else
             *outptr++ = (WebRtc_Word16)out32;
+#endif
     }
+    state[0]=state0;
+    state[1]=state1;
+    state[2]=state2;
+    state[3]=state3;
+    state[4]=state4;
+    state[5]=state5;
+    state[6]=state6;
+    state[7]=state7;
+
 }
