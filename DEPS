@@ -16,10 +16,10 @@ deps = {
     Var("chromium_trunk") + "/src/testing@" + Var("chromium_revision"),
 
   "trunk/testing/gtest":
-    "http://googletest.googlecode.com/svn/trunk@539",
+    (Var("googlecode_url") % "googletest") + "/trunk@573",
 
   "trunk/tools/gyp":
-    "http://gyp.googlecode.com/svn/trunk@930",
+    (Var("googlecode_url") % "gyp") + "/trunk@985",
 
   "trunk/third_party/protobuf/":
     Var("chromium_trunk") + "/src/third_party/protobuf@" + Var("chromium_revision"),
