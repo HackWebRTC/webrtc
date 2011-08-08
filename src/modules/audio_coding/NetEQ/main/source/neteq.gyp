@@ -86,212 +86,212 @@
         'webrtc_neteq.c',
       ],
     },
-    {
-      'target_name': 'NetEqRTPplay',
-      'type': 'executable',
-      'dependencies': [
-        'NetEq',         # NetEQ library defined above
-        'NetEqTestTools',# Test helpers
-        '../../../codecs/G711/main/source/g711.gyp:G711',
-        '../../../codecs/G722/main/source/g722.gyp:G722',
-        '../../../codecs/PCM16B/main/source/pcm16b.gyp:PCM16B',
-        '../../../codecs/iLBC/main/source/ilbc.gyp:iLBC',
-        '../../../codecs/iSAC/main/source/isac.gyp:iSAC',
-        '../../../codecs/CNG/main/source/cng.gyp:CNG',
-      ],
-      'defines': [
-        # TODO: Make codec selection conditional on definitions in target NetEq
-        'CODEC_ILBC',
-        'CODEC_PCM16B',
-        'CODEC_G711',
-        'CODEC_G722',
-        'CODEC_ISAC',
-        'CODEC_PCM16B_WB',
-        'CODEC_ISAC_SWB',
-        'CODEC_PCM16B_32KHZ',
-        'CODEC_CNGCODEC8',
-        'CODEC_CNGCODEC16',
-        'CODEC_CNGCODEC32',
-        'CODEC_ATEVENT_DECODE',
-        'CODEC_RED',
-      ],
-      'include_dirs': [
-        '../source',
-        '../test',
-      ],
-      'sources': [
-        '../test/NetEqRTPplay.cc',
-      ],
-    },
-    {
-      'target_name': 'RTPencode',
-      'type': 'executable',
-      'dependencies': [
-        'NetEqTestTools',# Test helpers
-        '../../../codecs/G711/main/source/g711.gyp:G711',
-        '../../../codecs/G722/main/source/g722.gyp:G722',
-        '../../../codecs/PCM16B/main/source/pcm16b.gyp:PCM16B',
-        '../../../codecs/iLBC/main/source/ilbc.gyp:iLBC',
-        '../../../codecs/iSAC/main/source/isac.gyp:iSAC',
-        '../../../codecs/CNG/main/source/cng.gyp:CNG',
-        '../../../../../common_audio/vad/main/source/vad.gyp:vad',
-      ],
-      'defines': [
-        # TODO: Make codec selection conditional on definitions in target NetEq
-        'CODEC_ILBC',
-        'CODEC_PCM16B',
-        'CODEC_G711',
-        'CODEC_G722',
-        'CODEC_ISAC',
-        'CODEC_PCM16B_WB',
-        'CODEC_ISAC_SWB',
-        'CODEC_PCM16B_32KHZ',
-        'CODEC_CNGCODEC8',
-        'CODEC_CNGCODEC16',
-        'CODEC_CNGCODEC32',
-        'CODEC_ATEVENT_DECODE',
-        'CODEC_RED',
-      ],
-      'include_dirs': [
-        '../interface',
-        '../test',
-      ],
-      'sources': [
-        '../test/RTPencode.cc',
-      ],
-    },
-
-    {
-      'target_name': 'RTPjitter',
-      'type': 'executable',
-      'dependencies': [
-      ],
-      'defines': [
-      ],
-      'include_dirs': [
-      ],
-      'sources': [
-        '../test/RTPjitter.cc',
-      ],
-    },
-
-    {
-      'target_name': 'RTPanalyze',
-      'type': 'executable',
-      'dependencies': [
-        'NetEqTestTools',
-      ],
-      'defines': [
-      ],
-      'include_dirs': [
-      ],
-      'sources': [
-        '../test/RTPanalyze.cc',
-      ],
-    },
-
-    {
-      'target_name': 'RTPchange',
-      'type': 'executable',
-      'dependencies': [
-        'NetEqTestTools',
-      ],
-      'defines': [
-      ],
-      'include_dirs': [
-      ],
-      'sources': [
-        '../test/RTPchange.cc',
-      ],
-    },
-
-    {
-      'target_name': 'RTPtimeshift',
-      'type': 'executable',
-      'dependencies': [
-        'NetEqTestTools',
-      ],
-      'defines': [
-      ],
-      'include_dirs': [
-      ],
-      'sources': [
-        '../test/RTPtimeshift.cc',
-      ],
-    },
-
-    {
-      'target_name': 'RTPcat',
-      'type': 'executable',
-      'dependencies': [
-        'NetEqTestTools',
-      ],
-      'defines': [
-      ],
-      'include_dirs': [
-      ],
-      'sources': [
-        '../test/RTPcat.cc',
-      ],
-    },
-
-    {
-      'target_name': 'NetEqTestTools',
-      # Collection of useful functions used in other tests
-      'type': '<(library)',
-      'dependencies': [
-        '../../../codecs/G711/main/source/g711.gyp:G711',
-        '../../../codecs/G722/main/source/g722.gyp:G722',
-        '../../../codecs/PCM16B/main/source/pcm16b.gyp:PCM16B',
-        '../../../codecs/iLBC/main/source/ilbc.gyp:iLBC',
-        '../../../codecs/iSAC/main/source/isac.gyp:iSAC',
-        '../../../codecs/CNG/main/source/cng.gyp:CNG',
-      ],
-      'direct_dependent_settings': {
-        'include_dirs': [
-          '../test',
-          '../interface',
-        ],
-      },
-      'defines': [
-        # TODO: Make codec selection conditional on definitions in target NetEq
-        'CODEC_ILBC',
-        'CODEC_PCM16B',
-        'CODEC_G711',
-        'CODEC_G722',
-        'CODEC_ISAC',
-        'CODEC_PCM16B_WB',
-        'CODEC_ISAC_SWB',
-        'CODEC_PCM16B_32KHZ',
-        'CODEC_CNGCODEC8',
-        'CODEC_CNGCODEC16',
-        'CODEC_CNGCODEC32',
-        'CODEC_ATEVENT_DECODE',
-        'CODEC_RED',
-      ],
-      'include_dirs': [
-        '../source',
-        '../interface',
-        '../test',
-      ],
-      'sources': [
-        '../test/NETEQTEST_NetEQClass.cc',
-        '../test/NETEQTEST_RTPpacket.cc',
-        '../test/NETEQTEST_CodecClass.cc',
-        '../test/NETEQTEST_NetEQClass.h',
-        '../test/NETEQTEST_RTPpacket.h',
-        '../test/NETEQTEST_CodecClass.h',
-      ],
-      'conditions': [
-        ['OS=="linux"', {
-          'cflags': [
-            '-fexceptions', # enable exceptions
+  ], # targets
+  # Exclude the test target when building with chromium.
+  'conditions': [   
+    ['build_with_chromium==0', {
+      'targets': [
+        {
+          'target_name': 'NetEqRTPplay',
+          'type': 'executable',
+          'dependencies': [
+            'NetEq',         # NetEQ library defined above
+            'NetEqTestTools',# Test helpers
+            '../../../codecs/G711/main/source/g711.gyp:G711',
+            '../../../codecs/G722/main/source/g722.gyp:G722',
+            '../../../codecs/PCM16B/main/source/pcm16b.gyp:PCM16B',
+            '../../../codecs/iLBC/main/source/ilbc.gyp:iLBC',
+            '../../../codecs/iSAC/main/source/isac.gyp:iSAC',
+            '../../../codecs/CNG/main/source/cng.gyp:CNG',
           ],
-        }],
-      ],
-    },
-
-  ],
+          'defines': [
+            # TODO: Make codec selection conditional on definitions in target NetEq
+            'CODEC_ILBC',
+            'CODEC_PCM16B',
+            'CODEC_G711',
+            'CODEC_G722',
+            'CODEC_ISAC',
+            'CODEC_PCM16B_WB',
+            'CODEC_ISAC_SWB',
+            'CODEC_PCM16B_32KHZ',
+            'CODEC_CNGCODEC8',
+            'CODEC_CNGCODEC16',
+            'CODEC_CNGCODEC32',
+            'CODEC_ATEVENT_DECODE',
+            'CODEC_RED',
+          ],
+          'include_dirs': [
+            '../source',
+            '../test',
+          ],
+          'sources': [
+            '../test/NetEqRTPplay.cc',
+          ],
+        },
+       {
+          'target_name': 'RTPencode',
+          'type': 'executable',
+          'dependencies': [
+            'NetEqTestTools',# Test helpers
+            '../../../codecs/G711/main/source/g711.gyp:G711',
+            '../../../codecs/G722/main/source/g722.gyp:G722',
+            '../../../codecs/PCM16B/main/source/pcm16b.gyp:PCM16B',
+            '../../../codecs/iLBC/main/source/ilbc.gyp:iLBC',
+            '../../../codecs/iSAC/main/source/isac.gyp:iSAC',
+            '../../../codecs/CNG/main/source/cng.gyp:CNG',
+            '../../../../../common_audio/vad/main/source/vad.gyp:vad',
+          ],
+          'defines': [
+            # TODO: Make codec selection conditional on definitions in target NetEq
+            'CODEC_ILBC',
+            'CODEC_PCM16B',
+            'CODEC_G711',
+            'CODEC_G722',
+            'CODEC_ISAC',
+            'CODEC_PCM16B_WB',
+            'CODEC_ISAC_SWB',
+            'CODEC_PCM16B_32KHZ',
+            'CODEC_CNGCODEC8',
+            'CODEC_CNGCODEC16',
+            'CODEC_CNGCODEC32',
+            'CODEC_ATEVENT_DECODE',
+            'CODEC_RED',
+          ],
+          'include_dirs': [
+            '../interface',
+            '../test',
+          ],
+          'sources': [
+            '../test/RTPencode.cc',
+          ],
+        },
+        {
+          'target_name': 'RTPjitter',
+          'type': 'executable',
+          'dependencies': [
+          ],
+          'defines': [
+          ],
+          'include_dirs': [
+          ],
+          'sources': [
+            '../test/RTPjitter.cc',
+          ],
+       },
+       {
+          'target_name': 'RTPanalyze',
+          'type': 'executable',
+          'dependencies': [
+            'NetEqTestTools',
+         ],
+          'defines': [
+          ],
+         'include_dirs': [
+         ],
+          'sources': [
+            '../test/RTPanalyze.cc',
+          ],
+       },
+        {
+          'target_name': 'RTPchange',
+          'type': 'executable',
+          'dependencies': [
+            'NetEqTestTools',
+          ],
+          'defines': [
+          ],
+         'include_dirs': [
+          ],
+         'sources': [
+           '../test/RTPchange.cc',
+         ],
+        },
+        {
+          'target_name': 'RTPtimeshift',
+         'type': 'executable',
+          'dependencies': [
+           'NetEqTestTools',
+          ],
+          'defines': [
+          ],
+          'include_dirs': [
+          ],
+          'sources': [
+           '../test/RTPtimeshift.cc',
+         ],
+       },
+        {
+          'target_name': 'RTPcat',
+         'type': 'executable',
+         'dependencies': [
+           'NetEqTestTools',
+         ],
+         'defines': [
+          ],
+          'include_dirs': [
+         ],
+         'sources': [
+           '../test/RTPcat.cc',
+          ],
+        },
+        {
+         'target_name': 'NetEqTestTools',
+          # Collection of useful functions used in other tests
+          'type': '<(library)',
+          'dependencies': [
+           '../../../codecs/G711/main/source/g711.gyp:G711',
+           '../../../codecs/G722/main/source/g722.gyp:G722',
+           '../../../codecs/PCM16B/main/source/pcm16b.gyp:PCM16B',
+           '../../../codecs/iLBC/main/source/ilbc.gyp:iLBC',
+           '../../../codecs/iSAC/main/source/isac.gyp:iSAC',
+            '../../../codecs/CNG/main/source/cng.gyp:CNG',
+          ],
+          'direct_dependent_settings': {
+            'include_dirs': [
+             '../test',
+              '../interface',
+            ],
+          },
+          'defines': [
+            # TODO: Make codec selection conditional on definitions in target NetEq
+            'CODEC_ILBC',
+            'CODEC_PCM16B',
+            'CODEC_G711',
+            'CODEC_G722',
+            'CODEC_ISAC',
+            'CODEC_PCM16B_WB',
+            'CODEC_ISAC_SWB',
+            'CODEC_PCM16B_32KHZ',
+            'CODEC_CNGCODEC8',
+            'CODEC_CNGCODEC16',
+            'CODEC_CNGCODEC32',
+            'CODEC_ATEVENT_DECODE',
+            'CODEC_RED',
+          ],
+          'include_dirs': [
+            '../source',
+            '../interface',
+            '../test',
+          ],
+          'sources': [
+            '../test/NETEQTEST_NetEQClass.cc',
+            '../test/NETEQTEST_RTPpacket.cc',
+            '../test/NETEQTEST_CodecClass.cc',
+            '../test/NETEQTEST_NetEQClass.h',
+            '../test/NETEQTEST_RTPpacket.h',
+            '../test/NETEQTEST_CodecClass.h',
+          ],
+          'conditions': [
+            ['OS=="linux"', {
+             'cflags': [
+               '-fexceptions', # enable exceptions
+              ],
+           }],
+          ],
+        },
+      ], # targets
+    }], # build_with_chromium
+  ], # conditions
 }
 
 # Local Variables:
