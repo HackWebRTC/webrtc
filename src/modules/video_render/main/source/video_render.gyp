@@ -125,49 +125,56 @@
         }],
       ] # conditions
     }, # video_render_module
-    {
-      'target_name': 'video_render_module_test',
-      'type': 'executable',
-      'dependencies': [
-       'video_render_module',
-       '../../../utility/source/utility.gyp:webrtc_utility',  
-       '../../../../system_wrappers/source/system_wrappers.gyp:system_wrappers',
-       '../../../../common_video/vplib/main/source/vplib.gyp:webrtc_vplib',
-      ],
-      'include_dirs': [
-      ],      
-      'sources': [               
-        # sources
-        '../test/testAPI/testAPI.cpp',
-      ], # source
-      'conditions': [
-       # DEFINE PLATFORM SPECIFIC INCLUDE AND CFLAGS
-        ['OS=="mac" or OS=="linux"', {
-          'cflags': [
-            '-Wno-write-strings',
-          ],
-          'ldflags': [
-            '-lpthread -lm',
-          ],
-        }],
-        ['OS=="linux"', {
-          'libraries': [
-            '-lrt',
-            '-lXext',
-            '-lX11',            
-          ],
-        }],
-        ['OS=="mac"', {
-          'xcode_settings': {
-            'OTHER_CPLUSPLUSFLAGS': '-x objective-c++',
-            'OTHER_LDFLAGS': [
-              '-framework Foundation -framework AppKit -framework Cocoa -framework OpenGL',
-            ],
-          },
-        }],
-      ] # conditions
-    }, # video_render_module_test
   ], # targets
+   # Exclude the test target when building with chromium.
+  'conditions': [   
+    ['build_with_chromium==0', {
+      'targets': [
+        {
+          'target_name': 'video_render_module_test',
+          'type': 'executable',
+          'dependencies': [
+           'video_render_module',
+           '../../../utility/source/utility.gyp:webrtc_utility',  
+           '../../../../system_wrappers/source/system_wrappers.gyp:system_wrappers',
+           '../../../../common_video/vplib/main/source/vplib.gyp:webrtc_vplib',
+          ],
+          'include_dirs': [
+          ],      
+          'sources': [               
+            # sources
+            '../test/testAPI/testAPI.cpp',
+          ], # source
+          'conditions': [
+           # DEFINE PLATFORM SPECIFIC INCLUDE AND CFLAGS
+            ['OS=="mac" or OS=="linux"', {
+              'cflags': [
+                '-Wno-write-strings',
+              ],
+              'ldflags': [
+                '-lpthread -lm',
+              ],
+            }],
+            ['OS=="linux"', {
+              'libraries': [
+                '-lrt',
+                '-lXext',
+                '-lX11',            
+              ],
+            }],
+            ['OS=="mac"', {
+              'xcode_settings': {
+                'OTHER_CPLUSPLUSFLAGS': '-x objective-c++',
+                'OTHER_LDFLAGS': [
+                  '-framework Foundation -framework AppKit -framework Cocoa -framework OpenGL',
+                ],
+              },
+            }],
+          ] # conditions
+        }, # video_render_module_test
+      ], # targets
+    }], # build_with_chromium==0
+  ], # conditions
 }
 
 # Local Variables:
