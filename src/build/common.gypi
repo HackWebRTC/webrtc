@@ -49,18 +49,7 @@
          # In a standalone build, we can set this here to have WebRTC code
          # treated as Chromium code. Our third party code will still have the
          # reduced warning settings.
-         #
-         # TODO(ajm): Chromium uses pattern lists to automatically exclude
-         # platform-specific files. This breaks our Mac and Windows builds in
-         # which we still make use of some _linux.cc files. One solution is to
-         # rename these to _posix.cc.
-         #
-         # Remove the condition when this is fixed.
-         'conditions': [
-           ['OS=="linux"', {
-             'chromium_code%': 1,
-           }],
-         ],
+         'chromium_code%': 1,
       }],
     ], # conditions
   },
