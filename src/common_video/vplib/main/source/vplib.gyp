@@ -39,29 +39,36 @@
         'scale_bilinear_yuv.cc',
       ],
     },
-    {
-      'target_name': 'vplib_test',
-      'type': 'executable',
-      'dependencies': [
-        'webrtc_vplib',
-      ],
-      'include_dirs': [
-         '../interface',
-         '../source',
-      ],
-      'sources': [
+  ], # targets
+  # Exclude the test target when building with chromium.
+  'conditions': [   
+    ['build_with_chromium==0', {
+      'targets': [
+        {
+          'target_name': 'vplib_test',
+          'type': 'executable',
+          'dependencies': [
+            'webrtc_vplib',
+          ],
+          'include_dirs': [
+             '../interface',
+             '../source',
+          ],
+          'sources': [
 
-        # headers
-        '../test/test_util.h',
+            # headers
+            '../test/test_util.h',
         
-        # sources
-        '../test/tester_main.cc',
-        '../test/scale_test.cc',
-        '../test/convert_test.cc',
-        '../test/interpolation_test.cc',
-      ], # source
-    },  
-  ],
+            # sources
+            '../test/tester_main.cc',
+            '../test/scale_test.cc',
+            '../test/convert_test.cc',
+            '../test/interpolation_test.cc',
+          ], # source
+        },
+      ], # targets
+    }], # build_with_chromium
+  ], # conditions
 }
 
 # Local Variables:
