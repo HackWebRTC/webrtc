@@ -116,17 +116,23 @@
         }],
       ] # conditions
     },
-    {
-      'target_name': 'system_wrappersTest',
-      'type': 'executable',
-      'dependencies': [
-        'system_wrappers'
-      ],
-      'sources': [
-        '../test/Test.cpp',
-      ],
-    },
   ], # targets
+  'conditions': [   
+    ['build_with_chromium==0', {
+      'targets': [
+        {
+          'target_name': 'system_wrappersTest',
+          'type': 'executable',
+          'dependencies': [
+            'system_wrappers'
+          ],
+          'sources': [
+            '../test/Test.cpp',
+          ],
+        },
+      ], # targets
+    }], # build_with_chromium
+  ], # conditions
 }
 
 # Local Variables:
