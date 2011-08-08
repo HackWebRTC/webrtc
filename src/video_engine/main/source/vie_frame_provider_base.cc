@@ -126,8 +126,8 @@ int ViEFrameProviderBase::FrameDelay()
 }
 
 int ViEFrameProviderBase::GetBestFormat(int& bestWidth,
-                                              int& bestHeight,
-                                              int& bestFrameRate)
+                                        int& bestHeight,
+                                        int& bestFrameRate)
 {
 
     int largestWidth = 0;

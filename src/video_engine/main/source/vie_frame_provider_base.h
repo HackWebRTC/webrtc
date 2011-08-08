@@ -78,7 +78,9 @@ protected:
                       const WebRtc_UWord32 CSRC[kRtpCsrcSize] = NULL);
     void SetFrameDelay(int frameDelay);
     int FrameDelay();
-    int GetBestFormat(int& bestWidth, int& bestHeight, int& bestFrameRate);
+    int GetBestFormat(int& bestWidth,
+                      int& bestHeight,
+                      int& bestFrameRate);
 
     int _id;
     int _engineId;

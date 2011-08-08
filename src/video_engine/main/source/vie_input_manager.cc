@@ -42,8 +42,11 @@ namespace webrtc {
 ViEInputManager::ViEInputManager(const int engineId)
     : _engineId(engineId),
       _mapCritsect(*CriticalSectionWrapper::CreateCriticalSection()),
-      _ptrCaptureDeviceInfo(NULL), _vieFrameProviderMap(),
-      _freeCaptureDeviceId(), _moduleProcessThread(NULL)
+      _vieFrameProviderMap(),
+      _ptrCaptureDeviceInfo(NULL),
+      _freeCaptureDeviceId(),
+      _freeFileId(),
+      _moduleProcessThread(NULL)
 {
     WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideo, ViEId(_engineId), "%s",
                __FUNCTION__);

@@ -29,13 +29,15 @@ int ViESharedData::_instanceCounter = 0;
 ViESharedData::ViESharedData()
     : _instanceId(++_instanceCounter),
       _apiCritsect(*CriticalSectionWrapper::CreateCriticalSection()),
-      _isInitialized(false), _numberOfCores(CpuWrapper::DetectNumberOfCores()),
-      _moduleProcessThreadPtr(ProcessThread::CreateProcessThread()),
+      _isInitialized(false),
+      _numberOfCores(CpuWrapper::DetectNumberOfCores()),
       _viePerformanceMonitor(ViEPerformanceMonitor(_instanceId)),
       _channelManager(*new ViEChannelManager(_instanceId, _numberOfCores,
                                              _viePerformanceMonitor)),
       _inputManager(*new ViEInputManager(_instanceId)),
-      _renderManager(*new ViERenderManager(_instanceId)), _lastError(0)
+      _renderManager(*new ViERenderManager(_instanceId)),
+      _moduleProcessThreadPtr(ProcessThread::CreateProcessThread()),
+      _lastError(0)
 {
     Trace::CreateTrace();
     _channelManager.SetModuleProcessThread(*_moduleProcessThreadPtr);

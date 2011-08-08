@@ -255,8 +255,6 @@ bool ViEFilePlayer::FilePlayDecodeProcess()
 
 int ViEFilePlayer::StopPlay() //Only called from destructor.
 {
-
-    bool threadStoped = false;
     if (_ptrDecodeThread)
     {
         _ptrDecodeThread->SetNotAlive();
@@ -533,7 +531,6 @@ int ViEFilePlayer::GetFileInformation(int engineId, const char* fileName,
     {
         return -1;
     }
-    int result = 0;
 
     bool videoOnly = false;
 

@@ -480,7 +480,6 @@ bool ViEChannelManager::ChannelUsingViEEncoder(int channelId) const
     MapItem* mapItem = _vieEncoderMap.First();
     while (mapItem)
     {
-        ViEEncoder* vieEncoder = static_cast<ViEEncoder*> (mapItem->GetItem());
         if (mapItem->GetId() != channelId)
         {
             if (channelEncoder == static_cast<ViEEncoder*> (mapItem->GetItem()))

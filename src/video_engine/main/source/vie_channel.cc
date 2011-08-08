@@ -1304,7 +1304,7 @@ WebRtc_Word32 ViEChannel::StartRTPDump(const char fileNameUTF8[1024],
                    __FUNCTION__);
         return -1;
     }
-    RtpDump* rtpDump = NULL;
+
     if (direction == kRtpIncoming)
     {
         return _vieReceiver.StartRTPDump(fileNameUTF8);
@@ -1331,7 +1331,7 @@ WebRtc_Word32 ViEChannel::StopRTPDump(RTPDirections direction)
                    __FUNCTION__);
         return -1;
     }
-    RtpDump* rtpDump = NULL;
+
     if (direction == kRtpIncoming)
     {
         return _vieReceiver.StopRTPDump();
