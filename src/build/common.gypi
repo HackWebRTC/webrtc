@@ -115,6 +115,39 @@
             },
           }],
         ], # conditions
+      }, {
+        # Exclusion filters derived from Chromium's common.gypi. These are
+        # provided in our standalone build due to chromium_code==1; if WebRTC
+        # code relies on them they must also be available for a Chromium build.
+        'conditions': [
+          ['OS!="win"', {
+            'sources/': [ ['exclude', '_win(_unittest)?\\.(h|cc)$'],
+                          ['exclude', '(^|/)win/'],
+                          ['exclude', '(^|/)win_[^/]*\\.(h|cc)$'] ],
+          }],
+          ['OS!="mac"', {
+            'sources/': [ ['exclude', '_(cocoa|mac)(_unittest)?\\.(h|cc)$'],
+                          ['exclude', '(^|/)(cocoa|mac)/'],
+                          ['exclude', '\\.mm?$' ] ],
+          }],
+          ['toolkit_uses_gtk!=1', {
+            'sources/': [
+              ['exclude', '_(chromeos|gtk|x|x11|xdg)(_unittest)?\\.(h|cc)$'],
+              ['exclude', '(^|/)gtk/'],
+              ['exclude', '(^|/)(gtk|x11)_[^/]*\\.(h|cc)$'],
+            ],
+          }],
+          ['OS!="linux"', {
+            'sources/': [
+              ['exclude', '_linux(_unittest)?\\.(h|cc)$'],
+              ['exclude', '(^|/)linux/'],
+            ],
+          }],
+          # We use "POSIX" to refer to all non-Windows operating systems.
+          ['OS=="win"', {
+            'sources/': [ ['exclude', '_posix\\.(h|cc)$'] ],
+          }],
+        ], # conditions
       }],
     ], # target_conditions
   }, # target_defaults
