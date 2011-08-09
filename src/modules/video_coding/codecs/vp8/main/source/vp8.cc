@@ -796,6 +796,12 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
 
     img = vpx_codec_get_frame(_decoder, &_iter);
 
+    if (img == NULL)
+    {
+        // Decoder OK and NULL image => No show frame
+        return WEBRTC_VIDEO_CODEC_OK;
+    }
+
     // Allocate memory for decoded image
     WebRtc_UWord32 requiredSize = (3 * img->h * img->w) >> 1;
     if (_decodedImage._buffer != NULL)
