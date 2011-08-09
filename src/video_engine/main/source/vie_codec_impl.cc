@@ -111,15 +111,6 @@ int ViECodecImpl::NumberOfCodecs() const
 {
     WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(_instanceId), "%s",
                __FUNCTION__);
-
-    if (!IsInitialized())
-    {
-        SetLastError(kViENotInitialized);
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_instanceId),
-                   "%s - ViE instance %d not initialized", __FUNCTION__,
-                   _instanceId);
-        return -1;
-    }
     // +2 because of FEC(RED and ULPFEC)
     return (int) (VideoCodingModule::NumberOfCodecs() + 2);
 }
@@ -136,14 +127,6 @@ int ViECodecImpl::GetCodec(const unsigned char listNumber,
     WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(_instanceId),
                "%s(listNumber: %d, codecType: %d)", __FUNCTION__,
                listNumber, videoCodec.codecType);
-    if (!IsInitialized())
-    {
-        SetLastError(kViENotInitialized);
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_instanceId),
-                   "%s - ViE instance %d not initialized", __FUNCTION__,
-                   _instanceId);
-        return -1;
-    }
     if (listNumber == VideoCodingModule::NumberOfCodecs())
     {
         memset(&videoCodec, 0, sizeof(webrtc::VideoCodec));
