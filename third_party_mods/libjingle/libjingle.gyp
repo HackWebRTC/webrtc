@@ -7,7 +7,7 @@
     'no_libjingle_logging%': 0,
     'peer_connection_dev%': 0,
     'libjingle_orig': '../../third_party/libjingle',
-    'libjingle_mods': '.',
+    'libjingle_mods': '../../third_party_mods/libjingle',
     'conditions': [
       ['inside_chromium_build==1', {
         'overrides': '<(libjingle_orig)/overrides',
