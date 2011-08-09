@@ -64,7 +64,7 @@ int VideoEngineSampleCode(void* window1, void* window2)
         return -1;
     }
 
-#ifdef ANDROID
+#ifdef WEBRTC_ANDROID
     error = ptrViE->SetTraceFile("/sdcard/ViETrace.txt");
     if (error == -1)
     {
@@ -150,7 +150,7 @@ int VideoEngineSampleCode(void* window1, void* window2)
         printf("\t %d. %s\n", captureIdx + 1, deviceName);
     }
     printf("\nChoose capture device: ");
-#ifdef ANDROID
+#ifdef WEBRTC_ANDROID
     captureIdx = 0;
     printf("0\n");
 #else
@@ -306,7 +306,7 @@ int VideoEngineSampleCode(void* window1, void* window2)
         }
     }
     printf("Choose codec: ");
-#ifdef ANDROID
+#ifdef WEBRTC_ANDROID
     codecIdx = 0;
     printf("0\n");
 #else

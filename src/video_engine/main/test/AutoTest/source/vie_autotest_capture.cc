@@ -278,7 +278,7 @@ int ViEAutoTest::ViECaptureStandardTest()
         error = ViE.ptrViEImageProcess->DeregisterCaptureEffectFilter(
             captureDeviceId[deviceIndex]);
 
-#ifdef ANDROID // Can only allocate one camera at the time on Android
+#ifdef WEBRTC_ANDROID // Can only allocate one camera at the time on Android
         error = ViE.ptrViECapture->StopCapture(captureDeviceId[deviceIndex]);
         numberOfErrors += ViETest::TestError(error==0, "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
@@ -299,7 +299,7 @@ int ViEAutoTest::ViECaptureStandardTest()
     for (int deviceIndex = 0; deviceIndex < numberOfCaptureDevices; ++deviceIndex)
     {
         error = ViE.ptrViECapture->StopCapture(captureDeviceId[deviceIndex]);
-#ifdef ANDROID
+#ifdef WEBRTC_ANDROID
         // Camera already stoped on Android since we can only allocate one
         // camera at the time.
         numberOfErrors += ViETest::TestError(error==-1, "ERROR: %s at line %d",
@@ -311,7 +311,7 @@ int ViEAutoTest::ViECaptureStandardTest()
 
         error = ViE.ptrViECapture->ReleaseCaptureDevice(
             captureDeviceId[deviceIndex]);
-#ifdef ANDROID
+#ifdef WEBRTC_ANDROID
         // Camera already stoped on Android since we can only allocate one
         // camera at the time
         numberOfErrors += ViETest::TestError(error==-1, "ERROR: %s at line %d",

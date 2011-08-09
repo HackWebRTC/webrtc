@@ -20,7 +20,7 @@
 #import <AppKit/AppKit.h>
 //#import "CocoaWindow.h"
 #import "cocoa_renderer.h"
-#elif defined (ANDROID)
+#elif defined (WEBRTC_ANDROID)
 #include <JNI.h>
 #elif defined(WEBRTC_LINUX)
 typedef void* HWND;
@@ -42,7 +42,7 @@ public:
     void PaintBlue();
     void* GetWindow();
 
-#if defined (ANDROID)
+#if defined (WEBRTC_ANDROID)
     static void SetRenderWindow(jobject renderWindow);
 #endif
 
@@ -65,7 +65,7 @@ private:
 #elif defined(WEBRTC_MAC_INTEL)
     NSAutoreleasePool* _pool;
     CocoaRenderer* _renderWindow;
-#elif defined (ANDROID)
+#elif defined (WEBRTC_ANDROID)
     jobject _renderWindow; //this is a glsurface.
 public:
     static jobject g_renderWindow;

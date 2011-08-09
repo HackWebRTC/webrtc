@@ -138,7 +138,8 @@ int ViEAutoTest::ViERenderStandardTest()
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-#ifndef ANDROID // PIP and full screen rendering is not supported on Android
+    // PIP and full screen rendering is not supported on Android
+#ifndef WEBRTC_ANDROID
     error = ViE.ptrViERender->DeRegisterVideoRenderModule(*_vrm1);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);

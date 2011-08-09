@@ -452,7 +452,7 @@ int testPlatformDependent::DoTest()
         testRotation(uniqueID);
 
     }
-#ifndef ANDROID
+#ifndef WEBRTC_ANDROID
     _logger.SetFileName("testPlatformDependent_multipleCameras.txt");
     testMultipleCameras();
 #endif

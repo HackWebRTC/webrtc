@@ -361,7 +361,7 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
 
     ViETest::Log("Testing RTP dump...\n\n");
 
-#ifdef ANDROID
+#ifdef WEBRTC_ANDROID
     const char* inDumpName = "/sdcard/IncomingRTPDump.rtp";
     const char* outDumpName = "/sdcard/OutgoingRTPDump.rtp";
 #else
@@ -818,7 +818,7 @@ int ViEAutoTest::ViERtpRtcpAPITest()
     // RTP Dump
     //
     {
-#ifdef ANDROID
+#ifdef WEBRTC_ANDROID
         const char* dumpName = "/sdcard/DumpFileName.rtp";
 #else
         const char* dumpName = "DumpFileName.rtp";

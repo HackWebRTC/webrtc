@@ -38,7 +38,7 @@ int ViEAutoTest::ViEBaseStandardTest()
     numberOfErrors += ViETest::TestError(ptrViE != NULL,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
-#ifdef ANDROID
+#ifdef WEBRTC_ANDROID
     error = ptrViE->SetTraceFile("/sdcard/ViEBaseStandardTest.txt");
     numberOfErrors += ViETest::TestError(error == 0,
                                          "ERROR: %s at line %d", __FUNCTION__,
@@ -416,7 +416,7 @@ int ViEAutoTest::ViEBaseAPITest()
     ptrViE = VideoEngine::Create();
     numberOfErrors += ViETest::TestError(ptrViE != NULL, "VideoEngine::Create");
 
-#ifdef ANDROID
+#ifdef WEBRTC_ANDROID
     error = ptrViE->SetTraceFile("/sdcard/WebRTC/ViESampleCodeTrace.txt");
     numberOfErrors += ViETest::TestError(error == 0, "SetTraceFile error");
 

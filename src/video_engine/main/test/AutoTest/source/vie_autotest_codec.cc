@@ -312,7 +312,7 @@ int ViEAutoTest::ViECodecStandardTest()
                 else
                 {
 
-#ifdef ANDROID
+#ifdef WEBRTC_ANDROID
                     // To get the autotest to pass on some slow devices
                     numberOfErrors += ViETest::TestError(frameCounter.numFrames
                                                          > maxNumberOfRenderedFrames/6, // Safety margin due to bitrate

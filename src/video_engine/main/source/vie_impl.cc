@@ -20,7 +20,7 @@
 #include <tchar.h>    // For _T
 #endif
 
-#ifdef ANDROID
+#ifdef WEBRTC_ANDROID
 #include "video_capture.h"
 #include "video_render.h"
 #endif
@@ -280,7 +280,7 @@ int VideoEngine::SetAndroidObjects(void* javaVM, void* javaContext)
     WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, gViEActiveInstanceCounter,
                "SetAndroidObjects()");
 
-#ifdef ANDROID	
+#ifdef WEBRTC_ANDROID
     if (VideoCaptureModule::SetAndroidObjects(javaVM,javaContext) != 0)
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, gViEActiveInstanceCounter,

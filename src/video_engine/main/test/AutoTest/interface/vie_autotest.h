@@ -33,7 +33,7 @@
 #include "vie_errors.h"
 #include "video_render_defines.h"
 
-#ifndef ANDROID
+#ifndef WEBRTC_ANDROID
 #include <string>
 #endif
 
@@ -57,7 +57,7 @@ public:
     bool GetVideoDevice(ViEBase* ptrViEBase, ViECapture* ptrViECapture,
                         char* captureDeviceName, char* captureDeviceUniqueId);
     bool GetIPAddress(char* IP);
-#ifndef ANDROID
+#ifndef WEBRTC_ANDROID
     bool ValidateIP(std::string iStr);
 #endif
     void PrintCallInformation(char* IP, char* videoCaptureDeviceName,

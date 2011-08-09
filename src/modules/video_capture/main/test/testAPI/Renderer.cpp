@@ -202,7 +202,7 @@ void SetWindowPos(CocoaRenderer*& cocoaRenderer, int x, int y, int width, int he
     //			[ownerWindow setLevel:NSNormalWindowLevel];
     //		}
 }
-#elif defined(ANDROID)
+#elif defined(WEBRTC_ANDROID)
 #define nil NULL
 #define NO false
 jobject Renderer::g_renderWindow=NULL;

@@ -16,7 +16,7 @@ tbInterfaces::tbInterfaces(const char* testName, int& nrOfErrors) :
     char traceFile[256] = "";
     char traceFileEnc[256] = "";
 
-#ifdef ANDROID
+#ifdef WEBRTC_ANDROID
     strcat(traceFile,"/sdcard/");
 #endif
     strcat(traceFile, testName);

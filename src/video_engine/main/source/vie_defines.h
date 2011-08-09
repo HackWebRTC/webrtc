@@ -22,7 +22,7 @@
 #include <unistd.h>
 #endif
 
-#ifdef ANDROID
+#ifdef WEBRTC_ANDROID
 #include <pthread.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -237,7 +237,7 @@ ODE TEXT("d")
 #define BUILDINFO BUILDDATE " " BUILDTIME " " BUILDMODE
 
 #endif  // ifdef WEBRTC_LINUX
-#endif  // ifndef ANDROID
+#endif  // ifndef WEBRTC_ANDROID
 
 #ifdef WEBRTC_ANDROID
 
@@ -260,7 +260,7 @@ ODE TEXT("d")
     // example: "Oct 10 2002 12:05:30 r"
     #define BUILDINFO BUILDDATE " " BUILDTIME " " BUILDMODE
 
-#endif  // #ifdef ANDROID
+#endif  // #ifdef WEBRTC_ANDROID
 
 } //namespace webrtc
 #endif  // WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_DEFINES_H_

@@ -171,7 +171,7 @@ public:
         }
 #endif
 #ifdef VIE_LOG_TO_STDOUT
-#if ANDROID
+#if WEBRTC_ANDROID
         __android_log_write(ANDROID_LOG_DEBUG, "*WebRTCN*", _logStr);
 #else
         printf(_logStr);
@@ -201,7 +201,7 @@ public:
             va_start(va, fmt);
             memset(_logStr, 0, KMaxLogSize);
             vsprintf(_logStr, fmt, va);
-#ifdef ANDROID
+#ifdef WEBRTC_ANDROID
             __android_log_write(ANDROID_LOG_ERROR, "*WebRTCN*", _logStr);
 #endif
             Log(_logStr);
