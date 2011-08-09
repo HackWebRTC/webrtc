@@ -19,7 +19,7 @@
 #include "peerconnection/samples/server/peer_channel.h"
 #include "peerconnection/samples/server/utils.h"
 
-static const int kMaxConnections = (FD_SETSIZE - 2);
+static const size_t kMaxConnections = (FD_SETSIZE - 2);
 
 void HandleBrowserRequest(DataSocket* ds, bool* quit) {
   assert(ds && ds->valid());
