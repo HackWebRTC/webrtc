@@ -18,7 +18,7 @@ LOCAL_MODULE_TAGS := optional
 LOCAL_GENERATED_SOURCES :=
 LOCAL_SRC_FILES := \
     noise_suppression_x.c \
-    nsx_core.c 
+    nsx_core.c
 
 # floating point
 # noise_suppression.c ns_core.c 
@@ -26,6 +26,11 @@ LOCAL_SRC_FILES := \
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \
     $(MY_WEBRTC_COMMON_DEFS)
+
+ifeq ($(ARCH_ARM_HAVE_NEON),true)
+    LOCAL_SRC_FILES += nsx_core_neon.c
+    LOCAL_CFLAGS += $(CFLAGS_NEON)
+endif
 
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../interface \

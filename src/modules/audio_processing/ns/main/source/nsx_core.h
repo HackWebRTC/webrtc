@@ -162,6 +162,18 @@ int WebRtcNsx_set_policy_core(NsxInst_t *inst, int mode);
 int WebRtcNsx_ProcessCore(NsxInst_t *inst, short *inFrameLow, short *inFrameHigh,
                           short *outFrameLow, short *outFrameHigh);
 
+/****************************************************************************
+ * Internal functions and variable declarations shared with optimized code.
+ */
+void WebRtcNsx_UpdateNoiseEstimate(NsxInst_t *inst, int offset);
+
+void WebRtcNsx_NoiseEstimation(NsxInst_t *inst, WebRtc_UWord16 *magn, WebRtc_UWord32 *noise,
+                               WebRtc_Word16 *qNoise);
+
+extern const WebRtc_Word16 WebRtcNsx_kLogTable[9];
+extern const WebRtc_Word16 WebRtcNsx_kLogTableFrac[256];
+extern const WebRtc_Word16 WebRtcNsx_kCounterDiv[201];
+
 #ifdef __cplusplus
 }
 #endif

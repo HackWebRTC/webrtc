@@ -28,12 +28,14 @@ MY_WEBRTC_COMMON_DEFS += \
 ifeq ($(ARCH_ARM_HAVE_NEON),true)
 MY_WEBRTC_COMMON_DEFS += \
     '-DWEBRTC_ARCH_ARM_NEON'
+CFLAGS_NEON = -flax-vector-conversions
 endif
 
 ifeq ($(ARCH_ARM_HAVE_ARMV7A),true)
 MY_WEBRTC_COMMON_DEFS += \
     '-DWEBRTC_ARCH_ARM_V7A'
 endif
+
 else ifeq ($(TARGET_ARCH),x86)
 MY_WEBRTC_COMMON_DEFS += \
     '-DWEBRTC_USE_SSE2'
