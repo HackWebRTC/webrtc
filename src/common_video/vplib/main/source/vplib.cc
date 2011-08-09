@@ -3238,6 +3238,7 @@ PadI420Frame(const WebRtc_UWord8* inBuffer, WebRtc_UWord8* outBuffer,
     {
         return -1;
     }
+
     if (toWidth == fromWidth && toHeight == fromHeight)
     {
         // nothing to do
@@ -3250,16 +3251,6 @@ PadI420Frame(const WebRtc_UWord8* inBuffer, WebRtc_UWord8* outBuffer,
     }
 
     if (outBuffer == NULL)
-    {
-        return -1;
-    }
-
-    if (fromWidth < 0 || fromHeight < 0)
-    {
-        return -1;
-    }
-
-    if (toWidth < 0 || toHeight < 0)
     {
         return -1;
     }

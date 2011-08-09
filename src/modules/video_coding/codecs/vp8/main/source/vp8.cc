@@ -194,10 +194,6 @@ VP8Encoder::InitEncode(const VideoCodec* inst,
     {
         return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
     }
-    if (inst->startBitrate < 0 || inst->maxBitrate < 0)
-    {
-        return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
-    }
     // allow zero to represent an unspecified maxBitRate
     if (inst->maxBitrate > 0 && inst->startBitrate > inst->maxBitrate)
     {
