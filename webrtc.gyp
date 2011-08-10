@@ -74,5 +74,38 @@
         },
       ],  # targets
     }, ],  # OS="win"
+    ['OS=="linux"', {
+      'targets': [
+        {
+          'target_name': 'peerconnection_client',
+          'type': 'executable',
+          'sources': [
+            'peerconnection/samples/client/linux/main.cc',
+            'peerconnection/samples/client/linux/main_wnd.cc',
+            'peerconnection/samples/client/linux/main_wnd.h',
+          ],
+          'dependencies': [
+            'third_party_mods/libjingle/libjingle.gyp:libjingle_app',
+            # TODO(tommi): Switch to this and remove specific gtk dependency
+            # sections below for cflags and link_settings.
+            # '<(DEPTH)/build/linux/system.gyp:gtk',
+          ],
+          'include_dirs': [
+            'third_party/libjingle/source',
+          ],
+          'cflags': [
+            '<!@(pkg-config --cflags gtk+-2.0)',
+          ],
+          'link_settings': {
+            'ldflags': [
+              '<!@(pkg-config --libs-only-L --libs-only-other gtk+-2.0 gthread-2.0)',
+            ],
+            'libraries': [
+              '<!@(pkg-config --libs-only-l gtk+-2.0 gthread-2.0)',
+            ],
+          },
+        },
+      ],  # targets
+    }, ],  # OS="linux"
   ],  # conditions  
 }
