@@ -183,78 +183,77 @@
       ], # conditions
 
     },
-    {
-      'target_name': 'video_capture_module_test',
-      'type': 'executable',
-      'dependencies': [
-       'video_capture_module',
-       '../../../../system_wrappers/source/system_wrappers.gyp:system_wrappers',
-       '../../../utility/source/utility.gyp:webrtc_utility',
-       '../../../video_render/main/source/video_render.gyp:video_render_module',
-       '../../../video_coding/main/source/video_coding.gyp:webrtc_video_coding',
-      ],
-      'include_dirs': [
-        '../interface',
-      ],
-      'sources': [
-        # sources
-        '../test/testAPI/cocoa_renderer.h',
-        '../test/testAPI/cocoa_renderer.mm',
-        '../test/testAPI/testDefines.h',
-        '../test/testAPI/testAPI.cpp',
-        '../test/testAPI/testCameraEncoder.cpp',
-        '../test/testAPI/testCameraEncoder.h',
-        '../test/testAPI/testExternalCapture.cpp',
-        '../test/testAPI/testExternalCapture.h',
-        '../test/testAPI/testPlatformDependent.cpp',
-        '../test/testAPI/testPlatformDependent.h',
-        '../test/testAPI/Logger.h',
-        '../test/testAPI/Logger.cpp',
-        '../test/testAPI/Renderer.h',
-        '../test/testAPI/Renderer.cpp',
-      ], # source
-      'conditions': [
-        ['build_with_chromium!=0', {
-          'sources!': [
-            '../test/testAPI/testCameraEncoder.cpp',
-            '../test/testAPI/testCameraEncoder.h',
-            '../test/testAPI/testPlatformDependent.cpp',
-            '../test/testAPI/testPlatformDependent.h',
+  ],
+   # Exclude the test targets when building with chromium.
+  'conditions': [   
+    ['build_with_chromium==0', {
+      'targets': [
+        {
+          'target_name': 'video_capture_module_test',
+          'type': 'executable',
+          'dependencies': [
+           'video_capture_module',
+           '../../../../system_wrappers/source/system_wrappers.gyp:system_wrappers',
+           '../../../utility/source/utility.gyp:webrtc_utility',
+           '../../../video_render/main/source/video_render.gyp:video_render_module',
+           '../../../video_coding/main/source/video_coding.gyp:webrtc_video_coding',
           ],
-        }],
-        # DEFINE PLATFORM SPECIFIC SOURCE FILES
-        ['OS!="mac"', {
-          'sources!': [
+          'include_dirs': [
+            '../interface',
+          ],
+          'sources': [
+            # sources
             '../test/testAPI/cocoa_renderer.h',
             '../test/testAPI/cocoa_renderer.mm',
-          ],
-        }],
-       # DEFINE PLATFORM SPECIFIC INCLUDE AND CFLAGS
-        ['OS=="mac" or OS=="linux"', {
-          'cflags': [
-            '-Wno-write-strings',
-          ],
-          'ldflags': [
-            '-lpthread -lm',
-          ],
-        }],
-        ['OS=="linux"', {
-          'libraries': [
-            '-lrt',
-            '-lXext',
-            '-lX11',
-          ],
-        }],
-        ['OS=="mac"', {
-          'xcode_settings': {
-            'OTHER_CPLUSPLUSFLAGS': '-x objective-c++',
-            'OTHER_LDFLAGS': [
-              '-framework Foundation -framework AppKit -framework Cocoa -framework OpenGL -framework CoreVideo -framework CoreAudio -framework AudioToolbox',
-            ],
-          },
-        }],
-      ] # conditions
-    },
+            '../test/testAPI/testDefines.h',
+            '../test/testAPI/testAPI.cpp',
+            '../test/testAPI/testCameraEncoder.cpp',
+            '../test/testAPI/testCameraEncoder.h',
+            '../test/testAPI/testExternalCapture.cpp',
+            '../test/testAPI/testExternalCapture.h',
+            '../test/testAPI/testPlatformDependent.cpp',
+            '../test/testAPI/testPlatformDependent.h',
+            '../test/testAPI/Logger.h',
+            '../test/testAPI/Logger.cpp',
+            '../test/testAPI/Renderer.h',
+            '../test/testAPI/Renderer.cpp',
+          ], # source
+          'conditions': [
+            # DEFINE PLATFORM SPECIFIC SOURCE FILES
+            ['OS!="mac"', {
+              'sources!': [
+                '../test/testAPI/cocoa_renderer.h',
+                '../test/testAPI/cocoa_renderer.mm',
+              ],
+            }],
+           # DEFINE PLATFORM SPECIFIC INCLUDE AND CFLAGS
+            ['OS=="mac" or OS=="linux"', {
+              'cflags': [
+                '-Wno-write-strings',
+              ],
+              'ldflags': [
+                '-lpthread -lm',
+              ],
+            }],
+            ['OS=="linux"', {
+              'libraries': [
+                '-lrt',
+                '-lXext',
+                '-lX11',
+              ],
+            }],
+            ['OS=="mac"', {
+              'xcode_settings': {
+                'OTHER_CPLUSPLUSFLAGS': '-x objective-c++',
+                'OTHER_LDFLAGS': [
+                  '-framework Foundation -framework AppKit -framework Cocoa -framework OpenGL -framework CoreVideo -framework CoreAudio -framework AudioToolbox',
+                ],
+              },
+            }],
+          ] # conditions
+        },
+      ],
+    }],
   ],
 }
 
