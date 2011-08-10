@@ -56,6 +56,7 @@ LOCAL_SRC_FILES := \
     sin_table.c \
     sin_table_1024.c \
     spl_sqrt.c \
+    spl_sqrt_floor.c \
     spl_version.c \
     splitting_filter.c \
     sqrt_of_one_minus_x_squared.c \
