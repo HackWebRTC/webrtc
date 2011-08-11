@@ -236,6 +236,8 @@ RTPSendCompleteCallback::RTPSendCompleteCallback(RtpRtcp* rtp, const char* filen
     _sendCount(0),
     _rtp(rtp),
     _lossPct(0),
+    _burstLength(0),
+    _prevLossState(0),
     _rtpDump(NULL)
 {
     if (filename != NULL)
@@ -256,14 +258,67 @@ int
 RTPSendCompleteCallback::SendPacket(int channel, const void *data, int len)
 {
     _sendCount++;
-    // Packet Loss - randomly drop %loss packets
-    // don't drop I-frame packets
-    if(PacketLoss(_lossPct) && (_sendCount > 12))
+
+    // Packet Loss
+
+    if (_burstLength <= 1.0)
     {
-        // drop
-        //printf("\tDrop packet, sendCount = %d\n", _sendCount);
-        return len;
+        // Random loss: if _burstLength parameter is not set, or <=1
+        if (PacketLoss(_lossPct))
+        {
+            // drop
+            //printf("\tDrop packet, sendCount = %d\n", _sendCount);
+            return len;
+        }
     }
+    else
+    {
+        // Simulate bursty channel (Gilbert model)
+        // (1st order) Markov chain model with memory of the previous/last
+        // packet state (loss or received)
+
+        // 0 = received state
+        // 1 = loss state
+
+        // probTrans10: if previous packet is lost, prob. to -> received state
+        // probTrans11: if previous packet is lost, prob. to -> loss state
+
+        // probTrans01: if previous packet is received, prob. to -> loss state
+        // probTrans00: if previous packet is received, prob. to -> received
+
+        // Map the two channel parameters (average loss rate and burst length)
+        // to the transition probabilities:
+        double probTrans10 = 100 * (1.0 / _burstLength);
+        double probTrans11 = (100.0 - probTrans10);
+        double probTrans01 = (probTrans10 * ( _lossPct / (100.0 - _lossPct) ) );
+
+        // Note: Random loss (Bernoulli) model is a special case where:
+        // burstLength = 100.0 / (100.0 - _lossPct) (i.e., p10 + p01 = 100)
+
+        if (_prevLossState == 0 )
+        {
+            // previous packet was received
+            if (PacketLoss(probTrans01) )
+            {
+                // drop, update previous state to loss
+                _prevLossState = 1;
+                return len;
+            }
+        }
+        else if (_prevLossState == 1)
+        {
+            // previous packet was lost
+            if (PacketLoss(probTrans11) )
+            {
+                // drop, update previous state to loss
+                _prevLossState = 1;
+                return len;
+            }
+        }
+        // no drop, update previous state to received
+        _prevLossState = 0;
+    }
+
     if (_rtpDump != NULL)
     {
         if (_rtpDump->DumpPacket((const WebRtc_UWord8*)data, len) != 0)
@@ -292,6 +347,13 @@ void
 RTPSendCompleteCallback::SetLossPct(double lossPct)
 {
     _lossPct = lossPct;
+    return;
+}
+
+void
+RTPSendCompleteCallback::SetBurstLength(double burstLength)
+{
+    _burstLength = burstLength;
     return;
 }
 

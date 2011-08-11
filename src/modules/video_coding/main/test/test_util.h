@@ -185,6 +185,8 @@ public:
     virtual int SendRTCPPacket(int channel, const void *data, int len);
     // Set percentage of channel loss in the network
     void SetLossPct(double lossPct);
+    // Set average size of burst loss
+    void SetBurstLength(double burstLength);
     // return send count
     int SendCount() { return _sendCount; }
 private:
@@ -194,6 +196,8 @@ private:
     WebRtc_UWord32    _sendCount;
     webrtc::RtpRtcp*  _rtp;
     double            _lossPct;
+    double            _burstLength;
+    bool              _prevLossState;
     webrtc::RtpDump*  _rtpDump;
 };
 
