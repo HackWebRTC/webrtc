@@ -799,7 +799,7 @@ JNIEXPORT jint JNICALL Java_org_webrtc_voiceengine_test_AndroidTest_StartSend(
      return -1;
      } */
 
-    /*	if (veData1.rtp_rtcp->SetFECStatus(channel, 1) != 0)
+    /* if (veData1.rtp_rtcp->SetFECStatus(channel, 1) != 0)
      {
      __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
          "Failed to enable FEC");
@@ -867,7 +867,7 @@ JNIEXPORT jint JNICALL Java_org_webrtc_voiceengine_test_AndroidTest_StopSend(
         jobject,
         jint channel)
 {
-    /*	if (veData1.rtp_rtcp->SetFECStatus(channel, 0) != 0)
+    /* if (veData1.rtp_rtcp->SetFECStatus(channel, 0) != 0)
      {
      __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
          "Failed to disable FEC");
@@ -1037,7 +1037,7 @@ Java_org_webrtc_voiceengine_test_AndroidTest_SetAGCStatus(
             break;
     }
 
-    /*	AgcConfig agcConfig;
+    /* AgcConfig agcConfig;
      agcConfig.targetLeveldBOv = 3;
      agcConfig.digitalCompressionGaindB = 50;
      agcConfig.limiterEnable = 0;
