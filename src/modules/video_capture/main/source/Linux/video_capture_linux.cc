@@ -120,9 +120,9 @@ WebRtc_Word32 VideoCaptureModuleV4L2::StartCapture(
 {
     if (_captureStarted)
     {
-        if (capability.width == _currentWidth
-            && capability.height == _currentHeight
-            && _captureVideoType == capability.rawType)
+        if (capability.width == _currentWidth &&
+            capability.height == _currentHeight &&
+            _captureVideoType == capability.rawType)
         {
             return 0;
         }
@@ -202,9 +202,8 @@ WebRtc_Word32 VideoCaptureModuleV4L2::StartCapture(
     //start capture thread;
     if (!_captureThread)
     {
-        _captureThread = ThreadWrapper::CreateThread(VideoCaptureModuleV4L2::CaptureThread,
-                                                  this,
-                                                  kHighPriority);
+        _captureThread = ThreadWrapper::CreateThread(
+            VideoCaptureModuleV4L2::CaptureThread, this, kHighPriority);
         unsigned int id;
         _captureThread->Start(id);
     }
@@ -214,7 +213,8 @@ WebRtc_Word32 VideoCaptureModuleV4L2::StartCapture(
     type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     if (ioctl(_deviceFd, VIDIOC_STREAMON, &type) == -1)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id, "Failed to turn on stream");
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
+                     "Failed to turn on stream");
         return -1;
     }
 
@@ -305,7 +305,7 @@ bool VideoCaptureModuleV4L2::AllocateVideoBuffers()
 
         if (MAP_FAILED == pool[i].start)
         {
-            for (int j = 0; j < i; j++)
+            for (unsigned int j = 0; j < i; j++)
                 munmap(pool[j].start, pool[j].length);
             return false;
         }

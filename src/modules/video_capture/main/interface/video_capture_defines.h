@@ -37,10 +37,10 @@ enum VideoCaptureRotation
 
 struct VideoCaptureCapability
 {
-    WebRtc_UWord32 width;
-    WebRtc_UWord32 height;
-    WebRtc_UWord32 maxFPS;
-    WebRtc_UWord32 expectedCaptureDelay;
+    WebRtc_Word32 width;
+    WebRtc_Word32 height;
+    WebRtc_Word32 maxFPS;
+    WebRtc_Word32 expectedCaptureDelay;
     RawVideoType rawType;
     VideoCodecType codecType;
     bool interlaced;
