@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_AUDIO_DEVICE_AUDIO_MIXER_MANAGER_H
-#define WEBRTC_AUDIO_DEVICE_AUDIO_MIXER_MANAGER_H
+#ifndef WEBRTC_AUDIO_DEVICE_AUDIO_MIXER_MANAGER_WIN_H
+#define WEBRTC_AUDIO_DEVICE_AUDIO_MIXER_MANAGER_WIN_H
 
 #include "typedefs.h"
 #include "audio_device.h"

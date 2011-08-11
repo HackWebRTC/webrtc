@@ -24,8 +24,8 @@ LOCAL_SRC_FILES := \
     audio_device_impl.cc \
     Android/audio_device_android_opensles.cc \
     Android/audio_device_utility_android.cc \
-    Dummy/audio_device_utility_dummy.cc \
-    Dummy/audio_device_dummy.cc
+    dummy/audio_device_utility_dummy.cc \
+    dummy/audio_device_dummy.cc
 
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \
@@ -35,8 +35,8 @@ LOCAL_CFLAGS := \
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH) \
     $(LOCAL_PATH)/Android \
-    $(LOCAL_PATH)/Dummy \
-    $(LOCAL_PATH)/Linux \
+    $(LOCAL_PATH)/dummy \
+    $(LOCAL_PATH)/linux \
     $(LOCAL_PATH)/../interface \
     $(LOCAL_PATH)/../../../.. \
     $(LOCAL_PATH)/../../../interface \

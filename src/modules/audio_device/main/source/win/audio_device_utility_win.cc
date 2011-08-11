@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "audio_device_utility_windows.h"
+#include "audio_device_utility_win.h"
 #include "audio_device_config.h"
 
 #include "critical_section_wrapper.h"

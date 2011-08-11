@@ -9,7 +9,7 @@
  */
 
 #include "audio_device_utility.h"
-#include "audio_device_windows_wave.h"
+#include "audio_device_wave_win.h"
 #include "audio_device_config.h"
 
 #include "trace.h"

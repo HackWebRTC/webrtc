@@ -15,10 +15,10 @@
 #include "trace.h"
 
 #if defined(_WIN32)
-    #include "audio_device_utility_windows.h"
-    #include "audio_device_windows_wave.h"
+    #include "audio_device_utility_win.h"
+    #include "audio_device_wave_win.h"
  #if defined(WEBRTC_WINDOWS_CORE_AUDIO_BUILD)
-    #include "audio_device_windows_core.h"
+    #include "audio_device_core_win.h"
  #endif
 #elif defined(WEBRTC_ANDROID_OPENSLES)
     #include <stdlib.h>
@@ -31,10 +31,10 @@
 #elif defined(WEBRTC_LINUX)
     #include "audio_device_utility_linux.h"
  #if defined(LINUX_ALSA)
-    #include "audio_device_linux_alsa.h"
+    #include "audio_device_alsa_linux.h"
  #endif
  #if defined(LINUX_PULSE)
-    #include "audio_device_linux_pulse.h"
+    #include "audio_device_pulse_linux.h"
  #endif
 #elif defined(MAC_IPHONE)
     #include "audio_device_utility_iphone.h"

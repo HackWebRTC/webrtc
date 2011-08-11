@@ -29,7 +29,7 @@
 #ifdef WEBRTC_WINDOWS_CORE_AUDIO_BUILD
 
 #include "audio_device_utility.h"
-#include "audio_device_windows_core.h"
+#include "audio_device_core_win.h"
 #include "trace.h"
 
 #include <windows.h>

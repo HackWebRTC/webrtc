@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "audio_mixer_manager.h"
+#include "audio_mixer_manager_win.h"
 #include "trace.h"
 
 #include <strsafe.h>    // StringCchCopy(), StringCchCat(), StringCchPrintf()

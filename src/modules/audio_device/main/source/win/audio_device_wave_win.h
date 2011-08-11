@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_WINDOWS_WAVE_H
-#define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_WINDOWS_WAVE_H
+#ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_WAVE_WIN_H
+#define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_WAVE_WIN_H
 
 #include "audio_device_generic.h"
-#include "audio_mixer_manager.h"
+#include "audio_mixer_manager_win.h"
 
 #pragma comment( lib, "winmm.lib" )
 
@@ -330,4 +330,4 @@ private:
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_WINDOWS_WAVE_H
+#endif  // WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_WAVE_WIN_H

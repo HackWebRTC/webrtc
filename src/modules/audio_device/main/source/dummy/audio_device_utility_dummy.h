@@ -8,34 +8,30 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_UTILITY_WINDOWS_H
-#define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_UTILITY_WINDOWS_H
+#ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_UTILITY_DUMMY_H
+#define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_UTILITY_DUMMY_H
 
 #include "audio_device_utility.h"
 #include "audio_device.h"
-#include <windows.h>
 
 namespace webrtc
 {
 class CriticalSectionWrapper;
 
-class AudioDeviceUtilityWindows : public AudioDeviceUtility
+class AudioDeviceUtilityDummy: public AudioDeviceUtility
 {
 public:
-    AudioDeviceUtilityWindows(const WebRtc_Word32 id);
-    ~AudioDeviceUtilityWindows();
+    AudioDeviceUtilityDummy(const WebRtc_Word32 id);
+    ~AudioDeviceUtilityDummy();
 
     virtual WebRtc_Word32 Init();
 
 private:
-    BOOL GetOSDisplayString(LPTSTR pszOS);
-
-private:
-    CriticalSectionWrapper&         _critSect;
-    WebRtc_Word32                   _id;
-    AudioDeviceModule::ErrorCode    _lastError;
+    CriticalSectionWrapper& _critSect;
+    WebRtc_Word32 _id;
+    AudioDeviceModule::ErrorCode _lastError;
 };
 
-}  // namespace webrtc
+} // namespace webrtc
 
-#endif  // WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_UTILITY_WINDOWS_H
+#endif  // MODULES_AUDIO_DEVICE_MAIN_SOURCE_LINUX_AUDIO_DEVICE_UTILITY_DUMMY_H_

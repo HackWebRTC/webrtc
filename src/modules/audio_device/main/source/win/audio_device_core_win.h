@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_WINDOWS_CORE_H
-#define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_WINDOWS_CORE_H
+#ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_CORE_WIN_H
+#define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_CORE_WIN_H
 
 #if (_MSC_VER >= 1400)  // only include for VS 2005 and higher
 
@@ -309,5 +309,5 @@ private:
 
 }  // namespace webrtc
 
-#endif  // WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_WINDOWS_CORE_H
+#endif  // WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_CORE_WIN_H
 
