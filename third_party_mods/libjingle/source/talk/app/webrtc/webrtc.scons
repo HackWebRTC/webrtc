@@ -20,7 +20,6 @@ talk.Unittest(
   name = 'webrtc',
   srcs = [
     'webrtcsession_unittest.cc',
-    'testing/timing.cc'
   ],
   libs = [
     'srtp',

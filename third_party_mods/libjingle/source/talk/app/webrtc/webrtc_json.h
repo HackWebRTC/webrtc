@@ -30,7 +30,11 @@
 
 #include <string>
 
+#ifdef WEBRTC_RELATIVE_PATH
 #include "json/json.h"
+#else
+#include "third_party/jsoncpp/json.h"
+#endif
 #include "talk/session/phone/codec.h"
 #include "talk/p2p/base/candidate.h"
 

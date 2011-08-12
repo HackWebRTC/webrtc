@@ -29,7 +29,6 @@
 
 #include "base/gunit.h"
 #include "base/helpers.h"
-#include "talk/app/webrtc/testing/timing.h"
 #include "talk/app/webrtc/webrtcsession.h"
 #include "talk/base/fakenetwork.h"
 #include "talk/base/scoped_ptr.h"
@@ -377,7 +376,6 @@ class WebRTCSessionTest : public OnSignalImpl,
 
   bool WaitForCallback(CallbackId id, int timeout_ms) {
     bool success = false;
-    Timing my_timer;
     for (int ms = 0; ms < timeout_ms; ms++) {
       const CallbackId peek_id = PeekOldestCallback();
       if (peek_id == id) {
@@ -388,7 +386,7 @@ class WebRTCSessionTest : public OnSignalImpl,
         success = false;
         break;
       }
-      my_timer.IdleWait(0.001);
+      talk_base::Thread::SleepMs(1);
     }
     return success;
   }
@@ -827,16 +825,14 @@ class WebRTCSessionTest : public OnSignalImpl,
 };
 
 bool CallbackReceived(WebRTCSessionTest* session, int timeout) {
-  Timing my_timer;
-  my_timer.IdleWait(timeout * 0.001);
+  talk_base::Thread::SleepMs(timeout);
   const OnSignalImpl::CallbackId peek_id =
       session->PeekOldestCallback();
   return peek_id != OnSignalImpl::kNone;
 }
 
 void SleepMs(int timeout_ms) {
-  Timing my_timer;
-  my_timer.IdleWait(timeout_ms * 0.001);
+  talk_base::Thread::SleepMs(timeout_ms);
 }
 
 TEST(WebRtcSessionTest, InitializationReceiveSanity) {
@@ -873,13 +869,4 @@ TEST(WebRtcSessionTest, SendCallSetUp) {
 
   // All callbacks should be caught by my session. Assert it.
   ASSERT_FALSE(CallbackReceived(my_session.get(), 1000));
-}
-
-int main(int argc, char* argv[]) {
-  ::testing::InitGoogleTest(&argc, argv);
-  // Added return_value so that it's convenient to put a breakpoint before
-  // exiting please note that the return value from RUN_ALL_TESTS() must
-  // be returned by the main function.
-  const int return_value = RUN_ALL_TESTS();
-  return return_value;
 }
