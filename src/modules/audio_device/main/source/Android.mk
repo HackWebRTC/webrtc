@@ -22,8 +22,8 @@ LOCAL_SRC_FILES := \
     audio_device_generic.cc \
     audio_device_utility.cc \
     audio_device_impl.cc \
-    Android/audio_device_android_opensles.cc \
-    Android/audio_device_utility_android.cc \
+    android/audio_device_android_opensles.cc \
+    android/audio_device_utility_android.cc \
     dummy/audio_device_utility_dummy.cc \
     dummy/audio_device_dummy.cc
 
@@ -34,7 +34,7 @@ LOCAL_CFLAGS := \
 
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH) \
-    $(LOCAL_PATH)/Android \
+    $(LOCAL_PATH)/android \
     $(LOCAL_PATH)/dummy \
     $(LOCAL_PATH)/linux \
     $(LOCAL_PATH)/../interface \
