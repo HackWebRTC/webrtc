@@ -97,6 +97,12 @@ static const WebRtc_Word16 kChannelStored16kHz[PART_LEN1] = {
 static const WebRtc_Word16 kNoiseEstQDomain = 15;
 static const WebRtc_Word16 kNoiseEstIncCount = 5;
 
+static void ComfortNoise(AecmCore_t * aecm,
+                         const WebRtc_UWord16* dfa,
+                         WebRtc_Word16* outReal,
+                         WebRtc_Word16* outImag,
+                         const WebRtc_Word16* lambda);
+
 #ifdef ARM_WINM_LOG
 HANDLE logFile = NULL;
 #endif
@@ -1497,7 +1503,7 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm, const WebRtc_Word16 * farend,
 
     if (aecm->cngMode == AecmTrue)
     {
-        WebRtcAecm_ComfortNoise(aecm, ptrDfaClean, efwReal, efwImag, hnl);
+        ComfortNoise(aecm, ptrDfaClean, efwReal, efwImag, hnl);
     }
 
 #ifdef ARM_WINM_LOG_
@@ -1690,11 +1696,11 @@ void WebRtcAecm_ResetAdaptiveChannel(AecmCore_t *aecm)
 // \param[in,out] outImag Imaginary part of the output signal (Q[aecm->dfaQDomain]).
 // \param[in]     lambda  Suppression gain with which to scale the noise level (Q14).
 //
-void WebRtcAecm_ComfortNoise(AecmCore_t * aecm,
-                             const WebRtc_UWord16* dfa,
-                             WebRtc_Word16* outReal,
-                             WebRtc_Word16* outImag,
-                             const WebRtc_Word16* lambda)
+static void ComfortNoise(AecmCore_t * aecm,
+                         const WebRtc_UWord16* dfa,
+                         WebRtc_Word16* outReal,
+                         WebRtc_Word16* outImag,
+                         const WebRtc_Word16* lambda)
 {
     WebRtc_Word16 i;
     WebRtc_Word16 tmp16;
