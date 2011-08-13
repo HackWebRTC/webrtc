@@ -97,6 +97,8 @@
 #define NLP_COMP_LOW    3277            // 0.2 in Q14
 #define NLP_COMP_HIGH   ONE_Q14         // 1 in Q14
 
+extern const WebRtc_Word16 WebRtcAecm_kSqrtHanning[];
+
 typedef struct
 {
     int farBufWritePos;
@@ -109,11 +111,6 @@ typedef struct
     void *nearNoisyFrameBuf;
     void *nearCleanFrameBuf;
     void *outFrameBuf;
-
-    WebRtc_Word16 xBuf[PART_LEN2]; // farend
-    WebRtc_Word16 dBufClean[PART_LEN2]; // nearend
-    WebRtc_Word16 dBufNoisy[PART_LEN2]; // nearend
-    WebRtc_Word16 outBuf[PART_LEN];
 
     WebRtc_Word16 farBuf[FAR_BUF_LEN];
 
@@ -139,9 +136,26 @@ typedef struct
     WebRtc_Word16 echoAdaptLogEnergy[MAX_BUF_LEN];
     WebRtc_Word16 echoStoredLogEnergy[MAX_BUF_LEN];
 
-    WebRtc_Word16 channelAdapt16[PART_LEN1];
-    WebRtc_Word32 channelAdapt32[PART_LEN1];
-    WebRtc_Word16 channelStored[PART_LEN1];
+    // The extra 16 or 32 bytes in the following buffers are for alignment based Neon code.
+    // It's designed this way since the current GCC compiler can't align a buffer in 16 or 32
+    // byte boundaries properly.
+    WebRtc_Word16 channelStored_buf[PART_LEN1 + 8];
+    WebRtc_Word16 channelAdapt16_buf[PART_LEN1 + 8];
+    WebRtc_Word32 channelAdapt32_buf[PART_LEN1 + 8];
+    WebRtc_Word16 xBuf_buf[PART_LEN2 + 8]; // farend
+    WebRtc_Word16 dBufClean_buf[PART_LEN2 + 8]; // nearend
+    WebRtc_Word16 dBufNoisy_buf[PART_LEN2 + 8]; // nearend
+    WebRtc_Word16 outBuf_buf[PART_LEN + 8];
+
+    // Pointers to the above buffers
+    WebRtc_Word16 *channelStored;
+    WebRtc_Word16 *channelAdapt16;
+    WebRtc_Word32 *channelAdapt32;
+    WebRtc_Word16 *xBuf;
+    WebRtc_Word16 *dBufClean;
+    WebRtc_Word16 *dBufNoisy;
+    WebRtc_Word16 *outBuf;
+
     WebRtc_Word32 echoFilt[PART_LEN1];
     WebRtc_Word16 nearFilt[PART_LEN1];
     WebRtc_Word32 noiseEst[PART_LEN1];
@@ -307,5 +321,28 @@ void WebRtcAecm_BufferFarFrame(AecmCore_t * const aecm, const WebRtc_Word16 * co
 //
 void WebRtcAecm_FetchFarFrame(AecmCore_t * const aecm, WebRtc_Word16 * const farend,
                               const int farLen, const int knownDelay);
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+// Some internal functions shared by ARM NEON and generic C code:
+//
+
+WebRtc_Word16 WebRtcAecm_CalcSuppressionGain(AecmCore_t * aecm);
+
+void WebRtcAecm_CalcLinearEnergies(AecmCore_t *aecm,
+                                   const WebRtc_UWord16* far_spectrum,
+                                   WebRtc_Word32* echoEst,
+                                   WebRtc_UWord32* far_energy,
+                                   WebRtc_UWord32* echo_energy_adapt,
+                                   WebRtc_UWord32* echo_energy_stored);
+
+void WebRtcAecm_StoreAdaptiveChannel(AecmCore_t* aecm,
+                                     const WebRtc_UWord16* far_spectrum,
+                                     WebRtc_Word32* echo_est);
+
+void WebRtcAecm_ResetAdaptiveChannel(AecmCore_t *aecm);
+
+void WebRtcAecm_PrepareFft(WebRtc_Word16* fft,
+                           const WebRtc_Word16* time_signal,
+                           int time_signal_scaling);
 
 #endif

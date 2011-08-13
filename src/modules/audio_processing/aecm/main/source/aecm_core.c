@@ -31,7 +31,7 @@ FILE *testfile;
 #ifdef AECM_SHORT
 
 // Square root of Hanning window in Q14
-static const WebRtc_Word16 kSqrtHanning[] =
+const WebRtc_Word16 WebRtcAecm_kSqrtHanning[] =
 {
     0, 804, 1606, 2404, 3196, 3981, 4756, 5520,
     6270, 7005, 7723, 8423, 9102, 9760, 10394, 11003,
@@ -43,12 +43,15 @@ static const WebRtc_Word16 kSqrtHanning[] =
 #else
 
 // Square root of Hanning window in Q14
-static const WebRtc_Word16 kSqrtHanning[] = {0, 399, 798, 1196, 1594, 1990, 2386, 2780, 3172,
-        3562, 3951, 4337, 4720, 5101, 5478, 5853, 6224, 6591, 6954, 7313, 7668, 8019, 8364,
-        8705, 9040, 9370, 9695, 10013, 10326, 10633, 10933, 11227, 11514, 11795, 12068, 12335,
-        12594, 12845, 13089, 13325, 13553, 13773, 13985, 14189, 14384, 14571, 14749, 14918,
-        15079, 15231, 15373, 15506, 15631, 15746, 15851, 15947, 16034, 16111, 16179, 16237,
-        16286, 16325, 16354, 16373, 16384};
+const WebRtc_Word16 WebRtcAecm_kSqrtHanning[] __attribute__ ((aligned (8))) =
+{
+    0, 399, 798, 1196, 1594, 1990, 2386, 2780, 3172,
+    3562, 3951, 4337, 4720, 5101, 5478, 5853, 6224, 6591, 6954, 7313, 7668, 8019, 8364,
+    8705, 9040, 9370, 9695, 10013, 10326, 10633, 10933, 11227, 11514, 11795, 12068, 12335,
+    12594, 12845, 13089, 13325, 13553, 13773, 13985, 14189, 14384, 14571, 14749, 14918,
+    15079, 15231, 15373, 15506, 15631, 15746, 15851, 15947, 16034, 16111, 16179, 16237,
+    16286, 16325, 16354, 16373, 16384
+};
 
 #endif
 
@@ -98,11 +101,6 @@ static const WebRtc_Word16 kNoiseEstIncCount = 5;
 HANDLE logFile = NULL;
 #endif
 
-static void WebRtcAecm_ComfortNoise(AecmCore_t* const aecm, const WebRtc_UWord16 * const dfa,
-                                    WebRtc_Word16 * const outReal,
-                                    WebRtc_Word16 * const outImag,
-                                    const WebRtc_Word16 * const lambda);
-
 int WebRtcAecm_CreateCore(AecmCore_t **aecmInst)
 {
     AecmCore_t *aecm = malloc(sizeof(AecmCore_t));
@@ -146,6 +144,18 @@ int WebRtcAecm_CreateCore(AecmCore_t **aecmInst)
         aecm = NULL;
         return -1;
     }
+
+    // Init some aecm pointers. 16-byte alignment is only necessary for Neon code currently.
+    aecm->xBuf = (WebRtc_Word16*) (((uintptr_t)aecm->xBuf_buf + 15) & ~ 15);
+    aecm->dBufClean = (WebRtc_Word16*) (((uintptr_t)aecm->dBufClean_buf + 15) & ~ 15);
+    aecm->dBufNoisy = (WebRtc_Word16*) (((uintptr_t)aecm->dBufNoisy_buf + 15) & ~ 15);
+    aecm->outBuf = (WebRtc_Word16*) (((uintptr_t)aecm->outBuf_buf + 15) & ~ 15);
+    aecm->channelStored = (WebRtc_Word16*) (((uintptr_t)
+                                             aecm->channelStored_buf + 15) & ~ 15);
+    aecm->channelAdapt16 = (WebRtc_Word16*) (((uintptr_t)
+                                              aecm->channelAdapt16_buf + 15) & ~ 15);
+    aecm->channelAdapt32 = (WebRtc_Word32*) (((uintptr_t)
+                                              aecm->channelAdapt32_buf + 31) & ~ 31);
 
     return 0;
 }
@@ -209,10 +219,10 @@ int WebRtcAecm_InitCore(AecmCore_t * const aecm, int samplingFreq)
     WebRtcApm_InitBuffer(aecm->nearCleanFrameBuf);
     WebRtcApm_InitBuffer(aecm->outFrameBuf);
 
-    memset(aecm->xBuf, 0, sizeof(aecm->xBuf));
-    memset(aecm->dBufClean, 0, sizeof(aecm->dBufClean));
-    memset(aecm->dBufNoisy, 0, sizeof(aecm->dBufNoisy));
-    memset(aecm->outBuf, 0, sizeof(aecm->outBuf));
+    memset(aecm->xBuf_buf, 0, sizeof(aecm->xBuf_buf));
+    memset(aecm->dBufClean_buf, 0, sizeof(aecm->dBufClean_buf));
+    memset(aecm->dBufNoisy_buf, 0, sizeof(aecm->dBufNoisy_buf));
+    memset(aecm->outBuf_buf, 0, sizeof(aecm->outBuf_buf));
 
     aecm->seed = 666;
     aecm->totCount = 0;
@@ -286,6 +296,8 @@ int WebRtcAecm_InitCore(AecmCore_t * const aecm, int samplingFreq)
     aecm->supGainErrParamD = SUPGAIN_ERROR_PARAM_D;
     aecm->supGainErrParamDiffAB = SUPGAIN_ERROR_PARAM_A - SUPGAIN_ERROR_PARAM_B;
     aecm->supGainErrParamDiffBD = SUPGAIN_ERROR_PARAM_B - SUPGAIN_ERROR_PARAM_D;
+
+    assert(PART_LEN % 16 == 0);
 
     return 0;
 }
@@ -481,18 +493,8 @@ void WebRtcAecm_CalcEnergies(AecmCore_t * aecm,
     aecm->nearLogEnergy[0] = tmp16;
     // END: Get log of near end energy
 
-    // Get energy for the delayed far end signal and estimated
-    // echo using both stored and adapted channels.
-    for (i = 0; i < PART_LEN1; i++)
-    {
-        // Get estimated echo energies for adaptive channel and stored channel
-        echoEst[i] = WEBRTC_SPL_MUL_16_U16(aecm->channelStored[i],
-                                           far_spectrum[i]);
-        tmpFar += (WebRtc_UWord32)(far_spectrum[i]);
-        tmpAdapt += WEBRTC_SPL_UMUL_16_16(aecm->channelAdapt16[i],
-                                          far_spectrum[i]);
-        tmpStored += (WebRtc_UWord32)echoEst[i];
-    }
+    WebRtcAecm_CalcLinearEnergies(aecm, far_spectrum, echoEst, &tmpFar, &tmpAdapt, &tmpStored);
+
     // Shift buffers
     memmove(aecm->echoAdaptLogEnergy + 1, aecm->echoAdaptLogEnergy,
             sizeof(WebRtc_Word16) * (MAX_BUF_LEN - 1));
@@ -814,22 +816,9 @@ void WebRtcAecm_UpdateChannel(AecmCore_t * aecm,
     // Determine if we should store or restore the channel
     if ((aecm->startupState == 0) & (aecm->currentVADValue))
     {
-        // During startup we store the channel every block.
-        memcpy(aecm->channelStored, aecm->channelAdapt16, sizeof(WebRtc_Word16) * PART_LEN1);
-        // Recalculate echo estimate
-        for (i = 0; i < PART_LEN; i += 4)
-        {
-            echoEst[i] = WEBRTC_SPL_MUL_16_U16(aecm->channelStored[i],
-                                               far_spectrum[i]);
-            echoEst[i + 1] = WEBRTC_SPL_MUL_16_U16(aecm->channelStored[i + 1],
-                                               far_spectrum[i + 1]);
-            echoEst[i + 2] = WEBRTC_SPL_MUL_16_U16(aecm->channelStored[i + 2],
-                                               far_spectrum[i + 2]);
-            echoEst[i + 3] = WEBRTC_SPL_MUL_16_U16(aecm->channelStored[i + 3],
-                                               far_spectrum[i + 3]);
-        }
-        echoEst[i] = WEBRTC_SPL_MUL_16_U16(aecm->channelStored[i],
-                                           far_spectrum[i]);
+        // During startup we store the channel every block,
+        // and we recalculate echo estimate
+        WebRtcAecm_StoreAdaptiveChannel(aecm, far_spectrum, echoEst);
     } else
     {
         if (aecm->farLogEnergy < aecm->farEnergyMSE)
@@ -865,43 +854,14 @@ void WebRtcAecm_UpdateChannel(AecmCore_t * aecm,
             {
                 // The stored channel has a significantly lower MSE than the adaptive one for
                 // two consecutive calculations. Reset the adaptive channel.
-                memcpy(aecm->channelAdapt16, aecm->channelStored,
-                       sizeof(WebRtc_Word16) * PART_LEN1);
-                // Restore the W32 channel
-                for (i = 0; i < PART_LEN; i += 4)
-                {
-                    aecm->channelAdapt32[i] = WEBRTC_SPL_LSHIFT_W32(
-                            (WebRtc_Word32)aecm->channelStored[i], 16);
-                    aecm->channelAdapt32[i + 1] = WEBRTC_SPL_LSHIFT_W32(
-                            (WebRtc_Word32)aecm->channelStored[i + 1], 16);
-                    aecm->channelAdapt32[i + 2] = WEBRTC_SPL_LSHIFT_W32(
-                            (WebRtc_Word32)aecm->channelStored[i + 2], 16);
-                    aecm->channelAdapt32[i + 3] = WEBRTC_SPL_LSHIFT_W32(
-                            (WebRtc_Word32)aecm->channelStored[i + 3], 16);
-                }
-                aecm->channelAdapt32[i] = WEBRTC_SPL_LSHIFT_W32((WebRtc_Word32)aecm->channelStored[i], 16);
-
+                WebRtcAecm_ResetAdaptiveChannel(aecm);
             } else if (((MIN_MSE_DIFF * mseStored) > (mseAdapt << MSE_RESOLUTION)) & (mseAdapt
                     < aecm->mseThreshold) & (aecm->mseAdaptOld < aecm->mseThreshold))
             {
                 // The adaptive channel has a significantly lower MSE than the stored one.
                 // The MSE for the adaptive channel has also been low for two consecutive
                 // calculations. Store the adaptive channel.
-                memcpy(aecm->channelStored, aecm->channelAdapt16,
-                       sizeof(WebRtc_Word16) * PART_LEN1);
-                // Recalculate echo estimate
-                for (i = 0; i < PART_LEN; i += 4)
-                {
-                    echoEst[i] = WEBRTC_SPL_MUL_16_U16(aecm->channelStored[i],
-                                                       far_spectrum[i]);
-                    echoEst[i + 1] = WEBRTC_SPL_MUL_16_U16(aecm->channelStored[i + 1],
-                                                       far_spectrum[i + 1]);
-                    echoEst[i + 2] = WEBRTC_SPL_MUL_16_U16(aecm->channelStored[i + 2],
-                                                       far_spectrum[i + 2]);
-                    echoEst[i + 3] = WEBRTC_SPL_MUL_16_U16(aecm->channelStored[i + 3],
-                                                       far_spectrum[i + 3]);
-                }
-                echoEst[i] = WEBRTC_SPL_MUL_16_U16(aecm->channelStored[i], far_spectrum[i]);
+                WebRtcAecm_StoreAdaptiveChannel(aecm, far_spectrum, echoEst);
 
                 // Update threshold
                 if (aecm->mseThreshold == WEBRTC_SPL_WORD32_MAX)
@@ -1032,7 +992,9 @@ static int TimeToFrequencyDomain(const WebRtc_Word16* time_signal,
     WebRtc_Word32 tmp32no1;
     WebRtc_Word32 tmp32no2;
 
-    WebRtc_Word16 fft[PART_LEN4];
+    // In fft_buf, +8 for 16-byte alignment, and +2 to make some loops safe.
+    WebRtc_Word16 fft_buf[PART_LEN4 + 2 + 8];
+    WebRtc_Word16 *fft = (WebRtc_Word16 *) (((uintptr_t) fft_buf + 15) & ~15);
 
     WebRtc_Word16 tmp16no1;
     WebRtc_Word16 tmp16no2;
@@ -1048,23 +1010,7 @@ static int TimeToFrequencyDomain(const WebRtc_Word16* time_signal,
     time_signal_scaling = WebRtcSpl_NormW16(tmp16no1);
 #endif
 
-    memset(fft, 0, sizeof(WebRtc_Word16) * PART_LEN4);
-    // FFT of signal
-    for (i = 0, j = 0; i < PART_LEN; i++, j += 2)
-    {
-        // Window time domain signal and insert into real part of
-        // transformation array |fft|
-        fft[j] = (WebRtc_Word16)WEBRTC_SPL_MUL_16_16_RSFT(
-            (time_signal[i] << time_signal_scaling),
-            kSqrtHanning[i],
-            14);
-        fft[PART_LEN2 + j] = (WebRtc_Word16)WEBRTC_SPL_MUL_16_16_RSFT(
-            (time_signal[PART_LEN + i] << time_signal_scaling),
-            kSqrtHanning[PART_LEN - i],
-            14);
-        // Inserting zeros in imaginary parts not necessary since we
-        // initialized the array with all zeros
-    }
+    WebRtcAecm_PrepareFft(fft, time_signal, time_signal_scaling);
 
     // Fourier transformation of time domain signal.
     // The result is scaled with 1/PART_LEN2, that is, the result is in Q(-6)
@@ -1187,7 +1133,10 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm, const WebRtc_Word16 * farend,
     WebRtc_UWord32 tmpU32;
 
     WebRtc_Word32 tmp32no1;
-    WebRtc_Word32 echoEst32[PART_LEN1];
+
+    // +8 for 32-byte alignment.
+    WebRtc_Word32 echoEst32_buf[PART_LEN1 + 8];
+    WebRtc_Word32 *echoEst32 = (WebRtc_Word32*) (((uintptr_t) echoEst32_buf + 31) & ~ 31);
 
     WebRtc_UWord16 xfa[PART_LEN1];
     WebRtc_UWord16 dfaNoisy[PART_LEN1];
@@ -1540,9 +1489,9 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm, const WebRtc_Word16 * farend,
         for (i = 0; i < PART_LEN1; i++)
         {
             efwReal[i] = (WebRtc_Word16)(WEBRTC_SPL_MUL_16_16_RSFT_WITH_ROUND(dfwReal[i],
-                                                                            hnl[i], 14));
+                                                                           hnl[i], 14));
             efwImag[i] = (WebRtc_Word16)(WEBRTC_SPL_MUL_16_16_RSFT_WITH_ROUND(dfwImag[i],
-                                                                            hnl[i], 14));
+                                                                           hnl[i], 14));
         }
     }
 
@@ -1595,7 +1544,7 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm, const WebRtc_Word16 * farend,
     {
         fft[i] = (WebRtc_Word16)WEBRTC_SPL_MUL_16_16_RSFT_WITH_ROUND(
                 fft[i],
-                kSqrtHanning[i],
+                WebRtcAecm_kSqrtHanning[i],
                 14);
         tmp32no1 = WEBRTC_SPL_SHIFT_W32((WebRtc_Word32)fft[i],
                 outCFFT - aecm->dfaCleanQDomain);
@@ -1606,7 +1555,7 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm, const WebRtc_Word16 * farend,
 
         tmp32no1 = WEBRTC_SPL_MUL_16_16_RSFT(
                 fft[PART_LEN + i],
-                kSqrtHanning[PART_LEN - i],
+                WebRtcAecm_kSqrtHanning[PART_LEN - i],
                 14);
         tmp32no1 = WEBRTC_SPL_SHIFT_W32(tmp32no1,
                 outCFFT - aecm->dfaCleanQDomain);
@@ -1623,7 +1572,7 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm, const WebRtc_Word16 * farend,
     milliseconds = (unsigned int)(diff__ & 0xffffffff);
     WriteFile (logFile, &milliseconds, sizeof(unsigned int), &temp, NULL);
 #endif
-    // Copy the current block to the old position (outBuf is shifted elsewhere)
+    // Copy the current block to the old position (aecm->outBuf is shifted elsewhere)
     memcpy(aecm->xBuf, aecm->xBuf + PART_LEN, sizeof(WebRtc_Word16) * PART_LEN);
     memcpy(aecm->dBufNoisy, aecm->dBufNoisy + PART_LEN, sizeof(WebRtc_Word16) * PART_LEN);
     if (nearendClean != NULL)
@@ -1634,6 +1583,105 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm, const WebRtc_Word16 * farend,
     return 0;
 }
 
+#if !(defined(WEBRTC_ANDROID) && defined(WEBRTC_ARCH_ARM_NEON))
+
+void WebRtcAecm_PrepareFft(WebRtc_Word16* fft,
+                           const WebRtc_Word16* time_signal,
+                           int time_signal_scaling)
+{
+    int i, j;
+
+    memset(fft, 0, sizeof(WebRtc_Word16) * PART_LEN4);
+    // FFT of signal
+    for (i = 0, j = 0; i < PART_LEN; i++, j += 2)
+    {
+        // Window time domain signal and insert into real part of
+        // transformation array |fft|
+        fft[j] = (WebRtc_Word16)WEBRTC_SPL_MUL_16_16_RSFT(
+            (time_signal[i] << time_signal_scaling),
+            WebRtcAecm_kSqrtHanning[i],
+            14);
+        fft[PART_LEN2 + j] = (WebRtc_Word16)WEBRTC_SPL_MUL_16_16_RSFT(
+            (time_signal[PART_LEN + i] << time_signal_scaling),
+            WebRtcAecm_kSqrtHanning[PART_LEN - i],
+            14);
+        // Inserting zeros in imaginary parts not necessary since we
+        // initialized the array with all zeros
+    }
+}
+
+void WebRtcAecm_CalcLinearEnergies(AecmCore_t *aecm,
+                                   const WebRtc_UWord16* far_spectrum,
+                                   WebRtc_Word32* echo_est,
+                                   WebRtc_UWord32* far_energy,
+                                   WebRtc_UWord32* echo_energy_adapt,
+                                   WebRtc_UWord32* echo_energy_stored)
+{
+    int i;
+
+    // Get energy for the delayed far end signal and estimated
+    // echo using both stored and adapted channels.
+    for (i = 0; i < PART_LEN1; i++)
+    {
+        echo_est[i] = WEBRTC_SPL_MUL_16_U16(aecm->channelStored[i],
+                                           far_spectrum[i]);
+        (*far_energy) += (WebRtc_UWord32)(far_spectrum[i]);
+        (*echo_energy_adapt) += WEBRTC_SPL_UMUL_16_16(aecm->channelAdapt16[i],
+                                          far_spectrum[i]);
+        (*echo_energy_stored) += (WebRtc_UWord32)echo_est[i];
+    }
+}
+
+void WebRtcAecm_StoreAdaptiveChannel(AecmCore_t* aecm,
+                                     const WebRtc_UWord16* far_spectrum,
+                                     WebRtc_Word32* echo_est)
+{
+    int i;
+
+    // During startup we store the channel every block.
+    memcpy(aecm->channelStored, aecm->channelAdapt16, sizeof(WebRtc_Word16) * PART_LEN1);
+    // Recalculate echo estimate
+    for (i = 0; i < PART_LEN; i += 4)
+    {
+        echo_est[i] = WEBRTC_SPL_MUL_16_U16(aecm->channelStored[i],
+                                           far_spectrum[i]);
+        echo_est[i + 1] = WEBRTC_SPL_MUL_16_U16(aecm->channelStored[i + 1],
+                                           far_spectrum[i + 1]);
+        echo_est[i + 2] = WEBRTC_SPL_MUL_16_U16(aecm->channelStored[i + 2],
+                                           far_spectrum[i + 2]);
+        echo_est[i + 3] = WEBRTC_SPL_MUL_16_U16(aecm->channelStored[i + 3],
+                                           far_spectrum[i + 3]);
+    }
+    echo_est[i] = WEBRTC_SPL_MUL_16_U16(aecm->channelStored[i],
+                                       far_spectrum[i]);
+}
+
+void WebRtcAecm_ResetAdaptiveChannel(AecmCore_t *aecm)
+{
+    int i;
+
+    // The stored channel has a significantly lower MSE than the adaptive one for
+    // two consecutive calculations. Reset the adaptive channel.
+    memcpy(aecm->channelAdapt16, aecm->channelStored,
+           sizeof(WebRtc_Word16) * PART_LEN1);
+    // Restore the W32 channel
+    for (i = 0; i < PART_LEN; i += 4)
+    {
+        aecm->channelAdapt32[i] = WEBRTC_SPL_LSHIFT_W32(
+                (WebRtc_Word32)aecm->channelStored[i], 16);
+        aecm->channelAdapt32[i + 1] = WEBRTC_SPL_LSHIFT_W32(
+                (WebRtc_Word32)aecm->channelStored[i + 1], 16);
+        aecm->channelAdapt32[i + 2] = WEBRTC_SPL_LSHIFT_W32(
+                (WebRtc_Word32)aecm->channelStored[i + 2], 16);
+        aecm->channelAdapt32[i + 3] = WEBRTC_SPL_LSHIFT_W32(
+                (WebRtc_Word32)aecm->channelStored[i + 3], 16);
+    }
+    aecm->channelAdapt32[i] = WEBRTC_SPL_LSHIFT_W32((WebRtc_Word32)aecm->channelStored[i], 16);
+}
+
+#endif // !(defined(WEBRTC_ANDROID) && defined(WEBRTC_ARCH_ARM_NEON))
+
+
 // Generate comfort noise and add to output signal.
 //
 // \param[in]     aecm     Handle of the AECM instance.
@@ -1642,11 +1690,11 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm, const WebRtc_Word16 * farend,
 // \param[in,out] outImag Imaginary part of the output signal (Q[aecm->dfaQDomain]).
 // \param[in]     lambda  Suppression gain with which to scale the noise level (Q14).
 //
-static void WebRtcAecm_ComfortNoise(AecmCore_t * const aecm,
-                                    const WebRtc_UWord16 * const dfa,
-                                    WebRtc_Word16 * const outReal,
-                                    WebRtc_Word16 * const outImag,
-                                    const WebRtc_Word16 * const lambda)
+void WebRtcAecm_ComfortNoise(AecmCore_t * aecm,
+                             const WebRtc_UWord16* dfa,
+                             WebRtc_Word16* outReal,
+                             WebRtc_Word16* outImag,
+                             const WebRtc_Word16* lambda)
 {
     WebRtc_Word16 i;
     WebRtc_Word16 tmp16;
@@ -1792,7 +1840,8 @@ static void WebRtcAecm_ComfortNoise(AecmCore_t * const aecm,
 #endif
 }
 
-void WebRtcAecm_BufferFarFrame(AecmCore_t * const aecm, const WebRtc_Word16 * const farend,
+void WebRtcAecm_BufferFarFrame(AecmCore_t* const aecm,
+                               const WebRtc_Word16* const farend,
                                const int farLen)
 {
     int writeLen = farLen, writePos = 0;
