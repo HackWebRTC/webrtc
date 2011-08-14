@@ -43,7 +43,7 @@ const WebRtc_Word16 WebRtcAecm_kSqrtHanning[] =
 #else
 
 // Square root of Hanning window in Q14
-const WebRtc_Word16 WebRtcAecm_kSqrtHanning[] __attribute__ ((aligned (8))) =
+const WebRtc_Word16 WebRtcAecm_kSqrtHanning[] =
 {
     0, 399, 798, 1196, 1594, 1990, 2386, 2780, 3172,
     3562, 3951, 4337, 4720, 5101, 5478, 5853, 6224, 6591, 6954, 7313, 7668, 8019, 8364,
@@ -902,7 +902,7 @@ void WebRtcAecm_UpdateChannel(AecmCore_t * aecm,
 //                          level (Q14).
 //
 //
-WebRtc_Word16 WebRtcAecm_CalcSuppressionGain(AecmCore_t * const aecm)
+WebRtc_Word16 WebRtcAecm_CalcSuppressionGain(AecmCore_t* aecm)
 {
     WebRtc_Word32 tmp32no1;
 
