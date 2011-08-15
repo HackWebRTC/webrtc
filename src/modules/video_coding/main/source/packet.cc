@@ -58,6 +58,18 @@ void VCMPacket::CopyCodecSpecifics(const RTPVideoHeader& videoHeader)
     {
         case kRTPVideoVP8:
             {
+                // Handle all packets within a frame as depending on the previous packet
+                // TODO(holmer): This should be changed to make fragments independent
+                // when the VP8 RTP receiver supports fragments.
+                if (isFirstPacket && markerBit)
+                    completeNALU = kNaluComplete;
+                else if (isFirstPacket)
+                    completeNALU = kNaluStart;
+                else if (markerBit)
+                    completeNALU = kNaluEnd;
+                else
+                    completeNALU = kNaluIncomplete;
+
                 codec = kVideoCodecVP8;
                 break;
             }
