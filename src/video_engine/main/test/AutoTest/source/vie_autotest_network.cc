@@ -48,7 +48,6 @@ public:
 int ViEAutoTest::ViENetworkStandardTest()
 {
     int error = 0;
-    bool succeeded = true;
     int numberOfErrors = 0;
 
     tbInterfaces ViE("ViENetworkStandardTest", numberOfErrors); // Create VIE
@@ -214,7 +213,6 @@ int ViEAutoTest::ViENetworkExtendedTest()
     int numberOfErrors = ViENetworkStandardTest();
 
     int error = 0;
-    bool succeeded = true;
 
     tbInterfaces ViE("ViENetworkExtendedTest", numberOfErrors); // Create VIE
     tbCaptureDevice tbCapture(ViE, numberOfErrors);
@@ -283,7 +281,7 @@ int ViEAutoTest::ViENetworkExtendedTest()
             ViETest::Log("On Win7 and late Vista, you need to right click the "
                          "exe and choose");
             ViETest::Log("\"Run as administrator\"\n");
-            int dummyChar = getchar();
+            getchar();
         }
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
@@ -385,7 +383,6 @@ int ViEAutoTest::ViENetworkAPITest()
 
 
     int error = 0;
-    bool succeeded = true;
     int numberOfErrors = 0;
 
     tbInterfaces ViE("ViENetworkAPITest", numberOfErrors); // Create VIE
@@ -412,7 +409,6 @@ int ViEAutoTest::ViENetworkAPITest()
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
         unsigned char packet[1500];
-        void* ptrPacket = (void*) packet;
         packet[0] = 0x80; // V=2, P=0, X=0, CC=0
         packet[1] = 0x78; // M=0, PT = 120 (VP8)
         error = ViE.ptrViENetwork->ReceivedRTPPacket(tbChannel.videoChannel,
@@ -748,7 +744,7 @@ int ViEAutoTest::ViENetworkAPITest()
             ViETest::Log("On Win7 and late Vista, you need to right click the "
                          "exe and choose");
             ViETest::Log("\"Run as administrator\"\n");
-            int dummyChar = getchar();
+            getchar();
         }
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",

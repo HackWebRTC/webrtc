@@ -13,7 +13,7 @@
 tbVideoChannel::tbVideoChannel(tbInterfaces& Engine, int& nrOfErrors,
                                webrtc::VideoCodecType sendCodec, int width,
                                int height, int frameRate, int startBitrate) :
-    ViE(Engine), numberOfErrors(nrOfErrors), videoChannel(-1)
+    videoChannel(-1), numberOfErrors(nrOfErrors), ViE(Engine)
 {
     int error;
     error = ViE.ptrViEBase->CreateChannel(videoChannel);
@@ -132,4 +132,3 @@ void tbVideoChannel::StopReceive()
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 }
-

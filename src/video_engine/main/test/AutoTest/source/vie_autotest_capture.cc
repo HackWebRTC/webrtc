@@ -85,7 +85,8 @@ public:
 class CaptureEffectFilter: public ViEEffectFilter
 {
 public:
-    CaptureEffectFilter(int reqWidth, int reqHeight, int& numberOfErrors) :
+    CaptureEffectFilter(unsigned int reqWidth, unsigned int reqHeight,
+                        int& numberOfErrors) :
         _numberOfCapturedFrames(0),
         _reqWidth(reqWidth),
         _reqHeight(reqHeight),
@@ -109,8 +110,8 @@ public:
     int _numberOfCapturedFrames;
 
 protected:
-    int _reqWidth;
-    int _reqHeight;
+    unsigned int _reqWidth;
+    unsigned int _reqHeight;
     int& _numberOfErrors;
 };
 
@@ -379,7 +380,6 @@ int ViEAutoTest::ViECaptureAPITest()
     WebRtc_UWord8 deviceName[128];
     WebRtc_UWord8 deviceUniqueName[512];
     int captureId = 0;
-    int dummy = 0;
 
     VideoCaptureModule::DeviceInfo* devInfo =
         VideoCaptureModule::CreateDeviceInfo(0);
@@ -484,7 +484,7 @@ int ViEAutoTest::ViECaptureAPITest()
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    // Release invalid capture device    
+    // Release invalid capture device.
     error = ViE.ptrViECapture->ReleaseCaptureDevice(captureId + 1);
     numberOfErrors += ViETest::TestError(error == -1, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);

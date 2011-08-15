@@ -174,8 +174,7 @@ public:
 #if WEBRTC_ANDROID
         __android_log_write(ANDROID_LOG_DEBUG, "*WebRTCN*", _logStr);
 #else
-        printf(_logStr);
-        printf("\n");
+        printf("%s\n",_logStr);
 #endif
 #endif
     }

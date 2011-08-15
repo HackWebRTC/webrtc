@@ -50,7 +50,6 @@ int ViEAutoTest::ViEImageProcessStandardTest()
 
 
     int error = 0;
-    bool succeeded = true;
     int numberOfErrors = 0;
 
     int rtpPort = 6000;
@@ -209,8 +208,6 @@ int ViEAutoTest::ViEImageProcessExtendedTest()
     ViETest::Log("========================================");
     ViETest::Log(" ViEImageProcess Extended Test\n");
 
-    int error = 0;
-    bool succeeded = true;
     int numberOfErrors = 0;
 
     numberOfErrors = ViEImageProcessStandardTest();
@@ -240,10 +237,8 @@ int ViEAutoTest::ViEImageProcessAPITest()
     ViETest::Log(" ViEImageProcess API Test\n");
 
     int error = 0;
-    bool succeeded = true;
     int numberOfErrors = 0;
 
-    int rtpPort = 6000;
     tbInterfaces ViE("ViEImageProcessAPITest", numberOfErrors);
     tbVideoChannel tbChannel(ViE, numberOfErrors, webrtc::kVideoCodecVP8);
     tbCaptureDevice tbCapture(ViE, numberOfErrors);

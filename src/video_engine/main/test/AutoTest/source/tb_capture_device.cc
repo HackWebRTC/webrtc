@@ -11,9 +11,9 @@
 #include "tb_capture_device.h"
 
 tbCaptureDevice::tbCaptureDevice(tbInterfaces& Engine, int& nrOfErrors) :
-    ViE(Engine),
-    numberOfErrors(nrOfErrors),
     captureId(-1),
+    numberOfErrors(nrOfErrors),
+    ViE(Engine),
     vcpm_(NULL)
 {
     const unsigned int KMaxDeviceNameLength = 128;

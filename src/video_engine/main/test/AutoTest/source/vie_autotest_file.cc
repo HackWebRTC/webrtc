@@ -48,7 +48,6 @@ int ViEAutoTest::ViEFileStandardTest()
 
 
     int error = 0;
-    bool succeeded = true;
     int numberOfErrors = 0;
 
     {
@@ -245,7 +244,6 @@ int ViEAutoTest::ViEFileStandardTest()
 
         const int RENDER_TIMEOUT = 1000;
         const int TEST_SPACING = 1000;
-        const int UI_UPDATE_INTERVAL = 2000;
         const int VIDEO_LENGTH = 5000;
 
 
@@ -855,4 +853,3 @@ int ViEAutoTest::ViEFileAPITest()
     ViETest::Log(" ");
     return 0;
 }
-

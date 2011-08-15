@@ -90,7 +90,7 @@ bool ViEAutoTestMain::BeginOSIndependentTesting()
         }
         else
         {
-            int dummy = scanf("%d", &testType);
+            scanf("%d", &testType);
             getchar();
         }
         ViETest::Log("");

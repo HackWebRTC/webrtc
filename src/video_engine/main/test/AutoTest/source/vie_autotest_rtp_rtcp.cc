@@ -99,10 +99,8 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
     //***************************************************************
 
     int error = 0;
-    bool succeeded = true;
     int numberOfErrors = 0;
 
-    int rtpPort = 6000;
     // Create VIE
     tbInterfaces ViE("ViERtpRtcpStandardTest", numberOfErrors);
     // Create a video channel
@@ -309,8 +307,10 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
     WebRtc_Word32 numDroppedPackets = 0;
     WebRtc_Word32 numRtcpPackets = 0;
     myTransport.GetStats(numRtpPackets, numDroppedPackets, numRtcpPackets);
-    numberOfErrors += ViETest::TestError(numRtpPackets == KAutoTestSleepTimeMs
-        / (1000 * deltaTimeSeconds), "ERROR: %s at line %d", __FUNCTION__,
+    WebRtc_Word32 expectedPackets = KAutoTestSleepTimeMs / 1000 *
+        static_cast<WebRtc_Word32>(deltaTimeSeconds);
+    numberOfErrors += ViETest::TestError(numRtpPackets == expectedPackets,
+                                         "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
 
     // Test to set SSRC
@@ -455,12 +455,10 @@ int ViEAutoTest::ViERtpRtcpExtendedTest()
 
 
     int error = 0;
-    bool succeeded = true;
     int numberOfErrors = 0;
 
     numberOfErrors = ViERtpRtcpStandardTest();
 
-    int rtpPort = 6000;
     // Create VIE
     tbInterfaces ViE("ViERtpRtcpStandardTest", numberOfErrors);
     // Create a video channel
@@ -568,10 +566,8 @@ int ViEAutoTest::ViERtpRtcpAPITest()
 
 
     int error = 0;
-    bool succeeded = true;
     int numberOfErrors = 0;
 
-    int rtpPort = 6000;
     // Create VIE
     tbInterfaces ViE("ViERtpRtcpAPITest", numberOfErrors);
     // Create a video channel
@@ -785,9 +781,8 @@ int ViEAutoTest::ViERtpRtcpAPITest()
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        numberOfErrors += ViETest::TestError((enabled == true,
-                                              setPT == getPT,
-                                              setDeltaTime == getDeltaTime),
+        numberOfErrors += ViETest::TestError((enabled == true && setPT == getPT
+                                              && setDeltaTime == getDeltaTime),
                                               "ERROR: %s at line %d",
                                               __FUNCTION__, __LINE__);
 

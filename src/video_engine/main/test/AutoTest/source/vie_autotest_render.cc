@@ -87,7 +87,6 @@ int ViEAutoTest::ViERenderStandardTest()
 
 
     int error = 0;
-    bool succeeded = true;
     int numberOfErrors = 0;
     int rtpPort = 6000;
 
@@ -251,7 +250,6 @@ int ViEAutoTest::ViERenderExtendedTest()
     ViETest::Log(" ViERender Extended Test\n");
 
     int error = 0;
-    bool succeeded = true;
     int numberOfErrors = 0;
     int rtpPort = 6000;
 
@@ -476,7 +474,6 @@ int ViEAutoTest::ViERenderAPITest()
     ViETest::Log("========================================");
     ViETest::Log(" ViERender API Test\n");
 
-    int error = 0;
     int numberOfErrors = 0;
 
     //TODO add the real tests cases

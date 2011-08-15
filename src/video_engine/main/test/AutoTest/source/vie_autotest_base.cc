@@ -28,7 +28,6 @@ int ViEAutoTest::ViEBaseStandardTest()
     //***************************************************************
 
     int error = 0;
-    bool succeeded = true;
     int numberOfErrors = 0;
 
     ViETest::Log("Starting a loopback call...");
@@ -217,7 +216,6 @@ int ViEAutoTest::ViEBaseStandardTest()
                                          __LINE__);
 
     char version[1024] = "";
-    int versionLength = 1024;
     error = ptrViEBase->GetVersion(version);
 
     ViETest::Log("\nUsing WebRTC Video Engine version: %s", version);
@@ -403,7 +401,6 @@ int ViEAutoTest::ViEBaseAPITest()
     //***************************************************************
 
     int error = 0;
-    bool succeeded = true;
     int numberOfErrors = 0;
 
     VideoEngine* ptrViE = NULL;
@@ -534,7 +531,7 @@ int ViEAutoTest::ViEBaseAPITest()
                                          __FUNCTION__, __LINE__);
 
     ViEBase* ptrViEBase2 = ViEBase::GetInterface(ptrViE);
-    numberOfErrors += ViETest::TestError(ptrViEBase != NULL,
+    numberOfErrors += ViETest::TestError(ptrViEBase2 != NULL,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
 

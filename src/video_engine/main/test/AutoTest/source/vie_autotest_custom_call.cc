@@ -29,7 +29,6 @@ int ViEAutoTest::ViECustomCall()
     ViETest::Log(" Enter values to use custom settings\n");
 
     int error = 0;
-    bool succeeded = true;
     int numberOfErrors = 0;
     std::string str;
 
@@ -107,7 +106,6 @@ int ViEAutoTest::ViECustomCall()
     int videoTxPort = 0;
     int videoRxPort = 0;
     int videoChannel = -1;
-    int codecIdx = 0;
     webrtc::VideoCodec videoCodec;
     char audioCaptureDeviceName[KMaxUniqueIdLength] = "";
     char audioPlaybackDeviceName[KMaxUniqueIdLength] = "";
@@ -684,7 +682,6 @@ bool ViEAutoTest::GetAudioDevices(VoEBase* ptrVEBase,
 {
     int error = 0;
     int numberOfErrors = 0;
-    int captureDeviceIndex = 0;
     std::string str;
 
     const unsigned int KMaxDeviceNameLength = 128;
@@ -821,7 +818,6 @@ bool ViEAutoTest::GetAudioDevices(VoEBase* ptrVEBase,
 // general settings functions
 bool ViEAutoTest::GetIPAddress(char* iIP)
 {
-    int error = 0;
     char oIP[16] = DEFAULT_SEND_IP;
     std::string str;
 
@@ -865,7 +861,6 @@ bool ViEAutoTest::ValidateIP(std::string iStr)
 // video settings functions
 bool ViEAutoTest::GetVideoPorts(int* txPort, int* rxPort)
 {
-    int error = 0;
     std::string str;
     int port = 0;
 
@@ -1019,7 +1014,6 @@ bool ViEAutoTest::GetVideoCodec(ViECodec* ptrViECodec,
 // audio settings functions
 bool ViEAutoTest::GetAudioPorts(int* txPort, int* rxPort)
 {
-    int error = 0;
     int port = 0;
     std::string str;
 

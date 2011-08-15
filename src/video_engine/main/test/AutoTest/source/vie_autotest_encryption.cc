@@ -85,7 +85,6 @@ int ViEAutoTest::ViEEncryptionStandardTest()
     //***************************************************************
 
     int error = 0;
-    bool succeeded = true;
     int numberOfErrors = 0;
 
     // Create VIE
@@ -246,7 +245,6 @@ int ViEAutoTest::ViEEncryptionExtendedTest()
     //***************************************************************
 
     int error = 0;
-    bool succeeded = true;
     int numberOfErrors = 0;
 
     // Create VIE
@@ -476,7 +474,6 @@ int ViEAutoTest::ViEEncryptionAPITest()
 
 
     int error = 0;
-    bool succeeded = true;
     int numberOfErrors = 0;
 
     //***************************************************************

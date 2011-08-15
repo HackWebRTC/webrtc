@@ -43,8 +43,6 @@ int VideoEngineSampleCode(void* window1, void* window2)
     //********************************************************
 
     int error = 0;
-    bool succeeded = true;
-    int numberOfErrors = 0;
 
     //
     // Create a VideoEngine instance

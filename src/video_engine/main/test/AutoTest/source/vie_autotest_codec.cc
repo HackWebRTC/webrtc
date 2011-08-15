@@ -129,7 +129,6 @@ int ViEAutoTest::ViECodecStandardTest()
 
 
     int error = 0;
-    bool succeeded = true;
     int numberOfErrors = 0;
 
     tbInterfaces interfaces = tbInterfaces("ViECodecStandardTest",
@@ -451,7 +450,6 @@ int ViEAutoTest::ViECodecStandardTest()
 int ViEAutoTest::ViECodecExtendedTest()
 {
     int error = 0;
-    bool succeeded = true;
     int numberOfErrors = 0;
 
     {
@@ -465,7 +463,6 @@ int ViEAutoTest::ViECodecExtendedTest()
 
         tbInterfaces interfaces = tbInterfaces("ViECodecExtendedTest",
                                                numberOfErrors);
-        VideoEngine* ptrViE = interfaces.ptrViE;
         ViEBase* ptrViEBase = interfaces.ptrViEBase;
         ViECapture* ptrViECapture = interfaces.ptrViECapture;
         ViERender* ptrViERender = interfaces.ptrViERender;
@@ -898,7 +895,6 @@ int ViEAutoTest::ViECodecAPITest()
     //***************************************************************
 
     int error = 0;
-    bool succeeded = true;
     int numberOfErrors = 0;
 
     VideoEngine* ptrViE = NULL;
