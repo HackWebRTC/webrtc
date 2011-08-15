@@ -281,16 +281,10 @@ VPMContentAnalysis::ComputeSpatialMetrics_C()
     const WebRtc_UWord16 sizei = _height;
     const WebRtc_UWord16 sizej = _width;
 
-    float spatialErr = 0.0f;
-    float spatialErrH = 0.0f;
-    float spatialErrV = 0.0f;
-
     // pixel mean square average: used to normalize the spatial metrics
     WebRtc_UWord32 pixelMSA = 0;
-    float norm = 1.0f;
 
     const WebRtc_UWord32 bord = 8; // avoid boundary
-    WebRtc_UWord32 numPixels = 0;  // counter for # of pixels
 
     WebRtc_UWord32 spatialErrSum = 0;
     WebRtc_UWord32 spatialErrVSum = 0;
@@ -305,7 +299,6 @@ VPMContentAnalysis::ComputeSpatialMetrics_C()
         {
             WebRtc_UWord32 ssn1,ssn2,ssn3,ssn4,ssn5;
 
-            numPixels += 1;
             ssn1=  i * sizej + j;
             ssn2 = (i + 1) * sizej + j; // bottom
             ssn3 = (i - 1) * sizej + j; // top
@@ -333,21 +326,19 @@ VPMContentAnalysis::ComputeSpatialMetrics_C()
     }
 
     // normalize over all pixels
-    spatialErr = (float)spatialErrSum / (float)(4 * numPixels);
-    spatialErrH = (float)spatialErrHSum / (float)(2 * numPixels);
-    spatialErrV = (float)spatialErrVSum / (float)(2 * numPixels);
-    norm = (float)pixelMSA / float(numPixels);
-
-    // normalize to RMS pixel level: use avg pixel level for now
+    const float spatialErr  = (float)(spatialErrSum >> 2);
+    const float spatialErrH = (float)(spatialErrHSum >> 1);
+    const float spatialErrV = (float)(spatialErrVSum >> 1);
+    const float norm = (float)pixelMSA;
 
     // 2X2:
-    _spatialPredErr = spatialErr / (norm);
+    _spatialPredErr = spatialErr / norm;
 
     // 1X2:
-    _spatialPredErrH = spatialErrH / (norm);
+    _spatialPredErrH = spatialErrH / norm;
 
     // 2X1:
-    _spatialPredErrV = spatialErrV / (norm);
+    _spatialPredErrV = spatialErrV / norm;
 
     return VPM_OK;
 }
@@ -358,10 +349,6 @@ VPMContentAnalysis::ComputeSpatialMetrics_SSE2()
 {
     // avoid boundary
     const WebRtc_Word32 bord = 8;
-
-    // counter for # of pixels
-    const WebRtc_UWord32 numPixels = ((_width - 2*bord) & -16)*
-                                      (_height - 2*bord) / _skipNum;
 
     const WebRtc_UWord8* imgBuf = _origFrame + bord*_width;
     const WebRtc_Word32 width_end = ((_width - 2*bord) & -16) + bord;
@@ -501,19 +488,16 @@ VPMContentAnalysis::ComputeSpatialMetrics_SSE2()
                      _mm_add_epi64(_mm_unpackhi_epi32(msa_32,z),
                                    _mm_unpacklo_epi32(msa_32,z)));
 
-    const WebRtc_UWord32 spatialErrSum  = se_64[0] + se_64[1];;
+    const WebRtc_UWord32 spatialErrSum  = se_64[0] + se_64[1];
     const WebRtc_UWord32 spatialErrVSum = sev_64[0] + sev_64[1];
     const WebRtc_UWord32 spatialErrHSum = seh_64[0] + seh_64[1];
     const WebRtc_UWord32 pixelMSA = msa_64[0] + msa_64[1];
 
     // normalize over all pixels
-    const float spatialErr = (float)spatialErrSum / (float)(4 * numPixels);
-    const float spatialErrH = (float)spatialErrHSum / (float)(2 * numPixels);
-    const float spatialErrV = (float)spatialErrVSum / (float)(2 * numPixels);
-    const float norm = (float)pixelMSA / float(numPixels);
-
-
-    // normalize to RMS pixel level: use avg pixel level for now
+    const float spatialErr  = (float)(spatialErrSum >> 2);
+    const float spatialErrH = (float)(spatialErrHSum >> 1);
+    const float spatialErrV = (float)(spatialErrVSum >> 1);
+    const float norm = (float)pixelMSA;
 
     // 2X2:
     _spatialPredErr = spatialErr / norm;
