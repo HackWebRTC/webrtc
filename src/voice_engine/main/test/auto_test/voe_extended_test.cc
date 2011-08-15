@@ -4892,6 +4892,112 @@ int VoEExtendedTest::TestFile()
 }
 
 // ----------------------------------------------------------------------------
+//  VoEExtendedTest::TestMixing
+// ----------------------------------------------------------------------------
+
+int VoEExtendedTest::TestMixing()
+{
+    VoEBase* base = _mgr.BasePtr();
+    VoEFile* file = _mgr.FilePtr();
+    VoECodec* codec = _mgr.CodecPtr();
+    VoEAudioProcessing* apm = _mgr.APMPtr();
+
+    // Use L16 at 16kHz to minimize distortion (file recording is 16kHz
+    // and resampling will cause large distortions).
+    CodecInst codec_inst;
+    strcpy(codec_inst.plname, "L16");
+    codec_inst.channels = 1;
+    codec_inst.rate = 256000;
+    codec_inst.plfreq = 16000;
+    codec_inst.pltype = 105;
+    codec_inst.pacsize = 160;
+
+    apm->SetNsStatus(false);
+    apm->SetAgcStatus(false);
+    apm->SetEcStatus(false);
+
+    const char file_to_generate_name[] = "dc_file.pcm";
+    const char* input_filename = file_to_generate_name;
+    FILE* file_to_generate = fopen(file_to_generate_name, "wb");
+    const WebRtc_Word16 per_channel_value = 1000;
+    for (int i = 0; i < 160 * 100 * 5; i++)
+    {
+        fwrite(&per_channel_value, sizeof(per_channel_value), 1,
+               file_to_generate);
+    }
+    fclose(file_to_generate);
+
+    // Create 4 channels and make sure that only three are mixed.
+    TEST_MUSTPASS(base->Init());
+
+    int channels[4];
+    const int number_of_channels = sizeof(channels) / sizeof(channels[0]);
+    for (int channel_index = 0; channel_index < number_of_channels;
+         ++channel_index)
+    {
+        const int channel = base->CreateChannel();
+        channels[channel_index] = channel;
+        TEST_MUSTPASS((channel != -1) ? 0 : 1);
+        TEST_MUSTPASS(codec->SetRecPayloadType(channel, codec_inst));
+        TEST_MUSTPASS(base->SetLocalReceiver(channel,
+                                             1234 + 2 * channel_index));
+        TEST_MUSTPASS(base->SetSendDestination(channel,
+                                               1234  + 2 * channel_index,
+                                               "127.0.0.1"));
+        TEST_MUSTPASS(base->StartReceive(channel));
+        TEST_MUSTPASS(base->StartPlayout(channel));
+        TEST_MUSTPASS(codec->SetSendCodec(channel, codec_inst));
+        TEST_MUSTPASS(base->StartSend(channel));
+    }
+    for (int channel_index = 0; channel_index < number_of_channels;
+         ++channel_index)
+    {
+        const int channel = channels[channel_index];
+        TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(channel,
+                                                         input_filename,
+                                                         true));
+    }
+    const char mix_result[] = "mix_result.pcm";
+    TEST_MUSTPASS(file->StartRecordingPlayout(-1/*record meeting*/,
+                                              mix_result));
+    printf("Playing %d channels\n", number_of_channels);
+    SLEEP(5000);
+    TEST_MUSTPASS(file->StopRecordingPlayout(-1));
+    printf("Stopping\n");
+
+    for (int channel_index = 0; channel_index < number_of_channels;
+         ++channel_index)
+    {
+        const int channel = channels[channel_index];
+        channels[channel_index] = channel;
+        TEST_MUSTPASS(base->DeleteChannel(channel));
+    }
+
+    FILE* verification_file = fopen(mix_result, "rb");
+    WebRtc_Word16 mix_value = 0;
+    bool all_mix_values_too_low = true;
+    while (fread(&mix_value, sizeof(WebRtc_Word16), 1, verification_file))
+    {
+      // The mixed value should be:
+      // The input value (from mic) * the number of participants to mix /
+      // saturation factor (divide by two to avoid saturation).
+      // The 1.2 comes from the fact that the audio has to be looped back
+      // which will distort the original signal. I.e. allow 20% distortion.
+      if (mix_value > 1.1 * per_channel_value * 3 / 2)
+      {
+          TEST_MUSTPASS(-1);
+      }
+      // At least once the value should be close to the expected mixed value.
+      if (mix_value > 0.9 * per_channel_value * 3 / 2)
+      {
+          all_mix_values_too_low = false;
+      }
+    }
+    TEST_MUSTPASS(all_mix_values_too_low ? -1 : 0);
+    return 0;
+}
+
+// ----------------------------------------------------------------------------
 //  VoEExtendedTest::TestHardware
 // ----------------------------------------------------------------------------
 

@@ -510,19 +510,21 @@ bool SubAPIManager::GetExtendedMenuSelection(ExtendedSelection& sel)
     if (_externalMedia) printf("\n"); else printf(" (NA)\n");
     printf(" (7)  File");
     if (_file) printf("\n"); else printf(" (NA)\n");
-    printf(" (8)  Hardware");
+    printf(" (8)  Mixing");
+    if (_file) printf("\n"); else printf(" (NA)\n");
+    printf(" (9)  Hardware");
     if (_hardware) printf("\n"); else printf(" (NA)\n");
-    printf(" (9) NetEqStats");
+    printf(" (10) NetEqStats");
     if (_netEqStats) printf("\n"); else printf(" (NA)\n");
-    printf(" (10) Network");
+    printf(" (11) Network");
     if (_network) printf("\n"); else printf(" (NA)\n");
-    printf(" (11) RTP_RTCP");
+    printf(" (12) RTP_RTCP");
     if (_rtp_rtcp) printf("\n"); else printf(" (NA)\n");
-    printf(" (12) VideoSync");
+    printf(" (13) VideoSync");
     if (_videoSync) printf("\n"); else printf(" (NA)\n");
-    printf(" (13) VolumeControl");
+    printf(" (14) VolumeControl");
     if (_volumeControl) printf("\n"); else printf(" (NA)\n");
-    printf(" (14) AudioProcessing");
+    printf(" (15) AudioProcessing");
     if (_apm) printf("\n"); else printf(" (NA)\n");
     printf("\n: ");
 
@@ -557,24 +559,27 @@ bool SubAPIManager::GetExtendedMenuSelection(ExtendedSelection& sel)
         if (_file) xsel = XSEL_File;
         break;
     case 8:
-        if (_hardware) xsel = XSEL_Hardware;
+        if (_file) xsel = XSEL_Mixing;
         break;
     case 9:
-        if (_netEqStats) xsel = XSEL_NetEqStats;
+        if (_hardware) xsel = XSEL_Hardware;
         break;
     case 10:
-        if (_network) xsel = XSEL_Network;
+        if (_netEqStats) xsel = XSEL_NetEqStats;
         break;
     case 11:
-        if (_rtp_rtcp) xsel = XSEL_RTP_RTCP;
+        if (_network) xsel = XSEL_Network;
         break;
     case 12:
-        if (_videoSync) xsel = XSEL_VideoSync;
+        if (_rtp_rtcp) xsel = XSEL_RTP_RTCP;
         break;
     case 13:
-        if (_volumeControl) xsel = XSEL_VolumeControl;
+        if (_videoSync) xsel = XSEL_VideoSync;
         break;
     case 14:
+        if (_volumeControl) xsel = XSEL_VolumeControl;
+        break;
+    case 15:
         if (_apm) xsel = XSEL_AudioProcessing;
         break;
     default:
@@ -3702,6 +3707,12 @@ int runAutoTest(TestType testType, ExtendedSelection extendedSel)
                 if ((mainRet = xtend.TestFile()) == -1)
                     break;
                 xtend.TestPassed("File");
+            }
+            if (extendedSel == XSEL_Mixing || extendedSel == XSEL_All)
+            {
+                if ((mainRet = xtend.TestMixing()) == -1)
+                    break;
+                xtend.TestPassed("Mixing");
             }
             if (extendedSel == XSEL_Hardware || extendedSel == XSEL_All)
             {

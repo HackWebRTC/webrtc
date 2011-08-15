@@ -53,6 +53,7 @@ enum ExtendedSelection
     XSEL_Encryption,
     XSEL_ExternalMedia,
     XSEL_File,
+    XSEL_Mixing,
     XSEL_Hardware,
     XSEL_NetEqStats,
     XSEL_Network,

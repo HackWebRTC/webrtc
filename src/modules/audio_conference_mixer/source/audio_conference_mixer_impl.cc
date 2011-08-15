@@ -46,6 +46,13 @@ WebRtc_Word32 MixHistory::IsMixed(bool& mixed) const
     return 0;
 }
 
+WebRtc_Word32 MixHistory::WasMixed(bool& wasMixed) const
+{
+    // Was mixed is the same as is mixed depending on perspective. This function
+    // is for the perspective of AudioConferenceMixerImpl.
+    return IsMixed(wasMixed);
+}
+
 WebRtc_Word32 MixHistory::SetIsMixed(const bool mixed)
 {
     _isMixed = mixed ? 1 : 0;
@@ -180,6 +187,8 @@ WebRtc_Word32 AudioConferenceMixerImpl::TimeUntilNextProcess()
 
 WebRtc_Word32 AudioConferenceMixerImpl::Process()
 {
+    WebRtc_UWord32 remainingParticipantsAllowedToMix =
+        kMaximumAmountOfMixedParticipants;
     {
         CriticalSectionScoped cs(*_crit);
         assert(_processCalls == 0);
@@ -190,6 +199,7 @@ WebRtc_Word32 AudioConferenceMixerImpl::Process()
     }
 
     ListWrapper mixList;
+    ListWrapper rampOutList;
     MapWrapper mixedParticipantsMap;
     {
         CriticalSectionScoped cs(*_cbCrit);
@@ -240,7 +250,9 @@ WebRtc_Word32 AudioConferenceMixerImpl::Process()
             }
         }
 
-        UpdateToMix(mixList,mixedParticipantsMap);
+        UpdateToMix(mixList, rampOutList, mixedParticipantsMap,
+                    remainingParticipantsAllowedToMix);
+
         UpdateMixedStatus(mixedParticipantsMap);
         _scratchParticipantsToMixAmount = mixedParticipantsMap.Size();
     }
@@ -286,6 +298,7 @@ WebRtc_Word32 AudioConferenceMixerImpl::Process()
 
         MixFromList(*mixedAudio,mixList);
 
+        MixAnonomouslyFromList(*mixedAudio, rampOutList);
         if(mixedAudio->_payloadDataLengthInSamples == 0)
         {
           // Nothing was mixed set the audio samples to silence.
@@ -339,6 +352,7 @@ WebRtc_Word32 AudioConferenceMixerImpl::Process()
     // Reclaim all outstanding memory.
     _audioFramePool->PushMemory(mixedAudio);
     ClearAudioFrameList(mixList);
+    ClearAudioFrameList(rampOutList);
     {
         CriticalSectionScoped cs(*_crit);
         _processCalls--;
@@ -471,11 +485,6 @@ WebRtc_Word32 AudioConferenceMixerImpl::SetMixabilityStatus(
         bool success = false;
         if(mixable)
         {
-            if(_amountOfMixableParticipants >=
-               kMaximumAmountOfMixedParticipants)
-            {
-                return -1;
-            }
             success = AddParticipantToList(participant,_participantList);
         }
         else
@@ -579,16 +588,38 @@ WebRtc_Word32 AudioConferenceMixerImpl::GetLowestMixingFrequency()
 
 void AudioConferenceMixerImpl::UpdateToMix(
     ListWrapper& mixList,
-    MapWrapper& mixParticipantList)
+    ListWrapper& rampOutList,
+    MapWrapper& mixParticipantList,
+    WebRtc_UWord32& maxAudioFrameCounter)
 {
     WEBRTC_TRACE(kTraceStream, kTraceAudioMixerServer, _id,
-                 "UpdateToMix(mixList,mixParticipantList)");
-
+                 "GetVIPAudio(mixList,rampOutList,mixParticipantList,%d)",
+                 maxAudioFrameCounter);
+    const WebRtc_UWord32 mixListStartSize = mixList.GetSize();
+    ListWrapper activeList; // Elements are AudioFrames
+    // Struct needed by the passive lists to keep track of which AudioFrame
+    // belongs to which MixerParticipant.
+    struct ParticipantFramePair
+    {
+        MixerParticipant* participant;
+        AudioFrame* audioFrame;
+    };
+    ListWrapper passiveWasNotMixedList; // Elements are MixerParticipant
+    ListWrapper passiveWasMixedList;    // Elements are MixerParticipant
     ListItem* item = _participantList.First();
     while(item)
     {
+        // Stop keeping track of passive participants if there are already
+        // enough participants available (they wont be mixed anyway).
+        bool mustAddToPassiveList = (maxAudioFrameCounter >
+                                    (activeList.GetSize() +
+                                     passiveWasMixedList.GetSize() +
+                                     passiveWasNotMixedList.GetSize()));
+
         MixerParticipant* participant = static_cast<MixerParticipant*>(
             item->GetItem());
+        bool wasMixed = false;
+        participant->_mixHistory->WasMixed(wasMixed);
         AudioFrame* audioFrame = NULL;
         if(_audioFramePool->PopMemory(audioFrame) == -1)
         {
@@ -608,12 +639,157 @@ void AudioConferenceMixerImpl::UpdateToMix(
             continue;
         }
         assert(audioFrame->_vadActivity != AudioFrame::kVadUnknown);
-        mixList.PushBack(static_cast<void*>(audioFrame));
-        mixParticipantList.Insert(audioFrame->_id,static_cast<void*>(
-            participant));
-        assert(mixParticipantList.Size() <= kMaximumAmountOfMixedParticipants);
+
+        if(audioFrame->_vadActivity == AudioFrame::kVadActive)
+        {
+            if(!wasMixed)
+            {
+                RampIn(*audioFrame);
+            }
+
+            if(activeList.GetSize() >= maxAudioFrameCounter)
+            {
+                // There are already more active participants than should be
+                // mixed. Only keep the ones with the highest energy.
+                ListItem* replaceItem = NULL;
+                CalculateEnergy(*audioFrame);
+                WebRtc_UWord32 lowestEnergy = audioFrame->_energy;
+
+                ListItem* activeItem = activeList.First();
+                while(activeItem)
+                {
+                    AudioFrame* replaceFrame = static_cast<AudioFrame*>(
+                        activeItem->GetItem());
+                    CalculateEnergy(*replaceFrame);
+                    if(replaceFrame->_energy < lowestEnergy)
+                    {
+                        replaceItem = activeItem;
+                        lowestEnergy = replaceFrame->_energy;
+                    }
+                    activeItem = activeList.Next(activeItem);
+                }
+                if(replaceItem != NULL)
+                {
+                    AudioFrame* replaceFrame = static_cast<AudioFrame*>(
+                        replaceItem->GetItem());
+
+                    bool replaceWasMixed = false;
+                    MapItem* replaceParticipant = mixParticipantList.Find(
+                        replaceFrame->_id);
+                    static_cast<MixerParticipant*>(
+                        replaceParticipant->GetItem())->_mixHistory->WasMixed(
+                            replaceWasMixed);
+
+                    mixParticipantList.Erase(replaceFrame->_id);
+                    activeList.Erase(replaceItem);
+
+                    activeList.PushFront(static_cast<void*>(audioFrame));
+                    mixParticipantList.Insert(audioFrame->_id,
+                                              static_cast<void*>(participant));
+                    assert(mixParticipantList.Size() <=
+                           kMaximumAmountOfMixedParticipants);
+
+                    if(replaceWasMixed)
+                    {
+                        RampOut(*replaceFrame);
+                        rampOutList.PushBack(static_cast<void*>(replaceFrame));
+                        assert(rampOutList.GetSize() <=
+                               kMaximumAmountOfMixedParticipants);
+                    } else {
+                        _audioFramePool->PushMemory(replaceFrame);
+                    }
+                } else {
+                    if(wasMixed)
+                    {
+                        RampOut(*audioFrame);
+                        rampOutList.PushBack(static_cast<void*>(audioFrame));
+                        assert(rampOutList.GetSize() <=
+                               kMaximumAmountOfMixedParticipants);
+                    } else {
+                        _audioFramePool->PushMemory(audioFrame);
+                    }
+                }
+            } else {
+                activeList.PushFront(static_cast<void*>(audioFrame));
+                mixParticipantList.Insert(audioFrame->_id,
+                                          static_cast<void*>(participant));
+                assert(mixParticipantList.Size() <=
+                       kMaximumAmountOfMixedParticipants);
+            }
+        } else {
+            if(wasMixed)
+            {
+                ParticipantFramePair* pair = new ParticipantFramePair;
+                pair->audioFrame  = audioFrame;
+                pair->participant = participant;
+                passiveWasMixedList.PushBack(static_cast<void*>(pair));
+            } else if(mustAddToPassiveList) {
+                RampIn(*audioFrame);
+                ParticipantFramePair* pair = new ParticipantFramePair;
+                pair->audioFrame  = audioFrame;
+                pair->participant = participant;
+                passiveWasNotMixedList.PushBack(static_cast<void*>(pair));
+            } else {
+                _audioFramePool->PushMemory(audioFrame);
+            }
+        }
         item = _participantList.Next(item);
     }
+    assert(activeList.GetSize() <= maxAudioFrameCounter);
+    // At this point it is known which participants should be mixed. Transfer
+    // this information to this functions output parameters.
+    while(!activeList.Empty())
+    {
+        ListItem* mixItem = activeList.First();
+        mixList.PushBack(mixItem->GetItem());
+        activeList.Erase(mixItem);
+    }
+    // Always mix a constant number of AudioFrames. If there aren't enough
+    // active participants mix passive ones. Starting with those that was mixed
+    // last iteration.
+    while(!passiveWasMixedList.Empty())
+    {
+        ListItem* mixItem = passiveWasMixedList.First();
+        ParticipantFramePair* pair = static_cast<ParticipantFramePair*>(
+            mixItem->GetItem());
+        if(mixList.GetSize() <  maxAudioFrameCounter + mixListStartSize)
+        {
+            mixList.PushBack(pair->audioFrame);
+            mixParticipantList.Insert(pair->audioFrame->_id,
+                                      static_cast<void*>(pair->participant));
+            assert(mixParticipantList.Size() <=
+                   kMaximumAmountOfMixedParticipants);
+        }
+        else
+        {
+            _audioFramePool->PushMemory(pair->audioFrame);
+        }
+        delete pair;
+        passiveWasMixedList.Erase(mixItem);
+    }
+    // And finally the ones that have not been mixed for a while.
+    while(!passiveWasNotMixedList.Empty())
+    {
+        ListItem* mixItem = passiveWasNotMixedList.First();
+        ParticipantFramePair* pair = static_cast<ParticipantFramePair*>(
+            mixItem->GetItem());
+        if(mixList.GetSize() <  maxAudioFrameCounter + mixListStartSize)
+        {
+            mixList.PushBack(pair->audioFrame);
+            mixParticipantList.Insert(pair->audioFrame->_id,
+                                      static_cast<void*>(pair->participant));
+            assert(mixParticipantList.Size() <=
+                   kMaximumAmountOfMixedParticipants);
+        }
+        else
+        {
+            _audioFramePool->PushMemory(pair->audioFrame);
+        }
+        delete pair;
+        passiveWasNotMixedList.Erase(mixItem);
+    }
+    assert(maxAudioFrameCounter + mixListStartSize >= mixList.GetSize());
+    maxAudioFrameCounter += mixListStartSize - mixList.GetSize();
 }
 
 void AudioConferenceMixerImpl::UpdateMixedStatus(
@@ -773,6 +949,24 @@ WebRtc_Word32 AudioConferenceMixerImpl::MixFromList(AudioFrame& mixedAudioFrame,
         _scratchMixedParticipants[position].level = audioFrame->_volume;
 
         position++;
+        item = audioFrameList.Next(item);
+    }
+    return 0;
+}
+
+WebRtc_Word32 AudioConferenceMixerImpl::MixAnonomouslyFromList(
+    AudioFrame& mixedAudioFrame,
+    ListWrapper& audioFrameList)
+{
+    WEBRTC_TRACE(kTraceStream, kTraceAudioMixerServer, _id,
+                 "MixAnonomouslyFromList(mixedAudioFrame, audioFrameList)");
+    ListItem* item = audioFrameList.First();
+    while(item != NULL)
+    {
+        AudioFrame* audioFrame = static_cast<AudioFrame*>(item->GetItem());
+        // Divide the AudioFrame samples by 2 to avoid saturation.
+        *audioFrame >>= 1;
+        mixedAudioFrame += *audioFrame;
         item = audioFrameList.Next(item);
     }
     return 0;

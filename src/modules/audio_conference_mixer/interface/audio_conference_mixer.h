@@ -24,7 +24,7 @@ class Trace;
 class AudioConferenceMixer : public Module
 {
 public:
-    enum {kMaximumAmountOfMixedParticipants = 16};
+    enum {kMaximumAmountOfMixedParticipants = 3};
     enum Frequency
     {
         kNbInHz           = 8000,

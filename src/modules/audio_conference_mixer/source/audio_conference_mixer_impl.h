@@ -35,6 +35,10 @@ public:
     // MixerParticipant function
     WebRtc_Word32 IsMixed(bool& mixed) const;
 
+    // Sets wasMixed to true if the participant was mixed previous mix
+    // iteration.
+    WebRtc_Word32 WasMixed(bool& wasMixed) const;
+
     // Updates the mixed status.
     WebRtc_Word32 SetIsMixed(const bool mixed);
 
@@ -81,10 +85,17 @@ private:
     WebRtc_Word32 SetOutputFrequency(const Frequency frequency);
     Frequency OutputFrequency() const;
 
-    // Fill mixList with the AudioFrames pointers that should be used when
-    // mixing. Fill mixParticipantList with ParticipantStatistics for the
+    // Fills mixList with the AudioFrames pointers that should be used when
+    // mixing. Fills mixParticipantList with ParticipantStatistics for the
     // participants who's AudioFrames are inside mixList.
-    void UpdateToMix(ListWrapper& mixList, MapWrapper& mixParticipantList);
+    // maxAudioFrameCounter both input and output specifies how many more
+    // AudioFrames that are allowed to be mixed.
+    // rampOutList contain AudioFrames corresponding to an audio stream that
+    // used to be mixed but shouldn't be mixed any longer. These AudioFrames
+    // should be ramped out over this AudioFrame to avoid audio discontinuities.
+    void UpdateToMix(ListWrapper& mixList, ListWrapper& rampOutList,
+                     MapWrapper& mixParticipantList,
+                     WebRtc_UWord32& maxAudioFrameCounter);
 
     // Return the lowest mixing frequency that can be used without having to
     // downsample any audio.
@@ -121,6 +132,11 @@ private:
     WebRtc_Word32 MixFromList(
         AudioFrame& mixedAudioFrame,
         ListWrapper& audioFrameList);
+    // Mix the AudioFrames stored in audioFrameList into mixedAudioFrame. No
+    // record will be kept of this mix (e.g. the corresponding MixerParticipants
+    // will not be marked as IsMixed()
+    WebRtc_Word32 MixAnonomouslyFromList(AudioFrame& mixedAudioFrame,
+                                         ListWrapper& audioFrameList);
 
     // Scratch memory
     // Note that the scratch memory may only be touched in the scope of

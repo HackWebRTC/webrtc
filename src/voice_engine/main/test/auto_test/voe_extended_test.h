@@ -87,6 +87,7 @@ public:
     int TestEncryption();
     int TestExternalMedia();
     int TestFile();
+    int TestMixing();
     int TestHardware();
     int TestNetEqStats();
     int TestNetwork();
