@@ -306,7 +306,6 @@ int VoEUnitTest::StartMedia(int channel,
 {
     VoEBase* base = _mgr.BasePtr();
     VoEFile* file = _mgr.FilePtr();
-    VoECodec* codec = _mgr.CodecPtr();
 
     _listening[channel] = false;
     _playing[channel] = false;
@@ -445,9 +444,9 @@ int VoEUnitTest::MixerTest()
     CHECK(base->Init());
 
     // 8 kHz
-    CodecInst l16_8 = { 123, "L16", 8000, 160, 1, 128000 };
+//    CodecInst l16_8 = { 123, "L16", 8000, 160, 1, 128000 };
     CodecInst pcmu_8 = { 0, "pcmu", 8000, 160, 1, 64000 };
-    CodecInst g729_8 = { 18, "g729", 8000, 160, 1, 8000 };
+//    CodecInst g729_8 = { 18, "g729", 8000, 160, 1, 8000 };
 
     // 16 kHz
     CodecInst ipcmwb_16 = { 97, "ipcmwb", 16000, 320, 1, 80000 };

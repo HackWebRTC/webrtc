@@ -1568,10 +1568,7 @@ int VoEExtendedTest::TestCallReport()
 {
     // Get required sub-API pointers
     VoEBase* base = _mgr.BasePtr();
-    VoEAudioProcessing* apm = _mgr.APMPtr();
     VoECallReport* report = _mgr.CallReportPtr();
-    VoERTP_RTCP* rtp_rtcp = _mgr.RTP_RTCPPtr();
-    VoENetwork* netw = _mgr.NetworkPtr();
     VoEFile* file = _mgr.FilePtr();
 
     PrepareTest("CallReport");
@@ -1755,7 +1752,6 @@ int VoEExtendedTest::TestCodec()
     VoEBase* base = _mgr.BasePtr();
     VoECodec* codec = _mgr.CodecPtr();
     VoEFile* file = _mgr.FilePtr();
-    VoENetwork* netw = _mgr.NetworkPtr();
 
 #ifdef _USE_EXTENDED_TRACE_
     TEST_MUSTPASS(VoiceEngine::SetTraceFile(GetFilename("VoECodec_trace.txt")));
@@ -5243,12 +5239,9 @@ int VoEExtendedTest::TestNetwork()
     int sleepTime2 = 200;
 #endif
 
-    const int truncLen(5);
-
     VoEBase* base = _mgr.BasePtr();
     VoEFile* file = _mgr.FilePtr();
     VoENetwork* netw = _mgr.NetworkPtr();
-    VoERTP_RTCP* rtp_rtcp = _mgr.RTP_RTCPPtr();
 
 #ifdef _USE_EXTENDED_TRACE_
     TEST_MUSTPASS(VoiceEngine::SetTraceFile(GetFilename(

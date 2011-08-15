@@ -352,21 +352,21 @@ public:
 private:
     VoiceEngine* ve;
     VoEBase* base;
+    VoECallReport* report;
     VoECodec* codec;
-    VoEVolumeControl* volume;
     VoEDtmf* dtmf;
-    VoERTP_RTCP* rtp_rtcp;
-    VoEAudioProcessing* apm;
-    VoENetwork* netw;
-    VoEFile* file;
-    VoEHardware* hardware;
-    VoEVideoSync* vsync;
     VoEEncryption* encrypt;
     VoEExternalMedia* xmedia;
-    VoECallReport* report;
+    VoEFile* file;
+    VoEHardware* hardware;
 #ifdef _TEST_NETEQ_STATS_
     VoENetEqStats* neteqst;
 #endif
+    VoENetwork* netw;
+    VoERTP_RTCP* rtp_rtcp;
+    VoEVideoSync* vsync;
+    VoEVolumeControl* volume;
+    VoEAudioProcessing* apm;
     int instanceCount;
 };
 

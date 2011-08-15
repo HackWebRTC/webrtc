@@ -593,7 +593,7 @@ WebRtc_Word32 AudioDeviceBuffer::RequestPlayoutData(WebRtc_UWord32 nSamples)
                         WebRtc_Word16 maxIndex = WebRtcSpl_MaxAbsIndexW16((const WebRtc_Word16*)&_playBuffer[0], (WebRtc_Word16)nSamplesOut*_playChannels);
                         WebRtc_UWord32 pulseTime = item->GetUnsignedItem();
                         WebRtc_UWord32 diff = nowTime - pulseTime + (10*maxIndex)/(nSamplesOut*_playChannels);
-                        // DEBUG_PRINT("diff=%d", diff);
+                        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "diff time in playout delay (%d)", diff);
                     }
                     _pulseList.PopFront();
                 }
@@ -631,7 +631,6 @@ void AudioDeviceBuffer::_EmptyList()
 {
     while (!_pulseList.Empty())
     {
-        int n = _pulseList.GetSize();
         ListItem* item = _pulseList.First();
         if (item)
         {

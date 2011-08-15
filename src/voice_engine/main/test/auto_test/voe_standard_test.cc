@@ -91,7 +91,7 @@ const char* GetResource(const char* resource)
     return filenameStr[currentStr];
 }
 #else
-char filenameStr[2][256] = {0};
+char filenameStr[2][256];
 int currentStr = 0;
 
 char* GetFilename(char* filename)
@@ -593,18 +593,21 @@ bool SubAPIManager::GetExtendedMenuSelection(ExtendedSelection& sel)
 VoETestManager::VoETestManager() :
     ve(0),
     base(0),
-    codec(0),
-    volume(0),
-    dtmf(0),
-    rtp_rtcp(0),
-    apm(0),
-    netw(0),
-    file(0),
-    encrypt(0),
-    hardware(0),
-    xmedia(0),
     report(0),
+    codec(0),
+    dtmf(0),
+    encrypt(0),
+    xmedia(0),
+    file(0),
+    hardware(0),
+#ifdef _TEST_NETEQ_STATS_
+    neteqst(0),
+#endif
+    netw(0),
+    rtp_rtcp(0),
     vsync(0),
+    volume(0),
+    apm(0),
     instanceCount(0)
 {
     if (VoiceEngine::SetTraceFile(NULL) != -1)
@@ -903,7 +906,6 @@ int VoETestManager::DoStandardTest()
     memset(&cinst, 0, sizeof(cinst));
 #endif
     char tmpStr[1024];
-    bool enabled(false);
 
     TEST_LOG("\n\n+++ Base tests +++\n\n");
 

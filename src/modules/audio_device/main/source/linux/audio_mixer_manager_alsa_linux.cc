@@ -742,6 +742,7 @@ WebRtc_Word32 AudioMixerManagerLinuxALSA::MicrophoneMuteIsAvailable(
     }
 
     available = LATE(snd_mixer_selem_has_capture_switch)(_inputMixerElement);
+    return 0;
 }
 
 WebRtc_Word32 AudioMixerManagerLinuxALSA::SetMicrophoneMute(bool enable)
