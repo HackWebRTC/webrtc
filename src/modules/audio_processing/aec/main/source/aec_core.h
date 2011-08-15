@@ -20,7 +20,6 @@
 #include "signal_processing_library.h"
 #include "typedefs.h"
 
-//#define G167 // for running G167 tests
 //#define UNCONSTR // time-unconstrained filter
 //#define AEC_DEBUG // for recording files
 
@@ -125,13 +124,6 @@ typedef struct {
     float errThresh; // error threshold
 
     int noiseEstCtr;
-
-    // Toggles for G.167 testing
-#ifdef G167
-    short adaptToggle;  // Filter adaptation
-    short nlpToggle;    // Nonlinear processing
-    short cnToggle;     // Comfort noise
-#endif
 
     power_level_t farlevel;
     power_level_t nearlevel;

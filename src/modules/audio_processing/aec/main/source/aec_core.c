@@ -451,13 +451,6 @@ int WebRtcAec_InitAec(aec_t *aec, int sampFreq)
     aec->seed = 777;
     aec->delayEstCtr = 0;
 
-    // Features on by default (G.167)
-#ifdef G167
-    aec->adaptToggle = 1;
-    aec->nlpToggle = 1;
-    aec->cnToggle = 1;
-#endif
-
     // Metrics disabled by default
     aec->metricsMode = 0;
     WebRtcAec_InitMetrics(aec);
@@ -727,26 +720,15 @@ static void ProcessBlock(aec_t *aec, const short *farend,
 
     // Scale error signal inversely with far power.
     WebRtcAec_ScaleErrorSignal(aec, ef);
-#ifdef G167
-    if (aec->adaptToggle) {
-#endif
-        // Filter adaptation
-        WebRtcAec_FilterAdaptation(aec, fft, ef);
-#ifdef G167
-    }
-#endif
+    // Filter adaptation
+    WebRtcAec_FilterAdaptation(aec, fft, ef);
 
     NonLinearProcessing(aec, output, outputH);
 
-#if defined(AEC_DEBUG) || defined(G167)
+#ifdef AEC_DEBUG
     for (i = 0; i < PART_LEN; i++) {
         eInt16[i] = (short)WEBRTC_SPL_SAT(WEBRTC_SPL_WORD16_MAX, e[i],
             WEBRTC_SPL_WORD16_MIN);
-    }
-#endif
-#ifdef G167
-    if (aec->nlpToggle == 0) {
-        memcpy(output, eInt16, sizeof(eInt16));
     }
 #endif
 
@@ -1035,14 +1017,8 @@ static void NonLinearProcessing(aec_t *aec, short *output, short *outputH)
 
     WebRtcAec_OverdriveAndSuppress(aec, hNl, hNlFb, efw);
 
-#ifdef G167
-    if (aec->cnToggle) {
-      ComfortNoise(aec, efw, comfortNoiseHband, aec->noisePow, hNl);
-    }
-#else
     // Add comfort noise.
     ComfortNoise(aec, efw, comfortNoiseHband, aec->noisePow, hNl);
-#endif
 
     // Inverse error fft.
     fft[0] = efw[0][0];
