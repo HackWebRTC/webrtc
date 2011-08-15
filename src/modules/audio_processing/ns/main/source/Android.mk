@@ -28,8 +28,10 @@ LOCAL_CFLAGS := \
     $(MY_WEBRTC_COMMON_DEFS)
 
 ifeq ($(ARCH_ARM_HAVE_NEON),true)
-    LOCAL_SRC_FILES += nsx_core_neon.c
-    LOCAL_CFLAGS += $(CFLAGS_NEON)
+LOCAL_SRC_FILES += \
+    nsx_core_neon.c
+LOCAL_CFLAGS += \
+    $(MY_ARM_CFLAGS_NEON)
 endif
 
 LOCAL_C_INCLUDES := \
