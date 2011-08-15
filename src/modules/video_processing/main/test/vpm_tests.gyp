@@ -20,29 +20,31 @@
       'include_dirs': [
          '../../../../system_wrappers/interface',
          '../../../../common_video/vplib/main/interface',
+         '../../../../modules/video_processing/main/source',
       ],
       'sources': [
 
         # headers
         'unit_test/unit_test.h',
-        
+
         # sources
         'unit_test/brightness_detection_test.cc',
         'unit_test/color_enhancement_test.cc',
+        'unit_test/content_metrics_test.cc',
         'unit_test/deflickering_test.cc',
         'unit_test/denoising_test.cc',
-        'unit_test/unit_test.cc',  
+        'unit_test/unit_test.cc',
 
       ], # source
-      
+
       'conditions': [
-      
+
         ['OS=="linux"', {
           'cflags': [
             '-fexceptions',
           ],
         }],
-        
+
       ], # conditions
     },
   ],

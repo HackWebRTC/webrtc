@@ -25,56 +25,65 @@ namespace webrtc {
 class VPMContentAnalysis
 {
 public:
-    VPMContentAnalysis();
+    VPMContentAnalysis(bool RTCD = true);
     ~VPMContentAnalysis();
 
-    //Initialize ContentAnalysis - should be called prior to extractContentFeature
-    //Inputs:	   width, height
-    //Return value:   0 if OK, negative value upon error
+    // Initialize ContentAnalysis - should be called prior to
+    //  extractContentFeature
+    // Inputs:         width, height
+    // Return value:   0 if OK, negative value upon error
     WebRtc_Word32 Initialize( WebRtc_UWord16 width,  WebRtc_UWord16 height);
-	
-    //Extract content Feature - main function of ContentAnalysis
-    //Input:		new frame
-    //Return value:    pointer to structure containing content Analysis metrics or NULL value upon error
+
+    // Extract content Feature - main function of ContentAnalysis
+    // Input:           new frame
+    // Return value:    pointer to structure containing content Analysis
+    //                  metrics or NULL value upon error
     VideoContentMetrics* ComputeContentMetrics(const VideoFrame* inputFrame);
 
-    //Release all allocated memory
-    //Output: 0 if OK, negative value upon error
+    // Release all allocated memory
+    // Output: 0 if OK, negative value upon error
     WebRtc_Word32 Release();
 
 private:
 
-    //return motion metrics
+    // return motion metrics
     VideoContentMetrics* ContentMetrics();
 
-    //Normalized temporal difference metric: for motion magnitude
+    // Normalized temporal difference metric: for motion magnitude
     WebRtc_Word32 TemporalDiffMetric();
 
-    //Motion metric method: call 2 metrics (magnitude and size)
+    // Motion metric method: call 2 metrics (magnitude and size)
     WebRtc_Word32 ComputeMotionMetrics();
 
-    //Spatial metric method: computes the 3 frame-average spatial prediction errors (1x2,2x1,2x2)
-    WebRtc_Word32 ComputeSpatialMetrics();
+    // Spatial metric method: computes the 3 frame-average spatial
+    //  prediction errors (1x2,2x1,2x2)
+    typedef WebRtc_Word32 (VPMContentAnalysis::*ComputeSpatialMetricsFunc)();
+    ComputeSpatialMetricsFunc ComputeSpatialMetrics;
+    WebRtc_Word32 ComputeSpatialMetrics_C();
+#if defined(__SSE2__)
+    WebRtc_Word32 ComputeSpatialMetrics_SSE2();
+#endif
 
     const WebRtc_UWord8*       _origFrame;
     WebRtc_UWord8*             _prevFrame;
     WebRtc_UWord16             _width;
     WebRtc_UWord16             _height;
+    WebRtc_UWord32            _skipNum;
 
-
-    //Content Metrics:
-    //stores the local average of the metrics
-    float                  _motionMagnitudeNZ;  //for motion class
-    float                  _spatialPredErr;    //for spatial class
-    float                  _spatialPredErrH;   //for spatial class
-    float                  _spatialPredErrV;   //for spatial class
-    float                  _sizeZeroMotion;     //for motion class
-    float                  _motionPredErr;     //for complexity class:
-    float                  _motionHorizontalness;    //for coherence class
-    float                  _motionClusterDistortion;  //for coherence class
+    // Content Metrics:
+    // stores the local average of the metrics
+    float                  _motionMagnitudeNZ;  // motion class
+    float                  _spatialPredErr;     // spatial class
+    float                  _spatialPredErrH;    // spatial class
+    float                  _spatialPredErrV;    // spatial class
+    float                  _sizeZeroMotion;     // motion class
+    float                  _motionPredErr;      // complexity class:
+    float                  _motionHorizontalness;     // coherence class
+    float                  _motionClusterDistortion;  // coherence class
 
     bool                   _firstFrame;
     bool                   _CAInit;
+
     VideoContentMetrics*   _cMetrics;
 
 }; // end of VPMContentAnalysis class definition
