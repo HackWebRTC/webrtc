@@ -1002,9 +1002,7 @@ static int TimeToFrequencyDomain(const WebRtc_Word16* time_signal,
                                  WebRtc_UWord32* freq_signal_sum_abs)
 {
     int i = 0;
-    int j = 0;
     int time_signal_scaling = 0;
-    int ret = 0;
 
     WebRtc_Word32 tmp32no1;
     WebRtc_Word32 tmp32no2;
@@ -1126,7 +1124,7 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm,
                             const WebRtc_Word16 * nearendClean,
                             WebRtc_Word16 * output)
 {
-    int i, j;
+    int i;
 
     WebRtc_UWord32 xfaSum;
     WebRtc_UWord32 dfaNoisySum;
@@ -1141,7 +1139,6 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm,
     WebRtc_UWord16 dfaClean[PART_LEN1];
     WebRtc_UWord16* ptrDfaClean = dfaClean;
     const WebRtc_UWord16* far_spectrum_ptr = NULL;
-    int outCFFT;
 
     // 32 byte aligned buffers (with +8 or +16).
     // TODO (kma): define fft with complex16_t.
