@@ -95,7 +95,7 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
     ViETest::Log(" ViERTP_RTCP Standard Test\n");
 
     //***************************************************************
-    //	Begin create/initialize WebRTC Video Engine for testing
+    //  Begin create/initialize WebRTC Video Engine for testing
     //***************************************************************
 
     int error = 0;
@@ -119,14 +119,11 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
                                          __FUNCTION__, __LINE__);
 
     //***************************************************************
-    //	Engine ready. Begin testing class
+    //  Engine ready. Begin testing class
     //***************************************************************
 
-
-    
-
     unsigned short startSequenceNumber = 12345;
-    ViETest::Log("Set start sequence number: %u\n");
+    ViETest::Log("Set start sequence number: %u", startSequenceNumber);
     error = ViE.ptrViERtpRtcp->SetStartSequenceNumber(tbChannel.videoChannel,
                                                       startSequenceNumber);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
@@ -141,12 +138,12 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
     error = ViE.ptrViEBase->StartSend(tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-
-    AutoTestSleep(1000);
+    AutoTestSleep(2000);
 
     unsigned short receivedSequenceNumber =
         myTransport.GetFirstSequenceNumber();
-    ViETest::Log("First received sequence number: %u\n\n");
+    ViETest::Log("First received sequence number: %u\n",
+                 receivedSequenceNumber);
     numberOfErrors += ViETest::TestError(
         receivedSequenceNumber == startSequenceNumber, "ERROR: %s at line %d",
         __FUNCTION__, __LINE__);
@@ -158,7 +155,7 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
     //
     // RTCP CName
     //
-    ViETest::Log("Testing CName\n\n");
+    ViETest::Log("Testing CName\n");
     const char* sendCName = "ViEAutoTestCName\0";
     error = ViE.ptrViERtpRtcp->SetRTCPCName(tbChannel.videoChannel, sendCName);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
@@ -194,7 +191,7 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
     //  Statistics
     //
     // Stop and restart to clear stats
-    ViETest::Log("Testing statistics\n\n");
+    ViETest::Log("Testing statistics\n");
     error = ViE.ptrViEBase->StopReceive(tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
@@ -204,10 +201,7 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
                                          __FUNCTION__, __LINE__);
 
     myTransport.ClearStats();
-    std::cout << "Enter Packet Loss Percentage" << std::endl;
-    std::string rate_str;
-    std::getline(std::cin, rate_str);
-    int rate = atoi(rate_str.c_str());
+    int rate = 20;
     myTransport.SetPacketLoss(rate);
 
     // Start send to verify sending stats
@@ -276,7 +270,7 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
     //
     // Keepalive
     //
-    ViETest::Log("Testing RTP keep alive...\n\n");
+    ViETest::Log("Testing RTP keep alive...\n");
     error = ViE.ptrViEBase->StopSend(tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
@@ -307,15 +301,15 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
     WebRtc_Word32 numDroppedPackets = 0;
     WebRtc_Word32 numRtcpPackets = 0;
     myTransport.GetStats(numRtpPackets, numDroppedPackets, numRtcpPackets);
-    WebRtc_Word32 expectedPackets = KAutoTestSleepTimeMs / 1000 *
-        static_cast<WebRtc_Word32>(deltaTimeSeconds);
+    WebRtc_Word32 expectedPackets = KAutoTestSleepTimeMs / (1000 *
+        static_cast<WebRtc_Word32>(deltaTimeSeconds));
     numberOfErrors += ViETest::TestError(numRtpPackets == expectedPackets,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
 
     // Test to set SSRC
     unsigned int setSSRC = 0x01234567;
-    ViETest::Log("Set SSRC %u\n");
+    ViETest::Log("Set SSRC %u", setSSRC);
     error = ViE.ptrViERtpRtcp->SetLocalSSRC(tbChannel.videoChannel, setSSRC);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
@@ -332,7 +326,7 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
 
     AutoTestSleep(2000);
     unsigned int receivedSSRC = myTransport.ReceivedSSRC();
-    ViETest::Log("Received SSRC %u\n\n");
+    ViETest::Log("Received SSRC %u\n", receivedSSRC);
     numberOfErrors += ViETest::TestError(setSSRC == receivedSSRC,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
@@ -359,7 +353,7 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
                                          __FUNCTION__, __LINE__);
 
 
-    ViETest::Log("Testing RTP dump...\n\n");
+    ViETest::Log("Testing RTP dump...\n");
 
 #ifdef WEBRTC_ANDROID
     const char* inDumpName = "/sdcard/IncomingRTPDump.rtp";
@@ -421,7 +415,7 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
                                          __FUNCTION__, __LINE__);
 
     //***************************************************************
-    //	Testing finished. Tear down Video Engine
+    //  Testing finished. Tear down Video Engine
     //***************************************************************
 
 
@@ -450,7 +444,7 @@ int ViEAutoTest::ViERtpRtcpExtendedTest()
     ViETest::Log(" ViERTP_RTCP Extended Test\n");
 
     //***************************************************************
-    //	Begin create/initialize WebRTC Video Engine for testing
+    //  Begin create/initialize WebRTC Video Engine for testing
     //***************************************************************
 
 
@@ -485,7 +479,7 @@ int ViEAutoTest::ViERtpRtcpExtendedTest()
                                          __FUNCTION__, __LINE__);
 
     //***************************************************************
-    //	Engine ready. Begin testing class
+    //  Engine ready. Begin testing class
     //***************************************************************
 
 
@@ -521,7 +515,7 @@ int ViEAutoTest::ViERtpRtcpExtendedTest()
     ViETest::Log("\t RTCP application data received\n");
 
     //***************************************************************
-    //	Testing finished. Tear down Video Engine
+    //  Testing finished. Tear down Video Engine
     //***************************************************************
 
 
@@ -561,7 +555,7 @@ int ViEAutoTest::ViERtpRtcpAPITest()
     ViETest::Log(" ViERTP_RTCP API Test\n");
 
     //***************************************************************
-    //	Begin create/initialize WebRTC Video Engine for testing
+    //  Begin create/initialize WebRTC Video Engine for testing
     //***************************************************************
 
 
@@ -577,7 +571,7 @@ int ViEAutoTest::ViERtpRtcpAPITest()
     tbCapture.ConnectTo(tbChannel.videoChannel);
 
     //***************************************************************
-    //	Engine ready. Begin testing class
+    //  Engine ready. Begin testing class
     //***************************************************************
 
 
@@ -939,7 +933,7 @@ int ViEAutoTest::ViERtpRtcpAPITest()
     }
 
     //***************************************************************
-    //	Testing finished. Tear down Video Engine
+    //  Testing finished. Tear down Video Engine
     //***************************************************************
 
     if (numberOfErrors > 0)
