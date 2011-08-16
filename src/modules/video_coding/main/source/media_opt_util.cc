@@ -208,9 +208,9 @@ VCMFecMethod::AvgRecoveryFEC(const VCMProtectionParameters* parameters) const
 
     WebRtc_UWord8 sourcePacketsPerFrame = avgTotPackets - fecPacketsPerFrame;
 
-    if (fecPacketsPerFrame == 0)
+    if ( (fecPacketsPerFrame == 0) || (sourcePacketsPerFrame == 0) )
     {
-        // No protection, so average recovery from FEC == 0.
+        // No protection, or rate too low: so average recovery from FEC == 0.
         return 0.0;
     }
 
@@ -218,6 +218,12 @@ VCMFecMethod::AvgRecoveryFEC(const VCMProtectionParameters* parameters) const
     if (sourcePacketsPerFrame > codeSize)
     {
         sourcePacketsPerFrame = codeSize;
+    }
+
+    // Table defined up to codeSizexcodeSize code
+    if (fecPacketsPerFrame > codeSize)
+    {
+        fecPacketsPerFrame = codeSize;
     }
 
     // Check: protection factor is maxed at 50%, so this should never happen
