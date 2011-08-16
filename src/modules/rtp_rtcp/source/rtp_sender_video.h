@@ -160,7 +160,7 @@ private:
     bool                      _useUepProtectionDelta;
     WebRtc_UWord8             _fecProtectionFactor;
     bool                      _fecUseUepProtection;
-    WebRtc_UWord32            _numberFirstPartition;
+    int                       _numberFirstPartition;
     ListWrapper               _mediaPacketListFec;
     ListWrapper               _rtpPacketListFec;
 

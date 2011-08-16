@@ -9,7 +9,6 @@
  */
 
 #include "forward_error_correction.h"
-#include "fec_private_tables.h"
 #include "rtp_utility.h"
 
 #include "trace.h"

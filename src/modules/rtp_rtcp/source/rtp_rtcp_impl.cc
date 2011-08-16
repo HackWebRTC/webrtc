@@ -2187,10 +2187,10 @@ ModuleRtpRtcpImpl::OnBandwidthEstimateUpdate(WebRtc_UWord16 bandWidthKbit)
             extensions.  Overhead excludes any RTP payload headers and the
             payload itself.
         */
-        WebRtc_UWord16 RTPpacketOH = _rtpReceiver.PacketOHReceived();
+        _rtpReceiver.PacketOHReceived();
 
         // call RequestTMMBR when our localy created estimate changes
-        _rtcpSender.RequestTMMBR(bandWidthKbit, 0/*RTPpacketOH + _packetOverHead*/);
+        _rtcpSender.RequestTMMBR(bandWidthKbit, 0);
     }
 }
 

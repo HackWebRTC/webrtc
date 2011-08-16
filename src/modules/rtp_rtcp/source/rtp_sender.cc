@@ -611,9 +611,9 @@ RTPSender::CheckPayloadType(const WebRtc_Word8 payloadType,
                         _audio->SetAudioFrequency(payloadFreqHz);
                         // We need to correct the timestamp again,
                         // since this might happen after we've set it
-                        WebRtc_UWord32 RTPtime = 
+                        WebRtc_UWord32 RTPtime =
                             ModuleRTPUtility::CurrentRTP(payloadFreqHz);
-                        SetStartTimestamp(RTPtime); 
+                        SetStartTimestamp(RTPtime);
                         // will be ignored if it's already configured via API
                     }
                 }

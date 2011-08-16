@@ -567,11 +567,11 @@ ModuleRTPUtility::RTPHeaderParser::Parse(WebRtcRTPHeader& parsedPacket) const
             */
 
             // Parse out the fields but only use it for debugging for now.
-            const WebRtc_UWord8 ID = (*ptr & 0xf0) >> 4;
-            const WebRtc_UWord8 len = (*ptr & 0x0f);
+            //const WebRtc_UWord8 ID = (*ptr & 0xf0) >> 4;
+            //const WebRtc_UWord8 len = (*ptr & 0x0f);
             ptr++;
-            const WebRtc_UWord8 V = (*ptr & 0x80) >> 7;
-            const WebRtc_UWord8 level = (*ptr & 0x7f);
+            //const WebRtc_UWord8 V = (*ptr & 0x80) >> 7;
+            //const WebRtc_UWord8 level = (*ptr & 0x7f);
             // DEBUG_PRINT("RTP_AUDIO_LEVEL_UNIQUE_ID: ID=%u, len=%u, V=%u, level=%u", ID, len, V, level);
         }
         parsedPacket.header.headerLength += XLen;

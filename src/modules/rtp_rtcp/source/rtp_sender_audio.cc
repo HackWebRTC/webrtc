@@ -87,7 +87,7 @@ RTPSenderAudio::SetAudioFrequency(const WebRtc_UWord32 f)
     _frequency = f;
 }
 
-WebRtc_UWord32
+int
 RTPSenderAudio::AudioFrequency() const
 {
     CriticalSectionScoped cs(_sendAudioCritsect);

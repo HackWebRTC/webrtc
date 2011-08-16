@@ -236,10 +236,12 @@ WebRtc_UWord32 RemoteRateControl::ChangeBitRate(WebRtc_UWord32 currentBitRate,
 #ifdef _DEBUG
             //char logStr[256];
 #ifdef _WIN32
-            _snprintf(logStr,256, "New bitRate: %lu\n", currentBitRate / 1000);
+            _snprintf(logStr,256, "New bitRate: %lu\n",
+                      static_cast<long unsigned int> (currentBitRate / 1000));
             OutputDebugStringA(logStr);
 #else
-            snprintf(logStr,256, "New bitRate: %lu\n", currentBitRate / 1000);
+            snprintf(logStr,256, "New bitRate: %lu\n",
+                     static_cast<long unsigned int> (currentBitRate / 1000));
             //TODO
 #endif
 #endif

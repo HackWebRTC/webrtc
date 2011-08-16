@@ -170,7 +170,7 @@ RTPSenderVideo::SendVideoPacket(const FrameType frameType,
         // Add packet to FEC list
         _rtpPacketListFec.PushBack(ptrGenericFEC);
         // FEC can only protect up to kMaxMediaPackets packets
-        if (_mediaPacketListFec.GetSize() <
+        if (static_cast<int>(_mediaPacketListFec.GetSize()) <
             ForwardErrorCorrection::kMaxMediaPackets)
         {
             _mediaPacketListFec.PushBack(ptrGenericFEC->pkt);
@@ -195,7 +195,7 @@ RTPSenderVideo::SendVideoPacket(const FrameType frameType,
 
             // Number of first partition packets cannot exceed kMaxMediaPackets
             if (_numberFirstPartition >
-                    ForwardErrorCorrection::kMaxMediaPackets)
+                ForwardErrorCorrection::kMaxMediaPackets)
             {
                 _numberFirstPartition =
                     ForwardErrorCorrection::kMaxMediaPackets;

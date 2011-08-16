@@ -71,7 +71,7 @@ public:
 
     void SetAudioFrequency(const WebRtc_UWord32 f);
 
-    WebRtc_UWord32 AudioFrequency() const;
+    int AudioFrequency() const;
 
     // Set payload type for Redundant Audio Data RFC 2198
     WebRtc_Word32 SetRED(const WebRtc_Word8 payloadType);
