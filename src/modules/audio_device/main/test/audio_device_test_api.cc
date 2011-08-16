@@ -484,8 +484,6 @@ int api_test()
 
     nDevices = audioDevice->RecordingDevices();
 
-    WebRtc_UWord16 nRecordingDevices(audioDevice->RecordingDevices());
-
     // fail tests
     TEST(audioDevice->SetRecordingDevice(-1) == -1);
     TEST(audioDevice->SetRecordingDevice(nDevices) == -1);
@@ -811,7 +809,7 @@ int api_test()
         }
     }
 
-    int vol(0);
+    WebRtc_UWord32 vol(0);
 
 #if defined(_WIN32) && !defined(WEBRTC_WINDOWS_CORE_AUDIO_BUILD)
 
@@ -1332,7 +1330,7 @@ int api_test()
         TEST(audioDevice->MaxMicrophoneVolume(&maxVolume) == 0);
         TEST(audioDevice->MinMicrophoneVolume(&minVolume) == 0);
         TEST(audioDevice->MicrophoneVolumeStepSize(&stepSize) == 0);
-        for (vol = minVolume; vol < (int) maxVolume; vol += 10 * stepSize)
+        for (vol = minVolume; vol < maxVolume; vol += 10 * stepSize)
         {
             TEST(audioDevice->SetMicrophoneVolume(vol) == 0);
             TEST(audioDevice->MicrophoneVolume(&volume) == 0);
@@ -1352,7 +1350,7 @@ int api_test()
             TEST(audioDevice->MaxMicrophoneVolume(&maxVolume) == 0);
             TEST(audioDevice->MinMicrophoneVolume(&minVolume) == 0);
             TEST(audioDevice->MicrophoneVolumeStepSize(&stepSize) == 0);
-            for (vol = minVolume; vol < (int) maxVolume; vol += 20 * stepSize)
+            for (vol = minVolume; vol < maxVolume; vol += 20 * stepSize)
             {
                 TEST(audioDevice->SetMicrophoneVolume(vol) == 0);
                 TEST(audioDevice->MicrophoneVolume(&volume) == 0);
@@ -2192,7 +2190,9 @@ int api_test()
 #endif
     TEST(audioDevice->StopPlayout() == 0);
 
+#ifdef _WIN32
     Exit:
+#endif
 
     // ------------------------------------------------------------------------
     // Terminate the module when all tests are done:

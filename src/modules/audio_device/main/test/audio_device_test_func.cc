@@ -12,8 +12,10 @@
 #include "audio_device_test_defines.h"
 #include "func_test_manager.h"
 
+#ifndef __GNUC__
 // Disable warning message 4996 ('scanf': This function or variable may be unsafe)
 #pragma warning( disable : 4996 )
+#endif
 
 using namespace webrtc;
 
@@ -36,43 +38,48 @@ int main(int /*argc*/, char* /*argv*/[])
 
 int func_test(int sel)
 {
-	TEST_LOG("=========================================\n");
-	TEST_LOG("Func Test of the WebRtcAudioDevice Module\n");
+    TEST_LOG("=========================================\n");
+    TEST_LOG("Func Test of the WebRtcAudioDevice Module\n");
     TEST_LOG("=========================================\n\n");
 
-	FuncTestManager funcMgr;
+    // Initialize the counters here to get rid of "unused variables" warnings.
+    testCount = 0;
+    errorCount = 0;
+    warningCount = 0;
 
-	funcMgr.Init();
+    FuncTestManager funcMgr;
 
-	bool quit(false);
+    funcMgr.Init();
 
-	while (!quit)
-	{
-		TEST_LOG("---------------------------------------\n");
-		TEST_LOG("Select type of test\n\n");
-		TEST_LOG("  (0) Quit\n");
-		TEST_LOG("  (1) All\n");
-		TEST_LOG("- - - - - - - - - - - - - - - - - - - -\n");
-		TEST_LOG("  (2) Audio-layer selection\n");
-		TEST_LOG("  (3) Device enumeration\n");
-		TEST_LOG("  (4) Device selection\n");
-		TEST_LOG("  (5) Audio transport\n");
-		TEST_LOG("  (6) Speaker volume\n");
-		TEST_LOG("  (7) Microphone volume\n");
-		TEST_LOG("  (8) Speaker mute\n");
-		TEST_LOG("  (9) Microphone mute\n");
-		TEST_LOG(" (10) Microphone boost\n");
-		TEST_LOG(" (11) Microphone AGC\n");
-		TEST_LOG(" (12) Loopback measurements\n");
+    bool quit(false);
+
+    while (!quit)
+    {
+        TEST_LOG("---------------------------------------\n");
+        TEST_LOG("Select type of test\n\n");
+        TEST_LOG("  (0) Quit\n");
+        TEST_LOG("  (1) All\n");
+        TEST_LOG("- - - - - - - - - - - - - - - - - - - -\n");
+        TEST_LOG("  (2) Audio-layer selection\n");
+        TEST_LOG("  (3) Device enumeration\n");
+        TEST_LOG("  (4) Device selection\n");
+        TEST_LOG("  (5) Audio transport\n");
+        TEST_LOG("  (6) Speaker volume\n");
+        TEST_LOG("  (7) Microphone volume\n");
+        TEST_LOG("  (8) Speaker mute\n");
+        TEST_LOG("  (9) Microphone mute\n");
+        TEST_LOG(" (10) Microphone boost\n");
+        TEST_LOG(" (11) Microphone AGC\n");
+        TEST_LOG(" (12) Loopback measurements\n");
         TEST_LOG(" (13) Device removal\n");
         TEST_LOG(" (14) Advanced mobile device API\n");
         TEST_LOG(" (66) XTEST\n");
-		TEST_LOG("- - - - - - - - - - - - - - - - - - - -\n");
-		TEST_LOG("\n: ");
+        TEST_LOG("- - - - - - - - - - - - - - - - - - - -\n");
+        TEST_LOG("\n: ");
 
-		int dummy(0);
-		int selection(0);
-		enum TestType testType(TTInvalid);
+        int dummy(0);
+        int selection(0);
+        enum TestType testType(TTInvalid);
 
 SHOW_MENU:
 
@@ -85,72 +92,72 @@ SHOW_MENU:
             dummy = scanf("%d", &selection);
         }
 
-		switch (selection)
-		{
-			case 0:
-				quit = true;
-				break;
-			case 1: 
-				testType = TTAll;
-				break;
-			case 2: 
-				testType = TTAudioLayerSelection;
-				break;
-			case 3: 
-				testType = TTDeviceEnumeration;
-				break;
-			case 4: 
-				testType = TTDeviceSelection;
-				break;
-			case 5: 
-				testType = TTAudioTransport;
-				break;
-			case 6: 
-				testType = TTSpeakerVolume;
-				break;
-			case 7: 
-				testType = TTMicrophoneVolume;
-				break;
-			case 8: 
-				testType = TTSpeakerMute;
-				break;
-			case 9: 
-				testType = TTMicrophoneMute;
-				break;
-			case 10: 
-				testType = TTMicrophoneBoost;
-				break;
-			case 11: 
-				testType = TTMicrophoneAGC;
-				break;
-			case 12: 
-				testType = TTLoopback;
-				break;
-                        case 13:
-                                testType = TTDeviceRemoval;
-                                break;
-                        case 14:
-                                testType = TTMobileAPI;
-                                break;
-                        case 66:
-				testType = TTTest;
-				break;
-			default:
-				testType = TTInvalid;
-				TEST_LOG(": ");
-				goto SHOW_MENU;
-				break;
-		}
+        switch (selection)
+        {
+            case 0:
+                quit = true;
+                break;
+            case 1: 
+                testType = TTAll;
+                break;
+            case 2: 
+                testType = TTAudioLayerSelection;
+                break;
+            case 3: 
+                testType = TTDeviceEnumeration;
+                break;
+            case 4: 
+                testType = TTDeviceSelection;
+                break;
+            case 5: 
+                testType = TTAudioTransport;
+                break;
+            case 6: 
+                testType = TTSpeakerVolume;
+                break;
+            case 7: 
+                testType = TTMicrophoneVolume;
+                break;
+            case 8: 
+                testType = TTSpeakerMute;
+                break;
+            case 9: 
+                testType = TTMicrophoneMute;
+                break;
+            case 10: 
+                testType = TTMicrophoneBoost;
+                break;
+            case 11: 
+                testType = TTMicrophoneAGC;
+                break;
+            case 12: 
+                testType = TTLoopback;
+                break;
+            case 13:
+                testType = TTDeviceRemoval;
+                break;
+            case 14:
+                testType = TTMobileAPI;
+                break;
+            case 66:
+                testType = TTTest;
+                break;
+            default:
+                testType = TTInvalid;
+                TEST_LOG(": ");
+                goto SHOW_MENU;
+                break;
+           }
 
-		WebRtc_Word32 ret = funcMgr.DoTest(testType);
+        funcMgr.DoTest(testType);
 
         if (sel > 0)
         {
             quit = true;
         }
-	}
+    }
 
-	funcMgr.Close();
+    funcMgr.Close();
 
-	return 0;
+    return 0;
 }

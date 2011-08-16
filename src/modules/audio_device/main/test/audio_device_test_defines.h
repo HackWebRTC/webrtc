@@ -38,12 +38,12 @@ static int testCount = 0;
 static int errorCount = 0;
 static int warningCount = 0;
 
-#define RESET_TEST												\
-	do {                                                        \
-	    testCount = 0;											\
-		errorCount = 0;											\
-		warningCount = 0;										\
-    } while(0)													\
+#define RESET_TEST                                              \
+    do {                                                        \
+        testCount = 0;                                          \
+        errorCount = 0;                                         \
+        warningCount = 0;                                       \
+    } while(0)                                                  \
 
 #define PRINT_ERR_MSG(msg)                                      \
     do {                                                        \
@@ -101,7 +101,6 @@ static int warningCount = 0;
             TEST_LOG(">> ALL PASSED <<\n\n");                   \
         }                                                       \
     } while(0)
-
 
 // Helper functions
 // For iPhone, they are defined in iPhone specific test code.

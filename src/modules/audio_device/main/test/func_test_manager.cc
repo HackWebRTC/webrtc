@@ -17,10 +17,12 @@
 
 #include "../source/audio_device_config.h"
 
+#ifndef __GNUC__
 // Disable warning message ('sprintf': name was marked as #pragma deprecated)
 #pragma warning( disable : 4995 )
 // Disable warning message 4996 ('scanf': This function or variable may be unsafe)
 #pragma warning( disable : 4996 )
+#endif
 
 const WebRtc_Word8 PlayoutFile48[] = "audio_short48.pcm";
 const WebRtc_Word8 PlayoutFile44[] = "audio_short44.pcm";
@@ -192,9 +194,6 @@ WebRtc_Word32 AudioTransportImpl::RecordedDataIsAvailable(
     const WebRtc_UWord32 currentMicLevel,
     WebRtc_UWord32& newMicLevel)
 {
-    WebRtc_UWord32 samples(nSamples);
-    WebRtc_UWord32 fs(samplesPerSec);
-
     if (_fullDuplex && _audioList.GetSize() < 15)
     {
         AudioPacket* packet = new AudioPacket();
@@ -356,8 +355,6 @@ WebRtc_Word32 AudioTransportImpl::NeedMorePlayData(
                 WebRtc_Word16* ptr16Out = NULL;
 
                 const WebRtc_UWord16 nSamplesIn = packet->nSamples;
-                const WebRtc_UWord16 nBytesIn = nSamplesIn
-                    * packet->nBytesPerSample;
                 const WebRtc_UWord8 nChannelsIn = packet->nChannels;
                 const WebRtc_UWord32 samplesPerSecIn = packet->samplesPerSec;
                 const WebRtc_UWord16 nBytesPerSampleIn =
@@ -619,7 +616,6 @@ WebRtc_Word32 FuncTestManager::Init()
 
     WebRtc_Word8 version[256];
     WebRtc_UWord32 remainingBufferInBytes = 256;
-    WebRtc_UWord32 tooFewBytes = 10;
     WebRtc_UWord32 position = 0;
 
     // log version
@@ -771,7 +767,6 @@ WebRtc_Word32 FuncTestManager::TestAudioLayerSelection()
     }
 
     char ch;
-    int dummy(0);
     bool tryWinWave(false);
     bool tryWinCore(false);
 
@@ -779,7 +774,7 @@ WebRtc_Word32 FuncTestManager::TestAudioLayerSelection()
     {
         TEST_LOG("Would you like to try kWindowsCoreAudio instead "
             "[requires Win Vista or Win 7] (Y/N)?\n: ");
-        dummy = scanf(" %c", &ch);
+        scanf(" %c", &ch);
         ch = toupper(ch);
         if (ch == 'Y')
         {
@@ -788,7 +783,7 @@ WebRtc_Word32 FuncTestManager::TestAudioLayerSelection()
     } else if (audioLayer == AudioDeviceModule::kWindowsCoreAudio)
     {
         TEST_LOG("Would you like to try kWindowsWaveAudio instead (Y/N)?\n: ");
-        int dummy = scanf(" %c", &ch);
+        scanf(" %c", &ch);
         ch = toupper(ch);
         if (ch == 'Y')
         {
@@ -1007,9 +1002,9 @@ WebRtc_Word32 FuncTestManager::TestDeviceSelection()
 
 #define PRINT_STR(a, b) \
 	{ \
-		char str[128]; \
-		(b == true) ? (sprintf(str, "  %-17s: available\n", #a)) : (sprintf(str, "  %-17s: NA\n", #a)); \
-		TEST_LOG(str); \
+                char str[128]; \
+                (b == true) ? (sprintf(str, "  %-17s: available\n", #a)) : (sprintf(str, "  %-17s: NA\n", #a)); \
+                TEST_LOG("%s", str); \
 	} \
 
     AudioDeviceModule* audioDevice = _audioDevice;
@@ -1690,7 +1685,7 @@ WebRtc_Word32 FuncTestManager::TestMicrophoneVolume()
              RecordedMicrophoneVolumeFile);
     char ch;
     bool fileRecording(false);
-    int dummy = scanf(" %c", &ch);
+    scanf(" %c", &ch);
     ch = toupper(ch);
     if (ch == 'Y')
     {
@@ -1829,7 +1824,7 @@ WebRtc_Word32 FuncTestManager::TestMicrophoneMute()
         RecordedMicrophoneMuteFile);
     char ch;
     bool fileRecording(false);
-    int dummy = scanf(" %c", &ch);
+    scanf(" %c", &ch);
     ch = toupper(ch);
     if (ch == 'Y')
     {
@@ -1965,7 +1960,7 @@ WebRtc_Word32 FuncTestManager::TestMicrophoneBoost()
         RecordedMicrophoneBoostFile);
     char ch;
     bool fileRecording(false);
-    int dummy = scanf(" %c", &ch);
+    scanf(" %c", &ch);
     ch = toupper(ch);
     if (ch == 'Y')
     {
@@ -2102,7 +2097,7 @@ WebRtc_Word32 FuncTestManager::TestMicrophoneAGC()
         RecordedMicrophoneAGCFile);
     char ch;
     bool fileRecording(false);
-    int dummy = scanf(" %c", &ch);
+    scanf(" %c", &ch);
     ch = toupper(ch);
     if (ch == 'Y')
     {
@@ -2367,13 +2362,11 @@ WebRtc_Word32 FuncTestManager::TestDeviceRemoval()
 
         bool available(false);
         bool enabled(false);
-        WebRtc_UWord32 samplesPerSec(0);
 
         if (recIsAvailable && playIsAvailable)
         {
             WebRtc_UWord32 playSamplesPerSec(0);
             WebRtc_UWord32 recSamplesPerSecRec(0);
-            WebRtc_UWord32 maxVolume(0);
 
             TEST(audioDevice->RegisterAudioCallback(_audioTransport) == 0);
 
@@ -2535,10 +2528,9 @@ WebRtc_Word32 FuncTestManager::SelectRecordingDevice()
     }
     TEST_LOG("\n: ");
 
-    int dummy(0);
     int sel(0);
 
-    dummy = scanf("%u", &sel);
+    scanf("%u", &sel);
 
     if (sel == 0)
     {
@@ -2566,10 +2558,9 @@ WebRtc_Word32 FuncTestManager::SelectRecordingDevice()
     }
     TEST_LOG("\n: ");
 
-    int dummy(0);
     int sel(0);
 
-    dummy = scanf("%u", &sel);
+    scanf("%u", &sel);
 
     if (sel < (nDevices))
     {
@@ -2601,10 +2592,9 @@ WebRtc_Word32 FuncTestManager::SelectPlayoutDevice()
     }
     TEST_LOG("\n: ");
 
-    int dummy(0);
     int sel(0);
 
-    dummy = scanf("%u", &sel);
+    scanf("%u", &sel);
 
     WebRtc_Word32 ret(0);
 
@@ -2635,10 +2625,9 @@ WebRtc_Word32 FuncTestManager::SelectPlayoutDevice()
     }
     TEST_LOG("\n: ");
 
-    int dummy(0);
     int sel(0);
 
-    dummy = scanf("%u", &sel);
+    scanf("%u", &sel);
 
     WebRtc_Word32 ret(0);
 
