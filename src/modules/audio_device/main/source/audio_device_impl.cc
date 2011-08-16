@@ -11,8 +11,8 @@
 #include "audio_device_impl.h"
 #include "audio_device_config.h"
 
-#include "critical_section_wrapper.h"
-#include "trace.h"
+#include <cassert>
+#include <string.h>
 
 #if defined(_WIN32)
     #include "audio_device_utility_win.h"
@@ -45,8 +45,8 @@
 #endif
 #include "audio_device_dummy.h"
 #include "audio_device_utility_dummy.h"
-
-#include <cassert>
+#include "critical_section_wrapper.h"
+#include "trace.h"
 
 #define CHECK_INITIALIZED()         \
 {                                   \
@@ -232,6 +232,15 @@ WebRtc_Word32 AudioDeviceModuleImpl::CreatePlatformSpecificObjects()
     AudioDeviceGeneric* ptrAudioDevice(NULL);
     AudioDeviceUtility* ptrAudioDeviceUtility(NULL);
 
+#if defined(WEBRTC_DUMMY_AUDIO_BUILD)
+    ptrAudioDevice = new AudioDeviceDummy(Id());
+    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "Dummy Audio APIs will be utilized");
+
+    if (ptrAudioDevice != NULL)
+    {
+        ptrAudioDeviceUtility = new AudioDeviceUtilityDummy(Id());
+    }
+#else
     const AudioLayer audioLayer(PlatformAudioLayer());
 
     // Create the *Windows* implementation of the Audio Device
@@ -418,6 +427,7 @@ WebRtc_Word32 AudioDeviceModuleImpl::CreatePlatformSpecificObjects()
             ptrAudioDeviceUtility = new AudioDeviceUtilityDummy(Id());
         }
     }
+#endif  // if defined(WEBRTC_DUMMY_AUDIO_BUILD)
 
     if (ptrAudioDevice == NULL)
     {

@@ -39,9 +39,11 @@
         # Exclude pulse audio on Chromium since its prerequisites don't
         # include pulse audio.
         'include_pulse_audio%': 0,
+        # Exclude internal ADM since chrome uses its own IO handling.
+        'include_internal_audio_device%': 0,
       }, {
         'include_pulse_audio%': 1,
-
+        'include_internal_audio_device%': 1,
          # The Chromium common.gypi we use treats all gyp files without
          # chromium_code==1 as third party code. This disables many of the
          # preferred warning settings.

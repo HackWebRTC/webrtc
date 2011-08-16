@@ -49,87 +49,102 @@
         'dummy/audio_device_dummy.h',
         'dummy/audio_device_utility_dummy.cc',
         'dummy/audio_device_utility_dummy.h',
-        'linux/alsasymboltable_linux.cc',
-        'linux/alsasymboltable_linux.h',
-        'linux/audio_device_alsa_linux.cc',
-        'linux/audio_device_alsa_linux.h',
-        'linux/audio_device_utility_linux.cc',
-        'linux/audio_device_utility_linux.h',
-        'linux/audio_mixer_manager_alsa_linux.cc',
-        'linux/audio_mixer_manager_alsa_linux.h',
-        'linux/latebindingsymboltable_linux.cc',
-        'linux/latebindingsymboltable_linux.h',
-        'mac/audio_device_mac.cc',
-        'mac/audio_device_mac.h',
-        'mac/audio_device_utility_mac.cc',
-        'mac/audio_device_utility_mac.h',
-        'mac/audio_mixer_manager_mac.cc',
-        'mac/audio_mixer_manager_mac.h',
-        'mac/portaudio/pa_memorybarrier.h',
-        'mac/portaudio/pa_ringbuffer.c',
-        'mac/portaudio/pa_ringbuffer.h',
-        'win/audio_device_utility_win.cc',
-        'win/audio_device_utility_win.h',
-        'win/audio_device_core_win.cc',
-        'win/audio_device_core_win.h',
-        'win/audio_device_wave_win.cc',
-        'win/audio_device_wave_win.h',
-        'win/audio_mixer_manager_win.cc',
-        'win/audio_mixer_manager_win.h',
       ],
       'conditions': [
         ['OS=="linux"', {
-          'defines': [
-            'LINUX_ALSA',
-          ],
           'include_dirs': [
             'linux',
           ],
-          'link_settings': {
-            'libraries': [
-              '-ldl',
-              '-lasound',
+        }], # OS==linux
+        ['OS=="mac"', {
+            'include_dirs': [
+              'mac',
             ],
-          },
+        }], # OS==mac
+        ['OS=="win"', {
+            'include_dirs': [
+              'win',
+              '../../../../../..',
+            ],
+        }],
+        ['include_internal_audio_device==0', {
+          'defines': [
+            'WEBRTC_DUMMY_AUDIO_BUILD',
+          ],
+        }],
+        ['include_internal_audio_device==1', {
+          'sources': [
+            'linux/alsasymboltable_linux.cc',
+            'linux/alsasymboltable_linux.h',
+            'linux/audio_device_alsa_linux.cc',
+            'linux/audio_device_alsa_linux.h',
+            'linux/audio_device_utility_linux.cc',
+            'linux/audio_device_utility_linux.h',
+            'linux/audio_mixer_manager_alsa_linux.cc',
+            'linux/audio_mixer_manager_alsa_linux.h',
+            'linux/latebindingsymboltable_linux.cc',
+            'linux/latebindingsymboltable_linux.h',
+            'mac/audio_device_mac.cc',
+            'mac/audio_device_mac.h',
+            'mac/audio_device_utility_mac.cc',
+            'mac/audio_device_utility_mac.h',
+            'mac/audio_mixer_manager_mac.cc',
+            'mac/audio_mixer_manager_mac.h',
+            'mac/portaudio/pa_memorybarrier.h',
+            'mac/portaudio/pa_ringbuffer.c',
+            'mac/portaudio/pa_ringbuffer.h',
+            'win/audio_device_core_win.cc',
+            'win/audio_device_core_win.h',
+            'win/audio_device_wave_win.cc',
+            'win/audio_device_wave_win.h',
+            'win/audio_device_utility_win.cc',
+            'win/audio_device_utility_win.h',
+            'win/audio_mixer_manager_win.cc',
+            'win/audio_mixer_manager_win.h',
+          ],
           'conditions': [
-            ['include_pulse_audio==1', {
+            ['OS=="linux"', {
               'defines': [
-                'LINUX_PULSE',
-              ],
-              'sources': [
-                'linux/audio_device_pulse_linux.cc',
-                'linux/audio_device_pulse_linux.h',
-                'linux/audio_mixer_manager_pulse_linux.cc',
-                'linux/audio_mixer_manager_pulse_linux.h',
-                'linux/pulseaudiosymboltable_linux.cc',
-                'linux/pulseaudiosymboltable_linux.h',
+                'LINUX_ALSA',
               ],
               'link_settings': {
                 'libraries': [
-                  '-lpulse',
+                  '-ldl',
+                  '-lasound',
+                ],
+              },
+              'conditions': [
+                ['include_pulse_audio==1', {
+                  'defines': [
+                    'LINUX_PULSE',
+                  ],
+                  'sources': [
+                    'linux/audio_device_pulse_linux.cc',
+                    'linux/audio_device_pulse_linux.h',
+                    'linux/audio_mixer_manager_pulse_linux.cc',
+                    'linux/audio_mixer_manager_pulse_linux.h',
+                    'linux/pulseaudiosymboltable_linux.cc',
+                    'linux/pulseaudiosymboltable_linux.h',
+                  ],
+                  'link_settings': {
+                    'libraries': [
+                      '-lpulse',
+                    ],
+                  },
+                }],
+              ],
+            }],
+            ['OS=="mac"', {
+              'link_settings': {
+                'libraries': [
+                  '$(SDKROOT)/System/Library/Frameworks/AudioToolbox.framework',
+                  '$(SDKROOT)/System/Library/Frameworks/CoreAudio.framework',
                 ],
               },
             }],
-          ],
-        }],
-        ['OS=="mac"', {
-          'include_dirs': [
-            'mac',
-          ],
-          'link_settings': {
-            'libraries': [
-              '$(SDKROOT)/System/Library/Frameworks/AudioToolbox.framework',
-              '$(SDKROOT)/System/Library/Frameworks/CoreAudio.framework',
-            ],
-          },
-        }],
-        ['OS=="win"', {
-          'include_dirs': [
-            'win',
-            '../../../../../..',
-          ],
-        }],
-      ] # conditions
+          ], # conditions
+        }], # include_internal_audio_device==1
+      ], # conditions
     },
   ],
   # Exclude the test targets when building with chromium.
