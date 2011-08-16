@@ -85,8 +85,8 @@ public:
         AVI_VIDEO = 1
     };
 
-    static const WebRtc_UWord32 CODEC_CONFIG_LENGTH = 64;
-    static const WebRtc_UWord32 STREAM_NAME_LENGTH  = 32;
+    enum {CODEC_CONFIG_LENGTH = 64};
+    enum {STREAM_NAME_LENGTH  = 32};
 
     AviFile();
     ~AviFile();

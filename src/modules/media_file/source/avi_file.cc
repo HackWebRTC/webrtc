@@ -1504,7 +1504,7 @@ WebRtc_Word32 AviFile::ReadAVIVideoStreamHeader(WebRtc_Word32 endpos)
 
     if (chunksize >  _videoFormatHeader.biSize)
     {
-        const WebRtc_Word32 size = chunksize - _videoFormatHeader.biSize;
+        const WebRtc_UWord32 size = chunksize - _videoFormatHeader.biSize;
         const WebRtc_Word32 readSize = (size > CODEC_CONFIG_LENGTH) ?
             CODEC_CONFIG_LENGTH : size;
         _bytesRead += GetBuffer(
