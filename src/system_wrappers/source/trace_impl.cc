@@ -832,7 +832,8 @@ bool TraceImpl::UpdateFileName(
     }
 
     memcpy(fileNameWithCounterUTF8, fileNameUTF8, lengthTo_);
-    sprintf(fileNameWithCounterUTF8+lengthTo_, "_%lu%s", newCount,
+    sprintf(fileNameWithCounterUTF8+lengthTo_, "_%lu%s",
+            static_cast<long unsigned int> (newCount),
             fileNameUTF8+lengthWithoutFileEnding);
     return true;
 }
@@ -865,7 +866,8 @@ bool TraceImpl::CreateFileName(
     }
     memcpy(fileNameWithCounterUTF8, fileNameUTF8, lengthWithoutFileEnding);
     sprintf(fileNameWithCounterUTF8+lengthWithoutFileEnding, "_%lu%s",
-            newCount, fileNameUTF8+lengthWithoutFileEnding);
+            static_cast<long unsigned int> (newCount),
+            fileNameUTF8+lengthWithoutFileEnding);
     return true;
 }
 

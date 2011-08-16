@@ -51,7 +51,8 @@ TracePosix::~TracePosix()
 WebRtc_Word32 TracePosix::AddThreadId(char* traceMessage) const
 {
     WebRtc_UWord64 threadId = (WebRtc_UWord64)pthread_self();
-    sprintf(traceMessage, "%10llu; ", threadId);
+    sprintf(traceMessage, "%10llu; ",
+            static_cast<long long unsigned int>(threadId));
     // 12 bytes are written.
     return 12;
 }
