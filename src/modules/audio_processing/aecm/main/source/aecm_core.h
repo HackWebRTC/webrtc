@@ -99,6 +99,11 @@
 
 extern const WebRtc_Word16 WebRtcAecm_kSqrtHanning[];
 
+typedef struct {
+    WebRtc_Word16 real;
+    WebRtc_Word16 imag;
+} complex16_t;
+
 typedef struct
 {
     int farBufWritePos;
@@ -142,9 +147,9 @@ typedef struct
     WebRtc_Word16 channelStored_buf[PART_LEN1 + 8];
     WebRtc_Word16 channelAdapt16_buf[PART_LEN1 + 8];
     WebRtc_Word32 channelAdapt32_buf[PART_LEN1 + 8];
-    WebRtc_Word16 xBuf_buf[PART_LEN2 + 8]; // farend
-    WebRtc_Word16 dBufClean_buf[PART_LEN2 + 8]; // nearend
-    WebRtc_Word16 dBufNoisy_buf[PART_LEN2 + 8]; // nearend
+    WebRtc_Word16 xBuf_buf[PART_LEN2 + 16]; // farend
+    WebRtc_Word16 dBufClean_buf[PART_LEN2 + 16]; // nearend
+    WebRtc_Word16 dBufNoisy_buf[PART_LEN2 + 16]; // nearend
     WebRtc_Word16 outBuf_buf[PART_LEN + 8];
 
     // Pointers to the above buffers
@@ -326,9 +331,7 @@ void WebRtcAecm_FetchFarFrame(AecmCore_t * const aecm, WebRtc_Word16 * const far
 // Some internal functions shared by ARM NEON and generic C code:
 //
 
-WebRtc_Word16 WebRtcAecm_CalcSuppressionGain(AecmCore_t * aecm);
-
-void WebRtcAecm_CalcLinearEnergies(AecmCore_t *aecm,
+void WebRtcAecm_CalcLinearEnergies(AecmCore_t* aecm,
                                    const WebRtc_UWord16* far_spectrum,
                                    WebRtc_Word32* echoEst,
                                    WebRtc_UWord32* far_energy,
@@ -341,8 +344,15 @@ void WebRtcAecm_StoreAdaptiveChannel(AecmCore_t* aecm,
 
 void WebRtcAecm_ResetAdaptiveChannel(AecmCore_t *aecm);
 
-void WebRtcAecm_PrepareFft(WebRtc_Word16* fft,
-                           const WebRtc_Word16* time_signal,
-                           int time_signal_scaling);
+void WebRtcAecm_WindowAndFFT(WebRtc_Word16* fft,
+                             const WebRtc_Word16* time_signal,
+                             complex16_t* freq_signal,
+                             int time_signal_scaling);
+
+void WebRtcAecm_InverseFFTAndWindow(AecmCore_t* aecm,
+                                    WebRtc_Word16* fft,
+                                    complex16_t* efw,
+                                    WebRtc_Word16* output,
+                                    const WebRtc_Word16* nearendClean);
 
 #endif
