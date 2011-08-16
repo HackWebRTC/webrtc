@@ -62,8 +62,9 @@ Resampler::Resampler(int inFreq, int outFreq, ResamplerType type)
     slave_left_ = NULL;
     slave_right_ = NULL;
 
-    int res = Reset(inFreq, outFreq, type);
-
+    // TODO(andrew): looks like this class should use an init method
+    //   (and possibly a static create).
+    Reset(inFreq, outFreq, type);
 }
 
 Resampler::~Resampler()
@@ -185,7 +186,8 @@ int Resampler::Reset(int inFreq, int outFreq, ResamplerType type)
     if ((my_type_ & 0xf0) == 0x20)
     {
         // Change type to mono
-        type = (ResamplerType)((int)type & 0x0f + 0x10);
+        type = static_cast<ResamplerType>(
+            ((static_cast<int>(type) & 0x0f) + 0x10));
         slave_left_ = new Resampler(inFreq, outFreq, type);
         slave_right_ = new Resampler(inFreq, outFreq, type);
     }

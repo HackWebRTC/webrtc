@@ -21,6 +21,8 @@
 namespace webrtc
 {
 
+// TODO(andrew): the implementation depends on the exact values of this enum.
+//   It should be rewritten in a less fragile way.
 enum ResamplerType
 {
     // 4 MSB = Number of channels
