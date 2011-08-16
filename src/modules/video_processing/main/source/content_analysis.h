@@ -60,7 +60,7 @@ private:
     typedef WebRtc_Word32 (VPMContentAnalysis::*ComputeSpatialMetricsFunc)();
     ComputeSpatialMetricsFunc ComputeSpatialMetrics;
     WebRtc_Word32 ComputeSpatialMetrics_C();
-#if defined(__SSE2__)
+#if defined(WEBRTC_USE_SSE2)
     WebRtc_Word32 ComputeSpatialMetrics_SSE2();
 #endif
 

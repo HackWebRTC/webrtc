@@ -13,7 +13,9 @@
 
 #include <math.h>
 #include <stdlib.h>
+#if defined(WEBRTC_USE_SSE2)
 #include <xmmintrin.h>
+#endif
 namespace webrtc {
 
 VPMContentAnalysis::VPMContentAnalysis(bool RTCD):
@@ -40,7 +42,7 @@ _cMetrics(NULL)
     {
         if(WebRtc_GetCPUInfo(kSSE2))
         {
-#if defined(__SSE2__)
+#if defined(WEBRTC_USE_SSE2)
             ComputeSpatialMetrics =
                           &VPMContentAnalysis::ComputeSpatialMetrics_SSE2;
 #endif
@@ -343,7 +345,7 @@ VPMContentAnalysis::ComputeSpatialMetrics_C()
     return VPM_OK;
 }
 
-#if defined(__SSE2__)
+#if defined(WEBRTC_USE_SSE2)
 WebRtc_Word32
 VPMContentAnalysis::ComputeSpatialMetrics_SSE2()
 {
@@ -510,7 +512,7 @@ VPMContentAnalysis::ComputeSpatialMetrics_SSE2()
 
     return VPM_OK;
 }
-#endif
+#endif // #if defined(WEBRTC_USE_SSE2)
 
 VideoContentMetrics*
 VPMContentAnalysis::ContentMetrics()
