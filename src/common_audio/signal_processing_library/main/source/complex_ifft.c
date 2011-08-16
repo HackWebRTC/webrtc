@@ -110,21 +110,38 @@ int WebRtcSpl_ComplexIFFT(WebRtc_Word16 frfi[], int stages, int mode)
                 wr = WebRtcSpl_kSinTable1024[j + 256];
                 wi = WebRtcSpl_kSinTable1024[j];
 
+#ifdef WEBRTC_ARCH_ARM_V7A
+                WebRtc_Word32 wri;
+                WebRtc_Word32 frfi_r;
+                __asm__("pkhbt %0, %1, %2, lsl #16" : "=r"(wri) :
+                    "r"((WebRtc_Word32)wr), "r"((WebRtc_Word32)wi));
+#endif
+
                 for (i = m; i < n; i += istep)
                 {
                     j = i + l;
 
-                    tr32 = WEBRTC_SPL_RSHIFT_W32((WEBRTC_SPL_MUL_16_16_RSFT(wr, frfi[2 * j], 0)
-                            - WEBRTC_SPL_MUL_16_16_RSFT(wi, frfi[2 * j + 1], 0) + CIFFTRND),
-                            15 - CIFFTSFT);
+#ifdef WEBRTC_ARCH_ARM_V7A
+                    __asm__("pkhbt %0, %1, %2, lsl #16" : "=r"(frfi_r) :
+                        "r"((WebRtc_Word32)frfi[2*j]), "r"((WebRtc_Word32)frfi[2*j +1]));
+                    __asm__("smlsd %0, %1, %2, %3" : "=r"(tr32) :
+                        "r"(wri), "r"(frfi_r), "r"(CIFFTRND));
+                    __asm__("smladx %0, %1, %2, %3" : "=r"(ti32) :
+                        "r"(wri), "r"(frfi_r), "r"(CIFFTRND));
+#else
 
-                    ti32 = WEBRTC_SPL_RSHIFT_W32(
-                                    (WEBRTC_SPL_MUL_16_16_RSFT(wr, frfi[2 * j + 1], 0)
-                                            + WEBRTC_SPL_MUL_16_16_RSFT(wi, frfi[2 * j], 0)
-                                            + CIFFTRND), 15 - CIFFTSFT);
+                    tr32 = WEBRTC_SPL_MUL_16_16(wr, frfi[2 * j])
+                            - WEBRTC_SPL_MUL_16_16(wi, frfi[2 * j + 1]) + CIFFTRND;
 
+                    ti32 = WEBRTC_SPL_MUL_16_16(wr, frfi[2 * j + 1])
+                            + WEBRTC_SPL_MUL_16_16(wi, frfi[2 * j]) + CIFFTRND;
+#endif
+                    tr32 = WEBRTC_SPL_RSHIFT_W32(tr32, 15 - CIFFTSFT);
+                    ti32 = WEBRTC_SPL_RSHIFT_W32(ti32, 15 - CIFFTSFT);
+    
                     qr32 = ((WebRtc_Word32)frfi[2 * i]) << CIFFTSFT;
                     qi32 = ((WebRtc_Word32)frfi[2 * i + 1]) << CIFFTSFT;
+    
                     frfi[2 * j] = (WebRtc_Word16)WEBRTC_SPL_RSHIFT_W32((qr32 - tr32+round2),
                                                                        shift+CIFFTSFT);
                     frfi[2 * j + 1] = (WebRtc_Word16)WEBRTC_SPL_RSHIFT_W32(
