@@ -57,11 +57,11 @@ void FileRecorder::DestroyFileRecorder(FileRecorder* recorder)
 
 FileRecorderImpl::FileRecorderImpl(WebRtc_UWord32 instanceID,
                                    FileFormats fileFormat)
-    : _fileFormat(fileFormat),
-      _instanceID(instanceID),
-      _audioEncoder(instanceID),
+    : _instanceID(instanceID),
+      _fileFormat(fileFormat),
+      _moduleFile(MediaFile::CreateMediaFile(_instanceID)),
       _amrFormat(AMRFileStorage),
-      _moduleFile(MediaFile::CreateMediaFile(_instanceID))
+      _audioEncoder(instanceID)
 {
 }
 
@@ -348,8 +348,8 @@ class AudioFrameFileInfo
 
 AviRecorder::AviRecorder(WebRtc_UWord32 instanceID, FileFormats fileFormat)
     : FileRecorderImpl(instanceID, fileFormat),
-      _thread( 0),
       _videoOnly(false),
+      _thread( 0),
       _timeEvent(*EventWrapper::Create()),
       _critSec(*CriticalSectionWrapper::CreateCriticalSection()),
       _writtenVideoFramesCounter(0),
