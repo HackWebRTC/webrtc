@@ -17,22 +17,29 @@
 
 namespace webrtc {
 CpuLinux::CpuLinux()
-{
-    m_oldBusyTime = 0;
-    m_oldIdleTime = 0;
-    m_numCores = 0;
-    m_numCores = GetNumCores();
-    m_oldBusyTimeMulti = new long long[m_numCores];
-    memset(m_oldBusyTimeMulti, 0, sizeof(long long) * m_numCores);
-    m_oldIdleTimeMulti = new long long[m_numCores];
-    memset(m_oldIdleTimeMulti, 0, sizeof(long long) * m_numCores);
-    m_idleArray = new long long[m_numCores];
-    memset(m_idleArray, 0, sizeof(long long) * m_numCores);
-    m_busyArray = new long long[m_numCores];
-    memset(m_busyArray, 0, sizeof(long long) * m_numCores);
-    m_resultArray = new WebRtc_UWord32[m_numCores];
+    : m_oldBusyTime(0),
+      m_oldIdleTime(0),
+      m_oldBusyTimeMulti(NULL),
+      m_oldIdleTimeMulti(NULL),
+      m_idleArray(NULL),
+      m_busyArray(NULL),
+      m_resultArray(NULL),
+      m_numCores(0) {
+    const int result = GetNumCores();
+    if (result != -1) {
+      m_numCores = result;
+      m_oldBusyTimeMulti = new long long[m_numCores];
+      memset(m_oldBusyTimeMulti, 0, sizeof(long long) * m_numCores);
+      m_oldIdleTimeMulti = new long long[m_numCores];
+      memset(m_oldIdleTimeMulti, 0, sizeof(long long) * m_numCores);
+      m_idleArray = new long long[m_numCores];
+      memset(m_idleArray, 0, sizeof(long long) * m_numCores);
+      m_busyArray = new long long[m_numCores];
+      memset(m_busyArray, 0, sizeof(long long) * m_numCores);
+      m_resultArray = new WebRtc_UWord32[m_numCores];
 
-    GetData(m_oldBusyTime, m_oldIdleTime, m_busyArray, m_idleArray);
+      GetData(m_oldBusyTime, m_oldIdleTime, m_busyArray, m_idleArray);
+    }
 }
 
 CpuLinux::~CpuLinux()
