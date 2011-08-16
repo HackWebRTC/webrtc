@@ -361,7 +361,7 @@ TEST(ListWrapperTest,PopTest) {
     ASSERT_FALSE(ascending_list->Empty());
     EXPECT_EQ(0,ascending_list->PopFront());
     EXPECT_EQ(1,ascending_list->GetUnsignedItem(ascending_list->First()));
-    
+
     EXPECT_EQ(0,ascending_list->PopBack());
     EXPECT_EQ(kNumberOfElements - 2,ascending_list->GetUnsignedItem(
               ascending_list->Last()));
@@ -408,7 +408,7 @@ TEST(ListWrapperTest,InterLeaveTest) {
         }
         --insert_position;
     }
-    
+
     ListWrapperSimple* interleaved_list = CreateInterleavedList(rand()%2);
     ASSERT_FALSE(interleaved_list == NULL);
     ASSERT_FALSE(interleaved_list->Empty());
