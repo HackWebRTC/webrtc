@@ -17,8 +17,7 @@
 
 #include "typedefs.h"
 #include "module_common_types.h"
-
-#include "spatial_resampler.h"
+#include "video_processing_defines.h"
 
 namespace webrtc {
 
@@ -50,7 +49,9 @@ private:
     VideoContentMetrics* ContentMetrics();
 
     // Normalized temporal difference metric: for motion magnitude
-    WebRtc_Word32 TemporalDiffMetric();
+    typedef WebRtc_Word32 (VPMContentAnalysis::*TemporalDiffMetricFunc)();
+    TemporalDiffMetricFunc TemporalDiffMetric;
+    WebRtc_Word32 TemporalDiffMetric_C();
 
     // Motion metric method: call 2 metrics (magnitude and size)
     WebRtc_Word32 ComputeMotionMetrics();
@@ -60,15 +61,18 @@ private:
     typedef WebRtc_Word32 (VPMContentAnalysis::*ComputeSpatialMetricsFunc)();
     ComputeSpatialMetricsFunc ComputeSpatialMetrics;
     WebRtc_Word32 ComputeSpatialMetrics_C();
+
 #if defined(WEBRTC_USE_SSE2)
     WebRtc_Word32 ComputeSpatialMetrics_SSE2();
+    WebRtc_Word32 TemporalDiffMetric_SSE2();
 #endif
 
     const WebRtc_UWord8*       _origFrame;
     WebRtc_UWord8*             _prevFrame;
     WebRtc_UWord16             _width;
     WebRtc_UWord16             _height;
-    WebRtc_UWord32            _skipNum;
+    WebRtc_UWord32             _skipNum;
+    WebRtc_Word32              _border;
 
     // Content Metrics:
     // stores the local average of the metrics
