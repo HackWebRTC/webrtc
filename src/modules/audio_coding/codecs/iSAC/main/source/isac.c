@@ -1104,7 +1104,7 @@ WebRtc_Word16 WebRtcIsac_DecoderInit(
 	}
     }
 
-  if((instISAC->initFlag && BIT_MASK_ENC_INIT) !=
+  if((instISAC->initFlag & BIT_MASK_ENC_INIT) !=
      BIT_MASK_ENC_INIT)
     {
       WebRtcIsac_InitBandwidthEstimator(&instISAC->bwestimator_obj,

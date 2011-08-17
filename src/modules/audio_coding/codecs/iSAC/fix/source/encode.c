@@ -261,7 +261,7 @@ int WebRtcIsacfix_EncodeImpl(WebRtc_Word16      *in,
     // then the limit at this point should be half of the assigned value
     payloadLimitBytes = ISACenc_obj->payloadLimitBytes60 >> 1;
   }
-  else if ((frame_mode == 0))
+  else if (frame_mode == 0)
   {
     // it is a 30ms frame
     payloadLimitBytes = (ISACenc_obj->payloadLimitBytes30) - 3;
@@ -492,7 +492,6 @@ int WebRtcIsacfix_EncodeStoredData(ISACFIX_EncInst_t  *ISACenc_obj,
   int status;
   WebRtc_Word16 BWno = BWnumber;
   int stream_length = 0;
-  int usefulstr_len;
 
   WebRtc_Word16 model;
   const WebRtc_UWord16 *Q_PitchGain_cdf_ptr[1];
