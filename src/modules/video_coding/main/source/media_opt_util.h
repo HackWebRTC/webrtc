@@ -136,12 +136,12 @@ public:
     // Extracts whether the FEC Unequal protection (UEP) is used for Key frame.
     //
     // Return value                 : Required Unequal protection on/off state.
-    virtual WebRtc_UWord8 RequiredUepProtectionK() { return _useUepProtectionK; }
+    virtual bool RequiredUepProtectionK() { return _useUepProtectionK; }
 
     // Extracts whether the the FEC Unequal protection (UEP) is used for Delta frame.
     //
     // Return value                 : Required Unequal protection on/off state.
-    virtual WebRtc_UWord8 RequiredUepProtectionD() { return _useUepProtectionD; }
+    virtual bool RequiredUepProtectionD() { return _useUepProtectionD; }
 
     // Updates content metrics
     void UpdateContentMetrics(const VideoContentMetrics* contentMetrics);
