@@ -3270,7 +3270,8 @@ DWORD AudioDeviceWindowsCore::DoRenderThread()
     // Typical value: 100000 <=> 0.01 sec = 10ms.
     //
     REFERENCE_TIME devPeriod = 0;
-    _ptrClientOut->GetDevicePeriod(&devPeriod, NULL);
+    REFERENCE_TIME devPeriodMin = 0;
+    _ptrClientOut->GetDevicePeriod(&devPeriod, &devPeriodMin);
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "[REND] device period        : %u (%3.2f ms)",
         (DWORD)devPeriod, (double)(devPeriod/10000.0));
 
@@ -3546,7 +3547,8 @@ DWORD AudioDeviceWindowsCore::DoCaptureThread()
     // the audio engine on the data in the endpoint buffer.
     //
     REFERENCE_TIME devPeriod = 0;
-    _ptrClientIn->GetDevicePeriod(&devPeriod, NULL);
+    REFERENCE_TIME devPeriodMin = 0;
+    _ptrClientIn->GetDevicePeriod(&devPeriod, &devPeriodMin);
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "[CAPT] device period        : %u (%3.2f ms)",
         (DWORD)devPeriod, (double)(devPeriod / 10000.0));
 
