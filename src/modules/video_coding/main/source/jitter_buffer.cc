@@ -1702,13 +1702,12 @@ VCMJitterBuffer::InsertPacket(VCMEncodedFrame* buffer, const VCMPacket& packet)
                 frame->IncrementNackCount();
             }
 
-            // First packet of a frame
-            if (state == kStateEmpty)
+            // Insert each frame once on the arrival of the first packet
+            // belonging to that frame (media or empty)
+            if (state == kStateEmpty &&
+                frame->GetHighSeqNum() == packet.seqNum)
             {
-                if (bufferReturn > 0)
-                {
-                    ret = kFirstPacket;
-                }
+                ret = kFirstPacket;
                 _frameBuffersTSOrder.Insert(frame);
             }
         }
@@ -1857,7 +1856,7 @@ VCMJitterBuffer::RecycleFramesUntilKeyFrame()
             oldestFrame = oldestFrameListItem->GetItem();
         }
 
-        if(oldestFrame != NULL)
+        if (oldestFrame != NULL)
         {
             foundIFrame = foundIFrame ||
                           (oldestFrame->FrameType() != kVideoFrameDelta);

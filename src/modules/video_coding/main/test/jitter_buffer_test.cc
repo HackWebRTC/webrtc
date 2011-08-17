@@ -1903,7 +1903,7 @@ int JitterBufferTest(CmdArgs& args)
     packet.seqNum = seqNum;
     packet.timestamp = timeStamp;
     packet.frameType = kVideoFrameDelta;
-    TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
+    TEST(kIncomplete == jb.InsertPacket(frameIn, packet));
     // insert an additional data packet
     seqNum = 2;
     packet.isFirstPacket = false;
