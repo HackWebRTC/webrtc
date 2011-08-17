@@ -48,6 +48,7 @@ public:
                                         // first
                                         // byte should be ORed with the last packet of the
                                         // previous frame.
+    const RTPVideoHeader *codecSpecificHeader;
 
 protected:
     void CopyCodecSpecifics(const RTPVideoHeader& videoHeader);

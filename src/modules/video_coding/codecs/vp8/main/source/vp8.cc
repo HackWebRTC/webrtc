@@ -689,7 +689,7 @@ VP8Decoder::InitDecode(const VideoCodec* inst,
 WebRtc_Word32
 VP8Decoder::Decode(const EncodedImage& inputImage,
                    bool missingFrames,
-                   const void* /*codecSpecificInfo*/,
+                   const CodecSpecificInfo* /*codecSpecificInfo*/,
                    WebRtc_Word64 /*renderTimeMs*/)
  {
     if (!_inited)

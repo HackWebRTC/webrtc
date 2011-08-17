@@ -154,6 +154,9 @@ VCMFrameBuffer::InsertPacket(const VCMPacket& packet, WebRtc_Word64 timeInMs)
             return kSizeError;
         }
     }
+
+    CopyCodecSpecific(packet.codecSpecificHeader);
+
     WebRtc_Word64 retVal = _sessionInfo.InsertPacket(packet, _buffer);
     if (retVal == -1)
     {

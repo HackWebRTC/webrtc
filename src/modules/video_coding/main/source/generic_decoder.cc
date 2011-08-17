@@ -157,7 +157,7 @@ WebRtc_Word32 VCMGenericDecoder::Decode(const VCMEncodedFrame& frame)
 
     WebRtc_Word32 ret = _decoder.Decode(frame.EncodedImage(),
                                         frame.MissingFrame(),
-                                        frame.CodecSpecificInfo(),
+                                        frame.CodecSpecific(),
                                         frame.RenderTimeMs());
 
     if (ret < WEBRTC_VIDEO_CODEC_OK)
@@ -200,4 +200,4 @@ bool VCMGenericDecoder::External() const
     return _isExternal;
 }
 
-}
+} // namespace

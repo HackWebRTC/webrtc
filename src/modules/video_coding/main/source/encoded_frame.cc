@@ -21,10 +21,9 @@ webrtc::EncodedImage(),
 _renderTimeMs(-1),
 _payloadType(0),
 _missingFrame(false),
-_codecSpecificInfo(NULL),
-_codecSpecificInfoLength(0),
 _codec(kVideoCodecUnknown)
 {
+    _codecSpecificInfo.codecType = kVideoCodecUnknown;
 }
 
 VCMEncodedFrame::VCMEncodedFrame(const webrtc::EncodedImage& rhs)
@@ -33,10 +32,9 @@ webrtc::EncodedImage(rhs),
 _renderTimeMs(-1),
 _payloadType(0),
 _missingFrame(false),
-_codecSpecificInfo(NULL),
-_codecSpecificInfoLength(0),
 _codec(kVideoCodecUnknown)
 {
+    _codecSpecificInfo.codecType = kVideoCodecUnknown;
     _buffer = NULL;
     _size = 0;
     _length = 0;
@@ -53,8 +51,7 @@ webrtc::EncodedImage(rhs),
 _renderTimeMs(rhs._renderTimeMs),
 _payloadType(rhs._payloadType),
 _missingFrame(rhs._missingFrame),
-_codecSpecificInfo(NULL),
-_codecSpecificInfoLength(0),
+_codecSpecificInfo(rhs._codecSpecificInfo),
 _codec(rhs._codec)
 {
     _buffer = NULL;
@@ -87,15 +84,46 @@ void VCMEncodedFrame::Reset()
     _renderTimeMs = -1;
     _timeStamp = 0;
     _payloadType = 0;
-    _codecSpecificInfo = NULL;
-    _codecSpecificInfoLength = 0;
     _frameType = kDeltaFrame;
     _encodedWidth = 0;
     _encodedHeight = 0;
     _completeFrame = false;
     _missingFrame = false;
     _length = 0;
+    _codecSpecificInfo.codecType = kVideoCodecUnknown;
     _codec = kVideoCodecUnknown;
+}
+
+void VCMEncodedFrame::CopyCodecSpecific(const RTPVideoHeader* header)
+{
+    if (header)
+    {
+        switch (header->codec)
+        {
+            case kRTPVideoVP8:
+            {
+                if (_codecSpecificInfo.codecType != kVideoCodecVP8)
+                {
+                    // This is the first packet for this frame.
+                    _codecSpecificInfo.codecSpecific.VP8.pictureId = -1;
+                    _codecSpecificInfo.codecType = kVideoCodecVP8;
+                }
+                _codecSpecificInfo.codecSpecific.VP8.nonReference =
+                    header->codecHeader.VP8.nonReference;
+                if (header->codecHeader.VP8.pictureId != kNoPictureId)
+                {
+                    _codecSpecificInfo.codecSpecific.VP8.pictureId =
+                        header->codecHeader.VP8.pictureId;
+                }
+                break;
+            }
+            default:
+            {
+                _codecSpecificInfo.codecType = kVideoCodecUnknown;
+                break;
+            }
+        }
+    }
 }
 
 WebRtc_Word32

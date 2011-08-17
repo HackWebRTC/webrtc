@@ -21,6 +21,8 @@ namespace webrtc
 
 class RTPFragmentationHeader; // forward declaration
 
+// Note: if any pointers are added to this struct, it must be fitted
+// with a copy-constructor. See below.
 struct CodecSpecificInfoVP8
 {
     bool             hasReceivedSLI;
@@ -36,6 +38,9 @@ union CodecSpecificInfoUnion
     CodecSpecificInfoVP8       VP8;
 };
 
+// Note: if any pointers are added to this struct or its sub-structs, it
+// must be fitted with a copy-constructor. This is because it is copied
+// in the copy-constructor of VCMEncodedFrame.
 struct CodecSpecificInfo
 {
     VideoCodecType   codecType;
@@ -201,7 +206,11 @@ public:
     //                                used by decoders with internal rendering.
     //
     // Return value                 : WEBRTC_VIDEO_CODEC_OK if OK, < 0 otherwise.
-    virtual WebRtc_Word32 Decode(const EncodedImage& inputImage, bool missingFrames, const void* codecSpecificInfo = NULL, WebRtc_Word64 renderTimeMs = -1) = 0;
+    virtual WebRtc_Word32
+    Decode(const EncodedImage& inputImage,
+           bool missingFrames,
+           const CodecSpecificInfo* codecSpecificInfo = NULL,
+           WebRtc_Word64 renderTimeMs = -1) = 0;
 
     // Register an decode complete callback object.
     //

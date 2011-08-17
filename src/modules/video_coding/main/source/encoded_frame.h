@@ -13,6 +13,7 @@
 
 #include "module_common_types.h"
 #include "common_types.h"
+#include "video_codec_interface.h"
 #include "video_coding_defines.h"
 #include "video_image.h"
 
@@ -79,9 +80,12 @@ public:
     */
     WebRtc_UWord8 PayloadType() const { return _payloadType; }
     /**
-    *   Get codec specific info
+    *   Get codec specific info.
+    *   The returned pointer is only valid as long as the VCMEncodedFrame
+    *   is valid. Also, VCMEncodedFrame owns the pointer and will delete
+    *   the object.
     */
-    const void* CodecSpecificInfo() const {return _codecSpecificInfo;}
+    const CodecSpecificInfo* CodecSpecific() const {return &_codecSpecificInfo;}
 
     WebRtc_Word32 Store(VCMFrameStorageCallback& storeCallback) const;
 
@@ -99,11 +103,12 @@ protected:
 
     void Reset();
 
+    void CopyCodecSpecific(const RTPVideoHeader* header);
+
     WebRtc_Word64                 _renderTimeMs;
     WebRtc_UWord8                 _payloadType;
     bool                          _missingFrame;
-    void*                         _codecSpecificInfo;
-    WebRtc_UWord32                _codecSpecificInfoLength;
+    CodecSpecificInfo             _codecSpecificInfo;
     webrtc::VideoCodecType        _codec;
 };
 
