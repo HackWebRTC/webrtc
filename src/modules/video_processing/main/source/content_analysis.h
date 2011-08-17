@@ -31,7 +31,7 @@ public:
     //  extractContentFeature
     // Inputs:         width, height
     // Return value:   0 if OK, negative value upon error
-    WebRtc_Word32 Initialize( WebRtc_UWord16 width,  WebRtc_UWord16 height);
+    WebRtc_Word32 Initialize(WebRtc_UWord16 width, WebRtc_UWord16 height);
 
     // Extract content Feature - main function of ContentAnalysis
     // Input:           new frame

@@ -24,6 +24,7 @@ _prevFrame(NULL),
 _width(0),
 _height(0),
 _skipNum(1),
+_border(8),
 _motionMagnitudeNZ(0.0f),
 _spatialPredErr(0.0f),
 _spatialPredErrH(0.0f),
@@ -37,6 +38,7 @@ _CAInit(false),
 _cMetrics(NULL)
 {
     ComputeSpatialMetrics = &VPMContentAnalysis::ComputeSpatialMetrics_C;
+    TemporalDiffMetric = &VPMContentAnalysis::TemporalDiffMetric_C;
 
     if (RTCD)
     {
@@ -45,6 +47,7 @@ _cMetrics(NULL)
 #if defined(WEBRTC_USE_SSE2)
             ComputeSpatialMetrics =
                           &VPMContentAnalysis::ComputeSpatialMetrics_SSE2;
+            TemporalDiffMetric = &VPMContentAnalysis::TemporalDiffMetric_SSE2;
 #endif
         }
     }
@@ -180,7 +183,7 @@ VPMContentAnalysis::ComputeMotionMetrics()
 
     // Motion metrics: only one is derived from normalized
     //  (MAD) temporal difference
-    TemporalDiffMetric();
+    (this->*TemporalDiffMetric)();
 
     return VPM_OK;
 }
@@ -190,46 +193,24 @@ VPMContentAnalysis::ComputeMotionMetrics()
 //  (pixel variance) likely have larger temporal difference
 // To reduce complexity, we compute the metric for a reduced set of points.
 WebRtc_Word32
-VPMContentAnalysis::TemporalDiffMetric()
+VPMContentAnalysis::TemporalDiffMetric_C()
 {
-
     // size of original frame
     WebRtc_UWord16 sizei = _height;
     WebRtc_UWord16 sizej = _width;
 
-    // Use the member variable _skipNum later when this gets
-    // optimized
-    // skip parameter: # of skipped rows: for complexity reduction
-    //  temporal also currently uses it for column reduction.
-    WebRtc_UWord32 skipNum = 1;
-
-    // use skipNum = 2 for 4CIF, WHD
-    if ( (_height >=  576) && (_width >= 704) )
-    {
-        skipNum = 2;
-    }
-    // use skipNum = 3 for FULLL_HD images
-    if ( (_height >=  1080) && (_width >= 1920) )
-    {
-        skipNum = 3;
-    }
-
-    float contrast = 0.0f;
-    float tempDiffAvg = 0.0f;
-    float pixelSumAvg = 0.0f;
-    float pixelSqSumAvg = 0.0f;
-
     WebRtc_UWord32 tempDiffSum = 0;
     WebRtc_UWord32 pixelSum = 0;
-    WebRtc_UWord32 pixelSqSum = 0;
+    WebRtc_UWord64 pixelSqSum = 0;
 
-    WebRtc_UWord8 bord = 8;       // avoid boundary
     WebRtc_UWord32 numPixels = 0; // counter for # of pixels
     WebRtc_UWord32 ssn;
 
-    for(WebRtc_UWord16 i = bord; i < sizei - bord; i += skipNum)
+    const WebRtc_Word32 width_end = ((_width - 2*_border) & -16) + _border;
+
+    for(WebRtc_UWord16 i = _border; i < sizei - _border; i += _skipNum)
     {
-        for(WebRtc_UWord16 j = bord; j < sizej - bord; j += skipNum)
+        for(WebRtc_UWord16 j = _border; j < width_end; j++)
         {
             numPixels += 1;
             ssn =  i * sizej + j;
@@ -239,8 +220,8 @@ VPMContentAnalysis::TemporalDiffMetric()
 
             tempDiffSum += (WebRtc_UWord32)
                             abs((WebRtc_Word16)(currPixel - prevPixel));
-            pixelSum += (WebRtc_UWord32) _origFrame[ssn];
-            pixelSqSum += (WebRtc_UWord32) (_origFrame[ssn] * _origFrame[ssn]);
+            pixelSum += (WebRtc_UWord32) currPixel;
+            pixelSqSum += (WebRtc_UWord64) (currPixel * currPixel);
         }
     }
 
@@ -253,10 +234,10 @@ VPMContentAnalysis::TemporalDiffMetric()
     }
 
     // normalize over all pixels
-    tempDiffAvg = (float)tempDiffSum / (float)(numPixels);
-    pixelSumAvg = (float)pixelSum / (float)(numPixels);
-    pixelSqSumAvg = (float)pixelSqSum / (float)(numPixels);
-    contrast = pixelSqSumAvg - (pixelSumAvg * pixelSumAvg);
+    float const tempDiffAvg = (float)tempDiffSum / (float)(numPixels);
+    float const pixelSumAvg = (float)pixelSum / (float)(numPixels);
+    float const pixelSqSumAvg = (float)pixelSqSum / (float)(numPixels);
+    float contrast = pixelSqSumAvg - (pixelSumAvg * pixelSumAvg);
 
     if (contrast > 0.0)
     {
@@ -268,6 +249,109 @@ VPMContentAnalysis::TemporalDiffMetric()
 
 }
 
+#if defined(WEBRTC_USE_SSE2)
+WebRtc_Word32
+VPMContentAnalysis::TemporalDiffMetric_SSE2()
+{
+    WebRtc_UWord32 numPixels = 0;       // counter for # of pixels
+
+    const WebRtc_UWord8* imgBufO = _origFrame + _border*_width + _border;
+    const WebRtc_UWord8* imgBufP = _prevFrame + _border*_width + _border;
+
+    const WebRtc_Word32 width_end = ((_width - 2*_border) & -16) + _border;
+
+    __m128i sad_64   = _mm_setzero_si128();
+    __m128i sum_64   = _mm_setzero_si128();
+    __m128i sqsum_64 = _mm_setzero_si128();
+    const __m128i z  = _mm_setzero_si128();
+
+    for(WebRtc_UWord16 i = 0; i < (_height - 2*_border); i += _skipNum)
+    {
+        __m128i sqsum_32  = _mm_setzero_si128();
+
+        const WebRtc_UWord8 *lineO = imgBufO;
+        const WebRtc_UWord8 *lineP = imgBufP;
+
+        // Work on 16 pixels at a time.  For HD content with a width of 1920
+        // this loop will run ~67 times (depending on border).  Maximum for
+        // abs(o-p) and sum(o) will be 255. _mm_sad_epu8 produces 2 64 bit
+        // results which are then accumulated.  There is no chance of
+        // rollover for these two accumulators.
+        // o*o will have a maximum of 255*255 = 65025.  This will roll over
+        // a 16 bit accumulator as 67*65025 > 65535, but will fit in a
+        // 32 bit accumulator.
+        for(WebRtc_UWord16 j = 0; j < width_end - _border; j += 16)
+        {
+            const __m128i o = _mm_loadu_si128((__m128i*)(lineO));
+            const __m128i p = _mm_loadu_si128((__m128i*)(lineP));
+
+            lineO += 16;
+            lineP += 16;
+
+            // abs pixel difference between frames
+            sad_64 = _mm_add_epi64 (sad_64, _mm_sad_epu8(o, p));
+
+            // sum of all pixels in frame
+            sum_64 = _mm_add_epi64 (sum_64, _mm_sad_epu8(o, z));
+
+            // squared sum of all pixels in frame
+            const __m128i olo = _mm_unpacklo_epi8(o,z);
+            const __m128i ohi = _mm_unpackhi_epi8(o,z);
+
+            const __m128i sqsum_32_lo = _mm_madd_epi16(olo, olo);
+            const __m128i sqsum_32_hi = _mm_madd_epi16(ohi, ohi);
+
+            sqsum_32 = _mm_add_epi32(sqsum_32, sqsum_32_lo);
+            sqsum_32 = _mm_add_epi32(sqsum_32, sqsum_32_hi);
+        }
+
+        // Add to 64 bit running sum as to not roll over.
+        sqsum_64 = _mm_add_epi64(sqsum_64,
+                                _mm_add_epi64(_mm_unpackhi_epi32(sqsum_32,z),
+                                              _mm_unpacklo_epi32(sqsum_32,z)));
+
+        imgBufO += _width * _skipNum;
+        imgBufP += _width * _skipNum;
+        numPixels += (width_end - _border);
+    }
+
+    WebRtc_Word64 sad_final_64[2];
+    WebRtc_Word64 sum_final_64[2];
+    WebRtc_Word64 sqsum_final_64[2];
+
+    // bring sums out of vector registers and into integer register
+    // domain, summing them along the way
+    _mm_store_si128 ((__m128i*)sad_final_64, sad_64);
+    _mm_store_si128 ((__m128i*)sum_final_64, sum_64);
+    _mm_store_si128 ((__m128i*)sqsum_final_64, sqsum_64);
+
+    const WebRtc_UWord32 pixelSum = sum_final_64[0] + sum_final_64[1];
+    const WebRtc_UWord64 pixelSqSum = sqsum_final_64[0] + sqsum_final_64[1];
+    const WebRtc_UWord32 tempDiffSum = sad_final_64[0] + sad_final_64[1];
+
+    // default
+    _motionMagnitudeNZ = 0.0f;
+
+    if (tempDiffSum == 0)
+    {
+        return VPM_OK;
+    }
+
+    // normalize over all pixels
+    const float tempDiffAvg = (float)tempDiffSum / (float)(numPixels);
+    const float pixelSumAvg = (float)pixelSum / (float)(numPixels);
+    const float pixelSqSumAvg = (float)pixelSqSum / (float)(numPixels);
+    float contrast = pixelSqSumAvg - (pixelSumAvg * pixelSumAvg);
+
+    if (contrast > 0.0)
+    {
+        contrast = sqrt(contrast);
+       _motionMagnitudeNZ = tempDiffAvg/contrast;
+    }
+
+    return VPM_OK;
+}
+#endif
 
 // Compute spatial metrics:
 // To reduce complexity, we compute the metric for a reduced set of points.
@@ -286,18 +370,16 @@ VPMContentAnalysis::ComputeSpatialMetrics_C()
     // pixel mean square average: used to normalize the spatial metrics
     WebRtc_UWord32 pixelMSA = 0;
 
-    const WebRtc_UWord32 bord = 8; // avoid boundary
-
     WebRtc_UWord32 spatialErrSum = 0;
     WebRtc_UWord32 spatialErrVSum = 0;
     WebRtc_UWord32 spatialErrHSum = 0;
 
     // make sure work section is a multiple of 16
-    const WebRtc_UWord32 width_end = ((sizej - 2*bord) & -16) + bord;
+    const WebRtc_UWord32 width_end = ((sizej - 2*_border) & -16) + _border;
 
-    for(WebRtc_UWord16 i = bord; i < sizei - bord; i += _skipNum)
+    for(WebRtc_UWord16 i = _border; i < sizei - _border; i += _skipNum)
     {
-        for(WebRtc_UWord16 j = bord; j < width_end; j++)
+        for(WebRtc_UWord16 j = _border; j < width_end; j++)
         {
             WebRtc_UWord32 ssn1,ssn2,ssn3,ssn4,ssn5;
 
@@ -349,11 +431,8 @@ VPMContentAnalysis::ComputeSpatialMetrics_C()
 WebRtc_Word32
 VPMContentAnalysis::ComputeSpatialMetrics_SSE2()
 {
-    // avoid boundary
-    const WebRtc_Word32 bord = 8;
-
-    const WebRtc_UWord8* imgBuf = _origFrame + bord*_width;
-    const WebRtc_Word32 width_end = ((_width - 2*bord) & -16) + bord;
+    const WebRtc_UWord8* imgBuf = _origFrame + _border*_width;
+    const WebRtc_Word32 width_end = ((_width - 2*_border) & -16) + _border;
 
     __m128i se_32  = _mm_setzero_si128();
     __m128i sev_32 = _mm_setzero_si128();
@@ -366,7 +445,7 @@ VPMContentAnalysis::ComputeSpatialMetrics_SSE2()
     // value is maxed out at 65529 for every row, 65529*1080 = 70777800, which
     // will not roll over a 32 bit accumulator.
     // _skipNum is also used to reduce the number of rows
-    for(WebRtc_Word32 i = 0; i < (_height - 2*bord); i += _skipNum)
+    for(WebRtc_Word32 i = 0; i < (_height - 2*_border); i += _skipNum)
     {
         __m128i se_16  = _mm_setzero_si128();
         __m128i sev_16 = _mm_setzero_si128();
@@ -380,14 +459,14 @@ VPMContentAnalysis::ComputeSpatialMetrics_SSE2()
         // a point would be abs(0-255+255+255+255) which equals 1020.
         // 120*1020 = 122400.  The probability of hitting this is quite low
         // on well behaved content.  A specially crafted image could roll over.
-        // bord could also be adjusted to concentrate on just the center of
+        // _border could also be adjusted to concentrate on just the center of
         // the images for an HD capture in order to reduce the possiblity of
         // rollover.
-        const WebRtc_UWord8 *lineTop = imgBuf - _width + bord;
-        const WebRtc_UWord8 *lineCen = imgBuf + bord;
-        const WebRtc_UWord8 *lineBot = imgBuf + _width + bord;
+        const WebRtc_UWord8 *lineTop = imgBuf - _width + _border;
+        const WebRtc_UWord8 *lineCen = imgBuf + _border;
+        const WebRtc_UWord8 *lineBot = imgBuf + _width + _border;
 
-        for(WebRtc_Word32 j = 0; j < width_end - bord; j += 16)
+        for(WebRtc_Word32 j = 0; j < width_end - _border; j += 16)
         {
             const __m128i t = _mm_loadu_si128((__m128i*)(lineTop));
             const __m128i l = _mm_loadu_si128((__m128i*)(lineCen - 1));
