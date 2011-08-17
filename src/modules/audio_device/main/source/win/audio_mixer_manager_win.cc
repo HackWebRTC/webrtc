@@ -349,13 +349,15 @@ WebRtc_Word32 AudioMixerManager::EnumerateMicrophones()
                     {
                         // selection now contains the index of the selected source =>
                         // read the line information for this source
-                        if (!GetSourceLineInfo(mixId, destId, selection, sourceLine))
-                        {
-                            return -1;
-                        }
-                        if (sourceLine.cControls == 0                          ||   // no controls
-                           (sourceLine.fdwLine & MIXERLINE_LINEF_DISCONNECTED) ||   // disconnected
-                          !(sourceLine.fdwLine & MIXERLINE_LINEF_ACTIVE))           // inactive
+                        // if conditions listed below
+                        // condition 1: invalid source
+                        // condition 2: no controls
+                        // condition 3: disconnected
+                        // condition 4: inactive
+                        if (!GetSourceLineInfo(mixId, destId, selection, sourceLine)  ||
+                           (sourceLine.cControls == 0)                                ||
+                           (sourceLine.fdwLine & MIXERLINE_LINEF_DISCONNECTED)        ||
+                          !(sourceLine.fdwLine & MIXERLINE_LINEF_ACTIVE))               
                         {
                             continue;
                         }
