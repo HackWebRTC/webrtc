@@ -79,6 +79,7 @@ class PeerConnection {
       cricket::PortAllocator* port_allocator,
       cricket::MediaEngine* media_engine,
       talk_base::Thread* worker_thread,
+      talk_base::Thread* signaling_thread,
       cricket::DeviceManager* device_manager);
   static PeerConnection* Create(const std::string& config,
                                 cricket::PortAllocator* port_allocator,

@@ -33,9 +33,10 @@ PeerConnection* PeerConnection::Create(const std::string& config,
     cricket::PortAllocator* port_allocator,
     cricket::MediaEngine* media_engine,
     talk_base::Thread* worker_thread,
+    talk_base::Thread* signaling_thread,
     cricket::DeviceManager* device_manager) {
   return new PeerConnectionImpl(config, port_allocator, media_engine,
-      worker_thread, device_manager);
+      worker_thread, signaling_thread, device_manager);
 }
 
 PeerConnection* PeerConnection::Create(const std::string& config,

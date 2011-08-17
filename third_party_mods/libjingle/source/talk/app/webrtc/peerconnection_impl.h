@@ -28,9 +28,10 @@
 #ifndef TALK_APP_WEBRTC_PEERCONNECTION_IMPL_H_
 #define TALK_APP_WEBRTC_PEERCONNECTION_IMPL_H_
 
-#include "talk/app/webrtc/peerconnection.h"
-
 #include <string>
+#include <vector>
+
+#include "talk/app/webrtc/peerconnection.h"
 #include "talk/base/sigslot.h"
 #include "talk/base/scoped_ptr.h"
 #include "talk/base/packetsocketfactory.h"
@@ -62,6 +63,7 @@ class PeerConnectionImpl : public PeerConnection,
       cricket::PortAllocator* port_allocator,
       cricket::MediaEngine* media_engine,
       talk_base::Thread* worker_thread,
+      talk_base::Thread* signaling_thread,
       cricket::DeviceManager* device_manager);
   PeerConnectionImpl(const std::string& config,
                      cricket::PortAllocator* port_allocator,

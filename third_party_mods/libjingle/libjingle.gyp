@@ -458,7 +458,7 @@
         '<(libjingle_orig)/source/talk/session/phone/call.h',
         '<(libjingle_orig)/source/talk/session/phone/channel.cc',
         '<(libjingle_orig)/source/talk/session/phone/channel.h',
-        '<(libjingle_orig)/source/talk/session/phone/channelmanager.cc',
+        '<(libjingle_mods)/source/talk/session/phone/channelmanager.cc',
         '<(libjingle_orig)/source/talk/session/phone/channelmanager.h',
         '<(libjingle_orig)/source/talk/session/phone/codec.cc',
         '<(libjingle_orig)/source/talk/session/phone/codec.h',
