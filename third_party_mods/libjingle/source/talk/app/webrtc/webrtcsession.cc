@@ -132,9 +132,7 @@ bool WebRTCSession::CreateVoiceChannel(const std::string& stream_id) {
   ASSERT(voice_channel != NULL);
   stream_info->channel = voice_channel;
 
-  if (incoming()) {
-    SignalAddStream(stream_id, false);
-  } else {
+  if (!incoming()) {
     SignalRtcMediaChannelCreated(stream_id, false);
   }
   return true;
@@ -151,14 +149,11 @@ bool WebRTCSession::CreateVideoChannel(const std::string& stream_id) {
   ASSERT(video_channel != NULL);
   stream_info->channel = video_channel;
 
-  if (incoming()) {
-    SignalAddStream(stream_id, true);
-  } else {
+  if (!incoming()) {
     SignalRtcMediaChannelCreated(stream_id, true);
   }
   return true;
 }
-
 
 cricket::TransportChannel* WebRTCSession::CreateChannel(
     const std::string& content_name,
@@ -354,7 +349,8 @@ void WebRTCSession::RemoveAllStreams() {
     RemoveStream(*i);
   }
 
-  SignalRemoveStream(this);
+  SetState(STATE_SENTTERMINATE);
+  SignalRemoveStreamMessage(this);
 }
 
 bool WebRTCSession::HasStream(const std::string& stream_id) const {
@@ -412,8 +408,6 @@ void WebRTCSession::OnWritableState(cricket::Transport* transport) {
   NotifyTransportState();
   return;
 }
-
-
 
 void WebRTCSession::StartTransportTimeout(int timeout) {
   talk_base::Thread::Current()->PostDelayed(timeout, this,
@@ -473,17 +467,32 @@ bool WebRTCSession::OnInitiateMessage(
 
   set_local_description(answer.release());
   SetState(STATE_SENTACCEPT);
+
+  // Provide remote candidates to the transport
+  transport_->OnRemoteCandidates(candidates);
+
+  // AddStream called only once with Video label
+  if (video_content) {
+    SignalAddStream(video_content->name, true);
+  } else {
+    SignalAddStream(audio_content->name, false);
+  }
   return true;
 }
 
 bool WebRTCSession::OnRemoteDescription(
     cricket::SessionDescription* desc,
     const std::vector<cricket::Candidate>& candidates) {
+
+  if (state() == STATE_SENTTERMINATE) {
+    ProcessTerminateAccept(desc);
+    return true;
+  }
   if (state() == STATE_SENTACCEPT ||
       state() == STATE_RECEIVEDACCEPT ||
       state() == STATE_INPROGRESS) {
     if (CheckForStreamDeleteMessage(candidates)) {
-      return OnRemoteDescriptionUpdate(desc, candidates);
+      return OnStreamDeleteMessage(desc, candidates);
     } else {
       transport_->OnRemoteCandidates(candidates);
       return true;
@@ -493,9 +502,33 @@ bool WebRTCSession::OnRemoteDescription(
   // Session description is always accepted.
   set_remote_description(desc);
   SetState(STATE_RECEIVEDACCEPT);
-  // Will trigger OnWritableState() if successfull.
+
+  if (!incoming()) {
+    // Trigger OnAddStream callback at the initiator
+    const cricket::ContentInfo* video_content = GetFirstVideoContent(desc);
+    if (video_content) {
+      SignalAddStream(video_content->name, true);
+    } else {
+      const cricket::ContentInfo* audio_content = GetFirstAudioContent(desc);
+      if (audio_content)
+        SignalAddStream(audio_content->name, false);
+    }
+  }
+  // Will trigger OnWritableState() if successful.
   transport_->OnRemoteCandidates(candidates);
   return true;
+}
+
+void WebRTCSession::ProcessTerminateAccept(cricket::SessionDescription* desc) {
+  const cricket::ContentInfo* video_content = GetFirstVideoContent(desc);
+  if (video_content) {
+    SignalRemoveStream(video_content->name, true);
+  } else {
+    const cricket::ContentInfo* audio_content = GetFirstAudioContent(desc);
+    if (audio_content) {
+      SignalRemoveStream(audio_content->name, false);
+    }
+  }
 }
 
 bool WebRTCSession::CheckForStreamDeleteMessage(
@@ -508,7 +541,7 @@ bool WebRTCSession::CheckForStreamDeleteMessage(
   return false;
 }
 
-bool WebRTCSession::OnRemoteDescriptionUpdate(
+bool WebRTCSession::OnStreamDeleteMessage(
     const cricket::SessionDescription* desc,
     const std::vector<cricket::Candidate>& candidates) {
   // This will be called when session is in connected state
@@ -517,9 +550,21 @@ bool WebRTCSession::OnRemoteDescriptionUpdate(
   // check for candidates port, if its equal to 0, remove that stream
   // and provide callback OnRemoveStream else keep as it is
 
+  SetState(STATE_RECEIVEDTERMINATE);
   for (size_t i = 0; i < candidates.size(); ++i) {
     if (candidates[i].address().port() == 0) {
       RemoveStreamOnRequest(candidates[i]);
+    }
+  }
+
+  SignalRemoveStreamMessage(this);
+  const cricket::ContentInfo* video_content = GetFirstVideoContent(desc);
+  if (video_content) {
+    SignalRemoveStream(video_content->name, true);
+  } else {
+    const cricket::ContentInfo* audio_content = GetFirstAudioContent(desc);
+    if (audio_content) {
+      SignalRemoveStream(audio_content->name, false);
     }
   }
   return true;
@@ -547,13 +592,14 @@ void WebRTCSession::RemoveStreamOnRequest(
             stream_info->channel);
         channel->Enable(false);
         channel_manager_->DestroyVoiceChannel(channel);
+        DisableLocalCandidate(stream_info->transport->name());
       } else {
         cricket::VideoChannel* channel = static_cast<cricket::VideoChannel*> (
             stream_info->channel);
         channel->Enable(false);
         channel_manager_->DestroyVideoChannel(channel);
+        DisableLocalCandidate(stream_info->transport->name());
       }
-      SignalRemoveStream2((*siter)->stream_id, (*siter)->video);
       streams_.erase(siter);
       break;
     }

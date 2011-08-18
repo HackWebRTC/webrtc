@@ -110,9 +110,9 @@ class WebRTCSession : public cricket::BaseSession {
   bool SetVideoRenderer(const std::string& stream_id,
                         cricket::VideoRenderer* renderer);
 
-  sigslot::signal1<WebRTCSession*> SignalRemoveStream;
+  sigslot::signal1<WebRTCSession*> SignalRemoveStreamMessage;
   sigslot::signal2<const std::string&, bool> SignalAddStream;
-  sigslot::signal2<const std::string&, bool> SignalRemoveStream2;
+  sigslot::signal2<const std::string&, bool> SignalRemoveStream;
   sigslot::signal2<const std::string&, bool> SignalRtcMediaChannelCreated;
   // Triggered when the local candidate is ready
   sigslot::signal2<const cricket::SessionDescription*,
@@ -164,6 +164,7 @@ class WebRTCSession : public cricket::BaseSession {
 
   bool CheckForStreamDeleteMessage(
       const std::vector<cricket::Candidate>& candidates);
+  void ProcessTerminateAccept(cricket::SessionDescription* desc);
 
   void UpdateTransportWritableState();
   bool CheckAllTransportsWritable();
@@ -184,7 +185,7 @@ class WebRTCSession : public cricket::BaseSession {
 
   bool SetVideoCapture(bool capture);
   void DisableLocalCandidate(const std::string& name);
-  bool OnRemoteDescriptionUpdate(const cricket::SessionDescription* desc,
+  bool OnStreamDeleteMessage(const cricket::SessionDescription* desc,
       const std::vector<cricket::Candidate>& candidates);
   void RemoveStreamOnRequest(const cricket::Candidate& candidate);
   void EnableAllStreams();

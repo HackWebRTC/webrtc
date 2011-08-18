@@ -34,7 +34,6 @@
 #include "talk/base/stringencode.h"
 #include "talk/base/logging.h"
 #include "talk/p2p/client/basicportallocator.h"
-
 #include "talk/app/webrtc/webrtcsession.h"
 #include "talk/app/webrtc/webrtc_json.h"
 
@@ -294,13 +293,13 @@ WebRTCSession* PeerConnectionImpl::CreateMediaSession(
       signaling_thread_.get());
 
   if (session->Initiate()) {
-    session->SignalRemoveStream.connect(
+    session->SignalRemoveStreamMessage.connect(
         this,
         &PeerConnectionImpl::SendRemoveSignal);
     session->SignalAddStream.connect(
         this,
         &PeerConnectionImpl::OnAddStream);
-    session->SignalRemoveStream2.connect(
+    session->SignalRemoveStream.connect(
         this,
         &PeerConnectionImpl::OnRemoveStream2);
     session->SignalRtcMediaChannelCreated.connect(
