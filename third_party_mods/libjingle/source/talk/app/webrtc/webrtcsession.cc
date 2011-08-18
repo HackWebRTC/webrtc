@@ -214,7 +214,6 @@ void WebRTCSession::DestroyChannel(
   for (iter = streams_.begin(); iter != streams_.end(); ++iter) {
     if (content_name.compare((*iter)->stream_id) == 0) {
       (*iter)->transport = NULL;
-      streams_.erase(iter);
       break;
     }
   }
@@ -555,6 +554,7 @@ void WebRTCSession::RemoveStreamOnRequest(
         channel_manager_->DestroyVideoChannel(channel);
       }
       SignalRemoveStream2((*siter)->stream_id, (*siter)->video);
+      streams_.erase(siter);
       break;
     }
   }
