@@ -16,22 +16,9 @@
 #include <cstdio>
 #include <cstdlib>
 
-// class PCMStream
-// {
-// protected:    
-//     PCMStream(){}
-//     ~PCMStream(){}
-// public:
-//     virtual WebRtc_Word32 Read10MsData(AudioFrame& audioFrame) = 0;
-//     virtual void Write10MsData(WebRtc_Word16 *playoutBuffer, WebRtc_UWord16 playoutLengthSmpls) = 0;
-//     virtual WebRtc_UWord16 PayloadLength10Ms() const = 0;
-//     virtual WebRtc_Word32 SamplingFrequency() const = 0;
-// };
-
-
 using namespace webrtc;
 
-class PCMFile /*: public PCMStream*/
+class PCMFile
 {
 public:
     PCMFile();
@@ -63,14 +50,14 @@ public:
         bool readStereo = true);
 private:
     FILE*           _pcmFile;
-    WebRtc_UWord16    _nSamples10Ms;
-    WebRtc_Word32     _frequency;
+    WebRtc_UWord16  _nSamples10Ms;
+    WebRtc_Word32   _frequency;
     bool            _endOfFile;
     bool            _autoRewind;
     bool            _rewinded;
-    WebRtc_UWord32    _timestamp;
-    bool            _saveStereo;
+    WebRtc_UWord32  _timestamp;
     bool            _readStereo;
+    bool            _saveStereo;
 };
 
 #endif

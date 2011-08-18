@@ -780,8 +780,6 @@ void TestAllCodecs::Run(TestPack* channel)
 {
     AudioFrame audioFrame;
 
-    WebRtc_UWord16 SamplesIn10MsecA = _inFileA.PayloadLength10Ms();
-    WebRtc_UWord32 timestampA = 1;
     WebRtc_Word32 outFreqHzB = _outFileB.SamplingFrequency();
     WebRtc_UWord16 recSize;
     WebRtc_UWord32 timeStampDiff;

@@ -206,7 +206,6 @@ APITest::SetUp()
         {
             // test if un-registration works;
             CodecInst nextCodec;
-            int currentPayloadType = dummyCodec.pltype;
             AudioCodingModule::Codec(n + 1, nextCodec);
             nextCodec.pltype = dummyCodec.pltype;
             if(!FixedPayloadTypeCodec(nextCodec.plname))
@@ -780,7 +779,7 @@ APITest::CheckVADStatus(char side)
     bool dtxEnabled;
     bool vadEnabled;
     ACMVADMode vadMode;
-    EventWrapper* myEvent = EventWrapper::Create();
+
     if(side == 'A')
     {
         _acmA->VAD(dtxEnabled, vadEnabled, vadMode);
@@ -1268,7 +1267,6 @@ void
 APITest::TestReceiverVAD(char side)
 {
     AudioCodingModule* myACM;
-    EventWrapper* myEvent = EventWrapper::Create();
     WebRtc_UWord64* myReceiveVADActivity;
 
     if(side == 'A')
@@ -1293,9 +1291,9 @@ APITest::TestReceiverVAD(char side)
         fprintf(stdout, "----------------------------------\n");
         fprintf(stdout, "Status........ %s\n", vadStatus? "ON":"OFF");
         fprintf(stdout, "mode.......... %d\n", (int)mode);
-        fprintf(stdout, "VAD Active.... %llu\n", myReceiveVADActivity[0]);
-        fprintf(stdout, "VAD Passive... %llu\n", myReceiveVADActivity[1]);
-        fprintf(stdout, "VAD Unknown... %llu\n", myReceiveVADActivity[2]);
+        fprintf(stdout, "VAD Active.... %lu\n", myReceiveVADActivity[0]);
+        fprintf(stdout, "VAD Passive... %lu\n", myReceiveVADActivity[1]);
+        fprintf(stdout, "VAD Unknown... %lu\n", myReceiveVADActivity[2]);
     }
 
     if(vadStatus)
@@ -1442,7 +1440,6 @@ void
 APITest::CurrentCodec(char side)
 {
     CodecInst myCodec;
-    EventWrapper* myEvent = EventWrapper::Create();
     if(side == 'A')
     {
         _acmA->SendCodec(myCodec);
@@ -1478,7 +1475,6 @@ APITest::ChangeCodec(char side)
     bool* dtx;
     ACMVADMode* mode;
     Channel* myChannel;
-    EventWrapper* myEvent = EventWrapper::Create();
     // Reset and Wait
     if(!_randomTest)
     {

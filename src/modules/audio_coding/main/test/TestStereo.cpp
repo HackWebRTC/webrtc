@@ -56,10 +56,7 @@ TestPackStereo::SendData(
     WebRtc_Word32   status;
     WebRtc_UWord16  payloadDataSize = payloadSize;
     WebRtc_UWord8 payloadDataMaster[60 * 32 * 2 * 2]; 
-    WebRtc_UWord8 payloadDataSlave[60 * 32 * 2 * 2]; 
-    bool twoBytePerSample = false;
-    bool oneBytePerSample = true;
-    bool frameBased = false;
+    WebRtc_UWord8 payloadDataSlave[60 * 32 * 2 * 2];
 
     rtpInfo.header.markerBit = false;
     rtpInfo.header.ssrc = 0;
@@ -470,8 +467,6 @@ void TestStereo::Run(TestPackStereo* channel)
 {
     AudioFrame audioFrame;
 
-    WebRtc_UWord16 SamplesIn10MsecA = _inFileA.PayloadLength10Ms();
-    WebRtc_UWord32 timestampA = 1;
     WebRtc_Word32 outFreqHzB = _outFileB.SamplingFrequency();
     WebRtc_UWord16 recSize;
     WebRtc_UWord32 timeStampDiff;

@@ -92,8 +92,6 @@ void TestVADDTX::Perform()
 
 
     WebRtc_Word16 testCntr = 1;
-    VADDTXstruct setDTX, getDTX, expectedDTX;
-    bool dtxReplaced;
     WebRtc_Word16 testResults = 0;
 
 #ifdef WEBRTC_CODEC_ISAC
@@ -144,7 +142,7 @@ void TestVADDTX::Perform()
     printf("VAD/DTX test completed with %d subtests failed\n", testResults);
     if (testResults > 0)
     {
-        printf("Press return\n\n", testResults);
+        printf("Press return\n\n");
         getchar();
     }
 }
@@ -227,12 +225,13 @@ void TestVADDTX::SetVAD(bool statusDTX, bool statusVAD, WebRtc_Word16 vadMode)
             printf("DTX: %s not the same as requested: %s\n", 
             dtxEnabled? "ON":"OFF", dtxEnabled? "OFF":"ON");
         }
-        if((statusVAD == true) && (vadEnabled == false) || 
-           (statusVAD == false) && (vadEnabled == false) && (statusDTX == true)) 
+        if(((statusVAD == true) && (vadEnabled == false)) ||
+           ((statusVAD == false) && (vadEnabled == false) &&
+               (statusDTX == true)))
         {
             printf("VAD: %s not the same as requested: %s\n", 
             vadEnabled? "ON":"OFF", vadEnabled? "OFF":"ON");
-        }        
+        }
         if(vadModeSet != vadMode) 
         {
             printf("VAD mode: %d not the same as requested: %d\n", 

@@ -29,17 +29,17 @@ struct ACMTestFrameSizeStats
     WebRtc_UWord32 numPackets;
     WebRtc_UWord64 totalPayloadLenByte;
     WebRtc_UWord64 totalEncodedSamples;
-    double       rateBitPerSec;
-    double       usageLenSec;
+    double         rateBitPerSec;
+    double         usageLenSec;
            
 };
 
 struct ACMTestPayloadStats
 {
     bool                  newPacket;
-    WebRtc_Word16           payloadType;
-    WebRtc_Word16           lastPayloadLenByte;
-    WebRtc_UWord32          lastTimestamp;
+    WebRtc_Word16         payloadType;
+    WebRtc_Word16         lastPayloadLenByte;
+    WebRtc_UWord32        lastTimestamp;
     ACMTestFrameSizeStats frameSizeStats[MAX_NUM_FRAMESIZES];
 };
 
@@ -67,7 +67,7 @@ public:
     void ResetStats();
     
     WebRtc_Word16 Stats(
-        CodecInst&     codecInst, 
+        CodecInst&           codecInst,
         ACMTestPayloadStats& payloadStats);
     
     void Stats(
@@ -99,26 +99,26 @@ private:
         WebRtcRTPHeader& rtpInfo, 
         WebRtc_UWord16   payloadSize);
 
-    AudioCodingModule* _receiverACM;
-    WebRtc_UWord16           _seqNo;
-    // 60 msec * 32 sample (max) / msec * 2 description (maybe) * 2 bytes / sample
-    WebRtc_UWord8            _payloadData[60 * 32 * 2 * 2]; 
+    AudioCodingModule*      _receiverACM;
+    WebRtc_UWord16          _seqNo;
+    // 60msec * 32 sample(max)/msec * 2 description (maybe) * 2 bytes/sample
+    WebRtc_UWord8           _payloadData[60 * 32 * 2 * 2];
 
     CriticalSectionWrapper* _channelCritSect;
-    FILE*                _bitStreamFile;
-    bool                 _saveBitStream;
-    WebRtc_Word16          _lastPayloadType;
-    ACMTestPayloadStats  _payloadStats[MAX_NUM_PAYLOADS];
-    bool                 _isStereo;
-    WebRtcRTPHeader        _rtpInfo;
-    bool                 _leftChannel;
-    WebRtc_UWord32         _lastInTimestamp;
+    FILE*                   _bitStreamFile;
+    bool                    _saveBitStream;
+    WebRtc_Word16           _lastPayloadType;
+    ACMTestPayloadStats     _payloadStats[MAX_NUM_PAYLOADS];
+    bool                    _isStereo;
+    WebRtcRTPHeader         _rtpInfo;
+    bool                    _leftChannel;
+    WebRtc_UWord32          _lastInTimestamp;
     // FEC Test variables
-    WebRtc_Word16          _packetLoss;
-    bool                 _useFECTestWithPacketLoss;
-    WebRtc_Word16          _chID;
-    WebRtc_UWord64         _beginTime;
-    WebRtc_UWord64         _totalBytes;
+    WebRtc_Word16           _packetLoss;
+    bool                    _useFECTestWithPacketLoss;
+    WebRtc_Word16           _chID;
+    WebRtc_UWord64          _beginTime;
+    WebRtc_UWord64          _totalBytes;
 };
 
 

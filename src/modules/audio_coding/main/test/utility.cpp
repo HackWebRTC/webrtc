@@ -158,13 +158,13 @@ PrintCodecs()
 }
 
 CircularBuffer::CircularBuffer(WebRtc_UWord32 len):
+_buff(NULL),
+_idx(0),
 _buffIsFull(false),
 _calcAvg(false),
 _calcVar(false),
 _sum(0),
-_sumSqr(0),
-_idx(0),
-_buff(NULL)
+_sumSqr(0)
 {
     _buff = new(double[len]);
     if(_buff == NULL)

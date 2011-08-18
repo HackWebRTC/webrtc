@@ -8,8 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-// 'conversion' conversion from 'type1' to 'type2', possible loss of data
-#pragma warning(disable: 4267)
 
 #include "acm_dtmf_detection.h"
 #include "audio_coding_module.h"

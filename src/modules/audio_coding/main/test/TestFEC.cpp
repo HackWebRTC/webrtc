@@ -566,19 +566,13 @@ void TestFEC::Run()
 
     WebRtc_UWord16 msecPassed = 0;
     WebRtc_UWord32 secPassed  = 0;
-    WebRtc_UWord16 SamplesIn10MsecA = _inFileA.PayloadLength10Ms();
-    WebRtc_UWord32 timestampA = 1;
     WebRtc_Word32 outFreqHzB = _outFileB.SamplingFrequency();
 
     while(!_inFileA.EndOfFile())
     {
         _inFileA.Read10MsData(audioFrame);
-        //audioFrame._timeStamp = timestampA;
-        //timestampA += SamplesIn10MsecA;
         CHECK_ERROR(_acmA->Add10MsData(audioFrame));
-
         CHECK_ERROR(_acmA->Process());
-
         CHECK_ERROR(_acmB->PlayoutData10Ms(outFreqHzB, audioFrame));
         _outFileB.Write10MsData(audioFrame._payloadData, audioFrame._payloadDataLengthInSamples);
         msecPassed += 10;
