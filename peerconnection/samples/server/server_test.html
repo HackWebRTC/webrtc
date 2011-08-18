@@ -24,13 +24,8 @@ function handleServerNotification(data) {
 
 function handlePeerMessage(peer_id, data) {
   trace("Message from '" + other_peers[peer_id] + "': " + data);
-  if (document.getElementById("loopback").checked) {
-    if (data.search('"port" : "0"') == -1) {
-      sendToPeer(peer_id, data);
-    } else {
-      trace("Not looping back quit message");
-    }
-  }
+  if (document.getElementById("loopback").checked)
+    sendToPeer(peer_id, data);
 }
 
 function GetIntHeader(r, name) {
