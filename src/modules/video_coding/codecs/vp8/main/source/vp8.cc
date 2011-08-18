@@ -658,7 +658,9 @@ VP8Decoder::InitDecode(const VideoCodec* inst,
     cfg.threads = numberOfCores;
     cfg.h = cfg.w = 0; // set after decode
 
-    if (vpx_codec_dec_init(_decoder, vpx_codec_vp8_dx(), NULL, 0))
+    vpx_codec_flags_t flags = VPX_CODEC_USE_ERROR_CONCEALMENT;
+
+    if (vpx_codec_dec_init(_decoder, vpx_codec_vp8_dx(), NULL, flags))
     {
         return WEBRTC_VIDEO_CODEC_MEMORY;
     }
