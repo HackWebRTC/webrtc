@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "system_wrappers/interface/cpu_features_wrapper.h"
 #include "test_util.h"
 #include "test_macros.h"
 #include "rtp_dump.h"
@@ -440,34 +441,6 @@ PSNRfromFiles(const WebRtc_Word8 *refFileName, const WebRtc_Word8 *testFileName,
     return 0;
 }
 
-void
-ssim_parms_8x8_c
-(
-    unsigned char *s,
-    int sp,
-    unsigned char *r,
-    int rp,
-    unsigned long *sum_s,
-    unsigned long *sum_r,
-    unsigned long *sum_sq_s,
-    unsigned long *sum_sq_r,
-    unsigned long *sum_sxr
-)
-{
-    int i,j;
-    for(i=0;i<8;i++,s+=sp,r+=rp)
-     {
-         for(j=0;j<8;j++)
-         {
-             *sum_s += s[j];
-             *sum_r += r[j];
-             *sum_sq_s += s[j] * s[j];
-             *sum_sq_r += r[j] * r[j];
-             *sum_sxr += s[j] * r[j];
-         }
-     }
-}
-
 static double
 similarity
 (
@@ -499,12 +472,109 @@ similarity
 }
 
 static double
-ssim_8x8(unsigned char *s,int sp, unsigned char *r,int rp)
+ssim_8x8_c
+(
+    unsigned char *s,
+    int sp,
+    unsigned char *r,
+    int rp
+)
 {
-    unsigned long sum_s=0,sum_r=0,sum_sq_s=0,sum_sq_r=0,sum_sxr=0;
-    ssim_parms_8x8_c(s, sp, r, rp, &sum_s, &sum_r, &sum_sq_s, &sum_sq_r, &sum_sxr);
+    unsigned long sum_s    = 0;
+    unsigned long sum_r    = 0;
+    unsigned long sum_sq_s = 0;
+    unsigned long sum_sq_r = 0;
+    unsigned long sum_sxr  = 0;
+
+    int i,j;
+    for(i=0;i<8;i++,s+=sp,r+=rp)
+    {
+        for(j=0;j<8;j++)
+        {
+            sum_s += s[j];
+            sum_r += r[j];
+            sum_sq_s += s[j] * s[j];
+            sum_sq_r += r[j] * r[j];
+            sum_sxr += s[j] * r[j];
+        }
+    }
+
     return similarity(sum_s, sum_r, sum_sq_s, sum_sq_r, sum_sxr, 64);
 }
+
+#if defined(WEBRTC_USE_SSE2)
+#include <xmmintrin.h>
+static double
+ssim_8x8_sse2
+(
+    unsigned char *s,
+    int sp,
+    unsigned char *r,
+    int rp
+)
+{
+    int i;
+    const __m128i z     = _mm_setzero_si128();
+    __m128i sum_s_16    = _mm_setzero_si128();
+    __m128i sum_r_16    = _mm_setzero_si128();
+    __m128i sum_sq_s_32 = _mm_setzero_si128();
+    __m128i sum_sq_r_32 = _mm_setzero_si128();
+    __m128i sum_sxr_32  = _mm_setzero_si128();
+
+    for(i=0;i<8;i++,s+=sp,r+=rp)
+    {
+        const __m128i s_8 = _mm_loadl_epi64((__m128i*)(s));
+        const __m128i r_8 = _mm_loadl_epi64((__m128i*)(r));
+
+        const __m128i s_16 = _mm_unpacklo_epi8(s_8,z);
+        const __m128i r_16 = _mm_unpacklo_epi8(r_8,z);
+
+        sum_s_16 = _mm_adds_epu16(sum_s_16, s_16);
+        sum_r_16 = _mm_adds_epu16(sum_r_16, r_16);
+        const __m128i sq_s_32 = _mm_madd_epi16(s_16, s_16);
+        sum_sq_s_32 = _mm_add_epi32(sum_sq_s_32, sq_s_32);
+        const __m128i sq_r_32 = _mm_madd_epi16(r_16, r_16);
+        sum_sq_r_32 = _mm_add_epi32(sum_sq_r_32, sq_r_32);
+        const __m128i sxr_32 = _mm_madd_epi16(s_16, r_16);
+        sum_sxr_32 = _mm_add_epi32(sum_sxr_32, sxr_32);
+    }
+
+    const __m128i sum_s_32  = _mm_add_epi32(_mm_unpackhi_epi16(sum_s_16, z),
+                                            _mm_unpacklo_epi16(sum_s_16, z));
+    const __m128i sum_r_32  = _mm_add_epi32(_mm_unpackhi_epi16(sum_r_16, z),
+                                            _mm_unpacklo_epi16(sum_r_16, z));
+
+    unsigned long sum_s_64[2];
+    unsigned long sum_r_64[2];
+    unsigned long sum_sq_s_64[2];
+    unsigned long sum_sq_r_64[2];
+    unsigned long sum_sxr_64[2];
+
+    _mm_store_si128 ((__m128i*)sum_s_64,
+                      _mm_add_epi64(_mm_unpackhi_epi32(sum_s_32, z),
+                                    _mm_unpacklo_epi32(sum_s_32, z)));
+    _mm_store_si128 ((__m128i*)sum_r_64,
+                      _mm_add_epi64(_mm_unpackhi_epi32(sum_r_32, z),
+                                    _mm_unpacklo_epi32(sum_r_32, z)));
+    _mm_store_si128 ((__m128i*)sum_sq_s_64,
+                      _mm_add_epi64(_mm_unpackhi_epi32(sum_sq_s_32, z),
+                                    _mm_unpacklo_epi32(sum_sq_s_32, z)));
+    _mm_store_si128 ((__m128i*)sum_sq_r_64,
+                      _mm_add_epi64(_mm_unpackhi_epi32(sum_sq_r_32, z),
+                                    _mm_unpacklo_epi32(sum_sq_r_32, z)));
+    _mm_store_si128 ((__m128i*)sum_sxr_64,
+                      _mm_add_epi64(_mm_unpackhi_epi32(sum_sxr_32, z),
+                                    _mm_unpacklo_epi32(sum_sxr_32, z)));
+
+    const unsigned long sum_s    = sum_s_64[0]    + sum_s_64[1];
+    const unsigned long sum_r    = sum_r_64[0]    + sum_r_64[1];
+    const unsigned long sum_sq_s = sum_sq_s_64[0] + sum_sq_s_64[1];
+    const unsigned long sum_sq_r = sum_sq_r_64[0] + sum_sq_r_64[1];
+    const unsigned long sum_sxr  = sum_sxr_64[0]  + sum_sxr_64[1];
+
+    return similarity(sum_s, sum_r, sum_sq_s, sum_sq_r, sum_sxr, 64);
+}
+#endif
 
 double
 SSIM_frame
@@ -516,9 +586,18 @@ SSIM_frame
     int width,
     int height)
 {
-    WebRtc_Word32 i,j;
-    WebRtc_UWord32 samples = 0;
+    int i,j;
+    unsigned int samples = 0;
     double ssim_total = 0;
+    double (*ssim_8x8)(unsigned char*, int, unsigned char*, int rp);
+
+    ssim_8x8 = ssim_8x8_c;
+    if(WebRtc_GetCPUInfo(kSSE2))
+    {
+#if defined(WEBRTC_USE_SSE2)
+        ssim_8x8 = ssim_8x8_sse2;
+#endif
+    }
 
     // sample point start with each 4x4 location
     for(i=0; i < height-8; i+=4, img1 += stride_img1*4, img2 += stride_img2*4)
