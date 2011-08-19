@@ -41,19 +41,11 @@ JNIEXPORT jboolean JNICALL Java_org_webrtc_voiceengine_test_AndroidTest_Delete
 
 /*
  * Class:     org_webrtc_voiceengine_test_AndroidTest
- * Method:    Authenticate
- * Signature: (Ljava/lang/String;)I
- */
-JNIEXPORT jint JNICALL Java_org_webrtc_voiceengine_test_AndroidTest_Authenticate
-  (JNIEnv *, jobject, jstring);
-
-/*
- * Class:     org_webrtc_voiceengine_test_AndroidTest
  * Method:    Init
  * Signature: (IIIZZ)I
  */
 JNIEXPORT jint JNICALL Java_org_webrtc_voiceengine_test_AndroidTest_Init
-  (JNIEnv *, jobject, jint, jint, jint, jboolean, jboolean);
+  (JNIEnv *, jobject, jboolean, jboolean);
 
 /*
  * Class:     org_webrtc_voiceengine_test_AndroidTest

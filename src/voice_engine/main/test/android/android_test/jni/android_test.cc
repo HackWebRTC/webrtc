@@ -106,7 +106,46 @@
 // General design: create a class or keep global struct with "C" functions?
 // Otherwise make sure symbols are as unique as possible.
 
+// TestType enumerator
+enum TestType
+{
+  Invalid = -1,
+  Standard = 0,
+  Extended = 1,
+  Stress   = 2,
+  Unit     = 3,
+  CPU      = 4
+};
+
+// ExtendedSelection enumerator
+enum ExtendedSelection
+{
+   XSEL_Invalid = -1,
+   XSEL_None = 0,
+   XSEL_All,
+   XSEL_Base,
+   XSEL_CallReport,
+   XSEL_Codec,
+   XSEL_DTMF,
+   XSEL_Encryption,
+   XSEL_ExternalMedia,
+   XSEL_File,
+   XSEL_Hardware,
+   XSEL_NetEqStats,
+   XSEL_Network,
+   XSEL_PTT,
+   XSEL_RTP_RTCP,
+   XSEL_VideoSync,
+   XSEL_VideoSyncExtended,
+   XSEL_VolumeControl,
+   XSEL_VQE,
+   XSEL_APM,
+   XSEL_VQMon
+};
+
 using namespace webrtc;
+
+class my_transportation;
 
 // VoiceEngine data struct
 typedef struct
@@ -128,16 +167,39 @@ typedef struct
     JavaVM* jvm;
 } VoiceEngineData;
 
-// Global variables visible in this file
+// my_transportation is used when useExtTrans is enabled
+class my_transportation : public Transport
+{
+ public:
+  my_transportation(VoENetwork * network) :
+      netw(network) {
+  }
+
+  int SendPacket(int channel,const void *data,int len);
+  int SendRTCPPacket(int channel, const void *data, int len);
+ private:
+  VoENetwork * netw;
+};
+
+int my_transportation::SendPacket(int channel,const void *data,int len)
+{
+  netw->ReceivedRTPPacket(channel, data, len);
+  return len;
+}
+
+int my_transportation::SendRTCPPacket(int channel, const void *data, int len)
+{
+  netw->ReceivedRTCPPacket(channel, data, len);
+  return len;
+}
+
+//Global variables visible in this file
 static VoiceEngineData veData1;
 static VoiceEngineData veData2;
 
 // "Local" functions (i.e. not Java accessible)
 static bool GetSubApis(VoiceEngineData &veData);
 static bool ReleaseSubApis(VoiceEngineData &veData);
-
-char nikkey[64] =
-        "123456781234567812345678123456781234567812345678123456781234567";
 
 class ThreadTest
 {
@@ -189,14 +251,14 @@ bool ThreadTest::Process()
 
 #ifdef INIT_FROM_THREAD
     VALIDATE_BASE_POINTER;
-    veData1.base->Init(0, 0, 0);
+    veData1.base->Init();
 #endif
 
 #ifdef START_CALL_FROM_THREAD
     // receiving instance
     veData2.ve = VoiceEngine::Create();
     GetSubApis(veData2);
-    veData2.base->Init(0, 0, 0);
+    veData2.base->Init();
     veData2.base->CreateChannel();
     if(veData2.base->SetLocalReceiver(0, 1234) < 0)
     {
@@ -218,7 +280,7 @@ bool ThreadTest::Process()
     // sending instance
     veData1.ve = VoiceEngine::Create();
     GetSubApis(veData1);
-    veData1.base->Init(0, 0, 0);
+    veData1.base->Init();
     if(veData1.base->CreateChannel() < 0)
     {
         __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
@@ -458,13 +520,13 @@ JNIEXPORT jint JNICALL Java_org_webrtc_voiceengine_test_AndroidTest_RunAutoTest(
     VoiceEngine::SetAndroidObjects(veData1.jvm, env, context);
 
     // Call voe test interface function
-    //setAndroidObjects(veData1.jvm, context);
-    jint retVal = runAutoTest(tType, xsel);
+    // TODO(leozwang) add autotest setAndroidObjects(veData1.jvm, context);
+    // jint retVal = runAutoTest(tType, xsel);
 
     // Clear instance independent Java objects
     VoiceEngine::SetAndroidObjects(NULL, NULL, NULL);
 
-    return retVal;
+    return 0;
 }
 
 //////////////////////////////////////////////////////////////////
@@ -557,37 +619,11 @@ JNIEXPORT jboolean JNICALL Java_org_webrtc_voiceengine_test_AndroidTest_Delete(
 }
 
 /////////////////////////////////////////////
-// [Base] Authenticate
-//
-JNIEXPORT jint JNICALL Java_org_webrtc_voiceengine_test_AndroidTest_Authenticate(
-        JNIEnv *env,
-        jobject,
-        jstring key)
-{
-    const char* keyNative = env->GetStringUTFChars(key, NULL);
-    if (!keyNative)
-    {
-        __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
-                            "Could not get UTF string");
-        return -1;
-    }
-
-    jint retVal = veData1.base->Authenticate(keyNative, strlen(keyNative));
-
-    env->ReleaseStringUTFChars(key, keyNative);
-
-    return retVal;
-}
-
-/////////////////////////////////////////////
 // [Base] Initialize VoiceEngine
 //
 JNIEXPORT jint JNICALL Java_org_webrtc_voiceengine_test_AndroidTest_Init(
         JNIEnv *,
         jobject,
-        jint month,
-        jint day,
-        jint year,
         jboolean enableTrace,
         jboolean useExtTrans)
 {
@@ -599,13 +635,6 @@ JNIEXPORT jint JNICALL Java_org_webrtc_voiceengine_test_AndroidTest_Init(
         {
             __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
                                 "Could not enable trace");
-        }
-        if (0
-                != VoiceEngine::SetEncryptedTraceFile(
-                        "/sdcard/trace_debug.txt"))
-        {
-            __android_log_write(ANDROID_LOG_ERROR, WEBRTC_LOG_TAG,
-                                "Could not enable debug trace");
         }
         if (0 != VoiceEngine::SetTraceFilter(kTraceAll))
         {
@@ -625,7 +654,7 @@ JNIEXPORT jint JNICALL Java_org_webrtc_voiceengine_test_AndroidTest_Init(
     threadTest.RunTest();
     usleep(200000);
 #else
-    retVal = veData1.base->Init(month, day, year);
+    retVal = veData1.base->Init();
 #endif
     return retVal;
 }
@@ -635,7 +664,7 @@ JNIEXPORT jint JNICALL Java_org_webrtc_voiceengine_test_AndroidTest_Init(
 //
 JNIEXPORT jint JNICALL Java_org_webrtc_voiceengine_test_AndroidTest_Terminate(
         JNIEnv *,
-        jobj  ect)
+        jobject)
 {
     VALIDATE_BASE_POINTER;
 

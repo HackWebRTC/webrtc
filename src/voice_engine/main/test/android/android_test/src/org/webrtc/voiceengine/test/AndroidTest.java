@@ -1128,10 +1128,7 @@ public class AndroidTest extends Activity {
 
     private native boolean Delete();
 
-    private native int Authenticate(String key);
-
-    private native int Init(int month, int day, int year,
-                    boolean enableTrace, boolean useExtTrans);
+    private native int Init(boolean enableTrace, boolean useExtTrans);
 
     private native int Terminate();
 
