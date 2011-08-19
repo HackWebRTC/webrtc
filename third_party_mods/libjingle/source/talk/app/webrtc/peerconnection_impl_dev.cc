@@ -36,12 +36,12 @@ bool PeerConnectionImpl::Init() {
   return true;
 }
 
-WebRTCSession* PeerConnectionImpl::CreateSession() {
-  // TODO(ronghuawu): when we have the new WebRTCSession we don't need these
+WebRtcSession* PeerConnectionImpl::CreateSession() {
+  // TODO(ronghuawu): when we have the new WebRtcSession we don't need these
   std::string id = "";
   std::string direction = "";
-  WebRTCSession* session =
-      new WebRTCSession(id, direction, port_allocator_,
+  WebRtcSession* session =
+      new WebRtcSession(id, direction, port_allocator_,
                             channel_manager_,
                             // TODO(ronghuawu): implement PeerConnectionImplCallbacks
                             // this,

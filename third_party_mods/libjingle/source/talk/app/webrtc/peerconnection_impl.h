@@ -53,7 +53,7 @@ namespace webrtc {
 
 class AudioDeviceModule;
 class ExternalRenderer;
-class WebRTCSession;
+class WebRtcSession;
 
 class PeerConnectionImpl : public PeerConnection,
                            public talk_base::MessageHandler,
@@ -114,8 +114,8 @@ class PeerConnectionImpl : public PeerConnection,
   bool ParseConfigString(const std::string& config,
                          talk_base::SocketAddress* stun_addr);
   void WrapChromiumThread();
-  void SendRemoveSignal(WebRTCSession* session);
-  WebRTCSession* CreateMediaSession(const std::string& id,
+  void SendRemoveSignal(WebRtcSession* session);
+  WebRtcSession* CreateMediaSession(const std::string& id,
                                         const std::string& dir);
 
   virtual void OnMessage(talk_base::Message* message);
@@ -161,7 +161,7 @@ class PeerConnectionImpl : public PeerConnection,
 
   ServiceType service_type_;
   PeerConnectionObserver* event_callback_;
-  talk_base::scoped_ptr<WebRTCSession> session_;
+  talk_base::scoped_ptr<WebRtcSession> session_;
   // TODO(ronghua): There's no such concept as "incoming" and "outgoing"
   // according to the spec. This will be removed in the new PeerConnection.
   bool incoming_;

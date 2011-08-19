@@ -285,10 +285,10 @@ bool PeerConnectionImpl::SignalingMessage_s(const std::string& msg) {
   return ret;
 }
 
-WebRTCSession* PeerConnectionImpl::CreateMediaSession(
+WebRtcSession* PeerConnectionImpl::CreateMediaSession(
     const std::string& id, const std::string& dir) {
   ASSERT(port_allocator_ != NULL);
-  WebRTCSession* session = new WebRTCSession(id, dir,
+  WebRtcSession* session = new WebRtcSession(id, dir,
       port_allocator_, channel_manager_.get(),
       signaling_thread_.get());
 
@@ -318,7 +318,7 @@ WebRTCSession* PeerConnectionImpl::CreateMediaSession(
   return session;
 }
 
-void PeerConnectionImpl::SendRemoveSignal(WebRTCSession* session) {
+void PeerConnectionImpl::SendRemoveSignal(WebRtcSession* session) {
   if (event_callback_) {
     std::string message;
     if (GetJSONSignalingMessage(session->remote_description(),

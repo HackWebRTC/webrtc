@@ -64,10 +64,10 @@ typedef std::vector<StreamInfo*> StreamMap;  // not really a map (vector)
 static const char kVideoStream[] = "video_rtp";
 static const char kAudioStream[] = "rtp";
 
-const char WebRTCSession::kOutgoingDirection[] = "s";
-const char WebRTCSession::kIncomingDirection[] = "r";
+const char WebRtcSession::kOutgoingDirection[] = "s";
+const char WebRtcSession::kIncomingDirection[] = "r";
 
-WebRTCSession::WebRTCSession(
+WebRtcSession::WebRtcSession(
     const std::string& id,
     const std::string& direction,
     cricket::PortAllocator* allocator,
@@ -76,7 +76,7 @@ WebRTCSession::WebRTCSession(
   : BaseSession(signaling_thread),
     transport_(NULL),
     channel_manager_(channelmgr),
-    all_transports_writable_(false),
+    transports_writable_(false),
     muted_(false),
     camera_muted_(false),
     setup_timeout_(kCallSetupTimeout),
@@ -87,7 +87,7 @@ WebRTCSession::WebRTCSession(
   BaseSession::sid_ = id;
 }
 
-WebRTCSession::~WebRTCSession() {
+WebRtcSession::~WebRtcSession() {
   RemoveAllStreams();
   if (state_ != STATE_RECEIVEDTERMINATE) {
     Terminate();
@@ -95,7 +95,7 @@ WebRTCSession::~WebRTCSession() {
   signaling_thread_->Send(this, MSG_WEBRTC_DELETE_TRANSPORT, NULL);
 }
 
-bool WebRTCSession::Initiate() {
+bool WebRtcSession::Initiate() {
   signaling_thread_->Send(this, MSG_WEBRTC_CREATE_TRANSPORT, NULL);
   if (transport_ == NULL) {
     return false;
@@ -104,24 +104,24 @@ bool WebRTCSession::Initiate() {
 
   // start transports
   transport_->SignalRequestSignaling.connect(
-      this, &WebRTCSession::OnRequestSignaling);
+      this, &WebRtcSession::OnRequestSignaling);
   transport_->SignalCandidatesReady.connect(
-      this, &WebRTCSession::OnCandidatesReady);
+      this, &WebRtcSession::OnCandidatesReady);
   transport_->SignalWritableState.connect(
-      this, &WebRTCSession::OnWritableState);
+      this, &WebRtcSession::OnWritableState);
   // Limit the amount of time that setting up a call may take.
   StartTransportTimeout(kCallSetupTimeout);
   return true;
 }
 
-cricket::Transport* WebRTCSession::CreateTransport() {
+cricket::Transport* WebRtcSession::CreateTransport() {
   ASSERT(signaling_thread()->IsCurrent());
   return new cricket::P2PTransport(
       talk_base::Thread::Current(),
       channel_manager_->worker_thread(), port_allocator());
 }
 
-bool WebRTCSession::CreateVoiceChannel(const std::string& stream_id) {
+bool WebRtcSession::CreateVoiceChannel(const std::string& stream_id) {
   StreamInfo* stream_info = new StreamInfo(stream_id);
   stream_info->video = false;
   streams_.push_back(stream_info);
@@ -138,7 +138,7 @@ bool WebRTCSession::CreateVoiceChannel(const std::string& stream_id) {
   return true;
 }
 
-bool WebRTCSession::CreateVideoChannel(const std::string& stream_id) {
+bool WebRtcSession::CreateVideoChannel(const std::string& stream_id) {
   StreamInfo* stream_info = new StreamInfo(stream_id);
   stream_info->video = true;
   streams_.push_back(stream_info);
@@ -155,7 +155,7 @@ bool WebRTCSession::CreateVideoChannel(const std::string& stream_id) {
   return true;
 }
 
-cricket::TransportChannel* WebRTCSession::CreateChannel(
+cricket::TransportChannel* WebRtcSession::CreateChannel(
     const std::string& content_name,
     const std::string& name) {
   if (!transport_) {
@@ -184,7 +184,7 @@ cricket::TransportChannel* WebRTCSession::CreateChannel(
   return transport_channel;
 }
 
-cricket::TransportChannel* WebRTCSession::GetChannel(
+cricket::TransportChannel* WebRtcSession::GetChannel(
     const std::string& content_name, const std::string& name) {
   if (!transport_)
     return NULL;
@@ -198,7 +198,7 @@ cricket::TransportChannel* WebRTCSession::GetChannel(
   return NULL;
 }
 
-void WebRTCSession::DestroyChannel(
+void WebRtcSession::DestroyChannel(
     const std::string& content_name, const std::string& name) {
   if (!transport_)
     return;
@@ -214,7 +214,7 @@ void WebRTCSession::DestroyChannel(
   }
 }
 
-void WebRTCSession::OnMessage(talk_base::Message* message) {
+void WebRtcSession::OnMessage(talk_base::Message* message) {
   switch (message->message_id) {
     case MSG_CANDIDATE_TIMEOUT:
       if (transport_->writable()) {
@@ -239,7 +239,7 @@ void WebRTCSession::OnMessage(talk_base::Message* message) {
   }
 }
 
-bool WebRTCSession::Connect() {
+bool WebRtcSession::Connect() {
   if (streams_.empty()) {
     // nothing to initiate
     return false;
@@ -259,7 +259,7 @@ bool WebRTCSession::Connect() {
   return true;
 }
 
-bool WebRTCSession::SetVideoRenderer(const std::string& stream_id,
+bool WebRtcSession::SetVideoRenderer(const std::string& stream_id,
                                          cricket::VideoRenderer* renderer) {
   bool ret = false;
   StreamMap::iterator iter;
@@ -277,12 +277,12 @@ bool WebRTCSession::SetVideoRenderer(const std::string& stream_id,
   return ret;
 }
 
-bool WebRTCSession::SetVideoCapture(bool capture) {
+bool WebRtcSession::SetVideoCapture(bool capture) {
   channel_manager_->SetVideoCapture(capture);
   return true;
 }
 
-bool WebRTCSession::RemoveStream(const std::string& stream_id) {
+bool WebRtcSession::RemoveStream(const std::string& stream_id) {
   bool ret = false;
   StreamMap::iterator iter;
   for (iter = streams_.begin(); iter != streams_.end(); ++iter) {
@@ -313,7 +313,7 @@ bool WebRTCSession::RemoveStream(const std::string& stream_id) {
   return ret;
 }
 
-void WebRTCSession::DisableLocalCandidate(const std::string& name) {
+void WebRtcSession::DisableLocalCandidate(const std::string& name) {
   for (size_t i = 0; i < local_candidates_.size(); ++i) {
     if (local_candidates_[i].name().compare(name) == 0) {
       talk_base::SocketAddress address(local_candidates_[i].address().ip(), 0);
@@ -322,7 +322,7 @@ void WebRTCSession::DisableLocalCandidate(const std::string& name) {
   }
 }
 
-void WebRTCSession::EnableAllStreams() {
+void WebRtcSession::EnableAllStreams() {
   StreamMap::const_iterator i;
   for (i = streams_.begin(); i != streams_.end(); ++i) {
     cricket::BaseChannel* channel = (*i)->channel;
@@ -331,7 +331,7 @@ void WebRTCSession::EnableAllStreams() {
   }
 }
 
-void WebRTCSession::RemoveAllStreams() {
+void WebRtcSession::RemoveAllStreams() {
   // signaling_thread_->Post(this, MSG_RTC_REMOVEALLSTREAMS);
   // First build a list of streams to remove and then remove them.
   // The reason we do this is that if we remove the streams inside the
@@ -353,7 +353,7 @@ void WebRTCSession::RemoveAllStreams() {
   SignalRemoveStreamMessage(this);
 }
 
-bool WebRTCSession::HasStream(const std::string& stream_id) const {
+bool WebRtcSession::HasStream(const std::string& stream_id) const {
   StreamMap::const_iterator iter;
   for (iter = streams_.begin(); iter != streams_.end(); ++iter) {
     StreamInfo* sinfo = (*iter);
@@ -364,7 +364,7 @@ bool WebRTCSession::HasStream(const std::string& stream_id) const {
   return false;
 }
 
-bool WebRTCSession::HasStream(bool video) const {
+bool WebRtcSession::HasStream(bool video) const {
   StreamMap::const_iterator iter;
   for (iter = streams_.begin(); iter != streams_.end(); ++iter) {
     StreamInfo* sinfo = (*iter);
@@ -375,27 +375,27 @@ bool WebRTCSession::HasStream(bool video) const {
   return false;
 }
 
-bool WebRTCSession::HasAudioStream() const {
+bool WebRtcSession::HasAudioStream() const {
   return HasStream(false);
 }
 
-bool WebRTCSession::HasVideoStream() const {
+bool WebRtcSession::HasVideoStream() const {
   return HasStream(true);
 }
 
-talk_base::Thread* WebRTCSession::worker_thread() {
+talk_base::Thread* WebRtcSession::worker_thread() {
   return channel_manager_->worker_thread();
 }
 
-void WebRTCSession::OnRequestSignaling(cricket::Transport* transport) {
+void WebRtcSession::OnRequestSignaling(cricket::Transport* transport) {
   transport->OnSignalingReady();
 }
 
-void WebRTCSession::OnWritableState(cricket::Transport* transport) {
+void WebRtcSession::OnWritableState(cricket::Transport* transport) {
   ASSERT(transport == transport_);
-  const bool all_transports_writable = transport_->writable();
-  if (all_transports_writable) {
-    if (all_transports_writable != all_transports_writable_) {
+  const bool transports_writable = transport_->writable();
+  if (transports_writable) {
+    if (transports_writable != transports_writable_) {
       signaling_thread_->Clear(this, MSG_CANDIDATE_TIMEOUT);
     } else {
       // At one point all channels were writable and we had full connectivity,
@@ -403,22 +403,22 @@ void WebRTCSession::OnWritableState(cricket::Transport* transport) {
       // doesn't come back.
       StartTransportTimeout(kCallLostTimeout);
     }
-    all_transports_writable_ = all_transports_writable;
+    transports_writable_ = transports_writable;
   }
   NotifyTransportState();
   return;
 }
 
-void WebRTCSession::StartTransportTimeout(int timeout) {
+void WebRtcSession::StartTransportTimeout(int timeout) {
   talk_base::Thread::Current()->PostDelayed(timeout, this,
                                             MSG_CANDIDATE_TIMEOUT,
                                             NULL);
 }
 
-void WebRTCSession::NotifyTransportState() {
+void WebRtcSession::NotifyTransportState() {
 }
 
-bool WebRTCSession::OnInitiateMessage(
+bool WebRtcSession::OnInitiateMessage(
     cricket::SessionDescription* offer,
     const std::vector<cricket::Candidate>& candidates) {
   if (!offer) {
@@ -480,7 +480,7 @@ bool WebRTCSession::OnInitiateMessage(
   return true;
 }
 
-bool WebRTCSession::OnRemoteDescription(
+bool WebRtcSession::OnRemoteDescription(
     cricket::SessionDescription* desc,
     const std::vector<cricket::Candidate>& candidates) {
 
@@ -519,7 +519,7 @@ bool WebRTCSession::OnRemoteDescription(
   return true;
 }
 
-void WebRTCSession::ProcessTerminateAccept(cricket::SessionDescription* desc) {
+void WebRtcSession::ProcessTerminateAccept(cricket::SessionDescription* desc) {
   const cricket::ContentInfo* video_content = GetFirstVideoContent(desc);
   if (video_content) {
     SignalRemoveStream(video_content->name, true);
@@ -531,7 +531,7 @@ void WebRTCSession::ProcessTerminateAccept(cricket::SessionDescription* desc) {
   }
 }
 
-bool WebRTCSession::CheckForStreamDeleteMessage(
+bool WebRtcSession::CheckForStreamDeleteMessage(
     const std::vector<cricket::Candidate>& candidates) {
   for (size_t i = 0; i < candidates.size(); ++i) {
     if (candidates[i].address().port() == 0) {
@@ -541,7 +541,7 @@ bool WebRTCSession::CheckForStreamDeleteMessage(
   return false;
 }
 
-bool WebRTCSession::OnStreamDeleteMessage(
+bool WebRtcSession::OnStreamDeleteMessage(
     const cricket::SessionDescription* desc,
     const std::vector<cricket::Candidate>& candidates) {
   // This will be called when session is in connected state
@@ -570,7 +570,7 @@ bool WebRTCSession::OnStreamDeleteMessage(
   return true;
 }
 
-void WebRTCSession::RemoveStreamOnRequest(
+void WebRtcSession::RemoveStreamOnRequest(
     const cricket::Candidate& candidate) {
   // 1. Get Transport corresponding to candidate name
   // 2. Get StreamInfo for the transport found in step 1
@@ -606,7 +606,7 @@ void WebRTCSession::RemoveStreamOnRequest(
   }
 }
 
-cricket::SessionDescription* WebRTCSession::CreateOffer() {
+cricket::SessionDescription* WebRtcSession::CreateOffer() {
   cricket::SessionDescription* offer = new cricket::SessionDescription();
   StreamMap::iterator iter;
   for (iter = streams_.begin(); iter != streams_.end(); ++iter) {
@@ -641,7 +641,7 @@ cricket::SessionDescription* WebRTCSession::CreateOffer() {
   return offer;
 }
 
-cricket::SessionDescription* WebRTCSession::CreateAnswer(
+cricket::SessionDescription* WebRtcSession::CreateAnswer(
     const cricket::SessionDescription* offer) {
   cricket::SessionDescription* answer = new cricket::SessionDescription();
 
@@ -699,35 +699,11 @@ cricket::SessionDescription* WebRTCSession::CreateAnswer(
   return answer;
 }
 
-void WebRTCSession::OnMute(bool mute) {
-  StreamMap::iterator iter;
-  for (iter = streams_.begin(); iter != streams_.end(); ++iter) {
-    if (!(*iter)->video) {
-      cricket::VoiceChannel* voice_channel =
-          static_cast<cricket::VoiceChannel*>((*iter)->channel);
-      ASSERT(voice_channel != NULL);
-      voice_channel->Mute(mute);
-    }
-  }
-}
-
-void WebRTCSession::OnCameraMute(bool mute) {
-  StreamMap::iterator iter;
-  for (iter = streams_.begin(); iter != streams_.end(); ++iter) {
-    if ((*iter)->video) {
-      cricket::VideoChannel* video_channel =
-          static_cast<cricket::VideoChannel*>((*iter)->channel);
-      ASSERT(video_channel != NULL);
-      video_channel->Mute(mute);
-    }
-  }
-}
-
-void WebRTCSession::SetError(Error error) {
+void WebRtcSession::SetError(Error error) {
   BaseSession::SetError(error);
 }
 
-void WebRTCSession::OnCandidatesReady(
+void WebRtcSession::OnCandidatesReady(
     cricket::Transport* transport,
     const std::vector<cricket::Candidate>& candidates) {
   std::vector<cricket::Candidate>::const_iterator iter;

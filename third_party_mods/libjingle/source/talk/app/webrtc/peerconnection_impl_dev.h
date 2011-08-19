@@ -42,7 +42,7 @@ class Message;
 
 namespace webrtc {
 
-class WebRTCSession;
+class WebRtcSession;
 
 class PeerConnectionImpl : public PeerConnection {
  public:
@@ -100,7 +100,7 @@ class PeerConnectionImpl : public PeerConnection {
   }
 
 private:
-  WebRTCSession* CreateSession();
+  WebRtcSession* CreateSession();
   virtual void OnMessage(talk_base::Message* msg);
   void AddStream_s(LocalStream* stream);
   void RemoveStream_s(LocalStream* stream);
@@ -110,7 +110,7 @@ private:
   bool initialized_;
   ReadyState ready_state_;
   PeerConnectionObserver* observer_;
-  talk_base::scoped_ptr<WebRTCSession> session_;
+  talk_base::scoped_ptr<WebRtcSession> session_;
   talk_base::scoped_ptr<talk_base::Thread> signaling_thread_;
   cricket::ChannelManager* channel_manager_;
   cricket::PortAllocator* port_allocator_;

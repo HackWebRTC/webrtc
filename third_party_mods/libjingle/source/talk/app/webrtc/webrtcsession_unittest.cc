@@ -168,7 +168,7 @@ class OnSignalImpl
   enum CallbackId {
     kNone,
     kOnAddStream,
-    kOnRemoveStream2,
+    kOnRemoveStream,
     kOnRtcMediaChannelCreated,
     kOnLocalDescription,
     kOnFailedCall,
@@ -190,8 +190,8 @@ class OnSignalImpl
     last_stream_id_ = stream_id;
     last_was_video_ = video;
   }
-  void OnRemoveStream2(const std::string& stream_id, bool video) {
-    callback_ids_.push_back(kOnRemoveStream2);
+  void OnRemoveStream(const std::string& stream_id, bool video) {
+    callback_ids_.push_back(kOnRemoveStream);
     last_stream_id_ = stream_id;
     last_was_video_ = video;
   }
@@ -310,14 +310,14 @@ typedef ReturnBoolPassArgument<
     std::pair<std::string, cricket::VideoRenderer*> >
         ReturnBoolPassStringVideoRenderer;
 
-class WebRTCSessionExtendedForTest : public webrtc::WebRTCSession {
+class WebRtcSessionExtendedForTest : public webrtc::WebRtcSession {
  public:
-  WebRTCSessionExtendedForTest(const std::string& id,
+  WebRtcSessionExtendedForTest(const std::string& id,
                                    const std::string& direction,
                                    cricket::PortAllocator* allocator,
                                    cricket::ChannelManager* channelmgr,
                                    talk_base::Thread* signaling_thread)
-      : WebRTCSession(id, direction, allocator, channelmgr, signaling_thread),
+      : WebRtcSession(id, direction, allocator, channelmgr, signaling_thread),
         worker_thread_(channelmgr->worker_thread()) {
   }
  private:
@@ -330,7 +330,7 @@ class WebRTCSessionExtendedForTest : public webrtc::WebRTCSession {
   talk_base::Thread* worker_thread_;
 };
 
-class WebRTCSessionTest : public OnSignalImpl,
+class WebRtcSessionTest : public OnSignalImpl,
                           public talk_base::MessageHandler {
  public:
   enum FunctionCallId {
@@ -338,8 +338,6 @@ class WebRTCSessionTest : public OnSignalImpl,
     kCallConnect,
     kCallOnRemoteDescription,
     kCallOnInitiateMessage,
-    kCallOnMute,
-    kCallOnCameraMute,
     kCallMuted,
     kCallCameraMuted,
     kCallCreateVoiceChannel,
@@ -356,9 +354,9 @@ class WebRTCSessionTest : public OnSignalImpl,
   enum {kInit = kCallLocalCandidates + 1};
   enum {kTerminate = kInit + 1};
 
-  static WebRTCSessionTest* CreateWebRTCSessionTest(bool receiving) {
-    WebRTCSessionTest* return_value =
-        new WebRTCSessionTest();
+  static WebRtcSessionTest* CreateWebRtcSessionTest(bool receiving) {
+    WebRtcSessionTest* return_value =
+        new WebRtcSessionTest();
     if (return_value == NULL) {
       return NULL;
     }
@@ -436,16 +434,16 @@ class WebRTCSessionTest : public OnSignalImpl,
 
     talk_base::CreateRandomString(8, &id_);
 
-    session_ = new webrtc::WebRTCSession(
+    session_ = new webrtc::WebRtcSession(
         id_, DirectionAsString() , allocator_,
         channel_manager_,
         signaling_thread_);
     session_->SignalAddStream.connect(
         static_cast<OnSignalImpl*> (this),
         &OnSignalImpl::OnAddStream);
-    session_->SignalRemoveStream2.connect(
+    session_->SignalRemoveStream.connect(
         static_cast<OnSignalImpl*> (this),
-        &OnSignalImpl::OnRemoveStream2);
+        &OnSignalImpl::OnRemoveStream);
     session_->SignalRtcMediaChannelCreated.connect(
         static_cast<OnSignalImpl*> (this),
         &OnSignalImpl::OnRtcMediaChannelCreated);
@@ -466,7 +464,7 @@ class WebRTCSessionTest : public OnSignalImpl,
     delete allocator_;
   }
 
-  ~WebRTCSessionTest() {
+  ~WebRtcSessionTest() {
     if (signaling_thread_ != NULL) {
       signaling_thread_->Send(this, kTerminate, NULL);
       signaling_thread_->Stop();
@@ -506,28 +504,6 @@ class WebRTCSessionTest : public OnSignalImpl,
   bool CallOnInitiateMessage() {
     ReturnBool return_value;
     signaling_thread_->Send(this, kCallOnInitiateMessage, &return_value);
-    return return_value.return_value_;
-  }
-
-  void CallOnMute(bool mute) {
-    PassBool return_value(mute);
-    signaling_thread_->Send(this, kCallOnMute, &return_value);
-  }
-
-  void CallOnCameraMute(bool mute) {
-    PassBool return_value(mute);
-    signaling_thread_->Send(this, kCallOnCameraMute, &return_value);
-  }
-
-  bool CallMuted() {
-    ReturnBool return_value;
-    signaling_thread_->Send(this, kCallMuted, &return_value);
-    return return_value.return_value_;
-  }
-
-  bool CallCameraMuted() {
-    ReturnBool return_value;
-    signaling_thread_->Send(this, kCallCameraMuted, &return_value);
     return return_value.return_value_;
   }
 
@@ -641,16 +617,6 @@ class WebRTCSessionTest : public OnSignalImpl,
     return_value->return_value_ = true;
   }
 
-  void OnMute_s(talk_base::Message* message) {
-    PassBool* return_value = reinterpret_cast<PassBool*>(message->pdata);
-    session_->OnMute(return_value->argument());
-  }
-
-  void OnCameraMute_s(talk_base::Message* message) {
-    PassBool* return_value = reinterpret_cast<PassBool*>(message->pdata);
-    session_->OnCameraMute(return_value->argument());
-  }
-
   void Muted_s(talk_base::Message* message) {
     ReturnBool* return_value = reinterpret_cast<ReturnBool*>(message->pdata);
     return_value->return_value_ = session_->muted();
@@ -747,12 +713,6 @@ class WebRTCSessionTest : public OnSignalImpl,
       case kCallOnInitiateMessage:
         OnInitiateMessage_s(message);
         return;
-      case kCallOnMute:
-        OnMute_s(message);
-        return;
-      case kCallOnCameraMute:
-        OnCameraMute_s(message);
-        return;
       case kCallMuted:
         Muted_s(message);
         return;
@@ -802,7 +762,7 @@ class WebRTCSessionTest : public OnSignalImpl,
   }
 
  private:
-  WebRTCSessionTest()
+  WebRtcSessionTest()
       : session_(NULL),
         id_(),
         receiving_(false),
@@ -812,7 +772,7 @@ class WebRTCSessionTest : public OnSignalImpl,
         signaling_thread_(NULL) {
   }
 
-  webrtc::WebRTCSession* session_;
+  webrtc::WebRtcSession* session_;
   std::string id_;
   bool receiving_;
 
@@ -824,7 +784,7 @@ class WebRTCSessionTest : public OnSignalImpl,
   talk_base::Thread* signaling_thread_;
 };
 
-bool CallbackReceived(WebRTCSessionTest* session, int timeout) {
+bool CallbackReceived(WebRtcSessionTest* session, int timeout) {
   talk_base::Thread::SleepMs(timeout);
   const OnSignalImpl::CallbackId peek_id =
       session->PeekOldestCallback();
@@ -837,8 +797,8 @@ void SleepMs(int timeout_ms) {
 
 TEST(WebRtcSessionTest, InitializationReceiveSanity) {
   const bool kReceiving = true;
-  talk_base::scoped_ptr<WebRTCSessionTest> my_session;
-  my_session.reset(WebRTCSessionTest::CreateWebRTCSessionTest(kReceiving));
+  talk_base::scoped_ptr<WebRtcSessionTest> my_session;
+  my_session.reset(WebRtcSessionTest::CreateWebRtcSessionTest(kReceiving));
 
   ASSERT_TRUE(my_session.get() != NULL);
   ASSERT_TRUE(my_session->CallInitiate());
@@ -854,10 +814,11 @@ TEST(WebRtcSessionTest, InitializationReceiveSanity) {
             my_session->PopOldestCallback());
 }
 
+// TODO(ronghuawu): Add tests for video calls and incoming calls.
 TEST(WebRtcSessionTest, SendCallSetUp) {
   const bool kReceiving = false;
-  talk_base::scoped_ptr<WebRTCSessionTest> my_session;
-  my_session.reset(WebRTCSessionTest::CreateWebRTCSessionTest(kReceiving));
+  talk_base::scoped_ptr<WebRtcSessionTest> my_session;
+  my_session.reset(WebRtcSessionTest::CreateWebRtcSessionTest(kReceiving));
 
   ASSERT_TRUE(my_session.get() != NULL);
   ASSERT_TRUE(my_session->CallInitiate());

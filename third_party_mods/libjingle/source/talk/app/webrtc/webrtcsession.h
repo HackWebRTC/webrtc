@@ -74,15 +74,15 @@ struct StreamInfo {
 typedef std::vector<cricket::AudioCodec> AudioCodecs;
 typedef std::vector<cricket::VideoCodec> VideoCodecs;
 
-class WebRTCSession : public cricket::BaseSession {
+class WebRtcSession : public cricket::BaseSession {
  public:
-  WebRTCSession(const std::string& id,
+  WebRtcSession(const std::string& id,
                     const std::string& direction,
                     cricket::PortAllocator* allocator,
                     cricket::ChannelManager* channelmgr,
                     talk_base::Thread* signaling_thread);
 
-  ~WebRTCSession();
+  ~WebRtcSession();
 
   bool Initiate();
   bool Connect();
@@ -90,8 +90,6 @@ class WebRTCSession : public cricket::BaseSession {
       const std::vector<cricket::Candidate>& candidates);
   bool OnInitiateMessage(cricket::SessionDescription* sdp,
       const std::vector<cricket::Candidate>& candidates);
-  void OnMute(bool mute);
-  void OnCameraMute(bool mute);
   bool CreateVoiceChannel(const std::string& stream_id);
   bool CreateVideoChannel(const std::string& stream_id);
   bool RemoveStream(const std::string& stream_id);
@@ -110,14 +108,31 @@ class WebRTCSession : public cricket::BaseSession {
   bool SetVideoRenderer(const std::string& stream_id,
                         cricket::VideoRenderer* renderer);
 
-  sigslot::signal1<WebRTCSession*> SignalRemoveStreamMessage;
+  // This signal occurs when all the streams have been removed.
+  // It is triggered by a successful call to the RemoveAllStream or
+  // the OnRemoteDescription with stream deleted signaling message with the
+  // candidates port equal to 0.
+  sigslot::signal1<WebRtcSession*> SignalRemoveStreamMessage;
+
+  // This signal indicates a stream has been added properly.
+  // It is triggered by a successful call to the OnInitiateMessage or
+  // the OnRemoteDescription and if it's going to the STATE_RECEIVEDACCEPT.
   sigslot::signal2<const std::string&, bool> SignalAddStream;
+
+  // This signal occurs when one stream is removed with the signaling
+  // message from the remote peer with the candidates port equal to 0.
   sigslot::signal2<const std::string&, bool> SignalRemoveStream;
+
+  // This signal occurs when audio/video channel has been created for the
+  // new added stream.
   sigslot::signal2<const std::string&, bool> SignalRtcMediaChannelCreated;
-  // Triggered when the local candidate is ready
+
+  // This signal occurs when the local candidate is ready
   sigslot::signal2<const cricket::SessionDescription*,
       const std::vector<cricket::Candidate>&> SignalLocalDescription;
-  // This callback will trigger if setting up a call times out.
+
+  // This signal triggers when setting up or resuming a call has not been
+  // successful before a certain time out.
   sigslot::signal0<> SignalFailedCall;
 
   bool muted() const { return muted_; }
@@ -194,7 +209,7 @@ class WebRTCSession : public cricket::BaseSession {
   cricket::ChannelManager* channel_manager_;
   std::vector<StreamInfo*> streams_;
   TransportChannelMap transport_channels_;
-  bool all_transports_writable_;
+  bool transports_writable_;
   bool muted_;
   bool camera_muted_;
   int setup_timeout_;

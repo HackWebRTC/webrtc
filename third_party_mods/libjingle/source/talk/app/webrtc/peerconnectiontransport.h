@@ -53,7 +53,7 @@ class PeerConnectionTransport : public talk_base::MessageHandler,
   void ConnectChannels();
 
   // methods to handle transport channels. These methods are relayed from
-  // WebRTCSessionImpl which implements cricket::BaseSession methods
+  // WebRtcSession which implements cricket::BaseSession methods
   cricket::TransportChannel* CreateChannel(const std::string& channel_name,
                                            const std::string& content_type);
   cricket::TransportChannel* GetChannel(const std::string& channel_name,
