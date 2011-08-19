@@ -141,7 +141,7 @@ class PeerConnectionImpl : public PeerConnection,
   cricket::MediaEngine* media_engine_;
   talk_base::Thread* worker_thread_;
   cricket::DeviceManager* device_manager_;
-  talk_base::scoped_ptr<talk_base::Thread> signaling_thread_;
+  talk_base::Thread* signaling_thread_;
 
   bool initialized_;
   ReadyState ready_state_;

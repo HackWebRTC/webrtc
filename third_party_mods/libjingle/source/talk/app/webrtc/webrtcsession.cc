@@ -302,6 +302,7 @@ bool WebRtcSession::RemoveStream(const std::string& stream_id) {
       }
       // channel and transport will be deleted in
       // DestroyVoiceChannel/DestroyVideoChannel
+      streams_.erase(iter);
       ret = true;
       break;
     }
@@ -459,6 +460,9 @@ bool WebRtcSession::OnInitiateMessage(
     }
   }
 
+  // Provide remote candidates to the transport
+  transport_->OnRemoteCandidates(candidates);
+
   set_remote_description(offer);
   SetState(STATE_RECEIVEDINITIATE);
 
@@ -468,8 +472,6 @@ bool WebRtcSession::OnInitiateMessage(
   set_local_description(answer.release());
   SetState(STATE_SENTACCEPT);
 
-  // Provide remote candidates to the transport
-  transport_->OnRemoteCandidates(candidates);
 
   // AddStream called only once with Video label
   if (video_content) {
@@ -485,9 +487,10 @@ bool WebRtcSession::OnRemoteDescription(
     const std::vector<cricket::Candidate>& candidates) {
 
   if (state() == STATE_SENTTERMINATE) {
-    ProcessTerminateAccept(desc);
-    return true;
+    LOG(LERROR) << "Invalid state to process the message";
+    return false;
   }
+
   if (state() == STATE_SENTACCEPT ||
       state() == STATE_RECEIVEDACCEPT ||
       state() == STATE_INPROGRESS) {
@@ -498,6 +501,9 @@ bool WebRtcSession::OnRemoteDescription(
       return true;
     }
   }
+
+  // Will trigger OnWritableState() if successful.
+  transport_->OnRemoteCandidates(candidates);
 
   // Session description is always accepted.
   set_remote_description(desc);
@@ -514,11 +520,11 @@ bool WebRtcSession::OnRemoteDescription(
         SignalAddStream(audio_content->name, false);
     }
   }
-  // Will trigger OnWritableState() if successful.
-  transport_->OnRemoteCandidates(candidates);
   return true;
 }
 
+<<<<<<< .mine
+=======
 void WebRtcSession::ProcessTerminateAccept(cricket::SessionDescription* desc) {
   const cricket::ContentInfo* video_content = GetFirstVideoContent(desc);
   if (video_content) {
@@ -531,6 +537,7 @@ void WebRtcSession::ProcessTerminateAccept(cricket::SessionDescription* desc) {
   }
 }
 
+>>>>>>> .r402
 bool WebRtcSession::CheckForStreamDeleteMessage(
     const std::vector<cricket::Candidate>& candidates) {
   for (size_t i = 0; i < candidates.size(); ++i) {
@@ -557,7 +564,6 @@ bool WebRtcSession::OnStreamDeleteMessage(
     }
   }
 
-  SignalRemoveStreamMessage(this);
   const cricket::ContentInfo* video_content = GetFirstVideoContent(desc);
   if (video_content) {
     SignalRemoveStream(video_content->name, true);

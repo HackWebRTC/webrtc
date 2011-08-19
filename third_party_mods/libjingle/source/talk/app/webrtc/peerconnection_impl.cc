@@ -140,12 +140,12 @@ PeerConnectionImpl::PeerConnectionImpl(const std::string& config,
     media_engine_(media_engine),
     worker_thread_(worker_thread),
     device_manager_(device_manager),
+    signaling_thread_(signaling_thread),
     initialized_(false),
     service_type_(SERVICE_COUNT),
     event_callback_(NULL),
     session_(NULL),
     incoming_(false) {
-  signaling_thread_.reset(signaling_thread);
 }
 
 PeerConnectionImpl::PeerConnectionImpl(const std::string& config,
@@ -166,6 +166,8 @@ PeerConnectionImpl::PeerConnectionImpl(const std::string& config,
 
 PeerConnectionImpl::~PeerConnectionImpl() {
   signaling_thread_->Send(this, MSG_WEBRTC_RELEASE);
+  // Signaling thread must be destroyed by the application.
+  signaling_thread_ = NULL;
 }
 
 void PeerConnectionImpl::Release_s() {
@@ -181,8 +183,11 @@ bool PeerConnectionImpl::Init() {
     return false;
   stun_hosts.push_back(stun_addr);
 
-  if (!signaling_thread_.get()) {
-    signaling_thread_.reset(new talk_base::Thread());
+  // TODO(mallinath) - Changes are required to modify the stand alone
+  // constructor to get signaling thread as input. It should not be created
+  // here.
+  if (!signaling_thread_) {
+    signaling_thread_ = new talk_base::Thread();
     if (!signaling_thread_->SetName("signaling thread", this) ||
         !signaling_thread_->Start()) {
       LOG(WARNING) << "Failed to start libjingle signaling thread";
@@ -290,7 +295,7 @@ WebRtcSession* PeerConnectionImpl::CreateMediaSession(
   ASSERT(port_allocator_ != NULL);
   WebRtcSession* session = new WebRtcSession(id, dir,
       port_allocator_, channel_manager_.get(),
-      signaling_thread_.get());
+      signaling_thread_);
 
   if (session->Initiate()) {
     session->SignalRemoveStreamMessage.connect(
