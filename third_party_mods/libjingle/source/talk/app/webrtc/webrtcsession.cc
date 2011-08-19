@@ -523,21 +523,6 @@ bool WebRtcSession::OnRemoteDescription(
   return true;
 }
 
-<<<<<<< .mine
-=======
-void WebRtcSession::ProcessTerminateAccept(cricket::SessionDescription* desc) {
-  const cricket::ContentInfo* video_content = GetFirstVideoContent(desc);
-  if (video_content) {
-    SignalRemoveStream(video_content->name, true);
-  } else {
-    const cricket::ContentInfo* audio_content = GetFirstAudioContent(desc);
-    if (audio_content) {
-      SignalRemoveStream(audio_content->name, false);
-    }
-  }
-}
-
->>>>>>> .r402
 bool WebRtcSession::CheckForStreamDeleteMessage(
     const std::vector<cricket::Candidate>& candidates) {
   for (size_t i = 0; i < candidates.size(); ++i) {
