@@ -35,7 +35,7 @@ public:
      */
     struct Packet
     {
-        WebRtc_UWord16 length;                    /**> Length of packet in bytes. */
+        WebRtc_UWord16 length;               /**> Length of packet in bytes. */
         WebRtc_UWord8 data[IP_PACKET_SIZE];  /**> Packet data. */
     };
 
@@ -58,8 +58,8 @@ public:
      */
     struct ReceivedPacket
     {
-        WebRtc_UWord16 seqNum;      /**> Sequence number of packet. */
-        WebRtc_UWord32 ssrc;        /**> SSRC of the current frame. Must be set for FEC
+        WebRtc_UWord16 seqNum;    /**> Sequence number of packet. */
+        WebRtc_UWord32 ssrc;      /**> SSRC of the current frame. Must be set for FEC
                                        packets, but not required for media packets. */
         bool isFec;               /**> Set to true if this is an FEC packet and false
                                        otherwise. */
@@ -73,13 +73,13 @@ public:
      */
     struct RecoveredPacket
     {
-        bool wasRecovered;   /**> Will be true if this packet was recovered by the FEC.
-                                   Otherwise it was a media packet passed in through the
-                                   received packet list. */
+        bool wasRecovered;     /**> Will be true if this packet was recovered by the FEC.
+                                    Otherwise it was a media packet passed in through the
+                                    received packet list. */
         WebRtc_UWord16 seqNum; /**> Sequence number of the packet. This is mostly for
-                                  implementation convenience but could be utilized by the
-                                  user if so desired. */
-        Packet* pkt;         /**> Pointer to the packet storage. */
+                                    implementation convenience but could be utilized by the
+                                    user if so desired. */
+        Packet* pkt;           /**> Pointer to the packet storage. */
     };
 
     /**
@@ -87,7 +87,7 @@ public:
      *
      * \param[in] id Module ID
      */
-    ForwardErrorCorrection(const WebRtc_Word32 id);
+    ForwardErrorCorrection(WebRtc_Word32 id);
 
     /**
      * Destructor. Before freeing an instance of the class, #DecodeFEC() must be called
@@ -122,8 +122,8 @@ public:
      */
      WebRtc_Word32 GenerateFEC(const ListWrapper& mediaPacketList,
                                WebRtc_UWord8 protectionFactor,
-                               WebRtc_UWord32 numImportantPackets,
-                               const bool useUnequalProtection,
+                               int numImportantPackets,
+                               bool useUnequalProtection,
                                ListWrapper& fecPacketList);
 
     /**
@@ -165,9 +165,9 @@ public:
      * \return 0 on success, -1 on failure.
      */
     WebRtc_Word32 DecodeFEC(ListWrapper& receivedPacketList,
-                          ListWrapper& recoveredPacketList,
-                          const WebRtc_UWord16 lastFECSeqNum,
-                          bool& frameComplete);
+                            ListWrapper& recoveredPacketList,
+                            WebRtc_UWord16 lastFECSeqNum,
+                            bool& frameComplete);
     /**
      * Gets the size in bytes of the FEC/ULP headers, which must be accounted for as
      * packet overhead.
@@ -176,12 +176,12 @@ public:
     static WebRtc_UWord16 PacketOverhead();
 
 private:
-    WebRtc_Word32  _id;
-    Packet*      _generatedFecPackets;
-    ListWrapper     _fecPacketList;
+    WebRtc_Word32 _id;
+    Packet* _generatedFecPackets;
+    ListWrapper _fecPacketList;
     WebRtc_UWord16 _seqNumBase;
-    bool         _lastMediaPacketReceived;
-    bool         _fecPacketReceived;
+    bool _lastMediaPacketReceived;
+    bool _fecPacketReceived;
 };
 } // namespace webrtc
 

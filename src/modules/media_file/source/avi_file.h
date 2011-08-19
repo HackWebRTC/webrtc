@@ -85,8 +85,9 @@ public:
         AVI_VIDEO = 1
     };
 
-    enum {CODEC_CONFIG_LENGTH = 64};
-    enum {STREAM_NAME_LENGTH  = 32};
+    // Unsigned, for comparison with must-be-unsigned types.
+    static const unsigned int CODEC_CONFIG_LENGTH = 64;
+    static const unsigned int STREAM_NAME_LENGTH  = 32;
 
     AviFile();
     ~AviFile();

@@ -46,17 +46,17 @@ public:
     // This method will be called after the detection of an inband
     // telephone event. The event code is given as output in the
     // |eventCode| parameter.
-    virtual void OnReceivedTelephoneEventInband(const int channel,
-                                                const unsigned char eventCode,
-                                                const bool endOfEvent) = 0;
+    virtual void OnReceivedTelephoneEventInband(int channel,
+                                                int eventCode,
+                                                bool endOfEvent) = 0;
 
     // This method will be called after the detection of an out-of-band
     // telephone event. The event code is given as output in the
     // |eventCode| parameter.
     virtual void OnReceivedTelephoneEventOutOfBand(
-        const int channel,
-        const unsigned char eventCode,
-        const bool endOfEvent) = 0;
+        int channel,
+        int eventCode,
+        bool endOfEvent) = 0;
 
 protected:
     virtual ~VoETelephoneEventObserver() {}
@@ -79,7 +79,7 @@ public:
     virtual int Release() = 0;
 
     // Sends telephone events either in-band or out-of-band.
-    virtual int SendTelephoneEvent(int channel, unsigned char eventCode,
+    virtual int SendTelephoneEvent(int channel, int eventCode,
                                    bool outOfBand = true, int lengthMs = 160,
                                    int attenuationDb = 10) = 0;
 
@@ -110,13 +110,13 @@ public:
     virtual int GetDtmfFeedbackStatus(bool& enabled, bool& directFeedback) = 0;
 
     // Plays a DTMF feedback tone (only locally).
-    virtual int PlayDtmfTone(unsigned char eventCode, int lengthMs = 200,
+    virtual int PlayDtmfTone(int eventCode, int lengthMs = 200,
                              int attenuationDb = 10) = 0;
 
     // Starts playing out a DTMF feedback tone locally.
     // The tone will be played out until the corresponding stop function
     // is called.
-    virtual int StartPlayingDtmfTone(unsigned char eventCode,
+    virtual int StartPlayingDtmfTone(int eventCode,
                                      int attenuationDb = 10) = 0;
 
     // Stops playing out a DTMF feedback tone locally.

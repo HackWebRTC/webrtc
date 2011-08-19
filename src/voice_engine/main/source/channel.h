@@ -513,11 +513,11 @@ public:
     {
         return _inputIsOnHold;
     };
-    RtpRtcp* const RtpRtcpModulePtr()
+    RtpRtcp* RtpRtcpModulePtr() const
     {
         return &_rtpRtcpModule;
     };
-    WebRtc_Word8 const OutputEnergyLevel()
+    WebRtc_Word8 OutputEnergyLevel() const
     {
         return _outputAudioLevel.Level();
     };

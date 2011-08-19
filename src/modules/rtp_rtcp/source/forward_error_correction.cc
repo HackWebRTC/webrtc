@@ -54,7 +54,7 @@ struct ProtectedPacket
     ForwardErrorCorrection::Packet* pkt; /**> Pointer to the packet storage. */
 };
 
-ForwardErrorCorrection::ForwardErrorCorrection(const WebRtc_Word32 id) :
+ForwardErrorCorrection::ForwardErrorCorrection(WebRtc_Word32 id) :
     _id(id),
     _generatedFecPackets(NULL),
     _fecPacketList(),
@@ -92,8 +92,8 @@ ForwardErrorCorrection::~ForwardErrorCorrection()
 WebRtc_Word32
 ForwardErrorCorrection::GenerateFEC(const ListWrapper& mediaPacketList,
                                     WebRtc_UWord8 protectionFactor,
-                                    WebRtc_UWord32 numImportantPackets,
-                                    const bool useUnequalProtection,
+                                    int numImportantPackets,
+                                    bool useUnequalProtection,
                                     ListWrapper& fecPacketList)
 {
     if (mediaPacketList.Empty())
@@ -132,15 +132,15 @@ ForwardErrorCorrection::GenerateFEC(const ListWrapper& mediaPacketList,
     if (numImportantPackets > numMediaPackets)
     {
         WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
-            "Number of Important packet greater than number of Media Packets %d %d",
-            numImportantPackets, numMediaPackets);
+            "Number of important packets (%d) greater than number of media "
+            "packets (%d)", numImportantPackets, numMediaPackets);
         return -1;
     }
     if (numImportantPackets < 0)
     {
         WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
-            "Number of Important packets less than zero %d %d",
-            numImportantPackets, numMediaPackets);
+            "Number of important packets (%d) less than zero",
+            numImportantPackets);
         return -1;
     }
 
@@ -350,7 +350,7 @@ ForwardErrorCorrection::GenerateFEC(const ListWrapper& mediaPacketList,
 WebRtc_Word32
 ForwardErrorCorrection::DecodeFEC(ListWrapper& receivedPacketList,
                                   ListWrapper& recoveredPacketList,
-                                  const WebRtc_UWord16 lastFECSeqNum,
+                                  WebRtc_UWord16 lastFECSeqNum,
                                   bool& frameComplete)
 {
     // TODO: can we check for multiple ULP headers, and return an error?

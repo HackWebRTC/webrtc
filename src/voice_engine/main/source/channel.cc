@@ -4511,7 +4511,7 @@ Channel::SetSendTelephoneEventPayloadType(unsigned char type)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                "Channel::SetSendTelephoneEventPayloadType()");
-    if (type < 0 || type > 127)
+    if (type > 127)
     {
         _engineStatisticsPtr->SetLastError(
             VE_INVALID_ARGUMENT, kTraceError,

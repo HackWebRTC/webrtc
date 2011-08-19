@@ -38,12 +38,10 @@ namespace internal {
   *                                    of size:
   *                                    numFecPackets * "number of mask bytes".
   */
-void GeneratePacketMasks(const WebRtc_UWord32 numMediaPackets,
-                         const WebRtc_UWord32 numFecPackets,
-                         const WebRtc_UWord32 numImpPackets,
-                         const bool useUnequalProtection,
+void GeneratePacketMasks(int numMediaPackets,
+                         int numFecPackets,
+                         int numImpPackets,
+                         bool useUnequalProtection,
                          WebRtc_UWord8* packetMask);
-
-
 } // namespace internal
 } // namespace webrtc

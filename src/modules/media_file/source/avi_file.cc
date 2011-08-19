@@ -39,13 +39,18 @@
 
 namespace webrtc {
 namespace {
-    static const WebRtc_UWord32 kAvifHasindex       = 0x00000010;
-    static const WebRtc_UWord32 kAvifMustuseindex   = 0x00000020;
-    static const WebRtc_UWord32 kAvifIsinterleaved  = 0x00000100;
-    static const WebRtc_UWord32 kAvifTrustcktype    = 0x00000800;
-    static const WebRtc_UWord32 kAvifWascapturefile = 0x00010000;
-}
+static const WebRtc_UWord32 kAvifHasindex       = 0x00000010;
+static const WebRtc_UWord32 kAvifMustuseindex   = 0x00000020;
+static const WebRtc_UWord32 kAvifIsinterleaved  = 0x00000100;
+static const WebRtc_UWord32 kAvifTrustcktype    = 0x00000800;
+static const WebRtc_UWord32 kAvifWascapturefile = 0x00010000;
 
+template <class T>
+T MinValue(T a, T b)
+{
+    return a < b ? a : b;
+}
+}  // namespace
 
 AviFile::AVIMAINHEADER::AVIMAINHEADER()
     : fcc(                  0),
@@ -1505,8 +1510,7 @@ WebRtc_Word32 AviFile::ReadAVIVideoStreamHeader(WebRtc_Word32 endpos)
     if (chunksize >  _videoFormatHeader.biSize)
     {
         const WebRtc_UWord32 size = chunksize - _videoFormatHeader.biSize;
-        const WebRtc_Word32 readSize = (size > CODEC_CONFIG_LENGTH) ?
-            CODEC_CONFIG_LENGTH : size;
+        const WebRtc_UWord32 readSize = MinValue(size, CODEC_CONFIG_LENGTH);
         _bytesRead += GetBuffer(
             reinterpret_cast<WebRtc_UWord8*>(_videoConfigParameters), readSize);
         _videoConfigLength = readSize;
@@ -1528,15 +1532,14 @@ WebRtc_Word32 AviFile::ReadAVIVideoStreamHeader(WebRtc_Word32 endpos)
 
         if (chunktag == MakeFourCc('s', 't', 'r', 'n'))
         {
-            WebRtc_Word32 size = (chunksize > STREAM_NAME_LENGTH) ?
-                STREAM_NAME_LENGTH : chunksize;
+            const WebRtc_UWord32 size = MinValue(chunksize, STREAM_NAME_LENGTH);
             _bytesRead += GetBuffer(
                 reinterpret_cast<WebRtc_UWord8*>(_videoStreamName), size);
         }
         else if (chunktag == MakeFourCc('s', 't', 'r', 'd'))
         {
-            WebRtc_Word32 size = (chunksize > CODEC_CONFIG_LENGTH) ?
-                CODEC_CONFIG_LENGTH : chunksize;
+            const WebRtc_UWord32 size = MinValue(chunksize,
+                                                 CODEC_CONFIG_LENGTH);
             _bytesRead += GetBuffer(
                 reinterpret_cast<WebRtc_UWord8*>(_videoConfigParameters), size);
             _videoConfigLength = size;
@@ -1579,11 +1582,10 @@ WebRtc_Word32 AviFile::ReadAVIAudioStreamHeader(WebRtc_Word32 endpos)
     _bytesRead += GetLE16(_audioFormatHeader.wBitsPerSample);
     _bytesRead += GetLE16(_audioFormatHeader.cbSize);
 
-    const WebRtc_Word32 diffRead = chunksize - (_bytesRead - startRead);
+    const WebRtc_UWord32 diffRead = chunksize - (_bytesRead - startRead);
     if (diffRead > 0)
     {
-        size_t size = (diffRead > CODEC_CONFIG_LENGTH) ?
-            CODEC_CONFIG_LENGTH : diffRead;
+        const WebRtc_UWord32 size = MinValue(diffRead, CODEC_CONFIG_LENGTH);
         _bytesRead += GetBuffer(
             reinterpret_cast<WebRtc_UWord8*>(_audioConfigParameters), size);
     }
@@ -1597,15 +1599,14 @@ WebRtc_Word32 AviFile::ReadAVIAudioStreamHeader(WebRtc_Word32 endpos)
 
         if (chunktag == MakeFourCc('s', 't', 'r', 'n'))
         {
-            WebRtc_Word32 size = (chunksize > STREAM_NAME_LENGTH) ?
-                STREAM_NAME_LENGTH : chunksize;
+            const WebRtc_UWord32 size = MinValue(chunksize, STREAM_NAME_LENGTH);
             _bytesRead += GetBuffer(
                 reinterpret_cast<WebRtc_UWord8*>(_audioStreamName), size);
         }
         else if (chunktag == MakeFourCc('s', 't', 'r', 'd'))
         {
-            WebRtc_Word32 size = (chunksize > CODEC_CONFIG_LENGTH) ?
-                CODEC_CONFIG_LENGTH : chunksize;
+            const WebRtc_UWord32 size = MinValue(chunksize,
+                                                 CODEC_CONFIG_LENGTH);
             _bytesRead += GetBuffer(
                 reinterpret_cast<WebRtc_UWord8*>(_audioConfigParameters), size);
         }

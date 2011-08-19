@@ -36,10 +36,10 @@
           'C:/Program Files/Microsoft SDKs/Windows/v7.1/Samples/multimedia/directshow/baseclasses/',
       }],
       ['build_with_chromium==1', {
-        # Exclude pulse audio on Chromium since its prerequisites don't
-        # include pulse audio.
+        # Exclude pulse audio on Chromium since its prerequisites don't require
+        # pulse audio.
         'include_pulse_audio%': 0,
-        # Exclude internal ADM since chrome uses its own IO handling.
+        # Exclude internal ADM since Chromium uses its own IO handling.
         'include_internal_audio_device%': 0,
       }, {
         'include_pulse_audio%': 1,
@@ -90,6 +90,16 @@
         'defines': [
           'WEBRTC_VIDEO_EXTERNAL_CAPTURE_AND_RENDER',
         ],
+      }, {
+        # Add more stringent warnings to the standalone build than
+        # provided by the Chromium common.gypi.
+        'conditions': [
+          ['OS=="linux"', {
+            'cflags': [
+              '-Wextra',
+            ],
+          }],
+        ],
       }],
     ], # conditions
 
@@ -98,11 +108,6 @@
         # TODO(ajm): This block disables some warnings from the chromium_code
         #            configuration. Remove when possible.
         'conditions': [
-          ['OS=="linux"', {
-            'cflags!': [
-              '-Werror',
-            ],
-          }],
           ['OS=="mac"', {
             'xcode_settings': {
               'GCC_TREAT_WARNINGS_AS_ERRORS': 'NO',

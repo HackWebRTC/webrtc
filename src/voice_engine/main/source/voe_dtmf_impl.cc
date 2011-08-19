@@ -72,7 +72,7 @@ int VoEDtmfImpl::Release()
 }
 
 int VoEDtmfImpl::SendTelephoneEvent(int channel,
-                                    unsigned char eventCode,
+                                    int eventCode,
                                     bool outOfBand,
                                     int lengthMs,
                                     int attenuationDb)
@@ -216,7 +216,7 @@ int VoEDtmfImpl::GetSendTelephoneEventPayloadType(int channel,
     return channelPtr->GetSendTelephoneEventPayloadType(type);
 }
 
-int VoEDtmfImpl::PlayDtmfTone(unsigned char eventCode,
+int VoEDtmfImpl::PlayDtmfTone(int eventCode,
                               int lengthMs,
                               int attenuationDb)
 {
@@ -251,7 +251,7 @@ int VoEDtmfImpl::PlayDtmfTone(unsigned char eventCode,
     return _outputMixerPtr->PlayDtmfTone(eventCode, lengthMs, attenuationDb);
 }
 
-int VoEDtmfImpl::StartPlayingDtmfTone(unsigned char eventCode,
+int VoEDtmfImpl::StartPlayingDtmfTone(int eventCode,
                                       int attenuationDb)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1),

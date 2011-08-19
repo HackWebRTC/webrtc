@@ -28,7 +28,7 @@ public:
 
     virtual int SendTelephoneEvent(
         int channel,
-        unsigned char eventCode,
+        int eventCode,
         bool outOfBand = true,
         int lengthMs = 160,
         int attenuationDb = 10);
@@ -44,11 +44,11 @@ public:
 
     virtual int GetDtmfFeedbackStatus(bool& enabled, bool& directFeedback);
 
-    virtual int PlayDtmfTone(unsigned char eventCode,
+    virtual int PlayDtmfTone(int eventCode,
                              int lengthMs = 200,
                              int attenuationDb = 10);
 
-    virtual int StartPlayingDtmfTone(unsigned char eventCode,
+    virtual int StartPlayingDtmfTone(int eventCode,
                                      int attenuationDb = 10);
 
     virtual int StopPlayingDtmfTone();

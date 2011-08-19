@@ -39,15 +39,14 @@ enum ResidualProtectionMode
   * \param[out] packetMask      A pointer to hold the output mask, of size
   *                             [0, x * numMaskBytes], where x >= numRows.
   */
-void FitSubMask(const WebRtc_UWord16 numMaskBytes,
-                const WebRtc_UWord16 numSubMaskBytes,
-                const WebRtc_UWord16 numRows,
+void FitSubMask(WebRtc_UWord16 numMaskBytes,
+                WebRtc_UWord16 numSubMaskBytes,
+                WebRtc_UWord16 numRows,
                 const WebRtc_UWord8* subMask,
                 WebRtc_UWord8* packetMask)
 {
     if (numMaskBytes == numSubMaskBytes)
     {
-
         memcpy(packetMask,subMask,
                numRows * numSubMaskBytes);
     }
@@ -86,10 +85,10 @@ void FitSubMask(const WebRtc_UWord16 numMaskBytes,
 // TODO (marpan): This function is doing three things at the same time:
 // shift within a byte, byte shift and resizing.
 // Split up into subroutines.
-void ShiftFitSubMask(const WebRtc_UWord16 numMaskBytes,
-                     const WebRtc_UWord16 resMaskBytes,
-                     const WebRtc_UWord16 numColumnShift,
-                     const WebRtc_UWord16 endRow,
+void ShiftFitSubMask(WebRtc_UWord16 numMaskBytes,
+                     WebRtc_UWord16 resMaskBytes,
+                     WebRtc_UWord16 numColumnShift,
+                     WebRtc_UWord16 endRow,
                      const WebRtc_UWord8* subMask,
                      WebRtc_UWord8* packetMask)
 {
@@ -160,11 +159,11 @@ namespace webrtc {
 namespace internal {
 
 // Residual protection for remaining packets
-void ResidualPacketProtection(const WebRtc_UWord16 numMediaPackets,
-                              const WebRtc_UWord16 numFecPackets,
-                              const WebRtc_UWord16 numImpPackets,
-                              const WebRtc_UWord16 numMaskBytes,
-                              const ResidualProtectionMode mode,
+void ResidualPacketProtection(WebRtc_UWord16 numMediaPackets,
+                              WebRtc_UWord16 numFecPackets,
+                              WebRtc_UWord16 numImpPackets,
+                              WebRtc_UWord16 numMaskBytes,
+                              ResidualProtectionMode mode,
                               WebRtc_UWord8* packetMask)
 {
     if (mode == kModeNoOverlap)
@@ -209,9 +208,9 @@ void ResidualPacketProtection(const WebRtc_UWord16 numMediaPackets,
 }
 
 // Higher protection for numImpPackets
-void ImportantPacketProtection(const WebRtc_UWord16 numFecPackets,
-                               const WebRtc_UWord16 numImpPackets,
-                               const WebRtc_UWord16 numMaskBytes,
+void ImportantPacketProtection(WebRtc_UWord16 numFecPackets,
+                               WebRtc_UWord16 numImpPackets,
+                               WebRtc_UWord16 numMaskBytes,
                                WebRtc_UWord8* packetMask)
 {
     const WebRtc_UWord8 lBit = numImpPackets > 16 ? 1 : 0;
@@ -289,14 +288,15 @@ void UnequalProtectionMask(const WebRtc_UWord16 numMediaPackets,
 
 }
 
-void GeneratePacketMasks(const WebRtc_UWord32 numMediaPackets,
-                         const WebRtc_UWord32 numFecPackets,
-                         const WebRtc_UWord32 numImpPackets,
-                         const bool useUnequalProtection,
+void GeneratePacketMasks(int numMediaPackets,
+                         int numFecPackets,
+                         int numImpPackets,
+                         bool useUnequalProtection,
                          WebRtc_UWord8* packetMask)
 {
-    assert(numMediaPackets <= sizeof(packetMaskTbl)/sizeof(*packetMaskTbl) &&
-        numMediaPackets > 0);
+    assert(numMediaPackets <= static_cast<int>(sizeof(packetMaskTbl) /
+            sizeof(*packetMaskTbl)));
+    assert(numMediaPackets > 0);
     assert(numFecPackets <= numMediaPackets && numFecPackets > 0);
     assert(numImpPackets <= numMediaPackets && numImpPackets >= 0);
 
