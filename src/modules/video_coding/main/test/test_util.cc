@@ -440,6 +440,100 @@ PSNRfromFiles(const WebRtc_Word8 *refFileName, const WebRtc_Word8 *testFileName,
     return 0;
 }
 
+void
+ssim_parms_8x8_c
+(
+    unsigned char *s,
+    int sp,
+    unsigned char *r,
+    int rp,
+    unsigned long *sum_s,
+    unsigned long *sum_r,
+    unsigned long *sum_sq_s,
+    unsigned long *sum_sq_r,
+    unsigned long *sum_sxr
+)
+{
+    int i,j;
+    for(i=0;i<8;i++,s+=sp,r+=rp)
+     {
+         for(j=0;j<8;j++)
+         {
+             *sum_s += s[j];
+             *sum_r += r[j];
+             *sum_sq_s += s[j] * s[j];
+             *sum_sq_r += r[j] * r[j];
+             *sum_sxr += s[j] * r[j];
+         }
+     }
+}
+
+static double
+similarity
+(
+    unsigned long sum_s,
+    unsigned long sum_r,
+    unsigned long sum_sq_s,
+    unsigned long sum_sq_r,
+    unsigned long sum_sxr,
+    int count
+)
+{
+    int64_t ssim_n, ssim_d;
+    int64_t c1, c2;
+    const int64_t cc1 =  26634; // (64^2*(.01*255)^2
+    const int64_t cc2 = 239708; // (64^2*(.03*255)^2
+
+    //scale the constants by number of pixels
+    c1 = (cc1*count*count)>>12;
+    c2 = (cc2*count*count)>>12;
+
+    ssim_n = (2*sum_s*sum_r+ c1)*((int64_t) 2*count*sum_sxr-
+          (int64_t) 2*sum_s*sum_r+c2);
+
+    ssim_d = (sum_s*sum_s +sum_r*sum_r+c1)*
+        ((int64_t)count*sum_sq_s-(int64_t)sum_s*sum_s +
+        (int64_t)count*sum_sq_r-(int64_t) sum_r*sum_r +c2) ;
+
+    return ssim_n * 1.0 / ssim_d;
+}
+
+static double
+ssim_8x8(unsigned char *s,int sp, unsigned char *r,int rp)
+{
+    unsigned long sum_s=0,sum_r=0,sum_sq_s=0,sum_sq_r=0,sum_sxr=0;
+    ssim_parms_8x8_c(s, sp, r, rp, &sum_s, &sum_r, &sum_sq_s, &sum_sq_r, &sum_sxr);
+    return similarity(sum_s, sum_r, sum_sq_s, sum_sq_r, sum_sxr, 64);
+}
+
+double
+SSIM_frame
+(
+    unsigned char *img1,
+    unsigned char *img2,
+    int stride_img1,
+    int stride_img2,
+    int width,
+    int height)
+{
+    WebRtc_Word32 i,j;
+    WebRtc_UWord32 samples = 0;
+    double ssim_total = 0;
+
+    // sample point start with each 4x4 location
+    for(i=0; i < height-8; i+=4, img1 += stride_img1*4, img2 += stride_img2*4)
+    {
+        for(j=0; j < width-8; j+=4 )
+        {
+            double v = ssim_8x8(img1+j, stride_img1, img2+j, stride_img2);
+            ssim_total += v;
+            samples++;
+        }
+    }
+    ssim_total /= samples;
+    return ssim_total;
+}
+
 WebRtc_Word32
 SSIMfromFiles(const WebRtc_Word8 *refFileName, const WebRtc_Word8 *testFileName, WebRtc_Word32 width, WebRtc_Word32 height, double *SSIMptr)
 {
@@ -459,281 +553,23 @@ SSIMfromFiles(const WebRtc_Word8 *refFileName, const WebRtc_Word8 *testFileName,
 
     int frames = 0;
 
-    int frameBytes = 3*width*height/2; // bytes in one frame I420
-    unsigned char *ref = new unsigned char[frameBytes]; // space for one frame I420
-    unsigned char *test = new unsigned char[frameBytes]; // space for one frame I420
+    const int frameBytes = 3*width*height/2; // bytes in one frame I420
+    unsigned char *ref = new unsigned char[frameBytes];
+    unsigned char *test = new unsigned char[frameBytes];
 
     int refBytes = (int) fread(ref, 1, frameBytes, refFp);
     int testBytes = (int) fread(test, 1, frameBytes, testFp);
 
-    float *righMostColumnAvgTest =  new float[width];
-    float *righMostColumnAvgRef =  new float[width];
-    float *righMostColumnContrastTest =  new float[width];
-    float *righMostColumnContrastRef = new float[width];
-    float *righMostColumnCrossCorr = new float[width];
-
-    float term1,term2,term3,term4,term5;
-
-    //
-    // SSIM: variable definition, window function, initialization
-    int window = 10;
-    //
-    int flag_window = 0;  //0 and 1 for uniform window filter, 2 for gaussian window
-    //
-    float variance_window = 2.0; //variance for window function
-    float ssimFilter[121]; //2d window filter: typically 11x11 = (window+1)*(window+1)
-    //statistics per column of window (#columns = window+1), 0 element for avg over all columns
-    float avgTest[12];
-    float avgRef[12];
-    float contrastTest[12];
-    float contrastRef[12];
-    float crossCorr[12];
-    //
-    //offsets for stability
-    float offset1 = 1.0f; //0.1
-    float offset2 = 1.0f; //0.1
-    //for Guassian window: settings from paper:
-    //float offset1 = 6.0f;   // ~ (K1*L)^2 , K1 = 0.01
-    //float offset2 = 58.0f;  // ~ (K1*L)^2 , K2 = 0.03
-
-
-    float offset3 = offset2/2;
-    //
-    //define window for SSIM: take uniform filter for now
-    float sumfil = 0.0;
-    int nn=-1;
-    for(int j=-window/2;j<=window/2;j++)
-    for(int i=-window/2;i<=window/2;i++)
-    {
-        nn+=1;
-        if (flag_window != 2)
-            ssimFilter[nn] =  1.0;
-        else
-        {
-            float dist  = (float)(i*i) + (float)(j*j);
-            float tmp = 0.5f*dist/variance_window;
-            ssimFilter[nn] = exp(-tmp);
-        }
-        sumfil +=ssimFilter[nn];
-    }
-    //normalize window
-    nn=-1;
-    for(int j=-window/2;j<=window/2;j++)
-    for(int i=-window/2;i<=window/2;i++)
-    {
-        nn+=1;
-        ssimFilter[nn] = ssimFilter[nn]/((float)sumfil);
-    }
-    //
-    float ssimScene = 0.0; //avgerage SSIM for sequence
-    //
-    //SSIM: done with variables  and defintion
-    //
-
-       int sh = 8; //boundary offset
+    double ssimScene = 0.0; //avgerage SSIM for sequence
 
     while( refBytes == frameBytes && testBytes == frameBytes )
     {
-        float ssimFrame = 0.0;
-
-        int numPixels = 0;
-
-        //skip over pixels vertically and horizontally
-        //for window cases 1 and 2
-        int skipH = 2;
-        int skipV = 2;
-
-        //uniform window case, with window computation updated for each pixel horiz and vert: can't skip pixels for this case
-        if (flag_window == 0)
-        {
-            skipH = 1;
-            skipV = 1;
-        }
-        for(int i=sh;i<height-sh;i+=skipV)
-        for(int j=sh;j<width-sh;j+=skipH)
-        {
-            avgTest[0] = 0.0;
-            avgRef[0] = 0.0;
-            contrastTest[0] = 0.0;
-            contrastRef[0] = 0.0;
-            crossCorr[0] = 0.0;
-
-            numPixels +=1;
-
-            if (flag_window > 0 )
-            {
-                //initialize statistics
-                avgTest[0] = 0.0;
-                avgRef[0] = 0.0;
-                contrastTest[0] = 0.0;
-                contrastRef[0] = 0.0;
-                crossCorr[0] = 0.0;
-
-                int nn=-1;
-                //compute contrast and correlation
-                //windows are symmetrics
-                for(int jj=-window/2;jj<=window/2;jj++)
-                for(int ii=-window/2;ii<=window/2;ii++)
-                {
-                    nn+=1;
-                    int i2 = i+ii;
-                    int j2 = j+jj;
-                    float tmp1 = (float)test[i2*width+j2];
-                    float tmp2 = (float)ref[i2*width+j2];
-
-                    term1 = tmp1;
-                    term2 = tmp2;
-                    term3 = tmp1*tmp1;
-                    term4 = tmp2*tmp2;
-                    term5 = tmp1*tmp2;
-
-                    //local average of each signal
-                    avgTest[0] += ssimFilter[nn]*term1;
-                    avgRef[0] += ssimFilter[nn]*term2;
-                    //local correlation/contrast of each signal
-                    contrastTest[0] += ssimFilter[nn]*term3;
-                    contrastRef[0] += ssimFilter[nn]*term4;
-                    //local cross correlation
-                    crossCorr[0] += ssimFilter[nn]*term5;
-
-                }
-
-            }
-
-            else
-            {
-                //for uniform window case == 0: only need to loop over whole window for first row and column, and then shift/update
-                if (j == sh || i == sh)
-                {
-                    //initialize statistics
-                    for(int k=0;k<window+2;k++)
-                    {
-                        avgTest[k] = 0.0;
-                        avgRef[k] = 0.0;
-                        contrastTest[k] = 0.0;
-                        contrastRef[k] = 0.0;
-                        crossCorr[k] = 0.0;
-                    }
-
-                    int nn=-1;
-                    //compute contrast and correlation
-                    //windows are symmetrics
-                    for(int jj=-window/2;jj<=window/2;jj++)
-                    for(int ii=-window/2;ii<=window/2;ii++)
-                    {
-                        nn+=1;
-                        int i2 = i+ii;
-                        int j2 = j+jj;
-                        float tmp1 = (float)test[i2*width+j2];
-                        float tmp2 = (float)ref[i2*width+j2];
-
-                        term1 = tmp1;
-                        term2 = tmp2;
-                        term3 = tmp1*tmp1;
-                        term4 = tmp2*tmp2;
-                        term5 = tmp1*tmp2;
-
-                        //local average of each signal
-                        avgTest[jj+window/2+1] += term1;
-                        avgRef[jj+window/2+1] += term2;
-                        //local correlation/contrast of each signal
-                        contrastTest[jj+window/2+1] += term3;
-                        contrastRef[jj+window/2+1] += term4;
-                        //local cross correlation
-                        crossCorr[jj+window/2+1] += term5;
-
-                    }
-
-                    //normalize
-                    for(int k=1;k<window+2;k++)
-                    {
-                        avgTest[k] = ssimFilter[0]*avgTest[k];
-                        avgRef[k] = ssimFilter[0]*avgRef[k];
-                        contrastTest[k] = ssimFilter[0]*contrastTest[k];
-                        contrastRef[k] = ssimFilter[0]*contrastRef[k];
-                        crossCorr[k] = ssimFilter[0]*crossCorr[k];
-                    }
-
-                }
-                //for all other pixels, update window filter computation
-                else
-                {
-                        //shift statistics horiz.
-                    for(int k=1;k<window+1;k++)
-                    {
-                        avgTest[k]=avgTest[k+1];
-                        avgRef[k]=avgRef[k+1];
-                        contrastTest[k] = contrastTest[k+1];
-                        contrastRef[k] = contrastRef[k+1];
-                        crossCorr[k] = crossCorr[k+1];
-                    }
-
-                    //compute statistics for last column
-                    //update right-most column, by updating with bottom pixel contribution
-                    int j2 = j + window/2; //last column of window
-                    int i2 = i + window/2; //last window pixel of column
-                    int ix = i - window/2 - 1; //last window pixel of top neighboring pixel
-                    float tmp1 = (float)test[i2*width+j2];
-                    float tmp2 = (float)ref[i2*width+j2];
-                    float tmp1x = (float)test[ix*width+j2];
-                    float tmp2x = (float)ref[ix*width+j2];
-
-                    avgTest[window+1] =  righMostColumnAvgTest[j]  + ssimFilter[0]*(tmp1 - tmp1x);
-                    avgRef[window+1] =  righMostColumnAvgRef[j]  + ssimFilter[0]*(tmp2 - tmp2x);
-                    contrastTest[window+1] =  righMostColumnContrastTest[j]  + ssimFilter[0]*(tmp1*tmp1 - tmp1x*tmp1x);
-                    contrastRef[window+1] =  righMostColumnContrastRef[j]  + ssimFilter[0]*(tmp2*tmp2 - tmp2x*tmp2x);
-                    crossCorr[window+1] =  righMostColumnCrossCorr[j]  + ssimFilter[0]*(tmp1*tmp2 - tmp1x*tmp2x);
-                }
-
-                //sum over all columns
-                for(int k=1;k<window+2;k++)
-                {
-                    avgTest[0] += avgTest[k];
-                    avgRef[0] += avgRef[k];
-                    contrastTest[0] += contrastTest[k];
-                    contrastRef[0] += contrastRef[k];
-                    crossCorr[0] += crossCorr[k];
-                }
-
-                //
-                righMostColumnAvgTest[j] = avgTest[window+1];
-                righMostColumnAvgRef[j] = avgRef[window+1];
-                righMostColumnContrastTest[j] = contrastTest[window+1];
-                righMostColumnContrastRef[j] = contrastRef[window+1];
-                righMostColumnCrossCorr[j] = crossCorr[window+1];
-                //
-
-            } //end of window = 0 case
-
-            float tmp1 = (contrastTest[0] - avgTest[0]*avgTest[0]);
-            if (tmp1 < 0.0) tmp1 = 0.0;
-            contrastTest[0] = sqrt(tmp1);
-            float tmp2 = (contrastRef[0] - avgRef[0]*avgRef[0]);
-            if (tmp2 < 0.0) tmp2 = 0.0;
-            contrastRef[0] = sqrt(tmp2);
-            crossCorr[0] = crossCorr[0] - avgTest[0]*avgRef[0];
-
-            float ssimCorrCoeff = (crossCorr[0]+offset3)/(contrastTest[0]*contrastRef[0] + offset3);
-            float ssimLuminance = (2*avgTest[0]*avgRef[0]+offset1)/(avgTest[0]*avgTest[0] + avgRef[0]*avgRef[0] + offset1);
-            float ssimContrast   = (2*contrastTest[0]*contrastRef[0]+offset2)/(contrastTest[0]*contrastTest[0] + contrastRef[0]*contrastRef[0] + offset2);
-
-            float ssimPixel  = ssimCorrCoeff * ssimLuminance * ssimContrast;
-            ssimFrame += ssimPixel;
-
-        } //done with ssim computation
-
-        ssimFrame = ssimFrame / (numPixels);
-        //printf("***SSIM for frame ***%f \n",ssimFrame);
-        ssimScene += ssimFrame;
-        //
-        //SSIM: done with SSIM computation
-        //
+        ssimScene += SSIM_frame(ref, test, width, width, width, height);
 
         frames++;
 
         refBytes = (int) fread(ref, 1, frameBytes, refFp);
         testBytes = (int) fread(test, 1, frameBytes, testFp);
-
     }
 
     //SSIM: normalize/average for sequence
@@ -743,12 +579,6 @@ SSIMfromFiles(const WebRtc_Word8 *refFileName, const WebRtc_Word8 *testFileName,
 
     delete [] ref;
     delete [] test;
-
-    delete [] righMostColumnAvgTest;
-    delete [] righMostColumnAvgRef;
-    delete [] righMostColumnContrastTest;
-    delete [] righMostColumnContrastRef;
-    delete [] righMostColumnCrossCorr;
 
 
     fclose(refFp);
