@@ -1317,10 +1317,19 @@ int WebRtcAgc_Process(void *agcInst, const WebRtc_Word16 *in_near,
     *outMicLevel = inMicLevel;
     inMicLevelTmp = inMicLevel;
 
-    memcpy(out, in_near, samples * sizeof(WebRtc_Word16));
+    // TODO(andrew): clearly we don't need input and output pointers...
+    //   Change the interface to take a shared input/output.
+    if (in_near != out)
+    {
+        // Only needed if they don't already point to the same place.
+        memcpy(out, in_near, samples * sizeof(WebRtc_Word16));
+    }
     if (stt->fs == 32000)
     {
-        memcpy(out_H, in_near_H, samples * sizeof(WebRtc_Word16));
+        if (in_near_H != out_H)
+        {
+            memcpy(out_H, in_near_H, samples * sizeof(WebRtc_Word16));
+        }
     }
 
 #ifdef AGC_DEBUG//test log

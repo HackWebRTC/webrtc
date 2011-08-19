@@ -327,10 +327,18 @@ WebRtc_Word32 WebRtcAgc_ProcessDigital(DigitalAgc_t *stt, const WebRtc_Word16 *i
         return -1;
     }
 
-    memcpy(out, in_near, 10 * L * sizeof(WebRtc_Word16));
+    // TODO(andrew): again, we don't need input and output pointers...
+    if (in_near != out)
+    {
+        // Only needed if they don't already point to the same place.
+        memcpy(out, in_near, 10 * L * sizeof(WebRtc_Word16));
+    }
     if (FS == 32000)
     {
-        memcpy(out_H, in_near_H, 10 * L * sizeof(WebRtc_Word16));
+        if (in_near_H != out_H)
+        {
+            memcpy(out_H, in_near_H, 10 * L * sizeof(WebRtc_Word16));
+        }
     }
     // VAD for near end
     logratio = WebRtcAgc_ProcessVad(&stt->vadNearend, out, L * 10);

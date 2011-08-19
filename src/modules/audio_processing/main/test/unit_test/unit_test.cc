@@ -638,8 +638,6 @@ TEST_F(ApmTest, Process) {
   if (write_output_data) {
     WriteMessageLiteToFile(kOutputFileName, output_data);
   }
-
-  google::protobuf::ShutdownProtobufLibrary();
 }
 
 TEST_F(ApmTest, EchoCancellation) {
@@ -1002,5 +1000,9 @@ int main(int argc, char** argv) {
     }
   }
 
-  return RUN_ALL_TESTS();
+  int err = RUN_ALL_TESTS();
+
+  // Optional, but removes memory leak noise from Valgrind.
+  google::protobuf::ShutdownProtobufLibrary();
+  return err;
 }

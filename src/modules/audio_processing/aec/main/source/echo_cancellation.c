@@ -420,7 +420,10 @@ WebRtc_Word32 WebRtcAec_Process(void *aecInst, const WebRtc_Word16 *nearend,
     nBlocks10ms = nFrames / aecpc->aec->mult;
 
     if (aecpc->ECstartup) {
-        memcpy(out, nearend, sizeof(short) * nrOfSamples);
+        if (nearend != out) {
+            // Only needed if they don't already point to the same place.
+            memcpy(out, nearend, sizeof(short) * nrOfSamples);
+        }
         nmbrOfFilledBuffers = WebRtcApm_get_buffer_size(aecpc->farendBuf) / FRAME_LEN;
 
         // The AEC is in the start up mode

@@ -891,5 +891,7 @@ int main(int argc, char* argv[])
 {
   void_main(argc, argv);
 
+  // Optional, but removes memory leak noise from Valgrind.
+  google::protobuf::ShutdownProtobufLibrary();
   return 0;
 }
