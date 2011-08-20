@@ -347,8 +347,10 @@ class TelephoneEventObserver: public VoETelephoneEventObserver
 {
 public:
     TelephoneEventObserver(CWnd* editControlOut, CWnd* editControlIn);
-    virtual void OnReceivedTelephoneEventInband(const int channel, const unsigned char eventCode, const bool endOfEvent);
-    virtual void OnReceivedTelephoneEventOutOfBand(const int channel, const unsigned char eventCode, const bool endOfEvent);
+    virtual void OnReceivedTelephoneEventInband(int channel, int eventCode,
+                                                bool endOfEvent);
+    virtual void OnReceivedTelephoneEventOutOfBand(int channel, int eventCode,
+                                                   bool endOfEvent);
 private:
     CWnd* _editControlOutPtr;
     CWnd* _editControlInPtr;
@@ -360,7 +362,9 @@ TelephoneEventObserver::TelephoneEventObserver(CWnd* editControlOut, CWnd* editC
 {
 }
 
-void TelephoneEventObserver::OnReceivedTelephoneEventInband(const int channel, const unsigned char eventCode, const bool endOfEvent)
+void TelephoneEventObserver::OnReceivedTelephoneEventInband(int channel,
+                                                            int eventCode,
+                                                            bool endOfEvent)
 {
     CString msg;
     if (endOfEvent)
@@ -375,7 +379,9 @@ void TelephoneEventObserver::OnReceivedTelephoneEventInband(const int channel, c
     }
 }
 
-void TelephoneEventObserver::OnReceivedTelephoneEventOutOfBand(const int channel, const unsigned char eventCode, const bool endOfEvent)
+void TelephoneEventObserver::OnReceivedTelephoneEventOutOfBand(int channel,
+                                                               int eventCode,
+                                                               bool endOfEvent)
 {
     CString msg;
     if (endOfEvent)
