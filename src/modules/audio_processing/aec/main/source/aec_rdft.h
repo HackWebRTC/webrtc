@@ -31,12 +31,14 @@ extern float rdft_wk3r[32];
 extern float rdft_wk1i[32];
 extern float rdft_wk2i[32];
 extern float rdft_wk3i[32];
+extern float cftmdl_wk1r[4];
 
 // code path selection function pointers
 typedef void (*rft_sub_128_t)(float *a);
 extern rft_sub_128_t rftfsub_128;
 extern rft_sub_128_t rftbsub_128;
 extern rft_sub_128_t cft1st_128;
+extern rft_sub_128_t cftmdl_128;
 
 // entry points
 void aec_rdft_init(void);

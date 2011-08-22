@@ -38,6 +38,7 @@ ALIGN16_BEG float ALIGN16_END rdft_wk3r[32];
 ALIGN16_BEG float ALIGN16_END rdft_wk1i[32];
 ALIGN16_BEG float ALIGN16_END rdft_wk2i[32];
 ALIGN16_BEG float ALIGN16_END rdft_wk3i[32];
+ALIGN16_BEG float ALIGN16_END cftmdl_wk1r[4];
 
 static int ip[16];
 
@@ -138,7 +139,11 @@ static void makewt_32(void) {
   }
   bitrv2_32or128(nw, ip + 2, rdft_w);
 
-  // pre-calculate constants used by cft1st_128 ...
+  // pre-calculate constants used by cft1st_128 and cftmdl_128...
+  cftmdl_wk1r[0] = rdft_w[2];
+  cftmdl_wk1r[1] = rdft_w[2];
+  cftmdl_wk1r[2] = rdft_w[2];
+  cftmdl_wk1r[3] = -rdft_w[2];
   {
     int k1;
 
@@ -306,58 +311,59 @@ static void cft1st_128_C(float *a) {
   }
 }
 
-static void cftmdl_128(int l, float *a) {
+static void cftmdl_128_C(float *a) {
+  const int l = 8;
   const int n = 128;
-  int j, j1, j2, j3, k, k1, k2, m, m2;
+  const int m = 32;
+  int j0, j1, j2, j3, k, k1, k2, m2;
   float wk1r, wk1i, wk2r, wk2i, wk3r, wk3i;
   float x0r, x0i, x1r, x1i, x2r, x2i, x3r, x3i;
 
-  m = l << 2;
-  for (j = 0; j < l; j += 2) {
-    j1 = j + l;
-    j2 = j1 + l;
-    j3 = j2 + l;
-    x0r = a[j] + a[j1];
-    x0i = a[j + 1] + a[j1 + 1];
-    x1r = a[j] - a[j1];
-    x1i = a[j + 1] - a[j1 + 1];
-    x2r = a[j2] + a[j3];
+  for (j0 = 0; j0 < l; j0 += 2) {
+    j1 = j0 +  8;
+    j2 = j0 + 16;
+    j3 = j0 + 24;
+    x0r = a[j0 + 0] + a[j1 + 0];
+    x0i = a[j0 + 1] + a[j1 + 1];
+    x1r = a[j0 + 0] - a[j1 + 0];
+    x1i = a[j0 + 1] - a[j1 + 1];
+    x2r = a[j2 + 0] + a[j3 + 0];
     x2i = a[j2 + 1] + a[j3 + 1];
-    x3r = a[j2] - a[j3];
+    x3r = a[j2 + 0] - a[j3 + 0];
     x3i = a[j2 + 1] - a[j3 + 1];
-    a[j] = x0r + x2r;
-    a[j + 1] = x0i + x2i;
-    a[j2] = x0r - x2r;
+    a[j0 + 0] = x0r + x2r;
+    a[j0 + 1] = x0i + x2i;
+    a[j2 + 0] = x0r - x2r;
     a[j2 + 1] = x0i - x2i;
-    a[j1] = x1r - x3i;
+    a[j1 + 0] = x1r - x3i;
     a[j1 + 1] = x1i + x3r;
-    a[j3] = x1r + x3i;
+    a[j3 + 0] = x1r + x3i;
     a[j3 + 1] = x1i - x3r;
   }
   wk1r = rdft_w[2];
-  for (j = m; j < l + m; j += 2) {
-    j1 = j + l;
-    j2 = j1 + l;
-    j3 = j2 + l;
-    x0r = a[j] + a[j1];
-    x0i = a[j + 1] + a[j1 + 1];
-    x1r = a[j] - a[j1];
-    x1i = a[j + 1] - a[j1 + 1];
-    x2r = a[j2] + a[j3];
+  for (j0 = m; j0 < l + m; j0 += 2) {
+    j1 = j0 +  8;
+    j2 = j0 + 16;
+    j3 = j0 + 24;
+    x0r = a[j0 + 0] + a[j1 + 0];
+    x0i = a[j0 + 1] + a[j1 + 1];
+    x1r = a[j0 + 0] - a[j1 + 0];
+    x1i = a[j0 + 1] - a[j1 + 1];
+    x2r = a[j2 + 0] + a[j3 + 0];
     x2i = a[j2 + 1] + a[j3 + 1];
-    x3r = a[j2] - a[j3];
+    x3r = a[j2 + 0] - a[j3 + 0];
     x3i = a[j2 + 1] - a[j3 + 1];
-    a[j] = x0r + x2r;
-    a[j + 1] = x0i + x2i;
-    a[j2] = x2i - x0i;
+    a[j0 + 0] = x0r + x2r;
+    a[j0 + 1] = x0i + x2i;
+    a[j2 + 0] = x2i - x0i;
     a[j2 + 1] = x0r - x2r;
     x0r = x1r - x3i;
     x0i = x1i + x3r;
-    a[j1] = wk1r * (x0r - x0i);
+    a[j1 + 0] = wk1r * (x0r - x0i);
     a[j1 + 1] = wk1r * (x0r + x0i);
     x0r = x3i + x1r;
     x0i = x3r - x1i;
-    a[j3] = wk1r * (x0i - x0r);
+    a[j3 + 0] = wk1r * (x0i - x0r);
     a[j3 + 1] = wk1r * (x0i + x0r);
   }
   k1 = 0;
@@ -365,68 +371,68 @@ static void cftmdl_128(int l, float *a) {
   for (k = m2; k < n; k += m2) {
     k1 += 2;
     k2 = 2 * k1;
-    wk2r = rdft_w[k1];
+    wk2r = rdft_w[k1 + 0];
     wk2i = rdft_w[k1 + 1];
-    wk1r = rdft_w[k2];
+    wk1r = rdft_w[k2 + 0];
     wk1i = rdft_w[k2 + 1];
-    wk3r = wk1r - 2 * wk2i * wk1i;
-    wk3i = 2 * wk2i * wk1r - wk1i;
-    for (j = k; j < l + k; j += 2) {
-      j1 = j + l;
-      j2 = j1 + l;
-      j3 = j2 + l;
-      x0r = a[j] + a[j1];
-      x0i = a[j + 1] + a[j1 + 1];
-      x1r = a[j] - a[j1];
-      x1i = a[j + 1] - a[j1 + 1];
-      x2r = a[j2] + a[j3];
+    wk3r = rdft_wk3ri_first[k1 + 0];
+    wk3i = rdft_wk3ri_first[k1 + 1];
+    for (j0 = k; j0 < l + k; j0 += 2) {
+      j1 = j0 +  8;
+      j2 = j0 + 16;
+      j3 = j0 + 24;
+      x0r = a[j0 + 0] + a[j1 + 0];
+      x0i = a[j0 + 1] + a[j1 + 1];
+      x1r = a[j0 + 0] - a[j1 + 0];
+      x1i = a[j0 + 1] - a[j1 + 1];
+      x2r = a[j2 + 0] + a[j3 + 0];
       x2i = a[j2 + 1] + a[j3 + 1];
-      x3r = a[j2] - a[j3];
+      x3r = a[j2 + 0] - a[j3 + 0];
       x3i = a[j2 + 1] - a[j3 + 1];
-      a[j] = x0r + x2r;
-      a[j + 1] = x0i + x2i;
+      a[j0 + 0] = x0r + x2r;
+      a[j0 + 1] = x0i + x2i;
       x0r -= x2r;
       x0i -= x2i;
-      a[j2] = wk2r * x0r - wk2i * x0i;
+      a[j2 + 0] = wk2r * x0r - wk2i * x0i;
       a[j2 + 1] = wk2r * x0i + wk2i * x0r;
       x0r = x1r - x3i;
       x0i = x1i + x3r;
-      a[j1] = wk1r * x0r - wk1i * x0i;
+      a[j1 + 0] = wk1r * x0r - wk1i * x0i;
       a[j1 + 1] = wk1r * x0i + wk1i * x0r;
       x0r = x1r + x3i;
       x0i = x1i - x3r;
-      a[j3] = wk3r * x0r - wk3i * x0i;
+      a[j3 + 0] = wk3r * x0r - wk3i * x0i;
       a[j3 + 1] = wk3r * x0i + wk3i * x0r;
     }
     wk1r = rdft_w[k2 + 2];
     wk1i = rdft_w[k2 + 3];
-    wk3r = wk1r - 2 * wk2r * wk1i;
-    wk3i = 2 * wk2r * wk1r - wk1i;
-    for (j = k + m; j < l + (k + m); j += 2) {
-      j1 = j + l;
-      j2 = j1 + l;
-      j3 = j2 + l;
-      x0r = a[j] + a[j1];
-      x0i = a[j + 1] + a[j1 + 1];
-      x1r = a[j] - a[j1];
-      x1i = a[j + 1] - a[j1 + 1];
-      x2r = a[j2] + a[j3];
+    wk3r = rdft_wk3ri_second[k1 + 0];
+    wk3i = rdft_wk3ri_second[k1 + 1];
+    for (j0 = k + m; j0 < l + (k + m); j0 += 2) {
+      j1 = j0 +  8;
+      j2 = j0 + 16;
+      j3 = j0 + 24;
+      x0r = a[j0 + 0] + a[j1 + 0];
+      x0i = a[j0 + 1] + a[j1 + 1];
+      x1r = a[j0 + 0] - a[j1 + 0];
+      x1i = a[j0 + 1] - a[j1 + 1];
+      x2r = a[j2 + 0] + a[j3 + 0];
       x2i = a[j2 + 1] + a[j3 + 1];
-      x3r = a[j2] - a[j3];
+      x3r = a[j2 + 0] - a[j3 + 0];
       x3i = a[j2 + 1] - a[j3 + 1];
-      a[j] = x0r + x2r;
-      a[j + 1] = x0i + x2i;
+      a[j0 + 0] = x0r + x2r;
+      a[j0 + 1] = x0i + x2i;
       x0r -= x2r;
       x0i -= x2i;
-      a[j2] = -wk2i * x0r - wk2r * x0i;
+      a[j2 + 0] = -wk2i * x0r - wk2r * x0i;
       a[j2 + 1] = -wk2i * x0i + wk2r * x0r;
       x0r = x1r - x3i;
       x0i = x1i + x3r;
-      a[j1] = wk1r * x0r - wk1i * x0i;
+      a[j1 + 0] = wk1r * x0r - wk1i * x0i;
       a[j1 + 1] = wk1r * x0i + wk1i * x0r;
       x0r = x1r + x3i;
       x0i = x1i - x3r;
-      a[j3] = wk3r * x0r - wk3i * x0i;
+      a[j3 + 0] = wk3r * x0r - wk3i * x0i;
       a[j3 + 1] = wk3r * x0i + wk3i * x0r;
     }
   }
@@ -437,7 +443,7 @@ static void cftfsub_128(float *a) {
   float x0r, x0i, x1r, x1i, x2r, x2i, x3r, x3i;
 
   cft1st_128(a);
-  cftmdl_128(8, a);
+  cftmdl_128(a);
   l = 32;
   for (j = 0; j < l; j += 2) {
     j1 = j + l;
@@ -467,7 +473,7 @@ static void cftbsub_128(float *a) {
   float x0r, x0i, x1r, x1i, x2r, x2i, x3r, x3i;
 
   cft1st_128(a);
-  cftmdl_128(8, a);
+  cftmdl_128(a);
   l = 32;
 
   for (j = 0; j < l; j += 2) {
@@ -565,11 +571,13 @@ void aec_rdft_inverse_128(float *a) {
 
 // code path selection
 rft_sub_128_t cft1st_128;
+rft_sub_128_t cftmdl_128;
 rft_sub_128_t rftfsub_128;
 rft_sub_128_t rftbsub_128;
 
 void aec_rdft_init(void) {
   cft1st_128 = cft1st_128_C;
+  cftmdl_128 = cftmdl_128_C;
   rftfsub_128 = rftfsub_128_C;
   rftbsub_128 = rftbsub_128_C;
   if (WebRtc_GetCPUInfo(kSSE2)) {
