@@ -53,14 +53,18 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
 
   virtual int FrameSizeChange(unsigned int width, unsigned int height,
                               unsigned int /*number_of_streams*/) {
-    ASSERT(renderer_ != NULL);
+    if (renderer_ == NULL) {
+      return 0;
+    }
     width_ = width;
     height_ = height;
     return renderer_->SetSize(width_, height_, 0) ? 0 : -1;
   }
 
   virtual int DeliverFrame(unsigned char* buffer, int buffer_size) {
-    ASSERT(renderer_ != NULL);
+    if (renderer_ == NULL) {
+      return 0;
+    }
     WebRtcVideoFrame video_frame;
     // TODO(ronghuawu): Currently by the time DeliverFrame got called,
     // ViE expects the frame will be rendered ASAP. However, the libjingle
@@ -711,6 +715,7 @@ bool WebRtcVideoMediaChannel::SetRenderer(
   if (remote_renderer_.get()) {
     // If the renderer already set, stop it first
     engine_->video_engine()->render()->StopRender(vie_channel_);
+    engine_->video_engine()->render()->RemoveRenderer(vie_channel_);
   }
   remote_renderer_.reset(new WebRtcRenderAdapter(renderer));
 
