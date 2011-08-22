@@ -21,7 +21,7 @@ using namespace webrtc;
  *****************************/
 // Basic callback implementation
 // passes the encoded frame directly to the encoder
-// Packetization callback implmentation
+// Packetization callback implementation
 VCMEncodeCompleteCallback::VCMEncodeCompleteCallback(FILE* encodedFile):
     _encodedFile(encodedFile),
     _encodedBytes(0),
@@ -90,10 +90,10 @@ VCMEncodeCompleteCallback::SendData(
     // TODO(hlundin): Remove assert once we've piped PictureID into VCM
     // through the WebRtcRTPHeader.
     assert(rtpInfo.type.Video.codec != kRTPVideoVP8);
-    _VCMReceiver->IncomingPacket(payloadData, payloadSize, rtpInfo);
+    int ret = _VCMReceiver->IncomingPacket(payloadData, payloadSize, rtpInfo);
     _encodeComplete = true;
 
-    return 0;
+    return ret;
 }
 
  float
@@ -133,7 +133,7 @@ VCMEncodeCompleteCallback::ResetByteCount()
 /***********************************/
 // Encode Complete callback implementation
 // passes the encoded frame via the RTP module to the decoder
-// Packetization callback implmentation
+// Packetization callback implementation
 
 WebRtc_Word32
 VCMRTPEncodeCompleteCallback::SendData(
@@ -148,7 +148,6 @@ VCMRTPEncodeCompleteCallback::SendData(
     _frameType = frameType;
     _encodedBytes+= payloadSize;
     _encodeComplete = true;
-    //printf("encoded = %d Bytes\n", payloadSize);
     return _RTPModule->SendOutgoingData(frameType,
                                         payloadType,
                                         timeStamp,
@@ -178,7 +177,7 @@ VCMRTPEncodeCompleteCallback::EncodeComplete()
     return false;
 }
 
-// Decoded Frame Callback Implmentation
+// Decoded Frame Callback Implementation
 
  WebRtc_Word32
  VCMDecodeCompleteCallback::FrameToRender(VideoFrame& videoFrame)
@@ -196,12 +195,14 @@ VCMRTPEncodeCompleteCallback::EncodeComplete()
  }
 
 int
-VCMDecodeCompleteCallback::PSNRLastFrame(const VideoFrame& sourceFrame,  double *YPSNRptr)
+VCMDecodeCompleteCallback::PSNRLastFrame(const VideoFrame& sourceFrame,
+                                         double *YPSNRptr)
 {
     double mse = 0.0;
     double mseLogSum = 0.0;
 
-    WebRtc_Word32 frameBytes = sourceFrame.Height() * sourceFrame.Width(); // only Y
+    // Y only
+    WebRtc_Word32 frameBytes = sourceFrame.Height() * sourceFrame.Width();
     WebRtc_UWord8 *ref = sourceFrame.Buffer();
     if (_lastDecodedFrame.Height() == 0)
     {
@@ -233,12 +234,16 @@ VCMDecodeCompleteCallback::DecodedBytes()
     return _decodedBytes;
 }
 
-RTPSendCompleteCallback::RTPSendCompleteCallback(RtpRtcp* rtp, const char* filename):
+RTPSendCompleteCallback::RTPSendCompleteCallback(RtpRtcp* rtp,
+                                                 const char* filename):
     _sendCount(0),
     _rtp(rtp),
     _lossPct(0),
     _burstLength(0),
+    _networkDelayMs(0),
     _prevLossState(0),
+    _totalSentLength(0),
+    _rtpPackets(),
     _rtpDump(NULL)
 {
     if (filename != NULL)
@@ -254,11 +259,20 @@ RTPSendCompleteCallback::~RTPSendCompleteCallback()
         _rtpDump->Stop();
         RtpDump::DestroyRtpDump(_rtpDump);
     }
+    // Delete remaining packets
+    while (!_rtpPackets.Empty())
+    {
+         // Take first packet in list
+         delete static_cast<rtpPacket*>((_rtpPackets.First())->GetItem());
+         _rtpPackets.PopFront();
+    }
 }
 int
 RTPSendCompleteCallback::SendPacket(int channel, const void *data, int len)
 {
     _sendCount++;
+    _totalSentLength += len;
+    bool transmitPacket = true;
 
     // Packet Loss
 
@@ -268,8 +282,7 @@ RTPSendCompleteCallback::SendPacket(int channel, const void *data, int len)
         if (PacketLoss(_lossPct))
         {
             // drop
-            //printf("\tDrop packet, sendCount = %d\n", _sendCount);
-            return len;
+            transmitPacket = false;
         }
     }
     else
@@ -291,7 +304,7 @@ RTPSendCompleteCallback::SendPacket(int channel, const void *data, int len)
         // to the transition probabilities:
         double probTrans10 = 100 * (1.0 / _burstLength);
         double probTrans11 = (100.0 - probTrans10);
-        double probTrans01 = (probTrans10 * ( _lossPct / (100.0 - _lossPct) ) );
+        double probTrans01 = (probTrans10 * ( _lossPct / (100.0 - _lossPct)));
 
         // Note: Random loss (Bernoulli) model is a special case where:
         // burstLength = 100.0 / (100.0 - _lossPct) (i.e., p10 + p01 = 100)
@@ -299,25 +312,24 @@ RTPSendCompleteCallback::SendPacket(int channel, const void *data, int len)
         if (_prevLossState == 0 )
         {
             // previous packet was received
-            if (PacketLoss(probTrans01) )
+            if (PacketLoss(probTrans01))
             {
                 // drop, update previous state to loss
                 _prevLossState = 1;
-                return len;
+                transmitPacket = false;
             }
         }
         else if (_prevLossState == 1)
         {
+            _prevLossState = 0;
             // previous packet was lost
-            if (PacketLoss(probTrans11) )
+            if (PacketLoss(probTrans11))
             {
                 // drop, update previous state to loss
                 _prevLossState = 1;
-                return len;
+                transmitPacket = false;
             }
         }
-        // no drop, update previous state to received
-        _prevLossState = 0;
     }
 
     if (_rtpDump != NULL)
@@ -327,17 +339,53 @@ RTPSendCompleteCallback::SendPacket(int channel, const void *data, int len)
             return -1;
         }
     }
-    if(_rtp->IncomingPacket((const WebRtc_UWord8*)data, len) == 0)
+
+    WebRtc_UWord64 now = VCMTickTime::MillisecondTimestamp();
+    // Insert outgoing packet into list
+    if (transmitPacket)
     {
-        return len;
+        rtpPacket* newPacket = new rtpPacket();
+        memcpy(newPacket->data, data, len);
+        newPacket->length = len;
+        // Simulate receive time
+        newPacket->receiveTime = now + _networkDelayMs;
+        _rtpPackets.PushBack(newPacket);
     }
-    return -1;
+
+    // Are we ready to send packets to the receiver?
+    rtpPacket* packet = NULL;
+
+    while (!_rtpPackets.Empty())
+    {
+        // Take first packet in list
+        packet = static_cast<rtpPacket*>((_rtpPackets.First())->GetItem());
+        WebRtc_Word64 timeToReceive = packet->receiveTime - now;
+        if (timeToReceive > 0)
+        {
+            // No available packets to send
+            break;
+        }
+
+        _rtpPackets.PopFront();
+        // Send to receive side
+        if (_rtp->IncomingPacket((const WebRtc_UWord8*)packet->data,
+                                     packet->length) < 0)
+        {
+            delete packet;
+            packet = NULL;
+            // Will return an error after the first packet that goes wrong
+            return -1;
+        }
+        delete packet;
+        packet = NULL;
     }
+    return len; // OK
+}
 
 int
 RTPSendCompleteCallback::SendRTCPPacket(int channel, const void *data, int len)
 {
-    if(_rtp->IncomingPacket((const WebRtc_UWord8*)data, len) == 0)
+    if (_rtp->IncomingPacket((const WebRtc_UWord8*)data, len) == 0)
     {
         return len;
     }
@@ -366,13 +414,15 @@ RTPSendCompleteCallback::PacketLoss(double lossPct)
 }
 
 WebRtc_Word32
-PacketRequester::ResendPackets(const WebRtc_UWord16* sequenceNumbers, WebRtc_UWord16 length)
+PacketRequester::ResendPackets(const WebRtc_UWord16* sequenceNumbers,
+                               WebRtc_UWord16 length)
 {
     return _rtp.SendNACK(sequenceNumbers, length);
 }
 
 WebRtc_Word32
-PSNRfromFiles(const WebRtc_Word8 *refFileName, const WebRtc_Word8 *testFileName, WebRtc_Word32 width, WebRtc_Word32 height, double *YPSNRptr)
+PSNRfromFiles(const WebRtc_Word8 *refFileName, const WebRtc_Word8 *testFileName,
+              WebRtc_Word32 width, WebRtc_Word32 height, double *YPSNRptr)
 {
     FILE *refFp = fopen(refFileName, "rb");
     if( refFp == NULL ) {
@@ -392,9 +442,10 @@ PSNRfromFiles(const WebRtc_Word8 *refFileName, const WebRtc_Word8 *testFileName,
     double mseLogSum = 0.0;
     WebRtc_Word32 frames = 0;
 
-    WebRtc_Word32 frameBytes = 3*width*height/2; // bytes in one frame I420
-    WebRtc_UWord8 *ref = new WebRtc_UWord8[frameBytes]; // space for one frame I420
-    WebRtc_UWord8 *test = new WebRtc_UWord8[frameBytes]; // space for one frame I420
+    // Allocating size for one I420 frame.
+    WebRtc_Word32 frameBytes = 3 * width * height >> 1;
+    WebRtc_UWord8 *ref = new WebRtc_UWord8[frameBytes];
+    WebRtc_UWord8 *test = new WebRtc_UWord8[frameBytes];
 
     WebRtc_Word32 refBytes = (WebRtc_Word32) fread(ref, 1, frameBytes, refFp);
     WebRtc_Word32 testBytes = (WebRtc_Word32) fread(test, 1, frameBytes, testFp);
@@ -440,16 +491,9 @@ PSNRfromFiles(const WebRtc_Word8 *refFileName, const WebRtc_Word8 *testFileName,
 
     return 0;
 }
-
 static double
-similarity
-(
-    unsigned long sum_s,
-    unsigned long sum_r,
-    unsigned long sum_sq_s,
-    unsigned long sum_sq_r,
-    unsigned long sum_sxr,
-    int count
+similarity(unsigned long sum_s, unsigned long sum_r, unsigned long sum_sq_s,
+           unsigned long sum_sq_r, unsigned long sum_sxr, int count
 )
 {
     int64_t ssim_n, ssim_d;
@@ -472,13 +516,7 @@ similarity
 }
 
 static double
-ssim_8x8_c
-(
-    unsigned char *s,
-    int sp,
-    unsigned char *r,
-    int rp
-)
+ssim_8x8_c(unsigned char *s, int sp, unsigned char *r, int rp)
 {
     unsigned long sum_s    = 0;
     unsigned long sum_r    = 0;
@@ -487,9 +525,9 @@ ssim_8x8_c
     unsigned long sum_sxr  = 0;
 
     int i,j;
-    for(i=0;i<8;i++,s+=sp,r+=rp)
+    for (i = 0;i < 8; i++, s += sp,r += rp)
     {
-        for(j=0;j<8;j++)
+        for (j = 0; j < 8; j++)
         {
             sum_s += s[j];
             sum_r += r[j];
@@ -498,20 +536,13 @@ ssim_8x8_c
             sum_sxr += s[j] * r[j];
         }
     }
-
     return similarity(sum_s, sum_r, sum_sq_s, sum_sq_r, sum_sxr, 64);
 }
 
 #if defined(WEBRTC_USE_SSE2)
 #include <xmmintrin.h>
 static double
-ssim_8x8_sse2
-(
-    unsigned char *s,
-    int sp,
-    unsigned char *r,
-    int rp
-)
+ssim_8x8_sse2(unsigned char *s, int sp, unsigned char *r, int rp)
 {
     int i;
     const __m128i z     = _mm_setzero_si128();
@@ -521,7 +552,7 @@ ssim_8x8_sse2
     __m128i sum_sq_r_32 = _mm_setzero_si128();
     __m128i sum_sxr_32  = _mm_setzero_si128();
 
-    for(i=0;i<8;i++,s+=sp,r+=rp)
+    for (i = 0;i < 8; i++,s += sp,r += rp)
     {
         const __m128i s_8 = _mm_loadl_epi64((__m128i*)(s));
         const __m128i r_8 = _mm_loadl_epi64((__m128i*)(r));
@@ -577,14 +608,8 @@ ssim_8x8_sse2
 #endif
 
 double
-SSIM_frame
-(
-    unsigned char *img1,
-    unsigned char *img2,
-    int stride_img1,
-    int stride_img2,
-    int width,
-    int height)
+SSIM_frame(unsigned char *img1, unsigned char *img2, int stride_img1,
+           int stride_img2,int width, int height)
 {
     int i,j;
     unsigned int samples = 0;
@@ -592,7 +617,7 @@ SSIM_frame
     double (*ssim_8x8)(unsigned char*, int, unsigned char*, int rp);
 
     ssim_8x8 = ssim_8x8_c;
-    if(WebRtc_GetCPUInfo(kSSE2))
+    if (WebRtc_GetCPUInfo(kSSE2))
     {
 #if defined(WEBRTC_USE_SSE2)
         ssim_8x8 = ssim_8x8_sse2;
@@ -600,11 +625,12 @@ SSIM_frame
     }
 
     // sample point start with each 4x4 location
-    for(i=0; i < height-8; i+=4, img1 += stride_img1*4, img2 += stride_img2*4)
+    for (i = 0; i < height-8; i += 4, img1 += stride_img1 * 4,
+         img2 += stride_img2 * 4)
     {
-        for(j=0; j < width-8; j+=4 )
+        for (j = 0; j < width - 8; j += 4 )
         {
-            double v = ssim_8x8(img1+j, stride_img1, img2+j, stride_img2);
+            double v = ssim_8x8(img1 + j, stride_img1, img2 + j, stride_img2);
             ssim_total += v;
             samples++;
         }
@@ -614,17 +640,20 @@ SSIM_frame
 }
 
 WebRtc_Word32
-SSIMfromFiles(const WebRtc_Word8 *refFileName, const WebRtc_Word8 *testFileName, WebRtc_Word32 width, WebRtc_Word32 height, double *SSIMptr)
+SSIMfromFiles(const WebRtc_Word8 *refFileName, const WebRtc_Word8 *testFileName,
+              WebRtc_Word32 width, WebRtc_Word32 height, double *SSIMptr)
 {
     FILE *refFp = fopen(refFileName, "rb");
-    if( refFp == NULL ) {
+    if ( refFp == NULL )
+    {
         // cannot open reference file
         fprintf(stderr, "Cannot open file %s\n", refFileName);
         return -1;
     }
 
     FILE *testFp = fopen(testFileName, "rb");
-    if( testFp == NULL ) {
+    if ( testFp == NULL )
+    {
         // cannot open test file
         fprintf(stderr, "Cannot open file %s\n", testFileName);
         return -2;
@@ -632,7 +661,7 @@ SSIMfromFiles(const WebRtc_Word8 *refFileName, const WebRtc_Word8 *testFileName,
 
     int frames = 0;
 
-    const int frameBytes = 3*width*height/2; // bytes in one frame I420
+    const int frameBytes = 3 * width  *height / 2; // bytes in one frame I420
     unsigned char *ref = new unsigned char[frameBytes];
     unsigned char *test = new unsigned char[frameBytes];
 
@@ -674,24 +703,29 @@ ConvertCodecType(const char* plname)
     if (strncmp(plname,"VP8" , 3) == 0)
     {
         return kRTPVideoVP8;
-    }else if (strncmp(plname,"H263" , 5) == 0)
+    }
+    else if (strncmp(plname,"H263" , 5) == 0)
     {
         return kRTPVideoH263;
-    }else if (strncmp(plname, "H263-1998",10) == 0)
+    }
+    else if (strncmp(plname, "H263-1998",10) == 0)
     {
         return kRTPVideoH263;
-    }else if (strncmp(plname,"I420" , 5) == 0)
+    }
+    else if (strncmp(plname,"I420" , 5) == 0)
     {
         return kRTPVideoI420;
-    }else
+    }
+    else
     {
-        return kRTPVideoNoVideo; // defualt value
+        return kRTPVideoNoVideo; // Default value
     }
 
 }
 
 WebRtc_Word32
-SendStatsTest::SendStatistics(const WebRtc_UWord32 bitRate, const WebRtc_UWord32 frameRate)
+SendStatsTest::SendStatistics(const WebRtc_UWord32 bitRate,
+                              const WebRtc_UWord32 frameRate)
 {
     TEST(frameRate <= _frameRate);
     TEST(bitRate > 0 && bitRate < 100000);

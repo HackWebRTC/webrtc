@@ -17,6 +17,7 @@
 #include "module_common_types.h"
 #include "tick_time.h"
 #include "test_util.h"
+#include "list_wrapper.h"
 
 #include <string.h>
 #include <fstream>
@@ -28,19 +29,24 @@ enum { kMaxWaitEncTimeMs = 100 };
 class CmdArgs
 {
 public:
-    CmdArgs() : codecName(""), codecType(webrtc::kVideoCodecVP8), width(-1),
-            height(-1), bitRate(-1), frameRate(-1),
-            inputFile(""), outputFile(""), testNum(-1)
-    {}
-    std::string codecName;
-    webrtc::VideoCodecType codecType;
-    int width;
-    int height;
-    int bitRate;
-    int frameRate;
-    std::string inputFile;
-    std::string outputFile;
-    int testNum;
+  CmdArgs() : codecName(""), codecType(webrtc::kVideoCodecVP8), width(-1),
+             height(-1), bitRate(-1), frameRate(-1), packetLoss(0), rtt(0),
+             protectionMode(0), camaEnable(0), inputFile(""), outputFile(""),
+             testNum(-1)
+     {}
+     std::string codecName;
+     webrtc::VideoCodecType codecType;
+     int width;
+     int height;
+     int bitRate;
+     int frameRate;
+     int packetLoss;
+     int rtt;
+     int protectionMode;
+     int camaEnable;
+     std::string inputFile;
+     std::string outputFile;
+     int testNum;
 };
 
 // forward declaration
@@ -50,7 +56,8 @@ namespace webrtc
     class RtpDump;
 }
 
-// definition of general test function to be used by VCM tester (mainly send side)
+// Definition of general test function to be used by VCM tester
+// (mainly send side)
 /*
  Includes the following:
  1. General Callback definition for VCM test functions - no RTP.
@@ -60,31 +67,34 @@ namespace webrtc
  3. Caluclate PSNR from file function (for now: does not deal with frame drops)
  */
 
-//Send Side - Packetization callback - send an encoded frame directly to the VCMReceiver
+// Send Side - Packetization callback - send an encoded frame to the VCMReceiver
 class VCMEncodeCompleteCallback: public webrtc::VCMPacketizationCallback
 {
 public:
-    // constructor input: file in which encoded data will be written, and test parameters
+    // constructor input: file in which encoded data will be written
     VCMEncodeCompleteCallback(FILE* encodedFile);
     virtual ~VCMEncodeCompleteCallback();
     // Register transport callback
     void RegisterTransportCallback(webrtc::VCMPacketizationCallback* transport);
-    // process encoded data received from the encoder, pass stream to the VCMReceiver module
+    // Process encoded data received from the encoder, pass stream to the
+    // VCMReceiver module
     WebRtc_Word32 SendData(const webrtc::FrameType frameType,
             const WebRtc_UWord8 payloadType, const WebRtc_UWord32 timeStamp,
             const WebRtc_UWord8* payloadData, const WebRtc_UWord32 payloadSize,
             const webrtc::RTPFragmentationHeader& fragmentationHeader,
             const webrtc::RTPVideoTypeHeader* videoTypeHdr);
-    // Register exisitng VCM. Currently - encode and decode with the same vcm module.
-    void RegisterReceiverVCM(webrtc::VideoCodingModule *vcm) { _VCMReceiver = vcm; }
+    // Register exisitng VCM. Currently - encode and decode under same module.
+    void RegisterReceiverVCM(webrtc::VideoCodingModule *vcm) {_VCMReceiver = vcm;}
     // Return size of last encoded frame encoded data (all frames in the sequence)
-    // Good for only one call - after which will reset value (to allow detection of frame drop)
+    // Good for only one call - after which will reset value
+    // (to allow detection of frame drop)
     float EncodedBytes();
-    // return encode complete (true/false)
+    // Return encode complete (true/false)
     bool EncodeComplete();
     // Inform callback of codec used
-    void SetCodecType(webrtc::RTPVideoCodecTypes codecType) { _codecType = codecType; }
-    // inform callback of frame dimensions
+    void SetCodecType(webrtc::RTPVideoCodecTypes codecType)
+    {_codecType = codecType;}
+    // Inform callback of frame dimensions
     void SetFrameDimensions(WebRtc_Word32 width, WebRtc_Word32 height)
     {
         _width = width;
@@ -94,8 +104,7 @@ public:
     void Initialize();
     void ResetByteCount();
 
-    // conversion function for payload type (needed for the callback function)
-    //    RTPVideoVideoCodecTypes ConvertPayloadType(WebRtc_UWord8 payloadType);
+    // Conversion function for payload type (needed for the callback function)
 
 private:
     FILE* _encodedFile;
@@ -111,7 +120,8 @@ private:
 
 }; // end of VCMEncodeCompleteCallback
 
-//Send Side - Packetization callback - packetize an encoded frame via the RTP module
+// Send Side - Packetization callback - packetize an encoded frame via the
+// RTP module
 class VCMRTPEncodeCompleteCallback: public webrtc::VCMPacketizationCallback
 {
 public:
@@ -122,7 +132,8 @@ public:
         _RTPModule(rtp) {}
 
     virtual ~VCMRTPEncodeCompleteCallback() {}
-    // process encoded data received from the encoder, pass stream to the RTP module
+    // Process encoded data received from the encoder, pass stream to the
+    // RTP module
     WebRtc_Word32 SendData(const webrtc::FrameType frameType,
             const WebRtc_UWord8 payloadType, const WebRtc_UWord32 timeStamp,
             const WebRtc_UWord8* payloadData, const WebRtc_UWord32 payloadSize,
@@ -134,9 +145,10 @@ public:
     // return encode complete (true/false)
     bool EncodeComplete();
     // Inform callback of codec used
-    void SetCodecType(webrtc::RTPVideoCodecTypes codecType) { _codecType = codecType; }
+    void SetCodecType(webrtc::RTPVideoCodecTypes codecType)
+    {_codecType = codecType;}
 
-    // inform callback of frame dimensions
+    // Inform callback of frame dimensions
     void SetFrameDimensions(WebRtc_Word16 width, WebRtc_Word16 height)
     {
         _width = width;
@@ -171,13 +183,21 @@ private:
     webrtc::VideoFrame  _lastDecodedFrame;
 }; // end of VCMDecodeCompleCallback class
 
-///
+
+typedef struct
+{
+        WebRtc_Word8 data[1650]; // max packet size
+        WebRtc_Word32 length;
+        WebRtc_Word64 receiveTime;
+} rtpPacket;
+
+
 class RTPSendCompleteCallback: public webrtc::Transport
 {
 public:
-    // constructor input: (reeive side) rtp module to send encoded data to
-            RTPSendCompleteCallback(webrtc::RtpRtcp* rtp,
-                    const char* filename = NULL);
+    // constructor input: (receive side) rtp module to send encoded data to
+    RTPSendCompleteCallback(webrtc::RtpRtcp* rtp,
+                            const char* filename = NULL);
     virtual ~RTPSendCompleteCallback();
     // Send Packet to receive side RTP module
     virtual int SendPacket(int channel, const void *data, int len);
@@ -187,21 +207,29 @@ public:
     void SetLossPct(double lossPct);
     // Set average size of burst loss
     void SetBurstLength(double burstLength);
-    // return send count
-    int SendCount() { return _sendCount; }
+    // Set network delay in the network
+    void SetNetworkDelay(WebRtc_UWord32 networkDelayMs)
+                        {_networkDelayMs = networkDelayMs;};
+    // Return send count
+    int SendCount() {return _sendCount; }
+    // Return accumulated length in bytes of transmitted packets
+    WebRtc_UWord32 TotalSentLength() {return _totalSentLength;}
 private:
-    // randomly decide weather to drop a packet or not, based on the channel model
+    // Randomly decide whether to drop packets, based on the channel model
     bool PacketLoss(double lossPct);
 
-    WebRtc_UWord32    _sendCount;
-    webrtc::RtpRtcp*  _rtp;
-    double            _lossPct;
-    double            _burstLength;
-    bool              _prevLossState;
-    webrtc::RtpDump*  _rtpDump;
+    WebRtc_UWord32          _sendCount;
+    webrtc::RtpRtcp*        _rtp;
+    double                  _lossPct;
+    double                  _burstLength;
+    WebRtc_UWord32          _networkDelayMs;
+    bool                    _prevLossState;
+    WebRtc_UWord32          _totalSentLength;
+    webrtc::ListWrapper     _rtpPackets;
+    webrtc::RtpDump*        _rtpDump;
 };
 
-// used in multi thread test
+// Used in multi thread test
 class SendSharedState
 {
 public:
@@ -245,7 +273,7 @@ SSIMfromFiles(const WebRtc_Word8 *refFileName,
         const WebRtc_Word8 *testFileName, WebRtc_Word32 width,
         WebRtc_Word32 height, double *SSIMptr);
 
-// codec type conversion
+// Codec type conversion
 webrtc::RTPVideoCodecTypes
 ConvertCodecType(const char* plname);
 
@@ -255,7 +283,7 @@ public:
     SendStatsTest() : _frameRate(15) {}
     WebRtc_Word32 SendStatistics(const WebRtc_UWord32 bitRate,
             const WebRtc_UWord32 frameRate);
-    void SetTargetFrameRate(WebRtc_UWord32 frameRate) { _frameRate = frameRate; }
+    void SetTargetFrameRate(WebRtc_UWord32 frameRate) {_frameRate = frameRate;}
 private:
     WebRtc_UWord32 _frameRate;
 };

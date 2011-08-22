@@ -121,6 +121,26 @@ int ParseArguments(int argc, char **argv, CmdArgs& args)
             args.testNum = n;
             break;
         }
+        case 'p':
+        {
+            args.packetLoss = atoi(argv[i+1]);
+            break;
+        }
+        case 'r':
+        {
+            args.rtt = atoi(argv[i+1]);
+            break;
+        }
+        case 'm':
+        {
+            args.protectionMode = atoi(argv[i+1]);
+            break;
+        }
+        case 'e':
+        {
+            args.camaEnable = atoi(argv[i+1]);
+            break;
+        }
         default:
             return -1;
         }
@@ -136,10 +156,12 @@ int main(int argc, char **argv)
     if (ParseArguments(argc, argv, args) != 0)
     {
         printf("Unable to parse input arguments\n");
-        printf("args: -n <test #> -w <width> -h <height> -f <fps> -b <bps> -c <codec>"
-               " -i <input file> -o <output file>\n");
+        printf("args: -n <test #> -w <width> -h <height> -f <fps> -b <bps> "
+               "-c <codec>  -i <input file> -o <output file> -p <packet loss> "
+               "-r <round-trip-time> -e <cama enable> -m <protection mode> \n");
         return -1;
     }
+
     int ret = 0;
     switch (args.testNum)
     {
