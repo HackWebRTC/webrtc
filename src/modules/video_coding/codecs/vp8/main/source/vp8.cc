@@ -345,10 +345,8 @@ VP8Encoder::InitAndSetControlSettings()
     }
     vpx_codec_control(_encoder, VP8E_SET_STATIC_THRESHOLD, 800);
     vpx_codec_control(_encoder, VP8E_SET_CPUUSED, _cpuSpeed);
-#ifdef VP8_LATEST
     vpx_codec_control(_encoder, VP8E_SET_MAX_INTRA_BITRATE_PCT,
                       _rcMaxIntraTarget);
-#endif
     *_cfg = cfg_copy;
 
     _inited = true;

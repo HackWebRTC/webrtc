@@ -26,8 +26,6 @@ typedef struct vpx_codec_enc_cfg vpx_codec_enc_cfg_t;
 typedef struct vpx_image vpx_image_t;
 typedef struct vpx_ref_frame vpx_ref_frame_t;
 
-//#define VP8_LATEST
-
 namespace webrtc
 {
 
