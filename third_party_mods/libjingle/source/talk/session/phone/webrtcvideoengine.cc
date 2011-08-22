@@ -566,7 +566,7 @@ bool WebRtcVideoMediaChannel::Init() {
       vie_channel_, *this) != 0) {
     ret = false;
   } else {
-    // EnableRtcp(); // by default RTCP is disabled.
+    EnableRtcp();
     EnablePLI();
   }
   return ret;
@@ -901,6 +901,7 @@ int WebRtcVideoMediaChannel::SendPacket(int channel, const void* data,
   if (!network_interface_) {
     return -1;
   }
+
   talk_base::Buffer packet(data, len, kMaxRtpPacketLen);
   return network_interface_->SendPacket(&packet) ? len : -1;
 }

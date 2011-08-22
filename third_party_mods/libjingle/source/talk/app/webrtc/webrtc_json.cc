@@ -270,6 +270,10 @@ bool ParseJSONSignalingMessage(const std::string& signaling_message,
       cricket::AudioContentDescription* audio_content =
           new cricket::AudioContentDescription();
       ParseAudioCodec(mlines[i], audio_content);
+    
+      // enabling RTCP mux by default at both ends, without
+      // exchanging it through signaling message.
+      audio_content->set_rtcp_mux(true);
       audio_content->SortCodecs();
       sdp->AddContent(cricket::CN_AUDIO, cricket::NS_JINGLE_RTP, audio_content);
       ParseICECandidates(mlines[i], candidates);
@@ -277,6 +281,10 @@ bool ParseJSONSignalingMessage(const std::string& signaling_message,
       cricket::VideoContentDescription* video_content =
           new cricket::VideoContentDescription();
       ParseVideoCodec(mlines[i], video_content);
+
+      // enabling RTCP mux by default at both ends, without
+      // exchanging it through signaling message.
+      video_content->set_rtcp_mux(true);
       video_content->SortCodecs();
       sdp->AddContent(cricket::CN_VIDEO, cricket::NS_JINGLE_RTP, video_content);
       ParseICECandidates(mlines[i], candidates);

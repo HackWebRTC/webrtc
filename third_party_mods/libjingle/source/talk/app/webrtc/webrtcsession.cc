@@ -612,6 +612,9 @@ cricket::SessionDescription* WebRtcSession::CreateOffer() {
         video->AddCodec(*codec);
       }
 
+      // enabling RTCP mux by default at both ends, without
+      // exchanging it through signaling message.
+      video->set_rtcp_mux(true);
       video->SortCodecs();
       offer->AddContent(cricket::CN_VIDEO, cricket::NS_JINGLE_RTP, video);
     } else {
@@ -625,6 +628,9 @@ cricket::SessionDescription* WebRtcSession::CreateOffer() {
         audio->AddCodec(*codec);
       }
 
+      // enabling RTCP mux by default at both ends, without
+      // exchanging it through signaling message.
+      audio->set_rtcp_mux(true);
       audio->SortCodecs();
       offer->AddContent(cricket::CN_AUDIO, cricket::NS_JINGLE_RTP, audio);
     }
@@ -658,6 +664,10 @@ cricket::SessionDescription* WebRtcSession::CreateAnswer(
         }
       }
     }
+
+    // enabling RTCP mux by default at both ends, without
+    // exchanging it through signaling message.
+    audio_accept->set_rtcp_mux(true);
     audio_accept->SortCodecs();
     answer->AddContent(audio_content->name, audio_content->type, audio_accept);
   }
@@ -684,6 +694,10 @@ cricket::SessionDescription* WebRtcSession::CreateAnswer(
         }
       }
     }
+
+    // enabling RTCP mux by default at both ends, without
+    // exchanging it through signaling message.
+    video_accept->set_rtcp_mux(true);
     video_accept->SortCodecs();
     answer->AddContent(video_content->name, video_content->type, video_accept);
   }
