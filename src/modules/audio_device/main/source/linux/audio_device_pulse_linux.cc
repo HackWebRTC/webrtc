@@ -2509,6 +2509,13 @@ void AudioDeviceLinuxPulse::PaUnLock()
 void AudioDeviceLinuxPulse::WaitForOperationCompletion(
     pa_operation* paOperation) const
 {
+    if (!paOperation)
+    {
+        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+                     "paOperation NULL in WaitForOperationCompletion");
+        return;
+    }
+
     while (LATE(pa_operation_get_state)(paOperation) == PA_OPERATION_RUNNING)
     {
         LATE(pa_threaded_mainloop_wait)(_paMainloop);
