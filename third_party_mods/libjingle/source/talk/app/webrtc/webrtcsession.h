@@ -28,6 +28,7 @@
 #ifndef TALK_APP_WEBRTC_WEBRTCSESSION_H_
 #define TALK_APP_WEBRTC_WEBRTCSESSION_H_
 
+#include <map>
 #include <string>
 #include <vector>
 
@@ -199,7 +200,6 @@ class WebRtcSession : public cricket::BaseSession {
   typedef std::map<std::string, cricket::TransportChannel*> TransportChannelMap;
 
   bool SetVideoCapture(bool capture);
-  void DisableLocalCandidate(const std::string& name);
   bool OnStreamDeleteMessage(const cricket::SessionDescription* desc,
       const std::vector<cricket::Candidate>& candidates);
   void RemoveStreamOnRequest(const cricket::Candidate& candidate);

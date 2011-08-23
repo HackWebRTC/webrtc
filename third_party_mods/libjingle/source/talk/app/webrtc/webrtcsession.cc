@@ -288,7 +288,6 @@ bool WebRtcSession::RemoveStream(const std::string& stream_id) {
   for (iter = streams_.begin(); iter != streams_.end(); ++iter) {
     StreamInfo* sinfo = (*iter);
     if (sinfo->stream_id.compare(stream_id) == 0) {
-      DisableLocalCandidate(sinfo->transport->name());
       if (!sinfo->video) {
         cricket::VoiceChannel* channel = static_cast<cricket::VoiceChannel*> (
             sinfo->channel);
@@ -312,15 +311,6 @@ bool WebRtcSession::RemoveStream(const std::string& stream_id) {
     // TODO(ronghuawu): trigger onError callback
   }
   return ret;
-}
-
-void WebRtcSession::DisableLocalCandidate(const std::string& name) {
-  for (size_t i = 0; i < local_candidates_.size(); ++i) {
-    if (local_candidates_[i].name().compare(name) == 0) {
-      talk_base::SocketAddress address(local_candidates_[i].address().ip(), 0);
-      local_candidates_[i].set_address(address);
-    }
-  }
 }
 
 void WebRtcSession::EnableAllStreams() {
@@ -349,9 +339,6 @@ void WebRtcSession::RemoveAllStreams() {
        i != streams_to_remove.end(); ++i) {
     RemoveStream(*i);
   }
-
-  SetState(STATE_SENTTERMINATE);
-  SignalRemoveStreamMessage(this);
 }
 
 bool WebRtcSession::HasStream(const std::string& stream_id) const {
@@ -459,7 +446,6 @@ bool WebRtcSession::OnInitiateMessage(
       return false;
     }
   }
-
   // Provide remote candidates to the transport
   transport_->OnRemoteCandidates(candidates);
 
@@ -471,7 +457,6 @@ bool WebRtcSession::OnInitiateMessage(
 
   set_local_description(answer.release());
   SetState(STATE_SENTACCEPT);
-
 
   // AddStream called only once with Video label
   if (video_content) {
@@ -485,29 +470,17 @@ bool WebRtcSession::OnInitiateMessage(
 bool WebRtcSession::OnRemoteDescription(
     cricket::SessionDescription* desc,
     const std::vector<cricket::Candidate>& candidates) {
-
-  if (state() == STATE_SENTTERMINATE) {
-    LOG(LERROR) << "Invalid state to process the message";
-    return false;
-  }
-
   if (state() == STATE_SENTACCEPT ||
       state() == STATE_RECEIVEDACCEPT ||
       state() == STATE_INPROGRESS) {
-    if (CheckForStreamDeleteMessage(candidates)) {
-      return OnStreamDeleteMessage(desc, candidates);
-    } else {
-      transport_->OnRemoteCandidates(candidates);
-      return true;
-    }
+    transport_->OnRemoteCandidates(candidates);
+    return true;
   }
-
-  // Will trigger OnWritableState() if successful.
-  transport_->OnRemoteCandidates(candidates);
-
   // Session description is always accepted.
   set_remote_description(desc);
   SetState(STATE_RECEIVEDACCEPT);
+  // Will trigger OnWritableState() if successful.
+  transport_->OnRemoteCandidates(candidates);
 
   if (!incoming()) {
     // Trigger OnAddStream callback at the initiator
@@ -521,16 +494,6 @@ bool WebRtcSession::OnRemoteDescription(
     }
   }
   return true;
-}
-
-bool WebRtcSession::CheckForStreamDeleteMessage(
-    const std::vector<cricket::Candidate>& candidates) {
-  for (size_t i = 0; i < candidates.size(); ++i) {
-    if (candidates[i].address().port() == 0) {
-      return true;
-    }
-  }
-  return false;
 }
 
 bool WebRtcSession::OnStreamDeleteMessage(
@@ -583,13 +546,11 @@ void WebRtcSession::RemoveStreamOnRequest(
             stream_info->channel);
         channel->Enable(false);
         channel_manager_->DestroyVoiceChannel(channel);
-        DisableLocalCandidate(stream_info->transport->name());
       } else {
         cricket::VideoChannel* channel = static_cast<cricket::VideoChannel*> (
             stream_info->channel);
         channel->Enable(false);
         channel_manager_->DestroyVideoChannel(channel);
-        DisableLocalCandidate(stream_info->transport->name());
       }
       streams_.erase(siter);
       break;
