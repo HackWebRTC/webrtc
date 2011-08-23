@@ -1463,7 +1463,7 @@ RTPSender::RED(WebRtc_Word8& payloadType) const
 {
     if(!_audioConfigured)
     {
-        return NULL;
+        return 0;
     }
     return _audio->RED(payloadType);
 }

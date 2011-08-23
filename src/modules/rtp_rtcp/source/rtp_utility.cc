@@ -634,9 +634,6 @@ ModuleRTPUtility::RTPPayloadParser::ParseH263(RTPPayload& parsedPacket) const
 
     const WebRtc_UWord8 header1 = _dataPtr[0];
     const WebRtc_UWord8 header2 = _dataPtr[1];
-    bool modeA = false;
-    bool modeB = false;
-    bool modeC = false;
 
     parsedPacket.frameType = ((header2 & 0x10) == 0) ? kIFrame : kPFrame;
 
@@ -644,7 +641,6 @@ ModuleRTPUtility::RTPPayloadParser::ParseH263(RTPPayload& parsedPacket) const
     if ((header1 & 0x80) == 0)
     {
         // Mode A
-        modeA = true;
         h263HeaderLength = 4;
     }
     else
@@ -655,12 +651,13 @@ ModuleRTPUtility::RTPPayloadParser::ParseH263(RTPPayload& parsedPacket) const
 
         if((header1 & 0x40) == 0)
         {
-            // IMPROVEMENT use the information in the H263 header? GQuant of the first MB
-            modeB = true;
+            // Mode B
+            // IMPROVEMENT use the information in the H263 header?
+            // GQuant of the first MB
             h263HeaderLength = 8;
         }else
         {
-            modeC = true;
+            // Mode C
             h263HeaderLength = 12;
         }
     }
