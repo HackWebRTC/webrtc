@@ -525,6 +525,8 @@ protected:
     virtual WebRtc_Word32 BoundingSet(bool &tmmbrOwner,
                                     TMMBRSet*& boundingSetRec);
 
+    RTPSender                 _rtpSender;
+
 private:
     void SendKeyFrame();
 
@@ -557,7 +559,6 @@ private:
     WebRtc_UWord32              _RTCPArrivalTimeFracAudio;
 
     // send side
-    RTPSender                 _rtpSender;
     RTCPSender                _rtcpSender;
     NACKMethod            _nackMethod;
     WebRtc_UWord32              _nackLastTimeSent;
