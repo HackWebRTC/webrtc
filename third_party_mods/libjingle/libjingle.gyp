@@ -561,6 +561,8 @@
         '<(libjingle_mods)/source/talk/app/webrtc/peerconnectionimpl_callbacks.h',
         '<(libjingle_mods)/source/talk/app/webrtc/peerconnection_impl.cc',
         '<(libjingle_mods)/source/talk/app/webrtc/peerconnection_impl.h',
+        '<(libjingle_mods)/source/talk/app/webrtc/peerconnection_proxy.cc',
+        '<(libjingle_mods)/source/talk/app/webrtc/peerconnection_proxy.h',
         '<(libjingle_mods)/source/talk/app/webrtc/webrtcsession.cc',
         '<(libjingle_mods)/source/talk/app/webrtc/webrtcsession.h',
         '<(libjingle_mods)/source/talk/app/webrtc/webrtc_json.cc',

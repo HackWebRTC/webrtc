@@ -116,7 +116,7 @@ class PeerConnection {
   // TODO(ronghuawu): Add an event such as onclose, or onreadystatechanged
   // when the readystate reaches the closed state (no more streams in the
   // peerconnection object.
-  virtual void Close() = 0;
+  virtual bool Close() = 0;
 
   // Set the audio input & output devices based on the given device name.
   // An empty device name means to use the default audio device.

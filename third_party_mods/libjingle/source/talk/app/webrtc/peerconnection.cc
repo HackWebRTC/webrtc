@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/app/webrtc/peerconnection_impl.h"
+#include "talk/app/webrtc/peerconnection_proxy.h"
 
 namespace webrtc {
 
@@ -35,14 +35,14 @@ PeerConnection* PeerConnection::Create(const std::string& config,
     talk_base::Thread* worker_thread,
     talk_base::Thread* signaling_thread,
     cricket::DeviceManager* device_manager) {
-  return new PeerConnectionImpl(config, port_allocator, media_engine,
+  return new PeerConnectionProxy(config, port_allocator, media_engine,
       worker_thread, signaling_thread, device_manager);
 }
 
 PeerConnection* PeerConnection::Create(const std::string& config,
                                        cricket::PortAllocator* port_allocator,
                                        talk_base::Thread* worker_thread) {
-  return new PeerConnectionImpl(config, port_allocator, worker_thread);
+  return new PeerConnectionProxy(config, port_allocator, worker_thread);
 }
 
 }  // namespace webrtc

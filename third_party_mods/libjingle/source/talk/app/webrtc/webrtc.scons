@@ -10,6 +10,7 @@ talk.Library(
   srcs = [
     'peerconnection.cc',
     'peerconnection_impl.cc',
+    'peerconnection_proxy.cc',
     'webrtc_json.cc',
     'webrtcsession.cc',
   ],
