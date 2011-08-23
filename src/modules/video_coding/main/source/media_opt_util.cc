@@ -844,42 +844,14 @@ VCMLossProtectionLogic::UpdateMethod(VCMProtectionMethod *newMethod /*=NULL */)
     _currentParameters.codecWidth = _codecWidth;
     _currentParameters.codecHeight = _codecHeight;
 
-    if (newMethod == NULL)
+    // Update to new method, if not NULL
+    if (newMethod != NULL)
     {
-        VCMProtectionMethod *method;
-        ListItem *item;
-        for (item = _availableMethods.First(); item != NULL;
-             item = _availableMethods.Next(item))
-        {
-            method = static_cast<VCMProtectionMethod *> (item->GetItem());
-            if (method != NULL)
-            {
-                if (method->Type() == kFEC)
-                {
-                      _selectedMethod = method;
-                }
-                if (method->Type() == kNACK)
-                {
-                    _selectedMethod = method;
-                }
-                if (method->Type() == kNackFec)
-                {
-                    _selectedMethod = method;
-                }
-                method->UpdateParameters(&_currentParameters);
-            }
-        }
-        if (_selectedMethod != NULL && _selectedMethod->Type() != kFEC)
-        {
-            _selectedMethod = method;
-        }
-     }
-     else
-     {
-         _selectedMethod = newMethod;
-         _selectedMethod->UpdateParameters(&_currentParameters);
-     }
-    return true;
+        _selectedMethod = newMethod;
+        _selectedMethod->UpdateParameters(&_currentParameters);
+        return true;
+    }
+    return false;
 }
 
 VCMProtectionMethod*

@@ -339,8 +339,7 @@ public:
                          _fecRateDelta = fecRateDelta; }
 
     // Update the protection methods with the current VCMProtectionParameters
-    // and choose the best method available. The update involves computing the
-    // robustness settings for the protection method.
+    // and set the requested protection settings.
     //
     // Input:
     //          - newMethod         : If not NULL, this method will be selected.
