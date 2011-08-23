@@ -3510,11 +3510,13 @@ WebRtc_Word32 AudioDeviceWindowsWave::RecProc(LONGLONG& consumedTime)
         // increase main buffer count since one complete buffer has now been delivered
         _recBufCount++;
 
-        // Calculate processing time
-        consumedTime = (int)(t2.QuadPart-t1.QuadPart);
-        // handle wraps, time should not be higher than a second
-        if ((consumedTime > _perfFreq.QuadPart) || (consumedTime < 0))
-            consumedTime = 0;
+        if (send) {
+            // Calculate processing time
+            consumedTime = (int)(t2.QuadPart-t1.QuadPart);
+            // handle wraps, time should not be higher than a second
+            if ((consumedTime > _perfFreq.QuadPart) || (consumedTime < 0))
+                consumedTime = 0;
+        }
 
     }  // if ((nBytesRecorded == fullBufferSizeInBytes))
 
