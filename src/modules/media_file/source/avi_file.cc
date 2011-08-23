@@ -10,6 +10,7 @@
 
 #include "avi_file.h"
 
+#include <assert.h>
 #include <string.h>
 
 #ifdef _WIN32
@@ -1138,10 +1139,20 @@ size_t AviFile::PutBufferZ(const char* str)
 long AviFile::PutLE32LengthFromCurrent(long startPos)
 {
     const long endPos = ftell(_aviFile);
-    WebRtc_Word32 error = fseek(_aviFile, startPos - 4, SEEK_SET);
+    bool success = (0 == fseek(_aviFile, startPos - 4, SEEK_SET));
+    if (!success) {
+        assert(false);
+        return 0;
+    }
     const long len = endPos - startPos;
-    PutLE32(len);
-    error = fseek(_aviFile, endPos, SEEK_SET);
+    if (endPos > startPos) {
+        PutLE32(len);
+    }
+    else {
+        assert(false);
+    }
+    success = (0 == fseek(_aviFile, endPos, SEEK_SET));
+    assert(success);
     return len;
 }
 
