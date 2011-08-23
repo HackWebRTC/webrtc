@@ -304,8 +304,7 @@ int ViESender::SendPacket(int vieId, const void *data, int len)
         return -1;
     }
 
-    int channelId = ChannelId(vieId);
-    assert(channelId == _channelId);
+    assert(ChannelId(vieId) == _channelId);
 
     // Prepare for possible encryption and sending
     WebRtc_UWord8* sendPacket = (WebRtc_UWord8*) data;
@@ -356,8 +355,8 @@ int ViESender::SendRTCPPacket(int vieId, const void *data, int len)
         // No transport
         return -1;
     }
-    int channelId = ChannelId(vieId);
-    assert(channelId == _channelId);
+
+    assert(ChannelId(vieId) == _channelId);
 
     // Prepare for possible encryption and sending
     WebRtc_UWord8* sendPacket = (WebRtc_UWord8*) data;

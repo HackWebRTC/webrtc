@@ -90,7 +90,13 @@ bool ViEAutoTestMain::BeginOSIndependentTesting()
         }
         else
         {
-            scanf("%d", &testType);
+            if (scanf("%d", &testType) <= 0)
+            {
+                ViETest::Log("ERROR: unable to read selection. Try again\n");
+                testType = -1;
+                getchar();
+                continue;
+            }
             getchar();
         }
         ViETest::Log("");

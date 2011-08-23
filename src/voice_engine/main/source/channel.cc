@@ -639,8 +639,7 @@ Channel::OnInitializeDecoder(
                  "payloadName=%s, frequency=%u, channels=%u, rate=%u)",
                  id, payloadType, payloadName, frequency, channels, rate);
 
-    WebRtc_Word32 channel = VoEChannelId(id);
-    assert(channel == _channelId);
+    assert(VoEChannelId(id) == _channelId);
 
     CodecInst receiveCodec;
     CodecInst dummyCodec;
@@ -658,7 +657,7 @@ Channel::OnInitializeDecoder(
     if (_audioCodingModule.RegisterReceiveCodec(receiveCodec) == -1)
     {
         WEBRTC_TRACE(kTraceWarning, kTraceVoice,
-                     VoEId(_instanceId,_channelId),
+                     VoEId(_instanceId, _channelId),
                      "Channel::OnInitializeDecoder() invalid codec ("
                      "pt=%d, name=%s) received - 1", payloadType, payloadName);
         _engineStatisticsPtr->SetLastError(VE_AUDIO_CODING_MODULE_ERROR);
@@ -703,8 +702,7 @@ Channel::OnReceivedPacket(const WebRtc_Word32 id,
                  "Channel::OnReceivedPacket(id=%d, packetType=%d)",
                  id, packetType);
 
-    WebRtc_Word32 channel = VoEChannelId(id);
-    assert(channel == _channelId);
+    assert(VoEChannelId(id) == _channelId);
 
     // Notify only for the case when we have restarted an RTP session.
     if (_rtpPacketTimedOut && (kPacketRtp == packetType))

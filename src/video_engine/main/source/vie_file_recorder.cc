@@ -133,7 +133,7 @@ int ViEFileRecorder::StartRecording(const char* fileNameUTF8,
 int ViEFileRecorder::StopRecording()
 {
 
-    int error;
+    int error = 0;
     // Stop recording audio
     // Note - we can not hold the _ptrCritSect while accessing VE functions. It might cause deadlock in Write
     if (_veFileInterface)

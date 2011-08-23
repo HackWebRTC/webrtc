@@ -322,35 +322,34 @@ AudioCodingModuleImpl::TimeUntilNextProcess()
 }
 
 // Process any pending tasks such as timeouts
-WebRtc_Word32 
+WebRtc_Word32
 AudioCodingModuleImpl::Process()
 {
     WebRtc_UWord8 bitStream[2 * MAX_PAYLOAD_SIZE_BYTE]; // Make room for 1 RED payload
     WebRtc_Word16 lengthBytes = 2 * MAX_PAYLOAD_SIZE_BYTE;
+    WebRtc_Word16 redLengthBytes = lengthBytes;
     WebRtc_UWord32 rtpTimestamp;
     WebRtc_Word16 status;
     WebRtcACMEncodingType encodingType;
     FrameType frameType = kAudioFrameSpeech;
-    WebRtc_Word16 redLengthBytes;
     WebRtc_UWord8 currentPayloadType;
     bool hasDataToSend = false;
     bool fecActive = false;
-    WebRtc_UWord32 dummyFragLength;
- 
+
     // keep the scope of the ACM critical section limited
     {
         CriticalSectionScoped lock(*_acmCritSect);
         if(!HaveValidEncoder("Process"))
-        {           
+        {
             return -1;
         }
- 
-       status = _codecs[_currentSendCodecIdx]->Encode(bitStream, &lengthBytes, 
-                &rtpTimestamp, &encodingType);
+
+        status = _codecs[_currentSendCodecIdx]->Encode(bitStream, &lengthBytes,
+                 &rtpTimestamp, &encodingType);
         if (status < 0) // Encode failed
         {
             // logging error
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id, 
+            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
                 "Process(): Encoding Failed");
             lengthBytes = 0;
             return -1;
@@ -415,7 +414,6 @@ AudioCodingModuleImpl::Process()
             // one RTP packet and the fragmentation points
             // are set.
             // Only apply RED on speech data.
-            
             if((_fecEnabled) &&
                 ((encodingType == kActiveNormalEncoded) ||
                  (encodingType == kPassiveNormalEncoded)))
@@ -481,12 +479,12 @@ AudioCodingModuleImpl::Process()
 
                 // Insert new packet length.
                 _fragmentation->fragmentationLength[0] = lengthBytes;
-                
+
                 // Insert new packet payload type.
                 _fragmentation->fragmentationPlType[0] = currentPayloadType;
                 _lastFECTimestamp = rtpTimestamp;
 
-                // can be modified by the getRedPayload() call if iSAC is utilized
+                // can be modified by the GetRedPayload() call if iSAC is utilized
                 redLengthBytes = lengthBytes;
                 // A fragmentation header is provided => packetization according to RFC 2198
                 // (RTP Payload for Redundant Audio Data) will be used.
@@ -505,11 +503,8 @@ AudioCodingModuleImpl::Process()
                 {
                     // The codec was not iSAC => use current encoder output as redundant data
                     // instead (trivial FEC scheme)
-                    memcpy(_redBuffer, bitStream, redLengthBytes); 
+                    memcpy(_redBuffer, bitStream, redLengthBytes);
                 }
-                
-                // Temporary storing RED length
-                dummyFragLength = redLengthBytes;
 
                 _isFirstRED = false;
                 // Update payload type with RED payload type
@@ -533,10 +528,10 @@ AudioCodingModuleImpl::Process()
         if(_packetizationCallback != NULL)
         {
             if (fecActive) {
-                _packetizationCallback->SendData(frameType, currentPayloadType, 
+                _packetizationCallback->SendData(frameType, currentPayloadType,
                     rtpTimestamp, bitStream, lengthBytes, _fragmentation);
             } else {
-                _packetizationCallback->SendData(frameType, currentPayloadType, 
+                _packetizationCallback->SendData(frameType, currentPayloadType,
                     rtpTimestamp, bitStream, lengthBytes, NULL);
             }
         }
@@ -548,7 +543,7 @@ AudioCodingModuleImpl::Process()
         }
     }
     if (fecActive) {
-        _fragmentation->fragmentationLength[1] = dummyFragLength;
+        _fragmentation->fragmentationLength[1] = redLengthBytes;
     }
     return lengthBytes;
 }
