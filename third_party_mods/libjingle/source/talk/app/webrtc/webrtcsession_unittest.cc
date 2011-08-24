@@ -280,11 +280,6 @@ class WebRtcSessionTest : public OnSignalImpl {
     return return_value;
   }
 
-  std::string DirectionAsString() {
-    // Direction is either "r"=incoming or "s"=outgoing.
-    return (receiving_) ? "r" : "s";
-  }
-
   bool WaitForCallback(CallbackId id, int timeout_ms) {
     bool success = false;
     for (int ms = 0; ms < timeout_ms; ms++) {
@@ -324,7 +319,7 @@ class WebRtcSessionTest : public OnSignalImpl {
     talk_base::CreateRandomString(8, &id_);
 
     session_ = new webrtc::WebRtcSession(
-        id_, DirectionAsString() , allocator_,
+        id_, receiving_ , allocator_,
         channel_manager_,
         signaling_thread_);
     session_->SignalAddStream.connect(

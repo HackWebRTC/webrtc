@@ -33,138 +33,35 @@
 #include "talk/base/helpers.h"
 #include "talk/base/logging.h"
 #include "talk/base/stringencode.h"
+#include "talk/p2p/base/session.h"
 #include "talk/p2p/client/basicportallocator.h"
 
 namespace webrtc {
 
-// The number of the tokens in the config string.
-static const size_t kConfigTokens = 2;
 
-// The default stun port.
-static const int kDefaultStunPort = 3478;
-
-PeerConnectionImpl::PeerConnectionImpl(const std::string& config,
-      cricket::PortAllocator* port_allocator,
-      cricket::MediaEngine* media_engine,
-      talk_base::Thread* worker_thread,
-      talk_base::Thread* signaling_thread,
-      cricket::DeviceManager* device_manager)
-  : config_(config),
-    port_allocator_(port_allocator),
-    media_engine_(media_engine),
-    worker_thread_(worker_thread),
-    device_manager_(device_manager),
+PeerConnectionImpl::PeerConnectionImpl(
+    cricket::PortAllocator* port_allocator,
+    cricket::ChannelManager* channel_manager,
+    talk_base::Thread* signaling_thread)
+  : port_allocator_(port_allocator),
+    channel_manager_(channel_manager),
     signaling_thread_(signaling_thread),
-    initialized_(false),
-    service_type_(SERVICE_COUNT),
     event_callback_(NULL),
-    session_(NULL),
-    incoming_(false) {
-}
-
-PeerConnectionImpl::PeerConnectionImpl(const std::string& config,
-                                       cricket::PortAllocator* port_allocator,
-                                       talk_base::Thread* worker_thread)
-  : config_(config),
-    port_allocator_(port_allocator),
-    media_engine_(NULL),
-    worker_thread_(worker_thread),
-    device_manager_(NULL),
-    signaling_thread_(NULL),
-    initialized_(false),
-    service_type_(SERVICE_COUNT),
-    event_callback_(NULL),
-    session_(NULL),
-    incoming_(false) {
+    session_(NULL) {
 }
 
 PeerConnectionImpl::~PeerConnectionImpl() {
-  session_.reset();
-  channel_manager_.reset();
 }
 
 bool PeerConnectionImpl::Init() {
-  ASSERT(!initialized_);
-  std::vector<talk_base::SocketAddress> stun_hosts;
-  talk_base::SocketAddress stun_addr;
-  if (!ParseConfigString(config_, &stun_addr))
-    return false;
-  stun_hosts.push_back(stun_addr);
-
-  // TODO(mallinath) - Changes are required to modify the stand alone
-  // constructor to get signaling thread as input. It should not be created
-  // here.
-  if (!signaling_thread_) {
-    signaling_thread_ = new talk_base::Thread();
-    if (!signaling_thread_->SetName("signaling thread", this) ||
-        !signaling_thread_->Start()) {
-      LOG(WARNING) << "Failed to start libjingle signaling thread";
-      return false;
-    }
-  }
-
-  // create cricket::ChannelManager object
-  ASSERT(worker_thread_ != NULL);
-  if (media_engine_ && device_manager_) {
-    channel_manager_.reset(new cricket::ChannelManager(
-        media_engine_, device_manager_, worker_thread_));
-  } else {
-    channel_manager_.reset(new cricket::ChannelManager(worker_thread_));
-  }
-
-  initialized_ = channel_manager_->Init();
-
-  if (event_callback_) {
-    // TODO(ronghuawu): OnInitialized is no longer needed.
-    if (initialized_)
-      event_callback_->OnInitialized();
-  }
-  return initialized_;
-}
-
-bool PeerConnectionImpl::ParseConfigString(
-    const std::string& config, talk_base::SocketAddress* stun_addr) {
-  std::vector<std::string> tokens;
-  talk_base::tokenize(config_, ' ', &tokens);
-
-  if (tokens.size() != kConfigTokens) {
-    LOG(WARNING) << "Invalid config string";
+  std::string sid;
+  talk_base::CreateRandomString(8, &sid);
+  const bool incoming = false;
+  session_.reset(CreateMediaSession(sid, incoming)); // default outgoing direction
+  if (session_.get() == NULL) {
+    ASSERT(false && "failed to initialize a session");
     return false;
   }
-
-  service_type_ = SERVICE_COUNT;
-  // NOTE: Must be in the same order as the enum.
-  static const char* kValidServiceTypes[SERVICE_COUNT] = {
-    "STUN", "STUNS", "TURN", "TURNS"
-  };
-  const std::string& type = tokens[0];
-  for (size_t i = 0; i < SERVICE_COUNT; ++i) {
-    if (type.compare(kValidServiceTypes[i]) == 0) {
-      service_type_ = static_cast<ServiceType>(i);
-      break;
-    }
-  }
-
-  if (service_type_ == SERVICE_COUNT) {
-    LOG(WARNING) << "Invalid service type: " << type;
-    return false;
-  }
-  std::string service_address = tokens[1];
-
-  int port;
-  tokens.clear();
-  talk_base::tokenize(service_address, ':', &tokens);
-  if (tokens.size() != kConfigTokens) {
-    port = kDefaultStunPort;
-  } else {
-    port = atoi(tokens[1].c_str());
-    if (port <= 0 || port > 0xffff) {
-      LOG(WARNING) << "Invalid port: " << tokens[1];
-      return false;
-    }
-  }
-  stun_addr->SetIP(service_address);
-  stun_addr->SetPort(port);
   return true;
 }
 
@@ -187,36 +84,23 @@ bool PeerConnectionImpl::SignalingMessage(
   }
 
   bool ret = false;
-  if (!session_.get()) {
-    // this will be incoming call
-    std::string sid;
-    talk_base::CreateRandomString(8, &sid);
-    std::string direction("r");
-    session_.reset(CreateMediaSession(sid, direction));
-    if (session_.get() == NULL) {
-      ASSERT(false && "failed to initialize a session");
-      return false;
-    }
-    incoming_ = true;
+  if (GetReadyState() == NEW) {
+    // set direction to incoming, as message received first
+    session_->set_incoming(true);
     ret = session_->OnInitiateMessage(incoming_sdp, candidates);
   } else {
     ret = session_->OnRemoteDescription(incoming_sdp, candidates);
   }
-
   return ret;
 }
 
 WebRtcSession* PeerConnectionImpl::CreateMediaSession(
-    const std::string& id, const std::string& dir) {
+    const std::string& id, bool incoming) {
   ASSERT(port_allocator_ != NULL);
-  WebRtcSession* session = new WebRtcSession(id, dir,
-      port_allocator_, channel_manager_.get(),
-      signaling_thread_);
+  WebRtcSession* session = new WebRtcSession(id, incoming,
+      port_allocator_, channel_manager_, signaling_thread_);
 
   if (session->Initiate()) {
-    session->SignalRemoveStreamMessage.connect(
-        this,
-        &PeerConnectionImpl::SendRemoveSignal);
     session->SignalAddStream.connect(
         this,
         &PeerConnectionImpl::OnAddStream);
@@ -239,31 +123,7 @@ WebRtcSession* PeerConnectionImpl::CreateMediaSession(
   return session;
 }
 
-void PeerConnectionImpl::SendRemoveSignal(WebRtcSession* session) {
-  std::string message;
-  if (GetJSONSignalingMessage(session->remote_description(),
-                              session->local_candidates(), &message)) {
-    if (event_callback_) {
-      event_callback_->OnSignalingMessage(message);
-      // TODO(ronghuawu): Notify the client when the PeerConnection object
-      // doesn't have any streams. Something like the onreadystatechanged
-      // + setting readyState to 'CLOSED'.
-    }
-  }
-}
-
 bool PeerConnectionImpl::AddStream(const std::string& stream_id, bool video) {
-  if (!session_.get()) {
-    // if session doesn't exist then this should be an outgoing call
-    std::string sid;
-    talk_base::CreateRandomString(8, &sid);
-    session_.reset(CreateMediaSession(sid, "s"));
-    if (session_.get() == NULL) {
-      ASSERT(false && "failed to initialize a session");
-      return false;
-    }
-  }
-
   bool ret = false;
   if (session_->HasStream(stream_id)) {
     ASSERT(false && "A stream with this name already exists");
@@ -280,9 +140,6 @@ bool PeerConnectionImpl::AddStream(const std::string& stream_id, bool video) {
 }
 
 bool PeerConnectionImpl::RemoveStream(const std::string& stream_id) {
-  if (!session_.get()) {
-    return false;
-  }
   return session_->RemoveStream(stream_id);
 }
 
@@ -321,9 +178,6 @@ bool PeerConnectionImpl::SetLocalVideoRenderer(
 
 bool PeerConnectionImpl::SetVideoRenderer(const std::string& stream_id,
                                           cricket::VideoRenderer* renderer) {
-  if (!session_.get()) {
-    return false;
-  }
   return session_->SetVideoRenderer(stream_id, renderer);
 }
 
@@ -332,17 +186,11 @@ bool PeerConnectionImpl::SetVideoCapture(const std::string& cam_device) {
 }
 
 bool PeerConnectionImpl::Connect() {
-  if (!session_.get()) {
-    return false;
-  }
   return session_->Connect();
 }
 
+// TODO(mallinath) - Close is not used anymore, should be removed.
 bool PeerConnectionImpl::Close() {
-  if (!session_.get()) {
-    return false;
-  }
-
   session_->RemoveAllStreams();
   return true;
 }
@@ -366,6 +214,21 @@ void PeerConnectionImpl::OnRtcMediaChannelCreated(const std::string& stream_id,
   if (event_callback_) {
     event_callback_->OnLocalStreamInitialized(stream_id, video);
   }
+}
+
+PeerConnectionImpl::ReadyState PeerConnectionImpl::GetReadyState() {
+  ReadyState ready_state;
+  cricket::BaseSession::State state = session_->state();
+  if (state == cricket::BaseSession::STATE_INIT) {
+    ready_state = NEW;
+  } else if (state == cricket::BaseSession::STATE_INPROGRESS) {
+    ready_state = ACTIVE;
+  } else if (state == cricket::BaseSession::STATE_DEINIT) {
+    ready_state = CLOSED;
+  } else {
+    ready_state = NEGOTIATING;
+  }
+  return ready_state;
 }
 
 }  // namespace webrtc

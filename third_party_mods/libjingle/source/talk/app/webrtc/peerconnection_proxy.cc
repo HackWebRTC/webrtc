@@ -130,24 +130,13 @@ struct ResultParams : public talk_base::MessageData {
   bool result;
 };
 
-PeerConnectionProxy::PeerConnectionProxy(const std::string& config,
-      cricket::PortAllocator* port_allocator,
-      cricket::MediaEngine* media_engine,
-      talk_base::Thread* worker_thread,
-      talk_base::Thread* signaling_thread,
-      cricket::DeviceManager* device_manager)
-  : peerconnection_impl_(new PeerConnectionImpl(config, port_allocator,
-                             media_engine, worker_thread, signaling_thread,
-                             device_manager)),
+PeerConnectionProxy::PeerConnectionProxy(
+    cricket::PortAllocator* port_allocator,
+    cricket::ChannelManager* channel_manager,
+      talk_base::Thread* signaling_thread)
+  : peerconnection_impl_(new PeerConnectionImpl(port_allocator,
+                             channel_manager, signaling_thread)),
     signaling_thread_(signaling_thread) {
-}
-
-PeerConnectionProxy::PeerConnectionProxy(const std::string& config,
-                                       cricket::PortAllocator* port_allocator,
-                                       talk_base::Thread* worker_thread)
-  : peerconnection_impl_(new PeerConnectionImpl(config, port_allocator,
-                             worker_thread)),
-    signaling_thread_(NULL) {
 }
 
 PeerConnectionProxy::~PeerConnectionProxy() {
@@ -156,18 +145,6 @@ PeerConnectionProxy::~PeerConnectionProxy() {
 }
 
 bool PeerConnectionProxy::Init() {
-  // TODO(mallinath) - Changes are required to modify the stand alone
-  // constructor to get signaling thread as input. It should not be created
-  // here.
-  if (!signaling_thread_) {
-    signaling_thread_ = new talk_base::Thread();
-    if (!signaling_thread_->SetName("signaling thread", this) ||
-        !signaling_thread_->Start()) {
-      LOG(WARNING) << "Failed to start libjingle signaling thread";
-      return false;
-    }
-  }
-
   ResultParams params;
   return (Send(MSG_WEBRTC_INIT, &params) && params.result);
 }

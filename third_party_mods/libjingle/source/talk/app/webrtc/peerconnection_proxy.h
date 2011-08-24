@@ -35,26 +35,23 @@
 #include "talk/base/thread.h"
 
 namespace cricket {
-class DeviceManager;
+class ChannelManager;
+class PortAllocator;
 }
 
 namespace webrtc {
+
+class PeerConnectionImpl;
+
 class PeerConnectionProxy : public PeerConnection,
                             public talk_base::MessageHandler {
  public:
-  PeerConnectionProxy(const std::string& config,
-      cricket::PortAllocator* port_allocator,
-      cricket::MediaEngine* media_engine,
-      talk_base::Thread* worker_thread,
-      talk_base::Thread* signaling_thread,
-      cricket::DeviceManager* device_manager);
-  PeerConnectionProxy(const std::string& config,
-                     cricket::PortAllocator* port_allocator,
-                     talk_base::Thread* worker_thread);
+  PeerConnectionProxy(cricket::PortAllocator* port_allocator,
+                      cricket::ChannelManager* channel_manager,
+                      talk_base::Thread* signaling_thread);
   virtual ~PeerConnectionProxy();
 
   // PeerConnection interfaces
-  bool Init();
   void RegisterObserver(PeerConnectionObserver* observer);
   bool SignalingMessage(const std::string& msg);
   bool AddStream(const std::string& stream_id, bool video);
@@ -69,11 +66,15 @@ class PeerConnectionProxy : public PeerConnection,
   bool SetVideoCapture(const std::string& cam_device);
 
  private:
+
+  bool Init();
   bool Send(uint32 id, talk_base::MessageData* data);
   virtual void OnMessage(talk_base::Message* message);
 
-  talk_base::scoped_ptr<PeerConnection> peerconnection_impl_;
+  talk_base::scoped_ptr<PeerConnectionImpl> peerconnection_impl_;
   talk_base::Thread* signaling_thread_;
+
+  friend class PeerConnectionFactory;
 };
 }
 

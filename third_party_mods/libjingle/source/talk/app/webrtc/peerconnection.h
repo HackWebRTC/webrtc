@@ -37,9 +37,6 @@
 #include <string>
 
 namespace cricket {
-class DeviceManager;
-class MediaEngine;
-class PortAllocator;
 class VideoRenderer;
 }
 
@@ -75,18 +72,6 @@ class PeerConnectionObserver {
 class PeerConnection {
  public:
   virtual ~PeerConnection() {}
-  static PeerConnection* Create(const std::string& config,
-      cricket::PortAllocator* port_allocator,
-      cricket::MediaEngine* media_engine,
-      talk_base::Thread* worker_thread,
-      talk_base::Thread* signaling_thread,
-      cricket::DeviceManager* device_manager);
-  static PeerConnection* Create(const std::string& config,
-                                cricket::PortAllocator* port_allocator,
-                                talk_base::Thread* worker_thread);
-
-  // Initialize
-  virtual bool Init() = 0;
 
   // Register a listener
   virtual void RegisterObserver(PeerConnectionObserver* observer) = 0;

@@ -64,12 +64,9 @@ typedef std::vector<StreamInfo*> StreamMap;  // not really a map (vector)
 static const char kVideoStream[] = "video_rtp";
 static const char kAudioStream[] = "rtp";
 
-const char WebRtcSession::kOutgoingDirection[] = "s";
-const char WebRtcSession::kIncomingDirection[] = "r";
-
 WebRtcSession::WebRtcSession(
     const std::string& id,
-    const std::string& direction,
+    bool incoming,
     cricket::PortAllocator* allocator,
     cricket::ChannelManager* channelmgr,
     talk_base::Thread* signaling_thread)
@@ -82,7 +79,7 @@ WebRtcSession::WebRtcSession(
     setup_timeout_(kCallSetupTimeout),
     signaling_thread_(signaling_thread),
     id_(id),
-    incoming_(direction == kIncomingDirection),
+    incoming_(incoming),
     port_allocator_(allocator) {
   BaseSession::sid_ = id;
 }

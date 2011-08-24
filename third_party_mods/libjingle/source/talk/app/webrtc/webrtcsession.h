@@ -78,7 +78,7 @@ typedef std::vector<cricket::VideoCodec> VideoCodecs;
 class WebRtcSession : public cricket::BaseSession {
  public:
   WebRtcSession(const std::string& id,
-                    const std::string& direction,
+                    bool incoming,
                     cricket::PortAllocator* allocator,
                     cricket::ChannelManager* channelmgr,
                     talk_base::Thread* signaling_thread);
@@ -142,6 +142,7 @@ class WebRtcSession : public cricket::BaseSession {
     return local_candidates_;
   }
   const std::string& id() const { return id_; }
+  void set_incoming(bool incoming) { incoming_ = incoming; }
   bool incoming() const { return incoming_; }
   cricket::PortAllocator* port_allocator() const { return port_allocator_; }
   talk_base::Thread* signaling_thread() const { return signaling_thread_; }

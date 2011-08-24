@@ -34,10 +34,12 @@
 #include "talk/app/webrtc/peerconnection.h"
 #include "talk/base/sigslot.h"
 #include "talk/base/scoped_ptr.h"
+#include "talk/base/thread.h"
 #include "talk/session/phone/channelmanager.h"
 
 namespace cricket {
-class DeviceManager;
+class ChannelManager;
+class PortAllocator;
 class SessionDescription;
 }
 
@@ -47,15 +49,9 @@ class WebRtcSession;
 class PeerConnectionImpl : public PeerConnection,
                            public sigslot::has_slots<> {
  public:
-  PeerConnectionImpl(const std::string& config,
-      cricket::PortAllocator* port_allocator,
-      cricket::MediaEngine* media_engine,
-      talk_base::Thread* worker_thread,
-      talk_base::Thread* signaling_thread,
-      cricket::DeviceManager* device_manager);
-  PeerConnectionImpl(const std::string& config,
-                     cricket::PortAllocator* port_allocator,
-                     talk_base::Thread* worker_thread);
+  PeerConnectionImpl(cricket::PortAllocator* port_allocator,
+                     cricket::ChannelManager* channel_manager,
+                     talk_base::Thread* signaling_thread);
   virtual ~PeerConnectionImpl();
 
   enum ReadyState {
@@ -66,7 +62,6 @@ class PeerConnectionImpl : public PeerConnection,
   };
 
   // PeerConnection interfaces
-  bool Init();
   void RegisterObserver(PeerConnectionObserver* observer);
   bool SignalingMessage(const std::string& msg);
   bool AddStream(const std::string& stream_id, bool video);
@@ -80,13 +75,9 @@ class PeerConnectionImpl : public PeerConnection,
                         cricket::VideoRenderer* renderer);
   bool SetVideoCapture(const std::string& cam_device);
 
-  // Access to the members
-  const std::string& config() const { return config_; }
-  bool incoming() const { return incoming_; }
   cricket::ChannelManager* channel_manager() {
-    return channel_manager_.get();
+    return channel_manager_;
   }
-  ReadyState ready_state() const { return ready_state_; }
 
   // Callbacks from PeerConnectionImplCallbacks
   void OnAddStream(const std::string& stream_id, bool video);
@@ -97,45 +88,22 @@ class PeerConnectionImpl : public PeerConnection,
   void OnFailedCall();
   void OnRtcMediaChannelCreated(const std::string& stream_id,
                                 bool video);
+  bool Init();
 
  private:
+  ReadyState GetReadyState();
   bool ParseConfigString(const std::string& config,
                          talk_base::SocketAddress* stun_addr);
   void SendRemoveSignal(WebRtcSession* session);
-  WebRtcSession* CreateMediaSession(const std::string& id,
-                                        const std::string& dir);
+  WebRtcSession* CreateMediaSession(const std::string& id, bool incoming);
 
-  std::string config_;
-  talk_base::scoped_ptr<cricket::ChannelManager> channel_manager_;
   cricket::PortAllocator* port_allocator_;
-  cricket::MediaEngine* media_engine_;
-  talk_base::Thread* worker_thread_;
-  cricket::DeviceManager* device_manager_;
+  cricket::ChannelManager* channel_manager_;
   talk_base::Thread* signaling_thread_;
-
-  bool initialized_;
-  ReadyState ready_state_;
-  // TODO(ronghuawu/tommi): Replace the initialized_ with ready_state_.
-  // Fire notifications via the observer interface
-  // when ready_state_ changes (i.e. onReadyStateChanged()).
-
-  // NOTE: The order of the enum values must be in sync with the array
-  // in Init().
-  enum ServiceType {
-    STUN,
-    STUNS,
-    TURN,
-    TURNS,
-    SERVICE_COUNT,  // Also means 'invalid'.
-  };
-
-  ServiceType service_type_;
   PeerConnectionObserver* event_callback_;
   talk_base::scoped_ptr<WebRtcSession> session_;
-  // TODO(ronghua): There's no such concept as "incoming" and "outgoing"
-  // according to the spec. This will be removed in the new PeerConnection.
-  bool incoming_;
 };
-}
+
+}  // namespace webrtc
 
 #endif  // TALK_APP_WEBRTC_PEERCONNECTION_IMPL_H_
