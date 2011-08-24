@@ -24,9 +24,6 @@ TEST_F(VideoProcessingModuleTest, ContentAnalysis)
     _ca_c.Initialize(_width,_height);
     _ca_sse.Initialize(_width,_height);
 
-    ASSERT_EQ(352, _width);
-    ASSERT_EQ(288, _height);
-
     while (fread(_videoFrame.Buffer(), 1, _frameLength, _sourceFile)
            == _frameLength)
     {

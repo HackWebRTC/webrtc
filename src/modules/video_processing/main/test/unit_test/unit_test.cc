@@ -268,7 +268,6 @@ TEST_F(VideoProcessingModuleTest, PreprocessorLogic)
 TEST_F(VideoProcessingModuleTest, Resampler)
 {
     enum { NumRuns = 1 };
-    WebRtc_UWord32 frameNum = 0;
 
     WebRtc_Word64 minRuntime = 0;
     WebRtc_Word64 avgRuntime = 0;
@@ -276,7 +275,6 @@ TEST_F(VideoProcessingModuleTest, Resampler)
     TickTime t0;
     TickTime t1;
     TickInterval accTicks;
-    WebRtc_Word32 modifiedPixels = 0;
     WebRtc_Word32 height = 288;
     WebRtc_Word32 width = 352;
     WebRtc_Word32 lengthSourceFrame = width*height*3/2;
