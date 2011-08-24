@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2004--2011, Google Inc.
+ * Copyright 2011, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -30,8 +30,8 @@ namespace webrtc {
 
 class LocalVideoTrackImpl : public NotifierImpl<LocalVideoTrack> {
  public:
-  LocalVideoTrackImpl(){};
-  LocalVideoTrackImpl(VideoDevice* video_device)
+  LocalVideoTrackImpl() {}
+  explicit LocalVideoTrackImpl(VideoDevice* video_device)
       : enabled_(true),
         kind_(kVideoTrackKind),
         video_device_(video_device) {
@@ -39,6 +39,7 @@ class LocalVideoTrackImpl : public NotifierImpl<LocalVideoTrack> {
 
   virtual void SetRenderer(VideoRenderer* renderer) {
     video_renderer_ = renderer;
+    NotifierImpl<LocalVideoTrack>::FireOnChanged();
   }
 
   virtual scoped_refptr<VideoRenderer> GetRenderer() {
@@ -70,17 +71,18 @@ class LocalVideoTrackImpl : public NotifierImpl<LocalVideoTrack> {
       NotifierImpl<LocalVideoTrack>::FireOnChanged();
   }
 
-private:
+ private:
   bool enabled_;
   std::string kind_;
   scoped_refptr<VideoDevice> video_device_;
   scoped_refptr<VideoRenderer> video_renderer_;
 };
 
-scoped_refptr<LocalVideoTrack> LocalVideoTrack::Create(VideoDevice* video_device) {
+scoped_refptr<LocalVideoTrack> LocalVideoTrack::Create(
+    VideoDevice* video_device) {
   RefCountImpl<LocalVideoTrackImpl>* track =
       new RefCountImpl<LocalVideoTrackImpl>(video_device);
   return track;
 }
 
-} // namespace webrtc
+}  // namespace webrtc

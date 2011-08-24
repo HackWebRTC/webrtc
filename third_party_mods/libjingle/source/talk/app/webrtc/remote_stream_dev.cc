@@ -24,44 +24,49 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#include "talk/app/webrtc/remote_stream_dev.h"
 
-#ifndef TALK_APP_WEBRTC_LOCAL_STREAM_H_
-#define TALK_APP_WEBRTC_LOCAL_STREAM_H_
-
-#include "talk/app/webrtc/media_stream_impl_dev.h"
-#include "talk/app/webrtc/stream_dev.h"
-#include "talk/base/scoped_ptr.h"
+#include <string>
 
 namespace webrtc {
 
-class MediaStreamImpl;
-/////////////////////////////////////////////
-// Local streams are  Created by the PeerConnections client and provided to a
-// PeerConnection object using the call PeerConnection::AddStream.
+scoped_refptr<RemoteMediaStream> RemoteMediaStreamImpl::Create(
+    const std::string& label) {
+  // To instantiate LocalStream use
+  RefCountImpl<RemoteMediaStreamImpl>* stream =
+      new RefCountImpl<RemoteMediaStreamImpl>(label);
+  return stream;
+}
 
-class LocalStreamImpl
-    : public LocalMediaStream,
-      public NotifierImpl<MediaStreamTrackList> {
- public:
-  // Implement LocalStream.
-  virtual bool AddTrack(MediaStreamTrack* track);
+RemoteMediaStreamImpl::RemoteMediaStreamImpl(const std::string& label)
+    : media_stream_impl_(label) {
+}
 
-  // Implement MediaStream.
-  virtual const std::string& label();
-  virtual scoped_refptr<MediaStreamTrackList> tracks();
-  virtual ReadyState ready_state();
+// Implement MediaStream
+const std::string& RemoteMediaStreamImpl::label() {
+  return media_stream_impl_.label();
+}
 
-  // Implement MediaStreamTrackList.
-  virtual size_t count();
-  virtual scoped_refptr<MediaStreamTrack> at(size_t index);
+scoped_refptr<MediaStreamTrackList> RemoteMediaStreamImpl::tracks() {
+  return this;
+}
 
- protected:
-  explicit LocalStreamImpl(const std::string& label);
+MediaStream::ReadyState RemoteMediaStreamImpl::ready_state() {
+  return media_stream_impl_.ready_state();
+}
 
-  MediaStreamImpl media_stream_impl_;
-  MediaStreamTrackListImpl tracks_;
-};
+// Implement MediaStreamTrackList.
+size_t RemoteMediaStreamImpl::count() {
+  return tracks_.count();
+}
+
+scoped_refptr<MediaStreamTrack> RemoteMediaStreamImpl::at(size_t index) {
+  return tracks_.at(index);
+}
+
+bool RemoteMediaStreamImpl::AddTrack(MediaStreamTrack* track) {
+  tracks_.AddTrack(track);
+  NotifierImpl<MediaStreamTrackList>::FireOnChanged();
+}
 
 }  // namespace webrtc
-
-#endif  // TALK_APP_WEBRTC_LOCAL_STREAM_H_

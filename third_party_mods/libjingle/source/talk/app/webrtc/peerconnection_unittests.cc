@@ -24,44 +24,13 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#include "gtest/gtest.h"
 
-#ifndef TALK_APP_WEBRTC_LOCAL_STREAM_H_
-#define TALK_APP_WEBRTC_LOCAL_STREAM_H_
-
-#include "talk/app/webrtc/media_stream_impl_dev.h"
-#include "talk/app/webrtc/stream_dev.h"
-#include "talk/base/scoped_ptr.h"
-
-namespace webrtc {
-
-class MediaStreamImpl;
-/////////////////////////////////////////////
-// Local streams are  Created by the PeerConnections client and provided to a
-// PeerConnection object using the call PeerConnection::AddStream.
-
-class LocalStreamImpl
-    : public LocalMediaStream,
-      public NotifierImpl<MediaStreamTrackList> {
- public:
-  // Implement LocalStream.
-  virtual bool AddTrack(MediaStreamTrack* track);
-
-  // Implement MediaStream.
-  virtual const std::string& label();
-  virtual scoped_refptr<MediaStreamTrackList> tracks();
-  virtual ReadyState ready_state();
-
-  // Implement MediaStreamTrackList.
-  virtual size_t count();
-  virtual scoped_refptr<MediaStreamTrack> at(size_t index);
-
- protected:
-  explicit LocalStreamImpl(const std::string& label);
-
-  MediaStreamImpl media_stream_impl_;
-  MediaStreamTrackListImpl tracks_;
-};
-
-}  // namespace webrtc
-
-#endif  // TALK_APP_WEBRTC_LOCAL_STREAM_H_
+int main(int argc, char **argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  // Added return_value so that it's convenient to put a breakpoint before
+  // exiting please note that the return value from RUN_ALL_TESTS() must
+  // be returned by the main function.
+  const int return_value = RUN_ALL_TESTS();
+  return return_value;
+}

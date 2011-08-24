@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2004--2011, Google Inc.
+ * Copyright 2011, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,44 +28,46 @@
 
 namespace webrtc {
 
-scoped_refptr<LocalStream> LocalStream::Create(const std::string& label) {
-  // To instantiate LocalStream use
-  RefCountImpl<LocalStreamImpl>* stream = new RefCountImpl<LocalStreamImpl>(label);
+scoped_refptr<LocalMediaStream> LocalMediaStream::Create(
+    const std::string& label) {
+  RefCountImpl<LocalStreamImpl>* stream =
+      new RefCountImpl<LocalStreamImpl>(label);
   return stream;
 }
 
 LocalStreamImpl::LocalStreamImpl(const std::string& label)
-    : label_(label),
-      ready_state_(kInitializing) {
+    : media_stream_impl_(label) {
 }
 
 // Implement MediaStream
 const std::string& LocalStreamImpl::label() {
-  return label_;
+  return media_stream_impl_.label();
 }
 
 scoped_refptr<MediaStreamTrackList> LocalStreamImpl::tracks() {
   return this;
 }
 
-MediaStream::ReadyState LocalStreamImpl::readyState() {
-  return ready_state_;
+MediaStream::ReadyState LocalStreamImpl::ready_state() {
+  return media_stream_impl_.ready_state();
 }
 
 // Implement MediaStreamTrackList.
 size_t LocalStreamImpl::count() {
-  return tracks_.size();
+  return tracks_.count();
 }
 
 scoped_refptr<MediaStreamTrack> LocalStreamImpl::at(size_t index) {
-  return tracks_[index];
+  return tracks_.at(index);
 }
 
 bool LocalStreamImpl::AddTrack(MediaStreamTrack* track) {
-  if(ready_state_ != kInitializing)
+  if (ready_state() != kInitializing)
     return false;
 
-  tracks_.push_back(track);
+  bool result = tracks_.AddTrack(track);
+  NotifierImpl<MediaStreamTrackList>::FireOnChanged();
+  return result;
 }
 
-} // namespace webrtc
+}  // namespace webrtc

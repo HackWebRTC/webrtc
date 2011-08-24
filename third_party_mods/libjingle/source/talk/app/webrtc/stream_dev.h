@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2004--2011, Google Inc.
+ * Copyright 2011, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -50,13 +50,15 @@ const char kAudioTrackKind[] = "audio";
 class Observer {
  public:
   virtual void OnChanged() = 0;
+
+ protected:
+  virtual ~Observer() {}
 };
 
 class Notifier {
-  virtual void RegisterObserver(Observer*) = 0;
-  virtual void UnregisterObserver(Observer*) = 0;
-  // This method should only be accessible to the owner
-  //void FireOnChanged() = 0;
+ public:
+  virtual void RegisterObserver(Observer* observer) = 0;
+  virtual void UnregisterObserver(Observer* observer) = 0;
 };
 
 // Information about a track.
@@ -66,12 +68,12 @@ class MediaStreamTrack : public RefCount,
   virtual const std::string& kind() = 0;
   virtual const std::string& label() = 0;
   virtual bool enabled() = 0;
-   // Enable or disables a track.
-   // For Remote streams - disable means that the video is not decoded,
-   // or audio not decoded.
-   // For local streams this means that video is not captured
-   // or audio is not captured.
-  virtual bool set_enabled(bool enable);
+  // Enable or disables a track.
+  // For Remote streams - disable means that the video is not decoded,
+  // or audio not decoded.
+  // For local streams this means that video is not captured
+  // or audio is not captured.
+  virtual bool set_enabled(bool enable) = 0;
 };
 
 // Reference counted wrapper for an AudioDeviceModule.
@@ -86,8 +88,8 @@ class AudioDevice : public RefCount {
   AudioDeviceModule* module();
 
  protected:
-  AudioDevice(){};
-  virtual ~AudioDevice() {};
+  AudioDevice() {}
+  virtual ~AudioDevice() {}
   void Initialize(const std::string& name, AudioDeviceModule* adm);
 
   std::string name_;
@@ -105,8 +107,8 @@ class VideoDevice : public RefCount {
   VideoCaptureModule* module();
 
  protected:
-  VideoDevice(){};
-  ~VideoDevice() {};
+  VideoDevice() {}
+  ~VideoDevice() {}
   void Initialize(const std::string& name, VideoCaptureModule* vcm);
 
   std::string name_;
@@ -120,8 +122,8 @@ class VideoRenderer : public RefCount {
   virtual cricket::VideoRenderer* module();
 
  protected:
-  VideoRenderer() {};
-  ~VideoRenderer() {};
+  VideoRenderer() {}
+  ~VideoRenderer() {}
   void Initialize(cricket::VideoRenderer* renderer);
 
   cricket::VideoRenderer* renderer_;
@@ -137,7 +139,7 @@ class VideoTrack : public MediaStreamTrack {
   virtual scoped_refptr<VideoRenderer> GetRenderer() = 0;
 
  protected:
-  virtual ~VideoTrack() {};
+  virtual ~VideoTrack() {}
 };
 
 class LocalVideoTrack : public VideoTrack {
@@ -148,13 +150,13 @@ class LocalVideoTrack : public VideoTrack {
   virtual scoped_refptr<VideoDevice> GetVideoCapture() = 0;
 
  protected:
-   virtual ~LocalVideoTrack() {};
+  virtual ~LocalVideoTrack() {}
 };
 
 class AudioTrack : public MediaStreamTrack {
  public:
  protected:
-  virtual ~AudioTrack() {};
+  virtual ~AudioTrack() {}
 };
 
 class LocalAudioTrack : public AudioTrack {
@@ -164,17 +166,17 @@ class LocalAudioTrack : public AudioTrack {
   // Get the AudioDevice associated with this track.
   virtual scoped_refptr<AudioDevice> GetAudioDevice() =  0;
  protected:
-   virtual ~LocalAudioTrack() {};
+  virtual ~LocalAudioTrack() {}
 };
 
 // List of of tracks.
-class MediaStreamTrackList : public RefCount {
+class MediaStreamTrackList : public RefCount, public Notifier {
  public:
   virtual size_t count() = 0;
   virtual scoped_refptr<MediaStreamTrack> at(size_t index) = 0;
 
  protected:
-  virtual ~MediaStreamTrackList() {};
+  virtual ~MediaStreamTrackList() {}
 };
 
 class MediaStream : public RefCount {
@@ -188,15 +190,15 @@ class MediaStream : public RefCount {
     kEnded = 2,  // Stream have ended
   };
 
-  virtual ReadyState readyState() = 0;
+  virtual ReadyState ready_state() = 0;
 
  protected:
-  virtual ~MediaStream() {};
+  virtual ~MediaStream() {}
 };
 
-class LocalStream : public MediaStream {
-public:
-  static scoped_refptr<LocalStream> Create(const std::string& label);
+class LocalMediaStream : public MediaStream {
+ public:
+  static scoped_refptr<LocalMediaStream> Create(const std::string& label);
   virtual bool AddTrack(MediaStreamTrack* track) = 0;
 };
 
@@ -204,8 +206,8 @@ public:
 // client using PeerConnectionObserver::OnAddStream.
 // The client can provide the renderer to the PeerConnection object calling
 // VideoTrack::SetRenderer.
-class RemoteStream : public MediaStream {
-public:
+class RemoteMediaStream : public MediaStream {
+ public:
 };
 
 }  // namespace webrtc

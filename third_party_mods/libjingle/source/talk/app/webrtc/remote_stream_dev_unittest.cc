@@ -25,43 +25,38 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_APP_WEBRTC_LOCAL_STREAM_H_
-#define TALK_APP_WEBRTC_LOCAL_STREAM_H_
+#include <string>
 
-#include "talk/app/webrtc/media_stream_impl_dev.h"
-#include "talk/app/webrtc/stream_dev.h"
-#include "talk/base/scoped_ptr.h"
+#include "gtest/gtest.h"
+#include "talk/app/webrtc/remote_stream_dev.h"
+
+static const char kStreamLabel1[] = "remote_stream_1";
 
 namespace webrtc {
 
-class MediaStreamImpl;
-/////////////////////////////////////////////
-// Local streams are  Created by the PeerConnections client and provided to a
-// PeerConnection object using the call PeerConnection::AddStream.
-
-class LocalStreamImpl
-    : public LocalMediaStream,
-      public NotifierImpl<MediaStreamTrackList> {
+// Helper class to test the Observer.
+class TestObserver : public Observer {
  public:
-  // Implement LocalStream.
-  virtual bool AddTrack(MediaStreamTrack* track);
-
-  // Implement MediaStream.
-  virtual const std::string& label();
-  virtual scoped_refptr<MediaStreamTrackList> tracks();
-  virtual ReadyState ready_state();
-
-  // Implement MediaStreamTrackList.
-  virtual size_t count();
-  virtual scoped_refptr<MediaStreamTrack> at(size_t index);
+  TestObserver() : changed_(0) {}
+  void OnChanged() {
+    ++changed_;
+  }
+  int NoChanged() {
+    return changed_;
+  }
 
  protected:
-  explicit LocalStreamImpl(const std::string& label);
-
-  MediaStreamImpl media_stream_impl_;
-  MediaStreamTrackListImpl tracks_;
+  int changed_;
 };
 
-}  // namespace webrtc
+TEST(RemoteStreamTest, Create) {
+  // Create a Remote stream.
+  std::string label(kStreamLabel1);
+  scoped_refptr<RemoteMediaStream> stream(RemoteMediaStreamImpl::Create(label));
 
-#endif  // TALK_APP_WEBRTC_LOCAL_STREAM_H_
+  EXPECT_EQ(stream->label().compare(label), 0);
+  //  Check state.
+  EXPECT_EQ(stream->ready_state(), MediaStream::kInitializing);
+}
+
+}  // namespace webrtc

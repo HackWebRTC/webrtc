@@ -599,6 +599,8 @@
             '<(libjingle_mods)/source/talk/app/webrtc/local_stream_dev.h',
             '<(libjingle_mods)/source/talk/app/webrtc/local_stream_dev.cc',
             '<(libjingle_mods)/source/talk/app/webrtc/local_video_track_impl_dev.cc',
+            '<(libjingle_mods)/source/talk/app/webrtc/media_stream_impl_dev.h',
+            '<(libjingle_mods)/source/talk/app/webrtc/media_stream_impl_dev.cc',
             '<(libjingle_mods)/source/talk/app/webrtc/peerconnection_dev.h',
             '<(libjingle_mods)/source/talk/app/webrtc/peerconnection_impl_dev.cc',
             '<(libjingle_mods)/source/talk/app/webrtc/peerconnection_impl_dev.h',
@@ -607,6 +609,8 @@
             '<(libjingle_mods)/source/talk/app/webrtc/peerconnectiontransport.cc',
             '<(libjingle_mods)/source/talk/app/webrtc/peerconnectiontransport.h',
             '<(libjingle_mods)/source/talk/app/webrtc/ref_count.h',
+            '<(libjingle_mods)/source/talk/app/webrtc/remote_stream_dev.h',
+            '<(libjingle_mods)/source/talk/app/webrtc/remote_stream_dev.cc',
             '<(libjingle_mods)/source/talk/app/webrtc/stream_dev.h',
             '<(libjingle_mods)/source/talk/app/webrtc/video_device_dev.cc',
             '<(libjingle_mods)/source/talk/app/webrtc/video_renderer_dev.cc',
@@ -638,6 +642,26 @@
             'libjingle_app',
           ],
         } ],  # inside_chromium_build
+      ],  # conditions
+    },
+    {
+      'target_name': 'peerconnection_unittests',
+      'dependencies': [
+        'libjingle_app',
+        '../../testing/gtest.gyp:gtest',
+        '../../testing/gtest.gyp:gtest_main',
+      ],
+      'conditions': [
+        ['peer_connection_dev==1', {
+          'type': 'executable',
+          'sources': [
+            '<(libjingle_mods)/source/talk/app/webrtc/peerconnection_unittests.cc',
+            '<(libjingle_mods)/source/talk/app/webrtc/local_stream_dev_unittest.cc',
+            '<(libjingle_mods)/source/talk/app/webrtc/remote_stream_dev_unittest.cc',
+          ],
+        }, {
+          'type': 'none',
+        } ],  # peer_connection_dev
       ],  # conditions
     },
   ],

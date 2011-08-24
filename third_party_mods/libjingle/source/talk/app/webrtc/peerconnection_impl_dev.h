@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2004--2011, Google Inc.
+ * Copyright 2011, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,6 +28,8 @@
 #ifndef TALK_APP_WEBRTC_PEERCONNECTION_IMPL_H_
 #define TALK_APP_WEBRTC_PEERCONNECTION_IMPL_H_
 
+#include <list>
+
 #include "talk/app/webrtc/peerconnection_dev.h"
 #include "talk/base/scoped_ptr.h"
 
@@ -46,13 +48,6 @@ class WebRtcSession;
 
 class PeerConnectionImpl : public PeerConnection {
  public:
-  enum ReadyState {
-    NEW = 0,
-    NEGOTIATING,
-    ACTIVE,
-    CLOSED,
-  };
-
   enum Error {
     ERROR_NONE = 0,             // Good
     ERROR_TIMEOUT = 1,          // No Candidates generated for X amount of time
@@ -84,34 +79,21 @@ class PeerConnectionImpl : public PeerConnection {
   virtual scoped_refptr<StreamCollection> remote_streams() {
     //TODO: implement
   }
-  virtual void AddStream(LocalStream* stream);
-  virtual void RemoveStream(LocalStream* stream);
+  virtual void AddStream(LocalMediaStream* stream);
+  virtual void RemoveStream(LocalMediaStream* stream);
+  virtual void CommitStreamChanges();
 
-  bool Init();
   void RegisterObserver(PeerConnectionObserver* observer);
 
-  bool ProcessSignalingMessage(const std::string& msg);
-
-  bool initialized() {
-    return initialized_;
-  }
-  ReadyState ready_state() {
-    return ready_state_;
-  }
-
-private:
-  WebRtcSession* CreateSession();
-  virtual void OnMessage(talk_base::Message* msg);
-  void AddStream_s(LocalStream* stream);
-  void RemoveStream_s(LocalStream* stream);
-  void ProcessSignalingMessage_s(const std::string& msg);
-  void StartNegotiation_s();
-
-  bool initialized_;
-  ReadyState ready_state_;
+ private:
   PeerConnectionObserver* observer_;
+
+  // List of media streams to process.
+  std::list<scoped_refptr<LocalMediaStream> > add_commit_queue_;
+  std::list<scoped_refptr<LocalMediaStream> > remove_commit_queue_;
+
   talk_base::scoped_ptr<WebRtcSession> session_;
-  talk_base::scoped_ptr<talk_base::Thread> signaling_thread_;
+  talk_base::scoped_ptr<talk_base::Thread> worker_thread_;
   cricket::ChannelManager* channel_manager_;
   cricket::PortAllocator* port_allocator_;
 };

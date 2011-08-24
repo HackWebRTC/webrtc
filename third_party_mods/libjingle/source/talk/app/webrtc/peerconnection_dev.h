@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2004--2011, Google Inc.
+ * Copyright 2011, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -55,18 +55,16 @@ class PeerConnectionObserver {
 
   virtual void OnMessage(const std::string& msg) = 0;
 
-  // serialized signaling message
-  // First message will be the initial offer.
+  // Serialized signaling message
   virtual void OnSignalingMessage(const std::string& msg) = 0;
 
   virtual void OnStateChange(Readiness state) = 0;
 
   // Triggered when media is received on a new stream from remote peer.
-  // The label is unique for a certain peer_id.
-  virtual void OnAddStream(scoped_refptr<RemoteStream> stream) = 0;
+  virtual void OnAddStream(RemoteMediaStream* stream) = 0;
 
   // Triggered when a remote peer close a stream.
-  virtual void OnRemoveStream(scoped_refptr<RemoteStream> stream) = 0;
+  virtual void OnRemoveStream(RemoteMediaStream* stream) = 0;
 
  protected:
   // Dtor protected as objects shouldn't be deleted via this interface.
@@ -98,13 +96,20 @@ class PeerConnection {
   virtual scoped_refptr<StreamCollection> remote_streams() = 0;
 
   // Add a new local stream.
-  virtual void AddStream(LocalStream* stream) = 0;
+  // This function does not trigger any changes to the stream until
+  // CommitStreamChanges is called.
+  virtual void AddStream(LocalMediaStream* stream) = 0;
 
   // Remove a local stream and stop sending it.
-  virtual void RemoveStream(LocalStream* stream) = 0;
+  // This function does not trigger any changes to the stream until
+  // CommitStreamChanges is called.
+  virtual void RemoveStream(LocalMediaStream* stream) = 0;
 
-  virtual ~PeerConnection(){};
+  // Commit Stream changes. This will start sending media on new streams
+  // and stop sending media on removed stream.
+  virtual void CommitStreamChanges() = 0;
 
+  virtual ~PeerConnection() {}
 };
 
 }  // namespace webrtc

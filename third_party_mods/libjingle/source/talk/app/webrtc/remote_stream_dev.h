@@ -25,8 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_APP_WEBRTC_LOCAL_STREAM_H_
-#define TALK_APP_WEBRTC_LOCAL_STREAM_H_
+#ifndef TALK_APP_WEBRTC_REMOTE_STREAM_H_
+#define TALK_APP_WEBRTC_REMOTE_STREAM_H_
 
 #include "talk/app/webrtc/media_stream_impl_dev.h"
 #include "talk/app/webrtc/stream_dev.h"
@@ -34,17 +34,14 @@
 
 namespace webrtc {
 
-class MediaStreamImpl;
 /////////////////////////////////////////////
-// Local streams are  Created by the PeerConnections client and provided to a
-// PeerConnection object using the call PeerConnection::AddStream.
-
-class LocalStreamImpl
-    : public LocalMediaStream,
+// Remote stream
+class RemoteMediaStreamImpl
+    : public RemoteMediaStream,
       public NotifierImpl<MediaStreamTrackList> {
  public:
-  // Implement LocalStream.
-  virtual bool AddTrack(MediaStreamTrack* track);
+  static scoped_refptr<RemoteMediaStream> Create(const std::string& label);
+  bool AddTrack(MediaStreamTrack* track);
 
   // Implement MediaStream.
   virtual const std::string& label();
@@ -56,12 +53,11 @@ class LocalStreamImpl
   virtual scoped_refptr<MediaStreamTrack> at(size_t index);
 
  protected:
-  explicit LocalStreamImpl(const std::string& label);
-
+  explicit RemoteMediaStreamImpl(const std::string& label);
   MediaStreamImpl media_stream_impl_;
   MediaStreamTrackListImpl tracks_;
 };
 
 }  // namespace webrtc
 
-#endif  // TALK_APP_WEBRTC_LOCAL_STREAM_H_
+#endif  // TALK_APP_WEBRTC_REMOTE_STREAM_H_

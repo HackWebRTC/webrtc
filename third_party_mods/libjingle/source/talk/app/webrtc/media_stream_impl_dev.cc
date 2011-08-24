@@ -25,43 +25,40 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_APP_WEBRTC_LOCAL_STREAM_H_
-#define TALK_APP_WEBRTC_LOCAL_STREAM_H_
-
 #include "talk/app/webrtc/media_stream_impl_dev.h"
-#include "talk/app/webrtc/stream_dev.h"
-#include "talk/base/scoped_ptr.h"
 
 namespace webrtc {
 
-class MediaStreamImpl;
-/////////////////////////////////////////////
-// Local streams are  Created by the PeerConnections client and provided to a
-// PeerConnection object using the call PeerConnection::AddStream.
+MediaStreamImpl::MediaStreamImpl(const std::string& label)
+    : label_(label),
+      ready_state_(MediaStream::kInitializing) {
+}
 
-class LocalStreamImpl
-    : public LocalMediaStream,
-      public NotifierImpl<MediaStreamTrackList> {
- public:
-  // Implement LocalStream.
-  virtual bool AddTrack(MediaStreamTrack* track);
+// Implement MediaStream
+const std::string& MediaStreamImpl::label() const {
+  return label_;
+}
 
-  // Implement MediaStream.
-  virtual const std::string& label();
-  virtual scoped_refptr<MediaStreamTrackList> tracks();
-  virtual ReadyState ready_state();
+MediaStream::ReadyState MediaStreamImpl::ready_state() const {
+  return ready_state_;
+}
 
-  // Implement MediaStreamTrackList.
-  virtual size_t count();
-  virtual scoped_refptr<MediaStreamTrack> at(size_t index);
+MediaStreamTrackListImpl::MediaStreamTrackListImpl() {
+}
 
- protected:
-  explicit LocalStreamImpl(const std::string& label);
+// Implement MediaStreamTrackList.
+size_t MediaStreamTrackListImpl::count() const {
+  return tracks_.size();
+}
 
-  MediaStreamImpl media_stream_impl_;
-  MediaStreamTrackListImpl tracks_;
-};
+scoped_refptr<MediaStreamTrack>
+MediaStreamTrackListImpl::at(size_t index) const {
+  return tracks_[index];
+}
+
+bool MediaStreamTrackListImpl::AddTrack(MediaStreamTrack* track) {
+  tracks_.push_back(track);
+  return true;
+}
 
 }  // namespace webrtc
-
-#endif  // TALK_APP_WEBRTC_LOCAL_STREAM_H_

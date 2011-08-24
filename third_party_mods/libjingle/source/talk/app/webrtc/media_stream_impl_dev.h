@@ -25,43 +25,44 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_APP_WEBRTC_LOCAL_STREAM_H_
-#define TALK_APP_WEBRTC_LOCAL_STREAM_H_
+#ifndef TALK_APP_WEBRTC_MEDIA_STREAM_IMPL_H_
+#define TALK_APP_WEBRTC_MEDIA_STREAM_IMPL_H_
 
-#include "talk/app/webrtc/media_stream_impl_dev.h"
+#include <string>
+#include <vector>
+
+#include "talk/app/webrtc/notifier_impl.h"
+#include "talk/app/webrtc/ref_count.h"
+#include "talk/app/webrtc/scoped_refptr.h"
 #include "talk/app/webrtc/stream_dev.h"
-#include "talk/base/scoped_ptr.h"
 
 namespace webrtc {
 
-class MediaStreamImpl;
-/////////////////////////////////////////////
-// Local streams are  Created by the PeerConnections client and provided to a
-// PeerConnection object using the call PeerConnection::AddStream.
-
-class LocalStreamImpl
-    : public LocalMediaStream,
-      public NotifierImpl<MediaStreamTrackList> {
+// MediaStreamImpl- help class for implementing the MediaStream interface.
+class MediaStreamImpl {
  public:
-  // Implement LocalStream.
-  virtual bool AddTrack(MediaStreamTrack* track);
+  explicit MediaStreamImpl(const std::string& label);
 
-  // Implement MediaStream.
-  virtual const std::string& label();
-  virtual scoped_refptr<MediaStreamTrackList> tracks();
-  virtual ReadyState ready_state();
-
-  // Implement MediaStreamTrackList.
-  virtual size_t count();
-  virtual scoped_refptr<MediaStreamTrack> at(size_t index);
+  // Implement MediaStream
+  const std::string& label() const;
+  MediaStream::ReadyState ready_state() const;
 
  protected:
-  explicit LocalStreamImpl(const std::string& label);
+  std::string label_;
+  MediaStream::ReadyState ready_state_;
+};
 
-  MediaStreamImpl media_stream_impl_;
-  MediaStreamTrackListImpl tracks_;
+class MediaStreamTrackListImpl {
+ public:
+  MediaStreamTrackListImpl();
+  // Implement MediaStreamTrackList.
+  bool AddTrack(MediaStreamTrack* track);
+  size_t count() const;
+  scoped_refptr<MediaStreamTrack> at(size_t index) const;
+ protected:
+  std::vector<scoped_refptr<MediaStreamTrack> > tracks_;
 };
 
 }  // namespace webrtc
 
-#endif  // TALK_APP_WEBRTC_LOCAL_STREAM_H_
+#endif  // TALK_APP_WEBRTC_MEDIA_STREAM_IMPL_H_
