@@ -67,7 +67,7 @@ VP8Encoder::~VP8Encoder()
 WebRtc_Word32
 VP8Encoder::VersionStatic(WebRtc_Word8* version, WebRtc_Word32 length)
 {
-    const WebRtc_Word8* str = "WebM/VP8 version 1.0.0\n"; // Bali
+    const WebRtc_Word8* str = "WebM/VP8 version 1.0.0\n";
     WebRtc_Word32 verLen = (WebRtc_Word32)strlen(str);
     if (verLen > length)
     {
@@ -345,8 +345,10 @@ VP8Encoder::InitAndSetControlSettings()
     }
     vpx_codec_control(_encoder, VP8E_SET_STATIC_THRESHOLD, 800);
     vpx_codec_control(_encoder, VP8E_SET_CPUUSED, _cpuSpeed);
+#if WEBRTC_LIBVPX_VERSION >= 971
     vpx_codec_control(_encoder, VP8E_SET_MAX_INTRA_BITRATE_PCT,
                       _rcMaxIntraTarget);
+#endif
     *_cfg = cfg_copy;
 
     _inited = true;
@@ -656,7 +658,10 @@ VP8Decoder::InitDecode(const VideoCodec* inst,
     cfg.threads = numberOfCores;
     cfg.h = cfg.w = 0; // set after decode
 
-    vpx_codec_flags_t flags = VPX_CODEC_USE_ERROR_CONCEALMENT;
+    vpx_codec_flags_t flags = 0;
+#if WEBRTC_LIBVPX_VERSION >= 971
+    flags = VPX_CODEC_USE_ERROR_CONCEALMENT;
+#endif
 
     if (vpx_codec_dec_init(_decoder, vpx_codec_vp8_dx(), NULL, flags))
     {

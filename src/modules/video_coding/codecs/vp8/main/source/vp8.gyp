@@ -47,12 +47,18 @@
                ],
              }],
            ],
+           'defines': [
+             'WEBRTC_LIBVPX_VERSION=960' # Bali
+           ],
         },{
           'dependencies': [
             '../../../../../../../third_party/libvpx/libvpx.gyp:libvpx',
           ],
           'include_dirs': [
             '../../../../../../../third_party/libvpx/source/libvpx',
+          ],
+          'defines': [
+            'WEBRTC_LIBVPX_VERSION=971' # Cayuga
           ],
         }],
       ],
