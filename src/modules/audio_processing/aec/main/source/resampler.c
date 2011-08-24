@@ -176,7 +176,6 @@ int EstimateSkew(const int* rawSkew,
     float y = 0;
     float xy = 0;
     float xAvg = 0;
-    float yAvg = 0;
     float denom = 0;
     float skew = 0;
 
@@ -223,7 +222,6 @@ int EstimateSkew(const int* rawSkew,
     }
     assert(n > 0);
     xAvg = x / n;
-    yAvg = y / n;
     denom = x2 - xAvg*x;
 
     if (denom != 0) {

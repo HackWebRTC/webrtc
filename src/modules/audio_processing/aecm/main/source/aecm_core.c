@@ -212,7 +212,6 @@ void WebRtcAecm_InitEchoPathCore(AecmCore_t* aecm, const WebRtc_Word16* echo_pat
 //
 int WebRtcAecm_InitCore(AecmCore_t * const aecm, int samplingFreq)
 {
-    int retVal = 0;
     int i = 0;
     WebRtc_Word32 tmp32 = PART_LEN1 * PART_LEN1;
     WebRtc_Word16 tmp16 = PART_LEN1;
@@ -220,7 +219,7 @@ int WebRtcAecm_InitCore(AecmCore_t * const aecm, int samplingFreq)
     if (samplingFreq != 8000 && samplingFreq != 16000)
     {
         samplingFreq = 8000;
-        retVal = -1;
+        return -1;
     }
     // sanity check of sampling frequency
     aecm->mult = (WebRtc_Word16)samplingFreq / 8000;
@@ -245,7 +244,7 @@ int WebRtcAecm_InitCore(AecmCore_t * const aecm, int samplingFreq)
 
     if (WebRtcAecm_InitDelayEstimator(aecm->delay_estimator) != 0)
     {
-        retVal = -1;
+        return -1;
     }
 
     // Initialize to reasonable values

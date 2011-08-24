@@ -660,11 +660,9 @@ WebRtc_Word16 WebRtcAgc_ProcessVad(AgcVad_t *state, // (i) VAD state
     WebRtc_Word16 buf2[4];
     WebRtc_Word16 HPstate;
     WebRtc_Word16 zeros, dB;
-    WebRtc_Word16 *buf1_ptr;
 
     // process in 10 sub frames of 1 ms (to save on memory)
     nrg = 0;
-    buf1_ptr = &buf1[0];
     HPstate = state->HPstate;
     for (subfr = 0; subfr < 10; subfr++)
     {

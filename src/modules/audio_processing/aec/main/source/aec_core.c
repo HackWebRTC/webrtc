@@ -1306,7 +1306,7 @@ static void UpdateLevel(power_level_t *level, const short *in)
 
 static void UpdateMetrics(aec_t *aec)
 {
-    float dtmp, dtmp2, dtmp3;
+    float dtmp, dtmp2;
 
     const float actThresholdNoisy = 8.0f;
     const float actThresholdClean = 40.0f;
@@ -1372,7 +1372,6 @@ static void UpdateMetrics(aec_t *aec)
             suppressedEcho = aec->linoutlevel.averagelevel - safety * aec->linoutlevel.minlevel;
 
             dtmp2 = 10 * (float)log10(echo / suppressedEcho + 1e-10f);
-            dtmp3 = 10 * (float)log10(aec->nearlevel.averagelevel / suppressedEcho + 1e-10f);
 
             aec->aNlp.instant = dtmp2;
             if (dtmp > aec->aNlp.max) {

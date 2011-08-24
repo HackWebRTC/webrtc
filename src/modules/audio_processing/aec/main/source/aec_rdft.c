@@ -545,10 +545,8 @@ static void rftbsub_128_C(float *a) {
 
 void aec_rdft_forward_128(float *a) {
   const int n = 128;
-  int nw;
   float xi;
 
-  nw = ip[0];
   bitrv2_32or128(n, ip + 2, a);
   cftfsub_128(a);
   rftfsub_128(a);
@@ -559,9 +557,7 @@ void aec_rdft_forward_128(float *a) {
 
 void aec_rdft_inverse_128(float *a) {
   const int n = 128;
-  int nw;
 
-  nw = ip[0];
   a[1] = 0.5f * (a[0] - a[1]);
   a[0] -= a[1];
   rftbsub_128(a);
