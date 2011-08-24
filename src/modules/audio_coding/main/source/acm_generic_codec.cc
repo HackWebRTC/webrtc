@@ -1152,7 +1152,7 @@ ACMGenericCodec::EnableDTX()
     {
         if(WebRtcCng_CreateEnc(&_ptrDTXInst) < 0)
         {
-            _ptrDTXInst = false;
+            _ptrDTXInst = NULL;
             return -1;
         }
         WebRtc_UWord16 freqHz;
