@@ -449,7 +449,7 @@ WebRtc_Word16 WebRtcNetEQ_CalcOptimalBufLvl(AutomodeInst_t *inst, WebRtc_Word32 
                 (WebRtc_Word16) WEBRTC_SPL_MIN(timeIatPkts, WEBRTC_SPL_WORD16_MAX);
 
             /* increment peakIndex and wrap/modulo */
-            inst->peakIndex = ++inst->peakIndex & PEAK_INDEX_MASK;
+            inst->peakIndex = (inst->peakIndex + 1) & PEAK_INDEX_MASK;
 
             /* process peak vectors */
             inst->curPeakHeight = 0;
