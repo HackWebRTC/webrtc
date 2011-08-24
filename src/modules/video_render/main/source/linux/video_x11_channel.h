@@ -14,15 +14,11 @@
 #include "video_render_defines.h"
 #include "vplib.h"
 
-#include <sys/ipc.h>
 #include <sys/shm.h>
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
-#include <X11/Xatom.h>
 #include <X11/extensions/XShm.h>
-#include <X11/extensions/Xv.h>
-#include <X11/extensions/Xvlib.h>
 
 namespace webrtc {
 class CriticalSectionWrapper;
@@ -74,7 +70,6 @@ private:
     VideoInterpolator* _videoInterpolator;
 
     Display* _display;
-    WebRtc_Word32 _xvport;
     XShmSegmentInfo _shminfo;
     XImage* _image;
     Window _window;
