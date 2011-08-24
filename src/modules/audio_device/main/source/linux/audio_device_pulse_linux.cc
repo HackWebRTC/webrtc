@@ -144,27 +144,23 @@ AudioDeviceLinuxPulse::~AudioDeviceLinuxPulse()
 
     if (_recBuffer)
     {
-        delete _recBuffer;
+        delete [] _recBuffer;
+        _recBuffer = NULL;
     }
     if (_playBuffer)
     {
-        delete _playBuffer;
+        delete [] _playBuffer;
+        _playBuffer = NULL;
     }
     if (_playDeviceName)
     {
-        delete _playDeviceName;
+        delete [] _playDeviceName;
+        _playDeviceName = NULL;
     }
     if (_recDeviceName)
     {
-        delete _recDeviceName;
-    }
-    if (_playDisplayDeviceName)
-    {
-        delete _playDisplayDeviceName;
-    }
-    if (_recDisplayDeviceName)
-    {
-        delete _recDisplayDeviceName;
+        delete [] _recDeviceName;
+        _recDeviceName = NULL;
     }
 
     delete &_recStartEvent;
@@ -1682,7 +1678,7 @@ WebRtc_Word32 AudioDeviceLinuxPulse::StopRecording()
 
     if (_recBuffer)
     {
-        delete _recBuffer;
+        delete [] _recBuffer;
         _recBuffer = NULL;
     }
 
@@ -1814,7 +1810,7 @@ WebRtc_Word32 AudioDeviceLinuxPulse::StopPlayout()
 
     if (_playBuffer)
     {
-        delete _playBuffer;
+        delete [] _playBuffer;
         _playBuffer = NULL;
     }
 
@@ -2961,7 +2957,7 @@ bool AudioDeviceLinuxPulse::PlayThreadProcess()
         // Clear device name
         if (_playDeviceName)
         {
-            delete[] _playDeviceName;
+            delete [] _playDeviceName;
             _playDeviceName = NULL;
         }
 
@@ -3172,7 +3168,7 @@ bool AudioDeviceLinuxPulse::RecThreadProcess()
         // Clear device name
         if (_recDeviceName)
         {
-            delete[] _recDeviceName;
+            delete [] _recDeviceName;
             _recDeviceName = NULL;
         }
 
