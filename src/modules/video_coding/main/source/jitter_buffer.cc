@@ -552,7 +552,6 @@ VCMFrameListItem*
 VCMJitterBuffer::FindOldestSequenceNum() const
 {
     WebRtc_UWord16 currentLow = 0xffff;
-    VCMFrameBufferStateEnum state = kStateFree;
     WebRtc_UWord16 sequenceNumber = 0;
     bool first = true;
     VCMFrameListItem* frameListItem = _frameBuffersTSOrder.First();
@@ -564,7 +563,6 @@ VCMJitterBuffer::FindOldestSequenceNum() const
         // pick oldest
         VCMFrameBuffer* ptrFrame = NULL;
         ptrFrame = frameListItem->GetItem();
-        state = ptrFrame->GetState();
         sequenceNumber = static_cast<WebRtc_UWord16>(ptrFrame->GetLowSeqNum());
 
         // Find the oldest, hence lowest, using sequence numbers
@@ -1152,10 +1150,8 @@ VCMJitterBuffer::GetFrameForDecodingNACK()
     {
         oldestFrame = oldestFrameListItem->GetItem();
     }
-    bool continuous = true;
     if (oldestFrame == NULL)
     {
-        continuous = false;
         // If we didn't find one we're good with a complete key/decodable frame.
         oldestFrameListItem = _frameBuffersTSOrder.FindFrameListItem(
                                CompleteDecodableKeyFrameCriteria);

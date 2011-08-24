@@ -55,7 +55,6 @@ VCMPacket::VCMPacket(const WebRtc_UWord8* ptr, WebRtc_UWord32 size, WebRtc_UWord
 
 void VCMPacket::CopyCodecSpecifics(const RTPVideoHeader& videoHeader)
 {
-    RTPVideoTypeHeader codecHeader = videoHeader.codecHeader;
     switch(videoHeader.codec)
     {
         case kRTPVideoVP8:
