@@ -297,7 +297,7 @@ class WebRtcSessionTest : public OnSignalImpl {
         success = false;
         break;
       }
-      talk_base::Thread::SleepMs(1);
+      talk_base::Thread::Current()->ProcessMessages(1);
     }
     return success;
   }
