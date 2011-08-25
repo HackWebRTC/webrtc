@@ -73,7 +73,6 @@ int ReceiverTimingTests(CmdArgs& args)
     timing.Reset(static_cast<WebRtc_Word64>(clockInMs + 0.5));
 
     timing.UpdateCurrentDelay(timeStamp);
-    TEST(timing.MaxWaitingTime(timeStamp, static_cast<WebRtc_Word64>(clockInMs + 0.5)) >= 0);
 
     timing.Reset(static_cast<WebRtc_Word64>(clockInMs + 0.5));
 
