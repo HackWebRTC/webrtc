@@ -1,4 +1,4 @@
-/*
+c/*
  *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
@@ -13,6 +13,10 @@
 #if defined(_WIN32)
     #include <windows.h>
     #include "event_windows.h"
+#elif defined(WEBRTC_MAC_INTEL)
+    #include <ApplicationServices/ApplicationServices.h>
+    #include <pthread.h>
+    #include "event_posix.h"
 #else
     #include <pthread.h>
     #include "event_posix.h"
@@ -45,6 +49,21 @@ int EventWrapper::KeyPressed()
     {
         return 0;
     }
+#elif defined(WEBRTC_MAC_INTEL)
+    bool keyDown = false;
+    // loop through all Mac virtual key constant values
+    for(int keyIndex = 0; keyIndex <= 0x5C; keyIndex++) 
+    {
+        keyDown |= CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, keyIndex);
+    }
+    if(keyDown)
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    } 
 #else
     return -1;
 #endif

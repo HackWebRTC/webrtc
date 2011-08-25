@@ -97,6 +97,11 @@
           'sources': [
             'cpu_mac.cc',
           ],
+          'link_settings': {
+            'libraries': [
+              '$(SDKROOT)/System/Library/Frameworks/ApplicationServices.framework',
+            ],
+          },
         }],
         ['OS=="win"', {
           'sources': [
