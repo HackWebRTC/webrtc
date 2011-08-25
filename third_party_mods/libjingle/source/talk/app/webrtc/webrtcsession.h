@@ -54,24 +54,6 @@ class Value;
 
 namespace webrtc {
 
-struct StreamInfo {
-  explicit StreamInfo(const std::string stream_id)
-    : channel(NULL),
-      transport(NULL),
-      video(false),
-      stream_id(stream_id) {}
-
-  StreamInfo()
-    : channel(NULL),
-      transport(NULL),
-      video(false) {}
-
-  cricket::BaseChannel* channel;
-  cricket::TransportChannel* transport;
-  bool video;
-  std::string stream_id;
-};
-
 typedef std::vector<cricket::AudioCodec> AudioCodecs;
 typedef std::vector<cricket::VideoCodec> VideoCodecs;
 
@@ -158,6 +140,25 @@ class WebRtcSession : public cricket::BaseSession {
       const std::string& content_name, const std::string& name);
 
  private:
+  struct StreamInfo {
+    explicit StreamInfo(const std::string stream_id)
+        : channel(NULL),
+          transport(NULL),
+          video(false),
+          stream_id(stream_id) {}
+
+    StreamInfo()
+        : channel(NULL),
+          transport(NULL),
+          video(false) {}
+    cricket::BaseChannel* channel;
+    cricket::TransportChannel* transport;
+    bool video;
+    std::string stream_id;
+  };
+  // Not really a map (vector).
+  typedef std::vector<StreamInfo*> StreamMap;
+
   // Dummy functions inherited from cricket::BaseSession.
   // They should never be called.
   virtual bool Accept(const cricket::SessionDescription* sdesc) {

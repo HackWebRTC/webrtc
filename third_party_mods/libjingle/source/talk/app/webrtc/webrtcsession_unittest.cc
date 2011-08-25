@@ -96,6 +96,7 @@ cricket::ContentInfos CopyContentInfos(const cricket::ContentInfos& original) {
     info.name = (*iter).name;
     info.type = (*iter).type;
     info.description = CopyContentDescription((*iter).description);
+    new_content_infos.push_back(info);
   }
   return new_content_infos;
 }
@@ -375,18 +376,16 @@ class WebRtcSessionTest : public OnSignalImpl {
     if (!session_->OnRemoteDescription(description, candidates)) {
       return false;
     }
+    if (!WaitForCallback(kOnAddStream, 1000)) {
+      return false;
+    }
     return true;
   }
 
-  bool CallOnInitiateMessage() {
-    cricket::SessionDescription* description = NULL;
-    std::vector<cricket::Candidate> candidates;
-
-    if (!GenerateFakeSession(false, &description, &candidates)) {
-      return false;
-    }
+  bool CallOnInitiateMessage(
+      cricket::SessionDescription* description,
+      const std::vector<cricket::Candidate>& candidates) {
     if (!session_->OnInitiateMessage(description, candidates)) {
-      delete description;
       return false;
     }
     return true;
@@ -497,7 +496,7 @@ TEST(WebRtcSessionTest, InitializationReceiveSanity) {
             my_session->PopOldestCallback());
 }
 
-TEST(WebRtcSessionTest, AudioSendReceiveCallSetUp) {
+TEST(WebRtcSessionTest, AudioSendCallSetUp) {
   const bool kReceiving = false;
   talk_base::scoped_ptr<WebRtcSessionTest> my_session;
   my_session.reset(WebRtcSessionTest::CreateWebRtcSessionTest(kReceiving));
@@ -518,7 +517,7 @@ TEST(WebRtcSessionTest, AudioSendReceiveCallSetUp) {
       FAIL();
   }
 
-  // All callbacks should be caught by my session. Assert it.
+  // All callbacks should be caught by my_session. Assert it.
   ASSERT_FALSE(CallbackReceived(my_session.get(), 1000));
 }
 
@@ -544,7 +543,7 @@ TEST(WebRtcSessionTest, VideoSendCallSetUp) {
       FAIL();
   }
 
-  // All callbacks should be caught by my session. Assert it.
+  // All callbacks should be caught by my_session. Assert it.
   ASSERT_FALSE(CallbackReceived(my_session.get(), 1000));
 }
 

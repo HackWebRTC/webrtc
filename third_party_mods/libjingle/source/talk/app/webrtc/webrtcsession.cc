@@ -60,7 +60,6 @@ static const int kCallSetupTimeout = 30 * 1000;
 // use a longer timeout for that.
 static const int kCallLostTimeout = 60 * 1000;
 
-typedef std::vector<StreamInfo*> StreamMap;  // not really a map (vector)
 static const char kVideoStream[] = "video_rtp";
 static const char kAudioStream[] = "rtp";
 
