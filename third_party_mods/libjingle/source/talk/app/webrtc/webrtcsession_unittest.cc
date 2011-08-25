@@ -369,21 +369,10 @@ class WebRtcSessionTest : public OnSignalImpl {
     return true;
   }
 
-  bool CallOnRemoteDescription(cricket::SessionDescription* session_shallow,
-      std::vector<cricket::Candidate>* candidates_shallow) {
-    std::vector<cricket::Candidate> candidates;
-    candidates.insert(candidates.end(), candidates_shallow->begin(),
-                      candidates_shallow->end());
-    if (candidates.empty()) {
-      return false;
-    }
-    cricket::SessionDescription* description = CopySessionDescription(
-        session_shallow);
-    if (description == NULL) {
-      return false;
-    }
+  bool CallOnRemoteDescription(
+      cricket::SessionDescription* description,
+      std::vector<cricket::Candidate> candidates) {
     if (!session_->OnRemoteDescription(description, candidates)) {
-      delete description;
       return false;
     }
     return true;
@@ -524,7 +513,10 @@ TEST(WebRtcSessionTest, AudioSendReceiveCallSetUp) {
       &candidates);
   ASSERT_FALSE(candidates.empty());
   ASSERT_FALSE(local_session == NULL);
-  ASSERT_TRUE(my_session->CallOnRemoteDescription(local_session, &candidates));
+  if (!my_session->CallOnRemoteDescription(local_session, candidates)) {
+      delete local_session;
+      FAIL();
+  }
 
   // All callbacks should be caught by my session. Assert it.
   ASSERT_FALSE(CallbackReceived(my_session.get(), 1000));
@@ -546,7 +538,11 @@ TEST(WebRtcSessionTest, VideoSendCallSetUp) {
       &candidates);
   ASSERT_FALSE(candidates.empty());
   ASSERT_FALSE(local_session == NULL);
-  ASSERT_TRUE(my_session->CallOnRemoteDescription(local_session, &candidates));
+
+  if (!my_session->CallOnRemoteDescription(local_session, candidates)) {
+      delete local_session;
+      FAIL();
+  }
 
   // All callbacks should be caught by my session. Assert it.
   ASSERT_FALSE(CallbackReceived(my_session.get(), 1000));
