@@ -8,9 +8,9 @@ talk.Library(
   env,
   name = 'webrtc',
   srcs = [
-    'peerconnection.cc',
     'peerconnection_impl.cc',
     'peerconnection_proxy.cc',
+    'peerconnectionfactory.cc',
     'webrtc_json.cc',
     'webrtcsession.cc',
   ],
