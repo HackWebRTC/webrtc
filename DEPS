@@ -19,7 +19,7 @@ deps = {
     (Var("googlecode_url") % "googletest") + "/trunk@573",
 
   "trunk/tools/gyp":
-    (Var("googlecode_url") % "gyp") + "/trunk@985",
+    (Var("googlecode_url") % "gyp") + "/trunk@1012",
 
   "trunk/third_party/protobuf/":
     Var("chromium_trunk") + "/src/third_party/protobuf@" + Var("chromium_revision"),
