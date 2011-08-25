@@ -24,13 +24,8 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include "gtest/gtest.h"
+#include "base/gunit.h"
 
-int main(int argc, char **argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  // Added return_value so that it's convenient to put a breakpoint before
-  // exiting please note that the return value from RUN_ALL_TESTS() must
-  // be returned by the main function.
-  const int return_value = RUN_ALL_TESTS();
-  return return_value;
+TEST(PeerConnectionTest, InitializationReceiveSanity) {
+  // TODO(henrike): implement.
 }

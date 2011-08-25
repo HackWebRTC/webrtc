@@ -21,6 +21,7 @@ talk.Unittest(
   name = 'webrtc',
   srcs = [
     'webrtcsession_unittest.cc',
+    'peerconnection_unittest.cc',
   ],
   libs = [
     'srtp',
