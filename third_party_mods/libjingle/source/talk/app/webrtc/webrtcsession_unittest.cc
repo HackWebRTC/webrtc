@@ -41,6 +41,7 @@
 #include "talk/session/phone/fakesession.h"
 #include "talk/session/phone/mediasessionclient.h"
 
+namespace {
 cricket::VideoContentDescription* CopyVideoContentDescription(
     const cricket::VideoContentDescription* video_description) {
   cricket::VideoContentDescription* new_video_description =
@@ -108,11 +109,8 @@ cricket::SessionDescription* CopySessionDescription(
   return new cricket::SessionDescription(new_content_infos);
 }
 
-bool GenerateFakeSessionDescription(bool video,
-    cricket::SessionDescription** incoming_sdp) {
-  *incoming_sdp = new cricket::SessionDescription();
-  if (*incoming_sdp == NULL)
-    return false;
+cricket::SessionDescription* GenerateFakeSessionDescription(bool video) {
+  cricket::SessionDescription* fake_description = new cricket::SessionDescription();
   const std::string name = video ? std::string(cricket::CN_VIDEO) :
                                    std::string(cricket::CN_AUDIO);
   cricket::ContentDescription* description = NULL;
@@ -129,12 +127,12 @@ bool GenerateFakeSessionDescription(bool video,
   }
 
   // Cannot fail.
-  (*incoming_sdp)->AddContent(name, cricket::NS_JINGLE_RTP, description);
-  return true;
+  fake_description->AddContent(name, cricket::NS_JINGLE_RTP, description);
+  return fake_description;
 }
 
-void GenerateFakeCandidate(bool video,
-                           std::vector<cricket::Candidate>* candidates) {
+void GenerateFakeCandidate(std::vector<cricket::Candidate>* candidates,
+                           bool video) {
   // Next add a candidate.
   // int port_index = 0;
   std::string port_index_as_string("0");
@@ -154,16 +152,18 @@ void GenerateFakeCandidate(bool video,
   candidates->push_back(candidate);
 }
 
-
-bool GenerateFakeSession(bool video, cricket::SessionDescription** incoming_sdp,
-                         std::vector<cricket::Candidate>* candidates) {
-  if (!GenerateFakeSessionDescription(video, incoming_sdp)) {
-    return false;
+cricket::SessionDescription* GenerateFakeSession(
+    std::vector<cricket::Candidate>* candidates,
+    bool video) {
+  cricket::SessionDescription* fake_description =
+      GenerateFakeSessionDescription(video);
+  if (fake_description == NULL) {
+    return NULL;
   }
-
-  GenerateFakeCandidate(video, candidates);
-  return true;
+  GenerateFakeCandidate(candidates, video);
+  return fake_description;
 }
+} // namespace
 
 class OnSignalImpl
     : public sigslot::has_slots<> {
@@ -388,6 +388,9 @@ class WebRtcSessionTest : public OnSignalImpl {
     if (!session_->OnInitiateMessage(description, candidates)) {
       return false;
     }
+    if (!WaitForCallback(kOnAddStream, 1000)) {
+      return false;
+    }
     return true;
   }
 
@@ -519,6 +522,9 @@ TEST(WebRtcSessionTest, AudioSendCallSetUp) {
 
   // All callbacks should be caught by my_session. Assert it.
   ASSERT_FALSE(CallbackReceived(my_session.get(), 1000));
+  ASSERT_TRUE(my_session->CallHasAudioStream() &&
+              !my_session->CallHasVideoStream());
+
 }
 
 TEST(WebRtcSessionTest, VideoSendCallSetUp) {
@@ -545,6 +551,55 @@ TEST(WebRtcSessionTest, VideoSendCallSetUp) {
 
   // All callbacks should be caught by my_session. Assert it.
   ASSERT_FALSE(CallbackReceived(my_session.get(), 1000));
+  ASSERT_TRUE(!my_session->CallHasAudioStream() &&
+              my_session->CallHasVideoStream());
 }
 
-// TODO(ronghuawu): Add tests for incoming calls.
+TEST(WebRtcSessionTest, AudioReceiveCallSetUp) {
+  const bool kReceiving = true;
+  const bool video = false;
+
+  talk_base::scoped_ptr<WebRtcSessionTest> my_session;
+  my_session.reset(WebRtcSessionTest::CreateWebRtcSessionTest(kReceiving));
+  ASSERT_TRUE(my_session.get() != NULL);
+  ASSERT_TRUE(my_session->CallInitiate());
+
+  std::vector<cricket::Candidate> candidates;
+  cricket::SessionDescription* local_session =
+      GenerateFakeSession(&candidates, video);
+  ASSERT_FALSE(candidates.empty());
+  ASSERT_FALSE(local_session == NULL);
+  if (!my_session->CallOnInitiateMessage(local_session, candidates)) {
+      delete local_session;
+      FAIL();
+  }
+  ASSERT_TRUE(my_session->CallConnect());
+  ASSERT_FALSE(CallbackReceived(my_session.get(), 1000));
+
+  ASSERT_TRUE(my_session->CallHasAudioStream() &&
+              !my_session->CallHasVideoStream());
+}
+
+TEST(WebRtcSessionTest, VideoReceiveCallSetUp) {
+  const bool kReceiving = true;
+  const bool video = true;
+
+  talk_base::scoped_ptr<WebRtcSessionTest> my_session;
+  my_session.reset(WebRtcSessionTest::CreateWebRtcSessionTest(kReceiving));
+  ASSERT_TRUE(my_session.get() != NULL);
+  ASSERT_TRUE(my_session->CallInitiate());
+
+  std::vector<cricket::Candidate> candidates;
+  cricket::SessionDescription* local_session =
+      GenerateFakeSession(&candidates, video);
+  ASSERT_FALSE(candidates.empty());
+  ASSERT_FALSE(local_session == NULL);
+  if (!my_session->CallOnInitiateMessage(local_session, candidates)) {
+      delete local_session;
+      FAIL();
+  }
+  ASSERT_TRUE(my_session->CallConnect());
+  ASSERT_FALSE(CallbackReceived(my_session.get(), 1000));
+  ASSERT_TRUE(!my_session->CallHasAudioStream() &&
+              my_session->CallHasVideoStream());
+}
