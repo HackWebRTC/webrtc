@@ -147,7 +147,6 @@ VPMSimpleSpatialResampler::UpsampleFrame(const VideoFrame& inFrame,
                                          VideoFrame& outFrame)
 {
     outFrame.CopyFrame(inFrame);
-    WebRtc_UWord32 currentLength = inFrame.Width() * inFrame.Height() * 3 / 2;
 
     float ratioWidth = _targetWidth / (float)inFrame.Width();
     float ratioHeight = _targetHeight / (float)inFrame.Height();
@@ -161,46 +160,62 @@ VPMSimpleSpatialResampler::UpsampleFrame(const VideoFrame& inFrame,
         if(ratioWidth <= 1.5 && ratioHeight <= 1.5)
         {
             // scale up 1.5
-            currentLength = ScaleI420Up3_2(inFrame.Width(), inFrame.Height(),
-                                           outFrame.Buffer(), outFrame.Size(),
-                                           scaledWidth, scaledHeight);
+            WebRtc_Word32 ret = ScaleI420Up3_2(inFrame.Width(), inFrame.Height(),
+                                               outFrame.Buffer(), outFrame.Size(),
+                                               scaledWidth, scaledHeight);
+            if (ret < 0)
+                return VPM_GENERAL_ERROR;
         }
         else if(ratioWidth <= 2 && ratioHeight <= 2)
         {
             // scale up 2
-            currentLength = ScaleI420Up2(inFrame.Width(), inFrame.Height(),
-                                         outFrame.Buffer(), outFrame.Size(),
-                                         scaledWidth, scaledHeight);
+            WebRtc_Word32 ret = ScaleI420Up2(inFrame.Width(), inFrame.Height(),
+                                             outFrame.Buffer(), outFrame.Size(),
+                                             scaledWidth, scaledHeight);
+            if (ret < 0)
+                return VPM_GENERAL_ERROR;
         }
         else if(ratioWidth <= 2.25 && ratioHeight <= 2.25)
         {
             // scale up 2.25
-            currentLength = ScaleI420Up3_2(inFrame.Width(), inFrame.Height(),
-                                           outFrame.Buffer(), outFrame.Size(),
-                                           scaledWidth, scaledHeight);
-            currentLength = ScaleI420Up3_2(scaledWidth, scaledHeight,
-                                           outFrame.Buffer(), outFrame.Size(),
-                                           scaledWidth, scaledHeight);
+            WebRtc_Word32 ret = ScaleI420Up3_2(inFrame.Width(), inFrame.Height(),
+                                               outFrame.Buffer(), outFrame.Size(),
+                                               scaledWidth, scaledHeight);
+            if (ret < 0)
+                return VPM_GENERAL_ERROR;
+            ret = ScaleI420Up3_2(scaledWidth, scaledHeight,
+                                 outFrame.Buffer(), outFrame.Size(),
+                                 scaledWidth, scaledHeight);
+            if (ret < 0)
+                return VPM_GENERAL_ERROR;
         }
         else if(ratioWidth <= 3 && ratioHeight <= 3)
         {
             // scale up 3
-            currentLength = ScaleI420Up2(inFrame.Width(), inFrame.Height(),
-                                         outFrame.Buffer(), outFrame.Size(),
-                                         scaledWidth, scaledHeight);
-            currentLength = ScaleI420Up3_2(scaledWidth, scaledHeight,
-                                           outFrame.Buffer(), outFrame.Size(),
-                                           scaledWidth, scaledHeight);
+            WebRtc_Word32 ret = ScaleI420Up2(inFrame.Width(), inFrame.Height(),
+                                             outFrame.Buffer(), outFrame.Size(),
+                                             scaledWidth, scaledHeight);
+            if (ret < 0)
+                return VPM_GENERAL_ERROR;
+            ret = ScaleI420Up3_2(scaledWidth, scaledHeight,
+                                 outFrame.Buffer(), outFrame.Size(),
+                                 scaledWidth, scaledHeight);
+            if (ret < 0)
+                return VPM_GENERAL_ERROR;
         }
         else if(ratioWidth <= 4 && ratioHeight <= 4)
         {
             // scale up 4
-            currentLength = ScaleI420Up2(inFrame.Width(), inFrame.Height(),
-                                         outFrame.Buffer(), outFrame.Size(),
-                                         scaledWidth, scaledHeight);
-            currentLength = ScaleI420Up2(scaledWidth, scaledHeight,
-                                         outFrame.Buffer(), outFrame.Size(),
-                                         scaledWidth, scaledHeight);
+            WebRtc_Word32 ret = ScaleI420Up2(inFrame.Width(), inFrame.Height(),
+                                             outFrame.Buffer(), outFrame.Size(),
+                                             scaledWidth, scaledHeight);
+            if (ret < 0)
+                return VPM_GENERAL_ERROR;
+            ret = ScaleI420Up2(scaledWidth, scaledHeight,
+                               outFrame.Buffer(), outFrame.Size(),
+                               scaledWidth, scaledHeight);
+            if (ret < 0)
+                return VPM_GENERAL_ERROR;
         }
 
         //TODO: what if ratioWidth/Height >= 8 ?
@@ -213,9 +228,11 @@ VPMSimpleSpatialResampler::UpsampleFrame(const VideoFrame& inFrame,
         if ((static_cast<WebRtc_UWord32>(scaledWidth) > _targetWidth) ||
             (static_cast<WebRtc_UWord32>(scaledHeight) > _targetHeight))
         {
-            currentLength = CutI420Frame(outFrame.Buffer(), scaledWidth,
-                                         scaledHeight, _targetWidth,
-                                         _targetHeight);
+            WebRtc_Word32 ret = CutI420Frame(outFrame.Buffer(),
+                                             scaledWidth, scaledHeight,
+                                             _targetWidth, _targetHeight);
+            if (ret < 0)
+                return VPM_GENERAL_ERROR;
         }
     }
     else
