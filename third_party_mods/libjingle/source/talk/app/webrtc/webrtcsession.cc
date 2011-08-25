@@ -93,10 +93,14 @@ WebRtcSession::~WebRtcSession() {
 }
 
 bool WebRtcSession::Initiate() {
-  signaling_thread_->Send(this, MSG_WEBRTC_CREATE_TRANSPORT, NULL);
-  if (transport_ == NULL) {
+  if (signaling_thread_ == NULL)
     return false;
-  }
+
+  signaling_thread_->Send(this, MSG_WEBRTC_CREATE_TRANSPORT, NULL);
+
+  if (transport_ == NULL)
+    return false;
+
   transport_->set_allow_local_ips(true);
 
   // start transports

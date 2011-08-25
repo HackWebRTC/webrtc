@@ -45,6 +45,7 @@ enum {
   MSG_WEBRTC_SETVIDEOCAPTURE,
   MSG_WEBRTC_SETVIDEORENDERER,
   MSG_WEBRTC_SIGNALINGMESSAGE,
+  MSG_WEBRTC_GETREADYSTATE,
 };
 
 struct AddStreamParams : public talk_base::MessageData {
@@ -194,6 +195,13 @@ bool PeerConnectionProxy::SetVideoCapture(const std::string& cam_device) {
   return (Send(MSG_WEBRTC_SETVIDEOCAPTURE, &params) && params.result);
 }
 
+PeerConnection::ReadyState PeerConnectionProxy::GetReadyState() {
+  PeerConnection::ReadyState ready_state = NEW;
+  Send(MSG_WEBRTC_GETREADYSTATE,
+       reinterpret_cast<talk_base::MessageData*>(&ready_state));
+  return ready_state;
+}
+
 bool PeerConnectionProxy::Connect() {
   ResultParams params;
   return (Send(MSG_WEBRTC_CONNECT, &params) && params.result);
@@ -252,6 +260,12 @@ void PeerConnectionProxy::OnMessage(talk_base::Message* message) {
           reinterpret_cast<SetVideoCaptureParams*>(data);
       params->result = peerconnection_impl_->SetVideoCapture(
           params->cam_device);
+      break;
+    }
+    case MSG_WEBRTC_GETREADYSTATE: {
+      PeerConnection::ReadyState* ready_state =
+          reinterpret_cast<PeerConnection::ReadyState*>(data);
+      *ready_state = peerconnection_impl_->GetReadyState();
       break;
     }
     case MSG_WEBRTC_SETVIDEORENDERER: {

@@ -71,6 +71,13 @@ class PeerConnectionObserver {
 
 class PeerConnection {
  public:
+  enum ReadyState {
+    NEW = 0,
+    NEGOTIATING,
+    ACTIVE,
+    CLOSED,
+  };
+
   virtual ~PeerConnection() {}
 
   // Register a listener
@@ -121,6 +128,10 @@ class PeerConnection {
   // For standalone app, cam_device is the camera name. It will try to
   // set the default capture device when cam_device is "".
   virtual bool SetVideoCapture(const std::string& cam_device) = 0;
+
+  // Returns the state of the PeerConnection object.  See the ReadyState
+  // enum for valid values.
+  virtual ReadyState GetReadyState() = 0;
 };
 
 }  // namespace webrtc

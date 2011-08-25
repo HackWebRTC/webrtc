@@ -54,26 +54,20 @@ class PeerConnectionImpl : public PeerConnection,
                      talk_base::Thread* signaling_thread);
   virtual ~PeerConnectionImpl();
 
-  enum ReadyState {
-    NEW = 0,
-    NEGOTIATING,
-    ACTIVE,
-    CLOSED,
-  };
-
   // PeerConnection interfaces
-  void RegisterObserver(PeerConnectionObserver* observer);
-  bool SignalingMessage(const std::string& msg);
-  bool AddStream(const std::string& stream_id, bool video);
-  bool RemoveStream(const std::string& stream_id);
-  bool Connect();
-  bool Close();
-  bool SetAudioDevice(const std::string& wave_in_device,
-                      const std::string& wave_out_device, int opts);
-  bool SetLocalVideoRenderer(cricket::VideoRenderer* renderer);
-  bool SetVideoRenderer(const std::string& stream_id,
-                        cricket::VideoRenderer* renderer);
-  bool SetVideoCapture(const std::string& cam_device);
+  virtual void RegisterObserver(PeerConnectionObserver* observer);
+  virtual bool SignalingMessage(const std::string& msg);
+  virtual bool AddStream(const std::string& stream_id, bool video);
+  virtual bool RemoveStream(const std::string& stream_id);
+  virtual bool Connect();
+  virtual bool Close();
+  virtual bool SetAudioDevice(const std::string& wave_in_device,
+                              const std::string& wave_out_device, int opts);
+  virtual bool SetLocalVideoRenderer(cricket::VideoRenderer* renderer);
+  virtual bool SetVideoRenderer(const std::string& stream_id,
+                                cricket::VideoRenderer* renderer);
+  virtual bool SetVideoCapture(const std::string& cam_device);
+  virtual ReadyState GetReadyState();
 
   cricket::ChannelManager* channel_manager() {
     return channel_manager_;
@@ -91,7 +85,6 @@ class PeerConnectionImpl : public PeerConnection,
   bool Init();
 
  private:
-  ReadyState GetReadyState();
   bool ParseConfigString(const std::string& config,
                          talk_base::SocketAddress* stun_addr);
   void SendRemoveSignal(WebRtcSession* session);
