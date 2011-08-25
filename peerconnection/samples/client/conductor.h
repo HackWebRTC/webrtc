@@ -12,11 +12,13 @@
 #define PEERCONNECTION_SAMPLES_CLIENT_CONDUCTOR_H_
 #pragma once
 
+#include <deque>
 #include <string>
 
 #include "peerconnection/samples/client/main_wnd.h"
 #include "peerconnection/samples/client/peer_connection_client.h"
 #include "talk/app/webrtc/peerconnection.h"
+#include "talk/app/webrtc/peerconnectionfactory.h"
 #include "talk/base/scoped_ptr.h"
 
 namespace cricket {
@@ -26,40 +28,29 @@ class VideoRenderer;
 class Conductor
   : public webrtc::PeerConnectionObserver,
     public PeerConnectionClientObserver,
-    public MainWndCallback,
-    public talk_base::Win32Window {
+    public MainWndCallback {
  public:
-  enum WindowMessages {
-    MEDIA_CHANNELS_INITIALIZED = WM_APP + 1,
+  enum CallbackID {
+    MEDIA_CHANNELS_INITIALIZED = 1,
     PEER_CONNECTION_CLOSED,
     SEND_MESSAGE_TO_PEER,
     PEER_CONNECTION_ADDSTREAMS,
     PEER_CONNECTION_CONNECT,
+    PEER_CONNECTION_ERROR,
   };
 
-  enum HandshakeState {
-    NONE,
-    INITIATOR,
-    ANSWER_RECEIVED,
-    OFFER_RECEIVED,
-    QUIT_SENT,
-  };
-
-  Conductor(PeerConnectionClient* client, MainWnd* main_wnd);
+  Conductor(PeerConnectionClient* client, MainWindow* main_wnd);
   ~Conductor();
 
-  bool has_video() const;
-  bool has_audio() const;
   bool connection_active() const;
 
-  void Close();
+  virtual void Close();
 
  protected:
   bool InitializePeerConnection();
   void DeletePeerConnection();
   void StartCaptureDevice();
   void AddStreams();
-  void PeerConnectionConnect();
 
   //
   // PeerConnectionObserver implementation.
@@ -71,7 +62,7 @@ class Conductor
 
   // Called when a local stream is added and initialized
   virtual void OnLocalStreamInitialized(const std::string& stream_id,
-      bool video);
+                                        bool video);
 
   // Called when a remote stream is added
   virtual void OnAddStream(const std::string& stream_id, bool video);
@@ -89,15 +80,17 @@ class Conductor
 
   virtual void OnPeerConnected(int id, const std::string& name);
 
-  virtual void OnPeerDisconnected(int id, const std::string& name);
+  virtual void OnPeerDisconnected(int id);
 
   virtual void OnMessageFromPeer(int peer_id, const std::string& message);
+
+  virtual void OnMessageSent(int err);
 
   //
   // MainWndCallback implementation.
   //
 
-  virtual void StartLogin(const std::string& server, int port);
+  virtual bool StartLogin(const std::string& server, int port);
 
   virtual void DisconnectFromServer();
 
@@ -105,25 +98,20 @@ class Conductor
 
   virtual void DisconnectFromCurrentPeer();
 
-  //
-  // Win32Window implementation.
-  //
-
-  virtual bool OnMessage(UINT msg, WPARAM wp, LPARAM lp,
-                         LRESULT& result); // NOLINT
+  virtual void UIThreadCallback(int msg_id, void* data);
 
  protected:
-  HandshakeState handshake_;
   bool waiting_for_audio_;
   bool waiting_for_video_;
   int peer_id_;
   talk_base::scoped_ptr<webrtc::PeerConnection> peer_connection_;
-  talk_base::scoped_ptr<cricket::PortAllocator> port_allocator_;
+  talk_base::scoped_ptr<webrtc::PeerConnectionFactory> peer_connection_factory_;
   talk_base::scoped_ptr<talk_base::Thread> worker_thread_;
   PeerConnectionClient* client_;
-  MainWnd* main_wnd_;
+  MainWindow* main_wnd_;
   std::string video_channel_;
   std::string audio_channel_;
+  std::deque<std::string*> pending_messages_;
 };
 
 #endif  // PEERCONNECTION_SAMPLES_CLIENT_CONDUCTOR_H_

@@ -12,7 +12,6 @@
 #define PEERCONNECTION_SAMPLES_CLIENT_DEFAULTS_H_
 #pragma once
 
-#include <windows.h>
 #include <string>
 
 #include "talk/base/basictypes.h"

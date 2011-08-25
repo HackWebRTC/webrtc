@@ -45,11 +45,12 @@ int PASCAL wWinMain(HINSTANCE instance, HINSTANCE prev_instance,
   }
 
   if (conductor.connection_active() || client.is_connected()) {
-    conductor.Close();
     while ((conductor.connection_active() || client.is_connected()) &&
            (gm = ::GetMessage(&msg, NULL, 0, 0)) && gm != -1) {
-      ::TranslateMessage(&msg);
-      ::DispatchMessage(&msg);
+      if (!wnd.PreTranslateMessage(&msg)) {
+        ::TranslateMessage(&msg);
+        ::DispatchMessage(&msg);
+      }
     }
   }
 

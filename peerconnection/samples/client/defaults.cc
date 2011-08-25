@@ -10,6 +10,17 @@
 
 #include "peerconnection/samples/client/defaults.h"
 
+#include <stdlib.h>
+#include <string.h>
+
+#ifdef WIN32
+#include <winsock2.h>
+#else
+#include <unistd.h>
+#endif
+
+#include "talk/base/common.h"
+
 const char kAudioLabel[] = "audio_label";
 const char kVideoLabel[] = "video_label";
 const uint16 kDefaultServerPort = 8888;
@@ -36,12 +47,10 @@ std::string GetDefaultServerName() {
 }
 
 std::string GetPeerName() {
-  char computer_name[MAX_PATH] = {0}, user_name[MAX_PATH] = {0};
-  DWORD size = ARRAYSIZE(computer_name);
-  ::GetComputerNameA(computer_name, &size);
-  size = ARRAYSIZE(user_name);
-  ::GetUserNameA(user_name, &size);
-  std::string ret(user_name);
+  char computer_name[256];
+  if (gethostname(computer_name, ARRAY_SIZE(computer_name)) != 0)
+    strcpy(computer_name, "host");
+  std::string ret(GetEnvVarOrDefault("USERNAME", "user"));
   ret += '@';
   ret += computer_name;
   return ret;

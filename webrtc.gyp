@@ -68,8 +68,8 @@
             'third_party_mods/libjingle/libjingle.gyp:libjingle_app',
           ],
           'include_dirs': [
-            'third_party_mods/libjingle/source',
             'third_party/libjingle/source',
+            'third_party_mods/libjingle/source',
           ],
         },
       ],  # targets
@@ -80,9 +80,15 @@
           'target_name': 'peerconnection_client',
           'type': 'executable',
           'sources': [
+            'peerconnection/samples/client/conductor.cc',
+            'peerconnection/samples/client/conductor.h',
+            'peerconnection/samples/client/defaults.cc',
+            'peerconnection/samples/client/defaults.h',
             'peerconnection/samples/client/linux/main.cc',
             'peerconnection/samples/client/linux/main_wnd.cc',
             'peerconnection/samples/client/linux/main_wnd.h',
+            'peerconnection/samples/client/peer_connection_client.cc',
+            'peerconnection/samples/client/peer_connection_client.h',
           ],
           'dependencies': [
             'third_party_mods/libjingle/libjingle.gyp:libjingle_app',
@@ -92,6 +98,7 @@
           ],
           'include_dirs': [
             'third_party/libjingle/source',
+            'third_party_mods/libjingle/source',
           ],
           'cflags': [
             '<!@(pkg-config --cflags gtk+-2.0)',
@@ -102,6 +109,8 @@
             ],
             'libraries': [
               '<!@(pkg-config --libs-only-l gtk+-2.0 gthread-2.0)',
+              '-lX11',
+              '-lXext',
             ],
           },
         },

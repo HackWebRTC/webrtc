@@ -16,7 +16,8 @@
 #include <string>
 
 #include "talk/base/sigslot.h"
-#include "talk/base/win32socketserver.h"
+#include "talk/base/physicalsocketserver.h"
+#include "talk/base/scoped_ptr.h"
 
 typedef std::map<int, std::string> Peers;
 
@@ -24,8 +25,10 @@ struct PeerConnectionClientObserver {
   virtual void OnSignedIn() = 0;  // Called when we're logged on.
   virtual void OnDisconnected() = 0;
   virtual void OnPeerConnected(int id, const std::string& name) = 0;
-  virtual void OnPeerDisconnected(int id, const std::string& name) = 0;
+  virtual void OnPeerDisconnected(int peer_id) = 0;
   virtual void OnMessageFromPeer(int peer_id, const std::string& message) = 0;
+  virtual void OnMessageSent(int err) = 0;
+
  protected:
   virtual ~PeerConnectionClientObserver() {}
 };
@@ -53,6 +56,8 @@ class PeerConnectionClient : public sigslot::has_slots<> {
                const std::string& client_name);
 
   bool SendToPeer(int peer_id, const std::string& message);
+  bool SendHangUp(int peer_id);
+  bool IsSendingMessage();
 
   bool SignOut();
 
@@ -61,6 +66,7 @@ class PeerConnectionClient : public sigslot::has_slots<> {
   bool ConnectControlSocket();
   void OnConnect(talk_base::AsyncSocket* socket);
   void OnHangingGetConnect(talk_base::AsyncSocket* socket);
+  void OnMessageFromPeer(int peer_id, const std::string& message);
 
   // Quick and dirty support for parsing HTTP header values.
   bool GetHeaderValue(const std::string& data, size_t eoh,
@@ -90,8 +96,8 @@ class PeerConnectionClient : public sigslot::has_slots<> {
 
   PeerConnectionClientObserver* callback_;
   talk_base::SocketAddress server_address_;
-  talk_base::Win32Socket control_socket_;
-  talk_base::Win32Socket hanging_get_;
+  talk_base::scoped_ptr<talk_base::AsyncSocket> control_socket_;
+  talk_base::scoped_ptr<talk_base::AsyncSocket> hanging_get_;
   std::string onconnect_data_;
   std::string control_data_;
   std::string notification_data_;

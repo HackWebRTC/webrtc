@@ -74,6 +74,7 @@ bool MainWnd::Create() {
   if (!RegisterWindowClass())
     return false;
 
+  ui_thread_id_ = ::GetCurrentThreadId();
   wnd_ = ::CreateWindowExW(WS_EX_OVERLAPPEDWINDOW, kClassName, L"WebRTC",
       WS_OVERLAPPEDWINDOW | WS_VISIBLE | WS_CLIPCHILDREN,
       CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
@@ -101,7 +102,7 @@ void MainWnd::RegisterObserver(MainWndCallback* callback) {
   callback_ = callback;
 }
 
-bool MainWnd::IsWindow() const {
+bool MainWnd::IsWindow() {
   return wnd_ && ::IsWindow(wnd_) != FALSE;
 }
 
@@ -123,6 +124,10 @@ bool MainWnd::PreTranslateMessage(MSG* msg) {
         }
       }
     }
+  } else if (msg->hwnd == NULL && msg->message == UI_THREAD_CALLBACK) {
+    callback_->UIThreadCallback(static_cast<int>(msg->wParam),
+                                reinterpret_cast<void*>(msg->lParam));
+    ret = true;
   }
   return ret;
 }
@@ -151,9 +156,25 @@ void MainWnd::SwitchToPeerList(const Peers& peers) {
 }
 
 void MainWnd::SwitchToStreamingUI() {
+  remote_video_.reset(new VideoRenderer(handle(), 1, 1));
+  local_video_.reset(new VideoRenderer(handle(), 1, 1));
+
   LayoutConnectUI(false);
   LayoutPeerListUI(false);
   ui_ = STREAMING;
+}
+
+void MainWnd::MessageBox(const char* caption, const char* text, bool is_error) {
+  DWORD flags = MB_OK;
+  if (is_error)
+    flags |= MB_ICONERROR;
+
+  ::MessageBoxA(handle(), text, caption, flags);
+}
+
+void MainWnd::QueueUIThreadCallback(int msg_id, void* data) {
+  ::PostThreadMessage(ui_thread_id_, UI_THREAD_CALLBACK,
+      static_cast<WPARAM>(msg_id), reinterpret_cast<LPARAM>(data));
 }
 
 void MainWnd::OnPaint() {
@@ -164,6 +185,9 @@ void MainWnd::OnPaint() {
   ::GetClientRect(handle(), &rc);
 
   if (ui_ == STREAMING && remote_video_.get() && local_video_.get()) {
+    AutoLock<VideoRenderer> local_lock(local_video_.get());
+    AutoLock<VideoRenderer> remote_lock(remote_video_.get());
+
     const BITMAPINFO& bmi = remote_video_->bmi();
     long height = abs(bmi.bmiHeader.biHeight);
     long width = bmi.bmiHeader.biWidth;
@@ -266,17 +290,14 @@ void MainWnd::OnDefaultAction() {
 
 bool MainWnd::OnMessage(UINT msg, WPARAM wp, LPARAM lp, LRESULT* result) {
   switch (msg) {
-    case WM_CREATE:
-      remote_video_.reset(new VideoRenderer(handle(), 1, 1));
-      local_video_.reset(new VideoRenderer(handle(), 1, 1));
-      break;
-
     case WM_ERASEBKGND:
       *result = TRUE;
       return true;
+
     case WM_PAINT:
       OnPaint();
       return true;
+
     case WM_SETFOCUS:
       if (ui_ == CONNECT_TO_SERVER) {
         SetFocus(edit1_);
@@ -284,6 +305,7 @@ bool MainWnd::OnMessage(UINT msg, WPARAM wp, LPARAM lp, LRESULT* result) {
         SetFocus(listbox_);
       }
       return true;
+
     case WM_SIZE:
       if (ui_ == CONNECT_TO_SERVER) {
         LayoutConnectUI(true);
@@ -291,9 +313,11 @@ bool MainWnd::OnMessage(UINT msg, WPARAM wp, LPARAM lp, LRESULT* result) {
         LayoutPeerListUI(true);
       }
       break;
+
     case WM_CTLCOLORSTATIC:
       *result = reinterpret_cast<LRESULT>(GetSysColorBrush(COLOR_WINDOW));
       return true;
+
     case WM_COMMAND:
       if (button_ == reinterpret_cast<HWND>(lp)) {
         if (BN_CLICKED == HIWORD(wp))
@@ -304,12 +328,11 @@ bool MainWnd::OnMessage(UINT msg, WPARAM wp, LPARAM lp, LRESULT* result) {
         }
       }
       return true;
-    case VIDEO_RENDERER_MESSAGE: {
-      VideoRenderer* renderer = reinterpret_cast<VideoRenderer*>(lp);
-      const MSG* msg_ptr = reinterpret_cast<const MSG*>(wp);
-      renderer->OnMessage(*msg_ptr);
-      return true;
-    }
+
+    case WM_CLOSE:
+      if (callback_)
+        callback_->Close();
+      break;
   }
   return false;
 }
@@ -364,7 +387,7 @@ bool MainWnd::RegisterWindowClass() {
   wcex.lpfnWndProc = &WndProc;
   wcex.lpszClassName = kClassName;
   wnd_class_ = ::RegisterClassEx(&wcex);
-  ASSERT(wnd_class_);
+  ASSERT(wnd_class_ != 0);
   return wnd_class_ != 0;
 }
 
@@ -380,7 +403,7 @@ void MainWnd::CreateChildWindow(HWND* wnd, MainWnd::ChildWindowID id,
                           100, 100, 100, 100, wnd_,
                           reinterpret_cast<HMENU>(id),
                           GetModuleHandle(NULL), NULL);
-  ASSERT(::IsWindow(*wnd));
+  ASSERT(::IsWindow(*wnd) != FALSE);
   ::SendMessage(*wnd, WM_SETFONT, reinterpret_cast<WPARAM>(GetDefaultFont()),
                 TRUE);
 }
@@ -454,6 +477,7 @@ void MainWnd::LayoutPeerListUI(bool show) {
     ::ShowWindow(listbox_, SW_SHOWNA);
   } else {
     ::ShowWindow(listbox_, SW_HIDE);
+    InvalidateRect(wnd_, NULL, TRUE);
   }
 }
 
@@ -487,6 +511,7 @@ void MainWnd::HandleTabbing() {
 
 MainWnd::VideoRenderer::VideoRenderer(HWND wnd, int width, int height)
     : wnd_(wnd) {
+  ::InitializeCriticalSection(&buffer_lock_);
   ZeroMemory(&bmi_, sizeof(bmi_));
   bmi_.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
   bmi_.bmiHeader.biPlanes = 1;
@@ -499,22 +524,18 @@ MainWnd::VideoRenderer::VideoRenderer(HWND wnd, int width, int height)
 }
 
 MainWnd::VideoRenderer::~VideoRenderer() {
+  ::DeleteCriticalSection(&buffer_lock_);
 }
 
 bool MainWnd::VideoRenderer::SetSize(int width, int height, int reserved) {
-  if (width != bmi_.bmiHeader.biWidth ||
-      height != -bmi_.bmiHeader.biHeight) {
-    // Update the bitmap info and image buffer.
-    // To avoid touching buffers from different threads, we always
-    // marshal messages through the main window's thread.
-    MSG msg = {0};
-    msg.message = WM_SIZE;
-    msg.lParam = width;
-    msg.wParam = height;
-    ::SendMessage(wnd_, VIDEO_RENDERER_MESSAGE,
-        reinterpret_cast<WPARAM>(&msg),
-        reinterpret_cast<LPARAM>(this));
-  }
+  AutoLock<VideoRenderer> lock(this);
+
+  bmi_.bmiHeader.biWidth = width;
+  bmi_.bmiHeader.biHeight = -height;
+  bmi_.bmiHeader.biSizeImage = width * height *
+                               (bmi_.bmiHeader.biBitCount >> 3);
+  image_.reset(new uint8[bmi_.bmiHeader.biSizeImage]);
+
   return true;
 }
 
@@ -522,36 +543,17 @@ bool MainWnd::VideoRenderer::RenderFrame(const cricket::VideoFrame* frame) {
   if (!frame)
     return false;
 
-  MSG msg = {0};
-  msg.message = WM_PAINT;
-  msg.lParam = reinterpret_cast<LPARAM>(frame);
-  ::SendMessage(wnd_, VIDEO_RENDERER_MESSAGE,
-      reinterpret_cast<WPARAM>(&msg),
-      reinterpret_cast<LPARAM>(this));
-  return true;
-}
+  {
+    AutoLock<VideoRenderer> lock(this);
 
-void MainWnd::VideoRenderer::OnMessage(const MSG& msg) {
-  switch (msg.message) {
-    case WM_SIZE:
-      bmi_.bmiHeader.biWidth = static_cast<int>(msg.lParam);
-      bmi_.bmiHeader.biHeight = -static_cast<int>(msg.wParam);
-      bmi_.bmiHeader.biSizeImage = bmi_.bmiHeader.biWidth *
-                                   static_cast<int>(msg.wParam) *
-                                   (bmi_.bmiHeader.biBitCount >> 3);
-      image_.reset(new uint8[bmi_.bmiHeader.biSizeImage]);
-      break;
-
-    case WM_PAINT: {
-      ASSERT(image_.get() != NULL);
-      const cricket::VideoFrame* frame =
-          reinterpret_cast<const cricket::VideoFrame*>(msg.lParam);
-      frame->ConvertToRgbBuffer(cricket::FOURCC_ARGB, image_.get(),
-                                bmi_.bmiHeader.biSizeImage,
-                                bmi_.bmiHeader.biWidth *
-                                (bmi_.bmiHeader.biBitCount >> 3));
-      InvalidateRect(wnd_, 0, 0);
-      break;
-    }
+    ASSERT(image_.get() != NULL);
+    frame->ConvertToRgbBuffer(cricket::FOURCC_ARGB, image_.get(),
+        bmi_.bmiHeader.biSizeImage,
+        bmi_.bmiHeader.biWidth *
+        (bmi_.bmiHeader.biBitCount >> 3));
   }
+
+  InvalidateRect(wnd_, NULL, TRUE);
+
+  return true;
 }

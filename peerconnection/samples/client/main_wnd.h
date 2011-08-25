@@ -22,26 +22,51 @@
 
 class MainWndCallback {
  public:
-  virtual void StartLogin(const std::string& server, int port) = 0;
+  virtual bool StartLogin(const std::string& server, int port) = 0;
   virtual void DisconnectFromServer() = 0;
   virtual void ConnectToPeer(int peer_id) = 0;
   virtual void DisconnectFromCurrentPeer() = 0;
+  virtual void UIThreadCallback(int msg_id, void* data) = 0;
+  virtual void Close() = 0;
  protected:
   virtual ~MainWndCallback() {}
 };
 
-class MainWnd {
+// Pure virtual interface for the main window.
+class MainWindow {
  public:
-  static const wchar_t kClassName[];
-
   enum UI {
     CONNECT_TO_SERVER,
     LIST_PEERS,
     STREAMING,
   };
 
+  virtual void RegisterObserver(MainWndCallback* callback) = 0;
+
+  virtual bool IsWindow() = 0;
+  virtual void MessageBox(const char* caption, const char* text,
+                          bool is_error) = 0;
+
+  virtual UI current_ui() = 0;
+
+  virtual void SwitchToConnectUI() = 0;
+  virtual void SwitchToPeerList(const Peers& peers) = 0;
+  virtual void SwitchToStreamingUI() = 0;
+
+  virtual cricket::VideoRenderer* local_renderer() = 0;
+  virtual cricket::VideoRenderer* remote_renderer() = 0;
+
+  virtual void QueueUIThreadCallback(int msg_id, void* data) = 0;
+};
+
+#ifdef WIN32
+
+class MainWnd : public MainWindow {
+ public:
+  static const wchar_t kClassName[];
+
   enum WindowMessages {
-    VIDEO_RENDERER_MESSAGE = WM_APP + 1,
+    UI_THREAD_CALLBACK = WM_APP + 1,
   };
 
   MainWnd();
@@ -49,38 +74,46 @@ class MainWnd {
 
   bool Create();
   bool Destroy();
-  bool IsWindow() const;
-
-  void RegisterObserver(MainWndCallback* callback);
-
   bool PreTranslateMessage(MSG* msg);
 
-  void SwitchToConnectUI();
-  void SwitchToPeerList(const Peers& peers);
-  void SwitchToStreamingUI();
+  virtual void RegisterObserver(MainWndCallback* callback);
+  virtual bool IsWindow();
+  virtual void SwitchToConnectUI();
+  virtual void SwitchToPeerList(const Peers& peers);
+  virtual void SwitchToStreamingUI();
+  virtual void MessageBox(const char* caption, const char* text,
+                          bool is_error);
+  virtual UI current_ui() { return ui_; }
 
-  HWND handle() const { return wnd_; }
-  UI current_ui() const { return ui_; }
-
-  cricket::VideoRenderer* local_renderer() const {
+  virtual cricket::VideoRenderer* local_renderer() {
     return local_video_.get();
   }
 
-  cricket::VideoRenderer* remote_renderer() const {
+  virtual cricket::VideoRenderer* remote_renderer() {
     return remote_video_.get();
   }
+
+  virtual void QueueUIThreadCallback(int msg_id, void* data);
+
+  HWND handle() const { return wnd_; }
 
   class VideoRenderer : public cricket::VideoRenderer {
    public:
     VideoRenderer(HWND wnd, int width, int height);
     virtual ~VideoRenderer();
 
+    void Lock() {
+      ::EnterCriticalSection(&buffer_lock_);
+    }
+
+    void Unlock() {
+      ::LeaveCriticalSection(&buffer_lock_);
+    }
+
     virtual bool SetSize(int width, int height, int reserved);
 
     // Called when a new frame is available for display.
     virtual bool RenderFrame(const cricket::VideoFrame* frame);
-
-    void OnMessage(const MSG& msg);
 
     const BITMAPINFO& bmi() const { return bmi_; }
     const uint8* image() const { return image_.get(); }
@@ -94,6 +127,18 @@ class MainWnd {
     HWND wnd_;
     BITMAPINFO bmi_;
     talk_base::scoped_array<uint8> image_;
+    CRITICAL_SECTION buffer_lock_;
+  };
+
+  // A little helper class to make sure we always to proper locking and
+  // unlocking when working with VideoRenderer buffers.
+  template <typename T>
+  class AutoLock {
+   public:
+    AutoLock(T* obj) : obj_(obj) { obj_->Lock(); }
+    ~AutoLock() { obj_->Unlock(); }
+   protected:
+    T* obj_;
   };
 
  protected:
@@ -129,6 +174,7 @@ class MainWnd {
   talk_base::scoped_ptr<VideoRenderer> local_video_;
   UI ui_;
   HWND wnd_;
+  DWORD ui_thread_id_;
   HWND edit1_;
   HWND edit2_;
   HWND label1_;
@@ -140,5 +186,6 @@ class MainWnd {
   MainWndCallback* callback_;
   static ATOM wnd_class_;
 };
+#endif  // WIN32
 
 #endif  // PEERCONNECTION_SAMPLES_CLIENT_MAIN_WND_H_

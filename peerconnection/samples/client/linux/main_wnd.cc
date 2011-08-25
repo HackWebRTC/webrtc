@@ -15,8 +15,12 @@
 #include <gtk/gtk.h>
 #include <stddef.h>
 
+#include "peerconnection/samples/client/defaults.h"
 #include "talk/base/common.h"
 #include "talk/base/logging.h"
+#include "talk/base/stringutils.h"
+
+using talk_base::sprintfn;
 
 namespace {
 
@@ -67,6 +71,27 @@ void AddToList(GtkWidget* list, const gchar* str, int value) {
   gtk_list_store_set(store, &iter, 0, str, 1, value, -1);
 }
 
+struct UIThreadCallbackData {
+  explicit UIThreadCallbackData(MainWndCallback* cb, int id, void* d)
+      : callback(cb), msg_id(id), data(d) {}
+  MainWndCallback* callback;
+  int msg_id;
+  void* data;
+};
+
+gboolean HandleUIThreadCallback(gpointer data) {
+  UIThreadCallbackData* cb_data = reinterpret_cast<UIThreadCallbackData*>(data);
+  cb_data->callback->UIThreadCallback(cb_data->msg_id, cb_data->data);
+  delete cb_data;
+  return false;
+}
+
+gboolean Redraw(gpointer data) {
+  GtkMainWnd* wnd = reinterpret_cast<GtkMainWnd*>(data);
+  wnd->OnRedraw();
+  return false;
+}
+
 }  // end anonymous
 
 //
@@ -74,15 +99,62 @@ void AddToList(GtkWidget* list, const gchar* str, int value) {
 //
 
 GtkMainWnd::GtkMainWnd()
-    : window_(NULL), draw_area_(NULL), vbox_(NULL), peer_list_(NULL) {
+    : window_(NULL), draw_area_(NULL), vbox_(NULL), server_edit_(NULL),
+      port_edit_(NULL), peer_list_(NULL), callback_(NULL),
+      server_("localhost") {
+  char buffer[10];
+  sprintfn(buffer, sizeof(buffer), "%i", kDefaultServerPort);
+  port_ = buffer;
 }
 
 GtkMainWnd::~GtkMainWnd() {
   ASSERT(!IsWindow());
 }
 
+void GtkMainWnd::RegisterObserver(MainWndCallback* callback) {
+  callback_ = callback;
+}
+
 bool GtkMainWnd::IsWindow() {
   return window_ != NULL && GTK_IS_WINDOW(window_);
+}
+
+void GtkMainWnd::MessageBox(const char* caption, const char* text,
+                            bool is_error) {
+  GtkWidget* dialog = gtk_message_dialog_new(GTK_WINDOW(window_),
+      GTK_DIALOG_DESTROY_WITH_PARENT,
+      is_error ? GTK_MESSAGE_ERROR : GTK_MESSAGE_INFO,
+      GTK_BUTTONS_CLOSE, "%s", text);
+  gtk_window_set_title(GTK_WINDOW(dialog), caption);
+  gtk_dialog_run(GTK_DIALOG (dialog));
+  gtk_widget_destroy (dialog);
+}
+
+MainWindow::UI GtkMainWnd::current_ui() {
+  if (vbox_)
+    return CONNECT_TO_SERVER;
+
+  if (peer_list_)
+    return LIST_PEERS;
+
+  return STREAMING;
+}
+
+cricket::VideoRenderer* GtkMainWnd::local_renderer() {
+  if (!local_renderer_.get())
+    local_renderer_.reset(new VideoRenderer(this));
+  return local_renderer_.get();
+}
+
+cricket::VideoRenderer* GtkMainWnd::remote_renderer() {
+  if (!remote_renderer_.get())
+    remote_renderer_.reset(new VideoRenderer(this));
+  return remote_renderer_.get();
+}
+
+void GtkMainWnd::QueueUIThreadCallback(int msg_id, void* data) {
+  g_idle_add(HandleUIThreadCallback,
+             new UIThreadCallbackData(callback_, msg_id, data));
 }
 
 bool GtkMainWnd::Create() {
@@ -115,6 +187,8 @@ bool GtkMainWnd::Destroy() {
 }
 
 void GtkMainWnd::SwitchToConnectUI() {
+  LOG(INFO) << __FUNCTION__;
+
   ASSERT(IsWindow());
   ASSERT(vbox_ == NULL);
 
@@ -130,11 +204,20 @@ void GtkMainWnd::SwitchToConnectUI() {
   gtk_container_add(GTK_CONTAINER(vbox_), valign);
   gtk_container_add(GTK_CONTAINER(window_), vbox_);
 
-  GtkWidget* hbox = gtk_hbox_new(FALSE, 3);
+  GtkWidget* hbox = gtk_hbox_new(FALSE, 5);
 
-  GtkWidget* edit = gtk_entry_new();
-  gtk_widget_set_size_request(edit, 400, 30);
-  gtk_container_add(GTK_CONTAINER(hbox), edit);
+  GtkWidget* label = gtk_label_new("Server");
+  gtk_container_add(GTK_CONTAINER(hbox), label);
+
+  server_edit_ = gtk_entry_new();
+  gtk_entry_set_text(GTK_ENTRY(server_edit_), server_.c_str());
+  gtk_widget_set_size_request(server_edit_, 400, 30);
+  gtk_container_add(GTK_CONTAINER(hbox), server_edit_);
+
+  port_edit_ = gtk_entry_new();
+  gtk_entry_set_text(GTK_ENTRY(port_edit_), port_.c_str());
+  gtk_widget_set_size_request(port_edit_, 70, 30);
+  gtk_container_add(GTK_CONTAINER(hbox), port_edit_);
 
   GtkWidget* button = gtk_button_new_with_label("Connect");
   gtk_widget_set_size_request(button, 70, 30);
@@ -148,30 +231,43 @@ void GtkMainWnd::SwitchToConnectUI() {
   gtk_widget_show_all(window_);
 }
 
-void GtkMainWnd::SwitchToPeerList(/*const Peers& peers*/) {
-  gtk_container_set_border_width(GTK_CONTAINER(window_), 0);
-  if (vbox_) {
-    gtk_widget_destroy(vbox_);
-    vbox_ = NULL;
-  } else if (draw_area_) {
-    gtk_widget_destroy(draw_area_);
-    draw_area_ = NULL;
+void GtkMainWnd::SwitchToPeerList(const Peers& peers) {
+  LOG(INFO) << __FUNCTION__;
+
+  if (!peer_list_) {
+    gtk_container_set_border_width(GTK_CONTAINER(window_), 0);
+    if (vbox_) {
+      gtk_widget_destroy(vbox_);
+      vbox_ = NULL;
+      server_edit_ = NULL;
+      port_edit_ = NULL;
+    } else if (draw_area_) {
+      gtk_widget_destroy(draw_area_);
+      draw_area_ = NULL;
+      draw_buffer_.reset();
+    }
+
+    peer_list_ = gtk_tree_view_new();
+    g_signal_connect(peer_list_, "row-activated",
+                     G_CALLBACK(OnRowActivatedCallback), this);
+    gtk_tree_view_set_headers_visible(GTK_TREE_VIEW(peer_list_), FALSE);
+    InitializeList(peer_list_);
+    gtk_container_add(GTK_CONTAINER(window_), peer_list_);
+    gtk_widget_show_all(window_);
+  } else {
+    GtkListStore* store =
+        GTK_LIST_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(peer_list_)));
+    gtk_list_store_clear(store);
   }
 
-  peer_list_ = gtk_tree_view_new();
-  g_signal_connect(peer_list_, "row-activated",
-                   G_CALLBACK(OnRowActivatedCallback), this);
-  gtk_tree_view_set_headers_visible(GTK_TREE_VIEW(peer_list_), FALSE);
-  InitializeList(peer_list_);
-  AddToList(peer_list_, "item 1", 1);
-  AddToList(peer_list_, "item 2", 2);
-  AddToList(peer_list_, "item 3", 3);
-  gtk_container_add(GTK_CONTAINER(window_), peer_list_);
-
-  gtk_widget_show_all(window_);
+  AddToList(peer_list_, "List of currently connected peers:", -1);
+  for (Peers::const_iterator i = peers.begin(); i != peers.end(); ++i)
+    AddToList(peer_list_, i->second.c_str(), i->first);
 }
 
 void GtkMainWnd::SwitchToStreamingUI() {
+  LOG(INFO) << __FUNCTION__;
+
   ASSERT(draw_area_ == NULL);
 
   gtk_container_set_border_width(GTK_CONTAINER(window_), 0);
@@ -187,36 +283,40 @@ void GtkMainWnd::SwitchToStreamingUI() {
 }
 
 void GtkMainWnd::OnDestroyed(GtkWidget* widget, GdkEvent* event) {
-  gtk_main_quit();
+  callback_->Close();
+  window_ = NULL;
+  draw_area_ = NULL;
+  vbox_ = NULL;
+  server_edit_ = NULL;
+  port_edit_ = NULL;
+  peer_list_ = NULL;
 }
 
 void GtkMainWnd::OnClicked(GtkWidget* widget) {
-  g_print("Clicked!\n");
-  SwitchToPeerList();
+  server_ = gtk_entry_get_text(GTK_ENTRY(server_edit_));
+  port_ = gtk_entry_get_text(GTK_ENTRY(port_edit_));
+  int port = port_.length() ? atoi(port_.c_str()) : 0;
+  callback_->StartLogin(server_, port);
 }
 
 void GtkMainWnd::OnKeyPress(GtkWidget* widget, GdkEventKey* key) {
-  g_print("KeyPress!\n");
   if (key->type == GDK_KEY_PRESS) {
-    g_print("0x%08X\n", key->keyval);
     switch (key->keyval) {
-     case GDK_Escape :
+     case GDK_Escape:
        if (draw_area_) {
-         SwitchToPeerList();
+         callback_->DisconnectFromCurrentPeer();
        } else if (peer_list_) {
-         SwitchToConnectUI();
-       } else {
-         gtk_main_quit();
+         callback_->DisconnectFromServer();
        }
        break;
 
      case GDK_KP_Enter:
      case GDK_Return:
-       // TODO(tommi): Use g_idle_add() if we need to switch asynchronously.
        if (vbox_) {
-         SwitchToPeerList();
+         OnClicked(NULL);
        } else if (peer_list_) {
-         SwitchToStreamingUI();
+         // OnRowActivated will be called automatically when the user
+         // presses enter.
        }
        break;
 
@@ -235,9 +335,119 @@ void GtkMainWnd::OnRowActivated(GtkTreeView* tree_view, GtkTreePath* path,
       gtk_tree_view_get_selection(GTK_TREE_VIEW(tree_view));
   if (gtk_tree_selection_get_selected(selection, &model, &iter)) {
      char* text;
-     int id = 0;
+     int id = -1;
      gtk_tree_model_get(model, &iter, 0, &text, 1, &id,  -1);
-     g_print("%s - %i\n", text, id);
+     if (id != -1)
+       callback_->ConnectToPeer(id);
      g_free(text);
    }
 }
+
+void GtkMainWnd::OnRedraw() {
+  gdk_threads_enter();
+
+  if (remote_renderer_.get() && remote_renderer_->image() != NULL &&
+      draw_area_ != NULL) {
+    int width = remote_renderer_->width();
+    int height = remote_renderer_->height();
+
+    if (!draw_buffer_.get()) {
+      draw_buffer_size_ = (width * height * 4) * 4;
+      draw_buffer_.reset(new uint8[draw_buffer_size_]);
+      gtk_widget_set_size_request(draw_area_, width * 2, height * 2);
+    }
+
+    const uint32* image = reinterpret_cast<const uint32*>(
+        remote_renderer_->image());
+    uint32* scaled = reinterpret_cast<uint32*>(draw_buffer_.get());
+    for (int r = 0; r < height; ++r) {
+      for (int c = 0; c < width; ++c) {
+        int x = c * 2;
+        scaled[x] = scaled[x + 1] = image[c];
+      }
+
+      uint32* prev_line = scaled;
+      scaled += width * 2;
+      memcpy(scaled, prev_line, (width * 2) * 4);
+
+      image += width;
+      scaled += width * 2;
+    }
+    
+    image = reinterpret_cast<const uint32*>(local_renderer_->image());
+    scaled = reinterpret_cast<uint32*>(draw_buffer_.get());
+    // Position the local preview on the right side.
+    scaled += (width * 2) - (local_renderer_->width() / 2);
+    // right margin...
+    scaled -= 10;
+    // ... towards the bottom.
+    scaled += (height * width * 4) - 
+              ((local_renderer_->height() / 2) *
+               (local_renderer_->width() / 2) * 4);
+    // bottom margin...
+    scaled -= (width * 2) * 5;
+    for (int r = 0; r < local_renderer_->height(); r += 2) {
+      for (int c = 0; c < local_renderer_->width(); c += 2) {
+        scaled[c / 2] = image[c + r * local_renderer_->width()];
+      }
+      scaled += width * 2;
+    }
+
+    gdk_draw_rgb_32_image(draw_area_->window,
+                          draw_area_->style->fg_gc[GTK_STATE_NORMAL],
+                          0,
+                          0,
+                          width * 2,
+                          height * 2,
+                          GDK_RGB_DITHER_MAX,
+                          draw_buffer_.get(),
+                          (width * 2) * 4);
+  }
+
+  gdk_threads_leave();
+}
+
+GtkMainWnd::VideoRenderer::VideoRenderer(GtkMainWnd* main_wnd) 
+    : width_(0), height_(0), main_wnd_(main_wnd) {
+}
+
+GtkMainWnd::VideoRenderer::~VideoRenderer() {
+}
+
+bool GtkMainWnd::VideoRenderer::SetSize(int width, int height, int reserved) {
+  gdk_threads_enter();
+  width_ = width;
+  height_ = height;
+  image_.reset(new uint8[width * height * 4]);
+  gdk_threads_leave();
+  return true;
+}
+
+bool GtkMainWnd::VideoRenderer::RenderFrame(const cricket::VideoFrame* frame) {
+  gdk_threads_enter();
+
+  int size = width_ * height_ * 4;
+  frame->ConvertToRgbBuffer(cricket::FOURCC_ARGB,
+                            image_.get(),
+                            size,
+                            width_ * 4);
+  // Convert the B,G,R,A frame to R,G,B,A, which is accepted by GTK.
+  // The 'A' is just padding for GTK, so we can use it as temp.
+  uint8* pix = image_.get();
+  uint8* end = image_.get() + size;
+  while (pix < end) {
+    pix[3] = pix[0];     // Save B to A.
+    pix[0] = pix[2];  // Set Red.
+    pix[2] = pix[3];  // Set Blue.
+    pix[3] = 0xFF;     // Fixed Alpha.
+    pix += 4;
+  }
+
+  gdk_threads_leave();
+
+  g_idle_add(Redraw, main_wnd_);
+
+  return true;
+}
+
+
