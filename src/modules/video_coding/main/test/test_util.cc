@@ -95,11 +95,11 @@ VCMEncodeCompleteCallback::SendData(
     return ret;
 }
 
- float
- VCMEncodeCompleteCallback::EncodedBytes()
- {
-     return _encodedBytes;
- }
+float
+VCMEncodeCompleteCallback::EncodedBytes()
+{
+    return _encodedBytes;
+}
 
 bool
 VCMEncodeCompleteCallback::EncodeComplete()
@@ -156,13 +156,13 @@ VCMRTPEncodeCompleteCallback::SendData(
                                         videoTypeHdr);
 }
 
- float
- VCMRTPEncodeCompleteCallback::EncodedBytes()
- {
-     // only good for one call  - after which will reset value;
-     float tmp = _encodedBytes;
-     _encodedBytes = 0;
-     return tmp;
+float
+VCMRTPEncodeCompleteCallback::EncodedBytes()
+{
+    // only good for one call  - after which will reset value;
+    float tmp = _encodedBytes;
+    _encodedBytes = 0;
+    return tmp;
  }
 
 bool
@@ -178,54 +178,13 @@ VCMRTPEncodeCompleteCallback::EncodeComplete()
 
 // Decoded Frame Callback Implementation
 
- WebRtc_Word32
- VCMDecodeCompleteCallback::FrameToRender(VideoFrame& videoFrame)
- {
-      fwrite(videoFrame.Buffer(), 1, videoFrame.Length(), _decodedFile);
-     _decodedBytes+= videoFrame.Length();
-     // keeping last decoded frame
-     _lastDecodedFrame.VerifyAndAllocate(videoFrame.Size());
-     _lastDecodedFrame.CopyFrame(videoFrame.Size(), videoFrame.Buffer());
-     _lastDecodedFrame.SetHeight(videoFrame.Height());
-     _lastDecodedFrame.SetWidth(videoFrame.Width());
-     _lastDecodedFrame.SetTimeStamp(videoFrame.TimeStamp());
-
+WebRtc_Word32
+VCMDecodeCompleteCallback::FrameToRender(VideoFrame& videoFrame)
+{
+    fwrite(videoFrame.Buffer(), 1, videoFrame.Length(), _decodedFile);
+    _decodedBytes+= videoFrame.Length();
     return VCM_OK;
  }
-
-int
-VCMDecodeCompleteCallback::PSNRLastFrame(const VideoFrame& sourceFrame,
-                                         double *YPSNRptr)
-{
-    double mse = 0.0;
-    double mseLogSum = 0.0;
-
-    // Y only
-    WebRtc_Word32 frameBytes = sourceFrame.Height() * sourceFrame.Width();
-    WebRtc_UWord8 *ref = sourceFrame.Buffer();
-    if (_lastDecodedFrame.Height() == 0)
-    {
-        *YPSNRptr = 0;
-        return 0; // no new decoded frames
-    }
-    WebRtc_UWord8 *test  = _lastDecodedFrame.Buffer();
-    for( int k = 0; k < frameBytes; k++ )
-    {
-            mse += (test[k] - ref[k]) * (test[k] - ref[k]);
-    }
-
-    // divide by number of pixels
-    mse /= (double) (frameBytes);
-
-    // accumulate for total average
-    mseLogSum += std::log10( mse );
-
-    *YPSNRptr = 20.0 * std::log10(255.0) - 10.0 * mseLogSum; // for only 1 frame
-
-    _lastDecodedFrame.Free();
-    _lastDecodedFrame.SetHeight(0);
-    return 0;
-}
 
 WebRtc_Word32
 VCMDecodeCompleteCallback::DecodedBytes()
@@ -251,6 +210,7 @@ RTPSendCompleteCallback::RTPSendCompleteCallback(RtpRtcp* rtp,
         _rtpDump->Start(filename);
     }
 }
+
 RTPSendCompleteCallback::~RTPSendCompleteCallback()
 {
     if (_rtpDump != NULL)
@@ -266,6 +226,7 @@ RTPSendCompleteCallback::~RTPSendCompleteCallback()
          _rtpPackets.PopFront();
     }
 }
+
 int
 RTPSendCompleteCallback::SendPacket(int channel, const void *data, int len)
 {

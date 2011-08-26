@@ -176,11 +176,9 @@ public:
     // will write decoded frame into file
     WebRtc_Word32 FrameToRender(webrtc::VideoFrame& videoFrame);
     WebRtc_Word32 DecodedBytes();
-    int PSNRLastFrame(const webrtc::VideoFrame& sourceFrame, double *YPSNRptr);
 private:
     FILE*               _decodedFile;
     WebRtc_UWord32      _decodedBytes;
-    webrtc::VideoFrame  _lastDecodedFrame;
 }; // end of VCMDecodeCompleCallback class
 
 
