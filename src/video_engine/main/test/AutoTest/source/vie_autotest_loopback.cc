@@ -152,7 +152,7 @@ int VideoEngineSampleCode(void* window1, void* window2)
     captureIdx = 0;
     printf("0\n");
 #else
-    int dummy = scanf("%d", &captureIdx);
+    scanf("%d", &captureIdx);
     getchar();
     captureIdx = captureIdx - 1; // Compensate for idx start at 1.
 #endif
@@ -308,7 +308,7 @@ int VideoEngineSampleCode(void* window1, void* window2)
     codecIdx = 0;
     printf("0\n");
 #else
-    dummy = scanf("%d", &codecIdx);
+    scanf("%d", &codecIdx);
     getchar();
     codecIdx = codecIdx - 1; // Compensate for idx start at 1.
 #endif

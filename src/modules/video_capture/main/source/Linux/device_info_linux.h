@@ -45,7 +45,6 @@ public:
 private:
 
     bool IsDeviceNameMatches(const char* name, const char* deviceUniqueIdUTF8);
-    bool GetMaxFPS(int fd, VideoCaptureCapability* cap);
 };
 } // namespace videocapturemodule
 } // namespace webrtc
