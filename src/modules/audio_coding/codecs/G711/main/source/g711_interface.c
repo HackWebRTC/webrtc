@@ -20,8 +20,8 @@ WebRtc_Word16 WebRtcG711_EncodeA(void *state,
     int n;
     WebRtc_UWord16 tempVal,  tempVal2;
 
-    // Set to avoid getting warnings
-    state = NULL;
+    // Set and discard to avoid getting warnings
+    (void)(state = NULL);
 
     // Sanity check of input length
     if (len < 0) {
@@ -59,8 +59,8 @@ WebRtc_Word16 WebRtcG711_EncodeU(void  *state,
     int n;
     WebRtc_UWord16 tempVal;
 
-    // Set to avoid getting warnings
-    state = NULL;
+    // Set and discard to avoid getting warnings
+    (void)(state = NULL);
 
     // Sanity check of input length
     if (len < 0) {
@@ -97,8 +97,8 @@ WebRtc_Word16 WebRtcG711_DecodeA(void *state,
     int n;
     WebRtc_UWord16 tempVal;
 
-    // Set to avoid getting warnings
-    state = NULL;
+    // Set and discard to avoid getting warnings
+    (void)(state = NULL);
 
     // Sanity check of input length
     if (len < 0) {
@@ -135,8 +135,8 @@ WebRtc_Word16 WebRtcG711_DecodeU(void *state,
     int n;
     WebRtc_UWord16 tempVal;
 
-    // Set to avoid getting warnings
-    state = NULL;
+    // Set and discard to avoid getting warnings
+    (void)(state = NULL);
 
     // Sanity check of input length
     if (len < 0) {
