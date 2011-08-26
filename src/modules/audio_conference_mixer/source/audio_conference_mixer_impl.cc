@@ -940,9 +940,6 @@ WebRtc_Word32 AudioConferenceMixerImpl::MixFromList(AudioFrame& mixedAudioFrame,
             position = 0;
         }
         AudioFrame* audioFrame = static_cast<AudioFrame*>(item->GetItem());
-
-        // Divide the AudioFrame samples by 2 to avoid saturation.
-        *audioFrame >>= 1;
         mixedAudioFrame += *audioFrame;
 
         _scratchMixedParticipants[position].participant = audioFrame->_id;
@@ -964,8 +961,6 @@ WebRtc_Word32 AudioConferenceMixerImpl::MixAnonomouslyFromList(
     while(item != NULL)
     {
         AudioFrame* audioFrame = static_cast<AudioFrame*>(item->GetItem());
-        // Divide the AudioFrame samples by 2 to avoid saturation.
-        *audioFrame >>= 1;
         mixedAudioFrame += *audioFrame;
         item = audioFrameList.Next(item);
     }
