@@ -77,9 +77,8 @@ static void cft1st_128_SSE2(float *a) {
 
 static void cftmdl_128_SSE2(float *a) {
   const int l = 8;
-  const int m = 32;
   const __m128 mm_swap_sign = _mm_load_ps(k_swap_sign);
-  int j0, k, k1, k2, m2;
+  int j0, k, k1, k2;
 
   __m128 wk1rv = _mm_load_ps(cftmdl_wk1r);
   for (j0 = 0; j0 < l; j0 += 2) {
@@ -136,7 +135,6 @@ static void cftmdl_128_SSE2(float *a) {
   }
 
   k1 = 0;
-  m2 = 2 * m;
   k = 64;
   k1 += 2;
   k2 = 2 * k1;
