@@ -329,8 +329,10 @@ void Conductor::AddStreams() {
 
 void Conductor::DisconnectFromCurrentPeer() {
   LOG(INFO) << __FUNCTION__;
-  if (peer_connection_.get())
+  if (peer_connection_.get()) {
+    client_->SendHangUp(peer_id_);
     DeletePeerConnection();
+  }
 
   if (main_wnd_->IsWindow())
     main_wnd_->SwitchToPeerList(client_->peers());
