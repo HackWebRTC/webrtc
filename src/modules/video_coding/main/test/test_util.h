@@ -262,17 +262,6 @@ private:
     webrtc::RtpRtcp& _rtp;
 };
 
-// PSNR & SSIM calculations
-WebRtc_Word32
-PSNRfromFiles(const WebRtc_Word8 *refFileName,
-        const WebRtc_Word8 *testFileName, WebRtc_Word32 width,
-        WebRtc_Word32 height, double *YPSNRptr);
-
-WebRtc_Word32
-SSIMfromFiles(const WebRtc_Word8 *refFileName,
-        const WebRtc_Word8 *testFileName, WebRtc_Word32 width,
-        WebRtc_Word32 height, double *SSIMptr);
-
 // Codec type conversion
 webrtc::RTPVideoCodecTypes
 ConvertCodecType(const char* plname);

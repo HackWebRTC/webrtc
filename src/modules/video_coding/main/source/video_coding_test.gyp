@@ -37,6 +37,7 @@
         '../test/release_test.h',
         '../test/rtp_player.h',
         '../test/test_util.h',
+        '../test/video_metrics.h',
         '../test/video_source.h',
 
         # sources
@@ -52,6 +53,7 @@
         '../test/rtp_player.cc',
         '../test/test_util.cc',
         '../test/tester_main.cc',
+        '../test/video_metrics.cc',
         '../test/video_rtp_play_mt.cc',
         '../test/video_rtp_play.cc',
         '../test/video_source.cc',

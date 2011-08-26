@@ -9,16 +9,20 @@
  */
 
 #include "normal_test.h"
-#include "../source/event.h"
-#include "tick_time.h"
-#include "common_types.h"
-#include "trace.h"
-#include "test_macros.h"
-#include "test_util.h"
+
 #include <assert.h>
 #include <iostream>
 #include <sstream>
 #include <time.h>
+
+#include "../source/event.h"
+#include "common_types.h"
+#include "test_macros.h"
+#include "test_util.h"
+#include "tick_time.h"
+#include "trace.h"
+#include "video_metrics.h"
+
 
 using namespace webrtc;
 
@@ -141,7 +145,7 @@ VCMNTEncodeCompleteCallback::SkipCnt()
     return _skipCnt;
 }
 
-// Decoded Frame Callback Implmentation
+// Decoded Frame Callback Implementation
 VCMNTDecodeCompleCallback::~VCMNTDecodeCompleCallback()
 {
     //
@@ -359,8 +363,8 @@ NormalTest::Print()
     double avgDecTime = _totalDecodeTime / _frameCnt;
     double psnr;
     double ssim;
-    PSNRfromFiles(_inname.c_str(), _outname.c_str(), _width, _height, &psnr);
-    SSIMfromFiles(_inname.c_str(), _outname.c_str(), _width, _height, &ssim);
+    PsnrFromFiles(_inname.c_str(), _outname.c_str(), _width, _height, &psnr);
+    SsimFromFiles(_inname.c_str(), _outname.c_str(), _width, _height, &ssim);
     printf("Actual bitrate: %f kbps\n", actualBitRate);
     printf("Target bitrate: %f kbps\n", _bitRate);
     ( _log) << "Actual bitrate: " << actualBitRate<< " kbps\tTarget: " << _bitRate << " kbps" << std::endl;

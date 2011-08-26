@@ -12,14 +12,17 @@
 // testing is done via the VCM module, no specific CodecDataBase module functionality.
 
 #include "codec_database_test.h"
-#include "vp8.h" // for external codecs test
-#include "../source/event.h"
-#include "test_macros.h"
-#include "test_util.h"
-#include "../../../../engine_configurations.h"
 
 #include <assert.h>
 #include <stdio.h>
+
+#include "../../../../engine_configurations.h"
+#include "../source/event.h"
+#include "test_macros.h"
+#include "test_util.h"
+#include "video_metrics.h"
+#include "vp8.h" // for external codecs test
+
 
 using namespace webrtc;
 
@@ -362,7 +365,7 @@ CodecDataBaseTest::Perform(CmdArgs& args)
         // closing and calculating PSNR for prior encoder-decoder test
         TearDown(); // closing open files
         double psnr = 0;
-        PSNRfromFiles(_inname.c_str(), _outname.c_str(), _width, _height, &psnr);
+        PsnrFromFiles(_inname.c_str(), _outname.c_str(), _width, _height, &psnr);
         printf(" \n @ %d KBPS:  ", sendCodec.startBitrate);
         printf("PSNR from encoder-decoder send-receive control test is %f \n \n", psnr);
     } // end of #codecs >1

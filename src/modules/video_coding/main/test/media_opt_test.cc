@@ -11,18 +11,21 @@
 // Implementation of Media Optimization Test
 // testing is done via the VCM module, no specific Media opt functionality.
 
-#include "receiver_tests.h" // receive side callbacks
-#include "video_coding.h"
-#include "rtp_rtcp.h"
-#include "test_macros.h"
-#include "test_util.h" // send side callback
 #include "media_opt_test.h"
-#include "../source/event.h"
 
 #include <string.h>
 #include <stdio.h>
-#include <vector>
 #include <time.h>
+#include <vector>
+
+#include "../source/event.h"
+#include "receiver_tests.h" // receive side callbacks
+#include "rtp_rtcp.h"
+#include "test_macros.h"
+#include "test_util.h" // send side callback
+#include "video_coding.h"
+#include "video_metrics.h"
+
 
 using namespace webrtc;
 
@@ -465,7 +468,7 @@ MediaOptTest::Print(int mode)
     double ActualBitRate =  8.0 *( _sumEncBytes / (_frameCnt / _frameRate));
     double actualBitRate = ActualBitRate / 1000.0;
     double psnr;
-    PSNRfromFiles(_actualSourcename.c_str(), _outname.c_str(), _width, _height, &psnr);
+    PsnrFromFiles(_actualSourcename.c_str(), _outname.c_str(), _width, _height, &psnr);
 
     (_log) << "VCM: Media Optimization Test Cycle Completed!" << std::endl;
     (_log) << "Input file: " << _inname << std::endl;
