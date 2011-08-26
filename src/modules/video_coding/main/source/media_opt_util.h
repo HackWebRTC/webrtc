@@ -12,7 +12,6 @@
 #define WEBRTC_MODULES_VIDEO_CODING_MEDIA_OPT_UTIL_H_
 
 #include "typedefs.h"
-#include "list_wrapper.h"
 #include "trace.h"
 #include "exp_filter.h"
 #include "internal_defines.h"
@@ -40,9 +39,10 @@ enum HybridNackTH {
 
 struct VCMProtectionParameters
 {
-    VCMProtectionParameters() : rtt(0), lossPr(0), bitRate(0),
-        packetsPerFrame(0), frameRate(0), keyFrameSize(0), fecRateDelta(0),
-        fecRateKey(0), residualPacketLossFec(0.0), codecWidth(0), codecHeight(0)
+    VCMProtectionParameters() : rtt(0), lossPr(0.0f), bitRate(0.0f),
+        packetsPerFrame(0.0f), packetsPerFrameKey(0.0f), frameRate(0.0f),
+        keyFrameSize(0.0f), fecRateDelta(0), fecRateKey(0),
+        residualPacketLossFec(0.0f), codecWidth(0), codecHeight(0)
         {}
 
     WebRtc_UWord32      rtt;
@@ -57,7 +57,6 @@ struct VCMProtectionParameters
     float               residualPacketLossFec;
     WebRtc_UWord16      codecWidth;
     WebRtc_UWord16      codecHeight;
-
 };
 
 
@@ -67,12 +66,9 @@ struct VCMProtectionParameters
 
 enum VCMProtectionMethodEnum
 {
-    kNACK,
-    kFEC,
+    kNack,
+    kFec,
     kNackFec,
-    kIntraRequest, // I-frame request
-    kPeriodicIntra, // I-frame refresh
-    kMBIntraRefresh, // Macro block refresh
     kNone
 };
 
@@ -89,19 +85,13 @@ public:
 class VCMProtectionMethod
 {
 public:
-    VCMProtectionMethod(VCMProtectionMethodEnum type) : _effectivePacketLoss(0),
-        _protectionFactorK(0), _protectionFactorD(0),
-        _residualPacketLossFec(0.0), _scaleProtKey(2.0), _maxPayloadSize(1460),
-        _useUepProtectionK(false), _useUepProtectionD(true), _corrFecCost(1.0),
-        _efficiency(0), _type(type)
-        {_qmRobustness = new VCMQmRobustness();}
-
-    virtual ~VCMProtectionMethod() { delete _qmRobustness;}
+    VCMProtectionMethod();
+    virtual ~VCMProtectionMethod();
 
     // Updates the efficiency of the method using the parameters provided
     //
     // Input:
-    //         - parameters         : Parameters used to calculate the efficiency
+    //         - parameters         : Parameters used to calculate efficiency
     //
     // Return value                 : True if this method is recommended in
     //                                the given conditions.
@@ -146,6 +136,8 @@ public:
     // Updates content metrics
     void UpdateContentMetrics(const VideoContentMetrics* contentMetrics);
 
+protected:
+
     WebRtc_UWord8                        _effectivePacketLoss;
     WebRtc_UWord8                        _protectionFactorK;
     WebRtc_UWord8                        _protectionFactorD;
@@ -158,20 +150,15 @@ public:
     bool                                 _useUepProtectionK;
     bool                                 _useUepProtectionD;
     float                                _corrFecCost;
-
-protected:
+    enum VCMProtectionMethodEnum         _type;
     float                                _efficiency;
-
-private:
-    const enum VCMProtectionMethodEnum   _type;
-
 };
 
 class VCMNackMethod : public VCMProtectionMethod
 {
 public:
-    VCMNackMethod() : VCMProtectionMethod(kNACK) {}
-    virtual ~VCMNackMethod() {}
+    VCMNackMethod();
+    virtual ~VCMNackMethod();
     virtual bool UpdateParameters(const VCMProtectionParameters* parameters);
     // Get the effective packet loss
     bool EffectivePacketLoss(const VCMProtectionParameters* parameter);
@@ -180,8 +167,8 @@ public:
 class VCMFecMethod : public VCMProtectionMethod
 {
 public:
-    VCMFecMethod() : VCMProtectionMethod(kFEC) {}
-    virtual ~VCMFecMethod() {}
+    VCMFecMethod();
+    virtual ~VCMFecMethod();
     virtual bool UpdateParameters(const VCMProtectionParameters* parameters);
     // Get the effective packet loss for ER
     bool EffectivePacketLoss(const VCMProtectionParameters* parameters);
@@ -199,69 +186,41 @@ public:
 };
 
 
-class VCMNackFecMethod : public VCMProtectionMethod
+class VCMNackFecMethod : public VCMFecMethod
 {
 public:
     VCMNackFecMethod();
-    ~VCMNackFecMethod();
+    virtual ~VCMNackFecMethod();
     virtual bool UpdateParameters(const VCMProtectionParameters* parameters);
     // Get the effective packet loss for ER
     bool EffectivePacketLoss(const VCMProtectionParameters* parameters);
-    // Get the FEC protection factors
+    // Get the protection factors
     bool ProtectionFactor(const VCMProtectionParameters* parameters);
-private:
-    VCMFecMethod* _fecMethod;
-
-};
-
-
-class VCMIntraReqMethod : public VCMProtectionMethod
-{
-public:
-    VCMIntraReqMethod() : VCMProtectionMethod(kIntraRequest), _IREQ_MAX_RTT(150)
-    {}
-    virtual bool UpdateParameters(const VCMProtectionParameters* parameters);
-private:
-    const WebRtc_UWord32 _IREQ_MAX_RTT;
-};
-
-class VCMPeriodicIntraMethod : public VCMProtectionMethod
-{
-public:
-    VCMPeriodicIntraMethod() : VCMProtectionMethod(kPeriodicIntra) {}
-    virtual bool UpdateParameters(const VCMProtectionParameters* parameters);
-};
-
-class VCMMbIntraRefreshMethod : public VCMProtectionMethod
-{
-public:
-    VCMMbIntraRefreshMethod() :
-        VCMProtectionMethod(kMBIntraRefresh), _MBREF_MIN_BITRATE(150) {}
-    virtual bool UpdateParameters(const VCMProtectionParameters* parameters);
-    virtual float RequiredBitRate() { return 0.0; }
-private:
-    const WebRtc_UWord32 _MBREF_MIN_BITRATE;
 };
 
 class VCMLossProtectionLogic
 {
 public:
-    VCMLossProtectionLogic() : _availableMethods(), _selectedMethod(NULL),
-        _bestNotOkMethod(NULL), _currentParameters(), _rtt(0), _lossPr(0.0f),
-        _bitRate(0.0f), _frameRate(0.0f), _keyFrameSize(0.0f), _fecRateKey(0),
-        _fecRateDelta(0), _lastPrUpdateT(0), _lossPr255(0.9999f),
-        _lossPrHistory(), _shortMaxLossPr255(0), _packetsPerFrame(0.9999f),
-        _packetsPerFrameKey(0.9999f), _residualPacketLossFec(0),
-        _boostRateKey(2), _codecWidth(0), _codecHeight(0)
-    { Reset(); }
-
+    VCMLossProtectionLogic();
     ~VCMLossProtectionLogic();
 
-    void ClearLossProtections();
-    bool AddMethod(VCMProtectionMethod *newMethod);
-    bool RemoveMethod(VCMProtectionMethodEnum methodType);
-    VCMProtectionMethod* FindMethod(VCMProtectionMethodEnum methodType) const;
-    float HighestOverhead() const;
+    // Set the protection method to be used
+    //
+    // Input:
+    //        - newMethodType    : New requested protection method type. If one
+    //                           is already set, it will be deleted and replaced
+    // Return value:             Returns true on update
+    bool SetMethod(enum VCMProtectionMethodEnum newMethodType);
+
+    // Remove requested protection method
+    // Input:
+    //        - method          : method to be removed (if currently selected)
+    //
+    // Return value:             Returns true on update
+    bool RemoveMethod(enum VCMProtectionMethodEnum method);
+
+    // Return required bit rate per selected protectin method
+    float RequiredBitRate() const;
 
     // Update the round-trip time
     //
@@ -340,17 +299,16 @@ public:
 
     // Update the protection methods with the current VCMProtectionParameters
     // and set the requested protection settings.
-    //
-    // Input:
-    //          - newMethod         : If not NULL, this method will be selected.
-    //
     // Return value     : Returns true on update
-    bool UpdateMethod(VCMProtectionMethod *newMethod = NULL);
+    bool UpdateMethod();
 
     // Returns the method currently selected.
     //
     // Return value                 : The protection method currently selected.
     VCMProtectionMethod* SelectedMethod() const;
+
+    // Return the protection type of the currently selected method
+    VCMProtectionMethodEnum SelectedType() const;
 
     // Returns the filtered loss probability in the interval [0, 255].
     //
@@ -359,13 +317,13 @@ public:
 
     void Reset();
 
+    void Release();
+
 private:
     // Sets the available loss protection methods.
     void UpdateMaxLossHistory(WebRtc_UWord8 lossPr255, WebRtc_Word64 now);
     WebRtc_UWord8 MaxFilteredLossPr(WebRtc_Word64 nowMs) const;
-    ListWrapper               _availableMethods;
     VCMProtectionMethod*      _selectedMethod;
-    VCMProtectionMethod*      _bestNotOkMethod;
     VCMProtectionParameters   _currentParameters;
     WebRtc_UWord32            _rtt;
     float                     _lossPr;

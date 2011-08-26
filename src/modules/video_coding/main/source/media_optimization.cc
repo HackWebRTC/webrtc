@@ -27,7 +27,6 @@ _packetLossEnc(0),
 _fractionLost(0),
 _sendStatisticsZeroEncode(0),
 _maxPayloadSize(1460),
-_lastBitRate(0),
 _targetBitRate(0),
 _incomingFrameRate(0),
 _enableQm(false),
@@ -51,7 +50,7 @@ _lastChangeTime(0)
 
 VCMMediaOptimization::~VCMMediaOptimization(void)
 {
-    _lossProtLogic->ClearLossProtections();
+    _lossProtLogic->Release();
     delete _lossProtLogic;
     delete _frameDropper;
     delete _content;
@@ -71,7 +70,6 @@ VCMMediaOptimization::Reset()
     _lossProtLogic->UpdateFrameRate(_incomingFrameRate);
     _lossProtLogic->Reset();
     _sendStatisticsZeroEncode = 0;
-    _lastBitRate = 0;
     _targetBitRate = 0;
     _lossProtOverhead = 0;
     _codecWidth = 0;
@@ -144,7 +142,7 @@ VCMMediaOptimization::SetTargetRates(WebRtc_UWord32 bitRate,
 
         // Get the bit cost of protection method
         _lossProtOverhead = static_cast<WebRtc_UWord32>
-                            (_lossProtLogic->HighestOverhead() + 0.5f);
+                            (_lossProtLogic->RequiredBitRate() + 0.5f);
 
         // Get the effective packet loss for encoder ER
         // when applicable, should be passed to encoder via fractionLost
@@ -154,9 +152,6 @@ VCMMediaOptimization::SetTargetRates(WebRtc_UWord32 bitRate,
     // Update encoding rates following protection settings
     _frameDropper->SetRates(static_cast<float>(bitRate -
                                                  _lossProtOverhead), 0);
-    // This may be used for UpdateEncoderBitRate: lastBitRate is total rate,
-    // before compensation
-    _lastBitRate = _targetBitRate;
 
     // Source coding rate: total rate - protection overhead
     _targetBitRate = bitRate - _lossProtOverhead;
@@ -205,7 +200,7 @@ VCMMediaOptimization::UpdateProtectionCallback(VCMProtectionMethod
 
     // NACK is on for NACK and NackFec protection method: off for FEC method
     bool nackStatus = (selectedMethod->Type() == kNackFec ||
-                       selectedMethod->Type() == kNACK);
+                       selectedMethod->Type() == kNack);
 
    return _videoProtectionCallback->ProtectionRequest(codeRateDeltaRTP,
                                                       codeRateKeyRTP,
@@ -270,31 +265,24 @@ VCMMediaOptimization::RegisterProtectionCallback(VCMProtectionCallback*
 
 }
 
-
 void
 VCMMediaOptimization::EnableFrameDropper(bool enable)
 {
     _frameDropper->Enable(enable);
 }
 
-
 void
-VCMMediaOptimization::EnableNack(bool enable)
+VCMMediaOptimization::EnableProtectionMethod(bool enable,
+                                             VCMProtectionMethodEnum method)
 {
-    // Add NACK to the list of loss protection methods
     bool updated = false;
     if (enable)
     {
-        VCMProtectionMethod *nackMethod = new VCMNackMethod();
-        updated = _lossProtLogic->AddMethod(nackMethod);
-        if (!updated)
-        {
-            delete nackMethod;
-        }
+        updated = _lossProtLogic->SetMethod(method);
     }
     else
     {
-        updated = _lossProtLogic->RemoveMethod(kNACK);
+        _lossProtLogic->RemoveMethod(method);
     }
     if (updated)
     {
@@ -303,68 +291,9 @@ VCMMediaOptimization::EnableNack(bool enable)
 }
 
 bool
-VCMMediaOptimization::IsNackEnabled()
+VCMMediaOptimization::IsProtectionMethodEnabled(VCMProtectionMethodEnum method)
 {
-    return (_lossProtLogic->FindMethod(kNACK) != NULL);
-}
-
-void
-VCMMediaOptimization::EnableFEC(bool enable)
-{
-    // Add FEC to the list of loss protection methods
-    bool updated = false;
-    if (enable)
-    {
-        VCMProtectionMethod *fecMethod = new VCMFecMethod();
-        updated = _lossProtLogic->AddMethod(fecMethod);
-        if (!updated)
-        {
-            delete fecMethod;
-        }
-    }
-    else
-    {
-        updated = _lossProtLogic->RemoveMethod(kFEC);
-    }
-    if (updated)
-    {
-        _lossProtLogic->UpdateMethod();
-    }
-}
-void
-VCMMediaOptimization::EnableNackFEC(bool enable)
-{
-    // Add NackFec to the list of loss protection methods
-    bool updated = false;
-    if (enable)
-    {
-        VCMProtectionMethod *nackfecMethod = new VCMNackFecMethod();
-        updated = _lossProtLogic->AddMethod(nackfecMethod);
-        if (!updated)
-        {
-            delete nackfecMethod;
-        }
-    }
-    else
-    {
-        updated = _lossProtLogic->RemoveMethod(kNackFec);
-    }
-    if (updated)
-    {
-        _lossProtLogic->UpdateMethod();
-    }
-}
-
-bool
-VCMMediaOptimization::IsFecEnabled()
-{
-    return (_lossProtLogic->FindMethod(kFEC) != NULL);
-}
-
-bool
-VCMMediaOptimization::IsNackFecEnabled()
-{
-    return (_lossProtLogic->FindMethod(kNackFec) != NULL);
+    return (_lossProtLogic->SelectedType() == method);
 }
 
 void

@@ -590,15 +590,13 @@ VideoCodingModuleImpl::SetVideoProtection(VCMVideoProtection videoProtection, bo
 
     case kProtectionNackSender:
         {
-            // Send-side only
             CriticalSectionScoped cs(_sendCritSect);
-            _mediaOpt.EnableNack(enable);
+            _mediaOpt.EnableProtectionMethod(enable, kNack);
             break;
         }
 
     case kProtectionNackReceiver:
         {
-            // Receive-side only
             CriticalSectionScoped cs(_receiveCritSect);
             if (enable)
             {
@@ -679,7 +677,7 @@ VideoCodingModuleImpl::SetVideoProtection(VCMVideoProtection videoProtection, bo
             // Send Side
             {
                 CriticalSectionScoped cs(_sendCritSect);
-                _mediaOpt.EnableNackFEC(enable);
+                _mediaOpt.EnableProtectionMethod(enable, kNackFec);
             }
             break;
         }
@@ -687,7 +685,7 @@ VideoCodingModuleImpl::SetVideoProtection(VCMVideoProtection videoProtection, bo
     case kProtectionFEC:
         {
             CriticalSectionScoped cs(_sendCritSect);
-            _mediaOpt.EnableFEC(enable);
+            _mediaOpt.EnableProtectionMethod(enable, kFec);
             break;
         }
 

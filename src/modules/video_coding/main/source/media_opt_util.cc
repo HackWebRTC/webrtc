@@ -21,22 +21,43 @@
 
 namespace webrtc {
 
+VCMProtectionMethod::VCMProtectionMethod():
+_effectivePacketLoss(0),
+_protectionFactorK(0),
+_protectionFactorD(0),
+_residualPacketLossFec(0.0f),
+_scaleProtKey(2.0f),
+_maxPayloadSize(1460),
+_qmRobustness(new VCMQmRobustness()),
+_useUepProtectionK(false),
+_useUepProtectionD(true),
+_corrFecCost(1.0),
+_type(kNone),
+_efficiency(0)
+{
+    //
+}
+
+VCMProtectionMethod::~VCMProtectionMethod()
+{
+    delete _qmRobustness;
+}
 void
 VCMProtectionMethod::UpdateContentMetrics(const
                                           VideoContentMetrics* contentMetrics)
 {
-   _qmRobustness->UpdateContent(contentMetrics);
+    _qmRobustness->UpdateContent(contentMetrics);
 }
 
-
-VCMNackFecMethod::VCMNackFecMethod() : VCMProtectionMethod(kNackFec)
+VCMNackFecMethod::VCMNackFecMethod():
+VCMFecMethod()
 {
-    _fecMethod = new VCMFecMethod();
+    _type = kNackFec;
 }
 
 VCMNackFecMethod::~VCMNackFecMethod()
 {
-    delete _fecMethod;
+    //
 }
 bool
 VCMNackFecMethod::ProtectionFactor(const
@@ -54,13 +75,7 @@ VCMNackFecMethod::ProtectionFactor(const
     // nack the residual, based on a decision made in the JB.
 
     // Compute the protection factors
-    _fecMethod->ProtectionFactor(parameters);
-
-    _protectionFactorK = _fecMethod->_protectionFactorK;
-    _protectionFactorD = _fecMethod->_protectionFactorD;
-
-    _useUepProtectionD = _fecMethod->_useUepProtectionD;
-    _useUepProtectionK = _fecMethod->_useUepProtectionK;
+    VCMFecMethod::ProtectionFactor(parameters);
 
     // When in Hybrid mode (RTT range), adjust FEC rates based on the
     // RTT (NACK effectiveness) - adjustment factor is in the range [0,1].
@@ -75,7 +90,7 @@ VCMNackFecMethod::ProtectionFactor(const
                             (adjustRtt *
                              static_cast<float>(_protectionFactorD));
         // update FEC rates after applyingadjustment softness parameter
-        _fecMethod->UpdateProtectionFactorD(_protectionFactorD);
+        VCMFecMethod::UpdateProtectionFactorD(_protectionFactorD);
     }
 
     return true;
@@ -87,10 +102,7 @@ VCMNackFecMethod::EffectivePacketLoss(const
 {
     // Set the effective packet loss for encoder (based on FEC code).
     // Compute the effective packet loss and residual packet loss due to FEC.
-    _fecMethod->EffectivePacketLoss(parameters);
-    _effectivePacketLoss = _fecMethod->_effectivePacketLoss;
-    _residualPacketLossFec = _fecMethod->_residualPacketLossFec;
-
+    VCMFecMethod::EffectivePacketLoss(parameters);
     return true;
 }
 
@@ -119,10 +131,21 @@ VCMNackFecMethod::UpdateParameters(const VCMProtectionParameters* parameters)
     // protection factor is defined relative to source number of packets so we
     // should convert the factor to reduce mismatch between mediaOpt's rate and
     // the actual one
-    _protectionFactorK = _fecMethod->ConvertFECRate(_protectionFactorK);
-    _protectionFactorD = _fecMethod->ConvertFECRate(_protectionFactorD);
+    _protectionFactorK = VCMFecMethod::ConvertFECRate(_protectionFactorK);
+    _protectionFactorD = VCMFecMethod::ConvertFECRate(_protectionFactorD);
 
     return true;
+}
+
+VCMNackMethod::VCMNackMethod():
+VCMProtectionMethod()
+{
+    _type = kNack;
+}
+
+VCMNackMethod::~VCMNackMethod()
+{
+    //
 }
 
 bool
@@ -130,7 +153,6 @@ VCMNackMethod::EffectivePacketLoss(const VCMProtectionParameters* parameter)
 {
     // Effective Packet Loss, NA in current version.
     _effectivePacketLoss = 0;
-
     return true;
 }
 
@@ -144,6 +166,16 @@ VCMNackMethod::UpdateParameters(const VCMProtectionParameters* parameters)
     _efficiency = parameters->bitRate * parameters->lossPr /
                   (1.0f + parameters->lossPr);
     return true;
+}
+
+VCMFecMethod::VCMFecMethod():
+VCMProtectionMethod()
+{
+    _type = kFec;
+}
+VCMFecMethod::~VCMFecMethod()
+{
+    //
 }
 
 WebRtc_UWord8
@@ -175,7 +207,6 @@ void
 VCMFecMethod::UpdateProtectionFactorD(WebRtc_UWord8 protectionFactorD)
 {
     _protectionFactorD = protectionFactorD;
-
 }
 
 // AvgRecoveryFEC: computes the residual packet loss function.
@@ -241,8 +272,10 @@ VCMFecMethod::AvgRecoveryFEC(const VCMProtectionParameters* parameters) const
         }
     }
 
-    const WebRtc_UWord8 lossRate = static_cast<WebRtc_UWord8> (255.0 *
-                                   parameters->lossPr + 0.5f);
+    WebRtc_UWord8 lossRate = static_cast<WebRtc_UWord8> (255.0 *
+                             parameters->lossPr + 0.5f);
+    // Constrain lossRate to 129 (50% protection)
+    // TODO (marpan): Verify table values
 
     const WebRtc_UWord16 codeIndex = (fecPacketsPerFrame - 1) * codeSize +
                                      (sourcePacketsPerFrame - 1);
@@ -527,151 +560,100 @@ VCMFecMethod::UpdateParameters(const VCMProtectionParameters* parameters)
 
     return true;
 }
-
-bool
-VCMIntraReqMethod::UpdateParameters(const VCMProtectionParameters* parameters)
+VCMLossProtectionLogic::VCMLossProtectionLogic():
+_selectedMethod(NULL),
+_currentParameters(),
+_rtt(0),
+_lossPr(0.0f),
+_bitRate(0.0f),
+_frameRate(0.0f),
+_keyFrameSize(0.0f),
+_fecRateKey(0),
+_fecRateDelta(0),
+_lastPrUpdateT(0),
+_lossPr255(0.9999f),
+_lossPrHistory(),
+_shortMaxLossPr255(0),
+_packetsPerFrame(0.9999f),
+_packetsPerFrameKey(0.9999f),
+_residualPacketLossFec(0),
+_boostRateKey(2),
+_codecWidth(0),
+_codecHeight(0)
 {
-    float packetRate = parameters->packetsPerFrame * parameters->frameRate;
-    // Assume that all lost packets cohere to different frames
-    float lossRate = parameters->lossPr * packetRate;
-    if (parameters->keyFrameSize <= 1e-3)
-    {
-        return false;
-    }
-    _efficiency = lossRate * parameters->keyFrameSize;
-    if (parameters->lossPr >= 1.0f / parameters->keyFrameSize ||
-        parameters->rtt > _IREQ_MAX_RTT)
-    {
-        return false;
-    }
-    return true;
-}
-
-bool
-VCMPeriodicIntraMethod::UpdateParameters(const
-                                        VCMProtectionParameters* /*parameters*/)
-{
-    // Periodic I-frames. The last thing we want to use.
-    _efficiency = 0.0f;
-    return true;
-}
-
-bool
-VCMMbIntraRefreshMethod::UpdateParameters(const
-                                          VCMProtectionParameters* parameters)
-{
-    // Assume optimal for now.
-    _efficiency = parameters->bitRate * parameters->lossPr /
-                  (1.0f + parameters->lossPr);
-    if (parameters->bitRate < _MBREF_MIN_BITRATE)
-    {
-        return false;
-    }
-    return true;
+    Reset();
 }
 
 VCMLossProtectionLogic::~VCMLossProtectionLogic()
 {
-    ClearLossProtections();
-}
-
-void
-VCMLossProtectionLogic::ClearLossProtections()
-{
-    ListItem *item;
-    while ((item = _availableMethods.First()) != 0)
-    {
-        VCMProtectionMethod *method = static_cast<VCMProtectionMethod*>
-                                    (item->GetItem());
-        if (method != NULL)
-        {
-            delete method;
-        }
-        _availableMethods.PopFront();
-    }
-    _selectedMethod = NULL;
+    Release();
 }
 
 bool
-VCMLossProtectionLogic::AddMethod(VCMProtectionMethod *newMethod)
+VCMLossProtectionLogic::SetMethod(enum VCMProtectionMethodEnum newMethodType)
 {
-    VCMProtectionMethod *method;
-    ListItem *item;
-    if (newMethod == NULL)
+    if (_selectedMethod != NULL)
     {
-        return false;
-    }
-    for (item = _availableMethods.First(); item != NULL;
-        item = _availableMethods.Next(item))
-    {
-        method = static_cast<VCMProtectionMethod *> (item->GetItem());
-        if (method != NULL && method->Type() == newMethod->Type())
+        if (_selectedMethod->Type() == newMethodType)
         {
+            // Nothing to update
             return false;
         }
+        // New method - delete existing one
+        delete _selectedMethod;
     }
-    _availableMethods.PushBack(newMethod);
+    VCMProtectionMethod *newMethod = NULL;
+    switch (newMethodType)
+    {
+        case kNack:
+        {
+            newMethod = new VCMNackMethod();
+            break;
+        }
+        case kFec:
+        {
+            newMethod  = new VCMFecMethod();
+            break;
+        }
+        case kNackFec:
+        {
+            newMethod =  new VCMNackFecMethod();
+            break;
+        }
+        default:
+        {
+          return false;
+          break;
+        }
+
+    }
+    _selectedMethod = newMethod;
     return true;
 }
 bool
-VCMLossProtectionLogic::RemoveMethod(VCMProtectionMethodEnum methodType)
+VCMLossProtectionLogic::RemoveMethod(enum VCMProtectionMethodEnum method)
 {
-    VCMProtectionMethod *method;
-    ListItem *item;
-    bool foundAndRemoved = false;
-    for (item = _availableMethods.First(); item != NULL;
-         item = _availableMethods.Next(item))
+    if (_selectedMethod == NULL)
     {
-        method = static_cast<VCMProtectionMethod *> (item->GetItem());
-        if (method != NULL && method->Type() == methodType)
-        {
-            if (_selectedMethod != NULL &&
-                _selectedMethod->Type() == method->Type())
-            {
-                _selectedMethod = NULL;
-            }
-            _availableMethods.Erase(item);
-            item = NULL;
-            delete method;
-            foundAndRemoved = true;
-        }
+        return false;
     }
-    return foundAndRemoved;
-}
-
-VCMProtectionMethod*
-VCMLossProtectionLogic::FindMethod(VCMProtectionMethodEnum methodType) const
-{
-    VCMProtectionMethod *method;
-    ListItem *item;
-    for (item = _availableMethods.First(); item != NULL;
-         item = _availableMethods.Next(item))
+    else if (_selectedMethod->Type() == method)
     {
-        method = static_cast<VCMProtectionMethod *> (item->GetItem());
-        if (method != NULL && method->Type() == methodType)
-        {
-            return method;
-        }
+        delete _selectedMethod;
+        _selectedMethod = NULL;
     }
-    return NULL;
+    return true;
 }
 
 float
-VCMLossProtectionLogic::HighestOverhead() const
+VCMLossProtectionLogic::RequiredBitRate() const
 {
-    VCMProtectionMethod *method;
-    ListItem *item;
-    float highestOverhead = 0.0f;
-    for (item = _availableMethods.First(); item != NULL;
-         item = _availableMethods.Next(item))
+    float RequiredBitRate = 0.0f;
+    if (_selectedMethod != NULL)
     {
-        method = static_cast<VCMProtectionMethod *> (item->GetItem());
-        if (method != NULL && method->RequiredBitRate() > highestOverhead)
-        {
-            highestOverhead = method->RequiredBitRate();
-        }
+        RequiredBitRate = _selectedMethod->RequiredBitRate();
     }
-    return highestOverhead;
+    return RequiredBitRate;
 }
 
 void
@@ -774,7 +756,7 @@ VCMLossProtectionLogic::FilteredLoss() const
 
     //TODO: Update for hybrid
     //take the windowed max of the received loss
-    if (_selectedMethod != NULL && _selectedMethod->Type() == kFEC)
+    if (_selectedMethod != NULL && _selectedMethod->Type() == kFec)
     {
         return MaxFilteredLossPr(VCMTickTime::MillisecondTimestamp());
     }
@@ -829,8 +811,12 @@ VCMLossProtectionLogic::UpdateFrameSize(WebRtc_UWord16 width,
 }
 
 bool
-VCMLossProtectionLogic::UpdateMethod(VCMProtectionMethod *newMethod /*=NULL */)
+VCMLossProtectionLogic::UpdateMethod()
 {
+    if (_selectedMethod == NULL)
+    {
+        return false;
+    }
     _currentParameters.rtt = _rtt;
     _currentParameters.lossPr = _lossPr;
     _currentParameters.bitRate = _bitRate;
@@ -843,21 +829,19 @@ VCMLossProtectionLogic::UpdateMethod(VCMProtectionMethod *newMethod /*=NULL */)
     _currentParameters.residualPacketLossFec = _residualPacketLossFec;
     _currentParameters.codecWidth = _codecWidth;
     _currentParameters.codecHeight = _codecHeight;
-
-    // Update to new method, if not NULL
-    if (newMethod != NULL)
-    {
-        _selectedMethod = newMethod;
-        _selectedMethod->UpdateParameters(&_currentParameters);
-        return true;
-    }
-    return false;
+    return _selectedMethod->UpdateParameters(&_currentParameters);
 }
 
 VCMProtectionMethod*
 VCMLossProtectionLogic::SelectedMethod() const
 {
     return _selectedMethod;
+}
+
+VCMProtectionMethodEnum
+VCMLossProtectionLogic::SelectedType() const
+{
+    return _selectedMethod->Type();
 }
 
 void
@@ -876,7 +860,14 @@ VCMLossProtectionLogic::Reset()
         _lossPrHistory[i].timeMs = -1;
     }
     _shortMaxLossPr255 = 0;
-    ClearLossProtections();
+    Release();
+}
+
+void
+VCMLossProtectionLogic::Release()
+{
+    delete _selectedMethod;
+    _selectedMethod = NULL;
 }
 
 }

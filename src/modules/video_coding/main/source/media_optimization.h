@@ -67,35 +67,17 @@ public:
                                   WebRtc_UWord16 width,
                                   WebRtc_UWord16 height);
     /**
-    * Enable NACK and update error resilience parameters
+    * Enable protection method
     */
-    void EnableNack(bool enable);
+    void EnableProtectionMethod(bool enable, VCMProtectionMethodEnum method);
     /**
-    * Returns weather or not NACK is enabled
+    * Returns weather or not protection method is enabled
     */
-    bool IsNackEnabled();
-    /**
-    * Enable FEC and update error resilience parameters
-    */
-    void EnableFEC(bool enable);
-    /**
-    * Returns weather or not FEC is enabled
-    */
-    bool IsFecEnabled();
-    /**
-    * Returns weather or not NackFec is enabled
-    */
-    bool IsNackFecEnabled();
+    bool IsProtectionMethodEnabled(VCMProtectionMethodEnum method);
     /**
     * Updates the max pay load size
     */
-     /**
-    * Enable NackFec and update error resilience parameters
-    */
-    void EnableNackFEC(bool enable);
-
     void SetMtu(WebRtc_Word32 mtu);
-
     /*
     * Get actual input frame rate
     */
@@ -122,10 +104,10 @@ public:
     * Register a protection callback to be used to inform the user about the
     * protection methods used
     */
-    WebRtc_Word32 RegisterProtectionCallback(VCMProtectionCallback* protectionCallback);
+    WebRtc_Word32 RegisterProtectionCallback(VCMProtectionCallback*
+                                             protectionCallback);
     /*
-    * Register a quality settings callback to be used to inform VPM/user about the optimal
-    * quality settings (frame rate/dimension) required
+    * Register a quality settings callback to be used to inform VPM/user about
     */
     WebRtc_Word32 RegisterVideoQMCallback(VCMQMSettingsCallback* videoQMSettings);
     void EnableFrameDropper(bool enable);
@@ -194,7 +176,6 @@ private:
     WebRtc_UWord32                    _sendStatistics[4];
     WebRtc_UWord32                    _sendStatisticsZeroEncode;
     WebRtc_Word32                     _maxPayloadSize;
-    WebRtc_UWord32                    _lastBitRate;
     WebRtc_UWord32                    _targetBitRate;
 
     float                             _incomingFrameRate;
@@ -215,7 +196,7 @@ private:
     VCMQmResolution*                  _qmResolution;
 
     WebRtc_Word64                     _lastQMUpdateTime;
-    WebRtc_Word64                     _lastChangeTime; // content or user triggered
+    WebRtc_Word64                     _lastChangeTime; // content/user triggered
 
 
 }; // end of VCMMediaOptimization class definition
