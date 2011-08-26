@@ -9,13 +9,15 @@
  */
 
 #include "quality_modes_test.h"
-#include "../source/event.h"
-#include "test_macros.h"
-#include "vplib.h"
 
 #include <iostream>
 #include <string>
 #include <time.h>
+
+#include "../source/event.h"
+#include "test_macros.h"
+#include "video_metrics.h"
+#include "vplib.h"
 
 using namespace webrtc;
 
@@ -107,7 +109,7 @@ QualityModesTest::Print()
     double avgEncTime = _totalEncodeTime / _frameCnt;
     double avgDecTime = _totalDecodeTime / _frameCnt;
     double psnr,ssim;
-    PSNRfromFiles(_inname.c_str(), _outname.c_str(), _nativeWidth, _nativeHeight, &psnr);
+    PsnrFromFiles(_inname.c_str(), _outname.c_str(), _nativeWidth, _nativeHeight, &psnr);
     printf("Actual bitrate: %f kbps\n", actualBitRate);
     printf("Target bitrate: %f kbps\n", _bitRate);
     ( _log) << "Actual bitrate: " << actualBitRate<< " kbps\tTarget: " << _bitRate << " kbps" << std::endl;
@@ -121,7 +123,7 @@ QualityModesTest::Print()
     if (_flagSSIM == 1)
     {
         printf("***computing SSIM***\n");
-        SSIMfromFiles(_inname.c_str(), _outname.c_str(), _nativeWidth, _nativeHeight, &ssim);
+        SsimFromFiles(_inname.c_str(), _outname.c_str(), _nativeWidth, _nativeHeight, &ssim);
         printf("SSIM: %f \n", ssim);
     }
     (_log) << std::endl;
