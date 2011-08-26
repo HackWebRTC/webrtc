@@ -45,7 +45,6 @@ void WebRtcIlbcfix_Smooth(
   /* compute some inner products (ensure no overflow by first calculating proper scale factor) */
 
   w00 = w10 = w11 = 0;
-  current=current;
 
   max1=WebRtcSpl_MaxAbsValueW16(current, ENH_BLOCKL);
   max2=WebRtcSpl_MaxAbsValueW16(surround, ENH_BLOCKL);

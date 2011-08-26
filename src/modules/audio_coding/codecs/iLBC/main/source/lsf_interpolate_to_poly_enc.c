@@ -26,8 +26,6 @@
  *---------------------------------------------------------------*/
 
 void WebRtcIlbcfix_LsfInterpolate2PloyEnc(
-    iLBC_Enc_Inst_t *iLBCenc_inst,
-    /* (i) the encoder state structure */
     WebRtc_Word16 *a,  /* (o) lpc coefficients Q12 */
     WebRtc_Word16 *lsf1, /* (i) first set of lsf coefficients Q13 */
     WebRtc_Word16 *lsf2, /* (i) second set of lsf coefficients Q13 */
@@ -38,8 +36,6 @@ void WebRtcIlbcfix_LsfInterpolate2PloyEnc(
   /* Stack based */
   WebRtc_Word16 lsftmp[LPC_FILTERORDER];
 
-  /* Input parameter not used if not using scratch memory */
-  iLBCenc_inst = iLBCenc_inst;
   /* interpolate LSF */
   WebRtcIlbcfix_Interpolate(lsftmp, lsf1, lsf2, coef, length);
 

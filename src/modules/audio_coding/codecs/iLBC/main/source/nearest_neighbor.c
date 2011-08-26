@@ -25,8 +25,6 @@
  *---------------------------------------------------------------*/
 
 void WebRtcIlbcfix_NearestNeighbor(
-    iLBC_Dec_Inst_t *iLBCdec_inst,
-    /* (i) Decoder state */
     WebRtc_Word16 *index, /* (o) index of array element closest to value */
     WebRtc_Word16 *array, /* (i) data array (Q2) */
     WebRtc_Word16 value, /* (i) value (Q2) */
@@ -36,8 +34,6 @@ void WebRtcIlbcfix_NearestNeighbor(
   WebRtc_Word16 diff;
   /* Stack based */
   WebRtc_Word32 crit[8];
-  /* The input variable iLBCdec_inst is unused if not using scratch memory */
-  iLBCdec_inst = iLBCdec_inst;
 
   /* Calculate square distance */
   for(i=0;i<arlength;i++){

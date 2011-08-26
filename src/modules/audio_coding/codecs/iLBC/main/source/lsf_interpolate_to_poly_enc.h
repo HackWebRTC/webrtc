@@ -27,8 +27,6 @@
  *---------------------------------------------------------------*/
 
 void WebRtcIlbcfix_LsfInterpolate2PloyEnc(
-    iLBC_Enc_Inst_t *iLBCenc_inst,
-    /* (i) the encoder state structure */
     WebRtc_Word16 *a,  /* (o) lpc coefficients Q12 */
     WebRtc_Word16 *lsf1, /* (i) first set of lsf coefficients Q13 */
     WebRtc_Word16 *lsf2, /* (i) second set of lsf coefficients Q13 */

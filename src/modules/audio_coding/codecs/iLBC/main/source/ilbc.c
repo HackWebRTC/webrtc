@@ -240,8 +240,8 @@ WebRtc_Word16 WebRtcIlbcfix_DecodePlc(iLBC_decinst_t *iLBCdec_inst, WebRtc_Word1
 WebRtc_Word16 WebRtcIlbcfix_NetEqPlc(iLBC_decinst_t *iLBCdec_inst, WebRtc_Word16 *decoded, WebRtc_Word16 noOfLostFrames) {
 
   /* Two input parameters not used, but needed for function pointers in NetEQ */
-  decoded = decoded;
-  noOfLostFrames = noOfLostFrames;
+  decoded = NULL;
+  noOfLostFrames = 0;
 
   WebRtcSpl_MemSetW16(((iLBC_Dec_Inst_t*)iLBCdec_inst)->enh_buf, 0, ENH_BUFL);
   ((iLBC_Dec_Inst_t*)iLBCdec_inst)->prev_enh_pl = 2;

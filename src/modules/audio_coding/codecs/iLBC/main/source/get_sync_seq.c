@@ -26,8 +26,6 @@
  *---------------------------------------------------------------*/
 
 void WebRtcIlbcfix_GetSyncSeq(
-    iLBC_Dec_Inst_t *iLBCdec_inst,
-    /* (i) Decoder state */
     WebRtc_Word16 *idata,   /* (i) original data */
     WebRtc_Word16 idatal,   /* (i) dimension of data */
     WebRtc_Word16 centerStartPos, /* (i) where current block starts */
@@ -48,7 +46,7 @@ void WebRtcIlbcfix_GetSyncSeq(
 
   /* present (find predicted lag from this position) */
 
-  WebRtcIlbcfix_NearestNeighbor(iLBCdec_inst, lagBlock+hl,plocs,
+  WebRtcIlbcfix_NearestNeighbor(lagBlock+hl,plocs,
                                 (WebRtc_Word16)WEBRTC_SPL_MUL_16_16(2, (centerStartPos+centerEndPos)),
                                 periodl);
 
@@ -60,7 +58,7 @@ void WebRtcIlbcfix_GetSyncSeq(
   for(q=hl-1;q>=0;q--) {
     blockStartPos[q]=blockStartPos[q+1]-period[lagBlock[q+1]];
 
-    WebRtcIlbcfix_NearestNeighbor(iLBCdec_inst, lagBlock+q, plocs,
+    WebRtcIlbcfix_NearestNeighbor(lagBlock+q, plocs,
                                   (WebRtc_Word16)(blockStartPos[q] + (WebRtc_Word16)WEBRTC_SPL_MUL_16_16(4, ENH_BLOCKL_HALF)-period[lagBlock[q+1]]),
                                   periodl);
 
@@ -68,7 +66,7 @@ void WebRtcIlbcfix_GetSyncSeq(
 
       /* Find the best possible sequence in the 4 times upsampled
          domain around blockStartPos+q */
-      WebRtcIlbcfix_Refiner(iLBCdec_inst, blockStartPos+q,idata,idatal,
+      WebRtcIlbcfix_Refiner(blockStartPos+q,idata,idatal,
                             centerStartPos,blockStartPos[q],surround,WebRtcIlbcfix_kEnhWt[q]);
 
     } else {
@@ -86,7 +84,7 @@ void WebRtcIlbcfix_GetSyncSeq(
 
   for(q=hl+1;q<=WEBRTC_SPL_MUL_16_16(2, hl);q++) {
 
-    WebRtcIlbcfix_NearestNeighbor(iLBCdec_inst, lagBlock+q,plocs2,
+    WebRtcIlbcfix_NearestNeighbor(lagBlock+q,plocs2,
                                   (WebRtc_Word16)(blockStartPos[q-1]+
                                                   (WebRtc_Word16)WEBRTC_SPL_MUL_16_16(4, ENH_BLOCKL_HALF)),periodl);
 
@@ -98,7 +96,7 @@ void WebRtcIlbcfix_GetSyncSeq(
 
       /* Find the best possible sequence in the 4 times upsampled
          domain around blockStartPos+q */
-      WebRtcIlbcfix_Refiner(iLBCdec_inst, blockStartPos+q, idata, idatal,
+      WebRtcIlbcfix_Refiner(blockStartPos+q, idata, idatal,
                             centerStartPos,blockStartPos[q],surround,WebRtcIlbcfix_kEnhWt[2*hl-q]);
 
     }

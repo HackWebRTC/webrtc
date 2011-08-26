@@ -334,7 +334,7 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
   /* Perform enhancement block by block */
 
   for (iblock = 0; iblock<new_blocks; iblock++) {
-    WebRtcIlbcfix_Enhancer(iLBCdec_inst, out+WEBRTC_SPL_MUL_16_16(iblock, ENH_BLOCKL), enh_buf,
+    WebRtcIlbcfix_Enhancer(out+WEBRTC_SPL_MUL_16_16(iblock, ENH_BLOCKL), enh_buf,
                            ENH_BUFL, (WebRtc_Word16)(WEBRTC_SPL_MUL_16_16(iblock, ENH_BLOCKL)+startPos),
                            enh_period, (WebRtc_Word16*)WebRtcIlbcfix_kEnhPlocs, ENH_NBLOCKS_TOT);
   }

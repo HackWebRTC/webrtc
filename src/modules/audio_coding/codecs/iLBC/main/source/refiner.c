@@ -30,8 +30,6 @@
  *---------------------------------------------------------------*/
 
 void WebRtcIlbcfix_Refiner(
-    iLBC_Dec_Inst_t *iLBCdec_inst,
-    /* (i) Decoder state */
     WebRtc_Word16 *updStartPos, /* (o) updated start point (Q-2) */
     WebRtc_Word16 *idata,   /* (i) original data buffer */
     WebRtc_Word16 idatal,   /* (i) dimension of idata */
@@ -52,9 +50,6 @@ void WebRtcIlbcfix_Refiner(
   WebRtc_Word32 corrVecTemp[ENH_CORRDIM];
   WebRtc_Word16 vect[ENH_VECTL];
   WebRtc_Word16 corrVec[ENH_CORRDIM];
-
-  /* The input parameter iLBCdec_inst is unused unless using scratch memory */
-  iLBCdec_inst = iLBCdec_inst;
 
   /* defining array bounds */
 

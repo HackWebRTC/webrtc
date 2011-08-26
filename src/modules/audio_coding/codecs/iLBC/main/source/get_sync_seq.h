@@ -26,8 +26,6 @@
  *---------------------------------------------------------------*/
 
 void WebRtcIlbcfix_GetSyncSeq(
-    iLBC_Dec_Inst_t *iLBCdec_inst,
-    /* (i) Decoder state */
     WebRtc_Word16 *idata,   /* (i) original data */
     WebRtc_Word16 idatal,   /* (i) dimension of data */
     WebRtc_Word16 centerStartPos, /* (i) where current block starts */

@@ -27,8 +27,6 @@
  *---------------------------------------------------------------*/
 
 void WebRtcIlbcfix_Enhancer(
-    iLBC_Dec_Inst_t *iLBCdec_inst,
-    /* (i) Decoder state */
     WebRtc_Word16 *odata,   /* (o) smoothed block, dimension blockl */
     WebRtc_Word16 *idata,   /* (i) data buffer used for enhancing */
     WebRtc_Word16 idatal,   /* (i) dimension idata */

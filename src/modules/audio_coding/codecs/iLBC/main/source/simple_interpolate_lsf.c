@@ -57,13 +57,18 @@ void WebRtcIlbcfix_SimpleInterpolateLsf(
        lsf coefficients */
 
     /* Calculate Analysis/Syntehsis filter from quantized LSF */
-    WebRtcIlbcfix_LsfInterpolate2PloyEnc(iLBCenc_inst, lp, lsfdeqold, lsfdeq,
-                                         WebRtcIlbcfix_kLsfWeight30ms[0], length);
+    WebRtcIlbcfix_LsfInterpolate2PloyEnc(lp, lsfdeqold, lsfdeq,
+                                         WebRtcIlbcfix_kLsfWeight30ms[0],
+                                         length);
     WEBRTC_SPL_MEMCPY_W16(syntdenum, lp, lp_length);
 
     /* Calculate Weighting filter from quantized LSF */
-    WebRtcIlbcfix_LsfInterpolate2PloyEnc(iLBCenc_inst, lp, lsfold, lsf, WebRtcIlbcfix_kLsfWeight30ms[0], length);
-    WebRtcIlbcfix_BwExpand(weightdenum, lp, (WebRtc_Word16*)WebRtcIlbcfix_kLpcChirpWeightDenum, (WebRtc_Word16)lp_length);
+    WebRtcIlbcfix_LsfInterpolate2PloyEnc(lp, lsfold, lsf,
+                                         WebRtcIlbcfix_kLsfWeight30ms[0],
+                                         length);
+    WebRtcIlbcfix_BwExpand(weightdenum, lp,
+                           (WebRtc_Word16*)WebRtcIlbcfix_kLpcChirpWeightDenum,
+                           (WebRtc_Word16)lp_length);
 
     /* subframe 2 to 6: Interpolation between first and second
        set of lsf coefficients */
@@ -72,15 +77,18 @@ void WebRtcIlbcfix_SimpleInterpolateLsf(
     for (i = 1; i < iLBCenc_inst->nsub; i++) {
 
       /* Calculate Analysis/Syntehsis filter from quantized LSF */
-      WebRtcIlbcfix_LsfInterpolate2PloyEnc(iLBCenc_inst, lp, lsfdeq, lsfdeq2,
-                                           WebRtcIlbcfix_kLsfWeight30ms[i], length);
+      WebRtcIlbcfix_LsfInterpolate2PloyEnc(lp, lsfdeq, lsfdeq2,
+                                           WebRtcIlbcfix_kLsfWeight30ms[i],
+                                           length);
       WEBRTC_SPL_MEMCPY_W16(syntdenum + pos, lp, lp_length);
 
       /* Calculate Weighting filter from quantized LSF */
-      WebRtcIlbcfix_LsfInterpolate2PloyEnc(iLBCenc_inst, lp, lsf, lsf2,
-                                           WebRtcIlbcfix_kLsfWeight30ms[i], length);
+      WebRtcIlbcfix_LsfInterpolate2PloyEnc(lp, lsf, lsf2,
+                                           WebRtcIlbcfix_kLsfWeight30ms[i],
+                                           length);
       WebRtcIlbcfix_BwExpand(weightdenum + pos, lp,
-                             (WebRtc_Word16*)WebRtcIlbcfix_kLpcChirpWeightDenum, (WebRtc_Word16)lp_length);
+                             (WebRtc_Word16*)WebRtcIlbcfix_kLpcChirpWeightDenum,
+                             (WebRtc_Word16)lp_length);
 
       pos += lp_length;
     }
@@ -95,15 +103,18 @@ void WebRtcIlbcfix_SimpleInterpolateLsf(
     for (i = 0; i < iLBCenc_inst->nsub; i++) {
 
       /* Calculate Analysis/Syntehsis filter from quantized LSF */
-      WebRtcIlbcfix_LsfInterpolate2PloyEnc(iLBCenc_inst, lp, lsfdeqold, lsfdeq,
-                                           WebRtcIlbcfix_kLsfWeight20ms[i], length);
+      WebRtcIlbcfix_LsfInterpolate2PloyEnc(lp, lsfdeqold, lsfdeq,
+                                           WebRtcIlbcfix_kLsfWeight20ms[i],
+                                           length);
       WEBRTC_SPL_MEMCPY_W16(syntdenum + pos, lp, lp_length);
 
       /* Calculate Weighting filter from quantized LSF */
-      WebRtcIlbcfix_LsfInterpolate2PloyEnc(iLBCenc_inst, lp, lsfold, lsf,
-                                           WebRtcIlbcfix_kLsfWeight20ms[i], length);
+      WebRtcIlbcfix_LsfInterpolate2PloyEnc(lp, lsfold, lsf,
+                                           WebRtcIlbcfix_kLsfWeight20ms[i],
+                                           length);
       WebRtcIlbcfix_BwExpand(weightdenum+pos, lp,
-                             (WebRtc_Word16*)WebRtcIlbcfix_kLpcChirpWeightDenum, (WebRtc_Word16)lp_length);
+                             (WebRtc_Word16*)WebRtcIlbcfix_kLpcChirpWeightDenum,
+                             (WebRtc_Word16)lp_length);
 
       pos += lp_length;
     }
