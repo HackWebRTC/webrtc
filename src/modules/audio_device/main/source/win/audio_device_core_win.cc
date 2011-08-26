@@ -1079,31 +1079,26 @@ WebRtc_Word32 AudioDeviceWindowsCore::SpeakerMuteIsAvailable(bool& available)
     }
 
     HRESULT hr = S_OK;
-    IAudioSessionManager* pManager = NULL;
-    ISimpleAudioVolume* pVolume = NULL;
+    IAudioEndpointVolume* pVolume = NULL;
 
-    hr = _ptrDeviceOut->Activate(__uuidof(IAudioSessionManager), CLSCTX_ALL,NULL, (void**)&pManager);
-    EXIT_ON_ERROR(hr);
-
-    hr = pManager->GetSimpleAudioVolume(NULL, FALSE, &pVolume);
+    // Query the speaker system mute state.
+    hr = _ptrDeviceOut->Activate(__uuidof(IAudioEndpointVolume),
+        CLSCTX_ALL, NULL,  reinterpret_cast<void**>(&pVolume));
     EXIT_ON_ERROR(hr);
 
     BOOL mute;
     hr = pVolume->GetMute(&mute);
     if (FAILED(hr))
-    {
         available = false;
-    }
-    available = true;
+    else
+        available = true;
 
-    SAFE_RELEASE(pManager);
     SAFE_RELEASE(pVolume);
 
     return 0;
 
 Exit:
     _TraceCOMError(hr);
-    SAFE_RELEASE(pManager);
     SAFE_RELEASE(pVolume);
     return -1;
 }
@@ -1131,6 +1126,7 @@ WebRtc_Word32 AudioDeviceWindowsCore::SetSpeakerMute(bool enable)
     HRESULT hr = S_OK;
     IAudioEndpointVolume* pVolume = NULL;
 
+    // Set the speaker system mute state.
     hr = _ptrDeviceOut->Activate(__uuidof(IAudioEndpointVolume), CLSCTX_ALL, NULL,  reinterpret_cast<void**>(&pVolume));
     EXIT_ON_ERROR(hr);
 
@@ -1169,6 +1165,7 @@ WebRtc_Word32 AudioDeviceWindowsCore::SpeakerMute(bool& enabled) const
     HRESULT hr = S_OK;
     IAudioEndpointVolume* pVolume = NULL;
 
+    // Query the speaker system mute state.
     hr = _ptrDeviceOut->Activate(__uuidof(IAudioEndpointVolume), CLSCTX_ALL, NULL,  reinterpret_cast<void**>(&pVolume));
     EXIT_ON_ERROR(hr);
 
@@ -1206,16 +1203,16 @@ WebRtc_Word32 AudioDeviceWindowsCore::MicrophoneMuteIsAvailable(bool& available)
     HRESULT hr = S_OK;
     IAudioEndpointVolume* pVolume = NULL;
 
+    // Query the microphone system mute state.
     hr = _ptrDeviceIn->Activate(__uuidof(IAudioEndpointVolume), CLSCTX_ALL, NULL,  reinterpret_cast<void**>(&pVolume));
     EXIT_ON_ERROR(hr);
 
     BOOL mute;
     hr = pVolume->GetMute(&mute);
     if (FAILED(hr))
-    {
         available = false;
-    }
-    available = true;
+    else
+        available = true;
 
     SAFE_RELEASE(pVolume);
     return 0;
@@ -1247,6 +1244,7 @@ WebRtc_Word32 AudioDeviceWindowsCore::SetMicrophoneMute(bool enable)
     HRESULT hr = S_OK;
     IAudioEndpointVolume* pVolume = NULL;
 
+    // Set the microphone system mute state.
     hr = _ptrDeviceIn->Activate(__uuidof(IAudioEndpointVolume), CLSCTX_ALL, NULL,  reinterpret_cast<void**>(&pVolume));
     EXIT_ON_ERROR(hr);
 
@@ -1279,6 +1277,7 @@ WebRtc_Word32 AudioDeviceWindowsCore::MicrophoneMute(bool& enabled) const
     HRESULT hr = S_OK;
     IAudioEndpointVolume* pVolume = NULL;
 
+    // Query the microphone system mute state.
     hr = _ptrDeviceIn->Activate(__uuidof(IAudioEndpointVolume), CLSCTX_ALL, NULL,  reinterpret_cast<void**>(&pVolume));
     EXIT_ON_ERROR(hr);
 
