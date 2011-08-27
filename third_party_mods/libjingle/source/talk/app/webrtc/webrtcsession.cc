@@ -128,7 +128,7 @@ bool WebRtcSession::CreateVoiceChannel(const std::string& stream_id) {
 
   // RTCP disabled
   cricket::VoiceChannel* voice_channel =
-      channel_manager_->CreateVoiceChannel(this, stream_id, false);
+      channel_manager_->CreateVoiceChannel(this, stream_id, true);
   ASSERT(voice_channel != NULL);
   stream_info->channel = voice_channel;
 
@@ -145,7 +145,7 @@ bool WebRtcSession::CreateVideoChannel(const std::string& stream_id) {
 
   // RTCP disabled
   cricket::VideoChannel* video_channel =
-      channel_manager_->CreateVideoChannel(this, stream_id, false, NULL);
+      channel_manager_->CreateVideoChannel(this, stream_id, true, NULL);
   ASSERT(video_channel != NULL);
   stream_info->channel = video_channel;
 
@@ -170,17 +170,6 @@ cricket::TransportChannel* WebRtcSession::CreateChannel(
   cricket::TransportChannel* transport_channel =
       transport_->CreateChannel(name, type);
   ASSERT(transport_channel != NULL);
-  transport_channels_[name] = transport_channel;
-
-  StreamMap::iterator iter;
-  for (iter = streams_.begin(); iter != streams_.end(); ++iter) {
-    StreamInfo* stream_info = (*iter);
-    if (stream_info->stream_id.compare(content_name) == 0) {
-      ASSERT(!stream_info->channel);
-      stream_info->transport = transport_channel;
-      break;
-    }
-  }
   return transport_channel;
 }
 
@@ -189,13 +178,7 @@ cricket::TransportChannel* WebRtcSession::GetChannel(
   if (!transport_)
     return NULL;
 
-  StreamMap::iterator iter;
-  for (iter = streams_.begin(); iter != streams_.end(); ++iter) {
-    if (content_name.compare((*iter)->stream_id) == 0) {
-      return (*iter)->transport;
-    }
-  }
-  return NULL;
+  return transport_->GetChannel(name);
 }
 
 void WebRtcSession::DestroyChannel(
@@ -204,14 +187,6 @@ void WebRtcSession::DestroyChannel(
     return;
 
   transport_->DestroyChannel(name);
-
-  StreamMap::iterator iter;
-  for (iter = streams_.begin(); iter != streams_.end(); ++iter) {
-    if (content_name.compare((*iter)->stream_id) == 0) {
-      (*iter)->transport = NULL;
-      break;
-    }
-  }
 }
 
 void WebRtcSession::OnMessage(talk_base::Message* message) {
@@ -496,68 +471,6 @@ bool WebRtcSession::OnRemoteDescription(
   return true;
 }
 
-bool WebRtcSession::OnStreamDeleteMessage(
-    const cricket::SessionDescription* desc,
-    const std::vector<cricket::Candidate>& candidates) {
-  // This will be called when session is in connected state
-  // In this state session expects signaling message for any removed
-  // streamed by the peer.
-  // check for candidates port, if its equal to 0, remove that stream
-  // and provide callback OnRemoveStream else keep as it is
-
-  SetState(STATE_RECEIVEDTERMINATE);
-  for (size_t i = 0; i < candidates.size(); ++i) {
-    if (candidates[i].address().port() == 0) {
-      RemoveStreamOnRequest(candidates[i]);
-    }
-  }
-
-  const cricket::ContentInfo* video_content = GetFirstVideoContent(desc);
-  if (video_content) {
-    SignalRemoveStream(video_content->name, true);
-  } else {
-    const cricket::ContentInfo* audio_content = GetFirstAudioContent(desc);
-    if (audio_content) {
-      SignalRemoveStream(audio_content->name, false);
-    }
-  }
-  return true;
-}
-
-void WebRtcSession::RemoveStreamOnRequest(
-    const cricket::Candidate& candidate) {
-  // 1. Get Transport corresponding to candidate name
-  // 2. Get StreamInfo for the transport found in step 1
-  // 3. call ChannelManager Destroy voice/video method
-//
-  TransportChannelMap::iterator iter =
-      transport_channels_.find(candidate.name());
-  if (iter == transport_channels_.end()) {
-    return;
-  }
-
-  cricket::TransportChannel* transport = iter->second;
-  std::vector<StreamInfo*>::iterator siter;
-  for (siter = streams_.begin(); siter != streams_.end(); ++siter) {
-    StreamInfo* stream_info = (*siter);
-    if (stream_info->transport == transport) {
-      if (!stream_info->video) {
-        cricket::VoiceChannel* channel = static_cast<cricket::VoiceChannel*> (
-            stream_info->channel);
-        channel->Enable(false);
-        channel_manager_->DestroyVoiceChannel(channel);
-      } else {
-        cricket::VideoChannel* channel = static_cast<cricket::VideoChannel*> (
-            stream_info->channel);
-        channel->Enable(false);
-        channel_manager_->DestroyVideoChannel(channel);
-      }
-      streams_.erase(siter);
-      break;
-    }
-  }
-}
-
 cricket::SessionDescription* WebRtcSession::CreateOffer() {
   cricket::SessionDescription* offer = new cricket::SessionDescription();
   StreamMap::iterator iter;
@@ -626,9 +539,8 @@ cricket::SessionDescription* WebRtcSession::CreateAnswer(
       }
     }
 
-    // enabling RTCP mux by default at both ends, without
-    // exchanging it through signaling message.
-    audio_accept->set_rtcp_mux(true);
+    // RTCP mux is set based on what present in incoming offer
+    audio_accept->set_rtcp_mux(audio_offer->rtcp_mux());
     audio_accept->SortCodecs();
     answer->AddContent(audio_content->name, audio_content->type, audio_accept);
   }
@@ -656,9 +568,8 @@ cricket::SessionDescription* WebRtcSession::CreateAnswer(
       }
     }
 
-    // enabling RTCP mux by default at both ends, without
-    // exchanging it through signaling message.
-    video_accept->set_rtcp_mux(true);
+    // RTCP mux is set based on what present in incoming offer
+    video_accept->set_rtcp_mux(video_offer->rtcp_mux());
     video_accept->SortCodecs();
     answer->AddContent(video_content->name, video_content->type, video_accept);
   }

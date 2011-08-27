@@ -29,6 +29,7 @@
 #define TALK_APP_WEBRTC_WEBRTC_JSON_H_
 
 #include <string>
+#include <vector>
 
 #ifdef WEBRTC_RELATIVE_PATH
 #include "json/json.h"
@@ -100,6 +101,7 @@ bool ParseVideoCodec(const Json::Value& value,
                      cricket::VideoContentDescription* content);
 bool ParseICECandidates(const Json::Value& value,
                         std::vector<cricket::Candidate>* candidates);
+bool ParseRTCPMux(const Json::Value& value);
 Json::Value ReadValue(const Json::Value& value, const std::string& key);
 std::string ReadString(const Json::Value& value, const std::string& key);
 double ReadDouble(const Json::Value& value, const std::string& key);

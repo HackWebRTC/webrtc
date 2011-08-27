@@ -143,16 +143,13 @@ class WebRtcSession : public cricket::BaseSession {
   struct StreamInfo {
     explicit StreamInfo(const std::string stream_id)
         : channel(NULL),
-          transport(NULL),
           video(false),
           stream_id(stream_id) {}
 
     StreamInfo()
         : channel(NULL),
-          transport(NULL),
           video(false) {}
     cricket::BaseChannel* channel;
-    cricket::TransportChannel* transport;
     bool video;
     std::string stream_id;
   };
@@ -202,9 +199,6 @@ class WebRtcSession : public cricket::BaseSession {
   typedef std::map<std::string, cricket::TransportChannel*> TransportChannelMap;
 
   bool SetVideoCapture(bool capture);
-  bool OnStreamDeleteMessage(const cricket::SessionDescription* desc,
-      const std::vector<cricket::Candidate>& candidates);
-  void RemoveStreamOnRequest(const cricket::Candidate& candidate);
   void EnableAllStreams();
 
   cricket::Transport* transport_;

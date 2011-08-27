@@ -145,6 +145,13 @@ bool BuildMediaMessage(
     Append(params, "label", 1);  // always audio 1
   }
 
+  const cricket::MediaContentDescription* media_info =
+      static_cast<const cricket::MediaContentDescription*> (
+          content_info.description);
+  if (media_info->rtcp_mux()) {
+    Append(params, "rtcp_mux", std::string("supported"));
+  }
+
   std::vector<Json::Value> rtpmap;
   if (!BuildRtpMapParams(content_info, video, &rtpmap)) {
     return false;
@@ -214,8 +221,10 @@ bool BuildAttributes(const std::vector<cricket::Candidate>& candidates,
   std::vector<cricket::Candidate>::const_iterator iter_end =
       candidates.end();
   for (; iter != iter_end; ++iter) {
-    if ((video && !iter->name().compare("video_rtp")) ||
-        (!video && !iter->name().compare("rtp"))) {
+    if ((video && (!iter->name().compare("video_rtcp") ||
+                  (!iter->name().compare("video_rtp")))) ||
+        (!video && (!iter->name().compare("rtp") ||
+                   (!iter->name().compare("rtcp"))))) {
       Json::Value candidate;
       Append(&candidate, "component", kIceComponent);
       Append(&candidate, "foundation", kIceFoundation);
@@ -270,10 +279,8 @@ bool ParseJSONSignalingMessage(const std::string& signaling_message,
       cricket::AudioContentDescription* audio_content =
           new cricket::AudioContentDescription();
       ParseAudioCodec(mlines[i], audio_content);
-    
-      // enabling RTCP mux by default at both ends, without
-      // exchanging it through signaling message.
-      audio_content->set_rtcp_mux(true);
+
+      audio_content->set_rtcp_mux(ParseRTCPMux(mlines[i]));
       audio_content->SortCodecs();
       sdp->AddContent(cricket::CN_AUDIO, cricket::NS_JINGLE_RTP, audio_content);
       ParseICECandidates(mlines[i], candidates);
@@ -282,15 +289,23 @@ bool ParseJSONSignalingMessage(const std::string& signaling_message,
           new cricket::VideoContentDescription();
       ParseVideoCodec(mlines[i], video_content);
 
-      // enabling RTCP mux by default at both ends, without
-      // exchanging it through signaling message.
-      video_content->set_rtcp_mux(true);
+      video_content->set_rtcp_mux(ParseRTCPMux(mlines[i]));
       video_content->SortCodecs();
       sdp->AddContent(cricket::CN_VIDEO, cricket::NS_JINGLE_RTP, video_content);
       ParseICECandidates(mlines[i], candidates);
     }
   }
   return true;
+}
+
+bool ParseRTCPMux(const Json::Value& value) {
+  Json::Value rtcp_mux(ReadValue(value, "rtcp_mux"));
+  if (!rtcp_mux.empty()) {
+    if (rtcp_mux.asString().compare("supported") == 0) {
+      return true;
+    }
+  }
+  return false;
 }
 
 bool ParseAudioCodec(const Json::Value& value,
@@ -421,6 +436,7 @@ void Append(Json::Value* object, const std::string& key, bool value) {
 void Append(Json::Value* object, const std::string& key, char * value) {
   (*object)[key] = Json::Value(value);
 }
+
 void Append(Json::Value* object, const std::string& key, double value) {
   (*object)[key] = Json::Value(value);
 }
