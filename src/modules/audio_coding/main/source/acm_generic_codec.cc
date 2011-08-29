@@ -229,9 +229,9 @@ ACMGenericCodec::EncodeSafe(
     }
 
     // Not all codecs accept the whole frame to be pushed into 
-    // encoder at once. "myBasicCodingBlockSmpl" is 
+    // encoder at once.
     const WebRtc_Word16 myBasicCodingBlockSmpl =
-        ACMCodecDB::_basicCodingBlockSmpl[_codecID];
+        ACMCodecDB::BasicCodingBlock(_codecID);
     if((myBasicCodingBlockSmpl < 0) || 
         (!_encoderInitialized) || 
         (!_encoderExist))
@@ -607,9 +607,9 @@ ACMGenericCodec::InitEncoderSafe(
     bool                  forceInitialization)
 {
     // Check if we got a valid set of parameters
-    WebRtc_Word16 mirrorID;
-    WebRtc_Word16 codecNumber =
-        ACMCodecDB::CodecNumber(&(codecParams->codecInstant), mirrorID);
+    int mirrorID;
+    int codecNumber =
+        ACMCodecDB::CodecNumber(&(codecParams->codecInstant), &mirrorID);
 
     if(codecNumber < 0)
     {
@@ -718,10 +718,10 @@ ACMGenericCodec::InitDecoderSafe(
     WebRtcACMCodecParams* codecParams,
     bool                  forceInitialization)
 {
-    WebRtc_Word16 mirrorID;
+    int mirrorID;
     // Check if we got a valid set of parameters
-    WebRtc_Word16 codecNumber =
-        ACMCodecDB::ReceiverCodecNumber(codecParams->codecInstant, mirrorID);
+    int codecNumber =
+        ACMCodecDB::ReceiverCodecNumber(&codecParams->codecInstant, &mirrorID);
 
     if(codecNumber < 0)
     {
@@ -1308,7 +1308,6 @@ ACMGenericCodec::ProcessFrameVADDTX(
     WebRtc_Word16 samplesIn10Msec = (WebRtc_Word16)(freqHz / 100);
     WebRtc_Word32 frameLenMsec = (((WebRtc_Word32)_frameLenSmpl * 1000) / freqHz);
     WebRtc_Word16 status;
-    WebRtc_Word16 vadFlag = 0;
 
     // Vector for storing maximum 30 ms of mono audio at 32 kHz
     WebRtc_Word16 audio[960];
@@ -1345,10 +1344,6 @@ ACMGenericCodec::ProcessFrameVADDTX(
         // Call VAD
         status = WebRtcVad_Process(_ptrVADInst, (WebRtc_Word16)freqHz,
             audio, noSamplesToProcess[i]);
-        if (status)
-        {
-            vadFlag = 1;
-        }    
 
         _vadLabel[i] = status;
         

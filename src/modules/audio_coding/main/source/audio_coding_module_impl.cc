@@ -76,8 +76,8 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(
     _lastInTimestamp = 0xD87F3F9F;
     // nullify the codec name
     strncpy(_sendCodecInst.plname, "noCodecRegistered", 31);
-    ACMCodecDB::initACMCodecDB();
-    for (WebRtc_Word16 i = 0; i < MAX_NR_OF_CODECS; i++)
+
+    for (int i = 0; i < ACMCodecDB::kMaxNumCodecs; i++)
     {
         _codecs[i]            = NULL;
         _registeredPlTypes[i] = -1;
@@ -99,24 +99,24 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(
 
     // Register the default payload type for RED and for
     // CNG for the three frequencies 8, 16 and 32 kHz
-    for (int i = (ACMCodecDB::_noOfCodecs - 1); i>=0; i--)
+    for (int i = (ACMCodecDB::kNumCodecs - 1); i>=0; i--)
     {
-        if((STR_CASE_CMP(ACMCodecDB::_mycodecs[i].plname, "red") == 0))
+        if((STR_CASE_CMP(ACMCodecDB::database_[i].plname, "red") == 0))
         {
-            _redPayloadType = ACMCodecDB::_mycodecs[i].pltype;
-        } 
-        else if ((STR_CASE_CMP(ACMCodecDB::_mycodecs[i].plname, "CN") == 0))
+            _redPayloadType = ACMCodecDB::database_[i].pltype;
+        }
+        else if ((STR_CASE_CMP(ACMCodecDB::database_[i].plname, "CN") == 0))
         {
-            if (ACMCodecDB::_mycodecs[i].plfreq == 8000)
+            if (ACMCodecDB::database_[i].plfreq == 8000)
             {
-                memcpy(&_cngNB, &ACMCodecDB::_mycodecs[i], sizeof(_cngNB));
-            } 
-            else if (ACMCodecDB::_mycodecs[i].plfreq == 16000)
+                memcpy(&_cngNB, &ACMCodecDB::database_[i], sizeof(_cngNB));
+            }
+            else if (ACMCodecDB::database_[i].plfreq == 16000)
             {
-                memcpy(&_cngWB, &ACMCodecDB::_mycodecs[i], sizeof(_cngWB));
-            } else if (ACMCodecDB::_mycodecs[i].plfreq == 32000)
+                memcpy(&_cngWB, &ACMCodecDB::database_[i], sizeof(_cngWB));
+            } else if (ACMCodecDB::database_[i].plfreq == 32000)
             {
-                memcpy(&_cngSWB, &ACMCodecDB::_mycodecs[i], sizeof(_cngSWB));
+                memcpy(&_cngSWB, &ACMCodecDB::database_[i], sizeof(_cngSWB));
             }
         }
     }
@@ -163,7 +163,7 @@ AudioCodingModuleImpl::~AudioCodingModuleImpl()
         CriticalSectionScoped lock(*_acmCritSect);
         _currentSendCodecIdx = -1;
 
-        for (WebRtc_Word16 i=0; i < MAX_NR_OF_CODECS; i++)
+        for (int i=0; i < ACMCodecDB::kMaxNumCodecs; i++)
         {
             if (_codecs[i] != NULL)
             {
@@ -276,7 +276,7 @@ AudioCodingModuleImpl::ChangeUniqueId(
         _outgoingPL = fopen(fileName, "wb");
 #endif
 
-        for (WebRtc_Word16 i = 0; i < MAX_NR_OF_CODECS; i++)
+        for (int i = 0; i < ACMCodecDB::kMaxNumCodecs; i++)
         {
             if(_codecs[i] != NULL)
             {
@@ -569,7 +569,7 @@ AudioCodingModuleImpl::InitializeSender()
 
     _sendCodecInst.plname[0] = '\0';
 
-    for(WebRtc_Word16 codecCntr = 0; codecCntr < MAX_NR_OF_CODECS; codecCntr++)
+    for(int codecCntr = 0; codecCntr < ACMCodecDB::kMaxNumCodecs; codecCntr++)
     {
         if(_codecs[codecCntr] != NULL)
         {
@@ -664,9 +664,10 @@ mono codecs are supported, i.e. channels=1.", sendCodec.channels);
         return -1;
     }
 
-    WebRtc_Word8 errMsg[500];
-    WebRtc_Word16 mirrorId;
-    WebRtc_Word16 codecID = ACMCodecDB::CodecNumber(&sendCodec, mirrorId, errMsg, 500);
+    char errMsg[500];
+    int mirrorId;
+    int codecID = ACMCodecDB::CodecNumber(&sendCodec, &mirrorId, errMsg,
+                                          sizeof(errMsg));
     CriticalSectionScoped lock(*_acmCritSect);
 
     // Check for reported errors from function CodecNumber()
@@ -695,7 +696,7 @@ mono codecs are supported, i.e. channels=1.", sendCodec.channels);
     if(!STR_CASE_CMP(sendCodec.plname, "red"))
     {
         // Check if the payload-type is valid
-        if(ACMCodecDB::ValidPayloadType(sendCodec.pltype) < 0)
+        if(!ACMCodecDB::ValidPayloadType(sendCodec.pltype))
         {
             WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id, 
                 "Invalid payload-type %d for %s.", 
@@ -742,7 +743,7 @@ mono codecs are supported, i.e. channels=1.", sendCodec.channels);
     }
 
     // Check if the payload-type is valid
-    if(ACMCodecDB::ValidPayloadType(sendCodec.pltype) < 0)
+    if(!ACMCodecDB::ValidPayloadType(sendCodec.pltype))
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id, 
                 "Invalid payload-type %d for %s.", 
@@ -751,7 +752,7 @@ mono codecs are supported, i.e. channels=1.", sendCodec.channels);
     }
 
     // Check if codec supports the number of channels
-    if(ACMCodecDB::_channelSupport[codecID] < sendCodec.channels)
+    if(ACMCodecDB::codec_settings_[codecID].channel_support < sendCodec.channels)
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id, 
                 "%d number of channels not supportedn for %s.", 
@@ -769,9 +770,9 @@ mono codecs are supported, i.e. channels=1.", sendCodec.channels);
     bool oldCodecFamily;
     if(_sendCodecRegistered)
     {
-        WebRtc_Word16 sendCodecMirrorID;
-        WebRtc_Word16 sendCodecID =
-                ACMCodecDB::CodecNumber(&_sendCodecInst, sendCodecMirrorID);
+        int sendCodecMirrorID;
+        int sendCodecID =
+                ACMCodecDB::CodecNumber(&_sendCodecInst, &sendCodecMirrorID);
         assert(sendCodecID >= 0);
         oldCodecFamily = (sendCodecID == codecID) || (mirrorId == sendCodecMirrorID);
     }
@@ -879,7 +880,7 @@ with the previously registered codec");
             // At this point check if the given payload type is valid.
             // Record it later when the sampling frequency is changed
             // successfully.
-            if(ACMCodecDB::ValidPayloadType(sendCodec.pltype) < 0)
+            if(!ACMCodecDB::ValidPayloadType(sendCodec.pltype))
             {
                 WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id, 
                     "Out of range payload type");
@@ -1355,15 +1356,13 @@ AudioCodingModuleImpl::InitializeReceiverSafe()
 {
     WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id, 
         "InitializeReceiver()");
-    WebRtc_Word16 noCodecs = ACMCodecDB::NoOfCodecs();
-    int i = 0;
 
     // If the receiver is already initialized then we 
     // also like to destruct decoders if any exist. After a call
     // to this function, we should have a clean start-up.
     if(_receiverInitialized)
     {
-        for(WebRtc_Word16 codecCntr = 0; codecCntr < noCodecs; codecCntr++)
+        for(int codecCntr = 0; codecCntr < ACMCodecDB::kNumCodecs; codecCntr++)
         {
             if(UnregisterReceiveCodecSafe(codecCntr) < 0)
             {
@@ -1376,36 +1375,36 @@ AudioCodingModuleImpl::InitializeReceiverSafe()
     if (_netEq.Init() != 0)
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id, 
-            "InitializeReceiver() failed, Could not initialize NetEq");
+            "InitializeReceiver() failed, Could not initialize NetEQ");
         return -1;
     }
     _netEq.SetUniqueId(_id);
-    if (_netEq.AllocatePacketBuffer(ACMCodecDB::NetEqDecoders(),
-        ACMCodecDB::NoNetEqDecoders()) != 0)
+    if (_netEq.AllocatePacketBuffer(ACMCodecDB::NetEQDecoders(),
+        ACMCodecDB::kNumCodecs) != 0)
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id, 
-            "NetEq cannot allocatePacket Buffer");
+            "NetEQ cannot allocatePacket Buffer");
         return -1;
     }
 
     // Register RED and CN
     int regInNeteq = 0;
-    for (i = (ACMCodecDB::_noOfCodecs - 1); i>-1; i--) {
-        if((STR_CASE_CMP(ACMCodecDB::_mycodecs[i].plname, "red") == 0)) {
+    for (int i = (ACMCodecDB::kNumCodecs - 1); i>-1; i--) {
+        if((STR_CASE_CMP(ACMCodecDB::database_[i].plname, "red") == 0)) {
             regInNeteq = 1;
-        } else if ((STR_CASE_CMP(ACMCodecDB::_mycodecs[i].plname, "CN") == 0)) {
+        } else if ((STR_CASE_CMP(ACMCodecDB::database_[i].plname, "CN") == 0)) {
             regInNeteq = 1;
         }
 
         if (regInNeteq == 1) {
-           if(RegisterRecCodecMSSafe(ACMCodecDB::_mycodecs[i], i, i,
+           if(RegisterRecCodecMSSafe(ACMCodecDB::database_[i], i, i,
                 ACMNetEQ::masterJB) < 0)
             {
                 WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id, 
                     "Cannot register master codec.");
                 return -1;
             }
-            _registeredPlTypes[i] = ACMCodecDB::_mycodecs[i].pltype;
+            _registeredPlTypes[i] = ACMCodecDB::database_[i].pltype;
             regInNeteq = 0;
         }
     }
@@ -1422,7 +1421,7 @@ AudioCodingModuleImpl::ResetDecoder()
         "ResetDecoder()");
     CriticalSectionScoped lock(*_acmCritSect);
    
-    for(WebRtc_Word16 codecCntr = 0; codecCntr < MAX_NR_OF_CODECS; codecCntr++)
+    for(int codecCntr = 0; codecCntr < ACMCodecDB::kMaxNumCodecs; codecCntr++)
     {
         if((_codecs[codecCntr] != NULL) && (_registeredPlTypes[codecCntr] != -1))
         {
@@ -1487,17 +1486,17 @@ AudioCodingModuleImpl::RegisterReceiveCodec(
         return -1;
     }
 
-    WebRtc_Word16 mirrorId;
-    WebRtc_Word16 codecId = ACMCodecDB::ReceiverCodecNumber(receiveCodec, mirrorId);
+    int mirrorId;
+    int codecId = ACMCodecDB::ReceiverCodecNumber(&receiveCodec, &mirrorId);
 
-    if(codecId < 0 || codecId >= ACMCodecDB::NoOfCodecs())
+    if(codecId < 0 || codecId >= ACMCodecDB::kNumCodecs)
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id, 
             "Wrong codec params to be registered as receive codec");
         return -1;
     }
     // Check if the payload-type is valid.
-    if(ACMCodecDB::ValidPayloadType(receiveCodec.pltype) < 0)
+    if(!ACMCodecDB::ValidPayloadType(receiveCodec.pltype))
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id, 
                 "Invalid payload-type %d for %s.", 
@@ -1540,11 +1539,11 @@ AudioCodingModuleImpl::RegisterReceiveCodec(
     {
         if(_netEq.NumSlaves() < 1)
         {
-            if(_netEq.AddSlave(ACMCodecDB::NetEqDecoders(),
-                ACMCodecDB::NoNetEqDecoders()) < 0)
+            if(_netEq.AddSlave(ACMCodecDB::NetEQDecoders(),
+                   ACMCodecDB::kNumCodecs) < 0)
             {
                 WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id, 
-                    "Cannot Add Slave jitter buffer to NetEq.");
+                    "Cannot Add Slave jitter buffer to NetEQ.");
                 return -1;
             }
         }
@@ -1660,12 +1659,12 @@ AudioCodingModuleImpl::RegisterRecCodecMSSafe(
             != 0)
         {
             WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id, 
-                "Receive codec could not be registered in NetEq");
+                "Receive codec could not be registered in NetEQ");
             
             return -1;
         }
         // Guaranty that the same payload-type that is 
-        // registered in NetEq is stored in the codec.
+        // registered in NetEQ is stored in the codec.
         codecArray[codecId]->SaveDecoderParam(&codecParams);
     }
 
@@ -1681,11 +1680,10 @@ AudioCodingModuleImpl::ReceiveCodec(
 {
     WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id, 
         "ReceiveCodec()");
-    WebRtc_Word16 decCntr;
     WebRtcACMCodecParams decoderParam;
     CriticalSectionScoped lock(*_acmCritSect);
     
-    for(decCntr = 0; decCntr < MAX_NR_OF_CODECS; decCntr++)
+    for(int decCntr = 0; decCntr < ACMCodecDB::kMaxNumCodecs; decCntr++)
     {
         if(_codecs[decCntr] != NULL)
         {
@@ -1768,8 +1766,7 @@ AudioCodingModuleImpl::IncomingPacket(
                 // I cannot use the function that BV has written, i.e. 
                 // "DecoderParamByPlType()" as for iSAC there is one instance and 
                 // multiple payloads.
-                int i;
-                for(i = 0; i < MAX_NR_OF_CODECS; i++)
+                for(int i = 0; i < ACMCodecDB::kMaxNumCodecs; i++)
                 {
                     if(_registeredPlTypes[i] == myPayloadType)
                     {
@@ -1869,8 +1866,7 @@ AudioCodingModuleImpl::DecoderEstimatedBandwidth() const
     int plTypSWB;
 
     // Get iSAC settings
-    for(WebRtc_Word16 codecCntr = 0; codecCntr < ACMCodecDB::NoOfCodecs();
-        codecCntr++)
+    for(int codecCntr = 0; codecCntr < ACMCodecDB::kNumCodecs; codecCntr++)
     {
         // Store codec settings for codec number "codeCntr" in the output struct
         ACMCodecDB::Codec(codecCntr, &codecInst);
@@ -2016,11 +2012,11 @@ AudioCodingModuleImpl::PlayoutData10Ms(
                 {
                     // we are in 8 kHz so the master channel needs only 80 samples
                     WebRtc_Word16 masterChannel[80]; 
-                    for(WebRtc_Word16 n = 0; n < 80; n++)
+                    for(int n = 0; n < 80; n++)
                     {
                         masterChannel[n] = audioFrame._payloadData[n<<1];
                     }
-                    _dtmfDetector->Detect(audioFrame._payloadData, 
+                    _dtmfDetector->Detect(masterChannel,
                         audioFrame._payloadDataLengthInSamples, 
                         audioFrame._frequencyInHz, toneDetected, tone);
                 }
@@ -2037,12 +2033,11 @@ AudioCodingModuleImpl::PlayoutData10Ms(
                 else
                 {
                     WebRtc_Word16 masterChannel[WEBRTC_10MS_PCM_AUDIO];
-                    WebRtc_Word16 n;
-                    for(n = 0; n < audioFrameTmp._payloadDataLengthInSamples; n++)
+                    for(int n = 0; n < audioFrameTmp._payloadDataLengthInSamples; n++)
                     {
                         masterChannel[n] = audioFrameTmp._payloadData[n<<1];
                     }
-                    _dtmfDetector->Detect(audioFrameTmp._payloadData, 
+                    _dtmfDetector->Detect(masterChannel,
                         audioFrameTmp._payloadDataLengthInSamples, recvFreq, 
                         toneDetected, tone);
                 }
@@ -2338,7 +2333,7 @@ AudioCodingModuleImpl::DecoderParamByPlType(
     WebRtcACMCodecParams&  codecParams) const
 {
     CriticalSectionScoped lock(*_acmCritSect);
-    for(WebRtc_Word16 codecCntr = 0; codecCntr < MAX_NR_OF_CODECS; codecCntr++)
+    for(WebRtc_Word16 codecCntr = 0; codecCntr < ACMCodecDB::kMaxNumCodecs; codecCntr++)
     {
         if(_codecs[codecCntr] != NULL)
         {
@@ -2371,7 +2366,7 @@ AudioCodingModuleImpl::DecoderListIDByPlName(
 {
     WebRtcACMCodecParams codecParams;
     CriticalSectionScoped lock(*_acmCritSect);
-    for(WebRtc_Word16 codecCntr = 0; codecCntr < MAX_NR_OF_CODECS; codecCntr++)
+    for(WebRtc_Word16 codecCntr = 0; codecCntr < ACMCodecDB::kMaxNumCodecs; codecCntr++)
     {
         if((_codecs[codecCntr] != NULL))
         {
@@ -2559,17 +2554,16 @@ bool
 AudioCodingModuleImpl::HaveValidEncoder(
     const WebRtc_Word8* callerName) const
 {
-    WebRtc_Word16 numCodecs = ACMCodecDB::NoOfCodecs();
     if((!_sendCodecRegistered) || 
         (_currentSendCodecIdx < 0) ||
-        (_currentSendCodecIdx >= numCodecs))
+        (_currentSendCodecIdx >= ACMCodecDB::kNumCodecs))
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id, 
             "%s failed: No send codec is registered.", callerName);
         return false;
     }
     if((_currentSendCodecIdx < 0) ||
-        (_currentSendCodecIdx >= numCodecs))
+        (_currentSendCodecIdx >= ACMCodecDB::kNumCodecs))
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id, 
             "%s failed: Send codec index out of range.", callerName);    
@@ -2594,7 +2588,7 @@ AudioCodingModuleImpl::UnregisterReceiveCodec(
     WebRtc_Word16 codecID;
     
     // Search through the list of registered payload types
-    for (codecID = 0; codecID < MAX_NR_OF_CODECS; codecID++) 
+    for (codecID = 0; codecID < ACMCodecDB::kMaxNumCodecs; codecID++)
     {
         if (_registeredPlTypes[codecID] == payloadType) 
         {
@@ -2603,17 +2597,10 @@ AudioCodingModuleImpl::UnregisterReceiveCodec(
         }
     }
 
-    if(codecID >= ACMCodecDB::NoOfCodecs())
+    if(codecID >= ACMCodecDB::kNumCodecs)
     {
         // payload type was not registered. No need to unregister
         return 0;
-    } 
-    else if(codecID < 0) 
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id, 
-            "UnregisterReceiveCodec() failed: the given codec, %s, is not supported",
-            payloadType);
-        return -1;
     }
 
     // Unregister the codec with the given payload type
@@ -2624,32 +2611,32 @@ WebRtc_Word32
 AudioCodingModuleImpl::UnregisterReceiveCodecSafe(
     const WebRtc_Word16 codecID)
 {
-    WebRtcNetEQDecoder *neteqDecoder = ACMCodecDB::NetEqDecoders();
+    WebRtcNetEQDecoder *neteqDecoder = ACMCodecDB::NetEQDecoders();
     WebRtc_Word16 mirrorID = ACMCodecDB::MirrorID(codecID);
     if(_codecs[codecID] != NULL)
     {
         if(_registeredPlTypes[codecID] != -1)
         {
             // before deleting the decoder instance unregister
-            // from NetEq. 
+            // from NetEQ.
             if(_netEq.RemoveCodec(neteqDecoder[codecID], _stereoReceive[codecID]) < 0)
             {
                 CodecInst codecInst;
                 ACMCodecDB::Codec(codecID, &codecInst);
                 WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id, 
-                    "Unregistering %s-%d from NetEq failed.",
+                    "Unregistering %s-%d from NetEQ failed.",
                     codecInst.plname, codecInst.plfreq);
                 return -1;
             }
       
             // CN is a special case for NetEQ, all three sampling frequencies are 
             // deletad if one is deleted
-            if(STR_CASE_CMP(ACMCodecDB::_mycodecs[codecID].plname, "CN") == 0)
+            if(STR_CASE_CMP(ACMCodecDB::database_[codecID].plname, "CN") == 0)
             {
                 // Search codecs nearby in the database to unregister all CN. 
                 for (int i=-2; i<3; i++) 
                 {
-                    if (STR_CASE_CMP(ACMCodecDB::_mycodecs[codecID+i].plname, "CN") == 0)
+                    if (STR_CASE_CMP(ACMCodecDB::database_[codecID+i].plname, "CN") == 0)
                     {
                         _codecs[codecID+i]->DestructDecoder();
                         if(_stereoReceive[codecID+i])

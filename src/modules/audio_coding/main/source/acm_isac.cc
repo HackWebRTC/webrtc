@@ -248,11 +248,6 @@ ACMISAC::UnregisterFromNetEqSafe(
     return -1;
 }
 
-bool
-ACMISAC::IsValidDefaultEncoder()
-{
-    return false;
-}
 
 WebRtc_Word16
 ACMISAC::UpdateDecoderSampFreq(
@@ -634,11 +629,11 @@ ACMISAC::InternalInitDecoder(
     // set decoder sampling frequency.
     if(codecParams->codecInstant.plfreq == 32000)
     {
-        UpdateDecoderSampFreq(ACMCodecDB::isacswb);
+        UpdateDecoderSampFreq(ACMCodecDB::kISACSWB);
     }
     else
     {
-        UpdateDecoderSampFreq(ACMCodecDB::isac);
+        UpdateDecoderSampFreq(ACMCodecDB::kISAC);
     }
 
     // in a one-way communication we may never register send-codec.
@@ -1023,11 +1018,11 @@ ACMISAC::UpdateDecoderSampFreq(
 #ifdef WEBRTC_CODEC_ISAC
     WebRtc_Word16 codecId)
 {
-    if(ACMCodecDB::isac == codecId)
+    if(ACMCodecDB::kISAC == codecId)
     {
         return WebRtcIsac_SetDecSampRate(_codecInstPtr->inst, kIsacWideband);
     }
-    else if(ACMCodecDB::isacswb == codecId)
+    else if(ACMCodecDB::kISACSWB == codecId)
     {
         return WebRtcIsac_SetDecSampRate(_codecInstPtr->inst, kIsacSuperWideband);
     }

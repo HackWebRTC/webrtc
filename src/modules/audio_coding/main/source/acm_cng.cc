@@ -25,22 +25,7 @@ ACMCNG::ACMCNG(WebRtc_Word16 codecID)
     _encoderInstPtr = NULL;
     _decoderInstPtr = NULL;
     _codecID = codecID;
-    if(_codecID == ACMCodecDB::cnNB)
-    {
-        _sampFreqHz = 8000;
-    }
-    else if(_codecID == ACMCodecDB::cnWB)
-    {
-        _sampFreqHz = 16000;
-    }
-    else if(_codecID == ACMCodecDB::cnSWB)
-    {
-        _sampFreqHz = 32000;
-    }
-    else
-    {
-        _sampFreqHz = -1;
-    }
+    _sampFreqHz = ACMCodecDB::CodecFreq(_codecID);
     return;
 }
 

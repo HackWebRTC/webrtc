@@ -339,10 +339,10 @@ private:
     bool                           _vadEnabled;
     bool                           _dtxEnabled;
     ACMVADMode                     _vadMode;
-    ACMGenericCodec*               _codecs[MAX_NR_OF_CODECS];
-    ACMGenericCodec*               _slaveCodecs[MAX_NR_OF_CODECS];
-    WebRtc_Word16                  _mirrorCodecIdx[MAX_NR_OF_CODECS];
-    bool                           _stereoReceive[MAX_NR_OF_CODECS];
+    ACMGenericCodec*               _codecs[ACMCodecDB::kMaxNumCodecs];
+    ACMGenericCodec*               _slaveCodecs[ACMCodecDB::kMaxNumCodecs];
+    WebRtc_Word16                  _mirrorCodecIdx[ACMCodecDB::kMaxNumCodecs];
+    bool                           _stereoReceive[ACMCodecDB::kMaxNumCodecs];
     bool                           _stereoSend;
     WebRtc_Word32                  _currentSendCodecIdx;
     bool                           _sendCodecRegistered;
@@ -370,7 +370,7 @@ private:
     // This keeps track of payload types associated with _codecs[].
     // We define it as signed variable and initialize with -1 to indicate 
     // unused elements. 
-    WebRtc_Word16                  _registeredPlTypes[MAX_NR_OF_CODECS];
+    WebRtc_Word16                  _registeredPlTypes[ACMCodecDB::kMaxNumCodecs];
 
     // Used when payloads are pushed into ACM without any RTP info
     // One example is when pre-encoded bit-stream is pushed from

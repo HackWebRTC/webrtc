@@ -42,21 +42,30 @@ AudioCodingModule::GetVersion(
 {
     WebRtc_Word32 len = position;
     strncpy(&version[position], "AudioCodingModule 1.3.0\n", remainingBufferInBytes);
-    position = (WebRtc_UWord32)strlen(version);
+
+    position = static_cast<WebRtc_UWord32>(strlen(version));
     remainingBufferInBytes -= (position - len);
     
+    // Get NetEQ version.
     if(ACMNetEQ::GetVersion(version,
         remainingBufferInBytes, position) < 0)
     {
         return -1;
     }
 
-    ACMCodecDB::initACMCodecDB();
+    // Set position and size before calling ACMCodecDB::CodecsVersion
+    // to get versions of all codecs.
+    size_t current_position = position;
+    size_t current_remaining_bytes = remainingBufferInBytes;
     if(ACMCodecDB::CodecsVersion(version,
-        remainingBufferInBytes, position) < 0)
+          &current_remaining_bytes, &current_position) < 0)
     {
         return -1;
     }
+
+    // Update position and size of version vector.
+    remainingBufferInBytes = current_remaining_bytes;
+    position = current_position;
     return 0;
 }
 
@@ -65,8 +74,7 @@ WebRtc_UWord8 AudioCodingModule::NumberOfCodecs()
 {
     WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, -1, 
         "NumberOfCodecs()");
-    ACMCodecDB::initACMCodecDB();
-    return (WebRtc_UWord8)ACMCodecDB::NoOfCodecs();
+    return static_cast<WebRtc_UWord8>(ACMCodecDB::kNumCodecs);
 }
 
 // Get supported codec param with id 
@@ -77,7 +85,6 @@ AudioCodingModule::Codec(
 {
     WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, -1,
         "Codec(const WebRtc_UWord8 listId, CodecInst& codec)");
-    ACMCodecDB::initACMCodecDB();
     
     // Get the codec settings for the codec with the given list ID
     return ACMCodecDB::Codec(listId, &codec);
@@ -92,11 +99,9 @@ AudioCodingModule::Codec(
 {
     WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, -1, 
         "Codec(const WebRtc_Word8* payloadName, CodecInst& codec)");
-    ACMCodecDB::initACMCodecDB();
 
     // Search through codec list for a matching name
-    for(WebRtc_Word16 codecCntr = 0; codecCntr < ACMCodecDB::NoOfCodecs();
-        codecCntr++)
+    for(int codecCntr = 0; codecCntr < ACMCodecDB::kNumCodecs; codecCntr++)
     {
         // Store codec settings for codec number "codeCntr" in the output struct
         ACMCodecDB::Codec(codecCntr, &codec);
@@ -130,12 +135,10 @@ AudioCodingModule::Codec(
 {
     WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, -1, 
         "Codec(const WebRtc_Word8* payloadName)");
-    ACMCodecDB::initACMCodecDB();
     CodecInst codec;
 
     // Search through codec list for a matching name
-    for(WebRtc_Word16 codecCntr = 0; codecCntr < ACMCodecDB::NoOfCodecs();
-        codecCntr++)
+    for(int codecCntr = 0; codecCntr < ACMCodecDB::kNumCodecs; codecCntr++)
     {
         // Temporally store codec settings for codec number "codeCntr" in "codec"
         ACMCodecDB::Codec(codecCntr, &codec);
@@ -160,13 +163,12 @@ bool
 AudioCodingModule::IsCodecValid(
     const CodecInst& codec)
 {
-    WebRtc_Word16 mirrorID;
-    WebRtc_Word8 errMsg[500];
+    int mirrorID;
+    char errMsg[500];
     
     WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, -1,
                "IsCodecValid(const CodecInst& codec)");
-    ACMCodecDB::initACMCodecDB();
-    WebRtc_Word16 codecNumber = ACMCodecDB::CodecNumber(&codec, mirrorID, errMsg, 500);
+    int codecNumber = ACMCodecDB::CodecNumber(&codec, &mirrorID, errMsg, 500);
      
     if(codecNumber < 0)
     {
