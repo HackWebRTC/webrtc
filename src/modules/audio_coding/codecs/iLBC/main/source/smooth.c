@@ -83,7 +83,7 @@ void WebRtcIlbcfix_Smooth(
   if (w11prim>64) {
     endiff = WEBRTC_SPL_LSHIFT_W32(
         (WebRtc_Word32)WebRtcSpl_DivW32W16(w00prim, w11prim), 6);
-    C = (WebRtc_Word16)WebRtcSpl_Sqrt(endiff); /* C is in Q11 */
+    C = (WebRtc_Word16)WebRtcSpl_SqrtFloor(endiff); /* C is in Q11 */
   } else {
     C = 1;
   }
@@ -164,7 +164,7 @@ void WebRtcIlbcfix_Smooth(
       }
 
       /* A sqrt( (ENH_A0-(ENH_A0^2)/4)*(w00*w00)/(w11*w00 + w10*w10) ) in Q9 */
-      A = (WebRtc_Word16)WebRtcSpl_Sqrt(WebRtcSpl_DivW32W16(num, denomW16));
+      A = (WebRtc_Word16)WebRtcSpl_SqrtFloor(WebRtcSpl_DivW32W16(num, denomW16));
 
       /* B_W32 is in Q30 ( B = 1 - ENH_A0/2 - A * w10/w00 ) */
       scale1 = 31-bitsw10;

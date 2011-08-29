@@ -251,5 +251,5 @@ WebRtc_Word16 WebRtcIlbcfix_NetEqPlc(iLBC_decinst_t *iLBCdec_inst, WebRtc_Word16
 
 void WebRtcIlbcfix_version(WebRtc_Word8 *version)
 {
-  strcpy((char*)version, "1.1.0");
+  strcpy((char*)version, "1.1.1");
 }

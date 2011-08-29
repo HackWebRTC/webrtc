@@ -65,7 +65,8 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
   WebRtc_Word16 en16[3];
   WebRtc_Word16 lagmax[3];
 
-  plc_pred = downsampled; /* Reuse memory since plc_pred[ENH_BLOCKL] and downsampled are non overlapping */
+  plc_pred = downsampled; /* Reuse memory since plc_pred[ENH_BLOCKL] and
+                              downsampled are non overlapping */
   enh_buf=iLBCdec_inst->enh_buf;
   enh_period=iLBCdec_inst->enh_period;
 
@@ -81,15 +82,18 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
   if (iLBCdec_inst->mode==30) {
     plc_blockl=ENH_BLOCKL;
     new_blocks=3;
-    startPos=320;  /* Start position for enhancement (640-new_blocks*ENH_BLOCKL-80) */
+    startPos=320;  /* Start position for enhancement
+                     (640-new_blocks*ENH_BLOCKL-80) */
   } else {
     plc_blockl=40;
     new_blocks=2;
-    startPos=440;  /* Start position for enhancement (640-new_blocks*ENH_BLOCKL-40) */
+    startPos=440;  /* Start position for enhancement
+                    (640-new_blocks*ENH_BLOCKL-40) */
   }
 
   /* Update the pitch prediction for each enhancer block, move the old ones */
-  WEBRTC_SPL_MEMMOVE_W16(enh_period, &enh_period[new_blocks], (ENH_NBLOCKS_TOT-new_blocks));
+  WEBRTC_SPL_MEMMOVE_W16(enh_period, &enh_period[new_blocks],
+                         (ENH_NBLOCKS_TOT-new_blocks));
 
   k=WebRtcSpl_DownsampleFast(
       enh_buf+ENH_BUFL-inLen,    /* Input samples */
@@ -110,7 +114,8 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
     regressor=downsampled+i-10;
 
     /* scaling */
-    max16=WebRtcSpl_MaxAbsValueW16(&regressor[-50], (WebRtc_Word16)(ENH_BLOCKL_HALF+50-1));
+    max16=WebRtcSpl_MaxAbsValueW16(&regressor[-50],
+                                   (WebRtc_Word16)(ENH_BLOCKL_HALF+50-1));
     shifts = WebRtcSpl_GetSizeInBits(WEBRTC_SPL_MUL_16_16(max16, max16)) - 25;
     shifts = WEBRTC_SPL_MAX(0, shifts);
 
@@ -138,10 +143,13 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
     /* Calculate normalized corr^2 and ener */
     for (i=0;i<3;i++) {
       corrSh = 15-WebRtcSpl_GetSizeInBits(corrmax[i]);
-      ener = WebRtcSpl_DotProductWithScale(&regressor[-lagmax[i]], &regressor[-lagmax[i]], ENH_BLOCKL_HALF, shifts);
+      ener = WebRtcSpl_DotProductWithScale(&regressor[-lagmax[i]],
+                                           &regressor[-lagmax[i]],
+                                           ENH_BLOCKL_HALF, shifts);
       enerSh = 15-WebRtcSpl_GetSizeInBits(ener);
       corr16[i] = (WebRtc_Word16)WEBRTC_SPL_SHIFT_W32(corrmax[i], corrSh);
-      corr16[i] = (WebRtc_Word16)WEBRTC_SPL_MUL_16_16_RSFT(corr16[i], corr16[i], 16);
+      corr16[i] = (WebRtc_Word16)WEBRTC_SPL_MUL_16_16_RSFT(corr16[i],
+                                                           corr16[i], 16);
       en16[i] = (WebRtc_Word16)WEBRTC_SPL_SHIFT_W32(ener, enerSh);
       totsh[i] = enerSh - WEBRTC_SPL_LSHIFT_W32(corrSh, 1);
     }
@@ -151,12 +159,14 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
     for (i=1; i<3; i++) {
       if (totsh[ind] > totsh[i]) {
         sh = WEBRTC_SPL_MIN(31, totsh[ind]-totsh[i]);
-        if ( WEBRTC_SPL_MUL_16_16(corr16[ind], en16[i]) < WEBRTC_SPL_MUL_16_16_RSFT(corr16[i], en16[ind], sh)) {
+        if ( WEBRTC_SPL_MUL_16_16(corr16[ind], en16[i]) <
+            WEBRTC_SPL_MUL_16_16_RSFT(corr16[i], en16[ind], sh)) {
           ind = i;
         }
       } else {
         sh = WEBRTC_SPL_MIN(31, totsh[i]-totsh[ind]);
-        if (WEBRTC_SPL_MUL_16_16_RSFT(corr16[ind], en16[i], sh) <  WEBRTC_SPL_MUL_16_16(corr16[i], en16[ind])) {
+        if (WEBRTC_SPL_MUL_16_16_RSFT(corr16[ind], en16[i], sh) <
+            WEBRTC_SPL_MUL_16_16(corr16[i], en16[ind])) {
           ind = i;
         }
       }
@@ -165,7 +175,8 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
     lag = lagmax[ind] + 10;
 
     /* Store the estimated lag in the non-downsampled domain */
-    enh_period[ENH_NBLOCKS_TOT-new_blocks+iblock] = (WebRtc_Word16)WEBRTC_SPL_MUL_16_16(lag, 8);
+    enh_period[ENH_NBLOCKS_TOT-new_blocks+iblock] =
+        (WebRtc_Word16)WEBRTC_SPL_MUL_16_16(lag, 8);
 
     /* Store the estimated lag for backward PLC */
     if (iLBCdec_inst->prev_enh_pl==1) {
@@ -213,7 +224,9 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
         WEBRTC_SPL_MEMCPY_W16(plc_pred, &in[lag-plc_blockl], plc_blockl);
       } else {
         WEBRTC_SPL_MEMCPY_W16(&plc_pred[plc_blockl-lag], in, lag);
-        WEBRTC_SPL_MEMCPY_W16(plc_pred, &enh_buf[ENH_BUFL-iLBCdec_inst->blockl-plc_blockl+lag], (plc_blockl-lag));
+        WEBRTC_SPL_MEMCPY_W16(
+            plc_pred, &enh_buf[ENH_BUFL-iLBCdec_inst->blockl-plc_blockl+lag],
+            (plc_blockl-lag));
       }
     } else {
       int pos;
@@ -230,23 +243,29 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
 
     if (iLBCdec_inst->prev_enh_pl==1) {
       /* limit energy change
-         if energy in backward PLC is more than 4 times higher than the forward PLC,
-         then reduce the energy in the backward PLC vector:
+         if energy in backward PLC is more than 4 times higher than the forward
+         PLC, then reduce the energy in the backward PLC vector:
          sample 1...len-16 set energy of the to 4 times forward PLC
          sample len-15..len interpolate between 4 times fw PLC and bw PLC energy
 
          Note: Compared to floating point code there is a slight change,
-         the window is 16 samples long instead of 10 samples to simplify the calculations
+         the window is 16 samples long instead of 10 samples to simplify the
+         calculations
       */
 
-      max=WebRtcSpl_MaxAbsValueW16(&enh_buf[ENH_BUFL-iLBCdec_inst->blockl-plc_blockl], plc_blockl);
+      max=WebRtcSpl_MaxAbsValueW16(
+          &enh_buf[ENH_BUFL-iLBCdec_inst->blockl-plc_blockl], plc_blockl);
       max16=WebRtcSpl_MaxAbsValueW16(plc_pred, plc_blockl);
       max = WEBRTC_SPL_MAX(max, max16);
       scale=22-(WebRtc_Word16)WebRtcSpl_NormW32(max);
       scale=WEBRTC_SPL_MAX(scale,0);
 
-      tmp2 = WebRtcSpl_DotProductWithScale(&enh_buf[ENH_BUFL-iLBCdec_inst->blockl-plc_blockl], &enh_buf[ENH_BUFL-iLBCdec_inst->blockl-plc_blockl], plc_blockl, scale);
-      tmp1 = WebRtcSpl_DotProductWithScale(plc_pred, plc_pred, plc_blockl, scale);
+      tmp2 = WebRtcSpl_DotProductWithScale(
+          &enh_buf[ENH_BUFL-iLBCdec_inst->blockl-plc_blockl],
+          &enh_buf[ENH_BUFL-iLBCdec_inst->blockl-plc_blockl],
+          plc_blockl, scale);
+      tmp1 = WebRtcSpl_DotProductWithScale(plc_pred, plc_pred,
+                                           plc_blockl, scale);
 
       /* Check the energy difference */
       if ((tmp1>0)&&((tmp1>>2)>tmp2)) {
@@ -258,23 +277,29 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
         tmp1=WEBRTC_SPL_SHIFT_W32(tmp1, (scale1-16)); /* using 15 bits */
 
         tmp2=WEBRTC_SPL_SHIFT_W32(tmp2, (scale1));
-        EnChange = (WebRtc_Word16)WebRtcSpl_DivW32W16(tmp2, (WebRtc_Word16)tmp1);
+        EnChange = (WebRtc_Word16)WebRtcSpl_DivW32W16(tmp2,
+                                                      (WebRtc_Word16)tmp1);
 
         /* Calculate the Sqrt of the energy in Q15 ((14+16)/2) */
-        SqrtEnChange = (WebRtc_Word16)WebRtcSpl_Sqrt(WEBRTC_SPL_LSHIFT_W32((WebRtc_Word32)EnChange, 14));
+        SqrtEnChange = (WebRtc_Word16)WebRtcSpl_SqrtFloor(
+            WEBRTC_SPL_LSHIFT_W32((WebRtc_Word32)EnChange, 14));
+
 
         /* Multiply first part of vector with 2*SqrtEnChange */
-        WebRtcSpl_ScaleVector(plc_pred, plc_pred, SqrtEnChange, (WebRtc_Word16)(plc_blockl-16), 14);
+        WebRtcSpl_ScaleVector(plc_pred, plc_pred, SqrtEnChange,
+                              (WebRtc_Word16)(plc_blockl-16), 14);
 
         /* Calculate increase parameter for window part (16 last samples) */
-        inc=(2048-WEBRTC_SPL_RSHIFT_W16(SqrtEnChange, 3)); /* (1-2*SqrtEnChange)/16 in Q15 */
+        /* (1-2*SqrtEnChange)/16 in Q15 */
+        inc=(2048-WEBRTC_SPL_RSHIFT_W16(SqrtEnChange, 3));
 
         win=0;
         tmpW16ptr=&plc_pred[plc_blockl-16];
 
         for (i=16;i>0;i--) {
-          (*tmpW16ptr)=(WebRtc_Word16)WEBRTC_SPL_MUL_16_16_RSFT((*tmpW16ptr),
-                                                                (SqrtEnChange+(win>>1)), 14); /* multiply by (2.0*SqrtEnChange+win) */
+          (*tmpW16ptr)=(WebRtc_Word16)WEBRTC_SPL_MUL_16_16_RSFT(
+              (*tmpW16ptr), (SqrtEnChange+(win>>1)), 14);
+          /* multiply by (2.0*SqrtEnChange+win) */
 
           win += inc;
           tmpW16ptr++;
@@ -294,8 +319,10 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
       enh_bufPtr1=&enh_buf[ENH_BUFL-1-iLBCdec_inst->blockl];
       for (i=0; i<plc_blockl; i++) {
         win+=inc;
-        *enh_bufPtr1 = (WebRtc_Word16)WEBRTC_SPL_MUL_16_16_RSFT((*enh_bufPtr1), win, 14);
-        *enh_bufPtr1 += (WebRtc_Word16)WEBRTC_SPL_MUL_16_16_RSFT((16384-win), plc_pred[plc_blockl-1-i], 14);
+        *enh_bufPtr1 =
+            (WebRtc_Word16)WEBRTC_SPL_MUL_16_16_RSFT((*enh_bufPtr1), win, 14);
+        *enh_bufPtr1 += (WebRtc_Word16)WEBRTC_SPL_MUL_16_16_RSFT(
+                (16384-win), plc_pred[plc_blockl-1-i], 14);
         enh_bufPtr1--;
       }
     } else {
@@ -310,20 +337,28 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
       WebRtcSpl_MemSetW16(iLBCdec_inst->hpimemx, 0, 2);
 
       /* Initialize filter memory by filtering through 2 lags */
-      WEBRTC_SPL_MEMCPY_W16(&synt[-LPC_FILTERORDER], iLBCdec_inst->syntMem, LPC_FILTERORDER);
+      WEBRTC_SPL_MEMCPY_W16(&synt[-LPC_FILTERORDER], iLBCdec_inst->syntMem,
+                            LPC_FILTERORDER);
       WebRtcSpl_FilterARFastQ12(
-          enh_bufPtr1, synt,
-          &iLBCdec_inst->old_syntdenum[(iLBCdec_inst->nsub-1)*(LPC_FILTERORDER+1)], LPC_FILTERORDER+1, (WebRtc_Word16)lag);
+          enh_bufPtr1,
+          synt,
+          &iLBCdec_inst->old_syntdenum[
+                                       (iLBCdec_inst->nsub-1)*(LPC_FILTERORDER+1)],
+                                       LPC_FILTERORDER+1, (WebRtc_Word16)lag);
 
-      WEBRTC_SPL_MEMCPY_W16(&synt[-LPC_FILTERORDER], &synt[lag-LPC_FILTERORDER], LPC_FILTERORDER);
+      WEBRTC_SPL_MEMCPY_W16(&synt[-LPC_FILTERORDER], &synt[lag-LPC_FILTERORDER],
+                            LPC_FILTERORDER);
       WebRtcIlbcfix_HpOutput(synt, (WebRtc_Word16*)WebRtcIlbcfix_kHpOutCoefs,
                              iLBCdec_inst->hpimemy, iLBCdec_inst->hpimemx,
                              (WebRtc_Word16)lag);
       WebRtcSpl_FilterARFastQ12(
           enh_bufPtr1, synt,
-          &iLBCdec_inst->old_syntdenum[(iLBCdec_inst->nsub-1)*(LPC_FILTERORDER+1)], LPC_FILTERORDER+1, (WebRtc_Word16)lag);
+          &iLBCdec_inst->old_syntdenum[
+                                       (iLBCdec_inst->nsub-1)*(LPC_FILTERORDER+1)],
+                                       LPC_FILTERORDER+1, (WebRtc_Word16)lag);
 
-      WEBRTC_SPL_MEMCPY_W16(iLBCdec_inst->syntMem, &synt[lag-LPC_FILTERORDER], LPC_FILTERORDER);
+      WEBRTC_SPL_MEMCPY_W16(iLBCdec_inst->syntMem, &synt[lag-LPC_FILTERORDER],
+                            LPC_FILTERORDER);
       WebRtcIlbcfix_HpOutput(synt, (WebRtc_Word16*)WebRtcIlbcfix_kHpOutCoefs,
                              iLBCdec_inst->hpimemy, iLBCdec_inst->hpimemx,
                              (WebRtc_Word16)lag);
@@ -334,9 +369,12 @@ int WebRtcIlbcfix_EnhancerInterface( /* (o) Estimated lag in end of in[] */
   /* Perform enhancement block by block */
 
   for (iblock = 0; iblock<new_blocks; iblock++) {
-    WebRtcIlbcfix_Enhancer(out+WEBRTC_SPL_MUL_16_16(iblock, ENH_BLOCKL), enh_buf,
-                           ENH_BUFL, (WebRtc_Word16)(WEBRTC_SPL_MUL_16_16(iblock, ENH_BLOCKL)+startPos),
-                           enh_period, (WebRtc_Word16*)WebRtcIlbcfix_kEnhPlocs, ENH_NBLOCKS_TOT);
+    WebRtcIlbcfix_Enhancer(out+WEBRTC_SPL_MUL_16_16(iblock, ENH_BLOCKL),
+                           enh_buf,
+                           ENH_BUFL,
+                           (WebRtc_Word16)(WEBRTC_SPL_MUL_16_16(iblock, ENH_BLOCKL)+startPos),
+                           enh_period,
+                           (WebRtc_Word16*)WebRtcIlbcfix_kEnhPlocs, ENH_NBLOCKS_TOT);
   }
 
   return (lag);
