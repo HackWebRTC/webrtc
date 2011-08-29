@@ -449,8 +449,12 @@ bool WebRtcVoiceEngine::SetOptions(int options) {
     LOG_RTCERR1(SetEcStatus, aec);
     return false;
   }
+  // TODO (perkj):
+  // This sets the AGC to use digital AGC since analog AGC can't be supported on
+  // Chromium at the moment. Change back to analog when it can.
+  if (voe_wrapper_->processing()->SetAgcStatus(
+      agc, webrtc::kAgcAdaptiveDigital) == -1) {
 
-  if (voe_wrapper_->processing()->SetAgcStatus(agc) == -1) {
     LOG_RTCERR1(SetAgcStatus, agc);
     return false;
   }
