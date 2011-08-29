@@ -15,6 +15,19 @@
 
 using namespace webrtc;
 
+// Normal Distribution
+#define PI  3.14159265
+double
+NormalDist(double mean, double stdDev)
+{
+    // Creating a Normal distribution variable from two independent uniform
+    // variables based on the Box-Muller transform
+    double uniform1 = (std::rand() + 1.0) / (RAND_MAX + 1.0);
+    double uniform2 = (std::rand() + 1.0) / (RAND_MAX + 1.0);
+    return (mean + stdDev * sqrt(-2 * log(uniform1)) * cos(2 * PI * uniform2));
+}
+
+
 /******************************
  *  VCMEncodeCompleteCallback
  *****************************/
@@ -199,6 +212,7 @@ RTPSendCompleteCallback::RTPSendCompleteCallback(RtpRtcp* rtp,
     _lossPct(0),
     _burstLength(0),
     _networkDelayMs(0),
+    _jitterVar(0),
     _prevLossState(0),
     _totalSentLength(0),
     _rtpPackets(),
@@ -307,8 +321,13 @@ RTPSendCompleteCallback::SendPacket(int channel, const void *data, int len)
         rtpPacket* newPacket = new rtpPacket();
         memcpy(newPacket->data, data, len);
         newPacket->length = len;
-        // Simulate receive time
-        newPacket->receiveTime = now + _networkDelayMs;
+        // Simulate receive time = network delay + packet jitter
+        // simulated as a Normal distribution random variable with
+        // mean = networkDelay and variance = jitterVar
+        WebRtc_Word32
+        simulatedDelay = (WebRtc_Word32)NormalDist(_networkDelayMs,
+                                                   sqrt(_jitterVar));
+        newPacket->receiveTime = now + simulatedDelay;
         _rtpPackets.PushBack(newPacket);
     }
 

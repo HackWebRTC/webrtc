@@ -208,6 +208,9 @@ public:
     // Set network delay in the network
     void SetNetworkDelay(WebRtc_UWord32 networkDelayMs)
                         {_networkDelayMs = networkDelayMs;};
+    // Set Packet jitter delay
+    void SetJitterVar(WebRtc_UWord32 jitterVar)
+                      {_jitterVar = jitterVar;};
     // Return send count
     int SendCount() {return _sendCount; }
     // Return accumulated length in bytes of transmitted packets
@@ -221,6 +224,7 @@ private:
     double                  _lossPct;
     double                  _burstLength;
     WebRtc_UWord32          _networkDelayMs;
+    double                  _jitterVar;
     bool                    _prevLossState;
     WebRtc_UWord32          _totalSentLength;
     webrtc::ListWrapper     _rtpPackets;
