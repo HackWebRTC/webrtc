@@ -28,11 +28,14 @@
         '../interface/cpu_wrapper.h',
         '../interface/cpu_features_wrapper.h',
         '../interface/critical_section_wrapper.h',
+        '../interface/data_log.h',
+        '../interface/data_log_impl.h',
         '../interface/event_wrapper.h',
         '../interface/file_wrapper.h',
         '../interface/list_wrapper.h',
         '../interface/map_wrapper.h',
         '../interface/rw_lock_wrapper.h',
+        '../interface/scoped_ptr.h',
         '../interface/sort.h',
         '../interface/thread_wrapper.h',
         '../interface/tick_util.h',
@@ -83,6 +86,15 @@
             'trace_posix.cc',
           ],
         }],
+        ['enable_data_logging==1', {
+          'sources': [
+            'data_log.cc',
+          ],
+        },{
+          'sources': [
+            'data_log_dummy.cc',
+          ],
+        },],
         ['OS=="linux"', {
           'sources': [
             'cpu_linux.cc',

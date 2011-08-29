@@ -27,6 +27,10 @@
     # TODO(ajm): we'd like to set this based on the target OS/architecture.
     'prefer_fixed_point%': 0,
 
+    # Enable data logging. Produces text files with data logged within engines
+    # which can be easily parsed for offline processing.
+    'enable_data_logging%': 0,
+
     'conditions': [
       ['OS=="win"', {
         # TODO(ajm, perkj): does this need to be here?

@@ -25,6 +25,14 @@
       'sources': [
         'list_unittest.cc',
         'map_unittest.cc',
+        'data_log_helpers_unittest.cc',
+      ],
+      'conditions': [
+        ['enable_data_logging==1', {
+          'sources': [
+            'data_log_unittest.cc',
+          ],
+        },],
       ],
     },
   ],
