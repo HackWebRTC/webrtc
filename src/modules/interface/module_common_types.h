@@ -37,18 +37,30 @@ struct RTPAudioHeader
 
 struct RTPVideoHeaderH263
 {
+    void InitRTPVideoHeaderH263() {};
     bool independentlyDecodable;  // H.263-1998 if no P bit it's not independently decodable
     bool bits;                    // H.263 mode B, Xor the lasy byte of previus packet with the
                                   // first byte of this packet
 };
 enum {kNoPictureId = -1};
+enum {kNoTl0PicIdx = -1};
+enum {kNoTemporalIdx = -1};
 struct RTPVideoHeaderVP8
 {
-    bool           startBit;        // Start of partition.
-    bool           stopBit;         // Stop of partition.
+    void InitRTPVideoHeaderVP8()
+    {
+        nonReference = false;
+        pictureId = kNoPictureId;
+        tl0PicIdx = kNoTl0PicIdx;
+        temporalIdx = kNoTemporalIdx;
+    }
+
+    bool           nonReference;    // Frame is discardable.
     WebRtc_Word16  pictureId;       // Picture ID index, 15 bits;
                                     // kNoPictureId if PictureID does not exist.
-    bool           nonReference;    // Frame is discardable.
+    WebRtc_Word16  tl0PicIdx;       // TL0PIC_IDX, 8 bits;
+                                    // kNoTl0PicIdx means no value provided.
+    WebRtc_Word8   temporalIdx;     // Temporal layer index, or kNoTemporalIdx.
 };
 union RTPVideoTypeHeader
 {

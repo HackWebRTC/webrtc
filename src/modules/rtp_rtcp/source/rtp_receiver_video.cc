@@ -14,7 +14,6 @@
 
 #include "rtp_receiver_video.h"
 
-#include "trace.h"
 #include "critical_section_wrapper.h"
 #include "tick_util.h"
 
@@ -466,7 +465,8 @@ RTPReceiverVideo::ReceiveH263Codec(WebRtcRTPHeader* rtpHeader,
 {
     ModuleRTPUtility::RTPPayloadParser rtpPayloadParser(kRtpH263Video,
                                                         payloadData,
-                                                        payloadDataLength);
+                                                        payloadDataLength,
+                                                        _id);
     ModuleRTPUtility::RTPPayload parsedPacket;
     const bool success = rtpPayloadParser.Parse(parsedPacket);
 
@@ -491,7 +491,8 @@ RTPReceiverVideo::ReceiveH2631998Codec(WebRtcRTPHeader* rtpHeader,
 {
     ModuleRTPUtility::RTPPayloadParser rtpPayloadParser(kRtpH2631998Video,
                                                         payloadData,
-                                                        payloadDataLength);
+                                                        payloadDataLength,
+                                                        _id);
 
     ModuleRTPUtility::RTPPayload parsedPacket;
     const bool success = rtpPayloadParser.Parse(parsedPacket);
@@ -581,7 +582,8 @@ RTPReceiverVideo::ReceiveMPEG4Codec(WebRtcRTPHeader* rtpHeader,
 {
     ModuleRTPUtility::RTPPayloadParser rtpPayloadParser(kRtpMpeg4Video,
                                                         payloadData,
-                                                        payloadDataLength);
+                                                        payloadDataLength,
+                                                        _id);
 
     ModuleRTPUtility::RTPPayload parsedPacket;
     const bool success = rtpPayloadParser.Parse(parsedPacket);
@@ -612,7 +614,8 @@ RTPReceiverVideo::ReceiveVp8Codec(WebRtcRTPHeader* rtpHeader,
 {
     ModuleRTPUtility::RTPPayloadParser rtpPayloadParser(kRtpVp8Video,
                                                         payloadData,
-                                                        payloadDataLength);
+                                                        payloadDataLength,
+                                                        _id);
 
     ModuleRTPUtility::RTPPayload parsedPacket;
     const bool success = rtpPayloadParser.Parse(parsedPacket);
@@ -631,10 +634,17 @@ RTPReceiverVideo::ReceiveVp8Codec(WebRtcRTPHeader* rtpHeader,
     }
     rtpHeader->frameType = (parsedPacket.frameType == ModuleRTPUtility::kIFrame) ? kVideoFrameKey : kVideoFrameDelta;
 
-    rtpHeader->type.Video.codecHeader.VP8.startBit = parsedPacket.info.VP8.startFragment;   // Start of partition
-    rtpHeader->type.Video.codecHeader.VP8.stopBit= parsedPacket.info.VP8.stopFragment;    // Stop of partition
+    RTPVideoHeaderVP8 *toHeader = &rtpHeader->type.Video.codecHeader.VP8;
+    ModuleRTPUtility::RTPPayloadVP8 *fromHeader = &parsedPacket.info.VP8;
 
-    rtpHeader->type.Video.isFirstPacket = parsedPacket.info.VP8.beginningOfFrame;
+    rtpHeader->type.Video.isFirstPacket = fromHeader->beginningOfPartition
+        && (fromHeader->partitionID == 0);
+    toHeader->pictureId = fromHeader->hasPictureID ? fromHeader->pictureID :
+                          kNoPictureId;
+    toHeader->tl0PicIdx = fromHeader->hasTl0PicIdx ? fromHeader->tl0PicIdx :
+                          kNoTl0PicIdx;
+    toHeader->temporalIdx = fromHeader->hasTID ? fromHeader->tID :
+                            kNoTemporalIdx;
 
     if(CallbackOfReceivedPayloadData(parsedPacket.info.VP8.data,
                                      parsedPacket.info.VP8.dataLength,

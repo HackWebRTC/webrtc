@@ -35,11 +35,12 @@ RtpFormatVp8::RtpFormatVp8(const WebRtc_UWord8* payload_data,
       part_ix_(0),
       beginning_(true),
       first_fragment_(true),
-      vp8_header_bytes_(1),
+      vp8_fixed_payload_descriptor_bytes_(1),
       aggr_mode_(aggr_modes_[mode]),
       balance_(balance_modes_[mode]),
       separate_first_(separate_first_modes_[mode]),
-      hdr_info_(hdr_info)
+      hdr_info_(hdr_info),
+      first_partition_in_packet_(0)
 {
     part_info_ = fragmentation;
 }
@@ -54,11 +55,12 @@ RtpFormatVp8::RtpFormatVp8(const WebRtc_UWord8* payload_data,
       part_ix_(0),
       beginning_(true),
       first_fragment_(true),
-      vp8_header_bytes_(1),
+      vp8_fixed_payload_descriptor_bytes_(1),
       aggr_mode_(aggr_modes_[kSloppy]),
       balance_(balance_modes_[kSloppy]),
       separate_first_(separate_first_modes_[kSloppy]),
-      hdr_info_(hdr_info)
+      hdr_info_(hdr_info),
+      first_partition_in_packet_(0)
 {
     part_info_.VerifyAndAllocateFragmentationHeader(1);
     part_info_.fragmentationLength[0] = payload_size;
@@ -97,14 +99,22 @@ int RtpFormatVp8::CalcNextSize(int max_payload_len, int remaining_bytes,
 int RtpFormatVp8::NextPacket(int max_payload_len, WebRtc_UWord8* buffer,
                              int* bytes_to_send, bool* last_packet)
 {
+    if (max_payload_len < vp8_fixed_payload_descriptor_bytes_
+            + PayloadDescriptorExtraLength() + 1)
+    {
+        // The provided payload length is not long enough for the payload
+        // descriptor and one payload byte. Return an error.
+        return -1;
+    }
     const int num_partitions = part_info_.fragmentationVectorSize;
     int send_bytes = 0; // How much data to send in this packet.
     bool split_payload = true; // Splitting of partitions is initially allowed.
     int remaining_in_partition = part_info_.fragmentationOffset[part_ix_] -
         payload_bytes_sent_ + part_info_.fragmentationLength[part_ix_] +
-        FirstHeaderExtraLength(); // Add header extra length to payload length.
-    int rem_payload_len = max_payload_len - vp8_header_bytes_;
-    const int first_partition_in_packet = part_ix_;
+        PayloadDescriptorExtraLength();
+    int rem_payload_len = max_payload_len - vp8_fixed_payload_descriptor_bytes_;
+    first_partition_in_packet_ = part_ix_;
+    if (first_partition_in_packet_ > 8) return -1;
 
     while (int next_size = CalcNextSize(rem_payload_len, remaining_in_partition,
         split_payload))
@@ -141,67 +151,117 @@ int RtpFormatVp8::NextPacket(int max_payload_len, WebRtc_UWord8* buffer,
         ++part_ix_; // Advance to next partition.
     }
 
-    send_bytes -= FirstHeaderExtraLength(); // Remove the extra length again.
+    send_bytes -= PayloadDescriptorExtraLength(); // Remove extra length again.
     assert(send_bytes > 0);
-    const bool end_of_fragment = (remaining_in_partition == 0);
     // Write the payload header and the payload to buffer.
-    *bytes_to_send = WriteHeaderAndPayload(send_bytes, end_of_fragment, buffer,
-        max_payload_len);
+    *bytes_to_send = WriteHeaderAndPayload(send_bytes, buffer, max_payload_len);
     if (*bytes_to_send < 0)
     {
         return -1;
     }
 
+    beginning_ = false; // Next packet cannot be first packet in frame.
+    // Next packet starts new fragment if this ended one.
+    first_fragment_ = (remaining_in_partition == 0);
     *last_packet = (payload_bytes_sent_ >= payload_size_);
     assert(!*last_packet || (payload_bytes_sent_ == payload_size_));
-    return first_partition_in_packet;
+    return first_partition_in_packet_;
 }
 
 int RtpFormatVp8::WriteHeaderAndPayload(int payload_bytes,
-                                        bool end_of_fragment,
                                         WebRtc_UWord8* buffer,
                                         int buffer_length)
 {
-    // Write the VP8 payload header.
-    //  0                   1                   2
-    //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3
-    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-    // | RSV |I|N|FI |B|   PictureID (1 or 2 octets)   |
-    // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    // Write the VP8 payload descriptor.
+    //     0
+    //     0 1 2 3 4 5 6 7 8
+    //    +-+-+-+-+-+-+-+-+-+
+    //    |X| |N|S| PART_ID |
+    //    +-+-+-+-+-+-+-+-+-+
+    // X: |I|L|T|           | (mandatory if any of the below are used)
+    //    +-+-+-+-+-+-+-+-+-+
+    // I: |PictureID (8/16b)| (optional)
+    //    +-+-+-+-+-+-+-+-+-+
+    // L: |   TL0PIC_IDX    | (optional)
+    //    +-+-+-+-+-+-+-+-+-+
+    // T: | TID |           | (optional)
+    //    +-+-+-+-+-+-+-+-+-+
 
-    if (payload_bytes < 0)
-    {
-        return -1;
-    }
-    if (payload_bytes_sent_ + payload_bytes > payload_size_)
-    {
-        return -1;
-    }
+    assert(payload_bytes > 0);
+    assert(payload_bytes_sent_ + payload_bytes <= payload_size_);
+    assert(vp8_fixed_payload_descriptor_bytes_ + PayloadDescriptorExtraLength()
+            + payload_bytes <= buffer_length);
 
     buffer[0] = 0;
-    if (hdr_info_.nonReference) buffer[0] |= (0x01 << 3); // N
-    buffer[0] |= (GetFIFlag(end_of_fragment) << 1); // FI
-    if (beginning_) buffer[0] |= 0x01; // B
+    if (XFieldPresent())        buffer[0] |= kXBit;
+    if (hdr_info_.nonReference) buffer[0] |= kNBit;
+    if (first_fragment_)        buffer[0] |= kSBit;
+    buffer[0] |= (first_partition_in_packet_ & kPartIdField);
 
-    int pic_id_len = WritePictureID(&buffer[vp8_header_bytes_],
-        buffer_length - vp8_header_bytes_);
-    if (pic_id_len < 0) return pic_id_len; // error
-    if (pic_id_len > 0) buffer[0] |= (0x01 << 4); // I
+    const int extension_length = WriteExtensionFields(buffer, buffer_length);
 
-    if (vp8_header_bytes_ + pic_id_len + payload_bytes > buffer_length)
-    {
-        return -1;
-    }
-    memcpy(&buffer[vp8_header_bytes_ + pic_id_len],
+    memcpy(&buffer[vp8_fixed_payload_descriptor_bytes_ + extension_length],
         &payload_data_[payload_bytes_sent_], payload_bytes);
 
-    beginning_ = false; // next packet cannot be first packet in frame
-    // next packet starts new fragment if this ended one
-    first_fragment_ = end_of_fragment;
     payload_bytes_sent_ += payload_bytes;
 
     // Return total length of written data.
-    return payload_bytes + vp8_header_bytes_ + pic_id_len;
+    return payload_bytes + vp8_fixed_payload_descriptor_bytes_
+            + extension_length;
+}
+
+int RtpFormatVp8::WriteExtensionFields(WebRtc_UWord8* buffer, int buffer_length)
+const
+{
+    int extension_length = 0;
+    if (XFieldPresent())
+    {
+        WebRtc_UWord8* x_field = buffer + vp8_fixed_payload_descriptor_bytes_;
+        *x_field = 0;
+        extension_length = 1; // One octet for the X field.
+        if (PictureIdPresent())
+        {
+            if (WritePictureIDFields(x_field, buffer, buffer_length,
+                    &extension_length) < 0)
+            {
+                return -1;
+            }
+        }
+        if (TL0PicIdxFieldPresent())
+        {
+            if (WriteTl0PicIdxFields(x_field, buffer, buffer_length,
+                    &extension_length) < 0)
+            {
+                return -1;
+            }
+        }
+        if (TIDFieldPresent())
+        {
+            if (WriteTIDFields(x_field, buffer, buffer_length,
+                    &extension_length) < 0)
+            {
+                return -1;
+            }
+        }
+        assert(extension_length == PayloadDescriptorExtraLength());
+    }
+    return extension_length;
+}
+
+
+int RtpFormatVp8::WritePictureIDFields(WebRtc_UWord8* x_field,
+                                       WebRtc_UWord8* buffer,
+                                       int buffer_length,
+                                       int* extension_length) const
+{
+    *x_field |= kIBit;
+    const int pic_id_length = WritePictureID(
+            buffer + vp8_fixed_payload_descriptor_bytes_ + *extension_length,
+            buffer_length - vp8_fixed_payload_descriptor_bytes_
+                    - *extension_length);
+    if (pic_id_length < 0) return -1;
+    *extension_length += pic_id_length;
+    return 0;
 }
 
 int RtpFormatVp8::WritePictureID(WebRtc_UWord8* buffer, int buffer_length) const
@@ -209,7 +269,7 @@ int RtpFormatVp8::WritePictureID(WebRtc_UWord8* buffer, int buffer_length) const
     const WebRtc_UWord16 pic_id =
         static_cast<WebRtc_UWord16> (hdr_info_.pictureId);
     int picture_id_len = PictureIdLength();
-    if (picture_id_len > buffer_length) return -1; // error
+    if (picture_id_len > buffer_length) return -1;
     if (picture_id_len == 2)
     {
         buffer[0] = 0x80 | ((pic_id >> 8) & 0x7F);
@@ -222,17 +282,51 @@ int RtpFormatVp8::WritePictureID(WebRtc_UWord8* buffer, int buffer_length) const
     return picture_id_len;
 }
 
-int RtpFormatVp8::FirstHeaderExtraLength() const
+int RtpFormatVp8::WriteTl0PicIdxFields(WebRtc_UWord8* x_field,
+                                       WebRtc_UWord8* buffer,
+                                       int buffer_length,
+                                       int* extension_length) const
+{
+    if (buffer_length < vp8_fixed_payload_descriptor_bytes_ + *extension_length
+            + 1)
+    {
+        return -1;
+    }
+    *x_field |= kLBit;
+    buffer[vp8_fixed_payload_descriptor_bytes_
+           + *extension_length] = hdr_info_.tl0PicIdx;
+    ++*extension_length;
+    return 0;
+}
+
+int RtpFormatVp8::WriteTIDFields(WebRtc_UWord8* x_field,
+                                 WebRtc_UWord8* buffer,
+                                 int buffer_length,
+                                 int* extension_length) const
+{
+    if (buffer_length < vp8_fixed_payload_descriptor_bytes_ + *extension_length
+            + 1)
+    {
+        return -1;
+    }
+    *x_field |= kTBit;
+    buffer[vp8_fixed_payload_descriptor_bytes_ + *extension_length]
+        = hdr_info_.temporalIdx << 5;
+    ++*extension_length;
+    return 0;
+}
+
+int RtpFormatVp8::PayloadDescriptorExtraLength() const
 {
     if (!beginning_)
     {
         return 0;
     }
-    int length = 0;
-
-    length += PictureIdLength();
-
-    return length;
+    int length_bytes = PictureIdLength();
+    if (TL0PicIdxFieldPresent()) ++length_bytes;
+    if (TIDFieldPresent())       ++length_bytes;
+    if (length_bytes > 0)        ++length_bytes; // Include the extension field.
+    return length_bytes;
 }
 
 int RtpFormatVp8::PictureIdLength() const
@@ -251,19 +345,19 @@ int RtpFormatVp8::PictureIdLength() const
     }
 }
 
-int RtpFormatVp8::GetFIFlag(bool end_of_fragment) const
+bool RtpFormatVp8::XFieldPresent() const
 {
-    if (first_fragment_ && end_of_fragment) {
-        return 0x0;
-    }
-    if (first_fragment_ && !end_of_fragment) {
-        return 0x1;
-    }
-    if (!first_fragment_ && !end_of_fragment) {
-        return 0x2;
-    }
-    // if (!first_fragment_ && end_of_fragment)
-    return 0x3;
+    return (TIDFieldPresent() || TL0PicIdxFieldPresent() || PictureIdPresent());
+}
+
+bool RtpFormatVp8::TIDFieldPresent() const
+{
+    return (hdr_info_.temporalIdx != kNoTemporalIdx);
+}
+
+bool RtpFormatVp8::TL0PicIdxFieldPresent() const
+{
+    return (hdr_info_.tl0PicIdx != kNoTl0PicIdx);
 }
 
 } // namespace webrtc

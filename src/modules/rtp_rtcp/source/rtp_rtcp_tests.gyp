@@ -23,8 +23,23 @@
         '.',
       ],
       'sources': [
-        'rtp_format_vp8_unittest.h',
         'rtp_format_vp8_unittest.cc',
+      ],
+    },
+
+    {
+      'target_name': 'rtp_utility_test',
+      'type': 'executable',
+      'dependencies': [
+        'rtp_rtcp.gyp:rtp_rtcp',
+        '../../../../testing/gtest.gyp:gtest',
+        '../../../../testing/gtest.gyp:gtest_main',
+      ],
+      'include_dirs': [
+        '.',
+      ],
+      'sources': [
+        'rtp_utility_test.cc',
       ],
     },
   ],

@@ -14,6 +14,8 @@
 #include <cmath>   // ceil
 #include <cassert>
 
+#include "trace.h"
+
 #if defined(_WIN32)
     #include <Windows.h> // FILETIME
     #include <WinSock.h> // timeval
@@ -374,12 +376,15 @@ ModuleRTPUtility::RTPPayload::SetType(RtpVideoCodecTypes videoType)
     }
     case kRtpVp8Video:
     {
-        info.VP8.beginningOfFrame = false;
         info.VP8.nonReferenceFrame = false;
+        info.VP8.beginningOfPartition = false;
+        info.VP8.partitionID = 0;
         info.VP8.hasPictureID = false;
-        info.VP8.fragments = false;
-        info.VP8.startFragment = false;
-        info.VP8.stopFragment = false;
+        info.VP8.hasTl0PicIdx = false;
+        info.VP8.hasTID = false;
+        info.VP8.pictureID = -1;
+        info.VP8.tl0PicIdx = -1;
+        info.VP8.tID = -1;
         break;
     }
     default:
@@ -581,10 +586,13 @@ ModuleRTPUtility::RTPHeaderParser::Parse(WebRtcRTPHeader& parsedPacket) const
 }
 
 // RTP payload parser
-ModuleRTPUtility::RTPPayloadParser::RTPPayloadParser(const RtpVideoCodecTypes videoType,
-                                                     const WebRtc_UWord8* payloadData,
-                                                     const WebRtc_UWord16 payloadDataLength)
+ModuleRTPUtility::RTPPayloadParser::RTPPayloadParser(
+        const RtpVideoCodecTypes videoType,
+        const WebRtc_UWord8* payloadData,
+        const WebRtc_UWord16 payloadDataLength,
+        const WebRtc_Word32 id)
     :
+    _id(id),
     _dataPtr(payloadData),
     _dataLength(payloadDataLength),
     _videoType(videoType)
@@ -793,61 +801,174 @@ ModuleRTPUtility::RTPPayloadParser::ParseMPEG4(
     return true;
 }
 
+
+//
+// VP8 format:
+//
+// Payload descriptor
+//     0 1 2 3 4 5 6 7
+//    +-+-+-+-+-+-+-+-+
+//    |X|R|N|S|PartID | (REQUIRED)
+//    +-+-+-+-+-+-+-+-+
+// X: |I|L|T|  RSV-A  | (OPTIONAL)
+//    +-+-+-+-+-+-+-+-+
+// I: |   PictureID   | (OPTIONAL)
+//    +-+-+-+-+-+-+-+-+
+// L: |   TL0PICIDX   | (OPTIONAL)
+//    +-+-+-+-+-+-+-+-+
+// T: | TID |  RSV-B  | (OPTIONAL)
+//    +-+-+-+-+-+-+-+-+
+//
+// Payload header (considered part of the actual payload, sent to decoder)
+//     0 1 2 3 4 5 6 7
+//    +-+-+-+-+-+-+-+-+
+//    |Size0|H| VER |P|
+//    +-+-+-+-+-+-+-+-+
+//    |      ...      |
+//    +               +
+
 bool
 ModuleRTPUtility::RTPPayloadParser::ParseVP8(RTPPayload& parsedPacket) const
 {
-    parsedPacket.info.VP8.hasPictureID = (_dataPtr[0] & 0x10)?true:false;
-    parsedPacket.info.VP8.nonReferenceFrame = (_dataPtr[0] & 0x08)?true:false;
-    parsedPacket.info.VP8.fragments = (_dataPtr[0] & 0x06)?true:false;
-    parsedPacket.info.VP8.beginningOfFrame = (_dataPtr[0] & 0x01)?true:false;
+    RTPPayloadVP8 *vp8 = &parsedPacket.info.VP8;
+    const WebRtc_UWord8 *dataPtr = _dataPtr;
+    int dataLength = _dataLength;
 
-    if(parsedPacket.info.VP8.fragments)
+    // Parse mandatory first byte of payload descriptor
+    bool extension =            (*dataPtr & 0x80); // X bit
+    vp8->nonReferenceFrame =    (*dataPtr & 0x20); // N bit
+    vp8->beginningOfPartition = (*dataPtr & 0x10); // S bit
+    vp8->partitionID =          (*dataPtr & 0x0F); // PartID field
+
+    // Advance dataPtr and decrease remaining payload size
+    dataPtr++;
+    dataLength--;
+
+    if (extension)
     {
-        WebRtc_UWord8 fragments = (_dataPtr[0] >> 1) & 0x03;
-        if( fragments == 1)
-        {
-            parsedPacket.info.VP8.startFragment = true;
-            parsedPacket.info.VP8.stopFragment = false;
-        } else if(fragments == 3)
-        {
-            parsedPacket.info.VP8.startFragment = false;
-            parsedPacket.info.VP8.stopFragment = true;
-        } else
-        {
-            parsedPacket.info.VP8.startFragment = false;
-            parsedPacket.info.VP8.stopFragment = false;
-        }
-    } else
-    {
-        parsedPacket.info.VP8.startFragment = true;
-        parsedPacket.info.VP8.stopFragment = true;
+        const int parsedBytes = ParseVP8Extension(vp8, dataPtr, dataLength);
+        if (parsedBytes < 0) return false;
+        dataPtr += parsedBytes;
+        dataLength -= parsedBytes;
     }
-    if(parsedPacket.info.VP8.hasPictureID)
-    {
-        WebRtc_UWord8 numBytesPictureId = 1;
-        while(_dataPtr[numBytesPictureId] & 0x80)
-        {
-            numBytesPictureId++;
-        }
 
-        parsedPacket.frameType = (_dataPtr[1+numBytesPictureId] & 0x01) ? kPFrame : kIFrame;   // first bit after picture id
-
-        if(!parsedPacket.info.VP8.startFragment)
-        {
-            // if not start fragment parse away all picture IDs
-            parsedPacket.info.VP8.hasPictureID = false;
-            parsedPacket.info.VP8.data       = _dataPtr+numBytesPictureId;
-            parsedPacket.info.VP8.dataLength = _dataLength-numBytesPictureId;
-            return true;
-        }
-    } else
+    if (dataLength <= 0)
     {
-        parsedPacket.frameType = (_dataPtr[1] & 0x01) ? kPFrame : kIFrame;   // first bit after picture id
+        WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
+                "Error parsing VP8 payload descriptor; payload too short");
+        return false;
     }
-    parsedPacket.info.VP8.data       = _dataPtr+1;
-    parsedPacket.info.VP8.dataLength = _dataLength-1;
+
+    // Read P bit from payload header (only at beginning of first partition)
+    if (dataLength > 0 && vp8->beginningOfPartition && vp8->partitionID == 0)
+    {
+        parsedPacket.frameType = (*dataPtr & 0x01) ? kPFrame : kIFrame;
+    }
+    else
+    {
+        parsedPacket.frameType = kPFrame;
+    }
+
+    parsedPacket.info.VP8.data       = dataPtr;
+    parsedPacket.info.VP8.dataLength = dataLength;
 
     return true;
+}
+
+int
+ModuleRTPUtility::RTPPayloadParser::ParseVP8Extension(
+        RTPPayloadVP8 *vp8,
+        const WebRtc_UWord8 *dataPtr,
+        int dataLength) const
+{
+    int parsedBytes = 0;
+    if (dataLength <= 0) return -1;
+    // Optional X field is present
+    vp8->hasPictureID = (*dataPtr & 0x80); // I bit
+    vp8->hasTl0PicIdx = (*dataPtr & 0x40); // L bit
+    vp8->hasTID = (*dataPtr & 0x20); // T bit
+
+    // Advance dataPtr and decrease remaining payload size
+    dataPtr++;
+    parsedBytes++;
+    dataLength--;
+
+    if (vp8->hasPictureID)
+    {
+        if (ParseVP8PictureID(vp8, &dataPtr, &dataLength, &parsedBytes) != 0)
+        {
+            return -1;
+        }
+    }
+
+    if (vp8->hasTl0PicIdx)
+    {
+        if (ParseVP8Tl0PicIdx(vp8, &dataPtr, &dataLength, &parsedBytes) != 0)
+        {
+            return -1;
+        }
+    }
+
+    if (vp8->hasTID)
+    {
+        if (ParseVP8TID(vp8, &dataPtr, &dataLength, &parsedBytes) != 0)
+        {
+            return -1;
+        }
+    }
+    return parsedBytes;
+}
+
+int
+ModuleRTPUtility::RTPPayloadParser::ParseVP8PictureID(
+        RTPPayloadVP8 *vp8,
+        const WebRtc_UWord8 **dataPtr,
+        int *dataLength,
+        int *parsedBytes) const
+{
+    if (*dataLength <= 0) return -1;
+    vp8->pictureID = (**dataPtr & 0x7F);
+    if (**dataPtr & 0x80)
+    {
+        (*dataPtr)++;
+        (*parsedBytes)++;
+        if (--(*dataLength) <= 0) return -1;
+        // PictureID is 15 bits
+        vp8->pictureID = (vp8->pictureID << 8) + **dataPtr;
+    }
+    (*dataPtr)++;
+    (*parsedBytes)++;
+    (*dataLength)--;
+    return 0;
+}
+
+int
+ModuleRTPUtility::RTPPayloadParser::ParseVP8Tl0PicIdx(
+        RTPPayloadVP8 *vp8,
+        const WebRtc_UWord8 **dataPtr,
+        int *dataLength,
+        int *parsedBytes) const
+{
+    if (*dataLength <= 0) return -1;
+    vp8->tl0PicIdx = **dataPtr;
+    (*dataPtr)++;
+    (*parsedBytes)++;
+    (*dataLength)--;
+    return 0;
+}
+
+int ModuleRTPUtility::RTPPayloadParser::ParseVP8TID(
+        RTPPayloadVP8 *vp8,
+        const WebRtc_UWord8 **dataPtr,
+        int *dataLength,
+        int *parsedBytes) const
+{
+    if (*dataLength <= 0) return -1;
+    vp8->tID = ((**dataPtr >> 5) & 0x07);
+    (*dataPtr)++;
+    (*parsedBytes)++;
+    (*dataLength)--;
+    return 0;
 }
 
 bool

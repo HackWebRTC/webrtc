@@ -201,7 +201,7 @@ public:
 //                                      WEBRTC_VIDEO_CODEC_ERR_PARAMETER
     virtual WebRtc_Word32 Decode(const EncodedImage& inputImage,
                                  bool missingFrames,
-                                 const CodecSpecificInfo* /*codecSpecificInfo*/,
+                                 const CodecSpecificInfo* codecSpecificInfo,
                                  WebRtc_Word64 /*renderTimeMs*/);
 
 // Register a decode complete callback object.

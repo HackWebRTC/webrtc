@@ -694,7 +694,7 @@ VP8Decoder::InitDecode(const VideoCodec* inst,
 WebRtc_Word32
 VP8Decoder::Decode(const EncodedImage& inputImage,
                    bool missingFrames,
-                   const CodecSpecificInfo* /*codecSpecificInfo*/,
+                   const CodecSpecificInfo* codecSpecificInfo,
                    WebRtc_Word64 /*renderTimeMs*/)
  {
     if (!_inited)
@@ -727,16 +727,6 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
     vpx_dec_iter_t _iter = NULL;
     vpx_image_t* img;
 
-    // scan for number of bytes used for picture ID
-    WebRtc_UWord64 pictureID = inputImage._buffer[0] & 0x7F;
-    WebRtc_UWord8 numberOfBytes = 1;
-    if (inputImage._buffer[0] & 0x80)
-    {
-        pictureID <<= 8;
-        pictureID += inputImage._buffer[1];
-        ++numberOfBytes;
-    }
-
     // check for missing frames
     if (missingFrames)
     {
@@ -749,8 +739,8 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
 
     // we remove the picture ID here
     if (vpx_codec_decode(_decoder,
-                         inputImage._buffer + numberOfBytes,
-                         inputImage._length - numberOfBytes,
+                         inputImage._buffer,
+                         inputImage._length,
                          0,
                          VPX_DL_REALTIME))
     {
@@ -761,7 +751,7 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
     if (inputImage._frameType == kKeyFrame)
     {
         // Reduce size due to PictureID that we won't copy.
-        const WebRtc_UWord32 bytesToCopy = inputImage._length - numberOfBytes;
+        const WebRtc_UWord32 bytesToCopy = inputImage._length;
         if (_lastKeyFrame._size < bytesToCopy)
         {
             delete [] _lastKeyFrame._buffer;
@@ -781,8 +771,7 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
             _lastKeyFrame._buffer = new WebRtc_UWord8[_lastKeyFrame._size];
         }
         // Copy encoded frame.
-        memcpy(_lastKeyFrame._buffer, inputImage._buffer + numberOfBytes,
-               bytesToCopy);
+        memcpy(_lastKeyFrame._buffer, inputImage._buffer, bytesToCopy);
         _lastKeyFrame._length = bytesToCopy;
     }
 
@@ -854,15 +843,22 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
 
     // TODO(pw): how do we know it's a golden or alt reference frame? libvpx will
     // provide an API for now I added it temporarily
-    if((lastRefUpdates & VP8_GOLD_FRAME) || (lastRefUpdates & VP8_ALTR_FRAME))
+    WebRtc_Word16 pictureId = codecSpecificInfo->codecSpecific.VP8.pictureId;
+    if (codecSpecificInfo && pictureId > -1)
     {
-        if (!missingFrames && (inputImage._completeFrame == true))
-        //if (!corrupted) // TODO(pw): Can we engage this line intead of the above?
+        if ((lastRefUpdates & VP8_GOLD_FRAME)
+                || (lastRefUpdates & VP8_ALTR_FRAME))
         {
-            _decodeCompleteCallback->ReceivedDecodedReferenceFrame(pictureID);
+            if (!missingFrames && (inputImage._completeFrame == true))
+            //if (!corrupted) // TODO(pw): Can we engage this line instead of
+            // the above?
+            {
+                _decodeCompleteCallback->ReceivedDecodedReferenceFrame(
+                        pictureId);
+            }
         }
+        _decodeCompleteCallback->ReceivedDecodedFrame(pictureId);
     }
-    _decodeCompleteCallback->ReceivedDecodedFrame(pictureID);
 
 #ifdef DEV_PIC_LOSS
     if (corrupted)

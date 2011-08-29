@@ -139,12 +139,15 @@ namespace ModuleRTPUtility
     };
     struct RTPPayloadVP8
     {
-        bool                 beginningOfFrame;
         bool                 nonReferenceFrame;
+        bool                 beginningOfPartition;
+        int                  partitionID;
         bool                 hasPictureID;
-        bool                 fragments;
-        bool                 startFragment;
-        bool                 stopFragment;
+        bool                 hasTl0PicIdx;
+        bool                 hasTID;
+        int                  pictureID;
+        int                  tl0PicIdx;
+        int                  tID;
 
         const WebRtc_UWord8*   data;
         WebRtc_UWord16         dataLength;
@@ -172,7 +175,8 @@ namespace ModuleRTPUtility
     public:
         RTPPayloadParser(const RtpVideoCodecTypes payloadType,
                          const WebRtc_UWord8* payloadData,
-                         const WebRtc_UWord16 payloadDataLength); // Length w/o padding.
+                         const WebRtc_UWord16 payloadDataLength, // Length w/o padding.
+                         const WebRtc_Word32 id);
 
         ~RTPPayloadParser();
 
@@ -188,6 +192,25 @@ namespace ModuleRTPUtility
 
         bool ParseVP8(RTPPayload& parsedPacket) const;
 
+        int ParseVP8Extension(RTPPayloadVP8 *vp8,
+                              const WebRtc_UWord8 *dataPtr,
+                              int dataLength) const;
+
+        int ParseVP8PictureID(RTPPayloadVP8 *vp8,
+                              const WebRtc_UWord8 **dataPtr,
+                              int *dataLength,
+                              int *parsedBytes) const;
+
+        int ParseVP8Tl0PicIdx(RTPPayloadVP8 *vp8,
+                              const WebRtc_UWord8 **dataPtr,
+                              int *dataLength,
+                              int *parsedBytes) const;
+
+        int ParseVP8TID(RTPPayloadVP8 *vp8,
+                        const WebRtc_UWord8 **dataPtr,
+                        int *dataLength,
+                        int *parsedBytes) const;
+
         // H.263
         bool H263PictureStartCode(const WebRtc_UWord8* data,
                                   const bool skipFirst2bytes = false) const;
@@ -199,6 +222,7 @@ namespace ModuleRTPUtility
         FrameTypes GetH263FrameType(const WebRtc_UWord8* inputVideoBuffer) const;
 
     private:
+        WebRtc_Word32               _id;
         const WebRtc_UWord8*        _dataPtr;
         const WebRtc_UWord16        _dataLength;
         const RtpVideoCodecTypes    _videoType;

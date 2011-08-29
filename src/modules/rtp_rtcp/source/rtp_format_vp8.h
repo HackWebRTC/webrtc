@@ -80,6 +80,13 @@ private:
     static const AggregationMode aggr_modes_[kNumModes];
     static const bool balance_modes_[kNumModes];
     static const bool separate_first_modes_[kNumModes];
+    static const int kXBit        = 0x80;
+    static const int kNBit        = 0x20;
+    static const int kSBit        = 0x10;
+    static const int kPartIdField = 0x0F;
+    static const int kIBit        = 0x80;
+    static const int kLBit        = 0x40;
+    static const int kTBit        = 0x20;
 
     // Calculate size of next chunk to send. Returns 0 if none can be sent.
     int CalcNextSize(int max_payload_len, int remaining_bytes,
@@ -89,8 +96,29 @@ private:
     // Will copy send_bytes bytes from the current position on the payload data.
     // last_fragment indicates that this packet ends with the last byte of a
     // partition.
-    int WriteHeaderAndPayload(int send_bytes, bool end_of_fragment,
-                              WebRtc_UWord8* buffer, int buffer_length);
+    int WriteHeaderAndPayload(int send_bytes, WebRtc_UWord8* buffer,
+                              int buffer_length);
+
+
+    // Write the X field and the appropriate extension fields to buffer.
+    // The function returns the extension length (including X field), or -1
+    // on error.
+    int WriteExtensionFields(WebRtc_UWord8* buffer, int buffer_length) const;
+
+    // Set the I bit in the x_field, and write PictureID to the appropriate
+    // position in buffer. The function returns 0 on success, -1 otherwise.
+    int WritePictureIDFields(WebRtc_UWord8* x_field, WebRtc_UWord8* buffer,
+                             int buffer_length, int* extension_length) const;
+
+    // Set the L bit in the x_field, and write Tl0PicIdx to the appropriate
+    // position in buffer. The function returns 0 on success, -1 otherwise.
+    int WriteTl0PicIdxFields(WebRtc_UWord8* x_field, WebRtc_UWord8* buffer,
+                             int buffer_length, int* extension_length) const;
+
+    // Set the T bit in the x_field, and write TID to the appropriate
+    // position in buffer. The function returns 0 on success, -1 otherwise.
+    int WriteTIDFields(WebRtc_UWord8* x_field, WebRtc_UWord8* buffer,
+                       int buffer_length, int* extension_length) const;
 
     // Write the PictureID from codec_specific_info_ to buffer. One or two
     // bytes are written, depending on magnitude of PictureID. The function
@@ -99,13 +127,17 @@ private:
 
     // Calculate and return length (octets) of the variable header fields in
     // the next header (i.e., header length in addition to vp8_header_bytes_).
-    int FirstHeaderExtraLength() const;
+    int PayloadDescriptorExtraLength() const;
 
     // Calculate and return length (octets) of PictureID field in the next
     // header. Can be 0, 1, or 2.
     int PictureIdLength() const;
 
-    int GetFIFlag(bool end_of_fragment) const;
+    // Check whether each of the optional fields will be included in the header.
+    bool XFieldPresent() const;
+    bool TIDFieldPresent() const;
+    bool TL0PicIdxFieldPresent() const;
+    bool PictureIdPresent() const { return (PictureIdLength() > 0); }
 
     const WebRtc_UWord8* payload_data_;
     const int payload_size_;
@@ -114,11 +146,13 @@ private:
     int part_ix_;
     bool beginning_; // first partition in this frame
     bool first_fragment_; // first fragment of a partition
-    const int vp8_header_bytes_; // length of VP8 payload header's fixed part
+    const int vp8_fixed_payload_descriptor_bytes_; // length of VP8 payload
+                                                   // descriptors's fixed part
     AggregationMode aggr_mode_;
     bool balance_;
     bool separate_first_;
     const RTPVideoHeaderVP8 hdr_info_;
+    int first_partition_in_packet_;
 };
 
 }
