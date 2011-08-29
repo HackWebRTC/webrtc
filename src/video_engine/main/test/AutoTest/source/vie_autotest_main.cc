@@ -315,7 +315,7 @@ int ViEAutoTestMain::GetClassTestSelection()
 {
     int testType = 0;
     std::string answer;
-    int dummy = 0;
+
     while (1)
     {
         ViETest::Log("Choose specific test: ");
@@ -337,7 +337,7 @@ int ViEAutoTestMain::GetClassTestSelection()
         }
         else
         {
-            dummy = scanf("%d", &testType);
+            scanf("%d", &testType);
             getchar();
         }
         ViETest::Log("\n");

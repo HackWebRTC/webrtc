@@ -113,12 +113,11 @@ int VoEStressTest::MenuSelection()
 
     const int maxMenuSelection = 4;
     int selection(-1);
-    int dummy(0);
 
     while ((selection < 0) || (selection > maxMenuSelection))
     {
         printf("\n: ");
-        dummy = scanf("%d", &selection);
+        scanf("%d", &selection);
         if ((selection < 0) || (selection > maxMenuSelection))
         {
             printf("Invalid selection!\n");

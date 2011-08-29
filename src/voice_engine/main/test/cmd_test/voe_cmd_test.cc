@@ -45,7 +45,6 @@ using namespace webrtc;
   {                                                                     \
     printf("*** Error at position %i / line %i \n", cnt, __LINE__);     \
     printf("*** Error code = %i \n", base1->LastError());               \
-    error = 1;                                                          \
   }                                                                     \
   cnt++;
 
@@ -93,7 +92,6 @@ my_transportation my_transport;
 int main() {
   int res = 0;
   int cnt = 0;
-  int error = 0;
 
   printf("Test started \n");
 
@@ -189,7 +187,6 @@ void run_test() {
   CodecInst cinst;
   cnt = 0;
   int i;
-  int dummy(0);
   int codecinput;
   bool AEC = false;
   bool AGC = true;
@@ -222,12 +219,12 @@ void run_test() {
 
   printf("1. 127.0.0.1 \n");
   printf("2. Specify IP \n");
-  dummy = scanf("%i", &i);
+  scanf("%i", &i);
   if (1 == i)
     strcpy(ip, "127.0.0.1");
   else {
     printf("Specify remote IP: ");
-    dummy = scanf("%s", ip);
+    scanf("%s", ip);
   }
 #endif
 
@@ -245,7 +242,7 @@ void run_test() {
   rPort=8500;
 #else
   printf("Specify remote port (1=1234): ");
-  dummy = scanf("%i", &rPort);
+  scanf("%i", &rPort);
   if (1 == rPort)
     rPort = 1234;
   printf("Set Send port \n");
@@ -260,7 +257,7 @@ void run_test() {
   lPort=8500;
 #else
   printf("Specify local port (1=1234): ");
-  dummy = scanf("%i", &lPort);
+  scanf("%i", &lPort);
   if (1 == lPort)
     lPort = 1234;
   printf("Set Rec Port \n");
@@ -286,7 +283,7 @@ void run_test() {
   codecinput=0;
 #else
   printf("Select send codec: ");
-  dummy = scanf("%i", &codecinput);
+  scanf("%i", &codecinput);
 #endif
   codec->GetCodec(codecinput, cinst);
 
@@ -322,11 +319,11 @@ void run_test() {
     }
 
     printf("Select playout device: ");
-    dummy = scanf("%d", &pd);
+    scanf("%d", &pd);
     res = hardware->SetPlayoutDevice(pd);
     VALIDATE;
     printf("Select recording device: ");
-    dummy = scanf("%d", &rd);
+    scanf("%d", &rd);
     printf("Setting sound devices \n");
     res = hardware->SetRecordingDevice(rd);
     VALIDATE;
@@ -351,7 +348,7 @@ void run_test() {
     printf("2. Send only \n");
     printf("3. Listen and playout only \n");
     printf("Select transfer mode: ");
-    dummy = scanf("%i", &i);
+    scanf("%i", &i);
 #endif
     const bool send = !(3 == i);
     const bool receive = !(2 == i);
@@ -437,7 +434,7 @@ void run_test() {
       printf("\t%i. Stop call \n", i);
 
       printf("Select action or %i to stop the call: ", i);
-      dummy = scanf("%i", &codecinput);
+      scanf("%i", &codecinput);
 
       if (codecinput < codec->NumOfCodecs()) {
         res = codec->GetCodec(codecinput, cinst);
@@ -509,7 +506,7 @@ void run_test() {
       }
       else if (codecinput == (noCodecs + 8)) {
         printf("Level: ");
-        dummy = scanf("%i", &i);
+        scanf("%i", &i);
         res = volume->SetSpeakerVolume(i);
         VALIDATE;
       }
@@ -521,7 +518,7 @@ void run_test() {
       }
       else if (codecinput == (noCodecs + 10)) {
         printf("Level: ");
-        dummy = scanf("%i", &i);
+        scanf("%i", &i);
         res = volume->SetMicVolume(i);
         VALIDATE;
       }
@@ -544,7 +541,7 @@ void run_test() {
           printf("  %d: %s \n", j, dn);
         }
         printf("Select playout device: ");
-        dummy = scanf("%d", &num_pd);
+        scanf("%d", &num_pd);
         // Will use plughw for hardware devices
         res = hardware->SetPlayoutDevice(num_pd);
         VALIDATE;
@@ -567,7 +564,7 @@ void run_test() {
         }
 
         printf("Select recording device: ");
-        dummy = scanf("%d", &num_rd);
+        scanf("%d", &num_rd);
         printf("Setting sound devices \n");
         // Will use plughw for hardware devices
         res = hardware->SetRecordingDevice(num_rd);
@@ -625,7 +622,7 @@ void run_test() {
     printf("\n1. New call \n");
     printf("2. Quit \n");
     printf("Select action: ");
-    dummy = scanf("%i", &i);
+    scanf("%i", &i);
     newcall = (1 == i);
     // Call loop
   }
