@@ -1159,9 +1159,14 @@ long AviFile::PutLE32LengthFromCurrent(long startPos)
 void AviFile::PutLE32AtPos(long pos, WebRtc_UWord32 word)
 {
     const long currPos = ftell(_aviFile);
-    WebRtc_Word32 error = fseek(_aviFile, pos, SEEK_SET);
+    bool success = (0 == fseek(_aviFile, pos, SEEK_SET));
+    if (!success) {
+      assert(false);
+      return;
+    }
     PutLE32(word);
-    error = fseek(_aviFile, currPos, SEEK_SET);
+    success = (0 == fseek(_aviFile, currPos, SEEK_SET));
+    assert(success);
 }
 
 void AviFile::CloseRead()
