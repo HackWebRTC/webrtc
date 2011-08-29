@@ -349,7 +349,6 @@ WebRtc_Word16 WebRtcCng_Encode(CNG_enc_inst *cng_inst,
     int i, stab;
     int acorrScale;
     int index;
-    WebRtc_Word32 diff;
     WebRtc_Word16 ind,factor;
     WebRtc_Word32 *bptr, blo, bhi;
     WebRtc_Word16 negate;
@@ -468,9 +467,7 @@ WebRtc_Word16 WebRtcCng_Encode(CNG_enc_inst *cng_inst,
     if((inst->enc_msSinceSID>(inst->enc_interval-1))||forceSID){
 
         /* Search for best dbov value */
-        /* Clumsy linear search that can be optimized since database is sorted */
         index=0;
-        diff=WEBRTC_SPL_ABS_W32(inst->enc_Energy-WebRtcCng_kDbov[index]);
         for(i=1;i<93;i++){
             /* Always round downwards */
             if((inst->enc_Energy-WebRtcCng_kDbov[i])>0){
