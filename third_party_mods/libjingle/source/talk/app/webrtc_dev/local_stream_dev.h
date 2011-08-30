@@ -28,8 +28,8 @@
 #ifndef TALK_APP_WEBRTC_LOCAL_STREAM_H_
 #define TALK_APP_WEBRTC_LOCAL_STREAM_H_
 
-#include "talk/app/webrtc/media_stream_impl_dev.h"
-#include "talk/app/webrtc/stream_dev.h"
+#include "talk/app/webrtc_dev/media_stream_impl_dev.h"
+#include "talk/app/webrtc_dev/stream_dev.h"
 #include "talk/base/scoped_ptr.h"
 
 namespace webrtc {

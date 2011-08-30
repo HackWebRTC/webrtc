@@ -28,7 +28,7 @@
 #include <string>
 
 #include "gtest/gtest.h"
-#include "talk/app/webrtc/local_stream_dev.h"
+#include "talk/app/webrtc_dev/local_stream_dev.h"
 
 static const char kStreamLabel1[] = "local_stream_1";
 const char* kVideoDeviceName = "dummy_video_cam_1";

@@ -24,7 +24,7 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include "talk/app/webrtc/local_stream_dev.h"
+#include "talk/app/webrtc_dev/local_stream_dev.h"
 
 namespace webrtc {
 

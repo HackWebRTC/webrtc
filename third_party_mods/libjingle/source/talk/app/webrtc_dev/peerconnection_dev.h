@@ -30,7 +30,7 @@
 
 #include <string>
 
-#include "talk/app/webrtc/stream_dev.h"
+#include "talk/app/webrtc_dev/stream_dev.h"
 
 namespace cricket {
 class PortAllocator;
@@ -109,6 +109,8 @@ class PeerConnection {
   // and stop sending media on removed stream.
   virtual void CommitStreamChanges() = 0;
 
+ protected:
+  // Dtor protected as objects shouldn't be deleted via this interface.
   virtual ~PeerConnection() {}
 };
 

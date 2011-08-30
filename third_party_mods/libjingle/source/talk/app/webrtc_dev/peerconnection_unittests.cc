@@ -8,7 +8,7 @@
  *  1. Redistributions of source code must retain the above copyright notice,
  *     this list of conditions and the following disclaimer.
  *  2. Redistributions in binary form must reproduce the above copyright notice,
- *     this list of conditions and the following disclaimer in the documentation
+       this list of conditions and the following disclaimer in the documentation
  *     and/or other materials provided with the distribution.
  *  3. The name of the author may not be used to endorse or promote products
  *     derived from this software without specific prior written permission.
@@ -24,40 +24,13 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#include "gtest/gtest.h"
 
-#ifndef TALK_APP_WEBRTC_REMOTE_STREAM_H_
-#define TALK_APP_WEBRTC_REMOTE_STREAM_H_
-
-#include "talk/app/webrtc_dev/media_stream_impl_dev.h"
-#include "talk/app/webrtc_dev/stream_dev.h"
-#include "talk/base/scoped_ptr.h"
-
-namespace webrtc {
-
-/////////////////////////////////////////////
-// Remote stream
-class RemoteMediaStreamImpl
-    : public RemoteMediaStream,
-      public NotifierImpl<MediaStreamTrackList> {
- public:
-  static scoped_refptr<RemoteMediaStream> Create(const std::string& label);
-  bool AddTrack(MediaStreamTrack* track);
-
-  // Implement MediaStream.
-  virtual const std::string& label();
-  virtual scoped_refptr<MediaStreamTrackList> tracks();
-  virtual ReadyState ready_state();
-
-  // Implement MediaStreamTrackList.
-  virtual size_t count();
-  virtual scoped_refptr<MediaStreamTrack> at(size_t index);
-
- protected:
-  explicit RemoteMediaStreamImpl(const std::string& label);
-  MediaStreamImpl media_stream_impl_;
-  MediaStreamTrackListImpl tracks_;
-};
-
-}  // namespace webrtc
-
-#endif  // TALK_APP_WEBRTC_REMOTE_STREAM_H_
+int main(int argc, char **argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  // Added return_value so that it's convenient to put a breakpoint before
+  // exiting please note that the return value from RUN_ALL_TESTS() must
+  // be returned by the main function.
+  const int return_value = RUN_ALL_TESTS();
+  return return_value;
+}

@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/app/webrtc/media_stream_impl_dev.h"
+#include "talk/app/webrtc_dev/media_stream_impl_dev.h"
 
 namespace webrtc {
 

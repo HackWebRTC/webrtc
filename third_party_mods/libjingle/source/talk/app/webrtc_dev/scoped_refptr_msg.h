@@ -25,39 +25,28 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_APP_WEBRTC_REMOTE_STREAM_H_
-#define TALK_APP_WEBRTC_REMOTE_STREAM_H_
+#ifndef TALK_APP_WEBRTC_SCOPED_REF_PTR_MSG_H_
+#define TALK_APP_WEBRTC_SCOPED_REF_PTR_MSG_H_
 
-#include "talk/app/webrtc_dev/media_stream_impl_dev.h"
-#include "talk/app/webrtc_dev/stream_dev.h"
-#include "talk/base/scoped_ptr.h"
 
-namespace webrtc {
+#include "talk/base/messagequeue.h"
 
-/////////////////////////////////////////////
-// Remote stream
-class RemoteMediaStreamImpl
-    : public RemoteMediaStream,
-      public NotifierImpl<MediaStreamTrackList> {
+// Like ScopedRefMessageData, but for reference counting pointers.
+template <class T>
+class ScopedRefMessageData : public talk_base::MessageData {
  public:
-  static scoped_refptr<RemoteMediaStream> Create(const std::string& label);
-  bool AddTrack(MediaStreamTrack* track);
-
-  // Implement MediaStream.
-  virtual const std::string& label();
-  virtual scoped_refptr<MediaStreamTrackList> tracks();
-  virtual ReadyState ready_state();
-
-  // Implement MediaStreamTrackList.
-  virtual size_t count();
-  virtual scoped_refptr<MediaStreamTrack> at(size_t index);
-
- protected:
-  explicit RemoteMediaStreamImpl(const std::string& label);
-  MediaStreamImpl media_stream_impl_;
-  MediaStreamTrackListImpl tracks_;
+  explicit ScopedRefMessageData(T* data) : data_(data) { }
+  const scoped_refptr<T>& data() const { return data_; }
+  scoped_refptr<T>& data() { return data_; }
+ private:
+  scoped_refptr<T> data_;
 };
+/*
+struct ScopedTypedMessageData : public talk_base::MessageData {
+  ScopedRefPtrMsgParams(scoped_refptr<T> ptr)
+      : ptr_(ptr) {
+  }
+  scoped_refptr<T> ptr_;
+};*/
 
-}  // namespace webrtc
-
-#endif  // TALK_APP_WEBRTC_REMOTE_STREAM_H_
+#endif  // TALK_APP_WEBRTC_SCOPED_REF_PTR_MSG_H_

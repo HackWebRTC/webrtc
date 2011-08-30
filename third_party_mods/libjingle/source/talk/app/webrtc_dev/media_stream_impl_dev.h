@@ -31,10 +31,10 @@
 #include <string>
 #include <vector>
 
-#include "talk/app/webrtc/notifier_impl.h"
-#include "talk/app/webrtc/ref_count.h"
-#include "talk/app/webrtc/scoped_refptr.h"
-#include "talk/app/webrtc/stream_dev.h"
+#include "talk/app/webrtc_dev/notifier_impl.h"
+#include "talk/app/webrtc_dev/ref_count.h"
+#include "talk/app/webrtc_dev/scoped_refptr.h"
+#include "talk/app/webrtc_dev/stream_dev.h"
 
 namespace webrtc {
 

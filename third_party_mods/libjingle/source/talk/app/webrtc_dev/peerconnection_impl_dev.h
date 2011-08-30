@@ -29,24 +29,22 @@
 #define TALK_APP_WEBRTC_PEERCONNECTION_IMPL_H_
 
 #include <list>
+#include <map>
+#include <string>
 
-#include "talk/app/webrtc/peerconnection_dev.h"
+#include "talk/app/webrtc_dev/peerconnection_dev.h"
 #include "talk/base/scoped_ptr.h"
+#include "talk/base/messagequeue.h"
 
 namespace cricket {
 class ChannelManager;
 class PortAllocator;
 }
 
-namespace talk_base {
-class Message;
-}
-
 namespace webrtc {
 
-class WebRtcSession;
-
-class PeerConnectionImpl : public PeerConnection {
+class PeerConnectionImpl : public PeerConnection,
+                           public talk_base::MessageHandler {
  public:
   enum Error {
     ERROR_NONE = 0,             // Good
@@ -60,7 +58,8 @@ class PeerConnectionImpl : public PeerConnection {
   };
 
   PeerConnectionImpl(cricket::ChannelManager* channel_manager,
-                     cricket::PortAllocator* port_allocator);
+                     cricket::PortAllocator* port_allocator,
+                     talk_base::Thread* signal_thread);
   virtual ~PeerConnectionImpl();
 
   // Interfaces from PeerConnection
@@ -85,15 +84,23 @@ class PeerConnectionImpl : public PeerConnection {
 
   void RegisterObserver(PeerConnectionObserver* observer);
 
+  // Implement talk_base::MessageHandler.
+  void OnMessage(talk_base::Message* msg);
+
  private:
+  enum {
+      MSG_ADDMEDIASTREAM = 1,
+      MSG_REMOVEMEDIASTREAM = 2,
+      MSG_COMMITSTREAMCHANGES = 3
+  };
+
   PeerConnectionObserver* observer_;
 
-  // List of media streams to process.
-  std::list<scoped_refptr<LocalMediaStream> > add_commit_queue_;
-  std::list<scoped_refptr<LocalMediaStream> > remove_commit_queue_;
+  // Map of local media streams.
+  typedef std::map<std::string, scoped_refptr<LocalMediaStream> > LocalStreamMap;
+  LocalStreamMap local_media_streams_;
 
-  talk_base::scoped_ptr<WebRtcSession> session_;
-  talk_base::scoped_ptr<talk_base::Thread> worker_thread_;
+  talk_base::Thread* signal_thread_;
   cricket::ChannelManager* channel_manager_;
   cricket::PortAllocator* port_allocator_;
 };

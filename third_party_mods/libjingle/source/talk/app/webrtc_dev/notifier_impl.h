@@ -31,7 +31,7 @@
 #include <list>
 
 #include "talk/base/common.h"
-#include "talk/app/webrtc/stream_dev.h"
+#include "talk/app/webrtc_dev/stream_dev.h"
 
 namespace webrtc {
 

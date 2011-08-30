@@ -28,7 +28,7 @@
 #include <string>
 
 #include "gtest/gtest.h"
-#include "talk/app/webrtc/remote_stream_dev.h"
+#include "talk/app/webrtc_dev/remote_stream_dev.h"
 
 static const char kStreamLabel1[] = "remote_stream_1";
 

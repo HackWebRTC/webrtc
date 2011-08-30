@@ -25,9 +25,9 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/app/webrtc/peerconnectionmanager.h"
+#include "talk/app/webrtc_dev/peerconnectionmanager.h"
 
-#include "talk/app/webrtc/peerconnection_impl_dev.h"
+#include "talk/app/webrtc_dev/peerconnection_impl_dev.h"
 #include "talk/base/logging.h"
 #include "talk/base/thread.h"
 #include "talk/session/phone/channelmanager.h"
@@ -71,6 +71,11 @@ bool PeerConnectionManager::Initialize(cricket::MediaEngine* media_engine,
   return initialized_;
 }
 
+PeerConnectionManager::PeerConnectionManager()
+    : signal_thread_(new talk_base::Thread) {
+
+}
+
 bool PeerConnectionManager::Initialize(cricket::PortAllocator* port_allocator,
                                        talk_base::Thread* worker_thread) {
   port_allocator_.reset(port_allocator);
@@ -85,11 +90,12 @@ PeerConnection* PeerConnectionManager::CreatePeerConnection() {
   // TODO(mallinath) - It may be necessary to store the created PeerConnection
   // object in manager.
   return new PeerConnectionImpl(channel_manager_.get(),
-                                port_allocator_.get());
+                                port_allocator_.get(),
+                                signal_thread_.get());
 }
 
 void PeerConnectionManager::DestroyPeerConnection(PeerConnection* pc) {
-  delete pc;
+  delete static_cast<PeerConnectionImpl*> (pc);
 }
 
 } // namespace webrtc

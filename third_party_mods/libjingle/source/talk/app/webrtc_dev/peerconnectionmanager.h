@@ -61,7 +61,7 @@ class PeerConnectionManager {
   void DestroyPeerConnection(PeerConnection* pc);
 
  protected:
-  PeerConnectionManager() {};
+  PeerConnectionManager();
   virtual ~PeerConnectionManager() {};
 
  private:
@@ -74,6 +74,7 @@ class PeerConnectionManager {
                   talk_base::Thread* worker_thread);
 
   bool initialized_;
+  talk_base::scoped_ptr<talk_base::Thread> signal_thread_;
   talk_base::scoped_ptr<cricket::PortAllocator> port_allocator_;
   talk_base::scoped_ptr<cricket::ChannelManager> channel_manager_;
 };

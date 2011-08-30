@@ -656,9 +656,10 @@
         ['peer_connection_dev==1', {
           'type': 'executable',
           'sources': [
-            '<(libjingle_mods)/source/talk/app/peer_connection_dev/peerconnection_unittests.cc',
-            '<(libjingle_mods)/source/talk/app/peer_connection_dev/local_stream_dev_unittest.cc',
-            '<(libjingle_mods)/source/talk/app/peer_connection_dev/remote_stream_dev_unittest.cc',
+            '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnection_unittests.cc',
+            '<(libjingle_mods)/source/talk/app/webrtc_dev/local_stream_dev_unittest.cc',
+            '<(libjingle_mods)/source/talk/app/webrtc_dev/remote_stream_dev_unittest.cc',
+            '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnection_impl_dev_unittest.cc',
           ],
         }, {
           'type': 'none',
