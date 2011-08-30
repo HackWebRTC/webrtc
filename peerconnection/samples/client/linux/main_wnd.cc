@@ -141,14 +141,12 @@ MainWindow::UI GtkMainWnd::current_ui() {
 }
 
 cricket::VideoRenderer* GtkMainWnd::local_renderer() {
-  if (!local_renderer_.get())
-    local_renderer_.reset(new VideoRenderer(this));
+  ASSERT(local_renderer_.get() != NULL);
   return local_renderer_.get();
 }
 
 cricket::VideoRenderer* GtkMainWnd::remote_renderer() {
-  if (!remote_renderer_.get())
-    remote_renderer_.reset(new VideoRenderer(this));
+  ASSERT(remote_renderer_.get() != NULL);
   return remote_renderer_.get();
 }
 
@@ -234,6 +232,10 @@ void GtkMainWnd::SwitchToConnectUI() {
 void GtkMainWnd::SwitchToPeerList(const Peers& peers) {
   LOG(INFO) << __FUNCTION__;
 
+  // Clean up buffers from a potential previous session.
+  local_renderer_.reset();
+  remote_renderer_.reset();
+
   if (!peer_list_) {
     gtk_container_set_border_width(GTK_CONTAINER(window_), 0);
     if (vbox_) {
@@ -269,6 +271,12 @@ void GtkMainWnd::SwitchToStreamingUI() {
   LOG(INFO) << __FUNCTION__;
 
   ASSERT(draw_area_ == NULL);
+
+  // Prepare new buffers for the new conversation.  We don't
+  // reuse buffers across sessions to avoid possibly rendering
+  // a frame from the previous conversation.
+  remote_renderer_.reset(new VideoRenderer(this));
+  local_renderer_.reset(new VideoRenderer(this));
 
   gtk_container_set_border_width(GTK_CONTAINER(window_), 0);
   if (peer_list_) {

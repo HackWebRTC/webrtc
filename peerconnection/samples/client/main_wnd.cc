@@ -22,6 +22,11 @@ const wchar_t MainWnd::kClassName[] = L"WebRTC_MainWnd";
 std::string GetDefaultServerName();
 
 namespace {
+
+const char kConnecting[] = "Connecting... ";
+const char kNoVideoStreams[] = "(no video streams either way)";
+const char kNoIncomingStream[] = "(no incoming video)";
+
 void CalculateWindowSizeForText(HWND wnd, const wchar_t* text,
                                 size_t* width, size_t* height) {
   HDC dc = ::GetDC(wnd);
@@ -192,8 +197,10 @@ void MainWnd::OnPaint() {
     long height = abs(bmi.bmiHeader.biHeight);
     long width = bmi.bmiHeader.biWidth;
 
-    if (remote_video_.get()->image() != NULL) {
+    const uint8* image = remote_video_->image();
+    if (image != NULL) {
       HDC dc_mem = ::CreateCompatibleDC(ps.hdc);
+      ::SetStretchBltMode(dc_mem, HALFTONE);
 
       // Set the map mode so that the ratio will be maintained for us.
       HDC all_dc[] = { ps.hdc, dc_mem };
@@ -214,7 +221,6 @@ void MainWnd::OnPaint() {
       ::FillRect(dc_mem, &logical_rect, brush);
       ::DeleteObject(brush);
 
-      const uint8* image = remote_video_->image();
       int max_unit = std::max(width, height);
       int x = (logical_area.x / 2) - (width / 2);
       int y = (logical_area.y / 2) - (height / 2);
@@ -247,10 +253,18 @@ void MainWnd::OnPaint() {
       HBRUSH brush = ::CreateSolidBrush(RGB(0, 0, 0));
       ::FillRect(ps.hdc, &rc, brush);
       ::DeleteObject(brush);
+
       HGDIOBJ old_font = ::SelectObject(ps.hdc, GetDefaultFont());
       ::SetTextColor(ps.hdc, RGB(0xff, 0xff, 0xff));
       ::SetBkMode(ps.hdc, TRANSPARENT);
-      ::DrawTextA(ps.hdc, "Connecting...", -1, &rc,
+
+      std::string text(kConnecting);
+      if (!local_video_->image()) {
+        text += kNoVideoStreams;
+      } else {
+        text += kNoIncomingStream;
+      }
+      ::DrawTextA(ps.hdc, text.c_str(), -1, &rc,
           DT_SINGLELINE | DT_CENTER | DT_VCENTER);
       ::SelectObject(ps.hdc, old_font);
     }
