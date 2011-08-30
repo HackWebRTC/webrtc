@@ -26,32 +26,32 @@
 namespace webrtc
 {
 
-#define WEBRTC_CA_RETURN_ON_ERR(expr)                                     \
+#define WEBRTC_CA_RETURN_ON_ERR(expr)                                   \
     do {                                                                \
         err = expr;                                                     \
         if (err != noErr) {                                             \
-            logCAMsg(kTraceError, kTraceAudioDevice, _id,    \
+            logCAMsg(kTraceError, kTraceAudioDevice, _id,               \
                 "Error in " #expr, (const char *)&err);                 \
             return -1;                                                  \
         }                                                               \
     } while(0)
 
-#define WEBRTC_CA_LOG_ERR(expr)                                           \
+#define WEBRTC_CA_LOG_ERR(expr)                                         \
     do {                                                                \
         err = expr;                                                     \
         if (err != noErr) {                                             \
-            logCAMsg(kTraceError, kTraceAudioDevice, _id,    \
+            logCAMsg(kTraceError, kTraceAudioDevice, _id,               \
                 "Error in " #expr, (const char *)&err);                 \
         }                                                               \
     } while(0)
 
-#define WEBRTC_CA_LOG_WARN(expr)                                           \
-    do {                                                                 \
-        err = expr;                                                      \
-        if (err != noErr) {                                              \
-            logCAMsg(kTraceWarning, kTraceAudioDevice, _id,  \
-                "Error in " #expr, (const char *)&err);                  \
-        }                                                                \
+#define WEBRTC_CA_LOG_WARN(expr)                                        \
+    do {                                                                \
+        err = expr;                                                     \
+        if (err != noErr) {                                             \
+            logCAMsg(kTraceWarning, kTraceAudioDevice, _id,             \
+                "Error in " #expr, (const char *)&err);                 \
+        }                                                               \
     } while(0)
 
 enum
@@ -105,7 +105,6 @@ void AudioDeviceMac::logCAMsg(const TraceLevel level,
 AudioDeviceMac::AudioDeviceMac(const WebRtc_Word32 id) :
     _ptrAudioBuffer(NULL),
     _critSect(*CriticalSectionWrapper::CreateCriticalSection()),
-    _critSectCb(*CriticalSectionWrapper::CreateCriticalSection()),
     _stopEventRec(*EventWrapper::Create()),
     _stopEvent(*EventWrapper::Create()),
     _captureWorkerThread(NULL),
@@ -164,6 +163,10 @@ AudioDeviceMac::AudioDeviceMac(const WebRtc_Word32 id) :
     assert(&_stopEventRec != NULL);
 
     memset(_renderConvertData, 0, sizeof(_renderConvertData));
+    memset(&_outStreamFormat, 0, sizeof(AudioStreamBasicDescription));
+    memset(&_outDesiredFormat, 0, sizeof(AudioStreamBasicDescription));
+    memset(&_inStreamFormat, 0, sizeof(AudioStreamBasicDescription));
+    memset(&_inDesiredFormat, 0, sizeof(AudioStreamBasicDescription));
 }
 
 
@@ -231,7 +234,6 @@ AudioDeviceMac::~AudioDeviceMac()
     delete &_stopEvent;
     delete &_stopEventRec;
     delete &_critSect;
-    delete &_critSectCb;
 }
 
 // ============================================================================
@@ -1331,17 +1333,26 @@ WebRtc_Word32 AudioDeviceMac::PlayoutIsAvailable(bool& available)
     WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
                  "%s", __FUNCTION__);
 
-    available = false;
+    available = true;
 
     // Try to initialize the playout side
-    WebRtc_Word32 res = InitPlayout();
+    if (InitPlayout() == -1)
+    {
+        available = false;
+    }
+
+    // We destroy the IOProc created by InitPlayout() in implDeviceIOProc().
+    // We must actually start playout here in order to have the IOProc
+    // deleted by calling StopPlayout().
+    if (StartPlayout() == -1)
+    {
+        available = false;
+    }
 
     // Cancel effect of initialization
-    StopPlayout();
-
-    if (res != -1)
+    if (StopPlayout() == -1)
     {
-        available = true;
+        available = false;
     }
 
     return 0;
@@ -1352,17 +1363,26 @@ WebRtc_Word32 AudioDeviceMac::RecordingIsAvailable(bool& available)
     WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
                  "%s", __FUNCTION__);
 
-    available = false;
+    available = true;
 
     // Try to initialize the recording side
-    WebRtc_Word32 res = InitRecording();
+    if (InitRecording() == -1)
+    {
+        available = false;
+    }
+
+    // We destroy the IOProc created by InitRecording() in implInDeviceIOProc().
+    // We must actually start recording here in order to have the IOProc
+    // deleted by calling StopRecording().
+    if (StartRecording() == -1)
+    {
+        available = false;
+    }
 
     // Cancel effect of initialization
-    StopRecording();
-
-    if (res != -1)
+    if (StopRecording() == -1)
     {
-        available = true;
+        available = false;
     }
 
     return 0;
@@ -1890,6 +1910,8 @@ WebRtc_Word32 AudioDeviceMac::StartRecording()
 {
     WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
                  "%s", __FUNCTION__);
+    
+    CriticalSectionScoped lock(_critSect);
 
     if (!_recIsInitialized)
     {
@@ -1972,6 +1994,7 @@ WebRtc_Word32 AudioDeviceMac::StopRecording()
     {
         if (_recording && captureDeviceIsAlive == 1)
         {
+            _recording = false;
             _doStopRec = true; // Signal to io proc to stop audio device
             _critSect.Leave(); // Cannot be under lock, risk of deadlock
             if (kEventTimeout == _stopEventRec.Wait(2000))
@@ -1985,24 +2008,19 @@ WebRtc_Word32 AudioDeviceMac::StopRecording()
             WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice, _id,
                          " Recording stopped");
         }
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 1050
-        if (AudioDeviceDestroyIOProcID != NULL)
-        {
-            WEBRTC_CA_LOG_WARN(AudioDeviceDestroyIOProcID(_inputDeviceID,
-                    _inDeviceIOProcID));
-        }
-        else
-        {
-#endif
-        WEBRTC_CA_LOG_WARN(AudioDeviceRemoveIOProc(_inputDeviceID, inDeviceIOProc));
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 1050
     }
-#endif
-    } else if (!_playing)
+    else
     {
-        // Stop the shared device if playing has stopped as well.
+        // We signal a stop for a shared device even when rendering has
+        // not yet ended. This is to ensure the IOProc will return early as
+        // intended (by checking |_recording|) before accessing
+        // resources we free below (e.g. the capture converter).
+        //
+        // In the case of a shared devcie, the IOProc will verify
+        // rendering has ended before stopping itself.
         if (_recording && captureDeviceIsAlive == 1)
         {
+            _recording = false;
             _doStop = true; // Signal to io proc to stop audio device
             _critSect.Leave(); // Cannot be under lock, risk of deadlock
             if (kEventTimeout == _stopEvent.Wait(2000))
@@ -2016,18 +2034,6 @@ WebRtc_Word32 AudioDeviceMac::StopRecording()
             WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice, _id,
                          " Recording stopped (shared)");
         }
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 1050
-        if (AudioDeviceDestroyIOProcID != NULL)
-        {
-            WEBRTC_CA_LOG_WARN(AudioDeviceDestroyIOProcID(_inputDeviceID, _deviceIOProcID));
-        }
-        else
-        {
-#endif
-        WEBRTC_CA_LOG_WARN(AudioDeviceRemoveIOProc(_inputDeviceID, deviceIOProc));
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 1050
-    }
-#endif
     }
 
     // Setting this signal will allow the worker thread to be stopped.
@@ -2088,6 +2094,8 @@ WebRtc_Word32 AudioDeviceMac::StartPlayout()
 {
     WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
                  "%s", __FUNCTION__);
+    
+    CriticalSectionScoped lock(_critSect);
 
     if (!_playIsInitialized)
     {
@@ -2143,37 +2151,29 @@ WebRtc_Word32 AudioDeviceMac::StopPlayout()
     OSStatus err = noErr;
 
     int32_t renderDeviceIsAlive = AtomicGet32(&_renderDeviceIsAlive);
-    if (_twoDevices || !_recording)
+    if (_playing && renderDeviceIsAlive == 1)
     {
-        // Stop the shared device if recording has stopped as well.
-        if (_playing && renderDeviceIsAlive == 1)
+        // We signal a stop for a shared device even when capturing has not
+        // yet ended. This is to ensure the IOProc will return early as
+        // intended (by checking |_playing|) before accessing resources we
+        // free below (e.g. the render converter).
+        //
+        // In the case of a shared device, the IOProc will verify capturing
+        // has ended before stopping itself.
+        _playing = false;
+        _doStop = true; // Signal to io proc to stop audio device
+        _critSect.Leave(); // Cannot be under lock, risk of deadlock
+        if (kEventTimeout == _stopEvent.Wait(2000))
         {
-            _doStop = true; // Signal to io proc to stop audio device
-            _critSect.Leave(); // Cannot be under lock, risk of deadlock
-            if (kEventTimeout == _stopEvent.Wait(2000))
-            {
-                WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice,
-                             _id, " Timed out stopping the render IOProc. "
-                                 "We likely failed to detect a device removal.");
-            }
-            _critSect.Enter();
-            _doStop = false;
-            WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice, _id,
-                         "Playout stopped");
+           WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id, 
+                        "Timed out stopping the render IOProc, "
+                        "We likely failed to detect a device removal.");
         }
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 1050
-        if (AudioDeviceDestroyIOProcID != NULL)
-        {
-            WEBRTC_CA_LOG_WARN(AudioDeviceDestroyIOProcID(_outputDeviceID,
-                    _deviceIOProcID));
-        }
-        else
-        {
-#endif
-        WEBRTC_CA_LOG_WARN(AudioDeviceRemoveIOProc(_outputDeviceID, deviceIOProc));
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 1050
-    }
-#endif
+        _critSect.Enter();
+        _doStop = false;
+        WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice, _id,
+                     "Playout stopped");
+        
     }
 
     // Setting this signal will allow the worker thread to be stopped.
@@ -2666,7 +2666,7 @@ OSStatus AudioDeviceMac::implObjectListenerProc(
 {
     WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice, _id,
                  "AudioDeviceMac::implObjectListenerProc()");
-
+    
     for (UInt32 i = 0; i < numberAddresses; i++)
     {
         if (addresses[i].mSelector == kAudioHardwarePropertyDevices)
@@ -2723,7 +2723,7 @@ WebRtc_Word32 AudioDeviceMac::HandleDeviceChange()
             logCAMsg(kTraceError, kTraceAudioDevice, _id,
                      "Error in AudioDeviceGetProperty()", (const char*) &err);
             return -1;
-        }
+        }      
     }
 
     if (SpeakerIsInitialized())
@@ -3017,24 +3017,36 @@ OSStatus AudioDeviceMac::implDeviceIOProc(const AudioBufferList *inputData,
         _critSect.Enter();
         if (_doStop)
         {
-            // This case is for stop play only or stop play+rec
-            // (in that case out and in device ids are equal)
+            if (_twoDevices || (!_recording && !_playing))
+            {
+               // In the case of a shared device, the single driving ioProc
+               // is stopped here
 #if __MAC_OS_X_VERSION_MAX_ALLOWED >= 1050
-            if (AudioDeviceCreateIOProcID != NULL)
-            {
-                WEBRTC_CA_LOG_ERR(AudioDeviceStop(_outputDeviceID, _deviceIOProcID));
-            }
-            else
-            {
+               if (AudioDeviceCreateIOProcID != NULL)
+               {
+                   WEBRTC_CA_LOG_ERR(AudioDeviceStop(_outputDeviceID, 
+                                                     _deviceIOProcID));
+                   
+                   WEBRTC_CA_LOG_WARN(AudioDeviceDestroyIOProcID(_outputDeviceID,
+                                                                 _deviceIOProcID));
+               }
+               else
+               {
 #endif
-            WEBRTC_CA_LOG_ERR(AudioDeviceStop(_outputDeviceID, deviceIOProc));
+                   WEBRTC_CA_LOG_ERR(AudioDeviceStop(_outputDeviceID, 
+                                                     deviceIOProc));
+                   
+                   WEBRTC_CA_LOG_WARN(AudioDeviceRemoveIOProc(_outputDeviceID,
+                                                              deviceIOProc));
+                   
 #if __MAC_OS_X_VERSION_MAX_ALLOWED >= 1050
-        }
+               }
 #endif
-            if (err == noErr)
-            {
-                WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice,
-                             _id, " Playout or shared device stopped");
+               if (err == noErr)
+               {
+                  WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice,
+                               _id, " Playout or shared device stopped");
+               }
             }
 
             _doStop = false;
@@ -3125,11 +3137,6 @@ OSStatus AudioDeviceMac::implInDeviceIOProc(const AudioBufferList *inputData,
     UInt64 inputTimeNs = AudioConvertHostTimeToNanos(inputTime->mHostTime);
     UInt64 nowNs = AudioConvertHostTimeToNanos(AudioGetCurrentHostTime());
 
-    if (!_recording)
-    {
-        return 0;
-    }
-
     // Check if we should close down audio device
     // Double-checked locking optimization to remove locking overhead
     if (_doStopRec)
@@ -3137,18 +3144,24 @@ OSStatus AudioDeviceMac::implInDeviceIOProc(const AudioBufferList *inputData,
         _critSect.Enter();
         if (_doStopRec)
         {
-            // This case is for stop rec only
+            // This will be signalled only when a shared device is not in use.
 #if __MAC_OS_X_VERSION_MAX_ALLOWED >= 1050
             if (AudioDeviceCreateIOProcID != NULL)
             {
                 WEBRTC_CA_LOG_ERR(AudioDeviceStop(_inputDeviceID, _inDeviceIOProcID));
+                
+                WEBRTC_CA_LOG_WARN(AudioDeviceDestroyIOProcID(_inputDeviceID,
+                                                              _inDeviceIOProcID));
             }
             else
             {
-#endif
-            WEBRTC_CA_LOG_ERR(AudioDeviceStop(_inputDeviceID, inDeviceIOProc));
+#endif 
+                WEBRTC_CA_LOG_ERR(AudioDeviceStop(_inputDeviceID, inDeviceIOProc));
+                
+                WEBRTC_CA_LOG_WARN(AudioDeviceRemoveIOProc(_inputDeviceID, 
+                                                           inDeviceIOProc));
 #if __MAC_OS_X_VERSION_MAX_ALLOWED >= 1050
-        }
+            }
 #endif
             if (err == noErr)
             {
@@ -3162,6 +3175,12 @@ OSStatus AudioDeviceMac::implInDeviceIOProc(const AudioBufferList *inputData,
             return 0;
         }
         _critSect.Leave();
+    }
+    
+    if (!_recording)
+    {
+        // Allow above checks to avoid a timeout on stopping capture.
+        return 0;
     }
 
     ring_buffer_size_t bufSizeSamples =

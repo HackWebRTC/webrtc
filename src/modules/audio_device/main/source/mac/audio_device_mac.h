@@ -300,7 +300,6 @@ private:
     AudioDeviceBuffer* _ptrAudioBuffer;
 
     CriticalSectionWrapper& _critSect;
-    CriticalSectionWrapper& _critSectCb;
 
     EventWrapper& _stopEventRec;
     EventWrapper& _stopEvent;
