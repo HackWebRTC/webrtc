@@ -36,7 +36,7 @@
 // it could be useful in repeat tests.
 //#define DEBUG
 
-//#define EXTERNAL_TRANSPORT
+// #define EXTERNAL_TRANSPORT
 
 using namespace webrtc;
 
@@ -204,10 +204,11 @@ void run_test() {
   }
   cnt++;
 
+  int j = 0;
 #ifdef EXTERNAL_TRANSPORT
   my_transportation ch0transport;
   printf("Enabling external transport \n");
-  netw->SetExternalTransport(0, true, &ch0transport);
+  netw->RegisterExternalTransport(0, ch0transport);
 #else
   char ip[64];
 #ifdef DEBUG
@@ -228,7 +229,7 @@ void run_test() {
   }
 #endif
 
-  int colons(0), j(0);
+  int colons(0);
   while (ip[j] != '\0' && j < 64 && !(colons = (ip[j++] == ':')))
     ;
   if (colons) {
