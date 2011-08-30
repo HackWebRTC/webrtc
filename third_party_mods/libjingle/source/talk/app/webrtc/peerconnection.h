@@ -48,15 +48,10 @@ namespace webrtc {
 
 class PeerConnectionObserver {
  public:
-  virtual void OnInitialized() = 0;
   virtual void OnError() = 0;
 
   // serialized signaling message
   virtual void OnSignalingMessage(const std::string& msg) = 0;
-
-  // Triggered when a local stream has been added and initialized
-  virtual void OnLocalStreamInitialized(const std::string& stream_id,
-      bool video) = 0;
 
   // Triggered when a remote peer accepts a media connection.
   virtual void OnAddStream(const std::string& stream_id, bool video) = 0;

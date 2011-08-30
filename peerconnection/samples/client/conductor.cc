@@ -115,10 +115,6 @@ void Conductor::StartCaptureDevice() {
 // PeerConnectionObserver implementation.
 //
 
-void Conductor::OnInitialized() {
-  main_wnd_->QueueUIThreadCallback(PEER_CONNECTION_ADDSTREAMS, NULL);
-}
-
 void Conductor::OnError() {
   LOG(LS_ERROR) << __FUNCTION__;
   main_wnd_->QueueUIThreadCallback(PEER_CONNECTION_ERROR, NULL);
@@ -131,36 +127,10 @@ void Conductor::OnSignalingMessage(const std::string& msg) {
   main_wnd_->QueueUIThreadCallback(SEND_MESSAGE_TO_PEER, msg_copy);
 }
 
-// Called when a local stream is added and initialized
-void Conductor::OnLocalStreamInitialized(const std::string& stream_id,
-                                         bool video) {
-  LOG(INFO) << __FUNCTION__ << " " << stream_id;
-  bool send_notification = (waiting_for_video_ || waiting_for_audio_);
-  if (video) {
-    ASSERT(video_channel_.empty());
-    video_channel_ = stream_id;
-    waiting_for_video_ = false;
-    LOG(INFO) << "Setting video renderer for stream: " << stream_id;
-    bool ok = peer_connection_->SetVideoRenderer(stream_id,
-                                                 main_wnd_->remote_renderer());
-    ASSERT(ok);
-  } else {
-    ASSERT(audio_channel_.empty());
-    audio_channel_ = stream_id;
-    waiting_for_audio_ = false;
-  }
-
-  if (send_notification && !waiting_for_audio_ && !waiting_for_video_)
-    main_wnd_->QueueUIThreadCallback(MEDIA_CHANNELS_INITIALIZED, NULL);
-
-  if (!waiting_for_audio_ && !waiting_for_video_)
-    main_wnd_->QueueUIThreadCallback(PEER_CONNECTION_CONNECT, NULL);
-}
-
 // Called when a remote stream is added
 void Conductor::OnAddStream(const std::string& stream_id, bool video) {
   LOG(INFO) << __FUNCTION__ << " " << stream_id;
-  bool send_notification = (waiting_for_video_ || waiting_for_audio_);
+
   if (video) {
     // ASSERT(video_channel_.empty());
     video_channel_ = stream_id;
@@ -177,11 +147,8 @@ void Conductor::OnAddStream(const std::string& stream_id, bool video) {
     waiting_for_audio_ = false;
   }
 
-  if (send_notification && !waiting_for_audio_ && !waiting_for_video_)
+  if (!waiting_for_video_)
     main_wnd_->QueueUIThreadCallback(MEDIA_CHANNELS_INITIALIZED, NULL);
-
-  if (!waiting_for_audio_ && !waiting_for_video_)
-    main_wnd_->QueueUIThreadCallback(PEER_CONNECTION_CONNECT, NULL);
 }
 
 void Conductor::OnRemoveStream(const std::string& stream_id, bool video) {
@@ -307,7 +274,7 @@ void Conductor::ConnectToPeer(int peer_id) {
   if (InitializePeerConnection()) {
     peer_id_ = peer_id;
     main_wnd_->SwitchToStreamingUI();
-    OnInitialized();  // TODO(tommi): Figure out why we don't get this callback.
+    AddStreams();
   } else {
     main_wnd_->MessageBox("Error", "Failed to initialize PeerConnection", true);
   }
@@ -325,6 +292,15 @@ void Conductor::AddStreams() {
 
   if (!peer_connection_->AddStream(kAudioLabel, false))
     waiting_for_audio_ = false;
+
+  // At the initiator of the call, after adding streams we need
+  // kick start the ICE candidates discovery process, which
+  // is done by the Connect method. Earlier this was done after
+  // getting the OnLocalStreamInitialized callback which is removed
+  // now. Connect will trigger OnSignalingMessage callback when
+  // ICE candidates are available.
+  if (waiting_for_audio_ || waiting_for_video_)
+    peer_connection_->Connect();
 }
 
 void Conductor::DisconnectFromCurrentPeer() {
@@ -340,8 +316,6 @@ void Conductor::DisconnectFromCurrentPeer() {
 
 void Conductor::UIThreadCallback(int msg_id, void* data) {
   if (msg_id == MEDIA_CHANNELS_INITIALIZED) {
-    bool ok = peer_connection_->Connect();
-    ASSERT(ok);
     StartCaptureDevice();
     // When we get an OnSignalingMessage notification, we'll send our
     // json encoded signaling message to the peer, which is the first step
@@ -388,8 +362,6 @@ void Conductor::UIThreadCallback(int msg_id, void* data) {
     }
   } else if (msg_id == PEER_CONNECTION_ADDSTREAMS) {
     AddStreams();
-  } else if (msg_id == PEER_CONNECTION_CONNECT) {
-    peer_connection_->Connect();
   } else if (msg_id == PEER_CONNECTION_ERROR) {
     main_wnd_->MessageBox("Error", "an unknown error occurred", true);
   }

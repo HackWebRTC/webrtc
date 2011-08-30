@@ -80,8 +80,6 @@ class PeerConnectionImpl : public PeerConnection,
       const cricket::SessionDescription* desc,
       const std::vector<cricket::Candidate>& candidates);
   void OnFailedCall();
-  void OnRtcMediaChannelCreated(const std::string& stream_id,
-                                bool video);
   bool Init();
 
  private:

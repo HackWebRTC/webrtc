@@ -35,7 +35,6 @@ class Conductor
     PEER_CONNECTION_CLOSED,
     SEND_MESSAGE_TO_PEER,
     PEER_CONNECTION_ADDSTREAMS,
-    PEER_CONNECTION_CONNECT,
     PEER_CONNECTION_ERROR,
   };
 
@@ -55,14 +54,8 @@ class Conductor
   //
   // PeerConnectionObserver implementation.
   //
-
-  virtual void OnInitialized();
   virtual void OnError();
   virtual void OnSignalingMessage(const std::string& msg);
-
-  // Called when a local stream is added and initialized
-  virtual void OnLocalStreamInitialized(const std::string& stream_id,
-                                        bool video);
 
   // Called when a remote stream is added
   virtual void OnAddStream(const std::string& stream_id, bool video);

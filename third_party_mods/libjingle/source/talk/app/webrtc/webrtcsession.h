@@ -106,10 +106,6 @@ class WebRtcSession : public cricket::BaseSession {
   // message from the remote peer with the candidates port equal to 0.
   sigslot::signal2<const std::string&, bool> SignalRemoveStream;
 
-  // This signal occurs when audio/video channel has been created for the
-  // new added stream.
-  sigslot::signal2<const std::string&, bool> SignalRtcMediaChannelCreated;
-
   // This signal occurs when the local candidate is ready
   sigslot::signal2<const cricket::SessionDescription*,
       const std::vector<cricket::Candidate>&> SignalLocalDescription;
@@ -200,6 +196,7 @@ class WebRtcSession : public cricket::BaseSession {
 
   bool SetVideoCapture(bool capture);
   void EnableAllStreams();
+  bool SendSignalAddStream(bool video);
 
   cricket::Transport* transport_;
   cricket::ChannelManager* channel_manager_;

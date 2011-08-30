@@ -56,8 +56,8 @@ PeerConnectionImpl::~PeerConnectionImpl() {
 bool PeerConnectionImpl::Init() {
   std::string sid;
   talk_base::CreateRandomString(8, &sid);
-  const bool incoming = false;
-  session_.reset(CreateMediaSession(sid, incoming)); // default outgoing direction
+  const bool incoming = false;  // default outgoing direction
+  session_.reset(CreateMediaSession(sid, incoming));
   if (session_.get() == NULL) {
     ASSERT(false && "failed to initialize a session");
     return false;
@@ -107,9 +107,6 @@ WebRtcSession* PeerConnectionImpl::CreateMediaSession(
     session->SignalRemoveStream.connect(
         this,
         &PeerConnectionImpl::OnRemoveStream);
-    session->SignalRtcMediaChannelCreated.connect(
-        this,
-        &PeerConnectionImpl::OnRtcMediaChannelCreated);
     session->SignalLocalDescription.connect(
         this,
         &PeerConnectionImpl::OnLocalDescription);
@@ -206,13 +203,6 @@ void PeerConnectionImpl::OnRemoveStream(const std::string& stream_id,
                                         bool video) {
   if (event_callback_) {
     event_callback_->OnRemoveStream(stream_id, video);
-  }
-}
-
-void PeerConnectionImpl::OnRtcMediaChannelCreated(const std::string& stream_id,
-                                                  bool video) {
-  if (event_callback_) {
-    event_callback_->OnLocalStreamInitialized(stream_id, video);
   }
 }
 

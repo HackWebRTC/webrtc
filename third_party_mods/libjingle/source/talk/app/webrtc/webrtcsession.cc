@@ -131,10 +131,6 @@ bool WebRtcSession::CreateVoiceChannel(const std::string& stream_id) {
       channel_manager_->CreateVoiceChannel(this, stream_id, true);
   ASSERT(voice_channel != NULL);
   stream_info->channel = voice_channel;
-
-  if (!incoming()) {
-    SignalRtcMediaChannelCreated(stream_id, false);
-  }
   return true;
 }
 
@@ -148,10 +144,6 @@ bool WebRtcSession::CreateVideoChannel(const std::string& stream_id) {
       channel_manager_->CreateVideoChannel(this, stream_id, true, NULL);
   ASSERT(video_channel != NULL);
   stream_info->channel = video_channel;
-
-  if (!incoming()) {
-    SignalRtcMediaChannelCreated(stream_id, true);
-  }
   return true;
 }
 
@@ -451,6 +443,7 @@ bool WebRtcSession::OnRemoteDescription(
     transport_->OnRemoteCandidates(candidates);
     return true;
   }
+
   // Session description is always accepted.
   set_remote_description(desc);
   SetState(STATE_RECEIVEDACCEPT);
@@ -460,15 +453,30 @@ bool WebRtcSession::OnRemoteDescription(
   if (!incoming()) {
     // Trigger OnAddStream callback at the initiator
     const cricket::ContentInfo* video_content = GetFirstVideoContent(desc);
-    if (video_content) {
-      SignalAddStream(video_content->name, true);
+    if (video_content && !SendSignalAddStream(true)) {
+      LOG(LERROR) << "failed to find video stream in map";
+      ASSERT(false);
     } else {
       const cricket::ContentInfo* audio_content = GetFirstAudioContent(desc);
-      if (audio_content)
-        SignalAddStream(audio_content->name, false);
+      if (audio_content && !SendSignalAddStream(false)) {
+        LOG(LERROR) << "failed to find audio stream in map";
+        ASSERT(false);
+      }
     }
   }
   return true;
+}
+
+bool WebRtcSession::SendSignalAddStream(bool video) {
+  StreamMap::const_iterator iter;
+  for (iter = streams_.begin(); iter != streams_.end(); ++iter) {
+    StreamInfo* sinfo = (*iter);
+    if (sinfo->video == video) {
+      SignalAddStream(sinfo->stream_id, video);
+      return true;
+    }
+  }
+  return false;
 }
 
 cricket::SessionDescription* WebRtcSession::CreateOffer() {
