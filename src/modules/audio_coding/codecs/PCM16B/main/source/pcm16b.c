@@ -11,6 +11,8 @@
 
 #include "pcm16b.h"
 
+#include <stdlib.h>
+
 #include "typedefs.h"
 
 #ifdef WEBRTC_BIG_ENDIAN
@@ -66,7 +68,6 @@ WebRtc_Word16 WebRtcPcm16b_DecodeW16(void *inst,
                                      WebRtc_Word16 *speechOut16b,
                                      WebRtc_Word16* speechType)
 {
-  // Avoid warning
   (void)(inst = NULL);
 #ifdef WEBRTC_BIG_ENDIAN
     WEBRTC_SPL_MEMCPY_W8(speechOut16b, speechIn16b, ((len*sizeof(WebRtc_Word16)+1)>>1));
