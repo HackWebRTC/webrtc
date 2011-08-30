@@ -25,23 +25,6 @@ namespace webrtc
 class EventWrapper;
 class ThreadWrapper;
 
-// Number of continuous buffer check errors before going 0->1
-const WebRtc_UWord16 THR_OLD_BUFFER_CHECK_METHOD = 30;
-// Number of buffer check errors before going 1->2
-const WebRtc_UWord16 THR_IGNORE_BUFFER_CHECK = 30;
-// 2.7 seconds (decimal 131071)
-const WebRtc_UWord32 ALSA_SNDCARD_BUFF_SIZE_REC = 0x1ffff;
-// ~170 ms (decimal 8191) - enough since we only write to buffer if it contains
-// less than 50 ms
-const WebRtc_UWord32 ALSA_SNDCARD_BUFF_SIZE_PLAY = 0x1fff;
-
-const WebRtc_UWord32 REC_TIMER_PERIOD_MS = 2;
-const WebRtc_UWord32 PLAY_TIMER_PERIOD_MS = 5;
-const WebRtc_UWord16 PLAYBACK_THRESHOLD = 50;
-
-const WebRtc_UWord32 REC_SAMPLES_PER_MS = 48;
-const WebRtc_UWord32 PLAY_SAMPLES_PER_MS = 48;
-
 class AudioDeviceLinuxALSA : public AudioDeviceGeneric
 {
 public:
@@ -184,7 +167,6 @@ private:
                                  char* enumDeviceName = NULL,
                                  const WebRtc_Word32 ednLen = 0) const;
     WebRtc_Word32 ErrorRecovery(WebRtc_Word32 error, snd_pcm_t* deviceHandle);
-    void FillPlayoutBuffer();
 
 private:
     void Lock() { _critSect.Enter(); };
@@ -192,10 +174,6 @@ private:
 private:
     inline WebRtc_Word32 InputSanityCheckAfterUnlockedPeriod() const;
     inline WebRtc_Word32 OutputSanityCheckAfterUnlockedPeriod() const;
-
-    WebRtc_Word32 PrepareStartRecording();
-    WebRtc_Word32 GetPlayoutBufferDelay();
-    WebRtc_Word32 GetRecordingBufferDelay(bool preRead);
 
 private:
     static bool RecThreadFunc(void*);
@@ -207,10 +185,6 @@ private:
     AudioDeviceBuffer* _ptrAudioBuffer;
     
     CriticalSectionWrapper& _critSect;
-    EventWrapper& _timeEventRec;
-    EventWrapper& _timeEventPlay;
-    EventWrapper& _recStartEvent;
-    EventWrapper& _playStartEvent;
 
     ThreadWrapper* _ptrThreadRec;
     ThreadWrapper* _ptrThreadPlay;
@@ -229,17 +203,28 @@ private:
     snd_pcm_t* _handleRecord;
     snd_pcm_t* _handlePlayout;
 
-    snd_pcm_uframes_t _recSndcardBuffsize;
-    snd_pcm_uframes_t _playSndcardBuffsize;
+    snd_pcm_uframes_t _recordingBuffersizeInFrame;
+    snd_pcm_uframes_t _recordingPeriodSizeInFrame;
+    snd_pcm_uframes_t _playoutBufferSizeInFrame;
+    snd_pcm_uframes_t _playoutPeriodSizeInFrame;
 
-    WebRtc_UWord32 _samplingFreqRec;
-    WebRtc_UWord32 _samplingFreqPlay;
+    ssize_t _recordingBufferSizeIn10MS;
+    ssize_t _playoutBufferSizeIn10MS;
+    WebRtc_UWord32 _recordingFramesIn10MS;
+    WebRtc_UWord32 _playoutFramesIn10MS;
+
+    WebRtc_UWord32 _recordingFreq;
+    WebRtc_UWord32 _playoutFreq;
     WebRtc_UWord8 _recChannels;
     WebRtc_UWord8 _playChannels;
 
+    WebRtc_Word8* _recordingBuffer; // in byte
+    WebRtc_Word8* _playoutBuffer; // in byte
+    WebRtc_UWord32 _recordingFramesLeft;
+    WebRtc_UWord32 _playoutFramesLeft;
+
     WebRtc_UWord32 _playbackBufferSize;
-    WebRtc_UWord32 _recordBufferSize;
-    WebRtc_Word16* _recBuffer;
+
     AudioDeviceModule::BufferType _playBufType;
 
 private:
@@ -248,28 +233,12 @@ private:
     bool _playing;
     bool _recIsInitialized;
     bool _playIsInitialized;
-    bool _startRec;
-    bool _stopRec;
-    bool _startPlay;
-    bool _stopPlay;
     bool _AGC;
-    bool _buffersizeFromZeroAvail;
-    bool _buffersizeFromZeroDelay;
 
-    WebRtc_UWord32 _sndCardPlayDelay;        // Just to store last value
-    WebRtc_UWord32 _previousSndCardPlayDelay; // Stores previous _sndCardPlayDelay value
-    WebRtc_UWord8 _delayMonitorStatePlay; // 0 normal, 1 monitor delay change (after error)
-    WebRtc_Word16 _largeDelayCountPlay;  // Used when monitoring delay change
-    WebRtc_UWord32 _sndCardRecDelay;
-    WebRtc_UWord32 _numReadyRecSamples;
+    snd_pcm_sframes_t _recordingDelay;
+    snd_pcm_sframes_t _playoutDelay;
 
-    WebRtc_UWord8 _bufferCheckMethodPlay;
-    WebRtc_UWord8 _bufferCheckMethodRec;
-    WebRtc_UWord32 _bufferCheckErrorsPlay;
-    WebRtc_UWord32 _bufferCheckErrorsRec;
-    WebRtc_Word32 _lastBufferCheckValuePlay;
     WebRtc_Word32 _writeErrors;
-
     WebRtc_UWord16 _playWarning;
     WebRtc_UWord16 _playError;
     WebRtc_UWord16 _recWarning;

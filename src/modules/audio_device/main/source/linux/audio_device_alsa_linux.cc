@@ -49,13 +49,22 @@ void WebrtcAlsaErrorHandler(const char *file,
 
 namespace webrtc
 {
+static const unsigned int ALSA_PLAYOUT_FREQ = 48000;
+static const unsigned int ALSA_PLAYOUT_CH = 2;
+static const unsigned int ALSA_PLAYOUT_LATENCY = 40*1000; // in us
+static const unsigned int ALSA_CAPTURE_FREQ = 48000;
+static const unsigned int ALSA_CAPTURE_CH = 2;
+static const unsigned int ALSA_CAPTURE_LATENCY = 40*1000; // in us
+static const unsigned int ALSA_PLAYOUT_WAIT_TIMEOUT = 5; // in ms
+static const unsigned int ALSA_CAPTURE_WAIT_TIMEOUT = 5; // in ms
+
+#define FUNC_GET_NUM_OF_DEVICE 0
+#define FUNC_GET_DEVICE_NAME 1
+#define FUNC_GET_DEVICE_NAME_FOR_AN_ENUM 2
+
 AudioDeviceLinuxALSA::AudioDeviceLinuxALSA(const WebRtc_Word32 id) :
     _ptrAudioBuffer(NULL),
     _critSect(*CriticalSectionWrapper::CreateCriticalSection()),
-    _timeEventRec(*EventWrapper::Create()),
-    _timeEventPlay(*EventWrapper::Create()),
-    _recStartEvent(*EventWrapper::Create()),
-    _playStartEvent(*EventWrapper::Create()),
     _ptrThreadRec(NULL),
     _ptrThreadPlay(NULL),
     _recThreadID(0),
@@ -68,39 +77,32 @@ AudioDeviceLinuxALSA::AudioDeviceLinuxALSA(const WebRtc_Word32 id) :
     _outputDeviceIsSpecified(false),
     _handleRecord(NULL),
     _handlePlayout(NULL),
-    _recSndcardBuffsize(ALSA_SNDCARD_BUFF_SIZE_REC),
-    _playSndcardBuffsize(ALSA_SNDCARD_BUFF_SIZE_PLAY),
-    _samplingFreqRec(REC_SAMPLES_PER_MS),
-    _samplingFreqPlay(PLAY_SAMPLES_PER_MS),
-    _recChannels(1),
-    _playChannels(1),
+    _recordingBuffersizeInFrame(0),
+    _recordingPeriodSizeInFrame(0),
+    _playoutBufferSizeInFrame(0),
+    _playoutPeriodSizeInFrame(0),
+    _recordingBufferSizeIn10MS(0),
+    _playoutBufferSizeIn10MS(0),
+    _recordingFramesIn10MS(0),
+    _playoutFramesIn10MS(0),
+    _recordingFreq(ALSA_CAPTURE_FREQ),
+    _playoutFreq(ALSA_PLAYOUT_FREQ),
+    _recChannels(ALSA_CAPTURE_CH),
+    _playChannels(ALSA_PLAYOUT_CH),
+    _recordingBuffer(NULL),
+    _playoutBuffer(NULL),
+    _recordingFramesLeft(0),
+    _playoutFramesLeft(0),
     _playbackBufferSize(0),
-    _recordBufferSize(0),
-    _recBuffer(NULL),
     _playBufType(AudioDeviceModule::kAdaptiveBufferSize),
     _initialized(false),
     _recording(false),
     _playing(false),
     _recIsInitialized(false),
     _playIsInitialized(false),
-    _startRec(false),
-    _stopRec(false),
-    _startPlay(false),
-    _stopPlay(false),
     _AGC(false),
-    _buffersizeFromZeroAvail(true),
-    _buffersizeFromZeroDelay(true),
-    _sndCardPlayDelay(0),
-    _previousSndCardPlayDelay(0),
-    _delayMonitorStatePlay(0),
-    _largeDelayCountPlay(0),
-    _sndCardRecDelay(0),
-    _numReadyRecSamples(0),
-    _bufferCheckMethodPlay(0),
-    _bufferCheckMethodRec(0),
-    _bufferCheckErrorsPlay(0),
-    _bufferCheckErrorsRec(0),
-    _lastBufferCheckValuePlay(0),
+    _recordingDelay(0),
+    _playoutDelay(0),
     _writeErrors(0),
     _playWarning(0),
     _playError(0),
@@ -124,14 +126,17 @@ AudioDeviceLinuxALSA::~AudioDeviceLinuxALSA()
     
     Terminate();
 
-    if (_recBuffer)
+    // Clean up the recording buffer and playout buffer.
+    if (_recordingBuffer)
     {
-        delete _recBuffer;
+        delete [] _recordingBuffer;
+        _recordingBuffer = NULL;
     }
-    delete &_recStartEvent;
-    delete &_playStartEvent;
-    delete &_timeEventRec;
-    delete &_timeEventPlay;
+    if (_playoutBuffer)
+    {
+        delete [] _playoutBuffer;
+        _playoutBuffer = NULL;
+    }
     delete &_critSect;
 }
 
@@ -189,96 +194,6 @@ WebRtc_Word32 AudioDeviceLinuxALSA::Init()
     _recWarning = 0;
     _recError = 0;
 
-    // RECORDING
-    const char* threadName = "webrtc_audio_module_rec_thread";
-    _ptrThreadRec = ThreadWrapper::CreateThread(RecThreadFunc,
-                                                this,
-                                                kRealtimePriority,
-                                                threadName);
-    if (_ptrThreadRec == NULL)
-    {
-        WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
-                     "  failed to create the rec audio thread");
-        return -1;
-    }
-
-    unsigned int threadID(0);
-    if (!_ptrThreadRec->Start(threadID))
-    {
-        WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
-                     "  failed to start the rec audio thread");
-        delete _ptrThreadRec;
-        _ptrThreadRec = NULL;
-        return -1;
-    }
-    _recThreadID = threadID;
-    
-    const bool periodic(true);
-    if (!_timeEventRec.StartTimer(periodic, REC_TIMER_PERIOD_MS))
-    {
-        WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
-                     "  failed to start the rec timer event");
-        if (_ptrThreadRec->Stop())
-        {
-            delete _ptrThreadRec;
-            _ptrThreadRec = NULL;
-        }
-        else
-        {
-            WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                         "  unable to stop the activated rec thread");
-        }
-        return -1;
-    }
-
-    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                 "  periodic rec timer (dT=%d) is now active",
-                 REC_TIMER_PERIOD_MS);
-
-    // PLAYOUT
-    threadName = "webrtc_audio_module_play_thread";
-    _ptrThreadPlay = ThreadWrapper::CreateThread(PlayThreadFunc,
-                                                 this,
-                                                 kRealtimePriority,
-                                                 threadName);
-    if (_ptrThreadPlay == NULL)
-    {
-        WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
-                     "  failed to create the play audio thread");
-        return -1;
-    }
-
-    threadID = 0;
-    if (!_ptrThreadPlay->Start(threadID))
-    {
-        WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
-                     "  failed to start the play audio thread");
-        delete _ptrThreadPlay;
-        _ptrThreadPlay = NULL;
-        return -1;
-    }
-    _playThreadID = threadID;
-    
-    if (!_timeEventPlay.StartTimer(periodic, PLAY_TIMER_PERIOD_MS))
-    {
-        WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
-                     "  failed to start the play timer event");
-        if (_ptrThreadPlay->Stop())
-        {
-            delete _ptrThreadPlay;
-            _ptrThreadPlay = NULL;
-        }
-        else
-        {
-            WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                         "  unable to stop the activated play thread");
-        }
-        return -1;
-    }
-
-    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                 "  periodic play timer (dT=%d) is now active", PLAY_TIMER_PERIOD_MS);
-
     _initialized = true;
 
     return 0;
@@ -306,7 +221,6 @@ WebRtc_Word32 AudioDeviceLinuxALSA::Terminate()
         _critSect.Leave();
 
         tmpThread->SetNotAlive();
-        _timeEventRec.Set();
 
         if (tmpThread->Stop())
         {
@@ -321,8 +235,6 @@ WebRtc_Word32 AudioDeviceLinuxALSA::Terminate()
         _critSect.Enter();
     }
 
-    _timeEventRec.StopTimer();
-
     // PLAYOUT
     if (_ptrThreadPlay)
     {
@@ -331,7 +243,6 @@ WebRtc_Word32 AudioDeviceLinuxALSA::Terminate()
         _critSect.Leave();
 
         tmpThread->SetNotAlive();
-        _timeEventPlay.Set();
 
         if (tmpThread->Stop())
         {
@@ -345,8 +256,6 @@ WebRtc_Word32 AudioDeviceLinuxALSA::Terminate()
 
         _critSect.Enter();
     }
-
-    _timeEventPlay.StopTimer();
 
     _initialized = false;
     _outputDeviceIsSpecified = false;
@@ -1280,9 +1189,6 @@ WebRtc_Word32 AudioDeviceLinuxALSA::InitPlayout()
 
     int errVal = 0;
 
-    snd_pcm_uframes_t   numFrames = 0;
-    snd_pcm_hw_params_t *paramsPlayout;
-
     CriticalSectionScoped lock(_critSect);
     if (_playing)
     {
@@ -1310,7 +1216,7 @@ WebRtc_Word32 AudioDeviceLinuxALSA::InitPlayout()
     if (_handlePlayout != NULL)
     {
         LATE(snd_pcm_close)(_handlePlayout);
-        _handlePlayout=NULL;
+        _handlePlayout = NULL;
         _playIsInitialized = false;
         if (errVal < 0)
         {
@@ -1356,253 +1262,65 @@ WebRtc_Word32 AudioDeviceLinuxALSA::InitPlayout()
                      "     unable to open playback device: %s (%d)",
                      LATE(snd_strerror)(errVal),
                      errVal);
-        _handlePlayout=NULL;
+        _handlePlayout = NULL;
         return -1;
     }
 
-    // Allocate hardware paramterers 
-    errVal = LATE(snd_pcm_hw_params_malloc)(&paramsPlayout);
-    if (errVal < 0)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "     hardware params malloc, error: %s",
-                     LATE(snd_strerror)(errVal));
-        if (_handlePlayout)
-        {
-            LATE(snd_pcm_close)(_handlePlayout);
-            _handlePlayout=NULL;
-            if (errVal < 0)
-            {
-                WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                             "     Error closing playout sound device, error: %s",
-                             LATE(snd_strerror)(errVal));
-            }
-        }
-        return -1;
-    }
-
-    errVal = LATE(snd_pcm_hw_params_any)(_handlePlayout, paramsPlayout);
-    if (errVal < 0)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "     hardware params_any, error: %s",
-                     LATE(snd_strerror)(errVal));
-        if (_handlePlayout)
-        {
-            LATE(snd_pcm_close)(_handlePlayout);
-            _handlePlayout=NULL;
-            if (errVal < 0)
-            {
-                WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                             "     Error closing playout sound device, error: %s",
-                             LATE(snd_strerror)(errVal));
-            }
-        }
-        return -1;
-    }
-
-    // Set stereo sample order
-    errVal = LATE(snd_pcm_hw_params_set_access)
-                 (_handlePlayout,
-                  paramsPlayout,
-                  SND_PCM_ACCESS_RW_INTERLEAVED);
-    if (errVal < 0)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "     hardware params set access, error: %s",
-                     LATE(snd_strerror)(errVal));
-        if (_handlePlayout)
-        {
-            LATE(snd_pcm_close)(_handlePlayout);
-            _handlePlayout=NULL;
-            if (errVal < 0)
-            {
-                WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                             "     Error closing playout sound device, error: %s",
-                             LATE(snd_strerror)(errVal));
-            }
-        }
-        return -1;
-    }
-
-    // Set sample format
+    _playoutFramesIn10MS = _playoutFreq/100;
+    if ((errVal = LATE(snd_pcm_set_params)( _handlePlayout,
 #if defined(WEBRTC_BIG_ENDIAN)
-    errVal = LATE(snd_pcm_hw_params_set_format)
-                 (_handlePlayout,
-                  paramsPlayout,
-                  SND_PCM_FORMAT_S16_BE);
+        SND_PCM_FORMAT_S16_BE,
 #else
-    errVal = LATE(snd_pcm_hw_params_set_format)
-                 (_handlePlayout,
-                  paramsPlayout,
-                  SND_PCM_FORMAT_S16_LE);
+        SND_PCM_FORMAT_S16_LE, //format
 #endif
-    if (errVal < 0)
-    {
+        SND_PCM_ACCESS_RW_INTERLEAVED, //access
+        _playChannels, //channels
+        _playoutFreq, //rate
+        1, //soft_resample
+        ALSA_PLAYOUT_LATENCY //40*1000 //latency required overall latency in us
+    )) < 0)
+    {   /* 0.5sec */
+        _playoutFramesIn10MS = 0;
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "     hardware params set format, error: %s",
-                     LATE(snd_strerror)(errVal));
-        if (_handlePlayout)
-        {
-            LATE(snd_pcm_close)(_handlePlayout);
-            _handlePlayout=NULL;
-            if (errVal < 0)
-            {
-                WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                             "     Error closing playout sound device, error: %s",
-                             LATE(snd_strerror)(errVal));
-            }
-        }
+                     "     unable to set playback device: %s (%d)",
+                     LATE(snd_strerror)(errVal),
+                     errVal);
+        ErrorRecovery(errVal, _handlePlayout);
+        errVal = LATE(snd_pcm_close)(_handlePlayout);
+        _handlePlayout = NULL;
         return -1;
     }
 
-    // Set stereo/mono
-    errVal = LATE(snd_pcm_hw_params_set_channels)
-                 (_handlePlayout,
-                  paramsPlayout,
-                  _playChannels);
+    errVal = LATE(snd_pcm_get_params)(_handlePlayout,
+        &_playoutBufferSizeInFrame, &_playoutPeriodSizeInFrame);
     if (errVal < 0)
     {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "     hardware params set channels(%d), error: %s",
-                     _playChannels,
-                     LATE(snd_strerror)(errVal));
-
-        if (_handlePlayout)
-        {
-            LATE(snd_pcm_close)(_handlePlayout);
-            _handlePlayout = NULL;
-            if (errVal < 0)
-            {
-                WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                             "     Error closing playout sound device, error: %s",
-                             LATE(snd_strerror)(errVal));
-            }
-        }
-        return -1;
+                     "    snd_pcm_get_params %s",
+                     LATE(snd_strerror)(errVal),
+                     errVal);
+        _playoutBufferSizeInFrame = 0;
+        _playoutPeriodSizeInFrame = 0;
     }
-
-    // Set sampling rate to use
-    _samplingFreqPlay = PLAY_SAMPLES_PER_MS;
-    WebRtc_UWord32 samplingRate = _samplingFreqPlay*1000;
-
-    // Set sample rate
-    unsigned int exactRate = samplingRate;
-    errVal = LATE(snd_pcm_hw_params_set_rate_near)
-                 (_handlePlayout,
-                  paramsPlayout,
-                  &exactRate,
-                  0);
-    if (errVal < 0)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "     hardware params set rate near(%d), error: %s",
-                     samplingRate,
-                     LATE(snd_strerror)(errVal));
-        if (_handlePlayout)
-        {
-            LATE(snd_pcm_close)(_handlePlayout);
-            _handlePlayout=NULL;
-            if (errVal < 0)
-            {
-                WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                             "     Error closing playout sound device, error: %s",
-                             LATE(snd_strerror)(errVal));
-            }
-        }
-        return -1;
+    else {
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
+                     "    playout snd_pcm_get_params "
+                     "buffer_size:%d period_size :%d",
+                     _playoutBufferSizeInFrame, _playoutPeriodSizeInFrame);
     }
-    if (exactRate != samplingRate)
-    {
-        WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                     "     Soundcard does not support sample rate %d Hz, %d Hz"
-                     " used instead.",
-                     samplingRate,
-                     exactRate);
-
-        // We use this rate instead
-        _samplingFreqPlay = (WebRtc_UWord32)(exactRate / 1000);
-    }
-
-    // Set buffer size, in frames
-    numFrames = ALSA_SNDCARD_BUFF_SIZE_PLAY;
-    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                 "     set playout, numFrames: %d, bufer size: %d",
-                 numFrames,
-                 _playSndcardBuffsize);
-    errVal = LATE(snd_pcm_hw_params_set_buffer_size_near)
-                 (_handlePlayout,
-                  paramsPlayout,
-                  &_playSndcardBuffsize);
-    if (errVal < 0)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "     hardware params set buffer size near(%d), error: %s",
-                     (int) numFrames,
-                     LATE(snd_strerror)(errVal));
-        if (_handlePlayout)
-        {
-            LATE(snd_pcm_close)(_handlePlayout);
-            _handlePlayout = NULL;
-            if (errVal < 0)
-            {
-                WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                             "     Error closing playout sound device, error: %s",
-                             LATE(snd_strerror)(errVal));
-            }
-        }
-        return -1;
-    }
-    if (numFrames != _playSndcardBuffsize)
-    {
-        WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                     "     Allocated record buffersize: %d frames",
-                     (int)_playSndcardBuffsize);
-    }
-
-    // Write settings to the devices
-    errVal = LATE(snd_pcm_hw_params)(_handlePlayout, paramsPlayout);
-    if (errVal < 0)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "     hardware params(_handlePlayout, paramsPlayout),"
-                     " error: %s",
-                     LATE(snd_strerror)(errVal));
-        if (_handlePlayout)
-        {
-            LATE(snd_pcm_close)(_handlePlayout);
-            _handlePlayout = NULL;
-            if (errVal < 0)
-            {
-                WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                             "     Error closing playout sound device, error: %s",
-                             LATE(snd_strerror)(errVal));
-            }
-        }
-        return -1;
-    }
-
-    // Free parameter struct memory
-    LATE(snd_pcm_hw_params_free)(paramsPlayout);
-    paramsPlayout = NULL;
 
     if (_ptrAudioBuffer)
     {
-        // Update audio buffer with the selected parameters
-        _ptrAudioBuffer->SetPlayoutSampleRate(_samplingFreqPlay*1000);
-        _ptrAudioBuffer->SetPlayoutChannels((WebRtc_UWord8)_playChannels);
+        // Update webrtc audio buffer with the selected parameters
+        _ptrAudioBuffer->SetPlayoutSampleRate(_playoutFreq);
+        _ptrAudioBuffer->SetPlayoutChannels(_playChannels);
     }
 
     // Set play buffer size
-    _playbackBufferSize = _samplingFreqPlay * 10 * _playChannels * 2;
+    _playoutBufferSizeIn10MS = LATE(snd_pcm_frames_to_bytes)(
+        _handlePlayout, _playoutFramesIn10MS);
 
     // Init varaibles used for play
-    _previousSndCardPlayDelay = 0;
-    _largeDelayCountPlay = 0;
-    _delayMonitorStatePlay = 0;
-    _bufferCheckMethodPlay = 0;
-    _bufferCheckErrorsPlay = 0;
-    _lastBufferCheckValuePlay = 0;
     _playWarning = 0;
     _playError = 0;
 
@@ -1611,7 +1329,7 @@ WebRtc_Word32 AudioDeviceLinuxALSA::InitPlayout()
         _playIsInitialized = true;
         return 0;
     }
-    else 
+    else
     {
         return -1;
     }
@@ -1625,8 +1343,6 @@ WebRtc_Word32 AudioDeviceLinuxALSA::InitRecording()
                  "%s", __FUNCTION__);
 
     int errVal = 0;
-    snd_pcm_uframes_t   numFrames = 0;
-    snd_pcm_hw_params_t *paramsRecord;
 
     CriticalSectionScoped lock(_critSect);
 
@@ -1708,248 +1424,77 @@ WebRtc_Word32 AudioDeviceLinuxALSA::InitRecording()
         return -1;
     }
 
-    // Allocate hardware paramterers
-    errVal = LATE(snd_pcm_hw_params_malloc)(&paramsRecord);
-    if (errVal < 0)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "    hardware params malloc, error: %s",
-                     LATE(snd_strerror)(errVal));
-        if (_handleRecord)
-        {
-            errVal = LATE(snd_pcm_close)(_handleRecord);
-            _handleRecord = NULL;
-            if (errVal < 0)
-            {
-                WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                             "     Error closing recording sound device, error: %s",
-                             LATE(snd_strerror)(errVal));
-            }
-        }
-        return -1;
-    }
-
-    errVal = LATE(snd_pcm_hw_params_any)(_handleRecord, paramsRecord);
-    if (errVal < 0)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "    hardware params any, error: %s",
-                     LATE(snd_strerror)(errVal));
-        if (_handleRecord)
-        {
-            errVal = LATE(snd_pcm_close)(_handleRecord);
-            _handleRecord = NULL;
-            if (errVal < 0)
-            {
-                WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                             "     Error closing recording sound device, error:"
-                             " %s", LATE(snd_strerror)(errVal));
-            }
-        }           
-        return -1;
-    }
-
-    // Set stereo sample order
-    errVal = LATE(snd_pcm_hw_params_set_access)
-                 (_handleRecord,
-                  paramsRecord,
-                  SND_PCM_ACCESS_RW_INTERLEAVED);
-    if (errVal < 0)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "    harware params set access, error: %s",
-                     LATE(snd_strerror)(errVal));
-        if (_handleRecord)
-        {
-            errVal = LATE(snd_pcm_close)(_handleRecord);
-            _handleRecord = NULL;
-            if (errVal < 0)
-            {
-                WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                             "     Error closing recording sound device, error:"
-                             " %s", LATE(snd_strerror)(errVal));
-            }
-        }
-        return -1;
-    }
-
-    // Set sample format
+    _recordingFramesIn10MS = _recordingFreq/100;
+    if ((errVal = LATE(snd_pcm_set_params)(_handleRecord,
 #if defined(WEBRTC_BIG_ENDIAN)
-    errVal = LATE(snd_pcm_hw_params_set_format)
-                 (_handleRecord,
-                  paramsRecord,
-                  SND_PCM_FORMAT_S16_BE);
+        SND_PCM_FORMAT_S16_BE, //format
 #else
-    errVal = LATE(snd_pcm_hw_params_set_format)
-                 (_handleRecord,
-                  paramsRecord,
-                  SND_PCM_FORMAT_S16_LE);
+        SND_PCM_FORMAT_S16_LE, //format
 #endif
+        SND_PCM_ACCESS_RW_INTERLEAVED, //access
+        _recChannels, //channels
+        _recordingFreq, //rate
+        1, //soft_resample
+        ALSA_CAPTURE_LATENCY //latency in us
+    )) < 0)
+    {
+         // Fall back to another mode then.
+         if (_recChannels == 1)
+           _recChannels = 2;
+         else
+           _recChannels = 1;
+
+         if ((errVal = LATE(snd_pcm_set_params)(_handleRecord,
+#if defined(WEBRTC_BIG_ENDIAN)
+             SND_PCM_FORMAT_S16_BE, //format
+#else
+             SND_PCM_FORMAT_S16_LE, //format
+#endif
+             SND_PCM_ACCESS_RW_INTERLEAVED, //access
+             _recChannels, //channels
+             _recordingFreq, //rate
+             1, //soft_resample
+             ALSA_CAPTURE_LATENCY //latency in us
+         )) < 0)
+         {
+             _recordingFramesIn10MS = 0;
+             WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+                          "    unable to set record settings: %s (%d)",
+                          LATE(snd_strerror)(errVal), errVal);
+             ErrorRecovery(errVal, _handleRecord);
+             errVal = LATE(snd_pcm_close)(_handleRecord);
+             _handleRecord = NULL;
+             return -1;
+         }
+    }
+
+    errVal = LATE(snd_pcm_get_params)(_handleRecord,
+        &_recordingBuffersizeInFrame, &_recordingPeriodSizeInFrame);
     if (errVal < 0)
     {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "    harware params set format, error: %s",
-                     LATE(snd_strerror)(errVal));
-        if (_handleRecord)
-        {
-            errVal = LATE(snd_pcm_close)(_handleRecord);
-            _handleRecord = NULL;
-            if (errVal < 0)
-            {
-                WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                             "     Error closing recording sound device,"
-                             " error: %s",
-                             LATE(snd_strerror)(errVal));
-            }
-        }
-        return -1;
+                     "    snd_pcm_get_params %s",
+                     LATE(snd_strerror)(errVal), errVal);
+        _recordingBuffersizeInFrame = 0;
+        _recordingPeriodSizeInFrame = 0;
     }
-
-    // Set stereo/mono
-    errVal = LATE(snd_pcm_hw_params_set_channels)(
-        _handleRecord, paramsRecord, _recChannels);
-    if (errVal < 0)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "    harware params set channels (%d), error: %s",
-                     _recChannels,
-                     LATE(snd_strerror)(errVal));
-        if (_handleRecord)
-        {
-            errVal = LATE(snd_pcm_close)(_handleRecord);
-            _handleRecord = NULL;
-            if (errVal < 0)
-            {
-                WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                             "     Error closing recording sound device, "
-                             "error: %s",
-                             LATE(snd_strerror)(errVal));
-            }
-        }
-        return -1;
+    else {
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
+                     "    capture snd_pcm_get_params "
+                     "buffer_size:%d period_size:%d",
+                     _recordingBuffersizeInFrame, _recordingPeriodSizeInFrame);
     }
-
-    // Set sampling rate to use
-    _samplingFreqRec = REC_SAMPLES_PER_MS;
-    WebRtc_UWord32 samplingRate = _samplingFreqRec*1000;
-
-    // Set sample rate
-    unsigned int exactRate = samplingRate;
-    errVal = LATE(snd_pcm_hw_params_set_rate_near)
-                 (_handleRecord,
-                  paramsRecord,
-                  &exactRate,
-                  0);
-    if (errVal < 0)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "    hardware params set rate near(%d), error: %s",
-                     samplingRate,
-                     LATE(snd_strerror)(errVal));
-        if (_handleRecord)
-        {
-            errVal = LATE(snd_pcm_close)(_handleRecord);
-            _handleRecord = NULL;
-            if (errVal < 0)
-            {
-                WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                             "     Error closing recording sound device,"
-                             " error: %s",
-                             LATE(snd_strerror)(errVal));
-            }
-        }
-        return -1;
-    }
-    if (exactRate != samplingRate)
-    {
-        WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                     "  Sound device does not support sample rate %d Hz, %d Hz"
-                     " used instead.",
-                     samplingRate,
-                     exactRate);
-
-        // We use this rate instead
-        _samplingFreqRec = (WebRtc_UWord32)(exactRate / 1000);
-    }
-
-    // Set buffer size, in frames.
-    numFrames = ALSA_SNDCARD_BUFF_SIZE_REC;
-    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                 "     set record, numFrames: %d, buffer size: %d",
-                 numFrames,
-                 _recSndcardBuffsize);
-
-    errVal = LATE(snd_pcm_hw_params_set_buffer_size_near)
-                 (_handleRecord,
-                  paramsRecord,
-                  &_recSndcardBuffsize);
-    if (errVal < 0)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "    hardware params set buffer size near(%d), error: %s",
-                     (int) numFrames,
-                     LATE(snd_strerror)(errVal));
-
-        if (_handleRecord)
-        {
-            errVal = LATE(snd_pcm_close)(_handleRecord);
-            _handleRecord = NULL;
-            if (errVal < 0)
-            {
-                WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                             "     Error closing recording sound device, "
-                             "error: %s",
-                             LATE(snd_strerror)(errVal));
-            }
-        }
-        return -1;
-    }
-    if (numFrames != _recSndcardBuffsize)
-    {
-        WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                     "     Allocated record buffersize: %d frames",
-                     (int)_recSndcardBuffsize);
-    }
-
-    // Write settings to the devices
-    errVal = LATE(snd_pcm_hw_params)(_handleRecord, paramsRecord);
-    if (errVal < 0)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "    hardware params, error: %s",
-                     LATE(snd_strerror)(errVal));
-        if (_handleRecord)
-        {
-            errVal = LATE(snd_pcm_close)(_handleRecord);
-            _handleRecord = NULL;
-            if (errVal < 0)
-            {
-                WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                             "     Error closing recording sound device, error: %s",
-                             LATE(snd_strerror)(errVal));
-            }
-        }
-        return -1;
-    }
-
-    // Free prameter struct memory
-    LATE(snd_pcm_hw_params_free)(paramsRecord);
-    paramsRecord = NULL;
 
     if (_ptrAudioBuffer)
     {
-        // Update audio buffer with the selected parameters
-        _ptrAudioBuffer->SetRecordingSampleRate(_samplingFreqRec*1000);
-        _ptrAudioBuffer->SetRecordingChannels((WebRtc_UWord8)_recChannels);
+        // Update webrtc audio buffer with the selected parameters
+        _ptrAudioBuffer->SetRecordingSampleRate(_recordingFreq);
+        _ptrAudioBuffer->SetRecordingChannels(_recChannels);
     }
 
     // Set rec buffer size and create buffer
-    _recordBufferSize = _samplingFreqRec * 10 * _recChannels * 2;
-    _recBuffer = new WebRtc_Word16[_recordBufferSize / 2];
-
-    // Init rec varaibles
-    _bufferCheckMethodRec = 0;
-    _bufferCheckErrorsRec = 0;
+    _recordingBufferSizeIn10MS = LATE(snd_pcm_frames_to_bytes)(
+        _handleRecord, _recordingFramesIn10MS);
 
     if (_handleRecord != NULL)
     {
@@ -1974,68 +1519,82 @@ WebRtc_Word32 AudioDeviceLinuxALSA::StartRecording()
     {
         return -1;
     }
-    
+
     if (_recording)
     {
         return 0;
     }
 
-    // prepare and start the recording
-    int errVal=0;
-    errVal = LATE(snd_pcm_prepare)(_handleRecord);
-    if (errVal<0)
+    _recording = true;
+
+    int errVal = 0;
+    _recordingFramesLeft = _recordingFramesIn10MS;
+
+    // Make sure we only create the buffer once.
+    if (!_recordingBuffer)
+        _recordingBuffer = new WebRtc_Word8[_recordingBufferSizeIn10MS];
+    if (!_recordingBuffer)
     {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "     cannot prepare audio record interface for use (%s)\n",
-                     LATE(snd_strerror)(errVal));
+        WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
+                     "   failed to alloc recording buffer");
+        _recording = false;
         return -1;
     }
-        
+    // RECORDING
+    const char* threadName = "webrtc_audio_module_capture_thread";
+    _ptrThreadRec = ThreadWrapper::CreateThread(RecThreadFunc,
+                                                this,
+                                                kRealtimePriority,
+                                                threadName);
+    if (_ptrThreadRec == NULL)
+    {
+        WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
+                     "  failed to create the rec audio thread");
+        _recording = false;
+        delete [] _recordingBuffer;
+        _recordingBuffer = NULL;
+        return -1;
+    }
+
+    unsigned int threadID(0);
+    if (!_ptrThreadRec->Start(threadID))
+    {
+        WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
+                     "  failed to start the rec audio thread");
+        _recording = false;
+        delete _ptrThreadRec;
+        _ptrThreadRec = NULL;
+        delete [] _recordingBuffer;
+        _recordingBuffer = NULL;
+        return -1;
+    }
+    _recThreadID = threadID;
+
+    errVal = LATE(snd_pcm_prepare)(_handleRecord);
+    if (errVal < 0)
+    {
+        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+                     "     capture snd_pcm_prepare failed (%s)\n",
+                     LATE(snd_strerror)(errVal));
+        // just log error
+        // if snd_pcm_open fails will return -1
+    }
+
     errVal = LATE(snd_pcm_start)(_handleRecord);
     if (errVal < 0)
     {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "     Error starting record interface: %s",
+                     "     capture snd_pcm_start err: %s",
                      LATE(snd_strerror)(errVal));
-        return -1;
-    }
-
-/*
-        // DEBUG: Write info about PCM
-        snd_output_t *output = NULL;
-        errVal = LATE(snd_output_stdio_attach)(&output, stdout, 0);
-        if (errVal < 0) {
-                printf("Output failed: %s\n", snd_strerror(errVal));
-                return 0;
+        errVal = LATE(snd_pcm_start)(_handleRecord);
+        if (errVal < 0)
+        {
+            WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+                         "     capture snd_pcm_start 2nd try err: %s",
+                         LATE(snd_strerror)(errVal));
+            StopRecording();
+            return -1;
         }
-        LATE(snd_pcm_dump)(_handleRecord, output);
-*/
-
-    // set state to ensure that the recording starts from the audio thread
-    _startRec = true;
-
-    // the audio thread will signal when recording has stopped
-    if (kEventTimeout == _recStartEvent.Wait(10000))
-    {
-        _startRec = false;
-        StopRecording();
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "  failed to activate recording");
-        return -1;
-    }
-
-    if (_recording)
-    {
-        // the recording state is set by the audio thread after recording has
-        // started
-        WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                     "  recording is now active");
-    }
-    else
-    {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "  failed to activate recording");
-        return -1;
     }
 
     return 0;
@@ -2046,29 +1605,51 @@ WebRtc_Word32 AudioDeviceLinuxALSA::StopRecording()
     WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
                  "%s", __FUNCTION__);
 
-    CriticalSectionScoped lock(_critSect);
-
-    if (!_recIsInitialized)
     {
-        return 0;
+      CriticalSectionScoped lock(_critSect);
+
+      if (!_recIsInitialized)
+      {
+          return 0;
+      }
+
+      if (_handleRecord == NULL)
+      {
+          return -1;
+      }
+
+      // Make sure we don't start recording (it's asynchronous).
+      _recIsInitialized = false;
+      _recording = false;
     }
 
-    if (_handleRecord == NULL)
+    if (_ptrThreadRec && !_ptrThreadRec->Stop())
     {
+        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+                     "    failed to stop the rec audio thread");
         return -1;
     }
+    else {
+        delete _ptrThreadRec;
+        _ptrThreadRec = NULL;
+    }
 
-    // make sure we don't start recording (it's asynchronous), assuming that
-    // we are under lock
-    _startRec = false;
+    CriticalSectionScoped lock(_critSect);
+    _recordingFramesLeft = 0;
+    if (_recordingBuffer)
+    {
+        delete [] _recordingBuffer;
+        _recordingBuffer = NULL;
+    }
 
-    // stop and close pcm recording device
+    // Stop and close pcm recording device.
     int errVal = LATE(snd_pcm_drop)(_handleRecord);
     if (errVal < 0)
     {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
                      "     Error stop recording: %s",
                      LATE(snd_strerror)(errVal));
+        return -1;
     }
 
     errVal = LATE(snd_pcm_close)(_handleRecord);
@@ -2077,9 +1658,10 @@ WebRtc_Word32 AudioDeviceLinuxALSA::StopRecording()
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
                      "     Error closing record sound device, error: %s",
                      LATE(snd_strerror)(errVal));
+        return -1;
     }
-    
-    // check if we have muted and unmute if so
+
+    // Check if we have muted and unmute if so.
     bool muteEnabled = false;
     MicrophoneMute(muteEnabled);
     if (muteEnabled)
@@ -2087,20 +1669,10 @@ WebRtc_Word32 AudioDeviceLinuxALSA::StopRecording()
         SetMicrophoneMute(false);
     }
 
-    _recIsInitialized = false;
-    _recording = false;
-
     // set the pcm input handle to NULL
     _handleRecord = NULL;
-    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                 "  _handleRecord is now set to NULL");
-
-    // delete the rec buffer
-    if (_recBuffer)
-    {
-        delete _recBuffer;
-        _recBuffer = NULL;
-    }
+    WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+                 "  handle_capture is now set to NULL");
 
     return 0;
 }
@@ -2139,53 +1711,58 @@ WebRtc_Word32 AudioDeviceLinuxALSA::StartPlayout()
     {
         return 0;
     }
-    // prepare playout
-    int errVal=0;
-    errVal = LATE(snd_pcm_prepare)(_handlePlayout);
-    if (errVal<0)
+
+    _playing = true;
+
+    _playoutFramesLeft = 0;
+    if (!_playoutBuffer)
+        _playoutBuffer = new WebRtc_Word8[_playoutBufferSizeIn10MS];
+    if (!_playoutBuffer)
     {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "     cannot prepare audio playout interface for use: %s",
+      WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+                   "    failed to alloc playout buf");
+      _playing = false;
+      return -1;
+    }
+
+    // PLAYOUT
+    const char* threadName = "webrtc_audio_module_play_thread";
+    _ptrThreadPlay =  ThreadWrapper::CreateThread(PlayThreadFunc,
+                                                  this,
+                                                  kRealtimePriority,
+                                                  threadName);
+    if (_ptrThreadPlay == NULL)
+    {
+        WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
+                     "    failed to create the play audio thread");
+        _playing = false;
+        delete [] _playoutBuffer;
+        _playoutBuffer = NULL;
+        return -1;
+    }
+
+    unsigned int threadID(0);
+    if (!_ptrThreadPlay->Start(threadID))
+    {
+        WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
+                     "  failed to start the play audio thread");
+        _playing = false;
+        delete _ptrThreadPlay;
+        _ptrThreadPlay = NULL;
+        delete [] _playoutBuffer;
+        _playoutBuffer = NULL;
+        return -1;
+    }
+    _playThreadID = threadID;
+
+    int errVal = LATE(snd_pcm_prepare)(_handlePlayout);
+    if (errVal < 0)
+    {
+        WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
+                     "     playout snd_pcm_prepare failed (%s)\n",
                      LATE(snd_strerror)(errVal));
-        return -1;
-    }
-
-    // Don't call snd_pcm_start here, it will start implicitly at first write.
-/*
-        // DEBUG: Write info about PCM
-        snd_output_t *output = NULL;
-        errVal = LATE(snd_output_stdio_attach)(&output, stdout, 0);
-        if (errVal < 0) {
-                printf("Output failed: %s\n", snd_strerror(errVal));
-                return 0;
-        }
-        LATE(snd_pcm_dump)(_handlePlayout, output);
-*/
-
-    // set state to ensure that playout starts from the audio thread
-    _startPlay = true;
-
-    // the audio thread will signal when recording has started
-    if (kEventTimeout == _playStartEvent.Wait(10000))
-    {
-        _startPlay = false;
-        StopPlayout();
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "  failed to activate playout");
-        return -1;
-    }
-
-    if (_playing)
-    {
-        // the playing state is set by the audio thread after playout has started
-        WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                     "  playing is now active");
-    }
-    else
-    {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "  failed to activate playing");
-        return -1;
+        // just log error
+        // if snd_pcm_open fails will return -1
     }
 
     return 0;
@@ -2196,55 +1773,74 @@ WebRtc_Word32 AudioDeviceLinuxALSA::StopPlayout()
     WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
                  "%s", __FUNCTION__);
 
-    CriticalSectionScoped lock(_critSect);
-
-    if (!_playIsInitialized)
     {
-        return 0;
+        CriticalSectionScoped lock(_critSect);
+
+        if (!_playIsInitialized)
+        {
+            return 0;
+        }
+
+        if (_handlePlayout == NULL)
+        {
+            return -1;
+        }
+
+        _playing = false;
     }
 
-    if (_handlePlayout == NULL)
+    // stop playout thread first
+    if (_ptrThreadPlay && !_ptrThreadPlay->Stop())
     {
+        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+                     "  failed to stop the play audio thread");
         return -1;
     }
+    else {
+        delete _ptrThreadPlay;
+        _ptrThreadPlay = NULL;
+    }
 
-    _playIsInitialized = false;
-    _playing = false;
+    CriticalSectionScoped lock(_critSect);
+
+    _playoutFramesLeft = 0;
+    delete [] _playoutBuffer;
+    _playoutBuffer = NULL;
 
     // stop and close pcm playout device
     int errVal = LATE(snd_pcm_drop)(_handlePlayout);
     if (errVal < 0)
     {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "     Error stop playing: %s",
+                     "    Error stop playing: %s",
                      LATE(snd_strerror)(errVal));
     }
 
     errVal = LATE(snd_pcm_close)(_handlePlayout);
-    if (errVal < 0)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "     Error closing playout sound device, error: %s",
-                     LATE(snd_strerror)(errVal));
-    }
+     if (errVal < 0)
+         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+                      "    Error closing playout sound device, error: %s",
+                      LATE(snd_strerror)(errVal));
 
-    // set the pcm input handle to NULL
-    _handlePlayout = NULL;
-    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                 "  _handlePlayout is now set to NULL");
+     // set the pcm input handle to NULL
+     _playIsInitialized = false;
+     _handlePlayout = NULL;
+     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
+                  "  handle_playout is now set to NULL");
 
-    return 0;
+     return 0;
 }
 
 WebRtc_Word32 AudioDeviceLinuxALSA::PlayoutDelay(WebRtc_UWord16& delayMS) const
 {
-    delayMS = (WebRtc_UWord16)_sndCardPlayDelay;
+    delayMS = (WebRtc_UWord16)_playoutDelay * 1000 / _playoutFreq;
     return 0;
 }
 
 WebRtc_Word32 AudioDeviceLinuxALSA::RecordingDelay(WebRtc_UWord16& delayMS) const
 {
-    delayMS = (WebRtc_UWord16)_sndCardRecDelay;
+    // Adding 10ms adjusted value to the record delay due to 10ms buffering.
+    delayMS = (WebRtc_UWord16)(10 + _recordingDelay * 1000 / _recordingFreq);
     return 0;
 }
 
@@ -2382,6 +1978,18 @@ WebRtc_Word32 AudioDeviceLinuxALSA::GetDevicesInfo(
         return -1;
     }
 
+    enumCount++; // default is 0
+    if (function == FUNC_GET_DEVICE_NAME && enumDeviceNo == 0)
+    {
+        strcpy(enumDeviceName, "default");
+        return 0;
+    }
+    if (function == FUNC_GET_DEVICE_NAME_FOR_AN_ENUM && enumDeviceNo == 0)
+    {
+        strcpy(enumDeviceName, "default");
+        return 0;
+    }
+
     for (void **list = hints; *list != NULL; ++list)
     {
         char *actualType = LATE(snd_device_name_get_hint)(*list, "IOID");
@@ -2420,21 +2028,27 @@ WebRtc_Word32 AudioDeviceLinuxALSA::GetDevicesInfo(
                 desc = name;
             }
 
-            if (0 == function)
+            if (FUNC_GET_NUM_OF_DEVICE == function)
             {
                 WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
                              "    Enum device %d - %s", enumCount, name);
 
             }
-            if ((1 == function) && (enumDeviceNo == enumCount))
+            if ((FUNC_GET_DEVICE_NAME == function) &&
+                (enumDeviceNo == enumCount))
             {
 
                 // We have found the enum device, copy the name to buffer
                 strncpy(enumDeviceName, desc, ednLen);
                 enumDeviceName[ednLen-1] = '\0';
                 keepSearching = false;
+                // replace '\n' with '-'
+                char * pret = strchr(enumDeviceName, '\n'/*0xa*/); //LF
+                if (pret)
+                    *pret = '-';
             }
-            if ((2 == function) && (enumDeviceNo == enumCount))
+            if ((FUNC_GET_DEVICE_NAME_FOR_AN_ENUM == function) &&
+                (enumDeviceNo == enumCount))
             {
                 // We have found the enum device, copy the name to buffer
                 strncpy(enumDeviceName, name, ednLen);
@@ -2469,8 +2083,10 @@ WebRtc_Word32 AudioDeviceLinuxALSA::GetDevicesInfo(
         // Continue and return true anyways, since we did get the whole list.
     }
 
-    if (0 == function)
+    if (FUNC_GET_NUM_OF_DEVICE == function)
     {
+        if (enumCount == 1) // only default?
+            enumCount = 0;
         return enumCount; // Normal return point for function 0
     }
 
@@ -2484,98 +2100,6 @@ WebRtc_Word32 AudioDeviceLinuxALSA::GetDevicesInfo(
     }
 
     return 0;
-}
-
-void AudioDeviceLinuxALSA::FillPlayoutBuffer()
-{
-    WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice, _id,
-                 "Filling playout buffer");
-
-    WebRtc_Word32 sizeBytes = _playbackBufferSize;
-    WebRtc_Word32 blockFrames = sizeBytes / (2 * _playChannels);
-    WebRtc_Word16 sendoutOnCard[sizeBytes / 2];
-    WebRtc_Word32 samplingFreq = _samplingFreqPlay * 1000;
-
-    if (samplingFreq == 44000)
-    {
-        // Convert to sndcard samplerate
-        samplingFreq = 44100;
-    }
-
-    memset(sendoutOnCard, 0, sizeBytes);
-
-    int maxWrites = 3;
-    int avail = blockFrames+1;
-    if (0 == _bufferCheckMethodPlay)
-    {
-        // Normal case
-        maxWrites = (_playSndcardBuffsize / samplingFreq) / 10 + 3;
-        avail = LATE(snd_pcm_avail_update)(_handlePlayout);
-    }
-
-    while ((avail >= blockFrames) && (maxWrites > 0))
-    {
-        int written = LATE(snd_pcm_writei)
-                          (_handlePlayout,
-                           sendoutOnCard,
-                           blockFrames);
-
-        if (written != blockFrames)
-        {
-            if (written < 0)
-            {
-                WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                             "    Error writing to sound device (1), error: %s",
-                             LATE(snd_strerror)(written));
-            }
-            else
-            {
-                int remainingFrames = (blockFrames-written);
-                WEBRTC_TRACE(kTraceStream, kTraceAudioDevice, _id,
-                             "Written %d playout frames to soundcard, trying to "
-                             "write the remaining %d frames",
-                             written, remainingFrames);
-
-                written = LATE(snd_pcm_writei)
-                              (_handlePlayout,
-                               &sendoutOnCard[written*2],
-                               remainingFrames);
-
-                if( written == remainingFrames )
-                {
-                    WEBRTC_TRACE(kTraceStream, kTraceAudioDevice,
-                                 _id,  "     %d frames were written",
-                               written);
-                    written = blockFrames;
-                }
-                else
-                {
-                    WEBRTC_TRACE(kTraceWarning,
-                                 kTraceAudioDevice, _id,
-                                 "     Error writing to sound device (2),"
-                                 " error: %s",
-                                 LATE(snd_strerror)(written));
-
-                    // Try to recover
-                    ErrorRecovery(written, _handlePlayout);
-                }
-            }
-        }
-
-        --maxWrites;
-        if (0 == _bufferCheckMethodPlay)
-        {
-            avail = LATE(snd_pcm_avail_update)(_handlePlayout);
-            WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice, _id,
-                         "  snd_pcm_avail_update returned %d", avail);
-        }
-    }
-
-    // Write one extra so that we push the buffer full
-    LATE(snd_pcm_writei)(_handlePlayout, sendoutOnCard, blockFrames);
-    avail = LATE(snd_pcm_avail_update)(_handlePlayout);
-    WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice, _id,
-                 "  snd_pcm_avail_update returned %d", avail);
 }
 
 WebRtc_Word32 AudioDeviceLinuxALSA::InputSanityCheckAfterUnlockedPeriod() const
@@ -2600,558 +2124,41 @@ WebRtc_Word32 AudioDeviceLinuxALSA::OutputSanityCheckAfterUnlockedPeriod() const
     return 0;
 }
 
-WebRtc_Word32 AudioDeviceLinuxALSA::PrepareStartRecording()
-{
-    WebRtc_Word32 res(0);
-    snd_pcm_sframes_t delayInFrames(0);
-
-    // Check if mic is muted
-    bool muteEnabled = false;
-    MicrophoneMute(muteEnabled);
-    if (muteEnabled)
-    {
-        SetMicrophoneMute(false);
-    }
-
-    // Check delay and available frames before reset
-    delayInFrames = -1;
-    res = LATE(snd_pcm_delay)(_handleRecord, &delayInFrames);
-    res = LATE(snd_pcm_avail_update)(_handleRecord);
-    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                 "Before reset: delayInFrames = %d, available frames = %d",
-                 delayInFrames, res);
-
-    // Reset pcm
-    res = LATE(snd_pcm_reset)(_handleRecord);
-    if (res < 0 )
-    {
-        WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                     "Error resetting pcm: %s (%d)",
-                     LATE(snd_strerror)(res), res);
-    }
-
-    // Check delay and available frames after reset
-    delayInFrames = -1;
-    res = LATE(snd_pcm_delay)(_handleRecord, &delayInFrames);
-    res = LATE(snd_pcm_avail_update)(_handleRecord);
-    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                 "After reset: delayInFrames = %d, available frames = %d "
-                 "(rec buf size = %u)",
-                 delayInFrames, res, _recSndcardBuffsize);
-
-    if (res < 0)
-    {
-        res = 0;
-    }
-
-    if (delayInFrames < 0)
-    {
-        delayInFrames = 0;
-    }
-
-     // True if the driver gives the actual number of frames in the buffer (normal case).
-    // Cast is safe after check above.
-    _buffersizeFromZeroAvail = (unsigned int)res < (_recSndcardBuffsize/2);
-    _buffersizeFromZeroDelay = (unsigned int)delayInFrames < (_recSndcardBuffsize/2);
-
-    return 0;
-}
-
-WebRtc_Word32 AudioDeviceLinuxALSA::GetPlayoutBufferDelay()
-{
-    WebRtc_Word32  msPlay(0);
-    WebRtc_Word32  res(0);
-    WebRtc_UWord32 samplesPerMs = _samplingFreqPlay;
-
-    snd_pcm_sframes_t delayInFrames(0);
-
-    // Check how much is in playout buffer and check delay
-    if (0 == _bufferCheckMethodPlay)
-    {
-        // Using snd_pcm_avail_update for checking buffer is the method that
-        // shall be used according to documentation. If we however detect that
-        // returned available buffer is larger than the buffer size, we switch
-        // to using snd_pcm_delay. See -391.
-
-        // Get delay - distance between current application frame position and
-        // sound frame position.
-        // This is only used for giving delay measurement to VE.
-        bool calcDelayFromAvail = false;
-        res = LATE(snd_pcm_delay)(_handlePlayout, &delayInFrames);
-        if (res < 0)
-        {
-            _writeErrors++;
-            if ( _writeErrors > 50 )
-            {
-                if (_playError == 1)
-                {
-                    WEBRTC_TRACE(kTraceWarning,
-                                 kTraceAudioDevice, _id,
-                                 "  pending playout error exists");
-                }
-                _playError = 1;  // triggers callback from module process thread
-                WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                             "  kPlayoutError message posted: _writeErrors=%u",
-                             _writeErrors);
-            }   
-                
-            WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                         "LinuxALSASndCardStream::playThreadProcess(), "
-                         "snd_pcm_delay error (1): %s (%d)",
-                         LATE(snd_strerror)(res), res);
-            calcDelayFromAvail = true;
-            ErrorRecovery(res, _handlePlayout);
-            _delayMonitorStatePlay = 1; // Go to delay monitor state
-            WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                         "    Going to delay monitor state");
-        }
-        else
-        {
-            _writeErrors=0;
-            _sndCardPlayDelay = delayInFrames / samplesPerMs;
-        }
-        
-        // Check if we should write more data to the soundcard. Updates
-        // the r/w pointer.
-        int avail = LATE(snd_pcm_avail_update)(_handlePlayout);
-       if (avail < 0)
-        {
-            WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                         "LinuxALSASndCardStream::playThreadProcess(),"
-                         " snd_pcm_avail_update error: %s (%d)",
-                         LATE(snd_strerror)(avail), avail);
-            res = ErrorRecovery(avail, _handlePlayout);
-            if (avail == -EPIPE)
-            {
-                res = LATE(snd_pcm_prepare)(_handlePlayout);
-                if (res < 0)
-                {
-                    WEBRTC_TRACE(kTraceError, kTraceAudioDevice,
-                                 _id, "ErrorRecovery failed: %s",
-                                 LATE(snd_strerror)(res));
-                }
-                FillPlayoutBuffer();
-                msPlay = 0;
-            }
-            else
-            {
-                msPlay = 25;
-            }
-            WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                         "   Guessed ms in playout buffer = %d", msPlay);
-            _delayMonitorStatePlay = 1; // Go to delay monitor state
-            WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                         "    Going to delay monitor state");
-        }
-        else
-        {
-            // Calculate filled part of playout buffer size in ms
-            // Safe since _playSndcardBuffsize is a small number
-            int pb = (int)_playSndcardBuffsize;
-            assert(pb >= 0);
-            // If avail_update returns a value larger than playout buffer and it
-            // doesn't keep decreasing we switch method of checking the buffer.
-            if ((avail > pb) && (avail >= _lastBufferCheckValuePlay))
-            {
-                msPlay = 0; // Continue to write to buffer
-                ++_bufferCheckErrorsPlay;
-                WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                             "    _bufferCheckErrorsPlay = %d",
-                             _bufferCheckErrorsPlay);
-                if (_bufferCheckErrorsPlay > 50)
-                {
-                    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice,
-                                 _id,
-                                 "    Switching to delay buffer check method "
-                                 "for playout");
-                    _bufferCheckMethodPlay = 1; // Switch to using snd_pcm_delay
-                    _bufferCheckErrorsPlay = 0;
-                }
-            }
-            else
-            {
-                msPlay = pb > avail ? (pb - avail) / samplesPerMs : 0;
-                _bufferCheckErrorsPlay = 0;
-            }
-            _lastBufferCheckValuePlay = avail;
-        }
-        
-        if (calcDelayFromAvail)
-        {
-            _sndCardPlayDelay = msPlay;
-        }
-        // Here we monitor the delay value if we had an error
-        if (0 == _delayMonitorStatePlay)
-        {
-            // Normal state, just store delay value
-            _previousSndCardPlayDelay = _sndCardPlayDelay;
-        }
-        else if (1 == _delayMonitorStatePlay)
-        {
-            // We had an error, check if we get stuck in a long delay in playout.
-            // If so, restart device completely. Workaround for PulseAudio.
-            if ((_sndCardPlayDelay > 200) &&
-                ((_sndCardPlayDelay > _previousSndCardPlayDelay * 2) ||
-                (_sndCardPlayDelay > _previousSndCardPlayDelay + 200)))
-            {
-                if (_largeDelayCountPlay < 0) _largeDelayCountPlay = 0;
-                ++_largeDelayCountPlay;
-                WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                             "    _largeDelayCountPlay = %d",
-                             _largeDelayCountPlay);
-                if (_largeDelayCountPlay > 50)
-                {
-                    WEBRTC_TRACE(kTraceWarning,
-                                 kTraceAudioDevice, _id,
-                                 "    Detected stuck in long delay after error "
-                                 "- restarting playout device");
-                    WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice,
-                                 _id,
-                                 "    _previousSndCardPlayDelay = %d,"
-                                 " _sndCardPlayDelay = %d",
-                                 _previousSndCardPlayDelay, _sndCardPlayDelay);
-                    StopPlayout();
-                    InitPlayout();
-                    res = LATE(snd_pcm_prepare)(_handlePlayout);
-                    if (res < 0)
-                    {
-                        WEBRTC_TRACE(kTraceError,
-                                     kTraceAudioDevice, _id,
-                                     "     Cannot prepare audio playout "
-                                     "interface for use: %s (%d)",
-                                     LATE(snd_strerror)(res), res);
-                    }
-                    FillPlayoutBuffer();
-                    _startPlay = true;
-                    _delayMonitorStatePlay = 0;
-                    _largeDelayCountPlay = 0;
-                    // Make sure we only restart the device once. We could have had
-                    // an error due to e.g. changed sink route in PulseAudio which would correctly
-                    // lead to a larger delay. In this case we shouldn't get stuck restarting.
-                    _previousSndCardPlayDelay = _sndCardPlayDelay;
-                    return -1;
-                }
-            }
-            else
-            {
-                // No error, keep count of OK tests
-                if (_largeDelayCountPlay > 0) _largeDelayCountPlay = 0;
-                --_largeDelayCountPlay;
-                if (_largeDelayCountPlay < -50)
-                {
-                    // After a couple of OK monitor tests, go back to normal state
-                    _delayMonitorStatePlay = 0;
-                    _largeDelayCountPlay = 0;
-                    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice,
-                                 _id,  "    Leaving delay monitor state");
-                    WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice,
-                                 _id,
-                                 "    _previousSndCardPlayDelay = %d,"
-                                 " _sndCardPlayDelay = %d",
-                                 _previousSndCardPlayDelay, _sndCardPlayDelay);
-                }
-            }
-        }
-        else
-        {
-            // Should never happen
-            assert(false);
-        }
-   }
-    else if (1 == _bufferCheckMethodPlay)
-    {
-        // Check if we should write more data to the soundcard
-        // alternative method to get the delay (snd_pcm_avail_update() seem to
-        // give unreliable vaules in some cases!, i.e. with dmix) <- TL
-        // distance between current application frame position and sound frame
-        // position
-        res = LATE(snd_pcm_delay)(_handlePlayout, &delayInFrames);
-        if (res < 0 || res > (int)_playSndcardBuffsize)
-        {
-            int recoveryRes = ErrorRecovery(res, _handlePlayout);
-            if (res == -EPIPE)
-            {
-                WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                             "LinuxALSASndCardStream::playThreadProcess(), "
-                             "outbuffer underrun");
-                if (recoveryRes < 0)
-                {
-                WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                             "ErrorRecovery failed: %s",
-                             LATE(snd_strerror)(res));
-                }
-                msPlay = 0;
-            }
-            else
-            {
-                _writeErrors++;
-                if (_writeErrors > 50)
-                {
-                    if (_playError == 1)
-                    {
-                        WEBRTC_TRACE(kTraceWarning,
-                                     kTraceAudioDevice, _id,
-                                     "  pending playout error exists");
-                    }
-                    _playError = 1;  // triggers callback from module process thread
-                    WEBRTC_TRACE(kTraceError, kTraceAudioDevice,
-                                 _id,
-                                 "  kPlayoutError message posted:"
-                                 " _writeErrors=%u", _writeErrors);
-                }   
-            
-                WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice,
-                             _id,
-                             "LinuxALSASndCardStream::playThreadProcess(),"
-                             " snd_pcm_delay error (2): %s (%d)",
-                           LATE(snd_strerror)(res), res);
-                WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                             "Playout buffer size=%d", _playSndcardBuffsize);
-                msPlay = 25;
-                WEBRTC_TRACE(kTraceStream, kTraceAudioDevice, _id,
-                             "   Guessed ms in playout buffer = %d", msPlay);
-            }
-        }
-        else
-        {   
-            _writeErrors = 0;
-            msPlay = delayInFrames / samplesPerMs; // playout buffer delay in ms
-            _sndCardPlayDelay = msPlay;
-        }
-    }
-    else
-    {
-        // Unknown _bufferCheckMethodPlay value, should never happen
-        assert(false);    
-    }
-
-    /*
-        delayInFrames = -1;
-        snd_pcm_delay(_handlePlayout, &delayInFrames);
-       // DEBUG END
-*/
-    
-    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                 "msplay = %d", msPlay);
-    return msPlay;
-}
-
-WebRtc_Word32 AudioDeviceLinuxALSA::GetRecordingBufferDelay(bool preRead)
-{ 
-    WebRtc_Word32  msRec(0);
-    WebRtc_Word32  res(0);
-    WebRtc_UWord32 samplesPerMs = _samplingFreqRec;
-
-    snd_pcm_sframes_t delayInFrames(0);
-
-    if ((0 == _bufferCheckMethodRec) || (1 == _bufferCheckMethodRec))
-    {
-        // Get delay, only used for input to VE
-        bool calcDelayFromAvail = false;
-        res = LATE(snd_pcm_delay)(_handleRecord, &delayInFrames);
-        if (res < 0)
-        {
-            WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                         "LinuxALSASndCardStream::recThreadfun(),"
-                         " snd_pcm_delay (3) error: %s (%d)",
-                         LATE(snd_strerror)(res), res);
-            ErrorRecovery(res, _handleRecord);
-            calcDelayFromAvail = true; // Must get estimate below instead
-        }
-        else if (0 == _bufferCheckMethodRec)
-        {
-            if (_buffersizeFromZeroDelay)
-            {
-                // Normal case
-                _sndCardRecDelay = delayInFrames / samplesPerMs;
-            }
-            else
-            {
-                // Safe since _recSndcardBuffsize is a small number
-                int rb = (int)_recSndcardBuffsize;
-                assert(rb >= 0);
-                _sndCardRecDelay = (rb >= delayInFrames ?
-                    rb - delayInFrames : rb) / samplesPerMs;
-            }
-        }
-        // if method == 1 we calculate delay below to keep algorithm same as
-        // when we didn't have method 0.
-
-        // Check if we have data in rec buffer. Updates the r/w pointer.
-        int avail = -1;
-        if (0 == _bufferCheckMethodRec)
-        {
-            avail = res = LATE(snd_pcm_avail_update)(_handleRecord);
-        }
-        if (res >= 0)
-        {
-            // We must check that state == RUNNING, otherwise we might have a
-            // false buffer value.
-            // Normal case
-            if (LATE(snd_pcm_state)(_handleRecord) == SND_PCM_STATE_RUNNING)
-            {
-                if (0 == _bufferCheckMethodRec)
-                {   // Safe since _recSndcardBuffsize is a small number
-                    int rb = (int)_recSndcardBuffsize;
-                    if (_buffersizeFromZeroAvail)
-                    {
-                        // Normal case
-                        msRec = avail / samplesPerMs;
-                    }
-                    else
-                    {
-                        assert(rb >= 0);
-                        msRec = (rb >= avail ? rb - avail : rb) / samplesPerMs;
-                    }
-                    
-                    if (calcDelayFromAvail)
-                    {
-                        _sndCardRecDelay = msRec;
-                    }
-
-                    if ((msRec == 0) || (avail > rb))
-                    {
-                        ++_bufferCheckErrorsRec;
-                        WEBRTC_TRACE(kTraceInfo,
-                                     kTraceAudioDevice, _id,
-                                     "    _bufferCheckErrorsRec: %d (avail=%d)",
-                                     _bufferCheckErrorsRec, avail);
-                        if (_bufferCheckErrorsRec >= THR_OLD_BUFFER_CHECK_METHOD)
-                        {
-                            WEBRTC_TRACE(kTraceInfo,
-                                         kTraceAudioDevice, _id,
-                                         "   Switching to delay buffer check"
-                                         " method for recording");
-                            _bufferCheckMethodRec = 1;
-                            _bufferCheckErrorsRec = 0;
-                        }
-                    }
-                    else
-                    {
-                        _bufferCheckErrorsRec = 0;
-                    }
-                }
-                else // 1 == _bufferCheckMethodRec
-                {
-                    if (_buffersizeFromZeroDelay)
-                    {
-                        msRec = delayInFrames / samplesPerMs;
-                    }
-                    else
-                    {
-                        msRec =
-                            (_recSndcardBuffsize - delayInFrames) / samplesPerMs;
-                    }
-                    _sndCardRecDelay = msRec; 
-
-                    if (msRec == 0)
-                    {
-                        ++_bufferCheckErrorsRec;
-                        WEBRTC_TRACE(kTraceInfo,
-                                     kTraceAudioDevice, _id,
-                                     "    _bufferCheckErrorsRec: %d",
-                                     _bufferCheckErrorsRec);
-                        if (_bufferCheckErrorsRec >= THR_IGNORE_BUFFER_CHECK)
-                        {
-                            // The delay has been zero too many times, ignore
-                            // the delay value!
-                            WEBRTC_TRACE(kTraceInfo,
-                                         kTraceAudioDevice, _id,
-                                         "   Switching to Ignore Delay Mode");
-                            _bufferCheckMethodRec = 2;
-                            _bufferCheckErrorsRec = 0;
-                        }
-                    }
-                }
-            }
-            else if (LATE(snd_pcm_state)(_handleRecord) == SND_PCM_STATE_XRUN)
-            {
-                // We've probably had a buffer overrun
-                WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                             "Record buffer overrun, trying to recover");
-                // Handle pipe error (overrun)
-                res = ErrorRecovery(-EPIPE, _handleRecord);
-                if (res < 0)
-                {
-                    // We were not able to recover from the error.
-                    // CRITICAL?
-                    WEBRTC_TRACE(kTraceError, kTraceAudioDevice,
-                                 _id,
-                                 "Can't recover from buffer overrun, "
-                                 "error: %s (%d)",
-                                 LATE(snd_strerror)(res), res);
-                    return -1;
-                }
-                msRec = _recSndcardBuffsize / samplesPerMs;
-            }
-        }
-        else
-        {
-            // Something went wrong asking for the delay / buffer. Try to
-            // recover and make a guess.
-            WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                         "LinuxALSASndCardStream::recThreadfun(), "
-                         "snd_pcm_avail_update: %s (%d)",
-                         LATE(snd_strerror)(res), res);
-            res = ErrorRecovery(avail, _handleRecord);
-            if (preRead)
-            {
-                if (res == 1)
-                {
-                    // Recovered from buffer overrun, continue and read data.
-                    msRec = _recSndcardBuffsize / samplesPerMs;
-                } 
-                else
-                {
-                    return -1;
-                } 
-            }
-            else // We have a previous msRec value and have read maximum 10 ms since then.
-            {
-                if (res < 0)
-                {
-                    return -1;
-                }
-
-                msRec = _sndCardRecDelay - 10;
-
-                if (calcDelayFromAvail)
-                {
-                    _sndCardRecDelay = msRec;
-                }
-            }
-        }
-    }
-    else if (2 == _bufferCheckMethodRec)
-    {
-        // We've stopped asking for the number of samples on soundcard.
-        msRec = 0;
-    }
-    else
-    {
-        // Should never happen
-        WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
-                   "Unknown buffer check method (%d)", _bufferCheckMethodRec);
-        assert(false);
-    }
-
-    return msRec;
-}
-
 WebRtc_Word32 AudioDeviceLinuxALSA::ErrorRecovery(WebRtc_Word32 error,
                                                   snd_pcm_t* deviceHandle)
 {
     int st = LATE(snd_pcm_state)(deviceHandle);
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
                "Trying to recover from error: %s (%d) (state %d)",
-               LATE(snd_strerror)(error), error, st);
+               (LATE(snd_pcm_stream)(deviceHandle) == SND_PCM_STREAM_CAPTURE) ?
+                   "capture" : "playout", LATE(snd_strerror)(error), error, st);
 
     // It is recommended to use snd_pcm_recover for all errors. If that function
     // cannot handle the error, the input error code will be returned, otherwise
     // 0 is returned. From snd_pcm_recover API doc: "This functions handles
-    // -EINTR (interrupted system call),-EPIPE (overrun or underrun) and
-    // -ESTRPIPE (stream is suspended) error codes trying to prepare given
-    // stream for next I/O."
+    // -EINTR (4) (interrupted system call), -EPIPE (32) (playout overrun or
+    // capture underrun) and -ESTRPIPE (86) (stream is suspended) error codes
+    // trying to prepare given stream for next I/O."
+
+    /** Open */
+    //    SND_PCM_STATE_OPEN = 0,
+    /** Setup installed */
+    //    SND_PCM_STATE_SETUP,
+    /** Ready to start */
+    //    SND_PCM_STATE_PREPARED,
+    /** Running */
+    //    SND_PCM_STATE_RUNNING,
+    /** Stopped: underrun (playback) or overrun (capture) detected */
+    //    SND_PCM_STATE_XRUN,= 4
+    /** Draining: running (playback) or stopped (capture) */
+    //    SND_PCM_STATE_DRAINING,
+    /** Paused */
+    //    SND_PCM_STATE_PAUSED,
+    /** Hardware is suspended */
+    //    SND_PCM_STATE_SUSPENDED,
+    //  ** Hardware is disconnected */
+    //    SND_PCM_STATE_DISCONNECTED,
+    //    SND_PCM_STATE_LAST = SND_PCM_STATE_DISCONNECTED
 
     // snd_pcm_recover isn't available in older alsa, e.g. on the FC4 machine
     // in Sthlm lab.
@@ -3162,7 +2169,8 @@ WebRtc_Word32 AudioDeviceLinuxALSA::ErrorRecovery(WebRtc_Word32 error,
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
                    "    Recovery - snd_pcm_recover OK");
 
-        if (error == -EPIPE &&  // Buffer underrun/overrun.
+        if ((error == -EPIPE || error == -ESTRPIPE) && // Buf underrun/overrun.
+            _recording &&
             LATE(snd_pcm_stream)(deviceHandle) == SND_PCM_STREAM_CAPTURE)
         {
             // For capture streams we also have to repeat the explicit start()
@@ -3176,7 +2184,27 @@ WebRtc_Word32 AudioDeviceLinuxALSA::ErrorRecovery(WebRtc_Word32 error,
             }
         }
 
+        if ((error == -EPIPE || error == -ESTRPIPE) &&  // Buf underrun/overrun.
+            _playing &&
+            LATE(snd_pcm_stream)(deviceHandle) == SND_PCM_STREAM_PLAYBACK)
+        {
+            // For capture streams we also have to repeat the explicit start() to get
+            // data flowing again.
+            int err = LATE(snd_pcm_start)(deviceHandle);
+            if (err != 0)
+            {
+              WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+                       "    Recovery - snd_pcm_start error: %s",
+                       LATE(snd_strerror)(err));
+              return -1;
+            }
+        }
+
         return -EPIPE == error ? 1 : 0;
+    }
+    else {
+        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+                     "  Terriable, it shouldn't happen");
     }
 
     return res;
@@ -3198,231 +2226,74 @@ bool AudioDeviceLinuxALSA::RecThreadFunc(void* pThis)
 
 bool AudioDeviceLinuxALSA::PlayThreadProcess()
 {
-    WebRtc_Word32 written(0);
-    WebRtc_Word32 msPlay(0);
+    if(!_playing)
+        return false;
 
-    // Number of (stereo) samples
-    WebRtc_Word32 numPlaySamples = _playbackBufferSize / (2 * _playChannels);
-    WebRtc_Word8 playBuffer[_playbackBufferSize];
+    int err;
+    snd_pcm_sframes_t frames;
+    snd_pcm_sframes_t avail_frames;
 
-    switch (_timeEventPlay.Wait(1000))
-    {
-    case kEventSignaled:
-        break;
-    case kEventError:
-        WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                   "EventWrapper::Wait() failed => restarting timer");
-        _timeEventPlay.StopTimer();
-        _timeEventPlay.StartTimer(true, PLAY_TIMER_PERIOD_MS);
-        return true;
-    case kEventTimeout:
-        return true;
-    }
-    
     Lock();
-
-    if (_startPlay)
+    //return a positive number of frames ready otherwise a negative error code
+    avail_frames = LATE(snd_pcm_avail_update)(_handlePlayout);
+    if (avail_frames < 0)
     {
-        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                   "_startPlay true, performing initial actions");
-
-        _startPlay = false;
-
-        // Fill playout buffer with zeroes
-        FillPlayoutBuffer();
-
-        _bufferCheckErrorsPlay = 0;
-        _playing = true;
-        _playStartEvent.Set();
+        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+                   "playout snd_pcm_avail_update error: %s",
+                   LATE(snd_strerror)(avail_frames));
+        ErrorRecovery(avail_frames, _handlePlayout);
+        UnLock();
+        return true;
     }
-    
-    if(_playing)
+    else if (avail_frames == 0)
     {
-        // get number of ms of sound that remains in the sound card buffer for
-        // playback
-        msPlay = GetPlayoutBufferDelay();
-        if (msPlay == -1)
-        {
-            UnLock();
-            return true;
+        UnLock();
+
+        //maximum tixe in milliseconds to wait, a negative value means infinity
+        err = LATE(snd_pcm_wait)(_handlePlayout, 2);
+        if (err == 0)
+        { //timeout occured
+            WEBRTC_TRACE(kTraceStream, kTraceAudioDevice, _id,
+                         "playout snd_pcm_wait timeout");
         }
 
-        // write more data if below threshold
-        if (msPlay < PLAYBACK_THRESHOLD)
-        {
-            // ask for new PCM data to be played out using the AudioDeviceBuffer
-            // ensure that this callback is executed without taking the
-            // audio-thread lock
-            // 
-            UnLock();
-            WebRtc_Word32 nSamples =
-                (WebRtc_Word32)_ptrAudioBuffer->RequestPlayoutData(numPlaySamples);
-            Lock();
+        return true;
+    }
 
-            if (OutputSanityCheckAfterUnlockedPeriod() == -1)
-            {
-                UnLock();
-                return true;
-            }
+    if (_playoutFramesLeft <= 0)
+    {
+        UnLock();
+        _ptrAudioBuffer->RequestPlayoutData(_playoutFramesIn10MS);
+        Lock();
 
-            nSamples = _ptrAudioBuffer->GetPlayoutData(playBuffer);
-            if (nSamples != numPlaySamples)
-            {
-                WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                             "  invalid number of output samples(%d)", nSamples);
-            }
+        _playoutFramesLeft = _ptrAudioBuffer->GetPlayoutData(_playoutBuffer);
+        assert(_playoutFramesLeft == _playoutFramesIn10MS);
+    }
 
-            written = LATE(snd_pcm_writei)(_handlePlayout, playBuffer, numPlaySamples);
-            if (written != numPlaySamples)
-            {
-                if (written < 0)
-                { 
-                    WEBRTC_TRACE(kTraceError, kTraceAudioDevice,
-                                 _id,
-                                 "Error writing to sound device (7), error: %d/%s",
-                                 written,
-                                 LATE(snd_strerror)(written));
+    if (static_cast<WebRtc_UWord32>(avail_frames) > _playoutFramesLeft)
+        avail_frames = _playoutFramesLeft;
 
-                    // Try to recover
-                    ErrorRecovery(written, _handlePlayout);
-                    _delayMonitorStatePlay = 1; // Go to delay monitor state
-                    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice,
-                                 _id,
-                                 "    Going to delay monitor state");
-                }
-                else
-                {
-                    _writeErrors = 0;
-                    int remainingFrames = (numPlaySamples - written);
-                    written = LATE(snd_pcm_writei)
-                                  (_handlePlayout,
-                                   &playBuffer[written*2],
-                                   remainingFrames);
-                    if( written == remainingFrames )
-                    {
-                        written = numPlaySamples;
-                    }
-                    else
-                    {
-                        if (written < 0)
-                        {
-                            WEBRTC_TRACE(kTraceError,
-                                         kTraceAudioDevice, _id,
-                                         "Error writing to sound device (8), "
-                                         "error: %d/%s, numPlaySamples=%d, "
-                                         "remainingFrames=%d",
-                                         written, LATE(snd_strerror)(written),
-                                         numPlaySamples, remainingFrames);
+    int size = LATE(snd_pcm_frames_to_bytes)(_handlePlayout,
+        _playoutFramesLeft);
+    frames = LATE(snd_pcm_writei)(
+        _handlePlayout,
+        &_playoutBuffer[_playoutBufferSizeIn10MS - size],
+        avail_frames);
 
-                            // Try to recover
-                            ErrorRecovery(written, _handlePlayout);
-                        }
-                        else
-                        {
-                            WEBRTC_TRACE(kTraceWarning,
-                                         kTraceAudioDevice, _id,
-                                         "Could not write all playout data (1),"
-                                         " numPlaySamples=%d, remainingFrames=%d,"
-                                         " written=%d",
-                                         numPlaySamples, remainingFrames, written);
-                        }
-                    }
-                }
-            }
-            else
-            {
-                _writeErrors = 0;
-            }
-
-            // Write more data if we are more than 10 ms under the threshold.
-            if (msPlay < PLAYBACK_THRESHOLD - 10)
-            {
-                // ask for new PCM data to be played out using the
-                // AudioDeviceBuffer ensure that this callback is executed
-                // without taking the audio-thread lock
-                // 
-                UnLock();
-                WebRtc_Word32 nSamples = (WebRtc_Word32)
-                    _ptrAudioBuffer->RequestPlayoutData(numPlaySamples);
-                Lock();
-
-                if (OutputSanityCheckAfterUnlockedPeriod() == -1)
-                {
-                    UnLock();
-                    return true;
-                }
-
-                nSamples = _ptrAudioBuffer->GetPlayoutData(playBuffer);
-                if (nSamples != numPlaySamples)
-                {
-                    WEBRTC_TRACE(kTraceError, kTraceAudioDevice,
-                                 _id, "  invalid number of output samples(%d)",
-                                 nSamples);
-                }
-
-                written = LATE(snd_pcm_writei)(
-                    _handlePlayout, playBuffer, numPlaySamples);
-                if (written != numPlaySamples)
-                {
-                    if (written < 0)
-                    {
-                        WEBRTC_TRACE(kTraceError,
-                                     kTraceAudioDevice, _id,
-                                     "Error writing to sound device (9), "
-                                     "error: %s", LATE(snd_strerror)(written));
-
-                        // Try to recover
-                        ErrorRecovery(written, _handlePlayout);
-                        _delayMonitorStatePlay = 1; // Go to delay monitor state
-                        WEBRTC_TRACE(kTraceInfo,
-                                     kTraceAudioDevice, _id,
-                                     "    Going to delay monitor state");
-                    }
-                    else
-                    {
-                        int remainingFrames = (numPlaySamples - written);
-                        written = LATE(snd_pcm_writei)
-                                      (_handlePlayout,
-                                       &playBuffer[written*2],
-                                       remainingFrames);
-                        if (written == remainingFrames)
-                        {
-                            written = numPlaySamples;
-                        }
-                        else
-                        {
-                            if (written < 0)
-                            {
-                                WEBRTC_TRACE(kTraceError,
-                                             kTraceAudioDevice, _id,
-                                             "Error writing to sound device (10),"
-                                             " error: %d/%s, numPlaySamples=%d,"
-                                             " remainingFrames=%d",
-                                             written, LATE(snd_strerror)(written),
-                                             numPlaySamples, remainingFrames);
-
-                                // Try to recover
-                                ErrorRecovery(written, _handlePlayout);
-                            }
-                            else
-                            {
-                                WEBRTC_TRACE(kTraceWarning,
-                                             kTraceAudioDevice, _id,
-                                             "Could not write all playout data"
-                                             " (2), numPlaySamples=%d, "
-                                             "remainingFrames=%d, written=%d",
-                                             numPlaySamples, remainingFrames,
-                                             written);
-                            }
-                        }
-                    }
-
-                } 
-            } // msPlay < PLAYBACK_THRESHOLD - 10
-
-        } // msPlay < PLAYBACK_THRESHOLD
-
-    } // _playing
+    if (frames < 0)
+    {
+        WEBRTC_TRACE(kTraceStream, kTraceAudioDevice, _id,
+                     "playout snd_pcm_avail_update error: %s",
+                     LATE(snd_strerror)(frames));
+        _playoutFramesLeft = 0;
+        ErrorRecovery(frames, _handlePlayout);
+        UnLock();
+        return true;
+    }
+    else {
+        assert(frames==avail_frames);
+        _playoutFramesLeft -= frames;
+    }
 
     UnLock();
     return true;
@@ -3430,261 +2301,149 @@ bool AudioDeviceLinuxALSA::PlayThreadProcess()
 
 bool AudioDeviceLinuxALSA::RecThreadProcess()
 {
-    WebRtc_Word32  msRec(0);
-    WebRtc_Word32  framesInRecData(0);
+    if (!_recording)
+        return false;
 
-    // Number of (stereo) samples to record
-    WebRtc_Word32  recBufSizeInSamples = _recordBufferSize / (2 * _recChannels);
-    WebRtc_Word16  tmpBuffer[_recordBufferSize / 2];
-    WebRtc_UWord32 samplesPerMs = _samplingFreqRec;
-
-    switch (_timeEventRec.Wait(1000))
-    {
-    case kEventSignaled:
-        break;
-    case kEventError:
-        WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                     "EventWrapper::Wait() failed => restarting timer");
-        _timeEventRec.StopTimer();
-        _timeEventRec.StartTimer(true, REC_TIMER_PERIOD_MS);
-        return true;
-    case kEventTimeout:
-        return true;
-    }
+    int err;
+    snd_pcm_sframes_t frames;
+    snd_pcm_sframes_t avail_frames;
+    WebRtc_Word8 buffer[_recordingBufferSizeIn10MS];
 
     Lock();
 
-    if (_startRec)
+    //return a positive number of frames ready otherwise a negative error code
+    avail_frames = LATE(snd_pcm_avail_update)(_handleRecord);
+    if (avail_frames < 0)
     {
-        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                     "_startRec true, performing initial actions");
+        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+                     "capture snd_pcm_avail_update error: %s",
+                     LATE(snd_strerror)(avail_frames));
+        ErrorRecovery(avail_frames, _handleRecord);
+        UnLock();
+        return true;
+    }
+    else if (avail_frames == 0)
+    { // no frame is available now
+        UnLock();
 
-        if (PrepareStartRecording() == 0)
-        {
-            _bufferCheckErrorsRec = 0;
-            _startRec = false;
-            _recording = true;
-            _recStartEvent.Set();
-        }
+        //maximum time in milliseconds to wait, a negative value means infinity
+        err = LATE(snd_pcm_wait)(_handleRecord,
+            ALSA_CAPTURE_WAIT_TIMEOUT);
+        if (err == 0) //timeout occured
+            WEBRTC_TRACE(kTraceStream, kTraceAudioDevice, _id,
+                         "caputre snd_pcm_wait timeout");
+
+        return true;
     }
 
-    if (_recording)
+    if (static_cast<WebRtc_UWord32>(avail_frames) > _recordingFramesLeft)
+        avail_frames = _recordingFramesLeft;
+
+    frames = LATE(snd_pcm_readi)(_handleRecord,
+        buffer, avail_frames); // frames to be written
+    if (frames < 0)
     {
-        // get number of ms of sound that remains in the sound card buffer for
-        // playback
-        msRec = GetRecordingBufferDelay(true);
-        if (msRec == -1)
-        {
-            UnLock();
-            return true;
-        }
+        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+                     "caputre snd_pcm_readi error: %s",
+                     LATE(snd_strerror)(frames));
+        ErrorRecovery(frames, _handleRecord);
+        UnLock();
+        return true;
+    }
+    else if (frames > 0)
+    {
+        assert(frames == avail_frames);
 
-        // read data if a whole frame has been captured
-        // or if we are in ignore delay mode (check method 2)
-        if ((msRec > 10) || (2 == _bufferCheckMethodRec))
-        {
-            // Read 10 ms of data from soundcard
-            framesInRecData = LATE(snd_pcm_readi)
-                                  (_handleRecord,
-                                   tmpBuffer,
-                                   recBufSizeInSamples);
+        int left_size = LATE(snd_pcm_frames_to_bytes)(_handleRecord,
+            _recordingFramesLeft);
+        int size = LATE(snd_pcm_frames_to_bytes)(_handleRecord, frames);
 
-            if (framesInRecData < 0)
+        memcpy(&_recordingBuffer[_recordingBufferSizeIn10MS - left_size],
+               buffer, size);
+        _recordingFramesLeft -= frames;
+
+        if (!_recordingFramesLeft)
+        { // buf is full
+            _recordingFramesLeft = _recordingFramesIn10MS;
+
+            // store the recorded buffer (no action will be taken if the
+            // #recorded samples is not a full buffer)
+            _ptrAudioBuffer->SetRecordedBuffer(_recordingBuffer,
+                                               _recordingFramesIn10MS);
+
+            WebRtc_UWord32 currentMicLevel = 0;
+            WebRtc_UWord32 newMicLevel = 0;
+
+            if (AGC())
             {
+                // store current mic level in the audio buffer if AGC is enabled
+                if (MicrophoneVolume(currentMicLevel) == 0)
+                {
+                    if (currentMicLevel == 0xffffffff)
+                        currentMicLevel = 100;
+                    // this call does not affect the actual microphone volume
+                    _ptrAudioBuffer->SetCurrentMicLevel(currentMicLevel);
+                }
+            }
+
+            // calculate delay
+            _playoutDelay = 0;
+            _recordingDelay = 0;
+            if (_handlePlayout)
+            {
+                err = LATE(snd_pcm_delay)(_handlePlayout,
+                    &_playoutDelay); // returned delay in frames
+                if (err < 0)
+                {
+                    // TODO(xians): Shall we call ErrorRecovery() here?
+                    _playoutDelay = 0;
+                    WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+                                 "playout snd_pcm_delay: %s",
+                                 LATE(snd_strerror)(err));
+                }
+            }
+
+            err = LATE(snd_pcm_delay)(_handleRecord,
+                &_recordingDelay); // returned delay in frames
+            if (err < 0)
+            {
+                // TODO(xians): Shall we call ErrorRecovery() here?
+                _recordingDelay = 0;
                 WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                             "pcm read error (1)");
-                ErrorRecovery(framesInRecData, _handleRecord);
-                UnLock();
-                return true;
-            }
-            else if (framesInRecData + (WebRtc_Word32)_numReadyRecSamples <
-                recBufSizeInSamples)
-            {
-                for (int idx = 0; idx < framesInRecData*_recChannels; idx++)
-                {
-                    _recBuffer[_numReadyRecSamples*_recChannels + idx] =
-                        tmpBuffer[idx];
-                }
-                _numReadyRecSamples += framesInRecData;
-
-                framesInRecData = LATE(snd_pcm_readi)
-                                      (_handleRecord,
-                                       tmpBuffer,
-                                       recBufSizeInSamples - _numReadyRecSamples);
-
-                if (framesInRecData < 0)
-                {
-                    WEBRTC_TRACE(kTraceError, kTraceAudioDevice,
-                                 _id, "pcm read error (2)");
-                    ErrorRecovery(framesInRecData, _handleRecord);
-                    UnLock();
-                    return true;
-                }
-                else if (framesInRecData + (WebRtc_Word32)_numReadyRecSamples ==
-                    recBufSizeInSamples)
-                {
-                    // We got all the data we need, go on as normal.
-                }
-                else 
-                {
-                    // We still don't have enough data, copy what we have and leave.
-                    for (int idx = 0; idx < framesInRecData*_recChannels; idx++)
-                    {
-                        _recBuffer[_numReadyRecSamples*_recChannels + idx] =
-                            tmpBuffer[idx];
-                    }
-                    _numReadyRecSamples += framesInRecData;
-                    WEBRTC_TRACE(kTraceStream,
-                                 kTraceAudioDevice, _id,
-                               "     %d samples copied. Not enough, return and"
-                               " wait for more.",
-                               framesInRecData);
-                    UnLock();
-                    return true;
-                }
+                             "caputre snd_pcm_delay: %s",
+                             LATE(snd_strerror)(err));
             }
 
-            // get recording buffer delay after reading
-            // to have a value to use for the AEC
-            msRec = GetRecordingBufferDelay(false);
-            if (msRec == -1)
+           // TODO(xians): Shall we add 10ms buffer delay to the record delay?
+            _ptrAudioBuffer->SetVQEData(
+                _playoutDelay * 1000 / _playoutFreq,
+                _recordingDelay * 1000 / _recordingFreq, 0);
+
+            // Deliver recorded samples at specified sample rate, mic level etc.
+            // to the observer using callback.
+            UnLock();
+            _ptrAudioBuffer->DeliverRecordedData();
+            Lock();
+
+            if (AGC())
             {
-                UnLock();
-                return true;
+                newMicLevel = _ptrAudioBuffer->NewMicLevel();
+                if (newMicLevel != 0)
+                {
+                    // The VQE will only deliver non-zero microphone levels when a
+                    // change is needed. Set this new mic level (received from the
+                    // observer as return value in the callback).
+                    if (SetMicrophoneVolume(newMicLevel) == -1)
+                        WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
+                                     "  the required modification of the "
+                                     "microphone volume failed");
+                }
             }
-
-            // calculate the number of samples to copy
-            // to have a full buffer
-            int copySamples = 0;
-            if ((WebRtc_Word32)_numReadyRecSamples + framesInRecData >=
-                recBufSizeInSamples)
-            {
-                copySamples = recBufSizeInSamples - _numReadyRecSamples;
-            }
-            else 
-            {
-                copySamples = framesInRecData;
-            }
-        
-            // fill up buffer
-            for (int idx = 0; idx < copySamples*_recChannels; idx++)
-            {
-                _recBuffer[_numReadyRecSamples*_recChannels + idx] =
-                    tmpBuffer[idx];
-            }
-
-            _numReadyRecSamples += copySamples;
-            framesInRecData -= copySamples;
-
-            // Send data, if we have 10ms data...
-            if ((WebRtc_Word32)_numReadyRecSamples == recBufSizeInSamples)
-            {
-                WebRtc_UWord32 currentMicLevel(0);
-                WebRtc_UWord32 newMicLevel(0);
-                WebRtc_Word32 msRecDelay = 0 == _bufferCheckMethodRec ?
-                    _sndCardRecDelay : msRec;
-                WebRtc_Word32 msReady = _numReadyRecSamples / samplesPerMs;
-                WebRtc_Word32 msStored = framesInRecData / samplesPerMs;
-                WebRtc_Word32 blockSize = recBufSizeInSamples / samplesPerMs;
-
-                // TODO(xians): The blockSize - 25 term brings the delay measurement
-                // into line with the Windows interpretation. Investigate if this 
-                // works properly with different block sizes.
-                // TODO(xians): Should only the rec delay from snd_pcm_delay be taken
-                // into account? See ALSA API doc.
-                // Probably we want to add the remaining data in the buffer as
-                // well or is that already in any of the variables?
-                WebRtc_Word32 msTotalRecDelay = msRecDelay + msReady +
-                    msStored + blockSize - 25;
-                if (msTotalRecDelay < 0)
-                {
-                    msTotalRecDelay = 0;
-                }
-                // store the recorded buffer (no action will be taken if the
-                // #recorded samples is not a full buffer)
-                _ptrAudioBuffer->SetRecordedBuffer(
-                    (WebRtc_Word8 *)&_recBuffer[0], _numReadyRecSamples);
-
-                if (AGC())
-                {
-                    // store current mic level in the audio buffer if AGC is enabled
-                    if (MicrophoneVolume(currentMicLevel) == 0)
-                    {
-                        if (currentMicLevel == 0xffffffff)
-                        {
-                            currentMicLevel = 100;
-                        }
-                        // this call does not affect the actual microphone volume
-                        _ptrAudioBuffer->SetCurrentMicLevel(currentMicLevel);                
-                    }
-                }
-
-                // store vqe delay values
-                _ptrAudioBuffer->SetVQEData(_sndCardPlayDelay,
-                                            msTotalRecDelay,
-                                            0);
-
-                // deliver recorded samples at specified sample rate, mic level
-                // etc. to the observer using callback
-                UnLock();
-                _ptrAudioBuffer->DeliverRecordedData();
-                Lock();
-
-                if (InputSanityCheckAfterUnlockedPeriod() == -1)
-                {
-                    UnLock();
-                    return true;
-                }
-
-                if (AGC())
-                {
-                    newMicLevel = _ptrAudioBuffer->NewMicLevel();
-                    if (newMicLevel != 0)
-                    {
-                        // The VQE will only deliver non-zero microphone levels
-                        //when a change is needed.
-                         // Set this new mic level (received from the observer
-                        // as return value in the callback).
-                        WEBRTC_TRACE(kTraceStream,
-                                     kTraceAudioDevice, _id,
-                                     "  AGC change of volume: old=%u => new=%u",
-                                     currentMicLevel,  newMicLevel);
-                        if (SetMicrophoneVolume(newMicLevel) == -1)
-                        {
-                            WEBRTC_TRACE(kTraceWarning,
-                                         kTraceAudioDevice, _id,
-                                       "  the required modification of the"
-                                       " microphone volume failed");
-                        }
-                    }
-                }
-
-                _numReadyRecSamples = 0;
-
-                // if there are remaining samples in tmpBuffer
-                // copy those to _recBuffer
-                if (framesInRecData > 0)
-                {
-                    WEBRTC_TRACE(kTraceStream,
-                                 kTraceAudioDevice, _id,
-                                 "   Got rest samples, copy %d samples to rec"
-                                 " buffer", framesInRecData);
-                    for (int idx = 0; idx < framesInRecData; idx++)
-                    {
-                        _recBuffer[idx] = tmpBuffer[copySamples+idx];
-                    }
-
-                    _numReadyRecSamples = framesInRecData;
-                }
-
-            } // if (_numReadyRecSamples == recBufSizeInSamples)
-
-        } // (msRec > 10) || (2 == _bufferCheckMethodRec)
-
-    } // _recording
+        }
+    }
 
     UnLock();
     return true;
 }
 
-}
+}  // namespace webrtc

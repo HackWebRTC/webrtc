@@ -51,8 +51,11 @@ namespace webrtc_adm_linux_alsa {
   X(snd_pcm_reset) \
   X(snd_pcm_state) \
   X(snd_pcm_set_params) \
+  X(snd_pcm_get_params) \
   X(snd_pcm_start) \
   X(snd_pcm_stream) \
+  X(snd_pcm_frames_to_bytes) \
+  X(snd_pcm_bytes_to_frames) \
   X(snd_pcm_wait) \
   X(snd_pcm_writei) \
   X(snd_pcm_info_get_class) \
