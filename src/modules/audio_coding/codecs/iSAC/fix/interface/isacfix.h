@@ -144,6 +144,8 @@ extern "C" {
    * 10ms frames until it reaches the chosen Framesize (480 or 960 wide-band samples
    * corresponding to 30 or 60 ms frames), and then proceeds to the encoding.
    *
+   * The function is enabled if WEBRTC_ISAC_FIX_NB_CALLS_ENABLED is defined
+   *
    * Input:
    *      - ISAC_main_inst    : ISAC instance.
    *      - speechIn          : input speech vector.
@@ -158,9 +160,11 @@ extern "C" {
    */
 
 
+#ifdef WEBRTC_ISAC_FIX_NB_CALLS_ENABLED
   WebRtc_Word16 WebRtcIsacfix_EncodeNb(ISACFIX_MainStruct *ISAC_main_inst,
                                        const WebRtc_Word16 *speechIn,
                                        WebRtc_Word16 *encoded);
+#endif //  WEBRTC_ISAC_FIX_NB_CALLS_ENABLED
 
 
 
@@ -262,6 +266,8 @@ extern "C" {
    * Output speech length will be a multiple of 240 samples: 240 or 480 samples,
    * depending on the framesize (30 or 60 ms).
    *
+   * The function is enabled if WEBRTC_ISAC_FIX_NB_CALLS_ENABLED is defined
+   *
    * Input:
    *      - ISAC_main_inst    : ISAC instance.
    *      - encoded           : encoded ISAC frame(s)
@@ -274,11 +280,13 @@ extern "C" {
    *                            -1 - Error
    */
 
+#ifdef WEBRTC_ISAC_FIX_NB_CALLS_ENABLED
   WebRtc_Word16 WebRtcIsacfix_DecodeNb(ISACFIX_MainStruct *ISAC_main_inst,
                                        const WebRtc_UWord16 *encoded,
                                        WebRtc_Word16 len,
                                        WebRtc_Word16 *decoded,
                                        WebRtc_Word16 *speechType);
+#endif //  WEBRTC_ISAC_FIX_NB_CALLS_ENABLED
 
 
   /****************************************************************************
@@ -287,6 +295,8 @@ extern "C" {
    * This function conducts PLC for ISAC frame(s) in narrow-band (8kHz sampling).
    * Output speech length  will be "240*noOfLostFrames" samples
    * that equevalent of "30*noOfLostFrames" millisecond.
+   *
+   * The function is enabled if WEBRTC_ISAC_FIX_NB_CALLS_ENABLED is defined
    *
    * Input:
    *      - ISAC_main_inst    : ISAC instance.
@@ -300,9 +310,11 @@ extern "C" {
    *                            -1 - Error
    */
 
+#ifdef WEBRTC_ISAC_FIX_NB_CALLS_ENABLED
   WebRtc_Word16 WebRtcIsacfix_DecodePlcNb(ISACFIX_MainStruct *ISAC_main_inst,
                                           WebRtc_Word16 *decoded,
                                           WebRtc_Word16 noOfLostFrames );
+#endif // WEBRTC_ISAC_FIX_NB_CALLS_ENABLED
 
 
 

@@ -242,7 +242,7 @@ WebRtc_Word16 WebRtcIsacfix_EncoderInit(ISACFIX_MainStruct *ISAC_main_inst,
     ISAC_inst->ISACenc_obj.bitstr_obj.stream[k] = 0;
   }
 
-#ifdef NB_CALLS
+#ifdef WEBRTC_ISAC_FIX_NB_CALLS_ENABLED
   WebRtcIsacfix_InitPostFilterbank(&ISAC_inst->ISACenc_obj.interpolatorstr_obj);
 #endif
 
@@ -332,6 +332,8 @@ WebRtc_Word16 WebRtcIsacfix_Encode(ISACFIX_MainStruct *ISAC_main_inst,
  * 10ms frames until it reaches the chosen Framesize (480 or 960 wide-band samples
  * corresponding to 30 or 60 ms frames), and then proceeds to the encoding.
  *
+ * The function is enabled if WEBRTC_ISAC_FIX_NB_CALLS_ENABLED is defined
+ *
  * Input:
  *      - ISAC_main_inst    : ISAC instance.
  *      - speechIn          : input speech vector.
@@ -345,13 +347,11 @@ WebRtc_Word16 WebRtcIsacfix_Encode(ISACFIX_MainStruct *ISAC_main_inst,
  *                            so it keeps buffering speech samples.
  *                          : -1 - Error
  */
-
+#ifdef WEBRTC_ISAC_FIX_NB_CALLS_ENABLED
 WebRtc_Word16 WebRtcIsacfix_EncodeNb(ISACFIX_MainStruct *ISAC_main_inst,
                                       const WebRtc_Word16    *speechIn,
                                       WebRtc_Word16          *encoded)
 {
-#ifdef NB_CALLS
-
   ISACFIX_SubStruct *ISAC_inst;
   WebRtc_Word16 stream_len;
   WebRtc_Word16 speechInWB[FRAMESAMPLES_10ms];
@@ -407,11 +407,8 @@ WebRtc_Word16 WebRtcIsacfix_EncodeNb(ISACFIX_MainStruct *ISAC_main_inst,
 
 
   return stream_len;
-
-#else /* NB_CALLS not defined */
-  return -1;
-#endif  /* NB_CALLS */
 }
+#endif  /* WEBRTC_ISAC_FIX_NB_CALLS_ENABLED */
 
 
 /****************************************************************************
@@ -511,7 +508,7 @@ WebRtc_Word16 WebRtcIsacfix_DecoderInit(ISACFIX_MainStruct *ISAC_main_inst)
   WebRtcIsacfix_InitPlc( &ISAC_inst->ISACdec_obj.plcstr_obj );
 
 
-#ifdef NB_CALLS
+#ifdef WEBRTC_ISAC_FIX_NB_CALLS_ENABLED
   WebRtcIsacfix_InitPreFilterbank(&ISAC_inst->ISACdec_obj.decimatorstr_obj);
 #endif
 
@@ -814,6 +811,8 @@ WebRtc_Word16 WebRtcIsacfix_Decode(ISACFIX_MainStruct *ISAC_main_inst,
  * Output speech length will be a multiple of 240 samples: 240 or 480 samples,
  * depending on the framesize (30 or 60 ms).
  *
+ * The function is enabled if WEBRTC_ISAC_FIX_NB_CALLS_ENABLED is defined
+ *
  * Input:
  *      - ISAC_main_inst    : ISAC instance.
  *      - encoded           : encoded ISAC frame(s)
@@ -826,14 +825,13 @@ WebRtc_Word16 WebRtcIsacfix_Decode(ISACFIX_MainStruct *ISAC_main_inst,
  *                            -1 - Error
  */
 
-
+#ifdef WEBRTC_ISAC_FIX_NB_CALLS_ENABLED
 WebRtc_Word16 WebRtcIsacfix_DecodeNb(ISACFIX_MainStruct *ISAC_main_inst,
                                         const WebRtc_UWord16   *encoded,
                                         WebRtc_Word16          len,
                                         WebRtc_Word16          *decoded,
                                         WebRtc_Word16    *speechType)
 {
-#ifdef NB_CALLS
   ISACFIX_SubStruct *ISAC_inst;
   /* twice the number of samples (480 or 960), output from decoder */
   /* that were actually used in the encoder/decoder (determined on the fly) */
@@ -908,11 +906,8 @@ WebRtc_Word16 WebRtcIsacfix_DecodeNb(ISACFIX_MainStruct *ISAC_main_inst,
   }
 
   return number_of_samples/2;
-
-#else /* NB_CALLS not defined */
-  return -1;
-#endif /* NB_CALLS */
 }
+#endif /* WEBRTC_ISAC_FIX_NB_CALLS_ENABLED */
 
 
 /****************************************************************************
@@ -921,6 +916,8 @@ WebRtc_Word16 WebRtcIsacfix_DecodeNb(ISACFIX_MainStruct *ISAC_main_inst,
  * This function conducts PLC for ISAC frame(s) in narrow-band (8kHz sampling).
  * Output speech length  will be "240*noOfLostFrames" samples
  * that is equevalent of "30*noOfLostFrames" millisecond.
+ *
+ * The function is enabled if WEBRTC_ISAC_FIX_NB_CALLS_ENABLED is defined
  *
  * Input:
  *      - ISAC_main_inst    : ISAC instance.
@@ -933,13 +930,11 @@ WebRtc_Word16 WebRtcIsacfix_DecodeNb(ISACFIX_MainStruct *ISAC_main_inst,
  *                            -1 - Error
  */
 
+#ifdef WEBRTC_ISAC_FIX_NB_CALLS_ENABLED
 WebRtc_Word16 WebRtcIsacfix_DecodePlcNb(ISACFIX_MainStruct *ISAC_main_inst,
                                          WebRtc_Word16          *decoded,
                                          WebRtc_Word16 noOfLostFrames )
 {
-
-#ifdef NB_CALLS
-
   WebRtc_Word16 no_of_samples, declen, k, ok;
   WebRtc_Word16 outframeNB[FRAMESAMPLES];
   WebRtc_Word16 outframeWB[FRAMESAMPLES];
@@ -977,14 +972,8 @@ WebRtc_Word16 WebRtcIsacfix_DecodePlcNb(ISACFIX_MainStruct *ISAC_main_inst,
   }
 
   return declen;
-
-
-#else /* NB_CALLS not defined */
-  return -1;
-#endif /* NB_CALLS */
-
-
 }
+#endif /* WEBRTC_ISAC_FIX_NB_CALLS_ENABLED */
 
 
 

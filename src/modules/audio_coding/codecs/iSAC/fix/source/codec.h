@@ -97,7 +97,7 @@ void WebRtcIsacfix_FilterAndCombine1(WebRtc_Word16     *tempin_ch1,
                                      WebRtc_Word16     *out16,
                                      PostFiltBankstr *postfiltdata);
 
-#ifdef NB_CALLS
+#ifdef WEBRTC_ISAC_FIX_NB_CALLS_ENABLED
 
 void WebRtcIsacfix_SplitAndFilter2(WebRtc_Word16    *in,
                                    WebRtc_Word16    *LP16,

@@ -152,7 +152,7 @@ void WebRtcIsacfix_SplitAndFilter1(WebRtc_Word16 *pin,
 }/*end of WebRtcIsacfix_SplitAndFilter */
 
 
-#ifdef NB_CALLS
+#ifdef WEBRTC_ISAC_FIX_NB_CALLS_ENABLED
 
 /* Without lookahead */
 void WebRtcIsacfix_SplitAndFilter2(WebRtc_Word16 *pin,
@@ -267,7 +267,7 @@ void WebRtcIsacfix_FilterAndCombine1(WebRtc_Word16 *tempin_ch1,
 }
 
 
-#ifdef NB_CALLS
+#ifdef WEBRTC_ISAC_FIX_NB_CALLS_ENABLED
 /* Function WebRtcIsacfix_FilterAndCombine */
 /* This is a decoder function that takes the decimated
    length len/2 input low-pass and

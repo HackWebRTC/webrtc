@@ -322,7 +322,7 @@ typedef struct {
   WebRtc_UWord16        MaxBits;
 
   WebRtc_Word16         bitstr_seed;
-#ifdef NB_CALLS
+#ifdef WEBRTC_ISAC_FIX_NB_CALLS_ENABLED
   PostFiltBankstr     interpolatorstr_obj;
 #endif
 
@@ -344,7 +344,7 @@ typedef struct {
   PitchFiltstr        pitchfiltstr_obj;
   PLCstr              plcstr_obj;               /* TS; for packet loss concealment */
 
-#ifdef NB_CALLS
+#ifdef WEBRTC_ISAC_FIX_NB_CALLS_ENABLED
   PreFiltBankstr      decimatorstr_obj;
 #endif
 
