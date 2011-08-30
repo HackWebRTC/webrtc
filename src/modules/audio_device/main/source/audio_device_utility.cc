@@ -69,42 +69,28 @@ namespace webrtc
 void AudioDeviceUtility::WaitForKey()
 {
 
-struct termios oldt, newt;
+    struct termios oldt, newt;
 
-int ch;
+    tcgetattr( STDIN_FILENO, &oldt );
 
+    // we don't want getchar to echo!
 
+    newt = oldt;
+    newt.c_lflag &= ~( ICANON | ECHO );
+    tcsetattr( STDIN_FILENO, TCSANOW, &newt );
 
-tcgetattr( STDIN_FILENO, &oldt );
+    // catch any newline that's hanging around...
 
+    // you'll have to hit enter twice if you
 
+    // choose enter out of all available keys
 
-// we don't want getchar to echo!
+    if (getchar() == '\n')
+    {
+        getchar();
+    }
 
-newt = oldt;
-
-newt.c_lflag &= ~( ICANON | ECHO );
-
-tcsetattr( STDIN_FILENO, TCSANOW, &newt );
-
-
-
-// catch any newline that's hanging around...
-
-// you'll have to hit enter twice if you
-
-// choose enter out of all available keys
-
-if (getchar() == '\n')
-
-{
-
-	ch = getchar();
-
-}
-
-
-tcsetattr( STDIN_FILENO, TCSANOW, &oldt );
+    tcsetattr( STDIN_FILENO, TCSANOW, &oldt );
 }
 
 WebRtc_UWord32 AudioDeviceUtility::GetTimeInMS()
