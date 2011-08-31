@@ -68,7 +68,6 @@ WebRtc_Word16 WebRtcPcm16b_DecodeW16(void *inst,
                                      WebRtc_Word16 *speechOut16b,
                                      WebRtc_Word16* speechType)
 {
-  (void)(inst = NULL);
 #ifdef WEBRTC_BIG_ENDIAN
     WEBRTC_SPL_MEMCPY_W8(speechOut16b, speechIn16b, ((len*sizeof(WebRtc_Word16)+1)>>1));
 #else
@@ -81,6 +80,10 @@ WebRtc_Word16 WebRtcPcm16b_DecodeW16(void *inst,
 #endif
 
     *speechType=1;
+
+    // Avoid warning.
+    (void)(inst = NULL);
+
     return(len>>1);
 }
 
