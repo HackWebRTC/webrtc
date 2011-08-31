@@ -453,8 +453,7 @@ WebRtc_Word16 WebRtcIsacfix_GetNewBitStream(ISACFIX_MainStruct *ISAC_main_inst,
 
   stream_len = WebRtcIsacfix_EncodeStoredData(&ISAC_inst->ISACenc_obj,
                                               bweIndex,
-                                              scale,
-                                              ISAC_inst->CodingMode);
+                                              scale);
   if (stream_len<0) {
     ISAC_inst->errorcode = - stream_len;
     return -1;

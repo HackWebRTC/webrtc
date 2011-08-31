@@ -107,7 +107,6 @@ int main(int argc, char* argv[])
   double starttime, runtime, length_file;
 
   WebRtc_Word16 stream_len = 0;
-  WebRtc_Word16 trans_len = 0;
   WebRtc_Word16 framecnt, declen;
   WebRtc_Word16 shortdata[FRAMESAMPLES_10ms];
   WebRtc_Word16 decoded[MAX_FRAMESAMPLES];
@@ -174,48 +173,62 @@ int main(int argc, char* argv[])
     printf("Usage:\n\n");
     printf("./kenny.exe [-F num][-I] bottleneck_value infile outfile \n\n");
     printf("with:\n");
-    printf("[-I]             :  if -I option is specified, the coder will use\n");
-    printf("                    an instantaneous Bottleneck value. If not, it\n");
-    printf("                    will be an adaptive Bottleneck value.\n\n");
-    printf("bottleneck_value :  the value of the bottleneck provided either\n");
-    printf("                    as a fixed value (e.g. 25000) or\n");
-    printf("                    read from a file (e.g. bottleneck.txt)\n\n");
-    printf("[-INITRATE num]  :  Set a new value for initial rate. Note! Only used in adaptive mode.\n\n");
-    printf("[-FL num]        :  Set (initial) frame length in msec. Valid length are 30 and 60 msec.\n\n");
-    printf("[-FIXED_FL]      :  Frame length will be fixed to initial value.\n\n");
-    printf("[-MAX num]       :  Set the limit for the payload size of iSAC in bytes. \n");
-    printf("                    Minimum 100, maximum 400.\n\n");
-    printf("[-MAXRATE num]   :  Set the maxrate for iSAC in bits per second. \n");
-    printf("                    Minimum 32000, maximum 53400.\n\n");
-    printf("[-F num]         :  if -F option is specified, the test function\n");
-    printf("                    will run the iSAC API fault scenario specified by the\n");
-    printf("                    supplied number.\n");
-    printf("                    F 1 - Call encoder prior to init encoder call\n");
-    printf("                    F 2 - Call decoder prior to init decoder call\n");
-    printf("                    F 3 - Call decoder prior to encoder call\n");
-    printf("                    F 4 - Call decoder with a too short coded sequence\n");
-    printf("                    F 5 - Call decoder with a too long coded sequence\n");
-    printf("                    F 6 - Call decoder with random bit stream\n");
-    printf("                    F 7 - Call init encoder/decoder at random during a call\n");
-    printf("                    F 8 - Call encoder/decoder without having allocated memory for \n");
-    printf("                          encoder/decoder instance\n");
-    printf("                    F 9 - Call decodeB without calling decodeA\n");
-    printf("                    F 10 - Call decodeB with garbage data\n");
-    printf("[-PL num]       :   if -PL option is specified 0<num<100 will specify the\n");
-    printf("                    percentage of packet loss\n\n");
-    printf("[-G file]       :   if -G option is specified the file given is a .gns file\n");
-    printf("                    that represents a network profile\n\n");
-    printf("[-NB num]       :   if -NB option, use the narrowband interfaces\n");
-    printf("                    num=1 => encode with narrowband encoder (infile is narrowband)\n");
-    printf("                    num=2 => decode with narrowband decoder (outfile is narrowband)\n\n");
-    printf("[-CE num]       :   Test of APIs used by Conference Engine.\n");
-    printf("                    CE 1 - createInternal, freeInternal, getNewBitstream \n");
-    printf("                    CE 2 - transcode, getBWE \n");
-    printf("                    CE 3 - getSendBWE, setSendBWE.  \n\n");
-    printf("[-RTP_INIT num] :   if -RTP_INIT option is specified num will be the initial\n");
-    printf("                    value of the rtp sequence number.\n\n");
-    printf("infile          :   Normal speech input file\n\n");
-    printf("outfile         :   Speech output file\n\n");
+    printf("[-I]             :if -I option is specified, the coder will use\n");
+    printf("                  an instantaneous Bottleneck value. If not, it\n");
+    printf("                  will be an adaptive Bottleneck value.\n\n");
+    printf("bottleneck_value :the value of the bottleneck provided either\n");
+    printf("                  as a fixed value (e.g. 25000) or\n");
+    printf("                  read from a file (e.g. bottleneck.txt)\n\n");
+    printf("[-INITRATE num]  :Set a new value for initial rate. Note! Only used"
+           " in adaptive mode.\n\n");
+    printf("[-FL num]        :Set (initial) frame length in msec. Valid length"
+           " are 30 and 60 msec.\n\n");
+    printf("[-FIXED_FL]      :Frame length will be fixed to initial value.\n\n");
+    printf("[-MAX num]       :Set the limit for the payload size of iSAC"
+           " in bytes. \n");
+    printf("                  Minimum 100, maximum 400.\n\n");
+    printf("[-MAXRATE num]   :Set the maxrate for iSAC in bits per second. \n");
+    printf("                  Minimum 32000, maximum 53400.\n\n");
+    printf("[-F num]         :if -F option is specified, the test function\n");
+    printf("                  will run the iSAC API fault scenario specified"
+           " by the\n");
+    printf("                  supplied number.\n");
+    printf("                  F 1 - Call encoder prior to init encoder call\n");
+    printf("                  F 2 - Call decoder prior to init decoder call\n");
+    printf("                  F 3 - Call decoder prior to encoder call\n");
+    printf("                  F 4 - Call decoder with a too short coded"
+           " sequence\n");
+    printf("                  F 5 - Call decoder with a too long coded"
+           " sequence\n");
+    printf("                  F 6 - Call decoder with random bit stream\n");
+    printf("                  F 7 - Call init encoder/decoder at random"
+           " during a call\n");
+    printf("                  F 8 - Call encoder/decoder without having"
+           " allocated memory for \n");
+    printf("                        encoder/decoder instance\n");
+    printf("                  F 9 - Call decodeB without calling decodeA\n");
+    printf("                  F 10 - Call decodeB with garbage data\n");
+    printf("[-PL num]       : if -PL option is specified 0<num<100 will "
+           "specify the\n");
+    printf("                  percentage of packet loss\n\n");
+    printf("[-G file]       : if -G option is specified the file given is"
+           " a .gns file\n");
+    printf("                  that represents a network profile\n\n");
+    printf("[-NB num]       : if -NB option, use the narrowband interfaces\n");
+    printf("                  num=1 => encode with narrowband encoder"
+           " (infile is narrowband)\n");
+    printf("                  num=2 => decode with narrowband decoder"
+           " (outfile is narrowband)\n\n");
+    printf("[-CE num]       : Test of APIs used by Conference Engine.\n");
+    printf("                  CE 1 - createInternal, freeInternal,"
+           " getNewBitstream \n");
+    printf("                  CE 2 - transcode, getBWE \n");
+    printf("                  CE 3 - getSendBWE, setSendBWE.  \n\n");
+    printf("[-RTP_INIT num] : if -RTP_INIT option is specified num will be"
+           " the initial\n");
+    printf("                  value of the rtp sequence number.\n\n");
+    printf("infile          : Normal speech input file\n\n");
+    printf("outfile         : Speech output file\n\n");
     printf("Example usage   : \n\n");
     printf("./kenny.exe -I bottleneck.txt speechIn.pcm speechOut.pcm\n\n");
     exit(0);
@@ -243,7 +256,8 @@ int main(int argc, char* argv[])
       rateBPS = atoi(argv[i + 1]);
       setControlBWE = 1;
       if ((rateBPS < 10000) || (rateBPS > 32000)) {
-        printf("\n%d is not a initial rate. Valid values are in the range 10000 to 32000.\n", rateBPS);
+        printf("\n%d is not a initial rate. "
+               "Valid values are in the range 10000 to 32000.\n", rateBPS);
         exit(0);
       }
       printf("\nNew initial rate: %d\n", rateBPS);
@@ -254,7 +268,8 @@ int main(int argc, char* argv[])
     if (!strcmp ("-FL", argv[i])) {
       framesize = atoi(argv[i + 1]);
       if ((framesize != 30) && (framesize != 60)) {
-        printf("\n%d is not a valid frame length. Valid length are 30 and 60 msec.\n", framesize);
+        printf("\n%d is not a valid frame length. "
+               "Valid length are 30 and 60 msec.\n", framesize);
         exit(0);
       }
       printf("\nFrame Length: %d\n", framesize);
@@ -286,7 +301,8 @@ int main(int argc, char* argv[])
       testNum = atoi(argv[i + 1]);
       printf("\nFault test: %d\n", testNum);
       if (testNum < 1 || testNum > 10) {
-        printf("\n%d is not a valid Fault Scenario number. Valid Fault Scenarios are numbered 1-10.\n", testNum);
+        printf("\n%d is not a valid Fault Scenario number."
+               " Valid Fault Scenarios are numbered 1-10.\n", testNum);
         exit(0);
       }
       i++;
@@ -301,7 +317,8 @@ int main(int argc, char* argv[])
           exit( 0 );
         }
         if( packetLossPercent > 0 ) {
-          printf( "\nSimulating %d %% of independent packet loss\n", packetLossPercent );
+          printf( "\nSimulating %d %% of independent packet loss\n",
+                  packetLossPercent );
         } else {
           printf( "\nNo Packet Loss Is Simulated \n" );
         }
@@ -313,7 +330,8 @@ int main(int argc, char* argv[])
           printf( "\n couldn't open the frameloss file: %s\n", argv[i+1] );
           exit( 0 );
         }
-        printf( "\nSimulating packet loss through the given channel file: %s\n", argv[i+1] );
+        printf( "\nSimulating packet loss through the given "
+                "channel file: %s\n", argv[i+1] );
       }
       i++;
     }
@@ -349,7 +367,8 @@ int main(int argc, char* argv[])
         i++;
         scale = (float)atof( argv[i+1] );
       } else if (testCE < 1 || testCE > 3) {
-        printf("\n%d is not a valid CE-test number, valid Fault Scenarios are numbered 1-3\n", testCE);
+        printf("\n%d is not a valid CE-test number, valid Fault "
+               "Scenarios are numbered 1-3\n", testCE);
         exit(0);
       }
       i++;
@@ -555,14 +574,18 @@ int main(int argc, char* argv[])
           /* Encode */
           stream_len = WebRtcIsacfix_Encode(ISAC_main_inst,
                                             shortdata,
-                                            streamdata);
+                                            (WebRtc_Word16*)streamdata);
 
           /* If packet is ready, and CE testing, call the different API functions
-             from the internal API.                                               */
+             from the internal API.                       */
           if (stream_len>0) {
             if (testCE == 1) {
-              err = WebRtcIsacfix_ReadBwIndex(streamdata, &bwe);
-              stream_len = WebRtcIsacfix_GetNewBitStream(ISAC_main_inst, bwe, scale, streamdata);
+              err = WebRtcIsacfix_ReadBwIndex((WebRtc_Word16*)streamdata, &bwe);
+              stream_len = WebRtcIsacfix_GetNewBitStream(
+                  ISAC_main_inst,
+                  bwe,
+                  scale,
+                  (WebRtc_Word16*)streamdata);
             } else if (testCE == 2) {
               /* transcode function not supported */
             } else if (testCE == 3) {
@@ -586,9 +609,13 @@ int main(int argc, char* argv[])
             }
           }
         } else {
+#ifdef WEBRTC_ISAC_FIX_NB_CALLS_ENABLED
           stream_len = WebRtcIsacfix_EncodeNb(ISAC_main_inst,
                                               shortdata,
                                               streamdata);
+#else
+          stream_len = -1;
+#endif
         }
       }
       else
@@ -702,17 +729,24 @@ int main(int argc, char* argv[])
       /* iSAC decoding */
       if( lostFrame && framecnt >  0) {
         if (nbTest !=2) {
-          declen = WebRtcIsacfix_DecodePlc( ISAC_main_inst, decoded, prevFrameSize );
+          declen = WebRtcIsacfix_DecodePlc(ISAC_main_inst,
+                                           decoded, prevFrameSize );
         } else {
-          declen = WebRtcIsacfix_DecodePlcNb( ISAC_main_inst, decoded, prevFrameSize );
+#ifdef WEBRTC_ISAC_FIX_NB_CALLS_ENABLED
+          declen = WebRtcIsacfix_DecodePlcNb(ISAC_main_inst, decoded,
+                                             prevFrameSize );
+#else
+          declen = -1;
+#endif
         }
         lostPackets++;
       } else {
         if (nbTest !=2 ) {
           short FL;
           /* Call getFramelen, only used here for function test */
-          err = WebRtcIsacfix_ReadFrameLen(streamdata, &FL);
-          declen = WebRtcIsacfix_Decode( ISAC_main_inst, streamdata, stream_len, decoded, speechType );
+          err = WebRtcIsacfix_ReadFrameLen((WebRtc_Word16*)streamdata, &FL);
+          declen = WebRtcIsacfix_Decode( ISAC_main_inst, streamdata, stream_len,
+                                         decoded, speechType );
           /* Error check */
           if (err<0 || declen<0 || FL!=declen) {
             errtype=WebRtcIsacfix_GetErrorCode(ISAC_main_inst);
@@ -721,7 +755,12 @@ int main(int argc, char* argv[])
           prevFrameSize = declen/480;
 
         } else {
-          declen = WebRtcIsacfix_DecodeNb( ISAC_main_inst, streamdata, stream_len, decoded, speechType );
+#ifdef WEBRTC_ISAC_FIX_NB_CALLS_ENABLED
+          declen = WebRtcIsacfix_DecodeNb( ISAC_main_inst, streamdata,
+                                           stream_len, decoded, speechType );
+#else
+          declen = -1;
+#endif
           prevFrameSize = declen/240;
         }
       }
@@ -734,8 +773,8 @@ int main(int argc, char* argv[])
 
       /* Write decoded speech frame to file */
       fwrite(decoded, sizeof(WebRtc_Word16), declen, outp);
-      //   fprintf( ratefile, "%f \n", stream_len / ( ((double)declen)/ ((double)FS) ) * 8 );
-
+      //   fprintf( ratefile, "%f \n", stream_len / ( ((double)declen)/
+      // ((double)FS) ) * 8 );
     } else {
       lostPackets++;
     }
@@ -743,7 +782,8 @@ int main(int argc, char* argv[])
 
     totalsmpls += declen;
     totalbits += 8 * stream_len;
-    kbps = ((double) FS) / ((double) cur_framesmpls) * 8.0 * stream_len / 1000.0;// kbits/s
+    kbps = ((double) FS) / ((double) cur_framesmpls) * 8.0 *
+        stream_len / 1000.0;// kbits/s
 
     /* Error test number 10, garbage data */
     if (testNum == 10) {
@@ -765,14 +805,17 @@ int main(int argc, char* argv[])
 #endif /* _DEBUG */
 
   }
-  printf("\nLost Frames %d ~ %4.1f%%\n", lostPackets, (double)lostPackets/(double)framecnt*100.0 );
+  printf("\nLost Frames %d ~ %4.1f%%\n", lostPackets,
+         (double)lostPackets/(double)framecnt*100.0 );
   printf("\n\ntotal bits                          = %d bits", totalbits);
-  printf("\nmeasured average bitrate              = %0.3f kbits/s", (double)totalbits *(FS/1000) / totalsmpls);
+  printf("\nmeasured average bitrate              = %0.3f kbits/s",
+         (double)totalbits *(FS/1000) / totalsmpls);
   printf("\n");
 
 #ifdef _DEBUG
   /* fprintf(stderr,"\n\ntotal bits    = %d bits", totalbits);
-     fprintf(stderr,"\nmeasured average bitrate  = %0.3f kbits/s", (double)totalbits *(FS/1000) / totalsmpls);
+     fprintf(stderr,"\nmeasured average bitrate  = %0.3f kbits/s",
+     (double)totalbits *(FS/1000) / totalsmpls);
      fprintf(stderr,"\n");
   */
 #endif /* _DEBUG */
@@ -783,7 +826,8 @@ int main(int argc, char* argv[])
   runtime = (double)(((double)clock()/(double)CLOCKS_PER_SEC)-starttime);
   length_file = ((double)framecnt*(double)declen/FS);
   printf("\n\nLength of speech file: %.1f s\n", length_file);
-  printf("Time to run iSAC:      %.2f s (%.2f %% of realtime)\n\n", runtime, (100*runtime/length_file));
+  printf("Time to run iSAC:      %.2f s (%.2f %% of realtime)\n\n",
+         runtime, (100*runtime/length_file));
   printf("\n\n_______________________________________________\n");
 
   fclose(inp);

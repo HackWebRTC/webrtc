@@ -485,8 +485,7 @@ int WebRtcIsacfix_EncodeImpl(WebRtc_Word16      *in,
    when calling the encoder. */
 int WebRtcIsacfix_EncodeStoredData(ISACFIX_EncInst_t  *ISACenc_obj,
                                    int     BWnumber,
-                                   float              scale,
-                                   WebRtc_Word16        CodingMode)
+                                   float              scale)
 {
   int ii;
   int status;
