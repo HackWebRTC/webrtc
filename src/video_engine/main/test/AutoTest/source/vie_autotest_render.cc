@@ -55,7 +55,8 @@ public:
         return 0;
     }
 
-    virtual int DeliverFrame(unsigned char* buffer, int bufferSize)
+    virtual int DeliverFrame(unsigned char* buffer, int bufferSize,
+                             unsigned int time_stamp)
     {
         if (bufferSize != _width * _height * 3 / 2)
         {

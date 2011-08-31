@@ -61,7 +61,8 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
     return renderer_->SetSize(width_, height_, 0) ? 0 : -1;
   }
 
-  virtual int DeliverFrame(unsigned char* buffer, int buffer_size) {
+  virtual int DeliverFrame(unsigned char* buffer, int buffer_size,
+                           unsigned int time_stamp) {
     if (renderer_ == NULL) {
       return 0;
     }
@@ -70,7 +71,7 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
     // ViE expects the frame will be rendered ASAP. However, the libjingle
     // renderer may have its own internal delays. Can you disable the buffering
     // inside ViE and surface the timing information to this callback?
-    video_frame.Attach(buffer, buffer_size, width_, height_, 0, 0);
+    video_frame.Attach(buffer, buffer_size, width_, height_, 0, time_stamp);
     int ret = renderer_->RenderFrame(&video_frame) ? 0 : -1;
     uint8* buffer_temp;
     size_t buffer_size_temp;
@@ -392,6 +393,7 @@ bool WebRtcVideoEngine::SetLocalRenderer(VideoRenderer* renderer) {
   if (local_renderer_.get()) {
     // If the renderer already set, stop it first
     vie_wrapper_->render()->StopRender(capture_id_);
+    vie_wrapper_->render()->RemoveRenderer(capture_id_);
   }
   local_renderer_.reset(new WebRtcRenderAdapter(renderer));
 

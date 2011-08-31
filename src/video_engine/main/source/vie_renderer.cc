@@ -236,7 +236,9 @@ WebRtc_Word32 ViEExternalRendererImpl::RenderFrame(const WebRtc_UWord32 streamId
 
   if(pConvertedFrame)
   {
-    _externalRenderer->DeliverFrame(pConvertedFrame->Buffer(), pConvertedFrame->Length());
+    _externalRenderer->DeliverFrame(pConvertedFrame->Buffer(),
+                                    pConvertedFrame->Length(),
+                                    videoFrame.TimeStamp());
   }
   return 0;
 }

@@ -40,7 +40,8 @@ public:
                                 unsigned int numberOfStreams) = 0;
 
     // This method is called when a new frame should be rendered.
-    virtual int DeliverFrame(unsigned char* buffer, int bufferSize) = 0;
+    virtual int DeliverFrame(unsigned char* buffer, int bufferSize,
+                             unsigned int time_stamp) = 0;
 
 protected:
     virtual ~ExternalRenderer() {}
