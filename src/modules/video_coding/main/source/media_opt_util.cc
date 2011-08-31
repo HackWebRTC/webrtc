@@ -209,7 +209,7 @@ VCMFecMethod::UpdateProtectionFactorD(WebRtc_UWord8 protectionFactorD)
     _protectionFactorD = protectionFactorD;
 }
 
-// AvgRecoveryFEC: computes the residual packet loss function.
+// AvgRecoveryFEC: computes the residual packet loss (RPL) function.
 // This is the average recovery from the FEC, assuming random packet loss model.
 // Computed off-line for a range of FEC code parameters and loss rates.
 float
@@ -226,11 +226,16 @@ VCMFecMethod::AvgRecoveryFEC(const VCMProtectionParameters* parameters) const
                          static_cast<float> (8.0 * _maxPayloadSize) + 0.5);
 
     // Parameters for tables
-    const WebRtc_UWord8 codeSize = 24;
+    // Maximum number of source packets in off-line model
+    const WebRtc_UWord8 maxNumPackets = 24;
+    // Max value of loss rates in off-line model
     const WebRtc_UWord8 plossMax = 129;
+
+    // Table size for model is:  plossMax * numberOfFecCodes = 38700
+    // numberOfFecCodes is determined as:
+    // {(1,1), (2,1), (2,2),...(n,1),..(n,n-1), (n,n)} = n*(n+1)/2; for n=24.
     const WebRtc_UWord16 maxErTableSize = 38700;
 
-    // Get index for table
     const float protectionFactor = static_cast<float>(_protectionFactorD) /
                                                       255.0;
 
@@ -245,76 +250,49 @@ VCMFecMethod::AvgRecoveryFEC(const VCMProtectionParameters* parameters) const
         return 0.0;
     }
 
-    // Table defined up to codeSizexcodeSize code
-    if (sourcePacketsPerFrame > codeSize)
+    // Table defined up to maxNumPackets
+    if (sourcePacketsPerFrame > maxNumPackets)
     {
-        sourcePacketsPerFrame = codeSize;
+        sourcePacketsPerFrame = maxNumPackets;
     }
 
-    // Table defined up to codeSizexcodeSize code
-    if (fecPacketsPerFrame > codeSize)
+    // Table defined up to maxNumPackets
+    if (fecPacketsPerFrame > maxNumPackets)
     {
-        fecPacketsPerFrame = codeSize;
+        fecPacketsPerFrame = maxNumPackets;
     }
 
-    // Check: protection factor is maxed at 50%, so this should never happen
-    assert(sourcePacketsPerFrame >= 1);
-
-    // Index for ER tables: up to codeSizexcodeSize mask
-    WebRtc_UWord16 codeIndexTable[codeSize * codeSize];
+    // Code index for tables: up to (maxNumPackets * maxNumPackets)
+    WebRtc_UWord16 codeIndexTable[maxNumPackets * maxNumPackets];
     WebRtc_UWord16 k = 0;
-    for (WebRtc_UWord8 i = 1; i <= codeSize; i++)
+    for (WebRtc_UWord8 i = 1; i <= maxNumPackets; i++)
     {
         for (WebRtc_UWord8 j = 1; j <= i; j++)
         {
-            codeIndexTable[(j - 1) * codeSize + i - 1] = k;
+            codeIndexTable[(j - 1) * maxNumPackets + i - 1] = k;
             k += 1;
         }
     }
 
     WebRtc_UWord8 lossRate = static_cast<WebRtc_UWord8> (255.0 *
                              parameters->lossPr + 0.5f);
-    // Constrain lossRate to 129 (50% protection)
-    // TODO (marpan): Verify table values
 
-    const WebRtc_UWord16 codeIndex = (fecPacketsPerFrame - 1) * codeSize +
+    // Constrain lossRate to 50%: tables defined up to 50%
+    if (lossRate >= plossMax)
+    {
+        lossRate = plossMax - 1;
+    }
+
+    const WebRtc_UWord16 codeIndex = (fecPacketsPerFrame - 1) * maxNumPackets +
                                      (sourcePacketsPerFrame - 1);
 
     const WebRtc_UWord16 indexTable = codeIndexTable[codeIndex] * plossMax +
                                       lossRate;
 
-    const WebRtc_UWord16 codeIndex2 = (fecPacketsPerFrame) * codeSize +
-                                      (sourcePacketsPerFrame);
-
-    WebRtc_UWord16 indexTable2 = codeIndexTable[codeIndex2] * plossMax +
-                                 lossRate;
-
     // Check on table index
     assert (indexTable < maxErTableSize);
-    if (indexTable2 >= maxErTableSize)
-    {
-        indexTable2 = indexTable;
-    }
 
-    // Get the average effective packet loss recovery from FEC
-    // this is from tables, computed using random loss model
-    WebRtc_UWord8 avgFecRecov1 = 0;
-    WebRtc_UWord8 avgFecRecov2 = 0;
-    float avgFecRecov = 0.0f;
-
-    if (fecPacketsPerFrame > 0)
-    {
-        avgFecRecov1 = VCMAvgFECRecoveryXOR[indexTable];
-        avgFecRecov2 = VCMAvgFECRecoveryXOR[indexTable2];
-    }
-
-    // Interpolate over two FEC codes
-    const float weightRpl = static_cast<float>
-                           (0.5 + protectionFactor * avgTotPackets) -
-                           (float) fecPacketsPerFrame;
-
-    avgFecRecov = weightRpl * static_cast<float> (avgFecRecov2) +
-                  (1.0 - weightRpl) * static_cast<float> (avgFecRecov1);
+    float avgFecRecov = static_cast<float> (VCMAvgFECRecoveryXOR[indexTable]);
 
     return avgFecRecov;
 }
