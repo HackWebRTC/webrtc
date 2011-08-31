@@ -17,14 +17,18 @@
     # dict that operate on these variables (e.g., for setting
     # 'include_pulse_audio', we need to have 'build_with_chromium' already set).
     'variables': {
-      # TODO(ajm): use webrtc_standalone to match NaCl?
       'build_with_chromium%': 1, # 1 to build webrtc with chromium
     },
 
     'build_with_chromium%': '<(build_with_chromium)',
 
+    # Adds video support to dependencies shared by voice and video engine.
+    # This should normally be enabled; the intended use is to disable only
+    # when building voice engine exclusively.
+    'enable_video%': 1,
+
     # Selects fixed-point code where possible.
-    # TODO(ajm): we'd like to set this based on the target OS/architecture.
+    # TODO(andrew): we'd like to set this based on the target OS/architecture.
     'prefer_fixed_point%': 0,
 
     # Enable data logging. Produces text files with data logged within engines
@@ -33,7 +37,7 @@
 
     'conditions': [
       ['OS=="win"', {
-        # TODO(ajm, perkj): does this need to be here?
+        # TODO(andrew, perkj): does this need to be here?
         # Path needed to build Direct Show base classes on Windows.
         # The code is included in the Windows SDK.
         'direct_show_base_classes':
@@ -43,11 +47,15 @@
         # Exclude pulse audio on Chromium since its prerequisites don't require
         # pulse audio.
         'include_pulse_audio%': 0,
+
         # Exclude internal ADM since Chromium uses its own IO handling.
         'include_internal_audio_device%': 0,
       }, {
+        # Settings for the standalone (not-in-Chromium) build.
         'include_pulse_audio%': 1,
+
         'include_internal_audio_device%': 1,
+
          # The Chromium common.gypi we use treats all gyp files without
          # chromium_code==1 as third party code. This disables many of the
          # preferred warning settings.
@@ -69,13 +77,13 @@
           'WEBRTC_TARGET_PC',
           'WEBRTC_LINUX',
           'WEBRTC_THREAD_RR',
-          # TODO(ajm): can we select this automatically?
+          # TODO(andrew): can we select this automatically?
           # Define this if the Linux system does not support CLOCK_MONOTONIC.
           #'WEBRTC_CLOCK_TYPE_REALTIME',
         ],
       }],
       ['OS=="mac"', {
-        # TODO(ajm): what about PowerPC?
+        # TODO(andrew): what about PowerPC?
         # Setup for Intel
         'defines': [
           'WEBRTC_TARGET_MAC_INTEL',
@@ -109,8 +117,8 @@
 
     'target_conditions': [
       ['chromium_code==1', {
-        # TODO(ajm): This block disables some warnings from the chromium_code
-        #            configuration. Remove when possible.
+        # TODO(andrew): This block disables some warnings from the chromium_code
+        # configuration. Remove when possible.
         'conditions': [
           ['OS=="mac"', {
             'xcode_settings': {
