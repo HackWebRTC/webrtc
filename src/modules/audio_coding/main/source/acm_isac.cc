@@ -376,7 +376,7 @@ static WebRtc_Word16
 ACMISACFixGetNewBitstream(
     ACM_ISAC_STRUCT* inst,
     WebRtc_Word16    BWEIndex,
-    WebRtc_Word16    jitterIndex,
+    WebRtc_Word16    /* jitterIndex */,
     WebRtc_Word32    rate,
     WebRtc_Word16*   bitStream,
     bool             isRED)
