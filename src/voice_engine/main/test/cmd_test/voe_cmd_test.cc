@@ -183,7 +183,7 @@ int main() {
 }
 
 void run_test() {
-  int chan, cnt, error, res;
+  int chan, cnt, res;
   CodecInst cinst;
   cnt = 0;
   int i;
@@ -200,7 +200,6 @@ void run_test() {
     printf("Error at position %i\n", cnt);
     printf("************ Error code = %i\n", base1->LastError());
     fflush(NULL);
-    error = 1;
   }
   cnt++;
 

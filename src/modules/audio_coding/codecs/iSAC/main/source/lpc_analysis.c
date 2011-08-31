@@ -136,7 +136,7 @@ WebRtcIsac_GetVarsUB(
     double*       oldEnergy,
     double*       varscale)
 {
-  double nrg[4], chng, pg;
+  double nrg[4], chng;
   int k;
 
   /* Calculate energies of first and second frame halfs */
@@ -163,9 +163,6 @@ WebRtcIsac_GetVarsUB(
                  fabs(10.0 * log10(nrg[1] / nrg[0])) +
                  fabs(10.0 * log10(nrg[0] / *oldEnergy)));
 
-
-  /* Find average pitch gain */
-  pg = 0.0;
 
   /* If pitch gain is low and energy constant - increase noise level*/
   /* Matlab code:
@@ -464,7 +461,6 @@ WebRtcIsac_GetLpcGain(
     const double* varscale)
 {
   WebRtc_Word16 j, n;
-  WebRtc_Word16 varscaleIdx;
   WebRtc_Word16 subFrameCntr;
   double aPolynom[ORDERLO + 1];
   double res_nrg;
@@ -475,7 +471,6 @@ WebRtcIsac_GetLpcGain(
   const double S_N_R = pow(10.0, 0.05 * signal_noise_ratio) / 3.46;
 
   aPolynom[0] = 1;
-  varscaleIdx = 0;
   for(subFrameCntr = 0; subFrameCntr < numVecs; subFrameCntr++)
   {
     if(subFrameCntr == SUBFRAMES)

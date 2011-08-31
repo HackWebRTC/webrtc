@@ -865,8 +865,6 @@ WebRtcIsac_EncodeUb12(
   WebRtc_Word16 fre[FRAMESAMPLES_HALF];   /* Q7 */
   WebRtc_Word16 fim[FRAMESAMPLES_HALF];   /* Q7 */
 
-  WebRtc_Word16    AvgPitchGain_Q12;
-
   int status = 0;
 
   double varscale[1];
@@ -926,8 +924,6 @@ WebRtcIsac_EncodeUb12(
   /* split signal in two bands */
   WebRtcIsac_SplitAndFilterFloat(ISACencUB_obj->data_buffer_float, HP, LP,
                                  HP_lookahead, LP_lookahead, &ISACencUB_obj->prefiltbankstr_obj);
-
-  AvgPitchGain_Q12 = 0;
 
   /* find coefficients for perceptual pre-filters */
   WebRtcIsac_GetLpcCoefUb(LP_lookahead, &ISACencUB_obj->maskfiltstr_obj,

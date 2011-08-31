@@ -1849,7 +1849,6 @@ void WebRtcIsac_EncodeLpcGainLb(double *LPCCoef_lo, double *LPCCoef_hi, int mode
   int j, k, n, pos, pos2, posg, offsg, offs2;
   int index_g[KLT_ORDER_GAIN];
   int index_ovr_g[KLT_ORDER_GAIN];
-  double Bits;
   double tmpcoeffs_g[KLT_ORDER_GAIN];
   double tmpcoeffs2_g[KLT_ORDER_GAIN];
   double sum;
@@ -1907,7 +1906,6 @@ void WebRtcIsac_EncodeLpcGainLb(double *LPCCoef_lo, double *LPCCoef_hi, int mode
 
 
   /* quantize coefficients */
-  Bits = 0.0;
   for (k=0; k<KLT_ORDER_GAIN; k++) {
 
     /* get index */
@@ -2523,7 +2521,6 @@ void WebRtcIsac_TranscodeLPCCoef(double *LPCCoef_lo, double *LPCCoef_hi, int mod
 
   int j, k, n, pos, pos2, posg, offsg, offs2;
   int index_ovr_g[KLT_ORDER_GAIN];
-  double Bits;
   double tmpcoeffs_g[KLT_ORDER_GAIN];
   double tmpcoeffs2_g[KLT_ORDER_GAIN];
   double sum;
@@ -2581,7 +2578,6 @@ void WebRtcIsac_TranscodeLPCCoef(double *LPCCoef_lo, double *LPCCoef_hi, int mod
 
 
   /* quantize coefficients */
-  Bits = 0.0;
   for (k=0; k<KLT_ORDER_GAIN; k++) {
 
     /* get index */

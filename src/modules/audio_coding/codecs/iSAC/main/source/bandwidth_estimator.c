@@ -153,8 +153,6 @@ WebRtc_Word16 WebRtcIsac_UpdateBandwidthEstimator(
   float arr_time_noise;
   float arr_time_noise_abs;
 
-  WebRtc_Word32 asdf;
-
   float delay_correction_factor = 1;
   float late_diff = 0.0f;
   int immediate_set = 0;
@@ -470,8 +468,6 @@ WebRtc_Word16 WebRtcIsac_UpdateBandwidthEstimator(
   /* store send and arrival time stamp */
   bwest_str->prev_rec_arr_ts = arr_ts ;
   bwest_str->prev_rec_send_ts = send_ts;
-
-  asdf = bwest_str->rec_bw;
 
   /* Replace bwest_str->rec_bw by the new value (atomic operation) */
   bwest_str->rec_bw = (WebRtc_Word32)(1.0f / bwest_str->rec_bw_inv -
