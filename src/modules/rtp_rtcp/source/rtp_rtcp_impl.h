@@ -526,6 +526,7 @@ protected:
                                     TMMBRSet*& boundingSetRec);
 
     RTPSender                 _rtpSender;
+    RTPReceiver               _rtpReceiver;
 
 private:
     void SendKeyFrame();
@@ -549,7 +550,6 @@ private:
     WebRtc_UWord32              _deadOrAliveLastTimer;
 
     // receive side
-    RTPReceiver               _rtpReceiver;
     RTCPReceiver              _rtcpReceiver;
     BandwidthManagement       _bandwidthManagement;
 
