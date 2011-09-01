@@ -53,10 +53,10 @@ public:
     bool        IsOwner(const WebRtc_UWord32 ssrc,
                         const WebRtc_UWord32 length) const;
 
-    WebRtc_Word32 CalcMinMaxBitRate(const WebRtc_UWord32 totalPacketRate,
-                                  const WebRtc_UWord32 lengthOfBoundingSet,
-                                  WebRtc_UWord32& minBitrateKbit,
-                                  WebRtc_UWord32& maxBitrateKbit) const;
+    int CalcMinMaxBitRate(int totalPacketRate,
+                          int lengthOfBoundingSet,
+                          int* minBitrateKbit,
+                          int* maxBitrateKbit) const;
 
 protected:
     TMMBRSet*   VerifyAndAllocateBoundingSet(WebRtc_UWord32 minimumSize);

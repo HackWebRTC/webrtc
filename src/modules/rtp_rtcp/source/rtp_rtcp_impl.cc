@@ -2476,8 +2476,8 @@ ModuleRtpRtcpImpl::UpdateTMMBR()
 {
     WebRtc_Word32 numBoundingSet = 0;
     WebRtc_Word32 newBitrates = 0;
-    WebRtc_UWord32 minBitrateKbit = 0;
-    WebRtc_UWord32 maxBitrateKbit = 0;
+    int minBitrateKbit = 0;
+    int maxBitrateKbit = 0;
 
     if(_defaultModule)
     {
@@ -2589,9 +2589,9 @@ ModuleRtpRtcpImpl::UpdateTMMBR()
 
     // Get net bitrate from bounding set depending on sent packet rate
     newBitrates = CalcMinMaxBitRate(_rtpSender.PacketRate(),
-                                    (WebRtc_UWord32)numBoundingSet,
-                                    minBitrateKbit,
-                                    maxBitrateKbit);
+                                    numBoundingSet,
+                                    &minBitrateKbit,
+                                    &maxBitrateKbit);
 
     // no critsect when calling out to "unknown" code
     if(newBitrates == 0) // we have new bitrates

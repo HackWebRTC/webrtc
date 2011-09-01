@@ -435,11 +435,11 @@ TMMBRHelp::IsOwner(const WebRtc_UWord32 ssrc,
     return false;
 }
 
-WebRtc_Word32
-TMMBRHelp::CalcMinMaxBitRate(const WebRtc_UWord32 totalPacketRate,
-                             const WebRtc_UWord32 lengthOfBoundingSet,
-                             WebRtc_UWord32& minBitrateKbit,
-                             WebRtc_UWord32& maxBitrateKbit) const
+
+int TMMBRHelp::CalcMinMaxBitRate(int totalPacketRate,
+                                 int lengthOfBoundingSet,
+                                 int* minBitrateKbit,
+                                 int* maxBitrateKbit) const
 {
     CriticalSectionScoped lock(_criticalSection);
 
@@ -449,58 +449,62 @@ TMMBRHelp::CalcMinMaxBitRate(const WebRtc_UWord32 totalPacketRate,
         return -1;
     }
 
-    minBitrateKbit = 0xFFFFFFFF;
-    maxBitrateKbit = 0;
+    int myMinBitrateKbit = 0xFFFFFFFF;
+    int myMaxBitrateKbit = 0;
 
     for (WebRtc_UWord32 i = 0; i < _candidateSet.sizeOfSet; ++i)
     {
         if (_candidateSet.ptrTmmbrSet[i])
         {
-            WebRtc_Word32 curNetBitRate = static_cast<WebRtc_Word32>((_candidateSet.ptrTmmbrSet[i]*1000.0
+            int curNetBitRate = static_cast<WebRtc_Word32>((_candidateSet.ptrTmmbrSet[i]*1000.0
                             - (totalPacketRate * (_candidateSet.ptrPacketOHSet[i] << 3)))/1000 + 0.5);
 
-        if (curNetBitRate < 0)
-        {
-            // could be negative for a large packet rate
-            if(_audio)
+            if (curNetBitRate < 0)
             {
-                curNetBitRate = MIN_AUDIO_BW_MANAGEMENT_BITRATE;
-            }else
-            {
-                curNetBitRate = MIN_VIDEO_BW_MANAGEMENT_BITRATE;
+                // could be negative for a large packet rate
+                if(_audio)
+                {
+                    curNetBitRate = MIN_AUDIO_BW_MANAGEMENT_BITRATE;
+                }else
+                {
+                    curNetBitRate = MIN_VIDEO_BW_MANAGEMENT_BITRATE;
+                }
             }
-        }
-            minBitrateKbit = (WebRtc_UWord32(curNetBitRate) < minBitrateKbit) ? curNetBitRate : minBitrateKbit;
+            myMinBitrateKbit = curNetBitRate < myMinBitrateKbit ?
+                               curNetBitRate : myMinBitrateKbit;
         }
     }
-    maxBitrateKbit = minBitrateKbit;
+    myMaxBitrateKbit = myMinBitrateKbit;
 
-    if (maxBitrateKbit == 0 || maxBitrateKbit < minBitrateKbit)
+    if (myMaxBitrateKbit == 0 || myMaxBitrateKbit < myMinBitrateKbit)
     {
         return -1;
     }
 
     if(_audio)
     {
-        if (minBitrateKbit < MIN_AUDIO_BW_MANAGEMENT_BITRATE)
+        if (myMinBitrateKbit < MIN_AUDIO_BW_MANAGEMENT_BITRATE)
         {
-            minBitrateKbit = MIN_AUDIO_BW_MANAGEMENT_BITRATE;
+            myMinBitrateKbit = MIN_AUDIO_BW_MANAGEMENT_BITRATE;
         }
-        if (maxBitrateKbit < MIN_AUDIO_BW_MANAGEMENT_BITRATE)
+        if (myMaxBitrateKbit < MIN_AUDIO_BW_MANAGEMENT_BITRATE)
         {
-            maxBitrateKbit = MIN_AUDIO_BW_MANAGEMENT_BITRATE;
+            myMaxBitrateKbit = MIN_AUDIO_BW_MANAGEMENT_BITRATE;
         }
     }else
     {
-        if (minBitrateKbit < MIN_VIDEO_BW_MANAGEMENT_BITRATE)
+        if (myMinBitrateKbit < MIN_VIDEO_BW_MANAGEMENT_BITRATE)
         {
-            minBitrateKbit = MIN_VIDEO_BW_MANAGEMENT_BITRATE;
+            myMinBitrateKbit = MIN_VIDEO_BW_MANAGEMENT_BITRATE;
         }
-        if (maxBitrateKbit < MIN_VIDEO_BW_MANAGEMENT_BITRATE)
+        if (myMaxBitrateKbit < MIN_VIDEO_BW_MANAGEMENT_BITRATE)
         {
-            maxBitrateKbit = MIN_VIDEO_BW_MANAGEMENT_BITRATE;
+            myMaxBitrateKbit = MIN_VIDEO_BW_MANAGEMENT_BITRATE;
         }
     }
+
+    *maxBitrateKbit = myMaxBitrateKbit;
+    *minBitrateKbit = myMinBitrateKbit;
 
     return 0;
 }
