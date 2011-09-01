@@ -8,7 +8,7 @@
   ],
   'targets': [
     {
-      'target_name': 'vie_auto_test',
+      'target_name': '<(autotest_name)',
       'type': 'executable',
       'dependencies': [
         'system_wrappers/source/system_wrappers.gyp:system_wrappers',

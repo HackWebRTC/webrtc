@@ -5,8 +5,34 @@
 {
   'includes': [
     'common_settings.gypi', # Common settings
-    # Defines target vie_auto_test
     'video_engine/main/test/AutoTest/vie_auto_test.gypi',
+  ],
+  'variables': {
+    'autotest_name': 'vie_auto_test',
+  },
+  'targets': [
+    {
+      'target_name': 'merged_lib',
+      'type': 'none',
+      'dependencies': [
+        '<(autotest_name)',
+      ],
+      'actions': [
+        {
+          'variables': {
+            'output_lib_name': 'webrtc',
+            'output_lib': '<(PRODUCT_DIR)/<(STATIC_LIB_PREFIX)<(output_lib_name)_<(OS)<(STATIC_LIB_SUFFIX)',
+          },
+          'action_name': 'merge_libs',
+          'inputs': ['<(PRODUCT_DIR)/<(EXECUTABLE_PREFIX)<(autotest_name)<(EXECUTABLE_SUFFIX)'],
+          'outputs': ['<(output_lib)'],
+          'action': ['python',
+                     './build/merge_libs.py',
+                     '<(PRODUCT_DIR)',
+                     '<(output_lib)'],
+        },
+      ],
+    },
   ],
 }
 
