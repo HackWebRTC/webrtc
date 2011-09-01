@@ -23,6 +23,12 @@
     'video_render': {
       'filepath': 'src/modules/video_render/.*',
     },
+    'NetEQ': {
+      'filepath': 'src/modules/audio_coding/NetEQ/.*',
+    },
+    'video_codecs': {
+      'filepath': 'src/modules/video_coding/codecs/.*',
+    },
   },
 
   'WATCHLISTS': {
@@ -31,5 +37,7 @@
                      'perkj@webrtc.org'],
     'video_capture': ['mflodman@webrtc.org'],
     'video_render': ['mflodman@webrtc.org'],
+    'NetEQ': ['henrik.lundin@webrtc.org'],
+    'video_codecs': ['henrik.lundin@webrtc.org'],
   },
 }
