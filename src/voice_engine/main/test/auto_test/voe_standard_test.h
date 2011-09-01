@@ -130,9 +130,9 @@ public:
     {
         counter = 0;
     }
-    virtual void OnReceivedTelephoneEventInband(const int channel,
-                                                const unsigned char eventCode,
-                                                const bool endOfEvent)
+    virtual void OnReceivedTelephoneEventInband(int channel,
+                                                int eventCode,
+                                                bool endOfEvent)
     {
         char msg[128];
         if (endOfEvent)
@@ -146,9 +146,9 @@ public:
     }
 
     virtual void OnReceivedTelephoneEventOutOfBand(
-        const int channel,
-        const unsigned char eventCode,
-        const bool endOfEvent)
+        int channel,
+        int eventCode,
+        bool endOfEvent)
     {
         char msg[128];
         if (endOfEvent)

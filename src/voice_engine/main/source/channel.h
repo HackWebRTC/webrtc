@@ -409,29 +409,11 @@ public:
 
 public:
     // From RtcpFeedback in the RTP/RTCP module
-    void OnLipSyncUpdate(const WebRtc_Word32 id,
-                         const WebRtc_Word32 audioVideoOffset) {};
-
     void OnApplicationDataReceived(const WebRtc_Word32 id,
                                    const WebRtc_UWord8 subType,
                                    const WebRtc_UWord32 name,
                                    const WebRtc_UWord16 length,
                                    const WebRtc_UWord8* data);
-
-    void OnRTCPPacketTimeout(const WebRtc_Word32 id) {} ;
-
-    void OnTMMBRReceived(const WebRtc_Word32 id,
-                         const WebRtc_UWord16 bwEstimateKbit) {};
-
-    void OnSendReportReceived(const WebRtc_Word32 id,
-                              const WebRtc_UWord32 senderSSRC,
-                              const WebRtc_UWord8* packet,
-                              const WebRtc_UWord16 packetLength) {};
-
-    void OnReceiveReportReceived(const WebRtc_Word32 id,
-                                 const WebRtc_UWord32 senderSSRC,
-                                 const WebRtc_UWord8* packet,
-                                 const WebRtc_UWord16 packetLength) {};
 
 public:
     // From RtpAudioFeedback in the RTP/RTCP module

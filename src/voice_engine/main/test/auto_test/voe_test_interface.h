@@ -17,17 +17,16 @@
 
 #include "common_types.h"
 
-namespace webrtc
-{
+namespace webrtc {
 class CriticalSectionWrapper;
 class EventWrapper;
 class ThreadWrapper;
 class VoENetwork;
 }
 
-using namespace webrtc;
-
 namespace voetest {
+// TODO(andrew): using directives are not permitted.
+using namespace webrtc;
 
 // TestType enumerator
 enum TestType
