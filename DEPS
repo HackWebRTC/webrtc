@@ -24,8 +24,10 @@ deps = {
   "trunk/third_party/protobuf/":
     Var("chromium_trunk") + "/src/third_party/protobuf@" + Var("chromium_revision"),
 
+  # TODO(andrew): return to the webm git repository when possible.
   "trunk/third_party/libvpx/source/libvpx":
-    "git://review.webmproject.org/libvpx.git@v0.9.7-p1",
+    Var("chromium_trunk") + "/deps/third_party/libvpx/source/libvpx@98040",
+    #"git://review.webmproject.org/libvpx.git@v0.9.7-p1",
 
   "trunk/third_party/libjpeg_turbo/":
     Var("chromium_trunk") + "/deps/third_party/libjpeg_turbo@95800",
