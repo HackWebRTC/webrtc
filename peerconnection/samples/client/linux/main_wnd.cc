@@ -91,7 +91,6 @@ gboolean Redraw(gpointer data) {
   wnd->OnRedraw();
   return false;
 }
-
 }  // end anonymous
 
 //
@@ -126,8 +125,8 @@ void GtkMainWnd::MessageBox(const char* caption, const char* text,
       is_error ? GTK_MESSAGE_ERROR : GTK_MESSAGE_INFO,
       GTK_BUTTONS_CLOSE, "%s", text);
   gtk_window_set_title(GTK_WINDOW(dialog), caption);
-  gtk_dialog_run(GTK_DIALOG (dialog));
-  gtk_widget_destroy (dialog);
+  gtk_dialog_run(GTK_DIALOG(dialog));
+  gtk_widget_destroy(dialog);
 }
 
 MainWindow::UI GtkMainWnd::current_ui() {
@@ -141,12 +140,14 @@ MainWindow::UI GtkMainWnd::current_ui() {
 }
 
 cricket::VideoRenderer* GtkMainWnd::local_renderer() {
-  ASSERT(local_renderer_.get() != NULL);
+  if (!local_renderer_.get())
+    local_renderer_.reset(new VideoRenderer(this));
   return local_renderer_.get();
 }
 
 cricket::VideoRenderer* GtkMainWnd::remote_renderer() {
-  ASSERT(remote_renderer_.get() != NULL);
+  if (!remote_renderer_.get())
+    remote_renderer_.reset(new VideoRenderer(this));
   return remote_renderer_.get();
 }
 
@@ -272,12 +273,6 @@ void GtkMainWnd::SwitchToStreamingUI() {
 
   ASSERT(draw_area_ == NULL);
 
-  // Prepare new buffers for the new conversation.  We don't
-  // reuse buffers across sessions to avoid possibly rendering
-  // a frame from the previous conversation.
-  remote_renderer_.reset(new VideoRenderer(this));
-  local_renderer_.reset(new VideoRenderer(this));
-
   gtk_container_set_border_width(GTK_CONTAINER(window_), 0);
   if (peer_list_) {
     gtk_widget_destroy(peer_list_);
@@ -348,7 +343,7 @@ void GtkMainWnd::OnRowActivated(GtkTreeView* tree_view, GtkTreePath* path,
      if (id != -1)
        callback_->ConnectToPeer(id);
      g_free(text);
-   }
+  }
 }
 
 void GtkMainWnd::OnRedraw() {
@@ -381,7 +376,7 @@ void GtkMainWnd::OnRedraw() {
       image += width;
       scaled += width * 2;
     }
-    
+
     image = reinterpret_cast<const uint32*>(local_renderer_->image());
     scaled = reinterpret_cast<uint32*>(draw_buffer_.get());
     // Position the local preview on the right side.
@@ -389,7 +384,7 @@ void GtkMainWnd::OnRedraw() {
     // right margin...
     scaled -= 10;
     // ... towards the bottom.
-    scaled += (height * width * 4) - 
+    scaled += (height * width * 4) -
               ((local_renderer_->height() / 2) *
                (local_renderer_->width() / 2) * 4);
     // bottom margin...
@@ -415,7 +410,7 @@ void GtkMainWnd::OnRedraw() {
   gdk_threads_leave();
 }
 
-GtkMainWnd::VideoRenderer::VideoRenderer(GtkMainWnd* main_wnd) 
+GtkMainWnd::VideoRenderer::VideoRenderer(GtkMainWnd* main_wnd)
     : width_(0), height_(0), main_wnd_(main_wnd) {
 }
 

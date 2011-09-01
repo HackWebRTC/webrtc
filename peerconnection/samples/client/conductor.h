@@ -13,6 +13,7 @@
 #pragma once
 
 #include <deque>
+#include <set>
 #include <string>
 
 #include "peerconnection/samples/client/main_wnd.h"
@@ -36,6 +37,8 @@ class Conductor
     SEND_MESSAGE_TO_PEER,
     PEER_CONNECTION_ADDSTREAMS,
     PEER_CONNECTION_ERROR,
+    NEW_STREAM_ADDED,
+    STREAM_REMOVED,
   };
 
   Conductor(PeerConnectionClient* client, MainWindow* main_wnd);
@@ -49,6 +52,7 @@ class Conductor
   bool InitializePeerConnection();
   void DeletePeerConnection();
   void StartCaptureDevice();
+  bool AddStream(const std::string& id, bool video);
   void AddStreams();
 
   //
@@ -94,17 +98,14 @@ class Conductor
   virtual void UIThreadCallback(int msg_id, void* data);
 
  protected:
-  bool waiting_for_audio_;
-  bool waiting_for_video_;
   int peer_id_;
   talk_base::scoped_ptr<webrtc::PeerConnection> peer_connection_;
   talk_base::scoped_ptr<webrtc::PeerConnectionFactory> peer_connection_factory_;
   talk_base::scoped_ptr<talk_base::Thread> worker_thread_;
   PeerConnectionClient* client_;
   MainWindow* main_wnd_;
-  std::string video_channel_;
-  std::string audio_channel_;
   std::deque<std::string*> pending_messages_;
+  std::set<std::string> active_streams_;
 };
 
 #endif  // PEERCONNECTION_SAMPLES_CLIENT_CONDUCTOR_H_

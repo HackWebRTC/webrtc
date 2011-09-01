@@ -146,6 +146,9 @@ void MainWnd::SwitchToConnectUI() {
 }
 
 void MainWnd::SwitchToPeerList(const Peers& peers) {
+  remote_video_.reset();
+  local_video_.reset();
+
   LayoutConnectUI(false);
 
   ::SendMessage(listbox_, LB_RESETCONTENT, 0, 0);
@@ -161,9 +164,6 @@ void MainWnd::SwitchToPeerList(const Peers& peers) {
 }
 
 void MainWnd::SwitchToStreamingUI() {
-  remote_video_.reset(new VideoRenderer(handle(), 1, 1));
-  local_video_.reset(new VideoRenderer(handle(), 1, 1));
-
   LayoutConnectUI(false);
   LayoutPeerListUI(false);
   ui_ = STREAMING;
@@ -175,6 +175,18 @@ void MainWnd::MessageBox(const char* caption, const char* text, bool is_error) {
     flags |= MB_ICONERROR;
 
   ::MessageBoxA(handle(), text, caption, flags);
+}
+
+cricket::VideoRenderer* MainWnd::local_renderer() {
+  if (!local_video_.get())
+    local_video_.reset(new VideoRenderer(handle(), 1, 1));
+  return local_video_.get();
+}
+
+cricket::VideoRenderer* MainWnd::remote_renderer() {
+  if (!remote_video_.get())
+    remote_video_.reset(new VideoRenderer(handle(), 1, 1));
+  return remote_video_.get();
 }
 
 void MainWnd::QueueUIThreadCallback(int msg_id, void* data) {
@@ -194,8 +206,8 @@ void MainWnd::OnPaint() {
     AutoLock<VideoRenderer> remote_lock(remote_video_.get());
 
     const BITMAPINFO& bmi = remote_video_->bmi();
-    long height = abs(bmi.bmiHeader.biHeight);
-    long width = bmi.bmiHeader.biWidth;
+    int height = abs(bmi.bmiHeader.biHeight);
+    int width = bmi.bmiHeader.biWidth;
 
     const uint8* image = remote_video_->image();
     if (image != NULL) {
@@ -231,8 +243,8 @@ void MainWnd::OnPaint() {
       if ((rc.right - rc.left) > 200 && (rc.bottom - rc.top) > 200) {
         const BITMAPINFO& bmi = local_video_->bmi();
         image = local_video_->image();
-        long thumb_width = bmi.bmiHeader.biWidth / 4;
-        long thumb_height = abs(bmi.bmiHeader.biHeight) / 4;
+        int thumb_width = bmi.bmiHeader.biWidth / 4;
+        int thumb_height = abs(bmi.bmiHeader.biHeight) / 4;
         StretchDIBits(dc_mem,
             logical_area.x - thumb_width - 10,
             logical_area.y - thumb_height - 10,

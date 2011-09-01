@@ -35,6 +35,8 @@ class MainWndCallback {
 // Pure virtual interface for the main window.
 class MainWindow {
  public:
+  virtual ~MainWindow() {}
+
   enum UI {
     CONNECT_TO_SERVER,
     LIST_PEERS,
@@ -85,13 +87,8 @@ class MainWnd : public MainWindow {
                           bool is_error);
   virtual UI current_ui() { return ui_; }
 
-  virtual cricket::VideoRenderer* local_renderer() {
-    return local_video_.get();
-  }
-
-  virtual cricket::VideoRenderer* remote_renderer() {
-    return remote_video_.get();
-  }
+  virtual cricket::VideoRenderer* local_renderer();
+  virtual cricket::VideoRenderer* remote_renderer();
 
   virtual void QueueUIThreadCallback(int msg_id, void* data);
 
@@ -135,7 +132,7 @@ class MainWnd : public MainWindow {
   template <typename T>
   class AutoLock {
    public:
-    AutoLock(T* obj) : obj_(obj) { obj_->Lock(); }
+    explicit AutoLock(T* obj) : obj_(obj) { obj_->Lock(); }
     ~AutoLock() { obj_->Unlock(); }
    protected:
     T* obj_;

@@ -15,10 +15,18 @@
 #include "talk/p2p/client/basicportallocator.h"
 #include "talk/session/phone/videorendererfactory.h"
 
+namespace {
+// Used when passing stream information from callback threads to the UI thread.
+struct StreamInfo {
+  StreamInfo(const std::string& id, bool video) : id_(id), video_(video) {}
+
+  std::string id_;
+  bool video_;
+};
+}  // end anonymous.
+
 Conductor::Conductor(PeerConnectionClient* client, MainWindow* main_wnd)
-  : waiting_for_audio_(false),
-    waiting_for_video_(false),
-    peer_id_(-1),
+  : peer_id_(-1),
     client_(client),
     main_wnd_(main_wnd) {
   client_->RegisterObserver(this);
@@ -89,11 +97,8 @@ bool Conductor::InitializePeerConnection() {
 void Conductor::DeletePeerConnection() {
   peer_connection_.reset();
   worker_thread_.reset();
-  video_channel_.clear();
-  audio_channel_.clear();
+  active_streams_.clear();
   peer_connection_factory_.reset();
-  waiting_for_audio_ = false;
-  waiting_for_video_ = false;
   peer_id_ = -1;
 }
 
@@ -105,8 +110,6 @@ void Conductor::StartCaptureDevice() {
 
     if (peer_connection_->SetVideoCapture("")) {
       peer_connection_->SetLocalVideoRenderer(main_wnd_->local_renderer());
-    } else {
-      ASSERT(false);
     }
   }
 }
@@ -131,41 +134,15 @@ void Conductor::OnSignalingMessage(const std::string& msg) {
 void Conductor::OnAddStream(const std::string& stream_id, bool video) {
   LOG(INFO) << __FUNCTION__ << " " << stream_id;
 
-  if (video) {
-    // ASSERT(video_channel_.empty());
-    video_channel_ = stream_id;
-    waiting_for_video_ = false;
-
-    LOG(INFO) << "Setting video renderer for stream: " << stream_id;
-    bool ok = peer_connection_->SetVideoRenderer(stream_id,
-                                                 main_wnd_->remote_renderer());
-    if (!ok)
-      LOG(LS_ERROR) << "SetVideoRenderer failed for : " << stream_id;
-  } else {
-    // ASSERT(audio_channel_.empty());
-    audio_channel_ = stream_id;
-    waiting_for_audio_ = false;
-  }
-
-  if (!waiting_for_video_)
-    main_wnd_->QueueUIThreadCallback(MEDIA_CHANNELS_INITIALIZED, NULL);
+  main_wnd_->QueueUIThreadCallback(NEW_STREAM_ADDED,
+                                   new StreamInfo(stream_id, video));
 }
 
 void Conductor::OnRemoveStream(const std::string& stream_id, bool video) {
   LOG(INFO) << __FUNCTION__ << (video ? " video: " : " audio: ") << stream_id;
-  if (video) {
-    video_channel_.clear();
-  } else {
-    audio_channel_.clear();
-  }
 
-  if (video_channel_.empty() && audio_channel_.empty()) {
-    LOG(INFO) << "All streams have been closed.";
-    main_wnd_->QueueUIThreadCallback(PEER_CONNECTION_CLOSED, NULL);
-  } else {
-    LOG(INFO) << "Remaining streams: '" << video_channel_ << "', '"
-              << audio_channel_ << "'";
-  }
+  main_wnd_->QueueUIThreadCallback(STREAM_REMOVED,
+                                   new StreamInfo(stream_id, video));
 }
 
 //
@@ -221,8 +198,6 @@ void Conductor::OnMessageFromPeer(int peer_id, const std::string& message) {
       LOG(LS_ERROR) << "Failed to initialize our PeerConnection instance";
       client_->SignOut();
       return;
-    } else {
-      StartCaptureDevice();
     }
   } else if (peer_id != peer_id_) {
     ASSERT(peer_id_ != -1);
@@ -274,24 +249,38 @@ void Conductor::ConnectToPeer(int peer_id) {
   if (InitializePeerConnection()) {
     peer_id_ = peer_id;
     main_wnd_->SwitchToStreamingUI();
+    StartCaptureDevice();
     AddStreams();
   } else {
     main_wnd_->MessageBox("Error", "Failed to initialize PeerConnection", true);
   }
 }
 
+bool Conductor::AddStream(const std::string& id, bool video) {
+  // NOTE: Must be called from the UI thread.
+  if (active_streams_.find(id) != active_streams_.end())
+    return false;  // Already added.
+
+  active_streams_.insert(id);
+  bool ret = peer_connection_->AddStream(id, video);
+  if (!ret) {
+    active_streams_.erase(id);
+  } else if (video) {
+    LOG(INFO) << "Setting video renderer for stream: " << id;
+    bool ok = peer_connection_->SetVideoRenderer(id,
+        main_wnd_->remote_renderer());
+    ASSERT(ok);
+  }
+  return ret;
+}
+
 void Conductor::AddStreams() {
-  ASSERT(!waiting_for_video_);
-  ASSERT(!waiting_for_audio_);
+  int streams = 0;
+  if (AddStream(kVideoLabel, true))
+    ++streams;
 
-  waiting_for_video_ = true;
-  waiting_for_audio_ = true;
-
-  if (!peer_connection_->AddStream(kVideoLabel, true))
-    waiting_for_video_ = false;
-
-  if (!peer_connection_->AddStream(kAudioLabel, false))
-    waiting_for_audio_ = false;
+  if (AddStream(kAudioLabel, false))
+    ++streams;
 
   // At the initiator of the call, after adding streams we need
   // kick start the ICE candidates discovery process, which
@@ -299,7 +288,7 @@ void Conductor::AddStreams() {
   // getting the OnLocalStreamInitialized callback which is removed
   // now. Connect will trigger OnSignalingMessage callback when
   // ICE candidates are available.
-  if (waiting_for_audio_ || waiting_for_video_)
+  if (streams)
     peer_connection_->Connect();
 }
 
@@ -315,54 +304,95 @@ void Conductor::DisconnectFromCurrentPeer() {
 }
 
 void Conductor::UIThreadCallback(int msg_id, void* data) {
-  if (msg_id == MEDIA_CHANNELS_INITIALIZED) {
-    StartCaptureDevice();
-    // When we get an OnSignalingMessage notification, we'll send our
-    // json encoded signaling message to the peer, which is the first step
-    // of establishing a connection.
-  } else if (msg_id == PEER_CONNECTION_CLOSED) {
-    LOG(INFO) << "PEER_CONNECTION_CLOSED";
-    DeletePeerConnection();
+  switch (msg_id) {
+    case PEER_CONNECTION_CLOSED:
+      LOG(INFO) << "PEER_CONNECTION_CLOSED";
+      DeletePeerConnection();
 
-    waiting_for_audio_ = false;
-    waiting_for_video_ = false;
-    ASSERT(video_channel_.empty());
-    ASSERT(audio_channel_.empty());
-    if (main_wnd_->IsWindow()) {
-      if (client_->is_connected()) {
-        main_wnd_->SwitchToPeerList(client_->peers());
-      } else {
-        main_wnd_->SwitchToConnectUI();
-      }
-    } else {
-      DisconnectFromServer();
-    }
-  } else if (msg_id == SEND_MESSAGE_TO_PEER) {
-    LOG(INFO) << "SEND_MESSAGE_TO_PEER";
-    std::string* msg = reinterpret_cast<std::string*>(data);
-    if (client_->IsSendingMessage()) {
-      ASSERT(msg != NULL);
-      pending_messages_.push_back(msg);
-    } else {
-      if (!msg && !pending_messages_.empty()) {
-        msg = pending_messages_.front();
-        pending_messages_.pop_front();
-      }
-      if (msg) {
-        bool ok = client_->SendToPeer(peer_id_, *msg);
-        if (!ok && peer_id_ != -1) {
-          LOG(LS_ERROR) << "SendToPeer failed";
-          DisconnectFromServer();
+      ASSERT(active_streams_.empty());
+
+      if (main_wnd_->IsWindow()) {
+        if (client_->is_connected()) {
+          main_wnd_->SwitchToPeerList(client_->peers());
+        } else {
+          main_wnd_->SwitchToConnectUI();
         }
-        delete msg;
+      } else {
+        DisconnectFromServer();
+      }
+      break;
+
+    case SEND_MESSAGE_TO_PEER: {
+      LOG(INFO) << "SEND_MESSAGE_TO_PEER";
+      std::string* msg = reinterpret_cast<std::string*>(data);
+      if (client_->IsSendingMessage()) {
+        ASSERT(msg != NULL);
+        pending_messages_.push_back(msg);
+      } else {
+        if (!msg && !pending_messages_.empty()) {
+          msg = pending_messages_.front();
+          pending_messages_.pop_front();
+        }
+        if (msg) {
+          bool ok = client_->SendToPeer(peer_id_, *msg);
+          if (!ok && peer_id_ != -1) {
+            LOG(LS_ERROR) << "SendToPeer failed";
+            DisconnectFromServer();
+          }
+          delete msg;
+        }
+
+        if (!peer_connection_.get())
+          peer_id_ = -1;
+      }
+      break;
+    }
+
+    case PEER_CONNECTION_ADDSTREAMS:
+      AddStreams();
+      break;
+
+    case PEER_CONNECTION_ERROR:
+      main_wnd_->MessageBox("Error", "an unknown error occurred", true);
+      break;
+
+    case NEW_STREAM_ADDED: {
+      talk_base::scoped_ptr<StreamInfo> info(
+          reinterpret_cast<StreamInfo*>(data));
+      if (info->video_) {
+        LOG(INFO) << "Setting video renderer for stream: " << info->id_;
+        bool ok = peer_connection_->SetVideoRenderer(info->id_,
+            main_wnd_->remote_renderer());
+        ASSERT(ok);
+        if (!ok)
+          LOG(LS_ERROR) << "SetVideoRenderer failed for : " << info->id_;
+
+        // TODO(tommi): For the initiator, we shouldn't have to make this call
+        // here (which is actually the second time this is called for the
+        // initiator).  Look into why this is needed.
+        StartCaptureDevice();
       }
 
-      if (!peer_connection_.get())
-        peer_id_ = -1;
+      // If we haven't shared any streams with this peer (we're the receiver)
+      // then do so now.
+      if (active_streams_.empty())
+        AddStreams();
+      break;
     }
-  } else if (msg_id == PEER_CONNECTION_ADDSTREAMS) {
-    AddStreams();
-  } else if (msg_id == PEER_CONNECTION_ERROR) {
-    main_wnd_->MessageBox("Error", "an unknown error occurred", true);
+
+    case STREAM_REMOVED: {
+      talk_base::scoped_ptr<StreamInfo> info(
+          reinterpret_cast<StreamInfo*>(data));
+      active_streams_.erase(info->id_);
+      if (active_streams_.empty()) {
+        LOG(INFO) << "All streams have been closed.";
+        main_wnd_->QueueUIThreadCallback(PEER_CONNECTION_CLOSED, NULL);
+      }
+      break;
+    }
+
+    default:
+      ASSERT(false);
+      break;
   }
 }
