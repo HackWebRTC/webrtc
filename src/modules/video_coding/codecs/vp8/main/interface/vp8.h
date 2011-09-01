@@ -227,9 +227,6 @@ public:
 //                                  WEBRTC_VIDEO_CODEC_UNINITIALIZED
 //                                  WEBRTC_VIDEO_CODEC_ERROR
     virtual WebRtc_Word32 Reset();
-    virtual WebRtc_Word32 SetCodecConfigParameters(WebRtc_UWord8* /*buffer*/,
-                                                   WebRtc_Word32 /*size*/)
-                                                   { return -1; }
 
 // Create a copy of the codec and its internal state.
 //
