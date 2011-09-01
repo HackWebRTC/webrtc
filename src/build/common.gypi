@@ -102,16 +102,6 @@
         'defines': [
           'WEBRTC_VIDEO_EXTERNAL_CAPTURE_AND_RENDER',
         ],
-      }, {
-        # Add more stringent warnings to the standalone build than
-        # provided by the Chromium common.gypi.
-        'conditions': [
-          ['OS=="linux"', {
-            'cflags': [
-              '-Wextra',
-            ],
-          }],
-        ],
       }],
     ], # conditions
 
