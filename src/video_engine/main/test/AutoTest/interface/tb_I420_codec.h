@@ -38,10 +38,10 @@ public:
                                      WebRtc_Word32 numberOfCores,
                                      WebRtc_UWord32 maxPayloadSize);
 
-    virtual WebRtc_Word32 Encode(const webrtc::RawImage& inputImage,
-                                 const void* codecSpecificInfo = NULL,
-                                 webrtc::VideoFrameType frameType =
-                                     webrtc::kDeltaFrame);
+    virtual WebRtc_Word32 Encode(
+        const webrtc::RawImage& inputImage,
+        const webrtc::CodecSpecificInfo* codecSpecificInfo = NULL,
+        webrtc::VideoFrameType frameType = webrtc::kDeltaFrame);
 
     virtual WebRtc_Word32 RegisterEncodeCompleteCallback(
         webrtc::EncodedImageCallback* callback);
@@ -98,10 +98,12 @@ public:
 
     virtual WebRtc_Word32 InitDecode(const webrtc::VideoCodec* inst,
                                      WebRtc_Word32 numberOfCores);
-    virtual WebRtc_Word32 Decode(const webrtc::EncodedImage& inputImage,
-                                 bool missingFrames,
-                                 const void* codecSpecificInfo = NULL,
-                                 WebRtc_Word64 renderTimeMs = -1);
+    virtual WebRtc_Word32 Decode(
+        const webrtc::EncodedImage& inputImage,
+        bool missingFrames,
+        const webrtc::CodecSpecificInfo* codecSpecificInfo = NULL,
+        WebRtc_Word64 renderTimeMs = -1);
+
     virtual WebRtc_Word32
         RegisterDecodeCompleteCallback(webrtc::DecodedImageCallback* callback);
     virtual WebRtc_Word32 Release();

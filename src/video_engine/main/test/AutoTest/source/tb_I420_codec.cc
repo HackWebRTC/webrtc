@@ -114,10 +114,10 @@ WebRtc_Word32 tbI420Encoder::InitEncode(const webrtc::VideoCodec* inst,
     return WEBRTC_VIDEO_CODEC_OK;
 }
 
-WebRtc_Word32 tbI420Encoder::Encode(const webrtc::RawImage& inputImage,
-                                    const void* codecSpecificInfo /*= NULL*/,
-                                    webrtc::VideoFrameType frameType
-                                    /*= webrtc::kDeltaFrame*/)
+WebRtc_Word32 tbI420Encoder::Encode(
+    const webrtc::RawImage& inputImage,
+    const webrtc::CodecSpecificInfo* codecSpecificInfo /*= NULL*/,
+    webrtc::VideoFrameType frameType /*= webrtc::kDeltaFrame*/)
 {
     _functionCalls.Encode++;
     if (!_inited)
@@ -234,10 +234,11 @@ WebRtc_Word32 tbI420Decoder::InitDecode(const webrtc::VideoCodec* inst,
     return WEBRTC_VIDEO_CODEC_OK;
 }
 
-WebRtc_Word32 tbI420Decoder::Decode(const webrtc::EncodedImage& inputImage,
-                                    bool /*missingFrames*/,
-                                    const void* /*codecSpecificInfWord64o*/,
-                                    WebRtc_Word64 /*renderTimeMs*/)
+WebRtc_Word32 tbI420Decoder::Decode(
+    const webrtc::EncodedImage& inputImage,
+    bool /*missingFrames*/,
+    const webrtc::CodecSpecificInfo* /*codecSpecificInfWord64o*/,
+    WebRtc_Word64 /*renderTimeMs*/)
 {
     _functionCalls.Decode++;
     if (inputImage._buffer == NULL)
