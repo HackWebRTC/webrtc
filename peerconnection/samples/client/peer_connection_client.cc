@@ -11,6 +11,7 @@
 #include "peerconnection/samples/client/peer_connection_client.h"
 
 #include "peerconnection/samples/client/defaults.h"
+#include "talk/base/common.h"
 #include "talk/base/nethelpers.h"
 #include "talk/base/logging.h"
 #include "talk/base/stringutils.h"
@@ -208,6 +209,7 @@ void PeerConnectionClient::OnConnect(talk_base::AsyncSocket* socket) {
   ASSERT(!onconnect_data_.empty());
   size_t sent = socket->Send(onconnect_data_.c_str(), onconnect_data_.length());
   ASSERT(sent == onconnect_data_.length());
+  UNUSED(sent);
   onconnect_data_.clear();
 }
 
@@ -218,6 +220,7 @@ void PeerConnectionClient::OnHangingGetConnect(talk_base::AsyncSocket* socket) {
   int len = strlen(buffer);
   int sent = socket->Send(buffer, len);
   ASSERT(sent == len);
+  UNUSED2(sent, len);
 }
 
 void PeerConnectionClient::OnMessageFromPeer(int peer_id,
