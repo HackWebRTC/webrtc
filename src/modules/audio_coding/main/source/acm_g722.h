@@ -16,8 +16,7 @@
 typedef struct WebRtcG722EncInst    G722EncInst;
 typedef struct WebRtcG722DecInst    G722DecInst;
 
-namespace webrtc
-{
+namespace webrtc {
 
 // forward declaration
 struct ACMG722EncStr;

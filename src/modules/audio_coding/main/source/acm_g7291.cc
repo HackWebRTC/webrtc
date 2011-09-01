@@ -8,21 +8,33 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "acm_common_defs.h"
 #include "acm_g7291.h"
+#include "acm_common_defs.h"
 #include "acm_neteq.h"
 #include "trace.h"
 #include "webrtc_neteq.h"
 #include "webrtc_neteq_help_macros.h"
 
 #ifdef WEBRTC_CODEC_G729_1
-    // NOTE! G.729.1 is not included in the open-source package. Modify this file or your codec
-    // API to match the function call and name of used G.729.1 API file.
-    // #include "g7291_interface.h"
+    // NOTE! G.729.1 is not included in the open-source package. A wrapper is
+    // needed with interface file named as below. The API should match the one
+    // below.
+    //
+    // int16_t WebRtcG7291_Create(G729_1_inst_t_** inst);
+    // int16_t WebRtcG7291_Free(G729_1_inst_t_* inst);
+    // int16_t WebRtcG7291_Encode(G729_1_inst_t_* encInst, int16_t* input,
+    //                            int16_t* output, int16_t myRate,
+    //                            int16_t nrFrames);
+    // int16_t WebRtcG7291_EncoderInit(G729_1_inst_t_* encInst, int16_t myRate,
+    //                                 int16_t flag8kHz, int16_t flagG729mode);
+    // int16_t WebRtcG7291_Decode(G729_1_inst_t_* decInst);
+    // int16_t WebRtcG7291_DecodeBwe(G729_1_inst_t_* decInst, int16_t* input);
+    // int16_t WebRtcG7291_DecodePlc(G729_1_inst_t_* decInst);
+    // int16_t WebRtcG7291_DecoderInit(G729_1_inst_t_* decInst);
+    #include "g7291_interface.h"
 #endif
 
-namespace webrtc
-{
+namespace webrtc {
 
 #ifndef WEBRTC_CODEC_G729_1
 
@@ -145,24 +157,7 @@ ACMG729_1::SetBitRateSafe(
 
 #else     //===================== Actual Implementation =======================
 
-// Remove when integrating a real GSM AMR wrapper
-
 struct G729_1_inst_t_;
-extern WebRtc_Word16 WebRtcG7291_Create(G729_1_inst_t_** inst);
-extern WebRtc_Word16 WebRtcG7291_Free(G729_1_inst_t_* inst);
-extern WebRtc_Word16 WebRtcG7291_Encode(G729_1_inst_t_* encInst,
-                                        WebRtc_Word16* input,
-                                        WebRtc_Word16* output,
-                                        WebRtc_Word16 myRate,
-                                        WebRtc_Word16 nrFrames);
-extern WebRtc_Word16 WebRtcG7291_EncoderInit(G729_1_inst_t_* encInst,
-                                             WebRtc_Word16 myRate,
-                                             WebRtc_Word16 flag8kHz,
-                                             WebRtc_Word16 flagG729mode);
-extern WebRtc_Word16 WebRtcG7291_Decode(G729_1_inst_t_* decInst);
-extern WebRtc_Word16 WebRtcG7291_DecodeBwe(G729_1_inst_t_* decInst, WebRtc_Word16* input);
-extern WebRtc_Word16 WebRtcG7291_DecodePlc(G729_1_inst_t_* decInst);
-extern WebRtc_Word16 WebRtcG7291_DecoderInit(G729_1_inst_t_* decInst);
 
 ACMG729_1::ACMG729_1(
     WebRtc_Word16 codecID):
@@ -206,7 +201,6 @@ ACMG729_1::InternalEncode(
 
     // Initialize before entering the loop 
     WebRtc_Word16 noEncodedSamples = 0;
-    WebRtc_Word16 tmpLenByte = 0;
     *bitStreamLenByte = 0;
 
 	WebRtc_Word16 byteLengthFrame = 0;
@@ -413,8 +407,10 @@ WebRtc_Word16
 ACMG729_1::SetBitRateSafe(
     const WebRtc_Word32 rate)
 {
-	//allowed rates: { 8000, 12000, 14000, 16000, 18000, 20000,
+    //allowed rates: { 8000, 12000, 14000, 16000, 18000, 20000,
     //                22000, 24000, 26000, 28000, 30000, 32000};
+    // TODO(tlegrand): This check exists in one other place two. Should be
+    // possible to reuse code.
     switch(rate)
     {
     case 8000:

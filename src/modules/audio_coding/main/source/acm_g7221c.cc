@@ -8,22 +8,79 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "acm_g7221c.h"
 #include "acm_codec_database.h"
 #include "acm_common_defs.h"
-#include "acm_g7221c.h"
 #include "acm_neteq.h"
 #include "webrtc_neteq.h"
 #include "webrtc_neteq_help_macros.h"
 #include "trace.h"
 
 #ifdef WEBRTC_CODEC_G722_1C
-    // NOTE! G.722.1C is not included in the open-source package. Modify this file or your
-    // codec API to match the function call and name of used G.722.1C API file.
-    // #include "g7221C_interface.h"
+    // NOTE! G.722.1C is not included in the open-source package. A wrapper is
+    // needed with interface file named as below. The API should match the one
+    // below.
+    //
+    // int16_t WebRtcG7221C_CreateEnc24(G722_1C_24_encinst_t_** encInst);
+    // int16_t WebRtcG7221C_CreateEnc32(G722_1C_32_encinst_t_** encInst);
+    // int16_t WebRtcG7221C_CreateEnc48(G722_1C_48_encinst_t_** encInst);
+    // int16_t WebRtcG7221C_CreateDec24(G722_1C_24_decinst_t_** decInst);
+    // int16_t WebRtcG7221C_CreateDec32(G722_1C_32_decinst_t_** decInst);
+    // int16_t WebRtcG7221C_CreateDec48(G722_1C_48_decinst_t_** decInst);
+    //
+    // int16_t WebRtcG7221C_FreeEnc24(G722_1C_24_encinst_t_** encInst);
+    // int16_t WebRtcG7221C_FreeEnc32(G722_1C_32_encinst_t_** encInst);
+    // int16_t WebRtcG7221C_FreeEnc48(G722_1C_48_encinst_t_** encInst);
+    // int16_t WebRtcG7221C_FreeDec24(G722_1C_24_decinst_t_** decInst);
+    // int16_t WebRtcG7221C_FreeDec32(G722_1C_32_decinst_t_** decInst);
+    // int16_t WebRtcG7221C_FreeDec48(G722_1C_48_decinst_t_** decInst);
+    //
+    // int16_t WebRtcG7221C_EncoderInit24(G722_1C_24_encinst_t_* encInst);
+    // int16_t WebRtcG7221C_EncoderInit32(G722_1C_32_encinst_t_* encInst);
+    // int16_t WebRtcG7221C_EncoderInit48(G722_1C_48_encinst_t_* encInst);
+    // int16_t WebRtcG7221C_DecoderInit24(G722_1C_24_decinst_t_* decInst);
+    // int16_t WebRtcG7221C_DecoderInit32(G722_1C_32_decinst_t_* decInst);
+    // int16_t WebRtcG7221C_DecoderInit48(G722_1C_48_decinst_t_* decInst);
+    //
+    // int16_t WebRtcG7221C_Encode24(G722_1C_24_encinst_t_* encInst,
+    //                               int16_t* input,
+    //                               int16_t len,
+    //                               int16_t* output);
+    // int16_t WebRtcG7221C_Encode32(G722_1C_32_encinst_t_* encInst,
+    //                               int16_t* input,
+    //                               int16_t len,
+    //                               int16_t* output);
+    // int16_t WebRtcG7221C_Encode48(G722_1C_48_encinst_t_* encInst,
+    //                               int16_t* input,
+    //                               int16_t len,
+    //                               int16_t* output);
+    //
+    // int16_t WebRtcG7221C_Decode24(G722_1C_24_decinst_t_* decInst,
+    //                               int16_t* bitstream,
+    //                               int16_t len,
+    //                               int16_t* output);
+    // int16_t WebRtcG7221C_Decode32(G722_1C_32_decinst_t_* decInst,
+    //                               int16_t* bitstream,
+    //                               int16_t len,
+    //                               int16_t* output);
+    // int16_t WebRtcG7221C_Decode48(G722_1C_48_decinst_t_* decInst,
+    //                               int16_t* bitstream,
+    //                               int16_t len,
+    //                               int16_t* output);
+    //
+    // int16_t WebRtcG7221C_DecodePlc24(G722_1C_24_decinst_t_* decInst,
+    //                                  int16_t* output,
+    //                                  int16_t nrLostFrames);
+    // int16_t WebRtcG7221C_DecodePlc32(G722_1C_32_decinst_t_* decInst,
+    //                                  int16_t* output,
+    //                                  int16_t nrLostFrames);
+    // int16_t WebRtcG7221C_DecodePlc48(G722_1C_48_decinst_t_* decInst,
+    //                                  int16_t* output,
+    //                                  int16_t nrLostFrames);
+    #include "g7221c_interface.h"
 #endif
 
-namespace webrtc
-{
+namespace webrtc {
 
 #ifndef WEBRTC_CODEC_G722_1C
 
@@ -137,67 +194,6 @@ ACMG722_1C::UnregisterFromNetEqSafe(
 
 
 #else     //===================== Actual Implementation =======================
-// Remove when integrating a real G,722.1 wrapper
-struct G722_1_Inst_t_;
-
-extern WebRtc_Word16 WebRtcG7221C_CreateEnc24(G722_1C_24_encinst_t_** encInst);
-extern WebRtc_Word16 WebRtcG7221C_CreateEnc32(G722_1C_32_encinst_t_** encInst);
-extern WebRtc_Word16 WebRtcG7221C_CreateEnc48(G722_1C_48_encinst_t_** encInst);
-extern WebRtc_Word16 WebRtcG7221C_CreateDec24(G722_1C_24_decinst_t_** decInst);
-extern WebRtc_Word16 WebRtcG7221C_CreateDec32(G722_1C_32_decinst_t_** decInst);
-extern WebRtc_Word16 WebRtcG7221C_CreateDec48(G722_1C_48_decinst_t_** decInst);
-
-extern WebRtc_Word16 WebRtcG7221C_FreeEnc24(G722_1C_24_encinst_t_** encInst);
-extern WebRtc_Word16 WebRtcG7221C_FreeEnc32(G722_1C_32_encinst_t_** encInst);
-extern WebRtc_Word16 WebRtcG7221C_FreeEnc48(G722_1C_48_encinst_t_** encInst);
-extern WebRtc_Word16 WebRtcG7221C_FreeDec24(G722_1C_24_decinst_t_** decInst);
-extern WebRtc_Word16 WebRtcG7221C_FreeDec32(G722_1C_32_decinst_t_** decInst);
-extern WebRtc_Word16 WebRtcG7221C_FreeDec48(G722_1C_48_decinst_t_** decInst);
-
-
-extern WebRtc_Word16 WebRtcG7221C_EncoderInit24(G722_1C_24_encinst_t_* encInst);
-extern WebRtc_Word16 WebRtcG7221C_EncoderInit32(G722_1C_32_encinst_t_* encInst);
-extern WebRtc_Word16 WebRtcG7221C_EncoderInit48(G722_1C_48_encinst_t_* encInst);
-extern WebRtc_Word16 WebRtcG7221C_DecoderInit24(G722_1C_24_decinst_t_* decInst);
-extern WebRtc_Word16 WebRtcG7221C_DecoderInit32(G722_1C_32_decinst_t_* decInst);
-extern WebRtc_Word16 WebRtcG7221C_DecoderInit48(G722_1C_48_decinst_t_* decInst);
-
-extern WebRtc_Word16 WebRtcG7221C_Encode24(G722_1C_24_encinst_t_* encInst,
-                                           WebRtc_Word16* input,
-                                           WebRtc_Word16 len,
-                                           WebRtc_Word16* output);
-extern WebRtc_Word16 WebRtcG7221C_Encode32(G722_1C_32_encinst_t_* encInst,
-                                           WebRtc_Word16* input,
-                                           WebRtc_Word16 len,
-                                           WebRtc_Word16* output);
-extern WebRtc_Word16 WebRtcG7221C_Encode48(G722_1C_48_encinst_t_* encInst,
-                                           WebRtc_Word16* input,
-                                           WebRtc_Word16 len,
-                                           WebRtc_Word16* output);
-
-extern WebRtc_Word16 WebRtcG7221C_Decode24(G722_1C_24_decinst_t_* decInst,
-                                           WebRtc_Word16* bitstream,
-                                           WebRtc_Word16 len,
-                                           WebRtc_Word16* output);
-extern WebRtc_Word16 WebRtcG7221C_Decode32(G722_1C_32_decinst_t_* decInst,
-                                           WebRtc_Word16* bitstream,
-                                           WebRtc_Word16 len,
-                                           WebRtc_Word16* output);
-extern WebRtc_Word16 WebRtcG7221C_Decode48(G722_1C_48_decinst_t_* decInst,
-                                           WebRtc_Word16* bitstream,
-                                           WebRtc_Word16 len,
-                                           WebRtc_Word16* output);
-
-extern WebRtc_Word16 WebRtcG7221C_DecodePlc24(G722_1C_24_decinst_t_* decInst,
-                                              WebRtc_Word16* output,
-                                              WebRtc_Word16 nrLostFrames);
-extern WebRtc_Word16 WebRtcG7221C_DecodePlc32(G722_1C_32_decinst_t_* decInst,
-                                              WebRtc_Word16* output,
-                                              WebRtc_Word16 nrLostFrames);
-extern WebRtc_Word16 WebRtcG7221C_DecodePlc48(G722_1C_48_decinst_t_* decInst,
-                                              WebRtc_Word16* output,
-                                              WebRtc_Word16 nrLostFrames);
-
 
 ACMG722_1C::ACMG722_1C(
     WebRtc_Word16 codecID):
@@ -215,15 +211,15 @@ _decoderInst32Ptr(NULL),
 _decoderInst48Ptr(NULL)
 {		
     _codecID = codecID;
-    if(_codecID == ACMCodecDB::g722_1C_24)
+    if(_codecID == ACMCodecDB::kG722_1C_24)
     {
         _operationalRate = 24000;
     }
-    else if(_codecID == ACMCodecDB::g722_1C_32)
+    else if(_codecID == ACMCodecDB::kG722_1C_32)
     {
         _operationalRate = 32000;
     }
-    else if(_codecID == ACMCodecDB::g722_1C_48)
+    else if(_codecID == ACMCodecDB::kG722_1C_48)
     { 
         _operationalRate = 48000;
     }

@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "acm_gsmfr.h"
 #include "acm_common_defs.h"
 #include "acm_gsmfr.h"
 #include "acm_neteq.h"
@@ -16,13 +17,25 @@
 #include "webrtc_neteq_help_macros.h"
 
 #ifdef WEBRTC_CODEC_GSMFR
-    // NOTE! GSM-FR is not included in the open-source package. Modify this file or your codec
-    // API to match the function call and name of used GSM-FR API file.
-    // #include "gsmfr_interface.h"
+    // NOTE! GSM-FR is not included in the open-source package. A wrapper is
+    // needed with interface file named as below. The API should match the one
+    // below.
+    //
+    // int16_t WebRtcGSMFR_CreateEnc(GSMFR_encinst_t_** inst);
+    // int16_t WebRtcGSMFR_CreateDec(GSMFR_decinst_t_** inst);
+    // int16_t WebRtcGSMFR_FreeEnc(GSMFR_encinst_t_* inst);
+    // int16_t WebRtcGSMFR_FreeDec(GSMFR_decinst_t_* inst);
+    // int16_t WebRtcGSMFR_Encode(GSMFR_encinst_t_* encInst, int16_t* input,
+    //                            int16_t len, int16_t* output);
+    // int16_t WebRtcGSMFR_EncoderInit(GSMFR_encinst_t_* encInst, int16_t mode);
+    // int16_t WebRtcGSMFR_Decode(GSMFR_decinst_t_* decInst);
+    // int16_t WebRtcGSMFR_DecodeBwe(GSMFR_decinst_t_* decInst, int16_t* input);
+    // int16_t WebRtcGSMFR_DecodePlc(GSMFR_decinst_t_* decInst);
+    // int16_t WebRtcGSMFR_DecoderInit(GSMFR_decinst_t_* decInst);
+    #include "gsmfr_interface.h"
 #endif
 
-namespace webrtc
-{
+namespace webrtc {
 
 #ifndef WEBRTC_CODEC_GSMFR
 
@@ -152,19 +165,6 @@ ACMGSMFR::UnregisterFromNetEqSafe(
 
 
 #else     //===================== Actual Implementation =======================
-
-// Remove when integrating a real GSM FR wrapper
-extern WebRtc_Word16 WebRtcGSMFR_CreateEnc(GSMFR_encinst_t_** inst);
-extern WebRtc_Word16 WebRtcGSMFR_CreateDec(GSMFR_decinst_t_** inst);
-extern WebRtc_Word16 WebRtcGSMFR_FreeEnc(GSMFR_encinst_t_* inst);
-extern WebRtc_Word16 WebRtcGSMFR_FreeDec(GSMFR_decinst_t_* inst);
-extern WebRtc_Word16 WebRtcGSMFR_Encode(GSMFR_encinst_t_* encInst, WebRtc_Word16* input,
-                                        WebRtc_Word16 len, WebRtc_Word16* output);
-extern WebRtc_Word16 WebRtcGSMFR_EncoderInit(GSMFR_encinst_t_* encInst, WebRtc_Word16 mode);
-extern WebRtc_Word16 WebRtcGSMFR_Decode(GSMFR_decinst_t_* decInst);
-extern WebRtc_Word16 WebRtcGSMFR_DecodeBwe(GSMFR_decinst_t_* decInst, WebRtc_Word16* input);
-extern WebRtc_Word16 WebRtcGSMFR_DecodePlc(GSMFR_decinst_t_* decInst);
-extern WebRtc_Word16 WebRtcGSMFR_DecoderInit(GSMFR_decinst_t_* decInst);
 
 ACMGSMFR::ACMGSMFR(
     WebRtc_Word16 codecID):

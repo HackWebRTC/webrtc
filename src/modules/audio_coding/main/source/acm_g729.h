@@ -17,8 +17,7 @@
 struct G729_encinst_t_;
 struct G729_decinst_t_;
 
-namespace webrtc
-{
+namespace webrtc {
 
 class ACMG729 : public ACMGenericCodec
 {

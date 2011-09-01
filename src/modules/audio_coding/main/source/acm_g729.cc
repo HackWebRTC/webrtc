@@ -8,21 +8,33 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "acm_common_defs.h"
 #include "acm_g729.h"
+#include "acm_common_defs.h"
 #include "acm_neteq.h"
 #include "trace.h"
 #include "webrtc_neteq.h"
 #include "webrtc_neteq_help_macros.h"
 
 #ifdef WEBRTC_CODEC_G729
-    // NOTE! G.729 is not included in the open-source package. Modify this file or your codec
-    // API to match the function call and name of used G.729 API file.
-    // #include "g729_interface.h"
+    // NOTE! G.729 is not included in the open-source package. A wrapper is
+    // needed with interface file named as below. The API should match the one
+    // below.
+    //
+    // int16_t WebRtcG729_CreateEnc(G729_encinst_t_** inst);
+    // int16_t WebRtcG729_CreateDec(G729_decinst_t_** inst);
+    // int16_t WebRtcG729_FreeEnc(G729_encinst_t_* inst);
+    // int16_t WebRtcG729_FreeDec(G729_decinst_t_* inst);
+    // int16_t WebRtcG729_Encode(G729_encinst_t_* encInst, int16_t* input,
+    //                                       int16_t len, int16_t* output);
+    // int16_t WebRtcG729_EncoderInit(G729_encinst_t_* encInst, int16_t mode);
+    // int16_t WebRtcG729_Decode(G729_decinst_t_* decInst);
+    // int16_t WebRtcG729_DecodeBwe(G729_decinst_t_* decInst, int16_t* input);
+    // int16_t WebRtcG729_DecodePlc(G729_decinst_t_* decInst);
+    // int16_t WebRtcG729_DecoderInit(G729_decinst_t_* decInst);
+    #include "g729_interface.h"
 #endif
 
-namespace webrtc
-{
+namespace webrtc {
 
 #ifndef WEBRTC_CODEC_G729
 
@@ -166,20 +178,6 @@ ACMG729::UnregisterFromNetEqSafe(
 
 
 #else     //===================== Actual Implementation =======================
-
-// Remove when integrating a real GSM FR wrapper
-extern WebRtc_Word16 WebRtcG729_CreateEnc(G729_encinst_t_** inst);
-extern WebRtc_Word16 WebRtcG729_CreateDec(G729_decinst_t_** inst);
-extern WebRtc_Word16 WebRtcG729_FreeEnc(G729_encinst_t_* inst);
-extern WebRtc_Word16 WebRtcG729_FreeDec(G729_decinst_t_* inst);
-extern WebRtc_Word16 WebRtcG729_Encode(G729_encinst_t_* encInst, WebRtc_Word16* input,
-                                       WebRtc_Word16 len, WebRtc_Word16* output);
-extern WebRtc_Word16 WebRtcG729_EncoderInit(G729_encinst_t_* encInst, WebRtc_Word16 mode);
-extern WebRtc_Word16 WebRtcG729_Decode(G729_decinst_t_* decInst);
-extern WebRtc_Word16 WebRtcG729_DecodeBwe(G729_decinst_t_* decInst, WebRtc_Word16* input);
-extern WebRtc_Word16 WebRtcG729_DecodePlc(G729_decinst_t_* decInst);
-extern WebRtc_Word16 WebRtcG729_DecoderInit(G729_decinst_t_* decInst);
-
 
 ACMG729::ACMG729(
     WebRtc_Word16 codecID):

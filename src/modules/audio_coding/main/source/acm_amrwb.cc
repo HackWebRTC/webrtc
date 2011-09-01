@@ -18,13 +18,29 @@
 #include "webrtc_neteq_help_macros.h"
 
 #ifdef WEBRTC_CODEC_AMRWB
-    // NOTE! GSM AMR-wb is not included in the open-source package. Modify this file or your
-    // codec API to match the function call and name of used AMR-wb API file.
-    // #include "amrwb_interface.h"
+    // NOTE! GSM AMR-wb is not included in the open-source package. A wrapper is
+    // needed with interface file named as below. The API should match the one
+    // below.
+    //
+    // int16_t WebRtcAmrWb_CreateEnc(AMRWB_encinst_t_** encInst);
+    // int16_t WebRtcAmrWb_CreateDec(AMRWB_decinst_t_** decInst);
+    // int16_t WebRtcAmrWb_FreeEnc(AMRWB_encinst_t_* encInst);
+    // int16_t WebRtcAmrWb_FreeDec(AMRWB_decinst_t_* decInst);
+    // int16_t WebRtcAmrWb_Encode(AMRWB_encinst_t_* encInst, int16_t* input,
+    //                            int16_t len, int16_t*output, int16_t mode);
+    // int16_t WebRtcAmrWb_EncoderInit(AMRWB_encinst_t_* encInst,
+    //                                 int16_t dtxMode);
+    // int16_t WebRtcAmrWb_EncodeBitmode(AMRWB_encinst_t_* encInst,
+    //                                    ACMAMRPackingFormat format);
+    // int16_t WebRtcAmrWb_Decode(AMRWB_decinst_t_* decInst);
+    // int16_t WebRtcAmrWb_DecodePlc(AMRWB_decinst_t_* decInst);
+    // int16_t WebRtcAmrWb_DecoderInit(AMRWB_decinst_t_* decInst);
+    // int16_t WebRtcAmrWb_DecodeBitmode(AMRWB_decinst_t_* decInst,
+    //                                   ACMAMRPackingFormat format);
+    #include "amrwb_interface.h"
 #endif
 
-namespace webrtc
-{
+namespace webrtc {
 
 #ifndef WEBRTC_CODEC_AMRWB
 ACMAMRwb::ACMAMRwb(WebRtc_Word16 /* codecID*/)
@@ -181,27 +197,6 @@ ACMAMRwb::UnregisterFromNetEqSafe(
 #define AMRWB_MODE_20k      6
 #define AMRWB_MODE_23k      7
 #define AMRWB_MODE_24k      8
-
-// Remove when integrating a real GSM AMR wrapper
-extern WebRtc_Word16 WebRtcAmrWb_CreateEnc(AMRWB_encinst_t_** encInst);
-extern WebRtc_Word16 WebRtcAmrWb_CreateDec(AMRWB_decinst_t_** decInst);
-extern WebRtc_Word16 WebRtcAmrWb_FreeEnc(AMRWB_encinst_t_* encInst);
-extern WebRtc_Word16 WebRtcAmrWb_FreeDec(AMRWB_decinst_t_* decInst);
-extern WebRtc_Word16 WebRtcAmrWb_Encode(AMRWB_encinst_t_* encInst,
-                                        WebRtc_Word16* input,
-                                        WebRtc_Word16 len,
-                                        WebRtc_Word16*output,
-                                        WebRtc_Word16 mode);
-extern WebRtc_Word16 WebRtcAmrWb_EncoderInit(AMRWB_encinst_t_* encInst,
-                                             WebRtc_Word16 dtxMode);
-extern WebRtc_Word16 WebRtcAmrWb_EncodeBitmode(AMRWB_encinst_t_* encInst,
-                                               ACMAMRPackingFormat format);
-extern WebRtc_Word16 WebRtcAmrWb_Decode(AMRWB_decinst_t_* decInst);
-extern WebRtc_Word16 WebRtcAmrWb_DecodePlc(AMRWB_decinst_t_* decInst);
-extern WebRtc_Word16 WebRtcAmrWb_DecoderInit(AMRWB_decinst_t_* decInst);
-extern WebRtc_Word16 WebRtcAmrWb_DecodeBitmode(AMRWB_decinst_t_* decInst,
-                                               ACMAMRPackingFormat format);
-
 
 ACMAMRwb::ACMAMRwb(WebRtc_Word16 codecID):
 _encoderInstPtr(NULL),

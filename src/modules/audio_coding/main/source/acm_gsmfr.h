@@ -13,12 +13,11 @@
 
 #include "acm_generic_codec.h"
 
-namespace webrtc
-{
-
 // forward declaration
 struct GSMFR_encinst_t_;
 struct GSMFR_decinst_t_;
+
+namespace webrtc {
 
 class ACMGSMFR : public ACMGenericCodec
 {

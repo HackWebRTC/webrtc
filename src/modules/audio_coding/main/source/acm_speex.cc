@@ -8,23 +8,44 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "acm_speex.h"
 #include "acm_codec_database.h"
 #include "acm_common_defs.h"
 #include "acm_neteq.h"
-#include "acm_speex.h"
 #include "trace.h"
 #include "webrtc_neteq.h"
 #include "webrtc_neteq_help_macros.h"
 
 #ifdef WEBRTC_CODEC_SPEEX
-    // NOTE! Speex is not included in the open-source package. Modify this file or your codec
-    // API to match the function call and name of used Speex API file.
-    // #include "speex_interface.h"
+    // NOTE! Speex is not included in the open-source package.  A wrapper is
+    // needed with interface file named as below. The API should match the one
+    // below.
+    //
+    // int16_t WebRtcSpeex_CreateEnc(SPEEX_encinst_t **SPEEXenc_inst,
+    //                               int32_t fs);
+    // int16_t WebRtcSpeex_FreeEnc(SPEEX_encinst_t *SPEEXenc_inst);
+    // int16_t WebRtcSpeex_CreateDec(SPEEX_decinst_t **SPEEXdec_inst,
+    //                               int32_t fs,
+    //                               int16_t enh_enabled);
+    // int16_t WebRtcSpeex_FreeDec(SPEEX_decinst_t *SPEEXdec_inst);
+    // int16_t WebRtcSpeex_Encode(SPEEX_encinst_t *SPEEXenc_inst,
+    //                            int16_t *speechIn,
+    //                            int32_t rate);
+    // int16_t WebRtcSpeex_EncoderInit(SPEEX_encinst_t *SPEEXenc_inst,
+    //                                 int16_t vbr, int16_t complexity,
+    //                                 int16_t vad_enable);
+    // int16_t WebRtcSpeex_GetBitstream(SPEEX_encinst_t *SPEEXenc_inst,
+    //                                  int16_t *encoded);
+    // int16_t WebRtcSpeex_DecodePlc(SPEEX_decinst_t *SPEEXdec_inst,
+    //                               int16_t *decoded, int16_t noOfLostFrames);
+    // int16_t WebRtcSpeex_Decode(SPEEX_decinst_t *SPEEXdec_inst,
+    //                            int16_t *encoded, int16_t len,
+    //                            int16_t *decoded, int16_t *speechType);
+    // int16_t WebRtcSpeex_DecoderInit(SPEEX_decinst_t *SPEEXdec_inst);
+    #include "speex_interface.h"
 #endif
 
-
-namespace webrtc
-{
+namespace webrtc {
 
 #ifndef WEBRTC_CODEC_SPEEX
 ACMSPEEX::ACMSPEEX(WebRtc_Word16 /* codecID*/)
@@ -166,27 +187,6 @@ ACMSPEEX::SetComplMode(
 
 #else     //===================== Actual Implementation =======================
 
-// Remove when integrating a real Speex wrapper
-extern WebRtc_Word16 WebRtcSpeex_CreateEnc(SPEEX_encinst_t_** inst,
-                                           WebRtc_Word16 samplFreq);
-extern WebRtc_Word16 WebRtcSpeex_CreateDec(SPEEX_decinst_t_** inst,
-                                           WebRtc_Word16 samplFreq,
-                                           WebRtc_Word16 mode);
-extern WebRtc_Word16 WebRtcSpeex_FreeEnc(SPEEX_encinst_t_* inst);
-extern WebRtc_Word16 WebRtcSpeex_FreeDec(SPEEX_decinst_t_* inst);
-extern WebRtc_Word16 WebRtcSpeex_Encode(SPEEX_encinst_t_* encInst,
-                                        WebRtc_Word16* input,
-                                        WebRtc_Word16 rate);
-extern WebRtc_Word16 WebRtcSpeex_EncoderInit(SPEEX_encinst_t_* encInst,
-                                             WebRtc_Word16 samplFreq,
-                                             WebRtc_Word16 mode,
-                                             WebRtc_Word16 vbrFlag);
-extern WebRtc_Word16 WebRtcSpeex_GetBitstream(SPEEX_encinst_t_* encInst,
-                                              WebRtc_Word16* output);
-extern WebRtc_Word16 WebRtcSpeex_Decode(SPEEX_decinst_t_* decInst);
-extern WebRtc_Word16 WebRtcSpeex_DecodePlc(SPEEX_decinst_t_* decInst);
-extern WebRtc_Word16 WebRtcSpeex_DecoderInit(SPEEX_decinst_t_* decInst);
-
 ACMSPEEX::ACMSPEEX(WebRtc_Word16 codecID):
 _encoderInstPtr(NULL),
 _decoderInstPtr(NULL)
@@ -194,13 +194,13 @@ _decoderInstPtr(NULL)
     _codecID = codecID;
     
     // Set sampling frequency, frame size and rate Speex
-    if(_codecID == ACMCodecDB::speex8)
+    if(_codecID == ACMCodecDB::kSPEEX8)
     {
         _samplingFrequency = 8000;
         _samplesIn20MsAudio = 160;
         _encodingRate = 11000;
     }
-    else if(_codecID == ACMCodecDB::speex16)
+    else if(_codecID == ACMCodecDB::kSPEEX16)
     {
         _samplingFrequency = 16000;
         _samplesIn20MsAudio = 320;

@@ -14,7 +14,7 @@
  */
 
 // TODO(tlegrand): Change constant input pointers in all functions to constant
-// references, where appripriate.
+// references, where appropriate.
 #include "acm_codec_database.h"
 
 #include <stdio.h>
@@ -23,22 +23,15 @@
 #include "trace.h"
 
 // Includes needed to get version info and to create the codecs.
+// G.711, PCM mu-law and A-law.
 #include "acm_pcma.h"
 #include "acm_pcmu.h"
 #include "g711_interface.h"
-#include "webrtc_neteq.h"
-#include "webrtc_cng.h"
+// CNG.
 #include "acm_cng.h"
-#ifdef WEBRTC_CODEC_AVT
-    #include "acm_dtmf_playout.h"
-#endif
-#ifdef WEBRTC_CODEC_RED
-    #include "acm_red.h"
-#endif
-#ifdef WEBRTC_CODEC_ILBC
-    #include "acm_ilbc.h"
-    #include "ilbc.h"
-#endif
+#include "webrtc_cng.h"
+// NetEQ.
+#include "webrtc_neteq.h"
 #ifdef WEBRTC_CODEC_ISAC
     #include "acm_isac.h"
     #include "acm_isac_macros.h"
@@ -53,9 +46,43 @@
     #include "pcm16b.h"
     #include "acm_pcm16b.h"
 #endif
+#ifdef WEBRTC_CODEC_ILBC
+    #include "acm_ilbc.h"
+    #include "ilbc.h"
+#endif
+#ifdef WEBRTC_CODEC_AMR
+    #include "acm_amr.h"
+#endif
+#ifdef WEBRTC_CODEC_AMRWB
+    #include "acm_amrwb.h"
+#endif
 #ifdef WEBRTC_CODEC_G722
     #include "acm_g722.h"
     #include "g722_interface.h"
+#endif
+#ifdef WEBRTC_CODEC_G722_1
+    #include "acm_g7221.h"
+#endif
+#ifdef WEBRTC_CODEC_G722_1C
+    #include "acm_g7221c.h"
+#endif
+#ifdef WEBRTC_CODEC_G729
+    #include "acm_g729.h"
+#endif
+#ifdef WEBRTC_CODEC_G729_1
+    #include "acm_g7291.h"
+#endif
+#ifdef WEBRTC_CODEC_GSMFR
+    #include "acm_gsmfr.h"
+#endif
+#ifdef WEBRTC_CODEC_SPEEX
+    #include "acm_speex.h"
+#endif
+#ifdef WEBRTC_CODEC_AVT
+    #include "acm_dtmf_playout.h"
+#endif
+#ifdef WEBRTC_CODEC_RED
+    #include "acm_red.h"
 #endif
 
 namespace webrtc {
@@ -93,8 +120,37 @@ const CodecInst ACMCodecDB::database_[] = {
 #ifdef WEBRTC_CODEC_ILBC
   {102, "ILBC", 8000, 240, 1, 13300},
 #endif
+#ifdef WEBRTC_CODEC_AMR
+  {kDynamicPayloadtypes[count_database++], "AMR", 8000, 160, 1, 12200},
+#endif
+#ifdef WEBRTC_CODEC_AMRWB
+  {kDynamicPayloadtypes[count_database++], "AMR-WB", 16000, 320, 1, 20000},
+#endif
 #ifdef WEBRTC_CODEC_G722
   {9, "G722", 16000, 320, 1, 64000},
+#endif
+#ifdef WEBRTC_CODEC_G722_1
+  {kDynamicPayloadtypes[count_database++], "G7221", 16000, 320, 1, 32000},
+  {kDynamicPayloadtypes[count_database++], "G7221", 16000, 320, 1, 24000},
+  {kDynamicPayloadtypes[count_database++], "G7221", 16000, 320, 1, 16000},
+#endif
+#ifdef WEBRTC_CODEC_G722_1C
+  {kDynamicPayloadtypes[count_database++], "G7221", 32000, 640, 1, 48000},
+  {kDynamicPayloadtypes[count_database++], "G7221", 32000, 640, 1, 32000},
+  {kDynamicPayloadtypes[count_database++], "G7221", 32000, 640, 1, 24000},
+#endif
+#ifdef WEBRTC_CODEC_G729
+  {18, "G729", 8000, 240, 1, 8000},
+#endif
+#ifdef WEBRTC_CODEC_G729_1
+  {kDynamicPayloadtypes[count_database++], "G7291", 16000, 320, 1, 32000},
+#endif
+#ifdef WEBRTC_CODEC_GSMFR
+  {3, "GSM", 8000, 160, 1, 13200},
+#endif
+#ifdef WEBRTC_CODEC_SPEEX
+  {kDynamicPayloadtypes[count_database++], "speex", 8000, 160, 1, 11000},
+  {kDynamicPayloadtypes[count_database++], "speex", 16000, 320, 1, 22000},
 #endif
   // Comfort noise for three different sampling frequencies.
   {13, "CN", 8000, 240, 1, 0},
@@ -132,8 +188,37 @@ const ACMCodecDB::CodecSettings ACMCodecDB::codec_settings_[] = {
 #ifdef WEBRTC_CODEC_ILBC
   {4, {160, 240, 320, 480}, 0, 1},
 #endif
+#ifdef WEBRTC_CODEC_AMR
+  {3, {160, 320, 480}, 0, 1},
+#endif
+#ifdef WEBRTC_CODEC_AMRWB
+  {3, {320, 640, 960}, 0, 1},
+#endif
 #ifdef WEBRTC_CODEC_G722
   {6, {160, 320, 480, 640, 800, 960}, 0, 2},
+#endif
+#ifdef WEBRTC_CODEC_G722_1
+  {1, {320}, 320, 2},
+  {1, {320}, 320, 2},
+  {1, {320}, 320, 2},
+#endif
+#ifdef WEBRTC_CODEC_G722_1C
+  {1, {640}, 640, 2},
+  {1, {640}, 640, 2},
+  {1, {640}, 640, 2},
+#endif
+#ifdef WEBRTC_CODEC_G729
+  {6, {80, 160, 240, 320, 400, 480}, 0, 1},
+#endif
+#ifdef WEBRTC_CODEC_G729_1
+  {3, {320, 640, 960}, 0, 1},
+#endif
+#ifdef WEBRTC_CODEC_GSMFR
+  {3, {160, 320, 480}, 160, 1},
+#endif
+#ifdef WEBRTC_CODEC_SPEEX
+  {3, {160, 320, 480}, 0, 1},
+  {3, {320, 640, 960}, 0, 1},
 #endif
   // Comfort noise for three different sampling frequencies.
   {1, {240}, 240, 1},
@@ -162,6 +247,7 @@ WebRtcNetEQDecoder ACMCodecDB::neteq_decoders_[] = {
   kDecoderPCM16Bwb,
   kDecoderPCM16Bswb32kHz,
 #endif
+  // G.711, PCM mu-las and A-law.
   kDecoderPCMu,
   kDecoderPCMa,
 #ifdef WEBRTC_CODEC_ILBC
@@ -189,6 +275,9 @@ WebRtcNetEQDecoder ACMCodecDB::neteq_decoders_[] = {
 #ifdef WEBRTC_CODEC_G729
   kDecoderG729,
 #endif
+#ifdef WEBRTC_CODEC_G729_1
+  kDecoderG729_1,
+#endif
 #ifdef WEBRTC_CODEC_GSMFR
   kDecoderGSMFR,
 #endif
@@ -196,6 +285,7 @@ WebRtcNetEQDecoder ACMCodecDB::neteq_decoders_[] = {
   kDecoderSPEEX_8,
   kDecoderSPEEX_16,
 #endif
+  // Comfort noise for three different sampling frequencies.
   kDecoderCNG,
   kDecoderCNG,
   kDecoderCNG,
@@ -362,6 +452,18 @@ int ACMCodecDB::CodecNumber(const CodecInst* codec_inst, int* mirror_id) {
   } else if (STR_CASE_CMP("ilbc", codec_inst->plname) == 0) {
     return IsILBCRateValid(codec_inst->rate, codec_inst->pacsize)
         ? codec_number : kInvalidRate;
+  } else if (STR_CASE_CMP("amr", codec_inst->plname) == 0) {
+    return IsAMRRateValid(codec_inst->rate)
+        ? codec_number : kInvalidRate;
+  } else if (STR_CASE_CMP("amr-wb", codec_inst->plname) == 0) {
+    return IsAMRwbRateValid(codec_inst->rate)
+        ? codec_number : kInvalidRate;
+  } else if (STR_CASE_CMP("g7291", codec_inst->plname) == 0) {
+    return IsG7291RateValid(codec_inst->rate)
+        ? codec_number : kInvalidRate;
+  } else if (STR_CASE_CMP("speex", codec_inst->plname) == 0) {
+    return IsSpeexRateValid(codec_inst->rate)
+        ? codec_number : kInvalidRate;
   }
 
   return IsRateValid(codec_number, codec_inst->rate) ?
@@ -468,12 +570,44 @@ int ACMCodecDB::CodecsVersion(char* version, size_t* remaining_buffer_bytes,
   remaining_size = kVersionBufferSize - strlen(versions_buffer);
   strncat(versions_buffer, "\n", remaining_size);
 #endif
+#ifdef WEBRTC_CODEC_AMR
+  remaining_size = kVersionBufferSize - strlen(versions_buffer);
+  strncat(versions_buffer, "AMR\t\tX.X.X\n", remaining_size);
+#endif
+#ifdef WEBRTC_CODEC_AMRWB
+  remaining_size = kVersionBufferSize - strlen(versions_buffer);
+  strncat(versions_buffer, "AMR-WB\t\tX.X.X\n", remaining_size);
+#endif
 #ifdef WEBRTC_CODEC_G722
   remaining_size = kVersionBufferSize - strlen(versions_buffer);
   WebRtcG722_Version(version_num_buf, kTemporaryBufferSize);
   strncat(versions_buffer, "G.722\t\t", remaining_size);
   remaining_size = kVersionBufferSize - strlen(versions_buffer);
   strncat(versions_buffer, version_num_buf, remaining_size);
+#endif
+#ifdef WEBRTC_CODEC_G722_1
+  remaining_size = kVersionBufferSize - strlen(versions_buffer);
+  strncat(versions_buffer, "G.722.1\t\tX.X.X\n", remaining_size);
+#endif
+#ifdef WEBRTC_CODEC_G722_1C
+  remaining_size = kVersionBufferSize - strlen(versions_buffer);
+  strncat(versions_buffer, "G.722.1C\tX.X.X\n", remaining_size);
+#endif
+#ifdef WEBRTC_CODEC_G729
+  remaining_size = kVersionBufferSize - strlen(versions_buffer);
+  strncat(versions_buffer, "G.729\t\tX.X.X\n", remaining_size);
+#endif
+#ifdef WEBRTC_CODEC_G729_1
+  remaining_size = kVersionBufferSize - strlen(versions_buffer);
+  strncat(versions_buffer, "G.729.1\t\tX.X.X\n", remaining_size);
+#endif
+#ifdef WEBRTC_CODEC_GSMFR
+  remaining_size = kVersionBufferSize - strlen(versions_buffer);
+  strncat(versions_buffer, "GSM-FR\t\tX.X.X\n", remaining_size);
+#endif
+#ifdef WEBRTC_CODEC_SPEEX
+  remaining_size = kVersionBufferSize - strlen(versions_buffer);
+  strncat(versions_buffer, "Speex\t\tX.X.X\n", remaining_size);
 #endif
   remaining_size = kVersionBufferSize - strlen(versions_buffer);
   WebRtcCng_Version(version_num_buf);
@@ -519,9 +653,113 @@ ACMGenericCodec* ACMCodecDB::CreateCodecInstance(const CodecInst* codec_inst) {
 #ifdef WEBRTC_CODEC_ILBC
     return new ACMILBC(kILBC);
 #endif
+  } else if (!STR_CASE_CMP(codec_inst->plname, "AMR")) {
+#ifdef WEBRTC_CODEC_AMR
+    return new ACMAMR(kGSMAMR);
+#endif
+  } else if (!STR_CASE_CMP(codec_inst->plname, "AMR-WB")) {
+#ifdef WEBRTC_CODEC_AMRWB
+    return new ACMAMRwb(kGSMAMRWB);
+#endif
   } else if (!STR_CASE_CMP(codec_inst->plname, "G722")) {
 #ifdef WEBRTC_CODEC_G722
     return new ACMG722(kG722);
+#endif
+  } else if (!STR_CASE_CMP(codec_inst->plname, "G7221")) {
+    switch (codec_inst->plfreq) {
+      case 16000: {
+#ifdef WEBRTC_CODEC_G722_1
+        int codec_id;
+        switch (codec_inst->rate) {
+          case 16000 : {
+            codec_id = kG722_1_16;
+            break;
+          }
+          case 24000 : {
+            codec_id = kG722_1_24;
+            break;
+          }
+          case 32000 : {
+            codec_id = kG722_1_32;
+            break;
+          }
+          default: {
+            return NULL;
+          }
+          return new ACMG722_1(codec_id);
+        }
+#endif
+      }
+      case 32000: {
+#ifdef WEBRTC_CODEC_G722_1C
+        int codec_id;
+        switch (codec_inst->rate) {
+          case 24000 : {
+            codec_id = kG722_1C_24;
+            break;
+          }
+          case 32000 : {
+            codec_id = kG722_1C_32;
+            break;
+          }
+          case 48000 : {
+            codec_id = kG722_1C_48;
+            break;
+          }
+          default: {
+            return NULL;
+          }
+          return new ACMG722_1C(codec_id);
+        }
+#endif
+      }
+    }
+  } else if (!STR_CASE_CMP(codec_inst->plname, "CN")) {
+    // For CN we need to check sampling frequency to know what codec to create.
+    int codec_id;
+    switch (codec_inst->plfreq) {
+      case 8000: {
+        codec_id = kCNNB;
+        break;
+      }
+      case 16000: {
+        codec_id = kCNWB;
+        break;
+      }
+      case 32000: {
+        codec_id = kCNSWB;
+        break;
+      }
+      default: {
+        return NULL;
+      }
+    }
+    return new ACMCNG(codec_id);
+  } else if (!STR_CASE_CMP(codec_inst->plname, "G729")) {
+#ifdef WEBRTC_CODEC_G729
+    return new ACMG729(kG729);
+#endif
+  } else if (!STR_CASE_CMP(codec_inst->plname, "G7291")) {
+#ifdef WEBRTC_CODEC_G729_1
+    return new ACMG729_1(kG729_1);
+#endif
+  } else if (!STR_CASE_CMP(codec_inst->plname, "speex")) {
+#ifdef WEBRTC_CODEC_SPEEX
+    int codec_id;
+    switch (codec_inst->plfreq) {
+      case 8000: {
+        codec_id = kSPEEX8;
+        break;
+      }
+      case 16000: {
+        codec_id = kSPEEX16;
+        break;
+      }
+      default: {
+        return NULL;
+      }
+    }
+    return new ACMSPEEX(codec_id);
 #endif
   } else if (!STR_CASE_CMP(codec_inst->plname, "CN")) {
     // For CN we need to check sampling frequency to know what codec to create.
@@ -604,6 +842,76 @@ bool ACMCodecDB::IsILBCRateValid(int rate, int frame_size_samples) {
     return true;
   } else if (((frame_size_samples == 160) || (frame_size_samples == 320)) &&
       (rate == 15200)) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+// Check if the bitrate is valid for the GSM-AMR.
+bool ACMCodecDB::IsAMRRateValid(int rate) {
+  switch (rate) {
+    case 4750:
+    case 5150:
+    case 5900:
+    case 6700:
+    case 7400:
+    case 7950:
+    case 10200:
+    case 12200: {
+      return true;
+    }
+    default: {
+      return false;
+    }
+  }
+}
+
+// Check if the bitrate is valid for GSM-AMR-WB.
+bool ACMCodecDB::IsAMRwbRateValid(int rate) {
+  switch (rate) {
+    case 7000:
+    case 9000:
+    case 12000:
+    case 14000:
+    case 16000:
+    case 18000:
+    case 20000:
+    case 23000:
+    case 24000: {
+      return true;
+    }
+    default: {
+      return false;
+    }
+  }
+}
+
+// Check if the bitrate is valid for G.729.1.
+bool ACMCodecDB::IsG7291RateValid(int rate) {
+  switch (rate) {
+    case 8000:
+    case 12000:
+    case 14000:
+    case 16000:
+    case 18000:
+    case 20000:
+    case 22000:
+    case 24000:
+    case 26000:
+    case 28000:
+    case 30000:
+    case 32000: {
+      return true;
+    }
+    default: {
+      return false;
+    }
+  }
+}
+// Checks if the bitrate is valid for Speex.
+bool ACMCodecDB::IsSpeexRateValid(int rate) {
+  if (rate > 2000) {
     return true;
   } else {
     return false;

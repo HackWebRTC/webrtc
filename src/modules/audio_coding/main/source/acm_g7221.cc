@@ -8,22 +8,79 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "acm_g7221.h"
 #include "acm_codec_database.h"
 #include "acm_common_defs.h"
-#include "acm_g7221.h"
 #include "acm_neteq.h"
 #include "trace.h"
 #include "webrtc_neteq.h"
 #include "webrtc_neteq_help_macros.h"
 
 #ifdef WEBRTC_CODEC_G722_1
-    // NOTE! G.722.1 is not included in the open-source package. Modify this file or your codec
-    // API to match the function call and name of used G.722.1 API file.
-    // #include "g7221_interface.h"
+    // NOTE! G.722.1 is not included in the open-source package. A wrapper is
+    // needed with interface file named as below. The API should match the one
+    // below.
+    //
+    // int16_t WebRtcG7221_CreateEnc16(G722_1_16_encinst_t_** encInst);
+    // int16_t WebRtcG7221_CreateEnc24(G722_1_24_encinst_t_** encInst);
+    // int16_t WebRtcG7221_CreateEnc32(G722_1_32_encinst_t_** encInst);
+    // int16_t WebRtcG7221_CreateDec16(G722_1_16_decinst_t_** decInst);
+    // int16_t WebRtcG7221_CreateDec24(G722_1_24_decinst_t_** decInst);
+    // int16_t WebRtcG7221_CreateDec32(G722_1_32_decinst_t_** decInst);
+    //
+    // int16_t WebRtcG7221_FreeEnc16(G722_1_16_encinst_t_** encInst);
+    // int16_t WebRtcG7221_FreeEnc24(G722_1_24_encinst_t_** encInst);
+    // int16_t WebRtcG7221_FreeEnc32(G722_1_32_encinst_t_** encInst);
+    // int16_t WebRtcG7221_FreeDec16(G722_1_16_decinst_t_** decInst);
+    // int16_t WebRtcG7221_FreeDec24(G722_1_24_decinst_t_** decInst);
+    // int16_t WebRtcG7221_FreeDec32(G722_1_32_decinst_t_** decInst);
+    //
+    // int16_t WebRtcG7221_EncoderInit16(G722_1_16_encinst_t_* encInst);
+    // int16_t WebRtcG7221_EncoderInit24(G722_1_24_encinst_t_* encInst);
+    // int16_t WebRtcG7221_EncoderInit32(G722_1_32_encinst_t_* encInst);
+    // int16_t WebRtcG7221_DecoderInit16(G722_1_16_decinst_t_* decInst);
+    // int16_t WebRtcG7221_DecoderInit24(G722_1_24_decinst_t_* decInst);
+    // int16_t WebRtcG7221_DecoderInit32(G722_1_32_decinst_t_* decInst);
+    //
+    // int16_t WebRtcG7221_Encode16(G722_1_16_encinst_t_* encInst,
+    //                              int16_t* input,
+    //                              int16_t len,
+    //                              int16_t* output);
+    // int16_t WebRtcG7221_Encode24(G722_1_24_encinst_t_* encInst,
+    //                              int16_t* input,
+    //                              int16_t len,
+    //                              int16_t* output);
+    // int16_t WebRtcG7221_Encode32(G722_1_32_encinst_t_* encInst,
+    //                              int16_t* input,
+    //                              int16_t len,
+    //                              int16_t* output);
+    //
+    // int16_t WebRtcG7221_Decode16(G722_1_16_decinst_t_* decInst,
+    //                              int16_t* bitstream,
+    //                              int16_t len,
+    //                              int16_t* output);
+    // int16_t WebRtcG7221_Decode24(G722_1_24_decinst_t_* decInst,
+    //                              int16_t* bitstream,
+    //                              int16_t len,
+    //                              int16_t* output);
+    // int16_t WebRtcG7221_Decode32(G722_1_32_decinst_t_* decInst,
+    //                              int16_t* bitstream,
+    //                              int16_t len,
+    //                              int16_t* output);
+    //
+    // int16_t WebRtcG7221_DecodePlc16(G722_1_16_decinst_t_* decInst,
+    //                                 int16_t* output,
+    //                                 int16_t nrLostFrames);
+    // int16_t WebRtcG7221_DecodePlc24(G722_1_24_decinst_t_* decInst,
+    //                                 int16_t* output,
+    //                                 int16_t nrLostFrames);
+    // int16_t WebRtcG7221_DecodePlc32(G722_1_32_decinst_t_* decInst,
+    //                                 int16_t* output,
+    //                                 int16_t nrLostFrames);
+    #include "g7221_interface.h"
 #endif
 
-namespace webrtc
-{
+namespace webrtc {
 
 #ifndef WEBRTC_CODEC_G722_1
 
@@ -138,67 +195,6 @@ ACMG722_1::UnregisterFromNetEqSafe(
 
 #else     //===================== Actual Implementation =======================
 
-// Remove when integrating a real G.722.1 wrapper
-struct G722_1_Inst_t_;
-
-extern WebRtc_Word16 WebRtcG7221_CreateEnc16(G722_1_16_encinst_t_** encInst);
-extern WebRtc_Word16 WebRtcG7221_CreateEnc24(G722_1_24_encinst_t_** encInst);
-extern WebRtc_Word16 WebRtcG7221_CreateEnc32(G722_1_32_encinst_t_** encInst);
-extern WebRtc_Word16 WebRtcG7221_CreateDec16(G722_1_16_decinst_t_** decInst);
-extern WebRtc_Word16 WebRtcG7221_CreateDec24(G722_1_24_decinst_t_** decInst);
-extern WebRtc_Word16 WebRtcG7221_CreateDec32(G722_1_32_decinst_t_** decInst);
-
-extern WebRtc_Word16 WebRtcG7221_FreeEnc16(G722_1_16_encinst_t_** encInst);
-extern WebRtc_Word16 WebRtcG7221_FreeEnc24(G722_1_24_encinst_t_** encInst);
-extern WebRtc_Word16 WebRtcG7221_FreeEnc32(G722_1_32_encinst_t_** encInst);
-extern WebRtc_Word16 WebRtcG7221_FreeDec16(G722_1_16_decinst_t_** decInst);
-extern WebRtc_Word16 WebRtcG7221_FreeDec24(G722_1_24_decinst_t_** decInst);
-extern WebRtc_Word16 WebRtcG7221_FreeDec32(G722_1_32_decinst_t_** decInst);
-
-extern WebRtc_Word16 WebRtcG7221_EncoderInit16(G722_1_16_encinst_t_* encInst);
-extern WebRtc_Word16 WebRtcG7221_EncoderInit24(G722_1_24_encinst_t_* encInst);
-extern WebRtc_Word16 WebRtcG7221_EncoderInit32(G722_1_32_encinst_t_* encInst);
-extern WebRtc_Word16 WebRtcG7221_DecoderInit16(G722_1_16_decinst_t_* decInst);
-extern WebRtc_Word16 WebRtcG7221_DecoderInit24(G722_1_24_decinst_t_* decInst);
-extern WebRtc_Word16 WebRtcG7221_DecoderInit32(G722_1_32_decinst_t_* decInst);
-
-extern WebRtc_Word16 WebRtcG7221_Encode16(G722_1_16_encinst_t_* encInst,
-                                          WebRtc_Word16* input,
-                                          WebRtc_Word16 len,
-                                          WebRtc_Word16* output);
-extern WebRtc_Word16 WebRtcG7221_Encode24(G722_1_24_encinst_t_* encInst,
-                                          WebRtc_Word16* input,
-                                          WebRtc_Word16 len,
-                                          WebRtc_Word16* output);
-extern WebRtc_Word16 WebRtcG7221_Encode32(G722_1_32_encinst_t_* encInst,
-                                          WebRtc_Word16* input,
-                                          WebRtc_Word16 len,
-                                          WebRtc_Word16* output);
-
-extern WebRtc_Word16 WebRtcG7221_Decode16(G722_1_16_decinst_t_* decInst,
-                                          WebRtc_Word16* bitstream,
-                                          WebRtc_Word16 len,
-                                          WebRtc_Word16* output);
-extern WebRtc_Word16 WebRtcG7221_Decode24(G722_1_24_decinst_t_* decInst,
-                                          WebRtc_Word16* bitstream,
-                                          WebRtc_Word16 len,
-                                          WebRtc_Word16* output);
-extern WebRtc_Word16 WebRtcG7221_Decode32(G722_1_32_decinst_t_* decInst,
-                                          WebRtc_Word16* bitstream,
-                                          WebRtc_Word16 len,
-                                          WebRtc_Word16* output);
-
-extern WebRtc_Word16 WebRtcG7221_DecodePlc16(G722_1_16_decinst_t_* decInst,
-                                             WebRtc_Word16* output,
-                                             WebRtc_Word16 nrLostFrames);
-extern WebRtc_Word16 WebRtcG7221_DecodePlc24(G722_1_24_decinst_t_* decInst,
-                                             WebRtc_Word16* output,
-                                             WebRtc_Word16 nrLostFrames);
-extern WebRtc_Word16 WebRtcG7221_DecodePlc32(G722_1_32_decinst_t_* decInst,
-                                             WebRtc_Word16* output,
-                                             WebRtc_Word16 nrLostFrames);
-
-
 ACMG722_1::ACMG722_1(
     WebRtc_Word16 codecID):
 _encoderInstPtr(NULL),
@@ -215,15 +211,15 @@ _decoderInst24Ptr(NULL),
 _decoderInst32Ptr(NULL)
 {
     _codecID = codecID;
-    if(_codecID == ACMCodecDB::g722_1_16)
+    if(_codecID == ACMCodecDB::kG722_1_16)
     {
         _operationalRate = 16000;
     }
-    else if(_codecID == ACMCodecDB::g722_1_24)
+    else if(_codecID == ACMCodecDB::kG722_1_24)
     {
         _operationalRate = 24000;
     }
-    else if(_codecID == ACMCodecDB::g722_1_32)
+    else if(_codecID == ACMCodecDB::kG722_1_32)
     { 
         _operationalRate = 32000;
     }
@@ -242,7 +238,7 @@ ACMG722_1::~ACMG722_1()
         _encoderInstPtr = NULL;
     }
     if(_encoderInstPtrRight != NULL)
-    {
+    {Inst
         delete _encoderInstPtrRight;
         _encoderInstPtrRight = NULL;
     }
@@ -308,7 +304,7 @@ ACMG722_1::InternalEncode(
     switch(_operationalRate)
     {
     case 16000:
-        {
+        {Inst
             lenInBytes = WebRtcG7221_Encode16(_encoderInst16Ptr,
                 leftChannel, 320, &outB[0]);
             if (_noChannels == 2) 
@@ -407,7 +403,7 @@ ACMG722_1::InternalInitEncoder(
         }
     default:
         { 
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
+            WEBRTC_TRACE(webrtc::kTraceError,Inst webrtc::kTraceAudioCoding, _uniqueID,
 				"InternalInitEncoder: Wrong rate for G722_1.");
             return -1;
             break;

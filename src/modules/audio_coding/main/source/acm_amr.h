@@ -17,8 +17,7 @@
 struct AMR_encinst_t_;
 struct AMR_decinst_t_;
 
-namespace webrtc
-{
+namespace webrtc {
 
 enum ACMAMRPackingFormat;
 

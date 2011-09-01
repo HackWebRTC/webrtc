@@ -13,21 +13,16 @@
 
 #include "acm_generic_codec.h"
 
-namespace webrtc
-{
-
 // forward declaration
 struct G722_1_16_encinst_t_;
 struct G722_1_16_decinst_t_;
-
 struct G722_1_24_encinst_t_;
 struct G722_1_24_decinst_t_;
-
 struct G722_1_32_encinst_t_;
 struct G722_1_32_decinst_t_;
-
 struct G722_1_Inst_t_;
 
+namespace webrtc {
 
 class ACMG722_1 : public ACMGenericCodec
 {

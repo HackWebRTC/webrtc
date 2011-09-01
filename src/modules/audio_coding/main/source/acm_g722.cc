@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "acm_g722.h"
 #include "acm_codec_database.h"
 #include "acm_common_defs.h"
-#include "acm_g722.h"
 #include "acm_neteq.h"
 #include "trace.h"
 #include "webrtc_neteq.h"
 #include "webrtc_neteq_help_macros.h"
 #include "g722_interface.h"
-namespace webrtc
-{
+
+namespace webrtc {
 
 #ifndef WEBRTC_CODEC_G722
 

@@ -273,15 +273,23 @@
     #define NETEQ_PCM16B_CODEC
     #define NETEQ_G711_CODEC
     #define NETEQ_ILBC_CODEC
+    #define NETEQ_AMR_CODEC
+    #define NETEQ_G729_CODEC
+    #define NETEQ_GSMFR_CODEC
 
     /* Wideband codecs */
     #define NETEQ_WIDEBAND
     #define NETEQ_ISAC_CODEC
     #define NETEQ_G722_CODEC
+    #define NETEQ_G722_1_CODEC
+    #define NETEQ_G729_1_CODEC
+    #define NETEQ_AMRWB_CODEC
+    #define NETEQ_SPEEX_CODEC
 
     /* Super wideband 32kHz codecs */
     #define NETEQ_ISAC_SWB_CODEC
     #define NETEQ_32KHZ_WIDEBAND
+    #define NETEQ_G722_1C_CODEC
 
 #endif 
 

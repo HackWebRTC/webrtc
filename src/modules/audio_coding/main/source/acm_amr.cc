@@ -18,13 +18,32 @@
 #include "webrtc_neteq_help_macros.h"
 
 #ifdef WEBRTC_CODEC_AMR
-    // NOTE! GSM AMR is not included in the open-source package. Modify this file or your codec
-    // API to match the function call and name of used AMR API file.
-    //  #include "amr_interface.h"
+    // NOTE! GSM AMR is not included in the open-source package. A wrapper is
+    // needed with interface file named as below. The API should match the one
+    // below.
+    //
+    // int16_t WebRtcAmr_CreateEnc(AMR_encinst_t_** encInst);
+    // int16_t WebRtcAmr_CreateDec(AMR_decinst_t_** decInst);
+    // int16_t WebRtcAmr_FreeEnc(AMR_encinst_t_* encInst);
+    // int16_t WebRtcAmr_FreeDec(AMR_decinst_t_* decInst);
+    // int16_t WebRtcAmr_Encode(AMR_encinst_t_* encInst,
+    //                          int16_t* input,
+    //                          int16_t len,
+    //                          int16_t*output,
+    //                          int16_t mode);
+    //  int16_t WebRtcAmr_EncoderInit(AMR_encinst_t_* encInst,
+    //                               int16_t dtxMode);
+    // int16_t WebRtcAmr_EncodeBitmode(AMR_encinst_t_* encInst,
+    //                                 ACMAMRPackingFormat format);
+    // int16_t WebRtcAmr_Decode(AMR_decinst_t_* decInst);
+    // int16_t WebRtcAmr_DecodePlc(AMR_decinst_t_* decInst);
+    // int16_t WebRtcAmr_DecoderInit(AMR_decinst_t_* decInst);
+    // int16_t WebRtcAmr_DecodeBitmode(AMR_decinst_t_* decInst,
+    //                                 ACMAMRPackingFormat format);
+    #include "amr_interface.h"
 #endif
 
-namespace webrtc
-{
+namespace webrtc {
 
 #ifndef WEBRTC_CODEC_AMR
 ACMAMR::ACMAMR(WebRtc_Word16 /* codecID */)
@@ -186,7 +205,6 @@ ACMAMR::UnregisterFromNetEqSafe(
 
 #else     //===================== Actual Implementation =======================
 
-
 #define WEBRTC_AMR_MR475  0
 #define WEBRTC_AMR_MR515  1
 #define WEBRTC_AMR_MR59   2
@@ -195,26 +213,6 @@ ACMAMR::UnregisterFromNetEqSafe(
 #define WEBRTC_AMR_MR795  5
 #define WEBRTC_AMR_MR102  6
 #define WEBRTC_AMR_MR122  7
-
-// Remove when integrating a real GSM AMR wrapper
-extern WebRtc_Word16 WebRtcAmr_CreateEnc(AMR_encinst_t_** encInst);
-extern WebRtc_Word16 WebRtcAmr_CreateDec(AMR_decinst_t_** decInst);
-extern WebRtc_Word16 WebRtcAmr_FreeEnc(AMR_encinst_t_* encInst);
-extern WebRtc_Word16 WebRtcAmr_FreeDec(AMR_decinst_t_* decInst);
-extern WebRtc_Word16 WebRtcAmr_Encode(AMR_encinst_t_* encInst,
-                                      WebRtc_Word16* input,
-                                      WebRtc_Word16 len,
-                                      WebRtc_Word16*output,
-                                      WebRtc_Word16 mode);
-extern WebRtc_Word16 WebRtcAmr_EncoderInit(AMR_encinst_t_* encInst,
-                                           WebRtc_Word16 dtxMode);
-extern WebRtc_Word16 WebRtcAmr_EncodeBitmode(AMR_encinst_t_* encInst,
-                                             ACMAMRPackingFormat format);
-extern WebRtc_Word16 WebRtcAmr_Decode(AMR_decinst_t_* decInst);
-extern WebRtc_Word16 WebRtcAmr_DecodePlc(AMR_decinst_t_* decInst);
-extern WebRtc_Word16 WebRtcAmr_DecoderInit(AMR_decinst_t_* decInst);
-extern WebRtc_Word16 WebRtcAmr_DecodeBitmode(AMR_decinst_t_* decInst,
-                                             ACMAMRPackingFormat format);
 
 ACMAMR::ACMAMR(WebRtc_Word16 codecID):
 _encoderInstPtr(NULL),

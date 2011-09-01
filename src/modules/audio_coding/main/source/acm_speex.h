@@ -13,12 +13,11 @@
 
 #include "acm_generic_codec.h"
 
-namespace webrtc
-{
-
 // forward declaration
 struct SPEEX_encinst_t_;
 struct SPEEX_decinst_t_;
+
+namespace webrtc {
 
 class ACMSPEEX : public ACMGenericCodec
 {
