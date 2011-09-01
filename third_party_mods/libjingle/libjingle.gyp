@@ -559,7 +559,6 @@
         '<(libjingle_mods)/source/talk/app/webrtc/peerconnection.h',
         '<(libjingle_mods)/source/talk/app/webrtc/peerconnectionfactory.h',
         '<(libjingle_mods)/source/talk/app/webrtc/peerconnectionfactory.cc',                
-        '<(libjingle_mods)/source/talk/app/webrtc/peerconnectionimpl_callbacks.h',
         '<(libjingle_mods)/source/talk/app/webrtc/peerconnection_impl.cc',
         '<(libjingle_mods)/source/talk/app/webrtc/peerconnection_impl.h',
         '<(libjingle_mods)/source/talk/app/webrtc/peerconnection_proxy.cc',
