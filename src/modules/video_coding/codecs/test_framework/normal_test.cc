@@ -15,30 +15,30 @@
 
 NormalTest::NormalTest()
 :
+Test("Normal Test 1", "A test of normal execution of the codec"),
 _testNo(1),
 _lengthEncFrame(0),
-_appendNext(false),
-Test("Normal Test 1", "A test of normal execution of the codec")
+_appendNext(false)
 {
 }
 
 NormalTest::NormalTest(std::string name, std::string description, unsigned int testNo)
 :
+Test(name, description),
 _requestKeyFrame(false),
 _testNo(testNo),
 _lengthEncFrame(0),
-_appendNext(false),
-Test(name, description)
+_appendNext(false)
 {
 }
 
 NormalTest::NormalTest(std::string name, std::string description, WebRtc_UWord32 bitRate, unsigned int testNo)
 :
+Test(name, description, bitRate),
 _requestKeyFrame(false),
 _testNo(testNo),
 _lengthEncFrame(0),
-_appendNext(false),
-Test(name, description, bitRate)
+_appendNext(false)
 {
 }
 
@@ -229,7 +229,6 @@ NormalTest::Encode()
 int
 NormalTest::Decode()
 {
-    double starttime = clock()/(double)CLOCKS_PER_SEC;
     _encodedVideoBuffer.SetWidth(_inst.width);
     _encodedVideoBuffer.SetHeight(_inst.height);
     int lengthDecFrame = 0;

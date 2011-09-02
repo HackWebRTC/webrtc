@@ -43,9 +43,9 @@ VP8UnitTest::Print()
 WebRtc_UWord32
 VP8UnitTest::CodecSpecific_SetBitrate(WebRtc_UWord32 bitRate, WebRtc_UWord32 /*frameRate*/)
 {
-    bitRate = _encoder->SetRates(bitRate, _inst.maxFramerate);
-    VIDEO_TEST_EXIT_ON_ERR(bitRate >= 0);
-    return bitRate;
+    int rate = _encoder->SetRates(bitRate, _inst.maxFramerate);
+    VIDEO_TEST_EXIT_ON_ERR(rate >= 0);
+    return rate;
 }
 
 bool
@@ -84,7 +84,6 @@ VP8UnitTest::Perform()
     std::string outFileName;
     VP8Encoder* enc = (VP8Encoder*)_encoder;
     VP8Decoder* dec = (VP8Decoder*)_decoder;
-    int frameLength = 0;
 
     //----- Encoder parameter tests -----
     //-- Calls before InitEncode() --

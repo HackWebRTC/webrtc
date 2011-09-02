@@ -23,8 +23,8 @@ VP8NormalAsyncTest(bitRate)
 
 VP8DualDecoderTest::VP8DualDecoderTest() 
 :
-_decoder2(NULL),
-VP8NormalAsyncTest("VP8 Dual Decoder Test", "Tests VP8 dual decoder", 1)
+VP8NormalAsyncTest("VP8 Dual Decoder Test", "Tests VP8 dual decoder", 1),
+_decoder2(NULL)
 {}
 
 VP8DualDecoderTest::~VP8DualDecoderTest()
@@ -148,7 +148,6 @@ int
 VP8DualDecoderTest::Decode(int lossValue)
 {
     _sumEncBytes += _frameToDecode->_frame->GetLength();
-    double starttime = 0;
     webrtc::EncodedImage encodedImage;
     VideoEncodedBufferToEncodedImage(*(_frameToDecode->_frame), encodedImage);
     encodedImage._completeFrame = !lossValue;

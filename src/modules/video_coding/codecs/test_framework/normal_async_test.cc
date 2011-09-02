@@ -20,79 +20,79 @@ using namespace webrtc;
 
 NormalAsyncTest::NormalAsyncTest()
 :
+NormalTest("Async Normal Test 1", "A test of normal execution of the codec",
+           _testNo),
+_decodeCompleteTime(0),
+_encodeCompleteTime(0),
+_encFrameCnt(0),
+_decFrameCnt(0),
 _requestKeyFrame(false),
 _testNo(1),
 _appendNext(false),
-_decFrameCnt(0),
-_encFrameCnt(0),
 _missingFrames(false),
-_decodeCompleteTime(0),
-_encodeCompleteTime(0),
 _rttFrames(0),
 _hasReceivedSLI(false),
 _hasReceivedPLI(false),
-_waitForKey(false),
-NormalTest("Async Normal Test 1", "A test of normal execution of the codec",
-           _testNo)
+_waitForKey(false)
 {
 }
 
 NormalAsyncTest::NormalAsyncTest(WebRtc_UWord32 bitRate)
 :
+NormalTest("Async Normal Test 1", "A test of normal execution of the codec",
+           bitRate, _testNo),
+_decodeCompleteTime(0),
+_encodeCompleteTime(0),
+_encFrameCnt(0),
+_decFrameCnt(0),
 _requestKeyFrame(false),
 _testNo(1),
 _appendNext(false),
-_decFrameCnt(0),
-_encFrameCnt(0),
 _missingFrames(false),
-_decodeCompleteTime(0),
-_encodeCompleteTime(0),
 _rttFrames(0),
 _hasReceivedSLI(false),
 _hasReceivedPLI(false),
-_waitForKey(false),
-NormalTest("Async Normal Test 1", "A test of normal execution of the codec",
-           bitRate, _testNo)
+_waitForKey(false)
 {
 }
 
 NormalAsyncTest::NormalAsyncTest(std::string name, std::string description,
                                  unsigned int testNo)
 :
+NormalTest(name, description, _testNo),
+_decodeCompleteTime(0),
+_encodeCompleteTime(0),
+_encFrameCnt(0),
+_decFrameCnt(0),
 _requestKeyFrame(false),
 _testNo(testNo),
 _lengthEncFrame(0),
 _appendNext(false),
-_decFrameCnt(0),
-_encFrameCnt(0),
 _missingFrames(false),
-_decodeCompleteTime(0),
-_encodeCompleteTime(0),
 _rttFrames(0),
 _hasReceivedSLI(false),
 _hasReceivedPLI(false),
-_waitForKey(false),
-NormalTest(name, description, _testNo)
+_waitForKey(false)
 {
 }
 
 NormalAsyncTest::NormalAsyncTest(std::string name, std::string description,
                                  WebRtc_UWord32 bitRate, unsigned int testNo)
 :
+NormalTest(name, description, bitRate, _testNo),
+_decodeCompleteTime(0),
+_encodeCompleteTime(0),
+_encFrameCnt(0),
+_decFrameCnt(0),
 _requestKeyFrame(false),
 _testNo(testNo),
 _lengthEncFrame(0),
 _appendNext(false),
-_decFrameCnt(0),
-_encFrameCnt(0),
 _missingFrames(false),
-_decodeCompleteTime(0),
-_encodeCompleteTime(0),
 _rttFrames(0),
 _hasReceivedSLI(false),
 _hasReceivedPLI(false),
-_waitForKey(false),
-NormalTest(name, description, bitRate, _testNo)
+_waitForKey(false)
 {
 }
 
@@ -100,20 +100,20 @@ NormalAsyncTest::NormalAsyncTest(std::string name, std::string description,
                                  WebRtc_UWord32 bitRate, unsigned int testNo,
                                  unsigned int rttFrames)
 :
+NormalTest(name, description, bitRate, _testNo),
+_decodeCompleteTime(0),
+_encodeCompleteTime(0),
+_encFrameCnt(0),
+_decFrameCnt(0),
 _requestKeyFrame(false),
 _testNo(testNo),
 _lengthEncFrame(0),
 _appendNext(false),
-_decFrameCnt(0),
-_encFrameCnt(0),
 _missingFrames(false),
-_decodeCompleteTime(0),
-_encodeCompleteTime(0),
 _rttFrames(rttFrames),
 _hasReceivedSLI(false),
 _hasReceivedPLI(false),
-_waitForKey(false),
-NormalTest(name, description, bitRate, _testNo)
+_waitForKey(false)
 {
 }
 
@@ -469,7 +469,6 @@ int
 NormalAsyncTest::Decode(int lossValue)
 {
     _sumEncBytes += _frameToDecode->_frame->GetLength();
-    double starttime = 0;
     EncodedImage encodedImage;
     VideoEncodedBufferToEncodedImage(*(_frameToDecode->_frame), encodedImage);
     encodedImage._completeFrame = !lossValue;

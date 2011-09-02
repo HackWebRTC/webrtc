@@ -38,7 +38,7 @@ VP8NormalAsyncTest::CodecSettings(int width, int height, WebRtc_UWord32 frameRat
     _inst.codecType = kVideoCodecVP8;
     _inst.codecSpecific.VP8.feedbackModeOn = true;
     _inst.codecSpecific.VP8.pictureLossIndicationOn = true;
-    _inst.codecSpecific.VP8.complexity;
+    _inst.codecSpecific.VP8.complexity = kComplexityNormal;
     _inst.maxFramerate = (unsigned char)frameRate;
     _inst.startBitrate = _bitRate;
     _inst.maxBitrate = 8000;

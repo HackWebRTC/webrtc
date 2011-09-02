@@ -18,30 +18,31 @@ using namespace webrtc;
 
 PacketLossTest::PacketLossTest()
 :
+NormalAsyncTest("PacketLossTest", "Encode, remove lost packets, decode", 300,
+                5),
 _lossRate(0.1),
 _lossProbability(0.1),
 _lastFrame(NULL),
-_lastFrameLength(0),
-NormalAsyncTest("PacketLossTest", "Encode, remove lost packets, decode", 300, 5)
+_lastFrameLength(0)
 {
 }
 
 PacketLossTest::PacketLossTest(std::string name, std::string description)
 :
+NormalAsyncTest(name, description, 300, 5),
 _lossRate(0.1),
 _lossProbability(0.1),
 _lastFrame(NULL),
-_lastFrameLength(0),
-NormalAsyncTest(name, description, 300, 5)
+_lastFrameLength(0)
 {
 }
 
 PacketLossTest::PacketLossTest(std::string name, std::string description, double lossRate, bool useNack, unsigned int rttFrames /* = 0*/)
 :
+NormalAsyncTest(name, description, 300, 5, rttFrames),
 _lossRate(lossRate),
 _lastFrame(NULL),
-_lastFrameLength(0),
-NormalAsyncTest(name, description, 300, 5, rttFrames)
+_lastFrameLength(0)
 {
     assert(lossRate >= 0 && lossRate <= 1);
     if (useNack)
@@ -177,7 +178,6 @@ int PacketLossTest::DoPacketLoss()
     int size = 1;
     int kept = 0;
     int thrown = 0;
-    int count = 0;
     while ((size = NextPacket(1500, &packet)) > 0)
     {
         if (!PacketLoss(_lossProbability))

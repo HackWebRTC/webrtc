@@ -28,25 +28,25 @@ using namespace webrtc;
 
 Benchmark::Benchmark()
 :
+NormalAsyncTest("Benchmark", "Codec benchmark over a range of test cases", 6),
 _resultsFileName("../../../../testFiles/benchmark.txt"),
-_codecName("Default"),
-NormalAsyncTest("Benchmark", "Codec benchmark over a range of test cases", 6)
+_codecName("Default")
 {
 }
 
 Benchmark::Benchmark(std::string name, std::string description)
 :
+NormalAsyncTest(name, description, 6),
 _resultsFileName("../../../../testFiles/benchmark.txt"),
-_codecName("Default"),
-NormalAsyncTest(name, description, 6)
+_codecName("Default")
 {
 }
 
 Benchmark::Benchmark(std::string name, std::string description, std::string resultsFileName, std::string codecName)
 :
+NormalAsyncTest(name, description, 6),
 _resultsFileName(resultsFileName),
-_codecName(codecName),
-NormalAsyncTest(name, description, 6)
+_codecName(codecName)
 {
 }
 
@@ -86,7 +86,7 @@ Benchmark::Perform()
 
     for (it = sources.begin() ; it < sources.end(); it++)
     {
-        for (int i = 0; i < sizeof(size)/sizeof(*size); i++)
+        for (int i = 0; i < static_cast<int>(sizeof(size)/sizeof(*size)); i++)
         {
             for (int j = 0; j < nFrameRates; j++)
             {

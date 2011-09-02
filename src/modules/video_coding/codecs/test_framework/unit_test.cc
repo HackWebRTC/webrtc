@@ -36,6 +36,7 @@ _decodeCompleteCallback(NULL)
 
 UnitTest::UnitTest(std::string name, std::string description)
 :
+Test(name, description),
 _tests(0),
 _errors(0),
 _source(NULL),
@@ -45,8 +46,7 @@ _refDecFrame(NULL),
 _refEncFrameLength(0),
 _sourceFile(NULL),
 _encodeCompleteCallback(NULL),
-_decodeCompleteCallback(NULL),
-Test(name, description)
+_decodeCompleteCallback(NULL)
 {
 }
 
@@ -248,7 +248,7 @@ UnitTest::Setup()
         exit(EXIT_FAILURE);
     }
 
-    int frameLength = 0;
+    unsigned int frameLength = 0;
     int i=0;
     while (frameLength == 0)
     {
@@ -339,7 +339,7 @@ UnitTest::Decode()
         return WEBRTC_VIDEO_CODEC_OK;
     }
     int ret = _decoder->Decode(encodedImage, 0, NULL);
-    int frameLength = WaitForDecodedFrame();
+    unsigned int frameLength = WaitForDecodedFrame();
     assert(ret == WEBRTC_VIDEO_CODEC_OK && (frameLength == 0 || frameLength
         == _lengthSourceFrame));
     VIDEO_TEST(ret == WEBRTC_VIDEO_CODEC_OK && (frameLength == 0 || frameLength
@@ -696,7 +696,8 @@ UnitTest::Perform()
         //VIDEO_TEST_EXIT_ON_ERR(frameLength);
         VIDEO_TEST(frameLength > 0);
         encTimeStamp = _encodedVideoBuffer.GetTimeStamp();
-        VIDEO_TEST(_inputVideoBuffer.GetTimeStamp() == encTimeStamp);
+        VIDEO_TEST(_inputVideoBuffer.GetTimeStamp() ==
+                static_cast<unsigned>(encTimeStamp));
 
         frameLength = Decode();
         if (frameLength == 0)
@@ -709,7 +710,8 @@ UnitTest::Perform()
         {
             encTimeStamp = 0;
         }
-        VIDEO_TEST(_decodedVideoBuffer.GetTimeStamp() == encTimeStamp);
+        VIDEO_TEST(_decodedVideoBuffer.GetTimeStamp() ==
+                static_cast<unsigned>(encTimeStamp));
         frames++;
         sleepEvent.Wait(33);
     }
@@ -725,7 +727,6 @@ UnitTest::Perform()
 void
 UnitTest::RateControlTests()
 {
-    FILE *outFile = NULL;
     std::string outFileName;
     int frames = 0;
     RawImage inputImage;

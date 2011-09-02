@@ -20,7 +20,9 @@
 // Refer to http://stackoverflow.com/questions/1946445/
 //   is-there-better-way-to-write-do-while0-construct-to-avoid-compiler-warnings
 // for some discussion of the issue.
+#ifdef _WIN32
 #pragma warning(disable : 4127)
+#endif
 
 #define VIDEO_TEST(expr)                                                       \
     do                                                                         \
@@ -99,8 +101,8 @@ public:
                                    WebRtc_UWord32 decoderSpecificSize = 0,
                                    void* decoderSpecificInfo = NULL) :
       _encodedVideoBuffer(buffer),
-      _decoderSpecificSize(decoderSpecificSize),
       _decoderSpecificInfo(decoderSpecificInfo),
+      _decoderSpecificSize(decoderSpecificSize),
       _encodeComplete(false) {}
     WebRtc_Word32 Encoded(webrtc::EncodedImage& encodedImage,
                           const webrtc::CodecSpecificInfo* codecSpecificInfo,

@@ -18,6 +18,7 @@ using namespace webrtc;
 
 PerformanceTest::PerformanceTest(WebRtc_UWord32 bitRate)
 :
+NormalAsyncTest(bitRate),
 _numCodecs(0),
 _tests(NULL),
 _encoders(NULL),
@@ -27,13 +28,13 @@ _rawImageLock(NULL),
 _encodeEvents(new EventWrapper*[1]),
 _stopped(true),
 _encodeCompleteCallback(NULL),
-_decodeCompleteCallback(NULL),
-NormalAsyncTest(bitRate)
+_decodeCompleteCallback(NULL)
 {
 }
 
 PerformanceTest::PerformanceTest(WebRtc_UWord32 bitRate, WebRtc_UWord8 numCodecs)
 :
+NormalAsyncTest(bitRate),
 _numCodecs(numCodecs),
 _tests(new PerformanceTest*[_numCodecs]),
 _encoders(new VideoEncoder*[_numCodecs]),
@@ -43,8 +44,7 @@ _rawImageLock(RWLockWrapper::CreateRWLock()),
 _encodeEvents(new EventWrapper*[_numCodecs]),
 _stopped(true),
 _encodeCompleteCallback(NULL),
-_decodeCompleteCallback(NULL),
-NormalAsyncTest(bitRate)
+_decodeCompleteCallback(NULL)
 {
     for (int i=0; i < _numCodecs; i++)
     {

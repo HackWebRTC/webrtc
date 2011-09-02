@@ -46,12 +46,12 @@ struct SSIMcontext
 
 Test::Test(std::string name, std::string description)
 :
-_name(name),
-_description(description),
 _bitRate(0),
 _inname(""),
 _outname(""),
-_encodedName("")
+_encodedName(""),
+_name(name),
+_description(description)
 {
     memset(&_inst, 0, sizeof(_inst));
     unsigned int seed = static_cast<unsigned int>(0);
@@ -60,12 +60,12 @@ _encodedName("")
 
 Test::Test(std::string name, std::string description, WebRtc_UWord32 bitRate)
 :
-_name(name),
-_description(description),
 _bitRate(bitRate),
 _inname(""),
 _outname(""),
-_encodedName("")
+_encodedName(""),
+_name(name),
+_description(description)
 {
     memset(&_inst, 0, sizeof(_inst));
     unsigned int seed = static_cast<unsigned int>(0);
