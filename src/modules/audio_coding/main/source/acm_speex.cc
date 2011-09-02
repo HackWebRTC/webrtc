@@ -42,7 +42,7 @@
     //                            int16_t *encoded, int16_t len,
     //                            int16_t *decoded, int16_t *speechType);
     // int16_t WebRtcSpeex_DecoderInit(SPEEX_decinst_t *SPEEXdec_inst);
-    #include "speex_interface.h"
+    #include "modules/audio_coding/codecs/speex/interface/speex_interface.h"
 #endif
 
 namespace webrtc {
