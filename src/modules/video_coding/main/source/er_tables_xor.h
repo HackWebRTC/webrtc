@@ -11,15 +11,29 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_SOURCE_ER_TABLES_XOR_H_
 #define WEBRTC_MODULES_VIDEO_CODING_SOURCE_ER_TABLES_XOR_H_
 
-namespace webrtc
-{
+// This is a private header for media_opt_util.cc.
+// It should not be included by other files.
+
+namespace webrtc {
 
 // Table for average FEC recovery from packet loss, for XOR code.
 // From RPL model of random loss.
-// Input is the received packet loss (up to 50%), and FEC code parameters (up to 24x24):
-// i.e., averageFECRecoveryRS[k] where k= code_i*129 + loss_j;
-// code_i=1x1,2x1,2x2,..24x24, loss_j=0,1,..128.
-const unsigned char VCMAvgFECRecoveryXOR[38700] = {
+// Input is the received packet loss (up to 50%), and FEC code parameters
+// (up to 24x24):
+// i.e., kAvgFECRecoveryXOR[k] where k = code_i*129 + loss_j;
+// code_i=1x1,2x1,2x2,..24x24, loss_j = 0,1,..128.
+
+// Maximum number of source packets in off-line model
+static const int kMaxNumPackets = 24;
+// Max value of loss rates in off-line model
+static const int kPacketLossMax = 129;
+
+// Table size for model is: kPacketLossMax * numberOfFecCodes = 38700
+// numberOfFecCodes is determined as:
+// {(1,1), (2,1), (2,2),...(n,1),..(n,n-1), (n,n)} = n*(n+1)/2
+// for n = kMaxNumPackets.
+static const int kSizeAvgFECRecoveryXOR = 38700;
+static const unsigned char kAvgFECRecoveryXOR[kSizeAvgFECRecoveryXOR] = {
 0,
 0,
 1,

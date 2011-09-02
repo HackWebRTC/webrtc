@@ -11,14 +11,17 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_SOURCE_FEC_TABLES_XOR_H_
 #define WEBRTC_MODULES_VIDEO_CODING_SOURCE_FEC_TABLES_XOR_H_
 
-namespace webrtc
-{
+// This is a private header for media_opt_util.cc.
+// It should not be included by other files.
+
+namespace webrtc {
 
 // Table for Protection factor (code rate) of delta frames, for the XOR FEC.
 // Input is the packet loss and an effective rate (bits/frame).
-// Output is array codeRateXORTable[k], where k = rate_i*129 + loss_j;
-// loss_j=0,1,..128, and rate_i varies over some range.
-const unsigned char VCMCodeRateXORTable[6450] = {
+// Output is array kCodeRateXORTable[k], where k = rate_i*129 + loss_j;
+// loss_j = 0,1,..128, and rate_i varies over some range.
+static const int kSizeCodeRateXORTable = 6450;
+static const unsigned char kCodeRateXORTable[kSizeCodeRateXORTable] = {
 0,
 0,
 0,

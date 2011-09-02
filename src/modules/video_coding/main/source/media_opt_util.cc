@@ -225,17 +225,6 @@ VCMFecMethod::AvgRecoveryFEC(const VCMProtectionParameters* parameters) const
                         (static_cast<float> (bitRatePerFrame * 1000.0) /
                          static_cast<float> (8.0 * _maxPayloadSize) + 0.5);
 
-    // Parameters for tables
-    // Maximum number of source packets in off-line model
-    const WebRtc_UWord8 maxNumPackets = 24;
-    // Max value of loss rates in off-line model
-    const WebRtc_UWord8 plossMax = 129;
-
-    // Table size for model is:  plossMax * numberOfFecCodes = 38700
-    // numberOfFecCodes is determined as:
-    // {(1,1), (2,1), (2,2),...(n,1),..(n,n-1), (n,n)} = n*(n+1)/2; for n=24.
-    const WebRtc_UWord16 maxErTableSize = 38700;
-
     const float protectionFactor = static_cast<float>(_protectionFactorD) /
                                                       255.0;
 
@@ -250,26 +239,26 @@ VCMFecMethod::AvgRecoveryFEC(const VCMProtectionParameters* parameters) const
         return 0.0;
     }
 
-    // Table defined up to maxNumPackets
-    if (sourcePacketsPerFrame > maxNumPackets)
+    // Table defined up to kMaxNumPackets
+    if (sourcePacketsPerFrame > kMaxNumPackets)
     {
-        sourcePacketsPerFrame = maxNumPackets;
+        sourcePacketsPerFrame = kMaxNumPackets;
     }
 
-    // Table defined up to maxNumPackets
-    if (fecPacketsPerFrame > maxNumPackets)
+    // Table defined up to kMaxNumPackets
+    if (fecPacketsPerFrame > kMaxNumPackets)
     {
-        fecPacketsPerFrame = maxNumPackets;
+        fecPacketsPerFrame = kMaxNumPackets;
     }
 
-    // Code index for tables: up to (maxNumPackets * maxNumPackets)
-    WebRtc_UWord16 codeIndexTable[maxNumPackets * maxNumPackets];
+    // Code index for tables: up to (kMaxNumPackets * kMaxNumPackets)
+    WebRtc_UWord16 codeIndexTable[kMaxNumPackets * kMaxNumPackets];
     WebRtc_UWord16 k = 0;
-    for (WebRtc_UWord8 i = 1; i <= maxNumPackets; i++)
+    for (WebRtc_UWord8 i = 1; i <= kMaxNumPackets; i++)
     {
         for (WebRtc_UWord8 j = 1; j <= i; j++)
         {
-            codeIndexTable[(j - 1) * maxNumPackets + i - 1] = k;
+            codeIndexTable[(j - 1) * kMaxNumPackets + i - 1] = k;
             k += 1;
         }
     }
@@ -278,21 +267,20 @@ VCMFecMethod::AvgRecoveryFEC(const VCMProtectionParameters* parameters) const
                              parameters->lossPr + 0.5f);
 
     // Constrain lossRate to 50%: tables defined up to 50%
-    if (lossRate >= plossMax)
+    if (lossRate >= kPacketLossMax)
     {
-        lossRate = plossMax - 1;
+        lossRate = kPacketLossMax - 1;
     }
 
-    const WebRtc_UWord16 codeIndex = (fecPacketsPerFrame - 1) * maxNumPackets +
+    const WebRtc_UWord16 codeIndex = (fecPacketsPerFrame - 1) * kMaxNumPackets +
                                      (sourcePacketsPerFrame - 1);
 
-    const WebRtc_UWord16 indexTable = codeIndexTable[codeIndex] * plossMax +
+    const WebRtc_UWord16 indexTable = codeIndexTable[codeIndex] * kPacketLossMax +
                                       lossRate;
 
     // Check on table index
-    assert (indexTable < maxErTableSize);
-
-    float avgFecRecov = static_cast<float> (VCMAvgFECRecoveryXOR[indexTable]);
+    assert(indexTable < kSizeAvgFECRecoveryXOR);
+    float avgFecRecov = static_cast<float>(kAvgFECRecoveryXOR[indexTable]);
 
     return avgFecRecov;
 }
@@ -322,12 +310,9 @@ VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters)
     WebRtc_UWord8 lossThr = 0;
     WebRtc_UWord8 packetNumThr = 1;
 
-    // Size of table
-    const WebRtc_UWord16 maxFecTableSize = 6450;
-    // Parameters for range of rate and packet loss for tables
+    // Parameters for range of rate index of table.
     const WebRtc_UWord8 ratePar1 = 5;
     const WebRtc_UWord8 ratePar2 = 49;
-    const WebRtc_UWord8 plossMax = 129;
 
     // Spatial resolution size, relative to a reference size.
     float spatialSizeToRef = static_cast<float>
@@ -365,17 +350,17 @@ VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters)
 
     // Restrict packet loss range to 50:
     // current tables defined only up to 50%
-    if (packetLoss >= plossMax)
+    if (packetLoss >= kPacketLossMax)
     {
-        packetLoss = plossMax - 1;
+        packetLoss = kPacketLossMax - 1;
     }
-    WebRtc_UWord16 indexTable = rateIndexTable * plossMax + packetLoss;
+    WebRtc_UWord16 indexTable = rateIndexTable * kPacketLossMax + packetLoss;
 
     // Check on table index
-    assert(indexTable < maxFecTableSize);
+    assert(indexTable < kSizeCodeRateXORTable);
 
     // Protection factor for P frame
-    codeRateDelta = VCMCodeRateXORTable[indexTable];
+    codeRateDelta = kCodeRateXORTable[indexTable];
 
     if (packetLoss > lossThr && avgTotPackets > packetNumThr)
     {
@@ -387,9 +372,9 @@ VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters)
     }
 
     // Check limit on amount of protection for P frame; 50% is max.
-    if (codeRateDelta >= plossMax)
+    if (codeRateDelta >= kPacketLossMax)
     {
-        codeRateDelta = plossMax - 1;
+        codeRateDelta = kPacketLossMax - 1;
     }
 
     float adjustFec = _qmRobustness->AdjustFecFactor(codeRateDelta,
@@ -414,21 +399,21 @@ VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters)
     rateIndexTable = (WebRtc_UWord8) VCM_MAX(VCM_MIN(
                       1 + (boostKey * effRateFecTable - ratePar1) /
                       ratePar1,ratePar2),0);
-    WebRtc_UWord16 indexTableKey = rateIndexTable * plossMax + packetLoss;
+    WebRtc_UWord16 indexTableKey = rateIndexTable * kPacketLossMax + packetLoss;
 
-    indexTableKey = VCM_MIN(indexTableKey, maxFecTableSize);
+    indexTableKey = VCM_MIN(indexTableKey, kSizeCodeRateXORTable);
 
     // Check on table index
-    assert(indexTableKey < maxFecTableSize);
+    assert(indexTableKey < kSizeCodeRateXORTable);
 
     // Protection factor for I frame
-    codeRateKey = VCMCodeRateXORTable[indexTableKey];
+    codeRateKey = kCodeRateXORTable[indexTableKey];
 
     // Boosting for Key frame.
-    WebRtc_UWord32 boostKeyProt = _scaleProtKey * codeRateDelta;
-    if ( boostKeyProt >= plossMax)
+    int boostKeyProt = _scaleProtKey * codeRateDelta;
+    if (boostKeyProt >= kPacketLossMax)
     {
-        boostKeyProt = plossMax - 1;
+        boostKeyProt = kPacketLossMax - 1;
     }
 
     // Make sure I frame protection is at least larger than P frame protection,
@@ -437,9 +422,9 @@ VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters)
             VCM_MAX(boostKeyProt, codeRateKey)));
 
     // Check limit on amount of protection for I frame: 50% is max.
-    if (codeRateKey >= plossMax)
+    if (codeRateKey >= kPacketLossMax)
     {
-        codeRateKey = plossMax - 1;
+        codeRateKey = kPacketLossMax - 1;
     }
 
     _protectionFactorK = codeRateKey;
