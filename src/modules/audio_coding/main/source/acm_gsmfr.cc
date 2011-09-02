@@ -10,7 +10,6 @@
 
 #include "acm_gsmfr.h"
 #include "acm_common_defs.h"
-#include "acm_gsmfr.h"
 #include "acm_neteq.h"
 #include "trace.h"
 #include "webrtc_neteq.h"
