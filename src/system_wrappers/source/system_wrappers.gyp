@@ -34,6 +34,7 @@
         '../interface/file_wrapper.h',
         '../interface/list_wrapper.h',
         '../interface/map_wrapper.h',
+        '../interface/ref_count.h',
         '../interface/rw_lock_wrapper.h',
         '../interface/scoped_ptr.h',
         '../interface/sort.h',
