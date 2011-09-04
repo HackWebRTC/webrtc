@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
- * 
+ *
  * Use of this source code is governed by a BSD-style license that can be found
  * in the LICENSE file in the root of the source tree. An additional
  * intellectual property rights grant can be found in the file PATENTS. All
@@ -185,25 +185,19 @@ public class AndroidTest extends Activity {
                         this,
                         android.R.layout.simple_spinner_dropdown_item,
                         ap4);
-        String codecs[] = {"iSAC", "PCMU", "PCMA", "iLBC", "G.729"};
+        String codecs[] = {"iSAC", "PCMU", "PCMA", "iLBC"};
         final ArrayAdapter<String> adapterCodecs = new ArrayAdapter<String>(
                         this,
                         android.R.layout.simple_spinner_dropdown_item,
                         codecs);
-        String audio[] =
-                        {"Volume Up", "Volume Down", "Loudspeaker", "Earpiece"};
-        final ArrayAdapter<String> adapterAudio = new ArrayAdapter<String>(
-                        this,
-                        android.R.layout.simple_spinner_dropdown_item,
-                        audio);
 
         final Spinner spinnerSettings1 = (Spinner) findViewById(R.id.Spinner01);
         final Spinner spinnerSettings2 = (Spinner) findViewById(R.id.Spinner02);
         spinnerSettings1.setMinimumWidth(200);
         String settings[] =
-                        {"Audio", "Codec", "Echo Control", "Noise Suppression",
-                                        "Automatic Gain Control",
-                                        "Voice Activity Detection"};
+                        {"Codec", "Echo Control", "Noise Suppression",
+                         "Automatic Gain Control",
+                         "Voice Activity Detection"};
         ArrayAdapter<String> adapterSettings1 = new ArrayAdapter<String>(
                         this,
                         android.R.layout.simple_spinner_dropdown_item,
@@ -217,26 +211,22 @@ public class AndroidTest extends Activity {
                 _settingMenu = position;
                 _settingSet = false;
                 if (position == 0) {
-                    spinnerSettings2.setAdapter(adapterAudio);
-                    spinnerSettings2.setSelection(_audioIndex);
-                }
-                if (position == 1) {
                     spinnerSettings2.setAdapter(adapterCodecs);
                     spinnerSettings2.setSelection(_codecIndex);
                 }
-                if (position == 2) {
+                if (position == 1) {
                     spinnerSettings2.setAdapter(adapterAp1);
                     spinnerSettings2.setSelection(_ecIndex);
                 }
-                if (position == 3) {
+                if (position == 2) {
                     spinnerSettings2.setAdapter(adapterAp2);
                     spinnerSettings2.setSelection(_nsIndex);
                 }
-                if (position == 4) {
+                if (position == 3) {
                     spinnerSettings2.setAdapter(adapterAp3);
                     spinnerSettings2.setSelection(_agcIndex);
                 }
-                if (position == 5) {
+                if (position == 4) {
                     spinnerSettings2.setAdapter(adapterAp4);
                     spinnerSettings2.setSelection(_vadIndex);
                 }
@@ -389,7 +379,7 @@ public class AndroidTest extends Activity {
         Create(); // Error logging is done in native API wrapper
 
         // Initialize
-        if (0 != Init(0, 0, 0, false, false)) {
+        if (0 != Init(false, false)) {
             WebrtcLog("VoE init failed");
         }
 
@@ -438,12 +428,6 @@ public class AndroidTest extends Activity {
             // Route audio to earpiece
             if (0 != SetLoudspeakerStatus(false)) {
                 WebrtcLog("VoE set louspeaker status failed");
-                return -1;
-            }
-
-            // set volume to default value
-            if (0 != SetSpeakerVolume(_volumeLevel)) {
-                WebrtcLog("VoE set speaker volume failed");
                 return -1;
             }
 
@@ -1185,14 +1169,15 @@ public class AndroidTest extends Activity {
     private native int SetLoudspeakerStatus(boolean enable);
 
     /*
-     * this is used to load the 'AndroidJavaAPI' library on application startup.
+     * this is used to load the 'webrtc-voice-demo-jni'
+     * library on application startup.
      * The library has already been unpacked into
-     * /data/data/webrtc.android.AndroidTest/lib/libAndroidJavaAPI.so at
-     * installation time by the package manager.
+     * /data/data/webrtc.android.AndroidTest/lib/libwebrtc-voice-demo-jni.so
+     * at installation time by the package manager.
      */
     static {
-        Log.d("*Webrtc*", "Loading AndroidJavaAPI...");
-        System.loadLibrary("AndroidJavaAPI");
+        Log.d("*Webrtc*", "Loading webrtc-voice-demo-jni...");
+        System.loadLibrary("webrtc-voice-demo-jni");
 
         Log.d("*Webrtc*", "Calling native init...");
         if (!NativeInit()) {

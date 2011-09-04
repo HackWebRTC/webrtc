@@ -6,6 +6,8 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+ifdef NDK_ROOT
+
 MY_WEBRTC_ROOT_PATH := $(call my-dir)
 
 MY_WEBRTC_SRC_PATH := ../../../../../../..
@@ -64,9 +66,6 @@ LOCAL_SHARED_LIBRARIES := \
 
 LOCAL_PRELINK_MODULE := false
 
-ifndef NDK_ROOT
-include external/stlport/libstlport.mk
-endif
 include $(BUILD_SHARED_LIBRARY)
 
 ###
@@ -76,7 +75,7 @@ LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
 LOCAL_ARM_MODE := arm
-LOCAL_MODULE := libwebrtc
+LOCAL_MODULE := libwebrtc-voice-demo-jni
 LOCAL_MODULE_TAGS := optional
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \
@@ -109,7 +108,37 @@ LOCAL_SHARED_LIBRARIES := \
 
 LOCAL_PRELINK_MODULE := false
 
-ifndef NDK_ROOT
-include external/stlport/libstlport.mk
-endif
 include $(BUILD_SHARED_LIBRARY)
+
+else
+
+LOCAL_PATH := $(call my-dir)
+
+include $(CLEAR_VARS)
+
+LOCAL_MODULE_TAGS := tests
+LOCAL_MODULE := libwebrtc-voice-demo-jni
+LOCAL_CPP_EXTENSION := .cc
+LOCAL_SRC_FILES := android_test.cc
+LOCAL_CFLAGS := \
+    '-DWEBRTC_TARGET_PC' \
+    '-DWEBRTC_ANDROID'
+
+LOCAL_C_INCLUDES := \
+    $(LOCAL_PATH)/../../../auto_test \
+    $(LOCAL_PATH)/../../../../interface \
+    $(LOCAL_PATH)/../../../../../.. \
+    $(LOCAL_PATH)/../../../../../../system_wrappers/interface
+
+LOCAL_PRELINK_MODULE := false
+
+LOCAL_SHARED_LIBRARIES := \
+    libutils \
+    libstlport \
+    libandroid \
+    libwebrtc \
+    libGLESv2
+
+include $(BUILD_SHARED_LIBRARY)
+
+endif
