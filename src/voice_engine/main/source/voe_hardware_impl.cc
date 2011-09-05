@@ -329,7 +329,7 @@ int VoEHardwareImpl::GetPlayoutDeviceName(int index,
 
     if (strGuidUTF8 != NULL)
     {
-        strncpy(strGuidUTF8, name, strLen);
+        strncpy(strGuidUTF8, guid, strLen);
         WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_instanceId, -1),
                      "  Output: strGuidUTF8=%s", strGuidUTF8);
     }
