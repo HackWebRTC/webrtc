@@ -85,8 +85,7 @@ public:
     virtual void Decoded(const webrtc::RawImage& decodedImage);
     virtual webrtc::CodecSpecificInfo*
     CopyCodecSpecificInfo(
-        const webrtc::CodecSpecificInfo* /*codecSpecificInfo */) const
-    { return NULL; };
+        const webrtc::CodecSpecificInfo* codecSpecificInfo) const;
     virtual void CopyEncodedImage(TestVideoEncodedBuffer& dest,
                                   webrtc::EncodedImage& src,
                                   void* /*codecSpecificInfo*/) const;

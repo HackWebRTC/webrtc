@@ -169,6 +169,7 @@ NormalAsyncTest::Teardown()
 {
     Test::Teardown();
     fclose(_sourceFile);
+    fclose(_encodedFile);
     fclose(_decodedFile);
 }
 
@@ -527,6 +528,16 @@ NormalAsyncTest::Decode(int lossValue)
         _totalDecodeTime += tGetTime() - _decodeTimes[encodedImage._timeStamp];
     }
     return ret;
+}
+
+webrtc::CodecSpecificInfo*
+NormalAsyncTest::CopyCodecSpecificInfo(
+        const webrtc::CodecSpecificInfo* codecSpecificInfo) const
+{
+    webrtc::CodecSpecificInfo* info = new webrtc::CodecSpecificInfo;
+    info->codecType = codecSpecificInfo->codecType;
+    info->codecSpecific = codecSpecificInfo->codecSpecific;
+    return info;
 }
 
 void NormalAsyncTest::CodecSpecific_InitBitrate()
