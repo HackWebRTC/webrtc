@@ -11,6 +11,8 @@
 #ifndef MODULES_INTERFACE_MODULE_H_
 #define MODULES_INTERFACE_MODULE_H_
 
+#include <assert.h>
+
 #include "typedefs.h"
 
 namespace webrtc {
@@ -41,13 +43,23 @@ class RefCountedModule : public Module {
  public:
   // Increase the reference count by one.
   // Returns the incremented reference count.
-  virtual int32_t AddRef() = 0;
+  // TODO(perkj): Make this pure virtual when Chromium have implemented  
+  // reference counting ADM and Video capture module.
+  virtual int32_t AddRef() {
+    assert("Not implemented.");
+    return 1;
+  }
 
   // Decrease the reference count by one.
   // Returns the decreased reference count.
   // Returns 0 if the last reference was just released.
   // When the reference count reach 0 the object will self-destruct.
-  virtual int32_t Release() = 0;
+  // TODO(perkj): Make this pure virtual when Chromium have implemented  
+  // reference counting ADM and Video capture module.
+  virtual int32_t Release() {
+    assert("Not implemented.");
+    return 1;
+  }
 
  protected:
   virtual ~RefCountedModule() {}
