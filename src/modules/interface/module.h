@@ -46,7 +46,7 @@ class RefCountedModule : public Module {
   // TODO(perkj): Make this pure virtual when Chromium have implemented  
   // reference counting ADM and Video capture module.
   virtual int32_t AddRef() {
-    assert("Not implemented.");
+    assert(!"Not implemented.");
     return 1;
   }
 
@@ -57,7 +57,7 @@ class RefCountedModule : public Module {
   // TODO(perkj): Make this pure virtual when Chromium have implemented  
   // reference counting ADM and Video capture module.
   virtual int32_t Release() {
-    assert("Not implemented.");
+    assert(!"Not implemented.");
     return 1;
   }
 
