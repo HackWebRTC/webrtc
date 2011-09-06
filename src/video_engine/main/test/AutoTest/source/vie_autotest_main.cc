@@ -331,17 +331,18 @@ int ViEAutoTestMain::GetClassTestSelection()
         ViETest::Log("\t 11. Go back to previous menu");
         ViETest::Log("Select type of test: ");
 
+        int items_read = 0;
         if (_useAnswerFile)
         {
             //GetNextAnswer(answer);
         }
         else
         {
-            scanf("%d", &testType);
+            items_read = scanf("%d", &testType);
             getchar();
         }
         ViETest::Log("\n");
-        if (testType >= 1 && testType <= 13)
+        if (items_read == 1 && testType >= 1 && testType <= 13)
         {
             return testType;
         }
