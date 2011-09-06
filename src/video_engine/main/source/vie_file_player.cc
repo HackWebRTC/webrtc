@@ -312,8 +312,8 @@ int ViEFilePlayer::StopPlayAudio()
         StopPlayAudioLocally(_localAudioChannel);
     }
     _localAudioChannel = -1;
-    while (_audioChannelBuffers.PopFront() != -1);
-    while (_audioChannelsSending.Erase(_audioChannelsSending.First()) != -1);
+    while (_audioChannelBuffers.PopFront() != -1) {}
+    while (_audioChannelsSending.Erase(_audioChannelsSending.First()) != -1) {}
     _audioClients = 0;
     return 0;
 }
