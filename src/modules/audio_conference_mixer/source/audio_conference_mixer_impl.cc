@@ -260,7 +260,7 @@ WebRtc_Word32 AudioConferenceMixerImpl::Process()
     // Clear mixedParticipantsMap to avoid memory leak warning.
     // Please note that the mixedParticipantsMap doesn't own any dynamically
     // allocated memory.
-    while(mixedParticipantsMap.Erase(mixedParticipantsMap.First()) == 0);
+    while(mixedParticipantsMap.Erase(mixedParticipantsMap.First()) == 0) {}
 
     // Get an AudioFrame for mixing from the memory pool.
     AudioFrame* mixedAudio = NULL;
