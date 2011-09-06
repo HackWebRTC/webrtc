@@ -74,6 +74,7 @@
       'target_name': 'voe_cmd_test',
       'type': 'executable',
       'dependencies': [
+        '../testing/gtest.gyp:gtest',
         'voice_engine/main/source/voice_engine_core.gyp:voice_engine_core',
         'system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
