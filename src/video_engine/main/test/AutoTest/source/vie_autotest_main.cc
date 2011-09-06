@@ -351,7 +351,7 @@ int ViEAutoTestMain::GetClassTestSelection()
     return -1;
 }
 
-bool ViEAutoTestMain::GetAnswer(int index, string& answer)
+bool ViEAutoTestMain::GetAnswer(int index, std::string& answer)
 {
     if (!_useAnswerFile || index > _answersCount)
     {

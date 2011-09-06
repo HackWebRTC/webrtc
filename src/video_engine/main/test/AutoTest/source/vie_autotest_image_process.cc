@@ -21,7 +21,7 @@
 #include "tb_video_channel.h"
 #include "tb_capture_device.h"
 
-class MyEffectFilter: public ViEEffectFilter
+class MyEffectFilter: public webrtc::ViEEffectFilter
 {
 public:
     MyEffectFilter() {}

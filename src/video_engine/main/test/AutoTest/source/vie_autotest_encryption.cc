@@ -21,7 +21,7 @@
 #include "tb_interfaces.h"
 #include "tb_video_channel.h"
 
-class ViEAutotestEncryption: public Encryption
+class ViEAutotestEncryption: public webrtc::Encryption
 {
 public:
     ViEAutotestEncryption()

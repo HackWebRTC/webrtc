@@ -37,8 +37,6 @@
 #include <string>
 #endif
 
-using namespace webrtc;
-
 class ViEAutoTest
 {
 public:
@@ -54,7 +52,8 @@ public:
     int ViECustomCall();
 
     // general settings functions
-    bool GetVideoDevice(ViEBase* ptrViEBase, ViECapture* ptrViECapture,
+    bool GetVideoDevice(webrtc::ViEBase* ptrViEBase,
+                        webrtc::ViECapture* ptrViECapture,
                         char* captureDeviceName, char* captureDeviceUniqueId);
     bool GetIPAddress(char* IP);
 #ifndef WEBRTC_ANDROID
@@ -70,16 +69,20 @@ public:
 
     // video settings functions
     bool GetVideoPorts(int* txPort, int* rxPort);
-    bool GetVideoCodec(ViECodec* ptrViECodec, webrtc::VideoCodec& videoCodec);
+    bool GetVideoCodec(webrtc::ViECodec* ptrViECodec,
+                       webrtc::VideoCodec& videoCodec);
 
     // audio settings functions
-    bool GetAudioDevices(VoEBase* ptrVEBase, VoEHardware* ptrVEHardware,
+    bool GetAudioDevices(webrtc::VoEBase* ptrVEBase,
+                         webrtc::VoEHardware* ptrVEHardware,
                          char* recordingDeviceName, int& recordingDeviceIndex,
                          char* playbackDeviceName, int& playbackDeviceIndex);
-    bool GetAudioDevices(VoEBase* ptrVEBase, VoEHardware* ptrVEHardware,
+    bool GetAudioDevices(webrtc::VoEBase* ptrVEBase,
+                         webrtc::VoEHardware* ptrVEHardware,
                          int& recordingDeviceIndex, int& playbackDeviceIndex);
     bool GetAudioPorts(int* txPort, int* rxPort);
-    bool GetAudioCodec(VoECodec* ptrVeCodec, CodecInst& audioCodec);
+    bool GetAudioCodec(webrtc::VoECodec* ptrVeCodec,
+                       webrtc::CodecInst& audioCodec);
 
     // vie_autotest_base.cc
     int ViEBaseStandardTest();
@@ -135,9 +138,9 @@ private:
     void* _window1;
     void* _window2;
 
-    VideoRenderType _renderType;
-    VideoRender* _vrm1;
-    VideoRender* _vrm2;
+    webrtc::VideoRenderType _renderType;
+    webrtc::VideoRender* _vrm1;
+    webrtc::VideoRender* _vrm2;
 };
 
 #endif  // WEBRTC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_INTERFACE_VIE_AUTOTEST_H_
