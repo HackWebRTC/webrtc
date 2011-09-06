@@ -27,7 +27,7 @@ class ViEAutoTestWindowManager: public ViEAutoTestWindowManagerInterface
 {
 public:
     ViEAutoTestWindowManager();
-    ~ViEAutoTestWindowManager();
+    virtual ~ViEAutoTestWindowManager();
     virtual void* GetWindow1();
     virtual void* GetWindow2();
     virtual int CreateWindows(AutoTestRect window1Size,
