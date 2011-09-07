@@ -843,8 +843,11 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
 
     // TODO(pw): how do we know it's a golden or alt reference frame? libvpx will
     // provide an API for now I added it temporarily
-    WebRtc_Word16 pictureId = codecSpecificInfo->codecSpecific.VP8.pictureId;
-    if (codecSpecificInfo && pictureId > -1)
+    WebRtc_Word16 pictureId = -1;
+    if (codecSpecificInfo) {
+        pictureId = codecSpecificInfo->codecSpecific.VP8.pictureId;
+    }
+    if (pictureId > -1)
     {
         if ((lastRefUpdates & VP8_GOLD_FRAME)
                 || (lastRefUpdates & VP8_ALTR_FRAME))
