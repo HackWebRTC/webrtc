@@ -44,13 +44,15 @@ void* ViEAutoTestWindowManager::GetWindow2()
 
 int ViEAutoTestWindowManager::TerminateWindows()
 {
-    if (_hwnd1)
+    if (_hdsp1)
     {
         ViEDestroyWindow(&_hwnd1, _hdsp1);
+        _hdsp1 = NULL;
     }
-    if (_hwnd2)
+    if (_hdsp2)
     {
         ViEDestroyWindow(&_hwnd2, _hdsp2);
+        _hdsp2 = NULL;
     }
     return 0;
 }
