@@ -377,23 +377,25 @@ void GtkMainWnd::OnRedraw() {
       scaled += width * 2;
     }
 
-    image = reinterpret_cast<const uint32*>(local_renderer_->image());
-    scaled = reinterpret_cast<uint32*>(draw_buffer_.get());
-    // Position the local preview on the right side.
-    scaled += (width * 2) - (local_renderer_->width() / 2);
-    // right margin...
-    scaled -= 10;
-    // ... towards the bottom.
-    scaled += (height * width * 4) -
-              ((local_renderer_->height() / 2) *
-               (local_renderer_->width() / 2) * 4);
-    // bottom margin...
-    scaled -= (width * 2) * 5;
-    for (int r = 0; r < local_renderer_->height(); r += 2) {
-      for (int c = 0; c < local_renderer_->width(); c += 2) {
-        scaled[c / 2] = image[c + r * local_renderer_->width()];
+    if (local_renderer_.get() && local_renderer_->image()) {
+      image = reinterpret_cast<const uint32*>(local_renderer_->image());
+      scaled = reinterpret_cast<uint32*>(draw_buffer_.get());
+      // Position the local preview on the right side.
+      scaled += (width * 2) - (local_renderer_->width() / 2);
+      // right margin...
+      scaled -= 10;
+      // ... towards the bottom.
+      scaled += (height * width * 4) -
+                ((local_renderer_->height() / 2) *
+                 (local_renderer_->width() / 2) * 4);
+      // bottom margin...
+      scaled -= (width * 2) * 5;
+      for (int r = 0; r < local_renderer_->height(); r += 2) {
+        for (int c = 0; c < local_renderer_->width(); c += 2) {
+          scaled[c / 2] = image[c + r * local_renderer_->width()];
+        }
+        scaled += width * 2;
       }
-      scaled += width * 2;
     }
 
     gdk_draw_rgb_32_image(draw_area_->window,
