@@ -72,6 +72,13 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../interface \
     $(LOCAL_PATH)/../../../.. 
 
+ifeq ($(ARCH_ARM_HAVE_NEON),true)
+LOCAL_SRC_FILES += \
+    min_max_operations_neon.c
+LOCAL_CFLAGS += \
+    $(MY_ARM_CFLAGS_NEON)
+endif
+
 LOCAL_SHARED_LIBRARIES := libstlport
 
 ifeq ($(TARGET_OS)-$(TARGET_SIMULATOR),linux-true)

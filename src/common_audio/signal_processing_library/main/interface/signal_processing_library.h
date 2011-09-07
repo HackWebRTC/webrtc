@@ -228,7 +228,7 @@ WebRtc_Word16 WebRtcSpl_OnesArrayW32(WebRtc_Word32* vector,
 
 // Minimum and maximum operations. Implementation in min_max_operations.c.
 // Descriptions at bottom of file.
-WebRtc_Word16 WebRtcSpl_MaxAbsValueW16(G_CONST WebRtc_Word16* vector,
+WebRtc_Word16 WebRtcSpl_MaxAbsValueW16(const WebRtc_Word16* vector,
                                        WebRtc_Word16 length);
 WebRtc_Word32 WebRtcSpl_MaxAbsValueW32(G_CONST WebRtc_Word32* vector,
                                        WebRtc_Word16 length);
