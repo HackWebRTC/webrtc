@@ -150,6 +150,9 @@
         }                                                               \
     }
 #else
+#define ASSERT_TRUE(expr) TEST_MUSTPASS(!(expr))
+#define ASSERT_FALSE(expr) TEST_MUSTPASS(expr)
+#define TEST_MUSTFAIL(expr) TEST_MUSTPASS(!((expr) == -1))
 #define TEST_MUSTPASS(expr)                                              \
     {                                                                    \
         if ((expr))                                                      \

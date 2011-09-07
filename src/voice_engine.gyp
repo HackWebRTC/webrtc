@@ -46,6 +46,8 @@
       ],
       'include_dirs': [
         'voice_engine/main/test/auto_test',
+        'modules/interface',
+        'modules/audio_device/main/interface',
       ],
       'sources': [
         'voice_engine/main/test/auto_test/voe_cpu_test.cc',

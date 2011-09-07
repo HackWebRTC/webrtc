@@ -34,11 +34,7 @@ public:
 
     virtual int DeRegisterVoiceEngineObserver();
 
-    virtual int RegisterAudioDeviceModule(AudioDeviceModule& adm);
-
-    virtual int DeRegisterAudioDeviceModule();
-
-    virtual int Init();
+    virtual int Init(AudioDeviceModule* external_adm = NULL);
 
     virtual int Terminate();
 

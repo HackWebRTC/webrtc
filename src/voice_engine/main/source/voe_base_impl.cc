@@ -10,20 +10,19 @@
 
 #include "voe_base_impl.h"
 
-#include "voice_engine_impl.h"
-#include "voe_errors.h"
-#include "trace.h"
+#include "audio_coding_module.h"
+#include "audio_device_impl.h"
+#include "audio_processing.h"
+#include "channel.h"
 #include "critical_section_wrapper.h"
 #include "file_wrapper.h"
-#include "audio_processing.h"
-
-#include "channel.h"
 #include "output_mixer.h"
-#include "transmit_mixer.h"
-
-#include "audio_coding_module.h"
 #include "signal_processing_library.h"
+#include "trace.h"
+#include "transmit_mixer.h"
 #include "utility.h"
+#include "voe_errors.h"
+#include "voice_engine_impl.h"
 
 #if (defined(_WIN32) && defined(_DLL) && (_MSC_VER == 1400))
 // Fix for VS 2005 MD/MDd link problem
@@ -356,48 +355,10 @@ int VoEBaseImpl::DeRegisterVoiceEngineObserver()
     return 0;
 }
 
-int VoEBaseImpl::RegisterAudioDeviceModule(AudioDeviceModule& adm)
+int VoEBaseImpl::Init(AudioDeviceModule* external_adm)
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
-                 "RegisterAudioDeviceModule(adm=%p)", &adm);
-    CriticalSectionScoped cs(*_apiCritPtr);
-
-    if (_engineStatistics.Initialized())
-    {
-        _engineStatistics.SetLastError(VE_INVALID_OPERATION, kTraceError,
-                                       "Cannot register ADM when initialized");
-        return -1;
-    }
-
-    _audioDevicePtr = &adm;
-    _usingExternalAudioDevice = true;
-
-    return 0;
-}
-
-int VoEBaseImpl::DeRegisterAudioDeviceModule()
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
-                 "DeRegisterAudioDeviceModule()");
-    CriticalSectionScoped cs(*_apiCritPtr);
-
-    if (_engineStatistics.Initialized())
-    {
-        _engineStatistics.SetLastError(VE_INVALID_OPERATION, kTraceError,
-                                       "Cannot de-register ADM when "
-                                       "initialized");
-        return -1;
-    }
-
-    _audioDevicePtr = NULL;
-    _usingExternalAudioDevice = false;
-
-    return 0;
-}
-
-int VoEBaseImpl::Init()
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1), "Init()");
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1), 
+        "Init(external_adm=0x%p)", external_adm);
     CriticalSectionScoped cs(*_apiCritPtr);
 
     if (_engineStatistics.Initialized())
@@ -558,15 +519,14 @@ int VoEBaseImpl::Init()
         }
     }
 
-    // Create the Audio Device Module (ADM) if it does not already exist
-
-    if (_audioDevicePtr == NULL)
+    // Create and internal ADM if the user has not added and external
+    // ADM implementation as input to Init().
+    if (external_adm == NULL)
     {
-        // Create the ADM
-        // _audioDeviceLayer is set by
-        // VoEHardwareImpl::SetAudioDeviceLayer
-        _audioDevicePtr = AudioDeviceModule::Create(VoEId(_instanceId, -1),
-                                                    _audioDeviceLayer);
+        // Create the internal ADM implementation.
+        _audioDevicePtr = AudioDeviceModuleImpl::Create(
+            VoEId(_instanceId, -1), _audioDeviceLayer);
+        
         if (_audioDevicePtr == NULL)
         {
             _engineStatistics.SetLastError(VE_NO_MEMORY, kTraceCritical,
@@ -574,6 +534,16 @@ int VoEBaseImpl::Init()
             return -1;
         }
     }
+    else
+    {
+        // Use the already existing external ADM implementation.
+        _audioDevicePtr = external_adm;
+        WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, -1),
+            "An external ADM implementation will be used in VoiceEngine");
+    }
+
+    // Increase the reference counter for both external and internal usage.
+    _audioDevicePtr->AddRef();
 
     // Register the ADM to the process thread, which will drive the error
     // callback mechanism
@@ -1485,13 +1455,11 @@ WebRtc_Word32 VoEBaseImpl::AddADMVersion(char* str) const
     AudioDeviceModule* admPtr(_audioDevicePtr);
     if (_audioDevicePtr == NULL)
     {
-        admPtr = AudioDeviceModule::Create(-1);
+        admPtr = AudioDeviceModuleImpl::Create(-1);
     }
+    admPtr->AddRef();
     int len = AddModuleVersion(admPtr, str);
-    if (_audioDevicePtr == NULL)
-    {
-        AudioDeviceModule::Destroy(admPtr);
-    }
+    admPtr->Release();
     return len;
 }
 
@@ -1872,11 +1840,9 @@ WebRtc_Word32 VoEBaseImpl::TerminateInternal()
                                            "TerminateInternal() failed to "
                                            "terminate the ADM");
         }
-        if (!_usingExternalAudioDevice)
-        {
-            AudioDeviceModule::Destroy(_audioDevicePtr);
-            _audioDevicePtr = NULL;
-        }
+       
+        _audioDevicePtr->Release();
+        _audioDevicePtr = NULL;
     }
 
     // AP module

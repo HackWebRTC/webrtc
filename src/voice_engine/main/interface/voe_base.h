@@ -113,16 +113,12 @@ public:
     // and warning notifications.
     virtual int DeRegisterVoiceEngineObserver() = 0;
 
-    // Installs and enables a user-defined external audio device module
-    // which implements all the audio layer functionality.
-    virtual int RegisterAudioDeviceModule(AudioDeviceModule& adm) = 0;
-
-    // Removes and disables the external audio device module.
-    virtual int DeRegisterAudioDeviceModule() = 0;
-
     // Initiates all common parts of the VoiceEngine; e.g. all
     // encoders/decoders, the sound card and core receiving components.
-    virtual int Init() = 0;
+    // This method also makes it possible to install a user-defined
+    // external Audio Device Module (ADM) which implements all the audio
+    // layer functionality in a separate (reference counted) module.
+    virtual int Init(AudioDeviceModule* external_adm = NULL) = 0;
 
     // Terminates all VoiceEngine functions and releses allocated resources.
     virtual int Terminate() = 0;

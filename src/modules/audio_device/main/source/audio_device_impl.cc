@@ -10,6 +10,7 @@
 
 #include "audio_device_impl.h"
 #include "audio_device_config.h"
+#include "system_wrappers/interface/ref_count.h"
 
 #include <cassert>
 #include <string.h>
@@ -73,31 +74,32 @@ namespace webrtc
 //  AudioDeviceModule::Create()
 // ----------------------------------------------------------------------------
 
-AudioDeviceModule* AudioDeviceModule::Create(const WebRtc_Word32 id,
-                                             const AudioLayer audioLayer)
+AudioDeviceModule* AudioDeviceModuleImpl::Create(const WebRtc_Word32 id,
+                                                 const AudioLayer audioLayer)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, id, "Create(audioLayer=%d)", (int)audioLayer);
+    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, id,
+        "Create(audioLayer=%d)", (int)audioLayer);
 
-    // Create the generic (platform independent) implementation
-    //
-    AudioDeviceModuleImpl* audioDevice = static_cast<AudioDeviceModuleImpl*> (new AudioDeviceModuleImpl(id, audioLayer));
+    // Create the generic ref counted (platform independent) implementation.
+    RefCountImpl<AudioDeviceModuleImpl>* audioDevice =
+        new RefCountImpl<AudioDeviceModuleImpl>(id, audioLayer);
 
+    // Ensure that the current platform is supported.
     if (audioDevice->CheckPlatform() == -1)
     {
         delete audioDevice;
         return NULL;
     }
 
-    // Create the platform-dependent implementation
-    //
+    // Create the platform-dependent implementation.
     if (audioDevice->CreatePlatformSpecificObjects() == -1)
     {
         delete audioDevice;
         return NULL;
     }
 
-    // Ensure that the generic audio buffer can communicate with the platform-specific parts
-    //
+    // Ensure that the generic audio buffer can communicate with the
+    // platform-specific parts.
     if (audioDevice->AttachAudioBuffer() == -1)
     {
         delete audioDevice;
@@ -105,58 +107,6 @@ AudioDeviceModule* AudioDeviceModule::Create(const WebRtc_Word32 id,
     }
 
     return audioDevice;
-}
-
-// ----------------------------------------------------------------------------
-//  AudioDeviceModule::Destroy()
-// ----------------------------------------------------------------------------
-
-void AudioDeviceModule::Destroy(AudioDeviceModule* module)
-{
-    if (module)
-    {
-        WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, static_cast<AudioDeviceModuleImpl*>(module)->Id(), "Destroy()");
-        delete static_cast<AudioDeviceModuleImpl*>(module);
-    }
-}
-
-// ----------------------------------------------------------------------------
-//  AudioDeviceModule::GetVersion()
-// ----------------------------------------------------------------------------
-
-WebRtc_Word32 AudioDeviceModule::GetVersion(WebRtc_Word8* version, WebRtc_UWord32& remainingBufferInBytes, WebRtc_UWord32& position)
-{
-    if (version == NULL)
-    {
-        WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, -1, "invalid buffer pointer in argument");
-        return -1;
-    }
-    WebRtc_Word8 ourVersion[] = "AudioDevice 1.1.0";
-    WebRtc_UWord32 ourLength = (WebRtc_UWord32)strlen(ourVersion);
-    if (remainingBufferInBytes < (ourLength + 1))
-    {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, -1, "version string requires %d bytes", (ourLength + 1));
-        return -1;
-    }
-    memcpy(&version[position], ourVersion, ourLength);
-    version[position + ourLength] = '\0'; // null terminaion
-    remainingBufferInBytes -= (ourLength + 1);
-    position += (ourLength + 1);
-    WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, -1, "version: %s", version);
-    return 0;
-}
-
-// ----------------------------------------------------------------------------
-//  SetAndroidObjects
-// ----------------------------------------------------------------------------
-
-WebRtc_Word32 AudioDeviceModule::SetAndroidObjects(void* javaVM, void* env, void* context)
-{
-#if defined(WEBRTC_ANDROID) && !defined(WEBRTC_ANDROID_OPENSLES)
-    return SetAndroidAudioDeviceObjects(javaVM, env, context);
-#else
-    return -1;
-#endif
 }
 
 // ============================================================================
@@ -473,20 +423,17 @@ WebRtc_Word32 AudioDeviceModuleImpl::AttachAudioBuffer()
 AudioDeviceModuleImpl::~AudioDeviceModuleImpl()
 {
     WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, _id, "%s destroyed", __FUNCTION__);
+
+    if (_ptrAudioDevice)
     {
-        CriticalSectionScoped lock(_critSect);
+        delete _ptrAudioDevice;
+        _ptrAudioDevice = NULL;
+    }
 
-        if (_ptrAudioDevice)
-        {
-            delete _ptrAudioDevice;
-            _ptrAudioDevice = NULL;
-        }
-
-        if (_ptrAudioDeviceUtility)
-        {
-            delete _ptrAudioDeviceUtility;
-            _ptrAudioDeviceUtility = NULL;
-        }
+    if (_ptrAudioDeviceUtility)
+    {
+        delete _ptrAudioDeviceUtility;
+        _ptrAudioDeviceUtility = NULL;
     }
 
     delete &_critSect;
@@ -515,8 +462,24 @@ WebRtc_Word32 AudioDeviceModuleImpl::ChangeUniqueId(const WebRtc_Word32 id)
 
 WebRtc_Word32 AudioDeviceModuleImpl::Version(WebRtc_Word8* version, WebRtc_UWord32& remainingBufferInBytes, WebRtc_UWord32& position) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id, "Version(remainingBufferInBytes=%d)", remainingBufferInBytes);
-    return GetVersion(version, remainingBufferInBytes, position);
+    if (version == NULL)
+    {
+        WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, -1, "invalid buffer pointer in argument");
+        return -1;
+    }
+    WebRtc_Word8 ourVersion[] = "AudioDevice 1.1.0";
+    WebRtc_UWord32 ourLength = (WebRtc_UWord32)strlen(ourVersion);
+    if (remainingBufferInBytes < (ourLength + 1))
+    {
+        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, -1, "version string requires %d bytes", (ourLength + 1));
+        return -1;
+    }
+    memcpy(&version[position], ourVersion, ourLength);
+    version[position + ourLength] = '\0'; // null terminaion
+    remainingBufferInBytes -= (ourLength + 1);
+    position += (ourLength + 1);
+    WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, -1, "version: %s", version);
+    return 0;
 }
 
 // ----------------------------------------------------------------------------

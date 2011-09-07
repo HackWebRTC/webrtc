@@ -16,6 +16,7 @@
 #include "thread_wrapper.h"
 #include "voe_extended_test.h"
 #include "../../source/voice_engine_defines.h"  // defines build macros
+#include "system_wrappers/interface/ref_count.h"
 
 #if defined(_WIN32)
 #include <conio.h>
@@ -59,6 +60,46 @@ extern const char* GetFilename(const char* filename);
 extern int GetResource(char* resource, char* dest, int destLen);
 extern char* GetResource(char* resource);
 extern const char* GetResource(const char* resource);
+
+// ----------------------------------------------------------------------------
+// External AudioDeviceModule implementation
+// ----------------------------------------------------------------------------
+
+// static
+AudioDeviceModuleImpl* AudioDeviceModuleImpl::Create() {
+  AudioDeviceModuleImpl* xADM = new AudioDeviceModuleImpl();
+  if (xADM)
+    xADM->AddRef();
+  return xADM;
+}
+
+// static
+bool AudioDeviceModuleImpl::Destroy(AudioDeviceModuleImpl* adm) {
+  if (!adm)
+    return false;
+  int32_t count = adm->Release();
+  if (count != 0) {
+    return false;
+  } else {
+    delete adm;
+    return true;
+  }
+}
+
+AudioDeviceModuleImpl::AudioDeviceModuleImpl()
+    : _ref_count(0) {}
+
+AudioDeviceModuleImpl::~AudioDeviceModuleImpl() {}
+
+int32_t AudioDeviceModuleImpl::AddRef() {
+  return ++_ref_count;
+}
+
+int32_t AudioDeviceModuleImpl::Release() {
+  // Avoid self destruction in this mock implementation.
+  // Ensures that we can always check the reference counter while alive.
+  return --_ref_count;
+}
 
 // ----------------------------------------------------------------------------
 //  External transport (Transport) implementations:
@@ -460,6 +501,41 @@ int VoEExtendedTest::TestBase()
     AOK();
     ANL();
     ANL();
+
+    // ------------------------------------------------------------------------
+    // >> Init(AudioDeviceModule)
+    //
+    // Note that our mock implementation of the ADM also mocks the 
+    // reference counting part. This approach enables us to keep track
+    // of the internal reference counter without checking return values
+    // from the ADM and we also avoid the built-in self destruction.
+    //
+    // TODO(henrika): this test does not verify that external ADM methods
+    // are called by the VoiceEngine once registered. We could extend
+    // the mock implementation and add counters for each ADM API to ensure
+    // that they are called in the correct sequence and the correct number
+    // of times.
+
+    TEST_LOG("\nTesting: Init in combination with an external ADM\n");
+
+    // Create the ADM and call AddRef within the factory method.
+    AudioDeviceModuleImpl* xADM = AudioDeviceModuleImpl::Create();
+    ASSERT_FALSE(xADM == NULL);
+    ASSERT_TRUE(xADM->ReferenceCounter() == 1);
+
+    // Verify default usage case for external ADM.
+    TEST_MUSTPASS(base->Init(xADM)); MARK();
+    ASSERT_TRUE(xADM->ReferenceCounter() == 2);
+    TEST_MUSTPASS(base->Terminate());
+    ASSERT_TRUE(xADM->ReferenceCounter() == 1);
+
+    // Our reference-count implementation does not self destruct.
+    // We do it manually here instead by calling Release followed by delete.
+    ASSERT_TRUE(AudioDeviceModuleImpl::Destroy(xADM));
+    ANL(); AOK(); ANL();
+
+    // >> end of Init(AudioDeviceModule)
+    // ------------------------------------------------------------------------
 
     ///////////////////////////
     // MaxNumOfChannels

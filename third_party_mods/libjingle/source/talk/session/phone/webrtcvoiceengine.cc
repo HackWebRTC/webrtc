@@ -232,6 +232,12 @@ void WebRtcVoiceEngine::Construct() {
   if (tracing_->SetTraceCallback(this) == -1) {
     LOG_RTCERR0(SetTraceCallback);
   }
+  // Update reference counters for the external ADM(s).
+  if (adm_)
+    adm_->AddRef();
+  if (adm_sc_)
+    adm_sc_->AddRef();
+
   if (voe_wrapper_->base()->RegisterVoiceEngineObserver(*this) == -1) {
     LOG_RTCERR0(RegisterVoiceEngineObserver);
   }
@@ -266,12 +272,12 @@ WebRtcVoiceEngine::~WebRtcVoiceEngine() {
   }
   if (adm_) {
     voe_wrapper_.reset();
-    webrtc::AudioDeviceModule::Destroy(adm_);
+    adm_->Release();
     adm_ = NULL;
   }
   if (adm_sc_) {
     voe_wrapper_sc_.reset();
-    webrtc::AudioDeviceModule::Destroy(adm_sc_);
+    adm_sc_->Release();
     adm_sc_ = NULL;
   }
 
@@ -297,21 +303,9 @@ bool WebRtcVoiceEngine::InitInternal() {
                                static_cast<int>(talk_base::LS_INFO));
   ApplyLogging();
 
-  if (adm_) {
-    if (voe_wrapper_->base()->RegisterAudioDeviceModule(*adm_) == -1) {
-      LOG_RTCERR0_EX(Init, voe_wrapper_->error());
-      return false;
-    }
-  }
-  if (adm_sc_) {
-    if (voe_wrapper_sc_->base()->RegisterAudioDeviceModule(*adm_sc_) == -1) {
-      LOG_RTCERR0_EX(Init, voe_wrapper_sc_->error());
-      return false;
-    }
-  }
-
-  // Init WebRtc VoiceEngine, enabling AEC logging if specified in SetLogging.
-  if (voe_wrapper_->base()->Init() == -1) {
+  // Init WebRtc VoiceEngine, enabling AEC logging if specified in SetLogging,
+  // and install the externally provided (and implemented) ADM.
+  if (voe_wrapper_->base()->Init(adm_) == -1) {
     LOG_RTCERR0_EX(Init, voe_wrapper_->error());
     return false;
   }
@@ -372,7 +366,8 @@ bool WebRtcVoiceEngine::InitInternal() {
 #endif
 
   // Initialize the VoiceEngine instance that we'll use to play out sound clips.
-  if (voe_wrapper_sc_->base()->Init() == -1) {
+  // Also, install the externally provided (and implemented) ADM.
+  if (voe_wrapper_sc_->base()->Init(adm_sc_) == -1) {
     LOG_RTCERR0_EX(Init, voe_wrapper_sc_->error());
     return false;
   }
@@ -410,6 +405,7 @@ void WebRtcVoiceEngine::Terminate() {
 
   voe_wrapper_sc_->base()->Terminate();
   voe_wrapper_->base()->Terminate();
+
   desired_local_monitor_enable_ = false;
 }
 

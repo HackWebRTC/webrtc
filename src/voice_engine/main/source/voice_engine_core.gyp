@@ -30,6 +30,7 @@
       'include_dirs': [
         '../../..',
         '../interface',
+        '../../../modules/audio_device/main/source',
       ],
       'direct_dependent_settings': {
         'include_dirs': [

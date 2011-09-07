@@ -40,7 +40,7 @@ public:
     AudioDeviceModuleImpl(const WebRtc_Word32 id, const AudioLayer audioLayer);
     virtual ~AudioDeviceModuleImpl();
 
-public: // Module
+public: // RefCountedModule
     virtual WebRtc_Word32 ChangeUniqueId(const WebRtc_Word32 id);
     virtual WebRtc_Word32 Version(
         WebRtc_Word8 *version, WebRtc_UWord32& remainingBufferInBytes,
@@ -53,7 +53,6 @@ public:
     static AudioDeviceModule* Create(
         const WebRtc_Word32 id,
         const AudioLayer audioLayer = kPlatformDefaultAudio);
-    static void Destroy(AudioDeviceModule* module);
 
     // Retrieve the currently utilized audio layer
     virtual WebRtc_Word32 ActiveAudioLayer(AudioLayer* audioLayer) const;
