@@ -25,60 +25,52 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_APP_WEBRTC_REF_COUNT_H_
-#define TALK_APP_WEBRTC_REF_COUNT_H_
 
-#include <cstring>
+#include "talk/app/webrtc_dev/webrtc_devicemanager.h"
 
-// Reference count interface.
-class RefCount {
- public:
-  virtual size_t AddRef() = 0;
-  virtual size_t Release() = 0;
-};
+using cricket::Device;
+using cricket::DeviceManager;
 
-template <class T>
-class RefCountImpl : public T {
- public:
-  RefCountImpl() : ref_count_(0) {
-  }
+const int WebRtcDeviceManager::kDefaultDeviceId = -1;
 
-  template<typename P>
-  explicit RefCountImpl(P p) : ref_count_(0), T(p) {
-  }
+WebRtcDeviceManager::WebRtcDeviceManager()
+  : DeviceManager(),
+    default_device_(DeviceManager::kDefaultDeviceName, kDefaultDeviceId) {
+}
 
-  template<typename P1, typename P2>
-  RefCountImpl(P1 p1, P2 p2) : ref_count_(0), T(p1, p2) {
-  }
+WebRtcDeviceManager::~WebRtcDeviceManager() {
+  Terminate();
+}
 
-  template<typename P1, typename P2, typename P3>
-  RefCountImpl(P1 p1, P2 p2, P3 p3) : ref_count_(0), T(p1, p2, p3) {
-  }
+bool WebRtcDeviceManager::Init() {
+  return true;
+}
 
-  template<typename P1, typename P2, typename P3, typename P4>
-  RefCountImpl(P1 p1, P2 p2, P3 p3, P4 p4) : ref_count_(0), T(p1, p2, p3, p4) {
-  }
+void WebRtcDeviceManager::Terminate() {
+}
 
-  template<typename P1, typename P2, typename P3, typename P4, typename P5>
-  RefCountImpl(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5)
-      : ref_count_(0), T(p1, p2, p3, p4, p5) {
-  }
+bool WebRtcDeviceManager::GetAudioInputDevices(std::vector<Device>* devs) {
+  return GetDefaultDevices(devs);
+}
 
-  virtual size_t AddRef() {
-    ++ref_count_;
-    return ref_count_;
-  }
+bool WebRtcDeviceManager::GetAudioOutputDevices(std::vector<Device>* devs) {
+  return GetDefaultDevices(devs);
+}
 
-  virtual size_t Release() {
-    size_t ret = --ref_count_;
-    if (!ref_count_) {
-      delete this;
-    }
-    return ret;
-  }
+bool WebRtcDeviceManager::GetVideoCaptureDevices(std::vector<Device>* devs) {
+  return GetDefaultDevices(devs);
+}
 
- protected:
-  size_t ref_count_;
-};
+bool WebRtcDeviceManager::GetDefaultVideoCaptureDevice(Device* device) {
+  *device = default_device_;
+  return true;
+}
 
-#endif  // TALK_APP_WEBRTC_REF_COUNT_H_
+bool WebRtcDeviceManager::GetDefaultDevices(
+    std::vector<cricket::Device>* devs) {
+  if (!devs)
+    return false;
+  devs->clear();
+  devs->push_back(default_device_);
+  return true;
+}

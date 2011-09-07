@@ -28,55 +28,60 @@
 #ifndef TALK_APP_WEBRTC_PEERCONNECTION_IMPL_H_
 #define TALK_APP_WEBRTC_PEERCONNECTION_IMPL_H_
 
-#include <list>
 #include <map>
 #include <string>
 
 #include "talk/app/webrtc_dev/peerconnection_dev.h"
 #include "talk/base/scoped_ptr.h"
-#include "talk/base/messagequeue.h"
+#include "talk/p2p/base/portallocator.h"
 
 namespace cricket {
 class ChannelManager;
-class PortAllocator;
 }
 
 namespace webrtc {
+class LocalStreamCollection;
 
 class PeerConnectionImpl : public PeerConnection,
                            public talk_base::MessageHandler {
  public:
   enum Error {
-    ERROR_NONE = 0,             // Good
-    ERROR_TIMEOUT = 1,          // No Candidates generated for X amount of time
-    ERROR_AUDIO_DEVICE = 2,     // DeviceManager audio device error
-    ERROR_VIDEO_DEVICE = 3,     // DeviceManager video device error
-    ERROR_NETWORK = 4,          // Transport errors
-    ERROR_MEDIADESCRIPTION = 5, // SignalingMessage error
-    ERROR_MEDIA = 6,            // Related to Engines
-    ERROR_UNKNOWN = 10,         // Everything else
+    ERROR_NONE = 0,              // Good
+    ERROR_TIMEOUT = 1,           // No Candidates generated for X amount of time
+    ERROR_AUDIO_DEVICE = 2,      // DeviceManager audio device error
+    ERROR_VIDEO_DEVICE = 3,      // DeviceManager video device error
+    ERROR_NETWORK = 4,           // Transport errors
+    ERROR_MEDIADESCRIPTION = 5,  // SignalingMessage error
+    ERROR_MEDIA = 6,             // Related to Engines
+    ERROR_UNKNOWN = 10,          // Everything else
   };
 
   PeerConnectionImpl(cricket::ChannelManager* channel_manager,
-                     cricket::PortAllocator* port_allocator,
-                     talk_base::Thread* signal_thread);
+                     talk_base::Thread* worker_thread,
+                     PcNetworkManager* network_manager,
+                     PcPacketSocketFactory* socket_factory);
+
+  bool Initialize(const std::string& configuration);
+
   virtual ~PeerConnectionImpl();
 
   // Interfaces from PeerConnection
   virtual bool StartNegotiation() {
-    //TODO: implement
+    // TODO(perkj): implement
+    ASSERT(false);
   }
   virtual bool SignalingMessage(const std::string& msg) {
-    //TODO: implement
+    // TODO(perkj): implement
+    ASSERT(false);
   }
   virtual bool Send(const std::string& msg) {
-    //TODO: implement
+    // TODO(perkj): implement
+    ASSERT(false);
   }
-  virtual scoped_refptr<StreamCollection> local_streams() {
-    //TODO: implement
-  }
+  virtual scoped_refptr<StreamCollection> local_streams();
   virtual scoped_refptr<StreamCollection> remote_streams() {
-    //TODO: implement
+    // TODO(perkj): implement
+    ASSERT(false);
   }
   virtual void AddStream(LocalMediaStream* stream);
   virtual void RemoveStream(LocalMediaStream* stream);
@@ -89,22 +94,19 @@ class PeerConnectionImpl : public PeerConnection,
 
  private:
   enum {
-      MSG_ADDMEDIASTREAM = 1,
-      MSG_REMOVEMEDIASTREAM = 2,
       MSG_COMMITSTREAMCHANGES = 3
   };
 
   PeerConnectionObserver* observer_;
+  scoped_refptr<LocalStreamCollection> local_media_streams_;
 
-  // Map of local media streams.
-  typedef std::map<std::string, scoped_refptr<LocalMediaStream> > LocalStreamMap;
-  LocalStreamMap local_media_streams_;
-
-  talk_base::Thread* signal_thread_;
+  talk_base::Thread* worker_thread_;  // Weak ref from PeerConnectionManager.
   cricket::ChannelManager* channel_manager_;
-  cricket::PortAllocator* port_allocator_;
+  scoped_refptr<PcNetworkManager> network_manager_;
+  scoped_refptr<PcPacketSocketFactory> socket_factory_;
+  talk_base::scoped_ptr<cricket::PortAllocator> port_allocator_;
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
-#endif // TALK_APP_WEBRTC_PEERCONNECTION_IMPL_H_
+#endif  // TALK_APP_WEBRTC_PEERCONNECTION_IMPL_H_

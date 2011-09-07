@@ -25,60 +25,29 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_APP_WEBRTC_REF_COUNT_H_
-#define TALK_APP_WEBRTC_REF_COUNT_H_
+#ifndef TALK_APP_WEBRTC_DEVICEMANAGER_
+#define TALK_APP_WEBRTC_DEVICEMANAGER_
 
-#include <cstring>
+#include <vector>
 
-// Reference count interface.
-class RefCount {
+#include "talk/session/phone/devicemanager.h"
+
+class WebRtcDeviceManager : public cricket::DeviceManager {
  public:
-  virtual size_t AddRef() = 0;
-  virtual size_t Release() = 0;
+  WebRtcDeviceManager();
+  ~WebRtcDeviceManager();
+  virtual bool Init();
+  virtual void Terminate();
+  virtual bool GetAudioInputDevices(std::vector<cricket::Device>* devs);
+  virtual bool GetAudioOutputDevices(std::vector<cricket::Device>* devs);
+  virtual bool GetVideoCaptureDevices(std::vector<cricket::Device>* devs);
+  virtual bool GetDefaultVideoCaptureDevice(cricket::Device* device);
+
+ private:
+  static const int kDefaultDeviceId;
+  bool GetDefaultDevices(std::vector<cricket::Device>* devs);
+
+  cricket::Device default_device_;
 };
 
-template <class T>
-class RefCountImpl : public T {
- public:
-  RefCountImpl() : ref_count_(0) {
-  }
-
-  template<typename P>
-  explicit RefCountImpl(P p) : ref_count_(0), T(p) {
-  }
-
-  template<typename P1, typename P2>
-  RefCountImpl(P1 p1, P2 p2) : ref_count_(0), T(p1, p2) {
-  }
-
-  template<typename P1, typename P2, typename P3>
-  RefCountImpl(P1 p1, P2 p2, P3 p3) : ref_count_(0), T(p1, p2, p3) {
-  }
-
-  template<typename P1, typename P2, typename P3, typename P4>
-  RefCountImpl(P1 p1, P2 p2, P3 p3, P4 p4) : ref_count_(0), T(p1, p2, p3, p4) {
-  }
-
-  template<typename P1, typename P2, typename P3, typename P4, typename P5>
-  RefCountImpl(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5)
-      : ref_count_(0), T(p1, p2, p3, p4, p5) {
-  }
-
-  virtual size_t AddRef() {
-    ++ref_count_;
-    return ref_count_;
-  }
-
-  virtual size_t Release() {
-    size_t ret = --ref_count_;
-    if (!ref_count_) {
-      delete this;
-    }
-    return ret;
-  }
-
- protected:
-  size_t ref_count_;
-};
-
-#endif  // TALK_APP_WEBRTC_REF_COUNT_H_
+#endif  // TALK_APP_WEBRTC_DEVICEMANAGER_
