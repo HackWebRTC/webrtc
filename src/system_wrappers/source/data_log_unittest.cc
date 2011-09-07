@@ -113,29 +113,30 @@ class DataLogParser {
 TEST(TestDataLog, CreateReturnTest) {
   for (int i = 0; i < 10; ++i)
     ASSERT_EQ(DataLog::CreateLog(), 0);
-  ASSERT_EQ(DataLog::AddTable("a proper table", "table.txt"), 0);
+  ASSERT_EQ(DataLog::AddTable(DataLog::Combine("a proper table", 1)), 0);
   for (int i = 0; i < 10; ++i)
     DataLog::ReturnLog();
-  ASSERT_LT(DataLog::AddTable("table failure", "table.txt"), 0);
+  ASSERT_LT(DataLog::AddTable(DataLog::Combine("table failure", 1)), 0);
 }
 
 TEST(TestDataLog, VerifySingleTable) {
   DataLog::CreateLog();
-  DataLog::AddTable("table1", "table1.txt");
-  DataLog::AddColumn("table1", "arrival", 1);
-  DataLog::AddColumn("table1", "timestamp", 1);
-  DataLog::AddColumn("table1", "size", 5);
+  DataLog::AddTable(DataLog::Combine("table", 1));
+  DataLog::AddColumn(DataLog::Combine("table", 1), "arrival", 1);
+  DataLog::AddColumn(DataLog::Combine("table", 1), "timestamp", 1);
+  DataLog::AddColumn(DataLog::Combine("table", 1), "size", 5);
   WebRtc_UWord32 sizes[5] = {1400, 1500, 1600, 1700, 1800};
   for (int i = 0; i < 10; ++i) {
-    DataLog::InsertCell("table1", "arrival", static_cast<double>(i));
-    DataLog::InsertCell("table1", "timestamp",
+    DataLog::InsertCell(DataLog::Combine("table", 1), "arrival",
+                        static_cast<double>(i));
+    DataLog::InsertCell(DataLog::Combine("table", 1), "timestamp",
                         static_cast<WebRtc_Word64>(4354 + i));
-    DataLog::InsertCell("table1", "size", sizes, 5);
-    DataLog::NextRow("table1");
+    DataLog::InsertCell(DataLog::Combine("table", 1), "size", sizes, 5);
+    DataLog::NextRow(DataLog::Combine("table", 1));
   }
   DataLog::ReturnLog();
   // Verify file
-  FILE* table = fopen("table1.txt", "r");
+  FILE* table = fopen("table_1.txt", "r");
   ASSERT_FALSE(table == NULL);
   // Read the column names and verify with the expected columns.
   // Note that the columns are written to file in alphabetical order.
@@ -170,31 +171,31 @@ TEST(TestDataLog, VerifySingleTable) {
 
 TEST(TestDataLog, VerifyMultipleTables) {
   DataLog::CreateLog();
-  DataLog::AddTable("table2", "table2.txt");
-  DataLog::AddTable("table3", "table3.txt");
-  DataLog::AddColumn("table2", "arrival", 1);
-  DataLog::AddColumn("table2", "timestamp", 1);
-  DataLog::AddColumn("table2", "size", 1);
-  DataLog::AddTable("table4", "table4.txt");
-  DataLog::AddColumn("table3", "timestamp", 1);
-  DataLog::AddColumn("table3", "arrival", 1);
-  DataLog::AddColumn("table4", "size", 1);
+  DataLog::AddTable(DataLog::Combine("table", 2));
+  DataLog::AddTable(DataLog::Combine("table", 3));
+  DataLog::AddColumn(DataLog::Combine("table", 2), "arrival", 1);
+  DataLog::AddColumn(DataLog::Combine("table", 2), "timestamp", 1);
+  DataLog::AddColumn(DataLog::Combine("table", 2), "size", 1);
+  DataLog::AddTable(DataLog::Combine("table", 4));
+  DataLog::AddColumn(DataLog::Combine("table", 3), "timestamp", 1);
+  DataLog::AddColumn(DataLog::Combine("table", 3), "arrival", 1);
+  DataLog::AddColumn(DataLog::Combine("table", 4), "size", 1);
   for (WebRtc_Word32 i = 0; i < 10; ++i) {
-    DataLog::InsertCell("table2", "arrival",
+    DataLog::InsertCell(DataLog::Combine("table", 2), "arrival",
                         static_cast<WebRtc_Word32>(i));
-    DataLog::InsertCell("table2", "timestamp",
+    DataLog::InsertCell(DataLog::Combine("table", 2), "timestamp",
                         static_cast<WebRtc_Word32>(4354 + i));
-    DataLog::InsertCell("table2", "size",
+    DataLog::InsertCell(DataLog::Combine("table", 2), "size",
                         static_cast<WebRtc_Word32>(1200 + 10 * i));
-    DataLog::InsertCell("table3", "timestamp",
+    DataLog::InsertCell(DataLog::Combine("table", 3), "timestamp",
                         static_cast<WebRtc_Word32>(4354 + i));
-    DataLog::InsertCell("table3", "arrival",
+    DataLog::InsertCell(DataLog::Combine("table", 3), "arrival",
                         static_cast<WebRtc_Word32>(i));
-    DataLog::InsertCell("table4", "size",
+    DataLog::InsertCell(DataLog::Combine("table", 4), "size",
                         static_cast<WebRtc_Word32>(1200 + 10 * i));
-    DataLog::NextRow("table4");
-    DataLog::NextRow("table2");
-    DataLog::NextRow("table3");
+    DataLog::NextRow(DataLog::Combine("table", 4));
+    DataLog::NextRow(DataLog::Combine("table", 2));
+    DataLog::NextRow(DataLog::Combine("table", 3));
   }
   DataLog::ReturnLog();
 
@@ -217,7 +218,7 @@ TEST(TestDataLog, VerifyMultipleTables) {
 
   // Verify table 2
   {
-    FILE* table = fopen("table2.txt", "r");
+    FILE* table = fopen("table_2.txt", "r");
     ASSERT_FALSE(table == NULL);
     ExpectedValuesMap expected;
     expected["arrival,"] = ExpectedValues(
@@ -240,20 +241,18 @@ TEST(TestDataLog, VerifyMultipleTables) {
 
   // Verify table 3
   {
-    FILE* table = fopen("table3.txt", "r");
+    FILE* table = fopen("table_3.txt", "r");
     ASSERT_FALSE(table == NULL);
     ExpectedValuesMap expected;
     expected["arrival,"] = ExpectedValues(
                              std::vector<std::string>(string_arrival,
                                                       string_arrival +
-                                                      sizeof(string_arrival)
-                                                      / sizeof(std::string)),
+                                                      kNumberOfRows),
                              1);
     expected["timestamp,"] = ExpectedValues(
                              std::vector<std::string>(string_timestamp,
                                                       string_timestamp +
-                                                      sizeof(string_timestamp) /
-                                                      sizeof(std::string)),
+                                                      kNumberOfRows),
                                1);
     ASSERT_EQ(DataLogParser::VerifyTable(table, expected), 0);
     fclose(table);
@@ -261,14 +260,13 @@ TEST(TestDataLog, VerifyMultipleTables) {
 
   // Verify table 4
   {
-    FILE* table = fopen("table4.txt", "r");
+    FILE* table = fopen("table_4.txt", "r");
     ASSERT_FALSE(table == NULL);
     ExpectedValuesMap expected;
     expected["size,"] = ExpectedValues(
                           std::vector<std::string>(string_size,
                                                    string_size +
-                                                   sizeof(string_size)
-                                                   / sizeof(std::string)),
+                                                   kNumberOfRows),
                           1);
     ASSERT_EQ(DataLogParser::VerifyTable(table, expected), 0);
     fclose(table);
