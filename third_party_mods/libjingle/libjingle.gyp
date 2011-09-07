@@ -659,12 +659,22 @@
       'dependencies': [
         'libjingle_app',
         '../../testing/gtest.gyp:gtest',
-        '../../testing/gtest.gyp:gtest_main',        
-        '../../src/modules/audio_device/main/source/audio_device.gyp:audio_device',
+        '../../testing/gtest.gyp:gtest_main',                
       ],
       'conditions': [
         ['peer_connection_dev==1', {
           'type': 'executable',
+          'conditions': [
+            ['inside_chromium_build==1', {
+              'dependencies': [        
+                '../../third_party/webrtc/modules/audio_device/main/source/audio_device.gyp:audio_device',
+              ]  
+              }, {
+              'dependencies': [
+                '../../src/modules/audio_device/main/source/audio_device.gyp:audio_device',
+               ] 
+            }],
+          ], #conditions             
           'sources': [
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnection_unittests.cc',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/local_stream_dev_unittest.cc',
@@ -672,7 +682,7 @@
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnection_impl_dev_unittest.cc',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionmanager_unittest.cc',            
           ],
-        }, {
+        }, { # peer_connection_dev != 1
           'type': 'none',
         } ],  # peer_connection_dev
         ['peer_connection_dev==1 and OS=="linux"', {
