@@ -83,6 +83,12 @@ VCMEncodeCompleteCallback::SendData(
         rtpInfo.type.Video.width = (WebRtc_UWord16)_width;
         break;
     case webrtc::kRTPVideoVP8:
+        rtpInfo.type.Video.codecHeader.VP8.nonReference =
+            videoTypeHdr->VP8.nonReference;
+        rtpInfo.type.Video.codecHeader.VP8.pictureId =
+            videoTypeHdr->VP8.pictureId;
+        break;
+    case webrtc::kRTPVideoI420:
         break;
     default:
         assert(false);
@@ -99,9 +105,6 @@ VCMEncodeCompleteCallback::SendData(
 
     _encodedBytes += payloadSize;
     // directly to receiver
-    // TODO(hlundin): Remove assert once we've piped PictureID into VCM
-    // through the WebRtcRTPHeader.
-    assert(rtpInfo.type.Video.codec != kRTPVideoVP8);
     int ret = _VCMReceiver->IncomingPacket(payloadData, payloadSize, rtpInfo);
     _encodeComplete = true;
 

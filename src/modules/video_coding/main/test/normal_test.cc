@@ -99,6 +99,10 @@ VCMNTEncodeCompleteCallback::SendData(
         break;
     case kVideoCodecVP8:
         rtpInfo.type.Video.codec = kRTPVideoVP8;
+        rtpInfo.type.Video.codecHeader.VP8.nonReference =
+            videoTypeHdr->VP8.nonReference;
+        rtpInfo.type.Video.codecHeader.VP8.pictureId =
+            videoTypeHdr->VP8.pictureId;
         break;
     case kVideoCodecI420:
         rtpInfo.type.Video.codec = kRTPVideoI420;
@@ -121,9 +125,6 @@ VCMNTEncodeCompleteCallback::SendData(
     {
         _skipCnt++;
     }
-    // TODO(hlundin): Remove assert once we've piped PictureID into VCM
-    // through the WebRtcRTPHeader.
-    assert(rtpInfo.type.Video.codec != kRTPVideoVP8);
     _VCMReceiver->IncomingPacket(payloadData, payloadSize, rtpInfo);
     return 0;
 }
