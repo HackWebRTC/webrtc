@@ -58,8 +58,14 @@
             '../../../../../../../third_party/libvpx/source/libvpx',
           ],
           'defines': [
-            'WEBRTC_LIBVPX_VERSION=971' # Cayuga
+            'WEBRTC_LIBVPX_VERSION=971', # Cayuga
+            'INDEPENDENT_PARTITIONS',
           ],
+          'direct_dependent_settings': {
+            'defines': [
+              'INDEPENDENT_PARTITIONS',
+            ],
+          },
         }],
       ],
       'direct_dependent_settings': {
@@ -76,7 +82,7 @@
     },
   ], # targets
   # Exclude the test target when building with chromium.
-  'conditions': [   
+  'conditions': [
     ['build_with_chromium==0', {
       'targets': [
         {

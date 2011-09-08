@@ -25,6 +25,7 @@ typedef struct vpx_codec_ctx vpx_dec_ctx_t;
 typedef struct vpx_codec_enc_cfg vpx_codec_enc_cfg_t;
 typedef struct vpx_image vpx_image_t;
 typedef struct vpx_ref_frame vpx_ref_frame_t;
+struct vpx_codec_cx_pkt;
 
 namespace webrtc
 {
@@ -136,6 +137,13 @@ private:
 // Call encoder initialize function and set control settings.
     WebRtc_Word32 InitAndSetControlSettings();
 
+    void PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
+                               const vpx_codec_cx_pkt& pkt);
+
+    WebRtc_Word32 GetEncodedFrame(const RawImage& input_image);
+
+    WebRtc_Word32 GetEncodedPartitions(const RawImage& input_image);
+
 // Determine maximum target for Intra frames
 //
 // Input:
@@ -162,6 +170,7 @@ private:
     WebRtc_UWord16            _pictureIDLastAcknowledgedRef;
     int                       _cpuSpeed;
     WebRtc_UWord32            _rcMaxIntraTarget;
+    int                       _tokenPartitions;
 
     vpx_codec_ctx_t*          _encoder;
     vpx_codec_enc_cfg_t*      _cfg;
@@ -192,6 +201,8 @@ public:
 //          - inputImage        : Encoded image to be decoded
 //          - missingFrames     : True if one or more frames have been lost
 //                                since the previous decode call.
+//          - fragmentation     : Specifies the start and length of each VP8
+//                                partition.
 //          - codecSpecificInfo : pointer to specific codec data
 //          - renderTimeMs      : Render time in Ms
 //
@@ -201,6 +212,7 @@ public:
 //                                      WEBRTC_VIDEO_CODEC_ERR_PARAMETER
     virtual WebRtc_Word32 Decode(const EncodedImage& inputImage,
                                  bool missingFrames,
+                                 const RTPFragmentationHeader* fragmentation,
                                  const CodecSpecificInfo* codecSpecificInfo,
                                  WebRtc_Word64 /*renderTimeMs*/);
 
@@ -237,6 +249,9 @@ private:
 // Copy reference image from this _decoder to the _decoder in copyTo. Set which
 // frame type to copy in _refFrame->frame_type before the call to this function.
     int CopyReference(VP8Decoder* copyTo);
+
+    WebRtc_Word32 DecodePartitions(const EncodedImage& input_image,
+                                   const RTPFragmentationHeader* fragmentation);
 
     RawImage                   _decodedImage;
     DecodedImageCallback*      _decodeCompleteCallback;

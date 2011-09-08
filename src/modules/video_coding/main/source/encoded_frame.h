@@ -87,6 +87,8 @@ public:
     */
     const CodecSpecificInfo* CodecSpecific() const {return &_codecSpecificInfo;}
 
+    const RTPFragmentationHeader* FragmentationHeader() const;
+
     WebRtc_Word32 Store(VCMFrameStorageCallback& storeCallback) const;
 
     static webrtc::FrameType ConvertFrameType(VideoFrameType frameType);
@@ -110,6 +112,7 @@ protected:
     bool                          _missingFrame;
     CodecSpecificInfo             _codecSpecificInfo;
     webrtc::VideoCodecType        _codec;
+    RTPFragmentationHeader        _fragmentation;
 };
 
 } // namespace webrtc

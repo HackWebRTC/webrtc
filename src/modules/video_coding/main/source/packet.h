@@ -21,6 +21,7 @@ namespace webrtc
 class VCMPacket
 {
 public:
+    VCMPacket();
     VCMPacket(const WebRtc_UWord8* ptr,
                    const WebRtc_UWord32 size,
                    const WebRtcRTPHeader& rtpHeader);
@@ -29,6 +30,8 @@ public:
                    WebRtc_UWord16 seqNum,
                    WebRtc_UWord32 timestamp,
                    bool markerBit);
+
+    void Reset();
 
     WebRtc_UWord8           payloadType;
     WebRtc_UWord32          timestamp;
@@ -48,7 +51,7 @@ public:
                                         // first
                                         // byte should be ORed with the last packet of the
                                         // previous frame.
-    const RTPVideoHeader *codecSpecificHeader;
+    RTPVideoHeader codecSpecificHeader;
 
 protected:
     void CopyCodecSpecifics(const RTPVideoHeader& videoHeader);

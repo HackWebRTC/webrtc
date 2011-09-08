@@ -210,6 +210,7 @@ I420Decoder::InitDecode(const VideoCodec* codecSettings, WebRtc_Word32 /*numberO
 WebRtc_Word32
 I420Decoder::Decode(const EncodedImage& inputImage,
                     bool /*missingFrames*/,
+                    const RTPFragmentationHeader* /*fragmentation*/,
                     const CodecSpecificInfo* /*codecSpecificInfo*/,
                     WebRtc_Word64 /*renderTimeMs*/)
 {

@@ -70,6 +70,22 @@
 
       ], # conditions
     },
+    {
+      'target_name': 'video_coding_unit_test',
+      'type': 'executable',
+      'dependencies': [
+        '../../../../system_wrappers/source/system_wrappers.gyp:system_wrappers',
+        '../../../../../testing/gtest.gyp:gtest',
+        '../../../../../testing/gtest.gyp:gtest_main',
+        'video_coding.gyp:webrtc_video_coding',
+      ],
+      'include_dirs': [
+        '../../../interface',
+      ],
+      'sources': [
+        'session_info_unittest.cc',
+      ],
+    },
   ],
 }
 

@@ -479,8 +479,8 @@ NormalAsyncTest::Decode(int lossValue)
     if (!_waitForKey || encodedImage._frameType == kKeyFrame)
     {
         _waitForKey = false;
-        ret = _decoder->Decode(encodedImage, _missingFrames,
-            _frameToDecode->_codecSpecificInfo);
+        ret = _decoder->Decode(encodedImage, _missingFrames, NULL,
+                               _frameToDecode->_codecSpecificInfo);
 
         if (ret >= 0)
         {

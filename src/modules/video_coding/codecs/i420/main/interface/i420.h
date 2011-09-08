@@ -127,10 +127,12 @@ public:
 //
 // Return value                 : WEBRTC_VIDEO_CODEC_OK if OK
 //                                 <0 - Error
-    virtual WebRtc_Word32 Decode(const EncodedImage& inputImage,
-                                 bool missingFrames,
-                                 const CodecSpecificInfo* /*codecSpecificInfo*/,
-                                 WebRtc_Word64 /*renderTimeMs*/);
+    virtual WebRtc_Word32 Decode(
+        const EncodedImage& inputImage,
+        bool missingFrames,
+        const RTPFragmentationHeader* /*fragmentation*/,
+        const CodecSpecificInfo* /*codecSpecificInfo*/,
+        WebRtc_Word64 /*renderTimeMs*/);
 
 // Register a decode complete callback object.
 //

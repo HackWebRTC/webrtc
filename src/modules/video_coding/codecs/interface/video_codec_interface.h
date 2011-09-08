@@ -201,6 +201,11 @@ public:
     //          - inputImage        : Encoded image to be decoded
     //          - missingFrames     : True if one or more frames have been lost
     //                                since the previous decode call.
+    //          - fragmentation     : Specifies where the encoded frame can be
+    //                                split into separate fragments. The meaning
+    //                                of fragment is codec specific, but often
+    //                                means that each fragment is decodable by
+    //                                itself.
     //          - codecSpecificInfo : Pointer to codec specific data
     //          - renderTimeMs      : System time to render in milliseconds. Only
     //                                used by decoders with internal rendering.
@@ -209,6 +214,7 @@ public:
     virtual WebRtc_Word32
     Decode(const EncodedImage& inputImage,
            bool missingFrames,
+           const RTPFragmentationHeader* fragmentation,
            const CodecSpecificInfo* codecSpecificInfo = NULL,
            WebRtc_Word64 renderTimeMs = -1) = 0;
 

@@ -21,7 +21,7 @@ VP8NormalAsyncTest(bitRate)
     _decoder2 = NULL;
 }
 
-VP8DualDecoderTest::VP8DualDecoderTest() 
+VP8DualDecoderTest::VP8DualDecoderTest()
 :
 VP8NormalAsyncTest("VP8 Dual Decoder Test", "Tests VP8 dual decoder", 1),
 _decoder2(NULL)
@@ -86,7 +86,7 @@ VP8DualDecoderTest::Perform()
         if (!frameQueue.Empty() || complete)
         {
             while (!frameQueue.Empty())
-            {   
+            {
                 _frameToDecode =
                     static_cast<FrameQueueTuple *>(frameQueue.PopFrame());
                 int lost = DoPacketLoss();
@@ -153,13 +153,14 @@ VP8DualDecoderTest::Decode(int lossValue)
     encodedImage._completeFrame = !lossValue;
     _decodeCompleteTime = 0;
     _decodeTimes[encodedImage._timeStamp] = clock()/(double)CLOCKS_PER_SEC;
-    int ret = _decoder->Decode(encodedImage, _missingFrames,
-        _frameToDecode->_codecSpecificInfo);
+    int ret = _decoder->Decode(encodedImage, _missingFrames, NULL,
+                               _frameToDecode->_codecSpecificInfo);
     // second decoder
     if (_decoder2)
     {
-        int ret2 = _decoder2->Decode(encodedImage, _missingFrames,
-            _frameToDecode->_codecSpecificInfo, 0 /* dummy */);
+        int ret2 = _decoder2->Decode(encodedImage, _missingFrames, NULL,
+                                     _frameToDecode->_codecSpecificInfo,
+                                     0 /* dummy */);
 
         // check return values
         if (ret < 0 || ret2 < 0 || ret2 != ret)
@@ -184,7 +185,7 @@ VP8DualDecoderTest::Decode(int lossValue)
 
 
 bool
-VP8DualDecoderTest::CheckIfBitExact(const void* ptrA, unsigned int aLengthBytes, 
+VP8DualDecoderTest::CheckIfBitExact(const void* ptrA, unsigned int aLengthBytes,
                                     const void* ptrB, unsigned int bLengthBytes)
 {
     if (aLengthBytes != bLengthBytes)

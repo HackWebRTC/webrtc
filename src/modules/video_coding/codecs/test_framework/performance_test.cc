@@ -283,7 +283,8 @@ int PerformanceTest::Decode(int lossValue)
     EncodedImage encodedImage;
     VideoEncodedBufferToEncodedImage(*(_frameToDecode->_frame), encodedImage);
     encodedImage._completeFrame = !lossValue;
-    int ret = _decoder->Decode(encodedImage, _missingFrames, _frameToDecode->_codecSpecificInfo);
+    int ret = _decoder->Decode(encodedImage, _missingFrames, NULL,
+                               _frameToDecode->_codecSpecificInfo);
     _missingFrames = false;
     return ret;
 }

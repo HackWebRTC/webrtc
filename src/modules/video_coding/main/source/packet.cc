@@ -15,6 +15,23 @@
 
 namespace webrtc {
 
+VCMPacket::VCMPacket()
+  :
+    payloadType(0),
+    timestamp(0),
+    seqNum(0),
+    dataPtr(NULL),
+    sizeBytes(0),
+    markerBit(false),
+    frameType(kFrameEmpty),
+    codec(kVideoCodecUnknown),
+    isFirstPacket(false),
+    completeNALU(kNaluUnset),
+    insertStartCode(false),
+    bits(false),
+    codecSpecificHeader() {
+}
+
 VCMPacket::VCMPacket(const WebRtc_UWord8* ptr,
                                const WebRtc_UWord32 size,
                                const WebRtcRTPHeader& rtpHeader) :
@@ -31,7 +48,7 @@ VCMPacket::VCMPacket(const WebRtc_UWord8* ptr,
     completeNALU(kNaluComplete),
     insertStartCode(false),
     bits(false),
-    codecSpecificHeader(&rtpHeader.type.Video)
+    codecSpecificHeader(rtpHeader.type.Video)
 {
     CopyCodecSpecifics(rtpHeader.type.Video);
 }
@@ -50,8 +67,24 @@ VCMPacket::VCMPacket(const WebRtc_UWord8* ptr, WebRtc_UWord32 size, WebRtc_UWord
     completeNALU(kNaluComplete),
     insertStartCode(false),
     bits(false),
-    codecSpecificHeader(NULL)
+    codecSpecificHeader()
 {}
+
+void VCMPacket::Reset() {
+  payloadType = 0;
+  timestamp = 0;
+  seqNum = 0;
+  dataPtr = NULL;
+  sizeBytes = 0;
+  markerBit = false;
+  frameType = kFrameEmpty;
+  codec = kVideoCodecUnknown;
+  isFirstPacket = false;
+  completeNALU = kNaluUnset;
+  insertStartCode = false;
+  bits = false;
+  memset(&codecSpecificHeader, 0, sizeof(RTPVideoHeader));
+}
 
 void VCMPacket::CopyCodecSpecifics(const RTPVideoHeader& videoHeader)
 {

@@ -18,6 +18,8 @@
 namespace webrtc
 {
 
+enum { kMaxVP8Partitions = 9 };
+
 class VCMSessionInfo
 {
 public:
@@ -25,6 +27,9 @@ public:
     virtual ~VCMSessionInfo();
 
     VCMSessionInfo(const VCMSessionInfo& rhs);
+
+    void UpdateDataPointers(const WebRtc_UWord8* frame_buffer,
+                            const WebRtc_UWord8* prev_buffer_address);
 
     WebRtc_Word32 ZeroOutSeqNum(WebRtc_Word32* list,
                                 WebRtc_Word32 numberOfSeqNum);
@@ -40,7 +45,19 @@ public:
     WebRtc_Word32 InformOfEmptyPacket(const WebRtc_UWord16 seqNum);
 
     virtual bool IsSessionComplete();
-    WebRtc_UWord32 MakeSessionDecodable(WebRtc_UWord8* ptrStartOfLayer);
+
+    // Builds fragmentation headers for VP8, each fragment being a decodable
+    // VP8 partition. Returns the total number of bytes which are decodable. Is
+    // used instead of MakeDecodable for VP8.
+    int BuildVP8FragmentationHeader(WebRtc_UWord8* frame_buffer,
+                                    int frame_buffer_length,
+                                    RTPFragmentationHeader* fragmentation);
+
+    // Makes the frame decodable. I.e., only contain decodable NALUs. All
+    // non-decodable NALUs will be deleted and packets will be moved to in
+    // memory to remove any empty space.
+    // Returns the number of bytes deleted from the session.
+    WebRtc_UWord32 MakeDecodable(WebRtc_UWord8* ptrStartOfLayer);
 
     WebRtc_UWord32 GetSessionLength();
     bool HaveLastPacket();
@@ -67,6 +84,13 @@ public:
     bool PreviousFrameLoss() const { return _previousFrameLoss; }
 
 protected:
+    // Finds the packet index of the next VP8 partition. If none is found
+    // _highestPacketIndex + 1 is returned.
+    int FindNextPartitionBeginning(int packet_index) const;
+    // Finds the packet index of the end of the partition with index
+    // partitionIndex.
+    int FindPartitionEnd(int packet_index) const;
+    static bool InSequence(WebRtc_UWord16 seqNum, WebRtc_UWord16 prevSeqNum);
     WebRtc_UWord32 InsertBuffer(WebRtc_UWord8* ptrStartOfLayer,
                                 WebRtc_Word32 packetIndex,
                                 const VCMPacket& packet);
@@ -77,13 +101,11 @@ protected:
                                  WebRtc_Word32 startIndex,
                                  WebRtc_Word32 endIndex);
     void UpdateCompleteSession();
-    // If we have inserted the first packet into this frame
-    bool _haveFirstPacket;
     // If we have inserted a packet with markerbit into this frame
-    bool _markerBit;
+    bool               _markerBit;
     // If this session has been NACKed by JB
-    bool _sessionNACK;
-    bool _completeSession;
+    bool               _sessionNACK;
+    bool               _completeSession;
     webrtc::FrameType  _frameType;
     bool               _previousFrameLoss;
     // Lowest/Highest packet sequence number in a session
@@ -92,15 +114,15 @@ protected:
 
     // Highest packet index in this frame
     WebRtc_UWord16     _highestPacketIndex;
-    // Length of packet (used for reordering)
-    WebRtc_UWord32     _packetSizeBytes[kMaxPacketsInJitterBuffer];
-    // Completeness of packets. Used for deciding if the frame is decodable.
-    WebRtc_UWord8      _naluCompleteness[kMaxPacketsInJitterBuffer];
+    // Packets in this frame.
+    // TODO(holmer): Replace this with a std::list<VCMPacket*>. Doing that will
+    //               make it possible to get rid of _markerBit, _lowSeqNum,
+    //               _highSeqNum, _highestPacketIndex, etc.
+    VCMPacket          _packets[kMaxPacketsInJitterBuffer];
     WebRtc_Word32      _emptySeqNumLow;
     WebRtc_Word32      _emptySeqNumHigh;
     // Store the sequence number that marks the last media packet
     WebRtc_Word32      _markerSeqNum;
-    bool               _ORwithPrevByte[kMaxPacketsInJitterBuffer];
 };
 
 } // namespace webrtc

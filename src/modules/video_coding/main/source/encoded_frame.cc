@@ -21,7 +21,8 @@ webrtc::EncodedImage(),
 _renderTimeMs(-1),
 _payloadType(0),
 _missingFrame(false),
-_codec(kVideoCodecUnknown)
+_codec(kVideoCodecUnknown),
+_fragmentation()
 {
     _codecSpecificInfo.codecType = kVideoCodecUnknown;
 }
@@ -32,7 +33,8 @@ webrtc::EncodedImage(rhs),
 _renderTimeMs(-1),
 _payloadType(0),
 _missingFrame(false),
-_codec(kVideoCodecUnknown)
+_codec(kVideoCodecUnknown),
+_fragmentation()
 {
     _codecSpecificInfo.codecType = kVideoCodecUnknown;
     _buffer = NULL;
@@ -46,22 +48,24 @@ _codec(kVideoCodecUnknown)
 }
 
 VCMEncodedFrame::VCMEncodedFrame(const VCMEncodedFrame& rhs)
-:
-webrtc::EncodedImage(rhs),
-_renderTimeMs(rhs._renderTimeMs),
-_payloadType(rhs._payloadType),
-_missingFrame(rhs._missingFrame),
-_codecSpecificInfo(rhs._codecSpecificInfo),
-_codec(rhs._codec)
-{
-    _buffer = NULL;
-    _size = 0;
-    _length = 0;
-    if (rhs._buffer != NULL)
-    {
-        VerifyAndAllocate(rhs._size);
-        memcpy(_buffer, rhs._buffer, rhs._length);
-    }
+  :
+    webrtc::EncodedImage(rhs),
+    _renderTimeMs(rhs._renderTimeMs),
+    _payloadType(rhs._payloadType),
+    _missingFrame(rhs._missingFrame),
+    _codecSpecificInfo(rhs._codecSpecificInfo),
+    _codec(rhs._codec),
+    _fragmentation() {
+  _buffer = NULL;
+  _size = 0;
+  _length = 0;
+  if (rhs._buffer != NULL)
+  {
+      VerifyAndAllocate(rhs._size);
+      memcpy(_buffer, rhs._buffer, rhs._length);
+  }
+  // Deep operator=
+  _fragmentation = rhs._fragmentation;
 }
 
 VCMEncodedFrame::~VCMEncodedFrame()
@@ -124,6 +128,10 @@ void VCMEncodedFrame::CopyCodecSpecific(const RTPVideoHeader* header)
             }
         }
     }
+}
+
+const RTPFragmentationHeader* VCMEncodedFrame::FragmentationHeader() const {
+  return &_fragmentation;
 }
 
 WebRtc_Word32

@@ -22,19 +22,15 @@
 
 namespace webrtc {
 
-// Constructor
-VCMFrameBuffer::VCMFrameBuffer() :
+VCMFrameBuffer::VCMFrameBuffer()
+  :
     _state(kStateFree),
     _frameCounted(false),
     _nackCount(0),
-    _latestPacketTimeMs(-1)
-{
+    _latestPacketTimeMs(-1) {
 }
 
-// Destructor
-VCMFrameBuffer::~VCMFrameBuffer()
-{
-    Reset();
+VCMFrameBuffer::~VCMFrameBuffer() {
 }
 
 VCMFrameBuffer::VCMFrameBuffer(VCMFrameBuffer& rhs)
@@ -139,6 +135,7 @@ VCMFrameBuffer::InsertPacket(const VCMPacket& packet, WebRtc_Word64 timeInMs)
                    (packet.insertStartCode ? kH264StartCodeLengthBytes : 0);
     if (requiredSizeBytes >= _size)
     {
+        const WebRtc_UWord8* prevBuffer = _buffer;
         const WebRtc_UWord32 increments = requiredSizeBytes /
                                           kBufferIncStepSizeBytes +
                                         (requiredSizeBytes %
@@ -153,9 +150,10 @@ VCMFrameBuffer::InsertPacket(const VCMPacket& packet, WebRtc_Word64 timeInMs)
         {
             return kSizeError;
         }
+        _sessionInfo.UpdateDataPointers(_buffer, prevBuffer);
     }
 
-    CopyCodecSpecific(packet.codecSpecificHeader);
+    CopyCodecSpecific(&packet.codecSpecificHeader);
 
     WebRtc_Word64 retVal = _sessionInfo.InsertPacket(packet, _buffer);
     if (retVal == -1)
@@ -261,9 +259,16 @@ VCMFrameBuffer::Reset()
 void
 VCMFrameBuffer::MakeSessionDecodable()
 {
-    WebRtc_Word32 retVal = _sessionInfo.MakeSessionDecodable(_buffer);
-    // update length
+    WebRtc_UWord32 retVal;
+#ifdef INDEPENDENT_PARTITIONS
+    if (_codec != kVideoCodecVP8) {
+        retVal = _sessionInfo.MakeDecodable(_buffer);
+        _length -= retVal;
+    }
+#else
+    retVal = _sessionInfo.MakeDecodable(_buffer);
     _length -= retVal;
+#endif
 }
 
 // Set state of frame
@@ -397,7 +402,20 @@ VCMFrameBuffer::IsRetransmitted()
 void
 VCMFrameBuffer::PrepareForDecode()
 {
+#ifdef INDEPENDENT_PARTITIONS
+    if (_codec == kVideoCodecVP8)
+    {
+        _length =
+            _sessionInfo.BuildVP8FragmentationHeader(_buffer, _length,
+                                                     &_fragmentation);
+    }
+    else
+    {
+        _length = _sessionInfo.PrepareForDecode(_buffer, _codec);
+    }
+#else
     _length = _sessionInfo.PrepareForDecode(_buffer, _codec);
+#endif
 }
 
 }
