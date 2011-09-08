@@ -14,12 +14,14 @@
 #define WEBRTC_TYPEDEFS_H_
 
 // Reserved words definitions
+// TODO(andrew): Look at removing these.
 #define WEBRTC_EXTERN extern
 #define G_CONST const
 #define WEBRTC_INLINE extern __inline
 
 // Define WebRTC preprocessor identifiers based on the current build platform.
-// TODO(ajm): Clean these up. We can probably remove everything in this block.
+// TODO(andrew): Clean these up. We can probably remove everything in this
+// block.
 //   - TARGET_MAC_INTEL and TARGET_MAC aren't used anywhere.
 //   - In the few places where TARGET_PC is used, it should be replaced by
 //     something more specific.
@@ -32,7 +34,7 @@
     #endif
 #elif defined(__APPLE__)
     // Mac OS X
-    #if defined(__LITTLE_ENDIAN__ ) //TODO: is this used?
+    #if defined(__LITTLE_ENDIAN__ )
         #if !defined(WEBRTC_TARGET_MAC_INTEL)
             #define WEBRTC_TARGET_MAC_INTEL
         #endif
@@ -53,7 +55,7 @@
 //   http://msdn.microsoft.com/en-us/library/b0084kay.aspx
 //   http://www.agner.org/optimize/calling_conventions.pdf
 //   or with gcc, run: "echo | gcc -E -dM -"
-// TODO(ajm): replace WEBRTC_LITTLE_ENDIAN with WEBRTC_ARCH_LITTLE_ENDIAN?
+// TODO(andrew): replace WEBRTC_LITTLE_ENDIAN with WEBRTC_ARCH_LITTLE_ENDIAN?
 #if defined(_M_X64) || defined(__x86_64__)
 #define WEBRTC_ARCH_X86_FAMILY
 #define WEBRTC_ARCH_X86_64
@@ -65,8 +67,11 @@
 #define WEBRTC_ARCH_32_BITS
 #define WEBRTC_ARCH_LITTLE_ENDIAN
 #elif defined(__ARMEL__)
-// TODO(ajm): Chromium uses the two commented defines. Should we switch?
-#define WEBRTC_ARCH_ARM
+// TODO(andrew): We'd prefer to control platform defines here, but this is
+// currently provided by the Android makefiles. Commented to avoid duplicate
+// definition warnings.
+//#define WEBRTC_ARCH_ARM
+// TODO(andrew): Chromium uses the following two defines. Should we switch?
 //#define WEBRTC_ARCH_ARM_FAMILY
 //#define WEBRTC_ARCH_ARMEL
 #define WEBRTC_ARCH_32_BITS
@@ -75,7 +80,7 @@
 #error Please add support for your architecture in typedefs.h
 #endif
 
-// TODO(ajm): SSE2 is disabled on Windows for the moment, because AEC
+// TODO(andrew): SSE2 is disabled on Windows for the moment, because AEC
 // optimization is broken. Enable it as soon as AEC is fixed.
 //#if defined(__SSE2__) || defined(_MSC_VER)
 #if defined(__SSE2__)
