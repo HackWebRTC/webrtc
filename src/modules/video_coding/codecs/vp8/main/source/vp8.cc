@@ -22,7 +22,6 @@
 #include "vpx/vp8cx.h"
 #include "vpx/vp8dx.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -705,7 +704,6 @@ VP8Decoder::~VP8Decoder()
 WebRtc_Word32
 VP8Decoder::Reset()
 {
-    printf("Reset decoder\n");
     if (!_inited)
     {
         return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
@@ -727,7 +725,6 @@ WebRtc_Word32
 VP8Decoder::InitDecode(const VideoCodec* inst,
                        WebRtc_Word32 numberOfCores)
 {
-    printf("Init decoder\n");
     vp8_postproc_cfg_t  ppcfg;
     WebRtc_Word32 retVal = Release();
     if (retVal < 0 )
@@ -1013,7 +1010,6 @@ VP8Decoder::RegisterDecodeCompleteCallback(DecodedImageCallback* callback)
 WebRtc_Word32
 VP8Decoder::Release()
 {
-    printf("Release decoder\n");
     if (_decodedImage._buffer != NULL)
     {
         delete [] _decodedImage._buffer;
