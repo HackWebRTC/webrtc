@@ -59,11 +59,11 @@
           ],
           'defines': [
             'WEBRTC_LIBVPX_VERSION=971', # Cayuga
-            'INDEPENDENT_PARTITIONS',
+            #'INDEPENDENT_PARTITIONS',
           ],
           'direct_dependent_settings': {
             'defines': [
-              'INDEPENDENT_PARTITIONS',
+              #'INDEPENDENT_PARTITIONS',
             ],
           },
         }],
