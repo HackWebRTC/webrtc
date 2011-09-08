@@ -22,6 +22,7 @@
 #include "vpx/vp8cx.h"
 #include "vpx/vp8dx.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -618,6 +619,7 @@ VP8Encoder::GetEncodedFrame(const RawImage& input_image)
     return WEBRTC_VIDEO_CODEC_ERROR;
 }
 
+#if WEBRTC_LIBVPX_VERSION >= 971
 WebRtc_Word32
 VP8Encoder::GetEncodedPartitions(const RawImage& input_image) {
   vpx_codec_iter_t iter = NULL;
@@ -666,6 +668,7 @@ VP8Encoder::GetEncodedPartitions(const RawImage& input_image) {
       &frag_info);
   return WEBRTC_VIDEO_CODEC_OK;
 }
+#endif
 
 WebRtc_Word32
 VP8Encoder::SetPacketLoss(WebRtc_UWord32 packetLoss)
@@ -702,11 +705,21 @@ VP8Decoder::~VP8Decoder()
 WebRtc_Word32
 VP8Decoder::Reset()
 {
+    printf("Reset decoder\n");
     if (!_inited)
     {
         return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
     }
-    InitDecode(NULL, 1);
+    if (_inst != NULL)
+    {
+        VideoCodec inst;
+        inst = *_inst;
+        InitDecode(&inst, _numCores);
+    }
+    else
+    {
+        InitDecode(NULL, _numCores);
+    }
     return WEBRTC_VIDEO_CODEC_OK;
 }
 
@@ -714,6 +727,7 @@ WebRtc_Word32
 VP8Decoder::InitDecode(const VideoCodec* inst,
                        WebRtc_Word32 numberOfCores)
 {
+    printf("Init decoder\n");
     vp8_postproc_cfg_t  ppcfg;
     WebRtc_Word32 retVal = Release();
     if (retVal < 0 )
@@ -757,7 +771,7 @@ VP8Decoder::InitDecode(const VideoCodec* inst,
     vpx_codec_control(_decoder, VP8_SET_POSTPROC, &ppcfg);
 
     // Save VideoCodec instance for later; mainly for duplicating the decoder.
-    if (inst)
+    if (inst && inst != _inst)
     {
         if (!_inst)
         {
@@ -999,6 +1013,7 @@ VP8Decoder::RegisterDecodeCompleteCallback(DecodedImageCallback* callback)
 WebRtc_Word32
 VP8Decoder::Release()
 {
+    printf("Release decoder\n");
     if (_decodedImage._buffer != NULL)
     {
         delete [] _decodedImage._buffer;

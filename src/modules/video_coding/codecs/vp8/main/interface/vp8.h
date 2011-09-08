@@ -142,7 +142,9 @@ private:
 
     WebRtc_Word32 GetEncodedFrame(const RawImage& input_image);
 
+#if WEBRTC_LIBVPX_VERSION >= 971
     WebRtc_Word32 GetEncodedPartitions(const RawImage& input_image);
+#endif
 
 // Determine maximum target for Intra frames
 //
