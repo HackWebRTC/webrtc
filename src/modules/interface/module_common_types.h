@@ -53,6 +53,8 @@ struct RTPVideoHeaderVP8
         pictureId = kNoPictureId;
         tl0PicIdx = kNoTl0PicIdx;
         temporalIdx = kNoTemporalIdx;
+        partitionId = 0;
+        beginningOfPartition = false;
     }
 
     bool           nonReference;    // Frame is discardable.
@@ -61,6 +63,9 @@ struct RTPVideoHeaderVP8
     WebRtc_Word16  tl0PicIdx;       // TL0PIC_IDX, 8 bits;
                                     // kNoTl0PicIdx means no value provided.
     WebRtc_Word8   temporalIdx;     // Temporal layer index, or kNoTemporalIdx.
+    int            partitionId;     // VP8 partition ID
+    bool           beginningOfPartition;  // True if this packet is the first
+                                          // in a VP8 partition. Otherwise false
 };
 union RTPVideoTypeHeader
 {
@@ -372,11 +377,11 @@ public:
 struct VideoContentMetrics
 {
     VideoContentMetrics(): motionMagnitudeNZ(0), sizeZeroMotion(0), spatialPredErr(0),
-            spatialPredErrH(0), spatialPredErrV(0), motionPredErr(0), 
+            spatialPredErrH(0), spatialPredErrV(0), motionPredErr(0),
             motionHorizontalness(0), motionClusterDistortion(0),
             nativeWidth(0), nativeHeight(0), contentChange(false) {   }
     void Reset(){ motionMagnitudeNZ = 0; sizeZeroMotion = 0; spatialPredErr = 0;
-            spatialPredErrH = 0; spatialPredErrV = 0; motionPredErr = 0; 
+            spatialPredErrH = 0; spatialPredErrV = 0; motionPredErr = 0;
             motionHorizontalness = 0; motionClusterDistortion = 0;
             nativeWidth = 0; nativeHeight = 0; contentChange = false; }
 

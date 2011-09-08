@@ -645,6 +645,8 @@ RTPReceiverVideo::ReceiveVp8Codec(WebRtcRTPHeader* rtpHeader,
                           kNoTl0PicIdx;
     toHeader->temporalIdx = fromHeader->hasTID ? fromHeader->tID :
                             kNoTemporalIdx;
+    toHeader->partitionId = fromHeader->partitionID;
+    toHeader->beginningOfPartition = fromHeader->beginningOfPartition;
 
     if(CallbackOfReceivedPayloadData(parsedPacket.info.VP8.data,
                                      parsedPacket.info.VP8.dataLength,
