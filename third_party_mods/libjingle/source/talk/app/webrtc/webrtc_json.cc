@@ -28,6 +28,8 @@
 #include "talk/app/webrtc/webrtc_json.h"
 
 #include <stdio.h>
+
+#include <locale>
 #include <string>
 
 #include "talk/base/json.h"
@@ -35,6 +37,41 @@
 #include "talk/base/stringutils.h"
 #include "talk/session/phone/mediasessionclient.h"
 #include "talk/session/phone/codec.h"
+
+namespace {
+
+// Before [de]serializing, we need to work around a bug in jsoncpp where
+// locale sensitive string conversion functions are used (e.g. sprintf,
+// sscanf and stl).  The problem is that depending on what the current
+// locale is, numbers might be formatted differently than the jsoncpp code
+// otherwise expects.  E.g. sprintf might format a number as "1,234" and
+// the parser assumes that it would be "1.234".
+class AutoSwitchToClassicLocale {
+ public:
+  AutoSwitchToClassicLocale() {
+    const char* locale_name = setlocale(LC_NUMERIC, NULL);
+    if (locale_name)
+      saved_locale_ = locale_name;
+
+    // Switch the CRT to "C".
+    setlocale(LC_NUMERIC, "C");
+
+    // Switch STL to classic.
+    cxx_locale_ = std::locale::global(std::locale::classic());
+  }
+
+  ~AutoSwitchToClassicLocale() {
+    // Switch the locale back to what it was before.
+    std::locale::global(cxx_locale_);
+    setlocale(LC_NUMERIC, saved_locale_.c_str());
+  }
+
+ private:
+  std::string saved_locale_;
+  std::locale cxx_locale_;
+};
+
+}
 
 namespace webrtc {
 static const int kIceComponent = 1;
@@ -110,6 +147,9 @@ bool GetJSONSignalingMessage(
     const cricket::SessionDescription* sdp,
     const std::vector<cricket::Candidate>& candidates,
     std::string* signaling_message) {
+  // See documentation for AutoSwitchToClassicLocale.
+  AutoSwitchToClassicLocale auto_switch;
+
   const cricket::ContentInfo* audio_content = GetFirstAudioContent(sdp);
   const cricket::ContentInfo* video_content = GetFirstVideoContent(sdp);
 
@@ -129,8 +169,9 @@ bool GetJSONSignalingMessage(
   Json::Value signal;
   Append(&signal, "media", media);
 
-  // now serialize
+  // Now serialize.
   *signaling_message = Serialize(signal);
+
   return true;
 }
 
@@ -258,6 +299,10 @@ bool ParseJSONSignalingMessage(const std::string& signaling_message,
                                cricket::SessionDescription*& sdp,
                                std::vector<cricket::Candidate>* candidates) {
   ASSERT(!sdp);  // expect this to be NULL
+
+  // See documentation for AutoSwitchToClassicLocale.
+  AutoSwitchToClassicLocale auto_switch;
+
   // first deserialize message
   Json::Value value;
   if (!Deserialize(signaling_message, &value)) {
@@ -440,16 +485,16 @@ void Append(Json::Value* object, const std::string& key, char * value) {
 void Append(Json::Value* object, const std::string& key, double value) {
   (*object)[key] = Json::Value(value);
 }
-void Append(Json::Value* object, const std::string& key, float value) {
-  (*object)[key] = Json::Value(value);
-}
+
 void Append(Json::Value* object, const std::string& key, int value) {
   (*object)[key] = Json::Value(value);
 }
+
 void Append(Json::Value* object, const std::string& key,
             const std::string& value) {
   (*object)[key] = Json::Value(value);
 }
+
 void Append(Json::Value* object, const std::string& key, uint32 value) {
   (*object)[key] = Json::Value(value);
 }
