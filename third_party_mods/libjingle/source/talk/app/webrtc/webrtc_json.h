@@ -112,7 +112,6 @@ void Append(Json::Value* object, const std::string& key, bool value);
 
 void Append(Json::Value* object, const std::string& key, char * value);
 void Append(Json::Value* object, const std::string& key, double value);
-void Append(Json::Value* object, const std::string& key, float value);
 void Append(Json::Value* object, const std::string& key, int value);
 void Append(Json::Value* object, const std::string& key,
             const std::string& value);
