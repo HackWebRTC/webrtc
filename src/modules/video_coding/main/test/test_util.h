@@ -51,6 +51,7 @@ public:
 
 // forward declaration
 int MTRxTxTest(CmdArgs& args);
+double NormalDist(double mean, double stdDev);
 namespace webrtc
 {
     class RtpDump;
@@ -64,7 +65,7 @@ namespace webrtc
  2. EncodeComplete callback:
  2a. Transfer encoded data directly to the decoder
  2b. Pass encoded data via the RTP module
- 3. Caluclate PSNR from file function (for now: does not deal with frame drops)
+ 3. Calculate PSNR from file function (for now: does not deal with frame drops)
  */
 
 // Send Side - Packetization callback - send an encoded frame to the VCMReceiver
@@ -215,9 +216,11 @@ public:
     int SendCount() {return _sendCount; }
     // Return accumulated length in bytes of transmitted packets
     WebRtc_UWord32 TotalSentLength() {return _totalSentLength;}
-private:
+protected:
     // Randomly decide whether to drop packets, based on the channel model
-    bool PacketLoss(double lossPct);
+    bool PacketLoss();
+    // Random uniform loss model
+    bool UnifomLoss(double lossPct);
 
     WebRtc_UWord32          _sendCount;
     webrtc::RtpRtcp*        _rtp;
@@ -229,27 +232,6 @@ private:
     WebRtc_UWord32          _totalSentLength;
     webrtc::ListWrapper     _rtpPackets;
     webrtc::RtpDump*        _rtpDump;
-};
-
-// Used in multi thread test
-class SendSharedState
-{
-public:
-    SendSharedState(webrtc::VideoCodingModule& vcm, webrtc::RtpRtcp& rtp,
-            CmdArgs args) :
-            _vcm(vcm),
-            _rtp(rtp),
-            _args(args),
-            _sourceFile(NULL),
-            _frameCnt(0),
-            _timestamp(0) {}
-
-    webrtc::VideoCodingModule&  _vcm;
-    webrtc::RtpRtcp&            _rtp;
-    CmdArgs                     _args;
-    FILE*                       _sourceFile;
-    WebRtc_Word32               _frameCnt;
-    WebRtc_Word32               _timestamp;
 };
 
 class PacketRequester: public webrtc::VCMPacketRequestCallback

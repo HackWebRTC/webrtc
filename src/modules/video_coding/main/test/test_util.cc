@@ -249,65 +249,6 @@ RTPSendCompleteCallback::SendPacket(int channel, const void *data, int len)
 {
     _sendCount++;
     _totalSentLength += len;
-    bool transmitPacket = true;
-
-    // Packet Loss
-
-    if (_burstLength <= 1.0)
-    {
-        // Random loss: if _burstLength parameter is not set, or <=1
-        if (PacketLoss(_lossPct))
-        {
-            // drop
-            transmitPacket = false;
-        }
-    }
-    else
-    {
-        // Simulate bursty channel (Gilbert model)
-        // (1st order) Markov chain model with memory of the previous/last
-        // packet state (loss or received)
-
-        // 0 = received state
-        // 1 = loss state
-
-        // probTrans10: if previous packet is lost, prob. to -> received state
-        // probTrans11: if previous packet is lost, prob. to -> loss state
-
-        // probTrans01: if previous packet is received, prob. to -> loss state
-        // probTrans00: if previous packet is received, prob. to -> received
-
-        // Map the two channel parameters (average loss rate and burst length)
-        // to the transition probabilities:
-        double probTrans10 = 100 * (1.0 / _burstLength);
-        double probTrans11 = (100.0 - probTrans10);
-        double probTrans01 = (probTrans10 * ( _lossPct / (100.0 - _lossPct)));
-
-        // Note: Random loss (Bernoulli) model is a special case where:
-        // burstLength = 100.0 / (100.0 - _lossPct) (i.e., p10 + p01 = 100)
-
-        if (_prevLossState == 0 )
-        {
-            // previous packet was received
-            if (PacketLoss(probTrans01))
-            {
-                // drop, update previous state to loss
-                _prevLossState = 1;
-                transmitPacket = false;
-            }
-        }
-        else if (_prevLossState == 1)
-        {
-            _prevLossState = 0;
-            // previous packet was lost
-            if (PacketLoss(probTrans11))
-            {
-                // drop, update previous state to loss
-                _prevLossState = 1;
-                transmitPacket = false;
-            }
-        }
-    }
 
     if (_rtpDump != NULL)
     {
@@ -316,6 +257,8 @@ RTPSendCompleteCallback::SendPacket(int channel, const void *data, int len)
             return -1;
         }
     }
+
+    bool transmitPacket = PacketLoss();
 
     WebRtc_UWord64 now = VCMTickTime::MillisecondTimestamp();
     // Insert outgoing packet into list
@@ -367,11 +310,8 @@ RTPSendCompleteCallback::SendPacket(int channel, const void *data, int len)
 int
 RTPSendCompleteCallback::SendRTCPPacket(int channel, const void *data, int len)
 {
-    if (_rtp->IncomingPacket((const WebRtc_UWord8*)data, len) == 0)
-    {
-        return len;
-    }
-    return -1;
+    // Incorporate network conditions
+    return SendPacket(channel, data, len);
 }
 
 void
@@ -389,7 +329,70 @@ RTPSendCompleteCallback::SetBurstLength(double burstLength)
 }
 
 bool
-RTPSendCompleteCallback::PacketLoss(double lossPct)
+RTPSendCompleteCallback::PacketLoss()
+{
+    bool transmitPacket = true;
+    if (_burstLength <= 1.0)
+    {
+        // Random loss: if _burstLength parameter is not set, or <=1
+        if (UnifomLoss(_lossPct))
+        {
+            // drop
+            transmitPacket = false;
+        }
+    }
+    else
+    {
+        // Simulate bursty channel (Gilbert model)
+        // (1st order) Markov chain model with memory of the previous/last
+        // packet state (loss or received)
+
+        // 0 = received state
+        // 1 = loss state
+
+        // probTrans10: if previous packet is lost, prob. to -> received state
+        // probTrans11: if previous packet is lost, prob. to -> loss state
+
+        // probTrans01: if previous packet is received, prob. to -> loss state
+        // probTrans00: if previous packet is received, prob. to -> received
+
+        // Map the two channel parameters (average loss rate and burst length)
+        // to the transition probabilities:
+        double probTrans10 = 100 * (1.0 / _burstLength);
+        double probTrans11 = (100.0 - probTrans10);
+        double probTrans01 = (probTrans10 * ( _lossPct / (100.0 - _lossPct)));
+
+        // Note: Random loss (Bernoulli) model is a special case where:
+        // burstLength = 100.0 / (100.0 - _lossPct) (i.e., p10 + p01 = 100)
+
+        if (_prevLossState == 0 )
+        {
+            // previous packet was received
+            if (UnifomLoss(probTrans01))
+            {
+                // drop, update previous state to loss
+                _prevLossState = 1;
+                transmitPacket = false;
+            }
+        }
+        else if (_prevLossState == 1)
+        {
+            _prevLossState = 0;
+            // previous packet was lost
+            if (UnifomLoss(probTrans11))
+            {
+                // drop, update previous state to loss
+                _prevLossState = 1;
+                transmitPacket = false;
+             }
+        }
+    }
+    return transmitPacket;
+}
+
+
+bool
+RTPSendCompleteCallback::UnifomLoss(double lossPct)
 {
     double randVal = (std::rand() + 1.0)/(RAND_MAX + 1.0);
     return randVal < lossPct/100;
@@ -401,7 +404,6 @@ PacketRequester::ResendPackets(const WebRtc_UWord16* sequenceNumbers,
 {
     return _rtp.SendNACK(sequenceNumbers, length);
 }
-
 
 RTPVideoCodecTypes
 ConvertCodecType(const char* plname)

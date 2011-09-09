@@ -63,15 +63,6 @@ public:
     RTPPlayer&              _rtpPlayer;
 };
 
-class SharedRTPState
-{
-public:
-    SharedRTPState(webrtc::VideoCodingModule& vcm, webrtc::RtpRtcp& rtp) :
-        _vcm(vcm),
-        _rtp(rtp) {}
-    webrtc::VideoCodingModule&  _vcm;
-    webrtc::RtpRtcp&            _rtp;
-};
 
 int RtpPlay(CmdArgs& args);
 int RtpPlayMT(CmdArgs& args,

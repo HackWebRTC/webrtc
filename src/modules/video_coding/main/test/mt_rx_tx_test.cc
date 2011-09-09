@@ -14,16 +14,17 @@
  *
  **************************************************/
 
-#include "receiver_tests.h" // shared RTP state and receive side threads
-#include "video_coding.h"
-#include "rtp_rtcp.h"
-#include "thread_wrapper.h"
+#include <string.h>
+
 #include "../source/event.h"
+#include "media_opt_test.h"
+#include "mt_test_common.h"
+#include "receiver_tests.h" // shared RTP state and receive side threads
+#include "rtp_rtcp.h"
 #include "test_macros.h"
 #include "test_util.h" // send side callback
-#include "media_opt_test.h"
-
-#include <string.h>
+#include "thread_wrapper.h"
+#include "video_coding.h"
 
 using namespace webrtc;
 
