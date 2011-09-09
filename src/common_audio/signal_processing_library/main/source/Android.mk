@@ -17,8 +17,6 @@ LOCAL_MODULE_CLASS := STATIC_LIBRARIES
 LOCAL_MODULE := libwebrtc_spl
 LOCAL_MODULE_TAGS := optional
 LOCAL_SRC_FILES := \
-    add_sat_w16.c \
-    add_sat_w32.c \
     auto_corr_to_refl_coef.c \
     auto_correlation.c \
     complex_fft.c \
@@ -36,15 +34,11 @@ LOCAL_SRC_FILES := \
     filter_ma_fast_q12.c \
     get_hanning_window.c \
     get_scaling_square.c \
-    get_size_in_bits.c \
     hanning_table.c \
     ilbc_specific_functions.c \
     levinson_durbin.c \
     lpc_to_refl_coef.c \
     min_max_operations.c \
-    norm_u32.c \
-    norm_w16.c \
-    norm_w32.c \
     randn_table.c \
     randomization_functions.c \
     refl_coef_to_lpc.c \
@@ -60,8 +54,6 @@ LOCAL_SRC_FILES := \
     spl_version.c \
     splitting_filter.c \
     sqrt_of_one_minus_x_squared.c \
-    sub_sat_w16.c \
-    sub_sat_w32.c \
     vector_scaling_operations.c
 
 # Flags passed to both C and C++ files.
