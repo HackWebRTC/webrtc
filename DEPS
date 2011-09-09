@@ -44,6 +44,9 @@ deps = {
   "trunk/third_party/libjingle/":
     Var("chromium_trunk") + "/src/third_party/libjingle@" + Var("chromium_revision"),
 
+  "trunk/third_party/google-gflags/src":
+    (Var("googlecode_url") % "google-gflags") + "/tags/gflags-1.5/src@head",
+
   "trunk/third_party/libjingle/source":
     (Var("googlecode_url") % "libjingle") + "/trunk@" + Var("libjingle_revision"),
 
