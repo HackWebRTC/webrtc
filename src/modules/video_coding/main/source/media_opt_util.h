@@ -26,8 +26,12 @@ namespace webrtc
 {
 class ListWrapper;
 
-enum { kLossPrHistorySize = 30 }; // 30 time periods
-// 1000 ms, total filter length is 30 000 ms
+// Number of time periods used for (max) window filter for packet loss
+// TODO (marpan): set reasonable window size for filtered packet loss,
+// adjustment should be based on logged/real data of loss stats/correlation.
+enum { kLossPrHistorySize = 10 };
+
+// 1000 ms, total filter length is (kLossPrHistorySize * 1000) ms
 enum { kLossPrShortFilterWinMs = 1000 };
 
 // Thresholds for hybrid NACK/FEC
