@@ -1296,7 +1296,7 @@ WebRtc_Word32 TransmitMixer::APMProcessStream(
         captureLevel) == -1)
     {
         WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
-                   "AudioProcessingModule::set_stream_analog_level"
+                   "AudioProcessingModule::set_stream_analog_level "
                    "(captureLevel=%u,) => error",
                    captureLevel);
     }
@@ -1341,7 +1341,7 @@ WebRtc_Word32 TransmitMixer::APMProcessStream(
         } else
         {
             WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
-                       "TransmitMixer::APMProcessStream() failed to"
+                       "TransmitMixer::APMProcessStream() failed to "
                        "retrieve level metrics");
             _audioLevel_dBov = 100;
         }
@@ -1353,19 +1353,13 @@ WebRtc_Word32 TransmitMixer::APMProcessStream(
         if (_saturationWarning == 1)
         {
             WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
-                       "TransmitMixer::APMProcessStream() pending"
+                       "TransmitMixer::APMProcessStream() pending "
                        "saturation warning exists");
         }
         _saturationWarning = 1; // triggers callback from moduleprocess thread
         WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
-                   "TransmitMixer::APMProcessStream() VE_SATURATION_WARNING"
+                   "TransmitMixer::APMProcessStream() VE_SATURATION_WARNING "
                    "message has been posted for callback");
-    }
-
-    if (_audioProcessingModulePtr->echo_cancellation()->stream_has_echo())
-    {
-        WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
-                   "AudioProcessingModule notification: Echo");
     }
 
     return 0;
