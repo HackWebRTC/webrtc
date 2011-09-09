@@ -305,6 +305,10 @@ VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters)
     // First partition protection: ~ 20%
     WebRtc_UWord8 firstPartitionProt = (WebRtc_UWord8) (255 * 0.20);
 
+    // Minimum protection level needed to generate one FEC packet for one
+    // source packet/frame (in RTP sender)
+    WebRtc_UWord8 minProtLevelFec = 85;
+
     // Threshold on packetLoss and bitRrate/frameRate (=average #packets),
     // above which we allocate protection to cover at least first partition.
     WebRtc_UWord8 lossThr = 0;
@@ -437,17 +441,17 @@ VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters)
     // in mediaOpt may generate 0 FEC packets in RTP sender (since actual #FEC
     // is based on rounding off protectionFactor on actual source packet number).
     // The correction factor (_corrFecCost) attempts to corrects this, at least
-    // for cases of low rates/low # of packets.
+    // for cases of low rates (small #packets) and low protection levels.
     const float estNumFecGen = 0.5f + static_cast<float> (_protectionFactorD *
                                                         avgTotPackets / 255.0f);
-    // Note we reduce cost factor (which will reduce overhead for FEC and
+    // We reduce cost factor (which will reduce overhead for FEC and
     // hybrid method) and not the protectionFactor.
     _corrFecCost = 1.0f;
-    if (estNumFecGen < 1.5f)
+    if (estNumFecGen < 1.5f && _protectionFactorD < minProtLevelFec)
     {
         _corrFecCost = 0.5f;
     }
-    if (estNumFecGen < 1.0f)
+    if (estNumFecGen < 0.9f && _protectionFactorD < minProtLevelFec)
     {
         _corrFecCost = 0.0f;
     }
