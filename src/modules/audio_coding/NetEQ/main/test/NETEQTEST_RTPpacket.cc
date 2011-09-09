@@ -10,6 +10,7 @@
 
 #include "NETEQTEST_RTPpacket.h"
 
+#include <assert.h>
 #include <string.h>
 
 #ifdef WIN32
@@ -72,7 +73,7 @@ NETEQTEST_RTPpacket & NETEQTEST_RTPpacket::operator = (const NETEQTEST_RTPpacket
         // deallocate datagram memory if allocated
         if(_datagram)
         {
-            delete[] _datagram;
+            delete [] _datagram;
         }
 
         // do shallow copy
@@ -113,7 +114,7 @@ NETEQTEST_RTPpacket::~NETEQTEST_RTPpacket()
 {
     if(_datagram) 
     {
-        delete _datagram;
+        delete [] _datagram;
     }
 }
 
@@ -121,7 +122,7 @@ NETEQTEST_RTPpacket::~NETEQTEST_RTPpacket()
 void NETEQTEST_RTPpacket::reset()
 {
     if(_datagram) {
-        delete _datagram;
+        delete [] _datagram;
     }
     _datagram = NULL;
     _memSize = 0;
@@ -134,6 +135,37 @@ void NETEQTEST_RTPpacket::reset()
 
 }
 
+int NETEQTEST_RTPpacket::skipFileHeader(FILE *fp)
+{
+    if (!fp) {
+        return -1;
+    }
+
+    const int kFirstLineLength = 40;
+    char firstline[kFirstLineLength];
+    fgets(firstline, kFirstLineLength, fp);
+    if (strncmp(firstline, "#!rtpplay", 9) == 0) {
+        if (strncmp(firstline, "#!rtpplay1.0", 12) != 0) {
+            return -1;
+        }
+    }
+    else if (strncmp(firstline, "#!RTPencode", 11) == 0) {
+        if (strncmp(firstline, "#!RTPencode1.0", 14) != 0) {
+            return -1;
+        }
+    }
+    else
+    {
+        return -1;
+    }
+
+    const int kRtpDumpHeaderSize = 4 + 4 + 4 + 2 + 2;
+    if (fseek(fp, kRtpDumpHeaderSize, SEEK_CUR) != 0)
+    {
+        return -1;
+    }
+    return 0;
+}
 
 int NETEQTEST_RTPpacket::readFromFile(FILE *fp)
 {
@@ -201,15 +233,15 @@ int NETEQTEST_RTPpacket::readFromFile(FILE *fp)
 }
 
 
-int NETEQTEST_RTPpacket::readFixedFromFile(FILE *fp, int length)
+int NETEQTEST_RTPpacket::readFixedFromFile(FILE *fp, size_t length)
 {
-    if(!fp)
+    if (!fp)
     {
-        return(-1);
+        return -1;
     }
 
     // check buffer size
-    if (_datagram && _memSize < length)
+    if (_datagram && _memSize < static_cast<int>(length))
     {
         reset();
     }
@@ -220,10 +252,10 @@ int NETEQTEST_RTPpacket::readFixedFromFile(FILE *fp, int length)
         _memSize = length;
     }
 
-	if (fread((unsigned short *) _datagram,1,length,fp) != length)
+    if (fread(_datagram, 1, length, fp) != length)
     {
         reset();
-		return(-1);
+        return -1;
     }
 
     _datagramLen = length;
@@ -232,53 +264,54 @@ int NETEQTEST_RTPpacket::readFixedFromFile(FILE *fp, int length)
     if (!_blockList.empty() && _blockList.count(payloadType()) > 0)
     {
         // discard this payload
-        return(readFromFile(fp));
+        return readFromFile(fp);
     }
 
-	return(length);
+    return length;
 
 }
 
 
 int NETEQTEST_RTPpacket::writeToFile(FILE *fp)
 {
-    if(!fp)
+    if (!fp)
     {
-        return(-1);
+        return -1;
     }
 
-	WebRtc_UWord16 length, plen;
+    WebRtc_UWord16 length, plen;
     WebRtc_UWord32 offset;
 
     // length including RTPplay header
     length = htons(_datagramLen + HDR_SIZE);
     if (fwrite(&length, 2, 1, fp) != 1)
     {
-        return(-1);
+        return -1;
     }
 
     // payload length
     plen = htons(_datagramLen);
     if (fwrite(&plen, 2, 1, fp) != 1)
     {
-        return(-1);
+        return -1;
     }
     
     // offset (=receive time)
     offset = htonl(_receiveTime);
     if (fwrite(&offset, 4, 1, fp) != 1)
     {
-        return(-1);
+        return -1;
     }
 
 
     // write packet data
-    if (fwrite((unsigned short *) _datagram, 1, _datagramLen, fp) != _datagramLen)
+    if (fwrite(_datagram, 1, _datagramLen, fp) !=
+            static_cast<size_t>(_datagramLen))
     {
-        return(-1);
+        return -1;
     }
 
-	return(_datagramLen + HDR_SIZE); // total number of bytes written
+    return _datagramLen + HDR_SIZE; // total number of bytes written
 
 }
 
@@ -633,6 +666,11 @@ int NETEQTEST_RTPpacket::splitStereo(NETEQTEST_RTPpacket& slaveRtp, enum stereoM
             // frame based codec
             splitStereoFrame(slaveRtp);
             break;
+        }
+    case stereoModeMono:
+        {
+            assert(false);
+            return -1;
         }
     }
 

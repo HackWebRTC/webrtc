@@ -150,7 +150,6 @@ int main(int argc, char* argv[])
     std::vector<NETEQTEST_NetEQClass *> NetEQvector;
     NETEQTEST_RTPpacket rtp;
 	char   version[20];
-	char   firstline[FIRSTLINELEN];
 
     NETEQTEST_RTPpacket slaveRtp;
     //bool switchMS = false;
@@ -359,40 +358,11 @@ int main(int argc, char* argv[])
 	/* read RTP file header */
     if (!rtpOnly)
     {
-        fgets(firstline, FIRSTLINELEN, in_file);
-        if(strncmp(firstline,"#!rtpplay",9) == 0) {
-            if(strncmp(firstline,"#!rtpplay1.0",12) != 0){
-                printf("ERROR: wrong rtpplay version, must be 1.0\n");
-                exit(0);
-            }
+        if (NETEQTEST_RTPpacket::skipFileHeader(in_file) != 0)
+        {
+            fprintf(stderr, "Wrong format in RTP file.\n");
+            return -1;
         }
-        else if (strncmp(firstline,"#!RTPencode",11) == 0) {
-            if(strncmp(firstline,"#!RTPencode1.0",14) != 0){
-                printf("ERROR: wrong RTPencode version, must be 1.0\n");
-                exit(0);
-            }
-        }
-        else {
-            printf("ERROR: wrong file format of input file\n");
-            exit(0);
-        }
-
-        WebRtc_UWord32 start_sec;
-        WebRtc_UWord32 start_usec;
-        WebRtc_UWord32 source;
-        WebRtc_UWord16 port;
-        WebRtc_UWord16 padding;
-
-        fread(&start_sec, 4, 1, in_file);
-        start_sec=ntohl(start_sec);
-        fread(&start_usec, 4, 1, in_file);
-        start_usec=ntohl(start_usec);
-        fread(&source, 4, 1, in_file);
-        source=ntohl(source);
-        fread(&port, 2, 1, in_file);
-        port=ntohs(port);
-        fread(&padding, 2, 1, in_file);
-        padding=ntohs(padding);
     }
 
     /* check payload type for first speech packet */
@@ -683,14 +653,14 @@ int main(int argc, char* argv[])
     WebRtcNetEQ_GetJitterStatistics(NetEQvector[0]->instance(), &jitterStats);
 
     printf("\nPost-call statistics:\n");
-    printf("    Call duration ms    : %lu\n", simClock-start_clock);
-    printf("    Expand (voice) ms   : %lu \t(%.2f%%)\n", jitterStats.interpolatedVoiceMs, (float) 100.0 * jitterStats.interpolatedVoiceMs/(simClock-start_clock));
-    printf("    Expand (silence) ms : %lu \t(%.2f%%)\n", jitterStats.interpolatedSilentMs, (float) 100.0 * jitterStats.interpolatedSilentMs/(simClock-start_clock));
-    printf("    Accelerate ms       : %lu \t(%.2f%%)\n", jitterStats.accelerateMs, (float) 100.0 * jitterStats.accelerateMs/(simClock-start_clock));
-    printf("    Flushed ms          : %lu \t(%.2f%%)\n", jitterStats.flushedMs, (float) 100.0 * jitterStats.flushedMs/(simClock-start_clock));
-    printf("    JB avg size ms      : %lu\n", jitterStats.jbAvgSize);
-    printf("    JB max size ms      : %lu\n", jitterStats.jbMaxSize);
-    printf("    Max inter-arrival ms: %lu\n", jitterStats.longestIATms);
+    printf("    Call duration ms    : %u\n", simClock-start_clock);
+    printf("    Expand (voice) ms   : %u \t(%.2f%%)\n", jitterStats.interpolatedVoiceMs, (float) 100.0 * jitterStats.interpolatedVoiceMs/(simClock-start_clock));
+    printf("    Expand (silence) ms : %u \t(%.2f%%)\n", jitterStats.interpolatedSilentMs, (float) 100.0 * jitterStats.interpolatedSilentMs/(simClock-start_clock));
+    printf("    Accelerate ms       : %u \t(%.2f%%)\n", jitterStats.accelerateMs, (float) 100.0 * jitterStats.accelerateMs/(simClock-start_clock));
+    printf("    Flushed ms          : %u \t(%.2f%%)\n", jitterStats.flushedMs, (float) 100.0 * jitterStats.flushedMs/(simClock-start_clock));
+    printf("    JB avg size ms      : %u\n", jitterStats.jbAvgSize);
+    printf("    JB max size ms      : %u\n", jitterStats.jbMaxSize);
+    printf("    Max inter-arrival ms: %u\n", jitterStats.longestIATms);
 
     printf("\nComplexity estimates (including sub-components):\n");
     printf("    RecIn complexity    : %.2f MCPS\n", NetEQvector[0]->getRecInTime() / ((float) 1000*(simClock-start_clock)));

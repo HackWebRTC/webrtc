@@ -32,8 +32,9 @@ public:
     bool operator !() const { return (dataLen() < 0); };
     ~NETEQTEST_RTPpacket();
     void reset();
+    static int skipFileHeader(FILE *fp);
     int readFromFile(FILE *fp);
-    int readFixedFromFile(FILE *fp, int len);
+    int readFixedFromFile(FILE *fp, size_t len);
     int writeToFile(FILE *fp);
     void blockPT(WebRtc_UWord8 pt);
     //WebRtc_Word16 payloadType();

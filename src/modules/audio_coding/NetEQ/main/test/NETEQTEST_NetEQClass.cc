@@ -210,7 +210,7 @@ void NETEQTEST_NetEQClass::printError(NETEQTEST_RTPpacket &rtp)
     printError();
 
     // print extra info from packet
-    printf("\tRTP: TS=%lu, SN=%u, PT=%u, M=%i, len=%i\n",
+    printf("\tRTP: TS=%u, SN=%u, PT=%u, M=%i, len=%i\n",
            rtp.timeStamp(), rtp.sequenceNumber(), rtp.payloadType(),
            rtp.markerBit(), rtp.payloadLen());
 
