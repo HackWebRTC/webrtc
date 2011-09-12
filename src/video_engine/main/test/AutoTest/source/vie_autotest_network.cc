@@ -231,7 +231,7 @@ int ViEAutoTest::ViENetworkExtendedTest()
         // Create a video channel
         tbVideoChannel tbChannel(ViE, numberOfErrors, webrtc::kVideoCodecVP8);
         tbCapture.ConnectTo(tbChannel.videoChannel);
-        char* remoteIp = "192.168.200.1";
+        const char* remoteIp = "192.168.200.1";
         int DSCP = 0;
         bool useSetSockOpt = false;
 

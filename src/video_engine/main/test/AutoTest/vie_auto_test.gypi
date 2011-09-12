@@ -41,7 +41,7 @@
         '<(webrtc_root)/modules/modules.gyp:video_render_module',
         '<(webrtc_root)/modules/modules.gyp:video_capture_module',
         '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine_core',
-        'video_engine_core',        
+        'video_engine_core',
       ],
       'include_dirs': [
         'interface/',
@@ -52,7 +52,6 @@
         '../../../../common_video/interface/',
       ],
       'sources': [
-        # interfaces
         'interface/tb_capture_device.h',
         'interface/tb_external_transport.h',
         'interface/tb_I420_codec.h',
@@ -67,7 +66,7 @@
         'interface/vie_autotest_window_manager_interface.h',
         'interface/vie_autotest_windows.h',
 
-        # PLATFORM INDEPENDENT SOURCE FILES
+        # Platform independent
         'source/tb_capture_device.cc',
         'source/tb_external_transport.cc',
         'source/tb_I420_codec.cc',
@@ -86,7 +85,8 @@
         'source/vie_autotest_render.cc',
         'source/vie_autotest_rtp_rtcp.cc',
         'source/vie_autotest_custom_call.cc',
-        # PLATFORM SPECIFIC SOURCE FILES - Will be filtered below
+
+        # Platform dependent
         # Linux
         'source/vie_autotest_linux.cc',
         # Mac
@@ -94,14 +94,21 @@
         'source/vie_autotest_mac_carbon.cc',
         # Windows
         'source/vie_autotest_windows.cc',
-      ], # sources
+      ],
+      'copies': [{
+        'destination': '/tmp',
+        'files': [
+          'media/captureDeviceImage.bmp',
+          'media/captureDeviceImage.jpg',
+          'media/renderStartImage.bmp',
+          'media/renderStartImage.jpg',
+          'media/renderTimeoutImage.bmp',
+          'media/renderTimeoutImage.jpg',
+        ],
+      }],
       'conditions': [
-        # DEFINE PLATFORM SPECIFIC SOURCE FILES
-        ['OS!="linux"', {
-          'sources!': [
-            'source/vie_autotest_linux.cc',
-          ],
-        }],
+        # TODO(andrew): rename these to be suffixed with _mac and _win. They
+        # will then be automatically excluded.
         ['OS!="mac"', {
           'sources!': [
             'source/vie_autotest_mac_cocoa.cc',
@@ -113,33 +120,20 @@
             'source/vie_autotest_windows.cc',
           ],
         }],
+
+        # TODO(andrew): this likely isn't an actual dependency. It should be
+        # included in webrtc.gyp or video_engine.gyp instead.
         ['OS=="win"', {
-          'dependencies': [            
+          'dependencies': [
             'vie_win_test',
           ],
         }],
-        
-       # DEFINE PLATFORM SPECIFIC INCLUDE AND CFLAGS
-        ['OS=="mac" or OS=="linux"', {
-          'cflags': [
-            '-Wno-write-strings',
-          ],
-          'ldflags': [
-            '-lpthread -lm',
-          ],
-        }],
         ['OS=="linux"', {
-          'ldflags': [
-          #  '-L<(libvpx_hack_dir)/<(OS)/<(target_arch)',
-          ],
+          # TODO(andrew): these should be provided directly by the projects
+          # which require them instead.
           'libraries': [
-            '-lrt',
             '-lXext',
             '-lX11',
-            '-lasound',
-            '-lpulse',
-
-
           ],
         }],
         ['OS=="mac"', {
@@ -150,43 +144,7 @@
             ],
           },
         }],
-      #Copy media files
-        ['OS=="linux" or OS=="mac"', {
-          'actions': [
-            {
-              'action_name': 'copy media files',
-              'inputs': [
-                'media',
-              ],
-              'outputs': [
-                'captureDeviceImage.bmp',
-              ],
-              'action': [
-                '/bin/sh', '-c',
-                'cp -f main/test/AutoTest/media/* /tmp/',
-              ],
-            },
-          ],
-        }],
-        ['OS=="win"', {
-          'actions': [
-             {
-              'action_name': 'copy media files',
-              'inputs': [
-                'media',
-              ],
-              'outputs': [
-                '\\tmp\\*.jpg',
-                '\\tmp\\*.bmp',
-              ],
-              'action': [
-                'cmd', '/c',
-                'xcopy /Y /R main\\test\\AutoTest\\media\\* \\tmp',
-              ],
-            },
-          ],
-        }],
-      ], #conditions  
+      ], # conditions
     },
   ],
 }
