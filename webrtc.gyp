@@ -15,15 +15,15 @@
       'target_name': 'auto_tests',
       'type': 'none',
       'dependencies': [
-        'src/voice_engine.gyp:voe_auto_test',
-        'src/video_engine.gyp:vie_auto_test',
+        'src/voice_engine/voice_engine.gyp:voe_auto_test',
+        'src/video_engine/video_engine.gyp:vie_auto_test',
       ],
     },
     {
       'target_name': 'cmd_test',
       'type': 'none',
       'dependencies': [
-        'src/voice_engine.gyp:voe_cmd_test',
+        'src/voice_engine/voice_engine.gyp:voe_cmd_test',
       ],
     },    
     {

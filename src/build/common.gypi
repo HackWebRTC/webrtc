@@ -50,11 +50,15 @@
 
         # Exclude internal ADM since Chromium uses its own IO handling.
         'include_internal_audio_device%': 0,
+
+        'webrtc_root%': '<(DEPTH)/third_party/webrtc',
       }, {
         # Settings for the standalone (not-in-Chromium) build.
         'include_pulse_audio%': 1,
 
         'include_internal_audio_device%': 1,
+
+        'webrtc_root%': '<(DEPTH)/src',
 
          # The Chromium common.gypi we use treats all gyp files without
          # chromium_code==1 as third party code. This disables many of the

@@ -530,22 +530,22 @@
         }],        
         ['inside_chromium_build==1', {
           'dependencies': [
-            '../../third_party/webrtc/modules/audio_device/main/source/audio_device.gyp:audio_device',
-            '../../third_party/webrtc/modules/video_capture/main/source/video_capture.gyp:video_capture_module',
-            '../../third_party/webrtc/modules/video_render/main/source/video_render.gyp:video_render_module',
+            '../../third_party/webrtc/modules/modules.gyp:audio_device',
+            '../../third_party/webrtc/modules/modules.gyp:video_capture_module',
+            '../../third_party/webrtc/modules/modules.gyp:video_render_module',
             '../../third_party/webrtc/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-            '../../third_party/webrtc/video_engine/main/source/video_engine_core.gyp:video_engine_core',
-            '../../third_party/webrtc/voice_engine/main/source/voice_engine_core.gyp:voice_engine_core',
+            '../../third_party/webrtc/video_engine/video_engine.gyp:video_engine_core',
+            '../../third_party/webrtc/voice_engine/voice_engine.gyp:voice_engine_core',
             'libjingle',
           ],
         }, {
           'dependencies': [
-            '../../src/modules/audio_device/main/source/audio_device.gyp:audio_device',
-            '../../src/modules/video_capture/main/source/video_capture.gyp:video_capture_module',
-            '../../src/modules/video_render/main/source/video_render.gyp:video_render_module',
+            '../../src/modules/modules.gyp:audio_device',
+            '../../src/modules/modules.gyp:video_capture_module',
+            '../../src/modules/modules.gyp:video_render_module',
             '../../src/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-            '../../src/video_engine/main/source/video_engine_core.gyp:video_engine_core',
-            '../../src/voice_engine/main/source/voice_engine_core.gyp:voice_engine_core',
+            '../../src/video_engine/video_engine.gyp:video_engine_core',
+            '../../src/voice_engine/voice_engine.gyp:voice_engine_core',
             'libjingle',
           ],
         } ],  # inside_chromium_build
@@ -578,19 +578,19 @@
       'conditions': [
         ['inside_chromium_build==1', {        
           'dependencies': [
-            '../../third_party/webrtc/modules/video_capture/main/source/video_capture.gyp:video_capture_module',
-            '../../third_party/webrtc/modules/video_render/main/source/video_render.gyp:video_render_module',
-            '../../third_party/webrtc/video_engine/main/source/video_engine_core.gyp:video_engine_core',
-            '../../third_party/webrtc/voice_engine/main/source/voice_engine_core.gyp:voice_engine_core',
+            '../../third_party/webrtc/modules/modules.gyp:video_capture_module',
+            '../../third_party/webrtc/modules/modules.gyp:video_render_module',
+            '../../third_party/webrtc/video_engine/video_engine.gyp:video_engine_core',
+            '../../third_party/webrtc/voice_engine/voice_engine.gyp:voice_engine_core',
             '../../third_party/webrtc/system_wrappers/source/system_wrappers.gyp:system_wrappers',
             'libjingle_p2p',
           ],          
         }, {
           'dependencies': [
-            '../../src/modules/video_capture/main/source/video_capture.gyp:video_capture_module',
-            '../../src/modules/video_render/main/source/video_render.gyp:video_render_module',
-            '../../src/video_engine/main/source/video_engine_core.gyp:video_engine_core',
-            '../../src/voice_engine/main/source/voice_engine_core.gyp:voice_engine_core',
+            '../../src/modules/modules.gyp:video_capture_module',
+            '../../src/modules/modules.gyp:video_render_module',
+            '../../src/video_engine/video_engine.gyp:video_engine_core',
+            '../../src/voice_engine/voice_engine.gyp:voice_engine_core',
             '../../src/system_wrappers/source/system_wrappers.gyp:system_wrappers',
             'libjingle_p2p',
           ],          

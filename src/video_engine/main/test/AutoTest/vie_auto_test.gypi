@@ -1,21 +1,47 @@
-# Copyright (c) 2009 The Chromium Authors. All rights reserved.
-# Use of this source code is governed by a BSD-style license that can be
-# found in the LICENSE file.
+# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+#
+# Use of this source code is governed by a BSD-style license
+# that can be found in the LICENSE file in the root of the source
+# tree. An additional intellectual property rights grant can be found
+# in the file PATENTS.  All contributing project authors may
+# be found in the AUTHORS file in the root of the source tree.
 
 {
-  'includes': [
-    '../../../../common_settings.gypi', # Common settings
-  ],
+  'variables': {
+    'autotest_name': 'vie_auto_test',
+  },
   'targets': [
+    {
+      'target_name': 'merged_lib',
+      'type': 'none',
+      'dependencies': [
+        '<(autotest_name)',
+      ],
+      'actions': [
+        {
+          'variables': {
+            'output_lib_name': 'webrtc',
+            'output_lib': '<(PRODUCT_DIR)/<(STATIC_LIB_PREFIX)<(output_lib_name)_<(OS)<(STATIC_LIB_SUFFIX)',
+          },
+          'action_name': 'merge_libs',
+          'inputs': ['<(PRODUCT_DIR)/<(EXECUTABLE_PREFIX)<(autotest_name)<(EXECUTABLE_SUFFIX)'],
+          'outputs': ['<(output_lib)'],
+          'action': ['python',
+                     '../build/merge_libs.py',
+                     '<(PRODUCT_DIR)',
+                     '<(output_lib)'],
+        },
+      ],
+    },
     {
       'target_name': '<(autotest_name)',
       'type': 'executable',
       'dependencies': [
-        'system_wrappers/source/system_wrappers.gyp:system_wrappers',
-        'modules/video_render/main/source/video_render.gyp:video_render_module',
-        'modules/video_capture/main/source/video_capture.gyp:video_capture_module',
-        'voice_engine/main/source/voice_engine_core.gyp:voice_engine_core',
-        'video_engine/main/source/video_engine_core.gyp:video_engine_core',        
+        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+        '<(webrtc_root)/modules/modules.gyp:video_render_module',
+        '<(webrtc_root)/modules/modules.gyp:video_capture_module',
+        '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine_core',
+        'video_engine_core',        
       ],
       'include_dirs': [
         'interface/',
@@ -89,7 +115,7 @@
         }],
         ['OS=="win"', {
           'dependencies': [            
-            'video_engine/main/test/WindowsTest/windowstest.gyp:vie_win_test',
+            'vie_win_test',
           ],
         }],
         
@@ -137,7 +163,7 @@
               ],
               'action': [
                 '/bin/sh', '-c',
-                'cp -f video_engine/main/test/AutoTest/media/* /tmp/',
+                'cp -f main/test/AutoTest/media/* /tmp/',
               ],
             },
           ],
@@ -155,7 +181,7 @@
               ],
               'action': [
                 'cmd', '/c',
-                'xcopy /Y /R video_engine\\main\\test\\AutoTest\\media\\* \\tmp',
+                'xcopy /Y /R main\\test\\AutoTest\\media\\* \\tmp',
               ],
             },
           ],
