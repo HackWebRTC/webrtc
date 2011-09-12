@@ -19,7 +19,7 @@
 #include "event_wrapper.h"
 #include "module_common_types.h"
 #include "video_capture.h"
-#include "video_capture.h"
+#include "video_capture_impl.h"
 #include "video_processing.h"
 #include "video_render_defines.h"
 #include "thread_wrapper.h"
@@ -41,7 +41,6 @@ ViECapturer::ViECapturer(int captureId,
         _captureCritsect(*CriticalSectionWrapper::CreateCriticalSection()),
         _deliverCritsect(*CriticalSectionWrapper::CreateCriticalSection()),
         _captureModule(NULL),
-        _useExternalModule(false),
         _externalCaptureModule(NULL),
         _moduleProcessThread(moduleProcessThread),
         _captureId(captureId),
@@ -118,6 +117,8 @@ ViECapturer::~ViECapturer()
     {
         _moduleProcessThread.DeRegisterModule(_captureModule);
         _captureModule->DeRegisterCaptureDataCallback();
+        _captureModule->Release();
+        _captureModule = NULL;
     }
     if (_vieCaptureThread.Stop())
     {
@@ -134,11 +135,6 @@ ViECapturer::~ViECapturer()
         // Not possible to stop the thread, leak it...
     }
 
-    if (!_useExternalModule)
-    {
-        VideoCaptureModule::Destroy(_captureModule);
-    }
-    _captureModule = NULL;
     if (_imageProcModule)
     {
         VideoProcessingModule::Destroy(_imageProcModule);
@@ -179,9 +175,10 @@ ViECapturer* ViECapturer::CreateViECapture(int  captureId,
 
 WebRtc_Word32 ViECapturer::Init(VideoCaptureModule& captureModule)
 {
+    assert(_captureModule == NULL);
     _captureModule = &captureModule;
-    _useExternalModule = true;
     _captureModule->RegisterCaptureDataCallback(*this);
+    _captureModule->AddRef();
     if (_moduleProcessThread.RegisterModule(_captureModule) != 0)
     {
         return -1;
@@ -205,23 +202,23 @@ ViECapturer* ViECapturer::CreateViECapture(int captureId,
     return capture;
 }
 WebRtc_Word32 ViECapturer::Init(const WebRtc_UWord8* deviceUniqueIdUTF8,
-                               const WebRtc_UWord32 deviceUniqueIdUTF8Length)
+                                const WebRtc_UWord32 deviceUniqueIdUTF8Length)
 {
+    assert(_captureModule == NULL);
 #ifndef WEBRTC_VIDEO_EXTERNAL_CAPTURE_AND_RENDER
     if (deviceUniqueIdUTF8 == NULL)
     {
-        _captureModule  = VideoCaptureModule::Create(
-                                         ViEModuleId(_engineId, _captureId),
-                                         _externalCaptureModule);
+        _captureModule  = videocapturemodule::VideoCaptureImpl::Create(
+            ViEModuleId(_engineId, _captureId), _externalCaptureModule);
     } else
     {
-        _captureModule = VideoCaptureModule::Create(
-                                          ViEModuleId(_engineId, _captureId),
-                                          deviceUniqueIdUTF8);
+        _captureModule = videocapturemodule::VideoCaptureImpl::Create(
+            ViEModuleId(_engineId, _captureId), deviceUniqueIdUTF8);
     }
 #endif
     if (!_captureModule)
         return -1;
+    _captureModule->AddRef();
     _captureModule->RegisterCaptureDataCallback(*this);
     if (_moduleProcessThread.RegisterModule(_captureModule) != 0)
     {

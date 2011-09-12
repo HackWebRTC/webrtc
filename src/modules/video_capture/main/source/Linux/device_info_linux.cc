@@ -8,7 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "trace.h"
 #include "device_info_linux.h"
 
 #include <sys/stat.h>
@@ -22,10 +21,17 @@
 
 //v4l includes
 #include <linux/videodev2.h>
+
+#include "ref_count.h"
+#include "trace.h"
+
+
 namespace webrtc
 {
+namespace videocapturemodule
+{
 VideoCaptureModule::DeviceInfo*
-VideoCaptureModule::CreateDeviceInfo(const WebRtc_Word32 id)
+VideoCaptureImpl::CreateDeviceInfo(const WebRtc_Word32 id)
 {
     videocapturemodule::DeviceInfoLinux *deviceInfo =
                     new videocapturemodule::DeviceInfoLinux(id);
@@ -37,15 +43,13 @@ VideoCaptureModule::CreateDeviceInfo(const WebRtc_Word32 id)
     return deviceInfo;
 }
 
-void VideoCaptureModule::DestroyDeviceInfo(DeviceInfo* deviceInfo)
+void VideoCaptureImpl::DestroyDeviceInfo(DeviceInfo* deviceInfo)
 {
     videocapturemodule::DeviceInfoLinux* devInfo =
         static_cast<videocapturemodule::DeviceInfoLinux*> (deviceInfo);
     delete devInfo;
 }
 
-namespace videocapturemodule
-{
 
 DeviceInfoLinux::DeviceInfoLinux(const WebRtc_Word32 id)
     : DeviceInfoImpl(id)

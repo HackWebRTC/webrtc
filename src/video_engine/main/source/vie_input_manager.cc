@@ -18,7 +18,7 @@
 #include "common_types.h"
 #include "critical_section_wrapper.h"
 #include "video_capture.h"
-#include "video_capture.h"
+#include "video_capture_impl.h"
 #include "video_coding.h"
 #include "video_coding_defines.h"
 #include "rw_lock_wrapper.h"
@@ -58,8 +58,9 @@ ViEInputManager::ViEInputManager(const int engineId)
 #ifdef WEBRTC_VIDEO_EXTERNAL_CAPTURE_AND_RENDER
     _ptrCaptureDeviceInfo=NULL;
 #else
-    _ptrCaptureDeviceInfo = VideoCaptureModule::CreateDeviceInfo(
-                                                           ViEModuleId(_engineId));
+    _ptrCaptureDeviceInfo =
+        videocapturemodule::VideoCaptureImpl::CreateDeviceInfo(
+            ViEModuleId(_engineId));
 #endif
     for (int idx = 0; idx < kViEMaxFilePlayers; idx++)
     {
@@ -87,11 +88,14 @@ ViEInputManager::~ViEInputManager()
     }
 
     delete &_mapCritsect;
+#ifndef WEBRTC_VIDEO_EXTERNAL_CAPTURE_AND_RENDER
     if (_ptrCaptureDeviceInfo)
     {
-        VideoCaptureModule::DestroyDeviceInfo( _ptrCaptureDeviceInfo);
+        videocapturemodule::VideoCaptureImpl::DestroyDeviceInfo(
+            _ptrCaptureDeviceInfo);
         _ptrCaptureDeviceInfo = NULL;
     }
+#endif
 }
 
 // ----------------------------------------------------------------------------

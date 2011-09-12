@@ -116,6 +116,8 @@ WebRtcVideoEngine::WebRtcVideoEngine(WebRtcVoiceEngine* voice_engine,
       voice_engine_(voice_engine),
       log_level_(kDefaultLogSeverity),
       capture_started_(false) {
+  if(capture_)
+    capture_->AddRef();
 }
 
 WebRtcVideoEngine::WebRtcVideoEngine(WebRtcVoiceEngine* voice_engine,
@@ -137,7 +139,7 @@ WebRtcVideoEngine::~WebRtcVideoEngine() {
   Terminate();
   vie_wrapper_.reset();
   if (capture_) {
-    webrtc::VideoCaptureModule::Destroy(capture_);
+     capture_->Release();
   }
   if (renderer_) {
     webrtc::VideoRender::DestroyVideoRender(renderer_);
@@ -382,9 +384,10 @@ bool WebRtcVideoEngine::SetCaptureDevice(const Device* cam) {
 bool WebRtcVideoEngine::SetCaptureModule(webrtc::VideoCaptureModule* vcm) {
   ReleaseCaptureDevice();
   if (capture_) {
-    webrtc::VideoCaptureModule::Destroy(capture_);
+    capture_->Release();
   }
   capture_ = vcm;
+  capture_->AddRef();
   external_capture_ = true;
   return true;
 }

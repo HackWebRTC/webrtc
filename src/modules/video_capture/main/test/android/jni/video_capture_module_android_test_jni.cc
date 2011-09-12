@@ -13,6 +13,7 @@
 
 #include "org_webrtc_capturemoduleandroidtest_VideoCaptureModuleTest.h"
 #include "../../../interface/video_capture.h"
+#include "../../../source/video_capture_impl.h"
 #include "../../../../../video_render/main/interface/video_render.h"
 #include "../../testAPI/testPlatformDependent.h"
 #include "../../testAPI/testPlatformDependent.h"
@@ -116,11 +117,11 @@ Java_org_webrtc_capturemoduleandroidtest_VideoCaptureModuleTest_StartCapture(
 {
   if (!jniData._captureInfo) {
     VideoCaptureModule::SetAndroidObjects(jniData.jvm, context);
-    jniData._captureInfo = VideoCaptureModule::CreateDeviceInfo(5);
+    jniData._captureInfo = VideoCaptureImpl::CreateDeviceInfo(5);
     WebRtc_UWord8 id[256];
     WebRtc_UWord8 name[256];
     jniData._captureInfo->GetDeviceName(0, name, 256, id, 256);
-    jniData._videoCapture = VideoCaptureModule::Create(0, id);
+    jniData._videoCapture = VideoCaptureImpl::Create(0, id);
     VideoCaptureCapability capability;
 
     jniData._captureInfo->GetCapability(id, 0, capability);

@@ -57,8 +57,7 @@
           ],
         }],
         ['OS=="mac" and build_with_chromium==0', {
-          'sources': [
-            'Mac/video_capture_mac.h',
+          'sources': [            
             'Mac/QTKit/video_capture_recursive_lock.h',
             'Mac/QTKit/video_capture_qtkit.h',
             'Mac/QTKit/video_capture_qtkit_info.h',

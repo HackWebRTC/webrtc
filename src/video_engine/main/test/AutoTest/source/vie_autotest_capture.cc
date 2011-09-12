@@ -28,7 +28,7 @@
 
 #include "tb_interfaces.h"
 #include "tb_video_channel.h"
-#include "video_capture.h"
+#include "video_capture_impl.h"
 
 class CaptureObserver: public webrtc::ViECaptureObserver
 {
@@ -138,7 +138,7 @@ int ViEAutoTest::ViECaptureStandardTest()
     tbInterfaces ViE("WebRTCViECapture_Standard", numberOfErrors);
 
     webrtc::VideoCaptureModule::DeviceInfo* devInfo =
-        webrtc::VideoCaptureModule::CreateDeviceInfo(0);
+        webrtc::videocapturemodule::VideoCaptureImpl::CreateDeviceInfo(0);
 
     int numberOfCaptureDevices = devInfo->NumberOfDevices();
     ViETest::Log("Number of capture devices %d", numberOfCaptureDevices);
@@ -229,7 +229,9 @@ int ViEAutoTest::ViECaptureStandardTest()
                                              __FUNCTION__, __LINE__);
 
         webrtc::VideoCaptureModule* vcpm =
-            webrtc::VideoCaptureModule::Create(deviceIndex, deviceUniqueName);
+            webrtc::videocapturemodule::VideoCaptureImpl::Create(
+                deviceIndex, deviceUniqueName);
+        vcpm->AddRef();
         numberOfErrors += ViETest::TestError(vcpm != NULL,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
@@ -323,7 +325,7 @@ int ViEAutoTest::ViECaptureStandardTest()
         numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 #endif
-        webrtc::VideoCaptureModule::Destroy(vcpms[deviceIndex]);
+        vcpms[deviceIndex]->Release();
     }
 #endif
     if (numberOfErrors > 0)
@@ -336,7 +338,7 @@ int ViEAutoTest::ViECaptureStandardTest()
         ViETest::Log(" ");
         return numberOfErrors;
     }
-    webrtc::VideoCaptureModule::DestroyDeviceInfo(devInfo);
+    webrtc::videocapturemodule::VideoCaptureImpl::DestroyDeviceInfo(devInfo);
 
     ViETest::Log(" ");
     ViETest::Log(" ViECapture Standard Test PASSED!");
@@ -384,7 +386,7 @@ int ViEAutoTest::ViECaptureAPITest()
     int captureId = 0;
 
     webrtc::VideoCaptureModule::DeviceInfo* devInfo =
-        webrtc::VideoCaptureModule::CreateDeviceInfo(0);
+        webrtc::videocapturemodule::VideoCaptureImpl::CreateDeviceInfo(0);
     numberOfErrors += ViETest::TestError(devInfo != NULL,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
@@ -396,7 +398,9 @@ int ViEAutoTest::ViECaptureAPITest()
                                          __FUNCTION__, __LINE__);
 
     webrtc::VideoCaptureModule* vcpm =
-        webrtc::VideoCaptureModule::Create(0, deviceUniqueName);
+        webrtc::videocapturemodule::VideoCaptureImpl::Create(
+            0, deviceUniqueName);
+    vcpm->AddRef();
     numberOfErrors += ViETest::TestError(vcpm != NULL, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
@@ -554,8 +558,8 @@ int ViEAutoTest::ViECaptureAPITest()
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    webrtc::VideoCaptureModule::DestroyDeviceInfo(devInfo);
-    webrtc::VideoCaptureModule::Destroy(vcpm);
+    webrtc::videocapturemodule::VideoCaptureImpl::DestroyDeviceInfo(devInfo);
+    vcpm->Release();
 
     //***************************************************************
     //	Testing finished. Tear down Video Engine
@@ -604,7 +608,9 @@ int ViEAutoTest::ViECaptureExternalCaptureTest()
 
     // Allocate the external capture device
     webrtc::VideoCaptureModule* vcpm =
-        webrtc::VideoCaptureModule::Create(0, externalCapture);
+        webrtc::videocapturemodule::VideoCaptureImpl::Create(
+            0, externalCapture);
+    vcpm->AddRef();
     numberOfErrors += ViETest::TestError(vcpm != NULL, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
@@ -787,6 +793,7 @@ int ViEAutoTest::ViECaptureExternalCaptureTest()
     numberOfErrors += ViETest::TestError(
         ViE.LastError() == kViECaptureDeviceDoesnNotExist,
         "ERROR: %s at line %d", __FUNCTION__, __LINE__);
+    vcpm->Release();
 
     //***************************************************************
     //	Testing finished. Tear down Video Engine

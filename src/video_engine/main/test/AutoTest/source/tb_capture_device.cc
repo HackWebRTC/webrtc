@@ -9,6 +9,7 @@
  */
 
 #include "tb_capture_device.h"
+#include "video_capture_impl.h"
 
 tbCaptureDevice::tbCaptureDevice(tbInterfaces& Engine, int& nrOfErrors) :
     captureId(-1),
@@ -27,7 +28,7 @@ tbCaptureDevice::tbCaptureDevice(tbInterfaces& Engine, int& nrOfErrors) :
     bool captureDeviceSet = false;
 
     webrtc::VideoCaptureModule::DeviceInfo* devInfo =
-        webrtc::VideoCaptureModule::CreateDeviceInfo(0);
+        webrtc::videocapturemodule::VideoCaptureImpl::CreateDeviceInfo(0);
     for (size_t captureIdx = 0;
         captureIdx < devInfo->NumberOfDevices();
         captureIdx++)
@@ -39,11 +40,13 @@ tbCaptureDevice::tbCaptureDevice(tbInterfaces& Engine, int& nrOfErrors) :
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
-        vcpm_ = webrtc::VideoCaptureModule::Create(captureIdx, uniqueId);
+        vcpm_ = webrtc::videocapturemodule::VideoCaptureImpl::Create(
+            captureIdx, uniqueId);
         if (vcpm_ == NULL) // Failed to open this device. Try next.
         {
             continue;
         }
+        vcpm_->AddRef();
 
         error = ViE.ptrViECapture->AllocateCaptureDevice(*vcpm_, captureId);
         if (error == 0)
@@ -54,7 +57,7 @@ tbCaptureDevice::tbCaptureDevice(tbInterfaces& Engine, int& nrOfErrors) :
             break;
         }
     }
-    webrtc::VideoCaptureModule::DestroyDeviceInfo(devInfo);
+    webrtc::videocapturemodule::VideoCaptureImpl::DestroyDeviceInfo(devInfo);
     numberOfErrors += ViETest::TestError(
         captureDeviceSet, "ERROR: %s at line %d - Could not set capture device",
         __FUNCTION__, __LINE__);
@@ -78,9 +81,7 @@ tbCaptureDevice::~tbCaptureDevice(void)
     error = ViE.ptrViECapture->ReleaseCaptureDevice(captureId);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-
-    webrtc::VideoCaptureModule::Destroy(vcpm_);
-
+    vcpm_->Release();
 }
 
 void tbCaptureDevice::ConnectTo(int videoChannel)

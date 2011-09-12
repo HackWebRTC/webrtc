@@ -21,6 +21,7 @@
 #include <iostream>
 #include <new>
 
+#include "ref_count.h"
 #include "trace.h"
 #include "thread_wrapper.h"
 #include "critical_section_wrapper.h"
@@ -28,23 +29,23 @@
 
 namespace webrtc
 {
-VideoCaptureModule* VideoCaptureModule::Create(const WebRtc_Word32 id,
-                                               const WebRtc_UWord8* deviceUniqueId)
-{
-
-    videocapturemodule::VideoCaptureModuleV4L2* interface =
-                            new videocapturemodule::VideoCaptureModuleV4L2(id);
-    if (!interface || interface->Init(deviceUniqueId) != 0)
-    {
-        Destroy(interface);
-        interface = NULL;
-    }
-
-    return interface;
-}
-
 namespace videocapturemodule
 {
+VideoCaptureModule* VideoCaptureImpl::Create(const WebRtc_Word32 id,
+                                             const WebRtc_UWord8* deviceUniqueId)
+{
+    RefCountImpl<videocapturemodule::VideoCaptureModuleV4L2>* implementation =
+        new RefCountImpl<videocapturemodule::VideoCaptureModuleV4L2>(id);
+
+    if (!implementation || implementation->Init(deviceUniqueId) != 0)
+    {
+        delete implementation;
+        implementation = NULL;
+    }
+
+    return implementation;
+}
+
 VideoCaptureModuleV4L2::VideoCaptureModuleV4L2(const WebRtc_Word32 id)
     : VideoCaptureImpl(id), _captureThread(NULL),
       _captureCritSect(CriticalSectionWrapper::CreateCriticalSection()),

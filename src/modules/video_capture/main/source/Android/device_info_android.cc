@@ -8,14 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "device_info_android.h"
+
+#include <stdio.h>
+
+#include "ref_count.h"
 #include "trace.h"
 #include "video_capture_android.h"
-#include "device_info_android.h"
-#include <stdio.h>
 
 namespace webrtc
 {
-VideoCaptureModule::DeviceInfo* VideoCaptureModule::CreateDeviceInfo (
+namespace videocapturemodule
+{
+VideoCaptureModule::DeviceInfo* VideoCaptureImpl::CreateDeviceInfo (
     const WebRtc_Word32 id)
 {
     WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, id,
@@ -30,7 +35,7 @@ VideoCaptureModule::DeviceInfo* VideoCaptureModule::CreateDeviceInfo (
     return deviceInfo;
 }
 
-void VideoCaptureModule::DestroyDeviceInfo(
+void VideoCaptureImpl::DestroyDeviceInfo(
     VideoCaptureModule::DeviceInfo* deviceInfo)
 {
     WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, -1,
@@ -41,8 +46,6 @@ void VideoCaptureModule::DestroyDeviceInfo(
     delete devInfo;
 }
 
-namespace videocapturemodule
-{
 DeviceInfoAndroid::DeviceInfoAndroid(const WebRtc_Word32 id) :
     DeviceInfoImpl(id)
 {

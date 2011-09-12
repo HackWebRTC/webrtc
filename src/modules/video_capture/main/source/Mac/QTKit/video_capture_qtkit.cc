@@ -18,24 +18,6 @@
 namespace webrtc
 {
 
-/*
- *   Returns version of the module and its components
- *
- *   version                 - buffer to which the version will be written
- *   remainingBufferInBytes  - remaining number of WebRtc_Word8 in the version
- *                             buffer
- *   position                - position of the next empty WebRtc_Word8 in the
- *                             version buffer
- */
-
-WebRtc_Word32 VideoCaptureModule::GetVersion(
-    WebRtc_Word8* version, WebRtc_UWord32& remainingBufferInBytes,
-    WebRtc_UWord32& position)
-{
-    return webrtc::videocapturemodule::VideoCaptureMacQTKit::GetVersion(
-        version, remainingBufferInBytes, position);
-}
-
 namespace videocapturemodule
 {
 

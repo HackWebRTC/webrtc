@@ -28,7 +28,7 @@ enum {kProcessInterval = 300};
 enum {kFrameRateCallbackInterval = 1000}; 
 enum {kFrameRateCountHistorySize = 90};
 enum {kFrameRateHistoryWindowMs = 2000};
-} //namespace videocapturemodule
-} //namespace webrtc
+}  // namespace videocapturemodule
+}  // namespace webrtc
 
 #endif // WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_VIDEO_CAPTURE_CONFIG_H_

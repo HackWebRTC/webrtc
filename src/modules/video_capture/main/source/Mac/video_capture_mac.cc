@@ -13,13 +13,12 @@
  *
  */
 
-// self header
-#include "video_capture_mac.h"
 
 // super class stuff
 #include "../video_capture_impl.h"
 #include "../device_info_impl.h"
 #include "../video_capture_config.h"
+#include "ref_count.h"
 
 #include "trace.h"
 
@@ -41,7 +40,7 @@ namespace videocapturemodule
 {
 
 // static
-bool VideoCaptureMac::CheckOSVersion()
+bool CheckOSVersion()
 {
     // Check OSX version
     OSErr err = noErr;
@@ -70,7 +69,7 @@ bool VideoCaptureMac::CheckOSVersion()
 }
 
 // static
-bool VideoCaptureMac::CheckQTVersion()
+bool CheckQTVersion()
 {
     // Check OSX version
     OSErr err = noErr;
@@ -96,7 +95,6 @@ bool VideoCaptureMac::CheckQTVersion()
                  "QuickTime version compatible: 0x%x", version);
     return true;
 }
-}  // videocapturemodule
 
 /**************************************************************************
  *
@@ -114,13 +112,13 @@ bool VideoCaptureMac::CheckQTVersion()
  *                             version buffer
  */
 
-VideoCaptureModule* VideoCaptureModule::Create(
+VideoCaptureModule* VideoCaptureImpl::Create(
     const WebRtc_Word32 id, const WebRtc_UWord8* deviceUniqueIdUTF8)
 {
     WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, id,
                  "Create %s", deviceUniqueIdUTF8);
 
-    if (webrtc::videocapturemodule::VideoCaptureMac::CheckOSVersion == false)
+    if (webrtc::videocapturemodule::CheckOSVersion() == false)
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, id,
                      "OS version is too old. Could not create video capture "
@@ -129,7 +127,7 @@ VideoCaptureModule* VideoCaptureModule::Create(
     }
 
 #if __MAC_OS_X_VERSION_MIN_REQUIRED == __MAC_10_4 // QuickTime version
-    if (webrtc::videocapturemodule::VideoCaptureMac::CheckQTVersion == false)
+    if (webrtc::videocapturemodule::CheckQTVersion() == false)
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, id,
                      "QuickTime version is too old. Could not create video "
@@ -142,15 +140,16 @@ VideoCaptureModule* VideoCaptureModule::Create(
                  "QuickTime framework to capture video",
                  __FILE__, __LINE__);
 
-    webrtc::videocapturemodule::VideoCaptureMacQuickTime* newCaptureModule =
-        new webrtc::videocapturemodule::VideoCaptureMacQuickTime(id);
+    RefCountImpl<videocapturemodule::VideoCaptureMacQuickTime>*
+        newCaptureModule =
+            new RefCountImpl<videocapturemodule::VideoCaptureMacQuickTime>(id);
+
     if (!newCaptureModule)
     {
         WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCapture, id,
                      "could not Create for unique device %s, !newCaptureModule",
                      deviceUniqueIdUTF8);
-        Destroy(newCaptureModule);
-        newCaptureModule = NULL;
+        return NULL;
     }
 
     if (newCaptureModule->Init(id, deviceUniqueIdUTF8) != 0)
@@ -159,8 +158,8 @@ VideoCaptureModule* VideoCaptureModule::Create(
                      "could not Create for unique device %s, "
                      "newCaptureModule->Init()!=0",
                      deviceUniqueIdUTF8);
-        Destroy(newCaptureModule);
-        newCaptureModule = NULL;
+        delete newCaptureModule;
+        return NULL;
     }
 
     // Successfully created VideoCaptureMacQuicktime. Return it
@@ -175,23 +174,23 @@ VideoCaptureModule* VideoCaptureModule::Create(
     WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, id,
                  "Using QTKit framework to capture video", id);
 
-    webrtc::videocapturemodule::VideoCaptureMacQTKit* newCaptureModule =
-        new webrtc::videocapturemodule::VideoCaptureMacQTKit(id);
+    RefCountImpl<videocapturemodule::VideoCaptureMacQTKit>* newCaptureModule =
+        new RefCountImpl<videocapturemodule::VideoCaptureMacQTKit>(id);
+
     if(!newCaptureModule)
     {
         WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCapture, id,
                      "could not Create for unique device %s, !newCaptureModule",
                      deviceUniqueIdUTF8);
-        Destroy(newCaptureModule);
-        newCaptureModule = NULL;
+        return NULL;
     }
     if(newCaptureModule->Init(id, deviceUniqueIdUTF8) != 0)
     {
         WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCapture, id,
                      "could not Create for unique device %s, "
                      "newCaptureModule->Init()!=0", deviceUniqueIdUTF8);
-        Destroy(newCaptureModule);
-        newCaptureModule = NULL;
+        delete newCaptureModule;
+        return NULL;
     }
 
     // Successfully created VideoCaptureMacQuicktime. Return it
@@ -202,121 +201,6 @@ VideoCaptureModule* VideoCaptureModule::Create(
 #endif
 }
 
-void Destroy(VideoCaptureModule* module)
-{
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, 0,
-                 "%s:%d Destroying GISPModuleVideoCapture", __FUNCTION__,
-                 __LINE__);
-
-#if __MAC_OS_X_VERSION_MIN_REQUIRED == __MAC_10_4 // QuickTime version
-    webrtc::videocapturemodule::VideoCaptureMacQuickTime* captureDevice =
-        static_cast<VideoCaptureMacQuickTime*> (module);
-    delete captureDevice;
-    captureDevice = NULL;
-
-#else // QTKit version
-    webrtc::videocapturemodule::VideoCaptureMacQTKit* captureDevice =
-        static_cast<webrtc::videocapturemodule::VideoCaptureMacQTKit*> (module);
-    delete captureDevice;
-    captureDevice = NULL;
-#endif
-}
-/**************************************************************************
- *
- *    End Create/Destroy VideoCaptureModule
- *
- ***************************************************************************/
-
-//  VideoCaptureMac class
-namespace videocapturemodule
-{
-
-/**************************************************************************
- *
- *    These will just delegate to the appropriate class
- *
- ***************************************************************************/
-
-VideoCaptureMac::VideoCaptureMac(const WebRtc_Word32 id) :
-    VideoCaptureImpl(id), // super class constructor
-        _isFrameworkSupported(false), _captureClass(NULL)
-{
-#if __MAC_OS_X_VERSION_MIN_REQUIRED == __MAC_10_4 // QuickTime version
-    _isFrameworkSupported = false;
-    _captureClass = new VideoCaptureMacQuickTime(_id);
-
-#else // QTKit version
-    _isFrameworkSupported = true;
-    _captureClass = new VideoCaptureMacQTKit(_id);
-#endif
-}
-
-VideoCaptureMac::~VideoCaptureMac()
-{
-    delete _captureClass;
-}
-
-WebRtc_Word32 VideoCaptureMac::Init(const WebRtc_Word32 id,
-                                    const WebRtc_UWord8* deviceUniqueIdUTF8)
-{
-#if __MAC_OS_X_VERSION_MIN_REQUIRED == __MAC_10_4 // QuickTime version
-    return static_cast<VideoCaptureMacQuickTime*> (_captureClass)->Init(
-        id, deviceUniqueIdUTF8);
-
-#else // QTKit version
-    return static_cast<VideoCaptureMacQTKit*>(_captureClass)->Init(id, deviceUniqueIdUTF8);
-#endif
-}
-
-WebRtc_Word32 VideoCaptureMac::StartCapture(
-    const VideoCaptureCapability& capability)
-{
-#if __MAC_OS_X_VERSION_MIN_REQUIRED == __MAC_10_4 // QuickTime version
-    return static_cast<VideoCaptureMacQuickTime*> (_captureClass)->StartCapture(
-        capability);
-
-#else // QTKit version
-    return static_cast<VideoCaptureMacQTKit*>
-        (_captureClass)->StartCapture(capability);
-#endif
-}
-
-WebRtc_Word32 VideoCaptureMac::StopCapture()
-{
-#if __MAC_OS_X_VERSION_MIN_REQUIRED == __MAC_10_4 // QuickTime version
-    return static_cast<VideoCaptureMacQuickTime*>
-        (_captureClass)->StopCapture();
-
-#else // QTKit version
-    return static_cast<VideoCaptureMacQTKit*>(_captureClass)->StopCapture();
-#endif
-}
-
-bool VideoCaptureMac::CaptureStarted()
-{
-#if __MAC_OS_X_VERSION_MIN_REQUIRED == __MAC_10_4 // QuickTime version
-    return static_cast<VideoCaptureMacQuickTime*>
-        (_captureClass)->CaptureStarted();
-
-#else // QTKit version
-    return static_cast<VideoCaptureMacQTKit*>(_captureClass)->CaptureStarted();
-#endif
-}
-
-WebRtc_Word32 VideoCaptureMac::CaptureSettings(VideoCaptureCapability& settings)
-{
-#if __MAC_OS_X_VERSION_MIN_REQUIRED == __MAC_10_4 // QuickTime version
-    return static_cast<VideoCaptureMacQuickTime*>
-        (_captureClass)->CaptureSettings(settings);
-
-#else // QTKit version
-    return static_cast<VideoCaptureMacQTKit*>
-        (_captureClass)->CaptureSettings(settings);
-#endif
-}
-} // namespace videocapturemodule
-
-
 /**************************************************************************
  *
  *    Create/Destroy a DeviceInfo
@@ -324,13 +208,13 @@ WebRtc_Word32 VideoCaptureMac::CaptureSettings(VideoCaptureCapability& settings)
  ***************************************************************************/
 
 VideoCaptureModule::DeviceInfo*
-VideoCaptureModule::CreateDeviceInfo(const WebRtc_Word32 id)
+VideoCaptureImpl::CreateDeviceInfo(const WebRtc_Word32 id)
 {
 
     WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, id,
                  "Create %d", id);
 
-    if (webrtc::videocapturemodule::VideoCaptureMac::CheckOSVersion == false)
+    if (webrtc::videocapturemodule::CheckOSVersion() == false)
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, id,
                      "OS version is too old. Could not create video capture "
@@ -339,7 +223,7 @@ VideoCaptureModule::CreateDeviceInfo(const WebRtc_Word32 id)
     }
 
 #if __MAC_OS_X_VERSION_MIN_REQUIRED == __MAC_10_4 // QuickTime version
-    if (webrtc::videocapturemodule::VideoCaptureMac::CheckQTVersion == false)
+    if (webrtc::videocapturemodule::CheckQTVersion() == false)
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, id,
                      "QuickTime version is too old. Could not create video "
@@ -385,7 +269,7 @@ VideoCaptureModule::CreateDeviceInfo(const WebRtc_Word32 id)
 
 }
 
-void VideoCaptureModule::DestroyDeviceInfo(DeviceInfo* deviceInfo)
+void VideoCaptureImpl::DestroyDeviceInfo(DeviceInfo* deviceInfo)
 {
     WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, 0,
                  "%s:%d", __FUNCTION__, __LINE__);
@@ -410,165 +294,6 @@ void VideoCaptureModule::DestroyDeviceInfo(DeviceInfo* deviceInfo)
  *    End Create/Destroy VideoCaptureModule
  *
  ***************************************************************************/
-
-// VideoCaptureMacInfo class
-
-namespace videocapturemodule {
-
-/**************************************************************************
- *
- *    These will just delegate to the appropriate class
- *
- ***************************************************************************/
-
-VideoCaptureMacInfo::VideoCaptureMacInfo(const WebRtc_Word32 id) :
-    DeviceInfoImpl(id), _isFrameworkSupported(false)//,
-//_captureInfoClass(        NULL) // special init below
-{
-#if __MAC_OS_X_VERSION_MIN_REQUIRED == __MAC_10_4 // QuickTime version
-    _isFrameworkSupported = false;
-    _captureInfoClass = new VideoCaptureMacQuickTimeInfo(_id);
-
-#else // QTKit version
-    _isFrameworkSupported = true;
-    _captureInfoClass = new VideoCaptureMacQTKitInfo(_id);
-#endif
-
-}
-
-VideoCaptureMacInfo::~VideoCaptureMacInfo()
-{
-#if __MAC_OS_X_VERSION_MIN_REQUIRED == __MAC_10_4 // QuickTime version
-    delete _captureInfoClass;
-#else // QTKit version
-    delete _captureInfoClass;
-#endif
-}
-
-WebRtc_Word32 VideoCaptureMacInfo::Init()
-{
-#if __MAC_OS_X_VERSION_MIN_REQUIRED == __MAC_10_4 // QuickTime version
-    return static_cast<VideoCaptureMacQuickTimeInfo*>
-        (_captureInfoClass)->Init();
-#else // QTKit version
-    return static_cast<VideoCaptureMacQTKitInfo*>(_captureInfoClass)->Init();
-#endif
-}
-
-WebRtc_UWord32 VideoCaptureMacInfo::NumberOfDevices()
-{
-#if __MAC_OS_X_VERSION_MIN_REQUIRED == __MAC_10_4 // QuickTime version
-    return static_cast<VideoCaptureMacQuickTimeInfo*>
-        (_captureInfoClass)->NumberOfDevices();
-
-#else // QTKit version
-    return static_cast<VideoCaptureMacQTKitInfo*>
-        (_captureInfoClass)->NumberOfDevices();
-#endif
-}
-
-WebRtc_Word32 VideoCaptureMacInfo::GetDeviceName(
-    WebRtc_UWord32 deviceNumber, WebRtc_UWord8* deviceNameUTF8,
-    WebRtc_UWord32 deviceNameLength, WebRtc_UWord8* deviceUniqueIdUTF8,
-    WebRtc_UWord32 deviceUniqueIdUTF8Length, WebRtc_UWord8* productUniqueIdUTF8,
-    WebRtc_UWord32 productUniqueIdUTF8Length)
-{
-#if __MAC_OS_X_VERSION_MIN_REQUIRED == __MAC_10_4 // QuickTime version
-    return static_cast<VideoCaptureMacQuickTimeInfo*>
-    (_captureInfoClass)->GetDeviceName(deviceNumber, deviceNameUTF8,
-                                       deviceNameLength, deviceUniqueIdUTF8,
-                                       deviceUniqueIdUTF8Length,
-                                       productUniqueIdUTF8,
-                                       productUniqueIdUTF8Length);
-
-#else // QTKit version
-    return static_cast<VideoCaptureMacQTKitInfo*>
-        (_captureInfoClass)->GetDeviceName(deviceNumber, deviceNameUTF8,
-                                           deviceNameLength, deviceUniqueIdUTF8,
-                                           deviceUniqueIdUTF8Length,
-                                           productUniqueIdUTF8,
-                                           productUniqueIdUTF8Length);
-#endif
-}
-
-WebRtc_Word32 VideoCaptureMacInfo::NumberOfCapabilities(
-    const WebRtc_UWord8* deviceUniqueIdUTF8)
-{
-#if __MAC_OS_X_VERSION_MIN_REQUIRED == __MAC_10_4 // QuickTime version
-    return static_cast<VideoCaptureMacQuickTimeInfo*>
-    (_captureInfoClass)->NumberOfCapabilities(deviceUniqueIdUTF8);
-
-#else // QTKit version
-    return static_cast<VideoCaptureMacQTKitInfo*>
-        (_captureInfoClass)->NumberOfCapabilities(deviceUniqueIdUTF8);
-#endif
-}
-
-WebRtc_Word32 VideoCaptureMacInfo::GetCapability(
-    const WebRtc_UWord8* deviceUniqueIdUTF8,
-    const WebRtc_UWord32 deviceCapabilityNumber,
-    VideoCaptureCapability& capability)
-{
-#if __MAC_OS_X_VERSION_MIN_REQUIRED == __MAC_10_4 // QuickTime version
-    return static_cast<VideoCaptureMacQuickTimeInfo*>
-    (_captureInfoClass)->GetCapability(deviceUniqueIdUTF8,
-                                       deviceCapabilityNumber, capability);
-
-#else // QTKit version
-    return static_cast<VideoCaptureMacQTKitInfo*>
-        (_captureInfoClass)->GetCapability(deviceUniqueIdUTF8,
-                                           deviceCapabilityNumber, capability);
-#endif
-}
-
-WebRtc_Word32 VideoCaptureMacInfo::GetBestMatchedCapability(
-    const WebRtc_UWord8*deviceUniqueIdUTF8,
-    const VideoCaptureCapability requested, VideoCaptureCapability& resulting)
-{
-#if __MAC_OS_X_VERSION_MIN_REQUIRED == __MAC_10_4 // QuickTime version
-    return static_cast<VideoCaptureMacQuickTimeInfo*>
-        (_captureInfoClass)->GetBestMatchedCapability(deviceUniqueIdUTF8,
-                                                      requested, resulting);
-
-#else // QTKit version
-    return static_cast<VideoCaptureMacQTKitInfo*>
-        (_captureInfoClass)->GetBestMatchedCapability(deviceUniqueIdUTF8,
-                                                      requested, resulting);
-#endif
-}
-
-WebRtc_Word32 VideoCaptureMacInfo::DisplayCaptureSettingsDialogBox(
-    const WebRtc_UWord8* deviceUniqueIdUTF8,
-    const WebRtc_UWord8* dialogTitleUTF8, void* parentWindow,
-    WebRtc_UWord32 positionX, WebRtc_UWord32 positionY)
-{
-#if __MAC_OS_X_VERSION_MIN_REQUIRED == __MAC_10_4 // QuickTime version
-    return static_cast<VideoCaptureMacQuickTimeInfo*>
-        (_captureInfoClass)->DisplayCaptureSettingsDialogBox(deviceUniqueIdUTF8,
-                                                             dialogTitleUTF8,
-                                                             parentWindow,
-                                                             positionX,
-                                                             positionY);
-#else // QTKit version
-    return static_cast<VideoCaptureMacQTKitInfo*>
-        (_captureInfoClass)->DisplayCaptureSettingsDialogBox(deviceUniqueIdUTF8,
-                                                             dialogTitleUTF8,
-                                                             parentWindow,
-                                                             positionX,
-                                                             positionY);
-#endif
-}
-
-WebRtc_Word32 VideoCaptureMacInfo::CreateCapabilityMap(
-    const WebRtc_UWord8* deviceUniqueIdUTF8)
-{
-#if __MAC_OS_X_VERSION_MIN_REQUIRED == __MAC_10_4 // QuickTime version
-#else // QTKit version
-#endif
-    // not supported. The call stack should never make it this deep.
-    // This call should be returned higher in the order
-    return -1;
-
-}
-}  // namespace webrtc
 }  // namespace videocapturemodule
+}  // namespace webrtc
+

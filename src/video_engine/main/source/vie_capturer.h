@@ -157,7 +157,6 @@ private:
     CriticalSectionWrapper& _captureCritsect; // Never take this one before deliverCritsect!
     CriticalSectionWrapper& _deliverCritsect;
     VideoCaptureModule* _captureModule;
-    bool _useExternalModule;
     VideoCaptureExternal* _externalCaptureModule;
     ProcessThread& _moduleProcessThread;
     const int _captureId;

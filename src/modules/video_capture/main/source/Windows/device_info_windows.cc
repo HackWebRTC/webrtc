@@ -10,17 +10,20 @@
 
 #include "device_info_windows.h"
 
-#include "trace.h"
-#include "help_functions_windows.h"
 #include "../video_capture_config.h"
+#include "help_functions_windows.h"
 #include "capture_delay_values_windows.h"
+#include "ref_count.h"
+#include "trace.h"
 
 #include <Streams.h>
 #include <Dvdmedia.h>
 
 namespace webrtc
 {
-VideoCaptureModule::DeviceInfo* VideoCaptureModule::CreateDeviceInfo(
+namespace videocapturemodule
+{
+VideoCaptureModule::DeviceInfo* VideoCaptureImpl::CreateDeviceInfo(
                                                         const WebRtc_Word32 id)
 {
     videocapturemodule::DeviceInfoWindows* dsInfo =
@@ -34,15 +37,12 @@ VideoCaptureModule::DeviceInfo* VideoCaptureModule::CreateDeviceInfo(
     return dsInfo;
 }
 
-void VideoCaptureModule::DestroyDeviceInfo(DeviceInfo* deviceInfo)
+void VideoCaptureImpl::DestroyDeviceInfo(DeviceInfo* deviceInfo)
 {
     videocapturemodule::DeviceInfoWindows* impl =
         static_cast<videocapturemodule::DeviceInfoWindows*> (deviceInfo);
     delete impl;
 }
-
-namespace videocapturemodule
-{
 
 DeviceInfoWindows::DeviceInfoWindows(const WebRtc_Word32 id)
     : DeviceInfoImpl(id), _dsDevEnum(NULL), _dsMonikerDevEnum(NULL),

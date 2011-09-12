@@ -8,14 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "ref_count.h"
 #include "video_capture_windows.h"
 #include "trace.h"
 
 namespace webrtc
 {
-VideoCaptureModule* VideoCaptureModule::Create(
-                                       const WebRtc_Word32 id,
-                                       const WebRtc_UWord8* deviceUniqueIdUTF8)
+namespace videocapturemodule
+{
+VideoCaptureModule* VideoCaptureImpl::Create(
+    const WebRtc_Word32 id,
+    const WebRtc_UWord8* deviceUniqueIdUTF8)
 {
     WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, id, "Create %s",
                  deviceUniqueIdUTF8);
@@ -31,16 +34,16 @@ VideoCaptureModule* VideoCaptureModule::Create(
     videocapturemodule::DeviceInfoWindows::GetProductId(deviceUniqueIdUTF8,
                                                         productId,
                                                         sizeof(productId));
+    
+    RefCountImpl<videocapturemodule::VideoCaptureDS>* newCaptureModule =
+        new RefCountImpl<videocapturemodule::VideoCaptureDS>(id);
 
-    videocapturemodule::VideoCaptureDS* newCaptureModule = NULL;
-    newCaptureModule = new videocapturemodule::VideoCaptureDS(id);
-
-    if (!newCaptureModule
-        || newCaptureModule->Init(id, deviceUniqueIdUTF8) != 0)
+    if (newCaptureModule->Init(id, deviceUniqueIdUTF8) != 0)
     {
-        Destroy(newCaptureModule);
+        delete newCaptureModule;
         newCaptureModule = NULL;
     }
     return newCaptureModule;
 }
+} //namespace videocapturemodule
 } //namespace webrtc

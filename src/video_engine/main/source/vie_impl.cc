@@ -22,6 +22,7 @@
 
 #ifdef WEBRTC_ANDROID
 #include "video_capture.h"
+#include "video_capture_impl.h"
 #include "video_render.h"
 #endif
 
@@ -281,7 +282,7 @@ int VideoEngine::SetAndroidObjects(void* javaVM, void* javaContext)
                "SetAndroidObjects()");
 
 #ifdef WEBRTC_ANDROID
-    if (VideoCaptureModule::SetAndroidObjects(javaVM,javaContext) != 0)
+    if (VideoCaptureImpl::SetAndroidObjects(javaVM,javaContext) != 0)
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, gViEActiveInstanceCounter,
                    "Could not set capture module Android objects");

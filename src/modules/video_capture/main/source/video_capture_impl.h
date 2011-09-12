@@ -24,23 +24,42 @@ namespace webrtc
 {
 class CriticalSectionWrapper;
 
-namespace videocapturemodule
-{
+namespace videocapturemodule {
 // Class definitions
 class VideoCaptureImpl: public VideoCaptureModule, public VideoCaptureExternal
 {
 public:
 
-    VideoCaptureImpl(const WebRtc_Word32 id);
-    virtual ~VideoCaptureImpl();
+    /*
+     *   Create a video capture module object
+     *
+     *   id              - unique identifier of this video capture module object
+     *   deviceUniqueIdUTF8 -  name of the device. Available names can be found by using GetDeviceName
+     */
+    static VideoCaptureModule* Create(const WebRtc_Word32 id,
+                                      const WebRtc_UWord8* deviceUniqueIdUTF8);
 
+    /*
+     *   Create a video capture module object used for external capture.
+     *
+     *   id              - unique identifier of this video capture module object
+     *   externalCapture - [out] interface to call when a new frame is captured.
+     */
     static VideoCaptureModule* Create(const WebRtc_Word32 id,
                                       VideoCaptureExternal*& externalCapture);
 
-    static void Destroy(VideoCaptureModule* module);
+    static DeviceInfo* CreateDeviceInfo(const WebRtc_Word32 id);
+    static void DestroyDeviceInfo(DeviceInfo* deviceInfo);
+
+#ifdef WEBRTC_ANDROID
+    static WebRtc_Word32 SetAndroidObjects(void* javaVM, void* javaContext);
+#endif
+
     static WebRtc_Word32 GetVersion(WebRtc_Word8* version,
                                     WebRtc_UWord32& remainingBufferInBytes,
                                     WebRtc_UWord32& position);
+
+
 
     // Implements Module declared functions.
     virtual WebRtc_Word32 ChangeUniqueId(const WebRtc_Word32 id);
@@ -91,6 +110,9 @@ public:
     { return NULL; }
 
 protected:
+    VideoCaptureImpl(const WebRtc_Word32 id);
+    virtual ~VideoCaptureImpl();
+
     WebRtc_Word32 _id; // Module ID
     WebRtc_UWord8* _deviceUniqueId; // current Device unique name;
     CriticalSectionWrapper& _apiCs;
@@ -121,6 +143,6 @@ private:
 
     VideoFrame _captureFrame;
 };
-} //namespace videocapturemodule
+} // namespace videocapturemodule
 } //namespace webrtc
 #endif  // WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_VIDEO_CAPTURE_IMPL_H_

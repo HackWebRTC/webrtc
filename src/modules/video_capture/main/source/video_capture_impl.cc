@@ -15,6 +15,7 @@
 #include "vplib_conversions.h"
 #include "video_capture_config.h"
 #include "module_common_types.h"
+#include "ref_count.h"
 
 #ifdef WEBRTC_ANDROID
 #include "video_capture_android.h" // Need inclusion here to set Java environment.
@@ -22,32 +23,25 @@
 
 namespace webrtc
 {
-
-VideoCaptureModule* VideoCaptureModule::Create(const WebRtc_Word32 id,
-                                               VideoCaptureExternal*& externalCapture)
+namespace videocapturemodule
 {
-    videocapturemodule::VideoCaptureImpl* implementation =
-                        new videocapturemodule::VideoCaptureImpl(id);
+VideoCaptureModule* VideoCaptureImpl::Create(
+    const WebRtc_Word32 id,
+    VideoCaptureExternal*& externalCapture)
+{
+    RefCountImpl<VideoCaptureImpl>* implementation =
+        new RefCountImpl<VideoCaptureImpl>(id);
     externalCapture = implementation;
     return implementation;
 }
 
-
-void VideoCaptureModule::Destroy(VideoCaptureModule* module)
-{
-    delete module;
-}
-
 #ifdef WEBRTC_ANDROID
-WebRtc_Word32 VideoCaptureModule::SetAndroidObjects(void* javaVM,void* javaContext)
+WebRtc_Word32 VideoCaptureImpl::SetAndroidObjects(void* javaVM,void* javaContext)
 {
     WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, 0, "SetAndroidObjects");
     return videocapturemodule::VideoCaptureAndroid::SetAndroidObjects(javaVM,javaContext);
 }
 #endif
-
-namespace videocapturemodule
-{
 
 WebRtc_Word32 VideoCaptureImpl::Version(WebRtc_Word8* version,
                                               WebRtc_UWord32& remainingBufferInBytes,
@@ -281,7 +275,8 @@ WebRtc_Word32 VideoCaptureImpl::IncomingFrame(WebRtc_UWord8* videoFrame,
 
     if (frameInfo.codecType == kVideoCodecUnknown) // None encoded. Convert to I420.
     {
-        const VideoType vpLibType =RawVideoTypeToVplibVideoType(frameInfo.rawType);
+        const VideoType vpLibType = videocapturemodule::
+            RawVideoTypeToVplibVideoType(frameInfo.rawType);
         int size = CalcBufferSize(vpLibType, width, height);
         if (size != videoFrameLength)
         {
@@ -477,5 +472,5 @@ WebRtc_UWord32 VideoCaptureImpl::CalculateFrameRate(const TickTime& now)
 
     return nrOfFrames;
 }
-} //namespace videocapturemodule
+} // namespace videocapturemodule
 } // namespace webrtc

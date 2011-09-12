@@ -9,32 +9,33 @@
  */
 
 #include "video_capture_android.h"
-#include <stdio.h>
-#include "critical_section_wrapper.h"
 
+#include <stdio.h>
+
+#include "critical_section_wrapper.h"
+#include "ref_count.h"
 #include "trace.h"
 namespace webrtc
 {
-
-VideoCaptureModule* VideoCaptureModule::Create(const WebRtc_Word32 id,
-                                        const WebRtc_UWord8* deviceUniqueIdUTF8)
+namespace videocapturemodule
+{
+VideoCaptureModule* VideoCaptureImpl::Create(
+    const WebRtc_Word32 id,
+    const WebRtc_UWord8* deviceUniqueIdUTF8)
 {
     WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, -1,
                  "%s:", __FUNCTION__);
 
-    videocapturemodule::VideoCaptureAndroid* newCaptureModule =
-                            new videocapturemodule::VideoCaptureAndroid(id);
-    if (!newCaptureModule || newCaptureModule->Init(id, deviceUniqueIdUTF8)
-        != 0)
-    {
-        Destroy(newCaptureModule);
-        newCaptureModule = NULL;
-    }
-    return newCaptureModule;
-}
+    RefCountImpl<videocapturemodule::VideoCaptureAndroid>* implementation =
+        new RefCountImpl<videocapturemodule::VideoCaptureAndroid>(id);
 
-namespace videocapturemodule
-{
+    if (!implementation || implementation->Init(id, deviceUniqueId) != 0)
+    {
+        delete implementation;
+        implementation = NULL;
+    }
+    return implementation;
+}
 
 // Android logging, uncomment to print trace to logcat instead of trace file/callback
 //#include <android/log.h>
