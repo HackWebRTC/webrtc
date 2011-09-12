@@ -164,7 +164,7 @@ int WebRtcNetEQ_Normal(DSPInst_t *inst,
             w32_tmp = WEBRTC_SPL_SHIFT_W32(inst->BGNInst.w32_energy, (w16_tmp+14));
             w16_tmp = (WebRtc_Word16) WEBRTC_SPL_SHIFT_W32(w32_En_speech, w16_tmp);
             w16_tmp = (WebRtc_Word16) WebRtcSpl_DivW32W16(w32_tmp, w16_tmp);
-            w16_muted = (WebRtc_Word16) WebRtcSpl_Sqrt(
+            w16_muted = (WebRtc_Word16) WebRtcSpl_SqrtFloor(
                 WEBRTC_SPL_LSHIFT_W32((WebRtc_Word32) w16_tmp,
                     14)); /* w16_muted in Q14 (sqrt(Q28)) */
         }

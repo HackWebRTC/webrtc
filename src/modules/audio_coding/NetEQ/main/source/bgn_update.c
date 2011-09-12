@@ -188,7 +188,7 @@ void WebRtcNetEQ_BGNUpdate(
             w32_enBGN = WEBRTC_SPL_SHIFT_W32(w32_enBGN, w16_tmp2);
 
             /* Calculate scale and shift factor */
-            BGN_Inst->w16_scale = (WebRtc_Word16) WebRtcSpl_Sqrt(w32_enBGN);
+            BGN_Inst->w16_scale = (WebRtc_Word16) WebRtcSpl_SqrtFloor(w32_enBGN);
             BGN_Inst->w16_scaleShift = 13 + ((6 + w16_tmp2) >> 1); /* RANDN table is in Q13, */
             /* 6=log2(64) */
 

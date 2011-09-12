@@ -253,7 +253,7 @@ int WebRtcNetEQ_Merge(DSPInst_t *inst,
         w16_tmp
             = WebRtcSpl_DivW32W16ResW16(w32_En_old_frame, (WebRtc_Word16) w32_En_new_frame);
         /* Calculate sqrt(w32_En_old_frame/w32_En_new_frame) in Q14 */
-        w16_muted = (WebRtc_Word16) WebRtcSpl_Sqrt(
+        w16_muted = (WebRtc_Word16) WebRtcSpl_SqrtFloor(
             WEBRTC_SPL_LSHIFT_W32((WebRtc_Word32)w16_tmp,14));
     }
     else

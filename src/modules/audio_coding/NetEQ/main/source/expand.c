@@ -419,7 +419,7 @@ int WebRtcNetEQ_Expand(DSPInst_t *inst,
             w16_en1 = (WebRtc_Word16) WEBRTC_SPL_RSHIFT_W32(w32_en1, w16_en1Scale);
             w16_en2 = (WebRtc_Word16) WEBRTC_SPL_RSHIFT_W32(w32_en2, w16_en2Scale);
             w32_en1_mul_en2 = WEBRTC_SPL_MUL_16_16(w16_en1, w16_en2);
-            w16_sqrt_en1en2 = (WebRtc_Word16) WebRtcSpl_Sqrt(w32_en1_mul_en2);
+            w16_sqrt_en1en2 = (WebRtc_Word16) WebRtcSpl_SqrtFloor(w32_en1_mul_en2);
 
             /* Calculate cc/sqrt(en1*en2) in Q14 */
             w16_ccShiftL = 14 - ((w16_en1Scale + w16_en2Scale) >> 1);
@@ -463,7 +463,7 @@ int WebRtcNetEQ_Expand(DSPInst_t *inst,
                 (WebRtc_Word16) (WEBRTC_SPL_RSHIFT_W32(w32_en2, w16_en2Scale)));
 
             /* calculate factor in Q13 (sqrt of en1/en2 in Q26) */
-            w16_factor = (WebRtc_Word16) WebRtcSpl_Sqrt(
+            w16_factor = (WebRtc_Word16) WebRtcSpl_SqrtFloor(
                 WEBRTC_SPL_LSHIFT_W32(w32_en1_mul_en2, 13));
 
             /* Copy the two vectors and give them the same energy */
@@ -621,7 +621,7 @@ int WebRtcNetEQ_Expand(DSPInst_t *inst,
         w16_tmp += ((w16_tmp & 0x1) ^ 0x1); /* Make sure we do an odd number of shifts since we
          from earlier have 7 shifts from dividing with 128.*/
         w32_tmp = WEBRTC_SPL_SHIFT_W32(w32_tmp, w16_tmp);
-        w32_tmp = WebRtcSpl_Sqrt(w32_tmp);
+        w32_tmp = WebRtcSpl_SqrtFloor(w32_tmp);
         ExpandState->w16_arGainScale = 13 + ((w16_tmp + 7 - w16_scale) >> 1);
         ExpandState->w16_arGain = (WebRtc_Word16) w32_tmp;
 

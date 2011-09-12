@@ -380,7 +380,7 @@ int WebRtcNetEQ_Accelerate(DSPInst_t *inst,
             w32_tmp = WEBRTC_SPL_MUL_16_16(w16_en1, w16_en2);
 
             /* Calculate square-root of energy product */
-            w16_sqrtEn1En2 = (WebRtc_Word16) WebRtcSpl_Sqrt(w32_tmp);
+            w16_sqrtEn1En2 = (WebRtc_Word16) WebRtcSpl_SqrtFloor(w32_tmp);
 
             /* Calculate cc/sqrt(en1*en2) in Q14 */
             w16_tmp = 14 - WEBRTC_SPL_RSHIFT_W16(w16_en1Scale+w16_en2Scale, 1);
