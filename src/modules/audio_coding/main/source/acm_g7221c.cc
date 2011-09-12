@@ -17,9 +17,12 @@
 #include "trace.h"
 
 #ifdef WEBRTC_CODEC_G722_1C
-    // NOTE! G.722.1C is not included in the open-source package. A wrapper is
-    // needed with interface file named as below. The API should match the one
-    // below.
+    // NOTE! G.722.1C is not included in the open-source package. The following
+    // interface file is needed:
+    //
+    // /modules/audio_coding/codecs/g7221c/main/interface/g7221c_interface.h
+    //
+    // The API in the header file should match the one below.
     //
     // int16_t WebRtcG7221C_CreateEnc24(G722_1C_24_encinst_t_** encInst);
     // int16_t WebRtcG7221C_CreateEnc32(G722_1C_32_encinst_t_** encInst);
@@ -77,6 +80,7 @@
     // int16_t WebRtcG7221C_DecodePlc48(G722_1C_48_decinst_t_* decInst,
     //                                  int16_t* output,
     //                                  int16_t nrLostFrames);
+    // void WebRtcG7221C_Version(char *versionStr, short len);
     #include "g7221c_interface.h"
 #endif
 

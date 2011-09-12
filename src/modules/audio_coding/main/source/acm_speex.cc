@@ -17,9 +17,12 @@
 #include "webrtc_neteq_help_macros.h"
 
 #ifdef WEBRTC_CODEC_SPEEX
-    // NOTE! Speex is not included in the open-source package.  A wrapper is
-    // needed with interface file named as below. The API should match the one
-    // below.
+    // NOTE! Speex is not included in the open-source package. The following
+    // interface file is needed:
+    //
+    // /modules/audio_coding/codecs/speex/main/interface/speex_interface.h
+    //
+    // The API in the header file should match the one below.
     //
     // int16_t WebRtcSpeex_CreateEnc(SPEEX_encinst_t **SPEEXenc_inst,
     //                               int32_t fs);
@@ -42,6 +45,7 @@
     //                            int16_t *encoded, int16_t len,
     //                            int16_t *decoded, int16_t *speechType);
     // int16_t WebRtcSpeex_DecoderInit(SPEEX_decinst_t *SPEEXdec_inst);
+    // void WebRtcSpeex_Version(char *versionStr, short len);
     #include "speex_interface.h"
 #endif
 

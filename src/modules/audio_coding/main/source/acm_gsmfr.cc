@@ -16,9 +16,12 @@
 #include "webrtc_neteq_help_macros.h"
 
 #ifdef WEBRTC_CODEC_GSMFR
-    // NOTE! GSM-FR is not included in the open-source package. A wrapper is
-    // needed with interface file named as below. The API should match the one
-    // below.
+    // NOTE! GSM-FR is not included in the open-source package. The following
+    // interface file is needed:
+    //
+    // /modules/audio_coding/codecs/gsmfr/main/interface/gsmfr_interface.h
+    //
+    // The API in the header file should match the one below.
     //
     // int16_t WebRtcGSMFR_CreateEnc(GSMFR_encinst_t_** inst);
     // int16_t WebRtcGSMFR_CreateDec(GSMFR_decinst_t_** inst);
@@ -31,6 +34,7 @@
     // int16_t WebRtcGSMFR_DecodeBwe(GSMFR_decinst_t_* decInst, int16_t* input);
     // int16_t WebRtcGSMFR_DecodePlc(GSMFR_decinst_t_* decInst);
     // int16_t WebRtcGSMFR_DecoderInit(GSMFR_decinst_t_* decInst);
+    // void WebRtcGSMFR_Version(char *versionStr, short len);
     #include "gsmfr_interface.h"
 #endif
 

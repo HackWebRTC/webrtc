@@ -52,9 +52,11 @@
 #endif
 #ifdef WEBRTC_CODEC_AMR
     #include "acm_amr.h"
+    #include "amr_interface.h"
 #endif
 #ifdef WEBRTC_CODEC_AMRWB
     #include "acm_amrwb.h"
+    #include "amrwb_interface.h"
 #endif
 #ifdef WEBRTC_CODEC_G722
     #include "acm_g722.h"
@@ -62,21 +64,27 @@
 #endif
 #ifdef WEBRTC_CODEC_G722_1
     #include "acm_g7221.h"
+    #include "g7221_interface.h"
 #endif
 #ifdef WEBRTC_CODEC_G722_1C
     #include "acm_g7221c.h"
+    #include "g7221c_interface.h"
 #endif
 #ifdef WEBRTC_CODEC_G729
     #include "acm_g729.h"
+    #include "g729_interface.h"
 #endif
 #ifdef WEBRTC_CODEC_G729_1
     #include "acm_g7291.h"
+    #include "g7291_interface.h"
 #endif
 #ifdef WEBRTC_CODEC_GSMFR
     #include "acm_gsmfr.h"
+    #include "gsmfr_interface.h"
 #endif
 #ifdef WEBRTC_CODEC_SPEEX
     #include "acm_speex.h"
+    #include "speex_interface.h"
 #endif
 #ifdef WEBRTC_CODEC_AVT
     #include "acm_dtmf_playout.h"
@@ -572,11 +580,17 @@ int ACMCodecDB::CodecsVersion(char* version, size_t* remaining_buffer_bytes,
 #endif
 #ifdef WEBRTC_CODEC_AMR
   remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  strncat(versions_buffer, "AMR\t\tX.X.X\n", remaining_size);
+  WebRtcAmr_Version(version_num_buf, kTemporaryBufferSize);
+  strncat(versions_buffer, "AMR\t\t", remaining_size);
+  remaining_size = kVersionBufferSize - strlen(versions_buffer);
+  strncat(versions_buffer, version_num_buf, remaining_size);
 #endif
 #ifdef WEBRTC_CODEC_AMRWB
   remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  strncat(versions_buffer, "AMR-WB\t\tX.X.X\n", remaining_size);
+  WebRtcAmrWb_Version(version_num_buf, kTemporaryBufferSize);
+  strncat(versions_buffer, "AMR-WB\t\t", remaining_size);
+  remaining_size = kVersionBufferSize - strlen(versions_buffer);
+  strncat(versions_buffer, version_num_buf, remaining_size);
 #endif
 #ifdef WEBRTC_CODEC_G722
   remaining_size = kVersionBufferSize - strlen(versions_buffer);
@@ -587,27 +601,45 @@ int ACMCodecDB::CodecsVersion(char* version, size_t* remaining_buffer_bytes,
 #endif
 #ifdef WEBRTC_CODEC_G722_1
   remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  strncat(versions_buffer, "G.722.1\t\tX.X.X\n", remaining_size);
+  WebRtcG7221_Version(version_num_buf, kTemporaryBufferSize);
+  strncat(versions_buffer, "G.722.1\t\t", remaining_size);
+  remaining_size = kVersionBufferSize - strlen(versions_buffer);
+  strncat(versions_buffer, version_num_buf, remaining_size);
 #endif
 #ifdef WEBRTC_CODEC_G722_1C
   remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  strncat(versions_buffer, "G.722.1C\tX.X.X\n", remaining_size);
+  WebRtcG7221c_Version(version_num_buf, kTemporaryBufferSize);
+  strncat(versions_buffer, "G.722.1C\t", remaining_size);
+  remaining_size = kVersionBufferSize - strlen(versions_buffer);
+  strncat(versions_buffer, version_num_buf, remaining_size);
 #endif
 #ifdef WEBRTC_CODEC_G729
   remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  strncat(versions_buffer, "G.729\t\tX.X.X\n", remaining_size);
+  WebRtcG729_Version(version_num_buf, kTemporaryBufferSize);
+  strncat(versions_buffer, "G.729\t\t", remaining_size);
+  remaining_size = kVersionBufferSize - strlen(versions_buffer);
+  strncat(versions_buffer, version_num_buf, remaining_size);
 #endif
 #ifdef WEBRTC_CODEC_G729_1
   remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  strncat(versions_buffer, "G.729.1\t\tX.X.X\n", remaining_size);
+  WebRtcG7291_Version(version_num_buf, kTemporaryBufferSize);
+  strncat(versions_buffer, "G.729.1\t\t", remaining_size);
+  remaining_size = kVersionBufferSize - strlen(versions_buffer);
+  strncat(versions_buffer, version_num_buf, remaining_size);
 #endif
 #ifdef WEBRTC_CODEC_GSMFR
   remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  strncat(versions_buffer, "GSM-FR\t\tX.X.X\n", remaining_size);
+  WebRtcGSMFR_Version(version_num_buf, kTemporaryBufferSize);
+  strncat(versions_buffer, "GSM-FR\t\t", remaining_size);
+  remaining_size = kVersionBufferSize - strlen(versions_buffer);
+  strncat(versions_buffer, version_num_buf, remaining_size);
 #endif
 #ifdef WEBRTC_CODEC_SPEEX
   remaining_size = kVersionBufferSize - strlen(versions_buffer);
-  strncat(versions_buffer, "Speex\t\tX.X.X\n", remaining_size);
+  WebRtcSpeex_Version(version_num_buf, kTemporaryBufferSize);
+  strncat(versions_buffer, "Speex\t\t", remaining_size);
+  remaining_size = kVersionBufferSize - strlen(versions_buffer);
+  strncat(versions_buffer, version_num_buf, remaining_size);
 #endif
   remaining_size = kVersionBufferSize - strlen(versions_buffer);
   WebRtcCng_Version(version_num_buf);

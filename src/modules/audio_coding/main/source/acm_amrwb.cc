@@ -18,9 +18,12 @@
 #include "webrtc_neteq_help_macros.h"
 
 #ifdef WEBRTC_CODEC_AMRWB
-    // NOTE! GSM AMR-wb is not included in the open-source package. A wrapper is
-    // needed with interface file named as below. The API should match the one
-    // below.
+    // NOTE! GSM AMR-wb is not included in the open-source package. The
+    // following interface file is needed:
+    //
+    // /modules/audio_coding/codecs/amrwb/main/interface/amrwb_interface.h
+    //
+    // The API in the header file should match the one below.
     //
     // int16_t WebRtcAmrWb_CreateEnc(AMRWB_encinst_t_** encInst);
     // int16_t WebRtcAmrWb_CreateDec(AMRWB_decinst_t_** decInst);
@@ -31,12 +34,13 @@
     // int16_t WebRtcAmrWb_EncoderInit(AMRWB_encinst_t_* encInst,
     //                                 int16_t dtxMode);
     // int16_t WebRtcAmrWb_EncodeBitmode(AMRWB_encinst_t_* encInst,
-    //                                    ACMAMRPackingFormat format);
+    //                                    int format);
     // int16_t WebRtcAmrWb_Decode(AMRWB_decinst_t_* decInst);
     // int16_t WebRtcAmrWb_DecodePlc(AMRWB_decinst_t_* decInst);
     // int16_t WebRtcAmrWb_DecoderInit(AMRWB_decinst_t_* decInst);
     // int16_t WebRtcAmrWb_DecodeBitmode(AMRWB_decinst_t_* decInst,
-    //                                   ACMAMRPackingFormat format);
+    //                                   int format);
+    // void WebRtcAmrWb_Version(char *versionStr, short len);
     #include "amrwb_interface.h"
 #endif
 

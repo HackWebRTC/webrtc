@@ -16,9 +16,12 @@
 #include "webrtc_neteq_help_macros.h"
 
 #ifdef WEBRTC_CODEC_G729
-    // NOTE! G.729 is not included in the open-source package. A wrapper is
-    // needed with interface file named as below. The API should match the one
-    // below.
+    // NOTE! G.729 is not included in the open-source package. The following
+    // interface file is needed:
+    //
+    // /modules/audio_coding/codecs/g729/main/interface/g729_interface.h
+    //
+    // The API in the header file should match the one below.
     //
     // int16_t WebRtcG729_CreateEnc(G729_encinst_t_** inst);
     // int16_t WebRtcG729_CreateDec(G729_decinst_t_** inst);
@@ -31,6 +34,7 @@
     // int16_t WebRtcG729_DecodeBwe(G729_decinst_t_* decInst, int16_t* input);
     // int16_t WebRtcG729_DecodePlc(G729_decinst_t_* decInst);
     // int16_t WebRtcG729_DecoderInit(G729_decinst_t_* decInst);
+    // void WebRtcG729_Version(char *versionStr, short len);
     #include "g729_interface.h"
 #endif
 
