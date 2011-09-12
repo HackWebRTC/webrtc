@@ -1,13 +1,14 @@
 vars = {
-  "webrtc_trunk" : "https://webrtc.googlecode.com/svn/trunk",
-  "chromium_trunk" : "http://src.chromium.org/svn/trunk",
-  "chromium_revision": "98568",
   # Use this googlecode_url variable only if there is an internal mirror for it.
   # If you do not know, use the full path while defining your new deps entry.
   "googlecode_url": "http://%s.googlecode.com/svn",
+  "webrtc_trunk" : "https://webrtc.googlecode.com/svn/trunk",
+  "chromium_trunk" : "http://src.chromium.org/svn/trunk",
+  "chromium_revision": "98568",
   "libjingle_revision": "77",
 }
 
+# NOTE: Prefer revision numbers to tags.
 deps = {
   "trunk/build":
     Var("chromium_trunk") + "/src/build@" + Var("chromium_revision"),
@@ -45,7 +46,7 @@ deps = {
     Var("chromium_trunk") + "/src/third_party/libjingle@" + Var("chromium_revision"),
 
   "trunk/third_party/google-gflags/src":
-    (Var("googlecode_url") % "google-gflags") + "/tags/gflags-1.5/src@head",
+    (Var("googlecode_url") % "google-gflags") + "/trunk/src@45",
 
   "trunk/third_party/libjingle/source":
     (Var("googlecode_url") % "libjingle") + "/trunk@" + Var("libjingle_revision"),
@@ -57,7 +58,7 @@ deps = {
     Var("chromium_trunk") + "/deps/third_party/yasm/binaries@74228",
 
   "trunk/third_party/jsoncpp/":
-    "https://jsoncpp.svn.sourceforge.net/svnroot/jsoncpp/tags/jsoncpp/0.5.0",
+    "https://jsoncpp.svn.sourceforge.net/svnroot/jsoncpp/trunk/jsoncpp@139",
 }
 
 deps_os = {
