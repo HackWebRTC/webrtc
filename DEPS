@@ -19,6 +19,9 @@ deps = {
   "trunk/testing/gtest":
     (Var("googlecode_url") % "googletest") + "/trunk@573",
 
+  "trunk/testing/gmock":
+    (Var("googlecode_url") % "googlemock") + "/trunk@386",
+
   "trunk/tools/gyp":
     (Var("googlecode_url") % "gyp") + "/trunk@1012",
 
