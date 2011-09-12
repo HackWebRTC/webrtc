@@ -771,7 +771,7 @@ VCMQmRobustness::SetUepProtection(WebRtc_UWord8 codeRateDelta, float totalRate,
                                   WebRtc_UWord8 packetLoss, bool frameType)
 {
      // Default:
-    bool uepProtection  = true;
+    bool uepProtection  = false;
 
     if (_contentMetrics == NULL)
     {
