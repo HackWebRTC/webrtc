@@ -8,13 +8,26 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "video_metrics.h"
+#include <algorithm> // min_element, max_element
 #include <cmath>
+#include <fstream>
 #include "system_wrappers/interface/cpu_features_wrapper.h"
-#include "test_util.h"
+
+// Calculates PSNR from MSE
+static inline double CalcPsnr(double mse) {
+  // Formula: PSNR = 10 log (255^2 / MSE) = 20 log(255) - 10 log(MSE)
+  return 20.0 * std::log10(255.0) - 10.0 * std::log10(mse);
+}
+
+// Used for calculating min and max values
+static bool lessForFrameResultValue (const FrameResult& s1, const FrameResult& s2) {
+    return s1.value < s2.value;
+}
 
 WebRtc_Word32
 PsnrFromFiles(const WebRtc_Word8 *refFileName, const WebRtc_Word8 *testFileName,
-              WebRtc_Word32 width, WebRtc_Word32 height, double *YPsnrPtr)
+              WebRtc_Word32 width, WebRtc_Word32 height, QualityMetricsResult *result)
 {
     FILE *refFp = fopen(refFileName, "rb");
     if (refFp == NULL )
@@ -33,7 +46,7 @@ PsnrFromFiles(const WebRtc_Word8 *refFileName, const WebRtc_Word8 *testFileName,
     }
 
     double mse = 0.0;
-    double mseLogSum = 0.0;
+    double mseSum = 0.0;
     WebRtc_Word32 frames = 0;
 
     // Allocating size for one I420 frame.
@@ -57,10 +70,16 @@ PsnrFromFiles(const WebRtc_Word8 *refFileName, const WebRtc_Word8 *testFileName,
         }
 
         // divide by number of pixels
-          mse /= (double) (width * height);
+        mse /= (double) (width * height);
+
+        // Save statistics for this specific frame
+        FrameResult frame_result;
+        frame_result.value = CalcPsnr(mse);
+        frame_result.frame_number = frames;
+        result->frames.push_back(frame_result);
 
         // accumulate for total average
-        mseLogSum += std::log10(mse);
+        mseSum += mse;
         frames++;
 
         refBytes = (WebRtc_Word32) fread(ref, 1, frameBytes, refFp);
@@ -69,13 +88,23 @@ PsnrFromFiles(const WebRtc_Word8 *refFileName, const WebRtc_Word8 *testFileName,
      // for identical reproduction:
     if (mse == 0)
     {
-        *YPsnrPtr = 48;
+        result->average = 48;
     }
     else
     {
-        *YPsnrPtr = 20.0 * std::log10(255.0) - 10.0 * mseLogSum / frames;
+        result->average = CalcPsnr(mseSum / frames);
     }
 
+    // Calculate min/max statistics
+    std::vector<FrameResult>::iterator element;
+    element = min_element(result->frames.begin(),
+                          result->frames.end(), lessForFrameResultValue);
+    result->min = element->value;
+    result->min_frame_number = element->frame_number;
+    element = max_element(result->frames.begin(),
+                          result->frames.end(), lessForFrameResultValue);
+    result->max = element->value;
+    result->max_frame_number = element->frame_number;
 
     delete [] ref;
     delete [] test;
@@ -238,7 +267,7 @@ SsimFrame(WebRtc_UWord8 *img1, WebRtc_UWord8 *img2, WebRtc_Word32 stride_img1,
 
 WebRtc_Word32
 SsimFromFiles(const WebRtc_Word8 *refFileName, const WebRtc_Word8 *testFileName,
-              WebRtc_Word32 width, WebRtc_Word32 height, double *YSsimPtr)
+              WebRtc_Word32 width, WebRtc_Word32 height, QualityMetricsResult *result)
 {
     FILE *refFp = fopen(refFileName, "rb");
     if (refFp == NULL)
@@ -270,8 +299,14 @@ SsimFromFiles(const WebRtc_Word8 *refFileName, const WebRtc_Word8 *testFileName,
 
     while (refBytes == frameBytes && testBytes == frameBytes )
     {
-        ssimScene += SsimFrame(ref, test, width, width, width, height);
+        double ssimFrameValue = SsimFrame(ref, test, width, width, width, height);
+        // Save statistics for this specific frame
+        FrameResult frame_result;
+        frame_result.value = ssimFrameValue;
+        frame_result.frame_number = frames;
+        result->frames.push_back(frame_result);
 
+        ssimScene += ssimFrameValue;
         frames++;
 
         refBytes = (WebRtc_Word32) fread(ref, 1, frameBytes, refFp);
@@ -280,7 +315,18 @@ SsimFromFiles(const WebRtc_Word8 *refFileName, const WebRtc_Word8 *testFileName,
 
     // SSIM: normalize/average for sequence
     ssimScene  = ssimScene / frames;
-    *YSsimPtr = ssimScene;
+    result->average = ssimScene;
+
+    // Calculate min/max statistics
+    std::vector<FrameResult>::iterator element;
+    element = min_element(result->frames.begin(),
+                          result->frames.end(), lessForFrameResultValue);
+    result->min = element->value;
+    result->min_frame_number = element->frame_number;
+    element = max_element(result->frames.begin(),
+                          result->frames.end(), lessForFrameResultValue);
+    result->max = element->value;
+    result->max_frame_number = element->frame_number;
 
     delete [] ref;
     delete [] test;

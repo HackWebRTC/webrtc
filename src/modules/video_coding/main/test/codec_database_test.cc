@@ -364,10 +364,10 @@ CodecDataBaseTest::Perform(CmdArgs& args)
         delete encodeCallCDT;
         // closing and calculating PSNR for prior encoder-decoder test
         TearDown(); // closing open files
-        double psnr = 0;
+        QualityMetricsResult psnr;
         PsnrFromFiles(_inname.c_str(), _outname.c_str(), _width, _height, &psnr);
         printf(" \n @ %d KBPS:  ", sendCodec.startBitrate);
-        printf("PSNR from encoder-decoder send-receive control test is %f \n \n", psnr);
+        printf("PSNR from encoder-decoder send-receive control test is %f \n \n", psnr.average);
     } // end of #codecs >1
 
     delete waitEvent;

@@ -362,8 +362,7 @@ NormalTest::Print()
     double actualBitRate = ActualBitRate / 1000.0;
     double avgEncTime = _totalEncodeTime / _frameCnt;
     double avgDecTime = _totalDecodeTime / _frameCnt;
-    double psnr;
-    double ssim;
+    QualityMetricsResult psnr, ssim;
     PsnrFromFiles(_inname.c_str(), _outname.c_str(), _width, _height, &psnr);
     SsimFromFiles(_inname.c_str(), _outname.c_str(), _width, _height, &ssim);
     printf("Actual bitrate: %f kbps\n", actualBitRate);
@@ -373,10 +372,10 @@ NormalTest::Print()
     ( _log) << "Average encode time: " << avgEncTime << " s" << std::endl;
     printf("Average decode time: %f s\n", avgDecTime);
     ( _log) << "Average decode time: " << avgDecTime << " s" << std::endl;
-    printf("PSNR: %f \n", psnr);
-    ( _log) << "PSNR: " << psnr << std::endl;
-    printf("SSIM: %f \n", ssim);
-    ( _log) << "SSIM: " << ssim << std::endl;
+    printf("PSNR: %f \n", psnr.average);
+    ( _log) << "PSNR: " << psnr.average << std::endl;
+    printf("SSIM: %f \n", ssim.average);
+    ( _log) << "SSIM: " << ssim.average << std::endl;
     (_log) << std::endl;
 
     printf("\nVCM Normal Test: \n\n%i tests completed\n", vcmMacrosTests);

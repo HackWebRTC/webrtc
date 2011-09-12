@@ -108,7 +108,7 @@ QualityModesTest::Print()
     double actualBitRate = ActualBitRate / 1000.0;
     double avgEncTime = _totalEncodeTime / _frameCnt;
     double avgDecTime = _totalDecodeTime / _frameCnt;
-    double psnr,ssim;
+    QualityMetricsResult psnr,ssim;
     PsnrFromFiles(_inname.c_str(), _outname.c_str(), _nativeWidth, _nativeHeight, &psnr);
     printf("Actual bitrate: %f kbps\n", actualBitRate);
     printf("Target bitrate: %f kbps\n", _bitRate);
@@ -117,14 +117,14 @@ QualityModesTest::Print()
     ( _log) << "Average encode time: " << avgEncTime << " s" << std::endl;
     printf("Average decode time: %f s\n", avgDecTime);
     ( _log) << "Average decode time: " << avgDecTime << " s" << std::endl;
-    printf("PSNR: %f \n", psnr);
+    printf("PSNR: %f \n", psnr.average);
     printf("**Number of frames dropped in VPM***%d \n",_numFramesDroppedVPM);
-    ( _log) << "PSNR: " << psnr << std::endl;
+    ( _log) << "PSNR: " << psnr.average << std::endl;
     if (_flagSSIM == 1)
     {
         printf("***computing SSIM***\n");
         SsimFromFiles(_inname.c_str(), _outname.c_str(), _nativeWidth, _nativeHeight, &ssim);
-        printf("SSIM: %f \n", ssim);
+        printf("SSIM: %f \n", ssim.average);
     }
     (_log) << std::endl;
 

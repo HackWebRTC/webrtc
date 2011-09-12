@@ -467,7 +467,7 @@ MediaOptTest::Print(int mode)
 {
     double ActualBitRate =  8.0 *( _sumEncBytes / (_frameCnt / _frameRate));
     double actualBitRate = ActualBitRate / 1000.0;
-    double psnr;
+    QualityMetricsResult psnr;
     PsnrFromFiles(_actualSourcename.c_str(), _outname.c_str(), _width, _height, &psnr);
 
     (_log) << "VCM: Media Optimization Test Cycle Completed!" << std::endl;
@@ -477,7 +477,7 @@ MediaOptTest::Print(int mode)
     (_log) << "Error Reslience: NACK:" << _nackEnabled << "; FEC: " << _fecEnabled << std::endl;
     (_log) << "Packet Loss applied= %f " << _lossRate << std::endl;
     (_log) << _numFramesDropped << " FRames were dropped" << std::endl;
-     ( _log) << "PSNR: " << psnr << std::endl;
+     ( _log) << "PSNR: " << psnr.average << std::endl;
     (_log) << std::endl;
 
     if (_testType == 2)
@@ -490,7 +490,7 @@ MediaOptTest::Print(int mode)
         fprintf(_outputRes,"FEC: %s \n ",(_fecEnabled)?"true":"false");
         fprintf(_outputRes,"Packet loss applied = %f\n", _lossRate);
         fprintf(_outputRes,"%d frames were dropped, and total number of frames processed %d  \n",_numFramesDropped,_frameCnt);
-        fprintf(_outputRes,"PSNR: %f \n", psnr);
+        fprintf(_outputRes,"PSNR: %f \n", psnr.average);
         fprintf(_outputRes,"************\n");
     }
 
@@ -506,13 +506,13 @@ MediaOptTest::Print(int mode)
         fprintf(_fpout,"FEC: %s \n ",(_fecEnabled)?"true":"false");
         fprintf(_fpout,"Packet loss applied = %f\n", _lossRate);
         fprintf(_fpout,"%d frames were dropped, and total number of frames processed %d  \n",_numFramesDropped,_frameCnt);
-        fprintf(_fpout,"PSNR: %f \n", psnr);
+        fprintf(_fpout,"PSNR: %f \n", psnr.average);
         fprintf(_fpout,"************\n");
 
         int testNum1 = _testNum/(_numParRuns +1) + 1;
         int testNum2 = _testNum%_numParRuns;
         if (testNum2 == 0) testNum2 = _numParRuns;
-        fprintf(_fpout2,"%d %d %f %f %f %f \n",testNum1,testNum2,_bitRate,actualBitRate,_lossRate,psnr);
+        fprintf(_fpout2,"%d %d %f %f %f %f \n",testNum1,testNum2,_bitRate,actualBitRate,_lossRate,psnr.average);
         fclose(_fpinp);
         _fpinp = fopen("dat_inp","wb");
         fprintf(_fpinp,"%f %f %d \n",_bitRate,_lossRate,_testNum);
@@ -530,9 +530,9 @@ MediaOptTest::Print(int mode)
         printf("FEC: %s \n",(_fecEnabled)?"true":"false");
         printf("Packet loss applied = %f\n", _lossRate);
         printf("%d frames were dropped, and total number of frames processed %d  \n",_numFramesDropped,_frameCnt);
-        printf("PSNR: %f \n", psnr);
+        printf("PSNR: %f \n", psnr.average);
     }
-    TEST(psnr > 10); // low becuase of possible frame dropping (need to verify that OK for all packet loss values/ rates)
+    TEST(psnr.average > 10); // low becuase of possible frame dropping (need to verify that OK for all packet loss values/ rates)
 }
 
 void
