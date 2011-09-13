@@ -145,7 +145,7 @@ const char* micFile = "audio_long16bigendian.pcm";
 const char* micFile = "/sdcard/audio_long16.pcm";
 #elif defined(_WIN32)
 // File path is relative to the location of 'voice_engine.gyp'.
-const char* micFile = "../test/data/voice_engine/audio_long16.pcm";
+const char* micFile = "../../test/data/voice_engine/audio_long16.pcm";
 #elif defined(WEBRTC_LINUX)
 // Assumes launch from command line: $ ./out/<Debug><Release>/audio_device_test_func
 const char* micFile = "./test/data/voice_engine/audio_long16.pcm";
