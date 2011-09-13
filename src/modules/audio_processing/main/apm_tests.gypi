@@ -13,7 +13,7 @@
   },
   'targets': [
     {
-      'target_name': 'unit_test',
+      'target_name': 'audioproc_unittest',
       'type': 'executable',
       'conditions': [
         ['prefer_fixed_point==1', {
@@ -23,7 +23,7 @@
         }],
       ],
       'dependencies': [
-        'unittest_proto',
+        'audioproc_unittest_proto',
         'audio_processing',
         '<(webrtc_root)/common_audio/common_audio.gyp:spl',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
@@ -42,11 +42,12 @@
       ],
     },
     {
-      # Protobuf compiler / generate rule for unit_test
-      'target_name': 'unittest_proto',
+      # Protobuf compiler / generate rule for audioproc_unittest
+      'target_name': 'audioproc_unittest_proto',
       'type': 'none',
       'variables': {
-        'proto_relpath': 'test/unit_test',
+        'proto_relpath':
+          '<(webrtc_root)/modules/audio_processing/main/test/unit_test',
       },
       'sources': [
         '<(proto_relpath)/unittest.proto',
@@ -79,7 +80,7 @@
       'hard_dependency': 1,
     },
     {
-      'target_name': 'process_test',
+      'target_name': 'audioproc_process_test',
       'type': 'executable',
       'dependencies': [
         'audio_processing',
