@@ -54,8 +54,22 @@ WebRtc_Word32 AudioDeviceGeneric::SoundDeviceControl(unsigned int par1,
     unsigned int par2, unsigned int par3, unsigned int par4)
 {
     WEBRTC_TRACE(kTraceError, kTraceAudioDevice, -1,
-        "Reset audio device not supported on this platform");
+        "Sound device control not supported on this platform");
     return -1;
+}
+
+int32_t AudioDeviceGeneric::EnableBuiltInAEC(bool enable)
+{
+    WEBRTC_TRACE(kTraceError, kTraceAudioDevice, -1,
+        "Windows AEC not supported on this platform");
+    return -1;
+}
+
+bool AudioDeviceGeneric::BuiltInAECIsEnabled() const
+{
+    WEBRTC_TRACE(kTraceError, kTraceAudioDevice, -1,
+        "Windows AEC not supported on this platform");
+    return false;
 }
 
 }  // namespace webrtc

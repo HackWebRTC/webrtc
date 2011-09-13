@@ -12,7 +12,7 @@
 #include "audio_device_config.h"
 #include "system_wrappers/interface/ref_count.h"
 
-#include <cassert>
+#include <assert.h>
 #include <string.h>
 
 #if defined(_WIN32)
@@ -2104,6 +2104,22 @@ WebRtc_Word32 AudioDeviceModuleImpl::GetLoudspeakerStatus(bool* enabled) const
     }
 
     return 0;
+}
+
+int32_t AudioDeviceModuleImpl::EnableBuiltInAEC(bool enable)
+{
+    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id, "%s", __FUNCTION__);
+    CHECK_INITIALIZED();
+
+    return _ptrAudioDevice->EnableBuiltInAEC(enable);
+}
+
+bool AudioDeviceModuleImpl::BuiltInAECIsEnabled() const
+{
+    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id, "%s", __FUNCTION__);
+    CHECK_INITIALIZED_BOOL();
+
+    return _ptrAudioDevice->BuiltInAECIsEnabled();
 }
 
 // ============================================================================

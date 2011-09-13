@@ -815,6 +815,32 @@ int VoEHardwareImpl::GetSystemCPULoad(int& loadPercent)
     return 0;
 }
 
+int VoEHardwareImpl::EnableBuiltInAEC(bool enable)
+{
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
+        "%s", __FUNCTION__);
+    if (!_engineStatistics.Initialized())
+    {
+        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
+        return -1;
+    }
+
+    return _audioDevicePtr->EnableBuiltInAEC(enable);
+}
+
+bool VoEHardwareImpl::BuiltInAECIsEnabled() const
+{
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
+        "%s", __FUNCTION__);
+    if (!_engineStatistics.Initialized())
+    {
+        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
+        return false;
+    }
+
+    return _audioDevicePtr->BuiltInAECIsEnabled();
+}
+
 #endif  // WEBRTC_VOICE_ENGINE_HARDWARE_API
 
 } // namespace webrtc

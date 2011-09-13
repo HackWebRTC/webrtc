@@ -1,6 +1,10 @@
-# Copyright (c) 2009 The Chromium Authors. All rights reserved.
-# Use of this source code is governed by a BSD-style license that can be
-# found in the LICENSE file.
+# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+#
+# Use of this source code is governed by a BSD-style license
+# that can be found in the LICENSE file in the root of the source
+# tree. An additional intellectual property rights grant can be found
+# in the file PATENTS.  All contributing project authors may
+# be found in the AUTHORS file in the root of the source tree.
 
 # TODO: Rename files to use *_linux.cpp etc. names, to automatically include relevant files. Remove conditions section.
 
@@ -32,11 +36,13 @@
         '../interface/data_log_impl.h',
         '../interface/event_wrapper.h',
         '../interface/file_wrapper.h',
+        '../interface/fix_interlocked_exchange_pointer_windows.h',
         '../interface/list_wrapper.h',
         '../interface/map_wrapper.h',
         '../interface/ref_count.h',
         '../interface/rw_lock_wrapper.h',
         '../interface/scoped_ptr.h',
+        '../interface/scoped_refptr.h',
         '../interface/sort.h',
         '../interface/thread_wrapper.h',
         '../interface/tick_util.h',
@@ -71,6 +77,7 @@
         'thread.cc',
         'thread_posix.h',
         'thread_windows.h',
+        'thread_windows_set_name.h',
         'trace_impl.cc',
         'trace_impl.h',
         'trace_posix.h',

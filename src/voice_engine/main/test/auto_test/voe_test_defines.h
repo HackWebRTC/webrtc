@@ -27,7 +27,7 @@
 #endif
 
 // Select the tests to execute, list order below is same as they will be
-// executed. Note that, all settings below will be overrided by sub-API
+// executed. Note that, all settings below will be overriden by sub-API
 // settings in engine_configurations.h.
 #define _TEST_BASE_
 #define _TEST_RTP_RTCP_

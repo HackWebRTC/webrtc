@@ -67,6 +67,9 @@ public:
 
     virtual int GetLoudspeakerStatus(bool& enabled);
 
+    virtual int EnableBuiltInAEC(bool enable);
+    virtual bool BuiltInAECIsEnabled() const;
+
 protected:
     VoEHardwareImpl();
     virtual ~VoEHardwareImpl();

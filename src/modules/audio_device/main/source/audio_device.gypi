@@ -139,6 +139,17 @@
                 ],
               },
             }],
+            ['OS=="win"', {
+              'link_settings': {
+                'libraries': [
+                  # Required for the built-in WASAPI AEC.
+                  '-ldmoguids.lib',
+                  '-lwmcodecdspuuid.lib',
+                  '-lamstrmid.lib',
+                  '-lmsdmo.lib',
+                ],
+              },
+            }],
           ], # conditions
         }], # include_internal_audio_device==1
       ], # conditions

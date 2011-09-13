@@ -184,6 +184,17 @@ class AudioDeviceModule : public RefCountedModule {
   virtual int32_t SetLoudspeakerStatus(bool enable) = 0;
   virtual int32_t GetLoudspeakerStatus(bool* enabled) const = 0;
 
+  // *Experimental - not recommended for use.*
+  // Enables the Windows Core Audio built-in AEC. Fails on other platforms.
+  //
+  // Must be called before InitRecording(). When enabled:
+  // 1. StartPlayout() must be called before StartRecording().
+  // 2. StopRecording() should be called before StopPlayout().
+  //    The reverse order may cause garbage audio to be rendered or the
+  //    capture side to halt util StopRecording() is called.
+  virtual int32_t EnableBuiltInAEC(bool enable) { return -1; }
+  virtual bool BuiltInAECIsEnabled() const { return false; }
+
  protected:
   virtual ~AudioDeviceModule() {};
 };

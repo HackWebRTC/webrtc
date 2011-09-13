@@ -16,13 +16,17 @@
 #include "audio_device_generic.h"
 
 #pragma once
-#include <Mmdeviceapi.h>                    // MMDevice
-#include <Audioclient.h>                    // WASAPI
-#include <avrt.h>                           // Avrt
-#include <endpointvolume.h>
+#include <wmcodecdsp.h>      // CLSID_CWMAudioAEC
+                             // (must be before audioclient.h)
+#include <Audioclient.h>     // WASAPI
 #include <Audiopolicy.h>
+#include <avrt.h>            // Avrt
+#include <endpointvolume.h>
+#include <mediaobj.h>        // IMediaObject
+#include <Mmdeviceapi.h>     // MMDevice
 
 #include "critical_section_wrapper.h"
+#include "scoped_refptr.h"
 
 // Use Multimedia Class Scheduler Service (MMCSS) to boost the thread priority
 #pragma comment( lib, "avrt.lib" )
@@ -148,6 +152,9 @@ public:
     // CPU load
     virtual WebRtc_Word32 CPULoad(WebRtc_UWord16& load) const;
 
+    virtual int32_t EnableBuiltInAEC(bool enable);
+    virtual bool BuiltInAECIsEnabled() const;
+
 public:
     virtual bool PlayoutWarning() const;
     virtual bool PlayoutError() const;
@@ -169,8 +176,13 @@ private:    // avrt function pointers
     bool                                _winSupportAvrt;
 
 private:    // thread functions
+    DWORD InitCaptureThreadPriority();
+    void RevertCaptureThreadPriority();
     static DWORD WINAPI WSAPICaptureThread(LPVOID context);
     DWORD DoCaptureThread();
+    
+    static DWORD WINAPI WSAPICaptureThreadPollDMO(LPVOID context);
+    DWORD DoCaptureThreadPollDMO();
 
     static DWORD WINAPI WSAPIRenderThread(LPVOID context);
     DWORD DoRenderThread();
@@ -189,6 +201,16 @@ private:
     WebRtc_Word32 Id() {return _id;}
 
 private:
+    int SetDMOProperties();
+    
+    int SetBoolProperty(IPropertyStore* ptrPS,
+                        REFPROPERTYKEY key,
+                        VARIANT_BOOL value);
+    
+    int SetVtI4Property(IPropertyStore* ptrPS,
+                        REFPROPERTYKEY key,
+                        LONG value);
+
     WebRtc_Word32 _EnumerateEndpointDevicesAll(EDataFlow dataFlow) const;
     void _TraceCOMError(HRESULT hr) const;
 
@@ -199,6 +221,7 @@ private:
     WebRtc_Word32 _GetDeviceName(IMMDevice* pDevice, LPWSTR pszBuffer, int bufferLen);
     WebRtc_Word32 _GetListDeviceID(EDataFlow dir, int index, LPWSTR szBuffer, int bufferLen);
     WebRtc_Word32 _GetDefaultDeviceID(EDataFlow dir, ERole role, LPWSTR szBuffer, int bufferLen);
+    WebRtc_Word32 _GetDefaultDeviceIndex(EDataFlow dir, ERole role, int* index);
     WebRtc_Word32 _GetDeviceID(IMMDevice* pDevice, LPWSTR pszBuffer, int bufferLen);
     WebRtc_Word32 _GetDefaultDevice(EDataFlow dir, ERole role, IMMDevice** ppDevice);
     WebRtc_Word32 _GetListDevice(EDataFlow dir, int index, IMMDevice** ppDevice);
@@ -208,6 +231,8 @@ private:
     // Converts from wide-char to UTF-8 if UNICODE is defined.
     // Does nothing if UNICODE is undefined.
     char* WideToUTF8(const TCHAR* src) const;
+
+    WebRtc_Word32 InitRecordingDMO();
 
 private:
     AudioDeviceBuffer*                      _ptrAudioBuffer;
@@ -231,6 +256,11 @@ private:  // WASAPI
     ISimpleAudioVolume*                     _ptrRenderSimpleVolume;
     IAudioEndpointVolume*                   _ptrRenderEndpointVolume;
 
+    // DirectX Media Object (DMO) for the built-in AEC.
+    scoped_refptr<IMediaObject>             _dmo;
+    scoped_refptr<IMediaBuffer>             _mediaBuffer;
+    bool                                    _builtInAecEnabled;
+
     HANDLE                                  _hRenderSamplesReadyEvent;
     HANDLE                                  _hPlayThread;
     HANDLE                                  _hRenderStartedEvent;
@@ -244,6 +274,8 @@ private:  // WASAPI
     HANDLE                                  _hGetCaptureVolumeThread;
     HANDLE                                  _hSetCaptureVolumeThread;
     HANDLE                                  _hSetCaptureVolumeEvent;
+
+    HANDLE                                  _hMmTask;
 
     UINT                                    _playAudioFrameSize;
     WebRtc_UWord32                          _playSampleRate;

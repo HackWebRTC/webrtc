@@ -202,6 +202,9 @@ public:
     virtual WebRtc_Word32 SetLoudspeakerStatus(bool enable);
     virtual WebRtc_Word32 GetLoudspeakerStatus(bool* enabled) const;
 
+    virtual int32_t EnableBuiltInAEC(bool enable);
+    virtual bool BuiltInAECIsEnabled() const;
+
 public:
     WebRtc_Word32 Id() {return _id;}
 

@@ -2004,6 +2004,80 @@ int VoETestManager::DoStandardTest()
     SLEEP(2000);
 #endif // #ifdef MAC_IPHONE
 
+    TEST_LOG("\nBuilt-in WASAPI AEC tests\n");
+    TEST_MUSTPASS(base->StopSend(0));
+    TEST_MUSTPASS(base->StopPlayout(0));
+
+    TEST_MUSTPASS(hardware->GetAudioDeviceLayer(givenLayer));
+    if (givenLayer != kAudioWindowsCore)
+    {
+        TEST_MUSTFAIL(hardware->EnableBuiltInAEC(true));
+        TEST_MUSTFAIL(hardware->EnableBuiltInAEC(false));
+    }
+    else
+    {
+        TEST_MUSTPASS(base->StartSend(0));
+        // Can't be set after StartSend().
+        TEST_MUSTFAIL(hardware->EnableBuiltInAEC(true));
+        TEST_MUSTFAIL(hardware->EnableBuiltInAEC(false));
+
+        TEST_MUSTPASS(base->StopSend(0));
+        TEST_MUSTPASS(hardware->EnableBuiltInAEC(true));
+
+        // Can't be called before StartPlayout().
+        TEST_MUSTFAIL(base->StartSend(0));
+    
+        TEST_MUSTPASS(base->StartPlayout(0));
+        TEST_MUSTPASS(base->StartSend(0));
+        TEST_LOG("Processing capture data with built-in AEC...\n");
+        SLEEP(2000);
+
+        TEST_LOG("Looping through capture devices...\n");
+        TEST_MUSTPASS(hardware->GetNumOfRecordingDevices(nRec));
+        for (idx = 0; idx < nRec; idx++)
+        {
+            TEST_MUSTPASS(hardware->GetRecordingDeviceName(idx,
+                                                           devName,
+                                                           guidName));
+            TEST_LOG("%d: %s\n", idx, devName);
+            TEST_MUSTPASS(hardware->SetRecordingDevice(idx));
+            SLEEP(2000);
+        }
+
+        TEST_MUSTPASS(hardware->SetPlayoutDevice(-1));
+        TEST_MUSTPASS(hardware->SetRecordingDevice(-1));
+
+        TEST_LOG("Looping through render devices, restarting for each "
+                 "device...\n");
+        TEST_MUSTPASS(hardware->GetNumOfPlayoutDevices(nPlay));
+        for (idx = 0; idx < nPlay; idx++)
+        {
+            TEST_MUSTPASS(hardware->GetPlayoutDeviceName(idx,
+                                                         devName,
+                                                         guidName));
+            TEST_LOG("%d: %s\n", idx, devName);
+            TEST_MUSTPASS(hardware->SetPlayoutDevice(idx));
+            SLEEP(2000);
+        }
+
+        TEST_LOG("Using default devices...\n");
+        TEST_MUSTPASS(hardware->SetRecordingDevice(-1));
+        TEST_MUSTPASS(hardware->SetPlayoutDevice(-1));
+        SLEEP(2000);
+
+        // Possible, but not recommended before StopSend().
+        TEST_MUSTPASS(base->StopPlayout(0));
+
+        TEST_MUSTPASS(base->StopSend(0));
+        TEST_MUSTPASS(base->StopPlayout(0));
+        SLEEP(2000); // To verify that there is no garbage audio.
+
+        TEST_LOG("Disabling built-in AEC.\n");
+        TEST_MUSTPASS(hardware->EnableBuiltInAEC(false));
+
+        TEST_MUSTPASS(base->StartSend(0));
+        TEST_MUSTPASS(base->StartPlayout(0));
+    }
 #else
     TEST_LOG("\n\n+++ More hardware tests NOT ENABLED +++\n");
 #endif
