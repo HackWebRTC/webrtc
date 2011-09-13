@@ -60,6 +60,7 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../../../modules/audio_coding/main/interface \
     $(LOCAL_PATH)/../../../modules/audio_conference_mixer/interface \
     $(LOCAL_PATH)/../../../modules/audio_device/main/interface \
+    $(LOCAL_PATH)/../../../modules/audio_device/main/source \
     $(LOCAL_PATH)/../../../modules/audio_processing/main/interface \
     $(LOCAL_PATH)/../../../modules/media_file/interface \
     $(LOCAL_PATH)/../../../modules/rtp_rtcp/interface \
