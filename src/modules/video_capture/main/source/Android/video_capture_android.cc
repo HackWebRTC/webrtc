@@ -29,7 +29,7 @@ VideoCaptureModule* VideoCaptureImpl::Create(
     RefCountImpl<videocapturemodule::VideoCaptureAndroid>* implementation =
         new RefCountImpl<videocapturemodule::VideoCaptureAndroid>(id);
 
-    if (!implementation || implementation->Init(id, deviceUniqueId) != 0)
+    if (!implementation || implementation->Init(id, deviceUniqueIdUTF8) != 0)
     {
         delete implementation;
         implementation = NULL;
