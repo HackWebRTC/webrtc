@@ -101,34 +101,6 @@
               ],
           },
       },
-
-    {
-      'target_name': 'matlab_plotting_test',
-      'type': 'executable',
-      'dependencies': [
-        'matlab_plotting',
-        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-      ],
-      'include_dirs': [
-      ],
-      'sources': [
-        'BWEStandAlone/matlab_plotting_test.cc',
-      ], # source
-      'conditions': [
-          ['OS=="linux"', {
-              'cflags': [
-                  '-fexceptions', # enable exceptions
-                  ],
-              },
-           ],
-          ],
-
-      'include_dirs': [
-          ],
-      'link_settings': {
-          },
-    },
-
   ],
 }
 
