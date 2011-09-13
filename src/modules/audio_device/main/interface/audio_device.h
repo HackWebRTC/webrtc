@@ -191,7 +191,7 @@ class AudioDeviceModule : public RefCountedModule {
   // 1. StartPlayout() must be called before StartRecording().
   // 2. StopRecording() should be called before StopPlayout().
   //    The reverse order may cause garbage audio to be rendered or the
-  //    capture side to halt util StopRecording() is called.
+  //    capture side to halt until StopRecording() is called.
   virtual int32_t EnableBuiltInAEC(bool enable) { return -1; }
   virtual bool BuiltInAECIsEnabled() const { return false; }
 

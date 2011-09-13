@@ -120,7 +120,7 @@ public:
     // 1. VoEBase::StartPlayout() must be called before VoEBase::StartSend().
     // 2. VoEBase::StopSend() should be called before VoEBase::StopPlayout().
     //    The reverse order may cause garbage audio to be rendered or the
-    //    capture side to halt util StopSend() is called.
+    //    capture side to halt until StopSend() is called.
     //
     //    As a consequence, SetPlayoutDevice() should be used with caution
     //    during a call. It will function, but may cause the above issues for
