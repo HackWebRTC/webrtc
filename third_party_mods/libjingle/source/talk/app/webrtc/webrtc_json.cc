@@ -451,7 +451,7 @@ bool ParseICECandidates(const Json::Value& value,
 std::vector<Json::Value> ReadValues(
     const Json::Value& value, const std::string& key) {
   std::vector<Json::Value> objects;
-  for (size_t i = 0; i < value[key].size(); ++i) {
+  for (Json::ArrayIndex i = 0; i < value[key].size(); ++i) {
     objects.push_back(value[key][i]);
   }
   return objects;

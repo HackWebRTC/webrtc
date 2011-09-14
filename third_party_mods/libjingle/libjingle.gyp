@@ -15,6 +15,7 @@
         'overrides': '<(libjingle_orig)/source',
       }],
     ],
+    'jsoncpp': '../../third_party/jsoncpp',
   },
   'target_defaults': {
     'defines': [
@@ -162,6 +163,41 @@
     ],
   },
   'targets': [
+    #TODO(ronghuawu): move jsoncpp target to its own gyp
+    {
+      'target_name': 'jsoncpp',
+      'type': '<(library)',
+      'defines': [
+        'JSON_USE_EXCEPTION=0',
+      ],
+      'sources': [
+        '<(jsoncpp)/include/json/assertions.h',
+        '<(jsoncpp)/include/json/autolink.h',
+        '<(jsoncpp)/include/json/config.h',
+        '<(jsoncpp)/include/json/features.h',
+        '<(jsoncpp)/include/json/forwards.h',
+        '<(jsoncpp)/include/json/json.h',
+        '<(jsoncpp)/include/json/reader.h',
+        '<(jsoncpp)/include/json/value.h',
+        '<(jsoncpp)/include/json/writer.h',
+        '<(jsoncpp)/src/lib_json/json_batchallocator.h',
+        '<(jsoncpp)/src/lib_json/json_internalarray.inl',
+        '<(jsoncpp)/src/lib_json/json_internalmap.inl',
+        '<(jsoncpp)/src/lib_json/json_reader.cpp',
+        '<(jsoncpp)/src/lib_json/json_tool.h',
+        '<(jsoncpp)/src/lib_json/json_value.cpp',
+        '<(jsoncpp)/src/lib_json/json_valueiterator.inl',
+        '<(jsoncpp)/src/lib_json/json_writer.cpp',
+      ],
+      'include_dirs': [
+        '<(jsoncpp)/include/',
+      ],
+      'direct_dependent_settings': {
+        'include_dirs': [
+          '<(jsoncpp)/include/',
+        ],
+      },
+    },
     {
       'target_name': 'libjingle',
       'type': 'static_library',
@@ -385,7 +421,7 @@
         }],
       ],
       'dependencies': [
-        '../../third_party/jsoncpp/jsoncpp.gyp:jsoncpp',
+        'jsoncpp',
       ],
     },
     # This has to be is a separate project due to a bug in MSVS:
@@ -573,7 +609,7 @@
         '<(libjingle_mods)/source/talk/app/webrtc/webrtc_json.h',                  
       ],
       'dependencies': [
-        '../../third_party/jsoncpp/jsoncpp.gyp:jsoncpp',
+        'jsoncpp',
       ],
       'conditions': [
         ['inside_chromium_build==1', {        

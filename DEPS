@@ -61,7 +61,7 @@ deps = {
     Var("chromium_trunk") + "/deps/third_party/yasm/binaries@74228",
 
   "trunk/third_party/jsoncpp/":
-    "https://jsoncpp.svn.sourceforge.net/svnroot/jsoncpp/trunk/jsoncpp@139",
+    "https://jsoncpp.svn.sourceforge.net/svnroot/jsoncpp/trunk/jsoncpp@246",
 }
 
 deps_os = {
@@ -72,10 +72,6 @@ deps_os = {
 }
 
 hooks = [
-  {
-    "pattern": ".",
-    "action": ["svn", "export", Var("webrtc_trunk") + "/third_party_mods/jsoncpp", "trunk/third_party/jsoncpp", "--force"],
-  },
   {
     # Create a supplement.gypi file under trunk/.  This file will be picked up
     # by gyp and we use it to set Chromium related variables (inside_chromium_build)
