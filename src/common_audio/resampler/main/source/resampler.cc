@@ -62,8 +62,6 @@ Resampler::Resampler(int inFreq, int outFreq, ResamplerType type)
     slave_left_ = NULL;
     slave_right_ = NULL;
 
-    // TODO(andrew): looks like this class should use an init method
-    //   (and possibly a static create).
     Reset(inFreq, outFreq, type);
 }
 
@@ -213,7 +211,7 @@ int Resampler::Reset(int inFreq, int outFreq, ResamplerType type)
                 break;
             default:
                 my_type_ = kResamplerInvalid;
-                break;
+                return -1;
         }
     } else if (outFreq == 1)
     {
@@ -233,7 +231,7 @@ int Resampler::Reset(int inFreq, int outFreq, ResamplerType type)
                 break;
             default:
                 my_type_ = kResamplerInvalid;
-                break;
+                return -1;
         }
     } else if ((inFreq == 2) && (outFreq == 3))
     {

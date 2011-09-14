@@ -22,7 +22,7 @@ namespace webrtc
 {
 
 // TODO(andrew): the implementation depends on the exact values of this enum.
-//   It should be rewritten in a less fragile way.
+// It should be rewritten in a less fragile way.
 enum ResamplerType
 {
     // 4 MSB = Number of channels
@@ -35,6 +35,7 @@ enum ResamplerType
     kResamplerInvalid = 0xff
 };
 
+// TODO(andrew): doesn't need to be part of the interface.
 enum ResamplerMode
 {
     kResamplerMode1To1,
@@ -63,6 +64,7 @@ class Resampler
 
 public:
     Resampler();
+    // TODO(andrew): use an init function instead.
     Resampler(int inFreq, int outFreq, ResamplerType type);
     ~Resampler();
 

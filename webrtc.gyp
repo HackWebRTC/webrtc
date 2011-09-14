@@ -8,24 +8,26 @@
 
 {
   'includes': [
-    'src/common_settings.gypi', # Common settings
+    'src/build/common.gypi',
   ],
- 'targets': [
+  'targets': [
     {
-      'target_name': 'auto_tests',
+      'target_name': 'All',
       'type': 'none',
       'dependencies': [
-        'src/voice_engine/voice_engine.gyp:voe_auto_test',
+        'src/common_audio/common_audio.gyp:*',
+        # TODO(andrew): enable these when all tests build.
+        #'src/common_video/common_video.gyp:*',
+        #'src/modules/modules.gyp:*',
+        #'src/system_wrappers/source/system_wrappers.gyp:*',
+        # TODO(andrew): move the merge_lib targets to a private gyp so we can
+        # target "*" in these.
         'src/video_engine/video_engine.gyp:vie_auto_test',
-      ],
-    },
-    {
-      'target_name': 'cmd_test',
-      'type': 'none',
-      'dependencies': [
+        'src/voice_engine/voice_engine.gyp:voe_auto_test',
         'src/voice_engine/voice_engine.gyp:voe_cmd_test',
       ],
-    },    
+    },
+    # TODO(andrew): move peerconnection to its own gyp.
     {
       'target_name': 'peerconnection_server',
       'type': 'executable',
@@ -61,7 +63,7 @@
           ],
           'msvs_settings': {
             'VCLinkerTool': {
-             'SubSystem': '2',   # Windows
+             'SubSystem': '2',  # Windows
             },
           },
           'dependencies': [
@@ -116,5 +118,5 @@
         },
       ],  # targets
     }, ],  # OS="linux"
-  ],  # conditions  
+  ],  # conditions
 }
