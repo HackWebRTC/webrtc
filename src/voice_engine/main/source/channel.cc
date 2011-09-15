@@ -506,7 +506,7 @@ Channel::OnReceivedTelephoneEvent(const WebRtc_Word32 id,
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::OnReceivedTelephoneEvent(id=%d, event=%u,"
-                 "endOfEvent=%d)", id, event, endOfEvent);
+                 " endOfEvent=%d)", id, event, endOfEvent);
 
 #ifdef WEBRTC_DTMF_DETECTION
     if (_outOfBandTelephoneEventDetecion)
@@ -530,7 +530,7 @@ Channel::OnPlayTelephoneEvent(const WebRtc_Word32 id,
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::OnPlayTelephoneEvent(id=%d, event=%u, lengthMs=%u,"
-                 "volume=%u)", id, event, lengthMs, volume);
+                 " volume=%u)", id, event, lengthMs, volume);
 
     if (!_playOutbandDtmfEvent || (event > 15))
     {
@@ -1588,7 +1588,7 @@ Channel::Init()
         _engineStatisticsPtr->SetLastError(
             VE_APM_ERROR, kTraceWarning,
             "Channel::Init() failed to set the device sample rate to 48K"
-            "for far-end AP module");
+            " for far-end AP module");
     }
 
     if (_rxAudioProcessingModulePtr->set_sample_rate_hz(8000))
@@ -1612,7 +1612,7 @@ Channel::Init()
         _engineStatisticsPtr->SetLastError(
             VE_SOUNDCARD_ERROR, kTraceWarning,
             "Init() failed to set channels for the primary audio"
-            "stream");
+            " stream");
     }
 
     if (_rxAudioProcessingModulePtr->high_pass_filter()->Enable(
@@ -1621,7 +1621,7 @@ Channel::Init()
         _engineStatisticsPtr->SetLastError(
             VE_APM_ERROR, kTraceWarning,
             "Channel::Init() failed to set the high-pass filter for"
-            "far-end AP module");
+            " far-end AP module");
     }
 
     if (_rxAudioProcessingModulePtr->noise_suppression()->set_level(
@@ -1630,7 +1630,7 @@ Channel::Init()
         _engineStatisticsPtr->SetLastError(
             VE_APM_ERROR, kTraceWarning,
             "Init() failed to set noise reduction level for far-end"
-            "AP module");
+            " AP module");
     }
     if (_rxAudioProcessingModulePtr->noise_suppression()->Enable(
         WEBRTC_VOICE_ENGINE_RX_NS_DEFAULT_STATE) != 0)
@@ -1638,7 +1638,7 @@ Channel::Init()
         _engineStatisticsPtr->SetLastError(
             VE_APM_ERROR, kTraceWarning,
             "Init() failed to set noise reduction state for far-end"
-            "AP module");
+            " AP module");
     }
 
     if (_rxAudioProcessingModulePtr->gain_control()->set_mode(
@@ -5308,7 +5308,7 @@ Channel::GetRemoteRTCPData(
     {
         _engineStatisticsPtr->SetLastError(
             VE_RTP_RTCP_MODULE_ERROR, kTraceError,
-            "GetRemoteRTCPData() failed to retrieve sender info for remote"
+            "GetRemoteRTCPData() failed to retrieve sender info for remote "
             "side");
         return -1;
     }
@@ -5354,7 +5354,7 @@ Channel::GetRemoteRTCPData(
             WEBRTC_TRACE(kTraceWarning, kTraceVoice,
                          VoEId(_instanceId, _channelId),
                          "GetRemoteRTCPData() failed to measure statistics due"
-                       "to lack of received RTP and/or RTCP packets");
+                         " to lack of received RTP and/or RTCP packets");
         }
         if (NULL != jitter)
         {
@@ -5450,7 +5450,7 @@ Channel::GetRTPStatistics(
     {
         _engineStatisticsPtr->SetLastError(
             VE_CANNOT_RETRIEVE_RTP_STAT, kTraceWarning,
-            "GetRTPStatistics() failed to read RTP statistics from the"
+            "GetRTPStatistics() failed to read RTP statistics from the "
             "RTP/RTCP module");
     }
 
@@ -5468,7 +5468,7 @@ Channel::GetRTPStatistics(
     WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
                VoEId(_instanceId, _channelId),
                "GetRTPStatistics() => averageJitterMs = %lu, maxJitterMs = %lu,"
-               "discardedPackets = %lu)",
+               " discardedPackets = %lu)",
                averageJitterMs, maxJitterMs, discardedPackets);
     return 0;
 }
@@ -5506,7 +5506,7 @@ Channel::GetRTPStatistics(CallStatistics& stats)
     WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
                  VoEId(_instanceId, _channelId),
                  "GetRTPStatistics() => fractionLost=%lu, cumulativeLost=%lu,"
-                 "extendedMax=%lu, jitterSamples=%li)",
+                 " extendedMax=%lu, jitterSamples=%li)",
                  stats.fractionLost, stats.cumulativeLost, stats.extendedMax,
                  stats.jitterSamples);
 
@@ -5518,7 +5518,7 @@ Channel::GetRTPStatistics(CallStatistics& stats)
     {
         WEBRTC_TRACE(kTraceWarning, kTraceVoice,
                      VoEId(_instanceId, _channelId),
-                     "GetRTPStatistics() RTCP is disabled => valid RTT"
+                     "GetRTPStatistics() RTCP is disabled => valid RTT "
                      "measurements cannot be retrieved");
     } else
     {
@@ -5535,14 +5535,14 @@ Channel::GetRTPStatistics(CallStatistics& stats)
             {
                 WEBRTC_TRACE(kTraceWarning, kTraceVoice,
                              VoEId(_instanceId, _channelId),
-                             "GetRTPStatistics() failed to retrieve RTT from"
+                             "GetRTPStatistics() failed to retrieve RTT from "
                              "the RTP/RTCP module");
             }
         } else
         {
             WEBRTC_TRACE(kTraceWarning, kTraceVoice,
                          VoEId(_instanceId, _channelId),
-                         "GetRTPStatistics() failed to measure RTT since no"
+                         "GetRTPStatistics() failed to measure RTT since no "
                          "RTP packets have been received yet");
         }
     }
@@ -5568,7 +5568,7 @@ Channel::GetRTPStatistics(CallStatistics& stats)
         WEBRTC_TRACE(kTraceWarning, kTraceVoice,
                      VoEId(_instanceId, _channelId),
                      "GetRTPStatistics() failed to retrieve RTP datacounters =>"
-                     "output will not be complete");
+                     " output will not be complete");
     }
 
     stats.bytesSent = bytesSent;
@@ -5579,7 +5579,7 @@ Channel::GetRTPStatistics(CallStatistics& stats)
     WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
                  VoEId(_instanceId, _channelId),
                  "GetRTPStatistics() => bytesSent=%d, packetsSent=%d,"
-                 "bytesReceived=%d, packetsReceived=%d)",
+                 " bytesReceived=%d, packetsReceived=%d)",
                  stats.bytesSent, stats.packetsSent, stats.bytesReceived,
                  stats.packetsReceived);
 
@@ -6652,7 +6652,7 @@ Channel::RegisterReceiveCodecsToRTPModule()
                          kTraceVoice,
                          VoEId(_instanceId, _channelId),
                          "Channel::RegisterReceiveCodecsToRTPModule() %s "
-                         "(%d/%d/%d/%d) has been added to the RTP/RTCP"
+                         "(%d/%d/%d/%d) has been added to the RTP/RTCP "
                          "receiver",
                          codec.plname, codec.pltype, codec.plfreq,
                          codec.channels, codec.rate);
