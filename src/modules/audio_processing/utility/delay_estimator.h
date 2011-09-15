@@ -14,7 +14,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_UTILITY_DELAY_ESTIMATOR_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_UTILITY_DELAY_ESTIMATOR_H_
 
-#include <stdint.h>
+#include "typedefs.h"
 
 // Releases the memory allocated by WebRtc_CreateDelayEstimator(...)
 // Input:

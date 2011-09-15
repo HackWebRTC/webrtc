@@ -11,7 +11,6 @@
 #include "delay_estimator.h"
 
 #include <assert.h>
-#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -231,11 +230,12 @@ int WebRtc_CreateDelayEstimator(void** handle,
                                 int spectrum_size,
                                 int history_size,
                                 int enable_alignment) {
+  DelayEstimator_t *self = NULL;
+
   // Check if the sub band used in the delay estimation is small enough to
   // fit the binary spectra in a uint32.
   assert(kBandLast - kBandFirst < 32);
 
-  DelayEstimator_t *self = NULL;
   if (spectrum_size < kBandLast) {
     return -1;
   }
