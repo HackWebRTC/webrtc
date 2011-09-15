@@ -20,7 +20,6 @@
 #include "signal_processing_library.h"
 #include "typedefs.h"
 
-//#define UNCONSTR // time-unconstrained filter
 //#define AEC_DEBUG // for recording files
 
 #define FRAME_LEN 80

@@ -138,16 +138,6 @@ static void FilterAdaptationSSE2(aec_t *aec, float *fft, float ef[2][PART_LEN1])
       xPos -= NR_PART * PART_LEN1;
     }
 
-#ifdef UNCONSTR
-    for (j = 0; j < PART_LEN1; j++) {
-      aec->wfBuf[pos + j][0] += MulRe(aec->xfBuf[xPos + j][0],
-                                      -aec->xfBuf[xPos + j][1],
-                                      ef[j][0], ef[j][1]);
-      aec->wfBuf[pos + j][1] += MulIm(aec->xfBuf[xPos + j][0],
-                                      -aec->xfBuf[xPos + j][1],
-                                      ef[j][0], ef[j][1]);
-    }
-#else
     // Process the whole array...
     for (j = 0; j < PART_LEN; j+= 4) {
       // Load xfBuf and ef.
@@ -208,7 +198,6 @@ static void FilterAdaptationSSE2(aec_t *aec, float *fft, float ef[2][PART_LEN1])
       }
       aec->wfBuf[1][pos] = wt1;
     }
-#endif // UNCONSTR
   }
 }
 

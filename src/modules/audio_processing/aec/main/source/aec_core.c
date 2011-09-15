@@ -34,26 +34,9 @@ static const float cnScaleHband = (float)0.4; // scale for comfort noise in H ba
 // Initial bin for averaging nlp gain in low band
 static const int freqAvgIc = PART_LEN / 2;
 
-/* Matlab code to produce table:
-win = sqrt(hanning(63)); win = [0 ; win(1:32)];
-fprintf(1, '\t%.14f, %.14f, %.14f,\n', win);
-*/
-/*
-static const float sqrtHanning[33] = {
-    0.00000000000000, 0.04906767432742, 0.09801714032956,
-    0.14673047445536, 0.19509032201613, 0.24298017990326,
-    0.29028467725446, 0.33688985339222, 0.38268343236509,
-    0.42755509343028, 0.47139673682600, 0.51410274419322,
-    0.55557023301960, 0.59569930449243, 0.63439328416365,
-    0.67155895484702, 0.70710678118655, 0.74095112535496,
-    0.77301045336274, 0.80320753148064, 0.83146961230255,
-    0.85772861000027, 0.88192126434835, 0.90398929312344,
-    0.92387953251129, 0.94154406518302, 0.95694033573221,
-    0.97003125319454, 0.98078528040323, 0.98917650996478,
-    0.99518472667220, 0.99879545620517, 1.00000000000000
-};
-*/
-
+// Matlab code to produce table:
+// win = sqrt(hanning(63)); win = [0 ; win(1:32)];
+// fprintf(1, '\t%.14f, %.14f, %.14f,\n', win);
 static const float sqrtHanning[65] = {
     0.00000000000000f, 0.02454122852291f, 0.04906767432742f,
     0.07356456359967f, 0.09801714032956f, 0.12241067519922f,
@@ -79,10 +62,9 @@ static const float sqrtHanning[65] = {
     0.99969881869620f, 1.00000000000000f
 };
 
-/* Matlab code to produce table:
-weightCurve = [0 ; 0.3 * sqrt(linspace(0,1,64))' + 0.1];
-fprintf(1, '\t%.4f, %.4f, %.4f, %.4f, %.4f, %.4f,\n', weightCurve);
-*/
+// Matlab code to produce table:
+// weightCurve = [0 ; 0.3 * sqrt(linspace(0,1,64))' + 0.1];
+// fprintf(1, '\t%.4f, %.4f, %.4f, %.4f, %.4f, %.4f,\n', weightCurve);
 const float WebRtcAec_weightCurve[65] = {
     0.0000f, 0.1000f, 0.1378f, 0.1535f, 0.1655f, 0.1756f,
     0.1845f, 0.1926f, 0.2000f, 0.2069f, 0.2134f, 0.2195f,
@@ -97,10 +79,9 @@ const float WebRtcAec_weightCurve[65] = {
     0.3903f, 0.3928f, 0.3952f, 0.3976f, 0.4000f
 };
 
-/* Matlab code to produce table:
-overDriveCurve = [sqrt(linspace(0,1,65))' + 1];
-fprintf(1, '\t%.4f, %.4f, %.4f, %.4f, %.4f, %.4f,\n', overDriveCurve);
-*/
+// Matlab code to produce table:
+// overDriveCurve = [sqrt(linspace(0,1,65))' + 1];
+// fprintf(1, '\t%.4f, %.4f, %.4f, %.4f, %.4f, %.4f,\n', overDriveCurve);
 const float WebRtcAec_overDriveCurve[65] = {
     1.0000f, 1.1250f, 1.1768f, 1.2165f, 1.2500f, 1.2795f,
     1.3062f, 1.3307f, 1.3536f, 1.3750f, 1.3953f, 1.4146f,
@@ -255,6 +236,32 @@ static void ScaleErrorSignal(aec_t *aec, float ef[2][PART_LEN1])
   }
 }
 
+// Time-unconstrined filter adaptation.
+// TODO(andrew): consider for a low-complexity mode.
+//static void FilterAdaptationUnconstrained(aec_t *aec, float *fft,
+//                                          float ef[2][PART_LEN1]) {
+//  int i, j;
+//  for (i = 0; i < NR_PART; i++) {
+//    int xPos = (i + aec->xfBufBlockPos)*(PART_LEN1);
+//    int pos;
+//    // Check for wrap
+//    if (i + aec->xfBufBlockPos >= NR_PART) {
+//      xPos -= NR_PART * PART_LEN1;
+//    }
+//
+//    pos = i * PART_LEN1;
+//
+//    for (j = 0; j < PART_LEN1; j++) {
+//      aec->wfBuf[pos + j][0] += MulRe(aec->xfBuf[xPos + j][0],
+//                                      -aec->xfBuf[xPos + j][1],
+//                                      ef[j][0], ef[j][1]);
+//      aec->wfBuf[pos + j][1] += MulIm(aec->xfBuf[xPos + j][0],
+//                                      -aec->xfBuf[xPos + j][1],
+//                                      ef[j][0], ef[j][1]);
+//    }
+//  }
+//}
+
 static void FilterAdaptation(aec_t *aec, float *fft, float ef[2][PART_LEN1]) {
   int i, j;
   for (i = 0; i < NR_PART; i++) {
@@ -267,16 +274,6 @@ static void FilterAdaptation(aec_t *aec, float *fft, float ef[2][PART_LEN1]) {
 
     pos = i * PART_LEN1;
 
-#ifdef UNCONSTR
-    for (j = 0; j < PART_LEN1; j++) {
-      aec->wfBuf[pos + j][0] += MulRe(aec->xfBuf[xPos + j][0],
-                                      -aec->xfBuf[xPos + j][1],
-                                      ef[j][0], ef[j][1]);
-      aec->wfBuf[pos + j][1] += MulIm(aec->xfBuf[xPos + j][0],
-                                      -aec->xfBuf[xPos + j][1],
-                                      ef[j][0], ef[j][1]);
-    }
-#else
     for (j = 0; j < PART_LEN; j++) {
 
       fft[2 * j] = MulRe(aec->xfBuf[0][xPos + j],
@@ -309,7 +306,6 @@ static void FilterAdaptation(aec_t *aec, float *fft, float ef[2][PART_LEN1]) {
       aec->wfBuf[0][pos + j] += fft[2 * j];
       aec->wfBuf[1][pos + j] += fft[2 * j + 1];
     }
-#endif // UNCONSTR
   }
 }
 
@@ -720,9 +716,7 @@ static void ProcessBlock(aec_t *aec, const short *farend,
 
     // Scale error signal inversely with far power.
     WebRtcAec_ScaleErrorSignal(aec, ef);
-    // Filter adaptation
     WebRtcAec_FilterAdaptation(aec, fft, ef);
-
     NonLinearProcessing(aec, output, outputH);
 
 #ifdef AEC_DEBUG
