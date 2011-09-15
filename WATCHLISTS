@@ -14,6 +14,9 @@
     'this_file': {
       'filepath': '^WATCHLISTS$',
     },
+    'all_src': {
+      'filepath': 'src/.*',
+    },
     'video_engine': {
       'filepath': 'src/video_engine/.*',
     },
@@ -45,6 +48,8 @@
 
   'WATCHLISTS': {
     'this_file': [''],
+    'all_files': ['tterriberry@mozilla.com',
+                     'giles@mozilla.com'],
     'video_engine': ['mflodman@webrtc.org',
                      'perkj@webrtc.org'],
     'voice_engine': ['henrika@webrtc.org'],
