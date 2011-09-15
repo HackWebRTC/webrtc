@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
     WebRtc_UWord32 ts;
     WebRtc_UWord32 sendTime;
 
-    while(fscanf(statFile, "%u %u %u %*i\n", &seqNo, &ts, &sendTime) == 3)
+    while(fscanf(statFile, "%hu %u %u %*i %*i\n", &seqNo, &ts, &sendTime) == 3)
     {
         std::pair<WebRtc_UWord16, WebRtc_UWord32> tempPair =
             std::pair<WebRtc_UWord16, WebRtc_UWord32>(seqNo, ts);
@@ -83,7 +83,6 @@ int main(int argc, char* argv[])
 	fwrite(firstline, 4+4+4+2+2, 1, outFile);
 
     std::vector<NETEQTEST_RTPpacket *> packetVec;
-    int i = 0;
 
     while (1)
     {

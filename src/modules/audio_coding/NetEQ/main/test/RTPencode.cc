@@ -1610,7 +1610,7 @@ int NetEQTest_encode(int coder, WebRtc_Word16 *indata, int frameLen, unsigned ch
 						  int * vad, int useVAD, int bitrate, int numChannels){
 
 	short cdlen;
-	WebRtc_Word16 size_in_bytes, *tempdata;
+	WebRtc_Word16 *tempdata;
 	static int first_cng=1;
 	WebRtc_Word16 tempLen;
 
