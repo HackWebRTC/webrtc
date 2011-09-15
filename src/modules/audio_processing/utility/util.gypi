@@ -11,16 +11,23 @@
     {
       'target_name': 'apm_util',
       'type': '<(library)',
+      'dependencies': [
+        '<(webrtc_root)/common_audio/common_audio.gyp:spl',
+      ],
       'direct_dependent_settings': {
         'include_dirs': [
           '.',
         ],
       },
       'sources': [
-        'ring_buffer.c',
-        'ring_buffer.h',
+        'delay_estimator_float.c',
+        'delay_estimator_float.h',
+        'delay_estimator.c',
+        'delay_estimator.h',
         'fft4g.c',
         'fft4g.h',
+        'ring_buffer.c',
+        'ring_buffer.h',
       ],
     },
   ],

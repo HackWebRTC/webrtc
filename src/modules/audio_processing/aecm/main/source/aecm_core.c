@@ -13,8 +13,8 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include "aecm_delay_estimator.h"
 #include "echo_control_mobile.h"
+#include "delay_estimator.h"
 #include "ring_buffer.h"
 #include "typedefs.h"
 
@@ -153,11 +153,13 @@ int WebRtcAecm_CreateCore(AecmCore_t **aecmInst)
         return -1;
     }
 
-    if (WebRtcAecm_CreateDelayEstimator(&aecm->delay_estimator, PART_LEN1, MAX_DELAY) == -1)
-    {
-        WebRtcAecm_FreeCore(aecm);
-        aecm = NULL;
-        return -1;
+    if (WebRtc_CreateDelayEstimator(&aecm->delay_estimator,
+                                    PART_LEN1,
+                                    MAX_DELAY,
+                                    1) == -1) {
+      WebRtcAecm_FreeCore(aecm);
+      aecm = NULL;
+      return -1;
     }
 
     // Init some aecm pointers. 16 and 32 byte alignment is only necessary
@@ -242,9 +244,8 @@ int WebRtcAecm_InitCore(AecmCore_t * const aecm, int samplingFreq)
     aecm->seed = 666;
     aecm->totCount = 0;
 
-    if (WebRtcAecm_InitDelayEstimator(aecm->delay_estimator) != 0)
-    {
-        return -1;
+    if (WebRtc_InitDelayEstimator(aecm->delay_estimator) != 0) {
+      return -1;
     }
 
     // Initialize to reasonable values
@@ -339,7 +340,7 @@ int WebRtcAecm_FreeCore(AecmCore_t *aecm)
     WebRtcApm_FreeBuffer(aecm->nearCleanFrameBuf);
     WebRtcApm_FreeBuffer(aecm->outFrameBuf);
 
-    WebRtcAecm_FreeDelayEstimator(aecm->delay_estimator);
+    WebRtc_FreeDelayEstimator(aecm->delay_estimator);
     free(aecm);
 
     return 0;
@@ -1161,6 +1162,7 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm,
     WebRtc_Word16 supGain;
     WebRtc_Word16 zeros32, zeros16;
     WebRtc_Word16 zerosDBufNoisy, zerosDBufClean, zerosXBuf;
+    int far_q;
     WebRtc_Word16 resolutionDiff, qDomainDiff;
 
     const int kMinPrefBand = 4;
@@ -1200,10 +1202,10 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm,
 #endif
 
     // Transform far end signal from time domain to frequency domain.
-    zerosXBuf = TimeToFrequencyDomain(aecm->xBuf,
-                                      dfw,
-                                      xfa,
-                                      &xfaSum);
+    far_q = TimeToFrequencyDomain(aecm->xBuf,
+                                  dfw,
+                                  xfa,
+                                  &xfaSum);
 
     // Transform noisy near end signal from time domain to frequency domain.
     zerosDBufNoisy = TimeToFrequencyDomain(aecm->dBufNoisy,
@@ -1211,7 +1213,7 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm,
                                            dfaNoisy,
                                            &dfaNoisySum);
     aecm->dfaNoisyQDomainOld = aecm->dfaNoisyQDomain;
-    aecm->dfaNoisyQDomain = zerosDBufNoisy;
+    aecm->dfaNoisyQDomain = (WebRtc_Word16)zerosDBufNoisy;
 
 
     if (nearendClean == NULL)
@@ -1228,7 +1230,7 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm,
                                                dfaClean,
                                                &dfaCleanSum);
         aecm->dfaCleanQDomainOld = aecm->dfaCleanQDomain;
-        aecm->dfaCleanQDomain = zerosDBufClean;
+        aecm->dfaCleanQDomain = (WebRtc_Word16)zerosDBufClean;
     }
 
 #ifdef ARM_WINM_LOG_
@@ -1243,12 +1245,12 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm,
 
     // Get the delay
     // Save far-end history and estimate delay
-    delay = WebRtcAecm_DelayEstimatorProcess(aecm->delay_estimator,
-                                             xfa,
-                                             dfaNoisy,
-                                             PART_LEN1,
-                                             zerosXBuf,
-                                             aecm->currentVADValue);
+    delay = WebRtc_DelayEstimatorProcess(aecm->delay_estimator,
+                                         xfa,
+                                         dfaNoisy,
+                                         PART_LEN1,
+                                         far_q,
+                                         aecm->currentVADValue);
     if (delay < 0)
     {
         return -1;
@@ -1272,16 +1274,21 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm,
     QueryPerformanceCounter((LARGE_INTEGER*)&start);
 #endif
     // Get aligned far end spectrum
-    far_spectrum_ptr = WebRtcAecm_GetAlignedFarend(aecm->delay_estimator,
-                                                   PART_LEN1,
-                                                   &zerosXBuf);
+    far_spectrum_ptr = WebRtc_AlignedFarend(aecm->delay_estimator,
+                                            PART_LEN1,
+                                            &far_q);
+    zerosXBuf = (WebRtc_Word16) far_q;
     if (far_spectrum_ptr == NULL)
     {
         return -1;
     }
 
     // Calculate log(energy) and update energy threshold levels
-    WebRtcAecm_CalcEnergies(aecm, far_spectrum_ptr, zerosXBuf, dfaNoisySum, echoEst32);
+    WebRtcAecm_CalcEnergies(aecm,
+                            far_spectrum_ptr,
+                            zerosXBuf,
+                            dfaNoisySum,
+                            echoEst32);
 
     // Calculate stepsize
     mu = WebRtcAecm_CalcStepSize(aecm);
@@ -1923,4 +1930,3 @@ void WebRtcAecm_ResetAdaptiveChannel(AecmCore_t* aecm)
 }
 
 #endif // !(defined(WEBRTC_ANDROID) && defined(WEBRTC_ARCH_ARM_NEON))
-

@@ -178,7 +178,7 @@ typedef struct
     WebRtc_Word16 farEnergyMaxMin;
     WebRtc_Word16 farEnergyVAD;
     WebRtc_Word16 farEnergyMSE;
-    WebRtc_Word16 currentVADValue;
+    int currentVADValue;
     WebRtc_Word16 vadUpdateCount;
 
     WebRtc_Word16 startupState;

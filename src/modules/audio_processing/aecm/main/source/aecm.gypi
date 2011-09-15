@@ -28,8 +28,6 @@
         'echo_control_mobile.c',
         'aecm_core.c',
         'aecm_core.h',
-        'aecm_delay_estimator.c',
-        'aecm_delay_estimator.h',
       ],
     },
   ],
