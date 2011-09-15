@@ -18,8 +18,7 @@ LOCAL_MODULE := libwebrtc_aecm
 LOCAL_MODULE_TAGS := optional
 LOCAL_SRC_FILES := \
     echo_control_mobile.c \
-    aecm_core.c \
-    aecm_delay_estimator.c
+    aecm_core.c
 
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \
