@@ -32,6 +32,7 @@ LOCAL_CFLAGS := \
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../../interface \
     $(LOCAL_PATH)/../../../.. \
+    $(LOCAL_PATH)/../../../../modules/audio_device/main/interface \
     $(LOCAL_PATH)/../../../../system_wrappers/interface \
     external/gtest/include \
 
