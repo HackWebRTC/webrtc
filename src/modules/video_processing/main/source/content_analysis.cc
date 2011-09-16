@@ -14,7 +14,7 @@
 #include <math.h>
 #include <stdlib.h>
 #if defined(WEBRTC_USE_SSE2)
-#include <xmmintrin.h>
+#include <emmintrin.h>
 #endif
 namespace webrtc {
 
