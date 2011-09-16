@@ -61,7 +61,7 @@ deps = {
     Var("chromium_trunk") + "/deps/third_party/yasm/binaries@74228",
 
   "trunk/third_party/jsoncpp/":
-    "https://jsoncpp.svn.sourceforge.net/svnroot/jsoncpp/trunk/jsoncpp@246",
+    "http://jsoncpp.svn.sourceforge.net/svnroot/jsoncpp/trunk/jsoncpp@246",
 }
 
 deps_os = {
