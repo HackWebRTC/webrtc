@@ -2026,7 +2026,7 @@ int VoETestManager::DoStandardTest()
 
         // Can't be called before StartPlayout().
         TEST_MUSTFAIL(base->StartSend(0));
-    
+
         TEST_MUSTPASS(base->StartPlayout(0));
         TEST_MUSTPASS(base->StartSend(0));
         TEST_LOG("Processing capture data with built-in AEC...\n");
@@ -2074,10 +2074,9 @@ int VoETestManager::DoStandardTest()
 
         TEST_LOG("Disabling built-in AEC.\n");
         TEST_MUSTPASS(hardware->EnableBuiltInAEC(false));
-
-        TEST_MUSTPASS(base->StartSend(0));
-        TEST_MUSTPASS(base->StartPlayout(0));
     }
+    TEST_MUSTPASS(base->StartSend(0));
+    TEST_MUSTPASS(base->StartPlayout(0));
 #else
     TEST_LOG("\n\n+++ More hardware tests NOT ENABLED +++\n");
 #endif
