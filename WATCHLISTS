@@ -32,6 +32,9 @@
     'audio_device': {
       'filepath': 'src/modules/audio_device/.*',
     },
+    'audio_coding': {
+      'filepath': 'src/modules/audio_coding/.*',
+    },
     'NetEQ': {
       'filepath': 'src/modules/audio_coding/NetEQ/.*',
     },
@@ -58,6 +61,7 @@
     'video_render': ['mflodman@webrtc.org',
                      'perkj@webrtc.org'],
     'audio_device': ['henrika@webrtc.org'],
+    'audio_coding': ['tina.legrand@webrtc.org'],
     'NetEQ': ['henrik.lundin@webrtc.org'],
     'video_codecs': ['henrik.lundin@webrtc.org'],
     'rtp_rtcp': ['mflodman@webrtc.org'],
