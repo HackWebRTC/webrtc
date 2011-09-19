@@ -149,6 +149,9 @@ WebRtc_Word32 AudioDeviceModuleImpl::CheckPlatform()
 #if defined(_WIN32)
     platform = kPlatformWin32;
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "current platform is WIN32");
+#elif defined(WEBRTC_ANDROID)
+    platform = kPlatformAndroid;
+    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "current platform is ANDROID");
 #elif defined(WEBRTC_LINUX)
     platform = kPlatformLinux;
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "current platform is LINUX");
