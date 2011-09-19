@@ -80,7 +80,10 @@
 #error Please add support for your architecture in typedefs.h
 #endif
 
-#if defined(__SSE2__) || defined(_MSC_VER)
+// TODO(andrew): Enable on Windows. Temporarily disabled again until we can
+// build on VS 2005...
+//#if defined(__SSE2__) || defined(_MSC_VER)
+#if defined(__SSE2__)
 #define WEBRTC_USE_SSE2
 #endif
 
