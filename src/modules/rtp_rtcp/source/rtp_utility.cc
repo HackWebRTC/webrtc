@@ -835,9 +835,9 @@ ModuleRTPUtility::RTPPayloadParser::ParseVP8(RTPPayload& parsedPacket) const
     int dataLength = _dataLength;
 
     // Parse mandatory first byte of payload descriptor
-    bool extension =            (*dataPtr & 0x80); // X bit
-    vp8->nonReferenceFrame =    (*dataPtr & 0x20); // N bit
-    vp8->beginningOfPartition = (*dataPtr & 0x10); // S bit
+    bool extension =            (*dataPtr & 0x80) ? true : false; // X bit
+    vp8->nonReferenceFrame =    (*dataPtr & 0x20) ? true : false; // N bit
+    vp8->beginningOfPartition = (*dataPtr & 0x10) ? true : false; // S bit
     vp8->partitionID =          (*dataPtr & 0x0F); // PartID field
 
     // Advance dataPtr and decrease remaining payload size
@@ -884,9 +884,9 @@ ModuleRTPUtility::RTPPayloadParser::ParseVP8Extension(
     int parsedBytes = 0;
     if (dataLength <= 0) return -1;
     // Optional X field is present
-    vp8->hasPictureID = (*dataPtr & 0x80); // I bit
-    vp8->hasTl0PicIdx = (*dataPtr & 0x40); // L bit
-    vp8->hasTID = (*dataPtr & 0x20); // T bit
+    vp8->hasPictureID = (*dataPtr & 0x80) ? true : false; // I bit
+    vp8->hasTl0PicIdx = (*dataPtr & 0x40) ? true : false; // L bit
+    vp8->hasTID =       (*dataPtr & 0x20) ? true : false; // T bit
 
     // Advance dataPtr and decrease remaining payload size
     dataPtr++;
