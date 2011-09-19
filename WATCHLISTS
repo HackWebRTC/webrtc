@@ -41,6 +41,9 @@
     'video_codecs': {
       'filepath': 'src/modules/video_coding/codecs/.*',
     },
+    'video_coding': {
+      'filepath': 'src/modules/video_coding/.*',
+    },
     'rtp_rtcp': {
       'filepath': 'src/modules/rtp_rtcp/.*'
     },
@@ -64,6 +67,7 @@
     'audio_coding': ['tina.legrand@webrtc.org'],
     'NetEQ': ['henrik.lundin@webrtc.org'],
     'video_codecs': ['henrik.lundin@webrtc.org'],
+    'video_coding': ['stefan@webrtc.org'],
     'rtp_rtcp': ['mflodman@webrtc.org'],
     'system_wrappers': ['mflodman@webrtc.org',
                         'henrika@webrtc.org' ],
