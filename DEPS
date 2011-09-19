@@ -4,7 +4,7 @@ vars = {
   "googlecode_url": "http://%s.googlecode.com/svn",
   "chromium_trunk" : "http://src.chromium.org/svn/trunk",
   "chromium_revision": "98568",
-  "libjingle_revision": "77",
+  "libjingle_revision": "85",
 }
 
 # NOTE: Prefer revision numbers to tags.

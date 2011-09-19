@@ -19,6 +19,8 @@
 #include "talk/base/win32.h"
 #include "talk/session/phone/mediachannel.h"
 #include "talk/session/phone/videocommon.h"
+#include "talk/session/phone/videoframe.h"
+#include "talk/session/phone/videorenderer.h"
 
 class MainWndCallback {
  public:

@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef HAVE_WEBRTC
+#ifdef HAVE_WEBRTC_VIDEO
 
 #include "talk/session/phone/webrtcvideoengine.h"
 
@@ -34,6 +34,8 @@
 #include "talk/base/byteorder.h"
 #include "talk/base/logging.h"
 #include "talk/base/stringutils.h"
+#include "talk/session/phone/videorenderer.h"
+#include "talk/session/phone/webrtcpassthroughrender.h"
 #include "talk/session/phone/webrtcvoiceengine.h"
 #include "talk/session/phone/webrtcvideoframe.h"
 #include "talk/session/phone/webrtcvie.h"
@@ -53,9 +55,8 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
 
   virtual int FrameSizeChange(unsigned int width, unsigned int height,
                               unsigned int /*number_of_streams*/) {
-    if (renderer_ == NULL) {
+    if (renderer_ == NULL)
       return 0;
-    }
     width_ = width;
     height_ = height;
     return renderer_->SetSize(width_, height_, 0) ? 0 : -1;
@@ -63,14 +64,9 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
 
   virtual int DeliverFrame(unsigned char* buffer, int buffer_size,
                            unsigned int time_stamp) {
-    if (renderer_ == NULL) {
+    if (renderer_ == NULL)
       return 0;
-    }
     WebRtcVideoFrame video_frame;
-    // TODO(ronghuawu): Currently by the time DeliverFrame got called,
-    // ViE expects the frame will be rendered ASAP. However, the libjingle
-    // renderer may have its own internal delays. Can you disable the buffering
-    // inside ViE and surface the timing information to this callback?
     video_frame.Attach(buffer, buffer_size, width_, height_, 0, time_stamp);
     int ret = renderer_->RenderFrame(&video_frame) ? 0 : -1;
     uint8* buffer_temp;
@@ -89,48 +85,72 @@ class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
 
 const WebRtcVideoEngine::VideoCodecPref
     WebRtcVideoEngine::kVideoCodecPrefs[] = {
-    {"VP8", 104, 0},
-    {"H264", 105, 1}
+    {"VP8", 120, 0},
 };
+
+// The formats are sorted by the descending order of width. We use the order to
+// find the next format for CPU and bandwidth adaptation.
+const VideoFormat WebRtcVideoEngine::kVideoFormats[] = {
+  // TODO: Understand why we have problem with 16:9 formats.
+  VideoFormat(1280, 800, VideoFormat::FpsToInterval(30), FOURCC_ANY),
+//VideoFormat(1280, 720, VideoFormat::FpsToInterval(30), FOURCC_ANY),
+  VideoFormat(960, 600, VideoFormat::FpsToInterval(30), FOURCC_ANY),
+//VideoFormat(960, 540, VideoFormat::FpsToInterval(30), FOURCC_ANY),
+  VideoFormat(640, 400, VideoFormat::FpsToInterval(30), FOURCC_ANY),
+//VideoFormat(640, 360, VideoFormat::FpsToInterval(30), FOURCC_ANY),
+  VideoFormat(480, 300, VideoFormat::FpsToInterval(30), FOURCC_ANY),
+//VideoFormat(480, 270, VideoFormat::FpsToInterval(30), FOURCC_ANY),
+  VideoFormat(320, 200, VideoFormat::FpsToInterval(30), FOURCC_ANY),
+//VideoFormat(320, 180, VideoFormat::FpsToInterval(30), FOURCC_ANY),
+  VideoFormat(240, 150, VideoFormat::FpsToInterval(30), FOURCC_ANY),
+//VideoFormat(240, 135, VideoFormat::FpsToInterval(30), FOURCC_ANY),
+  VideoFormat(160, 100, VideoFormat::FpsToInterval(30), FOURCC_ANY),
+//VideoFormat(160, 90, VideoFormat::FpsToInterval(30), FOURCC_ANY),
+};
+
+// TODO: Understand why 640x400 is not working.
+const VideoFormat WebRtcVideoEngine::kDefaultVideoFormat =
+    VideoFormat(320, 200, VideoFormat::FpsToInterval(30), FOURCC_ANY);
 
 WebRtcVideoEngine::WebRtcVideoEngine()
     : vie_wrapper_(new ViEWrapper()),
-      capture_(NULL),
-      external_capture_(false),
-      capture_id_(-1),
-      renderer_(webrtc::VideoRender::CreateVideoRender(0, NULL,
-                  false, webrtc::kRenderExternal)),
-      voice_engine_(NULL),
-      log_level_(kDefaultLogSeverity),
-      capture_started_(false) {
-}
-
-WebRtcVideoEngine::WebRtcVideoEngine(WebRtcVoiceEngine* voice_engine,
-                                     webrtc::VideoCaptureModule* capture)
-    : vie_wrapper_(new ViEWrapper()),
-      capture_(capture),
-      external_capture_(true),
-      capture_id_(-1),
-      renderer_(webrtc::VideoRender::CreateVideoRender(0, NULL,
-                  false, webrtc::kRenderExternal)),
-      voice_engine_(voice_engine),
-      log_level_(kDefaultLogSeverity),
-      capture_started_(false) {
-  if(capture_)
-    capture_->AddRef();
+      voice_engine_(NULL) {
+  Construct();
 }
 
 WebRtcVideoEngine::WebRtcVideoEngine(WebRtcVoiceEngine* voice_engine,
                                      ViEWrapper* vie_wrapper)
     : vie_wrapper_(vie_wrapper),
-      capture_(NULL),
-      external_capture_(false),
-      capture_id_(-1),
-      renderer_(webrtc::VideoRender::CreateVideoRender(0, NULL,
-                  false, webrtc::kRenderExternal)),
-      voice_engine_(voice_engine),
-      log_level_(kDefaultLogSeverity),
-      capture_started_(false) {
+      voice_engine_(voice_engine) {
+  Construct();
+}
+
+void  WebRtcVideoEngine::Construct() {
+  initialized_ = false;
+  capture_id_ = -1;
+  capture_module_ = NULL;
+  external_capture_ = false;
+  log_level_ = kDefaultLogSeverity;
+  capture_started_ = false;
+  render_module_.reset(new WebRtcPassthroughRender());
+
+  ApplyLogging();
+  if (vie_wrapper_->engine()->SetTraceCallback(this) != 0) {
+    LOG_RTCERR1(SetTraceCallback, this);
+  }
+
+  // Set default quality levels for our supported codecs.  We override them here
+  // if we know your cpu performance is low, and they can be updated explicitly
+  // by calling SetDefaultCodec.  For example by a flute preference setting, or
+  // by the server with a jec in response to our reported system info.
+  VideoCodec max_codec(kVideoCodecPrefs[0].payload_type,
+                       kVideoCodecPrefs[0].name,
+                       kDefaultVideoFormat.width,
+                       kDefaultVideoFormat.height,
+                       kDefaultVideoFormat.framerate(), 0);
+  if (!SetDefaultCodec(max_codec)) {
+    LOG(LS_ERROR) << "Failed to initialize list of supported codec types";
+  }
 }
 
 WebRtcVideoEngine::~WebRtcVideoEngine() {
@@ -138,21 +158,13 @@ WebRtcVideoEngine::~WebRtcVideoEngine() {
   vie_wrapper_->engine()->SetTraceCallback(NULL);
   Terminate();
   vie_wrapper_.reset();
-  if (capture_) {
-     capture_->Release();
-  }
-  if (renderer_) {
-    webrtc::VideoRender::DestroyVideoRender(renderer_);
+  if (capture_module_) {
+    capture_module_->Release();
   }
 }
 
 bool WebRtcVideoEngine::Init() {
   LOG(LS_INFO) << "WebRtcVideoEngine::Init";
-  ApplyLogging();
-  if (vie_wrapper_->engine()->SetTraceCallback(this) != 0) {
-    LOG_RTCERR1(SetTraceCallback, this);
-  }
-
   bool result = InitVideoEngine();
   if (result) {
     LOG(LS_INFO) << "VideoEngine Init done";
@@ -184,28 +196,16 @@ bool WebRtcVideoEngine::InitVideoEngine() {
     return false;
   }
 
-  int ncodecs = vie_wrapper_->codec()->NumberOfCodecs();
-  for (int i = 0; i < ncodecs; ++i) {
-    webrtc::VideoCodec wcodec;
-    if ((vie_wrapper_->codec()->GetCodec(i, wcodec) == 0) &&
-        (strncmp(wcodec.plName, "I420", 4) != 0) &&
-        (strncmp(wcodec.plName, "ULPFEC", 4) != 0) &&
-        (strncmp(wcodec.plName, "RED", 4) != 0)) {
-      // ignore I420, FEC(RED and ULPFEC)
-      VideoCodec codec(wcodec.plType, wcodec.plName, wcodec.width,
-                       wcodec.height, wcodec.maxFramerate, i);
-      LOG(LS_INFO) << codec.ToString();
-      video_codecs_.push_back(codec);
-    }
-  }
-
-  if (vie_wrapper_->render()->RegisterVideoRenderModule(*renderer_) != 0) {
+  if (vie_wrapper_->render()->RegisterVideoRenderModule(
+      *render_module_.get()) != 0) {
     LOG_RTCERR0(RegisterVideoRenderModule);
     return false;
   }
 
   std::sort(video_codecs_.begin(), video_codecs_.end(),
             &VideoCodec::Preferable);
+
+  initialized_ = true;
   return true;
 }
 
@@ -253,15 +253,6 @@ void WebRtcVideoEngine::Print(const webrtc::TraceLevel level,
   }
 }
 
-int WebRtcVideoEngine::GetCodecPreference(const char* name) {
-  for (size_t i = 0; i < ARRAY_SIZE(kVideoCodecPrefs); ++i) {
-    if (strcmp(kVideoCodecPrefs[i].payload_name, name) == 0) {
-     return kVideoCodecPrefs[i].pref;
-    }
-  }
-  return -1;
-}
-
 void WebRtcVideoEngine::ApplyLogging() {
   int filter = 0;
   switch (log_level_) {
@@ -273,8 +264,33 @@ void WebRtcVideoEngine::ApplyLogging() {
   }
 }
 
+// Rebuilds the codec list to be only those that are less intensive
+// than the specified codec.
+bool WebRtcVideoEngine::RebuildCodecList(const VideoCodec& in_codec) {
+  if (!FindCodec(in_codec))
+    return false;
+
+  video_codecs_.clear();
+
+  bool found = false;
+  for (size_t i = 0; i < ARRAY_SIZE(kVideoCodecPrefs); ++i) {
+    const VideoCodecPref& pref(kVideoCodecPrefs[i]);
+    if (!found)
+      found = (in_codec.name == pref.name);
+    if (found) {
+      VideoCodec codec(pref.payload_type, pref.name,
+                       in_codec.width, in_codec.height, in_codec.framerate,
+                       ARRAY_SIZE(kVideoCodecPrefs) - i);
+      video_codecs_.push_back(codec);
+    }
+  }
+  ASSERT(found);
+  return true;
+}
+
 void WebRtcVideoEngine::Terminate() {
   LOG(LS_INFO) << "WebRtcVideoEngine::Terminate";
+  initialized_ = false;
   SetCapture(false);
   if (local_renderer_.get()) {
     // If the renderer already set, stop it first
@@ -282,7 +298,8 @@ void WebRtcVideoEngine::Terminate() {
       LOG_RTCERR1(StopRender, capture_id_);
   }
 
-  if (vie_wrapper_->render()->DeRegisterVideoRenderModule(*renderer_) != 0)
+  if (vie_wrapper_->render()->DeRegisterVideoRenderModule(
+      *render_module_.get()) != 0)
     LOG_RTCERR0(DeRegisterVideoRenderModule);
 
   if ((vie_wrapper_->base()->DeregisterObserver()) != 0)
@@ -296,7 +313,7 @@ void WebRtcVideoEngine::Terminate() {
 }
 
 int WebRtcVideoEngine::GetCapabilities() {
-  return MediaEngine::VIDEO_RECV | MediaEngine::VIDEO_SEND;
+  return VIDEO_RECV | VIDEO_SEND;
 }
 
 bool WebRtcVideoEngine::SetOptions(int options) {
@@ -313,8 +330,11 @@ bool WebRtcVideoEngine::ReleaseCaptureDevice() {
         it != channels_.end(); ++it) {
       ASSERT(*it != NULL);
       channel = *it;
+      // Ignore the return value here as the channel may not have connected to
+      // the capturer yet.
       vie_wrapper_->capture()->DisconnectCaptureDevice(
           channel->video_channel());
+      channel->set_connected(false);
     }
     // ReleaseCaptureDevice
     vie_wrapper_->capture()->ReleaseCaptureDevice(capture_id_);
@@ -325,7 +345,6 @@ bool WebRtcVideoEngine::ReleaseCaptureDevice() {
 }
 
 bool WebRtcVideoEngine::SetCaptureDevice(const Device* cam) {
-  ASSERT(vie_wrapper_.get());
   ASSERT(cam != NULL);
 
   ReleaseCaptureDevice();
@@ -333,47 +352,55 @@ bool WebRtcVideoEngine::SetCaptureDevice(const Device* cam) {
   webrtc::ViECapture* vie_capture = vie_wrapper_->capture();
 
   // There's an external VCM
-  if (capture_) {
-    if (vie_capture->AllocateCaptureDevice(*capture_, capture_id_) != 0)
+  if (capture_module_) {
+    if (vie_capture->AllocateCaptureDevice(*capture_module_, capture_id_) != 0)
       ASSERT(capture_id_ == -1);
   } else if (!external_capture_) {
-    const unsigned int KMaxDeviceNameLength = 128;
-    const unsigned int KMaxUniqueIdLength = 256;
-    char device_name[KMaxDeviceNameLength];
-    char device_id[KMaxUniqueIdLength];
+    char device_name[256], device_id[256];
     bool found = false;
     for (int i = 0; i < vie_capture->NumberOfCaptureDevices(); ++i) {
-      memset(device_name, 0, KMaxDeviceNameLength);
-      memset(device_id, 0, KMaxUniqueIdLength);
-      if (vie_capture->GetCaptureDevice(i, device_name, KMaxDeviceNameLength,
-                                        device_id, KMaxUniqueIdLength) == 0) {
-        // TODO(ronghuawu): We should only compare the device_id here,
+      if (vie_capture->GetCaptureDevice(i, device_name, sizeof(device_name),
+                                        device_id, sizeof(device_id)) == 0) {
+        // TODO: We should only compare the device_id here,
         // however the devicemanager and webrtc use different format for th v4l2
         // device id. So here we also compare the device_name for now.
         // For example "usb-0000:00:1d.7-6" vs "/dev/video0".
-        if ((cam->name.compare(reinterpret_cast<char*>(device_name)) == 0) ||
-            (cam->id.compare(reinterpret_cast<char*>(device_id)) == 0)) {
+        if (cam->name.compare(device_name) == 0 ||
+            cam->id.compare(device_id) == 0) {
           LOG(INFO) << "Found video capture device: " << device_name;
           found = true;
           break;
         }
       }
     }
-    if (!found)
+    if (!found) {
       return false;
-    if (vie_capture->AllocateCaptureDevice(device_id, KMaxUniqueIdLength,
-                                           capture_id_) != 0)
+    }
+    if (vie_capture->AllocateCaptureDevice(device_id, strlen(device_id),
+                                           capture_id_) != 0) {
       ASSERT(capture_id_ == -1);
+    }
   }
 
   if (capture_id_ != -1) {
-    // Connect to all the channels
+    // Connect to all the channels if there is any.
     WebRtcVideoMediaChannel* channel;
     for (VideoChannels::const_iterator it = channels_.begin();
          it != channels_.end(); ++it) {
       ASSERT(*it != NULL);
       channel = *it;
-      vie_capture->ConnectCaptureDevice(capture_id_, channel->video_channel());
+
+      // No channel should have been connected yet.
+      // In case of switching device, all channel connections should have been
+      // disconnected in ReleaseCaptureDevice() first.
+      ASSERT(!channel->connected());
+
+      if (vie_capture->ConnectCaptureDevice(capture_id_,
+                                            channel->video_channel()) == 0) {
+        channel->set_connected(true);
+      } else {
+        LOG(LS_WARNING) << "SetCaptureDevice failed to ConnectCaptureDevice.";
+      }
     }
     SetCapture(true);
   }
@@ -383,20 +410,31 @@ bool WebRtcVideoEngine::SetCaptureDevice(const Device* cam) {
 
 bool WebRtcVideoEngine::SetCaptureModule(webrtc::VideoCaptureModule* vcm) {
   ReleaseCaptureDevice();
-  if (capture_) {
-    capture_->Release();
+  if (capture_module_) {
+    capture_module_->Release();
+    capture_module_ = NULL;
   }
-  capture_ = vcm;
-  capture_->AddRef();
-  external_capture_ = true;
+
+  if (vcm) {
+    capture_module_ = vcm;
+    capture_module_->AddRef();
+    external_capture_ = true;
+  } else {
+    external_capture_ = false;
+  }
+
   return true;
 }
 
 bool WebRtcVideoEngine::SetLocalRenderer(VideoRenderer* renderer) {
   if (local_renderer_.get()) {
-    // If the renderer already set, stop it first
-    vie_wrapper_->render()->StopRender(capture_id_);
-    vie_wrapper_->render()->RemoveRenderer(capture_id_);
+    // If the renderer already set, stop and remove it first
+    if (vie_wrapper_->render()->StopRender(capture_id_) != 0) {
+      LOG_RTCERR1(StopRender, capture_id_);
+    }
+    if (vie_wrapper_->render()->RemoveRenderer(capture_id_) != 0) {
+      LOG_RTCERR1(RemoveRenderer, capture_id_);
+    }
   }
   local_renderer_.reset(new WebRtcRenderAdapter(renderer));
 
@@ -456,13 +494,34 @@ WebRtcVideoMediaChannel* WebRtcVideoEngine::CreateChannel(
   return channel;
 }
 
-bool WebRtcVideoEngine::FindCodec(const VideoCodec& codec) {
-  for (size_t i = 0; i < video_codecs_.size(); ++i) {
-    if (video_codecs_[i].Matches(codec)) {
-      return true;
+// Checks to see whether we comprehend and could receive a particular codec
+bool WebRtcVideoEngine::FindCodec(const VideoCodec& in) {
+  for (int i = 0; i < ARRAY_SIZE(kVideoFormats); ++i) {
+    const VideoFormat& fmt = kVideoFormats[i];
+    if ((in.width == 0 && in.height == 0) ||
+        (fmt.width == in.width && fmt.height == in.height)) {
+      for (int j = 0; j < ARRAY_SIZE(kVideoCodecPrefs); ++j) {
+        VideoCodec codec(kVideoCodecPrefs[j].payload_type,
+                         kVideoCodecPrefs[j].name, 0, 0, 0, 0);
+        if (codec.Matches(in)) {
+          return true;
+        }
+      }
     }
   }
   return false;
+}
+
+// SetDefaultCodec may be called while the capturer is running. For example, a
+// test call is started in a page with QVGA default codec, and then a real call
+// is started in another page with VGA default codec. This is the corner case
+// and happens only when a session is started. We ignore this case currently.
+bool WebRtcVideoEngine::SetDefaultCodec(const VideoCodec& codec) {
+  if (!RebuildCodecList(codec)) {
+    LOG(LS_WARNING) << "Failed to RebuildCodecList";
+    return false;
+  }
+  return true;
 }
 
 void WebRtcVideoEngine::ConvertToCricketVideoCodec(
@@ -529,8 +588,24 @@ void WebRtcVideoEngine::UnregisterChannel(WebRtcVideoMediaChannel *channel) {
   }
 }
 
+bool WebRtcVideoEngine::SetVoiceEngine(WebRtcVoiceEngine* voice_engine) {
+  if (initialized_) {
+    LOG(LS_WARNING) << "SetVoiceEngine can not be called after Init.";
+    return false;
+  }
+  voice_engine_ = voice_engine;
+  return true;
+}
 
-
+bool WebRtcVideoEngine::EnableTimedRender() {
+  if (initialized_) {
+    LOG(LS_WARNING) << "EnableTimedRender can not be called after Init.";
+    return false;
+  }
+  render_module_.reset(webrtc::VideoRender::CreateVideoRender(0, NULL,
+      false, webrtc::kRenderExternal));
+  return true;
+}
 
 // WebRtcVideoMediaChannel
 
@@ -540,6 +615,7 @@ WebRtcVideoMediaChannel::WebRtcVideoMediaChannel(
       voice_channel_(channel),
       vie_channel_(-1),
       sending_(false),
+      connected_(false),
       render_started_(false),
       send_codec_(NULL) {
   engine->RegisterChannel(this);
@@ -554,6 +630,7 @@ bool WebRtcVideoMediaChannel::Init() {
 
   LOG(LS_INFO) << "WebRtcVideoMediaChannel::Init "
                << "video_channel " << vie_channel_ << " created";
+
   // connect audio channel
   if (voice_channel_) {
     WebRtcVoiceMediaChannel* channel =
@@ -692,14 +769,27 @@ bool WebRtcVideoMediaChannel::SetSend(bool send) {
       LOG_RTCERR1(StartSend, vie_channel_);
       ret = false;
     }
+
+    // If the channel has not been connected to the capturer yet,
+    // connect it now.
+    if (!connected()) {
+      if (engine()->video_engine()->capture()->ConnectCaptureDevice(
+          engine()->capture_id(), vie_channel_) != 0) {
+        LOG_RTCERR2(ConnectCaptureDevice, engine()->capture_id(), vie_channel_);
+        ret = false;
+      } else {
+        set_connected(true);
+      }
+    }
   } else {  // disable
     if (engine()->video_engine()->base()->StopSend(vie_channel_) != 0) {
       LOG_RTCERR1(StopSend, vie_channel_);
       ret = false;
     }
   }
-  if (ret)
+  if (ret) {
     sending_ = send;
+  }
 
   return ret;
 }
@@ -718,9 +808,13 @@ bool WebRtcVideoMediaChannel::SetRenderer(
   if (ssrc != 0)
     return false;
   if (remote_renderer_.get()) {
-    // If the renderer already set, stop it first
-    engine_->video_engine()->render()->StopRender(vie_channel_);
-    engine_->video_engine()->render()->RemoveRenderer(vie_channel_);
+    // If the renderer already set, stop and remove it first
+    if (engine_->video_engine()->render()->StopRender(vie_channel_) != 0) {
+      LOG_RTCERR1(StopRender, vie_channel_);
+    }
+    if (engine_->video_engine()->render()->RemoveRenderer(vie_channel_) != 0) {
+      LOG_RTCERR1(RemoveRenderer, vie_channel_);
+    }
   }
   remote_renderer_.reset(new WebRtcRenderAdapter(renderer));
 
@@ -906,7 +1000,6 @@ int WebRtcVideoMediaChannel::SendPacket(int channel, const void* data,
   if (!network_interface_) {
     return -1;
   }
-
   talk_base::Buffer packet(data, len, kMaxRtpPacketLen);
   return network_interface_->SendPacket(&packet) ? len : -1;
 }
@@ -923,5 +1016,5 @@ int WebRtcVideoMediaChannel::SendRTCPPacket(int channel,
 
 }  // namespace cricket
 
-#endif  // HAVE_WEBRTC
+#endif  // HAVE_WEBRTC_VIDEO
 

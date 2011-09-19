@@ -35,7 +35,7 @@
 #include <ksmedia.h>
 #define INITGUID  // For PKEY_AudioEndpoint_GUID
 #include <mmdeviceapi.h>
-#include <MMSystem.h>
+#include <mmsystem.h>
 #include <functiondiscoverykeys_devpkey.h>
 #include <uuids.h>
 #include "talk/base/win32.h"  // ToUtf8
@@ -53,21 +53,24 @@
 #include "talk/base/stream.h"
 #include "talk/session/phone/libudevsymboltable.h"
 #include "talk/session/phone/v4llookup.h"
-#if defined(LINUX_SOUND_USED)
 #include "talk/sound/platformsoundsystem.h"
 #include "talk/sound/platformsoundsystemfactory.h"
 #include "talk/sound/sounddevicelocator.h"
 #include "talk/sound/soundsysteminterface.h"
 #endif
-#endif
 
 #include "talk/base/logging.h"
 #include "talk/base/stringutils.h"
-#include "talk/session/phone/mediaengine.h"
+#include "talk/base/thread.h"
+#include "talk/session/phone/mediacommon.h"
 
 namespace cricket {
 // Initialize to empty string.
-const std::string DeviceManager::kDefaultDeviceName;
+const char DeviceManagerInterface::kDefaultDeviceName[] = "";
+
+DeviceManagerInterface* DeviceManagerFactory::Create() {
+  return new DeviceManager();
+}
 
 #ifdef WIN32
 class DeviceWatcher : public talk_base::Win32Window {
@@ -151,7 +154,7 @@ DeviceManager::DeviceManager()
       need_couninitialize_(false),
 #endif
       watcher_(new DeviceWatcher(this))
-#ifdef LINUX_SOUND_USED
+#ifdef LINUX
       , sound_system_(new PlatformSoundSystemFactory())
 #endif
     {
@@ -199,15 +202,15 @@ void DeviceManager::Terminate() {
 
 int DeviceManager::GetCapabilities() {
   std::vector<Device> devices;
-  int caps = MediaEngine::VIDEO_RECV;
+  int caps = VIDEO_RECV;
   if (GetAudioInputDevices(&devices) && !devices.empty()) {
-    caps |= MediaEngine::AUDIO_SEND;
+    caps |= AUDIO_SEND;
   }
   if (GetAudioOutputDevices(&devices) && !devices.empty()) {
-    caps |= MediaEngine::AUDIO_RECV;
+    caps |= AUDIO_RECV;
   }
   if (GetVideoCaptureDevices(&devices) && !devices.empty()) {
-    caps |= MediaEngine::VIDEO_SEND;
+    caps |= VIDEO_SEND;
   }
   return caps;
 }
@@ -327,7 +330,8 @@ bool DeviceManager::GetAudioDevice(bool is_input, const std::string& name,
 bool DeviceManager::GetAudioDevicesByPlatform(bool input,
                                               std::vector<Device>* devs) {
   devs->clear();
-#if defined(LINUX_SOUND_USED)
+
+#if defined(LINUX)
   if (!sound_system_.get()) {
     return false;
   }

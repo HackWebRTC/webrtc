@@ -69,8 +69,7 @@ bool Conductor::InitializePeerConnection() {
           talk_base::SocketAddress());
 
   peer_connection_factory_.reset(
-      new webrtc::PeerConnectionFactory(GetPeerConnectionString(),
-                                        port_allocator,
+      new webrtc::PeerConnectionFactory(port_allocator,
                                         worker_thread_.get()));
   if (!peer_connection_factory_->Initialize()) {
     main_wnd_->MessageBox("Error",
