@@ -11,6 +11,14 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC_MAIN_SOURCE_AEC_RDFT_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AEC_MAIN_SOURCE_AEC_RDFT_H_
 
+// These intrinsics were unavailable before VS 2008.
+// TODO(andrew): move to a common file.
+#if defined(_MSC_VER) && _MSC_VER < 1500
+#include <emmintrin.h>
+static __inline __m128 _mm_castsi128_ps(__m128i a) { return *(__m128*)&a; }
+static __inline __m128i _mm_castps_si128(__m128 a) { return *(__m128i*)&a; }
+#endif
+
 #ifdef _MSC_VER /* visual c++ */
 # define ALIGN16_BEG __declspec(align(16))
 # define ALIGN16_END
