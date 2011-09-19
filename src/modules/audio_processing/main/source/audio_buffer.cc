@@ -10,8 +10,6 @@
 
 #include "audio_buffer.h"
 
-#include "module_common_types.h"
-
 namespace webrtc {
 namespace {
 
@@ -64,21 +62,22 @@ struct SplitAudioChannel {
   WebRtc_Word32 synthesis_filter_state2[6];
 };
 
-// TODO(am): check range of input parameters?
-AudioBuffer::AudioBuffer(WebRtc_Word32 max_num_channels,
-                         WebRtc_Word32 samples_per_channel)
-    : max_num_channels_(max_num_channels),
-      num_channels_(0),
-      num_mixed_channels_(0),
-      num_mixed_low_pass_channels_(0),
-      samples_per_channel_(samples_per_channel),
-      samples_per_split_channel_(samples_per_channel),
-      reference_copied_(false),
-      data_(NULL),
-      channels_(NULL),
-      split_channels_(NULL),
-      mixed_low_pass_channels_(NULL),
-      low_pass_reference_channels_(NULL) {
+// TODO(andrew): check range of input parameters?
+AudioBuffer::AudioBuffer(int max_num_channels,
+                         int samples_per_channel)
+  : max_num_channels_(max_num_channels),
+    num_channels_(0),
+    num_mixed_channels_(0),
+    num_mixed_low_pass_channels_(0),
+    samples_per_channel_(samples_per_channel),
+    samples_per_split_channel_(samples_per_channel),
+    reference_copied_(false),
+    activity_(AudioFrame::kVadUnknown),
+    data_(NULL),
+    channels_(NULL),
+    split_channels_(NULL),
+    mixed_low_pass_channels_(NULL),
+    low_pass_reference_channels_(NULL) {
   if (max_num_channels_ > 1) {
     channels_ = new AudioChannel[max_num_channels_];
     mixed_low_pass_channels_ = new AudioChannel[max_num_channels_];
@@ -109,7 +108,7 @@ AudioBuffer::~AudioBuffer() {
   }
 }
 
-WebRtc_Word16* AudioBuffer::data(WebRtc_Word32 channel) const {
+WebRtc_Word16* AudioBuffer::data(int channel) const {
   assert(channel >= 0 && channel < num_channels_);
   if (data_ != NULL) {
     return data_;
@@ -118,7 +117,7 @@ WebRtc_Word16* AudioBuffer::data(WebRtc_Word32 channel) const {
   return channels_[channel].data;
 }
 
-WebRtc_Word16* AudioBuffer::low_pass_split_data(WebRtc_Word32 channel) const {
+WebRtc_Word16* AudioBuffer::low_pass_split_data(int channel) const {
   assert(channel >= 0 && channel < num_channels_);
   if (split_channels_ == NULL) {
     return data(channel);
@@ -127,7 +126,7 @@ WebRtc_Word16* AudioBuffer::low_pass_split_data(WebRtc_Word32 channel) const {
   return split_channels_[channel].low_pass_data;
 }
 
-WebRtc_Word16* AudioBuffer::high_pass_split_data(WebRtc_Word32 channel) const {
+WebRtc_Word16* AudioBuffer::high_pass_split_data(int channel) const {
   assert(channel >= 0 && channel < num_channels_);
   if (split_channels_ == NULL) {
     return NULL;
@@ -136,13 +135,13 @@ WebRtc_Word16* AudioBuffer::high_pass_split_data(WebRtc_Word32 channel) const {
   return split_channels_[channel].high_pass_data;
 }
 
-WebRtc_Word16* AudioBuffer::mixed_low_pass_data(WebRtc_Word32 channel) const {
+WebRtc_Word16* AudioBuffer::mixed_low_pass_data(int channel) const {
   assert(channel >= 0 && channel < num_mixed_low_pass_channels_);
 
   return mixed_low_pass_channels_[channel].data;
 }
 
-WebRtc_Word16* AudioBuffer::low_pass_reference(WebRtc_Word32 channel) const {
+WebRtc_Word16* AudioBuffer::low_pass_reference(int channel) const {
   assert(channel >= 0 && channel < num_channels_);
   if (!reference_copied_) {
     return NULL;
@@ -151,58 +150,67 @@ WebRtc_Word16* AudioBuffer::low_pass_reference(WebRtc_Word32 channel) const {
   return low_pass_reference_channels_[channel].data;
 }
 
-WebRtc_Word32* AudioBuffer::analysis_filter_state1(WebRtc_Word32 channel) const {
+WebRtc_Word32* AudioBuffer::analysis_filter_state1(int channel) const {
   assert(channel >= 0 && channel < num_channels_);
   return split_channels_[channel].analysis_filter_state1;
 }
 
-WebRtc_Word32* AudioBuffer::analysis_filter_state2(WebRtc_Word32 channel) const {
+WebRtc_Word32* AudioBuffer::analysis_filter_state2(int channel) const {
   assert(channel >= 0 && channel < num_channels_);
   return split_channels_[channel].analysis_filter_state2;
 }
 
-WebRtc_Word32* AudioBuffer::synthesis_filter_state1(WebRtc_Word32 channel) const {
+WebRtc_Word32* AudioBuffer::synthesis_filter_state1(int channel) const {
   assert(channel >= 0 && channel < num_channels_);
   return split_channels_[channel].synthesis_filter_state1;
 }
 
-WebRtc_Word32* AudioBuffer::synthesis_filter_state2(WebRtc_Word32 channel) const {
+WebRtc_Word32* AudioBuffer::synthesis_filter_state2(int channel) const {
   assert(channel >= 0 && channel < num_channels_);
   return split_channels_[channel].synthesis_filter_state2;
 }
 
-WebRtc_Word32 AudioBuffer::num_channels() const {
+void AudioBuffer::set_activity(AudioFrame::VADActivity activity) {
+  activity_ = activity;
+}
+
+AudioFrame::VADActivity AudioBuffer::activity() {
+  return activity_;
+}
+
+int AudioBuffer::num_channels() const {
   return num_channels_;
 }
 
-WebRtc_Word32 AudioBuffer::samples_per_channel() const {
+int AudioBuffer::samples_per_channel() const {
   return samples_per_channel_;
 }
 
-WebRtc_Word32 AudioBuffer::samples_per_split_channel() const {
+int AudioBuffer::samples_per_split_channel() const {
   return samples_per_split_channel_;
 }
 
-// TODO(ajm): Do deinterleaving and mixing in one step?
-void AudioBuffer::DeinterleaveFrom(AudioFrame* audioFrame) {
-  assert(audioFrame->_audioChannel <= max_num_channels_);
-  assert(audioFrame->_payloadDataLengthInSamples ==  samples_per_channel_);
+// TODO(andrew): Do deinterleaving and mixing in one step?
+void AudioBuffer::DeinterleaveFrom(AudioFrame* frame) {
+  assert(frame->_audioChannel <= max_num_channels_);
+  assert(frame->_payloadDataLengthInSamples ==  samples_per_channel_);
 
-  num_channels_ = audioFrame->_audioChannel;
+  num_channels_ = frame->_audioChannel;
   num_mixed_channels_ = 0;
   num_mixed_low_pass_channels_ = 0;
   reference_copied_ = false;
+  activity_ = frame->_vadActivity;
 
   if (num_channels_ == 1) {
     // We can get away with a pointer assignment in this case.
-    data_ = audioFrame->_payloadData;
+    data_ = frame->_payloadData;
     return;
   }
 
+  WebRtc_Word16* interleaved = frame->_payloadData;
   for (int i = 0; i < num_channels_; i++) {
     WebRtc_Word16* deinterleaved = channels_[i].data;
-    WebRtc_Word16* interleaved = audioFrame->_payloadData;
-    WebRtc_Word32 interleaved_idx = i;
+    int interleaved_idx = i;
     for (int j = 0; j < samples_per_channel_; j++) {
       deinterleaved[j] = interleaved[interleaved_idx];
       interleaved_idx += num_channels_;
@@ -210,27 +218,28 @@ void AudioBuffer::DeinterleaveFrom(AudioFrame* audioFrame) {
   }
 }
 
-void AudioBuffer::InterleaveTo(AudioFrame* audioFrame) const {
-  assert(audioFrame->_audioChannel == num_channels_);
-  assert(audioFrame->_payloadDataLengthInSamples == samples_per_channel_);
+void AudioBuffer::InterleaveTo(AudioFrame* frame) const {
+  assert(frame->_audioChannel == num_channels_);
+  assert(frame->_payloadDataLengthInSamples == samples_per_channel_);
+  frame->_vadActivity = activity_;
 
   if (num_channels_ == 1) {
     if (num_mixed_channels_ == 1) {
-      memcpy(audioFrame->_payloadData,
+      memcpy(frame->_payloadData,
              channels_[0].data,
              sizeof(WebRtc_Word16) * samples_per_channel_);
     } else {
       // These should point to the same buffer in this case.
-      assert(data_ == audioFrame->_payloadData);
+      assert(data_ == frame->_payloadData);
     }
 
     return;
   }
 
+  WebRtc_Word16* interleaved = frame->_payloadData;
   for (int i = 0; i < num_channels_; i++) {
     WebRtc_Word16* deinterleaved = channels_[i].data;
-    WebRtc_Word16* interleaved = audioFrame->_payloadData;
-    WebRtc_Word32 interleaved_idx = i;
+    int interleaved_idx = i;
     for (int j = 0; j < samples_per_channel_; j++) {
       interleaved[interleaved_idx] = deinterleaved[j];
       interleaved_idx += num_channels_;
@@ -238,9 +247,10 @@ void AudioBuffer::InterleaveTo(AudioFrame* audioFrame) const {
   }
 }
 
-// TODO(ajm): would be good to support the no-mix case with pointer assignment.
-// TODO(ajm): handle mixing to multiple channels?
-void AudioBuffer::Mix(WebRtc_Word32 num_mixed_channels) {
+// TODO(andrew): would be good to support the no-mix case with pointer
+// assignment.
+// TODO(andrew): handle mixing to multiple channels?
+void AudioBuffer::Mix(int num_mixed_channels) {
   // We currently only support the stereo to mono case.
   assert(num_channels_ == 2);
   assert(num_mixed_channels == 1);
@@ -254,7 +264,7 @@ void AudioBuffer::Mix(WebRtc_Word32 num_mixed_channels) {
   num_mixed_channels_ = num_mixed_channels;
 }
 
-void AudioBuffer::CopyAndMixLowPass(WebRtc_Word32 num_mixed_channels) {
+void AudioBuffer::CopyAndMixLowPass(int num_mixed_channels) {
   // We currently only support the stereo to mono case.
   assert(num_channels_ == 2);
   assert(num_mixed_channels == 1);

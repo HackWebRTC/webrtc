@@ -74,16 +74,16 @@ int VoiceDetectionImpl::ProcessCaptureAudio(AudioBuffer* audio) {
 
   // TODO(ajm): concatenate data in frame buffer here.
 
-  int vad_ret_val;
-  vad_ret_val = WebRtcVad_Process(static_cast<Handle*>(handle(0)),
-                      apm_->split_sample_rate_hz(),
-                      mixed_data,
-                      frame_size_samples_);
-
-  if (vad_ret_val == 0) {
+  int vad_ret = WebRtcVad_Process(static_cast<Handle*>(handle(0)),
+                                  apm_->split_sample_rate_hz(),
+                                  mixed_data,
+                                  frame_size_samples_);
+  if (vad_ret == 0) {
     stream_has_voice_ = false;
-  } else if (vad_ret_val == 1) {
+    audio->set_activity(AudioFrame::kVadPassive);
+  } else if (vad_ret == 1) {
     stream_has_voice_ = true;
+    audio->set_activity(AudioFrame::kVadActive);
   } else {
     return apm_->kUnspecifiedError;
   }

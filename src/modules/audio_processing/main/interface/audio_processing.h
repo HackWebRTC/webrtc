@@ -486,6 +486,7 @@ class HighPassFilter {
 };
 
 // An estimation component used to retrieve level metrics.
+// NOTE: currently unavailable. All methods return errors.
 class LevelEstimator {
  public:
   virtual int Enable(bool enable) = 0;
@@ -539,6 +540,10 @@ class NoiseSuppression {
 // The voice activity detection (VAD) component analyzes the stream to
 // determine if voice is present. A facility is also provided to pass in an
 // external VAD decision.
+//
+// In addition to |stream_has_voice()| the VAD decision is provided through the
+// |AudioFrame| passed to |ProcessStream()|. The |_vadActivity| member will be
+// modified to reflect the current decision.
 class VoiceDetection {
  public:
   virtual int Enable(bool enable) = 0;

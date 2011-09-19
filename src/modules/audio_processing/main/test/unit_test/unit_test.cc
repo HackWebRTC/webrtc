@@ -555,6 +555,7 @@ TEST_F(ApmTest, Process) {
                &temp_data[0],
                sizeof(WebRtc_Word16) * read_count);
       }
+      frame_->_vadActivity = AudioFrame::kVadUnknown;
 
       EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
 
@@ -571,6 +572,9 @@ TEST_F(ApmTest, Process) {
       }
       if (apm_->voice_detection()->stream_has_voice()) {
         has_voice_count++;
+        EXPECT_EQ(AudioFrame::kVadActive, frame_->_vadActivity);
+      } else {
+        EXPECT_EQ(AudioFrame::kVadPassive, frame_->_vadActivity);
       }
 
       frame_count++;
@@ -966,27 +970,27 @@ TEST_F(ApmTest, VoiceDetection) {
   EXPECT_EQ(apm_->kNoError, apm_->voice_detection()->Enable(false));
   EXPECT_FALSE(apm_->voice_detection()->is_enabled());
 
+  // Test that AudioFrame activity is maintained when VAD is disabled.
+  EXPECT_EQ(apm_->kNoError, apm_->voice_detection()->Enable(false));
+  AudioFrame::VADActivity activity[] = {
+      AudioFrame::kVadActive,
+      AudioFrame::kVadPassive,
+      AudioFrame::kVadUnknown
+  };
+  for (size_t i = 0; i < sizeof(activity)/sizeof(*activity); i++) {
+    frame_->_vadActivity = activity[i];
+    EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
+    EXPECT_EQ(activity[i], frame_->_vadActivity);
+  }
+
+  // Test that AudioFrame activity is set when VAD is enabled.
+  EXPECT_EQ(apm_->kNoError, apm_->voice_detection()->Enable(true));
+  frame_->_vadActivity = AudioFrame::kVadUnknown;
+  EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
+  EXPECT_NE(AudioFrame::kVadUnknown, frame_->_vadActivity);
+
   // TODO(bjornv): Add tests for streamed voice; stream_has_voice()
 }
-
-// Below are some ideas for tests from VPM.
-
-/*TEST_F(VideoProcessingModuleTest, GetVersionTest)
-{
-}
-
-TEST_F(VideoProcessingModuleTest, HandleNullBuffer)
-{
-}
-
-TEST_F(VideoProcessingModuleTest, HandleBadSize)
-{
-}
-
-TEST_F(VideoProcessingModuleTest, IdenticalResultsAfterReset)
-{
-}
-*/
 }  // namespace
 
 int main(int argc, char** argv) {

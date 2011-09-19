@@ -11,55 +11,58 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_MAIN_SOURCE_AUDIO_BUFFER_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_MAIN_SOURCE_AUDIO_BUFFER_H_
 
+#include "module_common_types.h"
 #include "typedefs.h"
-
 
 namespace webrtc {
 
 struct AudioChannel;
 struct SplitAudioChannel;
-class AudioFrame;
 
 class AudioBuffer {
  public:
-  AudioBuffer(WebRtc_Word32 max_num_channels, WebRtc_Word32 samples_per_channel);
+  AudioBuffer(int max_num_channels, int samples_per_channel);
   virtual ~AudioBuffer();
 
-  WebRtc_Word32 num_channels() const;
-  WebRtc_Word32 samples_per_channel() const;
-  WebRtc_Word32 samples_per_split_channel() const;
+  int num_channels() const;
+  int samples_per_channel() const;
+  int samples_per_split_channel() const;
 
-  WebRtc_Word16* data(WebRtc_Word32 channel) const;
-  WebRtc_Word16* low_pass_split_data(WebRtc_Word32 channel) const;
-  WebRtc_Word16* high_pass_split_data(WebRtc_Word32 channel) const;
-  WebRtc_Word16* mixed_low_pass_data(WebRtc_Word32 channel) const;
-  WebRtc_Word16* low_pass_reference(WebRtc_Word32 channel) const;
+  WebRtc_Word16* data(int channel) const;
+  WebRtc_Word16* low_pass_split_data(int channel) const;
+  WebRtc_Word16* high_pass_split_data(int channel) const;
+  WebRtc_Word16* mixed_low_pass_data(int channel) const;
+  WebRtc_Word16* low_pass_reference(int channel) const;
 
-  WebRtc_Word32* analysis_filter_state1(WebRtc_Word32 channel) const;
-  WebRtc_Word32* analysis_filter_state2(WebRtc_Word32 channel) const;
-  WebRtc_Word32* synthesis_filter_state1(WebRtc_Word32 channel) const;
-  WebRtc_Word32* synthesis_filter_state2(WebRtc_Word32 channel) const;
+  WebRtc_Word32* analysis_filter_state1(int channel) const;
+  WebRtc_Word32* analysis_filter_state2(int channel) const;
+  WebRtc_Word32* synthesis_filter_state1(int channel) const;
+  WebRtc_Word32* synthesis_filter_state2(int channel) const;
+
+  void set_activity(AudioFrame::VADActivity activity);
+  AudioFrame::VADActivity activity();
 
   void DeinterleaveFrom(AudioFrame* audioFrame);
   void InterleaveTo(AudioFrame* audioFrame) const;
-  void Mix(WebRtc_Word32 num_mixed_channels);
-  void CopyAndMixLowPass(WebRtc_Word32 num_mixed_channels);
+  void Mix(int num_mixed_channels);
+  void CopyAndMixLowPass(int num_mixed_channels);
   void CopyLowPassToReference();
 
  private:
-  const WebRtc_Word32 max_num_channels_;
-  WebRtc_Word32 num_channels_;
-  WebRtc_Word32 num_mixed_channels_;
-  WebRtc_Word32 num_mixed_low_pass_channels_;
-  const WebRtc_Word32 samples_per_channel_;
-  WebRtc_Word32 samples_per_split_channel_;
+  const int max_num_channels_;
+  int num_channels_;
+  int num_mixed_channels_;
+  int num_mixed_low_pass_channels_;
+  const int samples_per_channel_;
+  int samples_per_split_channel_;
   bool reference_copied_;
+  AudioFrame::VADActivity activity_;
 
   WebRtc_Word16* data_;
-  // TODO(ajm): Prefer to make these vectors if permitted...
+  // TODO(andrew): use vectors here.
   AudioChannel* channels_;
   SplitAudioChannel* split_channels_;
-  // TODO(ajm): improve this, we don't need the full 32 kHz space here.
+  // TODO(andrew): improve this, we don't need the full 32 kHz space here.
   AudioChannel* mixed_low_pass_channels_;
   AudioChannel* low_pass_reference_channels_;
 };
