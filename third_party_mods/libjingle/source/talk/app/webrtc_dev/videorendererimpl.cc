@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2011, Google Inc.
+ * Copyright 2004--2011, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -25,44 +25,34 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_APP_WEBRTC_MEDIA_STREAM_IMPL_H_
-#define TALK_APP_WEBRTC_MEDIA_STREAM_IMPL_H_
+#include "talk/app/webrtc_dev/mediastreamimpl.h"
 
-#include <string>
-#include <vector>
-
-#include "talk/app/webrtc_dev/notifier_impl.h"
-#include "talk/app/webrtc_dev/ref_count.h"
-#include "talk/app/webrtc_dev/scoped_refptr.h"
-#include "talk/app/webrtc_dev/stream_dev.h"
+#include "talk/session/phone/videorenderer.h"
 
 namespace webrtc {
 
-// MediaStreamImpl- help class for implementing the MediaStream interface.
-class MediaStreamImpl {
+// VideoRendererImpl take ownership of cricket::VideoRenderer.
+class VideoRendererImpl : public VideoRenderer {
  public:
-  explicit MediaStreamImpl(const std::string& label);
-
-  // Implement MediaStream
-  const std::string& label() const;
-  MediaStream::ReadyState ready_state() const;
-
+  explicit VideoRendererImpl(cricket::VideoRenderer* renderer)
+      : renderer_(renderer) {
+  }
+  virtual cricket::VideoRenderer* renderer() {
+    return renderer_;
+  }
  protected:
-  std::string label_;
-  MediaStream::ReadyState ready_state_;
+  ~VideoRendererImpl() {
+    delete renderer_;
+  }
+ private:
+  cricket::VideoRenderer* renderer_;
 };
 
-class MediaStreamTrackListImpl {
- public:
-  MediaStreamTrackListImpl();
-  // Implement MediaStreamTrackList.
-  bool AddTrack(MediaStreamTrack* track);
-  size_t count() const;
-  scoped_refptr<MediaStreamTrack> at(size_t index) const;
- protected:
-  std::vector<scoped_refptr<MediaStreamTrack> > tracks_;
-};
+scoped_refptr<VideoRenderer> CreateVideoRenderer(
+    cricket::VideoRenderer* renderer) {
+  RefCountImpl<VideoRendererImpl>* r =
+      new RefCountImpl<VideoRendererImpl>(renderer);
+  return r;
+}
 
 }  // namespace webrtc
-
-#endif  // TALK_APP_WEBRTC_MEDIA_STREAM_IMPL_H_

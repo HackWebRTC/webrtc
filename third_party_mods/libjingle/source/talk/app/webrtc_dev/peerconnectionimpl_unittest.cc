@@ -28,9 +28,9 @@
 #include <string>
 
 #include "gtest/gtest.h"
-#include "talk/app/webrtc_dev/local_stream_dev.h"
-#include "talk/app/webrtc_dev/peerconnection_dev.h"
-#include "talk/app/webrtc_dev/peerconnection_impl_dev.h"
+#include "talk/app/webrtc_dev/mediastreamimpl.h"
+#include "talk/app/webrtc_dev/peerconnection.h"
+#include "talk/app/webrtc_dev/peerconnectionimpl.h"
 #include "talk/base/scoped_ptr.h"
 #include "talk/base/thread.h"
 
@@ -40,7 +40,6 @@ namespace webrtc {
 
 class PeerConnectionImplTest : public testing::Test {
  public:
-
  protected:
   virtual void SetUp() {
     pc_factory_ = webrtc::PeerConnectionManager::Create();
@@ -56,12 +55,14 @@ class PeerConnectionImplTest : public testing::Test {
 TEST_F(PeerConnectionImplTest, AddRemoveStream) {
   // Create a local stream.
   std::string label(kStreamLabel1);
-  scoped_refptr<LocalMediaStream> stream(LocalMediaStream::Create(label));
+  scoped_refptr<LocalMediaStream> stream(CreateLocalMediaStream(label));
 
   pc_->AddStream(stream);
   pc_->CommitStreamChanges();
-  EXPECT_EQ(pc_->local_streams()->count(), 1l);
-  EXPECT_EQ(pc_->local_streams()->at(0)->label().compare(kStreamLabel1), 0);
+  EXPECT_EQ(1l, pc_->local_streams()->count());
+  if (pc_->local_streams()->count() <= 0)
+    return;
+  EXPECT_EQ(0, pc_->local_streams()->at(0)->label().compare(kStreamLabel1));
 }
 
 }  // namespace webrtc

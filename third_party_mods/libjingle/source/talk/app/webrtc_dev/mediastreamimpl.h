@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2004--2011, Google Inc.
+ * Copyright 2011, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -24,28 +24,51 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include "talk/app/webrtc_dev/local_stream_dev.h"
+
+#ifndef TALK_APP_WEBRTC_MEDIASTREAMIMPL_H_
+#define TALK_APP_WEBRTC_MEDIASTREAMIMPL_H_
+
+#include <string>
+#include <vector>
+
+#include "talk/app/webrtc_dev/mediastream.h"
+#include "talk/app/webrtc_dev/notifierimpl.h"
 
 namespace webrtc {
 
-scoped_refptr<VideoDevice> VideoDevice::Create(const std::string& name,
-                                               VideoCaptureModule* vcm) {
-  RefCountImpl<VideoDevice>* device = new RefCountImpl<VideoDevice>();
-  device->Initialize(name,vcm);
-  return device;
-}
+class MediaStreamImpl
+    : public NotifierImpl<LocalMediaStream> {
+ public:
+  class MediaStreamTrackListImpl : public NotifierImpl<MediaStreamTrackList> {
+   public:
+    void AddTrack(MediaStreamTrack* track);
+    virtual size_t count();
+    virtual scoped_refptr<MediaStreamTrack> at(size_t index);
 
-const std::string& VideoDevice::name(){
-  return name_;
-}
+   private:
+    std::vector<scoped_refptr<MediaStreamTrack> > tracks_;
+  };
 
-VideoCaptureModule* VideoDevice::module() {
-  return vcm_;
-}
+  static scoped_refptr<MediaStreamImpl> Create(const std::string& label);
 
-void VideoDevice::Initialize(const std::string& name, VideoCaptureModule* vcm) {
-  name_ = name;
-  vcm_ = vcm;
-}
+  // Implement LocalStream.
+  virtual bool AddTrack(MediaStreamTrack* track);
 
-} // namespace webrtc
+  // Implement MediaStream.
+  virtual const std::string& label();
+  virtual scoped_refptr<MediaStreamTrackList> tracks();
+  virtual ReadyState ready_state();
+  virtual void set_ready_state(ReadyState new_state);
+  void set_state(ReadyState new_state);
+
+ protected:
+  explicit MediaStreamImpl(const std::string& label);
+
+  std::string label_;
+  MediaStream::ReadyState ready_state_;
+  scoped_refptr<MediaStreamTrackListImpl> track_list_;
+};
+
+}  // namespace webrtc
+
+#endif  // TALK_APP_WEBRTC_MEDIASTREAMIMPL_H_

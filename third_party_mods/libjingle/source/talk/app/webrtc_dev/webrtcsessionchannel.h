@@ -31,7 +31,7 @@
 #include <string>
 #include <vector>
 
-#include "talk/app/webrtc/stream_dev.h"
+#include "talk/app/webrtc/mediastream.h"
 #include "talk/base/messagehandler.h"
 #include "talk/base/scoped_ptr.h"
 #include "talk/base/sigslot.h"

@@ -28,9 +28,10 @@
 #include <string>
 
 #include "gtest/gtest.h"
-#include "talk/app/webrtc_dev/remote_stream_dev.h"
+#include "talk/app/webrtc_dev/mediastreamimpl.h"
 
-static const char kStreamLabel1[] = "remote_stream_1";
+static const char kStreamLabel1[] = "local_stream_1";
+static const char kVideoDeviceName[] = "dummy_video_cam_1";
 
 namespace webrtc {
 
@@ -49,14 +50,51 @@ class TestObserver : public Observer {
   int changed_;
 };
 
-TEST(RemoteStreamTest, Create) {
-  // Create a Remote stream.
+TEST(LocalStreamTest, Create) {
+  // Create a local stream.
   std::string label(kStreamLabel1);
-  scoped_refptr<RemoteMediaStream> stream(RemoteMediaStreamImpl::Create(label));
+  scoped_refptr<LocalMediaStream> stream(CreateLocalMediaStream(label));
 
   EXPECT_EQ(stream->label().compare(label), 0);
   //  Check state.
   EXPECT_EQ(stream->ready_state(), MediaStream::kInitializing);
+
+  // Create a local Video track.
+  {
+    TestObserver tracklist_observer;
+
+    scoped_refptr<LocalVideoTrack> video_track(CreateLocalVideoTrack(
+        kVideoDeviceName, NULL));
+
+    // Add an observer to the track list.
+    scoped_refptr<MediaStreamTrackList> track_list(stream->tracks());
+    stream->tracks()->RegisterObserver(&tracklist_observer);
+
+    // Add the track to the local stream.
+    EXPECT_TRUE(stream->AddTrack(video_track));
+
+    // Verify that the track list observer have been notified
+    // that the track have been added.
+    EXPECT_EQ(tracklist_observer.NoChanged(), 1);
+  }
+
+  EXPECT_EQ(stream->tracks()->count(), 1u);
+
+  // Verify the track.
+  scoped_refptr<webrtc::MediaStreamTrack> track(stream->tracks()->at(0));
+  EXPECT_EQ(track->kind().compare(kVideoTrackKind), 0);
+  EXPECT_EQ(track->label().compare(kVideoDeviceName), 0);
+  EXPECT_TRUE(track->enabled());
+
+  // Verify the Track observer.
+  TestObserver observer1;
+  TestObserver observer2;
+  track->RegisterObserver(&observer1);
+  track->RegisterObserver(&observer2);
+  track->set_enabled(false);
+  EXPECT_EQ(observer1.NoChanged(), 1);
+  EXPECT_EQ(observer2.NoChanged(), 1);
+  EXPECT_FALSE(track->enabled());
 }
 
 }  // namespace webrtc

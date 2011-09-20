@@ -28,13 +28,19 @@
 #include <string>
 
 #include "gtest/gtest.h"
-#include "talk/app/webrtc_dev/local_stream_dev.h"
-#include "talk/app/webrtc_dev/peerconnectionmanager_impl.h"
+#include "talk/app/webrtc_dev/mediastreamimpl.h"
+#include "talk/app/webrtc_dev/peerconnectionmanagerimpl.h"
 #include "talk/base/basicpacketsocketfactory.h"
 #include "talk/base/scoped_ptr.h"
 #include "talk/base/thread.h"
 #include "talk/session/phone/webrtccommon.h"
 #include "talk/session/phone/webrtcvoe.h"
+
+#ifdef WEBRTC_RELATIVE_PATH
+#include "modules/audio_device/main/source/audio_device_impl.h"
+#else
+#include "third_party/webrtc/files/include/audio_device_impl.h"
+#endif
 
 static const char kAudioDeviceLabel[] = "dummy_audio_device";
 
@@ -52,9 +58,8 @@ TEST(PeerConnectionManager, CreatePCUsingInternalModules) {
 
 TEST(PeerConnectionManager, CreatePCUsingExternalModules) {
   // Create an audio device. Use the default sound card.
-  AudioDeviceModule* module = AudioDeviceModule::Create(0);
-  scoped_refptr<AudioDevice> audio_device(AudioDevice::Create(
-      kAudioDeviceLabel, module));
+  scoped_refptr<AudioDeviceModule> audio_device(
+      AudioDeviceModuleImpl::Create(0));
 
   // Creata a libjingle thread used as internal worker thread.
   talk_base::scoped_ptr<talk_base::Thread> w_thread(new talk_base::Thread);

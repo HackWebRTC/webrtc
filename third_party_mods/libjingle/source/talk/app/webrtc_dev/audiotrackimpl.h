@@ -25,39 +25,54 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_APP_WEBRTC_REMOTE_STREAM_H_
-#define TALK_APP_WEBRTC_REMOTE_STREAM_H_
+#ifndef TALK_APP_WEBRTC_AUDIOTRACKIMPL_H_
+#define TALK_APP_WEBRTC_AUDIOTRACKIMPL_H_
 
-#include "talk/app/webrtc_dev/media_stream_impl_dev.h"
-#include "talk/app/webrtc_dev/stream_dev.h"
-#include "talk/base/scoped_ptr.h"
+#include <string>
+
+#include "talk/app/webrtc_dev/notifierimpl.h"
+#include "talk/app/webrtc_dev/scoped_refptr.h"
+#include "talk/app/webrtc_dev/mediastream.h"
+#ifdef WEBRTC_RELATIVE_PATH
+#include "modules/audio_device/main/interface/audio_device.h"
+#else
+#include "third_party/webrtc/files/include/audio_device.h"
+#endif
 
 namespace webrtc {
 
-/////////////////////////////////////////////
-// Remote stream
-class RemoteMediaStreamImpl
-    : public RemoteMediaStream,
-      public NotifierImpl<MediaStreamTrackList> {
+class AudioTrackImpl : public NotifierImpl<LocalAudioTrack> {
  public:
-  static scoped_refptr<RemoteMediaStream> Create(const std::string& label);
-  bool AddTrack(MediaStreamTrack* track);
+  // Creates an audio track. This can be used in remote media streams.
+  // For local audio tracks use CreateLocalAudioTrack.
+  static scoped_refptr<AudioTrack> Create(const std::string& label,
+                                          uint32 ssrc);
 
-  // Implement MediaStream.
+  // Get the AudioDeviceModule associated with this track.
+  virtual scoped_refptr<AudioDeviceModule> GetAudioDevice();
+
+  // Implement MediaStreamTrack
+  virtual const std::string& kind();
   virtual const std::string& label();
-  virtual scoped_refptr<MediaStreamTrackList> tracks();
-  virtual ReadyState ready_state();
-
-  // Implement MediaStreamTrackList.
-  virtual size_t count();
-  virtual scoped_refptr<MediaStreamTrack> at(size_t index);
+  virtual uint32 ssrc();
+  virtual bool enabled();
+  virtual bool set_enabled(bool enable);
+  virtual bool set_ssrc(uint32 ssrc);
 
  protected:
-  explicit RemoteMediaStreamImpl(const std::string& label);
-  MediaStreamImpl media_stream_impl_;
-  MediaStreamTrackListImpl tracks_;
+  AudioTrackImpl(const std::string& label, uint32 ssrc);
+  AudioTrackImpl(const std::string& label, AudioDeviceModule* audio_device);
+
+ private:
+  bool enabled_;
+  std::string kind_;
+  std::string label_;
+  uint32 ssrc_;
+  scoped_refptr<AudioDeviceModule> audio_device_;
 };
+
+
 
 }  // namespace webrtc
 
-#endif  // TALK_APP_WEBRTC_REMOTE_STREAM_H_
+#endif  // TALK_APP_WEBRTC_AUDIOTRACKIMPL_H_

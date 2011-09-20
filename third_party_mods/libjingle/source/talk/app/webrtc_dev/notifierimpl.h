@@ -24,65 +24,50 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include "talk/app/webrtc_dev/local_stream_dev.h"
+
+#ifndef TALK_APP_WEBRTC_NOTIFIERIMPL_H_
+#define TALK_APP_WEBRTC_NOTIFIERIMPL_H_
+
+#include <list>
+
+#include "talk/base/common.h"
+#include "talk/app/webrtc_dev/mediastream.h"
 
 namespace webrtc {
 
-class LocalVideoTrackImpl : public NotifierImpl<LocalVideoTrack> {
+// Implement a template version of a notifier.
+template <class T>
+class NotifierImpl : public T {
  public:
-  LocalVideoTrackImpl() {}
-  explicit LocalVideoTrackImpl(VideoDevice* video_device)
-      : enabled_(true),
-        kind_(kVideoTrackKind),
-        video_device_(video_device) {
+  NotifierImpl() {
   }
 
-  virtual void SetRenderer(VideoRenderer* renderer) {
-    video_renderer_ = renderer;
-    NotifierImpl<LocalVideoTrack>::FireOnChanged();
+  virtual void RegisterObserver(Observer* observer) {
+    ASSERT(observer != NULL);
+    observers_.push_back(observer);
   }
 
-  virtual scoped_refptr<VideoRenderer> GetRenderer() {
-    return video_renderer_.get();
+  virtual void UnregisterObserver(Observer* observer) {
+    for (std::list<Observer*>::iterator it = observers_.begin();
+         it != observers_.end(); it++) {
+      if (*it == observer) {
+        observers_.erase(it);
+        break;
+      }
+    }
   }
 
-  // Get the VideoCapture device associated with this track.
-  virtual scoped_refptr<VideoDevice> GetVideoCapture() {
-    return video_device_.get();
+  void FireOnChanged() {
+    for (std::list<Observer*>::iterator it = observers_.begin();
+         it != observers_.end(); ++it) {
+      (*it)-> OnChanged();
+    }
   }
 
-  // Implement MediaStreamTrack
-  virtual const std::string& kind() {
-    return kind_;
-  }
-
-  virtual const std::string& label() {
-    return video_device_->name();
-  }
-
-  virtual bool enabled() {
-    return enabled_;
-  }
-
-  virtual bool set_enabled(bool enable) {
-    bool fire_on_change = enable != enabled_;
-    enabled_ = enable;
-    if (fire_on_change)
-      NotifierImpl<LocalVideoTrack>::FireOnChanged();
-  }
-
- private:
-  bool enabled_;
-  std::string kind_;
-  scoped_refptr<VideoDevice> video_device_;
-  scoped_refptr<VideoRenderer> video_renderer_;
+ protected:
+  std::list<Observer*> observers_;
 };
 
-scoped_refptr<LocalVideoTrack> LocalVideoTrack::Create(
-    VideoDevice* video_device) {
-  RefCountImpl<LocalVideoTrackImpl>* track =
-      new RefCountImpl<LocalVideoTrackImpl>(video_device);
-  return track;
-}
-
 }  // namespace webrtc
+
+#endif  // TALK_APP_WEBRTC_NOTIFIERIMPL_H_

@@ -30,7 +30,7 @@
 
 #include <string>
 
-#include "talk/app/webrtc_dev/stream_dev.h"
+#include "talk/app/webrtc_dev/mediastream.h"
 
 namespace talk_base {
   class Thread;
@@ -67,10 +67,10 @@ class PeerConnectionObserver {
   virtual void OnStateChange(Readiness state) = 0;
 
   // Triggered when media is received on a new stream from remote peer.
-  virtual void OnAddStream(RemoteMediaStream* stream) = 0;
+  virtual void OnAddStream(MediaStream* stream) = 0;
 
   // Triggered when a remote peer close a stream.
-  virtual void OnRemoveStream(RemoteMediaStream* stream) = 0;
+  virtual void OnRemoveStream(MediaStream* stream) = 0;
 
  protected:
   // Dtor protected as objects shouldn't be deleted via this interface.
@@ -156,7 +156,7 @@ class PeerConnectionManager : public RefCount {
       talk_base::Thread* worker_thread,
       PcNetworkManager* network_manager,
       PcPacketSocketFactory* packet_socket_factory,
-      AudioDevice* default_adm);
+      AudioDeviceModule* default_adm);
 
   virtual scoped_refptr<PeerConnection> CreatePeerConnection(
       const std::string& config) = 0;

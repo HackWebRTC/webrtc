@@ -24,41 +24,66 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
-#include "talk/app/webrtc_dev/media_stream_impl_dev.h"
+#include "talk/app/webrtc_dev/mediastreamimpl.h"
 
 namespace webrtc {
 
-MediaStreamImpl::MediaStreamImpl(const std::string& label)
-    : label_(label),
-      ready_state_(MediaStream::kInitializing) {
+scoped_refptr<LocalMediaStream> CreateLocalMediaStream(
+    const std::string& label) {
+  return MediaStreamImpl::Create(label);
 }
 
-// Implement MediaStream
-const std::string& MediaStreamImpl::label() const {
+scoped_refptr<MediaStreamImpl> MediaStreamImpl::Create(
+    const std::string& label) {
+  RefCountImpl<MediaStreamImpl>* stream =
+      new RefCountImpl<MediaStreamImpl>(label);
+  return stream;
+}
+
+MediaStreamImpl::MediaStreamImpl(const std::string& label)
+    : label_(label),
+      ready_state_(MediaStream::kInitializing),
+      track_list_(new RefCountImpl<MediaStreamTrackListImpl>()) {
+}
+
+const std::string& MediaStreamImpl::label() {
   return label_;
 }
 
-MediaStream::ReadyState MediaStreamImpl::ready_state() const {
+scoped_refptr<MediaStreamTrackList> MediaStreamImpl::tracks() {
+  return track_list_;
+}
+
+MediaStream::ReadyState MediaStreamImpl::ready_state() {
   return ready_state_;
 }
 
-MediaStreamTrackListImpl::MediaStreamTrackListImpl() {
+void MediaStreamImpl::set_ready_state(MediaStream::ReadyState new_state) {
+  ready_state_ = new_state;
+  NotifierImpl<LocalMediaStream>::FireOnChanged();
 }
 
-// Implement MediaStreamTrackList.
-size_t MediaStreamTrackListImpl::count() const {
+bool MediaStreamImpl::AddTrack(MediaStreamTrack* track) {
+  if (ready_state() != kInitializing)
+    return false;
+
+  track_list_->AddTrack(track);
+  return true;
+}
+
+void MediaStreamImpl::MediaStreamTrackListImpl::AddTrack(
+    MediaStreamTrack* track) {
+  tracks_.push_back(track);
+  NotifierImpl<MediaStreamTrackList>::FireOnChanged();
+}
+
+size_t MediaStreamImpl::MediaStreamTrackListImpl::count() {
   return tracks_.size();
 }
 
-scoped_refptr<MediaStreamTrack>
-MediaStreamTrackListImpl::at(size_t index) const {
-  return tracks_[index];
-}
-
-bool MediaStreamTrackListImpl::AddTrack(MediaStreamTrack* track) {
-  tracks_.push_back(track);
-  return true;
+scoped_refptr<MediaStreamTrack> MediaStreamImpl::MediaStreamTrackListImpl::at(
+    size_t index) {
+  return tracks_.at(index);
 }
 
 }  // namespace webrtc

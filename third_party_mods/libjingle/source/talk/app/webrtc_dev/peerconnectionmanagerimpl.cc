@@ -25,13 +25,21 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/app/webrtc_dev/peerconnection_impl_dev.h"
-#include "talk/app/webrtc_dev/peerconnectionmanager_impl.h"
+#include "talk/app/webrtc_dev/peerconnectionmanagerimpl.h"
+
+#include "talk/app/webrtc_dev/peerconnectionimpl.h"
 #include "talk/app/webrtc_dev/webrtc_devicemanager.h"
-#include "talk/app/webrtc_dev/webrtc_mediaengine.h"
 #include "talk/base/basicpacketsocketfactory.h"
 #include "talk/base/thread.h"
 #include "talk/session/phone/channelmanager.h"
+#include "talk/session/phone/webrtcmediaengine.h"
+
+#ifdef WEBRTC_RELATIVE_PATH
+#include "modules/audio_device/main/interface/audio_device.h"
+#else
+#include "third_party/webrtc/files/include/audio_device.h"
+#endif
+
 
 namespace webrtc {
 
@@ -88,7 +96,7 @@ scoped_refptr<PeerConnectionManager> PeerConnectionManager::Create(
     talk_base::Thread* worker_thread,
     PcNetworkManager* network_manager,
     PcPacketSocketFactory* socket_factory,
-    AudioDevice* default_adm) {
+    AudioDeviceModule* default_adm) {
   RefCountImpl<PeerConnectionManagerImpl>* pc_manager =
       new RefCountImpl<PeerConnectionManagerImpl>(worker_thread,
                                                   network_manager,
@@ -114,7 +122,7 @@ PeerConnectionManagerImpl::PeerConnectionManagerImpl(
     talk_base::Thread* worker_thread,
     PcNetworkManager* network_manager,
     PcPacketSocketFactory* socket_factory,
-    AudioDevice* default_adm)
+    AudioDeviceModule* default_adm)
     : worker_thread_ptr_(worker_thread),
       network_manager_(network_manager),
       socket_factory_(socket_factory),
@@ -132,14 +140,14 @@ bool PeerConnectionManagerImpl::Initialize() {
   if (worker_thread_.get() && !worker_thread_->Start())
     return false;
   cricket::DeviceManager* device_manager(new WebRtcDeviceManager());
-  WebRtcMediaEngine* webrtc_media_engine = NULL;
-  if (default_adm_.get() != NULL) {
-    webrtc_media_engine = new WebRtcMediaEngine(default_adm_.get()->module(),
-                                                NULL,   // No secondary adm.
-                                                NULL);  // No vcm available.
-  } else {
-    webrtc_media_engine = new WebRtcMediaEngine();
-  }
+  cricket::WebRtcMediaEngine* webrtc_media_engine = NULL;
+
+  // TODO(perkj):  Need to make sure only one VoE is created inside
+  // WebRtcMediaEngine.
+  webrtc_media_engine = new cricket::WebRtcMediaEngine(
+      default_adm_.get(),
+      NULL,   // No secondary adm.
+      NULL);  // No vcm available.
 
   channel_manager_.reset(new cricket::ChannelManager(
       webrtc_media_engine, device_manager, worker_thread_ptr_));

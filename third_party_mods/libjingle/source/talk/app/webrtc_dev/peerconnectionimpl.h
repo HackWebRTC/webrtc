@@ -25,13 +25,13 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TALK_APP_WEBRTC_PEERCONNECTION_IMPL_H_
-#define TALK_APP_WEBRTC_PEERCONNECTION_IMPL_H_
+#ifndef TALK_APP_WEBRTC_PEERCONNECTIONIMPL_H_
+#define TALK_APP_WEBRTC_PEERCONNECTIONIMPL_H_
 
 #include <map>
 #include <string>
 
-#include "talk/app/webrtc_dev/peerconnection_dev.h"
+#include "talk/app/webrtc_dev/peerconnection.h"
 #include "talk/base/scoped_ptr.h"
 #include "talk/p2p/base/portallocator.h"
 
@@ -40,7 +40,7 @@ class ChannelManager;
 }
 
 namespace webrtc {
-class LocalStreamCollection;
+class StreamCollectionImpl;
 
 class PeerConnectionImpl : public PeerConnection,
                            public talk_base::MessageHandler {
@@ -98,7 +98,7 @@ class PeerConnectionImpl : public PeerConnection,
   };
 
   PeerConnectionObserver* observer_;
-  scoped_refptr<LocalStreamCollection> local_media_streams_;
+  scoped_refptr<StreamCollectionImpl> local_media_streams_;
 
   talk_base::Thread* worker_thread_;  // Weak ref from PeerConnectionManager.
   cricket::ChannelManager* channel_manager_;
@@ -109,4 +109,4 @@ class PeerConnectionImpl : public PeerConnection,
 
 }  // namespace webrtc
 
-#endif  // TALK_APP_WEBRTC_PEERCONNECTION_IMPL_H_
+#endif  // TALK_APP_WEBRTC_PEERCONNECTIONIMPL_H_

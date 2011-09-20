@@ -26,70 +26,17 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/app/webrtc_dev/peerconnection_impl_dev.h"
+#include "talk/app/webrtc_dev/peerconnectionimpl.h"
 
 #include <vector>
 
 #include "talk/app/webrtc_dev/scoped_refptr_msg.h"
+#include "talk/app/webrtc_dev/streamcollectionimpl.h"
 #include "talk/base/logging.h"
 #include "talk/p2p/client/basicportallocator.h"
 #include "talk/session/phone/channelmanager.h"
 
 namespace webrtc {
-
-// Implementation of StreamCollection intended for local streams.
-class LocalStreamCollection : public StreamCollection {
- public:
-  static scoped_refptr<LocalStreamCollection> Create() {
-    RefCountImpl<LocalStreamCollection>* implementation =
-         new RefCountImpl<LocalStreamCollection>();
-    return implementation;
-  }
-
-  static scoped_refptr<LocalStreamCollection> Create(
-      LocalStreamCollection* local_streams) {
-    RefCountImpl<LocalStreamCollection>* implementation =
-         new RefCountImpl<LocalStreamCollection>(local_streams);
-    return implementation;
-  }
-
-  virtual size_t count() {
-    return local_media_streams_.size();
-  }
-
-  virtual MediaStream* at(size_t index) {
-    return local_media_streams_.at(index);
-  }
-
-  void AddStream(LocalMediaStream* local_stream) {
-    for (LocalStreamVector::iterator it = local_media_streams_.begin();
-         it != local_media_streams_.end(); ++it) {
-      if ((*it)->label().compare(local_stream->label()) == 0)
-        return;
-    }
-    local_media_streams_.push_back(local_stream);
-  }
-
-  void RemoveStream(LocalMediaStream* remove_stream) {
-    for (LocalStreamVector::iterator it = local_media_streams_.begin();
-         it != local_media_streams_.end(); ++it) {
-      if ((*it)->label().compare(remove_stream->label()) == 0) {
-        local_media_streams_.erase(it);
-        break;
-      }
-    }
-  }
-
- protected:
-  LocalStreamCollection() {}
-  explicit LocalStreamCollection(LocalStreamCollection* original)
-      : local_media_streams_(original->local_media_streams_) {
-  }
-  // Map of local media streams.
-  typedef std::vector<scoped_refptr<LocalMediaStream> >
-      LocalStreamVector;
-  LocalStreamVector local_media_streams_;
-};
 
 PeerConnectionImpl::PeerConnectionImpl(
     cricket::ChannelManager* channel_manager,
@@ -97,7 +44,7 @@ PeerConnectionImpl::PeerConnectionImpl(
     PcNetworkManager* network_manager,
     PcPacketSocketFactory* socket_factory)
     : observer_(NULL),
-      local_media_streams_(LocalStreamCollection::Create()),
+      local_media_streams_(StreamCollectionImpl::Create()),
       worker_thread_(worker_thread),
       channel_manager_(channel_manager),
       network_manager_(network_manager),
@@ -108,6 +55,7 @@ PeerConnectionImpl::PeerConnectionImpl(
 }
 
 PeerConnectionImpl::~PeerConnectionImpl() {
+  worker_thread_->Clear(this);
 }
 
 bool PeerConnectionImpl::Initialize(const std::string& configuration) {
@@ -132,9 +80,9 @@ void PeerConnectionImpl::RemoveStream(LocalMediaStream* remove_stream) {
 }
 
 void PeerConnectionImpl::CommitStreamChanges() {
-  ScopedRefMessageData<LocalStreamCollection>* msg =
-           new ScopedRefMessageData<LocalStreamCollection> (
-               LocalStreamCollection::Create(local_media_streams_));
+  ScopedRefMessageData<StreamCollectionImpl>* msg =
+           new ScopedRefMessageData<StreamCollectionImpl> (
+               StreamCollectionImpl::Create(local_media_streams_));
   worker_thread_->Post(this, MSG_COMMITSTREAMCHANGES, msg);
 }
 

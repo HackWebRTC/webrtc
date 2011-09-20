@@ -27,7 +27,7 @@
 
 #include "talk/app/webrtc/webrtcsessionchannel.h"
 
-#include "talk/app/webrtc/stream_dev.h"
+#include "talk/app/webrtc/mediastream.h"
 #include "talk/app/webrtc/webrtc_json_dev.h"
 #include "talk/base/logging.h"
 #include "talk/base/thread.h"

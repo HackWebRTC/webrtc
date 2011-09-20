@@ -24,44 +24,43 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+#ifndef TALK_APP_WEBRTC_PEERCONNECTIONMANAGERIMPL_H_
+#define TALK_APP_WEBRTC_PEERCONNECTIONMANAGERIMPL_H_
 
-#ifndef TALK_APP_WEBRTC_LOCAL_STREAM_H_
-#define TALK_APP_WEBRTC_LOCAL_STREAM_H_
+#include <string>
 
-#include "talk/app/webrtc_dev/media_stream_impl_dev.h"
-#include "talk/app/webrtc_dev/stream_dev.h"
 #include "talk/base/scoped_ptr.h"
+#include "talk/app/webrtc_dev/peerconnection.h"
+#include "talk/app/webrtc_dev/mediastream.h"
+#include "talk/session/phone/channelmanager.h"
 
 namespace webrtc {
 
-class MediaStreamImpl;
-/////////////////////////////////////////////
-// Local streams are  Created by the PeerConnections client and provided to a
-// PeerConnection object using the call PeerConnection::AddStream.
-
-class LocalStreamImpl
-    : public LocalMediaStream,
-      public NotifierImpl<MediaStreamTrackList> {
+class PeerConnectionManagerImpl : public PeerConnectionManager {
  public:
-  // Implement LocalStream.
-  virtual bool AddTrack(MediaStreamTrack* track);
-
-  // Implement MediaStream.
-  virtual const std::string& label();
-  virtual scoped_refptr<MediaStreamTrackList> tracks();
-  virtual ReadyState ready_state();
-
-  // Implement MediaStreamTrackList.
-  virtual size_t count();
-  virtual scoped_refptr<MediaStreamTrack> at(size_t index);
+  scoped_refptr<PeerConnection> CreatePeerConnection(const std::string& config);
+  bool Initialize();
 
  protected:
-  explicit LocalStreamImpl(const std::string& label);
+  PeerConnectionManagerImpl();
+  PeerConnectionManagerImpl(talk_base::Thread* worker_thread,
+                            PcNetworkManager* network_manager,
+                            PcPacketSocketFactory* socket_factory,
+                            AudioDeviceModule* default_adm);
+  virtual ~PeerConnectionManagerImpl();
 
-  MediaStreamImpl media_stream_impl_;
-  MediaStreamTrackListImpl tracks_;
+ private:
+  // Channel manager worker thread. Only used if the external thread is not set.
+  talk_base::scoped_ptr<talk_base::Thread> worker_thread_;
+  talk_base::Thread* worker_thread_ptr_;
+  scoped_refptr<PcNetworkManager> network_manager_;
+  scoped_refptr<PcPacketSocketFactory> socket_factory_;
+  talk_base::scoped_ptr<cricket::ChannelManager> channel_manager_;
+
+  // External Audio device used for audio playback.
+  scoped_refptr<AudioDeviceModule> default_adm_;
 };
 
 }  // namespace webrtc
 
-#endif  // TALK_APP_WEBRTC_LOCAL_STREAM_H_
+#endif  // TALK_APP_WEBRTC_PEERCONNECTIONMANAGER_IMPL_H_

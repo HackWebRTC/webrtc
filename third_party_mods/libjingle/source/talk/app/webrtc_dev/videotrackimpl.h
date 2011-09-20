@@ -1,6 +1,6 @@
 /*
  * libjingle
- * Copyright 2004--2011, Google Inc.
+ * Copyright 2011, Google Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -24,54 +24,52 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include "talk/app/webrtc_dev/local_stream_dev.h"
+
+#ifndef TALK_APP_WEBRTC_VIDEOTRACKIMPL_H_
+#define TALK_APP_WEBRTC_VIDEOTRACKIMPL_H_
+
+#include <string>
+
+#include "talk/app/webrtc_dev/mediastream.h"
+#include "talk/app/webrtc_dev/notifierimpl.h"
+#include "talk/app/webrtc_dev/scoped_refptr.h"
+
+#ifdef WEBRTC_RELATIVE_PATH
+#include "modules/video_capture/main/interface/video_capture.h"
+#else
+#include "third_party/webrtc/files/include/video_capture.h"
+#endif
 
 namespace webrtc {
 
-class LocalAudioTrackImpl : public NotifierImpl<LocalAudioTrack> {
+class VideoTrackImpl : public NotifierImpl<LocalVideoTrack> {
  public:
-  LocalAudioTrackImpl(){};
-  LocalAudioTrackImpl(AudioDevice* audio_device)
-      : enabled_(true),
-        kind_(kAudioTrackKind),
-        audio_device_(audio_device) {
-  }
+  static scoped_refptr<VideoTrack> Create(const std::string& label,
+                                          uint32 ssrc);
+  virtual scoped_refptr<VideoCaptureModule> GetVideoCapture();
+  virtual void SetRenderer(VideoRenderer* renderer);
+  scoped_refptr<VideoRenderer> GetRenderer();
 
-  // Get the AudioDevice associated with this track.
-  virtual scoped_refptr<AudioDevice> GetAudioDevice() {
-    return audio_device_.get();
-  };
+  virtual const std::string& kind();
+  virtual const std::string& label();
+  virtual uint32 ssrc();
+  virtual bool enabled();
+  virtual bool set_enabled(bool enable);
+  virtual bool set_ssrc(uint32 ssrc);
 
-  // Implement MediaStreamTrack
-  virtual const std::string& kind() {
-    return kind_;
-  }
-
-  virtual const std::string& label() {
-    return audio_device_->name();
-  }
-
-  virtual bool enabled() {
-    return enabled_;
-  }
-
-  virtual bool set_enabled(bool enable) {
-    bool fire_on_change = enable != enabled_;
-    enabled_ = enable;
-    if (fire_on_change)
-      NotifierImpl<LocalAudioTrack>::FireOnChanged();
-  }
+ protected:
+  VideoTrackImpl(const std::string& label, uint32 ssrc);
+  VideoTrackImpl(const std::string& label, VideoCaptureModule* video_device);
 
  private:
   bool enabled_;
   std::string kind_;
-  scoped_refptr<AudioDevice> audio_device_;
+  std::string label_;
+  uint32 ssrc_;
+  scoped_refptr<VideoCaptureModule> video_device_;
+  scoped_refptr<VideoRenderer> video_renderer_;
 };
 
-scoped_refptr<LocalAudioTrack> LocalAudioTrack::Create(AudioDevice* audio_device) {
-  RefCountImpl<LocalAudioTrackImpl>* lstream =
-      new RefCountImpl<LocalAudioTrackImpl>(audio_device);
-  return lstream;
-}
+}  // namespace webrtc
 
-} // namespace webrtc
+#endif  // TALK_APP_WEBRTC_VIDEOTRACKIMPL_H_
