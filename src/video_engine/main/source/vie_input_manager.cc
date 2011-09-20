@@ -118,6 +118,9 @@ int ViEInputManager::NumberOfCaptureDevices()
 {
     WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_engineId), "%s",
                __FUNCTION__);
+#ifdef WEBRTC_VIDEO_EXTERNAL_CAPTURE_AND_RENDER
+    return 0;
+#endif
     assert(_ptrCaptureDeviceInfo);
     return _ptrCaptureDeviceInfo->NumberOfDevices();
 }
@@ -134,6 +137,9 @@ int ViEInputManager::GetDeviceName(WebRtc_UWord32 deviceNumber,
 {
     WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_engineId),
                "%s(deviceNumber: %d)", __FUNCTION__, deviceNumber);
+#ifdef WEBRTC_VIDEO_EXTERNAL_CAPTURE_AND_RENDER
+    return 0;
+#endif
     assert(_ptrCaptureDeviceInfo);
     return _ptrCaptureDeviceInfo->GetDeviceName(deviceNumber, deviceNameUTF8,
                                                 deviceNameLength,
@@ -150,6 +156,9 @@ int ViEInputManager::GetDeviceName(WebRtc_UWord32 deviceNumber,
 int ViEInputManager::NumberOfCaptureCapabilities(
                                         const WebRtc_UWord8* deviceUniqueIdUTF8)
 {
+#ifdef WEBRTC_VIDEO_EXTERNAL_CAPTURE_AND_RENDER
+    return 0;
+#endif
     WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_engineId), "%s",
                __FUNCTION__);
     assert(_ptrCaptureDeviceInfo);
@@ -167,6 +176,9 @@ int ViEInputManager::GetCaptureCapability(const WebRtc_UWord8* deviceUniqueIdUTF
     WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_engineId),
                "%s(deviceUniqueIdUTF8: %s, deviceCapabilityNumber: %d)",
                __FUNCTION__, deviceUniqueIdUTF8, deviceCapabilityNumber);
+#ifdef WEBRTC_VIDEO_EXTERNAL_CAPTURE_AND_RENDER
+    return -1;
+#endif
     assert(_ptrCaptureDeviceInfo);
     VideoCaptureCapability moduleCapability;
     int result = _ptrCaptureDeviceInfo->GetCapability(deviceUniqueIdUTF8,
@@ -188,6 +200,9 @@ int ViEInputManager::GetOrientation(const WebRtc_UWord8* deviceUniqueIdUTF8,
 {
     WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_engineId),
                "%s(deviceUniqueIdUTF8: %s,)", __FUNCTION__, deviceUniqueIdUTF8);
+#ifdef WEBRTC_VIDEO_EXTERNAL_CAPTURE_AND_RENDER
+    return -1;
+#endif
     assert(_ptrCaptureDeviceInfo);
     VideoCaptureRotation moduleOrientation;
     int result = _ptrCaptureDeviceInfo->GetOrientation(deviceUniqueIdUTF8,
@@ -226,6 +241,9 @@ int ViEInputManager::DisplayCaptureSettingsDialogBox(
                                                      WebRtc_UWord32 positionX,
                                                      WebRtc_UWord32 positionY)
 {
+#ifdef WEBRTC_VIDEO_EXTERNAL_CAPTURE_AND_RENDER
+    return -1;
+#endif
     assert(_ptrCaptureDeviceInfo);
     return _ptrCaptureDeviceInfo->DisplayCaptureSettingsDialogBox(
                                                                   deviceUniqueIdUTF8,
