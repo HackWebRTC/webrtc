@@ -118,6 +118,12 @@ RTCPUtility::RTCPParserV2::Iterate()
         case State_PSFB_FIRItem:
             IterateFIRItem();
             break;
+        case State_PSFB_AppItem:
+            IteratePsfbAppItem();
+            break;
+        case State_PSFB_REMBItem:
+            IteratePsfbREMBItem();
+            break;
         case State_AppItem:
             IterateAppItem();
             break;
@@ -321,6 +327,26 @@ RTCPUtility::RTCPParserV2::IterateFIRItem()
 }
 
 void
+RTCPUtility::RTCPParserV2::IteratePsfbAppItem()
+{
+    const bool success = ParsePsfbAppItem();
+    if (!success)
+    {
+        Iterate();
+    }
+}
+
+void
+RTCPUtility::RTCPParserV2::IteratePsfbREMBItem()
+{
+    const bool success = ParsePsfbREMBItem();
+    if (!success)
+    {
+        Iterate();
+    }
+}
+
+void
 RTCPUtility::RTCPParserV2::IterateAppItem()
 {
     const bool success = ParseAPPItem();
@@ -340,8 +366,8 @@ RTCPUtility::RTCPParserV2::Validate()
 
     RTCPCommonHeader header;
     const bool success = RTCPParseCommonHeader(_ptrRTCPDataBegin,
-                                                _ptrRTCPDataEnd,
-                                                header);
+                                               _ptrRTCPDataEnd,
+                                               header);
 
     if (!success)
     {
@@ -1010,6 +1036,11 @@ RTCPUtility::RTCPParserV2::ParseFBCommon(const RTCPCommonHeader& header)
 
             _state = State_PSFB_FIRItem;
             return true;
+        case 15:
+            _packetType            = kRtcpPsfbAppCode;
+
+            _state = State_PSFB_AppItem;
+            return true;
         default:
             break;
         }
@@ -1091,6 +1122,78 @@ RTCPUtility::RTCPParserV2::ParseNACKItem()
     _packet.NACKItem.BitMask = *_ptrRTCPData++ << 8;
     _packet.NACKItem.BitMask += *_ptrRTCPData++;
 
+    return true;
+}
+
+bool
+RTCPUtility::RTCPParserV2::ParsePsfbAppItem()
+{
+    const ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
+
+    if (length < 4)
+    {
+        _state = State_TopLevel;
+
+        EndCurrentBlock();
+        return false;
+    }
+    if(*_ptrRTCPData++ != 'R')
+    {
+        _state = State_TopLevel;
+
+        EndCurrentBlock();
+        return false;
+    }
+    if(*_ptrRTCPData++ != 'E')
+    {
+        _state = State_TopLevel;
+
+        EndCurrentBlock();
+        return false;
+    }
+    if(*_ptrRTCPData++ != 'M')
+    {
+        _state = State_TopLevel;
+
+        EndCurrentBlock();
+        return false;
+    }
+    if(*_ptrRTCPData++ != 'B')
+    {
+        _state = State_TopLevel;
+
+        EndCurrentBlock();
+        return false;
+    }
+    _packetType = kRtcpPsfbRembItemCode;
+    _state = State_PSFB_REMBItem;
+    return true;
+}
+ 
+bool
+RTCPUtility::RTCPParserV2::ParsePsfbREMBItem()
+{
+    const ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
+
+    if (length < 4)
+    {
+        _state = State_TopLevel;
+
+        EndCurrentBlock();
+        return false;
+    }
+
+    const WebRtc_UWord8 numSSRC = *_ptrRTCPData++;
+    const WebRtc_UWord8 brExp = (_ptrRTCPData[0] >> 2) & 0x3F;
+
+    WebRtc_UWord32 brMantissa = (_ptrRTCPData[0] & 0x03) << 16;
+    brMantissa += (_ptrRTCPData[1] << 8);
+    brMantissa += (_ptrRTCPData[2]);
+
+    _ptrRTCPData += 3; // Fwd read data
+    _packet.REMB.BitRate = (brMantissa << brExp);
+
+    _ptrRTCPData += 4 * numSSRC; // Ignore the SSRCs for now
     return true;
 }
 

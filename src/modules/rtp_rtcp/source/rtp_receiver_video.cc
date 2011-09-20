@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "rtp_receiver_video.h"
+
 #include <cassert> //assert
 #include <cstring>  // memcpy()
 #include <math.h>
 
-#include "rtp_receiver_video.h"
-
 #include "critical_section_wrapper.h"
 #include "tick_util.h"
-
 #include "receiver_fec.h"
+#include "rtp_rtcp_impl.h"
 
 namespace webrtc {
 WebRtc_UWord32 BitRateBPS(WebRtc_UWord16 x )
@@ -26,11 +26,11 @@ WebRtc_UWord32 BitRateBPS(WebRtc_UWord16 x )
 }
 
 RTPReceiverVideo::RTPReceiverVideo(const WebRtc_Word32 id,
-                                   ModuleRtpRtcpPrivate& callback):
+                                   ModuleRtpRtcpImpl* owner):
     _id(id),
+    _rtpRtcp(*owner),
     _criticalSectionFeedback(*CriticalSectionWrapper::CreateCriticalSection()),
     _cbVideoFeedback(NULL),
-    _cbPrivateFeedback(callback),
     _criticalSectionReceiverVideo(*CriticalSectionWrapper::CreateCriticalSection()),
 
     _completeFrame(false),
@@ -304,7 +304,7 @@ RTPReceiverVideo::ParseVideoCodecSpecific(WebRtcRTPHeader* rtpHeader,
     _criticalSectionReceiverVideo.Leave();
 
     // Call the callback outside critical section
-    const RateControlRegion region = _cbPrivateFeedback.OnOverUseStateUpdate(input);
+    const RateControlRegion region = _rtpRtcp.OnOverUseStateUpdate(input);
 
     _criticalSectionReceiverVideo.Enter();
     _overUseDetector.SetRateControlRegion(region);

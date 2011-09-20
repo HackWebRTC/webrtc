@@ -20,14 +20,16 @@
 #include "common_types.h"
 #include "critical_section_wrapper.h"
 
+#include "rtp_rtcp_impl.h"
+
 namespace webrtc {
 RTCPSender::RTCPSender(const WebRtc_Word32 id,
                        const bool audio,
-                       ModuleRtpRtcpPrivate& callback) :
+                       ModuleRtpRtcpImpl* owner) :
     _id(id),
     _audio(audio),
     _method(kRtcpOff),
-    _cbRtcpPrivate(callback),
+    _rtpRtcp(*owner),
     _criticalSectionTransport(*CriticalSectionWrapper::CreateCriticalSection()),
     _cbTransport(NULL),
 
@@ -35,6 +37,8 @@ RTCPSender::RTCPSender(const WebRtc_Word32 id,
     _usingNack(false),
     _sending(false),
     _sendTMMBN(false),
+    _REMB(false),
+    _sendREMB(false),
     _TMMBR(false),
     _nextTimeToSendRTCP(0),
     _SSRC(0),
@@ -54,6 +58,11 @@ RTCPSender::RTCPSender(const WebRtc_Word32 id,
 
     _sequenceNumberFIR(0),
     _lastTimeFIR(0),
+
+    _lengthRembSSRC(0),
+    _sizeRembSSRC(0),
+    _rembSSRC(NULL),
+    _rembBitrate(0),
 
     _tmmbrHelp(audio),
     _tmmbr_Send(0),
@@ -77,10 +86,8 @@ RTCPSender::RTCPSender(const WebRtc_Word32 id,
 
 RTCPSender::~RTCPSender()
 {
-    if(_appData)
-    {
-        delete [] _appData;
-    }
+    delete [] _rembSSRC;
+    delete [] _appData;
 
     MapItem* item = _reportBlocks.First();
     while(item)
@@ -121,6 +128,8 @@ RTCPSender::Init()
     _sending = false;
     _sendTMMBN = false;
     _TMMBR = false;
+    _REMB = false;
+    _sendREMB = false;
     _SSRC = 0;
     _remoteSSRC = 0;
     _cameraDelayMS = 0;
@@ -215,6 +224,44 @@ RTCPSender::SetSendingStatus(const bool sending)
     if(sendRTCPBye)
     {
         return SendRTCP(kRtcpBye);
+    }
+    return 0;
+}
+
+bool
+RTCPSender::REMB() const
+{
+    CriticalSectionScoped lock(_criticalSectionRTCPSender);
+    return _REMB;
+}
+
+WebRtc_Word32
+RTCPSender::SetREMBStatus(const bool enable)
+{
+    CriticalSectionScoped lock(_criticalSectionRTCPSender);
+    _REMB = enable;
+    return 0;
+}
+
+WebRtc_Word32
+RTCPSender::SetREMBData(const WebRtc_UWord32 bitrate,
+                        const WebRtc_UWord8 numberOfSSRC,
+                        const WebRtc_UWord32* SSRC)
+{
+    CriticalSectionScoped lock(_criticalSectionRTCPSender);
+    _rembBitrate = bitrate;
+ 
+    if(_sizeRembSSRC < numberOfSSRC)
+    {
+        delete [] _rembSSRC;
+        _rembSSRC = new WebRtc_UWord32[numberOfSSRC];
+        _sizeRembSSRC = numberOfSSRC;
+    } 
+
+    _lengthRembSSRC = numberOfSSRC;
+    for (int i = 0; i < numberOfSSRC; i++)
+    {  
+        _rembSSRC[i] = SSRC[i];
     }
     return 0;
 }
@@ -585,7 +632,7 @@ RTCPSender::BuildSR(WebRtc_UWord8* rtcpbuffer,
     WebRtc_UWord32 freqHz = 90000; // For video
     if(_audio)
     {
-        freqHz =  _cbRtcpPrivate.CurrentSendFrequencyHz();
+        freqHz =  _rtpRtcp.CurrentSendFrequencyHz();
         RTPtime = ModuleRTPUtility::CurrentRTP(freqHz);
     }
     else // video 
@@ -615,11 +662,11 @@ RTCPSender::BuildSR(WebRtc_UWord8* rtcpbuffer,
     pos += 4;
 
     //sender's packet count
-    ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer+pos, _cbRtcpPrivate.PacketCountSent());
+    ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer+pos, _rtpRtcp.PacketCountSent());
     pos += 4;
 
     //sender's octet count
-    ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer+pos, _cbRtcpPrivate.ByteCountSent());
+    ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer+pos, _rtpRtcp.ByteCountSent());
     pos += 4;
 
     WebRtc_UWord8 numberOfReportBlocks = 0;
@@ -1000,15 +1047,73 @@ RTCPSender::BuildRPSI(WebRtc_UWord8* rtcpbuffer,
 }
 
 WebRtc_Word32
-RTCPSender::BuildTMMBR(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos, WebRtc_UWord32 RTT)
+RTCPSender::BuildREMB(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos)
+{
+    // sanity
+    if(pos + 20 + 4 * _lengthRembSSRC >= IP_PACKET_SIZE)
+    {
+        return -2;
+    }
+    // add application layer feedback
+    WebRtc_UWord8 FMT = 15;
+    rtcpbuffer[pos++]=(WebRtc_UWord8)0x80 + FMT;
+    rtcpbuffer[pos++]=(WebRtc_UWord8)206;
+
+    rtcpbuffer[pos++]=(WebRtc_UWord8)0;
+    rtcpbuffer[pos++]=_lengthRembSSRC + 4;
+
+    // Add our own SSRC
+    ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer+pos, _SSRC);
+    pos += 4;
+
+    // Remote SSRC must be 0
+    ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer+pos, 0);
+    pos += 4;
+
+    rtcpbuffer[pos++]='R';
+    rtcpbuffer[pos++]='E';
+    rtcpbuffer[pos++]='M';
+    rtcpbuffer[pos++]='B';
+
+    rtcpbuffer[pos++] = _lengthRembSSRC;
+    // 6 bit Exp
+    // 18 bit mantissa
+    WebRtc_UWord8 brExp = 0;
+    for(WebRtc_UWord32 i=0; i<64; i++)
+    {
+        if(_rembBitrate <= ((WebRtc_UWord32)262143 << i))
+        {
+            brExp = i;
+            break;
+        }
+    }
+    const WebRtc_UWord32 brMantissa = (_rembBitrate >> brExp);
+    rtcpbuffer[pos++]=(WebRtc_UWord8)((brExp << 2) + ((brMantissa >> 16) & 0x03));
+    rtcpbuffer[pos++]=(WebRtc_UWord8)(brMantissa >> 8);
+    rtcpbuffer[pos++]=(WebRtc_UWord8)(brMantissa);
+
+    for (int i = 0; i < _lengthRembSSRC; i++) 
+    { 
+        ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer+pos, _rembSSRC[i]);
+        pos += 4;
+    }
+    return 0;
+}
+
+WebRtc_UWord32
+RTCPSender::CalculateNewTargetBitrate(WebRtc_UWord32 RTT)
+{
+    WebRtc_UWord32 target_bitrate = _remoteRateControl.TargetBitRate(RTT);
+    _tmmbr_Send = target_bitrate / 1000;
+    return target_bitrate;
+}
+
+WebRtc_Word32
+RTCPSender::BuildTMMBR(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos)
 {
     // Before sending the TMMBR check the received TMMBN, only an owner is allowed to raise the bitrate
     // If the sender is an owner of the TMMBN -> send TMMBR
     // If not an owner but the TMMBR would enter the TMMBN -> send TMMBR
-
-    // About to send TMMBR, first run remote rate control
-    // to get a target bit rate.
-    _tmmbr_Send = _remoteRateControl.TargetBitRate(RTT) / 1000;
 
     // get current bounding set from RTCP receiver
     bool tmmbrOwner = false;
@@ -1016,7 +1121,7 @@ RTCPSender::BuildTMMBR(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos, WebRtc_UW
 
     // holding _criticalSectionRTCPSender while calling RTCPreceiver which will accuire _criticalSectionRTCPReceiver
     // is a potental deadlock but since RTCPreceiver is not doing the revese we should be fine
-    WebRtc_Word32 lengthOfBoundingSet = _cbRtcpPrivate.BoundingSet(tmmbrOwner, candidateSet);
+    WebRtc_Word32 lengthOfBoundingSet = _rtpRtcp.BoundingSet(tmmbrOwner, candidateSet);
 
     if(lengthOfBoundingSet > 0)
     {
@@ -1479,10 +1584,10 @@ RTCPSender::SendRTCP(const WebRtc_UWord32 packetTypeFlags,
             rtcpPacketTypeFlags & kRtcpRr)
         {
             // get statistics from our RTPreceiver outside critsect
-            if(_cbRtcpPrivate.ReportBlockStatistics(&received.fractionLost,
-                                                    &received.cumulativeLost,
-                                                    &received.extendedHighSeqNum,
-                                                    &received.jitter) == 0)
+            if(_rtpRtcp.ReportBlockStatistics(&received.fractionLost,
+                                              &received.cumulativeLost,
+                                              &received.extendedHighSeqNum,
+                                              &received.jitter) == 0)
             {
                 hasReceived = true;
 
@@ -1491,7 +1596,9 @@ RTCPSender::SendRTCP(const WebRtc_UWord32 packetTypeFlags,
                 WebRtc_UWord32 remoteSR = 0;
 
                 // ok even if we have not received a SR, we will send 0 in that case
-                _cbRtcpPrivate.LastReceivedNTP(lastReceivedRRNTPsecs, lastReceivedRRNTPfrac, remoteSR);
+                _rtpRtcp.LastReceivedNTP(lastReceivedRRNTPsecs,
+                                         lastReceivedRRNTPfrac,
+                                         remoteSR);
 
                 // get our NTP as late as possible to avoid a race
                 ModuleRTPUtility::CurrentNTP(NTPsec, NTPfrac);
@@ -1531,6 +1638,11 @@ RTCPSender::SendRTCP(const WebRtc_UWord32 packetTypeFlags,
             rtcpPacketTypeFlags |= kRtcpApp;
             _appSend = false;
         }
+        if(_REMB && _sendREMB)
+        {
+            rtcpPacketTypeFlags |= kRtcpRemb;
+            _sendREMB = false;
+        }        
         if(_xrSendVoIPMetric)
         {
             rtcpPacketTypeFlags |= kRtcpXrVoipMetric;
@@ -1581,7 +1693,7 @@ RTCPSender::SendRTCP(const WebRtc_UWord32 packetTypeFlags,
                 if(_sending)
                 {
                     // calc bw for video 360/sendBW in kbit/s
-                    WebRtc_Word32 sendBitrateKbit = _cbRtcpPrivate.BitrateSent()/1000;
+                    WebRtc_Word32 sendBitrateKbit = _rtpRtcp.BitrateSent()/1000;
                     if(sendBitrateKbit != 0)
                     {
                         minIntervalMs = 360000/sendBitrateKbit;
@@ -1691,12 +1803,24 @@ RTCPSender::SendRTCP(const WebRtc_UWord32 packetTypeFlags,
         }
         if(rtcpPacketTypeFlags & kRtcpRpsi)
         {
-            const WebRtc_Word8 payloadType = _cbRtcpPrivate.SendPayloadType();
+            const WebRtc_Word8 payloadType = _rtpRtcp.SendPayloadType();
             if(payloadType == -1)
             {
                 return -1;
             }
             buildVal = BuildRPSI(rtcpbuffer, pos, pictureID, (WebRtc_UWord8)payloadType);
+            if(buildVal == -1)
+            {
+                return -1; // error
+
+            }else if(buildVal == -2)
+            {
+                break;  // out of buffer
+            }
+        }
+        if(rtcpPacketTypeFlags & kRtcpRemb)
+        {
+            buildVal = BuildREMB(rtcpbuffer, pos);
             if(buildVal == -1)
             {
                 return -1; // error
@@ -1732,7 +1856,7 @@ RTCPSender::SendRTCP(const WebRtc_UWord32 packetTypeFlags,
         }
         if(rtcpPacketTypeFlags & kRtcpTmmbr)
         {
-            buildVal = BuildTMMBR(rtcpbuffer, pos, RTT);
+            buildVal = BuildTMMBR(rtcpbuffer, pos);
             if(buildVal == -1)
             {
                 return -1; // error

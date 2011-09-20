@@ -22,6 +22,7 @@
 
 namespace webrtc {
 class RtpRtcpFeedback;
+class ModuleRtpRtcpImpl;
 class Trace;
 
 class RTPReceiver : public RTPReceiverAudio, public RTPReceiverVideo, public Bitrate
@@ -29,7 +30,7 @@ class RTPReceiver : public RTPReceiverAudio, public RTPReceiverVideo, public Bit
 public:
     RTPReceiver(const WebRtc_Word32 id,
                 const bool audio,
-                ModuleRtpRtcpPrivate& callback);
+                ModuleRtpRtcpImpl* owner);
 
     virtual ~RTPReceiver();
 
@@ -104,22 +105,22 @@ public:
     WebRtc_Word32 SetSSRCFilter(const bool enable, const WebRtc_UWord32 allowedSSRC);
 
     WebRtc_Word32 Statistics(WebRtc_UWord8  *fraction_lost,
-                           WebRtc_UWord32 *cum_lost,
-                           WebRtc_UWord32 *ext_max,
-                           WebRtc_UWord32 *jitter,               // will be moved from JB
-                           WebRtc_UWord32 *max_jitter,
-                           bool reset = false) const;
+                             WebRtc_UWord32 *cum_lost,
+                             WebRtc_UWord32 *ext_max,
+                             WebRtc_UWord32 *jitter,               // will be moved from JB
+                             WebRtc_UWord32 *max_jitter,
+                             bool reset = false) const;
 
     WebRtc_Word32 Statistics(WebRtc_UWord8  *fraction_lost,
-                           WebRtc_UWord32 *cum_lost,
-                           WebRtc_UWord32 *ext_max,
-                           WebRtc_UWord32 *jitter,               // will be moved from JB
-                           WebRtc_UWord32 *max_jitter,
-                           WebRtc_Word32 *missing,
-                           bool reset = false) const;
+                             WebRtc_UWord32 *cum_lost,
+                             WebRtc_UWord32 *ext_max,
+                             WebRtc_UWord32 *jitter,               // will be moved from JB
+                             WebRtc_UWord32 *max_jitter,
+                             WebRtc_Word32 *missing,
+                             bool reset = false) const;
 
     WebRtc_Word32 DataCounters(WebRtc_UWord32 *bytesReceived,
-                             WebRtc_UWord32 *packetsReceived) const;
+                               WebRtc_UWord32 *packetsReceived) const;
 
     WebRtc_Word32 ResetStatistics();
 
@@ -132,12 +133,12 @@ public:
     WebRtc_UWord32 ByteCountReceived() const;
 
     virtual WebRtc_UWord32 PayloadTypeToPayload(const WebRtc_UWord8 payloadType,
-                                              ModuleRTPUtility::Payload*& payload) const;
+                                                ModuleRTPUtility::Payload*& payload) const;
 
 protected:
     virtual WebRtc_Word32 CallbackOfReceivedPayloadData(const WebRtc_UWord8* payloadData,
-                                                      const WebRtc_UWord16 payloadSize,
-                                                      const WebRtcRTPHeader* rtpHeader);
+                                                        const WebRtc_UWord16 payloadSize,
+                                                        const WebRtcRTPHeader* rtpHeader);
 
     virtual bool RetransmitOfOldPacket(const WebRtc_UWord16 sequenceNumber,
                                        const WebRtc_UWord32 rtpTimeStamp) const;
@@ -158,20 +159,20 @@ private:
     void CheckSSRCChanged(const WebRtcRTPHeader* rtpHeader);
     void CheckCSRC(const WebRtcRTPHeader* rtpHeader);
     WebRtc_Word32 CheckPayloadChanged(const WebRtcRTPHeader* rtpHeader,
-                                    const WebRtc_Word8 firstPayloadByte,
-                                    bool& isRED,
-                                    ModuleRTPUtility::AudioPayload& audioSpecific,
-                                    ModuleRTPUtility::VideoPayload& videoSpecific);
+                                      const WebRtc_Word8 firstPayloadByte,
+                                      bool& isRED,
+                                      ModuleRTPUtility::AudioPayload& audioSpecific,
+                                      ModuleRTPUtility::VideoPayload& videoSpecific);
 
     void UpdateNACKBitRate(WebRtc_Word32 bytes, WebRtc_UWord32 now);
     bool ProcessNACKBitRate(WebRtc_UWord32 now);
 
 private:
-    WebRtc_Word32             _id;
+    WebRtc_Word32           _id;
     const bool              _audio;
+    ModuleRtpRtcpImpl&      _rtpRtcp;
 
     CriticalSectionWrapper&    _criticalSectionCbs;
-    ModuleRtpRtcpPrivate&   _cbPrivateFeedback;
     RtpFeedback*        _cbRtpFeedback;
     RtpData*            _cbRtpData;
 

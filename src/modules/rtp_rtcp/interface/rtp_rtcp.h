@@ -750,6 +750,16 @@ public:
     virtual WebRtc_Word32 SetRTCPVoIPMetrics(const RTCPVoIPMetric* VoIPMetric) = 0;
 
     /*
+    *  (REMB) Receiver Estimated Max Bitrate
+    */
+    virtual bool REMB() const = 0;;
+
+    virtual WebRtc_Word32 SetREMBStatus(const bool enable) = 0;
+
+    virtual WebRtc_Word32 SetREMBData(const WebRtc_UWord32 bitrate,
+                                      const WebRtc_UWord8 numberOfSSRC,
+                                      const WebRtc_UWord32* SSRC) = 0;
+    /*
     *   (TMMBR) Temporary Max Media Bit Rate
     */
     virtual bool TMMBR() const  = 0;

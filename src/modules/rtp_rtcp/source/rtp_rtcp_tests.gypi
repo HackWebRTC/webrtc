@@ -24,6 +24,23 @@
       ],
     },
     {
+      'target_name': 'rtcp_format_remb_unittest',
+      'type': 'executable',
+      'dependencies': [
+        'rtp_rtcp',
+        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+        '../../testing/gtest.gyp:gtest',
+        '../../testing/gtest.gyp:gtest_main',
+      ],
+      'include_dirs': [
+        '.',
+        '../../../',
+      ],
+      'sources': [
+        'rtcp_format_remb_unittest.cc',
+      ],
+    },
+    {
       'target_name': 'rtp_utility_test',
       'type': 'executable',
       'dependencies': [

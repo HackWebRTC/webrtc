@@ -15,14 +15,17 @@
 #include "rtp_utility.h"
 #include "map_wrapper.h"
 #include "rtp_rtcp_defines.h"
-#include "rtp_rtcp_private.h"
 #include "remote_rate_control.h"
+#include "tmmbr_help.h"
 
 namespace webrtc {
+
+class ModuleRtpRtcpImpl; 
+
 class RTCPSender
 {
 public:
-    RTCPSender(const WebRtc_Word32 id, const bool audio, ModuleRtpRtcpPrivate& callback);
+    RTCPSender(const WebRtc_Word32 id, const bool audio, ModuleRtpRtcpImpl* owner);
     virtual ~RTCPSender();
 
     void ChangeUniqueId(const WebRtc_Word32 id);
@@ -60,16 +63,26 @@ public:
     WebRtc_UWord32 LastSendReport(WebRtc_UWord32& lastRTCPTime);
 
     WebRtc_Word32 SendRTCP(const WebRtc_UWord32 rtcpPacketTypeFlags,
-                         const WebRtc_Word32 nackSize = 0,
-                         const WebRtc_UWord16* nackList = 0,
-                         const WebRtc_UWord32 RTT = 0,
-                         const WebRtc_UWord64 pictureID = 0);
+                           const WebRtc_Word32 nackSize = 0,
+                           const WebRtc_UWord16* nackList = 0,
+                           const WebRtc_UWord32 RTT = 0,
+                           const WebRtc_UWord64 pictureID = 0);
 
     WebRtc_Word32 AddReportBlock(const WebRtc_UWord32 SSRC,
                                  const RTCPReportBlock* receiveBlock);
 
     WebRtc_Word32 RemoveReportBlock(const WebRtc_UWord32 SSRC);
 
+    /*
+    *  REMB
+    */
+    bool REMB() const;
+
+    WebRtc_Word32 SetREMBStatus(const bool enable);
+
+    WebRtc_Word32 SetREMBData(const WebRtc_UWord32 bitrate,
+                              const WebRtc_UWord8 numberOfSSRC,
+                              const WebRtc_UWord32* SSRC);
     /*
     *   TMMBR
     */
@@ -78,24 +91,24 @@ public:
     WebRtc_Word32 SetTMMBRStatus(const bool enable);
 
     WebRtc_Word32 SetTMMBN(const TMMBRSet* boundingSet,
-                         const WebRtc_UWord32 maxBitrateKbit);
+                           const WebRtc_UWord32 maxBitrateKbit);
 
     WebRtc_Word32 RequestTMMBR(const WebRtc_UWord32 estimatedBW,
-                             const WebRtc_UWord32 packetOH);
+                               const WebRtc_UWord32 packetOH);
 
     /*
     *
     */
 
     WebRtc_Word32 SetApplicationSpecificData(const WebRtc_UWord8 subType,
-                                           const WebRtc_UWord32 name,
-                                           const WebRtc_UWord8* data,
-                                           const WebRtc_UWord16 length);
+                                             const WebRtc_UWord32 name,
+                                             const WebRtc_UWord8* data,
+                                             const WebRtc_UWord16 length);
 
     WebRtc_Word32 SetRTCPVoIPMetrics(const RTCPVoIPMetric* VoIPMetric);
 
     WebRtc_Word32 SetCSRCs(const WebRtc_UWord32 arrOfCSRC[kRtpCsrcSize],
-                         const WebRtc_UWord8 arrLength);
+                           const WebRtc_UWord8 arrLength);
 
     WebRtc_Word32 SetCSRCStatus(const bool include);
 
@@ -104,6 +117,8 @@ public:
     */
 
     RateControlRegion UpdateOverUseState(const RateControlInput& rateControlInput, bool& firstOverUse);
+
+    WebRtc_UWord32 CalculateNewTargetBitrate(WebRtc_UWord32 RTT);
 
 private:
     WebRtc_Word32 SendToNetwork(const WebRtc_UWord8* dataBuffer,
@@ -132,7 +147,8 @@ private:
 
     WebRtc_Word32 BuildSDEC(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos);
     WebRtc_Word32 BuildPLI(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos);
-    WebRtc_Word32 BuildTMMBR(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos, WebRtc_UWord32 RTT);
+    WebRtc_Word32 BuildREMB(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos);
+    WebRtc_Word32 BuildTMMBR(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos);
     WebRtc_Word32 BuildTMMBN(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos);
     WebRtc_Word32 BuildAPP(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos);
     WebRtc_Word32 BuildVoIPMetric(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos);
@@ -154,19 +170,21 @@ private:
                           const WebRtc_UWord16* nackList);
 
 private:
-    WebRtc_Word32             _id;
-    const bool              _audio;
-    RTCPMethod          _method;
+    WebRtc_Word32            _id;
+    const bool               _audio;
+    RTCPMethod               _method;
 
-    ModuleRtpRtcpPrivate&   _cbRtcpPrivate;
+    ModuleRtpRtcpImpl&      _rtpRtcp;
 
-    CriticalSectionWrapper&    _criticalSectionTransport;
-    Transport*         _cbTransport;
+    CriticalSectionWrapper& _criticalSectionTransport;
+    Transport*              _cbTransport;
 
-    CriticalSectionWrapper&    _criticalSectionRTCPSender;
+    CriticalSectionWrapper& _criticalSectionRTCPSender;
     bool                    _usingNack;
     bool                    _sending;
     bool                    _sendTMMBN;
+    bool                    _REMB;
+    bool                    _sendREMB;
     bool                    _TMMBR;
 
     WebRtc_UWord32        _nextTimeToSendRTCP;
@@ -193,7 +211,12 @@ private:
     WebRtc_UWord8         _sequenceNumberFIR;
     WebRtc_UWord32        _lastTimeFIR;
 
-    // TMMBR
+    // REMB    
+    WebRtc_UWord8       _lengthRembSSRC;
+    WebRtc_UWord8       _sizeRembSSRC;
+    WebRtc_UWord32*     _rembSSRC;
+    WebRtc_UWord32      _rembBitrate;
+
     TMMBRHelp           _tmmbrHelp;
     WebRtc_UWord32      _tmmbr_Send;
     WebRtc_UWord32      _packetOH_Send;

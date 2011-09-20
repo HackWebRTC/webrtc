@@ -55,12 +55,12 @@ enum RTCPPacketType
     kRtcpFir            = 0x0040,
     kRtcpTmmbr          = 0x0080,
     kRtcpTmmbn          = 0x0100,
-    kRtcpSrReq         = 0x0200,
-    kRtcpXrVoipMetric = 0x0400,
+    kRtcpSrReq          = 0x0200,
+    kRtcpXrVoipMetric   = 0x0400,
     kRtcpApp            = 0x0800,
-    kRtcpAppBwe        = 0x0801,
     kRtcpSli            = 0x4000,
-    kRtcpRpsi           = 0x8000
+    kRtcpRpsi           = 0x8000,
+    kRtcpRemb           = 0x10000
 };
 
 enum KeyFrameRequestMethod
@@ -104,9 +104,10 @@ struct RTCPReportBlock
 class RtpData
 {
 public:
-    virtual WebRtc_Word32 OnReceivedPayloadData(const WebRtc_UWord8* payloadData,
-                                              const WebRtc_UWord16 payloadSize,
-                                              const WebRtcRTPHeader* rtpHeader) = 0;
+    virtual WebRtc_Word32 OnReceivedPayloadData(
+        const WebRtc_UWord8* payloadData,
+        const WebRtc_UWord16 payloadSize,
+        const WebRtcRTPHeader* rtpHeader) = 0;
 protected:
     virtual ~RtpData() {}
 };
@@ -124,9 +125,10 @@ public:
                                            const WebRtc_UWord16 /*length*/,
                                            const WebRtc_UWord8* /*data*/)  {};
 
-    virtual void OnXRVoIPMetricReceived(const WebRtc_Word32 /*id*/,
-                                        const RTCPVoIPMetric* /*metric*/,
-                                        const WebRtc_Word8 /*VoIPmetricBuffer*/[28])  {};
+    virtual void OnXRVoIPMetricReceived(
+        const WebRtc_Word32 /*id*/,
+        const RTCPVoIPMetric* /*metric*/,
+        const WebRtc_Word8 /*VoIPmetricBuffer*/[28])  {};
 
     virtual void OnRTCPPacketTimeout(const WebRtc_Word32 /*id*/)  {};
 
@@ -138,6 +140,10 @@ public:
 
     virtual void OnRPSIReceived(const WebRtc_Word32 /*id*/,
                                 const WebRtc_UWord64 /*pictureId*/) {};
+
+    virtual void OnReceiverEstimatedMaxBitrateReceived(
+        const WebRtc_Word32 /*id*/,
+        const WebRtc_UWord32 /*bitRate*/) {};
 
     virtual void OnSendReportReceived(const WebRtc_Word32 id,
                                       const WebRtc_UWord32 senderSSRC)  {};
@@ -156,12 +162,13 @@ public:
     /*
     *   channels    - number of channels in codec (1 = mono, 2 = stereo)
     */
-    virtual WebRtc_Word32 OnInitializeDecoder(const WebRtc_Word32 id,
-                                            const WebRtc_Word8 payloadType,
-                                            const WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
-                                            const int frequency,
-                                            const WebRtc_UWord8 channels,
-                                            const WebRtc_UWord32 rate) = 0;
+    virtual WebRtc_Word32 OnInitializeDecoder(
+        const WebRtc_Word32 id,
+        const WebRtc_Word8 payloadType,
+        const WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
+        const int frequency,
+        const WebRtc_UWord8 channels,
+        const WebRtc_UWord32 rate) = 0;
 
     virtual void OnPacketTimeout(const WebRtc_Word32 id) = 0;
 
@@ -203,8 +210,9 @@ class RtpVideoFeedback
 {
 public:
     // this function should call codec module to inform it about the request
-    virtual void OnReceivedIntraFrameRequest(const WebRtc_Word32 id,
-                                             const WebRtc_UWord8 message = 0) = 0;
+    virtual void OnReceivedIntraFrameRequest(
+        const WebRtc_Word32 id,
+        const WebRtc_UWord8 message = 0) = 0;
 
     virtual void OnNetworkChanged(const WebRtc_Word32 id,
                                   const WebRtc_UWord32 minBitrateBps,

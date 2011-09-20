@@ -177,11 +177,14 @@ namespace RTCPUtility {
         // RFC4585
         WebRtc_UWord32 SenderSSRC;
         WebRtc_UWord32 MediaSSRC;
-    WebRtc_UWord8  PayloadType;
-    WebRtc_UWord16 NumberOfValidBits;
+        WebRtc_UWord8  PayloadType;
+        WebRtc_UWord16 NumberOfValidBits;
         WebRtc_UWord8  NativeBitString[RTCP_RPSI_DATA_SIZE];
     };
-
+    struct RTCPPacketPSFBREMB
+    {
+        WebRtc_UWord32 BitRate;
+    };
     // generic name APP
     struct RTCPPacketAPP
     {
@@ -207,6 +210,7 @@ namespace RTCPUtility {
         RTCPPacketPSFBSLI         SLI;
         RTCPPacketPSFBSLIItem     SLIItem;
         RTCPPacketPSFBRPSI        RPSI;
+        RTCPPacketPSFBREMB        REMB;
 
         RTCPPacketRTPFBTMMBR      TMMBR;
         RTCPPacketRTPFBTMMBRItem  TMMBRItem;
@@ -242,6 +246,8 @@ namespace RTCPUtility {
         kRtcpPsfbRpsiCode,
         kRtcpPsfbSliCode,
         kRtcpPsfbSliItemCode,
+        kRtcpPsfbAppCode,
+        kRtcpPsfbRembItemCode,
 
         // RFC5104
         kRtcpRtpfbTmmbrCode,
@@ -329,6 +335,8 @@ namespace RTCPUtility {
             State_PSFB_SLIItem,    // SLI FCI item
             State_PSFB_RPSIItem,   // RPSI FCI item
             State_PSFB_FIRItem,    // FIR FCI item
+            State_PSFB_AppItem,    // Application specific FCI item
+            State_PSFB_REMBItem,   // Application specific REMB item
             State_XRItem,
             State_AppItem
         };
@@ -344,6 +352,8 @@ namespace RTCPUtility {
         void IterateSLIItem();
         void IterateRPSIItem();
         void IterateFIRItem();
+        void IteratePsfbAppItem();
+        void IteratePsfbREMBItem();
         void IterateAppItem();
 
         void Validate();
@@ -371,6 +381,8 @@ namespace RTCPUtility {
         bool ParseSLIItem();
         bool ParseRPSIItem();
         bool ParseFIRItem();
+        bool ParsePsfbAppItem();
+        bool ParsePsfbREMBItem();
 
         bool ParseAPP(const RTCPCommonHeader& header);
         bool ParseAPPItem();

@@ -16,14 +16,15 @@
 #include "rtp_utility.h"
 #include "rtcp_utility.h"
 #include "rtp_rtcp_defines.h"
-#include "rtp_rtcp_private.h"
 #include "rtcp_receiver_help.h"
 
 namespace webrtc {
+class ModuleRtpRtcpImpl;
+
 class RTCPReceiver
 {
 public:
-    RTCPReceiver(const WebRtc_Word32 id, ModuleRtpRtcpPrivate& callback);
+    RTCPReceiver(const WebRtc_Word32 id, ModuleRtpRtcpImpl* owner);
     virtual ~RTCPReceiver();
 
     void ChangeUniqueId(const WebRtc_Word32 id);
@@ -50,20 +51,20 @@ public:
 
     // get received cname
     WebRtc_Word32 CNAME(const WebRtc_UWord32 remoteSSRC,
-                      WebRtc_Word8 cName[RTCP_CNAME_SIZE]) const;
+                        WebRtc_Word8 cName[RTCP_CNAME_SIZE]) const;
 
     // get received NTP
     WebRtc_Word32 NTP(WebRtc_UWord32 *ReceivedNTPsecs,
-                    WebRtc_UWord32 *ReceivedNTPfrac,
-                    WebRtc_UWord32 *RTCPArrivalTimeSecs,
-                    WebRtc_UWord32 *RTCPArrivalTimeFrac) const;
+                      WebRtc_UWord32 *ReceivedNTPfrac,
+                      WebRtc_UWord32 *RTCPArrivalTimeSecs,
+                      WebRtc_UWord32 *RTCPArrivalTimeFrac) const;
 
     // get rtt
     WebRtc_Word32 RTT(const WebRtc_UWord32 remoteSSRC,
-                    WebRtc_UWord16* RTT,
-                    WebRtc_UWord16* avgRTT,
-                    WebRtc_UWord16* minRTT,
-                    WebRtc_UWord16* maxRTT) const;
+                      WebRtc_UWord16* RTT,
+                      WebRtc_UWord16* avgRTT,
+                      WebRtc_UWord16* minRTT,
+                      WebRtc_UWord16* maxRTT) const;
 
     WebRtc_Word32 ResetRTT(const WebRtc_UWord32 remoteSSRC);
 
@@ -140,6 +141,12 @@ protected:
     void HandleRPSI(RTCPUtility::RTCPParserV2& rtcpParser,
                     RTCPHelp::RTCPPacketInformation& rtcpPacketInformation);
 
+    void HandlePsfbApp(RTCPUtility::RTCPParserV2& rtcpParser,
+                       RTCPHelp::RTCPPacketInformation& rtcpPacketInformation);
+
+    void HandleREMBItem(RTCPUtility::RTCPParserV2& rtcpParser,
+                        RTCPHelp::RTCPPacketInformation& rtcpPacketInformation);
+
     void HandleTMMBR(RTCPUtility::RTCPParserV2& rtcpParser,
                      RTCPHelp::RTCPPacketInformation& rtcpPacketInformation);
 
@@ -170,18 +177,18 @@ protected:
                        RTCPHelp::RTCPPacketInformation& rtcpPacketInformation);
 
 private:
-    WebRtc_Word32             _id;
-    RTCPMethod          _method;
-    WebRtc_UWord32            _lastReceived;
-    ModuleRtpRtcpPrivate&   _cbRtcpPrivate;
+    WebRtc_Word32           _id;
+    RTCPMethod              _method;
+    WebRtc_UWord32          _lastReceived;
+    ModuleRtpRtcpImpl&      _rtpRtcp;
 
-    CriticalSectionWrapper&    _criticalSectionFeedbacks;
-    RtcpFeedback*       _cbRtcpFeedback;
-    RtpVideoFeedback*   _cbVideoFeedback;
+    CriticalSectionWrapper& _criticalSectionFeedbacks;
+    RtcpFeedback*           _cbRtcpFeedback;
+    RtpVideoFeedback*       _cbVideoFeedback;
 
-    CriticalSectionWrapper&    _criticalSectionRTCPReceiver;
-    WebRtc_UWord32            _SSRC;
-    WebRtc_UWord32            _remoteSSRC;
+    CriticalSectionWrapper& _criticalSectionRTCPReceiver;
+    WebRtc_UWord32          _SSRC;
+    WebRtc_UWord32          _remoteSSRC;
 
     // Received send report
     RTCPSenderInfo      _remoteSenderInfo;

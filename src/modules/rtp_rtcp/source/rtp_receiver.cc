@@ -12,6 +12,7 @@
 #include "rtp_receiver.h"
 
 #include "rtp_rtcp_defines.h"
+#include "rtp_rtcp_impl.h"
 #include "critical_section_wrapper.h"
 
 #include <cassert>
@@ -22,13 +23,13 @@
 namespace webrtc {
 RTPReceiver::RTPReceiver(const WebRtc_Word32 id,
                          const bool audio,
-                         ModuleRtpRtcpPrivate& callback) :
+                         ModuleRtpRtcpImpl* owner) :
     RTPReceiverAudio(id),
-    RTPReceiverVideo(id, callback),
+    RTPReceiverVideo(id, owner),
     _id(id),
     _audio(audio),
+    _rtpRtcp(*owner),
     _criticalSectionCbs(*CriticalSectionWrapper::CreateCriticalSection()),
-    _cbPrivateFeedback(callback),
     _cbRtpFeedback(NULL),
     _cbRtpData(NULL),
 
@@ -956,7 +957,7 @@ RTPReceiver::RetransmitOfOldPacket(const WebRtc_UWord16 sequenceNumber,
     WebRtc_Word32 rtpTimeStampDiffMS = ((WebRtc_Word32)(rtpTimeStamp - _lastReceivedTimestamp))/90; // diff in time stamp since last received in order
 
     WebRtc_UWord16 minRTT = 0;
-    _cbPrivateFeedback.RTT(_SSRC,NULL,NULL,&minRTT, NULL);
+    _rtpRtcp.RTT(_SSRC,NULL,NULL,&minRTT, NULL);
     if(minRTT == 0)
     {
         // no update
@@ -1154,7 +1155,7 @@ RTPReceiver::CheckSSRCChanged(const WebRtcRTPHeader* rtpHeader)
     {
         // we need to get this to our RTCP sender and receiver
         // need to do this outside critical section
-        _cbPrivateFeedback.SetRemoteSSRC(rtpHeader->header.ssrc);
+        _rtpRtcp.SetRemoteSSRC(rtpHeader->header.ssrc);
     }
 
     CriticalSectionScoped lock(_criticalSectionCbs);

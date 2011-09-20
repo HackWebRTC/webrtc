@@ -12,7 +12,6 @@
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_RTCP_IMPL_H_
 
 #include "rtp_rtcp.h"
-#include "rtp_rtcp_private.h"
 
 #include "rtp_sender.h"
 #include "rtp_receiver.h"
@@ -28,7 +27,7 @@ class MatlabPlot;
 
 namespace webrtc {
 
-class ModuleRtpRtcpImpl : public ModuleRtpRtcpPrivate, private TMMBRHelp
+class ModuleRtpRtcpImpl : public RtpRtcp, private TMMBRHelp
 {
 public:
     ModuleRtpRtcpImpl(const WebRtc_Word32 id,
@@ -318,6 +317,16 @@ public:
     virtual WebRtc_Word32 RemoveRTCPReportBlock(const WebRtc_UWord32 SSRC);
 
     /*
+    *  (REMB) Receiver Estimated Max Bitrate
+    */
+    virtual bool REMB() const;
+
+    virtual WebRtc_Word32 SetREMBStatus(const bool enable);
+
+    virtual WebRtc_Word32 SetREMBData(const WebRtc_UWord32 bitrate,
+                                      const WebRtc_UWord8 numberOfSSRC,
+                                      const WebRtc_UWord32* SSRC);
+    /*
     *   (TMMBR) Temporary Max Media Bit Rate
     */
     virtual bool TMMBR() const ;
@@ -453,22 +462,20 @@ public:
 
     virtual WebRtc_Word32 SetH263InverseLogic(const bool enable);
 
-    // only for internal testing
-    WebRtc_UWord32 LastSendReport(WebRtc_UWord32& lastRTCPTime);
+    virtual WebRtc_Word32 LastReceivedNTP(WebRtc_UWord32& NTPsecs,
+                                          WebRtc_UWord32& NTPfrac,
+                                          WebRtc_UWord32& remoteSR);
 
-protected:
-    virtual void RegisterChildModule(RtpRtcp* module);
+    virtual WebRtc_Word32 BoundingSet(bool &tmmbrOwner,
+                                      TMMBRSet*& boundingSetRec);
 
-    virtual void DeRegisterChildModule(RtpRtcp* module);
+    virtual WebRtc_UWord32 BitrateSent() const;
 
-    bool UpdateRTCPReceiveInformationTimers();
-
-    void ProcessDeadOrAliveTimer();
-
-    /*
-    *   Implementation of ModuleRtpRtcpPrivate
-    */
     virtual void SetRemoteSSRC(const WebRtc_UWord32 SSRC);
+    
+    virtual WebRtc_UWord32 SendTimeOfSendReport(const WebRtc_UWord32 sendReport);
+
+    virtual RateControlRegion OnOverUseStateUpdate(const RateControlInput& rateControlInput);
 
     virtual void OnReceivedNTP() ;
 
@@ -478,15 +485,12 @@ protected:
                                               const WebRtc_UWord32 lastReceivedExtendedHighSeqNum,
                                               const WebRtc_UWord32 jitter);
 
-    // bw estimation
     virtual void OnReceivedTMMBR();
 
     virtual void OnBandwidthEstimateUpdate(WebRtc_UWord16 bandWidthKbit);
 
     virtual void OnReceivedBandwidthEstimateUpdate(const WebRtc_UWord16 bwEstimateMinKbit,
                                                    const WebRtc_UWord16 bwEstimateMaxKbit);
-
-    virtual RateControlRegion OnOverUseStateUpdate(const RateControlInput& rateControlInput);
 
     // bad state of RTP receiver request a keyframe
     virtual void OnRequestIntraFrame(const FrameType frameType);
@@ -506,14 +510,17 @@ protected:
                                 const WebRtc_UWord16* nackSequenceNumbers);
 
     virtual void OnRequestSendReport();
+    // only for internal testing
+    WebRtc_UWord32 LastSendReport(WebRtc_UWord32& lastRTCPTime);
 
-    virtual WebRtc_UWord32 SendTimeOfSendReport(const WebRtc_UWord32 sendReport);
+protected:
+    virtual void RegisterChildModule(RtpRtcp* module);
 
-    virtual WebRtc_Word32 LastReceivedNTP(WebRtc_UWord32& NTPsecs, // when we received the last report
-                                        WebRtc_UWord32& NTPfrac,
-                                        WebRtc_UWord32& remoteSR); // NTP inside the last received (mid 16 bits from sec and frac)
+    virtual void DeRegisterChildModule(RtpRtcp* module);
 
-    virtual WebRtc_UWord32 BitrateSent() const;
+    bool UpdateRTCPReceiveInformationTimers();
+
+    void ProcessDeadOrAliveTimer();
 
     virtual WebRtc_UWord32 BitrateReceivedNow() const;
 
@@ -522,35 +529,33 @@ protected:
 
     virtual WebRtc_Word32 UpdateTMMBR();
 
-    virtual WebRtc_Word32 BoundingSet(bool &tmmbrOwner,
-                                    TMMBRSet*& boundingSetRec);
-
     RTPSender                 _rtpSender;
     RTPReceiver               _rtpReceiver;
 
+    RTCPSender                _rtcpSender;
+    RTCPReceiver              _rtcpReceiver;
 private:
     void SendKeyFrame();
 
-    WebRtc_Word32               _id;
+    WebRtc_Word32             _id;
     const bool                _audio;
     bool                      _collisionDetected;
-    WebRtc_UWord32              _lastProcessTime;
-    WebRtc_UWord16              _packetOverHead;
+    WebRtc_UWord32            _lastProcessTime;
+    WebRtc_UWord16            _packetOverHead;
 
-    CriticalSectionWrapper&      _criticalSectionModulePtrs;
-    CriticalSectionWrapper&      _criticalSectionModulePtrsFeedback;
-    ModuleRtpRtcpPrivate*     _defaultModule;
-    ModuleRtpRtcpPrivate*     _audioModule;
-    ModuleRtpRtcpPrivate*     _videoModule;
-    ListWrapper                  _childModules;
+    CriticalSectionWrapper&   _criticalSectionModulePtrs;
+    CriticalSectionWrapper&   _criticalSectionModulePtrsFeedback;
+    ModuleRtpRtcpImpl*        _defaultModule;
+    ModuleRtpRtcpImpl*        _audioModule;
+    ModuleRtpRtcpImpl*        _videoModule;
+    ListWrapper               _childModules;
 
     // Dead or alive
     bool                      _deadOrAliveActive;
-    WebRtc_UWord32              _deadOrAliveTimeoutMS;
-    WebRtc_UWord32              _deadOrAliveLastTimer;
+    WebRtc_UWord32            _deadOrAliveTimeoutMS;
+    WebRtc_UWord32            _deadOrAliveLastTimer;
 
     // receive side
-    RTCPReceiver              _rtcpReceiver;
     BandwidthManagement       _bandwidthManagement;
 
     WebRtc_UWord32              _receivedNTPsecsAudio;
@@ -559,7 +564,6 @@ private:
     WebRtc_UWord32              _RTCPArrivalTimeFracAudio;
 
     // send side
-    RTCPSender                _rtcpSender;
     NACKMethod            _nackMethod;
     WebRtc_UWord32              _nackLastTimeSent;
     WebRtc_UWord16              _nackLastSeqNumberSent;

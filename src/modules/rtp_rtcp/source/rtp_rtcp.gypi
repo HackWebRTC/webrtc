@@ -33,7 +33,6 @@
         'rtp_rtcp_config.h',
         'rtp_rtcp_impl.cc',
         'rtp_rtcp_impl.h',
-        'rtp_rtcp_private.h',
         'rtcp_receiver.cc',
         'rtcp_receiver.h',
         'rtcp_receiver_help.cc',

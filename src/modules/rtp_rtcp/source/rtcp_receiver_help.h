@@ -51,7 +51,7 @@ public:
     WebRtc_UWord8*  applicationData;
     WebRtc_UWord16  applicationLength;
 
-    bool          reportBlock;
+    bool            reportBlock;
     WebRtc_UWord8   fractionLost;
     WebRtc_UWord16  roundTripTime;
     WebRtc_UWord32  lastReceivedExtendedHighSeqNum;
@@ -59,6 +59,7 @@ public:
 
     WebRtc_UWord8   sliPictureId;
     WebRtc_UWord64  rpsiPictureId;
+    WebRtc_UWord32  receiverEstimatedMaxBitrate;
 
     RTCPVoIPMetric*  VoIPMetric;
 };

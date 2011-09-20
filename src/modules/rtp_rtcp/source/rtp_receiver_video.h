@@ -12,7 +12,6 @@
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_RECEIVER_VIDEO_H_
 
 #include "rtp_rtcp_defines.h"
-#include "rtp_rtcp_private.h"
 #include "rtp_utility.h"
 
 #include "typedefs.h"
@@ -25,12 +24,13 @@
 
 namespace webrtc {
 class ReceiverFEC;
+class ModuleRtpRtcpImpl;
 
 class RTPReceiverVideo
 {
 public:
     RTPReceiverVideo(const WebRtc_Word32 id,
-                     ModuleRtpRtcpPrivate& callback);
+                     ModuleRtpRtcpImpl* owner);
 
     virtual ~RTPReceiverVideo();
 
@@ -123,11 +123,10 @@ protected:
 
 private:
     WebRtc_Word32             _id;
+    ModuleRtpRtcpImpl&        _rtpRtcp;
 
-    CriticalSectionWrapper&    _criticalSectionFeedback;
-    RtpVideoFeedback*   _cbVideoFeedback;
-
-    ModuleRtpRtcpPrivate&   _cbPrivateFeedback;
+    CriticalSectionWrapper&   _criticalSectionFeedback;
+    RtpVideoFeedback*         _cbVideoFeedback;
 
     CriticalSectionWrapper&    _criticalSectionReceiverVideo;
 
