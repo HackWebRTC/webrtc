@@ -112,6 +112,7 @@
       ['inside_chromium_build==1', {
         'include_dirs': [
           '<(overrides)',
+          '<(libjingle_mods)/source',
           '<(libjingle_orig)/source',
           '../..',  # the third_party folder for webrtc includes
           '../../third_party/expat/files',
@@ -119,6 +120,7 @@
         'direct_dependent_settings': {
           'include_dirs': [
             '<(overrides)',
+            '<(libjingle_mods)/source',
             '<(libjingle_orig)/source',
             '../../third_party/expat/files'
           ],
@@ -131,6 +133,7 @@
         'include_dirs': [
           # the third_party folder for webrtc/ includes (non-chromium).
           '../../src',
+          '<(libjingle_mods)/source',
           '<(libjingle_orig)/source',
           '../../third_party/expat/files',
         ],
@@ -338,19 +341,6 @@
         '<(libjingle_orig)/source/talk/base/urlencode.h',
         '<(libjingle_orig)/source/talk/base/worker.cc', 
         '<(libjingle_orig)/source/talk/base/worker.h', 
-        '<(libjingle_orig)/source/talk/sound/automaticallychosensoundsystem.h', 
-        '<(libjingle_orig)/source/talk/sound/platformsoundsystem.cc', 
-        '<(libjingle_orig)/source/talk/sound/platformsoundsystem.h', 
-        '<(libjingle_orig)/source/talk/sound/platformsoundsystemfactory.cc', 
-        '<(libjingle_orig)/source/talk/sound/platformsoundsystemfactory.h', 
-        '<(libjingle_orig)/source/talk/sound/sounddevicelocator.h', 
-        '<(libjingle_orig)/source/talk/sound/soundinputstreaminterface.h', 
-        '<(libjingle_orig)/source/talk/sound/soundoutputstreaminterface.h', 
-        '<(libjingle_orig)/source/talk/sound/soundsystemfactory.h', 
-        '<(libjingle_orig)/source/talk/sound/soundsysteminterface.cc', 
-        '<(libjingle_orig)/source/talk/sound/soundsysteminterface.h', 
-        '<(libjingle_orig)/source/talk/sound/soundsystemproxy.cc', 
-        '<(libjingle_orig)/source/talk/sound/soundsystemproxy.h',
         '<(libjingle_orig)/source/talk/xmllite/xmlbuilder.cc',
         '<(libjingle_orig)/source/talk/xmllite/xmlbuilder.h',
         '<(libjingle_orig)/source/talk/xmllite/xmlconstants.cc',
@@ -392,6 +382,39 @@
         '<(libjingle_orig)/source/talk/xmpp/xmpptask.h',
       ],
       'conditions': [
+        ['inside_chromium_build==0', {
+          'sources': [ 
+            '<(libjingle_orig)/source/talk/sound/automaticallychosensoundsystem.h', 
+            '<(libjingle_orig)/source/talk/sound/platformsoundsystem.cc', 
+            '<(libjingle_orig)/source/talk/sound/platformsoundsystem.h', 
+            '<(libjingle_orig)/source/talk/sound/platformsoundsystemfactory.cc', 
+            '<(libjingle_orig)/source/talk/sound/platformsoundsystemfactory.h', 
+            '<(libjingle_orig)/source/talk/sound/sounddevicelocator.h', 
+            '<(libjingle_orig)/source/talk/sound/soundinputstreaminterface.h', 
+            '<(libjingle_orig)/source/talk/sound/soundoutputstreaminterface.h', 
+            '<(libjingle_orig)/source/talk/sound/soundsystemfactory.h', 
+            '<(libjingle_orig)/source/talk/sound/soundsysteminterface.cc', 
+            '<(libjingle_orig)/source/talk/sound/soundsysteminterface.h', 
+            '<(libjingle_orig)/source/talk/sound/soundsystemproxy.cc', 
+            '<(libjingle_orig)/source/talk/sound/soundsystemproxy.h',
+          ],
+          'conditions' : [ 
+            ['OS=="linux"', {
+              'sources': [
+                '<(libjingle_orig)/source/talk/sound/alsasoundsystem.cc',
+                '<(libjingle_orig)/source/talk/sound/alsasoundsystem.h',
+                '<(libjingle_orig)/source/talk/sound/alsasymboltable.cc',
+                '<(libjingle_orig)/source/talk/sound/alsasymboltable.h',
+                '<(libjingle_orig)/source/talk/sound/linuxsoundsystem.cc',
+                '<(libjingle_orig)/source/talk/sound/linuxsoundsystem.h',
+                '<(libjingle_orig)/source/talk/sound/pulseaudiosoundsystem.cc',
+                '<(libjingle_orig)/source/talk/sound/pulseaudiosoundsystem.h',
+                '<(libjingle_orig)/source/talk/sound/pulseaudiosymboltable.cc',
+                '<(libjingle_orig)/source/talk/sound/pulseaudiosymboltable.h',
+              ],
+            }],
+          ],
+        }],
         ['OS=="win"', {
           'sources': [
             '<(overrides)/talk/base/win32socketinit.cc',
@@ -424,16 +447,6 @@
           'sources': [
             '<(libjingle_orig)/source/talk/base/linux.cc',
             '<(libjingle_orig)/source/talk/base/linux.h',
-            '<(libjingle_orig)/source/talk/sound/alsasoundsystem.cc',
-            '<(libjingle_orig)/source/talk/sound/alsasoundsystem.h',
-            '<(libjingle_orig)/source/talk/sound/alsasymboltable.cc',
-            '<(libjingle_orig)/source/talk/sound/alsasymboltable.h',
-            '<(libjingle_orig)/source/talk/sound/linuxsoundsystem.cc',
-            '<(libjingle_orig)/source/talk/sound/linuxsoundsystem.h',
-            '<(libjingle_orig)/source/talk/sound/pulseaudiosoundsystem.cc',
-            '<(libjingle_orig)/source/talk/sound/pulseaudiosoundsystem.h',
-            '<(libjingle_orig)/source/talk/sound/pulseaudiosymboltable.cc',
-            '<(libjingle_orig)/source/talk/sound/pulseaudiosymboltable.h',
           ],
         }],
         ['OS=="mac"', {
@@ -527,7 +540,7 @@
         '<(libjingle_orig)/source/talk/session/phone/currentspeakermonitor.cc',
         '<(libjingle_orig)/source/talk/session/phone/currentspeakermonitor.h',
         '<(libjingle_mods)/source/talk/session/phone/devicemanager.cc',
-        '<(libjingle_orig)/source/talk/session/phone/devicemanager.h',
+        '<(libjingle_mods)/source/talk/session/phone/devicemanager.h',
         '<(libjingle_orig)/source/talk/session/phone/filemediaengine.cc',
         '<(libjingle_orig)/source/talk/session/phone/filemediaengine.h',   
         '<(libjingle_orig)/source/talk/session/phone/mediachannel.h',

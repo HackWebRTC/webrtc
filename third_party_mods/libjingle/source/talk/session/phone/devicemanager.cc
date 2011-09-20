@@ -53,10 +53,12 @@
 #include "talk/base/stream.h"
 #include "talk/session/phone/libudevsymboltable.h"
 #include "talk/session/phone/v4llookup.h"
+#if defined(LINUX_SOUND_USED)
 #include "talk/sound/platformsoundsystem.h"
 #include "talk/sound/platformsoundsystemfactory.h"
 #include "talk/sound/sounddevicelocator.h"
 #include "talk/sound/soundsysteminterface.h"
+#endif
 #endif
 
 #include "talk/base/logging.h"
@@ -154,7 +156,7 @@ DeviceManager::DeviceManager()
       need_couninitialize_(false),
 #endif
       watcher_(new DeviceWatcher(this))
-#ifdef LINUX
+#ifdef LINUX_SOUND_USED
       , sound_system_(new PlatformSoundSystemFactory())
 #endif
     {
@@ -331,7 +333,7 @@ bool DeviceManager::GetAudioDevicesByPlatform(bool input,
                                               std::vector<Device>* devs) {
   devs->clear();
 
-#if defined(LINUX)
+#if defined(LINUX_SOUND_USED)
   if (!sound_system_.get()) {
     return false;
   }
