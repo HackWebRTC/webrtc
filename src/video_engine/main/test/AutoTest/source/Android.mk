@@ -33,7 +33,8 @@ LOCAL_SRC_FILES:= \
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \
     '-DWEBRTC_TARGET_PC' \
-    '-DWEBRTC_ANDROID'
+    '-DWEBRTC_ANDROID' \
+    '-DWEBRTC_ANDROID_OPENSLES'
 
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../interface \
