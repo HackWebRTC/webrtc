@@ -91,6 +91,34 @@ my_transportation my_transport;
 
 #endif
 
+class MyObserver : public VoiceEngineObserver {
+ public:
+   virtual void CallbackOnError(const int channel, const int err_code);
+};
+
+void MyObserver::CallbackOnError(const int channel, const int err_code) {
+  // Add printf for other error codes here
+  if (err_code == VE_TYPING_NOISE_WARNING) {
+    printf("  TYPING NOISE DETECTED \n");
+  } else if (err_code == VE_RECEIVE_PACKET_TIMEOUT) {
+    printf("  RECEIVE PACKET TIMEOUT \n");
+  } else if (err_code == VE_PACKET_RECEIPT_RESTARTED) {
+    printf("  PACKET RECEIPT RESTARTED \n");
+  } else if (err_code == VE_RUNTIME_PLAY_WARNING) {
+    printf("  RUNTIME PLAY WARNING \n");
+  } else if (err_code == VE_RUNTIME_REC_WARNING) {
+    printf("  RUNTIME RECORD WARNING \n");
+  } else if (err_code == VE_SATURATION_WARNING) {
+    printf("  SATURATION WARNING \n");
+  } else if (err_code == VE_RUNTIME_PLAY_ERROR) {
+    printf("  RUNTIME PLAY ERROR \n");
+  } else if (err_code == VE_RUNTIME_REC_ERROR) {
+    printf("  RUNTIME RECORD ERROR \n");
+  } else if (err_code == VE_REC_DEVICE_REMOVED) {
+    printf("  RECORD DEVICE REMOVED \n");
+  }
+}
+
 int main() {
   int res = 0;
   int cnt = 0;
@@ -112,9 +140,14 @@ int main() {
   xmedia = VoEExternalMedia::GetInterface(m_voe);
   neteqst = VoENetEqStats::GetInterface(m_voe);
 
+  MyObserver my_observer;
+
   printf("Set trace filenames (enable trace)\n");
   VoiceEngine::SetTraceFilter(kTraceAll);
   res = VoiceEngine::SetTraceFile("webrtc_trace.txt");
+  VALIDATE;
+
+  res = VoiceEngine::SetTraceCallback(NULL);
   VALIDATE;
 
   printf("Init\n");
@@ -124,6 +157,9 @@ int main() {
     fflush(NULL);
     exit(1);
   }
+
+  res = base1->RegisterVoiceEngineObserver(my_observer);
+  VALIDATE;
 
   cnt++;
   printf("Version\n");
@@ -136,6 +172,8 @@ int main() {
   run_test();
 
   printf("Terminate \n");
+
+  base1->DeRegisterVoiceEngineObserver();
 
   res = base1->Terminate();
   VALIDATE;
@@ -196,6 +234,9 @@ void run_test() {
   bool VAD = false;
   bool NS = false;
   bool NS1 = false;
+  bool typing_detection = false;
+  bool muted = false;
+  bool on_hold = false;
 
   chan = base1->CreateChannel();
   if (chan < 0) {
@@ -434,6 +475,16 @@ void run_test() {
       i++;
       printf("\t%i. AGC status \n", i);
       i++;
+      printf("\t%i. Toggle microphone mute \n", i);
+      i++;
+      printf("\t%i. Toggle on hold status \n", i);
+      i++;
+      printf("\t%i. Get last error code \n", i);
+      i++;
+      printf("\t%i. Toggle typing detection(for Mac/Windows only) \n", i);
+      i++;
+
+
       printf("\t%i. Stop call \n", i);
 
       printf("Select action or %i to stop the call: ", i);
@@ -598,7 +649,51 @@ void run_test() {
         bool enable;
         res = apm->GetAgcStatus(enable, agcmode);
         VALIDATE
-            printf("\n AGC enale is %d , mode is %d \n", enable, agcmode);
+            printf("\n AGC enable is %d , mode is %d \n", enable, agcmode);
+      }
+      else if (codecinput == (noCodecs + 17)) {
+        // Toggle Mute on Microphone
+        res = volume->GetInputMute(chan, muted);
+        VALIDATE;
+        muted = !muted;
+        res = volume->SetInputMute(chan, muted);
+        VALIDATE;
+        if (muted)
+          printf("\n Microphone is now on mute! \n");
+        else
+          printf("\n Microphone is no longer on mute! \n");
+
+      }
+      else if (codecinput == (noCodecs + 18)) {
+        // Toggle the call on hold
+        OnHoldModes mode;
+        res = base1->GetOnHoldStatus(chan, on_hold, mode);
+        VALIDATE;
+        on_hold = !on_hold;
+        mode = kHoldSendAndPlay;
+        res = base1->SetOnHoldStatus(chan, on_hold, mode);
+        VALIDATE;
+        if (on_hold)
+          printf("\n Call now on hold! \n");
+        else
+          printf("\n Call now not on hold! \n");
+      }
+
+      else if (codecinput == (noCodecs + 19)) {
+        // Get the last error code and print to screen
+        int err_code = 0;
+        err_code = base1->LastError();
+        if (err_code != -1)
+          printf("\n The last error code was %i. \n", err_code);
+      }
+      else if (codecinput == (noCodecs + 20)) {
+         typing_detection= !typing_detection;
+        res = apm->SetTypingDetectionStatus(typing_detection);
+        VALIDATE;
+        if (typing_detection)
+          printf("\n Typing detection is now on! \n");
+        else
+          printf("\n Typing detection is now off! \n");
       }
       else
         break;
