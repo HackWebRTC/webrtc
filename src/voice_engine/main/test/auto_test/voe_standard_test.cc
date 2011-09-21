@@ -56,19 +56,19 @@ char* GetResource(char* resource);
 const char* GetResource(const char* resource);
 // #ifdef MAC_IPHONE
 #elif defined(WEBRTC_ANDROID)
-char filenameStr[2][256] = {0};
+char filenameStr[2][256];
 int currentStr = 0;
 
 char* GetFilename(char* filename)
 {
     currentStr = !currentStr;
-    sprintf(filenameStr[currentStr], "/sdcard/%s", filename); 
+    sprintf(filenameStr[currentStr], "/sdcard/%s", filename);
     return filenameStr[currentStr];
 }
 const char* GetFilename(const char* filename)
 {
     currentStr = !currentStr;
-    sprintf(filenameStr[currentStr], "/sdcard/%s", filename); 
+    sprintf(filenameStr[currentStr], "/sdcard/%s", filename);
     return filenameStr[currentStr];
 }
 int GetResource(char* resource, char* dest, int destLen)
@@ -81,13 +81,13 @@ int GetResource(char* resource, char* dest, int destLen)
 char* GetResource(char* resource)
 {
     currentStr = !currentStr;
-    sprintf(filenameStr[currentStr], "/sdcard/%s", resource); 
+    sprintf(filenameStr[currentStr], "/sdcard/%s", resource);
     return filenameStr[currentStr];
 }
 const char* GetResource(const char* resource)
-{ 
+{
     currentStr = !currentStr;
-    sprintf(filenameStr[currentStr], "/sdcard/%s", resource); 
+    sprintf(filenameStr[currentStr], "/sdcard/%s", resource);
     return filenameStr[currentStr];
 }
 #else
@@ -1978,9 +1978,9 @@ int VoETestManager::DoStandardTest()
     TEST_MUSTPASS(hardware->GetNumOfRecordingDevices(nRec));
     TEST_MUSTPASS(hardware->GetNumOfPlayoutDevices(nPlay));
 #endif
-    
+
     int load = -1;
-    
+
 #if defined(_WIN32)
     TEST_MUSTPASS(hardware->GetCPULoad(load));
     TEST_MUSTPASS(load == -1);
@@ -1996,7 +1996,7 @@ int VoETestManager::DoStandardTest()
     TEST_MUSTPASS(load == -1);
     TEST_LOG("System CPU load = %d\n", load);
 #endif
-    
+
 #ifdef MAC_IPHONE
     // Reset sound device
     TEST_LOG("Reset sound device \n");
@@ -2033,14 +2033,17 @@ int VoETestManager::DoStandardTest()
         SLEEP(2000);
 
         TEST_LOG("Looping through capture devices...\n");
-        TEST_MUSTPASS(hardware->GetNumOfRecordingDevices(nRec));
-        for (idx = 0; idx < nRec; idx++)
+        int num_devs = 0;
+        char dev_name[128] = {0};
+        char guid_name[128] = {0};
+        TEST_MUSTPASS(hardware->GetNumOfRecordingDevices(num_devs));
+        for (int dev_index = 0; dev_index < num_devs; ++dev_index)
         {
-            TEST_MUSTPASS(hardware->GetRecordingDeviceName(idx,
-                                                           devName,
-                                                           guidName));
-            TEST_LOG("%d: %s\n", idx, devName);
-            TEST_MUSTPASS(hardware->SetRecordingDevice(idx));
+            TEST_MUSTPASS(hardware->GetRecordingDeviceName(dev_index,
+                                                           dev_name,
+                                                           guid_name));
+            TEST_LOG("%d: %s\n", dev_index, dev_name);
+            TEST_MUSTPASS(hardware->SetRecordingDevice(dev_index));
             SLEEP(2000);
         }
 
@@ -2049,14 +2052,14 @@ int VoETestManager::DoStandardTest()
 
         TEST_LOG("Looping through render devices, restarting for each "
                  "device...\n");
-        TEST_MUSTPASS(hardware->GetNumOfPlayoutDevices(nPlay));
-        for (idx = 0; idx < nPlay; idx++)
+        TEST_MUSTPASS(hardware->GetNumOfPlayoutDevices(num_devs));
+        for (int dev_index = 0; dev_index < num_devs; ++dev_index)
         {
-            TEST_MUSTPASS(hardware->GetPlayoutDeviceName(idx,
-                                                         devName,
-                                                         guidName));
-            TEST_LOG("%d: %s\n", idx, devName);
-            TEST_MUSTPASS(hardware->SetPlayoutDevice(idx));
+            TEST_MUSTPASS(hardware->GetPlayoutDeviceName(dev_index,
+                                                         dev_name,
+                                                         guid_name));
+            TEST_LOG("%d: %s\n", dev_index, dev_name);
+            TEST_MUSTPASS(hardware->SetPlayoutDevice(dev_index));
             SLEEP(2000);
         }
 
