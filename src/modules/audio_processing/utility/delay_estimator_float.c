@@ -206,7 +206,8 @@ int WebRtc_DelayEstimatorProcessFloat(void* handle,
   // TODO(bjornv): I've taken the size of FFT into account, since there is a
   // different scaling in float vs fixed point FFTs. I'm not completely sure
   // this is necessary.
-  freq_scaling_log = 14 - (int) log2(max_value / kFftSize + 1);
+  // TODO(bjornv): Replace log2()
+  freq_scaling_log = 0;//14; - (int) log2(max_value / kFftSize + 1);
   freq_scaling = (float) (1 << freq_scaling_log) / kFftSize;
   for (i = 0; i < spectrum_size; ++i) {
     self->near_spectrum_u16[i] = (uint16_t) (near_spectrum[i] * freq_scaling);
@@ -221,7 +222,8 @@ int WebRtc_DelayEstimatorProcessFloat(void* handle,
   }
   // Find the largest possible scaling that is a multiple of two.
   // With largest we mean to fit in a Word16.
-  freq_scaling_log = 14 - (int) log2(max_value / kFftSize + 1);
+  // TODO(bjornv): Replace log2()
+  freq_scaling_log = 0;//14 - (int) log2(max_value / kFftSize + 1);
   freq_scaling = (float) (1 << freq_scaling_log) / kFftSize;
   for (i = 0; i < spectrum_size; ++i) {
     self->far_spectrum_u16[i] = (uint16_t) (far_spectrum[i] * freq_scaling);
