@@ -46,6 +46,7 @@ namespace cricket {
 static const int kDefaultLogSeverity = talk_base::LS_WARNING;
 static const int kStartVideoBitrate = 300;
 static const int kMaxVideoBitrate = 1000;
+static const int kMaxVideoRtpBufferSize = 0xFFFF;
 
 class WebRtcRenderAdapter : public webrtc::ExternalRenderer {
  public:
@@ -197,7 +198,7 @@ bool WebRtcVideoEngine::InitVideoEngine() {
   }
 
   if (vie_wrapper_->render()->RegisterVideoRenderModule(
-      *render_module_.get()) != 0) {
+          *render_module_.get()) != 0) {
     LOG_RTCERR0(RegisterVideoRenderModule);
     return false;
   }
@@ -299,7 +300,7 @@ void WebRtcVideoEngine::Terminate() {
   }
 
   if (vie_wrapper_->render()->DeRegisterVideoRenderModule(
-      *render_module_.get()) != 0)
+          *render_module_.get()) != 0)
     LOG_RTCERR0(DeRegisterVideoRenderModule);
 
   if ((vie_wrapper_->base()->DeregisterObserver()) != 0)
@@ -359,8 +360,10 @@ bool WebRtcVideoEngine::SetCaptureDevice(const Device* cam) {
     char device_name[256], device_id[256];
     bool found = false;
     for (int i = 0; i < vie_capture->NumberOfCaptureDevices(); ++i) {
-      if (vie_capture->GetCaptureDevice(i, device_name, sizeof(device_name),
-                                        device_id, sizeof(device_id)) == 0) {
+      if (vie_capture->GetCaptureDevice(i, device_name,
+                                        ARRAY_SIZE(device_name),
+                                        device_id,
+                                        ARRAY_SIZE(device_id)) == 0) {
         // TODO: We should only compare the device_id here,
         // however the devicemanager and webrtc use different format for th v4l2
         // device id. So here we also compare the device_name for now.
@@ -704,6 +707,14 @@ bool WebRtcVideoMediaChannel::SetRecvCodecs(
       ret = false;
     }
   }
+  if (ret && network_interface_) {
+    network_interface_->SetOption(NetworkInterface::ST_RTP,
+                                  talk_base::Socket::OPT_RCVBUF,
+                                  kMaxVideoRtpBufferSize);
+    network_interface_->SetOption(NetworkInterface::ST_RTP,
+                                  talk_base::Socket::OPT_SNDBUF,
+                                  kMaxVideoRtpBufferSize);
+  }
   return ret;
 }
 
@@ -774,7 +785,7 @@ bool WebRtcVideoMediaChannel::SetSend(bool send) {
     // connect it now.
     if (!connected()) {
       if (engine()->video_engine()->capture()->ConnectCaptureDevice(
-          engine()->capture_id(), vie_channel_) != 0) {
+              engine()->capture_id(), vie_channel_) != 0) {
         LOG_RTCERR2(ConnectCaptureDevice, engine()->capture_id(), vie_channel_);
         ret = false;
       } else {
