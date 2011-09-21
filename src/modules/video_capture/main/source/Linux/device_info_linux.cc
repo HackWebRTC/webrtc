@@ -80,7 +80,7 @@ WebRtc_UWord32 DeviceInfoLinux::NumberOfDevices()
         sprintf(device, "/dev/video%d", n);
         if (stat(device, &s) == 0) //check validity of path
         {
-            if ((fd = open(device, O_RDONLY)) > 0 || errno == EBUSY)
+            if ((fd = open(device, O_RDONLY)) != -1)
             {
                 close(fd);
                 count++;
@@ -102,21 +102,33 @@ WebRtc_Word32 DeviceInfoLinux::GetDeviceName(
 {
     WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideoCapture, _id, "%s", __FUNCTION__);
 
+    // Travel through /dev/video [0-63]
+    WebRtc_UWord32 count = 0;
     char device[20];
-    sprintf(device, "/dev/video%d", (int) deviceNumber);
     int fd = -1;
-
-    // open video device in RDONLY mode
-    struct stat s;
-    if (stat(device, &s) == 0)
+    bool found = false;
+    for (int n = 0; n < 64; n++)
     {
-        if ((fd = open(device, O_RDONLY)) < 0)
+        struct stat s;
+        sprintf(device, "/dev/video%d", n);
+        if (stat(device, &s) == 0)  // Check validity of path
         {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
-                       "error in opening video device. errno = %d", errno);
-            return -1;
+            if ((fd = open(device, O_RDONLY)) != -1)
+            {
+                if (count == deviceNumber) {
+                    // Found the device
+                    found = true;
+                    break;
+                } else {
+                    close(fd);
+                    count++;
+                }
+            }
         }
     }
+
+    if (!found)
+        return -1;
 
     // query device capabilities
     struct v4l2_capability cap;
