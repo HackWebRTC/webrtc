@@ -18,6 +18,7 @@
 #define END_STARTUP_SHORT       50
 #define FACTOR_Q16              (WebRtc_Word32)2621440 // 40 in Q16
 #define FACTOR_Q7               (WebRtc_Word16)5120 // 40 in Q7
+#define FACTOR_Q7_STARTUP       (WebRtc_Word16)1024 // 8 in Q7
 #define WIDTH_Q8                3 // 0.01 in Q8 (or 25 )
 //PARAMETERS FOR NEW METHOD
 #define DD_PR_SNR_Q11           2007 // ~= Q11(0.98) DD update of prior SNR
