@@ -450,11 +450,6 @@ int ViEAutoTest::ViECustomCall()
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
-        error = ptrViERender->MirrorRenderStream(captureId, true, false, true);
-        numberOfErrors += ViETest::TestError(error == 0,
-                                             "ERROR: %s at line %d",
-                                             __FUNCTION__, __LINE__);
-
         error = ptrViERender->StartRender(captureId);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
@@ -472,7 +467,7 @@ int ViEAutoTest::ViECustomCall()
 
         // Call started
         std::cout << std::endl;
-        std::cout << "Loopback call started" << std::endl;
+        std::cout << "Custom call started" << std::endl;
         std::cout << std::endl << std::endl;
         std::cout << "Press enter to stop...";
         std::getline(std::cin, str);
@@ -588,7 +583,7 @@ int ViEAutoTest::ViECustomCall()
                                              __FUNCTION__, __LINE__);
 
         ViETest::Log(" ");
-        ViETest::Log(" ViE Autotest Loopback Call Done");
+        ViETest::Log(" ViE Autotest Custom Call Started");
         ViETest::Log("========================================");
         ViETest::Log(" ");
     }
@@ -634,6 +629,15 @@ bool ViEAutoTest::GetVideoDevice(webrtc::ViEBase* ptrViEBase,
             std::cout << "   " << captureIdx+1 << ". " << deviceName
                       << std::endl;
         }
+        //  Get the devName of the default (or first) camera for display
+        error = ptrViECapture->GetCaptureDevice(0, deviceName,
+                                                KMaxDeviceNameLength,
+                                                uniqueId,
+                                                KMaxUniqueIdLength);
+        numberOfErrors += ViETest::TestError(error == 0,
+                                             "ERROR: %s at line %d",
+                                              __FUNCTION__, __LINE__);
+
         std::cout << "Choose a capture device. Press enter for default ("
                   << deviceName << "/" << uniqueId << "): ";
         std::getline(std::cin, str);
@@ -670,7 +674,7 @@ bool ViEAutoTest::GetVideoDevice(webrtc::ViEBase* ptrViEBase,
             numberOfErrors += ViETest::TestError(error == 0,
                                                  "ERROR: %s at line %d",
                                                  __FUNCTION__, __LINE__);
-            strcpy(captureDeviceName, uniqueId);
+            strcpy(captureDeviceUniqueId, uniqueId);
             strcpy(captureDeviceName, deviceName);
             return true;
         }
