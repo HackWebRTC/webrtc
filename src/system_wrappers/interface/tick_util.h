@@ -76,6 +76,11 @@ public:
                                   const TickInterval& rhs);
     TickInterval& operator+=(const TickInterval& rhs);
 
+    friend bool operator>(const TickInterval& lhs, const TickInterval& rhs);
+    friend bool operator<=(const TickInterval& lhs, const TickInterval& rhs);
+    friend bool operator<(const TickInterval& lhs, const TickInterval& rhs);
+    friend bool operator>=(const TickInterval& lhs, const TickInterval& rhs);
+
 private:
     TickInterval(WebRtc_Word64 interval);
 
@@ -106,6 +111,22 @@ inline TickTime operator+(const TickTime lhs, const WebRtc_Word64 ticks)
     TickTime time = lhs;
     time._ticks += ticks;
     return time;
+}
+inline bool operator>(const TickInterval& lhs, const TickInterval& rhs)
+{
+    return lhs._interval > rhs._interval;
+}
+inline bool operator<=(const TickInterval& lhs, const TickInterval& rhs)
+{
+    return lhs._interval <= rhs._interval;
+}
+inline bool operator<(const TickInterval& lhs, const TickInterval& rhs)
+{
+    return lhs._interval <= rhs._interval;
+}
+inline bool operator>=(const TickInterval& lhs, const TickInterval& rhs)
+{
+    return lhs._interval >= rhs._interval;
 }
 
 inline TickTime TickTime::Now()
