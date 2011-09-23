@@ -170,11 +170,12 @@ int WebRtc_DelayEstimatorProcessFloat(void* handle,
   DelayEstimatorFloat_t* self = (DelayEstimatorFloat_t*) handle;
 
   const float kFftSize = (float) (2 * (spectrum_size - 1));
+  const float kLogOf2Inverse = 1.4426950f;
   float max_value = 0.0f;
-  float freq_scaling = 0;
+  float scaling = 0;
 
   int far_q = 0;
-  int freq_scaling_log = 0;
+  int scaling_log = 0;
   int i = 0;
 
   if (self == NULL) {
@@ -206,11 +207,10 @@ int WebRtc_DelayEstimatorProcessFloat(void* handle,
   // TODO(bjornv): I've taken the size of FFT into account, since there is a
   // different scaling in float vs fixed point FFTs. I'm not completely sure
   // this is necessary.
-  // TODO(bjornv): Replace log2()
-  freq_scaling_log = 0;//14; - (int) log2(max_value / kFftSize + 1);
-  freq_scaling = (float) (1 << freq_scaling_log) / kFftSize;
+  scaling_log = 14 - (int) (log(max_value / kFftSize + 1) * kLogOf2Inverse);
+  scaling = (float) (1 << scaling_log) / kFftSize;
   for (i = 0; i < spectrum_size; ++i) {
-    self->near_spectrum_u16[i] = (uint16_t) (near_spectrum[i] * freq_scaling);
+    self->near_spectrum_u16[i] = (uint16_t) (near_spectrum[i] * scaling);
   }
 
   // Same for far end
@@ -222,13 +222,12 @@ int WebRtc_DelayEstimatorProcessFloat(void* handle,
   }
   // Find the largest possible scaling that is a multiple of two.
   // With largest we mean to fit in a Word16.
-  // TODO(bjornv): Replace log2()
-  freq_scaling_log = 0;//14 - (int) log2(max_value / kFftSize + 1);
-  freq_scaling = (float) (1 << freq_scaling_log) / kFftSize;
+  scaling_log = 14 - (int) (log(max_value / kFftSize + 1) * kLogOf2Inverse);
+  scaling = (float) (1 << scaling_log) / kFftSize;
   for (i = 0; i < spectrum_size; ++i) {
-    self->far_spectrum_u16[i] = (uint16_t) (far_spectrum[i] * freq_scaling);
+    self->far_spectrum_u16[i] = (uint16_t) (far_spectrum[i] * scaling);
   }
-  far_q = (int) freq_scaling_log;
+  far_q = (int) scaling_log;
   assert(far_q < 16); // Catch too large scaling, which should never be able to
                       // occur.
 
