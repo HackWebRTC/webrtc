@@ -391,13 +391,14 @@ int main(int argc, char* argv[])
       printf("No value provided for BottleNeck and cannot read file %s\n", bottleneck_file);
       exit(0);
     } else {
+      int aux_var;
       printf("reading bottleneck rates from file %s\n\n",bottleneck_file);
-      if (fscanf(f_bn, "%d", &bottleneck) == EOF) {
+      if (fscanf(f_bn, "%d", &aux_var) == EOF) {
         /* Set pointer to beginning of file */
         fseek(f_bn, 0L, SEEK_SET);
-        fscanf(f_bn, "%d", &bottleneck);
+        fscanf(f_bn, "%d", &aux_var);
       }
-
+      bottleneck = (WebRtc_Word16)aux_var;
       /* Bottleneck is a cosine function
        * Matlab code for writing the bottleneck file:
        * BottleNeck_10ms = 20e3 + 10e3 * cos((0:5999)/5999*2*pi);
@@ -635,11 +636,13 @@ int main(int argc, char* argv[])
 
       /* read next bottleneck rate */
       if (f_bn != NULL) {
-        if (fscanf(f_bn, "%d", &bottleneck) == EOF) {
+        int aux_var;
+        if (fscanf(f_bn, "%d", &aux_var) == EOF) {
           /* Set pointer to beginning of file */
           fseek(f_bn, 0L, SEEK_SET);
-          fscanf(f_bn, "%d", &bottleneck);
+          fscanf(f_bn, "%d", &aux_var);
         }
+        bottleneck = (WebRtc_Word16)aux_var;
         if (CodingMode == 1) {
           WebRtcIsacfix_Control(ISAC_main_inst, bottleneck, framesize);
         }
@@ -838,6 +841,5 @@ int main(int argc, char* argv[])
     WebRtcIsacfix_FreeInternal(ISAC_main_inst);
   }
   WebRtcIsacfix_Free(ISAC_main_inst);
-
-  // exit(0);
+  return 0;
 }

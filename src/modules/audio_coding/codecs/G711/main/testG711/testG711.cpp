@@ -57,7 +57,6 @@ int main(int argc, char* argv[])
     WebRtc_Word16 stream_len = 0;
     WebRtc_Word16 shortdata[480];
     WebRtc_Word16 decoded[480];
-    WebRtc_Word16 decoded2[480];
     WebRtc_Word16 streamdata[500];
     WebRtc_Word16    speechType[1];
     char law[2];
@@ -168,4 +167,3 @@ int main(int argc, char* argv[])
 
     return 0;
 }
-

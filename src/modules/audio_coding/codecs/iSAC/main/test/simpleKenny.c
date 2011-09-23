@@ -57,12 +57,9 @@ int main(int argc, char* argv[])
     FILE* outp;
     char inname[500];
     char outname[500];
-    char usageFileName[500] = "usage.txt";
 
     /* Runtime statistics */
     double        starttime;
-    double        runtime;
-    double        length_file;
     double        rate;
     double        rateRCU;
     double        rateLB;
@@ -87,12 +84,16 @@ int main(int argc, char* argv[])
     WebRtc_Word16   err;
     WebRtc_Word16   cur_framesmpls; 
     int           endfile;
+#ifdef WIN32
+    double        length_file;
+    double        runtime;
     char          outDrive[10];
     char          outPath[500];
     char          outPrefix[500];
     char          outSuffix[500];
     char          bitrateFileName[500];
     FILE*         bitrateFile;
+#endif
     FILE*         histFile;
     FILE*         averageFile;
     int           sampFreqKHz;
@@ -341,6 +342,7 @@ valid values are 8 and 16.\n", sampFreqKHz);
 		if(onlyDecode)
 		{
 			WebRtc_UWord8 auxUW8;
+                        size_t auxSizet;
 			if(fread(&auxUW8, sizeof(WebRtc_UWord8), 1, inp) < 1)
 			{
 				break;
@@ -351,7 +353,8 @@ valid values are 8 and 16.\n", sampFreqKHz);
 				break;
 			}
 			stream_len |= (WebRtc_UWord16)auxUW8;
-			if(fread(payload, 1, stream_len, inp) < stream_len)
+                        auxSizet = (size_t)stream_len;
+                        if(fread(payload, 1, auxSizet, inp) < auxSizet)
 			{
 				printf("last payload is corrupted\n");
 				break;

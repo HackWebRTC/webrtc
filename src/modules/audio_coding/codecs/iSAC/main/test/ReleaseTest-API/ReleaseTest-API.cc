@@ -66,7 +66,6 @@ int main(int argc, char* argv[])
 	WebRtc_Word16 decodedTC[MAX_FRAMESAMPLES << 1];
 	WebRtc_UWord16 streamdata[500];
 	WebRtc_Word16	speechType[1];
-    WebRtc_Word16 prevFrameSize = 1;
     WebRtc_Word16 rateBPS = 0;
     WebRtc_Word16 fixedFL = 0; 
     WebRtc_Word16 payloadSize = 0;
@@ -85,14 +84,9 @@ int main(int argc, char* argv[])
 	int totalbits =0;
 	int totalsmpls =0;
 
-    /* For fault test 10, garbage data */
-    //FILE *seedfile;
-    unsigned int random_seed = (unsigned int) time(NULL);//1196764538
-
     /* If use GNS file */
     FILE *fp_gns = NULL;
 	int gns = 0;
-	int cur_delay = 0;
 	char gns_file[100];
     short maxStreamLen30 = 0;
     short maxStreamLen60 = 0;
@@ -107,7 +101,6 @@ int main(int argc, char* argv[])
     FILE* transCodingFile;
     FILE* transcodingBitstream;
     WebRtc_UWord32 numTransCodingBytes=0;
-    WebRtc_UWord32 numREDTransCodingBytes=0;
 
 	/* only one structure used for ISAC encoder */
 	ISACStruct* ISAC_main_inst;
@@ -941,7 +934,7 @@ int main(int argc, char* argv[])
                     printf("\n\n");
                 }
                 printf("    Error: in decoding the transcoded stream");
-                cout << fflush;
+                cout << flush;
                 if(testNum == 0)
                 {
                     printf("\n\n");

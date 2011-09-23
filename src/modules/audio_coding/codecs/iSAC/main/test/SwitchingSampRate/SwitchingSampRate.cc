@@ -72,12 +72,16 @@ int main(int argc, char* argv[])
   fileNameWB[0]  = '\0';
   fileNameSWB[0] = '\0';
 
+  char myFlag[20];
+  strcpy(myFlag, "-wb");
   // READ THE WIDEBAND AND SUPER-WIDEBAND FILE NAMES
-  if(readParamString(argc, argv, "-wb", fileNameWB, MAX_FILE_NAME) <= 0)
+  if(readParamString(argc, argv, myFlag, fileNameWB, MAX_FILE_NAME) <= 0)
   {
     printf("No wideband file is specified");
   }
-  if(readParamString(argc, argv, "-swb", fileNameSWB, MAX_FILE_NAME) <= 0)
+
+  strcpy(myFlag, "-swb");
+  if(readParamString(argc, argv, myFlag, fileNameSWB, MAX_FILE_NAME) <= 0)
   {
     printf("No super-wideband file is specified");
   }
@@ -90,7 +94,8 @@ int main(int argc, char* argv[])
   encoderSampRate[1] = kIsacSuperWideband;
   OPEN_FILE_RB(inFile[1], fileNameSWB);
 
-  short codingMode = readSwitch(argc, argv, "-I");
+  strcpy(myFlag, "-I");
+  short codingMode = readSwitch(argc, argv, myFlag);
 
   for(clientCntr = 0; clientCntr < NUM_CLIENTS; clientCntr++)
   {
@@ -193,8 +198,6 @@ int main(int argc, char* argv[])
   short receiverIdx;
 
   printf("\n");
-  char rot[4] = {'\\', '|', '/', '-'};
-  unsigned int rotCntr = 0;
   short num10ms[MAX_NUM_CLIENTS];
   memset(num10ms, 0, sizeof(short)*MAX_NUM_CLIENTS);
   FILE* arrivalTimeFile1 = fopen("arrivalTime1.dat", "wb");
