@@ -18,6 +18,7 @@
 
 #include "../../../../engine_configurations.h"
 #include "../source/event.h"
+#include "test_callbacks.h"
 #include "test_macros.h"
 #include "test_util.h"
 #include "video_metrics.h"

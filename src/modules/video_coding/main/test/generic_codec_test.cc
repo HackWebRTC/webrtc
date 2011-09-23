@@ -16,9 +16,10 @@
 #include "rtp_rtcp.h"
 #include "module_common_types.h"
 #include "test_macros.h"
-#include "test_util.h"
 
 using namespace webrtc;
+
+enum { kMaxWaitEncTimeMs = 100 };
 
 int GenericCodecTest::RunTest(CmdArgs& args)
 {

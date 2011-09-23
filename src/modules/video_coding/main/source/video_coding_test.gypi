@@ -58,6 +58,7 @@
         '../test/receiver_tests.h',
         '../test/release_test.h',
         '../test/rtp_player.h',
+        '../test/test_callbacks.h',
         '../test/test_util.h',
         '../test/video_source.h',
 
@@ -73,6 +74,7 @@
         '../test/quality_modes_test.cc',
         '../test/receiver_timing_tests.cc',
         '../test/rtp_player.cc',
+        '../test/test_callbacks.cc',
         '../test/test_util.cc',
         '../test/tester_main.cc',
         '../test/video_rtp_play_mt.cc',

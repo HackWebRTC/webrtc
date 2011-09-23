@@ -16,6 +16,7 @@
 #define WEBRTC_MODULES_VIDEO_CODING_TEST_MT_TEST_COMMON_H_
 
 #include "rtp_rtcp.h"
+#include "test_callbacks.h"
 #include "test_util.h"
 #include "video_coding.h"
 

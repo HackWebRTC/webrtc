@@ -12,14 +12,15 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_TEST_MEDIA_OPT_TEST_H_
 #define WEBRTC_MODULES_VIDEO_CODING_TEST_MEDIA_OPT_TEST_H_
 
-#include "video_coding.h"
-#include "test_util.h"
-#include "video_source.h"
 
 #include <string>
 
+#include "rtp_rtcp.h"
+#include "test_util.h"
+#include "video_coding.h"
+#include "video_source.h"
+
 using namespace std;
-//
 
 // media optimization test
 // This test simulates a complete encode-decode cycle via the RTP module.
@@ -28,31 +29,6 @@ using namespace std;
 // The test allows two modes:
 // 1 - Standard, basic settings, one run
 // 2 - Release test - iterates over a number of video sequences, bit rates, packet loss values ,etc.
-
-class VCMTestProtectionCallback: public webrtc::VCMProtectionCallback
-{
-public:
-    VCMTestProtectionCallback();
-    virtual ~VCMTestProtectionCallback();
-    WebRtc_Word32 ProtectionRequest(const WebRtc_UWord8 deltaFECRate,
-                                    const WebRtc_UWord8 keyFECRate,
-                                    const bool deltaUseUepProtection,
-                                    const bool keyUseUepProtection,
-                                    const bool nack);
-    enum webrtc::NACKMethod NACKMethod();
-    WebRtc_UWord8 FECDeltaRate();
-    WebRtc_UWord8 FECKeyRate();
-    bool          FECDeltaUepProtection();
-    bool          FECKeyUepProtection();
-private:
-    WebRtc_UWord8     _deltaFECRate;
-    WebRtc_UWord8     _keyFECRate;
-    bool              _deltaUseUepProtection;
-    bool              _keyUseUepProtection;
-    enum webrtc::NACKMethod   _nack;
-
-};
-
 
 class MediaOptTest
 {
@@ -114,25 +90,4 @@ private:
 
 }; // end of MediaOptTest class definition
 
-
-// Feed back from the RTP Module callback
-class RTPFeedbackCallback: public webrtc::RtpVideoFeedback
-{
-public:
-    RTPFeedbackCallback(webrtc::VideoCodingModule* vcm) {_vcm = vcm;};
-   void OnReceivedIntraFrameRequest(const WebRtc_Word32 id,
-                                    const WebRtc_UWord8 message = 0){};
-
-   void OnNetworkChanged(const WebRtc_Word32 id,
-                          const WebRtc_UWord16 bitrateTargetKbit,
-                          const WebRtc_UWord8 fractionLost,
-                          const WebRtc_UWord16 roundTripTimeMs,
-                          const WebRtc_UWord32 jitterMS,
-                          const WebRtc_UWord16 bwEstimateKbitMin,
-                          const WebRtc_UWord16 bwEstimateKbitMax);
-
-private:
-   webrtc::VideoCodingModule* _vcm;
-
-};
 #endif // WEBRTC_MODULES_VIDEO_CODING_TEST_MEDIA_OPT_TEST_H_

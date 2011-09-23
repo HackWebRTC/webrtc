@@ -15,6 +15,7 @@
 #include <time.h>
 
 #include "../source/event.h"
+#include "test_callbacks.h"
 #include "test_macros.h"
 #include "video_metrics.h"
 #include "vplib.h"

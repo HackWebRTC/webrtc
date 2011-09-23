@@ -212,7 +212,7 @@ int MTRxTxTest(CmdArgs& args)
     rtp->RegisterIncomingDataCallback(&dataCallback);
     vcm->RegisterReceiveCallback(&receiveCallback);
 
-    VCMTestProtectionCallback protectionCallback;
+    VideoProtectionCallback protectionCallback;
     vcm->RegisterProtectionCallback(&protectionCallback);
 
     outgoingTransport->SetLossPct(lossRate);

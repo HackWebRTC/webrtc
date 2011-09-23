@@ -20,7 +20,7 @@
 
 #include "../source/event.h"
 #include "receiver_tests.h" // receive side callbacks
-#include "rtp_rtcp.h"
+#include "test_callbacks.h"
 #include "test_macros.h"
 #include "test_util.h" // send side callback
 #include "video_coding.h"
@@ -277,7 +277,7 @@ MediaOptTest::Perform()
     RtpDataCallback dataCallback(_vcm);
     _rtp->RegisterIncomingDataCallback(&dataCallback);
 
-    VCMTestProtectionCallback  protectionCallback;
+    VideoProtectionCallback  protectionCallback;
     _vcm->RegisterProtectionCallback(&protectionCallback);
 
     // set error resilience / test parameters:
@@ -543,87 +543,4 @@ MediaOptTest::TearDown()
     fclose(_decodedFile);
     fclose(_actualSourceFile);
     return;
-}
-
-
-VCMTestProtectionCallback::VCMTestProtectionCallback():
-_deltaFECRate(0),
-_keyFECRate(0),
-_deltaUseUepProtection(0),
-_keyUseUepProtection(0),
-_nack(kNackOff)
-{
-    //
-}
-
-VCMTestProtectionCallback::~VCMTestProtectionCallback()
-{
-    //
-}
-
-WebRtc_Word32
-VCMTestProtectionCallback::ProtectionRequest(const WebRtc_UWord8 deltaFECRate,
-                                             const WebRtc_UWord8 keyFECRate,
-                                             const bool deltaUseUepProtection,
-                                             const bool keyUseUepProtection,
-                                             const bool nack)
-{
-    _deltaFECRate = deltaFECRate;
-    _keyFECRate = keyFECRate;
-    _deltaUseUepProtection = deltaUseUepProtection;
-    _keyUseUepProtection = keyUseUepProtection;
-    if (nack == true)
-    {
-        _nack = kNackRtcp;
-    }
-    else
-    {
-        _nack = kNackOff;
-    }
-    return VCM_OK;
-
-}
-NACKMethod
-VCMTestProtectionCallback::NACKMethod()
-{
-    return _nack;
-}
-
-WebRtc_UWord8
-VCMTestProtectionCallback::FECDeltaRate()
-{
-    return _deltaFECRate;
-}
-
-WebRtc_UWord8
-VCMTestProtectionCallback::FECKeyRate()
-{
-    return _keyFECRate;
-}
-
-bool
-VCMTestProtectionCallback::FECDeltaUepProtection()
-{
-    return _deltaUseUepProtection;
-}
-
-bool
-VCMTestProtectionCallback::FECKeyUepProtection()
-{
-    return _keyUseUepProtection;
-}
-
-
-
-void
-RTPFeedbackCallback::OnNetworkChanged(const WebRtc_Word32 id,
-                                      const WebRtc_UWord16 bitrateTargetKbit,
-                                      const WebRtc_UWord8 fractionLost,
-                                      const WebRtc_UWord16 roundTripTimeMs,
-                                      const WebRtc_UWord32 jitterMS,
-                                      const WebRtc_UWord16 bwEstimateKbitMin,
-                                      const WebRtc_UWord16 bwEstimateKbitMax)
-{
-
-    _vcm->SetChannelParameters(bitrateTargetKbit, fractionLost,(WebRtc_UWord8)roundTripTimeMs);
 }

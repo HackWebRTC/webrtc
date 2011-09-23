@@ -17,6 +17,7 @@
 
 #include "../source/event.h"
 #include "common_types.h"
+#include "test_callbacks.h"
 #include "test_macros.h"
 #include "test_util.h"
 #include "tick_time.h"
