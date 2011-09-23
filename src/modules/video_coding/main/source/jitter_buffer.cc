@@ -1685,6 +1685,9 @@ VCMJitterBuffer::InsertPacket(VCMEncodedFrame* buffer, const VCMPacket& packet)
         }
 
         // Insert packet
+        // check for first packet
+        // high sequence number will not be set
+        bool first = frame->GetHighSeqNum() == -1;
         bufferReturn = frame->InsertPacket(packet, nowMs);
         ret = bufferReturn;
 
@@ -1700,8 +1703,7 @@ VCMJitterBuffer::InsertPacket(VCMEncodedFrame* buffer, const VCMPacket& packet)
 
             // Insert each frame once on the arrival of the first packet
             // belonging to that frame (media or empty)
-            if (state == kStateEmpty &&
-                frame->GetHighSeqNum() == packet.seqNum)
+            if (state == kStateEmpty && first)
             {
                 ret = kFirstPacket;
                 _frameBuffersTSOrder.Insert(frame);

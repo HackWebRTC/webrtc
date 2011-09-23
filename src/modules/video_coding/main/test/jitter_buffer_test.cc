@@ -1895,7 +1895,7 @@ int JitterBufferTest(CmdArgs& args)
     packet.seqNum = seqNum;
     packet.timestamp = timeStamp;
     packet.frameType = kFrameEmpty;
-    TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
+    TEST(kIncomplete == jb.InsertPacket(frameIn, packet));
     // now insert the first data packet
     seqNum = 1;
     packet.isFirstPacket = true;
@@ -1955,13 +1955,39 @@ int JitterBufferTest(CmdArgs& args)
     TEST(frameIn != 0);
 
     jb.SetNackMode(kNoNack);
+    jb.Flush();
+
+    // Testing that 1 empty packet inserted last will not be set for decoding
+    seqNum = 3;
+    // Insert one empty packet per frame, should never return the last timestamp
+    // inserted. Only return empty frames in the presence of subsequent frames.
+    maxSize = 1000;
+    for (int i = 0; i < maxSize + 10; i++)
+    {
+        timeStamp += 33 * 90;
+        seqNum++;
+        packet.isFirstPacket = false;
+        packet.markerBit = false;
+        packet.seqNum = seqNum;
+        packet.timestamp = timeStamp;
+        packet.frameType = kFrameEmpty;
+        testFrame = jb.GetFrameForDecoding();
+        // timestamp should bever be the last TS inserted
+        if (testFrame != NULL)
+        {
+            TEST(testFrame->TimeStamp() < timeStamp);
+            printf("Not null TS = %d\n",testFrame->TimeStamp());
+        }
+    }
+
+    jb.Flush();
 
 
     // printf(DONE testing inserting empty packets to the JB)
 
 
     // H.264 tests
-    //Test incomplete NALU frames
+    // Test incomplete NALU frames
 
     jb.Flush();
     jb.SetNackMode(kNoNack);

@@ -14,6 +14,8 @@
 #include <string.h>
 #include <cassert>
 
+#include "internal_defines.h"
+
 namespace webrtc {
 
 VCMSessionInfo::VCMSessionInfo():
@@ -52,11 +54,7 @@ VCMSessionInfo::GetLowSeqNum() const
 WebRtc_Word32
 VCMSessionInfo::GetHighSeqNum() const
 {
-    if (_emptySeqNumHigh != -1)
-    {
-        return _emptySeqNumHigh;
-    }
-    return _highSeqNum;
+    return VCM_MAX(_emptySeqNumHigh, _highSeqNum);
 }
 
 void
