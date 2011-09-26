@@ -119,4 +119,11 @@ static __inline int WebRtcSpl_NormW16(WebRtc_Word16 a) {
   return tmp - 17;
 }
 
+static __inline WebRtc_Word16 WebRtcSpl_SatW32ToW16(WebRtc_Word32 value32) {
+  WebRtc_Word16 out16;
+
+  __asm__("ssat %r0, #16, %r1" : "=r"(out16) : "r"(value32));
+
+  return out16;
+}
 #endif  // WEBRTC_SPL_SPL_INL_ARMV7_H_

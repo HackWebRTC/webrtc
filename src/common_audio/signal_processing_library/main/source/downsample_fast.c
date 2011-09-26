@@ -52,7 +52,7 @@ int WebRtcSpl_DownsampleFast(WebRtc_Word16 *in_ptr, WebRtc_Word16 in_length,
 
         // If output is higher than 32768, saturate it. Same with negative side
 
-        *downsampled_ptr++ = (WebRtc_Word16)WEBRTC_SPL_SAT(32767, o, -32768);
+        *downsampled_ptr++ = WebRtcSpl_SatW32ToW16(o);
     }
 
     return 0;

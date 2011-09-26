@@ -19,16 +19,20 @@
 #include "spl_inl_armv7.h"
 #else
 
+static __inline WebRtc_Word16 WebRtcSpl_SatW32ToW16(WebRtc_Word32 value32) {
+  WebRtc_Word16 out16 = (WebRtc_Word16) value32;
+
+  if (value32 > 32767)
+    out16 = 32767;
+  else if (value32 < -32768)
+    out16 = -32768;
+
+  return out16;
+}
+
 static __inline WebRtc_Word16 WebRtcSpl_AddSatW16(WebRtc_Word16 a,
                                                   WebRtc_Word16 b) {
-  WebRtc_Word32 s_sum = (WebRtc_Word32) a + (WebRtc_Word32) b;
-
-  if (s_sum > WEBRTC_SPL_WORD16_MAX)
-    s_sum = WEBRTC_SPL_WORD16_MAX;
-  else if (s_sum < WEBRTC_SPL_WORD16_MIN)
-    s_sum = WEBRTC_SPL_WORD16_MIN;
-
-  return (WebRtc_Word16)s_sum;
+  return WebRtcSpl_SatW32ToW16((WebRtc_Word32) a + (WebRtc_Word32) b);
 }
 
 static __inline WebRtc_Word32 WebRtcSpl_AddSatW32(WebRtc_Word32 l_var1,
@@ -54,24 +58,7 @@ static __inline WebRtc_Word32 WebRtcSpl_AddSatW32(WebRtc_Word32 l_var1,
 
 static __inline WebRtc_Word16 WebRtcSpl_SubSatW16(WebRtc_Word16 var1,
                                                   WebRtc_Word16 var2) {
-  WebRtc_Word32 l_diff;
-  WebRtc_Word16 s_diff;
-
-  // perform subtraction
-  l_diff = (WebRtc_Word32)var1 - (WebRtc_Word32)var2;
-
-  // default setting
-  s_diff = (WebRtc_Word16) l_diff;
-
-  // check for overflow
-  if (l_diff > (WebRtc_Word32)32767)
-  s_diff = (WebRtc_Word16)32767;
-
-  // check for underflow
-  if (l_diff < (WebRtc_Word32)-32768)
-  s_diff = (WebRtc_Word16)-32768;
-
-  return s_diff;
+  return WebRtcSpl_SatW32ToW16((WebRtc_Word32) var1 - (WebRtc_Word32) var2);
 }
 
 static __inline WebRtc_Word32 WebRtcSpl_SubSatW32(WebRtc_Word32 l_var1,

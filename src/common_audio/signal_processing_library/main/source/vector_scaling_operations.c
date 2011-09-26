@@ -125,7 +125,7 @@ void WebRtcSpl_ScaleVectorWithSat(G_CONST WebRtc_Word16 *in_vector, WebRtc_Word1
     for (i = 0; i < in_vector_length; i++)
     {
         tmpW32 = WEBRTC_SPL_MUL_16_16_RSFT(*inptr++, gain, right_shifts);
-        ( *outptr++) = (WebRtc_Word16)WEBRTC_SPL_SAT(32767, tmpW32, -32768);
+        (*outptr++) = WebRtcSpl_SatW32ToW16(tmpW32);
     }
 }
 

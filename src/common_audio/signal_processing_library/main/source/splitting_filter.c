@@ -147,13 +147,11 @@ void WebRtcSpl_AnalysisQMF(const WebRtc_Word16* in_data, WebRtc_Word16* low_band
     {
         tmp = filter1[i] + filter2[i] + 1024;
         tmp = WEBRTC_SPL_RSHIFT_W32(tmp, 11);
-        low_band[i] = (WebRtc_Word16)WEBRTC_SPL_SAT(WEBRTC_SPL_WORD16_MAX,
-                tmp, WEBRTC_SPL_WORD16_MIN);
+        low_band[i] = WebRtcSpl_SatW32ToW16(tmp);
 
         tmp = filter1[i] - filter2[i] + 1024;
         tmp = WEBRTC_SPL_RSHIFT_W32(tmp, 11);
-        high_band[i] = (WebRtc_Word16)WEBRTC_SPL_SAT(WEBRTC_SPL_WORD16_MAX,
-                tmp, WEBRTC_SPL_WORD16_MIN);
+        high_band[i] = WebRtcSpl_SatW32ToW16(tmp);
     }
 }
 
@@ -191,10 +189,10 @@ void WebRtcSpl_SynthesisQMF(const WebRtc_Word16* low_band, const WebRtc_Word16* 
     for (i = 0, k = 0; i < kBandFrameLength; i++)
     {
         tmp = WEBRTC_SPL_RSHIFT_W32(filter2[i] + 512, 10);
-        out_data[k++] = (WebRtc_Word16)WEBRTC_SPL_SAT(32767, tmp, -32768);
+        out_data[k++] = WebRtcSpl_SatW32ToW16(tmp);
 
         tmp = WEBRTC_SPL_RSHIFT_W32(filter1[i] + 512, 10);
-        out_data[k++] = (WebRtc_Word16)WEBRTC_SPL_SAT(32767, tmp, -32768);
+        out_data[k++] = WebRtcSpl_SatW32ToW16(tmp);
     }
 
 }

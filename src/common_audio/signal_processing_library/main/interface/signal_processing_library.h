@@ -1659,6 +1659,17 @@ void WebRtcSpl_SynthesisQMF(const WebRtc_Word16* low_band,
 //      - out_data      : Super-wideband speech signal, 0-16 kHz
 //
 
+// WebRtc_Word16 WebRtcSpl_SatW32ToW16(...)
+//
+// This function saturates a 32-bit word into a 16-bit word.
+// 
+// Input:
+//      - value32   : The value of a 32-bit word.
+//
+// Output:
+//      - out16     : the saturated 16-bit word.
+//
+
 // WebRtc_Word16 WebRtcSpl_get_version(...)
 //
 // This function gives the version string of the Signal Processing Library.
