@@ -879,7 +879,7 @@ bool ViEAutoTest::GetVideoPorts(int* txPort, int* rxPort)
     while(1)
     {
         std::cout << "Enter video send port. Press enter for default ("
-                  << *txPort << ")";
+                  << *txPort << "):  ";
         std::getline(std::cin, str);
         port = atoi(str.c_str());
 
@@ -907,7 +907,7 @@ bool ViEAutoTest::GetVideoPorts(int* txPort, int* rxPort)
     while(1)
     {
         std::cout << "Enter video receive port. Press enter for default ("
-                  << *rxPort << ")";
+                  << *rxPort << "):  ";
         std::getline(std::cin, str);
         port = atoi(str.c_str());
 
@@ -969,7 +969,7 @@ bool ViEAutoTest::GetVideoCodec(webrtc::ViECodec* ptrViECodec,
         }
         std::cout << std::endl;
         std::cout << "Choose video codec. Press enter for default ("
-                  << DEFAULT_VIDEO_CODEC << ")";
+                  << DEFAULT_VIDEO_CODEC << "):  ";
         std::getline(std::cin, str);
         codecSelection = atoi(str.c_str());
 
@@ -1001,7 +1001,7 @@ bool ViEAutoTest::GetVideoCodec(webrtc::ViECodec* ptrViECodec,
     }
 
     std::cout << "Choose video width. Press enter for default ("
-              << DEFAULT_VIDEO_CODEC_WIDTH << ")";
+              << DEFAULT_VIDEO_CODEC_WIDTH << "):  ";
     std::getline(std::cin, str);
     int sizeSelection = atoi(str.c_str());
     if(sizeSelection!=0)
@@ -1010,12 +1010,22 @@ bool ViEAutoTest::GetVideoCodec(webrtc::ViECodec* ptrViECodec,
     }
 
     std::cout << "Choose video height. Press enter for default ("
-              << DEFAULT_VIDEO_CODEC_HEIGHT << ")";
+              << DEFAULT_VIDEO_CODEC_HEIGHT << "):  ";
     std::getline(std::cin, str);
     sizeSelection = atoi(str.c_str());
     if(sizeSelection!=0)
     {
         videoCodec.height=sizeSelection;
+    }
+    // Set start bit rate
+    std::cout << std::endl;
+    std::cout << "Choose start rate (in kbps). Press enter for default ("
+              << DEFAULT_VIDEO_CODEC_BITRATE << "):  ";
+    std::getline(std::cin, str);
+    int startRate = atoi(str.c_str());
+    if(startRate != 0)
+    {
+        videoCodec.startBitrate=startRate;
     }
     return true;
 }
@@ -1033,7 +1043,7 @@ bool ViEAutoTest::GetAudioPorts(int* txPort, int* rxPort)
     while(1)
     {
         std::cout << "Enter audio send port. Press enter for default ("
-                  << *txPort << ")";
+                  << *txPort << "):  ";
         std::getline(std::cin, str);
         port = atoi(str.c_str());
 
@@ -1061,7 +1071,7 @@ bool ViEAutoTest::GetAudioPorts(int* txPort, int* rxPort)
     while(1)
     {
         std::cout << "Enter audio receive port. Press enter for default ("
-                  << *rxPort << ")";
+                  << *rxPort << "):  ";
         std::getline(std::cin, str);
         port = atoi(str.c_str());
 
@@ -1120,7 +1130,7 @@ bool ViEAutoTest::GetAudioCodec(webrtc::VoECodec* ptrVeCodec, webrtc::CodecInst&
         }
         std::cout << std::endl;
         std::cout << "Choose audio codec. Press enter for default ("
-                  << DEFAULT_AUDIO_CODEC << ")";
+                  << DEFAULT_AUDIO_CODEC << "):  ";
         std::getline(std::cin, str);
         codecSelection = atoi(str.c_str());
 
@@ -1178,6 +1188,7 @@ void ViEAutoTest::PrintCallInformation(char* IP, char* videoCaptureDeviceName,
     std::cout << "\t\tplType: " << (int)videoCodec.plType << std::endl;
     std::cout << "\t\twidth: " << videoCodec.width << std::endl;
     std::cout << "\t\theight: " << videoCodec.height << std::endl;
+    std::cout << "\t\tstartBitrate: " << videoCodec.startBitrate << std::endl;
     std::cout << "\t Video Tx Port: " << videoTxPort << std::endl;
     std::cout << "\t Video Rx Port: " << videoRxPort << std::endl;
     std::cout << "\tAudio Capture Device: " << audioCaptureDeviceName
