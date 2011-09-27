@@ -256,7 +256,6 @@ private:
     afx_msg void OnBnClickedProtNone();
     afx_msg void OnBnClickedProtFec();    
     afx_msg void OnBnClickedFreezelog();
-    afx_msg void OnBnClickedCameracap();
 public:
     afx_msg void OnBnClickedExttransport();    
     afx_msg void OnCbnSelchangePacketloss();
@@ -264,6 +263,7 @@ public:
     afx_msg void OnBnClickedBtnRecordIncoming();
     afx_msg void OnBnClickedBtnRecordOutgoing();
     afx_msg void OnBnClickedBtnCreateSlave();
+    afx_msg void OnBnClickedVersion();
 };
 
 //{{AFX_INSERT_LOCATION}}

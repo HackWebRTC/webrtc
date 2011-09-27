@@ -1,13 +1,3 @@
-/*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
- *
- *  Use of this source code is governed by a BSD-style license
- *  that can be found in the LICENSE file in the root of the source
- *  tree. An additional intellectual property rights grant can be found
- *  in the file PATENTS.  All contributing project authors may
- *  be found in the AUTHORS file in the root of the source tree.
- */
-
 //{{NO_DEPENDENCIES}}
 // Microsoft Visual C++ generated include file.
 // Used by Capture.rc
@@ -48,13 +38,11 @@
 #define IDC_INFORMATION                 1050
 #define IDC_PACKETLOSS                  1051
 #define IDC_FREEZELOG                   1052
-#define IDC_BUTTON1                     1053
-#define IDC_CAMERACAP                   1053
+#define IDC_VERSION                     1053
 #define IDC_EXTTRANSPORT                1054
 #define IDC_DELAY                       1055
 #define IDC_BTN_RECORD_INCOMING         1056
 #define IDC_BTN_RECORD_OUTGOING         1057
-#define IDC_BUTTON2                     1058
 #define IDC_BTN_CREATE_SLAVE            1058
 
 // Next default values for new objects

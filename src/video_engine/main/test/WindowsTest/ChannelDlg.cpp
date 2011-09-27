@@ -153,7 +153,7 @@ BEGIN_MESSAGE_MAP(CDXChannelDlg, CDialog)
     ON_BN_CLICKED(IDC_PROT_NONE, &CDXChannelDlg::OnBnClickedProtNone)
     ON_BN_CLICKED(IDC_PROT_FEC, &CDXChannelDlg::OnBnClickedProtFec)    
     ON_BN_CLICKED(IDC_FREEZELOG, &CDXChannelDlg::OnBnClickedFreezelog)
-    ON_BN_CLICKED(IDC_CAMERACAP, &CDXChannelDlg::OnBnClickedCameracap)
+    ON_BN_CLICKED(IDC_VERSION, &CDXChannelDlg::OnBnClickedVersion)
     ON_BN_CLICKED(IDC_EXTTRANSPORT, &CDXChannelDlg::OnBnClickedExttransport)
     ON_CBN_SELCHANGE(IDC_PACKETLOSS, &CDXChannelDlg::OnCbnSelchangePacketloss)
     ON_CBN_SELCHANGE(IDC_DELAY, &CDXChannelDlg::OnCbnSelchangeDelay)
@@ -969,7 +969,7 @@ void CDXChannelDlg::OnBnClickedProtFec()
     TEST_MUSTPASS(_vieRTPRTCP->SetFECStatus(_channelId,true,redPayloadType,fecPayloadType),-5);
 }
 
-void CDXChannelDlg::OnBnClickedCameracap()
+void CDXChannelDlg::OnBnClickedVersion()
 {
     char version[1024];
     _vieBase->GetVersion(version);
