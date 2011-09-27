@@ -278,6 +278,7 @@ MediaOptTest::Perform()
     _rtp->RegisterIncomingDataCallback(&dataCallback);
 
     VideoProtectionCallback  protectionCallback;
+    protectionCallback.RegisterRtpModule(_rtp);
     _vcm->RegisterProtectionCallback(&protectionCallback);
 
     // set error resilience / test parameters:
@@ -290,16 +291,12 @@ MediaOptTest::Perform()
         _vcm->SetVideoProtection(kProtectionFEC, _fecEnabled);
     }
 
-       // START TEST
+    // START TEST
     VideoFrame sourceFrame;
     sourceFrame.VerifyAndAllocate(_lengthSourceFrame);
     WebRtc_UWord8* tmpBuffer = new WebRtc_UWord8[_lengthSourceFrame];
     _vcm->SetChannelParameters((WebRtc_UWord32)_bitRate, (WebRtc_UWord8)_lossRate, _rttMS);
     _vcm->RegisterReceiveCallback(&receiveCallback);
-
-    // inform RTP Module of error resilience features
-    _rtp->SetFECCodeRate(protectionCallback.FECKeyRate(),protectionCallback.FECDeltaRate());
-    _rtp->SetNACKStatus(protectionCallback.NACKMethod());
 
     _frameCnt  = 0;
     _sumEncBytes = 0.0;
