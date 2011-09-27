@@ -482,13 +482,6 @@ void void_main(int argc, char* argv[]) {
                                                  << aecm_echo_path_out_filename;
   }
 
-  enum Events {
-    kInitializeEvent,
-    kRenderEvent,
-    kCaptureEvent,
-    kResetEventDeprecated
-  };
-  int16_t event = 0;
   size_t read_count = 0;
   int reverse_count = 0;
   int primary_count = 0;
@@ -666,6 +659,13 @@ void void_main(int argc, char* argv[]) {
     ASSERT_TRUE(feof(pb_file));
 
   } else {
+    enum Events {
+      kInitializeEvent,
+      kRenderEvent,
+      kCaptureEvent,
+      kResetEventDeprecated
+    };
+    int16_t event = 0;
     while (simulating || feof(event_file) == 0) {
       std::ostringstream trace_stream;
       trace_stream << "Processed frames: " << reverse_count << " (reverse), "
@@ -778,10 +778,6 @@ void void_main(int argc, char* argv[]) {
         }
         if (simulating) {
           if (read_count != near_frame._payloadDataLengthInSamples) {
-            // Read an equal amount from the far file to avoid errors due to
-            // not reaching end-of-file.
-            EXPECT_EQ(0, fseek(far_file, read_count * sizeof(WebRtc_Word16),
-                      SEEK_CUR));
             break; // This is expected.
           }
 
