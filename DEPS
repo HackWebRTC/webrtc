@@ -7,7 +7,7 @@ vars = {
   "libjingle_revision": "85",
 }
 
-# NOTE: Prefer revision numbers to tags.
+# NOTE: Prefer revision numbers to tags for svn deps.
 deps = {
   "trunk/build":
     Var("chromium_trunk") + "/src/build@" + Var("chromium_revision"),
@@ -27,10 +27,8 @@ deps = {
   "trunk/third_party/protobuf/":
     Var("chromium_trunk") + "/src/third_party/protobuf@" + Var("chromium_revision"),
 
-  # TODO(andrew): return to the webm git repository when possible.
   "trunk/third_party/libvpx/source/libvpx":
-    Var("chromium_trunk") + "/deps/third_party/libvpx/source/libvpx@98040",
-    #"git://review.webmproject.org/libvpx.git@v0.9.7-p1",
+    "http://git.chromium.org/webm/libvpx.git@v0.9.7-p1",
 
   "trunk/third_party/libjpeg_turbo/":
     Var("chromium_trunk") + "/deps/third_party/libjpeg_turbo@95800",
