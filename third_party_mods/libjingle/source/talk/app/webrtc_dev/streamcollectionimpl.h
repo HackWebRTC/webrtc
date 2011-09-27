@@ -28,6 +28,7 @@
 #ifndef TALK_APP_WEBRTC_STREAMCOLLECTIONIMPL_H_
 #define TALK_APP_WEBRTC_STREAMCOLLECTIONIMPL_H_
 
+#include <string>
 #include <vector>
 
 #include "talk/app/webrtc_dev/peerconnection.h"
@@ -58,6 +59,16 @@ class StreamCollectionImpl : public StreamCollection {
     return media_streams_.at(index);
   }
 
+  virtual MediaStream* find(const std::string& label) {
+    for (StreamVector::iterator it = media_streams_.begin();
+         it != media_streams_.end(); ++it) {
+      if ((*it)->label().compare(label) == 0) {
+        return (*it);
+      }
+    }
+    return NULL;
+  }
+
   void AddStream(MediaStream* stream) {
     for (StreamVector::iterator it = media_streams_.begin();
          it != media_streams_.end(); ++it) {
@@ -77,15 +88,6 @@ class StreamCollectionImpl : public StreamCollection {
     }
   }
 
-  MediaStream* FindFirstStream(const std::string& label) {
-    for (StreamVector::iterator it = media_streams_.begin();
-         it != media_streams_.end(); ++it) {
-      if ((*it)->label().compare(label) == 0) {
-        return (*it);
-      }
-    }
-    return NULL;
-  }
 
  protected:
   StreamCollectionImpl() {}

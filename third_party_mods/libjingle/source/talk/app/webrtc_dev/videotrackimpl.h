@@ -54,8 +54,10 @@ class VideoTrackImpl : public NotifierImpl<LocalVideoTrack> {
   virtual const std::string& label();
   virtual uint32 ssrc();
   virtual bool enabled();
+  virtual TrackState state();
   virtual bool set_enabled(bool enable);
   virtual bool set_ssrc(uint32 ssrc);
+  virtual bool set_state(TrackState new_state);
 
  protected:
   VideoTrackImpl(const std::string& label, uint32 ssrc);
@@ -66,6 +68,7 @@ class VideoTrackImpl : public NotifierImpl<LocalVideoTrack> {
   std::string kind_;
   std::string label_;
   uint32 ssrc_;
+  TrackState state_;
   scoped_refptr<VideoCaptureModule> video_device_;
   scoped_refptr<VideoRenderer> video_renderer_;
 };

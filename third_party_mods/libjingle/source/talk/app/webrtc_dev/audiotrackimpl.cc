@@ -35,6 +35,7 @@ AudioTrackImpl::AudioTrackImpl(const std::string& label, uint32 ssrc)
       kind_(kAudioTrackKind),
       label_(label),
       ssrc_(ssrc),
+      state_(kInitializing),
       audio_device_(NULL) {
 }
 
@@ -44,6 +45,7 @@ AudioTrackImpl::AudioTrackImpl(const std::string& label,
       kind_(kAudioTrackKind),
       label_(label),
       ssrc_(0),
+      state_(kInitializing),
       audio_device_(audio_device) {
 }
 
@@ -83,6 +85,18 @@ bool AudioTrackImpl::set_ssrc(uint32 ssrc) {
     return false;
   ssrc_ = ssrc;
   NotifierImpl<LocalAudioTrack>::FireOnChanged();
+  return true;
+}
+
+MediaStreamTrack::TrackState AudioTrackImpl::state() {
+  return state_;
+}
+
+bool AudioTrackImpl::set_state(TrackState new_state) {
+  bool fire_on_change = state_ != new_state;
+  state_ = new_state;
+  if (fire_on_change)
+    NotifierImpl<LocalAudioTrack>::FireOnChanged();
   return true;
 }
 

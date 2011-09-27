@@ -55,9 +55,11 @@ class AudioTrackImpl : public NotifierImpl<LocalAudioTrack> {
   virtual const std::string& kind();
   virtual const std::string& label();
   virtual uint32 ssrc();
+  virtual TrackState state();
   virtual bool enabled();
   virtual bool set_enabled(bool enable);
   virtual bool set_ssrc(uint32 ssrc);
+  virtual bool set_state(TrackState new_state);
 
  protected:
   AudioTrackImpl(const std::string& label, uint32 ssrc);
@@ -68,6 +70,7 @@ class AudioTrackImpl : public NotifierImpl<LocalAudioTrack> {
   std::string kind_;
   std::string label_;
   uint32 ssrc_;
+  TrackState state_;
   scoped_refptr<AudioDeviceModule> audio_device_;
 };
 

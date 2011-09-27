@@ -35,6 +35,7 @@ VideoTrackImpl::VideoTrackImpl(const std::string& label, uint32 ssrc)
       kind_(kVideoTrackKind),
       label_(label),
       ssrc_(ssrc),
+      state_(kInitializing),
       video_device_(NULL) {
 }
 
@@ -44,6 +45,7 @@ VideoTrackImpl::VideoTrackImpl(const std::string& label,
       kind_(kVideoTrackKind),
       label_(label),
       ssrc_(0),
+      state_(kInitializing),
       video_device_(video_device) {
 }
 
@@ -91,6 +93,18 @@ bool VideoTrackImpl::set_ssrc(uint32 ssrc) {
     return false;
   ssrc_ = ssrc;
   NotifierImpl<LocalVideoTrack>::FireOnChanged();
+  return true;
+}
+
+MediaStreamTrack::TrackState VideoTrackImpl::state() {
+  return state_;
+}
+
+bool VideoTrackImpl::set_state(TrackState new_state) {
+  bool fire_on_change = state_ != new_state;
+  state_ = new_state;
+  if (fire_on_change)
+    NotifierImpl<LocalVideoTrack>::FireOnChanged();
   return true;
 }
 

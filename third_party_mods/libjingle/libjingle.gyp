@@ -625,6 +625,15 @@
             'libjingle',
           ],
         } ],  # inside_chromium_build
+        ['peer_connection_dev==1', {
+          'sources-': [
+            '<(libjingle_orig)/source/talk/session/phone/mediasession.cc',
+          ],
+          'sources+': [
+            '<(libjingle_mods)/source/talk/session/phone/mediasession.cc',
+          ]
+          
+        }],   # peer_connection_dev
       ],  # conditions
     },
     # seperate project for app
@@ -685,6 +694,8 @@
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionimpl.h',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionmanagerimpl.cc',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionmanagerimpl.h',
+            '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionsignaling.cc',
+            '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionsignaling.h',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectiontransport.cc',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectiontransport.h',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/ref_count.h',
@@ -751,7 +762,8 @@
             '<(libjingle_mods)/source/talk/app/webrtc_dev/mediastreamimpl_unittest.cc',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnection_unittests.cc',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionimpl_unittest.cc',
-            '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionmanager_unittest.cc',          
+            '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionmanager_unittest.cc',
+            '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionsignaling_unittest.cc',
           ],
         }, { # peer_connection_dev != 1
           'type': 'none',

@@ -44,6 +44,7 @@ class StreamCollection : public RefCount {
  public:
   virtual size_t count() = 0;
   virtual MediaStream* at(size_t index) = 0;
+  virtual MediaStream* find(const std::string& label) = 0;
  protected:
   // Dtor protected as objects shouldn't be deleted via this interface.
   ~StreamCollection() {}

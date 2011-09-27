@@ -66,10 +66,18 @@ class Notifier {
 class MediaStreamTrack : public RefCount,
                          public Notifier {
  public:
+  enum TrackState {
+    kInitializing,  // Track is beeing negotiated.
+    kLive = 1,  // Track alive
+    kEnded = 2,  // Track have ended
+    kFailed = 3,  // Track negotiation failed.
+  };
+
   virtual const std::string& kind() = 0;
   virtual const std::string& label() = 0;
   virtual uint32 ssrc() = 0;
   virtual bool enabled() = 0;
+  virtual TrackState state() = 0;
   // Enable or disables a track.
   // For Remote streams - disable means that the video is not decoded,
   // or audio not decoded.
@@ -78,6 +86,7 @@ class MediaStreamTrack : public RefCount,
   virtual bool set_enabled(bool enable) = 0;
   // Return false (or assert) if the ssrc is already set.
   virtual bool set_ssrc(uint32 ssrc) = 0;
+  virtual bool set_state(TrackState new_state) = 0;
 };
 
 // Reference counted wrapper for a VideoRenderer.
