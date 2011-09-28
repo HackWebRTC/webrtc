@@ -199,7 +199,15 @@ WebRtc_Word32 VoEBaseImpl::RecordedDataIsAvailable(
                         / (maxVolume));
             }
         }
-        assert(currentVoEMicLevel <= kMaxVolumeLevel);
+        // We learned that on certain systems (e.g Linux) the currentVoEMicLevel
+        // can be greater than the maxVolumeLevel therefore
+        // we are going to cap the currentVoEMicLevel to the maxVolumeLevel
+        // if it turns out that the currentVoEMicLevel is indeed greater
+        // than the maxVolumeLevel
+        if (currentVoEMicLevel > kMaxVolumeLevel)
+        {
+            currentVoEMicLevel = kMaxVolumeLevel;
+        }
     }
 
     // Keep track if the MicLevel has been changed by the AGC, if not,
