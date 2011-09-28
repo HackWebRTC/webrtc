@@ -11,7 +11,9 @@
 #if defined(WEBRTC_ARCH_ARM_NEON) && defined(WEBRTC_ANDROID)
 
 #include "nsx_core.h"
+
 #include <arm_neon.h>
+#include <assert.h>
 
 void WebRtcNsx_NoiseEstimation(NsxInst_t *inst, WebRtc_UWord16 *magn, WebRtc_UWord32 *noise,
                                WebRtc_Word16 *qNoise)
@@ -28,6 +30,8 @@ void WebRtcNsx_NoiseEstimation(NsxInst_t *inst, WebRtc_UWord16 *magn, WebRtc_UWo
     numerator = FACTOR_Q16;
 
     tabind = inst->stages - inst->normData;
+    assert(tabind < 9);
+    assert(tabind > -9);
     if (tabind < 0)
     {
         logval = -WebRtcNsx_kLogTable[-tabind];
@@ -35,6 +39,8 @@ void WebRtcNsx_NoiseEstimation(NsxInst_t *inst, WebRtc_UWord16 *magn, WebRtc_UWo
     {
         logval = WebRtcNsx_kLogTable[tabind];
     }
+
+    int16x8_t logval_16x8 = vdupq_n_s16(logval);
 
     // lmagn(i)=log(magn(i))=log(2)*log2(magn(i))
     // magn is in Q(-stages), and the real lmagn values are:
@@ -46,6 +52,7 @@ void WebRtcNsx_NoiseEstimation(NsxInst_t *inst, WebRtc_UWord16 *magn, WebRtc_UWo
         {
             zeros = WebRtcSpl_NormU32((WebRtc_UWord32)magn[i]);
             frac = (WebRtc_Word16)((((WebRtc_UWord32)magn[i] << zeros) & 0x7FFFFFFF) >> 23);
+            assert(frac < 256);
             // log2(magn(i))
             log2 = (WebRtc_Word16)(((31 - zeros) << 8) + WebRtcNsx_kLogTableFrac[frac]);
             // log2(magn(i))*log(2)
@@ -62,6 +69,10 @@ void WebRtcNsx_NoiseEstimation(NsxInst_t *inst, WebRtc_UWord16 *magn, WebRtc_UWo
     int16x8_t WIDTHQ8_16x8 = vdupq_n_s16(WIDTH_Q8);
     int16x8_t WIDTHFACTOR_16x8 = vdupq_n_s16(widthFactor);
 
+    WebRtc_Word16 factor = FACTOR_Q7;
+    if (inst->blockIndex < END_STARTUP_LONG)
+        factor = FACTOR_Q7_STARTUP;
+
     // Loop over simultaneous estimates
     for (s = 0; s < SIMULT; s++)
     {
@@ -69,11 +80,12 @@ void WebRtcNsx_NoiseEstimation(NsxInst_t *inst, WebRtc_UWord16 *magn, WebRtc_UWo
 
         // Get counter values from state
         counter = inst->noiseEstCounter[s];
+        assert(counter < 201);
         countDiv = WebRtcNsx_kCounterDiv[counter];
         countProd = (WebRtc_Word16)WEBRTC_SPL_MUL_16_16(counter, countDiv);
 
         // quant_est(...)
-        WebRtc_Word16 delta_[8];
+        WebRtc_Word16 deltaBuff[8];
         int16x4_t tmp16x4_0;
         int16x4_t tmp16x4_1;
         int16x4_t countDiv_16x4 = vdup_n_s16(countDiv);
@@ -88,22 +100,25 @@ void WebRtcNsx_NoiseEstimation(NsxInst_t *inst, WebRtc_UWord16 *magn, WebRtc_UWo
         int32x4_t tmp32x4;
 
         for (i = 0; i < inst->magnLen - 7; i += 8) {
-            // compute delta
-            tmp16x8_0 = vdupq_n_s16(FACTOR_Q7);
-            vst1q_s16(delta_, tmp16x8_0);
+            // Compute delta.
+            // Smaller step size during startup. This prevents from using
+            // unrealistic values causing overflow.
+            tmp16x8_0 = vdupq_n_s16(factor);
+            vst1q_s16(deltaBuff, tmp16x8_0);
+
             int j;
             for (j = 0; j < 8; j++) {
                 if (inst->noiseEstDensity[offset + i + j] > 512)
-                    delta_[j] = WebRtcSpl_DivW32W16ResW16(numerator, 
+                    deltaBuff[j] = WebRtcSpl_DivW32W16ResW16(numerator, 
                                    inst->noiseEstDensity[offset + i + j]);
             }
 
             // Update log quantile estimate
 
             // tmp16 = (WebRtc_Word16)WEBRTC_SPL_MUL_16_16_RSFT(delta, countDiv, 14);
-            tmp32x4 = vmull_s16(vld1_s16(&delta_[0]), countDiv_16x4);
+            tmp32x4 = vmull_s16(vld1_s16(&deltaBuff[0]), countDiv_16x4);
             tmp16x4_1 = vshrn_n_s32(tmp32x4, 14);
-            tmp32x4 = vmull_s16(vld1_s16(&delta_[4]), countDiv_16x4);
+            tmp32x4 = vmull_s16(vld1_s16(&deltaBuff[4]), countDiv_16x4);
             tmp16x4_0 = vshrn_n_s32(tmp32x4, 14);
             tmp16x8_0 = vcombine_s16(tmp16x4_1, tmp16x4_0); // Keep for several lines.
 
@@ -132,6 +147,11 @@ void WebRtcNsx_NoiseEstimation(NsxInst_t *inst, WebRtc_UWord16 *magn, WebRtc_UWo
             // inst->noiseEstLogQuantile[offset + i] - tmp16_2;
             tmp16x8_0 = vcombine_s16(tmp16x4_1, tmp16x4_0); // keep
             tmp16x8_0 = vsubq_s16(tmp16x8_2, tmp16x8_0);
+
+            // logval is the smallest fixed point representation we can have. Values below
+            // that will correspond to values in the interval [0, 1], which can't possibly
+            // occur.
+             tmp16x8_0 = vmaxq_s16(tmp16x8_0, logval_16x8);
 
             // Do the if-else branches:
             tmp16x8_3 = vld1q_s16(&lmagn[i]); // keep for several lines
@@ -165,6 +185,11 @@ void WebRtcNsx_NoiseEstimation(NsxInst_t *inst, WebRtc_UWord16 *magn, WebRtc_UWo
             } else
             {
                 delta = FACTOR_Q7;
+                if (inst->blockIndex < END_STARTUP_LONG) {
+                  // Smaller step size during startup. This prevents from using
+                  // unrealistic values causing overflow.
+                  delta = FACTOR_Q7_STARTUP;
+                }
             }
 
             // update log quantile estimate
@@ -172,7 +197,7 @@ void WebRtcNsx_NoiseEstimation(NsxInst_t *inst, WebRtc_UWord16 *magn, WebRtc_UWo
             if (lmagn[i] > inst->noiseEstLogQuantile[offset + i])
             {
                 // +=QUANTILE*delta/(inst->counter[s]+1) QUANTILE=0.25, =1 in Q2
-                // CounterDiv=1/inst->counter[s] in Q15
+                // CounterDiv=1/(inst->counter[s]+1) in Q15
                 tmp16 += 2;
                 tmp16no1 = WEBRTC_SPL_RSHIFT_W16(tmp16, 2);
                 inst->noiseEstLogQuantile[offset + i] += tmp16no1;
@@ -183,6 +208,12 @@ void WebRtcNsx_NoiseEstimation(NsxInst_t *inst, WebRtc_UWord16 *magn, WebRtc_UWo
                 // *(1-QUANTILE), in Q2 QUANTILE=0.25, 1-0.25=0.75=3 in Q2
                 tmp16no2 = (WebRtc_Word16)WEBRTC_SPL_MUL_16_16_RSFT(tmp16no1, 3, 1);
                 inst->noiseEstLogQuantile[offset + i] -= tmp16no2;
+                if (inst->noiseEstLogQuantile[offset + i] < logval) {
+                  // logval is the smallest fixed point representation we can have.
+                  // Values below that will correspond to values in the interval 
+                  // [0, 1], which can't possibly occur.
+                  inst->noiseEstLogQuantile[offset + i] = logval;
+                }
             }
 
             // update density estimate
