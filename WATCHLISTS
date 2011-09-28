@@ -17,11 +17,18 @@
     'all_src': {
       'filepath': 'src/.*',
     },
+    'root_files': {
+      # src/build/ and non-recursive contents of ./ and src/
+      'filepath': '^[^/]*$|src/[^/]*$|src/build/.*',
+    },
     'video_engine': {
       'filepath': 'src/video_engine/.*',
     },
     'voice_engine': {
       'filepath': 'src/voice_engine/.*',
+    },
+    'common_audio': {
+      'filepath': 'src/common_audio/.*',
     },
     'video_capture': {
       'filepath': 'src/modules/video_capture/.*',
@@ -37,6 +44,9 @@
     },
     'NetEQ': {
       'filepath': 'src/modules/audio_coding/NetEQ/.*',
+    },
+    'audio_processing': {
+      'filepath': 'src/modules/audio_processing/.*',
     },
     'video_codecs': {
       'filepath': 'src/modules/video_coding/codecs/.*',
@@ -56,6 +66,10 @@
     'this_file': [''],
     'all_src': ['tterriberry@mozilla.com',
                 'giles@mozilla.com'],
+    'root_files': ['andrew@webrtc.org',
+                   'niklas.enbom@webrtc.org'],
+    'common_audio': ['bjornv@webrtc.org',
+                     'andrew@webrtc.org'],
     'video_engine': ['mflodman@webrtc.org',
                      'perkj@webrtc.org'],
     'voice_engine': ['henrika@webrtc.org'],
@@ -66,10 +80,13 @@
     'audio_device': ['henrika@webrtc.org'],
     'audio_coding': ['tina.legrand@webrtc.org'],
     'NetEQ': ['henrik.lundin@webrtc.org'],
+    'audio_processing': ['andrew@webrtc.org',
+                         'bjornv@webrtc.org'],
     'video_codecs': ['henrik.lundin@webrtc.org'],
     'video_coding': ['stefan@webrtc.org'],
     'rtp_rtcp': ['mflodman@webrtc.org'],
     'system_wrappers': ['mflodman@webrtc.org',
-                        'henrika@webrtc.org' ],
+                        'henrika@webrtc.org',
+                        'andrew@webrtc.org'],
   },
 }
