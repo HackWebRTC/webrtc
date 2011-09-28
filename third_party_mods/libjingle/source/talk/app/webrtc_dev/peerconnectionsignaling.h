@@ -34,6 +34,8 @@
 #include <list>
 #include <map>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "talk/app/webrtc_dev/mediastreamimpl.h"
 #include "talk/app/webrtc_dev/peerconnection.h"
@@ -48,6 +50,8 @@
 
 namespace cricket {
 class ChannelManager;
+class Candidate;
+typedef std::vector<Candidate> Candidates;
 }
 
 namespace webrtc {
@@ -74,7 +78,8 @@ class PeerConnectionMessage : public RefCount {
 
   static scoped_refptr<PeerConnectionMessage> Create(
       PeerConnectionMessageType type,
-      const cricket::SessionDescription* desc);
+      const cricket::SessionDescription* desc,
+      const cricket::Candidates& candidates);
 
   static scoped_refptr<PeerConnectionMessage> CreateErrorMessage(
       ErrorCode error);
@@ -82,18 +87,21 @@ class PeerConnectionMessage : public RefCount {
   PeerConnectionMessageType type() {return type_;}
   ErrorCode error() {return error_code_;}
   const cricket::SessionDescription* desc() {return desc_.get();}
+  const cricket::Candidates& candidates() {return candidates_;}
 
   // TODO(perkj): Add functions for serializing and deserializing this class.
 
  protected:
   PeerConnectionMessage(PeerConnectionMessageType type,
-                        const cricket::SessionDescription* desc);
+                        const cricket::SessionDescription* desc,
+                        const cricket::Candidates& candidates);
   explicit PeerConnectionMessage(ErrorCode error);
 
  private:
   PeerConnectionMessageType type_;
   ErrorCode error_code_;
   talk_base::scoped_ptr<const cricket::SessionDescription> desc_;
+  cricket::Candidates candidates_;
 };
 
 // PeerConnectionSignaling is a class responsible for handling signaling
@@ -102,12 +110,18 @@ class PeerConnectionMessage : public RefCount {
 // to send a new MediaStream.
 // It changes the state of local MediaStreams and tracks
 // when a remote peer is ready to receive media.
+// Call Initialize when local Candidates are ready.
 // Call CreateOffer to negotiate new local streams to send.
 // Call ProcessSignalingMessage when a new PeerConnectionMessage have been
 // received from the remote peer.
+// Before PeerConnectionSignaling can process an answer or create an offer,
+// Initialize have to be called. The last request to create an offer or process
+// an answer will be processed after Initialize have been called.
 class PeerConnectionSignaling : public talk_base::MessageHandler {
  public:
   enum State {
+    // Awaiting the local candidates.
+    kInitializing,
     // Ready to sent new offer or receive a new offer.
     kIdle,
     // We have sent an offer and expect an answer, or we want to update
@@ -118,8 +132,11 @@ class PeerConnectionSignaling : public talk_base::MessageHandler {
     kGlare
   };
 
-  explicit PeerConnectionSignaling(cricket::ChannelManager* channel_manager);
+  PeerConnectionSignaling(cricket::ChannelManager* channel_manager,
+                          talk_base::Thread* signaling_thread);
   ~PeerConnectionSignaling();
+
+  void Initialize(const cricket::Candidates& candidates);
 
   // Process a received offer/answer from the remote peer.
   void ProcessSignalingMessage(PeerConnectionMessage* message,
@@ -148,15 +165,22 @@ class PeerConnectionSignaling : public talk_base::MessageHandler {
   // Remote PeerConnection sent an error message.
   sigslot::signal1<PeerConnectionMessage::ErrorCode> SignalErrorMessageReceived;
 
+  // Informs that a new Offer/Answer have been exchanged.
+  // The parameters are local session description,
+  //                    remote session_description,
+  //                    local StreamCollection.
+  sigslot::signal3<const cricket::SessionDescription*,
+                   const cricket::SessionDescription*,
+                   StreamCollection*> SignalUpdateSessionDescription;
+
  private:
   // Implement talk_base::MessageHandler.
   virtual void OnMessage(talk_base::Message* msg);
   void CreateOffer_s();
-  void GenerateAnswer(PeerConnectionMessage* message,
-                      StreamCollection* local_streams);
+  void CreateAnswer_s();
 
   void InitMediaSessionOptions(cricket::MediaSessionOptions* options,
-                                  StreamCollection* local_streams);
+                               StreamCollection* local_streams);
 
   void UpdateRemoteStreams(const cricket::SessionDescription* remote_desc);
   void UpdateSendingLocalStreams(
@@ -165,6 +189,10 @@ class PeerConnectionSignaling : public talk_base::MessageHandler {
 
   typedef std::list<scoped_refptr<StreamCollection> > StreamCollectionList;
   StreamCollectionList queued_offers_;
+
+  typedef std::pair<scoped_refptr<PeerConnectionMessage>,
+                    scoped_refptr<StreamCollection> >  RemoteOfferPair;
+  RemoteOfferPair queued_received_offer_;
 
   talk_base::Thread* signaling_thread_;
   State state_;
@@ -177,6 +205,9 @@ class PeerConnectionSignaling : public talk_base::MessageHandler {
       LocalStreamMap;
   LocalStreamMap local_streams_;
   cricket::MediaSessionDescriptionFactory session_description_factory_;
+
+  scoped_refptr<PeerConnectionMessage> last_send_offer_;
+  cricket::Candidates candidates_;
 };
 
 }  // namespace webrtc

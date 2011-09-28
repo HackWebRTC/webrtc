@@ -82,7 +82,8 @@ class MockMediaStreamObserver : public webrtc::Observer {
 class MockSignalingObserver : public sigslot::has_slots<> {
  public:
   MockSignalingObserver()
-      : remote_peer_(NULL) {
+      : update_session_description_counter_(0),
+        remote_peer_(NULL) {
   }
 
   // New remote stream have been discovered.
@@ -103,10 +104,19 @@ class MockSignalingObserver : public sigslot::has_slots<> {
   void OnSignalingMessage(PeerConnectionMessage* message) {
     if (remote_peer_) {
       remote_peer_->ProcessSignalingMessage(message, remote_local_collection_);
+      // Process posted messages to allow the remote peer to process
+      // the message.
+      talk_base::Thread::Current()->ProcessMessages(1);
     }
     if (message->type() != PeerConnectionMessage::kError) {
       last_message = message;
     }
+  }
+
+  void OnUpdateSessionDescription(const cricket::SessionDescription* local,
+                                  const cricket::SessionDescription* remote,
+                                  StreamCollection* local_streams) {
+    update_session_description_counter_++;
   }
 
   // Tell this object to answer the remote_peer.
@@ -133,6 +143,7 @@ class MockSignalingObserver : public sigslot::has_slots<> {
   virtual ~MockSignalingObserver() {}
 
   scoped_refptr<PeerConnectionMessage> last_message;
+  int update_session_description_counter_;
 
  private:
   MediaStreamMap remote_media_streams_;
@@ -147,25 +158,32 @@ class PeerConnectionSignalingTest: public testing::Test {
         talk_base::Thread::Current()));
     EXPECT_TRUE(channel_manager_->Init());
 
-    signaling1_.reset(new PeerConnectionSignaling(channel_manager_.get()));
+    signaling1_.reset(new PeerConnectionSignaling(
+        channel_manager_.get(), talk_base::Thread::Current()));
     observer1_.reset(new MockSignalingObserver());
     signaling1_->SignalNewPeerConnectionMessage.connect(
         observer1_.get(), &MockSignalingObserver::OnSignalingMessage);
+    signaling1_->SignalUpdateSessionDescription.connect(
+        observer1_.get(), &MockSignalingObserver::OnUpdateSessionDescription);
     signaling1_->SignalRemoteStreamAdded.connect(
         observer1_.get(), &MockSignalingObserver::OnRemoteStreamAdded);
     signaling1_->SignalRemoteStreamRemoved.connect(
         observer1_.get(), &MockSignalingObserver::OnRemoteStreamRemoved);
 
-    signaling2_.reset(new PeerConnectionSignaling(channel_manager_.get()));
+    signaling2_.reset(new PeerConnectionSignaling(
+        channel_manager_.get(), talk_base::Thread::Current()));
     observer2_.reset(new MockSignalingObserver());
     signaling2_->SignalNewPeerConnectionMessage.connect(
         observer2_.get(), &MockSignalingObserver::OnSignalingMessage);
+    signaling2_->SignalUpdateSessionDescription.connect(
+        observer2_.get(), &MockSignalingObserver::OnUpdateSessionDescription);
     signaling2_->SignalRemoteStreamAdded.connect(
         observer2_.get(), &MockSignalingObserver::OnRemoteStreamAdded);
     signaling2_->SignalRemoteStreamRemoved.connect(
         observer2_.get(), &MockSignalingObserver::OnRemoteStreamRemoved);
   }
 
+  cricket::Candidates candidates_;
   talk_base::scoped_ptr<MockSignalingObserver> observer1_;
   talk_base::scoped_ptr<MockSignalingObserver> observer2_;
   talk_base::scoped_ptr<PeerConnectionSignaling> signaling1_;
@@ -203,12 +221,30 @@ TEST_F(PeerConnectionSignalingTest, SimpleOneWayCall) {
   // Connect all messages sent from Peer2 to be received on Peer1
   observer2_->AnswerPeer(signaling1_.get(), local_collection1);
 
-  // Peer 1 generates the offer and and send it to Peer2.
+  // Peer 1 generates the offer. It is not sent since there is no
+  // local candidates ready.
   signaling1_->CreateOffer(local_collection1);
 
   // Process posted messages.
   talk_base::Thread::Current()->ProcessMessages(1);
+  EXPECT_EQ(PeerConnectionSignaling::kInitializing, signaling1_->GetState());
 
+  // Initialize signaling1_ by providing the candidates.
+  signaling1_->Initialize(candidates_);
+  EXPECT_EQ(PeerConnectionSignaling::kWaitingForAnswer,
+            signaling1_->GetState());
+  // Process posted messages to allow signaling_1 to send the offer.
+  talk_base::Thread::Current()->ProcessMessages(1);
+
+  // Verify that signaling_2 is still not initialized.
+  // Even though it have received an offer.
+  EXPECT_EQ(PeerConnectionSignaling::kInitializing, signaling2_->GetState());
+
+  // Provide the candidates to signaling_2 and let it process the offer.
+  signaling2_->Initialize(candidates_);
+  talk_base::Thread::Current()->ProcessMessages(1);
+
+  // Verify that the offer/answer have been exchanged and the state is good.
   EXPECT_EQ(PeerConnectionSignaling::kIdle, signaling1_->GetState());
   EXPECT_EQ(PeerConnectionSignaling::kIdle, signaling2_->GetState());
 
@@ -219,9 +255,16 @@ TEST_F(PeerConnectionSignalingTest, SimpleOneWayCall) {
 
   // Verify that PeerConnection2 is aware of the sending stream.
   EXPECT_TRUE(observer2_->RemoteStream(label) != NULL);
+
+  // Verify that both peers have updated the session descriptions.
+  EXPECT_EQ(1u, observer1_->update_session_description_counter_);
+  EXPECT_EQ(1u, observer2_->update_session_description_counter_);
 }
 
 TEST_F(PeerConnectionSignalingTest, Glare) {
+  // Initialize signaling1_ and signaling_2 by providing the candidates.
+  signaling1_->Initialize(candidates_);
+  signaling2_->Initialize(candidates_);
   // Create a local stream.
   std::string label(kStreamLabel1);
   scoped_refptr<LocalMediaStream> stream(CreateLocalMediaStream(label));
@@ -275,9 +318,16 @@ TEST_F(PeerConnectionSignalingTest, Glare) {
 
   // Verify that PeerConnection2 is aware of the sending stream.
   EXPECT_TRUE(observer2_->RemoteStream(label) != NULL);
+
+  // Verify that both peers have updated the session descriptions.
+  EXPECT_EQ(1u, observer1_->update_session_description_counter_);
+  EXPECT_EQ(1u, observer2_->update_session_description_counter_);
 }
 
 TEST_F(PeerConnectionSignalingTest, AddRemoveStream) {
+  // Initialize signaling1_ and signaling_2 by providing the candidates.
+  signaling1_->Initialize(candidates_);
+  signaling2_->Initialize(candidates_);
   // Create a local stream.
   std::string label(kStreamLabel1);
   scoped_refptr<LocalMediaStream> stream(CreateLocalMediaStream(label));
@@ -310,9 +360,12 @@ TEST_F(PeerConnectionSignalingTest, AddRemoveStream) {
 
   // Peer 1 creates an empty offer and send it to Peer2.
   signaling1_->CreateOffer(local_collection1);
-
   // Process posted messages.
   talk_base::Thread::Current()->ProcessMessages(1);
+
+  // Verify that both peers have updated the session descriptions.
+  EXPECT_EQ(1u, observer1_->update_session_description_counter_);
+  EXPECT_EQ(1u, observer2_->update_session_description_counter_);
 
   // Peer2 add a stream.
   local_collection2->AddStream(stream);
@@ -327,6 +380,10 @@ TEST_F(PeerConnectionSignalingTest, AddRemoveStream) {
   // Verify that PeerConnection1 is aware of the sending stream.
   EXPECT_TRUE(observer1_->RemoteStream(label) != NULL);
 
+  // Verify that both peers have updated the session descriptions.
+  EXPECT_EQ(2u, observer1_->update_session_description_counter_);
+  EXPECT_EQ(2u, observer2_->update_session_description_counter_);
+
   // Remove the stream
   local_collection2->RemoveStream(stream);
 
@@ -339,6 +396,10 @@ TEST_F(PeerConnectionSignalingTest, AddRemoveStream) {
   // Verify that the PeerConnection 2 local stream is now ended.
   EXPECT_EQ(MediaStream::kEnded, stream_observer1.ready_state);
   EXPECT_EQ(MediaStreamTrack::kEnded, track_observer1.track_state);
+
+  // Verify that both peers have updated the session descriptions.
+  EXPECT_EQ(3u, observer1_->update_session_description_counter_);
+  EXPECT_EQ(3u, observer2_->update_session_description_counter_);
 }
 
 }  // namespace webrtc
