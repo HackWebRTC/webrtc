@@ -59,10 +59,6 @@ public:
     // the call report for a specified |channel|.
     virtual int ResetCallReportStatistics(int channel) = 0;
 
-    // Gets minimum, maximum and average levels for long-term speech and
-    // noise metrics.
-    virtual int GetSpeechAndNoiseSummary(LevelStatistics& stats) = 0;
-
     // Gets minimum, maximum and average levels for long-term echo metrics.
     virtual int GetEchoMetricSummary(EchoStatistics& stats) = 0;
 

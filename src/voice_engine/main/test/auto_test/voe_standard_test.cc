@@ -2789,44 +2789,36 @@ int VoETestManager::DoStandardTest()
     TEST_LOG("Skipping NS tests - WEBRTC_VOICE_ENGINE_NR not defined \n");
 #endif  // #ifdef WEBRTC_VOICE_ENGINE_NR
 
-    // TODO(xians), enable the metrics test when APM is ready
-    /*
 #if (!defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID) && defined(WEBRTC_VOICE_ENGINE_NR))
-    TEST_LOG("Speech, Noise and Echo Metric calls\n");
-    TEST_MUSTPASS(apm->GetMetricsStatus(enabled));   // check default
-    TEST_MUSTPASS(enabled != false);
-    TEST_MUSTPASS(apm->SetMetricsStatus(true));      // enable metrics
 #ifdef WEBRTC_VOICE_ENGINE_ECHO
+    bool enabled = false;
+    TEST_LOG("Echo Metric calls\n");
+    TEST_MUSTPASS(apm->GetEchoMetricsStatus(enabled));   // check default
+    TEST_MUSTPASS(enabled != false);
+    TEST_MUSTPASS(apm->SetEchoMetricsStatus(true));      // enable echo metrics
     // must enable AEC to get valid echo metrics
     TEST_MUSTPASS(apm->SetEcStatus(true, kEcAec));
-#endif
-    TEST_MUSTPASS(apm->GetMetricsStatus(enabled));
+    TEST_MUSTPASS(apm->GetEchoMetricsStatus(enabled));
     TEST_MUSTPASS(enabled != true);
 
     TEST_LOG("Speak into microphone and check metrics for 10 seconds...\n");
-    int speech_tx, speech_rx;
-    int noise_tx, noise_rx;
-#ifdef WEBRTC_VOICE_ENGINE_ECHO
     int ERLE, ERL, RERL, A_NLP;
-#endif
     for (int t = 0; t < 5; t++)
     {
         SLEEP(2000);
-        TEST_MUSTPASS(apm->GetSpeechMetrics(speech_tx, speech_rx));
-        TEST_LOG("    Speech: Tx=%5d, Rx=%5d [dBm0]\n", speech_tx, speech_rx);
-        TEST_MUSTPASS(apm->GetNoiseMetrics(noise_tx, noise_rx));
-        TEST_LOG("    Noise : Tx=%5d, Rx=%5d [dBm0]\n", noise_tx, noise_rx);
-#ifdef WEBRTC_VOICE_ENGINE_ECHO
         TEST_MUSTPASS(apm->GetEchoMetrics(ERL, ERLE, RERL, A_NLP));
         TEST_LOG("    Echo  : ERL=%5d, ERLE=%5d, RERL=%5d, A_NLP=%5d [dB]\n",
                  ERL, ERLE, RERL, A_NLP);
-#endif
     }
-    TEST_MUSTPASS(apm->SetMetricsStatus(false));     // disable metrics
+    TEST_MUSTPASS(apm->SetEchoMetricsStatus(false));     // disable echo metrics
+#else
+    TEST_LOG("Skipping echo metrics tests -"
+        " WEBRTC_VOICE_ENGINE_ECHO not defined \n");
+#endif  // #ifdef WEBRTC_VOICE_ENGINE_ECHO
 #else
     TEST_LOG("Skipping apm metrics tests - MAC_IPHONE/WEBRTC_ANDROID defined \n");
 #endif // #if (!defined(MAC_IPHONE) && !d...
-*/
+
     // VAD/DTX indication
     TEST_LOG("Get voice activity indication \n");
     if (codec)
@@ -3256,8 +3248,6 @@ int VoETestManager::DoStandardTest()
 #ifdef _TEST_CALL_REPORT_
     TEST_LOG("\n\n+++ CallReport tests +++\n\n");
 #if (defined(WEBRTC_VOICE_ENGINE_ECHO) && defined(WEBRTC_VOICE_ENGINE_NR))
-    // TODO(xians), enale the tests when APM is ready
-    /*
     TEST(ResetCallReportStatistics);ANL();
     TEST_MUSTPASS(!report->ResetCallReportStatistics(-2));
     TEST_MUSTPASS(!report->ResetCallReportStatistics(1));
@@ -3265,36 +3255,10 @@ int VoETestManager::DoStandardTest()
     TEST_MUSTPASS(report->ResetCallReportStatistics(-1));
 
     bool onOff;
-    LevelStatistics stats;
-    TEST_MUSTPASS(apm->GetMetricsStatus(onOff));
+    TEST_MUSTPASS(apm->GetEchoMetricsStatus(onOff));
     TEST_MUSTPASS(onOff != false);
-    // All values should be -100 dBm0 when metrics are disabled
-    TEST(GetSpeechAndNoiseSummary);ANL();
-    TEST_MUSTPASS(report->GetSpeechAndNoiseSummary(stats));
-    TEST_MUSTPASS(stats.noise_rx.min != -100);
-    TEST_MUSTPASS(stats.noise_rx.max != -100);
-    TEST_MUSTPASS(stats.noise_rx.average != -100);
-    TEST_MUSTPASS(stats.noise_tx.min != -100);
-    TEST_MUSTPASS(stats.noise_tx.max != -100);
-    TEST_MUSTPASS(stats.noise_tx.average != -100);
-    TEST_MUSTPASS(stats.speech_rx.min != -100);
-    TEST_MUSTPASS(stats.speech_rx.max != -100);
-    TEST_MUSTPASS(stats.speech_rx.average != -100);
-    TEST_MUSTPASS(stats.speech_tx.min != -100);
-    TEST_MUSTPASS(stats.speech_tx.max != -100);
-    TEST_MUSTPASS(stats.speech_tx.average != -100);
-    TEST_MUSTPASS(apm->SetMetricsStatus(true));
+    TEST_MUSTPASS(apm->SetEchoMetricsStatus(true));
     SLEEP(3000);
-    // All values should *not* be -100 dBm0 when metrics are enabled
-    // (check Rx side only since user might be silent)
-    TEST_MUSTPASS(report->GetSpeechAndNoiseSummary(stats));
-    TEST_MUSTPASS(stats.noise_rx.min == -100);
-    TEST_MUSTPASS(stats.noise_rx.max == -100);
-    TEST_MUSTPASS(stats.noise_rx.average == -100);
-    TEST_MUSTPASS(stats.speech_rx.min == -100);
-    TEST_MUSTPASS(stats.speech_rx.max == -100);
-    TEST_MUSTPASS(stats.speech_rx.average == -100);
-
     EchoStatistics echo;
     TEST(GetEchoMetricSummary);ANL();
     // all outputs will be -100 in loopback (skip further tests)
@@ -3307,17 +3271,17 @@ int VoETestManager::DoStandardTest()
     TEST_MUSTPASS(report->GetRoundTripTimeSummary(0, delays));
     TEST_MUSTPASS(delays.min != -1);
     TEST_MUSTPASS(delays.max != -1);
-    TEST_MUSTPASS(delays.max != -1);
+    TEST_MUSTPASS(delays.average != -1);
     rtp_rtcp->SetRTCPStatus(0, true);
     SLEEP(5000); // gives time for RTCP
     TEST_MUSTPASS(report->GetRoundTripTimeSummary(0, delays));
     TEST_MUSTPASS(delays.min == -1);
     TEST_MUSTPASS(delays.max == -1);
-    TEST_MUSTPASS(delays.max == -1);
+    TEST_MUSTPASS(delays.average == -1);
     rtp_rtcp->SetRTCPStatus(0, false);
 
-    int nDead;
-    int nAlive;
+    int nDead = 0;
+    int nAlive = 0;
     // -1 will be returned since dead-or-alive is not active
     TEST(GetDeadOrAliveSummary);ANL();
     TEST_MUSTPASS(report->GetDeadOrAliveSummary(0, nDead, nAlive) != -1);
@@ -3333,7 +3297,6 @@ int VoETestManager::DoStandardTest()
     TEST(WriteReportToFile);ANL();
     TEST_MUSTPASS(!report->WriteReportToFile(NULL));
     TEST_MUSTPASS(report->WriteReportToFile("call_report.txt"));
-    */
 #else
     TEST_LOG("Skipping CallReport tests since both EC and NS are required\n");
 #endif

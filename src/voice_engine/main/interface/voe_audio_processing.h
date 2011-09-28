@@ -150,19 +150,11 @@ public:
     virtual int VoiceActivityIndicator(int channel) = 0;
 
     // Enables or disables the possibility to retrieve instantaneous
-    // speech, noise and echo metrics during an active call.
-    virtual int SetMetricsStatus(bool enable) = 0;
+    // echo metrics during an active call.
+    virtual int SetEchoMetricsStatus(bool enable) = 0;
 
-    // Gets the current speech, noise and echo metric status.
-    virtual int GetMetricsStatus(bool& enabled) = 0;
-
-    // Gets the instantaneous speech level metrics for the transmitted
-    // and received signals.
-    virtual int GetSpeechMetrics(int& levelTx, int& levelRx) = 0;
-
-    // Gets the instantaneous noise level metrics for the transmitted
-    // and received signals.
-    virtual int GetNoiseMetrics(int& levelTx, int& levelRx) = 0;
+    // Gets the current echo metric status.
+    virtual int GetEchoMetricsStatus(bool& enabled) = 0;
 
     // Gets the instantaneous echo level metrics for the near-end and
     // far-end signals.

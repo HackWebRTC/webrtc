@@ -85,35 +85,23 @@ int VoECallReportImpl::ResetCallReportStatistics(int channel)
     }
     assert(_audioProcessingModulePtr != NULL);
 
-    bool levelMode =
-        _audioProcessingModulePtr->level_estimator()->is_enabled();
     bool echoMode =
         _audioProcessingModulePtr->echo_cancellation()->are_metrics_enabled();
 
-    // We always set the same mode for the level and echo
-    if (levelMode != echoMode)
-    {
-        _engineStatistics.SetLastError(VE_APM_ERROR, kTraceError,
-                                       "ResetCallReportStatistics() level mode "
-                                       "and echo mode are not the same");
-        return -1;
-    }
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, -1),
-                 "  current AudioProcessingModule metric currentState %d",
-                 levelMode);
+                 "  current AudioProcessingModule echo metric currentState %d",
+                 echoMode);
     // Reset the APM statistics
-    if ((_audioProcessingModulePtr->level_estimator()->Enable(true) != 0)
-      || (_audioProcessingModulePtr->echo_cancellation()->enable_metrics(true)
-      != 0))
+    if (_audioProcessingModulePtr->echo_cancellation()->enable_metrics(true)
+        != 0)
     {
         _engineStatistics.SetLastError(VE_APM_ERROR, kTraceError,
                                        "ResetCallReportStatistics() unable to "
-                                       "set the AudioProcessingModule metrics "
-                                       "state");
+                                       "set the AudioProcessingModule echo "
+                                       "metrics state");
         return -1;
     }
     // Restore metric states
-    _audioProcessingModulePtr->level_estimator()->Enable(levelMode);
     _audioProcessingModulePtr->echo_cancellation()->enable_metrics(echoMode);
 
     // Reset channel dependent statistics
@@ -153,102 +141,6 @@ int VoECallReportImpl::ResetCallReportStatistics(int channel)
         delete[] channelsArray;
     }
 
-    return 0;
-}
-
-int VoECallReportImpl::GetSpeechAndNoiseSummary(LevelStatistics& stats)
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
-                 "GetSpeechAndNoiseSummary()");
-    ANDROID_NOT_SUPPORTED();IPHONE_NOT_SUPPORTED();
-
-    if (!_engineStatistics.Initialized())
-    {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
-        return -1;
-    }
-    assert(_audioProcessingModulePtr != NULL);
-
-    return (GetSpeechAndNoiseSummaryInternal(stats));
-}
-
-int VoECallReportImpl::GetSpeechAndNoiseSummaryInternal(LevelStatistics& stats)
-{
-    int ret(0);
-    bool mode(false);
-    LevelEstimator::Metrics metrics;
-    LevelEstimator::Metrics reverseMetrics;
-
-    // Ensure that level metrics is enabled
-    mode = _audioProcessingModulePtr->level_estimator()->is_enabled();
-    if (mode != false)
-    {
-        ret = _audioProcessingModulePtr->level_estimator()->GetMetrics(
-            &metrics, &reverseMetrics);
-        if (ret != 0)
-        {
-            WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
-                       "  GetSpeechAndNoiseSummary(), AudioProcessingModule "
-                       "level metrics error");
-        }
-    }
-    else
-    {
-        WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
-                   "  GetSpeechAndNoiseSummary(), AudioProcessingModule level "
-                   "metrics is not enabled");
-    }
-
-    if ((ret != 0) || (mode == false))
-    {
-        // Mark complete struct as invalid (-100 dBm0)
-        WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
-                   "  unable to retrieve level metrics from the "
-                   "AudioProcessingModule");
-        stats.noise_rx.min = -100;
-        stats.noise_rx.max = -100;
-        stats.noise_rx.average = -100;
-        stats.speech_rx.min = -100;
-        stats.speech_rx.max = -100;
-        stats.speech_rx.average = -100;
-        stats.noise_tx.min = -100;
-        stats.noise_tx.max = -100;
-        stats.noise_tx.average = -100;
-        stats.speech_tx.min = -100;
-        stats.speech_tx.max = -100;
-        stats.speech_tx.average = -100;
-    }
-    else
-    {
-        // Deliver output results to user
-        stats.noise_rx.min = reverseMetrics.noise.minimum;
-        stats.noise_rx.max = reverseMetrics.noise.maximum;
-        stats.noise_rx.average = reverseMetrics.noise.average;
-        WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_instanceId, -1),
-                   "  noise_rx: min=%d, max=%d, avg=%d", stats.noise_rx.min,
-                   stats.noise_rx.max, stats.noise_rx.average);
-
-        stats.noise_tx.min = metrics.noise.minimum;
-        stats.noise_tx.max = metrics.noise.maximum;
-        stats.noise_tx.average = metrics.noise.average;
-        WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_instanceId, -1),
-                   "  noise_tx: min=%d, max=%d, avg=%d", stats.noise_tx.min,
-                   stats.noise_tx.max, stats.noise_tx.average);
-
-        stats.speech_rx.min = reverseMetrics.speech.minimum;
-        stats.speech_rx.max = reverseMetrics.speech.maximum;
-        stats.speech_rx.average = reverseMetrics.speech.average;
-        WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_instanceId, -1),
-                   "  speech_rx: min=%d, max=%d, avg=%d", stats.speech_rx.min,
-                   stats.speech_rx.max, stats.speech_rx.average);
-
-        stats.speech_tx.min = metrics.speech.minimum;
-        stats.speech_tx.max = metrics.speech.maximum;
-        stats.speech_tx.average = metrics.speech.average;
-        WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_instanceId, -1),
-                   "  speech_tx: min=%d, max=%d, avg=%d", stats.speech_tx.min,
-                   stats.speech_tx.max, stats.speech_tx.average);
-    }
     return 0;
 }
 
@@ -498,33 +390,6 @@ int VoECallReportImpl::WriteReportToFile(const char* fileNameUTF8)
     }
 
     delete[] channelsArray;
-
-    LevelStatistics stats;
-    GetSpeechAndNoiseSummary(stats);
-
-    _file.WriteText("\nLong-term Speech Levels\n");
-    _file.WriteText("-----------------------\n\n");
-
-    _file.WriteText("Transmitting side:\n");
-    _file.WriteText("  min:%5d [dBm0]\n", stats.speech_tx.min);
-    _file.WriteText("  max:%5d [dBm0]\n", stats.speech_tx.max);
-    _file.WriteText("  avg:%5d [dBm0]\n", stats.speech_tx.average);
-    _file.WriteText("\nReceiving side:\n");
-    _file.WriteText("  min:%5d [dBm0]\n", stats.speech_rx.min);
-    _file.WriteText("  max:%5d [dBm0]\n", stats.speech_rx.max);
-    _file.WriteText("  avg:%5d [dBm0]\n", stats.speech_rx.average);
-
-    _file.WriteText("\nLong-term Noise Levels\n");
-    _file.WriteText("----------------------\n\n");
-
-    _file.WriteText("Transmitting side:\n");
-    _file.WriteText("  min:%5d [dBm0]\n", stats.noise_tx.min);
-    _file.WriteText("  max:%5d [dBm0]\n", stats.noise_tx.max);
-    _file.WriteText("  avg:%5d [dBm0]\n", stats.noise_tx.average);
-    _file.WriteText("\nReceiving side:\n");
-    _file.WriteText("  min:%5d [dBm0]\n", stats.noise_rx.min);
-    _file.WriteText("  max:%5d [dBm0]\n", stats.noise_rx.max);
-    _file.WriteText("  avg:%5d [dBm0]\n", stats.noise_rx.average);
 
     EchoStatistics echo;
     GetEchoMetricSummary(echo);

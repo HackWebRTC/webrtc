@@ -1646,6 +1646,8 @@ int VoEExtendedTest::TestCallReport()
     VoEBase* base = _mgr.BasePtr();
     VoECallReport* report = _mgr.CallReportPtr();
     VoEFile* file = _mgr.FilePtr();
+    VoEAudioProcessing* apm = _mgr.APMPtr();
+    VoENetwork* netw = _mgr.NetworkPtr();
 
     PrepareTest("CallReport");
 
@@ -1680,8 +1682,6 @@ int VoEExtendedTest::TestCallReport()
     ///////////////////////////
     // Actual test starts here
 
-    // TODO(xians), enable the tests when APM is ready
-    /*
     TEST(ResetCallReportStatistics);
     ANL();
     TEST_MUSTPASS(!report->ResetCallReportStatistics(-2));
@@ -1695,51 +1695,19 @@ int VoEExtendedTest::TestCallReport()
     AOK();
     ANL();
 
-    LevelStatistics stats;
-    bool enabled;
-    TEST(GetSpeechAndNoiseSummary);
-    ANL();
-    TEST_MUSTPASS(apm->GetMetricsStatus(enabled));
-    TEST_MUSTPASS(enabled != false);
-    // All values should be -100 dBm0 when metrics are disabled
-    TEST_MUSTPASS(report->GetSpeechAndNoiseSummary(stats));
-    MARK();
-    TEST_MUSTPASS(stats.noise_rx.min != -100);
-    TEST_MUSTPASS(stats.noise_rx.max != -100);
-    TEST_MUSTPASS(stats.noise_rx.average != -100);
-    TEST_MUSTPASS(stats.noise_tx.min != -100);
-    TEST_MUSTPASS(stats.noise_tx.max != -100);
-    TEST_MUSTPASS(stats.noise_tx.average != -100);
-    TEST_MUSTPASS(stats.speech_rx.min != -100);
-    TEST_MUSTPASS(stats.speech_rx.max != -100);
-    TEST_MUSTPASS(stats.speech_rx.average != -100);
-    TEST_MUSTPASS(stats.speech_tx.min != -100);
-    TEST_MUSTPASS(stats.speech_tx.max != -100);
-    TEST_MUSTPASS(stats.speech_tx.average != -100);
-    // 
-    TEST_MUSTPASS(apm->SetMetricsStatus(true));
-    SLEEP(7000);
-    // All values should *not* be -100 dBm0 when metrics are enabled (check
-    // Rx side only since user might be silent)
-    TEST_MUSTPASS(report->GetSpeechAndNoiseSummary(stats));
-    MARK();
-    TEST_MUSTPASS(stats.noise_rx.min == -100);
-    TEST_MUSTPASS(stats.noise_rx.max == -100);
-    TEST_MUSTPASS(stats.noise_rx.average == -100);
-    TEST_MUSTPASS(stats.speech_rx.min == -100);
-    TEST_MUSTPASS(stats.speech_rx.max == -100);
-    TEST_MUSTPASS(stats.speech_rx.average == -100);
-    AOK();
-    ANL();
-
+    bool enabled = false;
     EchoStatistics echo;
     TEST(GetEchoMetricSummary);
     ANL();
+    TEST_MUSTPASS(apm->GetEchoMetricsStatus(enabled));
+    TEST_MUSTPASS(enabled != false);
+    TEST_MUSTPASS(apm->SetEchoMetricsStatus(true));
     TEST_MUSTPASS(report->GetEchoMetricSummary(echo)); // all outputs will be
                                        // -100 in loopback (skip further tests)
     AOK();
     ANL();
-
+    // TODO(xians): investigate the cause of test failure before enabling.
+    /*
     StatVal delays;
     TEST(GetRoundTripTimeSummary);
     ANL();
@@ -1748,20 +1716,21 @@ int VoEExtendedTest::TestCallReport()
     MARK();
     TEST_MUSTPASS(delays.min == -1);
     TEST_MUSTPASS(delays.max == -1);
-    TEST_MUSTPASS(delays.max == -1);
+    TEST_MUSTPASS(delays.average == -1);
     rtp_rtcp->SetRTCPStatus(0, false);
     // All values should be -1 since RTCP is off
     TEST_MUSTPASS(report->GetRoundTripTimeSummary(0, delays));
     MARK();
     TEST_MUSTPASS(delays.min != -1);
     TEST_MUSTPASS(delays.max != -1);
-    TEST_MUSTPASS(delays.max != -1);
+    TEST_MUSTPASS(delays.average != -1);
     rtp_rtcp->SetRTCPStatus(0, true);
     AOK();
     ANL();
+    */
 
-    int nDead(0);
-    int nAlive(0);
+    int nDead = 0;
+    int nAlive = 0;
     TEST(GetDeadOrAliveSummary);
     ANL();
     // All results should be -1 since dead-or-alive is not active
@@ -1806,7 +1775,7 @@ int VoEExtendedTest::TestCallReport()
     MARK(); // should work with UTF-8 as well (κλνξ.txt)
     AOK();
     ANL();
-*/
+
     TEST_MUSTPASS(file->StopPlayingFileAsMicrophone(0));
     TEST_MUSTPASS(base->StopSend(0));
     TEST_MUSTPASS(base->StopPlayout(0));
@@ -6952,6 +6921,8 @@ int VoEExtendedTest::TestRTP_RTCP()
     TEST_ERROR(VE_INVALID_ARGUMENT);
     TEST_MUSTPASS(-1 != rtp_rtcp->SetRTPAudioLevelIndicationStatus(0, false, 15));
     MARK();
+    // TODO(bjornv): Activate tests below when APM supports level estimation.
+    /*
     TEST_MUSTPASS(-1 != rtp_rtcp->SetRTPAudioLevelIndicationStatus(1, true, 5));
     MARK();
     TEST_ERROR(VE_CHANNEL_NOT_VALID);
@@ -6978,6 +6949,7 @@ int VoEExtendedTest::TestRTP_RTCP()
 
     // disable audio-level-rtp-header-extension
     TEST_MUSTPASS(rtp_rtcp->SetRTPAudioLevelIndicationStatus(0, false));
+    */
     MARK();
     ANL();
 
@@ -8145,65 +8117,30 @@ digitalCompressionGaindBDefault);
     SLEEP(NSSleep);
 
     //////////////////////////////////
-    // Speech, Noise and Echo Metrics
+    // Echo Metrics
 
 #if (!defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID))
-    // TODO(xians), enable the tests when APM is ready
-    /*
-    TEST(GetMetricsStatus);
+    TEST(GetEchoMetricsStatus);
     ANL();
-    TEST(SetMetricsStatus);
+    TEST(SetEchoMetricsStatus);
     ANL();
-    TEST_MUSTPASS(apm->GetMetricsStatus(enabled));
+    TEST_MUSTPASS(apm->GetEchoMetricsStatus(enabled));
     MARK();
     TEST_MUSTPASS(enabled != false);
     MARK(); // should be OFF by default
-    TEST_MUSTPASS(apm->SetMetricsStatus(true));
+    TEST_MUSTPASS(apm->SetEchoMetricsStatus(true));
     MARK();
-    TEST_MUSTPASS(apm->GetMetricsStatus(enabled));
+    TEST_MUSTPASS(apm->GetEchoMetricsStatus(enabled));
     MARK();
     TEST_MUSTPASS(enabled != true);
     MARK();
-    TEST_MUSTPASS(apm->SetMetricsStatus(false));
+    TEST_MUSTPASS(apm->SetEchoMetricsStatus(false));
     MARK();
-    TEST_MUSTPASS(apm->GetMetricsStatus(enabled));
+    TEST_MUSTPASS(apm->GetEchoMetricsStatus(enabled));
     MARK();
     TEST_MUSTPASS(enabled != false);
     MARK();
     AOK();
-    ANL();
-
-    TEST(GetSpeechMetrics);
-    ANL();
-
-    int levelTx, levelRx;
-    TEST_MUSTPASS(-1 != apm->GetSpeechMetrics(levelTx, levelRx));
-    MARK(); // should fail since not activated
-    err = base->LastError();
-    TEST_MUSTPASS(err != VE_APM_ERROR);
-    TEST_MUSTPASS(apm->SetMetricsStatus(true));
-    TEST_MUSTPASS(apm->GetSpeechMetrics(levelTx, levelRx));
-    MARK();
-    TEST_LOG("\nSpeech: levelTx=%d, levelRx=%d [dBm0]\n",
-             levelTx, levelTx);
-    TEST_MUSTPASS(apm->SetMetricsStatus(false));
-    AOK();
-    ANL();
-
-    TEST(GetNoiseMetrics);
-    ANL();
-
-    TEST_MUSTPASS(-1 != apm->GetNoiseMetrics(levelTx, levelRx));
-    MARK(); // should fail since not activated
-    err = base->LastError();
-    TEST_MUSTPASS(err != VE_APM_ERROR);
-    TEST_MUSTPASS(apm->SetMetricsStatus(true));
-    TEST_MUSTPASS(apm->GetNoiseMetrics(levelTx, levelRx));
-    MARK();
-    TEST_LOG("\nNoise: levelTx=%d, levelRx=%d [dBm0]\n",
-             levelTx, levelTx);
-    TEST_MUSTPASS(apm->SetMetricsStatus(false));
-    AOK(        );
     ANL();
 
     TEST(GetEchoMetrics);
@@ -8214,7 +8151,7 @@ digitalCompressionGaindBDefault);
     MARK(); // should fail since not activated
     err = base->LastError();
     TEST_MUSTPASS(err != VE_APM_ERROR);
-    TEST_MUSTPASS(apm->SetMetricsStatus(true));
+    TEST_MUSTPASS(apm->SetEchoMetricsStatus(true));
     TEST_MUSTPASS(-1 != apm->GetEchoMetrics(ERL, ERLE, RERL, A_NLP));
     MARK(); // should fail since AEC is off
     err = base->LastError();
@@ -8225,11 +8162,11 @@ digitalCompressionGaindBDefault);
     TEST_LOG(
         "\nEcho: ERL=%d, ERLE=%d, RERL=%d, A_NLP=%d [dB]\n",
         ERL, ERLE, RERL, A_NLP);
-    TEST_MUSTPASS(apm->SetMetricsStatus(false));
+    TEST_MUSTPASS(apm->SetEchoMetricsStatus(false));
     TEST_MUSTPASS(apm->SetEcStatus(false));
     AOK();
     ANL();
-    */
+
 #endif // #if (!defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID))
     // far-end AudioProcessing
     ///////

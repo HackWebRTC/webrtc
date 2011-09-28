@@ -70,13 +70,9 @@ public:
 
     virtual int VoiceActivityIndicator(int channel);
 
-    virtual int SetMetricsStatus(bool enable);
+    virtual int SetEchoMetricsStatus(bool enable);
 
-    virtual int GetMetricsStatus(bool& enabled);
-
-    virtual int GetSpeechMetrics(int& levelTx, int& levelRx);
-
-    virtual int GetNoiseMetrics(int& levelTx, int& levelRx);
+    virtual int GetEchoMetricsStatus(bool& enabled);
 
     virtual int GetEchoMetrics(int& ERL, int& ERLE, int& RERL, int& A_NLP);
 

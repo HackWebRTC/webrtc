@@ -263,8 +263,7 @@ int VoERTP_RTCPImpl::SetRTPAudioLevelIndicationStatus(int channel,
     }
 
     // Set AudioProcessingModule level-metric mode based on user input.
-    // Note that this setting may conflict with the
-    // AudioProcessing::SetMetricsStatus API.
+    // Note that the Level Estimator component is currently not supported
     if (_audioProcessingModulePtr->level_estimator()->Enable(enable) != 0)
     {
         _engineStatistics.SetLastError(

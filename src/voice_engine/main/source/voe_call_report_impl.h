@@ -30,8 +30,6 @@ public:
 
     virtual int ResetCallReportStatistics(int channel);
 
-    virtual int GetSpeechAndNoiseSummary(LevelStatistics& stats);
-
     virtual int GetEchoMetricSummary(EchoStatistics& stats);
 
     virtual int GetRoundTripTimeSummary(int channel,
