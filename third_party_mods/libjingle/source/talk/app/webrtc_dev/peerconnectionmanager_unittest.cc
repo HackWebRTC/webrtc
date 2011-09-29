@@ -43,16 +43,31 @@
 #endif
 
 static const char kAudioDeviceLabel[] = "dummy_audio_device";
+static const char kStunConfiguration[] = "STUN stun.l.google.com:19302";
 
 namespace webrtc {
 
+class MockPeerConnectionObserver : public PeerConnectionObserver {
+ public:
+  virtual void OnError() {}
+  virtual void OnMessage(const std::string& msg) {}
+  virtual void OnSignalingMessage(const std::string& msg) {}
+  virtual void OnStateChange(Readiness state) {}
+  virtual void OnAddStream(MediaStream* stream) {}
+  virtual void OnRemoveStream(MediaStream* stream) {}
+};
+
 TEST(PeerConnectionManager, CreatePCUsingInternalModules) {
+  MockPeerConnectionObserver observer;
   scoped_refptr<PeerConnectionManager> manager(PeerConnectionManager::Create());
   ASSERT_TRUE(manager.get() != NULL);
-  scoped_refptr<PeerConnection> pc1(manager->CreatePeerConnection(""));
-  EXPECT_TRUE(pc1.get() != NULL);
+  scoped_refptr<PeerConnection> pc1(manager->CreatePeerConnection("",
+                                                                  &observer));
+  EXPECT_TRUE(pc1.get() == NULL);
 
-  scoped_refptr<webrtc::PeerConnection> pc2(manager->CreatePeerConnection(""));
+  scoped_refptr<PeerConnection> pc2(manager->CreatePeerConnection(
+      kStunConfiguration, &observer));
+
   EXPECT_TRUE(pc2.get() != NULL);
 }
 
@@ -71,16 +86,21 @@ TEST(PeerConnectionManager, CreatePCUsingExternalModules) {
       PcPacketSocketFactory::Create(new talk_base::BasicPacketSocketFactory));
 
   scoped_refptr<PeerConnectionManager> manager =
-      PeerConnectionManager::Create(w_thread.get(),
+      PeerConnectionManager::Create(talk_base::Thread::Current(),
+                                    talk_base::Thread::Current(),
                                     network_manager,
                                     socket_factory,
                                     audio_device);
   ASSERT_TRUE(manager.get() != NULL);
 
-  scoped_refptr<webrtc::PeerConnection> pc1(manager->CreatePeerConnection(""));
-  EXPECT_TRUE(pc1.get() != NULL);
+  MockPeerConnectionObserver observer;
+  scoped_refptr<webrtc::PeerConnection> pc1(manager->CreatePeerConnection(
+      "", &observer));
 
-  scoped_refptr<webrtc::PeerConnection> pc2(manager->CreatePeerConnection(""));
+  EXPECT_TRUE(pc1.get() == NULL);
+
+  scoped_refptr<PeerConnection> pc2(manager->CreatePeerConnection(
+      kStunConfiguration, &observer));
   EXPECT_TRUE(pc2.get() != NULL);
 }
 

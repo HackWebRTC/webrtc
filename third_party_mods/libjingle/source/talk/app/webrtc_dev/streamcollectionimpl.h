@@ -45,9 +45,9 @@ class StreamCollectionImpl : public StreamCollection {
   }
 
   static scoped_refptr<StreamCollectionImpl> Create(
-      StreamCollectionImpl* local_streams) {
+      StreamCollectionImpl* streams) {
     RefCountImpl<StreamCollectionImpl>* implementation =
-         new RefCountImpl<StreamCollectionImpl>(local_streams);
+         new RefCountImpl<StreamCollectionImpl>(streams);
     return implementation;
   }
 
@@ -87,7 +87,6 @@ class StreamCollectionImpl : public StreamCollection {
       }
     }
   }
-
 
  protected:
   StreamCollectionImpl() {}

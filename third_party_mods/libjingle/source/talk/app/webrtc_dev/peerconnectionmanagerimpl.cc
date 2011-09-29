@@ -94,11 +94,13 @@ scoped_refptr<PeerConnectionManager> PeerConnectionManager::Create() {
 
 scoped_refptr<PeerConnectionManager> PeerConnectionManager::Create(
     talk_base::Thread* worker_thread,
+    talk_base::Thread* signaling_thread,
     PcNetworkManager* network_manager,
     PcPacketSocketFactory* socket_factory,
     AudioDeviceModule* default_adm) {
   RefCountImpl<PeerConnectionManagerImpl>* pc_manager =
       new RefCountImpl<PeerConnectionManagerImpl>(worker_thread,
+                                                  signaling_thread,
                                                   network_manager,
                                                   socket_factory,
                                                   default_adm);
@@ -111,23 +113,28 @@ scoped_refptr<PeerConnectionManager> PeerConnectionManager::Create(
 
 PeerConnectionManagerImpl::PeerConnectionManagerImpl()
     : worker_thread_(new talk_base::Thread),
+      signaling_thread_(new talk_base::Thread),
       network_manager_(PcNetworkManager::Create(
           new talk_base::BasicNetworkManager())),
       socket_factory_(PcPacketSocketFactory::Create(
           new talk_base::BasicPacketSocketFactory)) {
   worker_thread_ptr_ = worker_thread_.get();
+  signaling_thread_ptr_ = signaling_thread_.get();
 }
 
 PeerConnectionManagerImpl::PeerConnectionManagerImpl(
     talk_base::Thread* worker_thread,
+    talk_base::Thread* signaling_thread,
     PcNetworkManager* network_manager,
     PcPacketSocketFactory* socket_factory,
     AudioDeviceModule* default_adm)
     : worker_thread_ptr_(worker_thread),
+      signaling_thread_ptr_(signaling_thread),
       network_manager_(network_manager),
       socket_factory_(socket_factory),
       default_adm_(default_adm) {
   ASSERT(worker_thread);
+  ASSERT(signaling_thread);
   ASSERT(network_manager->network_manager());
   ASSERT(socket_factory->socket_factory());
   ASSERT(default_adm);
@@ -138,6 +145,8 @@ PeerConnectionManagerImpl::~PeerConnectionManagerImpl() {
 
 bool PeerConnectionManagerImpl::Initialize() {
   if (worker_thread_.get() && !worker_thread_->Start())
+    return false;
+  if (signaling_thread_.get() && !signaling_thread_->Start())
     return false;
   cricket::DeviceManager* device_manager(new WebRtcDeviceManager());
   cricket::WebRtcMediaEngine* webrtc_media_engine = NULL;
@@ -158,13 +167,14 @@ bool PeerConnectionManagerImpl::Initialize() {
 }
 
 scoped_refptr<PeerConnection> PeerConnectionManagerImpl::CreatePeerConnection(
-    const std::string& configuration) {
+    const std::string& configuration,
+    PeerConnectionObserver* observer) {
   RefCountImpl<PeerConnectionImpl>* pc =
       new RefCountImpl<PeerConnectionImpl>(channel_manager_.get(),
-                                           worker_thread_ptr_,
+                                           signaling_thread_ptr_,
                                            network_manager_,
                                            socket_factory_);
-  if (!pc->Initialize(configuration)) {
+  if (!pc->Initialize(configuration, observer)) {
     delete pc;
     pc = NULL;
   }

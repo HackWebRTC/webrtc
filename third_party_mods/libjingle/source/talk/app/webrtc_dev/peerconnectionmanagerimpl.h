@@ -38,21 +38,25 @@ namespace webrtc {
 
 class PeerConnectionManagerImpl : public PeerConnectionManager {
  public:
-  scoped_refptr<PeerConnection> CreatePeerConnection(const std::string& config);
+  scoped_refptr<PeerConnection> CreatePeerConnection(
+      const std::string& config,
+      PeerConnectionObserver* observer);
   bool Initialize();
 
  protected:
   PeerConnectionManagerImpl();
   PeerConnectionManagerImpl(talk_base::Thread* worker_thread,
+                            talk_base::Thread* signaling_thread,
                             PcNetworkManager* network_manager,
                             PcPacketSocketFactory* socket_factory,
                             AudioDeviceModule* default_adm);
   virtual ~PeerConnectionManagerImpl();
 
  private:
-  // Channel manager worker thread. Only used if the external thread is not set.
   talk_base::scoped_ptr<talk_base::Thread> worker_thread_;
   talk_base::Thread* worker_thread_ptr_;
+  talk_base::scoped_ptr<talk_base::Thread> signaling_thread_;
+  talk_base::Thread* signaling_thread_ptr_;
   scoped_refptr<PcNetworkManager> network_manager_;
   scoped_refptr<PcPacketSocketFactory> socket_factory_;
   talk_base::scoped_ptr<cricket::ChannelManager> channel_manager_;

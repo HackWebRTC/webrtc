@@ -35,8 +35,19 @@
 #include "talk/base/thread.h"
 
 static const char kStreamLabel1[] = "local_stream_1";
+static const char kStunConfiguration[] = "STUN stun.l.google.com:19302";
 
 namespace webrtc {
+
+class MockPeerConnectionObserver : public PeerConnectionObserver {
+ public:
+  virtual void OnError() {}
+  virtual void OnMessage(const std::string& msg) {}
+  virtual void OnSignalingMessage(const std::string& msg) {}
+  virtual void OnStateChange(Readiness state) {}
+  virtual void OnAddStream(MediaStream* stream) {}
+  virtual void OnRemoveStream(MediaStream* stream) {}
+};
 
 class PeerConnectionImplTest : public testing::Test {
  public:
@@ -44,12 +55,13 @@ class PeerConnectionImplTest : public testing::Test {
   virtual void SetUp() {
     pc_factory_ = webrtc::PeerConnectionManager::Create();
     ASSERT_TRUE(pc_factory_.get() != NULL);
-    pc_ = pc_factory_->CreatePeerConnection("");
+    pc_ = pc_factory_->CreatePeerConnection(kStunConfiguration, &observer_);
     ASSERT_TRUE(pc_.get() != NULL);
   }
 
   scoped_refptr<webrtc::PeerConnectionManager> pc_factory_;
   scoped_refptr<PeerConnection> pc_;
+  MockPeerConnectionObserver observer_;
 };
 
 TEST_F(PeerConnectionImplTest, AddRemoveStream) {
