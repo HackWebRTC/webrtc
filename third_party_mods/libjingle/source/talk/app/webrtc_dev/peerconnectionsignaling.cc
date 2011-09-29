@@ -73,35 +73,6 @@ static bool VerifyAnswer(const cricket::SessionDescription* answer_desc) {
   return false;
 }
 
-
-scoped_refptr<PeerConnectionMessage> PeerConnectionMessage::Create(
-    PeerConnectionMessageType type,
-    const cricket::SessionDescription* desc,
-    const cricket::Candidates& candidates) {
-  return new RefCountImpl<PeerConnectionMessage> (type, desc, candidates);
-}
-
-scoped_refptr<PeerConnectionMessage> PeerConnectionMessage::CreateErrorMessage(
-    ErrorCode error) {
-  return new RefCountImpl<PeerConnectionMessage> (error);
-}
-
-PeerConnectionMessage::PeerConnectionMessage(
-    PeerConnectionMessageType type,
-    const cricket::SessionDescription* desc,
-    const cricket::Candidates& candidates)
-    : type_(type),
-      error_code_(kNoError),
-      desc_(desc),
-      candidates_(candidates) {
-}
-
-PeerConnectionMessage::PeerConnectionMessage(ErrorCode error)
-    : type_(kError),
-      error_code_(error),
-      desc_(NULL) {
-}
-
 PeerConnectionSignaling::PeerConnectionSignaling(
     cricket::ChannelManager* channel_manager,
     talk_base::Thread* signaling_thread)

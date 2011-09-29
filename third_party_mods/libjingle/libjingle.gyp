@@ -632,7 +632,6 @@
           'sources+': [
             '<(libjingle_mods)/source/talk/session/phone/mediasession.cc',
           ]
-          
         }],   # peer_connection_dev
       ],  # conditions
     },
@@ -694,6 +693,8 @@
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionimpl.h',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionmanagerimpl.cc',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionmanagerimpl.h',
+            '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionmessage.cc',
+            '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionmessage.h',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionsignaling.cc',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionsignaling.h',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/ref_count.h',
@@ -703,8 +704,10 @@
             '<(libjingle_mods)/source/talk/app/webrtc_dev/videotrackimpl.h',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/webrtc_devicemanager.h',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/webrtc_devicemanager.cc',
-            '<(libjingle_mods)/source/talk/app/webrtc_dev/webrtcsession.h',
+            '<(libjingle_mods)/source/talk/app/webrtc_dev/webrtcjson.cc',
+            '<(libjingle_mods)/source/talk/app/webrtc_dev/webrtcjson.h',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/webrtcsession.cc',
+            '<(libjingle_mods)/source/talk/app/webrtc_dev/webrtcsession.h',
           ],
         }], # peer_connection_dev
       ],  # conditions
@@ -763,8 +766,9 @@
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnection_unittests.cc',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionimpl_unittest.cc',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionmanager_unittest.cc',
+            '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionmessage_unittest.cc',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionsignaling_unittest.cc',
-            '<(libjingle_mods)/source/talk/app/webrtc_dev/webrtcsession_unittest.cc',
+            #'<(libjingle_mods)/source/talk/app/webrtc_dev/webrtcsession_unittest.cc',
           ],
         }, { # peer_connection_dev != 1
           'type': 'none',

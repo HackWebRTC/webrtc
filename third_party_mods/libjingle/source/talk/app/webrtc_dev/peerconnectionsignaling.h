@@ -39,6 +39,7 @@
 
 #include "talk/app/webrtc_dev/mediastreamimpl.h"
 #include "talk/app/webrtc_dev/peerconnection.h"
+#include "talk/app/webrtc_dev/peerconnectionmessage.h"
 #include "talk/app/webrtc_dev/ref_count.h"
 #include "talk/app/webrtc_dev/scoped_refptr.h"
 #include "talk/base/basictypes.h"
@@ -55,54 +56,6 @@ typedef std::vector<Candidate> Candidates;
 }
 
 namespace webrtc {
-
-// PeerConnectionMessage represent an SDP offer or an answer.
-// Instances of this class can be serialized / deserialized and are used for
-// signaling between PeerConnection objects.
-// Each instance has a type, a sequence number and a session description.
-class PeerConnectionMessage : public RefCount {
- public:
-  enum PeerConnectionMessageType {
-    kOffer,
-    kAnswer,
-    kError
-  };
-
-  enum ErrorCode {
-    kNoError = 0,
-    kWrongState = 10,  // Offer received when Answer was expected.
-    kParseError = 20,  // Can't parse / process offer.
-    kOfferNotAcceptable = 30,  // The offer have been rejected.
-    kMessageNotDeliverable = 40  // The signaling channel is broken.
-  };
-
-  static scoped_refptr<PeerConnectionMessage> Create(
-      PeerConnectionMessageType type,
-      const cricket::SessionDescription* desc,
-      const cricket::Candidates& candidates);
-
-  static scoped_refptr<PeerConnectionMessage> CreateErrorMessage(
-      ErrorCode error);
-
-  PeerConnectionMessageType type() {return type_;}
-  ErrorCode error() {return error_code_;}
-  const cricket::SessionDescription* desc() {return desc_.get();}
-  const cricket::Candidates& candidates() {return candidates_;}
-
-  // TODO(perkj): Add functions for serializing and deserializing this class.
-
- protected:
-  PeerConnectionMessage(PeerConnectionMessageType type,
-                        const cricket::SessionDescription* desc,
-                        const cricket::Candidates& candidates);
-  explicit PeerConnectionMessage(ErrorCode error);
-
- private:
-  PeerConnectionMessageType type_;
-  ErrorCode error_code_;
-  talk_base::scoped_ptr<const cricket::SessionDescription> desc_;
-  cricket::Candidates candidates_;
-};
 
 // PeerConnectionSignaling is a class responsible for handling signaling
 // between PeerConnection objects.

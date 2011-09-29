@@ -47,7 +47,8 @@ WebRtcSession::WebRtcSession(cricket::ChannelManager* channel_manager,
                              talk_base::Thread* worker_thread,
                              cricket::PortAllocator* port_allocator,
                              PeerConnectionSignaling* pc_signaling)
-    : cricket::BaseSession(pc_signaling->signaling_thread(), worker_thread,
+      // TODO(ronghuawu): get the signaling thread from PeerConnectionSignaling
+    : cricket::BaseSession(worker_thread, worker_thread,
                            port_allocator,
                            talk_base::ToString(talk_base::CreateRandomId()),
                            cricket::NS_JINGLE_RTP, true) {

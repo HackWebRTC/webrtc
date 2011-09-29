@@ -43,6 +43,7 @@ namespace webrtc {
 class MediaStream;
 class PeerConnectionMessage;
 class PeerConnectionSignaling;
+class StreamCollection;
 
 class WebRtcSession : public cricket::BaseSession {
  public:
