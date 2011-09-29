@@ -41,10 +41,12 @@
         '<(webrtc_root)/modules/modules.gyp:video_render_module',
         '<(webrtc_root)/modules/modules.gyp:video_capture_module',
         '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine_core',
+        '<(webrtc_root)/../testing/gtest.gyp:gtest',
         'video_engine_core',
       ],
       'include_dirs': [
         'interface/',
+        'helpers/',
         '../../interface',
         '../../source',
         '../../../../modules/video_capture/main/source/',
@@ -65,6 +67,12 @@
         'interface/vie_autotest_main.h',
         'interface/vie_autotest_window_manager_interface.h',
         'interface/vie_autotest_windows.h',
+
+        # Helper classes
+        'helpers/vie_window_creator.cc',
+
+        # New, fully automated tests
+        'automated/vie_standard_integration_test.cc',
 
         # Platform independent
         'source/tb_capture_device.cc',
