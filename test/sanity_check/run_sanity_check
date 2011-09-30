@@ -1,0 +1,69 @@
+#!/bin/bash
+#
+# Run a test with the WebRTC Chromium build.
+# Should work on any machine with a camera.
+#
+# Method:
+# - Start server
+# - Start 2 browser tabs
+# - Browser tab 1 captures camera
+# - Both browsers sign in
+# - Browser 1 calls browser 2
+# - Browser 2 displays camera feed from browser 1
+#
+
+# Feel free to tweak this locally if your chrome build is somewhere else.
+# The default assumes that it is in a folder called chromium two levels
+# up from the project root ('trunk').
+CHROME_BINARY=$PROJECT_ROOT/../../chromium/src/out/Debug/chrome
+
+set -e
+
+URLBASE=127.0.0.1:3000
+CALLER=$URLBASE/call_client.html
+CALLEE=$URLBASE/call_responder.html
+FLAGS="--enable-media-stream --enable-p2papi"
+PROJECT_ROOT=../..
+
+LOCAL_WEB_SERVER_BINARY=`which lighttpd`
+if [ -z "$LOCAL_WEB_SERVER_BINARY" ]; then
+  echo "Error: You must install lighttpd first (sudo apt-get install lighttpd)"
+  exit 1
+fi
+
+SERVER_BINARY=${PROJECT_ROOT}/out/Debug/peerconnection_server
+if [ ! -e "$SERVER_BINARY" ]; then
+  echo "Error: You must build peerconnection_server first."
+  exit 1
+fi
+
+CHROME_BINARY=$PROJECT_ROOT/../../chromium/src/out/Debug/chrome
+if [ ! -e "$CHROME_BINARY" ]; then
+  echo "Error: You must build chrome (could not open $CHROME_BINARY)."
+  exit 1
+fi
+
+# Launch the web server and make it serve the local www/html directory
+${LOCAL_WEB_SERVER_BINARY} -D -f lighttpd.conf &
+LOCAL_WEB_SERVER=$!
+
+${SERVER_BINARY} &
+SERVER=$!
+echo "Started server as $SERVER"
+
+# We can make 2 browsers
+#${CHROME_BINARY} $CALLER $FLAGS --user-data-dir=temp/user1 &
+#USER1=$!
+#echo "Started first user as $USER1"
+#${CHROME_BINARY} $CALLEE $FLAGS --user-data-dir=temp/user2 
+
+# But it also works with separate tabs in one browser.
+${CHROME_BINARY} $CALLER $CALLEE $FLAGS --user-data-dir=temp/user1
+
+echo "Test finished, cleaning up"
+
+kill $SERVER
+kill $LOCAL_WEB_SERVER
+
+# If 2 browsers, we have to kill the other.
+#kill $USER1 || echo "Browser 1 is already dead"
