@@ -34,11 +34,17 @@
 #include "talk/base/logging.h"
 #include "talk/base/stringutils.h"
 #include "talk/session/phone/codec.h"
+#include "talk/session/phone/mediasession.h"
 #include "talk/session/phone/mediasessionclient.h"
 
 namespace webrtc {
 static const int kIceComponent = 1;
 static const int kIceFoundation = 1;
+static const char* kMessageType[] = {
+  "OFFER",
+  "ANSWER",
+  "ERROR",
+};
 
 static std::vector<Json::Value> ReadValues(const Json::Value& value,
                                            const std::string& key);
@@ -66,17 +72,19 @@ static std::string Serialize(const Json::Value& value);
 
 static bool Deserialize(const std::string& message, Json::Value& value);
 
-static bool ParseRtcpMux(const Json::Value& value);
+bool ParseContent(const Json::Value& jmessage,
+    cricket::SessionDescription* sdp,
+    std::vector<cricket::Candidate>* candidates);
+
 static bool ParseAudioCodec(const Json::Value& value,
                             cricket::AudioContentDescription* content);
 static bool ParseVideoCodec(const Json::Value& value,
                             cricket::VideoContentDescription* content);
-static bool ParseIceCandidates(const Json::Value& value,
-                               std::vector<cricket::Candidate>* candidates);
-static Json::Value ReadValue(const Json::Value& value, const std::string& key);
-static std::string ReadString(const Json::Value& value, const std::string& key);
-static double ReadDouble(const Json::Value& value, const std::string& key);
-static uint32 ReadUInt(const Json::Value& value, const std::string& key);
+static bool ParseCandidates(const Json::Value& content,
+                            std::vector<cricket::Candidate>* candidates);
+
+static bool ParseTrack(const Json::Value& content,
+    cricket::MediaContentDescription* content_desc);
 
 static void Append(Json::Value* object, const std::string& key, bool value);
 static void Append(Json::Value* object, const std::string& key,
@@ -92,13 +100,24 @@ static void Append(Json::Value* object,
                    const std::vector<Json::Value>& values);
 
 bool JsonSerialize(
+    const webrtc::PeerConnectionMessage::PeerConnectionMessageType type,
+    int error_code,
     const cricket::SessionDescription* sdp,
     const std::vector<cricket::Candidate>& candidates,
     std::string* signaling_message) {
+  Json::Value media;
+  // TODO(ronghuawu): Replace magic strings.
+  Append(&media, "SDP", kMessageType[type]);
+
+  if (type == webrtc::PeerConnectionMessage::kError) {
+    Append(&media, "error_code", error_code);
+    *signaling_message = Serialize(media);
+    return true;
+  }
+
   const cricket::ContentInfo* audio_content = GetFirstAudioContent(sdp);
   const cricket::ContentInfo* video_content = GetFirstVideoContent(sdp);
 
-  Json::Value media;
   std::vector<Json::Value> together;
   together.push_back("audio");
   together.push_back("video");
@@ -266,6 +285,7 @@ bool BuildTrack(const cricket::SessionDescription* sdp,
     Json::Value track;
     Append(&track, "ssrc", it->ssrc);
     Append(&track, "cname", it->cname);
+    Append(&track, "label", it->description);
     tracks->push_back(track);
   }
   return true;
@@ -281,66 +301,103 @@ bool Deserialize(const std::string& message, Json::Value* value) {
   return reader.parse(message, *value);
 }
 
-bool JsonDeserialize(const std::string& signaling_message,
-                     cricket::SessionDescription** sdp,
-                     std::vector<cricket::Candidate>* candidates) {
-  ASSERT(!(*sdp));  // expect this to be NULL
+bool JsonDeserialize(
+    webrtc::PeerConnectionMessage::PeerConnectionMessageType* type,
+    webrtc::PeerConnectionMessage::ErrorCode* error_code,
+    cricket::SessionDescription* sdp,
+    std::vector<cricket::Candidate>* candidates,
+    const std::string& signaling_message) {
+  ASSERT(type);
+  ASSERT(error_code);
+  ASSERT(sdp);
+  ASSERT(candidates);
+  if (type == NULL || error_code == NULL || sdp == NULL || candidates == NULL)
+    return false;
+
   // first deserialize message
-  Json::Value value;
-  if (!Deserialize(signaling_message, &value)) {
+  Json::Value jmessage;
+  if (!Deserialize(signaling_message, &jmessage)) {
     return false;
   }
 
-  // get media objects
-  std::vector<Json::Value> mlines = ReadValues(value, "media");
-  if (mlines.empty()) {
-    // no m-lines found
+  // Get the message type
+  std::string message_type;
+  bool valid_message_type = false;
+  if (!GetStringFromJsonObject(jmessage, "SDP", &message_type))
     return false;
+  for (int i = 0; i < ARRAY_SIZE(kMessageType); i++) {
+    if (message_type.compare(kMessageType[i]) == 0) {
+      *type = static_cast<
+          webrtc::PeerConnectionMessage::PeerConnectionMessageType>(i);
+      valid_message_type = true;
+      break;
+    }
+  }
+  if (!valid_message_type)
+    return false;
+  if (*type == webrtc::PeerConnectionMessage::kError) {
+    int code;
+    if (!GetIntFromJsonObject(jmessage, "error_code", &code))
+      return false;
+    *error_code = static_cast<webrtc::PeerConnectionMessage::ErrorCode>(code);
+    return true;
   }
 
-  *sdp = new cricket::SessionDescription();
+  return ParseContent(jmessage, sdp, candidates);
+}
 
-  // get codec information
-  for (size_t i = 0; i < mlines.size(); ++i) {
-    if (mlines[i]["label"].asInt() == 1) {
+bool ParseContent(const Json::Value& jmessage,
+    cricket::SessionDescription* sdp,
+    std::vector<cricket::Candidate>* candidates) {
+  // Get content
+  std::vector<Json::Value> contents = ReadValues(jmessage, "content");
+  if (contents.size() == 0)
+    return false;
+  for (size_t i = 0; i < contents.size(); ++i) {
+    Json::Value content = contents[i];
+    // TODO(ronghuawu): crypto
+    // candidates
+    if (!ParseCandidates(content, candidates))
+      return false;
+    // rtcp_mux
+    bool rtcp_mux;
+    if (!GetBoolFromJsonObject(content, "rtcp_mux", &rtcp_mux))
+      rtcp_mux = false;
+    // rtpmap
+    if (content["media"].asString().compare("audio") == 0) {
       cricket::AudioContentDescription* audio_content =
           new cricket::AudioContentDescription();
-      ParseAudioCodec(mlines[i], audio_content);
-      audio_content->set_rtcp_mux(ParseRtcpMux(mlines[i]));
+      if (!ParseAudioCodec(content, audio_content))
+        return false;
+      audio_content->set_rtcp_mux(rtcp_mux);
       audio_content->SortCodecs();
-      (*sdp)->AddContent(cricket::CN_AUDIO,
-                         cricket::NS_JINGLE_RTP, audio_content);
-      ParseIceCandidates(mlines[i], candidates);
-    } else {
+      // tracks
+      if (!ParseTrack(content, audio_content))
+        return false;
+      (sdp)->AddContent(cricket::CN_AUDIO,
+                        cricket::NS_JINGLE_RTP, audio_content);
+    } else if (content["media"].asString().compare("video") == 0) {
       cricket::VideoContentDescription* video_content =
           new cricket::VideoContentDescription();
-      ParseVideoCodec(mlines[i], video_content);
-
-      video_content->set_rtcp_mux(ParseRtcpMux(mlines[i]));
+      if (!ParseVideoCodec(content, video_content))
+        return false;
+      video_content->set_rtcp_mux(rtcp_mux);
       video_content->SortCodecs();
-      (*sdp)->AddContent(cricket::CN_VIDEO,
-                         cricket::NS_JINGLE_RTP, video_content);
-      ParseIceCandidates(mlines[i], candidates);
+      if (!ParseTrack(content, video_content))
+        return false;
+      (sdp)->AddContent(cricket::CN_VIDEO,
+                        cricket::NS_JINGLE_RTP, video_content);
     }
   }
   return true;
 }
 
-bool ParseRtcpMux(const Json::Value& value) {
-  Json::Value rtcp_mux(ReadValue(value, "rtcp_mux"));
-  if (!rtcp_mux.empty()) {
-    if (rtcp_mux.asBool()) {
-      return true;
-    }
-  }
-  return false;
-}
-
 bool ParseAudioCodec(const Json::Value& value,
                      cricket::AudioContentDescription* content) {
   std::vector<Json::Value> rtpmap(ReadValues(value, "rtpmap"));
+  // When there's no codecs in common, rtpmap can be empty.
   if (rtpmap.empty())
-    return false;
+    return true;
 
   std::vector<Json::Value>::const_iterator iter =
       rtpmap.begin();
@@ -351,11 +408,13 @@ bool ParseAudioCodec(const Json::Value& value,
     std::string pltype(iter->begin().memberName());
     talk_base::FromString(pltype, &codec.id);
     Json::Value codec_info((*iter)[pltype]);
-    std::string codec_name(ReadString(codec_info, "codec"));
+    std::string codec_name;
+    if (!GetStringFromJsonObject(codec_info, "codec", &codec_name))
+      continue;
     std::vector<std::string> tokens;
     talk_base::split(codec_name, '/', &tokens);
     codec.name = tokens[1];
-    codec.clockrate = ReadUInt(codec_info, "clockrate");
+    GetIntFromJsonObject(codec_info, "clockrate", &codec.clockrate);
     content->AddCodec(codec);
   }
 
@@ -365,8 +424,9 @@ bool ParseAudioCodec(const Json::Value& value,
 bool ParseVideoCodec(const Json::Value& value,
                      cricket::VideoContentDescription* content) {
   std::vector<Json::Value> rtpmap(ReadValues(value, "rtpmap"));
+  // When there's no codecs in common, rtpmap can be empty.
   if (rtpmap.empty())
-    return false;
+    return true;
 
   std::vector<Json::Value>::const_iterator iter =
       rtpmap.begin();
@@ -385,14 +445,9 @@ bool ParseVideoCodec(const Json::Value& value,
   return true;
 }
 
-bool ParseIceCandidates(const Json::Value& value,
-                        std::vector<cricket::Candidate>* candidates) {
-  Json::Value attributes(ReadValue(value, "attributes"));
-  std::string ice_pwd(ReadString(attributes, "ice-pwd"));
-  std::string ice_ufrag(ReadString(attributes, "ice-ufrag"));
-
-  std::vector<Json::Value> jcandidates(ReadValues(attributes, "candidate"));
-
+bool ParseCandidates(const Json::Value& content,
+                     std::vector<cricket::Candidate>* candidates) {
+  std::vector<Json::Value> jcandidates(ReadValues(content, "candidate"));
   std::vector<Json::Value>::const_iterator iter =
       jcandidates.begin();
   std::vector<Json::Value>::const_iterator iter_end =
@@ -453,6 +508,34 @@ bool ParseIceCandidates(const Json::Value& value,
   return true;
 }
 
+bool ParseTrack(const Json::Value& content,
+    cricket::MediaContentDescription* content_desc) {
+  ASSERT(content_desc);
+  if (!content_desc)
+    return false;
+
+  std::vector<Json::Value> tracks(ReadValues(content, "track"));
+  std::vector<Json::Value>::const_iterator iter =
+      tracks.begin();
+  std::vector<Json::Value>::const_iterator iter_end =
+      tracks.end();
+  cricket::Sources sources;
+  for (; iter != iter_end; ++iter) {
+    uint32 ssrc;
+    std::string label;
+    std::string cname;
+    if (!GetUIntFromJsonObject(*iter, "ssrc", &ssrc))
+        return false;
+    // label is optional, it will be empty string if doesn't exist
+    GetStringFromJsonObject(*iter, "label", &label);
+    if (!GetStringFromJsonObject(*iter, "cname", &cname))
+        return false;
+    sources.push_back(cricket::SourceParam(ssrc, label, cname));
+  }
+  content_desc->set_sources(sources);
+  return true;
+}
+
 std::vector<Json::Value> ReadValues(
     const Json::Value& value, const std::string& key) {
   std::vector<Json::Value> objects;
@@ -460,22 +543,6 @@ std::vector<Json::Value> ReadValues(
     objects.push_back(value[key][i]);
   }
   return objects;
-}
-
-Json::Value ReadValue(const Json::Value& value, const std::string& key) {
-  return value[key];
-}
-
-std::string ReadString(const Json::Value& value, const std::string& key) {
-  return value[key].asString();
-}
-
-uint32 ReadUInt(const Json::Value& value, const std::string& key) {
-  return value[key].asUInt();
-}
-
-double ReadDouble(const Json::Value& value, const std::string& key) {
-  return value[key].asDouble();
 }
 
 void Append(Json::Value* object, const std::string& key, bool value) {

@@ -35,6 +35,7 @@
 #else
 #include "third_party/jsoncpp/json.h"
 #endif
+#include "talk/app/webrtc_dev/peerconnectionmessage.h"
 #include "talk/p2p/base/candidate.h"
 
 namespace cricket {
@@ -44,13 +45,18 @@ class SessionDescription;
 namespace webrtc {
 
 bool JsonSerialize(
+    const webrtc::PeerConnectionMessage::PeerConnectionMessageType type,
+    int error_code,
     const cricket::SessionDescription* sdp,
     const std::vector<cricket::Candidate>& candidates,
     std::string* signaling_message);
 
-bool JsonDeserialize(const std::string& signaling_message,
-                     cricket::SessionDescription** sdp,
-                     std::vector<cricket::Candidate>* candidates);
+bool JsonDeserialize(
+    webrtc::PeerConnectionMessage::PeerConnectionMessageType* type,
+    webrtc::PeerConnectionMessage::ErrorCode* error_code,
+    cricket::SessionDescription* sdp,
+    std::vector<cricket::Candidate>* candidates,
+    const std::string& signaling_message);
 }
 
 #endif  // TALK_APP_WEBRTC_WEBRTCJSON_H_

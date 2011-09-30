@@ -65,10 +65,11 @@ class PeerConnectionMessage : public RefCount {
 
   static scoped_refptr<PeerConnectionMessage> Create(
       PeerConnectionMessageType type,
-      const cricket::SessionDescription* desc,
+      cricket::SessionDescription* desc,
       const std::vector<cricket::Candidate>& candidates);
 
-  static scoped_refptr<PeerConnectionMessage> Create(std::string message);
+  static scoped_refptr<PeerConnectionMessage> Create(
+      const std::string& message);
 
   static scoped_refptr<PeerConnectionMessage> CreateErrorMessage(
       ErrorCode error);
@@ -81,16 +82,19 @@ class PeerConnectionMessage : public RefCount {
 
  protected:
   PeerConnectionMessage(PeerConnectionMessageType type,
-                        const cricket::SessionDescription* desc,
+                        cricket::SessionDescription* desc,
                         const std::vector<cricket::Candidate>& candidates);
-  explicit PeerConnectionMessage(std::string message);
+  PeerConnectionMessage();
   explicit PeerConnectionMessage(ErrorCode error);
+
+  bool Deserialize(std::string message);
 
  private:
   PeerConnectionMessageType type_;
   ErrorCode error_code_;
-  talk_base::scoped_ptr<const cricket::SessionDescription> desc_;
+  talk_base::scoped_ptr<cricket::SessionDescription> desc_;
   std::vector<cricket::Candidate> candidates_;
+
 };
 
 }  // namespace webrtc

@@ -36,14 +36,19 @@ namespace webrtc {
 
 scoped_refptr<PeerConnectionMessage> PeerConnectionMessage::Create(
     PeerConnectionMessageType type,
-    const cricket::SessionDescription* desc,
+    cricket::SessionDescription* desc,
     const std::vector<cricket::Candidate>& candidates) {
   return new RefCountImpl<PeerConnectionMessage> (type, desc, candidates);
 }
 
 scoped_refptr<PeerConnectionMessage> PeerConnectionMessage::Create(
-    std::string message) {
-  return new RefCountImpl<PeerConnectionMessage> (message);
+    const std::string& message) {
+  scoped_refptr<PeerConnectionMessage>pc_message(new
+      RefCountImpl<PeerConnectionMessage> ());
+  if (pc_message->Deserialize(message))
+    return pc_message;
+  else
+    return NULL;
 }
 
 scoped_refptr<PeerConnectionMessage> PeerConnectionMessage::CreateErrorMessage(
@@ -53,7 +58,7 @@ scoped_refptr<PeerConnectionMessage> PeerConnectionMessage::CreateErrorMessage(
 
 PeerConnectionMessage::PeerConnectionMessage(
     PeerConnectionMessageType type,
-    const cricket::SessionDescription* desc,
+    cricket::SessionDescription* desc,
     const std::vector<cricket::Candidate>& candidates)
     : type_(type),
       error_code_(kNoError),
@@ -61,8 +66,10 @@ PeerConnectionMessage::PeerConnectionMessage(
       candidates_(candidates) {
 }
 
-PeerConnectionMessage::PeerConnectionMessage(std::string message) {
-  // TODO(ronghuawu): implement
+PeerConnectionMessage::PeerConnectionMessage()
+    : type_(kOffer),
+      error_code_(kNoError),
+      desc_(new cricket::SessionDescription()) {
 }
 
 PeerConnectionMessage::PeerConnectionMessage(ErrorCode error)
@@ -72,7 +79,13 @@ PeerConnectionMessage::PeerConnectionMessage(ErrorCode error)
 }
 
 bool PeerConnectionMessage::Serialize(std::string* message) {
-  return JsonSerialize(desc_.get(), candidates_, message);
+  return JsonSerialize(type_, error_code_,
+      desc_.get(), candidates_, message);
+}
+
+bool PeerConnectionMessage::Deserialize(std::string message) {
+  return JsonDeserialize(&type_, &error_code_, desc_.get(),
+      &candidates_, message);
 }
 
 }  // namespace webrtc
