@@ -230,12 +230,15 @@ int ViEAutoTestWindowManager::ViEDestroyWindow(HWND& hwnd)
 
 bool ViEAutoTestWindowManager::SetTopmostWindow()
 {
-    // Meant to put terminal window on top
+
+    // meant to put terminal window on top
+
     return true;
 }
 
 int main(int argc, char* argv[])
 {
+
     ViEAutoTestMain autoTest;
     if (argc > 1)
     {

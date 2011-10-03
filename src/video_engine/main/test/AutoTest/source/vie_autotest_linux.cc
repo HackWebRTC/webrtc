@@ -12,9 +12,6 @@
 // vie_autotest_linux.cc
 //
 
-#include "gtest/gtest.h"
-#include <string>
-
 #include "vie_autotest_linux.h"
 
 #include "vie_autotest_defines.h"
@@ -147,18 +144,10 @@ bool ViEAutoTestWindowManager::SetTopmostWindow()
     return 0;
 }
 
-int main(int argc, char** argv)
+int main()
 {
-    // This command-line flag is a transitory solution until we
-    // managed to rewrite all tests to GUnit tests. This flag is
-    // currently only supported in Linux.
-    if (argc == 2 && std::string(argv[1]) == "--automated") {
-      testing::InitGoogleTest(&argc, argv);
-      return RUN_ALL_TESTS();
-    }
-
-    // Default: run in classic interactive mode.
     ViEAutoTestMain autoTest;
     autoTest.UseAnswerFile("answers.txt");
     return autoTest.BeginOSIndependentTesting();
+
 }
