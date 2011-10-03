@@ -101,15 +101,18 @@ class MockSignalingObserver : public sigslot::has_slots<> {
   }
 
   // New answer ready to be sent.
-  void OnSignalingMessage(PeerConnectionMessage* message) {
+  void OnSignalingMessage(const std::string& smessage) {
     if (remote_peer_) {
-      remote_peer_->ProcessSignalingMessage(message, remote_local_collection_);
+      remote_peer_->ProcessSignalingMessage(smessage, remote_local_collection_);
       // Process posted messages to allow the remote peer to process
       // the message.
       talk_base::Thread::Current()->ProcessMessages(1);
     }
-    if (message->type() != PeerConnectionMessage::kError) {
-      last_message = message;
+    scoped_refptr<PeerConnectionMessage> message;
+    message = PeerConnectionMessage::Create(smessage);
+    if (message.get() != NULL &&
+        message->type() != PeerConnectionMessage::kError) {
+      last_message = smessage;
     }
   }
 
@@ -142,7 +145,7 @@ class MockSignalingObserver : public sigslot::has_slots<> {
 
   virtual ~MockSignalingObserver() {}
 
-  scoped_refptr<PeerConnectionMessage> last_message;
+  std::string last_message;
   int update_session_description_counter_;
 
  private:
@@ -294,8 +297,8 @@ TEST_F(PeerConnectionSignalingTest, Glare) {
   talk_base::Thread::Current()->ProcessMessages(1);
 
   // Peer 2 sends the offer to Peer1 and Peer1 sends its offer to Peer2.
-  ASSERT_TRUE(observer1_->last_message != NULL);
-  ASSERT_TRUE(observer2_->last_message != NULL);
+  ASSERT_TRUE(!observer1_->last_message.empty());
+  ASSERT_TRUE(!observer2_->last_message.empty());
   signaling2_->ProcessSignalingMessage(observer1_->last_message,
                                        local_collection2);
 

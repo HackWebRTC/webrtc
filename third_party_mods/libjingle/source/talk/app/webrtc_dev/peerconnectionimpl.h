@@ -76,7 +76,7 @@ class PeerConnectionImpl : public PeerConnection,
   void OnMessage(talk_base::Message* msg);
 
   // Signals from PeerConnectionSignaling.
-  void OnNewPeerConnectionMessage(PeerConnectionMessage* message);
+  void OnNewPeerConnectionMessage(const std::string& message);
   void OnRemoteStreamAdded(MediaStream* remote_stream);
   void OnRemoteStreamRemoved(MediaStream* remote_stream);
 

@@ -45,10 +45,9 @@ scoped_refptr<PeerConnectionMessage> PeerConnectionMessage::Create(
     const std::string& message) {
   scoped_refptr<PeerConnectionMessage>pc_message(new
       RefCountImpl<PeerConnectionMessage> ());
-  if (pc_message->Deserialize(message))
-    return pc_message;
-  else
+  if (!pc_message->Deserialize(message))
     return NULL;
+  return pc_message;
 }
 
 scoped_refptr<PeerConnectionMessage> PeerConnectionMessage::CreateErrorMessage(
@@ -78,9 +77,8 @@ PeerConnectionMessage::PeerConnectionMessage(ErrorCode error)
       error_code_(error) {
 }
 
-bool PeerConnectionMessage::Serialize(std::string* message) {
-  return JsonSerialize(type_, error_code_,
-      desc_.get(), candidates_, message);
+std::string PeerConnectionMessage::Serialize() {
+  return JsonSerialize(type_, error_code_, desc_.get(), candidates_);
 }
 
 bool PeerConnectionMessage::Deserialize(std::string message) {

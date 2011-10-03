@@ -29,6 +29,7 @@
 
 #include <stdio.h>
 #include <string>
+#include <vector>
 
 #include "talk/base/json.h"
 #include "talk/base/logging.h"
@@ -50,18 +51,18 @@ static const char* kMessageType[] = {
 static std::vector<Json::Value> ReadValues(const Json::Value& value,
                                            const std::string& key);
 
-static bool BuildContent(
+static void BuildContent(
     const cricket::SessionDescription* sdp,
     const cricket::ContentInfo& content_info,
     const std::vector<cricket::Candidate>& candidates,
     bool video,
     Json::Value* content);
 
-static bool BuildCandidate(const std::vector<cricket::Candidate>& candidates,
+static void BuildCandidate(const std::vector<cricket::Candidate>& candidates,
                            bool video,
                            std::vector<Json::Value>* jcandidates);
 
-static bool BuildRtpMapParams(const cricket::ContentInfo& content_info,
+static void BuildRtpMapParams(const cricket::ContentInfo& content_info,
                               bool video,
                               std::vector<Json::Value>* rtpmap);
 
@@ -69,7 +70,7 @@ static void BuildCrypto(const cricket::ContentInfo& content_info,
                         bool video,
                         std::vector<Json::Value>* cryptos);
 
-static bool BuildTrack(const cricket::SessionDescription* sdp,
+static void BuildTrack(const cricket::SessionDescription* sdp,
                        bool video,
                        std::vector<Json::Value>* track);
 
@@ -107,20 +108,18 @@ static void Append(Json::Value* object,
                    const std::string& key,
                    const std::vector<Json::Value>& values);
 
-bool JsonSerialize(
+std::string JsonSerialize(
     const webrtc::PeerConnectionMessage::PeerConnectionMessageType type,
     int error_code,
     const cricket::SessionDescription* sdp,
-    const std::vector<cricket::Candidate>& candidates,
-    std::string* signaling_message) {
+    const std::vector<cricket::Candidate>& candidates) {
   Json::Value media;
   // TODO(ronghuawu): Replace magic strings.
   Append(&media, "SDP", kMessageType[type]);
 
   if (type == webrtc::PeerConnectionMessage::kError) {
     Append(&media, "error_code", error_code);
-    *signaling_message = Serialize(media);
-    return true;
+    return Serialize(media);
   }
 
   const cricket::ContentInfo* audio_content = GetFirstAudioContent(sdp);
@@ -148,12 +147,10 @@ bool JsonSerialize(
   Append(&media, "TOGETHER", together);
 
   // Now serialize.
-  *signaling_message = Serialize(media);
-
-  return true;
+  return Serialize(media);
 }
 
-bool BuildContent(
+void BuildContent(
     const cricket::SessionDescription* sdp,
     const cricket::ContentInfo& content_info,
     const std::vector<cricket::Candidate>& candidates,
@@ -194,11 +191,9 @@ bool BuildContent(
   std::vector<Json::Value> track;
   BuildTrack(sdp, video, &track);
   Append(content, "track", track);
-
-  return true;
 }
 
-bool BuildRtpMapParams(const cricket::ContentInfo& content_info,
+void BuildRtpMapParams(const cricket::ContentInfo& content_info,
                        bool video,
                        std::vector<Json::Value>* rtpmap) {
   if (!video) {
@@ -238,7 +233,6 @@ bool BuildRtpMapParams(const cricket::ContentInfo& content_info,
       rtpmap->push_back(codec_id);
     }
   }
-  return true;
 }
 
 void BuildCrypto(const cricket::ContentInfo& content_info,
@@ -259,7 +253,7 @@ void BuildCrypto(const cricket::ContentInfo& content_info,
   }
 }
 
-bool BuildCandidate(const std::vector<cricket::Candidate>& candidates,
+void BuildCandidate(const std::vector<cricket::Candidate>& candidates,
                     bool video,
                     std::vector<Json::Value>* jcandidates) {
   std::vector<cricket::Candidate>::const_iterator iter =
@@ -287,10 +281,9 @@ bool BuildCandidate(const std::vector<cricket::Candidate>& candidates,
       jcandidates->push_back(jcandidate);
     }
   }
-  return true;
 }
 
-bool BuildTrack(const cricket::SessionDescription* sdp,
+void BuildTrack(const cricket::SessionDescription* sdp,
                 bool video,
                 std::vector<Json::Value>* tracks) {
   const cricket::ContentInfo* content;
@@ -300,7 +293,7 @@ bool BuildTrack(const cricket::SessionDescription* sdp,
     content = GetFirstAudioContent(sdp);
 
   if (!content)
-    return false;
+    return;
 
   const cricket::MediaContentDescription* desc =
       static_cast<const cricket::MediaContentDescription*>(
@@ -314,7 +307,6 @@ bool BuildTrack(const cricket::SessionDescription* sdp,
     Append(&track, "label", it->description);
     tracks->push_back(track);
   }
-  return true;
 }
 
 std::string Serialize(const Json::Value& value) {

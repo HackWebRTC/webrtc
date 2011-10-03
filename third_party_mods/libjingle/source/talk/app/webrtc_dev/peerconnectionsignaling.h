@@ -92,7 +92,7 @@ class PeerConnectionSignaling : public talk_base::MessageHandler {
   void Initialize(const cricket::Candidates& candidates);
 
   // Process a received offer/answer from the remote peer.
-  void ProcessSignalingMessage(PeerConnectionMessage* message,
+  void ProcessSignalingMessage(const std::string& message,
                                StreamCollection* local_streams);
 
   // Creates an offer containing all tracks in local_streams.
@@ -107,7 +107,7 @@ class PeerConnectionSignaling : public talk_base::MessageHandler {
   // New PeerConnectionMessage with an SDP offer/answer is ready to be sent.
   // The listener to this signal is expected to serialize and send the
   // PeerConnectionMessage to the remote peer.
-  sigslot::signal1<PeerConnectionMessage*> SignalNewPeerConnectionMessage;
+  sigslot::signal1<const std::string&> SignalNewPeerConnectionMessage;
 
   // A new remote stream have been discovered.
   sigslot::signal1<MediaStream*> SignalRemoteStreamAdded;

@@ -78,7 +78,7 @@ class PeerConnectionMessage : public RefCount {
   ErrorCode error() {return error_code_;}
   const cricket::SessionDescription* desc() {return desc_.get();}
 
-  bool Serialize(std::string* message);
+  std::string Serialize();
   std::vector<cricket::Candidate>& candidates() { return candidates_; }
 
  protected:
@@ -95,7 +95,6 @@ class PeerConnectionMessage : public RefCount {
   ErrorCode error_code_;
   talk_base::scoped_ptr<cricket::SessionDescription> desc_;
   std::vector<cricket::Candidate> candidates_;
-
 };
 
 }  // namespace webrtc

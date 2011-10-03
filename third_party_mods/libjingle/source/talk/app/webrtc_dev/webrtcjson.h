@@ -29,6 +29,7 @@
 #define TALK_APP_WEBRTC_WEBRTCJSON_H_
 
 #include <string>
+#include <vector>
 
 #ifdef WEBRTC_RELATIVE_PATH
 #include "json/json.h"
@@ -44,12 +45,11 @@ class SessionDescription;
 
 namespace webrtc {
 
-bool JsonSerialize(
+std::string JsonSerialize(
     const webrtc::PeerConnectionMessage::PeerConnectionMessageType type,
     int error_code,
     const cricket::SessionDescription* sdp,
-    const std::vector<cricket::Candidate>& candidates,
-    std::string* signaling_message);
+    const std::vector<cricket::Candidate>& candidates);
 
 bool JsonDeserialize(
     webrtc::PeerConnectionMessage::PeerConnectionMessageType* type,

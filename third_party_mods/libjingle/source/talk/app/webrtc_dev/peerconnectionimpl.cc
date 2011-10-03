@@ -224,8 +224,7 @@ void PeerConnectionImpl::OnMessage(talk_base::Message* msg) {
     }
     case MSG_PROCESSSIGNALINGMESSAGE: {
       SignalingParams* params(static_cast<SignalingParams*> (data));
-      // TODO(perkj) Deserialize params->msg into a PeerConnection Message.
-      signaling_->ProcessSignalingMessage(NULL, params->local_streams);
+      signaling_->ProcessSignalingMessage(params->msg, params->local_streams);
       delete data;  // Because it is Posted.
       break;
     }
@@ -239,10 +238,8 @@ void PeerConnectionImpl::OnMessage(talk_base::Message* msg) {
 }
 
 void PeerConnectionImpl::OnNewPeerConnectionMessage(
-    PeerConnectionMessage* message) {
-  // TODO(perkj): serialize the message.
-  std::string msg;
-  observer_->OnSignalingMessage(msg);
+    const std::string& message) {
+  observer_->OnSignalingMessage(message);
 }
 
 void PeerConnectionImpl::OnRemoteStreamAdded(MediaStream* remote_stream) {
