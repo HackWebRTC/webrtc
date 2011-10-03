@@ -67,6 +67,25 @@ class PeerConnectionMessageTest: public testing::Test {
         kVideoTrackLabel3, kStreamLabel2));
 
     options_.is_video = true;
+
+    int port = 1234;
+    talk_base::SocketAddress address("127.0.0.1", port++);
+    cricket::Candidate candidate1("video_rtcp", "udp", address, 1,
+        "user_video_rtcp", "password_video_rtcp", "local", "eth0", 0);
+    address.SetPort(port++);
+    cricket::Candidate candidate2("video_rtp", "udp", address, 1,
+        "user_video_rtp", "password_video_rtp", "local", "eth0", 0);
+    address.SetPort(port++);
+    cricket::Candidate candidate3("rtp", "udp", address, 1,
+        "user_rtp", "password_rtp", "local", "eth0", 0);
+    address.SetPort(port++);
+    cricket::Candidate candidate4("rtcp", "udp", address, 1,
+        "user_rtcp", "password_rtcp", "local", "eth0", 0);
+
+    candidates_.push_back(candidate1);
+    candidates_.push_back(candidate2);
+    candidates_.push_back(candidate3);
+    candidates_.push_back(candidate4);
   }
 
  protected:
@@ -74,15 +93,13 @@ class PeerConnectionMessageTest: public testing::Test {
   talk_base::scoped_ptr<cricket::MediaSessionDescriptionFactory>
       session_description_factory_;
   cricket::MediaSessionOptions options_;
+  cricket::Candidates candidates_;
 
  private:
   int ssrc_counter_;
 };
 
 TEST_F(PeerConnectionMessageTest, Serialize) {
-  std::vector<cricket::Candidate> candidates;
-  // TODO(ronghuawu): Populate the test candidates.
-
   std::string message;
   scoped_refptr<PeerConnectionMessage> pc_message;
 
@@ -90,7 +107,7 @@ TEST_F(PeerConnectionMessageTest, Serialize) {
   talk_base::scoped_ptr<cricket::SessionDescription> offer(
       session_description_factory_->CreateOffer(options_));
   pc_message = PeerConnectionMessage::Create(PeerConnectionMessage::kOffer,
-      offer.get(), candidates);
+      offer.get(), candidates_);
   EXPECT_TRUE(pc_message->Serialize(&message));
   pc_message.release();
   LOG(LS_INFO) << message;
@@ -99,7 +116,7 @@ TEST_F(PeerConnectionMessageTest, Serialize) {
   talk_base::scoped_ptr<cricket::SessionDescription> answer(
       session_description_factory_->CreateAnswer(offer.get(), options_));
   pc_message = PeerConnectionMessage::Create(PeerConnectionMessage::kAnswer,
-      answer.get(), candidates);
+      answer.get(), candidates_);
   EXPECT_TRUE(pc_message->Serialize(&message));
   pc_message.release();
   LOG(LS_INFO) << message;
@@ -115,9 +132,6 @@ TEST_F(PeerConnectionMessageTest, Serialize) {
 }
 
 TEST_F(PeerConnectionMessageTest, Deserialize) {
-  std::vector<cricket::Candidate> candidates;
-  // TODO(ronghuawu): Populate the test candidates.
-
   std::string message_ref;
   std::string message_result;
   scoped_refptr<PeerConnectionMessage> pc_message;
@@ -126,7 +140,7 @@ TEST_F(PeerConnectionMessageTest, Deserialize) {
   talk_base::scoped_ptr<cricket::SessionDescription> offer(
       session_description_factory_->CreateOffer(options_));
   pc_message = PeerConnectionMessage::Create(PeerConnectionMessage::kOffer,
-      offer.get(), candidates);
+      offer.get(), candidates_);
   EXPECT_TRUE(pc_message->Serialize(&message_ref));
   pc_message.release();
   LOG(LS_INFO) << "The reference message: " << message_ref;
@@ -142,7 +156,7 @@ TEST_F(PeerConnectionMessageTest, Deserialize) {
   talk_base::scoped_ptr<cricket::SessionDescription> answer(
       session_description_factory_->CreateAnswer(offer.get(), options_));
   pc_message = PeerConnectionMessage::Create(PeerConnectionMessage::kAnswer,
-      answer.get(), candidates);
+      answer.get(), candidates_);
   EXPECT_TRUE(pc_message->Serialize(&message_ref));
   pc_message.release();
   LOG(LS_INFO) << "The reference message: " << message_ref;
