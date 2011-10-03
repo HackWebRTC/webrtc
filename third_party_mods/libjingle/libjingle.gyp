@@ -686,8 +686,11 @@
             '<(libjingle_mods)/source/talk/app/webrtc_dev/audiotrackimpl.h',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/audiotrackimpl.cc',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/mediastream.h',
+            '<(libjingle_mods)/source/talk/app/webrtc_dev/mediastreamhandler.cc',
+            '<(libjingle_mods)/source/talk/app/webrtc_dev/mediastreamhandler.h',
+            '<(libjingle_mods)/source/talk/app/webrtc_dev/mediastreamprovider.h',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/mediastreamimpl.h',
-            '<(libjingle_mods)/source/talk/app/webrtc_dev/mediastreamimpl.cc',            
+            '<(libjingle_mods)/source/talk/app/webrtc_dev/mediastreamimpl.cc',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnection.h',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionimpl.cc',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionimpl.h',
@@ -718,6 +721,7 @@
         ['peer_connection_dev==1', {          
           'dependencies': [
             'libjingle_app',
+            '../../testing/gmock.gyp:gmock',
             '../../testing/gtest.gyp:gtest',
             '../../testing/gtest.gyp:gtest_main',
             # TODO(perkj): Temporary build the client app here to make sure
@@ -746,7 +750,8 @@
             }],
           ], #conditions             
           'sources': [
-            '<(libjingle_mods)/source/talk/app/webrtc_dev/mediastreamimpl_unittest.cc',
+            '<(libjingle_mods)/source/talk/app/webrtc_dev/mediastreamhandler_unittest.cc',
+            '<(libjingle_mods)/source/talk/app/webrtc_dev/mediastreamimpl_unittest.cc',           
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnection_unittests.cc',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionimpl_unittest.cc',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionmanager_unittest.cc',
