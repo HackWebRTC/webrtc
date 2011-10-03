@@ -442,12 +442,18 @@ VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters)
     // is based on rounding off protectionFactor on actual source packet number).
     // The correction factor (_corrFecCost) attempts to corrects this, at least
     // for cases of low rates (small #packets) and low protection levels.
+
+    float numPacketsFl = 1.0f + ((float) bitRatePerFrame * 1000.0
+                                / (float) (8.0 * _maxPayloadSize) + 0.5);
+
     const float estNumFecGen = 0.5f + static_cast<float> (_protectionFactorD *
-                                                        avgTotPackets / 255.0f);
+                                                         numPacketsFl / 255.0f);
+
+
     // We reduce cost factor (which will reduce overhead for FEC and
     // hybrid method) and not the protectionFactor.
     _corrFecCost = 1.0f;
-    if (estNumFecGen < 1.5f && _protectionFactorD < minProtLevelFec)
+    if (estNumFecGen < 1.1f && _protectionFactorD < minProtLevelFec)
     {
         _corrFecCost = 0.5f;
     }
