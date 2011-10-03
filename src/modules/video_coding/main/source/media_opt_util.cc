@@ -81,8 +81,9 @@ VCMNackFecMethod::ProtectionFactor(const
     // RTT (NACK effectiveness) - adjustment factor is in the range [0,1].
     if (parameters->rtt < kHighRttNackMs)
     {
-        WebRtc_UWord16 rttIndex = (WebRtc_UWord16) parameters->rtt;
-        float adjustRtt = (float)VCMNackFecTable[rttIndex] / 100.0f;
+        // TODO(mikhal): Disabling adjustment temporarily.
+        // WebRtc_UWord16 rttIndex = (WebRtc_UWord16) parameters->rtt;
+        float adjustRtt = 1.0f;// (float)VCMNackFecTable[rttIndex] / 100.0f;
 
         // Adjust FEC with NACK on (for delta frame only)
         // table depends on RTT relative to rttMax (NACK Threshold)
@@ -724,17 +725,16 @@ VCMLossProtectionLogic::MaxFilteredLossPr(WebRtc_Word64 nowMs) const
 WebRtc_UWord8
 VCMLossProtectionLogic::FilteredLoss() const
 {
-    //take the average received loss
-    //return static_cast<WebRtc_UWord8>(_lossPr255.Value() + 0.5f);
-
-    //TODO: Update for hybrid
-    //take the windowed max of the received loss
-    if (_selectedMethod != NULL && _selectedMethod->Type() == kFec)
+    if (_selectedMethod != NULL &&
+        (_selectedMethod->Type() == kFec ||
+         _selectedMethod->Type() == kNackFec))
     {
+        // Take the windowed max of the received loss.
         return MaxFilteredLossPr(VCMTickTime::MillisecondTimestamp());
     }
     else
     {
+        // Take the average received loss.
         return static_cast<WebRtc_UWord8> (_lossPr255.Value() + 0.5);
     }
 }
