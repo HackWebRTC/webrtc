@@ -142,6 +142,11 @@ void PeerConnectionSignaling::ProcessSignalingMessage(
       ASSERT(state_ != PeerConnectionSignaling::kIdle);
       if (state_ == PeerConnectionSignaling::kIdle)
         return;
+      // Signal the resulting local and remote session description.
+      SignalUpdateSessionDescription(last_send_offer_->desc(),
+                                     message->desc(),
+                                     message->candidates());
+
       UpdateRemoteStreams(message->desc());
       scoped_refptr<StreamCollection> streams(queued_offers_.front());
       queued_offers_.pop_front();
@@ -153,10 +158,6 @@ void PeerConnectionSignaling::ProcessSignalingMessage(
       } else {
         state_ = PeerConnectionSignaling::kIdle;
       }
-      // Signal the resulting local and remote session description.
-      SignalUpdateSessionDescription(last_send_offer_->desc(),
-                                     message->desc(),
-                                     streams.get());
       break;
     }
     case PeerConnectionMessage::kError: {
@@ -249,6 +250,10 @@ void PeerConnectionSignaling::CreateAnswer_s() {
     answer_message = PeerConnectionMessage::CreateErrorMessage(
         PeerConnectionMessage::kOfferNotAcceptable);
   }
+  // Signal the resulting local and remote session description.
+  SignalUpdateSessionDescription(answer.get(),
+                                 message->desc(),
+                                 message->candidates()); // remote candidates
 
   UpdateRemoteStreams(message->desc());
 
@@ -260,11 +265,6 @@ void PeerConnectionSignaling::CreateAnswer_s() {
   // have time to receive the signaling message before media arrives?
   // This is under debate.
   UpdateSendingLocalStreams(answer_message->desc(), local_streams);
-
-  // Signal the resulting local and remote session description.
-  SignalUpdateSessionDescription(answer.get(),
-                                 message->desc(),
-                                 local_streams);
 }
 
 // Fills a MediaSessionOptions struct with the MediaTracks we want to sent given

@@ -124,7 +124,7 @@ class PeerConnectionSignaling : public talk_base::MessageHandler {
   //                    local StreamCollection.
   sigslot::signal3<const cricket::SessionDescription*,
                    const cricket::SessionDescription*,
-                   StreamCollection*> SignalUpdateSessionDescription;
+                   const cricket::Candidates&> SignalUpdateSessionDescription;
 
  private:
   // Implement talk_base::MessageHandler.

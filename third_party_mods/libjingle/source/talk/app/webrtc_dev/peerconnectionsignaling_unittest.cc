@@ -115,7 +115,7 @@ class MockSignalingObserver : public sigslot::has_slots<> {
 
   void OnUpdateSessionDescription(const cricket::SessionDescription* local,
                                   const cricket::SessionDescription* remote,
-                                  StreamCollection* local_streams) {
+                                  const cricket::Candidates& candidates) {
     update_session_description_counter_++;
   }
 

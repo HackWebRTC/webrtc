@@ -32,21 +32,27 @@
 #include "talk/session/phone/channelmanager.h"
 #include "talk/p2p/client/fakeportallocator.h"
 
+class MockPeerConnectionSignaling {
+
+};
+
 class WebRtcSessionTest : public testing::Test {
  public:
   WebRtcSessionTest() {
+  }
+
+  ~WebRtcSessionTest() {
+  }
+
+  virtual void SetUp() {
     signaling_thread_ = talk_base::Thread::Current();
     worker_thread_ = talk_base::Thread::Current();
     channel_manager_.reset(new cricket::ChannelManager(worker_thread_));
     port_allocator_.reset(
         new cricket::FakePortAllocator(worker_thread_, NULL));
     pc_signaling_.reset(
-        new webrtc::PeerConnectionSignaling(channel_manager_.get()));
-    ASSERT_TRUE(channel_manager_.get() != NULL);
-    ASSERT_TRUE(session_.get() == NULL);
-  }
-
-  ~WebRtcSessionTest() {
+        new webrtc::PeerConnectionSignaling(channel_manager_.get(),
+                                            signaling_thread_));
   }
 
   bool InitializeSession() {
@@ -58,9 +64,11 @@ class WebRtcSessionTest : public testing::Test {
   }
 
   void Init() {
+    ASSERT_TRUE(channel_manager_.get() != NULL);
+    ASSERT_TRUE(session_.get() == NULL);
     EXPECT_TRUE(channel_manager_.get()->Init());
     session_.reset(new webrtc::WebRtcSession(
-        channel_manager_.get(), worker_thread_,
+        channel_manager_.get(), worker_thread_, signaling_thread_,
         port_allocator_.get(), pc_signaling_.get()));
     EXPECT_TRUE(InitializeSession());
     EXPECT_TRUE(CheckChannels());

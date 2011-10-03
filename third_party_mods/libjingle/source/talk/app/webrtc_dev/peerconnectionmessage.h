@@ -79,6 +79,7 @@ class PeerConnectionMessage : public RefCount {
   const cricket::SessionDescription* desc() {return desc_.get();}
 
   bool Serialize(std::string* message);
+  std::vector<cricket::Candidate>& candidates() { return candidates_; }
 
  protected:
   PeerConnectionMessage(PeerConnectionMessageType type,
