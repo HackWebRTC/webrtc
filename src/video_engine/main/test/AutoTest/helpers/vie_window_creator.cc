@@ -10,6 +10,7 @@
 
 #include "vie_window_creator.h"
 
+#include "engine_configurations.h"
 #include "vie_autotest_main.h"
 #include "vie_codec.h"
 #include "voe_codec.h"
