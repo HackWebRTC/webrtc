@@ -8,23 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "peerconnection/samples/client/conductor.h"
+#include "talk/examples/peerconnection_client/conductor.h"
 
-#include "peerconnection/samples/client/defaults.h"
+#include <utility>
+
+#include "talk/examples/peerconnection_client/defaults.h"
 #include "talk/base/common.h"
 #include "talk/base/logging.h"
 #include "talk/p2p/client/basicportallocator.h"
 #include "talk/session/phone/videorendererfactory.h"
-
-namespace {
-// Used when passing stream information from callback threads to the UI thread.
-struct StreamInfo {
-  StreamInfo(const std::string& id, bool video) : id_(id), video_(video) {}
-
-  std::string id_;
-  bool video_;
-};
-}  // end anonymous.
 
 Conductor::Conductor(PeerConnectionClient* client, MainWindow* main_wnd)
   : peer_id_(-1),
@@ -50,67 +42,39 @@ void Conductor::Close() {
 bool Conductor::InitializePeerConnection() {
   ASSERT(peer_connection_factory_.get() == NULL);
   ASSERT(peer_connection_.get() == NULL);
-  ASSERT(worker_thread_.get() == NULL);
 
-  worker_thread_.reset(new talk_base::Thread());
-  if (!worker_thread_->SetName("ConductorWT", this) ||
-      !worker_thread_->Start()) {
-    LOG(LS_ERROR) << "Failed to start libjingle worker thread";
-    worker_thread_.reset();
-    return false;
-  }
+  peer_connection_factory_  = webrtc::PeerConnectionManager::Create();
 
-  cricket::PortAllocator* port_allocator =
-      new cricket::BasicPortAllocator(
-          new talk_base::BasicNetworkManager(),
-          talk_base::SocketAddress("stun.l.google.com", 19302),
-          talk_base::SocketAddress(),
-          talk_base::SocketAddress(),
-          talk_base::SocketAddress());
-
-  peer_connection_factory_.reset(
-      new webrtc::PeerConnectionFactory(port_allocator,
-                                        worker_thread_.get()));
-  if (!peer_connection_factory_->Initialize()) {
+  if (!peer_connection_factory_.get()) {
     main_wnd_->MessageBox("Error",
         "Failed to initialize PeerConnectionFactory", true);
     DeletePeerConnection();
     return false;
   }
 
-  // Since we only ever use a single PeerConnection instance, we share
-  // the worker thread between the factory and the PC instance.
-  peer_connection_.reset(peer_connection_factory_->CreatePeerConnection(
-      worker_thread_.get()));
+  peer_connection_ = peer_connection_factory_->CreatePeerConnection(
+      GetPeerConnectionString(), this);
+
   if (!peer_connection_.get()) {
     main_wnd_->MessageBox("Error",
         "CreatePeerConnection failed", true);
     DeletePeerConnection();
-  } else {
-    peer_connection_->RegisterObserver(this);
-    bool audio = peer_connection_->SetAudioDevice("", "", 0);
-    LOG(INFO) << "SetAudioDevice " << (audio ? "succeeded." : "failed.");
   }
   return peer_connection_.get() != NULL;
 }
 
 void Conductor::DeletePeerConnection() {
-  peer_connection_.reset();
-  worker_thread_.reset();
+  peer_connection_.release();
   active_streams_.clear();
-  peer_connection_factory_.reset();
+  peer_connection_factory_.release();
   peer_id_ = -1;
 }
 
-void Conductor::SwitchToStreamingUi() {
+void Conductor::EnsureStreamingUI() {
   ASSERT(peer_connection_.get() != NULL);
   if (main_wnd_->IsWindow()) {
     if (main_wnd_->current_ui() != MainWindow::STREAMING)
       main_wnd_->SwitchToStreamingUI();
-
-    if (peer_connection_->SetVideoCapture("")) {
-      peer_connection_->SetLocalVideoRenderer(main_wnd_->local_renderer());
-    }
   }
 }
 
@@ -131,18 +95,19 @@ void Conductor::OnSignalingMessage(const std::string& msg) {
 }
 
 // Called when a remote stream is added
-void Conductor::OnAddStream(const std::string& stream_id, bool video) {
-  LOG(INFO) << __FUNCTION__ << " " << stream_id;
+void Conductor::OnAddStream(webrtc::MediaStream* stream) {
+  LOG(INFO) << __FUNCTION__ << " " << stream->label();
 
+  stream->AddRef();
   main_wnd_->QueueUIThreadCallback(NEW_STREAM_ADDED,
-                                   new StreamInfo(stream_id, video));
+                                   stream);
 }
 
-void Conductor::OnRemoveStream(const std::string& stream_id, bool video) {
-  LOG(INFO) << __FUNCTION__ << (video ? " video: " : " audio: ") << stream_id;
-
+void Conductor::OnRemoveStream(webrtc::MediaStream* stream) {
+  LOG(INFO) << __FUNCTION__ << " " << stream->label();
+  stream->AddRef();
   main_wnd_->QueueUIThreadCallback(STREAM_REMOVED,
-                                   new StreamInfo(stream_id, video));
+                                   stream);
 }
 
 //
@@ -206,7 +171,7 @@ void Conductor::OnMessageFromPeer(int peer_id, const std::string& message) {
     return;
   }
 
-  peer_connection_->SignalingMessage(message);
+  peer_connection_->ProcessSignalingMessage(message);
 }
 
 void Conductor::OnMessageSent(int err) {
@@ -249,48 +214,37 @@ void Conductor::ConnectToPeer(int peer_id) {
   if (InitializePeerConnection()) {
     peer_id_ = peer_id;
     main_wnd_->SwitchToStreamingUI();
-    SwitchToStreamingUi();
+    EnsureStreamingUI();
     AddStreams();
   } else {
     main_wnd_->MessageBox("Error", "Failed to initialize PeerConnection", true);
   }
 }
 
-bool Conductor::AddStream(const std::string& id, bool video) {
-  // NOTE: Must be called from the UI thread.
-  if (active_streams_.find(id) != active_streams_.end())
-    return false;  // Already added.
-
-  active_streams_.insert(id);
-  bool ret = peer_connection_->AddStream(id, video);
-  if (!ret) {
-    active_streams_.erase(id);
-  } else if (video) {
-    LOG(INFO) << "Setting video renderer for stream: " << id;
-    bool ok = peer_connection_->SetVideoRenderer(id,
-        main_wnd_->remote_renderer());
-    ASSERT(ok);
-    UNUSED(ok);
-  }
-  return ret;
-}
-
 void Conductor::AddStreams() {
-  int streams = 0;
-  if (AddStream(kVideoLabel, true))
-    ++streams;
+  if (active_streams_.find(kStreamLabel) != active_streams_.end())
+    return;  // Already added.
 
-  if (AddStream(kAudioLabel, false))
-    ++streams;
+  scoped_refptr<webrtc::LocalAudioTrack> audio_track(
+      webrtc::CreateLocalAudioTrack(kAudioLabel, NULL));
 
-  // At the initiator of the call, after adding streams we need
-  // kick start the ICE candidates discovery process, which
-  // is done by the Connect method. Earlier this was done after
-  // getting the OnLocalStreamInitialized callback which is removed
-  // now. Connect will trigger OnSignalingMessage callback when
-  // ICE candidates are available.
-  if (streams)
-    peer_connection_->Connect();
+  scoped_refptr<webrtc::LocalVideoTrack> video_track(
+      webrtc::CreateLocalVideoTrack(kVideoLabel, NULL));
+
+  scoped_refptr<webrtc::VideoRenderer> renderer(webrtc::CreateVideoRenderer(
+      main_wnd_->local_renderer()));
+  video_track->SetRenderer(renderer);
+
+  scoped_refptr<webrtc::LocalMediaStream> stream =
+      webrtc::CreateLocalMediaStream(kStreamLabel);
+
+  stream->AddTrack(audio_track);
+  stream->AddTrack(video_track);
+  peer_connection_->AddStream(stream);
+  peer_connection_->CommitStreamChanges();
+  typedef std::pair<std::string, scoped_refptr<webrtc::MediaStream> >
+      MediaStreamPair;
+  active_streams_.insert(MediaStreamPair(stream->label(), stream));
 }
 
 void Conductor::DisconnectFromCurrentPeer() {
@@ -358,33 +312,33 @@ void Conductor::UIThreadCallback(int msg_id, void* data) {
       break;
 
     case NEW_STREAM_ADDED: {
-      talk_base::scoped_ptr<StreamInfo> info(
-          reinterpret_cast<StreamInfo*>(data));
-      if (info->video_) {
-        LOG(INFO) << "Setting video renderer for stream: " << info->id_;
-        bool ok = peer_connection_->SetVideoRenderer(info->id_,
-            main_wnd_->remote_renderer());
-        ASSERT(ok);
-        if (!ok)
-          LOG(LS_ERROR) << "SetVideoRenderer failed for : " << info->id_;
-
-        // TODO(tommi): For the initiator, we shouldn't have to make this call
-        // here (which is actually the second time this is called for the
-        // initiator).  Look into why this is needed.
-        SwitchToStreamingUi();
+      webrtc::MediaStream* stream = reinterpret_cast<webrtc::MediaStream*>(
+          data);
+      scoped_refptr<webrtc::MediaStreamTrackList> tracks =
+          stream->tracks();
+      for (size_t i = 0; i < tracks->count(); ++i) {
+        if (tracks->at(i)->kind().compare(webrtc::kVideoTrackKind) == 0) {
+          webrtc::VideoTrack* track =
+              reinterpret_cast<webrtc::VideoTrack*>(tracks->at(i).get());
+          LOG(INFO) << "Setting video renderer for track: " << track->label();
+          scoped_refptr<webrtc::VideoRenderer> renderer(
+              webrtc::CreateVideoRenderer(main_wnd_->remote_renderer()));
+          track->SetRenderer(renderer);
+        }
       }
-
       // If we haven't shared any streams with this peer (we're the receiver)
       // then do so now.
       if (active_streams_.empty())
         AddStreams();
+      stream->Release();
       break;
     }
 
     case STREAM_REMOVED: {
-      talk_base::scoped_ptr<StreamInfo> info(
-          reinterpret_cast<StreamInfo*>(data));
-      active_streams_.erase(info->id_);
+      webrtc::MediaStream* stream = reinterpret_cast<webrtc::MediaStream*>(
+          data);
+      active_streams_.erase(stream->label());
+      stream->Release();
       if (active_streams_.empty()) {
         LOG(INFO) << "All streams have been closed.";
         main_wnd_->QueueUIThreadCallback(PEER_CONNECTION_CLOSED, NULL);

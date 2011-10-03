@@ -13,13 +13,14 @@
 #pragma once
 
 #include <deque>
+#include <map>
 #include <set>
 #include <string>
 
-#include "peerconnection/samples/client/main_wnd.h"
-#include "peerconnection/samples/client/peer_connection_client.h"
-#include "talk/app/webrtc/peerconnection.h"
-#include "talk/app/webrtc/peerconnectionfactory.h"
+#include "talk/examples/peerconnection_client/main_wnd.h"
+#include "talk/examples/peerconnection_client/peer_connection_client.h"
+#include "talk/app/webrtc_dev/mediastream.h"
+#include "talk/app/webrtc_dev/peerconnection.h"
 #include "talk/base/scoped_ptr.h"
 
 namespace cricket {
@@ -51,21 +52,19 @@ class Conductor
  protected:
   bool InitializePeerConnection();
   void DeletePeerConnection();
-  void SwitchToStreamingUi();
-  bool AddStream(const std::string& id, bool video);
+  void EnsureStreamingUI();
   void AddStreams();
 
   //
   // PeerConnectionObserver implementation.
   //
   virtual void OnError();
+  virtual void OnMessage(const std::string& msg) {}
   virtual void OnSignalingMessage(const std::string& msg);
+  virtual void OnStateChange(Readiness state) {}
+  virtual void OnAddStream(webrtc::MediaStream* stream);
+  virtual void OnRemoveStream(webrtc::MediaStream* stream);
 
-  // Called when a remote stream is added
-  virtual void OnAddStream(const std::string& stream_id, bool video);
-
-  virtual void OnRemoveStream(const std::string& stream_id,
-                              bool video);
 
   //
   // PeerConnectionClientObserver implementation.
@@ -99,13 +98,12 @@ class Conductor
 
  protected:
   int peer_id_;
-  talk_base::scoped_ptr<webrtc::PeerConnection> peer_connection_;
-  talk_base::scoped_ptr<webrtc::PeerConnectionFactory> peer_connection_factory_;
-  talk_base::scoped_ptr<talk_base::Thread> worker_thread_;
+  scoped_refptr<webrtc::PeerConnection> peer_connection_;
+  scoped_refptr<webrtc::PeerConnectionManager> peer_connection_factory_;
   PeerConnectionClient* client_;
   MainWindow* main_wnd_;
   std::deque<std::string*> pending_messages_;
-  std::set<std::string> active_streams_;
+  std::map<std::string, scoped_refptr<webrtc::MediaStream> > active_streams_;
 };
 
 #endif  // PEERCONNECTION_SAMPLES_CLIENT_CONDUCTOR_H_

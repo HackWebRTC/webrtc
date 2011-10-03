@@ -713,40 +713,18 @@
       ],  # conditions
     },
     {
-      'target_name': 'peerconnection_client_dev',
-      'conditions': [
-        ['peer_connection_dev==1 and OS=="linux"', {
-          'type': 'executable',
-          'sources': [
-            '<(libjingle_mods)/source/talk/app/peer_connection_dev/peerconnection_client_dev.cc',
-          ],
-          'libraries': [
-            '-lXext',
-            '-lX11',
-          ],
-        }, {
-          'type': 'none',
-        } ],  # peer_connection_dev
-        ['inside_chromium_build==1', {
-          'dependencies': [
-            'libjingle_app',
-          ],
-        }, {
-          'dependencies': [
-            'libjingle_app',
-          ],
-        } ],  # inside_chromium_build
-      ],  # conditions
-    },
-    {
       'target_name': 'peerconnection_unittests',
-      'dependencies': [
-        'libjingle_app',
-        '../../testing/gtest.gyp:gtest',
-        '../../testing/gtest.gyp:gtest_main',                
-      ],
       'conditions': [
-        ['peer_connection_dev==1', {
+        ['peer_connection_dev==1', {          
+          'dependencies': [
+            'libjingle_app',
+            '../../testing/gtest.gyp:gtest',
+            '../../testing/gtest.gyp:gtest_main',
+            # TODO(perkj): Temporary build the client app here to make sure
+            # nothing is broken.
+            'source/talk/examples/peerconnection_client/'
+                'peerconnection_client.gyp:peerconnection_client_dev',                
+          ],
           'type': 'executable',
           'conditions': [
             ['inside_chromium_build==1', {
@@ -760,6 +738,12 @@
                 '../../src/system_wrappers/source/system_wrappers.gyp:system_wrappers',
                ],
             }],
+            ['OS=="linux"', {
+              'libraries': [
+              '-lXext',
+              '-lX11',
+              ],
+            }],
           ], #conditions             
           'sources': [
             '<(libjingle_mods)/source/talk/app/webrtc_dev/mediastreamimpl_unittest.cc',
@@ -770,15 +754,10 @@
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionsignaling_unittest.cc',
             #'<(libjingle_mods)/source/talk/app/webrtc_dev/webrtcsession_unittest.cc',
           ],
-        }, { # peer_connection_dev != 1
+        } , {
           'type': 'none',
-        } ],  # peer_connection_dev
-        ['peer_connection_dev==1 and OS=="linux"', {
-          'libraries': [
-            '-lXext',
-            '-lX11',
-          ],
-        } ],
+        }
+        ], # peer_connection_dev 
       ],  # conditions
     },
   ],
