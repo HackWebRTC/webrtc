@@ -342,8 +342,7 @@ int VoEBaseImpl::DeRegisterVoiceEngineObserver()
     if (!_voiceEngineObserverPtr)
     {
         _engineStatistics.SetLastError(VE_INVALID_OPERATION, kTraceError,
-                                       "DeRegisterVoiceEngineObserver() "
-                                       " observer already disabled");
+            "DeRegisterVoiceEngineObserver() observer already disabled");
         return 0;
     }
 
@@ -379,8 +378,7 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm)
         if (_moduleProcessThreadPtr->Start() != 0)
         {
             _engineStatistics.SetLastError(VE_THREAD_ERROR, kTraceError,
-                                           "Init() failed to start module "
-                                           "process thread");
+                "Init() failed to start module process thread");
             return -1;
         }
     }
@@ -394,8 +392,7 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm)
         if (_audioProcessingModulePtr == NULL)
         {
             _engineStatistics.SetLastError(VE_NO_MEMORY, kTraceCritical,
-                                           "Init() failed to create the AP "
-                                           "module");
+                "Init() failed to create the AP module");
             return -1;
         }
         voe::Utility::TraceModuleVersion(VoEId(_instanceId, -1),
@@ -409,111 +406,103 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm)
                 set_device_sample_rate_hz(
                         kVoiceEngineAudioProcessingDeviceSampleRateHz))
         {
-            _engineStatistics.SetLastError(VE_APM_ERROR, kTraceWarning,
-                                           "Init() failed to set the device "
-                                           "sample rate to "
-                                           "48K for AP module");
+            _engineStatistics.SetLastError(VE_APM_ERROR, kTraceError,
+                "Init() failed to set the device sample rate to 48K for AP "
+                " module");
+            return -1;
         }
         // Using 8 kHz as inital Fs. Might be changed already at first call.
         if (_audioProcessingModulePtr->set_sample_rate_hz(8000))
         {
-            _engineStatistics.SetLastError(VE_APM_ERROR, kTraceWarning,
-                                           "Init() failed to set the sample "
-                                           "rate to 8K for AP"
-                                           "module");
+            _engineStatistics.SetLastError(VE_APM_ERROR, kTraceError,
+                "Init() failed to set the sample rate to 8K for AP module");
+            return -1;
         }
 
         if (_audioProcessingModulePtr->set_num_channels(1, 1) != 0)
         {
-            _engineStatistics.SetLastError(VE_SOUNDCARD_ERROR, kTraceWarning,
-                                           "Init() failed to set channels for "
-                                           "the primary audio"
-                                           "stream");
+            _engineStatistics.SetLastError(VE_SOUNDCARD_ERROR, kTraceError,
+                "Init() failed to set channels for the primary audio stream");
+            return -1;
         }
 
         if (_audioProcessingModulePtr->set_num_reverse_channels(1) != 0)
         {
-            _engineStatistics.SetLastError(VE_SOUNDCARD_ERROR, kTraceWarning,
-                                           "Init() failed to set channels for "
-                                           "the primary audio"
-                                           "stream");
+            _engineStatistics.SetLastError(VE_SOUNDCARD_ERROR, kTraceError,
+                "Init() failed to set channels for the primary audio stream");
+            return -1;
         }
         // high-pass filter
         if (_audioProcessingModulePtr->high_pass_filter()->Enable(
                 WEBRTC_VOICE_ENGINE_HP_DEFAULT_STATE) != 0)
         {
-            _engineStatistics.SetLastError(VE_APM_ERROR, kTraceWarning,
-                                           "Init() failed to set the high-pass "
-                                           "filter for AP"
-                                           " module");
+            _engineStatistics.SetLastError(VE_APM_ERROR, kTraceError,
+                "Init() failed to set the high-pass filter for AP module");
+            return -1;
         }
         // Echo Cancellation
         if (_audioProcessingModulePtr->echo_cancellation()->
                 enable_drift_compensation(false) != 0)
         {
-            _engineStatistics.SetLastError(VE_APM_ERROR, kTraceWarning,
-                                           "Init() failed to set drift "
-                                           "compensation for AP module");
+            _engineStatistics.SetLastError(VE_APM_ERROR, kTraceError,
+                "Init() failed to set drift compensation for AP module");
+            return -1;
         }
         if (_audioProcessingModulePtr->echo_cancellation()->Enable(
                 WEBRTC_VOICE_ENGINE_EC_DEFAULT_STATE))
         {
-            _engineStatistics.SetLastError(VE_APM_ERROR, kTraceWarning,
-                                           "Init() failed to set echo "
-                                           "cancellation state for AP"
-                                           " module");
+            _engineStatistics.SetLastError(VE_APM_ERROR, kTraceError,
+                "Init() failed to set echo cancellation state for AP module");
+            return -1;
         }
         // Noise Reduction
         if (_audioProcessingModulePtr->noise_suppression()->set_level(
                 (NoiseSuppression::Level) WEBRTC_VOICE_ENGINE_NS_DEFAULT_MODE)
                 != 0)
         {
-            _engineStatistics.SetLastError(VE_APM_ERROR, kTraceWarning,
-                                           "Init() failed to set noise "
-                                           "reduction level for VP"
-                                           "module");
+            _engineStatistics.SetLastError(VE_APM_ERROR, kTraceError,
+                "Init() failed to set noise reduction level for AP module");
+            return -1;
         }
         if (_audioProcessingModulePtr->noise_suppression()->Enable(
                 WEBRTC_VOICE_ENGINE_NS_DEFAULT_STATE) != 0)
         {
-            _engineStatistics.SetLastError(VE_APM_ERROR, kTraceWarning,
-                                           "Init() failed to set noise "
-                                           "reduction state for AP"
-                                           "module");
+            _engineStatistics.SetLastError(VE_APM_ERROR, kTraceError,
+                "Init() failed to set noise reduction state for AP module");
+            return -1;
         }
         // Automatic Gain control
         if (_audioProcessingModulePtr->gain_control()->set_analog_level_limits(
                 kMinVolumeLevel,kMaxVolumeLevel) != 0)
         {
-            _engineStatistics.SetLastError(VE_APM_ERROR, kTraceWarning,
-                                           "Init() failed to set AGC analog "
-                                           "level for AP module");
+            _engineStatistics.SetLastError(VE_APM_ERROR, kTraceError,
+                "Init() failed to set AGC analog level for AP module");
+            return -1;
         }
         if (_audioProcessingModulePtr->gain_control()->set_mode(
                 (GainControl::Mode) WEBRTC_VOICE_ENGINE_AGC_DEFAULT_MODE)
                 != 0)
         {
-            _engineStatistics.SetLastError(VE_APM_ERROR, kTraceWarning,
-                                           "Init() failed to set AGC mode for "
-                                           "AP module");
+            _engineStatistics.SetLastError(VE_APM_ERROR, kTraceError,
+                "Init() failed to set AGC mode for AP module");
+            return -1;
         }
         if (_audioProcessingModulePtr->gain_control()->Enable(
                 WEBRTC_VOICE_ENGINE_AGC_DEFAULT_STATE)
                 != 0)
         {
-            _engineStatistics.SetLastError(VE_APM_ERROR, kTraceWarning,
-                                           "Init() failed to set AGC state for "
-                                           "AP module");
+            _engineStatistics.SetLastError(VE_APM_ERROR, kTraceError,
+                "Init() failed to set AGC state for AP module");
+            return -1;
         }
         // VAD
         if (_audioProcessingModulePtr->voice_detection()->Enable(
                 WEBRTC_VOICE_ENGINE_VAD_DEFAULT_STATE)
                 != 0)
         {
-            _engineStatistics.SetLastError(VE_APM_ERROR, kTraceWarning,
-                                           "Init() failed to set Level "
-                                           "Estimator state for AP"
-                                           "module");
+            _engineStatistics.SetLastError(VE_APM_ERROR, kTraceError,
+                "Init() failed to set VAD state for AP module");
+            return -1;
         }
     }
 
@@ -524,7 +513,7 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm)
         // Create the internal ADM implementation.
         _audioDevicePtr = AudioDeviceModuleImpl::Create(
             VoEId(_instanceId, -1), _audioDeviceLayer);
-        
+
         if (_audioDevicePtr == NULL)
         {
             _engineStatistics.SetLastError(VE_NO_MEMORY, kTraceCritical,
@@ -577,33 +566,25 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm)
     if (_audioDevicePtr->SetPlayoutDevice(WEBRTC_VOICE_ENGINE_DEFAULT_DEVICE)
             != 0)
     {
-        _engineStatistics.SetLastError(VE_AUDIO_DEVICE_MODULE_ERROR,
-                                       kTraceInfo,
-                                       "Init() failed to set the default "
-                                       "output device");
+        _engineStatistics.SetLastError(VE_AUDIO_DEVICE_MODULE_ERROR, kTraceInfo,
+            "Init() failed to set the default output device");
     }
     if (_audioDevicePtr->SpeakerIsAvailable(&available) != 0)
     {
-        _engineStatistics.SetLastError(VE_CANNOT_ACCESS_SPEAKER_VOL,
-                                       kTraceInfo,
-                                       "Init() failed to check speaker "
-                                       "availability, trying"
-                                       " to initialize speaker anyway");
+        _engineStatistics.SetLastError(VE_CANNOT_ACCESS_SPEAKER_VOL, kTraceInfo,
+            "Init() failed to check speaker availability, trying to "
+            "initialize speaker anyway");
     }
     else if (!available)
     {
-        _engineStatistics.SetLastError(VE_CANNOT_ACCESS_SPEAKER_VOL,
-                                       kTraceInfo,
-                                       "Init() speaker not available, "
-                                       "trying to initialize"
-                                       "speaker anyway");
+        _engineStatistics.SetLastError(VE_CANNOT_ACCESS_SPEAKER_VOL, kTraceInfo,
+            "Init() speaker not available, trying to initialize speaker "
+            "anyway");
     }
     if (_audioDevicePtr->InitSpeaker() != 0)
     {
-        _engineStatistics.SetLastError(VE_CANNOT_ACCESS_SPEAKER_VOL,
-                                       kTraceInfo,
-                                       "Init() failed to initialize the "
-                                       "speaker");
+        _engineStatistics.SetLastError(VE_CANNOT_ACCESS_SPEAKER_VOL, kTraceInfo,
+            "Init() failed to initialize the speaker");
     }
 
     // Initialize the default microphone
@@ -611,28 +592,24 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm)
             != 0)
     {
         _engineStatistics.SetLastError(VE_SOUNDCARD_ERROR, kTraceInfo,
-                                       "Init() failed to set the default "
-                                       "input device");
+            "Init() failed to set the default input device");
     }
     if (_audioDevicePtr->MicrophoneIsAvailable(&available) != 0)
     {
         _engineStatistics.SetLastError(VE_CANNOT_ACCESS_MIC_VOL, kTraceInfo,
-                                       "Init() failed to check microphone "
-                                       "availability, trying"
-                                       "to initialize microphone anyway");
+            "Init() failed to check microphone availability, trying to "
+            "initialize microphone anyway");
     }
     else if (!available)
     {
         _engineStatistics.SetLastError(VE_CANNOT_ACCESS_MIC_VOL, kTraceInfo,
-                                       "Init() microphone not available, "
-                                       "trying to initialize"
-                                       "microphone anyway");
+            "Init() microphone not available, trying to initialize "
+            "microphone anyway");
     }
     if (_audioDevicePtr->InitMicrophone() != 0)
     {
         _engineStatistics.SetLastError(VE_CANNOT_ACCESS_MIC_VOL, kTraceInfo,
-                                       "Init() failed to initialize the "
-                                       "microphone");
+            "Init() failed to initialize the microphone");
     }
 
     // Set default AGC mode for the ADM
@@ -646,9 +623,7 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm)
         if (_audioDevicePtr->SetAGC(enable) != 0)
         {
             _engineStatistics.SetLastError(VE_AUDIO_DEVICE_MODULE_ERROR,
-                                           kTraceWarning,
-                                           "Init() failed to set default AGC "
-                                           "mode in ADM 0");
+                kTraceError, "Init() failed to set default AGC mode in ADM 0");
         }
     }
 #endif
@@ -657,15 +632,13 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm)
     if (_audioDevicePtr->SetStereoPlayout(available ? true : false) != 0)
     {
         _engineStatistics.SetLastError(VE_SOUNDCARD_ERROR, kTraceWarning,
-                                       "Init() failed to set stereo playout "
-                                       "mode");
+            "Init() failed to set stereo playout mode");
     }
     _audioDevicePtr->StereoRecordingIsAvailable(&available);
     if (_audioDevicePtr->SetStereoRecording(available ? true : false) != 0)
     {
         _engineStatistics.SetLastError(VE_SOUNDCARD_ERROR, kTraceWarning,
-                                       "Init() failed to set mono recording "
-                                       "mode");
+            "Init() failed to set mono recording mode");
     }
 
     return _engineStatistics.SetInitialized();

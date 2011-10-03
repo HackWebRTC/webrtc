@@ -129,6 +129,8 @@ enum { kVoiceEngineMaxRtpExtensionId = 14 };
 
 } // namespace webrtc
 
+// TODO(andrew): we shouldn't be using the precompiler for this.
+// Use enums or bools as appropriate.
 #define WEBRTC_AUDIO_PROCESSING_OFF false
 
 #define WEBRTC_VOICE_ENGINE_HP_DEFAULT_STATE true
