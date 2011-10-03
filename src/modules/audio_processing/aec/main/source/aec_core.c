@@ -12,12 +12,14 @@
  * The core AEC algorithm, which is presented with time-aligned signals.
  */
 
+#include "aec_core.h"
+
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "aec_core.h"
 #include "aec_rdft.h"
+#include "delay_estimator_float.h"
 #include "ring_buffer.h"
 #include "system_wrappers/interface/cpu_features_wrapper.h"
 
@@ -174,6 +176,15 @@ int WebRtcAec_CreateAec(aec_t **aecInst)
         return -1;
     }
 
+    if (WebRtc_CreateDelayEstimatorFloat(&aec->delay_estimator,
+                                         PART_LEN1,
+                                         kMaxDelay,
+                                         0) == -1) {
+      WebRtcAec_FreeAec(aec);
+      aec = NULL;
+      return -1;
+    }
+
     return 0;
 }
 
@@ -189,6 +200,8 @@ int WebRtcAec_FreeAec(aec_t *aec)
 
     WebRtcApm_FreeBuffer(aec->nearFrBufH);
     WebRtcApm_FreeBuffer(aec->outFrBufH);
+
+    WebRtc_FreeDelayEstimatorFloat(aec->delay_estimator);
 
     free(aec);
     return 0;
@@ -370,6 +383,12 @@ int WebRtcAec_InitAec(aec_t *aec, int sampFreq)
     if (WebRtcApm_InitBuffer(aec->outFrBufH) == -1) {
         return -1;
     }
+
+    if (WebRtc_InitDelayEstimatorFloat(aec->delay_estimator) != 0) {
+      return -1;
+    }
+    aec->delay_logging_enabled = 0;
+    memset(aec->delay_histogram, 0, sizeof(aec->delay_histogram));
 
     // Default target suppression level
     aec->targetSupp = -11.5;
@@ -561,6 +580,10 @@ static void ProcessBlock(aec_t *aec, const short *farend,
     float fft[PART_LEN2];
     float xf[2][PART_LEN1], yf[2][PART_LEN1], ef[2][PART_LEN1];
     complex_t df[PART_LEN1];
+    float far_spectrum = 0.0f;
+    float near_spectrum = 0.0f;
+    float abs_far_spectrum[PART_LEN1];
+    float abs_near_spectrum[PART_LEN1];
 
     const float gPow[2] = {0.9f, 0.1f};
 
@@ -625,10 +648,15 @@ static void ProcessBlock(aec_t *aec, const short *farend,
 
     // Power smoothing
     for (i = 0; i < PART_LEN1; i++) {
-        aec->xPow[i] = gPow[0] * aec->xPow[i] + gPow[1] * NR_PART *
-            (xf[0][i] * xf[0][i] + xf[1][i] * xf[1][i]);
-        aec->dPow[i] = gPow[0] * aec->dPow[i] + gPow[1] *
-            (df[i][0] * df[i][0] + df[i][1] * df[i][1]);
+      far_spectrum = xf[0][i] * xf[0][i] + xf[1][i] * xf[1][i];
+      aec->xPow[i] = gPow[0] * aec->xPow[i] + gPow[1] * NR_PART * far_spectrum;
+      // Calculate absolute spectra
+      abs_far_spectrum[i] = sqrtf(far_spectrum);
+
+      near_spectrum = df[i][0] * df[i][0] + df[i][1] * df[i][1];
+      aec->dPow[i] = gPow[0] * aec->dPow[i] + gPow[1] * near_spectrum;
+      // Calculate absolute spectra
+      abs_near_spectrum[i] = sqrtf(near_spectrum);
     }
 
     // Estimate noise power. Wait until dPow is more stable.
@@ -663,6 +691,20 @@ static void ProcessBlock(aec_t *aec, const short *farend,
         aec->noisePow = aec->dMinPow;
     }
 
+    // Block wise delay estimation used for logging
+    if (aec->delay_logging_enabled) {
+      int delay_estimate = 0;
+      // Estimate the delay
+      delay_estimate = WebRtc_DelayEstimatorProcessFloat(aec->delay_estimator,
+                                                         abs_far_spectrum,
+                                                         abs_near_spectrum,
+                                                         PART_LEN1,
+                                                         aec->echoState);
+      if (delay_estimate >= 0) {
+        // Update delay estimate buffer
+        aec->delay_histogram[delay_estimate]++;
+      }
+    }
 
     // Update the xfBuf block position.
     aec->xfBufBlockPos--;

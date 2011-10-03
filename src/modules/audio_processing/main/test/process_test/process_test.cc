@@ -93,8 +93,8 @@ void usage() {
   printf("\n  -aec     Echo cancellation\n");
   printf("  --drift_compensation\n");
   printf("  --no_drift_compensation\n");
-  printf("  --echo_metrics\n");
   printf("  --no_echo_metrics\n");
+  printf("  --no_delay_logging\n");
   printf("\n  -aecm    Echo control mobile\n");
   printf("  --aecm_echo_path_in_file FILE\n");
   printf("  --aecm_echo_path_out_file FILE\n");
@@ -218,6 +218,10 @@ void void_main(int argc, char* argv[]) {
 
     } else if (strcmp(argv[i], "-aec") == 0) {
       ASSERT_EQ(apm->kNoError, apm->echo_cancellation()->Enable(true));
+      ASSERT_EQ(apm->kNoError,
+                apm->echo_cancellation()->enable_metrics(true));
+      ASSERT_EQ(apm->kNoError,
+                apm->echo_cancellation()->enable_delay_logging(true));
 
     } else if (strcmp(argv[i], "--drift_compensation") == 0) {
       ASSERT_EQ(apm->kNoError, apm->echo_cancellation()->Enable(true));
@@ -230,15 +234,15 @@ void void_main(int argc, char* argv[]) {
       ASSERT_EQ(apm->kNoError,
                 apm->echo_cancellation()->enable_drift_compensation(false));
 
-    } else if (strcmp(argv[i], "--echo_metrics") == 0) {
-      ASSERT_EQ(apm->kNoError, apm->echo_cancellation()->Enable(true));
-      ASSERT_EQ(apm->kNoError,
-                apm->echo_cancellation()->enable_metrics(true));
-
     } else if (strcmp(argv[i], "--no_echo_metrics") == 0) {
       ASSERT_EQ(apm->kNoError, apm->echo_cancellation()->Enable(true));
       ASSERT_EQ(apm->kNoError,
                 apm->echo_cancellation()->enable_metrics(false));
+
+    } else if (strcmp(argv[i], "--no_delay_logging") == 0) {
+      ASSERT_EQ(apm->kNoError, apm->echo_cancellation()->Enable(true));
+      ASSERT_EQ(apm->kNoError,
+                apm->echo_cancellation()->enable_delay_logging(false));
 
     } else if (strcmp(argv[i], "-aecm") == 0) {
       ASSERT_EQ(apm->kNoError, apm->echo_control_mobile()->Enable(true));
@@ -883,6 +887,14 @@ void void_main(int argc, char* argv[]) {
       PrintStat(metrics.echo_return_loss_enhancement);
       printf("ANLP: ");
       PrintStat(metrics.a_nlp);
+    }
+    if (apm->echo_cancellation()->is_delay_logging_enabled()) {
+      int median = 0;
+      int std = 0;
+      apm->echo_cancellation()->GetDelayMetrics(&median, &std);
+      printf("\n--Delay metrics--\n");
+      printf("Median:             %3d\n", median);
+      printf("Standard deviation: %3d\n", std);
     }
   }
 

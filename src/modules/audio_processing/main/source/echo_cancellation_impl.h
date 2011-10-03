@@ -49,6 +49,9 @@ class EchoCancellationImpl : public EchoCancellation,
   virtual bool are_metrics_enabled() const;
   virtual bool stream_has_echo() const;
   virtual int GetMetrics(Metrics* metrics);
+  virtual int enable_delay_logging(bool enable);
+  virtual bool is_delay_logging_enabled() const;
+  virtual int GetDelayMetrics(int* median, int* std);
 
   // ProcessingComponent implementation.
   virtual void* CreateHandle() const;
@@ -66,6 +69,7 @@ class EchoCancellationImpl : public EchoCancellation,
   int stream_drift_samples_;
   bool was_stream_drift_set_;
   bool stream_has_echo_;
+  bool delay_logging_enabled_;
 };
 }  // namespace webrtc
 

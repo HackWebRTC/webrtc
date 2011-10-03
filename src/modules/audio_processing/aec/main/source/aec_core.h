@@ -33,6 +33,8 @@
 #define PREF_BAND_SIZE 24
 
 #define BLOCKL_MAX FRAME_LEN
+// Maximum delay in fixed point delay estimator, used for logging
+enum {kMaxDelay = 100};
 
 typedef float complex_t[2];
 // For performance reasons, some arrays of complex numbers are replaced by twice
@@ -140,6 +142,10 @@ typedef struct {
     int freq_avg_ic;         //initial bin for averaging nlp gain
     int flag_Hband_cn;      //for comfort noise
     float cn_scale_Hband;   //scale for comfort noise in H band
+
+    int delay_histogram[kMaxDelay];
+    int delay_logging_enabled;
+    void* delay_estimator;
 
 #ifdef AEC_DEBUG
     FILE *farFile;

@@ -38,6 +38,7 @@ typedef struct {
     WebRtc_Word16 nlpMode;        // default kAecNlpModerate
     WebRtc_Word16 skewMode;       // default kAecFalse
     WebRtc_Word16 metricsMode;    // default kAecFalse
+    int delay_logging;            // default kAecFalse
     //float realSkew;
 } AecConfig;
 
@@ -66,7 +67,7 @@ extern "C" {
  * Inputs                       Description
  * -------------------------------------------------------------------
  * void **aecInst               Pointer to the AEC instance to be created
- *                              and initilized
+ *                              and initialized
  *
  * Outputs                      Description
  * -------------------------------------------------------------------
@@ -224,6 +225,23 @@ WebRtc_Word32 WebRtcAec_get_echo_status(void *aecInst, WebRtc_Word16 *status);
  *                              -1: error
  */
 WebRtc_Word32 WebRtcAec_GetMetrics(void *aecInst, AecMetrics *metrics);
+
+/*
+ * Gets the current delay metrics for the session.
+ *
+ * Inputs                       Description
+ * -------------------------------------------------------------------
+ * void*      handle            Pointer to the AEC instance
+ *
+ * Outputs                      Description
+ * -------------------------------------------------------------------
+ * int*       median            Delay median value.
+ * int*       std               Delay standard deviation.
+ *
+ * int        return             0: OK
+ *                              -1: error
+ */
+int WebRtcAec_GetDelayMetrics(void* handle, int* median, int* std);
 
 /*
  * Gets the last error code.

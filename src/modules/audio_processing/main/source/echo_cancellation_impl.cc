@@ -66,7 +66,8 @@ EchoCancellationImpl::EchoCancellationImpl(const AudioProcessingImpl* apm)
     device_sample_rate_hz_(48000),
     stream_drift_samples_(0),
     was_stream_drift_set_(false),
-    stream_has_echo_(false) {}
+    stream_has_echo_(false),
+    delay_logging_enabled_(false) {}
 
 EchoCancellationImpl::~EchoCancellationImpl() {}
 
@@ -283,6 +284,39 @@ bool EchoCancellationImpl::stream_has_echo() const {
   return stream_has_echo_;
 }
 
+int EchoCancellationImpl::enable_delay_logging(bool enable) {
+  CriticalSectionScoped crit_scoped(*apm_->crit());
+  delay_logging_enabled_ = enable;
+  return Configure();
+}
+
+bool EchoCancellationImpl::is_delay_logging_enabled() const {
+  return delay_logging_enabled_;
+}
+
+// TODO(bjornv): How should we handle the multi-channel case?
+int EchoCancellationImpl::GetDelayMetrics(int* median, int* std) {
+  CriticalSectionScoped crit_scoped(*apm_->crit());
+  if (median == NULL) {
+    return apm_->kNullPointerError;
+  }
+  if (std == NULL) {
+    return apm_->kNullPointerError;
+  }
+
+  if (!is_component_enabled() || !delay_logging_enabled_) {
+    return apm_->kNotEnabledError;
+  }
+
+  Handle* my_handle = static_cast<Handle*>(handle(0));
+  if (WebRtcAec_GetDelayMetrics(my_handle, median, std) !=
+      apm_->kNoError) {
+    return GetHandleError(my_handle);
+  }
+
+  return apm_->kNoError;
+}
+
 int EchoCancellationImpl::Initialize() {
   int err = ProcessingComponent::Initialize();
   if (err != apm_->kNoError || !is_component_enabled()) {
@@ -332,6 +366,7 @@ int EchoCancellationImpl::ConfigureHandle(void* handle) const {
   config.metricsMode = metrics_enabled_;
   config.nlpMode = MapSetting(suppression_level_);
   config.skewMode = drift_compensation_enabled_;
+  config.delay_logging = delay_logging_enabled_;
 
   return WebRtcAec_set_config(static_cast<Handle*>(handle), config);
 }

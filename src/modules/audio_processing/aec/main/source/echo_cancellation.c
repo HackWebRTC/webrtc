@@ -11,16 +11,18 @@
 /*
  * Contains the API functions for the AEC.
  */
+#include "echo_cancellation.h"
+
+#include <math.h>
+#ifdef AEC_DEBUG
+#include <stdio.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 
-#include "echo_cancellation.h"
 #include "aec_core.h"
-#include "ring_buffer.h"
 #include "resampler.h"
-#ifdef AEC_DEBUG
-    #include <stdio.h>
-#endif
+#include "ring_buffer.h"
 
 #define BUF_SIZE_FRAMES 50 // buffer size (frames)
 // Maximum length of resampled signal. Must be an integer multiple of frames
@@ -215,7 +217,7 @@ WebRtc_Word32 WebRtcAec_Init(void *aecInst, WebRtc_Word32 sampFreq, WebRtc_Word3
         return -1;
     }
 
-    aecpc->initFlag = initCheck;  // indicates that initilisation has been done
+    aecpc->initFlag = initCheck;  // indicates that initialization has been done
 
     if (aecpc->sampFreq == 32000) {
         aecpc->splitSampFreq = 16000;
@@ -254,6 +256,7 @@ WebRtc_Word32 WebRtcAec_Init(void *aecInst, WebRtc_Word32 sampFreq, WebRtc_Word3
     aecConfig.nlpMode = kAecNlpModerate;
     aecConfig.skewMode = kAecFalse;
     aecConfig.metricsMode = kAecFalse;
+    aecConfig.delay_logging = kAecFalse;
 
     if (WebRtcAec_set_config(aecpc, aecConfig) == -1) {
         aecpc->lastError = AEC_UNSPECIFIED_ERROR;
@@ -566,6 +569,15 @@ WebRtc_Word32 WebRtcAec_set_config(void *aecInst, AecConfig config)
         WebRtcAec_InitMetrics(aecpc->aec);
     }
 
+  if (config.delay_logging != kAecFalse && config.delay_logging != kAecTrue) {
+    aecpc->lastError = AEC_BAD_PARAMETER_ERROR;
+    return -1;
+  }
+  aecpc->aec->delay_logging_enabled = config.delay_logging;
+  if (aecpc->aec->delay_logging_enabled == kAecTrue) {
+    memset(aecpc->aec->delay_histogram, 0, sizeof(aecpc->aec->delay_histogram));
+  }
+
     return 0;
 }
 
@@ -590,6 +602,7 @@ WebRtc_Word32 WebRtcAec_get_config(void *aecInst, AecConfig *config)
     config->nlpMode = aecpc->nlpMode;
     config->skewMode = aecpc->skewMode;
     config->metricsMode = aecpc->aec->metricsMode;
+    config->delay_logging = aecpc->aec->delay_logging_enabled;
 
     return 0;
 }
@@ -715,6 +728,69 @@ WebRtc_Word32 WebRtcAec_GetMetrics(void *aecInst, AecMetrics *metrics)
     }
 
     return 0;
+}
+
+int WebRtcAec_GetDelayMetrics(void* handle, int* median, int* std) {
+  aecpc_t* self = handle;
+  int i = 0;
+  int delay_values = 0;
+  int num_delay_values = 0;
+  int my_median = 0;
+  float l1_norm = 0;
+
+  if (self == NULL) {
+    return -1;
+  }
+  if (median == NULL) {
+    self->lastError = AEC_NULL_POINTER_ERROR;
+    return -1;
+  }
+  if (std == NULL) {
+    self->lastError = AEC_NULL_POINTER_ERROR;
+    return -1;
+  }
+  if (self->initFlag != initCheck) {
+    self->lastError = AEC_UNINITIALIZED_ERROR;
+    return -1;
+  }
+  if (self->aec->delay_logging_enabled == 0) {
+    // Logging disabled
+    self->lastError = AEC_UNSUPPORTED_FUNCTION_ERROR;
+    return -1;
+  }
+
+  // Get number of delay values since last update
+  for (i = 0; i < kMaxDelay; i++) {
+    num_delay_values += self->aec->delay_histogram[i];
+  }
+  if (num_delay_values == 0) {
+    // We have no new delay value data
+    *median = -1;
+    *std = -1;
+    return 0;
+  }
+
+  delay_values = num_delay_values >> 1; // Start value for median count down
+  // Get median of delay values since last update
+  for (i = 0; i < kMaxDelay; i++) {
+    delay_values -= self->aec->delay_histogram[i];
+    if (delay_values < 0) {
+      my_median = i;
+      break;
+    }
+  }
+  *median = my_median;
+
+  // Calculate the L1 norm, with median value as central moment
+  for (i = 0; i < kMaxDelay; i++) {
+    l1_norm += (float) (fabs(i - my_median) * self->aec->delay_histogram[i]);
+  }
+  *std = (int) (l1_norm / (float) num_delay_values + 0.5f);
+
+  // Reset histogram
+  memset(self->aec->delay_histogram, 0, sizeof(self->aec->delay_histogram));
+
+  return 0;
 }
 
 WebRtc_Word32 WebRtcAec_get_version(WebRtc_Word8 *versionStr, WebRtc_Word16 len)

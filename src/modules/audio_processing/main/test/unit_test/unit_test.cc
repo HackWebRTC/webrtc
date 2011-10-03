@@ -457,6 +457,8 @@ TEST_F(ApmTest, Process) {
             apm_->echo_cancellation()->enable_drift_compensation(true));
   EXPECT_EQ(apm_->kNoError,
             apm_->echo_cancellation()->enable_metrics(true));
+  EXPECT_EQ(apm_->kNoError,
+            apm_->echo_cancellation()->enable_delay_logging(true));
   EXPECT_EQ(apm_->kNoError, apm_->echo_cancellation()->Enable(true));
 
   EXPECT_EQ(apm_->kNoError,
@@ -591,6 +593,10 @@ TEST_F(ApmTest, Process) {
     EchoCancellation::Metrics echo_metrics;
     EXPECT_EQ(apm_->kNoError,
               apm_->echo_cancellation()->GetMetrics(&echo_metrics));
+    int median = 0;
+    int std = 0;
+    EXPECT_EQ(apm_->kNoError,
+              apm_->echo_cancellation()->GetDelayMetrics(&median, &std));
 #endif
 
     if (!write_output_data) {
@@ -612,6 +618,11 @@ TEST_F(ApmTest, Process) {
                 reference.echo_return_loss_enhancement());
       TestStats(echo_metrics.a_nlp,
                 reference.a_nlp());
+
+      webrtc::audioproc::Test::DelayMetrics reference_delay =
+          test->delay_metrics();
+      EXPECT_EQ(median, reference_delay.median());
+      EXPECT_EQ(std, reference_delay.std());
 #endif
     } else {
       test->set_has_echo_count(has_echo_count);
@@ -632,6 +643,11 @@ TEST_F(ApmTest, Process) {
                         message->mutable_echo_return_loss_enhancement());
       WriteStatsMessage(echo_metrics.a_nlp,
                         message->mutable_a_nlp());
+
+      webrtc::audioproc::Test::DelayMetrics* message_delay =
+          test->mutable_delay_metrics();
+      message_delay->set_median(median);
+      message_delay->set_std(std);
 #endif
     }
 
@@ -695,6 +711,18 @@ TEST_F(ApmTest, EchoCancellation) {
   EXPECT_EQ(apm_->kNoError,
             apm_->echo_cancellation()->enable_metrics(false));
   EXPECT_FALSE(apm_->echo_cancellation()->are_metrics_enabled());
+
+  int median = 0;
+  int std = 0;
+  EXPECT_EQ(apm_->kNotEnabledError,
+            apm_->echo_cancellation()->GetDelayMetrics(&median, &std));
+
+  EXPECT_EQ(apm_->kNoError,
+            apm_->echo_cancellation()->enable_delay_logging(true));
+  EXPECT_TRUE(apm_->echo_cancellation()->is_delay_logging_enabled());
+  EXPECT_EQ(apm_->kNoError,
+            apm_->echo_cancellation()->enable_delay_logging(false));
+  EXPECT_FALSE(apm_->echo_cancellation()->is_delay_logging_enabled());
 
   EXPECT_EQ(apm_->kNoError, apm_->echo_cancellation()->Enable(true));
   EXPECT_TRUE(apm_->echo_cancellation()->is_enabled());

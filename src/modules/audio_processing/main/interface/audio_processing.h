@@ -322,6 +322,16 @@ class EchoCancellation {
   // TODO(ajm): discuss the metrics update period.
   virtual int GetMetrics(Metrics* metrics) = 0;
 
+  // Enables computation and logging of delay values. Statistics are obtained
+  // through |GetDelayMetrics()|.
+  virtual int enable_delay_logging(bool enable) = 0;
+  virtual bool is_delay_logging_enabled() const = 0;
+
+  // The delay metrics consists of the delay |median| and the delay standard
+  // deviation |std|. The values are averaged over the time period since the
+  // last call to |GetDelayMetrics()|.
+  virtual int GetDelayMetrics(int* median, int* std) = 0;
+
  protected:
   virtual ~EchoCancellation() {};
 };
