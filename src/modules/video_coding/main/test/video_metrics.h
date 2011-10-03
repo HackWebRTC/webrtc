@@ -52,5 +52,9 @@ SsimFromFiles(const WebRtc_Word8 *refFileName,
         const WebRtc_Word8 *testFileName, WebRtc_Word32 width,
         WebRtc_Word32 height, QualityMetricsResult *result);
 
+double
+SsimFrame(WebRtc_UWord8 *img1, WebRtc_UWord8 *img2, WebRtc_Word32 stride_img1,
+          WebRtc_Word32 stride_img2, WebRtc_Word32 width, WebRtc_Word32 height);
+
 
 #endif // WEBRTC_MODULES_VIDEO_CODING_TEST_VIDEO_METRICS_H_
