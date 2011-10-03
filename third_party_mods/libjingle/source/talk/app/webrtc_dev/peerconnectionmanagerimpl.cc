@@ -172,6 +172,7 @@ scoped_refptr<PeerConnection> PeerConnectionManagerImpl::CreatePeerConnection(
   RefCountImpl<PeerConnectionImpl>* pc =
       new RefCountImpl<PeerConnectionImpl>(channel_manager_.get(),
                                            signaling_thread_ptr_,
+                                           worker_thread_ptr_,
                                            network_manager_,
                                            socket_factory_);
   if (!pc->Initialize(configuration, observer)) {

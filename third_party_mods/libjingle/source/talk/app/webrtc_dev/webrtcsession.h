@@ -35,6 +35,7 @@
 #include "talk/base/thread.h"
 #include "talk/p2p/base/session.h"
 #include "talk/session/phone/mediasession.h"
+#include "talk/app/webrtc_dev/mediastreamprovider.h"
 
 namespace cricket {
 class ChannelManager;
@@ -49,7 +50,8 @@ class PeerConnectionMessage;
 class PeerConnectionSignaling;
 class StreamCollection;
 
-class WebRtcSession : public cricket::BaseSession {
+class WebRtcSession : public cricket::BaseSession,
+                      public MediaProviderInterface {
  public:
   WebRtcSession(cricket::ChannelManager* channel_manager,
                 talk_base::Thread* signaling_thread,
@@ -75,6 +77,14 @@ class WebRtcSession : public cricket::BaseSession {
                             const cricket::SessionDescription* remote_desc);
 
  private:
+  // Implements MediaProviderInterface.
+  // TODO(mallinath): Add proper implementation.
+  virtual void SetCaptureDevice(uint32 ssrc, VideoCaptureModule* camera) {};
+  virtual void SetLocalRenderer(uint32 ssrc,
+                                cricket::VideoRenderer* renderer) {};
+  virtual void SetRemoteRenderer(uint32 ssrc,
+                                 cricket::VideoRenderer* renderer) {};
+
   // Callback handling from PeerConnectionSignaling
   void OnSignalUpdateSessionDescription(
       const cricket::SessionDescription* local_desc,
