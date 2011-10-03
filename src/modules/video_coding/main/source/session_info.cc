@@ -389,7 +389,8 @@ int VCMSessionInfo::FindPartitionEnd(int packet_index) const {
                      _packets[packet_index - 1].seqNum)));
     const int current_partition_id = _packets[packet_index].codecSpecificHeader.
           codecHeader.VP8.partitionId;
-    if (packet_loss_found || current_partition_id != partition_id) {
+    if (packet_loss_found || (beginning &&
+                              current_partition_id != partition_id)) {
       // Missing packet, the previous packet was the last in sequence.
       return packet_index - 1;
     }

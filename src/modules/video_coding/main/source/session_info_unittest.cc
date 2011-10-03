@@ -413,3 +413,52 @@ TEST_F(TestVP8MakeDecodable, ThreePartitionsLossInSecond) {
   SCOPED_TRACE("Calling VerifyPartition");
   EXPECT_TRUE(VerifyPartition(2, 2, 6));
 }
+
+TEST_F(TestVP8MakeDecodable, AggregationOverTwoPackets) {
+  // Partition 0   | Partition 1         | Partition 2
+  // [ 0           |           ]  [ 1 ]  | [ 2 ]
+  packet_header_.type.Video.isFirstPacket = true;
+  vp8_header_->beginningOfPartition = true;
+  vp8_header_->partitionId = 0;
+  packet_header_.header.markerBit = false;
+  packet_header_.header.sequenceNumber = 0;
+  FillPacket(0);
+  VCMPacket* packet = new VCMPacket(packet_buffer_, kPacketBufferSize,
+                                    packet_header_);
+  session_.SetStartSeqNumber(packet_header_.header.sequenceNumber);
+  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_), kPacketBufferSize);
+  delete packet;
+
+  packet_header_.type.Video.isFirstPacket = false;
+  vp8_header_->partitionId = 1;
+  vp8_header_->beginningOfPartition = false;
+  packet_header_.header.markerBit = false;
+  packet_header_.header.sequenceNumber += 1;
+  FillPacket(1);
+  packet = new VCMPacket(packet_buffer_, kPacketBufferSize, packet_header_);
+  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_), kPacketBufferSize);
+  delete packet;
+
+  packet_header_.type.Video.isFirstPacket = false;
+  vp8_header_->partitionId = 2;
+  vp8_header_->beginningOfPartition = true;
+  packet_header_.header.markerBit = true;
+  packet_header_.header.sequenceNumber += 1;
+  FillPacket(2);
+  packet = new VCMPacket(packet_buffer_, kPacketBufferSize, packet_header_);
+  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_), kPacketBufferSize);
+  delete packet;
+
+  // One packet should be removed (end of partition 0).
+  ASSERT_EQ(session_.BuildVP8FragmentationHeader(frame_buffer_,
+                                                 kFrameBufferSize,
+                                                 &fragmentation_),
+            3*kPacketBufferSize);
+  SCOPED_TRACE("Calling VerifyPartition");
+  EXPECT_TRUE(VerifyPartition(0, 2, 0));
+  // This partition is aggregated in partition 0
+  SCOPED_TRACE("Calling VerifyPartition");
+  EXPECT_TRUE(VerifyPartition(1, 0, 0));
+  SCOPED_TRACE("Calling VerifyPartition");
+  EXPECT_TRUE(VerifyPartition(2, 1, 2));
+}
