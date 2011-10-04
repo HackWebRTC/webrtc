@@ -216,8 +216,12 @@ void WebRtcSession::OnTransportCandidatesReady(
   if (local_candidates_.size() == kAllowedCandidates)
     return;
   InsertTransportCandidates(candidates);
-  if (local_candidates_.size() == kAllowedCandidates)
-    pc_signaling_->Initialize(candidates);
+  if (local_candidates_.size() == kAllowedCandidates) {
+    pc_signaling_->Initialize(local_candidates_);
+    // TODO(mallinath) - Remove signal when a new interface added for
+    // PC signaling.
+    SignalCandidatesReady(this, local_candidates_);
+  }
 }
 
 void WebRtcSession::OnTransportChannelGone(cricket::Transport* transport) {
@@ -303,12 +307,31 @@ bool WebRtcSession::GetVideoSourceParamInfo(
 
 void WebRtcSession::ProcessLocalMediaChanges(
     const cricket::SessionDescription* sdesc) {
-  //TODO(mallinath) - Handling of local media stream changes in active session
+  // TODO(mallinath) - Handling of local media stream changes in active session
 }
 
 void WebRtcSession::ProcessRemoteMediaChanges(
     const cricket::SessionDescription* sdesc) {
-  //TODO(mallinath) - Handling of remote media stream changes in active session
+  // TODO(mallinath) - Handling of remote media stream changes in active session
+}
+
+void WebRtcSession::SetCaptureDevice(uint32 ssrc,
+                                     VideoCaptureModule* camera) {
+  // should be called from a signaling thread
+  ASSERT(signaling_thread()->IsCurrent());
+  video_channel_->SetCaptureDevice(ssrc, camera);
+}
+
+void WebRtcSession::SetLocalRenderer(uint32 ssrc,
+                                     cricket::VideoRenderer* renderer) {
+  ASSERT(signaling_thread()->IsCurrent());
+  video_channel_->SetLocalRenderer(ssrc, renderer);
+}
+
+void WebRtcSession::SetRemoteRenderer(uint32 ssrc,
+                                      cricket::VideoRenderer* renderer) {
+  ASSERT(signaling_thread()->IsCurrent());
+  video_channel_->SetRenderer(ssrc, renderer);
 }
 
 }  // namespace webrtc

@@ -72,18 +72,21 @@ class WebRtcSession : public cricket::BaseSession,
   // Generic error message callback from WebRtcSession.
   // TODO(mallinath) - It may be necessary to supply error code as well.
   sigslot::signal0<> SignalError;
+  // This signal added for testing. Shouldn't be registered by other
+  // objects.
+  sigslot::signal2<WebRtcSession*,
+                   cricket::Candidates&> SignalCandidatesReady;
 
   void ProcessSessionUpdate(const cricket::SessionDescription* local_desc,
                             const cricket::SessionDescription* remote_desc);
 
  private:
   // Implements MediaProviderInterface.
-  // TODO(mallinath): Add proper implementation.
-  virtual void SetCaptureDevice(uint32 ssrc, VideoCaptureModule* camera) {};
+  virtual void SetCaptureDevice(uint32 ssrc, VideoCaptureModule* camera);
   virtual void SetLocalRenderer(uint32 ssrc,
-                                cricket::VideoRenderer* renderer) {};
+                                cricket::VideoRenderer* renderer);
   virtual void SetRemoteRenderer(uint32 ssrc,
-                                 cricket::VideoRenderer* renderer) {};
+                                 cricket::VideoRenderer* renderer);
 
   // Callback handling from PeerConnectionSignaling
   void OnSignalUpdateSessionDescription(
@@ -95,8 +98,9 @@ class WebRtcSession : public cricket::BaseSession,
   virtual void OnTransportRequestSignaling(cricket::Transport* transport);
   virtual void OnTransportConnecting(cricket::Transport* transport);
   virtual void OnTransportWritable(cricket::Transport* transport);
-  virtual void OnTransportCandidatesReady(cricket::Transport* transport,
-                                  const cricket::Candidates& candidates);
+  virtual void OnTransportCandidatesReady(
+      cricket::Transport* transport,
+      const cricket::Candidates& candidates);
   virtual void OnTransportChannelGone(cricket::Transport* transport);
 
   // Creates channels for voice and video.
