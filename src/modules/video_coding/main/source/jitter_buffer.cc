@@ -1115,7 +1115,6 @@ VCMJitterBuffer::GetFrameForDecoding()
         _waitingForCompletion.latestPacketTime =
                               oldestFrame->LatestPacketTimeMs();
         _waitingForCompletion.timestamp = oldestFrame->TimeStamp();
-        oldestFrame->SetState(kStateDecoding);
     }
     _frameBuffersTSOrder.Erase(oldestFrameListItem);
     oldestFrameListItem = NULL;
@@ -1123,7 +1122,10 @@ VCMJitterBuffer::GetFrameForDecoding()
     CleanUpOldFrames();
     CleanUpSizeZeroFrames();
 
+    // Look for previous frame loss
     VerifyAndSetPreviousFrameLost(*oldestFrame);
+    // Set as decoding. Propagates the missingFrame bit.
+    oldestFrame->SetState(kStateDecoding);
 
     // Store current seqnum & time
     _lastDecodedSeqNum = oldestFrame->GetHighSeqNum();

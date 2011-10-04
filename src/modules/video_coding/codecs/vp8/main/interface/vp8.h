@@ -255,6 +255,8 @@ private:
     WebRtc_Word32 DecodePartitions(const EncodedImage& input_image,
                                    const RTPFragmentationHeader* fragmentation);
 
+    WebRtc_Word32 ReturnFrame(const vpx_image_t* img, WebRtc_UWord32 timeStamp);
+
     RawImage                   _decodedImage;
     DecodedImageCallback*      _decodeCompleteCallback;
     bool                       _inited;

@@ -822,8 +822,9 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
     }
 #endif
 
-    vpx_dec_iter_t _iter = NULL;
+    vpx_dec_iter_t iter = NULL;
     vpx_image_t* img;
+    WebRtc_Word32 ret;
 
     // check for missing frames
     if (missingFrames)
@@ -833,6 +834,11 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
         {
             return WEBRTC_VIDEO_CODEC_ERROR;
         }
+        img = vpx_codec_get_frame(_decoder, &iter);
+        ret = ReturnFrame(img, inputImage._timeStamp);
+        if (ret != 0)
+            return ret;
+        iter = NULL;
     }
 
 #ifdef INDEPENDENT_PARTITIONS
@@ -892,56 +898,10 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
     }
 #endif
 
-    img = vpx_codec_get_frame(_decoder, &_iter);
-
-    if (img == NULL)
-    {
-        // Decoder OK and NULL image => No show frame
-        return WEBRTC_VIDEO_CODEC_OK;
-    }
-
-    // Allocate memory for decoded image
-    WebRtc_UWord32 requiredSize = (3 * img->h * img->w) >> 1;
-    if (_decodedImage._buffer != NULL)
-    {
-        delete [] _decodedImage._buffer;
-        _decodedImage._buffer = NULL;
-    }
-    if (_decodedImage._buffer == NULL)
-    {
-        _decodedImage._size = requiredSize;
-        _decodedImage._buffer = new WebRtc_UWord8[_decodedImage._size];
-        if (_decodedImage._buffer == NULL)
-        {
-            return WEBRTC_VIDEO_CODEC_MEMORY;
-        }
-    }
-
-    WebRtc_UWord8* buf;
-    WebRtc_UWord32 locCnt = 0;
-    WebRtc_UWord32 plane, y;
-
-    for (plane = 0; plane < 3; plane++)
-    {
-        buf = img->planes[plane];
-        WebRtc_UWord32 shiftFactor = plane ? 1 : 0;
-        for(y = 0; y < img->d_h >> shiftFactor; y++)
-        {
-            memcpy(&_decodedImage._buffer[locCnt], buf, img->d_w >> shiftFactor);
-            locCnt += img->d_w >> shiftFactor;
-            buf += img->stride[plane];
-        }
-    }
-
-    // Set image parameters
-    _decodedImage._height = img->d_h;
-    _decodedImage._width = img->d_w;
-    _decodedImage._length = (3 * img->d_h * img->d_w) >> 1;
-    _decodedImage._timeStamp = inputImage._timeStamp;
-    _decodeCompleteCallback->Decoded(_decodedImage);
-
-    // Remember image format for later
-    _imageFormat = img->fmt;
+    img = vpx_codec_get_frame(_decoder, &iter);
+    ret = ReturnFrame(img, inputImage._timeStamp);
+    if (ret != 0)
+        return ret;
 
     // we need to communicate that we should send a RPSI with a specific picture ID
 
@@ -998,6 +958,58 @@ VP8Decoder::DecodePartitions(const EncodedImage& input_image,
   if (vpx_codec_decode(_decoder, NULL, 0, 0, VPX_DL_REALTIME))
     return WEBRTC_VIDEO_CODEC_ERROR;
   return WEBRTC_VIDEO_CODEC_OK;
+}
+
+WebRtc_Word32
+VP8Decoder::ReturnFrame(const vpx_image_t* img, WebRtc_UWord32 timeStamp)
+{
+    if (img == NULL)
+    {
+        // Decoder OK and NULL image => No show frame
+        return WEBRTC_VIDEO_CODEC_OK;
+    }
+
+    // Allocate memory for decoded image
+    WebRtc_UWord32 requiredSize = (3 * img->h * img->w) >> 1;
+    if (_decodedImage._buffer != NULL)
+    {
+        delete [] _decodedImage._buffer;
+        _decodedImage._buffer = NULL;
+    }
+    if (_decodedImage._buffer == NULL)
+    {
+        _decodedImage._size = requiredSize;
+        _decodedImage._buffer = new WebRtc_UWord8[_decodedImage._size];
+    }
+
+    WebRtc_UWord8* buf;
+    WebRtc_UWord32 locCnt = 0;
+    WebRtc_UWord32 plane, y;
+
+    for (plane = 0; plane < 3; plane++)
+    {
+        buf = img->planes[plane];
+        WebRtc_UWord32 shiftFactor = plane ? 1 : 0;
+        for(y = 0; y < img->d_h >> shiftFactor; y++)
+        {
+            memcpy(&_decodedImage._buffer[locCnt], buf, img->d_w >> shiftFactor);
+            locCnt += img->d_w >> shiftFactor;
+            buf += img->stride[plane];
+        }
+    }
+
+    // Set image parameters
+    _decodedImage._height = img->d_h;
+    _decodedImage._width = img->d_w;
+    _decodedImage._length = (3 * img->d_h * img->d_w) >> 1;
+    _decodedImage._timeStamp = timeStamp;
+    WebRtc_Word32 ret = _decodeCompleteCallback->Decoded(_decodedImage);
+    if (ret != 0)
+        return ret;
+
+    // Remember image format for later
+    _imageFormat = img->fmt;
+    return WEBRTC_VIDEO_CODEC_OK;
 }
 
 WebRtc_Word32
