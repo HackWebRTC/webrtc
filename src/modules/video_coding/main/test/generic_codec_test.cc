@@ -294,6 +294,7 @@ GenericCodecTest::Perform(CmdArgs& args)
             _vcm->InitializeSender();
             _sendCodec.startBitrate = (int)_bitRate;
             _sendCodec.maxBitrate = 8000;
+            _sendCodec.maxFramerate = _frameRate;
             _vcm->RegisterSendCodec(&_sendCodec, 1, 1440);
             _vcm->RegisterTransportCallback(_encodeCompleteCallback);
             // up to here
