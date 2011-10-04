@@ -144,6 +144,8 @@ void PeerConnectionSignaling::ProcessSignalingMessage(
       if (state_ == kGlare) {
         state_ = kIdle;
       }
+      // Clear the MSG_SEND_QUEUED_OFFER we posted delayed.
+      signaling_thread_->Clear(this, MSG_SEND_QUEUED_OFFER);
       signaling_thread_->Post(this, MSG_GENERATE_ANSWER);
       break;
     }
@@ -169,13 +171,13 @@ void PeerConnectionSignaling::ProcessSignalingMessage(
       break;
     }
     case PeerConnectionMessage::kError: {
-      if (signaling_message->error() != PeerConnectionMessage::kWrongState)
+      if (signaling_message->error() != PeerConnectionMessage::kWrongState) {
         SignalErrorMessageReceived(signaling_message->error());
-
-      // An error have occurred that we can't do anything about.
-      // Reset the state and wait for user action.
-      queued_offers_.clear();
-      state_ = kIdle;
+         // An error have occurred that we can't do anything about.
+        // Reset the state and wait for user action.
+        queued_offers_.clear();
+        state_ = kIdle;
+      }
       break;
     }
   }

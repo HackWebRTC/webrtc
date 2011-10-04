@@ -30,8 +30,6 @@
 #include "talk/app/webrtc_dev/peerconnectionimpl.h"
 #include "talk/app/webrtc_dev/webrtc_devicemanager.h"
 #include "talk/base/basicpacketsocketfactory.h"
-#include "talk/base/thread.h"
-#include "talk/session/phone/channelmanager.h"
 #include "talk/session/phone/webrtcmediaengine.h"
 
 #ifdef WEBRTC_RELATIVE_PATH
@@ -39,6 +37,27 @@
 #else
 #include "third_party/webrtc/files/include/audio_device.h"
 #endif
+
+namespace {
+
+typedef talk_base::TypedMessageData<bool> InitMessageData;
+
+struct CreatePeerConnectionParams : public talk_base::MessageData {
+  CreatePeerConnectionParams(const std::string& configuration,
+                             webrtc::PeerConnectionObserver* observer)
+      : configuration(configuration), observer(observer) {
+  }
+  scoped_refptr<webrtc::PeerConnection> peerconnection;
+  const std::string& configuration;
+  webrtc::PeerConnectionObserver* observer;
+};
+
+enum {
+  MSG_INIT_MANAGER = 1,
+  MSG_CREATE_PEERCONNECTION = 2,
+};
+
+}  // namespace anonymous
 
 
 namespace webrtc {
@@ -85,6 +104,7 @@ talk_base::PacketSocketFactory* PcPacketSocketFactory::socket_factory() const {
 scoped_refptr<PeerConnectionManager> PeerConnectionManager::Create() {
   RefCountImpl<PeerConnectionManagerImpl>* pc_manager =
       new RefCountImpl<PeerConnectionManagerImpl>();
+
   if (!pc_manager->Initialize()) {
     delete pc_manager;
     pc_manager = NULL;
@@ -113,13 +133,13 @@ scoped_refptr<PeerConnectionManager> PeerConnectionManager::Create(
 
 PeerConnectionManagerImpl::PeerConnectionManagerImpl()
     : worker_thread_(new talk_base::Thread),
-      signaling_thread_(new talk_base::Thread),
-      network_manager_(PcNetworkManager::Create(
-          new talk_base::BasicNetworkManager())),
-      socket_factory_(PcPacketSocketFactory::Create(
-          new talk_base::BasicPacketSocketFactory)) {
+      signaling_thread_(new talk_base::Thread) {
   worker_thread_ptr_ = worker_thread_.get();
   signaling_thread_ptr_ = signaling_thread_.get();
+  bool result = worker_thread_->Start();
+  ASSERT(result);
+  result = signaling_thread_->Start();
+  ASSERT(result);
 }
 
 PeerConnectionManagerImpl::PeerConnectionManagerImpl(
@@ -144,19 +164,43 @@ PeerConnectionManagerImpl::~PeerConnectionManagerImpl() {
 }
 
 bool PeerConnectionManagerImpl::Initialize() {
-  if (worker_thread_.get() && !worker_thread_->Start())
-    return false;
-  if (signaling_thread_.get() && !signaling_thread_->Start())
-    return false;
-  cricket::DeviceManager* device_manager(new WebRtcDeviceManager());
-  cricket::WebRtcMediaEngine* webrtc_media_engine = NULL;
+  InitMessageData result(false);
+  signaling_thread_->Send(this, MSG_INIT_MANAGER, &result);
+  return result.data();
+}
 
+void PeerConnectionManagerImpl::OnMessage(talk_base::Message* msg) {
+  switch (msg->message_id) {
+    case MSG_INIT_MANAGER: {
+     InitMessageData* pdata = static_cast<InitMessageData*> (msg->pdata);
+     pdata->data() = Initialize_s();
+     break;
+    }
+    case MSG_CREATE_PEERCONNECTION: {
+      CreatePeerConnectionParams* pdata =
+          static_cast<CreatePeerConnectionParams*> (msg->pdata);
+      pdata->peerconnection = CreatePeerConnection_s(pdata->configuration,
+                                                     pdata->observer);
+      break;
+    }
+  }
+}
+
+bool PeerConnectionManagerImpl::Initialize_s() {
+  if (!network_manager_.get())
+    network_manager_ = PcNetworkManager::Create(
+        new talk_base::BasicNetworkManager());
+  if (!socket_factory_.get())
+    socket_factory_ = PcPacketSocketFactory::Create(
+        new talk_base::BasicPacketSocketFactory(worker_thread_ptr_));
+
+  cricket::DeviceManager* device_manager(new WebRtcDeviceManager());
   // TODO(perkj):  Need to make sure only one VoE is created inside
   // WebRtcMediaEngine.
-  webrtc_media_engine = new cricket::WebRtcMediaEngine(
-      default_adm_.get(),
-      NULL,   // No secondary adm.
-      NULL);  // No vcm available.
+  cricket::WebRtcMediaEngine* webrtc_media_engine(
+      new cricket::WebRtcMediaEngine(default_adm_.get(),
+                                     NULL,   // No secondary adm.
+                                     NULL));  // No vcm available.
 
   channel_manager_.reset(new cricket::ChannelManager(
       webrtc_media_engine, device_manager, worker_thread_ptr_));
@@ -169,12 +213,20 @@ bool PeerConnectionManagerImpl::Initialize() {
 scoped_refptr<PeerConnection> PeerConnectionManagerImpl::CreatePeerConnection(
     const std::string& configuration,
     PeerConnectionObserver* observer) {
-  RefCountImpl<PeerConnectionImpl>* pc =
+  CreatePeerConnectionParams params(configuration, observer);
+  signaling_thread_->Send(this, MSG_CREATE_PEERCONNECTION, &params);
+  return params.peerconnection;
+}
+
+scoped_refptr<PeerConnection> PeerConnectionManagerImpl::CreatePeerConnection_s(
+    const std::string& configuration,
+    PeerConnectionObserver* observer) {
+  RefCountImpl<PeerConnectionImpl>* pc(
       new RefCountImpl<PeerConnectionImpl>(channel_manager_.get(),
                                            signaling_thread_ptr_,
                                            worker_thread_ptr_,
                                            network_manager_,
-                                           socket_factory_);
+                                           socket_factory_));
   if (!pc->Initialize(configuration, observer)) {
     delete pc;
     pc = NULL;

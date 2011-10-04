@@ -128,6 +128,7 @@ PeerConnectionImpl::PeerConnectionImpl(
     PcPacketSocketFactory* socket_factory)
     : observer_(NULL),
       local_media_streams_(StreamCollectionImpl::Create()),
+      remote_media_streams_(StreamCollectionImpl::Create()),
       signaling_thread_(signaling_thread),
       channel_manager_(channel_manager),
       network_manager_(network_manager),

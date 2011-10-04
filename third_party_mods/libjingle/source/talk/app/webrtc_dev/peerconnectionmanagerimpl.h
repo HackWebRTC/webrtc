@@ -32,11 +32,13 @@
 #include "talk/base/scoped_ptr.h"
 #include "talk/app/webrtc_dev/peerconnection.h"
 #include "talk/app/webrtc_dev/mediastream.h"
+#include "talk/base/thread.h"
 #include "talk/session/phone/channelmanager.h"
 
 namespace webrtc {
 
-class PeerConnectionManagerImpl : public PeerConnectionManager {
+class PeerConnectionManagerImpl : public PeerConnectionManager,
+                                  public talk_base::MessageHandler {
  public:
   scoped_refptr<PeerConnection> CreatePeerConnection(
       const std::string& config,
@@ -52,7 +54,15 @@ class PeerConnectionManagerImpl : public PeerConnectionManager {
                             AudioDeviceModule* default_adm);
   virtual ~PeerConnectionManagerImpl();
 
+
  private:
+  bool Initialize_s();
+  scoped_refptr<PeerConnection> CreatePeerConnection_s(
+      const std::string& configuration,
+      PeerConnectionObserver* observer);
+  // Implements talk_base::MessageHandler.
+  void OnMessage(talk_base::Message* msg);
+
   talk_base::scoped_ptr<talk_base::Thread> worker_thread_;
   talk_base::Thread* worker_thread_ptr_;
   talk_base::scoped_ptr<talk_base::Thread> signaling_thread_;
