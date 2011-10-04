@@ -41,8 +41,9 @@ void
 VCMSessionInfo::UpdateDataPointers(const WebRtc_UWord8* frame_buffer,
                                    const WebRtc_UWord8* prev_buffer_address) {
   for (int i = 0; i <= _highestPacketIndex; ++i)
-    _packets[i].dataPtr = frame_buffer + (_packets[i].dataPtr -
-                                          prev_buffer_address);
+    if (_packets[i].dataPtr != NULL)
+      _packets[i].dataPtr = frame_buffer + (_packets[i].dataPtr -
+                                            prev_buffer_address);
 }
 
 WebRtc_Word32

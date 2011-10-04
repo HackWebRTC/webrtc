@@ -358,10 +358,12 @@ VCMFrameBuffer::ExtractFromStorage(const EncodedVideoData& frameFromStorage)
     _completeFrame = frameFromStorage.completeFrame;
     _renderTimeMs = frameFromStorage.renderTimeMs;
     _codec = frameFromStorage.codec;
+    const WebRtc_UWord8 *prevBuffer = _buffer;
     if (VerifyAndAllocate(frameFromStorage.payloadSize) < 0)
     {
         return VCM_MEMORY;
     }
+    _sessionInfo.UpdateDataPointers(_buffer, prevBuffer);
     memcpy(_buffer, frameFromStorage.payloadData, frameFromStorage.payloadSize);
     _length = frameFromStorage.payloadSize;
     return VCM_OK;
