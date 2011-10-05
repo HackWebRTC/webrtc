@@ -30,7 +30,7 @@ extern "C" {
  * Return value         :  0 - Ok
  *                        -1 - Error (probably length is not sufficient)
  */
-int WebRtcNs_get_version(char *version, short length);
+int WebRtcNs_get_version(char* version, short length);
 
 
 /*
@@ -46,7 +46,7 @@ int WebRtcNs_get_version(char *version, short length);
  * Return value         :  0 - Ok
  *                        -1 - Error
  */
-int WebRtcNs_Create(NsHandle **NS_inst);
+int WebRtcNs_Create(NsHandle** NS_inst);
 
 
 /*
@@ -59,7 +59,7 @@ int WebRtcNs_Create(NsHandle **NS_inst);
  * Return value         :  0 - Ok
  *                        -1 - Error
  */
-int WebRtcNs_Free(NsHandle *NS_inst);
+int WebRtcNs_Free(NsHandle* NS_inst);
 
 
 /*
@@ -75,7 +75,7 @@ int WebRtcNs_Free(NsHandle *NS_inst);
  * Return value         :  0 - Ok
  *                        -1 - Error
  */
-int WebRtcNs_Init(NsHandle *NS_inst, WebRtc_UWord32 fs);
+int WebRtcNs_Init(NsHandle* NS_inst, WebRtc_UWord32 fs);
 
 /*
  * This changes the aggressiveness of the noise suppression method.
@@ -90,7 +90,7 @@ int WebRtcNs_Init(NsHandle *NS_inst, WebRtc_UWord32 fs);
  * Return value         :  0 - Ok
  *                        -1 - Error
  */
-int WebRtcNs_set_policy(NsHandle *NS_inst, int mode);
+int WebRtcNs_set_policy(NsHandle* NS_inst, int mode);
 
 
 /*
@@ -111,11 +111,11 @@ int WebRtcNs_set_policy(NsHandle *NS_inst, int mode);
  * Return value         :  0 - OK
  *                        -1 - Error
  */
-int WebRtcNs_Process(NsHandle *NS_inst,
-                     short *spframe,
-                     short *spframe_H,
-                     short *outframe,
-                     short *outframe_H);
+int WebRtcNs_Process(NsHandle* NS_inst,
+                     short* spframe,
+                     short* spframe_H,
+                     short* outframe,
+                     short* outframe_H);
 
 #ifdef __cplusplus
 }

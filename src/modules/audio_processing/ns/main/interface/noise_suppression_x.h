@@ -30,7 +30,7 @@ extern "C" {
  * Return value         :  0 - Ok
  *                        -1 - Error (probably length is not sufficient)
  */
-int WebRtcNsx_get_version(char *version, short length);
+int WebRtcNsx_get_version(char* version, short length);
 
 
 /*
@@ -46,7 +46,7 @@ int WebRtcNsx_get_version(char *version, short length);
  * Return value         :  0 - Ok
  *                        -1 - Error
  */
-int WebRtcNsx_Create(NsxHandle **nsxInst);
+int WebRtcNsx_Create(NsxHandle** nsxInst);
 
 
 /*
@@ -59,7 +59,7 @@ int WebRtcNsx_Create(NsxHandle **nsxInst);
  * Return value         :  0 - Ok
  *                        -1 - Error
  */
-int WebRtcNsx_Free(NsxHandle *nsxInst);
+int WebRtcNsx_Free(NsxHandle* nsxInst);
 
 
 /*
@@ -75,7 +75,7 @@ int WebRtcNsx_Free(NsxHandle *nsxInst);
  * Return value         :  0 - Ok
  *                        -1 - Error
  */
-int WebRtcNsx_Init(NsxHandle *nsxInst, WebRtc_UWord32 fs);
+int WebRtcNsx_Init(NsxHandle* nsxInst, WebRtc_UWord32 fs);
 
 /*
  * This changes the aggressiveness of the noise suppression method.
@@ -90,7 +90,7 @@ int WebRtcNsx_Init(NsxHandle *nsxInst, WebRtc_UWord32 fs);
  * Return value         :  0 - Ok
  *                        -1 - Error
  */
-int WebRtcNsx_set_policy(NsxHandle *nsxInst, int mode);
+int WebRtcNsx_set_policy(NsxHandle* nsxInst, int mode);
 
 /*
  * This functions does noise suppression for the inserted speech frame. The
@@ -110,11 +110,11 @@ int WebRtcNsx_set_policy(NsxHandle *nsxInst, int mode);
  * Return value         :  0 - OK
  *                        -1 - Error
  */
-int WebRtcNsx_Process(NsxHandle *nsxInst,
-                      short *speechFrame,
-                      short *speechFrameHB,
-                      short *outFrame,
-                      short *outFrameHB);
+int WebRtcNsx_Process(NsxHandle* nsxInst,
+                      short* speechFrame,
+                      short* speechFrameHB,
+                      short* outFrame,
+                      short* outFrameHB);
 
 #ifdef __cplusplus
 }
