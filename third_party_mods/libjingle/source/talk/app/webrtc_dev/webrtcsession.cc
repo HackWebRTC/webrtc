@@ -131,7 +131,8 @@ void WebRtcSession::SetRemoteCandidates(
     cricket::TransportProxy* audio_proxy = GetTransportProxy(cricket::CN_AUDIO);
     if (audio_proxy) {
       // CompleteNegotiation will set actual impl's in Proxy.
-      audio_proxy->CompleteNegotiation();
+      if (!audio_proxy->negotiated())
+        audio_proxy->CompleteNegotiation();
       // TODO(mallinath) - Add a interface to TransportProxy to accept
       // remote candidate list.
       audio_proxy->impl()->OnRemoteCandidates(audio_candidates);
@@ -144,7 +145,8 @@ void WebRtcSession::SetRemoteCandidates(
     cricket::TransportProxy* video_proxy = GetTransportProxy(cricket::CN_VIDEO);
     if (video_proxy) {
       // CompleteNegotiation will set actual impl's in Proxy.
-      video_proxy->CompleteNegotiation();
+      if (!video_proxy->negotiated())
+        video_proxy->CompleteNegotiation();
       // TODO(mallinath) - Add a interface to TransportProxy to accept
       // remote candidate list.
       video_proxy->impl()->OnRemoteCandidates(video_candidates);
@@ -278,15 +280,17 @@ const cricket::SessionDescription* WebRtcSession::ProvideAnswer(
 }
 
 void WebRtcSession::NegotiationDone() {
-  // No state change after state moved to progress state.
+  // SetState of session is called after session receives both local and
+  // remote descriptions. State transition will happen only when session
+  // is in INIT state.
   if (state() == STATE_INIT) {
     SetState(STATE_SENTINITIATE);
     SetState(STATE_RECEIVEDACCEPT);
-  }
 
-  // Enabling channels
-  voice_channel_->Enable(true);
-  video_channel_->Enable(true);
+    // Enabling voice and video channel.
+    voice_channel_->Enable(true);
+    video_channel_->Enable(true);
+  }
 
   const cricket::ContentInfo* audio_info =
       cricket::GetFirstAudioContent(local_description());
@@ -298,9 +302,7 @@ void WebRtcSession::NegotiationDone() {
     // we can remove stream from a session by muting it.
     // TODO(mallinath) - Change needed when multiple send streams support
     // is available.
-    if (audio_content->sources().size() == 0) {
-      voice_channel_->Mute(true);
-    }
+    voice_channel_->Mute(audio_content->sources().size() == 0);
   }
 
   const cricket::ContentInfo* video_info =
@@ -313,9 +315,7 @@ void WebRtcSession::NegotiationDone() {
     // we can remove stream from a session by muting it.
     // TODO(mallinath) - Change needed when multiple send streams support
     // is available.
-    if (video_content->sources().size() == 0) {
-      video_channel_->Mute(true);
-    }
+    video_channel_->Mute(video_content->sources().size() == 0);
   }
 }
 

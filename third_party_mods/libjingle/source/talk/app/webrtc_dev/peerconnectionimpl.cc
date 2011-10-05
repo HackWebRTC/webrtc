@@ -149,6 +149,8 @@ PeerConnectionImpl::PeerConnectionImpl(
       this, &PeerConnectionImpl::OnRemoteStreamAdded);
   signaling_->SignalRemoteStreamRemoved.connect(
       this, &PeerConnectionImpl::OnRemoteStreamRemoved);
+  // Register with WebRtcSession
+  session_->RegisterObserver(signaling_.get());
 }
 
 PeerConnectionImpl::~PeerConnectionImpl() {
