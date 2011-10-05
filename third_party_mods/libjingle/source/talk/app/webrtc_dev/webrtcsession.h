@@ -31,13 +31,13 @@
 #include <string>
 #include <vector>
 
+#include "talk/app/webrtc_dev/mediastreamprovider.h"
+#include "talk/app/webrtc_dev/sessiondescriptionprovider.h"
+#include "talk/app/webrtc_dev/webrtcsessionobserver.h"
 #include "talk/base/sigslot.h"
 #include "talk/base/thread.h"
 #include "talk/p2p/base/session.h"
 #include "talk/session/phone/mediasession.h"
-#include "talk/app/webrtc_dev/mediastreamprovider.h"
-#include "talk/app/webrtc_dev/sessiondescriptionprovider.h"
-#include "talk/app/webrtc_dev/webrtcsessionobserver.h"
 
 namespace cricket {
 class ChannelManager;
@@ -47,10 +47,6 @@ class VoiceChannel;
 }
 
 namespace webrtc {
-class MediaStream;
-class PeerConnectionMessage;
-class PeerConnectionSignaling;
-class StreamCollection;
 
 class WebRtcSession : public cricket::BaseSession,
                       public MediaProviderInterface,
@@ -64,6 +60,10 @@ class WebRtcSession : public cricket::BaseSession,
 
   bool Initialize();
 
+  void RegisterObserver(WebRtcSessionObserver* observer) {
+    observer_ = observer;
+  }
+
   const cricket::VoiceChannel* voice_channel() const {
     return voice_channel_.get();
   }
@@ -74,38 +74,24 @@ class WebRtcSession : public cricket::BaseSession,
   // Generic error message callback from WebRtcSession.
   // TODO(mallinath) - It may be necessary to supply error code as well.
   sigslot::signal0<> SignalError;
-  // This signal added for testing. Shouldn't be registered by other
-  // objects.
-  sigslot::signal2<WebRtcSession*,
-                   cricket::Candidates&> SignalCandidatesReady;
-
-  void ProcessSessionUpdate(const cricket::SessionDescription* local_desc,
-                            const cricket::SessionDescription* remote_desc);
 
  private:
+  // Implements SessionDescriptionProvider
+  virtual const cricket::SessionDescription* ProvideOffer(
+      const cricket::MediaSessionOptions& options);
+  virtual const cricket::SessionDescription* SetRemoteSessionDescription(
+      const cricket::SessionDescription* remote_offer,
+      const std::vector<cricket::Candidate>& remote_candidates);
+  virtual const cricket::SessionDescription* ProvideAnswer(
+      const cricket::MediaSessionOptions& options);
+  virtual void NegotiationDone();
+
   // Implements MediaProviderInterface.
   virtual void SetCaptureDevice(uint32 ssrc, VideoCaptureModule* camera);
   virtual void SetLocalRenderer(uint32 ssrc,
                                 cricket::VideoRenderer* renderer);
   virtual void SetRemoteRenderer(uint32 ssrc,
                                  cricket::VideoRenderer* renderer);
-
-  //TODO mallinath: remove.
-  void OnSignalUpdateSessionDescription(
-      const cricket::SessionDescription* local_desc,
-      const cricket::SessionDescription* remote_desc,
-      const cricket::Candidates& remote_candidates);
-
-  // Implements SessionDescriptionProvider
-  virtual const cricket::SessionDescription* ProvideOffer(
-      const cricket::MediaSessionOptions& options) {}
-  virtual const cricket::SessionDescription* SetRemoteSessionDescription(
-      const cricket::SessionDescription* remote_offer,
-      const cricket::Candidates& remote_candidates) {}
-  virtual const cricket::SessionDescription* ProvideAnswer(
-      const cricket::MediaSessionOptions& options) {}
-  virtual void NegotiationDone() {}
-
 
   // Transport related callbacks, override from cricket::BaseSession.
   virtual void OnTransportRequestSignaling(cricket::Transport* transport);
@@ -125,21 +111,13 @@ class WebRtcSession : public cricket::BaseSession,
   bool CheckCandidate(const std::string& name);
   void SetRemoteCandidates(const cricket::Candidates& candidates);
 
-  // Helper methods to get handle to the MediaContentDescription sources param.
-  bool GetAudioSourceParamInfo(const cricket::SessionDescription* sdesc,
-                               cricket::Sources* sources);
-  bool GetVideoSourceParamInfo(const cricket::SessionDescription* sdesc,
-                               cricket::Sources* sources);
-
-  void ProcessLocalMediaChanges(const cricket::SessionDescription* sdesc);
-  void ProcessRemoteMediaChanges(const cricket::SessionDescription* sdesc);
-
  private:
-  WebRtcSessionObserver* observer_;
   talk_base::scoped_ptr<cricket::VoiceChannel> voice_channel_;
   talk_base::scoped_ptr<cricket::VideoChannel> video_channel_;
   cricket::ChannelManager* channel_manager_;
   cricket::Candidates local_candidates_;
+  WebRtcSessionObserver* observer_;
+  cricket::MediaSessionDescriptionFactory session_desc_factory_;
 };
 
 }  // namespace webrtc

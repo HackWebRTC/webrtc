@@ -34,6 +34,7 @@
 #include "talk/base/logging.h"
 #include "talk/session/phone/channel.h"
 #include "talk/session/phone/channelmanager.h"
+#include "talk/session/phone/mediasession.h"
 
 using cricket::MediaContentDescription;
 
@@ -59,13 +60,12 @@ WebRtcSession::WebRtcSession(cricket::ChannelManager* channel_manager,
                              talk_base::Thread* signaling_thread,
                              talk_base::Thread* worker_thread,
                              cricket::PortAllocator* port_allocator)
-    : observer_(NULL),
-      cricket::BaseSession(signaling_thread, worker_thread, port_allocator,
-                           talk_base::ToString(talk_base::CreateRandomId()),
-                           cricket::NS_JINGLE_RTP, true) {
-  // TODO(mallinath) - Remove initiator flag from BaseSession. As it's being
-  // used only by cricket::Session.
-  channel_manager_ = channel_manager;
+    : cricket::BaseSession(signaling_thread, worker_thread, port_allocator,
+          talk_base::ToString(talk_base::CreateRandomId()),
+          cricket::NS_JINGLE_RTP, true),
+      channel_manager_(channel_manager),
+      observer_(NULL),
+      session_desc_factory_(channel_manager) {
 }
 
 WebRtcSession::~WebRtcSession() {
@@ -85,30 +85,27 @@ void WebRtcSession::Terminate() {
   }
 }
 
-void WebRtcSession::OnSignalUpdateSessionDescription(
-    const cricket::SessionDescription* local_desc,
-    const cricket::SessionDescription* remote_desc,
-    const cricket::Candidates& remote_candidates) {
-  // Session updates are not supported yet. If session is in progress state
-  // ignore this callback.
-  if (state() == STATE_INPROGRESS) {
-    ProcessSessionUpdate(local_desc, remote_desc);
-    if (remote_candidates.size() > 0) {
-      SetRemoteCandidates(remote_candidates);
-    }
-    return;
+bool WebRtcSession::CreateChannels() {
+  voice_channel_.reset(channel_manager_->CreateVoiceChannel(
+      this, cricket::CN_AUDIO, true));
+  if (!voice_channel_.get()) {
+    LOG(LS_ERROR) << "Failed to create voice channel";
+    return false;
   }
-  // Local session and remote session descriptions are available before
-  // any state change. So for session it's doesn't matter it's initiator
-  // or receiver of the call. Session will be treated as initiator.
-  // Apply first local description
-  set_local_description(local_desc);
-  SetState(STATE_SENTINITIATE);
-  // Applying remote description on the session
-  set_remote_description(const_cast<cricket::SessionDescription*>(remote_desc));
-  SetState(STATE_RECEIVEDACCEPT);
-  // Set remote candidates
-  SetRemoteCandidates(remote_candidates);
+
+  video_channel_.reset(channel_manager_->CreateVideoChannel(
+      this, cricket::CN_VIDEO, true, voice_channel_.get()));
+  if (!video_channel_.get()) {
+    LOG(LS_ERROR) << "Failed to create video channel";
+    return false;
+  }
+
+  // TransportProxies and TransportChannels will be created when
+  // CreateVoiceChannel and CreateVideoChannel are called.
+  // Try connecting all transport channels. This is necessary to generate
+  // ICE candidates.
+  SpeculativelyConnectAllTransportChannels();
+  return true;
 }
 
 void WebRtcSession::SetRemoteCandidates(
@@ -150,34 +147,11 @@ void WebRtcSession::SetRemoteCandidates(
       video_proxy->CompleteNegotiation();
       // TODO(mallinath) - Add a interface to TransportProxy to accept
       // remote candidate list.
-      video_proxy->impl()->OnRemoteCandidates(audio_candidates);
+      video_proxy->impl()->OnRemoteCandidates(video_candidates);
     } else {
       LOG(LS_INFO) << "No video TransportProxy exists";
     }
   }
-}
-
-bool WebRtcSession::CreateChannels() {
-  voice_channel_.reset(channel_manager_->CreateVoiceChannel(
-      this, cricket::CN_AUDIO, true));
-  if (!voice_channel_.get()) {
-    LOG(LS_ERROR) << "Failed to create voice channel";
-    return false;
-  }
-
-  video_channel_.reset(channel_manager_->CreateVideoChannel(
-      this, cricket::CN_VIDEO, true, voice_channel_.get()));
-  if (!video_channel_.get()) {
-    LOG(LS_ERROR) << "Failed to create video channel";
-    return false;
-  }
-
-  // TransportProxies and TransportChannels will be created when
-  // CreateVoiceChannel and CreateVideoChannel are called.
-  // Try connecting all transport channels. This is necessary to generate
-  // ICE candidates.
-  SpeculativelyConnectAllTransportChannels();
-  return true;
 }
 
 void WebRtcSession::OnTransportRequestSignaling(
@@ -212,12 +186,8 @@ void WebRtcSession::OnTransportCandidatesReady(
   if (local_candidates_.size() == kAllowedCandidates)
     return;
   InsertTransportCandidates(candidates);
-  if (local_candidates_.size() == kAllowedCandidates) {
-    if(observer_)
-      observer_->OnCandidatesReady(local_candidates_);
-    // TODO(mallinath) - Remove signal when a new interface added for
-    // PC signaling.
-    SignalCandidatesReady(this, local_candidates_);
+  if (local_candidates_.size() == kAllowedCandidates && observer_) {
+    observer_->OnCandidatesReady(local_candidates_);
   }
 }
 
@@ -262,56 +232,6 @@ bool WebRtcSession::CheckCandidate(const std::string& name) {
   return ret;
 }
 
-void WebRtcSession::ProcessSessionUpdate(
-    const cricket::SessionDescription* local_desc,
-    const cricket::SessionDescription* remote_desc) {
-
-  if (local_desc) {
-    ProcessLocalMediaChanges(local_desc);
-  }
-  if (remote_desc) {
-    ProcessRemoteMediaChanges(remote_desc);
-  }
-}
-
-bool WebRtcSession::GetAudioSourceParamInfo(
-    const cricket::SessionDescription* sdesc,
-    cricket::Sources* sources) {
-  bool ret = false;
-  const cricket::ContentInfo* content = GetFirstAudioContent(sdesc);
-  if (content) {
-    const MediaContentDescription* audio_desc =
-        static_cast<const MediaContentDescription*> (content->description);
-    *sources = audio_desc->sources();
-    ret = true;
-  }
-  return ret;
-}
-
-bool WebRtcSession::GetVideoSourceParamInfo(
-    const cricket::SessionDescription* sdesc,
-    cricket::Sources* sources) {
-  bool ret = false;
-  const cricket::ContentInfo* content = GetFirstVideoContent(sdesc);
-  if (content) {
-    const MediaContentDescription* video_desc =
-        static_cast<const MediaContentDescription*> (content->description);
-    *sources = video_desc->sources();
-    ret = true;
-  }
-  return ret;
-}
-
-void WebRtcSession::ProcessLocalMediaChanges(
-    const cricket::SessionDescription* sdesc) {
-  // TODO(mallinath) - Handling of local media stream changes in active session
-}
-
-void WebRtcSession::ProcessRemoteMediaChanges(
-    const cricket::SessionDescription* sdesc) {
-  // TODO(mallinath) - Handling of remote media stream changes in active session
-}
-
 void WebRtcSession::SetCaptureDevice(uint32 ssrc,
                                      VideoCaptureModule* camera) {
   // should be called from a signaling thread
@@ -329,6 +249,74 @@ void WebRtcSession::SetRemoteRenderer(uint32 ssrc,
                                       cricket::VideoRenderer* renderer) {
   ASSERT(signaling_thread()->IsCurrent());
   video_channel_->SetRenderer(ssrc, renderer);
+}
+
+const cricket::SessionDescription* WebRtcSession::ProvideOffer(
+    const cricket::MediaSessionOptions& options) {
+  // TODO(mallinath) - Sanity check for options.
+  cricket::SessionDescription* offer(
+      session_desc_factory_.CreateOffer(options));
+  set_local_description(offer);
+  return offer;
+}
+
+const cricket::SessionDescription* WebRtcSession::SetRemoteSessionDescription(
+    const cricket::SessionDescription* remote_offer,
+    const std::vector<cricket::Candidate>& remote_candidates) {
+  set_remote_description(
+      const_cast<cricket::SessionDescription*>(remote_offer));
+  SetRemoteCandidates(remote_candidates);
+  return remote_offer;
+}
+
+const cricket::SessionDescription* WebRtcSession::ProvideAnswer(
+    const cricket::MediaSessionOptions& options) {
+  cricket::SessionDescription* answer(
+      session_desc_factory_.CreateAnswer(remote_description(), options));
+  set_local_description(answer);
+  return answer;
+}
+
+void WebRtcSession::NegotiationDone() {
+  // No state change after state moved to progress state.
+  if (state() == STATE_INIT) {
+    SetState(STATE_SENTINITIATE);
+    SetState(STATE_RECEIVEDACCEPT);
+  }
+
+  // Enabling channels
+  voice_channel_->Enable(true);
+  video_channel_->Enable(true);
+
+  const cricket::ContentInfo* audio_info =
+      cricket::GetFirstAudioContent(local_description());
+  if (audio_info) {
+    const cricket::MediaContentDescription* audio_content =
+        static_cast<const cricket::MediaContentDescription*>(
+            audio_info->description);
+    // Since channels are currently not supporting multiple send streams,
+    // we can remove stream from a session by muting it.
+    // TODO(mallinath) - Change needed when multiple send streams support
+    // is available.
+    if (audio_content->sources().size() == 0) {
+      voice_channel_->Mute(true);
+    }
+  }
+
+  const cricket::ContentInfo* video_info =
+      cricket::GetFirstVideoContent(local_description());
+  if (video_info) {
+    const cricket::MediaContentDescription* video_content =
+        static_cast<const cricket::MediaContentDescription*>(
+            video_info->description);
+    // Since channels are currently not supporting multiple send streams,
+    // we can remove stream from a session by muting it.
+    // TODO(mallinath) - Change needed when multiple send streams support
+    // is available.
+    if (video_content->sources().size() == 0) {
+      video_channel_->Mute(true);
+    }
+  }
 }
 
 }  // namespace webrtc

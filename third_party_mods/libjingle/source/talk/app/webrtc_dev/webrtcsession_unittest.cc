@@ -32,24 +32,28 @@
 #include "talk/session/phone/channelmanager.h"
 #include "talk/p2p/client/fakeportallocator.h"
 
-class WebRtcSessionTest : public testing::Test,
-                          public sigslot::has_slots<> {
+class MockWebRtcSessionObserver : public webrtc::WebRtcSessionObserver {
  public:
-  cricket::MediaSessionDescriptionFactory* media_factory_;
-  WebRtcSessionTest() {
+  virtual void OnCandidatesReady(
+      const std::vector<cricket::Candidate>& candidates) {
+    for (cricket::Candidates::const_iterator iter = candidates.begin();
+         iter != candidates.end(); ++iter) {
+      candidates_.push_back(*iter);
+    }
   }
+  std::vector<cricket::Candidate> candidates_;
+};
 
-  ~WebRtcSessionTest() {
-  }
-
+class WebRtcSessionTest : public testing::Test {
+ protected:
   virtual void SetUp() {
     signaling_thread_ = talk_base::Thread::Current();
     worker_thread_ = talk_base::Thread::Current();
     channel_manager_.reset(new cricket::ChannelManager(worker_thread_));
     port_allocator_.reset(
         new cricket::FakePortAllocator(worker_thread_, NULL));
-    media_factory_ =
-        new cricket::MediaSessionDescriptionFactory(channel_manager_.get());
+    desc_factory_.reset(
+        new cricket::MediaSessionDescriptionFactory(channel_manager_.get()));
   }
 
   bool InitializeSession() {
@@ -75,43 +79,53 @@ class WebRtcSessionTest : public testing::Test,
     session_.reset(new webrtc::WebRtcSession(
         channel_manager_.get(), worker_thread_, signaling_thread_,
         port_allocator_.get()));
-    session_->SignalCandidatesReady.connect(
-        this, &WebRtcSessionTest::OnCandidatesReady);
+    session_->RegisterObserver(&observer_);
+    desc_provider_ = session_.get();
     EXPECT_TRUE(InitializeSession());
   }
-  void OnCandidatesReady(webrtc::WebRtcSession* session,
-                         cricket::Candidates& candidates) {
-    for (cricket::Candidates::iterator iter = candidates.begin();
-         iter != candidates.end(); ++iter) {
-      local_candidates_.push_back(*iter);
-    }
-  }
-  cricket::Candidates& local_candidates() {
-    return local_candidates_;
-  }
-  cricket::SessionDescription* CreateOffer(bool video) {
+
+  // Creates an offer with one source ssrc, if ssrc = 0 no source info
+  // video ssrc + 1
+  void CreateOffer(uint32 ssrc) {
     cricket::MediaSessionOptions options;
     options.is_video = true;
-    // Source params not set
-    cricket::SessionDescription* sdp = media_factory_->CreateOffer(options);
-    return sdp;
+    if (ssrc != 0) {
+      options.audio_sources.push_back(cricket::SourceParam(ssrc, "", ""));
+      ++ssrc;
+      options.video_sources.push_back(cricket::SourceParam(ssrc, "", ""));
+    }
+    local_desc_ = desc_provider_->ProvideOffer(options);
+    ASSERT_TRUE(local_desc_ != NULL);
   }
-  cricket::SessionDescription* CreateAnswer(
-      cricket::SessionDescription* offer, bool video) {
+  void CreateAnswer(uint32 ssrc) {
     cricket::MediaSessionOptions options;
-    options.is_video = video;
-    cricket::SessionDescription* sdp =
-        media_factory_->CreateAnswer(offer, options);
+    options.is_video = true;
+    if (ssrc != 0) {
+      options.audio_sources.push_back(cricket::SourceParam(ssrc, "", ""));
+      ++ssrc;
+      options.video_sources.push_back(cricket::SourceParam(ssrc, "", ""));
+    }
+    remote_desc_ = desc_factory_->CreateAnswer(local_desc_, options);
+    ASSERT_TRUE(remote_desc_ != NULL);
+  }
+  void SetRemoteContents() {
+    desc_provider_->SetRemoteSessionDescription(
+        remote_desc_, observer_.candidates_);
+  }
+  void NegotiationDone() {
+    desc_provider_->NegotiationDone();
   }
 
- private:
-  cricket::Candidates local_candidates_;
-  cricket::Candidates remote_candidates_;
+  const cricket::SessionDescription* local_desc_;
+  const cricket::SessionDescription* remote_desc_;
   talk_base::Thread* signaling_thread_;
   talk_base::Thread* worker_thread_;
   talk_base::scoped_ptr<cricket::PortAllocator> port_allocator_;
   talk_base::scoped_ptr<webrtc::WebRtcSession> session_;
+  webrtc::SessionDescriptionProvider* desc_provider_;
   talk_base::scoped_ptr<cricket::ChannelManager> channel_manager_;
+  talk_base::scoped_ptr<cricket::MediaSessionDescriptionFactory> desc_factory_;
+  MockWebRtcSessionObserver observer_;
 };
 
 TEST_F(WebRtcSessionTest, TestInitialize) {
@@ -119,6 +133,14 @@ TEST_F(WebRtcSessionTest, TestInitialize) {
   EXPECT_TRUE(CheckChannels());
   CheckTransportChannels();
   talk_base::Thread::Current()->ProcessMessages(1000);
-  EXPECT_EQ(4u, local_candidates().size());
+  EXPECT_EQ(4u, observer_.candidates_.size());
+}
+
+// TODO(mallinath) - Adding test cases for session.
+TEST_F(WebRtcSessionTest, DISABLE_TestOfferAnswer) {
+  WebRtcSessionTest::Init();
+  EXPECT_TRUE(CheckChannels());
+  CheckTransportChannels();
+  talk_base::Thread::Current()->ProcessMessages(1);
 }
 
