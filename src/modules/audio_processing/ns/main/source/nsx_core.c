@@ -1429,53 +1429,54 @@ void WebRtcNsx_SpeechNoiseProb(NsxInst_t *inst, WebRtc_UWord16 *nonSpeechProbFin
                                                                          tmp16, 14); // Q14
 
     //final speech probability: combine prior model with LR factor:
-    for (i = 0; i < inst->magnLen; i++)
-    {
+
+    memset(nonSpeechProbFinal, 0, sizeof(WebRtc_UWord16) * inst->magnLen);
+
+    if (inst->priorNonSpeechProb > 0) {
+      for (i = 0; i < inst->magnLen; i++) {
         // FLOAT code
         // invLrt = exp(inst->logLrtTimeAvg[i]);
         // invLrt = inst->priorSpeechProb * invLrt;
         // nonSpeechProbFinal[i] = (1.0 - inst->priorSpeechProb) / (1.0 - inst->priorSpeechProb + invLrt);
         // invLrt = (1.0 - inst->priorNonSpeechProb) * invLrt;
         // nonSpeechProbFinal[i] = inst->priorNonSpeechProb / (inst->priorNonSpeechProb + invLrt);
-        nonSpeechProbFinal[i] = 0; // Q8
-        if ((inst->logLrtTimeAvgW32[i] < 65300) && (inst->priorNonSpeechProb > 0))
-        {
-            tmp32no1 = WEBRTC_SPL_RSHIFT_W32(WEBRTC_SPL_MUL(inst->logLrtTimeAvgW32[i], 23637),
-                                             14); // Q12
-            intPart = (WebRtc_Word16)WEBRTC_SPL_RSHIFT_W32(tmp32no1, 12);
-            if (intPart < -8)
-            {
-                intPart = -8;
-            }
-            frac = (WebRtc_Word16)(tmp32no1 & 0x00000fff); // Q12
-            // Quadratic approximation of 2^frac
-            tmp32no2 = WEBRTC_SPL_RSHIFT_W32(frac * frac * 44, 19); // Q12
-            tmp32no2 += WEBRTC_SPL_MUL_16_16_RSFT(frac, 84, 7); // Q12
-            invLrtFX = WEBRTC_SPL_LSHIFT_W32(1, 8 + intPart)
-                    + WEBRTC_SPL_SHIFT_W32(tmp32no2, intPart - 4); // Q8
+        if (inst->logLrtTimeAvgW32[i] < 65300) {
+          tmp32no1 = WEBRTC_SPL_RSHIFT_W32(WEBRTC_SPL_MUL(inst->logLrtTimeAvgW32[i], 23637),
+                                           14); // Q12
+          intPart = (WebRtc_Word16)WEBRTC_SPL_RSHIFT_W32(tmp32no1, 12);
+          if (intPart < -8) {
+            intPart = -8;
+          }
+          frac = (WebRtc_Word16)(tmp32no1 & 0x00000fff); // Q12
 
-            normTmp = WebRtcSpl_NormW32(invLrtFX);
-            normTmp2 = WebRtcSpl_NormW16((16384 - inst->priorNonSpeechProb));
-            if (normTmp + normTmp2 < 15)
-            {
-                invLrtFX = WEBRTC_SPL_RSHIFT_W32(invLrtFX, 15 - normTmp2 - normTmp); // Q(normTmp+normTmp2-7)
-                tmp32no1 = WEBRTC_SPL_MUL_32_16(invLrtFX, (16384 - inst->priorNonSpeechProb)); // Q(normTmp+normTmp2+7)
-                invLrtFX = WEBRTC_SPL_SHIFT_W32(tmp32no1, 7 - normTmp - normTmp2); // Q14
-            } else
-            {
-                tmp32no1 = WEBRTC_SPL_MUL_32_16(invLrtFX, (16384 - inst->priorNonSpeechProb)); // Q22
-                invLrtFX = WEBRTC_SPL_RSHIFT_W32(tmp32no1, 8); // Q14
+          // Quadratic approximation of 2^frac
+          tmp32no2 = WEBRTC_SPL_RSHIFT_W32(frac * frac * 44, 19); // Q12
+          tmp32no2 += WEBRTC_SPL_MUL_16_16_RSFT(frac, 84, 7); // Q12
+          invLrtFX = WEBRTC_SPL_LSHIFT_W32(1, 8 + intPart)
+                  + WEBRTC_SPL_SHIFT_W32(tmp32no2, intPart - 4); // Q8
+
+          normTmp = WebRtcSpl_NormW32(invLrtFX);
+          normTmp2 = WebRtcSpl_NormW16((16384 - inst->priorNonSpeechProb));
+          if (normTmp + normTmp2 >= 7) {
+            if (normTmp + normTmp2 < 15) {
+              invLrtFX = WEBRTC_SPL_RSHIFT_W32(invLrtFX, 15 - normTmp2 - normTmp);
+                                                                   // Q(normTmp+normTmp2-7)
+              tmp32no1 = WEBRTC_SPL_MUL_32_16(invLrtFX, (16384 - inst->priorNonSpeechProb));
+                                                                   // Q(normTmp+normTmp2+7)
+              invLrtFX = WEBRTC_SPL_SHIFT_W32(tmp32no1, 7 - normTmp - normTmp2); // Q14
+            } else {
+              tmp32no1 = WEBRTC_SPL_MUL_32_16(invLrtFX, (16384 - inst->priorNonSpeechProb)); // Q22
+              invLrtFX = WEBRTC_SPL_RSHIFT_W32(tmp32no1, 8); // Q14
             }
 
             tmp32no1 = WEBRTC_SPL_LSHIFT_W32((WebRtc_Word32)inst->priorNonSpeechProb, 8); // Q22
+
             nonSpeechProbFinal[i] = (WebRtc_UWord16)WEBRTC_SPL_DIV(tmp32no1,
                     (WebRtc_Word32)inst->priorNonSpeechProb
                     + invLrtFX); // Q8
-            if (7 - normTmp - normTmp2 > 0)
-            {
-                nonSpeechProbFinal[i] = 0; // Q8
-            }
+          }
         }
+      }
     }
 }
 
@@ -1570,46 +1571,8 @@ void WebRtcNsx_DataAnalysis(NsxInst_t *inst, short *speechFrame, WebRtc_UWord16 
     inst->sumMagn = (WebRtc_UWord32)magnU16[0]; // Q(normData-stages)
     inst->sumMagn += (WebRtc_UWord32)magnU16[inst->anaLen2];
 
-    // Gather information during startup for noise parameter estimation
-    if (inst->blockIndex < END_STARTUP_SHORT)
-    {
-        // Switch initMagnEst to Q(minNorm-stages)
-        inst->initMagnEst[0] = WEBRTC_SPL_RSHIFT_U32(inst->initMagnEst[0],
-                                                     right_shifts_in_initMagnEst);
-        inst->initMagnEst[inst->anaLen2] =
-                WEBRTC_SPL_RSHIFT_U32(inst->initMagnEst[inst->anaLen2],
-                                      right_shifts_in_initMagnEst); // Q(minNorm-stages)
-
-        // Shift magnU16 to same domain as initMagnEst
-        tmpU32no1 = WEBRTC_SPL_RSHIFT_W32((WebRtc_UWord32)magnU16[0],
-                                          right_shifts_in_magnU16); // Q(minNorm-stages)
-        tmpU32no2 = WEBRTC_SPL_RSHIFT_W32((WebRtc_UWord32)magnU16[inst->anaLen2],
-                                          right_shifts_in_magnU16); // Q(minNorm-stages)
-
-        // Update initMagnEst
-        inst->initMagnEst[0] += tmpU32no1; // Q(minNorm-stages)
-        inst->initMagnEst[inst->anaLen2] += tmpU32no2; // Q(minNorm-stages)
-
-        log2 = 0;
-        if (magnU16[inst->anaLen2])
-        {
-            // Calculate log2(magnU16[inst->anaLen2])
-            zeros = WebRtcSpl_NormU32((WebRtc_UWord32)magnU16[inst->anaLen2]);
-            frac = (WebRtc_Word16)((((WebRtc_UWord32)magnU16[inst->anaLen2] << zeros) &
-                    0x7FFFFFFF) >> 23); // Q8
-            // log2(magnU16(i)) in Q8
-            assert(frac < 256);
-            log2 = (WebRtc_Word16)(((31 - zeros) << 8) + WebRtcNsx_kLogTableFrac[frac]);
-        }
-
-        sum_log_magn = (WebRtc_Word32)log2; // Q8
-        // sum_log_i_log_magn in Q17
-        sum_log_i_log_magn = (WEBRTC_SPL_MUL_16_16(kLogIndex[inst->anaLen2], log2) >> 3);
-    }
-
-    for (i = 1; i < inst->anaLen2; i++)
-    {
-        j = WEBRTC_SPL_LSHIFT_W16(i, 1);
+    if (inst->blockIndex >= END_STARTUP_SHORT) {
+      for (i = 1, j = 2; i < inst->anaLen2; i += 1, j += 2) {
         inst->real[i] = realImag[j];
         inst->imag[i] = -realImag[j + 1];
         // magnitude spectrum
@@ -1620,126 +1583,177 @@ void WebRtcNsx_DataAnalysis(NsxInst_t *inst, short *speechFrame, WebRtc_UWord16 
 
         magnU16[i] = (WebRtc_UWord16)WebRtcSpl_Sqrt(tmpU32no1); // Q(normData-stages)
         inst->sumMagn += (WebRtc_UWord32)magnU16[i]; // Q(normData-stages)
-        if (inst->blockIndex < END_STARTUP_SHORT)
+      }
+    } else {
+      //
+      // Gather information during startup for noise parameter estimation
+      //
+
+      // Switch initMagnEst to Q(minNorm-stages)
+      inst->initMagnEst[0] = WEBRTC_SPL_RSHIFT_U32(inst->initMagnEst[0],
+                                                   right_shifts_in_initMagnEst);
+      inst->initMagnEst[inst->anaLen2] =
+              WEBRTC_SPL_RSHIFT_U32(inst->initMagnEst[inst->anaLen2],
+                                    right_shifts_in_initMagnEst); // Q(minNorm-stages)
+
+      // Shift magnU16 to same domain as initMagnEst
+      tmpU32no1 = WEBRTC_SPL_RSHIFT_W32((WebRtc_UWord32)magnU16[0],
+                                        right_shifts_in_magnU16); // Q(minNorm-stages)
+      tmpU32no2 = WEBRTC_SPL_RSHIFT_W32((WebRtc_UWord32)magnU16[inst->anaLen2],
+                                        right_shifts_in_magnU16); // Q(minNorm-stages)
+
+      // Update initMagnEst
+      inst->initMagnEst[0] += tmpU32no1; // Q(minNorm-stages)
+      inst->initMagnEst[inst->anaLen2] += tmpU32no2; // Q(minNorm-stages)
+
+      log2 = 0;
+      if (magnU16[inst->anaLen2])
+      {
+          // Calculate log2(magnU16[inst->anaLen2])
+          zeros = WebRtcSpl_NormU32((WebRtc_UWord32)magnU16[inst->anaLen2]);
+          frac = (WebRtc_Word16)((((WebRtc_UWord32)magnU16[inst->anaLen2] << zeros) &
+                  0x7FFFFFFF) >> 23); // Q8
+          // log2(magnU16(i)) in Q8
+          assert(frac < 256);
+          log2 = (WebRtc_Word16)(((31 - zeros) << 8) + WebRtcNsx_kLogTableFrac[frac]);
+      }
+
+      sum_log_magn = (WebRtc_Word32)log2; // Q8
+      // sum_log_i_log_magn in Q17
+      sum_log_i_log_magn = (WEBRTC_SPL_MUL_16_16(kLogIndex[inst->anaLen2], log2) >> 3);
+
+      for (i = 1, j = 2; i < inst->anaLen2; i += 1, j += 2)
+      {
+        inst->real[i] = realImag[j];
+        inst->imag[i] = -realImag[j + 1];
+        // magnitude spectrum
+        // energy in Q(2*(normData-stages))
+        tmpU32no1 = (WebRtc_UWord32)WEBRTC_SPL_MUL_16_16(realImag[j], realImag[j]);
+        tmpU32no1 += (WebRtc_UWord32)WEBRTC_SPL_MUL_16_16(realImag[j + 1], realImag[j + 1]);
+        inst->magnEnergy += tmpU32no1; // Q(2*(normData-stages))
+
+        magnU16[i] = (WebRtc_UWord16)WebRtcSpl_Sqrt(tmpU32no1); // Q(normData-stages)
+        inst->sumMagn += (WebRtc_UWord32)magnU16[i]; // Q(normData-stages)
+
+        // Switch initMagnEst to Q(minNorm-stages)
+        inst->initMagnEst[i] = WEBRTC_SPL_RSHIFT_U32(inst->initMagnEst[i],
+                                                     right_shifts_in_initMagnEst);
+
+        // Shift magnU16 to same domain as initMagnEst, i.e., Q(minNorm-stages)
+        tmpU32no1 = WEBRTC_SPL_RSHIFT_W32((WebRtc_UWord32)magnU16[i],
+                                          right_shifts_in_magnU16);
+        // Update initMagnEst
+        inst->initMagnEst[i] += tmpU32no1; // Q(minNorm-stages)
+
+        if (i >= kStartBand)
         {
-            // Switch initMagnEst to Q(minNorm-stages)
-            inst->initMagnEst[i] = WEBRTC_SPL_RSHIFT_U32(inst->initMagnEst[i],
-                                                         right_shifts_in_initMagnEst);
-
-            // Shift magnU16 to same domain as initMagnEst, i.e., Q(minNorm-stages)
-            tmpU32no1 = WEBRTC_SPL_RSHIFT_W32((WebRtc_UWord32)magnU16[i],
-                                              right_shifts_in_magnU16);
-            // Update initMagnEst
-            inst->initMagnEst[i] += tmpU32no1; // Q(minNorm-stages)
-
-            if (i >= kStartBand)
-            {
-                // For pink noise estimation. Collect data neglecting lower frequency band
-                log2 = 0;
-                if (magnU16[i])
-                {
-                    zeros = WebRtcSpl_NormU32((WebRtc_UWord32)magnU16[i]);
-                    frac = (WebRtc_Word16)((((WebRtc_UWord32)magnU16[i] << zeros) &
-                            0x7FFFFFFF) >> 23);
-                    // log2(magnU16(i)) in Q8
-                    assert(frac < 256);
-                    log2 = (WebRtc_Word16)(((31 - zeros) << 8) 
-                                           + WebRtcNsx_kLogTableFrac[frac]);
-                }
-                sum_log_magn += (WebRtc_Word32)log2; // Q8
-                // sum_log_i_log_magn in Q17
-                sum_log_i_log_magn += (WEBRTC_SPL_MUL_16_16(kLogIndex[i], log2) >> 3);
-            }
+          // For pink noise estimation. Collect data neglecting lower frequency band
+          log2 = 0;
+          if (magnU16[i])
+          {
+            zeros = WebRtcSpl_NormU32((WebRtc_UWord32)magnU16[i]);
+            frac = (WebRtc_Word16)((((WebRtc_UWord32)magnU16[i] << zeros) &
+                    0x7FFFFFFF) >> 23);
+            // log2(magnU16(i)) in Q8
+            assert(frac < 256);
+            log2 = (WebRtc_Word16)(((31 - zeros) << 8) 
+                                   + WebRtcNsx_kLogTableFrac[frac]);
+          }
+          sum_log_magn += (WebRtc_Word32)log2; // Q8
+          // sum_log_i_log_magn in Q17
+          sum_log_i_log_magn += (WEBRTC_SPL_MUL_16_16(kLogIndex[i], log2) >> 3);
         }
-    }
+      }
 
-    //compute simplified noise model during startup
-    if (inst->blockIndex < END_STARTUP_SHORT)
-    {
-        // Estimate White noise
-        // Switch whiteNoiseLevel to Q(minNorm-stages)
-        inst->whiteNoiseLevel = WEBRTC_SPL_RSHIFT_U32(inst->whiteNoiseLevel,
-                                                      right_shifts_in_initMagnEst);
+      //
+      //compute simplified noise model during startup
+      //
 
-        // Update the average magnitude spectrum, used as noise estimate.
-        tmpU32no1 = WEBRTC_SPL_UMUL_32_16(inst->sumMagn, inst->overdrive);
-        tmpU32no1 = WEBRTC_SPL_RSHIFT_U32(tmpU32no1, inst->stages + 8);
+      // Estimate White noise
 
-        // Replacing division above with 'stages' shifts
-        // Shift to same Q-domain as whiteNoiseLevel
-        tmpU32no1 = WEBRTC_SPL_RSHIFT_U32(tmpU32no1, right_shifts_in_magnU16);
-        // This operation is safe from wrap around as long as END_STARTUP_SHORT < 128
-        assert(END_STARTUP_SHORT < 128);
-        inst->whiteNoiseLevel += tmpU32no1; // Q(minNorm-stages)
+      // Switch whiteNoiseLevel to Q(minNorm-stages)
+      inst->whiteNoiseLevel = WEBRTC_SPL_RSHIFT_U32(inst->whiteNoiseLevel,
+                                                    right_shifts_in_initMagnEst);
 
-        // Estimate Pink noise parameters
-        // Denominator used in both parameter estimates.
-        // The value is only dependent on the size of the frequency band (kStartBand)
-        // and to reduce computational complexity stored in a table (kDeterminantEstMatrix[])
-        assert(kStartBand < 66);
-        matrix_determinant = kDeterminantEstMatrix[kStartBand]; // Q0
-        sum_log_i = kSumLogIndex[kStartBand]; // Q5
-        sum_log_i_square = kSumSquareLogIndex[kStartBand]; // Q2
-        if (inst->fs == 8000)
-        {
-            // Adjust values to shorter blocks in narrow band.
-            tmp_1_w32 = (WebRtc_Word32)matrix_determinant;
-            tmp_1_w32 += WEBRTC_SPL_MUL_16_16_RSFT(kSumLogIndex[65], sum_log_i, 9);
-            tmp_1_w32 -= WEBRTC_SPL_MUL_16_16_RSFT(kSumLogIndex[65], kSumLogIndex[65], 10);
-            tmp_1_w32 -= WEBRTC_SPL_LSHIFT_W32((WebRtc_Word32)sum_log_i_square, 4);
-            tmp_1_w32 -= WEBRTC_SPL_MUL_16_16_RSFT((WebRtc_Word16)(inst->magnLen
-                    - kStartBand), kSumSquareLogIndex[65], 2);
-            matrix_determinant = (WebRtc_Word16)tmp_1_w32;
-            sum_log_i -= kSumLogIndex[65]; // Q5
-            sum_log_i_square -= kSumSquareLogIndex[65]; // Q2
-        }
+      // Update the average magnitude spectrum, used as noise estimate.
+      tmpU32no1 = WEBRTC_SPL_UMUL_32_16(inst->sumMagn, inst->overdrive);
+      tmpU32no1 = WEBRTC_SPL_RSHIFT_U32(tmpU32no1, inst->stages + 8);
 
-        // Necessary number of shifts to fit sum_log_magn in a word16
-        zeros = 16 - WebRtcSpl_NormW32(sum_log_magn);
-        if (zeros < 0)
-        {
-            zeros = 0;
-        }
-        tmp_1_w32 = WEBRTC_SPL_LSHIFT_W32(sum_log_magn, 1); // Q9
-        sum_log_magn_u16 = (WebRtc_UWord16)WEBRTC_SPL_RSHIFT_W32(tmp_1_w32, zeros);//Q(9-zeros)
+      // Replacing division above with 'stages' shifts
+      // Shift to same Q-domain as whiteNoiseLevel
+      tmpU32no1 = WEBRTC_SPL_RSHIFT_U32(tmpU32no1, right_shifts_in_magnU16);
+      // This operation is safe from wrap around as long as END_STARTUP_SHORT < 128
+      assert(END_STARTUP_SHORT < 128);
+      inst->whiteNoiseLevel += tmpU32no1; // Q(minNorm-stages)
 
-        // Calculate and update pinkNoiseNumerator. Result in Q11.
-        tmp_2_w32 = WEBRTC_SPL_MUL_16_U16(sum_log_i_square, sum_log_magn_u16); // Q(11-zeros)
-        tmpU32no1 = WEBRTC_SPL_RSHIFT_U32((WebRtc_UWord32)sum_log_i_log_magn, 12); // Q5
+      // Estimate Pink noise parameters
+      // Denominator used in both parameter estimates.
+      // The value is only dependent on the size of the frequency band (kStartBand)
+      // and to reduce computational complexity stored in a table (kDeterminantEstMatrix[])
+      assert(kStartBand < 66);
+      matrix_determinant = kDeterminantEstMatrix[kStartBand]; // Q0
+      sum_log_i = kSumLogIndex[kStartBand]; // Q5
+      sum_log_i_square = kSumSquareLogIndex[kStartBand]; // Q2
+      if (inst->fs == 8000)
+      {
+          // Adjust values to shorter blocks in narrow band.
+          tmp_1_w32 = (WebRtc_Word32)matrix_determinant;
+          tmp_1_w32 += WEBRTC_SPL_MUL_16_16_RSFT(kSumLogIndex[65], sum_log_i, 9);
+          tmp_1_w32 -= WEBRTC_SPL_MUL_16_16_RSFT(kSumLogIndex[65], kSumLogIndex[65], 10);
+          tmp_1_w32 -= WEBRTC_SPL_LSHIFT_W32((WebRtc_Word32)sum_log_i_square, 4);
+          tmp_1_w32 -= WEBRTC_SPL_MUL_16_16_RSFT((WebRtc_Word16)(inst->magnLen
+                  - kStartBand), kSumSquareLogIndex[65], 2);
+          matrix_determinant = (WebRtc_Word16)tmp_1_w32;
+          sum_log_i -= kSumLogIndex[65]; // Q5
+          sum_log_i_square -= kSumSquareLogIndex[65]; // Q2
+      }
 
-        // Shift the largest value of sum_log_i and tmp32no3 before multiplication
-        tmp_u16 = WEBRTC_SPL_LSHIFT_U16((WebRtc_UWord16)sum_log_i, 1); // Q6
-        if ((WebRtc_UWord32)sum_log_i > tmpU32no1)
-        {
-            tmp_u16 = WEBRTC_SPL_RSHIFT_U16(tmp_u16, zeros);
-        }
-        else
-        {
-            tmpU32no1 = WEBRTC_SPL_RSHIFT_U32(tmpU32no1, zeros);
-        }
-        tmp_2_w32 -= (WebRtc_Word32)WEBRTC_SPL_UMUL_32_16(tmpU32no1, tmp_u16); // Q(11-zeros)
-        matrix_determinant = WEBRTC_SPL_RSHIFT_W16(matrix_determinant, zeros); // Q(-zeros)
-        tmp_2_w32 = WebRtcSpl_DivW32W16(tmp_2_w32, matrix_determinant); // Q11
-        tmp_2_w32 += WEBRTC_SPL_LSHIFT_W32((WebRtc_Word32)net_norm, 11); // Q11
-        if (tmp_2_w32 < 0)
-        {
-            tmp_2_w32 = 0;
-        }
-        inst->pinkNoiseNumerator += tmp_2_w32; // Q11
+      // Necessary number of shifts to fit sum_log_magn in a word16
+      zeros = 16 - WebRtcSpl_NormW32(sum_log_magn);
+      if (zeros < 0)
+      {
+          zeros = 0;
+      }
+      tmp_1_w32 = WEBRTC_SPL_LSHIFT_W32(sum_log_magn, 1); // Q9
+      sum_log_magn_u16 = (WebRtc_UWord16)WEBRTC_SPL_RSHIFT_W32(tmp_1_w32, zeros);//Q(9-zeros)
 
-        // Calculate and update pinkNoiseExp. Result in Q14.
-        tmp_2_w32 = WEBRTC_SPL_MUL_16_U16(sum_log_i, sum_log_magn_u16); // Q(14-zeros)
-        tmp_1_w32 = WEBRTC_SPL_RSHIFT_W32(sum_log_i_log_magn, 3 + zeros);
-        tmp_1_w32 = WEBRTC_SPL_MUL((WebRtc_Word32)(inst->magnLen - kStartBand),
-                                   tmp_1_w32);
-        tmp_2_w32 -= tmp_1_w32; // Q(14-zeros)
-        if (tmp_2_w32 > 0)
-        {
-            // If the exponential parameter is negative force it to zero, which means a
-            // flat spectrum.
-            tmp_1_w32 = WebRtcSpl_DivW32W16(tmp_2_w32, matrix_determinant); // Q14
-            inst->pinkNoiseExp += WEBRTC_SPL_SAT(16384, tmp_1_w32, 0); // Q14
-        }
+      // Calculate and update pinkNoiseNumerator. Result in Q11.
+      tmp_2_w32 = WEBRTC_SPL_MUL_16_U16(sum_log_i_square, sum_log_magn_u16); // Q(11-zeros)
+      tmpU32no1 = WEBRTC_SPL_RSHIFT_U32((WebRtc_UWord32)sum_log_i_log_magn, 12); // Q5
+
+      // Shift the largest value of sum_log_i and tmp32no3 before multiplication
+      tmp_u16 = WEBRTC_SPL_LSHIFT_U16((WebRtc_UWord16)sum_log_i, 1); // Q6
+      if ((WebRtc_UWord32)sum_log_i > tmpU32no1)
+      {
+          tmp_u16 = WEBRTC_SPL_RSHIFT_U16(tmp_u16, zeros);
+      }
+      else
+      {
+          tmpU32no1 = WEBRTC_SPL_RSHIFT_U32(tmpU32no1, zeros);
+      }
+      tmp_2_w32 -= (WebRtc_Word32)WEBRTC_SPL_UMUL_32_16(tmpU32no1, tmp_u16); // Q(11-zeros)
+      matrix_determinant = WEBRTC_SPL_RSHIFT_W16(matrix_determinant, zeros); // Q(-zeros)
+      tmp_2_w32 = WebRtcSpl_DivW32W16(tmp_2_w32, matrix_determinant); // Q11
+      tmp_2_w32 += WEBRTC_SPL_LSHIFT_W32((WebRtc_Word32)net_norm, 11); // Q11
+      if (tmp_2_w32 < 0)
+      {
+          tmp_2_w32 = 0;
+      }
+      inst->pinkNoiseNumerator += tmp_2_w32; // Q11
+
+      // Calculate and update pinkNoiseExp. Result in Q14.
+      tmp_2_w32 = WEBRTC_SPL_MUL_16_U16(sum_log_i, sum_log_magn_u16); // Q(14-zeros)
+      tmp_1_w32 = WEBRTC_SPL_RSHIFT_W32(sum_log_i_log_magn, 3 + zeros);
+      tmp_1_w32 = WEBRTC_SPL_MUL((WebRtc_Word32)(inst->magnLen - kStartBand),
+                                 tmp_1_w32);
+      tmp_2_w32 -= tmp_1_w32; // Q(14-zeros)
+      if (tmp_2_w32 > 0)
+      {
+          // If the exponential parameter is negative force it to zero, which means a
+          // flat spectrum.
+          tmp_1_w32 = WebRtcSpl_DivW32W16(tmp_2_w32, matrix_determinant); // Q14
+          inst->pinkNoiseExp += WEBRTC_SPL_SAT(16384, tmp_1_w32, 0); // Q14
+      }
     }
 }
 
