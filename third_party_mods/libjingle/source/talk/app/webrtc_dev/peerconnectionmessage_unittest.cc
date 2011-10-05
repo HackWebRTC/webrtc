@@ -101,27 +101,27 @@ class PeerConnectionMessageTest: public testing::Test {
 
 TEST_F(PeerConnectionMessageTest, Serialize) {
   std::string message;
-  scoped_refptr<PeerConnectionMessage> pc_message;
+  talk_base::scoped_ptr<PeerConnectionMessage> pc_message;
 
   // Offer
-  cricket::SessionDescription* offer =
-      session_description_factory_->CreateOffer(options_);
-  pc_message = PeerConnectionMessage::Create(PeerConnectionMessage::kOffer,
-      offer, candidates_);
+  talk_base::scoped_ptr<const cricket::SessionDescription> offer(
+      session_description_factory_->CreateOffer(options_));
+  pc_message.reset(PeerConnectionMessage::Create(PeerConnectionMessage::kOffer,
+      offer.get(), candidates_));
   message = pc_message->Serialize();
   LOG(LS_INFO) << message;
 
   // Answer
-  cricket::SessionDescription* answer =
-      session_description_factory_->CreateAnswer(offer, options_);
-  pc_message = PeerConnectionMessage::Create(PeerConnectionMessage::kAnswer,
-      answer, candidates_);
+  talk_base::scoped_ptr<const cricket::SessionDescription> answer(
+      session_description_factory_->CreateAnswer(offer.get(), options_));
+  pc_message.reset(PeerConnectionMessage::Create(PeerConnectionMessage::kAnswer,
+      answer.get(), candidates_));
   message = pc_message->Serialize();
   LOG(LS_INFO) << message;
 
   // Error
-  pc_message = PeerConnectionMessage::CreateErrorMessage(
-      PeerConnectionMessage::kParseError);
+  pc_message.reset(PeerConnectionMessage::CreateErrorMessage(
+      PeerConnectionMessage::kParseError));
   message = pc_message->Serialize();
   LOG(LS_INFO) << message;
 
@@ -131,44 +131,44 @@ TEST_F(PeerConnectionMessageTest, Serialize) {
 TEST_F(PeerConnectionMessageTest, Deserialize) {
   std::string message_ref;
   std::string message_result;
-  scoped_refptr<PeerConnectionMessage> pc_message;
-  cricket::SessionDescription* offer =
-      session_description_factory_->CreateOffer(options_);
-  cricket::SessionDescription* answer =
-      session_description_factory_->CreateAnswer(offer, options_);
+  talk_base::scoped_ptr<PeerConnectionMessage> pc_message;
+  talk_base::scoped_ptr<cricket::SessionDescription> offer(
+      session_description_factory_->CreateOffer(options_));
+  talk_base::scoped_ptr<cricket::SessionDescription> answer(
+      session_description_factory_->CreateAnswer(offer.get(), options_));
 
   // Offer
-  pc_message = PeerConnectionMessage::Create(PeerConnectionMessage::kOffer,
-      offer, candidates_);
+  pc_message.reset(PeerConnectionMessage::Create(PeerConnectionMessage::kOffer,
+      offer.get(), candidates_));
   message_ref = pc_message->Serialize();
   LOG(LS_INFO) << "The reference message: " << message_ref;
 
   // Deserialize Offer
-  pc_message = PeerConnectionMessage::Create(message_ref);
+  pc_message.reset(PeerConnectionMessage::Create(message_ref));
   message_result = pc_message->Serialize();
   LOG(LS_INFO) << "The result message: " << message_result;
   EXPECT_EQ(message_ref, message_result);
 
   // Answer
-  pc_message = PeerConnectionMessage::Create(PeerConnectionMessage::kAnswer,
-      answer, candidates_);
+  pc_message.reset(PeerConnectionMessage::Create(PeerConnectionMessage::kAnswer,
+      answer.get(), candidates_));
   message_ref = pc_message->Serialize();
   LOG(LS_INFO) << "The reference message: " << message_ref;
 
   // Deserialize Answer
-  pc_message = PeerConnectionMessage::Create(message_ref);
+  pc_message.reset(PeerConnectionMessage::Create(message_ref));
   message_result = pc_message->Serialize();
   LOG(LS_INFO) << "The result message: " << message_result;
   EXPECT_EQ(message_ref, message_result);
 
   // Error
-  pc_message = PeerConnectionMessage::CreateErrorMessage(
-      PeerConnectionMessage::kParseError);
+  pc_message.reset(PeerConnectionMessage::CreateErrorMessage(
+      PeerConnectionMessage::kParseError));
   message_ref = pc_message->Serialize();
   LOG(LS_INFO) << "The reference message: " << message_ref;
 
   // Deserialize Error
-  pc_message = PeerConnectionMessage::Create(message_ref);
+  pc_message.reset(PeerConnectionMessage::Create(message_ref));
   message_result = pc_message->Serialize();
   LOG(LS_INFO) << "The result message: " << message_result;
   EXPECT_EQ(message_ref, message_result);

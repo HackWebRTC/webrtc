@@ -34,30 +34,29 @@
 
 namespace webrtc {
 
-scoped_refptr<PeerConnectionMessage> PeerConnectionMessage::Create(
+PeerConnectionMessage* PeerConnectionMessage::Create(
     PeerConnectionMessageType type,
-    cricket::SessionDescription* desc,
+    const cricket::SessionDescription* desc,
     const std::vector<cricket::Candidate>& candidates) {
-  return new RefCountImpl<PeerConnectionMessage> (type, desc, candidates);
+  return new PeerConnectionMessage(type, desc, candidates);
 }
 
-scoped_refptr<PeerConnectionMessage> PeerConnectionMessage::Create(
+PeerConnectionMessage* PeerConnectionMessage::Create(
     const std::string& message) {
-  scoped_refptr<PeerConnectionMessage>pc_message(new
-      RefCountImpl<PeerConnectionMessage> ());
+  PeerConnectionMessage* pc_message(new PeerConnectionMessage());
   if (!pc_message->Deserialize(message))
     return NULL;
   return pc_message;
 }
 
-scoped_refptr<PeerConnectionMessage> PeerConnectionMessage::CreateErrorMessage(
+PeerConnectionMessage* PeerConnectionMessage::CreateErrorMessage(
     ErrorCode error) {
-  return new RefCountImpl<PeerConnectionMessage> (error);
+  return new PeerConnectionMessage(error);
 }
 
 PeerConnectionMessage::PeerConnectionMessage(
     PeerConnectionMessageType type,
-    cricket::SessionDescription* desc,
+    const cricket::SessionDescription* desc,
     const std::vector<cricket::Candidate>& candidates)
     : type_(type),
       error_code_(kNoError),
@@ -68,7 +67,7 @@ PeerConnectionMessage::PeerConnectionMessage(
 PeerConnectionMessage::PeerConnectionMessage()
     : type_(kOffer),
       error_code_(kNoError),
-      desc_(new cricket::SessionDescription()) {
+      desc_(NULL) {
 }
 
 PeerConnectionMessage::PeerConnectionMessage(ErrorCode error)
@@ -78,12 +77,19 @@ PeerConnectionMessage::PeerConnectionMessage(ErrorCode error)
 }
 
 std::string PeerConnectionMessage::Serialize() {
-  return JsonSerialize(type_, error_code_, desc_.get(), candidates_);
+  return JsonSerialize(type_, error_code_, desc_, candidates_);
 }
 
 bool PeerConnectionMessage::Deserialize(std::string message) {
-  return JsonDeserialize(&type_, &error_code_, desc_.get(),
-      &candidates_, message);
+  cricket::SessionDescription* desc(new cricket::SessionDescription());
+  bool result = JsonDeserialize(&type_, &error_code_, desc,
+                                &candidates_, message);
+  if(!result) {
+    delete desc;
+    desc = NULL;
+  }
+  desc_ = desc;
+  return result;
 }
 
 }  // namespace webrtc

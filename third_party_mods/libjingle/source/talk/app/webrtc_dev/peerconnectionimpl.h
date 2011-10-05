@@ -84,6 +84,8 @@ class PeerConnectionImpl : public PeerConnection,
   void OnRemoteStreamAdded(MediaStream* remote_stream);
   void OnRemoteStreamRemoved(MediaStream* remote_stream);
 
+  void Terminate_s();
+
   PeerConnectionObserver* observer_;
   scoped_refptr<StreamCollectionImpl> local_media_streams_;
   scoped_refptr<StreamCollectionImpl> remote_media_streams_;
@@ -93,8 +95,8 @@ class PeerConnectionImpl : public PeerConnection,
   scoped_refptr<PcNetworkManager> network_manager_;
   scoped_refptr<PcPacketSocketFactory> socket_factory_;
   talk_base::scoped_ptr<cricket::HttpPortAllocator> port_allocator_;
-  talk_base::scoped_ptr<PeerConnectionSignaling> signaling_;
   talk_base::scoped_ptr<WebRtcSession> session_;
+  talk_base::scoped_ptr<PeerConnectionSignaling> signaling_;
   talk_base::scoped_ptr<MediaStreamHandlers> stream_handler_;
 };
 

@@ -82,8 +82,7 @@ class MockMediaStreamObserver : public webrtc::Observer {
 class MockSignalingObserver : public sigslot::has_slots<> {
  public:
   MockSignalingObserver()
-      : update_session_description_counter_(0),
-        remote_peer_(NULL) {
+      : remote_peer_(NULL) {
   }
 
   // New remote stream have been discovered.
@@ -108,18 +107,12 @@ class MockSignalingObserver : public sigslot::has_slots<> {
       // the message.
       talk_base::Thread::Current()->ProcessMessages(1);
     }
-    scoped_refptr<PeerConnectionMessage> message;
-    message = PeerConnectionMessage::Create(smessage);
+    talk_base::scoped_ptr<PeerConnectionMessage> message(
+        PeerConnectionMessage::Create(smessage));
     if (message.get() != NULL &&
         message->type() != PeerConnectionMessage::kError) {
       last_message = smessage;
     }
-  }
-
-  void OnUpdateSessionDescription(const cricket::SessionDescription* local,
-                                  const cricket::SessionDescription* remote,
-                                  const cricket::Candidates& candidates) {
-    update_session_description_counter_++;
   }
 
   // Tell this object to answer the remote_peer.
@@ -146,12 +139,52 @@ class MockSignalingObserver : public sigslot::has_slots<> {
   virtual ~MockSignalingObserver() {}
 
   std::string last_message;
-  int update_session_description_counter_;
-
  private:
   MediaStreamMap remote_media_streams_;
   scoped_refptr<StreamCollectionImpl> remote_local_collection_;
   PeerConnectionSignaling* remote_peer_;
+};
+
+class MockSessionDescriptionProvider : public SessionDescriptionProvider {
+ public:
+  MockSessionDescriptionProvider(cricket::ChannelManager* channel_manager)
+      : update_session_description_counter_(0),
+        session_description_factory_(
+          new cricket::MediaSessionDescriptionFactory(channel_manager)) {
+  }
+  virtual const cricket::SessionDescription* ProvideOffer(
+      const cricket::MediaSessionOptions& options) {
+    offer_.reset(session_description_factory_->CreateOffer(options));
+    return offer_.get();
+  }
+
+  // Transfer ownership of remote_offer.
+  virtual const cricket::SessionDescription* SetRemoteSessionDescription(
+      const cricket::SessionDescription* remote_offer,
+      const cricket::Candidates& remote_candidates) {
+    remote_desc_.reset(remote_offer);
+    return remote_desc_.get();
+  }
+
+  virtual const cricket::SessionDescription* ProvideAnswer(
+      const cricket::MediaSessionOptions& options) {
+    answer_.reset(session_description_factory_->CreateAnswer(remote_desc_.get(),
+                                                             options));
+    return answer_.get();
+  }
+
+  virtual void NegotiationDone() {
+    ++update_session_description_counter_;
+  }
+
+  int update_session_description_counter_;
+
+ protected:
+  talk_base::scoped_ptr<cricket::MediaSessionDescriptionFactory>
+      session_description_factory_;
+  talk_base::scoped_ptr<const cricket::SessionDescription> offer_;
+  talk_base::scoped_ptr<const cricket::SessionDescription> answer_;
+  talk_base::scoped_ptr<const cricket::SessionDescription> remote_desc_;
 };
 
 class PeerConnectionSignalingTest: public testing::Test {
@@ -160,26 +193,26 @@ class PeerConnectionSignalingTest: public testing::Test {
     channel_manager_.reset(new cricket::ChannelManager(
         talk_base::Thread::Current()));
     EXPECT_TRUE(channel_manager_->Init());
+    provider1_.reset(new MockSessionDescriptionProvider(
+        channel_manager_.get()));
+    provider2_.reset(new MockSessionDescriptionProvider(
+        channel_manager_.get()));
 
     signaling1_.reset(new PeerConnectionSignaling(
-        channel_manager_.get(), talk_base::Thread::Current()));
+        talk_base::Thread::Current(), provider1_.get()));
     observer1_.reset(new MockSignalingObserver());
     signaling1_->SignalNewPeerConnectionMessage.connect(
         observer1_.get(), &MockSignalingObserver::OnSignalingMessage);
-    signaling1_->SignalUpdateSessionDescription.connect(
-        observer1_.get(), &MockSignalingObserver::OnUpdateSessionDescription);
     signaling1_->SignalRemoteStreamAdded.connect(
         observer1_.get(), &MockSignalingObserver::OnRemoteStreamAdded);
     signaling1_->SignalRemoteStreamRemoved.connect(
         observer1_.get(), &MockSignalingObserver::OnRemoteStreamRemoved);
 
     signaling2_.reset(new PeerConnectionSignaling(
-        channel_manager_.get(), talk_base::Thread::Current()));
+        talk_base::Thread::Current(), provider2_.get()));
     observer2_.reset(new MockSignalingObserver());
     signaling2_->SignalNewPeerConnectionMessage.connect(
         observer2_.get(), &MockSignalingObserver::OnSignalingMessage);
-    signaling2_->SignalUpdateSessionDescription.connect(
-        observer2_.get(), &MockSignalingObserver::OnUpdateSessionDescription);
     signaling2_->SignalRemoteStreamAdded.connect(
         observer2_.get(), &MockSignalingObserver::OnRemoteStreamAdded);
     signaling2_->SignalRemoteStreamRemoved.connect(
@@ -189,6 +222,8 @@ class PeerConnectionSignalingTest: public testing::Test {
   cricket::Candidates candidates_;
   talk_base::scoped_ptr<MockSignalingObserver> observer1_;
   talk_base::scoped_ptr<MockSignalingObserver> observer2_;
+  talk_base::scoped_ptr<MockSessionDescriptionProvider> provider1_;
+  talk_base::scoped_ptr<MockSessionDescriptionProvider> provider2_;
   talk_base::scoped_ptr<PeerConnectionSignaling> signaling1_;
   talk_base::scoped_ptr<PeerConnectionSignaling> signaling2_;
   talk_base::scoped_ptr<cricket::ChannelManager> channel_manager_;
@@ -233,7 +268,7 @@ TEST_F(PeerConnectionSignalingTest, SimpleOneWayCall) {
   EXPECT_EQ(PeerConnectionSignaling::kInitializing, signaling1_->GetState());
 
   // Initialize signaling1_ by providing the candidates.
-  signaling1_->Initialize(candidates_);
+  signaling1_->OnCandidatesReady(candidates_);
   EXPECT_EQ(PeerConnectionSignaling::kWaitingForAnswer,
             signaling1_->GetState());
   // Process posted messages to allow signaling_1 to send the offer.
@@ -244,7 +279,7 @@ TEST_F(PeerConnectionSignalingTest, SimpleOneWayCall) {
   EXPECT_EQ(PeerConnectionSignaling::kInitializing, signaling2_->GetState());
 
   // Provide the candidates to signaling_2 and let it process the offer.
-  signaling2_->Initialize(candidates_);
+  signaling2_->OnCandidatesReady(candidates_);
   talk_base::Thread::Current()->ProcessMessages(1);
 
   // Verify that the offer/answer have been exchanged and the state is good.
@@ -260,14 +295,14 @@ TEST_F(PeerConnectionSignalingTest, SimpleOneWayCall) {
   EXPECT_TRUE(observer2_->RemoteStream(label) != NULL);
 
   // Verify that both peers have updated the session descriptions.
-  EXPECT_EQ(1u, observer1_->update_session_description_counter_);
-  EXPECT_EQ(1u, observer2_->update_session_description_counter_);
+  EXPECT_EQ(1u, provider1_->update_session_description_counter_);
+  EXPECT_EQ(1u, provider2_->update_session_description_counter_);
 }
 
 TEST_F(PeerConnectionSignalingTest, Glare) {
   // Initialize signaling1_ and signaling_2 by providing the candidates.
-  signaling1_->Initialize(candidates_);
-  signaling2_->Initialize(candidates_);
+  signaling1_->OnCandidatesReady(candidates_);
+  signaling2_->OnCandidatesReady(candidates_);
   // Create a local stream.
   std::string label(kStreamLabel1);
   scoped_refptr<LocalMediaStream> stream(CreateLocalMediaStream(label));
@@ -323,14 +358,14 @@ TEST_F(PeerConnectionSignalingTest, Glare) {
   EXPECT_TRUE(observer2_->RemoteStream(label) != NULL);
 
   // Verify that both peers have updated the session descriptions.
-  EXPECT_EQ(1u, observer1_->update_session_description_counter_);
-  EXPECT_EQ(1u, observer2_->update_session_description_counter_);
+  EXPECT_EQ(1u, provider1_->update_session_description_counter_);
+  EXPECT_EQ(1u, provider2_->update_session_description_counter_);
 }
 
 TEST_F(PeerConnectionSignalingTest, AddRemoveStream) {
   // Initialize signaling1_ and signaling_2 by providing the candidates.
-  signaling1_->Initialize(candidates_);
-  signaling2_->Initialize(candidates_);
+  signaling1_->OnCandidatesReady(candidates_);
+  signaling2_->OnCandidatesReady(candidates_);
   // Create a local stream.
   std::string label(kStreamLabel1);
   scoped_refptr<LocalMediaStream> stream(CreateLocalMediaStream(label));
@@ -367,8 +402,8 @@ TEST_F(PeerConnectionSignalingTest, AddRemoveStream) {
   talk_base::Thread::Current()->ProcessMessages(1);
 
   // Verify that both peers have updated the session descriptions.
-  EXPECT_EQ(1u, observer1_->update_session_description_counter_);
-  EXPECT_EQ(1u, observer2_->update_session_description_counter_);
+  EXPECT_EQ(1u, provider1_->update_session_description_counter_);
+  EXPECT_EQ(1u, provider2_->update_session_description_counter_);
 
   // Peer2 add a stream.
   local_collection2->AddStream(stream);
@@ -384,8 +419,8 @@ TEST_F(PeerConnectionSignalingTest, AddRemoveStream) {
   EXPECT_TRUE(observer1_->RemoteStream(label) != NULL);
 
   // Verify that both peers have updated the session descriptions.
-  EXPECT_EQ(2u, observer1_->update_session_description_counter_);
-  EXPECT_EQ(2u, observer2_->update_session_description_counter_);
+  EXPECT_EQ(2u, provider1_->update_session_description_counter_);
+  EXPECT_EQ(2u, provider2_->update_session_description_counter_);
 
   // Remove the stream
   local_collection2->RemoveStream(stream);
@@ -401,8 +436,8 @@ TEST_F(PeerConnectionSignalingTest, AddRemoveStream) {
   EXPECT_EQ(MediaStreamTrack::kEnded, track_observer1.track_state);
 
   // Verify that both peers have updated the session descriptions.
-  EXPECT_EQ(3u, observer1_->update_session_description_counter_);
-  EXPECT_EQ(3u, observer2_->update_session_description_counter_);
+  EXPECT_EQ(3u, provider1_->update_session_description_counter_);
+  EXPECT_EQ(3u, provider2_->update_session_description_counter_);
 }
 
 }  // namespace webrtc

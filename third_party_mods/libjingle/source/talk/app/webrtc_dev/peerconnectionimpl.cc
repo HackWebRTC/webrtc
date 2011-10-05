@@ -60,7 +60,8 @@ enum ServiceType {
 enum {
     MSG_COMMITSTREAMCHANGES = 1,
     MSG_PROCESSSIGNALINGMESSAGE = 2,
-    MSG_RETURNREMOTEMEDIASTREAMS = 3
+    MSG_RETURNREMOTEMEDIASTREAMS = 3,
+    MSG_TERMINATE = 4
 };
 
 bool static ParseConfigString(const std::string& config,
@@ -137,10 +138,10 @@ PeerConnectionImpl::PeerConnectionImpl(
           network_manager->network_manager(),
           socket_factory->socket_factory(),
           std::string(kUserAgent))),
-      signaling_(new PeerConnectionSignaling(channel_manager,
-                                             signaling_thread)),
       session_(new WebRtcSession(channel_manager, signaling_thread,
-          worker_thread, port_allocator_.get(), signaling_.get())),
+          worker_thread, port_allocator_.get())),
+      signaling_(new PeerConnectionSignaling(signaling_thread,
+                                             session_.get())),
       stream_handler_(new MediaStreamHandlers(session_.get())) {
   signaling_->SignalNewPeerConnectionMessage.connect(
       this, &PeerConnectionImpl::OnNewPeerConnectionMessage);
@@ -152,6 +153,15 @@ PeerConnectionImpl::PeerConnectionImpl(
 
 PeerConnectionImpl::~PeerConnectionImpl() {
   signaling_thread_->Clear(this);
+  signaling_thread_->Send(this, MSG_TERMINATE);
+}
+
+// Clean up what needs to be cleaned up on the signaling thread.
+void PeerConnectionImpl::Terminate_s() {
+  stream_handler_.reset();
+  signaling_.reset();
+  session_.reset();
+  port_allocator_.reset();
 }
 
 bool PeerConnectionImpl::Initialize(const std::string& configuration,
@@ -182,6 +192,7 @@ bool PeerConnectionImpl::Initialize(const std::string& configuration,
       ASSERT(!"NOT SUPPORTED");
       return false;
   }
+
   // Initialize the WebRtcSession. It creates transport channels etc.
   return session_->Initialize();
 }
@@ -239,6 +250,10 @@ void PeerConnectionImpl::OnMessage(talk_base::Message* msg) {
       ScopedRefMessageData<StreamCollection>* param(
           static_cast<ScopedRefMessageData<StreamCollection>*> (data));
       param->data() = StreamCollectionImpl::Create(remote_media_streams_);
+      break;
+    }
+    case MSG_TERMINATE: {
+      Terminate_s();
       break;
     }
   }

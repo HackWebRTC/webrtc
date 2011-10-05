@@ -46,8 +46,8 @@ namespace webrtc {
 // PeerConnectionMessage represent an SDP offer or an answer.
 // Instances of this class can be serialized / deserialized and are used for
 // signaling between PeerConnection objects.
-// Each instance has a type, a sequence number and a session description.
-class PeerConnectionMessage : public RefCount {
+// Each instance has a type and a session description.
+class PeerConnectionMessage {
  public:
   enum PeerConnectionMessageType {
     kOffer,
@@ -63,37 +63,37 @@ class PeerConnectionMessage : public RefCount {
     kMessageNotDeliverable = 40  // The signaling channel is broken.
   };
 
-  static scoped_refptr<PeerConnectionMessage> Create(
+  static PeerConnectionMessage* Create(
       PeerConnectionMessageType type,
-      cricket::SessionDescription* desc,
+      const cricket::SessionDescription* desc,
       const std::vector<cricket::Candidate>& candidates);
 
-  static scoped_refptr<PeerConnectionMessage> Create(
+  static PeerConnectionMessage* Create(
       const std::string& message);
 
-  static scoped_refptr<PeerConnectionMessage> CreateErrorMessage(
+  static PeerConnectionMessage* CreateErrorMessage(
       ErrorCode error);
 
   PeerConnectionMessageType type() {return type_;}
   ErrorCode error() {return error_code_;}
-  const cricket::SessionDescription* desc() {return desc_.get();}
+  const cricket::SessionDescription* desc() {return desc_;}
 
   std::string Serialize();
   std::vector<cricket::Candidate>& candidates() { return candidates_; }
 
  protected:
   PeerConnectionMessage(PeerConnectionMessageType type,
-                        cricket::SessionDescription* desc,
+                        const cricket::SessionDescription* desc,
                         const std::vector<cricket::Candidate>& candidates);
-  PeerConnectionMessage();
   explicit PeerConnectionMessage(ErrorCode error);
+  PeerConnectionMessage();
 
   bool Deserialize(std::string message);
 
  private:
   PeerConnectionMessageType type_;
   ErrorCode error_code_;
-  talk_base::scoped_ptr<cricket::SessionDescription> desc_;
+  const cricket::SessionDescription* desc_;  // Weak ref.
   std::vector<cricket::Candidate> candidates_;
 };
 

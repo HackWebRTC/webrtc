@@ -48,9 +48,6 @@ class WebRtcSessionTest : public testing::Test,
     channel_manager_.reset(new cricket::ChannelManager(worker_thread_));
     port_allocator_.reset(
         new cricket::FakePortAllocator(worker_thread_, NULL));
-    pc_signaling_.reset(
-        new webrtc::PeerConnectionSignaling(channel_manager_.get(),
-                                            signaling_thread_));
     media_factory_ =
         new cricket::MediaSessionDescriptionFactory(channel_manager_.get());
   }
@@ -77,7 +74,7 @@ class WebRtcSessionTest : public testing::Test,
     EXPECT_TRUE(channel_manager_.get()->Init());
     session_.reset(new webrtc::WebRtcSession(
         channel_manager_.get(), worker_thread_, signaling_thread_,
-        port_allocator_.get(), pc_signaling_.get()));
+        port_allocator_.get()));
     session_->SignalCandidatesReady.connect(
         this, &WebRtcSessionTest::OnCandidatesReady);
     EXPECT_TRUE(InitializeSession());
@@ -113,7 +110,6 @@ class WebRtcSessionTest : public testing::Test,
   talk_base::Thread* signaling_thread_;
   talk_base::Thread* worker_thread_;
   talk_base::scoped_ptr<cricket::PortAllocator> port_allocator_;
-  talk_base::scoped_ptr<webrtc::PeerConnectionSignaling> pc_signaling_;
   talk_base::scoped_ptr<webrtc::WebRtcSession> session_;
   talk_base::scoped_ptr<cricket::ChannelManager> channel_manager_;
 };

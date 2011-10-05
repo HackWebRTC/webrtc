@@ -36,6 +36,8 @@
 #include "talk/p2p/base/session.h"
 #include "talk/session/phone/mediasession.h"
 #include "talk/app/webrtc_dev/mediastreamprovider.h"
+#include "talk/app/webrtc_dev/sessiondescriptionprovider.h"
+#include "talk/app/webrtc_dev/webrtcsessionobserver.h"
 
 namespace cricket {
 class ChannelManager;
@@ -51,13 +53,13 @@ class PeerConnectionSignaling;
 class StreamCollection;
 
 class WebRtcSession : public cricket::BaseSession,
-                      public MediaProviderInterface {
+                      public MediaProviderInterface,
+                      public SessionDescriptionProvider {
  public:
   WebRtcSession(cricket::ChannelManager* channel_manager,
                 talk_base::Thread* signaling_thread,
                 talk_base::Thread* worker_thread,
-                cricket::PortAllocator* port_allocator,
-                PeerConnectionSignaling* pc_signaling);
+                cricket::PortAllocator* port_allocator);
   ~WebRtcSession();
 
   bool Initialize();
@@ -88,11 +90,22 @@ class WebRtcSession : public cricket::BaseSession,
   virtual void SetRemoteRenderer(uint32 ssrc,
                                  cricket::VideoRenderer* renderer);
 
-  // Callback handling from PeerConnectionSignaling
+  //TODO mallinath: remove.
   void OnSignalUpdateSessionDescription(
       const cricket::SessionDescription* local_desc,
       const cricket::SessionDescription* remote_desc,
       const cricket::Candidates& remote_candidates);
+
+  // Implements SessionDescriptionProvider
+  virtual const cricket::SessionDescription* ProvideOffer(
+      const cricket::MediaSessionOptions& options) {}
+  virtual const cricket::SessionDescription* SetRemoteSessionDescription(
+      const cricket::SessionDescription* remote_offer,
+      const cricket::Candidates& remote_candidates) {}
+  virtual const cricket::SessionDescription* ProvideAnswer(
+      const cricket::MediaSessionOptions& options) {}
+  virtual void NegotiationDone() {}
+
 
   // Transport related callbacks, override from cricket::BaseSession.
   virtual void OnTransportRequestSignaling(cricket::Transport* transport);
@@ -122,7 +135,7 @@ class WebRtcSession : public cricket::BaseSession,
   void ProcessRemoteMediaChanges(const cricket::SessionDescription* sdesc);
 
  private:
-  PeerConnectionSignaling* pc_signaling_;
+  WebRtcSessionObserver* observer_;
   talk_base::scoped_ptr<cricket::VoiceChannel> voice_channel_;
   talk_base::scoped_ptr<cricket::VideoChannel> video_channel_;
   cricket::ChannelManager* channel_manager_;

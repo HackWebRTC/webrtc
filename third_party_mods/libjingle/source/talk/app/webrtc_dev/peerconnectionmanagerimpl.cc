@@ -165,7 +165,7 @@ PeerConnectionManagerImpl::~PeerConnectionManagerImpl() {
 
 bool PeerConnectionManagerImpl::Initialize() {
   InitMessageData result(false);
-  signaling_thread_->Send(this, MSG_INIT_MANAGER, &result);
+  signaling_thread_ptr_->Send(this, MSG_INIT_MANAGER, &result);
   return result.data();
 }
 
@@ -214,7 +214,7 @@ scoped_refptr<PeerConnection> PeerConnectionManagerImpl::CreatePeerConnection(
     const std::string& configuration,
     PeerConnectionObserver* observer) {
   CreatePeerConnectionParams params(configuration, observer);
-  signaling_thread_->Send(this, MSG_CREATE_PEERCONNECTION, &params);
+  signaling_thread_ptr_->Send(this, MSG_CREATE_PEERCONNECTION, &params);
   return params.peerconnection;
 }
 

@@ -702,6 +702,7 @@
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionsignaling.cc',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionsignaling.h',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/ref_count.h',
+            '<(libjingle_mods)/source/talk/app/webrtc_dev/sessiondescriptionprovider.h'
             '<(libjingle_mods)/source/talk/app/webrtc_dev/streamcollectionimpl.h',            
             '<(libjingle_mods)/source/talk/app/webrtc_dev/videorendererimpl.cc',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/videotrackimpl.cc',
@@ -710,6 +711,7 @@
             '<(libjingle_mods)/source/talk/app/webrtc_dev/webrtc_devicemanager.cc',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/webrtcjson.cc',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/webrtcjson.h',
+            '<(libjingle_mods)/source/talk/app/webrtc_dev/webrtcsessionobserver',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/webrtcsession.cc',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/webrtcsession.h',
           ],

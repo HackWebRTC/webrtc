@@ -58,15 +58,14 @@ static const std::string kRtcpVideoChannelStr = "video_rtcp";
 WebRtcSession::WebRtcSession(cricket::ChannelManager* channel_manager,
                              talk_base::Thread* signaling_thread,
                              talk_base::Thread* worker_thread,
-                             cricket::PortAllocator* port_allocator,
-                             PeerConnectionSignaling* pc_signaling)
-    : cricket::BaseSession(signaling_thread, worker_thread, port_allocator,
+                             cricket::PortAllocator* port_allocator)
+    : observer_(NULL),
+      cricket::BaseSession(signaling_thread, worker_thread, port_allocator,
                            talk_base::ToString(talk_base::CreateRandomId()),
                            cricket::NS_JINGLE_RTP, true) {
   // TODO(mallinath) - Remove initiator flag from BaseSession. As it's being
   // used only by cricket::Session.
   channel_manager_ = channel_manager;
-  pc_signaling_ = pc_signaling;
 }
 
 WebRtcSession::~WebRtcSession() {
@@ -74,9 +73,6 @@ WebRtcSession::~WebRtcSession() {
 }
 
 bool WebRtcSession::Initialize() {
-  ASSERT(pc_signaling_ != NULL);
-  pc_signaling_->SignalUpdateSessionDescription.connect(
-      this, &WebRtcSession::OnSignalUpdateSessionDescription);
   return CreateChannels();
 }
 
@@ -217,7 +213,8 @@ void WebRtcSession::OnTransportCandidatesReady(
     return;
   InsertTransportCandidates(candidates);
   if (local_candidates_.size() == kAllowedCandidates) {
-    pc_signaling_->Initialize(local_candidates_);
+    if(observer_)
+      observer_->OnCandidatesReady(local_candidates_);
     // TODO(mallinath) - Remove signal when a new interface added for
     // PC signaling.
     SignalCandidatesReady(this, local_candidates_);
