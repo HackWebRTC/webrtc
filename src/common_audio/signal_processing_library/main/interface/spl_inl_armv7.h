@@ -45,6 +45,14 @@ static __inline WebRtc_Word32 WEBRTC_SPL_MUL_16_16(WebRtc_Word16 a,
   return tmp;
 }
 
+static __inline int32_t WebRtc_MulAccumW16(int16_t a,
+                                          int16_t b,
+                                          int32_t c) {
+  int32_t tmp = 0;
+  __asm__("smlabb %0, %1, %2, %3":"=r"(tmp):"r"(a), "r"(b), "r"(c));
+  return tmp;
+}
+
 static __inline WebRtc_Word16 WebRtcSpl_AddSatW16(WebRtc_Word16 a,
                                                   WebRtc_Word16 b) {
   WebRtc_Word32 s_sum;

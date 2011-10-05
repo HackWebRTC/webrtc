@@ -148,6 +148,12 @@ static __inline int WebRtcSpl_NormW16(WebRtc_Word16 a) {
   return zeros;
 }
 
+static __inline int32_t WebRtc_MulAccumW16(int16_t a,
+                                          int16_t b,
+                                          int32_t c) {
+  return (a * b + c);
+}
+
 #endif  // WEBRTC_ARCH_ARM_V7A
 
 #endif  // WEBRTC_SPL_SPL_INL_H_
