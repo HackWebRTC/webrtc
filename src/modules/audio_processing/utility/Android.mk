@@ -19,11 +19,8 @@ LOCAL_MODULE_TAGS := optional
 LOCAL_SRC_FILES := \
     fft4g.c \
     ring_buffer.c \
-    delay_estimator.c
-# Remove delay_estimator_float.c for now
-# because log2 is not supported on Android
-# will implement it and add this file back when it's needed
-#    delay_estimator_float.c
+    delay_estimator.c \
+    delay_estimator_float.c
 
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \
