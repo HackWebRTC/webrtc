@@ -306,7 +306,9 @@ WebRtc_Word16 NETEQTEST_NetEQClass::recOut(WebRtc_Word16 *outData, void *msInfo,
 
         if (newfsmult != _fsmult)
         {
+#ifdef NETEQTEST_PRINT_WARNINGS
             printf("Warning: output sample rate changed\n");
+#endif  // NETEQTEST_PRINT_WARNINGS
             _fsmult = newfsmult;
         }
     }

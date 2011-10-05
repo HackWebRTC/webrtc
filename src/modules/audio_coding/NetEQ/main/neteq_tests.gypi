@@ -7,20 +7,17 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 {
-  'includes': [
-    '../../../../../common_settings.gypi',
-  ],
   'targets': [
     {
       'target_name': 'neteq_unittest',
       'type': 'executable',
       'dependencies': [
-        'neteq.gyp:NetEq',
-        'neteq.gyp:NetEqTestTools',
-        '../../../../../../testing/gtest.gyp:gtest',
+        'NetEq',
+        'NetEqTestTools',
+        '<(webrtc_root)/../testing/gtest.gyp:gtest',
       ],
       'sources': [
-        'neteq_api_unittest.cc',
+        'source/neteq_api_unittest.cc',
       ],
     },
   ],

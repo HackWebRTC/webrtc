@@ -46,6 +46,7 @@
         'audio_coding/codecs/iLBC/ilbc_test.gypi',
         'audio_coding/codecs/iSAC/isac_test.gypi',
         'audio_coding/codecs/iSAC/isacfix_test.gypi',
+        'audio_coding/NetEQ/main/neteq_tests.gypi',
         'audio_processing/main/apm_tests.gypi',
         'rtp_rtcp/source/rtp_rtcp_tests.gypi',
         'rtp_rtcp/test/test_bwe/test_bwe.gypi',
