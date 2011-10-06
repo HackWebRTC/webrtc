@@ -180,13 +180,13 @@ private:    // thread functions
     void RevertCaptureThreadPriority();
     static DWORD WINAPI WSAPICaptureThread(LPVOID context);
     DWORD DoCaptureThread();
-    
+
     static DWORD WINAPI WSAPICaptureThreadPollDMO(LPVOID context);
     DWORD DoCaptureThreadPollDMO();
 
     static DWORD WINAPI WSAPIRenderThread(LPVOID context);
     DWORD DoRenderThread();
-    
+
     static DWORD WINAPI GetCaptureVolumeThread(LPVOID context);
     DWORD DoGetCaptureVolumeThread();
 
@@ -202,11 +202,11 @@ private:
 
 private:
     int SetDMOProperties();
-    
+
     int SetBoolProperty(IPropertyStore* ptrPS,
                         REFPROPERTYKEY key,
                         VARIANT_BOOL value);
-    
+
     int SetVtI4Property(IPropertyStore* ptrPS,
                         REFPROPERTYKEY key,
                         LONG value);
