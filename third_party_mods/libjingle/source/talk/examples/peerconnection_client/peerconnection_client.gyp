@@ -26,12 +26,16 @@
           ],
           'dependencies': [
             '../../../../libjingle.gyp:libjingle_app',
+            '../../../../../../src/modules/modules.gyp:video_capture_module',
+            '../../../../../../src/system_wrappers/source/'
+                'system_wrappers.gyp:system_wrappers',
             # TODO(tommi): Switch to this and remove specific gtk dependency
             # sections below for cflags and link_settings.
             # '<(DEPTH)/build/linux/system.gyp:gtk',
           ],
           'include_dirs': [           
             '../../../',
+            '../../../../../../src', # webrtc modules
             #TODO(perkj): Remove when this project is in the correct folder.
              '../../../../../../third_party/libjingle/source/',
           ],

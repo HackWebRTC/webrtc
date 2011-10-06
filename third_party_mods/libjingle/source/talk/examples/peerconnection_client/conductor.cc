@@ -12,6 +12,7 @@
 
 #include <utility>
 
+#include "modules/video_capture/main/source/video_capture_impl.h"
 #include "talk/examples/peerconnection_client/defaults.h"
 #include "talk/base/common.h"
 #include "talk/base/logging.h"
@@ -213,12 +214,35 @@ void Conductor::ConnectToPeer(int peer_id) {
 
   if (InitializePeerConnection()) {
     peer_id_ = peer_id;
-    main_wnd_->SwitchToStreamingUI();
-    EnsureStreamingUI();
     AddStreams();
   } else {
     main_wnd_->MessageBox("Error", "Failed to initialize PeerConnection", true);
   }
+}
+
+scoped_refptr<webrtc::VideoCaptureModule> Conductor::OpenVideoCaptureDevice() {
+  webrtc::VideoCaptureModule::DeviceInfo* device_info(
+      webrtc::videocapturemodule::VideoCaptureImpl::CreateDeviceInfo(0));
+  scoped_refptr<webrtc::VideoCaptureModule> video_device;
+
+  const size_t kMaxDeviceNameLength = 128;
+  const size_t kMaxUniqueIdLength = 256;
+  uint8 device_name[kMaxDeviceNameLength];
+  uint8 unique_id[kMaxUniqueIdLength];
+
+  const size_t device_count = device_info->NumberOfDevices();
+  for (size_t i = 0; i < device_count; ++i) {
+    // Get the name of the video capture device.
+    device_info->GetDeviceName(i, device_name, kMaxDeviceNameLength, unique_id,
+        kMaxUniqueIdLength);
+    // Try to open this device.
+    video_device =
+        webrtc::videocapturemodule::VideoCaptureImpl::Create(0, unique_id);
+    if (video_device.get())
+      break;
+  }
+  webrtc::videocapturemodule::VideoCaptureImpl::DestroyDeviceInfo(device_info);
+  return video_device;
 }
 
 void Conductor::AddStreams() {
@@ -229,7 +253,7 @@ void Conductor::AddStreams() {
       webrtc::CreateLocalAudioTrack(kAudioLabel, NULL));
 
   scoped_refptr<webrtc::LocalVideoTrack> video_track(
-      webrtc::CreateLocalVideoTrack(kVideoLabel, NULL));
+      webrtc::CreateLocalVideoTrack(kVideoLabel, OpenVideoCaptureDevice()));
 
   scoped_refptr<webrtc::VideoRenderer> renderer(webrtc::CreateVideoRenderer(
       main_wnd_->local_renderer()));
@@ -245,6 +269,7 @@ void Conductor::AddStreams() {
   typedef std::pair<std::string, scoped_refptr<webrtc::MediaStream> >
       MediaStreamPair;
   active_streams_.insert(MediaStreamPair(stream->label(), stream));
+  main_wnd_->SwitchToStreamingUI();
 }
 
 void Conductor::DisconnectFromCurrentPeer() {

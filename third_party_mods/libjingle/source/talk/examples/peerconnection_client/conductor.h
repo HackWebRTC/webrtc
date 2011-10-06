@@ -23,6 +23,10 @@
 #include "talk/app/webrtc_dev/peerconnection.h"
 #include "talk/base/scoped_ptr.h"
 
+namespace webrtc {
+class VideoCaptureModule;
+}  // namespace webrtc
+
 namespace cricket {
 class VideoRenderer;
 }  // namespace cricket
@@ -54,6 +58,7 @@ class Conductor
   void DeletePeerConnection();
   void EnsureStreamingUI();
   void AddStreams();
+  scoped_refptr<webrtc::VideoCaptureModule> OpenVideoCaptureDevice();
 
   //
   // PeerConnectionObserver implementation.
