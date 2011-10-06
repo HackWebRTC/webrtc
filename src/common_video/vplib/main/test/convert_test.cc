@@ -87,7 +87,7 @@ int  convert_test(CmdArgs& args)
                                resI420Buffer);
     }
     tticks = clock() - tticks;
-    printf("RGB24->I420 Time(1000): %d\n", tticks);
+    printf("RGB24->I420 Time(1000): %d\n", (int)tticks);
 
     TestRetVal(retVal, width*height*3/2);
     fwrite(resI420Buffer, lengthSourceFrame, 1, outputFile);
@@ -109,9 +109,9 @@ int  convert_test(CmdArgs& args)
     }
     ticks = clock() - ticks;
 #ifndef SCALEOPT
-    fprintf(logFile, "\nConvertI420ToUYVY, before opt: %d\n", ticks);
+    fprintf(logFile, "\nConvertI420ToUYVY, before opt: %d\n", (int)ticks);
 #else
-    fprintf(logFile, "\nConvertI420ToUYVY, after opt: %d\n", ticks);
+    fprintf(logFile, "\nConvertI420ToUYVY, after opt: %d\n", (int)ticks);
 #endif
 
     TestRetVal(retVal, width*height*2);
@@ -150,9 +150,9 @@ int  convert_test(CmdArgs& args)
     }
     ticks = clock() - ticks;
 #ifndef SCALEOPT
-    fprintf(logFile, "\nConvertI420ToYV12, before opt: %d\n", ticks);
+    fprintf(logFile, "\nConvertI420ToYV12, before opt: %d\n", (int)ticks);
 #else
-    fprintf(logFile, "\nConvertI420ToYV12, after opt: %d\n", ticks);
+    fprintf(logFile, "\nConvertI420ToYV12, after opt: %d\n", (int)ticks);
 #endif
     TestRetVal(retVal, width*height*3/2);
     retVal = webrtc::ConvertYV12ToI420(outI420Buffer, width, height,
@@ -195,9 +195,9 @@ int  convert_test(CmdArgs& args)
     }
     ticks = clock() - ticks;
 #ifndef SCALEOPT
-    fprintf(logFile, "\nConvertI420ToYUY2, before opt: %d\n", ticks);
+    fprintf(logFile, "\nConvertI420ToYUY2, before opt: %d\n", (int)ticks);
 #else
-    fprintf(logFile, "\nConvertI420ToYUY2, after opt: %d\n", ticks);
+    fprintf(logFile, "\nConvertI420ToYUY2, after opt: %d\n", (int)ticks);
 #endif
     TestRetVal(retVal, width*height*2);
     ticks = clock();
@@ -208,9 +208,9 @@ int  convert_test(CmdArgs& args)
     }
     ticks = clock() - ticks;
 #ifndef SCALEOPT
-    fprintf(logFile, "\nConvertYUY2ToI420, before opt: %d\n", ticks);
+    fprintf(logFile, "\nConvertYUY2ToI420, before opt: %d\n", (int)ticks);
 #else
-    fprintf(logFile, "\nConvertYUY2ToI420, after opt: %d\n", ticks);
+    fprintf(logFile, "\nConvertYUY2ToI420, after opt: %d\n", (int)ticks);
 #endif
     TestRetVal(retVal, width*height*3/2);
     fwrite(resI420Buffer, lengthSourceFrame, 1, outputFile);

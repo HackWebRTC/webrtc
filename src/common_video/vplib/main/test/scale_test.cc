@@ -83,7 +83,6 @@ void ValidateImage2(WebRtc_Word32 width, WebRtc_Word32 height, WebRtc_UWord8* pt
 void ValidateImage3_2(WebRtc_Word32 width, WebRtc_Word32 height, WebRtc_UWord8* ptrFrame, WebRtc_Word32 offset, WebRtc_Word32 factor)
 {
     WebRtc_Word32 k = 0;
-    bool inc = true;
     WebRtc_Word32 res = offset*factor;
     for (WebRtc_Word32 i = 1; i <= height; i++)
     {
@@ -111,25 +110,6 @@ void ValidateImage1_3(WebRtc_Word32 width, WebRtc_Word32 height, WebRtc_UWord8* 
             assert(ptrFrame[k++] == res);
         }
         res += factor*3;  
-    }
-}
-
-static void VerifyInBounds(const WebRtc_UWord8* ptrImage, const WebRtc_Word32 imageLength, 
-                           const WebRtc_Word32 startOffset, const WebRtc_Word32 endOffset)
-{
-    // Verify that function does not write outside buffer
-    const WebRtc_UWord8* ptrFrameStart = ptrImage - startOffset;
-    const WebRtc_UWord8* ptrFrameEnd   = ptrImage + imageLength;
-
-    // Verify that function does not write outside buffer
-    for (WebRtc_Word32 i = 0; i < startOffset; i++)
-    {
-        assert(ptrFrameStart[i] == 255);
-    }
-
-    for (WebRtc_Word32 i = 0; i < endOffset; i++)
-    {
-        assert(ptrFrameEnd[i] == 255);
     }
 }
 
@@ -201,7 +181,7 @@ scale_test()
     retVal = ScaleI420Up2(width, height + 2, testFrame,length, scW, scH); // width, height > allocated buffer size
     assert(retVal == -1);
     retVal = ScaleI420Up2(width, height, testFrame,length, scW, scH);     // width, height == allocated buffer size, OK
-    assert(retVal == scW * scH * 3 / 2);
+    assert((WebRtc_UWord32) retVal == scW * scH * 3 / 2);
     delete [] testFrame;
 
     testFrame = new WebRtc_UWord8[  length * 4 + startBufferOffset * 2];
@@ -224,7 +204,7 @@ scale_test()
     PrintFrame(testFrame, scaledWidth, scaledHeight, "Output Frame");
 
     // Validate results
-    assert(retVal == scaledWidth * scaledHeight * 3 / 2);
+    assert((WebRtc_UWord32)retVal == scaledWidth * scaledHeight * 3 / 2);
     ptrFrameY = testFrame;
     ptrFrameCb  = ptrFrameY  + scaledWidth*scaledHeight;
     ptrFrameCr  = ptrFrameCb + scaledWidth*scaledHeight/4;
@@ -271,7 +251,7 @@ scale_test()
     retVal = ScaleI420Up3_2(width, height + 2, testFrame,length, scW, scH); // width, height > allocated buffer size
     assert(retVal == -1);
     retVal = ScaleI420Up3_2(width, height, testFrame,length, scW, scH);     // width, height == allocated buffer size, OK
-    assert(retVal == scW * scH * 3 / 2);
+    assert((WebRtc_UWord32)retVal == scW * scH * 3 / 2);
 
     delete [] testFrame;
        
@@ -296,7 +276,7 @@ scale_test()
     PrintFrame(testFrame, scaledWidth, scaledHeight, "Output Frame");
 
     // Validate results
-    assert(retVal == scaledWidth * scaledHeight * 3 / 2);
+    assert((WebRtc_UWord32)retVal == scaledWidth * scaledHeight * 3 / 2);
 
     // Verify that function does not write outside buffer
     ptrFrameY  = testFrame;//imageBuffer.GetBuffer();
@@ -340,7 +320,7 @@ scale_test()
     retVal = ScaleI420Down1_3(width, height + 2, testFrame, length, scW, scH); // width, height > allocated buffer size
     assert(retVal == -1);
     retVal = ScaleI420Down1_3(width, height, testFrame, length, scW, scH);     // width, height == allocated buffer size, ok
-    assert(retVal == scW * scH * 3 / 2);
+    assert((WebRtc_UWord32)retVal == scW * scH * 3 / 2);
     
     delete [] testFrame;
         
@@ -363,7 +343,7 @@ scale_test()
     PrintFrame(testFrame, scaledWidth, scaledHeight, "Output Frame");
 
     // Validate results
-    assert(retVal == scaledWidth * scaledHeight * 3 / 2);
+    assert((WebRtc_UWord32)retVal == scaledWidth * scaledHeight * 3 / 2);
 
     // Verify that function does not write outside buffer
     ptrFrameY  = testFrame;//imageBuffer.GetBuffer();
@@ -520,7 +500,7 @@ scale_test()
             }
 
             // Validate results
-            assert(retVal == scaledWidth * scaledHeight * 3 / 2);
+            assert((WebRtc_UWord32)retVal == scaledWidth * scaledHeight * 3 / 2);
         }
     }
 
