@@ -106,9 +106,6 @@ LocalVideoTrackHandler::LocalVideoTrackHandler(
     VideoTrack* track,
     MediaProviderInterface* provider)
     : VideoTrackHandler(track, provider) {
-  // If the Renderer is already set we want to start it.
-  if (video_track_->GetRenderer().get())
-    OnRendererChanged();
 }
 
 void LocalVideoTrackHandler::OnRendererChanged() {
@@ -124,6 +121,11 @@ void LocalVideoTrackHandler::OnStateChanged(
   LocalVideoTrack* track = static_cast<LocalVideoTrack*>(video_track_.get());
   if (state == VideoTrack::kLive) {
     provider_->SetCaptureDevice(track->ssrc(), track->GetVideoCapture());
+    scoped_refptr<VideoRenderer> renderer(video_track_->GetRenderer());
+    if (renderer.get())
+      provider_->SetLocalRenderer(video_track_->ssrc(), renderer->renderer());
+    else
+      provider_->SetLocalRenderer(video_track_->ssrc(), NULL);
   }
 }
 

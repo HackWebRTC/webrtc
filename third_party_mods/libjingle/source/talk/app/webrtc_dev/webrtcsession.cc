@@ -238,7 +238,14 @@ void WebRtcSession::SetCaptureDevice(uint32 ssrc,
                                      VideoCaptureModule* camera) {
   // should be called from a signaling thread
   ASSERT(signaling_thread()->IsCurrent());
+
+  // TODO(mallinath): Refactor this when there is support for multiple cameras.
+
+  // Register the the VideoCapture Module.
   video_channel_->SetCaptureDevice(ssrc, camera);
+
+  // Actually associate the video capture module with the ViE channel.
+  channel_manager_->SetVideoOptions("");
 }
 
 void WebRtcSession::SetLocalRenderer(uint32 ssrc,
@@ -250,7 +257,10 @@ void WebRtcSession::SetLocalRenderer(uint32 ssrc,
 void WebRtcSession::SetRemoteRenderer(uint32 ssrc,
                                       cricket::VideoRenderer* renderer) {
   ASSERT(signaling_thread()->IsCurrent());
-  video_channel_->SetRenderer(ssrc, renderer);
+
+  //TODO(mallinath): Only the ssrc = 0 is supported at the moment.
+  // Only one channel.
+  video_channel_->SetRenderer(0, renderer);
 }
 
 const cricket::SessionDescription* WebRtcSession::ProvideOffer(
