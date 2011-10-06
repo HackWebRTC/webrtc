@@ -52,6 +52,8 @@
         'rtp_rtcp/test/test_bwe/test_bwe.gypi',
         'rtp_rtcp/test/testFec/test_fec.gypi',
         'video_coding/main/source/video_coding_test.gypi',
+        'video_coding/codecs/test/video_codecs_test_framework.gypi',
+        'video_coding/codecs/tools/video_codecs_tools.gypi',
         'video_processing/main/test/vpm_tests.gypi',
       ], # includes
     }], # build_with_chromium
