@@ -8,18 +8,18 @@
 
 {
   'includes': [
-    '../common_settings.gypi', # Common settings
+    '../build/common.gypi',
     'main/source/video_engine_core.gypi',
   ],
 
-  # Test targets, excluded when building with chromium.
+  # Test targets, excluded when building with Chromium.
   'conditions': [
     ['build_with_chromium==0', {
       'includes': [
         'main/test/AutoTest/vie_auto_test.gypi',
         'main/test/WindowsTest/windowstest.gypi',
-      ], # includes
-    }], # build_with_chromium
-  ], # conditions   
+      ],
+    }],
+  ],
 }
 

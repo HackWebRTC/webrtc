@@ -7,35 +7,10 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 {
-  'variables': {
-    'autotest_name': 'voe_auto_test',
-  },
   'targets': [
-    {
-      'target_name': 'merged_lib_voice',
-      'type': 'none',
-      'dependencies': [
-        '<(autotest_name)',
-      ],
-      'actions': [
-        {
-          'variables': {
-            'output_lib_name': 'webrtc_voice_engine',
-            'output_lib': '<(PRODUCT_DIR)/<(STATIC_LIB_PREFIX)<(output_lib_name)_<(OS)<(STATIC_LIB_SUFFIX)',
-          },
-          'action_name': 'merge_libs',
-          'inputs': ['<(PRODUCT_DIR)/<(EXECUTABLE_PREFIX)<(autotest_name)<(EXECUTABLE_SUFFIX)'],
-          'outputs': ['<(output_lib)'],
-          'action': ['python',
-                     '../build/merge_libs.py',
-                     '<(PRODUCT_DIR)',
-                     '<(output_lib)'],
-        },
-      ],
-    },
     # Auto test - command line test for all platforms
     {
-      'target_name': '<(autotest_name)',
+      'target_name': 'voe_auto_test',
       'type': 'executable',
       'dependencies': [
         'voice_engine_core',
@@ -59,13 +34,6 @@
         'auto_test/voe_test_interface.h',
         'auto_test/voe_unit_test.cc',
         'auto_test/voe_unit_test.h',
-      ],
-      'conditions': [
-        ['OS=="win"', {
-          'dependencies': [
-            'voice_engine.gyp:voe_ui_win_test',
-          ],
-        }],
       ],
     },
     {

@@ -20,11 +20,8 @@
         #'src/common_video/common_video.gyp:*',
         #'src/modules/modules.gyp:*',
         #'src/system_wrappers/source/system_wrappers.gyp:*',
-        # TODO(andrew): move the merge_lib targets to a private gyp so we can
-        # target "*" in these.
-        'src/video_engine/video_engine.gyp:vie_auto_test',
-        'src/voice_engine/voice_engine.gyp:voe_auto_test',
-        'src/voice_engine/voice_engine.gyp:voe_cmd_test',
+        'src/video_engine/video_engine.gyp:*',
+        'src/voice_engine/voice_engine.gyp:*',
       ],
     },
     # TODO(andrew): move peerconnection to its own gyp.

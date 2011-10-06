@@ -8,16 +8,16 @@
 
 {
   'includes': [
-    '../common_settings.gypi', # Common settings
+    '../build/common.gypi',
     'main/source/voice_engine_core.gypi',
   ],
 
-  # Test targets, excluded when building with chromium.
+  # Test targets, excluded when building with Chromium.
   'conditions': [
     ['build_with_chromium==0', {
       'includes': [
         'main/test/voice_engine_tests.gypi',
-      ], # includes
-    }], # build_with_chromium
-  ], # conditions
+      ],
+    }],
+  ],
 }

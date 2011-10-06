@@ -7,34 +7,9 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 {
-  'variables': {
-    'autotest_name': 'vie_auto_test',
-  },
   'targets': [
     {
-      'target_name': 'merged_lib',
-      'type': 'none',
-      'dependencies': [
-        '<(autotest_name)',
-      ],
-      'actions': [
-        {
-          'variables': {
-            'output_lib_name': 'webrtc',
-            'output_lib': '<(PRODUCT_DIR)/<(STATIC_LIB_PREFIX)<(output_lib_name)_<(OS)<(STATIC_LIB_SUFFIX)',
-          },
-          'action_name': 'merge_libs',
-          'inputs': ['<(PRODUCT_DIR)/<(EXECUTABLE_PREFIX)<(autotest_name)<(EXECUTABLE_SUFFIX)'],
-          'outputs': ['<(output_lib)'],
-          'action': ['python',
-                     '../build/merge_libs.py',
-                     '<(PRODUCT_DIR)',
-                     '<(output_lib)'],
-        },
-      ],
-    },
-    {
-      'target_name': '<(autotest_name)',
+      'target_name': 'vie_auto_test',
       'type': 'executable',
       'dependencies': [
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
