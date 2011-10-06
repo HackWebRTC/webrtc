@@ -21,9 +21,7 @@
 #endif
 
 #ifndef _WIN32
-#ifndef WEBRTC_NO_AUTO_PTR
 #include <memory>
-#endif
 #endif
 
 namespace webrtc {
@@ -61,15 +59,9 @@ UdpSocketManager* UdpSocketManager::StaticInstance(
 
 #ifndef _WIN32
 
-#ifdef WEBRTC_NO_AUTO_PTR
-    // TODO (pwestin): crtiSect is never reclaimed. Fix memory leak.
-    static CriticalSectionWrapper* crtiSect(
-        CriticalSectionWrapper::CreateCriticalSection());
-#else
     static std::auto_ptr<CriticalSectionWrapper> crtiSect =
         std::auto_ptr<CriticalSectionWrapper>(
             CriticalSectionWrapper::CreateCriticalSection());
-#endif
     CriticalSectionScoped lock(*crtiSect);
 
     if(inc == kUdpSocketManagerInc)

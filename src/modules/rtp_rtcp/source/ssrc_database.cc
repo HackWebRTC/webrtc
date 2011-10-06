@@ -44,9 +44,7 @@
     #include <string.h>
     #include <time.h>
     #include <sys/time.h>
-    #ifndef WEBRTC_NO_AUTO_PTR    // are we allowed to use auto_ptrs?
-        #include <memory>       // definition of auto_ptr
-    #endif
+    #include <memory>       // definition of auto_ptr
 #endif
 
 namespace webrtc {
@@ -60,14 +58,8 @@ SSRCDatabase::StaticInstance(SsrcDatabaseCount inc)
     SsrcDatabaseCreate state = kSsrcDbExist;
 
 #ifndef _WIN32
-#ifdef WEBRTC_NO_AUTO_PTR
-    // since we only have InterlockedExchange on windows and no auto_ptrs, this will result in a memory leak but we accept it for now
-    static CriticalSectionWrapper* crtiSect(CriticalSectionWrapper::CreateCriticalSection());
-    CriticalSectionScoped lock(*crtiSect);
-#else
     static std::auto_ptr<CriticalSectionWrapper> crtiSect = std::auto_ptr<CriticalSectionWrapper>(CriticalSectionWrapper::CreateCriticalSection());
     CriticalSectionScoped lock(*crtiSect);
-#endif
 
     if(inc == kSsrcDbInc)
     {
