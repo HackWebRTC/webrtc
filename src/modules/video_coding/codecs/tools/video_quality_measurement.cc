@@ -451,7 +451,7 @@ int main(int argc, char* argv[]) {
   decoder.Release();
 
   // Verify statistics are correct:
-  assert(frame_number == stats.stats_.size());
+  assert(frame_number == static_cast<int>(stats.stats_.size()));
 
   // Close the files before we start using them for SSIM/PSNR calculations.
   file_handler.Close();
