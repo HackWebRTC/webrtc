@@ -30,6 +30,8 @@ enum ExcludeFrameTypes {
   // sequence they occur.
   kExcludeAllKeyFrames
 };
+// Returns a string representation of the enum value.
+const char* ExcludeFrameTypesToStr(ExcludeFrameTypes e);
 
 // Test configuration for a test run
 struct TestConfig {
@@ -37,7 +39,7 @@ struct TestConfig {
     : name(""), description(""), test_number(0),
       input_filename(""), output_filename(""), output_dir("out"),
       networking_config(), exclude_frame_types(kExcludeOnlyFirstKeyFrame),
-      use_single_core(false) {
+      frame_length_in_bytes(-1), use_single_core(false), keyframe_interval(0) {
   };
 
   // Name of the test. This is purely metadata and does not affect
@@ -70,6 +72,11 @@ struct TestConfig {
   // from packet loss. Default: kExcludeOnlyFirstKeyFrame.
   ExcludeFrameTypes exclude_frame_types;
 
+  // The length of a single frame of the input video file. This value is
+  // calculated out of the width and height according to the video format
+  // specification. Must be set before processing.
+  int frame_length_in_bytes;
+
   // Force the encoder and decoder to use a single core for processing.
   // Using a single core is necessary to get a deterministic behavior for the
   // encoded frames - using multiple cores will produce different encoded frames
@@ -79,10 +86,22 @@ struct TestConfig {
   // Default: false.
   bool use_single_core;
 
+  // If set to a value >0 this setting forces the encoder to create a keyframe
+  // every Nth frame. Note that the encoder may create a keyframe in other
+  // locations in addition to the interval that is set using this parameter.
+  // Forcing key frames may also affect encoder planning optimizations in
+  // a negative way, since it will suddenly be forced to produce an expensive
+  // key frame.
+  // Default: 0.
+  int keyframe_interval;
+
   // The codec settings to use for the test (target bitrate, video size,
   // framerate and so on)
   webrtc::VideoCodec codec_settings;
 };
+
+// Returns a string representation of the enum value.
+const char* VideoCodecTypeToStr(webrtc::VideoCodecType e);
 
 // Handles encoding/decoding of video using the VideoEncoder/VideoDecoder
 // interfaces. This is done in a sequential manner in order to be able to

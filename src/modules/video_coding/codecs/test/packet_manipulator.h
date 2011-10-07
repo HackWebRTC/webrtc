@@ -27,6 +27,8 @@ enum PacketLossMode {
   // length.
   kBurst
 };
+// Returns a string representation of the enum value.
+const char* PacketLossModeToStr(PacketLossMode e);
 
 // Contains configurations related to networking and simulation of
 // scenarios caused by network interference.

@@ -73,5 +73,16 @@ int PacketManipulatorImpl::ManipulatePackets(
   return nbr_packets_dropped;
 }
 
+const char* PacketLossModeToStr(PacketLossMode e) {
+  switch (e) {
+    case kUniform:
+      return "Uniform";
+    case kBurst:
+      return "Burst";
+    default:
+      assert(false);
+  }
+}
+
 }  // namespace test
 }  // namespace webrtcc

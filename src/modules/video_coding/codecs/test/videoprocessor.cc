@@ -132,7 +132,15 @@ bool VideoProcessorImpl::ProcessFrame(int frame_number) {
     encode_start_ = TickTime::Now();
     // Use the frame number as "timestamp" to identify frames
     source_frame_._timeStamp = frame_number;
-    WebRtc_Word32 encode_result = encoder_->Encode(source_frame_);
+
+    // Decide if we're going to force a keyframe:
+    VideoFrameType frame_type = kDeltaFrame;
+    if (config_.keyframe_interval > 0 &&
+        frame_number % config_.keyframe_interval == 0) {
+      frame_type = kKeyFrame;
+    }
+    WebRtc_Word32 encode_result = encoder_->Encode(source_frame_, NULL,
+                                                   frame_type);
     if (encode_result != WEBRTC_VIDEO_CODEC_OK) {
       fprintf(stderr, "Failed to encode frame %d, return code: %d\n",
               frame_number, encode_result);
@@ -221,6 +229,40 @@ int VideoProcessorImpl::GetElapsedTimeMicroseconds(
   assert(encode_time <
          static_cast<unsigned int>(std::numeric_limits<int>::max()));
   return static_cast<int>(encode_time);
+}
+
+const char* ExcludeFrameTypesToStr(ExcludeFrameTypes e) {
+  switch (e) {
+    case kExcludeOnlyFirstKeyFrame:
+      return "ExcludeOnlyFirstKeyFrame";
+    case kExcludeAllKeyFrames:
+      return "ExcludeAllKeyFrames";
+    default:
+      assert(false);
+  }
+}
+
+const char* VideoCodecTypeToStr(webrtc::VideoCodecType e) {
+  switch (e) {
+    case kVideoCodecH263:
+      return "H263";
+    case kVideoCodecH264:
+      return "H264";
+    case kVideoCodecVP8:
+      return "VP8";
+    case kVideoCodecMPEG4:
+      return "MPEG4";
+    case kVideoCodecI420:
+      return "I420";
+    case kVideoCodecRED:
+      return "RED";
+    case kVideoCodecULPFEC:
+      return "ULPFEC";
+    case kVideoCodecUnknown:
+      return "Unknown";
+    default:
+      assert(false);
+  }
 }
 
 // Callbacks
