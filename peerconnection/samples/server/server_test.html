@@ -9,6 +9,7 @@ var localName;
 var server;
 var my_id = -1;
 var other_peers = {};
+var message_counter = 0;
 
 function trace(txt) {
   var elem = document.getElementById("debug");
@@ -23,14 +24,19 @@ function handleServerNotification(data) {
 }
 
 function handlePeerMessage(peer_id, data) {
-  trace("Message from '" + other_peers[peer_id] + "': " + data);
+  ++message_counter;
+  var str = "Message from '" + other_peers[peer_id] + "'&nbsp;";
+  str += "<span id='toggle_" + message_counter + "' onclick='toggleMe(this);' ";
+  str += "style='cursor: pointer'>+</span><br>";
+  str += "<blockquote id='msg_" + message_counter + "' style='display:none'>";
+  str += data + "</blockquote>";
+  trace(str);
   if (document.getElementById("loopback").checked)
     sendToPeer(peer_id, data);
 }
 
 function GetIntHeader(r, name) {
   var val = r.getResponseHeader(name);
-  trace("header value: " + val);
   return val != null && val.length ? parseInt(val) : -1;
 }
 
@@ -126,7 +132,8 @@ function sendToPeer(peer_id, data) {
     return;
   }
   var r = new XMLHttpRequest();
-  r.open("POST", server + "/message?peer_id=" + my_id + "&to=" + peer_id, false);
+  r.open("POST", server + "/message?peer_id=" + my_id + "&to=" + peer_id,
+         false);
   r.setRequestHeader("Content-Type", "text/plain");
   r.send(data);
   r = null;
@@ -182,21 +189,37 @@ function send() {
   }
 }
 
+function toggleMe(obj) {
+  var id = obj.id.replace("toggle", "msg");
+  var t = document.getElementById(id);
+  if (obj.innerText == "+") {
+    obj.innerText = "-";
+    t.style.display = "block";
+  } else {
+    obj.innerText = "+";
+    t.style.display = "none";
+  }
+}
+
 </script>
 
 </head>
 <body>
-
 Server: <input type="text" id="server" value="http://localhost:8888" /><br>
-<input type="checkbox" id="loopback"/> Loopback (just send received messages right back)<br>
+<input type="checkbox" id="loopback" checked="checked"/> Loopback (just send
+received messages right back)<br>
 Your name: <input type="text" id="local" value="my_name"/>
 <button id="connect" onclick="connect();">Connect</button>
-<button disabled="true" id="disconnect" onclick="disconnect();">Disconnect</button><br>
+<button disabled="true" id="disconnect"
+        onclick="disconnect();">Disconnect</button>
+<br>
 <table><tr><td>
 Target peer id: <input type="text" id="peer_id" size="3"/></td><td>
 Message: <input type="text" id="message"/></td><td>
-<button disabled="true" id="send" onclick="send();">Send</button></td></tr></table>
-<button onclick="document.getElementById('debug').innerHTML='';">Clear log</button>
+<button disabled="true" id="send" onclick="send();">Send</button>
+</td></tr></table>
+<button onclick="document.getElementById('debug').innerHTML='';">
+Clear log</button>
 
 <pre id="debug">
 </pre>
