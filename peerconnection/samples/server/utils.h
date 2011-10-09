@@ -18,5 +18,6 @@
 #endif
 
 std::string int2str(int i);
+std::string size_t2str(size_t i);
 
 #endif  // PEERCONNECTION_SAMPLES_SERVER_UTILS_H_

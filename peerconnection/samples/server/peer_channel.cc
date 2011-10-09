@@ -228,8 +228,8 @@ bool PeerChannel::AddMember(DataSocket* ds) {
   HandleDeliveryFailures(&failures);
   members_.push_back(new_guy);
 
-  printf("New member added (total=%zu): %s\n",
-      members_.size(), new_guy->name().c_str());
+  printf("New member added (total=%s): %s\n",
+      size_t2str(members_.size()).c_str(), new_guy->name().c_str());
 
   // Let the newly connected peer know about other members of the channel.
   std::string content_type;
@@ -261,7 +261,7 @@ void PeerChannel::OnClosing(DataSocket* ds) {
         break;
     }
   }
-  printf("Total connected: %zu\n", members_.size());
+  printf("Total connected: %s\n", size_t2str(members_.size()).c_str());
 }
 
 void PeerChannel::CheckForTimeout() {
