@@ -13,25 +13,11 @@
  *
  */
 
-#include "vie_autotest.h"
-#include "vie_autotest_defines.h"
-#include "vie_autotest_main.h"
-#include "vie_codec.h"
-#include "voe_codec.h"
+#include "vie_window_creator.h"
+#include "vie_autotest_window_manager_interface.h"
 
-#if defined(WIN32)
-    #include "vie_autotest_windows.h"
-    #include <tchar.h>
-    #include <ShellAPI.h> //ShellExecute
-#elif defined(WEBRTC_MAC_INTEL)
-    #if defined(COCOA_RENDERING)
-    #include "vie_autotest_mac_cocoa.h"
-#elif defined(CARBON_RENDERING)
-    #include "vie_autotest_mac_carbon.h"
-#endif
-#elif defined(WEBRTC_LINUX)
-    #include "vie_autotest_linux.h"
-#endif
+#include "vie_autotest.h"
+#include "vie_autotest_main.h"
 
 ViEAutoTestMain::ViEAutoTestMain() :
     _answers(),
@@ -42,23 +28,10 @@ ViEAutoTestMain::ViEAutoTestMain() :
 
 bool ViEAutoTestMain::BeginOSIndependentTesting()
 {
-    // Create platform dependent render windows
+    // Create the windows
+    ViEWindowCreator windowCreator;
     ViEAutoTestWindowManagerInterface* windowManager =
-        new ViEAutoTestWindowManager();
-
-#if (defined(_WIN32))
-    TCHAR window1Title[1024] = _T("ViE Autotest Window 1");
-    TCHAR window2Title[1024] = _T("ViE Autotest Window 2");
-#else
-    char window1Title[1024] = "ViE Autotest Window 1";
-    char window2Title[1024] = "ViE Autotest Window 2";
-#endif
-
-    AutoTestRect window1Size(352, 288, 600, 100);
-    AutoTestRect window2Size(352, 288, 1000, 100);
-    windowManager->CreateWindows(window1Size, window2Size, window1Title,
-                                 window2Title);
-    windowManager->SetTopmostWindow();
+        windowCreator.CreateTwoWindows();
 
     // Create the test cases
     ViEAutoTest vieAutoTest(windowManager->GetWindow1(),
@@ -289,7 +262,7 @@ bool ViEAutoTestMain::BeginOSIndependentTesting()
         }
     } while (testType != 0);
 
-    windowManager->TerminateWindows();
+    windowCreator.TerminateWindows();
 
     if (testErrors)
     {
@@ -305,8 +278,6 @@ bool ViEAutoTestMain::BeginOSIndependentTesting()
     char c;
     while ((c = getchar()) != '\n' && c != EOF)
         /* discard */;
-
-    delete windowManager;
 
     return true;
 }
