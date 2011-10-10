@@ -173,7 +173,7 @@ int ViEAutoTest::ViERenderStandardTest()
     _vrm1 = NULL;
     _vrm1 = webrtc::VideoRender::CreateVideoRender(
         4563, _window1, true, _renderType);
-    numberOfErrors += ViETest::TestError(_vrm1, "ERROR: %s at line %d",
+    numberOfErrors += ViETest::TestError(_vrm1 != NULL, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
     error = ViE.ptrViERender->RegisterVideoRenderModule(*_vrm1);
@@ -212,7 +212,7 @@ int ViEAutoTest::ViERenderStandardTest()
     _vrm1 = NULL;
     _vrm1 = webrtc::VideoRender::CreateVideoRender(
         4561, _window1, false, _renderType);
-    numberOfErrors += ViETest::TestError(_vrm1, "ERROR: %s at line %d",
+    numberOfErrors += ViETest::TestError(_vrm1 != NULL, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 #endif
 
@@ -372,7 +372,7 @@ int ViEAutoTest::ViERenderExtendedTest()
     _vrm1 = NULL;
     _vrm1 = webrtc::VideoRender::CreateVideoRender(
         4563, _window1, true, _renderType);
-    numberOfErrors += ViETest::TestError(_vrm1, "ERROR: %s at line %d",
+    numberOfErrors += ViETest::TestError(_vrm1 != NULL, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
     error = ViE.ptrViERender->RegisterVideoRenderModule(*_vrm1);
@@ -414,7 +414,7 @@ int ViEAutoTest::ViERenderExtendedTest()
     _vrm1 = NULL;
     _vrm1 = webrtc::VideoRender::CreateVideoRender(4564, NULL, false,
                                                    _renderType);
-    numberOfErrors += ViETest::TestError(_vrm1, "ERROR: %s at line %d",
+    numberOfErrors += ViETest::TestError(_vrm1 != NULL, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
     error = ViE.ptrViERender->RegisterVideoRenderModule(*_vrm1);
@@ -450,7 +450,7 @@ int ViEAutoTest::ViERenderExtendedTest()
     _vrm1 = NULL;
     _vrm1 = webrtc::VideoRender::CreateVideoRender(4561, _window1, false,
                                                    _renderType);
-    numberOfErrors += ViETest::TestError(_vrm1, "ERROR: %s at line %d",
+    numberOfErrors += ViETest::TestError(_vrm1 != NULL, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
     tbCapture.Disconnect(tbChannel.videoChannel);
