@@ -30,7 +30,8 @@ VCMDecodedFrameCallback::~VCMDecodedFrameCallback()
     delete &_critSect;
 }
 
-void VCMDecodedFrameCallback::SetUserReceiveCallback(VCMReceiveCallback* receiveCallback)
+void VCMDecodedFrameCallback::SetUserReceiveCallback(
+    VCMReceiveCallback* receiveCallback)
 {
     CriticalSectionScoped cs(_critSect);
     _receiveCallback = receiveCallback;
@@ -38,18 +39,27 @@ void VCMDecodedFrameCallback::SetUserReceiveCallback(VCMReceiveCallback* receive
 
 WebRtc_Word32 VCMDecodedFrameCallback::Decoded(RawImage& decodedImage)
 {
+    // TODO(holmer): We should improve this so that we can handle multiple
+    // callbacks from one call to Decode().
     CriticalSectionScoped cs(_critSect);
-    VCMFrameInformation* frameInfo = static_cast<VCMFrameInformation*>(_timestampMap.Pop(decodedImage._timeStamp));
+    VCMFrameInformation* frameInfo = static_cast<VCMFrameInformation*>(
+        _timestampMap.Pop(decodedImage._timeStamp));
     if (frameInfo == NULL)
     {
+        // The map should never be empty or full if this callback is called.
         return WEBRTC_VIDEO_CODEC_ERROR;
     }
 
-    WebRtc_Word32 ret = _timing.StopDecodeTimer(decodedImage._timeStamp, frameInfo->decodeStartTimeMs, VCMTickTime::MillisecondTimestamp());
+    _timing.StopDecodeTimer(
+        decodedImage._timeStamp,
+        frameInfo->decodeStartTimeMs,
+        VCMTickTime::MillisecondTimestamp());
 
     if (_receiveCallback != NULL)
     {
-        _frame.Swap(decodedImage._buffer, decodedImage._length, decodedImage._size);
+        _frame.Swap(decodedImage._buffer,
+                    decodedImage._length,
+                    decodedImage._size);
         _frame.SetWidth(decodedImage._width);
         _frame.SetHeight(decodedImage._height);
         _frame.SetTimeStamp(decodedImage._timeStamp);
@@ -58,18 +68,18 @@ WebRtc_Word32 VCMDecodedFrameCallback::Decoded(RawImage& decodedImage)
         WebRtc_Word32 callbackReturn = _receiveCallback->FrameToRender(_frame);
         if (callbackReturn < 0)
         {
-            return callbackReturn;
+            WEBRTC_TRACE(webrtc::kTraceDebug,
+                         webrtc::kTraceVideoCoding,
+                         -1,
+                         "Render callback returned error: %d", callbackReturn);
         }
-    }
-    if (ret < 0)
-    {
-        return ret;
     }
     return WEBRTC_VIDEO_CODEC_OK;
 }
 
 WebRtc_Word32
-VCMDecodedFrameCallback::ReceivedDecodedReferenceFrame(const WebRtc_UWord64 pictureId)
+VCMDecodedFrameCallback::ReceivedDecodedReferenceFrame(
+    const WebRtc_UWord64 pictureId)
 {
     CriticalSectionScoped cs(_critSect);
     if (_receiveCallback != NULL)
@@ -125,7 +135,9 @@ VCMGenericDecoder::~VCMGenericDecoder()
 {
 }
 
-WebRtc_Word32 VCMGenericDecoder::InitDecode(const VideoCodec* settings, WebRtc_Word32 numberOfCores, bool requireKeyFrame)
+WebRtc_Word32 VCMGenericDecoder::InitDecode(const VideoCodec* settings,
+                                            WebRtc_Word32 numberOfCores,
+                                            bool requireKeyFrame)
 {
     _requireKeyFrame = requireKeyFrame;
     _keyFrameDecoded = false;
@@ -149,9 +161,10 @@ WebRtc_Word32 VCMGenericDecoder::Decode(const VCMEncodedFrame& frame)
     _frameInfos[_nextFrameInfoIdx].renderTimeMs = frame.RenderTimeMs();
     _callback->Map(frame.TimeStamp(), &_frameInfos[_nextFrameInfoIdx]);
 
-    WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, VCMId(_id),
-               "Decoding timestamp %u",
-               frame.TimeStamp());
+    WEBRTC_TRACE(webrtc::kTraceDebug,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "Decoding timestamp %u", frame.TimeStamp());
 
     _nextFrameInfoIdx = (_nextFrameInfoIdx + 1) % kDecoderFrameMemoryLength;
 
@@ -166,6 +179,12 @@ WebRtc_Word32 VCMGenericDecoder::Decode(const VCMEncodedFrame& frame)
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCoding, VCMId(_id), "Decoder error: %d\n", ret);
         _callback->Pop(frame.TimeStamp());
         return ret;
+    }
+    else if (ret == WEBRTC_VIDEO_CODEC_NO_OUTPUT ||
+             ret == WEBRTC_VIDEO_CODEC_REQUEST_SLI)
+    {
+        // No output
+        _callback->Pop(frame.TimeStamp());
     }
     // Update the key frame decoded variable so that we know whether or not we've decoded a key frame since reset.
     _keyFrameDecoded = (frame.FrameType() == kVideoFrameKey || frame.FrameType() == kVideoFrameGolden);

@@ -835,9 +835,6 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
             return WEBRTC_VIDEO_CODEC_ERROR;
         }
         img = vpx_codec_get_frame(_decoder, &iter);
-        ret = ReturnFrame(img, inputImage._timeStamp);
-        if (ret != 0)
-            return ret;
         iter = NULL;
     }
 
@@ -966,7 +963,7 @@ VP8Decoder::ReturnFrame(const vpx_image_t* img, WebRtc_UWord32 timeStamp)
     if (img == NULL)
     {
         // Decoder OK and NULL image => No show frame
-        return WEBRTC_VIDEO_CODEC_OK;
+        return WEBRTC_VIDEO_CODEC_NO_OUTPUT;
     }
 
     // Allocate memory for decoded image

@@ -199,7 +199,7 @@ VCMTiming::StopDecodeTimer(WebRtc_UWord32 timeStamp,
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCoding, VCMId(_vcmId, _timingId),
             "Codec timer error: %d", timeDiffMs);
-        return timeDiffMs;
+        assert(false);
     }
 
     if (_master)

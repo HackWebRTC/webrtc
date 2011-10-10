@@ -343,7 +343,10 @@ VCMFrameBuffer::RestructureFrameInformation()
     PrepareForDecode();
     _frameType = ConvertFrameType(_sessionInfo.FrameType());
     _completeFrame = _sessionInfo.IsSessionComplete();
-    _missingFrame = _sessionInfo.PreviousFrameLoss();
+    // TODO(holmer): This bit is disabled for now since we can't tell whether
+    // we have had a full frame loss or if we've just lost an FEC/empty packet.
+    // _missingFrame = _sessionInfo.PreviousFrameLoss();
+    _missingFrame = false;
 }
 
 WebRtc_Word32
