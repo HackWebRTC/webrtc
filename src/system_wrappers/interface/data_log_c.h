@@ -18,7 +18,7 @@
 #define SRC_SYSTEM_WRAPPERS_INTERFACE_DATA_LOG_C_H_
 
 #include <stddef.h>  /* size_t */
-#include <stdint.h>
+#include "common_types.h"
 
 #ifdef __cplusplus
 extern "C" {
