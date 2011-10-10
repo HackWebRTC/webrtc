@@ -11,7 +11,9 @@
 #include <map>
 #include <string>
 
-#include "data_log.h"
+#include "system_wrappers/interface/data_log.h"
+#include "system_wrappers/interface/data_log_c.h"
+#include "system_wrappers/source/data_log_c_helpers_unittest.h"
 #include "gtest/gtest.h"
 
 using ::webrtc::DataLog;
@@ -271,4 +273,33 @@ TEST(TestDataLog, VerifyMultipleTables) {
     ASSERT_EQ(DataLogParser::VerifyTable(table, expected), 0);
     fclose(table);
   }
+}
+
+TEST(TestDataLogCWrapper, VerifyCWrapper) {
+  // Simply call all C wrapper log functions through the C helper unittests.
+  // Main purpose is to make sure that the linkage is correct.
+
+  EXPECT_EQ(0, WebRtcDataLogCHelper_TestCreateLog());
+  EXPECT_EQ(0, WebRtcDataLogCHelper_TestCombine());
+  EXPECT_EQ(0, WebRtcDataLogCHelper_TestAddTable());
+  EXPECT_EQ(0, WebRtcDataLogCHelper_TestAddColumn());
+  EXPECT_EQ(0, WebRtcDataLogCHelper_TestInsertCell_int());
+  EXPECT_EQ(0, WebRtcDataLogCHelper_TestInsertArray_int());
+  EXPECT_EQ(0, WebRtcDataLogCHelper_TestNextRow());
+  EXPECT_EQ(0, WebRtcDataLogCHelper_TestInsertCell_float());
+  EXPECT_EQ(0, WebRtcDataLogCHelper_TestInsertArray_float());
+  EXPECT_EQ(0, WebRtcDataLogCHelper_TestNextRow());
+  EXPECT_EQ(0, WebRtcDataLogCHelper_TestInsertCell_double());
+  EXPECT_EQ(0, WebRtcDataLogCHelper_TestInsertArray_double());
+  EXPECT_EQ(0, WebRtcDataLogCHelper_TestNextRow());
+  EXPECT_EQ(0, WebRtcDataLogCHelper_TestInsertCell_int32());
+  EXPECT_EQ(0, WebRtcDataLogCHelper_TestInsertArray_int32());
+  EXPECT_EQ(0, WebRtcDataLogCHelper_TestNextRow());
+  EXPECT_EQ(0, WebRtcDataLogCHelper_TestInsertCell_uint32());
+  EXPECT_EQ(0, WebRtcDataLogCHelper_TestInsertArray_uint32());
+  EXPECT_EQ(0, WebRtcDataLogCHelper_TestNextRow());
+  EXPECT_EQ(0, WebRtcDataLogCHelper_TestInsertCell_int64());
+  EXPECT_EQ(0, WebRtcDataLogCHelper_TestInsertArray_int64());
+  EXPECT_EQ(0, WebRtcDataLogCHelper_TestNextRow());
+  EXPECT_EQ(0, WebRtcDataLogCHelper_TestReturnLog());
 }

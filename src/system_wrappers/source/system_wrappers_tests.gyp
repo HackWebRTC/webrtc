@@ -26,6 +26,8 @@
         'list_unittest.cc',
         'map_unittest.cc',
         'data_log_helpers_unittest.cc',
+        'data_log_c_helpers_unittest.c',
+        'data_log_c_helpers_unittest.h',
       ],
       'conditions': [
         ['enable_data_logging==1', {
