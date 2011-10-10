@@ -117,6 +117,9 @@ class MainWnd : public MainWindow {
     const BITMAPINFO& bmi() const { return bmi_; }
     const uint8* image() const { return image_.get(); }
 
+    size_t frame_width() const { return frame_width_; }
+    size_t frame_height() const { return frame_height_; }
+
    protected:
     enum {
       SET_SIZE,
@@ -125,6 +128,8 @@ class MainWnd : public MainWindow {
 
     HWND wnd_;
     BITMAPINFO bmi_;
+    size_t frame_width_;
+    size_t frame_height_;
     talk_base::scoped_array<uint8> image_;
     CRITICAL_SECTION buffer_lock_;
   };

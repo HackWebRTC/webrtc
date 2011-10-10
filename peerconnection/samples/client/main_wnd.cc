@@ -14,6 +14,7 @@
 
 #include "talk/base/common.h"
 #include "talk/base/logging.h"
+#include "talk/base/stringutils.h"
 
 ATOM MainWnd::wnd_class_ = 0;
 const wchar_t MainWnd::kClassName[] = L"WebRTC_MainWnd";
@@ -60,6 +61,15 @@ void AddListBoxItem(HWND listbox, const std::string& str, LPARAM item_data) {
   LRESULT index = ::SendMessageA(listbox, LB_ADDSTRING, 0,
       reinterpret_cast<LPARAM>(str.c_str()));
   ::SendMessageA(listbox, LB_SETITEMDATA, index, item_data);
+}
+
+void DrawWhiteText(HDC dc, const RECT& rect, const char* text, int flags) {
+  HGDIOBJ old_font = ::SelectObject(dc, GetDefaultFont());
+  ::SetTextColor(dc, RGB(0xff, 0xff, 0xff));
+  ::SetBkMode(dc, TRANSPARENT);
+  RECT rc = rect;
+  ::DrawTextA(dc, text, -1, &rc, flags);
+  ::SelectObject(dc, old_font);
 }
 
 }  // namespace
@@ -256,6 +266,18 @@ void MainWnd::OnPaint() {
       BitBlt(ps.hdc, 0, 0, logical_area.x, logical_area.y,
              dc_mem, 0, 0, SRCCOPY);
 
+      // Print the resolutions.
+      char buffer[1024];
+      talk_base::sprintfn(buffer, sizeof(buffer),
+          "Remote: %u x %u.  Local: %u x %u.",
+          remote_video_->frame_height(),
+          remote_video_->frame_width(),
+          local_video_->frame_height(),
+          local_video_->frame_width());
+
+      SetMapMode(ps.hdc, MM_TEXT);
+      DrawWhiteText(ps.hdc, rc, buffer, DT_SINGLELINE);
+
       // Cleanup.
       ::SelectObject(dc_mem, bmp_old);
       ::DeleteObject(bmp_mem);
@@ -266,19 +288,15 @@ void MainWnd::OnPaint() {
       ::FillRect(ps.hdc, &rc, brush);
       ::DeleteObject(brush);
 
-      HGDIOBJ old_font = ::SelectObject(ps.hdc, GetDefaultFont());
-      ::SetTextColor(ps.hdc, RGB(0xff, 0xff, 0xff));
-      ::SetBkMode(ps.hdc, TRANSPARENT);
-
       std::string text(kConnecting);
       if (!local_video_->image()) {
         text += kNoVideoStreams;
       } else {
         text += kNoIncomingStream;
       }
-      ::DrawTextA(ps.hdc, text.c_str(), -1, &rc,
-          DT_SINGLELINE | DT_CENTER | DT_VCENTER);
-      ::SelectObject(ps.hdc, old_font);
+
+      DrawWhiteText(ps.hdc, rc, text.c_str(),
+                    DT_SINGLELINE | DT_CENTER | DT_VCENTER);
     }
   } else {
     HBRUSH brush = ::CreateSolidBrush(::GetSysColor(COLOR_WINDOW));
@@ -536,7 +554,7 @@ void MainWnd::HandleTabbing() {
 //
 
 MainWnd::VideoRenderer::VideoRenderer(HWND wnd, int width, int height)
-    : wnd_(wnd) {
+    : wnd_(wnd), frame_width_(0), frame_height_(0) {
   ::InitializeCriticalSection(&buffer_lock_);
   ZeroMemory(&bmi_, sizeof(bmi_));
   bmi_.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
@@ -571,6 +589,9 @@ bool MainWnd::VideoRenderer::RenderFrame(const cricket::VideoFrame* frame) {
 
   {
     AutoLock<VideoRenderer> lock(this);
+
+    frame_height_ = frame->GetHeight();
+    frame_width_ = frame->GetWidth();
 
     ASSERT(image_.get() != NULL);
     frame->ConvertToRgbBuffer(cricket::FOURCC_ARGB, image_.get(),
