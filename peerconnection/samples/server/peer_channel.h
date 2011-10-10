@@ -29,7 +29,7 @@ class ChannelMember {
   bool connected() const { return connected_; }
   int id() const { return id_; }
   void set_disconnected() { connected_ = false; }
-  bool is_waiting_socket(DataSocket* ds) const { return waiting_socket_ == ds; }
+  bool is_wait_request(DataSocket* ds) const;
   const std::string& name() const { return name_; }
 
   bool TimedOut();

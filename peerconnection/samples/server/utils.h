@@ -11,6 +11,18 @@
 #define PEERCONNECTION_SAMPLES_SERVER_UTILS_H_
 #pragma once
 
+#ifndef assert
+#ifndef WIN32
+#include <assert.h>
+#else
+#ifndef NDEBUG
+#define assert(expr)  ((void)((expr) ? true : __debugbreak()))
+#else
+#define assert(expr)  ((void)0)
+#endif  // NDEBUG
+#endif  // WIN32
+#endif  // assert
+
 #include <string>
 
 #ifndef ARRAYSIZE

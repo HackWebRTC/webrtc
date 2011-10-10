@@ -8,7 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -96,7 +95,7 @@ int main(int argc, char** argv) {
                 s->Send("500 Error", true, "text/plain", "",
                         "Peer most likely gone.");
               }
-            } else if (member->is_waiting_socket(s)) {
+            } else if (member->is_wait_request(s)) {
               // no need to do anything.
               socket_done = false;
             } else {

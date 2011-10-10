@@ -10,7 +10,6 @@
 
 #include "peerconnection/samples/server/peer_channel.h"
 
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,6 +32,16 @@
 // at this point it is not working correctly in some popular browsers.
 static const char kPeerIdHeader[] = "Pragma: ";
 
+static const char* kRequestPaths[] = {
+  "/wait", "/sign_out", "/message",
+};
+
+enum RequestPathIndex {
+  kWait,
+  kSignOut,
+  kMessage,
+};
+
 //
 // ChannelMember
 //
@@ -52,6 +61,10 @@ ChannelMember::ChannelMember(DataSocket* socket)
 }
 
 ChannelMember::~ChannelMember() {
+}
+
+bool ChannelMember::is_wait_request(DataSocket* ds) const {
+  return ds && ds->PathEquals(kRequestPaths[kWait]);
 }
 
 bool ChannelMember::TimedOut() {
@@ -157,16 +170,13 @@ ChannelMember* PeerChannel::Lookup(DataSocket* ds) const {
   if (ds->method() != DataSocket::GET && ds->method() != DataSocket::POST)
     return NULL;
 
-  static const char* kRequests[] = {
-    "/wait", "/sign_out", "/message",
-  };
   size_t i = 0;
-  for (; i < ARRAYSIZE(kRequests); ++i) {
-    if (ds->PathEquals(kRequests[i]))
+  for (; i < ARRAYSIZE(kRequestPaths); ++i) {
+    if (ds->PathEquals(kRequestPaths[i]))
       break;
   }
 
-  if (i == ARRAYSIZE(kRequests))
+  if (i == ARRAYSIZE(kRequestPaths))
     return NULL;
 
   std::string args(ds->request_arguments());
@@ -179,9 +189,9 @@ ChannelMember* PeerChannel::Lookup(DataSocket* ds) const {
   Members::const_iterator iter = members_.begin();
   for (; iter != members_.end(); ++iter) {
     if (id == (*iter)->id()) {
-      if (i == 0)  // wait
+      if (i == kWait)
         (*iter)->SetWaitingSocket(ds);
-      if (i == 1)  // sign_out
+      if (i == kSignOut)
         (*iter)->set_disconnected();
       return *iter;
     }
