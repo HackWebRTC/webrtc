@@ -291,7 +291,7 @@ bool PeerConnectionClient::ReadIntoBuffer(talk_base::AsyncSocket* socket,
           socket->Close();
           // Since we closed the socket, there was no notification delivered
           // to us.  Compensate by letting ourselves know.
-          OnClose(socket, NO_ERROR);
+          OnClose(socket, 0);
         }
       } else {
         // We haven't received everything.  Just continue to accept data.
