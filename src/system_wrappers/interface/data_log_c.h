@@ -18,7 +18,8 @@
 #define SRC_SYSTEM_WRAPPERS_INTERFACE_DATA_LOG_C_H_
 
 #include <stddef.h>  /* size_t */
-#include "common_types.h"
+
+#include "typedefs.h"  /* NOLINT(build/include) */
 
 #ifdef __cplusplus
 extern "C" {
@@ -85,4 +86,4 @@ int WebRtcDataLog_NextRow(const char* table_name);
 }  /* end of extern "C" */
 #endif
 
-#endif  /* SRC_SYSTEM_WRAPPERS_INTERFACE_DATA_LOG_C_H_ */
+#endif  /* SRC_SYSTEM_WRAPPERS_INTERFACE_DATA_LOG_C_H_ */ /* NOLINT */
