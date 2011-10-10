@@ -289,6 +289,9 @@ bool PeerConnectionClient::ReadIntoBuffer(talk_base::AsyncSocket* socket,
         if (GetHeaderValue(*data, i, kConnection, &should_close) &&
             should_close.compare("close") == 0) {
           socket->Close();
+          // Since we closed the socket, there was no notification delivered
+          // to us.  Compensate by letting ourselves know.
+          OnClose(socket, NO_ERROR);
         }
       } else {
         // We haven't received everything.  Just continue to accept data.
@@ -472,7 +475,7 @@ void PeerConnectionClient::OnClose(talk_base::AsyncSocket* socket, int err) {
       callback_->OnMessageSent(err);
     }
   } else {
-    // Failed to connect to the server.
+    LOG(WARNING) << "Failed to connect to the server";
     Close();
     callback_->OnDisconnected();
   }

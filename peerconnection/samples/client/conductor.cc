@@ -326,26 +326,27 @@ void Conductor::UIThreadCallback(int msg_id, void* data) {
     case SEND_MESSAGE_TO_PEER: {
       LOG(INFO) << "SEND_MESSAGE_TO_PEER";
       std::string* msg = reinterpret_cast<std::string*>(data);
-      if (client_->IsSendingMessage()) {
-        ASSERT(msg != NULL);
+      if (msg) {
+        // For convenience, we always run the message through the queue.
+        // This way we can be sure that messages are sent to the server
+        // in the same order they were signaled without much hassle.
         pending_messages_.push_back(msg);
-      } else {
-        if (!msg && !pending_messages_.empty()) {
-          msg = pending_messages_.front();
-          pending_messages_.pop_front();
-        }
-        if (msg) {
-          bool ok = client_->SendToPeer(peer_id_, *msg);
-          if (!ok && peer_id_ != -1) {
-            LOG(LS_ERROR) << "SendToPeer failed";
-            DisconnectFromServer();
-          }
-          delete msg;
+      }
+
+      if (!pending_messages_.empty() && !client_->IsSendingMessage()) {
+        msg = pending_messages_.front();
+        pending_messages_.pop_front();
+
+        if (!client_->SendToPeer(peer_id_, *msg) && peer_id_ != -1) {
+          LOG(LS_ERROR) << "SendToPeer failed";
+          DisconnectFromServer();
         }
 
-        if (!peer_connection_.get())
-          peer_id_ = -1;
+        delete msg;
       }
+
+      if (!peer_connection_.get())
+        peer_id_ = -1;
       break;
     }
 
