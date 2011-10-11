@@ -90,6 +90,27 @@ int my_transportation::SendRTCPPacket(int channel, const void *data, int len)
 my_transportation my_transport;
 
 #endif
+// TODO(amyfong): we should share this with autotest in a common place.
+#if defined(MAC_IPHONE)
+char micFile[256] = {0}; // Filename copied to buffer in code
+#elif defined(WEBRTC_MAC) && !defined(WEBRTC_MAC_INTEL)
+const char* micFile = "audio_long16bigendian.pcm";
+#elif defined(WEBRTC_ANDROID)
+const char* micFile = "/sdcard/audio_long16.pcm";
+#elif defined(_WIN32)
+// File path is relative to the location of 'voice_engine.gyp'.
+const char* micFile = "../../test/data/voice_engine/audio_long16.pcm";
+#elif defined(WEBRTC_LINUX)
+// Assumes launch from command line: 
+// $ ./out/<Debug><Release>/audio_device_test_func
+const char* micFile = "./test/data/voice_engine/audio_long16.pcm";
+#elif (defined(WEBRTC_MAC_INTEL) || defined(WEBRTC_MAC))
+// Assumes that the working directory in Xcode 
+// is set to <path-to-src>/xcodebuild/<Debug><Release>.
+const char* micFile = "../../test/data/voice_engine/audio_long16.pcm";
+#else
+const char* micFile = "audio_long16.pcm";
+#endif
 
 class MyObserver : public VoiceEngineObserver {
  public:
@@ -463,7 +484,7 @@ void run_test() {
       i++;
       printf("\t%i. Set microphone volume\n", i);
       i++;
-      printf("\t%i. Play local file \n", i);
+      printf("\t%i. Play local file (audio_long16.pcm) \n", i);
       i++;
       printf("\t%i. Change Playout Device \n", i);
       i++;
@@ -483,8 +504,12 @@ void run_test() {
       i++;
       printf("\t%i. Toggle typing detection(for Mac/Windows only) \n", i);
       i++;
-
-
+      printf("\t%i. Record a PCM file \n", i);
+      i++;
+      printf("\t%i. Play a previously recorded PCM file locally \n", i);
+      i++;
+      printf("\t%i. Play a previously recorded PCM file as microphone \n", i);
+      i++;
       printf("\t%i. Stop call \n", i);
 
       printf("Select action or %i to stop the call: ", i);
@@ -577,7 +602,7 @@ void run_test() {
         VALIDATE;
       }
       else if (codecinput == (noCodecs + 11)) {
-        file->StartPlayingFileLocally(0, "../auto_test/audio_long16.pcm");
+        file->StartPlayingFileLocally(0, micFile);
       }
       else if (codecinput == (noCodecs + 12)) {
         // change the playout device with current call
@@ -684,16 +709,102 @@ void run_test() {
         int err_code = 0;
         err_code = base1->LastError();
         if (err_code != -1)
-          printf("\n The last error code was %i. \n", err_code);
+          printf("\n The last error code was %i.\n", err_code);
       }
       else if (codecinput == (noCodecs + 20)) {
-         typing_detection= !typing_detection;
+        typing_detection= !typing_detection;
         res = apm->SetTypingDetectionStatus(typing_detection);
         VALIDATE;
         if (typing_detection)
-          printf("\n Typing detection is now on! \n");
+          printf("\n Typing detection is now on!\n");
         else
-          printf("\n Typing detection is now off! \n");
+          printf("\n Typing detection is now off!\n");
+      }
+      else if (codecinput == (noCodecs + 21)) {
+        int stop_record = 1;
+        int file_source = 1;
+        printf("\n Select source of recorded file. ");
+        printf("\n 1. Record from microphone to file ");
+        printf("\n 2. Record from playout to file ");
+        printf("\n Enter your selection: \n");
+        ASSERT_EQ(1, scanf("%i", &file_source));
+        if (file_source == 1) {
+          printf("\n Start recording microphone as recordedmic.pcm \n");
+          res = file->StartRecordingMicrophone("recordedmic.pcm");
+          VALIDATE;
+        } 
+        else {
+          printf("\n Start recording playout as recordedplayout.pcm \n");
+          res = file->StartRecordingPlayout(chan, "recordedplayout.pcm");
+          VALIDATE;
+        } 
+        while (stop_record != 0) {
+          printf("\n Type 0 to stop recording file \n");
+          ASSERT_EQ(1, scanf("%i", &stop_record));
+        }
+        if (file_source == 1) {
+          res = file->StopRecordingMicrophone();
+          VALIDATE;
+        }          
+        else {
+          res = file->StopRecordingPlayout(chan);
+          VALIDATE;
+        }
+        printf("\n File finished recording \n");
+      }
+      else if (codecinput == (noCodecs + 22)) {
+        int file_type = 1;
+        int stop_play = 1;
+        printf("\n Select a file to play locally in a loop.");
+        printf("\n 1. Play recordedmic.pcm");
+        printf("\n 2. Play recordedplayout.pcm");
+        printf("\n Enter your selection\n");
+        ASSERT_EQ(1, scanf("%i", &file_type));
+        if (file_type == 1)  {
+          printf("\n Start playing recordedmic.pcm locally in a loop\n");
+          res = file->StartPlayingFileLocally(chan, 
+                                              "recordedmic.pcm", true);
+          VALIDATE;
+        }
+        else { 
+          printf("\n Start playing recordedplayout.pcm locally in a loop\n");
+          res = file->StartPlayingFileLocally(chan, 
+                                              "recordedplayout.pcm", true);
+          VALIDATE;
+        }
+        while (stop_play != 0) {
+          printf("\n Type 0 to stop playing file\n");
+          ASSERT_EQ(1, scanf("%i", &stop_play));
+        }
+        res = file->StopPlayingFileLocally(chan);
+        VALIDATE;
+      }
+      else if (codecinput == (noCodecs + 23)) {
+        int file_type = 1;
+        int stop_play = 1;
+        printf("\n Select a file to play as microphone in a loop.");
+        printf("\n 1. Play recordedmic.pcm");
+        printf("\n 2. Play recordedplayout.pcm");
+        printf("\n Enter your selection\n");
+        ASSERT_EQ(1, scanf("%i", &file_type));
+        if (file_type == 1)  {
+          printf("\n Start playing recordedmic.pcm as mic in a loop\n");
+          res = file->StartPlayingFileAsMicrophone(chan,
+                                                   "recordedmic.pcm", true);
+          VALIDATE;
+        }
+        else {
+          printf("\n Start playing recordedplayout.pcm as mic in a loop\n");
+          res = file->StartPlayingFileAsMicrophone(chan,
+                                                   "recordedplayout.pcm", true);
+          VALIDATE;
+        }
+        while (stop_play != 0) {
+          printf("\n Type 0 to stop playing file\n");
+          ASSERT_EQ(1, scanf("%i", &stop_play));
+        }
+        res = file->StopPlayingFileAsMicrophone(chan);
+        VALIDATE;
       }
       else
         break;
