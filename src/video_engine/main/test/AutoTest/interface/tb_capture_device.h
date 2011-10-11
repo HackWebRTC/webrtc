@@ -12,7 +12,7 @@
 #define WEBRTC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_INTERFACE_TB_CAPTURE_DEVICE_H_
 
 #include "tb_interfaces.h"
-#include "video_capture.h"
+#include "video_capture_factory.h"
 
 class tbCaptureDevice
 {

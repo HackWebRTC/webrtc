@@ -18,8 +18,7 @@
 #include "critical_section_wrapper.h"
 #include "event_wrapper.h"
 #include "module_common_types.h"
-#include "video_capture.h"
-#include "video_capture_impl.h"
+#include "video_capture_factory.h"
 #include "video_processing.h"
 #include "video_render_defines.h"
 #include "thread_wrapper.h"
@@ -208,11 +207,11 @@ WebRtc_Word32 ViECapturer::Init(const WebRtc_UWord8* deviceUniqueIdUTF8,
 #ifndef WEBRTC_VIDEO_EXTERNAL_CAPTURE_AND_RENDER
     if (deviceUniqueIdUTF8 == NULL)
     {
-        _captureModule  = videocapturemodule::VideoCaptureImpl::Create(
+        _captureModule  = VideoCaptureFactory::Create(
             ViEModuleId(_engineId, _captureId), _externalCaptureModule);
     } else
     {
-        _captureModule = videocapturemodule::VideoCaptureImpl::Create(
+        _captureModule = VideoCaptureFactory::Create(
             ViEModuleId(_engineId, _captureId), deviceUniqueIdUTF8);
     }
 #endif

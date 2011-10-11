@@ -12,7 +12,7 @@
 
 #include <utility>
 
-#include "modules/video_capture/main/source/video_capture_impl.h"
+#include "modules/video_capture/main/interface/video_capture_factory.h"
 #include "talk/examples/peerconnection_client/defaults.h"
 #include "talk/base/common.h"
 #include "talk/base/logging.h"
@@ -222,7 +222,7 @@ void Conductor::ConnectToPeer(int peer_id) {
 
 scoped_refptr<webrtc::VideoCaptureModule> Conductor::OpenVideoCaptureDevice() {
   webrtc::VideoCaptureModule::DeviceInfo* device_info(
-      webrtc::videocapturemodule::VideoCaptureImpl::CreateDeviceInfo(0));
+      webrtc::VideoCaptureFactory::CreateDeviceInfo(0));
   scoped_refptr<webrtc::VideoCaptureModule> video_device;
 
   const size_t kMaxDeviceNameLength = 128;
@@ -237,11 +237,11 @@ scoped_refptr<webrtc::VideoCaptureModule> Conductor::OpenVideoCaptureDevice() {
         kMaxUniqueIdLength);
     // Try to open this device.
     video_device =
-        webrtc::videocapturemodule::VideoCaptureImpl::Create(0, unique_id);
+        webrtc::VideoCaptureFactory::Create(0, unique_id);
     if (video_device.get())
       break;
   }
-  webrtc::videocapturemodule::VideoCaptureImpl::DestroyDeviceInfo(device_info);
+  webrtc::VideoCaptureFactory::DestroyDeviceInfo(device_info);
   return video_device;
 }
 

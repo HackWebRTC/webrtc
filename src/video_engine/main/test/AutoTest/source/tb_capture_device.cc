@@ -9,7 +9,6 @@
  */
 
 #include "tb_capture_device.h"
-#include "video_capture_impl.h"
 
 tbCaptureDevice::tbCaptureDevice(tbInterfaces& Engine, int& nrOfErrors) :
     captureId(-1),
@@ -28,7 +27,7 @@ tbCaptureDevice::tbCaptureDevice(tbInterfaces& Engine, int& nrOfErrors) :
     bool captureDeviceSet = false;
 
     webrtc::VideoCaptureModule::DeviceInfo* devInfo =
-        webrtc::videocapturemodule::VideoCaptureImpl::CreateDeviceInfo(0);
+        webrtc::VideoCaptureFactory::CreateDeviceInfo(0);
     for (size_t captureIdx = 0;
         captureIdx < devInfo->NumberOfDevices();
         captureIdx++)
@@ -40,7 +39,7 @@ tbCaptureDevice::tbCaptureDevice(tbInterfaces& Engine, int& nrOfErrors) :
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
-        vcpm_ = webrtc::videocapturemodule::VideoCaptureImpl::Create(
+        vcpm_ = webrtc::VideoCaptureFactory::Create(
             captureIdx, uniqueId);
         if (vcpm_ == NULL) // Failed to open this device. Try next.
         {
@@ -57,7 +56,7 @@ tbCaptureDevice::tbCaptureDevice(tbInterfaces& Engine, int& nrOfErrors) :
             break;
         }
     }
-    webrtc::videocapturemodule::VideoCaptureImpl::DestroyDeviceInfo(devInfo);
+    webrtc::VideoCaptureFactory::DestroyDeviceInfo(devInfo);
     numberOfErrors += ViETest::TestError(
         captureDeviceSet, "ERROR: %s at line %d - Could not set capture device",
         __FUNCTION__, __LINE__);

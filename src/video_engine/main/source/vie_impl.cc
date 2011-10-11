@@ -22,7 +22,6 @@
 
 #ifdef WEBRTC_ANDROID
 #include "video_capture.h"
-#include "video_capture_impl.h"
 #include "video_render.h"
 #endif
 

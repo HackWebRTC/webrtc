@@ -15,7 +15,7 @@
 #include "vie_autotest_defines.h"
 #include "vie_autotest.h"
 #include "engine_configurations.h"
-#include "video_capture_impl.h"
+#include "video_capture_factory.h"
 
 int ViEAutoTest::ViEBaseStandardTest()
 {
@@ -82,7 +82,7 @@ int ViEAutoTest::ViEBaseStandardTest()
     bool captureDeviceSet = false;
     int captureId = 0;
     webrtc::VideoCaptureModule::DeviceInfo* devInfo =
-        webrtc::videocapturemodule::VideoCaptureImpl::CreateDeviceInfo(0);
+        webrtc::VideoCaptureFactory::CreateDeviceInfo(0);
 
     for (unsigned int captureIdx = 0;
          captureIdx < devInfo->NumberOfDevices();
@@ -95,7 +95,7 @@ int ViEAutoTest::ViEBaseStandardTest()
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
-        vcpm = webrtc::videocapturemodule::VideoCaptureImpl::Create(
+        vcpm = webrtc::VideoCaptureFactory::Create(
             4571, uniqueId);
         vcpm->AddRef();
         numberOfErrors += ViETest::TestError(vcpm != NULL,
@@ -116,7 +116,7 @@ int ViEAutoTest::ViEBaseStandardTest()
             vcpm = NULL;
         }
     }
-    webrtc::videocapturemodule::VideoCaptureImpl::DestroyDeviceInfo(devInfo);
+    webrtc::VideoCaptureFactory::DestroyDeviceInfo(devInfo);
 
     numberOfErrors+= ViETest::TestError(
         captureDeviceSet,
