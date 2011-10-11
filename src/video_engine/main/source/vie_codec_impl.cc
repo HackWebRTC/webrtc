@@ -566,6 +566,25 @@ int ViECodecImpl::GetReceiveCodecStastistics(const int videoChannel,
 
 }
 
+unsigned int ViECodecImpl::GetDiscardedPackets(const int videoChannel) const {
+  WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
+               ViEId(_instanceId, videoChannel),
+               "%s(videoChannel: %d, codecType: %d)", __FUNCTION__,
+               videoChannel);
+
+  ViEChannelManagerScoped cs(_channelManager);
+  ViEChannel* vieChannel = cs.Channel(videoChannel);
+  if (vieChannel == NULL)
+  {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
+                 ViEId(_instanceId, videoChannel), "%s: No channel %d",
+                 __FUNCTION__, videoChannel);
+    SetLastError(kViECodecInvalidChannelId);
+    return -1;
+  }
+  return vieChannel->DiscardedPackets();
+}
+
 // Callbacks
 // ----------------------------------------------------------------------------
 // SetKeyFrameRequestCallbackStatus

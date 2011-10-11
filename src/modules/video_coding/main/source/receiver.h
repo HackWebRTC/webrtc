@@ -57,6 +57,7 @@ public:
     void ReleaseFrame(VCMEncodedFrame* frame);
     WebRtc_Word32 ReceiveStatistics(WebRtc_UWord32& bitRate, WebRtc_UWord32& frameRate);
     WebRtc_Word32 ReceivedFrameCount(VCMFrameCount& frameCount) const;
+    WebRtc_UWord32 DiscardedPackets() const;
 
     // NACK
     void SetNackMode(VCMNackMode nackMode);

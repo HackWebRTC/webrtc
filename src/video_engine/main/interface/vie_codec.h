@@ -140,6 +140,10 @@ public:
                                            unsigned int& keyFrames,
                                            unsigned int& deltaFrames) const = 0;
 
+    // Gets the number of packets discarded by the jitter buffer because they
+    // arrived too late.
+    virtual unsigned int GetDiscardedPackets(const int videoChannel) const = 0;
+
     // Enables key frame request callback in ViEDecoderObserver.
     virtual int SetKeyFrameRequestCallbackStatus(const int videoChannel,
                                                  const bool enable) = 0;

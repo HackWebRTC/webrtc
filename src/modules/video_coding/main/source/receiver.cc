@@ -344,6 +344,10 @@ VCMReceiver::ReceivedFrameCount(VCMFrameCount& frameCount) const
                                             frameCount.numKeyFrames);
 }
 
+WebRtc_UWord32 VCMReceiver::DiscardedPackets() const {
+  return _jitterBuffer.DiscardedPackets();
+}
+
 void
 VCMReceiver::SetNackMode(VCMNackMode nackMode)
 {

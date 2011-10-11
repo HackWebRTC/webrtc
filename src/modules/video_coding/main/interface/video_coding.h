@@ -490,6 +490,12 @@ public:
     // Return value           : VCM_OK,        on success.
     //                          <0,                 on error.
     virtual WebRtc_Word32 ReceivedFrameCount(VCMFrameCount& frameCount) const = 0;
+
+    // Returns the number of packets discarded by the jitter buffer due to being
+    // too late. This can include duplicated packets which arrived after the
+    // frame was sent to the decoder. Therefore packets which were prematurely
+    // NACKed will be counted.
+    virtual WebRtc_UWord32 DiscardedPackets() const = 0;
 };
 
 } // namespace webrtc

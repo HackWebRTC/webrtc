@@ -72,6 +72,8 @@ public:
                                            unsigned int& keyFrames,
                                            unsigned int& deltaFrames) const;
 
+    virtual unsigned int GetDiscardedPackets(const int videoChannel) const;
+
     // Callbacks
     virtual int SetKeyFrameRequestCallbackStatus(const int videoChannel,
                                                  const bool enable);

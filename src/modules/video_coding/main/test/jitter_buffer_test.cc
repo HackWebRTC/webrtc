@@ -800,11 +800,6 @@ int JitterBufferTest(CmdArgs& args)
     packet.insertStartCode = false;
     //printf("DONE H.264 insert start code test 2 packets\n");
 
-
-    // Temporarily do this to make the rest of the test work:
-    timeStamp += 33*90;
-    seqNum += 4;
-
     //
     // TEST statistics
     //
@@ -823,7 +818,34 @@ int JitterBufferTest(CmdArgs& args)
     TEST(frameRate > 30);
     TEST(bitRate > 10000000);
 
+
+    // Insert 3 old packets and verify that we have 3 discarded packets
+    packet.timestamp = timeStamp - 1000;
+    frameIn = jb.GetFrame(packet);
+    TEST(frameIn == NULL);
+
+    packet.timestamp = timeStamp - 500;
+    frameIn = jb.GetFrame(packet);
+    TEST(frameIn == NULL);
+
+    packet.timestamp = timeStamp - 100;
+    frameIn = jb.GetFrame(packet);
+    TEST(frameIn == NULL);
+
+    TEST(jb.DiscardedPackets() == 3);
+
+    jb.Flush();
+
+    // This statistic shouldn't be reset by a flush.
+    TEST(jb.DiscardedPackets() == 3);
+
     //printf("DONE Statistics\n");
+
+
+    // Temporarily do this to make the rest of the test work:
+    timeStamp += 33*90;
+    seqNum += 4;
+
 
     //
     // TEST delta frame 100 packets with seqNum wrap
@@ -833,7 +855,6 @@ int JitterBufferTest(CmdArgs& args)
     //  ---------------------------------------
     //
 
-    // test flush
     jb.Flush();
 
     // insert first packet

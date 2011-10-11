@@ -31,8 +31,9 @@ VCMProcessTimer::Period() const
 WebRtc_UWord32
 VCMProcessTimer::TimeUntilProcess() const
 {
-    return static_cast<WebRtc_UWord32>(VCM_MAX(static_cast<WebRtc_Word64>(_periodMs) -
-                                    (VCMTickTime::MillisecondTimestamp() - _latestMs), 0));
+    return static_cast<WebRtc_UWord32>(
+        VCM_MAX(static_cast<WebRtc_Word64>(_periodMs) -
+                (VCMTickTime::MillisecondTimestamp() - _latestMs), 0));
 }
 
 void
@@ -105,8 +106,10 @@ VideoCodingModuleImpl::~VideoCodingModuleImpl()
 VideoCodingModule*
 VideoCodingModule::Create(const WebRtc_Word32 id)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(id),
-               "VideoCodingModule::Create()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(id),
+                 "VideoCodingModule::Create()");
     return new VideoCodingModuleImpl(id);
 }
 
@@ -115,9 +118,10 @@ VideoCodingModule::Destroy(VideoCodingModule* module)
 {
     if (module != NULL)
     {
-        WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding,
-                   static_cast<VideoCodingModuleImpl*>(module)->Id(),
-                   "VideoCodingModule::Destroy()");
+        WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                     webrtc::kTraceVideoCoding,
+                     static_cast<VideoCodingModuleImpl*>(module)->Id(),
+                     "VideoCodingModule::Destroy()");
         delete static_cast<VideoCodingModuleImpl*>(module);
     }
 }
@@ -135,7 +139,8 @@ VideoCodingModuleImpl::Process()
         {
             WebRtc_UWord32 bitRate;
             WebRtc_UWord32 frameRate;
-            const WebRtc_Word32 ret = _receiver.ReceiveStatistics(bitRate, frameRate);
+            const WebRtc_Word32 ret = _receiver.ReceiveStatistics(bitRate,
+                                                                  frameRate);
             if (ret == 0)
             {
                 _receiveStatsCallback->ReceiveStatistics(bitRate, frameRate);
@@ -157,8 +162,10 @@ VideoCodingModuleImpl::Process()
             WebRtc_UWord32 frameRate;
             {
                 CriticalSectionScoped cs(_sendCritSect);
-                bitRate = static_cast<WebRtc_UWord32>(_mediaOpt.SentBitRate() + 0.5f);
-                frameRate = static_cast<WebRtc_UWord32>(_mediaOpt.SentFrameRate() + 0.5f);
+                bitRate = static_cast<WebRtc_UWord32>(
+                    _mediaOpt.SentBitRate() + 0.5f);
+                frameRate = static_cast<WebRtc_UWord32>(
+                    _mediaOpt.SentFrameRate() + 0.5f);
             }
             _sendStatsCallback->SendStatistics(bitRate, frameRate);
         }
@@ -207,11 +214,16 @@ VideoCodingModuleImpl::Version(WebRtc_Word8* version,
                                 WebRtc_UWord32& remainingBufferInBytes,
                                 WebRtc_UWord32& position) const
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id), "Version()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "Version()");
     if (version == NULL)
     {
-        WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideoCoding, VCMId(_id),
-            "Invalid buffer pointer in argument to Version()");
+        WEBRTC_TRACE(webrtc::kTraceWarning,
+                     webrtc::kTraceVideoCoding,
+                     VCMId(_id),
+                     "Invalid buffer pointer in argument to Version()");
         return VCM_PARAMETER_ERROR;
     }
     WebRtc_Word8 ourVersion[] = "VideoCodingModule 1.1.0\n";
@@ -225,7 +237,9 @@ VideoCodingModuleImpl::Version(WebRtc_Word8* version,
     position += ourLength;
 
     // Safe to truncate here.
-    WebRtc_Word32 ret = _codecDataBase.Version(version, remainingBufferInBytes, position);
+    WebRtc_Word32 ret = _codecDataBase.Version(version,
+                                               remainingBufferInBytes,
+                                               position);
     if (ret < 0)
     {
         return ret;
@@ -242,7 +256,10 @@ VideoCodingModuleImpl::Version(WebRtc_Word8* version,
 WebRtc_Word32
 VideoCodingModuleImpl::Id() const
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id), "Id()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "Id()");
     CriticalSectionScoped receiveCs(_receiveCritSect);
     {
         CriticalSectionScoped sendCs(_sendCritSect);
@@ -254,7 +271,10 @@ VideoCodingModuleImpl::Id() const
 WebRtc_Word32
 VideoCodingModuleImpl::ChangeUniqueId(const WebRtc_Word32 id)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id), "ChangeUniqueId()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "ChangeUniqueId()");
     CriticalSectionScoped receiveCs(_receiveCritSect);
     {
         CriticalSectionScoped sendCs(_sendCritSect);
@@ -263,15 +283,19 @@ VideoCodingModuleImpl::ChangeUniqueId(const WebRtc_Word32 id)
     }
 }
 
-// Returns the number of milliseconds until the module wants a worker thread to call Process
+// Returns the number of milliseconds until the module wants a worker thread to
+// call Process
 WebRtc_Word32
 VideoCodingModuleImpl::TimeUntilNextProcess()
 {
-    WebRtc_UWord32 timeUntilNextProcess = VCM_MIN(_receiveStatsTimer.TimeUntilProcess(),
-                                                  _sendStatsTimer.TimeUntilProcess());
-    if ((_receiver.NackMode() != kNoNack) || (_dualReceiver.State() != kPassive))
+    WebRtc_UWord32 timeUntilNextProcess = VCM_MIN(
+                                    _receiveStatsTimer.TimeUntilProcess(),
+                                    _sendStatsTimer.TimeUntilProcess());
+    if ((_receiver.NackMode() != kNoNack) ||
+        (_dualReceiver.State() != kPassive))
     {
-        // We need a Process call more often if we are relying on retransmissions
+        // We need a Process call more often if we are relying on
+        // retransmissions
         timeUntilNextProcess = VCM_MIN(timeUntilNextProcess,
                                        _retransmissionTimer.TimeUntilProcess());
     }
@@ -285,7 +309,10 @@ VideoCodingModuleImpl::TimeUntilNextProcess()
 WebRtc_UWord8
 VideoCodingModule::NumberOfCodecs()
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, -1, "NumberOfCodecs()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 -1,
+                 "NumberOfCodecs()");
     return VCMCodecDataBase::NumberOfCodecs();
 }
 
@@ -293,7 +320,10 @@ VideoCodingModule::NumberOfCodecs()
 WebRtc_Word32
 VideoCodingModule::Codec(WebRtc_UWord8 listId, VideoCodec* codec)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, -1, "Codec()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 -1,
+                 "Codec()");
     if (codec == NULL)
     {
         return VCM_PARAMETER_ERROR;
@@ -305,7 +335,10 @@ VideoCodingModule::Codec(WebRtc_UWord8 listId, VideoCodec* codec)
 WebRtc_Word32
 VideoCodingModule::Codec(VideoCodecType codecType, VideoCodec* codec)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, -1, "Codec()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 -1,
+                 "Codec()");
     if (codec == NULL)
     {
         return VCM_PARAMETER_ERROR;
@@ -321,7 +354,10 @@ VideoCodingModule::Codec(VideoCodecType codecType, VideoCodec* codec)
 WebRtc_Word32
 VideoCodingModuleImpl::InitializeSender()
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id), "InitializeSender()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "InitializeSender()");
     CriticalSectionScoped cs(_sendCritSect);
     _codecDataBase.ResetSender();
     _encoder = NULL;
@@ -336,7 +372,10 @@ VideoCodingModuleImpl::InitializeSender()
 WebRtc_Word32
 VideoCodingModuleImpl::ResetEncoder()
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id), "ResetEncoder()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "ResetEncoder()");
     CriticalSectionScoped cs(_sendCritSect);
     if (_encoder != NULL)
     {
@@ -351,7 +390,10 @@ VideoCodingModuleImpl::RegisterSendCodec(const VideoCodec* sendCodec,
                                          WebRtc_UWord32 numberOfCores,
                                          WebRtc_UWord32 maxPayloadSize)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id), "RegisterSendCodec()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "RegisterSendCodec()");
     CriticalSectionScoped cs(_sendCritSect);
     if (sendCodec == NULL)
     {
@@ -368,8 +410,10 @@ VideoCodingModuleImpl::RegisterSendCodec(const VideoCodec* sendCodec,
     _encoder = _codecDataBase.SetEncoder(sendCodec, &_encodedFrameCallback);
     if (_encoder == NULL)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCoding, VCMId(_id),
-                   "Failed to initialize encoder");
+        WEBRTC_TRACE(webrtc::kTraceError,
+                     webrtc::kTraceVideoCoding,
+                     VCMId(_id),
+                     "Failed to initialize encoder");
         return VCM_CODEC_ERROR;
     }
     _sendCodecType = sendCodec->codecType;
@@ -388,7 +432,10 @@ VideoCodingModuleImpl::RegisterSendCodec(const VideoCodec* sendCodec,
 WebRtc_Word32
 VideoCodingModuleImpl::SendCodec(VideoCodec* currentSendCodec) const
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id), "SendCodec()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "SendCodec()");
     CriticalSectionScoped cs(_sendCritSect);
 
     if (currentSendCodec == NULL)
@@ -402,7 +449,10 @@ VideoCodingModuleImpl::SendCodec(VideoCodec* currentSendCodec) const
 VideoCodecType
 VideoCodingModuleImpl::SendCodec() const
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id), "SendCodec()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "SendCodec()");
     CriticalSectionScoped cs(_sendCritSect);
 
     return _codecDataBase.SendCodec();
@@ -415,15 +465,18 @@ VideoCodingModuleImpl::RegisterExternalEncoder(VideoEncoder* externalEncoder,
                                                WebRtc_UWord8 payloadType,
                                                bool internalSource /*= false*/)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id),
-               "RegisterExternalEncoder()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "RegisterExternalEncoder()");
     CriticalSectionScoped cs(_sendCritSect);
 
     if (externalEncoder == NULL)
     {
         bool wasSendCodec = false;
-        const WebRtc_Word32 ret = _codecDataBase.DeRegisterExternalEncoder(payloadType,
-                                                                           wasSendCodec);
+        const WebRtc_Word32 ret = _codecDataBase.DeRegisterExternalEncoder(
+                                                                  payloadType,
+                                                                  wasSendCodec);
         if (wasSendCodec)
         {
             // Make sure the VCM doesn't use the de-registered codec
@@ -438,9 +491,12 @@ VideoCodingModuleImpl::RegisterExternalEncoder(VideoEncoder* externalEncoder,
 
 // Get codec config parameters
 WebRtc_Word32
-VideoCodingModuleImpl::CodecConfigParameters(WebRtc_UWord8* buffer, WebRtc_Word32 size)
+VideoCodingModuleImpl::CodecConfigParameters(WebRtc_UWord8* buffer,
+                                             WebRtc_Word32 size)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id),
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
                "CodecConfigParameters()");
     CriticalSectionScoped cs(_sendCritSect);
     if (_encoder != NULL)
@@ -454,7 +510,10 @@ VideoCodingModuleImpl::CodecConfigParameters(WebRtc_UWord8* buffer, WebRtc_Word3
 WebRtc_UWord32
 VideoCodingModuleImpl::Bitrate() const
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id), "Bitrate()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "Bitrate()");
     CriticalSectionScoped cs(_sendCritSect);
     // return the bit rate which the encoder is set to
     if (_encoder != NULL)
@@ -468,7 +527,10 @@ VideoCodingModuleImpl::Bitrate() const
 WebRtc_UWord32
 VideoCodingModuleImpl::FrameRate() const
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id), "FrameRate()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "FrameRate()");
     CriticalSectionScoped cs(_sendCritSect);
     // input frame rate, not compensated
     if (_encoder != NULL)
@@ -484,8 +546,10 @@ VideoCodingModuleImpl::SetChannelParameters(WebRtc_UWord32 availableBandWidth,
                                             WebRtc_UWord8 lossRate,
                                             WebRtc_UWord32 RTT)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id),
-               "SetChannelParameters()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "SetChannelParameters()");
     WebRtc_Word32 ret = 0;
     {
         CriticalSectionScoped sendCs(_sendCritSect);
@@ -499,7 +563,8 @@ VideoCodingModuleImpl::SetChannelParameters(WebRtc_UWord32 availableBandWidth,
             {
                 return ret;
             }
-            ret = (WebRtc_Word32)_encoder->SetRates(targetRate, _mediaOpt.InputFrameRate());
+            ret = (WebRtc_Word32)_encoder->SetRates(targetRate,
+                                                    _mediaOpt.InputFrameRate());
             if (ret < 0)
             {
                 return ret;
@@ -516,55 +581,68 @@ VideoCodingModuleImpl::SetChannelParameters(WebRtc_UWord32 availableBandWidth,
 WebRtc_Word32
 VideoCodingModuleImpl::SetReceiveChannelParameters(WebRtc_UWord32 RTT)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id),
-               "SetReceiveChannelParameters()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "SetReceiveChannelParameters()");
     CriticalSectionScoped receiveCs(_receiveCritSect);
     _receiver.UpdateRtt(RTT);
     return 0;
 }
 
-// Register a transport callback which will be called to deliver the encoded buffers
+// Register a transport callback which will be called to deliver the encoded
+// buffers
 WebRtc_Word32
-VideoCodingModuleImpl::RegisterTransportCallback(VCMPacketizationCallback* transport)
+VideoCodingModuleImpl::RegisterTransportCallback(
+    VCMPacketizationCallback* transport)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id),
-               "RegisterTransportCallback()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "RegisterTransportCallback()");
     CriticalSectionScoped cs(_sendCritSect);
     _encodedFrameCallback.SetMediaOpt(&_mediaOpt);
     _encodedFrameCallback.SetTransportCallback(transport);
     return VCM_OK;
 }
 
-// Register video output information callback which will be called to deliver information
-// about the video stream produced by the encoder, for instance the average frame rate and
-// bit rate.
+// Register video output information callback which will be called to deliver
+// information about the video stream produced by the encoder, for instance the
+// average frame rate and bit rate.
 WebRtc_Word32
-VideoCodingModuleImpl::RegisterSendStatisticsCallback(VCMSendStatisticsCallback* sendStats)
+VideoCodingModuleImpl::RegisterSendStatisticsCallback(
+    VCMSendStatisticsCallback* sendStats)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id),
-               "RegisterSendStatisticsCallback()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "RegisterSendStatisticsCallback()");
     CriticalSectionScoped cs(_sendCritSect);
     _sendStatsCallback = sendStats;
     return VCM_OK;
 }
 
-// Register a video quality settings callback which will be called when frame rate/dimensions
-// need to be updated for video quality optimization
+// Register a video quality settings callback which will be called when frame
+// rate/dimensions need to be updated for video quality optimization
 WebRtc_Word32
-VideoCodingModuleImpl::RegisterVideoQMCallback(VCMQMSettingsCallback* videoQMSettings)
+VideoCodingModuleImpl::RegisterVideoQMCallback(
+    VCMQMSettingsCallback* videoQMSettings)
 {
     CriticalSectionScoped cs(_sendCritSect);
     return _mediaOpt.RegisterVideoQMCallback(videoQMSettings);
 }
 
 
-// Register a video protection callback which will be called to deliver the requested FEC rate
-// and NACK status (on/off).
+// Register a video protection callback which will be called to deliver the
+// requested FEC rate and NACK status (on/off).
 WebRtc_Word32
-VideoCodingModuleImpl::RegisterProtectionCallback(VCMProtectionCallback* protection)
+VideoCodingModuleImpl::RegisterProtectionCallback(
+    VCMProtectionCallback* protection)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id),
-               "RegisterProtectionCallback()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "RegisterProtectionCallback()");
     CriticalSectionScoped cs(_sendCritSect);
     _mediaOpt.RegisterProtectionCallback(protection);
     return VCM_OK;
@@ -572,10 +650,13 @@ VideoCodingModuleImpl::RegisterProtectionCallback(VCMProtectionCallback* protect
 
 // Enable or disable a video protection method.
 WebRtc_Word32
-VideoCodingModuleImpl::SetVideoProtection(VCMVideoProtection videoProtection, bool enable)
+VideoCodingModuleImpl::SetVideoProtection(VCMVideoProtection videoProtection,
+                                          bool enable)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id),
-               "SetVideoProtection()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "SetVideoProtection()");
 
     switch (videoProtection)
     {
@@ -708,7 +789,10 @@ VideoCodingModuleImpl::AddVideoFrame(const VideoFrame& videoFrame,
                                      const VideoContentMetrics* _contentMetrics,
                                      const CodecSpecificInfo* codecSpecificInfo)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id), "AddVideoFrame()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "AddVideoFrame()");
     CriticalSectionScoped cs(_sendCritSect);
 
     if (_encoder == NULL)
@@ -725,8 +809,10 @@ VideoCodingModuleImpl::AddVideoFrame(const VideoFrame& videoFrame,
 
     if (_mediaOpt.DropFrame())
     {
-        WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceVideoCoding, VCMId(_id),
-                   "Drop frame due to bitrate");
+        WEBRTC_TRACE(webrtc::kTraceStream,
+                     webrtc::kTraceVideoCoding,
+                     VCMId(_id),
+                     "Drop frame due to bitrate");
     }
     else
     {
@@ -738,13 +824,16 @@ VideoCodingModuleImpl::AddVideoFrame(const VideoFrame& videoFrame,
                                              requestedFrameType);
         if (_encoderInputFile != NULL)
         {
-            fwrite(videoFrame.Buffer(), 1, videoFrame.Length(), _encoderInputFile);
+            fwrite(videoFrame.Buffer(), 1, videoFrame.Length(),
+                   _encoderInputFile);
         }
         if (ret < 0)
         {
             _nextFrameType = requestedFrameType;
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCoding,VCMId(_id),
-                       "Encode error: %d", ret);
+            WEBRTC_TRACE(webrtc::kTraceError,
+                         webrtc::kTraceVideoCoding,
+                         VCMId(_id),
+                         "Encode error: %d", ret);
             return ret;
         }
     }
@@ -757,13 +846,16 @@ VideoCodingModuleImpl::AddVideoFrame(const VideoFrame& videoFrame,
 WebRtc_Word32
 VideoCodingModuleImpl::FrameTypeRequest(FrameType frameType)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id), "FrameTypeRequest()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "FrameTypeRequest()");
     CriticalSectionScoped cs(_sendCritSect);
     _nextFrameType = frameType;
     if (_encoder != NULL && _encoder->InternalSource())
     {
-        // Try to request the frame if we have an external encoder with internal source
-        // since AddVideoFrame never will be called.
+        // Try to request the frame if we have an external encoder with
+        // internal source since AddVideoFrame never will be called.
         if (_encoder->RequestFrame(_nextFrameType) == WEBRTC_VIDEO_CODEC_OK)
         {
             _nextFrameType = kVideoFrameDelta;
@@ -784,7 +876,10 @@ VideoCodingModuleImpl::EnableFrameDropper(bool enable)
 WebRtc_Word32
 VideoCodingModuleImpl::SentFrameCount(VCMFrameCount &frameCount) const
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id), "SentFrameCount()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "SentFrameCount()");
     CriticalSectionScoped cs(_sendCritSect);
     return _mediaOpt.SentFrameCount(frameCount);
 }
@@ -793,8 +888,10 @@ VideoCodingModuleImpl::SentFrameCount(VCMFrameCount &frameCount) const
 WebRtc_Word32
 VideoCodingModuleImpl::InitializeReceiver()
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id),
-               "InitializeReceiver()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "InitializeReceiver()");
     CriticalSectionScoped cs(_receiveCritSect);
     WebRtc_Word32 ret = _receiver.Initialize();
     if (ret < 0)
@@ -823,13 +920,16 @@ VideoCodingModuleImpl::InitializeReceiver()
     return VCM_OK;
 }
 
-// Register a receive callback. Will be called whenever there is a new frame ready
-// for rendering.
+// Register a receive callback. Will be called whenever there is a new frame
+// ready for rendering.
 WebRtc_Word32
-VideoCodingModuleImpl::RegisterReceiveCallback(VCMReceiveCallback* receiveCallback)
+VideoCodingModuleImpl::RegisterReceiveCallback(
+    VCMReceiveCallback* receiveCallback)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id),
-               "RegisterReceiveCallback()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "RegisterReceiveCallback()");
     CriticalSectionScoped cs(_receiveCritSect);
     _decodedFrameCallback.SetUserReceiveCallback(receiveCallback);
     return VCM_OK;
@@ -839,8 +939,10 @@ WebRtc_Word32
 VideoCodingModuleImpl::RegisterReceiveStatisticsCallback(
                                      VCMReceiveStatisticsCallback* receiveStats)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id),
-               "RegisterReceiveStatisticsCallback()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "RegisterReceiveStatisticsCallback()");
     CriticalSectionScoped cs(_receiveCritSect);
     _receiveStatsCallback = receiveStats;
     return VCM_OK;
@@ -874,30 +976,39 @@ VideoCodingModuleImpl::RegisterExternalDecoder(VideoDecoder* externalDecoder,
 
 // Register a frame type request callback.
 WebRtc_Word32
-VideoCodingModuleImpl::RegisterFrameTypeCallback(VCMFrameTypeCallback* frameTypeCallback)
+VideoCodingModuleImpl::RegisterFrameTypeCallback(
+    VCMFrameTypeCallback* frameTypeCallback)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id),
-               "RegisterFrameTypeCallback()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "RegisterFrameTypeCallback()");
     CriticalSectionScoped cs(_receiveCritSect);
     _frameTypeCallback = frameTypeCallback;
     return VCM_OK;
 }
 
 WebRtc_Word32
-VideoCodingModuleImpl::RegisterFrameStorageCallback(VCMFrameStorageCallback* frameStorageCallback)
+VideoCodingModuleImpl::RegisterFrameStorageCallback(
+    VCMFrameStorageCallback* frameStorageCallback)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id),
-               "RegisterFrameStorageCallback()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "RegisterFrameStorageCallback()");
     CriticalSectionScoped cs(_receiveCritSect);
     _frameStorageCallback = frameStorageCallback;
     return VCM_OK;
 }
 
 WebRtc_Word32
-VideoCodingModuleImpl::RegisterPacketRequestCallback(VCMPacketRequestCallback* callback)
+VideoCodingModuleImpl::RegisterPacketRequestCallback(
+    VCMPacketRequestCallback* callback)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id),
-               "RegisterPacketRequestCallback()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "RegisterPacketRequestCallback()");
     CriticalSectionScoped cs(_receiveCritSect);
     _packetRequestCallback = callback;
     return VCM_OK;
@@ -908,9 +1019,11 @@ VideoCodingModuleImpl::RegisterPacketRequestCallback(VCMPacketRequestCallback* c
 WebRtc_Word32
 VideoCodingModuleImpl::Decode(WebRtc_UWord16 maxWaitTimeMs)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id), "Decode()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "Decode()");
     WebRtc_Word64 nextRenderTimeMs;
-
     {
         CriticalSectionScoped cs(_receiveCritSect);
         if (!_receiverInited)
@@ -923,20 +1036,23 @@ VideoCodingModuleImpl::Decode(WebRtc_UWord16 maxWaitTimeMs)
         }
     }
 
-    const bool dualReceiverEnabledNotReceiving = _dualReceiver.State() != kReceiving &&
-                                                 _dualReceiver.NackMode() == kNackInfinite;
+    const bool dualReceiverEnabledNotReceiving =
+        (_dualReceiver.State() != kReceiving &&
+         _dualReceiver.NackMode() == kNackInfinite);
 
-    VCMEncodedFrame* frame = _receiver.FrameForDecoding(maxWaitTimeMs,
-                                                        nextRenderTimeMs,
-                                                        _codecDataBase.RenderTiming(),
-                                                        &_dualReceiver);
+    VCMEncodedFrame* frame = _receiver.FrameForDecoding(
+                                                  maxWaitTimeMs,
+                                                  nextRenderTimeMs,
+                                                  _codecDataBase.RenderTiming(),
+                                                  &_dualReceiver);
 
     if (dualReceiverEnabledNotReceiving && _dualReceiver.State() == kReceiving)
     {
-        // Dual receiver is enabled (kNACK enabled), but was not receiving before the call to
-        // FrameForDecoding(). After the call the state changed to receiving, and therefore
-        // we must copy the primary decoder state to the dual decoder to make it possible
-        // for the dual decoder to start decoding retransmitted frames and recover.
+        // Dual receiver is enabled (kNACK enabled), but was not receiving
+        // before the call to FrameForDecoding(). After the call the state
+        // changed to receiving, and therefore we must copy the primary decoder
+        // state to the dual decoder to make it possible for the dual decoder to
+        // start decoding retransmitted frames and recover.
         CriticalSectionScoped cs(_receiveCritSect);
         if (_dualDecoder != NULL)
         {
@@ -945,7 +1061,8 @@ VideoCodingModuleImpl::Decode(WebRtc_UWord16 maxWaitTimeMs)
         _dualDecoder = _codecDataBase.CreateDecoderCopy();
         if (_dualDecoder != NULL)
         {
-            _dualDecoder->RegisterDecodeCompleteCallback(&_dualDecodedFrameCallback);
+            _dualDecoder->RegisterDecodeCompleteCallback(
+                &_dualDecodedFrameCallback);
         }
     }
 
@@ -954,12 +1071,14 @@ VideoCodingModuleImpl::Decode(WebRtc_UWord16 maxWaitTimeMs)
         CriticalSectionScoped cs(_receiveCritSect);
 
         // If this frame was too late, we should adjust the delay accordingly
-        _timing.UpdateCurrentDelay(frame->RenderTimeMs(), VCMTickTime::MillisecondTimestamp());
+        _timing.UpdateCurrentDelay(frame->RenderTimeMs(),
+                                   VCMTickTime::MillisecondTimestamp());
 
         if (_bitStreamBeforeDecoder != NULL)
         {
             // Write bit stream to file for debugging purposes
-            fwrite(frame->Buffer(), 1, frame->Length(), _bitStreamBeforeDecoder);
+            fwrite(frame->Buffer(), 1, frame->Length(),
+                   _bitStreamBeforeDecoder);
         }
         if (_frameStorageCallback != NULL)
         {
@@ -982,23 +1101,31 @@ VideoCodingModuleImpl::Decode(WebRtc_UWord16 maxWaitTimeMs)
 }
 
 WebRtc_Word32
-VideoCodingModuleImpl::RequestSliceLossIndication(const WebRtc_UWord64 pictureID) const
+VideoCodingModuleImpl::RequestSliceLossIndication(
+    const WebRtc_UWord64 pictureID) const
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id),
-               "RegisterSliceLossIndication()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "RegisterSliceLossIndication()");
     if (_frameTypeCallback != NULL)
     {
-        const WebRtc_Word32 ret = _frameTypeCallback->SliceLossIndicationRequest(pictureID);
+        const WebRtc_Word32 ret =
+            _frameTypeCallback->SliceLossIndicationRequest(pictureID);
         if (ret < 0)
         {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCoding, VCMId(_id),
-                "Failed to request key frame");
+            WEBRTC_TRACE(webrtc::kTraceError,
+                         webrtc::kTraceVideoCoding,
+                         VCMId(_id),
+                         "Failed to request key frame");
             return ret;
         }
     } else
     {
-        WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideoCoding, VCMId(_id),
-            "No frame type request callback registered");
+        WEBRTC_TRACE(webrtc::kTraceWarning,
+                     webrtc::kTraceVideoCoding,
+                     VCMId(_id),
+                     "No frame type request callback registered");
         return VCM_MISSING_CALLBACK;
     }
     return VCM_OK;
@@ -1009,19 +1136,24 @@ VideoCodingModuleImpl::RequestKeyFrame()
 {
     if (_frameTypeCallback != NULL)
     {
-        const WebRtc_Word32 ret = _frameTypeCallback->FrameTypeRequest(kVideoFrameKey);
+        const WebRtc_Word32 ret = _frameTypeCallback->FrameTypeRequest(
+                                                                kVideoFrameKey);
         if (ret < 0)
         {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCoding, VCMId(_id),
-                "Failed to request key frame");
+            WEBRTC_TRACE(webrtc::kTraceError,
+                         webrtc::kTraceVideoCoding,
+                         VCMId(_id),
+                         "Failed to request key frame");
             return ret;
         }
         _scheduleKeyRequest = false;
     }
     else
     {
-        WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideoCoding, VCMId(_id),
-            "No frame type request callback registered");
+        WEBRTC_TRACE(webrtc::kTraceWarning,
+                     webrtc::kTraceVideoCoding,
+                     VCMId(_id),
+                     "No frame type request callback registered");
         return VCM_MISSING_CALLBACK;
     }
     return VCM_OK;
@@ -1030,27 +1162,38 @@ VideoCodingModuleImpl::RequestKeyFrame()
 WebRtc_Word32
 VideoCodingModuleImpl::DecodeDualFrame(WebRtc_UWord16 maxWaitTimeMs)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id), "DecodeDualFrame()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "DecodeDualFrame()");
     CriticalSectionScoped cs(_receiveCritSect);
-    if (_dualReceiver.State() != kReceiving || _dualReceiver.NackMode() != kNackInfinite)
+    if (_dualReceiver.State() != kReceiving ||
+        _dualReceiver.NackMode() != kNackInfinite)
     {
-        // The dual receiver is currently not receiving or dual decoder mode is disabled.
+        // The dual receiver is currently not receiving or
+        // dual decoder mode is disabled.
         return VCM_OK;
     }
     WebRtc_Word64 dummyRenderTime;
     WebRtc_Word32 decodeCount = 0;
-    VCMEncodedFrame* dualFrame = _dualReceiver.FrameForDecoding(maxWaitTimeMs,
-                                                                dummyRenderTime);
+    VCMEncodedFrame* dualFrame = _dualReceiver.FrameForDecoding(
+                                                            maxWaitTimeMs,
+                                                            dummyRenderTime);
     if (dualFrame != NULL && _dualDecoder != NULL)
     {
-        WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceVideoCoding, VCMId(_id),
-                    "Decoding frame %u with dual decoder", dualFrame->TimeStamp());
+        WEBRTC_TRACE(webrtc::kTraceStream,
+                     webrtc::kTraceVideoCoding,
+                     VCMId(_id),
+                     "Decoding frame %u with dual decoder",
+                     dualFrame->TimeStamp());
         // Decode dualFrame and try to catch up
         WebRtc_Word32 ret = _dualDecoder->Decode(*dualFrame);
         if (ret != WEBRTC_VIDEO_CODEC_OK)
         {
-            WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideoCoding, VCMId(_id),
-                    "Failed to decode frame with dual decoder");
+            WEBRTC_TRACE(webrtc::kTraceWarning,
+                         webrtc::kTraceVideoCoding,
+                         VCMId(_id),
+                         "Failed to decode frame with dual decoder");
             _dualReceiver.ReleaseFrame(dualFrame);
             return VCM_CODEC_ERROR;
         }
@@ -1058,8 +1201,10 @@ VideoCodingModuleImpl::DecodeDualFrame(WebRtc_UWord16 maxWaitTimeMs)
         {
             // Copy the complete decoder state of the dual decoder
             // to the primary decoder.
-            WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceVideoCoding, VCMId(_id),
-                    "Dual decoder caught up");
+            WEBRTC_TRACE(webrtc::kTraceStream,
+                         webrtc::kTraceVideoCoding,
+                         VCMId(_id),
+                         "Dual decoder caught up");
             _codecDataBase.CopyDecoder(*_dualDecoder);
             _codecDataBase.ReleaseDecoder(_dualDecoder);
             _dualDecoder = NULL;
@@ -1077,7 +1222,8 @@ VideoCodingModuleImpl::Decode(const VCMEncodedFrame& frame)
 {
     // Change decoder if payload type has changed
     const bool renderTimingBefore = _codecDataBase.RenderTiming();
-    _decoder = _codecDataBase.SetDecoder(frame.PayloadType(), _decodedFrameCallback);
+    _decoder = _codecDataBase.SetDecoder(frame.PayloadType(),
+                                         _decodedFrameCallback);
     if (renderTimingBefore != _codecDataBase.RenderTiming())
     {
         // Make sure we reset the decode time estimate since it will
@@ -1101,14 +1247,18 @@ VideoCodingModuleImpl::Decode(const VCMEncodedFrame& frame)
         }
         else
         {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCoding, VCMId(_id),
-                "Failed to decode frame %u, requesting key frame", frame.TimeStamp());
+            WEBRTC_TRACE(webrtc::kTraceError,
+                         webrtc::kTraceVideoCoding,
+                         VCMId(_id),
+                         "Failed to decode frame %u, requesting key frame",
+                         frame.TimeStamp());
             ret = RequestKeyFrame();
         }
     }
     else if (ret == VCM_REQUEST_SLI)
     {
-        ret = RequestSliceLossIndication(_decodedFrameCallback.LastReceivedPictureID() + 1);
+        ret = RequestSliceLossIndication(
+            _decodedFrameCallback.LastReceivedPictureID() + 1);
     }
     if (!frame.Complete() || frame.MissingFrame())
     {
@@ -1136,9 +1286,13 @@ VideoCodingModuleImpl::Decode(const VCMEncodedFrame& frame)
 }
 
 WebRtc_Word32
-VideoCodingModuleImpl::DecodeFromStorage(const EncodedVideoData& frameFromStorage)
+VideoCodingModuleImpl::DecodeFromStorage(
+    const EncodedVideoData& frameFromStorage)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id), "DecodeFromStorage()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "DecodeFromStorage()");
     CriticalSectionScoped cs(_receiveCritSect);
     WebRtc_Word32 ret = _frameFromFile.ExtractFromStorage(frameFromStorage);
     if (ret < 0)
@@ -1152,7 +1306,10 @@ VideoCodingModuleImpl::DecodeFromStorage(const EncodedVideoData& frameFromStorag
 WebRtc_Word32
 VideoCodingModuleImpl::ResetDecoder()
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id), "ResetDecoder()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "ResetDecoder()");
     CriticalSectionScoped cs(_receiveCritSect);
     if (_decoder != NULL)
     {
@@ -1179,21 +1336,27 @@ VideoCodingModuleImpl::RegisterReceiveCodec(const VideoCodec* receiveCodec,
                                                 WebRtc_Word32 numberOfCores,
                                                 bool requireKeyFrame)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id),
-               "RegisterReceiveCodec()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "RegisterReceiveCodec()");
     CriticalSectionScoped cs(_receiveCritSect);
     if (receiveCodec == NULL)
     {
         return VCM_PARAMETER_ERROR;
     }
-    return _codecDataBase.RegisterReceiveCodec(receiveCodec, numberOfCores, requireKeyFrame);
+    return _codecDataBase.RegisterReceiveCodec(receiveCodec, numberOfCores,
+                                               requireKeyFrame);
 }
 
 // Get current received codec
 WebRtc_Word32
 VideoCodingModuleImpl::ReceiveCodec(VideoCodec* currentReceiveCodec) const
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id), "ReceiveCodec()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "ReceiveCodec()");
     CriticalSectionScoped cs(_receiveCritSect);
     if (currentReceiveCodec == NULL)
     {
@@ -1206,7 +1369,10 @@ VideoCodingModuleImpl::ReceiveCodec(VideoCodec* currentReceiveCodec) const
 VideoCodecType
 VideoCodingModuleImpl::ReceiveCodec() const
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id), "ReceiveCodec()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "ReceiveCodec()");
     CriticalSectionScoped cs(_receiveCritSect);
     return _codecDataBase.ReceiveCodec();
 }
@@ -1217,7 +1383,10 @@ VideoCodingModuleImpl::IncomingPacket(const WebRtc_UWord8* incomingPayload,
                                     WebRtc_UWord32 payloadLength,
                                     const WebRtcRTPHeader& rtpInfo)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id), "IncomingPacket()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "IncomingPacket()");
     const VCMPacket packet(incomingPayload, payloadLength, rtpInfo);
     WebRtc_Word32 ret;
     if (_dualReceiver.State() != kPassive)
@@ -1230,7 +1399,8 @@ VideoCodingModuleImpl::IncomingPacket(const WebRtc_UWord8* incomingPayload,
             return ret;
         }
     }
-    ret = _receiver.InsertPacket(packet, rtpInfo.type.Video.width, rtpInfo.type.Video.height);
+    ret = _receiver.InsertPacket(packet, rtpInfo.type.Video.width,
+                                 rtpInfo.type.Video.height);
     if (ret < 0)
     {
         return ret;
@@ -1241,18 +1411,24 @@ VideoCodingModuleImpl::IncomingPacket(const WebRtc_UWord8* incomingPayload,
 // Set codec config parameters
 WebRtc_Word32
 VideoCodingModuleImpl::SetCodecConfigParameters(WebRtc_UWord8 payloadType,
-                                                    const WebRtc_UWord8* buffer,
-                                                    WebRtc_Word32 length)
+                                                const WebRtc_UWord8* buffer,
+                                                WebRtc_Word32 length)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id),
-               "SetCodecConfigParameters()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "SetCodecConfigParameters()");
     CriticalSectionScoped cs(_receiveCritSect);
 
-    WebRtc_Word32 ret = _codecDataBase.SetCodecConfigParameters(payloadType, buffer, length);
+    WebRtc_Word32 ret = _codecDataBase.SetCodecConfigParameters(payloadType,
+                                                                buffer,
+                                                                length);
     if (ret < 0)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCoding, VCMId(_id),
-                "SetCodecConfigParameters() failed, %d", ret);
+        WEBRTC_TRACE(webrtc::kTraceError,
+                     webrtc::kTraceVideoCoding,
+                     VCMId(_id),
+                     "SetCodecConfigParameters() failed, %d", ret);
         return ret;
     }
     return VCM_OK;
@@ -1264,8 +1440,10 @@ VideoCodingModuleImpl::SetCodecConfigParameters(WebRtc_UWord8 payloadType,
 WebRtc_Word32
 VideoCodingModuleImpl::SetMinimumPlayoutDelay(WebRtc_UWord32 minPlayoutDelayMs)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id),
-        "SetMininumPlayoutDelay(%u)", minPlayoutDelayMs);
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "SetMininumPlayoutDelay(%u)", minPlayoutDelayMs);
     _timing.SetMinimumTotalDelay(minPlayoutDelayMs);
     return VCM_OK;
 }
@@ -1275,8 +1453,10 @@ VideoCodingModuleImpl::SetMinimumPlayoutDelay(WebRtc_UWord32 minPlayoutDelayMs)
 WebRtc_Word32
 VideoCodingModuleImpl::SetRenderDelay(WebRtc_UWord32 timeMS)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id),
-               "SetRenderDelay(%u)", timeMS);
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "SetRenderDelay(%u)", timeMS);
     _timing.SetRenderDelay(timeMS);
     return VCM_OK;
 }
@@ -1285,7 +1465,10 @@ VideoCodingModuleImpl::SetRenderDelay(WebRtc_UWord32 timeMS)
 WebRtc_Word32
 VideoCodingModuleImpl::Delay() const
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id), "Delay()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "Delay()");
     return _timing.TargetVideoDelay();
 }
 
@@ -1314,15 +1497,19 @@ VideoCodingModuleImpl::NackList(WebRtc_UWord16* nackList, WebRtc_UWord16& size)
     {
     case kNackNeedMoreMemory:
         {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCoding, VCMId(_id),
-                    "Out of memory");
+            WEBRTC_TRACE(webrtc::kTraceError,
+                         webrtc::kTraceVideoCoding,
+                         VCMId(_id),
+                         "Out of memory");
             return VCM_MEMORY;
         }
     case kNackKeyFrameRequest:
         {
             CriticalSectionScoped cs(_receiveCritSect);
-            WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideoCoding, VCMId(_id),
-                    "Failed to get NACK list, requesting key frame");
+            WEBRTC_TRACE(webrtc::kTraceWarning,
+                         webrtc::kTraceVideoCoding,
+                         VCMId(_id),
+                         "Failed to get NACK list, requesting key frame");
             return RequestKeyFrame();
         }
     default:
@@ -1334,9 +1521,19 @@ VideoCodingModuleImpl::NackList(WebRtc_UWord16* nackList, WebRtc_UWord16& size)
 WebRtc_Word32
 VideoCodingModuleImpl::ReceivedFrameCount(VCMFrameCount& frameCount) const
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCoding, VCMId(_id),
-               "ReceivedFrameCount()");
+    WEBRTC_TRACE(webrtc::kTraceModuleCall,
+                 webrtc::kTraceVideoCoding,
+                 VCMId(_id),
+                 "ReceivedFrameCount()");
     return _receiver.ReceivedFrameCount(frameCount);
 }
 
+WebRtc_UWord32 VideoCodingModuleImpl::DiscardedPackets() const {
+  WEBRTC_TRACE(webrtc::kTraceModuleCall,
+               webrtc::kTraceVideoCoding,
+               VCMId(_id),
+               "DiscardedPackets()");
+  return _receiver.DiscardedPackets();
 }
+
+}  // namespace webrtc

@@ -68,6 +68,9 @@ public:
     WebRtc_Word32 GetFrameStatistics(WebRtc_UWord32& receivedDeltaFrames,
                                      WebRtc_UWord32& receivedKeyFrames) const;
 
+    // Get number of packets discarded by the jitter buffer
+    WebRtc_UWord32 DiscardedPackets() const;
+
     // Statistics, Calculate frame and bit rates
     WebRtc_Word32 GetUpdate(WebRtc_UWord32& frameRate, WebRtc_UWord32& bitRate);
 
@@ -223,6 +226,9 @@ private:
     WebRtc_UWord32          _numConsecutiveOldFrames;
     // Number of packets in a row that have been too old
     WebRtc_UWord32          _numConsecutiveOldPackets;
+    // Number of packets discarded by the jitter buffer
+    WebRtc_UWord32          _discardedPackets;
+
     // Filters for estimating jitter
     VCMJitterEstimator      _jitterEstimate;
     // Calculates network delays used for jitter calculations

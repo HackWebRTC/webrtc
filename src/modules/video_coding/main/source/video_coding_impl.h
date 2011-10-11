@@ -43,9 +43,11 @@ private:
 
 enum VCMKeyRequestMode
 {
-    kKeyOnError,       // Normal mode, request key frames on decoder error
-    kKeyOnKeyLoss,    // Request key frames on decoder error and on packet loss in key frames
-    kKeyOnLoss,        // Request key frames on decoder error and on packet loss in any frame
+    kKeyOnError,    // Normal mode, request key frames on decoder error
+    kKeyOnKeyLoss,  // Request key frames on decoder error and on packet loss
+                    // in key frames.
+    kKeyOnLoss,     // Request key frames on decoder error and on packet loss
+                    // in any frame
 };
 
 class VideoCodingModuleImpl : public VideoCodingModule
@@ -65,7 +67,8 @@ public:
     //  Change the unique identifier of this object
     virtual WebRtc_Word32 ChangeUniqueId(const WebRtc_Word32 id);
 
-    // Returns the number of milliseconds until the module want a worker thread to call Process
+    // Returns the number of milliseconds until the module want a worker thread
+    // to call Process
     virtual WebRtc_Word32 TimeUntilNextProcess();
 
     virtual WebRtc_Word32 Process();
@@ -97,7 +100,8 @@ public:
                                                   bool internalSource = false);
 
     // Get codec config parameters
-    virtual WebRtc_Word32 CodecConfigParameters(WebRtc_UWord8* buffer, WebRtc_Word32 size);
+    virtual WebRtc_Word32 CodecConfigParameters(WebRtc_UWord8* buffer,
+                                                WebRtc_Word32 size);
 
     // Get encode bitrate
     virtual WebRtc_UWord32 Bitrate() const;
@@ -106,30 +110,38 @@ public:
     virtual WebRtc_UWord32 FrameRate() const;
 
     // Set channel parameters
-    virtual WebRtc_Word32 SetChannelParameters(WebRtc_UWord32 availableBandWidth,
-                                               WebRtc_UWord8 lossRate,
-                                               WebRtc_UWord32 RTT);
+    virtual WebRtc_Word32 SetChannelParameters(
+        WebRtc_UWord32 availableBandWidth,
+        WebRtc_UWord8 lossRate,
+        WebRtc_UWord32 RTT);
+
     // Set recieve channel parameters
     virtual WebRtc_Word32 SetReceiveChannelParameters(WebRtc_UWord32 RTT);
 
-    // Register a transport callback which will be called to deliver the encoded buffers
-    virtual WebRtc_Word32 RegisterTransportCallback(VCMPacketizationCallback* transport);
+    // Register a transport callback which will be called to deliver the
+    // encoded buffers
+    virtual WebRtc_Word32 RegisterTransportCallback(
+        VCMPacketizationCallback* transport);
 
-    // Register a send statistics callback which will be called to deliver information
-    // about the video stream produced by the encoder,
+    // Register a send statistics callback which will be called to deliver
+    // information about the video stream produced by the encoder,
     // for instance the average frame rate and bit rate.
-    virtual WebRtc_Word32 RegisterSendStatisticsCallback(VCMSendStatisticsCallback* sendStats);
+    virtual WebRtc_Word32 RegisterSendStatisticsCallback(
+        VCMSendStatisticsCallback* sendStats);
 
     // Register a video quality settings callback which will be called when
     // frame rate/dimensions need to be updated for video quality optimization
-    virtual WebRtc_Word32 RegisterVideoQMCallback(VCMQMSettingsCallback* videoQMSettings);
+    virtual WebRtc_Word32 RegisterVideoQMCallback(
+        VCMQMSettingsCallback* videoQMSettings);
 
     // Register a video protection callback which will be called to deliver
     // the requested FEC rate and NACK status (on/off).
-    virtual WebRtc_Word32 RegisterProtectionCallback(VCMProtectionCallback* protection);
+    virtual WebRtc_Word32 RegisterProtectionCallback(
+        VCMProtectionCallback* protection);
 
     // Enable or disable a video protection method.
-   virtual WebRtc_Word32 SetVideoProtection(VCMVideoProtection videoProtection, bool enable);
+   virtual WebRtc_Word32 SetVideoProtection(VCMVideoProtection videoProtection,
+                                            bool enable);
 
     // Add one raw video frame to the encoder, blocking.
     virtual WebRtc_Word32 AddVideoFrame(
@@ -164,31 +176,35 @@ public:
                                                   WebRtc_UWord8 payloadType,
                                                   bool internalRenderTiming);
 
-    // Register a receive callback. Will be called whenever there are a new frame ready
-    // for rendering.
-    virtual WebRtc_Word32 RegisterReceiveCallback(VCMReceiveCallback* receiveCallback);
+    // Register a receive callback. Will be called whenever there are a new
+    // frame ready for rendering.
+    virtual WebRtc_Word32 RegisterReceiveCallback(
+        VCMReceiveCallback* receiveCallback);
 
-    // Register a receive statistics callback which will be called to deliver information
-    // about the video stream received by the receiving side of the VCM, for instance
-    //  the average frame rate and bit rate.
+    // Register a receive statistics callback which will be called to deliver
+    // information about the video stream received by the receiving side of the
+    // VCM, for instance the average frame rate and bit rate.
     virtual WebRtc_Word32 RegisterReceiveStatisticsCallback(
-                                                VCMReceiveStatisticsCallback* receiveStats);
+        VCMReceiveStatisticsCallback* receiveStats);
 
     // Register a frame type request callback.
-    virtual WebRtc_Word32 RegisterFrameTypeCallback(VCMFrameTypeCallback* frameTypeCallback);
+    virtual WebRtc_Word32 RegisterFrameTypeCallback(
+        VCMFrameTypeCallback* frameTypeCallback);
 
     // Register a frame storage callback.
     virtual WebRtc_Word32 RegisterFrameStorageCallback(
-                                                VCMFrameStorageCallback* frameStorageCallback);
+        VCMFrameStorageCallback* frameStorageCallback);
 
     // Nack callback
-    virtual WebRtc_Word32 RegisterPacketRequestCallback(VCMPacketRequestCallback* callback);
+    virtual WebRtc_Word32 RegisterPacketRequestCallback(
+        VCMPacketRequestCallback* callback);
 
     // Decode next frame, blocks for a maximum of maxWaitTimeMs milliseconds.
     // Should be called as often as possible to get the most out of the decoder.
     virtual WebRtc_Word32 Decode(WebRtc_UWord16 maxWaitTimeMs = 200);
 
-    // Decode next dual frame, blocks for a maximum of maxWaitTimeMs milliseconds.
+    // Decode next dual frame, blocks for a maximum of maxWaitTimeMs
+    // milliseconds.
     virtual WebRtc_Word32 DecodeDualFrame(WebRtc_UWord16 maxWaitTimeMs = 200);
 
     // Reset the decoder state
@@ -207,17 +223,19 @@ public:
 
     // A part of an encoded frame to be decoded.
     // Used in conjunction with VCMFrameStorageCallback.
-    virtual WebRtc_Word32 DecodeFromStorage(const EncodedVideoData& frameFromStorage);
+    virtual WebRtc_Word32 DecodeFromStorage(
+        const EncodedVideoData& frameFromStorage);
 
     // Set codec config parameters
     virtual WebRtc_Word32 SetCodecConfigParameters(WebRtc_UWord8 payloadType,
                                                    const WebRtc_UWord8* buffer,
                                                    WebRtc_Word32 length);
 
-    // Minimum playout delay (Used for lip-sync). This is the minimum delay required
-    // to sync with audio. Not included in  VideoCodingModule::Delay()
+    // Minimum playout delay (Used for lip-sync). This is the minimum delay
+    // required to sync with audio. Not included in  VideoCodingModule::Delay()
     // Defaults to 0 ms.
-    virtual WebRtc_Word32 SetMinimumPlayoutDelay(WebRtc_UWord32 minPlayoutDelayMs);
+    virtual WebRtc_Word32 SetMinimumPlayoutDelay(
+        WebRtc_UWord32 minPlayoutDelayMs);
 
     // The estimated delay caused by rendering
     virtual WebRtc_Word32 SetRenderDelay(WebRtc_UWord32 timeMS);
@@ -228,15 +246,19 @@ public:
     // Received frame counters
     virtual WebRtc_Word32 ReceivedFrameCount(VCMFrameCount& frameCount) const;
 
+    // Returns the number of packets discarded by the jitter buffer.
+    virtual WebRtc_UWord32 DiscardedPackets() const;
+
 protected:
     WebRtc_Word32 Decode(const webrtc::VCMEncodedFrame& frame);
     WebRtc_Word32 RequestKeyFrame();
-    WebRtc_Word32 RequestSliceLossIndication(const WebRtc_UWord64 pictureID) const;
+    WebRtc_Word32 RequestSliceLossIndication(
+        const WebRtc_UWord64 pictureID) const;
     WebRtc_Word32 NackList(WebRtc_UWord16* nackList, WebRtc_UWord16& size);
 
 private:
     WebRtc_Word32                       _id;
-    CriticalSectionWrapper&                _receiveCritSect; // Critical section for receive side
+    CriticalSectionWrapper&             _receiveCritSect;
     bool                                _receiverInited;
     VCMTiming                           _timing;
     VCMTiming                           _dualTiming;
@@ -255,7 +277,7 @@ private:
     VCMKeyRequestMode                   _keyRequestMode;
     bool                                _scheduleKeyRequest;
 
-    CriticalSectionWrapper&                _sendCritSect; // Critical section for send side
+    CriticalSectionWrapper&             _sendCritSect;
     VCMGenericEncoder*                  _encoder;
     VCMEncodedFrameCallback             _encodedFrameCallback;
     FrameType                           _nextFrameType;

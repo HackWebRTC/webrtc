@@ -95,6 +95,8 @@ public:
     WebRtc_Word32 ReceiveCodecStatistics(WebRtc_UWord32& numKeyFrames,
                                          WebRtc_UWord32& numDeltaFrames);
 
+    WebRtc_UWord32 DiscardedPackets() const;
+
     WebRtc_Word32 WaitForKeyFrame(bool wait);
 
     WebRtc_Word32 SetSignalPacketLossStatus(bool enable, bool onlyKeyFrames);

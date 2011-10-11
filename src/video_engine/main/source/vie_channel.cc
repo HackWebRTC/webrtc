@@ -515,6 +515,14 @@ WebRtc_Word32 ViEChannel::ReceiveCodecStatistics(WebRtc_UWord32& numKeyFrames,
     return 0;
 }
 
+WebRtc_UWord32 ViEChannel::DiscardedPackets() const {
+  WEBRTC_TRACE(webrtc::kTraceInfo,
+               webrtc::kTraceVideo,
+               ViEId(_engineId, _channelId),
+               "%s", __FUNCTION__);
+  return _vcm.DiscardedPackets();
+}
+
 // ----------------------------------------------------------------------------
 // WaitForKeyFrame
 //

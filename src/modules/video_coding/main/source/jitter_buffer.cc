@@ -81,6 +81,7 @@ VCMJitterBuffer::VCMJitterBuffer(WebRtc_Word32 vcmId, WebRtc_Word32 receiverId,
     _dropCount(0),
     _numConsecutiveOldFrames(0),
     _numConsecutiveOldPackets(0),
+    _discardedPackets(0),
     _jitterEstimate(vcmId, receiverId),
     _rttMs(0),
     _nackMode(kNoNack),
@@ -134,6 +135,7 @@ VCMJitterBuffer::operator=(const VCMJitterBuffer& rhs)
         _dropCount = rhs._dropCount;
         _numConsecutiveOldFrames = rhs._numConsecutiveOldFrames;
         _numConsecutiveOldPackets = rhs._numConsecutiveOldPackets;
+        _discardedPackets = rhs._discardedPackets;
         _jitterEstimate = rhs._jitterEstimate;
         _delayEstimate = rhs._delayEstimate;
         _waitingForCompletion = rhs._waitingForCompletion;
@@ -210,6 +212,7 @@ VCMJitterBuffer::Start()
 
     _numConsecutiveOldFrames = 0;
     _numConsecutiveOldPackets = 0;
+    _discardedPackets = 0;
 
     _frameEvent.Reset(); // start in a non-signaled state
     _packetEvent.Reset(); // start in a non-signaled state
@@ -438,6 +441,11 @@ VCMJitterBuffer::GetFrameStatistics(WebRtc_UWord32& receivedDeltaFrames,
     return 0;
 }
 
+WebRtc_UWord32 VCMJitterBuffer::DiscardedPackets() const {
+  CriticalSectionScoped cs(_critSect);
+  return _discardedPackets;
+}
+
 // Gets frame to use for this timestamp. If no match, get empty frame.
 WebRtc_Word32
 VCMJitterBuffer::GetFrame(const VCMPacket& packet, VCMEncodedFrame*& frame)
@@ -448,11 +456,12 @@ VCMJitterBuffer::GetFrame(const VCMPacket& packet, VCMEncodedFrame*& frame)
     }
 
     _critSect.Enter();
+    // Make sure that old empty packets are inserted.
     if (LatestTimestamp(static_cast<WebRtc_UWord32>(_lastDecodedTimeStamp),
                         packet.timestamp) == _lastDecodedTimeStamp
         && packet.sizeBytes > 0)
-      // Make sure that old Empty packets are inserted.
     {
+        _discardedPackets++;  // Only counts discarded media packets
         // Trying to get an old frame.
         _numConsecutiveOldPackets++;
         if (_numConsecutiveOldPackets > kMaxConsecutiveOldPackets)
