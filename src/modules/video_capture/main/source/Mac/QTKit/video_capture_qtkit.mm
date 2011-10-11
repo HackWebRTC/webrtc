@@ -9,8 +9,8 @@
  */
 
 #include "video_capture_qtkit.h"
-#include "video_capture_qtkit_objc.h"
-#include "video_capture_qtkit_info_objc.h"
+#import "video_capture_qtkit_objc.h"
+#import "video_capture_qtkit_info_objc.h"
 #include "trace.h"
 #include "critical_section_wrapper.h"
 #include "../../video_capture_config.h"

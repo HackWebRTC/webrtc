@@ -66,8 +66,8 @@
         'linux/video_x11_channel.cc',
         'linux/video_x11_render.cc',
         # Mac
-        'mac/video_render_nsopengl.cc',
-        'mac/video_render_mac_cocoa_impl.cc',
+        'mac/video_render_nsopengl.mm',
+        'mac/video_render_mac_cocoa_impl.mm',
         'mac/video_render_agl.cc',
         'mac/video_render_mac_carbon_impl.cc',
         'mac/cocoa_render_view.mm',
@@ -79,8 +79,9 @@
         # External
         'external/video_render_external_impl.cc',
       ],
+      # TODO(andrew): with the proper suffix, these files will be excluded
+      # automatically.
       'conditions': [
-        # DEFINE PLATFORM SPECIFIC SOURCE FILES
         ['OS!="linux" or build_with_chromium==1', {
           'sources!': [
             'linux/video_render_linux_impl.h',
@@ -99,8 +100,8 @@
             'mac/video_render_mac_carbon_impl.h',
             'mac/video_render_mac_cocoa_impl.h',
             'mac/video_render_nsopengl.h',
-            'mac/video_render_nsopengl.cc',
-            'mac/video_render_mac_cocoa_impl.cc',
+            'mac/video_render_nsopengl.mm',
+            'mac/video_render_mac_cocoa_impl.mm',
             'mac/video_render_agl.cc',
             'mac/video_render_mac_carbon_impl.cc',
             'mac/cocoa_render_view.mm',
@@ -118,36 +119,27 @@
             'windows/video_render_windows_impl.cc',
           ],
         }],
-        # DEFINE PLATFORM SPECIFIC INCLUDE AND CFLAGS
-        ['OS=="mac"', {
-          'xcode_settings': {
-            'OTHER_CPLUSPLUSFLAGS': '-x objective-c++'
-          },
-        }],
       ] # conditions
     }, # video_render_module
   ], # targets
-   # Exclude the test target when building with chromium.
-  'conditions': [   
+
+  # Exclude the test target when building with chromium.
+  'conditions': [
     ['build_with_chromium==0', {
       'targets': [
         {
           'target_name': 'video_render_module_test',
           'type': 'executable',
           'dependencies': [
-           'video_render_module',
-           'webrtc_utility',  
-           '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-           '<(webrtc_root)/common_video/common_video.gyp:webrtc_vplib',
+            'video_render_module',
+            'webrtc_utility',
+            '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+            '<(webrtc_root)/common_video/common_video.gyp:webrtc_vplib',
           ],
-          'include_dirs': [
-          ],      
-          'sources': [               
-            # sources
+          'sources': [
             '../test/testAPI/testAPI.cpp',
-          ], # source
+          ],
           'conditions': [
-           # DEFINE PLATFORM SPECIFIC INCLUDE AND CFLAGS
             ['OS=="mac" or OS=="linux"', {
               'cflags': [
                 '-Wno-write-strings',
@@ -160,11 +152,13 @@
               'libraries': [
                 '-lrt',
                 '-lXext',
-                '-lX11',            
+                '-lX11',
               ],
             }],
             ['OS=="mac"', {
               'xcode_settings': {
+                # TODO(andrew): remove this. It shouldn't be needed when the
+                # required files have proper .mm extensions.
                 'OTHER_CPLUSPLUSFLAGS': '-x objective-c++',
                 'OTHER_LDFLAGS': [
                   '-framework Foundation -framework AppKit -framework Cocoa -framework OpenGL',

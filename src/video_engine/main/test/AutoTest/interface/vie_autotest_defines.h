@@ -27,13 +27,11 @@
 #elif defined (WEBRTC_ANDROID)
 #include <android/log.h>
 #include <string>
-#elif defined(WEBRTC_LINUX)
+#elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
 #include <string.h>
 #include <time.h>
 #include <sys/time.h>
 #include <stdlib.h>
-#elif defined(WEBRTC_MAC_INTEL)
-#import <Foundation/Foundation.h>
 #endif
 
 // Choose how to log

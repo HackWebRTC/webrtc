@@ -73,7 +73,7 @@
         # Linux
         'source/vie_autotest_linux.cc',
         # Mac
-        'source/vie_autotest_mac_cocoa.cc',
+        'source/vie_autotest_mac_cocoa.mm',
         'source/vie_autotest_mac_carbon.cc',
         # Windows
         'source/vie_autotest_windows.cc',
@@ -121,6 +121,8 @@
         }],
         ['OS=="mac"', {
           'xcode_settings': {
+            # TODO(andrew): remove this when the issue with Objective-C in
+            # vie_autotest_main.cc is worked out.
             'OTHER_CPLUSPLUSFLAGS': '-x objective-c++',
             'OTHER_LDFLAGS': [
               '-framework Foundation -framework AppKit -framework Cocoa -framework OpenGL -framework CoreVideo -framework CoreAudio -framework AudioToolbox',

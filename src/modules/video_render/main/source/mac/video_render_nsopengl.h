@@ -14,18 +14,18 @@
 #ifndef WEBRTC_MODULES_VIDEO_RENDER_MAIN_SOURCE_MAC_VIDEO_RENDER_NSOPENGL_H_
 #define WEBRTC_MODULES_VIDEO_RENDER_MAIN_SOURCE_MAC_VIDEO_RENDER_NSOPENGL_H_
 
-#include <Cocoa/Cocoa.h>
+#import <Cocoa/Cocoa.h>
+#import <OpenGL/OpenGL.h>
+#import <OpenGL/glu.h>
+#import <OpenGL/glext.h>
 #include <QuickTime/QuickTime.h>
-#include <OpenGL/OpenGL.h>
-#include <OpenGL/glu.h>
-#include <OpenGL/glext.h>
 #include <list>
 #include <map>
 
-#include	"video_render_defines.h"
+#include "video_render_defines.h"
 
-#import		"cocoa_render_view.h"
-#import		"cocoa_full_screen_window.h"
+#import "cocoa_render_view.h"
+#import "cocoa_full_screen_window.h"
 
 class Trace;
 

@@ -10,7 +10,7 @@
 
 #include "trace.h"
 #include "../../video_capture_config.h"
-#include "video_capture_qtkit_info_objc.h"
+#import "video_capture_qtkit_info_objc.h"
 
 #include "video_capture.h"
 
