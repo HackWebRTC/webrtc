@@ -360,7 +360,7 @@ TEST(ListWrapperTest,PopTest) {
     ASSERT_FALSE(ascending_list == NULL);
     ASSERT_FALSE(ascending_list->Empty());
     EXPECT_EQ(0,ascending_list->PopFront());
-    EXPECT_EQ(1,ascending_list->GetUnsignedItem(ascending_list->First()));
+    EXPECT_EQ(1U, ascending_list->GetUnsignedItem(ascending_list->First()));
 
     EXPECT_EQ(0,ascending_list->PopBack());
     EXPECT_EQ(kNumberOfElements - 2,ascending_list->GetUnsignedItem(
@@ -377,14 +377,14 @@ TEST(ListWrapperTest,InterLeaveTest) {
     ListWrapperSimple* decending_list = CreateDecendingList(rand()%2);
     ASSERT_FALSE(decending_list == NULL);
 
-    for (int i = 0; i < kNumberOfElements/2; ++i) {
+    for (unsigned int i = 0; i < kNumberOfElements/2; ++i) {
         ASSERT_EQ(0,interleave_list->PopBack());
         ASSERT_EQ(0,decending_list->PopBack());
     }
     ASSERT_EQ(kNumberOfElements/2,interleave_list->GetSize());
     ASSERT_EQ(kNumberOfElements/2,decending_list->GetSize());
 
-    int insert_position = kNumberOfElements/2;
+    unsigned int insert_position = kNumberOfElements/2;
     ASSERT_EQ(insert_position * 2, kNumberOfElements);
     while (!decending_list->Empty())
     {
@@ -398,7 +398,7 @@ TEST(ListWrapperTest,InterLeaveTest) {
         ASSERT_FALSE(insert_item == NULL);
         item = interleave_list->First();
         ASSERT_FALSE(item == NULL);
-        for (int j = 0; j < insert_position - 1; ++j) {
+        for (unsigned int j = 0; j < insert_position - 1; ++j) {
             item = interleave_list->Next(item);
             ASSERT_FALSE(item == NULL);
         }
@@ -425,14 +425,14 @@ TEST(ListWrapperTest,InterLeaveTestII) {
     ListWrapperSimple* ascending_list = CreateAscendingList(rand()%2);
     ASSERT_FALSE(ascending_list == NULL);
 
-    for (int i = 0; i < kNumberOfElements/2; ++i) {
+    for (unsigned int i = 0; i < kNumberOfElements/2; ++i) {
         ASSERT_EQ(0,interleave_list->PopBack());
         ASSERT_EQ(0,ascending_list->PopBack());
     }
     ASSERT_EQ(kNumberOfElements/2,interleave_list->GetSize());
     ASSERT_EQ(kNumberOfElements/2,ascending_list->GetSize());
 
-    int insert_position = kNumberOfElements/2;
+    unsigned int insert_position = kNumberOfElements/2;
     ASSERT_EQ(insert_position * 2, kNumberOfElements);
     while (!ascending_list->Empty())
     {
@@ -446,7 +446,7 @@ TEST(ListWrapperTest,InterLeaveTestII) {
         ASSERT_FALSE(insert_item == NULL);
         item = interleave_list->First();
         ASSERT_FALSE(item == NULL);
-        for (int j = 0; j < insert_position - 1; ++j) {
+        for (unsigned int j = 0; j < insert_position - 1; ++j) {
             item = interleave_list->Next(item);
             ASSERT_FALSE(item == NULL);
         }

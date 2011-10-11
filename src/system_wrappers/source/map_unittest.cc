@@ -15,7 +15,7 @@
 using ::webrtc::MapWrapper;
 using ::webrtc::MapItem;
 
-const unsigned int kNumberOfElements = 10;
+const int kNumberOfElements = 10;
 
 int* ItemPointer(MapItem* item) {
     if (item == NULL) {
@@ -48,7 +48,7 @@ void PrintToConsole(const char* message, bool supress) {
     if (supress) {
         return;
     }
-    printf(message);
+    printf("%s", message);
 }
 
 bool CreateAscendingMap(MapWrapper* ascending_map) {
