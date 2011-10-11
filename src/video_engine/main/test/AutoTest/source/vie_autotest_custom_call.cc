@@ -21,9 +21,20 @@
 #define VCM_RED_PAYLOAD_TYPE        96
 #define VCM_ULPFEC_PAYLOAD_TYPE     97
 
+class ViEAutotestFileObserver: public webrtc::ViEFileObserver
+{
+public:
+    ViEAutotestFileObserver() {};
+    ~ViEAutotestFileObserver() {};
+
+    void PlayFileEnded(const WebRtc_Word32 fileId)
+    {
+        ViETest::Log("PlayFile ended");
+    }
+};
+
 int ViEAutoTest::ViECustomCall()
 {
-
     ViETest::Log(" ");
     ViETest::Log("========================================");
     ViETest::Log(" Enter values to use custom settings\n");
@@ -52,13 +63,13 @@ int ViEAutoTest::ViECustomCall()
                                          __LINE__);
 
     webrtc::VoEHardware* ptrVEHardware =
-        webrtc::VoEHardware::GetInterface(ptrVE);
+      webrtc::VoEHardware::GetInterface(ptrVE);
     numberOfErrors += ViETest::TestError(ptrVEHardware != NULL,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
 
     webrtc::VoEAudioProcessing* ptrVEAPM =
-        webrtc::VoEAudioProcessing::GetInterface(ptrVE);
+      webrtc::VoEAudioProcessing::GetInterface(ptrVE);
     numberOfErrors += ViETest::TestError(ptrVEAPM != NULL,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
@@ -78,8 +89,8 @@ int ViEAutoTest::ViECustomCall()
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    webrtc::ViECapture* ptrViECapture =
-        webrtc::ViECapture::GetInterface(ptrViE);
+    webrtc::ViECapture* ptrViECapture = 
+      webrtc::ViECapture::GetInterface(ptrViE);
     numberOfErrors += ViETest::TestError(ptrViECapture != NULL,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
@@ -95,8 +106,13 @@ int ViEAutoTest::ViECustomCall()
                                          __LINE__);
 
     webrtc::ViENetwork* ptrViENetwork =
-        webrtc::ViENetwork::GetInterface(ptrViE);
+      webrtc::ViENetwork::GetInterface(ptrViE);
     numberOfErrors += ViETest::TestError(ptrViENetwork != NULL,
+                                         "ERROR: %s at line %d", __FUNCTION__,
+                                         __LINE__);
+
+    webrtc::ViEFile* ptrViEFile = webrtc::ViEFile::GetInterface(ptrViE);
+    numberOfErrors += ViETest::TestError(ptrViEFile != NULL,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
 
@@ -136,17 +152,20 @@ int ViEAutoTest::ViECustomCall()
         videoRxPort = 0;
         GetVideoPorts(&videoTxPort, &videoRxPort);
 
-
         // video codecs
         memset((void*)&videoCodec, 0, sizeof(videoCodec));
-        GetVideoCodec(ptrViECodec, videoCodec);
+        GetVideoCodecType(ptrViECodec, videoCodec);
+        GetVideoCodecSize(ptrViECodec, videoCodec);
+        GetVideoCodecBitrate(ptrViECodec, videoCodec);
 
         // Choose video protection mode
-        std::cout << "Enter Video Protection Method:" << std::endl;
+        std::cout << "Available Video Protection Method" << std::endl;
         std::cout << "0. None" << std::endl;
         std::cout << "1. FEC" << std::endl;
         std::cout << "2. NACK" << std::endl;
         std::cout << "3. NACK+FEC" << std::endl;
+        std::cout << "Enter Video Protection Method: ";
+
         std::string method;
         std::getline(std::cin, method);
         protectionMethod = atoi(method.c_str());
@@ -178,7 +197,7 @@ int ViEAutoTest::ViECustomCall()
         std::cout << "2. Reconfigure call settings" << std::endl;
         std::cout << "3. Go back to main menu" << std::endl;
         std::cout << "What do you want to do? Press enter for default "
-                  "(Start the call): ";
+                  << "(Start the call): ";
 
         std::getline(std::cin, str);
         int selection = 0;
@@ -249,9 +268,8 @@ int ViEAutoTest::ViECustomCall()
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-
         // Configure Video now
-        error = ptrViE->SetTraceFile("ViECustomCall.txt");
+        error = ptrViE->SetTraceFile("ViECustomCall_trace.txt");
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
@@ -290,7 +308,7 @@ int ViEAutoTest::ViECustomCall()
                                              __FUNCTION__, __LINE__);
 
         webrtc::ViERTP_RTCP* ptrViERtpRtcp =
-            webrtc::ViERTP_RTCP::GetInterface(ptrViE);
+          webrtc::ViERTP_RTCP::GetInterface(ptrViE);
         numberOfErrors += ViETest::TestError(ptrViE != NULL,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
@@ -301,8 +319,8 @@ int ViEAutoTest::ViECustomCall()
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
-        error = ptrViERtpRtcp->SetKeyFrameRequestMethod(
-            videoChannel, webrtc::kViEKeyFrameRequestPliRtcp);
+        error = ptrViERtpRtcp->SetKeyFrameRequestMethod(videoChannel,
+                                 webrtc::kViEKeyFrameRequestPliRtcp);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
@@ -311,48 +329,48 @@ int ViEAutoTest::ViECustomCall()
         switch (protectionMethod)
         {
             case 0: // None
-            error = ptrViERtpRtcp->SetFECStatus(videoChannel, false,
-                                                VCM_RED_PAYLOAD_TYPE,
-                                                VCM_ULPFEC_PAYLOAD_TYPE);
-            numberOfErrors += ViETest::TestError(error == 0,
-                                                 "ERROR: %s at line %d",
-                                                 __FUNCTION__, __LINE__);
+              error = ptrViERtpRtcp->SetFECStatus(videoChannel, false,
+                                                  VCM_RED_PAYLOAD_TYPE,
+                                                  VCM_ULPFEC_PAYLOAD_TYPE);
+              numberOfErrors += ViETest::TestError(error == 0,
+                                                   "ERROR: %s at line %d",
+                                                   __FUNCTION__, __LINE__);
 
-            error = ptrViERtpRtcp->SetNACKStatus(videoChannel, false);
-            numberOfErrors += ViETest::TestError(error == 0,
-                                                 "ERROR: %s at line %d",
-                                                 __FUNCTION__, __LINE__);
+              error = ptrViERtpRtcp->SetNACKStatus(videoChannel, false);
+              numberOfErrors += ViETest::TestError(error == 0,
+                                                   "ERROR: %s at line %d",
+                                                   __FUNCTION__, __LINE__);
               break;
 
             case 1: // FEC only
-            error = ptrViERtpRtcp->SetFECStatus(videoChannel, true,
-                                                VCM_RED_PAYLOAD_TYPE,
-                                                VCM_ULPFEC_PAYLOAD_TYPE);
-            numberOfErrors += ViETest::TestError(error == 0,
-                                                 "ERROR: %s at line %d",
-                                                 __FUNCTION__, __LINE__);
+              error = ptrViERtpRtcp->SetFECStatus(videoChannel, true,
+                                                  VCM_RED_PAYLOAD_TYPE,
+                                                  VCM_ULPFEC_PAYLOAD_TYPE);
+              numberOfErrors += ViETest::TestError(error == 0,
+                                                   "ERROR: %s at line %d",
+                                                   __FUNCTION__, __LINE__);
 
-            error = ptrViERtpRtcp->SetNACKStatus(videoChannel, false);
-            numberOfErrors += ViETest::TestError(error == 0,
-                                                 "ERROR: %s at line %d",
-                                                 __FUNCTION__, __LINE__);
+              error = ptrViERtpRtcp->SetNACKStatus(videoChannel, false);
+              numberOfErrors += ViETest::TestError(error == 0,
+                                                   "ERROR: %s at line %d",
+                                                   __FUNCTION__, __LINE__);
               break;
 
             case 2: // NACK only
-            error = ptrViERtpRtcp->SetNACKStatus(videoChannel, true);
-            numberOfErrors += ViETest::TestError(error == 0,
-                                                 "ERROR: %s at line %d",
-                                                 __FUNCTION__, __LINE__);
+              error = ptrViERtpRtcp->SetNACKStatus(videoChannel, true);
+              numberOfErrors += ViETest::TestError(error == 0,
+                                                   "ERROR: %s at line %d",
+                                                   __FUNCTION__, __LINE__);
               break;
 
             case 3: // Hybrid NACK and FEC
-            error = ptrViERtpRtcp->SetHybridNACKFECStatus(videoChannel, true,
-                                                      VCM_RED_PAYLOAD_TYPE,
-                                                      VCM_ULPFEC_PAYLOAD_TYPE);
-            numberOfErrors += ViETest::TestError(error == 0,
-                                                 "ERROR: %s at line %d",
-                                                 __FUNCTION__, __LINE__);
-            break;
+              error = ptrViERtpRtcp->SetHybridNACKFECStatus(
+                  videoChannel, true, VCM_RED_PAYLOAD_TYPE,
+                  VCM_ULPFEC_PAYLOAD_TYPE);
+              numberOfErrors += ViETest::TestError(error == 0,
+                                                   "ERROR: %s at line %d",
+                                                   __FUNCTION__, __LINE__);
+              break;
         }
 
         error = ptrViERtpRtcp->SetTMMBRStatus(videoChannel, true);
@@ -360,13 +378,13 @@ int ViEAutoTest::ViECustomCall()
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
-        error = ptrViERender->AddRenderer(captureId,  _window1, 0, 0.0, 0.0,
+        error = ptrViERender->AddRenderer(captureId, _window1, 0, 0.0, 0.0,
                                           1.0, 1.0);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
-        error = ptrViERender->AddRenderer(videoChannel,  _window2, 1, 0.0, 0.0,
+        error = ptrViERender->AddRenderer(videoChannel, _window2, 1, 0.0, 0.0,
                                           1.0, 1.0);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
@@ -410,7 +428,7 @@ int ViEAutoTest::ViECustomCall()
 
             // ULPFEC
             error = ptrViECodec->GetCodec(ptrViECodec->NumberOfCodecs() - 1,
-                                             videoCodec);
+                                          videoCodec);
             numberOfErrors += ViETest::TestError(error == 0,
                                                  "ERROR: %s at line %d",
                                                  __FUNCTION__, __LINE__);
@@ -438,7 +456,6 @@ int ViEAutoTest::ViECustomCall()
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
-
         // ViE next
         error = ptrViEBase->StartSend(videoChannel);
         numberOfErrors += ViETest::TestError(error == 0,
@@ -459,24 +476,297 @@ int ViEAutoTest::ViECustomCall()
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-
+        ViEAutotestFileObserver fileObserver;
+        int fileId;
+        
         //***************************************************************
         //  Engine ready. Wait for input
         //***************************************************************
-
 
         // Call started
         std::cout << std::endl;
         std::cout << "Custom call started" << std::endl;
         std::cout << std::endl << std::endl;
+
+        // Modify call or stop call
+
+        std::cout << "Custom call in progress, would you like do?" << std::endl;
+        std::cout << "  0. Stop the call" << std::endl;
+        std::cout << "  1. Modify the call" << std::endl;
+        std::cout << "What do you want to do? "
+                  << "Press enter for default (Stop the call): ";
+
+        std::getline(std::cin, str);
+        int selection = 0;
+        selection = atoi(str.c_str());
+
+        // keep on modifying the call until user selects finish modify call
+        bool modify_call = false;
+
+        while (selection == 1) {
+
+          std::cout << "Modify Custom Call" << std::endl;
+          std::cout << "  0. Finished modifying custom call" << std::endl;
+          std::cout << "  1. Change Video Codec" << std::endl;
+          std::cout << "  2. Change Video Size by Common Resolutions"
+                    << std::endl;
+          std::cout << "  3. Change Video Size by Width & Height" << std::endl;
+          std::cout << "  4. Change Video Capture Device" << std::endl;
+          std::cout << "  5. Record Incoming Call" << std::endl;
+          std::cout << "  6. Record Outgoing Call" << std::endl;
+          std::cout << "  7. Play File on Video Channel"
+                    << "(Assumes you recorded incoming & outgoing call)" 
+                    << std::endl;
+          std::cout << "  8. Print Call information" << std::endl;
+          std::cout << "What do you want to do? ";
+          std::cout << "Press enter for default "
+                    << "(Finished modifying custom call): ";
+
+          std::getline(std::cin, str);
+          int modify_selection = 0;
+          int file_selection = 0;
+
+          modify_selection = atoi(str.c_str());
+
+          switch (modify_selection) {
+            case 0:
+              std::cout << "Finished modifying custom call." << std::endl;
+              modify_call = false;
+              break;
+            case 1:
+              // Change video Codec 
+              GetVideoCodecType(ptrViECodec, videoCodec);
+              PrintCallInformation(ipAddress, deviceName,
+                                   uniqueId, videoCodec,
+                                   videoTxPort, videoRxPort,
+                                   audioCaptureDeviceName,
+                                   audioPlaybackDeviceName, audioCodec,
+                                   audioTxPort, audioRxPort);
+              error = ptrViECodec->SetSendCodec(videoChannel, videoCodec);
+              numberOfErrors += ViETest::TestError(error == 0,
+                                                   "ERROR: %s at line %d",
+                                                   __FUNCTION__, __LINE__);
+              error = ptrViECodec->SetReceiveCodec(videoChannel, videoCodec);
+              numberOfErrors += ViETest::TestError(error == 0,
+                                                   "ERROR: %s at line %d",
+                                                   __FUNCTION__, __LINE__);
+              modify_call = true;
+              break;
+            case 2:
+              // Change Video codec size by common resolution
+              GetVideoCodecResolution(ptrViECodec, videoCodec);
+              PrintCallInformation(ipAddress, deviceName,
+                                   uniqueId, videoCodec,
+                                   videoTxPort, videoRxPort,
+                                   audioCaptureDeviceName,
+                                   audioPlaybackDeviceName, audioCodec,
+                                   audioTxPort,  audioRxPort);
+              error = ptrViECodec->SetSendCodec(videoChannel, videoCodec);
+              numberOfErrors += ViETest::TestError(error == 0,
+                                                   "ERROR: %s at line %d",
+                                                    __FUNCTION__, __LINE__);
+
+              error = ptrViECodec->SetReceiveCodec(videoChannel, videoCodec);
+              numberOfErrors += ViETest::TestError(error == 0,
+                                                   "ERROR: %s at line %d",
+                                                   __FUNCTION__, __LINE__);
+              modify_call = true;
+              break;
+            case 3:
+              // Change Video codec size by common resolution
+              GetVideoCodecSize(ptrViECodec, videoCodec);
+              PrintCallInformation(ipAddress, deviceName,
+                                   uniqueId, videoCodec,
+                                   videoTxPort, videoRxPort,
+                                   audioCaptureDeviceName,
+                                   audioPlaybackDeviceName, audioCodec,
+                                   audioTxPort, audioRxPort);
+              error = ptrViECodec->SetSendCodec(videoChannel, videoCodec);
+              numberOfErrors += ViETest::TestError(error == 0,
+                                                   "ERROR: %s at line %d",
+                                                   __FUNCTION__, __LINE__);
+              error = ptrViECodec->SetReceiveCodec(videoChannel, videoCodec);
+              numberOfErrors += ViETest::TestError(error == 0,
+                                                 "ERROR: %s at line %d",
+                                                 __FUNCTION__, __LINE__);
+              modify_call = true;
+              break;
+            case 4:
+              error = ptrViERender->StopRender(captureId);
+              numberOfErrors += ViETest::TestError(error == 0,
+                                                   "ERROR: %s at line %d",
+                                                    __FUNCTION__, __LINE__);
+              error = ptrViERender->RemoveRenderer(captureId);
+              numberOfErrors += ViETest::TestError(error == 0,
+                                                   "ERROR: %s at line %d",
+                                                  __FUNCTION__, __LINE__);
+              error = ptrViECapture->StopCapture(captureId);
+              numberOfErrors += ViETest::TestError(error == 0,
+                                                   "ERROR: %s at line %d",
+                                                    __FUNCTION__, __LINE__);
+              error = ptrViECapture->DisconnectCaptureDevice(videoChannel);
+              numberOfErrors += ViETest::TestError(error == 0,
+                                                   "ERROR: %s at line %d",
+                                                    __FUNCTION__, __LINE__);
+              error = ptrViECapture->ReleaseCaptureDevice(captureId);
+              numberOfErrors += ViETest::TestError(error == 0,
+                                                   "ERROR: %s at line %d",
+                                                    __FUNCTION__, __LINE__);
+              memset(deviceName, 0, KMaxUniqueIdLength);
+              memset(uniqueId, 0, KMaxUniqueIdLength);
+              GetVideoDevice(ptrViEBase, ptrViECapture, deviceName, uniqueId);
+              captureId = 0;
+              error = ptrViECapture->AllocateCaptureDevice(uniqueId,
+                                                           KMaxUniqueIdLength,
+                                                           captureId);
+              numberOfErrors += ViETest::TestError(error == 0,
+                                                   "ERROR: %s at line %d",
+                                                    __FUNCTION__, __LINE__);
+              error = ptrViECapture->ConnectCaptureDevice(
+                  captureId, videoChannel);
+              numberOfErrors += ViETest::TestError(error == 0,
+                                                   "ERROR: %s at line %d",
+                                                    __FUNCTION__, __LINE__);
+              error = ptrViECapture->StartCapture(captureId);
+              numberOfErrors += ViETest::TestError(error == 0,
+                                                   "ERROR: %s at line %d",
+                                                    __FUNCTION__, __LINE__);
+              error = ptrViERender->AddRenderer(
+                  captureId, _window1, 0, 0.0, 0.0, 1.0, 1.0);
+              numberOfErrors += ViETest::TestError(error == 0,
+                                                   "ERROR: %s at line %d",
+                                                   __FUNCTION__, __LINE__);
+              error = ptrViERender->StartRender(captureId);
+              numberOfErrors += ViETest::TestError(error == 0,
+                                                   "ERROR: %s at line %d",
+                                                   __FUNCTION__, __LINE__);
+              modify_call = true;
+              break;
+            case 5:
+              // Record the incoming call
+              std::cout << "Start Recording Incoming Video " 
+                        << DEFAULT_INCOMING_FILE_NAME <<  std::endl;
+              error = ptrViEFile->StartRecordIncomingVideo(
+                  videoChannel, DEFAULT_INCOMING_FILE_NAME,
+                  webrtc::NO_AUDIO, audioCodec, videoCodec);
+              std::cout << "Press enter to stop...";
+              std::getline(std::cin, str);
+              error = ptrViEFile->StopRecordIncomingVideo(videoChannel);
+              numberOfErrors += ViETest::TestError(error == 0,
+                                                   "ERROR:%d %s at line %d",
+                                                   ptrViEBase->LastError(),
+                                                   __FUNCTION__, __LINE__);
+              modify_call = true;
+              break;
+            case 6:
+              // Record the outgoing call
+              std::cout << "Start Recording Outgoing Video " 
+                        << DEFAULT_OUTGOING_FILE_NAME <<  std::endl;
+              error = ptrViEFile->StartRecordOutgoingVideo(
+                  videoChannel, DEFAULT_OUTGOING_FILE_NAME,
+                  webrtc::NO_AUDIO, audioCodec, videoCodec);
+              std::cout << "Press enter to stop...";
+              std::getline(std::cin, str);
+              error = ptrViEFile->StopRecordOutgoingVideo(videoChannel);
+              numberOfErrors += ViETest::TestError(error == 0,
+                                                   "ERROR:%d %s at line %d",
+                                                   ptrViEBase->LastError(),
+                                                   __FUNCTION__, __LINE__);
+              modify_call = true;
+              break;
+            case 7:
+              // Send the file on the videoChannel
+              file_selection = 0;
+              std::cout << "Available files to play" << std::endl;
+              std::cout << "  0. " << DEFAULT_INCOMING_FILE_NAME <<  std::endl;
+              std::cout << "  1. " << DEFAULT_OUTGOING_FILE_NAME <<  std::endl;
+              std::cout << "Press enter for default (" 
+                        << DEFAULT_INCOMING_FILE_NAME << "): ";
+              std::getline(std::cin, str);
+              file_selection = atoi(str.c_str());
+              // Disconnect the camera first
+              error = ptrViECapture->DisconnectCaptureDevice(videoChannel);
+              numberOfErrors += ViETest::TestError(error == 0,
+                                                   "ERROR:%d %s at line %d",
+                                                   ptrViEBase->LastError(),
+                                                   __FUNCTION__, __LINE__);
+              if (file_selection == 1) 
+                error = ptrViEFile->StartPlayFile(DEFAULT_OUTGOING_FILE_NAME,
+                                                  fileId, true);
+              else
+                error = ptrViEFile->StartPlayFile(DEFAULT_INCOMING_FILE_NAME,
+                                                  fileId, true);
+              numberOfErrors += ViETest::TestError(error == 0,
+                                                   "ERROR:%d %s at line %d",
+                                                   ptrViEBase->LastError(),
+                                                   __FUNCTION__, __LINE__);
+              ViETest::Log("Registering file observer");
+              error = ptrViEFile->RegisterObserver(fileId, fileObserver);
+              numberOfErrors += ViETest::TestError(error == 0,
+                                                   "ERROR:%d %s at line %d",
+                                                    ptrViEBase->LastError(),
+                                                    __FUNCTION__, __LINE__);
+              numberOfErrors += ViETest::TestError(error == 0,
+                                                   "ERROR:%d %s at line %d",
+                                                   ptrViEBase->LastError(),
+                                                   __FUNCTION__, __LINE__);
+              std::cout << std::endl;
+              std::cout << "Start sending the file that is played in a loop " 
+                        << std::endl;
+              error = ptrViEFile->SendFileOnChannel(fileId, videoChannel);
+              numberOfErrors += ViETest::TestError(error == 0,
+                                                   "ERROR:%d %s at line %d",
+                                                   ptrViEBase->LastError(),
+                                                   __FUNCTION__, __LINE__);
+              std::cout << "Press enter to stop...";
+              std::getline(std::cin, str);
+              ViETest::Log("Stopped sending video on channel");
+              error = ptrViEFile->StopSendFileOnChannel(videoChannel);
+              numberOfErrors += ViETest::TestError(error == 0,
+                                                   "ERROR:%d %s at line %d",
+                                                   ptrViEBase->LastError(),
+                                                   __FUNCTION__, __LINE__);
+              ViETest::Log("Stop playing the file.");
+              error = ptrViEFile->StopPlayFile(fileId);
+              numberOfErrors += ViETest::TestError(error == 0,
+                                                   "ERROR:%d %s at line %d",
+                                                   ptrViEBase->LastError(),
+                                                   __FUNCTION__, __LINE__);
+              error = ptrViECapture->ConnectCaptureDevice(
+                  captureId, videoChannel);
+              numberOfErrors += ViETest::TestError(error == 0,
+                                                   "ERROR: %s at line %d",
+                                                    __FUNCTION__, __LINE__);
+              modify_call = true;
+              break;
+            case 8:
+              // Print Call information
+              PrintCallInformation(ipAddress, deviceName,
+                                   uniqueId, videoCodec,
+                                   videoTxPort, videoRxPort, 
+                                   audioCaptureDeviceName,
+                                   audioPlaybackDeviceName,
+                                   audioCodec, audioTxPort,
+                                   audioRxPort);
+              modify_call = true;
+              break;
+            default:
+              // invalid selection, shows options menu again 
+              std::cout << "Invalid selection. Select Again." << std::endl;
+              break;
+          }
+          // modify_call is false if user does not select one of the
+          // modify options
+          if (modify_call == false) {
+            selection = 0;
+          }
+        }
+        // Stop the Call
         std::cout << "Press enter to stop...";
         std::getline(std::cin, str);
-
         //***************************************************************
         //  Testing finished. Tear down Video Engine
         //***************************************************************
-
-
         // audio engine first
         error = ptrVEBase->StopReceive(audioChannel);
         numberOfErrors += ViETest::TestError(error == 0,
@@ -492,7 +782,6 @@ int ViEAutoTest::ViECustomCall()
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-
         // now do video
         error = ptrViEBase->DisconnectAudioChannel(videoChannel);
 
@@ -547,6 +836,10 @@ int ViEAutoTest::ViECustomCall()
                                              __FUNCTION__, __LINE__);
 
         int remainingInterfaces = 0;
+        remainingInterfaces = ptrViEFile->Release();
+        numberOfErrors += ViETest::TestError(remainingInterfaces == 0,
+                                             "ERROR: %s at line %d",
+                                             __FUNCTION__, __LINE__);
         remainingInterfaces = ptrViECodec->Release();
         numberOfErrors += ViETest::TestError(remainingInterfaces == 0,
                                              "ERROR: %s at line %d",
@@ -611,7 +904,7 @@ bool ViEAutoTest::GetVideoDevice(webrtc::ViEBase* ptrViEBase,
         memset(uniqueId, 0, KMaxUniqueIdLength);
 
         std::cout << std::endl;
-        std::cout << "Available capture devices:" << std::endl;
+        std::cout << "Available video capture devices:" << std::endl;
         int captureIdx = 0;
         for (captureIdx = 0;
              captureIdx < ptrViECapture->NumberOfCaptureDevices(); captureIdx++)
@@ -627,6 +920,7 @@ bool ViEAutoTest::GetVideoDevice(webrtc::ViEBase* ptrViEBase,
                                                  "ERROR: %s at line %d",
                                                  __FUNCTION__, __LINE__);
             std::cout << "   " << captureIdx+1 << ". " << deviceName
+                      << "/" << uniqueId
                       << std::endl;
         }
         //  Get the devName of the default (or first) camera for display
@@ -638,7 +932,7 @@ bool ViEAutoTest::GetVideoDevice(webrtc::ViEBase* ptrViEBase,
                                              "ERROR: %s at line %d",
                                               __FUNCTION__, __LINE__);
 
-        std::cout << "Choose a capture device. Press enter for default ("
+        std::cout << "Choose a video capture device. Press enter for default ("
                   << deviceName << "/" << uniqueId << "): ";
         std::getline(std::cin, str);
         captureDeviceIndex = atoi(str.c_str());
@@ -935,101 +1229,6 @@ bool ViEAutoTest::GetVideoPorts(int* txPort, int* rxPort)
   return false;
 }
 
-bool ViEAutoTest::GetVideoCodec(webrtc::ViECodec* ptrViECodec,
-                                webrtc::VideoCodec& videoCodec)
-{
-    int error = 0;
-    int numberOfErrors = 0;
-    int codecSelection = 0;
-    std::string str;
-    memset(&videoCodec, 0, sizeof(webrtc::VideoCodec));
-
-    bool exitLoop=false;
-    while(!exitLoop)
-    {
-        std::cout << std::endl;
-        std::cout << "Available video codecs:" << std::endl;
-        int codecIdx = 0;
-        int defaultCodecIdx = 0;
-        for (codecIdx = 0; codecIdx < ptrViECodec->NumberOfCodecs(); codecIdx++)
-        {
-            error = ptrViECodec->GetCodec(codecIdx, videoCodec);
-            numberOfErrors += ViETest::TestError(error == 0,
-                                                 "ERROR: %s at line %d",
-                                                 __FUNCTION__, __LINE__);
-
-            // test for default codec index
-            if(strcmp(videoCodec.plName, DEFAULT_VIDEO_CODEC) == 0)
-            {
-                defaultCodecIdx = codecIdx;
-            }
-
-            std::cout << "   " << codecIdx+1 << ". " << videoCodec.plName
-                      << std::endl;
-        }
-        std::cout << std::endl;
-        std::cout << "Choose video codec. Press enter for default ("
-                  << DEFAULT_VIDEO_CODEC << "):  ";
-        std::getline(std::cin, str);
-        codecSelection = atoi(str.c_str());
-
-        if(codecSelection == 0)
-        {
-            // use default
-            error = ptrViECodec->GetCodec(defaultCodecIdx, videoCodec);
-            numberOfErrors += ViETest::TestError(error == 0,
-                                                 "ERROR: %s at line %d",
-                                                 __FUNCTION__, __LINE__);
-            exitLoop=true;
-        }
-        else
-        {
-            // user selection
-            codecSelection = atoi(str.c_str())-1;
-            error = ptrViECodec->GetCodec(codecSelection, videoCodec);
-            numberOfErrors += ViETest::TestError(error == 0,
-                                                 "ERROR: %s at line %d",
-                                                 __FUNCTION__, __LINE__);
-            if(error != 0)
-            {
-                std::cout << "ERROR: Code=" << error << " Invalid selection"
-                          << std::endl;
-                continue;
-            }
-            exitLoop=true;
-      }
-    }
-
-    std::cout << "Choose video width. Press enter for default ("
-              << DEFAULT_VIDEO_CODEC_WIDTH << "):  ";
-    std::getline(std::cin, str);
-    int sizeSelection = atoi(str.c_str());
-    if(sizeSelection!=0)
-    {
-        videoCodec.width=sizeSelection;
-    }
-
-    std::cout << "Choose video height. Press enter for default ("
-              << DEFAULT_VIDEO_CODEC_HEIGHT << "):  ";
-    std::getline(std::cin, str);
-    sizeSelection = atoi(str.c_str());
-    if(sizeSelection!=0)
-    {
-        videoCodec.height=sizeSelection;
-    }
-    // Set start bit rate
-    std::cout << std::endl;
-    std::cout << "Choose start rate (in kbps). Press enter for default ("
-              << DEFAULT_VIDEO_CODEC_BITRATE << "):  ";
-    std::getline(std::cin, str);
-    int startRate = atoi(str.c_str());
-    if(startRate != 0)
-    {
-        videoCodec.startBitrate=startRate;
-    }
-    return true;
-}
-
 // audio settings functions
 bool ViEAutoTest::GetAudioPorts(int* txPort, int* rxPort)
 {
@@ -1177,7 +1376,7 @@ void ViEAutoTest::PrintCallInformation(char* IP, char* videoCaptureDeviceName,
 
     std::cout << "************************************************"
               << std::endl;
-    std::cout << "The call will use the following settings: " << std::endl;
+    std::cout << "The call has the following settings: " << std::endl;
     std::cout << "\tIP: " << IP << std::endl;
     std::cout << "\tVideo Capture Device: " << videoCaptureDeviceName
               << std::endl;
@@ -1202,4 +1401,186 @@ void ViEAutoTest::PrintCallInformation(char* IP, char* videoCaptureDeviceName,
     std::cout << "\t Audio Rx Port: " << audioRxPort << std::endl;
     std::cout << "************************************************"
               << std::endl;
+}
+
+bool ViEAutoTest::GetVideoCodecType(webrtc::ViECodec* ptrViECodec,
+                                    webrtc::VideoCodec& videoCodec)
+{
+  int error = 0;
+  int numberOfErrors = 0;
+  int codecSelection = 0;
+  std::string str;
+  memset(&videoCodec, 0, sizeof(webrtc::VideoCodec));
+
+  bool exitLoop=false;
+  while(!exitLoop) {
+    std::cout << std::endl;
+    std::cout << "Available video codecs:" << std::endl;
+    int codecIdx = 0;
+    int defaultCodecIdx = 0;
+    for (codecIdx = 0; codecIdx < ptrViECodec->NumberOfCodecs(); codecIdx++) {
+      error = ptrViECodec->GetCodec(codecIdx, videoCodec);
+      numberOfErrors += ViETest::TestError(error == 0,
+                                           "ERROR: %s at line %d",
+                                            __FUNCTION__, __LINE__);
+
+      // test for default codec index
+      if(strcmp(videoCodec.plName, DEFAULT_VIDEO_CODEC) == 0) {
+        defaultCodecIdx = codecIdx;
+      }
+      std::cout << "   " << codecIdx+1 << ". " << videoCodec.plName                    
+                << std::endl;
+    }
+    std::cout << std::endl;
+    std::cout << "Choose video codec. Press enter for default ("
+              << DEFAULT_VIDEO_CODEC << "):  ";
+    std::getline(std::cin, str);
+    codecSelection = atoi(str.c_str());
+    if(codecSelection == 0) {
+      // use default
+      error = ptrViECodec->GetCodec(defaultCodecIdx, videoCodec);
+      numberOfErrors += ViETest::TestError(error == 0,
+                                           "ERROR: %s at line %d",
+                                            __FUNCTION__, __LINE__);
+      exitLoop=true;
+    }
+    else {
+    // user selection
+      codecSelection = atoi(str.c_str())-1;
+      error = ptrViECodec->GetCodec(codecSelection, videoCodec);
+      numberOfErrors += ViETest::TestError(error == 0,
+                                           "ERROR: %s at line %d",
+                                            __FUNCTION__, __LINE__);
+      if(error != 0) {
+        std::cout << "ERROR: Code=" << error << " Invalid selection"
+                  << std::endl;
+        continue;
+      }
+      exitLoop=true;
+    }
+  }
+  if (videoCodec.codecType == webrtc::kVideoCodecI420) {
+    videoCodec.width = 176;
+    videoCodec.height = 144;
+  }
+  return true;
+}
+
+bool ViEAutoTest::GetVideoCodecResolution(webrtc::ViECodec* ptrViECodec,
+                                          webrtc::VideoCodec& videoCodec)
+{
+  std::string str;
+  int sizeOption = 2;
+
+  if (videoCodec.codecType == webrtc::kVideoCodecI420) {
+    std::cout << "Codec is I420, size is 176 x 144" << std::endl;
+    sizeOption = 1;
+  }
+  else {
+    std::cout << std::endl;
+    std::cout << "Available Common Resolutions : " << std::endl;
+    std::cout << "  1. SQCIF (128X96) " << std::endl;
+    std::cout << "  2. QQVGA (160X120) " << std::endl;
+    std::cout << "  3. QCIF (176X144) " << std::endl;
+    std::cout << "  4. CIF  (352X288) " << std::endl;
+    std::cout << "  5. VGA  (640X480) " << std::endl;
+    std::cout << "  6. WVGA (800x480) " << std::endl;
+    std::cout << "  7. 4CIF (704X576) " << std::endl;
+    std::cout << "  8. SVGA (800X600) " << std::endl;
+    std::cout << "  9. HD   (1280X720) " << std::endl;
+    std::cout << " 10. XGA  (1024x768) " << std::endl;
+    std::cout << "Enter frame size option "
+              << "(default keeps current size): ";
+    std::getline(std::cin, str);
+    sizeOption = atoi(str.c_str());
+  }
+   
+  switch (sizeOption) {
+    case 1:
+      videoCodec.width = 128;
+      videoCodec.height = 96;
+      break;
+    case 2:
+      videoCodec.width = 160;
+      videoCodec.height = 120;
+      break;
+    case 3:
+      videoCodec.width = 176;
+      videoCodec.height = 144;
+      break;
+    case 4:
+      videoCodec.width = 352;
+      videoCodec.height = 288;
+      break;
+    case 5:
+      videoCodec.width = 640;
+      videoCodec.height = 480;
+      break;
+    case 6:
+      videoCodec.width = 800;
+      videoCodec.height = 480;
+      break;
+    case 7:
+      videoCodec.width = 704;
+      videoCodec.height = 576;
+      break;
+    case 8:
+      videoCodec.width = 800;
+      videoCodec.height = 600;
+      break;
+    case 9:
+      videoCodec.width = 1280;
+      videoCodec.height = 720;
+      break;
+    case 10:
+      videoCodec.width = 1024;
+      videoCodec.height = 768;
+      break;
+    }
+  return true;
+}
+
+
+bool ViEAutoTest::GetVideoCodecSize(webrtc::ViECodec* ptrViECodec,
+                                          webrtc::VideoCodec& videoCodec)
+{
+  if (videoCodec.codecType != webrtc::kVideoCodecI420) {
+    std::string str;
+    videoCodec.width = DEFAULT_VIDEO_CODEC_WIDTH;
+    videoCodec.height = DEFAULT_VIDEO_CODEC_HEIGHT;
+    std::cout << "Choose video width. Press enter for default ("
+              << DEFAULT_VIDEO_CODEC_WIDTH << "):  ";
+    std::getline(std::cin, str);
+    int sizeSelection = atoi(str.c_str());
+    if(sizeSelection!=0) {
+      videoCodec.width=sizeSelection;
+    }
+    std::cout << "Choose video height. Press enter for default ("
+              << DEFAULT_VIDEO_CODEC_HEIGHT << "):  ";
+    std::getline(std::cin, str);
+    sizeSelection = atoi(str.c_str());
+    if(sizeSelection!=0) {
+      videoCodec.height=sizeSelection;
+    }
+  }
+  else if (videoCodec.codecType == webrtc::kVideoCodecI420) {
+    std::cout << "Codec is I420, size is 176 x 144" << std::endl;
+  }
+  return true;
+}
+
+bool ViEAutoTest::GetVideoCodecBitrate(webrtc::ViECodec* ptrViECodec,
+                                       webrtc::VideoCodec& videoCodec)
+{
+    std::string str;
+    std::cout << std::endl;
+    std::cout << "Choose start rate (in kbps). Press enter for default ("
+              << DEFAULT_VIDEO_CODEC_BITRATE << "):  ";
+    std::getline(std::cin, str);
+    int startRate = atoi(str.c_str());
+    videoCodec.startBitrate=DEFAULT_VIDEO_CODEC_BITRATE;
+    if(startRate != 0) {
+        videoCodec.startBitrate=startRate;
+    }
+    return true;
 }

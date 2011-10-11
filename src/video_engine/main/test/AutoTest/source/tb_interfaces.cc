@@ -14,14 +14,12 @@ tbInterfaces::tbInterfaces(const char* testName, int& nrOfErrors) :
     numberOfErrors(nrOfErrors)
 {
     char traceFile[256] = "";
-    char traceFileEnc[256] = "";
 
 #ifdef WEBRTC_ANDROID
     strcat(traceFile,"/sdcard/");
 #endif
     strcat(traceFile, testName);
-    strcat(traceFileEnc, traceFile);
-    strcat(traceFileEnc, "_encrypted");
+    strcat(traceFile, "_trace.txt");
 
     ViETest::Log("Creating ViE Interfaces for test %s\n", testName);
 

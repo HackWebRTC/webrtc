@@ -135,7 +135,7 @@ int ViEAutoTest::ViECaptureStandardTest()
 
 
     int error = 0;
-    tbInterfaces ViE("WebRTCViECapture_Standard", numberOfErrors);
+    tbInterfaces ViE("ViECaptureStandardTest", numberOfErrors);
 
     webrtc::VideoCaptureModule::DeviceInfo* devInfo =
         webrtc::VideoCaptureFactory::CreateDeviceInfo(0);
@@ -377,7 +377,7 @@ int ViEAutoTest::ViECaptureAPITest()
     //***************************************************************
 
     int error = 0;
-    tbInterfaces ViE("WebRTCViECapture_API", numberOfErrors);
+    tbInterfaces ViE("ViECapture_API", numberOfErrors);
 
     ViE.ptrViECapture->NumberOfCaptureDevices();
 
@@ -598,7 +598,7 @@ int ViEAutoTest::ViECaptureExternalCaptureTest()
 
 
     int error = 0;
-    tbInterfaces ViE("WebRTCViECapture_ExternalCapture", numberOfErrors);
+    tbInterfaces ViE("ViECapture_ExternalCapture", numberOfErrors);
     tbVideoChannel channel(ViE, numberOfErrors);
     channel.StartReceive();
     channel.StartSend();

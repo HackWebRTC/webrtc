@@ -63,21 +63,14 @@ int VideoEngineSampleCode(void* window1, void* window2)
     }
 
 #ifdef WEBRTC_ANDROID
-    error = ptrViE->SetTraceFile("/sdcard/ViETrace.txt");
-    if (error == -1)
-    {
-        printf("ERROR in VideoEngine::SetTraceFile\n");
-        return -1;
-    }
-
-    error = ptrViE->SetTraceFile("/sdcard/ViEEncryptedTrace.txt");
+    error = ptrViE->SetTraceFile("/sdcard/ViELoopbackCall_trace.txt");
     if (error == -1)
     {
         printf("ERROR in VideoEngine::SetTraceFile\n");
         return -1;
     }
 #else
-    error = ptrViE->SetTraceFile("ViETrace.txt");
+    error = ptrViE->SetTraceFile("ViELoopbackCall_trace.txt");
     if (error == -1)
     {
         printf("ERROR in VideoEngine::SetTraceFile\n");

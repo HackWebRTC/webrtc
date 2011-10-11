@@ -55,6 +55,8 @@
 #define DEFAULT_VIDEO_CODEC_BITRATE                     100
 #define DEFAULT_AUDIO_PORT                              11113
 #define DEFAULT_AUDIO_CODEC				"isac"
+#define DEFAULT_INCOMING_FILE_NAME                      "IncomingFile.avi"
+#define DEFAULT_OUTGOING_FILE_NAME                      "OutgoingFile.avi"   
 
 enum
 {

@@ -69,8 +69,14 @@ public:
 
     // video settings functions
     bool GetVideoPorts(int* txPort, int* rxPort);
-    bool GetVideoCodec(webrtc::ViECodec* ptrViECodec,
-                       webrtc::VideoCodec& videoCodec);
+    bool GetVideoCodecType(webrtc::ViECodec* ptrViECodec,
+                           webrtc::VideoCodec& videoCodec);
+    bool GetVideoCodecResolution(webrtc::ViECodec* ptrViECodec,
+                           webrtc::VideoCodec& videoCodec);
+    bool GetVideoCodecSize(webrtc::ViECodec* ptrViECodec,
+                           webrtc::VideoCodec& videoCodec);
+    bool GetVideoCodecBitrate(webrtc::ViECodec* ptrViECodec,
+                           webrtc::VideoCodec& videoCodec);
 
     // audio settings functions
     bool GetAudioDevices(webrtc::VoEBase* ptrVEBase,
