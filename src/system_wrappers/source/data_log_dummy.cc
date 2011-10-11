@@ -10,6 +10,8 @@
 
 #include "data_log.h"
 
+#include <string>
+
 namespace webrtc {
 
 int DataLog::CreateLog() {
@@ -17,6 +19,10 @@ int DataLog::CreateLog() {
 }
 
 void DataLog::ReturnLog() {
+}
+
+std::string DataLog::Combine(const std::string& table_name, int table_id) {
+  return std::string();
 }
 
 int DataLog::AddTable(const std::string& /*table_name*/) {
