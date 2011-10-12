@@ -49,7 +49,6 @@ public:
                                       VideoCaptureExternal*& externalCapture);
 
     static DeviceInfo* CreateDeviceInfo(const WebRtc_Word32 id);
-    static void DestroyDeviceInfo(DeviceInfo* deviceInfo);
 
 #ifdef WEBRTC_ANDROID
     static WebRtc_Word32 SetAndroidObjects(void* javaVM, void* javaContext);

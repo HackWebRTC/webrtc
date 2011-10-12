@@ -35,7 +35,6 @@ class VideoCaptureFactory {
 
   static VideoCaptureModule::DeviceInfo* CreateDeviceInfo(
       const WebRtc_Word32 id);
-  static void DestroyDeviceInfo(VideoCaptureModule::DeviceInfo* deviceInfo);
 
  private:
   ~VideoCaptureFactory();

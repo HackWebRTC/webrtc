@@ -90,8 +90,7 @@ ViEInputManager::~ViEInputManager()
 #ifndef WEBRTC_VIDEO_EXTERNAL_CAPTURE_AND_RENDER
     if (_ptrCaptureDeviceInfo)
     {
-        VideoCaptureFactory::DestroyDeviceInfo(
-            _ptrCaptureDeviceInfo);
+        delete _ptrCaptureDeviceInfo;
         _ptrCaptureDeviceInfo = NULL;
     }
 #endif

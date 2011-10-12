@@ -72,7 +72,6 @@ class VideoCaptureModule: public RefCountedModule {
         WebRtc_UWord32 positionX,
         WebRtc_UWord32 positionY) = 0;
 
-  protected:
     virtual ~DeviceInfo() {}
   };
 

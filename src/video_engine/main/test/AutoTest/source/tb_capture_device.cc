@@ -56,7 +56,7 @@ tbCaptureDevice::tbCaptureDevice(tbInterfaces& Engine, int& nrOfErrors) :
             break;
         }
     }
-    webrtc::VideoCaptureFactory::DestroyDeviceInfo(devInfo);
+    delete devInfo;
     numberOfErrors += ViETest::TestError(
         captureDeviceSet, "ERROR: %s at line %d - Could not set capture device",
         __FUNCTION__, __LINE__);

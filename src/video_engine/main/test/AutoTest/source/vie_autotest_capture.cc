@@ -338,7 +338,7 @@ int ViEAutoTest::ViECaptureStandardTest()
         ViETest::Log(" ");
         return numberOfErrors;
     }
-    webrtc::VideoCaptureFactory::DestroyDeviceInfo(devInfo);
+    delete devInfo;
 
     ViETest::Log(" ");
     ViETest::Log(" ViECapture Standard Test PASSED!");
@@ -558,7 +558,7 @@ int ViEAutoTest::ViECaptureAPITest()
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    webrtc::VideoCaptureFactory::DestroyDeviceInfo(devInfo);
+    delete devInfo;
     vcpm->Release();
 
     //***************************************************************

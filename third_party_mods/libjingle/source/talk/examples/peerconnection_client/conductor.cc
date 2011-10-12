@@ -241,7 +241,7 @@ scoped_refptr<webrtc::VideoCaptureModule> Conductor::OpenVideoCaptureDevice() {
     if (video_device.get())
       break;
   }
-  webrtc::VideoCaptureFactory::DestroyDeviceInfo(device_info);
+  delete device_info;
   return video_device;
 }
 

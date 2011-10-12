@@ -42,7 +42,7 @@ testCameraEncoder::testCameraEncoder(void)
  
 testCameraEncoder::~testCameraEncoder(void)
 {
-        VideoCaptureModule::DestroyDeviceInfo(_captureInfo);
+    delete _captureInfo;
 
 #ifdef RENDER_PREVIEW
     if(_renderer)

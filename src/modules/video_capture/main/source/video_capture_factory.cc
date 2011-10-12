@@ -29,9 +29,4 @@ VideoCaptureModule::DeviceInfo* VideoCaptureFactory::CreateDeviceInfo(
   return videocapturemodule::VideoCaptureImpl::CreateDeviceInfo(id);
 }
 
-void VideoCaptureFactory::DestroyDeviceInfo(
-    VideoCaptureModule::DeviceInfo* deviceInfo) {
-  videocapturemodule::VideoCaptureImpl::DestroyDeviceInfo(deviceInfo);
-}
-
 } // namespace webrtc

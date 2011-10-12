@@ -49,7 +49,7 @@ testPlatformDependent::testPlatformDependent(void) :
 
 testPlatformDependent::~testPlatformDependent(void)
 {
-    VideoCaptureModule::DestroyDeviceInfo(_captureInfo);
+    delete _captureInfo;
 
 #ifdef RENDER_PREVIEW
     if (_renderer[0])

@@ -35,17 +35,6 @@ VideoCaptureModule::DeviceInfo* VideoCaptureImpl::CreateDeviceInfo (
     return deviceInfo;
 }
 
-void VideoCaptureImpl::DestroyDeviceInfo(
-    VideoCaptureModule::DeviceInfo* deviceInfo)
-{
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, -1,
-                 "%s", __FUNCTION__);
-
-    videocapturemodule::DeviceInfoAndroid* devInfo =
-        static_cast<videocapturemodule::DeviceInfoAndroid*> (deviceInfo);
-    delete devInfo;
-}
-
 DeviceInfoAndroid::DeviceInfoAndroid(const WebRtc_Word32 id) :
     DeviceInfoImpl(id)
 {

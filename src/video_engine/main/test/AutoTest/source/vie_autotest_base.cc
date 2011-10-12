@@ -116,7 +116,7 @@ int ViEAutoTest::ViEBaseStandardTest()
             vcpm = NULL;
         }
     }
-    webrtc::VideoCaptureFactory::DestroyDeviceInfo(devInfo);
+    delete devInfo;
 
     numberOfErrors+= ViETest::TestError(
         captureDeviceSet,

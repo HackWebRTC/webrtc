@@ -43,14 +43,6 @@ VideoCaptureImpl::CreateDeviceInfo(const WebRtc_Word32 id)
     return deviceInfo;
 }
 
-void VideoCaptureImpl::DestroyDeviceInfo(DeviceInfo* deviceInfo)
-{
-    videocapturemodule::DeviceInfoLinux* devInfo =
-        static_cast<videocapturemodule::DeviceInfoLinux*> (deviceInfo);
-    delete devInfo;
-}
-
-
 DeviceInfoLinux::DeviceInfoLinux(const WebRtc_Word32 id)
     : DeviceInfoImpl(id)
 {

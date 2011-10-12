@@ -31,17 +31,10 @@ VideoCaptureModule::DeviceInfo* VideoCaptureImpl::CreateDeviceInfo(
 
     if (!dsInfo || dsInfo->Init() != 0)
     {
-        DestroyDeviceInfo(dsInfo);
+        delete dsInfo;
         dsInfo = NULL;
     }
     return dsInfo;
-}
-
-void VideoCaptureImpl::DestroyDeviceInfo(DeviceInfo* deviceInfo)
-{
-    videocapturemodule::DeviceInfoWindows* impl =
-        static_cast<videocapturemodule::DeviceInfoWindows*> (deviceInfo);
-    delete impl;
 }
 
 DeviceInfoWindows::DeviceInfoWindows(const WebRtc_Word32 id)

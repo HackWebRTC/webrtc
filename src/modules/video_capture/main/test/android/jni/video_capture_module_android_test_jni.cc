@@ -140,7 +140,7 @@ Java_org_webrtc_capturemoduleandroidtest_VideoCaptureModuleTest_StopCapture(
 {
   if (jniData._videoCapture) {
     jniData._videoCapture->StopCapture();
-    VideoCaptureModule::DestroyDeviceInfo(jniData._captureInfo);
+    delete jniData._captureInfo;
     VideoCaptureModule::Destroy(jniData._videoCapture);
     jniData._videoCapture = NULL;
     jniData._captureInfo = NULL;
