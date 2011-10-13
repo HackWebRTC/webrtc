@@ -12,6 +12,9 @@
  * vie_file_image.cc
  */
 
+#include "engine_configurations.h"
+
+#ifdef WEBRTC_VIDEO_ENGINE_FILE_API
 #include <stdio.h>
 #include "vie_file_image.h"
 #include "video_image.h"
@@ -111,3 +114,4 @@ int ViEFileImage::ConvertPictureToVideoFrame(int engineId,
     return 0;
 }
 } // namespace webrtc
+#endif  // WEBRTC_VIDEO_ENGINE_FILE_API

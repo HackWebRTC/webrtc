@@ -39,6 +39,7 @@ int ViEAutoTest::ViEFileStandardTest()
     ViETest::Log("========================================");
     ViETest::Log(" ViEFile Standard Test\n");
 
+#ifdef WEBRTC_VIDEO_ENGINE_FILE_API
     //***************************************************************
     //	Begin create/initialize WebRTC Video Engine for testing
     //***************************************************************
@@ -809,6 +810,7 @@ int ViEAutoTest::ViEFileStandardTest()
         ViETest::Log(" ");
         return numberOfErrors;
     }
+#endif
 
     ViETest::Log(" ");
     ViETest::Log(" ViEFile Standard Test PASSED!");

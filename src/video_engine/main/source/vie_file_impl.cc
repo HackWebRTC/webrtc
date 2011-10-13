@@ -14,6 +14,7 @@
 
 #include "vie_file_impl.h"
 
+#ifdef WEBRTC_VIDEO_ENGINE_FILE_API
 // Defines
 #include "vie_defines.h"
 
@@ -33,6 +34,7 @@
 #include "vie_impl.h"
 #include "vie_input_manager.h"
 #include "vie_render_manager.h"
+#endif
 
 namespace webrtc
 {
@@ -58,6 +60,7 @@ ViEFile* ViEFile::GetInterface(VideoEngine* videoEngine)
 #endif
 }
 
+#ifdef WEBRTC_VIDEO_ENGINE_FILE_API
 // ----------------------------------------------------------------------------
 // Release
 //
@@ -1311,4 +1314,5 @@ void ViECaptureSnapshot::DeliverFrame(int id, VideoFrame& videoFrame,
     _conditionVaraible.WakeAll();
     return;
 }
+#endif
 } // namespace webrtc
