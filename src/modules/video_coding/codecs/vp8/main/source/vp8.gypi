@@ -17,6 +17,7 @@
       'include_dirs': [
         '../interface',
         '../../../../../../common_video/interface',
+        '../../../../../../common_video/vplib/main/interface',
         '../../../interface',
         '../../../../../interface',
       ],
@@ -72,7 +73,9 @@
       },
       'sources': [
         '../interface/vp8.h',
+        '../interface/vp8_simulcast.h',
         'vp8.cc',
+        'vp8_simulcast.cc',
       ],
     },
   ], # targets

@@ -485,6 +485,7 @@ enum RawVideoType
 // Video codec
 enum { kConfigParameterSize = 128};
 enum { kPayloadNameSize = 32};
+enum { kMaxSimulcastStreams = 4};
 
 // H.263 specific
 struct VideoCodecH263
@@ -530,9 +531,10 @@ struct VideoCodecH264
 // VP8 specific
 struct VideoCodecVP8
 {
-    bool                       pictureLossIndicationOn;
-    bool                       feedbackModeOn;
-    VideoCodecComplexity       complexity;
+    bool                 pictureLossIndicationOn;
+    bool                 feedbackModeOn;
+    VideoCodecComplexity complexity;
+    unsigned char        numberOfTemporalLayers;
 };
 
 // MPEG-4 specific
@@ -570,6 +572,19 @@ union VideoCodecUnion
     VideoCodecGeneric   Generic;
 };
 
+/*
+*  Simulcast is when the same stream is encoded multiple times with different
+*  settings such as resolution.  
+*/
+struct SimulcastStream
+{
+    unsigned short      width;
+    unsigned short      height;
+    unsigned char       numberOfTemporalLayers;
+    unsigned int        maxBitrate;
+    unsigned int        qpMax; // minimum quality
+};
+
 // Common video codec properties
 struct VideoCodec
 {
@@ -588,8 +603,8 @@ struct VideoCodec
     VideoCodecUnion     codecSpecific;
 
     unsigned int        qpMax;
+    unsigned char       numberOfSimulcastStreams;
+    SimulcastStream     simulcastStream[kMaxSimulcastStreams];
 };
-
 }  // namespace webrtc
-
 #endif  // WEBRTC_COMMON_TYPES_H

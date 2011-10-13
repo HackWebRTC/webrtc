@@ -23,6 +23,7 @@
 // Supported codecs
 #ifdef  VIDEOCODEC_VP8
     #include "vp8.h"
+    #include "vp8_simulcast.h"
 #endif
 #ifdef  VIDEOCODEC_I420
     #include "i420.h"
@@ -91,7 +92,7 @@ VCMCodecDataBase::Version(WebRtc_Word8* version,
         {
             return ret;
         }
-        encoder = CreateEncoder(settings.codecType);
+        encoder = CreateEncoder(settings.codecType, false);
         if (encoder == NULL)
         {
             return VCM_MEMORY;
@@ -133,24 +134,29 @@ VCMCodecDataBase::ResetSender()
     return VCM_OK;
 }
 
-VCMGenericEncoder*
-VCMCodecDataBase::CreateEncoder(VideoCodecType type) const
-{
+VCMGenericEncoder* VCMCodecDataBase::CreateEncoder(
+    const VideoCodecType type,
+    const bool simulcast) const {
+
     switch(type)
     {
 #ifdef  VIDEOCODEC_VP8
         case kVideoCodecVP8:
-            return new VCMGenericEncoder(*(new VP8Encoder));
-        break;
+            if (simulcast) {
+                return new VCMGenericEncoder(*(new VP8SimulcastEncoder));
+            } else {
+                return new VCMGenericEncoder(*(new VP8Encoder));
+            }
 #endif
 #ifdef VIDEOCODEC_I420
         case kVideoCodecI420:
-            return new VCMGenericEncoder(*(new I420Encoder));
-            break;
+            if (!simulcast) {
+                return new VCMGenericEncoder(*(new I420Encoder));
+            }
+            return NULL;
 #endif
         default:
-        return NULL;
-        break;
+            return NULL;
     }
 }
 
@@ -203,6 +209,8 @@ VCMCodecDataBase::Codec(WebRtc_UWord8 listId, VideoCodec *settings)
             settings->maxFramerate = VCM_DEFAULT_FRAME_RATE;
             settings->width = VCM_DEFAULT_CODEC_WIDTH;
             settings->height = VCM_DEFAULT_CODEC_HEIGHT;
+            settings->numberOfSimulcastStreams = 0;
+            settings->codecSpecific.VP8.numberOfTemporalLayers = 1;
             break;
         }
 #endif
@@ -222,6 +230,7 @@ VCMCodecDataBase::Codec(WebRtc_UWord8 listId, VideoCodec *settings)
             settings->width = VCM_DEFAULT_CODEC_WIDTH;
             settings->height = VCM_DEFAULT_CODEC_HEIGHT;
             settings->minBitrate = VCM_MIN_BITRATE;
+            settings->numberOfSimulcastStreams = 0;
             break;
         }
 #endif
@@ -387,19 +396,32 @@ VCMCodecDataBase::SetEncoder(const VideoCodec* settings,
     }
     else
     {
-        _ptrEncoder = CreateEncoder(settings->codecType);
+         bool simulcast = false;
+         if (settings->numberOfSimulcastStreams > 1)
+         {
+             simulcast = true;
+         }
+        _ptrEncoder = CreateEncoder(settings->codecType, simulcast);
         _currentEncIsExternal = false;
     }
-
     VCMencodedFrameCallback->SetPayloadType(settings->plType);
 
     if (_ptrEncoder == NULL)
     {
+        WEBRTC_TRACE(webrtc::kTraceError,
+                     webrtc::kTraceVideoCoding,
+                     VCMId(_id),
+                     "Failed to create encoder: %s.",
+                     settings->plName);
         return NULL;
     }
-
     if (_ptrEncoder->InitEncode(settings, _numberOfCores, _maxPayloadSize) < 0)
     {
+        WEBRTC_TRACE(webrtc::kTraceError,
+                     webrtc::kTraceVideoCoding,
+                     VCMId(_id),
+                     "Failed to initialize encoder: %s.",
+                     settings->plName);
         DeleteEncoder();
         return NULL;
     }

@@ -268,7 +268,7 @@ bool PerformanceTest::Encode()
         frameType = kKeyFrame;
     }
     webrtc::CodecSpecificInfo* codecSpecificInfo = CreateEncoderSpecificInfo();
-    int ret = _encoder->Encode(rawImage, codecSpecificInfo, frameType);
+    int ret = _encoder->Encode(rawImage, codecSpecificInfo, &frameType);
     if (codecSpecificInfo != NULL)
     {
         delete codecSpecificInfo;

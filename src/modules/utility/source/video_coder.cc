@@ -149,7 +149,7 @@ WebRtc_Word32 VideoCoder::SendData(
     const WebRtc_UWord8* payloadData,
     WebRtc_UWord32 payloadSize,
     const RTPFragmentationHeader& fragmentationHeader,
-    const RTPVideoTypeHeader* rtpTypeHdr)
+    const RTPVideoHeader* /*rtpVideoHdr*/)
 {
     // Store the data in _videoEncodedData which is a pointer to videoFrame in
     // Encode(..)

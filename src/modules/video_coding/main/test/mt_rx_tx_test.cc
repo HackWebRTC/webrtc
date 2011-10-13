@@ -149,14 +149,23 @@ int MTRxTxTest(CmdArgs& args)
         return -1;
     }
     // registering codecs for the RTP module
-    TEST(rtp->RegisterReceivePayload("ULPFEC", VCM_ULPFEC_PAYLOAD_TYPE) == 0);
-    TEST(rtp->RegisterReceivePayload("RED", VCM_RED_PAYLOAD_TYPE) == 0);
-    TEST(rtp->RegisterReceivePayload(args.codecName.c_str(), VCM_VP8_PAYLOAD_TYPE) == 0);
+    VideoCodec videoCodec;
+    strncpy(videoCodec.plName, "ULPFEC", 32);
+    videoCodec.plType = VCM_ULPFEC_PAYLOAD_TYPE;
+    TEST(rtp->RegisterReceivePayload(videoCodec) == 0);
+
+    strncpy(videoCodec.plName, "RED", 32);
+    videoCodec.plType = VCM_RED_PAYLOAD_TYPE;
+    TEST(rtp->RegisterReceivePayload(videoCodec) == 0);
+
+    strncpy(videoCodec.plName, args.codecName.c_str(), 32);
+    videoCodec.plType = VCM_VP8_PAYLOAD_TYPE;
+    videoCodec.maxBitrate = 10000;
+    TEST(rtp->RegisterReceivePayload(videoCodec) == 0);
+    TEST(rtp->RegisterSendPayload(videoCodec) == 0);
 
     // inform RTP Module of error resilience features
     TEST(rtp->SetGenericFECStatus(fecEnabled, VCM_RED_PAYLOAD_TYPE, VCM_ULPFEC_PAYLOAD_TYPE) == 0);
-
-    TEST(rtp->RegisterSendPayload(args.codecName.c_str(), VCM_VP8_PAYLOAD_TYPE, 90000, 1, 10000) == 0);
 
     //VCM
     VideoCodingModule* vcm = VideoCodingModule::Create(1);

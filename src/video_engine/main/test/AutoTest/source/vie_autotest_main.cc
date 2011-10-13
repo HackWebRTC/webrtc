@@ -55,6 +55,7 @@ bool ViEAutoTestMain::BeginOSIndependentTesting()
         ViETest::Log("\t 6. Specific extended test");
         ViETest::Log("\t 7. Simple loopback call");
         ViETest::Log("\t 8. Custom configure a call");
+        ViETest::Log("\t 9. Simulcast in loopback");
         ViETest::Log("Select type of test: ");
 
         if (_useAnswerFile)
@@ -73,13 +74,6 @@ bool ViEAutoTestMain::BeginOSIndependentTesting()
             getchar();
         }
         ViETest::Log("");
-
-        if (testType < 0 || testType > 8)
-        {
-            ViETest::Log("ERROR: Invalid selection. Try again\n");
-            continue;
-        }
-
         switch (testType)
         {
             case 0:
@@ -257,8 +251,12 @@ bool ViEAutoTestMain::BeginOSIndependentTesting()
             case 8:
                 testErrors += vieAutoTest.ViECustomCall();
                 break;
-            default:
+            case 9:
+                testErrors += vieAutoTest.ViESimulcastCall();
                 break;
+            default:
+                ViETest::Log("ERROR: Invalid selection. Try again\n");
+                continue;
         }
     } while (testType != 0);
 

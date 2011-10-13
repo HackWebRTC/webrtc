@@ -15,11 +15,14 @@
 #ifndef WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_CHANNEL_H_
 #define WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_CHANNEL_H_
 
+#include <list>
+
 // Defines
 #include "vie_defines.h"
 
 #include "typedefs.h"
 #include "vie_network.h"
+#include "vie_rtp_rtcp.h"
 #include "rtp_rtcp_defines.h"
 #include "udp_transport.h"
 #include "video_coding_defines.h"
@@ -117,14 +120,15 @@ public:
                                          const unsigned char payloadTypeRED,
                                          const unsigned char payloadTypeFEC);
 
-    WebRtc_Word32
-        SetKeyFrameRequestMethod(const KeyFrameRequestMethod method);
+    WebRtc_Word32 SetKeyFrameRequestMethod(const KeyFrameRequestMethod method);
 
     WebRtc_Word32 EnableTMMBR(const bool enable);
 
     WebRtc_Word32 EnableKeyFrameRequestCallback(const bool enable);
 
-    WebRtc_Word32 SetSSRC(const WebRtc_UWord32 SSRC);
+    WebRtc_Word32 SetSSRC(const WebRtc_UWord32 SSRC,
+                          const StreamType usage,
+                          const unsigned char simulcastIdx);
 
     WebRtc_Word32 GetLocalSSRC(WebRtc_UWord32& SSRC);
 
@@ -431,11 +435,11 @@ private:
     // Critical sections
     // Used for all registered callbacks except rendering.
     CriticalSectionWrapper& _callbackCritsect;
-    // Use the same as above instead a seperate?
-    CriticalSectionWrapper& _dataCritsect;
 
     // Owned modules/classes
     RtpRtcp& _rtpRtcp;
+    RtpRtcp* _defaultRtpRtcp;
+    std::list<RtpRtcp*> _simulcastRtpRtcp;
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
     UdpTransport& _socketTransport;
 #endif
@@ -480,7 +484,5 @@ private:
     //Recording
     ViEFileRecorder _fileRecorder;
 };
-
 } // namespace webrtc
-
 #endif    // WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_CHANNEL_H_

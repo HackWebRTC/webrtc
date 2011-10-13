@@ -12,24 +12,22 @@
 // tb_external_transport.cc
 //
 
-#include <stdlib.h> // rand
 #include "tb_external_transport.h"
+
+#include <stdlib.h> // rand
+#if defined(WEBRTC_LINUX) || defined(__linux__)
+#include <stdlib.h>
+#include <string.h>
+#endif
+#if defined(WEBRTC_MAC)
+#include <cstring>
+#endif
 
 #include "critical_section_wrapper.h"
 #include "event_wrapper.h"
 #include "thread_wrapper.h"
 #include "tick_util.h"
 #include "vie_network.h"
-#include "tick_util.h"
-
-#if defined(WEBRTC_LINUX) || defined(__linux__)
-#include <stdlib.h>
-#include <string.h>
-#endif
-
-#if defined(WEBRTC_MAC)
-#include <cstring>
-#endif
 
 #if defined(_WIN32)
 #pragma warning(disable: 4355) // 'this' : used in base member initializer list
@@ -52,6 +50,8 @@ tbExternalTransport::tbExternalTransport(webrtc::ViENetwork& vieNetwork) :
         _rtcpPackets(),
         _checkSSRC(false),
         _lastSSRC(0),
+        _filterSSRC(false),
+        _SSRC(0),
         _checkSequenceNumber(0),
         _firstSequenceNumber(0)
 {
@@ -75,6 +75,18 @@ tbExternalTransport::~tbExternalTransport()
 
 int tbExternalTransport::SendPacket(int channel, const void *data, int len)
 {
+    if (_filterSSRC)
+    {
+        WebRtc_UWord8* ptr = (WebRtc_UWord8*)data;
+        WebRtc_UWord32 ssrc = ptr[8] << 24;
+        ssrc += ptr[9] << 16;
+        ssrc += ptr[10] << 8;
+        ssrc += ptr[11];
+        if (ssrc != _SSRC)
+        {  
+            return len; // return len to avoif error in trace file
+        }
+    }
     _statCrit.Enter();
     _rtpCount++;
     _statCrit.Leave();
@@ -132,7 +144,13 @@ void tbExternalTransport::SetNetworkDelay(WebRtc_Word64 delayMs)
 {
     webrtc::CriticalSectionScoped cs(_crit);
     _networkDelayMs = delayMs;
-    return;
+}
+
+void tbExternalTransport::SetSSRCFilter(WebRtc_UWord32 ssrc)
+{
+    webrtc::CriticalSectionScoped cs(_crit);
+    _filterSSRC = true;
+    _SSRC = ssrc;
 }
 
 void tbExternalTransport::ClearStats()
@@ -141,7 +159,6 @@ void tbExternalTransport::ClearStats()
     _rtpCount = 0;
     _dropCount = 0;
     _rtcpCount = 0;
-    return;
 }
 
 void tbExternalTransport::GetStats(WebRtc_Word32& numRtpPackets,
@@ -152,7 +169,6 @@ void tbExternalTransport::GetStats(WebRtc_Word32& numRtpPackets,
     numRtpPackets = _rtpCount;
     numDroppedPackets = _dropCount;
     numRtcpPackets = _rtcpCount;
-    return;
 }
 
 void tbExternalTransport::EnableSSRCCheck()
@@ -160,6 +176,7 @@ void tbExternalTransport::EnableSSRCCheck()
     webrtc::CriticalSectionScoped cs(_statCrit);
     _checkSSRC = true;
 }
+
 unsigned int tbExternalTransport::ReceivedSSRC()
 {
     webrtc::CriticalSectionScoped cs(_statCrit);
@@ -258,8 +275,9 @@ bool tbExternalTransport::ViEExternalTransportProcess()
         // Send to ViE
         if (packet)
         {
-            _vieNetwork.ReceivedRTPPacket(packet->channel,
-                                          packet->packetBuffer, packet->length);
+            _vieNetwork.ReceivedRTCPPacket(
+                 packet->channel,
+                 packet->packetBuffer, packet->length);
             delete packet;
             packet = NULL;
         }

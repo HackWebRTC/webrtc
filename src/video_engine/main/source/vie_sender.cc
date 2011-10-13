@@ -11,11 +11,10 @@
 /*
  * vie_sender.cc
  */
+#include <cassert>
 
 #include "vie_sender.h"
-
 #include "critical_section_wrapper.h"
-#include "rtp_rtcp.h"
 #ifdef WEBRTC_SRTP
 #include "SrtpModule.h"
 #endif
@@ -28,11 +27,9 @@ namespace webrtc {
 // Constructor
 // ----------------------------------------------------------------------------
 
-ViESender::ViESender(int engineId, int channelId,
-                     RtpRtcp& rtpRtcpModule)
+ViESender::ViESender(int engineId, int channelId)
     : _engineId(engineId), _channelId(channelId),
       _sendCritsect(*CriticalSectionWrapper::CreateCriticalSection()),
-      _rtpRtcp(rtpRtcpModule),
 #ifdef WEBRTC_SRTP
       _ptrSrtp(NULL),
       _ptrSrtcp(NULL),

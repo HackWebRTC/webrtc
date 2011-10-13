@@ -248,6 +248,19 @@ int ViECodecImpl::SetSendCodec(const int videoChannel,
         }
         newRtpStream = true;
     }
+    if (videoCodecInternal.numberOfSimulcastStreams > 1)
+    {
+        if (cs.ChannelUsingViEEncoder(videoChannel))
+        {
+            // We don't allow simulcast channels to share encoder
+            WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
+                       ViEId(_instanceId, videoChannel),
+                       "%s: Can't share simulcast encoder",
+                       __FUNCTION__);
+            SetLastError(kViECodecInUse);
+            return -1;
+        }
+    }
 
     ViEInputManagerScoped is(_inputManager);
     ViEFrameProviderBase* frameProvider = NULL;
@@ -958,7 +971,12 @@ bool ViECodecImpl::CodecValid(const VideoCodec& videoCodec)
                    "Invalid minBitrate: %u", videoCodec.minBitrate);
         return false;
     }
-
+    if (videoCodec.numberOfSimulcastStreams == 1)
+    {
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
+                     "Number of Simulcast streams can not be 1");
+        return false;
+    }
     if (videoCodec.codecType == kVideoCodecH263)
     {
         if ((videoCodec.width == 704 && videoCodec.height == 576)

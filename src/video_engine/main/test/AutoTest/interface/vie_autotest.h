@@ -47,6 +47,7 @@ public:
     int ViEExtendedTest();
     int ViEAPITest();
     int ViELoopbackCall();
+    int ViESimulcastCall();
 
     // custom call and helper functions
     int ViECustomCall();

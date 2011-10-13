@@ -87,7 +87,7 @@ public:
 
     virtual WebRtc_Word32 Encode(const RawImage& inputImage,
                                  const CodecSpecificInfo* codecSpecificInfo,
-                                 VideoFrameType frameType);
+                                 const VideoFrameType* frameTypes);
 
 // Register an encode complete callback object.
 //
@@ -163,6 +163,7 @@ private:
     bool                      _inited;
     WebRtc_UWord32            _timeStamp;
     WebRtc_UWord16            _pictureID;
+    WebRtc_UWord8             _simulcastIdx;
     bool                      _pictureLossIndicationOn;
     bool                      _feedbackModeOn;
     bool                      _nextRefIsGolden;

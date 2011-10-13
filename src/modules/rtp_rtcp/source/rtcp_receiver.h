@@ -72,24 +72,27 @@ public:
 
     WebRtc_Word32 SenderInfoReceived(RTCPSenderInfo* senderInfo) const;
 
-    void OnReceivedIntraFrameRequest(const WebRtc_UWord8 message) const;
+    void OnReceivedIntraFrameRequest(const FrameType frameType,
+                                     const WebRtc_UWord8 streamIdx) const;
+
     void OnReceivedSliceLossIndication(const WebRtc_UWord8 pitureID) const;
-    void OnReceivedReferencePictureSelectionIndication(const WebRtc_UWord64 pitureID) const;
+    void OnReceivedReferencePictureSelectionIndication(
+        const WebRtc_UWord64 pitureID) const;
 
     // get statistics
     WebRtc_Word32 StatisticsReceived(const WebRtc_UWord32 remoteSSRC,
-                                   RTCPReportBlock* receiveBlock) const;
+                                     RTCPReportBlock* receiveBlock) const;
     // Get TMMBR
     WebRtc_Word32 TMMBRReceived(const WebRtc_UWord32 size,
-                              const WebRtc_UWord32 accNumCandidates,
-                              TMMBRSet* candidateSet) const;
+                                const WebRtc_UWord32 accNumCandidates,
+                                TMMBRSet* candidateSet) const;
 
     bool UpdateRTCPReceiveInformationTimers();
 
     void UpdateBandwidthEstimate(const WebRtc_UWord16 bwEstimateKbit);
 
     WebRtc_Word32 BoundingSet(bool &tmmbrOwner,
-                            TMMBRSet*& boundingSetRec);
+                              TMMBRSet*& boundingSetRec);
 
     WebRtc_Word32 SetPacketTimeout(const WebRtc_UWord32 timeoutMS);
     void PacketTimeout();

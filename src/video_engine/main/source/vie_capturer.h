@@ -125,11 +125,10 @@ protected:
                                      WebRtc_Word32 numberOfCores,
                                      WebRtc_UWord32 maxPayloadSize);
     virtual WebRtc_Word32 Encode(const RawImage& inputImage,
-                                 const CodecSpecificInfo* codecSpecificInfo =
-                                     NULL,
-                                 VideoFrameType frameType = kDeltaFrame);
+                                 const CodecSpecificInfo* codecSpecificInfo,
+                                 const VideoFrameType* frameTypes);
     virtual WebRtc_Word32 RegisterEncodeCompleteCallback(
-                                                EncodedImageCallback* callback);
+        EncodedImageCallback* callback);
     virtual WebRtc_Word32 Release();
     virtual WebRtc_Word32 Reset();
     virtual WebRtc_Word32 SetPacketLoss(WebRtc_UWord32 packetLoss);

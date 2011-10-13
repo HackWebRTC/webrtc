@@ -47,6 +47,12 @@ enum ViEKeyFrameRequestMethod
     kViEKeyFrameRequestFirRtcp = 3
 };
 
+enum StreamType
+{
+    kViEStreamTypeNormal = 0,  // Normal media stream
+    kViEStreamTypeRtx = 1      // Retransmission media stream
+};
+
 // ----------------------------------------------------------------------------
 // ViERTPObserver
 // ----------------------------------------------------------------------------
@@ -120,12 +126,20 @@ public:
     // This function enables you to specify the RTP synchronization source
     // identifier (SSRC) explicitly.
     virtual int SetLocalSSRC(const int videoChannel,
-                             const unsigned int SSRC) = 0;
+                             const unsigned int SSRC,
+                             const StreamType usage = kViEStreamTypeNormal,
+                             const unsigned char simulcastIdx = 0) = 0;
 
     // This function gets the SSRC for the outgoing RTP stream for the specified
     // channel.
     virtual int GetLocalSSRC(const int videoChannel,
                              unsigned int& SSRC) const = 0;
+
+    // This function map a incoming SSRC to a StreamType so that the engine
+    // can know which is the normal stream and which is the RTX
+    virtual int SetRemoteSSRCType(const int videoChannel,
+                                  const StreamType usage,
+                                  const unsigned int SSRC) const = 0;
 
     // This function gets the SSRC for the incoming RTP stream for the specified
     // channel.

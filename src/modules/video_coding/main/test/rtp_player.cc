@@ -205,7 +205,10 @@ WebRtc_Word32 RTPPlayer::Initialize(const ListWrapper& payloadList)
         PayloadCodecTuple* payloadType = static_cast<PayloadCodecTuple*>(item->GetItem());
         if (payloadType != NULL)
         {
-            if (_rtpModule.RegisterReceivePayload(payloadType->name.c_str(), payloadType->payloadType) < 0)
+            VideoCodec videoCodec;
+            strncpy(videoCodec.plName, payloadType->name.c_str(), 32);
+            videoCodec.plType = payloadType->payloadType;
+            if (_rtpModule.RegisterReceivePayload(videoCodec) < 0)
             {
                 return -1;
             }

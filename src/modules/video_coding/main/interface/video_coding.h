@@ -237,7 +237,7 @@ public:
     //                     < 0,         on error.
     virtual WebRtc_Word32 AddVideoFrame(
         const VideoFrame& videoFrame,
-        const VideoContentMetrics* _contentMetrics = NULL,
+        const VideoContentMetrics* contentMetrics = NULL,
         const CodecSpecificInfo* codecSpecificInfo = NULL) = 0;
 
     // Next frame encoded should be of the type frameType.
@@ -248,7 +248,8 @@ public:
     //
     // Return value      : VCM_OK, on success.
     //                     < 0,         on error.
-    virtual WebRtc_Word32 FrameTypeRequest(FrameType frameType) = 0;
+    virtual WebRtc_Word32 FrameTypeRequest(FrameType frameType,
+                                           WebRtc_UWord8 simulcastIdx) = 0;
 
     // Frame Dropper enable. Can be used to disable the frame dropping when the encoder
     // over-uses its bit rate. This API is designed to be used when the encoded frames

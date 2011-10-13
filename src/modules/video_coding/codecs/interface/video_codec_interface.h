@@ -31,6 +31,8 @@ struct CodecSpecificInfoVP8
     WebRtc_UWord64   pictureIdRPSI;
     WebRtc_Word16    pictureId;         // negative value to skip pictureId
     bool             nonReference;
+    WebRtc_UWord8    simulcastIdx;
+    WebRtc_UWord8    temporalIdx;
 };
 
 union CodecSpecificInfoUnion
@@ -106,8 +108,8 @@ public:
     // Return value                 : WEBRTC_VIDEO_CODEC_OK if OK, < 0 otherwise.
     virtual WebRtc_Word32
     Encode(const RawImage& inputImage,
-           const CodecSpecificInfo* codecSpecificInfo = NULL,
-           VideoFrameType frameType = kDeltaFrame) = 0;
+           const CodecSpecificInfo* codecSpecificInfo,
+           const VideoFrameType* frameTypes) = 0;
 
     // Register an encode complete callback object.
     //

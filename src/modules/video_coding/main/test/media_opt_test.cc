@@ -209,15 +209,22 @@ MediaOptTest::GeneralSetup()
 
     // Registering codecs for the RTP module
 
-    // Register receive payload
-    _rtp->RegisterReceivePayload("VP8", VCM_VP8_PAYLOAD_TYPE);
-    _rtp->RegisterReceivePayload("ULPFEC", VCM_ULPFEC_PAYLOAD_TYPE);
-    _rtp->RegisterReceivePayload("RED", VCM_RED_PAYLOAD_TYPE);
+    // Register receive and send payload
+    VideoCodec videoCodec;
+    strncpy(videoCodec.plName, "VP8", 32);
+    videoCodec.plType = VCM_VP8_PAYLOAD_TYPE;
+    _rtp->RegisterReceivePayload(videoCodec);
+    _rtp->RegisterSendPayload(videoCodec);
 
-    // Register send payload
-    _rtp->RegisterSendPayload("VP8", VCM_VP8_PAYLOAD_TYPE);
-    _rtp->RegisterSendPayload("ULPFEC", VCM_ULPFEC_PAYLOAD_TYPE);
-    _rtp->RegisterSendPayload("RED", VCM_RED_PAYLOAD_TYPE);
+    strncpy(videoCodec.plName, "ULPFEC", 32);
+    videoCodec.plType = VCM_ULPFEC_PAYLOAD_TYPE;
+    _rtp->RegisterReceivePayload(videoCodec);
+    _rtp->RegisterSendPayload(videoCodec);
+
+    strncpy(videoCodec.plName, "RED", 32);
+    videoCodec.plType = VCM_RED_PAYLOAD_TYPE;
+    _rtp->RegisterReceivePayload(videoCodec);
+    _rtp->RegisterSendPayload(videoCodec);
 
     if (_nackFecEnabled == 1)
         _rtp->SetGenericFECStatus(_nackFecEnabled, VCM_RED_PAYLOAD_TYPE,

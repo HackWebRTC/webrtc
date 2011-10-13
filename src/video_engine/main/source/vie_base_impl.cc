@@ -219,7 +219,6 @@ int ViEBaseImpl::CreateChannel(int& videoChannel, int originalChannel)
         SetLastError(kViEBaseInvalidChannelId);
         return -1;
     }
-
     if (_channelManager.CreateChannel(videoChannel,
                                       originalChannel) == -1)
     {

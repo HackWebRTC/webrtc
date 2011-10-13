@@ -512,12 +512,12 @@ RTPReceiver::DeRegisterReceivePayload(const WebRtc_Word8 payloadType)
     return -1;
 }
 
-WebRtc_Word32
-RTPReceiver::ReceivePayloadType(const WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
-                                const WebRtc_UWord32 frequency,
-                                const WebRtc_UWord8 channels,
-                                WebRtc_Word8* payloadType,
-                                const WebRtc_UWord32 rate) const
+WebRtc_Word32 RTPReceiver::ReceivePayloadType(
+    const WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
+    const WebRtc_UWord32 frequency,
+    const WebRtc_UWord8 channels,
+    const WebRtc_UWord32 rate,
+    WebRtc_Word8* payloadType) const
 {
     if(payloadType == NULL)
     {

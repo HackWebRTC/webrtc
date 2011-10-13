@@ -107,10 +107,14 @@ ViERTP_RTCPImpl::~ViERTP_RTCPImpl()
 // ----------------------------------------------------------------------------
 
 int ViERTP_RTCPImpl::SetLocalSSRC(const int videoChannel,
-                                  const unsigned int SSRC)
+                                  const unsigned int SSRC,
+                                  const StreamType usage,
+                                  const unsigned char simulcastIdx)
 {
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-                 ViEId(_instanceId, videoChannel), "%s(channel: %d, SSRC: %d)",
+    WEBRTC_TRACE(webrtc::kTraceApiCall,
+                 webrtc::kTraceVideo,
+                 ViEId(_instanceId, videoChannel),
+                 "%s(channel: %d, SSRC: %d)",
                  __FUNCTION__, videoChannel, SSRC);
 
     // Get the channel
@@ -119,19 +123,19 @@ int ViERTP_RTCPImpl::SetLocalSSRC(const int videoChannel,
     if (ptrViEChannel == NULL)
     {
         // The channel doesn't exists
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
+        WEBRTC_TRACE(webrtc::kTraceError,
+                     webrtc::kTraceVideo,
                      ViEId(_instanceId, videoChannel),
-                     "%s: Channel %d doesn't exist", __FUNCTION__,
-                     videoChannel);
+                     "%s: Channel %d doesn't exist",
+                     __FUNCTION__, videoChannel);
         SetLastError(kViERtpRtcpInvalidChannelId);
         return -1;
     }
-    if (ptrViEChannel->SetSSRC(SSRC) != 0)
+    if (ptrViEChannel->SetSSRC(SSRC, usage, simulcastIdx) != 0)
     {
         SetLastError(kViERtpRtcpUnknownError);
         return -1;
     }
-
     return 0;
 }
 
@@ -169,6 +173,14 @@ int ViERTP_RTCPImpl::GetLocalSSRC(const int videoChannel,
     }
     return 0;
 
+}
+
+int ViERTP_RTCPImpl::SetRemoteSSRCType(const int videoChannel,
+                                       const StreamType usage,
+                                       const unsigned int SSRC) const
+{
+    // TODO(pwestin) add support for RTX
+    return -1;
 }
 
 // ----------------------------------------------------------------------------

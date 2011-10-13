@@ -37,6 +37,7 @@ public:
 
     WebRtc_Word32 SetPacketLoss(WebRtc_Word32 lossRate); // Rate in %
     void SetNetworkDelay(WebRtc_Word64 delayMs);
+    void SetSSRCFilter(WebRtc_UWord32 SSRC);
 
     void ClearStats();
     void GetStats(WebRtc_Word32& numRtpPackets,
@@ -88,6 +89,8 @@ private:
 
     bool _checkSSRC;
     WebRtc_UWord32 _lastSSRC;
+    bool _filterSSRC;
+    WebRtc_UWord32 _SSRC;
     bool _checkSequenceNumber;
     WebRtc_UWord16 _firstSequenceNumber;
 };

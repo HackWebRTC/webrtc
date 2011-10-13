@@ -90,7 +90,7 @@ public:
             const WebRtc_UWord8* payloadData,
             const WebRtc_UWord32 payloadSize,
             const webrtc::RTPFragmentationHeader& fragmentationHeader,
-            const webrtc::RTPVideoTypeHeader* videoTypeHdr);
+            const webrtc::RTPVideoHeader* videoHdr);
 private:
     webrtc::VideoCodingModule& _vcm;
     WebRtc_UWord16 _seqNo;

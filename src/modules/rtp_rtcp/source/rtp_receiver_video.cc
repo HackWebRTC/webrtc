@@ -86,17 +86,17 @@ RTPReceiverVideo::RegisterIncomingVideoCallback(RtpVideoFeedback* incomingMessag
 }
 
 void
-RTPReceiverVideo::UpdateBandwidthManagement(const WebRtc_UWord32 minBitrateBps,
-                                            const WebRtc_UWord32 maxBitrateBps,
+RTPReceiverVideo::UpdateBandwidthManagement(const WebRtc_UWord32 bitrateBps,
                                             const WebRtc_UWord8 fractionLost,
-                                            const WebRtc_UWord16 roundTripTimeMs,
-                                            const WebRtc_UWord16 bwEstimateKbitMin,
-                                            const WebRtc_UWord16 bwEstimateKbitMax)
+                                            const WebRtc_UWord16 roundTripTimeMs)
 {
     CriticalSectionScoped lock(_criticalSectionFeedback);
     if(_cbVideoFeedback)
     {
-        _cbVideoFeedback->OnNetworkChanged(_id, minBitrateBps, maxBitrateBps, fractionLost, roundTripTimeMs, bwEstimateKbitMin, bwEstimateKbitMax);
+        _cbVideoFeedback->OnNetworkChanged(_id,
+                                           bitrateBps,
+                                           fractionLost,
+                                           roundTripTimeMs);
     }
 }
 

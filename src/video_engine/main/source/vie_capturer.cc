@@ -910,8 +910,8 @@ WebRtc_Word32 ViECapturer::InitEncode(const VideoCodec* codecSettings,
  */
 WebRtc_Word32
 ViECapturer::Encode(const RawImage& inputImage,
-                    const CodecSpecificInfo* codecSpecificInfo, /*= NULL,*/
-                    VideoFrameType frameType /*= kDeltaFrame*/)
+                    const CodecSpecificInfo* codecSpecificInfo,
+                    const VideoFrameType* frameTypes)
 {
 
     CriticalSectionScoped cs(_encodingCritsect);
@@ -919,14 +919,13 @@ ViECapturer::Encode(const RawImage& inputImage,
     if (!_captureEncoder)
         return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
 
-    if (frameType == kKeyFrame)
+    if (*frameTypes == kKeyFrame)
         return _captureEncoder->EncodeFrameType(kVideoFrameKey);
 
-    if (frameType == kSkipFrame)
+    if (*frameTypes == kSkipFrame)
         return _captureEncoder->EncodeFrameType(kFrameEmpty);
 
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
-
 }
 
 WebRtc_Word32 ViECapturer::RegisterEncodeCompleteCallback( EncodedImageCallback* callback)

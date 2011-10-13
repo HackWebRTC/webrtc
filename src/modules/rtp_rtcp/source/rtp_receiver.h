@@ -59,17 +59,18 @@ public:
 
     WebRtc_Word32 DeRegisterReceivePayload(const WebRtc_Word8 payloadType);
 
-    WebRtc_Word32 ReceivePayloadType(const WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
-                                   const WebRtc_UWord32 frequency,
-                                   const WebRtc_UWord8 channels,
-                                   WebRtc_Word8* payloadType,
-                                   const WebRtc_UWord32 rate) const;
+    WebRtc_Word32 ReceivePayloadType(
+        const WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
+        const WebRtc_UWord32 frequency,
+        const WebRtc_UWord8 channels,
+        const WebRtc_UWord32 rate,
+        WebRtc_Word8* payloadType) const;
 
     WebRtc_Word32 ReceivePayload(const WebRtc_Word8 payloadType,
-                               WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
-                               WebRtc_UWord32* frequency,
-                               WebRtc_UWord8* channels,
-                               WebRtc_UWord32* rate) const;
+                                 WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
+                                 WebRtc_UWord32* frequency,
+                                 WebRtc_UWord8* channels,
+                                 WebRtc_UWord32* rate) const;
 
     WebRtc_Word32 RemotePayload(WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
                               WebRtc_Word8* payloadType,

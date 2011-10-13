@@ -51,7 +51,9 @@ WebRtc_Word32 VCMGenericEncoder::Release()
 }
 
 WebRtc_Word32
-VCMGenericEncoder::InitEncode(const VideoCodec* settings, WebRtc_Word32 numberOfCores, WebRtc_UWord32 maxPayloadSize)
+VCMGenericEncoder::InitEncode(const VideoCodec* settings,
+                              WebRtc_Word32 numberOfCores,
+                              WebRtc_UWord32 maxPayloadSize)
 {
     _bitRate = settings->startBitrate;
     _frameRate = settings->maxFramerate;
@@ -66,16 +68,21 @@ VCMGenericEncoder::InitEncode(const VideoCodec* settings, WebRtc_Word32 numberOf
 WebRtc_Word32
 VCMGenericEncoder::Encode(const VideoFrame& inputFrame,
                           const CodecSpecificInfo* codecSpecificInfo,
-                          FrameType frameType)
+                          FrameType* frameType)
 {
-    RawImage rawImage(inputFrame.Buffer(), inputFrame.Length(), inputFrame.Size());
+    RawImage rawImage(inputFrame.Buffer(),
+                      inputFrame.Length(),
+                      inputFrame.Size());
     rawImage._width     = inputFrame.Width();
     rawImage._height    = inputFrame.Height();
     rawImage._timeStamp = inputFrame.TimeStamp();
 
-    WebRtc_Word32 ret = _encoder.Encode(rawImage, codecSpecificInfo, VCMEncodedFrame::ConvertFrameType(frameType));
-
-    return ret;
+    VideoFrameType videoFrameTypes[kMaxSimulcastStreams];
+    for (int i = 0; i < kMaxSimulcastStreams; i++)
+    {
+        videoFrameTypes[i] = VCMEncodedFrame::ConvertFrameType(frameType[i]);
+    }
+    return _encoder.Encode(rawImage, codecSpecificInfo, videoFrameTypes);
 }
 
 WebRtc_Word32
@@ -125,10 +132,15 @@ VCMGenericEncoder::SetPeriodicKeyFrames(bool enable)
 }
 
 WebRtc_Word32
-VCMGenericEncoder::RequestFrame(FrameType frameType)
+VCMGenericEncoder::RequestFrame(FrameType* frameTypes)
 {
     RawImage image;
-    return _encoder.Encode(image, NULL, VCMEncodedFrame::ConvertFrameType(frameType));
+    VideoFrameType videoFrameTypes[kMaxSimulcastStreams];
+    for (int i = 0; i < kMaxSimulcastStreams; i++)
+    {
+        videoFrameTypes[i] = VCMEncodedFrame::ConvertFrameType(frameTypes[i]);
+    }
+    return _encoder.Encode(image, NULL,  videoFrameTypes);
 }
 
 WebRtc_Word32
@@ -186,22 +198,22 @@ VCMEncodedFrameCallback::Encoded(
     WebRtc_UWord32 encodedBytes = 0;
     if (_sendCallback != NULL)
     {
-            encodedBytes = encodedImage._length;
+        encodedBytes = encodedImage._length;
 
         if (_bitStreamAfterEncoder != NULL)
         {
             fwrite(encodedImage._buffer, 1, encodedImage._length, _bitStreamAfterEncoder);
         }
 
-        RTPVideoTypeHeader rtpTypeHeader;
-        RTPVideoTypeHeader* rtpTypeHeaderPtr = &rtpTypeHeader;
+        RTPVideoHeader rtpVideoHeader;
+        RTPVideoHeader* rtpVideoHeaderPtr = &rtpVideoHeader;
         if (codecSpecificInfo)
         {
-            CopyCodecSpecific(*codecSpecificInfo, &rtpTypeHeaderPtr);
+            CopyCodecSpecific(*codecSpecificInfo, &rtpVideoHeaderPtr);
         }
         else
         {
-            rtpTypeHeaderPtr = NULL;
+            rtpVideoHeaderPtr = NULL;
         }
 
         WebRtc_Word32 callbackReturn = _sendCallback->SendData(
@@ -211,7 +223,7 @@ VCMEncodedFrameCallback::Encoded(
             encodedImage._buffer,
             encodedBytes,
             *fragmentationHeader,
-            rtpTypeHeaderPtr);
+            rtpVideoHeaderPtr);
        if (callbackReturn < 0)
        {
            return callbackReturn;
@@ -227,7 +239,6 @@ VCMEncodedFrameCallback::Encoded(
     {
         return _mediaOpt->DropFrame(); // Signal to encoder to drop next frame
     }
-
     return VCM_OK;
 }
 
@@ -244,13 +255,17 @@ VCMEncodedFrameCallback::SetMediaOpt(VCMMediaOptimization *mediaOpt)
 }
 
 void VCMEncodedFrameCallback::CopyCodecSpecific(const CodecSpecificInfo& info,
-                                                RTPVideoTypeHeader** rtp) {
-    switch (info.codecType)
-    {
+                                                RTPVideoHeader** rtp) {
+    switch (info.codecType) {
         case kVideoCodecVP8: {
-            (*rtp)->VP8.InitRTPVideoHeaderVP8();
-            (*rtp)->VP8.pictureId = info.codecSpecific.VP8.pictureId;
-            (*rtp)->VP8.nonReference = info.codecSpecific.VP8.nonReference;
+            (*rtp)->codecHeader.VP8.InitRTPVideoHeaderVP8();
+            (*rtp)->codecHeader.VP8.pictureId =
+                 info.codecSpecific.VP8.pictureId;
+            (*rtp)->codecHeader.VP8.nonReference =
+                 info.codecSpecific.VP8.nonReference;
+            (*rtp)->codecHeader.VP8.temporalIdx =
+                 info.codecSpecific.VP8.temporalIdx;
+            (*rtp)->simulcastIdx = info.codecSpecific.VP8.simulcastIdx;
             return;
         }
         default: {
@@ -258,8 +273,6 @@ void VCMEncodedFrameCallback::CopyCodecSpecific(const CodecSpecificInfo& info,
             *rtp = NULL;
             return;
         }
-
     }
 }
-
 } // namespace webrtc

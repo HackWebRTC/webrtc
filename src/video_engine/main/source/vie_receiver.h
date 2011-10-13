@@ -15,12 +15,13 @@
 #ifndef WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_RECEIVER_H_
 #define WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_RECEIVER_H_
 
-// Defines
+#include <list>
+
 #include "engine_configurations.h"
-#include "vie_defines.h"
+#include "rtp_rtcp_defines.h"
 #include "typedefs.h"
 #include "udp_transport.h"
-#include "rtp_rtcp_defines.h"
+#include "vie_defines.h"
 
 #ifdef WEBRTC_SRTP
 class SrtpModule;
@@ -35,9 +36,7 @@ class RtpRtcp;
 class VideoCodingModule;
 class Encryption;
 
-class ViEReceiver: public UdpTransportData,
-    public RtpData,
-    public RtpVideoFeedback
+class ViEReceiver: public UdpTransportData, public RtpData
 {
 public:
     ViEReceiver(int engineId, int channelId, RtpRtcp& moduleRtpRtcp,
@@ -46,6 +45,8 @@ public:
 
     int RegisterExternalDecryption(Encryption* decryption);
     int DeregisterExternalDecryption();
+
+    void RegisterSimulcastRtpRtcpModules(const std::list<RtpRtcp*>& rtpModules);
 
 #ifdef WEBRTC_SRTP
     int RegisterSRTPModule(SrtpModule* srtpModule);
@@ -76,21 +77,10 @@ public:
     int ReceivedRTCPPacket(const void* rtcpPacket, int rtcpPacketLength);
 
     // From RtpData, callback for data from RTP module
-    virtual WebRtc_Word32
-    OnReceivedPayloadData(const WebRtc_UWord8* payloadData,
-                              const WebRtc_UWord16 payloadSize,
-                              const WebRtcRTPHeader* rtpHeader);
-
-    // Implements RtpVideoFeedback
-    virtual void OnReceivedIntraFrameRequest(const WebRtc_Word32 id,
-                                             const WebRtc_UWord8 message = 0);
-    virtual void OnNetworkChanged(const WebRtc_Word32 id,
-                                  const WebRtc_UWord32 minBitrateBps,
-                                  const WebRtc_UWord32 maxBitrateBps,
-                                  const WebRtc_UWord8 fractionLost,
-                                  const WebRtc_UWord16 roundTripTimeMs,
-                                  const WebRtc_UWord16 bwEstimateKbitMin,
-                                  const WebRtc_UWord16 bwEstimateKbitMax);
+    virtual WebRtc_Word32 OnReceivedPayloadData(
+        const WebRtc_UWord8* payloadData,
+        const WebRtc_UWord16 payloadSize,
+        const WebRtcRTPHeader* rtpHeader);
 private:
     int InsertRTPPacket(const WebRtc_Word8* rtpPacket, int rtpPacketLength);
     int InsertRTCPPacket(const WebRtc_Word8* rtcpPacket, int rtcpPacketLength);
@@ -99,6 +89,7 @@ private:
     int _engineId;
     int _channelId;
     RtpRtcp& _rtpRtcp;
+    std::list<RtpRtcp*> _rtpRtcpSimulcast;
     VideoCodingModule& _vcm;
 
 #ifdef WEBRTC_SRTP

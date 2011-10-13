@@ -1485,11 +1485,7 @@ Channel::Init()
     {
         // Open up the RTP/RTCP receiver for all supported codecs
         if ((_audioCodingModule.Codec(idx, codec) == -1) ||
-            (_rtpRtcpModule.RegisterReceivePayload(codec.plname,
-                                                   codec.pltype,
-                                                   codec.plfreq,
-                                                   codec.channels,
-                                                   codec.rate) == -1))
+            (_rtpRtcpModule.RegisterReceivePayload(codec) == -1))
         {
             WEBRTC_TRACE(kTraceWarning, kTraceVoice,
                          VoEId(_instanceId,_channelId),
@@ -1517,10 +1513,7 @@ Channel::Init()
         // Register default PT for outband 'telephone-event'
         if (!STR_CASE_CMP(codec.plname, "telephone-event"))
         {
-            if ((_rtpRtcpModule.RegisterSendPayload(codec.plname,
-                                                    codec.pltype,
-                                                    codec.plfreq,
-                                                    codec.channels) == -1) ||
+            if ((_rtpRtcpModule.RegisterSendPayload(codec) == -1) ||
                 (_audioCodingModule.RegisterReceiveCodec(codec) == -1))
             {
                 WEBRTC_TRACE(kTraceWarning, kTraceVoice,
@@ -1535,10 +1528,7 @@ Channel::Init()
         {
             if ((_audioCodingModule.RegisterSendCodec(codec) == -1) ||
                 (_audioCodingModule.RegisterReceiveCodec(codec) == -1) ||
-                (_rtpRtcpModule.RegisterSendPayload(codec.plname,
-                                                    codec.pltype,
-                                                    codec.plfreq,
-                                                    codec.channels) == -1))
+                (_rtpRtcpModule.RegisterSendPayload(codec) == -1))
             {
                 WEBRTC_TRACE(kTraceWarning, kTraceVoice,
                              VoEId(_instanceId,_channelId),
@@ -2379,20 +2369,10 @@ Channel::SetSendCodec(const CodecInst& codec)
         return -1;
     }
 
-    if (_rtpRtcpModule.RegisterSendPayload(
-        codec.plname,
-        codec.pltype,
-        codec.plfreq,
-        codec.channels,
-        (codec.rate < 0 ? 0 : codec.rate)) != 0)
+    if (_rtpRtcpModule.RegisterSendPayload(codec) != 0)
     {
         _rtpRtcpModule.DeRegisterSendPayload(codec.pltype);
-        if (_rtpRtcpModule.RegisterSendPayload(
-            codec.plname,
-            codec.pltype,
-            codec.plfreq,
-            codec.channels,
-            (codec.rate < 0 ? 0 : codec.rate)) != 0)
+        if (_rtpRtcpModule.RegisterSendPayload(codec) != 0)
         {
             WEBRTC_TRACE(
                     kTraceError, kTraceVoice, VoEId(_instanceId,_channelId),
@@ -2474,12 +2454,7 @@ Channel::SetRecPayloadType(const CodecInst& codec)
         CodecInst rxCodec = codec;
 
         // Get payload type for the given codec
-        _rtpRtcpModule.ReceivePayloadType(
-                rxCodec.plname,
-                rxCodec.plfreq,
-                rxCodec.channels,
-                &pltype,
-                (rxCodec.rate < 0 ? 0 : rxCodec.rate));
+        _rtpRtcpModule.ReceivePayloadType(rxCodec, &pltype);
         rxCodec.pltype = pltype;
 
         if (_rtpRtcpModule.DeRegisterReceivePayload(pltype) != 0)
@@ -2501,21 +2476,11 @@ Channel::SetRecPayloadType(const CodecInst& codec)
         return 0;
     }
 
-    if (_rtpRtcpModule.RegisterReceivePayload(
-        codec.plname,
-        codec.pltype,
-        codec.plfreq,
-        codec.channels,
-        (codec.rate < 0 ? 0 : codec.rate)) != 0)
+    if (_rtpRtcpModule.RegisterReceivePayload(codec) != 0)
     {
         // First attempt to register failed => de-register and try again
         _rtpRtcpModule.DeRegisterReceivePayload(codec.pltype);
-        if (_rtpRtcpModule.RegisterReceivePayload(
-            codec.plname,
-            codec.pltype,
-            codec.plfreq,
-            codec.channels,
-            (codec.rate < 0 ? 0 : codec.rate)) != 0)
+        if (_rtpRtcpModule.RegisterReceivePayload(codec) != 0)
         {
             _engineStatisticsPtr->SetLastError(
                 VE_RTP_RTCP_MODULE_ERROR, kTraceError,
@@ -2543,12 +2508,7 @@ Channel::GetRecPayloadType(CodecInst& codec)
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::GetRecPayloadType()");
     WebRtc_Word8 payloadType(-1);
-    if (_rtpRtcpModule.ReceivePayloadType((
-        const WebRtc_Word8*)codec.plname,
-        codec.plfreq,
-        codec.channels,
-        &payloadType,
-        (codec.rate < 0 ? 0 : codec.rate)) != 0)
+    if (_rtpRtcpModule.ReceivePayloadType(codec, &payloadType) != 0)
     {
         _engineStatisticsPtr->SetLastError(
             VE_RTP_RTCP_MODULE_ERROR, kTraceError,
@@ -2635,16 +2595,10 @@ Channel::SetSendCNPayloadType(int type, PayloadFrequencies frequency)
         return -1;
     }
 
-    if (_rtpRtcpModule.RegisterSendPayload(codec.plname,
-                                           codec.pltype,
-                                           codec.plfreq,
-                                           codec.channels) != 0)
+    if (_rtpRtcpModule.RegisterSendPayload(codec) != 0)
     {
         _rtpRtcpModule.DeRegisterSendPayload(codec.pltype);
-        if (_rtpRtcpModule.RegisterSendPayload(codec.plname,
-                                               codec.pltype,
-                                               codec.plfreq,
-                                               codec.channels) != 0)
+        if (_rtpRtcpModule.RegisterSendPayload(codec) != 0)
         {
             _engineStatisticsPtr->SetLastError(
                 VE_RTP_RTCP_MODULE_ERROR, kTraceError,
@@ -4539,9 +4493,11 @@ Channel::SetSendTelephoneEventPayloadType(unsigned char type)
             "SetSendTelephoneEventPayloadType() invalid type");
         return -1;
     }
-    const WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE] =
-        "telephone-event";
-    if (_rtpRtcpModule.RegisterSendPayload(payloadName, type, 8000) != 0)
+    CodecInst codec;
+    codec.plfreq = 8000;
+    codec.pltype = type;
+    memcpy(codec.plname, "telephone-event", 16);
+    if (_rtpRtcpModule.RegisterSendPayload(codec) != 0)
     {
         _engineStatisticsPtr->SetLastError(
             VE_RTP_RTCP_MODULE_ERROR, kTraceError,
@@ -6630,11 +6586,7 @@ Channel::RegisterReceiveCodecsToRTPModule()
     {
         // Open up the RTP/RTCP receiver for all supported codecs
         if ((_audioCodingModule.Codec(idx, codec) == -1) ||
-            (_rtpRtcpModule.RegisterReceivePayload(codec.plname,
-                                                   codec.pltype,
-                                                   codec.plfreq,
-                                                   codec.channels,
-                                                   codec.rate) == -1))
+            (_rtpRtcpModule.RegisterReceivePayload(codec) == -1))
         {
             WEBRTC_TRACE(
                          kTraceWarning,

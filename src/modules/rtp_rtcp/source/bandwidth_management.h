@@ -26,27 +26,26 @@ public:
     BandwidthManagement(const WebRtc_Word32 id);
     ~BandwidthManagement();
 
-    WebRtc_Word32 UpdateBandwidthEstimate(const WebRtc_UWord16 bandWidthMinKbit,
-                                          const WebRtc_UWord16 bandWidthMaxKbit,
-                                          WebRtc_UWord32& newBitrate,
-                                          WebRtc_UWord8& fractionLost,
-                                          WebRtc_UWord16& roundTripTime);
+    // Call when we receive a RTCP message with TMMBR or REMB
+    WebRtc_Word32 UpdateBandwidthEstimate(const WebRtc_UWord16 bandWidthKbit,
+                                          WebRtc_UWord32* newBitrate,
+                                          WebRtc_UWord8* fractionLost,
+                                          WebRtc_UWord16* roundTripTime);
 
-    WebRtc_Word32 UpdatePacketLoss(const WebRtc_UWord32 lastReceivedExtendedHighSeqNum,
-                                   const bool defaultCodec,
-                                   const WebRtc_UWord8 lossInput,
-                                   const WebRtc_UWord16 rtt,
-                                   WebRtc_UWord32& newBitrate,
-                                   WebRtc_UWord16& bwEstimateKbitMin,
-                                   WebRtc_UWord16& bwEstimateKbitMax);
+   // Call when we receive a RTCP message with a ReceiveBlock
+    WebRtc_Word32 UpdatePacketLoss(
+        const WebRtc_UWord32 lastReceivedExtendedHighSeqNum,
+        const WebRtc_UWord16 rtt,
+        WebRtc_UWord8* loss,
+        WebRtc_UWord32* newBitrate);
 
-    WebRtc_Word32 AvailableBandwidth(WebRtc_UWord16& bandwidthKbit) const;
+    WebRtc_Word32 AvailableBandwidth(WebRtc_UWord16* bandwidthKbit) const;
 
     WebRtc_Word32 SetSendBitrate(const WebRtc_UWord32 startBitrate,
                                  const WebRtc_UWord16 minBitrateKbit,
                                  const WebRtc_UWord16 maxBitrateKbit);
 
-    WebRtc_Word32 MaxConfiguredBitrate(WebRtc_UWord16& maxBitrateKbit);
+    WebRtc_Word32 MaxConfiguredBitrate(WebRtc_UWord16* maxBitrateKbit);
 
 protected:
     WebRtc_UWord32 ShapeSimple(WebRtc_Word32 packetLoss, WebRtc_Word32 rtt);
@@ -77,7 +76,6 @@ private:
 
     // bandwidth estimate
     WebRtc_UWord32        _bwEstimateIncoming;
-    WebRtc_UWord32        _bwEstimateIncomingMax;
     WebRtc_Word16         _smoothedFractionLostQ4;
     WebRtc_Word16         _sFLFactorQ4;  // forgetting factor for _smoothedFractionLostQ4
 };

@@ -1155,7 +1155,7 @@ RTCPReceiver::HandleREMBItem(RTCPUtility::RTCPParserV2& rtcpParser,
 
     rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpRemb;
     rtcpPacketInformation.receiverEstimatedMaxBitrate = rtcpPacket.REMB.BitRate;
-    // TODO send up SSRCs and do a sanity check
+    // TODO(pwestin) send up SSRCs and do a sanity check
 }
 
 // no need for critsect we have _criticalSectionRTCPReceiver
@@ -1235,13 +1235,14 @@ RTCPReceiver::HandleAPPItem(RTCPUtility::RTCPParserV2& rtcpParser,
 }
 
 void
-RTCPReceiver::OnReceivedIntraFrameRequest(const WebRtc_UWord8 message) const
+RTCPReceiver::OnReceivedIntraFrameRequest(const FrameType frameType,
+                                          const WebRtc_UWord8 streamIdx) const
 {
     CriticalSectionScoped lock(_criticalSectionFeedbacks);
 
     if(_cbVideoFeedback)
     {
-        _cbVideoFeedback->OnReceivedIntraFrameRequest(_id, message);
+        _cbVideoFeedback->OnReceivedIntraFrameRequest(_id, frameType, streamIdx);
     }
 }
 
@@ -1280,8 +1281,7 @@ RTCPReceiver::TriggerCallbacksFromRTCPPacket(RTCPPacketInformation& rtcpPacketIn
             _rtpRtcp.OnPacketLossStatisticsUpdate(
                 rtcpPacketInformation.fractionLost,
                 rtcpPacketInformation.roundTripTime,
-                rtcpPacketInformation.lastReceivedExtendedHighSeqNum,
-                rtcpPacketInformation.jitter);
+                rtcpPacketInformation.lastReceivedExtendedHighSeqNum);
         }
     }
     if (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpSr)
@@ -1318,13 +1318,19 @@ RTCPReceiver::TriggerCallbacksFromRTCPPacket(RTCPPacketInformation& rtcpPacketIn
         {
             WEBRTC_TRACE(kTraceStateInfo, kTraceRtpRtcp, _id, "SIG [RTCP] Incoming FIR to id:%d", _id);
         }
-        // we need use a bounce it up to handle default channel
-        _rtpRtcp.OnReceivedIntraFrameRequest(0);
+        _rtpRtcp.OnReceivedIntraFrameRequest(&_rtpRtcp);
     }
     if (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpSli)
     {
          // we need use a bounce it up to handle default channel
-        _rtpRtcp.OnReceivedSliceLossIndication(rtcpPacketInformation.sliPictureId);
+        _rtpRtcp.OnReceivedSliceLossIndication(
+            rtcpPacketInformation.sliPictureId);
+    }
+    if (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpRemb)
+    {
+       // We need to bounce this to the default channel
+        _rtpRtcp.OnReceivedEstimatedMaxBitrate(
+            rtcpPacketInformation.receiverEstimatedMaxBitrate);
     }
     if (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpRpsi)
     {

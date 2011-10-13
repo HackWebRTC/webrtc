@@ -568,8 +568,8 @@ VCMEncComplete_KeyReqTest::SendData(
         const WebRtc_UWord32 timeStamp,
         const WebRtc_UWord8* payloadData,
         const WebRtc_UWord32 payloadSize,
-        const RTPFragmentationHeader& fragmentationHeader,
-        const webrtc::RTPVideoTypeHeader* videoTypeHdr)
+        const RTPFragmentationHeader& /*fragmentationHeader*/,
+        const webrtc::RTPVideoHeader* /*videoHdr*/)
 {
     WebRtcRTPHeader rtpInfo;
     rtpInfo.header.markerBit = true; // end of frame

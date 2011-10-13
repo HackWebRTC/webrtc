@@ -161,22 +161,38 @@ public:
                                                   WebRtc_UWord8 &sampleTimeSeconds) = 0;
 
     /*
-    *   set codec name and payload type
-    *
-    *   payloadName - payload name of codec
-    *   payloadType - payload type of codec
-    *   frequency   - (audio specific) frequency of codec
-    *   channels    - (audio specific) number of channels in codec (1 = mono, 2 = stereo)
-    *   rate        - (audio) rate of codec
-    *                 (video) maxBitrate of codec, bits/sec
+    *   set voice codec name and payload type
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 RegisterReceivePayload(const WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
-                                               const WebRtc_Word8 payloadType,
-                                               const WebRtc_UWord32 frequency = 0,
-                                               const WebRtc_UWord8 channels = 1,
-                                               const WebRtc_UWord32 rate = 0) = 0;
+    virtual WebRtc_Word32 RegisterReceivePayload(
+        const CodecInst& voiceCodec) = 0;
+
+    /*
+    *   set video codec name and payload type
+    *
+    *   return -1 on failure else 0
+    */
+    virtual WebRtc_Word32 RegisterReceivePayload(
+        const VideoCodec& videoCodec) = 0;
+
+    /*
+    *   get payload type for a voice codec
+    *
+    *   return -1 on failure else 0
+    */
+    virtual WebRtc_Word32 ReceivePayloadType(
+        const CodecInst& voiceCodec,
+        WebRtc_Word8* plType) = 0;
+
+    /*
+    *   get payload type for a video codec
+    *
+    *   return -1 on failure else 0
+    */
+    virtual WebRtc_Word32 ReceivePayloadType(
+        const VideoCodec& videoCodec,
+        WebRtc_Word8* plType) = 0;
 
     /*
     *   Remove a registerd payload type from list of accepted payloads
@@ -185,40 +201,8 @@ public:
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 DeRegisterReceivePayload(const WebRtc_Word8 payloadType) = 0;
-
-    /*
-    *   get configured payload type
-    *
-    *   payloadName - payload name of codec
-    *   frequency   - frequency of codec, ignored for video
-    *   payloadType - payload type of codec, ignored for video
-    *   channels    - number of channels in codec (1 = mono, 2 = stereo)
-    *   rate        - (audio) rate of codec (ignored if set to 0)
-    *
-    *   return -1 on failure else 0
-    */
-    virtual WebRtc_Word32 ReceivePayloadType(const WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
-                                           const WebRtc_UWord32 frequency,
-                                           const WebRtc_UWord8 channels,
-                                           WebRtc_Word8* payloadType,
-                                           const WebRtc_UWord32 rate = 0) const = 0;
-
-    /*
-    *   get configured payload
-    *
-    *   payloadType - payload type of codec
-    *   payloadName - payload name of codec
-    *   frequency   - frequency of codec
-    *   channels    - number of channels in codec (1 = mono, 2 = stereo)
-    *
-    *   return -1 on failure else 0
-    */
-    virtual WebRtc_Word32 ReceivePayload(const WebRtc_Word8 payloadType,
-                                       WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
-                                       WebRtc_UWord32* frequency,
-                                       WebRtc_UWord8* channels,
-                                       WebRtc_UWord32* rate = NULL) const = 0;
+    virtual WebRtc_Word32 DeRegisterReceivePayload(
+        const WebRtc_Word8 payloadType) = 0;
 
     /*
     *   Get last received remote timestamp
@@ -249,21 +233,6 @@ public:
     virtual WebRtc_Word32 RemoteCSRCs( WebRtc_UWord32 arrOfCSRC[kRtpCsrcSize]) const  = 0;
 
     /*
-    *   get Current incoming payload
-    *
-    *   payloadName - payload name of codec
-    *   payloadType - payload type of codec
-    *   frequency   - frequency of codec
-    *   channels    - number of channels in codec (2 = stereo)
-    *
-    *   return -1 on failure else 0
-    */
-    virtual WebRtc_Word32 RemotePayload(WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
-                                      WebRtc_Word8* payloadType,
-                                      WebRtc_UWord32* frequency,
-                                      WebRtc_UWord8* channels) const = 0;
-
-    /*
     *   get the currently configured SSRC filter
     *
     *   allowedSSRC - SSRC that will be allowed through
@@ -289,8 +258,8 @@ public:
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 IncomingPacket( const WebRtc_UWord8* incomingPacket,
-                                        const WebRtc_UWord16 packetLength) = 0;
+    virtual WebRtc_Word32 IncomingPacket(const WebRtc_UWord8* incomingPacket,
+                                         const WebRtc_UWord16 packetLength) = 0;
 
 
     /*
@@ -300,11 +269,11 @@ public:
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 IncomingAudioNTP(const WebRtc_UWord32 audioReceivedNTPsecs,
-                                         const WebRtc_UWord32 audioReceivedNTPfrac,
-                                         const WebRtc_UWord32 audioRTCPArrivalTimeSecs,
-                                         const WebRtc_UWord32 audioRTCPArrivalTimeFrac) = 0;
-
+    virtual WebRtc_Word32 IncomingAudioNTP(
+        const WebRtc_UWord32 audioReceivedNTPsecs,
+        const WebRtc_UWord32 audioReceivedNTPfrac,
+        const WebRtc_UWord32 audioRTCPArrivalTimeSecs,
+        const WebRtc_UWord32 audioRTCPArrivalTimeFrac) = 0;
 
     /**************************************************************************
     *
@@ -391,9 +360,10 @@ public:
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 RTPKeepaliveStatus(bool* enable,
-                                           WebRtc_Word8* unknownPayloadType,
-                                           WebRtc_UWord16* deltaTransmitTimeMS) const = 0;
+    virtual WebRtc_Word32 RTPKeepaliveStatus(
+        bool* enable,
+        WebRtc_Word8* unknownPayloadType,
+        WebRtc_UWord16* deltaTransmitTimeMS) const = 0;
 
     /*
     *   check if RTPKeepaliveStatus is enabled
@@ -403,20 +373,18 @@ public:
     /*
     *   set codec name and payload type
     *
-    *   payloadName - payload name of codec
-    *   payloadType - payload type of codec
-    *   frequency   - frequency of codec
-    *   channels    - number of channels in codec (1 = mono, 2 = stereo)
-    *   rate        - (audio) rate of codec
-    *                 (video) maxBitrate of codec, bits/sec
+    *   return -1 on failure else 0
+    */
+    virtual WebRtc_Word32 RegisterSendPayload(
+        const CodecInst& voiceCodec) = 0;
+
+    /*
+    *   set codec name and payload type
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 RegisterSendPayload(const WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
-                                            const WebRtc_Word8 payloadType,
-                                            const WebRtc_UWord32 frequency = 0,
-                                            const WebRtc_UWord8 channels = 1,
-                                            const WebRtc_UWord32 rate = 0) = 0;
+    virtual WebRtc_Word32 RegisterSendPayload(
+        const VideoCodec& videoCodec) = 0;
 
     /*
     *   Unregister a send payload
@@ -548,7 +516,7 @@ public:
                      const WebRtc_UWord8* payloadData,
                      const WebRtc_UWord32 payloadSize,
                      const RTPFragmentationHeader* fragmentation = NULL,
-                     const RTPVideoTypeHeader* rtpTypeHdr = NULL) = 0;
+                     const RTPVideoHeader* rtpVideoHdr = NULL) = 0;
 
     /**************************************************************************
     *

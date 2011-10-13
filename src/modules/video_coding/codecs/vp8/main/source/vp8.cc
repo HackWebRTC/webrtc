@@ -43,6 +43,7 @@ VP8Encoder::VP8Encoder():
     _inited(false),
     _timeStamp(0),
     _pictureID(0),
+    _simulcastIdx(0),
     _pictureLossIndicationOn(false),
     _feedbackModeOn(false),
     _nextRefIsGolden(true),
@@ -164,8 +165,20 @@ VP8Encoder::SetRates(WebRtc_UWord32 newBitRateKbit, WebRtc_UWord32 newFrameRate)
     {
         newBitRateKbit = _maxBitRateKbit;
     }
-    _cfg->rc_target_bitrate = newBitRateKbit; // in kbit/s
 
+    _cfg->rc_target_bitrate = newBitRateKbit; // in kbit/s
+/*  TODO(pwestin) use number of temoral layers config
+    int ids[3] = {0,1,2};                                
+    _cfg->ts_number_layers     = 3;
+    _cfg->ts_periodicity       = 3;
+    _cfg->ts_target_bitrate[0] = (newBitRateKbit*2/5);
+    _cfg->ts_target_bitrate[1] = (newBitRateKbit*3/5);
+    _cfg->ts_target_bitrate[2] = (newBitRateKbit);
+    _cfg->ts_rate_decimator[0] = 4;
+    _cfg->ts_rate_decimator[1] = 2;
+    _cfg->ts_rate_decimator[2] = 1;
+    memcpy(_cfg->ts_layer_id, ids, sizeof(ids));
+*/
     // update frame rate
     if (newFrameRate != _maxFrameRate)
     {
@@ -267,6 +280,18 @@ VP8Encoder::InitEncode(const VideoCodec* inst,
     {
       _cfg->rc_target_bitrate = inst->startBitrate;  // in kbit/s
     }
+/*  TODO(pwestin) use number of temoral layers config
+    int ids[3] = {0,1,2};                                
+    _cfg->ts_number_layers     = 3;
+    _cfg->ts_periodicity       = 3;
+    _cfg->ts_target_bitrate[0] = (inst->startBitrate*2/5);
+    _cfg->ts_target_bitrate[1] = (inst->startBitrate*3/5);
+    _cfg->ts_target_bitrate[2] = (inst->startBitrate);
+    _cfg->ts_rate_decimator[0] = 4;
+    _cfg->ts_rate_decimator[1] = 2;
+    _cfg->ts_rate_decimator[2] = 1;
+    memcpy(_cfg->ts_layer_id, ids, sizeof(ids));
+*/
 
     // setting the time base of the codec
     _cfg->g_timebase.num = 1;
@@ -394,7 +419,7 @@ VP8Encoder::MaxIntraTarget(WebRtc_UWord32 optimalBuffersize)
 WebRtc_Word32
 VP8Encoder::Encode(const RawImage& inputImage,
                    const CodecSpecificInfo* codecSpecificInfo,
-                   VideoFrameType frameTypes)
+                   const VideoFrameType* frameTypes)
 {
     if (!_inited)
     {
@@ -408,14 +433,21 @@ VP8Encoder::Encode(const RawImage& inputImage,
     {
         return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
     }
-
+    if (codecSpecificInfo) 
+    {
+        _simulcastIdx = codecSpecificInfo->codecSpecific.VP8.simulcastIdx;
+    }
+    else
+    {
+        _simulcastIdx = 0; 
+    }
     // image in vpx_image_t format
     _raw->planes[PLANE_Y] =  inputImage._buffer;
     _raw->planes[PLANE_U] =  &inputImage._buffer[_height * _width];
     _raw->planes[PLANE_V] =  &inputImage._buffer[_height * _width * 5 >> 2];
 
     int flags = 0;
-    if (frameTypes == kKeyFrame)
+    if (frameTypes && *frameTypes == kKeyFrame)
     {
         flags |= VPX_EFLAG_FORCE_KF; // will update both golden and altref
         _encodedImage._frameType = kKeyFrame;
@@ -555,6 +587,8 @@ void VP8Encoder::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
   codec_specific->codecType = kVideoCodecVP8;
   CodecSpecificInfoVP8 *vp8Info = &(codec_specific->codecSpecific.VP8);
   vp8Info->pictureId = _pictureID;
+  vp8Info->simulcastIdx = _simulcastIdx;;
+  vp8Info->temporalIdx = kNoTemporalIdx; // TODO(pwestin) need to populate this
   vp8Info->nonReference = (pkt.data.frame.flags & VPX_FRAME_IS_DROPPABLE);
   _pictureID = (_pictureID + 1) % 0x7FFF; // prepare next
 }

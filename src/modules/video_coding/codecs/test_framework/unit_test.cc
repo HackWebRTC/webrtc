@@ -233,7 +233,8 @@ UnitTest::Setup()
 
     // Ensures our initial parameters are valid.
     VIDEO_TEST(_encoder->InitEncode(&_inst, 1, 1440) == WEBRTC_VIDEO_CODEC_OK);
-    _encoder->Encode(image, NULL);
+    VideoFrameType videoFrameType = kDeltaFrame;
+    _encoder->Encode(image, NULL, &videoFrameType);
     _refEncFrameLength = WaitForEncodedFrame();
     VIDEO_TEST_EXIT_ON_ERR(_refEncFrameLength > 0);
     _refEncFrame = new unsigned char[_refEncFrameLength];
@@ -262,7 +263,7 @@ UnitTest::Setup()
             _inputVideoBuffer.SetWidth(_source->GetWidth());
             _inputVideoBuffer.SetHeight(_source->GetHeight());
             VideoBufferToRawImage(_inputVideoBuffer, image);
-            _encoder->Encode(image, NULL);
+            _encoder->Encode(image, NULL, &videoFrameType);
             VIDEO_TEST_EXIT_ON_ERR(WaitForEncodedFrame() > 0);
         }
         EncodedImage encodedImage;
@@ -358,6 +359,7 @@ UnitTest::Perform()
     RawImage inputImage;
     EncodedImage encodedImage;
     EventWrapper& sleepEvent = *EventWrapper::Create();
+    VideoFrameType videoFrameType = kDeltaFrame;
 
     //----- Encoder parameter tests -----
 
@@ -365,7 +367,7 @@ UnitTest::Perform()
     // We want to revert the initialization done in Setup().
     VIDEO_TEST(_encoder->Release() == WEBRTC_VIDEO_CODEC_OK);
     VideoBufferToRawImage(_inputVideoBuffer, inputImage);
-    VIDEO_TEST(_encoder->Encode(inputImage, NULL)
+    VIDEO_TEST(_encoder->Encode(inputImage, NULL, &videoFrameType )
                == WEBRTC_VIDEO_CODEC_UNINITIALIZED);
     VIDEO_TEST(_encoder->Reset() == WEBRTC_VIDEO_CODEC_UNINITIALIZED);
 
@@ -432,7 +434,7 @@ UnitTest::Perform()
     // inputVideoBuffer unallocated.
     _inputVideoBuffer.Free();
     VideoBufferToRawImage(_inputVideoBuffer, inputImage);
-    VIDEO_TEST(_encoder->Encode(inputImage, NULL) ==
+    VIDEO_TEST(_encoder->Encode(inputImage, NULL, &videoFrameType) ==
         WEBRTC_VIDEO_CODEC_ERR_PARAMETER);
     _inputVideoBuffer.VerifyAndAllocate(_lengthSourceFrame);
     _inputVideoBuffer.CopyBuffer(_lengthSourceFrame, _refFrame);
@@ -444,7 +446,7 @@ UnitTest::Perform()
     for (int i = 1; i <= 60; i++)
     {
         VideoFrameType frameType = !(i % 2) ? kKeyFrame : kDeltaFrame;
-        VIDEO_TEST(_encoder->Encode(inputImage, NULL, frameType) ==
+        VIDEO_TEST(_encoder->Encode(inputImage, NULL, &frameType) ==
             WEBRTC_VIDEO_CODEC_OK);
         VIDEO_TEST(WaitForEncodedFrame() > 0);
         sleepEvent.Wait(10); // Allow the encoder's queue to realize it's empty.
@@ -453,11 +455,12 @@ UnitTest::Perform()
     // Init then encode.
     _encodedVideoBuffer.UpdateLength(0);
     _encodedVideoBuffer.Reset();
-    VIDEO_TEST(_encoder->Encode(inputImage, NULL) == WEBRTC_VIDEO_CODEC_OK);
+    VIDEO_TEST(_encoder->Encode(inputImage, NULL, &videoFrameType) ==
+        WEBRTC_VIDEO_CODEC_OK);
     VIDEO_TEST(WaitForEncodedFrame() > 0);
 
     VIDEO_TEST(_encoder->InitEncode(&_inst, 1, 1440) == WEBRTC_VIDEO_CODEC_OK);
-    _encoder->Encode(inputImage, NULL);
+    _encoder->Encode(inputImage, NULL, &videoFrameType);
     frameLength = WaitForEncodedFrame();
     VIDEO_TEST(frameLength > 0);
     VIDEO_TEST(CheckIfBitExact(_refEncFrame, _refEncFrameLength,
@@ -466,11 +469,12 @@ UnitTest::Perform()
     // Reset then encode.
     _encodedVideoBuffer.UpdateLength(0);
     _encodedVideoBuffer.Reset();
-    VIDEO_TEST(_encoder->Encode(inputImage, NULL) == WEBRTC_VIDEO_CODEC_OK);
+    VIDEO_TEST(_encoder->Encode(inputImage, NULL, &videoFrameType) ==
+        WEBRTC_VIDEO_CODEC_OK);
     WaitForEncodedFrame();
     VIDEO_TEST(_encoder->Reset() == WEBRTC_VIDEO_CODEC_OK);
     VIDEO_TEST(_encoder->InitEncode(&_inst, 1, 1440) == WEBRTC_VIDEO_CODEC_OK);
-    _encoder->Encode(inputImage, NULL);
+    _encoder->Encode(inputImage, NULL, &videoFrameType);
     frameLength = WaitForEncodedFrame();
     VIDEO_TEST(frameLength > 0);
     VIDEO_TEST(CheckIfBitExact(_refEncFrame, _refEncFrameLength,
@@ -479,11 +483,12 @@ UnitTest::Perform()
     // Release then encode.
     _encodedVideoBuffer.UpdateLength(0);
     _encodedVideoBuffer.Reset();
-    VIDEO_TEST(_encoder->Encode(inputImage, NULL) == WEBRTC_VIDEO_CODEC_OK);
+    VIDEO_TEST(_encoder->Encode(inputImage, NULL, &videoFrameType) ==
+        WEBRTC_VIDEO_CODEC_OK);
     WaitForEncodedFrame();
     VIDEO_TEST(_encoder->Release() == WEBRTC_VIDEO_CODEC_OK);
     VIDEO_TEST(_encoder->InitEncode(&_inst, 1, 1440) == WEBRTC_VIDEO_CODEC_OK);
-    _encoder->Encode(inputImage, NULL);
+    _encoder->Encode(inputImage, NULL, &videoFrameType);
     frameLength = WaitForEncodedFrame();
     VIDEO_TEST(frameLength > 0);
     VIDEO_TEST(CheckIfBitExact(_refEncFrame, _refEncFrameLength,
@@ -605,7 +610,8 @@ UnitTest::Perform()
             WEBRTC_VIDEO_CODEC_OK);
         RawImage tempInput(inputImage._buffer, inputImage._length/4,
                            inputImage._size/4);
-        _encoder->Encode(tempInput, NULL);
+        VideoFrameType videoFrameType = kDeltaFrame;
+        _encoder->Encode(tempInput, NULL, &videoFrameType);
         frameLength = WaitForEncodedFrame();
         VIDEO_TEST(frameLength > 0);
 
@@ -623,7 +629,7 @@ UnitTest::Perform()
         VIDEO_TEST(_encoder->Release() == WEBRTC_VIDEO_CODEC_OK);
         VIDEO_TEST(_encoder->InitEncode(&_inst, 1, 1440) ==
             WEBRTC_VIDEO_CODEC_OK);
-        _encoder->Encode(inputImage, NULL);
+        _encoder->Encode(inputImage, NULL, &videoFrameType);
         frameLength = WaitForEncodedFrame();
         VIDEO_TEST(frameLength > 0);
 
@@ -690,7 +696,10 @@ UnitTest::Perform()
         _inputVideoBuffer.CopyBuffer(_lengthSourceFrame, _sourceBuffer);
         _inputVideoBuffer.SetTimeStamp(frames);
         VideoBufferToRawImage(_inputVideoBuffer, inputImage);
-        VIDEO_TEST_EXIT_ON_ERR(_encoder->Encode(inputImage, NULL) ==
+        VideoFrameType videoFrameType = kDeltaFrame;
+        VIDEO_TEST_EXIT_ON_ERR(_encoder->Encode(inputImage,
+                                                NULL,
+                                                &videoFrameType) ==
             WEBRTC_VIDEO_CODEC_OK);
         frameLength = WaitForEncodedFrame();
         //VIDEO_TEST_EXIT_ON_ERR(frameLength);
@@ -774,8 +783,11 @@ UnitTest::RateControlTests()
                 static_cast<WebRtc_UWord32>(9e4 /
                     static_cast<float>(_inst.maxFramerate)));
             VideoBufferToRawImage(_inputVideoBuffer, inputImage);
-            VIDEO_TEST_EXIT_ON_ERR(_encoder->Encode(inputImage, NULL) ==
-                WEBRTC_VIDEO_CODEC_OK);
+            VideoFrameType videoFrameType = kDeltaFrame;
+            VIDEO_TEST_EXIT_ON_ERR(_encoder->Encode(inputImage,
+                                                    NULL,
+                                                    &videoFrameType) ==
+                 WEBRTC_VIDEO_CODEC_OK);
             frameLength = WaitForEncodedFrame();
             VIDEO_TEST_EXIT_ON_ERR(frameLength > 0);
             //VIDEO_TEST(frameLength > 0);

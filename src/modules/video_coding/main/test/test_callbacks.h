@@ -50,7 +50,7 @@ public:
             const WebRtc_UWord8 payloadType, const WebRtc_UWord32 timeStamp,
             const WebRtc_UWord8* payloadData, const WebRtc_UWord32 payloadSize,
             const RTPFragmentationHeader& fragmentationHeader,
-            const RTPVideoTypeHeader* videoTypeHdr);
+            const RTPVideoHeader* videoHdr);
     // Register exisitng VCM. Currently - encode and decode under same module.
     void RegisterReceiverVCM(VideoCodingModule *vcm) {_VCMReceiver = vcm;}
     // Return size of last encoded frame data (all frames in the sequence)
@@ -106,7 +106,7 @@ public:
             const WebRtc_UWord8 payloadType, const WebRtc_UWord32 timeStamp,
             const WebRtc_UWord8* payloadData, const WebRtc_UWord32 payloadSize,
             const RTPFragmentationHeader& fragmentationHeader,
-            const RTPVideoTypeHeader* videoTypeHdr);
+            const RTPVideoHeader* videoHdr);
     // Return size of last encoded frame. Value good for one call
     // (resets to zero after call to inform test of frame drop)
     float EncodedBytes();

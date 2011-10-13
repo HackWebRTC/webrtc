@@ -30,14 +30,13 @@
 namespace webrtc {
 class CriticalSectionWrapper;
 class RtpDump;
-class RtpRtcp;
 class Transport;
 class VideoCodingModule;
 
 class ViESender: public Transport
 {
 public:
-    ViESender(int engineId, int channelId, RtpRtcp& rtpRtcpModule);
+    ViESender(int engineId, int channelId);
     ~ViESender();
 
     int RegisterExternalEncryption(Encryption* encryption);
@@ -65,7 +64,6 @@ private:
     int _engineId;
     int _channelId;
     CriticalSectionWrapper& _sendCritsect;
-    RtpRtcp& _rtpRtcp;
 
 #ifdef WEBRTC_SRTP
     SrtpModule* _ptrSrtp;

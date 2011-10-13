@@ -34,7 +34,7 @@ public:
                            const WebRtc_UWord8* payloadData,
                            const WebRtc_UWord32 payloadSize,
                            const webrtc::RTPFragmentationHeader& fragmentationHeader,
-                           const webrtc::RTPVideoTypeHeader* videoTypeHdr);
+                           const webrtc::RTPVideoHeader* videoHdr);
 
     // Register exisitng VCM. Currently - encode and decode with the same vcm module.
     void RegisterReceiverVCM(webrtc::VideoCodingModule *vcm);

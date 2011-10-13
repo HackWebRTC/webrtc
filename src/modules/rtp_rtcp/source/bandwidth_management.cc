@@ -18,25 +18,18 @@
 namespace webrtc {
 BandwidthManagement::BandwidthManagement(const WebRtc_Word32 id) :
     _id(id),
-
     _critsect(*CriticalSectionWrapper::CreateCriticalSection()),
-
     _lastPacketLossExtendedHighSeqNum(0),
     _lastReportAllLost(false),
     _lastLoss(0),
     _accumulateLostPacketsQ8(0),
     _accumulateExpectedPackets(0),
-
     _bitRate(0),
     _minBitRateConfigured(0),
     _maxBitRateConfigured(0),
-
     _last_fraction_loss(0),
     _last_round_trip_time(0),
-
-    // bandwidth estimate
     _bwEstimateIncoming(0),
-    _bwEstimateIncomingMax(0),
     _smoothedFractionLostQ4(-1), // indicate uninitialized
     _sFLFactorQ4(14)             // 0.875 in Q4
 {
@@ -68,7 +61,7 @@ BandwidthManagement::SetSendBitrate(const WebRtc_UWord32 startBitrate,
 }
 
 WebRtc_Word32
-BandwidthManagement::MaxConfiguredBitrate(WebRtc_UWord16& maxBitrateKbit)
+BandwidthManagement::MaxConfiguredBitrate(WebRtc_UWord16* maxBitrateKbit)
 {
     CriticalSectionScoped cs(_critsect);
 
@@ -76,57 +69,48 @@ BandwidthManagement::MaxConfiguredBitrate(WebRtc_UWord16& maxBitrateKbit)
     {
         return -1;
     }
-    maxBitrateKbit = (WebRtc_UWord16)(_maxBitRateConfigured/1000);
+    *maxBitrateKbit = (WebRtc_UWord16)(_maxBitRateConfigured/1000);
     return 0;
 }
 
 WebRtc_Word32
-BandwidthManagement::UpdateBandwidthEstimate(const WebRtc_UWord16 bandWidthMinKbit,
-                                             const WebRtc_UWord16 bandWidthMaxKbit,
-                                             WebRtc_UWord32& newBitrate,
-                                             WebRtc_UWord8& fractionLost,
-                                             WebRtc_UWord16& roundTripTime)
+BandwidthManagement::UpdateBandwidthEstimate(const WebRtc_UWord16 bandWidthKbit,
+                                             WebRtc_UWord32* newBitrate,
+                                             WebRtc_UWord8* fractionLost,
+                                             WebRtc_UWord16* roundTripTime)
 {
-    newBitrate = 0;
+    *newBitrate = 0;
     CriticalSectionScoped cs(_critsect);
 
-    _bwEstimateIncoming = bandWidthMinKbit*1000;
-    _bwEstimateIncomingMax = bandWidthMaxKbit*1000;
+    _bwEstimateIncoming = bandWidthKbit*1000;
 
     if(_bitRate == 0)
     {
         // BandwidthManagement off
         return -1;
     }
-
     if (_bwEstimateIncoming > 0 && _bitRate > _bwEstimateIncoming)
     {
         _bitRate   = _bwEstimateIncoming;
-    }
-    else
+    } else
     {
         return -1;
     }
-    newBitrate = _bitRate;
-    fractionLost = _last_fraction_loss;
-    roundTripTime = _last_round_trip_time;
+    *newBitrate = _bitRate;
+    *fractionLost = _last_fraction_loss;
+    *roundTripTime = _last_round_trip_time;
     return 0;
 }
 
-WebRtc_Word32
-BandwidthManagement::UpdatePacketLoss(const WebRtc_UWord32 lastReceivedExtendedHighSeqNum,
-                                      const bool defaultCodec,
-                                      const WebRtc_UWord8 lossInput,
-                                      const WebRtc_UWord16 rtt,
-                                      WebRtc_UWord32& newBitrate,
-                                      WebRtc_UWord16& bwEstimateKbitMin,
-                                      WebRtc_UWord16& bwEstimateKbitMax)
+WebRtc_Word32 BandwidthManagement::UpdatePacketLoss(
+    const WebRtc_UWord32 lastReceivedExtendedHighSeqNum,
+    const WebRtc_UWord16 rtt,
+    WebRtc_UWord8* loss,
+    WebRtc_UWord32* newBitrate)
 {
     CriticalSectionScoped cs(_critsect);
 
-    WebRtc_UWord8 loss = lossInput; // Local copy to modify.
-
-    _last_fraction_loss = loss;
+    _last_fraction_loss = *loss;
     _last_round_trip_time = rtt;
 
     if(_bitRate == 0)
@@ -147,13 +131,13 @@ BandwidthManagement::UpdatePacketLoss(const WebRtc_UWord32 lastReceivedExtendedH
         // Check if this report and the last was 100% loss, then report
         // 100% loss even though seqNumDiff is small.
         // If not, go on with the checks.
-        if (!(_lastReportAllLost && loss == 255))
+        if (!(_lastReportAllLost && *loss == 255))
         {
-            _lastReportAllLost = (loss == 255);
+            _lastReportAllLost = (*loss == 255);
 
             // Calculate number of lost packets.
             // loss = 256 * numLostPackets / expectedPackets.
-            const int numLostPacketsQ8 = loss * seqNumDiff;
+            const int numLostPacketsQ8 = *loss * seqNumDiff;
 
             // Accumulate reports.
             _accumulateLostPacketsQ8 += numLostPacketsQ8;
@@ -164,7 +148,7 @@ BandwidthManagement::UpdatePacketLoss(const WebRtc_UWord32 lastReceivedExtendedH
             const int limitNumPackets = 10;
             if (_accumulateExpectedPackets >= limitNumPackets)
             {
-                loss = _accumulateLostPacketsQ8 / _accumulateExpectedPackets;
+                *loss = _accumulateLostPacketsQ8 / _accumulateExpectedPackets;
 
                 // Reset accumulators
                 _accumulateLostPacketsQ8 = 0;
@@ -174,34 +158,24 @@ BandwidthManagement::UpdatePacketLoss(const WebRtc_UWord32 lastReceivedExtendedH
             {
                 // Report same loss as before and keep the accumulators until
                 // the next report.
-                loss = _lastLoss;
+                *loss = _lastLoss;
             }
         }
     }
-
     // Keep for next time.
-    _lastLoss = loss;
+    _lastLoss = *loss;
 
     // Remember the sequence number until next time
     _lastPacketLossExtendedHighSeqNum = lastReceivedExtendedHighSeqNum;
 
-    bwEstimateKbitMax = static_cast<WebRtc_UWord16>(_bwEstimateIncomingMax / 1000);
-    bwEstimateKbitMin = static_cast<WebRtc_UWord16>(_bwEstimateIncoming / 1000);
-
-    newBitrate = 0;
-
-    if (defaultCodec)
-    {
-        return 0;
-    }
-    WebRtc_UWord32 bitRate = ShapeSimple(loss, rtt);
-    if(bitRate == 0)
+    WebRtc_UWord32 bitRate = ShapeSimple(*loss, rtt);
+    if (bitRate == 0)
     {
         // no change
         return -1;
     }
     _bitRate = bitRate;
-    newBitrate = bitRate;
+    *newBitrate = bitRate;
     return 0;
 }
 
@@ -210,8 +184,9 @@ BandwidthManagement::UpdatePacketLoss(const WebRtc_UWord32 lastReceivedExtendedH
  */
 
 // protected
-WebRtc_Word32
-BandwidthManagement::CalcTFRCbps(WebRtc_Word16 avgPackSizeBytes, WebRtc_Word32 rttMs, WebRtc_Word32 packetLoss)
+WebRtc_Word32 BandwidthManagement::CalcTFRCbps(WebRtc_Word16 avgPackSizeBytes,
+                                               WebRtc_Word32 rttMs,
+                                               WebRtc_Word32 packetLoss)
 {
     if (avgPackSizeBytes <= 0 || rttMs <= 0 || packetLoss <= 0)
     {
@@ -235,8 +210,8 @@ BandwidthManagement::CalcTFRCbps(WebRtc_Word16 avgPackSizeBytes, WebRtc_Word32 r
 *  Simple bandwidth estimation. Depends a lot on bwEstimateIncoming and packetLoss.
 */
 // protected
-WebRtc_UWord32
-BandwidthManagement::ShapeSimple(WebRtc_Word32 packetLoss, WebRtc_Word32 rtt)
+WebRtc_UWord32 BandwidthManagement::ShapeSimple(WebRtc_Word32 packetLoss,
+                                                WebRtc_Word32 rtt)
 {
     WebRtc_UWord32 newBitRate = 0;
     bool reducing = false;
@@ -292,18 +267,14 @@ BandwidthManagement::ShapeSimple(WebRtc_Word32 packetLoss, WebRtc_Word32 rtt)
     {
         newBitRate = _bwEstimateIncoming;
     }
-
     if (newBitRate > _maxBitRateConfigured)
     {
         newBitRate = _maxBitRateConfigured;
     }
-
     if (newBitRate < _minBitRateConfigured)
     {
         newBitRate = _minBitRateConfigured;
     }
-
     return newBitRate;
 }
-
 } // namespace webrtc

@@ -89,7 +89,7 @@ public:
         const WebRtc_UWord8* payloadData,
         const WebRtc_UWord32 payloadSize,
         const RTPFragmentationHeader& fragmentationHeader,
-        const RTPVideoTypeHeader* rtpTypeHdr) = 0;
+        const RTPVideoHeader* rtpVideoHdr) = 0;
 protected:
     virtual ~VCMPacketizationCallback() {}
 };

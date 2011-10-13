@@ -42,9 +42,12 @@ struct RTPVideoHeaderH263
     bool bits;                    // H.263 mode B, Xor the lasy byte of previus packet with the
                                   // first byte of this packet
 };
+
 enum {kNoPictureId = -1};
 enum {kNoTl0PicIdx = -1};
 enum {kNoTemporalIdx = -1};
+enum {kNoSimulcastIdx = 0};
+
 struct RTPVideoHeaderVP8
 {
     void InitRTPVideoHeaderVP8()
@@ -89,6 +92,8 @@ struct RTPVideoHeader
     WebRtc_UWord16          height;
 
     bool                    isFirstPacket;   // first packet in frame
+    WebRtc_UWord8           simulcastIdx;    // Index if the simulcast encoder creating
+                                             // this frame, 0 if not using simulcast.
     RTPVideoCodecTypes      codec;
     RTPVideoTypeHeader      codecHeader;
 };

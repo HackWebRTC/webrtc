@@ -51,7 +51,7 @@ VCMEncodeCompleteCallback::SendData(
         const WebRtc_UWord8* payloadData,
         const WebRtc_UWord32 payloadSize,
         const RTPFragmentationHeader& fragmentationHeader,
-        const RTPVideoTypeHeader* videoTypeHdr)
+        const RTPVideoHeader* videoHdr)
 {
     // will call the VCMReceiver input packet
     _frameType = frameType;
@@ -71,9 +71,9 @@ VCMEncodeCompleteCallback::SendData(
         break;
     case webrtc::kRTPVideoVP8:
         rtpInfo.type.Video.codecHeader.VP8.nonReference =
-            videoTypeHdr->VP8.nonReference;
+            videoHdr->codecHeader.VP8.nonReference;
         rtpInfo.type.Video.codecHeader.VP8.pictureId =
-            videoTypeHdr->VP8.pictureId;
+            videoHdr->codecHeader.VP8.pictureId;
         break;
     case webrtc::kRTPVideoI420:
         break;
@@ -145,7 +145,7 @@ VCMRTPEncodeCompleteCallback::SendData(
         const WebRtc_UWord8* payloadData,
         const WebRtc_UWord32 payloadSize,
         const RTPFragmentationHeader& fragmentationHeader,
-        const RTPVideoTypeHeader* videoTypeHdr)
+        const RTPVideoHeader* videoHdr)
 {
     _frameType = frameType;
     _encodedBytes+= payloadSize;
@@ -156,7 +156,7 @@ VCMRTPEncodeCompleteCallback::SendData(
                                         payloadData,
                                         payloadSize,
                                         &fragmentationHeader,
-                                        videoTypeHdr);
+                                        videoHdr);
 }
 
 float

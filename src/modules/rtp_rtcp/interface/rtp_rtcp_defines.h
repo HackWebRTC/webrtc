@@ -210,17 +210,14 @@ class RtpVideoFeedback
 {
 public:
     // this function should call codec module to inform it about the request
-    virtual void OnReceivedIntraFrameRequest(
-        const WebRtc_Word32 id,
-        const WebRtc_UWord8 message = 0) = 0;
+    virtual void OnReceivedIntraFrameRequest(const WebRtc_Word32 id,
+                                             const FrameType type,
+                                             const WebRtc_UWord8 streamIdx) = 0;
 
     virtual void OnNetworkChanged(const WebRtc_Word32 id,
-                                  const WebRtc_UWord32 minBitrateBps,
-                                  const WebRtc_UWord32 maxBitrateBps,
+                                  const WebRtc_UWord32 bitrateBps,
                                   const WebRtc_UWord8 fractionLost,
-                                  const WebRtc_UWord16 roundTripTimeMs,
-                                  const WebRtc_UWord16 bwEstimateKbitMin,
-                                  const WebRtc_UWord16 bwEstimateKbitMax) = 0;
+                                  const WebRtc_UWord16 roundTripTimeMs) = 0;
 
 protected:
     virtual ~RtpVideoFeedback() {}

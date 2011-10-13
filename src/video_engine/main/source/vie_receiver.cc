@@ -33,7 +33,9 @@ ViEReceiver::ViEReceiver(int engineId, int channelId,
                          RtpRtcp& moduleRtpRtcp,
                          VideoCodingModule& moduleVcm)
     :   _receiveCritsect(*CriticalSectionWrapper::CreateCriticalSection()),
-        _engineId(engineId), _channelId(channelId), _rtpRtcp(moduleRtpRtcp),
+        _engineId(engineId),
+        _channelId(channelId),
+        _rtpRtcp(moduleRtpRtcp),
         _vcm(moduleVcm),
 #ifdef WEBRTC_SRTP
         _ptrSrtp(NULL),
@@ -44,7 +46,6 @@ ViEReceiver::ViEReceiver(int engineId, int channelId,
         _ptrExternalDecryption(NULL), _ptrDecryptionBuffer(NULL),
         _rtpDump(NULL), _receiving(false)
 {
-    _rtpRtcp.RegisterIncomingVideoCallback(this);
 }
 
 // ----------------------------------------------------------------------------
@@ -116,6 +117,19 @@ int ViEReceiver::DeregisterExternalDecryption()
     }
     _ptrExternalDecryption = NULL;
     return 0;
+}
+
+void ViEReceiver::RegisterSimulcastRtpRtcpModules(
+    const std::list<RtpRtcp*>& rtpModules)
+{
+    CriticalSectionScoped cs(_receiveCritsect);
+    _rtpRtcpSimulcast.clear();
+    if (!rtpModules.empty())
+    {
+        _rtpRtcpSimulcast.insert(_rtpRtcpSimulcast.begin(),
+                                 rtpModules.begin(),
+                                 rtpModules.end());
+    }
 }
 
 #ifdef WEBRTC_SRTP
@@ -217,7 +231,6 @@ void ViEReceiver::IncomingRTPPacket(const WebRtc_Word8* incomingRtpPacket,
                                     const WebRtc_UWord16 fromPort)
 {
     InsertRTPPacket(incomingRtpPacket, incomingRtpPacketLength);
-    return;
 }
 
 // ----------------------------------------------------------------------------
@@ -232,7 +245,6 @@ void ViEReceiver::IncomingRTCPPacket(const WebRtc_Word8* incomingRtcpPacket,
                                      const WebRtc_UWord16 fromPort)
 {
     InsertRTCPPacket(incomingRtcpPacket, incomingRtcpPacketLength);
-    return;
 }
 
 // ----------------------------------------------------------------------------
@@ -420,6 +432,15 @@ int ViEReceiver::InsertRTCPPacket(const WebRtc_Word8* rtcpPacket,
                                  (WebRtc_UWord16) receivedPacketLength);
         }
     }
+    {
+        CriticalSectionScoped cs(_receiveCritsect);
+        std::list<RtpRtcp*>::iterator it = _rtpRtcpSimulcast.begin();
+        while (it != _rtpRtcpSimulcast.end())
+        {
+            RtpRtcp* rtpRtcp = *it++;
+            rtpRtcp->IncomingPacket(receivedPacket, receivedPacketLength);
+        }
+    }
     return _rtpRtcp.IncomingPacket(receivedPacket, receivedPacketLength);
 }
 
@@ -507,25 +528,5 @@ int ViEReceiver::StopRTPDump()
         return -1;
     }
     return 0;
-}
-
-// Implements RtpVideoFeedback
-void ViEReceiver::OnReceivedIntraFrameRequest(const WebRtc_Word32 id,
-                                              const WebRtc_UWord8 message)
-{
-    // Don't do anything, action trigged on default module
-    return;
-}
-
-void ViEReceiver::OnNetworkChanged(const WebRtc_Word32 id,
-                                   const WebRtc_UWord32 minBitrateBps,
-                                   const WebRtc_UWord32 maxBitrateBps,
-                                   const WebRtc_UWord8 fractionLost,
-                                   const WebRtc_UWord16 roundTripTimeMs,
-                                   const WebRtc_UWord16 bwEstimateKbitMin,
-                                   const WebRtc_UWord16 bwEstimateKbitMax)
-{
-    // Called for default module
-    return;
 }
 } // namespace webrtc

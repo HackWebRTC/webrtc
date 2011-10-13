@@ -61,8 +61,8 @@ public:
     WebRtc_Word32 GetEncoder(VideoCodec& videoCodec);
 
     WebRtc_Word32 GetCodecConfigParameters(
-                                 unsigned char configParameters[kConfigParameterSize],
-                                 unsigned char& configParametersSize);
+        unsigned char configParameters[kConfigParameterSize],
+        unsigned char& configParametersSize);
 
     // Scale or crop/pad image
     WebRtc_Word32 ScaleInputImage(bool enable);
@@ -86,14 +86,14 @@ public:
     // Loss protection
     WebRtc_Word32 UpdateProtectionMethod();
     // Implements VCMPacketizationCallback
-    virtual WebRtc_Word32
-    SendData(const FrameType frameType,
-             const WebRtc_UWord8 payloadType,
-             const WebRtc_UWord32 timeStamp,
-             const WebRtc_UWord8* payloadData,
-             const WebRtc_UWord32 payloadSize,
-             const RTPFragmentationHeader& fragmentationHeader,
-             const RTPVideoTypeHeader* rtpTypeHdr);
+    virtual WebRtc_Word32 SendData(
+        const FrameType frameType,
+        const WebRtc_UWord8 payloadType,
+        const WebRtc_UWord32 timeStamp,
+        const WebRtc_UWord8* payloadData,
+        const WebRtc_UWord32 payloadSize,
+        const RTPFragmentationHeader& fragmentationHeader,
+        const RTPVideoHeader* rtpVideoHdr);
     // Implements VideoProtectionCallback
     virtual WebRtc_Word32 ProtectionRequest(const WebRtc_UWord8 deltaFECRate,
                                             const WebRtc_UWord8 keyFECRate,
@@ -113,14 +113,13 @@ public:
 
     // Implements RtpVideoFeedback
     virtual void OnReceivedIntraFrameRequest(const WebRtc_Word32 id,
-                                             const WebRtc_UWord8 message = 0);
+                                             const FrameType type,
+                                             const WebRtc_UWord8 streamIdx);
+
     virtual void OnNetworkChanged(const WebRtc_Word32 id,
-                                  const WebRtc_UWord32 minBitrateBps,
-                                  const WebRtc_UWord32 maxBitrateBps,
+                                  const WebRtc_UWord32 bitrateBps,
                                   const WebRtc_UWord8 fractionLost,
-                                  const WebRtc_UWord16 roundTripTimeMs,
-                                  const WebRtc_UWord16 bwEstimateKbitMin,
-                                  const WebRtc_UWord16 bwEstimateKbitMax);
+                                  const WebRtc_UWord16 roundTripTimeMs);
     // Effect filter
     WebRtc_Word32 RegisterEffectFilter(ViEEffectFilter* effectFilter);
     //Recording
@@ -156,13 +155,13 @@ private:
 
     VideoCodingModule& _vcm;
     VideoProcessingModule& _vpm;
-    RtpRtcp& _rtpRtcp;
+    RtpRtcp& _defaultRtpRtcp;
     CriticalSectionWrapper& _callbackCritsect;
     CriticalSectionWrapper& _dataCritsect;
     VideoCodec _sendCodec;
 
     bool _paused;
-    WebRtc_Word64 _timeLastIntraRequestMs;
+    WebRtc_Word64 _timeLastIntraRequestMs[kMaxSimulcastStreams];
     WebRtc_Word32 _channelsDroppingDeltaFrames;
     bool _dropNextFrame;
     //Loss protection

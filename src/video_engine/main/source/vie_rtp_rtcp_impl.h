@@ -38,9 +38,16 @@ public:
     virtual int Release();
 
     // SSRC/CSRC
-    virtual int SetLocalSSRC(const int videoChannel, const unsigned int SSRC);
+    virtual int SetLocalSSRC(const int videoChannel,
+                             const unsigned int SSRC,
+                             const StreamType usage,
+                             const unsigned char simulcastIdx);
 
     virtual int GetLocalSSRC(const int videoChannel, unsigned int& SSRC) const;
+
+    virtual int SetRemoteSSRCType(const int videoChannel,
+                                  const StreamType usage,
+                                  const unsigned int SSRC) const;
 
     virtual int GetRemoteSSRC(const int videoChannel, unsigned int& SSRC) const;
 

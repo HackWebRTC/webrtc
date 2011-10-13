@@ -67,7 +67,6 @@ _scheduleKeyRequest(false),
 _sendCritSect(*CriticalSectionWrapper::CreateCriticalSection()),
 _encoder(),
 _encodedFrameCallback(),
-_nextFrameType(kVideoFrameDelta),
 _mediaOpt(id),
 _sendCodecType(kVideoCodecUnknown),
 _sendStatsCallback(NULL),
@@ -79,6 +78,10 @@ _sendStatsTimer(1000),
 _retransmissionTimer(10),
 _keyRequestTimer(500)
 {
+    for (int i = 0; i < kMaxSimulcastStreams; i++)
+    {
+        _nextFrameType[i] = kVideoFrameDelta;
+    }
 #ifdef DEBUG_DECODER_BIT_STREAM
     _bitStreamBeforeDecoder = fopen("decoderBitStream.bit", "wb");
 #endif
@@ -786,7 +789,7 @@ VideoCodingModuleImpl::SetVideoProtection(VCMVideoProtection videoProtection,
 // Add one raw video frame to the encoder, blocking.
 WebRtc_Word32
 VideoCodingModuleImpl::AddVideoFrame(const VideoFrame& videoFrame,
-                                     const VideoContentMetrics* _contentMetrics,
+                                     const VideoContentMetrics* contentMetrics,
                                      const CodecSpecificInfo* codecSpecificInfo)
 {
     WEBRTC_TRACE(webrtc::kTraceModuleCall,
@@ -799,12 +802,10 @@ VideoCodingModuleImpl::AddVideoFrame(const VideoFrame& videoFrame,
     {
         return VCM_UNINITIALIZED;
     }
-
-    if (_nextFrameType == kFrameEmpty)
+    if (_nextFrameType[0] == kFrameEmpty)
     {
         return VCM_OK;
     }
-
     _mediaOpt.UpdateIncomingFrameRate();
 
     if (_mediaOpt.DropFrame())
@@ -816,12 +817,10 @@ VideoCodingModuleImpl::AddVideoFrame(const VideoFrame& videoFrame,
     }
     else
     {
-        _mediaOpt.updateContentData(_contentMetrics);
-        const FrameType requestedFrameType = _nextFrameType;
-        _nextFrameType = kVideoFrameDelta; // default frame type
+        _mediaOpt.updateContentData(contentMetrics);
         WebRtc_Word32 ret = _encoder->Encode(videoFrame,
                                              codecSpecificInfo,
-                                             requestedFrameType);
+                                             _nextFrameType);
         if (_encoderInputFile != NULL)
         {
             fwrite(videoFrame.Buffer(), 1, videoFrame.Length(),
@@ -829,36 +828,42 @@ VideoCodingModuleImpl::AddVideoFrame(const VideoFrame& videoFrame,
         }
         if (ret < 0)
         {
-            _nextFrameType = requestedFrameType;
             WEBRTC_TRACE(webrtc::kTraceError,
                          webrtc::kTraceVideoCoding,
                          VCMId(_id),
                          "Encode error: %d", ret);
             return ret;
         }
+        for (int i = 0; i < kMaxSimulcastStreams; i++)
+        {
+            _nextFrameType[i] = kVideoFrameDelta; // default frame type
+        }
     }
-
     return VCM_OK;
 }
 
 // Next frame encoded should be of the type frameType
 // Good for only one frame
 WebRtc_Word32
-VideoCodingModuleImpl::FrameTypeRequest(FrameType frameType)
+VideoCodingModuleImpl::FrameTypeRequest(FrameType frameType, 
+                                        WebRtc_UWord8 simulcastIdx)
 {
+    assert(simulcastIdx < kMaxSimulcastStreams);
+
     WEBRTC_TRACE(webrtc::kTraceModuleCall,
                  webrtc::kTraceVideoCoding,
                  VCMId(_id),
                  "FrameTypeRequest()");
+
     CriticalSectionScoped cs(_sendCritSect);
-    _nextFrameType = frameType;
+    _nextFrameType[simulcastIdx] = frameType;
     if (_encoder != NULL && _encoder->InternalSource())
     {
         // Try to request the frame if we have an external encoder with
         // internal source since AddVideoFrame never will be called.
         if (_encoder->RequestFrame(_nextFrameType) == WEBRTC_VIDEO_CODEC_OK)
         {
-            _nextFrameType = kVideoFrameDelta;
+            _nextFrameType[simulcastIdx] = kVideoFrameDelta;
         }
     }
     return VCM_OK;
