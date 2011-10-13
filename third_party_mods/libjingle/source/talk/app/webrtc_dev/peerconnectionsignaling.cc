@@ -30,7 +30,6 @@
 #include <utility>
 
 #include "talk/app/webrtc_dev/audiotrackimpl.h"
-#include "talk/app/webrtc_dev/mediastreamimpl.h"
 #include "talk/app/webrtc_dev/videotrackimpl.h"
 #include "talk/app/webrtc_dev/sessiondescriptionprovider.h"
 #include "talk/base/helpers.h"
@@ -95,7 +94,6 @@ PeerConnectionSignaling::~PeerConnectionSignaling() {
     delete remote_desc;
     delete queued_received_offer_.first;
   }
-
 }
 
 void PeerConnectionSignaling::OnCandidatesReady(
@@ -333,7 +331,7 @@ void PeerConnectionSignaling::InitMediaSessionOptions(
 void PeerConnectionSignaling::UpdateRemoteStreams(
     const cricket::SessionDescription* remote_desc) {
   RemoteStreamMap current_streams;
-  typedef std::pair<std::string, scoped_refptr<MediaStreamImpl> >
+  typedef std::pair<std::string, scoped_refptr<MediaStreamProxy> >
       MediaStreamPair;
 
   const cricket::ContentInfo* audio_content = GetFirstAudioContent(remote_desc);
@@ -353,8 +351,8 @@ void PeerConnectionSignaling::UpdateRemoteStreams(
       if (old_streams_it == remote_streams_.end()) {
         if (new_streams_it == current_streams.end()) {
           // New stream
-          scoped_refptr<MediaStreamImpl> stream(
-              MediaStreamImpl::Create(it->cname));
+          scoped_refptr<MediaStreamProxy> stream(
+              MediaStreamProxy::Create(it->cname, signaling_thread_));
           current_streams.insert(MediaStreamPair(stream->label(), stream));
           new_streams_it = current_streams.find(it->cname);
         }
@@ -364,7 +362,7 @@ void PeerConnectionSignaling::UpdateRemoteStreams(
         new_streams_it->second->AddTrack(track);
 
       } else {
-        scoped_refptr<MediaStreamImpl> stream(old_streams_it->second);
+        scoped_refptr<MediaStreamProxy> stream(old_streams_it->second);
         current_streams.insert(MediaStreamPair(stream->label(), stream));
       }
     }
@@ -387,8 +385,8 @@ void PeerConnectionSignaling::UpdateRemoteStreams(
       if (old_streams_it == remote_streams_.end()) {
         if (new_streams_it == current_streams.end()) {
           // New stream
-          scoped_refptr<MediaStreamImpl> stream(
-              MediaStreamImpl::Create(it->cname));
+          scoped_refptr<MediaStreamProxy> stream(
+              MediaStreamProxy::Create(it->cname, signaling_thread_));
           current_streams.insert(MediaStreamPair(stream->label(), stream));
           new_streams_it = current_streams.find(it->cname);
         }
@@ -398,7 +396,7 @@ void PeerConnectionSignaling::UpdateRemoteStreams(
         track->set_state(MediaStreamTrack::kLive);
 
       } else {
-        scoped_refptr<MediaStreamImpl> stream(old_streams_it->second);
+        scoped_refptr<MediaStreamProxy> stream(old_streams_it->second);
         current_streams.insert(MediaStreamPair(stream->label(), stream));
       }
     }
@@ -409,7 +407,7 @@ void PeerConnectionSignaling::UpdateRemoteStreams(
   for (RemoteStreamMap::iterator it = current_streams.begin();
        it != current_streams.end();
        ++it) {
-    scoped_refptr<MediaStreamImpl> new_stream(it->second);
+    scoped_refptr<MediaStreamProxy> new_stream(it->second);
     RemoteStreamMap::iterator old_streams_it =
         remote_streams_.find(new_stream->label());
     if (old_streams_it == remote_streams_.end()) {
@@ -424,7 +422,7 @@ void PeerConnectionSignaling::UpdateRemoteStreams(
   for (RemoteStreamMap::iterator it = remote_streams_.begin();
        it != remote_streams_.end();
        ++it) {
-    scoped_refptr<MediaStreamImpl> old_stream(it->second);
+    scoped_refptr<MediaStreamProxy> old_stream(it->second);
     RemoteStreamMap::iterator new_streams_it =
         current_streams.find(old_stream->label());
     if (new_streams_it == current_streams.end()) {

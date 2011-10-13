@@ -260,7 +260,7 @@ void Conductor::AddStreams() {
   video_track->SetRenderer(renderer);
 
   scoped_refptr<webrtc::LocalMediaStream> stream =
-      webrtc::CreateLocalMediaStream(kStreamLabel);
+      peer_connection_factory_->CreateLocalMediaStream(kStreamLabel);
 
   stream->AddTrack(audio_track);
   stream->AddTrack(video_track);

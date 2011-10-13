@@ -53,7 +53,7 @@ class TestObserver : public Observer {
 TEST(LocalStreamTest, Create) {
   // Create a local stream.
   std::string label(kStreamLabel1);
-  scoped_refptr<LocalMediaStream> stream(CreateLocalMediaStream(label));
+  scoped_refptr<LocalMediaStream> stream(MediaStreamImpl::Create(label));
 
   EXPECT_EQ(stream->label().compare(label), 0);
   //  Check state.

@@ -78,11 +78,6 @@ class MediaStreamTrack : public RefCount,
   virtual uint32 ssrc() = 0;
   virtual bool enabled() = 0;
   virtual TrackState state() = 0;
-  // Enable or disables a track.
-  // For Remote streams - disable means that the video is not decoded,
-  // or audio not decoded.
-  // For local streams this means that video is not captured
-  // or audio is not captured.
   virtual bool set_enabled(bool enable) = 0;
   // Return false (or assert) if the ssrc is already set.
   virtual bool set_ssrc(uint32 ssrc) = 0;
@@ -182,9 +177,6 @@ class LocalMediaStream : public MediaStream {
  public:
   virtual bool AddTrack(MediaStreamTrack* track) = 0;
 };
-
-scoped_refptr<LocalMediaStream> CreateLocalMediaStream(
-    const std::string& label);
 
 }  // namespace webrtc
 

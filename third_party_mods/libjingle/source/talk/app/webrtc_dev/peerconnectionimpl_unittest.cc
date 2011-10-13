@@ -67,7 +67,8 @@ class PeerConnectionImplTest : public testing::Test {
 TEST_F(PeerConnectionImplTest, AddRemoveStream) {
   // Create a local stream.
   std::string label(kStreamLabel1);
-  scoped_refptr<LocalMediaStream> stream(CreateLocalMediaStream(label));
+  scoped_refptr<LocalMediaStream> stream(
+      pc_factory_->CreateLocalMediaStream(label));
 
   pc_->AddStream(stream);
   pc_->CommitStreamChanges();

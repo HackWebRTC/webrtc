@@ -45,6 +45,9 @@ class PeerConnectionManagerImpl : public PeerConnectionManager,
       PeerConnectionObserver* observer);
   bool Initialize();
 
+  scoped_refptr<LocalMediaStream> CreateLocalMediaStream(
+      const std::string& label);
+
  protected:
   PeerConnectionManagerImpl();
   PeerConnectionManagerImpl(talk_base::Thread* worker_thread,

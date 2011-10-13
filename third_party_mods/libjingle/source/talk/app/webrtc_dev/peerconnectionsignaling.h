@@ -37,7 +37,7 @@
 #include <utility>
 #include <vector>
 
-#include "talk/app/webrtc_dev/mediastreamimpl.h"
+#include "talk/app/webrtc_dev/mediastreamproxy.h"
 #include "talk/app/webrtc_dev/peerconnection.h"
 #include "talk/app/webrtc_dev/peerconnectionmessage.h"
 #include "talk/app/webrtc_dev/ref_count.h"
@@ -125,7 +125,6 @@ class PeerConnectionSignaling : public WebRtcSessionObserver,
   virtual void OnMessage(talk_base::Message* msg);
 
  private:
-
   void CreateOffer_s();
   void CreateAnswer_s();
 
@@ -149,7 +148,7 @@ class PeerConnectionSignaling : public WebRtcSessionObserver,
   State state_;
   uint32 ssrc_counter_;
 
-  typedef std::map<std::string, scoped_refptr<MediaStreamImpl> >
+  typedef std::map<std::string, scoped_refptr<MediaStreamProxy> >
       RemoteStreamMap;
   RemoteStreamMap remote_streams_;
   typedef std::map<std::string, scoped_refptr<MediaStream> >

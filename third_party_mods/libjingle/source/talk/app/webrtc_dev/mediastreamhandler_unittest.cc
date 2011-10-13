@@ -29,7 +29,7 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "talk/app/webrtc_dev/mediastream.h"
+#include "talk/app/webrtc_dev/mediastreamimpl.h"
 #include "talk/app/webrtc_dev/mediastreamhandler.h"
 #include "talk/app/webrtc_dev/streamcollectionimpl.h"
 #include "talk/base/thread.h"
@@ -67,7 +67,7 @@ class MockMediaProvier : public MediaProviderInterface {
 TEST(MediaStreamHandlerTest, LocalStreams) {
   // Create a local stream.
   std::string label(kStreamLabel1);
-  scoped_refptr<LocalMediaStream> stream(CreateLocalMediaStream(label));
+  scoped_refptr<LocalMediaStream> stream(MediaStreamImpl::Create(label));
   scoped_refptr<LocalVideoTrack> video_track(CreateLocalVideoTrack(
       kVideoDeviceName, NULL));
   video_track->set_ssrc(kVideoSsrc);
@@ -105,7 +105,7 @@ TEST(MediaStreamHandlerTest, RemoteStreams) {
   // they are easier to create.
   // LocalMediaStreams inherit from MediaStreams.
   std::string label(kStreamLabel1);
-  scoped_refptr<LocalMediaStream> stream(CreateLocalMediaStream(label));
+  scoped_refptr<LocalMediaStream> stream(MediaStreamImpl::Create(label));
   scoped_refptr<LocalVideoTrack> video_track(CreateLocalVideoTrack(
       kVideoDeviceName, NULL));
   video_track->set_ssrc(kVideoSsrc);

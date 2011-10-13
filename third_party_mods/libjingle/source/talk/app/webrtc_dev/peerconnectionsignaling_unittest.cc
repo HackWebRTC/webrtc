@@ -139,6 +139,7 @@ class MockSignalingObserver : public sigslot::has_slots<> {
   virtual ~MockSignalingObserver() {}
 
   std::string last_message;
+
  private:
   MediaStreamMap remote_media_streams_;
   scoped_refptr<StreamCollectionImpl> remote_local_collection_;
@@ -147,7 +148,8 @@ class MockSignalingObserver : public sigslot::has_slots<> {
 
 class MockSessionDescriptionProvider : public SessionDescriptionProvider {
  public:
-  MockSessionDescriptionProvider(cricket::ChannelManager* channel_manager)
+  explicit MockSessionDescriptionProvider(
+      cricket::ChannelManager* channel_manager)
       : update_session_description_counter_(0),
         session_description_factory_(
           new cricket::MediaSessionDescriptionFactory(channel_manager)) {
@@ -232,7 +234,7 @@ class PeerConnectionSignalingTest: public testing::Test {
 TEST_F(PeerConnectionSignalingTest, SimpleOneWayCall) {
   // Create a local stream.
   std::string label(kStreamLabel1);
-  scoped_refptr<LocalMediaStream> stream(CreateLocalMediaStream(label));
+  scoped_refptr<LocalMediaStream> stream(MediaStreamImpl::Create(label));
   MockMediaStreamObserver stream_observer1(stream);
 
   // Add a local audio track.
@@ -305,7 +307,7 @@ TEST_F(PeerConnectionSignalingTest, Glare) {
   signaling2_->OnCandidatesReady(candidates_);
   // Create a local stream.
   std::string label(kStreamLabel1);
-  scoped_refptr<LocalMediaStream> stream(CreateLocalMediaStream(label));
+  scoped_refptr<LocalMediaStream> stream(MediaStreamImpl::Create(label));
 
   // Add a local audio track.
   scoped_refptr<LocalAudioTrack> audio_track(
@@ -368,7 +370,7 @@ TEST_F(PeerConnectionSignalingTest, AddRemoveStream) {
   signaling2_->OnCandidatesReady(candidates_);
   // Create a local stream.
   std::string label(kStreamLabel1);
-  scoped_refptr<LocalMediaStream> stream(CreateLocalMediaStream(label));
+  scoped_refptr<LocalMediaStream> stream(MediaStreamImpl::Create(label));
   MockMediaStreamObserver stream_observer1(stream);
 
   // Add a local audio track.

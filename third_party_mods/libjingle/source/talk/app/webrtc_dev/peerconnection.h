@@ -160,6 +160,10 @@ class PeerConnectionManager : public RefCount {
       const std::string& config,
       PeerConnectionObserver* observer) = 0;
 
+  virtual scoped_refptr<LocalMediaStream> CreateLocalMediaStream(
+      const std::string& label) = 0;
+
+
  protected:
   // Dtor protected as objects shouldn't be deleted via this interface.
   ~PeerConnectionManager() {}
