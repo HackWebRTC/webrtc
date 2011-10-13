@@ -39,15 +39,15 @@ namespace webrtc {
 class StreamCollectionImpl : public StreamCollection {
  public:
   static scoped_refptr<StreamCollectionImpl> Create() {
-    RefCountImpl<StreamCollectionImpl>* implementation =
-         new RefCountImpl<StreamCollectionImpl>();
+    talk_base::RefCountImpl<StreamCollectionImpl>* implementation =
+         new talk_base::RefCountImpl<StreamCollectionImpl>();
     return implementation;
   }
 
   static scoped_refptr<StreamCollectionImpl> Create(
       StreamCollectionImpl* streams) {
-    RefCountImpl<StreamCollectionImpl>* implementation =
-         new RefCountImpl<StreamCollectionImpl>(streams);
+    talk_base::RefCountImpl<StreamCollectionImpl>* implementation =
+         new talk_base::RefCountImpl<StreamCollectionImpl>(streams);
     return implementation;
   }
 

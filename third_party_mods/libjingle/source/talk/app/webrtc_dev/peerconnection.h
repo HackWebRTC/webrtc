@@ -40,7 +40,7 @@ namespace talk_base {
 
 namespace webrtc {
 
-class StreamCollection : public RefCount {
+class StreamCollection : public talk_base::RefCount {
  public:
   virtual size_t count() = 0;
   virtual MediaStream* at(size_t index) = 0;
@@ -79,7 +79,7 @@ class PeerConnectionObserver {
 };
 
 
-class PeerConnection : public RefCount {
+class PeerConnection : public talk_base::RefCount {
  public:
   // SignalingMessage in json format
   virtual bool ProcessSignalingMessage(const std::string& msg) = 0;
@@ -113,7 +113,7 @@ class PeerConnection : public RefCount {
 };
 
 // Reference counted wrapper for talk_base::NetworkManager.
-class PcNetworkManager : public RefCount {
+class PcNetworkManager : public talk_base::RefCount {
  public:
   static scoped_refptr<PcNetworkManager> Create(
       talk_base::NetworkManager* network_manager);
@@ -127,7 +127,7 @@ class PcNetworkManager : public RefCount {
 };
 
 // Reference counted wrapper for talk_base::PacketSocketFactory.
-class PcPacketSocketFactory : public RefCount {
+class PcPacketSocketFactory : public talk_base::RefCount {
  public:
   static scoped_refptr<PcPacketSocketFactory> Create(
       talk_base::PacketSocketFactory* socket_factory);
@@ -141,7 +141,7 @@ class PcPacketSocketFactory : public RefCount {
   talk_base::PacketSocketFactory* socket_factory_;
 };
 
-class PeerConnectionManager : public RefCount {
+class PeerConnectionManager : public talk_base::RefCount {
  public:
   // Create a new instance of PeerConnectionManager.
   static scoped_refptr<PeerConnectionManager> Create();

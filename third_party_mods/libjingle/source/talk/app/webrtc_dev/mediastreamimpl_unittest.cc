@@ -42,8 +42,11 @@ class TestObserver : public Observer {
   void OnChanged() {
     ++changed_;
   }
-  int NoChanged() {
+  int NumChanges() {
     return changed_;
+  }
+  void Reset() {
+    changed_ = 0;
   }
 
  protected:
@@ -55,35 +58,28 @@ TEST(LocalStreamTest, Create) {
   std::string label(kStreamLabel1);
   scoped_refptr<LocalMediaStream> stream(MediaStreamImpl::Create(label));
 
-  EXPECT_EQ(stream->label().compare(label), 0);
+  EXPECT_EQ(label, stream->label());
   //  Check state.
-  EXPECT_EQ(stream->ready_state(), MediaStream::kInitializing);
+  EXPECT_EQ(MediaStream::kInitializing, stream->ready_state());
 
   // Create a local Video track.
-  {
-    TestObserver tracklist_observer;
-
-    scoped_refptr<LocalVideoTrack> video_track(CreateLocalVideoTrack(
-        kVideoDeviceName, NULL));
-
-    // Add an observer to the track list.
-    scoped_refptr<MediaStreamTrackList> track_list(stream->tracks());
-    stream->tracks()->RegisterObserver(&tracklist_observer);
-
-    // Add the track to the local stream.
-    EXPECT_TRUE(stream->AddTrack(video_track));
-
-    // Verify that the track list observer have been notified
-    // that the track have been added.
-    EXPECT_EQ(tracklist_observer.NoChanged(), 1);
-  }
-
-  EXPECT_EQ(stream->tracks()->count(), 1u);
+  TestObserver tracklist_observer;
+  scoped_refptr<LocalVideoTrack> video_track(CreateLocalVideoTrack(
+                          kVideoDeviceName, NULL));
+  // Add an observer to the track list.
+  scoped_refptr<MediaStreamTrackList> track_list(stream->tracks());
+  stream->tracks()->RegisterObserver(&tracklist_observer);
+  // Add the track to the local stream.
+  EXPECT_TRUE(stream->AddTrack(video_track));
+  // Verify that the track list observer have been notified
+  // that the track have been added.
+  EXPECT_EQ(1u, tracklist_observer.NumChanges());
+  EXPECT_EQ(1u, stream->tracks()->count());
 
   // Verify the track.
   scoped_refptr<webrtc::MediaStreamTrack> track(stream->tracks()->at(0));
-  EXPECT_EQ(track->kind().compare(kVideoTrackKind), 0);
-  EXPECT_EQ(track->label().compare(kVideoDeviceName), 0);
+  EXPECT_EQ(MediaStreamTrack::kVideo, track->type());
+  EXPECT_EQ(0, track->label().compare(kVideoDeviceName));
   EXPECT_TRUE(track->enabled());
 
   // Verify the Track observer.
@@ -92,8 +88,8 @@ TEST(LocalStreamTest, Create) {
   track->RegisterObserver(&observer1);
   track->RegisterObserver(&observer2);
   track->set_enabled(false);
-  EXPECT_EQ(observer1.NoChanged(), 1);
-  EXPECT_EQ(observer2.NoChanged(), 1);
+  EXPECT_EQ(1u, observer1.NumChanges());
+  EXPECT_EQ(1u, observer2.NumChanges());
   EXPECT_FALSE(track->enabled());
 }
 

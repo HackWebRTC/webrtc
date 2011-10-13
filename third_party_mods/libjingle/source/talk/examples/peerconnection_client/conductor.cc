@@ -343,9 +343,9 @@ void Conductor::UIThreadCallback(int msg_id, void* data) {
       scoped_refptr<webrtc::MediaStreamTrackList> tracks =
           stream->tracks();
       for (size_t i = 0; i < tracks->count(); ++i) {
-        if (tracks->at(i)->kind().compare(webrtc::kVideoTrackKind) == 0) {
+        if (tracks->at(i)->type() == webrtc::MediaStreamTrack::kVideo) {
           webrtc::VideoTrack* track =
-              reinterpret_cast<webrtc::VideoTrack*>(tracks->at(i).get());
+              reinterpret_cast<webrtc::VideoTrack*>(tracks->at(i));
           LOG(INFO) << "Setting video renderer for track: " << track->label();
           scoped_refptr<webrtc::VideoRenderer> renderer(
               webrtc::CreateVideoRenderer(main_wnd_->remote_renderer()));

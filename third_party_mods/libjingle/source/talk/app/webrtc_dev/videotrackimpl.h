@@ -46,15 +46,16 @@ class VideoTrackImpl : public NotifierImpl<LocalVideoTrack> {
  public:
   static scoped_refptr<VideoTrack> Create(const std::string& label,
                                           uint32 ssrc);
-  virtual scoped_refptr<VideoCaptureModule> GetVideoCapture();
+  virtual VideoCaptureModule* GetVideoCapture();
   virtual void SetRenderer(VideoRenderer* renderer);
-  scoped_refptr<VideoRenderer> GetRenderer();
+  VideoRenderer* GetRenderer();
 
-  virtual const std::string& kind();
-  virtual const std::string& label();
-  virtual uint32 ssrc();
-  virtual bool enabled();
-  virtual TrackState state();
+  virtual const char* kind() const ;
+  virtual const std::string& label() const { return label_; }
+  virtual TrackType type() const { return kVideo; }
+  virtual uint32 ssrc() const { return ssrc_; }
+  virtual bool enabled() const { return enabled_; }
+  virtual TrackState state() const { return state_; }
   virtual bool set_enabled(bool enable);
   virtual bool set_ssrc(uint32 ssrc);
   virtual bool set_state(TrackState new_state);
@@ -65,7 +66,6 @@ class VideoTrackImpl : public NotifierImpl<LocalVideoTrack> {
 
  private:
   bool enabled_;
-  std::string kind_;
   std::string label_;
   uint32 ssrc_;
   TrackState state_;

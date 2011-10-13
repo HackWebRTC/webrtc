@@ -303,7 +303,7 @@ void PeerConnectionSignaling::InitMediaSessionOptions(
     // For each track in the stream, add it to the MediaSessionOptions.
     for (size_t j = 0; j < tracks->count(); ++j) {
       scoped_refptr<MediaStreamTrack> track = tracks->at(j);
-      if (track->kind().compare(kAudioTrackKind) == 0) {
+      if (MediaStreamTrack::kAudio == track->type()) {
         // TODO(perkj): Better ssrc?
         // Does talk_base::CreateRandomNonZeroId() generate unique id?
         if (track->ssrc() == 0)
@@ -312,7 +312,7 @@ void PeerConnectionSignaling::InitMediaSessionOptions(
                                                               track->label(),
                                                               stream->label()));
       }
-      if (track->kind().compare(kVideoTrackKind) == 0) {
+      if (MediaStreamTrack::kVideo == track->type()) {
         if (track->ssrc() == 0)
           track->set_ssrc(++ssrc_counter_);  // TODO(perkj): Better ssrc?
         options->video_sources.push_back(cricket::SourceParam(track->ssrc(),
@@ -456,7 +456,7 @@ void PeerConnectionSignaling::UpdateSendingLocalStreams(
 
     for (size_t j = 0; j < tracklist->count(); ++j) {
       scoped_refptr<MediaStreamTrack> track = tracklist->at(j);
-      if (track->kind().compare(kAudioTrackKind) == 0) {
+      if (MediaStreamTrack::kAudio == track->type()) {
         const cricket::ContentInfo* audio_content =
             GetFirstAudioContent(answer_desc);
 
@@ -475,7 +475,7 @@ void PeerConnectionSignaling::UpdateSendingLocalStreams(
         track->set_state(MediaStreamTrack::kLive);
         stream_ok = true;
       }
-      if (track->kind().compare(kVideoTrackKind) == 0) {
+      if (MediaStreamTrack::kVideo == track->type()) {
         const cricket::ContentInfo* video_content =
             GetFirstVideoContent(answer_desc);
 

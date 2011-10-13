@@ -30,11 +30,15 @@
 
 #include <cstring>
 
+#include "talk/base/criticalsection.h"
+
+namespace talk_base {
+
 // Reference count interface.
 class RefCount {
  public:
-  virtual size_t AddRef() = 0;
-  virtual size_t Release() = 0;
+  virtual int AddRef() = 0;
+  virtual int Release() = 0;
 };
 
 template <class T>
@@ -64,21 +68,22 @@ class RefCountImpl : public T {
       : ref_count_(0), T(p1, p2, p3, p4, p5) {
   }
 
-  virtual size_t AddRef() {
-    ++ref_count_;
-    return ref_count_;
+  virtual int AddRef() {
+    return talk_base::AtomicOps::Increment(&ref_count_);
   }
 
-  virtual size_t Release() {
-    size_t ret = --ref_count_;
-    if (!ref_count_) {
+  virtual int Release() {
+    int count = talk_base::AtomicOps::Decrement(&ref_count_);
+    if (!count) {
       delete this;
     }
-    return ret;
+    return count;
   }
 
  protected:
-  size_t ref_count_;
+  int ref_count_;
 };
+
+} // namespace talk_base
 
 #endif  // TALK_APP_WEBRTC_REF_COUNT_H_

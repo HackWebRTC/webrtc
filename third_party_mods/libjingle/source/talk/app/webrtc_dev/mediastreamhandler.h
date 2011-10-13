@@ -61,7 +61,7 @@ class VideoTrackHandler : public Observer,
   virtual void OnEnabledChanged(bool enabled) = 0;
 
   MediaProviderInterface* provider_;
-  scoped_refptr<VideoTrack> video_track_;
+  VideoTrack* video_track_;  // a weak reference of Local or Remote handler.
 
  private:
   MediaStreamTrack::TrackState state_;
@@ -72,13 +72,16 @@ class VideoTrackHandler : public Observer,
 
 class LocalVideoTrackHandler : public VideoTrackHandler {
  public:
-  LocalVideoTrackHandler(VideoTrack* track,
+  LocalVideoTrackHandler(LocalVideoTrack* track,
                          MediaProviderInterface* provider);
 
  protected:
   virtual void OnRendererChanged();
   virtual void OnStateChanged(MediaStreamTrack::TrackState state);
   virtual void OnEnabledChanged(bool enabled);
+
+ private:
+  scoped_refptr<LocalVideoTrack> local_video_track_;
 };
 
 class RemoteVideoTrackHandler : public VideoTrackHandler {
@@ -90,6 +93,9 @@ class RemoteVideoTrackHandler : public VideoTrackHandler {
   virtual void OnRendererChanged();
   virtual void OnStateChanged(MediaStreamTrack::TrackState state);
   virtual void OnEnabledChanged(bool enabled);
+
+ private:
+  scoped_refptr<VideoTrack> remote_video_track_;
 };
 
 class MediaStreamHandler : public Observer {

@@ -44,9 +44,6 @@ namespace webrtc {
 class AudioDeviceModule;
 class VideoCaptureModule;
 
-const char kVideoTrackKind[] = "video";
-const char kAudioTrackKind[] = "audio";
-
 // Generic observer interface.
 class Observer {
  public:
@@ -63,7 +60,7 @@ class Notifier {
 };
 
 // Information about a track.
-class MediaStreamTrack : public RefCount,
+class MediaStreamTrack : public talk_base::RefCount,
                          public Notifier {
  public:
   enum TrackState {
@@ -73,11 +70,17 @@ class MediaStreamTrack : public RefCount,
     kFailed = 3,  // Track negotiation failed.
   };
 
-  virtual const std::string& kind() = 0;
-  virtual const std::string& label() = 0;
-  virtual uint32 ssrc() = 0;
-  virtual bool enabled() = 0;
-  virtual TrackState state() = 0;
+  enum TrackType {
+    kAudio = 0, 
+    kVideo = 1,
+  };
+
+  virtual const char* kind() const = 0;
+  virtual const std::string& label()  const = 0;
+  virtual TrackType type() const = 0;
+  virtual uint32 ssrc() const = 0;
+  virtual bool enabled() const = 0;
+  virtual TrackState state() const = 0;
   virtual bool set_enabled(bool enable) = 0;
   // Return false (or assert) if the ssrc is already set.
   virtual bool set_ssrc(uint32 ssrc) = 0;
@@ -85,7 +88,7 @@ class MediaStreamTrack : public RefCount,
 };
 
 // Reference counted wrapper for a VideoRenderer.
-class VideoRenderer : public RefCount {
+class VideoRenderer : public talk_base::RefCount {
  public:
   virtual cricket::VideoRenderer* renderer() = 0;
 
@@ -105,7 +108,7 @@ class VideoTrack : public MediaStreamTrack {
   virtual void SetRenderer(VideoRenderer* renderer) = 0;
 
   // Get the VideoRenderer associated with this track.
-  virtual scoped_refptr<VideoRenderer> GetRenderer() = 0;
+  virtual VideoRenderer* GetRenderer() = 0;
 
  protected:
   virtual ~VideoTrack() {}
@@ -114,7 +117,7 @@ class VideoTrack : public MediaStreamTrack {
 class LocalVideoTrack : public VideoTrack {
  public:
   // Get the VideoCapture device associated with this track.
-  virtual scoped_refptr<VideoCaptureModule> GetVideoCapture() = 0;
+  virtual VideoCaptureModule* GetVideoCapture() = 0;
 
  protected:
   virtual ~LocalVideoTrack() {}
@@ -133,7 +136,7 @@ class AudioTrack : public MediaStreamTrack {
 class LocalAudioTrack : public AudioTrack {
  public:
   // Get the AudioDeviceModule associated with this track.
-  virtual scoped_refptr<AudioDeviceModule> GetAudioDevice() =  0;
+  virtual AudioDeviceModule* GetAudioDevice() =  0;
  protected:
   virtual ~LocalAudioTrack() {}
 };
@@ -143,20 +146,21 @@ scoped_refptr<LocalAudioTrack> CreateLocalAudioTrack(
     AudioDeviceModule* audio_device);
 
 // List of of tracks.
-class MediaStreamTrackList : public RefCount, public Notifier {
+class MediaStreamTrackList : public talk_base::RefCount, 
+                             public Notifier {
  public:
   virtual size_t count() = 0;
-  virtual scoped_refptr<MediaStreamTrack> at(size_t index) = 0;
+  virtual MediaStreamTrack* at(size_t index) = 0;
 
  protected:
   virtual ~MediaStreamTrackList() {}
 };
 
-class MediaStream : public RefCount,
+class MediaStream : public talk_base::RefCount,
                     public Notifier {
  public:
   virtual const std::string& label() = 0;
-  virtual scoped_refptr<MediaStreamTrackList> tracks() = 0;
+  virtual MediaStreamTrackList* tracks() = 0;
 
   enum ReadyState {
     kInitializing,
