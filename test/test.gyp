@@ -16,11 +16,30 @@
       'target_name': 'test_support',
       'type': 'static_library',
       'dependencies': [
-        '../testing/gtest.gyp:gtest',
+        '<(webrtc_root)/../testing/gtest.gyp:gtest',
       ],
+      'direct_dependent_settings': {
+        'include_dirs': [
+          '.',
+        ],
+      },
       'sources': [
         'test_suite.cc',
         'test_suite.h',
+        'testsupport/fileutils.h',
+        'testsupport/fileutils.cc',
+      ],
+    },
+    {
+      'target_name': 'test_support_unittests',
+      'type': 'executable',
+      'dependencies': [
+        'test_support',
+        '<(webrtc_root)/../testing/gtest.gyp:gtest',
+      ],
+       'sources': [
+        'run_all_unittests.cc',
+        'testsupport/fileutils_unittest.cc',
       ],
     },
   ],
