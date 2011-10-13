@@ -48,7 +48,7 @@ class MediaStreamProxy : public LocalMediaStream,
     MediaStreamTrackListProxy(MediaStreamTrackList* track_list,
                               talk_base::Thread* signaling_thread);
     virtual size_t count();
-    virtual scoped_refptr<MediaStreamTrack> at(size_t index);
+    virtual MediaStreamTrack* at(size_t index);
 
     // Implement Notifier
     virtual void RegisterObserver(Observer* observer);
@@ -70,7 +70,7 @@ class MediaStreamProxy : public LocalMediaStream,
 
   // Implement MediaStream.
   virtual const std::string& label();
-  virtual scoped_refptr<MediaStreamTrackList> tracks();
+  virtual MediaStreamTrackList* tracks();
   virtual ReadyState ready_state();
   virtual void set_ready_state(ReadyState new_state);
 

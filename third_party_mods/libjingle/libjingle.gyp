@@ -109,6 +109,11 @@
       },
     },
     'conditions': [
+      ['peer_connection_dev==1', {
+        'include_dirs': [
+          '<(libjingle_mods)/source',
+        ],
+      }],
       ['inside_chromium_build==1', {
         'defines': [
           'NO_SOUND_SYSTEM',
@@ -533,8 +538,6 @@
         '<(libjingle_orig)/source/talk/session/phone/audiomonitor.h',
         '<(libjingle_orig)/source/talk/session/phone/call.cc',
         '<(libjingle_orig)/source/talk/session/phone/call.h',
-        '<(libjingle_orig)/source/talk/session/phone/channel.cc',
-        '<(libjingle_orig)/source/talk/session/phone/channel.h',
         '<(libjingle_orig)/source/talk/session/phone/channelmanager.cc',
         '<(libjingle_orig)/source/talk/session/phone/channelmanager.h',
         '<(libjingle_orig)/source/talk/session/phone/codec.cc',
@@ -553,7 +556,6 @@
         '<(libjingle_orig)/source/talk/session/phone/mediamessages.h',
         '<(libjingle_orig)/source/talk/session/phone/mediamonitor.cc',
         '<(libjingle_orig)/source/talk/session/phone/mediamonitor.h',
-        '<(libjingle_orig)/source/talk/session/phone/mediasession.cc',
         '<(libjingle_orig)/source/talk/session/phone/mediasessionclient.cc',
         '<(libjingle_orig)/source/talk/session/phone/mediasessionclient.h',
         '<(libjingle_orig)/source/talk/session/phone/mediasink.h',
@@ -629,13 +631,19 @@
           ],
         } ],  # inside_chromium_build
         ['peer_connection_dev==1', {
-          'sources-': [
+          'sources': [
+            '<(libjingle_mods)/source/talk/p2p/client/fakeportallocator.h',
+            '<(libjingle_mods)/source/talk/session/phone/channel.cc',
+            '<(libjingle_mods)/source/talk/session/phone/channel.h',
+            '<(libjingle_mods)/source/talk/session/phone/mediasession.cc',
+          ],
+        },{
+          'sources': [
+            '<(libjingle_orig)/source/talk/session/phone/channel.cc',
+            '<(libjingle_orig)/source/talk/session/phone/channel.h',
             '<(libjingle_orig)/source/talk/session/phone/mediasession.cc',
           ],
-          'sources+': [
-            '<(libjingle_mods)/source/talk/session/phone/mediasession.cc',
-          ]
-        }],   # peer_connection_dev
+        }], # peer_connection_dev
       ],  # conditions
     },
     # seperate project for app
@@ -741,11 +749,13 @@
             ['inside_chromium_build==1', {
               'dependencies': [        
                 '../../third_party/webrtc/modules/modules.gyp:audio_device',
+                '../../third_party/webrtc/modules/modules.gyp:video_capture_module',
                 '../../third_party/webrtc/system_wrappers/source/system_wrappers.gyp:system_wrappers',
               ],
             }, {
               'dependencies': [
                 '../../src/modules/modules.gyp:audio_device',
+                '../../src/modules/modules.gyp:video_capture_module',
                 '../../src/system_wrappers/source/system_wrappers.gyp:system_wrappers',
                ],
             }],

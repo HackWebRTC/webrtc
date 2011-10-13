@@ -91,6 +91,8 @@ class BaseChannel
               const std::string& content_name,
               TransportChannel* transport_channel);
   virtual ~BaseChannel();
+  bool Init(TransportChannel* /*transport_channel*/,
+            TransportChannel* /*rtcp_transport_channel*/) {return true;}
 
   talk_base::Thread* worker_thread() const { return worker_thread_; }
   BaseSession* session() const { return session_; }
@@ -295,6 +297,7 @@ class VoiceChannel : public BaseChannel {
                VoiceMediaChannel *channel, BaseSession *session,
                const std::string& content_name, bool rtcp);
   ~VoiceChannel();
+  bool Init() {return true;}
 
   // downcasts a MediaChannel
   virtual VoiceMediaChannel* media_channel() const {
@@ -427,6 +430,8 @@ class VideoChannel : public BaseChannel {
                const std::string& content_name, bool rtcp,
                VoiceChannel *voice_channel);
   ~VideoChannel();
+  bool Init() {return true;}
+
 
   // downcasts a MediaChannel
   virtual VideoMediaChannel* media_channel() const {

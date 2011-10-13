@@ -26,6 +26,8 @@
  */
 
 #include "talk/app/webrtc_dev/mediastreamproxy.h"
+#include "talk/app/webrtc_dev/ref_count.h"
+#include "talk/app/webrtc_dev/scoped_refptr.h"
 
 namespace {
 
@@ -74,8 +76,8 @@ scoped_refptr<MediaStreamProxy> MediaStreamProxy::Create(
     const std::string& label,
     talk_base::Thread* signaling_thread) {
   ASSERT(signaling_thread);
-  RefCountImpl<MediaStreamProxy>* stream =
-      new RefCountImpl<MediaStreamProxy>(label, signaling_thread);
+  talk_base::RefCountImpl<MediaStreamProxy>* stream =
+      new talk_base::RefCountImpl<MediaStreamProxy>(label, signaling_thread);
   return stream;
 }
 
@@ -83,7 +85,7 @@ MediaStreamProxy::MediaStreamProxy(const std::string& label,
                                    talk_base::Thread* signaling_thread)
     : signaling_thread_(signaling_thread),
       media_stream_impl_(MediaStreamImpl::Create(label)),
-      track_list_(new RefCountImpl<MediaStreamTrackListProxy>(
+      track_list_(new talk_base::RefCountImpl<MediaStreamTrackListProxy>(
           media_stream_impl_->tracks(),
           signaling_thread_)) {
 }
@@ -92,7 +94,7 @@ const std::string& MediaStreamProxy::label() {
   return media_stream_impl_->label();
 }
 
-scoped_refptr<MediaStreamTrackList> MediaStreamProxy::tracks() {
+MediaStreamTrackList* MediaStreamProxy::tracks() {
   return track_list_;
 }
 
@@ -197,7 +199,7 @@ size_t MediaStreamProxy::MediaStreamTrackListProxy::count() {
   return track_list_->count();
 }
 
-scoped_refptr<MediaStreamTrack> MediaStreamProxy::MediaStreamTrackListProxy::at(
+MediaStreamTrack* MediaStreamProxy::MediaStreamTrackListProxy::at(
     size_t index) {
   if (!signaling_thread_->IsCurrent()) {
     MediaStreamTrackAtMessageData msg(index);
