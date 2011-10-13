@@ -519,7 +519,6 @@
         '<(libjingle_orig)/source/talk/p2p/client/basicportallocator.h',
         '<(libjingle_orig)/source/talk/p2p/client/httpportallocator.cc',
         '<(libjingle_orig)/source/talk/p2p/client/httpportallocator.h',
-        '<(libjingle_orig)/source/talk/p2p/client/fakeportallocator.h',
         '<(libjingle_orig)/source/talk/p2p/client/sessionmanagertask.h',
         '<(libjingle_orig)/source/talk/p2p/client/sessionsendtask.h',
         '<(libjingle_orig)/source/talk/p2p/client/socketmonitor.cc',
