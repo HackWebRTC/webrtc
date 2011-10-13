@@ -26,12 +26,8 @@ int main()
     enum { kMaxNumberMediaPackets = 48 };
     enum { kMaxNumberFecPackets = 48 };
 
-    // Use same values as set in forward_correction.cc
-    const WebRtc_UWord8  rtpHeaderSize = 12;
-
     // FOR UEP
     const bool kUseUnequalProtection = true;
-    WebRtc_UWord32 numImpPackets = 0;
 
     WebRtc_UWord32 id = 0;
     webrtc::ForwardErrorCorrection fec(id);
