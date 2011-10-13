@@ -110,6 +110,9 @@
     },
     'conditions': [
       ['inside_chromium_build==1', {
+        'defines': [
+          'NO_SOUND_SYSTEM',
+        ],
         'include_dirs': [
           '<(overrides)',
           '<(libjingle_orig)/source',
@@ -117,6 +120,9 @@
           '../../third_party/expat/files',
         ],
         'direct_dependent_settings': {
+          'defines': [
+            'NO_SOUND_SYSTEM',
+          ],
           'include_dirs': [
             '<(overrides)',
             '<(libjingle_orig)/source',
