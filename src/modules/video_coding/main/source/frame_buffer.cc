@@ -58,19 +58,19 @@ VCMFrameBuffer::SetPreviousFrameLoss()
 }
 
 WebRtc_Word32
-VCMFrameBuffer::GetLowSeqNum()
+VCMFrameBuffer::GetLowSeqNum() const
 {
     return _sessionInfo.GetLowSeqNum();
 }
 
 WebRtc_Word32
-VCMFrameBuffer::GetHighSeqNum()
+VCMFrameBuffer::GetHighSeqNum() const
 {
     return _sessionInfo.GetHighSeqNum();
 }
 
 bool
-VCMFrameBuffer::IsSessionComplete()
+VCMFrameBuffer::IsSessionComplete() const
 {
     return _sessionInfo.IsSessionComplete();
 }
@@ -229,7 +229,7 @@ VCMFrameBuffer::GetNackCount() const
 }
 
 bool
-VCMFrameBuffer::HaveLastPacket()
+VCMFrameBuffer::HaveLastPacket() const
 {
     return _sessionInfo.HaveLastPacket();
 }
@@ -311,9 +311,12 @@ VCMFrameBuffer::SetState(VCMFrameBufferStateEnum state)
         break;
 
     case kStateDecoding:
-        // we can go to this state from state kStateComplete kStateIncomplete
+        // A frame migth have received empty packets, or media packets might
+        // have been removed when making the frame decodable. The frame can
+        // still be set to decodable since it can be used to inform the
+        // decoder of a frame loss.
         assert(_state == kStateComplete || _state == kStateIncomplete ||
-               _state == kStateDecodable);
+               _state == kStateDecodable || _state == kStateEmpty);
         // Transfer frame information to EncodedFrame and create any codec
         // specific information
         RestructureFrameInformation();
@@ -372,13 +375,17 @@ VCMFrameBuffer::ExtractFromStorage(const EncodedVideoData& frameFromStorage)
     return VCM_OK;
 }
 
+int VCMFrameBuffer::NotDecodablePackets() const {
+  return _sessionInfo.NotDecodablePackets();
+}
+
 // Set counted status (as counted by JB or not)
 void VCMFrameBuffer::SetCountedFrame(bool frameCounted)
 {
     _frameCounted = frameCounted;
 }
 
-bool VCMFrameBuffer::GetCountedFrame()
+bool VCMFrameBuffer::GetCountedFrame() const
 {
     return _frameCounted;
 }
@@ -399,7 +406,7 @@ VCMFrameBuffer::GetState(WebRtc_UWord32& timeStamp) const
 }
 
 bool
-VCMFrameBuffer::IsRetransmitted()
+VCMFrameBuffer::IsRetransmitted() const
 {
     return _sessionInfo.IsRetransmitted();
 }

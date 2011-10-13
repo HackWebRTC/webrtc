@@ -68,6 +68,9 @@ public:
     WebRtc_Word32 GetFrameStatistics(WebRtc_UWord32& receivedDeltaFrames,
                                      WebRtc_UWord32& receivedKeyFrames) const;
 
+    // The number of packets discarded by the jitter buffer because the decoder
+    // won't be able to decode them.
+    WebRtc_UWord32 NumNotDecodablePackets() const;
     // Get number of packets discarded by the jitter buffer
     WebRtc_UWord32 DiscardedPackets() const;
 
@@ -124,11 +127,8 @@ public:
                                 bool& listExtended);
 
     WebRtc_Word64 LastDecodedTimestamp() const;
-    static WebRtc_UWord32 LatestTimestamp(const WebRtc_UWord32 existingTimestamp,
-                                          const WebRtc_UWord32 newTimestamp);
 
-protected:
-
+private:
     // Misc help functions
     // Recycle (release) frame, used if we didn't receive whole frame
     void RecycleFrame(VCMFrameBuffer* frame);
@@ -159,6 +159,7 @@ protected:
 
     void VerifyAndSetPreviousFrameLost(VCMFrameBuffer& frame);
     bool IsPacketRetransmitted(const VCMPacket& packet) const;
+
     void UpdateJitterAndDelayEstimates(VCMJitterSample& sample,
                                        bool incompleteFrame);
     void UpdateJitterAndDelayEstimates(VCMFrameBuffer& frame,
@@ -175,10 +176,6 @@ protected:
                                    bool& listExtended);
     WebRtc_Word32 GetLowHighSequenceNumbers(WebRtc_Word32& lowSeqNum,
                                             WebRtc_Word32& highSeqNum) const;
-
-    void UpdateLastDecodedWithEmpty(const VCMPacket& packet);
-
-private:
 
     static bool FrameEqualTimestamp(VCMFrameBuffer* frame,
                                     const void* timestamp);
@@ -208,6 +205,7 @@ private:
     WebRtc_Word32           _lastDecodedSeqNum;
     // Timestamp of last frame that was given to decoder
     WebRtc_Word64           _lastDecodedTimeStamp;
+    WebRtc_UWord32          _packetsNotDecodable;
 
     // Statistics
     // Frame counter for each type (key, delta, golden, key-delta)

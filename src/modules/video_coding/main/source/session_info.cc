@@ -8,13 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "packet.h"
 #include "session_info.h"
 
-#include <string.h>
-#include <cassert>
-
-#include "internal_defines.h"
+#include "packet.h"
 
 namespace webrtc {
 
@@ -29,7 +25,8 @@ VCMSessionInfo::VCMSessionInfo():
     _highestPacketIndex(0),
     _emptySeqNumLow(-1),
     _emptySeqNumHigh(-1),
-    _markerSeqNum(-1)
+    _markerSeqNum(-1),
+    _packetsNotDecodable(0)
 {
 }
 
@@ -55,7 +52,7 @@ VCMSessionInfo::GetLowSeqNum() const
 WebRtc_Word32
 VCMSessionInfo::GetHighSeqNum() const
 {
-    return VCM_MAX(_emptySeqNumHigh, _highSeqNum);
+    return LatestSequenceNumber(_emptySeqNumHigh, _highSeqNum, NULL);
 }
 
 void
@@ -73,6 +70,7 @@ VCMSessionInfo::Reset() {
   _sessionNACK = false;
   _highestPacketIndex = 0;
   _markerSeqNum = -1;
+  _packetsNotDecodable = 0;
 }
 
 WebRtc_UWord32
@@ -202,7 +200,7 @@ VCMSessionInfo::UpdateCompleteSession()
     }
 }
 
-bool VCMSessionInfo::IsSessionComplete()
+bool VCMSessionInfo::IsSessionComplete() const
 {
     return _completeSession;
 }
@@ -287,6 +285,7 @@ VCMSessionInfo::DeletePackets(WebRtc_UWord8* ptrStartOfLayer,
     {
         bytesToDelete += _packets[j].sizeBytes;
         _packets[j].Reset();
+        ++_packetsNotDecodable;
     }
     if (bytesToDelete > 0)
     {
@@ -362,7 +361,7 @@ VCMSessionInfo::BuildVP8FragmentationHeader(
   return new_length;
 }
 
-int VCMSessionInfo::FindNextPartitionBeginning(int packet_index) const {
+int VCMSessionInfo::FindNextPartitionBeginning(int packet_index) {
   while (packet_index <= _highestPacketIndex) {
     if (_packets[packet_index].completeNALU == kNaluUnset) {
       // Missing packet
@@ -371,8 +370,13 @@ int VCMSessionInfo::FindNextPartitionBeginning(int packet_index) const {
     }
     const bool beginning = _packets[packet_index].codecSpecificHeader.
         codecHeader.VP8.beginningOfPartition;
-    if (beginning)
+    if (beginning) {
       return packet_index;
+    } else {
+      // This packet belongs to a partition with a previous loss and can't
+      // be decoded.
+      ++_packetsNotDecodable;
+    }
     ++packet_index;
   }
   return packet_index;
@@ -433,7 +437,7 @@ VCMSessionInfo::MakeDecodable(WebRtc_UWord8* ptrStartOfLayer)
             }
 
             returnLength += DeletePackets(ptrStartOfLayer,
-                                          packetIndex, endIndex);
+                                          packetIndex + 1, endIndex);
             packetIndex = endIndex;
         }// end lost packet
     }
@@ -636,7 +640,7 @@ VCMSessionInfo::GetHighestPacketIndex()
 }
 
 bool
-VCMSessionInfo::HaveLastPacket()
+VCMSessionInfo::HaveLastPacket() const
 {
     return _markerBit;
 }
@@ -649,23 +653,9 @@ VCMSessionInfo::ForceSetHaveLastPacket()
 }
 
 bool
-VCMSessionInfo::IsRetransmitted()
+VCMSessionInfo::IsRetransmitted() const
 {
     return _sessionNACK;
-}
-
-void
-VCMSessionInfo::UpdatePacketSize(WebRtc_Word32 packetIndex,
-                                 WebRtc_UWord32 length)
-{
-    // sanity
-    if (packetIndex >= kMaxPacketsInJitterBuffer || packetIndex < 0)
-    {
-        // not allowed
-        assert(!"SessionInfo::UpdatePacketSize Error: invalid packetIndex");
-        return;
-    }
-    _packets[packetIndex].sizeBytes = length;
 }
 
 WebRtc_Word64
@@ -848,6 +838,7 @@ VCMSessionInfo::PrepareForDecode(WebRtc_UWord8* ptrStartOfLayer,
                     // missing the previous packet.
                     memset(ptrFirstByte, 0, _packets[i].sizeBytes);
                     previousLost = true;
+                    ++_packetsNotDecodable;
                 }
                 else if (_packets[i].sizeBytes > 0) // Ignore if empty packet
                 {
@@ -870,6 +861,7 @@ VCMSessionInfo::PrepareForDecode(WebRtc_UWord8* ptrStartOfLayer,
             {
                 memset(ptrStartOfLayer, 0, _packets[i].sizeBytes);
                 previousLost = true;
+                ++_packetsNotDecodable;
             }
         }
         else if (_packets[i].sizeBytes == 0 && codec == kVideoCodecH263)
@@ -897,6 +889,10 @@ VCMSessionInfo::PrepareForDecode(WebRtc_UWord8* ptrStartOfLayer,
             _packets[i].Reset();
     }
     return length;
+}
+
+int VCMSessionInfo::NotDecodablePackets() const {
+  return _packetsNotDecodable;
 }
 
 }

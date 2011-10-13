@@ -793,17 +793,9 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
     {
         return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
     }
-    if (inputImage._buffer == NULL)
-    {
-        return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
-    }
     if (_decodeCompleteCallback == NULL)
     {
         return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
-    }
-    if (inputImage._length <= 0)
-    {
-        return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
     }
     if (inputImage._completeFrame == false)
     {
@@ -815,6 +807,11 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
         }
         // otherwise allow for incomplete frames to be decoded.
     }
+    if (inputImage._buffer == NULL && inputImage._length > 0)
+    {
+        return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
+    }
+
 #ifdef INDEPENDENT_PARTITIONS
     if (fragmentation == NULL)
     {
@@ -844,8 +841,13 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
         return WEBRTC_VIDEO_CODEC_ERROR;
     }
 #else
+    WebRtc_UWord8* buffer = inputImage._buffer;
+    if (inputImage._length == 0)
+    {
+        buffer = NULL; // Triggers full frame concealment
+    }
     if (vpx_codec_decode(_decoder,
-                         inputImage._buffer,
+                         buffer,
                          inputImage._length,
                          0,
                          VPX_DL_REALTIME))
@@ -947,11 +949,12 @@ VP8Decoder::DecodePartitions(const EncodedImage& input_image,
                          partition_length,
                          0,
                          VPX_DL_REALTIME)) {
-        return WEBRTC_VIDEO_CODEC_ERROR;
+      return WEBRTC_VIDEO_CODEC_ERROR;
     }
   }
 
-  // Signal end of frame data
+  // Signal end of frame data. If there was no frame data this will trigger
+  // a full frame concealment.
   if (vpx_codec_decode(_decoder, NULL, 0, 0, VPX_DL_REALTIME))
     return WEBRTC_VIDEO_CODEC_ERROR;
   return WEBRTC_VIDEO_CODEC_OK;

@@ -44,7 +44,7 @@ public:
                                WebRtc_UWord8* ptrStartOfLayer);
     WebRtc_Word32 InformOfEmptyPacket(const WebRtc_UWord16 seqNum);
 
-    virtual bool IsSessionComplete();
+    virtual bool IsSessionComplete() const;
 
     // Builds fragmentation headers for VP8, each fragment being a decodable
     // VP8 partition. Returns the total number of bytes which are decodable. Is
@@ -60,14 +60,12 @@ public:
     WebRtc_UWord32 MakeDecodable(WebRtc_UWord8* ptrStartOfLayer);
 
     WebRtc_UWord32 GetSessionLength();
-    bool HaveLastPacket();
+    bool HaveLastPacket() const;
     void ForceSetHaveLastPacket();
-    bool IsRetransmitted();
+    bool IsRetransmitted() const;
     webrtc::FrameType FrameType() const { return _frameType; }
 
     virtual WebRtc_Word32 GetHighestPacketIndex();
-    virtual void UpdatePacketSize(WebRtc_Word32 packetIndex,
-                                  WebRtc_UWord32 length);
 
     void SetStartSeqNumber(WebRtc_UWord16 seqNumber);
 
@@ -83,10 +81,17 @@ public:
     void SetPreviousFrameLoss() { _previousFrameLoss = true; }
     bool PreviousFrameLoss() const { return _previousFrameLoss; }
 
-protected:
-    // Finds the packet index of the next VP8 partition. If none is found
-    // _highestPacketIndex + 1 is returned.
-    int FindNextPartitionBeginning(int packet_index) const;
+    // The number of packets discarded because the decoder can't make use of
+    // them.
+    int NotDecodablePackets() const;
+
+private:
+    // Finds the packet index of the beginning of the next VP8 partition. If
+    // none is found _highestPacketIndex + 1 is returned. packet_index is
+    // expected to be the index of the last decodable packet of the previous
+    // partitions + 1, or 0 for the first partition.
+    int FindNextPartitionBeginning(int packet_index);
+
     // Finds the packet index of the end of the partition with index
     // partitionIndex.
     int FindPartitionEnd(int packet_index) const;
@@ -123,6 +128,8 @@ protected:
     WebRtc_Word32      _emptySeqNumHigh;
     // Store the sequence number that marks the last media packet
     WebRtc_Word32      _markerSeqNum;
+    // Number of packets discarded because the decoder can't use them.
+    int                _packetsNotDecodable;
 };
 
 } // namespace webrtc

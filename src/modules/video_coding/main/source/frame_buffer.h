@@ -42,22 +42,22 @@ public:
     VCMFrameBufferStateEnum GetState(WebRtc_UWord32& timeStamp) const;
     void SetState(VCMFrameBufferStateEnum state); // Set state of frame
 
-    bool IsRetransmitted();
-    bool IsSessionComplete();
-    bool HaveLastPacket();
+    bool IsRetransmitted() const;
+    bool IsSessionComplete() const;
+    bool HaveLastPacket() const;
     bool ForceSetHaveLastPacket();
     // Makes sure the session contain a decodable stream.
     void MakeSessionDecodable();
 
     // Sequence numbers
     // Get lowest packet sequence number in frame
-    WebRtc_Word32 GetLowSeqNum();
+    WebRtc_Word32 GetLowSeqNum() const;
     // Get highest packet sequence number in frame
-    WebRtc_Word32 GetHighSeqNum();
+    WebRtc_Word32 GetHighSeqNum() const;
 
     // Set counted status (as counted by JB or not)
     void SetCountedFrame(bool frameCounted);
-    bool GetCountedFrame();
+    bool GetCountedFrame() const;
 
     // NACK
     // Zero out all entries in list up to and including _lowSeqNum
@@ -75,6 +75,10 @@ public:
     void SetPreviousFrameLoss();
 
     WebRtc_Word32 ExtractFromStorage(const EncodedVideoData& frameFromStorage);
+
+    // The number of packets discarded because the decoder can't make use of
+    // them.
+    int NotDecodablePackets() const;
 
 protected:
     void RestructureFrameInformation();

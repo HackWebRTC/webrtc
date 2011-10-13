@@ -26,7 +26,8 @@ VCMFrameListTimestampOrderAsc::Flush()
     while(Erase(First()) != -1) { }
 }
 
-// Inserts frame in timestamp order, with the oldest timestamp first. Takes wrap arounds into account
+// Inserts frame in timestamp order, with the oldest timestamp first. Takes wrap
+// arounds into account
 WebRtc_Word32
 VCMFrameListTimestampOrderAsc::Insert(VCMFrameBuffer* frame)
 {
@@ -40,7 +41,8 @@ VCMFrameListTimestampOrderAsc::Insert(VCMFrameBuffer* frame)
     while (item != NULL)
     {
         const WebRtc_UWord32 itemTimestamp = item->GetItem()->TimeStamp();
-        if (VCMJitterBuffer::LatestTimestamp(itemTimestamp, frame->TimeStamp()) == itemTimestamp)
+        if (LatestTimestamp(itemTimestamp, frame->TimeStamp(), NULL) ==
+            itemTimestamp)
         {
             if (InsertBefore(item, newItem) < 0)
             {
@@ -101,7 +103,9 @@ VCMFrameListTimestampOrderAsc::FindFrame(FindFrameCriteria criteria,
                                          const void* compareWith,
                                          VCMFrameListItem* startItem) const
 {
-    const VCMFrameListItem* frameListItem = FindFrameListItem(criteria, compareWith, startItem);
+    const VCMFrameListItem* frameListItem = FindFrameListItem(criteria,
+                                                              compareWith,
+                                                              startItem);
     if (frameListItem == NULL)
     {
         return NULL;
