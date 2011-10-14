@@ -28,7 +28,7 @@
 
 namespace webrtc {
 
-scoped_refptr<LocalMediaStream> CreateLocalMediaStream(
+scoped_refptr<LocalMediaStreamInterface> CreateLocalMediaStream(
     const std::string& label) {
   return MediaStreamImpl::Create(label);
 }
@@ -42,18 +42,19 @@ scoped_refptr<MediaStreamImpl> MediaStreamImpl::Create(
 
 MediaStreamImpl::MediaStreamImpl(const std::string& label)
     : label_(label),
-      ready_state_(MediaStream::kInitializing),
+      ready_state_(MediaStreamInterface::kInitializing),
       track_list_(new talk_base::RefCountImpl<MediaStreamTrackListImpl>()) {
 }
 
-void MediaStreamImpl::set_ready_state(MediaStream::ReadyState new_state) {
+void MediaStreamImpl::set_ready_state(
+    MediaStreamInterface::ReadyState new_state) {
   if (ready_state_ != new_state) {
     ready_state_ = new_state;
-    NotifierImpl<LocalMediaStream>::FireOnChanged();
+    NotifierImpl<LocalMediaStreamInterface>::FireOnChanged();
   }
 }
 
-bool MediaStreamImpl::AddTrack(MediaStreamTrack* track) {
+bool MediaStreamImpl::AddTrack(MediaStreamTrackInterface* track) {
   if (ready_state() != kInitializing)
     return false;
 
@@ -62,9 +63,9 @@ bool MediaStreamImpl::AddTrack(MediaStreamTrack* track) {
 }
 
 void MediaStreamImpl::MediaStreamTrackListImpl::AddTrack(
-    MediaStreamTrack* track) {
+    MediaStreamTrackInterface* track) {
   tracks_.push_back(track);
-  NotifierImpl<MediaStreamTrackList>::FireOnChanged();
+  NotifierImpl<MediaStreamTrackListInterface>::FireOnChanged();
 }
 
 }  // namespace webrtc

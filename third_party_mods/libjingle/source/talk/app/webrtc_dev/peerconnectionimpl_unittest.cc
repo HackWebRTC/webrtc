@@ -45,8 +45,8 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
   virtual void OnMessage(const std::string& msg) {}
   virtual void OnSignalingMessage(const std::string& msg) {}
   virtual void OnStateChange(Readiness state) {}
-  virtual void OnAddStream(MediaStream* stream) {}
-  virtual void OnRemoveStream(MediaStream* stream) {}
+  virtual void OnAddStream(MediaStreamInterface* stream) {}
+  virtual void OnRemoveStream(MediaStreamInterface* stream) {}
 };
 
 class PeerConnectionImplTest : public testing::Test {
@@ -67,7 +67,7 @@ class PeerConnectionImplTest : public testing::Test {
 TEST_F(PeerConnectionImplTest, AddRemoveStream) {
   // Create a local stream.
   std::string label(kStreamLabel1);
-  scoped_refptr<LocalMediaStream> stream(
+  scoped_refptr<LocalMediaStreamInterface> stream(
       pc_factory_->CreateLocalMediaStream(label));
 
   pc_->AddStream(stream);

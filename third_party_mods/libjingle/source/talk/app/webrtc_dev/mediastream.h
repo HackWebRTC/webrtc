@@ -60,8 +60,8 @@ class Notifier {
 };
 
 // Information about a track.
-class MediaStreamTrack : public talk_base::RefCount,
-                         public Notifier {
+class MediaStreamTrackInterface : public talk_base::RefCount,
+                                  public Notifier {
  public:
   enum TrackState {
     kInitializing,  // Track is beeing negotiated.
@@ -88,79 +88,79 @@ class MediaStreamTrack : public talk_base::RefCount,
 };
 
 // Reference counted wrapper for a VideoRenderer.
-class VideoRenderer : public talk_base::RefCount {
+class VideoRendererInterface : public talk_base::RefCount {
  public:
   virtual cricket::VideoRenderer* renderer() = 0;
 
  protected:
-  virtual ~VideoRenderer() {}
+  virtual ~VideoRendererInterface() {}
 };
 
 // Creates a reference counted object of type webrtc::VideoRenderer.
 // webrtc::VideoRenderer take ownership of cricket::VideoRenderer.
-scoped_refptr<VideoRenderer> CreateVideoRenderer(
+scoped_refptr<VideoRendererInterface> CreateVideoRenderer(
     cricket::VideoRenderer* renderer);
 
-class VideoTrack : public MediaStreamTrack {
+class VideoTrackInterface : public MediaStreamTrackInterface {
  public:
   // Set the video renderer for a local or remote stream.
   // This call will start decoding the received video stream and render it.
-  virtual void SetRenderer(VideoRenderer* renderer) = 0;
+  virtual void SetRenderer(VideoRendererInterface* renderer) = 0;
 
   // Get the VideoRenderer associated with this track.
-  virtual VideoRenderer* GetRenderer() = 0;
+  virtual VideoRendererInterface* GetRenderer() = 0;
 
  protected:
-  virtual ~VideoTrack() {}
+  virtual ~VideoTrackInterface() {}
 };
 
-class LocalVideoTrack : public VideoTrack {
+class LocalVideoTrackInterface : public VideoTrackInterface {
  public:
   // Get the VideoCapture device associated with this track.
   virtual VideoCaptureModule* GetVideoCapture() = 0;
 
  protected:
-  virtual ~LocalVideoTrack() {}
+  virtual ~LocalVideoTrackInterface() {}
 };
 
-scoped_refptr<LocalVideoTrack> CreateLocalVideoTrack(
+scoped_refptr<LocalVideoTrackInterface> CreateLocalVideoTrack(
     const std::string& label,
     VideoCaptureModule* video_device);
 
-class AudioTrack : public MediaStreamTrack {
+class AudioTrackInterface : public MediaStreamTrackInterface {
  public:
  protected:
-  virtual ~AudioTrack() {}
+  virtual ~AudioTrackInterface() {}
 };
 
-class LocalAudioTrack : public AudioTrack {
+class LocalAudioTrackInterface : public AudioTrackInterface {
  public:
   // Get the AudioDeviceModule associated with this track.
   virtual AudioDeviceModule* GetAudioDevice() =  0;
  protected:
-  virtual ~LocalAudioTrack() {}
+  virtual ~LocalAudioTrackInterface() {}
 };
 
-scoped_refptr<LocalAudioTrack> CreateLocalAudioTrack(
+scoped_refptr<LocalAudioTrackInterface> CreateLocalAudioTrack(
     const std::string& label,
     AudioDeviceModule* audio_device);
 
 // List of of tracks.
-class MediaStreamTrackList : public talk_base::RefCount, 
-                             public Notifier {
+class MediaStreamTrackListInterface : public talk_base::RefCount,
+                                      public Notifier {
  public:
   virtual size_t count() = 0;
-  virtual MediaStreamTrack* at(size_t index) = 0;
+  virtual MediaStreamTrackInterface* at(size_t index) = 0;
 
  protected:
-  virtual ~MediaStreamTrackList() {}
+  virtual ~MediaStreamTrackListInterface() {}
 };
 
-class MediaStream : public talk_base::RefCount,
-                    public Notifier {
+class MediaStreamInterface : public talk_base::RefCount,
+                             public Notifier {
  public:
   virtual const std::string& label() = 0;
-  virtual MediaStreamTrackList* tracks() = 0;
+  virtual MediaStreamTrackListInterface* tracks() = 0;
 
   enum ReadyState {
     kInitializing,
@@ -174,12 +174,12 @@ class MediaStream : public talk_base::RefCount,
   virtual void set_ready_state(ReadyState state) = 0;
 
  protected:
-  virtual ~MediaStream() {}
+  virtual ~MediaStreamInterface() {}
 };
 
-class LocalMediaStream : public MediaStream {
+class LocalMediaStreamInterface : public MediaStreamInterface {
  public:
-  virtual bool AddTrack(MediaStreamTrack* track) = 0;
+  virtual bool AddTrack(MediaStreamTrackInterface* track) = 0;
 };
 
 }  // namespace webrtc

@@ -48,7 +48,7 @@ namespace webrtc {
 class VideoTrackHandler : public Observer,
                           public talk_base::MessageHandler {
  public:
-  VideoTrackHandler(VideoTrack* track,
+  VideoTrackHandler(VideoTrackInterface* track,
                     MediaProviderInterface* provider);
   virtual ~VideoTrackHandler();
   virtual void OnChanged();
@@ -57,70 +57,71 @@ class VideoTrackHandler : public Observer,
   virtual void OnMessage(talk_base::Message* msg);
 
   virtual void OnRendererChanged() = 0;
-  virtual void OnStateChanged(MediaStreamTrack::TrackState state) = 0;
+  virtual void OnStateChanged(MediaStreamTrackInterface::TrackState state) = 0;
   virtual void OnEnabledChanged(bool enabled) = 0;
 
   MediaProviderInterface* provider_;
-  VideoTrack* video_track_;  // a weak reference of Local or Remote handler.
+  VideoTrackInterface* video_track_;
 
  private:
-  MediaStreamTrack::TrackState state_;
+  MediaStreamTrackInterface::TrackState state_;
   bool enabled_;
-  scoped_refptr<VideoRenderer> renderer_;
+  scoped_refptr<VideoRendererInterface> renderer_;
   talk_base::Thread* signaling_thread_;
 };
 
 class LocalVideoTrackHandler : public VideoTrackHandler {
  public:
-  LocalVideoTrackHandler(LocalVideoTrack* track,
+  LocalVideoTrackHandler(LocalVideoTrackInterface* track,
                          MediaProviderInterface* provider);
 
  protected:
   virtual void OnRendererChanged();
-  virtual void OnStateChanged(MediaStreamTrack::TrackState state);
+  virtual void OnStateChanged(MediaStreamTrackInterface::TrackState state);
   virtual void OnEnabledChanged(bool enabled);
 
  private:
-  scoped_refptr<LocalVideoTrack> local_video_track_;
+  scoped_refptr<LocalVideoTrackInterface> local_video_track_;
 };
 
 class RemoteVideoTrackHandler : public VideoTrackHandler {
  public:
-  RemoteVideoTrackHandler(VideoTrack* track,
+  RemoteVideoTrackHandler(VideoTrackInterface* track,
                           MediaProviderInterface* provider);
 
  protected:
   virtual void OnRendererChanged();
-  virtual void OnStateChanged(MediaStreamTrack::TrackState state);
+  virtual void OnStateChanged(MediaStreamTrackInterface::TrackState state);
   virtual void OnEnabledChanged(bool enabled);
 
  private:
-  scoped_refptr<VideoTrack> remote_video_track_;
+  scoped_refptr<VideoTrackInterface> remote_video_track_;
 };
 
 class MediaStreamHandler : public Observer {
  public:
-  MediaStreamHandler(MediaStream* stream, MediaProviderInterface* provider);
+  MediaStreamHandler(MediaStreamInterface* stream,
+                     MediaProviderInterface* provider);
   ~MediaStreamHandler();
-  MediaStream* stream();
+  MediaStreamInterface* stream();
   virtual void OnChanged();
 
  protected:
   MediaProviderInterface* provider_;
   typedef std::vector<VideoTrackHandler*> VideoTrackHandlers;
   VideoTrackHandlers video_handlers_;
-  scoped_refptr<MediaStream> stream_;
+  scoped_refptr<MediaStreamInterface> stream_;
 };
 
 class LocalMediaStreamHandler : public MediaStreamHandler {
  public:
-  LocalMediaStreamHandler(MediaStream* stream,
+  LocalMediaStreamHandler(MediaStreamInterface* stream,
                           MediaProviderInterface* provider);
 };
 
 class RemoteMediaStreamHandler : public MediaStreamHandler {
  public:
-  RemoteMediaStreamHandler(MediaStream* stream,
+  RemoteMediaStreamHandler(MediaStreamInterface* stream,
                            MediaProviderInterface* provider);
 };
 
@@ -128,8 +129,8 @@ class MediaStreamHandlers {
  public:
   explicit MediaStreamHandlers(MediaProviderInterface* provider);
   ~MediaStreamHandlers();
-  void AddRemoteStream(MediaStream* stream);
-  void RemoveRemoteStream(MediaStream* stream);
+  void AddRemoteStream(MediaStreamInterface* stream);
+  void RemoveRemoteStream(MediaStreamInterface* stream);
   void CommitLocalStreams(StreamCollection* streams);
 
  private:

@@ -44,12 +44,14 @@ static const int kWaitTime = 5000;
 
 namespace webrtc {
 
-typedef std::map<std::string, scoped_refptr<MediaStream> > MediaStreamMap;
-typedef std::pair<std::string, scoped_refptr<MediaStream> > RemotePair;
+typedef std::map<std::string,
+                 scoped_refptr<MediaStreamInterface> > MediaStreamMap;
+typedef std::pair<std::string, scoped_refptr<MediaStreamInterface> > RemotePair;
 
 class MockMediaTrackObserver : public webrtc::Observer {
  public:
-  explicit MockMediaTrackObserver(MediaStreamTrack* track) : track_(track) {
+  explicit MockMediaTrackObserver(MediaStreamTrackInterface* track)
+      : track_(track) {
     track_state = track->state();
     track->RegisterObserver(this);
   }
@@ -58,14 +60,15 @@ class MockMediaTrackObserver : public webrtc::Observer {
     track_state = track_->state();
   }
 
-  webrtc::MediaStreamTrack::TrackState track_state;
+  webrtc::MediaStreamTrackInterface::TrackState track_state;
  private:
-  scoped_refptr<MediaStreamTrack> track_;
+  scoped_refptr<MediaStreamTrackInterface> track_;
 };
 
 class MockMediaStreamObserver : public webrtc::Observer {
  public:
-  explicit MockMediaStreamObserver(MediaStream* stream) : stream_(stream) {
+  explicit MockMediaStreamObserver(MediaStreamInterface* stream)
+      : stream_(stream) {
     ready_state = stream->ready_state();
     stream_->RegisterObserver(this);
   }
@@ -74,9 +77,9 @@ class MockMediaStreamObserver : public webrtc::Observer {
     ready_state = stream_->ready_state();
   }
 
-  webrtc::MediaStream::ReadyState ready_state;
+  webrtc::MediaStreamInterface::ReadyState ready_state;
  private:
-  scoped_refptr<MediaStream> stream_;
+  scoped_refptr<MediaStreamInterface> stream_;
 };
 
 class MockSignalingObserver : public sigslot::has_slots<> {
@@ -86,14 +89,14 @@ class MockSignalingObserver : public sigslot::has_slots<> {
   }
 
   // New remote stream have been discovered.
-  virtual void OnRemoteStreamAdded(MediaStream* remote_stream) {
-    EXPECT_EQ(MediaStream::kLive, remote_stream->ready_state());
+  virtual void OnRemoteStreamAdded(MediaStreamInterface* remote_stream) {
+    EXPECT_EQ(MediaStreamInterface::kLive, remote_stream->ready_state());
     remote_media_streams_.insert(RemotePair(remote_stream->label(),
                                             remote_stream));
   }
 
   // Remote stream is no longer available.
-  virtual void OnRemoteStreamRemoved(MediaStream* remote_stream) {
+  virtual void OnRemoteStreamRemoved(MediaStreamInterface* remote_stream) {
     EXPECT_NE(remote_media_streams_.find(remote_stream->label()),
               remote_media_streams_.end());
     remote_media_streams_.erase(remote_stream->label());
@@ -129,7 +132,7 @@ class MockSignalingObserver : public sigslot::has_slots<> {
     remote_local_collection_.release();
   }
 
-  MediaStream* RemoteStream(const std::string& label) {
+  MediaStreamInterface* RemoteStream(const std::string& label) {
     MediaStreamMap::iterator it = remote_media_streams_.find(label);
     if (it != remote_media_streams_.end())
       return it->second;
@@ -234,11 +237,12 @@ class PeerConnectionSignalingTest: public testing::Test {
 TEST_F(PeerConnectionSignalingTest, SimpleOneWayCall) {
   // Create a local stream.
   std::string label(kStreamLabel1);
-  scoped_refptr<LocalMediaStream> stream(MediaStreamImpl::Create(label));
+  scoped_refptr<LocalMediaStreamInterface> stream(
+      MediaStreamImpl::Create(label));
   MockMediaStreamObserver stream_observer1(stream);
 
   // Add a local audio track.
-  scoped_refptr<LocalAudioTrack> audio_track(
+  scoped_refptr<LocalAudioTrackInterface> audio_track(
       CreateLocalAudioTrack(kAudioTrackLabel1, NULL));
   stream->AddTrack(audio_track);
   MockMediaTrackObserver track_observer1(audio_track);
@@ -248,9 +252,10 @@ TEST_F(PeerConnectionSignalingTest, SimpleOneWayCall) {
       StreamCollectionImpl::Create());
   local_collection1->AddStream(stream);
   // Verify that the local stream is now initializing.
-  EXPECT_EQ(MediaStream::kInitializing, stream_observer1.ready_state);
+  EXPECT_EQ(MediaStreamInterface::kInitializing, stream_observer1.ready_state);
   // Verify that the audio track is now initializing.
-  EXPECT_EQ(MediaStreamTrack::kInitializing, track_observer1.track_state);
+  EXPECT_EQ(MediaStreamTrackInterface::kInitializing,
+            track_observer1.track_state);
 
   // Peer 2 only receive. Create an empty collection
   scoped_refptr<StreamCollectionImpl> local_collection2(
@@ -289,9 +294,9 @@ TEST_F(PeerConnectionSignalingTest, SimpleOneWayCall) {
   EXPECT_EQ(PeerConnectionSignaling::kIdle, signaling2_->GetState());
 
   // Verify that the local stream is now sending.
-  EXPECT_EQ(MediaStream::kLive, stream_observer1.ready_state);
+  EXPECT_EQ(MediaStreamInterface::kLive, stream_observer1.ready_state);
   // Verify that the local audio track is now sending.
-  EXPECT_EQ(MediaStreamTrack::kLive, track_observer1.track_state);
+  EXPECT_EQ(MediaStreamTrackInterface::kLive, track_observer1.track_state);
 
   // Verify that PeerConnection2 is aware of the sending stream.
   EXPECT_TRUE(observer2_->RemoteStream(label) != NULL);
@@ -307,10 +312,11 @@ TEST_F(PeerConnectionSignalingTest, Glare) {
   signaling2_->OnCandidatesReady(candidates_);
   // Create a local stream.
   std::string label(kStreamLabel1);
-  scoped_refptr<LocalMediaStream> stream(MediaStreamImpl::Create(label));
+  scoped_refptr<LocalMediaStreamInterface> stream(
+      MediaStreamImpl::Create(label));
 
   // Add a local audio track.
-  scoped_refptr<LocalAudioTrack> audio_track(
+  scoped_refptr<LocalAudioTrackInterface> audio_track(
       CreateLocalAudioTrack(kAudioTrackLabel1, NULL));
   stream->AddTrack(audio_track);
 
@@ -370,18 +376,19 @@ TEST_F(PeerConnectionSignalingTest, AddRemoveStream) {
   signaling2_->OnCandidatesReady(candidates_);
   // Create a local stream.
   std::string label(kStreamLabel1);
-  scoped_refptr<LocalMediaStream> stream(MediaStreamImpl::Create(label));
+  scoped_refptr<LocalMediaStreamInterface> stream(
+      MediaStreamImpl::Create(label));
   MockMediaStreamObserver stream_observer1(stream);
 
   // Add a local audio track.
-  scoped_refptr<LocalAudioTrack> audio_track(
+  scoped_refptr<LocalAudioTrackInterface> audio_track(
       CreateLocalAudioTrack(kAudioTrackLabel1, NULL));
   stream->AddTrack(audio_track);
   MockMediaTrackObserver track_observer1(audio_track);
   audio_track->RegisterObserver(&track_observer1);
 
   // Add a local video track.
-  scoped_refptr<LocalVideoTrack> video_track(
+  scoped_refptr<LocalVideoTrackInterface> video_track(
       CreateLocalVideoTrack(kAudioTrackLabel1, NULL));
   stream->AddTrack(audio_track);
 
@@ -414,8 +421,8 @@ TEST_F(PeerConnectionSignalingTest, AddRemoveStream) {
   talk_base::Thread::Current()->ProcessMessages(1);
 
   // Verify that the PeerConnection 2 local stream is now sending.
-  EXPECT_EQ(MediaStream::kLive, stream_observer1.ready_state);
-  EXPECT_EQ(MediaStreamTrack::kLive, track_observer1.track_state);
+  EXPECT_EQ(MediaStreamInterface::kLive, stream_observer1.ready_state);
+  EXPECT_EQ(MediaStreamTrackInterface::kLive, track_observer1.track_state);
 
   // Verify that PeerConnection1 is aware of the sending stream.
   EXPECT_TRUE(observer1_->RemoteStream(label) != NULL);
@@ -434,8 +441,8 @@ TEST_F(PeerConnectionSignalingTest, AddRemoveStream) {
   EXPECT_TRUE(observer1_->RemoteStream(label) == NULL);
 
   // Verify that the PeerConnection 2 local stream is now ended.
-  EXPECT_EQ(MediaStream::kEnded, stream_observer1.ready_state);
-  EXPECT_EQ(MediaStreamTrack::kEnded, track_observer1.track_state);
+  EXPECT_EQ(MediaStreamInterface::kEnded, stream_observer1.ready_state);
+  EXPECT_EQ(MediaStreamTrackInterface::kEnded, track_observer1.track_state);
 
   // Verify that both peers have updated the session descriptions.
   EXPECT_EQ(3u, provider1_->update_session_description_counter_);

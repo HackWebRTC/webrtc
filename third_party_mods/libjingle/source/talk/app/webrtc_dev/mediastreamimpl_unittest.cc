@@ -56,18 +56,19 @@ class TestObserver : public Observer {
 TEST(LocalStreamTest, Create) {
   // Create a local stream.
   std::string label(kStreamLabel1);
-  scoped_refptr<LocalMediaStream> stream(MediaStreamImpl::Create(label));
+  scoped_refptr<LocalMediaStreamInterface> stream(
+      MediaStreamImpl::Create(label));
 
   EXPECT_EQ(label, stream->label());
   //  Check state.
-  EXPECT_EQ(MediaStream::kInitializing, stream->ready_state());
+  EXPECT_EQ(MediaStreamInterface::kInitializing, stream->ready_state());
 
   // Create a local Video track.
   TestObserver tracklist_observer;
-  scoped_refptr<LocalVideoTrack> video_track(CreateLocalVideoTrack(
+  scoped_refptr<LocalVideoTrackInterface> video_track(CreateLocalVideoTrack(
                           kVideoDeviceName, NULL));
   // Add an observer to the track list.
-  scoped_refptr<MediaStreamTrackList> track_list(stream->tracks());
+  scoped_refptr<MediaStreamTrackListInterface> track_list(stream->tracks());
   stream->tracks()->RegisterObserver(&tracklist_observer);
   // Add the track to the local stream.
   EXPECT_TRUE(stream->AddTrack(video_track));
@@ -77,8 +78,9 @@ TEST(LocalStreamTest, Create) {
   EXPECT_EQ(1u, stream->tracks()->count());
 
   // Verify the track.
-  scoped_refptr<webrtc::MediaStreamTrack> track(stream->tracks()->at(0));
-  EXPECT_EQ(MediaStreamTrack::kVideo, track->type());
+  scoped_refptr<webrtc::MediaStreamTrackInterface> track(
+      stream->tracks()->at(0));
+  EXPECT_EQ(MediaStreamTrackInterface::kVideo, track->type());
   EXPECT_EQ(0, track->label().compare(kVideoDeviceName));
   EXPECT_TRUE(track->enabled());
 

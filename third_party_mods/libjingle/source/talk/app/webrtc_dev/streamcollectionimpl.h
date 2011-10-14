@@ -55,11 +55,11 @@ class StreamCollectionImpl : public StreamCollection {
     return media_streams_.size();
   }
 
-  virtual MediaStream* at(size_t index) {
+  virtual MediaStreamInterface* at(size_t index) {
     return media_streams_.at(index);
   }
 
-  virtual MediaStream* find(const std::string& label) {
+  virtual MediaStreamInterface* find(const std::string& label) {
     for (StreamVector::iterator it = media_streams_.begin();
          it != media_streams_.end(); ++it) {
       if ((*it)->label().compare(label) == 0) {
@@ -69,7 +69,7 @@ class StreamCollectionImpl : public StreamCollection {
     return NULL;
   }
 
-  void AddStream(MediaStream* stream) {
+  void AddStream(MediaStreamInterface* stream) {
     for (StreamVector::iterator it = media_streams_.begin();
          it != media_streams_.end(); ++it) {
       if ((*it)->label().compare(stream->label()) == 0)
@@ -78,7 +78,7 @@ class StreamCollectionImpl : public StreamCollection {
     media_streams_.push_back(stream);
   }
 
-  void RemoveStream(MediaStream* remove_stream) {
+  void RemoveStream(MediaStreamInterface* remove_stream) {
     for (StreamVector::iterator it = media_streams_.begin();
          it != media_streams_.end(); ++it) {
       if ((*it)->label().compare(remove_stream->label()) == 0) {
@@ -93,7 +93,7 @@ class StreamCollectionImpl : public StreamCollection {
   explicit StreamCollectionImpl(StreamCollectionImpl* original)
       : media_streams_(original->media_streams_) {
   }
-  typedef std::vector<scoped_refptr<MediaStream> > StreamVector;
+  typedef std::vector<scoped_refptr<MediaStreamInterface> > StreamVector;
   StreamVector media_streams_;
 };
 

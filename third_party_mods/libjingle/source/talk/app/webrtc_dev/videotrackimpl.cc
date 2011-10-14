@@ -32,7 +32,7 @@ namespace webrtc {
 
 static const char kVideoTrackKind[] = "video";
 
-VideoTrackImpl::VideoTrackImpl(const std::string& label, uint32 ssrc)
+VideoTrack::VideoTrack(const std::string& label, uint32 ssrc)
     : enabled_(true),
       label_(label),
       ssrc_(ssrc),
@@ -40,8 +40,8 @@ VideoTrackImpl::VideoTrackImpl(const std::string& label, uint32 ssrc)
       video_device_(NULL) {
 }
 
-VideoTrackImpl::VideoTrackImpl(const std::string& label,
-                               VideoCaptureModule* video_device)
+VideoTrack::VideoTrack(const std::string& label,
+                       VideoCaptureModule* video_device)
     : enabled_(true),
       label_(label),
       ssrc_(0),
@@ -49,61 +49,62 @@ VideoTrackImpl::VideoTrackImpl(const std::string& label,
       video_device_(video_device) {
 }
 
-void VideoTrackImpl::SetRenderer(VideoRenderer* renderer) {
+void VideoTrack::SetRenderer(VideoRendererInterface* renderer) {
   video_renderer_ = renderer;
-  NotifierImpl<LocalVideoTrack>::FireOnChanged();
+  NotifierImpl<LocalVideoTrackInterface>::FireOnChanged();
 }
 
-VideoRenderer* VideoTrackImpl::GetRenderer() {
+VideoRendererInterface* VideoTrack::GetRenderer() {
   return video_renderer_.get();
 }
 
   // Get the VideoCapture device associated with this track.
-VideoCaptureModule* VideoTrackImpl::GetVideoCapture() {
+VideoCaptureModule* VideoTrack::GetVideoCapture() {
   return video_device_.get();
 }
 
-const char* VideoTrackImpl::kind() const {
+const char* VideoTrack::kind() const {
   return kVideoTrackKind;
 }
 
-bool VideoTrackImpl::set_enabled(bool enable) {
+bool VideoTrack::set_enabled(bool enable) {
   bool fire_on_change = enable != enabled_;
   enabled_ = enable;
   if (fire_on_change)
-    NotifierImpl<LocalVideoTrack>::FireOnChanged();
+    NotifierImpl<LocalVideoTrackInterface>::FireOnChanged();
 }
 
-bool VideoTrackImpl::set_ssrc(uint32 ssrc) {
+bool VideoTrack::set_ssrc(uint32 ssrc) {
   ASSERT(ssrc_ == 0);
   ASSERT(ssrc != 0);
   if (ssrc_ != 0)
     return false;
   ssrc_ = ssrc;
-  NotifierImpl<LocalVideoTrack>::FireOnChanged();
+  NotifierImpl<LocalVideoTrackInterface>::FireOnChanged();
   return true;
 }
 
-bool VideoTrackImpl::set_state(TrackState new_state) {
+bool VideoTrack::set_state(TrackState new_state) {
   bool fire_on_change = state_ != new_state;
   state_ = new_state;
   if (fire_on_change)
-    NotifierImpl<LocalVideoTrack>::FireOnChanged();
+    NotifierImpl<LocalVideoTrackInterface>::FireOnChanged();
   return true;
 }
 
-scoped_refptr<VideoTrack> VideoTrackImpl::Create(const std::string& label,
-                                                 uint32 ssrc) {
-  talk_base::RefCountImpl<VideoTrackImpl>* track =
-      new talk_base::RefCountImpl<VideoTrackImpl>(label, ssrc);
+scoped_refptr<VideoTrackInterface> VideoTrack::Create(
+    const std::string& label,
+    uint32 ssrc) {
+  talk_base::RefCountImpl<VideoTrack>* track =
+      new talk_base::RefCountImpl<VideoTrack>(label, ssrc);
   return track;
 }
 
-scoped_refptr<LocalVideoTrack> CreateLocalVideoTrack(
+scoped_refptr<LocalVideoTrackInterface> CreateLocalVideoTrack(
     const std::string& label,
     VideoCaptureModule* video_device) {
-  talk_base::RefCountImpl<VideoTrackImpl>* track =
-      new talk_base::RefCountImpl<VideoTrackImpl>(label, video_device);
+  talk_base::RefCountImpl<VideoTrack>* track =
+      new talk_base::RefCountImpl<VideoTrack>(label, video_device);
   return track;
 }
 

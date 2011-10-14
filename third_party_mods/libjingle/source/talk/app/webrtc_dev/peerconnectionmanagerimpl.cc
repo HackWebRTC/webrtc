@@ -235,7 +235,7 @@ scoped_refptr<PeerConnection> PeerConnectionManagerImpl::CreatePeerConnection_s(
   return pc;
 }
 
-scoped_refptr<LocalMediaStream>
+scoped_refptr<LocalMediaStreamInterface>
 PeerConnectionManagerImpl::CreateLocalMediaStream(
       const std::string& label) {
   return MediaStreamProxy::Create(label, signaling_thread_ptr_);

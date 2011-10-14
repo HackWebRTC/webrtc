@@ -37,28 +37,29 @@
 namespace webrtc {
 
 class MediaStreamImpl
-    : public NotifierImpl<LocalMediaStream> {
+    : public NotifierImpl<LocalMediaStreamInterface> {
  public:
-  class MediaStreamTrackListImpl : public NotifierImpl<MediaStreamTrackList> {
+  class MediaStreamTrackListImpl :
+    public NotifierImpl<MediaStreamTrackListInterface> {
    public:
-    void AddTrack(MediaStreamTrack* track);
+    void AddTrack(MediaStreamTrackInterface* track);
     virtual size_t count() { return tracks_.size(); }
-    virtual MediaStreamTrack* at(size_t index) {
+    virtual MediaStreamTrackInterface* at(size_t index) {
       return tracks_.at(index);
     }
 
    private:
-    std::vector<scoped_refptr<MediaStreamTrack> > tracks_;
+    std::vector<scoped_refptr<MediaStreamTrackInterface> > tracks_;
   };
 
   static scoped_refptr<MediaStreamImpl> Create(const std::string& label);
 
   // Implement LocalStream.
-  virtual bool AddTrack(MediaStreamTrack* track);
+  virtual bool AddTrack(MediaStreamTrackInterface* track);
 
   // Implement MediaStream.
   virtual const std::string& label() { return label_; }
-  virtual MediaStreamTrackList* tracks() { return track_list_; }
+  virtual MediaStreamTrackListInterface* tracks() { return track_list_; }
   virtual ReadyState ready_state() { return ready_state_; }
   virtual void set_ready_state(ReadyState new_state);
   void set_state(ReadyState new_state);
@@ -67,7 +68,7 @@ class MediaStreamImpl
   explicit MediaStreamImpl(const std::string& label);
 
   std::string label_;
-  MediaStream::ReadyState ready_state_;
+  MediaStreamInterface::ReadyState ready_state_;
   scoped_refptr<MediaStreamTrackListImpl> track_list_;
 };
 

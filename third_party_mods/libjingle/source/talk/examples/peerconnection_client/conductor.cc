@@ -96,7 +96,7 @@ void Conductor::OnSignalingMessage(const std::string& msg) {
 }
 
 // Called when a remote stream is added
-void Conductor::OnAddStream(webrtc::MediaStream* stream) {
+void Conductor::OnAddStream(webrtc::MediaStreamInterface* stream) {
   LOG(INFO) << __FUNCTION__ << " " << stream->label();
 
   stream->AddRef();
@@ -104,7 +104,7 @@ void Conductor::OnAddStream(webrtc::MediaStream* stream) {
                                    stream);
 }
 
-void Conductor::OnRemoveStream(webrtc::MediaStream* stream) {
+void Conductor::OnRemoveStream(webrtc::MediaStreamInterface* stream) {
   LOG(INFO) << __FUNCTION__ << " " << stream->label();
   stream->AddRef();
   main_wnd_->QueueUIThreadCallback(STREAM_REMOVED,
@@ -249,24 +249,25 @@ void Conductor::AddStreams() {
   if (active_streams_.find(kStreamLabel) != active_streams_.end())
     return;  // Already added.
 
-  scoped_refptr<webrtc::LocalAudioTrack> audio_track(
+  scoped_refptr<webrtc::LocalAudioTrackInterface> audio_track(
       webrtc::CreateLocalAudioTrack(kAudioLabel, NULL));
 
-  scoped_refptr<webrtc::LocalVideoTrack> video_track(
+  scoped_refptr<webrtc::LocalVideoTrackInterface> video_track(
       webrtc::CreateLocalVideoTrack(kVideoLabel, OpenVideoCaptureDevice()));
 
-  scoped_refptr<webrtc::VideoRenderer> renderer(webrtc::CreateVideoRenderer(
+  scoped_refptr<webrtc::VideoRendererInterface> renderer(
+      webrtc::CreateVideoRenderer(
       main_wnd_->local_renderer()));
   video_track->SetRenderer(renderer);
 
-  scoped_refptr<webrtc::LocalMediaStream> stream =
+  scoped_refptr<webrtc::LocalMediaStreamInterface> stream =
       peer_connection_factory_->CreateLocalMediaStream(kStreamLabel);
 
   stream->AddTrack(audio_track);
   stream->AddTrack(video_track);
   peer_connection_->AddStream(stream);
   peer_connection_->CommitStreamChanges();
-  typedef std::pair<std::string, scoped_refptr<webrtc::MediaStream> >
+  typedef std::pair<std::string, scoped_refptr<webrtc::MediaStreamInterface> >
       MediaStreamPair;
   active_streams_.insert(MediaStreamPair(stream->label(), stream));
   main_wnd_->SwitchToStreamingUI();
@@ -338,16 +339,18 @@ void Conductor::UIThreadCallback(int msg_id, void* data) {
       break;
 
     case NEW_STREAM_ADDED: {
-      webrtc::MediaStream* stream = reinterpret_cast<webrtc::MediaStream*>(
+      webrtc::MediaStreamInterface* stream =
+          reinterpret_cast<webrtc::MediaStreamInterface*>(
           data);
-      scoped_refptr<webrtc::MediaStreamTrackList> tracks =
+      scoped_refptr<webrtc::MediaStreamTrackListInterface> tracks =
           stream->tracks();
       for (size_t i = 0; i < tracks->count(); ++i) {
-        if (tracks->at(i)->type() == webrtc::MediaStreamTrack::kVideo) {
-          webrtc::VideoTrack* track =
-              reinterpret_cast<webrtc::VideoTrack*>(tracks->at(i));
+        if (tracks->at(i)->type() ==
+            webrtc::MediaStreamTrackInterface::kVideo) {
+          webrtc::VideoTrackInterface* track =
+              reinterpret_cast<webrtc::VideoTrackInterface*>(tracks->at(i));
           LOG(INFO) << "Setting video renderer for track: " << track->label();
-          scoped_refptr<webrtc::VideoRenderer> renderer(
+          scoped_refptr<webrtc::VideoRendererInterface> renderer(
               webrtc::CreateVideoRenderer(main_wnd_->remote_renderer()));
           track->SetRenderer(renderer);
         }
@@ -361,7 +364,8 @@ void Conductor::UIThreadCallback(int msg_id, void* data) {
     }
 
     case STREAM_REMOVED: {
-      webrtc::MediaStream* stream = reinterpret_cast<webrtc::MediaStream*>(
+      webrtc::MediaStreamInterface* stream =
+          reinterpret_cast<webrtc::MediaStreamInterface*>(
           data);
       active_streams_.erase(stream->label());
       stream->Release();

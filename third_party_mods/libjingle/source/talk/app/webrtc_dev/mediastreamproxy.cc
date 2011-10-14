@@ -43,18 +43,19 @@ enum {
 
 typedef talk_base::TypedMessageData<size_t> SizeTMessageData;
 typedef talk_base::TypedMessageData<webrtc::Observer*> ObserverMessageData;
-typedef talk_base::TypedMessageData<webrtc::MediaStream::ReadyState>
+typedef talk_base::TypedMessageData<webrtc::MediaStreamInterface::ReadyState>
     ReadyStateMessageData;
 
 
 class MediaStreamTrackMessageData : public talk_base::MessageData {
  public:
-  explicit MediaStreamTrackMessageData(webrtc::MediaStreamTrack* track)
+  explicit MediaStreamTrackMessageData(
+      webrtc::MediaStreamTrackInterface* track)
       : track_(track),
         result_(false) {
   }
 
-  scoped_refptr<webrtc::MediaStreamTrack> track_;
+  scoped_refptr<webrtc::MediaStreamTrackInterface> track_;
   bool result_;
 };
 
@@ -65,7 +66,7 @@ class MediaStreamTrackAtMessageData : public talk_base::MessageData {
   }
 
   size_t index_;
-  scoped_refptr<webrtc::MediaStreamTrack> track_;
+  scoped_refptr<webrtc::MediaStreamTrackInterface> track_;
 };
 
 }  // namespace anonymous
@@ -94,29 +95,30 @@ const std::string& MediaStreamProxy::label() {
   return media_stream_impl_->label();
 }
 
-MediaStreamTrackList* MediaStreamProxy::tracks() {
+MediaStreamTrackListInterface* MediaStreamProxy::tracks() {
   return track_list_;
 }
 
-MediaStream::ReadyState MediaStreamProxy::ready_state() {
+MediaStreamInterface::ReadyState MediaStreamProxy::ready_state() {
   if (!signaling_thread_->IsCurrent()) {
-    ReadyStateMessageData msg(MediaStream::kInitializing);
+    ReadyStateMessageData msg(MediaStreamInterface::kInitializing);
     Send(MSG_READY_STATE, &msg);
     return msg.data();
   }
   return media_stream_impl_->ready_state();
 }
 
-void MediaStreamProxy::set_ready_state(MediaStream::ReadyState new_state) {
+void MediaStreamProxy::set_ready_state(
+    MediaStreamInterface::ReadyState new_state) {
   if (!signaling_thread_->IsCurrent()) {
-    ReadyStateMessageData msg(MediaStream::kInitializing);
+    ReadyStateMessageData msg(MediaStreamInterface::kInitializing);
     Send(MSG_SET_READY_STATE, &msg);
     return;
   }
   media_stream_impl_->set_ready_state(new_state);
 }
 
-bool MediaStreamProxy::AddTrack(MediaStreamTrack* track) {
+bool MediaStreamProxy::AddTrack(MediaStreamTrackInterface* track) {
   if (!signaling_thread_->IsCurrent()) {
     MediaStreamTrackMessageData msg(track);
     Send(MSG_ADD_TRACK, &msg);
@@ -184,7 +186,7 @@ void MediaStreamProxy::OnMessage(talk_base::Message* msg) {
 }
 
 MediaStreamProxy::MediaStreamTrackListProxy::MediaStreamTrackListProxy(
-    MediaStreamTrackList* track_list,
+    MediaStreamTrackListInterface* track_list,
     talk_base::Thread* signaling_thread)
     :  track_list_(track_list),
        signaling_thread_(signaling_thread) {
@@ -199,7 +201,7 @@ size_t MediaStreamProxy::MediaStreamTrackListProxy::count() {
   return track_list_->count();
 }
 
-MediaStreamTrack* MediaStreamProxy::MediaStreamTrackListProxy::at(
+MediaStreamTrackInterface* MediaStreamProxy::MediaStreamTrackListProxy::at(
     size_t index) {
   if (!signaling_thread_->IsCurrent()) {
     MediaStreamTrackAtMessageData msg(index);

@@ -39,16 +39,16 @@ namespace webrtc {
 // MediaStreamProxy is a proxy for the MediaStream interface. The purpose is
 // to make sure MediaStreamImpl is only accessed from the signaling thread.
 // It can be used as a proxy for both local and remote MediaStreams.
-class MediaStreamProxy : public LocalMediaStream,
+class MediaStreamProxy : public LocalMediaStreamInterface,
                          public talk_base::MessageHandler {
  public:
-  class MediaStreamTrackListProxy : public MediaStreamTrackList,
+  class MediaStreamTrackListProxy : public MediaStreamTrackListInterface,
                                     public talk_base::MessageHandler {
    public:
-    MediaStreamTrackListProxy(MediaStreamTrackList* track_list,
+    MediaStreamTrackListProxy(MediaStreamTrackListInterface* track_list,
                               talk_base::Thread* signaling_thread);
     virtual size_t count();
-    virtual MediaStreamTrack* at(size_t index);
+    virtual MediaStreamTrackInterface* at(size_t index);
 
     // Implement Notifier
     virtual void RegisterObserver(Observer* observer);
@@ -57,7 +57,7 @@ class MediaStreamProxy : public LocalMediaStream,
     void Send(uint32 id, talk_base::MessageData* data);
     void OnMessage(talk_base::Message* msg);
 
-    scoped_refptr<MediaStreamTrackList> track_list_;
+    scoped_refptr<MediaStreamTrackListInterface> track_list_;
     talk_base::Thread* signaling_thread_;
   };
 
@@ -66,11 +66,11 @@ class MediaStreamProxy : public LocalMediaStream,
       talk_base::Thread* signaling_thread);
 
   // Implement LocalStream.
-  virtual bool AddTrack(MediaStreamTrack* track);
+  virtual bool AddTrack(MediaStreamTrackInterface* track);
 
   // Implement MediaStream.
   virtual const std::string& label();
-  virtual MediaStreamTrackList* tracks();
+  virtual MediaStreamTrackListInterface* tracks();
   virtual ReadyState ready_state();
   virtual void set_ready_state(ReadyState new_state);
 

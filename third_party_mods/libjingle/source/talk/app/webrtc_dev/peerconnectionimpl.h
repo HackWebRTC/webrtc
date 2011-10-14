@@ -71,8 +71,8 @@ class PeerConnectionImpl : public PeerConnection,
   }
   virtual scoped_refptr<StreamCollection> local_streams();
   virtual scoped_refptr<StreamCollection> remote_streams();
-  virtual void AddStream(LocalMediaStream* stream);
-  virtual void RemoveStream(LocalMediaStream* stream);
+  virtual void AddStream(LocalMediaStreamInterface* stream);
+  virtual void RemoveStream(LocalMediaStreamInterface* stream);
   virtual void CommitStreamChanges();
 
  private:
@@ -81,8 +81,8 @@ class PeerConnectionImpl : public PeerConnection,
 
   // Signals from PeerConnectionSignaling.
   void OnNewPeerConnectionMessage(const std::string& message);
-  void OnRemoteStreamAdded(MediaStream* remote_stream);
-  void OnRemoteStreamRemoved(MediaStream* remote_stream);
+  void OnRemoteStreamAdded(MediaStreamInterface* remote_stream);
+  void OnRemoteStreamRemoved(MediaStreamInterface* remote_stream);
 
   void Terminate_s();
 

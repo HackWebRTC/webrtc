@@ -45,7 +45,7 @@ class PeerConnectionManagerImpl : public PeerConnectionManager,
       PeerConnectionObserver* observer);
   bool Initialize();
 
-  scoped_refptr<LocalMediaStream> CreateLocalMediaStream(
+  scoped_refptr<LocalMediaStreamInterface> CreateLocalMediaStream(
       const std::string& label);
 
  protected:

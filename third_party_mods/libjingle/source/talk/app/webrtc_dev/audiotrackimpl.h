@@ -41,11 +41,11 @@
 
 namespace webrtc {
 
-class AudioTrackImpl : public NotifierImpl<LocalAudioTrack> {
+class AudioTrack : public NotifierImpl<LocalAudioTrackInterface> {
  public:
   // Creates an audio track. This can be used in remote media streams.
   // For local audio tracks use CreateLocalAudioTrack.
-  static scoped_refptr<AudioTrack> Create(const std::string& label,
+  static scoped_refptr<AudioTrackInterface> Create(const std::string& label,
                                           uint32 ssrc);
 
   // Get the AudioDeviceModule associated with this track.
@@ -63,8 +63,8 @@ class AudioTrackImpl : public NotifierImpl<LocalAudioTrack> {
   virtual bool set_state(TrackState new_state);
 
  protected:
-  AudioTrackImpl(const std::string& label, uint32 ssrc);
-  AudioTrackImpl(const std::string& label, AudioDeviceModule* audio_device);
+  AudioTrack(const std::string& label, uint32 ssrc);
+  AudioTrack(const std::string& label, AudioDeviceModule* audio_device);
 
  private:
   bool enabled_;

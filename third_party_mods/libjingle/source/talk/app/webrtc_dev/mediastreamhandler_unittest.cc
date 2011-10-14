@@ -67,12 +67,13 @@ class MockMediaProvier : public MediaProviderInterface {
 TEST(MediaStreamHandlerTest, LocalStreams) {
   // Create a local stream.
   std::string label(kStreamLabel1);
-  scoped_refptr<LocalMediaStream> stream(MediaStreamImpl::Create(label));
-  scoped_refptr<LocalVideoTrack> video_track(CreateLocalVideoTrack(
+  scoped_refptr<LocalMediaStreamInterface> stream(
+      MediaStreamImpl::Create(label));
+  scoped_refptr<LocalVideoTrackInterface> video_track(CreateLocalVideoTrack(
       kVideoDeviceName, NULL));
   video_track->set_ssrc(kVideoSsrc);
   EXPECT_TRUE(stream->AddTrack(video_track));
-  scoped_refptr<VideoRenderer> renderer(CreateVideoRenderer(NULL));
+  scoped_refptr<VideoRendererInterface> renderer(CreateVideoRenderer(NULL));
   video_track->SetRenderer(renderer);
 
   MockMediaProvier provider;
@@ -88,14 +89,14 @@ TEST(MediaStreamHandlerTest, LocalStreams) {
       .Times(Exactly(1));
   handlers.CommitLocalStreams(collection);
 
-  video_track->set_state(MediaStreamTrack::kLive);
+  video_track->set_state(MediaStreamTrackInterface::kLive);
   // Process posted messages.
   talk_base::Thread::Current()->ProcessMessages(1);
 
   collection->RemoveStream(stream);
   handlers.CommitLocalStreams(collection);
 
-  video_track->set_state(MediaStreamTrack::kEnded);
+  video_track->set_state(MediaStreamTrackInterface::kEnded);
   // Process posted messages.
   talk_base::Thread::Current()->ProcessMessages(1);
 }
@@ -105,8 +106,9 @@ TEST(MediaStreamHandlerTest, RemoteStreams) {
   // they are easier to create.
   // LocalMediaStreams inherit from MediaStreams.
   std::string label(kStreamLabel1);
-  scoped_refptr<LocalMediaStream> stream(MediaStreamImpl::Create(label));
-  scoped_refptr<LocalVideoTrack> video_track(CreateLocalVideoTrack(
+  scoped_refptr<LocalMediaStreamInterface> stream(
+      MediaStreamImpl::Create(label));
+  scoped_refptr<LocalVideoTrackInterface> video_track(CreateLocalVideoTrack(
       kVideoDeviceName, NULL));
   video_track->set_ssrc(kVideoSsrc);
   EXPECT_TRUE(stream->AddTrack(video_track));
@@ -120,7 +122,7 @@ TEST(MediaStreamHandlerTest, RemoteStreams) {
       .Times(Exactly(2));
 
   // Set the renderer once.
-  scoped_refptr<VideoRenderer> renderer(CreateVideoRenderer(NULL));
+  scoped_refptr<VideoRendererInterface> renderer(CreateVideoRenderer(NULL));
     video_track->SetRenderer(renderer);
   talk_base::Thread::Current()->ProcessMessages(1);
 
