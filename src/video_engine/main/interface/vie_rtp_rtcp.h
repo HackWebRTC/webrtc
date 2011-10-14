@@ -241,6 +241,13 @@ public:
                                  unsigned int& bytesReceived,
                                  unsigned int& packetsReceived) const = 0;
 
+    // The function gets bandwidth usage statistics from the sent RTP streams in
+    // bits/s.
+    virtual int GetBandwidthUsage(const int videoChannel,
+                                  unsigned int& totalBitrateSent,
+                                  unsigned int& fecBitrateSent,
+                                  unsigned int& nackBitrateSent) const = 0;
+
     // This function enables or disables an RTP keep-alive mechanism which can
     // be used to maintain an existing Network Address Translator (NAT) mapping
     // while regular RTP is no longer transmitted.

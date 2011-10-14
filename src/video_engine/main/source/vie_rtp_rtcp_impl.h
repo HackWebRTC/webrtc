@@ -110,6 +110,11 @@ public:
                                  unsigned int& bytesReceived,
                                  unsigned int& packetsReceived) const;
 
+    virtual int GetBandwidthUsage(const int videoChannel,
+                                  unsigned int& totalBitrateSent,
+                                  unsigned int& fecBitrateSent,
+                                  unsigned int& nackBitrateSent) const;
+
     // Keep alive
     virtual int SetRTPKeepAliveStatus(
         const int videoChannel, bool enable, const char unknownPayloadType,

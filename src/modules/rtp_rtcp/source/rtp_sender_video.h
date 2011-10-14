@@ -85,6 +85,10 @@ public:
     WebRtc_Word32 SetFECUepProtection(const bool keyUseUepProtection,
                                       const bool deltaUseUepProtection);
 
+    void ProcessBitrate();
+
+    WebRtc_UWord32 FecOverheadRate() const;
+
 protected:
     virtual WebRtc_Word32 SendVideoPacket(const FrameType frameType,
                                         const WebRtc_UWord8* dataBuffer,
@@ -163,6 +167,7 @@ private:
     int                       _numberFirstPartition;
     ListWrapper               _mediaPacketListFec;
     ListWrapper               _rtpPacketListFec;
+    Bitrate                   _fecOverheadRate;
 
     // H263
     WebRtc_UWord8             _savedByte;

@@ -495,7 +495,9 @@ public:
     /*
     *   get sent bitrate in Kbit/s
     */
-    virtual WebRtc_UWord32 BitrateSent() const = 0;
+    virtual void BitrateSent(WebRtc_UWord32* totalRate,
+                             WebRtc_UWord32* fecRate,
+                             WebRtc_UWord32* nackRate) const = 0;
 
     /*
     *   Used by the codec module to deliver a video or audio frame for packetization

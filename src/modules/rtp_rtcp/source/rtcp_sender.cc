@@ -1693,7 +1693,13 @@ RTCPSender::SendRTCP(const WebRtc_UWord32 packetTypeFlags,
                 if(_sending)
                 {
                     // calc bw for video 360/sendBW in kbit/s
-                    WebRtc_Word32 sendBitrateKbit = _rtpRtcp.BitrateSent()/1000;
+                    WebRtc_UWord32 sendBitrateKbit = 0;
+                    WebRtc_UWord32 fecRate = 0;
+                    WebRtc_UWord32 nackRate = 0;
+                    _rtpRtcp.BitrateSent(&sendBitrateKbit,
+                                         &fecRate,
+                                         &nackRate);
+                    sendBitrateKbit /= 1000;
                     if(sendBitrateKbit != 0)
                     {
                         minIntervalMs = 360000/sendBitrateKbit;

@@ -171,6 +171,10 @@ public:
                                    WebRtc_UWord32& bytesReceived,
                                    WebRtc_UWord32& packetsReceived) const;
 
+    void GetBandwidthUsage(WebRtc_UWord32& totalBitrateSent,
+                           WebRtc_UWord32& fecBitrateSent,
+                           WebRtc_UWord32& nackBitrateSent) const;
+
     WebRtc_Word32 SetKeepAliveStatus(const bool enable,
                                      const WebRtc_Word8 unknownPayloadType,
                                      const WebRtc_UWord16 deltaTransmitTimeMS);

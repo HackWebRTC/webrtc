@@ -969,6 +969,34 @@ int ViERTP_RTCPImpl::GetRTPStatistics(const int videoChannel,
     return 0;
 }
 
+// The function gets bandwidth usage statistics from the sent RTP streams.
+int ViERTP_RTCPImpl::GetBandwidthUsage(const int videoChannel,
+                                       unsigned int& totalBitrateSent,
+                                       unsigned int& fecBitrateSent,
+                                       unsigned int& nackBitrateSent) const {
+  WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
+               ViEId(_instanceId, videoChannel), "%s(channel: %d)",
+               __FUNCTION__, videoChannel);
+
+  ViEChannelManagerScoped cs(_channelManager);
+  ViEChannel* ptrViEChannel = cs.Channel(videoChannel);
+  if (ptrViEChannel == NULL) {
+    // The channel doesn't exists
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
+                 ViEId(_instanceId, videoChannel),
+                 "%s: Channel %d doesn't exist", __FUNCTION__,
+                 videoChannel);
+    SetLastError(kViERtpRtcpInvalidChannelId);
+    return -1;
+  }
+
+  ptrViEChannel->GetBandwidthUsage(
+      static_cast<WebRtc_UWord32&>(totalBitrateSent),
+      static_cast<WebRtc_UWord32&>(fecBitrateSent),
+      static_cast<WebRtc_UWord32&>(nackBitrateSent));
+  return 0;
+}
+
 // ============================================================================
 // Keep alive
 // ============================================================================

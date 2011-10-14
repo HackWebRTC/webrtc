@@ -73,6 +73,9 @@ public:
     WebRtc_UWord16 TargetSendBitrateKbit() const;
     WebRtc_UWord16 ActualSendBitrateKbit() const;
 
+    WebRtc_UWord32 FecOverheadRate() const;
+    WebRtc_UWord32 NackOverheadRate() const;
+
     WebRtc_Word32 SetTargetSendBitrate(const WebRtc_UWord32 bits);
 
     WebRtc_UWord16 MaxDataPayloadLength() const; // with RTP and FEC headers
@@ -293,6 +296,7 @@ private:
     // NACK
     WebRtc_UWord32            _nackByteCountTimes[NACK_BYTECOUNT_SIZE];
     WebRtc_Word32             _nackByteCount[NACK_BYTECOUNT_SIZE];
+    Bitrate                   _nackBitrate;
 
     // statistics
     WebRtc_UWord32            _packetsSent;

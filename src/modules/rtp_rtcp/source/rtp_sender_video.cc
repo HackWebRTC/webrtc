@@ -47,6 +47,7 @@ RTPSenderVideo::RTPSenderVideo(const WebRtc_Word32 id,
     _fecProtectionFactor(0),
     _fecUseUepProtection(false),
     _numberFirstPartition(0),
+    _fecOverheadRate(),
 
     // H263
     _savedByte(0),
@@ -78,6 +79,7 @@ RTPSenderVideo::Init()
     _fecProtectionFactor = 0;
     _fecUseUepProtection = false;
     _numberFirstPartition = 0;
+    _fecOverheadRate.Init();
     return 0;
 }
 
@@ -155,6 +157,7 @@ RTPSenderVideo::SendVideoPacket(const FrameType frameType,
                                 const WebRtc_UWord16 payloadLength,
                                 const WebRtc_UWord16 rtpHeaderLength)
 {
+    int fecOverheadSent = 0;
     if(_fecEnabled)
     {
         WebRtc_Word32 retVal = 0;
@@ -296,8 +299,15 @@ RTPSenderVideo::SendVideoPacket(const FrameType frameType,
                         newDataBuffer,
                         packetToSend->length + REDForFECHeaderLength,
                         lastMediaRtpHeader.length);
+
+                if (retVal == 0)
+                {
+                    fecOverheadSent += packetToSend->length +
+                      REDForFECHeaderLength;
+                }
             }
         }
+        _fecOverheadRate.Update(fecOverheadSent);
         return retVal;
     }
     return _rtpSender.SendToNetwork(dataBuffer,
@@ -1261,7 +1271,6 @@ RTPSenderVideo::SendVP8(const FrameType frameType,
         // Set marker bit true if this is the last packet in frame.
         _rtpSender.BuildRTPheader(dataBuffer, payloadType, last,
             captureTimeStamp);
-
         if (-1 == SendVideoPacket(frameType, dataBuffer, payloadBytesInPacket,
             rtpHeaderLength))
         {
@@ -1272,4 +1281,13 @@ RTPSenderVideo::SendVP8(const FrameType frameType,
     }
     return 0;
 }
+
+void RTPSenderVideo::ProcessBitrate() {
+  _fecOverheadRate.Process();
+}
+
+WebRtc_UWord32 RTPSenderVideo::FecOverheadRate() const {
+  return _fecOverheadRate.BitrateLast();
+}
+
 } // namespace webrtc

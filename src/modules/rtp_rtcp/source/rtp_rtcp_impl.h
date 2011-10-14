@@ -459,7 +459,9 @@ public:
     virtual WebRtc_Word32 BoundingSet(bool &tmmbrOwner,
                                       TMMBRSet*& boundingSetRec);
 
-    virtual WebRtc_UWord32 BitrateSent() const;
+    virtual void BitrateSent(WebRtc_UWord32* totalRate,
+                             WebRtc_UWord32* fecRate,
+                             WebRtc_UWord32* nackRate) const;
 
     virtual void SetRemoteSSRC(const WebRtc_UWord32 SSRC);
     

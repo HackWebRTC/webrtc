@@ -232,6 +232,23 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
     unsigned int recJitter = 0;
     int recRttMs = 0;
 
+    unsigned int sentTotalBitrate = 0;
+    unsigned int sentFecBitrate = 0;
+    unsigned int sentNackBitrate = 0;
+
+    error = ViE.ptrViERtpRtcp->GetBandwidthUsage(tbChannel.videoChannel,
+                                                 sentTotalBitrate,
+                                                 sentFecBitrate,
+                                                 sentNackBitrate);
+    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                         __FUNCTION__, __LINE__);
+
+    numberOfErrors += ViETest::TestError(sentTotalBitrate > 0 &&
+                                         sentFecBitrate == 0 &&
+                                         sentNackBitrate == 0,
+                                         "ERROR: %s at line %d",
+                                         __FUNCTION__, __LINE__);
+
     error = ViE.ptrViEBase->StopReceive(tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
@@ -266,6 +283,82 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
     numberOfErrors += ViETest::TestError(recExtendedMax >= sentExtendedMax,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
+
+    error = ViE.ptrViEBase->StopSend(tbChannel.videoChannel);
+    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                         __FUNCTION__, __LINE__);
+
+    //
+    // Test bandwidth statistics with NACK and FEC separately
+    //
+
+    myTransport.ClearStats();
+    myTransport.SetPacketLoss(rate);
+
+    error = ViE.ptrViERtpRtcp->SetFECStatus(tbChannel.videoChannel,
+                                            true, 96, 97);
+    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                         __FUNCTION__, __LINE__);
+
+    error = ViE.ptrViEBase->StartReceive(tbChannel.videoChannel);
+    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                         __FUNCTION__, __LINE__);
+    error = ViE.ptrViEBase->StartSend(tbChannel.videoChannel);
+    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                         __FUNCTION__, __LINE__);
+
+    AutoTestSleep(KAutoTestSleepTimeMs);
+
+    error = ViE.ptrViERtpRtcp->GetBandwidthUsage(tbChannel.videoChannel,
+                                                 sentTotalBitrate,
+                                                 sentFecBitrate,
+                                                 sentNackBitrate);
+    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                         __FUNCTION__, __LINE__);
+
+    numberOfErrors += ViETest::TestError(sentTotalBitrate > 0 &&
+                                         sentFecBitrate > 0 &&
+                                         sentNackBitrate == 0,
+                                         "ERROR: %s at line %d",
+                                         __FUNCTION__, __LINE__);
+
+    error = ViE.ptrViEBase->StopSend(tbChannel.videoChannel);
+    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                         __FUNCTION__, __LINE__);
+
+    error = ViE.ptrViERtpRtcp->SetFECStatus(tbChannel.videoChannel,
+                                            false, 96, 97);
+    error = ViE.ptrViERtpRtcp->SetNACKStatus(tbChannel.videoChannel, true);
+    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                         __FUNCTION__, __LINE__);
+
+    error = ViE.ptrViEBase->StartSend(tbChannel.videoChannel);
+    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                         __FUNCTION__, __LINE__);
+
+    AutoTestSleep(KAutoTestSleepTimeMs);
+
+    error = ViE.ptrViERtpRtcp->GetBandwidthUsage(tbChannel.videoChannel,
+                                                 sentTotalBitrate,
+                                                 sentFecBitrate,
+                                                 sentNackBitrate);
+    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                         __FUNCTION__, __LINE__);
+
+    numberOfErrors += ViETest::TestError(sentTotalBitrate > 0 &&
+                                         sentFecBitrate == 0 &&
+                                         sentNackBitrate > 0,
+                                         "ERROR: %s at line %d",
+                                         __FUNCTION__, __LINE__);
+
+
+    error = ViE.ptrViEBase->StopReceive(tbChannel.videoChannel);
+    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                         __FUNCTION__, __LINE__);
+
+    error = ViE.ptrViERtpRtcp->SetNACKStatus(tbChannel.videoChannel, false);
+    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                         __FUNCTION__, __LINE__);
 
     //
     // Keepalive

@@ -2339,26 +2339,42 @@ WebRtc_UWord32 ModuleRtpRtcpImpl::BitrateReceivedNow() const {
     return _rtpReceiver.BitrateNow();
 }
 
-WebRtc_UWord32 ModuleRtpRtcpImpl::BitrateSent() const {
+void ModuleRtpRtcpImpl::BitrateSent(WebRtc_UWord32* totalRate,
+                               WebRtc_UWord32* fecRate,
+                               WebRtc_UWord32* nackRate) const {
     const bool defaultInstance(_childModules.empty() ? false : true);
 
     if (defaultInstance) {
         // for default we need to update the send bitrate
         CriticalSectionScoped lock(_criticalSectionModulePtrsFeedback);
 
-        WebRtc_UWord32 bitrate = 0;
         std::list<ModuleRtpRtcpImpl*>::const_iterator it =
             _childModules.begin();
         while (it != _childModules.end()) {
             RtpRtcp* module = *it;
             if (module) {
-                bitrate = std::max(module->BitrateSent(), bitrate);
+                WebRtc_UWord32 childTotalRate = 0;
+                WebRtc_UWord32 childFecRate = 0;
+                WebRtc_UWord32 childNackRate = 0;
+                module->BitrateSent(&childTotalRate,
+                                    &childFecRate,
+                                    &childNackRate);
+                if (totalRate != NULL && childTotalRate > *totalRate)
+                    *totalRate = childTotalRate;
+                if (fecRate != NULL && childFecRate > *fecRate)
+                    *fecRate = childFecRate;
+                if (nackRate != NULL && childNackRate > *nackRate)
+                    *nackRate = childNackRate;
             }
             it++;
         }
-        return bitrate;
     }
-    return _rtpSender.BitrateLast();
+    if (totalRate != NULL)
+        *totalRate = _rtpSender.BitrateLast();
+    if (fecRate != NULL)
+        *fecRate = _rtpSender.FecOverheadRate();
+    if (nackRate != NULL)
+        *nackRate = _rtpSender.NackOverheadRate();
 }
 
 // for lip sync

@@ -56,6 +56,7 @@ RTPSender::RTPSender(const WebRtc_Word32 id, const bool audio) :
     // NACK
     _nackByteCountTimes(),
     _nackByteCount(),
+    _nackBitrate(),
 
     // statistics
     _packetsSent(0),
@@ -192,6 +193,7 @@ RTPSender::Init(const WebRtc_UWord32 remoteSSRC)
 
     memset(_nackByteCount, 0, sizeof(_nackByteCount));
     memset(_nackByteCountTimes, 0, sizeof(_nackByteCountTimes));
+    _nackBitrate.Init();
 
     SetStorePacketsStatus(false, 0);
 
@@ -232,10 +234,21 @@ RTPSender::TargetSendBitrateKbit() const
 {
     return _targetSendBitrate;
 }
+
 WebRtc_UWord16
 RTPSender::ActualSendBitrateKbit() const
 {
     return (WebRtc_UWord16) (Bitrate::BitrateNow()/1000);
+}
+
+WebRtc_UWord32
+RTPSender::FecOverheadRate() const {
+  return _video->FecOverheadRate();
+}
+
+WebRtc_UWord32
+RTPSender::NackOverheadRate() const {
+  return _nackBitrate.BitrateLast();
 }
 
 //can be called multiple times
@@ -903,6 +916,7 @@ RTPSender::OnReceivedNACK(const WebRtc_UWord16 nackSequenceNumbersLength,
         if (bytesReSent > 0)
         {
             UpdateNACKBitRate(bytesReSent,now); // Update the nack bit rate
+            _nackBitrate.Update(bytesReSent);
         }
     }else
     {
@@ -918,7 +932,7 @@ RTPSender::ProcessNACKBitRate(const WebRtc_UWord32 now)
 {
     WebRtc_UWord32 num = 0;
     WebRtc_Word32 byteCount = 0;
-    const WebRtc_UWord32 avgIntervall=1000;
+    const WebRtc_UWord32 avgInterval=1000;
 
     CriticalSectionScoped cs(_sendCritsect);
 
@@ -929,24 +943,27 @@ RTPSender::ProcessNACKBitRate(const WebRtc_UWord32 now)
 
     for(num = 0; num < NACK_BYTECOUNT_SIZE; num++)
     {
-        if((now - _nackByteCountTimes[num]) > avgIntervall) // don't use data older than 1sec
+        if((now - _nackByteCountTimes[num]) > avgInterval)
         {
+            // don't use data older than 1sec
             break;
         } else
         {
             byteCount += _nackByteCount[num];
         }
     }
-    WebRtc_Word32 timeIntervall=avgIntervall;
-    if (num == NACK_BYTECOUNT_SIZE ) // More than NACK_BYTECOUNT_SIZE nack messages has been received during the last msgIntervall
+    WebRtc_Word32 timeInterval = avgInterval;
+    if (num == NACK_BYTECOUNT_SIZE)
     {
-        timeIntervall= now - _nackByteCountTimes[num-1];
-        if(timeIntervall <0)
+        // More than NACK_BYTECOUNT_SIZE nack messages has been received
+        // during the last msgInterval
+        timeInterval = now - _nackByteCountTimes[num-1];
+        if(timeInterval < 0)
         {
-            timeIntervall=avgIntervall;
+            timeInterval = avgInterval;
         }
     }
-    return (byteCount*8)<(_targetSendBitrate*timeIntervall);
+    return (byteCount*8) < (_targetSendBitrate * timeInterval);
 }
 
 void
@@ -1056,6 +1073,8 @@ RTPSender::ProcessBitrate()
     CriticalSectionScoped cs(_sendCritsect);
 
     Bitrate::Process();
+    _nackBitrate.Process();
+    _video->ProcessBitrate();
 }
 
 WebRtc_UWord16
