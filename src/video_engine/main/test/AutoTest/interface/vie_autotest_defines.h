@@ -21,6 +21,7 @@
 #include <stdio.h>
 
 #include "engine_configurations.h"
+#include "gtest/gtest.h"
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -58,162 +59,163 @@
 #define DEFAULT_INCOMING_FILE_NAME                      "IncomingFile.avi"
 #define DEFAULT_OUTGOING_FILE_NAME                      "OutgoingFile.avi"   
 
-enum
-{
-    KAutoTestSleepTimeMs = 5000
+enum {
+  KAutoTestSleepTimeMs = 5000
 };
 
-struct AutoTestSize
-{
-    unsigned int width;
-    unsigned int height;
-    AutoTestSize() :
-        width(0),
-        height(0)
-    {}
-    AutoTestSize(unsigned int iWidth, unsigned int iHeight) :
-        width(iWidth),
-        height(iHeight)
-    {}
+struct AutoTestSize {
+  unsigned int width;
+  unsigned int height;
+  AutoTestSize() :
+    width(0), height(0) {
+  }
+  AutoTestSize(unsigned int iWidth, unsigned int iHeight) :
+    width(iWidth), height(iHeight) {
+  }
 };
 
-struct AutoTestOrigin
-{
-    unsigned int x;
-    unsigned int y;
-    AutoTestOrigin() :
-        x(0),
-        y(0)
-    {}
-    AutoTestOrigin(unsigned int iX, unsigned int iY) :
-        x(iX),
-        y(iY)
-    {}
+struct AutoTestOrigin {
+  unsigned int x;
+  unsigned int y;
+  AutoTestOrigin() :
+    x(0), y(0) {
+  }
+  AutoTestOrigin(unsigned int iX, unsigned int iY) :
+    x(iX), y(iY) {
+  }
 };
 
-struct AutoTestRect
-{
-    AutoTestSize size;
-    AutoTestOrigin origin;
-    AutoTestRect() :
-        size(),
-        origin()
-    {}
+struct AutoTestRect {
+  AutoTestSize size;
+  AutoTestOrigin origin;
+  AutoTestRect() :
+    size(), origin() {
+  }
 
-    AutoTestRect(unsigned int iX, unsigned int iY, unsigned int iWidth,
-                 unsigned int iHeight) :
-        size(iX, iY),
-        origin(iWidth, iHeight)
-    {}
+  AutoTestRect(unsigned int iX, unsigned int iY, unsigned int iWidth, unsigned int iHeight) :
+    size(iX, iY), origin(iWidth, iHeight) {
+  }
 
-    void Copy(AutoTestRect iRect)
-    {
-        origin.x = iRect.origin.x;
-        origin.y = iRect.origin.y;
-        size.width = iRect.size.width;
-        size.height = iRect.size.height;
-    }
+  void Copy(AutoTestRect iRect) {
+    origin.x = iRect.origin.x;
+    origin.y = iRect.origin.y;
+    size.width = iRect.size.width;
+    size.height = iRect.size.height;
+  }
 };
 
 // ============================================
 
-class ViETest
-{
-protected:
-    static FILE* _logFile;
-    enum
-    {
-        KMaxLogSize = 512
-    };
-    static char* _logStr;
+class ViETest {
 public:
+  enum TestErrorMode {
+    kUseGTestExpectsForTestErrors, kUseAssertsForTestErrors
+  };
 
-    static int Init()
-    {
+  // The test error mode tells how we should assert when an error
+  // occurs, provided that VIE_ASSERT_ERROR is defined.
+  static int Init(TestErrorMode test_error_mode) {
 #ifdef VIE_LOG_TO_FILE
-        _logFile = fopen(VIE_LOG_FILE_NAME, "w+t");
+    log_file_ = fopen(VIE_LOG_FILE_NAME, "w+t");
 #else
-        _logFile = NULL;
+    log_file_ = NULL;
 #endif
-        _logStr = new char[KMaxLogSize];
-        memset(_logStr, 0, KMaxLogSize);
-        return 0;
+    log_str_ = new char[kMaxLogSize];
+    memset(log_str_, 0, kMaxLogSize);
+
+    test_error_mode_ = test_error_mode;
+    return 0;
+  }
+
+  static int Terminate() {
+    if (log_file_) {
+      fclose(log_file_);
+      log_file_ = NULL;
     }
-
-    static int Terminate()
-    {
-        if (_logFile)
-        {
-            fclose(_logFile);
-            _logFile = NULL;
-        }
-        if (_logStr)
-        {
-            delete[] _logStr;
-            _logStr = NULL;
-        }
-        return 0;
+    if (log_str_) {
+      delete[] log_str_;
+      log_str_ = NULL;
     }
+    return 0;
+  }
 
-    static void Log(const char* fmt, ...)
-    {
-        va_list va;
-        va_start(va, fmt);
-        memset(_logStr, 0, KMaxLogSize);
-        vsprintf(_logStr, fmt, va);
-        va_end(va);
+  static void Log(const char* fmt, ...) {
+    va_list va;
+    va_start(va, fmt);
+    memset(log_str_, 0, kMaxLogSize);
+    vsprintf(log_str_, fmt, va);
+    va_end(va);
 
+    WriteToSuitableOutput(log_str_);
+  }
+
+  // Writes to a suitable output, depending on platform and log mode.
+  static void WriteToSuitableOutput(const char* message) {
 #ifdef VIE_LOG_TO_FILE
-        if (_logFile)
-        {
-            fwrite(_logStr, 1, strlen(_logStr), _logFile);
-            fwrite("\n", 1, 1, _logFile);
-            fflush(_logFile);
-        }
+    if (log_file_)
+    {
+      fwrite(log_str_, 1, strlen(log_str_), log_file_);
+      fwrite("\n", 1, 1, log_file_);
+      fflush(log_file_);
+    }
 #endif
 #ifdef VIE_LOG_TO_STDOUT
 #if WEBRTC_ANDROID
-        __android_log_write(ANDROID_LOG_DEBUG, "*WebRTCN*", _logStr);
+    __android_log_write(ANDROID_LOG_DEBUG, "*WebRTCN*", log_str_);
 #else
-        printf("%s\n",_logStr);
+    printf("%s\n", log_str_);
 #endif
 #endif
+  }
+
+  static int TestError(bool expr) {
+    if (!expr) {
+      AssertError("");
+      return 1;
     }
+    return 0;
+  }
 
-    static int TestError(bool expr)
-    {
-        if (!expr)
-        {
-#ifdef VIE_ASSERT_ERROR
-            assert(expr);
-#endif
-            return 1;
-        }
-        return 0;
-    }
-
-    static int TestError(bool expr, const char* fmt, ...)
-    {
-
-        if (!expr)
-        {
-            va_list va;
-            va_start(va, fmt);
-            memset(_logStr, 0, KMaxLogSize);
-            vsprintf(_logStr, fmt, va);
+  static int TestError(bool expr, const char* fmt, ...) {
+    if (!expr) {
+      va_list va;
+      va_start(va, fmt);
+      memset(log_str_, 0, kMaxLogSize);
+      vsprintf(log_str_, fmt, va);
 #ifdef WEBRTC_ANDROID
-            __android_log_write(ANDROID_LOG_ERROR, "*WebRTCN*", _logStr);
+      __android_log_write(ANDROID_LOG_ERROR, "*WebRTCN*", log_str_);
 #endif
-            Log(_logStr);
-            va_end(va);
+      WriteToSuitableOutput(log_str_);
+      va_end(va);
 
-#ifdef VIE_ASSERT_ERROR
-            assert(false);
-#endif
-            return 1;
-        }
-        return 0;
+      AssertError(log_str_);
+      return 1;
     }
+    return 0;
+  }
+
+private:
+  static void AssertError(const char* message) {
+#ifdef VIE_ASSERT_ERROR
+    if (test_error_mode_ == kUseAssertsForTestErrors) {
+      assert(false);
+    } else if (test_error_mode_ == kUseGTestExpectsForTestErrors) {
+      // Note that the failure gets added here, but information about where
+      // the real error occurred is usually in the message.
+      ADD_FAILURE() << message ;
+    } else {
+      assert(false && "Internal test framework logical error: unknown mode");
+    }
+#endif
+  }
+
+  static FILE* log_file_;
+  enum {
+    kMaxLogSize = 512
+  };
+  static char* log_str_;
+
+  static TestErrorMode test_error_mode_;
 };
 
 // milliseconds
@@ -223,24 +225,24 @@ public:
 #define AutoTestSleep(x) usleep(x * 1000)
 #elif defined(WEBRTC_LINUX)
 namespace {
-void Sleep(unsigned long x) {
-  timespec t;
-  t.tv_sec = x/1000;
-  t.tv_nsec = (x-(x/1000)*1000)*1000000;
-  nanosleep(&t,NULL);
-}
+  void Sleep(unsigned long x) {
+    timespec t;
+    t.tv_sec = x/1000;
+    t.tv_nsec = (x-(x/1000)*1000)*1000000;
+    nanosleep(&t,NULL);
+  }
 }
 #define AutoTestSleep ::Sleep
 #endif
 
 #ifdef WEBRTC_ANDROID
 namespace {
-void Sleep(unsigned long x) {
-  timespec t;
-  t.tv_sec = x/1000;
-  t.tv_nsec = (x-(x/1000)*1000)*1000000;
-  nanosleep(&t,NULL);
-}
+  void Sleep(unsigned long x) {
+    timespec t;
+    t.tv_sec = x/1000;
+    t.tv_nsec = (x-(x/1000)*1000)*1000000;
+    nanosleep(&t,NULL);
+  }
 }
 
 #define AutoTestSleep ::Sleep
@@ -249,13 +251,11 @@ void Sleep(unsigned long x) {
 #define VIE_TEST_FILES_ROOT "/tmp/"
 #endif
 
-namespace
-{
-FILE* OpenTestFile(const char* fileName)
-{
-    char filePath[256];
-    sprintf(filePath,"%s%s",VIE_TEST_FILES_ROOT,fileName);
-    return fopen(filePath,"rb");
+namespace {
+FILE* OpenTestFile(const char* fileName) {
+  char filePath[256];
+  sprintf(filePath, "%s%s", VIE_TEST_FILES_ROOT, fileName);
+  return fopen(filePath, "rb");
 }
 }
 #endif  // WEBRTC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_INTERFACE_VIE_AUTOTEST_DEFINES_H_

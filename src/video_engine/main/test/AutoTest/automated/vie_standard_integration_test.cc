@@ -16,38 +16,19 @@
  */
 
 #include "gtest/gtest.h"
+
 #include "vie_autotest.h"
 #include "vie_autotest_window_manager_interface.h"
+#include "vie_integration_test_base.h"
 #include "vie_window_creator.h"
 
 namespace {
 
-class ViEStandardIntegrationTest: public testing::Test {
+class ViEStandardIntegrationTest: public ViEIntegrationTest {
  public:
-  static void SetUpTestCase() {
-    window_creator_ = new ViEWindowCreator();
-
-    ViEAutoTestWindowManagerInterface* window_manager =
-        window_creator_->CreateTwoWindows();
-
-    // Create the test cases
-    tests_ = new ViEAutoTest(window_manager->GetWindow1(),
-                             window_manager->GetWindow2());
-  }
-
-  static void TearDownTestCase() {
-    window_creator_->TerminateWindows();
-
-    delete tests_;
-    delete window_creator_;
-  }
-
- protected:
-  static ViEWindowCreator* window_creator_;
-  static ViEAutoTest* tests_;
 };
 
-TEST_F(ViEStandardIntegrationTest, RunsBaseStandardTestWithoutErrors)  {
+TEST_F(ViEStandardIntegrationTest, RunsBaseTestWithoutErrors)  {
   ASSERT_EQ(0, tests_->ViEBaseStandardTest());
 }
 
@@ -82,8 +63,4 @@ TEST_F(ViEStandardIntegrationTest, RunsRenderTestWithoutErrors)  {
 TEST_F(ViEStandardIntegrationTest, RunsRtpRctpTestWithoutErrors)  {
   ASSERT_EQ(0, tests_->ViERtpRtcpStandardTest());
 }
-
-ViEAutoTest* ViEStandardIntegrationTest::tests_ = NULL;
-ViEWindowCreator* ViEStandardIntegrationTest::window_creator_ = NULL;
-
 }

@@ -41,11 +41,14 @@
         'interface/vie_autotest_main.h',
         'interface/vie_autotest_window_manager_interface.h',
         'interface/vie_autotest_windows.h',
-
+        
         # Helper classes
         'helpers/vie_window_creator.cc',
-
+        
         # New, fully automated tests
+        'automated/vie_api_integration_test.cc',
+        'automated/vie_extended_integration_test.cc',
+        'automated/vie_integration_test_base.cc',
         'automated/vie_standard_integration_test.cc',
 
         # Platform independent

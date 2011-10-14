@@ -33,6 +33,8 @@
 #include "vie_errors.h"
 #include "video_render_defines.h"
 
+#include "vie_autotest_defines.h"
+
 #ifndef WEBRTC_ANDROID
 #include <string>
 #endif
@@ -40,7 +42,8 @@
 class ViEAutoTest
 {
 public:
-    ViEAutoTest(void* window1, void* window2);
+    ViEAutoTest(void* window1, void* window2,
+                ViETest::TestErrorMode testErrorMode);
     ~ViEAutoTest();
 
     int ViEStandardTest();
@@ -139,6 +142,17 @@ public:
     int ViERtpRtcpAPITest();
 
 private:
+    // Finds a suitable capture device (e.g. camera) on the current system.
+    // Details about the found device are filled into the out parameters.
+    // If this operation fails, device_id is assigned a negative value
+    // and number_of_errors is incremented.
+    void FindCaptureDeviceOnSystem(webrtc::ViECapture* capture,
+                                   WebRtc_UWord8* device_name,
+                                   const unsigned int kDeviceNameLength,
+                                   int* device_id,
+                                   int* number_of_errors,
+                                   webrtc::VideoCaptureModule** device_video);
+
     void PrintAudioCodec(const webrtc::CodecInst audioCodec);
     void PrintVideoCodec(const webrtc::VideoCodec videoCodec);
 

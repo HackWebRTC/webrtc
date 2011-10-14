@@ -13,29 +13,29 @@
  *
  */
 
-#include "vie_window_creator.h"
-#include "vie_autotest_window_manager_interface.h"
-
-#include "vie_autotest.h"
 #include "vie_autotest_main.h"
 
-ViEAutoTestMain::ViEAutoTestMain() :
-    _answers(),
-    _answersCount(0),
-    _useAnswerFile()
-{
+#include "vie_autotest_window_manager_interface.h"
+#include "vie_window_creator.h"
+#include "vie_autotest.h"
+
+ViEAutoTestMain::ViEAutoTestMain()
+    : _answers(),
+      _answersCount(0),
+      _useAnswerFile() {
 }
 
-bool ViEAutoTestMain::BeginOSIndependentTesting()
-{
+bool ViEAutoTestMain::BeginOSIndependentTesting() {
     // Create the windows
     ViEWindowCreator windowCreator;
     ViEAutoTestWindowManagerInterface* windowManager =
         windowCreator.CreateTwoWindows();
 
     // Create the test cases
-    ViEAutoTest vieAutoTest(windowManager->GetWindow1(),
-                            windowManager->GetWindow2());
+    ViEAutoTest
+        vieAutoTest(windowManager->GetWindow1(),
+                    windowManager->GetWindow2(),
+                    ViETest::kUseAssertsForTestErrors);
 
     ViETest::Log(" ============================== ");
     ViETest::Log("    WebRTC ViE 3.x Autotest     ");
@@ -43,8 +43,7 @@ bool ViEAutoTestMain::BeginOSIndependentTesting()
 
     int testType = 0;
     int testErrors = 0;
-    do
-    {
+    do {
         ViETest::Log("Test types: ");
         ViETest::Log("\t 0. Quit");
         ViETest::Log("\t 1. All standard tests (delivery test)");
@@ -58,14 +57,10 @@ bool ViEAutoTestMain::BeginOSIndependentTesting()
         ViETest::Log("\t 9. Simulcast in loopback");
         ViETest::Log("Select type of test: ");
 
-        if (_useAnswerFile)
-        {
-            //GetNextAnswer(str);
-        }
-        else
-        {
-            if (scanf("%d", &testType) <= 0)
-            {
+        if (_useAnswerFile) {
+            // GetNextAnswer(str);
+        } else {
+            if (scanf("%d", &testType) <= 0) {
                 ViETest::Log("ERROR: unable to read selection. Try again\n");
                 testType = -1;
                 getchar();
@@ -74,8 +69,13 @@ bool ViEAutoTestMain::BeginOSIndependentTesting()
             getchar();
         }
         ViETest::Log("");
-        switch (testType)
-        {
+
+        if (testType < 0 || testType > 8) {
+            ViETest::Log("ERROR: Invalid selection. Try again\n");
+            continue;
+        }
+
+        switch (testType) {
             case 0:
                 break;
 
@@ -83,13 +83,10 @@ bool ViEAutoTestMain::BeginOSIndependentTesting()
             {
                 int deliveryErrors = testErrors;
                 testErrors += vieAutoTest.ViEStandardTest();
-                if (testErrors == deliveryErrors)
-                {
+                if (testErrors == deliveryErrors) {
                     // No errors found in delivery test, create delivery
                     ViETest::Log("Standard/delivery passed.");
-                }
-                else
-                {
+                } else {
                     // Didn't pass, don't create delivery files
                     ViETest::Log("\nStandard/delivery test failed!\n");
                 }
@@ -103,44 +100,43 @@ bool ViEAutoTestMain::BeginOSIndependentTesting()
                 testErrors += vieAutoTest.ViEExtendedTest();
                 break;
 
-            case 4: // specific Standard
+            case 4:  // Specific Standard
                 testType = GetClassTestSelection();
 
-                switch (testType)
-                {
-                    case 1: // base
+                switch (testType) {
+                    case 1:  // base
                         testErrors += vieAutoTest.ViEBaseStandardTest();
                         break;
 
-                    case 2: // capture 
+                    case 2:  // capture
                         testErrors += vieAutoTest.ViECaptureStandardTest();
                         break;
 
-                    case 3: // codec
+                    case 3:  // codec
                         testErrors += vieAutoTest.ViECodecStandardTest();
                         break;
 
-                    case 5: //encryption
+                    case 5:  // encryption
                         testErrors += vieAutoTest.ViEEncryptionStandardTest();
                         break;
 
-                    case 6: // file
+                    case 6:  // file
                         testErrors += vieAutoTest.ViEFileStandardTest();
                         break;
 
-                    case 7: // image process
+                    case 7:  // image process
                         testErrors += vieAutoTest.ViEImageProcessStandardTest();
                         break;
 
-                    case 8: // network
+                    case 8:  // network
                         testErrors += vieAutoTest.ViENetworkStandardTest();
                         break;
 
-                    case 9: // Render
+                    case 9:  // Render
                         testErrors += vieAutoTest.ViERenderStandardTest();
                         break;
 
-                    case 10: // RTP/RTCP
+                    case 10:  // RTP/RTCP
                         testErrors += vieAutoTest.ViERtpRtcpStandardTest();
                         break;
                     case 11:
@@ -151,91 +147,88 @@ bool ViEAutoTestMain::BeginOSIndependentTesting()
                 }
                 break;
 
-            case 5: // specific API
+            case 5:  // specific API
                 testType = GetClassTestSelection();
 
-                switch (testType)
-                {
-                    case 1: // base
+                switch (testType) {
+                    case 1:  // base
                         testErrors += vieAutoTest.ViEBaseAPITest();
                         break;
 
-                    case 2: // capture 
+                    case 2:  // capture
                         testErrors += vieAutoTest.ViECaptureAPITest();
                         break;
 
-                    case 3: // codec
+                    case 3:  // codec
                         testErrors += vieAutoTest.ViECodecAPITest();
                         break;
 
-                    case 5: //encryption
+                    case 5:  // encryption
                         testErrors += vieAutoTest.ViEEncryptionAPITest();
                         break;
 
-                    case 6: // file
+                    case 6:  // file
                         testErrors += vieAutoTest.ViEFileAPITest();
                         break;
 
-                    case 7: // image process
+                    case 7:  // image process
                         testErrors += vieAutoTest.ViEImageProcessAPITest();
                         break;
 
-                    case 8: // network
+                    case 8:  // network
                         testErrors += vieAutoTest.ViENetworkAPITest();
                         break;
 
-                    case 9: // Render
+                    case 9:  // Render
                         testErrors += vieAutoTest.ViERenderAPITest();
                         break;
 
-                    case 10: // RTP/RTCP
+                    case 10:  // RTP/RTCP
                         testErrors += vieAutoTest.ViERtpRtcpAPITest();
                         break;
                     case 11:
                         break;
-
                     default:
                         break;
                 }
                 break;
-            case 6: // specific extended
+            case 6:  // specific extended
                 testType = GetClassTestSelection();
 
-                switch (testType)
-                {
-                    case 1: // base
+                switch (testType) {
+                    case 1:  // base
                         testErrors += vieAutoTest.ViEBaseExtendedTest();
                         break;
 
-                    case 2: // capture 
+                    case 2:  // capture
                         testErrors += vieAutoTest.ViECaptureExtendedTest();
                         break;
 
-                    case 3: // codec
+                    case 3:  // codec
                         testErrors += vieAutoTest.ViECodecExtendedTest();
                         break;
 
-                    case 5: //encryption
+                    case 5:  // encryption
                         testErrors += vieAutoTest.ViEEncryptionExtendedTest();
                         break;
 
-                    case 6: // file
+                    case 6:  // file
                         testErrors += vieAutoTest.ViEFileExtendedTest();
                         break;
 
-                    case 7: // image process
+                    case 7:  // image process
                         testErrors += vieAutoTest.ViEImageProcessExtendedTest();
                         break;
 
-                    case 8: // network
+                    case 8:  // network
                         testErrors += vieAutoTest.ViENetworkExtendedTest();
                         break;
 
-                    case 9: // Render
+                    case 9:  // Render
                         testErrors += vieAutoTest.ViERenderExtendedTest();
                         break;
 
-                    case 10: // RTP/RTCP
+                    case 10:  // RTP/RTCP
                         testErrors += vieAutoTest.ViERtpRtcpExtendedTest();
                         break;
                     case 11:
@@ -262,31 +255,27 @@ bool ViEAutoTestMain::BeginOSIndependentTesting()
 
     windowCreator.TerminateWindows();
 
-    if (testErrors)
-    {
+    if (testErrors) {
         ViETest::Log("Test done with errors, see ViEAutotestLog.txt for test "
                      "result.\n");
-    }
-    else
-    {
+    } else {
         ViETest::Log("Test done without errors, see ViEAutotestLog.txt for "
                      "test result.\n");
     }
     printf("Press enter to quit...");
     char c;
-    while ((c = getchar()) != '\n' && c != EOF)
-        /* discard */;
+    while ((c = getchar()) != '\n' && c != EOF) {
+        /* discard */
+    }
 
     return true;
 }
 
-int ViEAutoTestMain::GetClassTestSelection()
-{
+int ViEAutoTestMain::GetClassTestSelection() {
     int testType = 0;
     std::string answer;
 
-    while (1)
-    {
+    while (1) {
         ViETest::Log("Choose specific test: ");
         ViETest::Log("\t 1. Base ");
         ViETest::Log("\t 2. Capture");
@@ -301,18 +290,14 @@ int ViEAutoTestMain::GetClassTestSelection()
         ViETest::Log("Select type of test: ");
 
         int items_read = 0;
-        if (_useAnswerFile)
-        {
-            //GetNextAnswer(answer);
-        }
-        else
-        {
+        if (_useAnswerFile) {
+            // GetNextAnswer(answer);
+        } else {
             items_read = scanf("%d", &testType);
             getchar();
         }
         ViETest::Log("\n");
-        if (items_read == 1 && testType >= 1 && testType <= 13)
-        {
+        if (items_read == 1 && testType >= 1 && testType <= 13) {
             return testType;
         }
         ViETest::Log("ERROR: Invalid selection. Try again");
@@ -321,25 +306,20 @@ int ViEAutoTestMain::GetClassTestSelection()
     return -1;
 }
 
-bool ViEAutoTestMain::GetAnswer(int index, std::string& answer)
-{
-    if (!_useAnswerFile || index > _answersCount)
-    {
+bool ViEAutoTestMain::GetAnswer(int index, std::string* answer) {
+    if (!_useAnswerFile || index > _answersCount) {
         return false;
     }
-    answer = _answers[index];
+    *answer = _answers[index];
     return true;
 }
 
-bool ViEAutoTestMain::IsUsingAnswerFile()
-{
-
+bool ViEAutoTestMain::IsUsingAnswerFile() {
     return _useAnswerFile;
 }
 
-// TODO: write without stl
-bool ViEAutoTestMain::UseAnswerFile(const char* fileName)
-{
+// TODO(unknown): write without stl
+bool ViEAutoTestMain::UseAnswerFile(const char* fileName) {
     return false;
     /*
      _useAnswerFile = false;

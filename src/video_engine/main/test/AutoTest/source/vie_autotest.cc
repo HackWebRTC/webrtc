@@ -19,10 +19,12 @@
 #include <stdio.h>
 #include "video_render.h"
 
-FILE* ViETest::_logFile = NULL;
-char* ViETest::_logStr = NULL;
+FILE* ViETest::log_file_ = NULL;
+char* ViETest::log_str_ = NULL;
+ViETest::TestErrorMode ViETest::test_error_mode_;
 
-ViEAutoTest::ViEAutoTest(void* window1, void* window2) :
+ViEAutoTest::ViEAutoTest(void* window1, void* window2,
+                         ViETest::TestErrorMode testErrorMode) :
     _window1(window1),
     _window2(window2),
     _renderType(webrtc::kRenderDefault),
@@ -34,7 +36,7 @@ ViEAutoTest::ViEAutoTest(void* window1, void* window2) :
     assert(_vrm1);
     assert(_vrm2);
 
-    ViETest::Init();
+    ViETest::Init(testErrorMode);
 }
 
 ViEAutoTest::~ViEAutoTest()

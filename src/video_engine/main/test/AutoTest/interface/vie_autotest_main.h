@@ -18,7 +18,7 @@ class ViEAutoTestMain
 public:
     ViEAutoTestMain();
     bool BeginOSIndependentTesting();
-    bool GetAnswer(int index, std::string& answer);
+    bool GetAnswer(int index, std::string* answer);
     int GetClassTestSelection();
     bool GetNextAnswer(std::string& answer);
     bool IsUsingAnswerFile();
