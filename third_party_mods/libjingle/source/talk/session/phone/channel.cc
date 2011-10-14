@@ -76,14 +76,14 @@ static bool ValidPacket(bool rtcp, const talk_base::Buffer* packet) {
 BaseChannel::BaseChannel(talk_base::Thread* thread,
                          MediaEngineInterface* media_engine,
                          MediaChannel* media_channel, BaseSession* session,
-                         const std::string& content_name,
-                         TransportChannel* transport_channel)
+                         const std::string& content_name, bool rtcp)
     : worker_thread_(thread),
       media_engine_(media_engine),
       session_(session),
       media_channel_(media_channel),
       content_name_(content_name),
-      transport_channel_(transport_channel),
+      rtcp_(rtcp),
+      transport_channel_(NULL),
       rtcp_transport_channel_(NULL),
       enabled_(false),
       writable_(false),
@@ -92,17 +92,7 @@ BaseChannel::BaseChannel(talk_base::Thread* thread,
       has_remote_content_(false),
       muted_(false) {
   ASSERT(worker_thread_ == talk_base::Thread::Current());
-  media_channel_->SetInterface(this);
-  transport_channel_->SignalWritableState.connect(
-      this, &BaseChannel::OnWritableState);
-  transport_channel_->SignalReadPacket.connect(
-      this, &BaseChannel::OnChannelRead);
-
   LOG(LS_INFO) << "Created channel";
-
-  session->SignalState.connect(this, &BaseChannel::OnSessionState);
-  session->SignalRemoteDescriptionUpdate.connect(this,
-      &BaseChannel::OnRemoteDescriptionUpdate);
 }
 
 BaseChannel::~BaseChannel() {
@@ -118,6 +108,30 @@ BaseChannel::~BaseChannel() {
   if (transport_channel_ != NULL)
     session_->DestroyChannel(content_name_, transport_channel_->name());
   LOG(LS_INFO) << "Destroyed channel";
+}
+
+bool BaseChannel::Init(TransportChannel* transport_channel,
+                       TransportChannel* rtcp_transport_channel) {
+  if (transport_channel == NULL) {
+    return false;
+  }
+  if (rtcp() && rtcp_transport_channel == NULL) {
+    return false;
+  }
+  transport_channel_ = transport_channel;
+  media_channel_->SetInterface(this);
+  transport_channel_->SignalWritableState.connect(
+      this, &BaseChannel::OnWritableState);
+  transport_channel_->SignalReadPacket.connect(
+      this, &BaseChannel::OnChannelRead);
+
+  session_->SignalState.connect(this, &BaseChannel::OnSessionState);
+  session_->SignalRemoteDescriptionUpdate.connect(this,
+      &BaseChannel::OnRemoteDescriptionUpdate);
+
+  OnSessionState(session(), session()->state());
+  set_rtcp_transport_channel(rtcp_transport_channel);
+  return true;
 }
 
 bool BaseChannel::Enable(bool enable) {
@@ -627,19 +641,8 @@ VoiceChannel::VoiceChannel(talk_base::Thread* thread,
                            const std::string& content_name,
                            bool rtcp)
     : BaseChannel(thread, media_engine, media_channel, session, content_name,
-                  session->CreateChannel(content_name, "rtp")),
+                  rtcp),
       received_media_(false) {
-  if (rtcp) {
-    set_rtcp_transport_channel(session->CreateChannel(content_name, "rtcp"));
-  }
-  // Can't go in BaseChannel because certain session states will
-  // trigger pure virtual functions, such as GetFirstContent().
-  OnSessionState(session, session->state());
-
-  media_channel->SignalMediaError.connect(
-      this, &VoiceChannel::OnVoiceChannelError);
-  srtp_filter()->SignalSrtpError.connect(
-      this, &VoiceChannel::OnSrtpError);
 }
 
 VoiceChannel::~VoiceChannel() {
@@ -647,6 +650,20 @@ VoiceChannel::~VoiceChannel() {
   StopMediaMonitor();
   // this can't be done in the base class, since it calls a virtual
   DisableMedia_w();
+}
+
+bool VoiceChannel::Init() {
+  TransportChannel* rtcp_channel = rtcp() ?
+      session()->CreateChannel(content_name(), "rtcp") : NULL;
+  if (!BaseChannel::Init(session()->CreateChannel(content_name(), "rtp"),
+                         rtcp_channel)) {
+    return false;
+  }
+  media_channel()->SignalMediaError.connect(
+      this, &VoiceChannel::OnVoiceChannelError);
+  srtp_filter()->SignalSrtpError.connect(
+      this, &VoiceChannel::OnSrtpError);
+  return true;
 }
 
 bool VoiceChannel::AddStream(uint32 ssrc) {
@@ -1008,20 +1025,23 @@ VideoChannel::VideoChannel(talk_base::Thread* thread,
                            bool rtcp,
                            VoiceChannel* voice_channel)
     : BaseChannel(thread, media_engine, media_channel, session, content_name,
-                  session->CreateChannel(content_name, "video_rtp")),
+                  rtcp),
       voice_channel_(voice_channel), renderer_(NULL) {
-  if (rtcp) {
-    set_rtcp_transport_channel(
-        session->CreateChannel(content_name, "video_rtcp"));
-  }
-  // Can't go in BaseChannel because certain session states will
-  // trigger pure virtual functions, such as GetFirstContent()
-  OnSessionState(session, session->state());
+}
 
-  media_channel->SignalMediaError.connect(
+bool VideoChannel::Init() {
+  TransportChannel* rtcp_channel = rtcp() ?
+      session()->CreateChannel(content_name(), "video_rtcp") : NULL;
+  if (!BaseChannel::Init(
+          session()->CreateChannel(content_name(), "video_rtp"),
+          rtcp_channel)) {
+    return false;
+  }
+  media_channel()->SignalMediaError.connect(
       this, &VideoChannel::OnVideoChannelError);
   srtp_filter()->SignalSrtpError.connect(
       this, &VideoChannel::OnSrtpError);
+  return true;
 }
 
 void VoiceChannel::SendLastMediaError() {
@@ -1278,6 +1298,7 @@ void VideoChannel::OnSrtpError(uint32 ssrc, SrtpFilter::Mode mode,
       break;
   }
 }
+
 // TODO(mallinath) - Post on worker thread?
 void VideoChannel::SetCaptureDevice(
     uint32 ssrc, webrtc::VideoCaptureModule* camera) {

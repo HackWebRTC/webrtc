@@ -88,11 +88,10 @@ class BaseChannel
  public:
   BaseChannel(talk_base::Thread* thread, MediaEngineInterface* media_engine,
               MediaChannel* channel, BaseSession* session,
-              const std::string& content_name,
-              TransportChannel* transport_channel);
+              const std::string& content_name, bool rtcp);
   virtual ~BaseChannel();
-  bool Init(TransportChannel* /*transport_channel*/,
-            TransportChannel* /*rtcp_transport_channel*/) {return true;}
+  bool Init(TransportChannel* transport_channel,
+            TransportChannel* rtcp_transport_channel);
 
   talk_base::Thread* worker_thread() const { return worker_thread_; }
   BaseSession* session() const { return session_; }
@@ -177,6 +176,7 @@ class BaseChannel
   bool muted() const { return muted_; }
   talk_base::Thread* signaling_thread() { return session_->signaling_thread(); }
   SrtpFilter* srtp_filter() { return &srtp_filter_; }
+  bool rtcp() const { return rtcp_; }
 
   void Send(uint32 id, talk_base::MessageData *pdata = NULL);
   void Post(uint32 id, talk_base::MessageData *pdata = NULL);
@@ -276,6 +276,7 @@ class BaseChannel
   MediaChannel *media_channel_;
 
   std::string content_name_;
+  bool rtcp_;
   TransportChannel *transport_channel_;
   TransportChannel *rtcp_transport_channel_;
   SrtpFilter srtp_filter_;
@@ -297,7 +298,7 @@ class VoiceChannel : public BaseChannel {
                VoiceMediaChannel *channel, BaseSession *session,
                const std::string& content_name, bool rtcp);
   ~VoiceChannel();
-  bool Init() {return true;}
+  bool Init();
 
   // downcasts a MediaChannel
   virtual VoiceMediaChannel* media_channel() const {
@@ -430,8 +431,7 @@ class VideoChannel : public BaseChannel {
                const std::string& content_name, bool rtcp,
                VoiceChannel *voice_channel);
   ~VideoChannel();
-  bool Init() {return true;}
-
+  bool Init();
 
   // downcasts a MediaChannel
   virtual VideoMediaChannel* media_channel() const {
