@@ -269,26 +269,6 @@ VideoCaptureImpl::CreateDeviceInfo(const WebRtc_Word32 id)
 
 }
 
-void VideoCaptureImpl::DestroyDeviceInfo(DeviceInfo* deviceInfo)
-{
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, 0,
-                 "%s:%d", __FUNCTION__, __LINE__);
-
-#if __MAC_OS_X_VERSION_MIN_REQUIRED == __MAC_10_4 // QuickTime version
-    webrtc::videocapturemodule::VideoCaptureMacQuickTimeInfo* captureDeviceInfo =
-        static_cast<webrtc::videocapturemodule::VideoCaptureMacQuickTimeInfo*> (deviceInfo);
-    delete captureDeviceInfo;
-    captureDeviceInfo = NULL;
-
-#else // QTKit version
-    webrtc::videocapturemodule::VideoCaptureMacQTKitInfo* captureDeviceInfo =
-        static_cast<webrtc::videocapturemodule::VideoCaptureMacQTKitInfo*> (deviceInfo);
-    delete captureDeviceInfo;
-    captureDeviceInfo = NULL;
-#endif
-
-}
-
 /**************************************************************************
  *
  *    End Create/Destroy VideoCaptureModule
