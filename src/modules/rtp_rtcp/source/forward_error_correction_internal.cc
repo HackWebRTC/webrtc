@@ -16,14 +16,13 @@
 
 namespace {
 
-// Allow for two different modes of protection for residual packets.
-// The residual packets are the remaining packets beyond the important ones.
-enum ResidualProtectionMode
+// Allow for different modes of protection for packets in UEP case.
+enum ProtectionMode
 {
     kModeNoOverlap,
     kModeOverlap,
+    kModeBiasFirstPacket,
 };
-
 
 /**
   * Fits an input mask (subMask) to an output mask.
@@ -158,47 +157,51 @@ void ShiftFitSubMask(WebRtc_UWord16 numMaskBytes,
 namespace webrtc {
 namespace internal {
 
-// Residual protection for remaining packets
-void ResidualPacketProtection(WebRtc_UWord16 numMediaPackets,
-                              WebRtc_UWord16 numFecPackets,
-                              WebRtc_UWord16 numImpPackets,
-                              WebRtc_UWord16 numMaskBytes,
-                              ResidualProtectionMode mode,
-                              WebRtc_UWord8* packetMask)
+// Remaining protection after important (first partition) packet protection
+void RemainingPacketProtection(WebRtc_UWord16 numMediaPackets,
+                               WebRtc_UWord16 numFecRemaining,
+                               WebRtc_UWord16 numFecForImpPackets,
+                               WebRtc_UWord16 numMaskBytes,
+                               ProtectionMode mode,
+                               WebRtc_UWord8* packetMask)
 {
     if (mode == kModeNoOverlap)
     {
         // subMask21
 
         const WebRtc_UWord8 lBit =
-            (numMediaPackets - numImpPackets) > 16 ? 1 : 0;
+            (numMediaPackets - numFecForImpPackets) > 16 ? 1 : 0;
 
         const WebRtc_UWord16 resMaskBytes =
             (lBit == 1)? kMaskSizeLBitSet : kMaskSizeLBitClear;
 
         const WebRtc_UWord8* packetMaskSub21 =
-            packetMaskTbl[numMediaPackets - numImpPackets - 1]
-                         [numFecPackets - numImpPackets - 1];
+            packetMaskTbl[numMediaPackets - numFecForImpPackets - 1]
+                         [numFecRemaining - 1];
 
-        ShiftFitSubMask(numMaskBytes, resMaskBytes,
-                        numImpPackets, numFecPackets,
+        ShiftFitSubMask(numMaskBytes, resMaskBytes, numFecForImpPackets,
+                        (numFecForImpPackets + numFecRemaining),
                         packetMaskSub21, packetMask);
+
     }
-    else if (mode == kModeOverlap)
+    else if (mode == kModeOverlap || mode == kModeBiasFirstPacket)
     {
         // subMask22
 
-        const WebRtc_UWord16 numFecForResidual =
-            numFecPackets - numImpPackets;
-
         const WebRtc_UWord8* packetMaskSub22 =
-            packetMaskTbl[numMediaPackets - 1]
-                             [numFecForResidual - 1];
+            packetMaskTbl[numMediaPackets - 1][numFecRemaining - 1];
 
-        FitSubMask(numMaskBytes, numMaskBytes,
-                   numFecForResidual,
-                   packetMaskSub22,
-                   &packetMask[numImpPackets * numMaskBytes]);
+        FitSubMask(numMaskBytes, numMaskBytes, numFecRemaining, packetMaskSub22,
+                   &packetMask[numFecForImpPackets * numMaskBytes]);
+
+        if (mode == kModeBiasFirstPacket)
+        {
+            for (WebRtc_UWord32 i = 0; i < numFecRemaining; i++)
+            {
+                WebRtc_UWord32 pktMaskIdx = i * numMaskBytes;
+                packetMask[pktMaskIdx] = packetMask[pktMaskIdx] | (1 << 7);
+            }
+        }
     }
     else
     {
@@ -207,8 +210,8 @@ void ResidualPacketProtection(WebRtc_UWord16 numMediaPackets,
 
 }
 
-// Higher protection for numImpPackets
-void ImportantPacketProtection(WebRtc_UWord16 numFecPackets,
+// Protection for important (first partition) packets
+void ImportantPacketProtection(WebRtc_UWord16 numFecForImpPackets,
                                WebRtc_UWord16 numImpPackets,
                                WebRtc_UWord16 numMaskBytes,
                                WebRtc_UWord8* packetMask)
@@ -217,73 +220,128 @@ void ImportantPacketProtection(WebRtc_UWord16 numFecPackets,
     const WebRtc_UWord16 numImpMaskBytes =
     (lBit == 1)? kMaskSizeLBitSet : kMaskSizeLBitClear;
 
-    WebRtc_UWord32 numFecForImpPackets = numImpPackets;
-    if (numFecPackets < numImpPackets)
-    {
-        numFecForImpPackets = numFecPackets;
-    }
 
     // Get subMask1 from table
     const WebRtc_UWord8* packetMaskSub1 =
     packetMaskTbl[numImpPackets - 1][numFecForImpPackets - 1];
 
     FitSubMask(numMaskBytes, numImpMaskBytes,
-               numFecForImpPackets,
-               packetMaskSub1,
-               packetMask);
+               numFecForImpPackets, packetMaskSub1, packetMask);
 
 }
 
-// Modification for UEP: reuse the tables (designed for equal protection).
-// First version is to build mask from two sub-masks.
-// Longer-term, may add another set of tables for UEP cases for more
-// flexibility in protection between important and residual packets.
+// This function sets the protection allocation: i.e., how many FEC packets
+// to use for numImp (1st partition) packets, given the: number of media
+// packets, number of FEC packets, and number of 1st partition packets.
+WebRtc_UWord32 SetProtectionAllocation(const WebRtc_UWord16 numMediaPackets,
+                                       const WebRtc_UWord16 numFecPackets,
+                                       const WebRtc_UWord16 numImpPackets)
+{
 
-// UEP scheme:
-// First subMask is for higher protection for important packets.
-// Other subMask is the residual protection for remaining packets.
+    // TODO (marpan): test different cases for protection allocation:
+
+    // Use at most (allocPar * numFecPackets) for important packets.
+    float allocPar = 0.5;
+    WebRtc_UWord16 maxNumFecForImp =  static_cast<WebRtc_UWord16>
+                                      (allocPar * numFecPackets);
+
+    WebRtc_UWord16 numFecForImpPackets = (numImpPackets < maxNumFecForImp) ?
+                                          numImpPackets : maxNumFecForImp;
+
+    // Fall back to equal protection in this case
+    if (numFecPackets == 1 && (numMediaPackets > 2 * numImpPackets))
+    {
+        numFecForImpPackets = 0;
+    }
+
+    return numFecForImpPackets;
+}
+
+// Modification for UEP: reuse the off-line tables for the packet masks.
+// Note: these masks were designed for equal packet protection case,
+// assuming random packet loss.
+
+// Current version has 3 modes (options) to build UEP mask from existing ones.
+// Various other combinations may be added in future versions.
+// Longer-term, we may add another set of tables specifically for UEP cases.
+// TODO (marpan): also consider modification of masks for bursty loss cases.
 
 // Mask is characterized as (#packets_to_protect, #fec_for_protection).
-// Protection defined as: (#fec_for_protection / #packets_to_protect).
+// Protection factor defined as: (#fec_for_protection / #packets_to_protect).
 
-// So if k = numMediaPackets, n=total#packets, (n-k)=numFecPackets,
-// and m=numImpPackets, then we will have the following:
+// Let k=numMediaPackets, n=total#packets, (n-k)=numFecPackets, m=numImpPackets.
 
-// For important packets:
-// subMask1 = (m, t): protection = m/(t), where t=min(m,n-k).
+// For ProtectionMode 0 and 1:
+// one mask (subMask1) is used for 1st partition packets,
+// the other mask (subMask21/22, for 0/1) is for the remaining FEC packets.
 
-// For the residual protection, we currently have two options:
+// In both mode 0 and 1, the packets of 1st partition (numImpPackets) are
+// treated equally important, and are afforded more protection than the
+// residual partition packets.
 
-// Mode 0: subMask21 = (k-m,n-k-m): protection = (n-k-m)/(k-m):
-// no protection overlap between the two partitions.
+// For numImpPackets:
+// subMask1 = (m, t): protection = t/(m), where t=F(k,n-k,m).
+// t=F(k,n-k,m) is the number of packets used to protect first partition in
+// subMask1. This is determined from the function SetProtectionAllocation().
 
-// Mode 1: subMask22 = (k, n-k-m), with protection (n-k-m)/(k):
-// some protection overlap between the two partitions.
+// For the left-over protection:
+// Mode 0: subMask21 = (k-m,n-k-t): protection = (n-k-t)/(k-m)
+// mode 0 has no protection overlap between the two partitions.
+// For mode 0, we would typically set t = min(m, n-k).
+
+
+// Mode 1: subMask22 = (k, n-k-t), with protection (n-k-t)/(k)
+// mode 1 has protection overlap between the two partitions (preferred).
+
+// For ProtectionMode 2:
+// This gives 1st packet of list (which is 1st packet of 1st partition) more
+// protection. In mode 2, the equal protection mask (which is obtained from
+// mode 1 for t=0) is modified (more "1s" added in 1st column of packet mask)
+// to bias higher protection for the 1st source packet.
+
+// Protection Mode 2 may be extended for a sort of sliding protection
+// (i.e., vary the number/density of "1s" across columns) across packets.
 
 void UnequalProtectionMask(const WebRtc_UWord16 numMediaPackets,
                            const WebRtc_UWord16 numFecPackets,
                            const WebRtc_UWord16 numImpPackets,
                            const WebRtc_UWord16 numMaskBytes,
-                           const ResidualProtectionMode mode,
                            WebRtc_UWord8* packetMask)
 {
 
-    //
-    // Generate subMask1: higher protection for numImpPackets:
-    //
-    ImportantPacketProtection(numFecPackets, numImpPackets,
-                              numMaskBytes, packetMask);
+    // Set Protection type and allocation
+    // TODO (marpan): test/update for best mode and some combinations thereof.
 
-    //
-    // Generate subMask2: left-over protection (for remaining partition data),
-    // if we still have some some FEC packets
-    //
-    if (numFecPackets > numImpPackets)
+    ProtectionMode mode = kModeOverlap;
+    WebRtc_UWord16 numFecForImpPackets = 0;
+
+    if (mode != kModeBiasFirstPacket)
     {
+        numFecForImpPackets = SetProtectionAllocation(numMediaPackets,
+                                                      numFecPackets,
+                                                      numImpPackets);
+    }
 
-        ResidualPacketProtection(numMediaPackets,numFecPackets,
-                                 numImpPackets, numMaskBytes,
-                                 mode, packetMask);
+    WebRtc_UWord16 numFecRemaining = numFecPackets - numFecForImpPackets;
+    // Done with setting protection type and allocation
+
+    //
+    // Generate subMask1
+    //
+    if (numFecForImpPackets > 0)
+    {
+        ImportantPacketProtection(numFecForImpPackets, numImpPackets,
+                                  numMaskBytes, packetMask);
+    }
+
+    //
+    // Generate subMask2
+    //
+    if (numFecRemaining > 0)
+    {
+        RemainingPacketProtection(numMediaPackets, numFecRemaining,
+                                  numFecForImpPackets, numMaskBytes,
+                                  mode, packetMask);
     }
 
 }
@@ -304,17 +362,10 @@ void GeneratePacketMasks(int numMediaPackets,
     const WebRtc_UWord16 numMaskBytes =
         (lBit == 1)? kMaskSizeLBitSet : kMaskSizeLBitClear;
 
-    // Default: use overlap mode for residual protection.
-    const ResidualProtectionMode kResidualProtectionMode = kModeOverlap;
-
-    // Force equal-protection for these cases.
-    // Equal protection is also used for: (numImpPackets == 1 && numFecPackets == 1).
-    // UEP=off would generally be more efficient than the UEP=on for this case.
-    // TODO (marpan): check/test this condition.
-    if (!useUnequalProtection || numImpPackets == 0 ||
-        (numImpPackets == 1 && numFecPackets == 1))
+    // Equal-protection for these cases
+    if (!useUnequalProtection || numImpPackets == 0)
     {
-        // Retrieve corresponding mask table directly: for equal-protection case.
+        // Retrieve corresponding mask table directly:for equal-protection case.
         // Mask = (k,n-k), with protection factor = (n-k)/k,
         // where k = numMediaPackets, n=total#packets, (n-k)=numFecPackets.
         memcpy(packetMask, packetMaskTbl[numMediaPackets - 1][numFecPackets - 1],
@@ -323,8 +374,7 @@ void GeneratePacketMasks(int numMediaPackets,
     else  //UEP case
     {
         UnequalProtectionMask(numMediaPackets, numFecPackets, numImpPackets,
-                              numMaskBytes, kResidualProtectionMode,
-                              packetMask);
+                              numMaskBytes, packetMask);
 
     } // End of UEP modification
 
