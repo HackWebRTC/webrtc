@@ -1,0 +1,13 @@
+This test will pop up a browser with two tabs, and will run video from
+one tab to the other tab, across the local network interface.
+
+In order to run this test, you need to have:
+
+- a WebRTC Chrome binary in
+  $PROJECT_ROOT/../../chromium/src/out/Debug/chrome
+- an installed lighttpd in your $PATH
+- a built peerconnection_server (make peerconnection_server)
+
+You need to run the script from the test/sanity_check directory.
+
+The first time you run it, you will be asked to choose a search engine :-(

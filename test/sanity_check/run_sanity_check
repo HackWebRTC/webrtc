@@ -15,18 +15,24 @@
 # Feel free to tweak this locally if your chrome build is somewhere else.
 # The default assumes that it is in a folder called chromium two levels
 # up from the project root ('trunk').
-CHROME_BINARY=$PROJECT_ROOT/../../chromium/src/out/Debug/chrome
 
 set -e
+
+if [ ! -x run_sanity_check ]; then
+  echo "Error: This script must run from its own directory"
+  exit 1
+fi
 
 URLBASE=127.0.0.1:3000
 CALLER=$URLBASE/call_client.html
 CALLEE=$URLBASE/call_responder.html
 FLAGS="--enable-media-stream --enable-p2papi"
 PROJECT_ROOT=../..
+CHROME_BINARY=$PROJECT_ROOT/../../chromium/src/out/Debug/chrome
 
-LOCAL_WEB_SERVER_BINARY=`which lighttpd`
-if [ -z "$LOCAL_WEB_SERVER_BINARY" ]; then
+if which lighttpd; then
+  LOCAL_WEB_SERVER_BINARY=$(which lighttpd)
+else
   echo "Error: You must install lighttpd first (sudo apt-get install lighttpd)"
   exit 1
 fi
@@ -62,8 +68,5 @@ ${CHROME_BINARY} $CALLER $CALLEE $FLAGS --user-data-dir=temp/user1
 
 echo "Test finished, cleaning up"
 
-kill $SERVER
-kill $LOCAL_WEB_SERVER
-
-# If 2 browsers, we have to kill the other.
-#kill $USER1 || echo "Browser 1 is already dead"
+kill $SERVER || echo "No server"
+kill $LOCAL_WEB_SERVER || echo "No local web server"
