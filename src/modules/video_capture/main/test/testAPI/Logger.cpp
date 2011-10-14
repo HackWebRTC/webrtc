@@ -30,7 +30,7 @@ Logger::~Logger(void)
 }
 void Logger::Print(char* msg)
 {
-    printf(msg);
+    printf("%s\n",msg);
     if (_logFile.Open())
     {
         _logFile.WriteText(msg);

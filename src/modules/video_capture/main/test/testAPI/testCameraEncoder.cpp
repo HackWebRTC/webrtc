@@ -32,7 +32,7 @@ testCameraEncoder::testCameraEncoder(void)
     Trace::CreateTrace();
     Trace::SetLevelFilter(webrtc::kTraceAll);    
     Trace::SetTraceFile("testCameraEncoder.txt");
-    _captureInfo=VideoCaptureModule::CreateDeviceInfo(5);
+    _captureInfo=VideoCaptureFactory::CreateDeviceInfo(5);
 #ifdef RENDER_PREVIEW
     _renderer=NULL;
     _videoCoding=webrtc::VideoCodingModule::Createwebrtc::VideoCodingModule(5);
@@ -91,7 +91,8 @@ int testCameraEncoder::DoTest()
         WebRtc_UWord8 productId[256];
         _captureInfo->GetDeviceName(i,name,256,uniqueID,256,productId,256);
 
-        _captureModule= VideoCaptureModule::Create(0,uniqueID);
+        _captureModule= VideoCaptureFactory::Create(0,uniqueID);
+        _captureModule->AddRef();
         _captureModule->RegisterCaptureDataCallback(*this);
 
         VideoCaptureCapability capability; 
@@ -113,7 +114,7 @@ int testCameraEncoder::DoTest()
             }
         }
 
-        VideoCaptureModule::Destroy(_captureModule);
+        _captureModule->Release();
     }
     return 0;
 }
@@ -226,8 +227,10 @@ void testCameraEncoder::OnIncomingCapturedFrame(const WebRtc_Word32 id,
 {
     _captureSettings.incomingFrames++;
     _captureSettings.noOfBytes+=videoFrame.Length();
-    assert(videoFrame.Height()==_captureSettings.capability.height);
-    assert(videoFrame.Width()==_captureSettings.capability.width);
+    int height = static_cast<int>(videoFrame.Height());
+    int width = static_cast<int>(videoFrame.Width());
+    assert(height==_captureSettings.capability.height);
+    assert(width==_captureSettings.capability.width);
     assert(videoFrame.RenderTimeMs()>=(TickTime::MillisecondTimestamp()-30)); // RenderTimstamp should be the time now
     if((videoFrame.RenderTimeMs()>_captureSettings.lastRenderTimeMS
         +(1000*1.2)/_captureSettings.capability.maxFPS

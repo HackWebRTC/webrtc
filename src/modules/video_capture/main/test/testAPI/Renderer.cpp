@@ -227,6 +227,7 @@ void Renderer::SetRenderWindow(jobject renderWindow)
 
 int WebRtcCreateWindow(HWND &hwndMain,int winNum, int width, int height)
 {
+    return 0;
 }
 void SetWindowPos(HWND &hwndMain, int x, int y, int width, int height, bool onTop)
 {

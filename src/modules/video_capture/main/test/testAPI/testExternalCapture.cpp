@@ -29,7 +29,8 @@ static int testExternalCaptureResult = 0;
 
 void testExternalCapture::CreateInterface()
 {
-    _captureModule = VideoCaptureModule::Create(1, _captureInteface);
+    _captureModule = VideoCaptureFactory::Create(1, _captureInteface);
+    _captureModule->AddRef();
 }
 testExternalCapture::testExternalCapture(void)
     : _captureInteface(NULL), _captureModule(NULL)
@@ -51,7 +52,7 @@ int testExternalCapture::CompareFrames(const VideoFrame& frame1,
 
 testExternalCapture::~testExternalCapture(void)
 {
-    VideoCaptureModule::Destroy(_captureModule);
+    _captureModule->Release();
 }
 
 void testExternalCapture::OnIncomingCapturedFrame(
@@ -112,6 +113,19 @@ int testExternalCapture::DoTest()
     assert(_captureInteface->IncomingFrame(_testFrame.Buffer(),
                                            _testFrame.Length(),
                                            frameInfo,0)==0);
+    CompareFrames(_testFrame, _resultFrame);
+
+    printf("  testing the IncomingFrameI420 interface.\n");
+    VideoFrameI420 frame_i420;
+    frame_i420.width = width;
+    frame_i420.height = height;
+    frame_i420.y_plane = _testFrame.Buffer();
+    frame_i420.u_plane = frame_i420.y_plane + (width * height);
+    frame_i420.v_plane = frame_i420.u_plane + ((width * height) >> 2);
+    frame_i420.y_pitch = width;
+    frame_i420.u_pitch = width / 2;
+    frame_i420.v_pitch = width / 2;
+    assert(_captureInteface->IncomingFrameI420(frame_i420, 0) == 0);
     CompareFrames(_testFrame, _resultFrame);
 
     printf("  testing local frame rate callback and no picture alarm.\n");

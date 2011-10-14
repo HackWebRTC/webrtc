@@ -73,6 +73,31 @@ enum RotateCapturedFrame
     RotateCapturedFrame_270 = 270
 };
 
+struct ViEVideoFrameI420
+{
+  ViEVideoFrameI420() {
+    y_plane = NULL;
+    u_plane = NULL;
+    v_plane = NULL;
+    y_pitch = 0;
+    u_pitch = 0;
+    v_pitch = 0;
+    width = 0;
+    height = 0;
+  }
+
+  unsigned char* y_plane;
+  unsigned char* u_plane;
+  unsigned char* v_plane;
+
+  int y_pitch;
+  int u_pitch;
+  int v_pitch;
+
+  unsigned short width;
+  unsigned short height;
+};
+
 // This class declares an abstract interface to be used when using an external
 // capture device. The user implemented derived class is registered using
 // AllocateExternalCaptureDevice and is released using ReleaseCaptureDevice.
@@ -89,6 +114,12 @@ public:
                               unsigned short width, unsigned short height,
                               RawVideoType videoType,
                               unsigned long long captureTime = 0) = 0;
+
+    // This method is specifically for delivering a new captured I420 frame to
+    // VideoEngine.
+    virtual int IncomingFrameI420(
+        const ViEVideoFrameI420& video_frame,
+        unsigned long long captureTime = 0) = 0;
 };
 
 // ----------------------------------------------------------------------------

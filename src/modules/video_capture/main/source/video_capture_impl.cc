@@ -253,6 +253,40 @@ WebRtc_Word32 VideoCaptureImpl::CaptureDelay()
     CriticalSectionScoped cs(_apiCs);
     return _setCaptureDelay;
 }
+
+WebRtc_Word32 VideoCaptureImpl::DeliverCapturedFrame(VideoFrame& captureFrame,
+    WebRtc_Word32 width, WebRtc_Word32 height, WebRtc_Word64 capture_time,
+    VideoCodecType codec_type) {
+  UpdateFrameCount();// frame count used for local frame rate callback.
+  _startImageFrameIntervall = 0; // prevent the start image to be displayed.
+
+  const bool callOnCaptureDelayChanged = _setCaptureDelay != _captureDelay;
+  // Capture delay changed
+  if (_setCaptureDelay != _captureDelay) {
+      _setCaptureDelay = _captureDelay;
+  }
+
+  // Set the capture time
+  if (capture_time != 0) {
+      captureFrame.SetRenderTime(capture_time);
+  }
+  else {
+      captureFrame.SetRenderTime(TickTime::MillisecondTimestamp());
+  }
+
+  captureFrame.SetHeight(height);
+  captureFrame.SetWidth(width);
+
+  if (_dataCallBack) {
+    if (callOnCaptureDelayChanged) {
+      _dataCallBack->OnCaptureDelayChanged(_id, _captureDelay);
+    }
+    _dataCallBack->OnIncomingCapturedFrame(_id, captureFrame, codec_type);
+  }
+
+  return 0;
+}
+
 WebRtc_Word32 VideoCaptureImpl::IncomingFrame(WebRtc_UWord8* videoFrame,
                                                     WebRtc_Word32 videoFrameLength,
                                                     const VideoCaptureCapability& frameInfo,
@@ -268,10 +302,6 @@ WebRtc_Word32 VideoCaptureImpl::IncomingFrame(WebRtc_UWord8* videoFrame,
 
     const WebRtc_Word32 width = frameInfo.width;
     const WebRtc_Word32 height = frameInfo.height;
-
-    UpdateFrameCount();// frame count used for local frame rate callback.
-
-    _startImageFrameIntervall = 0; // prevent the start image to be displayed.
 
     if (frameInfo.codecType == kVideoCodecUnknown) // None encoded. Convert to I420.
     {
@@ -318,33 +348,8 @@ WebRtc_Word32 VideoCaptureImpl::IncomingFrame(WebRtc_UWord8* videoFrame,
         }
     }
 
-    const bool callOnCaptureDelayChanged = _setCaptureDelay != _captureDelay;
-    if (_setCaptureDelay != _captureDelay) // Capture delay changed
-    {
-        _setCaptureDelay = _captureDelay;
-    }
+    DeliverCapturedFrame(_captureFrame, width, height, captureTime, frameInfo.codecType);
 
-    // Set the capture time
-    if (captureTime != 0)
-    {
-        _captureFrame.SetRenderTime(captureTime);
-    }
-    else
-    {
-        _captureFrame.SetRenderTime(TickTime::MillisecondTimestamp());
-    }
-
-    _captureFrame.SetHeight(height);
-    _captureFrame.SetWidth(width);
-
-    if (_dataCallBack)
-    {
-        if (callOnCaptureDelayChanged)
-        {
-            _dataCallBack->OnCaptureDelayChanged(_id, _captureDelay);
-        }
-        _dataCallBack->OnIncomingCapturedFrame(_id, _captureFrame, frameInfo.codecType);
-    }
 
     const WebRtc_UWord32 processTime =
         (WebRtc_UWord32)(TickTime::Now() - startProcessTime).Milliseconds();
@@ -356,7 +361,60 @@ WebRtc_Word32 VideoCaptureImpl::IncomingFrame(WebRtc_UWord8* videoFrame,
     }
 
     return 0;
+}
 
+WebRtc_Word32 VideoCaptureImpl::IncomingFrameI420(
+    const VideoFrameI420& video_frame, WebRtc_Word64 captureTime) {
+
+  CriticalSectionScoped cs(_callBackCs);
+
+  // Allocate I420 buffer
+  int frame_size = CalcBufferSize(kI420,
+                                  video_frame.width,
+                                  video_frame.height);
+  _captureFrame.VerifyAndAllocate(frame_size);
+  if (!_captureFrame.Buffer()) {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
+               "Failed to allocate frame buffer.");
+    return -1;
+  }
+
+  // Copy planes to the _captureFrame
+  int y_width = video_frame.width;
+  int uv_width = video_frame.width / 2;
+  int y_rows = video_frame.height;
+  int uv_rows = video_frame.height / 2;  // I420
+  unsigned char* current_pointer = _captureFrame.Buffer();
+  unsigned char* y_plane = video_frame.y_plane;
+  unsigned char* u_plane = video_frame.u_plane;
+  unsigned char* v_plane = video_frame.v_plane;
+  // Copy Y
+  for (int i = 0; i < y_rows; ++i) {
+    memcpy(current_pointer, y_plane, y_width);
+    current_pointer += video_frame.y_pitch;
+    y_plane += video_frame.y_pitch;
+  }
+  // Copy U
+  for (int i = 0; i < uv_rows; ++i) {
+    memcpy(current_pointer, u_plane, uv_width);
+    current_pointer += video_frame.u_pitch;
+    u_plane += video_frame.u_pitch;
+  }
+  // Copy V
+  for (int i = 0; i < uv_rows; ++i) {
+    memcpy(current_pointer, v_plane, uv_width);
+    current_pointer += video_frame.v_pitch;
+    v_plane += video_frame.v_pitch;
+  }
+  _captureFrame.SetLength(frame_size);
+
+  DeliverCapturedFrame(_captureFrame,
+                       video_frame.width,
+                       video_frame.height,
+                       captureTime,
+                       kVideoCodecUnknown);
+
+  return 0;
 }
 
 WebRtc_Word32 VideoCaptureImpl::SetCaptureRotation(VideoCaptureRotation rotation)

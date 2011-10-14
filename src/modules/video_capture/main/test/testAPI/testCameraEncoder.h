@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include "video_capture.h"
+#include "video_capture_factory.h"
 
 //#define RENDER_PREVIEW
 

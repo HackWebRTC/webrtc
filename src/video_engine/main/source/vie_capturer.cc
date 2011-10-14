@@ -409,6 +409,34 @@ int ViECapturer::IncomingFrame(unsigned char* videoFrame,
     return _externalCaptureModule->IncomingFrame(videoFrame, videoFrameLength,
                                                  capability, captureTime);
 }
+
+// This method is specifically for delivering a new captured I420 frame to
+// VideoEngine.
+int ViECapturer::IncomingFrameI420(
+    const ViEVideoFrameI420& video_frame,
+    unsigned long long captureTime) {
+  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
+      ViEId(_engineId, _captureId),
+      "%ExternalCapture::IncomingFrame width %d, height %d, captureTime %u",
+      video_frame.width, video_frame.height, captureTime);
+
+  if (!_externalCaptureModule) {
+    return -1;
+  }
+
+  VideoFrameI420 frame;
+  frame.width = video_frame.width;
+  frame.height = video_frame.height;
+  frame.y_plane = video_frame.y_plane;
+  frame.u_plane = video_frame.u_plane;
+  frame.v_plane = video_frame.v_plane;
+  frame.y_pitch = video_frame.y_pitch;
+  frame.u_pitch = video_frame.u_pitch;
+  frame.v_pitch = video_frame.v_pitch;
+
+  return _externalCaptureModule->IncomingFrameI420(frame, captureTime);
+}
+
 // ----------------------------------------------------------------------------
 // OnIncomingCapturedFrame
 //

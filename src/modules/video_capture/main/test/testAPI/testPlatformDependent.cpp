@@ -41,7 +41,7 @@ testPlatformDependent::testPlatformDependent(void) :
     Trace::CreateTrace();
     Trace::SetLevelFilter(webrtc::kTraceAll);
     Trace::SetTraceFile("testPlatformDependent.txt");
-    _captureInfo = VideoCaptureModule::CreateDeviceInfo(5);
+    _captureInfo = VideoCaptureFactory::CreateDeviceInfo(5);
 #ifdef RENDER_PREVIEW
     memset(_renderer, 0, sizeof(_renderer));
 #endif
@@ -125,8 +125,10 @@ void testPlatformDependent::VerifyResultFrame(const WebRtc_Word32 settingID,
         {
             found = true;
 
-            assert(videoFrame.Height()==_captureSettings[i].capability.height);
-            assert(videoFrame.Width()==_captureSettings[i].capability.width);
+            int height = static_cast<int>(videoFrame.Height());
+            int width = static_cast<int>(videoFrame.Width());
+            assert(height==_captureSettings[i].capability.height);
+            assert(width==_captureSettings[i].capability.width);
             assert(videoFrame.RenderTimeMs()>=TickTime::MillisecondTimestamp()-30); // RenderTimstamp should be the time now
             if ((videoFrame.RenderTimeMs()
                 > _captureSettings[i].lastRenderTimeMS + (1000 * 1.1)
@@ -172,8 +174,9 @@ WebRtc_Word32 testPlatformDependent::testCreateDelete(
 #endif
         _captureSettings[0].startTime = TickTime::MillisecondTimestamp();
         _captureSettings[0].initStartTime = TickTime::MillisecondTimestamp();
-        _captureSettings[0].captureModule = VideoCaptureModule::Create(0,
-                                                                       uniqueID);
+        _captureSettings[0].captureModule =
+            VideoCaptureFactory::Create(0, uniqueID);
+        _captureSettings[0].captureModule->AddRef();
         assert(!_captureSettings[0].captureModule->CaptureStarted());
         assert(_captureSettings[0].captureModule); // Test that it is created
         assert(!_captureSettings[0].captureModule->RegisterCaptureDataCallback(*this));
@@ -202,7 +205,7 @@ WebRtc_Word32 testPlatformDependent::testCreateDelete(
         assert(_captureSettings[0].captureModule->StopCapture()==0);
         assert(!_captureSettings[0].captureModule->CaptureStarted());
 
-        VideoCaptureModule::Destroy(_captureSettings[0].captureModule);
+        _captureSettings[0].captureModule->Release();
         _captureSettings[0].stopStopTime = TickTime::MillisecondTimestamp();
 
         assert((_captureSettings[0].incomingFrames >= 5)); // Make sure at least 5 frames has been captured
@@ -219,8 +222,9 @@ WebRtc_Word32 testPlatformDependent::testCapabilities(
 #ifndef WEBRTC_MAC
     LOG("\n\nTesting capture capabilities\n");
 
-    _captureSettings[0].captureModule = VideoCaptureModule::Create(0, uniqueID);
+    _captureSettings[0].captureModule = VideoCaptureFactory::Create(0, uniqueID);
     assert(_captureSettings[0].captureModule); // Test that it is created
+    _captureSettings[0].captureModule->AddRef();
 
     assert(!_captureSettings[0].captureModule->RegisterCaptureDataCallback(*this));
 
@@ -271,7 +275,7 @@ WebRtc_Word32 testPlatformDependent::testCapabilities(
         EvaluateTestResult(_captureSettings[0]);
     }
     assert(oneValidCap); // Make sure the camera support at least one capability
-    VideoCaptureModule::Destroy(_captureSettings[0].captureModule);
+    _captureSettings[0].captureModule->Release();
     _captureSettings[0].ResetAll();
     return testPlatformDependentResult;
 #else
@@ -301,7 +305,8 @@ WebRtc_Word32 testPlatformDependent::testMultipleCameras()
         WebRtc_UWord8* name = _captureSettings[i].captureName;
         LOG("\n\n  Found capture device %u\n  name %s\n  unique name %s\n"
             ,(unsigned int) i,(char*) name, (char*)id);
-        _captureSettings[i].captureModule = VideoCaptureModule::Create(i, id);
+        _captureSettings[i].captureModule = VideoCaptureFactory::Create(i, id);
+        _captureSettings[i].captureModule->AddRef();
         assert(_captureSettings[i].captureModule); // Test that it is created
         assert(!_captureSettings[i].captureModule->RegisterCaptureDataCallback(*this));
 
@@ -326,7 +331,7 @@ WebRtc_Word32 testPlatformDependent::testMultipleCameras()
         _captureSettings[i].captureModule->StopCapture();
 
         EvaluateTestResult(_captureSettings[i]);
-        VideoCaptureModule::Destroy(_captureSettings[i].captureModule);
+        _captureSettings[i].captureModule->Release();
         _captureSettings[i].ResetAll();
     }
     return testPlatformDependentResult;
@@ -344,7 +349,9 @@ WebRtc_Word32 testPlatformDependent::testRotation(const WebRtc_UWord8* uniqueID)
 {
     LOG("\n\nTesting capture Rotation\n");
 
-    _captureSettings[0].captureModule = VideoCaptureModule::Create(0, uniqueID);
+    _captureSettings[0].captureModule =
+        VideoCaptureFactory::Create(0, uniqueID);
+    _captureSettings[0].captureModule->AddRef();
     assert(_captureSettings[0].captureModule); // Test that it is created
 
     assert(!_captureSettings[0].captureModule->RegisterCaptureDataCallback(*this));
@@ -411,7 +418,7 @@ WebRtc_Word32 testPlatformDependent::testRotation(const WebRtc_UWord8* uniqueID)
 
     EvaluateTestResult(_captureSettings[0]);
 
-    VideoCaptureModule::Destroy(_captureSettings[0].captureModule);
+    _captureSettings[0].captureModule->Release();
     _captureSettings[0].ResetAll();
 
     return testPlatformDependentResult;

@@ -12,7 +12,7 @@
 
 
 #include "testDefines.h"
-#include "video_capture.h"
+#include "video_capture_factory.h"
 #include "Logger.h"
 
 //#define RENDER_PREVIEW //Does not work properly on Linux

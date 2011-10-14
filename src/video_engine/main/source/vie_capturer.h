@@ -69,7 +69,12 @@ public:
                               RawVideoType videoType,
                               unsigned long long captureTime = 0);
 
-    // Use this capture device as encoder. Returns 0 if the codec is supported by this capture device.
+    virtual int IncomingFrameI420(
+        const ViEVideoFrameI420& video_frame,
+        unsigned long long captureTime = 0);
+
+    // Use this capture device as encoder.
+    // Returns 0 if the codec is supported by this capture device.
     virtual WebRtc_Word32 PreEncodeToViEEncoder(const VideoCodec& codec,
                                                 ViEEncoder& vieEncoder,
                                                 WebRtc_Word32 vieEncoderId);

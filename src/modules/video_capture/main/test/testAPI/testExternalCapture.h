@@ -12,7 +12,7 @@
 #define WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_TEST_TESTAPI_TESTEXTERNALCAPTURE_H_
 
 #include "testDefines.h"
-#include "video_capture.h"
+#include "video_capture_factory.h"
 
 namespace webrtc
 {

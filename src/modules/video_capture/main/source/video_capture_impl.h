@@ -95,6 +95,10 @@ public:
                                         WebRtc_Word32 videoFrameLength,
                                         const VideoCaptureCapability& frameInfo,
                                         WebRtc_Word64 captureTime = 0);
+    virtual WebRtc_Word32 IncomingFrameI420(
+        const VideoFrameI420& video_frame,
+        WebRtc_Word64 captureTime = 0);
+
     // Platform dependent
     virtual WebRtc_Word32 StartCapture(const VideoCaptureCapability& capability)
     {
@@ -120,6 +124,9 @@ protected:
 private:
     void UpdateFrameCount();
     WebRtc_UWord32 CalculateFrameRate(const TickTime& now);
+    WebRtc_Word32 DeliverCapturedFrame(
+        VideoFrame& captureFrame, WebRtc_Word32 width, WebRtc_Word32 height,
+        WebRtc_Word64 capture_time, VideoCodecType codec_type);
 
     CriticalSectionWrapper& _callBackCs;
 
