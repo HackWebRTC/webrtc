@@ -15,8 +15,13 @@
  */
 
 #include "vad_gmm.h"
+
 #include "signal_processing_library.h"
-#include "vad_const.h"
+#include "typedefs.h"
+
+static const WebRtc_Word32 kCompVar = 22005;
+// Constant log2(exp(1)) in Q12
+static const WebRtc_Word16 kLog10Const = 5909;
 
 WebRtc_Word32 WebRtcVad_GaussianProbability(WebRtc_Word16 in_sample,
                                             WebRtc_Word16 mean,

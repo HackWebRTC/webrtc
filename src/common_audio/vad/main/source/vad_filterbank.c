@@ -15,9 +15,21 @@
  */
 
 #include "vad_filterbank.h"
-#include "vad_defines.h"
-#include "vad_const.h"
+
 #include "signal_processing_library.h"
+#include "typedefs.h"
+#include "vad_defines.h"
+
+// Constant 160*log10(2) in Q9
+static const WebRtc_Word16 kLogConst = 24660;
+// Coefficients used by WebRtcVad_HpOutput, Q14
+static const WebRtc_Word16 kHpZeroCoefs[3] = {6631, -13262, 6631};
+static const WebRtc_Word16 kHpPoleCoefs[3] = {16384, -7756, 5620};
+// Allpass filter coefficients, upper and lower, in Q15
+// Upper: 0.64, Lower: 0.17
+static const WebRtc_Word16 kAllPassCoefsQ15[2] = {20972, 5571};
+// Adjustment for division with two in WebRtcVad_SplitFilter
+static const WebRtc_Word16 kOffsetVector[6] = {368, 368, 272, 176, 176, 176};
 
 void WebRtcVad_HpOutput(WebRtc_Word16 *in_vector,
                         WebRtc_Word16 in_vector_length,

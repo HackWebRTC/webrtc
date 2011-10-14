@@ -10,15 +10,20 @@
 
 
 /*
- * This file includes the implementation of the VAD internal calls for Downsampling and
- * FindMinimum.
+ * This file includes the implementation of the VAD internal calls for
+ * Downsampling and FindMinimum.
  * For function call descriptions; See vad_sp.h.
  */
 
 #include "vad_sp.h"
-#include "vad_defines.h"
-#include "vad_const.h"
+
 #include "signal_processing_library.h"
+#include "typedefs.h"
+#include "vad_defines.h"
+
+// Allpass filter coefficients, upper and lower, in Q13
+// Upper: 0.64, Lower: 0.17
+static const WebRtc_Word16 kAllPassCoefsQ13[2] = {5243, 1392}; // Q13
 
 // Downsampling filter based on the splitting filter and the allpass functions
 // in vad_filterbank.c

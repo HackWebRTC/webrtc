@@ -25,11 +25,9 @@
       'sources': [
         '../interface/webrtc_vad.h',
         'webrtc_vad.c',
-        'vad_const.c',
-        'vad_const.h',
-        'vad_defines.h',
         'vad_core.c',
         'vad_core.h',
+        'vad_defines.h',
         'vad_filterbank.c',
         'vad_filterbank.h',
         'vad_gmm.c',

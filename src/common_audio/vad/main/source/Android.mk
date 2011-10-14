@@ -18,7 +18,6 @@ LOCAL_MODULE := libwebrtc_vad
 LOCAL_MODULE_TAGS := optional
 LOCAL_SRC_FILES := \
     webrtc_vad.c \
-    vad_const.c \
     vad_core.c \
     vad_filterbank.c \
     vad_gmm.c \
