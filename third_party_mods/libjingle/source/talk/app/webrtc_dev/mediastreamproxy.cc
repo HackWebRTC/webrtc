@@ -34,6 +34,7 @@ namespace {
 enum {
   MSG_REGISTER_OBSERVER = 1,
   MSG_UNREGISTER_OBSERVER,
+  MSG_LABEL,
   MSG_ADD_TRACK,
   MSG_READY_STATE,
   MSG_SET_READY_STATE,
@@ -41,6 +42,7 @@ enum {
   MSG_AT
 };
 
+typedef talk_base::TypedMessageData<std::string*> LabelMessageData;
 typedef talk_base::TypedMessageData<size_t> SizeTMessageData;
 typedef talk_base::TypedMessageData<webrtc::Observer*> ObserverMessageData;
 typedef talk_base::TypedMessageData<webrtc::MediaStreamInterface::ReadyState>
@@ -91,7 +93,13 @@ MediaStreamProxy::MediaStreamProxy(const std::string& label,
           signaling_thread_)) {
 }
 
-const std::string& MediaStreamProxy::label() {
+std::string MediaStreamProxy::label() const {
+  if (!signaling_thread_->IsCurrent()) {
+    std::string label;
+    LabelMessageData msg(&label);
+    Send(MSG_LABEL, &msg);
+    return label;
+  }
   return media_stream_impl_->label();
 }
 
@@ -145,8 +153,9 @@ void MediaStreamProxy::UnregisterObserver(Observer* observer) {
   media_stream_impl_->UnregisterObserver(observer);
 }
 
-void MediaStreamProxy::Send(uint32 id, talk_base::MessageData* data) {
-  signaling_thread_->Send(this, id, data);
+void MediaStreamProxy::Send(uint32 id, talk_base::MessageData* data) const {
+  signaling_thread_->Send(const_cast<MediaStreamProxy*>(this), id,
+                          data);
 }
 
 // Implement MessageHandler
@@ -161,6 +170,11 @@ void MediaStreamProxy::OnMessage(talk_base::Message* msg) {
     case MSG_UNREGISTER_OBSERVER: {
       ObserverMessageData* observer = static_cast<ObserverMessageData*>(data);
       media_stream_impl_->UnregisterObserver(observer->data());
+      break;
+    }
+    case MSG_LABEL: {
+      LabelMessageData * label = static_cast<LabelMessageData*>(data);
+      *(label->data()) = media_stream_impl_->label();
       break;
     }
     case MSG_ADD_TRACK: {
@@ -232,8 +246,9 @@ void MediaStreamProxy::MediaStreamTrackListProxy::UnregisterObserver(
 }
 
 void MediaStreamProxy::MediaStreamTrackListProxy::Send(
-    uint32 id, talk_base::MessageData* data) {
-  signaling_thread_->Send(this, id, data);
+    uint32 id, talk_base::MessageData* data) const {
+  signaling_thread_->Send(
+      const_cast<MediaStreamProxy::MediaStreamTrackListProxy*>(this), id, data);
 }
 
 // Implement MessageHandler

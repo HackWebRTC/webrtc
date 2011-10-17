@@ -71,12 +71,12 @@ class MediaStreamTrackInterface : public talk_base::RefCount,
   };
 
   enum TrackType {
-    kAudio = 0, 
+    kAudio = 0,
     kVideo = 1,
   };
 
   virtual const char* kind() const = 0;
-  virtual const std::string& label()  const = 0;
+  virtual std::string label()  const = 0;
   virtual TrackType type() const = 0;
   virtual uint32 ssrc() const = 0;
   virtual bool enabled() const = 0;
@@ -97,7 +97,7 @@ class VideoRendererInterface : public talk_base::RefCount {
 };
 
 // Creates a reference counted object of type webrtc::VideoRenderer.
-// webrtc::VideoRenderer take ownership of cricket::VideoRenderer.
+// webrtc::VideoRendererInterface take ownership of cricket::VideoRenderer.
 scoped_refptr<VideoRendererInterface> CreateVideoRenderer(
     cricket::VideoRenderer* renderer);
 
@@ -123,10 +123,6 @@ class LocalVideoTrackInterface : public VideoTrackInterface {
   virtual ~LocalVideoTrackInterface() {}
 };
 
-scoped_refptr<LocalVideoTrackInterface> CreateLocalVideoTrack(
-    const std::string& label,
-    VideoCaptureModule* video_device);
-
 class AudioTrackInterface : public MediaStreamTrackInterface {
  public:
  protected:
@@ -140,10 +136,6 @@ class LocalAudioTrackInterface : public AudioTrackInterface {
  protected:
   virtual ~LocalAudioTrackInterface() {}
 };
-
-scoped_refptr<LocalAudioTrackInterface> CreateLocalAudioTrack(
-    const std::string& label,
-    AudioDeviceModule* audio_device);
 
 // List of of tracks.
 class MediaStreamTrackListInterface : public talk_base::RefCount,
@@ -159,7 +151,7 @@ class MediaStreamTrackListInterface : public talk_base::RefCount,
 class MediaStreamInterface : public talk_base::RefCount,
                              public Notifier {
  public:
-  virtual const std::string& label() = 0;
+  virtual std::string label() const = 0;
   virtual MediaStreamTrackListInterface* tracks() = 0;
 
   enum ReadyState {

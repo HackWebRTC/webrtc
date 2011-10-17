@@ -54,11 +54,11 @@ class MediaStreamProxy : public LocalMediaStreamInterface,
     virtual void RegisterObserver(Observer* observer);
     virtual void UnregisterObserver(Observer* observer);
    private:
-    void Send(uint32 id, talk_base::MessageData* data);
+    void Send(uint32 id, talk_base::MessageData* data) const;
     void OnMessage(talk_base::Message* msg);
 
     scoped_refptr<MediaStreamTrackListInterface> track_list_;
-    talk_base::Thread* signaling_thread_;
+    mutable talk_base::Thread* signaling_thread_;
   };
 
   static scoped_refptr<MediaStreamProxy> Create(
@@ -69,7 +69,7 @@ class MediaStreamProxy : public LocalMediaStreamInterface,
   virtual bool AddTrack(MediaStreamTrackInterface* track);
 
   // Implement MediaStream.
-  virtual const std::string& label();
+  virtual std::string label() const;
   virtual MediaStreamTrackListInterface* tracks();
   virtual ReadyState ready_state();
   virtual void set_ready_state(ReadyState new_state);
@@ -82,11 +82,11 @@ class MediaStreamProxy : public LocalMediaStreamInterface,
   explicit MediaStreamProxy(const std::string& label,
                             talk_base::Thread* signaling_thread);
 
-  void Send(uint32 id, talk_base::MessageData* data);
+  void Send(uint32 id, talk_base::MessageData* data) const;
   // Implement MessageHandler
   virtual void OnMessage(talk_base::Message* msg);
 
-  talk_base::Thread* signaling_thread_;
+  mutable talk_base::Thread* signaling_thread_;
   scoped_refptr<MediaStreamImpl> media_stream_impl_;
   scoped_refptr<MediaStreamTrackListProxy> track_list_;
 };

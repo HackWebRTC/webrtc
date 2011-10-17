@@ -31,6 +31,8 @@
 
 #include "gtest/gtest.h"
 #include "talk/app/webrtc_dev/mediastreamimpl.h"
+#include "talk/app/webrtc_dev/videotrackimpl.h"
+#include "talk/app/webrtc_dev/audiotrackimpl.h"
 #include "talk/app/webrtc_dev/peerconnectionsignaling.h"
 #include "talk/app/webrtc_dev/streamcollectionimpl.h"
 #include "talk/base/scoped_ptr.h"
@@ -242,8 +244,8 @@ TEST_F(PeerConnectionSignalingTest, SimpleOneWayCall) {
   MockMediaStreamObserver stream_observer1(stream);
 
   // Add a local audio track.
-  scoped_refptr<LocalAudioTrackInterface> audio_track(
-      CreateLocalAudioTrack(kAudioTrackLabel1, NULL));
+  scoped_refptr<LocalAudioTrackInterface> audio_track(AudioTrack::CreateLocal(
+      kAudioTrackLabel1, NULL));
   stream->AddTrack(audio_track);
   MockMediaTrackObserver track_observer1(audio_track);
 
@@ -316,8 +318,8 @@ TEST_F(PeerConnectionSignalingTest, Glare) {
       MediaStreamImpl::Create(label));
 
   // Add a local audio track.
-  scoped_refptr<LocalAudioTrackInterface> audio_track(
-      CreateLocalAudioTrack(kAudioTrackLabel1, NULL));
+  scoped_refptr<LocalAudioTrackInterface> audio_track(AudioTrack::CreateLocal(
+      kAudioTrackLabel1, NULL));
   stream->AddTrack(audio_track);
 
   // Peer 1 create an offer with only one audio track.
@@ -381,16 +383,16 @@ TEST_F(PeerConnectionSignalingTest, AddRemoveStream) {
   MockMediaStreamObserver stream_observer1(stream);
 
   // Add a local audio track.
-  scoped_refptr<LocalAudioTrackInterface> audio_track(
-      CreateLocalAudioTrack(kAudioTrackLabel1, NULL));
+  scoped_refptr<LocalAudioTrackInterface> audio_track(AudioTrack::CreateLocal(
+      kAudioTrackLabel1, NULL));
   stream->AddTrack(audio_track);
   MockMediaTrackObserver track_observer1(audio_track);
   audio_track->RegisterObserver(&track_observer1);
 
   // Add a local video track.
-  scoped_refptr<LocalVideoTrackInterface> video_track(
-      CreateLocalVideoTrack(kAudioTrackLabel1, NULL));
-  stream->AddTrack(audio_track);
+  scoped_refptr<LocalVideoTrackInterface> video_track(VideoTrack::CreateLocal(
+      kVideoTrackLabel1, NULL));
+  stream->AddTrack(video_track);
 
   // Peer 1 create an empty collection
   scoped_refptr<StreamCollectionImpl> local_collection1(

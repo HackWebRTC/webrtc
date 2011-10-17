@@ -84,14 +84,14 @@ bool AudioTrack::set_state(TrackState new_state) {
   return true;
 }
 
-scoped_refptr<AudioTrackInterface> AudioTrack::Create(
-    const std::string& label, uint32 ssrc) {
+scoped_refptr<AudioTrack> AudioTrack::CreateRemote(const std::string& label,
+                                                   uint32 ssrc) {
   talk_base::RefCountImpl<AudioTrack>* track =
       new talk_base::RefCountImpl<AudioTrack>(label, ssrc);
   return track;
 }
 
-scoped_refptr<LocalAudioTrackInterface> CreateLocalAudioTrack(
+scoped_refptr<AudioTrack> AudioTrack::CreateLocal(
     const std::string& label,
     AudioDeviceModule* audio_device) {
   talk_base::RefCountImpl<AudioTrack>* track =

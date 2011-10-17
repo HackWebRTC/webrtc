@@ -45,8 +45,16 @@ class PeerConnectionManagerImpl : public PeerConnectionManager,
       PeerConnectionObserver* observer);
   bool Initialize();
 
-  scoped_refptr<LocalMediaStreamInterface> CreateLocalMediaStream(
+  virtual scoped_refptr<LocalMediaStreamInterface> CreateLocalMediaStream(
       const std::string& label);
+
+  virtual scoped_refptr<LocalVideoTrackInterface> CreateLocalVideoTrack(
+      const std::string& label,
+      VideoCaptureModule* video_device);
+
+  virtual scoped_refptr<LocalAudioTrackInterface> CreateLocalAudioTrack(
+      const std::string& label,
+      AudioDeviceModule* audio_device);
 
  protected:
   PeerConnectionManagerImpl();

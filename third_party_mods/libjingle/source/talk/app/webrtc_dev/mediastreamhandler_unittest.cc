@@ -30,6 +30,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "talk/app/webrtc_dev/mediastreamimpl.h"
+#include "talk/app/webrtc_dev/videotrackimpl.h"
 #include "talk/app/webrtc_dev/mediastreamhandler.h"
 #include "talk/app/webrtc_dev/streamcollectionimpl.h"
 #include "talk/base/thread.h"
@@ -69,7 +70,7 @@ TEST(MediaStreamHandlerTest, LocalStreams) {
   std::string label(kStreamLabel1);
   scoped_refptr<LocalMediaStreamInterface> stream(
       MediaStreamImpl::Create(label));
-  scoped_refptr<LocalVideoTrackInterface> video_track(CreateLocalVideoTrack(
+  scoped_refptr<LocalVideoTrackInterface> video_track(VideoTrack::CreateLocal(
       kVideoDeviceName, NULL));
   video_track->set_ssrc(kVideoSsrc);
   EXPECT_TRUE(stream->AddTrack(video_track));
@@ -108,7 +109,7 @@ TEST(MediaStreamHandlerTest, RemoteStreams) {
   std::string label(kStreamLabel1);
   scoped_refptr<LocalMediaStreamInterface> stream(
       MediaStreamImpl::Create(label));
-  scoped_refptr<LocalVideoTrackInterface> video_track(CreateLocalVideoTrack(
+  scoped_refptr<LocalVideoTrackInterface> video_track(VideoTrack::CreateLocal(
       kVideoDeviceName, NULL));
   video_track->set_ssrc(kVideoSsrc);
   EXPECT_TRUE(stream->AddTrack(video_track));

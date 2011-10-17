@@ -29,6 +29,7 @@
 
 #include "gtest/gtest.h"
 #include "talk/app/webrtc_dev/mediastreamimpl.h"
+#include "talk/app/webrtc_dev/videotrackimpl.h"
 
 static const char kStreamLabel1[] = "local_stream_1";
 static const char kVideoDeviceName[] = "dummy_video_cam_1";
@@ -65,7 +66,7 @@ TEST(LocalStreamTest, Create) {
 
   // Create a local Video track.
   TestObserver tracklist_observer;
-  scoped_refptr<LocalVideoTrackInterface> video_track(CreateLocalVideoTrack(
+  scoped_refptr<LocalVideoTrackInterface> video_track(VideoTrack::CreateLocal(
                           kVideoDeviceName, NULL));
   // Add an observer to the track list.
   scoped_refptr<MediaStreamTrackListInterface> track_list(stream->tracks());

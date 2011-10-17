@@ -92,7 +92,7 @@ bool VideoTrack::set_state(TrackState new_state) {
   return true;
 }
 
-scoped_refptr<VideoTrackInterface> VideoTrack::Create(
+scoped_refptr<VideoTrack> VideoTrack::CreateRemote(
     const std::string& label,
     uint32 ssrc) {
   talk_base::RefCountImpl<VideoTrack>* track =
@@ -100,7 +100,7 @@ scoped_refptr<VideoTrackInterface> VideoTrack::Create(
   return track;
 }
 
-scoped_refptr<LocalVideoTrackInterface> CreateLocalVideoTrack(
+scoped_refptr<VideoTrack> VideoTrack::CreateLocal(
     const std::string& label,
     VideoCaptureModule* video_device) {
   talk_base::RefCountImpl<VideoTrack>* track =

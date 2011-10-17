@@ -28,6 +28,7 @@
 #include "talk/app/webrtc_dev/peerconnectionmanagerimpl.h"
 
 #include "talk/app/webrtc_dev/mediastreamproxy.h"
+#include "talk/app/webrtc_dev/mediastreamtrackproxy.h"
 #include "talk/app/webrtc_dev/peerconnectionimpl.h"
 #include "talk/app/webrtc_dev/webrtc_devicemanager.h"
 #include "talk/base/basicpacketsocketfactory.h"
@@ -239,6 +240,22 @@ scoped_refptr<LocalMediaStreamInterface>
 PeerConnectionManagerImpl::CreateLocalMediaStream(
       const std::string& label) {
   return MediaStreamProxy::Create(label, signaling_thread_ptr_);
+}
+
+scoped_refptr<LocalVideoTrackInterface>
+PeerConnectionManagerImpl::CreateLocalVideoTrack(
+    const std::string& label,
+    VideoCaptureModule* video_device) {
+  return VideoTrackProxy::CreateLocal(label, video_device,
+                                      signaling_thread_ptr_);
+}
+
+scoped_refptr<LocalAudioTrackInterface>
+PeerConnectionManagerImpl::CreateLocalAudioTrack(
+    const std::string& label,
+    AudioDeviceModule* audio_device) {
+  return AudioTrackProxy::CreateLocal(label, audio_device,
+                                      signaling_thread_ptr_);
 }
 
 }  // namespace webrtc

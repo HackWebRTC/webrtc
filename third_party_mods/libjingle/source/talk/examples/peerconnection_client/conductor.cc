@@ -250,10 +250,11 @@ void Conductor::AddStreams() {
     return;  // Already added.
 
   scoped_refptr<webrtc::LocalAudioTrackInterface> audio_track(
-      webrtc::CreateLocalAudioTrack(kAudioLabel, NULL));
+      peer_connection_factory_->CreateLocalAudioTrack(kAudioLabel, NULL));
 
   scoped_refptr<webrtc::LocalVideoTrackInterface> video_track(
-      webrtc::CreateLocalVideoTrack(kVideoLabel, OpenVideoCaptureDevice()));
+      peer_connection_factory_->CreateLocalVideoTrack(
+          kVideoLabel, OpenVideoCaptureDevice()));
 
   scoped_refptr<webrtc::VideoRendererInterface> renderer(
       webrtc::CreateVideoRenderer(

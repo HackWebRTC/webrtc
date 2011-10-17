@@ -163,6 +163,14 @@ class PeerConnectionManager : public talk_base::RefCount {
   virtual scoped_refptr<LocalMediaStreamInterface> CreateLocalMediaStream(
       const std::string& label) = 0;
 
+  virtual scoped_refptr<LocalVideoTrackInterface> CreateLocalVideoTrack(
+      const std::string& label,
+      VideoCaptureModule* video_device) = 0;
+
+  virtual scoped_refptr<LocalAudioTrackInterface> CreateLocalAudioTrack(
+      const std::string& label,
+      AudioDeviceModule* audio_device) = 0;
+
 
  protected:
   // Dtor protected as objects shouldn't be deleted via this interface.

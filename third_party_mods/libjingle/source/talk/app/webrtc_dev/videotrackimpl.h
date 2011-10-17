@@ -44,14 +44,20 @@ namespace webrtc {
 
 class VideoTrack : public NotifierImpl<LocalVideoTrackInterface> {
  public:
-  static scoped_refptr<VideoTrackInterface> Create(const std::string& label,
-                                          uint32 ssrc);
+  // Create a video track used for remote video tracks.
+  static scoped_refptr<VideoTrack> CreateRemote(const std::string& label,
+                                                uint32 ssrc);
+  // Create a video track used for local video tracks.
+  static scoped_refptr<VideoTrack> CreateLocal(
+      const std::string& label,
+      VideoCaptureModule* video_device);
+
   virtual VideoCaptureModule* GetVideoCapture();
   virtual void SetRenderer(VideoRendererInterface* renderer);
   VideoRendererInterface* GetRenderer();
 
   virtual const char* kind() const;
-  virtual const std::string& label() const { return label_; }
+  virtual std::string label() const { return label_; }
   virtual TrackType type() const { return kVideo; }
   virtual uint32 ssrc() const { return ssrc_; }
   virtual bool enabled() const { return enabled_; }

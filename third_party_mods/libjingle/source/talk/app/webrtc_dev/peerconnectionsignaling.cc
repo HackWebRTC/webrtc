@@ -29,8 +29,7 @@
 
 #include <utility>
 
-#include "talk/app/webrtc_dev/audiotrackimpl.h"
-#include "talk/app/webrtc_dev/videotrackimpl.h"
+#include "talk/app/webrtc_dev/mediastreamtrackproxy.h"
 #include "talk/app/webrtc_dev/sessiondescriptionprovider.h"
 #include "talk/base/helpers.h"
 #include "talk/base/messagequeue.h"
@@ -357,7 +356,8 @@ void PeerConnectionSignaling::UpdateRemoteStreams(
           new_streams_it = current_streams.find(it->cname);
         }
         scoped_refptr<AudioTrackInterface> track(
-            AudioTrack::Create(it->description, it->ssrc));
+            AudioTrackProxy::CreateRemote(it->description, it->ssrc,
+                                          signaling_thread_));
         track->set_state(MediaStreamTrackInterface::kLive);
         new_streams_it->second->AddTrack(track);
 
@@ -391,7 +391,8 @@ void PeerConnectionSignaling::UpdateRemoteStreams(
           new_streams_it = current_streams.find(it->cname);
         }
         scoped_refptr<VideoTrackInterface> track(
-            VideoTrack::Create(it->description, it->ssrc));
+            VideoTrackProxy::CreateRemote(it->description, it->ssrc,
+                                          signaling_thread_));
         new_streams_it->second->AddTrack(track);
         track->set_state(MediaStreamTrackInterface::kLive);
 
