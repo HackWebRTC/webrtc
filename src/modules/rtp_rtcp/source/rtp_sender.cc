@@ -1074,6 +1074,9 @@ RTPSender::ProcessBitrate()
 
     Bitrate::Process();
     _nackBitrate.Process();
+
+    if (_audioConfigured)
+      return;
     _video->ProcessBitrate();
 }
 
