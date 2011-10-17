@@ -47,18 +47,6 @@
 #undef RGB
 #define RGB(r,g,b) r|g<<8|b<<16
 
-// Default values for custom call
-#define DEFAULT_SEND_IP					"127.0.0.1"
-#define DEFAULT_VIDEO_PORT                              11111
-#define DEFAULT_VIDEO_CODEC				"vp8"
-#define DEFAULT_VIDEO_CODEC_WIDTH                       352
-#define DEFAULT_VIDEO_CODEC_HEIGHT                      288
-#define DEFAULT_VIDEO_CODEC_BITRATE                     100
-#define DEFAULT_AUDIO_PORT                              11113
-#define DEFAULT_AUDIO_CODEC				"isac"
-#define DEFAULT_INCOMING_FILE_NAME                      "IncomingFile.avi"
-#define DEFAULT_OUTGOING_FILE_NAME                      "OutgoingFile.avi"   
-
 enum {
   KAutoTestSleepTimeMs = 5000
 };

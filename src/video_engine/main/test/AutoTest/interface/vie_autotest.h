@@ -55,45 +55,6 @@ public:
     // custom call and helper functions
     int ViECustomCall();
 
-    // general settings functions
-    bool GetVideoDevice(webrtc::ViEBase* ptrViEBase,
-                        webrtc::ViECapture* ptrViECapture,
-                        char* captureDeviceName, char* captureDeviceUniqueId);
-    bool GetIPAddress(char* IP);
-#ifndef WEBRTC_ANDROID
-    bool ValidateIP(std::string iStr);
-#endif
-    void PrintCallInformation(char* IP, char* videoCaptureDeviceName,
-                              char* videoCaptureUniqueId,
-                              webrtc::VideoCodec videoCodec, int videoTxPort,
-                              int videoRxPort, char* audioCaptureDeviceName,
-                              char* audioPlaybackDeviceName,
-                              webrtc::CodecInst audioCodec, int audioTxPort,
-                              int audioRxPort);
-
-    // video settings functions
-    bool GetVideoPorts(int* txPort, int* rxPort);
-    bool GetVideoCodecType(webrtc::ViECodec* ptrViECodec,
-                           webrtc::VideoCodec& videoCodec);
-    bool GetVideoCodecResolution(webrtc::ViECodec* ptrViECodec,
-                           webrtc::VideoCodec& videoCodec);
-    bool GetVideoCodecSize(webrtc::ViECodec* ptrViECodec,
-                           webrtc::VideoCodec& videoCodec);
-    bool GetVideoCodecBitrate(webrtc::ViECodec* ptrViECodec,
-                           webrtc::VideoCodec& videoCodec);
-
-    // audio settings functions
-    bool GetAudioDevices(webrtc::VoEBase* ptrVEBase,
-                         webrtc::VoEHardware* ptrVEHardware,
-                         char* recordingDeviceName, int& recordingDeviceIndex,
-                         char* playbackDeviceName, int& playbackDeviceIndex);
-    bool GetAudioDevices(webrtc::VoEBase* ptrVEBase,
-                         webrtc::VoEHardware* ptrVEHardware,
-                         int& recordingDeviceIndex, int& playbackDeviceIndex);
-    bool GetAudioPorts(int* txPort, int* rxPort);
-    bool GetAudioCodec(webrtc::VoECodec* ptrVeCodec,
-                       webrtc::CodecInst& audioCodec);
-
     // vie_autotest_base.cc
     int ViEBaseStandardTest();
     int ViEBaseExtendedTest();
