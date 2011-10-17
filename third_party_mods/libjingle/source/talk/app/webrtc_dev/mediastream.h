@@ -57,6 +57,8 @@ class Notifier {
  public:
   virtual void RegisterObserver(Observer* observer) = 0;
   virtual void UnregisterObserver(Observer* observer) = 0;
+
+  virtual ~Notifier() {}
 };
 
 // Information about a track.
@@ -100,6 +102,8 @@ class VideoTrackInterface : public MediaStreamTrackInterface {
  public:
   // Set the video renderer for a local or remote stream.
   // This call will start decoding the received video stream and render it.
+  // The VideoRendererInterface is stored as a scoped_refptr. This means that
+  // it is not allowed to call delete renderer after this API has been called.
   virtual void SetRenderer(VideoRendererWrapperInterface* renderer) = 0;
 
   // Get the VideoRenderer associated with this track.

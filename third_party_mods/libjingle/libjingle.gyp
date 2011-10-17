@@ -772,6 +772,7 @@
           'sources': [
             '<(libjingle_mods)/source/talk/app/webrtc_dev/mediastreamhandler_unittest.cc',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/mediastreamimpl_unittest.cc',           
+            '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnection_unittest.cc',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnection_unittests.cc',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionimpl_unittest.cc',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionmanager_unittest.cc',
