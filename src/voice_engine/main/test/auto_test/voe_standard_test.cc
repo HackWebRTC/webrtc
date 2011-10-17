@@ -2792,27 +2792,30 @@ int VoETestManager::DoStandardTest()
 #if (!defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID) && defined(WEBRTC_VOICE_ENGINE_NR))
 #ifdef WEBRTC_VOICE_ENGINE_ECHO
     bool enabled = false;
-    TEST_LOG("Echo Metric calls\n");
-    TEST_MUSTPASS(apm->GetEchoMetricsStatus(enabled));   // check default
+    TEST_LOG("EC Metrics calls\n");
+    TEST_MUSTPASS(apm->GetEcMetricsStatus(enabled));   // check default
     TEST_MUSTPASS(enabled != false);
-    TEST_MUSTPASS(apm->SetEchoMetricsStatus(true));      // enable echo metrics
+    TEST_MUSTPASS(apm->SetEcMetricsStatus(true));      // enable EC metrics
     // must enable AEC to get valid echo metrics
     TEST_MUSTPASS(apm->SetEcStatus(true, kEcAec));
-    TEST_MUSTPASS(apm->GetEchoMetricsStatus(enabled));
+    TEST_MUSTPASS(apm->GetEcMetricsStatus(enabled));
     TEST_MUSTPASS(enabled != true);
 
     TEST_LOG("Speak into microphone and check metrics for 10 seconds...\n");
-    int ERLE, ERL, RERL, A_NLP;
-    for (int t = 0; t < 5; t++)
-    {
-        SLEEP(2000);
-        TEST_MUSTPASS(apm->GetEchoMetrics(ERL, ERLE, RERL, A_NLP));
-        TEST_LOG("    Echo  : ERL=%5d, ERLE=%5d, RERL=%5d, A_NLP=%5d [dB]\n",
-                 ERL, ERLE, RERL, A_NLP);
+    int ERL, ERLE, RERL, A_NLP;
+    int delay_median = 0;
+    int delay_std = 0;
+    for (int t = 0; t < 5; t++) {
+      SLEEP(2000);
+      TEST_MUSTPASS(apm->GetEchoMetrics(ERL, ERLE, RERL, A_NLP));
+      TEST_MUSTPASS(apm->GetEcDelayMetrics(delay_median, delay_std));
+      TEST_LOG("    Echo  : ERL=%5d, ERLE=%5d, RERL=%5d, A_NLP=%5d [dB], "
+          " delay median=%3d, delay std=%3d [ms]\n",
+          ERL, ERLE, RERL, A_NLP, delay_median, delay_std);
     }
-    TEST_MUSTPASS(apm->SetEchoMetricsStatus(false));     // disable echo metrics
+    TEST_MUSTPASS(apm->SetEcMetricsStatus(false));     // disable echo metrics
 #else
-    TEST_LOG("Skipping echo metrics tests -"
+    TEST_LOG("Skipping Echo Control metrics tests -"
         " WEBRTC_VOICE_ENGINE_ECHO not defined \n");
 #endif  // #ifdef WEBRTC_VOICE_ENGINE_ECHO
 #else
@@ -3255,9 +3258,9 @@ int VoETestManager::DoStandardTest()
     TEST_MUSTPASS(report->ResetCallReportStatistics(-1));
 
     bool onOff;
-    TEST_MUSTPASS(apm->GetEchoMetricsStatus(onOff));
+    TEST_MUSTPASS(apm->GetEcMetricsStatus(onOff));
     TEST_MUSTPASS(onOff != false);
-    TEST_MUSTPASS(apm->SetEchoMetricsStatus(true));
+    TEST_MUSTPASS(apm->SetEcMetricsStatus(true));
     SLEEP(3000);
     EchoStatistics echo;
     TEST(GetEchoMetricSummary);ANL();

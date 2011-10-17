@@ -70,11 +70,13 @@ public:
 
     virtual int VoiceActivityIndicator(int channel);
 
-    virtual int SetEchoMetricsStatus(bool enable);
+    virtual int SetEcMetricsStatus(bool enable);
 
-    virtual int GetEchoMetricsStatus(bool& enabled);
+    virtual int GetEcMetricsStatus(bool& enabled);
 
     virtual int GetEchoMetrics(int& ERL, int& ERLE, int& RERL, int& A_NLP);
+
+    virtual int GetEcDelayMetrics(int& delay_median, int& delay_std);
 
     virtual int StartDebugRecording(const char* fileNameUTF8);
 

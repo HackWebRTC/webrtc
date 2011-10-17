@@ -946,9 +946,9 @@ int VoEAudioProcessingImpl::VoiceActivityIndicator(int channel)
     return activity;
 }
 
-int VoEAudioProcessingImpl::SetEchoMetricsStatus(bool enable) {
+int VoEAudioProcessingImpl::SetEcMetricsStatus(bool enable) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
-               "SetEchoMetricsStatus(enable=%d)", enable);
+               "SetEcMetricsStatus(enable=%d)", enable);
   ANDROID_NOT_SUPPORTED();
   IPHONE_NOT_SUPPORTED();
 
@@ -958,11 +958,13 @@ int VoEAudioProcessingImpl::SetEchoMetricsStatus(bool enable) {
     return -1;
   }
 
-  if (_audioProcessingModulePtr->echo_cancellation()->enable_metrics(enable) !=
-      0) {
+  if ((_audioProcessingModulePtr->echo_cancellation()->enable_metrics(enable)
+      != 0) ||
+      (_audioProcessingModulePtr->echo_cancellation()->enable_delay_logging(
+          enable) != 0)) {
     _engineStatistics.SetLastError(
         VE_APM_ERROR, kTraceError,
-        "SetEchoMetricsStatus() unable to set echo metrics mode");
+        "SetEcMetricsStatus() unable to set EC metrics mode");
     return -1;
   }
   return 0;
@@ -973,9 +975,9 @@ int VoEAudioProcessingImpl::SetEchoMetricsStatus(bool enable) {
 #endif
 }
 
-int VoEAudioProcessingImpl::GetEchoMetricsStatus(bool& enabled) {
+int VoEAudioProcessingImpl::GetEcMetricsStatus(bool& enabled) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
-               "GetEchoMetricsStatus(enabled=?)");
+               "GetEcMetricsStatus(enabled=?)");
   ANDROID_NOT_SUPPORTED();
   IPHONE_NOT_SUPPORTED();
 
@@ -985,11 +987,22 @@ int VoEAudioProcessingImpl::GetEchoMetricsStatus(bool& enabled) {
     return -1;
   }
 
-  enabled =
-      _audioProcessingModulePtr->echo_cancellation()->are_metrics_enabled();
+  bool echo_mode =
+    _audioProcessingModulePtr->echo_cancellation()->are_metrics_enabled();
+  bool delay_mode =
+    _audioProcessingModulePtr->echo_cancellation()->is_delay_logging_enabled();
+
+  if (echo_mode != delay_mode) {
+    _engineStatistics.SetLastError(
+        VE_APM_ERROR, kTraceError,
+        "GetEcMetricsStatus() delay logging and echo mode are not the same");
+    return -1;
+  }
+
+  enabled = echo_mode;
 
   WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_instanceId, -1),
-               "GetEchoMetricsStatus() => enabled=%d", enabled);
+               "GetEcMetricsStatus() => enabled=%d", enabled);
   return 0;
 #else
   _engineStatistics.SetLastError(
@@ -1001,55 +1014,92 @@ int VoEAudioProcessingImpl::GetEchoMetricsStatus(bool& enabled) {
 int VoEAudioProcessingImpl::GetEchoMetrics(int& ERL,
                                            int& ERLE,
                                            int& RERL,
-                                           int& A_NLP)
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
-                 "GetEchoMetrics(ERL=?, ERLE=?, RERL=?, A_NLP=?)");
-    ANDROID_NOT_SUPPORTED();
-    IPHONE_NOT_SUPPORTED();
+                                           int& A_NLP) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
+               "GetEchoMetrics(ERL=?, ERLE=?, RERL=?, A_NLP=?)");
+  ANDROID_NOT_SUPPORTED();
+  IPHONE_NOT_SUPPORTED();
 
 #ifdef WEBRTC_VOICE_ENGINE_ECHO
-    if (!_engineStatistics.Initialized())
-    {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
-        return -1;
-    }
+  if (!_engineStatistics.Initialized()) {
+    _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
+    return -1;
+  }
+  if (!_audioProcessingModulePtr->echo_cancellation()->is_enabled()) {
+    _engineStatistics.SetLastError(
+        VE_APM_ERROR, kTraceWarning,
+        "GetEchoMetrics() AudioProcessingModule AEC is not enabled");
+    return -1;
+  }
 
-    bool echoMode =
-        _audioProcessingModulePtr->echo_cancellation()->is_enabled();
-    EchoCancellation::Metrics echoMetrics;
+  // Get Echo Metrics from Audio Processing Module.
+  EchoCancellation::Metrics echoMetrics;
+  if (_audioProcessingModulePtr->echo_cancellation()->GetMetrics(&echoMetrics))
+  {
+    WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId,-1),
+                 "GetEchoMetrics(), AudioProcessingModule metrics error");
+    return -1;
+  }
 
-    if (echoMode == false)
-    {
-        _engineStatistics.SetLastError(
-            VE_APM_ERROR, kTraceWarning,
-            "GetEchoMetrics() AudioProcessingModule echo metrics is not"
-            "enabled");
-        return -1;
-    }
-    if (_audioProcessingModulePtr->echo_cancellation()->GetMetrics(
-        &echoMetrics))
-    {
-        WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId,-1),
-                     "GetEchoMetrics(), AudioProcessingModule echo metrics"
-                     "error");
-        return -1;
-    }
+  // Echo quality metrics.
+  ERL = echoMetrics.echo_return_loss.instant;
+  ERLE = echoMetrics.echo_return_loss_enhancement.instant;
+  RERL = echoMetrics.residual_echo_return_loss.instant;
+  A_NLP = echoMetrics.a_nlp.instant;
 
-    ERL = echoMetrics.echo_return_loss.instant;
-    ERLE = echoMetrics.echo_return_loss_enhancement.instant;
-    RERL = echoMetrics.residual_echo_return_loss.instant;
-    A_NLP = echoMetrics.a_nlp.instant;
-
-    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_instanceId,-1),
+  WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_instanceId,-1),
                "GetEchoMetrics() => ERL=%d, ERLE=%d, RERL=%d, A_NLP=%d",
                ERL, ERLE, RERL, A_NLP);
-    return 0;
+  return 0;
 #else
-    _engineStatistics.SetLastError(
-        VE_FUNC_NOT_SUPPORTED, kTraceError,
-        "SetEcStatus() EC is not supported");
+  _engineStatistics.SetLastError(
+      VE_FUNC_NOT_SUPPORTED, kTraceError, "SetEcStatus() EC is not supported");
+  return -1;
+#endif
+}
+
+int VoEAudioProcessingImpl::GetEcDelayMetrics(int& delay_median,
+                                              int& delay_std) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
+               "GetEcDelayMetrics(median=?, std=?)");
+  ANDROID_NOT_SUPPORTED();
+  IPHONE_NOT_SUPPORTED();
+
+#ifdef WEBRTC_VOICE_ENGINE_ECHO
+  if (!_engineStatistics.Initialized()) {
+    _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
+  }
+  if (!_audioProcessingModulePtr->echo_cancellation()->is_enabled()) {
+    _engineStatistics.SetLastError(
+        VE_APM_ERROR, kTraceWarning,
+        "GetEcDelayMetrics() AudioProcessingModule AEC is not enabled");
+    return -1;
+  }
+
+  int median = 0;
+  int std = 0;
+  // Get delay-logging values from Audio Processing Module.
+  if (_audioProcessingModulePtr->echo_cancellation()->GetDelayMetrics(
+      &median, &std)) {
+    WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId,-1),
+                 "GetEcDelayMetrics(), AudioProcessingModule delay-logging "
+                 "error");
+    return -1;
+  }
+
+  // EC delay-logging metrics
+  delay_median = median;
+  delay_std = std;
+
+  WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_instanceId,-1),
+               "GetEcDelayMetrics() => delay_median=%d, delay_std=%d",
+               delay_median, delay_std);
+  return 0;
+#else
+  _engineStatistics.SetLastError(
+      VE_FUNC_NOT_SUPPORTED, kTraceError, "SetEcStatus() EC is not supported");
+  return -1;
 #endif
 }
 

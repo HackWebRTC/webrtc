@@ -89,7 +89,7 @@ int VoECallReportImpl::ResetCallReportStatistics(int channel)
         _audioProcessingModulePtr->echo_cancellation()->are_metrics_enabled();
 
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, -1),
-                 "  current AudioProcessingModule echo metric currentState %d",
+                 "  current AudioProcessingModule echo metric state %d)",
                  echoMode);
     // Reset the APM statistics
     if (_audioProcessingModulePtr->echo_cancellation()->enable_metrics(true)

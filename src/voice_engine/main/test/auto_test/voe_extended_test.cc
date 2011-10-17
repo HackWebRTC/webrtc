@@ -1699,13 +1699,14 @@ int VoEExtendedTest::TestCallReport()
     EchoStatistics echo;
     TEST(GetEchoMetricSummary);
     ANL();
-    TEST_MUSTPASS(apm->GetEchoMetricsStatus(enabled));
+    TEST_MUSTPASS(apm->GetEcMetricsStatus(enabled));
     TEST_MUSTPASS(enabled != false);
-    TEST_MUSTPASS(apm->SetEchoMetricsStatus(true));
+    TEST_MUSTPASS(apm->SetEcMetricsStatus(true));
     TEST_MUSTPASS(report->GetEchoMetricSummary(echo)); // all outputs will be
                                        // -100 in loopback (skip further tests)
     AOK();
     ANL();
+
     // TODO(xians): investigate the cause of test failure before enabling.
     /*
     StatVal delays;
@@ -8117,26 +8118,26 @@ digitalCompressionGaindBDefault);
     SLEEP(NSSleep);
 
     //////////////////////////////////
-    // Echo Metrics
+    // Ec Metrics
 
 #if (!defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID))
-    TEST(GetEchoMetricsStatus);
+    TEST(GetEcMetricsStatus);
     ANL();
-    TEST(SetEchoMetricsStatus);
+    TEST(SetEcMetricsStatus);
     ANL();
-    TEST_MUSTPASS(apm->GetEchoMetricsStatus(enabled));
+    TEST_MUSTPASS(apm->GetEcMetricsStatus(enabled));
     MARK();
     TEST_MUSTPASS(enabled != false);
     MARK(); // should be OFF by default
-    TEST_MUSTPASS(apm->SetEchoMetricsStatus(true));
+    TEST_MUSTPASS(apm->SetEcMetricsStatus(true));
     MARK();
-    TEST_MUSTPASS(apm->GetEchoMetricsStatus(enabled));
+    TEST_MUSTPASS(apm->GetEcMetricsStatus(enabled));
     MARK();
     TEST_MUSTPASS(enabled != true);
     MARK();
-    TEST_MUSTPASS(apm->SetEchoMetricsStatus(false));
+    TEST_MUSTPASS(apm->SetEcMetricsStatus(false));
     MARK();
-    TEST_MUSTPASS(apm->GetEchoMetricsStatus(enabled));
+    TEST_MUSTPASS(apm->GetEcMetricsStatus(enabled));
     MARK();
     TEST_MUSTPASS(enabled != false);
     MARK();
@@ -8148,21 +8149,43 @@ digitalCompressionGaindBDefault);
 
     int ERL, ERLE, RERL, A_NLP;
     TEST_MUSTPASS(-1 != apm->GetEchoMetrics(ERL, ERLE, RERL, A_NLP));
-    MARK(); // should fail since not activated
+    MARK(); // Should fail since not activated.
     err = base->LastError();
     TEST_MUSTPASS(err != VE_APM_ERROR);
-    TEST_MUSTPASS(apm->SetEchoMetricsStatus(true));
+    TEST_MUSTPASS(apm->SetEcMetricsStatus(true));
     TEST_MUSTPASS(-1 != apm->GetEchoMetrics(ERL, ERLE, RERL, A_NLP));
-    MARK(); // should fail since AEC is off
+    MARK(); // Should fail since AEC is off.
     err = base->LastError();
     TEST_MUSTPASS(err != VE_APM_ERROR);
     TEST_MUSTPASS(apm->SetEcStatus(true));
     TEST_MUSTPASS(apm->GetEchoMetrics(ERL, ERLE, RERL, A_NLP));
-    MARK(); // should work now
-    TEST_LOG(
-        "\nEcho: ERL=%d, ERLE=%d, RERL=%d, A_NLP=%d [dB]\n",
-        ERL, ERLE, RERL, A_NLP);
-    TEST_MUSTPASS(apm->SetEchoMetricsStatus(false));
+    MARK(); // Should work now.
+    TEST_LOG("\nEcho: ERL=%d, ERLE=%d, RERL=%d, A_NLP=%d [dB]\n",
+             ERL, ERLE, RERL, A_NLP);
+    TEST_MUSTPASS(apm->SetEcMetricsStatus(false));
+    TEST_MUSTPASS(apm->SetEcStatus(false));
+    AOK();
+    ANL();
+
+    TEST(GetEcDelayMetrics);
+    ANL();
+
+    int delay_median = 0;
+    int delay_std = 0;
+    TEST_MUSTPASS(-1 != apm->GetEcDelayMetrics(delay_median, delay_std));
+    MARK(); // Should fail since not activated.
+    err = base->LastError();
+    TEST_MUSTPASS(err != VE_APM_ERROR);
+    TEST_MUSTPASS(apm->SetEcMetricsStatus(true));
+    TEST_MUSTPASS(-1 != apm->GetEcDelayMetrics(delay_median, delay_std));
+    MARK(); // Should fail since AEC is off.
+    err = base->LastError();
+    TEST_MUSTPASS(err != VE_APM_ERROR);
+    TEST_MUSTPASS(apm->SetEcStatus(true));
+    TEST_MUSTPASS(apm->GetEcDelayMetrics(delay_median, delay_std));
+    MARK(); // Should work now.
+    TEST_LOG("\nEC Delay: median=%d, std=%d [ms]\n", delay_median, delay_std);
+    TEST_MUSTPASS(apm->SetEcMetricsStatus(false));
     TEST_MUSTPASS(apm->SetEcStatus(false));
     AOK();
     ANL();

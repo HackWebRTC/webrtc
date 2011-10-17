@@ -149,16 +149,21 @@ public:
     // and 0 if silence. The output is always 1 if VAD is disabled.
     virtual int VoiceActivityIndicator(int channel) = 0;
 
-    // Enables or disables the possibility to retrieve instantaneous
-    // echo metrics during an active call.
-    virtual int SetEchoMetricsStatus(bool enable) = 0;
+    // Enables or disables the possibility to retrieve echo metrics and delay
+    // logging values during an active call. The metrics are only supported in
+    // AEC.
+    virtual int SetEcMetricsStatus(bool enable) = 0;
 
-    // Gets the current echo metric status.
-    virtual int GetEchoMetricsStatus(bool& enabled) = 0;
+    // Gets the current EC metric status.
+    virtual int GetEcMetricsStatus(bool& enabled) = 0;
 
-    // Gets the instantaneous echo level metrics for the near-end and
-    // far-end signals.
+    // Gets the instantaneous echo level metrics.
     virtual int GetEchoMetrics(int& ERL, int& ERLE, int& RERL, int& A_NLP) = 0;
+
+    // Gets the EC internal |delay_median| and |delay_std| in ms between
+    // near-end and far-end. The values are calculated over the time period
+    // since the last GetEcDelayMetrics() call.
+    virtual int GetEcDelayMetrics(int& delay_median, int& delay_std) = 0;
 
     // Enables recording of Audio Processing (AP) debugging information.
     // The file can later be used for off-line analysis of the AP performance.
