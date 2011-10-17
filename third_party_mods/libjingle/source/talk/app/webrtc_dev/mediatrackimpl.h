@@ -25,54 +25,66 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/app/webrtc_dev/mediastreamimpl.h"
-#include "talk/base/logging.h"
+#ifndef TALK_APP_WEBRTC_MEDIATRACKIMPL_H_
+#define TALK_APP_WEBRTC_MEDIATRACKIMPL_H_
+
+#include <string>
+
+#include "talk/app/webrtc_dev/mediastream.h"
+#include "talk/app/webrtc_dev/notifierimpl.h"
 
 namespace webrtc {
 
-scoped_refptr<LocalMediaStreamInterface> CreateLocalMediaStream(
-    const std::string& label) {
-  return MediaStream::Create(label);
-}
+template <typename T>
+class MediaTrack : public NotifierImpl<T> {
+ public:
+  typedef typename T::TrackState TypedTrackState;
 
-scoped_refptr<MediaStream> MediaStream::Create(
-    const std::string& label) {
-  talk_base::RefCountImpl<MediaStream>* stream =
-      new talk_base::RefCountImpl<MediaStream>(label);
-  return stream;
-}
-
-MediaStream::MediaStream(const std::string& label)
-    : label_(label),
-      ready_state_(MediaStreamInterface::kInitializing),
-      audio_track_list_(
-          new talk_base::RefCountImpl<
-          MediaStreamTrackList<AudioTrackInterface> >()),
-      video_track_list_(
-          new talk_base::RefCountImpl<
-          MediaStreamTrackList<VideoTrackInterface> >()) {
-}
-
-void MediaStream::set_ready_state(
-    MediaStreamInterface::ReadyState new_state) {
-  if (ready_state_ != new_state) {
-    ready_state_ = new_state;
-    NotifierImpl<LocalMediaStreamInterface>::FireOnChanged();
+  virtual std::string label() const { return label_; }
+  virtual uint32 ssrc() const { return ssrc_; }
+  virtual TypedTrackState state() const { return state_; }
+  virtual bool enabled() const { return enabled_; }
+  virtual bool set_enabled(bool enable) {
+    bool fire_on_change = (enable != enabled_);
+    enabled_ = enable;
+    if (fire_on_change) {
+      NotifierImpl<T>::FireOnChanged();
+    }
   }
-}
 
-bool MediaStream::AddTrack(AudioTrackInterface* track) {
-  if (ready_state() != kInitializing)
-    return false;
-  audio_track_list_->AddTrack(track);
-  return true;
-}
+  virtual bool set_ssrc(uint32 ssrc) {
+    ASSERT(ssrc_ == 0);
+    ASSERT(ssrc != 0);
+    if (ssrc_ != 0)
+      return false;
+    ssrc_ = ssrc;
+    NotifierImpl<T>::FireOnChanged();
+    return true;
+  }
 
-bool MediaStream::AddTrack(VideoTrackInterface* track) {
-  if (ready_state() != kInitializing)
-    return false;
-  video_track_list_->AddTrack(track);
-  return true;
-}
+  virtual bool set_state(TypedTrackState new_state) {
+    bool fire_on_change = (state_ != new_state);
+    state_ = new_state;
+    if (fire_on_change)
+      NotifierImpl<T>::FireOnChanged();
+    return true;
+  }
+
+ protected:
+  MediaTrack(const std::string& label, uint32 ssrc)
+      : enabled_(true),
+        label_(label),
+        ssrc_(ssrc),
+        state_(T::kInitializing) {
+  }
+
+ private:
+  bool enabled_;
+  std::string label_;
+  uint32 ssrc_;
+  TypedTrackState state_;
+};
 
 }  // namespace webrtc
+
+#endif  // TALK_APP_WEBRTC_MEDIATRACKIMPL_H_

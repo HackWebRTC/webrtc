@@ -70,14 +70,8 @@ class MediaStreamTrackInterface : public talk_base::RefCount,
     kFailed = 3,  // Track negotiation failed.
   };
 
-  enum TrackType {
-    kAudio = 0,
-    kVideo = 1,
-  };
-
   virtual const char* kind() const = 0;
-  virtual std::string label()  const = 0;
-  virtual TrackType type() const = 0;
+  virtual std::string label() const = 0;
   virtual uint32 ssrc() const = 0;
   virtual bool enabled() const = 0;
   virtual TrackState state() const = 0;
@@ -88,27 +82,28 @@ class MediaStreamTrackInterface : public talk_base::RefCount,
 };
 
 // Reference counted wrapper for a VideoRenderer.
-class VideoRendererInterface : public talk_base::RefCount {
+class VideoRendererWrapperInterface : public talk_base::RefCount {
  public:
   virtual cricket::VideoRenderer* renderer() = 0;
 
  protected:
-  virtual ~VideoRendererInterface() {}
+  virtual ~VideoRendererWrapperInterface() {}
 };
 
 // Creates a reference counted object of type webrtc::VideoRenderer.
-// webrtc::VideoRendererInterface take ownership of cricket::VideoRenderer.
-scoped_refptr<VideoRendererInterface> CreateVideoRenderer(
+// webrtc::VideoRendererWrapperInterface take ownership of
+// cricket::VideoRenderer.
+scoped_refptr<VideoRendererWrapperInterface> CreateVideoRenderer(
     cricket::VideoRenderer* renderer);
 
 class VideoTrackInterface : public MediaStreamTrackInterface {
  public:
   // Set the video renderer for a local or remote stream.
   // This call will start decoding the received video stream and render it.
-  virtual void SetRenderer(VideoRendererInterface* renderer) = 0;
+  virtual void SetRenderer(VideoRendererWrapperInterface* renderer) = 0;
 
   // Get the VideoRenderer associated with this track.
-  virtual VideoRendererInterface* GetRenderer() = 0;
+  virtual VideoRendererWrapperInterface* GetRenderer() = 0;
 
  protected:
   virtual ~VideoTrackInterface() {}
@@ -117,6 +112,8 @@ class VideoTrackInterface : public MediaStreamTrackInterface {
 class LocalVideoTrackInterface : public VideoTrackInterface {
  public:
   // Get the VideoCapture device associated with this track.
+  // TODO(mallinath) - Update with VideoCapturerWrapper to support both
+  // cricket and webrtc capture interface.
   virtual VideoCaptureModule* GetVideoCapture() = 0;
 
  protected:
@@ -138,21 +135,25 @@ class LocalAudioTrackInterface : public AudioTrackInterface {
 };
 
 // List of of tracks.
-class MediaStreamTrackListInterface : public talk_base::RefCount,
-                                      public Notifier {
+template <class TrackType>
+class MediaStreamTrackListInterface : public talk_base::RefCount {
  public:
   virtual size_t count() = 0;
-  virtual MediaStreamTrackInterface* at(size_t index) = 0;
+  virtual TrackType* at(size_t index) = 0;
 
  protected:
   virtual ~MediaStreamTrackListInterface() {}
 };
 
+typedef MediaStreamTrackListInterface<AudioTrackInterface> AudioTracks;
+typedef MediaStreamTrackListInterface<VideoTrackInterface> VideoTracks;
+
 class MediaStreamInterface : public talk_base::RefCount,
                              public Notifier {
  public:
   virtual std::string label() const = 0;
-  virtual MediaStreamTrackListInterface* tracks() = 0;
+  virtual AudioTracks* audio_tracks() = 0;
+  virtual VideoTracks* video_tracks() = 0;
 
   enum ReadyState {
     kInitializing,
@@ -171,7 +172,8 @@ class MediaStreamInterface : public talk_base::RefCount,
 
 class LocalMediaStreamInterface : public MediaStreamInterface {
  public:
-  virtual bool AddTrack(MediaStreamTrackInterface* track) = 0;
+  virtual bool AddTrack(AudioTrackInterface* track) = 0;
+  virtual bool AddTrack(VideoTrackInterface* track) = 0;
 };
 
 }  // namespace webrtc

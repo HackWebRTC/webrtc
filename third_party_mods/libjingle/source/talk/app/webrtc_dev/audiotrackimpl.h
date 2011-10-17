@@ -28,11 +28,11 @@
 #ifndef TALK_APP_WEBRTC_AUDIOTRACKIMPL_H_
 #define TALK_APP_WEBRTC_AUDIOTRACKIMPL_H_
 
-#include <string>
-
+#include "talk/app/webrtc_dev/mediastream.h"
+#include "talk/app/webrtc_dev/mediatrackimpl.h"
 #include "talk/app/webrtc_dev/notifierimpl.h"
 #include "talk/app/webrtc_dev/scoped_refptr.h"
-#include "talk/app/webrtc_dev/mediastream.h"
+
 #ifdef WEBRTC_RELATIVE_PATH
 #include "modules/audio_device/main/interface/audio_device.h"
 #else
@@ -41,7 +41,7 @@
 
 namespace webrtc {
 
-class AudioTrack : public NotifierImpl<LocalAudioTrackInterface> {
+class AudioTrack : public MediaTrack<LocalAudioTrackInterface> {
  public:
   // Creates a remote audio track.
   static scoped_refptr<AudioTrack> CreateRemote(const std::string& label,
@@ -55,24 +55,12 @@ class AudioTrack : public NotifierImpl<LocalAudioTrackInterface> {
 
   // Implement MediaStreamTrack
   virtual const char* kind() const;
-  virtual std::string label() const { return label_; }
-  virtual TrackType type() const { return kAudio; }
-  virtual uint32 ssrc() const { return ssrc_; }
-  virtual TrackState state() const { return state_; }
-  virtual bool enabled() const { return enabled_; }
-  virtual bool set_enabled(bool enable);
-  virtual bool set_ssrc(uint32 ssrc);
-  virtual bool set_state(TrackState new_state);
 
  protected:
   AudioTrack(const std::string& label, uint32 ssrc);
   AudioTrack(const std::string& label, AudioDeviceModule* audio_device);
 
  private:
-  bool enabled_;
-  std::string label_;
-  uint32 ssrc_;
-  TrackState state_;
   scoped_refptr<AudioDeviceModule> audio_device_;
 };
 

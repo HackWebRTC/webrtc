@@ -240,7 +240,7 @@ TEST_F(PeerConnectionSignalingTest, SimpleOneWayCall) {
   // Create a local stream.
   std::string label(kStreamLabel1);
   scoped_refptr<LocalMediaStreamInterface> stream(
-      MediaStreamImpl::Create(label));
+      MediaStream::Create(label));
   MockMediaStreamObserver stream_observer1(stream);
 
   // Add a local audio track.
@@ -315,7 +315,7 @@ TEST_F(PeerConnectionSignalingTest, Glare) {
   // Create a local stream.
   std::string label(kStreamLabel1);
   scoped_refptr<LocalMediaStreamInterface> stream(
-      MediaStreamImpl::Create(label));
+      MediaStream::Create(label));
 
   // Add a local audio track.
   scoped_refptr<LocalAudioTrackInterface> audio_track(AudioTrack::CreateLocal(
@@ -379,7 +379,7 @@ TEST_F(PeerConnectionSignalingTest, AddRemoveStream) {
   // Create a local stream.
   std::string label(kStreamLabel1);
   scoped_refptr<LocalMediaStreamInterface> stream(
-      MediaStreamImpl::Create(label));
+      MediaStream::Create(label));
   MockMediaStreamObserver stream_observer1(stream);
 
   // Add a local audio track.

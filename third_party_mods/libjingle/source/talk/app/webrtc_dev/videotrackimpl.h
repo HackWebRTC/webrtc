@@ -28,9 +28,8 @@
 #ifndef TALK_APP_WEBRTC_VIDEOTRACKIMPL_H_
 #define TALK_APP_WEBRTC_VIDEOTRACKIMPL_H_
 
-#include <string>
-
 #include "talk/app/webrtc_dev/mediastream.h"
+#include "talk/app/webrtc_dev/mediatrackimpl.h"
 #include "talk/app/webrtc_dev/notifierimpl.h"
 #include "talk/app/webrtc_dev/scoped_refptr.h"
 
@@ -42,7 +41,7 @@
 
 namespace webrtc {
 
-class VideoTrack : public NotifierImpl<LocalVideoTrackInterface> {
+class VideoTrack : public MediaTrack<LocalVideoTrackInterface> {
  public:
   // Create a video track used for remote video tracks.
   static scoped_refptr<VideoTrack> CreateRemote(const std::string& label,
@@ -53,30 +52,18 @@ class VideoTrack : public NotifierImpl<LocalVideoTrackInterface> {
       VideoCaptureModule* video_device);
 
   virtual VideoCaptureModule* GetVideoCapture();
-  virtual void SetRenderer(VideoRendererInterface* renderer);
-  VideoRendererInterface* GetRenderer();
+  virtual void SetRenderer(VideoRendererWrapperInterface* renderer);
+  VideoRendererWrapperInterface* GetRenderer();
 
   virtual const char* kind() const;
-  virtual std::string label() const { return label_; }
-  virtual TrackType type() const { return kVideo; }
-  virtual uint32 ssrc() const { return ssrc_; }
-  virtual bool enabled() const { return enabled_; }
-  virtual TrackState state() const { return state_; }
-  virtual bool set_enabled(bool enable);
-  virtual bool set_ssrc(uint32 ssrc);
-  virtual bool set_state(TrackState new_state);
 
  protected:
   VideoTrack(const std::string& label, uint32 ssrc);
   VideoTrack(const std::string& label, VideoCaptureModule* video_device);
 
  private:
-  bool enabled_;
-  std::string label_;
-  uint32 ssrc_;
-  TrackState state_;
   scoped_refptr<VideoCaptureModule> video_device_;
-  scoped_refptr<VideoRendererInterface> video_renderer_;
+  scoped_refptr<VideoRendererWrapperInterface> video_renderer_;
 };
 
 }  // namespace webrtc

@@ -33,19 +33,13 @@ namespace webrtc {
 static const char kAudioTrackKind[] = "audio";
 
 AudioTrack::AudioTrack(const std::string& label, uint32 ssrc)
-    : enabled_(true),
-      label_(label),
-      ssrc_(ssrc),
-      state_(kInitializing),
+    : MediaTrack<LocalAudioTrackInterface>(label, ssrc),
       audio_device_(NULL) {
 }
 
 AudioTrack::AudioTrack(const std::string& label,
                        AudioDeviceModule* audio_device)
-    : enabled_(true),
-      label_(label),
-      ssrc_(0),
-      state_(kInitializing),
+    : MediaTrack<LocalAudioTrackInterface>(label, 0),
       audio_device_(audio_device) {
 }
 
@@ -57,31 +51,6 @@ AudioDeviceModule* AudioTrack::GetAudioDevice() {
   // Implement MediaStreamTrack
 const char* AudioTrack::kind() const {
   return kAudioTrackKind;
-}
-
-bool AudioTrack::set_enabled(bool enable) {
-  bool fire_on_change = (enable != enabled_);
-  enabled_ = enable;
-  if (fire_on_change)
-    NotifierImpl<LocalAudioTrackInterface>::FireOnChanged();
-}
-
-bool AudioTrack::set_ssrc(uint32 ssrc) {
-  ASSERT(ssrc_ == 0);
-  ASSERT(ssrc != 0);
-  if (ssrc_ != 0)
-    return false;
-  ssrc_ = ssrc;
-  NotifierImpl<LocalAudioTrackInterface>::FireOnChanged();
-  return true;
-}
-
-bool AudioTrack::set_state(TrackState new_state) {
-  bool fire_on_change = (state_ != new_state);
-  state_ = new_state;
-  if (fire_on_change)
-    NotifierImpl<LocalAudioTrackInterface>::FireOnChanged();
-  return true;
 }
 
 scoped_refptr<AudioTrack> AudioTrack::CreateRemote(const std::string& label,

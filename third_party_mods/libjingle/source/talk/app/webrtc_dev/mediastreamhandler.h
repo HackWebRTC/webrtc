@@ -66,7 +66,7 @@ class VideoTrackHandler : public Observer,
  private:
   MediaStreamTrackInterface::TrackState state_;
   bool enabled_;
-  scoped_refptr<VideoRendererInterface> renderer_;
+  scoped_refptr<VideoRendererWrapperInterface> renderer_;
   talk_base::Thread* signaling_thread_;
 };
 

@@ -64,7 +64,7 @@ class VideoDeviceMessageData : public talk_base::MessageData {
 
 class VideoRendererMessageData : public talk_base::MessageData {
  public:
-  scoped_refptr<webrtc::VideoRendererInterface> video_renderer_;
+  scoped_refptr<webrtc::VideoRendererWrapperInterface> video_renderer_;
 };
 
 }  // namespace anonymous
@@ -85,12 +85,6 @@ void MediaStreamTrackProxy<T>::Init(MediaStreamTrackInterface* track) {
 template <class T>
 const char* MediaStreamTrackProxy<T>::kind() const {
   return track_->kind();
-}
-
-template <class T>
-MediaStreamTrackInterface::TrackType
-    MediaStreamTrackProxy<T>::type() const {
-  return track_->type();
 }
 
 template <class T>
@@ -353,7 +347,7 @@ VideoCaptureModule* VideoTrackProxy::GetVideoCapture() {
   return video_track_->GetVideoCapture();
 }
 
-void VideoTrackProxy::SetRenderer(VideoRendererInterface* renderer) {
+void VideoTrackProxy::SetRenderer(VideoRendererWrapperInterface* renderer) {
   if (!signaling_thread_->IsCurrent()) {
     VideoRendererMessageData msg;
     msg.video_renderer_ = renderer;
@@ -363,7 +357,7 @@ void VideoTrackProxy::SetRenderer(VideoRendererInterface* renderer) {
   return video_track_->SetRenderer(renderer);
 }
 
-VideoRendererInterface* VideoTrackProxy::GetRenderer() {
+VideoRendererWrapperInterface* VideoTrackProxy::GetRenderer() {
   if (!signaling_thread_->IsCurrent()) {
     VideoRendererMessageData msg;
     Send(MSG_GET_VIDEORENDERER, &msg);

@@ -49,7 +49,6 @@ class MediaStreamTrackProxy : public T,
   // Implement MediaStreamTrack.
 
   virtual const char* kind() const;
-  virtual MediaStreamTrackInterface::TrackType type() const;
   virtual std::string label() const;
   virtual uint32 ssrc() const;
   virtual bool enabled() const;
@@ -118,8 +117,8 @@ class VideoTrackProxy : public MediaStreamTrackProxy<LocalVideoTrackInterface> {
       talk_base::Thread* signaling_thread);
 
   virtual VideoCaptureModule* GetVideoCapture();
-  virtual void SetRenderer(VideoRendererInterface* renderer);
-  VideoRendererInterface* GetRenderer();
+  virtual void SetRenderer(VideoRendererWrapperInterface* renderer);
+  VideoRendererWrapperInterface* GetRenderer();
 
  protected:
   VideoTrackProxy(const std::string& label,

@@ -110,7 +110,7 @@ LocalVideoTrackHandler::LocalVideoTrackHandler(
 }
 
 void LocalVideoTrackHandler::OnRendererChanged() {
-  VideoRendererInterface* renderer(video_track_->GetRenderer());
+  VideoRendererWrapperInterface* renderer(video_track_->GetRenderer());
   if (renderer)
     provider_->SetLocalRenderer(video_track_->ssrc(), renderer->renderer());
   else
@@ -122,7 +122,7 @@ void LocalVideoTrackHandler::OnStateChanged(
   if (state == VideoTrackInterface::kLive) {
     provider_->SetCaptureDevice(local_video_track_->ssrc(),
                                 local_video_track_->GetVideoCapture());
-    VideoRendererInterface* renderer(video_track_->GetRenderer());
+    VideoRendererWrapperInterface* renderer(video_track_->GetRenderer());
     if (renderer)
       provider_->SetLocalRenderer(video_track_->ssrc(), renderer->renderer());
     else
@@ -142,7 +142,7 @@ RemoteVideoTrackHandler::RemoteVideoTrackHandler(
 }
 
 void RemoteVideoTrackHandler::OnRendererChanged() {
-  VideoRendererInterface* renderer(video_track_->GetRenderer());
+  VideoRendererWrapperInterface* renderer(video_track_->GetRenderer());
   if (renderer)
     provider_->SetRemoteRenderer(video_track_->ssrc(), renderer->renderer());
   else
@@ -183,17 +183,13 @@ LocalMediaStreamHandler::LocalMediaStreamHandler(
     MediaStreamInterface* stream,
     MediaProviderInterface* provider)
     : MediaStreamHandler(stream, provider) {
-  MediaStreamTrackListInterface* tracklist(stream->tracks());
+  VideoTracks* tracklist(stream->video_tracks());
 
   for (size_t j = 0; j < tracklist->count(); ++j) {
-    MediaStreamTrackInterface* track = tracklist->at(j);
-    if (track->type() == MediaStreamTrackInterface::kVideo) {
-      LocalVideoTrackInterface* video_track =
-          static_cast<LocalVideoTrackInterface*>(track);
-      VideoTrackHandler* handler(new LocalVideoTrackHandler(video_track,
-                                                            provider));
-      video_handlers_.push_back(handler);
-    }
+    LocalVideoTrackInterface* track =
+        static_cast<LocalVideoTrackInterface*>(tracklist->at(j));
+    VideoTrackHandler* handler(new LocalVideoTrackHandler(track, provider));
+    video_handlers_.push_back(handler);
   }
 }
 
@@ -201,17 +197,13 @@ RemoteMediaStreamHandler::RemoteMediaStreamHandler(
     MediaStreamInterface* stream,
     MediaProviderInterface* provider)
     : MediaStreamHandler(stream, provider) {
-  MediaStreamTrackListInterface* tracklist(stream->tracks());
+  VideoTracks* tracklist(stream->video_tracks());
 
   for (size_t j = 0; j < tracklist->count(); ++j) {
-    MediaStreamTrackInterface* track = tracklist->at(j);
-    if (track->type() == MediaStreamTrackInterface::kVideo) {
-      VideoTrackInterface* video_track =
-          static_cast<VideoTrackInterface*>(track);
-      VideoTrackHandler* handler(new RemoteVideoTrackHandler(video_track,
-                                                             provider));
-      video_handlers_.push_back(handler);
-    }
+    VideoTrackInterface* track =
+        static_cast<VideoTrackInterface*>(tracklist->at(j));
+    VideoTrackHandler* handler(new RemoteVideoTrackHandler(track, provider));
+    video_handlers_.push_back(handler);
   }
 }
 

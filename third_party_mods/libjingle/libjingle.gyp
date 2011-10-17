@@ -706,6 +706,7 @@
             '<(libjingle_mods)/source/talk/app/webrtc_dev/mediastreamtrackproxy.cc',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/mediastreamproxy.h',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/mediastreamproxy.cc',            
+            '<(libjingle_mods)/source/talk/app/webrtc_dev/mediatrackimpl.h',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnection.h',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionimpl.cc',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionimpl.h',

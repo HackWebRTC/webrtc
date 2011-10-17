@@ -297,27 +297,29 @@ void PeerConnectionSignaling::InitMediaSessionOptions(
   options->is_video = true;
   for (size_t i = 0; i < local_streams->count(); ++i) {
     MediaStreamInterface* stream = local_streams->at(i);
-    scoped_refptr<MediaStreamTrackListInterface> tracks = stream->tracks();
 
-    // For each track in the stream, add it to the MediaSessionOptions.
-    for (size_t j = 0; j < tracks->count(); ++j) {
-      scoped_refptr<MediaStreamTrackInterface> track = tracks->at(j);
-      if (MediaStreamTrackInterface::kAudio == track->type()) {
-        // TODO(perkj): Better ssrc?
-        // Does talk_base::CreateRandomNonZeroId() generate unique id?
-        if (track->ssrc() == 0)
-          track->set_ssrc(++ssrc_counter_);
-        options->audio_sources.push_back(cricket::SourceParam(track->ssrc(),
-                                                              track->label(),
-                                                              stream->label()));
-      }
-      if (MediaStreamTrackInterface::kVideo == track->type()) {
-        if (track->ssrc() == 0)
-          track->set_ssrc(++ssrc_counter_);  // TODO(perkj): Better ssrc?
-        options->video_sources.push_back(cricket::SourceParam(track->ssrc(),
-                                                              track->label(),
-                                                              stream->label()));
-      }
+    scoped_refptr<MediaStreamTrackListInterface<AudioTrackInterface> >
+        audio_tracks = stream->audio_tracks();
+    // For each audio track in the stream, add it to the MediaSessionOptions.
+    for (size_t j = 0; j < audio_tracks->count(); ++j) {
+      scoped_refptr<MediaStreamTrackInterface> track = audio_tracks->at(j);
+      if (track->ssrc() == 0)
+        track->set_ssrc(++ssrc_counter_);
+      options->audio_sources.push_back(cricket::SourceParam(track->ssrc(),
+                                                            track->label(),
+                                                            stream->label()));
+    }
+
+    scoped_refptr<MediaStreamTrackListInterface<VideoTrackInterface> >
+        video_tracks = stream->video_tracks();
+    // For each video track in the stream, add it to the MediaSessionOptions.
+    for (size_t j = 0; j <  video_tracks->count(); ++j) {
+      scoped_refptr<MediaStreamTrackInterface> track = video_tracks->at(j);
+      if (track->ssrc() == 0)
+        track->set_ssrc(++ssrc_counter_);
+      options->video_sources.push_back(cricket::SourceParam(track->ssrc(),
+                                                            track->label(),
+                                                            stream->label()));
     }
   }
 }
@@ -428,10 +430,15 @@ void PeerConnectionSignaling::UpdateRemoteStreams(
         current_streams.find(old_stream->label());
     if (new_streams_it == current_streams.end()) {
       old_stream->set_ready_state(MediaStreamInterface::kEnded);
-      scoped_refptr<MediaStreamTrackListInterface> tracklist(
-          old_stream->tracks());
-      for (size_t j = 0; j < tracklist->count(); ++j) {
-        tracklist->at(j)->set_state(MediaStreamTrackInterface::kEnded);
+      scoped_refptr<MediaStreamTrackListInterface<AudioTrackInterface> >
+      audio_tracklist(old_stream->audio_tracks());
+      for (size_t j = 0; j < audio_tracklist->count(); ++j) {
+        audio_tracklist->at(j)->set_state(MediaStreamTrackInterface::kEnded);
+      }
+      scoped_refptr<MediaStreamTrackListInterface<VideoTrackInterface> >
+      video_tracklist(old_stream->video_tracks());
+      for (size_t j = 0; j < video_tracklist->count(); ++j) {
+        video_tracklist->at(j)->set_state(MediaStreamTrackInterface::kEnded);
       }
       SignalRemoteStreamRemoved(old_stream);
     }
@@ -453,51 +460,55 @@ void PeerConnectionSignaling::UpdateSendingLocalStreams(
 
   for (size_t i = 0; i < negotiated_streams->count(); ++i) {
     scoped_refptr<MediaStreamInterface> stream = negotiated_streams->at(i);
-    scoped_refptr<MediaStreamTrackListInterface> tracklist(stream->tracks());
+    scoped_refptr<MediaStreamTrackListInterface<AudioTrackInterface> >
+        audiotracklist(stream->audio_tracks());
+    scoped_refptr<MediaStreamTrackListInterface<VideoTrackInterface> >
+        videotracklist(stream->video_tracks());
 
     bool stream_ok = false;  // A stream is ok if at least one track succeed.
-
-    for (size_t j = 0; j < tracklist->count(); ++j) {
-      scoped_refptr<MediaStreamTrackInterface> track = tracklist->at(j);
-      if (MediaStreamTrackInterface::kAudio == track->type()) {
-        const cricket::ContentInfo* audio_content =
-            GetFirstAudioContent(answer_desc);
-
-        if (!audio_content) {  // The remote does not accept audio.
-          track->set_state(MediaStreamTrackInterface::kFailed);
-          continue;
-        }
-        const cricket::AudioContentDescription* audio_desc =
-              static_cast<const cricket::AudioContentDescription*>(
-                  audio_content->description);
-        // TODO(perkj): Do we need to store the codec in the track?
-        if (audio_desc->codecs().size() <= 0) {
-          // No common codec.
-          track->set_state(MediaStreamTrackInterface::kFailed);
-        }
-        track->set_state(MediaStreamTrackInterface::kLive);
-        stream_ok = true;
+    // Update tracks based on its type.
+    for (size_t j = 0; j < audiotracklist->count(); ++j) {
+      scoped_refptr<MediaStreamTrackInterface> track = audiotracklist->at(j);
+      const cricket::ContentInfo* audio_content =
+          GetFirstAudioContent(answer_desc);
+      if (!audio_content) {  // The remote does not accept audio.
+        track->set_state(MediaStreamTrackInterface::kFailed);
+        continue;
       }
-      if (MediaStreamTrackInterface::kVideo == track->type()) {
-        const cricket::ContentInfo* video_content =
-            GetFirstVideoContent(answer_desc);
 
-        if (!video_content) {  // The remote does not accept video.
-          track->set_state(MediaStreamTrackInterface::kFailed);
-          continue;
-        }
-        const cricket::VideoContentDescription* video_desc =
-            static_cast<const cricket::VideoContentDescription*>(
-                video_content->description);
-        // TODO(perkj): Do we need to store the codec in the track?
-        if (video_desc->codecs().size() <= 0) {
-          // No common codec.
-          track->set_state(MediaStreamTrackInterface::kFailed);
-        }
-        track->set_state(MediaStreamTrackInterface::kLive);
-        stream_ok = true;
+      const cricket::AudioContentDescription* audio_desc =
+          static_cast<const cricket::AudioContentDescription*>(
+              audio_content->description);
+      // TODO(perkj): Do we need to store the codec in the track?
+      if (audio_desc->codecs().size() <= 0) {
+        // No common codec.
+        track->set_state(MediaStreamTrackInterface::kFailed);
       }
+      track->set_state(MediaStreamTrackInterface::kLive);
+      stream_ok = true;
     }
+
+    for (size_t j = 0; j < videotracklist->count(); ++j) {
+      scoped_refptr<MediaStreamTrackInterface> track = videotracklist->at(j);
+      const cricket::ContentInfo* video_content =
+          GetFirstVideoContent(answer_desc);
+      if (!video_content) {  // The remote does not accept video.
+        track->set_state(MediaStreamTrackInterface::kFailed);
+        continue;
+      }
+
+      const cricket::VideoContentDescription* video_desc =
+          static_cast<const cricket::VideoContentDescription*>(
+              video_content->description);
+      // TODO(perkj): Do we need to store the codec in the track?
+      if (video_desc->codecs().size() <= 0) {
+        // No common codec.
+        track->set_state(MediaStreamTrackInterface::kFailed);
+      }
+      track->set_state(MediaStreamTrackInterface::kLive);
+      stream_ok = true;
+    }
+
     if (stream_ok) {
       // We have successfully negotiated to send this stream.
       // Change the stream and store it as successfully negotiated.
@@ -519,10 +530,15 @@ void PeerConnectionSignaling::UpdateSendingLocalStreams(
         negotiated_streams->find(old_stream->label());
     if (new_streams == NULL) {
       old_stream->set_ready_state(MediaStreamInterface::kEnded);
-      scoped_refptr<MediaStreamTrackListInterface> tracklist(
-          old_stream->tracks());
-      for (size_t j = 0; j < tracklist->count(); ++j) {
-        tracklist->at(j)->set_state(MediaStreamTrackInterface::kEnded);
+      scoped_refptr<MediaStreamTrackListInterface<AudioTrackInterface> >
+          audio_tracklist(old_stream->audio_tracks());
+      for (size_t j = 0; j < audio_tracklist->count(); ++j) {
+        audio_tracklist->at(j)->set_state(MediaStreamTrackInterface::kEnded);
+      }
+      scoped_refptr<MediaStreamTrackListInterface<VideoTrackInterface> >
+          video_tracklist(old_stream->video_tracks());
+      for (size_t j = 0; j < video_tracklist->count(); ++j) {
+        video_tracklist->at(j)->set_state(MediaStreamTrackInterface::kEnded);
       }
     }
   }

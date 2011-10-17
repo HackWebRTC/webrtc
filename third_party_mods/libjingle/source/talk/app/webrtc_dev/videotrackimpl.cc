@@ -33,28 +33,22 @@ namespace webrtc {
 static const char kVideoTrackKind[] = "video";
 
 VideoTrack::VideoTrack(const std::string& label, uint32 ssrc)
-    : enabled_(true),
-      label_(label),
-      ssrc_(ssrc),
-      state_(kInitializing),
+    : MediaTrack<LocalVideoTrackInterface>(label, ssrc),
       video_device_(NULL) {
 }
 
 VideoTrack::VideoTrack(const std::string& label,
                        VideoCaptureModule* video_device)
-    : enabled_(true),
-      label_(label),
-      ssrc_(0),
-      state_(kInitializing),
+    : MediaTrack<LocalVideoTrackInterface>(label, 0),
       video_device_(video_device) {
 }
 
-void VideoTrack::SetRenderer(VideoRendererInterface* renderer) {
+void VideoTrack::SetRenderer(VideoRendererWrapperInterface* renderer) {
   video_renderer_ = renderer;
   NotifierImpl<LocalVideoTrackInterface>::FireOnChanged();
 }
 
-VideoRendererInterface* VideoTrack::GetRenderer() {
+VideoRendererWrapperInterface* VideoTrack::GetRenderer() {
   return video_renderer_.get();
 }
 
@@ -65,31 +59,6 @@ VideoCaptureModule* VideoTrack::GetVideoCapture() {
 
 const char* VideoTrack::kind() const {
   return kVideoTrackKind;
-}
-
-bool VideoTrack::set_enabled(bool enable) {
-  bool fire_on_change = enable != enabled_;
-  enabled_ = enable;
-  if (fire_on_change)
-    NotifierImpl<LocalVideoTrackInterface>::FireOnChanged();
-}
-
-bool VideoTrack::set_ssrc(uint32 ssrc) {
-  ASSERT(ssrc_ == 0);
-  ASSERT(ssrc != 0);
-  if (ssrc_ != 0)
-    return false;
-  ssrc_ = ssrc;
-  NotifierImpl<LocalVideoTrackInterface>::FireOnChanged();
-  return true;
-}
-
-bool VideoTrack::set_state(TrackState new_state) {
-  bool fire_on_change = state_ != new_state;
-  state_ = new_state;
-  if (fire_on_change)
-    NotifierImpl<LocalVideoTrackInterface>::FireOnChanged();
-  return true;
 }
 
 scoped_refptr<VideoTrack> VideoTrack::CreateRemote(

@@ -42,22 +42,20 @@ namespace webrtc {
 class MediaStreamProxy : public LocalMediaStreamInterface,
                          public talk_base::MessageHandler {
  public:
-  class MediaStreamTrackListProxy : public MediaStreamTrackListInterface,
+  template <class T>
+  class MediaStreamTrackListProxy : public MediaStreamTrackListInterface<T>,
                                     public talk_base::MessageHandler {
    public:
-    MediaStreamTrackListProxy(MediaStreamTrackListInterface* track_list,
+    MediaStreamTrackListProxy(MediaStreamTrackListInterface<T>* track_list,
                               talk_base::Thread* signaling_thread);
     virtual size_t count();
-    virtual MediaStreamTrackInterface* at(size_t index);
+    virtual T* at(size_t index);
 
-    // Implement Notifier
-    virtual void RegisterObserver(Observer* observer);
-    virtual void UnregisterObserver(Observer* observer);
    private:
     void Send(uint32 id, talk_base::MessageData* data) const;
     void OnMessage(talk_base::Message* msg);
 
-    scoped_refptr<MediaStreamTrackListInterface> track_list_;
+    scoped_refptr<MediaStreamTrackListInterface<T> > track_list_;
     mutable talk_base::Thread* signaling_thread_;
   };
 
@@ -66,11 +64,20 @@ class MediaStreamProxy : public LocalMediaStreamInterface,
       talk_base::Thread* signaling_thread);
 
   // Implement LocalStream.
-  virtual bool AddTrack(MediaStreamTrackInterface* track);
+  virtual bool AddTrack(AudioTrackInterface* track);
+  virtual bool AddTrack(VideoTrackInterface* track);
+
+  // This will be used when Tracks are created internally.
+  bool AddTrack(MediaStreamTrackInterface* track);
 
   // Implement MediaStream.
   virtual std::string label() const;
-  virtual MediaStreamTrackListInterface* tracks();
+  virtual MediaStreamTrackListProxy<AudioTrackInterface>* audio_tracks() {
+    return audio_tracks_;
+  }
+  virtual MediaStreamTrackListProxy<VideoTrackInterface>* video_tracks() {
+    return video_tracks_;
+  }
   virtual ReadyState ready_state();
   virtual void set_ready_state(ReadyState new_state);
 
@@ -87,8 +94,9 @@ class MediaStreamProxy : public LocalMediaStreamInterface,
   virtual void OnMessage(talk_base::Message* msg);
 
   mutable talk_base::Thread* signaling_thread_;
-  scoped_refptr<MediaStreamImpl> media_stream_impl_;
-  scoped_refptr<MediaStreamTrackListProxy> track_list_;
+  scoped_refptr<MediaStream> media_stream_impl_;
+  scoped_refptr<MediaStreamTrackListProxy<AudioTrackInterface> > audio_tracks_;
+  scoped_refptr<MediaStreamTrackListProxy<VideoTrackInterface> > video_tracks_;
 };
 
 }  // namespace webrtc

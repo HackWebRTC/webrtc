@@ -32,7 +32,7 @@
 namespace webrtc {
 
 // VideoRendererImpl take ownership of cricket::VideoRenderer.
-class VideoRendererImpl : public VideoRendererInterface {
+class VideoRendererImpl : public VideoRendererWrapperInterface {
  public:
   explicit VideoRendererImpl(cricket::VideoRenderer* renderer)
       : renderer_(renderer) {
@@ -48,7 +48,7 @@ class VideoRendererImpl : public VideoRendererInterface {
   cricket::VideoRenderer* renderer_;
 };
 
-scoped_refptr<VideoRendererInterface> CreateVideoRenderer(
+scoped_refptr<VideoRendererWrapperInterface> CreateVideoRenderer(
     cricket::VideoRenderer* renderer) {
   talk_base::RefCountImpl<VideoRendererImpl>* r =
       new talk_base::RefCountImpl<VideoRendererImpl>(renderer);

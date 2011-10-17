@@ -69,12 +69,13 @@ TEST(MediaStreamHandlerTest, LocalStreams) {
   // Create a local stream.
   std::string label(kStreamLabel1);
   scoped_refptr<LocalMediaStreamInterface> stream(
-      MediaStreamImpl::Create(label));
+      MediaStream::Create(label));
   scoped_refptr<LocalVideoTrackInterface> video_track(VideoTrack::CreateLocal(
       kVideoDeviceName, NULL));
   video_track->set_ssrc(kVideoSsrc);
   EXPECT_TRUE(stream->AddTrack(video_track));
-  scoped_refptr<VideoRendererInterface> renderer(CreateVideoRenderer(NULL));
+  scoped_refptr<VideoRendererWrapperInterface> renderer(
+      CreateVideoRenderer(NULL));
   video_track->SetRenderer(renderer);
 
   MockMediaProvier provider;
@@ -108,7 +109,7 @@ TEST(MediaStreamHandlerTest, RemoteStreams) {
   // LocalMediaStreams inherit from MediaStreams.
   std::string label(kStreamLabel1);
   scoped_refptr<LocalMediaStreamInterface> stream(
-      MediaStreamImpl::Create(label));
+      MediaStream::Create(label));
   scoped_refptr<LocalVideoTrackInterface> video_track(VideoTrack::CreateLocal(
       kVideoDeviceName, NULL));
   video_track->set_ssrc(kVideoSsrc);
@@ -123,7 +124,8 @@ TEST(MediaStreamHandlerTest, RemoteStreams) {
       .Times(Exactly(2));
 
   // Set the renderer once.
-  scoped_refptr<VideoRendererInterface> renderer(CreateVideoRenderer(NULL));
+  scoped_refptr<VideoRendererWrapperInterface> renderer(
+      CreateVideoRenderer(NULL));
     video_track->SetRenderer(renderer);
   talk_base::Thread::Current()->ProcessMessages(1);
 

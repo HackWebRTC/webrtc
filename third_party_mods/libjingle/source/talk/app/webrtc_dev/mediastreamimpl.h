@@ -35,41 +35,54 @@
 #include "talk/app/webrtc_dev/notifierimpl.h"
 
 namespace webrtc {
+class AudioTrack;
+class VideoTrack;
 
-class MediaStreamImpl
+class MediaStream
     : public NotifierImpl<LocalMediaStreamInterface> {
  public:
-  class MediaStreamTrackListImpl :
-    public NotifierImpl<MediaStreamTrackListInterface> {
+  template<class T>
+  class MediaStreamTrackList :
+    public MediaStreamTrackListInterface<T> {
    public:
-    void AddTrack(MediaStreamTrackInterface* track);
+    void AddTrack(T* track) {
+      tracks_.push_back(track);
+    }
     virtual size_t count() { return tracks_.size(); }
-    virtual MediaStreamTrackInterface* at(size_t index) {
+    virtual T* at(size_t index) {
       return tracks_.at(index);
     }
 
    private:
-    std::vector<scoped_refptr<MediaStreamTrackInterface> > tracks_;
+    std::vector<scoped_refptr<T> > tracks_;
   };
 
-  static scoped_refptr<MediaStreamImpl> Create(const std::string& label);
+  static scoped_refptr<MediaStream> Create(const std::string& label);
 
-  // Implement LocalStream.
-  virtual bool AddTrack(MediaStreamTrackInterface* track);
-
-  // Implement MediaStream.
+  // Implement LocalMediaStreamInterface.
+  virtual bool AddTrack(AudioTrackInterface* track);
+  virtual bool AddTrack(VideoTrackInterface* track);
+  // Implement MediaStreamInterface.
   virtual std::string label() const { return label_; }
-  virtual MediaStreamTrackListInterface* tracks() { return track_list_; }
+  virtual MediaStreamTrackListInterface<AudioTrackInterface>* audio_tracks() {
+    return audio_track_list_;
+  }
+  virtual MediaStreamTrackListInterface<VideoTrackInterface>* video_tracks() {
+    return video_track_list_;
+  }
   virtual ReadyState ready_state() { return ready_state_; }
   virtual void set_ready_state(ReadyState new_state);
   void set_state(ReadyState new_state);
 
  protected:
-  explicit MediaStreamImpl(const std::string& label);
+  explicit MediaStream(const std::string& label);
 
   std::string label_;
   MediaStreamInterface::ReadyState ready_state_;
-  scoped_refptr<MediaStreamTrackListImpl> track_list_;
+  scoped_refptr<MediaStreamTrackList<AudioTrackInterface> >
+      audio_track_list_;
+  scoped_refptr<MediaStreamTrackList<VideoTrackInterface> >
+      video_track_list_;
 };
 
 }  // namespace webrtc
