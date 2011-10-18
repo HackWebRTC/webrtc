@@ -121,6 +121,11 @@ TEST(TestDataLog, CreateReturnTest) {
   ASSERT_LT(DataLog::AddTable(DataLog::Combine("table failure", 1)), 0);
 }
 
+TEST(TestDataLog, VerifyCombineMethod) {
+  EXPECT_EQ(std::string("a proper table_1"),
+            DataLog::Combine("a proper table", 1));
+}
+
 TEST(TestDataLog, VerifySingleTable) {
   DataLog::CreateLog();
   DataLog::AddTable(DataLog::Combine("table", 1));

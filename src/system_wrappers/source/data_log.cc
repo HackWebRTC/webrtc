@@ -283,9 +283,11 @@ void DataLog::ReturnLog() {
 
 std::string DataLog::Combine(const std::string& table_name, int table_id) {
   std::stringstream ss;
-  std::string combined_id;
-  ss << table_name << "_" << table_id;
-  ss >> combined_id;
+  std::string combined_id = table_name;
+  std::string number_suffix;
+  ss << "_" << table_id;
+  ss >> number_suffix;
+  combined_id += number_suffix;
   std::transform(combined_id.begin(), combined_id.end(), combined_id.begin(),
                  ::tolower);
   return combined_id;
