@@ -65,9 +65,9 @@ bool Conductor::InitializePeerConnection() {
 }
 
 void Conductor::DeletePeerConnection() {
-  peer_connection_.release();
+  peer_connection_ = NULL;
   active_streams_.clear();
-  peer_connection_factory_.release();
+  peer_connection_factory_ = NULL;
   peer_id_ = -1;
 }
 
@@ -256,10 +256,7 @@ void Conductor::AddStreams() {
       peer_connection_factory_->CreateLocalVideoTrack(
           kVideoLabel, OpenVideoCaptureDevice()));
 
-  scoped_refptr<webrtc::VideoRendererWrapperInterface> renderer(
-      webrtc::CreateVideoRenderer(
-      main_wnd_->local_renderer()));
-  video_track->SetRenderer(renderer);
+  video_track->SetRenderer(main_wnd_->local_renderer());
 
   scoped_refptr<webrtc::LocalMediaStreamInterface> stream =
       peer_connection_factory_->CreateLocalMediaStream(kStreamLabel);
@@ -348,9 +345,7 @@ void Conductor::UIThreadCallback(int msg_id, void* data) {
       for (size_t i = 0; i < tracks->count(); ++i) {
         webrtc::VideoTrackInterface* track = tracks->at(i);
         LOG(INFO) << "Setting video renderer for track: " << track->label();
-        scoped_refptr<webrtc::VideoRendererWrapperInterface> renderer(
-            webrtc::CreateVideoRenderer(main_wnd_->remote_renderer()));
-        track->SetRenderer(renderer);
+        track->SetRenderer(main_wnd_->remote_renderer());
       }
       // If we haven't shared any streams with this peer (we're the receiver)
       // then do so now.

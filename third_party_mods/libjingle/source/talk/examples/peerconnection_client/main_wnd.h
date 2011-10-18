@@ -15,6 +15,7 @@
 #include <map>
 #include <string>
 
+#include "talk/app/webrtc_dev/mediastream.h"
 #include "talk/examples/peerconnection_client/peer_connection_client.h"
 #include "talk/base/win32.h"
 #include "talk/session/phone/mediachannel.h"
@@ -57,8 +58,8 @@ class MainWindow {
   virtual void SwitchToPeerList(const Peers& peers) = 0;
   virtual void SwitchToStreamingUI() = 0;
 
-  virtual cricket::VideoRenderer* local_renderer() = 0;
-  virtual cricket::VideoRenderer* remote_renderer() = 0;
+  virtual webrtc::VideoRendererWrapperInterface* local_renderer() = 0;
+  virtual webrtc::VideoRendererWrapperInterface* remote_renderer() = 0;
 
   virtual void QueueUIThreadCallback(int msg_id, void* data) = 0;
 };

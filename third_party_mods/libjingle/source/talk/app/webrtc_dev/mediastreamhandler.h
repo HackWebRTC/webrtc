@@ -45,8 +45,7 @@ namespace webrtc {
 
 // VideoTrackHandler listen to events on a VideoTrack instance and
 // executes the requested change.
-class VideoTrackHandler : public Observer,
-                          public talk_base::MessageHandler {
+class VideoTrackHandler : public Observer {
  public:
   VideoTrackHandler(VideoTrackInterface* track,
                     MediaProviderInterface* provider);
@@ -54,11 +53,9 @@ class VideoTrackHandler : public Observer,
   virtual void OnChanged();
 
  protected:
-  virtual void OnMessage(talk_base::Message* msg);
-
   virtual void OnRendererChanged() = 0;
-  virtual void OnStateChanged(MediaStreamTrackInterface::TrackState state) = 0;
-  virtual void OnEnabledChanged(bool enabled) = 0;
+  virtual void OnStateChanged() = 0;
+  virtual void OnEnabledChanged() = 0;
 
   MediaProviderInterface* provider_;
   VideoTrackInterface* video_track_;
@@ -67,18 +64,18 @@ class VideoTrackHandler : public Observer,
   MediaStreamTrackInterface::TrackState state_;
   bool enabled_;
   scoped_refptr<VideoRendererWrapperInterface> renderer_;
-  talk_base::Thread* signaling_thread_;
 };
 
 class LocalVideoTrackHandler : public VideoTrackHandler {
  public:
   LocalVideoTrackHandler(LocalVideoTrackInterface* track,
                          MediaProviderInterface* provider);
+  virtual ~LocalVideoTrackHandler();
 
  protected:
   virtual void OnRendererChanged();
-  virtual void OnStateChanged(MediaStreamTrackInterface::TrackState state);
-  virtual void OnEnabledChanged(bool enabled);
+  virtual void OnStateChanged();
+  virtual void OnEnabledChanged();
 
  private:
   scoped_refptr<LocalVideoTrackInterface> local_video_track_;
@@ -88,11 +85,12 @@ class RemoteVideoTrackHandler : public VideoTrackHandler {
  public:
   RemoteVideoTrackHandler(VideoTrackInterface* track,
                           MediaProviderInterface* provider);
+  virtual ~RemoteVideoTrackHandler();
 
  protected:
   virtual void OnRendererChanged();
-  virtual void OnStateChanged(MediaStreamTrackInterface::TrackState state);
-  virtual void OnEnabledChanged(bool enabled);
+  virtual void OnStateChanged();
+  virtual void OnEnabledChanged();
 
  private:
   scoped_refptr<VideoTrackInterface> remote_video_track_;

@@ -14,6 +14,7 @@
 
 #include "talk/examples/peerconnection_client/main_wnd.h"
 #include "talk/examples/peerconnection_client/peer_connection_client.h"
+#include "talk/app/webrtc_dev/scoped_refptr.h"
 
 // Forward declarations.
 typedef struct _GtkWidget GtkWidget;
@@ -39,8 +40,9 @@ class GtkMainWnd : public MainWindow {
   virtual void MessageBox(const char* caption, const char* text,
                           bool is_error);
   virtual MainWindow::UI current_ui();
-  virtual cricket::VideoRenderer* local_renderer();
-  virtual cricket::VideoRenderer* remote_renderer();
+  virtual webrtc::VideoRendererWrapperInterface* local_renderer();
+  virtual webrtc::VideoRendererWrapperInterface* remote_renderer();
+
   virtual void QueueUIThreadCallback(int msg_id, void* data);
 
   // Creates and shows the main window with the |Connect UI| enabled.
@@ -63,13 +65,13 @@ class GtkMainWnd : public MainWindow {
   // connection.
   void OnRowActivated(GtkTreeView* tree_view, GtkTreePath* path,
                       GtkTreeViewColumn* column);
-                      
+
   void OnRedraw();
 
  protected:
   class VideoRenderer : public cricket::VideoRenderer {
    public:
-    VideoRenderer(GtkMainWnd* main_wnd);
+    explicit VideoRenderer(GtkMainWnd* main_wnd);
     virtual ~VideoRenderer();
 
     virtual bool SetSize(int width, int height, int reserved);
@@ -83,11 +85,11 @@ class GtkMainWnd : public MainWindow {
     int width() const {
       return width_;
     }
-    
+
     int height() const {
       return height_;
     }
-    
+
    protected:
     talk_base::scoped_array<uint8> image_;
     int width_;
@@ -105,8 +107,8 @@ class GtkMainWnd : public MainWindow {
   MainWndCallback* callback_;
   std::string server_;
   std::string port_;
-  talk_base::scoped_ptr<VideoRenderer> local_renderer_;
-  talk_base::scoped_ptr<VideoRenderer> remote_renderer_;
+  scoped_refptr<webrtc::VideoRendererWrapperInterface> local_renderer_wrapper_;
+  scoped_refptr<webrtc::VideoRendererWrapperInterface> remote_renderer_wrapper_;
   talk_base::scoped_ptr<uint8> draw_buffer_;
   int draw_buffer_size_;
 };

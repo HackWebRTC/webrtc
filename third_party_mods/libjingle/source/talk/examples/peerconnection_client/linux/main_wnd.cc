@@ -139,16 +139,18 @@ MainWindow::UI GtkMainWnd::current_ui() {
   return STREAMING;
 }
 
-cricket::VideoRenderer* GtkMainWnd::local_renderer() {
-  if (!local_renderer_.get())
-    local_renderer_.reset(new VideoRenderer(this));
-  return local_renderer_.get();
+webrtc::VideoRendererWrapperInterface* GtkMainWnd::local_renderer() {
+  if (!local_renderer_wrapper_.get())
+    local_renderer_wrapper_  =
+        webrtc::CreateVideoRenderer(new VideoRenderer(this));
+  return local_renderer_wrapper_.get();
 }
 
-cricket::VideoRenderer* GtkMainWnd::remote_renderer() {
-  if (!remote_renderer_.get())
-    remote_renderer_.reset(new VideoRenderer(this));
-  return remote_renderer_.get();
+webrtc::VideoRendererWrapperInterface*  GtkMainWnd::remote_renderer() {
+  if (!remote_renderer_wrapper_.get())
+    remote_renderer_wrapper_ =
+        webrtc::CreateVideoRenderer(new VideoRenderer(this));
+  return remote_renderer_wrapper_.get();
 }
 
 void GtkMainWnd::QueueUIThreadCallback(int msg_id, void* data) {
@@ -234,8 +236,8 @@ void GtkMainWnd::SwitchToPeerList(const Peers& peers) {
   LOG(INFO) << __FUNCTION__;
 
   // Clean up buffers from a potential previous session.
-  local_renderer_.reset();
-  remote_renderer_.reset();
+  local_renderer_wrapper_ = NULL;
+  remote_renderer_wrapper_ = NULL;
 
   if (!peer_list_) {
     gtk_container_set_border_width(GTK_CONTAINER(window_), 0);
@@ -349,10 +351,12 @@ void GtkMainWnd::OnRowActivated(GtkTreeView* tree_view, GtkTreePath* path,
 void GtkMainWnd::OnRedraw() {
   gdk_threads_enter();
 
-  if (remote_renderer_.get() && remote_renderer_->image() != NULL &&
+  VideoRenderer* remote_renderer =
+      static_cast<VideoRenderer*>(remote_renderer_wrapper_->renderer());
+  if (remote_renderer && remote_renderer->image() != NULL &&
       draw_area_ != NULL) {
-    int width = remote_renderer_->width();
-    int height = remote_renderer_->height();
+    int width = remote_renderer->width();
+    int height = remote_renderer->height();
 
     if (!draw_buffer_.get()) {
       draw_buffer_size_ = (width * height * 4) * 4;
@@ -361,7 +365,7 @@ void GtkMainWnd::OnRedraw() {
     }
 
     const uint32* image = reinterpret_cast<const uint32*>(
-        remote_renderer_->image());
+        remote_renderer->image());
     uint32* scaled = reinterpret_cast<uint32*>(draw_buffer_.get());
     for (int r = 0; r < height; ++r) {
       for (int c = 0; c < width; ++c) {
@@ -377,22 +381,24 @@ void GtkMainWnd::OnRedraw() {
       scaled += width * 2;
     }
 
-    if (local_renderer_.get() && local_renderer_->image()) {
-      image = reinterpret_cast<const uint32*>(local_renderer_->image());
+    VideoRenderer* local_renderer =
+        static_cast<VideoRenderer*>(local_renderer_wrapper_->renderer());
+    if (local_renderer && local_renderer->image()) {
+      image = reinterpret_cast<const uint32*>(local_renderer->image());
       scaled = reinterpret_cast<uint32*>(draw_buffer_.get());
       // Position the local preview on the right side.
-      scaled += (width * 2) - (local_renderer_->width() / 2);
+      scaled += (width * 2) - (local_renderer->width() / 2);
       // right margin...
       scaled -= 10;
       // ... towards the bottom.
       scaled += (height * width * 4) -
-                ((local_renderer_->height() / 2) *
-                 (local_renderer_->width() / 2) * 4);
+                ((local_renderer->height() / 2) *
+                 (local_renderer->width() / 2) * 4);
       // bottom margin...
       scaled -= (width * 2) * 5;
-      for (int r = 0; r < local_renderer_->height(); r += 2) {
-        for (int c = 0; c < local_renderer_->width(); c += 2) {
-          scaled[c / 2] = image[c + r * local_renderer_->width()];
+      for (int r = 0; r < local_renderer->height(); r += 2) {
+        for (int c = 0; c < local_renderer->width(); c += 2) {
+          scaled[c / 2] = image[c + r * local_renderer->width()];
         }
         scaled += width * 2;
       }

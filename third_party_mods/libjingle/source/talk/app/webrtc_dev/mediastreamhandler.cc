@@ -37,24 +37,13 @@
 
 namespace webrtc {
 
-enum {
-  MSG_TRACK_STATECHANGED = 1,
-  MSG_TRACK_RENDERERCHANGED = 2,
-  MSG_TRACK_ENABLEDCHANGED = 3,
-};
-
-typedef talk_base::TypedMessageData<MediaStreamTrackInterface::TrackState>
-    TrackStateMessageData;
-typedef talk_base::TypedMessageData<bool> TrackEnabledMessageData;
-
 VideoTrackHandler::VideoTrackHandler(VideoTrackInterface* track,
                                      MediaProviderInterface* provider)
     : provider_(provider),
       video_track_(track),
       state_(track->state()),
       enabled_(track->enabled()),
-      renderer_(track->GetRenderer()),
-      signaling_thread_(talk_base::Thread::Current()) {
+      renderer_(track->GetRenderer()) {
   video_track_->RegisterObserver(this);
 }
 
@@ -65,40 +54,15 @@ VideoTrackHandler::~VideoTrackHandler() {
 void VideoTrackHandler::OnChanged() {
   if (state_ != video_track_->state()) {
     state_ = video_track_->state();
-    TrackStateMessageData* state_param(new TrackStateMessageData(state_));
-    signaling_thread_->Post(this, MSG_TRACK_STATECHANGED, state_param);
+    OnStateChanged();
   }
   if (renderer_.get() != video_track_->GetRenderer()) {
     renderer_ = video_track_->GetRenderer();
-    signaling_thread_->Post(this, MSG_TRACK_RENDERERCHANGED);
+    OnRendererChanged();
   }
   if (enabled_ != video_track_->enabled()) {
-    enabled_ =video_track_->enabled();
-    TrackEnabledMessageData* enabled_param(
-        new TrackEnabledMessageData(enabled_));
-    signaling_thread_->Post(this, MSG_TRACK_ENABLEDCHANGED, enabled_param);
-  }
-}
-
-void VideoTrackHandler::OnMessage(talk_base::Message* msg) {
-  switch (msg->message_id) {
-    case MSG_TRACK_STATECHANGED: {
-      TrackStateMessageData* data =
-          static_cast<TrackStateMessageData*>(msg->pdata);
-      OnStateChanged(data->data());
-      delete data;
-      break;
-    }
-    case MSG_TRACK_RENDERERCHANGED: {
-      OnRendererChanged();
-      break;
-    }
-    case MSG_TRACK_ENABLEDCHANGED: {
-      TrackEnabledMessageData* data =
-          static_cast<TrackEnabledMessageData*>(msg->pdata);
-      OnEnabledChanged(data->data());
-      break;
-    }
+    enabled_ = video_track_->enabled();
+    OnEnabledChanged();
   }
 }
 
@@ -109,6 +73,12 @@ LocalVideoTrackHandler::LocalVideoTrackHandler(
       local_video_track_(track) {
 }
 
+LocalVideoTrackHandler::~LocalVideoTrackHandler() {
+  // Since cricket::VideoRenderer is not reference counted
+  // we need to remove the renderer before we are deleted.
+  provider_->SetLocalRenderer(video_track_->ssrc(), NULL);
+}
+
 void LocalVideoTrackHandler::OnRendererChanged() {
   VideoRendererWrapperInterface* renderer(video_track_->GetRenderer());
   if (renderer)
@@ -117,9 +87,8 @@ void LocalVideoTrackHandler::OnRendererChanged() {
     provider_->SetLocalRenderer(video_track_->ssrc(), NULL);
 }
 
-void LocalVideoTrackHandler::OnStateChanged(
-    MediaStreamTrackInterface::TrackState state) {
-  if (state == VideoTrackInterface::kLive) {
+void LocalVideoTrackHandler::OnStateChanged() {
+  if (local_video_track_->state() == VideoTrackInterface::kLive) {
     provider_->SetCaptureDevice(local_video_track_->ssrc(),
                                 local_video_track_->GetVideoCapture());
     VideoRendererWrapperInterface* renderer(video_track_->GetRenderer());
@@ -130,7 +99,7 @@ void LocalVideoTrackHandler::OnStateChanged(
   }
 }
 
-void LocalVideoTrackHandler::OnEnabledChanged(bool enabled) {
+void LocalVideoTrackHandler::OnEnabledChanged() {
   // TODO(perkj) What should happen when enabled is changed?
 }
 
@@ -141,6 +110,13 @@ RemoteVideoTrackHandler::RemoteVideoTrackHandler(
       remote_video_track_(track) {
 }
 
+RemoteVideoTrackHandler::~RemoteVideoTrackHandler() {
+  // Since cricket::VideoRenderer is not reference counted
+  // we need to remove the renderer before we are deleted.
+  provider_->SetRemoteRenderer(video_track_->ssrc(), NULL);
+}
+
+
 void RemoteVideoTrackHandler::OnRendererChanged() {
   VideoRendererWrapperInterface* renderer(video_track_->GetRenderer());
   if (renderer)
@@ -149,11 +125,10 @@ void RemoteVideoTrackHandler::OnRendererChanged() {
     provider_->SetRemoteRenderer(video_track_->ssrc(), NULL);
 }
 
-void RemoteVideoTrackHandler::OnStateChanged(
-    MediaStreamTrackInterface::TrackState state) {
+void RemoteVideoTrackHandler::OnStateChanged() {
 }
 
-void RemoteVideoTrackHandler::OnEnabledChanged(bool enabled) {
+void RemoteVideoTrackHandler::OnEnabledChanged() {
   // TODO(perkj): What should happen when enabled is changed?
 }
 
