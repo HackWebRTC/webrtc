@@ -10,12 +10,13 @@
 
 #include <stdio.h>
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include "audio_processing.h"
 #include "event_wrapper.h"
 #include "module_common_types.h"
 #include "signal_processing_library.h"
+#include "testsupport/fileutils.h"
 #include "thread_wrapper.h"
 #include "trace.h"
 #ifdef WEBRTC_ANDROID
@@ -42,12 +43,6 @@ namespace {
 // be set to true with the command-line switch --write_output_data.
 bool write_output_data = false;
 
-#if defined(WEBRTC_APM_UNIT_TEST_FIXED_PROFILE)
-const char kOutputFileName[] = "output_data_fixed.pb";
-#elif defined(WEBRTC_APM_UNIT_TEST_FLOAT_PROFILE)
-const char kOutputFileName[] = "output_data_float.pb";
-#endif
-
 class ApmEnvironment : public ::testing::Environment {
  public:
   virtual void SetUp() {
@@ -65,7 +60,9 @@ class ApmTest : public ::testing::Test {
   ApmTest();
   virtual void SetUp();
   virtual void TearDown();
-
+  // Path to where the resource files to be used for this test are located.
+  const std::string kResourcePath;
+  const std::string kOutputFileName;
   webrtc::AudioProcessing* apm_;
   webrtc::AudioFrame* frame_;
   webrtc::AudioFrame* revframe_;
@@ -74,7 +71,14 @@ class ApmTest : public ::testing::Test {
 };
 
 ApmTest::ApmTest()
-    : apm_(NULL),
+    : kResourcePath(webrtc::test::GetProjectRootPath() +
+                    "test/data/audio_processing/"),
+#if defined(WEBRTC_APM_UNIT_TEST_FIXED_PROFILE)
+      kOutputFileName(kResourcePath + "output_data_fixed.pb"),
+#elif defined(WEBRTC_APM_UNIT_TEST_FLOAT_PROFILE)
+      kOutputFileName(kResourcePath + "output_data_float.pb"),
+#endif
+      apm_(NULL),
       frame_(NULL),
       revframe_(NULL),
       far_file_(NULL),
@@ -98,10 +102,14 @@ void ApmTest::SetUp() {
   revframe_->_audioChannel = 2;
   revframe_->_frequencyInHz = 32000;
 
-  far_file_ = fopen("aec_far.pcm", "rb");
-  ASSERT_TRUE(far_file_ != NULL) << "Could not open input file aec_far.pcm\n";
-  near_file_ = fopen("aec_near.pcm", "rb");
-  ASSERT_TRUE(near_file_ != NULL) << "Could not open input file aec_near.pcm\n";
+  std::string input_filename = kResourcePath + "aec_far.pcm";
+  far_file_ = fopen(input_filename.c_str(), "rb");
+  ASSERT_TRUE(far_file_ != NULL) << "Could not open input file " <<
+      input_filename << "\n";
+  input_filename = kResourcePath + "aec_near.pcm";
+  near_file_ = fopen(input_filename.c_str(), "rb");
+  ASSERT_TRUE(near_file_ != NULL) << "Could not open input file " <<
+        input_filename << "\n";
 }
 
 void ApmTest::TearDown() {
@@ -177,11 +185,9 @@ void WriteStatsMessage(const AudioProcessing::Statistic& output,
   message->set_minimum(output.minimum);
 }
 
-void WriteMessageLiteToFile(const char* filename,
+void WriteMessageLiteToFile(const std::string filename,
                             const ::google::protobuf::MessageLite& message) {
-  assert(filename != NULL);
-
-  FILE* file = fopen(filename, "wb");
+  FILE* file = fopen(filename.c_str(), "wb");
   ASSERT_TRUE(file != NULL) << "Could not open " << filename;
   int size = message.ByteSize();
   ASSERT_GT(size, 0);
@@ -196,12 +202,11 @@ void WriteMessageLiteToFile(const char* filename,
   fclose(file);
 }
 
-void ReadMessageLiteFromFile(const char* filename,
+void ReadMessageLiteFromFile(const std::string filename,
                              ::google::protobuf::MessageLite* message) {
-  assert(filename != NULL);
   assert(message != NULL);
 
-  FILE* file = fopen(filename, "rb");
+  FILE* file = fopen(filename.c_str(), "rb");
   ASSERT_TRUE(file != NULL) << "Could not open " << filename;
   int size = 0;
   ASSERT_EQ(1u, fread(&size, sizeof(int), 1, file));

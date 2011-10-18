@@ -27,6 +27,7 @@
         'audio_processing',
         '<(webrtc_root)/common_audio/common_audio.gyp:spl',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+        '<(webrtc_root)/../test/test.gyp:test_support',
         '<(webrtc_root)/../testing/gtest.gyp:gtest',
         '<(webrtc_root)/../testing/gtest.gyp:gtest_main',
         '<(webrtc_root)/../third_party/protobuf/protobuf.gyp:protobuf_lite',
