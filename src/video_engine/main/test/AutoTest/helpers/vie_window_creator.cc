@@ -13,25 +13,16 @@
 #include "vie_autotest_main.h"
 #include "vie_codec.h"
 #include "voe_codec.h"
-#include "engine_configurations.h"
+#include "vie_window_manager_factory.h"
+#include "vie_autotest_window_manager_interface.h"
 
 #if defined(WIN32)
-#include "vie_autotest_windows.h"
 #include <tchar.h>
-#include <ShellAPI.h> //ShellExecute
-#elif defined(WEBRTC_MAC_INTEL)
-#if defined(COCOA_RENDERING)
-#include "vie_autotest_mac_cocoa.h"
-#elif defined(CARBON_RENDERING)
-#include "vie_autotest_mac_carbon.h"
-#endif
-#elif defined(WEBRTC_LINUX)
-#include "vie_autotest_linux.h"
 #endif
 
 ViEWindowCreator::ViEWindowCreator() {
-  // Create platform dependent render windows.
-  window_manager_ = new ViEAutoTestWindowManager();
+  window_manager_ =
+      ViEWindowManagerFactory::CreateWindowManagerForCurrentPlatform();
 }
 
 ViEWindowCreator::~ViEWindowCreator() {
@@ -40,7 +31,7 @@ ViEWindowCreator::~ViEWindowCreator() {
 
 ViEAutoTestWindowManagerInterface*
   ViEWindowCreator::CreateTwoWindows() {
-#if (defined(_WIN32))
+#if defined(WIN32)
   TCHAR window1Title[1024] = _T("ViE Autotest Window 1");
   TCHAR window2Title[1024] = _T("ViE Autotest Window 2");
 #else

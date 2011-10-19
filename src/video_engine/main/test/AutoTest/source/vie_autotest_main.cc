@@ -8,11 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- *  vie_autotest_main.cc
- *
- */
-
 #include "vie_autotest_main.h"
 
 #include "vie_autotest_window_manager_interface.h"

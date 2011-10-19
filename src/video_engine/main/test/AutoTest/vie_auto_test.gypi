@@ -75,11 +75,14 @@
         # Platform dependent
         # Linux
         'source/vie_autotest_linux.cc',
+        'source/vie_window_manager_factory_linux.cc',
         # Mac
         'source/vie_autotest_mac_cocoa.mm',
         'source/vie_autotest_mac_carbon.cc',
+        'source/vie_window_manager_factory_mac.mm',
         # Windows
         'source/vie_autotest_windows.cc',
+        'source/vie_window_manager_factory_win.cc',
       ],
       'copies': [{
         'destination': '/tmp',
@@ -99,11 +102,17 @@
           'sources!': [
             'source/vie_autotest_mac_cocoa.cc',
             'source/vie_autotest_mac_carbon.cc',
+            'source/vie_window_manager_factory_mac.mm',
           ],
         }],
         ['OS!="win"', {
           'sources!': [
             'source/vie_autotest_windows.cc',
+          ],
+        }],
+        ['OS!="linux"', {
+          'sources!': [
+            'source/vie_window_manager_factory_linux.cc',
           ],
         }],
 

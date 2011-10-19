@@ -25,7 +25,6 @@
 namespace {
 
 class ViEStandardIntegrationTest: public ViEIntegrationTest {
- public:
 };
 
 TEST_F(ViEStandardIntegrationTest, RunsBaseTestWithoutErrors)  {
