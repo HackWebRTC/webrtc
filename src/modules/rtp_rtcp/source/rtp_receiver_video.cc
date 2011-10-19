@@ -477,7 +477,8 @@ RTPReceiverVideo::ReceiveH263Codec(WebRtcRTPHeader* rtpHeader,
     {
         return -1;
     }
-    if (IP_PACKET_SIZE < parsedPacket.info.H263.dataLength + parsedPacket.info.H263.insert2byteStartCode? 2:0)
+    if (IP_PACKET_SIZE < parsedPacket.info.H263.dataLength +
+        (parsedPacket.info.H263.insert2byteStartCode ? 2 : 0))
     {
         return -1;
     }
@@ -501,7 +502,8 @@ RTPReceiverVideo::ReceiveH2631998Codec(WebRtcRTPHeader* rtpHeader,
         _criticalSectionReceiverVideo.Leave();
         return -1;
     }
-    if (IP_PACKET_SIZE < parsedPacket.info.H263.dataLength + parsedPacket.info.H263.insert2byteStartCode? 2:0)
+    if (IP_PACKET_SIZE < parsedPacket.info.H263.dataLength +
+        (parsedPacket.info.H263.insert2byteStartCode ? 2 : 0))
     {
         _criticalSectionReceiverVideo.Leave();
         return -1;
