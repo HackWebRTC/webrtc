@@ -25,11 +25,11 @@
         }],
         ['build_with_chromium==1', {
           'dependencies': [
-            '../../protobuf/protobuf.gyp:protobuf_lite',
+            '<(webrtc_root)/../protobuf/protobuf.gyp:protobuf_lite',
           ],
         }, {
           'dependencies': [
-            '../../third_party/protobuf/protobuf.gyp:protobuf_lite',
+            '<(webrtc_root)/../third_party/protobuf/protobuf.gyp:protobuf_lite',
           ],
         }],
       ],
@@ -43,18 +43,18 @@
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
       'include_dirs': [
+        'interface',
         '../interface',
-        '../../../interface',
         '<(protoc_out_dir)',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
+          'interface',
           '../interface',
-          '../../../interface',
         ],
       },
       'sources': [
-        '../interface/audio_processing.h',
+        'interface/audio_processing.h',
         'audio_buffer.cc',
         'audio_buffer.h',
         'audio_processing_impl.cc',
@@ -86,7 +86,7 @@
       'target_name': 'debug_proto',
       'type': 'none',
       'variables': {
-        'proto_relpath': 'audio_processing/main/source/',
+        'proto_relpath': '<(webrtc_root)/modules/audio_processing',
       },
       'sources': [
         '<(proto_relpath)/debug.proto',
@@ -114,11 +114,11 @@
       'conditions': [
         ['build_with_chromium==1', {
           'dependencies': [
-            '../../protobuf/protobuf.gyp:protoc#host',
+            '<(webrtc_root)/../protobuf/protobuf.gyp:protoc#host',
           ],
         }, {
           'dependencies': [
-            '../../third_party/protobuf/protobuf.gyp:protoc#host',
+            '<(webrtc_root)/../third_party/protobuf/protobuf.gyp:protoc#host',
           ],
         }],
       ],
@@ -128,9 +128,3 @@
     },
   ],
 }
-
-# Local Variables:
-# tab-width:2
-# indent-tabs-mode:nil
-# End:
-# vim: set expandtab tabstop=2 shiftwidth=2:

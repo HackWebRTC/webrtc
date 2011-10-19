@@ -26,7 +26,7 @@
 #include "splitting_filter.h"
 #include "voice_detection_impl.h"
 #ifdef WEBRTC_ANDROID
-#include "external/webrtc/src/modules/audio_processing/main/source/debug.pb.h"
+#include "external/webrtc/src/modules/audio_processing/debug.pb.h"
 #else
 #include "webrtc/audio_processing/debug.pb.h"
 #endif

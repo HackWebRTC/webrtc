@@ -16,15 +16,15 @@
         'apm_util'
       ],
       'include_dirs': [
-        '../interface',
+        'interface',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          '../interface',
+          'interface',
         ],
       },
       'sources': [
-        '../interface/echo_cancellation.h',
+        'interface/echo_cancellation.h',
         'echo_cancellation.c',
         'aec_core.h',
         'aec_core.c',
@@ -38,9 +38,3 @@
     },
   ],
 }
-
-# Local Variables:
-# tab-width:2
-# indent-tabs-mode:nil
-# End:
-# vim: set expandtab tabstop=2 shiftwidth=2:

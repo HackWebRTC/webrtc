@@ -9,32 +9,26 @@
 {
   'targets': [
     {
-      'target_name': 'agc',
+      'target_name': 'aecm',
       'type': '<(library)',
       'dependencies': [
         '<(webrtc_root)/common_audio/common_audio.gyp:spl',
+        'apm_util'
       ],
       'include_dirs': [
-        '../interface',
+        'interface',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          '../interface',
+          'interface',
         ],
       },
       'sources': [
-        '../interface/gain_control.h',
-        'analog_agc.c',
-        'analog_agc.h',
-        'digital_agc.c',
-        'digital_agc.h',
+        'interface/echo_control_mobile.h',
+        'echo_control_mobile.c',
+        'aecm_core.c',
+        'aecm_core.h',
       ],
     },
   ],
 }
-
-# Local Variables:
-# tab-width:2
-# indent-tabs-mode:nil
-# End:
-# vim: set expandtab tabstop=2 shiftwidth=2:

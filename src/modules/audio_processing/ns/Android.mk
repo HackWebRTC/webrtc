@@ -10,24 +10,35 @@ LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
 
-include $(LOCAL_PATH)/../../../../../../android-webrtc.mk
+include $(LOCAL_PATH)/../../../../android-webrtc.mk
 
-LOCAL_ARM_MODE := arm
 LOCAL_MODULE_CLASS := STATIC_LIBRARIES
-LOCAL_MODULE := libwebrtc_agc
+LOCAL_MODULE := libwebrtc_ns
 LOCAL_MODULE_TAGS := optional
+LOCAL_GENERATED_SOURCES :=
 LOCAL_SRC_FILES := \
-    analog_agc.c \
-    digital_agc.c
+    noise_suppression_x.c \
+    nsx_core.c
+
+# floating point
+# noise_suppression.c ns_core.c 
 
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \
     $(MY_WEBRTC_COMMON_DEFS)
 
+ifeq ($(ARCH_ARM_HAVE_NEON),true)
+LOCAL_SRC_FILES += \
+    nsx_core_neon.c
+LOCAL_CFLAGS += \
+    $(MY_ARM_CFLAGS_NEON)
+endif
+
 LOCAL_C_INCLUDES := \
-    $(LOCAL_PATH)/../interface \
-    $(LOCAL_PATH)/../../../../.. \
-    $(LOCAL_PATH)/../../../../../common_audio/signal_processing_library/main/interface 
+    $(LOCAL_PATH)/interface \
+    $(LOCAL_PATH)/../utility \
+    $(LOCAL_PATH)/../../.. \
+    $(LOCAL_PATH)/../../../common_audio/signal_processing_library/main/interface 
 
 LOCAL_SHARED_LIBRARIES := \
     libcutils \

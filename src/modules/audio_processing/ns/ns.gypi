@@ -16,15 +16,15 @@
         'apm_util'
       ],
       'include_dirs': [
-        '../interface',
+        'interface',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          '../interface',
+          'interface',
         ],
       },
       'sources': [
-        '../interface/noise_suppression.h',
+        'interface/noise_suppression.h',
         'noise_suppression.c',
         'windows_private.h',
         'defines.h',
@@ -39,15 +39,15 @@
         '<(webrtc_root)/common_audio/common_audio.gyp:spl',
       ],
       'include_dirs': [
-        '../interface',
+        'interface',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          '../interface',
+          'interface',
         ],
       },
       'sources': [
-        '../interface/noise_suppression_x.h',
+        'interface/noise_suppression_x.h',
         'noise_suppression_x.c',
         'nsx_defines.h',
         'nsx_core.c',
@@ -56,9 +56,3 @@
     },
   ],
 }
-
-# Local Variables:
-# tab-width:2
-# indent-tabs-mode:nil
-# End:
-# vim: set expandtab tabstop=2 shiftwidth=2:

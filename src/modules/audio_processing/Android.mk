@@ -10,25 +10,25 @@ LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
 
-include $(LOCAL_PATH)/../../../../android-webrtc.mk
+include $(LOCAL_PATH)/../../../android-webrtc.mk
 
 LOCAL_ARM_MODE := arm
 LOCAL_MODULE := libwebrtc_apm
 LOCAL_MODULE_TAGS := optional
 LOCAL_CPP_EXTENSION := .cc
 LOCAL_SRC_FILES := \
-    $(call all-proto-files-under, source) \
-    source/audio_buffer.cc \
-    source/audio_processing_impl.cc \
-    source/echo_cancellation_impl.cc \
-    source/echo_control_mobile_impl.cc \
-    source/gain_control_impl.cc \
-    source/high_pass_filter_impl.cc \
-    source/level_estimator_impl.cc \
-    source/noise_suppression_impl.cc \
-    source/splitting_filter.cc \
-    source/processing_component.cc \
-    source/voice_detection_impl.cc
+    $(call all-proto-files-under, .) \
+    audio_buffer.cc \
+    audio_processing_impl.cc \
+    echo_cancellation_impl.cc \
+    echo_control_mobile_impl.cc \
+    gain_control_impl.cc \
+    high_pass_filter_impl.cc \
+    level_estimator_impl.cc \
+    noise_suppression_impl.cc \
+    splitting_filter.cc \
+    processing_component.cc \
+    voice_detection_impl.cc
 
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \
@@ -39,15 +39,15 @@ LOCAL_CFLAGS := \
 
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/interface \
-    $(LOCAL_PATH)/../aec/main/interface \
-    $(LOCAL_PATH)/../aecm/main/interface \
-    $(LOCAL_PATH)/../agc/main/interface \
-    $(LOCAL_PATH)/../ns/main/interface \
-    $(LOCAL_PATH)/../../interface \
-    $(LOCAL_PATH)/../../.. \
-    $(LOCAL_PATH)/../../../common_audio/signal_processing_library/main/interface \
-    $(LOCAL_PATH)/../../../common_audio/vad/main/interface \
-    $(LOCAL_PATH)/../../../system_wrappers/interface \
+    $(LOCAL_PATH)/aec/interface \
+    $(LOCAL_PATH)/aecm/interface \
+    $(LOCAL_PATH)/agc/interface \
+    $(LOCAL_PATH)/ns/interface \
+    $(LOCAL_PATH)/../interface \
+    $(LOCAL_PATH)/../.. \
+    $(LOCAL_PATH)/../../common_audio/signal_processing_library/main/interface \
+    $(LOCAL_PATH)/../../common_audio/vad/main/interface \
+    $(LOCAL_PATH)/../../system_wrappers/interface \
     external/protobuf/src
 
 LOCAL_SHARED_LIBRARIES := \
@@ -67,8 +67,8 @@ include $(CLEAR_VARS)
 LOCAL_MODULE_TAGS := tests
 LOCAL_CPP_EXTENSION := .cc
 LOCAL_SRC_FILES:= \
-    $(call all-proto-files-under, source) \
-    test/process_test/process_test.cc
+    $(call all-proto-files-under, .) \
+    test/process_test.cc
 
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \
@@ -76,9 +76,9 @@ LOCAL_CFLAGS := \
 
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/interface \
-    $(LOCAL_PATH)/../../interface \
-    $(LOCAL_PATH)/../../.. \
-    $(LOCAL_PATH)/../../../system_wrappers/interface \
+    $(LOCAL_PATH)/../interface \
+    $(LOCAL_PATH)/../.. \
+    $(LOCAL_PATH)/../../system_wrappers/interface \
     external/gtest/include
 
 LOCAL_STATIC_LIBRARIES := \
@@ -106,8 +106,8 @@ include $(CLEAR_VARS)
 LOCAL_MODULE_TAGS := tests
 LOCAL_CPP_EXTENSION := .cc
 LOCAL_SRC_FILES:= \
-    $(call all-proto-files-under, test/unit_test) \
-    test/unit_test/unit_test.cc
+    $(call all-proto-files-under, test) \
+    test/unit_test.cc
 
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \
@@ -116,10 +116,10 @@ LOCAL_CFLAGS := \
 
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/interface \
-    $(LOCAL_PATH)/../../interface \
-    $(LOCAL_PATH)/../../.. \
-    $(LOCAL_PATH)/../../../system_wrappers/interface \
-    $(LOCAL_PATH)/../../../common_audio/signal_processing_library/main/interface \
+    $(LOCAL_PATH)/../interface \
+    $(LOCAL_PATH)/../.. \
+    $(LOCAL_PATH)/../../system_wrappers/interface \
+    $(LOCAL_PATH)/../../common_audio/signal_processing_library/main/interface \
     external/gtest/include \
     external/protobuf/src
 

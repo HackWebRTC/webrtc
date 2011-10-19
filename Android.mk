@@ -23,11 +23,11 @@ include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_coding/codecs/iSAC/main/source/
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_coding/main/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_conference_mixer/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_device/main/source/Android.mk
-include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_processing/aec/main/source/Android.mk
-include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_processing/aecm/main/source/Android.mk
-include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_processing/agc/main/source/Android.mk
-include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_processing/main/Android.mk
-include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_processing/ns/main/source/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_processing/aec/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_processing/aecm/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_processing/agc/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_processing/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_processing/ns/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_processing/utility/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/media_file/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/rtp_rtcp/source/Android.mk

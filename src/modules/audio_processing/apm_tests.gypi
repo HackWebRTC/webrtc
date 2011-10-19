@@ -29,15 +29,14 @@
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
         '<(webrtc_root)/../test/test.gyp:test_support',
         '<(webrtc_root)/../testing/gtest.gyp:gtest',
-        '<(webrtc_root)/../testing/gtest.gyp:gtest_main',
         '<(webrtc_root)/../third_party/protobuf/protobuf.gyp:protobuf_lite',
       ],
       'include_dirs': [
-        '../../../../testing/gtest/include',
+        '<(webrtc_root)/../testing/gtest/include',
         '<(protoc_out_dir)',
       ],
       'sources': [
-        'test/unit_test/unit_test.cc',
+        'test/unit_test.cc',
         '<(protoc_out_dir)/<(protoc_out_relpath)/unittest.pb.cc',
         '<(protoc_out_dir)/<(protoc_out_relpath)/unittest.pb.h',
       ],
@@ -48,7 +47,7 @@
       'type': 'none',
       'variables': {
         'proto_relpath':
-          '<(webrtc_root)/modules/audio_processing/main/test/unit_test',
+          '<(webrtc_root)/modules/audio_processing/test',
       },
       'sources': [
         '<(proto_relpath)/unittest.proto',
@@ -74,7 +73,7 @@
         },
       ],
       'dependencies': [
-        '../../third_party/protobuf/protobuf.gyp:protoc#host',
+        '<(webrtc_root)/../third_party/protobuf/protobuf.gyp:protoc#host',
       ],
       # This target exports a hard dependency because it generates header
       # files.
@@ -87,22 +86,15 @@
         'audio_processing',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
         '<(webrtc_root)/../testing/gtest.gyp:gtest',
-        '<(webrtc_root)/../testing/gtest.gyp:gtest_main',
         '<(webrtc_root)/../third_party/protobuf/protobuf.gyp:protobuf_lite',
       ],
       'include_dirs': [
-        '../../../../testing/gtest/include',
+        '<(webrtc_root)/../testing/gtest/include',
         '<(protoc_out_dir)',
       ],
       'sources': [
-        'test/process_test/process_test.cc',
+        'test/process_test.cc',
       ],
     },
   ],
 }
-
-# Local Variables:
-# tab-width:2
-# indent-tabs-mode:nil
-# End:
-# vim: set expandtab tabstop=2 shiftwidth=2:
