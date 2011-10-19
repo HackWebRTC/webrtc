@@ -18,6 +18,17 @@
 #include "engine_configurations.h"
 #include "video_capture_factory.h"
 
+class BaseObserver : public webrtc::ViEBaseObserver {
+ public:
+  BaseObserver()
+      : cpu_load_(0) {}
+
+  virtual void PerformanceAlarm(const unsigned int cpu_load) {
+    cpu_load_ = cpu_load;
+  }
+  unsigned int cpu_load_;
+};
+
 int ViEAutoTest::ViEBaseStandardTest() {
     ViETest::Log(" ");
     ViETest::Log("========================================");
@@ -314,6 +325,24 @@ int ViEAutoTest::ViEBaseExtendedTest() {
     ViETest::Log(" ");
     ViETest::Log("========================================");
     ViETest::Log(" ViEBase Extended Test");
+
+    // ***************************************************************
+    // Test BaseObserver
+    // ***************************************************************
+    // TODO(mflodman) Add test for base observer. Cpu load must be over 75%.
+//    BaseObserver base_observer;
+//    error = ptrViEBase->RegisterObserver(base_observer);
+//    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+//                                         __FUNCTION__, __LINE__);
+//
+//    AutoTestSleep(KAutoTestSleepTimeMs);
+//
+//    error = ptrViEBase->DeregisterObserver();
+//    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+//                                         __FUNCTION__, __LINE__);
+//    numberOfErrors += ViETest::TestError(base_observer.cpu_load_ > 0,
+//                                         "ERROR: %s at line %d",
+//                                         __FUNCTION__, __LINE__);
 
     ViETest::Log(" ");
     ViETest::Log(" ViEBase Extended Test PASSED!");

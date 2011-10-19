@@ -97,8 +97,6 @@ ViEBaseImpl::~ViEBaseImpl()
 {
     WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideo, _instanceId,
                "ViEBaseImpl::ViEBaseImpl() Dtor");
-
-    _viePerformanceMonitor.Terminate();
 }
 
 // ----------------------------------------------------------------------------
@@ -119,9 +117,6 @@ int ViEBaseImpl::Init()
     }
 
     SetInitialized();
-
-    _viePerformanceMonitor.Init();
-
     return 0;
 }
 
@@ -556,15 +551,14 @@ int ViEBaseImpl::StopReceive(const int videoChannel)
 
 int ViEBaseImpl::RegisterObserver(ViEBaseObserver& observer)
 {
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(_instanceId), "%s",
-               __FUNCTION__);
+    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(_instanceId),
+                 "%s", __FUNCTION__);
     if (_viePerformanceMonitor.ViEBaseObserverRegistered())
     {
         SetLastError(kViEBaseObserverAlreadyRegistered);
         return -1;
     }
-
-    return _viePerformanceMonitor.RegisterViEBaseObserver(&observer);
+    return _viePerformanceMonitor.Init(&observer);
 }
 
 // ----------------------------------------------------------------------------
@@ -575,8 +569,8 @@ int ViEBaseImpl::RegisterObserver(ViEBaseObserver& observer)
 
 int ViEBaseImpl::DeregisterObserver()
 {
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(_instanceId), "%s",
-               __FUNCTION__);
+    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(_instanceId),
+                 "%s", __FUNCTION__);
 
     if (!_viePerformanceMonitor.ViEBaseObserverRegistered())
     {
@@ -585,7 +579,8 @@ int ViEBaseImpl::DeregisterObserver()
                    "%s No observer registered.", __FUNCTION__);
         return -1;
     }
-    return _viePerformanceMonitor.RegisterViEBaseObserver(NULL);
+    _viePerformanceMonitor.Terminate();
+    return 0;
 }
 
 // ============================================================================

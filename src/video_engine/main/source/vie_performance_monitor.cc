@@ -35,17 +35,10 @@ ViEPerformanceMonitor::ViEPerformanceMonitor(int engineId)
         _ptrViEMonitorThread(NULL),
         _monitorkEvent(*EventWrapper::Create()),
         _averageApplicationCPU(kViECpuStartValue),
-        _averageSystemCPU(kViECpuStartValue), _cpu(NULL), _vieBaseObserver(NULL)
+        _averageSystemCPU(kViECpuStartValue),
+        _cpu(NULL),
+        _vieBaseObserver(NULL)
 {
-    _cpu = CpuWrapper::CreateCpu();
-    if (_cpu)
-    {
-        _cpu->CpuUsage(); // to initialize
-    } else
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId),
-                   "%s: Could not create CpuWrapper", __FUNCTION__);
-    }
 }
 
 ViEPerformanceMonitor::~ViEPerformanceMonitor()
@@ -53,24 +46,31 @@ ViEPerformanceMonitor::~ViEPerformanceMonitor()
     Terminate();
     delete &_pointerCritsect;
     delete &_monitorkEvent;
-    if (_cpu)
-    {
-        delete _cpu;
-        _cpu = NULL;
-    }
 }
 
-int ViEPerformanceMonitor::Init()
+int ViEPerformanceMonitor::Init(ViEBaseObserver* vieBaseObserver)
 {
+    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_engineId),
+                 "%s", __FUNCTION__);
+
+    CriticalSectionScoped cs(_pointerCritsect);
+    if (!vieBaseObserver || _vieBaseObserver)
+    {
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId),
+                   "%s: Bad input argument or observer already set",
+                   __FUNCTION__);
+        return -1;
+    }
+
+    _cpu = CpuWrapper::CreateCpu();
     if (_cpu == NULL)
     {
         // Performance monitoring not supported
-        WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_engineId),
-                   "%s: Not supported", __FUNCTION__);
+        WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideo,
+                     ViEId(_engineId), "%s: Not supported", __FUNCTION__);
         return 0;
     }
 
-    CriticalSectionScoped cs(_pointerCritsect);
     if (_ptrViEMonitorThread == NULL)
     {
         _monitorkEvent.StartTimer(true, kViEMonitorPeriodMs);
@@ -92,72 +92,45 @@ int ViEPerformanceMonitor::Init()
             return -1;
         }
     }
+    _vieBaseObserver = vieBaseObserver;
     return 0;
 }
 
-int ViEPerformanceMonitor::Terminate()
+void ViEPerformanceMonitor::Terminate()
 {
+    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_engineId),
+                 "%s", __FUNCTION__);
+
+    _pointerCritsect.Enter();
+    if (!_vieBaseObserver)
     {
-        _pointerCritsect.Enter();
-        _vieBaseObserver = NULL;
         _pointerCritsect.Leave();
-
-        _monitorkEvent.StopTimer();
-        if (_ptrViEMonitorThread)
-        {
-            ThreadWrapper* tmpThread = _ptrViEMonitorThread;
-            _ptrViEMonitorThread = NULL;
-            _monitorkEvent.Set();
-            if (tmpThread->Stop())
-            {
-                delete tmpThread;
-                tmpThread = NULL;
-            }
-        }
+        return;
     }
-    return 0;
+    _vieBaseObserver = NULL;
+    _monitorkEvent.StopTimer();
+    if (_ptrViEMonitorThread)
+    {
+        ThreadWrapper* tmpThread = _ptrViEMonitorThread;
+        _ptrViEMonitorThread = NULL;
+        _monitorkEvent.Set();
+        _pointerCritsect.Leave();
+        if (tmpThread->Stop())
+        {
+            _pointerCritsect.Enter();
+            delete tmpThread;
+            tmpThread = NULL;
+            delete _cpu;
+        }
+        _cpu = NULL;
+    }
+    _pointerCritsect.Leave();
 }
 
-int ViEPerformanceMonitor::RegisterViEBaseObserver(
-    ViEBaseObserver* vieBaseObserver)
-{
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_engineId), "%s",
-               __FUNCTION__);
-    CriticalSectionScoped cs(_pointerCritsect);
-    if (vieBaseObserver)
-    {
-        if (_vieBaseObserver)
-        {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId),
-                       "%s: Observer already started", __FUNCTION__);
-            return -1;
-        }
-        _vieBaseObserver = vieBaseObserver;
-    } else
-    {
-        _vieBaseObserver = NULL;
-    }
-    return 0;
-}
 bool ViEPerformanceMonitor::ViEBaseObserverRegistered()
 {
     CriticalSectionScoped cs(_pointerCritsect);
     return _vieBaseObserver != NULL;
-}
-
-int ViEPerformanceMonitor::GetAverageApplicationCPU(int& applicationCPU)
-{
-    // Not supported
-    return -1;
-}
-
-int ViEPerformanceMonitor::GetAverageSystemCPU(int& systemCPU)
-{
-    if (_cpu)
-    {
-        return _cpu->CpuUsage();
-    }
-    return -1;
 }
 
 bool ViEPerformanceMonitor::ViEMonitorThreadFunction(void* obj)
@@ -169,23 +142,20 @@ bool ViEPerformanceMonitor::ViEMonitorProcess()
 {
     // Periodically triggered with time KViEMonitorPeriodMs
     _monitorkEvent.Wait(kViEMonitorPeriodMs);
+    if (_ptrViEMonitorThread == NULL)
     {
-        if (_ptrViEMonitorThread == NULL)
+        // Thread removed, exit
+        return false;
+    }
+    CriticalSectionScoped cs(_pointerCritsect);
+    if (_cpu)
+    {
+        int cpuLoad = _cpu->CpuUsage();
+        if (cpuLoad > 75)
         {
-            // Thread removed, exit
-            return false;
-        }
-        if (_cpu)
-        {
-            int cpuLoad = _cpu->CpuUsage();
-            if (cpuLoad > 75)
+            if (_vieBaseObserver)
             {
-                _pointerCritsect.Enter();
-                if (_vieBaseObserver)
-                {
-                    _vieBaseObserver->PerformanceAlarm(cpuLoad);
-                }
-                _pointerCritsect.Leave();
+                _vieBaseObserver->PerformanceAlarm(cpuLoad);
             }
         }
     }

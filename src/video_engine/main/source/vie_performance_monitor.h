@@ -33,14 +33,9 @@ public:
     ViEPerformanceMonitor(int engineId);
     ~ViEPerformanceMonitor();
 
-    int Init();
-    int Terminate();
-    int RegisterViEBaseObserver(ViEBaseObserver* vieBaseObserver);
+    int Init(ViEBaseObserver* vieBaseObserver);
+    void Terminate();
     bool ViEBaseObserverRegistered();
-
-    // ViEBase
-    int GetAverageApplicationCPU(int& applicationCPU);
-    int GetAverageSystemCPU(int& systemCPU);
 
 protected:
     static bool ViEMonitorThreadFunction(void* obj);
