@@ -22,6 +22,15 @@
 
     'build_with_chromium%': '<(build_with_chromium)',
 
+    # The Chromium common.gypi we use treats all gyp files without
+    # chromium_code==1 as third party code. This disables many of the
+    # preferred warning settings.
+    #
+    # We can set this here to have WebRTC code treated as Chromium code. In a
+    # standalone build, our third party code will still have the reduced
+    # warning settings.
+    'chromium_code': 1,
+
     # Adds video support to dependencies shared by voice and video engine.
     # This should normally be enabled; the intended use is to disable only
     # when building voice engine exclusively.
@@ -59,15 +68,6 @@
         'include_internal_audio_device%': 1,
 
         'webrtc_root%': '<(DEPTH)/src',
-
-         # The Chromium common.gypi we use treats all gyp files without
-         # chromium_code==1 as third party code. This disables many of the
-         # preferred warning settings.
-         #
-         # In a standalone build, we can set this here to have WebRTC code
-         # treated as Chromium code. Our third party code will still have the
-         # reduced warning settings.
-         'chromium_code%': 1,
       }],
     ], # conditions
   },
@@ -110,57 +110,20 @@
     ], # conditions
 
     'target_conditions': [
-      ['chromium_code==1', {
-        # TODO(andrew): This block disables some warnings from the chromium_code
-        # configuration. Remove when possible.
-        'conditions': [
-          ['OS=="mac"', {
-            'xcode_settings': {
-              'GCC_TREAT_WARNINGS_AS_ERRORS': 'NO',
-            },
-          }],
-          ['OS=="win"', {
-            'msvs_disabled_warnings': [4389], # Signed/unsigned mismatch.
-            'msvs_settings': {
-              'VCCLCompilerTool': {
-                'WarnAsError': 'false',
-              },
-            },
-          }],
-        ], # conditions
-      }, {
-        # Exclusion filters derived from Chromium's common.gypi. These are
-        # provided in our standalone build due to chromium_code==1; if WebRTC
-        # code relies on them they must also be available for a Chromium build.
-        'conditions': [
-          ['OS!="win"', {
-            'sources/': [ ['exclude', '_win(_unittest)?\\.(h|cc)$'],
-                          ['exclude', '(^|/)win/'],
-                          ['exclude', '(^|/)win_[^/]*\\.(h|cc)$'] ],
-          }],
-          ['OS!="mac"', {
-            'sources/': [ ['exclude', '_(cocoa|mac)(_unittest)?\\.(h|cc)$'],
-                          ['exclude', '(^|/)(cocoa|mac)/'],
-                          ['exclude', '\\.mm?$' ] ],
-          }],
-          ['toolkit_uses_gtk!=1', {
-            'sources/': [
-              ['exclude', '_(chromeos|gtk|x|x11|xdg)(_unittest)?\\.(h|cc)$'],
-              ['exclude', '(^|/)gtk/'],
-              ['exclude', '(^|/)(gtk|x11)_[^/]*\\.(h|cc)$'],
-            ],
-          }],
-          ['OS!="linux"', {
-            'sources/': [
-              ['exclude', '_linux(_unittest)?\\.(h|cc)$'],
-              ['exclude', '(^|/)linux/'],
-            ],
-          }],
-          # We use "POSIX" to refer to all non-Windows operating systems.
-          ['OS=="win"', {
-            'sources/': [ ['exclude', '_posix\\.(h|cc)$'] ],
-          }],
-        ], # conditions
+      # TODO(andrew): This block disables some warnings from the chromium_code
+      # configuration. Remove when possible.
+      ['OS=="mac"', {
+        'xcode_settings': {
+          'GCC_TREAT_WARNINGS_AS_ERRORS': 'NO',
+        },
+      }],
+      ['OS=="win"', {
+        'msvs_disabled_warnings': [4389], # Signed/unsigned mismatch.
+        'msvs_settings': {
+          'VCCLCompilerTool': {
+            'WarnAsError': 'false',
+          },
+        },
       }],
     ], # target_conditions
   }, # target_defaults
