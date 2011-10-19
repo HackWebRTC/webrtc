@@ -736,6 +736,7 @@ int WebRtcAec_GetDelayMetrics(void* handle, int* median, int* std) {
   int delay_values = 0;
   int num_delay_values = 0;
   int my_median = 0;
+  const int kMsPerBlock = (PART_LEN * 1000) / self->splitSampFreq;
   float l1_norm = 0;
 
   if (self == NULL) {
@@ -779,13 +780,13 @@ int WebRtcAec_GetDelayMetrics(void* handle, int* median, int* std) {
       break;
     }
   }
-  *median = my_median;
+  *median = my_median * kMsPerBlock;
 
   // Calculate the L1 norm, with median value as central moment
   for (i = 0; i < kMaxDelay; i++) {
     l1_norm += (float) (fabs(i - my_median) * self->aec->delay_histogram[i]);
   }
-  *std = (int) (l1_norm / (float) num_delay_values + 0.5f);
+  *std = (int) (l1_norm / (float) num_delay_values + 0.5f) * kMsPerBlock;
 
   // Reset histogram
   memset(self->aec->delay_histogram, 0, sizeof(self->aec->delay_histogram));
