@@ -134,7 +134,7 @@ TEST_F(PacketReaderTest, NormalLargeData) {
 // Test with empty data.
 TEST_F(PacketReaderTest, EmptyData) {
   const int kDataLengthInBytes = 0;
-  WebRtc_UWord8 data[kDataLengthInBytes];
+  WebRtc_UWord8 data[0];
   WebRtc_UWord8* data_pointer = data;
   reader_->InitializeReading(data, kDataLengthInBytes, kPacketSizeInBytes);
   EXPECT_EQ(kDataLengthInBytes, reader_->NextPacket(&data_pointer));

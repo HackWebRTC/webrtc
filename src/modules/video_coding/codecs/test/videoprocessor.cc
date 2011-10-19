@@ -140,7 +140,7 @@ bool VideoProcessorImpl::ProcessFrame(int frame_number) {
       frame_type = kKeyFrame;
     }
     WebRtc_Word32 encode_result = encoder_->Encode(source_frame_, NULL,
-                                                   frame_type);
+                                                   &frame_type);
     if (encode_result != WEBRTC_VIDEO_CODEC_OK) {
       fprintf(stderr, "Failed to encode frame %d, return code: %d\n",
               frame_number, encode_result);

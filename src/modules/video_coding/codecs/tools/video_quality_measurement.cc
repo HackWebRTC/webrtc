@@ -7,10 +7,14 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include <dirent.h>  // for checking directory existence
 
 #include <cassert>
 #include <cstdio>
+#include <sys/stat.h>  // To check for directory existence.
+
+#ifndef S_ISDIR  // Not defined in stat.h on Windows.
+#define S_ISDIR(mode) (((mode) & S_IFMT) == S_IFDIR)
+#endif
 
 #include "google/gflags.h"
 #include "packet_manipulator.h"
@@ -100,13 +104,13 @@ int HandleCommandLineFlags(webrtc::test::TestConfig* config) {
   config->input_filename = FLAGS_input_filename;
 
   // Verify the output dir exists:
-  DIR* output_dir = opendir(FLAGS_output_dir.c_str());
-  if (output_dir == NULL) {
+  struct stat dir_info;
+  if (!(stat(FLAGS_output_dir.c_str(), &dir_info) == 0 && 
+      S_ISDIR(dir_info.st_mode))) {
     fprintf(stderr, "Cannot find output directory: %s\n",
-            FLAGS_output_dir.c_str());
+              FLAGS_output_dir.c_str());
     return 3;
   }
-  closedir(output_dir);
   config->output_dir = FLAGS_output_dir;
 
   // Manufacture an output filename if none was given:

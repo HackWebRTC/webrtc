@@ -20,9 +20,9 @@ class PacketManipulatorTest: public PacketRelatedTest {
  protected:
   PacketReader packet_reader_;
   EncodedImage image_;
-  static const double kNeverDropProbability = 0.0;
-  static const double kAlwaysDropProbability = 1.0;
-  static const int kBurstLength = 1;
+  const double kNeverDropProbability = 0.0;
+  const double kAlwaysDropProbability = 1.0;
+  const int kBurstLength = 1;
   NetworkingConfig drop_config_;
   NetworkingConfig no_drop_config_;
 
