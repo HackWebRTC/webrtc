@@ -96,9 +96,9 @@
 /// ***** Sets several member variables. Can signal the error system if one has
 ///       occurred
 /// ***** Returns 0 on success, -1 otherwise.
-- (NSNumber*)setCaptureDeviceByName:(char*)name{
+- (NSNumber*)setCaptureDeviceById:(char*)uniqueId{
     WEBRTC_TRACE(kTraceModuleCall, kTraceVideoCapture, 0,
-                 "%s:%d name=%s", __FUNCTION__, __LINE__, name);
+                 "%s:%d name=%s", __FUNCTION__, __LINE__, uniqueId);
     if(NO == _OSSupported)
     {
         WEBRTC_TRACE(kTraceInfo, kTraceVideoCapture, 0,
@@ -107,11 +107,7 @@
         return [NSNumber numberWithInt:0];
     }
 
-    if(!_captureSession)
-    {
-    }
-
-    if(!name || (0 == strcmp("", name)))
+    if(!uniqueId || (0 == strcmp("", uniqueId)))
     {
         WEBRTC_TRACE(kTraceInfo, kTraceVideoCapture, 0,
                      "%s:%d  \"\" was passed in for capture device name",
@@ -120,7 +116,7 @@
         return [NSNumber numberWithInt:0];
     }
 
-    if(0 == strcmp(name, _captureDeviceNameUTF8))
+    if(0 == strcmp(uniqueId, _captureDeviceNameUniqueID))
     {
         // camera already set
         WEBRTC_TRACE(kTraceInfo, kTraceVideoCapture, 0,
@@ -135,16 +131,24 @@
     {
         tempCaptureDevice = (QTCaptureDevice*)[_captureDevices
                                                objectAtIndex:index];
-        char tempCaptureDeviceName[1024] = "";
-        [[tempCaptureDevice localizedDisplayName]
-          getCString:tempCaptureDeviceName maxLength:1024
+        char tempCaptureDeviceId[1024] = "";
+        [[tempCaptureDevice uniqueID]
+          getCString:tempCaptureDeviceId maxLength:1024
           encoding:NSUTF8StringEncoding];
-        if(0 == strcmp(name, tempCaptureDeviceName))
+        if(0 == strcmp(uniqueId, tempCaptureDeviceId))
         {
             WEBRTC_TRACE(kTraceInfo, kTraceVideoCapture, 0,
-                         "%s:%d Found capture device %s as index %d",
-                         __FUNCTION__, __LINE__, tempCaptureDeviceName, index);
+                         "%s:%d Found capture device id %s as index %d",
+                         __FUNCTION__, __LINE__, tempCaptureDeviceId, index);
             success = YES;
+          [[tempCaptureDevice localizedDisplayName]
+              getCString:_captureDeviceNameUTF8
+               maxLength:1024
+                encoding:NSUTF8StringEncoding];
+          [[tempCaptureDevice uniqueID]
+              getCString:_captureDeviceNameUniqueID
+               maxLength:1024
+                encoding:NSUTF8StringEncoding];
             break;
         }
 
@@ -156,9 +160,8 @@
         // nothing has been changed yet, so capture device will stay in it's
         // state
         WEBRTC_TRACE(kTraceInfo, kTraceVideoCapture, 0,
-                     "%s:%d Capture device %s was not found in list of "
-                     "available devices", __FUNCTION__, __LINE__,
-                     _captureDeviceNameUTF8);
+                     "%s:%d Capture device id %s was not found in list of "
+                     "available devices.", __FUNCTION__, __LINE__, uniqueId);
         return [NSNumber numberWithInt:0];
     }
 
@@ -167,8 +170,8 @@
     if(!success)
     {
         WEBRTC_TRACE(kTraceError, kTraceVideoCapture, 0,
-                     "%s:%d Failed to open capture device: %s", __FUNCTION__,
-                     __LINE__, _captureDeviceNameUTF8);
+                     "%s:%d Failed to open capture device: %s",
+                     __FUNCTION__, __LINE__, _captureDeviceNameUTF8);
         return [NSNumber numberWithInt:-1];
     }
 

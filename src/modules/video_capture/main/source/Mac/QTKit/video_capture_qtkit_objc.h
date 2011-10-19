@@ -93,7 +93,7 @@ using namespace videocapturemodule;
 - (NSNumber*)getCaptureDeviceWithIndex:(int)index ToString:(char*)name WithLength:(int)length;
 - (NSNumber*)registerOwner:(webrtc::videocapturemodule::VideoCaptureMacQTKit*)owner;
 - (NSNumber*)setCaptureDeviceByIndex:(int)index;
-- (NSNumber*)setCaptureDeviceByName:(char*)name;
+- (NSNumber*)setCaptureDeviceById:(char*)uniqueId;
 - (NSNumber*)setCaptureHeight:(int)height AndWidth:(int)width AndFrameRate:(int)frameRate;
 - (NSNumber*)startCapture;
 - (NSNumber*)stopCapture;

@@ -152,9 +152,9 @@ WebRtc_Word32 VideoCaptureMacQTKit::Init(
     // at this point we know that the user has passed in a valid camera. Let's
     // set it as the current.
     if(-1 == [[_captureDevice
-               setCaptureDeviceByName:(char*)deviceNameUTF8]intValue])
+               setCaptureDeviceById:(char*)deviceUniqueIdUTF8]intValue])
     {
-        strcpy((char*)_deviceUniqueId, (char*)deviceNameUTF8);
+        strcpy((char*)_deviceUniqueId, (char*)deviceUniqueIdUTF8);
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
                      "Failed to set capture device %s (unique ID %s) even "
                      "though it was a valid return from "
