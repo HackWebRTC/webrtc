@@ -26,7 +26,8 @@ VCMSessionInfo::VCMSessionInfo():
     _emptySeqNumLow(-1),
     _emptySeqNumHigh(-1),
     _markerSeqNum(-1),
-    _packetsNotDecodable(0)
+    _packetsNotDecodable(0),
+    _pictureId(-1)
 {
 }
 
@@ -55,6 +56,10 @@ VCMSessionInfo::GetHighSeqNum() const
     return LatestSequenceNumber(_emptySeqNumHigh, _highSeqNum, NULL);
 }
 
+int VCMSessionInfo::PictureId() const {
+  return _pictureId;
+}
+
 void
 VCMSessionInfo::Reset() {
   for (int i = 0; i <= _highestPacketIndex; ++i)
@@ -71,6 +76,7 @@ VCMSessionInfo::Reset() {
   _highestPacketIndex = 0;
   _markerSeqNum = -1;
   _packetsNotDecodable = 0;
+  _pictureId = -1;
 }
 
 WebRtc_UWord32
@@ -168,6 +174,11 @@ VCMSessionInfo::InsertBuffer(WebRtc_UWord8* ptrStartOfLayer,
             packet.sizeBytes);
     }
     returnLength = packetSize;
+
+    if (packet.codecSpecificHeader.codec == kRTPVideoVP8)
+    {
+        _pictureId = packet.codecSpecificHeader.codecHeader.VP8.pictureId;
+    }
 
     if (packet.markerBit)
     {
@@ -643,13 +654,6 @@ bool
 VCMSessionInfo::HaveLastPacket() const
 {
     return _markerBit;
-}
-
-void
-VCMSessionInfo::ForceSetHaveLastPacket()
-{
-    _markerBit = true;
-    UpdateCompleteSession();
 }
 
 bool

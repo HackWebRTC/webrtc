@@ -69,6 +69,10 @@ VCMFrameBuffer::GetHighSeqNum() const
     return _sessionInfo.GetHighSeqNum();
 }
 
+int VCMFrameBuffer::PictureId() const {
+  return _sessionInfo.PictureId();
+}
+
 bool
 VCMFrameBuffer::IsSessionComplete() const
 {
@@ -234,13 +238,6 @@ VCMFrameBuffer::HaveLastPacket() const
     return _sessionInfo.HaveLastPacket();
 }
 
-bool
-VCMFrameBuffer::ForceSetHaveLastPacket()
-{
-    _sessionInfo.ForceSetHaveLastPacket();
-    return _sessionInfo.IsSessionComplete();
-}
-
 void
 VCMFrameBuffer::Reset()
 {
@@ -346,10 +343,7 @@ VCMFrameBuffer::RestructureFrameInformation()
     PrepareForDecode();
     _frameType = ConvertFrameType(_sessionInfo.FrameType());
     _completeFrame = _sessionInfo.IsSessionComplete();
-    // TODO(holmer): This bit is disabled for now since we can't tell whether
-    // we have had a full frame loss or if we've just lost an FEC/empty packet.
-    // _missingFrame = _sessionInfo.PreviousFrameLoss();
-    _missingFrame = false;
+    _missingFrame = _sessionInfo.PreviousFrameLoss();
 }
 
 WebRtc_Word32

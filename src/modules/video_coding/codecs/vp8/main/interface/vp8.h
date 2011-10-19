@@ -268,6 +268,7 @@ private:
     EncodedImage               _lastKeyFrame;
     int                        _imageFormat;
     vpx_ref_frame_t*           _refFrame;
+    int                        _propagationCnt;
 
 };// end of VP8Decoder class
 

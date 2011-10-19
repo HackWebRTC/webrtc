@@ -45,7 +45,6 @@ public:
     bool IsRetransmitted() const;
     bool IsSessionComplete() const;
     bool HaveLastPacket() const;
-    bool ForceSetHaveLastPacket();
     // Makes sure the session contain a decodable stream.
     void MakeSessionDecodable();
 
@@ -54,6 +53,8 @@ public:
     WebRtc_Word32 GetLowSeqNum() const;
     // Get highest packet sequence number in frame
     WebRtc_Word32 GetHighSeqNum() const;
+
+    int PictureId() const;
 
     // Set counted status (as counted by JB or not)
     void SetCountedFrame(bool frameCounted);

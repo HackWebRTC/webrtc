@@ -28,7 +28,7 @@
 
 #include "module_common_types.h"
 
-#define VP8_FREQ_HZ 90000
+enum { kVp8ErrorPropagationTh = 60 };
 //#define DEV_PIC_LOSS
 
 namespace webrtc
@@ -725,7 +725,8 @@ VP8Decoder::VP8Decoder():
     _numCores(1),
     _lastKeyFrame(),
     _imageFormat(VPX_IMG_FMT_NONE),
-    _refFrame(NULL)
+    _refFrame(NULL),
+    _propagationCnt(-1)
 {
 }
 
@@ -752,6 +753,7 @@ VP8Decoder::Reset()
     {
         InitDecode(NULL, _numCores);
     }
+    _propagationCnt = -1;
     return WEBRTC_VIDEO_CODEC_OK;
 }
 
@@ -811,6 +813,7 @@ VP8Decoder::InitDecode(const VideoCodec* inst,
         *_inst = *inst;
     }
     _numCores = numberOfCores;
+    _propagationCnt = -1;
 
     _inited = true;
     return WEBRTC_VIDEO_CODEC_OK;
@@ -822,7 +825,7 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
                    const RTPFragmentationHeader* fragmentation,
                    const CodecSpecificInfo* codecSpecificInfo,
                    WebRtc_Word64 /*renderTimeMs*/)
- {
+{
     if (!_inited)
     {
         return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
@@ -853,6 +856,17 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
     }
 #endif
 
+    // Restrict error propagation
+    // Reset on a key frame refresh
+    if (inputImage._frameType == kKeyFrame && inputImage._completeFrame)
+        _propagationCnt = -1;
+    // Start count on first loss
+    else if ((!inputImage._completeFrame || missingFrames) &&
+              _propagationCnt == -1)
+        _propagationCnt = 0;
+    if (_propagationCnt >= 0)
+        _propagationCnt++;
+
     vpx_dec_iter_t iter = NULL;
     vpx_image_t* img;
     WebRtc_Word32 ret;
@@ -863,6 +877,9 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
         // call decoder with zero data length to signal missing frames
         if (vpx_codec_decode(_decoder, NULL, 0, 0, VPX_DL_REALTIME))
         {
+            // Reset to avoid requesting key frames too often.
+            if (_propagationCnt > 0)
+                _propagationCnt = 0;
             return WEBRTC_VIDEO_CODEC_ERROR;
         }
         img = vpx_codec_get_frame(_decoder, &iter);
@@ -872,6 +889,9 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
 #ifdef INDEPENDENT_PARTITIONS
     if (DecodePartitions(inputImage, fragmentation))
     {
+        // Reset to avoid requesting key frames too often.
+        if (_propagationCnt > 0)
+            _propagationCnt = 0;
         return WEBRTC_VIDEO_CODEC_ERROR;
     }
 #else
@@ -886,6 +906,9 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
                          0,
                          VPX_DL_REALTIME))
     {
+        // Reset to avoid requesting key frames too often.
+        if (_propagationCnt > 0)
+            _propagationCnt = 0;
         return WEBRTC_VIDEO_CODEC_ERROR;
     }
 #endif
@@ -922,11 +945,17 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
 #ifdef DEV_PIC_LOSS
     if (vpx_codec_control(_decoder, VP8D_GET_LAST_REF_UPDATES, &lastRefUpdates))
     {
+        // Reset to avoid requesting key frames too often.
+        if (_propagationCnt > 0)
+            _propagationCnt = 0;
         return WEBRTC_VIDEO_CODEC_ERROR;
     }
     int corrupted = 0;
     if (vpx_codec_control(_decoder, VP8D_GET_FRAME_CORRUPTED, &corrupted))
     {
+        // Reset to avoid requesting key frames too often.
+        if (_propagationCnt > 0)
+            _propagationCnt = 0;
         return WEBRTC_VIDEO_CODEC_ERROR;
     }
 #endif
@@ -934,7 +963,12 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
     img = vpx_codec_get_frame(_decoder, &iter);
     ret = ReturnFrame(img, inputImage._timeStamp);
     if (ret != 0)
+    {
+        // Reset to avoid requesting key frames too often.
+        if (ret < 0 && _propagationCnt > 0)
+            _propagationCnt = 0;
         return ret;
+    }
 
     // we need to communicate that we should send a RPSI with a specific picture ID
 
@@ -967,6 +1001,14 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
         return WEBRTC_VIDEO_CODEC_REQUEST_SLI;
     }
 #endif
+
+    // Check Vs. threshold
+    if (_propagationCnt > kVp8ErrorPropagationTh)
+    {
+        // Reset to avoid requesting key frames too often.
+        _propagationCnt = 0;
+        return WEBRTC_VIDEO_CODEC_ERROR;
+    }
     return WEBRTC_VIDEO_CODEC_OK;
 }
 

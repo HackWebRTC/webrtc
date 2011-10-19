@@ -150,10 +150,6 @@ private:
     // Find oldest complete frame, used for getting next frame to decode
     VCMFrameListItem* FindOldestCompleteContinuousFrame();
 
-    // Check if a frame is missing the markerbit but is complete
-    bool CheckForCompleteFrame(VCMFrameListItem* oldestFrameItem);
-
-
     void CleanUpOldFrames();
     void CleanUpSizeZeroFrames();
 
@@ -181,6 +177,7 @@ private:
                                     const void* timestamp);
     static bool CompleteDecodableKeyFrameCriteria(VCMFrameBuffer* frame,
                                                   const void* notUsed);
+    bool ContinuousPictureId(int pictureId) const;
     // Decide whether should wait for NACK (mainly relevant for hybrid mode)
     bool WaitForNack();
 
@@ -205,6 +202,7 @@ private:
     WebRtc_Word32           _lastDecodedSeqNum;
     // Timestamp of last frame that was given to decoder
     WebRtc_Word64           _lastDecodedTimeStamp;
+    int                     _lastDecodedPictureId;
     WebRtc_UWord32          _packetsNotDecodable;
 
     // Statistics
@@ -241,7 +239,6 @@ private:
     WebRtc_UWord16          _NACKSeqNum[kNackHistoryLength];
     WebRtc_UWord32          _NACKSeqNumLength;
 
-    bool                    _missingMarkerBits;
     bool                    _firstPacket;
 };
 

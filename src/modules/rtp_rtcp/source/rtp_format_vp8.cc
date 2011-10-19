@@ -318,11 +318,7 @@ int RtpFormatVp8::WriteTIDFields(WebRtc_UWord8* x_field,
 
 int RtpFormatVp8::PayloadDescriptorExtraLength() const
 {
-    int length_bytes = 0;
-    if (beginning_)
-    {
-        length_bytes = PictureIdLength();
-    }
+    int length_bytes = PictureIdLength();
     if (TL0PicIdxFieldPresent()) ++length_bytes;
     if (TIDFieldPresent())       ++length_bytes;
     if (length_bytes > 0)        ++length_bytes; // Include the extension field.
@@ -331,7 +327,7 @@ int RtpFormatVp8::PayloadDescriptorExtraLength() const
 
 int RtpFormatVp8::PictureIdLength() const
 {
-    if (!beginning_ || hdr_info_.pictureId == kNoPictureId)
+    if (hdr_info_.pictureId == kNoPictureId)
     {
         return 0;
     }

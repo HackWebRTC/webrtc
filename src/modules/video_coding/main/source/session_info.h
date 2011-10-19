@@ -61,7 +61,6 @@ public:
 
     WebRtc_UWord32 GetSessionLength();
     bool HaveLastPacket() const;
-    void ForceSetHaveLastPacket();
     bool IsRetransmitted() const;
     webrtc::FrameType FrameType() const { return _frameType; }
 
@@ -74,6 +73,7 @@ public:
     WebRtc_Word32 GetLowSeqNum() const;
     // returns highest seqNum, media or empty
     WebRtc_Word32 GetHighSeqNum() const;
+    int PictureId() const;
 
     WebRtc_UWord32 PrepareForDecode(WebRtc_UWord8* ptrStartOfLayer,
                                     VideoCodecType codec);
@@ -130,6 +130,7 @@ private:
     WebRtc_Word32      _markerSeqNum;
     // Number of packets discarded because the decoder can't use them.
     int                _packetsNotDecodable;
+    int                _pictureId;
 };
 
 } // namespace webrtc
