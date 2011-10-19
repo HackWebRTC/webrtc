@@ -115,6 +115,9 @@ public:
 protected:
     VideoCaptureImpl(const WebRtc_Word32 id);
     virtual ~VideoCaptureImpl();
+    WebRtc_Word32 DeliverCapturedFrame(
+        VideoFrame& captureFrame, WebRtc_Word32 width, WebRtc_Word32 height,
+        WebRtc_Word64 capture_time, VideoCodecType codec_type);
 
     WebRtc_Word32 _id; // Module ID
     WebRtc_UWord8* _deviceUniqueId; // current Device unique name;
@@ -124,9 +127,6 @@ protected:
 private:
     void UpdateFrameCount();
     WebRtc_UWord32 CalculateFrameRate(const TickTime& now);
-    WebRtc_Word32 DeliverCapturedFrame(
-        VideoFrame& captureFrame, WebRtc_Word32 width, WebRtc_Word32 height,
-        WebRtc_Word64 capture_time, VideoCodecType codec_type);
 
     CriticalSectionWrapper& _callBackCs;
 
