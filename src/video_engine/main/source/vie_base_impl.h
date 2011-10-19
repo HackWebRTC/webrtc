@@ -27,7 +27,6 @@ namespace webrtc
 
 class VoiceEngine;
 class Module;
-class ViEPerformanceMonitor;
 
 class ViEBaseImpl: public virtual ViESharedData,
     public ViEBase,
@@ -74,7 +73,6 @@ public:
 protected:
     ViEBaseImpl();
     virtual ~ViEBaseImpl();
-    ViEPerformanceMonitor _viePerformanceMonitor;
 private:
 
     // Version functions

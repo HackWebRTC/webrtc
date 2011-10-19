@@ -83,8 +83,7 @@ int ViEBaseImpl::Release()
 // Constructor
 // ----------------------------------------------------------------------------
 
-ViEBaseImpl::ViEBaseImpl() :
-    _viePerformanceMonitor(0)
+ViEBaseImpl::ViEBaseImpl()
 {
     WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideo, _instanceId,
                "ViEBaseImpl::ViEBaseImpl() Ctor");
