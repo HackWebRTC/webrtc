@@ -173,11 +173,7 @@ ViERenderer* ViERenderManager::AddRenderStream(const WebRtc_Word32 renderId,
     if (ptrRenderer == NULL)
     {
         // No render module for this window, create a new one
-    #ifndef WEBRTC_VIDEO_EXTERNAL_CAPTURE_AND_RENDER
        ptrRenderer = VideoRender::CreateVideoRender(ViEModuleId(_engineId, -1), window, false);
-    #else
-       ptrRenderer = VideoRender::CreateVideoRender(ViEModuleId(_engineId, -1), window, false, kRenderExternal);
-    #endif //WEBRTC_VIDEO_EXTERNAL_CAPTURE_AND_RENDER
        if (!ptrRenderer)
        {
            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId), "Could not create new render module");

@@ -18,7 +18,7 @@
 
 #include <cassert>
 
-#ifndef WEBRTC_VIDEO_EXTERNAL_CAPTURE_AND_RENDER
+#ifdef WEBRTC_INCLUDE_INTERNAL_VIDEO_RENDER
 
 #if defined (_WIN32)
 #include "windows/video_render_windows_impl.h"
@@ -53,7 +53,7 @@
 //Other platforms
 #endif
 
-#endif  // WEBRTC_VIDEO_EXTERNAL_CAPTURE_AND_RENDER
+#endif  // WEBRTC_INCLUDE_INTERNAL_VIDEO_RENDER
 
 // For external rendering
 #include "external/video_render_external_impl.h"
@@ -120,7 +120,7 @@ ModuleVideoRenderImpl::ModuleVideoRenderImpl(
     // Create platform specific renderer
     switch (videoRenderType)
     {
-#ifndef WEBRTC_VIDEO_EXTERNAL_CAPTURE_AND_RENDER
+#ifdef WEBRTC_INCLUDE_INTERNAL_VIDEO_RENDER
 
 #if defined(_WIN32)
         case kRenderWindows:
@@ -210,7 +210,7 @@ ModuleVideoRenderImpl::ModuleVideoRenderImpl(
         // Other platforms
 #endif
 
-#endif  // WEBRTC_VIDEO_EXTERNAL_CAPTURE_AND_RENDER
+#endif  // WEBRTC_INCLUDE_INTERNAL_VIDEO_RENDER
         case kRenderExternal:
         {
             VideoRenderExternalImpl* ptrRenderer(NULL);
@@ -264,7 +264,7 @@ ModuleVideoRenderImpl::~ModuleVideoRenderImpl()
                 delete ptrRenderer;
             }
             break;
-#ifndef WEBRTC_VIDEO_EXTERNAL_CAPTURE_AND_RENDER
+#ifdef WEBRTC_INCLUDE_INTERNAL_VIDEO_RENDER
 
 #if defined(_WIN32)
             case kRenderWindows:
@@ -319,7 +319,7 @@ ModuleVideoRenderImpl::~ModuleVideoRenderImpl()
             //other platforms
 #endif
 
-#endif  // WEBRTC_VIDEO_EXTERNAL_CAPTURE_AND_RENDER
+#endif  // WEBRTC_INCLUDE_INTERNAL_VIDEO_RENDER
 
             default:
                 // Error...
@@ -397,7 +397,7 @@ WebRtc_Word32 ModuleVideoRenderImpl::ChangeWindow(void* window)
     WEBRTC_TRACE(kTraceModuleCall, kTraceVideoRenderer, _id,
                  "%s", __FUNCTION__);
 
-#ifndef WEBRTC_VIDEO_EXTERNAL_CAPTURE_AND_RENDER
+#ifdef WEBRTC_INCLUDE_INTERNAL_VIDEO_RENDER
 
 #if defined(MAC_IPHONE) // MAC_IPHONE must go before WEBRTC_MAC or WEBRTC_MAC_INTEL
     _ptrRenderer = NULL;
@@ -442,7 +442,7 @@ WebRtc_Word32 ModuleVideoRenderImpl::ChangeWindow(void* window)
 
 #endif
 
-#else  // WEBRTC_VIDEO_EXTERNAL_CAPTURE_AND_RENDER
+#else  // WEBRTC_INCLUDE_INTERNAL_VIDEO_RENDER
     return -1;
 #endif
 }

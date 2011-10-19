@@ -82,7 +82,12 @@
       # TODO(andrew): with the proper suffix, these files will be excluded
       # automatically.
       'conditions': [
-        ['OS!="linux" or build_with_chromium==1', {
+        ['include_internal_video_render==1', {
+          'defines': [
+            'WEBRTC_INCLUDE_INTERNAL_VIDEO_RENDER',
+          ],
+        }],
+        ['OS!="linux" or include_internal_video_render==0', {
           'sources!': [
             'linux/video_render_linux_impl.h',
             'linux/video_x11_channel.h',
@@ -92,7 +97,7 @@
             'linux/video_x11_render.cc',
           ],
         }],
-        ['OS!="mac" or build_with_chromium==1', {
+        ['OS!="mac" or include_internal_video_render==0', {
           'sources!': [
             'mac/cocoa_full_screen_window.h',
             'mac/cocoa_render_view.h',
@@ -108,7 +113,7 @@
             'mac/cocoa_full_screen_window.mm',
           ],
         }],
-        ['OS!="win" or build_with_chromium==1', {
+        ['OS!="win" or include_internal_video_render==0', {
           'sources!': [
             'windows/i_video_render_win.h',
             'windows/video_render_direct3d9.h',
@@ -125,6 +130,11 @@
 
   # Exclude the test target when building with chromium.
   'conditions': [
+    ['include_internal_video_render==1', {
+      'defines': [
+        'WEBRTC_INCLUDE_INTERNAL_VIDEO_RENDER',
+      ],
+    }],
     ['build_with_chromium==0', {
       'targets': [
         {

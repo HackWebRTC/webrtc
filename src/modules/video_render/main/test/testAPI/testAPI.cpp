@@ -362,7 +362,7 @@ int TestSingleStream(VideoRender* renderModule) {
     VideoRenderCallback* renderCallback0 = renderModule->AddIncomingRenderStream(streamId0, 0, 0.0f, 0.0f, 1.0f, 1.0f);
     assert(renderCallback0 != NULL);
 
-#if defined (WEBRTC_VIDEO_EXTERNAL_CAPTURE_AND_RENDER)
+#ifndef WEBRTC_INCLUDE_INTERNAL_VIDEO_RENDER
     MyRenderCallback externalRender;
     renderModule->AddExternalRenderCallback(streamId0, &externalRender);
 #endif
@@ -407,8 +407,6 @@ int TestSingleStream(VideoRender* renderModule) {
 int TestFullscreenStream(VideoRender* &renderModule,
                          void* window,
                          const VideoRenderType videoRenderType) {
-    int error = 0;
-
     VideoRender::DestroyVideoRender(renderModule);
     renderModule = VideoRender::CreateVideoRender(12345, window, true, videoRenderType);
 
@@ -492,7 +490,6 @@ int TestBitmapText(VideoRender* renderModule) {
 }
 
 int TestMultipleStreams(VideoRender* renderModule) {
-    int error = 0;
     // Add settings for a stream to render
     printf("Add stream 0\n");
     const int streamId0 = 0;
@@ -665,7 +662,7 @@ int main (int argc, const char * argv[])
     window = (void*)testWindow;
 #endif
 
-#if defined (WEBRTC_VIDEO_EXTERNAL_CAPTURE_AND_RENDER)
+#ifndef WEBRTC_INCLUDE_INTERNAL_VIDEO_RENDER
     windowType = kRenderExternal;
 #endif
 

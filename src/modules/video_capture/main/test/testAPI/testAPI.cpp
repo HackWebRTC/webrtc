@@ -36,10 +36,8 @@ using namespace std;
 
 #include <stdio.h>
 #include "testExternalCapture.h"
-#ifndef WEBRTC_VIDEO_EXTERNAL_CAPTURE_AND_RENDER
 #include "testPlatformDependent.h"
 #include "testCameraEncoder.h"
-#endif
 
 #if defined(_WIN32)
 int _tmain(int argc, _TCHAR* argv[])
@@ -62,7 +60,6 @@ int main (int argc, const char * argv[])
         printf("\nExternal capture test result %d\n",testResult);
     }
 
-#ifndef WEBRTC_VIDEO_EXTERNAL_CAPTURE_AND_RENDER
     {
         webrtc::testPlatformDependent platformDependent;
         testResult=platformDependent.DoTest();
@@ -74,7 +71,6 @@ int main (int argc, const char * argv[])
         printf("\nCamera encoder test result %d\n",testResult);
 
     }
-#endif
 
     getchar();
 

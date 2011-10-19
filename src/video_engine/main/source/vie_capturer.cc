@@ -204,7 +204,6 @@ WebRtc_Word32 ViECapturer::Init(const WebRtc_UWord8* deviceUniqueIdUTF8,
                                 const WebRtc_UWord32 deviceUniqueIdUTF8Length)
 {
     assert(_captureModule == NULL);
-#ifndef WEBRTC_VIDEO_EXTERNAL_CAPTURE_AND_RENDER
     if (deviceUniqueIdUTF8 == NULL)
     {
         _captureModule  = VideoCaptureFactory::Create(
@@ -214,7 +213,6 @@ WebRtc_Word32 ViECapturer::Init(const WebRtc_UWord8* deviceUniqueIdUTF8,
         _captureModule = VideoCaptureFactory::Create(
             ViEModuleId(_engineId, _captureId), deviceUniqueIdUTF8);
     }
-#endif
     if (!_captureModule)
         return -1;
     _captureModule->AddRef();
