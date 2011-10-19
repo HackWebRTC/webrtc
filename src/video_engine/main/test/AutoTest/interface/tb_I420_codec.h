@@ -40,8 +40,8 @@ public:
 
     virtual WebRtc_Word32 Encode(
         const webrtc::RawImage& inputImage,
-        const webrtc::CodecSpecificInfo* codecSpecificInfo = NULL,
-        webrtc::VideoFrameType frameType = webrtc::kDeltaFrame);
+        const webrtc::CodecSpecificInfo* codecSpecificInfo,
+        const webrtc::VideoFrameType* frameType);
 
     virtual WebRtc_Word32 RegisterEncodeCompleteCallback(
         webrtc::EncodedImageCallback* callback);
@@ -101,6 +101,7 @@ public:
     virtual WebRtc_Word32 Decode(
         const webrtc::EncodedImage& inputImage,
         bool missingFrames,
+        const webrtc::RTPFragmentationHeader* fragmentation,
         const webrtc::CodecSpecificInfo* codecSpecificInfo = NULL,
         WebRtc_Word64 renderTimeMs = -1);
 

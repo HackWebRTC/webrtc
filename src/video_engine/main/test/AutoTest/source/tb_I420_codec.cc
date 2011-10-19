@@ -116,8 +116,8 @@ WebRtc_Word32 tbI420Encoder::InitEncode(const webrtc::VideoCodec* inst,
 
 WebRtc_Word32 tbI420Encoder::Encode(
     const webrtc::RawImage& inputImage,
-    const webrtc::CodecSpecificInfo* codecSpecificInfo /*= NULL*/,
-    webrtc::VideoFrameType frameType /*= webrtc::kDeltaFrame*/)
+    const webrtc::CodecSpecificInfo* /*codecSpecificInfo*/,
+    const webrtc::VideoFrameType* /*frameType*/)
 {
     _functionCalls.Encode++;
     if (!_inited)
@@ -237,7 +237,8 @@ WebRtc_Word32 tbI420Decoder::InitDecode(const webrtc::VideoCodec* inst,
 WebRtc_Word32 tbI420Decoder::Decode(
     const webrtc::EncodedImage& inputImage,
     bool /*missingFrames*/,
-    const webrtc::CodecSpecificInfo* /*codecSpecificInfWord64o*/,
+    const webrtc::RTPFragmentationHeader* /*fragmentation*/,
+    const webrtc::CodecSpecificInfo* /*codecSpecificInfo*/,
     WebRtc_Word64 /*renderTimeMs*/)
 {
     _functionCalls.Decode++;
