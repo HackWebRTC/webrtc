@@ -76,10 +76,17 @@ VCMNackFecMethod::ProtectionFactor(const
 
     // Compute the protection factors
     VCMFecMethod::ProtectionFactor(parameters);
+    if (parameters->rtt < kLowRttNackMs)
+    {
+        _protectionFactorD = 0;
+        _protectionFactorK = 0;
+        VCMFecMethod::UpdateProtectionFactorD(_protectionFactorD);
+        VCMFecMethod::UpdateProtectionFactorK(_protectionFactorK);
+    }
 
     // When in Hybrid mode (RTT range), adjust FEC rates based on the
     // RTT (NACK effectiveness) - adjustment factor is in the range [0,1].
-    if (parameters->rtt < kHighRttNackMs)
+    else if (parameters->rtt < kHighRttNackMs)
     {
         // TODO(mikhal): Disabling adjustment temporarily.
         // WebRtc_UWord16 rttIndex = (WebRtc_UWord16) parameters->rtt;
@@ -90,7 +97,7 @@ VCMNackFecMethod::ProtectionFactor(const
         _protectionFactorD = static_cast<WebRtc_UWord8>
                             (adjustRtt *
                              static_cast<float>(_protectionFactorD));
-        // update FEC rates after applyingadjustment softness parameter
+        // update FEC rates after applying adjustment
         VCMFecMethod::UpdateProtectionFactorD(_protectionFactorD);
     }
 
@@ -208,6 +215,13 @@ void
 VCMFecMethod::UpdateProtectionFactorD(WebRtc_UWord8 protectionFactorD)
 {
     _protectionFactorD = protectionFactorD;
+}
+
+// Update FEC with protectionFactorK
+void
+VCMFecMethod::UpdateProtectionFactorK(WebRtc_UWord8 protectionFactorK)
+{
+    _protectionFactorK = protectionFactorK;
 }
 
 // AvgRecoveryFEC: computes the residual packet loss (RPL) function.

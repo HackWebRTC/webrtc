@@ -187,6 +187,8 @@ public:
     float AvgRecoveryFEC(const VCMProtectionParameters* parameters) const;
     // Update FEC with protectionFactorD
     void UpdateProtectionFactorD(WebRtc_UWord8 protectionFactorD);
+    // Update FEC with protectionFactorK
+    void UpdateProtectionFactorK(WebRtc_UWord8 protectionFactorK);
 };
 
 
