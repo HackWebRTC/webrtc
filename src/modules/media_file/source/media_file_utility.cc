@@ -1324,7 +1324,7 @@ WebRtc_Word32 ModuleFileUtility::UpdateWavHeader(OutStream& wav)
     } else if(STR_CASE_CMP(codec_info_.plname, "PCMU") == 0) {
             res = WriteWavHeader(wav, 8000, 1, channels, kWaveFormatMuLaw,
                                  _bytesWritten);
-    } else if(STR_CASE_CMP(codec_info_.plname, "PCMU") == 0) {
+    } else if(STR_CASE_CMP(codec_info_.plname, "PCMA") == 0) {
             res = WriteWavHeader(wav, 8000, 1, channels, kWaveFormatALaw,
                                  _bytesWritten);
     } else {
