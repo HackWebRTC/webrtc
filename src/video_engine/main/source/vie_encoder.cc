@@ -549,23 +549,22 @@ void ViEEncoder::DeliverFrame(int id, webrtc::VideoFrame& videoFrame,
     if (_vcm.SendCodec() == webrtc::kVideoCodecVP8)
     {
         webrtc::CodecSpecificInfo codecSpecificInfo;
-        codecSpecificInfo.codecType = webrtc::kVideoCodecUnknown;
+        codecSpecificInfo.codecType = webrtc::kVideoCodecVP8;
         if (_hasReceivedSLI || _hasReceivedRPSI)
         {
-            webrtc::VideoCodec currentSendCodec;
-            _vcm.SendCodec(&currentSendCodec);
-            if (currentSendCodec.codecType == webrtc::kVideoCodecVP8)
-            {
-                codecSpecificInfo.codecType = webrtc::kVideoCodecVP8;
-                codecSpecificInfo.codecSpecific.VP8.hasReceivedRPSI = _hasReceivedRPSI;
-                codecSpecificInfo.codecSpecific.VP8.hasReceivedSLI = _hasReceivedSLI;
-                codecSpecificInfo.codecSpecific.VP8.pictureIdRPSI = _pictureIdRPSI;
-                codecSpecificInfo.codecSpecific.VP8.pictureIdSLI  = _pictureIdSLI;
+          {
+            codecSpecificInfo.codecSpecific.VP8.hasReceivedRPSI =
+                _hasReceivedRPSI;
+            codecSpecificInfo.codecSpecific.VP8.hasReceivedSLI =
+                _hasReceivedSLI;
+            codecSpecificInfo.codecSpecific.VP8.pictureIdRPSI =
+                _pictureIdRPSI;
+            codecSpecificInfo.codecSpecific.VP8.pictureIdSLI  =
+                _pictureIdSLI;
             }
-            _hasReceivedSLI = false;
-            _hasReceivedRPSI = false;
+          _hasReceivedSLI = false;
+          _hasReceivedRPSI = false;
         }
-        // Pass frame via preprocessor
         VideoFrame *decimatedFrame = NULL;
         const int ret = _vpm.PreprocessFrame(&videoFrame, &decimatedFrame);
         if (ret == 1)
