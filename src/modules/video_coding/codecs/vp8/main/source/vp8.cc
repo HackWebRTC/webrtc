@@ -28,7 +28,7 @@
 
 #include "module_common_types.h"
 
-enum { kVp8ErrorPropagationTh = 60 };
+enum { kVp8ErrorPropagationTh = 30 };
 //#define DEV_PIC_LOSS
 
 namespace webrtc
@@ -846,6 +846,9 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
     }
     if (inputImage._buffer == NULL && inputImage._length > 0)
     {
+        // Reset to avoid requesting key frames too often.
+        if (_propagationCnt > 0)
+            _propagationCnt = 0;
         return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
     }
 
