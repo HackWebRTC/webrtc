@@ -53,18 +53,19 @@ const char* AudioTrack::kind() const {
   return kAudioTrackKind;
 }
 
-scoped_refptr<AudioTrack> AudioTrack::CreateRemote(const std::string& label,
-                                                   uint32 ssrc) {
-  talk_base::RefCountImpl<AudioTrack>* track =
-      new talk_base::RefCountImpl<AudioTrack>(label, ssrc);
+talk_base::scoped_refptr<AudioTrack> AudioTrack::CreateRemote(
+    const std::string& label,
+    uint32 ssrc) {
+  talk_base::RefCount<AudioTrack>* track =
+      new talk_base::RefCount<AudioTrack>(label, ssrc);
   return track;
 }
 
-scoped_refptr<AudioTrack> AudioTrack::CreateLocal(
+talk_base::scoped_refptr<AudioTrack> AudioTrack::CreateLocal(
     const std::string& label,
     AudioDeviceModule* audio_device) {
-  talk_base::RefCountImpl<AudioTrack>* track =
-      new talk_base::RefCountImpl<AudioTrack>(label, audio_device);
+  talk_base::RefCount<AudioTrack>* track =
+      new talk_base::RefCount<AudioTrack>(label, audio_device);
   return track;
 }
 

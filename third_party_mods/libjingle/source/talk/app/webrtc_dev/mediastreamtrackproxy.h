@@ -58,8 +58,8 @@ class MediaStreamTrackProxy : public T,
   virtual bool set_state(MediaStreamTrackInterface::TrackState new_state);
 
   // Implement Notifier
-  virtual void RegisterObserver(Observer* observer);
-  virtual void UnregisterObserver(Observer* observer);
+  virtual void RegisterObserver(ObserverInterface* observer);
+  virtual void UnregisterObserver(ObserverInterface* observer);
 
  protected:
   explicit MediaStreamTrackProxy(talk_base::Thread* signaling_thread);
@@ -77,11 +77,11 @@ class MediaStreamTrackProxy : public T,
 // It can be used as a proxy for both local and remote audio tracks.
 class AudioTrackProxy : public MediaStreamTrackProxy<LocalAudioTrackInterface> {
  public:
-  static scoped_refptr<AudioTrackInterface> CreateRemote(
+  static talk_base::scoped_refptr<AudioTrackInterface> CreateRemote(
       const std::string& label,
       uint32 ssrc,
       talk_base::Thread* signaling_thread);
-  static scoped_refptr<LocalAudioTrackInterface> CreateLocal(
+  static talk_base::scoped_refptr<LocalAudioTrackInterface> CreateLocal(
       const std::string& label,
       AudioDeviceModule* audio_device,
       talk_base::Thread* signaling_thread);
@@ -93,12 +93,12 @@ class AudioTrackProxy : public MediaStreamTrackProxy<LocalAudioTrackInterface> {
                   uint32 ssrc,
                   talk_base::Thread* signaling_thread);
   AudioTrackProxy(const std::string& label,
-                        AudioDeviceModule* audio_device,
-                        talk_base::Thread* signaling_thread);
+                  AudioDeviceModule* audio_device,
+                  talk_base::Thread* signaling_thread);
   // Implement MessageHandler
   virtual void OnMessage(talk_base::Message* msg);
 
-  scoped_refptr<AudioTrack> audio_track_;
+  talk_base::scoped_refptr<AudioTrack> audio_track_;
 };
 
 // VideoTrackProxy is a proxy for the VideoTrackInterface and
@@ -107,11 +107,11 @@ class AudioTrackProxy : public MediaStreamTrackProxy<LocalAudioTrackInterface> {
 // It can be used as a proxy for both local and remote video tracks.
 class VideoTrackProxy : public MediaStreamTrackProxy<LocalVideoTrackInterface> {
  public:
-  static scoped_refptr<VideoTrackInterface> CreateRemote(
+  static talk_base::scoped_refptr<VideoTrackInterface> CreateRemote(
       const std::string& label,
       uint32 ssrc,
       talk_base::Thread* signaling_thread);
-  static scoped_refptr<LocalVideoTrackInterface> CreateLocal(
+  static talk_base::scoped_refptr<LocalVideoTrackInterface> CreateLocal(
       const std::string& label,
       VideoCaptureModule* video_device,
       talk_base::Thread* signaling_thread);
@@ -130,7 +130,7 @@ class VideoTrackProxy : public MediaStreamTrackProxy<LocalVideoTrackInterface> {
   // Implement MessageHandler
   virtual void OnMessage(talk_base::Message* msg);
 
-  scoped_refptr<VideoTrack> video_track_;
+  talk_base::scoped_refptr<VideoTrack> video_track_;
 };
 
 }  // namespace webrtc

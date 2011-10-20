@@ -35,8 +35,10 @@
 
 namespace webrtc {
 
+// MediaTrack implements the interface common to AudioTrackInterface and
+// VideoTrackInterface.
 template <typename T>
-class MediaTrack : public NotifierImpl<T> {
+class MediaTrack : public Notifier<T> {
  public:
   typedef typename T::TrackState TypedTrackState;
 
@@ -48,7 +50,7 @@ class MediaTrack : public NotifierImpl<T> {
     bool fire_on_change = (enable != enabled_);
     enabled_ = enable;
     if (fire_on_change) {
-      NotifierImpl<T>::FireOnChanged();
+      Notifier<T>::FireOnChanged();
     }
   }
 
@@ -58,7 +60,7 @@ class MediaTrack : public NotifierImpl<T> {
     if (ssrc_ != 0)
       return false;
     ssrc_ = ssrc;
-    NotifierImpl<T>::FireOnChanged();
+    Notifier<T>::FireOnChanged();
     return true;
   }
 
@@ -66,7 +68,7 @@ class MediaTrack : public NotifierImpl<T> {
     bool fire_on_change = (state_ != new_state);
     state_ = new_state;
     if (fire_on_change)
-      NotifierImpl<T>::FireOnChanged();
+      Notifier<T>::FireOnChanged();
     return true;
   }
 

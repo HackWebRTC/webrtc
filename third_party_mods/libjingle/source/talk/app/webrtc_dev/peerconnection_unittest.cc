@@ -48,10 +48,10 @@ void GetAllVideoTracks(webrtc::MediaStreamInterface* media_stream,
 }
 
 // TODO(henrike): replace with a capture device that reads from a file/buffer.
-scoped_refptr<webrtc::VideoCaptureModule> OpenVideoCaptureDevice() {
+talk_base::scoped_refptr<webrtc::VideoCaptureModule> OpenVideoCaptureDevice() {
   webrtc::VideoCaptureModule::DeviceInfo* device_info(
       webrtc::VideoCaptureFactory::CreateDeviceInfo(0));
-  scoped_refptr<webrtc::VideoCaptureModule> video_device;
+  talk_base::scoped_refptr<webrtc::VideoCaptureModule> video_device;
 
   const size_t kMaxDeviceNameLength = 128;
   const size_t kMaxUniqueIdLength = 256;
@@ -175,22 +175,22 @@ class PeerConnectionP2PTestClient
   ~PeerConnectionP2PTestClient() {
     // Ensure that webrtc::PeerConnection is deleted before
     // webrtc::PeerConnectionManager or crash will occur
-    webrtc::PeerConnection* temp = peer_connection_.release();
+    webrtc::PeerConnectionInterface* temp = peer_connection_.release();
     temp->Release();
   }
 
   void StartSession() {
     // Audio track doesn't seem to be implemented yet. No need to pass a device
     // to it.
-    scoped_refptr<webrtc::LocalAudioTrackInterface> audio_track(
+    talk_base::scoped_refptr<webrtc::LocalAudioTrackInterface> audio_track(
         peer_connection_factory_->CreateLocalAudioTrack("audio_track", NULL));
 
-    scoped_refptr<webrtc::LocalVideoTrackInterface> video_track(
+    talk_base::scoped_refptr<webrtc::LocalVideoTrackInterface> video_track(
         peer_connection_factory_->CreateLocalVideoTrack(
             "video_track",
             OpenVideoCaptureDevice()));
 
-    scoped_refptr<webrtc::LocalMediaStreamInterface> stream =
+    talk_base::scoped_refptr<webrtc::LocalMediaStreamInterface> stream =
         peer_connection_factory_->CreateLocalMediaStream("stream_label");
 
     stream->AddTrack(audio_track);
@@ -231,8 +231,8 @@ class PeerConnectionP2PTestClient
          ++iter) {
       char file_name[256];
       GenerateRecordingFileName(track_id, file_name);
-      scoped_refptr<webrtc::VideoRendererWrapperInterface> video_renderer =
-          webrtc::CreateVideoRenderer(
+      talk_base::scoped_refptr<webrtc::VideoRendererWrapperInterface>
+          video_renderer = webrtc::CreateVideoRenderer(
               VideoRecorder::CreateVideoRecorder(file_name));
       if (video_renderer == NULL) {
         ADD_FAILURE();
@@ -277,8 +277,9 @@ class PeerConnectionP2PTestClient
   }
 
   int id_;
-  scoped_refptr<webrtc::PeerConnection> peer_connection_;
-  scoped_refptr<webrtc::PeerConnectionManager> peer_connection_factory_;
+  talk_base::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
+  talk_base::scoped_refptr<webrtc::PeerConnectionManager>
+      peer_connection_factory_;
 
   // Remote peer communication.
   SignalingMessageReceiver* signaling_message_receiver_;

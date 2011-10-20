@@ -110,11 +110,11 @@ bool static ParseConfigString(const std::string& config,
 
 struct SignalingParams : public talk_base::MessageData {
   SignalingParams(const std::string& msg,
-                  webrtc::StreamCollection* local_streams)
+                  webrtc::StreamCollectionInterface* local_streams)
       : msg(msg),
         local_streams(local_streams) {}
   const std::string msg;
-  scoped_refptr<webrtc::StreamCollection> local_streams;
+  talk_base::scoped_refptr<webrtc::StreamCollectionInterface> local_streams;
 };
 
 }  // namespace
@@ -199,13 +199,15 @@ bool PeerConnectionImpl::Initialize(const std::string& configuration,
   return session_->Initialize();
 }
 
-scoped_refptr<StreamCollection> PeerConnectionImpl::local_streams() {
+talk_base::scoped_refptr<StreamCollectionInterface>
+PeerConnectionImpl::local_streams() {
   return local_media_streams_;
 }
 
-scoped_refptr<StreamCollection> PeerConnectionImpl::remote_streams() {
-  ScopedRefMessageData<StreamCollection>* msg =
-      new ScopedRefMessageData<StreamCollection>(NULL);
+talk_base::scoped_refptr<StreamCollectionInterface>
+PeerConnectionImpl::remote_streams() {
+  ScopedRefMessageData<StreamCollectionInterface>* msg =
+      new ScopedRefMessageData<StreamCollectionInterface>(NULL);
   signaling_thread_->Send(this, MSG_RETURNREMOTEMEDIASTREAMS, msg);
   return msg->data();
 }
@@ -226,8 +228,8 @@ void PeerConnectionImpl::RemoveStream(
 }
 
 void PeerConnectionImpl::CommitStreamChanges() {
-  ScopedRefMessageData<StreamCollection>* msg =
-      new ScopedRefMessageData<StreamCollection> (
+  ScopedRefMessageData<StreamCollectionInterface>* msg =
+      new ScopedRefMessageData<StreamCollectionInterface> (
           StreamCollectionImpl::Create(local_media_streams_));
   signaling_thread_->Post(this, MSG_COMMITSTREAMCHANGES, msg);
 }
@@ -236,8 +238,8 @@ void PeerConnectionImpl::OnMessage(talk_base::Message* msg) {
   talk_base::MessageData* data = msg->pdata;
   switch (msg->message_id) {
     case MSG_COMMITSTREAMCHANGES: {
-      ScopedRefMessageData<StreamCollection>* param(
-          static_cast<ScopedRefMessageData<StreamCollection>*> (data));
+      ScopedRefMessageData<StreamCollectionInterface>* param(
+          static_cast<ScopedRefMessageData<StreamCollectionInterface>*> (data));
       signaling_->CreateOffer(param->data());
       stream_handler_->CommitLocalStreams(param->data());
       delete data;  // Because it is Posted.
@@ -250,8 +252,8 @@ void PeerConnectionImpl::OnMessage(talk_base::Message* msg) {
       break;
     }
     case MSG_RETURNREMOTEMEDIASTREAMS: {
-      ScopedRefMessageData<StreamCollection>* param(
-          static_cast<ScopedRefMessageData<StreamCollection>*> (data));
+      ScopedRefMessageData<StreamCollectionInterface>* param(
+          static_cast<ScopedRefMessageData<StreamCollectionInterface>*> (data));
       param->data() = StreamCollectionImpl::Create(remote_media_streams_);
       break;
     }

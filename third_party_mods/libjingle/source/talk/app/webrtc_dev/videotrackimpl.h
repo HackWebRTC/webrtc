@@ -28,6 +28,8 @@
 #ifndef TALK_APP_WEBRTC_VIDEOTRACKIMPL_H_
 #define TALK_APP_WEBRTC_VIDEOTRACKIMPL_H_
 
+#include <string>
+
 #include "talk/app/webrtc_dev/mediastream.h"
 #include "talk/app/webrtc_dev/mediatrackimpl.h"
 #include "talk/app/webrtc_dev/notifierimpl.h"
@@ -44,10 +46,11 @@ namespace webrtc {
 class VideoTrack : public MediaTrack<LocalVideoTrackInterface> {
  public:
   // Create a video track used for remote video tracks.
-  static scoped_refptr<VideoTrack> CreateRemote(const std::string& label,
-                                                uint32 ssrc);
+  static talk_base::scoped_refptr<VideoTrack> CreateRemote(
+      const std::string& label,
+      uint32 ssrc);
   // Create a video track used for local video tracks.
-  static scoped_refptr<VideoTrack> CreateLocal(
+  static talk_base::scoped_refptr<VideoTrack> CreateLocal(
       const std::string& label,
       VideoCaptureModule* video_device);
 
@@ -62,8 +65,8 @@ class VideoTrack : public MediaTrack<LocalVideoTrackInterface> {
   VideoTrack(const std::string& label, VideoCaptureModule* video_device);
 
  private:
-  scoped_refptr<VideoCaptureModule> video_device_;
-  scoped_refptr<VideoRendererWrapperInterface> video_renderer_;
+  talk_base::scoped_refptr<VideoCaptureModule> video_device_;
+  talk_base::scoped_refptr<VideoRendererWrapperInterface> video_renderer_;
 };
 
 }  // namespace webrtc

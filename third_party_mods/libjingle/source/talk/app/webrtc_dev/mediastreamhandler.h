@@ -45,7 +45,7 @@ namespace webrtc {
 
 // VideoTrackHandler listen to events on a VideoTrack instance and
 // executes the requested change.
-class VideoTrackHandler : public Observer {
+class VideoTrackHandler : public ObserverInterface {
  public:
   VideoTrackHandler(VideoTrackInterface* track,
                     MediaProviderInterface* provider);
@@ -63,7 +63,7 @@ class VideoTrackHandler : public Observer {
  private:
   MediaStreamTrackInterface::TrackState state_;
   bool enabled_;
-  scoped_refptr<VideoRendererWrapperInterface> renderer_;
+  talk_base::scoped_refptr<VideoRendererWrapperInterface> renderer_;
 };
 
 class LocalVideoTrackHandler : public VideoTrackHandler {
@@ -78,7 +78,7 @@ class LocalVideoTrackHandler : public VideoTrackHandler {
   virtual void OnEnabledChanged();
 
  private:
-  scoped_refptr<LocalVideoTrackInterface> local_video_track_;
+  talk_base::scoped_refptr<LocalVideoTrackInterface> local_video_track_;
 };
 
 class RemoteVideoTrackHandler : public VideoTrackHandler {
@@ -93,10 +93,10 @@ class RemoteVideoTrackHandler : public VideoTrackHandler {
   virtual void OnEnabledChanged();
 
  private:
-  scoped_refptr<VideoTrackInterface> remote_video_track_;
+  talk_base::scoped_refptr<VideoTrackInterface> remote_video_track_;
 };
 
-class MediaStreamHandler : public Observer {
+class MediaStreamHandler : public ObserverInterface {
  public:
   MediaStreamHandler(MediaStreamInterface* stream,
                      MediaProviderInterface* provider);
@@ -108,7 +108,7 @@ class MediaStreamHandler : public Observer {
   MediaProviderInterface* provider_;
   typedef std::vector<VideoTrackHandler*> VideoTrackHandlers;
   VideoTrackHandlers video_handlers_;
-  scoped_refptr<MediaStreamInterface> stream_;
+  talk_base::scoped_refptr<MediaStreamInterface> stream_;
 };
 
 class LocalMediaStreamHandler : public MediaStreamHandler {
@@ -129,7 +129,7 @@ class MediaStreamHandlers {
   ~MediaStreamHandlers();
   void AddRemoteStream(MediaStreamInterface* stream);
   void RemoveRemoteStream(MediaStreamInterface* stream);
-  void CommitLocalStreams(StreamCollection* streams);
+  void CommitLocalStreams(StreamCollectionInterface* streams);
 
  private:
   typedef std::list<MediaStreamHandler*> StreamHandlerList;

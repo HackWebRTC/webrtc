@@ -49,7 +49,7 @@ class StreamCollectionImpl;
 // PeerConnectionImpl implements the PeerConnection interface.
 // It uses PeerConnectionSignaling and WebRtcSession to implement
 // the PeerConnection functionality.
-class PeerConnectionImpl : public PeerConnection,
+class PeerConnectionImpl : public PeerConnectionInterface,
                            public talk_base::MessageHandler,
                            public sigslot::has_slots<> {
  public:
@@ -69,8 +69,8 @@ class PeerConnectionImpl : public PeerConnection,
     // TODO(perkj): implement
     ASSERT(false);
   }
-  virtual scoped_refptr<StreamCollection> local_streams();
-  virtual scoped_refptr<StreamCollection> remote_streams();
+  virtual talk_base::scoped_refptr<StreamCollectionInterface> local_streams();
+  virtual talk_base::scoped_refptr<StreamCollectionInterface> remote_streams();
   virtual void AddStream(LocalMediaStreamInterface* stream);
   virtual void RemoveStream(LocalMediaStreamInterface* stream);
   virtual void CommitStreamChanges();
@@ -87,13 +87,13 @@ class PeerConnectionImpl : public PeerConnection,
   void Terminate_s();
 
   PeerConnectionObserver* observer_;
-  scoped_refptr<StreamCollectionImpl> local_media_streams_;
-  scoped_refptr<StreamCollectionImpl> remote_media_streams_;
+  talk_base::scoped_refptr<StreamCollectionImpl> local_media_streams_;
+  talk_base::scoped_refptr<StreamCollectionImpl> remote_media_streams_;
 
   talk_base::Thread* signaling_thread_;  // Weak ref from PeerConnectionManager.
   cricket::ChannelManager* channel_manager_;
-  scoped_refptr<PcNetworkManager> network_manager_;
-  scoped_refptr<PcPacketSocketFactory> socket_factory_;
+  talk_base::scoped_refptr<PcNetworkManager> network_manager_;
+  talk_base::scoped_refptr<PcPacketSocketFactory> socket_factory_;
   talk_base::scoped_ptr<cricket::HttpPortAllocator> port_allocator_;
   talk_base::scoped_ptr<WebRtcSession> session_;
   talk_base::scoped_ptr<PeerConnectionSignaling> signaling_;

@@ -58,7 +58,7 @@ class Conductor
   void DeletePeerConnection();
   void EnsureStreamingUI();
   void AddStreams();
-  scoped_refptr<webrtc::VideoCaptureModule> OpenVideoCaptureDevice();
+  talk_base::scoped_refptr<webrtc::VideoCaptureModule> OpenVideoCaptureDevice();
 
   //
   // PeerConnectionObserver implementation.
@@ -103,13 +103,14 @@ class Conductor
 
  protected:
   int peer_id_;
-  scoped_refptr<webrtc::PeerConnection> peer_connection_;
-  scoped_refptr<webrtc::PeerConnectionManager> peer_connection_factory_;
+  talk_base::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
+  talk_base::scoped_refptr<webrtc::PeerConnectionManager>
+      peer_connection_factory_;
   PeerConnectionClient* client_;
   MainWindow* main_wnd_;
   std::deque<std::string*> pending_messages_;
-  std::map<std::string,
-           scoped_refptr<webrtc::MediaStreamInterface> > active_streams_;
+  std::map<std::string, talk_base::scoped_refptr<webrtc::MediaStreamInterface> >
+      active_streams_;
 };
 
 #endif  // PEERCONNECTION_SAMPLES_CLIENT_CONDUCTOR_H_

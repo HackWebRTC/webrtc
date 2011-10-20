@@ -37,7 +37,7 @@ static const char kVideoDeviceName[] = "dummy_video_cam_1";
 namespace webrtc {
 
 // Helper class to test the Observer.
-class TestObserver : public Observer {
+class TestObserver : public ObserverInterface {
  public:
   TestObserver() : changed_(0) {}
   void OnChanged() {
@@ -57,7 +57,7 @@ class TestObserver : public Observer {
 TEST(LocalStreamTest, Create) {
   // Create a local stream.
   std::string label(kStreamLabel1);
-  scoped_refptr<LocalMediaStreamInterface> stream(
+  talk_base::scoped_refptr<LocalMediaStreamInterface> stream(
       MediaStream::Create(label));
 
   EXPECT_EQ(label, stream->label());
@@ -66,17 +66,17 @@ TEST(LocalStreamTest, Create) {
 
   // Create a local Video track.
   TestObserver tracklist_observer;
-  scoped_refptr<LocalVideoTrackInterface> video_track(VideoTrack::CreateLocal(
-                          kVideoDeviceName, NULL));
+  talk_base::scoped_refptr<LocalVideoTrackInterface>
+      video_track(VideoTrack::CreateLocal(kVideoDeviceName, NULL));
   // Add an observer to the track list.
-  scoped_refptr<MediaStreamTrackListInterface<VideoTrackInterface> > track_list(
-      stream->video_tracks());
+  talk_base::scoped_refptr<MediaStreamTrackListInterface<VideoTrackInterface> >
+      track_list(stream->video_tracks());
   // Add the track to the local stream.
   EXPECT_TRUE(stream->AddTrack(video_track));
   EXPECT_EQ(1u, stream->video_tracks()->count());
 
   // Verify the track.
-  scoped_refptr<webrtc::MediaStreamTrackInterface> track(
+  talk_base::scoped_refptr<webrtc::MediaStreamTrackInterface> track(
       stream->video_tracks()->at(0));
   EXPECT_EQ(0, track->label().compare(kVideoDeviceName));
   EXPECT_TRUE(track->enabled());

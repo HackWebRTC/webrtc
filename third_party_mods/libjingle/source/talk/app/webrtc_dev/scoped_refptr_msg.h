@@ -36,17 +36,17 @@ template <class T>
 class ScopedRefMessageData : public talk_base::MessageData {
  public:
   explicit ScopedRefMessageData(T* data) : data_(data) { }
-  const scoped_refptr<T>& data() const { return data_; }
-  scoped_refptr<T>& data() { return data_; }
+  const talk_base::scoped_refptr<T>& data() const { return data_; }
+  talk_base::scoped_refptr<T>& data() { return data_; }
  private:
-  scoped_refptr<T> data_;
+  talk_base::scoped_refptr<T> data_;
 };
 /*
 struct ScopedTypedMessageData : public talk_base::MessageData {
-  ScopedRefPtrMsgParams(scoped_refptr<T> ptr)
+  ScopedRefPtrMsgParams(talk_base::scoped_refptr<T> ptr)
       : ptr_(ptr) {
   }
-  scoped_refptr<T> ptr_;
+  talk_base::scoped_refptr<T> ptr_;
 };*/
 
 #endif  // TALK_APP_WEBRTC_SCOPED_REF_PTR_MSG_H_

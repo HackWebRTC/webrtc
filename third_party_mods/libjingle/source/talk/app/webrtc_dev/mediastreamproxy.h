@@ -55,11 +55,11 @@ class MediaStreamProxy : public LocalMediaStreamInterface,
     void Send(uint32 id, talk_base::MessageData* data) const;
     void OnMessage(talk_base::Message* msg);
 
-    scoped_refptr<MediaStreamTrackListInterface<T> > track_list_;
+    talk_base::scoped_refptr<MediaStreamTrackListInterface<T> > track_list_;
     mutable talk_base::Thread* signaling_thread_;
   };
 
-  static scoped_refptr<MediaStreamProxy> Create(
+  static talk_base::scoped_refptr<MediaStreamProxy> Create(
       const std::string& label,
       talk_base::Thread* signaling_thread);
 
@@ -72,18 +72,18 @@ class MediaStreamProxy : public LocalMediaStreamInterface,
 
   // Implement MediaStream.
   virtual std::string label() const;
-  virtual MediaStreamTrackListProxy<AudioTrackInterface>* audio_tracks() {
+  virtual AudioTracks* audio_tracks() {
     return audio_tracks_;
   }
-  virtual MediaStreamTrackListProxy<VideoTrackInterface>* video_tracks() {
+  virtual VideoTracks* video_tracks() {
     return video_tracks_;
   }
   virtual ReadyState ready_state();
   virtual void set_ready_state(ReadyState new_state);
 
   // Implement Notifier
-  virtual void RegisterObserver(Observer* observer);
-  virtual void UnregisterObserver(Observer* observer);
+  virtual void RegisterObserver(ObserverInterface* observer);
+  virtual void UnregisterObserver(ObserverInterface* observer);
 
  protected:
   explicit MediaStreamProxy(const std::string& label,
@@ -94,9 +94,9 @@ class MediaStreamProxy : public LocalMediaStreamInterface,
   virtual void OnMessage(talk_base::Message* msg);
 
   mutable talk_base::Thread* signaling_thread_;
-  scoped_refptr<MediaStream> media_stream_impl_;
-  scoped_refptr<MediaStreamTrackListProxy<AudioTrackInterface> > audio_tracks_;
-  scoped_refptr<MediaStreamTrackListProxy<VideoTrackInterface> > video_tracks_;
+  talk_base::scoped_refptr<MediaStream> media_stream_impl_;
+  talk_base::scoped_refptr<AudioTracks> audio_tracks_;
+  talk_base::scoped_refptr<VideoTracks> video_tracks_;
 };
 
 }  // namespace webrtc

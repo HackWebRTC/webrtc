@@ -107,8 +107,10 @@ class GtkMainWnd : public MainWindow {
   MainWndCallback* callback_;
   std::string server_;
   std::string port_;
-  scoped_refptr<webrtc::VideoRendererWrapperInterface> local_renderer_wrapper_;
-  scoped_refptr<webrtc::VideoRendererWrapperInterface> remote_renderer_wrapper_;
+  talk_base::scoped_refptr<webrtc::VideoRendererWrapperInterface>
+      local_renderer_wrapper_;
+  talk_base::scoped_refptr<webrtc::VideoRendererWrapperInterface>
+      remote_renderer_wrapper_;
   talk_base::scoped_ptr<uint8> draw_buffer_;
   int draw_buffer_size_;
 };

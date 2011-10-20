@@ -36,18 +36,18 @@
 namespace webrtc {
 
 // Implementation of StreamCollection.
-class StreamCollectionImpl : public StreamCollection {
+class StreamCollectionImpl : public StreamCollectionInterface {
  public:
-  static scoped_refptr<StreamCollectionImpl> Create() {
-    talk_base::RefCountImpl<StreamCollectionImpl>* implementation =
-         new talk_base::RefCountImpl<StreamCollectionImpl>();
+  static talk_base::scoped_refptr<StreamCollectionImpl> Create() {
+    talk_base::RefCount<StreamCollectionImpl>* implementation =
+         new talk_base::RefCount<StreamCollectionImpl>();
     return implementation;
   }
 
-  static scoped_refptr<StreamCollectionImpl> Create(
+  static talk_base::scoped_refptr<StreamCollectionImpl> Create(
       StreamCollectionImpl* streams) {
-    talk_base::RefCountImpl<StreamCollectionImpl>* implementation =
-         new talk_base::RefCountImpl<StreamCollectionImpl>(streams);
+    talk_base::RefCount<StreamCollectionImpl>* implementation =
+         new talk_base::RefCount<StreamCollectionImpl>(streams);
     return implementation;
   }
 
@@ -93,7 +93,8 @@ class StreamCollectionImpl : public StreamCollection {
   explicit StreamCollectionImpl(StreamCollectionImpl* original)
       : media_streams_(original->media_streams_) {
   }
-  typedef std::vector<scoped_refptr<MediaStreamInterface> > StreamVector;
+  typedef std::vector<talk_base::scoped_refptr<MediaStreamInterface> >
+      StreamVector;
   StreamVector media_streams_;
 };
 

@@ -46,11 +46,12 @@ static const int kWaitTime = 5000;
 
 namespace webrtc {
 
-typedef std::map<std::string,
-                 scoped_refptr<MediaStreamInterface> > MediaStreamMap;
-typedef std::pair<std::string, scoped_refptr<MediaStreamInterface> > RemotePair;
+typedef std::map<std::string, talk_base::scoped_refptr<MediaStreamInterface> >
+    MediaStreamMap;
+typedef std::pair<std::string, talk_base::scoped_refptr<MediaStreamInterface> >
+    RemotePair;
 
-class MockMediaTrackObserver : public webrtc::Observer {
+class MockMediaTrackObserver : public webrtc::ObserverInterface {
  public:
   explicit MockMediaTrackObserver(MediaStreamTrackInterface* track)
       : track_(track) {
@@ -64,10 +65,10 @@ class MockMediaTrackObserver : public webrtc::Observer {
 
   webrtc::MediaStreamTrackInterface::TrackState track_state;
  private:
-  scoped_refptr<MediaStreamTrackInterface> track_;
+  talk_base::scoped_refptr<MediaStreamTrackInterface> track_;
 };
 
-class MockMediaStreamObserver : public webrtc::Observer {
+class MockMediaStreamObserver : public webrtc::ObserverInterface {
  public:
   explicit MockMediaStreamObserver(MediaStreamInterface* stream)
       : stream_(stream) {
@@ -81,7 +82,7 @@ class MockMediaStreamObserver : public webrtc::Observer {
 
   webrtc::MediaStreamInterface::ReadyState ready_state;
  private:
-  scoped_refptr<MediaStreamInterface> stream_;
+  talk_base::scoped_refptr<MediaStreamInterface> stream_;
 };
 
 class MockSignalingObserver : public sigslot::has_slots<> {
@@ -147,7 +148,7 @@ class MockSignalingObserver : public sigslot::has_slots<> {
 
  private:
   MediaStreamMap remote_media_streams_;
-  scoped_refptr<StreamCollectionImpl> remote_local_collection_;
+  talk_base::scoped_refptr<StreamCollectionImpl> remote_local_collection_;
   PeerConnectionSignaling* remote_peer_;
 };
 
@@ -239,18 +240,18 @@ class PeerConnectionSignalingTest: public testing::Test {
 TEST_F(PeerConnectionSignalingTest, SimpleOneWayCall) {
   // Create a local stream.
   std::string label(kStreamLabel1);
-  scoped_refptr<LocalMediaStreamInterface> stream(
+  talk_base::scoped_refptr<LocalMediaStreamInterface> stream(
       MediaStream::Create(label));
   MockMediaStreamObserver stream_observer1(stream);
 
   // Add a local audio track.
-  scoped_refptr<LocalAudioTrackInterface> audio_track(AudioTrack::CreateLocal(
-      kAudioTrackLabel1, NULL));
+  talk_base::scoped_refptr<LocalAudioTrackInterface>
+      audio_track(AudioTrack::CreateLocal(kAudioTrackLabel1, NULL));
   stream->AddTrack(audio_track);
   MockMediaTrackObserver track_observer1(audio_track);
 
   // Peer 1 create an offer with only one audio track.
-  scoped_refptr<StreamCollectionImpl> local_collection1(
+  talk_base::scoped_refptr<StreamCollectionImpl> local_collection1(
       StreamCollectionImpl::Create());
   local_collection1->AddStream(stream);
   // Verify that the local stream is now initializing.
@@ -260,7 +261,7 @@ TEST_F(PeerConnectionSignalingTest, SimpleOneWayCall) {
             track_observer1.track_state);
 
   // Peer 2 only receive. Create an empty collection
-  scoped_refptr<StreamCollectionImpl> local_collection2(
+  talk_base::scoped_refptr<StreamCollectionImpl> local_collection2(
       StreamCollectionImpl::Create());
 
   // Connect all messages sent from Peer1 to be received on Peer2
@@ -314,16 +315,16 @@ TEST_F(PeerConnectionSignalingTest, Glare) {
   signaling2_->OnCandidatesReady(candidates_);
   // Create a local stream.
   std::string label(kStreamLabel1);
-  scoped_refptr<LocalMediaStreamInterface> stream(
+  talk_base::scoped_refptr<LocalMediaStreamInterface> stream(
       MediaStream::Create(label));
 
   // Add a local audio track.
-  scoped_refptr<LocalAudioTrackInterface> audio_track(AudioTrack::CreateLocal(
-      kAudioTrackLabel1, NULL));
+  talk_base::scoped_refptr<LocalAudioTrackInterface>
+      audio_track(AudioTrack::CreateLocal(kAudioTrackLabel1, NULL));
   stream->AddTrack(audio_track);
 
   // Peer 1 create an offer with only one audio track.
-  scoped_refptr<StreamCollectionImpl> local_collection1(
+  talk_base::scoped_refptr<StreamCollectionImpl> local_collection1(
       StreamCollectionImpl::Create());
   local_collection1->AddStream(stream);
   signaling1_->CreateOffer(local_collection1);
@@ -333,7 +334,7 @@ TEST_F(PeerConnectionSignalingTest, Glare) {
   talk_base::Thread::Current()->ProcessMessages(1);
 
   // Peer 2 only receive. Create an empty collection.
-  scoped_refptr<StreamCollectionImpl> local_collection2(
+  talk_base::scoped_refptr<StreamCollectionImpl> local_collection2(
       StreamCollectionImpl::Create());
   // Peer 2 create an empty offer.
   signaling2_->CreateOffer(local_collection2);
@@ -378,28 +379,28 @@ TEST_F(PeerConnectionSignalingTest, AddRemoveStream) {
   signaling2_->OnCandidatesReady(candidates_);
   // Create a local stream.
   std::string label(kStreamLabel1);
-  scoped_refptr<LocalMediaStreamInterface> stream(
+  talk_base::scoped_refptr<LocalMediaStreamInterface> stream(
       MediaStream::Create(label));
   MockMediaStreamObserver stream_observer1(stream);
 
   // Add a local audio track.
-  scoped_refptr<LocalAudioTrackInterface> audio_track(AudioTrack::CreateLocal(
-      kAudioTrackLabel1, NULL));
+  talk_base::scoped_refptr<LocalAudioTrackInterface>
+      audio_track(AudioTrack::CreateLocal(kAudioTrackLabel1, NULL));
   stream->AddTrack(audio_track);
   MockMediaTrackObserver track_observer1(audio_track);
   audio_track->RegisterObserver(&track_observer1);
 
   // Add a local video track.
-  scoped_refptr<LocalVideoTrackInterface> video_track(VideoTrack::CreateLocal(
-      kVideoTrackLabel1, NULL));
+  talk_base::scoped_refptr<LocalVideoTrackInterface>
+      video_track(VideoTrack::CreateLocal(kVideoTrackLabel1, NULL));
   stream->AddTrack(video_track);
 
   // Peer 1 create an empty collection
-  scoped_refptr<StreamCollectionImpl> local_collection1(
+  talk_base::scoped_refptr<StreamCollectionImpl> local_collection1(
       StreamCollectionImpl::Create());
 
   // Peer 2 create an empty collection
-  scoped_refptr<StreamCollectionImpl> local_collection2(
+  talk_base::scoped_refptr<StreamCollectionImpl> local_collection2(
       StreamCollectionImpl::Create());
 
   // Connect all messages sent from Peer1 to be received on Peer2

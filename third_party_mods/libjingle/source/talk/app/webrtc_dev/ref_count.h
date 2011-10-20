@@ -35,36 +35,36 @@
 namespace talk_base {
 
 // Reference count interface.
-class RefCount {
+class RefCountInterface {
  public:
   virtual int AddRef() = 0;
   virtual int Release() = 0;
 };
 
 template <class T>
-class RefCountImpl : public T {
+class RefCount : public T {
  public:
-  RefCountImpl() : ref_count_(0) {
+  RefCount() : ref_count_(0) {
   }
 
   template<typename P>
-  explicit RefCountImpl(P p) : ref_count_(0), T(p) {
+  explicit RefCount(P p) : ref_count_(0), T(p) {
   }
 
   template<typename P1, typename P2>
-  RefCountImpl(P1 p1, P2 p2) : ref_count_(0), T(p1, p2) {
+  RefCount(P1 p1, P2 p2) : ref_count_(0), T(p1, p2) {
   }
 
   template<typename P1, typename P2, typename P3>
-  RefCountImpl(P1 p1, P2 p2, P3 p3) : ref_count_(0), T(p1, p2, p3) {
+  RefCount(P1 p1, P2 p2, P3 p3) : ref_count_(0), T(p1, p2, p3) {
   }
 
   template<typename P1, typename P2, typename P3, typename P4>
-  RefCountImpl(P1 p1, P2 p2, P3 p3, P4 p4) : ref_count_(0), T(p1, p2, p3, p4) {
+  RefCount(P1 p1, P2 p2, P3 p3, P4 p4) : ref_count_(0), T(p1, p2, p3, p4) {
   }
 
   template<typename P1, typename P2, typename P3, typename P4, typename P5>
-  RefCountImpl(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5)
+  RefCount(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5)
       : ref_count_(0), T(p1, p2, p3, p4, p5) {
   }
 
@@ -84,6 +84,6 @@ class RefCountImpl : public T {
   int ref_count_;
 };
 
-} // namespace talk_base
+}  // namespace talk_base
 
 #endif  // TALK_APP_WEBRTC_REF_COUNT_H_

@@ -58,33 +58,34 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
 // TODO(mallinath) - Fix drash when components are created in factory.
 TEST(PeerConnectionManager, DISABLED_CreatePCUsingInternalModules) {
   MockPeerConnectionObserver observer;
-  scoped_refptr<PeerConnectionManager> manager(PeerConnectionManager::Create());
+  talk_base::scoped_refptr<PeerConnectionManager> manager(
+      PeerConnectionManager::Create());
   ASSERT_TRUE(manager.get() != NULL);
-  scoped_refptr<PeerConnection> pc1(manager->CreatePeerConnection("",
-                                                                  &observer));
+  talk_base::scoped_refptr<PeerConnectionInterface> pc1(
+      manager->CreatePeerConnection("", &observer));
   EXPECT_TRUE(pc1.get() == NULL);
 
-  scoped_refptr<PeerConnection> pc2(manager->CreatePeerConnection(
-      kStunConfiguration, &observer));
+  talk_base::scoped_refptr<PeerConnectionInterface> pc2(
+      manager->CreatePeerConnection(kStunConfiguration, &observer));
 
   EXPECT_TRUE(pc2.get() != NULL);
 }
 
 TEST(PeerConnectionManager, CreatePCUsingExternalModules) {
   // Create an audio device. Use the default sound card.
-  scoped_refptr<AudioDeviceModule> audio_device(
+  talk_base::scoped_refptr<AudioDeviceModule> audio_device(
       AudioDeviceModuleImpl::Create(0));
 
   // Creata a libjingle thread used as internal worker thread.
   talk_base::scoped_ptr<talk_base::Thread> w_thread(new talk_base::Thread);
   EXPECT_TRUE(w_thread->Start());
 
-  scoped_refptr<PcNetworkManager> network_manager(PcNetworkManager::Create(
-      new talk_base::BasicNetworkManager));
-  scoped_refptr<PcPacketSocketFactory> socket_factory(
+  talk_base::scoped_refptr<PcNetworkManager> network_manager(
+      PcNetworkManager::Create(new talk_base::BasicNetworkManager));
+  talk_base::scoped_refptr<PcPacketSocketFactory> socket_factory(
       PcPacketSocketFactory::Create(new talk_base::BasicPacketSocketFactory));
 
-  scoped_refptr<PeerConnectionManager> manager =
+  talk_base::scoped_refptr<PeerConnectionManager> manager =
       PeerConnectionManager::Create(talk_base::Thread::Current(),
                                     talk_base::Thread::Current(),
                                     network_manager,
@@ -93,13 +94,13 @@ TEST(PeerConnectionManager, CreatePCUsingExternalModules) {
   ASSERT_TRUE(manager.get() != NULL);
 
   MockPeerConnectionObserver observer;
-  scoped_refptr<webrtc::PeerConnection> pc1(manager->CreatePeerConnection(
-      "", &observer));
+  talk_base::scoped_refptr<webrtc::PeerConnectionInterface> pc1(
+      manager->CreatePeerConnection("", &observer));
 
   EXPECT_TRUE(pc1.get() == NULL);
 
-  scoped_refptr<PeerConnection> pc2(manager->CreatePeerConnection(
-      kStunConfiguration, &observer));
+  talk_base::scoped_refptr<PeerConnectionInterface> pc2(
+      manager->CreatePeerConnection(kStunConfiguration, &observer));
   EXPECT_TRUE(pc2.get() != NULL);
 }
 

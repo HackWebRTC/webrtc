@@ -25,6 +25,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+// This file contains the implementation of MediaStreamInterface interface.
+
 #ifndef TALK_APP_WEBRTC_MEDIASTREAMIMPL_H_
 #define TALK_APP_WEBRTC_MEDIASTREAMIMPL_H_
 
@@ -38,12 +40,10 @@ namespace webrtc {
 class AudioTrack;
 class VideoTrack;
 
-class MediaStream
-    : public NotifierImpl<LocalMediaStreamInterface> {
+class MediaStream : public Notifier<LocalMediaStreamInterface> {
  public:
   template<class T>
-  class MediaStreamTrackList :
-    public MediaStreamTrackListInterface<T> {
+  class MediaStreamTrackList : public MediaStreamTrackListInterface<T> {
    public:
     void AddTrack(T* track) {
       tracks_.push_back(track);
@@ -54,10 +54,10 @@ class MediaStream
     }
 
    private:
-    std::vector<scoped_refptr<T> > tracks_;
+    std::vector<talk_base::scoped_refptr<T> > tracks_;
   };
 
-  static scoped_refptr<MediaStream> Create(const std::string& label);
+  static talk_base::scoped_refptr<MediaStream> Create(const std::string& label);
 
   // Implement LocalMediaStreamInterface.
   virtual bool AddTrack(AudioTrackInterface* track);
@@ -79,9 +79,9 @@ class MediaStream
 
   std::string label_;
   MediaStreamInterface::ReadyState ready_state_;
-  scoped_refptr<MediaStreamTrackList<AudioTrackInterface> >
+  talk_base::scoped_refptr<MediaStreamTrackList<AudioTrackInterface> >
       audio_track_list_;
-  scoped_refptr<MediaStreamTrackList<VideoTrackInterface> >
+  talk_base::scoped_refptr<MediaStreamTrackList<VideoTrackInterface> >
       video_track_list_;
 };
 

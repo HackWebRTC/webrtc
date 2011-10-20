@@ -220,10 +220,11 @@ void Conductor::ConnectToPeer(int peer_id) {
   }
 }
 
-scoped_refptr<webrtc::VideoCaptureModule> Conductor::OpenVideoCaptureDevice() {
+talk_base::scoped_refptr<webrtc::VideoCaptureModule>
+Conductor::OpenVideoCaptureDevice() {
   webrtc::VideoCaptureModule::DeviceInfo* device_info(
       webrtc::VideoCaptureFactory::CreateDeviceInfo(0));
-  scoped_refptr<webrtc::VideoCaptureModule> video_device;
+  talk_base::scoped_refptr<webrtc::VideoCaptureModule> video_device;
 
   const size_t kMaxDeviceNameLength = 128;
   const size_t kMaxUniqueIdLength = 256;
@@ -249,23 +250,24 @@ void Conductor::AddStreams() {
   if (active_streams_.find(kStreamLabel) != active_streams_.end())
     return;  // Already added.
 
-  scoped_refptr<webrtc::LocalAudioTrackInterface> audio_track(
+  talk_base::scoped_refptr<webrtc::LocalAudioTrackInterface> audio_track(
       peer_connection_factory_->CreateLocalAudioTrack(kAudioLabel, NULL));
 
-  scoped_refptr<webrtc::LocalVideoTrackInterface> video_track(
+  talk_base::scoped_refptr<webrtc::LocalVideoTrackInterface> video_track(
       peer_connection_factory_->CreateLocalVideoTrack(
           kVideoLabel, OpenVideoCaptureDevice()));
 
   video_track->SetRenderer(main_wnd_->local_renderer());
 
-  scoped_refptr<webrtc::LocalMediaStreamInterface> stream =
+  talk_base::scoped_refptr<webrtc::LocalMediaStreamInterface> stream =
       peer_connection_factory_->CreateLocalMediaStream(kStreamLabel);
 
   stream->AddTrack(audio_track);
   stream->AddTrack(video_track);
   peer_connection_->AddStream(stream);
   peer_connection_->CommitStreamChanges();
-  typedef std::pair<std::string, scoped_refptr<webrtc::MediaStreamInterface> >
+  typedef std::pair<std::string,
+                    talk_base::scoped_refptr<webrtc::MediaStreamInterface> >
       MediaStreamPair;
   active_streams_.insert(MediaStreamPair(stream->label(), stream));
   main_wnd_->SwitchToStreamingUI();
@@ -340,8 +342,8 @@ void Conductor::UIThreadCallback(int msg_id, void* data) {
       webrtc::MediaStreamInterface* stream =
           reinterpret_cast<webrtc::MediaStreamInterface*>(
           data);
-      scoped_refptr<webrtc::MediaStreamTrackListInterface<
-      webrtc::VideoTrackInterface> > tracks = stream->video_tracks();
+      talk_base::scoped_refptr<webrtc::VideoTracks> tracks =
+          stream->video_tracks();
       for (size_t i = 0; i < tracks->count(); ++i) {
         webrtc::VideoTrackInterface* track = tracks->at(i);
         LOG(INFO) << "Setting video renderer for track: " << track->label();

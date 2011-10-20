@@ -25,6 +25,12 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+// This file contains interfaces for MediaStream and MediaTrack. These
+// interfaces are used for implementing MediaStream and MediaTrack as defined
+// in http://dev.w3.org/2011/webrtc/editor/webrtc.html#stream-api. These
+// interfaces must be used only with PeerConnection. PeerConnectionManager
+// interface provides the factory methods to create MediaStream and MediaTracks.
+
 #ifndef TALK_APP_WEBRTC_MEDIASTREAM_H_
 #define TALK_APP_WEBRTC_MEDIASTREAM_H_
 
@@ -45,25 +51,25 @@ class AudioDeviceModule;
 class VideoCaptureModule;
 
 // Generic observer interface.
-class Observer {
+class ObserverInterface {
  public:
   virtual void OnChanged() = 0;
 
  protected:
-  virtual ~Observer() {}
+  virtual ~ObserverInterface() {}
 };
 
-class Notifier {
+class NotifierInterface {
  public:
-  virtual void RegisterObserver(Observer* observer) = 0;
-  virtual void UnregisterObserver(Observer* observer) = 0;
+  virtual void RegisterObserver(ObserverInterface* observer) = 0;
+  virtual void UnregisterObserver(ObserverInterface* observer) = 0;
 
-  virtual ~Notifier() {}
+  virtual ~NotifierInterface() {}
 };
 
 // Information about a track.
-class MediaStreamTrackInterface : public talk_base::RefCount,
-                                  public Notifier {
+class MediaStreamTrackInterface : public talk_base::RefCountInterface,
+                                  public NotifierInterface {
  public:
   enum TrackState {
     kInitializing,  // Track is beeing negotiated.
@@ -78,13 +84,13 @@ class MediaStreamTrackInterface : public talk_base::RefCount,
   virtual bool enabled() const = 0;
   virtual TrackState state() const = 0;
   virtual bool set_enabled(bool enable) = 0;
-  // Return false (or assert) if the ssrc is already set.
+  // These methods should be called by implementation only.
   virtual bool set_ssrc(uint32 ssrc) = 0;
   virtual bool set_state(TrackState new_state) = 0;
 };
 
 // Reference counted wrapper for a VideoRenderer.
-class VideoRendererWrapperInterface : public talk_base::RefCount {
+class VideoRendererWrapperInterface : public talk_base::RefCountInterface {
  public:
   virtual cricket::VideoRenderer* renderer() = 0;
 
@@ -92,10 +98,10 @@ class VideoRendererWrapperInterface : public talk_base::RefCount {
   virtual ~VideoRendererWrapperInterface() {}
 };
 
-// Creates a reference counted object of type webrtc::VideoRenderer.
+// Creates a reference counted object of type cricket::VideoRenderer.
 // webrtc::VideoRendererWrapperInterface take ownership of
 // cricket::VideoRenderer.
-scoped_refptr<VideoRendererWrapperInterface> CreateVideoRenderer(
+talk_base::scoped_refptr<VideoRendererWrapperInterface> CreateVideoRenderer(
     cricket::VideoRenderer* renderer);
 
 class VideoTrackInterface : public MediaStreamTrackInterface {
@@ -140,7 +146,7 @@ class LocalAudioTrackInterface : public AudioTrackInterface {
 
 // List of of tracks.
 template <class TrackType>
-class MediaStreamTrackListInterface : public talk_base::RefCount {
+class MediaStreamTrackListInterface : public talk_base::RefCountInterface {
  public:
   virtual size_t count() = 0;
   virtual TrackType* at(size_t index) = 0;
@@ -152,8 +158,8 @@ class MediaStreamTrackListInterface : public talk_base::RefCount {
 typedef MediaStreamTrackListInterface<AudioTrackInterface> AudioTracks;
 typedef MediaStreamTrackListInterface<VideoTrackInterface> VideoTracks;
 
-class MediaStreamInterface : public talk_base::RefCount,
-                             public Notifier {
+class MediaStreamInterface : public talk_base::RefCountInterface,
+                             public NotifierInterface {
  public:
   virtual std::string label() const = 0;
   virtual AudioTracks* audio_tracks() = 0;
@@ -167,7 +173,7 @@ class MediaStreamInterface : public talk_base::RefCount,
 
   virtual ReadyState ready_state() = 0;
 
-  // Only to be used by the implementation.
+  // These methods should be called by implementation only.
   virtual void set_ready_state(ReadyState state) = 0;
 
  protected:

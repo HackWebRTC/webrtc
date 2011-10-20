@@ -44,11 +44,13 @@ namespace webrtc {
 class AudioTrack : public MediaTrack<LocalAudioTrackInterface> {
  public:
   // Creates a remote audio track.
-  static scoped_refptr<AudioTrack> CreateRemote(const std::string& label,
-                                                uint32 ssrc);
+  static talk_base::scoped_refptr<AudioTrack> CreateRemote(
+      const std::string& label,
+      uint32 ssrc);
   // Creates a local audio track.
-  static scoped_refptr<AudioTrack> CreateLocal(const std::string& label,
-                                               AudioDeviceModule* audio_device);
+  static talk_base::scoped_refptr<AudioTrack> CreateLocal(
+      const std::string& label,
+      AudioDeviceModule* audio_device);
 
   // Get the AudioDeviceModule associated with this track.
   virtual AudioDeviceModule* GetAudioDevice();
@@ -61,7 +63,7 @@ class AudioTrack : public MediaTrack<LocalAudioTrackInterface> {
   AudioTrack(const std::string& label, AudioDeviceModule* audio_device);
 
  private:
-  scoped_refptr<AudioDeviceModule> audio_device_;
+  talk_base::scoped_refptr<AudioDeviceModule> audio_device_;
 };
 
 }  // namespace webrtc

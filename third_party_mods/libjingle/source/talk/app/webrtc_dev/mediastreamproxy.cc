@@ -45,7 +45,8 @@ enum {
 
 typedef talk_base::TypedMessageData<std::string*> LabelMessageData;
 typedef talk_base::TypedMessageData<size_t> SizeTMessageData;
-typedef talk_base::TypedMessageData<webrtc::Observer*> ObserverMessageData;
+typedef talk_base::TypedMessageData<webrtc::ObserverInterface*>
+    ObserverMessageData;
 typedef talk_base::TypedMessageData<webrtc::MediaStreamInterface::ReadyState>
     ReadyStateMessageData;
 
@@ -57,7 +58,7 @@ class MediaStreamTrackMessageData : public talk_base::MessageData {
         result_(false) {
   }
 
-  scoped_refptr<T> track_;
+  talk_base::scoped_refptr<T> track_;
   bool result_;
 };
 
@@ -74,19 +75,19 @@ class MediaStreamTrackAtMessageData : public talk_base::MessageData {
   }
 
   size_t index_;
-  scoped_refptr<TrackType> track_;
+  talk_base::scoped_refptr<TrackType> track_;
 };
 
 }  // namespace anonymous
 
 namespace webrtc {
 
-scoped_refptr<MediaStreamProxy> MediaStreamProxy::Create(
+talk_base::scoped_refptr<MediaStreamProxy> MediaStreamProxy::Create(
     const std::string& label,
     talk_base::Thread* signaling_thread) {
   ASSERT(signaling_thread);
-  talk_base::RefCountImpl<MediaStreamProxy>* stream =
-      new talk_base::RefCountImpl<MediaStreamProxy>(label, signaling_thread);
+  talk_base::RefCount<MediaStreamProxy>* stream =
+      new talk_base::RefCount<MediaStreamProxy>(label, signaling_thread);
   return stream;
 }
 
@@ -94,11 +95,11 @@ MediaStreamProxy::MediaStreamProxy(const std::string& label,
                                    talk_base::Thread* signaling_thread)
     : signaling_thread_(signaling_thread),
       media_stream_impl_(MediaStream::Create(label)),
-      audio_tracks_(new talk_base::RefCountImpl<
+      audio_tracks_(new talk_base::RefCount<
                     MediaStreamTrackListProxy<AudioTrackInterface> >(
                     media_stream_impl_->audio_tracks(),
                     signaling_thread_)),
-      video_tracks_(new talk_base::RefCountImpl<
+      video_tracks_(new talk_base::RefCount<
                     MediaStreamTrackListProxy<VideoTrackInterface> >(
                     media_stream_impl_->video_tracks(),
                     signaling_thread_)) {
@@ -151,7 +152,7 @@ bool MediaStreamProxy::AddTrack(VideoTrackInterface* track) {
   return media_stream_impl_->AddTrack(track);
 }
 
-void MediaStreamProxy::RegisterObserver(Observer* observer) {
+void MediaStreamProxy::RegisterObserver(ObserverInterface* observer) {
   if (!signaling_thread_->IsCurrent()) {
     ObserverMessageData msg(observer);
     Send(MSG_REGISTER_OBSERVER, &msg);
@@ -160,7 +161,7 @@ void MediaStreamProxy::RegisterObserver(Observer* observer) {
   media_stream_impl_->RegisterObserver(observer);
 }
 
-void MediaStreamProxy::UnregisterObserver(Observer* observer) {
+void MediaStreamProxy::UnregisterObserver(ObserverInterface* observer) {
   if (!signaling_thread_->IsCurrent()) {
     ObserverMessageData msg(observer);
     Send(MSG_UNREGISTER_OBSERVER, &msg);

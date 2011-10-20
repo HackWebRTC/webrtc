@@ -50,6 +50,8 @@
 //     // now, |a| and |b| each own a reference to the same MyFoo object.
 //   }
 //
+namespace talk_base {
+
 template <class T>
 class scoped_refptr {
  public:
@@ -124,5 +126,7 @@ class scoped_refptr {
  protected:
   T* ptr_;
 };
+
+}  // namespace talk_base
 
 #endif  // TALK_APP_WEBRTC_SCOPED_REFPTR_H_

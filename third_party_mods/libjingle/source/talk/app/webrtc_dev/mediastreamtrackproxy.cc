@@ -45,7 +45,8 @@ enum {
 };
 
 typedef talk_base::TypedMessageData<std::string*> LabelMessageData;
-typedef talk_base::TypedMessageData<webrtc::Observer*> ObserverMessageData;
+typedef talk_base::TypedMessageData<webrtc::ObserverInterface*>
+    ObserverMessageData;
 typedef talk_base::TypedMessageData
     <webrtc::MediaStreamTrackInterface::TrackState> TrackStateMessageData;
 typedef talk_base::TypedMessageData<uint32> SsrcMessageData;
@@ -54,17 +55,18 @@ typedef talk_base::TypedMessageData<bool> EnableMessageData;
 
 class AudioDeviceMessageData : public talk_base::MessageData {
  public:
-  scoped_refptr<webrtc::AudioDeviceModule> audio_device_;
+  talk_base::scoped_refptr<webrtc::AudioDeviceModule> audio_device_;
 };
 
 class VideoDeviceMessageData : public talk_base::MessageData {
  public:
-  scoped_refptr<webrtc::VideoCaptureModule> video_device_;
+  talk_base::scoped_refptr<webrtc::VideoCaptureModule> video_device_;
 };
 
 class VideoRendererMessageData : public talk_base::MessageData {
  public:
-  scoped_refptr<webrtc::VideoRendererWrapperInterface> video_renderer_;
+  talk_base::scoped_refptr<webrtc::VideoRendererWrapperInterface>
+      video_renderer_;
 };
 
 }  // namespace anonymous
@@ -160,7 +162,7 @@ bool MediaStreamTrackProxy<T>::set_ssrc(uint32 ssrc) {
 }
 
 template <class T>
-void MediaStreamTrackProxy<T>::RegisterObserver(Observer* observer) {
+void MediaStreamTrackProxy<T>::RegisterObserver(ObserverInterface* observer) {
   if (!signaling_thread_->IsCurrent()) {
     ObserverMessageData msg(observer);
     Send(MSG_REGISTER_OBSERVER, &msg);
@@ -170,7 +172,7 @@ void MediaStreamTrackProxy<T>::RegisterObserver(Observer* observer) {
 }
 
 template <class T>
-void MediaStreamTrackProxy<T>::UnregisterObserver(Observer* observer) {
+void MediaStreamTrackProxy<T>::UnregisterObserver(ObserverInterface* observer) {
   if (!signaling_thread_->IsCurrent()) {
     ObserverMessageData msg(observer);
     Send(MSG_UNREGISTER_OBSERVER, &msg);
@@ -254,26 +256,26 @@ AudioTrackProxy::AudioTrackProxy(
   Init(audio_track_);
 }
 
-scoped_refptr<AudioTrackInterface> AudioTrackProxy::CreateRemote(
+talk_base::scoped_refptr<AudioTrackInterface> AudioTrackProxy::CreateRemote(
     const std::string& label,
     uint32 ssrc,
     talk_base::Thread* signaling_thread) {
   ASSERT(signaling_thread);
-  talk_base::RefCountImpl<AudioTrackProxy>* track =
-      new talk_base::RefCountImpl<AudioTrackProxy>(label, ssrc,
-                                                   signaling_thread);
+  talk_base::RefCount<AudioTrackProxy>* track =
+      new talk_base::RefCount<AudioTrackProxy>(label, ssrc,
+                                               signaling_thread);
   return track;
 }
 
-scoped_refptr<LocalAudioTrackInterface> AudioTrackProxy::CreateLocal(
+talk_base::scoped_refptr<LocalAudioTrackInterface> AudioTrackProxy::CreateLocal(
     const std::string& label,
     AudioDeviceModule* audio_device,
     talk_base::Thread* signaling_thread) {
   ASSERT(signaling_thread);
-  talk_base::RefCountImpl<AudioTrackProxy>* track =
-      new talk_base::RefCountImpl<AudioTrackProxy>(label,
-                                                   audio_device,
-                                                   signaling_thread);
+  talk_base::RefCount<AudioTrackProxy>* track =
+      new talk_base::RefCount<AudioTrackProxy>(label,
+                                               audio_device,
+                                               signaling_thread);
   return track;
 }
 
@@ -316,25 +318,25 @@ VideoTrackProxy::VideoTrackProxy(
   Init(video_track_);
 }
 
-scoped_refptr<VideoTrackInterface> VideoTrackProxy::CreateRemote(
+talk_base::scoped_refptr<VideoTrackInterface> VideoTrackProxy::CreateRemote(
     const std::string& label,
     uint32 ssrc,
     talk_base::Thread* signaling_thread) {
   ASSERT(signaling_thread);
-  talk_base::RefCountImpl<VideoTrackProxy>* track =
-      new talk_base::RefCountImpl<VideoTrackProxy>(label, ssrc,
-                                                   signaling_thread);
+  talk_base::RefCount<VideoTrackProxy>* track =
+      new talk_base::RefCount<VideoTrackProxy>(label, ssrc,
+                                               signaling_thread);
   return track;
 }
 
-scoped_refptr<LocalVideoTrackInterface> VideoTrackProxy::CreateLocal(
+talk_base::scoped_refptr<LocalVideoTrackInterface> VideoTrackProxy::CreateLocal(
     const std::string& label,
     VideoCaptureModule* video_device,
     talk_base::Thread* signaling_thread) {
   ASSERT(signaling_thread);
-  talk_base::RefCountImpl<VideoTrackProxy>* track =
-      new talk_base::RefCountImpl<VideoTrackProxy>(label, video_device,
-                                                   signaling_thread);
+  talk_base::RefCount<VideoTrackProxy>* track =
+      new talk_base::RefCount<VideoTrackProxy>(label, video_device,
+                                               signaling_thread);
   return track;
 }
 

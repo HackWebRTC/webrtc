@@ -30,15 +30,10 @@
 
 namespace webrtc {
 
-scoped_refptr<LocalMediaStreamInterface> CreateLocalMediaStream(
+talk_base::scoped_refptr<MediaStream> MediaStream::Create(
     const std::string& label) {
-  return MediaStream::Create(label);
-}
-
-scoped_refptr<MediaStream> MediaStream::Create(
-    const std::string& label) {
-  talk_base::RefCountImpl<MediaStream>* stream =
-      new talk_base::RefCountImpl<MediaStream>(label);
+  talk_base::RefCount<MediaStream>* stream =
+      new talk_base::RefCount<MediaStream>(label);
   return stream;
 }
 
@@ -46,10 +41,10 @@ MediaStream::MediaStream(const std::string& label)
     : label_(label),
       ready_state_(MediaStreamInterface::kInitializing),
       audio_track_list_(
-          new talk_base::RefCountImpl<
+          new talk_base::RefCount<
           MediaStreamTrackList<AudioTrackInterface> >()),
       video_track_list_(
-          new talk_base::RefCountImpl<
+          new talk_base::RefCount<
           MediaStreamTrackList<VideoTrackInterface> >()) {
 }
 
@@ -57,7 +52,7 @@ void MediaStream::set_ready_state(
     MediaStreamInterface::ReadyState new_state) {
   if (ready_state_ != new_state) {
     ready_state_ = new_state;
-    NotifierImpl<LocalMediaStreamInterface>::FireOnChanged();
+    Notifier<LocalMediaStreamInterface>::FireOnChanged();
   }
 }
 

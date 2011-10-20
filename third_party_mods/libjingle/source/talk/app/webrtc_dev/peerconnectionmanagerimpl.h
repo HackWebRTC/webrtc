@@ -40,21 +40,21 @@ namespace webrtc {
 class PeerConnectionManagerImpl : public PeerConnectionManager,
                                   public talk_base::MessageHandler {
  public:
-  scoped_refptr<PeerConnection> CreatePeerConnection(
+  talk_base::scoped_refptr<PeerConnectionInterface> CreatePeerConnection(
       const std::string& config,
       PeerConnectionObserver* observer);
   bool Initialize();
 
-  virtual scoped_refptr<LocalMediaStreamInterface> CreateLocalMediaStream(
-      const std::string& label);
+  virtual talk_base::scoped_refptr<LocalMediaStreamInterface>
+      CreateLocalMediaStream(const std::string& label);
 
-  virtual scoped_refptr<LocalVideoTrackInterface> CreateLocalVideoTrack(
-      const std::string& label,
-      VideoCaptureModule* video_device);
+  virtual talk_base::scoped_refptr<LocalVideoTrackInterface>
+      CreateLocalVideoTrack(const std::string& label,
+                            VideoCaptureModule* video_device);
 
-  virtual scoped_refptr<LocalAudioTrackInterface> CreateLocalAudioTrack(
-      const std::string& label,
-      AudioDeviceModule* audio_device);
+  virtual talk_base::scoped_refptr<LocalAudioTrackInterface>
+      CreateLocalAudioTrack(const std::string& label,
+                            AudioDeviceModule* audio_device);
 
  protected:
   PeerConnectionManagerImpl();
@@ -68,22 +68,21 @@ class PeerConnectionManagerImpl : public PeerConnectionManager,
 
  private:
   bool Initialize_s();
-  scoped_refptr<PeerConnection> CreatePeerConnection_s(
+  talk_base::scoped_refptr<PeerConnectionInterface> CreatePeerConnection_s(
       const std::string& configuration,
       PeerConnectionObserver* observer);
   // Implements talk_base::MessageHandler.
   void OnMessage(talk_base::Message* msg);
 
-  talk_base::scoped_ptr<talk_base::Thread> worker_thread_;
-  talk_base::Thread* worker_thread_ptr_;
   talk_base::scoped_ptr<talk_base::Thread> signaling_thread_;
   talk_base::Thread* signaling_thread_ptr_;
-  scoped_refptr<PcNetworkManager> network_manager_;
-  scoped_refptr<PcPacketSocketFactory> socket_factory_;
-  talk_base::scoped_ptr<cricket::ChannelManager> channel_manager_;
-
+  talk_base::scoped_ptr<talk_base::Thread> worker_thread_;
+  talk_base::Thread* worker_thread_ptr_;
+  talk_base::scoped_refptr<PcNetworkManager> network_manager_;
+  talk_base::scoped_refptr<PcPacketSocketFactory> socket_factory_;
   // External Audio device used for audio playback.
-  scoped_refptr<AudioDeviceModule> default_adm_;
+  talk_base::scoped_refptr<AudioDeviceModule> default_adm_;
+  talk_base::scoped_ptr<cricket::ChannelManager> channel_manager_;
 };
 
 }  // namespace webrtc

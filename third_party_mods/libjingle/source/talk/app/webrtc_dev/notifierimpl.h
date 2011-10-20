@@ -37,18 +37,18 @@ namespace webrtc {
 
 // Implement a template version of a notifier.
 template <class T>
-class NotifierImpl : public T {
+class Notifier : public T {
  public:
-  NotifierImpl() {
+  Notifier() {
   }
 
-  virtual void RegisterObserver(Observer* observer) {
+  virtual void RegisterObserver(ObserverInterface* observer) {
     ASSERT(observer != NULL);
     observers_.push_back(observer);
   }
 
-  virtual void UnregisterObserver(Observer* observer) {
-    for (std::list<Observer*>::iterator it = observers_.begin();
+  virtual void UnregisterObserver(ObserverInterface* observer) {
+    for (std::list<ObserverInterface*>::iterator it = observers_.begin();
          it != observers_.end(); it++) {
       if (*it == observer) {
         observers_.erase(it);
@@ -58,14 +58,14 @@ class NotifierImpl : public T {
   }
 
   void FireOnChanged() {
-    for (std::list<Observer*>::iterator it = observers_.begin();
+    for (std::list<ObserverInterface*>::iterator it = observers_.begin();
          it != observers_.end(); ++it) {
       (*it)-> OnChanged();
     }
   }
 
  protected:
-  std::list<Observer*> observers_;
+  std::list<ObserverInterface*> observers_;
 };
 
 }  // namespace webrtc

@@ -59,15 +59,15 @@ class PeerConnectionImplTest : public testing::Test {
     ASSERT_TRUE(pc_.get() != NULL);
   }
 
-  scoped_refptr<webrtc::PeerConnectionManager> pc_factory_;
-  scoped_refptr<PeerConnection> pc_;
+  talk_base::scoped_refptr<webrtc::PeerConnectionManager> pc_factory_;
+  talk_base::scoped_refptr<PeerConnectionInterface> pc_;
   MockPeerConnectionObserver observer_;
 };
 
-TEST_F(PeerConnectionImplTest, AddRemoveStream) {
+TEST_F(PeerConnectionImplTest, DISABLED_AddRemoveStream) {
   // Create a local stream.
   std::string label(kStreamLabel1);
-  scoped_refptr<LocalMediaStreamInterface> stream(
+  talk_base::scoped_refptr<LocalMediaStreamInterface> stream(
       pc_factory_->CreateLocalMediaStream(label));
 
   pc_->AddStream(stream);

@@ -45,7 +45,7 @@ VideoTrack::VideoTrack(const std::string& label,
 
 void VideoTrack::SetRenderer(VideoRendererWrapperInterface* renderer) {
   video_renderer_ = renderer;
-  NotifierImpl<LocalVideoTrackInterface>::FireOnChanged();
+  Notifier<LocalVideoTrackInterface>::FireOnChanged();
 }
 
 VideoRendererWrapperInterface* VideoTrack::GetRenderer() {
@@ -61,19 +61,19 @@ const char* VideoTrack::kind() const {
   return kVideoTrackKind;
 }
 
-scoped_refptr<VideoTrack> VideoTrack::CreateRemote(
+talk_base::scoped_refptr<VideoTrack> VideoTrack::CreateRemote(
     const std::string& label,
     uint32 ssrc) {
-  talk_base::RefCountImpl<VideoTrack>* track =
-      new talk_base::RefCountImpl<VideoTrack>(label, ssrc);
+  talk_base::RefCount<VideoTrack>* track =
+      new talk_base::RefCount<VideoTrack>(label, ssrc);
   return track;
 }
 
-scoped_refptr<VideoTrack> VideoTrack::CreateLocal(
+talk_base::scoped_refptr<VideoTrack> VideoTrack::CreateLocal(
     const std::string& label,
     VideoCaptureModule* video_device) {
-  talk_base::RefCountImpl<VideoTrack>* track =
-      new talk_base::RefCountImpl<VideoTrack>(label, video_device);
+  talk_base::RefCount<VideoTrack>* track =
+      new talk_base::RefCount<VideoTrack>(label, video_device);
   return track;
 }
 

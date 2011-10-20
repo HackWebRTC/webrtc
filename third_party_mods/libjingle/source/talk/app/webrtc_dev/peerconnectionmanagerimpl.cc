@@ -49,7 +49,7 @@ struct CreatePeerConnectionParams : public talk_base::MessageData {
                              webrtc::PeerConnectionObserver* observer)
       : configuration(configuration), observer(observer) {
   }
-  scoped_refptr<webrtc::PeerConnection> peerconnection;
+  talk_base::scoped_refptr<webrtc::PeerConnectionInterface> peerconnection;
   const std::string& configuration;
   webrtc::PeerConnectionObserver* observer;
 };
@@ -64,10 +64,10 @@ enum {
 
 namespace webrtc {
 
-scoped_refptr<PcNetworkManager> PcNetworkManager::Create(
+talk_base::scoped_refptr<PcNetworkManager> PcNetworkManager::Create(
     talk_base::NetworkManager* network_manager) {
-  talk_base::RefCountImpl<PcNetworkManager>* implementation =
-       new talk_base::RefCountImpl<PcNetworkManager>(network_manager);
+  talk_base::RefCount<PcNetworkManager>* implementation =
+       new talk_base::RefCount<PcNetworkManager>(network_manager);
   return implementation;
 }
 
@@ -83,10 +83,10 @@ PcNetworkManager::~PcNetworkManager() {
   delete network_manager_;
 }
 
-scoped_refptr<PcPacketSocketFactory> PcPacketSocketFactory::Create(
+talk_base::scoped_refptr<PcPacketSocketFactory> PcPacketSocketFactory::Create(
     talk_base::PacketSocketFactory* socket_factory) {
-  talk_base::RefCountImpl<PcPacketSocketFactory>* implementation =
-       new talk_base::RefCountImpl<PcPacketSocketFactory>(socket_factory);
+  talk_base::RefCount<PcPacketSocketFactory>* implementation =
+       new talk_base::RefCount<PcPacketSocketFactory>(socket_factory);
   return implementation;
 }
 
@@ -103,9 +103,10 @@ talk_base::PacketSocketFactory* PcPacketSocketFactory::socket_factory() const {
   return socket_factory_;
 }
 
-scoped_refptr<PeerConnectionManager> PeerConnectionManager::Create() {
-  talk_base::RefCountImpl<PeerConnectionManagerImpl>* pc_manager =
-      new talk_base::RefCountImpl<PeerConnectionManagerImpl>();
+talk_base::scoped_refptr<PeerConnectionManager>
+PeerConnectionManager::Create() {
+  talk_base::RefCount<PeerConnectionManagerImpl>* pc_manager =
+      new talk_base::RefCount<PeerConnectionManagerImpl>();
 
   if (!pc_manager->Initialize()) {
     delete pc_manager;
@@ -114,18 +115,18 @@ scoped_refptr<PeerConnectionManager> PeerConnectionManager::Create() {
   return pc_manager;
 }
 
-scoped_refptr<PeerConnectionManager> PeerConnectionManager::Create(
+talk_base::scoped_refptr<PeerConnectionManager> PeerConnectionManager::Create(
     talk_base::Thread* worker_thread,
     talk_base::Thread* signaling_thread,
     PcNetworkManager* network_manager,
     PcPacketSocketFactory* socket_factory,
     AudioDeviceModule* default_adm) {
-  talk_base::RefCountImpl<PeerConnectionManagerImpl>* pc_manager =
-      new talk_base::RefCountImpl<PeerConnectionManagerImpl>(worker_thread,
-                                                             signaling_thread,
-                                                             network_manager,
-                                                             socket_factory,
-                                                             default_adm);
+  talk_base::RefCount<PeerConnectionManagerImpl>* pc_manager =
+      new talk_base::RefCount<PeerConnectionManagerImpl>(worker_thread,
+                                                         signaling_thread,
+                                                         network_manager,
+                                                         socket_factory,
+                                                         default_adm);
   if (!pc_manager->Initialize()) {
     delete pc_manager;
     pc_manager = NULL;
@@ -212,7 +213,8 @@ bool PeerConnectionManagerImpl::Initialize_s() {
   return true;
 }
 
-scoped_refptr<PeerConnection> PeerConnectionManagerImpl::CreatePeerConnection(
+talk_base::scoped_refptr<PeerConnectionInterface>
+PeerConnectionManagerImpl::CreatePeerConnection(
     const std::string& configuration,
     PeerConnectionObserver* observer) {
   CreatePeerConnectionParams params(configuration, observer);
@@ -220,15 +222,16 @@ scoped_refptr<PeerConnection> PeerConnectionManagerImpl::CreatePeerConnection(
   return params.peerconnection;
 }
 
-scoped_refptr<PeerConnection> PeerConnectionManagerImpl::CreatePeerConnection_s(
+talk_base::scoped_refptr<PeerConnectionInterface>
+PeerConnectionManagerImpl::CreatePeerConnection_s(
     const std::string& configuration,
     PeerConnectionObserver* observer) {
-  talk_base::RefCountImpl<PeerConnectionImpl>* pc(
-      new talk_base::RefCountImpl<PeerConnectionImpl>(channel_manager_.get(),
-                                                      signaling_thread_ptr_,
-                                                      worker_thread_ptr_,
-                                                      network_manager_,
-                                                      socket_factory_));
+  talk_base::RefCount<PeerConnectionImpl>* pc(
+      new talk_base::RefCount<PeerConnectionImpl>(channel_manager_.get(),
+                                                  signaling_thread_ptr_,
+                                                  worker_thread_ptr_,
+                                                  network_manager_,
+                                                  socket_factory_));
   if (!pc->Initialize(configuration, observer)) {
     delete pc;
     pc = NULL;
@@ -236,13 +239,13 @@ scoped_refptr<PeerConnection> PeerConnectionManagerImpl::CreatePeerConnection_s(
   return pc;
 }
 
-scoped_refptr<LocalMediaStreamInterface>
+talk_base::scoped_refptr<LocalMediaStreamInterface>
 PeerConnectionManagerImpl::CreateLocalMediaStream(
       const std::string& label) {
   return MediaStreamProxy::Create(label, signaling_thread_ptr_);
 }
 
-scoped_refptr<LocalVideoTrackInterface>
+talk_base::scoped_refptr<LocalVideoTrackInterface>
 PeerConnectionManagerImpl::CreateLocalVideoTrack(
     const std::string& label,
     VideoCaptureModule* video_device) {
@@ -250,7 +253,7 @@ PeerConnectionManagerImpl::CreateLocalVideoTrack(
                                       signaling_thread_ptr_);
 }
 
-scoped_refptr<LocalAudioTrackInterface>
+talk_base::scoped_refptr<LocalAudioTrackInterface>
 PeerConnectionManagerImpl::CreateLocalAudioTrack(
     const std::string& label,
     AudioDeviceModule* audio_device) {
