@@ -30,6 +30,7 @@ LOCAL_SRC_FILES := \
     generic_encoder.cc \
     inter_frame_delay.cc \
     jitter_buffer.cc \
+    jitter_buffer_common.cc \
     jitter_estimator.cc \
     media_opt_util.cc \
     media_optimization.cc \

@@ -16,7 +16,8 @@ LOCAL_MODULE_CLASS := STATIC_LIBRARIES
 LOCAL_MODULE := libwebrtc_vp8
 LOCAL_MODULE_TAGS := optional
 LOCAL_CPP_EXTENSION := .cc
-LOCAL_SRC_FILES := vp8.cc
+LOCAL_SRC_FILES := vp8.cc \
+    vp8_simulcast.cc
 
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \
@@ -27,6 +28,7 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../../../interface \
     $(LOCAL_PATH)/../../../../../.. \
     $(LOCAL_PATH)/../../../../../../common_video/interface \
+    $(LOCAL_PATH)/../../../../../../common_video/vplib/main/interface \
     $(LOCAL_PATH)/../../../../../../modules/interface \
     $(LOCAL_PATH)/../../../../../../system_wrappers/interface \
     external/libvpx 
