@@ -104,10 +104,10 @@ void RtpFormatVp8Test::CheckHeader(bool first_in_frame, bool frag_start,
     payload_start_ = 1;
     EXPECT_BIT_EQ(buffer_[0], 6, 0); // check reserved bit
 
-    if (first_in_frame &&
-        (hdr_info_.pictureId != webrtc::kNoPictureId ||
+
+    if (hdr_info_.pictureId != webrtc::kNoPictureId ||
         hdr_info_.temporalIdx != webrtc::kNoTemporalIdx ||
-        hdr_info_.tl0PicIdx != webrtc::kNoTl0PicIdx))
+        hdr_info_.tl0PicIdx != webrtc::kNoTl0PicIdx)
     {
         EXPECT_BIT_X_EQ(buffer_[0], 1);
         ++payload_start_;
@@ -235,47 +235,47 @@ TEST_F(RtpFormatVp8Test, TestStrictMode)
         hdr_info_, *fragmentation_, webrtc::kStrict);
 
     // get first packet, expect balanced size ~= same as second packet
-    EXPECT_EQ(0, packetizer.NextPacket(9, buffer_, &send_bytes, &last));
+    EXPECT_EQ(0, packetizer.NextPacket(13, buffer_, &send_bytes, &last));
     CheckPacket(send_bytes, 8, last,
                 first_in_frame,
                 /* frag_start */ true);
     first_in_frame = false;
 
     // get second packet
-    EXPECT_EQ(0, packetizer.NextPacket(9, buffer_, &send_bytes, &last));
-    CheckPacket(send_bytes, 7, last,
+    EXPECT_EQ(0, packetizer.NextPacket(13, buffer_, &send_bytes, &last));
+    CheckPacket(send_bytes, 10, last,
                 first_in_frame,
                 /* frag_start */ false);
 
     // Second partition
     // Get first (and only) packet
     EXPECT_EQ(1, packetizer.NextPacket(20, buffer_, &send_bytes, &last));
-    CheckPacket(send_bytes, 11, last,
+    CheckPacket(send_bytes, 14, last,
                 first_in_frame,
                 /* frag_start */ true);
 
     // Third partition
     // Get first packet (of four)
-    EXPECT_EQ(2, packetizer.NextPacket(4, buffer_, &send_bytes, &last));
-    CheckPacket(send_bytes, 4, last,
+    EXPECT_EQ(2, packetizer.NextPacket(7, buffer_, &send_bytes, &last));
+    CheckPacket(send_bytes, 5, last,
                 first_in_frame,
                 /* frag_start */ true);
 
     // Get second packet (of four)
-    EXPECT_EQ(2, packetizer.NextPacket(4, buffer_, &send_bytes, &last));
-    CheckPacket(send_bytes, 3, last,
+    EXPECT_EQ(2, packetizer.NextPacket(7, buffer_, &send_bytes, &last));
+    CheckPacket(send_bytes, 5, last,
                 first_in_frame,
                 /* frag_start */ false);
 
     // Get third packet (of four)
-    EXPECT_EQ(2, packetizer.NextPacket(4, buffer_, &send_bytes, &last));
-    CheckPacket(send_bytes, 4, last,
+    EXPECT_EQ(2, packetizer.NextPacket(7, buffer_, &send_bytes, &last));
+    CheckPacket(send_bytes, 7, last,
                 first_in_frame,
                 /* frag_start */ false);
 
     // Get fourth and last packet
-    EXPECT_EQ(2, packetizer.NextPacket(4, buffer_, &send_bytes, &last));
-    CheckPacket(send_bytes, 3, last,
+    EXPECT_EQ(2, packetizer.NextPacket(7, buffer_, &send_bytes, &last));
+    CheckPacket(send_bytes, 5, last,
                 first_in_frame,
                 /* frag_start */ false);
 
@@ -293,30 +293,30 @@ TEST_F(RtpFormatVp8Test, TestAggregateMode)
 
     // get first packet
     // first part of first partition (balanced fragments are expected)
-    EXPECT_EQ(0, packetizer.NextPacket(7, buffer_, &send_bytes, &last));
-    CheckPacket(send_bytes, 5, last,
+    EXPECT_EQ(0, packetizer.NextPacket(8, buffer_, &send_bytes, &last));
+    CheckPacket(send_bytes, 7, last,
                 first_in_frame,
                 /* frag_start */ true);
     first_in_frame = false;
 
     // get second packet
     // second fragment of first partition
-    EXPECT_EQ(0, packetizer.NextPacket(7, buffer_, &send_bytes, &last));
+    EXPECT_EQ(0, packetizer.NextPacket(8, buffer_, &send_bytes, &last));
     CheckPacket(send_bytes, 5, last,
                 first_in_frame,
                 /* frag_start */ false);
 
     // get third packet
     // third fragment of first partition
-    EXPECT_EQ(0, packetizer.NextPacket(7, buffer_, &send_bytes, &last));
-    CheckPacket(send_bytes, 5, last,
+    EXPECT_EQ(0, packetizer.NextPacket(8, buffer_, &send_bytes, &last));
+    CheckPacket(send_bytes, 7, last,
                 first_in_frame,
                 /* frag_start */ false);
 
     // get fourth packet
     // last two partitions aggregated
     EXPECT_EQ(1, packetizer.NextPacket(25, buffer_, &send_bytes, &last));
-    CheckPacket(send_bytes, 21, last,
+    CheckPacket(send_bytes, 23, last,
                 first_in_frame,
                 /* frag_start */ true);
 
