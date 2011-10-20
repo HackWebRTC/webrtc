@@ -28,12 +28,12 @@
 //   - Do we really support PowerPC? Probably not. Remove WEBRTC_MAC_INTEL
 //     from build/common.gypi as well.
 #if defined(WIN32)
-    // Windows & Windows Mobile
+    // Windows & Windows Mobile.
     #if !defined(WEBRTC_TARGET_PC)
         #define WEBRTC_TARGET_PC
     #endif
 #elif defined(__APPLE__)
-    // Mac OS X
+    // Mac OS X.
     #if defined(__LITTLE_ENDIAN__ )
         #if !defined(WEBRTC_TARGET_MAC_INTEL)
             #define WEBRTC_TARGET_MAC_INTEL
