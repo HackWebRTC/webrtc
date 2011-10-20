@@ -254,7 +254,6 @@ private:  // WASAPI
     IAudioCaptureClient*                    _ptrCaptureClient;
     IAudioEndpointVolume*                   _ptrCaptureVolume;
     ISimpleAudioVolume*                     _ptrRenderSimpleVolume;
-    IAudioEndpointVolume*                   _ptrRenderEndpointVolume;
 
     // DirectX Media Object (DMO) for the built-in AEC.
     scoped_refptr<IMediaObject>             _dmo;

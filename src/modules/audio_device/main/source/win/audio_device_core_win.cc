@@ -392,7 +392,6 @@ AudioDeviceWindowsCore::AudioDeviceWindowsCore(const WebRtc_Word32 id) :
     _ptrCaptureClient(NULL),
     _ptrCaptureVolume(NULL),
     _ptrRenderSimpleVolume(NULL),
-    _ptrRenderEndpointVolume(NULL),
     _builtInAecEnabled(false),
     _playAudioFrameSize(0),
     _playSampleRate(0),
@@ -724,7 +723,6 @@ WebRtc_Word32 AudioDeviceWindowsCore::Terminate()
     SAFE_RELEASE(_ptrCaptureClient);
     SAFE_RELEASE(_ptrCaptureVolume);
     SAFE_RELEASE(_ptrRenderSimpleVolume);
-    SAFE_RELEASE(_ptrRenderEndpointVolume);
 
     return 0;
 }
@@ -812,19 +810,6 @@ WebRtc_Word32 AudioDeviceWindowsCore::InitSpeaker()
         return -1;
     }
 
-    ret = _ptrDeviceOut->Activate(
-              __uuidof(IAudioEndpointVolume),
-              CLSCTX_ALL,
-              NULL,
-              reinterpret_cast<void **>(&_ptrRenderEndpointVolume));
-    if (ret != 0 || _ptrRenderEndpointVolume == NULL)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                    "  failed to initialize the render endpoint volume");
-        SAFE_RELEASE(_ptrRenderEndpointVolume);
-        return -1;
-    }
-
     IAudioSessionManager* pManager = NULL;
     ret = _ptrDeviceOut->Activate(__uuidof(IAudioSessionManager),
                                   CLSCTX_ALL,
@@ -838,6 +823,7 @@ WebRtc_Word32 AudioDeviceWindowsCore::InitSpeaker()
         return -1;
     }
 
+    SAFE_RELEASE(_ptrRenderSimpleVolume);
     ret = pManager->GetSimpleAudioVolume(NULL, FALSE, &_ptrRenderSimpleVolume);
     if (ret != 0 || _ptrRenderSimpleVolume == NULL)
     {
@@ -848,7 +834,6 @@ WebRtc_Word32 AudioDeviceWindowsCore::InitSpeaker()
         return -1;
     }
     SAFE_RELEASE(pManager);
-
 
     _speakerIsInitialized = true;
 
