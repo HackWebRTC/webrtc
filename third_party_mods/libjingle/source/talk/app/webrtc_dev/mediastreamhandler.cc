@@ -215,7 +215,8 @@ void MediaStreamHandlers::RemoveRemoteStream(MediaStreamInterface* stream) {
   remote_streams_handlers_.erase(it);
 }
 
-void MediaStreamHandlers::CommitLocalStreams(StreamCollection* streams) {
+void MediaStreamHandlers::CommitLocalStreams(
+    StreamCollectionInterface* streams) {
   // Iterate the old list of local streams.
   // If its not found in the new collection it have been removed.
   // We can not erase from the old collection at the same time as we iterate.
