@@ -32,13 +32,13 @@
 namespace {
 
 enum {
-  MSG_REGISTER_OBSERVER = 1,
+  MSG_SET_TRACKLIST_IMPLEMENTATION = 1,
+  MSG_REGISTER_OBSERVER,
   MSG_UNREGISTER_OBSERVER,
   MSG_LABEL,
   MSG_ADD_AUDIO_TRACK,
   MSG_ADD_VIDEO_TRACK,
   MSG_READY_STATE,
-  MSG_SET_READY_STATE,
   MSG_COUNT,
   MSG_AT
 };
@@ -78,6 +78,12 @@ class MediaStreamTrackAtMessageData : public talk_base::MessageData {
   talk_base::scoped_refptr<TrackType> track_;
 };
 
+class MediaStreamTrackListsMessageData : public talk_base::MessageData {
+ public:
+  talk_base::scoped_refptr<webrtc::AudioTracks> audio_tracks_;
+  talk_base::scoped_refptr<webrtc::VideoTracks> video_tracks_;
+};
+
 }  // namespace anonymous
 
 namespace webrtc {
@@ -87,22 +93,43 @@ talk_base::scoped_refptr<MediaStreamProxy> MediaStreamProxy::Create(
     talk_base::Thread* signaling_thread) {
   ASSERT(signaling_thread);
   talk_base::RefCount<MediaStreamProxy>* stream =
-      new talk_base::RefCount<MediaStreamProxy>(label, signaling_thread);
+      new talk_base::RefCount<MediaStreamProxy>(
+          label, signaling_thread,
+          reinterpret_cast<LocalMediaStreamInterface*>(NULL));
+  return stream;
+}
+
+talk_base::scoped_refptr<MediaStreamProxy> MediaStreamProxy::Create(
+    const std::string& label,
+    talk_base::Thread* signaling_thread,
+    LocalMediaStreamInterface* media_stream_impl) {
+  ASSERT(signaling_thread);
+  ASSERT(media_stream_impl);
+  talk_base::RefCount<MediaStreamProxy>* stream =
+      new talk_base::RefCount<MediaStreamProxy>(label, signaling_thread,
+                                                media_stream_impl);
   return stream;
 }
 
 MediaStreamProxy::MediaStreamProxy(const std::string& label,
-                                   talk_base::Thread* signaling_thread)
+                                   talk_base::Thread* signaling_thread,
+                                   LocalMediaStreamInterface* media_stream_impl)
     : signaling_thread_(signaling_thread),
-      media_stream_impl_(MediaStream::Create(label)),
+      media_stream_impl_(media_stream_impl),
       audio_tracks_(new talk_base::RefCount<
-                    MediaStreamTrackListProxy<AudioTrackInterface> >(
-                    media_stream_impl_->audio_tracks(),
-                    signaling_thread_)),
+                        MediaStreamTrackListProxy<AudioTrackInterface> >(
+                              signaling_thread_)),
       video_tracks_(new talk_base::RefCount<
-                    MediaStreamTrackListProxy<VideoTrackInterface> >(
-                    media_stream_impl_->video_tracks(),
-                    signaling_thread_)) {
+                        MediaStreamTrackListProxy<VideoTrackInterface> >(
+                            signaling_thread_)) {
+  if (media_stream_impl_ == NULL) {
+    media_stream_impl_ = MediaStream::Create(label);
+  }
+
+  MediaStreamTrackListsMessageData tracklists;
+  Send(MSG_SET_TRACKLIST_IMPLEMENTATION, &tracklists);
+  audio_tracks_->SetImplementation(tracklists.audio_tracks_);
+  video_tracks_->SetImplementation(tracklists.video_tracks_);
 }
 
 std::string MediaStreamProxy::label() const {
@@ -127,8 +154,8 @@ MediaStreamInterface::ReadyState MediaStreamProxy::ready_state() {
 void MediaStreamProxy::set_ready_state(
     MediaStreamInterface::ReadyState new_state) {
   if (!signaling_thread_->IsCurrent()) {
-    ReadyStateMessageData msg(MediaStreamInterface::kInitializing);
-    Send(MSG_SET_READY_STATE, &msg);
+    // State should only be allowed to be changed from the signaling thread.
+    ASSERT(!"Not Allowed!");
     return;
   }
   media_stream_impl_->set_ready_state(new_state);
@@ -179,6 +206,13 @@ void MediaStreamProxy::Send(uint32 id, talk_base::MessageData* data) const {
 void MediaStreamProxy::OnMessage(talk_base::Message* msg) {
   talk_base::MessageData* data = msg->pdata;
   switch (msg->message_id) {
+    case MSG_SET_TRACKLIST_IMPLEMENTATION: {
+      MediaStreamTrackListsMessageData* lists =
+          static_cast<MediaStreamTrackListsMessageData*>(data);
+      lists->audio_tracks_ = media_stream_impl_->audio_tracks();
+      lists->video_tracks_ = media_stream_impl_->video_tracks();
+      break;
+    }
     case MSG_REGISTER_OBSERVER: {
       ObserverMessageData* observer = static_cast<ObserverMessageData*>(data);
       media_stream_impl_->RegisterObserver(observer->data());
@@ -211,11 +245,6 @@ void MediaStreamProxy::OnMessage(talk_base::Message* msg) {
       state->data() = media_stream_impl_->ready_state();
       break;
     }
-    case MSG_SET_READY_STATE: {
-      ReadyStateMessageData* state = static_cast<ReadyStateMessageData*>(data);
-      media_stream_impl_->set_ready_state(state->data());
-      break;
-    }
     default:
       ASSERT(!"Not Implemented!");
       break;
@@ -224,10 +253,14 @@ void MediaStreamProxy::OnMessage(talk_base::Message* msg) {
 
 template <class T>
 MediaStreamProxy::MediaStreamTrackListProxy<T>::MediaStreamTrackListProxy(
-    MediaStreamTrackListInterface<T>* track_list,
     talk_base::Thread* signaling_thread)
-    :  track_list_(track_list),
-       signaling_thread_(signaling_thread) {
+    : signaling_thread_(signaling_thread) {
+}
+
+template <class T>
+void MediaStreamProxy::MediaStreamTrackListProxy<T>::SetImplementation(
+    MediaStreamTrackListInterface<T>* track_list) {
+  track_list_ = track_list;
 }
 
 template <class T>

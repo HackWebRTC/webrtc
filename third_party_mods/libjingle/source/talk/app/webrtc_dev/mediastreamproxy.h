@@ -35,6 +35,7 @@
 #include "talk/base/thread.h"
 
 namespace webrtc {
+using talk_base::scoped_refptr;
 
 // MediaStreamProxy is a proxy for the MediaStream interface. The purpose is
 // to make sure MediaStreamImpl is only accessed from the signaling thread.
@@ -42,33 +43,18 @@ namespace webrtc {
 class MediaStreamProxy : public LocalMediaStreamInterface,
                          public talk_base::MessageHandler {
  public:
-  template <class T>
-  class MediaStreamTrackListProxy : public MediaStreamTrackListInterface<T>,
-                                    public talk_base::MessageHandler {
-   public:
-    MediaStreamTrackListProxy(MediaStreamTrackListInterface<T>* track_list,
-                              talk_base::Thread* signaling_thread);
-    virtual size_t count();
-    virtual T* at(size_t index);
-
-   private:
-    void Send(uint32 id, talk_base::MessageData* data) const;
-    void OnMessage(talk_base::Message* msg);
-
-    talk_base::scoped_refptr<MediaStreamTrackListInterface<T> > track_list_;
-    mutable talk_base::Thread* signaling_thread_;
-  };
-
-  static talk_base::scoped_refptr<MediaStreamProxy> Create(
+  static scoped_refptr<MediaStreamProxy> Create(
       const std::string& label,
       talk_base::Thread* signaling_thread);
+
+  static scoped_refptr<MediaStreamProxy> Create(
+      const std::string& label,
+      talk_base::Thread* signaling_thread,
+      LocalMediaStreamInterface* media_stream_impl);
 
   // Implement LocalStream.
   virtual bool AddTrack(AudioTrackInterface* track);
   virtual bool AddTrack(VideoTrackInterface* track);
-
-  // This will be used when Tracks are created internally.
-  bool AddTrack(MediaStreamTrackInterface* track);
 
   // Implement MediaStream.
   virtual std::string label() const;
@@ -86,17 +72,38 @@ class MediaStreamProxy : public LocalMediaStreamInterface,
   virtual void UnregisterObserver(ObserverInterface* observer);
 
  protected:
-  explicit MediaStreamProxy(const std::string& label,
-                            talk_base::Thread* signaling_thread);
+  MediaStreamProxy(const std::string& label,
+                   talk_base::Thread* signaling_thread,
+                   LocalMediaStreamInterface* media_stream_impl);
+
+  template <class T>
+  class MediaStreamTrackListProxy : public MediaStreamTrackListInterface<T>,
+                                    public talk_base::MessageHandler {
+   public:
+    MediaStreamTrackListProxy(talk_base::Thread* signaling_thread);
+
+    void SetImplementation(MediaStreamTrackListInterface<T>* track_list);
+    virtual size_t count();
+    virtual T* at(size_t index);
+
+   private:
+    void Send(uint32 id, talk_base::MessageData* data) const;
+    void OnMessage(talk_base::Message* msg);
+
+    talk_base::scoped_refptr<MediaStreamTrackListInterface<T> > track_list_;
+    mutable talk_base::Thread* signaling_thread_;
+  };
+  typedef MediaStreamTrackListProxy<AudioTrackInterface> AudioTrackListProxy;
+  typedef MediaStreamTrackListProxy<VideoTrackInterface> VideoTrackListProxy;
 
   void Send(uint32 id, talk_base::MessageData* data) const;
-  // Implement MessageHandler
+  // Implement MessageHandler.
   virtual void OnMessage(talk_base::Message* msg);
 
   mutable talk_base::Thread* signaling_thread_;
-  talk_base::scoped_refptr<MediaStream> media_stream_impl_;
-  talk_base::scoped_refptr<AudioTracks> audio_tracks_;
-  talk_base::scoped_refptr<VideoTracks> video_tracks_;
+  scoped_refptr<LocalMediaStreamInterface> media_stream_impl_;
+  scoped_refptr<AudioTrackListProxy> audio_tracks_;
+  scoped_refptr<VideoTrackListProxy> video_tracks_;
 };
 
 }  // namespace webrtc

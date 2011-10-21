@@ -85,6 +85,9 @@ class AudioTrackProxy : public MediaStreamTrackProxy<LocalAudioTrackInterface> {
       const std::string& label,
       AudioDeviceModule* audio_device,
       talk_base::Thread* signaling_thread);
+  static talk_base::scoped_refptr<LocalAudioTrackInterface> CreateLocal(
+      LocalAudioTrackInterface* implementation,
+      talk_base::Thread* signaling_thread);
 
   virtual AudioDeviceModule* GetAudioDevice();
 
@@ -95,10 +98,12 @@ class AudioTrackProxy : public MediaStreamTrackProxy<LocalAudioTrackInterface> {
   AudioTrackProxy(const std::string& label,
                   AudioDeviceModule* audio_device,
                   talk_base::Thread* signaling_thread);
+  AudioTrackProxy(LocalAudioTrackInterface* implementation,
+                  talk_base::Thread* signaling_thread);
   // Implement MessageHandler
   virtual void OnMessage(talk_base::Message* msg);
 
-  talk_base::scoped_refptr<AudioTrack> audio_track_;
+  talk_base::scoped_refptr<LocalAudioTrackInterface> audio_track_;
 };
 
 // VideoTrackProxy is a proxy for the VideoTrackInterface and
@@ -115,6 +120,9 @@ class VideoTrackProxy : public MediaStreamTrackProxy<LocalVideoTrackInterface> {
       const std::string& label,
       VideoCaptureModule* video_device,
       talk_base::Thread* signaling_thread);
+  static talk_base::scoped_refptr<LocalVideoTrackInterface> CreateLocal(
+      LocalVideoTrackInterface* implementation,
+      talk_base::Thread* signaling_thread);
 
   virtual VideoCaptureModule* GetVideoCapture();
   virtual void SetRenderer(VideoRendererWrapperInterface* renderer);
@@ -127,10 +135,13 @@ class VideoTrackProxy : public MediaStreamTrackProxy<LocalVideoTrackInterface> {
   VideoTrackProxy(const std::string& label,
                   VideoCaptureModule* video_device,
                   talk_base::Thread* signaling_thread);
+  VideoTrackProxy(LocalVideoTrackInterface* implementation,
+                  talk_base::Thread* signaling_thread);
+
   // Implement MessageHandler
   virtual void OnMessage(talk_base::Message* msg);
 
-  talk_base::scoped_refptr<VideoTrack> video_track_;
+  talk_base::scoped_refptr<LocalVideoTrackInterface> video_track_;
 };
 
 }  // namespace webrtc

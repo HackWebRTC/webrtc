@@ -238,21 +238,26 @@ bool MediaStreamTrackProxy<T>::HandleMessage(talk_base::Message* msg) {
   }
 }
 
-AudioTrackProxy::AudioTrackProxy(
-    const std::string& label,
-    uint32 ssrc,
-    talk_base::Thread* signaling_thread)
+AudioTrackProxy::AudioTrackProxy(const std::string& label,
+                                 uint32 ssrc,
+                                 talk_base::Thread* signaling_thread)
     : MediaStreamTrackProxy<LocalAudioTrackInterface>(signaling_thread),
       audio_track_(AudioTrack::CreateRemote(label, ssrc)) {
   Init(audio_track_);
 }
 
-AudioTrackProxy::AudioTrackProxy(
-    const std::string& label,
-    AudioDeviceModule* audio_device,
-    talk_base::Thread* signaling_thread)
+AudioTrackProxy::AudioTrackProxy(const std::string& label,
+                                 AudioDeviceModule* audio_device,
+                                 talk_base::Thread* signaling_thread)
     : MediaStreamTrackProxy<LocalAudioTrackInterface>(signaling_thread),
       audio_track_(AudioTrack::CreateLocal(label, audio_device)) {
+  Init(audio_track_);
+}
+
+AudioTrackProxy::AudioTrackProxy(LocalAudioTrackInterface* implementation,
+                                 talk_base::Thread* signaling_thread)
+    : MediaStreamTrackProxy<LocalAudioTrackInterface>(signaling_thread),
+      audio_track_(implementation) {
   Init(audio_track_);
 }
 
@@ -279,6 +284,16 @@ talk_base::scoped_refptr<LocalAudioTrackInterface> AudioTrackProxy::CreateLocal(
   return track;
 }
 
+talk_base::scoped_refptr<LocalAudioTrackInterface> AudioTrackProxy::CreateLocal(
+    LocalAudioTrackInterface* implementation,
+    talk_base::Thread* signaling_thread) {
+  ASSERT(signaling_thread);
+  talk_base::RefCount<AudioTrackProxy>* track =
+      new talk_base::RefCount<AudioTrackProxy>(implementation,
+                                               signaling_thread);
+  return track;
+}
+
 AudioDeviceModule* AudioTrackProxy::GetAudioDevice() {
   if (!signaling_thread_->IsCurrent()) {
     AudioDeviceMessageData msg;
@@ -300,21 +315,26 @@ void AudioTrackProxy::OnMessage(talk_base::Message* msg) {
   }
 }
 
-VideoTrackProxy::VideoTrackProxy(
-    const std::string& label,
-    uint32 ssrc,
-    talk_base::Thread* signaling_thread)
+VideoTrackProxy::VideoTrackProxy(const std::string& label,
+                                 uint32 ssrc,
+                                 talk_base::Thread* signaling_thread)
     : MediaStreamTrackProxy<LocalVideoTrackInterface>(signaling_thread),
       video_track_(VideoTrack::CreateRemote(label, ssrc)) {
   Init(video_track_);
 }
 
-VideoTrackProxy::VideoTrackProxy(
-    const std::string& label,
-    VideoCaptureModule* video_device,
-    talk_base::Thread* signaling_thread)
+VideoTrackProxy::VideoTrackProxy(const std::string& label,
+                                 VideoCaptureModule* video_device,
+                                 talk_base::Thread* signaling_thread)
     : MediaStreamTrackProxy<LocalVideoTrackInterface>(signaling_thread),
       video_track_(VideoTrack::CreateLocal(label, video_device)) {
+  Init(video_track_);
+}
+
+VideoTrackProxy::VideoTrackProxy(LocalVideoTrackInterface* implementation,
+                                 talk_base::Thread* signaling_thread)
+    : MediaStreamTrackProxy<LocalVideoTrackInterface>(signaling_thread),
+      video_track_(implementation) {
   Init(video_track_);
 }
 
@@ -336,6 +356,16 @@ talk_base::scoped_refptr<LocalVideoTrackInterface> VideoTrackProxy::CreateLocal(
   ASSERT(signaling_thread);
   talk_base::RefCount<VideoTrackProxy>* track =
       new talk_base::RefCount<VideoTrackProxy>(label, video_device,
+                                               signaling_thread);
+  return track;
+}
+
+talk_base::scoped_refptr<LocalVideoTrackInterface> VideoTrackProxy::CreateLocal(
+    LocalVideoTrackInterface* implementation,
+    talk_base::Thread* signaling_thread) {
+  ASSERT(signaling_thread);
+  talk_base::RefCount<VideoTrackProxy>* track =
+      new talk_base::RefCount<VideoTrackProxy>(implementation,
                                                signaling_thread);
   return track;
 }
