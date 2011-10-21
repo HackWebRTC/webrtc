@@ -3,8 +3,14 @@ vars = {
   # If you do not know, use the full path while defining your new deps entry.
   "googlecode_url": "http://%s.googlecode.com/svn",
   "chromium_trunk" : "http://src.chromium.org/svn/trunk",
-  "chromium_revision": "98568",
+  "chromium_revision": "106036",
   "libjingle_revision": "87",
+
+  # Note: On most bots, clang is not checked out via DEPS but by
+  # tools/clang/scripts/update.sh. The script reads this line here.
+  # Do NOT CHANGE this if you don't know what you're doing -- see
+  # http://code.google.com/p/chromium/wiki/UpdatingClang
+  "clang_revision": "142072",
 }
 
 # NOTE: Prefer revision numbers to tags for svn deps.
@@ -22,7 +28,14 @@ deps = {
     (Var("googlecode_url") % "googlemock") + "/trunk@386",
 
   "trunk/tools/gyp":
-    (Var("googlecode_url") % "gyp") + "/trunk@1012",
+    (Var("googlecode_url") % "gyp") + "/trunk@1080",
+
+  # Needed by build/common.gypi.
+  "trunk/tools/win/supalink":
+    Var("chromium_trunk") + "/src/tools/win/supalink@" + Var("chromium_revision"),
+
+  "trunk/tools/clang/scripts":
+    Var("chromium_trunk") + "/src/tools/clang/scripts@" + Var("chromium_revision"),
 
   "trunk/third_party/protobuf/":
     Var("chromium_trunk") + "/src/third_party/protobuf@" + Var("chromium_revision"),
@@ -76,8 +89,14 @@ hooks = [
     "pattern": ".",
     "action": ["python", "trunk/tools/create_supplement_gypi.py", "trunk/src/supplement.gypi"],
   },
-  # A change to a .gyp, .gypi, or to GYP itself should run the generator.
   {
+    # Pull clang on mac. If nothing changed, or on non-mac platforms, this takes
+    # zero seconds to run. If something changed, it downloads a prebuilt clang.
+    "pattern": ".",
+    "action": ["python", "trunk/tools/clang/scripts/update.py", "--mac-only"],
+  },
+  {
+    # A change to a .gyp, .gypi, or to GYP itself should run the generator.
     "pattern": ".",
     "action": ["python", "trunk/build/gyp_chromium", "--depth=trunk", "trunk/webrtc.gyp"],
   },

@@ -59,10 +59,10 @@
 
         # Exclude internal ADM since Chromium uses its own IO handling.
         'include_internal_audio_device%': 0,
-        
+
         # Exclude internal VCM on Chromium build
         'include_internal_video_capture%': 0,
-        
+
         # Exclude internal video render module on Chromium build
         'include_internal_video_render%': 0,
 
@@ -72,12 +72,21 @@
         'include_pulse_audio%': 1,
 
         'include_internal_audio_device%': 1,
-        
+
         'include_internal_video_capture%': 1,
-        
+
         'include_internal_video_render%': 1,
 
         'webrtc_root%': '<(DEPTH)/src',
+
+        'conditions': [
+          ['OS=="mac"', {
+            # TODO(andrew): clang is now the default on Mac, but we have a build
+            # error in a test. Temporarily disable clang until this is solved:
+            # http://code.google.com/p/webrtc/issues/detail?id=78
+            'clang%': 0,
+          }],
+        ],
       }],
     ], # conditions
   },
