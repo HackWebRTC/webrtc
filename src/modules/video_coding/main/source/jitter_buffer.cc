@@ -288,7 +288,7 @@ VCMJitterBuffer::FlushInternal()
 void
 VCMJitterBuffer::ReleaseFrameInternal(VCMFrameBuffer* frame)
 {
-    if (frame != NULL)
+    if (frame != NULL && frame->GetState() != kStateDecoding)
     {
         frame->SetState(kStateFree);
     }
@@ -1532,12 +1532,15 @@ VCMJitterBuffer::CreateNackList(WebRtc_UWord16& nackSize, bool& listExtended)
     return _NACKSeqNum;
 }
 
-// Release frame (when done with decoding), forwards to internal function
+// Release frame when done with decoding. Should never be used to release
+// frames from within the jitter buffer.
 void
 VCMJitterBuffer::ReleaseFrame(VCMEncodedFrame* frame)
 {
     CriticalSectionScoped cs(_critSect);
-    ReleaseFrameInternal(static_cast<VCMFrameBuffer*>(frame));
+    VCMFrameBuffer* frameBuffer = static_cast<VCMFrameBuffer*>(frame);
+    if (frameBuffer != NULL)
+        frameBuffer->SetState(kStateFree);
 }
 
 WebRtc_Word64
@@ -1852,8 +1855,7 @@ VCMJitterBuffer::CleanUpSizeZeroFrames()
         VCMFrameBuffer* ptrTempBuffer = frameListItem->GetItem();
 
         // pop frame if its size zero but store seqnum
-        if (ptrTempBuffer->Length() == 0 &&
-            ptrTempBuffer->GetState() != kStateDecoding)
+        if (ptrTempBuffer->Length() == 0)
         {
             WebRtc_Word32 frameHighSeqNum = ptrTempBuffer->GetHighSeqNum();
             if (frameHighSeqNum == -1)
