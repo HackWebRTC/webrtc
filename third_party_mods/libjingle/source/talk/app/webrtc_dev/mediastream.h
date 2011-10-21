@@ -78,7 +78,7 @@ class MediaStreamTrackInterface : public talk_base::RefCountInterface,
     kFailed = 3,  // Track negotiation failed.
   };
 
-  virtual const char* kind() const = 0;
+  virtual std::string kind() const = 0;
   virtual std::string label() const = 0;
   virtual uint32 ssrc() const = 0;
   virtual bool enabled() const = 0;

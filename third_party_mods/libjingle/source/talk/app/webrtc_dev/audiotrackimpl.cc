@@ -49,8 +49,8 @@ AudioDeviceModule* AudioTrack::GetAudioDevice() {
 }
 
   // Implement MediaStreamTrack
-const char* AudioTrack::kind() const {
-  return kAudioTrackKind;
+std::string AudioTrack::kind() const {
+  return std::string(kAudioTrackKind);
 }
 
 talk_base::scoped_refptr<AudioTrack> AudioTrack::CreateRemote(

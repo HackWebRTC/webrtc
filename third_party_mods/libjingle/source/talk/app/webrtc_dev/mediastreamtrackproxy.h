@@ -48,7 +48,7 @@ class MediaStreamTrackProxy : public T,
   void Init(MediaStreamTrackInterface* track);
   // Implement MediaStreamTrack.
 
-  virtual const char* kind() const;
+  virtual std::string kind() const;
   virtual std::string label() const;
   virtual uint32 ssrc() const;
   virtual bool enabled() const;

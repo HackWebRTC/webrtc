@@ -58,7 +58,7 @@ class VideoTrack : public MediaTrack<LocalVideoTrackInterface> {
   virtual void SetRenderer(VideoRendererWrapperInterface* renderer);
   VideoRendererWrapperInterface* GetRenderer();
 
-  virtual const char* kind() const;
+  virtual std::string kind() const;
 
  protected:
   VideoTrack(const std::string& label, uint32 ssrc);

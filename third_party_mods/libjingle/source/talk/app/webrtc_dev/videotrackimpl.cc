@@ -57,8 +57,8 @@ VideoCaptureModule* VideoTrack::GetVideoCapture() {
   return video_device_.get();
 }
 
-const char* VideoTrack::kind() const {
-  return kVideoTrackKind;
+std::string VideoTrack::kind() const {
+  return std::string(kVideoTrackKind);
 }
 
 talk_base::scoped_refptr<VideoTrack> VideoTrack::CreateRemote(

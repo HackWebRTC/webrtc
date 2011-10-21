@@ -56,7 +56,7 @@ class AudioTrack : public MediaTrack<LocalAudioTrackInterface> {
   virtual AudioDeviceModule* GetAudioDevice();
 
   // Implement MediaStreamTrack
-  virtual const char* kind() const;
+  virtual std::string kind() const;
 
  protected:
   AudioTrack(const std::string& label, uint32 ssrc);

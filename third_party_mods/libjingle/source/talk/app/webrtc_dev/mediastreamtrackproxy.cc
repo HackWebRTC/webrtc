@@ -85,7 +85,7 @@ void MediaStreamTrackProxy<T>::Init(MediaStreamTrackInterface* track) {
 }
 
 template <class T>
-const char* MediaStreamTrackProxy<T>::kind() const {
+std::string MediaStreamTrackProxy<T>::kind() const {
   return track_->kind();
 }
 
