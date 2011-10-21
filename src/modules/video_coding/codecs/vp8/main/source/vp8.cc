@@ -179,13 +179,8 @@ VP8Encoder::SetRates(WebRtc_UWord32 newBitRateKbit, WebRtc_UWord32 newFrameRate)
     _cfg->ts_rate_decimator[2] = 1;
     memcpy(_cfg->ts_layer_id, ids, sizeof(ids));
 */
-    // update frame rate
-    if (newFrameRate != _maxFrameRate)
-    {
-        _maxFrameRate = newFrameRate;
-        _cfg->g_timebase.num = 1;
-        _cfg->g_timebase.den = _maxFrameRate;
-    }
+
+    _maxFrameRate = newFrameRate;
 
     // update encoder context
     if (vpx_codec_enc_config_set(_encoder, _cfg))
@@ -295,7 +290,7 @@ VP8Encoder::InitEncode(const VideoCodec* inst,
 
     // setting the time base of the codec
     _cfg->g_timebase.num = 1;
-    _cfg->g_timebase.den = _maxFrameRate;
+    _cfg->g_timebase.den = 90000;
 
 #ifdef INDEPENDENT_PARTITIONS
     _cfg->g_error_resilient = VPX_ERROR_RESILIENT_DEFAULT | VPX_ERROR_RESILIENT_PARTITIONS;
@@ -568,11 +563,19 @@ VP8Encoder::Encode(const RawImage& inputImage,
         _encodedImage._frameType = kDeltaFrame;
     }
 
-    if (vpx_codec_encode(_encoder, _raw, _timeStamp, 1, flags, VPX_DL_REALTIME))
+    // TODO(holmer): Ideally the duration should be the timestamp diff of this
+    // frame and the next frame to be encoded, which we don't have. Instead we
+    // would like to use the duration of the previous frame. Unfortunately the
+    // rate control seems to be off with that setup. Using the average input
+    // frame rate to calculate an average duration for now.
+    assert(_maxFrameRate > 0);
+    WebRtc_UWord32 duration = 90000 / _maxFrameRate;
+    if (vpx_codec_encode(_encoder, _raw, _timeStamp, duration, flags,
+                         VPX_DL_REALTIME))
     {
         return WEBRTC_VIDEO_CODEC_ERROR;
     }
-    _timeStamp++;
+    _timeStamp += duration;
 
 #if WEBRTC_LIBVPX_VERSION >= 971
     return GetEncodedPartitions(inputImage);
