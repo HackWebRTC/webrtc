@@ -79,9 +79,7 @@ VCMNackFecMethod::ProtectionFactor(const
     if (parameters->rtt < kLowRttNackMs)
     {
         _protectionFactorD = 0;
-        _protectionFactorK = 0;
         VCMFecMethod::UpdateProtectionFactorD(_protectionFactorD);
-        VCMFecMethod::UpdateProtectionFactorK(_protectionFactorK);
     }
 
     // When in Hybrid mode (RTT range), adjust FEC rates based on the
