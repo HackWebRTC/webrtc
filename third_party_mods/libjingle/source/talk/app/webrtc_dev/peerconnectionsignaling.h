@@ -40,7 +40,7 @@
 #include "talk/app/webrtc_dev/mediastreamproxy.h"
 #include "talk/app/webrtc_dev/peerconnection.h"
 #include "talk/app/webrtc_dev/peerconnectionmessage.h"
-#include "talk/app/webrtc_dev/ref_count.h"
+#include "talk/app/webrtc_dev/refcount.h"
 #include "talk/app/webrtc_dev/scoped_refptr.h"
 #include "talk/app/webrtc_dev/sessiondescriptionprovider.h"
 #include "talk/app/webrtc_dev/webrtcsessionobserver.h"

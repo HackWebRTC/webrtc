@@ -716,7 +716,7 @@
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionmessage.h',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionsignaling.cc',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionsignaling.h',
-            '<(libjingle_mods)/source/talk/app/webrtc_dev/ref_count.h',
+            '<(libjingle_mods)/source/talk/app/webrtc_dev/refcount.h',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/sessiondescriptionprovider.h'
             '<(libjingle_mods)/source/talk/app/webrtc_dev/streamcollectionimpl.h',            
             '<(libjingle_mods)/source/talk/app/webrtc_dev/videorendererimpl.cc',

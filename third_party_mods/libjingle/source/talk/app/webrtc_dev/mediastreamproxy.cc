@@ -26,7 +26,7 @@
  */
 
 #include "talk/app/webrtc_dev/mediastreamproxy.h"
-#include "talk/app/webrtc_dev/ref_count.h"
+#include "talk/app/webrtc_dev/refcount.h"
 #include "talk/app/webrtc_dev/scoped_refptr.h"
 
 namespace {

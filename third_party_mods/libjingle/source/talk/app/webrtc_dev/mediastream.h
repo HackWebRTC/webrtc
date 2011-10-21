@@ -36,7 +36,7 @@
 
 #include <string>
 
-#include "talk/app/webrtc_dev/ref_count.h"
+#include "talk/app/webrtc_dev/refcount.h"
 #include "talk/app/webrtc_dev/scoped_refptr.h"
 #include "talk/base/basictypes.h"
 
