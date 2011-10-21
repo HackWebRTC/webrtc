@@ -1049,8 +1049,8 @@ VP8Decoder::ReturnFrame(const vpx_image_t* img, WebRtc_UWord32 timeStamp)
     }
 
     // Allocate memory for decoded image
-    WebRtc_UWord32 requiredSize = (3 * img->h * img->w) >> 1;
-    if (_decodedImage._buffer != NULL)
+    WebRtc_UWord32 requiredSize = (3 * img->d_h * img->d_w) >> 1;
+    if (requiredSize > _decodedImage._size)
     {
         delete [] _decodedImage._buffer;
         _decodedImage._buffer = NULL;
