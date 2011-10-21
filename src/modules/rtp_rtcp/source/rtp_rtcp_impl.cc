@@ -2368,6 +2368,7 @@ void ModuleRtpRtcpImpl::BitrateSent(WebRtc_UWord32* totalRate,
             }
             it++;
         }
+        return;
     }
     if (totalRate != NULL)
         *totalRate = _rtpSender.BitrateLast();
