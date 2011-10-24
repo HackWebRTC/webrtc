@@ -31,7 +31,7 @@
 #include "gtest/gtest.h"
 #include "talk/app/webrtc_dev/mediastreamproxy.h"
 #include "talk/app/webrtc_dev/mediastreamtrackproxy.h"
-#include "talk/app/webrtc_dev/ref_count.h"
+#include "talk/app/webrtc_dev/refcount.h"
 #include "talk/base/scoped_ptr.h"
 #include "talk/base/thread.h"
 
@@ -167,7 +167,7 @@ class MockMediaStreamTrack: public T {
     EXPECT_EQ(talk_base::Thread::Current(), signaling_thread_);
     track_impl_->UnregisterObserver(observer);
   }
-  virtual const char* kind() const {
+  virtual std::string kind() const {
     EXPECT_EQ(talk_base::Thread::Current(), signaling_thread_);
     return track_impl_->kind();
   }
