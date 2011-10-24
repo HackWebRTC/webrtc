@@ -129,14 +129,14 @@ WebRtc_Word32 WebRtcNsx_InitCore(NsxInst_t* inst, WebRtc_UWord32 fs);
  * This changes the aggressiveness of the noise suppression method.
  *
  * Input:
- *      - inst          : Instance that should be initialized
- *      - mode          : 0: Mild (6 dB), 1: Medium (10 dB), 2: Aggressive (15 dB)
+ *      - inst       : Instance that should be initialized
+ *      - mode       : 0: Mild (6 dB), 1: Medium (10 dB), 2: Aggressive (15 dB)
  *
  * Output:
- *      - NS_inst      : Initialized instance
+ *      - inst       : Initialized instance
  *
- * Return value         :  0 - Ok
- *                        -1 - Error
+ * Return value      :  0 - Ok
+ *                     -1 - Error
  */
 int WebRtcNsx_set_policy_core(NsxInst_t* inst, int mode);
 
@@ -158,16 +158,47 @@ int WebRtcNsx_set_policy_core(NsxInst_t* inst, int mode);
  * Return value         :  0 - OK
  *                        -1 - Error
  */
-int WebRtcNsx_ProcessCore(NsxInst_t* inst, short* inFrameLow, short* inFrameHigh,
-                          short* outFrameLow, short* outFrameHigh);
+int WebRtcNsx_ProcessCore(NsxInst_t* inst,
+                          short* inFrameLow,
+                          short* inFrameHigh,
+                          short* outFrameLow,
+                          short* outFrameHigh);
 
 /****************************************************************************
  * Internal functions and variable declarations shared with optimized code.
  */
-void WebRtcNsx_UpdateNoiseEstimate(NsxInst_t* inst, int offset);
 
-void WebRtcNsx_NoiseEstimation(NsxInst_t* inst, WebRtc_UWord16* magn, WebRtc_UWord32* noise,
-                               WebRtc_Word16* qNoise);
+// Noise Estimation.
+void WebRtcNsx_NoiseEstimation(NsxInst_t* inst,
+                               uint16_t* magn,
+                               uint32_t* noise,
+                               int16_t* q_noise);
+
+// Filter the data in the frequency domain, and create spectrum.
+void WebRtcNsx_PrepareSpectrum(NsxInst_t* inst,
+                               int16_t* freq_buff);
+
+// For the noise supression process, synthesis, read out fully processed
+// segment, and update synthesis buffer.
+void WebRtcNsx_SynthesisUpdate(NsxInst_t* inst,
+                               int16_t* out_frame,
+                               int16_t gain_factor);
+
+// Update analysis buffer for lower band, and window data before FFT.
+void WebRtcNsx_AnalysisUpdate(NsxInst_t* inst,
+                              int16_t* out,
+                              int16_t* new_speech);
+
+// Denormalize the input buffer.
+inline void WebRtcNsx_Denormalize(NsxInst_t* inst,
+                                  int16_t* in,
+                                  int factor);
+
+// Create a complex number buffer, as the intput interleaved with zeros,
+// and normalize it.
+inline void WebRtcNsx_CreateComplexBuffer(NsxInst_t* inst,
+                                          int16_t* in,
+                                          int16_t* out);
 
 extern const WebRtc_Word16 WebRtcNsx_kLogTable[9];
 extern const WebRtc_Word16 WebRtcNsx_kLogTableFrac[256];
