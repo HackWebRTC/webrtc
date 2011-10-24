@@ -251,9 +251,7 @@
             }],
             ['OS=="mac"', {
               'xcode_settings': {
-                # TODO(andrew): remove this. Shouldn't be needed when required
-                # files have proper .mm extensions.
-                'OTHER_CPLUSPLUSFLAGS': '-x objective-c++',
+                # TODO(andrew): CoreAudio and AudioToolbox shouldn't be needed.
                 'OTHER_LDFLAGS': [
                   '-framework Foundation -framework AppKit -framework Cocoa -framework OpenGL -framework CoreVideo -framework CoreAudio -framework AudioToolbox',
                 ],

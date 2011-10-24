@@ -42,11 +42,11 @@
         'interface/vie_autotest_main.h',
         'interface/vie_autotest_window_manager_interface.h',
         'interface/vie_autotest_windows.h',
-        
+
         # Helper classes
         'helpers/vie_window_creator.cc',
         'helpers/vie_file_capture_device.cc',
-        
+
         # New, fully automated tests
         'automated/vie_api_integration_test.cc',
         'automated/vie_extended_integration_test.cc',
@@ -135,9 +135,6 @@
         }],
         ['OS=="mac"', {
           'xcode_settings': {
-            # TODO(andrew): remove this when the issue with Objective-C in
-            # vie_autotest_main.cc is worked out.
-            'OTHER_CPLUSPLUSFLAGS': '-x objective-c++',
             'OTHER_LDFLAGS': [
               '-framework Foundation -framework AppKit -framework Cocoa -framework OpenGL -framework CoreVideo -framework CoreAudio -framework AudioToolbox',
             ],

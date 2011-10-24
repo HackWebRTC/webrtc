@@ -167,9 +167,6 @@
             }],
             ['OS=="mac"', {
               'xcode_settings': {
-                # TODO(andrew): remove this. It shouldn't be needed when the
-                # required files have proper .mm extensions.
-                'OTHER_CPLUSPLUSFLAGS': '-x objective-c++',
                 'OTHER_LDFLAGS': [
                   '-framework Foundation -framework AppKit -framework Cocoa -framework OpenGL',
                 ],
