@@ -14,6 +14,7 @@
 #include "audio_device_test_defines.h"
 
 #include "../source/audio_device_config.h"
+#include "../source/audio_device_impl.h"
 #include "../source/audio_device_utility.h"
 
 // Helper functions
@@ -213,7 +214,7 @@ int api_test()
     processThread->Start();
 
     // =======================================================
-    // AudioDeviceModule::Create
+    // AudioDeviceModuleImpl::Create
     //
     // Windows:
     //      if (WEBRTC_WINDOWS_CORE_AUDIO_BUILD)
@@ -226,74 +227,78 @@ int api_test()
     AudioDeviceModule* audioDevice(NULL);
 
 #if defined(_WIN32)
-    TEST((audioDevice = AudioDeviceModule::Create(
+    TEST((audioDevice = AudioDeviceModuleImpl::Create(
         myId, AudioDeviceModule::kLinuxAlsaAudio)) == NULL);
 #if defined(WEBRTC_WINDOWS_CORE_AUDIO_BUILD)
     TEST_LOG("WEBRTC_WINDOWS_CORE_AUDIO_BUILD is defined!\n\n");
     // create default implementation (=Core Audio) instance
-    TEST((audioDevice = AudioDeviceModule::Create(
+    TEST((audioDevice = AudioDeviceModuleImpl::Create(
         myId, AudioDeviceModule::kPlatformDefaultAudio)) != NULL);
-    AudioDeviceModule::Destroy(audioDevice);
+    audioDevice->AddRef();
+    TEST(audioDevice->Release() == 0);
     // create non-default (=Wave Audio) instance
-    TEST((audioDevice = AudioDeviceModule::Create(
+    TEST((audioDevice = AudioDeviceModuleImpl::Create(
         myId, AudioDeviceModule::kWindowsWaveAudio)) != NULL);
-    AudioDeviceModule::Destroy(audioDevice);
+    audioDevice->AddRef();
+    TEST(audioDevice->Release() == 0);
     // explicitly specify usage of Core Audio (same as default)
-    TEST((audioDevice = AudioDeviceModule::Create(
+    TEST((audioDevice = AudioDeviceModuleImpl::Create(
         myId, AudioDeviceModule::kWindowsCoreAudio)) != NULL);
 #else
-    // TEST_LOG("WEBRTC_WINDOWS_CORE_AUDIO_BUILD is *not* defined!\n");
-    TEST((audioDevice = AudioDeviceModule::Create(
+    TEST_LOG("WEBRTC_WINDOWS_CORE_AUDIO_BUILD is *not* defined!\n");
+    TEST((audioDevice = AudioDeviceModuleImpl::Create(
         myId, AudioDeviceModule::kWindowsCoreAudio)) == NULL);
     // create default implementation (=Wave Audio) instance
-    TEST((audioDevice = AudioDeviceModule::Create(
+    TEST((audioDevice = AudioDeviceModuleImpl::Create(
         myId, AudioDeviceModule::kPlatformDefaultAudio)) != NULL);
-    AudioDeviceModule::Destroy(audioDevice);
+    audioDevice->AddRef();
+    TEST(audioDevice->Release() == 0);
     // explicitly specify usage of Wave Audio (same as default)
-    TEST((audioDevice = AudioDeviceModule::Create(
+    TEST((audioDevice = AudioDeviceModuleImpl::Create(
         myId, AudioDeviceModule::kWindowsWaveAudio)) != NULL);
 #endif
 #endif
 
 #if defined(ANDROID)
     // Fails tests
-    TEST((audioDevice = AudioDeviceModule::Create(
+    TEST((audioDevice = AudioDeviceModuleImpl::Create(
         myId, AudioDeviceModule::kWindowsWaveAudio)) == NULL);
-    TEST((audioDevice = AudioDeviceModule::Create(
+    TEST((audioDevice = AudioDeviceModuleImpl::Create(
         myId, AudioDeviceModule::kWindowsCoreAudio)) == NULL);
-    TEST((audioDevice = AudioDeviceModule::Create(
+    TEST((audioDevice = AudioDeviceModuleImpl::Create(
         myId, AudioDeviceModule::kLinuxAlsaAudio)) == NULL);
-    TEST((audioDevice = AudioDeviceModule::Create(
+    TEST((audioDevice = AudioDeviceModuleImpl::Create(
         myId, AudioDeviceModule::kLinuxPulseAudio)) == NULL);
     // Create default implementation instance
-    TEST((audioDevice = AudioDeviceModule::Create(
+    TEST((audioDevice = AudioDeviceModuleImpl::Create(
         myId, AudioDeviceModule::kPlatformDefaultAudio)) != NULL);
 #elif defined(WEBRTC_LINUX)
-    TEST((audioDevice = AudioDeviceModule::Create(
+    TEST((audioDevice = AudioDeviceModuleImpl::Create(
         myId, AudioDeviceModule::kWindowsWaveAudio)) == NULL);
-    TEST((audioDevice = AudioDeviceModule::Create(
+    TEST((audioDevice = AudioDeviceModuleImpl::Create(
         myId, AudioDeviceModule::kWindowsCoreAudio)) == NULL);
     // create default implementation (=ALSA Audio) instance
-    TEST((audioDevice = AudioDeviceModule::Create(
+    TEST((audioDevice = AudioDeviceModuleImpl::Create(
         myId, AudioDeviceModule::kPlatformDefaultAudio)) != NULL);
-    AudioDeviceModule::Destroy(audioDevice);
+    audioDevice->AddRef();
+    TEST(audioDevice->Release() == 0);
     // explicitly specify usage of Pulse Audio (same as default)
-    TEST((audioDevice = AudioDeviceModule::Create(
+    TEST((audioDevice = AudioDeviceModuleImpl::Create(
         myId, AudioDeviceModule::kLinuxPulseAudio)) != NULL);
 #endif
 
 #if defined(WEBRTC_MAC)
     // Fails tests
-    TEST((audioDevice = AudioDeviceModule::Create(
+    TEST((audioDevice = AudioDeviceModuleImpl::Create(
         myId, AudioDeviceModule::kWindowsWaveAudio)) == NULL);
-    TEST((audioDevice = AudioDeviceModule::Create(
+    TEST((audioDevice = AudioDeviceModuleImpl::Create(
         myId, AudioDeviceModule::kWindowsCoreAudio)) == NULL);
-    TEST((audioDevice = AudioDeviceModule::Create(
+    TEST((audioDevice = AudioDeviceModuleImpl::Create(
         myId, AudioDeviceModule::kLinuxAlsaAudio)) == NULL);
-    TEST((audioDevice = AudioDeviceModule::Create(
+    TEST((audioDevice = AudioDeviceModuleImpl::Create(
         myId, AudioDeviceModule::kLinuxPulseAudio)) == NULL);
     // Create default implementation instance
-    TEST((audioDevice = AudioDeviceModule::Create(
+    TEST((audioDevice = AudioDeviceModuleImpl::Create(
         myId, AudioDeviceModule::kPlatformDefaultAudio)) != NULL);
 #endif
 
@@ -306,6 +311,9 @@ int api_test()
         return 0;
 #endif
     }
+
+    // The ADM is reference counted.
+    audioDevice->AddRef();
 
     processThread->RegisterModule(audioDevice);
 
@@ -2201,7 +2209,7 @@ int api_test()
     // ------------------------------------------------------------------------
 
     // ===================================================
-    // AudioDeviceModule::Destroy
+    // AudioDeviceModuleImpl::Destroy
     // ===================================================
 
 
@@ -2228,8 +2236,9 @@ int api_test()
     }
 
     // release the AudioDeviceModule object
-    if (audioDevice)
-        AudioDeviceModule::Destroy(audioDevice);
+    if (audioDevice) {
+       TEST(audioDevice->Release() == 0);
+    }
 
     TEST_LOG("\n");
     PRINT_TEST_RESULTS;

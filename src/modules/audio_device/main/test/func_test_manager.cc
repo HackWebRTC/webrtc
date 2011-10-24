@@ -16,6 +16,7 @@
 #include "func_test_manager.h"
 
 #include "../source/audio_device_config.h"
+#include "../source/audio_device_impl.h"
 
 #ifndef __GNUC__
 // Disable warning message ('sprintf': name was marked as #pragma deprecated)
@@ -597,11 +598,13 @@ WebRtc_Word32 FuncTestManager::Init()
     _processThread->Start();
 
     // create the Audio Device module
-    TEST((_audioDevice = AudioDeviceModule::Create(555, ADM_AUDIO_LAYER)) != NULL);
+    TEST((_audioDevice = AudioDeviceModuleImpl::Create(
+        555, ADM_AUDIO_LAYER)) != NULL);
     if (_audioDevice == NULL)
     {
         return -1;
     }
+    TEST(_audioDevice->AddRef() == 1);
 
     // register the Audio Device module
     _processThread->RegisterModule(_audioDevice);
@@ -656,7 +659,7 @@ WebRtc_Word32 FuncTestManager::Close()
     // release the AudioDeviceModule object
     if (_audioDevice)
     {
-        AudioDeviceModule::Destroy(_audioDevice);
+        TEST(_audioDevice->Release() == 0);
         _audioDevice = NULL;
     }
 
@@ -826,7 +829,7 @@ WebRtc_Word32 FuncTestManager::TestAudioLayerSelection()
         // release the AudioDeviceModule object
         if (_audioDevice)
         {
-            AudioDeviceModule::Destroy(_audioDevice);
+            TEST(_audioDevice->Release() == 0);
             _audioDevice = NULL;
         }
 
@@ -843,12 +846,12 @@ WebRtc_Word32 FuncTestManager::TestAudioLayerSelection()
         // create the Audio Device module based on selected audio layer
         if (tryWinWave)
         {
-            _audioDevice = AudioDeviceModule::Create(
+            _audioDevice = AudioDeviceModuleImpl::Create(
                 555,
                 AudioDeviceModule::kWindowsWaveAudio);
         } else if (tryWinCore)
         {
-            _audioDevice = AudioDeviceModule::Create(
+            _audioDevice = AudioDeviceModuleImpl::Create(
                 555,
                 AudioDeviceModule::kWindowsCoreAudio);
         }
@@ -857,7 +860,7 @@ WebRtc_Word32 FuncTestManager::TestAudioLayerSelection()
         {
             TEST_LOG("\nERROR: Switch of audio layer failed!\n");
             // restore default audio layer instead
-            TEST((_audioDevice = AudioDeviceModule::Create(
+            TEST((_audioDevice = AudioDeviceModuleImpl::Create(
                 555, AudioDeviceModule::kPlatformDefaultAudio)) != NULL);
         }
 
@@ -866,6 +869,8 @@ WebRtc_Word32 FuncTestManager::TestAudioLayerSelection()
             TEST_LOG("\nERROR: Failed to revert back to default audio layer!\n");
             return -1;
         }
+
+        TEST(_audioDevice->AddRef() == 1);
 
         // register the Audio Device module
         _processThread->RegisterModule(_audioDevice);
