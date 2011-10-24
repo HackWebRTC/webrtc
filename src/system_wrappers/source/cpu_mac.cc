@@ -17,7 +17,12 @@
 #include "tick_util.h"
 
 namespace webrtc {
-CpuWrapperMac::CpuWrapperMac() : _cpuUsage(NULL)
+CpuWrapperMac::CpuWrapperMac()
+    : _cpuCount(0),
+      _cpuUsage(NULL), 
+      _totalCpuUsage(0),
+      _lastTickCount(NULL),
+      _lastTime(0)
 {
     natural_t cpuCount;
     processor_info_array_t infoArray;
@@ -33,6 +38,7 @@ CpuWrapperMac::CpuWrapperMac() : _cpuUsage(NULL)
         return;
     }
 
+    _cpuCount = cpuCount;
     _cpuUsage = new WebRtc_UWord32[cpuCount];
     _lastTickCount = new WebRtc_Word64[cpuCount];
     _lastTime = TickTime::MillisecondTimestamp();
@@ -47,14 +53,15 @@ CpuWrapperMac::CpuWrapperMac() : _cpuUsage(NULL)
             ticks += cpuLoadInfo[cpu].cpu_ticks[state];
         }
         _lastTickCount[cpu] = ticks;
+        _cpuUsage[cpu] = 0;
     }
     vm_deallocate(mach_task_self(), (vm_address_t)infoArray, infoCount);
 }
 
 CpuWrapperMac::~CpuWrapperMac()
 {
-    delete _cpuUsage;
-    delete _lastTickCount;
+    delete[] _cpuUsage;
+    delete[] _lastTickCount;
 }
 
 WebRtc_Word32 CpuWrapperMac::CpuUsage()
@@ -68,29 +75,35 @@ WebRtc_Word32
 CpuWrapperMac::CpuUsageMultiCore(WebRtc_UWord32& numCores,
                                  WebRtc_UWord32*& array)
 {
-    natural_t cpuCount;
-    processor_info_array_t infoArray;
-    mach_msg_type_number_t infoCount;
-
     // sanity check
     if(_cpuUsage == NULL)
     {
         return -1;
     }
+    
     WebRtc_Word64 now = TickTime::MillisecondTimestamp();
     WebRtc_Word64 timeDiffMS = now - _lastTime;
-    // TODO(hellner) why block here? Why not just return the old
-    //                          value? Is this behavior consistent across all
-    //                          platforms?
-    // Make sure that at least 500 ms pass between calls.
-    if(timeDiffMS < 500)
+    if(timeDiffMS >= 500) 
     {
-        usleep((500-timeDiffMS)*1000);
-        return CpuUsageMultiCore(numCores, array);
+        if(Update(timeDiffMS) != 0) 
+        {
+           return -1;
+        }
+        _lastTime = now;
     }
-    _lastTime = now;
+    
+    numCores = _cpuCount;
+    array = _cpuUsage;
+    return _totalCpuUsage / _cpuCount;
+}
 
-     kern_return_t error = host_processor_info(mach_host_self(),
+WebRtc_Word32 CpuWrapperMac::Update(WebRtc_Word64 timeDiffMS)
+{    
+    natural_t cpuCount;
+    processor_info_array_t infoArray;
+    mach_msg_type_number_t infoCount;
+    
+    kern_return_t error = host_processor_info(mach_host_self(),
                                               PROCESSOR_CPU_LOAD_INFO,
                                               &cpuCount,
                                               &infoArray,
@@ -103,7 +116,7 @@ CpuWrapperMac::CpuUsageMultiCore(WebRtc_UWord32& numCores,
     processor_cpu_load_info_data_t* cpuLoadInfo =
         (processor_cpu_load_info_data_t*) infoArray;
 
-    WebRtc_Word32 totalCpuUsage = 0;
+    _totalCpuUsage = 0;
     for (unsigned int cpu = 0; cpu < cpuCount; cpu++)
     {
         WebRtc_Word64 ticks = 0;
@@ -120,13 +133,11 @@ CpuWrapperMac::CpuUsageMultiCore(WebRtc_UWord32& numCores,
                                               timeDiffMS);
         }
         _lastTickCount[cpu] = ticks;
-        totalCpuUsage += _cpuUsage[cpu];
+        _totalCpuUsage += _cpuUsage[cpu];
     }
 
     vm_deallocate(mach_task_self(), (vm_address_t)infoArray, infoCount);
 
-    numCores = cpuCount;
-    array = _cpuUsage;
-    return totalCpuUsage/cpuCount;
+    return 0;
 }
 } // namespace webrtc

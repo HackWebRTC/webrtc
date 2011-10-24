@@ -35,7 +35,11 @@ public:
     virtual void Stop() {}
 
 private:
+    WebRtc_Word32 Update(WebRtc_Word64 timeDiffMS);
+    
+    WebRtc_UWord32  _cpuCount;
     WebRtc_UWord32* _cpuUsage;
+    WebRtc_Word32   _totalCpuUsage;
     WebRtc_Word64*  _lastTickCount;
     WebRtc_Word64   _lastTime;
 };
