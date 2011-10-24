@@ -21,7 +21,9 @@ namespace webrtc {
 // function.
 #define ThreadObj void*
 
-// Callback function that the spawned thread will enter once spawned
+// Callback function that the spawned thread will enter once spawned.
+// A return value of false is interpreted as that the function has no
+// more work to do and that the thread can be released.
 typedef  bool(*ThreadRunFunction)(ThreadObj);
 
 enum ThreadPriority

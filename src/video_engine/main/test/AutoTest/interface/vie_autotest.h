@@ -60,6 +60,11 @@ public:
     int ViEBaseExtendedTest();
     int ViEBaseAPITest();
 
+    // This is a variant of the base standard test, meant to run in GTest.
+    void ViEAutomatedBaseStandardTest(const std::string& pathToTestI420Video,
+                                      int width,
+                                      int height);
+
     // vie_autotest_capture.cc
     int ViECaptureStandardTest();
     int ViECaptureExtendedTest();
@@ -108,11 +113,15 @@ private:
     // If this operation fails, device_id is assigned a negative value
     // and number_of_errors is incremented.
     void FindCaptureDeviceOnSystem(webrtc::ViECapture* capture,
-                                   WebRtc_UWord8* device_name,
+                                   unsigned char* device_name,
                                    const unsigned int kDeviceNameLength,
                                    int* device_id,
                                    int* number_of_errors,
                                    webrtc::VideoCaptureModule** device_video);
+
+    webrtc::ViERender *RenderInBothWindows(webrtc::VideoEngine * ptrViE,
+                                           int & numberOfErrors, int captureId,
+                                           int videoChannel);
 
     void PrintAudioCodec(const webrtc::CodecInst audioCodec);
     void PrintVideoCodec(const webrtc::VideoCodec videoCodec);

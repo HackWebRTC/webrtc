@@ -98,9 +98,12 @@ struct ViEVideoFrameI420
   unsigned short height;
 };
 
-// This class declares an abstract interface to be used when using an external
-// capture device. The user implemented derived class is registered using
-// AllocateExternalCaptureDevice and is released using ReleaseCaptureDevice.
+// This class declares an abstract interface to be used when implementing
+// a user-defined capture device. This interface is not meant to be
+// implemented by the user. Instead, the user should call AllocateCaptureDevice
+// in the ViECapture interface, which will create a suitable implementation.
+// The user should then call IncomingFrame in this interface to deliver
+// captured frames to the system.
 class WEBRTC_DLLEXPORT ViEExternalCapture
 {
 public:

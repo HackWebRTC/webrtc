@@ -17,6 +17,7 @@
         '<(webrtc_root)/modules/modules.gyp:video_capture_module',
         '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine_core',
         '<(webrtc_root)/../testing/gtest.gyp:gtest',
+        '<(webrtc_root)/../third_party/google-gflags/google-gflags.gyp:google-gflags',
         'video_engine_core',
       ],
       'include_dirs': [
@@ -44,6 +45,7 @@
         
         # Helper classes
         'helpers/vie_window_creator.cc',
+        'helpers/vie_file_capture_device.cc',
         
         # New, fully automated tests
         'automated/vie_api_integration_test.cc',

@@ -13,7 +13,6 @@
  */
 
 #include "gtest/gtest.h"
-
 #include "vie_integration_test_base.h"
 #include "vie_autotest.h"
 
@@ -57,4 +56,5 @@ TEST_F(ViEExtendedIntegrationTest, RunsRenderTestWithoutErrors) {
 TEST_F(ViEExtendedIntegrationTest, RunsRtpRtcpTestWithoutErrors) {
   ASSERT_EQ(0, tests_->ViERtpRtcpExtendedTest());
 }
-}
+
+} // namespace
