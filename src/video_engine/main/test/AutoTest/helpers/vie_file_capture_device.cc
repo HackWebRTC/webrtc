@@ -9,6 +9,8 @@
  */
 #include "vie_file_capture_device.h"
 
+#include <assert.h>
+
 #include "common_types.h"
 #include "critical_section_wrapper.h"
 #include "event_wrapper.h"

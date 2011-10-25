@@ -62,14 +62,17 @@ TEST_F(ViEStandardIntegrationTest, RunsBaseTestWithoutErrors)  {
                                        FLAGS_i420_test_video_height);
 }
 
+TEST_F(ViEStandardIntegrationTest, RunsCodecTestWithoutErrors)  {
+  tests_->ViEAutomatedCodecStandardTest(FLAGS_i420_test_video_path,
+                                        FLAGS_i420_test_video_width,
+                                        FLAGS_i420_test_video_height);
+}
+
 // These tests still require a physical camera:
 TEST_F(ViEStandardIntegrationTest, RunsCaptureTestWithoutErrors)  {
   ASSERT_EQ(0, tests_->ViECaptureStandardTest());
 }
 
-TEST_F(ViEStandardIntegrationTest, RunsCodecTestWithoutErrors)  {
-  ASSERT_EQ(0, tests_->ViECodecStandardTest());
-}
 
 TEST_F(ViEStandardIntegrationTest, RunsEncryptionTestWithoutErrors)  {
   ASSERT_EQ(0, tests_->ViEEncryptionStandardTest());

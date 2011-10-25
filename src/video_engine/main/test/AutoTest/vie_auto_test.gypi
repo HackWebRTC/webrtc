@@ -46,6 +46,7 @@
         # Helper classes
         'helpers/vie_window_creator.cc',
         'helpers/vie_file_capture_device.cc',
+        'helpers/vie_fake_camera.cc',
 
         # New, fully automated tests
         'automated/vie_api_integration_test.cc',

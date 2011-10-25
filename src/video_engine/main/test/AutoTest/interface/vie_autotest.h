@@ -39,6 +39,8 @@
 #include <string>
 #endif
 
+class tbInterfaces;
+
 class ViEAutoTest
 {
 public:
@@ -76,6 +78,10 @@ public:
     int ViECodecExtendedTest();
     int ViECodecExternalCodecTest();
     int ViECodecAPITest();
+
+    void ViEAutomatedCodecStandardTest(const std::string& pathToTestI420Video,
+                                       int width,
+                                       int height);
 
     // vie_autotest_encryption.cc
     int ViEEncryptionStandardTest();
@@ -125,6 +131,10 @@ private:
 
     void PrintAudioCodec(const webrtc::CodecInst audioCodec);
     void PrintVideoCodec(const webrtc::VideoCodec videoCodec);
+
+    void RunCodecTestInternal(const tbInterfaces& interfaces,
+                              int & numberOfErrors,
+                              int captureId);
 
     void* _window1;
     void* _window2;

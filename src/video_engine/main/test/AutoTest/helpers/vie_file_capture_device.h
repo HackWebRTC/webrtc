@@ -23,10 +23,8 @@ class EventWrapper;
 class ViEExternalCapture;
 }
 
-/**
- * This class opens a i420 file and feeds it into a ExternalCapture instance,
- * thereby acting as a faked capture device with deterministic input.
- */
+// This class opens a i420 file and feeds it into a ExternalCapture instance,
+// thereby acting as a faked capture device with deterministic input.
 class ViEFileCaptureDevice {
  public:
   // The input sink is where to send the I420 video frames.

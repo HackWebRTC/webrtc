@@ -13,12 +13,12 @@
 //
 
 #include "gtest/gtest.h"
-
-#include "thread_wrapper.h"
-#include "vie_autotest.h"
-#include "vie_autotest_defines.h"
 #include "video_capture_factory.h"
+#include "vie_autotest_defines.h"
+#include "vie_autotest.h"
+#include "vie_fake_camera.h"
 #include "vie_file_capture_device.h"
+#include "thread_wrapper.h"
 
 class BaseObserver : public webrtc::ViEBaseObserver {
  public:
@@ -238,9 +238,6 @@ void StopEverything(webrtc::ViEBase * ptrViEBase,
   error = ptrViECapture->DisconnectCaptureDevice(videoChannel);
   numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                        __FUNCTION__, __LINE__);
-  error = ptrViECapture->ReleaseCaptureDevice(captureId);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
 }
 
 void ReleaseEverything(webrtc::ViECapture *ptrViECapture,
@@ -354,6 +351,10 @@ int ViEAutoTest::ViEBaseStandardTest() {
 
   StopEverything(ptrViEBase, videoChannel, numberOfErrors, ptrViERender,
                  captureId, ptrViECapture, _vrm1, _vrm2);
+
+  error = ptrViECapture->ReleaseCaptureDevice(captureId);
+  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                         __FUNCTION__, __LINE__);
 
   vcpm->Release();
   vcpm = NULL;
@@ -590,18 +591,6 @@ int ViEAutoTest::ViEBaseAPITest() {
   return 0;
 }
 
-// This callback gets used in the automated test case below:
-bool StreamVideoFileRepeatedlyIntoCaptureDevice(void* data) {
-  ViEFileCaptureDevice* file_capture_device =
-      reinterpret_cast<ViEFileCaptureDevice*>(data);
-
-  WebRtc_UWord64 time_slice_ms = 1500;
-  WebRtc_UWord64 max_fps = 30;
-  file_capture_device->ReadFileFor(time_slice_ms, max_fps);
-
-  return true;
-}
-
 void ViEAutoTest::ViEAutomatedBaseStandardTest(
     const std::string& pathToTestI420Video, int width, int height) {
   int ignoredNumberOfErrors;
@@ -617,29 +606,15 @@ void ViEAutoTest::ViEAutomatedBaseStandardTest(
       InitializeChannel(ptrViEBase, videoChannel,
                         ignoredNumberOfErrors, ptrViE);
 
-  int captureId;
-  webrtc::ViEExternalCapture* externalCapture;
-  int error = ptrViECapture->AllocateExternalCaptureDevice(captureId,
-                                                           externalCapture);
-  ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                     __FUNCTION__, __LINE__);
-
-  ViEFileCaptureDevice capturer(externalCapture);
-  if (!capturer.OpenI420File(pathToTestI420Video, width, height)) {
+  ViEFakeCamera fakeCamera(ptrViECapture);
+  if (!fakeCamera.StartCameraInNewThread(pathToTestI420Video, width, height)) {
     // No point in continuing if we have no proper video source
     ViETest::TestError(false, "ERROR: %s at line %d: "
                        "Could not open input video %s: aborting test...",
                        __FUNCTION__, __LINE__, pathToTestI420Video.c_str());
     return;
   }
-
-  // Set up a thread which runs the fake camera. Note that the capturer is
-  // handed off to the other thread - it should not be touched in this
-  // method until the other thread is stopped!
-  webrtc::ThreadWrapper* thread = webrtc::ThreadWrapper::CreateThread(
-      StreamVideoFileRepeatedlyIntoCaptureDevice, &capturer);
-  unsigned int id;
-  thread->Start(id);
+  int captureId = fakeCamera.capture_id();
 
   // Apparently, we need to connect external capture devices, but we should
   // not start them since the external device is not a proper device.
@@ -667,12 +642,14 @@ void ViEAutoTest::ViEAutomatedBaseStandardTest(
 
   AutoTestSleep(KAutoTestSleepTimeMs);
 
-  // Done, clean up
-  thread->Stop();
-  capturer.CloseFile();
-
   StopEverything(ptrViEBase, videoChannel, ignoredNumberOfErrors, ptrViERender,
                  captureId, ptrViECapture, _vrm1, _vrm2);
+
+  // Stop sending data, clean up the camera thread and release the capture
+  // device. Note that this all happens after StopEverything, so this is
+  // tests that the system doesn't mind that the external capture device sends
+  // data after rendering has been stopped.
+  fakeCamera.StopCamera();
 
   ReleaseEverything(ptrViECapture, ignoredNumberOfErrors, ptrViEBase,
                     videoChannel, ptrViECodec, ptrViERtpRtcp, ptrViERender,
