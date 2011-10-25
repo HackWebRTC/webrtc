@@ -44,6 +44,42 @@ const float MIN_CORE_MICROPHONE_VOLUME = 0.0f;
 const WebRtc_UWord16 CORE_SPEAKER_VOLUME_STEP_SIZE = 1;
 const WebRtc_UWord16 CORE_MICROPHONE_VOLUME_STEP_SIZE = 1;
 
+// Utility class which initializes COM in the constructor (STA or MTA),
+// and uninitializes COM in the destructor.
+class ScopedCOMInitializer {
+ public:
+  // Enum value provided to initialize the thread as an MTA instead of STA.
+  enum SelectMTA { kMTA };
+
+  // Constructor for STA initialization.
+  ScopedCOMInitializer() {
+    Initialize(COINIT_APARTMENTTHREADED);
+  }
+
+  // Constructor for MTA initialization.
+  explicit ScopedCOMInitializer(SelectMTA mta) {
+    Initialize(COINIT_MULTITHREADED);
+  }
+
+  ScopedCOMInitializer::~ScopedCOMInitializer() {
+    if (SUCCEEDED(hr_))
+      CoUninitialize();
+  }
+
+  bool succeeded() const { return SUCCEEDED(hr_); }
+ 
+ private:
+  void Initialize(COINIT init) {
+    hr_ = CoInitializeEx(NULL, init);
+  }
+
+  HRESULT hr_;
+
+  ScopedCOMInitializer(const ScopedCOMInitializer&);
+  void operator=(const ScopedCOMInitializer&);
+};
+
+
 class AudioDeviceWindowsCore : public AudioDeviceGeneric
 {
 public:
@@ -235,6 +271,7 @@ private:
     WebRtc_Word32 InitRecordingDMO();
 
 private:
+    ScopedCOMInitializer                    _comInit;
     AudioDeviceBuffer*                      _ptrAudioBuffer;
     CriticalSectionWrapper&                 _critSect;
     CriticalSectionWrapper&                 _volumeMutex;
@@ -304,7 +341,6 @@ private:  // WASAPI
     float                                   _avgCPULoad;
 
 private:
-    bool                                    _coUninitializeIsRequired;
     bool                                    _initialized;
     bool                                    _recording;
     bool                                    _playing;

@@ -192,43 +192,20 @@ bool AudioDeviceWindowsCore::CoreAudioIsSupported()
     TCHAR buf[MAXERRORLENGTH];
     LPCTSTR errorText;
 
-    // 1) Initialize the COM library (make Windows load the DLLs).
-    //
-    // CoInitializeEx must be called at least once, and is usually called only once,
-    // for each thread that uses the COM library. Multiple calls to CoInitializeEx
-    // by the same thread are allowed as long as they pass the same concurrency flag,
-    // but subsequent valid calls return S_FALSE.
-    // To close the COM library gracefully on a thread, each successful call to
-    // CoInitializeEx, including any call that returns S_FALSE, must be balanced
+    // 1) Initializes the COM library for use by the calling thread.
+
+    // The COM init wrapper sets the thread's concurrency model to MTA,
+    // and creates a new apartment for the thread if one is required. The
+    // wrapper also ensures that each call to CoInitializeEx is balanced
     // by a corresponding call to CoUninitialize.
     //
-    hr = CoInitializeEx(NULL, COM_THREADING_MODEL);
-    if (FAILED(hr))
-    {
-        // Avoid calling CoUninitialize() since CoInitializeEx() failed.
-        coUninitializeIsRequired = false;
-
-        if (RPC_E_CHANGED_MODE == hr)
-        {
-            // Calling thread has already initialized COM to be used in a single-threaded
-            // apartment (STA). We are then prevented from using MTA.
-            // Details: hr = 0x80010106 <=> "Cannot change thread mode after it is set".
-            WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, -1,
-                "AudioDeviceWindowsCore::CoreAudioIsSupported() CoInitializeEx(NULL, COM_THREADING_MODEL) => RPC_E_CHANGED_MODE");
-        }
-        _com_error error(hr);
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, -1,
-            "AudioDeviceWindowsCore::CoreAudioIsSupported() Failed to initialize the COM library", hr);
-        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, -1,
-            "AudioDeviceWindowsCore::CoreAudioIsSupported() CoInitializeEx(COM_THREADING_MODEL) failed (hr=0x%x)", hr);
-        StringCchPrintf(buf, MAXERRORLENGTH, TEXT("Error details: "));
-        errorText = error.ErrorMessage();
-        StringCchCat(buf, MAXERRORLENGTH, errorText);
-        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, -1, "%s", buf);
+    ScopedCOMInitializer com_init(ScopedCOMInitializer::kMTA);
+    if (!com_init.succeeded()) {
+      // Things will work even if an STA thread is calling this method but we
+      // want to ensure that MTA is used and therefore return false here.
+      return false;
     }
-
-    // ...it is OK to enter this scope even if CoInitializeEx() failed
-
+ 
     // 2) Check if the MMDevice API is available.
     //
     // The Windows Multimedia Device (MMDevice) API enables audio clients to
@@ -280,17 +257,7 @@ bool AudioDeviceWindowsCore::CoreAudioIsSupported()
         SAFE_RELEASE(pIMMD);
     }
 
-    // 3) Uninitialize COM but only if required.
-    //
-    // COM will be reinitialized again when the Core Audio ADM is created.
-    //
-    if (coUninitializeIsRequired)
-    {
-        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, -1, "AudioDeviceWindowsCore::CoreAudioIsSupported() calls CoUninitialize()");
-        CoUninitialize();
-    }
-
-    // 4) Verify that we can create and initialize our Core Audio class.
+    // 3) Verify that we can create and initialize our Core Audio class.
     //
     // Also, perform a limited "API test" to ensure that Core Audio is supported for all devices.
     //
@@ -377,6 +344,7 @@ bool AudioDeviceWindowsCore::CoreAudioIsSupported()
 // ----------------------------------------------------------------------------
 
 AudioDeviceWindowsCore::AudioDeviceWindowsCore(const WebRtc_Word32 id) :
+    _comInit(ScopedCOMInitializer::kMTA),
     _critSect(*CriticalSectionWrapper::CreateCriticalSection()),
     _volumeMutex(*CriticalSectionWrapper::CreateCriticalSection()),
     _id(id),
@@ -422,7 +390,6 @@ AudioDeviceWindowsCore::AudioDeviceWindowsCore(const WebRtc_Word32 id) :
     _hSetCaptureVolumeThread(NULL),
     _hSetCaptureVolumeEvent(NULL),
     _hMmTask(NULL),
-    _coUninitializeIsRequired(true),
     _initialized(false),
     _recording(false),
     _playing(false),
@@ -447,6 +414,7 @@ AudioDeviceWindowsCore::AudioDeviceWindowsCore(const WebRtc_Word32 id) :
     _newMicLevel(0)
 {
     WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, id, "%s created", __FUNCTION__);
+    assert(_comInit.succeeded());
 
     // Try to load the Avrt DLL
     if (!_avrtLibrary)
@@ -500,36 +468,20 @@ AudioDeviceWindowsCore::AudioDeviceWindowsCore(const WebRtc_Word32 id) :
     _playChannelsPrioList[0] = 2;    // stereo is prio 1
     _playChannelsPrioList[1] = 1;    // mono is prio 2
 
-    // Initialize the COM library
-    HRESULT hr = CoInitializeEx(NULL, COM_THREADING_MODEL);
-    if (FAILED(hr))
-    {
-        _coUninitializeIsRequired = false;
-        if (hr == RPC_E_CHANGED_MODE)
-        {
-            WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                "AudioDeviceWindowsCore::AudioDeviceWindowsCore() "
-                "CoInitializeEx(NULL, COM_THREADING_MODEL) => "
-                "RPC_E_CHANGED_MODE");
-        }
-    }
+    HRESULT hr;
 
     // We know that this API will work since it has already been verified in
     // CoreAudioIsSupported, hence no need to check for errors here as well.
 
     // Retrive the IMMDeviceEnumerator API (should load the MMDevAPI.dll)
+    // TODO(henrika): we should probably move this allocation to Init() instead
+    // and deallocate in Terminate() to make the implementation more symmetric.
     CoCreateInstance(
       __uuidof(MMDeviceEnumerator),
       NULL,
       CLSCTX_ALL,
       __uuidof(IMMDeviceEnumerator),
       reinterpret_cast<void**>(&_ptrEnumerator));
-
-    if (_coUninitializeIsRequired)
-    {
-        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-            "AudioDeviceWindowsCore::AudioDeviceWindowsCore() matching call to CoUninitialize() is required");
-    }
     assert(NULL != _ptrEnumerator);
 
     // DMO initialization for built-in WASAPI AEC.
@@ -561,13 +513,11 @@ AudioDeviceWindowsCore::~AudioDeviceWindowsCore()
 
     Terminate();
 
-    _ptrAudioBuffer = NULL;
+    // The IMMDeviceEnumerator is created during construction. Must release
+    // it here and not in Terminate() since we don't recreate it in Init().
+    SAFE_RELEASE(_ptrEnumerator);
 
-    if (_coUninitializeIsRequired)
-    {
-        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "AudioDeviceWindowsCore::~AudioDeviceWindowsCore() calling CoUninitialize()...");
-        CoUninitialize();
-    }
+    _ptrAudioBuffer = NULL;
 
     if (NULL != _hRenderSamplesReadyEvent)
     {
@@ -706,13 +656,16 @@ WebRtc_Word32 AudioDeviceWindowsCore::Terminate()
 
     CriticalSectionScoped lock(_critSect);
 
+    if (!_initialized) {
+        return 0;
+    }
+
     _initialized = false;
     _speakerIsInitialized = false;
     _microphoneIsInitialized = false;
     _playing = false;
     _recording = false;
 
-    SAFE_RELEASE(_ptrEnumerator);
     SAFE_RELEASE(_ptrRenderCollection);
     SAFE_RELEASE(_ptrCaptureCollection);
     SAFE_RELEASE(_ptrDeviceOut);
