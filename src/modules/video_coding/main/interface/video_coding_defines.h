@@ -18,6 +18,7 @@ namespace webrtc
 {
 
 // Error codes
+#define VCM_FRAME_NOT_READY      3
 #define VCM_REQUEST_SLI          2
 #define VCM_MISSING_CALLBACK     1
 #define VCM_OK                   0

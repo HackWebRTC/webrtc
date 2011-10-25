@@ -1071,7 +1071,9 @@ VideoCodingModuleImpl::Decode(WebRtc_UWord16 maxWaitTimeMs)
         }
     }
 
-    if (frame != NULL)
+    if (frame == NULL)
+      return VCM_FRAME_NOT_READY;
+    else
     {
         CriticalSectionScoped cs(_receiveCritSect);
 
