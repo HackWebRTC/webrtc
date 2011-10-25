@@ -821,11 +821,13 @@ VideoCodingModuleImpl::AddVideoFrame(const VideoFrame& videoFrame,
         WebRtc_Word32 ret = _encoder->Encode(videoFrame,
                                              codecSpecificInfo,
                                              _nextFrameType);
+#ifdef DEBUG_ENCODER_INPUT
         if (_encoderInputFile != NULL)
         {
             fwrite(videoFrame.Buffer(), 1, videoFrame.Length(),
                    _encoderInputFile);
         }
+#endif
         if (ret < 0)
         {
             WEBRTC_TRACE(webrtc::kTraceError,
@@ -1081,12 +1083,14 @@ VideoCodingModuleImpl::Decode(WebRtc_UWord16 maxWaitTimeMs)
         _timing.UpdateCurrentDelay(frame->RenderTimeMs(),
                                    VCMTickTime::MillisecondTimestamp());
 
+#ifdef DEBUG_DECODER_BIT_STREAM
         if (_bitStreamBeforeDecoder != NULL)
         {
             // Write bit stream to file for debugging purposes
             fwrite(frame->Buffer(), 1, frame->Length(),
                    _bitStreamBeforeDecoder);
         }
+#endif
         if (_frameStorageCallback != NULL)
         {
             WebRtc_Word32 ret = frame->Store(*_frameStorageCallback);

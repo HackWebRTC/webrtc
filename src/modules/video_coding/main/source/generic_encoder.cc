@@ -200,10 +200,12 @@ VCMEncodedFrameCallback::Encoded(
     {
         encodedBytes = encodedImage._length;
 
+#ifdef DEBUG_ENCODER_BIT_STREAM
         if (_bitStreamAfterEncoder != NULL)
         {
             fwrite(encodedImage._buffer, 1, encodedImage._length, _bitStreamAfterEncoder);
         }
+#endif
 
         RTPVideoHeader rtpVideoHeader;
         RTPVideoHeader* rtpVideoHeaderPtr = &rtpVideoHeader;
