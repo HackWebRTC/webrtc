@@ -186,7 +186,6 @@ bool AudioDeviceWindowsCore::CoreAudioIsSupported()
 
     bool MMDeviceIsAvailable(false);
     bool coreAudioIsSupported(false);
-    bool coUninitializeIsRequired(true);
 
     HRESULT hr(S_OK);
     TCHAR buf[MAXERRORLENGTH];
@@ -199,8 +198,8 @@ bool AudioDeviceWindowsCore::CoreAudioIsSupported()
     // wrapper also ensures that each call to CoInitializeEx is balanced
     // by a corresponding call to CoUninitialize.
     //
-    ScopedCOMInitializer com_init(ScopedCOMInitializer::kMTA);
-    if (!com_init.succeeded()) {
+    ScopedCOMInitializer comInit(ScopedCOMInitializer::kMTA);
+    if (!comInit.succeeded()) {
       // Things will work even if an STA thread is calling this method but we
       // want to ensure that MTA is used and therefore return false here.
       return false;
@@ -3114,10 +3113,9 @@ WebRtc_Word32 AudioDeviceWindowsCore::StopPlayout()
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
             "webrtc_core_audio_render_thread is now closed");
 
-        // Ensure that the thread has released these interfaces properly
-        assert(NULL == _ptrClientOut);
-        assert(NULL == _ptrRenderClient);
-
+        SAFE_RELEASE(_ptrClientOut);
+        SAFE_RELEASE(_ptrRenderClient);
+       
         _playIsInitialized = false;
         _playing = false;
 
@@ -3427,12 +3425,12 @@ DWORD AudioDeviceWindowsCore::DoRenderThread()
     LARGE_INTEGER t2;
     WebRtc_Word32 time(0);
 
-    hr = CoInitializeEx(NULL, COM_THREADING_MODEL);
-    if (FAILED(hr))
-    {
-        _TraceCOMError(hr);
-        WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id, "unable to initialize COM in render thread");
-        return hr;
+    // Initialize COM as MTA in this thread.
+    ScopedCOMInitializer comInit(ScopedCOMInitializer::kMTA);
+    if (!comInit.succeeded()) {
+      WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+          "failed to initialize COM in render thread");
+      return -1;
     }
 
     _SetThreadName(-1, "webrtc_core_audio_render_thread");
@@ -3665,10 +3663,6 @@ Exit:
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "_Rendering thread is now terminated properly");
     }
 
-    SAFE_RELEASE(_ptrClientOut);
-    SAFE_RELEASE(_ptrRenderClient);
-
-    CoUninitialize();
     return (DWORD)hr;
 }
 
@@ -3676,15 +3670,6 @@ DWORD AudioDeviceWindowsCore::InitCaptureThreadPriority()
 {
     HRESULT hr = S_OK;
     _hMmTask = NULL;
-
-    hr = CoInitializeEx(NULL, COM_THREADING_MODEL);
-    if (FAILED(hr))
-    {
-        _TraceCOMError(hr);
-        WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-            "unable to initialize COM in capture thread");
-        return hr;
-    }
 
     _SetThreadName(-1, "webrtc_core_audio_capture_thread");
 
@@ -3734,6 +3719,14 @@ DWORD AudioDeviceWindowsCore::DoCaptureThreadPollDMO()
 {
     assert(_mediaBuffer != NULL);
     bool keepRecording = true;
+
+    // Initialize COM as MTA in this thread.
+    ScopedCOMInitializer comInit(ScopedCOMInitializer::kMTA);
+    if (!comInit.succeeded()) {
+      WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+        "failed to initialize COM in polling DMO thread");
+      return -1;
+    }
 
     HRESULT hr = InitCaptureThreadPriority();
     if (FAILED(hr))
@@ -3861,7 +3854,6 @@ DWORD AudioDeviceWindowsCore::DoCaptureThreadPollDMO()
             "Capturing thread is now terminated properly");
     }
 
-    CoUninitialize();
     return hr;
 }
 
@@ -3890,6 +3882,14 @@ DWORD AudioDeviceWindowsCore::DoCaptureThread()
     WebRtc_UWord32 currentMicLevel(0);
 
     _readSamples = 0;
+
+    // Initialize COM as MTA in this thread.
+    ScopedCOMInitializer comInit(ScopedCOMInitializer::kMTA);
+    if (!comInit.succeeded()) {
+      WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+        "failed to initialize COM in capture thread");
+      return -1;
+    }
 
     hr = InitCaptureThreadPriority();
     if (FAILED(hr))
@@ -4171,7 +4171,6 @@ Exit:
         delete [] syncBuffer;
     }
 
-    CoUninitialize();
     return (DWORD)hr;
 }
 
