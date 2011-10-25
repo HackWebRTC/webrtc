@@ -299,7 +299,13 @@ VP8Encoder::InitEncode(const VideoCodec* inst,
 #endif
     _cfg->g_lag_in_frames = 0; // 0- no frame lagging
 
-    _cfg->g_threads = numberOfCores;
+    // Determining number of threads based on the image size
+
+    if (_width * _height > 704 * 576 && numberOfCores > 1)
+      // 2 threads when larger than 4CIF
+      _cfg->g_threads = 2;
+    else
+      _cfg->g_threads = 1;
 
     // rate control settings
     _cfg->rc_dropframe_thresh = 0;
@@ -782,7 +788,8 @@ VP8Decoder::InitDecode(const VideoCodec* inst,
 #endif
 
     vpx_codec_dec_cfg_t  cfg;
-    cfg.threads = numberOfCores;
+    // Setting number of threads to a constant value (1)
+    cfg.threads = 1;
     cfg.h = cfg.w = 0; // set after decode
 
     vpx_codec_flags_t flags = 0;
