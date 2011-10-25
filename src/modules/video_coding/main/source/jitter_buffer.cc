@@ -54,8 +54,7 @@ VCMJitterBuffer::CompleteDecodableKeyFrameCriteria(VCMFrameBuffer* frame,
     const VCMFrameBufferStateEnum state = frame->GetState();
     // We can decode key frame or decodable/complete frames.
     return (frame->FrameType() == kVideoFrameKey) &&
-           ((state == kStateComplete)
-           || (state == kStateDecodable));
+           (state == kStateComplete || state == kStateDecodable);
 }
 
 // Constructor
@@ -889,7 +888,9 @@ VCMJitterBuffer::GetNextTimeStamp(WebRtc_UWord32 maxWaitTimeMS,
 
     if (oldestFrame == NULL)
     {
+        _packetEvent.Reset();
         _critSect.Leave();
+
         if (_packetEvent.Wait(maxWaitTimeMS) == kEventSignaled)
         {
             // are we closing down the Jitter buffer
@@ -908,7 +909,6 @@ VCMJitterBuffer::GetNextTimeStamp(WebRtc_UWord32 maxWaitTimeMS,
             _critSect.Enter();
         }
     }
-    _packetEvent.Reset();
 
     if (oldestFrame == NULL)
     {

@@ -241,38 +241,46 @@ VCMReceiver::FrameForDecoding(WebRtc_UWord16 maxWaitTimeMs,
 {
     // How long can we wait until we must decode the next frame
     WebRtc_UWord32 waitTimeMs = _timing.MaxWaitingTime(nextRenderTimeMs,
-                                                       VCMTickTime::MillisecondTimestamp());
+                                          VCMTickTime::MillisecondTimestamp());
 
     // Try to get a complete frame from the jitter buffer
     VCMEncodedFrame* frame = _jitterBuffer.GetCompleteFrameForDecoding(0);
 
     if (frame == NULL && maxWaitTimeMs == 0 && waitTimeMs > 0)
     {
-        // If we're not allowed to wait for frames to get complete we must calculate if
-        // it's time to decode, and if it's not we will just return for now.
+        // If we're not allowed to wait for frames to get complete we must
+        // calculate if it's time to decode, and if it's not we will just return
+        // for now.
         return NULL;
     }
 
+    if (frame == NULL && VCM_MIN(waitTimeMs, maxWaitTimeMs) == 0)
+    {
+        // No time to wait for a complete frame,
+        // check if we have an incomplete
+        frame = _jitterBuffer.GetFrameForDecoding();
+    }
     if (frame == NULL)
     {
         // Wait for a complete frame
-        waitTimeMs = VCM_MIN(waitTimeMs, maxWaitTimeMs);
-        frame = _jitterBuffer.GetCompleteFrameForDecoding(waitTimeMs);
+        frame = _jitterBuffer.GetCompleteFrameForDecoding(maxWaitTimeMs);
     }
     if (frame == NULL)
     {
         // Get an incomplete frame
-        if (_timing.MaxWaitingTime(nextRenderTimeMs, VCMTickTime::MillisecondTimestamp()) > 0)
+        if (_timing.MaxWaitingTime(nextRenderTimeMs,
+                                   VCMTickTime::MillisecondTimestamp()) > 0)
         {
             // Still time to wait for a complete frame
             return NULL;
         }
 
         // No time left to wait, we must decode this frame now.
-        const bool dualReceiverEnabledAndPassive = dualReceiver != NULL &&
-                                                    dualReceiver->State() == kPassive &&
-                                                    dualReceiver->NackMode() == kNackInfinite;
-        if (dualReceiverEnabledAndPassive && !_jitterBuffer.CompleteSequenceWithNextFrame())
+        const bool dualReceiverEnabledAndPassive = (dualReceiver != NULL &&
+                                     dualReceiver->State() == kPassive &&
+                                     dualReceiver->NackMode() == kNackInfinite);
+        if (dualReceiverEnabledAndPassive &&
+            !_jitterBuffer.CompleteSequenceWithNextFrame())
         {
             // Jitter buffer state might get corrupt with this frame.
             dualReceiver->CopyJitterBufferStateFromReceiver(*this);

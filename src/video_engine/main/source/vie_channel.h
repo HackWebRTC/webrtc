@@ -42,7 +42,6 @@ namespace webrtc
 {
 class CriticalSectionWrapper;
 class Encryption;
-class EventWrapper;
 class ProcessThread;
 class RtpRtcp;
 class ThreadWrapper;
@@ -472,7 +471,6 @@ private:
 
     // Decoder
     ThreadWrapper* _ptrDecodeThread;
-    EventWrapper&  _vieDecodeEvent;
 
     //SRTP - using seperate pointers for encryption and decryption to support
     // simultaneous operations.

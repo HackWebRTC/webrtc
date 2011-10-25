@@ -15,7 +15,6 @@
 #include "vie_channel.h"
 #include "vie_defines.h"
 #include "critical_section_wrapper.h"
-#include "event_wrapper.h"
 #include "rtp_rtcp.h"
 #include "udp_transport.h"
 #include "video_coding.h"
@@ -37,7 +36,6 @@
 
 namespace webrtc
 {
-static const int kDecoderThreadWaitPeriod = 3;  // wait 3 ms
 // ----------------------------------------------------------------------------
 // Constructor
 // ----------------------------------------------------------------------------
@@ -77,7 +75,6 @@ ViEChannel::ViEChannel(WebRtc_Word32 channelId, WebRtc_Word32 engineId,
         _decoderReset(true),
         _waitForKeyFrame(false),
         _ptrDecodeThread(NULL),
-        _vieDecodeEvent(*EventWrapper::Create()),
         _ptrSrtpModuleEncryption(NULL),
         _ptrSrtpModuleDecryption(NULL),
         _ptrExternalEncryption(NULL),
@@ -262,13 +259,11 @@ ViEChannel::~ViEChannel()
         RtpRtcp::DestroyRtpRtcp(rtpRtcp);
         _simulcastRtpRtcp.erase(it);
     }
-    _vieDecodeEvent.Set();
     if (_ptrDecodeThread)
     {
         StopDecodeThread();
     }
 
-    delete &_vieDecodeEvent;
     delete &_vieReceiver;
     delete &_vieSender;
     delete &_vieSync;
@@ -3095,11 +3090,7 @@ bool ViEChannel::ChannelDecodeThreadFunction(void* obj)
 bool ViEChannel::ChannelDecodeProcess()
 {
     // Decode is blocking, but sleep some time anyway to not get a spin
-    int ret = _vcm.Decode(50);
-    if (ret == VCM_FRAME_NOT_READY) {
-        // TODO (mikhal): Add trigger by incoming packet.
-        _vieDecodeEvent.Wait(kDecoderThreadWaitPeriod);
-    }
+    _vcm.Decode(50);
 
     if ((TickTime::Now() - _vcmRTTReported).Milliseconds() > 1000)
     {
