@@ -1483,7 +1483,6 @@ void WebRtcNsx_DataAnalysis(NsxInst_t* inst, short* speechFrame, WebRtc_UWord16*
 }
 
 void WebRtcNsx_DataSynthesis(NsxInst_t* inst, short* outFrame) {
-  WebRtc_Word32 tmp32no1;
   WebRtc_Word32 energyOut;
 
   WebRtc_Word16 realImag[ANAL_BLOCKL_MAX << 1];
@@ -1491,7 +1490,7 @@ void WebRtcNsx_DataSynthesis(NsxInst_t* inst, short* outFrame) {
   WebRtc_Word16 energyRatio;
   WebRtc_Word16 gainFactor, gainFactor1, gainFactor2;
 
-  int i, j;
+  int i;
   int outCIFFT;
   int scaleEnergyOut = 0;
 
