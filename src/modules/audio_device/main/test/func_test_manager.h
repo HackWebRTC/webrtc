@@ -13,6 +13,8 @@
 
 #include "../source/audio_device_utility.h"
 
+#include <string>
+
 #include "typedefs.h"
 #include "audio_device.h"
 #include "audio_device_test_defines.h"
@@ -208,6 +210,13 @@ private:
     WebRtc_Word32 SelectRecordingDevice();
     WebRtc_Word32 TestAdvancedMBAPI();
 private:
+    // Paths to where the resource files to be used for this test are located.
+    std::string _resourcePath;
+    std::string _playoutFile48;
+    std::string _playoutFile44;
+    std::string _playoutFile16;
+    std::string _playoutFile8;
+
     ProcessThread* _processThread;
     AudioDeviceModule* _audioDevice;
     AudioEventObserver* _audioEventObserver;

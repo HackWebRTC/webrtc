@@ -180,6 +180,7 @@
             'webrtc_utility',
             '<(webrtc_root)/common_audio/common_audio.gyp:resampler',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+            '<(webrtc_root)/../test/test.gyp:test_support',
           ],
           'sources': [
             '../test/audio_device_test_func.cc',
