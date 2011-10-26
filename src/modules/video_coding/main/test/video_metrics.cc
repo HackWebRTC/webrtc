@@ -164,6 +164,7 @@ Ssim8x8C(WebRtc_UWord8 *s, WebRtc_Word32 sp,
 }
 
 #if defined(WEBRTC_USE_SSE2)
+#include <emmintrin.h>
 #include <xmmintrin.h>
 static double
 Ssim8x8Sse2(WebRtc_UWord8 *s, WebRtc_Word32 sp,
@@ -200,27 +201,38 @@ Ssim8x8Sse2(WebRtc_UWord8 *s, WebRtc_Word32 sp,
     const __m128i sum_r_32  = _mm_add_epi32(_mm_unpackhi_epi16(sum_r_16, z),
                                             _mm_unpacklo_epi16(sum_r_16, z));
 
-    WebRtc_UWord64 sum_s_64[2];
-    WebRtc_UWord64 sum_r_64[2];
-    WebRtc_UWord64 sum_sq_s_64[2];
-    WebRtc_UWord64 sum_sq_r_64[2];
-    WebRtc_UWord64 sum_sxr_64[2];
+    __m128i sum_s_128;
+    __m128i sum_r_128;
+    __m128i sum_sq_s_128;
+    __m128i sum_sq_r_128;
+    __m128i sum_sxr_128;
 
-    _mm_store_si128 ((__m128i*)sum_s_64,
+    _mm_store_si128 (&sum_s_128,
                       _mm_add_epi64(_mm_unpackhi_epi32(sum_s_32, z),
                                     _mm_unpacklo_epi32(sum_s_32, z)));
-    _mm_store_si128 ((__m128i*)sum_r_64,
+    _mm_store_si128 (&sum_r_128,
                       _mm_add_epi64(_mm_unpackhi_epi32(sum_r_32, z),
                                     _mm_unpacklo_epi32(sum_r_32, z)));
-    _mm_store_si128 ((__m128i*)sum_sq_s_64,
+    _mm_store_si128 (&sum_sq_s_128,
                       _mm_add_epi64(_mm_unpackhi_epi32(sum_sq_s_32, z),
                                     _mm_unpacklo_epi32(sum_sq_s_32, z)));
-    _mm_store_si128 ((__m128i*)sum_sq_r_64,
+    _mm_store_si128 (&sum_sq_r_128,
                       _mm_add_epi64(_mm_unpackhi_epi32(sum_sq_r_32, z),
                                     _mm_unpacklo_epi32(sum_sq_r_32, z)));
-    _mm_store_si128 ((__m128i*)sum_sxr_64,
+    _mm_store_si128 (&sum_sxr_128,
                       _mm_add_epi64(_mm_unpackhi_epi32(sum_sxr_32, z),
                                     _mm_unpacklo_epi32(sum_sxr_32, z)));
+
+    const WebRtc_UWord64 *sum_s_64 =
+                          reinterpret_cast<WebRtc_UWord64*>(&sum_s_128);
+    const WebRtc_UWord64 *sum_r_64 =
+                          reinterpret_cast<WebRtc_UWord64*>(&sum_r_128);
+    const WebRtc_UWord64 *sum_sq_s_64 =
+                          reinterpret_cast<WebRtc_UWord64*>(&sum_sq_s_128);
+    const WebRtc_UWord64 *sum_sq_r_64 =
+                          reinterpret_cast<WebRtc_UWord64*>(&sum_sq_r_128);
+    const WebRtc_UWord64 *sum_sxr_64 =
+                          reinterpret_cast<WebRtc_UWord64*>(&sum_sxr_128);
 
     const WebRtc_UWord64 sum_s    = sum_s_64[0]    + sum_s_64[1];
     const WebRtc_UWord64 sum_r    = sum_r_64[0]    + sum_r_64[1];
