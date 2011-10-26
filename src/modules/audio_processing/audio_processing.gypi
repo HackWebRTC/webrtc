@@ -7,34 +7,21 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 {
-  'variables': {
-    'protoc_out_dir': '<(SHARED_INTERMEDIATE_DIR)/protoc_out',
-    'protoc_out_relpath': 'webrtc/audio_processing',
-  },
   'targets': [
     {
       'target_name': 'audio_processing',
       'type': '<(library)',
       'conditions': [
         ['prefer_fixed_point==1', {
-          'dependencies': ['ns_fix'],
-          'defines': ['WEBRTC_NS_FIXED'],
+          'dependencies': [ 'ns_fix' ],
+          'defines': [ 'WEBRTC_NS_FIXED' ],
         }, {
-          'dependencies': ['ns'],
-          'defines': ['WEBRTC_NS_FLOAT'],
-        }],
-        ['build_with_chromium==1', {
-          'dependencies': [
-            '<(webrtc_root)/../protobuf/protobuf.gyp:protobuf_lite',
-          ],
-        }, {
-          'dependencies': [
-            '<(webrtc_root)/../third_party/protobuf/protobuf.gyp:protobuf_lite',
-          ],
+          'dependencies': [ 'ns' ],
+          'defines': [ 'WEBRTC_NS_FLOAT' ],
         }],
       ],
       'dependencies': [
-        'debug_proto',
+        'audioproc_debug_proto',
         'aec',
         'aecm',
         'agc',
@@ -45,7 +32,6 @@
       'include_dirs': [
         'interface',
         '../interface',
-        '<(protoc_out_dir)',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
@@ -77,54 +63,20 @@
         'processing_component.h',
         'voice_detection_impl.cc',
         'voice_detection_impl.h',
-        '<(protoc_out_dir)/<(protoc_out_relpath)/debug.pb.cc',
-        '<(protoc_out_dir)/<(protoc_out_relpath)/debug.pb.h',
       ],
     },
     {
-      # Protobuf compiler / generate rule for audio_processing
-      'target_name': 'debug_proto',
-      'type': 'none',
+      'target_name': 'audioproc_debug_proto',
+      'type': 'static_library',
+      'sources': [ 'debug.proto', ],
       'variables': {
-        'proto_relpath': '<(webrtc_root)/modules/audio_processing',
+        'proto_in_dir': '.',
+        # Workaround to protect against gyp's pathname relativization when this
+        # file is included by modules.gyp.
+        'proto_out_protected': 'webrtc/audio_processing',
+        'proto_out_dir': '<(proto_out_protected)',
       },
-      'sources': [
-        '<(proto_relpath)/debug.proto',
-      ],
-      'rules': [
-        {
-          'rule_name': 'genproto',
-          'extension': 'proto',
-          'inputs': [
-            '<(PRODUCT_DIR)/<(EXECUTABLE_PREFIX)protoc<(EXECUTABLE_SUFFIX)',
-          ],
-          'outputs': [
-            '<(protoc_out_dir)/<(protoc_out_relpath)/<(RULE_INPUT_ROOT).pb.cc',
-            '<(protoc_out_dir)/<(protoc_out_relpath)/<(RULE_INPUT_ROOT).pb.h',
-          ],
-          'action': [
-            '<(PRODUCT_DIR)/<(EXECUTABLE_PREFIX)protoc<(EXECUTABLE_SUFFIX)',
-            '--proto_path=<(proto_relpath)',
-            '<(proto_relpath)/<(RULE_INPUT_NAME)',
-            '--cpp_out=<(protoc_out_dir)/<(protoc_out_relpath)',
-          ],
-          'message': 'Generating C++ code from <(RULE_INPUT_PATH)',
-        },
-      ],
-      'conditions': [
-        ['build_with_chromium==1', {
-          'dependencies': [
-            '<(webrtc_root)/../protobuf/protobuf.gyp:protoc#host',
-          ],
-        }, {
-          'dependencies': [
-            '<(webrtc_root)/../third_party/protobuf/protobuf.gyp:protoc#host',
-          ],
-        }],
-      ],
-      # This target exports a hard dependency because it generates header
-      # files.
-      'hard_dependency': 1,
+      'includes': [ '../../../build/protoc.gypi', ],
     },
   ],
 }

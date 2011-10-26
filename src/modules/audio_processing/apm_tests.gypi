@@ -7,94 +7,59 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 {
-  'variables': {
-    'protoc_out_dir': '<(SHARED_INTERMEDIATE_DIR)/protoc_out',
-    'protoc_out_relpath': 'webrtc/audio_processing',
-  },
   'targets': [
     {
       'target_name': 'audioproc_unittest',
       'type': 'executable',
       'conditions': [
         ['prefer_fixed_point==1', {
-          'defines': ['WEBRTC_APM_UNIT_TEST_FIXED_PROFILE'],
+          'defines': [ 'WEBRTC_APM_UNIT_TEST_FIXED_PROFILE' ],
         }, {
-          'defines': ['WEBRTC_APM_UNIT_TEST_FLOAT_PROFILE'],
+          'defines': [ 'WEBRTC_APM_UNIT_TEST_FLOAT_PROFILE' ],
         }],
       ],
       'dependencies': [
-        'audioproc_unittest_proto',
         'audio_processing',
+        'audioproc_unittest_proto',
         '<(webrtc_root)/common_audio/common_audio.gyp:spl',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
         '<(webrtc_root)/../test/test.gyp:test_support',
         '<(webrtc_root)/../testing/gtest.gyp:gtest',
-        '<(webrtc_root)/../third_party/protobuf/protobuf.gyp:protobuf_lite',
       ],
-      'include_dirs': [
-        '<(webrtc_root)/../testing/gtest/include',
-        '<(protoc_out_dir)',
-      ],
-      'sources': [
-        'test/unit_test.cc',
-        '<(protoc_out_dir)/<(protoc_out_relpath)/unittest.pb.cc',
-        '<(protoc_out_dir)/<(protoc_out_relpath)/unittest.pb.h',
-      ],
+      'sources': [ 'test/unit_test.cc', ],
     },
     {
-      # Protobuf compiler / generate rule for audioproc_unittest
       'target_name': 'audioproc_unittest_proto',
-      'type': 'none',
+      'type': 'static_library',
+      'sources': [ 'test/unittest.proto', ],
       'variables': {
-        'proto_relpath':
-          '<(webrtc_root)/modules/audio_processing/test',
+        'proto_in_dir': 'test',
+        # Workaround to protect against gyp's pathname relativization when this
+        # file is included by modules.gyp.
+        'proto_out_protected': 'webrtc/audio_processing',
+        'proto_out_dir': '<(proto_out_protected)',
       },
-      'sources': [
-        '<(proto_relpath)/unittest.proto',
-      ],
-      'rules': [
-        {
-          'rule_name': 'genproto',
-          'extension': 'proto',
-          'inputs': [
-            '<(PRODUCT_DIR)/<(EXECUTABLE_PREFIX)protoc<(EXECUTABLE_SUFFIX)',
-          ],
-          'outputs': [
-            '<(protoc_out_dir)/<(protoc_out_relpath)/<(RULE_INPUT_ROOT).pb.cc',
-            '<(protoc_out_dir)/<(RULE_INPUT_ROOT).pb.h',
-          ],
-          'action': [
-            '<(PRODUCT_DIR)/<(EXECUTABLE_PREFIX)protoc<(EXECUTABLE_SUFFIX)',
-            '--proto_path=<(proto_relpath)',
-            '<(proto_relpath)/<(RULE_INPUT_NAME)',
-            '--cpp_out=<(protoc_out_dir)/<(protoc_out_relpath)',
-          ],
-          'message': 'Generating C++ code from <(RULE_INPUT_PATH)',
-        },
-      ],
-      'dependencies': [
-        '<(webrtc_root)/../third_party/protobuf/protobuf.gyp:protoc#host',
-      ],
-      # This target exports a hard dependency because it generates header
-      # files.
-      'hard_dependency': 1,
+      'includes': [ '../../../build/protoc.gypi', ],
     },
     {
-      'target_name': 'audioproc_process_test',
+      'target_name': 'audioproc',
       'type': 'executable',
       'dependencies': [
         'audio_processing',
+        'audioproc_debug_proto',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
         '<(webrtc_root)/../testing/gtest.gyp:gtest',
-        '<(webrtc_root)/../third_party/protobuf/protobuf.gyp:protobuf_lite',
       ],
-      'include_dirs': [
-        '<(webrtc_root)/../testing/gtest/include',
-        '<(protoc_out_dir)',
+      'sources': [ 'test/process_test.cc', ],
+    },
+    {
+      'target_name': 'unpack',
+      'type': 'executable',
+      'dependencies': [
+        'audioproc_debug_proto',
+        '<(webrtc_root)/../third_party/google-gflags/google-gflags.gyp:google-gflags',
       ],
-      'sources': [
-        'test/process_test.cc',
-      ],
+      'sources': [ 'test/unpack.cc', ],
     },
   ],
 }

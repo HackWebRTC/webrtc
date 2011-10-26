@@ -44,7 +44,7 @@ bool ReadMessageFromFile(FILE* file,
                         ::google::protobuf::MessageLite* msg) {
   // The "wire format" for the size is little-endian.
   // Assume process_test is running on a little-endian machine.
-  int32_t size;
+  int32_t size = 0;
   if (fread(&size, sizeof(int32_t), 1, file) != 1) {
     return false;
   }
@@ -116,11 +116,12 @@ void usage() {
   printf("  --vad_out_file FILE\n");
   printf("\n");
   printf("Modifiers:\n");
-  printf("  --noasm         Disable SSE optimization.\n");
-  printf("  --perf          Measure performance.\n");
-  printf("  --quiet         Suppress text output.\n");
-  printf("  --no_progress   Suppress progress.\n");
-  printf("  --version       Print version information and exit.\n");
+  printf("  --noasm            Disable SSE optimization.\n");
+  printf("  --perf             Measure performance.\n");
+  printf("  --quiet            Suppress text output.\n");
+  printf("  --no_progress      Suppress progress.\n");
+  printf("  --debug_file FILE  Dump a debug recording.\n");
+  printf("  --version          Print version information and exit.\n");
 }
 
 // void function for gtest.
@@ -359,9 +360,9 @@ void void_main(int argc, char* argv[]) {
       printf("%s\n", version);
       return;
 
-    } else if (strcmp(argv[i], "--debug_recording") == 0) {
+    } else if (strcmp(argv[i], "--debug_file") == 0) {
       i++;
-      ASSERT_LT(i, argc) << "Specify filename after --debug_recording";
+      ASSERT_LT(i, argc) << "Specify filename after --debug_file";
       ASSERT_EQ(apm->kNoError, apm->StartDebugRecording(argv[i]));
     } else {
       FAIL() << "Unrecognized argument " << argv[i];
