@@ -16,13 +16,15 @@
 namespace webrtc {
 namespace test {
 
+const double kNeverDropProbability = 0.0;
+const double kAlwaysDropProbability = 1.0;
+const int kBurstLength = 1;
+  
 class PacketManipulatorTest: public PacketRelatedTest {
  protected:
   PacketReader packet_reader_;
   EncodedImage image_;
-  const double kNeverDropProbability = 0.0;
-  const double kAlwaysDropProbability = 1.0;
-  const int kBurstLength = 1;
+
   NetworkingConfig drop_config_;
   NetworkingConfig no_drop_config_;
 
