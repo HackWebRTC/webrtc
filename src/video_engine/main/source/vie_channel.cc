@@ -533,9 +533,13 @@ WebRtc_Word32 ViEChannel::SetReceiveCodec(const VideoCodec& videoCodec)
     WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_engineId, _channelId),
                "%s", __FUNCTION__);
 
-    _rtpRtcp.DeRegisterReceivePayload(videoCodec.plType);
-    if (_rtpRtcp.RegisterReceivePayload(videoCodec)
-        != 0)
+    WebRtc_Word8 old_pltype = -1;
+    if (_rtpRtcp.ReceivePayloadType(videoCodec, &old_pltype) != -1)
+    {
+        _rtpRtcp.DeRegisterReceivePayload(old_pltype);
+    }
+
+    if (_rtpRtcp.RegisterReceivePayload(videoCodec) != 0)
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
                    ViEId(_engineId, _channelId),
