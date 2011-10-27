@@ -21,6 +21,11 @@
       # src/build/ and non-recursive contents of ./ and src/
       'filepath': '^[^/]*$|src/[^/]*$|src/build/.*',
     },
+    'documented_interfaces': {
+      'filepath': 'src/[^/]*\.h$|'\
+                  'src/video_engine/main/interface/.*|'\
+                  'src/voice_engine/main/interface/.*',
+    },
     'video_engine': {
       'filepath': 'src/video_engine/.*',
     },
@@ -68,6 +73,7 @@
                 'giles@mozilla.com'],
     'root_files': ['andrew@webrtc.org',
                    'niklas.enbom@webrtc.org'],
+    'documented_interfaces': ['amyfong@webrtc.org'],
     'common_audio': ['bjornv@webrtc.org',
                      'andrew@webrtc.org'],
     'video_engine': ['mflodman@webrtc.org',
