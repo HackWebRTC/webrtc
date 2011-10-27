@@ -972,6 +972,7 @@ int ViERTP_RTCPImpl::GetRTPStatistics(const int videoChannel,
 // The function gets bandwidth usage statistics from the sent RTP streams.
 int ViERTP_RTCPImpl::GetBandwidthUsage(const int videoChannel,
                                        unsigned int& totalBitrateSent,
+                                       unsigned int& videoBitrateSent,
                                        unsigned int& fecBitrateSent,
                                        unsigned int& nackBitrateSent) const {
   WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
@@ -992,6 +993,7 @@ int ViERTP_RTCPImpl::GetBandwidthUsage(const int videoChannel,
 
   ptrViEChannel->GetBandwidthUsage(
       static_cast<WebRtc_UWord32&>(totalBitrateSent),
+      static_cast<WebRtc_UWord32&>(videoBitrateSent),
       static_cast<WebRtc_UWord32&>(fecBitrateSent),
       static_cast<WebRtc_UWord32&>(nackBitrateSent));
   return 0;

@@ -245,6 +245,7 @@ public:
     // bits/s.
     virtual int GetBandwidthUsage(const int videoChannel,
                                   unsigned int& totalBitrateSent,
+                                  unsigned int& videoBitrateSent,
                                   unsigned int& fecBitrateSent,
                                   unsigned int& nackBitrateSent) const = 0;
 

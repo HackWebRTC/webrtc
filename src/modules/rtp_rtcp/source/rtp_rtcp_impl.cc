@@ -2340,8 +2340,9 @@ WebRtc_UWord32 ModuleRtpRtcpImpl::BitrateReceivedNow() const {
 }
 
 void ModuleRtpRtcpImpl::BitrateSent(WebRtc_UWord32* totalRate,
-                               WebRtc_UWord32* fecRate,
-                               WebRtc_UWord32* nackRate) const {
+                                    WebRtc_UWord32* videoRate,
+                                    WebRtc_UWord32* fecRate,
+                                    WebRtc_UWord32* nackRate) const {
     const bool defaultInstance(_childModules.empty() ? false : true);
 
     if (defaultInstance) {
@@ -2354,9 +2355,11 @@ void ModuleRtpRtcpImpl::BitrateSent(WebRtc_UWord32* totalRate,
             RtpRtcp* module = *it;
             if (module) {
                 WebRtc_UWord32 childTotalRate = 0;
+                WebRtc_UWord32 childVideoRate = 0;
                 WebRtc_UWord32 childFecRate = 0;
                 WebRtc_UWord32 childNackRate = 0;
                 module->BitrateSent(&childTotalRate,
+                                    &childVideoRate,
                                     &childFecRate,
                                     &childNackRate);
                 if (totalRate != NULL && childTotalRate > *totalRate)
@@ -2372,6 +2375,8 @@ void ModuleRtpRtcpImpl::BitrateSent(WebRtc_UWord32* totalRate,
     }
     if (totalRate != NULL)
         *totalRate = _rtpSender.BitrateLast();
+    if (videoRate != NULL)
+        *videoRate = _rtpSender.VideoBitrateSent();
     if (fecRate != NULL)
         *fecRate = _rtpSender.FecOverheadRate();
     if (nackRate != NULL)
@@ -2663,8 +2668,13 @@ void ModuleRtpRtcpImpl::OnPacketLossStatisticsUpdate(
     if (!defaultInstance) {
         WebRtc_UWord32 newBitrate = 0;
         WebRtc_UWord8 loss = fractionLost;  // local copy since it can change
+        WebRtc_UWord32 videoRate = 0;
+        WebRtc_UWord32 fecRate = 0;
+        WebRtc_UWord32 nackRate = 0;
+        BitrateSent(NULL, &videoRate, &fecRate, &nackRate);
         if (_bandwidthManagement.UpdatePacketLoss(
             lastReceivedExtendedHighSeqNum,
+            videoRate + fecRate + nackRate,
             roundTripTime,
             &loss,
             &newBitrate) != 0) {
@@ -2735,10 +2745,15 @@ void ModuleRtpRtcpImpl::OnPacketLossStatisticsUpdate(
             // default and simulcast
             WebRtc_UWord32 newBitrate = 0;
             WebRtc_UWord8 loss = fractionLost;  // local copy
+            WebRtc_UWord32 videoRate = 0;
+            WebRtc_UWord32 fecRate = 0;
+            WebRtc_UWord32 nackRate = 0;
+            BitrateSent(NULL, &videoRate, &fecRate, &nackRate);
             if (_bandwidthManagement.UpdatePacketLoss(0,  // we can't use this
-                                                      roundTripTime,
-                                                      &loss,
-                                                      &newBitrate) != 0) {
+                                             videoRate + fecRate + nackRate,
+                                             roundTripTime,
+                                             &loss,
+                                             &newBitrate) != 0) {
                 // ignore this update
                 return;
             }

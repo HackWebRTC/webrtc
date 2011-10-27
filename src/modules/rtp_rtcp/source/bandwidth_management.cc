@@ -104,6 +104,7 @@ BandwidthManagement::UpdateBandwidthEstimate(const WebRtc_UWord16 bandWidthKbit,
 
 WebRtc_Word32 BandwidthManagement::UpdatePacketLoss(
     const WebRtc_UWord32 lastReceivedExtendedHighSeqNum,
+    WebRtc_UWord32 sentBitrate,
     const WebRtc_UWord16 rtt,
     WebRtc_UWord8* loss,
     WebRtc_UWord32* newBitrate)
@@ -168,7 +169,7 @@ WebRtc_Word32 BandwidthManagement::UpdatePacketLoss(
     // Remember the sequence number until next time
     _lastPacketLossExtendedHighSeqNum = lastReceivedExtendedHighSeqNum;
 
-    WebRtc_UWord32 bitRate = ShapeSimple(*loss, rtt);
+    WebRtc_UWord32 bitRate = ShapeSimple(*loss, rtt, sentBitrate);
     if (bitRate == 0)
     {
         // no change
@@ -211,7 +212,8 @@ WebRtc_Word32 BandwidthManagement::CalcTFRCbps(WebRtc_Word16 avgPackSizeBytes,
 */
 // protected
 WebRtc_UWord32 BandwidthManagement::ShapeSimple(WebRtc_Word32 packetLoss,
-                                                WebRtc_Word32 rtt)
+                                                WebRtc_Word32 rtt,
+                                                WebRtc_UWord32 sentBitrate)
 {
     WebRtc_UWord32 newBitRate = 0;
     bool reducing = false;
@@ -226,7 +228,8 @@ WebRtc_UWord32 BandwidthManagement::ShapeSimple(WebRtc_Word32 packetLoss,
         // 26/256 ~= 10%
         // reduce rate: newRate = rate * (1 - 0.5*lossRate)
         // packetLoss = 256*lossRate
-        newBitRate = (_bitRate * (512 - packetLoss)) / 512;
+        newBitRate = static_cast<WebRtc_UWord32>(
+            (sentBitrate * static_cast<double>(512 - packetLoss)) / 512.0);
         reducing = true;
     }
     else

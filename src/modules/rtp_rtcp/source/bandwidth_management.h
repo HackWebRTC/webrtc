@@ -35,6 +35,7 @@ public:
    // Call when we receive a RTCP message with a ReceiveBlock
     WebRtc_Word32 UpdatePacketLoss(
         const WebRtc_UWord32 lastReceivedExtendedHighSeqNum,
+        WebRtc_UWord32 sentBitrate,
         const WebRtc_UWord16 rtt,
         WebRtc_UWord8* loss,
         WebRtc_UWord32* newBitrate);
@@ -48,7 +49,9 @@ public:
     WebRtc_Word32 MaxConfiguredBitrate(WebRtc_UWord16* maxBitrateKbit);
 
 protected:
-    WebRtc_UWord32 ShapeSimple(WebRtc_Word32 packetLoss, WebRtc_Word32 rtt);
+    WebRtc_UWord32 ShapeSimple(WebRtc_Word32 packetLoss,
+                               WebRtc_Word32 rtt,
+                               WebRtc_UWord32 sentBitrate);
 
     WebRtc_Word32 CalcTFRCbps(WebRtc_Word16 avgPackSizeBytes,
                               WebRtc_Word32 rttMs,

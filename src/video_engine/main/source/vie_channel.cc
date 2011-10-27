@@ -1452,6 +1452,7 @@ WebRtc_Word32 ViEChannel::GetRtpStatistics(
 }
 
 void ViEChannel::GetBandwidthUsage(WebRtc_UWord32& totalBitrateSent,
+                                   WebRtc_UWord32& videoBitrateSent,
                                    WebRtc_UWord32& fecBitrateSent,
                                    WebRtc_UWord32& nackBitrateSent) const {
   WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
@@ -1459,15 +1460,17 @@ void ViEChannel::GetBandwidthUsage(WebRtc_UWord32& totalBitrateSent,
                "%s", __FUNCTION__);
 
   _rtpRtcp.BitrateSent(&totalBitrateSent,
+                       &videoBitrateSent,
                        &fecBitrateSent,
                        &nackBitrateSent);
   for (std::list<RtpRtcp*>::const_iterator it = _simulcastRtpRtcp.begin();
        it != _simulcastRtpRtcp.end(); it++) {
     WebRtc_UWord32 streamRate = 0;
+    WebRtc_UWord32 videoRate = 0;
     WebRtc_UWord32 fecRate = 0;
     WebRtc_UWord32 nackRate = 0;
     RtpRtcp* rtpRtcp = *it;
-    rtpRtcp->BitrateSent(&streamRate, &fecRate, &nackRate);
+    rtpRtcp->BitrateSent(&streamRate, &videoRate, &fecRate, &nackRate);
     totalBitrateSent += streamRate;
     fecBitrateSent += fecRate;
     nackBitrateSent += nackRate;

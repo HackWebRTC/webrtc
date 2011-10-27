@@ -87,6 +87,7 @@ public:
 
     void ProcessBitrate();
 
+    WebRtc_UWord32 VideoBitrateSent() const;
     WebRtc_UWord32 FecOverheadRate() const;
 
 protected:
@@ -167,7 +168,11 @@ private:
     int                       _numberFirstPartition;
     ListWrapper               _mediaPacketListFec;
     ListWrapper               _rtpPacketListFec;
+    // Bitrate used for FEC payload, RED headers, RTP headers for FEC packets
+    // and any padding overhead.
     Bitrate                   _fecOverheadRate;
+    // Bitrate used for video payload and RTP headers
+    Bitrate                   _videoBitrate;
 
     // H263
     WebRtc_UWord8             _savedByte;

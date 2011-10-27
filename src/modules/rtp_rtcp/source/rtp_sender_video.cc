@@ -157,7 +157,6 @@ RTPSenderVideo::SendVideoPacket(const FrameType frameType,
                                 const WebRtc_UWord16 payloadLength,
                                 const WebRtc_UWord16 rtpHeaderLength)
 {
-    int fecOverheadSent = 0;
     if(_fecEnabled)
     {
         WebRtc_Word32 retVal = 0;
@@ -209,6 +208,10 @@ RTPSenderVideo::SendVideoPacket(const FrameType frameType,
                                       _numberFirstPartition,
                                       _fecUseUepProtection,
                                       fecPacketList);
+
+            int fecOverheadSent = 0;
+            int videoSent = 0;
+
             while(!_rtpPacketListFec.Empty())
             {
                 WebRtc_UWord8 newDataBuffer[IP_PACKET_SIZE];
@@ -217,6 +220,10 @@ RTPSenderVideo::SendVideoPacket(const FrameType frameType,
                 ListItem* item = _rtpPacketListFec.First();
                 RtpPacket* packetToSend =
                     static_cast<RtpPacket*>(item->GetItem());
+
+                item = _mediaPacketListFec.First();
+                ForwardErrorCorrection::Packet* mediaPacket =
+                  static_cast<ForwardErrorCorrection::Packet*>(item->GetItem());
 
                 // Copy RTP header
                 memcpy(newDataBuffer, packetToSend->pkt->data,
@@ -244,12 +251,23 @@ RTPSenderVideo::SendVideoPacket(const FrameType frameType,
                 _mediaPacketListFec.PopFront();
 
                 // Send normal packet with RED header
-                retVal |= _rtpSender.SendToNetwork(
+                int packetSuccess = _rtpSender.SendToNetwork(
                         newDataBuffer,
                         packetToSend->pkt->length -
                            packetToSend->rtpHeaderLength +
                            REDForFECHeaderLength,
                         packetToSend->rtpHeaderLength);
+
+                retVal |= packetSuccess;
+
+                if (packetSuccess == 0)
+                {
+                    videoSent += mediaPacket->length;
+                    fecOverheadSent += (packetToSend->pkt->length -
+                        mediaPacket->length +
+                        packetToSend->rtpHeaderLength +
+                        REDForFECHeaderLength);
+                }
 
                 delete packetToSend->pkt;
                 delete packetToSend;
@@ -295,24 +313,32 @@ RTPSenderVideo::SendVideoPacket(const FrameType frameType,
 
                 // No marker bit on FEC packets, last media packet have the
                 // marker send FEC packet with RED header
-                retVal |= _rtpSender.SendToNetwork(
+                int packetSuccess = _rtpSender.SendToNetwork(
                         newDataBuffer,
                         packetToSend->length + REDForFECHeaderLength,
                         lastMediaRtpHeader.length);
 
-                if (retVal == 0)
+                retVal |= packetSuccess;
+
+                if (packetSuccess == 0)
                 {
                     fecOverheadSent += packetToSend->length +
-                      REDForFECHeaderLength;
+                      REDForFECHeaderLength + lastMediaRtpHeader.length;
                 }
             }
+            _videoBitrate.Update(videoSent);
+            _fecOverheadRate.Update(fecOverheadSent);
         }
-        _fecOverheadRate.Update(fecOverheadSent);
         return retVal;
     }
-    return _rtpSender.SendToNetwork(dataBuffer,
-                                    payloadLength,
-                                    rtpHeaderLength);
+    int retVal = _rtpSender.SendToNetwork(dataBuffer,
+                                          payloadLength,
+                                          rtpHeaderLength);
+    if (retVal == 0)
+    {
+        _videoBitrate.Update(payloadLength + rtpHeaderLength);
+    }
+    return retVal;
 }
 
 WebRtc_Word32
@@ -1283,7 +1309,12 @@ RTPSenderVideo::SendVP8(const FrameType frameType,
 }
 
 void RTPSenderVideo::ProcessBitrate() {
+  _videoBitrate.Process();
   _fecOverheadRate.Process();
+}
+
+WebRtc_UWord32 RTPSenderVideo::VideoBitrateSent() const {
+  return _videoBitrate.BitrateLast();
 }
 
 WebRtc_UWord32 RTPSenderVideo::FecOverheadRate() const {

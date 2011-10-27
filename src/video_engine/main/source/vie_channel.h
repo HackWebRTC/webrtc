@@ -172,6 +172,7 @@ public:
                                    WebRtc_UWord32& packetsReceived) const;
 
     void GetBandwidthUsage(WebRtc_UWord32& totalBitrateSent,
+                           WebRtc_UWord32& videoBitrateSent,
                            WebRtc_UWord32& fecBitrateSent,
                            WebRtc_UWord32& nackBitrateSent) const;
 

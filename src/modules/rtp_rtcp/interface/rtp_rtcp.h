@@ -496,6 +496,7 @@ public:
     *   get sent bitrate in Kbit/s
     */
     virtual void BitrateSent(WebRtc_UWord32* totalRate,
+                             WebRtc_UWord32* videoRate,
                              WebRtc_UWord32* fecRate,
                              WebRtc_UWord32* nackRate) const = 0;
 

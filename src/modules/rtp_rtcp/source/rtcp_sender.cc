@@ -1694,9 +1694,11 @@ RTCPSender::SendRTCP(const WebRtc_UWord32 packetTypeFlags,
                 {
                     // calc bw for video 360/sendBW in kbit/s
                     WebRtc_UWord32 sendBitrateKbit = 0;
+                    WebRtc_UWord32 videoRate = 0;
                     WebRtc_UWord32 fecRate = 0;
                     WebRtc_UWord32 nackRate = 0;
                     _rtpRtcp.BitrateSent(&sendBitrateKbit,
+                                         &videoRate,
                                          &fecRate,
                                          &nackRate);
                     sendBitrateKbit /= 1000;

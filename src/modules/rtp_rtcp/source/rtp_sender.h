@@ -73,6 +73,7 @@ public:
     WebRtc_UWord16 TargetSendBitrateKbit() const;
     WebRtc_UWord16 ActualSendBitrateKbit() const;
 
+    WebRtc_UWord32 VideoBitrateSent() const;
     WebRtc_UWord32 FecOverheadRate() const;
     WebRtc_UWord32 NackOverheadRate() const;
 

@@ -233,11 +233,13 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
     int recRttMs = 0;
 
     unsigned int sentTotalBitrate = 0;
+    unsigned int sentVideoBitrate = 0;
     unsigned int sentFecBitrate = 0;
     unsigned int sentNackBitrate = 0;
 
     error = ViE.ptrViERtpRtcp->GetBandwidthUsage(tbChannel.videoChannel,
                                                  sentTotalBitrate,
+                                                 sentVideoBitrate,
                                                  sentFecBitrate,
                                                  sentNackBitrate);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
@@ -311,6 +313,7 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
 
     error = ViE.ptrViERtpRtcp->GetBandwidthUsage(tbChannel.videoChannel,
                                                  sentTotalBitrate,
+                                                 sentVideoBitrate,
                                                  sentFecBitrate,
                                                  sentNackBitrate);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
@@ -340,6 +343,7 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
 
     error = ViE.ptrViERtpRtcp->GetBandwidthUsage(tbChannel.videoChannel,
                                                  sentTotalBitrate,
+                                                 sentVideoBitrate,
                                                  sentFecBitrate,
                                                  sentNackBitrate);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
