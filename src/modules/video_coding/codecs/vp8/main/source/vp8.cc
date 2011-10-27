@@ -312,7 +312,7 @@ VP8Encoder::InitEncode(const VideoCodec* inst,
     _cfg->rc_end_usage = VPX_CBR;
     _cfg->g_pass = VPX_RC_ONE_PASS;
     _cfg->rc_resize_allowed = 0;
-    _cfg->rc_min_quantizer = 4;
+    _cfg->rc_min_quantizer = 8;
     _cfg->rc_max_quantizer = 56;
     _cfg->rc_undershoot_pct = 100;
     _cfg->rc_overshoot_pct = 15;
@@ -386,6 +386,7 @@ VP8Encoder::InitAndSetControlSettings()
     vpx_codec_control(_encoder, VP8E_SET_CPUUSED, _cpuSpeed);
     vpx_codec_control(_encoder, VP8E_SET_TOKEN_PARTITIONS,
                       static_cast<vp8e_token_partitions>(_tokenPartitions));
+    vpx_codec_control(_encoder, VP8E_SET_NOISE_SENSITIVITY, 2);
 #if WEBRTC_LIBVPX_VERSION >= 971
     vpx_codec_control(_encoder, VP8E_SET_MAX_INTRA_BITRATE_PCT,
                       _rcMaxIntraTarget);
