@@ -954,7 +954,7 @@ VCMJitterBuffer::CompleteSequenceWithNextFrame()
     VCMFrameBuffer* oldestFrame = oldestFrameListItem->GetItem();
     const VCMFrameListItem* nextFrameItem =
                             _frameBuffersTSOrder.Next(oldestFrameListItem);
-    if (nextFrameItem == NULL && !oldestFrame->HaveLastPacket())
+    if (nextFrameItem == NULL)
     {
         // Frame not ready to be decoded.
         return true;
@@ -1018,7 +1018,7 @@ VCMJitterBuffer::GetFrameForDecoding()
 
     const VCMFrameListItem* nextFrameItem =
                             _frameBuffersTSOrder.Next(oldestFrameListItem);
-    if (nextFrameItem == NULL && !oldestFrame->HaveLastPacket())
+    if (nextFrameItem == NULL)
     {
         return NULL;
     }
