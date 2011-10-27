@@ -254,7 +254,8 @@ private:
     afx_msg void OnCbnSelchangeRtcpmode();
     afx_msg void OnBnClickedProtNack();
     afx_msg void OnBnClickedProtNone();
-    afx_msg void OnBnClickedProtFec();    
+    afx_msg void OnBnClickedProtFec();
+    afx_msg void OnBnClickedProtNackFec();  
     afx_msg void OnBnClickedFreezelog();
 public:
     afx_msg void OnBnClickedExttransport();    

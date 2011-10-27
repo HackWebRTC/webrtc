@@ -35,6 +35,7 @@
 #define IDC_PROT_NONE                   1045
 #define IDC_PROT_NACK                   1046
 #define IDC_PROT_FEC                    1047
+#define IDC_PROT_NACKFEC                1048
 #define IDC_INFORMATION                 1050
 #define IDC_PACKETLOSS                  1051
 #define IDC_FREEZELOG                   1052

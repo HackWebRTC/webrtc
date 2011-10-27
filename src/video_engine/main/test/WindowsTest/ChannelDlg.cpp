@@ -27,7 +27,6 @@
     #define GET_TIME_IN_MS timeGetTime
 #endif
 
-
 // Hack to convert char to TCHAR, using two buffers to be able to
 // call twice in the same statement
 TCHAR convertTemp1[256] = {0};
@@ -160,6 +159,7 @@ BEGIN_MESSAGE_MAP(CDXChannelDlg, CDialog)
     ON_BN_CLICKED(IDC_BTN_RECORD_INCOMING, &CDXChannelDlg::OnBnClickedBtnRecordIncoming)
     ON_BN_CLICKED(IDC_BTN_RECORD_OUTGOING, &CDXChannelDlg::OnBnClickedBtnRecordOutgoing)
     ON_BN_CLICKED(IDC_BTN_CREATE_SLAVE, &CDXChannelDlg::OnBnClickedBtnCreateSlave)
+    ON_BN_CLICKED(IDC_PROT_NACKFEC, &CDXChannelDlg::OnBnClickedProtNackFec)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -946,6 +946,7 @@ void CDXChannelDlg::OnBnClickedProtNone()
 
     TEST_MUSTPASS(_vieRTPRTCP->SetNACKStatus(_channelId,false),-5);
     TEST_MUSTPASS(_vieRTPRTCP->SetFECStatus(_channelId,false,0,0),-5);
+    TEST_MUSTPASS(_vieRTPRTCP->SetHybridNACKFECStatus(_channelId,false,0,0),-5);
 }
 
 void CDXChannelDlg::OnBnClickedProtFec()
@@ -967,6 +968,30 @@ void CDXChannelDlg::OnBnClickedProtFec()
         }
     }
     TEST_MUSTPASS(_vieRTPRTCP->SetFECStatus(_channelId,true,redPayloadType,fecPayloadType),-5);
+}
+
+void CDXChannelDlg::OnBnClickedProtNackFec()
+{
+    int noCodec=_vieCodec->NumberOfCodecs();
+    int redPayloadType=0;
+    int fecPayloadType=0;
+    for(unsigned char i=0;i<noCodec;++i)
+    {
+        VideoCodec codec;
+        _vieCodec->GetCodec(i,codec);
+        if(codec.codecType==webrtc::kVideoCodecRED)
+        {
+            redPayloadType=codec.plType;
+        }
+        if(codec.codecType==webrtc::kVideoCodecULPFEC)
+        {
+            fecPayloadType=codec.plType;
+        }
+    }
+    TEST_MUSTPASS(_vieRTPRTCP->SetHybridNACKFECStatus(_channelId,true,
+                                                      redPayloadType,
+                                                      fecPayloadType),-5);
+
 }
 
 void CDXChannelDlg::OnBnClickedVersion()
