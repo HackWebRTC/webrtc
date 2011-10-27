@@ -1991,6 +1991,7 @@ void PrintBandwidthUsage(webrtc::ViERTP_RTCP* ptrViERtpRtcp,
   int error = 0;
   int numberOfErrors = 0;
   unsigned int totalBitrateSent = 0;
+  unsigned int videoBitrateSent = 0;
   unsigned int fecBitrateSent = 0;
   unsigned int nackBitrateSent = 0;
   double percentageFEC = 0;
@@ -2001,23 +2002,25 @@ void PrintBandwidthUsage(webrtc::ViERTP_RTCP* ptrViERtpRtcp,
 
   // Get and print Bandwidth usage
   error = ptrViERtpRtcp->GetBandwidthUsage(videoChannel, totalBitrateSent,
-                                           fecBitrateSent, nackBitrateSent);
+                                           videoBitrateSent, fecBitrateSent,
+                                           nackBitrateSent);
   numberOfErrors += ViETest::TestError(error == 0,
                                        "ERROR: %s at line %d",
                                        __FUNCTION__, __LINE__);
-  std::cout << "\tTotal bitrate sent: "
+  std::cout << "\tTotal bitrate sent (Kbit/s): "
             << totalBitrateSent << std::endl;
-  std::cout << "\tFEC bitrate sent: "
+  std::cout << "\tVideo bitrate sent (Kbit/s): "
+            << videoBitrateSent << std::endl;
+  std::cout << "\tFEC bitrate sent (Kbit/s): "
             << fecBitrateSent << std::endl;
   percentageFEC = ((double)fecBitrateSent/(double)totalBitrateSent) * 100;
-  std::cout << "\tTotal FEC bitrate sent %: "
+  std::cout << "\tPercentage FEC bitrate sent from total bitrate: "
             << percentageFEC << std::endl;
-  std::cout << "\tNACK bitrate sent: "
+  std::cout << "\tNACK bitrate sent (Kbit/s): "
             << nackBitrateSent << std::endl;
   percentageNACK = ((double)nackBitrateSent/(double)totalBitrateSent) * 100;
-  std::cout << "\tTotal NACK bitrate sent %: "
+  std::cout << "\tPercentage NACK bitrate sent from total bitrate: "
             << percentageNACK << std::endl;
-
 }
 
 void PrintCodecStatistics(webrtc::ViECodec* ptrViECodec, int videoChannel,
