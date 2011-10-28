@@ -3112,6 +3112,11 @@ WebRtc_Word32 AudioDeviceWindowsCore::StopPlayout()
         CriticalSectionScoped critScoped(_critSect);
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
             "webrtc_core_audio_render_thread is now closed");
+        
+        // to reset this event manually at each time we finish with it, 
+        // in case that the render thread has exited before StopPlayout(),
+        // this event might be caught by the new render thread within same VoE instance.
+        ResetEvent(_hShutdownRenderEvent); 
 
         SAFE_RELEASE(_ptrClientOut);
         SAFE_RELEASE(_ptrRenderClient);
