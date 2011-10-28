@@ -23,8 +23,8 @@ inline WebRtc_UWord32 MaskWord64ToUWord32(WebRtc_Word64 w64)
     return static_cast<WebRtc_UWord32>(MASK_32_BITS(w64));
 }
 
-#define VCM_MAX(a, b) ((a) > (b)) ? (a) : (b)
-#define VCM_MIN(a, b) ((a) < (b)) ? (a) : (b)
+#define VCM_MAX(a, b) (((a) > (b)) ? (a) : (b))
+#define VCM_MIN(a, b) (((a) < (b)) ? (a) : (b))
 
 #define VCM_DEFAULT_CODEC_WIDTH 352
 #define VCM_DEFAULT_CODEC_HEIGHT 288

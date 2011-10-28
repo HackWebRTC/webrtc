@@ -254,6 +254,12 @@ VCMReceiver::FrameForDecoding(WebRtc_UWord16 maxWaitTimeMs,
         return NULL;
     }
 
+    if (frame == NULL && VCM_MIN(waitTimeMs, maxWaitTimeMs) == 0)
+    {
+        // No time to wait for a complete frame,
+        // check if we have an incomplete
+        frame = _jitterBuffer.GetFrameForDecoding();
+    }
     if (frame == NULL)
     {
         // Wait for a complete frame
