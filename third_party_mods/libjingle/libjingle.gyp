@@ -695,7 +695,6 @@
           # sources= empties the list of source file and start new.
           # peer_connection_dev is independent of the main branch.          
           'sources=': [
-            '<(overrides)/talk/app/webrtc_dev/scoped_refptr.h',            
             '<(libjingle_mods)/source/talk/app/webrtc_dev/audiotrackimpl.h',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/audiotrackimpl.cc',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/mediastream.h',
