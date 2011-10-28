@@ -122,10 +122,15 @@
              '../test/utility.cpp',
           ],
           'conditions': [
-            ['OS=="linux"', {
+            ['OS=="linux" or OS=="mac"', {
               'cflags': [
                 '-fexceptions', # enable exceptions
               ],
+            }],
+            ['OS=="mac"', {
+              'xcode_settings': {
+                'GCC_ENABLE_CPP_EXCEPTIONS': 'YES', # -fexceptions
+              }
             }],
           ],
         },
