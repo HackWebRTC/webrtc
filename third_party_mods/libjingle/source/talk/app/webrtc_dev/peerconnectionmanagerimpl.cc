@@ -66,8 +66,8 @@ namespace webrtc {
 
 talk_base::scoped_refptr<PcNetworkManager> PcNetworkManager::Create(
     talk_base::NetworkManager* network_manager) {
-  talk_base::RefCount<PcNetworkManager>* implementation =
-       new talk_base::RefCount<PcNetworkManager>(network_manager);
+  talk_base::RefCountedObject<PcNetworkManager>* implementation =
+       new talk_base::RefCountedObject<PcNetworkManager>(network_manager);
   return implementation;
 }
 
@@ -85,8 +85,8 @@ PcNetworkManager::~PcNetworkManager() {
 
 talk_base::scoped_refptr<PcPacketSocketFactory> PcPacketSocketFactory::Create(
     talk_base::PacketSocketFactory* socket_factory) {
-  talk_base::RefCount<PcPacketSocketFactory>* implementation =
-       new talk_base::RefCount<PcPacketSocketFactory>(socket_factory);
+  talk_base::RefCountedObject<PcPacketSocketFactory>* implementation =
+       new talk_base::RefCountedObject<PcPacketSocketFactory>(socket_factory);
   return implementation;
 }
 
@@ -105,8 +105,8 @@ talk_base::PacketSocketFactory* PcPacketSocketFactory::socket_factory() const {
 
 talk_base::scoped_refptr<PeerConnectionManager>
 PeerConnectionManager::Create() {
-  talk_base::RefCount<PeerConnectionManagerImpl>* pc_manager =
-      new talk_base::RefCount<PeerConnectionManagerImpl>();
+  talk_base::RefCountedObject<PeerConnectionManagerImpl>* pc_manager =
+      new talk_base::RefCountedObject<PeerConnectionManagerImpl>();
 
   if (!pc_manager->Initialize()) {
     delete pc_manager;
@@ -121,8 +121,8 @@ talk_base::scoped_refptr<PeerConnectionManager> PeerConnectionManager::Create(
     PcNetworkManager* network_manager,
     PcPacketSocketFactory* socket_factory,
     AudioDeviceModule* default_adm) {
-  talk_base::RefCount<PeerConnectionManagerImpl>* pc_manager =
-      new talk_base::RefCount<PeerConnectionManagerImpl>(worker_thread,
+  talk_base::RefCountedObject<PeerConnectionManagerImpl>* pc_manager =
+      new talk_base::RefCountedObject<PeerConnectionManagerImpl>(worker_thread,
                                                          signaling_thread,
                                                          network_manager,
                                                          socket_factory,
@@ -226,8 +226,8 @@ talk_base::scoped_refptr<PeerConnectionInterface>
 PeerConnectionManagerImpl::CreatePeerConnection_s(
     const std::string& configuration,
     PeerConnectionObserver* observer) {
-  talk_base::RefCount<PeerConnectionImpl>* pc(
-      new talk_base::RefCount<PeerConnectionImpl>(channel_manager_.get(),
+  talk_base::RefCountedObject<PeerConnectionImpl>* pc(
+      new talk_base::RefCountedObject<PeerConnectionImpl>(channel_manager_.get(),
                                                   signaling_thread_ptr_,
                                                   worker_thread_ptr_,
                                                   network_manager_,

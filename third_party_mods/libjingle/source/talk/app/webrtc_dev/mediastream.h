@@ -36,9 +36,9 @@
 
 #include <string>
 
-#include "talk/app/webrtc_dev/refcount.h"
-#include "talk/app/webrtc_dev/scoped_refptr.h"
 #include "talk/base/basictypes.h"
+#include "talk/base/refcount.h"
+#include "talk/base/scoped_refptr.h"
 
 namespace cricket {
 class VideoRenderer;

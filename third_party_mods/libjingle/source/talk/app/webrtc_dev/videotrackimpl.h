@@ -33,7 +33,7 @@
 #include "talk/app/webrtc_dev/mediastream.h"
 #include "talk/app/webrtc_dev/mediatrackimpl.h"
 #include "talk/app/webrtc_dev/notifierimpl.h"
-#include "talk/app/webrtc_dev/scoped_refptr.h"
+#include "talk/base/scoped_refptr.h"
 
 #ifdef WEBRTC_RELATIVE_PATH
 #include "modules/video_capture/main/interface/video_capture.h"

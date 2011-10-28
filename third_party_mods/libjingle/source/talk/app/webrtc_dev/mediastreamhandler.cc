@@ -27,8 +27,6 @@
 
 #include "talk/app/webrtc_dev/mediastreamhandler.h"
 
-#include "talk/app/webrtc_dev/scoped_refptr_msg.h"
-
 #ifdef WEBRTC_RELATIVE_PATH
 #include "modules/video_capture/main/interface/video_capture.h"
 #else

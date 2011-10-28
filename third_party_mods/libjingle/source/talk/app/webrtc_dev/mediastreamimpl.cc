@@ -32,8 +32,8 @@ namespace webrtc {
 
 talk_base::scoped_refptr<MediaStream> MediaStream::Create(
     const std::string& label) {
-  talk_base::RefCount<MediaStream>* stream =
-      new talk_base::RefCount<MediaStream>(label);
+  talk_base::RefCountedObject<MediaStream>* stream =
+      new talk_base::RefCountedObject<MediaStream>(label);
   return stream;
 }
 
@@ -41,10 +41,10 @@ MediaStream::MediaStream(const std::string& label)
     : label_(label),
       ready_state_(MediaStreamInterface::kInitializing),
       audio_track_list_(
-          new talk_base::RefCount<
+          new talk_base::RefCountedObject<
           MediaStreamTrackList<AudioTrackInterface> >()),
       video_track_list_(
-          new talk_base::RefCount<
+          new talk_base::RefCountedObject<
           MediaStreamTrackList<VideoTrackInterface> >()) {
 }
 

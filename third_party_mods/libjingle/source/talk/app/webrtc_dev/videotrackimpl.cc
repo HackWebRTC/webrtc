@@ -64,16 +64,16 @@ std::string VideoTrack::kind() const {
 talk_base::scoped_refptr<VideoTrack> VideoTrack::CreateRemote(
     const std::string& label,
     uint32 ssrc) {
-  talk_base::RefCount<VideoTrack>* track =
-      new talk_base::RefCount<VideoTrack>(label, ssrc);
+  talk_base::RefCountedObject<VideoTrack>* track =
+      new talk_base::RefCountedObject<VideoTrack>(label, ssrc);
   return track;
 }
 
 talk_base::scoped_refptr<VideoTrack> VideoTrack::CreateLocal(
     const std::string& label,
     VideoCaptureModule* video_device) {
-  talk_base::RefCount<VideoTrack>* track =
-      new talk_base::RefCount<VideoTrack>(label, video_device);
+  talk_base::RefCountedObject<VideoTrack>* track =
+      new talk_base::RefCountedObject<VideoTrack>(label, video_device);
   return track;
 }
 

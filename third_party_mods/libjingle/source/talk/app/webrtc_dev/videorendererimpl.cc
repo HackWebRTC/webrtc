@@ -50,8 +50,8 @@ class VideoRendererImpl : public VideoRendererWrapperInterface {
 
 talk_base::scoped_refptr<VideoRendererWrapperInterface> CreateVideoRenderer(
     cricket::VideoRenderer* renderer) {
-  talk_base::RefCount<VideoRendererImpl>* r =
-      new talk_base::RefCount<VideoRendererImpl>(renderer);
+  talk_base::RefCountedObject<VideoRendererImpl>* r =
+      new talk_base::RefCountedObject<VideoRendererImpl>(renderer);
   return r;
 }
 

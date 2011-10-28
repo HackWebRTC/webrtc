@@ -29,9 +29,9 @@
 
 #include <string>
 
-#include "talk/base/scoped_ptr.h"
 #include "talk/app/webrtc_dev/peerconnection.h"
 #include "talk/app/webrtc_dev/mediastream.h"
+#include "talk/base/scoped_ptr.h"
 #include "talk/base/thread.h"
 #include "talk/session/phone/channelmanager.h"
 

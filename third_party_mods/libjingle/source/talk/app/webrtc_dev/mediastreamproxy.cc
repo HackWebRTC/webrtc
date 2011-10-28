@@ -26,8 +26,8 @@
  */
 
 #include "talk/app/webrtc_dev/mediastreamproxy.h"
-#include "talk/app/webrtc_dev/refcount.h"
-#include "talk/app/webrtc_dev/scoped_refptr.h"
+#include "talk/base/refcount.h"
+#include "talk/base/scoped_refptr.h"
 
 namespace {
 
@@ -92,8 +92,8 @@ talk_base::scoped_refptr<MediaStreamProxy> MediaStreamProxy::Create(
     const std::string& label,
     talk_base::Thread* signaling_thread) {
   ASSERT(signaling_thread);
-  talk_base::RefCount<MediaStreamProxy>* stream =
-      new talk_base::RefCount<MediaStreamProxy>(
+  talk_base::RefCountedObject<MediaStreamProxy>* stream =
+      new talk_base::RefCountedObject<MediaStreamProxy>(
           label, signaling_thread,
           reinterpret_cast<LocalMediaStreamInterface*>(NULL));
   return stream;
@@ -105,8 +105,8 @@ talk_base::scoped_refptr<MediaStreamProxy> MediaStreamProxy::Create(
     LocalMediaStreamInterface* media_stream_impl) {
   ASSERT(signaling_thread);
   ASSERT(media_stream_impl);
-  talk_base::RefCount<MediaStreamProxy>* stream =
-      new talk_base::RefCount<MediaStreamProxy>(label, signaling_thread,
+  talk_base::RefCountedObject<MediaStreamProxy>* stream =
+      new talk_base::RefCountedObject<MediaStreamProxy>(label, signaling_thread,
                                                 media_stream_impl);
   return stream;
 }
@@ -116,10 +116,10 @@ MediaStreamProxy::MediaStreamProxy(const std::string& label,
                                    LocalMediaStreamInterface* media_stream_impl)
     : signaling_thread_(signaling_thread),
       media_stream_impl_(media_stream_impl),
-      audio_tracks_(new talk_base::RefCount<
+      audio_tracks_(new talk_base::RefCountedObject<
                         MediaStreamTrackListProxy<AudioTrackInterface> >(
                               signaling_thread_)),
-      video_tracks_(new talk_base::RefCount<
+      video_tracks_(new talk_base::RefCountedObject<
                         MediaStreamTrackListProxy<VideoTrackInterface> >(
                             signaling_thread_)) {
   if (media_stream_impl_ == NULL) {

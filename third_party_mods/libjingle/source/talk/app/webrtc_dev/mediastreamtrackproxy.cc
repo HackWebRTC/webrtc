@@ -26,7 +26,6 @@
  */
 
 #include "talk/app/webrtc_dev/mediastreamtrackproxy.h"
-#include "talk/app/webrtc_dev/scoped_refptr_msg.h"
 
 namespace {
 
@@ -266,8 +265,8 @@ talk_base::scoped_refptr<AudioTrackInterface> AudioTrackProxy::CreateRemote(
     uint32 ssrc,
     talk_base::Thread* signaling_thread) {
   ASSERT(signaling_thread);
-  talk_base::RefCount<AudioTrackProxy>* track =
-      new talk_base::RefCount<AudioTrackProxy>(label, ssrc,
+  talk_base::RefCountedObject<AudioTrackProxy>* track =
+      new talk_base::RefCountedObject<AudioTrackProxy>(label, ssrc,
                                                signaling_thread);
   return track;
 }
@@ -277,8 +276,8 @@ talk_base::scoped_refptr<LocalAudioTrackInterface> AudioTrackProxy::CreateLocal(
     AudioDeviceModule* audio_device,
     talk_base::Thread* signaling_thread) {
   ASSERT(signaling_thread);
-  talk_base::RefCount<AudioTrackProxy>* track =
-      new talk_base::RefCount<AudioTrackProxy>(label,
+  talk_base::RefCountedObject<AudioTrackProxy>* track =
+      new talk_base::RefCountedObject<AudioTrackProxy>(label,
                                                audio_device,
                                                signaling_thread);
   return track;
@@ -288,8 +287,8 @@ talk_base::scoped_refptr<LocalAudioTrackInterface> AudioTrackProxy::CreateLocal(
     LocalAudioTrackInterface* implementation,
     talk_base::Thread* signaling_thread) {
   ASSERT(signaling_thread);
-  talk_base::RefCount<AudioTrackProxy>* track =
-      new talk_base::RefCount<AudioTrackProxy>(implementation,
+  talk_base::RefCountedObject<AudioTrackProxy>* track =
+      new talk_base::RefCountedObject<AudioTrackProxy>(implementation,
                                                signaling_thread);
   return track;
 }
@@ -343,8 +342,8 @@ talk_base::scoped_refptr<VideoTrackInterface> VideoTrackProxy::CreateRemote(
     uint32 ssrc,
     talk_base::Thread* signaling_thread) {
   ASSERT(signaling_thread);
-  talk_base::RefCount<VideoTrackProxy>* track =
-      new talk_base::RefCount<VideoTrackProxy>(label, ssrc,
+  talk_base::RefCountedObject<VideoTrackProxy>* track =
+      new talk_base::RefCountedObject<VideoTrackProxy>(label, ssrc,
                                                signaling_thread);
   return track;
 }
@@ -354,8 +353,8 @@ talk_base::scoped_refptr<LocalVideoTrackInterface> VideoTrackProxy::CreateLocal(
     VideoCaptureModule* video_device,
     talk_base::Thread* signaling_thread) {
   ASSERT(signaling_thread);
-  talk_base::RefCount<VideoTrackProxy>* track =
-      new talk_base::RefCount<VideoTrackProxy>(label, video_device,
+  talk_base::RefCountedObject<VideoTrackProxy>* track =
+      new talk_base::RefCountedObject<VideoTrackProxy>(label, video_device,
                                                signaling_thread);
   return track;
 }
@@ -364,8 +363,8 @@ talk_base::scoped_refptr<LocalVideoTrackInterface> VideoTrackProxy::CreateLocal(
     LocalVideoTrackInterface* implementation,
     talk_base::Thread* signaling_thread) {
   ASSERT(signaling_thread);
-  talk_base::RefCount<VideoTrackProxy>* track =
-      new talk_base::RefCount<VideoTrackProxy>(implementation,
+  talk_base::RefCountedObject<VideoTrackProxy>* track =
+      new talk_base::RefCountedObject<VideoTrackProxy>(implementation,
                                                signaling_thread);
   return track;
 }

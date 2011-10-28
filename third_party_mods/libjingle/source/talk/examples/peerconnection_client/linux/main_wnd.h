@@ -14,7 +14,7 @@
 
 #include "talk/examples/peerconnection_client/main_wnd.h"
 #include "talk/examples/peerconnection_client/peer_connection_client.h"
-#include "talk/app/webrtc_dev/scoped_refptr.h"
+#include "talk/base/scoped_refptr.h"
 
 // Forward declarations.
 typedef struct _GtkWidget GtkWidget;

@@ -31,7 +31,7 @@
 #include "gtest/gtest.h"
 #include "talk/app/webrtc_dev/mediastreamproxy.h"
 #include "talk/app/webrtc_dev/mediastreamtrackproxy.h"
-#include "talk/app/webrtc_dev/refcount.h"
+#include "talk/base/refcount.h"
 #include "talk/base/scoped_ptr.h"
 #include "talk/base/thread.h"
 
@@ -253,7 +253,7 @@ class MediaStreamTest: public testing::Test,
     // Create a stream proxy object that uses our mocked
     // version of a LocalMediaStream.
     scoped_refptr<MockMediaStream> mock_stream(
-        new talk_base::RefCount<MockMediaStream>(label,
+        new talk_base::RefCountedObject<MockMediaStream>(label,
                                                  signaling_thread_.get()));
     stream_ = MediaStreamProxy::Create(label, signaling_thread_.get(),
                                        mock_stream);
@@ -266,7 +266,7 @@ class MediaStreamTest: public testing::Test,
     scoped_refptr<VideoTrack> video_track_impl(
         VideoTrack::CreateLocal(kVideoTrackLabel, NULL));
     scoped_refptr<MockLocalVideoTrack> mock_videotrack(
-        new talk_base::RefCount<MockLocalVideoTrack>(video_track_impl,
+        new talk_base::RefCountedObject<MockLocalVideoTrack>(video_track_impl,
                                                      signaling_thread_.get()));
     video_track_ = VideoTrackProxy::CreateLocal(mock_videotrack,
                                                 signaling_thread_.get());
@@ -280,7 +280,7 @@ class MediaStreamTest: public testing::Test,
     scoped_refptr<AudioTrack> audio_track_impl(
         AudioTrack::CreateLocal(kAudioTrackLabel, NULL));
     scoped_refptr<MockLocalAudioTrack> mock_audiotrack(
-        new talk_base::RefCount<MockLocalAudioTrack>(audio_track_impl,
+        new talk_base::RefCountedObject<MockLocalAudioTrack>(audio_track_impl,
                                                      signaling_thread_.get()));
     audio_track_ = AudioTrackProxy::CreateLocal(mock_audiotrack,
                                                 signaling_thread_.get());

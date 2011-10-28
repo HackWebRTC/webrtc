@@ -632,10 +632,12 @@
         } ],  # inside_chromium_build
         ['peer_connection_dev==1', {
           'sources': [
+            '<(libjingle_mods)/source/talk/base/refcount.h',
+            '<(libjingle_mods)/source/talk/base/scoped_refptr.h',
             '<(libjingle_mods)/source/talk/p2p/client/fakeportallocator.h',
             '<(libjingle_mods)/source/talk/session/phone/channel.cc',
             '<(libjingle_mods)/source/talk/session/phone/channel.h',
-            '<(libjingle_mods)/source/talk/session/phone/mediasession.cc',
+            '<(libjingle_mods)/source/talk/session/phone/mediasession.cc',            
           ],
         },{
           'sources': [
@@ -716,7 +718,7 @@
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionmessage.h',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionsignaling.cc',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnectionsignaling.h',
-            '<(libjingle_mods)/source/talk/app/webrtc_dev/refcount.h',
+            
             '<(libjingle_mods)/source/talk/app/webrtc_dev/sessiondescriptionprovider.h'
             '<(libjingle_mods)/source/talk/app/webrtc_dev/streamcollectionimpl.h',            
             '<(libjingle_mods)/source/talk/app/webrtc_dev/videorendererimpl.cc',
