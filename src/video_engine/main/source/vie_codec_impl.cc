@@ -965,12 +965,6 @@ bool ViECodecImpl::CodecValid(const VideoCodec& videoCodec)
                    "Invalid minBitrate: %u", videoCodec.minBitrate);
         return false;
     }
-    if (videoCodec.startBitrate < kViEMinCodecBitrate)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
-                   "Invalid minBitrate: %u", videoCodec.minBitrate);
-        return false;
-    }
     if (videoCodec.numberOfSimulcastStreams == 1)
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, -1,
