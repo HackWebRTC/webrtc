@@ -60,7 +60,8 @@ class RefCountedObject : public T {
   }
 
   template<typename P1, typename P2, typename P3, typename P4>
-  RefCountedObject(P1 p1, P2 p2, P3 p3, P4 p4) : ref_count_(0), T(p1, p2, p3, p4) {
+  RefCountedObject(P1 p1, P2 p2, P3 p3, P4 p4)
+      : ref_count_(0), T(p1, p2, p3, p4) {
   }
 
   template<typename P1, typename P2, typename P3, typename P4, typename P5>
