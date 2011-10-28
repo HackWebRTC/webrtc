@@ -238,6 +238,7 @@ private:
     WebRtc_Word32           _NACKSeqNumInternal[kNackHistoryLength];
     WebRtc_UWord16          _NACKSeqNum[kNackHistoryLength];
     WebRtc_UWord32          _NACKSeqNumLength;
+    bool                    _waitingForKeyFrame;
 
     bool                    _firstPacket;
 };

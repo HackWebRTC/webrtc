@@ -88,6 +88,7 @@ VCMJitterBuffer::VCMJitterBuffer(WebRtc_Word32 vcmId, WebRtc_Word32 receiverId,
     _nackMode(kNoNack),
     _NACKSeqNum(),
     _NACKSeqNumLength(0),
+    _waitingForKeyFrame(false),
     _firstPacket(true)
 {
     memset(_frameBuffers, 0, sizeof(_frameBuffers));
@@ -140,6 +141,7 @@ VCMJitterBuffer::operator=(const VCMJitterBuffer& rhs)
         _nackMode = rhs._nackMode;
         _rttMs = rhs._rttMs;
         _NACKSeqNumLength = rhs._NACKSeqNumLength;
+        _waitingForKeyFrame = rhs._waitingForKeyFrame;
         _firstPacket = rhs._firstPacket;
         _lastDecodedSeqNum =  rhs._lastDecodedSeqNum;
         _lastDecodedTimeStamp = rhs._lastDecodedTimeStamp;
@@ -197,6 +199,7 @@ VCMJitterBuffer::Start()
     _waitingForCompletion.latestPacketTime = -1;
     _firstPacket = true;
     _NACKSeqNumLength = 0;
+    _waitingForKeyFrame = false;
     _rttMs = 0;
     _packetsNotDecodable = 0;
 
@@ -614,7 +617,7 @@ VCMJitterBuffer::FindOldestCompleteContinuousFrame()
     // we have a complete frame
     // check if it's continuous, otherwise we are missing a full frame
     // Use seqNum not timestamp since a full frame might be lost
-    if (_lastDecodedSeqNum != -1)
+    if (_lastDecodedSeqNum != -1 && !_waitingForKeyFrame)
     {
         // it's not enough that we have complete frame we need the layers to
         // be continuous too
@@ -629,6 +632,10 @@ VCMJitterBuffer::FindOldestCompleteContinuousFrame()
             // Wait since we want a complete continuous frame
             return NULL;
         }
+    }
+    else if (oldestFrame->FrameType() != kVideoFrameKey)
+    {
+        return NULL;
     }
     return oldestFrameItem;
 }
@@ -824,6 +831,11 @@ VCMJitterBuffer::GetCompleteFrameForDecoding(WebRtc_UWord32 maxWaitTimeMS)
 
     CleanUpOldFrames();
     CleanUpSizeZeroFrames();
+
+    if (oldestFrame->FrameType() == kVideoFrameKey)
+    {
+        _waitingForKeyFrame = false;
+    }
 
     _critSect.Leave();
 
@@ -1061,6 +1073,11 @@ VCMJitterBuffer::GetFrameForDecoding()
     CleanUpOldFrames();
     CleanUpSizeZeroFrames();
 
+    if (oldestFrame->FrameType() == kVideoFrameKey)
+    {
+        _waitingForKeyFrame = false;
+    }
+
     _packetsNotDecodable += oldestFrame->NotDecodablePackets();
 
     // Store current seqnum & time
@@ -1128,6 +1145,11 @@ VCMJitterBuffer::GetFrameForDecodingNACK()
     // Clean up old frames and empty frames
     CleanUpOldFrames();
     CleanUpSizeZeroFrames();
+
+    if (oldestFrame->FrameType() == kVideoFrameKey)
+    {
+        _waitingForKeyFrame = false;
+    }
 
     // We have a complete/decodable continuous frame, decode it.
     // Store seqnum & timestamp
@@ -1386,6 +1408,7 @@ VCMJitterBuffer::CreateNackList(WebRtc_UWord16& nackSize, bool& listExtended)
             // Set the last decoded sequence number to current high.
             // This is to not get a large nack list again right away
             _lastDecodedSeqNum = highSeqNum;
+            _waitingForKeyFrame = true;
             // Set to trigger key frame signal
             nackSize = 0xffff;
             listExtended = true;
