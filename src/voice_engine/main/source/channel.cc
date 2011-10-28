@@ -3501,6 +3501,16 @@ int Channel::StartPlayingFileLocally(const char* fileName,
         _outputFilePlayerPtr = NULL;
         return -1;
     }
+    if (_outputMixerPtr->SetAnonymousMixabilityStatus(*this, true) != 0)
+    {
+        _engineStatisticsPtr->SetLastError(
+            VE_AUDIO_CONF_MIX_MODULE_ERROR, kTraceError,
+            "StartPlayingFile() failed to add participant as file to mixer");
+        _outputFilePlayerPtr->StopPlayingFile();
+        FilePlayer::DestroyFilePlayer(_outputFilePlayerPtr);
+        _outputFilePlayerPtr = NULL;
+        return -1;
+    }
     _outputFilePlayerPtr->RegisterModuleFileCallback(this);
     _outputFilePlaying = true;
 
@@ -3573,6 +3583,16 @@ int Channel::StartPlayingFileLocally(InStream* stream,
         _outputFilePlayerPtr = NULL;
         return -1;
     }
+    if (_outputMixerPtr->SetAnonymousMixabilityStatus(*this, true) != 0)
+    {
+        _engineStatisticsPtr->SetLastError(
+            VE_AUDIO_CONF_MIX_MODULE_ERROR, kTraceError,
+            "StartPlayingFile() failed to add participant as file to mixer");
+        _outputFilePlayerPtr->StopPlayingFile();
+        FilePlayer::DestroyFilePlayer(_outputFilePlayerPtr);
+        _outputFilePlayerPtr = NULL;
+        return -1;
+    }
 
     _outputFilePlayerPtr->RegisterModuleFileCallback(this);
     _outputFilePlaying = true;
@@ -3600,6 +3620,14 @@ int Channel::StopPlayingFileLocally()
         _engineStatisticsPtr->SetLastError(
             VE_STOP_RECORDING_FAILED, kTraceError,
             "StopPlayingFile() could not stop playing");
+        return -1;
+    }
+    if (_outputMixerPtr->SetAnonymousMixabilityStatus(*this, false) != 0)
+    {
+        _engineStatisticsPtr->SetLastError(
+            VE_AUDIO_CONF_MIX_MODULE_ERROR, kTraceError,
+            "StopPlayingFile() failed to stop participant from playing as file"
+            "in the mixer");
         return -1;
     }
     _outputFilePlayerPtr->RegisterModuleFileCallback(NULL);

@@ -73,6 +73,16 @@ public:
     virtual WebRtc_Word32 AmountOfMixables(
         WebRtc_UWord32& amountOfMixableParticipants) = 0;
 
+    // Inform the mixer that the participant should always be mixed and not
+    // count toward the number of mixed participants. Note that a participant
+    // must have been added to the mixer (by calling SetMixabilityStatus())
+    // before this function can be successfully called.
+    virtual WebRtc_Word32 SetAnonymousMixabilityStatus(
+        MixerParticipant& participant, const bool mixable) = 0;
+    // mixable is set to true if the participant is mixed anonymously.
+    virtual WebRtc_Word32 AnonymousMixabilityStatus(
+        MixerParticipant& participant, bool& mixable) = 0;
+
     // Set the minimum sampling frequency at which to mix. The mixing algorithm
     // may still choose to mix at a higher samling frequency to avoid
     // downsampling of audio contributing to the mixed audio.

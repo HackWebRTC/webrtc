@@ -273,6 +273,13 @@ OutputMixer::SetMixabilityStatus(MixerParticipant& participant,
 }
 
 WebRtc_Word32
+OutputMixer::SetAnonymousMixabilityStatus(MixerParticipant& participant,
+                                          const bool mixable)
+{
+    return _mixerModule.SetAnonymousMixabilityStatus(participant,mixable);
+}
+
+WebRtc_Word32
 OutputMixer::MixActiveChannels()
 {
     return _mixerModule.Process();

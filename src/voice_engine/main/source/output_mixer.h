@@ -69,6 +69,9 @@ public:
     WebRtc_Word32 SetMixabilityStatus(MixerParticipant& participant,
                                       const bool mixable);
 
+    WebRtc_Word32 SetAnonymousMixabilityStatus(MixerParticipant& participant,
+                                               const bool mixable);
+
     WebRtc_Word32 GetMixedAudio(const WebRtc_Word32 desiredFreqHz,
                                 const WebRtc_UWord8 channels,
                                 AudioFrame& audioFrame);

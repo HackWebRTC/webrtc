@@ -78,6 +78,10 @@ public:
     virtual WebRtc_Word32 SetMinimumMixingFrequency(Frequency freq);
     virtual WebRtc_Word32 AmountOfMixables(
         WebRtc_UWord32& amountOfMixableParticipants);
+    virtual WebRtc_Word32 SetAnonymousMixabilityStatus(
+        MixerParticipant& participant, const bool mixable);
+    virtual WebRtc_Word32 AnonymousMixabilityStatus(
+        MixerParticipant& participant, bool& mixable);
 private:
     enum{DEFAULT_AUDIO_FRAME_POOLSIZE = 50};
 
@@ -100,6 +104,9 @@ private:
     // Return the lowest mixing frequency that can be used without having to
     // downsample any audio.
     WebRtc_Word32 GetLowestMixingFrequency();
+
+    // Return the AudioFrames that should be mixed anonymously.
+    void GetAdditionalAudio(ListWrapper& additionalFramesList);
 
     // Update the MixHistory of all MixerParticipants. mixedParticipantsList
     // should contain a map of MixerParticipants that have been mixed.
@@ -172,6 +179,7 @@ private:
 
     // List of all participants. Note all lists are disjunct
     ListWrapper _participantList;              // May be mixed.
+    ListWrapper _additionalParticipantList;    // Always mixed, anonomously.
 
     WebRtc_UWord32 _amountOfMixableParticipants;
 
