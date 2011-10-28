@@ -23,10 +23,12 @@
             '<(webrtc_root)/../test/test.gyp:test_support',
             '<(webrtc_root)/../testing/gtest.gyp:gtest',
             'resampler',
+            'vad',
           ],
           'sources': [
             '<(webrtc_root)/../test/run_all_unittests.cc',
             'resampler/main/source/resampler_unittest.cc',
+            'vad/test/vad_unittest.cc',
           ],
         },
       ],
