@@ -638,7 +638,15 @@ void AudioConferenceMixerImpl::UpdateToMix(
             item = _participantList.Next(item);
             continue;
         }
-        assert(audioFrame->_vadActivity != AudioFrame::kVadUnknown);
+        // TODO(henrike): this assert triggers in some test cases where SRTP is
+        // used which prevents NetEQ from making a VAD. Temporarily disable this
+        // assert until the problem is fixed on a higher level.
+        // assert(audioFrame->_vadActivity != AudioFrame::kVadUnknown);
+        if (audioFrame->_vadActivity == AudioFrame::kVadUnknown)
+        {
+            WEBRTC_TRACE(kTraceWarning, kTraceAudioMixerServer, _id,
+                         "invalid VAD state from participant");
+        }
 
         if(audioFrame->_vadActivity == AudioFrame::kVadActive)
         {
