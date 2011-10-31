@@ -12,6 +12,7 @@
 
 #include <assert.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "system_wrappers/interface/data_log_c.h"
 
