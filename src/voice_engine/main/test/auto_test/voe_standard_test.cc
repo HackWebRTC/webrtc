@@ -29,9 +29,10 @@
 #include "../../source/voice_engine_defines.h"  // defines build macros
 #endif
 
-#include "thread_wrapper.h"
 #include "critical_section_wrapper.h"
 #include "event_wrapper.h"
+#include "thread_wrapper.h"
+#include "testsupport/fileutils.h"
 
 #ifdef _TEST_NETEQ_STATS_
 #include "../../interface/voe_neteq_stats.h" // Not available in delivery folder
@@ -44,7 +45,7 @@
 
 using namespace webrtc;
 
-namespace voetest{
+namespace voetest {
 
 #ifdef MAC_IPHONE
 // Defined in iPhone specific test file
@@ -128,32 +129,13 @@ char* GetResource(char* resource)
     return filenameStr[currentStr];
 }
 const char* GetResource(const char* resource)
-{ 
+{
     currentStr = !currentStr;
     sprintf(filenameStr[currentStr],
             "/tmp/%s",
             resource);
     return filenameStr[currentStr];
 }
-#endif
-
-#if defined(MAC_IPHONE)
-char micFile[256] = {0}; // Filename copied to buffer in code
-#elif defined(WEBRTC_MAC) && !defined(WEBRTC_MAC_INTEL)
-const char* micFile = "audio_long16bigendian.pcm";
-#elif defined(WEBRTC_ANDROID)
-const char* micFile = "/sdcard/audio_long16.pcm";
-#elif defined(_WIN32)
-// File path is relative to the location of 'voice_engine.gyp'.
-const char* micFile = "../../test/data/voice_engine/audio_long16.pcm";
-#elif defined(WEBRTC_LINUX)
-// Assumes launch from command line: $ ./out/<Debug><Release>/audio_device_test_func
-const char* micFile = "./test/data/voice_engine/audio_long16.pcm";
-#elif (defined(WEBRTC_MAC_INTEL) || defined(WEBRTC_MAC))
-// Assumes that the working directory in Xcode is set to <path-to-src>/xcodebuild/<Debug><Release>.
-const char* micFile = "../../test/data/voice_engine/audio_long16.pcm";
-#else
-const char* micFile = "audio_long16.pcm";
 #endif
 
 #if !defined(MAC_IPHONE)
@@ -596,6 +578,7 @@ bool SubAPIManager::GetExtendedMenuSelection(ExtendedSelection& sel)
 }
 
 VoETestManager::VoETestManager() :
+    initialized_(false),
     ve(0),
     base(0),
     report(0),
@@ -606,31 +589,57 @@ VoETestManager::VoETestManager() :
     file(0),
     hardware(0),
 #ifdef _TEST_NETEQ_STATS_
-    neteqst(0),
+    neteqst(NULL),
 #endif
     netw(0),
     rtp_rtcp(0),
     vsync(0),
     volume(0),
     apm(0),
-    instanceCount(0)
+    instanceCount(0),
+    resourcePath_(),
+    audioFilename_()
+{}
+
+VoETestManager::~VoETestManager()
+{}
+
+bool VoETestManager::Init()
 {
+    if (initialized_)
+        return true;
+
     if (VoiceEngine::SetTraceFile(NULL) != -1)
     {
         // should not be possible to call a Trace method before the VoE is
         // created
         TEST_LOG("\nError at line: %i (VoiceEngine::SetTraceFile()"
             "should fail)!\n", __LINE__);
+        return false;
     }
-#ifdef _TEST_NETEQ_STATS_
-    neteqst = 0;
-#endif
-    ve = VoiceEngine::Create();
-    instanceCount++;
-};
 
-VoETestManager::~VoETestManager()
-{
+#if defined(WEBRTC_ANDROID)
+    resourcePath_ = "/sdcard/";
+#else
+    resourcePath_ = webrtc::test::GetProjectRootPath();
+    if (resourcePath_ == webrtc::test::kCannotFindProjectRootDir)
+    {
+        TEST_LOG("Failed to get project root directory\n");
+        return false;
+    }
+    resourcePath_ += "test/data/voice_engine/";
+#endif
+    audioFilename_ = resourcePath_ + "audio_long16.pcm";
+
+    ve = VoiceEngine::Create();
+    if (!ve)
+    {
+        TEST_LOG("Failed to create VoiceEngine\n");
+        return false;
+    }
+    instanceCount++;
+
+    return true;
 }
 
 void VoETestManager::GetInterfaces()
@@ -1322,7 +1331,7 @@ int VoETestManager::DoStandardTest()
         TEST_LOG("Start playing a file as microphone, so you don't need to"
             " speak all the time\n");
         TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0,
-                                                         micFile,
+                                                         AudioFilename(),
                                                          true,
                                                          true));
         SLEEP(1000);
@@ -1343,7 +1352,8 @@ int VoETestManager::DoStandardTest()
     {
         TEST_LOG("Start playing a file locally => "
             "you should now hear this file being played out \n");
-        TEST_MUSTPASS(file->StartPlayingFileLocally(0, micFile, true));
+        TEST_MUSTPASS(file->StartPlayingFileLocally(0, AudioFilename(),
+                                                    true));
         SLEEP(2000);
     }
     TEST_LOG("Put playing on hold => should *not* hear audio \n");
@@ -1680,10 +1690,8 @@ int VoETestManager::DoStandardTest()
     if (file)
     {
         TEST_LOG("==> Start playing a file as microphone again \n");
-        TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0,
-                                                         micFile,
-                                                         true,
-                                                         true));
+        TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(
+              0, AudioFilename(), true, true));
     }
 #else
     TEST_LOG("Skipping extended iSAC API tests - "
@@ -1923,7 +1931,7 @@ int VoETestManager::DoStandardTest()
     {
         TEST_LOG("Start playing a file as microphone again...\n");
         TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0,
-                                                         micFile,
+                                                         AudioFilename(),
                                                          true,
                                                          true));
     }
@@ -2247,10 +2255,8 @@ int VoETestManager::DoStandardTest()
                 TEST_MUSTPASS(base->StartPlayout(0));
                 TEST_MUSTPASS(base->StartSend(0));
                 TEST_LOG("Start playing a file as microphone again \n");
-                TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0,
-                                                                 micFile,
-                                                                 true,
-                                                                 true));
+                TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(
+                      0, AudioFilename(), true, true));
                 break;
             }
         }
@@ -2413,7 +2419,7 @@ int VoETestManager::DoStandardTest()
     {
         TEST_LOG("==> Start playing a file as microphone again \n");
         TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0,
-                                                         micFile,
+                                                         AudioFilename(),
                                                          true,
                                                          true));
         SLEEP(1000);
@@ -2854,10 +2860,8 @@ int VoETestManager::DoStandardTest()
         if (file)
         {
             TEST_LOG("Start playing a file as microphone again \n");
-            TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0,
-                                                             micFile,
-                                                             true,
-                                                             true));
+            TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(
+                  0, AudioFilename(), true, true));
         }
         else
         {
@@ -2989,7 +2993,8 @@ int VoETestManager::DoStandardTest()
     TEST_MUSTPASS(file->StopPlayingFileAsMicrophone(0));
 
     TEST_LOG("==> Start playing a file as microphone again \n");
-    TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0, micFile, true , true));
+    TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0, AudioFilename(),
+                                                     true, true));
 #else
     TEST_LOG("\n\n+++ File tests NOT ENABLED +++\n");
 #endif  // #ifdef _TEST_FILE_
@@ -3135,7 +3140,7 @@ int VoETestManager::DoStandardTest()
     {
         TEST_LOG("Start playing a file as microphone again \n");
         TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0,
-                                                         micFile,
+                                                         AudioFilename(),
                                                          true,
                                                          true));
     }
@@ -3160,7 +3165,7 @@ int VoETestManager::DoStandardTest()
     {
         TEST_LOG("Start playing a file as microphone again \n");
         TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0,
-                                                         micFile,
+                                                         AudioFilename(),
                                                          true,
                                                          true));
     }
@@ -3211,7 +3216,7 @@ int VoETestManager::DoStandardTest()
         TEST_LOG("Start playing a file as microphone again using"
             " external transport\n");
         TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0,
-                                                         micFile,
+                                                         AudioFilename(),
                                                          true,
                                                          true));
     }
@@ -3233,7 +3238,9 @@ int VoETestManager::DoStandardTest()
     if (file)
     {
         TEST_LOG("Start playing a file as microphone again using transport\n");
-        TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0, micFile, true,
+        TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0,
+                                                         AudioFilename(),
+                                                         true,
                                                          true));
     }
     SLEEP(2000);
@@ -3328,7 +3335,7 @@ int VoETestManager::DoStandardTest()
     {
         TEST_LOG("Start playing a file as microphone again \n");
         TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0,
-                                                         micFile,
+                                                         AudioFilename(),
                                                          true,
                                                          true));
     }
@@ -3522,7 +3529,8 @@ int VoETestManager::DoStandardTest()
     TEST_MUSTPASS(base->StartSend(0));
 
     TEST_LOG("==> Start playing a file as microphone again \n");
-    TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0, micFile, true , true));
+    TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0, AudioFilename(),
+                                                     true, true));
 #else
     TEST_LOG("Skipping external rec and playout tests - \
              WEBRTC_VOE_EXTERNAL_REC_AND_PLAYOUT not defined \n");
@@ -3647,7 +3655,6 @@ int VoETestManager::DoStandardTest()
     TEST_LOG("\n\n+++ NetEQ statistics tests NOT ENABLED +++\n");
 #endif // #ifdef _TEST_NETEQ_STATS_
 
- 
     //////////////////
     // Stop streaming
 
@@ -3672,19 +3679,14 @@ int runAutoTest(TestType testType, ExtendedSelection extendedSel)
     SubAPIManager apiMgr;
     apiMgr.DisplayStatus();
 
-#ifdef MAC_IPHONE
-    // Write mic file path to buffer
-    TEST_LOG("Get mic file path \n");
-    if (0 != GetResource("audio_long16.pcm", micFile, 256))
-    {
-        TEST_LOG("Failed get mic file path! \n");
-    }
-#endif
-
     ////////////////////////////////////
     // Create VoiceEngine and sub API:s
 
     voetest::VoETestManager tm;
+    if (!tm.Init())
+    {
+        return -1;
+    }
     tm.GetInterfaces();
 
     //////////////////////

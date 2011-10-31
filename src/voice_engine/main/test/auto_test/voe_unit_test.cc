@@ -25,12 +25,6 @@ using namespace webrtc;
 
 namespace voetest {
 
-#ifdef MAC_IPHONE
-extern char micFile[256];
-#else
-extern const char* micFile;
-#endif
-
 #define CHECK(expr)                                             \
     if (expr)                                                   \
     {                                                           \
@@ -295,7 +289,7 @@ int VoEUnitTest::MenuSelection()
 //  StartMedia
 // ----------------------------------------------------------------------------
 
-int VoEUnitTest::StartMedia(int channel, 
+int VoEUnitTest::StartMedia(int channel,
                             int rtpPort,
                             bool listen,
                             bool playout,
@@ -332,7 +326,7 @@ int VoEUnitTest::StartMedia(int channel,
         // play mic as file, mix with microphone to ensure that SWB can be
         //tested as well
         const bool mixWithMic(true);
-        CHECK(file->StartPlayingFileAsMicrophone(channel, micFile,
+        CHECK(file->StartPlayingFileAsMicrophone(channel, _mgr.AudioFilename(),
                                                  true, mixWithMic));
     }
     if (localFile)

@@ -11,6 +11,8 @@
 #ifndef WEBRTC_VOICE_ENGINE_VOE_STANDARD_TEST_H
 #define WEBRTC_VOICE_ENGINE_VOE_STANDARD_TEST_H
 
+#include <string>
+
 #include "voe_test_defines.h"
 #include "voe_test_interface.h"
 
@@ -282,9 +284,17 @@ public:
     VoETestManager();
     ~VoETestManager();
 
+    // Must be called after construction.
+    bool Init();
+
     void GetInterfaces();
     int ReleaseInterfaces();
     int DoStandardTest();
+
+    const char* AudioFilename() const
+    {
+        return audioFilename_.c_str();
+    }
 
     VoiceEngine* VoiceEnginePtr() const
     {
@@ -350,6 +360,7 @@ public:
 #endif
 
 private:
+    bool initialized_;
     VoiceEngine* ve;
     VoEBase* base;
     VoECallReport* report;
@@ -368,6 +379,8 @@ private:
     VoEVolumeControl* volume;
     VoEAudioProcessing* apm;
     int instanceCount;
+    std::string resourcePath_;
+    std::string audioFilename_;
 };
 
 } // namespace voetest

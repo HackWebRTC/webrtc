@@ -43,10 +43,8 @@ const char* RemoteIP = "192.168.200.1"; // transmit to this IP address
 
 #ifdef MAC_IPHONE
 #define SLEEP_IF_IPHONE(x) SLEEP(x)
-extern char micFile[256];
 #else
 #define SLEEP_IF_IPHONE(x)
-extern const char* micFile;
 #endif
 
 #ifdef WEBRTC_ANDROID
@@ -355,7 +353,8 @@ void VoEExtendedTest::Play(int channel,
     fflush(NULL);
     if (addFileAsMicrophone)
     {
-        file->StartPlayingFileAsMicrophone(channel, micFile, true, true);
+        file->StartPlayingFileAsMicrophone(channel, _mgr.AudioFilename(), true,
+                                           true);
         TEST_LOG("[file as mic]");
         fflush(NULL);
     }
@@ -1677,7 +1676,8 @@ int VoEExtendedTest::TestCallReport()
     TEST_MUSTPASS(base->StartReceive(0));
     TEST_MUSTPASS(base->StartSend(0));
     TEST_MUSTPASS(base->StartPlayout(0));
-    TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0, micFile, true ,true));
+    TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0, _mgr.AudioFilename(),
+                                                     true, true));
 
     ///////////////////////////
     // Actual test starts here
@@ -2636,8 +2636,10 @@ int VoEExtendedTest::TestCodec()
     TEST_MUSTPASS(base->StartSend(0));
     if (file)
     {
-        TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0, micFile,
-                                                         true, true));
+        TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0,
+                                                         _mgr.AudioFilename(),
+                                                         true,
+                                                         true));
     }
 
     // Scan all supported and valid codecs and remove from receiving db, then
@@ -3658,7 +3660,8 @@ int VoEExtendedTest::TestEncryption()
     TEST_MUSTPASS(base->StartReceive(0));
     TEST_MUSTPASS(base->StartSend(0));
     TEST_MUSTPASS(base->StartPlayout(0));
-    TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0, micFile, true ,true));
+    TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0, _mgr.AudioFilename(),
+                                                     true, true));
 
     ///////////////////////////
     // Actual test starts here
@@ -3913,7 +3916,8 @@ int VoEExtendedTest::TestEncryption()
     TEST_MUSTPASS(base->StartReceive(0));
     TEST_MUSTPASS(base->StartPlayout(0));
     TEST_MUSTPASS(base->StartSend(0));
-    TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0, micFile, true ,true));
+    TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0, _mgr.AudioFilename(),
+                                                     true, true));
     MARK(); SLEEP(2000);
     TEST_MUSTPASS(encrypt->DisableSRTPSend(0));
     TEST_MUSTPASS(encrypt->DisableSRTPReceive(0));
@@ -5888,7 +5892,8 @@ int VoEExtendedTest::TestNetwork()
     TEST_MUSTPASS(base->SetSendDestination(0, 8000, "::1"));
     TEST_MUSTPASS(base->StartPlayout(0));
     TEST_MUSTPASS(base->StartSend(0));
-    file->StartPlayingFileAsMicrophone(0, micFile, true ,true);
+    file->StartPlayingFileAsMicrophone(0, _mgr.AudioFilename(), true,
+                                       true);
     SLEEP(500); // ensure that we receieve some packets
 
     // SetSourceFilter and GetSourceFilter
@@ -6969,7 +6974,8 @@ int VoEExtendedTest::TestRTP_RTCP()
     MARK();
     ANL();
 
-    TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0, micFile, true ,true));
+    TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0, _mgr.AudioFilename(),
+                                                     true, true));
 
     // ------------------------------------------------------------------------
     // >> InsertExtraRTPPacket
@@ -7005,7 +7011,8 @@ int VoEExtendedTest::TestRTP_RTCP()
     MARK(); // not sending
     TEST_ERROR(VE_NOT_SENDING);
     TEST_MUSTPASS(base->StartSend(0));
-    TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0, micFile, true ,true));
+    TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0, _mgr.AudioFilename(),
+                                                     true, true));
 
     SLEEP(1000);
     for (int p = 0; p < 128; p++)
@@ -7213,7 +7220,8 @@ int VoEExtendedTest::TestRTP_RTCP()
     TEST_MUSTPASS(base->StartReceive(0));
     TEST_MUSTPASS(base->StartSend(0));
     TEST_MUSTPASS(base->StartPlayout(0));
-    TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0, micFile, true ,true));
+    TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0, _mgr.AudioFilename(),
+                                                     true, true));
 
     SLEEP(8000);
 
@@ -7467,7 +7475,8 @@ TEST(RTCPStatistics #2);
     TEST_MUSTPASS(base->StartReceive(0));
     TEST_MUSTPASS(base->StartSend(0));
     TEST_LOG("Start playing a file as microphone again \n");
-    TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0, micFile, true ,true));
+    TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0, _mgr.AudioFilename(),
+                                                     true, true));
     TEST_MUSTPASS(rtp_rtcp->SetFECStatus(0, true, 126));
     MARK();
     TEST_LOG("Should sound OK with FEC enabled\n");
@@ -7636,7 +7645,8 @@ int VoEExtendedTest::TestVolumeControl()
     TEST_MUSTPASS(base->StartPlayout(0));
     TEST_MUSTPASS(base->StartSend(0));
 #ifdef _TEST_FILE_
-    TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0, micFile, true ,true));
+    TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0, _mgr.AudioFilename(),
+                                                     true, true));
 #endif
 
     ////////////////////////////

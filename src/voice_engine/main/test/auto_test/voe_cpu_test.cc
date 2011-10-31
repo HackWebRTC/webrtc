@@ -22,12 +22,6 @@ using namespace webrtc;
 
 namespace voetest {
 
-#ifdef MAC_IPHONE
-extern char micFile[256];
-#else
-extern const char* micFile;
-#endif
-
 #define CHECK(expr)                                             \
     if (expr)                                                   \
     {                                                           \
@@ -81,7 +75,8 @@ int VoECpuTest::DoTest()
     CHECK(base->StartReceive(channel));
     CHECK(base->StartPlayout(channel));
     CHECK(base->StartSend(channel));
-    CHECK(file->StartPlayingFileAsMicrophone(channel, micFile, true, true));
+    CHECK(file->StartPlayingFileAsMicrophone(channel, _mgr.AudioFilename(),
+                                             true, true));
 
     CHECK(codec->SetVADStatus(channel, true));
     CHECK(apm->SetAgcStatus(true, kAgcAdaptiveAnalog));
