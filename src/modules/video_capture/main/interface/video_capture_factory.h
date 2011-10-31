@@ -36,6 +36,10 @@ class VideoCaptureFactory {
   static VideoCaptureModule::DeviceInfo* CreateDeviceInfo(
       const WebRtc_Word32 id);
 
+#ifdef WEBRTC_ANDROID
+  static WebRtc_Word32 SetAndroidObjects(void* javaVM, void* javaContext);
+#endif
+
  private:
   ~VideoCaptureFactory();
 };

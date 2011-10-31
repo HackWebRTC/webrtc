@@ -50,10 +50,6 @@ public:
 
     static DeviceInfo* CreateDeviceInfo(const WebRtc_Word32 id);
 
-#ifdef WEBRTC_ANDROID
-    static WebRtc_Word32 SetAndroidObjects(void* javaVM, void* javaContext);
-#endif
-
     static WebRtc_Word32 GetVersion(WebRtc_Word8* version,
                                     WebRtc_UWord32& remainingBufferInBytes,
                                     WebRtc_UWord32& position);

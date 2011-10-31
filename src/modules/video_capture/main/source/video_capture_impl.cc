@@ -35,14 +35,6 @@ VideoCaptureModule* VideoCaptureImpl::Create(
     return implementation;
 }
 
-#ifdef WEBRTC_ANDROID
-WebRtc_Word32 VideoCaptureImpl::SetAndroidObjects(void* javaVM,void* javaContext)
-{
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, 0, "SetAndroidObjects");
-    return videocapturemodule::VideoCaptureAndroid::SetAndroidObjects(javaVM,javaContext);
-}
-#endif
-
 WebRtc_Word32 VideoCaptureImpl::Version(WebRtc_Word8* version,
                                               WebRtc_UWord32& remainingBufferInBytes,
                                               WebRtc_UWord32& position) const
