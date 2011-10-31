@@ -463,13 +463,3 @@ TEST(ListWrapperTest,InterLeaveTestII) {
 
     ASSERT_TRUE(CompareLists(interleaved_list,interleave_list));
 }
-
-int main(int argc, char **argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-    // Added return_value so that it's convenient to put a breakpoint before
-    // exiting please note that the return value from RUN_ALL_TESTS() must
-    // be returned by the main function.
-    const int return_value = RUN_ALL_TESTS();
-    return return_value;
-}

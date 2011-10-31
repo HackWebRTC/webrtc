@@ -19,7 +19,7 @@
         # TODO(andrew): enable these when all tests build.
         #'src/common_video/common_video.gyp:*',
         #'src/modules/modules.gyp:*',
-        #'src/system_wrappers/source/system_wrappers.gyp:*',
+        'src/system_wrappers/source/system_wrappers.gyp:*',
         'src/video_engine/video_engine.gyp:*',
         'src/voice_engine/voice_engine.gyp:*',
       ],

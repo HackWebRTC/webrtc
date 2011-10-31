@@ -144,17 +144,32 @@
       ] # conditions
     },
   ], # targets
-  'conditions': [   
+  'conditions': [
     ['build_with_chromium==0', {
       'targets': [
         {
-          'target_name': 'system_wrappersTest',
+          'target_name': 'system_wrappers_unittests',
           'type': 'executable',
           'dependencies': [
-            'system_wrappers'
+            'system_wrappers',
+            '<(webrtc_root)/../testing/gtest.gyp:gtest',
+            '<(webrtc_root)/../test/test.gyp:test_support',
           ],
           'sources': [
-            '../test/Test.cpp',
+            'cpu_wrapper_unittest.cc',
+            'list_unittest.cc',
+            'map_unittest.cc',
+            'data_log_helpers_unittest.cc',
+            'data_log_c_helpers_unittest.c',
+            'data_log_c_helpers_unittest.h',
+            '<(webrtc_root)/../test/run_all_unittests.cc',
+          ],
+          'conditions': [
+            ['enable_data_logging==1', {
+              'sources': [ 'data_log_unittest.cc', ],
+            }, {
+              'sources': [ 'data_log_unittest_disabled.cc', ],
+            }],
           ],
         },
       ], # targets
