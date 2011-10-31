@@ -771,6 +771,7 @@
             }],
           ], #conditions             
           'sources': [
+            '<(libjingle_mods)/source/talk/app/webrtc_dev/test/filevideocapturemodule.cc',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/mediastream_unittest.cc',
             '<(libjingle_mods)/source/talk/app/webrtc_dev/mediastreamhandler_unittest.cc',                       
             '<(libjingle_mods)/source/talk/app/webrtc_dev/peerconnection_unittest.cc',

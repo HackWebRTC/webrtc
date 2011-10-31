@@ -33,6 +33,7 @@
 #include "modules/video_capture/main/interface/video_capture_factory.h"
 #include "talk/app/webrtc_dev/mediastream.h"
 #include "talk/app/webrtc_dev/peerconnection.h"
+#include "talk/app/webrtc_dev/test/filevideocapturemodule.h"
 #include "talk/base/thread.h"
 #include "talk/session/phone/videoframe.h"
 #include "talk/session/phone/videorenderer.h"
@@ -47,11 +48,10 @@ void GetAllVideoTracks(webrtc::MediaStreamInterface* media_stream,
   }
 }
 
-// TODO(henrike): replace with a capture device that reads from a file/buffer.
-talk_base::scoped_refptr<webrtc::VideoCaptureModule> OpenVideoCaptureDevice() {
+webrtc::VideoCaptureModule* OpenVideoCaptureDevice() {
   webrtc::VideoCaptureModule::DeviceInfo* device_info(
       webrtc::VideoCaptureFactory::CreateDeviceInfo(0));
-  talk_base::scoped_refptr<webrtc::VideoCaptureModule> video_device;
+  webrtc::VideoCaptureModule* video_device;
 
   const size_t kMaxDeviceNameLength = 128;
   const size_t kMaxUniqueIdLength = 256;
@@ -66,7 +66,7 @@ talk_base::scoped_refptr<webrtc::VideoCaptureModule> OpenVideoCaptureDevice() {
     // Try to open this device.
     video_device =
         webrtc::VideoCaptureFactory::Create(0, unique_id);
-    if (video_device.get())
+    if (video_device != NULL)
       break;
   }
   delete device_info;
@@ -183,8 +183,7 @@ class PeerConnectionP2PTestClient
 
     talk_base::scoped_refptr<webrtc::LocalVideoTrackInterface> video_track(
         peer_connection_factory_->CreateLocalVideoTrack(
-            "video_track",
-            OpenVideoCaptureDevice()));
+            "video_track", OpenVideoFileCaptureDevice()));
 
     talk_base::scoped_refptr<webrtc::LocalMediaStreamInterface> stream =
         peer_connection_factory_->CreateLocalMediaStream("stream_label");
@@ -211,7 +210,7 @@ class PeerConnectionP2PTestClient
   virtual void OnMessage(const std::string&) {}
   virtual void OnSignalingMessage(const std::string& msg)  {
     if (signaling_message_receiver_ == NULL) {
-      ADD_FAILURE();
+      // Remote party may be deleted.
       return;
     }
     signaling_message_receiver_->ReceiveMessage(msg);
@@ -242,6 +241,8 @@ class PeerConnectionP2PTestClient
   }
 
  private:
+  static const int kFileNameSize = 256;
+
   explicit PeerConnectionP2PTestClient(int id)
       : id_(id),
         peer_connection_(),
@@ -264,12 +265,19 @@ class PeerConnectionP2PTestClient
     return peer_connection_.get() != NULL;
   }
 
-  void GenerateRecordingFileName(int track, char file_name[256]) {
+  void GenerateRecordingFileName(int track, char file_name[kFileNameSize]) {
     if (file_name == NULL) {
       return;
     }
-    snprintf(file_name, sizeof(file_name),
+    snprintf(file_name, kFileNameSize,
              "p2p_test_client_%d_videotrack_%d.yuv", id_, track);
+  }
+
+  webrtc::VideoCaptureModule* OpenVideoFileCaptureDevice() {
+    const char filename[] = "foreman_cif.yuv";
+    webrtc::VideoCaptureModule* video_device =
+        FileVideoCaptureModule::CreateFileVideoCaptureModule(filename);
+    return video_device;
   }
 
   int id_;
@@ -292,6 +300,8 @@ class P2PTestConductor {
     return conductor;
   }
   ~P2PTestConductor() {
+    clients[0]->set_signaling_message_receiver(NULL);
+    clients[1]->set_signaling_message_receiver(NULL);
     for (int i = 0; i < kClients; ++i) {
       if (clients[i] != NULL) {
         // TODO(hellner): currently deleting the clients will trigger an assert
