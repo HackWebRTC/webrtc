@@ -31,11 +31,17 @@ int WebRtcDataLogCHelper_TestReturnLog() {
 
 int WebRtcDataLogCHelper_TestCombine() {
   const int kOutLen = strlen(kTableName) + 4;  /* Room for "_17" + '\0' */
-  char combined_name[kOutLen];
+  char* combined_name = malloc(kOutLen * sizeof(char));
   char* out_ptr = WebRtcDataLog_Combine(combined_name, kOutLen, kTableName, 17);
-  if (!out_ptr) return -1;
-  if (strcmp(combined_name, "c_wrapper_table_17") != 0) return -2;
-  return 0;
+  int return_code = 0;
+  if (!out_ptr) {
+    return_code = -1;
+  }
+  if (strcmp(combined_name, "c_wrapper_table_17") != 0) {
+    return_code = -2;
+  }
+  free(combined_name);
+  return return_code;
 }
 
 int WebRtcDataLogCHelper_TestAddTable() {
