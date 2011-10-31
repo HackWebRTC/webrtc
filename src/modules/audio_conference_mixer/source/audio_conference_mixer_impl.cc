@@ -474,6 +474,12 @@ WebRtc_Word32 AudioConferenceMixerImpl::SetMixabilityStatus(
     WEBRTC_TRACE(kTraceModuleCall, kTraceAudioMixerServer, _id,
                  "SetMixabilityStatus(participant,mixable:%s)",
                  mixable ? "true" : "false");
+    if (!mixable)
+    {
+        // Anonymous participants are in a separate list. Make sure that the
+        // participant is in the _participantList if it is being mixed.
+        SetAnonymousMixabilityStatus(participant, false);
+    }
     WebRtc_UWord32 amountOfMixableParticipants;
     {
         CriticalSectionScoped cs(*_cbCrit);
