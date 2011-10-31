@@ -72,9 +72,9 @@ class ViEAutotestDecoderObserver: public webrtc::ViEDecoderObserver {
     std::cout << "Received FR: " << framerate
               << " BR: " << bitrate << std::endl;
   }
-  void IncomingCodecChanged(int videoChannel,
+  void IncomingCodecChanged(const int videoChannel,
                             const webrtc::VideoCodec& codec) {}
-  void RequestNewKeyFrame(int videoChannel) {
+  void RequestNewKeyFrame(const int videoChannel) {
     std::cout << "Decoder requesting a new key frame." << std::endl;
   }
 };
