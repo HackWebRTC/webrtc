@@ -25,7 +25,11 @@
 namespace webrtc {
 namespace test {
 
-const std::string GetProjectRootPath() {
+// The file we're looking for to identify the project root dir.
+static const char* kProjectRootFileName = "DEPS";
+const char* kCannotFindProjectRootDir = "ERROR_CANNOT_FIND_PROJECT_ROOT_DIR";
+
+std::string GetProjectRootPath() {
   char path_buffer[FILENAME_MAX];
   if (!GET_CURRENT_DIR(path_buffer, sizeof(path_buffer))) {
     fprintf(stderr, "Cannot get current directory!\n");

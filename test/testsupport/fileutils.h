@@ -66,13 +66,9 @@
 namespace webrtc {
 namespace test {
 
-// The file we're looking for to identify the project root dir.
-const std::string kProjectRootFileName = "DEPS";
-
 // This is the "directory" returned if the GetProjectPath() function fails
 // to find the project root.
-const std::string kCannotFindProjectRootDir =
-    "ERROR_CANNOT_FIND_PROJECT_ROOT_DIR";
+extern const char* kCannotFindProjectRootDir;
 
 // Finds the root dir of the project, to be able to set correct paths to
 // resource files used by tests.
@@ -90,9 +86,9 @@ const std::string kCannotFindProjectRootDir =
 // WITH a trailing path delimiter.
 // If the project root is not found, the string specified by
 // kCannotFindProjectRootDir is returned.
-const std::string GetProjectRootPath();
+std::string GetProjectRootPath();
 
-}  // namespace webrtc
 }  // namespace test
+}  // namespace webrtc
 
 #endif  // TEST_TESTSUPPORT_FILEUTILS_H_
