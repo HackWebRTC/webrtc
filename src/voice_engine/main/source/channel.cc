@@ -824,15 +824,6 @@ WebRtc_Word32 Channel::GetAudioFrame(const WebRtc_Word32 id,
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::GetAudioFrame(id=%d)", id);
 
-    // TODO(zakkhoyt): temporary logs for tracking down an issue. Remove when
-    // Checking to ensure receive VAD is enabled
-    if (!_audioCodingModule.ReceiveVADStatus())
-    {  
-        WEBRTC_TRACE(kTraceWarning, kTraceVoice,
-                     VoEId(_instanceId,_channelId),
-                     "VAD is currently disabled");
-    }
-
     // Get 10ms raw PCM data from the ACM (mixer limits output frequency)
     if (_audioCodingModule.PlayoutData10Ms(
         audioFrame._frequencyInHz, (AudioFrame&)audioFrame) == -1)
@@ -841,10 +832,6 @@ WebRtc_Word32 Channel::GetAudioFrame(const WebRtc_Word32 id,
                      VoEId(_instanceId,_channelId),
                      "Channel::GetAudioFrame() PlayoutData10Ms() failed!");
     }
-    
-    // TODO(zakkhoyt): temporary logs for tracking down an issue. Remove when
-    // possible.
-    assert(audioFrame._vadActivity != AudioFrame::kVadUnknown);
 
     if (_RxVadDetection)
     {
@@ -1419,18 +1406,6 @@ Channel::Init()
         _engineStatisticsPtr->SetLastError(
             VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
             "Channel::Init() unable to initialize the ACM - 1");
-        return -1;
-    }
-
-    // TODO(zakkhoyt): temporary logs for tracking down an issue. Remove when
-    // possible.
-    // enable RX VAD by default (improves output mixing)
-    if (_audioCodingModule.SetReceiveVADStatus(true) == -1)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
-            "Channel::Init() unable to initialize the ACM - 1. "
-            "ACM failed to SetReceiveVADStatus");
         return -1;
     }
 
