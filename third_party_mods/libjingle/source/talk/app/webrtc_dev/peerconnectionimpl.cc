@@ -127,25 +127,20 @@ struct StreamCollectionParams : public talk_base::MessageData {
 namespace webrtc {
 
 PeerConnectionImpl::PeerConnectionImpl(
-    cricket::ChannelManager* channel_manager,
-    talk_base::Thread* signaling_thread,
-    talk_base::Thread* worker_thread,
-    PcNetworkManager* network_manager,
-    PcPacketSocketFactory* socket_factory)
-    : observer_(NULL),
+    PeerConnectionFactoryImpl* factory)
+    : factory_(factory),
+      observer_(NULL),
       local_media_streams_(StreamCollectionImpl::Create()),
       remote_media_streams_(StreamCollectionImpl::Create()),
-      signaling_thread_(signaling_thread),
-      channel_manager_(channel_manager),
-      network_manager_(network_manager),
-      socket_factory_(socket_factory),
       port_allocator_(new cricket::HttpPortAllocator(
-          network_manager->network_manager(),
-          socket_factory->socket_factory(),
+          factory->network_manager(),
+          factory->socket_factory(),
           std::string(kUserAgent))),
-      session_(new WebRtcSession(channel_manager, signaling_thread,
-          worker_thread, port_allocator_.get())),
-      signaling_(new PeerConnectionSignaling(signaling_thread,
+      session_(new WebRtcSession(factory->channel_manager(),
+                                 factory->signaling_thread(),
+                                 factory->worker_thread(),
+                                 port_allocator_.get())),
+      signaling_(new PeerConnectionSignaling(factory->signaling_thread(),
                                              session_.get())),
       stream_handler_(new MediaStreamHandlers(session_.get())) {
   signaling_->SignalNewPeerConnectionMessage.connect(
@@ -159,8 +154,8 @@ PeerConnectionImpl::PeerConnectionImpl(
 }
 
 PeerConnectionImpl::~PeerConnectionImpl() {
-  signaling_thread_->Clear(this);
-  signaling_thread_->Send(this, MSG_TERMINATE);
+  signaling_thread()->Clear(this);
+  signaling_thread()->Send(this, MSG_TERMINATE);
 }
 
 // Clean up what needs to be cleaned up on the signaling thread.
@@ -212,14 +207,14 @@ PeerConnectionImpl::local_streams() {
 talk_base::scoped_refptr<StreamCollectionInterface>
 PeerConnectionImpl::remote_streams() {
   StreamCollectionParams msg(NULL);
-  signaling_thread_->Send(this, MSG_RETURNREMOTEMEDIASTREAMS, &msg);
+  signaling_thread()->Send(this, MSG_RETURNREMOTEMEDIASTREAMS, &msg);
   return msg.streams;
 }
 
 bool PeerConnectionImpl::ProcessSignalingMessage(const std::string& msg) {
   SignalingParams* parameter(new SignalingParams(
       msg, StreamCollectionImpl::Create(local_media_streams_)));
-  signaling_thread_->Post(this, MSG_PROCESSSIGNALINGMESSAGE, parameter);
+  signaling_thread()->Post(this, MSG_PROCESSSIGNALINGMESSAGE, parameter);
 }
 
 void PeerConnectionImpl::AddStream(LocalMediaStreamInterface* local_stream) {
@@ -234,7 +229,7 @@ void PeerConnectionImpl::RemoveStream(
 void PeerConnectionImpl::CommitStreamChanges() {
   StreamCollectionParams* msg(new StreamCollectionParams(
           StreamCollectionImpl::Create(local_media_streams_)));
-  signaling_thread_->Post(this, MSG_COMMITSTREAMCHANGES, msg);
+  signaling_thread()->Post(this, MSG_COMMITSTREAMCHANGES, msg);
 }
 
 void PeerConnectionImpl::OnMessage(talk_base::Message* msg) {

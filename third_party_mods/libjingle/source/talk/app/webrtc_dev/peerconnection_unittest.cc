@@ -173,10 +173,6 @@ class PeerConnectionP2PTestClient
   }
 
   ~PeerConnectionP2PTestClient() {
-    // Ensure that webrtc::PeerConnection is deleted before
-    // webrtc::PeerConnectionManager or crash will occur
-    webrtc::PeerConnectionInterface* temp = peer_connection_.release();
-    temp->Release();
   }
 
   void StartSession() {
@@ -256,7 +252,7 @@ class PeerConnectionP2PTestClient
   bool Init() {
     EXPECT_TRUE(peer_connection_.get() == NULL);
     EXPECT_TRUE(peer_connection_factory_.get() == NULL);
-    peer_connection_factory_ = webrtc::PeerConnectionManager::Create();
+    peer_connection_factory_ = webrtc::CreatePeerConnectionFactory();
     if (peer_connection_factory_.get() == NULL) {
       ADD_FAILURE();
       return false;
@@ -278,7 +274,7 @@ class PeerConnectionP2PTestClient
 
   int id_;
   talk_base::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
-  talk_base::scoped_refptr<webrtc::PeerConnectionManager>
+  talk_base::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
       peer_connection_factory_;
 
   // Remote peer communication.

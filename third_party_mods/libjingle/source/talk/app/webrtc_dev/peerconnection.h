@@ -32,8 +32,8 @@
 // peerconnection, mediastream and media tracks objects.
 //
 // The Following steps are needed to setup a typical call.
-// 1. Create a PeerConnectionManager. Check constructors for more information
-// about input parameters.
+// 1. Create a PeerConnectionFactoryInterface. Check constructors for more
+// information about input parameters.
 // 2. Create a PeerConnection object. Provide a configuration string which
 // points either to stun or turn server to generate ICE candidates and provide
 // an object that implements the PeerConnectionObserver interface.
@@ -53,7 +53,7 @@
 // The Receiver of a call can decide to accept or reject the call.
 // This decision will be taken by the application not peerconnection.
 // If application decides to accept the call
-// 1. Create PeerConnectionManager if it doesn't exist.
+// 1. Create PeerConnectionFactoryInterface if it doesn't exist.
 // 2. Create new PeerConnection
 // 3. Provide the remote offer to the new PeerConnection object by calling
 // ProcessSignalingMessage.
@@ -156,57 +156,16 @@ class PeerConnectionInterface : public talk_base::RefCountInterface {
   ~PeerConnectionInterface() {}
 };
 
-// Reference counted wrapper for talk_base::NetworkManager.
-class PcNetworkManager : public talk_base::RefCountInterface {
- public:
-  static talk_base::scoped_refptr<PcNetworkManager> Create(
-      talk_base::NetworkManager* network_manager);
-  virtual talk_base::NetworkManager* network_manager() const;
-
- protected:
-  explicit PcNetworkManager(talk_base::NetworkManager* network_manager);
-  virtual ~PcNetworkManager();
-
-  talk_base::NetworkManager* network_manager_;
-};
-
-// Reference counted wrapper for talk_base::PacketSocketFactory.
-class PcPacketSocketFactory : public talk_base::RefCountInterface {
- public:
-  static talk_base::scoped_refptr<PcPacketSocketFactory> Create(
-      talk_base::PacketSocketFactory* socket_factory);
-  virtual talk_base::PacketSocketFactory* socket_factory() const;
-
- protected:
-  explicit PcPacketSocketFactory(
-      talk_base::PacketSocketFactory* socket_factory);
-  virtual ~PcPacketSocketFactory();
-
-  talk_base::PacketSocketFactory* socket_factory_;
-};
-
-// PeerConnectionManager is the factory interface use for creating
+// PeerConnectionFactoryInterface is the factory interface use for creating
 // PeerConnection, MediaStream and media tracks.
-// PeerConnectionManager will create required libjingle threads, socket and
-// network manager factory classes for networking.
+// PeerConnectionFactoryInterface will create required libjingle threads,
+// socket and network manager factory classes for networking.
 // If application decides to provide its own implementation of these classes
 // it should use alternate create method which accepts these parameters
 // as input.
-class PeerConnectionManager : public talk_base::RefCountInterface {
+
+class PeerConnectionFactoryInterface : public talk_base::RefCountInterface {
  public:
-  // Create a new instance of PeerConnectionManager.
-  static talk_base::scoped_refptr<PeerConnectionManager> Create();
-
-  // Create a new instance of PeerConnectionManager.
-  // Ownership of the arguments are not transfered to this object and must
-  // remain in scope for the lifetime of the PeerConnectionManager.
-  static talk_base::scoped_refptr<PeerConnectionManager> Create(
-      talk_base::Thread* worker_thread,
-      talk_base::Thread* signaling_thread,
-      PcNetworkManager* network_manager,
-      PcPacketSocketFactory* packet_socket_factory,
-      AudioDeviceModule* default_adm);
-
   virtual talk_base::scoped_refptr<PeerConnectionInterface>
       CreatePeerConnection(const std::string& config,
                            PeerConnectionObserver* observer) = 0;
@@ -223,9 +182,26 @@ class PeerConnectionManager : public talk_base::RefCountInterface {
                             AudioDeviceModule* audio_device) = 0;
 
  protected:
-  // Dtor protected as objects shouldn't be deleted via this interface.
-  ~PeerConnectionManager() {}
+  // Dtor and ctor protected as objects shouldn't be created or deleted via
+  // this interface.
+  PeerConnectionFactoryInterface() {}
+  ~PeerConnectionFactoryInterface() {}  // NOLINT
 };
+
+// Create a new instance of PeerConnectionFactoryInterface.
+talk_base::scoped_refptr<PeerConnectionFactoryInterface>
+CreatePeerConnectionFactory();
+
+// Create a new instance of PeerConnectionFactoryInterface.
+// Ownership of the arguments are not transfered to this object and must
+// remain in scope for the lifetime of the PeerConnectionFactoryInterface.
+talk_base::scoped_refptr<PeerConnectionFactoryInterface>
+CreatePeerConnectionFactory(
+    talk_base::Thread* worker_thread,
+    talk_base::Thread* signaling_thread,
+    talk_base::NetworkManager* network_manager,
+    talk_base::PacketSocketFactory* packet_socket_factory,
+    AudioDeviceModule* default_adm);
 
 }  // namespace webrtc
 

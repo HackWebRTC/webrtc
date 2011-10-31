@@ -24,20 +24,20 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef TALK_APP_WEBRTC_PEERCONNECTIONMANAGERIMPL_H_
-#define TALK_APP_WEBRTC_PEERCONNECTIONMANAGERIMPL_H_
+#ifndef TALK_APP_WEBRTC_PEERCONNECTIONFACTORYIMPL_H_
+#define TALK_APP_WEBRTC_PEERCONNECTIONFACTORYIMPL_H_
 
 #include <string>
 
+#include "talk/base/scoped_ptr.h"
 #include "talk/app/webrtc_dev/peerconnection.h"
 #include "talk/app/webrtc_dev/mediastream.h"
-#include "talk/base/scoped_ptr.h"
 #include "talk/base/thread.h"
 #include "talk/session/phone/channelmanager.h"
 
 namespace webrtc {
 
-class PeerConnectionManagerImpl : public PeerConnectionManager,
+class PeerConnectionFactoryImpl : public PeerConnectionFactoryInterface,
                                   public talk_base::MessageHandler {
  public:
   talk_base::scoped_refptr<PeerConnectionInterface> CreatePeerConnection(
@@ -56,14 +56,20 @@ class PeerConnectionManagerImpl : public PeerConnectionManager,
       CreateLocalAudioTrack(const std::string& label,
                             AudioDeviceModule* audio_device);
 
+  virtual cricket::ChannelManager* channel_manager();
+  virtual talk_base::Thread* signaling_thread();
+  virtual talk_base::Thread* worker_thread();
+  virtual talk_base::NetworkManager* network_manager();
+  virtual talk_base::PacketSocketFactory* socket_factory();
+
  protected:
-  PeerConnectionManagerImpl();
-  PeerConnectionManagerImpl(talk_base::Thread* worker_thread,
+  PeerConnectionFactoryImpl();
+  PeerConnectionFactoryImpl(talk_base::Thread* worker_thread,
                             talk_base::Thread* signaling_thread,
-                            PcNetworkManager* network_manager,
-                            PcPacketSocketFactory* socket_factory,
+                            talk_base::NetworkManager* network_manager,
+                            talk_base::PacketSocketFactory* socket_factory,
                             AudioDeviceModule* default_adm);
-  virtual ~PeerConnectionManagerImpl();
+  virtual ~PeerConnectionFactoryImpl();
 
 
  private:
@@ -78,8 +84,8 @@ class PeerConnectionManagerImpl : public PeerConnectionManager,
   talk_base::Thread* signaling_thread_ptr_;
   talk_base::scoped_ptr<talk_base::Thread> worker_thread_;
   talk_base::Thread* worker_thread_ptr_;
-  talk_base::scoped_refptr<PcNetworkManager> network_manager_;
-  talk_base::scoped_refptr<PcPacketSocketFactory> socket_factory_;
+  talk_base::scoped_ptr<talk_base::NetworkManager> network_manager_;
+  talk_base::scoped_ptr<talk_base::PacketSocketFactory> socket_factory_;
   // External Audio device used for audio playback.
   talk_base::scoped_refptr<AudioDeviceModule> default_adm_;
   talk_base::scoped_ptr<cricket::ChannelManager> channel_manager_;
@@ -87,4 +93,4 @@ class PeerConnectionManagerImpl : public PeerConnectionManager,
 
 }  // namespace webrtc
 
-#endif  // TALK_APP_WEBRTC_PEERCONNECTIONMANAGER_IMPL_H_
+#endif  // TALK_APP_WEBRTC_PEERCONNECTIONFACTORYIMPL_H_

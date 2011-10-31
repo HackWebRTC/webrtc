@@ -32,6 +32,7 @@
 #include <string>
 
 #include "talk/app/webrtc_dev/peerconnection.h"
+#include "talk/app/webrtc_dev/peerconnectionfactoryimpl.h"
 #include "talk/app/webrtc_dev/peerconnectionsignaling.h"
 #include "talk/app/webrtc_dev/webrtcsession.h"
 #include "talk/base/scoped_ptr.h"
@@ -53,11 +54,7 @@ class PeerConnectionImpl : public PeerConnectionInterface,
                            public talk_base::MessageHandler,
                            public sigslot::has_slots<> {
  public:
-  PeerConnectionImpl(cricket::ChannelManager* channel_manager,
-                     talk_base::Thread* signaling_thread,
-                     talk_base::Thread* worker_thread,
-                     PcNetworkManager* network_manager,
-                     PcPacketSocketFactory* socket_factory);
+  explicit PeerConnectionImpl(PeerConnectionFactoryImpl* factory);
 
   bool Initialize(const std::string& configuration,
                   PeerConnectionObserver* observer);
@@ -86,14 +83,21 @@ class PeerConnectionImpl : public PeerConnectionInterface,
 
   void Terminate_s();
 
+  talk_base::Thread* signaling_thread() {
+    return factory_->signaling_thread();
+  }
+
+  // Storing the factory as a scoped reference pointer ensures that the memory
+  // in the PeerConnectionFactoryImpl remains available as long as the
+  // PeerConnection is running. It is passed to PeerConnection as a raw pointer.
+  // However, since the reference counting is done in the
+  // PeerConnectionFactoryInteface all instances created using the raw pointer
+  // will refer to the same reference count.
+  talk_base::scoped_refptr<PeerConnectionFactoryImpl> factory_;
   PeerConnectionObserver* observer_;
   talk_base::scoped_refptr<StreamCollectionImpl> local_media_streams_;
   talk_base::scoped_refptr<StreamCollectionImpl> remote_media_streams_;
 
-  talk_base::Thread* signaling_thread_;  // Weak ref from PeerConnectionManager.
-  cricket::ChannelManager* channel_manager_;
-  talk_base::scoped_refptr<PcNetworkManager> network_manager_;
-  talk_base::scoped_refptr<PcPacketSocketFactory> socket_factory_;
   talk_base::scoped_ptr<cricket::HttpPortAllocator> port_allocator_;
   talk_base::scoped_ptr<WebRtcSession> session_;
   talk_base::scoped_ptr<PeerConnectionSignaling> signaling_;

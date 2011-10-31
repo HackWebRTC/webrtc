@@ -104,7 +104,7 @@ class Conductor
  protected:
   int peer_id_;
   talk_base::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
-  talk_base::scoped_refptr<webrtc::PeerConnectionManager>
+  talk_base::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
       peer_connection_factory_;
   PeerConnectionClient* client_;
   MainWindow* main_wnd_;

@@ -13,6 +13,7 @@
 #include <utility>
 
 #include "modules/video_capture/main/interface/video_capture_factory.h"
+#include "talk/app/webrtc_dev/peerconnection.h"
 #include "talk/examples/peerconnection_client/defaults.h"
 #include "talk/base/common.h"
 #include "talk/base/logging.h"
@@ -44,7 +45,7 @@ bool Conductor::InitializePeerConnection() {
   ASSERT(peer_connection_factory_.get() == NULL);
   ASSERT(peer_connection_.get() == NULL);
 
-  peer_connection_factory_  = webrtc::PeerConnectionManager::Create();
+  peer_connection_factory_  = webrtc::CreatePeerConnectionFactory();
 
   if (!peer_connection_factory_.get()) {
     main_wnd_->MessageBox("Error",

@@ -27,7 +27,7 @@
 
 #include "gtest/gtest.h"
 #include "talk/app/webrtc_dev/mediastreamimpl.h"
-#include "talk/app/webrtc_dev/peerconnectionmanagerimpl.h"
+#include "talk/app/webrtc_dev/peerconnectionfactoryimpl.h"
 #include "talk/base/basicpacketsocketfactory.h"
 #include "talk/base/scoped_ptr.h"
 #include "talk/base/thread.h"
@@ -56,22 +56,22 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
 };
 
 // TODO(mallinath) - Fix drash when components are created in factory.
-TEST(PeerConnectionManager, DISABLED_CreatePCUsingInternalModules) {
+TEST(PeerConnectionFactory, DISABLED_CreatePCUsingInternalModules) {
   MockPeerConnectionObserver observer;
-  talk_base::scoped_refptr<PeerConnectionManager> manager(
-      PeerConnectionManager::Create());
-  ASSERT_TRUE(manager.get() != NULL);
+  talk_base::scoped_refptr<PeerConnectionFactoryInterface> factory(
+      CreatePeerConnectionFactory());
+  ASSERT_TRUE(factory.get() != NULL);
   talk_base::scoped_refptr<PeerConnectionInterface> pc1(
-      manager->CreatePeerConnection("", &observer));
+      factory->CreatePeerConnection("", &observer));
   EXPECT_TRUE(pc1.get() == NULL);
 
   talk_base::scoped_refptr<PeerConnectionInterface> pc2(
-      manager->CreatePeerConnection(kStunConfiguration, &observer));
+      factory->CreatePeerConnection(kStunConfiguration, &observer));
 
   EXPECT_TRUE(pc2.get() != NULL);
 }
 
-TEST(PeerConnectionManager, CreatePCUsingExternalModules) {
+TEST(PeerConnectionFactory, CreatePCUsingExternalModules) {
   // Create an audio device. Use the default sound card.
   talk_base::scoped_refptr<AudioDeviceModule> audio_device(
       AudioDeviceModuleImpl::Create(0));
@@ -80,27 +80,31 @@ TEST(PeerConnectionManager, CreatePCUsingExternalModules) {
   talk_base::scoped_ptr<talk_base::Thread> w_thread(new talk_base::Thread);
   EXPECT_TRUE(w_thread->Start());
 
-  talk_base::scoped_refptr<PcNetworkManager> network_manager(
-      PcNetworkManager::Create(new talk_base::BasicNetworkManager));
-  talk_base::scoped_refptr<PcPacketSocketFactory> socket_factory(
-      PcPacketSocketFactory::Create(new talk_base::BasicPacketSocketFactory));
+  // Ownership of these pointers is handed over to the PeerConnectionFactory.
+  // TODO(henrike): add a check that ensures that the destructor is called for
+  // these classes. E.g. by writing a wrapper and set a flag in the wrappers
+  // destructor, or e.g. add a callback.
+  talk_base::NetworkManager* network_manager =
+      new talk_base::BasicNetworkManager();
+  talk_base::PacketSocketFactory* socket_factory =
+      new talk_base::BasicPacketSocketFactory();
 
-  talk_base::scoped_refptr<PeerConnectionManager> manager =
-      PeerConnectionManager::Create(talk_base::Thread::Current(),
-                                    talk_base::Thread::Current(),
-                                    network_manager,
-                                    socket_factory,
-                                    audio_device);
-  ASSERT_TRUE(manager.get() != NULL);
+  talk_base::scoped_refptr<PeerConnectionFactoryInterface> factory =
+      CreatePeerConnectionFactory(talk_base::Thread::Current(),
+                                           talk_base::Thread::Current(),
+                                           network_manager,
+                                           socket_factory,
+                                           audio_device);
+  ASSERT_TRUE(factory.get() != NULL);
 
   MockPeerConnectionObserver observer;
   talk_base::scoped_refptr<webrtc::PeerConnectionInterface> pc1(
-      manager->CreatePeerConnection("", &observer));
+      factory->CreatePeerConnection("", &observer));
 
   EXPECT_TRUE(pc1.get() == NULL);
 
   talk_base::scoped_refptr<PeerConnectionInterface> pc2(
-      manager->CreatePeerConnection(kStunConfiguration, &observer));
+      factory->CreatePeerConnection(kStunConfiguration, &observer));
   EXPECT_TRUE(pc2.get() != NULL);
 }
 

@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "talk/app/webrtc_dev/peerconnectionmanagerimpl.h"
+#include "talk/app/webrtc_dev/peerconnectionfactoryimpl.h"
 
 #include "talk/app/webrtc_dev/mediastreamproxy.h"
 #include "talk/app/webrtc_dev/mediastreamtrackproxy.h"
@@ -40,6 +40,8 @@
 #include "third_party/webrtc/files/include/audio_device.h"
 #endif
 
+using talk_base::scoped_refptr;
+
 namespace {
 
 typedef talk_base::TypedMessageData<bool> InitMessageData;
@@ -49,13 +51,13 @@ struct CreatePeerConnectionParams : public talk_base::MessageData {
                              webrtc::PeerConnectionObserver* observer)
       : configuration(configuration), observer(observer) {
   }
-  talk_base::scoped_refptr<webrtc::PeerConnectionInterface> peerconnection;
+  scoped_refptr<webrtc::PeerConnectionInterface> peerconnection;
   const std::string& configuration;
   webrtc::PeerConnectionObserver* observer;
 };
 
 enum {
-  MSG_INIT_MANAGER = 1,
+  MSG_INIT_FACTORY = 1,
   MSG_CREATE_PEERCONNECTION = 2,
 };
 
@@ -63,78 +65,37 @@ enum {
 
 
 namespace webrtc {
+scoped_refptr<PeerConnectionFactoryInterface>
+CreatePeerConnectionFactory() {
+  talk_base::RefCountedObject<PeerConnectionFactoryImpl>* pc_factory =
+      new talk_base::RefCountedObject<PeerConnectionFactoryImpl>();
 
-talk_base::scoped_refptr<PcNetworkManager> PcNetworkManager::Create(
-    talk_base::NetworkManager* network_manager) {
-  talk_base::RefCountedObject<PcNetworkManager>* implementation =
-       new talk_base::RefCountedObject<PcNetworkManager>(network_manager);
-  return implementation;
-}
-
-PcNetworkManager::PcNetworkManager(talk_base::NetworkManager* network_manager)
-    : network_manager_(network_manager) {
-}
-
-talk_base::NetworkManager* PcNetworkManager::network_manager() const {
-  return network_manager_;
-}
-
-PcNetworkManager::~PcNetworkManager() {
-  delete network_manager_;
-}
-
-talk_base::scoped_refptr<PcPacketSocketFactory> PcPacketSocketFactory::Create(
-    talk_base::PacketSocketFactory* socket_factory) {
-  talk_base::RefCountedObject<PcPacketSocketFactory>* implementation =
-       new talk_base::RefCountedObject<PcPacketSocketFactory>(socket_factory);
-  return implementation;
-}
-
-PcPacketSocketFactory::PcPacketSocketFactory(
-    talk_base::PacketSocketFactory* socket_factory)
-    : socket_factory_(socket_factory) {
-}
-
-PcPacketSocketFactory::~PcPacketSocketFactory() {
-  delete socket_factory_;
-}
-
-talk_base::PacketSocketFactory* PcPacketSocketFactory::socket_factory() const {
-  return socket_factory_;
-}
-
-talk_base::scoped_refptr<PeerConnectionManager>
-PeerConnectionManager::Create() {
-  talk_base::RefCountedObject<PeerConnectionManagerImpl>* pc_manager =
-      new talk_base::RefCountedObject<PeerConnectionManagerImpl>();
-
-  if (!pc_manager->Initialize()) {
-    delete pc_manager;
-    pc_manager = NULL;
+  if (!pc_factory->Initialize()) {
+    delete pc_factory;
+    pc_factory = NULL;
   }
-  return pc_manager;
+  return pc_factory;
 }
 
-talk_base::scoped_refptr<PeerConnectionManager> PeerConnectionManager::Create(
+scoped_refptr<PeerConnectionFactoryInterface>
+CreatePeerConnectionFactory(
     talk_base::Thread* worker_thread,
     talk_base::Thread* signaling_thread,
-    PcNetworkManager* network_manager,
-    PcPacketSocketFactory* socket_factory,
+    talk_base::NetworkManager* network_manager,
+    talk_base::PacketSocketFactory* socket_factory,
     AudioDeviceModule* default_adm) {
-  talk_base::RefCountedObject<PeerConnectionManagerImpl>* pc_manager =
-      new talk_base::RefCountedObject<PeerConnectionManagerImpl>(worker_thread,
-                                                         signaling_thread,
-                                                         network_manager,
-                                                         socket_factory,
-                                                         default_adm);
-  if (!pc_manager->Initialize()) {
-    delete pc_manager;
-    pc_manager = NULL;
+  talk_base::RefCountedObject<PeerConnectionFactoryImpl>* pc_factory =
+      new talk_base::RefCountedObject<PeerConnectionFactoryImpl>(
+          worker_thread, signaling_thread, network_manager, socket_factory,
+          default_adm);
+  if (!pc_factory->Initialize()) {
+    delete pc_factory;
+    pc_factory = NULL;
   }
-  return pc_manager;
+  return pc_factory;
 }
 
-PeerConnectionManagerImpl::PeerConnectionManagerImpl()
+PeerConnectionFactoryImpl::PeerConnectionFactoryImpl()
     : worker_thread_(new talk_base::Thread),
       signaling_thread_(new talk_base::Thread) {
   worker_thread_ptr_ = worker_thread_.get();
@@ -145,11 +106,11 @@ PeerConnectionManagerImpl::PeerConnectionManagerImpl()
   ASSERT(result);
 }
 
-PeerConnectionManagerImpl::PeerConnectionManagerImpl(
+PeerConnectionFactoryImpl::PeerConnectionFactoryImpl(
     talk_base::Thread* worker_thread,
     talk_base::Thread* signaling_thread,
-    PcNetworkManager* network_manager,
-    PcPacketSocketFactory* socket_factory,
+    talk_base::NetworkManager* network_manager,
+    talk_base::PacketSocketFactory* socket_factory,
     AudioDeviceModule* default_adm)
     : worker_thread_ptr_(worker_thread),
       signaling_thread_ptr_(signaling_thread),
@@ -158,23 +119,23 @@ PeerConnectionManagerImpl::PeerConnectionManagerImpl(
       default_adm_(default_adm) {
   ASSERT(worker_thread);
   ASSERT(signaling_thread);
-  ASSERT(network_manager->network_manager());
-  ASSERT(socket_factory->socket_factory());
+  ASSERT(network_manager);
+  ASSERT(socket_factory);
   ASSERT(default_adm);
 }
 
-PeerConnectionManagerImpl::~PeerConnectionManagerImpl() {
+PeerConnectionFactoryImpl::~PeerConnectionFactoryImpl() {
 }
 
-bool PeerConnectionManagerImpl::Initialize() {
+bool PeerConnectionFactoryImpl::Initialize() {
   InitMessageData result(false);
-  signaling_thread_ptr_->Send(this, MSG_INIT_MANAGER, &result);
+  signaling_thread_ptr_->Send(this, MSG_INIT_FACTORY, &result);
   return result.data();
 }
 
-void PeerConnectionManagerImpl::OnMessage(talk_base::Message* msg) {
+void PeerConnectionFactoryImpl::OnMessage(talk_base::Message* msg) {
   switch (msg->message_id) {
-    case MSG_INIT_MANAGER: {
+    case MSG_INIT_FACTORY: {
      InitMessageData* pdata = static_cast<InitMessageData*> (msg->pdata);
      pdata->data() = Initialize_s();
      break;
@@ -189,12 +150,11 @@ void PeerConnectionManagerImpl::OnMessage(talk_base::Message* msg) {
   }
 }
 
-bool PeerConnectionManagerImpl::Initialize_s() {
+bool PeerConnectionFactoryImpl::Initialize_s() {
   if (!network_manager_.get())
-    network_manager_ = PcNetworkManager::Create(
-        new talk_base::BasicNetworkManager());
+    network_manager_.reset(new talk_base::BasicNetworkManager());
   if (!socket_factory_.get())
-    socket_factory_ = PcPacketSocketFactory::Create(
+    socket_factory_.reset(
         new talk_base::BasicPacketSocketFactory(worker_thread_ptr_));
 
   cricket::DeviceManager* device_manager(new WebRtcDeviceManager());
@@ -213,8 +173,8 @@ bool PeerConnectionManagerImpl::Initialize_s() {
   return true;
 }
 
-talk_base::scoped_refptr<PeerConnectionInterface>
-PeerConnectionManagerImpl::CreatePeerConnection(
+scoped_refptr<PeerConnectionInterface>
+PeerConnectionFactoryImpl::CreatePeerConnection(
     const std::string& configuration,
     PeerConnectionObserver* observer) {
   CreatePeerConnectionParams params(configuration, observer);
@@ -222,16 +182,12 @@ PeerConnectionManagerImpl::CreatePeerConnection(
   return params.peerconnection;
 }
 
-talk_base::scoped_refptr<PeerConnectionInterface>
-PeerConnectionManagerImpl::CreatePeerConnection_s(
+scoped_refptr<PeerConnectionInterface>
+PeerConnectionFactoryImpl::CreatePeerConnection_s(
     const std::string& configuration,
     PeerConnectionObserver* observer) {
   talk_base::RefCountedObject<PeerConnectionImpl>* pc(
-      new talk_base::RefCountedObject<PeerConnectionImpl>(channel_manager_.get(),
-                                                  signaling_thread_ptr_,
-                                                  worker_thread_ptr_,
-                                                  network_manager_,
-                                                  socket_factory_));
+      new talk_base::RefCountedObject<PeerConnectionImpl>(this));
   if (!pc->Initialize(configuration, observer)) {
     delete pc;
     pc = NULL;
@@ -239,26 +195,46 @@ PeerConnectionManagerImpl::CreatePeerConnection_s(
   return pc;
 }
 
-talk_base::scoped_refptr<LocalMediaStreamInterface>
-PeerConnectionManagerImpl::CreateLocalMediaStream(
+scoped_refptr<LocalMediaStreamInterface>
+PeerConnectionFactoryImpl::CreateLocalMediaStream(
       const std::string& label) {
   return MediaStreamProxy::Create(label, signaling_thread_ptr_);
 }
 
-talk_base::scoped_refptr<LocalVideoTrackInterface>
-PeerConnectionManagerImpl::CreateLocalVideoTrack(
+scoped_refptr<LocalVideoTrackInterface>
+PeerConnectionFactoryImpl::CreateLocalVideoTrack(
     const std::string& label,
     VideoCaptureModule* video_device) {
   return VideoTrackProxy::CreateLocal(label, video_device,
                                       signaling_thread_ptr_);
 }
 
-talk_base::scoped_refptr<LocalAudioTrackInterface>
-PeerConnectionManagerImpl::CreateLocalAudioTrack(
+scoped_refptr<LocalAudioTrackInterface>
+PeerConnectionFactoryImpl::CreateLocalAudioTrack(
     const std::string& label,
     AudioDeviceModule* audio_device) {
   return AudioTrackProxy::CreateLocal(label, audio_device,
                                       signaling_thread_ptr_);
+}
+
+cricket::ChannelManager* PeerConnectionFactoryImpl::channel_manager() {
+  return channel_manager_.get();
+}
+
+talk_base::Thread* PeerConnectionFactoryImpl::signaling_thread() {
+  return signaling_thread_ptr_;
+}
+
+talk_base::Thread* PeerConnectionFactoryImpl::worker_thread() {
+  return worker_thread_ptr_;
+}
+
+talk_base::NetworkManager* PeerConnectionFactoryImpl::network_manager() {
+  return network_manager_.get();
+}
+
+talk_base::PacketSocketFactory* PeerConnectionFactoryImpl::socket_factory() {
+  return socket_factory_.get();
 }
 
 }  // namespace webrtc
