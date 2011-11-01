@@ -593,6 +593,7 @@ int WebRtcIsac_DecodeSpecUB12(
   if (WebRtcIsac_DecodeGain2(streamdata, &gain2_Q10) < 0)
     return -ISAC_RANGE_ERROR_DECODE_SPECTRUM;
 
+
   /* compute inverse AR power spectrum */
   WebRtcIsac_FindInvArSpec(ARCoefQ12, gain2_Q10, invARSpec2_Q16);
 
@@ -669,7 +670,8 @@ int WebRtcIsac_EncodeSpecLb(const WebRtc_Word16 *fr,
   WebRtc_Word32  in_sqrt;
   WebRtc_Word32  newRes;
   WebRtc_Word16  err;
-  int            lft_shft;
+  WebRtc_UWord32  nrg_u32;
+  int            shift_var;
   int          k, n, j, i;
 
 
@@ -704,15 +706,15 @@ int WebRtcIsac_EncodeSpecLb(const WebRtc_Word16 *fr,
 
   /* find AR coefficients */
   /* number of bit shifts to 14-bit normalize CorrQ7[0] (leaving room for sign) */
-  lft_shft = WebRtcSpl_NormW32(CorrQ7[0]) - 18;
+  shift_var = WebRtcSpl_NormW32(CorrQ7[0]) - 18;
 
-  if (lft_shft > 0) {
+  if (shift_var > 0) {
     for (k=0; k<AR_ORDER+1; k++) {
-      CorrQ7_norm[k] = CorrQ7[k] << lft_shft;
+      CorrQ7_norm[k] = CorrQ7[k] << shift_var;
     }
   } else {
     for (k=0; k<AR_ORDER+1; k++) {
-      CorrQ7_norm[k] = CorrQ7[k] >> (-lft_shft);
+      CorrQ7_norm[k] = CorrQ7[k] >> (-shift_var);
     }
   }
 
@@ -735,11 +737,18 @@ int WebRtcIsac_EncodeSpecLb(const WebRtc_Word16 *fr,
       nrg += ( ARCoefQ12[j] * ((CorrQ7_norm[n-j] * ARCoefQ12[n] + 256) >> 9) + 4 ) >> 3;
     }
   }
-  if (lft_shft > 0) {
-    nrg >>= lft_shft;
+
+  nrg_u32 = (WebRtc_UWord32)nrg;
+  if (shift_var > 0) {
+    nrg_u32 = nrg_u32 >> shift_var;
   } else {
-    nrg <<= -lft_shft;
+    nrg_u32 = nrg_u32 << (-shift_var);
   }
+
+  if (nrg_u32 > 0x7FFFFFFF)
+    nrg = 0x7FFFFFFF;
+  else
+    nrg = (WebRtc_Word32)nrg_u32;
 
   gain2_Q10 = WebRtcSpl_DivResultInQ31(FRAMESAMPLES_QUARTER, nrg);  /* also shifts 31 bits to the left! */
 
@@ -826,7 +835,8 @@ int WebRtcIsac_EncodeSpecUB16(
   WebRtc_Word32  in_sqrt;
   WebRtc_Word32  newRes;
   WebRtc_Word16  err;
-  int            lft_shft;
+  WebRtc_UWord32 nrg_u32;
+  int            shift_var;
   int          k, n, j, i;
 
   /* create dither_float signal */
@@ -863,15 +873,15 @@ int WebRtcIsac_EncodeSpecUB16(
   /* find AR coefficients
      number of bit shifts to 14-bit normalize CorrQ7[0]
      (leaving room for sign) */
-  lft_shft = WebRtcSpl_NormW32(CorrQ7[0]) - 18;
+  shift_var = WebRtcSpl_NormW32(CorrQ7[0]) - 18;
 
-  if (lft_shft > 0) {
+  if (shift_var > 0) {
     for (k=0; k<AR_ORDER+1; k++) {
-      CorrQ7_norm[k] = CorrQ7[k] << lft_shft;
+      CorrQ7_norm[k] = CorrQ7[k] << shift_var;
     }
   } else {
     for (k=0; k<AR_ORDER+1; k++) {
-      CorrQ7_norm[k] = CorrQ7[k] >> (-lft_shft);
+      CorrQ7_norm[k] = CorrQ7[k] >> (-shift_var);
     }
   }
 
@@ -896,11 +906,17 @@ int WebRtcIsac_EncodeSpecUB16(
                                 256) >> 9) + 4 ) >> 3;
     }
   }
-  if (lft_shft > 0) {
-    nrg >>= lft_shft;
+  nrg_u32 = (WebRtc_UWord32)nrg;
+  if (shift_var > 0) {
+    nrg_u32 = nrg_u32 >> shift_var;
   } else {
-    nrg <<= -lft_shft;
+    nrg_u32 = nrg_u32 << (-shift_var);
   }
+
+  if (nrg_u32 > 0x7FFFFFFF)
+    nrg = 0x7FFFFFFF;
+  else
+    nrg = (WebRtc_Word32)nrg_u32;
 
   gain2_Q10 = WebRtcSpl_DivResultInQ31(FRAMESAMPLES_QUARTER, nrg);  /* also shifts 31 bits to the left! */
 
@@ -967,8 +983,9 @@ int WebRtcIsac_EncodeSpecUB12(const WebRtc_Word16 *fr,
   WebRtc_Word32  in_sqrt;
   WebRtc_Word32  newRes;
   WebRtc_Word16  err;
-  int            lft_shft;
+  int            shift_var;
   int          k, n, j, i;
+  WebRtc_UWord32 nrg_u32;
 
   /* create dither_float signal */
   GenerateDitherQ7LbUB(ditherQ7, streamdata->W_upper, FRAMESAMPLES);
@@ -1010,15 +1027,15 @@ int WebRtcIsac_EncodeSpecUB12(const WebRtc_Word16 *fr,
 
   /* find AR coefficients */
   /* number of bit shifts to 14-bit normalize CorrQ7[0] (leaving room for sign) */
-  lft_shft = WebRtcSpl_NormW32(CorrQ7[0]) - 18;
+  shift_var = WebRtcSpl_NormW32(CorrQ7[0]) - 18;
 
-  if (lft_shft > 0) {
+  if (shift_var > 0) {
     for (k=0; k<AR_ORDER+1; k++) {
-      CorrQ7_norm[k] = CorrQ7[k] << lft_shft;
+      CorrQ7_norm[k] = CorrQ7[k] << shift_var;
     }
   } else {
     for (k=0; k<AR_ORDER+1; k++) {
-      CorrQ7_norm[k] = CorrQ7[k] >> (-lft_shft);
+      CorrQ7_norm[k] = CorrQ7[k] >> (-shift_var);
     }
   }
 
@@ -1028,8 +1045,10 @@ int WebRtcIsac_EncodeSpecUB12(const WebRtc_Word16 *fr,
   /* quantize & code RC Coef */
   WebRtcIsac_EncodeRc(RCQ15, streamdata);
 
+
   /* RC -> AR coefficients */
   WebRtcSpl_ReflCoefToLpc(RCQ15, AR_ORDER, ARCoefQ12);
+
 
   /* compute ARCoef' * Corr * ARCoef in Q19 */
   nrg = 0;
@@ -1041,10 +1060,18 @@ int WebRtcIsac_EncodeSpecUB12(const WebRtc_Word16 *fr,
       nrg += ( ARCoefQ12[j] * ((CorrQ7_norm[n-j] * ARCoefQ12[n] + 256) >> 9) + 4 ) >> 3;
     }
   }
-  if (lft_shft > 0) {
-    nrg >>= lft_shft;
+
+  nrg_u32 = (WebRtc_UWord32)nrg;
+  if (shift_var > 0) {
+    nrg_u32 = nrg_u32 >> shift_var;
   } else {
-    nrg <<= -lft_shft;
+    nrg_u32 = nrg_u32 << (-shift_var);
+  }
+
+  if (nrg_u32 > 0x7FFFFFFF) {
+    nrg = 0x7FFFFFFF;
+  } else {
+    nrg = (WebRtc_Word32)nrg_u32;
   }
 
   gain2_Q10 = WebRtcSpl_DivResultInQ31(FRAMESAMPLES_QUARTER, nrg);  /* also shifts 31 bits to the left! */
