@@ -37,6 +37,7 @@
 #include "talk/session/phone/codec.h"
 #include "talk/session/phone/cryptoparams.h"
 #include "talk/session/phone/mediachannel.h"
+#include "talk/session/phone/streamparams.h"
 #include "talk/p2p/base/sessiondescription.h"
 
 namespace cricket {
@@ -45,6 +46,7 @@ class ChannelManager;
 typedef std::vector<AudioCodec> AudioCodecs;
 typedef std::vector<VideoCodec> VideoCodecs;
 typedef std::vector<CryptoParams> CryptoParamsVec;
+typedef std::vector<StreamParams> StreamParamsVec;
 
 // SEC_ENABLED and SEC_REQUIRED should only be used if the session
 // was negotiated over TLS, to protect the inline crypto material
@@ -64,37 +66,48 @@ enum SecureMediaPolicy {
   SEC_REQUIRED
 };
 
-// Structure to describe a sending source.
-struct SourceParam {
-  SourceParam(uint32 ssrc,
-              const std::string description,
-              const std::string& cname)
-      : ssrc(ssrc), description(description), cname(cname) {}
-  uint32 ssrc;
-  std::string description;
-  std::string cname;
+enum MediaType {
+  MEDIA_TYPE_AUDIO,
+  MEDIA_TYPE_VIDEO
 };
-typedef std::vector<SourceParam> Sources;
 
 // Options to control how session descriptions are generated.
 const int kAutoBandwidth = -1;
 struct MediaSessionOptions {
   MediaSessionOptions() :
-      is_video(false),
+      has_audio(true),  // Audio enabled by default.
+      has_video(false),
       is_muc(false),
       video_bandwidth(kAutoBandwidth) {
   }
-  Sources audio_sources;
-  Sources video_sources;
-  bool is_video;
+
+  // Add a stream with MediaType type and id name.
+  // All streams with the same sync_label will get the same CNAME.
+  // All names must be unique.
+  void AddStream(MediaType type,
+                 const std::string& name,
+                 const std::string& sync_label);
+  void RemoveStream(MediaType type, const std::string& name);
+
+  bool has_audio;
+  bool has_video;
   bool is_muc;
   // bps. -1 == auto.
   int video_bandwidth;
-};
 
-enum MediaType {
-  MEDIA_TYPE_AUDIO,
-  MEDIA_TYPE_VIDEO
+  struct Stream {
+    Stream(MediaType type,
+           const std::string& name,
+           const std::string& sync_label)
+        : type(type), name(name), sync_label(sync_label) {
+    }
+    MediaType type;
+    std::string name;
+    std::string sync_label;
+  };
+
+  typedef std::vector<Stream> Streams;
+  Streams streams;
 };
 
 // "content" (as used in XEP-0166) descriptions for voice and video.
@@ -152,11 +165,11 @@ class MediaContentDescription : public ContentDescription {
   bool rtp_header_extensions_set() const {
     return rtp_header_extensions_set_;
   }
-  const Sources& sources() const {
-    return sources_;
+  const StreamParamsVec& streams() const {
+    return streams_;
   }
-  void set_sources(const Sources& sources) {
-    sources_ = sources;
+  void AddStream(const StreamParams& stream) {
+    streams_.push_back(stream);
   }
 
  protected:
@@ -168,7 +181,7 @@ class MediaContentDescription : public ContentDescription {
   bool crypto_required_;
   std::vector<RtpHeaderExtension> rtp_header_extensions_;
   bool rtp_header_extensions_set_;
-  std::vector<SourceParam> sources_;
+  StreamParamsVec streams_;
 };
 
 template <class C>
@@ -205,7 +218,6 @@ class AudioContentDescription : public MediaContentDescriptionImpl<AudioCodec> {
   const std::string &lang() const { return lang_; }
   void set_lang(const std::string &lang) { lang_ = lang; }
 
-
  private:
   bool conference_mode_;
   std::string lang_;
@@ -234,9 +246,25 @@ class MediaSessionDescriptionFactory {
   SecureMediaPolicy secure() const { return secure_; }
   void set_secure(SecureMediaPolicy s) { secure_ = s; }
 
-  SessionDescription* CreateOffer(const MediaSessionOptions& options);
-  SessionDescription* CreateAnswer(const SessionDescription* offer,
-                                   const MediaSessionOptions& options);
+  // TODO(perkj) Deprecate this version of CreateOffer and
+  // force to use the second alternative.
+  SessionDescription* CreateOffer(
+      const MediaSessionOptions& options);
+
+  SessionDescription* CreateOffer(
+      const MediaSessionOptions& options,
+      const SessionDescription* current_description);
+
+  // TODO(perkj) Deprecate this version of CreateAnswer and
+  // force to use the second alternative.
+  SessionDescription* CreateAnswer(
+      const SessionDescription* offer,
+      const MediaSessionOptions& options);
+
+  SessionDescription* CreateAnswer(
+        const SessionDescription* offer,
+        const MediaSessionOptions& options,
+        const SessionDescription* current_description);
 
  private:
   AudioCodecs audio_codecs_;

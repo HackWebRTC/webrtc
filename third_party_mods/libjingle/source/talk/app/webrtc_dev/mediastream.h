@@ -80,12 +80,10 @@ class MediaStreamTrackInterface : public talk_base::RefCountInterface,
 
   virtual std::string kind() const = 0;
   virtual std::string label() const = 0;
-  virtual uint32 ssrc() const = 0;
   virtual bool enabled() const = 0;
   virtual TrackState state() const = 0;
   virtual bool set_enabled(bool enable) = 0;
   // These methods should be called by implementation only.
-  virtual bool set_ssrc(uint32 ssrc) = 0;
   virtual bool set_state(TrackState new_state) = 0;
 };
 

@@ -46,27 +46,24 @@ static const char kVideoTrackLabel3[] = "local_video_3";
 
 class PeerConnectionMessageTest: public testing::Test {
  public:
-  PeerConnectionMessageTest()
-      : ssrc_counter_(0) {
+  PeerConnectionMessageTest() {
     channel_manager_.reset(new cricket::ChannelManager(
         talk_base::Thread::Current()));
     EXPECT_TRUE(channel_manager_->Init());
     session_description_factory_.reset(
         new cricket::MediaSessionDescriptionFactory(channel_manager_.get()));
-    options_.audio_sources.push_back(cricket::SourceParam(++ssrc_counter_,
-        kAudioTrackLabel1, kStreamLabel1));
-    options_.video_sources.push_back(cricket::SourceParam(++ssrc_counter_,
-        kVideoTrackLabel1, kStreamLabel1));
-    options_.video_sources.push_back(cricket::SourceParam(++ssrc_counter_,
-        kVideoTrackLabel2, kStreamLabel1));
+    options_.AddStream(cricket::MEDIA_TYPE_AUDIO, kAudioTrackLabel1,
+                       kStreamLabel1);
+    options_.AddStream(cricket::MEDIA_TYPE_VIDEO, kVideoTrackLabel1,
+                       kStreamLabel1);
+    options_.AddStream(cricket::MEDIA_TYPE_VIDEO, kVideoTrackLabel2,
+                       kStreamLabel1);
 
     // kStreamLabel2 with 1 audio track and 1 video track
-    options_.audio_sources.push_back(cricket::SourceParam(++ssrc_counter_,
-        kAudioTrackLabel2, kStreamLabel2));
-    options_.video_sources.push_back(cricket::SourceParam(++ssrc_counter_,
-        kVideoTrackLabel3, kStreamLabel2));
-
-    options_.is_video = true;
+    options_.AddStream(cricket::MEDIA_TYPE_AUDIO, kAudioTrackLabel2,
+                       kStreamLabel2);
+    options_.AddStream(cricket::MEDIA_TYPE_VIDEO, kVideoTrackLabel3,
+                       kStreamLabel2);
 
     int port = 1234;
     talk_base::SocketAddress address("127.0.0.1", port++);
@@ -94,9 +91,6 @@ class PeerConnectionMessageTest: public testing::Test {
       session_description_factory_;
   cricket::MediaSessionOptions options_;
   cricket::Candidates candidates_;
-
- private:
-  int ssrc_counter_;
 };
 
 TEST_F(PeerConnectionMessageTest, Serialize) {

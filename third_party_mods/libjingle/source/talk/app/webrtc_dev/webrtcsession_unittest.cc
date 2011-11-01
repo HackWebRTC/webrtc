@@ -84,27 +84,16 @@ class WebRtcSessionTest : public testing::Test {
     EXPECT_TRUE(InitializeSession());
   }
 
-  // Creates an offer with one source ssrc, if ssrc = 0 no source info
-  // video ssrc + 1
+
   void CreateOffer(uint32 ssrc) {
     cricket::MediaSessionOptions options;
-    options.is_video = true;
-    if (ssrc != 0) {
-      options.audio_sources.push_back(cricket::SourceParam(ssrc, "", ""));
-      ++ssrc;
-      options.video_sources.push_back(cricket::SourceParam(ssrc, "", ""));
-    }
+    // TODO(mallinath) - Adding test cases for session.
     local_desc_ = desc_provider_->ProvideOffer(options);
     ASSERT_TRUE(local_desc_ != NULL);
   }
   void CreateAnswer(uint32 ssrc) {
     cricket::MediaSessionOptions options;
-    options.is_video = true;
-    if (ssrc != 0) {
-      options.audio_sources.push_back(cricket::SourceParam(ssrc, "", ""));
-      ++ssrc;
-      options.video_sources.push_back(cricket::SourceParam(ssrc, "", ""));
-    }
+    // TODO(mallinath) - Adding test cases for session.
     remote_desc_ = desc_factory_->CreateAnswer(local_desc_, options);
     ASSERT_TRUE(remote_desc_ != NULL);
   }

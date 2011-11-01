@@ -37,10 +37,11 @@ namespace webrtc {
 // set new devices.
 class MediaProviderInterface {
  public:
-  virtual void SetCaptureDevice(uint32 ssrc, VideoCaptureModule* camera) = 0;
-  virtual void SetLocalRenderer(uint32 ssrc,
+  virtual void SetCaptureDevice(const std::string& name,
+                                VideoCaptureModule* camera) = 0;
+  virtual void SetLocalRenderer(const std::string& name,
                                 cricket::VideoRenderer* renderer) = 0;
-  virtual void SetRemoteRenderer(uint32 ssrc,
+  virtual void SetRemoteRenderer(const std::string& name,
                                  cricket::VideoRenderer* renderer) = 0;
  protected:
   virtual ~MediaProviderInterface() {}

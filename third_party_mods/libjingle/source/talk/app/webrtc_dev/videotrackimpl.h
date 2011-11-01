@@ -47,8 +47,7 @@ class VideoTrack : public MediaTrack<LocalVideoTrackInterface> {
  public:
   // Create a video track used for remote video tracks.
   static talk_base::scoped_refptr<VideoTrack> CreateRemote(
-      const std::string& label,
-      uint32 ssrc);
+      const std::string& label);
   // Create a video track used for local video tracks.
   static talk_base::scoped_refptr<VideoTrack> CreateLocal(
       const std::string& label,
@@ -61,7 +60,7 @@ class VideoTrack : public MediaTrack<LocalVideoTrackInterface> {
   virtual std::string kind() const;
 
  protected:
-  VideoTrack(const std::string& label, uint32 ssrc);
+  explicit VideoTrack(const std::string& label);
   VideoTrack(const std::string& label, VideoCaptureModule* video_device);
 
  private:

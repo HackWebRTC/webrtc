@@ -87,10 +87,11 @@ class WebRtcSession : public cricket::BaseSession,
   virtual void NegotiationDone();
 
   // Implements MediaProviderInterface.
-  virtual void SetCaptureDevice(uint32 ssrc, VideoCaptureModule* camera);
-  virtual void SetLocalRenderer(uint32 ssrc,
+  virtual void SetCaptureDevice(const std::string& name,
+                                VideoCaptureModule* camera);
+  virtual void SetLocalRenderer(const std::string& name,
                                 cricket::VideoRenderer* renderer);
-  virtual void SetRemoteRenderer(uint32 ssrc,
+  virtual void SetRemoteRenderer(const std::string& name,
                                  cricket::VideoRenderer* renderer);
 
   // Transport related callbacks, override from cricket::BaseSession.

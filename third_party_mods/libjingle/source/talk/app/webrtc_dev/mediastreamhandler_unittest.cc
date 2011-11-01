@@ -39,28 +39,28 @@ using ::testing::Exactly;
 
 static const char kStreamLabel1[] = "local_stream_1";
 static const char kVideoDeviceName[] = "dummy_video_cam_1";
-static const uint32 kVideoSsrc = 1;
 
 namespace webrtc {
 
 // Helper class to test MediaStreamHandler.
 class MockMediaProvier : public MediaProviderInterface {
  public:
-  MOCK_METHOD1(SetCaptureDevice, void(uint32 ssrc));
-  MOCK_METHOD1(SetLocalRenderer, void(uint32 ssrc));
-  MOCK_METHOD1(SetRemoteRenderer, void(uint32 ssrc));
+  MOCK_METHOD1(SetCaptureDevice, void(const std::string& name));
+  MOCK_METHOD1(SetLocalRenderer, void(const std::string& name));
+  MOCK_METHOD1(SetRemoteRenderer, void(const std::string& name));
 
-  virtual void SetCaptureDevice(uint32 ssrc, VideoCaptureModule* camera) {
-    SetCaptureDevice(ssrc);
+  virtual void SetCaptureDevice(const std::string& name,
+                                VideoCaptureModule* camera) {
+    SetCaptureDevice(name);
   }
-  virtual void SetLocalRenderer(uint32 ssrc,
+  virtual void SetLocalRenderer(const std::string& name,
                                 cricket::VideoRenderer* renderer) {
-    SetLocalRenderer(ssrc);
+    SetLocalRenderer(name);
   }
 
-  virtual void SetRemoteRenderer(uint32 ssrc,
+  virtual void SetRemoteRenderer(const std::string& name,
                                  cricket::VideoRenderer* renderer) {
-    SetRemoteRenderer(ssrc);
+    SetRemoteRenderer(name);
   }
   ~MockMediaProvier() {}
 };
@@ -72,7 +72,6 @@ TEST(MediaStreamHandlerTest, LocalStreams) {
       MediaStream::Create(label));
   talk_base::scoped_refptr<LocalVideoTrackInterface>
       video_track(VideoTrack::CreateLocal(kVideoDeviceName, NULL));
-  video_track->set_ssrc(kVideoSsrc);
   EXPECT_TRUE(stream->AddTrack(video_track));
   talk_base::scoped_refptr<VideoRendererWrapperInterface> renderer(
       CreateVideoRenderer(NULL));
@@ -85,10 +84,10 @@ TEST(MediaStreamHandlerTest, LocalStreams) {
       StreamCollectionImpl::Create());
   collection->AddStream(stream);
 
-  EXPECT_CALL(provider, SetLocalRenderer(kVideoSsrc))
-      .Times(Exactly(2)); // SetLocalRender will also be called from dtor of
-                          // LocalVideoTrackHandler
-  EXPECT_CALL(provider, SetCaptureDevice(kVideoSsrc))
+  EXPECT_CALL(provider, SetLocalRenderer(kVideoDeviceName))
+      .Times(Exactly(2));  // SetLocalRender will also be called from dtor of
+                           // LocalVideoTrackHandler
+  EXPECT_CALL(provider, SetCaptureDevice(kVideoDeviceName))
       .Times(Exactly(1));
   handlers.CommitLocalStreams(collection);
 
@@ -113,7 +112,6 @@ TEST(MediaStreamHandlerTest, RemoteStreams) {
       MediaStream::Create(label));
   talk_base::scoped_refptr<LocalVideoTrackInterface>
       video_track(VideoTrack::CreateLocal(kVideoDeviceName, NULL));
-  video_track->set_ssrc(kVideoSsrc);
   EXPECT_TRUE(stream->AddTrack(video_track));
 
   MockMediaProvier provider;
@@ -121,9 +119,9 @@ TEST(MediaStreamHandlerTest, RemoteStreams) {
 
   handlers.AddRemoteStream(stream);
 
-  EXPECT_CALL(provider, SetRemoteRenderer(kVideoSsrc))
-      .Times(Exactly(3)); // SetRemoteRenderer is also called from dtor of
-                          // RemoteVideoTrackHandler.
+  EXPECT_CALL(provider, SetRemoteRenderer(kVideoDeviceName))
+      .Times(Exactly(3));  // SetRemoteRenderer is also called from dtor of
+                           // RemoteVideoTrackHandler.
 
   // Set the renderer once.
   talk_base::scoped_refptr<VideoRendererWrapperInterface> renderer(

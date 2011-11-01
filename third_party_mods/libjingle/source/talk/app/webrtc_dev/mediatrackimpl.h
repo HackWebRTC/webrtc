@@ -43,7 +43,6 @@ class MediaTrack : public Notifier<T> {
   typedef typename T::TrackState TypedTrackState;
 
   virtual std::string label() const { return label_; }
-  virtual uint32 ssrc() const { return ssrc_; }
   virtual TypedTrackState state() const { return state_; }
   virtual bool enabled() const { return enabled_; }
   virtual bool set_enabled(bool enable) {
@@ -53,17 +52,6 @@ class MediaTrack : public Notifier<T> {
       Notifier<T>::FireOnChanged();
     }
   }
-
-  virtual bool set_ssrc(uint32 ssrc) {
-    ASSERT(ssrc_ == 0);
-    ASSERT(ssrc != 0);
-    if (ssrc_ != 0)
-      return false;
-    ssrc_ = ssrc;
-    Notifier<T>::FireOnChanged();
-    return true;
-  }
-
   virtual bool set_state(TypedTrackState new_state) {
     bool fire_on_change = (state_ != new_state);
     state_ = new_state;
@@ -73,17 +61,15 @@ class MediaTrack : public Notifier<T> {
   }
 
  protected:
-  MediaTrack(const std::string& label, uint32 ssrc)
+  explicit MediaTrack(const std::string& label)
       : enabled_(true),
         label_(label),
-        ssrc_(ssrc),
         state_(T::kInitializing) {
   }
 
  private:
   bool enabled_;
   std::string label_;
-  uint32 ssrc_;
   TypedTrackState state_;
 };
 

@@ -32,14 +32,14 @@ namespace webrtc {
 
 static const char kAudioTrackKind[] = "audio";
 
-AudioTrack::AudioTrack(const std::string& label, uint32 ssrc)
-    : MediaTrack<LocalAudioTrackInterface>(label, ssrc),
+AudioTrack::AudioTrack(const std::string& label)
+    : MediaTrack<LocalAudioTrackInterface>(label),
       audio_device_(NULL) {
 }
 
 AudioTrack::AudioTrack(const std::string& label,
                        AudioDeviceModule* audio_device)
-    : MediaTrack<LocalAudioTrackInterface>(label, 0),
+    : MediaTrack<LocalAudioTrackInterface>(label),
       audio_device_(audio_device) {
 }
 
@@ -54,10 +54,9 @@ std::string AudioTrack::kind() const {
 }
 
 talk_base::scoped_refptr<AudioTrack> AudioTrack::CreateRemote(
-    const std::string& label,
-    uint32 ssrc) {
+    const std::string& label) {
   talk_base::RefCountedObject<AudioTrack>* track =
-      new talk_base::RefCountedObject<AudioTrack>(label, ssrc);
+      new talk_base::RefCountedObject<AudioTrack>(label);
   return track;
 }
 

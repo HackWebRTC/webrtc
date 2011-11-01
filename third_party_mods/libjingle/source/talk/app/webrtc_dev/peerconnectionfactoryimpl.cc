@@ -30,8 +30,8 @@
 #include "talk/app/webrtc_dev/mediastreamproxy.h"
 #include "talk/app/webrtc_dev/mediastreamtrackproxy.h"
 #include "talk/app/webrtc_dev/peerconnectionimpl.h"
-#include "talk/app/webrtc_dev/webrtc_devicemanager.h"
 #include "talk/base/basicpacketsocketfactory.h"
+#include "talk/session/phone/dummydevicemanager.h"
 #include "talk/session/phone/webrtcmediaengine.h"
 
 #ifdef WEBRTC_RELATIVE_PATH
@@ -157,7 +157,8 @@ bool PeerConnectionFactoryImpl::Initialize_s() {
     socket_factory_.reset(
         new talk_base::BasicPacketSocketFactory(worker_thread_ptr_));
 
-  cricket::DeviceManager* device_manager(new WebRtcDeviceManager());
+  cricket::DummyDeviceManager* device_manager(
+      new cricket::DummyDeviceManager());
   // TODO(perkj):  Need to make sure only one VoE is created inside
   // WebRtcMediaEngine.
   cricket::WebRtcMediaEngine* webrtc_media_engine(

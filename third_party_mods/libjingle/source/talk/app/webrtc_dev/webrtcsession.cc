@@ -234,7 +234,7 @@ bool WebRtcSession::CheckCandidate(const std::string& name) {
   return ret;
 }
 
-void WebRtcSession::SetCaptureDevice(uint32 ssrc,
+void WebRtcSession::SetCaptureDevice(const std::string& name,
                                      VideoCaptureModule* camera) {
   // should be called from a signaling thread
   ASSERT(signaling_thread()->IsCurrent());
@@ -242,23 +242,25 @@ void WebRtcSession::SetCaptureDevice(uint32 ssrc,
   // TODO(mallinath): Refactor this when there is support for multiple cameras.
 
   // Register the the VideoCapture Module.
-  video_channel_->SetCaptureDevice(ssrc, camera);
+  // TODO(mallinath): Fix SetCaptureDevice.
+  video_channel_->SetCaptureDevice(0, camera);
 
   // Actually associate the video capture module with the ViE channel.
   channel_manager_->SetVideoOptions("");
 }
 
-void WebRtcSession::SetLocalRenderer(uint32 ssrc,
+void WebRtcSession::SetLocalRenderer(const std::string& name,
                                      cricket::VideoRenderer* renderer) {
   ASSERT(signaling_thread()->IsCurrent());
-  video_channel_->SetLocalRenderer(ssrc, renderer);
+  // TODO(mallinath): Fix SetLocalRenderer.
+  video_channel_->SetLocalRenderer(0, renderer);
 }
 
-void WebRtcSession::SetRemoteRenderer(uint32 ssrc,
+void WebRtcSession::SetRemoteRenderer(const std::string& name,
                                       cricket::VideoRenderer* renderer) {
   ASSERT(signaling_thread()->IsCurrent());
 
-  //TODO(mallinath): Only the ssrc = 0 is supported at the moment.
+  // TODO(mallinath): Only the ssrc = 0 is supported at the moment.
   // Only one channel.
   video_channel_->SetRenderer(0, renderer);
 }
@@ -267,7 +269,7 @@ const cricket::SessionDescription* WebRtcSession::ProvideOffer(
     const cricket::MediaSessionOptions& options) {
   // TODO(mallinath) - Sanity check for options.
   cricket::SessionDescription* offer(
-      session_desc_factory_.CreateOffer(options));
+      session_desc_factory_.CreateOffer(options, local_description()));
   set_local_description(offer);
   return offer;
 }
@@ -284,7 +286,8 @@ const cricket::SessionDescription* WebRtcSession::SetRemoteSessionDescription(
 const cricket::SessionDescription* WebRtcSession::ProvideAnswer(
     const cricket::MediaSessionOptions& options) {
   cricket::SessionDescription* answer(
-      session_desc_factory_.CreateAnswer(remote_description(), options));
+      session_desc_factory_.CreateAnswer(remote_description(), options,
+                                         local_description()));
   set_local_description(answer);
   return answer;
 }
@@ -312,7 +315,7 @@ void WebRtcSession::NegotiationDone() {
     // we can remove stream from a session by muting it.
     // TODO(mallinath) - Change needed when multiple send streams support
     // is available.
-    voice_channel_->Mute(audio_content->sources().size() == 0);
+    voice_channel_->Mute(audio_content->streams().size() == 0);
   }
 
   const cricket::ContentInfo* video_info =
@@ -325,7 +328,7 @@ void WebRtcSession::NegotiationDone() {
     // we can remove stream from a session by muting it.
     // TODO(mallinath) - Change needed when multiple send streams support
     // is available.
-    video_channel_->Mute(video_content->sources().size() == 0);
+    video_channel_->Mute(video_content->streams().size() == 0);
   }
 }
 

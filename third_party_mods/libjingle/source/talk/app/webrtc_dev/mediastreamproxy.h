@@ -80,7 +80,7 @@ class MediaStreamProxy : public LocalMediaStreamInterface,
   class MediaStreamTrackListProxy : public MediaStreamTrackListInterface<T>,
                                     public talk_base::MessageHandler {
    public:
-    MediaStreamTrackListProxy(talk_base::Thread* signaling_thread);
+    explicit MediaStreamTrackListProxy(talk_base::Thread* signaling_thread);
 
     void SetImplementation(MediaStreamTrackListInterface<T>* track_list);
     virtual size_t count();

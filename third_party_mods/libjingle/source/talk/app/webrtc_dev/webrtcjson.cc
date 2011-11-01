@@ -298,13 +298,16 @@ void BuildTrack(const cricket::SessionDescription* sdp,
   const cricket::MediaContentDescription* desc =
       static_cast<const cricket::MediaContentDescription*>(
           content->description);
-  for (cricket::Sources::const_iterator it = desc->sources().begin();
-       it != desc->sources().end();
+  for (cricket::StreamParamsVec::const_iterator it = desc->streams().begin();
+       it != desc->streams().end();
        ++it) {
+    // TODO(ronghuawu): Support ssrcsgroups.
     Json::Value track;
-    Append(&track, "ssrc", it->ssrc);
+    ASSERT(it->ssrcs.size() == 1);
+    Append(&track, "ssrc", it->ssrcs[0]);
     Append(&track, "cname", it->cname);
-    Append(&track, "label", it->description);
+    Append(&track, "stream_label", it->sync_label);
+    Append(&track, "label", it->name);
     tracks->push_back(track);
   }
 }
@@ -567,20 +570,25 @@ bool ParseTrack(const Json::Value& content,
       tracks.begin();
   std::vector<Json::Value>::const_iterator iter_end =
       tracks.end();
-  cricket::Sources sources;
   for (; iter != iter_end; ++iter) {
     uint32 ssrc;
     std::string label;
     std::string cname;
+    std::string stream_label;
     if (!GetUIntFromJsonObject(*iter, "ssrc", &ssrc))
         return false;
     // label is optional, it will be empty string if doesn't exist
     GetStringFromJsonObject(*iter, "label", &label);
     if (!GetStringFromJsonObject(*iter, "cname", &cname))
         return false;
-    sources.push_back(cricket::SourceParam(ssrc, label, cname));
+    // stream_label is optional, it will be the same as cname if it
+    // doesn't exist.
+    GetStringFromJsonObject(*iter, "stream_label", &stream_label);
+    if (stream_label.empty())
+      stream_label = cname;
+    content_desc->AddStream(cricket::StreamParams(label, ssrc, cname,
+                                                  stream_label));
   }
-  content_desc->set_sources(sources);
   return true;
 }
 

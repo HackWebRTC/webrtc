@@ -57,19 +57,6 @@ class ReadyStateMessageData : public talk_base::MessageData {
   webrtc::MediaStreamInterface::ReadyState ready_state_;
 };
 
-class SsrcMessageData : public talk_base::MessageData {
- public:
-  SsrcMessageData(
-      webrtc::MediaStreamTrackInterface* track,
-      uint32 ssrc)
-      : track_(track),
-        ssrc_(ssrc) {
-  }
-
-  scoped_refptr<webrtc::MediaStreamTrackInterface> track_;
-  uint32 ssrc_;
-};
-
 class TrackStateMessageData : public talk_base::MessageData {
  public:
   TrackStateMessageData(
@@ -175,10 +162,6 @@ class MockMediaStreamTrack: public T {
     EXPECT_EQ(talk_base::Thread::Current(), signaling_thread_);
     return track_impl_->label();
   }
-  virtual uint32 ssrc() const {
-    EXPECT_EQ(talk_base::Thread::Current(), signaling_thread_);
-    return track_impl_->ssrc();
-  }
   virtual bool enabled() const {
     EXPECT_EQ(talk_base::Thread::Current(), signaling_thread_);
     return track_impl_->enabled();
@@ -190,10 +173,6 @@ class MockMediaStreamTrack: public T {
   virtual bool set_enabled(bool enabled) {
     EXPECT_EQ(talk_base::Thread::Current(), signaling_thread_);
     return track_impl_->set_enabled(enabled);
-  }
-  virtual bool set_ssrc(uint32 ssrc) {
-    EXPECT_EQ(talk_base::Thread::Current(), signaling_thread_);
-    return track_impl_->set_ssrc(ssrc);
   }
   virtual bool set_state(webrtc::MediaStreamTrackInterface::TrackState state) {
     EXPECT_EQ(talk_base::Thread::Current(), signaling_thread_);
@@ -273,7 +252,6 @@ class MediaStreamTest: public testing::Test,
 
     ASSERT_TRUE(video_track_.get());
     EXPECT_EQ(MediaStreamTrackInterface::kInitializing, video_track_->state());
-    EXPECT_EQ(0u, video_track_->ssrc());
 
     // Create an audio track proxy object that uses our mocked
     // version of a LocalAudioTrack
@@ -287,12 +265,10 @@ class MediaStreamTest: public testing::Test,
 
     ASSERT_TRUE(audio_track_.get());
     EXPECT_EQ(MediaStreamTrackInterface::kInitializing, audio_track_->state());
-    EXPECT_EQ(0u, audio_track_->ssrc());
   }
 
   enum {
     MSG_SET_READYSTATE,
-    MSG_SET_SSRC,
     MSG_SET_TRACKSTATE,
   };
 
@@ -312,14 +288,6 @@ class MediaStreamTest: public testing::Test,
     signaling_thread_->Send(this, MSG_SET_TRACKSTATE, &state);
   }
 
-  // Set the ssrc on a track on the signaling thread.
-  // Ssrc can only be changed on the signaling thread.
-  void SetSsrc(MediaStreamTrackInterface* track,
-               uint32 new_ssrc) {
-    SsrcMessageData ssrc(track, new_ssrc);
-    signaling_thread_->Send(this, MSG_SET_SSRC, &ssrc);
-  }
-
   talk_base::scoped_ptr<talk_base::Thread> signaling_thread_;
   scoped_refptr<LocalMediaStreamInterface> stream_;
   scoped_refptr<LocalVideoTrackInterface> video_track_;
@@ -333,12 +301,6 @@ class MediaStreamTest: public testing::Test,
         ReadyStateMessageData* state =
             static_cast<ReadyStateMessageData*>(msg->pdata);
         state->stream_->set_ready_state(state->ready_state_);
-        break;
-      }
-      case MSG_SET_SSRC: {
-        SsrcMessageData* ssrc =
-            static_cast<SsrcMessageData*>(msg->pdata);
-        ssrc->track_->set_ssrc(ssrc->ssrc_);
         break;
       }
       case MSG_SET_TRACKSTATE: {
@@ -393,14 +355,8 @@ TEST_F(MediaStreamTest, ChangeVideoTrack) {
 
   EXPECT_CALL(observer, DoOnChanged())
       .Times(Exactly(1));
-
   video_track_->set_enabled(false);
   EXPECT_FALSE(video_track_->state());
-
-  EXPECT_CALL(observer, DoOnChanged())
-      .Times(Exactly(1));
-  SetSsrc(video_track_, 255);
-  EXPECT_EQ(255u, video_track_->ssrc());
 
   EXPECT_CALL(observer, DoOnChanged())
       .Times(Exactly(1));
@@ -421,14 +377,8 @@ TEST_F(MediaStreamTest, ChangeAudioTrack) {
 
   EXPECT_CALL(observer, DoOnChanged())
       .Times(Exactly(1));
-
   audio_track_->set_enabled(false);
   EXPECT_FALSE(audio_track_->enabled());
-
-  EXPECT_CALL(observer, DoOnChanged())
-      .Times(Exactly(1));
-  SetSsrc(audio_track_, 255);
-  EXPECT_EQ(255u, audio_track_->ssrc());
 
   EXPECT_CALL(observer, DoOnChanged())
       .Times(Exactly(1));

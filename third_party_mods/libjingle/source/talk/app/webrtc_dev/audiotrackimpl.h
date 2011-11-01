@@ -45,8 +45,7 @@ class AudioTrack : public MediaTrack<LocalAudioTrackInterface> {
  public:
   // Creates a remote audio track.
   static talk_base::scoped_refptr<AudioTrack> CreateRemote(
-      const std::string& label,
-      uint32 ssrc);
+      const std::string& label);
   // Creates a local audio track.
   static talk_base::scoped_refptr<AudioTrack> CreateLocal(
       const std::string& label,
@@ -59,7 +58,7 @@ class AudioTrack : public MediaTrack<LocalAudioTrackInterface> {
   virtual std::string kind() const;
 
  protected:
-  AudioTrack(const std::string& label, uint32 ssrc);
+  explicit AudioTrack(const std::string& label);
   AudioTrack(const std::string& label, AudioDeviceModule* audio_device);
 
  private:

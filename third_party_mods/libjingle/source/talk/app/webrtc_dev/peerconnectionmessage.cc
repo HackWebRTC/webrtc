@@ -84,7 +84,7 @@ bool PeerConnectionMessage::Deserialize(std::string message) {
   cricket::SessionDescription* desc(new cricket::SessionDescription());
   bool result = JsonDeserialize(&type_, &error_code_, desc,
                                 &candidates_, message);
-  if(!result) {
+  if (!result) {
     delete desc;
     desc = NULL;
   }

@@ -32,14 +32,14 @@ namespace webrtc {
 
 static const char kVideoTrackKind[] = "video";
 
-VideoTrack::VideoTrack(const std::string& label, uint32 ssrc)
-    : MediaTrack<LocalVideoTrackInterface>(label, ssrc),
+VideoTrack::VideoTrack(const std::string& label)
+    : MediaTrack<LocalVideoTrackInterface>(label),
       video_device_(NULL) {
 }
 
 VideoTrack::VideoTrack(const std::string& label,
                        VideoCaptureModule* video_device)
-    : MediaTrack<LocalVideoTrackInterface>(label, 0),
+    : MediaTrack<LocalVideoTrackInterface>(label),
       video_device_(video_device) {
 }
 
@@ -62,10 +62,9 @@ std::string VideoTrack::kind() const {
 }
 
 talk_base::scoped_refptr<VideoTrack> VideoTrack::CreateRemote(
-    const std::string& label,
-    uint32 ssrc) {
+    const std::string& label) {
   talk_base::RefCountedObject<VideoTrack>* track =
-      new talk_base::RefCountedObject<VideoTrack>(label, ssrc);
+      new talk_base::RefCountedObject<VideoTrack>(label);
   return track;
 }
 

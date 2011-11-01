@@ -148,7 +148,6 @@ class PeerConnectionSignaling : public WebRtcSessionObserver,
   talk_base::Thread* signaling_thread_;
   SessionDescriptionProvider* provider_;
   State state_;
-  uint32 ssrc_counter_;
 
   typedef std::map<std::string, talk_base::scoped_refptr<MediaStreamProxy> >
       RemoteStreamMap;

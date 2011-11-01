@@ -50,11 +50,9 @@ class MediaStreamTrackProxy : public T,
 
   virtual std::string kind() const;
   virtual std::string label() const;
-  virtual uint32 ssrc() const;
   virtual bool enabled() const;
   virtual MediaStreamTrackInterface::TrackState state() const;
   virtual bool set_enabled(bool enable);
-  virtual bool set_ssrc(uint32 ssrc);
   virtual bool set_state(MediaStreamTrackInterface::TrackState new_state);
 
   // Implement Notifier
@@ -79,7 +77,6 @@ class AudioTrackProxy : public MediaStreamTrackProxy<LocalAudioTrackInterface> {
  public:
   static talk_base::scoped_refptr<AudioTrackInterface> CreateRemote(
       const std::string& label,
-      uint32 ssrc,
       talk_base::Thread* signaling_thread);
   static talk_base::scoped_refptr<LocalAudioTrackInterface> CreateLocal(
       const std::string& label,
@@ -93,7 +90,6 @@ class AudioTrackProxy : public MediaStreamTrackProxy<LocalAudioTrackInterface> {
 
  protected:
   AudioTrackProxy(const std::string& label,
-                  uint32 ssrc,
                   talk_base::Thread* signaling_thread);
   AudioTrackProxy(const std::string& label,
                   AudioDeviceModule* audio_device,
@@ -114,7 +110,6 @@ class VideoTrackProxy : public MediaStreamTrackProxy<LocalVideoTrackInterface> {
  public:
   static talk_base::scoped_refptr<VideoTrackInterface> CreateRemote(
       const std::string& label,
-      uint32 ssrc,
       talk_base::Thread* signaling_thread);
   static talk_base::scoped_refptr<LocalVideoTrackInterface> CreateLocal(
       const std::string& label,
@@ -130,7 +125,6 @@ class VideoTrackProxy : public MediaStreamTrackProxy<LocalVideoTrackInterface> {
 
  protected:
   VideoTrackProxy(const std::string& label,
-                  uint32 ssrc,
                   talk_base::Thread* signaling_thread);
   VideoTrackProxy(const std::string& label,
                   VideoCaptureModule* video_device,

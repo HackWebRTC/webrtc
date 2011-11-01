@@ -74,26 +74,26 @@ LocalVideoTrackHandler::LocalVideoTrackHandler(
 LocalVideoTrackHandler::~LocalVideoTrackHandler() {
   // Since cricket::VideoRenderer is not reference counted
   // we need to remove the renderer before we are deleted.
-  provider_->SetLocalRenderer(video_track_->ssrc(), NULL);
+  provider_->SetLocalRenderer(video_track_->label(), NULL);
 }
 
 void LocalVideoTrackHandler::OnRendererChanged() {
   VideoRendererWrapperInterface* renderer(video_track_->GetRenderer());
   if (renderer)
-    provider_->SetLocalRenderer(video_track_->ssrc(), renderer->renderer());
+    provider_->SetLocalRenderer(video_track_->label(), renderer->renderer());
   else
-    provider_->SetLocalRenderer(video_track_->ssrc(), NULL);
+    provider_->SetLocalRenderer(video_track_->label(), NULL);
 }
 
 void LocalVideoTrackHandler::OnStateChanged() {
   if (local_video_track_->state() == VideoTrackInterface::kLive) {
-    provider_->SetCaptureDevice(local_video_track_->ssrc(),
+    provider_->SetCaptureDevice(local_video_track_->label(),
                                 local_video_track_->GetVideoCapture());
     VideoRendererWrapperInterface* renderer(video_track_->GetRenderer());
     if (renderer)
-      provider_->SetLocalRenderer(video_track_->ssrc(), renderer->renderer());
+      provider_->SetLocalRenderer(video_track_->label(), renderer->renderer());
     else
-      provider_->SetLocalRenderer(video_track_->ssrc(), NULL);
+      provider_->SetLocalRenderer(video_track_->label(), NULL);
   }
 }
 
@@ -111,16 +111,16 @@ RemoteVideoTrackHandler::RemoteVideoTrackHandler(
 RemoteVideoTrackHandler::~RemoteVideoTrackHandler() {
   // Since cricket::VideoRenderer is not reference counted
   // we need to remove the renderer before we are deleted.
-  provider_->SetRemoteRenderer(video_track_->ssrc(), NULL);
+  provider_->SetRemoteRenderer(video_track_->label(), NULL);
 }
 
 
 void RemoteVideoTrackHandler::OnRendererChanged() {
   VideoRendererWrapperInterface* renderer(video_track_->GetRenderer());
   if (renderer)
-    provider_->SetRemoteRenderer(video_track_->ssrc(), renderer->renderer());
+    provider_->SetRemoteRenderer(video_track_->label(), renderer->renderer());
   else
-    provider_->SetRemoteRenderer(video_track_->ssrc(), NULL);
+    provider_->SetRemoteRenderer(video_track_->label(), NULL);
 }
 
 void RemoteVideoTrackHandler::OnStateChanged() {
