@@ -144,6 +144,9 @@ private:
     VideoRotationMode _rotateFrame; //Set if the frame should be rotated by the capture module.
 
     VideoFrame _captureFrame;
+
+    // Used to make sure incoming timestamp is increasing for every frame.
+    WebRtc_Word64 last_capture_time_;
 };
 } // namespace videocapturemodule
 } //namespace webrtc

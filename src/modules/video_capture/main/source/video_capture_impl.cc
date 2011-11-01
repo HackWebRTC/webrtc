@@ -168,7 +168,8 @@ VideoCaptureImpl::VideoCaptureImpl(const WebRtc_Word32 id)
       _lastFrameRateCallbackTime(TickTime::Now()), _frameRateCallBack(false),
       _noPictureAlarmCallBack(false), _captureAlarm(Cleared), _setCaptureDelay(0),
       _dataCallBack(NULL), _captureCallBack(NULL), _startImageFrameIntervall(0),
-      _lastProcessFrameCount(TickTime::Now()), _rotateFrame(kRotateNone)
+      _lastProcessFrameCount(TickTime::Now()), _rotateFrame(kRotateNone),
+      last_capture_time_(TickTime::MillisecondTimestamp())
 
 {
     _requestedCapability.width = kDefaultWidth;
@@ -265,6 +266,12 @@ WebRtc_Word32 VideoCaptureImpl::DeliverCapturedFrame(VideoFrame& captureFrame,
   else {
       captureFrame.SetRenderTime(TickTime::MillisecondTimestamp());
   }
+
+  if (captureFrame.RenderTimeMs() == last_capture_time_) {
+    // We don't allow the same capture time for two frames, drop this one.
+    return -1;
+  }
+  last_capture_time_ = captureFrame.RenderTimeMs();
 
   captureFrame.SetHeight(height);
   captureFrame.SetWidth(width);
