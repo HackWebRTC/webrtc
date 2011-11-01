@@ -585,6 +585,11 @@ void ViEEncoder::DeliverFrame(int id, webrtc::VideoFrame& videoFrame,
         VideoContentMetrics* contentMetrics = NULL;
         contentMetrics = _vpm.ContentMetrics();
 
+        // frame was not sampled => use original
+        if (decimatedFrame == NULL)  {
+          decimatedFrame = &videoFrame;
+        }
+
         if (_vcm.AddVideoFrame
             (*decimatedFrame, contentMetrics, &codecSpecificInfo) != VCM_OK)
         {
@@ -608,6 +613,10 @@ void ViEEncoder::DeliverFrame(int id, webrtc::VideoFrame& videoFrame,
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId, _channelId),
                   "%s: Error preprocessing frame %u", __FUNCTION__, videoFrame.TimeStamp());
         return;
+    }
+    // frame was not sampled => use original
+    if (decimatedFrame == NULL)  {
+      decimatedFrame = &videoFrame;
     }
     if (_vcm.AddVideoFrame(*decimatedFrame) != VCM_OK)
     {

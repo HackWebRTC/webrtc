@@ -139,41 +139,43 @@ VPMFramePreprocessor::DecimatedHeight() const
 WebRtc_Word32
 VPMFramePreprocessor::PreprocessFrame(const VideoFrame* frame, VideoFrame** processedFrame)
 {
-    if (frame == NULL)
+    if (frame == NULL || frame->Height() == 0 || frame->Width() == 0)
     {
         return VPM_PARAMETER_ERROR;
     }
-    else if (frame->Height() == 0 || frame->Width() == 0)
-    {
-        return VPM_PARAMETER_ERROR;
-    }
+
     _vd->UpdateIncomingFrameRate();
 
     if (_vd->DropFrame())
     {
         WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceVideo, _id, "Drop frame due to frame rate");
-        return 1;// drop 1 frame
+        return 1;  // drop 1 frame
     }
 
-    //Resizing incoming frame.
-    // Note that we must make a copy of it. We are not allowed to resample the input frame.
-    WebRtc_Word32 ret = _spatialResampler->ResampleFrame(*frame, _resampledFrame);
-    if (ret != VPM_OK)
-    {
+    // Resizing incoming frame if needed.
+    // Note that we must make a copy of it.
+    // We are not allowed to resample the input frame.
+    *processedFrame = NULL;
+    if (_spatialResampler->ApplyResample(frame->Width(), frame->Height()))  {
+      WebRtc_Word32 ret = _spatialResampler->ResampleFrame(*frame, _resampledFrame);
+      if (ret != VPM_OK)
         return ret;
+      *processedFrame = &_resampledFrame;
     }
 
-    *processedFrame = &_resampledFrame;
-
-    // Perform content analysis on the resampled frame
+    // Perform content analysis on the frame to be encoded
     if (_enableCA)
     {
-        _contentMetrics = _ca->ComputeContentMetrics(&_resampledFrame);
-        //Update native values:
+        if (*processedFrame == NULL)  {
+          _contentMetrics = _ca->ComputeContentMetrics(frame);
+        } else {
+          _contentMetrics = _ca->ComputeContentMetrics(&_resampledFrame);
+        }
+        // Update native values:
         _contentMetrics->nativeHeight = frame->Height();
         _contentMetrics->nativeWidth = frame->Width();
-
-        _contentMetrics->nativeFrameRate = _maxFrameRate; // max value as set by user 
+        // Max value as set by user
+        _contentMetrics->nativeFrameRate = _maxFrameRate;
     }
     return VPM_OK;
 }

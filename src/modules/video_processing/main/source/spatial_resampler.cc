@@ -371,5 +371,16 @@ VPMSimpleSpatialResampler::TargetWidth()
     return _targetWidth;
 }
 
+bool
+VPMSimpleSpatialResampler::ApplyResample(WebRtc_UWord32 width,
+                                         WebRtc_UWord32 height)
+{
+    if ((width == _targetWidth && height == _targetHeight) ||
+        _resamplingMode == kNoRescaling)
+      return false;
+    else
+      return true;
+}
+
 
 } //namespace

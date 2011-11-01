@@ -39,6 +39,7 @@ public:
     virtual WebRtc_UWord32 TargetWidth() = 0;
     virtual WebRtc_UWord32 TargetHeight() = 0;
     virtual WebRtc_Word32 Release() = 0;
+    virtual bool ApplyResample(WebRtc_UWord32 width, WebRtc_UWord32 height) = 0;
 };
 
 class VPMSimpleSpatialResampler : public VPMSpatialResampler
@@ -55,6 +56,7 @@ public:
     virtual WebRtc_UWord32 TargetWidth();
     virtual WebRtc_UWord32 TargetHeight();
     virtual WebRtc_Word32 Release();
+    virtual bool ApplyResample(WebRtc_UWord32 width, WebRtc_UWord32 height);
 
 private:
     WebRtc_Word32 UpsampleFrame(const VideoFrame& inFrame, VideoFrame& outFrame);
