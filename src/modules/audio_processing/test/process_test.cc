@@ -19,6 +19,7 @@
 #include "audio_processing.h"
 #include "cpu_features_wrapper.h"
 #include "module_common_types.h"
+#include "scoped_ptr.h"
 #include "tick_util.h"
 #ifdef WEBRTC_ANDROID
 #include "external/webrtc/src/modules/audio_processing/debug.pb.h"
@@ -31,8 +32,10 @@ using webrtc::AudioProcessing;
 using webrtc::EchoCancellation;
 using webrtc::GainControl;
 using webrtc::NoiseSuppression;
+using webrtc::scoped_array;
 using webrtc::TickInterval;
 using webrtc::TickTime;
+
 using webrtc::audioproc::Event;
 using webrtc::audioproc::Init;
 using webrtc::audioproc::ReverseStream;
@@ -51,15 +54,15 @@ bool ReadMessageFromFile(FILE* file,
   if (size <= 0) {
     return false;
   }
-  size_t usize = static_cast<size_t>(size);
+  const size_t usize = static_cast<size_t>(size);
 
-  char array[usize];
-  if (fread(array, sizeof(char), usize, file) != usize) {
+  scoped_array<char> array(new char[usize]);
+  if (fread(array.get(), sizeof(char), usize, file) != usize) {
     return false;
   }
 
   msg->Clear();
-  return msg->ParseFromArray(array, usize);
+  return msg->ParseFromArray(array.get(), usize);
 }
 
 void PrintStat(const AudioProcessing::Statistic& stat) {
@@ -470,13 +473,14 @@ void void_main(int argc, char* argv[]) {
 
     const size_t path_size =
         apm->echo_control_mobile()->echo_path_size_bytes();
-    unsigned char echo_path[path_size];
-    ASSERT_EQ(path_size, fread(echo_path,
-                               sizeof(unsigned char),
+    scoped_array<char> echo_path(new char[path_size]);
+    ASSERT_EQ(path_size, fread(echo_path.get(),
+                               sizeof(char),
                                path_size,
                                aecm_echo_path_in_file));
     EXPECT_EQ(apm->kNoError,
-              apm->echo_control_mobile()->SetEchoPath(echo_path, path_size));
+              apm->echo_control_mobile()->SetEchoPath(echo_path.get(),
+                                                      path_size));
     fclose(aecm_echo_path_in_file);
     aecm_echo_path_in_file = NULL;
   }
@@ -863,10 +867,10 @@ void void_main(int argc, char* argv[]) {
   if (aecm_echo_path_out_file != NULL) {
     const size_t path_size =
         apm->echo_control_mobile()->echo_path_size_bytes();
-    unsigned char echo_path[path_size];
-    apm->echo_control_mobile()->GetEchoPath(echo_path, path_size);
-    ASSERT_EQ(path_size, fwrite(echo_path,
-                                sizeof(unsigned char),
+    scoped_array<char> echo_path(new char[path_size]);
+    apm->echo_control_mobile()->GetEchoPath(echo_path.get(), path_size);
+    ASSERT_EQ(path_size, fwrite(echo_path.get(),
+                                sizeof(char),
                                 path_size,
                                 aecm_echo_path_out_file));
     fclose(aecm_echo_path_out_file);

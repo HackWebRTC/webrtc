@@ -16,7 +16,11 @@
 #include <stdio.h>
 
 #include "google/gflags.h"
+#include "scoped_ptr.h"
+#include "typedefs.h"
 #include "webrtc/audio_processing/debug.pb.h"
+
+using webrtc::scoped_array;
 
 using webrtc::audioproc::Event;
 using webrtc::audioproc::ReverseStream;
@@ -41,15 +45,15 @@ bool ReadMessageFromFile(FILE* file,
   if (size <= 0) {
     return false;
   }
-  size_t usize = static_cast<size_t>(size);
+  const size_t usize = static_cast<size_t>(size);
 
-  char array[usize];
-  if (fread(array, sizeof(char), usize, file) != usize) {
+  scoped_array<char> array(new char[usize]);
+  if (fread(array.get(), sizeof(char), usize, file) != usize) {
     return false;
   }
 
   msg->Clear();
-  return msg->ParseFromArray(array, usize);
+  return msg->ParseFromArray(array.get(), usize);
 }
 
 int main(int argc, char* argv[]) {

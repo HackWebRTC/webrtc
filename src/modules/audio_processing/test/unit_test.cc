@@ -15,6 +15,7 @@
 #include "audio_processing.h"
 #include "event_wrapper.h"
 #include "module_common_types.h"
+#include "scoped_ptr.h"
 #include "signal_processing_library.h"
 #include "testsupport/fileutils.h"
 #include "thread_wrapper.h"
@@ -31,6 +32,7 @@ using webrtc::GainControl;
 using webrtc::NoiseSuppression;
 using webrtc::EchoCancellation;
 using webrtc::EventWrapper;
+using webrtc::scoped_array;
 using webrtc::Trace;
 using webrtc::LevelEstimator;
 using webrtc::EchoCancellation;
@@ -775,26 +777,28 @@ TEST_F(ApmTest, EchoControlMobile) {
   // Set and get echo path
   const size_t echo_path_size =
       apm_->echo_control_mobile()->echo_path_size_bytes();
-  unsigned char echo_path_in[echo_path_size];
-  unsigned char echo_path_out[echo_path_size];
+  scoped_array<char> echo_path_in(new char[echo_path_size]);
+  scoped_array<char> echo_path_out(new char[echo_path_size]);
   EXPECT_EQ(apm_->kNullPointerError,
             apm_->echo_control_mobile()->SetEchoPath(NULL, echo_path_size));
   EXPECT_EQ(apm_->kNullPointerError,
             apm_->echo_control_mobile()->GetEchoPath(NULL, echo_path_size));
   EXPECT_EQ(apm_->kBadParameterError,
-            apm_->echo_control_mobile()->GetEchoPath(echo_path_out, 1));
+            apm_->echo_control_mobile()->GetEchoPath(echo_path_out.get(), 1));
   EXPECT_EQ(apm_->kNoError,
-            apm_->echo_control_mobile()->GetEchoPath(echo_path_out,
+            apm_->echo_control_mobile()->GetEchoPath(echo_path_out.get(),
                                                      echo_path_size));
   for (size_t i = 0; i < echo_path_size; i++) {
     echo_path_in[i] = echo_path_out[i] + 1;
   }
   EXPECT_EQ(apm_->kBadParameterError,
-            apm_->echo_control_mobile()->SetEchoPath(echo_path_in, 1));
+            apm_->echo_control_mobile()->SetEchoPath(echo_path_in.get(), 1));
   EXPECT_EQ(apm_->kNoError,
-            apm_->echo_control_mobile()->SetEchoPath(echo_path_in, echo_path_size));
+            apm_->echo_control_mobile()->SetEchoPath(echo_path_in.get(),
+                                                     echo_path_size));
   EXPECT_EQ(apm_->kNoError,
-            apm_->echo_control_mobile()->GetEchoPath(echo_path_out, echo_path_size));
+            apm_->echo_control_mobile()->GetEchoPath(echo_path_out.get(),
+                                                     echo_path_size));
   for (size_t i = 0; i < echo_path_size; i++) {
     EXPECT_EQ(echo_path_in[i], echo_path_out[i]);
   }

@@ -57,6 +57,7 @@
       'type': 'executable',
       'dependencies': [
         'audioproc_debug_proto',
+        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
         '<(webrtc_root)/../third_party/google-gflags/google-gflags.gyp:google-gflags',
       ],
       'sources': [ 'test/unpack.cc', ],
