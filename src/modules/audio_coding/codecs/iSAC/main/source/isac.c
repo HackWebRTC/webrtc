@@ -479,11 +479,13 @@ WebRtc_Word16 WebRtcIsac_EncoderInit(
 
   if(instISAC->encoderSamplingRateKHz == kIsacWideband)
     {
+      instISAC->bandwidthKHz = isac8kHz;
       instISAC->maxPayloadSizeBytes = STREAM_SIZE_MAX_60;
       instISAC->maxRateBytesPer30Ms = STREAM_SIZE_MAX_30;
     }
   else
     {
+      instISAC->bandwidthKHz = isac16kHz;
       instISAC->maxPayloadSizeBytes = STREAM_SIZE_MAX;
       instISAC->maxRateBytesPer30Ms = STREAM_SIZE_MAX;
     }
@@ -2647,6 +2649,14 @@ WebRtc_Word16 WebRtcIsac_SetEncSampRate(
   else if((instISAC->initFlag & BIT_MASK_ENC_INIT) !=
           BIT_MASK_ENC_INIT)
     {
+      if(sampRate == kIsacWideband)
+      {
+        instISAC->bandwidthKHz = isac8kHz;
+      }
+      else
+      {
+        instISAC->bandwidthKHz = isac16kHz;
+      }
       instISAC->encoderSamplingRateKHz = sampRate;
       return 0;
     }
@@ -2684,6 +2694,7 @@ WebRtc_Word16 WebRtcIsac_SetEncSampRate(
 					&(instISAC->bandwidthKHz));
 	    }
 
+          instISAC->bandwidthKHz = isac16kHz;
 	  instISAC->maxPayloadSizeBytes = STREAM_SIZE_MAX;
 	  instISAC->maxRateBytesPer30Ms = STREAM_SIZE_MAX;
 
