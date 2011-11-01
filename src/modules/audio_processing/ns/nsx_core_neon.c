@@ -456,7 +456,7 @@ void WebRtcNsx_PrepareSpectrum(NsxInst_t* inst, int16_t* freq_buf) {
 }
 
 // Denormalize the input buffer.
-inline void WebRtcNsx_Denormalize(NsxInst_t* inst, int16_t* in, int factor) {
+__inline void WebRtcNsx_Denormalize(NsxInst_t* inst, int16_t* in, int factor) {
   int16_t* ptr_real = &inst->real[0];
   int16_t* ptr_in = &in[0];
 
@@ -683,9 +683,9 @@ void WebRtcNsx_AnalysisUpdate(NsxInst_t* inst,
 
 // Create a complex number buffer (out[]) as the intput (in[]) interleaved with
 // zeros, and normalize it.
-inline void WebRtcNsx_CreateComplexBuffer(NsxInst_t* inst,
-                                          int16_t* in,
-                                          int16_t* out) {
+__inline void WebRtcNsx_CreateComplexBuffer(NsxInst_t* inst,
+                                            int16_t* in,
+                                            int16_t* out) {
   int16_t* ptr_out = &out[0];
   int16_t* ptr_in = &in[0];
 

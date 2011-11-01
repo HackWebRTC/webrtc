@@ -190,15 +190,15 @@ void WebRtcNsx_AnalysisUpdate(NsxInst_t* inst,
                               int16_t* new_speech);
 
 // Denormalize the input buffer.
-inline void WebRtcNsx_Denormalize(NsxInst_t* inst,
-                                  int16_t* in,
-                                  int factor);
+__inline void WebRtcNsx_Denormalize(NsxInst_t* inst,
+                                    int16_t* in,
+                                    int factor);
 
 // Create a complex number buffer, as the intput interleaved with zeros,
 // and normalize it.
-inline void WebRtcNsx_CreateComplexBuffer(NsxInst_t* inst,
-                                          int16_t* in,
-                                          int16_t* out);
+__inline void WebRtcNsx_CreateComplexBuffer(NsxInst_t* inst,
+                                            int16_t* in,
+                                            int16_t* out);
 
 extern const WebRtc_Word16 WebRtcNsx_kLogTable[9];
 extern const WebRtc_Word16 WebRtcNsx_kLogTableFrac[256];

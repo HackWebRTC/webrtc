@@ -2341,7 +2341,7 @@ void WebRtcNsx_PrepareSpectrum(NsxInst_t* inst, int16_t* freq_buf) {
 }
 
 // Denormalize the input buffer.
-inline void WebRtcNsx_Denormalize(NsxInst_t* inst, int16_t* in, int factor) {
+__inline void WebRtcNsx_Denormalize(NsxInst_t* inst, int16_t* in, int factor) {
   int i = 0, j = 0;
   int32_t tmp32 = 0;
   for (i = 0, j = 0; i < inst->anaLen; i += 1, j += 2) {
@@ -2407,9 +2407,9 @@ void WebRtcNsx_AnalysisUpdate(NsxInst_t* inst,
 
 // Create a complex number buffer (out[]) as the intput (in[]) interleaved with
 // zeros, and normalize it.
-inline void WebRtcNsx_CreateComplexBuffer(NsxInst_t* inst,
-                                          int16_t* in,
-                                          int16_t* out) {
+__inline void WebRtcNsx_CreateComplexBuffer(NsxInst_t* inst,
+                                            int16_t* in,
+                                            int16_t* out) {
   int i = 0, j = 0;
   for (i = 0, j = 0; i < inst->anaLen; i += 1, j += 2) {
     out[j] = WEBRTC_SPL_LSHIFT_W16(in[i], inst->normData); // Q(normData)
