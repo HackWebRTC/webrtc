@@ -71,14 +71,14 @@ VP8Encoder::VersionStatic(WebRtc_Word8* version, WebRtc_Word32 length)
 {
     const char* str = vpx_codec_iface_name(vpx_codec_vp8_cx());
     WebRtc_Word32 verLen = (WebRtc_Word32)strlen(str);
-    // Accounting for added new line char.
-    if (verLen + 1 > length)
+    // Accounting for "\0" and "\n" (to be added a bit later)
+    if (verLen + 2 > length)
     {
         return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
     }
-    strncpy(version, str, verLen);
+    strcpy(version, str);
     strcat(version, "\n");
-    return (verLen + 1);
+    return (verLen + 2);
 }
 
 WebRtc_Word32
