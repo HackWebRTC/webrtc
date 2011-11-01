@@ -1256,8 +1256,8 @@ int WebRtcIsac_EncodeStoredDataUb12(
   int n;
   int err;
   double lpcGain[SUBFRAMES];
-  WebRtc_Word16 realFFT[FRAMESAMPLES];
-  WebRtc_Word16 imagFFT[FRAMESAMPLES];
+  WebRtc_Word16 realFFT[FRAMESAMPLES_HALF];
+  WebRtc_Word16 imagFFT[FRAMESAMPLES_HALF];
 
   /* reset bitstream */
   bitStream->W_upper = 0xFFFFFFFF;
@@ -1302,7 +1302,7 @@ int WebRtcIsac_EncodeStoredDataUb12(
     }
     // store lpc gain
     WebRtcIsac_StoreLpcGainUb(lpcGain, bitStream);
-    for(n = 0; n < FRAMESAMPLES; n++)
+    for(n = 0; n < FRAMESAMPLES_HALF; n++)
     {
       realFFT[n] = (WebRtc_Word16)(scale * (float)ISACSavedEnc_obj->realFFT[n] + 0.5f);
       imagFFT[n] = (WebRtc_Word16)(scale * (float)ISACSavedEnc_obj->imagFFT[n] + 0.5f);
@@ -1331,8 +1331,8 @@ WebRtcIsac_EncodeStoredDataUb16(
   int n;
   int err;
   double lpcGain[SUBFRAMES << 1];
-  WebRtc_Word16 realFFT[FRAMESAMPLES];
-  WebRtc_Word16 imagFFT[FRAMESAMPLES];
+  WebRtc_Word16 realFFT[FRAMESAMPLES_HALF];
+  WebRtc_Word16 imagFFT[FRAMESAMPLES_HALF];
 
   /* reset bitstream */
   bitStream->W_upper = 0xFFFFFFFF;
@@ -1381,7 +1381,7 @@ WebRtcIsac_EncodeStoredDataUb16(
     WebRtcIsac_StoreLpcGainUb(lpcGain, bitStream);
     WebRtcIsac_StoreLpcGainUb(&lpcGain[SUBFRAMES], bitStream);
     /* scale FFT coefficients */
-    for(n = 0; n < FRAMESAMPLES; n++)
+    for(n = 0; n < FRAMESAMPLES_HALF; n++)
     {
       realFFT[n] = (WebRtc_Word16)(scale * (float)ISACSavedEnc_obj->realFFT[n] + 0.5f);
       imagFFT[n] = (WebRtc_Word16)(scale * (float)ISACSavedEnc_obj->imagFFT[n] + 0.5f);
