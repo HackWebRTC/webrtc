@@ -12,15 +12,7 @@
 #include "trace.h"
 #include "tick_util.h"
 
-#ifdef WIN32
-#include <vld.h> // Visual Leak Detector
-#endif
-
-#ifdef WIN32
-#pragma message("Using Google C++ Testing Framework")
-#endif
-
-using namespace webrtc;
+using webrtc::Trace;
 
 void TestSize(VideoFrame& sourceFrame, WebRtc_UWord32 targetWidth, WebRtc_UWord32 targetHeight,
               WebRtc_UWord32 mode, VideoProcessingModule *vpm);
