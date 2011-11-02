@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
 	printf("Output file: %s\n\n",argv[2]);
 
     // print file header
-    fprintf(outFile, "SeqNo  TimeStamp   SendTime  Size    PT\n");
+    fprintf(outFile, "SeqNo  TimeStamp   SendTime  Size    PT  M\n");
 
 
     // read file header 
@@ -53,9 +53,9 @@ int main(int argc, char* argv[])
     while (packet.readFromFile(inFile) >= 0)
     {
         // write packet data to file
-        fprintf(outFile, "%5u %10u %10u %5i %5i\n",
+        fprintf(outFile, "%5u %10u %10u %5i %5i %2i\n",
             packet.sequenceNumber(), packet.timeStamp(), packet.time(),
-            packet.dataLen(), packet.payloadType());
+            packet.dataLen(), packet.payloadType(), packet.markerBit());
     }
 
     fclose(inFile);
