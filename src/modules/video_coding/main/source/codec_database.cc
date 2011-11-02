@@ -701,10 +701,9 @@ VCMCodecDataBase::CopyDecoder(const VCMGenericDecoder& decoder)
         ReleaseDecoder(_ptrDecoder);
         _ptrDecoder = new VCMGenericDecoder(*decoderCopy, _id,
                                             decoder.External());
-        if (cb)
+        if (cb && _ptrDecoder->RegisterDecodeCompleteCallback(cb))
         {
-            WebRtc_Word32 ret = _ptrDecoder->RegisterDecodeCompleteCallback(cb);
-            assert(ret == WEBRTC_VIDEO_CODEC_OK);
+            assert(false);
         }
     }
 }
