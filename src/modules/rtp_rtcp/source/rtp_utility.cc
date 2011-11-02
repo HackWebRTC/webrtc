@@ -385,6 +385,8 @@ ModuleRTPUtility::RTPPayload::SetType(RtpVideoCodecTypes videoType)
         info.VP8.pictureID = -1;
         info.VP8.tl0PicIdx = -1;
         info.VP8.tID = -1;
+        info.VP8.frameWidth = 0;
+        info.VP8.frameHeight = 0;
         break;
     }
     default:
@@ -868,15 +870,38 @@ ModuleRTPUtility::RTPPayloadParser::ParseVP8(RTPPayload& parsedPacket) const
     {
         parsedPacket.frameType = kPFrame;
     }
-
+    if (0 != ParseVP8FrameSize(parsedPacket, dataPtr, dataLength))
+    {
+        return false;
+    }
     parsedPacket.info.VP8.data       = dataPtr;
     parsedPacket.info.VP8.dataLength = dataLength;
-
     return true;
 }
 
-int
-ModuleRTPUtility::RTPPayloadParser::ParseVP8Extension(
+int ModuleRTPUtility::RTPPayloadParser::ParseVP8FrameSize(
+      RTPPayload &parsedPacket,
+      const WebRtc_UWord8 *dataPtr,
+      int dataLength) const
+{
+    if (parsedPacket.frameType != kIFrame)
+    {
+        // Included in payload header for I-frames.
+        return 0;
+    }
+    if (dataLength < 10)
+    {
+        // For an I-frame we should always have the uncompressed VP8 header
+        // in the beginning of the partition.
+        return -1;
+    }
+    RTPPayloadVP8 *vp8 = &parsedPacket.info.VP8;
+    vp8->frameWidth = ((dataPtr[7] << 8) + dataPtr[6]) & 0x3FFF;
+    vp8->frameHeight = ((dataPtr[9] << 8) + dataPtr[8]) & 0x3FFF;
+    return 0;
+}
+
+int ModuleRTPUtility::RTPPayloadParser::ParseVP8Extension(
         RTPPayloadVP8 *vp8,
         const WebRtc_UWord8 *dataPtr,
         int dataLength) const

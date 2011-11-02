@@ -42,7 +42,7 @@ namespace ModuleRTPUtility
     struct VideoPayload
     {
         RtpVideoCodecTypes   videoCodecType;
-        WebRtc_UWord32             maxRate;
+        WebRtc_UWord32       maxRate;
     };
     union PayloadUnion
     {
@@ -51,7 +51,7 @@ namespace ModuleRTPUtility
     };
     struct Payload
     {
-        WebRtc_Word8   name[RTP_PAYLOAD_NAME_SIZE];
+        WebRtc_Word8 name[RTP_PAYLOAD_NAME_SIZE];
         bool         audio;
         PayloadUnion typeSpecific;
     };
@@ -148,8 +148,10 @@ namespace ModuleRTPUtility
         int                  pictureID;
         int                  tl0PicIdx;
         int                  tID;
+        int                  frameWidth;
+        int                  frameHeight;
 
-        const WebRtc_UWord8*   data;
+        const WebRtc_UWord8*   data; 
         WebRtc_UWord16         dataLength;
     };
 
@@ -210,6 +212,10 @@ namespace ModuleRTPUtility
                         const WebRtc_UWord8 **dataPtr,
                         int *dataLength,
                         int *parsedBytes) const;
+
+        int ParseVP8FrameSize(RTPPayload& parsedPacket,
+                              const WebRtc_UWord8 *dataPtr,
+                              int dataLength) const;
 
         // H.263
         bool H263PictureStartCode(const WebRtc_UWord8* data,
