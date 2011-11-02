@@ -35,6 +35,7 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../../../../modules/audio_device/main/interface \
     $(LOCAL_PATH)/../../../../modules/interface \
     $(LOCAL_PATH)/../../../../system_wrappers/interface \
+    $(LOCAL_PATH)/../../../../../test \
     external/gtest/include \
 
 LOCAL_SHARED_LIBRARIES := \
