@@ -44,7 +44,7 @@ class PacketRelatedTest: public testing::Test {
   }
 
   void SetUp() {
-    // Initialize the random generator with 0 to get determenistic behaviour
+    // Initialize the random generator with 0 to get deterministic behavior
     srand(0);
   }
 

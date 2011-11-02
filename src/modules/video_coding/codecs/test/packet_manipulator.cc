@@ -73,6 +73,10 @@ int PacketManipulatorImpl::ManipulatePackets(
   return nbr_packets_dropped;
 }
 
+inline double PacketManipulatorImpl::RandomUniform() {
+  return (std::rand() + 1.0)/(RAND_MAX + 1.0);
+}
+
 const char* PacketLossModeToStr(PacketLossMode e) {
   switch (e) {
     case kUniform:
@@ -81,6 +85,7 @@ const char* PacketLossModeToStr(PacketLossMode e) {
       return "Burst";
     default:
       assert(false);
+      return "Unknown";
   }
 }
 

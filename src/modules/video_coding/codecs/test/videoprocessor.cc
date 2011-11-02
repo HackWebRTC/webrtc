@@ -239,6 +239,7 @@ const char* ExcludeFrameTypesToStr(ExcludeFrameTypes e) {
       return "ExcludeAllKeyFrames";
     default:
       assert(false);
+      return "Unknown";
   }
 }
 
@@ -262,6 +263,7 @@ const char* VideoCodecTypeToStr(webrtc::VideoCodecType e) {
       return "Unknown";
     default:
       assert(false);
+      return "Unknown";
   }
 }
 

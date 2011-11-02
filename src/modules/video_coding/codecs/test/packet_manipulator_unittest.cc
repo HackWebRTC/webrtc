@@ -7,6 +7,9 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+
+#include <queue>
+
 #include "gtest/gtest.h"
 #include "packet_manipulator.h"
 #include "typedefs.h"
@@ -19,12 +22,11 @@ namespace test {
 const double kNeverDropProbability = 0.0;
 const double kAlwaysDropProbability = 1.0;
 const int kBurstLength = 1;
-  
+
 class PacketManipulatorTest: public PacketRelatedTest {
  protected:
   PacketReader packet_reader_;
   EncodedImage image_;
-
   NetworkingConfig drop_config_;
   NetworkingConfig no_drop_config_;
 
@@ -70,6 +72,35 @@ class PacketManipulatorTest: public PacketRelatedTest {
   }
 };
 
+// Predictive packet manipulator that allows for setup of the result of
+// the random invocations.
+class PredictivePacketManipulatorImpl : public PacketManipulatorImpl {
+ public:
+  PredictivePacketManipulatorImpl(PacketReader* packet_reader,
+                                  const NetworkingConfig& config)
+    : PacketManipulatorImpl(packet_reader, config) {
+  }
+  // Adds a result. You must add at least the same number of results as the
+  // expected calls to the RandomUniform method. The results are added to a
+  // FIFO queue so they will be returned in the same order they were added.
+  void AddRandomResult(double result) {
+    ASSERT_TRUE(result >= 0.0 || result <= 1.0)
+        << "Cannot add results outside the range 0.0 - 1.0, was:" << result;
+    random_results_.push(result);
+  }
+ protected:
+  double RandomUniform() {
+    EXPECT_GT(random_results_.size(), 0u) << "No more stored results, please "
+        "make sure AddRandomResult() is called same amount of times you're "
+        "going to invoke the RandomUniform() function, i.e. once per packet.";
+    double result = random_results_.front();
+    random_results_.pop();
+    return result;
+  }
+ private:
+  std::queue<double> random_results_;
+};
+
 TEST_F(PacketManipulatorTest, Constructor) {
   PacketManipulatorImpl manipulator(&packet_reader_, no_drop_config_);
 }
@@ -107,27 +138,33 @@ TEST_F(PacketManipulatorTest, UniformDropAll) {
                    0, packet_data_, image_);
 }
 
+// Use our customized test class to make the second packet being lost
 TEST_F(PacketManipulatorTest, UniformDropSinglePacket) {
   drop_config_.packet_loss_probability = 0.5;
-  PacketManipulatorImpl manipulator(&packet_reader_, drop_config_);
+  PredictivePacketManipulatorImpl manipulator(&packet_reader_, drop_config_);
+  manipulator.AddRandomResult(1.0);
+  manipulator.AddRandomResult(0.3);  // less than 0.5 will cause packet loss
+  manipulator.AddRandomResult(1.0);
+
   // Execute the test target method:
   int nbr_packets_dropped = manipulator.ManipulatePackets(&image_);
 
-  // The deterministic behavior (since we've set srand) will
-  // make the packet manipulator to throw away the second packet.
-  // The third packet is lost because when we have lost one, the remains shall
-  // also be discarded.
+  // Since we setup the predictive packet manipulator, it will throw away the
+  // second packet. The third packet is also lost because when we have lost one,
+  // the remains shall also be discarded (in the current implementation).
   VerifyPacketLoss(2, nbr_packets_dropped, kPacketSizeInBytes, packet1_,
                    image_);
 }
 
+// Use our customized test class to make the second packet being lost
 TEST_F(PacketManipulatorTest, BurstDropNinePackets) {
-  // Create a longer packet data structure
-  const int kDataLength = kPacketSizeInBytes * 10;
+  // Create a longer packet data structure (10 packets)
+  const int kNbrPackets = 10;
+  const int kDataLength = kPacketSizeInBytes * kNbrPackets;
   WebRtc_UWord8 data[kDataLength];
   WebRtc_UWord8* data_pointer = data;
   // Fill with 0s, 1s and so on to be able to easily verify which were dropped:
-  for (int i = 0; i < 10; ++i) {
+  for (int i = 0; i < kNbrPackets; ++i) {
     memset(data_pointer + i * kPacketSizeInBytes, i, kPacketSizeInBytes);
   }
   // Overwrite the defaults from the test fixture:
@@ -135,10 +172,16 @@ TEST_F(PacketManipulatorTest, BurstDropNinePackets) {
   image_._length = kDataLength;
   image_._size = kDataLength;
 
-  drop_config_.packet_loss_probability = 0.4;
+  drop_config_.packet_loss_probability = 0.5;
   drop_config_.packet_loss_burst_length = 5;
   drop_config_.packet_loss_mode = kBurst;
-  PacketManipulatorImpl manipulator(&packet_reader_, drop_config_);
+  PredictivePacketManipulatorImpl manipulator(&packet_reader_, drop_config_);
+  manipulator.AddRandomResult(1.0);
+  manipulator.AddRandomResult(0.3);  // less than 0.5 will cause packet loss
+  for (int i = 0; i < kNbrPackets - 2; ++i) {
+    manipulator.AddRandomResult(1.0);
+  }
+
   // Execute the test target method:
   int nbr_packets_dropped = manipulator.ManipulatePackets(&image_);
 

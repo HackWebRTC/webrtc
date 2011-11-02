@@ -17,7 +17,9 @@ namespace test {
 const std::string kInputFilename = "temp_inputfile.tmp";
 const std::string kOutputFilename = "temp_outputfile.tmp";
 const std::string kInputFileContents = "baz";
-const int kFrameLength = 1e5;  // 100 kB
+// Setting the kFrameLength value to a value much larger than the
+// file to test causes the ReadFrame test to fail on Windows.
+const int kFrameLength = 1000;
 
 // Boilerplate code for proper unit tests for FileHandler.
 class FileHandlerTest: public testing::Test {

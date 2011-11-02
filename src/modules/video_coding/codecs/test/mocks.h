@@ -24,29 +24,27 @@ namespace webrtc {
 class MockVideoEncoder : public VideoEncoder {
  public:
   MOCK_CONST_METHOD2(Version,
-      WebRtc_Word32(WebRtc_Word8 *version, WebRtc_Word32 length));
+                     WebRtc_Word32(WebRtc_Word8 *version,
+                                   WebRtc_Word32 length));
   MOCK_METHOD3(InitEncode,
-      WebRtc_Word32(const VideoCodec* codecSettings,
-                    WebRtc_Word32 numberOfCores,
-                    WebRtc_UWord32 maxPayloadSize));
+               WebRtc_Word32(const VideoCodec* codecSettings,
+                             WebRtc_Word32 numberOfCores,
+                             WebRtc_UWord32 maxPayloadSize));
   MOCK_METHOD3(Encode,
-      WebRtc_Word32(const RawImage& inputImage,
-                    const CodecSpecificInfo* codecSpecificInfo,
-                    const VideoFrameType* frameType));
+               WebRtc_Word32(const RawImage& inputImage,
+                             const CodecSpecificInfo* codecSpecificInfo,
+                             const VideoFrameType* frameType));
   MOCK_METHOD1(RegisterEncodeCompleteCallback,
-      WebRtc_Word32(EncodedImageCallback* callback));
-  MOCK_METHOD0(Release,
-      WebRtc_Word32());
-  MOCK_METHOD0(Reset,
-      WebRtc_Word32());
-  MOCK_METHOD1(SetPacketLoss,
-      WebRtc_Word32(WebRtc_UWord32 packetLoss));
+               WebRtc_Word32(EncodedImageCallback* callback));
+  MOCK_METHOD0(Release, WebRtc_Word32());
+  MOCK_METHOD0(Reset, WebRtc_Word32());
+  MOCK_METHOD1(SetPacketLoss, WebRtc_Word32(WebRtc_UWord32 packetLoss));
   MOCK_METHOD2(SetRates,
-      WebRtc_Word32(WebRtc_UWord32 newBitRate, WebRtc_UWord32 frameRate));
-  MOCK_METHOD1(SetPeriodicKeyFrames,
-      WebRtc_Word32(bool enable));
+               WebRtc_Word32(WebRtc_UWord32 newBitRate,
+                             WebRtc_UWord32 frameRate));
+  MOCK_METHOD1(SetPeriodicKeyFrames, WebRtc_Word32(bool enable));
   MOCK_METHOD2(CodecConfigParameters,
-      WebRtc_Word32(WebRtc_UWord8* /*buffer*/, WebRtc_Word32));
+               WebRtc_Word32(WebRtc_UWord8* /*buffer*/, WebRtc_Word32));
 };
 
 class MockVideoDecoder : public VideoDecoder {
@@ -55,47 +53,36 @@ class MockVideoDecoder : public VideoDecoder {
       WebRtc_Word32(const VideoCodec* codecSettings,
                     WebRtc_Word32 numberOfCores));
   MOCK_METHOD5(Decode,
-      WebRtc_Word32(const EncodedImage& inputImage,
-                    bool missingFrames,
-                    const RTPFragmentationHeader* fragmentation,
-                    const CodecSpecificInfo* codecSpecificInfo,
-                    WebRtc_Word64 renderTimeMs));
+               WebRtc_Word32(const EncodedImage& inputImage,
+                             bool missingFrames,
+                             const RTPFragmentationHeader* fragmentation,
+                             const CodecSpecificInfo* codecSpecificInfo,
+                             WebRtc_Word64 renderTimeMs));
   MOCK_METHOD1(RegisterDecodeCompleteCallback,
-      WebRtc_Word32(DecodedImageCallback* callback));
-  MOCK_METHOD0(Release,
-      WebRtc_Word32());
-  MOCK_METHOD0(Reset,
-      WebRtc_Word32());
+               WebRtc_Word32(DecodedImageCallback* callback));
+  MOCK_METHOD0(Release, WebRtc_Word32());
+  MOCK_METHOD0(Reset, WebRtc_Word32());
   MOCK_METHOD2(SetCodecConfigParameters,
-      WebRtc_Word32(const WebRtc_UWord8* /*buffer*/, WebRtc_Word32));
-  MOCK_METHOD0(Copy,
-      VideoDecoder*());
+               WebRtc_Word32(const WebRtc_UWord8* /*buffer*/, WebRtc_Word32));
+  MOCK_METHOD0(Copy, VideoDecoder*());
 };
 
 namespace test {
 
 class MockFileHandler : public FileHandler {
  public:
-  MOCK_METHOD0(Init,
-                 bool());
-  MOCK_METHOD1(ReadFrame,
-               bool(WebRtc_UWord8* source_buffer));
-  MOCK_METHOD1(WriteFrame,
-               bool(WebRtc_UWord8* frame_buffer));
-  MOCK_METHOD0(Close,
-               void());
-  MOCK_METHOD1(GetFileSize,
-               WebRtc_UWord64(std::string filename));
-  MOCK_METHOD0(GetFrameLength,
-               int());
-  MOCK_METHOD0(GetNumberOfFrames,
-               int());
+  MOCK_METHOD0(Init, bool());
+  MOCK_METHOD1(ReadFrame, bool(WebRtc_UWord8* source_buffer));
+  MOCK_METHOD1(WriteFrame, bool(WebRtc_UWord8* frame_buffer));
+  MOCK_METHOD0(Close, void());
+  MOCK_METHOD1(GetFileSize, WebRtc_UWord64(std::string filename));
+  MOCK_METHOD0(GetFrameLength, int());
+  MOCK_METHOD0(GetNumberOfFrames, int());
 };
 
 class MockPacketManipulator : public PacketManipulator {
  public:
-  MOCK_METHOD1(ManipulatePackets,
-               int(webrtc::EncodedImage* encoded_image));
+  MOCK_METHOD1(ManipulatePackets, int(webrtc::EncodedImage* encoded_image));
 };
 
 }  // namespace test

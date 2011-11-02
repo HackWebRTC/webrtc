@@ -90,12 +90,10 @@ class PacketManipulatorImpl : public PacketManipulator {
                         const NetworkingConfig& config);
   virtual ~PacketManipulatorImpl();
   virtual int ManipulatePackets(webrtc::EncodedImage* encoded_image);
-
- private:
+ protected:
   // Returns a uniformly distributed random value between 0.0 and 1.0
-  inline double RandomUniform() {
-    return (std::rand() + 1.0)/(RAND_MAX + 1.0);
-  }
+  virtual double RandomUniform();
+ private:
   PacketReader* packet_reader_;
   const NetworkingConfig& config_;
   // Used to simulate a burst over several frames.

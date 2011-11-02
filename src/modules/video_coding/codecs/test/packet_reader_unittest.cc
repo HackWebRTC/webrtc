@@ -134,14 +134,12 @@ TEST_F(PacketReaderTest, NormalLargeData) {
 // Test with empty data.
 TEST_F(PacketReaderTest, EmptyData) {
   const int kDataLengthInBytes = 0;
-  WebRtc_UWord8 data[0];
-  WebRtc_UWord8* data_pointer = data;
+  WebRtc_UWord8* data = new WebRtc_UWord8[kDataLengthInBytes];
   reader_->InitializeReading(data, kDataLengthInBytes, kPacketSizeInBytes);
-  EXPECT_EQ(kDataLengthInBytes, reader_->NextPacket(&data_pointer));
-  EXPECT_EQ(*data, *data_pointer);
+  EXPECT_EQ(kDataLengthInBytes, reader_->NextPacket(&data));
   // Do it again to make sure nothing changes
-  EXPECT_EQ(kDataLengthInBytes, reader_->NextPacket(&data_pointer));
-  EXPECT_EQ(*data, *data_pointer);
+  EXPECT_EQ(kDataLengthInBytes, reader_->NextPacket(&data));
+  delete[] data;
 }
 
 }  // namespace test
