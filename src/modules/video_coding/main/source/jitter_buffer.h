@@ -53,7 +53,7 @@ public:
                     bool master = true);
     virtual ~VCMJitterBuffer();
 
-    VCMJitterBuffer& operator=(const VCMJitterBuffer& rhs);
+    void CopyFrom(const VCMJitterBuffer& rhs);
 
     // We need a start and stop to break out of the wait event
     // used in GetCompleteFrameForDecoding
@@ -241,6 +241,8 @@ private:
     bool                    _waitingForKeyFrame;
 
     bool                    _firstPacket;
+
+    DISALLOW_COPY_AND_ASSIGN(VCMJitterBuffer);
 };
 
 } // namespace webrtc

@@ -1071,6 +1071,10 @@ VideoCodingModuleImpl::Decode(WebRtc_UWord16 maxWaitTimeMs)
             _dualDecoder->RegisterDecodeCompleteCallback(
                 &_dualDecodedFrameCallback);
         }
+        else
+        {
+            _dualReceiver.Reset();
+        }
     }
 
     if (frame == NULL)

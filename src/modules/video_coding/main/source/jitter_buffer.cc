@@ -115,8 +115,8 @@ VCMJitterBuffer::~VCMJitterBuffer()
     delete &_critSect;
 }
 
-VCMJitterBuffer&
-VCMJitterBuffer::operator=(const VCMJitterBuffer& rhs)
+void
+VCMJitterBuffer::CopyFrom(const VCMJitterBuffer& rhs)
 {
     if (this != &rhs)
     {
@@ -138,7 +138,6 @@ VCMJitterBuffer::operator=(const VCMJitterBuffer& rhs)
         _jitterEstimate = rhs._jitterEstimate;
         _delayEstimate = rhs._delayEstimate;
         _waitingForCompletion = rhs._waitingForCompletion;
-        _nackMode = rhs._nackMode;
         _rttMs = rhs._rttMs;
         _NACKSeqNumLength = rhs._NACKSeqNumLength;
         _waitingForKeyFrame = rhs._waitingForKeyFrame;
@@ -173,7 +172,6 @@ VCMJitterBuffer::operator=(const VCMJitterBuffer& rhs)
         rhs._critSect.Leave();
         _critSect.Leave();
     }
-    return *this;
 }
 
 // Start jitter buffer
@@ -970,6 +968,10 @@ VCMJitterBuffer::CompleteSequenceWithNextFrame()
     {
         // Frame not ready to be decoded.
         return true;
+    }
+    if (!oldestFrame->Complete())
+    {
+        return false;
     }
 
     // See if we have lost a frame before this one.

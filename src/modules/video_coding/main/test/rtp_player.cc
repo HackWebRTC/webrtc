@@ -70,7 +70,7 @@ WebRtc_UWord32 LostPackets::AddPacket(WebRtc_UWord8* rtpData, WebRtc_UWord16 rtp
     CriticalSectionScoped cs(_critSect);
     RawRtpPacket* packet = new RawRtpPacket(rtpData, rtpLen);
     ListItem* newItem = new ListItem(packet);
-    InsertBefore(First(), newItem);
+    Insert(Last(), newItem);
     const WebRtc_UWord16 seqNo = (rtpData[2] << 8) + rtpData[3];
     if (_debugFile != NULL)
     {

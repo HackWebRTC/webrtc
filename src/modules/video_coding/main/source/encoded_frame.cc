@@ -63,6 +63,7 @@ VCMEncodedFrame::VCMEncodedFrame(const VCMEncodedFrame& rhs)
   {
       VerifyAndAllocate(rhs._size);
       memcpy(_buffer, rhs._buffer, rhs._length);
+      _length = rhs._length;
   }
   // Deep operator=
   _fragmentation = rhs._fragmentation;

@@ -42,8 +42,8 @@ VCMReceiver::~VCMReceiver()
     delete &_critSect;
 }
 
-WebRtc_Word32
-VCMReceiver::Initialize()
+void
+VCMReceiver::Reset()
 {
     CriticalSectionScoped cs(_critSect);
     if (!_jitterBuffer.Running())
@@ -62,6 +62,16 @@ VCMReceiver::Initialize()
     else
     {
         _state = kPassive;
+    }
+}
+
+WebRtc_Word32
+VCMReceiver::Initialize()
+{
+    CriticalSectionScoped cs(_critSect);
+    Reset();
+    if (!_master)
+    {
         SetNackMode(kNoNack);
     }
     return VCM_OK;
@@ -416,7 +426,7 @@ VCMReceiver::DualDecoderCaughtUp(VCMEncodedFrame* dualFrame, VCMReceiver& dualRe
 void
 VCMReceiver::CopyJitterBufferStateFromReceiver(const VCMReceiver& receiver)
 {
-    _jitterBuffer = receiver._jitterBuffer;
+    _jitterBuffer.CopyFrom(receiver._jitterBuffer);
 }
 
 VCMReceiverState

@@ -45,6 +45,7 @@ public:
                 bool master = true);
     ~VCMReceiver();
 
+    void Reset();
     WebRtc_Word32 Initialize();
     void UpdateRtt(WebRtc_UWord32 rtt);
     WebRtc_Word32 InsertPacket(const VCMPacket& packet,

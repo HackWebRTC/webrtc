@@ -1162,13 +1162,11 @@ VP8Decoder::Copy()
     if (_decodedImage._buffer == NULL)
     {
         // Nothing has been decoded before; cannot clone.
-        assert(false);
         return NULL;
     }
     if (_lastKeyFrame._buffer == NULL)
     {
         // Cannot clone if we have no key frame to start with.
-        assert(false);
         return NULL;
     }
 
@@ -1241,6 +1239,14 @@ VP8Decoder::Copy()
     copyTo->_lastKeyFrame._buffer = new WebRtc_UWord8[_lastKeyFrame._size];
     memcpy(copyTo->_lastKeyFrame._buffer, _lastKeyFrame._buffer,
            _lastKeyFrame._length);
+
+    // Initialize _decodedImage.
+    copyTo->_decodedImage = _decodedImage;  // Shallow copy
+    copyTo->_decodedImage._buffer = NULL;
+    if (_decodedImage._size)
+    {
+        copyTo->_decodedImage._buffer = new WebRtc_UWord8[_decodedImage._size];
+    }
 
     return static_cast<VideoDecoder*>(copyTo);
 }
