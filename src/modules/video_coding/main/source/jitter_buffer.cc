@@ -614,26 +614,33 @@ VCMJitterBuffer::FindOldestCompleteContinuousFrame()
 
     // we have a complete frame
     // check if it's continuous, otherwise we are missing a full frame
-    // Use seqNum not timestamp since a full frame might be lost
-    if (_lastDecodedSeqNum != -1 && !_waitingForKeyFrame)
-    {
-        // it's not enough that we have complete frame we need the layers to
-        // be continuous too
-        currentLow = oldestFrame->GetLowSeqNum();
 
-        WebRtc_UWord16 lastDecodedSeqNum = (WebRtc_UWord16)_lastDecodedSeqNum;
-
-        // We could have received the first packet of the last frame before a
-        // long period if drop, that case is handled by GetNackList
-        if (((WebRtc_UWord16)(lastDecodedSeqNum + 1)) != currentLow)
-        {
-            // Wait since we want a complete continuous frame
-            return NULL;
-        }
+    // Use pictureId if available. Otherwise use seqNum and not timestamps, as
+    // a complete frame might be lost
+    // First determine if we are waiting for a key frame.
+    if (_waitingForKeyFrame && oldestFrame->FrameType() != kVideoFrameKey)  {
+      return NULL;
     }
-    else if (oldestFrame->FrameType() != kVideoFrameKey)
-    {
+    // Is this the first frame to be decoded?
+    // Otherwise, verify continuity - use PictureId when available.
+    if (_lastDecodedSeqNum == -1)  {
+      return oldestFrameItem;
+    } else if (oldestFrame->PictureId() == kNoPictureId)  {
+      // It's not enough that we have a complete frame we need the layers to
+      // be continuous too.
+      currentLow = oldestFrame->GetLowSeqNum();
+      WebRtc_UWord16 lastDecodedSeqNum = (WebRtc_UWord16)_lastDecodedSeqNum;
+
+      // We could have received the first packet of the last frame before a
+      // long period if drop, that case is handled by GetNackList
+      if (((WebRtc_UWord16)(lastDecodedSeqNum + 1)) != currentLow)  {
+        // Wait since we want a complete continuous frame
         return NULL;
+      }
+    }
+    else if (!ContinuousPictureId(oldestFrame->PictureId()))  {
+      // We don't have a continuous frame
+      return NULL;
     }
     return oldestFrameItem;
 }
@@ -1460,10 +1467,11 @@ VCMJitterBuffer::CreateNackList(WebRtc_UWord16& nackSize, bool& listExtended)
             {
                 // build external rttScore based on RTT value
                 float rttScore = 1.0f;
+                int ret =
                 _frameBuffers[i]->ZeroOutSeqNumHybrid(_NACKSeqNumInternal,
                                                       numberOfSeqNum,
                                                       rttScore);
-                if (_frameBuffers[i]->IsRetransmitted() == false)
+                if (_frameBuffers[i]->IsRetransmitted() == false && ret != -1)
                 {
                     // If no retransmission required,set the state to decodable
                     // meaning that we will not wait for NACK.

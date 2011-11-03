@@ -491,7 +491,7 @@ WebRtc_Word32
 VCMSessionInfo::ZeroOutSeqNum(WebRtc_Word32* list,
                               WebRtc_Word32 numberOfSeqNum)
 {
-    if ((NULL == list) || (numberOfSeqNum < 1))
+    if (NULL == list || numberOfSeqNum < 1)
     {
         return -1;
     }
@@ -539,14 +539,9 @@ VCMSessionInfo::ZeroOutSeqNumHybrid(WebRtc_Word32* list,
                                     WebRtc_Word32 numberOfSeqNum,
                                     float rttScore)
 {
-    if ((NULL == list) || (numberOfSeqNum < 1))
+    if (NULL == list || numberOfSeqNum < 1)
     {
         return -1;
-    }
-    if (_lowSeqNum == -1)
-    {
-        // no media packets in this frame
-        return 0;
     }
 
     WebRtc_Word32 index = 0;
