@@ -76,7 +76,7 @@
         'proto_out_protected': 'webrtc/audio_processing',
         'proto_out_dir': '<(proto_out_protected)',
       },
-      'includes': [ '../../../build/protoc.gypi', ],
+      'includes': [ '../../build/protoc.gypi', ],
     },
   ],
 }
