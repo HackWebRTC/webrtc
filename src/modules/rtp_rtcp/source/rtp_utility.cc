@@ -889,7 +889,7 @@ int ModuleRTPUtility::RTPPayloadParser::ParseVP8FrameSize(
         // Included in payload header for I-frames.
         return 0;
     }
-    if (dataLength < 7)
+    if (dataLength < 10)
     {
         // For an I-frame we should always have the uncompressed VP8 header
         // in the beginning of the partition.

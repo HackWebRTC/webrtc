@@ -132,12 +132,12 @@ TEST(ParseVP8Test, PictureID) {
 }
 
 TEST(ParseVP8Test, Tl0PicIdx) {
-    WebRtc_UWord8 payload[10] = {0};
+    WebRtc_UWord8 payload[13] = {0};
     payload[0] = 0x90;
     payload[1] = 0x40;
     payload[2] = 17;
 
-    RTPPayloadParser rtpPayloadParser(webrtc::kRtpVp8Video, payload, 10, 0);
+    RTPPayloadParser rtpPayloadParser(webrtc::kRtpVp8Video, payload, 13, 0);
 
     RTPPayload parsedPacket;
     ASSERT_TRUE(rtpPayloadParser.Parse(parsedPacket));
@@ -151,7 +151,7 @@ TEST(ParseVP8Test, Tl0PicIdx) {
     EXPECT_EQ(17, parsedPacket.info.VP8.tl0PicIdx);
 
     EXPECT_EQ(payload + 3, parsedPacket.info.VP8.data);
-    EXPECT_EQ(10 - 3, parsedPacket.info.VP8.dataLength);
+    EXPECT_EQ(13 - 3, parsedPacket.info.VP8.dataLength);
 }
 
 TEST(ParseVP8Test, TID) {
