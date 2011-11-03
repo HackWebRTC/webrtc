@@ -372,6 +372,9 @@ void TestSize(VideoFrame& sourceFrame, WebRtc_UWord32 targetWidth,
   fclose(standAloneFile);
 }
 
+// TODO(kjellander): Get rid of this main and use test_support_main instead
+// This can be done by inheriting TestSuite instead of testing::Test and
+// override Initialize().
 int main(int argc, char** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);

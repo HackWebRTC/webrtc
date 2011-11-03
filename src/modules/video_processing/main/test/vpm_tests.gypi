@@ -9,22 +9,19 @@
 {
   'targets': [
     {
-     'target_name': 'VPMUnitTest',
+     'target_name': 'video_processing_unittests',
       'type': 'executable',
       'dependencies': [
-         'video_processing',
-         'webrtc_utility',
-        # The tests are based on gtest
-        '../../testing/gtest.gyp:gtest',
-        '../../testing/gtest.gyp:gtest_main',
+        'video_processing',
+        'webrtc_utility',
+        '<(webrtc_root)/../testing/gtest.gyp:gtest',
       ],
       'include_dirs': [
-         '../../../../system_wrappers/interface',
-         '../../../../common_video/vplib/main/interface',
-         '../../../../modules/video_processing/main/source',
+        '../../../../system_wrappers/interface',
+        '../../../../common_video/vplib/main/interface',
+        '../../../../modules/video_processing/main/source',
       ],
       'sources': [
-
         # headers
         'unit_test/unit_test.h',
 
@@ -35,17 +32,13 @@
         'unit_test/deflickering_test.cc',
         'unit_test/denoising_test.cc',
         'unit_test/unit_test.cc',
-
       ], # source
-
       'conditions': [
-
         ['OS=="linux"', {
           'cflags': [
             '-fexceptions',
           ],
         }],
-
       ], # conditions
     },
   ],

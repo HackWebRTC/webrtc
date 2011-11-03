@@ -13,9 +13,9 @@
       'type': 'executable',
       'dependencies': [
         'rtp_rtcp',
-        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+        '<(webrtc_root)/../test/test.gyp:test_support_main',
         '<(webrtc_root)/../testing/gtest.gyp:gtest',
-        '<(webrtc_root)/../testing/gtest.gyp:gtest_main',
+        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
       'include_dirs': [
         '../../source',

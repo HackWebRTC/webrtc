@@ -11,10 +11,6 @@
     {
       'target_name': 'video_coding_test_lib',
       'type': '<(library)',
-      'dependencies': [
-      ],
-      'include_dirs': [
-      ],
       'direct_dependent_settings': {
         'include_dirs': [
           '../test',
@@ -46,7 +42,6 @@
          '../source',
       ],
       'sources': [
-
         # headers
         '../test/codec_database_test.h',
         '../test/generic_codec_test.h',
@@ -80,27 +75,23 @@
         '../test/video_rtp_play_mt.cc',
         '../test/video_rtp_play.cc',
         '../test/video_source.cc',
-
       ], # source
-
       'conditions': [
-
         ['OS=="linux"', {
           'cflags': [
             '-fexceptions',
           ],
         }],
-
       ], # conditions
     },
     {
-      'target_name': 'video_coding_unit_test',
+      'target_name': 'video_coding_unittests',
       'type': 'executable',
       'dependencies': [
         'webrtc_video_coding',
-        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+        '<(webrtc_root)/../test/test.gyp:test_support_main',
         '<(webrtc_root)/../testing/gtest.gyp:gtest',
-        '<(webrtc_root)/../testing/gtest.gyp:gtest_main',
+        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
       'include_dirs': [
         '../../../interface',

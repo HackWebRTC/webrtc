@@ -23,12 +23,10 @@
           'include_dirs': [
             '../interface',
             '<(webrtc_root)/common_video/interface',
-            '<(webrtc_root)/../testing/gtest/include',
           ],
           'direct_dependent_settings': {
             'include_dirs': [
               '../interface',
-              '<(webrtc_root)/../testing/gtest/include',
             ],
           },
           'sources': [

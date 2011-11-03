@@ -18,7 +18,7 @@
       'dependencies': [
         '<(webrtc_root)/../testing/gtest.gyp:gtest',
       ],
-      'direct_dependent_settings': {
+      'all_dependent_settings': {
         'include_dirs': [
           '.',
         ],
@@ -31,14 +31,25 @@
       ],
     },
     {
+      # Depend on this target when you want to have test_support but also the
+      # main method needed for gtest to execute!
+      'target_name': 'test_support_main',
+      'type': 'static_library',
+      'dependencies': [
+        'test_support',
+      ],
+      'sources': [
+        'run_all_unittests.cc',
+      ],
+    },
+    {
       'target_name': 'test_support_unittests',
       'type': 'executable',
       'dependencies': [
-        'test_support',
+        'test_support_main',
         '<(webrtc_root)/../testing/gtest.gyp:gtest',
       ],
-       'sources': [
-        'run_all_unittests.cc',
+      'sources': [
         'testsupport/fileutils_unittest.cc',
       ],
     },
