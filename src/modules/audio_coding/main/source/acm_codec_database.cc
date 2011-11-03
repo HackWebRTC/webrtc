@@ -112,9 +112,9 @@ const int kDynamicPayloadtypes[ACMCodecDB::kMaxNumCodecs] = {
 static int count_database = 0;
 const CodecInst ACMCodecDB::database_[] = {
 #if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX))
-  {103, "ISAC", 16000, ISACWB_PAC_SIZE, 1, ISACWB_DEFAULT_RATE},
+  {103, "ISAC", 16000, kIsacPacSize480, 1, kIsacWbDefaultRate},
 # if (defined(WEBRTC_CODEC_ISAC))
-  {104, "ISAC", 32000, ISACSWB_PAC_SIZE, 1, ISACSWB_DEFAULT_RATE},
+  {104, "ISAC", 32000, kIsacPacSize960, 1, kIsacSwbDefaultRate},
 # endif
 #endif
 #ifdef WEBRTC_CODEC_PCM16
@@ -180,9 +180,9 @@ const CodecInst ACMCodecDB::database_[] = {
 // Basic block samples, max number of channels that are supported.
 const ACMCodecDB::CodecSettings ACMCodecDB::codec_settings_[] = {
 #if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX))
-  {2, {ISACWB_PAC_SIZE, ISACWB_PAC_SIZE*2}, 0, 1},
+  {2, {kIsacPacSize480, kIsacPacSize960}, 0, 1},
 # if (defined(WEBRTC_CODEC_ISAC))
-  {1, {ISACSWB_PAC_SIZE}, 0, 1},
+  {1, {kIsacPacSize960}, 0, 1},
 # endif
 #endif
 #ifdef WEBRTC_CODEC_PCM16
