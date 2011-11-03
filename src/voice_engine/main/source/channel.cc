@@ -1401,6 +1401,8 @@ Channel::Init()
         // out-of-band Dtmf tones are played out by default
         (_audioCodingModule.SetDtmfPlayoutStatus(true) == -1) ||
 #endif
+        // Enable RX VAD by default (improves output mixing).
+        (_audioCodingModule.SetReceiveVADStatus(true) == -1) ||
         (_audioCodingModule.InitializeSender() == -1))
     {
         _engineStatisticsPtr->SetLastError(
