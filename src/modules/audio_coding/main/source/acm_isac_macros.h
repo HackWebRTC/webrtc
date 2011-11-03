@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef ACM_ISAC_MACROS_H
-#define ACM_ISAC_MACROS_H
+#ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_ISAC_MACROS_H_
+#define WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_ISAC_MACROS_H_
 
 #include "engine_configurations.h"
 
@@ -72,5 +72,5 @@ namespace webrtc
 
 } //namespace
 
-#endif // ACM_ISAC_MACROS_H
+#endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_ISAC_MACROS_H_
 

@@ -33,24 +33,24 @@ ACMPCMU::~ACMPCMU()
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMPCMU::InternalEncode(
     WebRtc_UWord8* bitStream,
     WebRtc_Word16* bitStreamLenByte)
 {
     *bitStreamLenByte = WebRtcG711_EncodeU(NULL, &_inAudio[_inAudioIxRead],
         _frameLenSmpl*_noChannels, (WebRtc_Word16*)bitStream);
-    // increment the read index this tell the caller that how far 
+    // increment the read index this tell the caller that how far
     // we have gone forward in reading the audio buffer
     _inAudioIxRead += _frameLenSmpl*_noChannels;
     return *bitStreamLenByte;
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMPCMU::DecodeSafe(
     WebRtc_UWord8* /* bitStream        */,
-    WebRtc_Word16  /* bitStreamLenByte */, 
+    WebRtc_Word16  /* bitStreamLenByte */,
     WebRtc_Word16* /* audio            */,
     WebRtc_Word16* /* audioSamples     */,
     WebRtc_Word8*  /* speechType       */)
@@ -59,17 +59,17 @@ ACMPCMU::DecodeSafe(
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMPCMU::InternalInitEncoder(
     WebRtcACMCodecParams* /* codecParams */)
 {
     // This codec does not need initialization,
     // PCM has no instance
-    return 0;    
+    return 0;
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMPCMU::InternalInitDecoder(
     WebRtcACMCodecParams* /* codecParams */)
 {
@@ -79,12 +79,12 @@ ACMPCMU::InternalInitDecoder(
 }
 
 
-WebRtc_Word32 
+WebRtc_Word32
 ACMPCMU::CodecDef(
     WebRtcNetEQ_CodecDef& codecDef,
     const CodecInst&      codecInst)
 {
-    // Fill up the structure by calling 
+    // Fill up the structure by calling
     // "SET_CODEC_PAR" & "SET_PCMU_FUNCTION."
     // Then call NetEQ to add the codec to it's
     // database.
@@ -101,7 +101,7 @@ ACMPCMU::CreateInstance(void)
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMPCMU::InternalCreateEncoder()
 {
     // PCM has no instance
@@ -109,7 +109,7 @@ ACMPCMU::InternalCreateEncoder()
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMPCMU::InternalCreateDecoder()
 {
     // PCM has no instance
@@ -117,7 +117,7 @@ ACMPCMU::InternalCreateDecoder()
 }
 
 
-void 
+void
 ACMPCMU::InternalDestructEncoderInst(
     void* /* ptrInst */)
 {
@@ -126,7 +126,7 @@ ACMPCMU::InternalDestructEncoderInst(
 }
 
 
-void 
+void
 ACMPCMU::DestructEncoderSafe()
 {
     // PCM has no instance
@@ -144,7 +144,7 @@ void ACMPCMU::DestructDecoderSafe()
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMPCMU::UnregisterFromNetEqSafe(
     ACMNetEQ*     netEq,
     WebRtc_Word16 payloadType)
@@ -152,15 +152,15 @@ ACMPCMU::UnregisterFromNetEqSafe(
 
     if(payloadType != _decoderParams.codecInstant.pltype)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
             "Cannot unregister codec %s given payload-type %d does not match \
-the stored payload type", 
-            _decoderParams.codecInstant.plname, 
-            payloadType, 
+the stored payload type",
+            _decoderParams.codecInstant.plname,
+            payloadType,
             _decoderParams.codecInstant.pltype);
         return -1;
     }
-        
+
     return netEq->RemoveCodec(kDecoderPCMu);
 }
 

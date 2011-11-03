@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef ACM_RESAMPLER_H
-#define ACM_RESAMPLER_H
+#ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_RESAMPLER_H_
+#define WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_RESAMPLER_H_
 
 #include "resampler.h"
 #include "typedefs.h"
@@ -23,14 +23,14 @@ class ACMResampler
 public:
     ACMResampler();
     ~ACMResampler();
-   
+
     WebRtc_Word16 Resample10Msec(
         const WebRtc_Word16* inAudio,
         const WebRtc_Word32  inFreqHz,
         WebRtc_Word16*       outAudio,
         const WebRtc_Word32  outFreqHz,
         WebRtc_UWord8        numAudioChannels);
-  
+
     void SetUniqueId(
         WebRtc_Word32 id);
 
@@ -44,4 +44,4 @@ private:
 
 } // namespace webrtc
 
-#endif //ACM_RESAMPLER_H
+#endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_RESAMPLER_H_

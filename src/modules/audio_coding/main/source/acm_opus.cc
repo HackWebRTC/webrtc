@@ -39,7 +39,7 @@ ACMOPUS::~ACMOPUS()
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMOPUS::InternalEncode(
     WebRtc_UWord8* /* bitStream        */,
     WebRtc_Word16* /* bitStreamLenByte */)
@@ -48,11 +48,11 @@ ACMOPUS::InternalEncode(
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMOPUS::DecodeSafe(
     WebRtc_UWord8* /* bitStream        */,
-    WebRtc_Word16  /* bitStreamLenByte */, 
-    WebRtc_Word16* /* audio            */, 
+    WebRtc_Word16  /* bitStreamLenByte */,
+    WebRtc_Word16* /* audio            */,
     WebRtc_Word16* /* audioSamples     */,
     WebRtc_Word8*  /* speechType       */)
 {
@@ -60,7 +60,7 @@ ACMOPUS::DecodeSafe(
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMOPUS::InternalInitEncoder(
     WebRtcACMCodecParams* /* codecParams */)
 {
@@ -68,7 +68,7 @@ ACMOPUS::InternalInitEncoder(
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMOPUS::InternalInitDecoder(
     WebRtcACMCodecParams* /* codecParams */)
 {
@@ -76,9 +76,9 @@ ACMOPUS::InternalInitDecoder(
 }
 
 
-WebRtc_Word32 
+WebRtc_Word32
 ACMOPUS::CodecDef(
-    WebRtcNetEQ_CodecDef& /* codecDef  */, 
+    WebRtcNetEQ_CodecDef& /* codecDef  */,
     const CodecInst&      /* codecInst */)
 {
     return -1;
@@ -92,35 +92,35 @@ ACMOPUS::CreateInstance(void)
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMOPUS::InternalCreateEncoder()
 {
     return -1;
 }
 
 
-void 
+void
 ACMOPUS::DestructEncoderSafe()
 {
     return;
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMOPUS::InternalCreateDecoder()
 {
     return -1;
 }
 
 
-void 
+void
 ACMOPUS::DestructDecoderSafe()
 {
     return;
 }
 
 
-void 
+void
 ACMOPUS::InternalDestructEncoderInst(
     void* /* ptrInst */)
 {
@@ -128,7 +128,7 @@ ACMOPUS::InternalDestructEncoderInst(
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMOPUS::UnregisterFromNetEqSafe(
     ACMNetEQ*     /* netEq       */,
     WebRtc_Word16 /* payloadType */)
@@ -136,7 +136,7 @@ ACMOPUS::UnregisterFromNetEqSafe(
     return -1;
 }
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMOPUS::SetBitRateSafe(
     const WebRtc_Word32 /*rate*/ )
 {
@@ -172,14 +172,14 @@ _opusMode(1),           // default mode is the hybrid mode
 _flagVBR(0)             // default VBR off
 {
     _codecID = codecID;
-    
+
     // Current implementation doesn't have DTX. That might change.
     _hasInternalDTX = false;
 
     // Default sampling frequency
     _mySampFreq = 48000;
-    
-    // default rate     
+
+    // default rate
     _myRate = 50000;
 
     return;
@@ -201,7 +201,7 @@ ACMOPUS::~ACMOPUS()
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMOPUS::InternalEncode(
     WebRtc_UWord8* bitStream,
     WebRtc_Word16* bitStreamLenByte)
@@ -212,14 +212,14 @@ ACMOPUS::InternalEncode(
 
     WebRtc_Word16 byteLengthFrame = 0;
 
-    // Derive what byte-length is requested  
+    // Derive what byte-length is requested
     byteLengthFrame = _myRate*_frameLenSmpl/(8*_mySampFreq);
 
     // Call Encoder
     *bitStreamLenByte = WebRtcOpus_Encode(_encoderInstPtr, &_inAudio[_inAudioIxRead],
            (WebRtc_Word16*)bitStream, _frameLenSmpl, byteLengthFrame);
 
-    // increment the read index this tell the caller that how far 
+    // increment the read index this tell the caller that how far
     // we have gone forward in reading the audio buffer
     _inAudioIxRead += _frameLenSmpl;
 
@@ -227,8 +227,8 @@ ACMOPUS::InternalEncode(
     if(*bitStreamLenByte < 0)
     {
         // error has happened
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
-            "InternalEncode: Encode error for Opus");        
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+            "InternalEncode: Encode error for Opus");
             *bitStreamLenByte = 0;
             return -1;
     }
@@ -238,11 +238,11 @@ ACMOPUS::InternalEncode(
 
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMOPUS::DecodeSafe(
     WebRtc_UWord8* /* bitStream        */,
-    WebRtc_Word16  /* bitStreamLenByte */, 
-    WebRtc_Word16* /* audio            */, 
+    WebRtc_Word16  /* bitStreamLenByte */,
+    WebRtc_Word16* /* audio            */,
     WebRtc_Word16* /* audioSamples     */,
     WebRtc_Word8*  /* speechType       */)
 {
@@ -250,7 +250,7 @@ ACMOPUS::DecodeSafe(
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMOPUS::InternalInitEncoder(
     WebRtcACMCodecParams* codecParams)
 {
@@ -260,7 +260,7 @@ ACMOPUS::InternalInitEncoder(
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMOPUS::InternalInitDecoder(
     WebRtcACMCodecParams* /* codecParams */)
 {
@@ -274,7 +274,7 @@ ACMOPUS::InternalInitDecoder(
 }
 
 
-WebRtc_Word32 
+WebRtc_Word32
 ACMOPUS::CodecDef(
     WebRtcNetEQ_CodecDef& codecDef,
     const CodecInst&      codecInst)
@@ -286,7 +286,7 @@ ACMOPUS::CodecDef(
         return -1;
     }
 
-    // Fill up the structure by calling 
+    // Fill up the structure by calling
     // "SET_CODEC_PAR" & "SET_G729_FUNCTION."
     // Then call NetEQ to add the codec to it's
     // database.
@@ -304,7 +304,7 @@ ACMOPUS::CreateInstance(void)
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMOPUS::InternalCreateEncoder()
 {
     if (WebRtcOpus_CreateEnc(&_encoderInstPtr, _mySampFreq) < 0)
@@ -317,7 +317,7 @@ ACMOPUS::InternalCreateEncoder()
 }
 
 
-void 
+void
 ACMOPUS::DestructEncoderSafe()
 {
     _encoderExist = false;
@@ -330,12 +330,12 @@ ACMOPUS::DestructEncoderSafe()
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMOPUS::InternalCreateDecoder()
-{ 
+{
    if (WebRtcOpus_CreateDec(&_decoderInstPtr, _mySampFreq) < 0)
    {
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
         "InternalCreateDecoder: create decoder failed for Opus");
        return -1;
    }
@@ -343,7 +343,7 @@ ACMOPUS::InternalCreateDecoder()
 }
 
 
-void 
+void
 ACMOPUS::DestructDecoderSafe()
 {
     _decoderExist = false;
@@ -356,10 +356,10 @@ ACMOPUS::DestructDecoderSafe()
 }
 
 
-void 
+void
 ACMOPUS::InternalDestructEncoderInst(
     void* ptrInst)
-{   
+{
     if(ptrInst != NULL)
     {
         WebRtcOpus_FreeEnc((OPUS_inst_t*)ptrInst);
@@ -368,25 +368,25 @@ ACMOPUS::InternalDestructEncoderInst(
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMOPUS::UnregisterFromNetEqSafe(
     ACMNetEQ*     netEq,
     WebRtc_Word16 payloadType)
 {
     if(payloadType != _decoderParams.codecInstant.pltype)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
             "Cannot unregister codec: given payload-type does not match \
-the stored payload type", 
-            _decoderParams.codecInstant.plname, 
-            payloadType, 
+the stored payload type",
+            _decoderParams.codecInstant.plname,
+            payloadType,
             _decoderParams.codecInstant.pltype);
         return -1;
     }
     return netEq->RemoveCodec(kDecoderOpus);
 }
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMOPUS::SetBitRateSafe(
     const WebRtc_Word32 rate)
 {
@@ -459,17 +459,16 @@ ACMOPUS::SetBitRateSafe(
             WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
                 "SetBitRateSafe: Invalid rate Opus");
             return -1;
-            break;
         }
     }
-    
+
     // Re-init with new rate
     if (WebRtcOpus_EncoderInit(_encoderInstPtr, _mySampFreq, _opusMode, _flagVBR) >= 0)
     {
         _encoderParams.codecInstant.rate = _myRate;
         return 0;
-    } 
-    else 
+    }
+    else
     {
         return -1;
     }

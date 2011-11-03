@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef ACM_ILBC_H
-#define ACM_ILBC_H
+#ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_ILBC_H_
+#define WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_ILBC_H_
 
 #include "acm_generic_codec.h"
 
@@ -47,21 +47,21 @@ protected:
         WebRtc_Word8*  speechType);
 
     WebRtc_Word32 CodecDef(
-        WebRtcNetEQ_CodecDef& codecDef, 
+        WebRtcNetEQ_CodecDef& codecDef,
         const CodecInst&      codecInst);
 
-    
+
     WebRtc_Word16 SetBitRateSafe(
         const WebRtc_Word32 rate);
 
     void DestructEncoderSafe();
-    
+
     void DestructDecoderSafe();
 
     WebRtc_Word16 InternalCreateEncoder();
-    
+
     WebRtc_Word16 InternalCreateDecoder();
-    
+
     void InternalDestructEncoderInst(
         void* ptrInst);
 
@@ -75,5 +75,4 @@ protected:
 
 } // namespace webrtc
 
-#endif //ACM_ILBC_H
-
+#endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_ILBC_H_

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef ACM_OPUS_H
-#define ACM_OPUS_H
+#ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_OPUS_H_
+#define WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_OPUS_H_
 
 #include "acm_generic_codec.h"
 
@@ -41,23 +41,23 @@ public:
 protected:
     WebRtc_Word16 DecodeSafe(
         WebRtc_UWord8* bitStream,
-        WebRtc_Word16  bitStreamLenByte, 
-        WebRtc_Word16* audio, 
-        WebRtc_Word16* audioSamples, 
+        WebRtc_Word16  bitStreamLenByte,
+        WebRtc_Word16* audio,
+        WebRtc_Word16* audioSamples,
         WebRtc_Word8*  speechType);
 
     WebRtc_Word32 CodecDef(
-        WebRtcNetEQ_CodecDef& codecDef, 
+        WebRtcNetEQ_CodecDef& codecDef,
         const CodecInst& codecInst);
 
     void DestructEncoderSafe();
-    
+
     void DestructDecoderSafe();
 
     WebRtc_Word16 InternalCreateEncoder();
-    
+
     WebRtc_Word16 InternalCreateDecoder();
-    
+
     void InternalDestructEncoderInst(
         void* ptrInst);
 
@@ -80,5 +80,4 @@ protected:
 
 } // namespace webrtc
 
-#endif // ACM_OPUS_H
-
+#endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_OPUS_H_

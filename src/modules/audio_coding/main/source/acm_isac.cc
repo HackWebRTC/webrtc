@@ -43,10 +43,10 @@ struct ACMISACInst
 #define ISAC_MAX_RATE 56000
 
 
-// How the scaling is computed. iSAC computes a gain based on the 
+// How the scaling is computed. iSAC computes a gain based on the
 // bottleneck. It follows the following expression for that
-// 
-// G(BN_kbps) = pow(10, (a + b * BN_kbps + c * BN_kbps * BN_kbps) / 20.0) 
+//
+// G(BN_kbps) = pow(10, (a + b * BN_kbps + c * BN_kbps * BN_kbps) / 20.0)
 //              / 3.4641;
 //
 // Where for 30 ms framelength we have,
@@ -59,11 +59,11 @@ struct ACMISACInst
 
 #define ISAC_NUM_SUPPORTED_RATES 9
 const WebRtc_UWord16 isacSuportedRates[ISAC_NUM_SUPPORTED_RATES] = {
-    32000,    30000,    26000,   23000,   21000,   
+    32000,    30000,    26000,   23000,   21000,
     19000,    17000,   15000,    12000};
 
 const float isacScale[ISAC_NUM_SUPPORTED_RATES] = {
-     1.0f,    0.8954f,  0.7178f, 0.6081f, 0.5445f, 
+     1.0f,    0.8954f,  0.7178f, 0.6081f, 0.5445f,
      0.4875f, 0.4365f,  0.3908f, 0.3311f};
 
 // Tables for bandwidth estimates
@@ -78,10 +78,10 @@ const WebRtc_Word32 isacRatesWB[NR_ISAC_BANDWIDTHS] =
 
 const WebRtc_Word32 isacRatesSWB[NR_ISAC_BANDWIDTHS] =
 {
-    10000, 11000, 12400, 13800, 15300, 17000, 
-    18900, 21000, 23200, 25400, 27600, 29800, 
-    32000, 34100, 36300, 38500, 40700, 42900, 
-    45100, 47300, 49500, 51700, 53900, 56000, 
+    10000, 11000, 12400, 13800, 15300, 17000,
+    18900, 21000, 23200, 25400, 27600, 29800,
+    32000, 34100, 36300, 38500, 40700, 42900,
+    45100, 47300, 49500, 51700, 53900, 56000,
 };
 
 #if (!defined(WEBRTC_CODEC_ISAC) && !defined(WEBRTC_CODEC_ISACFX))
@@ -150,7 +150,7 @@ ACMISAC::InternalCreateDecoder()
 }
 
 
-void 
+void
 ACMISAC::DestructDecoderSafe()
 {
     return;
@@ -164,7 +164,7 @@ ACMISAC::InternalCreateEncoder()
 }
 
 
-void 
+void
 ACMISAC::DestructEncoderSafe()
 {
     return;
@@ -173,14 +173,14 @@ ACMISAC::DestructEncoderSafe()
 
 WebRtc_Word32
 ACMISAC::CodecDef(
-    WebRtcNetEQ_CodecDef& /* codecDef  */, 
+    WebRtcNetEQ_CodecDef& /* codecDef  */,
     const CodecInst&      /* codecInst */)
 {
     return -1;
 }
 
 
-void 
+void
 ACMISAC::InternalDestructEncoderInst(
     void* /* ptrInst */)
 {
@@ -286,7 +286,7 @@ ACMISAC::SetISACMaxPayloadSize(
 {
     return -1;
 }
- 
+
 WebRtc_Word32
 ACMISAC::SetISACMaxRate(
         const WebRtc_UWord32 /* maxRateBitPerSec */)
@@ -295,20 +295,20 @@ ACMISAC::SetISACMaxRate(
 }
 
 
-void 
+void
 ACMISAC::UpdateFrameLen()
 {
     return;
 }
 
-void 
+void
 ACMISAC::CurrentRate(
     WebRtc_Word32& /*rateBitPerSec */)
 {
     return;
 }
 
-bool 
+bool
 ACMISAC::DecoderParamsSafe(
     WebRtcACMCodecParams* /* decParams   */,
     const WebRtc_UWord8   /* payloadType */)
@@ -316,7 +316,7 @@ ACMISAC::DecoderParamsSafe(
     return false;
 }
 
-void 
+void
 ACMISAC::SaveDecoderParamSafe(
     const WebRtcACMCodecParams* /* codecParams */)
 {
@@ -346,17 +346,17 @@ enum IsacSamplingRate
     kIsacSuperWideband = 32
 };
 
-static float 
+static float
 ACMISACFixTranscodingScale(
     WebRtc_UWord16 rate)
 {
     // find the scale for transcoding, the scale is rounded
-    // downward 
+    // downward
     float  scale = -1;
     for(WebRtc_Word16 n=0; n < ISAC_NUM_SUPPORTED_RATES; n++)
     {
         if(rate >= isacSuportedRates[n])
-        { 
+        {
             scale = isacScale[n];
             break;
         }
@@ -364,7 +364,7 @@ ACMISACFixTranscodingScale(
     return scale;
 }
 
-static void 
+static void
 ACMISACFixGetSendBitrate(
     ACM_ISAC_STRUCT* inst,
     WebRtc_Word32*   bottleNeck)
@@ -506,9 +506,9 @@ ACMISAC::InternalEncode(
     // it should be treated like codecs with 'basic coding block'
     // non-zero, and the following 'while-loop' should not be necessary.
     // However, due to a mistake in the codec the frame-size might change
-    // at the first 10ms pushed in to iSAC if the bit-rate is low, this is 
-    // sort of a bug in iSAC. to address this we treat iSAC as the 
-    // following. 
+    // at the first 10ms pushed in to iSAC if the bit-rate is low, this is
+    // sort of a bug in iSAC. to address this we treat iSAC as the
+    // following.
 
     if (_codecInstPtr == NULL)
     {
@@ -527,7 +527,7 @@ pushed in but no bit-stream is generated.");
         }
         *bitStreamLenByte = ACM_ISAC_ENCODE(_codecInstPtr->inst,
             &_inAudio[_inAudioIxRead], (WebRtc_Word16*)bitstream);
-        // increment the read index this tell the caller that how far 
+        // increment the read index this tell the caller that how far
         // we have gone forward in reading the audio buffer
         _inAudioIxRead += _samplesIn10MsAudio;
     }
@@ -571,9 +571,9 @@ ACMISAC::InternalInitEncoder(
     {
         _isacCodingMode = ADAPTIVE;
     }
-    
+
     // sanity check that rate is in acceptable range
-    else if((codecParams->codecInstant.rate >= ISAC_MIN_RATE) && 
+    else if((codecParams->codecInstant.rate >= ISAC_MIN_RATE) &&
         (codecParams->codecInstant.rate <= ISAC_MAX_RATE))
     {
         _isacCodingMode = CHANNEL_INDEPENDENT;
@@ -584,7 +584,7 @@ ACMISAC::InternalInitEncoder(
         return -1;
     }
 
-    // we need to set the encoder sampling frequency. 
+    // we need to set the encoder sampling frequency.
     if(UpdateEncoderSampFreq((WebRtc_UWord16)codecParams->codecInstant.plfreq) < 0)
     {
         return -1;
@@ -599,8 +599,8 @@ ACMISAC::InternalInitEncoder(
     if(_isacCodingMode == CHANNEL_INDEPENDENT)
     {
         if(ACM_ISAC_CONTROL(_codecInstPtr->inst,
-            codecParams->codecInstant.rate, 
-            codecParams->codecInstant.pacsize / 
+            codecParams->codecInstant.rate,
+            codecParams->codecInstant.pacsize /
             (codecParams->codecInstant.plfreq / 1000)) < 0)
         {
             return -1;
@@ -608,7 +608,7 @@ ACMISAC::InternalInitEncoder(
     }
     else
     {
-        // We need this for adaptive case and has to be called 
+        // We need this for adaptive case and has to be called
         // after initialization
         ACM_ISAC_GETSENDBITRATE(
             _codecInstPtr->inst, &_isacCurrentBN);
@@ -637,15 +637,15 @@ ACMISAC::InternalInitDecoder(
     }
 
     // in a one-way communication we may never register send-codec.
-    // However we like that the BWE to work properly so it has to 
-    // be initialized. The BWE is initialized when iSAC encoder is initialized. 
+    // However we like that the BWE to work properly so it has to
+    // be initialized. The BWE is initialized when iSAC encoder is initialized.
     // Therefore, we need this.
     if(!_encoderInitialized)
     {
         // Since we don't require a valid rate or a valid packet size when initializing
         // the decoder, we set valid values before initializing encoder
-        codecParams->codecInstant.rate = ISACWB_DEFAULT_RATE;
-        codecParams->codecInstant.pacsize = ISACSWB_PAC_SIZE;
+        codecParams->codecInstant.rate = kIsacWbDefaultRate;
+        codecParams->codecInstant.pacsize = kIsacPacSize960;
         if(InternalInitEncoder(codecParams) < 0)
         {
             return -1;
@@ -670,7 +670,7 @@ ACMISAC::InternalCreateDecoder()
     _encoderInitialized = false;
     if(status < 0)
     {
-        _encoderExist = false; 
+        _encoderExist = false;
     }
     else
     {
@@ -680,7 +680,7 @@ ACMISAC::InternalCreateDecoder()
 }
 
 
-void 
+void
 ACMISAC::DestructDecoderSafe()
 {
     // codec with shared instance cannot delete.
@@ -712,7 +712,7 @@ ACMISAC::InternalCreateEncoder()
 }
 
 
-void 
+void
 ACMISAC::DestructEncoderSafe()
 {
     // codec with shared instance cannot delete.
@@ -737,7 +737,7 @@ ACMISAC::CodecDef(
         // log error
         return -1;
     }
-    // Fill up the structure by calling 
+    // Fill up the structure by calling
     // "SET_CODEC_PAR" & "SET_ISAC_FUNCTION."
     // Then call NetEQ to add the codec to it's
     // database.
@@ -766,7 +766,7 @@ ACMISAC::CodecDef(
 }
 
 
-void 
+void
 ACMISAC::InternalDestructEncoderInst(
     void* ptrInst)
 {
@@ -821,7 +821,7 @@ ACMISAC::SetBitRateSafe(
     bool reinit = false;
     // change the BN of iSAC
     if(bitRate == -1)
-    {        
+    {
         // ADAPTIVE MODE
         // Check if it was already in adaptive mode
         if(_isacCodingMode != ADAPTIVE)
@@ -833,13 +833,13 @@ ACMISAC::SetBitRateSafe(
         }
     }
     // Sanity check if the rate valid
-    else if((bitRate >= ISAC_MIN_RATE) && 
+    else if((bitRate >= ISAC_MIN_RATE) &&
         (bitRate <= ISAC_MAX_RATE))
     {
         //check if it was in channel-independent mode before
         if(_isacCodingMode != CHANNEL_INDEPENDENT)
         {
-            // was not in channel independent, set the mode to 
+            // was not in channel independent, set the mode to
             // channel-independent and flag for re-initialization
             _isacCodingMode = CHANNEL_INDEPENDENT;
             reinit = true;
@@ -867,13 +867,13 @@ ACMISAC::SetBitRateSafe(
     {
 
         status = ACM_ISAC_CONTROL(_codecInstPtr->inst, _isacCurrentBN,
-            (encoderSampFreq == 32000)? 30:(_frameLenSmpl / 16)); 
+            (encoderSampFreq == 32000)? 30:(_frameLenSmpl / 16));
         if(status < 0)
         {
             status = -1;
         }
     }
-   
+
     // Update encoder parameters
     _encoderParams.codecInstant.rate = bitRate;
 
@@ -889,9 +889,9 @@ ACMISAC::GetEstimatedBandwidthSafe()
     WebRtc_Word16 delayIndex;
     IsacSamplingRate sampRate;
 
-    // Get bandwidth information 
+    // Get bandwidth information
     ACM_ISAC_GETSENDBWE(_codecInstPtr->inst, &bandwidthIndex, &delayIndex);
-    
+
     // Validy check of index
     if ((bandwidthIndex < 0) || (bandwidthIndex > NR_ISAC_BANDWIDTHS))
     {
@@ -921,11 +921,11 @@ ACMISAC::SetEstimatedBandwidthSafe(
     sampRate = ACM_ISAC_GETENCSAMPRATE(_codecInstPtr->inst);
 
     if(sampRate == kIsacWideband)
-    {    
+    {
         // Search through the WB rate table to find the index
-        
+
         bandwidthIndex = NR_ISAC_BANDWIDTHS/2 - 1;
-        for (int i=0; i<(NR_ISAC_BANDWIDTHS/2); i++) 
+        for (int i=0; i<(NR_ISAC_BANDWIDTHS/2); i++)
         {
             if (estimatedBandwidth == isacRatesWB[i])
             {
@@ -936,7 +936,7 @@ ACMISAC::SetEstimatedBandwidthSafe(
                 bandwidthIndex = i + NR_ISAC_BANDWIDTHS/2;
                 break;
             } else if (estimatedBandwidth < isacRatesWB[i])
-            {         
+            {
                 bandwidthIndex = i;
                 break;
              }
@@ -946,7 +946,7 @@ ACMISAC::SetEstimatedBandwidthSafe(
     {
         // Search through the SWB rate table to find the index
         bandwidthIndex = NR_ISAC_BANDWIDTHS - 1;
-        for (int i=0; i<NR_ISAC_BANDWIDTHS; i++) 
+        for (int i=0; i<NR_ISAC_BANDWIDTHS; i++)
         {
             if(estimatedBandwidth <= isacRatesSWB[i])
             {
@@ -973,7 +973,7 @@ ACMISAC::GetRedPayloadSafe(
     WebRtc_UWord8* redPayload,
     WebRtc_Word16* payloadBytes)
 {
-   
+
     WebRtc_Word16 bytes = WebRtcIsac_GetRedPayload(_codecInstPtr->inst, (WebRtc_Word16*)redPayload);
     if (bytes < 0)
     {
@@ -996,15 +996,15 @@ ACMISAC::UnregisterFromNetEqSafe(
     }
     else if(payloadType == _decoderParams32kHz.codecInstant.pltype)
     {
-        return netEq->RemoveCodec(kDecoderISACswb); 
+        return netEq->RemoveCodec(kDecoderISACswb);
     }
     else
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
             "Cannot unregister codec %s given payload-type %d does not match \
-the stored payload type %d or %d", 
-            _decoderParams.codecInstant.plname, 
-            payloadType, 
+the stored payload type %d or %d",
+            _decoderParams.codecInstant.plname,
+            payloadType,
             _decoderParams.codecInstant.pltype,
             _decoderParams32kHz.codecInstant.pltype);
 
@@ -1066,7 +1066,7 @@ ACMISAC::UpdateEncoderSampFreq(
                 }
                 _samplesIn10MsAudio = 160;
             }
-            else 
+            else
             {
 
                 if(WebRtcIsac_SetEncSampRate(_codecInstPtr->inst, kIsacSuperWideband) < 0)
@@ -1084,7 +1084,7 @@ ACMISAC::UpdateEncoderSampFreq(
 #else
     WebRtc_UWord16 /* codecId */)
 {
-#endif    
+#endif
     return 0;
 }
 
@@ -1116,8 +1116,8 @@ ACMISAC::ConfigISACBandwidthEstimator(
         WebRtc_UWord16 sampFreqHz;
         EncoderSampFreq(sampFreqHz);
         // @TODO: at 32kHz we hardcode calling with 30ms and enforce
-        // the frame-size otherwise we might get error. Revise if 
-        // control-bwe is changed. 
+        // the frame-size otherwise we might get error. Revise if
+        // control-bwe is changed.
         if(sampFreqHz == 32000)
         {
             status = ACM_ISAC_CONTROL_BWE(_codecInstPtr->inst,
@@ -1146,7 +1146,7 @@ ACMISAC::SetISACMaxPayloadSize(
 {
     return ACM_ISAC_SETMAXPAYLOADSIZE(_codecInstPtr->inst, maxPayloadLenBytes);
 }
- 
+
 WebRtc_Word32
 ACMISAC::SetISACMaxRate(
     const WebRtc_UWord32 maxRateBitPerSec)
@@ -1155,14 +1155,14 @@ ACMISAC::SetISACMaxRate(
 }
 
 
-void 
+void
 ACMISAC::UpdateFrameLen()
 {
     _frameLenSmpl = ACM_ISAC_GETNEWFRAMELEN(_codecInstPtr->inst);
     _encoderParams.codecInstant.pacsize = _frameLenSmpl;
 }
 
-void 
+void
 ACMISAC::CurrentRate(WebRtc_Word32& rateBitPerSec)
 {
     if(_isacCodingMode == ADAPTIVE)
@@ -1172,7 +1172,7 @@ ACMISAC::CurrentRate(WebRtc_Word32& rateBitPerSec)
 }
 
 
-bool  
+bool
 ACMISAC::DecoderParamsSafe(
     WebRtcACMCodecParams* decParams,
     const WebRtc_UWord8   payloadType)
@@ -1186,7 +1186,7 @@ ACMISAC::DecoderParamsSafe(
         }
         if(payloadType == _decoderParams32kHz.codecInstant.pltype)
         {
-            memcpy(decParams, &_decoderParams32kHz, 
+            memcpy(decParams, &_decoderParams32kHz,
                 sizeof(WebRtcACMCodecParams));
             return true;
         }
@@ -1194,10 +1194,10 @@ ACMISAC::DecoderParamsSafe(
     return false;
 }
 
-void 
+void
 ACMISAC::SaveDecoderParamSafe(
     const WebRtcACMCodecParams* codecParams)
-{ 
+{
     // set decoder sampling frequency.
     if(codecParams->codecInstant.plfreq == 32000)
     {

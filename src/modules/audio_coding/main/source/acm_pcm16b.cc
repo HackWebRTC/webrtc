@@ -38,7 +38,7 @@ ACMPCM16B::~ACMPCM16B()
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMPCM16B::InternalEncode(
     WebRtc_UWord8* /* bitStream        */,
     WebRtc_Word16* /* bitStreamLenByte */)
@@ -47,10 +47,10 @@ ACMPCM16B::InternalEncode(
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMPCM16B::DecodeSafe(
     WebRtc_UWord8* /* bitStream        */,
-    WebRtc_Word16  /* bitStreamLenByte */, 
+    WebRtc_Word16  /* bitStreamLenByte */,
     WebRtc_Word16* /* audio            */,
     WebRtc_Word16* /* audioSamples     */,
     WebRtc_Word8*  /* speechType       */)
@@ -59,15 +59,15 @@ ACMPCM16B::DecodeSafe(
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMPCM16B::InternalInitEncoder(
     WebRtcACMCodecParams* /* codecParams */)
 {
-    return -1;    
+    return -1;
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMPCM16B::InternalInitDecoder(
     WebRtcACMCodecParams* /* codecParams */)
 {
@@ -75,9 +75,9 @@ ACMPCM16B::InternalInitDecoder(
 }
 
 
-WebRtc_Word32 
+WebRtc_Word32
 ACMPCM16B::CodecDef(
-    WebRtcNetEQ_CodecDef& /* codecDef  */, 
+    WebRtcNetEQ_CodecDef& /* codecDef  */,
     const CodecInst&      /* codecInst */)
 {
     return -1;
@@ -91,21 +91,21 @@ ACMPCM16B::CreateInstance(void)
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMPCM16B::InternalCreateEncoder()
 {
     return -1;
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMPCM16B::InternalCreateDecoder()
 {
     return -1;
 }
 
 
-void 
+void
 ACMPCM16B::InternalDestructEncoderInst(
     void* /* ptrInst */)
 {
@@ -113,20 +113,20 @@ ACMPCM16B::InternalDestructEncoderInst(
 }
 
 
-void 
+void
 ACMPCM16B::DestructEncoderSafe()
 {
     return;
 }
 
-void 
+void
 ACMPCM16B::DestructDecoderSafe()
 {
     return;
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMPCM16B::UnregisterFromNetEqSafe(
     ACMNetEQ*     /* netEq       */,
     WebRtc_Word16 /* payloadType */)
@@ -153,7 +153,7 @@ ACMPCM16B::~ACMPCM16B()
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMPCM16B::InternalEncode(
     WebRtc_UWord8* bitStream,
     WebRtc_Word16* bitStreamLenByte)
@@ -168,10 +168,10 @@ ACMPCM16B::InternalEncode(
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMPCM16B::DecodeSafe(
     WebRtc_UWord8* /* bitStream        */,
-    WebRtc_Word16  /* bitStreamLenByte */, 
+    WebRtc_Word16  /* bitStreamLenByte */,
     WebRtc_Word16* /* audio            */,
     WebRtc_Word16* /* audioSamples     */,
     WebRtc_Word8*  /* speechType       */)
@@ -180,17 +180,17 @@ ACMPCM16B::DecodeSafe(
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMPCM16B::InternalInitEncoder(
     WebRtcACMCodecParams* /* codecParams */)
 {
     // This codec does not need initialization,
     // PCM has no instance
-    return 0;    
+    return 0;
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMPCM16B::InternalInitDecoder(
     WebRtcACMCodecParams* /* codecParams */)
 {
@@ -200,12 +200,12 @@ ACMPCM16B::InternalInitDecoder(
 }
 
 
-WebRtc_Word32 
+WebRtc_Word32
 ACMPCM16B::CodecDef(
     WebRtcNetEQ_CodecDef& codecDef,
     const CodecInst&      codecInst)
 {
-    // Fill up the structure by calling 
+    // Fill up the structure by calling
     // "SET_CODEC_PAR" & "SET_PCMU_FUNCTION."
     // Then call NetEQ to add the codec to it's
     // database.
@@ -248,7 +248,7 @@ ACMPCM16B::CreateInstance(void)
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMPCM16B::InternalCreateEncoder()
 {
     // PCM has no instance
@@ -256,7 +256,7 @@ ACMPCM16B::InternalCreateEncoder()
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMPCM16B::InternalCreateDecoder()
 {
     // PCM has no instance
@@ -264,7 +264,7 @@ ACMPCM16B::InternalCreateDecoder()
 }
 
 
-void 
+void
 ACMPCM16B::InternalDestructEncoderInst(
     void* /* ptrInst */)
 {
@@ -273,7 +273,7 @@ ACMPCM16B::InternalDestructEncoderInst(
 }
 
 
-void 
+void
 ACMPCM16B::DestructEncoderSafe()
 {
     // PCM has no instance
@@ -282,7 +282,7 @@ ACMPCM16B::DestructEncoderSafe()
      return;
 }
 
-void 
+void
 ACMPCM16B::DestructDecoderSafe()
 {
     // PCM has no instance
@@ -292,18 +292,18 @@ ACMPCM16B::DestructDecoderSafe()
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMPCM16B::UnregisterFromNetEqSafe(
     ACMNetEQ*     netEq,
     WebRtc_Word16 payloadType)
 {
     if(payloadType != _decoderParams.codecInstant.pltype)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
             "Cannot unregister codec %s given payload-type %d does not match \
-the stored payload type", 
-            _decoderParams.codecInstant.plname, 
-            payloadType, 
+the stored payload type",
+            _decoderParams.codecInstant.plname,
+            payloadType,
             _decoderParams.codecInstant.pltype);
         return -1;
     }
@@ -313,17 +313,14 @@ the stored payload type",
     case 8000:
         {
             return netEq->RemoveCodec(kDecoderPCM16B);
-            break;
         }
     case 16000:
         {
             return netEq->RemoveCodec(kDecoderPCM16Bwb);
-            break;
         }
     case 32000:
         {
             return netEq->RemoveCodec(kDecoderPCM16Bswb32kHz);
-            break;
         }
     default:
         {

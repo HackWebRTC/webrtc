@@ -32,15 +32,15 @@ ACMResampler::~ACMResampler()
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMResampler::Resample10Msec(
-    const WebRtc_Word16* inAudio, 
-    WebRtc_Word32        inFreqHz, 
-    WebRtc_Word16*       outAudio, 
+    const WebRtc_Word16* inAudio,
+    WebRtc_Word32        inFreqHz,
+    WebRtc_Word16*       outAudio,
     WebRtc_Word32        outFreqHz,
     WebRtc_UWord8        numAudioChannels)
 {
-    
+
     CriticalSectionScoped cs(_resamplerCritSect);
 
     if(inFreqHz == outFreqHz)
@@ -55,20 +55,20 @@ ACMResampler::Resample10Msec(
 
     WebRtc_Word32 ret;
     ResamplerType type;
-    type = (numAudioChannels == 1)? kResamplerSynchronous:kResamplerSynchronousStereo;  
-    
-    ret = _resampler.ResetIfNeeded(inFreqHz,outFreqHz,type);  
+    type = (numAudioChannels == 1)? kResamplerSynchronous:kResamplerSynchronousStereo;
+
+    ret = _resampler.ResetIfNeeded(inFreqHz,outFreqHz,type);
     if (ret < 0)
-    {   
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id, 
-            "Error in reset of resampler");  
+    {
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
+            "Error in reset of resampler");
         return -1;
     }
-  
+
     ret = _resampler.Push(inAudio, lengthIn, outAudio, maxLen, outLen);
     if (ret < 0 )
-    {   
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id, 
+    {
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
             "Error in resampler: resampler.Push");
         return -1;
     }
@@ -79,11 +79,11 @@ ACMResampler::Resample10Msec(
 
 }
 
-void 
+void
 ACMResampler::SetUniqueId(
     WebRtc_Word32 id)
 {
-    CriticalSectionScoped lock(_resamplerCritSect); 
+    CriticalSectionScoped lock(_resamplerCritSect);
     _id = id;
 }
 

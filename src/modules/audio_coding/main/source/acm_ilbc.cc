@@ -76,7 +76,7 @@ ACMILBC::InternalInitDecoder(
 
 WebRtc_Word32
 ACMILBC::CodecDef(
-    WebRtcNetEQ_CodecDef& /* codecDef  */, 
+    WebRtcNetEQ_CodecDef& /* codecDef  */,
     const CodecInst&      /* codecInst */)
 {
     return -1;
@@ -97,7 +97,7 @@ ACMILBC::InternalCreateEncoder()
 }
 
 
-void 
+void
 ACMILBC::DestructEncoderSafe()
 {
     return;
@@ -111,14 +111,14 @@ ACMILBC::InternalCreateDecoder()
 }
 
 
-void 
+void
 ACMILBC::DestructDecoderSafe()
 {
     return;
 }
 
 
-void 
+void
 ACMILBC::InternalDestructEncoderInst(
     void* /* ptrInst */)
 {
@@ -175,15 +175,15 @@ ACMILBC::InternalEncode(
     WebRtc_UWord8* bitStream,
     WebRtc_Word16* bitStreamLenByte)
 {
-    *bitStreamLenByte = WebRtcIlbcfix_Encode(_encoderInstPtr, 
+    *bitStreamLenByte = WebRtcIlbcfix_Encode(_encoderInstPtr,
         &_inAudio[_inAudioIxRead], _frameLenSmpl, (WebRtc_Word16*)bitStream);
     if (*bitStreamLenByte < 0)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
-            "InternalEncode: error in encode for ILBC"); 
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+            "InternalEncode: error in encode for ILBC");
         return -1;
     }
-    // increment the read index this tell the caller that how far 
+    // increment the read index this tell the caller that how far
     // we have gone forward in reading the audio buffer
     _inAudioIxRead += _frameLenSmpl;
     return *bitStreamLenByte;
@@ -207,7 +207,7 @@ ACMILBC::InternalInitEncoder(
     WebRtcACMCodecParams* codecParams)
 {
     // initialize with a correct processing block length
-    if((160 == (codecParams->codecInstant).pacsize) || 
+    if((160 == (codecParams->codecInstant).pacsize) ||
         (320 == (codecParams->codecInstant).pacsize))
     {
         // processing block of 20ms
@@ -221,8 +221,8 @@ ACMILBC::InternalInitEncoder(
     }
     else
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
-            "InternalInitEncoder: invalid processing block"); 
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+            "InternalInitEncoder: invalid processing block");
         return -1;
     }
 }
@@ -233,13 +233,13 @@ ACMILBC::InternalInitDecoder(
     WebRtcACMCodecParams* codecParams)
 {
     // initialize with a correct processing block length
-    if((160 == (codecParams->codecInstant).pacsize) || 
+    if((160 == (codecParams->codecInstant).pacsize) ||
         (320 == (codecParams->codecInstant).pacsize))
     {
         // processing block of 20ms
         return WebRtcIlbcfix_DecoderInit(_decoderInstPtr, 20);
     }
-    else if((240 == (codecParams->codecInstant).pacsize) || 
+    else if((240 == (codecParams->codecInstant).pacsize) ||
         (480 == (codecParams->codecInstant).pacsize))
     {
         // processing block of 30ms
@@ -247,8 +247,8 @@ ACMILBC::InternalInitDecoder(
     }
     else
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
-            "InternalInitDecoder: invalid processing block"); 
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+            "InternalInitDecoder: invalid processing block");
         return -1;
     }
 }
@@ -261,15 +261,15 @@ ACMILBC::CodecDef(
 {
     if (!_decoderInitialized)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
-            "CodeDef: decoder not initialized for ILBC");     
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+            "CodeDef: decoder not initialized for ILBC");
         return -1;
     }
-    // Fill up the structure by calling 
+    // Fill up the structure by calling
     // "SET_CODEC_PAR" & "SET_ILBC_FUNCTION."
     // Then return the structure back to NetEQ to add the codec to it's
     // database.
-    SET_CODEC_PAR((codecDef), kDecoderILBC, codecInst.pltype, 
+    SET_CODEC_PAR((codecDef), kDecoderILBC, codecInst.pltype,
         _decoderInstPtr, 8000);
     SET_ILBC_FUNCTIONS((codecDef));
     return 0;
@@ -288,15 +288,15 @@ ACMILBC::InternalCreateEncoder()
 {
     if (WebRtcIlbcfix_EncoderCreate(&_encoderInstPtr) < 0)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
-            "InternalCreateEncoder: cannot create instance for ILBC encoder"); 
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+            "InternalCreateEncoder: cannot create instance for ILBC encoder");
         return -1;
     }
     return 0;
 }
 
 
-void 
+void
 ACMILBC::DestructEncoderSafe()
 {
     _encoderInitialized = false;
@@ -314,15 +314,15 @@ ACMILBC::InternalCreateDecoder()
 {
     if (WebRtcIlbcfix_DecoderCreate(&_decoderInstPtr) < 0)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
-            "InternalCreateDecoder: cannot create instance for ILBC decoder"); 
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+            "InternalCreateDecoder: cannot create instance for ILBC decoder");
         return -1;
     }
     return 0;
 }
 
 
-void 
+void
 ACMILBC::DestructDecoderSafe()
 {
     _decoderInitialized = false;
@@ -335,7 +335,7 @@ ACMILBC::DestructDecoderSafe()
 }
 
 
-void 
+void
 ACMILBC::InternalDestructEncoderInst(
     void* ptrInst)
 {
@@ -350,10 +350,10 @@ WebRtc_Word16
 ACMILBC::SetBitRateSafe(const WebRtc_Word32 rate)
 {
     // Check that rate is valid. No need to store the value
-    if (rate == 13300) 
+    if (rate == 13300)
     {
         WebRtcIlbcfix_EncoderInit(_encoderInstPtr, 30);
-    } 
+    }
     else if (rate == 15200)
     {
         WebRtcIlbcfix_EncoderInit(_encoderInstPtr, 20);
@@ -374,11 +374,11 @@ ACMILBC::UnregisterFromNetEqSafe(
 {
     if(payloadType != _decoderParams.codecInstant.pltype)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
             "Cannot unregister codec: given payload-type does not match \
-the stored payload type", 
-            _decoderParams.codecInstant.plname, 
-            payloadType, 
+the stored payload type",
+            _decoderParams.codecInstant.plname,
+            payloadType,
             _decoderParams.codecInstant.pltype);
         return -1;
     }

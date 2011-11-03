@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef ACM_GENERIC_CODEC_H
-#define ACM_GENERIC_CODEC_H
+#ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_GENERIC_CODEC_H_
+#define WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_GENERIC_CODEC_H_
 
 #include "acm_common_defs.h"
 #include "audio_coding_module_typedefs.h"
@@ -322,7 +322,7 @@ public:
     //    0 if the rate is adjusted successfully
     //
     WebRtc_Word16 SetBitRate(const WebRtc_Word32 bitRateBPS);
-  
+
 
     ///////////////////////////////////////////////////////////////////////////
     // DestructEncoderInst()
@@ -411,7 +411,7 @@ public:
         const bool             enableDTX = true,
         const bool             enableVAD = false,
         const ACMVADMode mode      = VADNormal);
-    
+
 
     ///////////////////////////////////////////////////////////////////////////
     // WebRtc_Word32 ReplaceInternalDTX()
@@ -451,9 +451,9 @@ public:
     //   -netEqDecodeLock    : pointer to the lock associated with NetEQ of ACM.
     //
     void SetNetEqDecodeLock(
-        RWLockWrapper* netEqDecodeLock) 
-    { 
-        _netEqDecodeLock = netEqDecodeLock; 
+        RWLockWrapper* netEqDecodeLock)
+    {
+        _netEqDecodeLock = netEqDecodeLock;
     }
 
 
@@ -465,7 +465,7 @@ public:
     //   true if the codec has an internal DTX, e.g. G729,
     //   false otherwise.
     //
-    bool HasInternalDTX() const 
+    bool HasInternalDTX() const
     {
         return _hasInternalDTX;
     }
@@ -481,7 +481,7 @@ public:
     //    >0 estimated bandwidth in bits/sec.
     //
     WebRtc_Word32 GetEstimatedBandwidth();
-  
+
 
     ///////////////////////////////////////////////////////////////////////////
     // WebRtc_Word32 SetEstimatedBandwidth()
@@ -514,7 +514,7 @@ public:
         WebRtc_UWord8* redPayload,
         WebRtc_Word16* payloadBytes);
 
- 
+
     ///////////////////////////////////////////////////////////////////////////
     // WebRtc_Word16 ResetEncoder()
     // By calling this function you would re-initialize the encoder with the
@@ -540,7 +540,7 @@ public:
     WebRtc_Word16 ResetDecoder(
         WebRtc_Word16 payloadType);
 
-   
+
     ///////////////////////////////////////////////////////////////////////////
     // void DestructEncoder()
     // This function is called to delete the encoder instance, if possible, to
@@ -581,7 +581,7 @@ public:
     //
     WebRtc_UWord32 LastEncodedTimestamp() const;
 
-    
+
     ///////////////////////////////////////////////////////////////////////////
     // WebRtc_Word32 UnregisterFromNetEq()
     // To remove the codec from NetEQ. If the codec (or the decoder instance)
@@ -654,7 +654,7 @@ public:
         return 0;
     }
 
-    
+
     ///////////////////////////////////////////////////////////////////////////
     // UpdateEncoderSampFreq()
     // Call this function to update the encoder sampling frequency. This
@@ -757,7 +757,7 @@ public:
     //
     virtual WebRtc_Word32 SetISACMaxRate(
         const WebRtc_UWord32 maxRateBitPerSec);
-    
+
 
     ///////////////////////////////////////////////////////////////////////////
     // SaveDecoderParamS()
@@ -779,7 +779,7 @@ public:
     void SetIsMaster(bool isMaster);
 
 
-    
+
 
     ///////////////////////////////////////////////////////////////////////////
     // REDPayloadISAC()
@@ -810,7 +810,7 @@ public:
         const WebRtc_Word16 isacBwEstimate,
         WebRtc_UWord8*      payload,
         WebRtc_Word16*      payloadLenBytes);
-    
+
 protected:
     ///////////////////////////////////////////////////////////////////////////
     // All the functions with FunctionNameSafe(...) contain the actual
@@ -840,7 +840,7 @@ protected:
         WebRtc_Word16* audio,
         WebRtc_Word16* audioSamples,
         WebRtc_Word8*  speechType) = 0;
-    
+
     ///////////////////////////////////////////////////////////////////////////
     // See Add10MsSafe() for the description of function, input(s)/output(s)
     // and return value.
@@ -850,22 +850,22 @@ protected:
         const WebRtc_Word16* data,
         const WebRtc_UWord16 length,
         const WebRtc_UWord8  audioChannel);
-    
+
     ///////////////////////////////////////////////////////////////////////////
     // See RegisterInNetEq() for the description of function,
     // input(s)/output(s) and  return value.
     //
     virtual WebRtc_Word32 CodecDef(
-        WebRtcNetEQ_CodecDef& codecDef, 
+        WebRtcNetEQ_CodecDef& codecDef,
         const CodecInst&  codecInst) = 0;
-    
+
     ///////////////////////////////////////////////////////////////////////////
     // See EncoderParam() for the description of function, input(s)/output(s)
     // and return value.
     //
     WebRtc_Word16 EncoderParamsSafe(
         WebRtcACMCodecParams *encParams);
-    
+
     ///////////////////////////////////////////////////////////////////////////
     // See DecoderParam for the description of function, input(s)/output(s)
     // and return value.
@@ -883,13 +883,13 @@ protected:
     virtual bool  DecoderParamsSafe(
         WebRtcACMCodecParams *decParams,
         const WebRtc_UWord8  payloadType);
-    
+
     ///////////////////////////////////////////////////////////////////////////
     // See ResetEncoder() for the description of function, input(s)/output(s)
     // and return value.
     //
     WebRtc_Word16 ResetEncoderSafe();
-    
+
     ///////////////////////////////////////////////////////////////////////////
     // See InitEncoder() for the description of function, input(s)/output(s)
     // and return value.
@@ -905,14 +905,14 @@ protected:
     WebRtc_Word16 InitDecoderSafe(
         WebRtcACMCodecParams *codecParams,
         bool                 forceInitialization);
-    
+
     ///////////////////////////////////////////////////////////////////////////
     // See ResetDecoder() for the description of function, input(s)/output(s)
     // and return value.
     //
     WebRtc_Word16 ResetDecoderSafe(
         WebRtc_Word16 payloadType);
-    
+
     ///////////////////////////////////////////////////////////////////////////
     // See DestructEncoder() for the description of function,
     // input(s)/output(s) and return value.
@@ -924,7 +924,7 @@ protected:
     // input(s)/output(s) and return value.
     //
     virtual void DestructDecoderSafe() = 0;
-    
+
     ///////////////////////////////////////////////////////////////////////////
     // See SetBitRate() for the description of function, input(s)/output(s)
     // and return value.
@@ -933,19 +933,19 @@ protected:
     //
     virtual WebRtc_Word16 SetBitRateSafe(
         const WebRtc_Word32 bitRateBPS);
-    
+
     ///////////////////////////////////////////////////////////////////////////
     // See GetEstimatedBandwidth() for the description of function, input(s)/output(s)
     // and return value.
     //
     virtual WebRtc_Word32 GetEstimatedBandwidthSafe();
-       
+
     ///////////////////////////////////////////////////////////////////////////
     // See SetEstimatedBandwidth() for the description of function, input(s)/output(s)
     // and return value.
     //
     virtual WebRtc_Word32 SetEstimatedBandwidthSafe(WebRtc_Word32 estimatedBandwidth);
-    
+
     ///////////////////////////////////////////////////////////////////////////
     // See GetRedPayload() for the description of function, input(s)/output(s)
     // and return value.
@@ -1145,7 +1145,7 @@ protected:
     //
     virtual WebRtc_Word16 InternalCreateEncoder() = 0;
 
-    
+
     ///////////////////////////////////////////////////////////////////////////
     // WebRtc_Word16 InternalCreateDecoder()
     // This is a codec-specific method called in CreateDecoderSafe() it is
@@ -1175,7 +1175,7 @@ protected:
     //    0 if succeeded.
     //
     virtual void InternalDestructEncoderInst(
-        void* ptrInst) = 0;    
+        void* ptrInst) = 0;
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -1230,7 +1230,7 @@ protected:
         WebRtc_Word16* bitStreamLenByte,
         WebRtc_Word16* samplesProcessed);
 
-   
+
     ///////////////////////////////////////////////////////////////////////////
     // CanChangeEncodingParam()
     // Check if the codec parameters can be changed. In conferencing normally
@@ -1242,7 +1242,7 @@ protected:
     //
     virtual bool CanChangeEncodingParam(CodecInst& codecInst);
 
-    
+
     ///////////////////////////////////////////////////////////////////////////
     // CurrentRate()
     // Call to get the current encoding rate of the encoder. This function
@@ -1256,24 +1256,23 @@ protected:
     virtual void CurrentRate(
         WebRtc_Word32& /* rateBitPerSec */)
     {
-        
         return;
     }
 
     virtual void SaveDecoderParamSafe(
         const WebRtcACMCodecParams* codecParams);
 
- 
-    // &_inAudio[_inAudioIxWrite] always point to where new audio can be 
-    // written to 
+
+    // &_inAudio[_inAudioIxWrite] always point to where new audio can be
+    // written to
     WebRtc_Word16         _inAudioIxWrite;
 
     // &_inAudio[_inAudioIxRead] points to where audio has to be read from
     WebRtc_Word16         _inAudioIxRead;
-    
+
     WebRtc_Word16         _inTimestampIxWrite;
 
-    // Where the audio is stored before encoding, 
+    // Where the audio is stored before encoding,
     // To save memory the following buffer can be allocated
     // dynamically for 80ms depending on the sampling frequency
     // of the codec.
@@ -1285,12 +1284,12 @@ protected:
 
     // This will point to a static database of the supported codecs
     WebRtc_Word16         _codecID;
-    
+
     // This will account for the No of samples  were not encoded
     // the case is rare, either samples are missed due to overwite
     // at input buffer or due to encoding error
     WebRtc_UWord32        _noMissedSamples;
-    
+
     // True if the encoder instance created
     bool                  _encoderExist;
     bool                  _decoderExist;
@@ -1330,4 +1329,4 @@ protected:
 
 } // namespace webrt
 
-#endif // ACM_GENERIC_CODEC_H
+#endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_GENERIC_CODEC_H_

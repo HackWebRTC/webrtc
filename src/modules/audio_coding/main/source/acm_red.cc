@@ -30,7 +30,7 @@ ACMRED::~ACMRED()
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMRED::InternalEncode(
     WebRtc_UWord8* /* bitStream        */,
     WebRtc_Word16* /* bitStreamLenByte */)
@@ -41,10 +41,10 @@ ACMRED::InternalEncode(
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMRED::DecodeSafe(
     WebRtc_UWord8* /* bitStream        */,
-    WebRtc_Word16  /* bitStreamLenByte */, 
+    WebRtc_Word16  /* bitStreamLenByte */,
     WebRtc_Word16* /* audio            */,
     WebRtc_Word16* /* audioSamples     */,
     WebRtc_Word8*  /* speechType       */)
@@ -53,17 +53,17 @@ ACMRED::DecodeSafe(
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMRED::InternalInitEncoder(
     WebRtcACMCodecParams* /* codecParams */)
 {
     // This codec does not need initialization,
     // RED has no instance
-    return 0;    
+    return 0;
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMRED::InternalInitDecoder(
     WebRtcACMCodecParams* /* codecParams */)
 {
@@ -73,7 +73,7 @@ ACMRED::InternalInitDecoder(
 }
 
 
-WebRtc_Word32 
+WebRtc_Word32
 ACMRED::CodecDef(
     WebRtcNetEQ_CodecDef& codecDef,
     const CodecInst&      codecInst)
@@ -85,7 +85,7 @@ ACMRED::CodecDef(
         return -1;
     }
 
-    // Fill up the structure by calling 
+    // Fill up the structure by calling
     // "SET_CODEC_PAR" & "SET_PCMU_FUNCTION."
     // Then call NetEQ to add the codec to it's
     // database.
@@ -102,7 +102,7 @@ ACMRED::CreateInstance(void)
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMRED::InternalCreateEncoder()
 {
     // RED has no instance
@@ -110,7 +110,7 @@ ACMRED::InternalCreateEncoder()
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMRED::InternalCreateDecoder()
 {
     // RED has no instance
@@ -118,7 +118,7 @@ ACMRED::InternalCreateDecoder()
 }
 
 
-void 
+void
 ACMRED::InternalDestructEncoderInst(
     void* /* ptrInst */)
 {
@@ -127,7 +127,7 @@ ACMRED::InternalDestructEncoderInst(
 }
 
 
-void 
+void
 ACMRED::DestructEncoderSafe()
 {
     // RED has no instance
@@ -141,18 +141,18 @@ void ACMRED::DestructDecoderSafe()
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMRED::UnregisterFromNetEqSafe(
     ACMNetEQ*     netEq,
     WebRtc_Word16 payloadType)
 {
     if(payloadType != _decoderParams.codecInstant.pltype)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
             "Cannot unregister codec %s given payload-type %d does not match \
-the stored payload type", 
-            _decoderParams.codecInstant.plname, 
-            payloadType, 
+the stored payload type",
+            _decoderParams.codecInstant.plname,
+            payloadType,
             _decoderParams.codecInstant.pltype);
         return -1;
     }

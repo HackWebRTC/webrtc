@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef ACM_NETEQ_H
-#define ACM_NETEQ_H
+#ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_NETEQ_H_
+#define WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_NETEQ_H_
 
 #include "audio_coding_module.h"
 #include "audio_coding_module_typedefs.h"
@@ -69,7 +69,7 @@ public:
     //                            if out of memory.
     //
     WebRtc_Word32 Init();
-    
+
     //
     // RecIn()
     // Gives the payload to NetEQ.
@@ -132,7 +132,7 @@ public:
     //                            <0 if NetEQ returned an error.
     //
     WebRtc_Word32 AllocatePacketBuffer(
-        WebRtcNetEQDecoder* usedCodecs, 
+        WebRtcNetEQDecoder* usedCodecs,
         WebRtc_Word16    noOfCodecs);
 
     //
@@ -298,9 +298,9 @@ public:
     //
     // Return value              : Pointer to the decode lock.
     //
-    RWLockWrapper* DecodeLock() const 
-    { 
-        return _decodeLock; 
+    RWLockWrapper* DecodeLock() const
+    {
+        return _decodeLock;
     }
 
     //
@@ -372,13 +372,13 @@ public:
 
     void SetReceivedStereo(
         bool receivedStereo);
-    
+
     WebRtc_UWord8 NumSlaves();
 
     enum JB {masterJB = 0, slaveJB = 1};
 
     WebRtc_Word16 AddSlave(
-        WebRtcNetEQDecoder*    usedCodecs, 
+        WebRtcNetEQDecoder*    usedCodecs,
         WebRtc_Word16       noOfCodecs);
 
 private:
@@ -426,7 +426,7 @@ private:
     bool                    _avtPlayout;
     AudioPlayoutMode        _playoutMode;
     CriticalSectionWrapper* _netEqCritSect;
-    
+
     WebRtcVadInst*          _ptrVADInst[MAX_NUM_SLAVE_NETEQ + 1];
 
     bool                    _vadStatus;
@@ -443,4 +443,4 @@ private:
 
 } //namespace webrtc
 
-#endif //ACM_NETEQ_H
+#endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_NETEQ_H_

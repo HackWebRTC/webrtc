@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef ACM_SPEEX_H
-#define ACM_SPEEX_H
+#ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_SPEEX_H_
+#define WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_SPEEX_H_
 
 #include "acm_generic_codec.h"
 
@@ -54,28 +54,28 @@ protected:
     void DestructDecoderSafe();
 
     WebRtc_Word16 InternalCreateEncoder();
-    
+
     WebRtc_Word16 InternalCreateDecoder();
-    
+
     void InternalDestructEncoderInst(
         void* ptrInst);
 
     WebRtc_Word16 SetBitRateSafe(
         const WebRtc_Word32 rate);
-    
+
     WebRtc_Word16 EnableDTX();
-    
+
     WebRtc_Word16 DisableDTX();
 
-#ifdef UNUSEDSPEEX    
+#ifdef UNUSEDSPEEX
     WebRtc_Word16 EnableVBR();
 
     WebRtc_Word16 DisableVBR();
-    
+
     WebRtc_Word16 SetComplMode(
         WebRtc_Word16 mode);
 #endif
-    
+
     WebRtc_Word16 UnregisterFromNetEqSafe(
         ACMNetEQ*     netEq,
         WebRtc_Word16 payloadType);
@@ -91,4 +91,4 @@ protected:
 
 } // namespace webrtc
 
-#endif // ACM_SPEEX_H
+#endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_SPEEX_H_

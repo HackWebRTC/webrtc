@@ -8,80 +8,66 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef ACM_CNG_H
-#define ACM_CNG_H
+#ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_CNG_H_
+#define WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_CNG_H_
 
 #include "acm_generic_codec.h"
-
 
 // forward declaration
 struct WebRtcCngEncInst;
 struct WebRtcCngDecInst;
 
-namespace webrtc
-{
+namespace webrtc {
 
-class ACMCNG : public ACMGenericCodec
-{
-public:
-    ACMCNG(WebRtc_Word16 codecID);
-    ~ACMCNG();
-    // for FEC
-    ACMGenericCodec* CreateInstance(void);
+class ACMCNG: public ACMGenericCodec {
+ public:
+  ACMCNG(WebRtc_Word16 codecID);
+  ~ACMCNG();
+  // for FEC
+  ACMGenericCodec* CreateInstance(void);
 
-    WebRtc_Word16 InternalEncode(
-        WebRtc_UWord8* bitstream,
-        WebRtc_Word16* bitStreamLenByte);
+  WebRtc_Word16 InternalEncode(WebRtc_UWord8* bitstream,
+                               WebRtc_Word16* bitStreamLenByte);
 
-    WebRtc_Word16 InternalInitEncoder(
-        WebRtcACMCodecParams *codecParams);
+  WebRtc_Word16 InternalInitEncoder(WebRtcACMCodecParams *codecParams);
 
-    WebRtc_Word16 InternalInitDecoder(
-        WebRtcACMCodecParams *codecParams);
+  WebRtc_Word16 InternalInitDecoder(WebRtcACMCodecParams *codecParams);
 
 protected:
-    WebRtc_Word16 DecodeSafe(
-        WebRtc_UWord8* bitStream,
-        WebRtc_Word16  bitStreamLenByte,
-        WebRtc_Word16* audio,
-        WebRtc_Word16* audioSamples,
-        WebRtc_Word8*  speechType);
+  WebRtc_Word16 DecodeSafe(WebRtc_UWord8* bitStream,
+                           WebRtc_Word16 bitStreamLenByte,
+                           WebRtc_Word16* audio, WebRtc_Word16* audioSamples,
+                           WebRtc_Word8* speechType);
 
-    WebRtc_Word32 CodecDef(
-        WebRtcNetEQ_CodecDef& codecDef,
-        const CodecInst&      codecInst);
+  WebRtc_Word32 CodecDef(WebRtcNetEQ_CodecDef& codecDef,
+                         const CodecInst& codecInst);
 
-    void DestructEncoderSafe();
+  void DestructEncoderSafe();
 
-    void DestructDecoderSafe();
+  void DestructDecoderSafe();
 
-    WebRtc_Word16 InternalCreateEncoder();
+  WebRtc_Word16 InternalCreateEncoder();
 
-    WebRtc_Word16 InternalCreateDecoder();
+  WebRtc_Word16 InternalCreateDecoder();
 
-    void InternalDestructEncoderInst(
-        void* ptrInst);
+  void InternalDestructEncoderInst(void* ptrInst);
 
-    WebRtc_Word16 EnableDTX()
-    {
-        return -1;
-    }
+  WebRtc_Word16 EnableDTX() {
+    return -1;
+  }
 
-    WebRtc_Word16 DisableDTX()
-    {
-        return -1;
-    }
+  WebRtc_Word16 DisableDTX() {
+    return -1;
+  }
 
-    WebRtc_Word16 UnregisterFromNetEqSafe(
-        ACMNetEQ*     netEq,
-        WebRtc_Word16 payloadType);
+  WebRtc_Word16 UnregisterFromNetEqSafe(ACMNetEQ* netEq,
+                                        WebRtc_Word16 payloadType);
 
-    WebRtcCngEncInst*  _encoderInstPtr;
-    WebRtcCngDecInst*  _decoderInstPtr;
-    WebRtc_Word16      _sampFreqHz;
+  WebRtcCngEncInst* _encoderInstPtr;
+  WebRtcCngDecInst* _decoderInstPtr;
+  WebRtc_Word16 _sampFreqHz;
 };
 
 } // namespace webrtc
 
-#endif // ACM_CNG_H
-
+#endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_CNG_H_

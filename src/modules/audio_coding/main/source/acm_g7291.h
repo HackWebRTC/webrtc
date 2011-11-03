@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef ACM_G729_1_H
-#define ACM_G729_1_H
+#ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_G729_1_H_
+#define WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_G729_1_H_
 
 #include "acm_generic_codec.h"
 
@@ -28,7 +28,7 @@ public:
     ACMGenericCodec* CreateInstance(void);
 
     WebRtc_Word16 InternalEncode(
-        WebRtc_UWord8* bitstream, 
+        WebRtc_UWord8* bitstream,
         WebRtc_Word16* bitStreamLenByte);
 
     WebRtc_Word16 InternalInitEncoder(
@@ -39,24 +39,24 @@ public:
 
 protected:
     WebRtc_Word16 DecodeSafe(
-        WebRtc_UWord8* bitStream, 
-        WebRtc_Word16  bitStreamLenByte, 
-        WebRtc_Word16* audio, 
-        WebRtc_Word16* audioSamples, 
+        WebRtc_UWord8* bitStream,
+        WebRtc_Word16  bitStreamLenByte,
+        WebRtc_Word16* audio,
+        WebRtc_Word16* audioSamples,
         WebRtc_Word8*  speechType);
 
     WebRtc_Word32 CodecDef(
-        WebRtcNetEQ_CodecDef& codecDef, 
+        WebRtcNetEQ_CodecDef& codecDef,
         const CodecInst& codecInst);
 
     void DestructEncoderSafe();
-    
+
     void DestructDecoderSafe();
 
     WebRtc_Word16 InternalCreateEncoder();
-    
+
     WebRtc_Word16 InternalCreateDecoder();
-    
+
     void InternalDestructEncoderInst(
         void* ptrInst);
 
@@ -65,22 +65,21 @@ protected:
     //WebRtc_Word16 DisableDTX();
 
     WebRtc_Word16 UnregisterFromNetEqSafe(
-        ACMNetEQ* netEq, 
+        ACMNetEQ* netEq,
         WebRtc_Word16   payloadType);
 
-	WebRtc_Word16 SetBitRateSafe(
-		const WebRtc_Word32 rate);
+  WebRtc_Word16 SetBitRateSafe(
+    const WebRtc_Word32 rate);
 
     G729_1_inst_t_* _encoderInstPtr;
     G729_1_inst_t_* _decoderInstPtr;
 
     WebRtc_UWord16     _myRate;
-	WebRtc_Word16     _flag8kHz;
+  WebRtc_Word16     _flag8kHz;
     WebRtc_Word16     _flagG729mode;
 
 };
 
 } // namespace webrtc
 
-#endif // ACM_G729_1_H
-
+#endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_G729_1_H_

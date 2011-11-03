@@ -8,61 +8,50 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef ACM_DTMF_PLAYOUT_H
-#define ACM_DTMF_PLAYOUT_H
+#ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_DTMF_PLAYOUT_H_
+#define WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_DTMF_PLAYOUT_H_
 
 #include "acm_generic_codec.h"
 
-namespace webrtc
-{
+namespace webrtc {
 
-class ACMDTMFPlayout : public ACMGenericCodec
-{
-public:
-    ACMDTMFPlayout(WebRtc_Word16 codecID);
-    ~ACMDTMFPlayout();
-    // for FEC
-    ACMGenericCodec* CreateInstance(void);
+class ACMDTMFPlayout: public ACMGenericCodec {
+ public:
+  ACMDTMFPlayout(WebRtc_Word16 codecID);
+  ~ACMDTMFPlayout();
+  // for FEC
+  ACMGenericCodec* CreateInstance(void);
 
-    WebRtc_Word16 InternalEncode(
-        WebRtc_UWord8* bitstream,
-        WebRtc_Word16* bitStreamLenByte);
+  WebRtc_Word16 InternalEncode(WebRtc_UWord8* bitstream,
+                               WebRtc_Word16* bitStreamLenByte);
 
-    WebRtc_Word16 InternalInitEncoder(
-        WebRtcACMCodecParams *codecParams);
+  WebRtc_Word16 InternalInitEncoder(WebRtcACMCodecParams *codecParams);
 
-    WebRtc_Word16 InternalInitDecoder(
-        WebRtcACMCodecParams *codecParams);
+  WebRtc_Word16 InternalInitDecoder(WebRtcACMCodecParams *codecParams);
 
-protected:
-    WebRtc_Word16 DecodeSafe(
-        WebRtc_UWord8* bitStream,
-        WebRtc_Word16  bitStreamLenByte,
-        WebRtc_Word16* audio,
-        WebRtc_Word16* audioSamples,
-        WebRtc_Word8*  speechType);
+ protected:
+  WebRtc_Word16 DecodeSafe(WebRtc_UWord8* bitStream,
+                           WebRtc_Word16 bitStreamLenByte,
+                           WebRtc_Word16* audio, WebRtc_Word16* audioSamples,
+                           WebRtc_Word8* speechType);
 
-    WebRtc_Word32 CodecDef(
-        WebRtcNetEQ_CodecDef& codecDef, 
-        const CodecInst&  codecInst);
+  WebRtc_Word32 CodecDef(WebRtcNetEQ_CodecDef& codecDef,
+                         const CodecInst& codecInst);
 
-    void DestructEncoderSafe();
-    
-    void DestructDecoderSafe();
-    
-    WebRtc_Word16 InternalCreateEncoder();
-    
-    WebRtc_Word16 InternalCreateDecoder();
-    
-    WebRtc_Word16 UnregisterFromNetEqSafe(
-        ACMNetEQ* netEq,
-        WebRtc_Word16   payloadType);
+  void DestructEncoderSafe();
 
-    void InternalDestructEncoderInst(
-        void* ptrInst);
+  void DestructDecoderSafe();
+
+  WebRtc_Word16 InternalCreateEncoder();
+
+  WebRtc_Word16 InternalCreateDecoder();
+
+  WebRtc_Word16 UnregisterFromNetEqSafe(ACMNetEQ* netEq,
+                                        WebRtc_Word16 payloadType);
+
+  void InternalDestructEncoderInst(void* ptrInst);
 };
 
 } // namespace webrtc
 
-#endif // ACM_DTMF_PLAYOUT_H
-
+#endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_DTMF_PLAYOUT_H_

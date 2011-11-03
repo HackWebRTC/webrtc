@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef ACM_ISAC_H
-#define ACM_ISAC_H
+#ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_ISAC_H_
+#define WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_ISAC_H_
 
 #include "acm_generic_codec.h"
 
@@ -32,7 +32,7 @@ public:
     WebRtc_Word16 InternalEncode(
         WebRtc_UWord8* bitstream,
         WebRtc_Word16* bitStreamLenByte);
-    
+
     WebRtc_Word16 InternalInitEncoder(
         WebRtcACMCodecParams *codecParams);
 
@@ -52,7 +52,7 @@ public:
         WebRtc_Word16*         /* bitStreamLenByte */,
         WebRtc_UWord32*        /* timestamp        */,
         WebRtcACMEncodingType* /* encodingType     */)
-    { 
+    {
         return -1;
     }
 
@@ -91,13 +91,13 @@ protected:
         WebRtc_Word8*  speechType);
 
     WebRtc_Word32 CodecDef(
-        WebRtcNetEQ_CodecDef& codecDef, 
+        WebRtcNetEQ_CodecDef& codecDef,
         const CodecInst&      codecInst);
 
     void DestructEncoderSafe();
-    
+
     void DestructDecoderSafe();
-    
+
     WebRtc_Word16 SetBitRateSafe(
         const WebRtc_Word32 bitRate);
 
@@ -110,9 +110,9 @@ protected:
         WebRtc_Word16* payloadBytes);
 
     WebRtc_Word16 InternalCreateEncoder();
-    
+
     WebRtc_Word16 InternalCreateDecoder();
-    
+
     void InternalDestructEncoderInst(
         void* ptrInst);
 
@@ -130,7 +130,7 @@ protected:
     void CurrentRate(WebRtc_Word32& rateBitPerSec);
 
     void UpdateFrameLen();
-    
+
     bool DecoderParamsSafe(
         WebRtcACMCodecParams *decParams,
         const WebRtc_UWord8  payloadType);
@@ -150,4 +150,4 @@ protected:
 
 } //namespace
 
-#endif // ACM_ISAC_H
+#endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_ISAC_H_

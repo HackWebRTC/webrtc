@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef ACM_AMR_H
-#define ACM_AMR_H
+#ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_AMR_H_
+#define WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_AMR_H_
 
 #include "acm_generic_codec.h"
 
@@ -21,76 +21,66 @@ namespace webrtc {
 
 enum ACMAMRPackingFormat;
 
-class ACMAMR : public ACMGenericCodec
-{
-public:
-    ACMAMR(WebRtc_Word16 codecID);
-    ~ACMAMR();
-    // for FEC
-    ACMGenericCodec* CreateInstance(void);
+class ACMAMR: public ACMGenericCodec {
+ public:
+  ACMAMR(WebRtc_Word16 codecID);
+  ~ACMAMR();
+  // for FEC
+  ACMGenericCodec* CreateInstance(void);
 
-    WebRtc_Word16 InternalEncode(
-        WebRtc_UWord8* bitstream,
-        WebRtc_Word16* bitStreamLenByte);
-    
-    WebRtc_Word16 InternalInitEncoder(
-        WebRtcACMCodecParams *codecParams);
-    
-    WebRtc_Word16 InternalInitDecoder(
-        WebRtcACMCodecParams *codecParams);
-    
-    WebRtc_Word16 SetAMREncoderPackingFormat(
-        const ACMAMRPackingFormat packingFormat);
+  WebRtc_Word16 InternalEncode(WebRtc_UWord8* bitstream,
+                               WebRtc_Word16* bitStreamLenByte);
 
-    ACMAMRPackingFormat AMREncoderPackingFormat() const;
+  WebRtc_Word16 InternalInitEncoder(WebRtcACMCodecParams *codecParams);
 
-    WebRtc_Word16 SetAMRDecoderPackingFormat(
-        const ACMAMRPackingFormat packingFormat);
+  WebRtc_Word16 InternalInitDecoder(WebRtcACMCodecParams *codecParams);
 
-    ACMAMRPackingFormat AMRDecoderPackingFormat() const;
+  WebRtc_Word16 SetAMREncoderPackingFormat(
+      const ACMAMRPackingFormat packingFormat);
 
-protected:
-    WebRtc_Word16 DecodeSafe(
-        WebRtc_UWord8* bitStream,
-        WebRtc_Word16  bitStreamLenByte,
-        WebRtc_Word16* audio,
-        WebRtc_Word16* audioSamples,
-        WebRtc_Word8*  speechType);
+  ACMAMRPackingFormat AMREncoderPackingFormat() const;
 
-    WebRtc_Word32 CodecDef(
-        WebRtcNetEQ_CodecDef& codecDef,
-        const CodecInst&      codecInst);
+  WebRtc_Word16 SetAMRDecoderPackingFormat(
+      const ACMAMRPackingFormat packingFormat);
 
-    void DestructEncoderSafe();
+  ACMAMRPackingFormat AMRDecoderPackingFormat() const;
 
-    void DestructDecoderSafe();
+ protected:
+  WebRtc_Word16 DecodeSafe(WebRtc_UWord8* bitStream,
+                           WebRtc_Word16 bitStreamLenByte,
+                           WebRtc_Word16* audio, WebRtc_Word16* audioSamples,
+                           WebRtc_Word8* speechType);
 
-    WebRtc_Word16 InternalCreateEncoder();
-    
-    WebRtc_Word16 InternalCreateDecoder();
-    
-    void InternalDestructEncoderInst(
-        void* ptrInst);
+  WebRtc_Word32 CodecDef(WebRtcNetEQ_CodecDef& codecDef,
+                         const CodecInst& codecInst);
 
-    WebRtc_Word16 SetBitRateSafe(
-        const WebRtc_Word32 rate);
-   
-    WebRtc_Word16 EnableDTX();
-    
-    WebRtc_Word16 DisableDTX();
-  
-    WebRtc_Word16 UnregisterFromNetEqSafe(
-        ACMNetEQ*     netEq,
-        WebRtc_Word16 payloadType);
+  void DestructEncoderSafe();
 
-    AMR_encinst_t_*     _encoderInstPtr;
-    AMR_decinst_t_*     _decoderInstPtr;
-    WebRtc_Word16       _encodingMode;
-    WebRtc_Word16       _encodingRate;
-    ACMAMRPackingFormat _encoderPackingFormat;
-    ACMAMRPackingFormat _decoderPackingFormat;
+  void DestructDecoderSafe();
+
+  WebRtc_Word16 InternalCreateEncoder();
+
+  WebRtc_Word16 InternalCreateDecoder();
+
+  void InternalDestructEncoderInst(void* ptrInst);
+
+  WebRtc_Word16 SetBitRateSafe(const WebRtc_Word32 rate);
+
+  WebRtc_Word16 EnableDTX();
+
+  WebRtc_Word16 DisableDTX();
+
+  WebRtc_Word16 UnregisterFromNetEqSafe(ACMNetEQ* netEq,
+                                        WebRtc_Word16 payloadType);
+
+  AMR_encinst_t_* _encoderInstPtr;
+  AMR_decinst_t_* _decoderInstPtr;
+  WebRtc_Word16 _encodingMode;
+  WebRtc_Word16 _encodingRate;
+  ACMAMRPackingFormat _encoderPackingFormat;
+  ACMAMRPackingFormat _decoderPackingFormat;
 };
 
 } // namespace webrtc
 
-#endif // ACM_AMR_H
+#endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_ACM_AMR_H_

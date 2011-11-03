@@ -127,7 +127,7 @@ ACMSPEEX::InternalCreateEncoder()
     return -1;
 }
 
-void 
+void
 ACMSPEEX::DestructEncoderSafe()
 {
     return;
@@ -140,7 +140,7 @@ ACMSPEEX::InternalCreateDecoder()
     return -1;
 }
 
-void 
+void
 ACMSPEEX::DestructDecoderSafe()
 {
     return;
@@ -153,7 +153,7 @@ ACMSPEEX::SetBitRateSafe(
     return -1;
 }
 
-void 
+void
 ACMSPEEX::InternalDestructEncoderInst(
     void* /* ptrInst */)
 {
@@ -196,7 +196,7 @@ _encoderInstPtr(NULL),
 _decoderInstPtr(NULL)
 {
     _codecID = codecID;
-    
+
     // Set sampling frequency, frame size and rate Speex
     if(_codecID == ACMCodecDB::kSPEEX8)
     {
@@ -212,7 +212,7 @@ _decoderInstPtr(NULL)
     }
     else
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
             "Wrong codec id for Speex.");
 
         _samplingFrequency = -1;
@@ -257,14 +257,14 @@ ACMSPEEX::InternalEncode(
         status = WebRtcSpeex_Encode(_encoderInstPtr, &_inAudio[_inAudioIxRead],
             _encodingRate);
 
-        // increment the read index this tell the caller that how far 
+        // increment the read index this tell the caller that how far
         // we have gone forward in reading the audio buffer
         _inAudioIxRead += _samplesIn20MsAudio;
         numEncodedSamples += _samplesIn20MsAudio;
 
-        if(status < 0) 
+        if(status < 0)
         {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
+            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
                 "Error in Speex encoder");
             return status;
         }
@@ -315,7 +315,7 @@ ACMSPEEX::EnableDTX()
         // enable DTX
         if(WebRtcSpeex_EncoderInit(_encoderInstPtr, (_vbrEnabled ? 1:0), _complMode, 1) < 0)
         {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
+            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
             "Cannot enable DTX for Speex");
             return -1;
         }
@@ -342,7 +342,7 @@ ACMSPEEX::DisableDTX()
         // disable DTX
         if(WebRtcSpeex_EncoderInit(_encoderInstPtr, (_vbrEnabled ? 1:0), _complMode, 0) < 0)
         {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
+            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
             "Cannot disable DTX for Speex");
             return -1;
         }
@@ -365,7 +365,7 @@ ACMSPEEX::InternalInitEncoder(
     // sanity check
     if (_encoderInstPtr == NULL)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
         "Cannot initialize Speex encoder, instance does not exist");
         return -1;
     }
@@ -376,7 +376,7 @@ ACMSPEEX::InternalInitEncoder(
     if (status >= 0) {
         return 0;
     } else {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
         "Error in initialization of Speex encoder");
         return -1;
     }
@@ -387,20 +387,20 @@ ACMSPEEX::InternalInitDecoder(
     WebRtcACMCodecParams* /* codecParams */)
 {
     WebRtc_Word16 status;
-    
+
     // sanity check
     if (_decoderInstPtr == NULL)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
         "Cannot initialize Speex decoder, instance does not exist");
         return -1;
     }
     status = ((WebRtcSpeex_DecoderInit(_decoderInstPtr) < 0)? -1:0);
-    
+
     if (status >= 0) {
         return 0;
     } else {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
         "Error in initialization of Speex decoder");
         return -1;
     }
@@ -413,12 +413,12 @@ ACMSPEEX::CodecDef(
 {
     if (!_decoderInitialized)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
         "Error, Speex decoder is not initialized");
         return -1;
     }
 
-    // Fill up the structure by calling 
+    // Fill up the structure by calling
     // "SET_CODEC_PAR" & "SET_SPEEX_FUNCTION."
     // Then call NetEQ to add the codec to it's
     // database.
@@ -439,14 +439,13 @@ ACMSPEEX::CodecDef(
         }
     default:
         {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
+            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
             "Unsupported sampling frequency for Speex");
- 
+
             return -1;
-            break;
         }
     }
-    
+
     SET_SPEEX_FUNCTIONS((codecDef));
     return 0;
 }
@@ -463,7 +462,7 @@ ACMSPEEX::InternalCreateEncoder()
     return WebRtcSpeex_CreateEnc(&_encoderInstPtr, _samplingFrequency);
 }
 
-void 
+void
 ACMSPEEX::DestructEncoderSafe()
 {
     if(_encoderInstPtr != NULL)
@@ -484,7 +483,7 @@ ACMSPEEX::InternalCreateDecoder()
     return WebRtcSpeex_CreateDec(&_decoderInstPtr, _samplingFrequency, 1);
 }
 
-void 
+void
 ACMSPEEX::DestructDecoderSafe()
 {
     if(_decoderInstPtr != NULL)
@@ -508,17 +507,17 @@ ACMSPEEX::SetBitRateSafe(
         _encodingRate = rate;
         _encoderParams.codecInstant.rate = rate;
     } else {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
         "Unsupported encoding rate for Speex");
- 
+
         return -1;
     }
-    
+
     return 0;
 }
 
 
-void 
+void
 ACMSPEEX::InternalDestructEncoderInst(
     void* ptrInst)
 {
@@ -537,11 +536,11 @@ ACMSPEEX::UnregisterFromNetEqSafe(
 {
     if(payloadType != _decoderParams.codecInstant.pltype)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
             "Cannot unregister codec %s given payload-type %d does not match \
-the stored payload type", 
-            _decoderParams.codecInstant.plname, 
-            payloadType, 
+the stored payload type",
+            _decoderParams.codecInstant.plname,
+            payloadType,
             _decoderParams.codecInstant.pltype);
         return -1;
     }
@@ -559,7 +558,7 @@ the stored payload type",
         }
     default:
         {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
+            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
             "Could not unregister Speex from NetEQ. Sampling frequency doesn't match");
             return -1;
         }
@@ -583,9 +582,9 @@ ACMSPEEX::EnableVBR()
         // enable Variable Bit Rate (VBR)
         if(WebRtcSpeex_EncoderInit(_encoderInstPtr, 1, _complMode, (_dtxEnabled? 1:0)) < 0)
         {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
+            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
             "Cannot enable VBR mode for Speex");
- 
+
             return -1;
         }
         _vbrEnabled = true;
@@ -612,7 +611,7 @@ ACMSPEEX::DisableVBR()
         // disable DTX
         if(WebRtcSpeex_EncoderInit(_encoderInstPtr, 0, _complMode, (_dtxEnabled? 1:0)) < 0)
         {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
+            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
             "Cannot disable DTX for Speex");
 
             return -1;
@@ -643,7 +642,7 @@ ACMSPEEX::SetComplMode(
         // Set new mode
         if(WebRtcSpeex_EncoderInit(_encoderInstPtr, 0, mode, (_dtxEnabled? 1:0)) < 0)
         {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
+            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
             "Error in complexity mode for Speex");
             return -1;
         }
@@ -662,4 +661,3 @@ ACMSPEEX::SetComplMode(
 #endif
 
 } // namespace webrtc
-

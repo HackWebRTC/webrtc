@@ -18,7 +18,7 @@ namespace webrtc
 {
 
 // Create module
-AudioCodingModule* 
+AudioCodingModule*
 AudioCodingModule::Create(
     const WebRtc_Word32 id)
 {
@@ -26,7 +26,7 @@ AudioCodingModule::Create(
 }
 
 // Destroy module
-void 
+void
 AudioCodingModule::Destroy(
         AudioCodingModule* module)
 {
@@ -34,10 +34,10 @@ AudioCodingModule::Destroy(
 }
 
 // Returns version of the module and its components.
-WebRtc_Word32 
+WebRtc_Word32
 AudioCodingModule::GetVersion(
     WebRtc_Word8*   version,
-    WebRtc_UWord32& remainingBufferInBytes, 
+    WebRtc_UWord32& remainingBufferInBytes,
     WebRtc_UWord32& position)
 {
     WebRtc_Word32 len = position;
@@ -45,7 +45,7 @@ AudioCodingModule::GetVersion(
 
     position = static_cast<WebRtc_UWord32>(strlen(version));
     remainingBufferInBytes -= (position - len);
-    
+
     // Get NetEQ version.
     if(ACMNetEQ::GetVersion(version,
         remainingBufferInBytes, position) < 0)
@@ -72,32 +72,32 @@ AudioCodingModule::GetVersion(
 // Get number of supported codecs
 WebRtc_UWord8 AudioCodingModule::NumberOfCodecs()
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, -1, 
+    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, -1,
         "NumberOfCodecs()");
     return static_cast<WebRtc_UWord8>(ACMCodecDB::kNumCodecs);
 }
 
-// Get supported codec param with id 
-WebRtc_Word32 
+// Get supported codec param with id
+WebRtc_Word32
 AudioCodingModule::Codec(
     const WebRtc_UWord8 listId,
     CodecInst&          codec)
 {
     WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, -1,
         "Codec(const WebRtc_UWord8 listId, CodecInst& codec)");
-    
+
     // Get the codec settings for the codec with the given list ID
     return ACMCodecDB::Codec(listId, &codec);
 }
 
-// Get supported codec Param with name 
-WebRtc_Word32 
+// Get supported codec Param with name
+WebRtc_Word32
 AudioCodingModule::Codec(
     const WebRtc_Word8* payloadName,
     CodecInst&          codec,
     const WebRtc_Word32 samplingFreqHz)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, -1, 
+    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, -1,
         "Codec(const WebRtc_Word8* payloadName, CodecInst& codec)");
 
     // Search through codec list for a matching name
@@ -108,7 +108,7 @@ AudioCodingModule::Codec(
 
         if(!STR_CASE_CMP(codec.plname, payloadName))
         {
-            // If samplingFreqHz is set (!= -1), check if frequency matches 
+            // If samplingFreqHz is set (!= -1), check if frequency matches
             if((samplingFreqHz == codec.plfreq) || (samplingFreqHz == -1))
             {
                 // We found a match, return OK
@@ -118,7 +118,7 @@ AudioCodingModule::Codec(
     }
 
     // if we are here we couldn't find anything
-    // set the params to unacceptable values 
+    // set the params to unacceptable values
     codec.plname[0] = '\0';
     codec.pltype    = -1;
     codec.pacsize   = 0;
@@ -133,7 +133,7 @@ AudioCodingModule::Codec(
     const WebRtc_Word8* payloadName,
     const WebRtc_Word32 samplingFreqHz)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, -1, 
+    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, -1,
         "Codec(const WebRtc_Word8* payloadName)");
     CodecInst codec;
 
@@ -145,10 +145,10 @@ AudioCodingModule::Codec(
 
         if(!STR_CASE_CMP(codec.plname, payloadName))
         {
-            // If samplingFreqHz is set (!= -1), check if frequency matches 
+            // If samplingFreqHz is set (!= -1), check if frequency matches
             if((samplingFreqHz == codec.plfreq) || (samplingFreqHz == -1))
             {
-                // We found a match, return codec list number (index) 
+                // We found a match, return codec list number (index)
                 return codecCntr;
             }
         }
@@ -159,17 +159,17 @@ AudioCodingModule::Codec(
 }
 
 // Checks the validity of the parameters of the given codec
-bool 
+bool
 AudioCodingModule::IsCodecValid(
     const CodecInst& codec)
 {
     int mirrorID;
     char errMsg[500];
-    
+
     WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, -1,
                "IsCodecValid(const CodecInst& codec)");
     int codecNumber = ACMCodecDB::CodecNumber(&codec, &mirrorID, errMsg, 500);
-     
+
     if(codecNumber < 0)
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, -1, errMsg);

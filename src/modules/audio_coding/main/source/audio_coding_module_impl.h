@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef AUDIO_CODING_MODULE_IMPL_H
-#define AUDIO_CODING_MODULE_IMPL_H
+#ifndef WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_AUDIO_CODING_MODULE_IMPL_H_
+#define WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_AUDIO_CODING_MODULE_IMPL_H_
 
 #include "acm_codec_database.h"
 #include "acm_neteq.h"
@@ -59,9 +59,9 @@ public:
     WebRtc_Word32 TimeUntilNextProcess();
 
     // Process any pending tasks such as timeouts
-    WebRtc_Word32 Process();    
+    WebRtc_Word32 Process();
 
-    // used in conference to go to and from active encoding, hence 
+    // used in conference to go to and from active encoding, hence
     // in and out of mix
     WebRtc_Word32 SetMode(
         const bool passive);
@@ -94,7 +94,7 @@ public:
     // return there longterm avarage or their fixed rate.
     WebRtc_Word32 SendBitrate() const;
 
-    // set available bandwidth, inform the encoder about the 
+    // set available bandwidth, inform the encoder about the
     // estimated bandwidth received from the remote party
     virtual WebRtc_Word32 SetReceivedEstimatedBandwidth(
         const WebRtc_Word32 bw);
@@ -123,7 +123,7 @@ public:
         ACMBackgroundNoiseMode& mode);
 
     /////////////////////////////////////////
-    // (FEC) Forward Error Correction 
+    // (FEC) Forward Error Correction
     //
 
     // configure FEC status i.e on/off
@@ -193,7 +193,7 @@ public:
         CodecInst& currentReceiveCodec) const;
 
     // incoming packet from network parsed and ready for decode
-    WebRtc_Word32 IncomingPacket( 
+    WebRtc_Word32 IncomingPacket(
         const WebRtc_Word8*    incomingPayload,
         const WebRtc_Word32    payloadLength,
         const WebRtcRTPHeader& rtpInfo);
@@ -222,7 +222,7 @@ public:
 
     // Estimate the Bandwidth based on the incoming stream
     // This is also done in the RTP module
-    // need this for one way audio where the RTCP send the BW estimate 
+    // need this for one way audio where the RTCP send the BW estimate
     WebRtc_Word32 DecoderEstimatedBandwidth() const;
 
     // Set playout mode voice, fax
@@ -261,21 +261,21 @@ public:
     void DestructEncoderInst(void* ptrInst);
 
     WebRtc_Word16 AudioBuffer(WebRtcACMAudioBuff& audioBuff);
-    
+
     // GET RED payload for iSAC. The method id called
     // when 'this' ACM is default ACM.
     WebRtc_Word32 REDPayloadISAC(
-        const WebRtc_Word32  isacRate, 
+        const WebRtc_Word32  isacRate,
         const WebRtc_Word16  isacBwEstimate,
         WebRtc_UWord8*       payload,
         WebRtc_Word16*       payloadLenByte);
-    
+
     WebRtc_Word16 SetAudioBuffer(WebRtcACMAudioBuff& audioBuff);
 
     WebRtc_UWord32 EarliestTimestamp() const;
 
     WebRtc_Word32 LastEncodedTimestamp(WebRtc_UWord32& timestamp) const;
-    
+
     WebRtc_Word32 ReplaceInternalDTXWithWebRtc(
         const bool useWebRtcDTX);
 
@@ -361,15 +361,15 @@ private:
     WebRtc_UWord32                 _lastFECTimestamp;
     WebRtc_UWord8                  _redPayloadType;
     // if no RED is registered as receive codec this
-    // will have an invalid value. 
+    // will have an invalid value.
     WebRtc_UWord8                  _receiveREDPayloadType;
-    
+
     // This is to keep track of CN instances where we can send DTMFs
     WebRtc_UWord8                  _previousPayloadType;
 
     // This keeps track of payload types associated with _codecs[].
-    // We define it as signed variable and initialize with -1 to indicate 
-    // unused elements. 
+    // We define it as signed variable and initialize with -1 to indicate
+    // unused elements.
     WebRtc_Word16                  _registeredPlTypes[ACMCodecDB::kMaxNumCodecs];
 
     // Used when payloads are pushed into ACM without any RTP info
@@ -380,7 +380,7 @@ private:
 
     bool                           _receiverInitialized;
     ACMDTMFDetection*              _dtmfDetector;
-    
+
     AudioCodingFeedback*           _dtmfCallback;
     WebRtc_Word16                  _lastDetectedTone;
     CriticalSectionWrapper*        _callbackCritSect;
@@ -397,4 +397,4 @@ private:
 
 } // namespace webrtc
 
-#endif
+#endif  // WEBRTC_MODULES_AUDIO_CODING_MAIN_SOURCE_AUDIO_CODING_MODULE_IMPL_H_

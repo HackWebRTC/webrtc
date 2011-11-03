@@ -55,42 +55,42 @@ ACMGSMFR::~ACMGSMFR()
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMGSMFR::InternalEncode(
-    WebRtc_UWord8* /* bitStream        */, 
+    WebRtc_UWord8* /* bitStream        */,
     WebRtc_Word16* /* bitStreamLenByte */)
 {
     return -1;
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMGSMFR::DecodeSafe(
-    WebRtc_UWord8* /* bitStream        */, 
-    WebRtc_Word16  /* bitStreamLenByte */, 
-    WebRtc_Word16* /* audio            */, 
-    WebRtc_Word16* /* audioSamples     */, 
+    WebRtc_UWord8* /* bitStream        */,
+    WebRtc_Word16  /* bitStreamLenByte */,
+    WebRtc_Word16* /* audio            */,
+    WebRtc_Word16* /* audioSamples     */,
     WebRtc_Word8*  /* speechType       */)
 {
     return -1;
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMGSMFR::EnableDTX()
 {
     return -1;
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMGSMFR::DisableDTX()
 {
     return -1;
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMGSMFR::InternalInitEncoder(
     WebRtcACMCodecParams* /* codecParams */)
 {
@@ -98,7 +98,7 @@ ACMGSMFR::InternalInitEncoder(
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMGSMFR::InternalInitDecoder(
     WebRtcACMCodecParams* /* codecParams */)
 {
@@ -106,51 +106,51 @@ ACMGSMFR::InternalInitDecoder(
 }
 
 
-WebRtc_Word32 
+WebRtc_Word32
 ACMGSMFR::CodecDef(
-    WebRtcNetEQ_CodecDef& /* codecDef  */, 
+    WebRtcNetEQ_CodecDef& /* codecDef  */,
     const CodecInst&      /* codecInst */)
 {
     return -1;
 }
 
 
-ACMGenericCodec* 
+ACMGenericCodec*
 ACMGSMFR::CreateInstance(void)
 {
     return NULL;
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMGSMFR::InternalCreateEncoder()
 {
     return -1;
 }
 
 
-void 
+void
 ACMGSMFR::DestructEncoderSafe()
 {
     return;
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMGSMFR::InternalCreateDecoder()
 {
     return -1;
 }
 
 
-void 
+void
 ACMGSMFR::DestructDecoderSafe()
 {
     return;
 }
 
 
-void 
+void
 ACMGSMFR::InternalDestructEncoderInst(
     void* /* ptrInst */)
 {
@@ -158,7 +158,7 @@ ACMGSMFR::InternalDestructEncoderInst(
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMGSMFR::UnregisterFromNetEqSafe(
     ACMNetEQ*     /* netEq       */,
     WebRtc_Word16 /* payloadType */)
@@ -196,33 +196,33 @@ ACMGSMFR::~ACMGSMFR()
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMGSMFR::InternalEncode(
-    WebRtc_UWord8* bitStream, 
+    WebRtc_UWord8* bitStream,
     WebRtc_Word16* bitStreamLenByte)
 {
     *bitStreamLenByte = WebRtcGSMFR_Encode(_encoderInstPtr,
         &_inAudio[_inAudioIxRead], _frameLenSmpl, (WebRtc_Word16*)bitStream);
-    // increment the read index this tell the caller that how far 
+    // increment the read index this tell the caller that how far
     // we have gone forward in reading the audio buffer
     _inAudioIxRead += _frameLenSmpl;
     return *bitStreamLenByte;
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMGSMFR::DecodeSafe(
-    WebRtc_UWord8* /* bitStream        */, 
-    WebRtc_Word16  /* bitStreamLenByte */, 
-    WebRtc_Word16* /* audio            */, 
-    WebRtc_Word16* /* audioSamples     */, 
+    WebRtc_UWord8* /* bitStream        */,
+    WebRtc_Word16  /* bitStreamLenByte */,
+    WebRtc_Word16* /* audio            */,
+    WebRtc_Word16* /* audioSamples     */,
     WebRtc_Word8*  /* speechType       */)
 {
     return 0;
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMGSMFR::EnableDTX()
 {
     if(_dtxEnabled)
@@ -233,8 +233,8 @@ ACMGSMFR::EnableDTX()
     {
         if(WebRtcGSMFR_EncoderInit(_encoderInstPtr, 1) < 0)
         {
-			WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
-				"EnableDTX: cannot init encoder for GSMFR");
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+        "EnableDTX: cannot init encoder for GSMFR");
             return -1;
         }
         _dtxEnabled = true;
@@ -247,7 +247,7 @@ ACMGSMFR::EnableDTX()
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMGSMFR::DisableDTX()
 {
     if(!_dtxEnabled)
@@ -258,8 +258,8 @@ ACMGSMFR::DisableDTX()
     {
         if(WebRtcGSMFR_EncoderInit(_encoderInstPtr, 0) < 0)
         {
-			WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
-				"DisableDTX: cannot init encoder for GSMFR");
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+        "DisableDTX: cannot init encoder for GSMFR");
             return -1;
         }
         _dtxEnabled = false;
@@ -273,45 +273,45 @@ ACMGSMFR::DisableDTX()
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMGSMFR::InternalInitEncoder(
     WebRtcACMCodecParams* codecParams)
 {
     if (WebRtcGSMFR_EncoderInit(_encoderInstPtr, ((codecParams->enableDTX)? 1:0)) < 0)
-	{
-		WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
-			"InternalInitEncoder: cannot init encoder for GSMFR"); 
-	}
-	return 0;
+  {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+      "InternalInitEncoder: cannot init encoder for GSMFR");
+  }
+  return 0;
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMGSMFR::InternalInitDecoder(
     WebRtcACMCodecParams* /* codecParams */)
 {
     if (WebRtcGSMFR_DecoderInit(_decoderInstPtr) < 0)
-	{
-		WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
-			 "InternalInitDecoder: cannot init decoder for GSMFR"); 		
-		return -1;
-	}
-	return 0;
+  {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+       "InternalInitDecoder: cannot init decoder for GSMFR");
+    return -1;
+  }
+  return 0;
 }
 
 
-WebRtc_Word32 
+WebRtc_Word32
 ACMGSMFR::CodecDef(
     WebRtcNetEQ_CodecDef& codecDef,
     const CodecInst&      codecInst)
 {
     if (!_decoderInitialized)
     {
-		WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
-			"CodecDef: decoder is not initialized for GSMFR");
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+      "CodecDef: decoder is not initialized for GSMFR");
         return -1;
     }
-    // Fill up the structure by calling 
+    // Fill up the structure by calling
     // "SET_CODEC_PAR" & "SET_GSMFR_FUNCTION."
     // Then call NetEQ to add the codec to it's
     // database.
@@ -322,27 +322,27 @@ ACMGSMFR::CodecDef(
 }
 
 
-ACMGenericCodec* 
+ACMGenericCodec*
 ACMGSMFR::CreateInstance(void)
 {
     return NULL;
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMGSMFR::InternalCreateEncoder()
 {
     if (WebRtcGSMFR_CreateEnc(&_encoderInstPtr) < 0)
-	{
-		 WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
-			 "InternalCreateEncoder: cannot create instance for GSMFR encoder"); 
-		return -1;
-	}
-	return 0;
+  {
+     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+       "InternalCreateEncoder: cannot create instance for GSMFR encoder");
+    return -1;
+  }
+  return 0;
 }
 
 
-void 
+void
 ACMGSMFR::DestructEncoderSafe()
 {
     if(_encoderInstPtr != NULL)
@@ -355,20 +355,20 @@ ACMGSMFR::DestructEncoderSafe()
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMGSMFR::InternalCreateDecoder()
 {
     if (WebRtcGSMFR_CreateDec(&_decoderInstPtr) < 0)
-	{
-		WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
-			 "InternalCreateDecoder: cannot create instance for GSMFR decoder"); 
-		return -1;
-	}
-	return 0;
+  {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+       "InternalCreateDecoder: cannot create instance for GSMFR decoder");
+    return -1;
+  }
+  return 0;
 }
 
 
-void 
+void
 ACMGSMFR::DestructDecoderSafe()
 {
     if(_decoderInstPtr != NULL)
@@ -381,7 +381,7 @@ ACMGSMFR::DestructDecoderSafe()
 }
 
 
-void 
+void
 ACMGSMFR::InternalDestructEncoderInst(
     void* ptrInst)
 {
@@ -393,18 +393,18 @@ ACMGSMFR::InternalDestructEncoderInst(
 }
 
 
-WebRtc_Word16 
+WebRtc_Word16
 ACMGSMFR::UnregisterFromNetEqSafe(
     ACMNetEQ*     netEq,
     WebRtc_Word16 payloadType)
 {
     if(payloadType != _decoderParams.codecInstant.pltype)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID, 
-			"Cannot unregister codec: payload-type does not match \
-the stored payload type", 
-            _decoderParams.codecInstant.plname, 
-            payloadType, 
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+      "Cannot unregister codec: payload-type does not match \
+the stored payload type",
+            _decoderParams.codecInstant.plname,
+            payloadType,
             _decoderParams.codecInstant.pltype);
         return -1;
     }
