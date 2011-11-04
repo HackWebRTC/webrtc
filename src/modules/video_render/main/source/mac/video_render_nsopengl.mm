@@ -450,9 +450,6 @@ WebRtc_Word32 VideoRenderNSOpenGL::StartRender()
         return 0;
     }
 
-    WEBRTC_TRACE(kTraceDebug, kTraceVideoRenderer, _id, "Starting screenUpdateThread and screenUpdateEvent");
-    _screenUpdateThread = ThreadWrapper::CreateThread(ScreenUpdateThreadProc, this, kRealtimePriority);
-    _screenUpdateEvent = EventWrapper::Create();
 
     if (!_screenUpdateThread)
     {
@@ -461,9 +458,6 @@ WebRtc_Word32 VideoRenderNSOpenGL::StartRender()
         return -1;
     }
 
-    _screenUpdateThread->Start(_threadID);
-
-    _screenUpdateEvent->StartTimer(true, 1000/MONITOR_FREQ);
 
     UnlockAGLCntx();
     return 0;
