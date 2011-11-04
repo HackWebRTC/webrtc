@@ -1267,7 +1267,7 @@ void
 APITest::TestReceiverVAD(char side)
 {
     AudioCodingModule* myACM;
-    WebRtc_UWord64* myReceiveVADActivity;
+    int* myReceiveVADActivity;
 
     if(side == 'A')
     {
@@ -1291,9 +1291,9 @@ APITest::TestReceiverVAD(char side)
         fprintf(stdout, "----------------------------------\n");
         fprintf(stdout, "Status........ %s\n", vadStatus? "ON":"OFF");
         fprintf(stdout, "mode.......... %d\n", (int)mode);
-        fprintf(stdout, "VAD Active.... %lu\n", myReceiveVADActivity[0]);
-        fprintf(stdout, "VAD Passive... %lu\n", myReceiveVADActivity[1]);
-        fprintf(stdout, "VAD Unknown... %lu\n", myReceiveVADActivity[2]);
+        fprintf(stdout, "VAD Active.... %d\n", myReceiveVADActivity[0]);
+        fprintf(stdout, "VAD Passive... %d\n", myReceiveVADActivity[1]);
+        fprintf(stdout, "VAD Unknown... %d\n", myReceiveVADActivity[2]);
     }
 
     if(vadStatus)

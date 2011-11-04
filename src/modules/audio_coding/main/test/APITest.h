@@ -150,8 +150,8 @@ private:
     ACMBackgroundNoiseMode _bgnModeB;
 
 
-    WebRtc_UWord64   _receiveVADActivityA[3];
-    WebRtc_UWord64   _receiveVADActivityB[3];
+    int            _receiveVADActivityA[3];
+    int            _receiveVADActivityB[3];
     bool           _verbose;
     
     int            _dotPositionA;
