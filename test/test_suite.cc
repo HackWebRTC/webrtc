@@ -10,11 +10,13 @@
 
 #include "test/test_suite.h"
 
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 namespace webrtc {
+namespace test {
 TestSuite::TestSuite(int argc, char** argv) {
-  testing::InitGoogleTest(&argc, argv);
+  testing::InitGoogleMock(&argc, argv);  // Runs InitGoogleTest() internally.
 }
 
 TestSuite::~TestSuite() {
@@ -33,4 +35,5 @@ void TestSuite::Initialize() {
 
 void TestSuite::Shutdown() {
 }
+}  // namespace test
 }  // namespace webrtc

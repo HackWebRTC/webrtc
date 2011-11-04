@@ -19,7 +19,7 @@
 //
 // Example use:
 // Assume we have the following code being used in a test source file:
-// const std::string kInputFile = webrtc::testing::GetProjectRootPath() +
+// const std::string kInputFile = webrtc::test::GetProjectRootPath() +
 //     "test/data/voice_engine/audio_long16.wav";
 // // Use the kInputFile for the tests...
 //

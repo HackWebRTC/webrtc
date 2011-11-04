@@ -20,6 +20,7 @@
 #include "src/system_wrappers/interface/constructor_magic.h"
 
 namespace webrtc {
+namespace test {
 class TestSuite {
  public:
   TestSuite(int argc, char** argv);
@@ -35,6 +36,7 @@ class TestSuite {
 
   DISALLOW_COPY_AND_ASSIGN(TestSuite);
 };
+}  // namespace test
 }  // namespace webrtc
 
 #endif  // TEST_TEST_SUITE_H_

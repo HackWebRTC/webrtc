@@ -17,6 +17,7 @@
       'type': 'static_library',
       'dependencies': [
         '<(webrtc_root)/../testing/gtest.gyp:gtest',
+        '<(webrtc_root)/../testing/gmock.gyp:gmock',
       ],
       'all_dependent_settings': {
         'include_dirs': [

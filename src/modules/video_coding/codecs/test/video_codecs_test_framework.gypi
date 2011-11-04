@@ -55,12 +55,12 @@
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
             '<(webrtc_root)/common_video/common_video.gyp:webrtc_vplib',
             '<(webrtc_root)/../testing/gmock.gyp:gmock',    
-            '<(webrtc_root)/../test/test.gyp:test_support',
+            '<(webrtc_root)/../test/test.gyp:test_support_main',
           ],
           'include_dirs': [
              '<(webrtc_root)/common_video/interface',               
-           ],
-           'sources': [
+          ],
+          'sources': [
             # header files
             'mocks.h',
             
@@ -68,8 +68,6 @@
             'file_handler_unittest.cc',
             'packet_manipulator_unittest.cc',
             'packet_reader_unittest.cc',
-            # cannot use the global run all file until it supports gmock:
-            'run_all_unittests.cc',
             'stats_unittest.cc',
             'videoprocessor_unittest.cc',
           ],
