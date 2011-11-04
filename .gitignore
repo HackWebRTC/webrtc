@@ -42,8 +42,11 @@
 /third_party/libjpeg
 /third_party/libjpeg_turbo
 /third_party/libvpx
+/third_party/llvm-build
 /third_party/protobuf
 /third_party/yasm
+/tools/clang
 /tools/gyp
+/tools/win
 /x86-generic_out/
 /xcodebuild
