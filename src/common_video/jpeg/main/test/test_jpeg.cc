@@ -49,7 +49,7 @@ main(int argc, char **argv)
 
     // Get file length
     fseek(openFile, 0, SEEK_END);
-    int length = ftell(openFile);
+    size_t length = ftell(openFile);
     fseek(openFile, 0, SEEK_SET);
 
 
@@ -58,7 +58,11 @@ main(int argc, char **argv)
     encodedBuffer._buffer = new WebRtc_UWord8[length];
     encodedBuffer._size = length;
     encodedBuffer._length = length;
-    fread(encodedBuffer._buffer, 1, length, openFile);
+    if (fread(encodedBuffer._buffer, 1, length, openFile) != length)
+    {
+        printf("Error reading file %s\n", fileName.c_str());
+        exit(1);
+    }
     fclose(openFile);
 
     // ------------------

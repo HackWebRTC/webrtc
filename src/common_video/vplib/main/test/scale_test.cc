@@ -65,7 +65,6 @@ void CreateImage(WebRtc_Word32 width, WebRtc_Word32 height, WebRtc_UWord8* ptrFr
 
 void ValidateImage2(WebRtc_Word32 width, WebRtc_Word32 height, WebRtc_UWord8* ptrFrame, WebRtc_Word32 offset, WebRtc_Word32 factor)
 {
-    WebRtc_Word32 k = 0;
     WebRtc_Word32 res = offset*factor;
     for (WebRtc_Word32 i = 0; i < height; i++)
     {
@@ -82,7 +81,6 @@ void ValidateImage2(WebRtc_Word32 width, WebRtc_Word32 height, WebRtc_UWord8* pt
 
 void ValidateImage3_2(WebRtc_Word32 width, WebRtc_Word32 height, WebRtc_UWord8* ptrFrame, WebRtc_Word32 offset, WebRtc_Word32 factor)
 {
-    WebRtc_Word32 k = 0;
     WebRtc_Word32 res = offset*factor;
     for (WebRtc_Word32 i = 1; i <= height; i++)
     {
@@ -100,7 +98,6 @@ void ValidateImage3_2(WebRtc_Word32 width, WebRtc_Word32 height, WebRtc_UWord8* 
 
 void ValidateImage1_3(WebRtc_Word32 width, WebRtc_Word32 height, WebRtc_UWord8* ptrFrame, WebRtc_Word32 offset, WebRtc_Word32 factor)
 {
-    WebRtc_Word32 k = 0;
     WebRtc_Word32 res = offset*factor;
     res += factor/2;
     for (WebRtc_Word32 i = 0; i < height; i++)

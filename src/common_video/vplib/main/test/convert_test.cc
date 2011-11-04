@@ -32,7 +32,7 @@ ImagePSNRfromBuffer(WebRtc_UWord8 *refBufName, WebRtc_UWord8 *testBufName,
                     VideoType vType, double *YPSNRptr);
 void TestRetVal(int testVal, int refVal );
 
-int  convert_test(CmdArgs& args)
+int convert_test(CmdArgs& args)
 {
     // reading YUV frame - testing on the first frame of the foreman sequence
     
@@ -71,7 +71,12 @@ int  convert_test(CmdArgs& args)
 
     // reading first frame of Foreman sequence
     WebRtc_UWord8* origBuffer = new WebRtc_UWord8[width * height*3/2];
-    fread(origBuffer, 1, lengthSourceFrame, sourceFile);
+    if (fread(origBuffer, 1, lengthSourceFrame, sourceFile) !=
+        lengthSourceFrame)
+    {
+        printf("Error reading file %s\n", inname.c_str());
+        exit(1);
+    }
 
     // START TEST
     printf("\nTEST #%d I420 <-> RGB24\n", j);
