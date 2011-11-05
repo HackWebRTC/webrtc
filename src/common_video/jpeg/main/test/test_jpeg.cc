@@ -61,7 +61,7 @@ main(int argc, char **argv)
     if (fread(encodedBuffer._buffer, 1, length, openFile) != length)
     {
         printf("Error reading file %s\n", fileName.c_str());
-        exit(1);
+        return 1;
     }
     fclose(openFile);
 

@@ -56,17 +56,17 @@ int convert_test(CmdArgs& args)
     if ((sourceFile = fopen(inname.c_str(), "rb")) == NULL)
     {
         printf("Cannot read file %s.\n", inname.c_str());
-        exit(1); 
+        return 1;
     }
     if ((outputFile = fopen(outname.c_str(), "wb")) == NULL)
     {
         printf("Cannot write file %s.\n", outname.c_str());
-        exit(1);
+        return 1;
     }
     if ((logFile = fopen("../log.txt", "a")) == NULL)
     {
         printf("Cannot write file ../log.txt.\n");
-        exit(1);
+        return 1;
     }
 
     // reading first frame of Foreman sequence
@@ -75,7 +75,7 @@ int convert_test(CmdArgs& args)
         lengthSourceFrame)
     {
         printf("Error reading file %s\n", inname.c_str());
-        exit(1);
+        return 1;
     }
 
     // START TEST
