@@ -17,7 +17,7 @@
     'audio_coding/codecs/iSAC/fix/source/isacfix.gypi',
     'audio_coding/codecs/PCM16B/main/source/pcm16b.gypi',
     'audio_coding/main/source/audio_coding_module.gypi',
-    'audio_coding/NetEQ/main/source/neteq.gypi',
+    'audio_coding/neteq/neteq.gypi',
     'audio_conference_mixer/source/audio_conference_mixer.gypi',
     'audio_device/main/source/audio_device.gypi',
     'audio_processing/audio_processing.gypi',
@@ -45,7 +45,6 @@
       'includes': [
         'audio_coding/codecs/iSAC/isac_test.gypi',
         'audio_coding/codecs/iSAC/isacfix_test.gypi',
-        'audio_coding/NetEQ/main/neteq_tests.gypi',
         'audio_processing/apm_tests.gypi',
         'rtp_rtcp/source/rtp_rtcp_tests.gypi',
         'rtp_rtcp/test/test_bwe/test_bwe.gypi',

@@ -20,12 +20,12 @@
 
 #include "gtest/gtest.h"
 
-#include "modules/audio_coding/NetEQ/main/test/NETEQTEST_CodecClass.h"
-#include "modules/audio_coding/NetEQ/main/test/NETEQTEST_NetEQClass.h"
-#include "modules/audio_coding/NetEQ/main/test/NETEQTEST_RTPpacket.h"
+#include "modules/audio_coding/neteq/test/NETEQTEST_CodecClass.h"
+#include "modules/audio_coding/neteq/test/NETEQTEST_NetEQClass.h"
+#include "modules/audio_coding/neteq/test/NETEQTEST_RTPpacket.h"
 #include "typedefs.h"  // NOLINT(build/include)
-#include "modules/audio_coding/NetEQ/main/interface/webrtc_neteq.h"
-#include "modules/audio_coding/NetEQ/main/interface/webrtc_neteq_help_macros.h"
+#include "modules/audio_coding/neteq/interface/webrtc_neteq.h"
+#include "modules/audio_coding/neteq/interface/webrtc_neteq_help_macros.h"
 
 namespace {
 

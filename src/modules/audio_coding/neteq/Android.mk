@@ -10,7 +10,7 @@ LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
 
-include $(LOCAL_PATH)/../../../../../../android-webrtc.mk
+include $(LOCAL_PATH)/../../../../android-webrtc.mk
 
 LOCAL_ARM_MODE := arm
 LOCAL_MODULE_CLASS := STATIC_LIBRARIES
@@ -57,10 +57,10 @@ LOCAL_CFLAGS := \
     '-DNETEQ_VOICEENGINE_CODECS'
 
 LOCAL_C_INCLUDES := \
-    $(LOCAL_PATH)/../interface \
-    $(LOCAL_PATH)/../../../codecs/CNG/main/interface \
-    $(LOCAL_PATH)/../../../../.. \
-    $(LOCAL_PATH)/../../../../../common_audio/signal_processing_library/main/interface 
+    $(LOCAL_PATH)/interface \
+    $(LOCAL_PATH)/../codecs/CNG/main/interface \
+    $(LOCAL_PATH)/../../.. \
+    $(LOCAL_PATH)/../../../common_audio/signal_processing_library/main/interface 
 
 LOCAL_SHARED_LIBRARIES := \
     libcutils \

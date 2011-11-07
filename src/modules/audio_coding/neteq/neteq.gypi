@@ -20,17 +20,17 @@
         'SCRATCH',                  # specifies a subset of codecs to support.
       ],
       'include_dirs': [
-        '../interface',
+        'interface',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          '../interface',
+          'interface',
         ],
       },
       'sources': [
-        '../interface/webrtc_neteq.h',
-        '../interface/webrtc_neteq_help_macros.h',
-        '../interface/webrtc_neteq_internal.h',
+        'interface/webrtc_neteq.h',
+        'interface/webrtc_neteq_help_macros.h',
+        'interface/webrtc_neteq_internal.h',
         'accelerate.c',
         'automode.c',
         'automode.h',
@@ -85,9 +85,21 @@
     },
   ], # targets
   # Exclude the test target when building with chromium.
-  'conditions': [   
+  'conditions': [
     ['build_with_chromium==0', {
       'targets': [
+        {
+          'target_name': 'neteq_unittests',
+          'type': 'executable',
+          'dependencies': [
+            'NetEq',
+            'NetEqTestTools',
+            '<(webrtc_root)/../testing/gtest.gyp:gtest',
+          ],
+          'sources': [
+            'neteq_api_unittest.cc',
+          ],
+        }, # neteq_unittests
         {
           'target_name': 'NetEqRTPplay',
           'type': 'executable',
@@ -118,11 +130,11 @@
             'CODEC_RED',
           ],
           'include_dirs': [
-            './',
-            '../test',
+            '.',
+            'test',
           ],
           'sources': [
-            '../test/NetEqRTPplay.cc',
+            'test/NetEqRTPplay.cc',
           ],
         },
        {
@@ -155,80 +167,58 @@
             'CODEC_RED',
           ],
           'include_dirs': [
-            '../interface',
-            '../test',
+            'interface',
+            'test',
           ],
           'sources': [
-            '../test/RTPencode.cc',
+            'test/RTPencode.cc',
           ],
         },
         {
           'target_name': 'RTPjitter',
           'type': 'executable',
-          'dependencies': [
-          ],
-          'defines': [
-          ],
-          'include_dirs': [
-          ],
           'sources': [
-            '../test/RTPjitter.cc',
+            'test/RTPjitter.cc',
           ],
-       },
-       {
+        },
+        {
           'target_name': 'RTPanalyze',
           'type': 'executable',
           'dependencies': [
             'NetEqTestTools',
-         ],
-          'defines': [
           ],
-         'include_dirs': [
-         ],
           'sources': [
-            '../test/RTPanalyze.cc',
+            'test/RTPanalyze.cc',
           ],
-       },
+        },
         {
           'target_name': 'RTPchange',
           'type': 'executable',
           'dependencies': [
             'NetEqTestTools',
           ],
-          'defines': [
+          'sources': [
+           'test/RTPchange.cc',
           ],
-         'include_dirs': [
-          ],
-         'sources': [
-           '../test/RTPchange.cc',
-         ],
         },
         {
           'target_name': 'RTPtimeshift',
-         'type': 'executable',
+          'type': 'executable',
           'dependencies': [
            'NetEqTestTools',
           ],
-          'defines': [
-          ],
-          'include_dirs': [
-          ],
           'sources': [
-           '../test/RTPtimeshift.cc',
-         ],
-       },
+            'test/RTPtimeshift.cc',
+          ],
+        },
         {
           'target_name': 'RTPcat',
-         'type': 'executable',
-         'dependencies': [
-           'NetEqTestTools',
-         ],
-         'defines': [
+          'type': 'executable',
+          'dependencies': [
+            'NetEqTestTools',
           ],
-          'include_dirs': [
-         ],
-         'sources': [
-           '../test/RTPcat.cc',
+          'sources': [
+            'test/RTPcat.cc',
           ],
         },
         {
@@ -245,8 +235,8 @@
           ],
           'direct_dependent_settings': {
             'include_dirs': [
-              '../test',
-              '../interface',
+              'interface',
+              'test',
             ],
           },
           'defines': [
@@ -266,25 +256,29 @@
             'CODEC_RED',
           ],
           'include_dirs': [
-            './',
-            '../interface',
-            '../test',
+            'interface',
+            'test',
           ],
           'sources': [
-            '../test/NETEQTEST_NetEQClass.cc',
-            '../test/NETEQTEST_RTPpacket.cc',
-            '../test/NETEQTEST_CodecClass.cc',
-            '../test/NETEQTEST_NetEQClass.h',
-            '../test/NETEQTEST_RTPpacket.h',
-            '../test/NETEQTEST_CodecClass.h',
+            'test/NETEQTEST_NetEQClass.cc',
+            'test/NETEQTEST_RTPpacket.cc',
+            'test/NETEQTEST_CodecClass.cc',
+            'test/NETEQTEST_NetEQClass.h',
+            'test/NETEQTEST_RTPpacket.h',
+            'test/NETEQTEST_CodecClass.h',
           ],
           'conditions': [
-            ['OS=="linux"', {
-             'cflags': [
-               '-fexceptions', # enable exceptions
+            ['OS=="linux" or OS=="mac"', {
+              'cflags': [
+                '-fexceptions', # enable exceptions
               ],
-           }],
-          ],
+            }],
+            ['OS=="mac"', {
+              'xcode_settings': {
+                'GCC_ENABLE_CPP_EXCEPTIONS': 'YES', # -fexceptions
+               }
+            }],
+          ], # conditions
         },
       ], # targets
     }], # build_with_chromium
