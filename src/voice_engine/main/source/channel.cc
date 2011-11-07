@@ -1401,8 +1401,6 @@ Channel::Init()
         // out-of-band Dtmf tones are played out by default
         (_audioCodingModule.SetDtmfPlayoutStatus(true) == -1) ||
 #endif
-        // Enable RX VAD by default (improves output mixing).
-        (_audioCodingModule.SetReceiveVADStatus(true) == -1) ||
         (_audioCodingModule.InitializeSender() == -1))
     {
         _engineStatisticsPtr->SetLastError(
@@ -4719,16 +4717,6 @@ Channel::RegisterRxVadObserver(VoERxVadCallback &observer)
             VE_INVALID_OPERATION, kTraceError,
             "RegisterRxVadObserver() observer already enabled");
         return -1;
-    }
-    if (!_audioCodingModule.ReceiveVADStatus())
-    {
-        if (_audioCodingModule.SetReceiveVADStatus(true) == -1)
-        {
-            _engineStatisticsPtr->SetLastError(
-                VE_AUDIO_CODING_MODULE_ERROR, kTraceError,
-                "RegisterRxVadObserver() failed to enable RX VAD");
-            return -1;
-        }
     }
     _rxVadObserverPtr = &observer;
     _RxVadDetection = true;

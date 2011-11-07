@@ -152,13 +152,6 @@ public:
     WebRtc_Word32 RegisterVADCallback(
         ACMVADCallback* vadCallback);
 
-    // Get VAD status on the incoming stream
-    bool ReceiveVADStatus() const;
-
-    // configure VAD status i.e on/off on the incoming stream
-    WebRtc_Word16 SetReceiveVADStatus(
-        const bool enable);
-
     // Get VAD aggressiveness on the incoming stream
     ACMVADMode ReceiveVADMode() const;
 

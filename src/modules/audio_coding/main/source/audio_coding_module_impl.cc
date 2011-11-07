@@ -2094,26 +2094,6 @@ AudioCodingModuleImpl::PlayoutData10Ms(
 //   Generate comfort noise when receiving DTX packets
 //
 
-// Get VAD status on the incoming stream
-bool
-AudioCodingModuleImpl::ReceiveVADStatus() const
-{
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "ReceiveVADStatus()");
-    return _netEq.VADStatus();
-}
-
-
-// configure VAD status i.e on/off on the incoming stream
-WebRtc_Word16
-AudioCodingModuleImpl::SetReceiveVADStatus(
-    const bool enable)
-{
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "SetReceiveVADStatus()");
-    return _netEq.SetVADStatus(enable);
-}
-
 // Get VAD aggressiveness on the incoming stream
 ACMVADMode
 AudioCodingModuleImpl::ReceiveVADMode() const

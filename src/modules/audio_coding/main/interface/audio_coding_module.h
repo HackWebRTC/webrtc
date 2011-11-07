@@ -800,34 +800,6 @@ class AudioCodingModule: public Module {
   //
 
   ///////////////////////////////////////////////////////////////////////////
-  // WebRtc_Word16 SetReceiveVADStatus()
-  // configure VAD status i.e. on/off on the incoming stream
-  // Running VAD on decoded audio is desired in some applications, e.g.
-  // conferencing.
-  //
-  // Input:
-  //   -enable             : true to enable VAD on incoming stream, and false
-  //                         to disable.
-  //
-  // Return value:
-  //   -1 if failed to enable/disable VAD,
-  //    0 if succeded to enable/disable VAD.
-  //
-  virtual WebRtc_Word16 SetReceiveVADStatus(const bool enable) = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
-  // bool ReceiveVADStatus()
-  // Call this API to get whether VAD is enabled on incoming stream or not.
-  // Running VAD on decoded audio is desired in some applications, e.g.
-  // conferencing.
-  //
-  // Return value:
-  //   true if VAD is enabled on the incoming stream,
-  //   false if VAD is disabled on the incoming stream.
-  //
-  virtual bool ReceiveVADStatus() const = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
   // WebRtc_Word16 SetReceiveVADMode()
   // Configure VAD aggressiveness on the incoming stream.
   //

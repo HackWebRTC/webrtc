@@ -250,28 +250,6 @@ public:
     WebRtc_Word32 ResetJitterStatistics() const;
 
     //
-    // VADStatus()
-    // Get the current VAD status.
-    //
-    // Return value              : True if VAD is enabled.
-    //                             False if VAD is disabled.
-    //
-    bool VADStatus() const;
-
-    //
-    // SetVADStatus()
-    // Enable/disable VAD.
-    //
-    // Input:
-    //   - enable                : Enable if true, disable if false.
-    //
-    // Return value              : 0 if ok.
-    //                            -1 if an error occurred.
-    //
-    WebRtc_Word16 SetVADStatus(
-        const bool status);
-
-    //
     // VADMode()
     // Get the current VAD Mode.
     //
@@ -407,6 +385,14 @@ private:
 
     WebRtc_Word16 InitByIdxSafe(
         const WebRtc_Word16 idx);
+
+    // EnableVAD()
+    // Enable VAD.
+    //
+    // Return value              : 0 if ok.
+    //                            -1 if an error occurred.
+    //
+    WebRtc_Word16 EnableVAD();
 
     WebRtc_Word16 EnableVADByIdxSafe(
         const WebRtc_Word16 idx);

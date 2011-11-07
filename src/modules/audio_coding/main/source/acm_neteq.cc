@@ -142,6 +142,10 @@ ACMNetEQ::Init()
         }
         _isInitialized[idx] = true;
     }
+    if (EnableVAD() == -1)
+    {
+        return -1;
+    }
     return 0;
 }
 
@@ -919,20 +923,14 @@ ACMNetEQ::RTPPack(
     }
 }
 
-
-bool
-ACMNetEQ::VADStatus() const
-{
-    CriticalSectionScoped lock(*_netEqCritSect);
-    return _vadStatus;
-}
-
-
 WebRtc_Word16
-ACMNetEQ::SetVADStatus(
-    const bool status)
+ACMNetEQ::EnableVAD()
 {
     CriticalSectionScoped lock(*_netEqCritSect);
+    if (_vadStatus)
+    {
+        return 0;
+    }
     for(WebRtc_Word16 idx = 0; idx < _numSlaves + 1; idx++)
     {
         if(!_isInitialized[idx])
@@ -941,42 +939,16 @@ ACMNetEQ::SetVADStatus(
                 "SetVADStatus: NetEq is not initialized.");
             return -1;
         }
-        if(_vadStatus && !status)
+        // VAD was off and we have to turn it on
+        if(EnableVADByIdxSafe(idx) < 0)
         {
-            // We have been using VAD but we want to stop using it calling the
-            // following function with NULL as VAD instance switches off the
-            // post-decode VAD
-            if(WebRtcNetEQ_SetVADInstance(_inst[idx], NULL,
-                (WebRtcNetEQ_VADInitFunction)    WebRtcVad_Init,
-                (WebRtcNetEQ_VADSetmodeFunction) WebRtcVad_set_mode,
-                (WebRtcNetEQ_VADFunction)        WebRtcVad_Process) < 0)
-            {
-                LogError("setVADinstance", idx);
-                return -1;
-            }
-            // Free VAD Memory
-            if(_ptrVADInst[idx] != NULL)
-            {
-                WebRtcVad_Free(_ptrVADInst[idx]);
-                _ptrVADInst[idx] = NULL;
-            }
-
-            // Set previous VAD status to UNKNOWN
-            _previousAudioActivity = AudioFrame::kVadUnknown;
+            return -1;
         }
-        else if(!_vadStatus && status)
-        {
-            // VAD was off and we have to turn it on
-            if(EnableVADByIdxSafe(idx) < 0)
-            {
-                return -1;
-            }
 
-            // Set previous VAD status to PASSIVE
-            _previousAudioActivity = AudioFrame::kVadPassive;
-        }
+        // Set previous VAD status to PASSIVE
+        _previousAudioActivity = AudioFrame::kVadPassive;
     }
-    _vadStatus = status;
+    _vadStatus = true;
     return 0;
 }
 
