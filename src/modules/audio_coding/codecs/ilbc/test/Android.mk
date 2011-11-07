@@ -11,7 +11,7 @@ LOCAL_PATH:= $(call my-dir)
 # iLBC test app
 include $(CLEAR_VARS)
 
-include $(LOCAL_PATH)/../../../../../../../android-webrtc.mk
+include $(LOCAL_PATH)/../../../../../../android-webrtc.mk
 
 LOCAL_MODULE_TAGS := tests
 LOCAL_CPP_EXTENSION := .cc
@@ -23,8 +23,7 @@ LOCAL_CFLAGS := \
     $(MY_WEBRTC_COMMON_DEFS)
 
 LOCAL_C_INCLUDES := \
-    $(LOCAL_PATH)/../interface \
-    $(LOCAL_PATH)/../../../../../..
+    $(LOCAL_PATH)/../../../../..
 
 LOCAL_SHARED_LIBRARIES := \
     libutils \
@@ -51,8 +50,7 @@ LOCAL_CFLAGS := \
     $(MY_WEBRTC_COMMON_DEFS)
 
 LOCAL_C_INCLUDES := \
-    $(LOCAL_PATH)/../interface \
-    $(LOCAL_PATH)/../../../../../..
+    $(LOCAL_PATH)/../../../../..
 
 LOCAL_SHARED_LIBRARIES := \
     libutils \

@@ -15,15 +15,15 @@
         '<(webrtc_root)/common_audio/common_audio.gyp:spl',
       ],
       'include_dirs': [
-        '../interface',
+        'interface',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          '../interface',
+          'interface',
         ],
       },
       'sources': [
-        '../interface/ilbc.h',
+        'interface/ilbc.h',
         'abs_quant.c',
         'abs_quant_loop.c',
         'augmented_cb_corr.c',
@@ -162,9 +162,25 @@
         'vq4.h',
         'window32_w32.h',
         'xcorr_coef.h',
-     ],
-    },
-  ],
+     ], # sources
+    }, # iLBC
+  ], # targets
+  'conditions': [
+    ['build_with_chromium==0', {
+      'targets': [  
+        {
+          'target_name': 'iLBCtest',
+          'type': 'executable',
+          'dependencies': [
+            'iLBC',
+          ],
+          'sources': [
+            'test/iLBC_test.c',
+          ],
+        }, # iLBCtest
+      ], # targets
+    }], # build_with_chromium
+  ], # conditions
 }
 
 # Local Variables:

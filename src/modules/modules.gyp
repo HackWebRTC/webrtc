@@ -12,7 +12,7 @@
     'audio_coding/codecs/CNG/main/source/cng.gypi',
     'audio_coding/codecs/G711/main/source/g711.gypi',
     'audio_coding/codecs/G722/main/source/g722.gypi',
-    'audio_coding/codecs/iLBC/main/source/ilbc.gypi',
+    'audio_coding/codecs/ilbc/ilbc.gypi',
     'audio_coding/codecs/iSAC/main/source/isac.gypi',
     'audio_coding/codecs/iSAC/fix/source/isacfix.gypi',
     'audio_coding/codecs/PCM16B/main/source/pcm16b.gypi',
@@ -43,7 +43,6 @@
   'conditions': [
     ['build_with_chromium==0', {
       'includes': [
-        'audio_coding/codecs/iLBC/ilbc_test.gypi',
         'audio_coding/codecs/iSAC/isac_test.gypi',
         'audio_coding/codecs/iSAC/isacfix_test.gypi',
         'audio_coding/NetEQ/main/neteq_tests.gypi',
