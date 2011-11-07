@@ -800,9 +800,9 @@ RTPSender::ReSendToNetwork(WebRtc_UWord16 packetID,
     {
         CriticalSectionScoped lock(_prevSentPacketsCritsect);
 
+        WebRtc_UWord16 seqNum = 0;
         if(_storeSentPackets)
         {
-            WebRtc_UWord16 seqNum = 0;
             if(_prevSentPacketsIndex)
             {
                 seqNum = _prevSentPacketsSeqNum[_prevSentPacketsIndex-1];
@@ -842,15 +842,24 @@ RTPSender::ReSendToNetwork(WebRtc_UWord16 packetID,
 
                 if(length > _maxPayloadLength || _ptrPrevSentPackets[index] == 0)
                 {
+                    WEBRTC_TRACE(
+                        kTraceWarning, kTraceRtpRtcp, _id,
+                        "Failed to resend seqNum %u: length = %d index = %d",
+                        seqNum, length, index);
                     return -1;
                 }
             } else
             {
+                WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, _id,
+                             "No match for resending seqNum %u and packetId %u",
+                             seqNum, packetID);
                 return -1;
             }
         }
         if(length ==0)
         {
+          WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, _id,
+                       "Resend packet length == 0 for seqNum %u", seqNum);
             return -1;
         }
 
@@ -884,6 +893,8 @@ RTPSender::ReSendToNetwork(WebRtc_UWord16 packetID,
         }
         return i; //bytes sent over network
     }
+    WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, _id,
+                 "Transport failed to resend packetID %u", packetID);
     return -1;
 }
 
