@@ -91,6 +91,7 @@ LOCAL_CFLAGS := \
     $(MY_WEBRTC_COMMON_DEFS)
 
 LOCAL_C_INCLUDES := \
+    $(LOCAL_PATH)/interface \
     $(LOCAL_PATH)/../../../.. \
     $(LOCAL_PATH)/../../../../common_audio/signal_processing_library/main/interface 
 

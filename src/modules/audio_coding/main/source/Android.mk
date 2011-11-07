@@ -44,11 +44,11 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../../codecs/CNG/main/interface \
     $(LOCAL_PATH)/../../codecs/G711/main/interface \
     $(LOCAL_PATH)/../../codecs/G722/main/interface \
-    $(LOCAL_PATH)/../../codecs/iLBC/main/interface \
+    $(LOCAL_PATH)/../../codecs/ilbc/interface \
     $(LOCAL_PATH)/../../codecs/iSAC/main/interface \
     $(LOCAL_PATH)/../../codecs/iSAC/fix/interface \
     $(LOCAL_PATH)/../../codecs/PCM16B/main/interface \
-    $(LOCAL_PATH)/../../NetEQ/main/interface \
+    $(LOCAL_PATH)/../../neteq/interface \
     $(LOCAL_PATH)/../../../.. \
     $(LOCAL_PATH)/../../../interface \
     $(LOCAL_PATH)/../../../../common_audio/resampler/main/interface \
