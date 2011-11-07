@@ -1280,7 +1280,6 @@ APITest::TestReceiverVAD(char side)
         myReceiveVADActivity = _receiveVADActivityB;
     }
 
-    bool vadStatus = myACM->ReceiveVADStatus();
     ACMVADMode mode = myACM->ReceiveVADMode();
 
     CHECK_ERROR_MT(mode);
@@ -1289,50 +1288,35 @@ APITest::TestReceiverVAD(char side)
     {
         fprintf(stdout, "\n\nCurrent Receive VAD at side %c\n", side);
         fprintf(stdout, "----------------------------------\n");
-        fprintf(stdout, "Status........ %s\n", vadStatus? "ON":"OFF");
         fprintf(stdout, "mode.......... %d\n", (int)mode);
         fprintf(stdout, "VAD Active.... %d\n", myReceiveVADActivity[0]);
         fprintf(stdout, "VAD Passive... %d\n", myReceiveVADActivity[1]);
         fprintf(stdout, "VAD Unknown... %d\n", myReceiveVADActivity[2]);
     }
 
-    if(vadStatus)
+    if(!_randomTest)
     {
-        if(!_randomTest)
-        {
-            fprintf(stdout, "\nChange Receive VAD at side %c\n\n", side);
-        }
-
-        switch(mode)
-        {
-        case VADNormal:
-            mode = VADAggr;
-            break;
-        case VADLowBitrate:
-            mode = VADVeryAggr;
-            break;
-        case VADAggr:
-            mode = VADLowBitrate;
-            break;
-        case VADVeryAggr:
-            vadStatus = false;
-            mode = VADNormal;
-            break;
-        default:
-            mode = VADNormal;
-        }
-       
-        CHECK_ERROR_MT(myACM->SetReceiveVADMode(mode));
-        CHECK_ERROR_MT(myACM->SetReceiveVADStatus(vadStatus));
+        fprintf(stdout, "\nChange Receive VAD at side %c\n\n", side);
     }
-    else
+
+    switch(mode)
     {
-        if(!_randomTest)
-        {
-            fprintf(stdout, "\nTurn on Receive VAD at side %c\n\n", side);
-        }
-        CHECK_ERROR_MT(myACM->SetReceiveVADStatus(true));
-        CHECK_ERROR_MT(myACM->SetReceiveVADMode(VADNormal));
+      case VADNormal:
+          mode = VADAggr;
+          break;
+      case VADLowBitrate:
+          mode = VADVeryAggr;
+          break;
+      case VADAggr:
+          mode = VADLowBitrate;
+          break;
+      case VADVeryAggr:
+          mode = VADNormal;
+          break;
+      default:
+          mode = VADNormal;
+
+          CHECK_ERROR_MT(myACM->SetReceiveVADMode(mode));
     }
     for(int n = 0; n < 3; n++)
     {
