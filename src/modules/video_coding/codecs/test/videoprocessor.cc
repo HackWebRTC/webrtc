@@ -13,7 +13,7 @@
 #include <cstring>
 #include <limits>
 
-#include "cpu_wrapper.h"
+#include "cpu_info.h"
 #include "util.h"
 
 namespace webrtc {
@@ -79,7 +79,7 @@ bool VideoProcessorImpl::Init() {
   // Init the encoder and decoder
   WebRtc_UWord32 nbr_of_cores = 1;
   if (!config_.use_single_core) {
-    nbr_of_cores = CpuWrapper::DetectNumberOfCores();
+    nbr_of_cores = CpuInfo::DetectNumberOfCores();
   }
   WebRtc_Word32 init_result =
       encoder_->InitEncode(&config_.codec_settings, nbr_of_cores,

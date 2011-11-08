@@ -17,8 +17,6 @@ namespace webrtc {
 class CpuWrapper
 {
 public:
-    static WebRtc_UWord32 DetectNumberOfCores();
-
     static CpuWrapper* CreateCpu();
     virtual ~CpuWrapper() {}
 
@@ -42,10 +40,6 @@ public:
 
 protected:
     CpuWrapper() {}
-
-private:
-    static WebRtc_UWord32 _numberOfCores;
-
 };
 } // namespace webrtc
 #endif // WEBRTC_SYSTEM_WRAPPERS_INTERFACE_CPU_WRAPPER_H_

@@ -11,20 +11,22 @@
 #include "system_wrappers/interface/cpu_wrapper.h"
 
 #include "gtest/gtest.h"
+#include "system_wrappers/interface/cpu_info.h"
 #include "system_wrappers/interface/trace.h"
 
+using webrtc::CpuInfo;
 using webrtc::CpuWrapper;
 using webrtc::Trace;
 
-// Only utilizes some of the cpu_wrapper.h code. Does not very anything except
-// that it doesn't crash.
+// Only utilizes some of the cpu_info.h and cpu_wrapper.h code. Does not verify
+// anything except that it doesn't crash.
 // TODO(kjellander): Improve this test so it verifies the implementation
 // executes as expected.
 TEST(CpuWrapperTest, Usage) {
   Trace::CreateTrace();
   Trace::SetTraceFile("cpu_wrapper_unittest.txt");
   Trace::SetLevelFilter(webrtc::kTraceAll);
-  printf("Number of cores detected:%u\n", CpuWrapper::DetectNumberOfCores());
+  printf("Number of cores detected:%u\n", CpuInfo::DetectNumberOfCores());
   CpuWrapper* cpu = CpuWrapper::CreateCpu();
   WebRtc_UWord32 numCores;
   WebRtc_UWord32* cores;

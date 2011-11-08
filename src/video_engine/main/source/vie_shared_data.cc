@@ -13,7 +13,7 @@
 #include "vie_shared_data.h"
 #include "vie_defines.h"
 
-#include "cpu_wrapper.h"
+#include "cpu_info.h"
 #include "critical_section_wrapper.h"
 #include "process_thread.h"
 #include "trace.h"
@@ -30,7 +30,7 @@ ViESharedData::ViESharedData()
     : _instanceId(++_instanceCounter),
       _apiCritsect(*CriticalSectionWrapper::CreateCriticalSection()),
       _isInitialized(false),
-      _numberOfCores(CpuWrapper::DetectNumberOfCores()),
+      _numberOfCores(CpuInfo::DetectNumberOfCores()),
       _viePerformanceMonitor(ViEPerformanceMonitor(_instanceId)),
       _channelManager(*new ViEChannelManager(_instanceId, _numberOfCores,
                                              _viePerformanceMonitor)),
