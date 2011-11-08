@@ -1266,8 +1266,7 @@ RTPSenderVideo::SendVP8(const FrameType frameType,
     WebRtc_Word32 payloadBytesToSend = payloadSize;
     const WebRtc_UWord8* data = payloadData;
 
-    WebRtc_UWord16 maxPayloadLengthVP8 = _rtpSender.MaxPayloadLength()
-        - FECPacketOverhead() - rtpHeaderLength;
+    WebRtc_UWord16 maxPayloadLengthVP8 = _rtpSender.MaxDataPayloadLength();
 
     assert(rtpTypeHdr);
     RtpFormatVp8 packetizer(data, payloadBytesToSend, rtpTypeHdr->VP8,
