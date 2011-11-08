@@ -11,6 +11,7 @@
 #ifndef WEBRTC_VOICE_ENGINE_VOE_STANDARD_TEST_H
 #define WEBRTC_VOICE_ENGINE_VOE_STANDARD_TEST_H
 
+#include <stdio.h>
 #include <string>
 
 #include "voe_test_defines.h"

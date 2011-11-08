@@ -29,6 +29,7 @@
 #include "../../source/voice_engine_defines.h"  // defines build macros
 #endif
 
+#include "automated_mode.h"
 #include "critical_section_wrapper.h"
 #include "event_wrapper.h"
 #include "thread_wrapper.h"
@@ -197,7 +198,7 @@ void MyRTPObserver::OnIncomingSSRCChanged(const int channel,
             channel, SSRC);
     TEST_LOG("%s", msg);
 
-    _SSRC[channel] = SSRC; 
+    _SSRC[channel] = SSRC;
 }
 
 void MyDeadOrAlive::OnPeriodicDeadOrAlive(const int /*channel*/,
@@ -218,7 +219,7 @@ void MyDeadOrAlive::OnPeriodicDeadOrAlive(const int /*channel*/,
 void MyMedia::Process(const int channel,
                       const ProcessingTypes type,
                       WebRtc_Word16 audio_10ms[],
-                      const int length, 
+                      const int length,
                       const int samplingFreqHz,
                       const bool stereo)
 {
@@ -231,7 +232,7 @@ void MyMedia::Process(const int channel,
         }
         else
         {
-            // interleaved stereo 
+            // interleaved stereo
             audio_10ms[2 * i] = (WebRtc_Word16)(audio_10ms[2 * i] *
                 sin(2.0 * 3.14 * f * 400.0 / samplingFreqHz));
             audio_10ms[2 * i + 1] = (WebRtc_Word16)(audio_10ms[2 * i + 1] *
@@ -278,9 +279,9 @@ my_transportation::~my_transportation()
         {
             delete _thread;
             _thread = NULL;
-            delete _event; 
+            delete _event;
             _event = NULL;
-            delete _lock; 
+            delete _lock;
             _lock = NULL;
         }
     }
@@ -301,7 +302,7 @@ bool my_transportation::Process()
         _lock->Leave();
         return true;
     case kEventTimeout:
-        return true; 
+        return true;
     case kEventError:
         break;
     }
@@ -324,7 +325,7 @@ int my_transportation::SendPacket(int channel, const void *data, int len)
 
 int my_transportation::SendRTCPPacket(int channel,const void *data,int len)
 {
-    if (_delayIsEnabled) 
+    if (_delayIsEnabled)
     {
         Sleep(_delayTimeInMs);
     }
@@ -691,7 +692,7 @@ int VoETestManager::ReleaseInterfaces()
     int err(0), remInt(1), j(0);
     bool releaseOK(true);
 
-    if (base) 
+    if (base)
     {
         for (remInt=1,j=0; remInt>0; j++)
             TEST_MUSTPASS(-1 == (remInt = base->Release()));
@@ -909,7 +910,7 @@ int VoETestManager::ReleaseInterfaces()
         TEST_LOG("\nError at line: %i (VoiceEngine::SetTraceFile()"
             "should fail)!\n", __LINE__);
     }
-    
+
     return (releaseOK == true) ? 0 : -1;
 }
 
@@ -928,7 +929,7 @@ int VoETestManager::DoStandardTest()
         "shall be printed... \n\n");
     MyTraceCallback* callback = new MyTraceCallback();
     VoiceEngine::SetTraceCallback(callback);
-    
+
     // Test the remaining trace APIs
     TEST_MUSTPASS(VoiceEngine::SetTraceFile(GetFilename("webrtc_voe_trace.txt"),
                                             true));
@@ -1017,7 +1018,7 @@ int VoETestManager::DoStandardTest()
     TEST_MUSTPASS(!rtp_rtcp->GetRTPKeepaliveStatus(-1, on, pt, dT));
     // should be off by default
     TEST_MUSTPASS(rtp_rtcp->GetRTPKeepaliveStatus(0, on, pt, dT));
-    TEST_MUSTPASS(on != false); 
+    TEST_MUSTPASS(on != false);
     TEST_MUSTPASS(pt != 255);
     TEST_MUSTPASS(dT != 0);
 
@@ -1097,7 +1098,7 @@ int VoETestManager::DoStandardTest()
     TEST_MUSTPASS(hardware->GetSystemCPULoad(loadPercent));
     TEST_LOG("GetSystemCPULoad => %d%%\n", loadPercent);
 #endif
-    
+
 #if !defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID)
     bool playAvail = false, recAvail = false;
     TEST_LOG("Get device status \n");
@@ -1105,7 +1106,7 @@ int VoETestManager::DoStandardTest()
     TEST_MUSTPASS(hardware->GetRecordingDeviceStatus(recAvail));
     TEST_MUSTPASS(!(recAvail && playAvail));
 #endif
-    
+
     // Win, Mac and Linux sound device tests
 #if (defined(WEBRTC_MAC) && !defined(MAC_IPHONE)) || defined(_WIN32) || (defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID))
     int idx, nRec = 0, nPlay = 0;
@@ -1178,7 +1179,7 @@ int VoETestManager::DoStandardTest()
     TEST_MUSTPASS(hardware->SetPlayoutDevice(0));
 #endif
 #endif
-    
+
 #ifdef MAC_IPHONE
     // Reset sound device
     TEST_LOG("Reset sound device \n");
@@ -1200,7 +1201,7 @@ int VoETestManager::DoStandardTest()
     cinst.pacsize=480;
     // should fail since niklas is not a valid codec name
     TEST_MUSTPASS(!codec->GetRecPayloadType(0,cinst));
-    strcpy(cinst.plname,"iSAC");                                
+    strcpy(cinst.plname,"iSAC");
     TEST_MUSTPASS(codec->GetRecPayloadType(0,cinst));  // both iSAC
     strcpy(cinst.plname,"ISAC");                        // and ISAC should work
     TEST_MUSTPASS(codec->GetRecPayloadType(0,cinst));
@@ -1271,7 +1272,7 @@ int VoETestManager::DoStandardTest()
 #endif // #ifndef WEBRTC_EXTERNAL_TRANSPORT
 #else
     TEST_LOG("\n\n+++ Network tests NOT ENABLED +++\n");
-#endif 
+#endif
 
     ///////////////////
     // Start streaming
@@ -1724,7 +1725,7 @@ int VoETestManager::DoStandardTest()
     cinst.channels=1;
     cinst.rate=64000;
     TEST_MUSTPASS(codec->SetSendCodec(0, cinst));
-    // The test here is confusing, what are we expecting? VADtest = false? 
+    // The test here is confusing, what are we expecting? VADtest = false?
     TEST_MUSTPASS(codec->GetVADStatus(0, VADtest, vadMode, disabledDTX));
     TEST_MUSTPASS(VADtest);
     TEST_MUSTPASS(codec->SetVADStatus(0, false, vadMode, true));
@@ -1766,7 +1767,7 @@ int VoETestManager::DoStandardTest()
     // Conferencing
 
 #ifndef _TEST_BASE_
-    
+
     TEST_LOG("\n\n+++ (Base) tests NOT ENABLED +++\n");
 #endif // #ifdef _TEST_BASE_
 
@@ -1792,7 +1793,7 @@ int VoETestManager::DoStandardTest()
     // the originally set 1234 should be maintained
     TEST_MUSTPASS(1234 != ssrc1);
 
-    
+
 
     // RTCP APP tests
     TEST_LOG("Check RTCP APP send/receive \n");
@@ -2228,7 +2229,7 @@ int VoETestManager::DoStandardTest()
     SLEEP(500);
 #endif
 #endif
-    
+
     TEST_LOG("Playing Dtmf tone locally \n");
 ///    TEST_MUSTPASS(dtmf->PlayDtmfTone(0, 300, 15));
     SLEEP(500);
@@ -2665,7 +2666,7 @@ int VoETestManager::DoStandardTest()
     TEST_MUSTPASS(test != true);
     TEST_MUSTPASS(ecMode != kEcAecm);
 
-    // AECM mode, get and set 
+    // AECM mode, get and set
     TEST_MUSTPASS(apm->GetAecmMode(aecmMode, enabledCNG));
     TEST_MUSTPASS(aecmMode != kAecmQuietEarpieceOrHeadset);
     TEST_MUSTPASS(enabledCNG != false);
@@ -2929,7 +2930,7 @@ int VoETestManager::DoStandardTest()
     // Ф    Х   Ѡ   Ц   Ч   Ш   Щ   Ъ   ЪІ  Ь   Ѣ
 
     const char* recName = GetFilename(fileName);
-    // Generated with   
+    // Generated with
 #if _WIN32
 /*   char tempFileNameUTF8[200];
      int err = WideCharToMultiByte(CP_UTF8,0,L"åäö", -1, tempFileNameUTF8,
@@ -2953,7 +2954,7 @@ int VoETestManager::DoStandardTest()
     TEST_LOG("After 2 seconds we should still be playing\n");
     TEST_MUSTPASS(!file->IsPlayingFileLocally(0));
 #endif
-    TEST_LOG("Set scaling\n"); 
+    TEST_LOG("Set scaling\n");
     TEST_MUSTPASS(file->ScaleLocalFilePlayout(0,(float)0.11));
     SLEEP(1100);
     TEST_LOG("After 3.1 seconds we should NOT be playing\n");
@@ -3030,7 +3031,7 @@ int VoETestManager::DoStandardTest()
     char filterIp[64] = {0};
 
     SLEEP(200); // Make sure we have received packets
-    
+
     TEST_MUSTPASS(netw->GetSourceInfo(0,
                                       sourceRtpPort,
                                       sourceRtcpPort,
@@ -3079,7 +3080,7 @@ int VoETestManager::DoStandardTest()
     {
         TEST_MUSTPASS(rtp_rtcp->SetRTCP_CNAME(0, "Tomas"));
     }
-  
+
     TEST_LOG("Set filter IP to %s => should hear audio\n", sourceIp);
     TEST_MUSTPASS(netw->SetSourceFilter(0, 0, sourceRtcpPort+10, sourceIp));
     TEST_MUSTPASS(netw->GetSourceFilter(0,
@@ -3205,7 +3206,7 @@ int VoETestManager::DoStandardTest()
     // to external transport
     TEST_MUSTPASS(base->DeleteChannel(0));
     TEST_MUSTPASS(base->CreateChannel());
- 
+
     TEST_MUSTPASS(netw->RegisterExternalTransport(0, ch0transport));
 
     TEST_MUSTPASS(base->StartReceive(0));
@@ -3349,7 +3350,7 @@ int VoETestManager::DoStandardTest()
         TEST_MUSTPASS(vsync->GetDelayEstimate(0, valInt));
         TEST_LOG("Delay estimate = %d ms\n", valInt);
 #if defined(MAC_IPHONE)
-        TEST_MUSTPASS(valInt <= 30);    
+        TEST_MUSTPASS(valInt <= 30);
 #else
         TEST_MUSTPASS(valInt <= 45); // 45=20+25 => can't be this low
 #endif
@@ -3398,7 +3399,7 @@ int VoETestManager::DoStandardTest()
 
     unsigned char encrKey[30] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 0,
         1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0};
-  
+
     TEST_LOG("Enable SRTP encryption and decryption, you should still hear"
         " the voice\n");
     TEST_MUSTPASS(encrypt->EnableSRTPSend(0,
@@ -3413,11 +3414,11 @@ int VoETestManager::DoStandardTest()
         20, 4, kEncryptionAndAuthentication, encrKey));
     SLEEP(2000);
 
-    TEST_LOG("Disabling decryption, you should hear nothing or garbage\n");     
+    TEST_LOG("Disabling decryption, you should hear nothing or garbage\n");
     TEST_MUSTPASS(encrypt->DisableSRTPReceive(0));
     SLEEP(2000);
 
-    TEST_LOG("Enable decryption again, you should hear the voice again\n");     
+    TEST_LOG("Enable decryption again, you should hear the voice again\n");
     TEST_MUSTPASS(encrypt->EnableSRTPReceive(0,
                                              kCipherAes128CounterMode,
                                              30,
@@ -3495,9 +3496,9 @@ int VoETestManager::DoStandardTest()
     WebRtc_Word16 speechData[32000];
     for (int i = 0; i < 200; i++)
     {
-        TEST_MUSTPASS(xmedia->ExternalPlayoutGetData(speechData+i*160, 
-                                                     16000, 
-                                                     100, 
+        TEST_MUSTPASS(xmedia->ExternalPlayoutGetData(speechData+i*160,
+                                                     16000,
+                                                     100,
                                                      getLen));
         TEST_MUSTPASS(160 != getLen);
         SLEEP(10);
@@ -3516,9 +3517,9 @@ int VoETestManager::DoStandardTest()
     TEST_LOG("Inserting record data from vector\n");
     for (int i = 0; i < 200; i++)
     {
-        TEST_MUSTPASS(xmedia->ExternalRecordingInsertData(speechData+i*160, 
-                                                          160, 
-                                                          16000, 
+        TEST_MUSTPASS(xmedia->ExternalRecordingInsertData(speechData+i*160,
+                                                          160,
+                                                          16000,
                                                           20));
         SLEEP(10);
     }
@@ -3892,7 +3893,7 @@ void createSummary(VoiceEngine* ve)
     fprintf(stream, "%s\n", str);
 
     strcpy(str, "G.711 A-law");
-    fprintf(stream, "\nSupported codecs:           %s\n", str); 
+    fprintf(stream, "\nSupported codecs:           %s\n", str);
     strcpy(str, "                            G.711 mu-law");
     fprintf(stream, "%s\n", str);
 #ifdef WEBRTC_CODEC_EG711
@@ -4028,7 +4029,7 @@ void createSummary(VoiceEngine* ve)
 #endif
 
     strcpy(str, "VoEBase");
-    fprintf(stream, "\nSupported sub-APIs:         %s\n", str); 
+    fprintf(stream, "\nSupported sub-APIs:         %s\n", str);
 #ifdef WEBRTC_VOICE_ENGINE_CODEC_API
     strcpy(str, "                            VoECodec");
     fprintf(stream, "%s\n", str);
@@ -4092,12 +4093,12 @@ void createSummary(VoiceEngine* ve)
 // Using thread.  A generic API/Class for all platforms.
 #ifdef THEADTEST // find first NL <=> end of VoiceEngine version string
 //Definition of Thread Class
-class ThreadTest 
+class ThreadTest
 {
 public:
     ThreadTest(
         VoEBase* base);
-    ~ThreadTest() 
+    ~ThreadTest()
     {
         delete _myThread;
     }
@@ -4132,7 +4133,7 @@ bool
 ThreadTest::StartSend(
     void* obj)
 {
-    return ((ThreadTest*)obj)->StartSend(); 
+    return ((ThreadTest*)obj)->StartSend();
 }
 
 
@@ -4167,7 +4168,7 @@ private:
 //Thread Definition
 unsigned int WINAPI mainTest::StartSend(void *obj)
 {
-    return ((mainTest*)obj)->StartSend();   
+    return ((mainTest*)obj)->StartSend();
 }
 unsigned int WINAPI mainTest::StartSend()
 {
@@ -4195,17 +4196,10 @@ unsigned int WINAPI mainTest::StartSend()
 
 }  // namespace voetest
 
-
-
-// ----------------------------------------------------------------------------
-//                                       main
-// ----------------------------------------------------------------------------
-
-using namespace voetest;
-
-#if !defined(MAC_IPHONE)
-int main(int , char** )
+int RunInManualMode()
 {
+    using namespace voetest;
+
     SubAPIManager apiMgr;
     apiMgr.DisplayStatus();
 
@@ -4229,34 +4223,47 @@ int main(int , char** )
 
     switch (selection)
     {
-    case 0:
+      case 0:
         return 0;
-    case 1:
+      case 1:
         testType = Standard;
         break;
-    case 2:
+      case 2:
         testType = Extended;
         while (!apiMgr.GetExtendedMenuSelection(extendedSel))
-            ;
+          continue;
         break;
-    case 3:
+      case 3:
         testType = Stress;
         break;
-    case 4:
+      case 4:
         testType = Unit;
         break;
-    case 5:
+      case 5:
         testType = CPU;
         break;
-    default:
+      default:
         TEST_LOG("Invalid selection!\n");
         return 0;
     }
 
-    // function that can be called
-    // from other entry functions
-    int retVal = runAutoTest(testType, extendedSel);
+    // Function that can be called from other entry functions.
+    return runAutoTest(testType, extendedSel);
+}
 
-    return retVal;
+// ----------------------------------------------------------------------------
+//                                       main
+// ----------------------------------------------------------------------------
+
+#if !defined(MAC_IPHONE)
+int main(int argc, char** argv)
+{
+    if (argc > 1 && std::string(argv[1]) == "--automated") {
+      // This function is defined in automated_mode.cc to avoid macro clashes
+      // with googletest (for instance the ASSERT_TRUE macro).
+      return RunInAutomatedMode(argc, argv);
+    }
+
+    return RunInManualMode();
 }
 #endif //#if !defined(MAC_IPHONE)

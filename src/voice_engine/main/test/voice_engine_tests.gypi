@@ -16,6 +16,7 @@
         'voice_engine_core',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
         '<(webrtc_root)/../test/test.gyp:test_support',
+        '<(webrtc_root)/../testing/gtest.gyp:gtest',
       ],
       'include_dirs': [
         'auto_test',
@@ -23,10 +24,12 @@
         '<(webrtc_root)/modules/audio_device/main/interface',
       ],
       'sources': [
+        'auto_test/automated_mode.cc',
         'auto_test/voe_cpu_test.cc',
         'auto_test/voe_cpu_test.h',
         'auto_test/voe_extended_test.cc',
         'auto_test/voe_extended_test.h',
+        'auto_test/voe_standard_integration_test.cc',
         'auto_test/voe_standard_test.cc',
         'auto_test/voe_standard_test.h',
         'auto_test/voe_stress_test.cc',
