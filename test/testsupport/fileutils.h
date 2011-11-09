@@ -88,6 +88,19 @@ extern const char* kCannotFindProjectRootDir;
 // kCannotFindProjectRootDir is returned.
 std::string GetProjectRootPath();
 
+// Creates and returns the absolute path to the output directory where log files
+// and other test artifacts should be put. The output directory is always a
+// directory named "out" at the top-level of the project, i.e. a subfolder to
+// the path returned by GetProjectRootPath().
+//
+// Details described for GetProjectRootPath() apply here too.
+//
+// Returns the absolute path to the output directory (named "out") below the
+// project root dir WITH a trailing path delimiter.
+// If the project root is not found, the string specified by
+// kCannotFindProjectRootDir is returned.
+std::string GetOutputDir();
+
 }  // namespace test
 }  // namespace webrtc
 
