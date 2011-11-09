@@ -76,13 +76,6 @@
         '../test/video_rtp_play.cc',
         '../test/video_source.cc',
       ], # source
-      'conditions': [
-        ['OS=="linux"', {
-          'cflags': [
-            '-fexceptions',
-          ],
-        }],
-      ], # conditions
     },
     {
       'target_name': 'video_coding_unittests',
