@@ -33,13 +33,6 @@
         'unit_test/denoising_test.cc',
         'unit_test/unit_test.cc',
       ], # source
-      'conditions': [
-        ['OS=="linux"', {
-          'cflags': [
-            '-fexceptions',
-          ],
-        }],
-      ], # conditions
     },
   ],
 }
