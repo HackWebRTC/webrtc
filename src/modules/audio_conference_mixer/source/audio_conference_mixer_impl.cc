@@ -626,8 +626,29 @@ WebRtc_Word32 AudioConferenceMixerImpl::SetMinimumMixingFrequency(
 // found is the lowest that can be used without losing information.
 WebRtc_Word32 AudioConferenceMixerImpl::GetLowestMixingFrequency()
 {
+    const int participantListFrequency =
+        GetLowestMixingFrequencyFromList(_participantList);
+    const int anonymousListFrequency =
+        GetLowestMixingFrequencyFromList(_additionalParticipantList);
+    const int highestFreq =
+        (participantListFrequency > anonymousListFrequency) ?
+            participantListFrequency : anonymousListFrequency;
+    // Check if the user specified a lowest mixing frequency.
+    if(_minimumMixingFreq != kLowestPossible)
+    {
+        if(_minimumMixingFreq > highestFreq)
+        {
+            return _minimumMixingFreq;
+        }
+    }
+    return highestFreq;
+}
+
+WebRtc_Word32 AudioConferenceMixerImpl::GetLowestMixingFrequencyFromList(
+    ListWrapper& mixList)
+{
     WebRtc_Word32 highestFreq = 8000;
-    ListItem* item = _participantList.First();
+    ListItem* item = mixList.First();
     while(item)
     {
         MixerParticipant* participant =
@@ -637,16 +658,7 @@ WebRtc_Word32 AudioConferenceMixerImpl::GetLowestMixingFrequency()
         {
             highestFreq = neededFrequency;
         }
-        item = _participantList.Next(item);
-    }
-
-    // Check if the user specified a lowest mixing frequency.
-    if(_minimumMixingFreq != kLowestPossible)
-    {
-        if(_minimumMixingFreq > highestFreq)
-        {
-            return _minimumMixingFreq;
-        }
+        item = mixList.Next(item);
     }
     return highestFreq;
 }

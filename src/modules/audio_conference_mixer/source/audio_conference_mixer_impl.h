@@ -104,6 +104,7 @@ private:
     // Return the lowest mixing frequency that can be used without having to
     // downsample any audio.
     WebRtc_Word32 GetLowestMixingFrequency();
+    WebRtc_Word32 GetLowestMixingFrequencyFromList(ListWrapper& mixList);
 
     // Return the AudioFrames that should be mixed anonymously.
     void GetAdditionalAudio(ListWrapper& additionalFramesList);
