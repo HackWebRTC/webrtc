@@ -40,13 +40,6 @@
           'sources': [
             '../testG722/testG722.cpp',
           ],
-          'conditions': [
-            ['OS=="linux"', {
-              'cflags': [
-                '-fexceptions', # enable exceptions
-              ],
-            }],
-          ],
         },
       ], # targets
     }], # build_with_chromium
