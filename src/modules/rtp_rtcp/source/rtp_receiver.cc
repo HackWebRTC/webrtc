@@ -648,7 +648,7 @@ RTPReceiver::RemotePayload(WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
         ModuleRTPUtility::Payload* payload = (ModuleRTPUtility::Payload*)item->GetItem();
         if(payload)
         {
-            memcpy(payloadName, payload->name, RTP_PAYLOAD_NAME_SIZE);
+            memcpy(payloadName, payload->name, RTP_PAYLOAD_NAME_SIZE - 1);
 
             if(payloadType )
             {
@@ -1134,7 +1134,7 @@ RTPReceiver::CheckSSRCChanged(const WebRtcRTPHeader* rtpHeader)
                         ModuleRTPUtility::Payload* payload = (ModuleRTPUtility::Payload*)item->GetItem();
                         if(payload)
                         {
-                            memcpy(payloadName, payload->name, RTP_PAYLOAD_NAME_SIZE);
+                            memcpy(payloadName, payload->name, RTP_PAYLOAD_NAME_SIZE - 1);
                             if(payload->audio)
                             {
                                 frequency = payload->typeSpecific.Audio.frequency;
@@ -1244,7 +1244,7 @@ RTPReceiver::CheckPayloadChanged(const WebRtcRTPHeader* rtpHeader,
                 return -1;
             }
 
-            memcpy(payloadName, payload->name, RTP_PAYLOAD_NAME_SIZE);
+            memcpy(payloadName, payload->name, RTP_PAYLOAD_NAME_SIZE - 1);
             _lastReceivedPayloadType = payloadType;
 
             reInitializeDecoder = true;
