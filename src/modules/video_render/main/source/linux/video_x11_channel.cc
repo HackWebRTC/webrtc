@@ -23,12 +23,12 @@ static int dispCount = 0;
 
 
 VideoX11Channel::VideoX11Channel(WebRtc_Word32 id) :
-    _crit(*CriticalSectionWrapper::CreateCriticalSection()),
-            _videoInterpolator(NULL), _display(NULL), _shminfo(),
-            _image(NULL), _window(0L), _width(DEFAULT_RENDER_FRAME_WIDTH),
-            _height(DEFAULT_RENDER_FRAME_HEIGHT), _outWidth(0), _outHeight(0),
-            _xPos(0), _yPos(0), _prepared(false), _dispCount(0), _buffer(NULL),
-            _Id(id)
+    _crit(*CriticalSectionWrapper::CreateCriticalSection()), _display(NULL),
+          _shminfo(), _image(NULL), _window(0L),
+          _width(DEFAULT_RENDER_FRAME_WIDTH),
+          _height(DEFAULT_RENDER_FRAME_HEIGHT), _outWidth(0), _outHeight(0),
+          _xPos(0), _yPos(0), _prepared(false), _dispCount(0), _buffer(NULL),
+          _Id(id)
 {
 }
 
@@ -41,11 +41,6 @@ VideoX11Channel::~VideoX11Channel()
         _crit.Leave();
     }
     delete &_crit;
-
-    if (_videoInterpolator)
-    {
-        delete _videoInterpolator;
-    }
 }
 
 WebRtc_Word32 VideoX11Channel::RenderFrame(const WebRtc_UWord32 streamId,

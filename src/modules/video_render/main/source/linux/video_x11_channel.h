@@ -13,7 +13,6 @@
 
 #include "video_render_defines.h"
 #include "vplib.h"
-
 #include <sys/shm.h>
 
 #include <X11/Xlib.h>
@@ -26,7 +25,6 @@ class CriticalSectionWrapper;
 #define DEFAULT_RENDER_FRAME_WIDTH 352
 #define DEFAULT_RENDER_FRAME_HEIGHT 288
 
-typedef char* VideoInterpolator;
 
 class VideoX11Channel: public VideoRenderCallback
 {
@@ -62,12 +60,12 @@ private:
             CreateLocalRenderer(WebRtc_Word32 width, WebRtc_Word32 height);
     WebRtc_Word32 RemoveRenderer();
 
-    //FIXME a better place for this method? the GetWidthHeight no longer supported by vplib.
+    //FIXME a better place for this method? the GetWidthHeight no longer
+    // supported by common_video.
     int GetWidthHeight(VideoType type, int bufferSize, int& width,
                        int& height);
 
     CriticalSectionWrapper& _crit;
-    VideoInterpolator* _videoInterpolator;
 
     Display* _display;
     XShmSegmentInfo _shminfo;

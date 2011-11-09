@@ -10,7 +10,6 @@
 
 #include "sink_filter_windows.h"
 
-#include "vplib.h"
 #include "trace.h"
 #include "help_functions_windows.h"
 

@@ -10,7 +10,6 @@
 
 #include "video_render_android_native_opengl2.h"
 #include "critical_section_wrapper.h"
-#include "vplib.h"
 #include "tick_util.h"
 
 #ifdef ANDROID_LOG

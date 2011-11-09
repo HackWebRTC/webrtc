@@ -18,7 +18,6 @@
 #include "../../video_capture_impl.h"
 #include "video_capture_qtkit_utility.h"
 #include "../../device_info_impl.h"
-#include "vplib.h"
 
 
 // Forward declaraion

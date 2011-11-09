@@ -22,7 +22,6 @@ DEFINE_GUID( IID_IDirectDraw7,0x15e65ec0,0x3b9c,0x11d2,0xb9,0x2f,0x00,0x60,0x97,
 #include "trace.h"
 #include "critical_section_wrapper.h"
 //#include "VideoErrors.h"
-#include "vplib.h"
 
 // Added
 #include "module_common_types.h"

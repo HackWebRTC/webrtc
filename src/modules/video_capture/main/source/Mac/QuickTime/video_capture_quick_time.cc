@@ -21,7 +21,6 @@
 #include "thread_wrapper.h"
 #include "tick_util.h"
 #include "trace.h"
-#include "vplib.h"
 #include <unistd.h>
 
 namespace webrtc
