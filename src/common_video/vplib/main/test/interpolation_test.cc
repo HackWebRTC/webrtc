@@ -27,7 +27,7 @@ int interpolation_test(CmdArgs& args)
     FILE* outputFile;
 
     std::string outname = args.outputFile;
-    if (outname == "")
+    if (outname.empty())
     {
         outname = "InterTest_out.yuv";
     }
