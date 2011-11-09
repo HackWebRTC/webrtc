@@ -629,16 +629,16 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm)
 #endif
     // Set number of channels
     _audioDevicePtr->StereoPlayoutIsAvailable(&available);
-    if (_audioDevicePtr->SetStereoPlayout(available ? true : false) != 0)
+    if (_audioDevicePtr->SetStereoPlayout(available) != 0)
     {
         _engineStatistics.SetLastError(VE_SOUNDCARD_ERROR, kTraceWarning,
-            "Init() failed to set stereo playout mode");
+            "Init() failed to set mono/stereo playout mode");
     }
     _audioDevicePtr->StereoRecordingIsAvailable(&available);
-    if (_audioDevicePtr->SetStereoRecording(available ? true : false) != 0)
+    if (_audioDevicePtr->SetStereoRecording(available) != 0)
     {
         _engineStatistics.SetLastError(VE_SOUNDCARD_ERROR, kTraceWarning,
-            "Init() failed to set mono recording mode");
+            "Init() failed to set mono/stereo recording mode");
     }
 
     return _engineStatistics.SetInitialized();
