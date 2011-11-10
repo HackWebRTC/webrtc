@@ -456,10 +456,14 @@ WebRtc_Word16 TestStereo::RegisterSendCodec(char side,
     CHECK_ERROR(AudioCodingModule::Codec(codecName, myCodecParam, samplingFreqHz));
     myCodecParam.rate = rate;
     myCodecParam.pacsize = packSize;
+    // Start with register codec as mono, to test that changing to stereo works.
+    myCodecParam.channels = 1;
+    CHECK_ERROR(myACM->RegisterSendCodec(myCodecParam));
+    // Register codec as stereo.
     myCodecParam.channels = 2;
     CHECK_ERROR(myACM->RegisterSendCodec(myCodecParam));
 
-    // initialization was succesful
+    // Initialization was successful.
     return 0;
 }
 

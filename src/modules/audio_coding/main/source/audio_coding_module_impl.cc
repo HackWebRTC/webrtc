@@ -902,7 +902,13 @@ with the previously registered codec");
             _isFirstRED = true;
         }
 
+        // If packet size or number of channels has changed, we need to
+        // re-initialize the encoder.
         if(_sendCodecInst.pacsize != sendCodec.pacsize)
+        {
+            forceInit = true;
+        }
+        if(_sendCodecInst.channels != sendCodec.channels)
         {
             forceInit = true;
         }
@@ -927,6 +933,7 @@ with the previously registered codec");
 
             _sendCodecInst.plfreq = sendCodec.plfreq;
             _sendCodecInst.pacsize = sendCodec.pacsize;
+            _sendCodecInst.channels = sendCodec.channels;
         }
 
         // If the change of sampling frequency has been successful then
