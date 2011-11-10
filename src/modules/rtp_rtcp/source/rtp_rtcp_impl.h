@@ -284,14 +284,14 @@ public:
 
     // statistics of the amount of data sent and received
     virtual WebRtc_Word32 DataCountersRTP(WebRtc_UWord32 *bytesSent,
-                                        WebRtc_UWord32 *packetsSent,
-                                        WebRtc_UWord32 *bytesReceived,
-                                        WebRtc_UWord32 *packetsReceived) const;
+                                          WebRtc_UWord32 *packetsSent,
+                                          WebRtc_UWord32 *bytesReceived,
+                                          WebRtc_UWord32 *packetsReceived) const;
 
     virtual WebRtc_Word32 ReportBlockStatistics(WebRtc_UWord8 *fraction_lost,
-                                              WebRtc_UWord32 *cum_lost,
-                                              WebRtc_UWord32 *ext_max,
-                                              WebRtc_UWord32 *jitter);
+                                                WebRtc_UWord32 *cum_lost,
+                                                WebRtc_UWord32 *ext_max,
+                                                WebRtc_UWord32 *jitter);
 
     // Get received RTCP report, sender info
     virtual WebRtc_Word32 RemoteRTCPStat( RTCPSenderInfo* senderInfo);
@@ -532,6 +532,7 @@ protected:
     RTCPReceiver              _rtcpReceiver;
 private:
     void SendKeyFrame();
+    void ProcessDefaultModuleBandwidth();
 
     WebRtc_Word32             _id;
     const bool                _audio;
