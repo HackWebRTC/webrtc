@@ -120,8 +120,7 @@ OutputMixer::Create(OutputMixer*& mixer, const WebRtc_UWord32 instanceId)
 OutputMixer::OutputMixer(const WebRtc_UWord32 instanceId) :
     _callbackCritSect(*CriticalSectionWrapper::CreateCriticalSection()),
     _fileCritSect(*CriticalSectionWrapper::CreateCriticalSection()),
-    _mixerModule(*AudioConferenceMixer::
-                 CreateAudioConferenceMixer(instanceId)),
+    _mixerModule(*AudioConferenceMixer::Create(instanceId)),
     _audioLevel(),
     _dtmfGenerator(instanceId),
     _instanceId(instanceId),

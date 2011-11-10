@@ -18,11 +18,13 @@
 #include "list_wrapper.h"
 #include "memory_pool.h"
 #include "module_common_types.h"
+#include "scoped_ptr.h"
 #include "time_scheduler.h"
 
 #define VERSION_STRING "Audio Conference Mixer Module 1.1.0"
 
 namespace webrtc {
+class AudioProcessing;
 class CriticalSectionWrapper;
 
 // Cheshire cat implementation of MixerParticipant's non virtual functions.
@@ -50,10 +52,14 @@ private:
 class AudioConferenceMixerImpl : public AudioConferenceMixer
 {
 public:
+    // AudioProcessing only accepts 10 ms frames.
     enum {kProcessPeriodicityInMs = 10};
 
-    AudioConferenceMixerImpl(const WebRtc_Word32 id);
+    AudioConferenceMixerImpl(int id);
     ~AudioConferenceMixerImpl();
+
+    // Must be called after ctor.
+    bool Init();
 
     // Module functions
     virtual WebRtc_Word32 Version(WebRtc_Word8* version,
@@ -88,6 +94,10 @@ private:
     // Set/get mix frequency
     WebRtc_Word32 SetOutputFrequency(const Frequency frequency);
     Frequency OutputFrequency() const;
+
+    // Must be called whenever an audio frame indicates the number of channels
+    // has changed.
+    bool SetNumLimiterChannels(int numChannels);
 
     // Fills mixList with the AudioFrames pointers that should be used when
     // mixing. Fills mixParticipantList with ParticipantStatistics for the
@@ -136,15 +146,19 @@ private:
         MixerParticipant& removeParticipant,
         ListWrapper& participantList);
 
-    // Mix the AudioFrames stored in audioFrameList into mixedAudioFrame.
+    // Mix the AudioFrames stored in audioFrameList into mixedAudio.
     WebRtc_Word32 MixFromList(
-        AudioFrame& mixedAudioFrame,
-        ListWrapper& audioFrameList);
-    // Mix the AudioFrames stored in audioFrameList into mixedAudioFrame. No
+        AudioFrame& mixedAudio,
+        const ListWrapper& audioFrameList);
+    // Mix the AudioFrames stored in audioFrameList into mixedAudio. No
     // record will be kept of this mix (e.g. the corresponding MixerParticipants
     // will not be marked as IsMixed()
-    WebRtc_Word32 MixAnonomouslyFromList(AudioFrame& mixedAudioFrame,
-                                         ListWrapper& audioFrameList);
+    WebRtc_Word32 MixAnonomouslyFromList(AudioFrame& mixedAudio,
+                                         const ListWrapper& audioFrameList);
+
+    bool LimitMixedAudio(AudioFrame& mixedAudio);
+
+    bool _initialized;
 
     // Scratch memory
     // Note that the scratch memory may only be touched in the scope of
@@ -156,8 +170,8 @@ private:
     ParticipantStatistics  _scratchVadPositiveParticipants[
         kMaximumAmountOfMixedParticipants];
 
-    CriticalSectionWrapper* _crit;
-    CriticalSectionWrapper* _cbCrit;
+    scoped_ptr<CriticalSectionWrapper> _crit;
+    scoped_ptr<CriticalSectionWrapper> _cbCrit;
 
     WebRtc_Word32 _id;
 
@@ -195,6 +209,9 @@ private:
     // Counter keeping track of concurrent calls to process.
     // Note: should never be higher than 1 or lower than 0.
     WebRtc_Word16 _processCalls;
+
+    // Used for inhibiting saturation in mixing.
+    scoped_ptr<AudioProcessing> _limiter;
 };
 } // namespace webrtc
 

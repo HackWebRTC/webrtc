@@ -11,11 +11,21 @@
 #include "audio_conference_mixer_defines.h"
 #include "audio_conference_mixer_impl.h"
 #include "audio_frame_manipulator.h"
+#include "audio_processing.h"
 #include "critical_section_wrapper.h"
 #include "map_wrapper.h"
 #include "trace.h"
 
 namespace webrtc {
+namespace {
+void SetParticipantStatistics(ParticipantStatistics* stats,
+                              const AudioFrame& frame)
+{
+    stats->participant = frame._id;
+    stats->level = frame._volume;
+}
+}  // namespace
+
 MixerParticipant::MixerParticipant()
     : _mixHistory(new MixHistory())
 {
@@ -64,21 +74,26 @@ void MixHistory::ResetMixedStatus()
     _isMixed  = 0;
 }
 
-AudioConferenceMixer* AudioConferenceMixer::CreateAudioConferenceMixer(
-    const WebRtc_Word32 id)
+AudioConferenceMixer* AudioConferenceMixer::Create(int id)
 {
     WEBRTC_TRACE(kTraceModuleCall, kTraceAudioMixerServer, id,
-                 "CreateAudioConferenceMixer");
-    return new AudioConferenceMixerImpl(id);
+                 "Create");
+    AudioConferenceMixerImpl* mixer = new AudioConferenceMixerImpl(id);
+    if(!mixer->Init())
+    {
+        delete mixer;
+        return NULL;
+    }
+    return mixer;
 }
 
-AudioConferenceMixerImpl::AudioConferenceMixerImpl(const WebRtc_Word32 id)
+AudioConferenceMixerImpl::AudioConferenceMixerImpl(int id)
     : _scratchParticipantsToMixAmount(0),
       _scratchMixedParticipants(),
       _scratchVadPositiveParticipantsAmount(0),
       _scratchVadPositiveParticipants(),
-      _crit(CriticalSectionWrapper::CreateCriticalSection()),
-      _cbCrit(CriticalSectionWrapper::CreateCriticalSection()),
+      _crit(NULL),
+      _cbCrit(NULL),
       _id(id),
       _minimumMixingFreq(kLowestPossible),
       _mixReceiver(NULL),
@@ -87,30 +102,71 @@ AudioConferenceMixerImpl::AudioConferenceMixerImpl(const WebRtc_Word32 id)
       _amountOf10MsUntilNextCallback(0),
       _mixerStatusCb(false),
       _outputFrequency(kDefaultFrequency),
-      _sampleSize((_outputFrequency*kProcessPeriodicityInMs)/1000),
+      _sampleSize(0),
+      _audioFramePool(NULL),
       _participantList(),
       _additionalParticipantList(),
       _amountOfMixableParticipants(0),
       _timeStamp(0),
       _timeScheduler(kProcessPeriodicityInMs),
       _mixedAudioLevel(),
-      _processCalls(0)
+      _processCalls(0),
+      _limiter(NULL)
+{}
+
+bool AudioConferenceMixerImpl::Init()
 {
+    _crit.reset(CriticalSectionWrapper::CreateCriticalSection());
+    if (_crit.get() == NULL)
+        return false;
+
+    _cbCrit.reset(CriticalSectionWrapper::CreateCriticalSection());
+    if(_cbCrit.get() == NULL)
+        return false;
+
+    _limiter.reset(AudioProcessing::Create(_id));
+    if(_limiter.get() == NULL)
+        return false;
+
     MemoryPool<AudioFrame>::CreateMemoryPool(_audioFramePool,
                                              DEFAULT_AUDIO_FRAME_POOLSIZE);
-    WEBRTC_TRACE(kTraceMemory, kTraceAudioMixerServer, _id, "%s created",
-                 __FUNCTION__);
+    if(_audioFramePool == NULL)
+        return false;
+
+    if(SetOutputFrequency(kDefaultFrequency) == -1)
+        return false;
+
+    // Assume mono.
+    if (!SetNumLimiterChannels(1))
+        return false;
+
+    if(_limiter->gain_control()->set_mode(GainControl::kFixedDigital) != 
+        _limiter->kNoError)
+        return false;
+
+    // We smoothly limit the mixed frame to -7 dbFS. -6 would correspond to the
+    // divide-by-2 but -7 is used instead to give a bit of headroom since the
+    // AGC is not a hard limiter.
+    if(_limiter->gain_control()->set_target_level_dbfs(7) != _limiter->kNoError)
+        return false;
+
+    if(_limiter->gain_control()->set_compression_gain_db(0)
+        != _limiter->kNoError)
+        return false;
+
+    if(_limiter->gain_control()->enable_limiter(true) != _limiter->kNoError)
+        return false;
+
+    if(_limiter->gain_control()->Enable(true) != _limiter->kNoError)
+        return false;
+
+    return true;
 }
 
 AudioConferenceMixerImpl::~AudioConferenceMixerImpl()
 {
-    delete _crit;
-    delete _cbCrit;
-
     MemoryPool<AudioFrame>::DeleteMemoryPool(_audioFramePool);
-    assert(_audioFramePool==NULL);
-    WEBRTC_TRACE(kTraceMemory, kTraceAudioMixerServer, _id, "%s deleted",
-                 __FUNCTION__);
+    assert(_audioFramePool == NULL);
 }
 
 WebRtc_Word32 AudioConferenceMixerImpl::Version(
@@ -208,9 +264,10 @@ WebRtc_Word32 AudioConferenceMixerImpl::Process()
 
         WebRtc_Word32 lowFreq = GetLowestMixingFrequency();
         // SILK can run in 12 kHz and 24 kHz. These frequencies are not
-        // supported so use closet higher frequency to not lose any information.
-        // TODO (hellner): this is probably more appropriate to do in
-        //                 GetLowestMixingFrequency().
+        // supported so use the closest higher frequency to not lose any
+        // information.
+        // TODO(henrike): this is probably more appropriate to do in
+        //                GetLowestMixingFrequency().
         if (lowFreq == 12000)
         {
             lowFreq = 16000;
@@ -276,6 +333,7 @@ WebRtc_Word32 AudioConferenceMixerImpl::Process()
     }
 
     bool timeForMixerCallback = false;
+    int retval = 0;
     WebRtc_Word32 audioLevel = 0;
     {
         const ListItem* firstItem = mixList.First();
@@ -287,11 +345,12 @@ WebRtc_Word32 AudioConferenceMixerImpl::Process()
             numberOfChannels = static_cast<const AudioFrame*>(
                 firstItem->GetItem())->_audioChannel;
         }
-        // TODO (hellner): it might be better to decide the number of channels
-        //                 with an API instead of dynamically.
-
+        // TODO(henrike): it might be better to decide the number of channels
+        //                with an API instead of dynamically.
 
         CriticalSectionScoped cs(*_crit);
+        if (!SetNumLimiterChannels(numberOfChannels))
+            retval = -1;
 
         mixedAudio->UpdateFrame(-1, _timeStamp, NULL, 0, _outputFrequency,
                                 AudioFrame::kNormalSpeech,
@@ -299,15 +358,21 @@ WebRtc_Word32 AudioConferenceMixerImpl::Process()
 
         _timeStamp += _sampleSize;
 
-        MixFromList(*mixedAudio,mixList);
+        MixFromList(*mixedAudio, mixList);
         MixAnonomouslyFromList(*mixedAudio, additionalFramesList);
-
         MixAnonomouslyFromList(*mixedAudio, rampOutList);
+
         if(mixedAudio->_payloadDataLengthInSamples == 0)
         {
-          // Nothing was mixed set the audio samples to silence.
-          memset(mixedAudio->_payloadData, 0, _sampleSize);
-          mixedAudio->_payloadDataLengthInSamples = _sampleSize;
+            // Nothing was mixed, set the audio samples to silence.
+            memset(mixedAudio->_payloadData, 0, _sampleSize);
+            mixedAudio->_payloadDataLengthInSamples = _sampleSize;
+        }
+        else
+        {
+            // Only call the limiter if we have something to mix.
+            if(!LimitMixedAudio(*mixedAudio))
+                retval = -1;
         }
 
         _mixedAudioLevel.ComputeLevel(mixedAudio->_payloadData,_sampleSize);
@@ -362,7 +427,7 @@ WebRtc_Word32 AudioConferenceMixerImpl::Process()
         CriticalSectionScoped cs(*_crit);
         _processCalls--;
     }
-    return 0;
+    return retval;
 }
 
 WebRtc_Word32 AudioConferenceMixerImpl::RegisterMixedStreamCallback(
@@ -396,8 +461,17 @@ WebRtc_Word32 AudioConferenceMixerImpl::SetOutputFrequency(
     const Frequency frequency)
 {
     CriticalSectionScoped cs(*_crit);
+    const int error = _limiter->set_sample_rate_hz(frequency);
+    if(error != _limiter->kNoError)
+    {
+        WEBRTC_TRACE(kTraceError, kTraceAudioMixerServer, _id,
+                     "Error from AudioProcessing: %d", error);
+        return -1;
+    }
+
     _outputFrequency = frequency;
     _sampleSize = (_outputFrequency*kProcessPeriodicityInMs) / 1000;
+
     return 0;
 }
 
@@ -406,6 +480,24 @@ AudioConferenceMixerImpl::OutputFrequency() const
 {
     CriticalSectionScoped cs(*_crit);
     return _outputFrequency;
+}
+
+bool AudioConferenceMixerImpl::SetNumLimiterChannels(int numChannels)
+{
+    if(_limiter->num_input_channels() != numChannels)
+    {
+        const int error = _limiter->set_num_channels(numChannels,
+                                                     numChannels);
+        if(error != _limiter->kNoError)
+        {
+            WEBRTC_TRACE(kTraceError, kTraceAudioMixerServer, _id,
+                         "Error from AudioProcessing: %d", error);
+            assert(false);
+            return false;
+        }
+    }
+
+    return true;
 }
 
 WebRtc_Word32 AudioConferenceMixerImpl::RegisterMixerStatusCallback(
@@ -527,7 +619,7 @@ WebRtc_Word32 AudioConferenceMixerImpl::MixabilityStatus(
     WEBRTC_TRACE(kTraceModuleCall, kTraceAudioMixerServer, _id,
                  "MixabilityStatus(participant,mixable)");
     CriticalSectionScoped cs(*_cbCrit);
-     mixable = IsParticipantInList(participant,_participantList);
+    mixable = IsParticipantInList(participant, _participantList);
     return 0;
 }
 
@@ -1046,13 +1138,29 @@ bool AudioConferenceMixerImpl::RemoveParticipantFromList(
     return false;
 }
 
-WebRtc_Word32 AudioConferenceMixerImpl::MixFromList(AudioFrame& mixedAudioFrame,
-                                                    ListWrapper& audioFrameList)
+WebRtc_Word32 AudioConferenceMixerImpl::MixFromList(
+    AudioFrame& mixedAudio,
+    const ListWrapper& audioFrameList)
 {
     WEBRTC_TRACE(kTraceStream, kTraceAudioMixerServer, _id,
-                 "MixFromList(mixedAudioFrame, audioFrameList)");
+                 "MixFromList(mixedAudio, audioFrameList)");
     WebRtc_UWord32 position = 0;
     ListItem* item = audioFrameList.First();
+    if(item == NULL)
+    {
+        return 0;
+    }
+
+    if(_amountOfMixableParticipants == 1)
+    {
+        // No mixing required here; skip the saturation protection.
+        AudioFrame* audioFrame = static_cast<AudioFrame*>(item->GetItem());
+        mixedAudio = *audioFrame;
+        SetParticipantStatistics(&_scratchMixedParticipants[position],
+                                 *audioFrame);
+        return 0;
+    }
+
     while(item != NULL)
     {
         if(position >= kMaximumAmountOfMixedParticipants)
@@ -1068,30 +1176,80 @@ WebRtc_Word32 AudioConferenceMixerImpl::MixFromList(AudioFrame& mixedAudioFrame,
             position = 0;
         }
         AudioFrame* audioFrame = static_cast<AudioFrame*>(item->GetItem());
-        mixedAudioFrame += *audioFrame;
 
-        _scratchMixedParticipants[position].participant = audioFrame->_id;
-        _scratchMixedParticipants[position].level = audioFrame->_volume;
+        // Divide by two to avoid saturation in the mixing.
+        *audioFrame >>= 1;
+        mixedAudio += *audioFrame;
+
+        SetParticipantStatistics(&_scratchMixedParticipants[position],
+                                 *audioFrame);
 
         position++;
+        item = audioFrameList.Next(item);
+    }
+
+    return 0;
+}
+
+// TODO(andrew): consolidate this function with MixFromList.
+WebRtc_Word32 AudioConferenceMixerImpl::MixAnonomouslyFromList(
+    AudioFrame& mixedAudio,
+    const ListWrapper& audioFrameList)
+{
+    WEBRTC_TRACE(kTraceStream, kTraceAudioMixerServer, _id,
+                 "MixAnonomouslyFromList(mixedAudio, audioFrameList)");
+    ListItem* item = audioFrameList.First();
+    if(item == NULL)
+        return 0;
+
+    if(_amountOfMixableParticipants == 1)
+    {
+        // No mixing required here; skip the saturation protection.
+        AudioFrame* audioFrame = static_cast<AudioFrame*>(item->GetItem());
+        mixedAudio = *audioFrame;
+        return 0;
+    }
+
+    while(item != NULL)
+    {
+        AudioFrame* audioFrame = static_cast<AudioFrame*>(item->GetItem());
+        // Divide by two to avoid saturation in the mixing.
+        *audioFrame >>= 1;
+        mixedAudio += *audioFrame;
         item = audioFrameList.Next(item);
     }
     return 0;
 }
 
-WebRtc_Word32 AudioConferenceMixerImpl::MixAnonomouslyFromList(
-    AudioFrame& mixedAudioFrame,
-    ListWrapper& audioFrameList)
+bool AudioConferenceMixerImpl::LimitMixedAudio(AudioFrame& mixedAudio)
 {
-    WEBRTC_TRACE(kTraceStream, kTraceAudioMixerServer, _id,
-                 "MixAnonomouslyFromList(mixedAudioFrame, audioFrameList)");
-    ListItem* item = audioFrameList.First();
-    while(item != NULL)
+    if(_amountOfMixableParticipants == 1)
     {
-        AudioFrame* audioFrame = static_cast<AudioFrame*>(item->GetItem());
-        mixedAudioFrame += *audioFrame;
-        item = audioFrameList.Next(item);
+        return true;
     }
-    return 0;
+
+    // Smoothly limit the mixed frame.
+    const int error = _limiter->ProcessStream(&mixedAudio);
+
+    // And now we can safely restore the level. This procedure results in
+    // some loss of resolution, deemed acceptable.
+    //
+    // It's possible to apply the gain in the AGC (with a target level of 0 dbFS
+    // and compression gain of 6 dB). However, in the transition frame when this
+    // is enabled (moving from one to two participants) it has the potential to
+    // create discontinuities in the mixed frame.
+    //
+    // Instead we double the frame (with addition since left-shifting a
+    // negative value is undefined).
+    mixedAudio += mixedAudio;
+
+    if(error != _limiter->kNoError)
+    {
+        WEBRTC_TRACE(kTraceError, kTraceAudioMixerServer, _id,
+                     "Error from AudioProcessing: %d", error);
+        assert(false);
+        return false;
+    }
+    return true;
 }
 } // namespace webrtc

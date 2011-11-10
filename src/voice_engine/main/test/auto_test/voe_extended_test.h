@@ -314,6 +314,10 @@ private:
                     bool playout,
                     bool send);
     void StopMedia(int channel);
+    int RunMixingTest(int num_channels,
+                      int16_t input_value,
+                      int16_t max_output_value,
+                      int16_t min_output_value);
 private:
     VoETestManager& _mgr;
 private:

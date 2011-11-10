@@ -113,7 +113,10 @@ class AudioProcessing : public Module {
   // for each far-end stream which requires processing. On the server-side,
   // this would typically be one instance for every incoming stream.
   static AudioProcessing* Create(int id);
+  virtual ~AudioProcessing() {};
 
+  // TODO(andrew): remove this method. We now allow users to delete instances
+  // directly, useful for scoped_ptr.
   // Destroys a |apm| instance.
   static void Destroy(AudioProcessing* apm);
 
@@ -240,9 +243,6 @@ class AudioProcessing : public Module {
   // Inherited from Module.
   virtual WebRtc_Word32 TimeUntilNextProcess() { return -1; };
   virtual WebRtc_Word32 Process() { return -1; };
-
- protected:
-  virtual ~AudioProcessing() {};
 };
 
 // The acoustic echo cancellation (AEC) component provides better performance

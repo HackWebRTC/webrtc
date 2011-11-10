@@ -1459,8 +1459,7 @@ WebRtc_Word32 VoEBaseImpl::AddACMVersion(char* str) const
 
 WebRtc_Word32 VoEBaseImpl::AddConferenceMixerVersion(char* str) const
 {
-    AudioConferenceMixer* mixerPtr =
-            AudioConferenceMixer::CreateAudioConferenceMixer(-1);
+    AudioConferenceMixer* mixerPtr = AudioConferenceMixer::Create(-1);
     int len = AddModuleVersion(mixerPtr, str);
     delete mixerPtr;
     return len;

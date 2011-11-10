@@ -12,6 +12,7 @@
       'target_name': 'audio_conference_mixer',
       'type': '<(library)',
       'dependencies': [
+        'audio_processing',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
       'include_dirs': [
@@ -32,24 +33,12 @@
         'level_indicator.cc',
         'level_indicator.h',
         'memory_pool.h',
-        'memory_pool_generic.h',
-        'memory_pool_windows.h',
+        'memory_pool_posix.h',
+        'memory_pool_win.h',
         'audio_conference_mixer_impl.cc',
         'audio_conference_mixer_impl.h',
         'time_scheduler.cc',
         'time_scheduler.h',
-      ],
-      'conditions': [
-        ['OS=="win"', {
-          'sources!': [
-            'memory_pool_generic.h',
-          ],
-        }],
-        ['OS!="win"', {
-          'sources!': [
-            'memory_pool_windows.h',
-          ],
-        }],
       ],
     },
   ],

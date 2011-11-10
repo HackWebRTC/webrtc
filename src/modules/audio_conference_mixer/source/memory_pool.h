@@ -16,9 +16,9 @@
 #include "typedefs.h"
 
 #if _WIN32
-    #include "memory_pool_windows.h"
+#include "memory_pool_win.h"
 #else
-    #include "memory_pool_generic.h"
+#include "memory_pool_posix.h"
 #endif
 
 namespace webrtc {

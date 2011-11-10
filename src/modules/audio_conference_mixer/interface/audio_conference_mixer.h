@@ -35,8 +35,7 @@ public:
     };
 
     // Factory method. Constructor disabled.
-    static AudioConferenceMixer* CreateAudioConferenceMixer(
-        const WebRtc_Word32 id);
+    static AudioConferenceMixer* Create(int id);
     virtual ~AudioConferenceMixer() {}
 
     // Returns version of the module and its components
