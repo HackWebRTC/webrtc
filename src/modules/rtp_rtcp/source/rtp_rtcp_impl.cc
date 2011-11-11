@@ -2827,6 +2827,11 @@ void ModuleRtpRtcpImpl::ProcessDefaultModuleBandwidth() {
             it++;
         }
     }  // end critsect
+
+    if (count == 0) {
+        // No sending modules and no bitrate estimate.
+        return;
+    }
     _bandwidthManagement.SetSendBitrate(minBitrateBps, 0, 0);
     // Update default module bitrate. Don't care about min max.
     // Check if we should trigger OnNetworkChanged via video callback
