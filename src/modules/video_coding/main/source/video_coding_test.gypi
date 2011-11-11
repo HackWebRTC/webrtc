@@ -7,27 +7,11 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 {
-  'targets': [
-    {
-      'target_name': 'video_coding_test_lib',
-      'type': '<(library)',
-      'direct_dependent_settings': {
-        'include_dirs': [
-          '../test',
-        ],
-      },
-      'sources': [
-        # headers
-        '../test/video_metrics.h',
-        # sources
-        '../test/video_metrics.cc',
-      ], 
-    },
-    {
+  'targets': [{
       'target_name': 'video_coding_test',
       'type': 'executable',
       'dependencies': [
-         'video_coding_test_lib',
+         '<(webrtc_root)/../test/test.gyp:test_support',
          'webrtc_video_coding',
          'rtp_rtcp',
          'webrtc_utility',

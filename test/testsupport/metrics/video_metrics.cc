@@ -85,10 +85,12 @@ PsnrFromFiles(const WebRtc_Word8 *refFileName, const WebRtc_Word8 *testFileName,
         refBytes = (WebRtc_Word32) fread(ref, 1, frameBytes, refFp);
         testBytes = (WebRtc_Word32) fread(test, 1, frameBytes, testFp);
     }
-     // for identical reproduction:
+
     if (mse == 0)
     {
-        result->average = 48;
+        // The PSNR value is undefined in this case.
+        // This value effectively means that the files are equal.
+        result->average = std::numeric_limits<double>::max();
     }
     else
     {

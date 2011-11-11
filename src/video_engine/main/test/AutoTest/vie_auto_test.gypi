@@ -18,6 +18,7 @@
         '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine_core',
         '<(webrtc_root)/../testing/gtest.gyp:gtest',
         '<(webrtc_root)/../third_party/google-gflags/google-gflags.gyp:google-gflags',
+        '<(webrtc_root)/../test/test.gyp:test_support',
         'video_engine_core',
       ],
       'include_dirs': [
@@ -42,12 +43,13 @@
         'interface/vie_autotest_main.h',
         'interface/vie_autotest_window_manager_interface.h',
         'interface/vie_autotest_windows.h',
-
+        
         # Helper classes
-        'helpers/vie_window_creator.cc',
-        'helpers/vie_file_capture_device.cc',
         'helpers/vie_fake_camera.cc',
-
+        'helpers/vie_file_capture_device.cc',
+        'helpers/vie_to_file_renderer.cc',
+        'helpers/vie_window_creator.cc',
+        
         # New, fully automated tests
         'automated/vie_api_integration_test.cc',
         'automated/vie_extended_integration_test.cc',

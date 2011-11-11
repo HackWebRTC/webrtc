@@ -8,17 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-//
-// vie_autotest_base.cc
-//
-
+#include "engine_configurations.h"
 #include "gtest/gtest.h"
 #include "video_capture_factory.h"
 #include "vie_autotest_defines.h"
 #include "vie_autotest.h"
 #include "vie_fake_camera.h"
-#include "vie_file_capture_device.h"
-#include "thread_wrapper.h"
+#include "vie_to_file_renderer.h"
 
 class BaseObserver : public webrtc::ViEBaseObserver {
  public:
@@ -110,36 +106,24 @@ webrtc::ViERTP_RTCP *ConfigureRtpRtcp(webrtc::VideoEngine * ptrViE,
   return ptrViERtpRtcp;
 }
 
-webrtc::ViERender *ViEAutoTest::RenderInBothWindows(
-    webrtc::VideoEngine * ptrViE, int & numberOfErrors,
-    int captureId, int videoChannel) {
-  webrtc::ViERender *ptrViERender = webrtc::ViERender::GetInterface(ptrViE);
-  numberOfErrors += ViETest::TestError(ptrViERender != NULL,
-                                       "ERROR: %s at line %d", __FUNCTION__,
-                                       __LINE__);
-  int error = ptrViERender->RegisterVideoRenderModule(*_vrm1);
+void ViEAutoTest::RenderInWindow(webrtc::ViERender* video_render_interface,
+                                 int* numberOfErrors,
+                                 int frame_provider_id,
+                                 void* os_window,
+                                 float z_index) {
+  int error = video_render_interface->AddRenderer(frame_provider_id, os_window,
+                                                  z_index, 0.0, 0.0, 1.0, 1.0);
+  *numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                        __FUNCTION__, __LINE__);
+
+  error = video_render_interface->StartRender(frame_provider_id);
   numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                        __FUNCTION__, __LINE__);
-  error = ptrViERender->AddRenderer(captureId, _window1, 0, 0.0,
-                                    0.0, 1.0, 1.0);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-  error = ptrViERender->StartRender(captureId);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-  error = ptrViERender->RegisterVideoRenderModule(*_vrm2);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-  error = ptrViERender->AddRenderer(videoChannel, _window2, 1, 0.0,
-                                    0.0, 1.0, 1.0);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-  error = ptrViERender->StartRender(videoChannel);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-  return ptrViERender;
 }
 
+// Tests a I420-to-I420 call. This test exercises the most basic WebRTC ViE
+// functionality by setting up the codec interface to recognize the most common
+// codecs, and the initiating a I420 call.
 webrtc::ViENetwork *TestCallSetup(webrtc::ViECodec * ptrViECodec,
                                   int & numberOfErrors,
                                   int videoChannel,
@@ -203,6 +187,14 @@ webrtc::ViENetwork *TestCallSetup(webrtc::ViECodec * ptrViECodec,
   ViETest::Log("Call started");
   ViETest::Log("You should see a local preview from camera %s"
       " in window 1 and the remote video in window 2.", deviceName);
+
+  AutoTestSleep(KAutoTestSleepTimeMs);
+
+  // Done
+  error = ptrViEBase->StopSend(videoChannel);
+  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                       __FUNCTION__, __LINE__);
+
   return ptrViENetwork;
 }
 
@@ -224,9 +216,6 @@ void StopEverything(webrtc::ViEBase * ptrViEBase,
   numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                        __FUNCTION__, __LINE__);
   error = ptrViERender->DeRegisterVideoRenderModule(*vrm2);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-  error = ptrViEBase->StopSend(videoChannel);
   numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                        __FUNCTION__, __LINE__);
   error = ptrViERender->RemoveRenderer(captureId);
@@ -323,8 +312,21 @@ int ViEAutoTest::ViEBaseStandardTest() {
 
   webrtc::ViERTP_RTCP *ptrViERtpRtcp =
       ConfigureRtpRtcp(ptrViE, numberOfErrors, videoChannel);
-  webrtc::ViERender *ptrViERender =
-      RenderInBothWindows(ptrViE, numberOfErrors, captureId, videoChannel);
+
+  webrtc::ViERender *ptrViERender = webrtc::ViERender::GetInterface(ptrViE);
+  ViETest::TestError(ptrViERender != NULL,
+                     "ERROR: %s at line %d", __FUNCTION__,
+                     __LINE__);
+
+  error = ptrViERender->RegisterVideoRenderModule(*_vrm1);
+  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                       __FUNCTION__, __LINE__);
+  error = ptrViERender->RegisterVideoRenderModule(*_vrm2);
+  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                       __FUNCTION__, __LINE__);
+
+  RenderInWindow(ptrViERender, &numberOfErrors, captureId, _window1, 0);
+  RenderInWindow(ptrViERender, &numberOfErrors, videoChannel, _window2, 1);
 
   webrtc::ViECodec *ptrViECodec = webrtc::ViECodec::GetInterface(ptrViE);
   numberOfErrors += ViETest::TestError(ptrViECodec != NULL,
@@ -332,14 +334,12 @@ int ViEAutoTest::ViEBaseStandardTest() {
                                        __LINE__);
 
   // ***************************************************************
-  // Set up the call and wait.
+  // Run the actual test:
   // ***************************************************************
 
   webrtc::ViENetwork *ptrViENetwork =
-      TestCallSetup(ptrViECodec, numberOfErrors, videoChannel,
-                    ptrViE, ptrViEBase, deviceName);
-
-  AutoTestSleep(KAutoTestSleepTimeMs);
+        TestCallSetup(ptrViECodec, numberOfErrors, videoChannel,
+                      ptrViE, ptrViEBase, deviceName);
 
   // ***************************************************************
   // Testing finished. Tear down Video Engine
@@ -407,10 +407,10 @@ int ViEAutoTest::ViEBaseExtendedTest() {
 //                                         "ERROR: %s at line %d",
 //                                         __FUNCTION__, __LINE__);
 
-    ViETest::Log(" ");
-    ViETest::Log(" ViEBase Extended Test PASSED!");
-    ViETest::Log("========================================");
-    ViETest::Log(" ");
+  ViETest::Log(" ");
+  ViETest::Log(" ViEBase Extended Test PASSED!");
+  ViETest::Log("========================================");
+  ViETest::Log(" ");
 
   return 0;
 }
@@ -591,71 +591,6 @@ int ViEAutoTest::ViEBaseAPITest() {
   return 0;
 }
 
-void ViEAutoTest::ViEAutomatedBaseStandardTest(
-    const std::string& pathToTestI420Video, int width, int height) {
-  int ignoredNumberOfErrors;
-
-  // Initialize the test:
-  webrtc::VideoEngine* ptrViE =
-      InitializeVideoEngine(ignoredNumberOfErrors);
-  webrtc::ViEBase *ptrViEBase =
-      InitializeViEBase(ptrViE, ignoredNumberOfErrors);
-
-  int videoChannel = -1;
-  webrtc::ViECapture *ptrViECapture =
-      InitializeChannel(ptrViEBase, videoChannel,
-                        ignoredNumberOfErrors, ptrViE);
-
-  ViEFakeCamera fakeCamera(ptrViECapture);
-  if (!fakeCamera.StartCameraInNewThread(pathToTestI420Video, width, height)) {
-    // No point in continuing if we have no proper video source
-    ViETest::TestError(false, "ERROR: %s at line %d: "
-                       "Could not open input video %s: aborting test...",
-                       __FUNCTION__, __LINE__, pathToTestI420Video.c_str());
-    return;
-  }
-  int captureId = fakeCamera.capture_id();
-
-  // Apparently, we need to connect external capture devices, but we should
-  // not start them since the external device is not a proper device.
-  ConnectCaptureDevice(ptrViECapture, captureId, videoChannel,
-                       ignoredNumberOfErrors);
-
-  webrtc::ViERTP_RTCP *ptrViERtpRtcp =
-      ConfigureRtpRtcp(ptrViE, ignoredNumberOfErrors, videoChannel);
-  webrtc::ViERender *ptrViERender =
-      RenderInBothWindows(ptrViE, ignoredNumberOfErrors,
-                          captureId, videoChannel);
-
-  webrtc::ViECodec *ptrViECodec = webrtc::ViECodec::GetInterface(ptrViE);
-  ignoredNumberOfErrors +=
-      ViETest::TestError(ptrViECodec != NULL,
-                         "ERROR: %s at line %d", __FUNCTION__,
-                         __LINE__);
-
-  // Run the test itself:
-  const WebRtc_UWord8* deviceName =
-      reinterpret_cast<const WebRtc_UWord8*>("Fake Capture Device");
-  webrtc::ViENetwork *ptrViENetwork =
-      TestCallSetup(ptrViECodec, ignoredNumberOfErrors, videoChannel,
-                    ptrViE, ptrViEBase, deviceName);
-
-  AutoTestSleep(KAutoTestSleepTimeMs);
-
-  StopEverything(ptrViEBase, videoChannel, ignoredNumberOfErrors, ptrViERender,
-                 captureId, ptrViECapture, _vrm1, _vrm2);
-
-  // Stop sending data, clean up the camera thread and release the capture
-  // device. Note that this all happens after StopEverything, so this is
-  // tests that the system doesn't mind that the external capture device sends
-  // data after rendering has been stopped.
-  fakeCamera.StopCamera();
-
-  ReleaseEverything(ptrViECapture, ignoredNumberOfErrors, ptrViEBase,
-                    videoChannel, ptrViECodec, ptrViERtpRtcp, ptrViERender,
-                    ptrViENetwork, ptrViE);
-}
-
 void ViEAutoTest::FindCaptureDeviceOnSystem(
     webrtc::ViECapture* capture,
     unsigned char* device_name,
@@ -699,4 +634,96 @@ void ViEAutoTest::FindCaptureDeviceOnSystem(
   *number_of_errors += ViETest::TestError(
       capture_device_set, "ERROR: %s at line %d - Could not set capture device",
       __FUNCTION__, __LINE__);
+}
+
+void ViEAutoTest::RenderToFile(webrtc::ViERender* renderer_interface,
+                               int render_id,
+                               ViEToFileRenderer *to_file_renderer)
+{
+    int result = renderer_interface->AddRenderer(render_id,
+                                                 webrtc::kVideoI420,
+                                                 to_file_renderer);
+    ViETest::TestError(result == 0, "ERROR: %s at line %d",
+                     __FUNCTION__, __LINE__);
+    result = renderer_interface->StartRender(render_id);
+    ViETest::TestError(result == 0, "ERROR: %s at line %d",
+                     __FUNCTION__, __LINE__);
+}
+
+void ViEAutoTest::ViEAutomatedBaseStandardTest(
+    const std::string& i420_test_video_path,
+    int width,
+    int height,
+    ViEToFileRenderer* local_file_renderer,
+    ViEToFileRenderer* remote_file_renderer) {
+  int ignored;
+
+  // Initialize the test:
+  webrtc::VideoEngine* video_engine =
+      InitializeVideoEngine(ignored);
+  webrtc::ViEBase *base_interface =
+      InitializeViEBase(video_engine, ignored);
+
+  int video_channel = -1;
+  webrtc::ViECapture *capture_interface =
+      InitializeChannel(base_interface, video_channel, ignored, video_engine);
+
+  ViEFakeCamera fake_camera(capture_interface);
+  if (!fake_camera.StartCameraInNewThread(i420_test_video_path,
+                                          width,
+                                          height)) {
+    // No point in continuing if we have no proper video source
+    ViETest::TestError(false, "ERROR: %s at line %d: "
+                       "Could not open input video %s: aborting test...",
+                       __FUNCTION__, __LINE__, i420_test_video_path.c_str());
+    return;
+  }
+  int capture_id = fake_camera.capture_id();
+
+  // Apparently, we need to connect external capture devices, but we should
+  // not start them since the external device is not a proper device.
+  ConnectCaptureDevice(capture_interface, capture_id, video_channel,
+                       ignored);
+
+  webrtc::ViERTP_RTCP *rtcp_interface =
+      ConfigureRtpRtcp(video_engine, ignored, video_channel);
+
+  webrtc::ViERender *render_interface =
+      webrtc::ViERender::GetInterface(video_engine);
+  ViETest::TestError(render_interface != NULL,
+                     "ERROR: %s at line %d", __FUNCTION__,
+                     __LINE__);
+
+  render_interface->RegisterVideoRenderModule(*_vrm1);
+  render_interface->RegisterVideoRenderModule(*_vrm2);
+  RenderToFile(render_interface, capture_id, local_file_renderer);
+  RenderToFile(render_interface, video_channel, remote_file_renderer);
+
+  webrtc::ViECodec *codec_interface =
+      webrtc::ViECodec::GetInterface(video_engine);
+  ViETest::TestError(codec_interface != NULL,
+                     "ERROR: %s at line %d", __FUNCTION__,
+                     __LINE__);
+
+  // Run the test itself:
+  const WebRtc_UWord8* device_name =
+      reinterpret_cast<const WebRtc_UWord8*>("Fake Capture Device");
+  webrtc::ViENetwork *network_interface =
+      TestCallSetup(codec_interface, ignored, video_channel,
+                    video_engine, base_interface, device_name);
+
+  AutoTestSleep(KAutoTestSleepTimeMs);
+
+  StopEverything(base_interface, video_channel, ignored, render_interface,
+                 capture_id, capture_interface, _vrm1, _vrm2);
+
+  // Stop sending data, clean up the camera thread and release the capture
+  // device. Note that this all happens after StopEverything, so this
+  // tests that the system doesn't mind that the external capture device sends
+  // data after rendering has been stopped.
+  fake_camera.StopCamera();
+
+  ReleaseEverything(capture_interface, ignored, base_interface,
+                    video_channel, codec_interface, rtcp_interface,
+                    render_interface, network_interface, video_engine);
 }

@@ -40,6 +40,7 @@
 #endif
 
 class tbInterfaces;
+class ViEToFileRenderer;
 
 class ViEAutoTest
 {
@@ -63,9 +64,14 @@ public:
     int ViEBaseAPITest();
 
     // This is a variant of the base standard test, meant to run in GTest.
-    void ViEAutomatedBaseStandardTest(const std::string& pathToTestI420Video,
+    // The first three arguments describes the file to use as fake camera
+    // input. The file renderer arguments describe where to put the output
+    // from the left and right windows, respectively.
+    void ViEAutomatedBaseStandardTest(const std::string& i420_test_video_path,
                                       int width,
-                                      int height);
+                                      int height,
+                                      ViEToFileRenderer* local_file_renderer,
+                                      ViEToFileRenderer* remote_file_renderer);
 
     // vie_autotest_capture.cc
     int ViECaptureStandardTest();
@@ -81,7 +87,9 @@ public:
 
     void ViEAutomatedCodecStandardTest(const std::string& pathToTestI420Video,
                                        int width,
-                                       int height);
+                                       int height,
+                                       ViEToFileRenderer* local_file_renderer,
+                                       ViEToFileRenderer* remote_file_renderer);
 
     // vie_autotest_encryption.cc
     int ViEEncryptionStandardTest();
@@ -125,16 +133,25 @@ private:
                                    int* number_of_errors,
                                    webrtc::VideoCaptureModule** device_video);
 
-    webrtc::ViERender *RenderInBothWindows(webrtc::VideoEngine * ptrViE,
-                                           int & numberOfErrors, int captureId,
-                                           int videoChannel);
+    void RenderInWindow(webrtc::ViERender* video_render_interface,
+                        int* numberOfErrors,
+                        int frame_provider_id,
+                        void* os_window,
+                        float z_index);
+    void RenderToFile(webrtc::ViERender* renderer_interface,
+                      int render_id,
+                      ViEToFileRenderer *to_file_renderer);
 
     void PrintAudioCodec(const webrtc::CodecInst audioCodec);
     void PrintVideoCodec(const webrtc::VideoCodec videoCodec);
 
     void RunCodecTestInternal(const tbInterfaces& interfaces,
                               int & numberOfErrors,
-                              int captureId);
+                              int captureId,
+                              int forced_codec_width,
+                              int forced_codec_height,
+                              ViEToFileRenderer* left_file_renderer,
+                              ViEToFileRenderer* right_file_renderer);
 
     void* _window1;
     void* _window2;

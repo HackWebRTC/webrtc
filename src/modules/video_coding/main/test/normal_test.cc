@@ -22,8 +22,7 @@
 #include "test_util.h"
 #include "tick_time.h"
 #include "trace.h"
-#include "video_metrics.h"
-
+#include "testsupport/metrics/video_metrics.h"
 
 using namespace webrtc;
 

@@ -23,8 +23,8 @@
 #include "test_callbacks.h"
 #include "test_macros.h"
 #include "test_util.h" // send side callback
+#include "testsupport/metrics/video_metrics.h"
 #include "video_coding.h"
-#include "video_metrics.h"
 
 
 using namespace webrtc;

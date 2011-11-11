@@ -20,8 +20,12 @@ bool StreamVideoFileRepeatedlyIntoCaptureDevice(void* data) {
   ViEFileCaptureDevice* file_capture_device =
       reinterpret_cast<ViEFileCaptureDevice*>(data);
 
+  // We want to interrupt the camera feeding thread every now and then in order
+  // to follow the contract for the system_wrappers thread library. 1.5 seconds
+  // seems about right here.
   uint64_t time_slice_ms = 1500;
   uint32_t max_fps = 30;
+
   file_capture_device->ReadFileFor(time_slice_ms, max_fps);
 
   return true;

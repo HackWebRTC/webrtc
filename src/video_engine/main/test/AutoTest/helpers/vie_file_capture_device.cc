@@ -72,8 +72,6 @@ void ViEFileCaptureDevice::ReadFileFor(uint64_t time_slice_ms,
   webrtc::CriticalSectionScoped cs(*mutex_);
   assert(input_file_ != NULL);
 
-  webrtc::VideoFrame sourceFrame;
-  sourceFrame.VerifyAndAllocate(frame_length_);
   unsigned char* frame_buffer = new unsigned char[frame_length_];
 
   webrtc::EventWrapper* sleeper = webrtc::EventWrapper::Create();

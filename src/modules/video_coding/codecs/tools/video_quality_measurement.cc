@@ -21,8 +21,8 @@
 #include "packet_reader.h"
 #include "stats.h"
 #include "trace.h"
+#include "testsupport/metrics/video_metrics.h"
 #include "util.h"
-#include "video_metrics.h"
 #include "videoprocessor.h"
 #include "vp8.h"
 
@@ -105,7 +105,7 @@ int HandleCommandLineFlags(webrtc::test::TestConfig* config) {
 
   // Verify the output dir exists:
   struct stat dir_info;
-  if (!(stat(FLAGS_output_dir.c_str(), &dir_info) == 0 && 
+  if (!(stat(FLAGS_output_dir.c_str(), &dir_info) == 0 &&
       S_ISDIR(dir_info.st_mode))) {
     fprintf(stderr, "Cannot find output directory: %s\n",
               FLAGS_output_dir.c_str());

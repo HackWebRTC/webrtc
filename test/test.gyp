@@ -15,7 +15,13 @@
     {
       'target_name': 'test_support',
       'type': 'static_library',
+      'direct_dependent_settings': {
+        'include_dirs': [
+          '.', # Some includes are hierarchical
+        ],
+      },
       'dependencies': [
+        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
         '<(webrtc_root)/../testing/gtest.gyp:gtest',
         '<(webrtc_root)/../testing/gmock.gyp:gmock',
       ],
@@ -29,6 +35,7 @@
         'test_suite.h',
         'testsupport/fileutils.h',
         'testsupport/fileutils.cc',
+        'testsupport/metrics/video_metrics.cc',
       ],
     },
     {

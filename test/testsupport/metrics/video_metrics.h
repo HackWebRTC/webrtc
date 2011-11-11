@@ -42,11 +42,20 @@ struct QualityMetricsResult {
 };
 
 // PSNR & SSIM calculations
+
+// PSNR values are filled into the QualityMetricsResult struct.
+// If the result is std::numerical_limits<double>::max() the videos were
+// equal. Otherwise, PSNR values are in decibel (higher is better). This
+// algorithm only compares up to the point when the shortest video ends.
 WebRtc_Word32
 PsnrFromFiles(const WebRtc_Word8 *refFileName,
         const WebRtc_Word8 *testFileName, WebRtc_Word32 width,
         WebRtc_Word32 height, QualityMetricsResult *result);
 
+
+// SSIM values are filled into the QualityMetricsResult struct.
+// Values range between -1 and 1, where 1 means the files were identical. This
+// algorithm only compares up to the point when the shortest video ends.
 WebRtc_Word32
 SsimFromFiles(const WebRtc_Word8 *refFileName,
         const WebRtc_Word8 *testFileName, WebRtc_Word32 width,

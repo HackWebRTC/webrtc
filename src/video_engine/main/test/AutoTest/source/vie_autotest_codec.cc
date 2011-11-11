@@ -30,8 +30,10 @@
 #include "vie_rtp_rtcp.h"
 #include "voe_base.h"
 
-class ViEAutotestCodecObserever: public webrtc::ViEEncoderObserver,
-                                 public webrtc::ViEDecoderObserver
+const int kDoNotForceResolution = 0;
+
+class ViEAutotestCodecObserver: public webrtc::ViEEncoderObserver,
+                                public webrtc::ViEDecoderObserver
 {
 public:
     int incomingCodecCalled;
@@ -49,7 +51,7 @@ public:
 
     webrtc::VideoCodec incomingCodec;
 
-    ViEAutotestCodecObserever()
+    ViEAutotestCodecObserver()
     {
         incomingCodecCalled = 0;
         incomingRatecalled = 0;
@@ -118,11 +120,188 @@ public:
     }
 };
 
+// Helper functions
+
+// Finds a codec in the codec list. Returns 0 on success, nonzero otherwise.
+// The resulting codec is filled into result on success but is zeroed out
+// on failure.
+int FindSpecificCodec(webrtc::VideoCodecType of_type,
+                      webrtc::ViECodec* codec_interface,
+                      webrtc::VideoCodec* result) {
+
+  memset(result, 1, sizeof(webrtc::VideoCodec));
+
+  for (int i = 0; i < codec_interface->NumberOfCodecs(); i++) {
+    webrtc::VideoCodec codec;
+    if (codec_interface->GetCodec(i, codec) != 0) {
+      return -1;
+    }
+    if (codec.codecType == of_type) {
+      // Done
+      *result = codec;
+      return 0;
+    }
+  }
+  // Didn't find it
+  return -1;
+}
+
+// Sets the video codec's resolution info to something suitable based on each
+// codec's quirks, except if the forced* variables are != kDoNotForceResolution.
+void SetSuitableResolution(webrtc::VideoCodec* video_codec,
+                           int forced_codec_width,
+                           int forced_codec_height) {
+  if (forced_codec_width != kDoNotForceResolution &&
+      forced_codec_height != kDoNotForceResolution) {
+    video_codec->width = forced_codec_width;
+    video_codec->height = forced_codec_height;
+  } else if (video_codec->codecType == webrtc::kVideoCodecI420) {
+    // I420 is very bandwidth heavy, so limit it here
+    video_codec->width = 176;
+    video_codec->height = 144;
+  } else if (video_codec->codecType != webrtc::kVideoCodecH263) {
+    // Otherwise go with 640x480, except for H263 which can do whatever
+    // it pleases.
+    video_codec->width = 640;
+    video_codec->height = 480;
+  }
+}
+
+// Tests that a codec actually renders frames by registering a basic
+// render effect filter on the codec and then running it. This test is
+// quite lenient on the number of frames that get rendered, so it should not
+// be seen as a end-user-visible quality measure - it is more a sanity check
+// that the codec at least gets some frames through.
+void TestCodecImageProcess(webrtc::VideoCodec video_codec,
+                           webrtc::ViECodec* codec_interface,
+                           int video_channel,
+                           int* number_of_errors,
+                           webrtc::ViEImageProcess* image_process) {
+
+  int error = codec_interface->SetSendCodec(video_channel, video_codec);
+  *number_of_errors += ViETest::TestError(error == 0,
+                                          "ERROR: %s at line %d",
+                                          __FUNCTION__, __LINE__);
+  ViEAutoTestEffectFilter frame_counter;
+  error = image_process->RegisterRenderEffectFilter(video_channel,
+                                                    frame_counter);
+  *number_of_errors += ViETest::TestError(error == 0,
+                                          "ERROR: %s at line %d",
+                                          __FUNCTION__, __LINE__);
+  AutoTestSleep (KAutoTestSleepTimeMs);
+
+  int max_number_of_rendered_frames = video_codec.maxFramerate *
+      KAutoTestSleepTimeMs / 1000;
+
+  if (video_codec.codecType == webrtc::kVideoCodecI420) {
+    // Due to that I420 needs a huge bandwidth, rate control can set
+    // frame rate very low. This happen since we use the same channel
+    // as we just tested with vp8.
+    *number_of_errors += ViETest::TestError(frame_counter.numFrames > 0,
+                                            "ERROR: %s at line %d",
+                                            __FUNCTION__, __LINE__);
+  } else {
+#ifdef WEBRTC_ANDROID
+    // Special case to get the autotest to pass on some slow devices
+    *number_of_errors +=
+        ViETest::TestError(frameCounter.numFrames
+                           > max_number_of_rendered_frames / 6,
+                           "ERROR: %s at line %d",
+                           __FUNCTION__, __LINE__);
+#else
+    *number_of_errors += ViETest::TestError(frame_counter.numFrames
+                                            > max_number_of_rendered_frames / 4,
+                                            "ERROR: %s at line %d",
+                                            __FUNCTION__, __LINE__);
+#endif
+  }
+  error = image_process->DeregisterRenderEffectFilter(video_channel);
+  *number_of_errors += ViETest::TestError(error == 0,
+                                          "ERROR: %s at line %d",
+                                          __FUNCTION__, __LINE__);
+}
+
+void SetSendCodec(webrtc::VideoCodecType of_type,
+                  webrtc::ViECodec* codec_interface,
+                  int video_channel,
+                  int* number_of_errors,
+                  int forced_codec_width,
+                  int forced_codec_height) {
+  webrtc::VideoCodec codec;
+  int error = FindSpecificCodec(of_type, codec_interface, &codec);
+  *number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                          __FUNCTION__, __LINE__);
+
+  SetSuitableResolution(&codec, forced_codec_width, forced_codec_height);
+
+  error = codec_interface->SetSendCodec(video_channel, codec);
+  *number_of_errors += ViETest::TestError(error == 0,
+                                          "ERROR: %s at line %d",
+                                          __FUNCTION__, __LINE__);
+}
+
+// Test switching from i420 to VP8 as send codec and make sure that
+// the codec observer gets called after the switch.
+void TestCodecCallbacks(webrtc::ViEBase *& base_interface,
+                        webrtc::ViECodec *codec_interface,
+                        int video_channel,
+                        int* number_of_errors,
+                        int forced_codec_width,
+                        int forced_codec_height) {
+
+  // Set I420 as send codec so we don't make any assumptions about what
+  // we currently have as send codec:
+  SetSendCodec(webrtc::kVideoCodecI420, codec_interface, video_channel,
+               number_of_errors, forced_codec_width, forced_codec_height);
+
+  // Register the observer:
+  ViEAutotestCodecObserver codec_observer;
+  int error = codec_interface->RegisterEncoderObserver(video_channel,
+                                                       codec_observer);
+  *number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                          __FUNCTION__, __LINE__);
+  error = codec_interface->RegisterDecoderObserver(video_channel,
+                                                   codec_observer);
+  *number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                          __FUNCTION__, __LINE__);
+
+  // Make the switch
+  ViETest::Log("Testing codec callbacks...");
+
+  SetSendCodec(webrtc::kVideoCodecVP8, codec_interface, video_channel,
+               number_of_errors, forced_codec_width, forced_codec_height);
+
+  AutoTestSleep (KAutoTestSleepTimeMs);
+
+  // Verify that we got the right codec
+  *number_of_errors += ViETest::TestError(
+      codec_observer.incomingCodec.codecType == webrtc::kVideoCodecVP8,
+      "ERROR: %s at line %d", __FUNCTION__, __LINE__);
+
+  // Clean up
+  error = codec_interface->DeregisterEncoderObserver(video_channel);
+  *number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                          __FUNCTION__, __LINE__);
+  error = codec_interface->DeregisterDecoderObserver(video_channel);
+  *number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                          __FUNCTION__, __LINE__);
+  *number_of_errors += ViETest::TestError(
+      codec_observer.incomingCodecCalled > 0,
+      "ERROR: %s at line %d", __FUNCTION__, __LINE__);
+  *number_of_errors += ViETest::TestError(
+      codec_observer.incomingRatecalled > 0,
+      "ERROR: %s at line %d", __FUNCTION__, __LINE__);
+  *number_of_errors += ViETest::TestError(
+      codec_observer.outgoingRatecalled > 0,
+      "ERROR: %s at line %d", __FUNCTION__, __LINE__);
+}
+
 void ViEAutoTest::ViEAutomatedCodecStandardTest(
     const std::string& i420_video_file,
     int width,
-    int height) {
-
+    int height,
+    ViEToFileRenderer* local_file_renderer,
+    ViEToFileRenderer* remote_file_renderer) {
   int ignored = 0;
 
   tbInterfaces interfaces = tbInterfaces("ViECodecAutomatedStandardTest",
@@ -137,7 +316,11 @@ void ViEAutoTest::ViEAutomatedCodecStandardTest(
     return;
   }
 
-  RunCodecTestInternal(interfaces, ignored, fake_camera.capture_id());
+  // Force the codec resolution to what our input video is so we can make
+  // comparisons later. Our comparison algorithms wouldn't like scaling.
+  RunCodecTestInternal(interfaces, ignored, fake_camera.capture_id(),
+                       width, height, local_file_renderer,
+                       remote_file_renderer);
 
   fake_camera.StopCamera();
 }
@@ -155,9 +338,9 @@ int ViEAutoTest::ViECodecStandardTest()
 
     tbCaptureDevice capture_device =
         tbCaptureDevice(interfaces, number_of_errors);
-    RunCodecTestInternal(interfaces,
-                         number_of_errors,
-                         capture_device.captureId);
+    RunCodecTestInternal(interfaces, number_of_errors, capture_device.captureId,
+                         kDoNotForceResolution, kDoNotForceResolution,
+                         NULL, NULL);
 
     if (number_of_errors > 0)
     {
@@ -294,7 +477,7 @@ int ViEAutoTest::ViECodecExtendedTest()
         numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
-        ViEAutotestCodecObserever codecObserver;
+        ViEAutotestCodecObserver codecObserver;
         error = ptrViECodec->RegisterEncoderObserver(videoChannel,
                                                      codecObserver);
         numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
@@ -377,7 +560,7 @@ int ViEAutoTest::ViECodecExtendedTest()
         numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
-        ViEAutotestCodecObserever codecObserver1;
+        ViEAutotestCodecObserver codecObserver1;
         error = ViE.ptrViECodec->RegisterEncoderObserver(videoChannel1,
                                                          codecObserver1);
         numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
@@ -454,7 +637,7 @@ int ViEAutoTest::ViECodecExtendedTest()
                                                  __FUNCTION__, __LINE__);
         }
 
-        ViEAutotestCodecObserever codecObserver2;
+        ViEAutotestCodecObserver codecObserver2;
         error = ViE.ptrViECodec->RegisterDecoderObserver(videoChannel2,
                                                          codecObserver2);
         numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
@@ -539,7 +722,7 @@ int ViEAutoTest::ViECodecExtendedTest()
                                                  __FUNCTION__, __LINE__);
         }
 
-        ViEAutotestCodecObserever codecObserver3;
+        ViEAutotestCodecObserver codecObserver3;
         error = ViE.ptrViECodec->RegisterDecoderObserver(videoChannel3,
                                                          codecObserver3);
         numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
@@ -609,7 +792,6 @@ int ViEAutoTest::ViECodecExtendedTest()
     ViETest::Log("========================================");
     ViETest::Log(" ");
     return 0;
-
 }
 
 int ViEAutoTest::ViECodecAPITest()
@@ -653,7 +835,6 @@ int ViEAutoTest::ViECodecAPITest()
     //	Engine ready. Begin testing class
     //***************************************************************
 
-
     //
     // SendCodec
     //
@@ -665,38 +846,15 @@ int ViEAutoTest::ViECodecAPITest()
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
 
-    for (int idx = 0; idx < numberOfCodecs; idx++)
-    {
-        error = ptrViECodec->GetCodec(idx, videoCodec);
-        numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                             __FUNCTION__, __LINE__);
-        if (videoCodec.codecType == webrtc::kVideoCodecVP8)
-        {
-            error = ptrViECodec->SetSendCodec(videoChannel, videoCodec);
-            numberOfErrors += ViETest::TestError(error == 0,
-                                                 "ERROR: %s at line %d",
-                                                 __FUNCTION__, __LINE__);
-            break;
-        }
-    }
+    SetSendCodec(webrtc::kVideoCodecVP8, ptrViECodec, videoChannel,
+                 &numberOfErrors, kDoNotForceResolution, kDoNotForceResolution);
+
     memset(&videoCodec, 0, sizeof(videoCodec));
     error = ptrViECodec->GetSendCodec(videoChannel, videoCodec);
     assert(videoCodec.codecType == webrtc::kVideoCodecVP8);
 
-    for (int idx = 0; idx < numberOfCodecs; idx++)
-    {
-        error = ptrViECodec->GetCodec(idx, videoCodec);
-        numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                             __FUNCTION__, __LINE__);
-        if (videoCodec.codecType == webrtc::kVideoCodecI420)
-        {
-            error = ptrViECodec->SetSendCodec(videoChannel, videoCodec);
-            numberOfErrors += ViETest::TestError(error == 0,
-                                                 "ERROR: %s at line %d",
-                                                 __FUNCTION__, __LINE__);
-            break;
-        }
-    }
+    SetSendCodec(webrtc::kVideoCodecI420, ptrViECodec, videoChannel,
+                 &numberOfErrors, kDoNotForceResolution, kDoNotForceResolution);
     memset(&videoCodec, 0, sizeof(videoCodec));
     error = ptrViECodec->GetSendCodec(videoChannel, videoCodec);
     assert(videoCodec.codecType == webrtc::kVideoCodecI420);
@@ -1023,269 +1181,150 @@ int ViEAutoTest::ViECodecExternalCodecTest()
 #endif
 }
 
-void ViEAutoTest::RunCodecTestInternal(const tbInterfaces& interfaces,
-                                       int & numberOfErrors,
-                                       int captureId)
-{
-  webrtc::VideoEngine *ptrViE = interfaces.ptrViE;
-  webrtc::ViEBase *ptrViEBase = interfaces.ptrViEBase;
-  webrtc::ViECapture *ptrViECapture = interfaces.ptrViECapture;
-  webrtc::ViERender *ptrViERender = interfaces.ptrViERender;
-  webrtc::ViECodec *ptrViECodec = interfaces.ptrViECodec;
-  webrtc::ViERTP_RTCP *ptrViERtpRtcp = interfaces.ptrViERtpRtcp;
-  webrtc::ViENetwork *ptrViENetwork = interfaces.ptrViENetwork;
-  int videoChannel = -1;
+void ViEAutoTest::RunCodecTestInternal(
+    const tbInterfaces& interfaces,
+    int & number_of_errors,
+    int capture_id,
+    int forced_codec_width,
+    int forced_codec_height,
+    ViEToFileRenderer* local_file_renderer,
+    ViEToFileRenderer* remote_file_renderer) {
 
-  int error = ptrViEBase->CreateChannel(videoChannel);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-  error = ptrViECapture->ConnectCaptureDevice(captureId, videoChannel);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-  error = ptrViERtpRtcp->SetRTCPStatus(videoChannel,
-                                       webrtc::kRtcpCompound_RFC4585);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-  error = ptrViERtpRtcp->
-      SetKeyFrameRequestMethod(videoChannel,
+  webrtc::VideoEngine *video_engine_interface = interfaces.ptrViE;
+  webrtc::ViEBase *base_interface = interfaces.ptrViEBase;
+  webrtc::ViECapture *capture_interface = interfaces.ptrViECapture;
+  webrtc::ViERender *render_interface = interfaces.ptrViERender;
+  webrtc::ViECodec *codec_interface = interfaces.ptrViECodec;
+  webrtc::ViERTP_RTCP *rtcp_interface = interfaces.ptrViERtpRtcp;
+  webrtc::ViENetwork *network_interface = interfaces.ptrViENetwork;
+  int video_channel = -1;
+
+  int error = base_interface->CreateChannel(video_channel);
+  number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                         __FUNCTION__, __LINE__);
+  error = capture_interface->ConnectCaptureDevice(capture_id, video_channel);
+  number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                         __FUNCTION__, __LINE__);
+  error = rtcp_interface->SetRTCPStatus(video_channel,
+                                        webrtc::kRtcpCompound_RFC4585);
+  number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                         __FUNCTION__, __LINE__);
+  error = rtcp_interface->
+      SetKeyFrameRequestMethod(video_channel,
                                webrtc::kViEKeyFrameRequestPliRtcp);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-  error = ptrViERtpRtcp->SetTMMBRStatus(videoChannel, true);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-  error = ptrViERender->AddRenderer(captureId, _window1, 0, 0.0, 0.0, 1.0, 1.0);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-  error = ptrViERender->AddRenderer(videoChannel, _window2, 1, 0.0, 0.0,
-                                    1.0, 1.0);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-  error = ptrViERender->StartRender(captureId);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-  error = ptrViERender->StartRender(videoChannel);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-
-  //***************************************************************
-  //  Engine ready. Begin testing class
-  //***************************************************************
-  webrtc::VideoCodec videoCodec;
-  memset(&videoCodec, 0, sizeof (webrtc::VideoCodec));
-  for (int idx = 0; idx < ptrViECodec->NumberOfCodecs(); idx++)
-  {
-    error = ptrViECodec->GetCodec(idx, videoCodec);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+  number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                         __FUNCTION__, __LINE__);
+  error = rtcp_interface->SetTMMBRStatus(video_channel, true);
+  number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    if (videoCodec.codecType != webrtc::kVideoCodecH263
-        && videoCodec.codecType != webrtc::kVideoCodecI420)
-    {
-      videoCodec.width = 640;
-      videoCodec.height = 480;
-    }
-    if(videoCodec.codecType == webrtc::kVideoCodecI420)
-    {
-      videoCodec.width=176;
-      videoCodec.height=144;
-    }
-    error = ptrViECodec->SetReceiveCodec(videoChannel, videoCodec);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+  if (local_file_renderer && remote_file_renderer) {
+    RenderToFile(render_interface, capture_id, local_file_renderer);
+    RenderToFile(render_interface, video_channel, remote_file_renderer);
+  } else {
+    RenderInWindow(render_interface, &number_of_errors,
+                   capture_id, _window1, 0);
+    RenderInWindow(render_interface, &number_of_errors,
+                   video_channel, _window2, 1);
   }
-  for (int idx = 0; idx < ptrViECodec->NumberOfCodecs(); idx++)
-  {
-    error = ptrViECodec->GetCodec(idx, videoCodec);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    if (videoCodec.codecType == webrtc::kVideoCodecVP8)
-    {
-      error = ptrViECodec->SetSendCodec(videoChannel, videoCodec);
-      numberOfErrors += ViETest::TestError(error == 0,
-                                           "ERROR: %s at line %d",
+
+  // ***************************************************************
+  // Engine ready. Begin testing class
+  // ***************************************************************
+  webrtc::VideoCodec video_codec;
+  webrtc::VideoCodec vp8_codec;
+  memset(&video_codec, 0, sizeof (webrtc::VideoCodec));
+  memset(&vp8_codec,   0, sizeof (webrtc::VideoCodec));
+
+  // Set up all receive codecs. This sets up a mapping in the codec interface
+  // which makes it able to recognize all receive codecs based on payload type.
+  for (int idx = 0; idx < codec_interface->NumberOfCodecs(); idx++) {
+    error = codec_interface->GetCodec(idx, video_codec);
+    number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                            __FUNCTION__, __LINE__);
-      break;
-    }
+    SetSuitableResolution(&video_codec,
+                          forced_codec_width,
+                          forced_codec_height);
+
+    error = codec_interface->SetReceiveCodec(video_channel, video_codec);
+    number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                           __FUNCTION__, __LINE__);
   }
-  const char *ipAddress = "127.0.0.1";
-  const unsigned short rtpPort = 6000;
-  error = ptrViENetwork->SetLocalReceiver(videoChannel, rtpPort);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-  error = ptrViEBase->StartReceive(videoChannel);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-  error = ptrViENetwork->SetSendDestination(videoChannel, ipAddress, rtpPort);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-  error = ptrViEBase->StartSend(videoChannel);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-  //
-  // Make sure all codecs runs
-  //
-  {
-    webrtc::ViEImageProcess *ptrViEImageProcess =
-        webrtc::ViEImageProcess::GetInterface(ptrViE);
-    ViEAutotestCodecObserever codecObserver;
-    error = ptrViECodec->RegisterDecoderObserver(videoChannel, codecObserver);
-    numberOfErrors += ViETest::TestError(error == 0,
+  const char *ip_address = "127.0.0.1";
+  const unsigned short rtp_port = 6000;
+  error = network_interface->SetLocalReceiver(video_channel, rtp_port);
+  number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                         __FUNCTION__, __LINE__);
+  error = base_interface->StartReceive(video_channel);
+  number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                         __FUNCTION__, __LINE__);
+  error = network_interface->SetSendDestination(video_channel, ip_address,
+                                                rtp_port);
+  number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                         __FUNCTION__, __LINE__);
+  error = base_interface->StartSend(video_channel);
+  number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                         __FUNCTION__, __LINE__);
+  // Run all found codecs
+  webrtc::ViEImageProcess *image_process =
+      webrtc::ViEImageProcess::GetInterface(video_engine_interface);
+  number_of_errors += ViETest::TestError(error == 0,
                                          "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-    ViETest::Log("Loop through all codecs for %d seconds",
-                 KAutoTestSleepTimeMs / 1000);
-    for (int idx = 0; idx < ptrViECodec->NumberOfCodecs() - 2; idx++)
-    {
-      error = ptrViECodec->GetCodec(idx, videoCodec);
-      numberOfErrors += ViETest::TestError(error == 0,
+
+  ViETest::Log("Loop through all codecs for %d seconds",
+               KAutoTestSleepTimeMs / 1000);
+  for (int i = 0; i < codec_interface->NumberOfCodecs(); i++) {
+    error = codec_interface->GetCodec(i, video_codec);
+    number_of_errors += ViETest::TestError(error == 0,
                                            "ERROR: %s at line %d",
                                            __FUNCTION__, __LINE__);
-      if (videoCodec.codecType != webrtc::kVideoCodecMPEG4)
-      {
-        if(videoCodec.codecType == webrtc::kVideoCodecI420)
-        {
-          // Lower resolution to sockkets keep up.
-          videoCodec.width=176;
-          videoCodec.height=144;
-          videoCodec.maxFramerate=15;
-        }
-        error = ptrViECodec->SetSendCodec(videoChannel, videoCodec);
-        numberOfErrors += ViETest::TestError(error == 0,
-                                             "ERROR: %s at line %d",
-                                             __FUNCTION__, __LINE__);
-        ViETest::Log("\t %d. %s", idx, videoCodec.plName);
 
-        ViEAutoTestEffectFilter frameCounter;
-        error = ptrViEImageProcess->RegisterRenderEffectFilter(
-            videoChannel,
-            frameCounter);
-        numberOfErrors += ViETest::TestError(error == 0,
-                                             "ERROR: %s at line %d",
-                                             __FUNCTION__, __LINE__);
-
-        AutoTestSleep( KAutoTestSleepTimeMs);
-
-        // Verify we've received and decoded correct payload
-        numberOfErrors += ViETest::TestError(
-            codecObserver.incomingCodec.codecType
-            == videoCodec.codecType, "ERROR: %s at line %d",
-            __FUNCTION__, __LINE__);
-
-        int maxNumberOfRenderedFrames = videoCodec.maxFramerate
-            * KAutoTestSleepTimeMs / 1000;
-
-        if(videoCodec.codecType == webrtc::kVideoCodecI420)
-        {
-          // Due to that I420 needs a huge bandwidth, rate control can set
-          // frame rate very low. This happen since we use the same channel
-          // as we just tested with vp8.
-          numberOfErrors += ViETest::TestError(frameCounter.numFrames>0,
-                                               "ERROR: %s at line %d",
-                                               __FUNCTION__, __LINE__);
-        }
-        else
-        {
-
-#ifdef WEBRTC_ANDROID
-          // Special case to get the autotest to pass on some slow devices
-          numberOfErrors +=
-              ViETest::TestError(frameCounter.numFrames
-                                 > maxNumberOfRenderedFrames / 6,
-                                 "ERROR: %s at line %d",
-                                 __FUNCTION__, __LINE__);
-#else
-          numberOfErrors += ViETest::TestError(frameCounter.numFrames
-                                               > maxNumberOfRenderedFrames / 4,
-                                               "ERROR: %s at line %d",
-                                               __FUNCTION__, __LINE__);
-#endif
-        }
-
-        error = ptrViEImageProcess->DeregisterRenderEffectFilter(
-            videoChannel);
-        numberOfErrors += ViETest::TestError(error == 0,
-                                             "ERROR: %s at line %d",
-                                             __FUNCTION__, __LINE__);
-      }
-      else
-      {
-        ViETest::Log("\t %d. %s not tested", idx, videoCodec.plName);
-      }
+    if (video_codec.codecType == webrtc::kVideoCodecMPEG4 ||
+        video_codec.codecType == webrtc::kVideoCodecRED ||
+        video_codec.codecType == webrtc::kVideoCodecULPFEC) {
+      ViETest::Log("\t %d. %s not tested", i, video_codec.plName);
+    } else {
+      ViETest::Log("\t %d. %s", i, video_codec.plName);
+      SetSuitableResolution(&video_codec,
+                            forced_codec_width, forced_codec_height);
+      TestCodecImageProcess(video_codec, codec_interface, video_channel,
+                            &number_of_errors, image_process);
     }
-    ptrViEImageProcess->Release();
-    error = ptrViECodec->DeregisterDecoderObserver(videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0,
-                                         "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    ViETest::Log("Done!");
   }
-  //
-  // Callbacks
-  //
-  ViEAutotestCodecObserever codecObserver;
-  error = ptrViECodec->RegisterEncoderObserver(videoChannel, codecObserver);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-  error = ptrViECodec->RegisterDecoderObserver(videoChannel, codecObserver);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-  ViETest::Log("\nTesting codec callbacks...");
-  for (int idx = 0; idx < ptrViECodec->NumberOfCodecs(); idx++)
-  {
-    error = ptrViECodec->GetCodec(idx, videoCodec);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+  image_process->Release();
+
+  TestCodecCallbacks(base_interface, codec_interface, video_channel,
+                     &number_of_errors, forced_codec_width,
+                     forced_codec_height);
+
+  ViETest::Log("Done!");
+
+  // ***************************************************************
+  // Testing finished. Tear down Video Engine
+  // ***************************************************************
+  error = base_interface->StopSend(video_channel);
+  number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-    if (videoCodec.codecType == webrtc::kVideoCodecVP8)
-    {
-      error = ptrViECodec->SetSendCodec(videoChannel, videoCodec);
-      numberOfErrors += ViETest::TestError(error == 0,
-                                           "ERROR: %s at line %d",
+  error = base_interface->StopReceive(video_channel);
+  number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                         __FUNCTION__, __LINE__);
+  error = render_interface->StopRender(capture_id);
+    number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                            __FUNCTION__, __LINE__);
-      break;
-    }
-  }
-  AutoTestSleep (KAutoTestSleepTimeMs);
-  error = ptrViEBase->StopSend(videoChannel);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-  error = ptrViECodec->DeregisterEncoderObserver(videoChannel);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-  error = ptrViECodec->DeregisterDecoderObserver(videoChannel);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-  numberOfErrors += ViETest::TestError(codecObserver.incomingCodecCalled > 0,
-                                       "ERROR: %s at line %d", __FUNCTION__,
-                                       __LINE__);
-  numberOfErrors += ViETest::TestError(codecObserver.incomingRatecalled > 0,
-                                       "ERROR: %s at line %d", __FUNCTION__,
-                                       __LINE__);
-  numberOfErrors += ViETest::TestError(codecObserver.outgoingRatecalled > 0,
-                                       "ERROR: %s at line %d", __FUNCTION__,
-                                       __LINE__);
-  //***************************************************************
-  //  Testing finished. Tear down Video Engine
-  //***************************************************************
-  error = ptrViEBase->StopReceive(videoChannel);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-  error = ptrViEBase->StopSend(videoChannel); // Already stopped
-  numberOfErrors += ViETest::TestError(error == -1, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-  error = ptrViERender->StopRender(videoChannel);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-  error = ptrViERender->RemoveRenderer(captureId);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-  error = ptrViERender->RemoveRenderer(videoChannel);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-  error = ptrViECapture->DisconnectCaptureDevice(videoChannel);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-  error = ptrViEBase->DeleteChannel(videoChannel);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
+  error = render_interface->StopRender(video_channel);
+  number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                         __FUNCTION__, __LINE__);
+  error = render_interface->RemoveRenderer(capture_id);
+  number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                         __FUNCTION__, __LINE__);
+  error = render_interface->RemoveRenderer(video_channel);
+  number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                         __FUNCTION__, __LINE__);
+  error = capture_interface->DisconnectCaptureDevice(video_channel);
+  number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                         __FUNCTION__, __LINE__);
+  error = base_interface->DeleteChannel(video_channel);
+  number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                         __FUNCTION__, __LINE__);
 }

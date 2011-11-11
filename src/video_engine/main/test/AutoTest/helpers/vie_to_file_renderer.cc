@@ -1,0 +1,89 @@
+/*
+ *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *
+ *  Use of this source code is governed by a BSD-style license
+ *  that can be found in the LICENSE file in the root of the source
+ *  tree. An additional intellectual property rights grant can be found
+ *  in the file PATENTS.  All contributing project authors may
+ *  be found in the AUTHORS file in the root of the source tree.
+ */
+
+#include "vie_to_file_renderer.h"
+
+#include <assert.h>
+
+ViEToFileRenderer::ViEToFileRenderer()
+    : output_file_(NULL) {
+}
+
+ViEToFileRenderer::~ViEToFileRenderer() {
+}
+
+bool ViEToFileRenderer::PrepareForRendering(
+    const std::string& output_filename) {
+
+  assert(output_file_ == NULL);
+
+  output_file_ = std::fopen(output_filename.c_str(), "wb");
+  if (output_file_ == NULL) {
+    return false;
+  }
+
+  output_filename_ = output_filename;
+  return true;
+}
+
+void ViEToFileRenderer::StopRendering() {
+  assert(output_file_ != NULL);
+  std::fclose(output_file_);
+  output_file_ = NULL;
+}
+
+bool ViEToFileRenderer::SaveOutputFile(const std::string& prefix) {
+  assert(output_file_ == NULL && output_filename_ != "");
+  if (std::rename(output_filename_.c_str(),
+                  (prefix + output_filename_).c_str()) != 0) {
+    std::perror("Failed to rename output file");
+    return false;
+  }
+  // Forget about the file
+  output_filename_ = "";
+  return true;
+}
+
+bool ViEToFileRenderer::DeleteOutputFile() {
+  assert(output_file_ == NULL && output_filename_ != "");
+  if (std::remove(output_filename_.c_str()) != 0) {
+    std::perror("Failed to delete output file");
+    return false;
+  }
+  output_filename_ = "";
+  return true;
+}
+
+const std::string& ViEToFileRenderer::output_filename() const {
+  assert(output_file_ != NULL);
+
+  return output_filename_;
+}
+
+int ViEToFileRenderer::DeliverFrame(unsigned char *buffer,
+                                    int buffer_size,
+                                    unsigned int time_stamp) {
+  assert(output_file_ != NULL);
+
+  int written = std::fwrite(buffer, sizeof(unsigned char),
+                            buffer_size, output_file_);
+
+  if (written == buffer_size) {
+    return 0;
+  } else {
+    return -1;
+  }
+}
+
+int ViEToFileRenderer::FrameSizeChange(unsigned int width,
+                                       unsigned int height,
+                                       unsigned int number_of_streams) {
+  return 0;
+}

@@ -21,7 +21,7 @@
 #include "test_callbacks.h"
 #include "test_macros.h"
 #include "test_util.h"
-#include "video_metrics.h"
+#include "testsupport/metrics/video_metrics.h"
 #include "vp8.h" // for external codecs test
 
 
