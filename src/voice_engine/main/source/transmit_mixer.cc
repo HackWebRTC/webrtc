@@ -1158,13 +1158,9 @@ TransmitMixer::GenerateAudioFrame(const WebRtc_Word16 audioSamples[],
                  "samplesPerSec=%u, mixingFrequency=%u)",
                  nSamples, samplesPerSec, mixingFrequency);
 
-    ResamplerType resampType = (nChannels == 1)? 
-            kResamplerSynchronous : kResamplerSynchronousStereo;
-    
-
     if (_audioResampler.ResetIfNeeded(samplesPerSec,
                                         mixingFrequency,
-                                        resampType) != 0)
+                                        kResamplerSynchronous) != 0)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice, VoEId(_instanceId, -1),
                      "TransmitMixer::GenerateAudioFrame() unable to resample");
@@ -1172,7 +1168,7 @@ TransmitMixer::GenerateAudioFrame(const WebRtc_Word16 audioSamples[],
     }
     if (_audioResampler.Push(
         (WebRtc_Word16*) audioSamples,
-        nSamples * nChannels,
+        nSamples,
         _audioFrame._payloadData,
         AudioFrame::kMaxAudioFrameSizeSamples,
         (int&) _audioFrame._payloadDataLengthInSamples) == -1)
@@ -1182,7 +1178,6 @@ TransmitMixer::GenerateAudioFrame(const WebRtc_Word16 audioSamples[],
         return -1;
     }
 
-    _audioFrame._payloadDataLengthInSamples /= nChannels;
     _audioFrame._id = _instanceId;
     _audioFrame._timeStamp = -1;
     _audioFrame._frequencyInHz = mixingFrequency;

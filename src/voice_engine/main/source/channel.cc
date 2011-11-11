@@ -5898,7 +5898,7 @@ Channel::EncodeAndSend()
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::EncodeAndSend()");
 
-    assert(_audioFrame._audioChannel <= 2);
+    assert(_audioFrame._audioChannel == 1);
     if (_audioFrame._payloadDataLengthInSamples == 0)
     {
         WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId,_channelId),
