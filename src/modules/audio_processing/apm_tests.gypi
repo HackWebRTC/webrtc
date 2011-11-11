@@ -53,7 +53,7 @@
       'sources': [ 'test/process_test.cc', ],
     },
     {
-      'target_name': 'unpack',
+      'target_name': 'unpack_aecdump',
       'type': 'executable',
       'dependencies': [
         'audioproc_debug_proto',
