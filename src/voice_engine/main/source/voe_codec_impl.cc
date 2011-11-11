@@ -135,7 +135,7 @@ int VoECodecImpl::SetSendCodec(int channel, const CodecInst& codec)
                                        "SetSendCodec() invalid codec name");
         return -1;
     }
-    if (copyCodec.channels != 1)
+    if ((copyCodec.channels != 1) && (copyCodec.channels != 2))
     {
         _engineStatistics.SetLastError(VE_INVALID_ARGUMENT, kTraceError,
                                        "SetSendCodec() invalid number of "
@@ -166,6 +166,36 @@ int VoECodecImpl::SetSendCodec(int channel, const CodecInst& codec)
                                        "codec");
         return -1;
     }
+
+    // Need to check if we should change APM settings for mono/stereo.
+    // We'll check all channels (sending or not), so we don't have to
+    // check this again when starting/stopping sending.
+
+    voe::ScopedChannel sc2(_channelManager);
+    void* iterator(NULL);
+    channelPtr = sc2.GetFirstChannel(iterator);
+    int maxNumChannels = 1;
+    while (channelPtr != NULL)
+    {   
+        CodecInst tmpCdc;
+        channelPtr->GetSendCodec(tmpCdc);
+        if (tmpCdc.channels > maxNumChannels)
+           maxNumChannels = tmpCdc.channels;
+        
+        channelPtr = sc2.GetNextChannel(iterator);
+    }
+
+    bool available(false);
+    _audioDevicePtr->StereoRecordingIsAvailable(&available);
+    int recordingChannels = available ? 2 : 1;
+
+    if (_audioProcessingModulePtr->set_num_channels(recordingChannels, maxNumChannels) != 0)
+    {
+        _engineStatistics.SetLastError(VE_SOUNDCARD_ERROR, kTraceError,
+            "Init() failed to set APM channels for the send audio stream");
+        return -1;
+    }
+
 
     return 0;
 }
