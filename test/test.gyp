@@ -21,7 +21,6 @@
         ],
       },
       'dependencies': [
-        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
         '<(webrtc_root)/../testing/gtest.gyp:gtest',
         '<(webrtc_root)/../testing/gmock.gyp:gmock',
       ],
