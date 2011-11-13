@@ -73,7 +73,7 @@ class ApmTest : public ::testing::Test {
 };
 
 ApmTest::ApmTest()
-    : kResourcePath(webrtc::test::GetProjectRootPath() +
+    : kResourcePath(webrtc::test::ProjectRootPath() +
                     "test/data/audio_processing/"),
 #if defined(WEBRTC_APM_UNIT_TEST_FIXED_PROFILE)
       kOutputFileName(kResourcePath + "output_data_fixed.pb"),

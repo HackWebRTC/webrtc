@@ -569,7 +569,7 @@ WebRtc_Word32 AudioTransportImpl::NeedMorePlayData(
 ;
 
 FuncTestManager::FuncTestManager() :
-    _resourcePath(webrtc::test::GetProjectRootPath() +
+    _resourcePath(webrtc::test::ProjectRootPath() +
         "test/data/audio_device/"),
     _processThread(NULL),
     _audioDevice(NULL),

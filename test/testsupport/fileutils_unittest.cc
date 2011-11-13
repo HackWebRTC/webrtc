@@ -53,16 +53,16 @@ class FileUtilsTest: public testing::Test {
 // The test is not fully testing the implementation, since we cannot be sure
 // of where the executable was launched from.
 // The test will fail if the top level directory is not named "trunk".
-TEST_F(FileUtilsTest, GetProjectRootPathFromUnchangedWorkingDir) {
-  std::string path = GetProjectRootPath();
+TEST_F(FileUtilsTest, ProjectRootPathFromUnchangedWorkingDir) {
+  std::string path = ProjectRootPath();
   std::string expected_end = "trunk";
   expected_end = kPathDelimiter + expected_end + kPathDelimiter;
   ASSERT_EQ(path.length() - expected_end.length(), path.find(expected_end));
 }
 
 // Similar to the above test, but for the output dir
-TEST_F(FileUtilsTest, GetOutputDirFromUnchangedWorkingDir) {
-  std::string path = GetOutputDir();
+TEST_F(FileUtilsTest, OutputPathFromUnchangedWorkingDir) {
+  std::string path = OutputPath();
   std::string expected_end = "out";
   expected_end = kPathDelimiter + expected_end + kPathDelimiter;
   ASSERT_EQ(path.length() - expected_end.length(), path.find(expected_end));
@@ -71,38 +71,38 @@ TEST_F(FileUtilsTest, GetOutputDirFromUnchangedWorkingDir) {
 // Tests setting the current working directory to a directory three levels
 // deeper from the current one. Then testing that the project path returned
 // is still the same, when the function under test is called again.
-TEST_F(FileUtilsTest, GetProjectRootPathFromDeeperWorkingDir) {
-  std::string path = GetProjectRootPath();
+TEST_F(FileUtilsTest, ProjectRootPathFromDeeperWorkingDir) {
+  std::string path = ProjectRootPath();
   std::string original_working_dir = path;  // This is the correct project root
   // Change to a subdirectory path (the full path doesn't have to exist).
   path += "foo/bar/baz";
   chdir(path.c_str());
-  ASSERT_EQ(original_working_dir, GetProjectRootPath());
+  ASSERT_EQ(original_working_dir, ProjectRootPath());
 }
 
 // Similar to the above test, but for the output dir
-TEST_F(FileUtilsTest, GetOutputDirFromDeeperWorkingDir) {
-  std::string path = GetOutputDir();
+TEST_F(FileUtilsTest, OutputPathFromDeeperWorkingDir) {
+  std::string path = OutputPath();
   std::string original_working_dir = path;
   path += "foo/bar/baz";
   chdir(path.c_str());
-  ASSERT_EQ(original_working_dir, GetOutputDir());
+  ASSERT_EQ(original_working_dir, OutputPath());
 }
 
 // Tests with current working directory set to a directory higher up in the
 // directory tree than the project root dir. This case shall return a specified
 // error string as a directory (which will be an invalid path).
-TEST_F(FileUtilsTest, GetProjectRootPathFromRootWorkingDir) {
+TEST_F(FileUtilsTest, ProjectRootPathFromRootWorkingDir) {
   // Change current working dir to the root of the current file system
   // (this will always be "above" our project root dir).
   chdir(kPathDelimiter);
-  ASSERT_EQ(kCannotFindProjectRootDir, GetProjectRootPath());
+  ASSERT_EQ(kCannotFindProjectRootDir, ProjectRootPath());
 }
 
 // Similar to the above test, but for the output dir
-TEST_F(FileUtilsTest, GetOutputDirFromRootWorkingDir) {
+TEST_F(FileUtilsTest, OutputPathFromRootWorkingDir) {
   chdir(kPathDelimiter);
-  ASSERT_EQ(kCannotFindProjectRootDir, GetOutputDir());
+  ASSERT_EQ("./", OutputPath());
 }
 
 }  // namespace test

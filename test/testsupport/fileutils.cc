@@ -36,9 +36,10 @@ static const char* kPathDelimiter = "/";
 // The file we're looking for to identify the project root dir.
 static const char* kProjectRootFileName = "DEPS";
 static const char* kOutputDirName = "out";
+static const char* kOutputFallbackPath = "./";
 const char* kCannotFindProjectRootDir = "ERROR_CANNOT_FIND_PROJECT_ROOT_DIR";
 
-std::string GetProjectRootPath() {
+std::string ProjectRootPath() {
   char path_buffer[FILENAME_MAX];
   if (!GET_CURRENT_DIR(path_buffer, sizeof(path_buffer))) {
     fprintf(stderr, "Cannot get current directory!\n");
@@ -67,10 +68,10 @@ std::string GetProjectRootPath() {
   return kCannotFindProjectRootDir;
 }
 
-std::string GetOutputDir() {
-  std::string path = GetProjectRootPath();
+std::string OutputPath() {
+  std::string path = ProjectRootPath();
   if (path == kCannotFindProjectRootDir) {
-    return kCannotFindProjectRootDir;
+    return kOutputFallbackPath;
   }
   path += kOutputDirName;
   struct stat path_info = {0};
@@ -79,7 +80,7 @@ std::string GetOutputDir() {
     if (!S_ISDIR(path_info.st_mode)) {
       fprintf(stderr, "Path %s exists but is not a directory! Remove this file "
               "and re-run to create the output folder.\n", path.c_str());
-      return kCannotFindProjectRootDir;
+      return kOutputFallbackPath;
     }
   } else {
 #ifdef WIN32

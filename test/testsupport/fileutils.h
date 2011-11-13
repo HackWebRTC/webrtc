@@ -9,7 +9,7 @@
  */
 
 // File utilities for testing purposes.
-// The GetProjectRootPath() method is a convenient way of getting an absolute
+// The ProjectRootPath() method is a convenient way of getting an absolute
 // path to the project source tree root directory. Using this, it is easy to
 // refer to test resource files in a portable way.
 //
@@ -19,7 +19,7 @@
 //
 // Example use:
 // Assume we have the following code being used in a test source file:
-// const std::string kInputFile = webrtc::test::GetProjectRootPath() +
+// const std::string kInputFile = webrtc::test::ProjectRootPath() +
 //     "test/data/voice_engine/audio_long16.wav";
 // // Use the kInputFile for the tests...
 //
@@ -29,7 +29,7 @@
 // * Test project located in /home/user/webrtc/trunk/src/testproject
 // * Test binary compiled as:
 //   /home/user/webrtc/trunk/out/Debug/testproject_unittests
-// Then GetProjectRootPath() will return /home/user/webrtc/trunk/ no matter if
+// Then ProjectRootPath() will return /home/user/webrtc/trunk/ no matter if
 // the test binary is executed from standing in either of:
 // /home/user/webrtc/trunk
 // or
@@ -41,7 +41,7 @@
 // * Test project located in C:\Users\user\webrtc\trunk\src\testproject
 // * Test binary compiled as:
 //   C:\Users\user\webrtc\trunk\src\testproject\Debug\testproject_unittests.exe
-// Then GetProjectRootPath() will return C:\Users\user\webrtc\trunk\ when the
+// Then ProjectRootPath() will return C:\Users\user\webrtc\trunk\ when the
 // test binary is executed from inside Visual Studio.
 // It will also return the same path if the test is executed from a command
 // prompt standing in C:\Users\user\webrtc\trunk\src\testproject\Debug
@@ -51,7 +51,7 @@
 // * Test project located in /Users/user/webrtc/trunk/src/testproject
 // * Test binary compiled as:
 //   /Users/user/webrtc/trunk/xcodebuild/Debug/testproject_unittests
-// Then GetProjectRootPath() will return /Users/user/webrtc/trunk/ no matter if
+// Then ProjectRootPath() will return /Users/user/webrtc/trunk/ no matter if
 // the test binary is executed from standing in either of:
 // /Users/user/webrtc/trunk
 // or
@@ -66,7 +66,7 @@
 namespace webrtc {
 namespace test {
 
-// This is the "directory" returned if the GetProjectPath() function fails
+// This is the "directory" returned if the ProjectPath() function fails
 // to find the project root.
 extern const char* kCannotFindProjectRootDir;
 
@@ -86,20 +86,18 @@ extern const char* kCannotFindProjectRootDir;
 // WITH a trailing path delimiter.
 // If the project root is not found, the string specified by
 // kCannotFindProjectRootDir is returned.
-std::string GetProjectRootPath();
+std::string ProjectRootPath();
 
 // Creates and returns the absolute path to the output directory where log files
 // and other test artifacts should be put. The output directory is always a
 // directory named "out" at the top-level of the project, i.e. a subfolder to
-// the path returned by GetProjectRootPath().
+// the path returned by ProjectRootPath().
 //
-// Details described for GetProjectRootPath() apply here too.
+// Details described for ProjectRootPath() apply here too.
 //
-// Returns the absolute path to the output directory (named "out") below the
-// project root dir WITH a trailing path delimiter.
-// If the project root is not found, the string specified by
-// kCannotFindProjectRootDir is returned.
-std::string GetOutputDir();
+// Returns the path WITH a trailing path delimiter. If the project root is not
+// found, the current working directory ("./") is returned as a fallback.
+std::string OutputPath();
 
 }  // namespace test
 }  // namespace webrtc

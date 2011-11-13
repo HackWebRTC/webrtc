@@ -622,7 +622,7 @@ bool VoETestManager::Init()
 #if defined(WEBRTC_ANDROID)
     resourcePath_ = "/sdcard/";
 #else
-    resourcePath_ = webrtc::test::GetProjectRootPath();
+    resourcePath_ = webrtc::test::ProjectRootPath();
     if (resourcePath_ == webrtc::test::kCannotFindProjectRootDir)
     {
         TEST_LOG("Failed to get project root directory\n");

@@ -45,6 +45,7 @@
       'target_name': 'voe_cmd_test',
       'type': 'executable',
       'dependencies': [
+        '<(webrtc_root)/../test/test.gyp:test_support',
         '<(webrtc_root)/../testing/gtest.gyp:gtest',
         'voice_engine_core',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
