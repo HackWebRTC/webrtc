@@ -33,6 +33,7 @@
         # headers
         'video_processing_impl.h',
         'brightness_detection.h',
+	'brighten.h',
         'color_enhancement.h',
         'color_enhancement_private.h',
         'content_analysis.h',
@@ -45,6 +46,7 @@
         # sources
         'video_processing_impl.cc',
         'brightness_detection.cc',
+	'brighten.cc',
         'color_enhancement.cc',
         'content_analysis.cc',
         'deflickering.cc',

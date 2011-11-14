@@ -239,6 +239,21 @@ VideoProcessingModule::ColorEnhancement(WebRtc_UWord8* frame,
 }
 
 WebRtc_Word32
+VideoProcessingModule::Brighten(VideoFrame& frame, int delta)
+{
+    return Brighten(frame.Buffer(), frame.Width(), frame.Height(), delta);
+}
+
+WebRtc_Word32
+VideoProcessingModule::Brighten(WebRtc_UWord8* frame,
+                                    int width,
+                                    int height,
+                                    int delta)
+{
+    return Brighten(frame, width, height, delta);
+}
+
+WebRtc_Word32
 VideoProcessingModuleImpl::Deflickering(VideoFrame& frame,
                                             FrameStats& stats)
 {

@@ -199,6 +199,31 @@ public:
     static WebRtc_Word32 ColorEnhancement(VideoFrame& frame);
 
     /**
+       Increases/decreases the luminance value.
+
+       \param[in,out] frame
+           Pointer to the video frame buffer.
+
+       \param[in]     width
+           Frame width in pixels.
+
+       \param[in]     height
+           Frame height in pixels.
+
+      \param[in] delta
+           The amount to change the chrominance value of every single pixel.
+           Can be < 0 also.
+
+       \return 0 on success, -1 on failure.
+    */
+    static WebRtc_Word32 Brighten(WebRtc_UWord8* frame,
+                                  int width, int height, int delta);
+    /**
+       \overload
+    */
+    static WebRtc_Word32 Brighten(VideoFrame& frame, int delta);
+
+    /**
        Detects and removes camera flicker from a video stream. Every frame from the
        stream must be passed in. A frame will only be altered if flicker has been
        detected. Has a fixed-point implementation.
@@ -376,4 +401,3 @@ public:
 } //namespace
 
 #endif
-
