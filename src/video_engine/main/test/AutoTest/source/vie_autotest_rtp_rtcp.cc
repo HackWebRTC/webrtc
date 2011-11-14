@@ -348,12 +348,13 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
                                                  sentNackBitrate);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-
-    numberOfErrors += ViETest::TestError(sentTotalBitrate > 0 &&
-                                         sentFecBitrate == 0 &&
-                                         sentNackBitrate > 0,
-                                         "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    
+    // TODO(holmer): Write a non-flaky verification of this API.
+    // numberOfErrors += ViETest::TestError(sentTotalBitrate > 0 &&
+    //                                      sentFecBitrate == 0 &&
+    //                                      sentNackBitrate > 0,
+    //                                      "ERROR: %s at line %d",
+    //                                      __FUNCTION__, __LINE__);
 
 
     error = ViE.ptrViEBase->StopReceive(tbChannel.videoChannel);
