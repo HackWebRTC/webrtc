@@ -95,6 +95,14 @@
       '..','../..', # common_types.h, typedefs.h
     ],
     'conditions': [
+      ['build_with_chromium==1', {
+        'defines': [
+          # This turns off tracing in webrtc to reduce the noise from
+          # the Chrome memory bots. Down the line we will enable WebRTC
+          # tracing for Chromium and remove this.
+          'WEBRTC_NO_TRACE',
+         ],
+      }],
       ['OS=="linux"', {
         'defines': [
           'WEBRTC_TARGET_PC',
