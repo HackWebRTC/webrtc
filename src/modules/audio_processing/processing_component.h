@@ -18,16 +18,6 @@
 namespace webrtc {
 class AudioProcessingImpl;
 
-/*template <class T>
-class ComponentHandle {
-  public:
-    ComponentHandle();
-    virtual ~ComponentHandle();
-
-    virtual int Create() = 0;
-    virtual T* ptr() const = 0;
-};*/
-
 class ProcessingComponent {
  public:
   explicit ProcessingComponent(const AudioProcessingImpl* apm);
@@ -37,10 +27,11 @@ class ProcessingComponent {
   virtual int Destroy();
   virtual int get_version(char* version, int version_len_bytes) const = 0;
 
+  bool is_component_enabled() const;
+
  protected:
   virtual int Configure();
   int EnableComponent(bool enable);
-  bool is_component_enabled() const;
   void* handle(int index) const;
   int num_handles() const;
 

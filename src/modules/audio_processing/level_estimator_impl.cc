@@ -10,73 +10,78 @@
 
 #include "level_estimator_impl.h"
 
-#include <cassert>
-#include <cstring>
-
-#include "critical_section_wrapper.h"
+#include <assert.h>
+#include <math.h>
+#include <string.h>
 
 #include "audio_processing_impl.h"
 #include "audio_buffer.h"
-
-// TODO(ajm): implement the underlying level estimator component.
+#include "critical_section_wrapper.h"
 
 namespace webrtc {
-
-typedef void Handle;
-
 namespace {
-/*int EstimateLevel(AudioBuffer* audio, Handle* my_handle) {
-  assert(audio->samples_per_split_channel() <= 160);
 
-  WebRtc_Word16* mixed_data = audio->low_pass_split_data(0);
-  if (audio->num_channels() > 1) {
-    audio->CopyAndMixLowPass(1);
-    mixed_data = audio->mixed_low_pass_data(0);
+const double kMaxSquaredLevel = 32768.0 * 32768.0;
+
+class Level {
+ public:
+  static const int kMinLevel = 127;
+
+  Level()
+    : sum_square_(0.0),
+      sample_count_(0) {}
+  ~Level() {}
+
+  void Init() {
+    sum_square_ = 0.0;
+    sample_count_ = 0;
   }
 
-  int err = UpdateLvlEst(my_handle,
-                         mixed_data,
-                         audio->samples_per_split_channel());
-  if (err != AudioProcessing::kNoError) {
-    return GetHandleError(my_handle);
+  void Process(int16_t* data, int length) {
+    assert(data != NULL);
+    assert(length > 0);
+    sum_square_ += SumSquare(data, length);
+    sample_count_ += length;
   }
 
-  return AudioProcessing::kNoError;
-}
-
-int GetMetricsLocal(Handle* my_handle, LevelEstimator::Metrics* metrics) {
-  level_t levels;
-  memset(&levels, 0, sizeof(levels));
-
-  int err = ExportLevels(my_handle, &levels, 2);
-  if (err != AudioProcessing::kNoError) {
-    return err;
+  void ProcessMuted(int length) {
+    assert(length > 0);
+    sample_count_ += length;
   }
-  metrics->signal.instant = levels.instant;
-  metrics->signal.average = levels.average;
-  metrics->signal.maximum = levels.max;
-  metrics->signal.minimum = levels.min;
 
-  err = ExportLevels(my_handle, &levels, 1);
-  if (err != AudioProcessing::kNoError) {
-    return err;
+  int RMS() {
+    if (sample_count_ == 0 || sum_square_ == 0.0) {
+      Init();
+      return kMinLevel;
+    }
+
+    // Normalize by the max level.
+    double rms = sum_square_ / (sample_count_ * kMaxSquaredLevel);
+    // 20log_10(x^0.5) = 10log_10(x)
+    rms = 10 * log10(rms);
+    if (rms > 0)
+      rms = 0;
+    else if (rms < -kMinLevel)
+      rms = -kMinLevel;
+
+    rms = -rms;
+    Init();
+    return static_cast<int>(rms + 0.5);
   }
-  metrics->speech.instant = levels.instant;
-  metrics->speech.average = levels.average;
-  metrics->speech.maximum = levels.max;
-  metrics->speech.minimum = levels.min;
 
-  err = ExportLevels(my_handle, &levels, 0);
-  if (err != AudioProcessing::kNoError) {
-    return err;
+ private:
+  static double SumSquare(int16_t* data, int length) {
+    double sum_square = 0.0;
+    for (int i = 0; i < length; ++i) {
+      double data_d = static_cast<double>(data[i]);
+      sum_square += data_d * data_d;
+    }
+    return sum_square;
   }
-  metrics->noise.instant = levels.instant;
-  metrics->noise.average = levels.average;
-  metrics->noise.maximum = levels.max;
-  metrics->noise.minimum = levels.min;
 
-  return AudioProcessing::kNoError;
-}*/
+  double sum_square_;
+  int sample_count_;
+};
 }  // namespace
 
 LevelEstimatorImpl::LevelEstimatorImpl(const AudioProcessingImpl* apm)
@@ -85,52 +90,44 @@ LevelEstimatorImpl::LevelEstimatorImpl(const AudioProcessingImpl* apm)
 
 LevelEstimatorImpl::~LevelEstimatorImpl() {}
 
-int LevelEstimatorImpl::AnalyzeReverseStream(AudioBuffer* /*audio*/) {
-  return apm_->kUnsupportedComponentError;
-  /*if (!is_component_enabled()) {
+int LevelEstimatorImpl::ProcessStream(AudioBuffer* audio) {
+  if (!is_component_enabled()) {
     return apm_->kNoError;
   }
 
-  return EstimateLevel(audio, static_cast<Handle*>(handle(1)));*/
-}
-
-int LevelEstimatorImpl::ProcessCaptureAudio(AudioBuffer* /*audio*/) {
-  return apm_->kUnsupportedComponentError;
-  /*if (!is_component_enabled()) {
+  Level* level = static_cast<Level*>(handle(0));
+  if (audio->is_muted()) {
+    level->ProcessMuted(audio->samples_per_channel());
     return apm_->kNoError;
   }
 
-  return EstimateLevel(audio, static_cast<Handle*>(handle(0)));*/
+  int16_t* mixed_data = audio->data(0);
+  if (audio->num_channels() > 1) {
+    audio->CopyAndMix(1);
+    mixed_data = audio->mixed_data(0);
+  }
+
+  level->Process(mixed_data, audio->samples_per_channel());
+
+  return apm_->kNoError;
 }
 
-int LevelEstimatorImpl::Enable(bool /*enable*/) {
+int LevelEstimatorImpl::Enable(bool enable) {
   CriticalSectionScoped crit_scoped(*apm_->crit());
-  return apm_->kUnsupportedComponentError;
-  //return EnableComponent(enable);
+  return EnableComponent(enable);
 }
 
 bool LevelEstimatorImpl::is_enabled() const {
   return is_component_enabled();
 }
 
-int LevelEstimatorImpl::GetMetrics(LevelEstimator::Metrics* /*metrics*/,
-                                   LevelEstimator::Metrics* /*reverse_metrics*/) {
-  return apm_->kUnsupportedComponentError;
-  /*if (!is_component_enabled()) {
+int LevelEstimatorImpl::RMS() {
+  if (!is_component_enabled()) {
     return apm_->kNotEnabledError;
   }
 
-  int err = GetMetricsLocal(static_cast<Handle*>(handle(0)), metrics);
-  if (err != apm_->kNoError) {
-    return err;
-  }
-
-  err = GetMetricsLocal(static_cast<Handle*>(handle(1)), reverse_metrics);
-  if (err != apm_->kNoError) {
-    return err;
-  }
-
-  return apm_->kNoError;*/
+  Level* level = static_cast<Level*>(handle(0));
+  return level->RMS();
 }
 
 int LevelEstimatorImpl::get_version(char* version,
@@ -141,37 +138,30 @@ int LevelEstimatorImpl::get_version(char* version,
 }
 
 void* LevelEstimatorImpl::CreateHandle() const {
-  Handle* handle = NULL;
-  /*if (CreateLvlEst(&handle) != apm_->kNoError) {
-    handle = NULL;
-  } else {
-    assert(handle != NULL);
-  }*/
-
-  return handle;
+  return new Level;
 }
 
-int LevelEstimatorImpl::DestroyHandle(void* /*handle*/) const {
-  return apm_->kUnsupportedComponentError;
-  //return FreeLvlEst(static_cast<Handle*>(handle));
+int LevelEstimatorImpl::DestroyHandle(void* handle) const {
+  assert(handle != NULL);
+  Level* level = static_cast<Level*>(handle);
+  delete level;
+  return apm_->kNoError;
 }
 
-int LevelEstimatorImpl::InitializeHandle(void* /*handle*/) const {
-  return apm_->kUnsupportedComponentError;
-  /*const double kIntervalSeconds = 1.5;
-  return InitLvlEst(static_cast<Handle*>(handle),
-                    apm_->sample_rate_hz(),
-                    kIntervalSeconds);*/
+int LevelEstimatorImpl::InitializeHandle(void* handle) const {
+  assert(handle != NULL);
+  Level* level = static_cast<Level*>(handle);
+  level->Init();
+
+  return apm_->kNoError;
 }
 
 int LevelEstimatorImpl::ConfigureHandle(void* /*handle*/) const {
-  return apm_->kUnsupportedComponentError;
-  //return apm_->kNoError;
+  return apm_->kNoError;
 }
 
 int LevelEstimatorImpl::num_handles_required() const {
-  return apm_->kUnsupportedComponentError;
-  //return 2;
+  return 1;
 }
 
 int LevelEstimatorImpl::GetHandleError(void* handle) const {

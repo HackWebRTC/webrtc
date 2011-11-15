@@ -262,22 +262,6 @@ int VoERTP_RTCPImpl::SetRTPAudioLevelIndicationStatus(int channel,
         return -1;
     }
 
-    // Set AudioProcessingModule level-metric mode based on user input.
-    // Note that the Level Estimator component is currently not supported
-    if (_audioProcessingModulePtr->level_estimator()->Enable(enable) != 0)
-    {
-        _engineStatistics.SetLastError(
-            VE_APM_ERROR, kTraceError,
-            "SetRTPAudioLevelIndicationStatus() failed to set level-metric"
-            "mode");
-        return -1;
-    }
-
-    // Ensure that the transmit mixer reads the audio-level metric for each
-    // 10ms packet and copies the same value to all active channels.
-    // The metric is derived within the AudioProcessingModule.
-    _transmitMixerPtr->SetRTPAudioLevelIndicationStatus(enable);
-
     // Set state and ID for the specified channel.
     voe::ScopedChannel sc(_channelManager, channel);
     voe::Channel* channelPtr = sc.ChannelPtr();

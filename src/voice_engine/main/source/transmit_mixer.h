@@ -69,10 +69,6 @@ public:
 
     WebRtc_Word32 StopSend();
 
-
-    void SetRTPAudioLevelIndicationStatus(bool enable)
-        { _includeAudioLevelIndication = enable; }
-
     // VoEDtmf
     void UpdateMuteMicrophoneTime(const WebRtc_UWord32 lengthMs);
 
@@ -217,7 +213,6 @@ private:
     WebRtc_Word32 _remainingMuteMicTimeMs;
     int _mixingFrequency;
     bool _includeAudioLevelIndication;
-    WebRtc_UWord8 _audioLevel_dBov;
 };
 
 #endif // WEBRTC_VOICE_ENGINE_TRANSMIT_MIXER_H

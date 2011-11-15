@@ -81,6 +81,9 @@ class AudioProcessingImpl : public AudioProcessing {
  private:
   int WriteMessageToDebugFile();
   int WriteInitMessage();
+  bool stream_data_changed() const;
+  bool synthesis_needed(bool stream_data_changed) const;
+  bool analysis_needed(bool stream_data_changed) const;
 
   int id_;
 

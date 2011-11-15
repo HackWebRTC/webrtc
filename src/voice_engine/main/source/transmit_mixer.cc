@@ -195,9 +195,7 @@ TransmitMixer::TransmitMixer(const WebRtc_UWord32 instanceId) :
     _externalMediaCallbackPtr(NULL),
     _mute(false),
     _remainingMuteMicTimeMs(0),
-    _mixingFrequency(0),
-    _includeAudioLevelIndication(false),
-    _audioLevel_dBov(100)
+    _mixingFrequency(0)
 {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId, -1),
                  "TransmitMixer::TransmitMixer() - ctor");
@@ -371,7 +369,6 @@ TransmitMixer::PrepareDemux(const WebRtc_Word8* audioSamples,
     if (_mute)
     {
         AudioFrameOperations::Mute(_audioFrame);
-        _audioLevel_dBov = 100;
     }
 
     // --- Measure audio level of speech after APM processing
@@ -442,7 +439,7 @@ TransmitMixer::DemuxAndMix()
             // load temporary audioframe with current (mixed) microphone signal
             AudioFrame tmpAudioFrame = _audioFrame;
 
-            channelPtr->Demultiplex(tmpAudioFrame, _audioLevel_dBov);
+            channelPtr->Demultiplex(tmpAudioFrame);
             channelPtr->PrepareEncodeAndSend(_mixingFrequency);
         }
         channelPtr = sc.GetNextChannel(iterator);
@@ -1322,30 +1319,6 @@ WebRtc_Word32 TransmitMixer::APMProcessStream(
 
     // Store new capture level (only updated when analog AGC is enabled)
     _captureLevel = captureLevel;
-
-    // Store current audio level (in dBov) if audio-level-indication
-    // functionality has been enabled. This value will be include in an
-    // extended RTP header by the RTP module.
-    if (_includeAudioLevelIndication)
-    {
-        if (_audioProcessingModulePtr->level_estimator()->is_enabled())
-        {
-            LevelEstimator::Metrics metrics;
-            LevelEstimator::Metrics reverseMetrics;
-            _audioProcessingModulePtr->level_estimator()->GetMetrics(
-                &metrics,
-                &reverseMetrics);
-            const WebRtc_Word16 absAudioLevel_dBov =
-                WEBRTC_ABS(metrics.speech.instant);
-            _audioLevel_dBov = static_cast<WebRtc_UWord8> (absAudioLevel_dBov);
-        } else
-        {
-            WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
-                       "TransmitMixer::APMProcessStream() failed to "
-                       "retrieve level metrics");
-            _audioLevel_dBov = 100;
-        }
-    }
 
     // Log notifications
     if (_audioProcessingModulePtr->gain_control()->stream_is_saturated())

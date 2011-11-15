@@ -12,6 +12,7 @@
 #define WEBRTC_MODULES_AUDIO_PROCESSING_MAIN_SOURCE_AUDIO_BUFFER_H_
 
 #include "module_common_types.h"
+#include "scoped_ptr.h"
 #include "typedefs.h"
 
 namespace webrtc {
@@ -28,23 +29,30 @@ class AudioBuffer {
   int samples_per_channel() const;
   int samples_per_split_channel() const;
 
-  WebRtc_Word16* data(int channel) const;
-  WebRtc_Word16* low_pass_split_data(int channel) const;
-  WebRtc_Word16* high_pass_split_data(int channel) const;
-  WebRtc_Word16* mixed_low_pass_data(int channel) const;
-  WebRtc_Word16* low_pass_reference(int channel) const;
+  int16_t* data(int channel) const;
+  int16_t* low_pass_split_data(int channel) const;
+  int16_t* high_pass_split_data(int channel) const;
+  int16_t* mixed_data(int channel) const;
+  int16_t* mixed_low_pass_data(int channel) const;
+  int16_t* low_pass_reference(int channel) const;
 
-  WebRtc_Word32* analysis_filter_state1(int channel) const;
-  WebRtc_Word32* analysis_filter_state2(int channel) const;
-  WebRtc_Word32* synthesis_filter_state1(int channel) const;
-  WebRtc_Word32* synthesis_filter_state2(int channel) const;
+  int32_t* analysis_filter_state1(int channel) const;
+  int32_t* analysis_filter_state2(int channel) const;
+  int32_t* synthesis_filter_state1(int channel) const;
+  int32_t* synthesis_filter_state2(int channel) const;
 
   void set_activity(AudioFrame::VADActivity activity);
-  AudioFrame::VADActivity activity();
+  AudioFrame::VADActivity activity() const;
+
+  bool is_muted() const;
 
   void DeinterleaveFrom(AudioFrame* audioFrame);
   void InterleaveTo(AudioFrame* audioFrame) const;
+  // If |data_changed| is false, only the non-audio data members will be copied
+  // to |frame|.
+  void InterleaveTo(AudioFrame* frame, bool data_changed) const;
   void Mix(int num_mixed_channels);
+  void CopyAndMix(int num_mixed_channels);
   void CopyAndMixLowPass(int num_mixed_channels);
   void CopyLowPassToReference();
 
@@ -53,18 +61,21 @@ class AudioBuffer {
   int num_channels_;
   int num_mixed_channels_;
   int num_mixed_low_pass_channels_;
+  // Whether the original data was replaced with mixed data.
+  bool data_was_mixed_;
   const int samples_per_channel_;
   int samples_per_split_channel_;
   bool reference_copied_;
   AudioFrame::VADActivity activity_;
+  bool is_muted_;
 
-  WebRtc_Word16* data_;
-  // TODO(andrew): use vectors here.
-  AudioChannel* channels_;
-  SplitAudioChannel* split_channels_;
+  int16_t* data_;
+  scoped_array<AudioChannel> channels_;
+  scoped_array<SplitAudioChannel> split_channels_;
+  scoped_array<AudioChannel> mixed_channels_;
   // TODO(andrew): improve this, we don't need the full 32 kHz space here.
-  AudioChannel* mixed_low_pass_channels_;
-  AudioChannel* low_pass_reference_channels_;
+  scoped_array<AudioChannel> mixed_low_pass_channels_;
+  scoped_array<AudioChannel> low_pass_reference_channels_;
 };
 }  // namespace webrtc
 

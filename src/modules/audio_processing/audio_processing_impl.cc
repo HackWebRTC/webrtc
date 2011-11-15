@@ -271,7 +271,7 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
   if (debug_file_->Open()) {
     event_msg_->set_type(audioproc::Event::STREAM);
     audioproc::Stream* msg = event_msg_->mutable_stream();
-    const size_t data_size = sizeof(WebRtc_Word16) *
+    const size_t data_size = sizeof(int16_t) *
                              frame->_payloadDataLengthInSamples *
                              frame->_audioChannel;
     msg->set_input_data(frame->_payloadData, data_size);
@@ -285,12 +285,12 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
   // TODO(ajm): experiment with mixing and AEC placement.
   if (num_output_channels_ < num_input_channels_) {
     capture_audio_->Mix(num_output_channels_);
-
     frame->_audioChannel = num_output_channels_;
   }
 
-  if (sample_rate_hz_ == kSampleRate32kHz) {
-    for (int i = 0; i < num_input_channels_; i++) {
+  bool data_changed = stream_data_changed();
+  if (analysis_needed(data_changed)) {
+    for (int i = 0; i < num_output_channels_; i++) {
       // Split into a low and high band.
       SplittingFilterAnalysis(capture_audio_->data(i),
                               capture_audio_->low_pass_split_data(i),
@@ -340,12 +340,7 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
     return err;
   }
 
-  //err = level_estimator_->ProcessCaptureAudio(capture_audio_);
-  //if (err != kNoError) {
-  //  return err;
-  //}
-
-  if (sample_rate_hz_ == kSampleRate32kHz) {
+  if (synthesis_needed(data_changed)) {
     for (int i = 0; i < num_output_channels_; i++) {
       // Recombine low and high bands.
       SplittingFilterSynthesis(capture_audio_->low_pass_split_data(i),
@@ -356,11 +351,17 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
     }
   }
 
-  capture_audio_->InterleaveTo(frame);
+  // The level estimator operates on the recombined data.
+  err = level_estimator_->ProcessStream(capture_audio_);
+  if (err != kNoError) {
+    return err;
+  }
+
+  capture_audio_->InterleaveTo(frame, data_changed);
 
   if (debug_file_->Open()) {
     audioproc::Stream* msg = event_msg_->mutable_stream();
-    const size_t data_size = sizeof(WebRtc_Word16) *
+    const size_t data_size = sizeof(int16_t) *
                              frame->_payloadDataLengthInSamples *
                              frame->_audioChannel;
     msg->set_output_data(frame->_payloadData, data_size);
@@ -396,7 +397,7 @@ int AudioProcessingImpl::AnalyzeReverseStream(AudioFrame* frame) {
   if (debug_file_->Open()) {
     event_msg_->set_type(audioproc::Event::REVERSE_STREAM);
     audioproc::ReverseStream* msg = event_msg_->mutable_reverse_stream();
-    const size_t data_size = sizeof(WebRtc_Word16) *
+    const size_t data_size = sizeof(int16_t) *
                              frame->_payloadDataLengthInSamples *
                              frame->_audioChannel;
     msg->set_data(frame->_payloadData, data_size);
@@ -435,11 +436,6 @@ int AudioProcessingImpl::AnalyzeReverseStream(AudioFrame* frame) {
   if (err != kNoError) {
     return err;
   }
-
-  //err = level_estimator_->AnalyzeReverseStream(render_audio_);
-  //if (err != kNoError) {
-  //  return err;
-  //}
 
   was_stream_delay_set_ = false;
   return err;  // TODO(ajm): this is for returning warnings; necessary?
@@ -647,5 +643,45 @@ int AudioProcessingImpl::WriteInitMessage() {
   }
 
   return kNoError;
+}
+
+bool AudioProcessingImpl::stream_data_changed() const {
+  int enabled_count = 0;
+  std::list<ProcessingComponent*>::const_iterator it;
+  for (it = component_list_.begin(); it != component_list_.end(); it++) {
+    if ((*it)->is_component_enabled()) {
+      enabled_count++;
+    }
+  }
+
+  // Data is unchanged if no components are enabled, or if only level_estimator_
+  // or voice_detection_ is enabled.
+  if (enabled_count == 0) {
+    return false;
+  } else if (enabled_count == 1) {
+    if (level_estimator_->is_enabled() || voice_detection_->is_enabled()) {
+      return false;
+    }
+  } else if (enabled_count == 2) {
+    if (level_estimator_->is_enabled() && voice_detection_->is_enabled()) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool AudioProcessingImpl::synthesis_needed(bool stream_data_changed) const {
+  return (stream_data_changed && sample_rate_hz_ == kSampleRate32kHz);
+}
+
+bool AudioProcessingImpl::analysis_needed(bool stream_data_changed) const {
+  if (!stream_data_changed && !voice_detection_->is_enabled()) {
+    // Only level_estimator_ is enabled.
+    return false;
+  } else if (sample_rate_hz_ == kSampleRate32kHz) {
+    // Something besides level_estimator_ is enabled, and we have super-wb.
+    return true;
+  }
+  return false;
 }
 }  // namespace webrtc

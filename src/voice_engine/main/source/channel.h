@@ -11,28 +11,28 @@
 #ifndef WEBRTC_VOICE_ENGINE_CHANNEL_H
 #define WEBRTC_VOICE_ENGINE_CHANNEL_H
 
-#include "voe_network.h"
-
 #include "audio_coding_module.h"
+#include "audio_conference_mixer_defines.h"
 #include "common_types.h"
-#include "shared_data.h"
+#include "dtmf_inband.h"
+#include "dtmf_inband_queue.h"
+#include "file_player.h"
+#include "file_recorder.h"
+#include "level_indicator.h"
+#include "resampler.h"
 #include "rtp_rtcp.h"
+#include "scoped_ptr.h"
+#include "shared_data.h"
 #include "voe_audio_processing.h"
+#include "voe_network.h"
 #include "voice_engine_defines.h"
 
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
 #include "udp_transport.h"
 #endif
-#include "audio_conference_mixer_defines.h"
-#include "file_player.h"
-#include "file_recorder.h"
 #ifdef WEBRTC_SRTP
 #include "SrtpModule.h"
 #endif
-#include "dtmf_inband.h"
-#include "dtmf_inband_queue.h"
-#include "level_indicator.h"
-#include "resampler.h"
 #ifdef WEBRTC_DTMF_DETECTION
 #include "voe_dtmf.h" // TelephoneEventDetectionMethods, TelephoneEventObserver
 #endif
@@ -513,8 +513,7 @@ public:
         return _socketTransportModule.ReceiveSocketsInitialized();
     };
 #endif
-    WebRtc_UWord32 Demultiplex(const AudioFrame& audioFrame,
-                               const WebRtc_UWord8 audioLevel_dBov);
+    WebRtc_UWord32 Demultiplex(const AudioFrame& audioFrame);
     WebRtc_UWord32 PrepareEncodeAndSend(int mixingFrequency);
     WebRtc_UWord32 EncodeAndSend();
 
@@ -590,6 +589,7 @@ private:
     CriticalSectionWrapper* _callbackCritSectPtr; // owned by base
     Transport* _transportPtr; // WebRtc socket or external transport
     Encryption* _encryptionPtr; // WebRtc SRTP or external encryption
+    scoped_ptr<AudioProcessing> _rtpAudioProc;
     AudioProcessing* _rxAudioProcessingModulePtr; // far end AudioProcessing
 #ifdef WEBRTC_DTMF_DETECTION
     VoETelephoneEventObserver* _telephoneEventDetectionPtr;

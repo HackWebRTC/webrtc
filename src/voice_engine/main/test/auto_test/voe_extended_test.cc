@@ -6905,6 +6905,67 @@ int VoEExtendedTest::TestNetwork()
 //  VoEExtendedTest::TestRTP_RTCP
 // ----------------------------------------------------------------------------
 
+// Used to validate packets during the RTP audio level indication test.
+class RTPAudioTransport : public Transport {
+ public:
+
+  RTPAudioTransport()
+    : mute_(false) {}
+
+  virtual ~RTPAudioTransport() {}
+
+  void set_mute(bool mute) { mute_ = mute; }
+  bool mute() const { return mute_; }
+
+  // TODO(andrew): use proper error checks here rather than asserts.
+  virtual int SendPacket(int channel, const void* data, int length) {
+    const uint8_t* packet = static_cast<const uint8_t*>(data);
+
+    // Extension bit.
+    assert(packet[0] & 0x10);
+    int index = 12;  // Assume standard RTP header.
+    // Header extension ID
+    assert(packet[index++] == 0xBE);
+    assert(packet[index++] == 0xDE);
+    // Header extension length
+    assert(packet[index++] == 0x00);
+    assert(packet[index++] == 0x01);
+
+    // User-defined ID.
+    assert(((packet[index] & 0xf0) >> 4) == 1);
+    // Length
+    assert((packet[index++] & 0x0f) == 0);
+
+    int vad = packet[index] >> 7;
+    int level = packet[index] & 0x7f;
+    if (channel == 0) {
+      printf("%d    -%d\n", vad, level);
+    } else if (channel == 1) {
+      printf("             %d    -%d\n", vad, level);
+    } else {
+      assert(false);
+    }
+
+    if (mute_) {
+      assert(vad == 0);
+      assert(level == 127);
+    } else {
+      assert(vad == 0 || vad == 1);
+      assert(level >= 0 && level <= 127);
+    }
+
+    return 0;
+  }
+
+  virtual int SendRTCPPacket(int /*channel*/, const void* /*data*/,
+                             int /*length*/) {
+    return 0;
+  }
+
+ private:
+  bool mute_;
+};
+
 int VoEExtendedTest::TestRTP_RTCP()
 {
     PrepareTest("RTP_RTCP");
@@ -6912,6 +6973,9 @@ int VoEExtendedTest::TestRTP_RTCP()
     VoEBase* base = _mgr.BasePtr();
     VoEFile* file = _mgr.FilePtr();
     VoERTP_RTCP* rtp_rtcp = _mgr.RTP_RTCPPtr();
+    VoENetwork* network = _mgr.NetworkPtr();
+    VoEVolumeControl* volume = _mgr.VolumeControlPtr();
+    VoECodec* codec = _mgr.CodecPtr();
 
     XRTPObserver rtpObserver;
 
@@ -6961,8 +7025,6 @@ int VoEExtendedTest::TestRTP_RTCP()
     TEST_ERROR(VE_INVALID_ARGUMENT);
     TEST_MUSTPASS(-1 != rtp_rtcp->SetRTPAudioLevelIndicationStatus(0, false, 15));
     MARK();
-    // TODO(bjornv): Activate tests below when APM supports level estimation.
-    /*
     TEST_MUSTPASS(-1 != rtp_rtcp->SetRTPAudioLevelIndicationStatus(1, true, 5));
     MARK();
     TEST_ERROR(VE_CHANNEL_NOT_VALID);
@@ -6986,10 +7048,70 @@ int VoEExtendedTest::TestRTP_RTCP()
         TEST_MUSTPASS(audioLevelEnabled != false);
         TEST_MUSTPASS(ID != id);
     }
+    TEST_MUSTPASS(base->StopPlayout(0));
+    TEST_MUSTPASS(base->StopSend(0));
+    TEST_MUSTPASS(base->StopPlayout(0));
+    TEST_MUSTPASS(base->DeleteChannel(0));
 
-    // disable audio-level-rtp-header-extension
-    TEST_MUSTPASS(rtp_rtcp->SetRTPAudioLevelIndicationStatus(0, false));
-    */
+    RTPAudioTransport rtpAudioTransport;
+    TEST_MUSTPASS(base->CreateChannel());
+    TEST_MUSTPASS(network->RegisterExternalTransport(0, rtpAudioTransport));
+    TEST_MUSTPASS(rtp_rtcp->SetRTPAudioLevelIndicationStatus(0, true));
+    TEST_MUSTPASS(codec->SetVADStatus(0, true));
+
+    printf("\n\nReceving muted packets (expect VAD = 0, Level = -127)...\n");
+    printf("VAD  Level [dbFS]\n");
+    SLEEP(2000);
+    rtpAudioTransport.set_mute(true);
+    TEST_MUSTPASS(volume->SetInputMute(0, true));
+    TEST_MUSTPASS(base->StartSend(0));
+    SLEEP(5000);
+    TEST_MUSTPASS(base->StopSend(0));
+    rtpAudioTransport.set_mute(false);
+    TEST_MUSTPASS(volume->SetInputMute(0, false));
+
+    printf("\nReceiving packets from mic (should respond to mic level)...\n");
+    printf("VAD  Level [dbFS]\n");
+    SLEEP(2000);
+    TEST_MUSTPASS(base->StartSend(0));
+    SLEEP(5000);
+    TEST_MUSTPASS(base->StopSend(0));
+
+    printf("\nReceiving packets from file (expect mostly VAD = 1)...\n");
+    printf("VAD  Level [dbFS]\n");
+    SLEEP(2000);
+    TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(0, _mgr.AudioFilename(),
+                                                     true, true));
+    TEST_MUSTPASS(base->StartSend(0));
+    SLEEP(5000);
+    TEST_MUSTPASS(base->StopSend(0));
+
+    printf("\nMuted and mic on independent channels...\n");
+    printf("Muted        Mic\n");
+    SLEEP(2000);
+    ASSERT_TRUE(1 == base->CreateChannel());
+    TEST_MUSTPASS(network->RegisterExternalTransport(1, rtpAudioTransport));
+    TEST_MUSTPASS(rtp_rtcp->SetRTPAudioLevelIndicationStatus(1, true));
+    TEST_MUSTPASS(codec->SetVADStatus(1, true));
+    TEST_MUSTPASS(volume->SetInputMute(0, true));
+    TEST_MUSTPASS(base->StartSend(0));
+    TEST_MUSTPASS(base->StartSend(1));
+    SLEEP(5000);
+    TEST_MUSTPASS(base->StopSend(0));
+    TEST_MUSTPASS(base->StopSend(1));
+
+    TEST_MUSTPASS(network->DeRegisterExternalTransport(0));
+    TEST_MUSTPASS(network->DeRegisterExternalTransport(1));
+    TEST_MUSTPASS(base->DeleteChannel(0));
+    TEST_MUSTPASS(base->DeleteChannel(1));
+
+    TEST_MUSTPASS(base->CreateChannel());
+    TEST_MUSTPASS(base->SetLocalReceiver(0, 12345));
+    TEST_MUSTPASS(base->SetSendDestination(0, 12345, "127.0.0.1"));
+    TEST_MUSTPASS(base->StartReceive(0));
+    TEST_MUSTPASS(base->StartSend(0));
+    TEST_MUSTPASS(base->StartPlayout(0));
+
     MARK();
     ANL();
 
@@ -7306,8 +7428,6 @@ int VoEExtendedTest::TestRTP_RTCP()
     //The following test is related to defect 4985 and 4986
     TEST_LOG("Turn FEC and VAD on and wait for 4 seconds and ensure that "
         "the jitter is still small...");
-    VoECodec* codec = _mgr.CodecPtr();
-    TEST_MUSTPASS(NULL == codec);
     CodecInst cinst;
 #if (!defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID))
     cinst.pltype = 104;

@@ -10,6 +10,8 @@
 
 #include "audio_buffer.h"
 
+#include "signal_processing_library.h"
+
 namespace webrtc {
 namespace {
 
@@ -19,18 +21,14 @@ enum {
   kSamplesPer32kHzChannel = 320
 };
 
-void StereoToMono(const WebRtc_Word16* left, const WebRtc_Word16* right,
-                  WebRtc_Word16* out, int samples_per_channel) {
-  WebRtc_Word32 data_int32 = 0;
+void StereoToMono(const int16_t* left, const int16_t* right,
+                  int16_t* out, int samples_per_channel) {
+  assert(left != NULL && right != NULL && out != NULL);
   for (int i = 0; i < samples_per_channel; i++) {
-    data_int32 = (left[i] + right[i]) >> 1;
-    if (data_int32 > 32767) {
-      data_int32 = 32767;
-    } else if (data_int32 < -32768) {
-      data_int32 = -32768;
-    }
+    int32_t data32 = (static_cast<int32_t>(left[i]) +
+                      static_cast<int32_t>(right[i])) >> 1;
 
-    out[i] = static_cast<WebRtc_Word16>(data_int32);
+    out[i] = WebRtcSpl_SatW32ToW16(data32);
   }
 }
 }  // namespace
@@ -40,7 +38,7 @@ struct AudioChannel {
     memset(data, 0, sizeof(data));
   }
 
-  WebRtc_Word16 data[kSamplesPer32kHzChannel];
+  int16_t data[kSamplesPer32kHzChannel];
 };
 
 struct SplitAudioChannel {
@@ -53,8 +51,8 @@ struct SplitAudioChannel {
     memset(synthesis_filter_state2, 0, sizeof(synthesis_filter_state2));
   }
 
-  WebRtc_Word16 low_pass_data[kSamplesPer16kHzChannel];
-  WebRtc_Word16 high_pass_data[kSamplesPer16kHzChannel];
+  int16_t low_pass_data[kSamplesPer16kHzChannel];
+  int16_t high_pass_data[kSamplesPer16kHzChannel];
 
   WebRtc_Word32 analysis_filter_state1[6];
   WebRtc_Word32 analysis_filter_state2[6];
@@ -69,46 +67,34 @@ AudioBuffer::AudioBuffer(int max_num_channels,
     num_channels_(0),
     num_mixed_channels_(0),
     num_mixed_low_pass_channels_(0),
+    data_was_mixed_(false),
     samples_per_channel_(samples_per_channel),
     samples_per_split_channel_(samples_per_channel),
     reference_copied_(false),
     activity_(AudioFrame::kVadUnknown),
+    is_muted_(false),
     data_(NULL),
     channels_(NULL),
     split_channels_(NULL),
+    mixed_channels_(NULL),
     mixed_low_pass_channels_(NULL),
     low_pass_reference_channels_(NULL) {
   if (max_num_channels_ > 1) {
-    channels_ = new AudioChannel[max_num_channels_];
-    mixed_low_pass_channels_ = new AudioChannel[max_num_channels_];
+    channels_.reset(new AudioChannel[max_num_channels_]);
+    mixed_channels_.reset(new AudioChannel[max_num_channels_]);
+    mixed_low_pass_channels_.reset(new AudioChannel[max_num_channels_]);
   }
-  low_pass_reference_channels_ = new AudioChannel[max_num_channels_];
+  low_pass_reference_channels_.reset(new AudioChannel[max_num_channels_]);
 
   if (samples_per_channel_ == kSamplesPer32kHzChannel) {
-    split_channels_ = new SplitAudioChannel[max_num_channels_];
+    split_channels_.reset(new SplitAudioChannel[max_num_channels_]);
     samples_per_split_channel_ = kSamplesPer16kHzChannel;
   }
 }
 
-AudioBuffer::~AudioBuffer() {
-  if (channels_ != NULL) {
-    delete [] channels_;
-  }
+AudioBuffer::~AudioBuffer() {}
 
-  if (mixed_low_pass_channels_ != NULL) {
-    delete [] mixed_low_pass_channels_;
-  }
-
-  if (low_pass_reference_channels_ != NULL) {
-    delete [] low_pass_reference_channels_;
-  }
-
-  if (split_channels_ != NULL) {
-    delete [] split_channels_;
-  }
-}
-
-WebRtc_Word16* AudioBuffer::data(int channel) const {
+int16_t* AudioBuffer::data(int channel) const {
   assert(channel >= 0 && channel < num_channels_);
   if (data_ != NULL) {
     return data_;
@@ -117,31 +103,37 @@ WebRtc_Word16* AudioBuffer::data(int channel) const {
   return channels_[channel].data;
 }
 
-WebRtc_Word16* AudioBuffer::low_pass_split_data(int channel) const {
+int16_t* AudioBuffer::low_pass_split_data(int channel) const {
   assert(channel >= 0 && channel < num_channels_);
-  if (split_channels_ == NULL) {
+  if (split_channels_.get() == NULL) {
     return data(channel);
   }
 
   return split_channels_[channel].low_pass_data;
 }
 
-WebRtc_Word16* AudioBuffer::high_pass_split_data(int channel) const {
+int16_t* AudioBuffer::high_pass_split_data(int channel) const {
   assert(channel >= 0 && channel < num_channels_);
-  if (split_channels_ == NULL) {
+  if (split_channels_.get() == NULL) {
     return NULL;
   }
 
   return split_channels_[channel].high_pass_data;
 }
 
-WebRtc_Word16* AudioBuffer::mixed_low_pass_data(int channel) const {
+int16_t* AudioBuffer::mixed_data(int channel) const {
+  assert(channel >= 0 && channel < num_mixed_channels_);
+
+  return mixed_channels_[channel].data;
+}
+
+int16_t* AudioBuffer::mixed_low_pass_data(int channel) const {
   assert(channel >= 0 && channel < num_mixed_low_pass_channels_);
 
   return mixed_low_pass_channels_[channel].data;
 }
 
-WebRtc_Word16* AudioBuffer::low_pass_reference(int channel) const {
+int16_t* AudioBuffer::low_pass_reference(int channel) const {
   assert(channel >= 0 && channel < num_channels_);
   if (!reference_copied_) {
     return NULL;
@@ -174,8 +166,12 @@ void AudioBuffer::set_activity(AudioFrame::VADActivity activity) {
   activity_ = activity;
 }
 
-AudioFrame::VADActivity AudioBuffer::activity() {
+AudioFrame::VADActivity AudioBuffer::activity() const {
   return activity_;
+}
+
+bool AudioBuffer::is_muted() const {
+  return is_muted_;
 }
 
 int AudioBuffer::num_channels() const {
@@ -196,10 +192,15 @@ void AudioBuffer::DeinterleaveFrom(AudioFrame* frame) {
   assert(frame->_payloadDataLengthInSamples ==  samples_per_channel_);
 
   num_channels_ = frame->_audioChannel;
+  data_was_mixed_ = false;
   num_mixed_channels_ = 0;
   num_mixed_low_pass_channels_ = 0;
   reference_copied_ = false;
   activity_ = frame->_vadActivity;
+  is_muted_ = false;
+  if (frame->_energy == 0) {
+    is_muted_ = true;
+  }
 
   if (num_channels_ == 1) {
     // We can get away with a pointer assignment in this case.
@@ -207,9 +208,9 @@ void AudioBuffer::DeinterleaveFrom(AudioFrame* frame) {
     return;
   }
 
-  WebRtc_Word16* interleaved = frame->_payloadData;
+  int16_t* interleaved = frame->_payloadData;
   for (int i = 0; i < num_channels_; i++) {
-    WebRtc_Word16* deinterleaved = channels_[i].data;
+    int16_t* deinterleaved = channels_[i].data;
     int interleaved_idx = i;
     for (int j = 0; j < samples_per_channel_; j++) {
       deinterleaved[j] = interleaved[interleaved_idx];
@@ -218,16 +219,20 @@ void AudioBuffer::DeinterleaveFrom(AudioFrame* frame) {
   }
 }
 
-void AudioBuffer::InterleaveTo(AudioFrame* frame) const {
+void AudioBuffer::InterleaveTo(AudioFrame* frame, bool data_changed) const {
   assert(frame->_audioChannel == num_channels_);
   assert(frame->_payloadDataLengthInSamples == samples_per_channel_);
   frame->_vadActivity = activity_;
 
+  if (!data_changed) {
+    return;
+  }
+
   if (num_channels_ == 1) {
-    if (num_mixed_channels_ == 1) {
+    if (data_was_mixed_) {
       memcpy(frame->_payloadData,
              channels_[0].data,
-             sizeof(WebRtc_Word16) * samples_per_channel_);
+             sizeof(int16_t) * samples_per_channel_);
     } else {
       // These should point to the same buffer in this case.
       assert(data_ == frame->_payloadData);
@@ -236,9 +241,9 @@ void AudioBuffer::InterleaveTo(AudioFrame* frame) const {
     return;
   }
 
-  WebRtc_Word16* interleaved = frame->_payloadData;
+  int16_t* interleaved = frame->_payloadData;
   for (int i = 0; i < num_channels_; i++) {
-    WebRtc_Word16* deinterleaved = channels_[i].data;
+    int16_t* deinterleaved = channels_[i].data;
     int interleaved_idx = i;
     for (int j = 0; j < samples_per_channel_; j++) {
       interleaved[interleaved_idx] = deinterleaved[j];
@@ -261,6 +266,19 @@ void AudioBuffer::Mix(int num_mixed_channels) {
                samples_per_channel_);
 
   num_channels_ = num_mixed_channels;
+  data_was_mixed_ = true;
+}
+
+void AudioBuffer::CopyAndMix(int num_mixed_channels) {
+  // We currently only support the stereo to mono case.
+  assert(num_channels_ == 2);
+  assert(num_mixed_channels == 1);
+
+  StereoToMono(channels_[0].data,
+               channels_[1].data,
+               mixed_channels_[0].data,
+               samples_per_channel_);
+
   num_mixed_channels_ = num_mixed_channels;
 }
 
@@ -282,7 +300,7 @@ void AudioBuffer::CopyLowPassToReference() {
   for (int i = 0; i < num_channels_; i++) {
     memcpy(low_pass_reference_channels_[i].data,
            low_pass_split_data(i),
-           sizeof(WebRtc_Word16) * samples_per_split_channel_);
+           sizeof(int16_t) * samples_per_split_channel_);
   }
 }
 }  // namespace webrtc

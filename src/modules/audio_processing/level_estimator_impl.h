@@ -24,8 +24,7 @@ class LevelEstimatorImpl : public LevelEstimator,
   explicit LevelEstimatorImpl(const AudioProcessingImpl* apm);
   virtual ~LevelEstimatorImpl();
 
-  int AnalyzeReverseStream(AudioBuffer* audio);
-  int ProcessCaptureAudio(AudioBuffer* audio);
+  int ProcessStream(AudioBuffer* audio);
 
   // LevelEstimator implementation.
   virtual bool is_enabled() const;
@@ -36,7 +35,7 @@ class LevelEstimatorImpl : public LevelEstimator,
  private:
   // LevelEstimator implementation.
   virtual int Enable(bool enable);
-  virtual int GetMetrics(Metrics* metrics, Metrics* reverse_metrics);
+  virtual int RMS();
 
   // ProcessingComponent implementation.
   virtual void* CreateHandle() const;

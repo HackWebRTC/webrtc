@@ -50,10 +50,11 @@ Channel::SendData(FrameType frameType,
 
     if (_includeAudioLevelIndication)
     {
+        assert(_rtpAudioProc.get() != NULL);
         // Store current audio level in the RTP/RTCP module.
         // The level will be used in combination with voice-activity state
         // (frameType) to add an RTP header extension
-        _rtpRtcpModule.SetAudioLevel(_audioLevel_dBov);
+        _rtpRtcpModule.SetAudioLevel(_rtpAudioProc->level_estimator()->RMS());
     }
 
     // Push data from ACM to RTP/RTCP-module to deliver audio frame for
@@ -1085,7 +1086,6 @@ Channel::Channel(const WebRtc_Word32 channelId,
     _rtpDumpOut(*RtpDump::CreateRtpDump()),
     _outputAudioLevel(),
     _externalTransport(false),
-    _audioLevel_dBov(100),
     _inputFilePlayerPtr(NULL),
     _outputFilePlayerPtr(NULL),
     _outputFileRecorderPtr(NULL),
@@ -1119,6 +1119,7 @@ Channel::Channel(const WebRtc_Word32 channelId,
     _callbackCritSectPtr(NULL),
     _transportPtr(NULL),
     _encryptionPtr(NULL),
+    _rtpAudioProc(NULL),
     _rxAudioProcessingModulePtr(NULL),
 #ifdef WEBRTC_DTMF_DETECTION
     _telephoneEventDetectionPtr(NULL),
@@ -1546,16 +1547,6 @@ Channel::Init()
         return -1;
     }
 
-    if (_rxAudioProcessingModulePtr->echo_cancellation()->
-            set_device_sample_rate_hz(
-                    kVoiceEngineAudioProcessingDeviceSampleRateHz))
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_APM_ERROR, kTraceWarning,
-            "Channel::Init() failed to set the device sample rate to 48K"
-            " for far-end AP module");
-    }
-
     if (_rxAudioProcessingModulePtr->set_sample_rate_hz(8000))
     {
         _engineStatisticsPtr->SetLastError(
@@ -1568,16 +1559,7 @@ Channel::Init()
     {
         _engineStatisticsPtr->SetLastError(
             VE_SOUNDCARD_ERROR, kTraceWarning,
-            "Init() failed to set channels for the primary audio"
-            " stream");
-    }
-
-    if (_rxAudioProcessingModulePtr->set_num_reverse_channels(1) != 0)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_SOUNDCARD_ERROR, kTraceWarning,
-            "Init() failed to set channels for the primary audio"
-            " stream");
+            "Init() failed to set channels for the primary audio stream");
     }
 
     if (_rxAudioProcessingModulePtr->high_pass_filter()->Enable(
@@ -5164,6 +5146,25 @@ Channel::GetRemoteCSRCs(unsigned int arrCSRC[15])
 int
 Channel::SetRTPAudioLevelIndicationStatus(bool enable, unsigned char ID)
 {
+    if (_rtpAudioProc.get() == NULL)
+    {
+        _rtpAudioProc.reset(AudioProcessing::Create(VoEModuleId(_instanceId,
+                                                                _channelId)));
+        if (_rtpAudioProc.get() == NULL)
+        {
+            _engineStatisticsPtr->SetLastError(VE_NO_MEMORY, kTraceCritical,
+                "Failed to create AudioProcessing");
+            return -1;
+        }
+    }
+
+    if (_rtpAudioProc->level_estimator()->Enable(enable) !=
+        AudioProcessing::kNoError)
+    {
+        _engineStatisticsPtr->SetLastError(VE_APM_ERROR, kTraceWarning,
+            "Failed to enable AudioProcessing::level_estimator()");
+    }
+
     _includeAudioLevelIndication = enable;
     return _rtpRtcpModule.SetRTPAudioLevelIndicationStatus(enable, ID);
 }
@@ -5837,14 +5838,12 @@ Channel::InsertExtraRTPPacket(unsigned char payloadType,
 }
 
 WebRtc_UWord32
-Channel::Demultiplex(const AudioFrame& audioFrame,
-                     const WebRtc_UWord8 audioLevel_dBov)
+Channel::Demultiplex(const AudioFrame& audioFrame)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::Demultiplex(audioLevel_dBov=%u)", audioLevel_dBov);
+                 "Channel::Demultiplex()");
     _audioFrame = audioFrame;
     _audioFrame._id = _channelId;
-    _audioLevel_dBov = audioLevel_dBov;
     return 0;
 }
 
@@ -5888,6 +5887,40 @@ Channel::PrepareEncodeAndSend(int mixingFrequency)
     }
 
     InsertInbandDtmfTone();
+
+    if (_includeAudioLevelIndication)
+    {
+        assert(_rtpAudioProc.get() != NULL);
+
+        // Check if settings need to be updated.
+        if (_rtpAudioProc->sample_rate_hz() != _audioFrame._frequencyInHz)
+        {
+            if (_rtpAudioProc->set_sample_rate_hz(_audioFrame._frequencyInHz) !=
+                AudioProcessing::kNoError)
+            {
+                WEBRTC_TRACE(kTraceWarning, kTraceVoice,
+                             VoEId(_instanceId, _channelId),
+                             "Error setting AudioProcessing sample rate");
+                return -1;
+            }
+        }
+
+        if (_rtpAudioProc->num_input_channels() != _audioFrame._audioChannel)
+        {
+            if (_rtpAudioProc->set_num_channels(_audioFrame._audioChannel,
+                                                _audioFrame._audioChannel)
+                != AudioProcessing::kNoError)
+            {
+                WEBRTC_TRACE(kTraceWarning, kTraceVoice,
+                             VoEId(_instanceId, _channelId),
+                             "Error setting AudioProcessing channels");
+                return -1;
+            }
+        }
+
+        // Performs level analysis only; does not affect the signal.
+        _rtpAudioProc->ProcessStream(&_audioFrame);
+    }
 
     return 0;
 }
@@ -6632,19 +6665,20 @@ Channel::ApmProcessRx(AudioFrame& audioFrame)
                  "Channel::ApmProcessRx()");
 
     // Reset the APM frequency if the frequency has changed
-    if(_rxAudioProcessingModulePtr->sample_rate_hz()!=audioFrame._frequencyInHz)
+    if (_rxAudioProcessingModulePtr->sample_rate_hz() !=
+        audioFrame._frequencyInHz)
     {
-        if(_rxAudioProcessingModulePtr->set_sample_rate_hz(
-            audioFrame._frequencyInHz))
+        if (_rxAudioProcessingModulePtr->set_sample_rate_hz(
+            audioFrame._frequencyInHz) != 0)
         {
             WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId,-1),
-                       "AudioProcessingModule::set_sample_rate_hz("
-                       "_frequencyInHz=%u) => error ",
-                       _audioFrame._frequencyInHz);
+                         "AudioProcessingModule::set_sample_rate_hz("
+                         "_frequencyInHz=%u) => error",
+                         _audioFrame._frequencyInHz);
         }
     }
 
-    if (_rxAudioProcessingModulePtr->ProcessStream(&audioFrame) == -1)
+    if (_rxAudioProcessingModulePtr->ProcessStream(&audioFrame) != 0)
     {
         WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId,-1),
                    "AudioProcessingModule::ProcessStream() => error");

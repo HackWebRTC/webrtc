@@ -496,27 +496,23 @@ class HighPassFilter {
 };
 
 // An estimation component used to retrieve level metrics.
-// NOTE: currently unavailable. All methods return errors.
 class LevelEstimator {
  public:
   virtual int Enable(bool enable) = 0;
   virtual bool is_enabled() const = 0;
 
-  // The metrics are reported in dBFs calculated as:
-  //   Level = 10log_10(P_s / P_max) [dBFs], where
-  //   P_s is the signal power and P_max is the maximum possible (or peak)
-  //   power. With 16-bit signals, P_max = (2^15)^2.
-  struct Metrics {
-    AudioProcessing::Statistic signal;  // Overall signal level.
-    AudioProcessing::Statistic speech;  // Speech level.
-    AudioProcessing::Statistic noise;   // Noise level.
-  };
-
-  virtual int GetMetrics(Metrics* metrics, Metrics* reverse_metrics) = 0;
-
-  //virtual int enable_noise_warning(bool enable) = 0;
-  //bool is_noise_warning_enabled() const = 0;
-  //virtual bool stream_has_high_noise() const = 0;
+  // Returns the root mean square (RMS) level in dBFs (decibels from digital
+  // full-scale), or alternately dBov. It is computed over all primary stream
+  // frames since the last call to RMS(). The returned value is positive but
+  // should be interpreted as negative. It is constrained to [0, 127].
+  //
+  // The computation follows:
+  // http://tools.ietf.org/html/draft-ietf-avtext-client-to-mixer-audio-level-05
+  // with the intent that it can provide the RTP audio level indication.
+  //
+  // Frames passed to ProcessStream() with an |_energy| of zero are considered
+  // to have been muted. The RMS of the frame will be interpreted as -127.
+  virtual int RMS() = 0;
 
  protected:
   virtual ~LevelEstimator() {};

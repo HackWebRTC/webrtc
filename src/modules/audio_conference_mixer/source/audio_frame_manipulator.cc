@@ -49,6 +49,7 @@ void CalculateEnergy(AudioFrame& audioFrame)
     for(int position = 0; position < audioFrame._payloadDataLengthInSamples;
         position++)
     {
+        // TODO(andrew): this can easily overflow.
         audioFrame._energy += audioFrame._payloadData[position] *
                               audioFrame._payloadData[position];
     }

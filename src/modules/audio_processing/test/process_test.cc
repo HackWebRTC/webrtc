@@ -117,6 +117,8 @@ void usage() {
   printf("  --ns_very_high\n");
   printf("\n  -vad     Voice activity detection\n");
   printf("  --vad_out_file FILE\n");
+  printf("\n Level metrics (enabled by default)\n");
+  printf("  --no_level_metrics\n");
   printf("\n");
   printf("Modifiers:\n");
   printf("  --noasm            Disable SSE optimization.\n");
@@ -171,6 +173,7 @@ void void_main(int argc, char* argv[]) {
   int extra_delay_ms = 0;
   //bool interleaved = true;
 
+  ASSERT_EQ(apm->kNoError, apm->level_estimator()->Enable(true));
   for (int i = 1; i < argc; i++) {
     if (strcmp(argv[i], "-pb") == 0) {
       i++;
@@ -249,6 +252,9 @@ void void_main(int argc, char* argv[]) {
       ASSERT_EQ(apm->kNoError, apm->echo_cancellation()->Enable(true));
       ASSERT_EQ(apm->kNoError,
                 apm->echo_cancellation()->enable_delay_logging(false));
+
+    } else if (strcmp(argv[i], "--no_level_metrics") == 0) {
+      ASSERT_EQ(apm->kNoError, apm->level_estimator()->Enable(false));
 
     } else if (strcmp(argv[i], "-aecm") == 0) {
       ASSERT_EQ(apm->kNoError, apm->echo_control_mobile()->Enable(true));
@@ -454,16 +460,16 @@ void void_main(int argc, char* argv[]) {
   ASSERT_TRUE(NULL != out_file) << "Unable to open output audio file "
                                 << out_filename;
 
-  int near_size_samples = 0;
+  int near_size_bytes = 0;
   if (pb_file) {
     struct stat st;
     stat(pb_filename, &st);
     // Crude estimate, but should be good enough.
-    near_size_samples = st.st_size / 3 / sizeof(int16_t);
+    near_size_bytes = st.st_size / 3;
   } else {
     struct stat st;
     stat(near_filename, &st);
-    near_size_samples = st.st_size / sizeof(int16_t);
+    near_size_bytes = st.st_size;
   }
 
   if (apm->voice_detection()->is_enabled()) {
@@ -500,14 +506,11 @@ void void_main(int argc, char* argv[]) {
   size_t read_count = 0;
   int reverse_count = 0;
   int primary_count = 0;
-  int near_read_samples = 0;
+  int near_read_bytes = 0;
   TickInterval acc_ticks;
 
   AudioFrame far_frame;
-  far_frame._frequencyInHz = sample_rate_hz;
-
   AudioFrame near_frame;
-  near_frame._frequencyInHz = sample_rate_hz;
 
   int delay_ms = 0;
   int drift_samples = 0;
@@ -556,14 +559,19 @@ void void_main(int argc, char* argv[]) {
 
         samples_per_channel = msg.sample_rate() / 100;
         far_frame._frequencyInHz = msg.sample_rate();
-        far_frame._payloadDataLengthInSamples =
-            msg.num_reverse_channels() * samples_per_channel;
+        far_frame._payloadDataLengthInSamples = samples_per_channel;
+        far_frame._audioChannel = msg.num_reverse_channels();
         near_frame._frequencyInHz = msg.sample_rate();
+        near_frame._payloadDataLengthInSamples = samples_per_channel;
 
         if (verbose) {
           printf("Init at frame: %d (primary), %d (reverse)\n",
               primary_count, reverse_count);
           printf("  Sample rate: %d Hz\n", sample_rate_hz);
+          printf("  Primary channels: %d (in), %d (out)\n",
+                 msg.num_input_channels(),
+                 msg.num_output_channels());
+          printf("  Reverse channels: %d \n", msg.num_reverse_channels());
         }
 
       } else if (event_msg.type() == Event::REVERSE_STREAM) {
@@ -572,8 +580,8 @@ void void_main(int argc, char* argv[]) {
         reverse_count++;
 
         ASSERT_TRUE(msg.has_data());
-        ASSERT_EQ(sizeof(int16_t) * far_frame._payloadDataLengthInSamples,
-                  msg.data().size());
+        ASSERT_EQ(sizeof(int16_t) * samples_per_channel *
+            far_frame._audioChannel, msg.data().size());
         memcpy(far_frame._payloadData, msg.data().data(), msg.data().size());
 
         if (perf_testing) {
@@ -600,21 +608,20 @@ void void_main(int argc, char* argv[]) {
         const Stream msg = event_msg.stream();
         primary_count++;
 
+        // ProcessStream could have changed this for the output frame.
         near_frame._audioChannel = apm->num_input_channels();
-        near_frame._payloadDataLengthInSamples =
-            apm->num_input_channels() * samples_per_channel;
 
         ASSERT_TRUE(msg.has_input_data());
-        ASSERT_EQ(sizeof(int16_t) * near_frame._payloadDataLengthInSamples,
-                  msg.input_data().size());
+        ASSERT_EQ(sizeof(int16_t) * samples_per_channel *
+            near_frame._audioChannel, msg.input_data().size());
         memcpy(near_frame._payloadData,
                msg.input_data().data(),
                msg.input_data().size());
 
-        near_read_samples += near_frame._payloadDataLengthInSamples;
+        near_read_bytes += msg.input_data().size();
         if (progress && primary_count % 100 == 0) {
           printf("%.0f%% complete\r",
-              (near_read_samples * 100.0) / near_size_samples);
+              (near_read_bytes * 100.0) / near_size_bytes);
           fflush(stdout);
         }
 
@@ -635,6 +642,7 @@ void void_main(int argc, char* argv[]) {
         }
         ASSERT_TRUE(err == apm->kNoError ||
                     err == apm->kBadStreamParameterWarning);
+        ASSERT_TRUE(near_frame._audioChannel == apm->num_output_channels());
 
         capture_level = apm->gain_control()->stream_analog_level();
 
@@ -663,11 +671,11 @@ void void_main(int argc, char* argv[]) {
           }
         }
 
-        ASSERT_EQ(near_frame._payloadDataLengthInSamples,
-                  fwrite(near_frame._payloadData,
-                         sizeof(int16_t),
-                         near_frame._payloadDataLengthInSamples,
-                         out_file));
+        size_t size = samples_per_channel * near_frame._audioChannel;
+        ASSERT_EQ(size, fwrite(near_frame._payloadData,
+                               sizeof(int16_t),
+                               size,
+                               out_file));
       }
     }
 
@@ -704,6 +712,12 @@ void void_main(int argc, char* argv[]) {
         }
       }
 
+      far_frame._frequencyInHz = sample_rate_hz;
+      far_frame._payloadDataLengthInSamples = samples_per_channel;
+      far_frame._audioChannel = num_render_channels;
+      near_frame._frequencyInHz = sample_rate_hz;
+      near_frame._payloadDataLengthInSamples = samples_per_channel;
+
       if (event == kInitializeEvent || event == kResetEventDeprecated) {
         ASSERT_EQ(1u,
             fread(&sample_rate_hz, sizeof(sample_rate_hz), 1, event_file));
@@ -723,7 +737,10 @@ void void_main(int argc, char* argv[]) {
                       device_sample_rate_hz));
 
         far_frame._frequencyInHz = sample_rate_hz;
+        far_frame._payloadDataLengthInSamples = samples_per_channel;
+        far_frame._audioChannel = num_render_channels;
         near_frame._frequencyInHz = sample_rate_hz;
+        near_frame._payloadDataLengthInSamples = samples_per_channel;
 
         if (verbose) {
           printf("Init at frame: %d (primary), %d (reverse)\n",
@@ -733,26 +750,23 @@ void void_main(int argc, char* argv[]) {
 
       } else if (event == kRenderEvent) {
         reverse_count++;
-        far_frame._audioChannel = num_render_channels;
-        far_frame._payloadDataLengthInSamples =
-            num_render_channels * samples_per_channel;
 
+        size_t size = samples_per_channel * num_render_channels;
         read_count = fread(far_frame._payloadData,
-                           sizeof(WebRtc_Word16),
-                           far_frame._payloadDataLengthInSamples,
+                           sizeof(int16_t),
+                           size,
                            far_file);
 
         if (simulating) {
-          if (read_count != far_frame._payloadDataLengthInSamples) {
+          if (read_count != size) {
             // Read an equal amount from the near file to avoid errors due to
             // not reaching end-of-file.
-            EXPECT_EQ(0, fseek(near_file, read_count * sizeof(WebRtc_Word16),
+            EXPECT_EQ(0, fseek(near_file, read_count * sizeof(int16_t),
                       SEEK_CUR));
             break; // This is expected.
           }
         } else {
-          ASSERT_EQ(read_count,
-              far_frame._payloadDataLengthInSamples);
+          ASSERT_EQ(size, read_count);
         }
 
         if (perf_testing) {
@@ -777,30 +791,28 @@ void void_main(int argc, char* argv[]) {
       } else if (event == kCaptureEvent) {
         primary_count++;
         near_frame._audioChannel = num_capture_input_channels;
-        near_frame._payloadDataLengthInSamples =
-            num_capture_input_channels * samples_per_channel;
 
+        size_t size = samples_per_channel * num_capture_input_channels;
         read_count = fread(near_frame._payloadData,
-                           sizeof(WebRtc_Word16),
-                           near_frame._payloadDataLengthInSamples,
+                           sizeof(int16_t),
+                           size,
                            near_file);
 
-        near_read_samples += read_count;
+        near_read_bytes += read_count * sizeof(int16_t);
         if (progress && primary_count % 100 == 0) {
           printf("%.0f%% complete\r",
-              (near_read_samples * 100.0) / near_size_samples);
+              (near_read_bytes * 100.0) / near_size_bytes);
           fflush(stdout);
         }
         if (simulating) {
-          if (read_count != near_frame._payloadDataLengthInSamples) {
+          if (read_count != size) {
             break; // This is expected.
           }
 
           delay_ms = 0;
           drift_samples = 0;
         } else {
-          ASSERT_EQ(read_count,
-              near_frame._payloadDataLengthInSamples);
+          ASSERT_EQ(size, read_count);
 
           // TODO(ajm): sizeof(delay_ms) for current files?
           ASSERT_EQ(1u,
@@ -829,6 +841,7 @@ void void_main(int argc, char* argv[]) {
         }
         ASSERT_TRUE(err == apm->kNoError ||
                     err == apm->kBadStreamParameterWarning);
+        ASSERT_TRUE(near_frame._audioChannel == apm->num_output_channels());
 
         capture_level = apm->gain_control()->stream_analog_level();
 
@@ -857,11 +870,11 @@ void void_main(int argc, char* argv[]) {
           }
         }
 
-        ASSERT_EQ(near_frame._payloadDataLengthInSamples,
-                  fwrite(near_frame._payloadData,
-                         sizeof(WebRtc_Word16),
-                         near_frame._payloadDataLengthInSamples,
-                         out_file));
+        size = samples_per_channel * near_frame._audioChannel;
+        ASSERT_EQ(size, fwrite(near_frame._payloadData,
+                               sizeof(int16_t),
+                               size,
+                               out_file));
       }
       else {
         FAIL() << "Event " << event << " is unrecognized";
@@ -887,6 +900,10 @@ void void_main(int argc, char* argv[]) {
     printf("\nProcessed frames: %d (primary), %d (reverse)\n",
         primary_count, reverse_count);
 
+    if (apm->level_estimator()->is_enabled()) {
+      printf("\n--Level metrics--\n");
+      printf("RMS: %d dBFS\n", -apm->level_estimator()->RMS());
+    }
     if (apm->echo_cancellation()->are_metrics_enabled()) {
       EchoCancellation::Metrics metrics;
       apm->echo_cancellation()->GetMetrics(&metrics);

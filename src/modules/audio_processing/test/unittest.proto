@@ -42,6 +42,8 @@ message Test {
   }
 
   optional DelayMetrics delay_metrics = 12;
+
+  optional int32 rms_level = 13;
 }
 
 message OutputData {
