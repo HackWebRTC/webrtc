@@ -258,6 +258,7 @@ VP8Encoder::InitEncode(const VideoCodec* inst,
     }
     _encodedImage._size = (3 * inst->width * inst->height) >> 1;
     _encodedImage._buffer = new WebRtc_UWord8[_encodedImage._size];
+    _encodedImage._completeFrame = true;
 
     vpx_img_alloc(_raw, IMG_FMT_I420, inst->width, inst->height, 1);
     // populate encoder configuration with default values
