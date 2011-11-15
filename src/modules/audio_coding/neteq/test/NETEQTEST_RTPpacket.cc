@@ -19,6 +19,8 @@
 #include <netinet/in.h> // for htons, htonl, etc
 #endif
 
+#include <cstdlib>
+
 #define HDR_SIZE 8 // rtpplay packet header size in bytes
 
 
@@ -802,3 +804,68 @@ void NETEQTEST_RTPpacket::splitStereoFrame(NETEQTEST_RTPpacket& slaveRtp)
     slaveRtp._payloadLen = _payloadLen;
 }
 
+// Get the RTP header for the RED payload indicated by argument index.
+// The first RED payload is index = 0.
+int NETEQTEST_RTPpacket::extractRED(int index, WebRtcNetEQ_RTPInfo& red)
+{
+//
+//  0                   1                    2                   3
+//  0 1 2 3 4 5 6 7 8 9 0 1 2 3  4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+// |1|   block PT  |  timestamp offset         |   block length    |
+// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+// |1|    ...                                                      |
+// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+// |0|   block PT  |
+// +-+-+-+-+-+-+-+-+
+//
+
+    parseHeader();
+
+    WebRtc_UWord8* ptr = payload();
+    WebRtc_UWord8* payloadEndPtr = ptr + payloadLen();
+    int num_encodings = 0;
+    int total_len = 0;
+
+    while ((ptr < payloadEndPtr) && (*ptr & 0x80))
+    {
+        int len = ((ptr[2] & 0x03) << 8) + ptr[3];
+        if (num_encodings == index)
+        {
+            // Header found.
+            red.payloadType = ptr[0] & 0x7F;
+            WebRtc_UWord32 offset = (ptr[1] << 6) + ((ptr[2] & 0xFC) >> 2);
+            red.sequenceNumber = sequenceNumber();
+            red.timeStamp = timeStamp() - offset;
+            red.markerBit = markerBit();
+            red.SSRC = SSRC();
+            return len;
+        }
+        ++num_encodings;
+        total_len += len;
+        ptr += 4;
+    }
+    if ((ptr < payloadEndPtr) && (num_encodings == index))
+    {
+        // Last header.
+        red.payloadType = ptr[0] & 0x7F;
+        red.sequenceNumber = sequenceNumber();
+        red.timeStamp = timeStamp();
+        red.markerBit = markerBit();
+        red.SSRC = SSRC();
+        ++ptr;
+        return payloadLen() - (ptr - payload()) - total_len;
+    }
+    return -1;
+}
+
+// Randomize the payload, not the RTP header.
+void NETEQTEST_RTPpacket::scramblePayload(void)
+{
+    parseHeader();
+
+    for (int i = 0; i < _payloadLen; ++i)
+    {
+        _payloadPtr[i] = static_cast<WebRtc_UWord8>(std::rand());
+    }
+}

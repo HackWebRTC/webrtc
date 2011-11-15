@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <assert.h>
 #include <stdio.h>
 #include <vector>
 
@@ -20,6 +21,7 @@
 
 #define FIRSTLINELEN 40
 
+enum {kRedPayloadType = 127};
 
 int main(int argc, char* argv[])
 {
@@ -56,6 +58,18 @@ int main(int argc, char* argv[])
         fprintf(outFile, "%5u %10u %10u %5i %5i %2i\n",
             packet.sequenceNumber(), packet.timeStamp(), packet.time(),
             packet.dataLen(), packet.payloadType(), packet.markerBit());
+        if (packet.payloadType() == kRedPayloadType) {
+            WebRtcNetEQ_RTPInfo redHdr;
+            int len;
+            int redIndex = 0;
+            while ((len = packet.extractRED(redIndex++, redHdr)) >= 0)
+            {
+                fprintf(outFile, "* %5u %10u %10u %5i %5i\n",
+                    redHdr.sequenceNumber, redHdr.timeStamp, packet.time(),
+                    len, redHdr.payloadType);
+            }
+            assert(redIndex > 1);  // We must get at least one payload.
+        }
     }
 
     fclose(inFile);

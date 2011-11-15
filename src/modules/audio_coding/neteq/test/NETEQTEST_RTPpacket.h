@@ -66,6 +66,10 @@ public:
 
     int splitStereo(NETEQTEST_RTPpacket& slaveRtp, enum stereoModes mode);
 
+    int extractRED(int index, WebRtcNetEQ_RTPInfo& red);
+
+    void scramblePayload(void);
+
     WebRtc_UWord8 *       _datagram;
     WebRtc_UWord8 *       _payloadPtr;
     int                 _memSize;
