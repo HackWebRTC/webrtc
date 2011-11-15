@@ -34,6 +34,20 @@
 namespace webrtc {
 static WebRtc_UWord32 levelFilter = kTraceDefault;
 
+#ifdef WEBRTC_NO_TRACE
+class TraceNoop : public Trace
+{
+public:
+    TraceNoop()
+    {
+    }
+
+    virtual ~TraceNoop()
+    {
+    }
+};
+#endif
+
 // Construct On First Use idiom. Avoids "static initialization order fiasco".
 Trace* TraceImpl::StaticInstance(TraceCount inc, const TraceLevel level)
 {
@@ -99,7 +113,7 @@ Trace* TraceImpl::StaticInstance(TraceCount inc, const TraceLevel level)
         {
             delete static_cast<TraceImpl*>(oldValue);
         }
-        // Re-aqcuire the lock.
+        // Re-acquire the lock.
         crtiSect->Enter();
         return NULL;
     }
@@ -179,16 +193,6 @@ Trace* TraceImpl::StaticInstance(TraceCount inc, const TraceLevel level)
     return theTrace;
 }
 
-void Trace::CreateTrace()
-{
-    TraceImpl::StaticInstance(WEBRTC_TRACE_INC);
-}
-
-void Trace::ReturnTrace()
-{
-    TraceImpl::StaticInstance(WEBRTC_TRACE_DEC);
-}
-
 TraceImpl* TraceImpl::GetTrace(const TraceLevel level)
 {
     return (TraceImpl*)StaticInstance(WEBRTC_TRACE_INC_NO_CREATE, level);
@@ -196,7 +200,9 @@ TraceImpl* TraceImpl::GetTrace(const TraceLevel level)
 
 Trace* TraceImpl::CreateTrace()
 {
-#if defined(_WIN32)
+#ifdef WEBRTC_NO_TRACE
+    return new TraceNoop();
+#elif defined(_WIN32)
     return new TraceWindows();
 #else
     return new TracePosix();
@@ -874,17 +880,29 @@ bool TraceImpl::CreateFileName(
     return true;
 }
 
+#ifndef WEBRTC_NO_TRACE
+
+void Trace::CreateTrace()
+{
+    TraceImpl::StaticInstance(WEBRTC_TRACE_INC);
+}
+
+void Trace::ReturnTrace()
+{
+    TraceImpl::StaticInstance(WEBRTC_TRACE_DEC);
+}
+
 WebRtc_Word32 Trace::SetLevelFilter(WebRtc_UWord32 filter)
 {
     levelFilter = filter;
     return 0;
-};
+}
 
 WebRtc_Word32 Trace::LevelFilter(WebRtc_UWord32& filter)
 {
     filter = levelFilter;
     return 0;
-};
+}
 
 WebRtc_Word32 Trace::TraceFile(WebRtc_Word8 fileName[FileWrapper::kMaxFileNameSize])
 {
@@ -951,4 +969,45 @@ void Trace::Add(const TraceLevel level, const TraceModule module,
         ReturnTrace();
     }
 }
+#else
+void Trace::CreateTrace()
+{
+}
+
+void Trace::ReturnTrace()
+{
+}
+
+WebRtc_Word32 Trace::SetLevelFilter(WebRtc_UWord32 filter)
+{
+    return 0;
+}
+
+WebRtc_Word32 Trace::LevelFilter(WebRtc_UWord32& filter)
+{
+    return 0;
+}
+
+WebRtc_Word32 Trace::TraceFile(WebRtc_Word8 fileName[FileWrapper::kMaxFileNameSize])
+{
+    return -1;
+}
+
+WebRtc_Word32 Trace::SetTraceFile(const WebRtc_Word8* fileName,
+                                  const bool addFileCounter)
+{
+    return -1;
+}
+
+WebRtc_Word32 Trace::SetTraceCallback(TraceCallback* callback)
+{
+    return -1;
+}
+
+void Trace::Add(const TraceLevel level, const TraceModule module,
+                const WebRtc_Word32 id, const char* msg, ...)
+
+{
+}
+#endif
 } // namespace webrtc
