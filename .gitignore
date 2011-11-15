@@ -1,4 +1,4 @@
-*.mk
+*.target.mk
 *.Makefile
 *.ncb
 *.ninja
@@ -27,6 +27,7 @@
 .gdbinit
 .metadata
 .project
+.pydevproject
 .settings
 /build
 /gyp-mac-tool
