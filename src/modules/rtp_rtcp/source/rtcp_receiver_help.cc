@@ -56,6 +56,11 @@ RTCPPacketInformation::AddApplicationData(const WebRtc_UWord8* data, const WebRt
     WebRtc_UWord8* oldData = applicationData;
     WebRtc_UWord16 oldLength = applicationLength;
 
+    // Don't copy more than kRtcpAppCode_DATA_SIZE bytes.
+    if (size > kRtcpAppCode_DATA_SIZE) {
+        size = kRtcpAppCode_DATA_SIZE;
+    }
+
     applicationLength += size;
     applicationData = new WebRtc_UWord8[applicationLength];
 
