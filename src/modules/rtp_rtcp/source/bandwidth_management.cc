@@ -12,10 +12,12 @@
 #include "trace.h"
 #include "rtp_utility.h"
 #include "rtp_rtcp_config.h"
+#include "tick_util.h"
 
 #include <math.h>   // sqrt()
 
 namespace webrtc {
+
 BandwidthManagement::BandwidthManagement(const WebRtc_Word32 id) :
     _id(id),
     _critsect(*CriticalSectionWrapper::CreateCriticalSection()),
@@ -31,7 +33,8 @@ BandwidthManagement::BandwidthManagement(const WebRtc_Word32 id) :
     _last_round_trip_time(0),
     _bwEstimateIncoming(0),
     _smoothedFractionLostQ4(-1), // indicate uninitialized
-    _sFLFactorQ4(14)             // 0.875 in Q4
+    _sFLFactorQ4(14),            // 0.875 in Q4
+    _timeLastIncrease(0)
 {
 }
 
@@ -157,9 +160,9 @@ WebRtc_Word32 BandwidthManagement::UpdatePacketLoss(
             }
             else
             {
-                // Report same loss as before and keep the accumulators until
-                // the next report.
-                *loss = _lastLoss;
+                // Report zero loss until we have enough data to estimate
+                // the loss rate.
+                *loss = 0;
             }
         }
     }
@@ -217,6 +220,17 @@ WebRtc_UWord32 BandwidthManagement::ShapeSimple(WebRtc_Word32 packetLoss,
 {
     WebRtc_UWord32 newBitRate = 0;
     bool reducing = false;
+
+    // Limit the rate increases to once a second.
+    if (packetLoss <= 5)
+    {
+        if ((TickTime::MillisecondTimestamp() - _timeLastIncrease) <
+            kBWEUpdateIntervalMs)
+        {
+            return _bitRate;
+        }
+        _timeLastIncrease = TickTime::MillisecondTimestamp();
+    }
 
     if (packetLoss > 5 && packetLoss <= 26)
     {

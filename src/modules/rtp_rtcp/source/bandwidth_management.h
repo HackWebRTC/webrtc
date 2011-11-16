@@ -58,6 +58,8 @@ protected:
                               WebRtc_Word32 packetLoss);
 
 private:
+    enum { kBWEUpdateIntervalMs = 1000 };
+
     WebRtc_Word32         _id;
 
     CriticalSectionWrapper& _critsect;
@@ -81,6 +83,7 @@ private:
     WebRtc_UWord32        _bwEstimateIncoming;
     WebRtc_Word16         _smoothedFractionLostQ4;
     WebRtc_Word16         _sFLFactorQ4;  // forgetting factor for _smoothedFractionLostQ4
+    WebRtc_Word64         _timeLastIncrease;
 };
 } // namespace webrtc
 
