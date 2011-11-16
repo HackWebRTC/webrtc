@@ -10,7 +10,6 @@
 
 #pragma once
 
-
 #include "testDefines.h"
 #include "video_capture_factory.h"
 #include "Logger.h"
@@ -30,7 +29,7 @@ struct CaptureSetting
 {
     WebRtc_Word32 settingID;
     WebRtc_UWord8 captureName[256];
-    VideoCaptureCapability capability;     
+    VideoCaptureCapability capability;
     WebRtc_Word32 captureDelay;
     WebRtc_Word64 lastRenderTimeMS;
 

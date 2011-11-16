@@ -14,14 +14,11 @@
 #include "testDefines.h"
 
 #ifdef _WIN32
-
 #include <windows.h>
-#elif defined(WEBRTC_MAC_INTEL)
-#import <AppKit/AppKit.h>
-//#import "CocoaWindow.h"
-#import "cocoa_renderer.h"
+
 #elif defined (WEBRTC_ANDROID)
 #include <JNI.h>
+
 #elif defined(WEBRTC_LINUX)
 typedef void* HWND;
 #endif
@@ -30,6 +27,16 @@ typedef void* HWND;
 
 namespace webrtc
 {
+
+// Creates a window and fills in the os-specific handle type or pointer
+// into os_window_handle. Returns 0 on success.
+int WebRtcCreateWindow(void** os_window_handle,
+                       int window_number,
+                       int width, int height);
+
+// Sets the window position in an OS-specific manner.
+void SetWindowPos(void* os_window_handle, int x, int y, 
+                  int width, int height, bool onTop);
 
 class Renderer
 {
@@ -63,8 +70,7 @@ private:
 #if defined(_WIN32)
     HWND _renderWindow;
 #elif defined(WEBRTC_MAC_INTEL)
-    NSAutoreleasePool* _pool;
-    CocoaRenderer* _renderWindow;
+    void* _renderWindow;
 #elif defined (WEBRTC_ANDROID)
     jobject _renderWindow; //this is a glsurface.
 public:

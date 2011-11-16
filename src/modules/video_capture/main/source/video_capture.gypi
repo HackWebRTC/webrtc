@@ -214,6 +214,7 @@
             '../test/testAPI/cocoa_renderer.mm',
             '../test/testAPI/testDefines.h',
             '../test/testAPI/testAPI.cpp',
+            '../test/testAPI/testAPI_mac.mm',
             '../test/testAPI/testCameraEncoder.cpp',
             '../test/testAPI/testCameraEncoder.h',
             '../test/testAPI/testExternalCapture.cpp',
@@ -224,6 +225,11 @@
             '../test/testAPI/Logger.cpp',
             '../test/testAPI/Renderer.h',
             '../test/testAPI/Renderer.cpp',
+            '../test/testAPI/renderer_win.cc',
+            '../test/testAPI/renderer_mac.mm',
+            '../test/testAPI/renderer_linux.cc',
+            # Note: renderer_android.cc is deliberately not listed since it
+            # doesn't build through gyp anyway.
           ], # source
           'conditions': [
             # DEFINE PLATFORM SPECIFIC SOURCE FILES

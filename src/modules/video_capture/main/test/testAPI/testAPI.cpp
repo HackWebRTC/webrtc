@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "testAPI.h"
+
 #if defined(_WIN32)
 #include <tchar.h>
 #include <windows.h>
@@ -21,15 +23,6 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <sys/time.h>
-
-#elif defined(WEBRTC_MAC_INTEL)
-#import <Foundation/Foundation.h>
-#import <Cocoa/Cocoa.h>
-#import <AppKit/AppKit.h>
-#import <QTKit/QTKit.h>
-#import "cocoa_renderer.h"
-#include <sys/time.h>
-#include <iostream>
 #endif
 
 using namespace std;
@@ -39,44 +32,33 @@ using namespace std;
 #include "testPlatformDependent.h"
 #include "testCameraEncoder.h"
 
+void RunApiTest() {
+    int test_result = 0;
+
+    webrtc::testExternalCapture test;
+    test_result = test.DoTest();
+    printf("\nExternal capture test result %d\n", test_result);
+
+    webrtc::testPlatformDependent platform_dependent;
+    test_result = platform_dependent.DoTest();
+    printf("\nPlatform dependent test result %d\n", test_result);
+
+    webrtc::testCameraEncoder camera_encoder;
+    test_result = camera_encoder.DoTest();
+    printf("\nCamera encoder test result %d\n", test_result);
+
+    getchar();
+}
+
+// Note: The Mac main is implemented in testApi.mm.
 #if defined(_WIN32)
 int _tmain(int argc, _TCHAR* argv[])
 #elif defined(WEBRTC_LINUX)
 int main(int argc, char* argv[])
-#elif defined(WEBRTC_MAC_INTEL)
-int main (int argc, const char * argv[])
-#endif
+#endif // WEBRTC LINUX
+#if !defined(WEBRTC_MAC)
 {
-
-#if defined(WEBRTC_MAC_INTEL)
-    NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
-    [NSApplication sharedApplication];
-#endif
-    int testResult=0;
-
-    {
-        webrtc::testExternalCapture test;
-        testResult=test.DoTest();
-        printf("\nExternal capture test result %d\n",testResult);
-    }
-
-    {
-        webrtc::testPlatformDependent platformDependent;
-        testResult=platformDependent.DoTest();
-        printf("\nPlatform dependent test result %d\n",testResult);
-    }
-    {
-        webrtc::testCameraEncoder cameraEncoder;
-        testResult=cameraEncoder.DoTest();
-        printf("\nCamera encoder test result %d\n",testResult);
-
-    }
-
-    getchar();
-
-#if defined (WEBRTC_MAC_INTEL)
-    [pool release];
-#endif
+    RunApiTest();
     return 0;
 }
-
+#endif // !WEBRTC_MAC

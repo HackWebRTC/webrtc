@@ -74,21 +74,20 @@
     #define SEED_FILE "randseed.txt"
 #endif
 
-
 #ifdef WIN32
 #define MY_MAX_DRIVE _MAX_DRIVE
 #define MY_MAX_PATH _MAX_PATH
 #define MY_MAX_FNAME _MAX_FNAME
 #define MY_MAX_EXT _MAX_EXT
-#else
-#if defined(WEBRTC_LINUX)
+
+#elif defined(WEBRTC_LINUX)
 #include <linux/limits.h>
-//#define MY_MAX_DRIVE 17 // arbitary number
 #define MY_MAX_PATH PATH_MAX
-//#define MY_MAX_FNAME NAME_MAX
-//#define MY_MAX_EXT 17 // arbitary number
-#endif
-#endif
+
+#elif defined(WEBRTC_MAC)
+#include <sys/syslimits.h>
+#define MY_MAX_PATH PATH_MAX
+#endif // WEBRTC_MAC
 
 /************/
 /* Typedefs */
