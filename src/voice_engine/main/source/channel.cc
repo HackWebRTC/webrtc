@@ -5931,7 +5931,7 @@ Channel::EncodeAndSend()
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::EncodeAndSend()");
 
-    assert(_audioFrame._audioChannel == 1);
+    assert(_audioFrame._audioChannel <= 2);
     if (_audioFrame._payloadDataLengthInSamples == 0)
     {
         WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId,_channelId),
@@ -6370,6 +6370,7 @@ Channel::MixAudioWithFile(AudioFrame& audioFrame,
 int
 Channel::InsertInbandDtmfTone()
 {
+    // Check if we should start a new tone.
     if (_inbandDtmfQueue.PendingDtmf() &&
         !_inbandDtmfGenerator.IsAddingTone() &&
         _inbandDtmfGenerator.DelaySinceLastTone() >
@@ -6405,7 +6406,7 @@ Channel::InsertInbandDtmfTone()
             // account.
             _inbandDtmfGenerator.ResetTone();
         }
-
+        
         WebRtc_Word16 toneBuffer[320];
         WebRtc_UWord16 toneSamples(0);
         // Get 10ms tone segment and set time since last tone to zero
@@ -6417,11 +6418,20 @@ Channel::InsertInbandDtmfTone()
             return -1;
         }
 
-        // Replace mixed audio with Dtmf tone
-        memcpy(_audioFrame._payloadData, toneBuffer, sizeof(WebRtc_Word16)
-            * toneSamples);
-
-        assert(_audioFrame._audioChannel == 1);
+        // Replace mixed audio with DTMF tone.
+        for (int sample = 0; 
+            sample < _audioFrame._payloadDataLengthInSamples;
+            sample++)
+        {
+            for (int channel = 0; 
+                channel < _audioFrame._audioChannel; 
+                channel++)
+            {
+                _audioFrame._payloadData[sample * _audioFrame._audioChannel + channel] = 
+                        toneBuffer[sample];
+            }
+        }
+        
         assert(_audioFrame._payloadDataLengthInSamples == toneSamples);
     } else
     {
