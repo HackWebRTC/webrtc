@@ -1045,7 +1045,7 @@ AudioMixerManagerMac::MicrophoneVolume(WebRtc_UWord32& volume) const
     UInt32 size = 0;
     unsigned int channels = 0;
     Float32 channelVol = 0;
-    Float32 vol = 0;
+    Float32 volFloat32 = 0;
 
     // Does the device have a master volume control?
     // If so, use it exclusively.
@@ -1056,16 +1056,16 @@ AudioMixerManagerMac::MicrophoneVolume(WebRtc_UWord32& volume) const
                                                  &propertyAddress);
     if (hasProperty)
     {
-        size = sizeof(vol);
+        size = sizeof(volFloat32);
         WEBRTC_CA_RETURN_ON_ERR(AudioObjectGetPropertyData(_inputDeviceID,
-                &propertyAddress, 0, NULL, &size, &vol));
+                &propertyAddress, 0, NULL, &size, &volFloat32));
 
         // vol 0.0 to 1.0 -> convert to 0 - 255
-        volume = static_cast<WebRtc_UWord32> (vol * 255 + 0.5);
+        volume = static_cast<WebRtc_UWord32> (volFloat32 * 255 + 0.5);
     } else
     {
         // Otherwise get the average volume across channels.
-        vol = 0;
+        volFloat32 = 0;
         for (UInt32 i = 1; i <= _noInputChannels; i++)
         {
             channelVol = 0;
@@ -1078,7 +1078,7 @@ AudioMixerManagerMac::MicrophoneVolume(WebRtc_UWord32& volume) const
                 WEBRTC_CA_RETURN_ON_ERR(AudioObjectGetPropertyData(_inputDeviceID,
                         &propertyAddress, 0, NULL, &size, &channelVol));
 
-                vol += channelVol;
+                volFloat32 += channelVol;
                 channels++;
             }
         }
@@ -1092,12 +1092,13 @@ AudioMixerManagerMac::MicrophoneVolume(WebRtc_UWord32& volume) const
 
         assert(channels > 0);
         // vol 0.0 to 1.0 -> convert to 0 - 255
-        volume = static_cast<WebRtc_UWord32> (255 * vol / channels + 0.5);
+        volume = static_cast<WebRtc_UWord32> 
+            (255 * volFloat32 / channels + 0.5);
     }
 
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                 "     AudioMixerManagerMac::MicrophoneVolume() => vol=%i",
-                 vol);
+                 "     AudioMixerManagerMac::MicrophoneVolume() => vol=%u",
+                 volume);
 
     return 0;
 }
