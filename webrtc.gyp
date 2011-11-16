@@ -17,7 +17,8 @@
       'dependencies': [
         'src/common_audio/common_audio.gyp:*',
         'src/common_video/common_video.gyp:*',
-        'src/modules/modules.gyp:*',
+        # TODO(andrew): enable when Linux-Release errors are fixed.
+        #'src/modules/modules.gyp:*',
         'src/system_wrappers/source/system_wrappers.gyp:*',
         'src/video_engine/video_engine.gyp:*',
         'src/voice_engine/voice_engine.gyp:*',
