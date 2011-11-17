@@ -74,7 +74,14 @@ bool FileHandlerImpl::ReadFrame(WebRtc_UWord8* source_buffer) {
     fprintf(stderr, "FileHandler is not initialized (input file is NULL)\n");
     return false;
   }
-  fread(source_buffer, 1, frame_length_in_bytes_, input_file_);
+  size_t nbr_read = fread(source_buffer, 1, frame_length_in_bytes_,
+                          input_file_);
+  if (nbr_read != static_cast<unsigned int>(frame_length_in_bytes_) &&
+      ferror(input_file_)) {
+    fprintf(stderr, "Error reading from input file: %s\n",
+            input_filename_.c_str());
+    return false;
+  }
   if (feof(input_file_) != 0) {
     return false;  // no more frames to process
   }
