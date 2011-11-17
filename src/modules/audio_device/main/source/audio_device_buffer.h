@@ -12,7 +12,7 @@
 #define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_BUFFER_H
 
 #include "typedefs.h"
-#include "../../../../common_audio/resampler/main/interface/resampler.h"
+#include "../../../../common_audio/resampler/include/resampler.h"
 #include "file_wrapper.h"
 #include "audio_device.h"
 #include "list_wrapper.h"
