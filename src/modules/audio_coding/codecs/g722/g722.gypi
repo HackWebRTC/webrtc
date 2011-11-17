@@ -11,15 +11,15 @@
       'target_name': 'G722',
       'type': '<(library)',
       'include_dirs': [
-        '../interface',
+        'include',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          '../interface',
+          'include',
         ],
       },
       'sources': [
-        '../interface/g722_interface.h',
+        'include/g722_interface.h',
         'g722_interface.c',
         'g722_encode.c',
         'g722_decode.c',
@@ -28,9 +28,20 @@
     },
   ], # targets
   # Exclude the test target when building with chromium.
-  'conditions': [   
+  'conditions': [
     ['build_with_chromium==0', {
       'targets': [
+        {
+          'target_name': 'g722_unittests',
+          'type': 'executable',
+          'dependencies': [
+            'G722',
+            '<(webrtc_root)/../test/test.gyp:test_support_main',
+          ],
+          'sources': [
+            'g722_unittest.cc',
+          ],
+        },
         {
           'target_name': 'G722Test',
           'type': 'executable',
@@ -38,7 +49,7 @@
             'G722',
           ],
           'sources': [
-            '../testG722/testG722.cpp',
+            'test/testG722.cpp',
           ],
         },
       ], # targets

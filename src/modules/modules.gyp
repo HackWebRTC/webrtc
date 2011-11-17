@@ -11,7 +11,7 @@
     '../build/common.gypi',
     'audio_coding/codecs/cng/cng.gypi',
     'audio_coding/codecs/g711/g711.gypi',
-    'audio_coding/codecs/G722/main/source/g722.gypi',
+    'audio_coding/codecs/g722/g722.gypi',
     'audio_coding/codecs/ilbc/ilbc.gypi',
     'audio_coding/codecs/iSAC/main/source/isac.gypi',
     'audio_coding/codecs/iSAC/fix/source/isacfix.gypi',

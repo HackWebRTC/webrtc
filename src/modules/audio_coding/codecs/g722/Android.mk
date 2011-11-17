@@ -10,7 +10,7 @@ LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
 
-include $(LOCAL_PATH)/../../../../../../../android-webrtc.mk
+include $(LOCAL_PATH)/../../../../../android-webrtc.mk
 
 LOCAL_ARM_MODE := arm
 LOCAL_MODULE_CLASS := STATIC_LIBRARIES
@@ -26,8 +26,8 @@ LOCAL_CFLAGS := \
     $(MY_WEBRTC_COMMON_DEFS)
 
 LOCAL_C_INCLUDES := \
-    $(LOCAL_PATH)/../interface \
-    $(LOCAL_PATH)/../../../../../..
+    $(LOCAL_PATH)/include \
+    $(LOCAL_PATH)/../../../..
 
 LOCAL_SHARED_LIBRARIES := \
     libcutils \
