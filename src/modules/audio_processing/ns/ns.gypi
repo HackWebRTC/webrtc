@@ -12,7 +12,7 @@
       'target_name': 'ns',
       'type': '<(library)',
       'dependencies': [
-        '<(webrtc_root)/common_audio/common_audio.gyp:spl',
+        '<(webrtc_root)/common_audio/common_audio.gyp:signal_processing',
         'apm_util'
       ],
       'include_dirs': [
@@ -36,7 +36,7 @@
       'target_name': 'ns_fix',
       'type': '<(library)',
       'dependencies': [
-        '<(webrtc_root)/common_audio/common_audio.gyp:spl',
+        '<(webrtc_root)/common_audio/common_audio.gyp:signal_processing',
       ],
       'include_dirs': [
         'interface',

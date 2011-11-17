@@ -9,19 +9,19 @@
 {
   'targets': [
     {
-      'target_name': 'spl',
+      'target_name': 'signal_processing',
       'type': '<(library)',
       'include_dirs': [
-        '../interface',
+        'include',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          '../interface',
+          'include',
         ],
       },
       'sources': [
-        '../interface/signal_processing_library.h',
-        '../interface/spl_inl.h',
+        'include/signal_processing_library.h',
+        'include/spl_inl.h',
         'auto_corr_to_refl_coef.c',
         'auto_correlation.c',
         'complex_fft.c',
@@ -62,8 +62,26 @@
         'sqrt_of_one_minus_x_squared.c',
         'vector_scaling_operations.c',
       ],
-    },
-  ],
+    }, # spl
+  ], # targets
+  'conditions': [
+    ['build_with_chromium==0', {
+      'targets': [
+        {
+          'target_name': 'signal_processing_unittests',
+          'type': 'executable',
+          'dependencies': [
+            'signal_processing',
+            '<(webrtc_root)/../test/test.gyp:test_support_main',
+            '<(webrtc_root)/../testing/gtest.gyp:gtest',
+          ],
+          'sources': [
+            'signal_processing_unittest.cc',
+          ],
+        }, # spl_unittests
+      ], # targets
+    }], # build_with_chromium
+  ], # conditions
 }
 
 # Local Variables:

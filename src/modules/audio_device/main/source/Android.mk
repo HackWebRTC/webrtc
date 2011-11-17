@@ -40,8 +40,8 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../interface \
     $(LOCAL_PATH)/../../../.. \
     $(LOCAL_PATH)/../../../interface \
-    $(LOCAL_PATH)/../../../../common_audio/resampler/main/interface \
-    $(LOCAL_PATH)/../../../../common_audio/signal_processing_library/main/interface \
+    $(LOCAL_PATH)/../../../../common_audio/resampler/include \
+    $(LOCAL_PATH)/../../../../common_audio/signal_processing/include \
     $(LOCAL_PATH)/../../../../system_wrappers/interface \
     system/media/wilhelm/include
 

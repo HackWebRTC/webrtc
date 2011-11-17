@@ -13,7 +13,7 @@
       'type': '<(library)',
       'dependencies': [
         'webrtc_utility',
-        '<(webrtc_root)/common_audio/common_audio.gyp:spl',
+        '<(webrtc_root)/common_audio/common_audio.gyp:signal_processing',
         '<(webrtc_root)/common_video/common_video.gyp:webrtc_vplib',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],

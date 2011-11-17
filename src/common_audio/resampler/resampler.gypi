@@ -12,22 +12,40 @@
       'target_name': 'resampler',
       'type': '<(library)',
       'dependencies': [
-        'spl',
+        'signal_processing',
       ],
       'include_dirs': [
-        '../interface',
+        'include',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          '../interface',
+          'include',
         ],
       },
       'sources': [
-        '../interface/resampler.h',
+        'include/resampler.h',
         'resampler.cc',
       ],
     },
-  ],
+  ], # targets
+  'conditions': [
+    ['build_with_chromium==0', {
+      'targets' : [
+        {
+          'target_name': 'resampler_unittests',
+          'type': 'executable',
+          'dependencies': [
+            'resampler',
+            '<(webrtc_root)/../test/test.gyp:test_support_main',
+            '<(webrtc_root)/../testing/gtest.gyp:gtest',
+          ],
+          'sources': [
+            'resampler_unittest.cc',
+          ],
+        }, # resampler_unittests
+      ], # targets
+    }], # build_with_chromium
+  ], # conditions
 }
 
 # Local Variables:

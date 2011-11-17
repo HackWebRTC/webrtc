@@ -12,18 +12,18 @@
       'target_name': 'vad',
       'type': '<(library)',
       'dependencies': [
-        'spl',
+        'signal_processing',
       ],
       'include_dirs': [
-        '../interface',
+        'include',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          '../interface',
+          'include',
         ],
       },
       'sources': [
-        '../interface/webrtc_vad.h',
+        'include/webrtc_vad.h',
         'webrtc_vad.c',
         'vad_core.c',
         'vad_core.h',
@@ -36,7 +36,25 @@
         'vad_sp.h',
       ],
     },
-  ],
+  ], # targets
+   'conditions': [
+    ['build_with_chromium==0', {
+      'targets' : [
+        {
+          'target_name': 'vad_unittests',
+          'type': 'executable',
+          'dependencies': [
+            'vad',
+            '<(webrtc_root)/../test/test.gyp:test_support_main',
+            '<(webrtc_root)/../testing/gtest.gyp:gtest',
+          ],
+          'sources': [
+            'vad_unittest.cc',
+          ],
+        }, # vad_unittests
+      ], # targets
+    }], # build_with_chromium
+  ], # conditions
 }
 
 # Local Variables:

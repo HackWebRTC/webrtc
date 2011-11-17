@@ -9,28 +9,8 @@
 {
   'includes': [
     '../build/common.gypi',
-    'signal_processing_library/main/source/spl.gypi',
-    'resampler/main/source/resampler.gypi',
-    'vad/main/source/vad.gypi',
-  ],
-  'conditions': [
-    ['build_with_chromium==0', {
-      'targets' : [
-        {
-          'target_name': 'common_audio_unittests',
-          'type': 'executable',
-          'dependencies': [
-            '<(webrtc_root)/../test/test.gyp:test_support_main',
-            '<(webrtc_root)/../testing/gtest.gyp:gtest',
-            'resampler',
-            'vad',
-          ],
-          'sources': [
-            'resampler/main/source/resampler_unittest.cc',
-            'vad/test/vad_unittest.cc',
-          ],
-        },
-      ],
-    }],
+    'signal_processing/signal_processing.gypi',
+    'resampler/resampler.gypi',
+    'vad/vad.gypi',
   ],
 }

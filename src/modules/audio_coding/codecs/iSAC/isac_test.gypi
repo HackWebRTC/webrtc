@@ -52,7 +52,7 @@
       'include_dirs': [
         './main/test',
         './main/interface',
-        '../../../../common_audio/signal_processing_library/main/interface',
+        '../../../../common_audio/signal_processing/include',
         './main/util',
       ],
       'sources': [

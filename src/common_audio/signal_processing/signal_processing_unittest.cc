@@ -8,32 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-
-/*
- * This file contains the SPL unit_test.
- *
- */
-
-#include "unit_test.h"
 #include "signal_processing_library.h"
+#include "gtest/gtest.h"
 
-class SplEnvironment : public ::testing::Environment {
- public:
-  virtual void SetUp() {
+class SplTest : public testing::Test {
+ protected:
+  virtual ~SplTest() {
   }
-  virtual void TearDown() {
+  void SetUp() {
+  }
+  void TearDown() {
   }
 };
-
-SplTest::SplTest()
-{
-}
-
-void SplTest::SetUp() {
-}
-
-void SplTest::TearDown() {
-}
 
 TEST_F(SplTest, MacroTest) {
     // Macros with inputs.
@@ -42,7 +28,6 @@ TEST_F(SplTest, MacroTest) {
     int a = -3;
     int b = WEBRTC_SPL_WORD32_MAX;
     int nr = 2;
-    int d_ptr1 = 0;
     int d_ptr2 = 0;
 
     EXPECT_EQ(10, WEBRTC_SPL_MIN(A, B));
@@ -56,19 +41,19 @@ TEST_F(SplTest, MacroTest) {
 
     EXPECT_EQ(-63, WEBRTC_SPL_MUL(a, B));
     EXPECT_EQ(-2147483645, WEBRTC_SPL_MUL(a, b));
-    EXPECT_EQ(-2147483645, WEBRTC_SPL_UMUL(a, b));
+    EXPECT_EQ(-2147483645u, WEBRTC_SPL_UMUL(a, b));
     b = WEBRTC_SPL_WORD16_MAX >> 1;
-    EXPECT_EQ(65535, WEBRTC_SPL_UMUL_RSFT16(a, b));
-    EXPECT_EQ(1073627139, WEBRTC_SPL_UMUL_16_16(a, b));
-    EXPECT_EQ(16382, WEBRTC_SPL_UMUL_16_16_RSFT16(a, b));
-    EXPECT_EQ(-49149, WEBRTC_SPL_UMUL_32_16(a, b));
-    EXPECT_EQ(65535, WEBRTC_SPL_UMUL_32_16_RSFT16(a, b));
+    EXPECT_EQ(65535u, WEBRTC_SPL_UMUL_RSFT16(a, b));
+    EXPECT_EQ(1073627139u, WEBRTC_SPL_UMUL_16_16(a, b));
+    EXPECT_EQ(16382u, WEBRTC_SPL_UMUL_16_16_RSFT16(a, b));
+    EXPECT_EQ(-49149u, WEBRTC_SPL_UMUL_32_16(a, b));
+    EXPECT_EQ(65535u, WEBRTC_SPL_UMUL_32_16_RSFT16(a, b));
     EXPECT_EQ(-49149, WEBRTC_SPL_MUL_16_U16(a, b));
 
     a = b;
     b = -3;
     EXPECT_EQ(-5461, WEBRTC_SPL_DIV(a, b));
-    EXPECT_EQ(0, WEBRTC_SPL_UDIV(a, b));
+    EXPECT_EQ(0u, WEBRTC_SPL_UDIV(a, b));
 
     EXPECT_EQ(-1, WEBRTC_SPL_MUL_16_32_RSFT16(a, b));
     EXPECT_EQ(-1, WEBRTC_SPL_MUL_16_32_RSFT15(a, b));
@@ -99,9 +84,10 @@ TEST_F(SplTest, MacroTest) {
     EXPECT_TRUE(WEBRTC_SPL_IS_NEG(b));
 
     // Shifting with negative numbers allowed
+    int shift_amount = 1;  // Workaround compiler warning using variable here.
     // Positive means left shift
-    EXPECT_EQ(32766, WEBRTC_SPL_SHIFT_W16(a, 1));
-    EXPECT_EQ(32766, WEBRTC_SPL_SHIFT_W32(a, 1));
+    EXPECT_EQ(32766, WEBRTC_SPL_SHIFT_W16(a, shift_amount));
+    EXPECT_EQ(32766, WEBRTC_SPL_SHIFT_W32(a, shift_amount));
 
     // Shifting with negative numbers not allowed
     // We cannot do casting here due to signed/unsigned problem
@@ -112,14 +98,13 @@ TEST_F(SplTest, MacroTest) {
 
     EXPECT_EQ(8191, WEBRTC_SPL_RSHIFT_U16(a, 1));
     EXPECT_EQ(32766, WEBRTC_SPL_LSHIFT_U16(a, 1));
-    EXPECT_EQ(8191, WEBRTC_SPL_RSHIFT_U32(a, 1));
-    EXPECT_EQ(32766, WEBRTC_SPL_LSHIFT_U32(a, 1));
+    EXPECT_EQ(8191u, WEBRTC_SPL_RSHIFT_U32(a, 1));
+    EXPECT_EQ(32766u, WEBRTC_SPL_LSHIFT_U32(a, 1));
 
     EXPECT_EQ(1470, WEBRTC_SPL_RAND(A));
 }
 
 TEST_F(SplTest, InlineTest) {
-
     WebRtc_Word16 a = 121;
     WebRtc_Word16 b = -17;
     WebRtc_Word32 A = 111121;
@@ -141,7 +126,6 @@ TEST_F(SplTest, InlineTest) {
 }
 
 TEST_F(SplTest, MathOperationsTest) {
-
     int A = 117;
     WebRtc_Word32 num = 117;
     WebRtc_Word32 den = -5;
@@ -153,16 +137,13 @@ TEST_F(SplTest, MathOperationsTest) {
     EXPECT_EQ(-91772805, WebRtcSpl_DivResultInQ31(den, num));
     EXPECT_EQ(-23, WebRtcSpl_DivW32W16ResW16(num, (WebRtc_Word16)den));
     EXPECT_EQ(-23, WebRtcSpl_DivW32W16(num, (WebRtc_Word16)den));
-    EXPECT_EQ(23, WebRtcSpl_DivU32U16(num, denU));
+    EXPECT_EQ(23u, WebRtcSpl_DivU32U16(num, denU));
     EXPECT_EQ(0, WebRtcSpl_DivW32HiLow(128, 0, 256));
 }
 
 TEST_F(SplTest, BasicArrayOperationsTest) {
-
-
     const int kVectorSize = 4;
     int B[] = {4, 12, 133, 1100};
-    int Bs[] = {2, 6, 66, 550};
     WebRtc_UWord8 b8[kVectorSize];
     WebRtc_Word16 b16[kVectorSize];
     WebRtc_Word32 b32[kVectorSize];
@@ -238,12 +219,9 @@ TEST_F(SplTest, BasicArrayOperationsTest) {
     for (int kk = 0; kk < kVectorSize; ++kk) {
         EXPECT_EQ(b16[3-kk], bTmp16[kk]);
     }
-
 }
 
 TEST_F(SplTest, MinMaxOperationsTest) {
-
-
     const int kVectorSize = 4;
     int B[] = {4, 12, 133, -1100};
     WebRtc_Word16 b16[kVectorSize];
@@ -268,12 +246,9 @@ TEST_F(SplTest, MinMaxOperationsTest) {
     EXPECT_EQ(3, WebRtcSpl_MinIndexW32(b32, kVectorSize));
 
     EXPECT_EQ(0, WebRtcSpl_GetScalingSquare(b16, kVectorSize, 1));
-
 }
 
 TEST_F(SplTest, VectorOperationsTest) {
-
-
     const int kVectorSize = 4;
     int B[] = {4, 12, 133, 1100};
     WebRtc_Word16 a16[kVectorSize];
@@ -341,8 +316,6 @@ TEST_F(SplTest, VectorOperationsTest) {
 }
 
 TEST_F(SplTest, EstimatorsTest) {
-
-
     const int kVectorSize = 4;
     int B[] = {4, 12, 133, 1100};
     WebRtc_Word16 b16[kVectorSize];
@@ -355,12 +328,9 @@ TEST_F(SplTest, EstimatorsTest) {
     }
 
     EXPECT_EQ(0, WebRtcSpl_LevinsonDurbin(b32, b16, bTmp16, 2));
-
 }
 
 TEST_F(SplTest, FilterTest) {
-
-
     const int kVectorSize = 4;
     WebRtc_Word16 A[] = {1, 2, 33, 100};
     WebRtc_Word16 A5[] = {1, 2, 33, 100, -5};
@@ -399,19 +369,15 @@ TEST_F(SplTest, FilterTest) {
                                               bTmp16,
                                               bTmp16Low,
                                               kVectorSize));
-
 }
 
 TEST_F(SplTest, RandTest) {
-
-
     const int kVectorSize = 4;
     WebRtc_Word16 BU[] = {3653, 12446, 8525, 30691};
-    WebRtc_Word16 BN[] = {3459, -11689, -258, -3738};
     WebRtc_Word16 b16[kVectorSize];
     WebRtc_UWord32 bSeed = 100000;
 
-    EXPECT_EQ(464449057, WebRtcSpl_IncreaseSeed(&bSeed));
+    EXPECT_EQ(464449057u, WebRtcSpl_IncreaseSeed(&bSeed));
     EXPECT_EQ(31565, WebRtcSpl_RandU(&bSeed));
     EXPECT_EQ(-9786, WebRtcSpl_RandN(&bSeed));
     EXPECT_EQ(kVectorSize, WebRtcSpl_RandUArray(b16, kVectorSize, &bSeed));
@@ -421,8 +387,6 @@ TEST_F(SplTest, RandTest) {
 }
 
 TEST_F(SplTest, SignalProcessingTest) {
-
-
     const int kVectorSize = 4;
     int A[] = {1, 2, 33, 100};
     WebRtc_Word16 b16[kVectorSize];
@@ -464,8 +428,6 @@ TEST_F(SplTest, SignalProcessingTest) {
 }
 
 TEST_F(SplTest, FFTTest) {
-
-
     WebRtc_Word16 B[] = {1, 2, 33, 100,
             2, 3, 34, 101,
             3, 4, 35, 102,
@@ -483,12 +445,4 @@ TEST_F(SplTest, FFTTest) {
     for (int kk = 0; kk < 16; ++kk) {
         //EXPECT_EQ(A[kk], B[kk]);
     }
-}
-
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  SplEnvironment* env = new SplEnvironment;
-  ::testing::AddGlobalTestEnvironment(env);
-
-  return RUN_ALL_TESTS();
 }

@@ -38,7 +38,7 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../../../interface \
     $(LOCAL_PATH)/../../../audio_coding/main/interface \
     $(LOCAL_PATH)/../../../utility/interface \
-    $(LOCAL_PATH)/../../../../common_audio/signal_processing_library/main/interface \
+    $(LOCAL_PATH)/../../../../common_audio/signal_processing/include \
     $(LOCAL_PATH)/../../../../common_video/vplib/main/interface \
     $(LOCAL_PATH)/../../../../system_wrappers/interface
 

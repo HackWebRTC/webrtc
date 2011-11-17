@@ -12,9 +12,9 @@ MY_WEBRTC_ROOT_PATH := $(call my-dir)
 
 MY_WEBRTC_SRC_PATH := ../../../../../../..
 
-include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/common_audio/resampler/main/source/Android.mk
-include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/common_audio/signal_processing_library/main/source/Android.mk
-include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/common_audio/vad/main/source/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/common_audio/resampler/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/common_audio/signal_processing/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/common_audio/vad/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/modules/audio_coding/NetEQ/main/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/modules/audio_coding/codecs/CNG/main/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/modules/audio_coding/codecs/G711/main/source/Android.mk
