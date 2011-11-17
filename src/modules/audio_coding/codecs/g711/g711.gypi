@@ -12,15 +12,15 @@
       'target_name': 'G711',
       'type': '<(library)',
       'include_dirs': [
-        '../interface',
+        'include',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          '../interface',
+          'include',
         ],
       },
       'sources': [
-       '../interface/g711_interface.h',
+        'include/g711_interface.h',
         'g711_interface.c',
         'g711.c',
         'g711.h',
@@ -28,9 +28,20 @@
     },
   ], # targets
   # Exclude the test target when building with chromium.
-  'conditions': [   
+  'conditions': [
     ['build_with_chromium==0', {
       'targets': [
+        {
+          'target_name': 'g711_unittests',
+          'type': 'executable',
+          'dependencies': [
+            'G711',
+            '<(webrtc_root)/../test/test.gyp:test_support_main',
+          ],
+          'sources': [
+            'g711_unittest.cc',
+          ],
+        },
         {
           'target_name': 'g711_test',
           'type': 'executable',
@@ -38,15 +49,8 @@
             'G711',
           ],
           'sources': [
-               '../testG711/testG711.cpp',
+            'test/testG711.cpp',
           ],
- #        'conditions': [
- #          ['OS=="linux"', {
- #          'cflags': [
- #            '-fexceptions', # enable exceptions
- #            ],
- #          }],
- #        ],
         },
       ], # targets
     }], # build_with_chromium

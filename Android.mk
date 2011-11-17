@@ -14,7 +14,7 @@ include $(MY_WEBRTC_ROOT_PATH)/src/common_audio/signal_processing/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/common_audio/vad/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_coding/neteq/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_coding/codecs/cng/Android.mk
-include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_coding/codecs/G711/main/source/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_coding/codecs/g711/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_coding/codecs/G722/main/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_coding/codecs/pcm16b/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_coding/codecs/ilbc/Android.mk
