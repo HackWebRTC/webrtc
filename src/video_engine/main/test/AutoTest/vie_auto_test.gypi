@@ -24,6 +24,7 @@
       'include_dirs': [
         'interface/',
         'helpers/',
+        'primitives',
         '../../interface',
         '../../source',
         '../../../../modules/video_coding/codecs/interface/',
@@ -52,9 +53,15 @@
         
         # New, fully automated tests
         'automated/vie_api_integration_test.cc',
+        'automated/vie_comparison_test.cc',
         'automated/vie_extended_integration_test.cc',
         'automated/vie_integration_test_base.cc',
         'automated/vie_standard_integration_test.cc',
+
+        # Test primitives
+        'primitives/base_primitives.cc',
+        'primitives/codec_primitives.cc',
+        'primitives/general_primitives.cc',
 
         # Platform independent
         'source/tb_capture_device.cc',
@@ -76,6 +83,7 @@
         'source/vie_autotest_rtp_rtcp.cc',
         'source/vie_autotest_custom_call.cc',
         'source/vie_autotest_simulcast.cc',
+        'source/vie_comparison_tests.cc',
 
         # Platform dependent
         # Linux

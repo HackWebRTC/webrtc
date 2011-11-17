@@ -51,18 +51,18 @@ int ViEAutoTest::ViEFileStandardTest()
     {
         ViETest::Log("Starting a loopback call...");
 
-        tbInterfaces interfaces = tbInterfaces("ViEFileStandardTest",
+        TbInterfaces interfaces = TbInterfaces("ViEFileStandardTest",
                                                numberOfErrors);
 
-        webrtc::VideoEngine* ptrViE = interfaces.ptrViE;
-        webrtc::ViEBase* ptrViEBase = interfaces.ptrViEBase;
-        webrtc::ViECapture* ptrViECapture = interfaces.ptrViECapture;
-        webrtc::ViERender* ptrViERender = interfaces.ptrViERender;
-        webrtc::ViECodec* ptrViECodec = interfaces.ptrViECodec;
-        webrtc::ViERTP_RTCP* ptrViERtpRtcp = interfaces.ptrViERtpRtcp;
-        webrtc::ViENetwork* ptrViENetwork = interfaces.ptrViENetwork;
+        webrtc::VideoEngine* ptrViE = interfaces.video_engine;
+        webrtc::ViEBase* ptrViEBase = interfaces.base;
+        webrtc::ViECapture* ptrViECapture = interfaces.capture;
+        webrtc::ViERender* ptrViERender = interfaces.render;
+        webrtc::ViECodec* ptrViECodec = interfaces.codec;
+        webrtc::ViERTP_RTCP* ptrViERtpRtcp = interfaces.rtp_rtcp;
+        webrtc::ViENetwork* ptrViENetwork = interfaces.network;
 
-        tbCaptureDevice captureDevice = tbCaptureDevice(interfaces,
+        TbCaptureDevice captureDevice = TbCaptureDevice(interfaces,
                                                         numberOfErrors);
         int captureId = captureDevice.captureId;
 

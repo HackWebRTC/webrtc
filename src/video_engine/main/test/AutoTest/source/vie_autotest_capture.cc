@@ -8,27 +8,28 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * vie_autotest_capture.cc
- */
-
-#include "vie_autotest_defines.h"
 #include "vie_autotest.h"
-#include "engine_configurations.h"
 
 #include "common_types.h"
-#include "voe_base.h"
+#include "engine_configurations.h"
+#include "gflags/gflags.h"
+#include "tb_interfaces.h"
+#include "tb_video_channel.h"
+#include "tick_util.h"
+#include "vie_autotest_defines.h"
+#include "video_capture_factory.h"
 #include "vie_base.h"
 #include "vie_capture.h"
 #include "vie_codec.h"
 #include "vie_network.h"
 #include "vie_render.h"
 #include "vie_rtp_rtcp.h"
-#include "tick_util.h"
+#include "voe_base.h"
 
-#include "tb_interfaces.h"
-#include "tb_video_channel.h"
-#include "video_capture_factory.h"
+DEFINE_bool(capture_test_ensure_resolution_alignment_in_capture_device, true,
+            "If true, we will give resolutions slightly below a reasonable "
+            "value to test the camera's ability to choose a good resolution. "
+            "If false, we will provide reasonable resolutions instead.");
 
 class CaptureObserver: public webrtc::ViECaptureObserver
 {
@@ -135,7 +136,7 @@ int ViEAutoTest::ViECaptureStandardTest()
 
 
     int error = 0;
-    tbInterfaces ViE("ViECaptureStandardTest", numberOfErrors);
+    TbInterfaces ViE("ViECaptureStandardTest", numberOfErrors);
 
     webrtc::VideoCaptureModule::DeviceInfo* devInfo =
         webrtc::VideoCaptureFactory::CreateDeviceInfo(0);
@@ -169,7 +170,7 @@ int ViEAutoTest::ViECaptureStandardTest()
 
 // not supported on MAC (is part of capture capabilites
 #if !defined(WEBRTC_LINUX) && !defined(WEBRTC_MAC_INTEL)
-        error = ViE.ptrViECapture->ShowCaptureSettingsDialogBox(
+        error = ViE.capture->ShowCaptureSettingsDialogBox(
             (char*) deviceUniqueName,
             (unsigned int) (strlen((char*) deviceUniqueName)),
             "WebRTCViECapture StandardTest");
@@ -210,10 +211,10 @@ int ViEAutoTest::ViECaptureStandardTest()
         }
 #endif
     }
+    // Capture Capability Functions are not supported on WEBRTC_MAC_INTEL.
 #if !defined(WEBRTC_MAC_INTEL)
-    // "capture capability functios" are not supported on WEBRTC_MAC_INTEL
-    //Check allocation. Try to allocate them all after each other.
 
+    // Check allocation. Try to allocate them all after each other.
     for (int deviceIndex = 0;
          deviceIndex < numberOfCaptureDevices;
          ++deviceIndex)
@@ -237,7 +238,7 @@ int ViEAutoTest::ViECaptureStandardTest()
                                              __FUNCTION__, __LINE__);
         vcpms[deviceIndex] = vcpm;
 
-        error = ViE.ptrViECapture->AllocateCaptureDevice(
+        error = ViE.capture->AllocateCaptureDevice(
                                             *vcpm, captureDeviceId[deviceIndex]);
         numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
@@ -246,10 +247,10 @@ int ViEAutoTest::ViECaptureStandardTest()
         error = devInfo->GetCapability(deviceUniqueName, 0, capability);
 
         // Test that the camera select the closest capability to the selected
-        // widht and height.
+        // width and height.
         CaptureEffectFilter filter(capability.width, capability.height,
                                    numberOfErrors);
-        error = ViE.ptrViEImageProcess->RegisterCaptureEffectFilter(
+        error = ViE.image_process->RegisterCaptureEffectFilter(
                                         captureDeviceId[deviceIndex], filter);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
@@ -257,8 +258,13 @@ int ViEAutoTest::ViECaptureStandardTest()
 
         ViETest::Log("Testing Device %s capability width %d  height %d",
                      deviceUniqueName, capability.width, capability.height);
-        capability.height = capability.height - 2;
-        capability.width = capability.width - 2;
+
+        if (FLAGS_capture_test_ensure_resolution_alignment_in_capture_device) {
+          // This tests that the capture device properly aligns to a
+          // multiple of 16 (or at least 8).
+          capability.height = capability.height - 2;
+          capability.width  = capability.width  - 2;
+        }
 
         webrtc::CaptureCapability vieCapability;
         vieCapability.width = capability.width;
@@ -267,7 +273,7 @@ int ViEAutoTest::ViECaptureStandardTest()
         vieCapability.maxFPS = capability.maxFPS;
         vieCapability.rawType = capability.rawType;
 
-        error = ViE.ptrViECapture->StartCapture(captureDeviceId[deviceIndex],
+        error = ViE.capture->StartCapture(captureDeviceId[deviceIndex],
                                                 vieCapability);
         numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
@@ -280,15 +286,15 @@ int ViEAutoTest::ViECaptureStandardTest()
         }
         numberOfErrors += ViETest::TestError(filter._numberOfCapturedFrames
             >= 10, "ERROR: %s at line %d", __FUNCTION__, __LINE__);
-        error = ViE.ptrViEImageProcess->DeregisterCaptureEffectFilter(
+        error = ViE.image_process->DeregisterCaptureEffectFilter(
             captureDeviceId[deviceIndex]);
 
 #ifdef WEBRTC_ANDROID // Can only allocate one camera at the time on Android
-        error = ViE.ptrViECapture->StopCapture(captureDeviceId[deviceIndex]);
+        error = ViE.capture->StopCapture(captureDeviceId[deviceIndex]);
         numberOfErrors += ViETest::TestError(error==0, "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
-        error = ViE.ptrViECapture->ReleaseCaptureDevice(
+        error = ViE.capture->ReleaseCaptureDevice(
             captureDeviceId[deviceIndex]);
         numberOfErrors += ViETest::TestError(error==0, "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
@@ -303,7 +309,7 @@ int ViEAutoTest::ViECaptureStandardTest()
     // stop all started capture devices
     for (int deviceIndex = 0; deviceIndex < numberOfCaptureDevices; ++deviceIndex)
     {
-        error = ViE.ptrViECapture->StopCapture(captureDeviceId[deviceIndex]);
+        error = ViE.capture->StopCapture(captureDeviceId[deviceIndex]);
 #ifdef WEBRTC_ANDROID
         // Camera already stoped on Android since we can only allocate one
         // camera at the time.
@@ -314,7 +320,7 @@ int ViEAutoTest::ViECaptureStandardTest()
                                              __FUNCTION__, __LINE__);
 #endif
 
-        error = ViE.ptrViECapture->ReleaseCaptureDevice(
+        error = ViE.capture->ReleaseCaptureDevice(
             captureDeviceId[deviceIndex]);
 #ifdef WEBRTC_ANDROID
         // Camera already stoped on Android since we can only allocate one
@@ -377,9 +383,9 @@ int ViEAutoTest::ViECaptureAPITest()
     //***************************************************************
 
     int error = 0;
-    tbInterfaces ViE("ViECapture_API", numberOfErrors);
+    TbInterfaces ViE("ViECaptureAPITest", numberOfErrors);
 
-    ViE.ptrViECapture->NumberOfCaptureDevices();
+    ViE.capture->NumberOfCaptureDevices();
 
     WebRtc_UWord8 deviceName[128];
     WebRtc_UWord8 deviceUniqueName[512];
@@ -405,17 +411,17 @@ int ViEAutoTest::ViECaptureAPITest()
                                          __FUNCTION__, __LINE__);
 
     // Allocate capture device
-    error = ViE.ptrViECapture->AllocateCaptureDevice(*vcpm, captureId);
+    error = ViE.capture->AllocateCaptureDevice(*vcpm, captureId);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
     // Start the capture device
-    error = ViE.ptrViECapture->StartCapture(captureId);
+    error = ViE.capture->StartCapture(captureId);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
     // Start again. Should fail
-    error = ViE.ptrViECapture->StartCapture(captureId);
+    error = ViE.capture->StartCapture(captureId);
     numberOfErrors += ViETest::TestError(error == -1, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
     numberOfErrors += ViETest::TestError(ViE.LastError()
@@ -423,7 +429,7 @@ int ViEAutoTest::ViECaptureAPITest()
                                          __FUNCTION__, __LINE__);
 
     // Start invalid capture device
-    error = ViE.ptrViECapture->StartCapture(captureId + 1);
+    error = ViE.capture->StartCapture(captureId + 1);
     numberOfErrors += ViETest::TestError(error == -1, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
     numberOfErrors += ViETest::TestError(ViE.LastError()
@@ -431,7 +437,7 @@ int ViEAutoTest::ViECaptureAPITest()
                                          __FUNCTION__, __LINE__);
 
     // Stop invalide capture device
-    error = ViE.ptrViECapture->StopCapture(captureId + 1);
+    error = ViE.capture->StopCapture(captureId + 1);
     numberOfErrors += ViETest::TestError(error == -1, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
     numberOfErrors += ViETest::TestError(ViE.LastError()
@@ -439,12 +445,12 @@ int ViEAutoTest::ViECaptureAPITest()
                                          __FUNCTION__, __LINE__);
 
     // Stop the capture device
-    error = ViE.ptrViECapture->StopCapture(captureId);
+    error = ViE.capture->StopCapture(captureId);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
     // Stop the capture device again
-    error = ViE.ptrViECapture->StopCapture(captureId);
+    error = ViE.capture->StopCapture(captureId);
     numberOfErrors += ViETest::TestError(error == -1, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
     numberOfErrors += ViETest::TestError(ViE.LastError()
@@ -452,7 +458,7 @@ int ViEAutoTest::ViECaptureAPITest()
                                          __LINE__);
 
     // Connect to invalid channel
-    error = ViE.ptrViECapture->ConnectCaptureDevice(captureId, 0);
+    error = ViE.capture->ConnectCaptureDevice(captureId, 0);
     numberOfErrors += ViETest::TestError(error == -1, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
     numberOfErrors += ViETest::TestError(ViE.LastError()
@@ -462,7 +468,7 @@ int ViEAutoTest::ViECaptureAPITest()
     tbVideoChannel channel(ViE, numberOfErrors);
 
     // Connect invalid captureId
-    error = ViE.ptrViECapture->ConnectCaptureDevice(captureId + 1,
+    error = ViE.capture->ConnectCaptureDevice(captureId + 1,
                                                     channel.videoChannel);
     numberOfErrors += ViETest::TestError(error == -1, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
@@ -472,13 +478,13 @@ int ViEAutoTest::ViECaptureAPITest()
                                          __LINE__);
 
     // Connect the capture device to the channel
-    error = ViE.ptrViECapture->ConnectCaptureDevice(captureId,
+    error = ViE.capture->ConnectCaptureDevice(captureId,
                                                     channel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
     // Connect the channel again
-    error = ViE.ptrViECapture->ConnectCaptureDevice(captureId,
+    error = ViE.capture->ConnectCaptureDevice(captureId,
                                                     channel.videoChannel);
     numberOfErrors += ViETest::TestError(error == -1, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
@@ -487,12 +493,12 @@ int ViEAutoTest::ViECaptureAPITest()
                                          __FUNCTION__, __LINE__);
 
     // Start the capture device
-    error = ViE.ptrViECapture->StartCapture(captureId);
+    error = ViE.capture->StartCapture(captureId);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
     // Release invalid capture device.
-    error = ViE.ptrViECapture->ReleaseCaptureDevice(captureId + 1);
+    error = ViE.capture->ReleaseCaptureDevice(captureId + 1);
     numberOfErrors += ViETest::TestError(error == -1, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
     numberOfErrors += ViETest::TestError(ViE.LastError()
@@ -500,12 +506,12 @@ int ViEAutoTest::ViECaptureAPITest()
                                          __FUNCTION__, __LINE__);
 
     // Release the capture device
-    error = ViE.ptrViECapture->ReleaseCaptureDevice(captureId);
+    error = ViE.capture->ReleaseCaptureDevice(captureId);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
     // Release the capture device again
-    error = ViE.ptrViECapture->ReleaseCaptureDevice(captureId);
+    error = ViE.capture->ReleaseCaptureDevice(captureId);
     numberOfErrors += ViETest::TestError(error == -1, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
     numberOfErrors += ViETest::TestError(ViE.LastError()
@@ -520,7 +526,7 @@ int ViEAutoTest::ViECaptureAPITest()
                                          __FUNCTION__, __LINE__);
 
     //Test SetRotation
-    error = ViE.ptrViECapture->SetRotateCapturedFrames(
+    error = ViE.capture->SetRotateCapturedFrames(
         captureId, webrtc::RotateCapturedFrame_90);
     numberOfErrors += ViETest::TestError(error == -1, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
@@ -529,32 +535,32 @@ int ViEAutoTest::ViECaptureAPITest()
         "ERROR: %s at line %d", __FUNCTION__, __LINE__);
 
     // Allocate capture device
-    error = ViE.ptrViECapture->AllocateCaptureDevice(*vcpm, captureId);
+    error = ViE.capture->AllocateCaptureDevice(*vcpm, captureId);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViECapture->SetRotateCapturedFrames(
+    error = ViE.capture->SetRotateCapturedFrames(
         captureId, webrtc::RotateCapturedFrame_0);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViECapture->SetRotateCapturedFrames(
+    error = ViE.capture->SetRotateCapturedFrames(
         captureId, webrtc::RotateCapturedFrame_90);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViECapture->SetRotateCapturedFrames(
+    error = ViE.capture->SetRotateCapturedFrames(
         captureId, webrtc::RotateCapturedFrame_180);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViECapture->SetRotateCapturedFrames(
+    error = ViE.capture->SetRotateCapturedFrames(
         captureId, webrtc::RotateCapturedFrame_270);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
     // Release the capture device
-    error = ViE.ptrViECapture->ReleaseCaptureDevice(captureId);
+    error = ViE.capture->ReleaseCaptureDevice(captureId);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
@@ -598,7 +604,7 @@ int ViEAutoTest::ViECaptureExternalCaptureTest()
 
 
     int error = 0;
-    tbInterfaces ViE("ViECapture_ExternalCapture", numberOfErrors);
+    TbInterfaces ViE("ViECaptureExternalCaptureTest", numberOfErrors);
     tbVideoChannel channel(ViE, numberOfErrors);
     channel.StartReceive();
     channel.StartSend();
@@ -614,7 +620,7 @@ int ViEAutoTest::ViECaptureExternalCaptureTest()
     numberOfErrors += ViETest::TestError(vcpm != NULL, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViECapture->AllocateCaptureDevice(*vcpm, captureId);
+    error = ViE.capture->AllocateCaptureDevice(*vcpm, captureId);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
     numberOfErrors += ViETest::TestError(externalCapture != 0,
@@ -622,44 +628,44 @@ int ViEAutoTest::ViECaptureExternalCaptureTest()
                                          __LINE__);
 
     // Connect the capture device to the channel
-    error = ViE.ptrViECapture->ConnectCaptureDevice(captureId,
+    error = ViE.capture->ConnectCaptureDevice(captureId,
                                                     channel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
     // Render the local capture
-    error = ViE.ptrViERender->AddRenderer(captureId, _window1, 1, 0.0, 0.0,
-                                          1.0, 1.0);
+    error = ViE.render->AddRenderer(captureId, _window1, 1, 0.0, 0.0,
+                                    1.0, 1.0);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
     // Render the remote capture
-    error = ViE.ptrViERender->AddRenderer(channel.videoChannel, _window2, 1,
-                                          0.0, 0.0, 1.0, 1.0);
+    error = ViE.render->AddRenderer(channel.videoChannel, _window2, 1,
+                                    0.0, 0.0, 1.0, 1.0);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViERender->StartRender(captureId);
+    error = ViE.render->StartRender(captureId);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViERender->StartRender(channel.videoChannel);
+    error = ViE.render->StartRender(channel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
     // Register observer
     CaptureObserver observer;
-    error = ViE.ptrViECapture->RegisterObserver(captureId, observer);
+    error = ViE.capture->RegisterObserver(captureId, observer);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
     // Enable brighness alarm
-    error = ViE.ptrViECapture->EnableBrightnessAlarm(captureId, true);
+    error = ViE.capture->EnableBrightnessAlarm(captureId, true);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
     CaptureEffectFilter effectFilter(176, 144, numberOfErrors);
-    error = ViE.ptrViEImageProcess->RegisterCaptureEffectFilter(captureId,
+    error = ViE.image_process->RegisterCaptureEffectFilter(captureId,
                                                                 effectFilter);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
@@ -782,12 +788,12 @@ int ViEAutoTest::ViECaptureExternalCaptureTest()
     delete videoFrame;
 
     // Release the capture device
-    error = ViE.ptrViECapture->ReleaseCaptureDevice(captureId);
+    error = ViE.capture->ReleaseCaptureDevice(captureId);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
     // Release the capture device again
-    error = ViE.ptrViECapture->ReleaseCaptureDevice(captureId);
+    error = ViE.capture->ReleaseCaptureDevice(captureId);
     numberOfErrors += ViETest::TestError(error == -1, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
     numberOfErrors += ViETest::TestError(

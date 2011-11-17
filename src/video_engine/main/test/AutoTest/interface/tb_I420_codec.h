@@ -21,13 +21,11 @@
 
 #include "video_codec_interface.h"
 
-class tbI420Encoder: public webrtc::VideoEncoder
+class TbI420Encoder: public webrtc::VideoEncoder
 {
 public:
-
-    tbI420Encoder();
-
-    virtual ~tbI420Encoder();
+    TbI420Encoder();
+    virtual ~TbI420Encoder();
 
     static WebRtc_Word32 VersionStatic(WebRtc_Word8* version,
                                        WebRtc_Word32 length);
@@ -88,13 +86,11 @@ private:
 /* tbI420Decoder class */
 /***************************/
 
-class tbI420Decoder: public webrtc::VideoDecoder
+class TbI420Decoder: public webrtc::VideoDecoder
 {
 public:
-
-    tbI420Decoder();
-
-    virtual ~tbI420Decoder();
+    TbI420Decoder();
+    virtual ~TbI420Decoder();
 
     virtual WebRtc_Word32 InitDecode(const webrtc::VideoCodec* inst,
                                      WebRtc_Word32 numberOfCores);

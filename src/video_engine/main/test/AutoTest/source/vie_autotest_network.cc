@@ -50,13 +50,13 @@ int ViEAutoTest::ViENetworkStandardTest()
     int error = 0;
     int numberOfErrors = 0;
 
-    tbInterfaces ViE("ViENetworkStandardTest", numberOfErrors); // Create VIE
-    tbCaptureDevice tbCapture(ViE, numberOfErrors);
-    error = ViE.ptrViERender->AddRenderer(tbCapture.captureId, _window1, 0,
-                                          0.0, 0.0, 1.0, 1.0);
+    TbInterfaces ViE("ViENetworkStandardTest", numberOfErrors); // Create VIE
+    TbCaptureDevice tbCapture(ViE, numberOfErrors);
+    error = ViE.render->AddRenderer(tbCapture.captureId, _window1, 0,
+                                    0.0, 0.0, 1.0, 1.0);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-    error = ViE.ptrViERender->StartRender(tbCapture.captureId);
+    error = ViE.render->StartRender(tbCapture.captureId);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
@@ -65,12 +65,12 @@ int ViEAutoTest::ViENetworkStandardTest()
         tbVideoChannel tbChannel(ViE, numberOfErrors, webrtc::kVideoCodecVP8);
         tbCapture.ConnectTo(tbChannel.videoChannel);
 
-        error = ViE.ptrViERender->AddRenderer(tbChannel.videoChannel, _window2,
-                                              1, 0.0, 0.0, 1.0, 1.0);
+        error = ViE.render->AddRenderer(tbChannel.videoChannel, _window2,
+                                        1, 0.0, 0.0, 1.0, 1.0);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViERender->StartRender(tbChannel.videoChannel);
+        error = ViE.render->StartRender(tbChannel.videoChannel);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
@@ -83,40 +83,40 @@ int ViEAutoTest::ViENetworkStandardTest()
         //
         // Transport
         //
-        tbExternalTransport testTransport(*ViE.ptrViENetwork);
-        error = ViE.ptrViENetwork->RegisterSendTransport(tbChannel.videoChannel,
-                                                         testTransport);
+        TbExternalTransport testTransport(*ViE.network);
+        error = ViE.network->RegisterSendTransport(tbChannel.videoChannel,
+                                                   testTransport);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
-        error = ViE.ptrViEBase->StartReceive(tbChannel.videoChannel);
+        error = ViE.base->StartReceive(tbChannel.videoChannel);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViEBase->StartSend(tbChannel.videoChannel);
+        error = ViE.base->StartSend(tbChannel.videoChannel);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error= ViE.ptrViERtpRtcp->SetKeyFrameRequestMethod(
+        error= ViE.rtp_rtcp->SetKeyFrameRequestMethod(
             tbChannel.videoChannel, webrtc::kViEKeyFrameRequestPliRtcp);
         numberOfErrors += ViETest::TestError(error == 0,
-                                                     "ERROR: %s at line %d",
-                                                     __FUNCTION__, __LINE__);
+                                             "ERROR: %s at line %d",
+                                             __FUNCTION__, __LINE__);
 
         ViETest::Log("Call started using external transport, video should "
             "see video in both windows\n");
         AutoTestSleep(KAutoTestSleepTimeMs);
 
-        error = ViE.ptrViEBase->StopReceive(tbChannel.videoChannel);
+        error = ViE.base->StopReceive(tbChannel.videoChannel);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViEBase->StopSend(tbChannel.videoChannel);
+        error = ViE.base->StopSend(tbChannel.videoChannel);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->DeregisterSendTransport(
+        error = ViE.network->DeregisterSendTransport(
             tbChannel.videoChannel);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
@@ -126,23 +126,23 @@ int ViEAutoTest::ViENetworkStandardTest()
         memset(myIpAddress, 0, 64);
         unsigned short rtpPort = 1234;
         memcpy(myIpAddress, "127.0.0.1", sizeof("127.0.0.1"));
-        error = ViE.ptrViENetwork->SetLocalReceiver(tbChannel.videoChannel,
-                                                    rtpPort, rtpPort + 1,
-                                                    myIpAddress);
+        error = ViE.network->SetLocalReceiver(tbChannel.videoChannel,
+                                              rtpPort, rtpPort + 1,
+                                              myIpAddress);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->SetSendDestination(tbChannel.videoChannel,
-                                                      myIpAddress, rtpPort,
-                                                      rtpPort + 1, rtpPort);
+        error = ViE.network->SetSendDestination(tbChannel.videoChannel,
+                                                myIpAddress, rtpPort,
+                                                rtpPort + 1, rtpPort);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViEBase->StartReceive(tbChannel.videoChannel);
+        error = ViE.base->StartReceive(tbChannel.videoChannel);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViEBase->StartSend(tbChannel.videoChannel);
+        error = ViE.base->StartSend(tbChannel.videoChannel);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
@@ -151,27 +151,27 @@ int ViEAutoTest::ViENetworkStandardTest()
                      "video in both windows\n");
         AutoTestSleep(KAutoTestSleepTimeMs);
 
-        error = ViE.ptrViENetwork->SetSourceFilter(tbChannel.videoChannel,
-                                                   rtpPort + 10, rtpPort + 11,
-                                                   myIpAddress);
+        error = ViE.network->SetSourceFilter(tbChannel.videoChannel,
+                                             rtpPort + 10, rtpPort + 11,
+                                             myIpAddress);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
         ViETest::Log("Added UDP port filter for incorrect ports, you should "
-            "not see video in Window2");
+                     "not see video in Window2");
         AutoTestSleep(2000);
-        error = ViE.ptrViENetwork->SetSourceFilter(tbChannel.videoChannel,
-                                                   rtpPort, rtpPort + 1,
-                                                   "123.1.1.0");
+        error = ViE.network->SetSourceFilter(tbChannel.videoChannel,
+                                             rtpPort, rtpPort + 1,
+                                             "123.1.1.0");
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
         ViETest::Log("Added IP filter for incorrect IP address, you should not "
                      "see video in Window2");
         AutoTestSleep(2000);
-        error = ViE.ptrViENetwork->SetSourceFilter(tbChannel.videoChannel,
-                                                   rtpPort, rtpPort + 1,
-                                                   myIpAddress);
+        error = ViE.network->SetSourceFilter(tbChannel.videoChannel,
+                                             rtpPort, rtpPort + 1,
+                                             myIpAddress);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
@@ -214,13 +214,13 @@ int ViEAutoTest::ViENetworkExtendedTest()
 
     int error = 0;
 
-    tbInterfaces ViE("ViENetworkExtendedTest", numberOfErrors); // Create VIE
-    tbCaptureDevice tbCapture(ViE, numberOfErrors);
-    error = ViE.ptrViERender->AddRenderer(tbCapture.captureId, _window1, 0,
-                                          0.0, 0.0, 1.0, 1.0);
+    TbInterfaces ViE("ViENetworkExtendedTest", numberOfErrors); // Create VIE
+    TbCaptureDevice tbCapture(ViE, numberOfErrors);
+    error = ViE.render->AddRenderer(tbCapture.captureId, _window1, 0,
+                                    0.0, 0.0, 1.0, 1.0);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-    error = ViE.ptrViERender->StartRender(tbCapture.captureId);
+    error = ViE.render->StartRender(tbCapture.captureId);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
@@ -236,14 +236,14 @@ int ViEAutoTest::ViENetworkExtendedTest()
         bool useSetSockOpt = false;
 
         webrtc::VideoCodec videoCodec;
-        error = ViE.ptrViECodec->GetSendCodec(tbChannel.videoChannel,
-                                              videoCodec);
+        error = ViE.codec->GetSendCodec(tbChannel.videoChannel,
+                                        videoCodec);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
         videoCodec.maxFramerate = 5;
-        error = ViE.ptrViECodec->SetSendCodec(tbChannel.videoChannel,
-                                              videoCodec);
+        error = ViE.codec->SetSendCodec(tbChannel.videoChannel,
+                                        videoCodec);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
@@ -255,25 +255,25 @@ int ViEAutoTest::ViENetworkExtendedTest()
         char myIpAddress[64];
         memset(myIpAddress, 0, 64);
         unsigned short rtpPort = 9000;
-        error = ViE.ptrViENetwork->GetLocalIP(myIpAddress, false);
+        error = ViE.network->GetLocalIP(myIpAddress, false);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->SetLocalReceiver(tbChannel.videoChannel,
-                                                    rtpPort, rtpPort + 1,
-                                                    myIpAddress);
+        error = ViE.network->SetLocalReceiver(tbChannel.videoChannel,
+                                              rtpPort, rtpPort + 1,
+                                              myIpAddress);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->SetSendDestination(tbChannel.videoChannel,
-                                                      remoteIp, rtpPort,
-                                                      rtpPort + 1, rtpPort);
+        error = ViE.network->SetSendDestination(tbChannel.videoChannel,
+                                                remoteIp, rtpPort,
+                                                rtpPort + 1, rtpPort);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
         // ToS
-        error = ViE.ptrViENetwork->SetSendToS(tbChannel.videoChannel, 2);
+        error = ViE.network->SetSendToS(tbChannel.videoChannel, 2);
         if (error != 0)
         {
             ViETest::Log("ViESetSendToS error!.");
@@ -286,17 +286,17 @@ int ViEAutoTest::ViENetworkExtendedTest()
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->GetSendToS(tbChannel.videoChannel, DSCP,
-                                              useSetSockOpt); // No ToS set
+        error = ViE.network->GetSendToS(tbChannel.videoChannel, DSCP,
+                                        useSetSockOpt); // No ToS set
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
-        error = ViE.ptrViEBase->StartReceive(tbChannel.videoChannel);
+        error = ViE.base->StartReceive(tbChannel.videoChannel);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViEBase->StartSend(tbChannel.videoChannel);
+        error = ViE.base->StartSend(tbChannel.videoChannel);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
@@ -306,40 +306,40 @@ int ViEAutoTest::ViENetworkExtendedTest()
         ViETest::Log(" DSCP set to 0x%x\n", DSCP);
         AutoTestSleep(1000);
 
-        error = ViE.ptrViENetwork->SetSendToS(tbChannel.videoChannel, 63);
+        error = ViE.network->SetSendToS(tbChannel.videoChannel, 63);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->GetSendToS(tbChannel.videoChannel, DSCP,
-                                              useSetSockOpt); // No ToS set
-        numberOfErrors += ViETest::TestError(error == 0,
-                                             "ERROR: %s at line %d",
-                                             __FUNCTION__, __LINE__);
-        ViETest::Log(" DSCP set to 0x%x\n", DSCP);
-        AutoTestSleep(1000);
-
-        error = ViE.ptrViENetwork->SetSendToS(tbChannel.videoChannel, 0);
-        numberOfErrors += ViETest::TestError(error == 0,
-                                             "ERROR: %s at line %d",
-                                             __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->SetSendToS(tbChannel.videoChannel, 2, true);
-        numberOfErrors += ViETest::TestError(error == 0,
-                                             "ERROR: %s at line %d",
-                                             __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->GetSendToS(tbChannel.videoChannel, DSCP,
-                                              useSetSockOpt); // No ToS set
+        error = ViE.network->GetSendToS(tbChannel.videoChannel, DSCP,
+                                        useSetSockOpt); // No ToS set
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
         ViETest::Log(" DSCP set to 0x%x\n", DSCP);
         AutoTestSleep(1000);
 
-        error = ViE.ptrViENetwork->SetSendToS(tbChannel.videoChannel, 63, true);
+        error = ViE.network->SetSendToS(tbChannel.videoChannel, 0);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->GetSendToS(tbChannel.videoChannel, DSCP,
-                                              useSetSockOpt); // No ToS set
+        error = ViE.network->SetSendToS(tbChannel.videoChannel, 2, true);
+        numberOfErrors += ViETest::TestError(error == 0,
+                                             "ERROR: %s at line %d",
+                                             __FUNCTION__, __LINE__);
+        error = ViE.network->GetSendToS(tbChannel.videoChannel, DSCP,
+                                        useSetSockOpt); // No ToS set
+        numberOfErrors += ViETest::TestError(error == 0,
+                                             "ERROR: %s at line %d",
+                                             __FUNCTION__, __LINE__);
+        ViETest::Log(" DSCP set to 0x%x\n", DSCP);
+        AutoTestSleep(1000);
+
+        error = ViE.network->SetSendToS(tbChannel.videoChannel, 63, true);
+        numberOfErrors += ViETest::TestError(error == 0,
+                                             "ERROR: %s at line %d",
+                                             __FUNCTION__, __LINE__);
+        error = ViE.network->GetSendToS(tbChannel.videoChannel, DSCP,
+                                        useSetSockOpt); // No ToS set
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
@@ -385,7 +385,7 @@ int ViEAutoTest::ViENetworkAPITest()
     int error = 0;
     int numberOfErrors = 0;
 
-    tbInterfaces ViE("ViENetworkAPITest", numberOfErrors); // Create VIE
+    TbInterfaces ViE("ViENetworkAPITest", numberOfErrors); // Create VIE
     {
         // Create a video channel
         tbVideoChannel tbChannel(ViE, numberOfErrors, webrtc::kVideoCodecVP8);
@@ -397,87 +397,87 @@ int ViEAutoTest::ViENetworkAPITest()
         //
         // External transport
         //
-        tbExternalTransport testTransport(*ViE.ptrViENetwork);
-        error = ViE.ptrViENetwork->RegisterSendTransport(tbChannel.videoChannel,
-                                                         testTransport);
+        TbExternalTransport testTransport(*ViE.network);
+        error = ViE.network->RegisterSendTransport(tbChannel.videoChannel,
+                                                   testTransport);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->RegisterSendTransport(tbChannel.videoChannel,
-                                                         testTransport);
+        error = ViE.network->RegisterSendTransport(tbChannel.videoChannel,
+                                                   testTransport);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
         unsigned char packet[1500];
         packet[0] = 0x80; // V=2, P=0, X=0, CC=0
         packet[1] = 0x78; // M=0, PT = 120 (VP8)
-        error = ViE.ptrViENetwork->ReceivedRTPPacket(tbChannel.videoChannel,
-                                                     packet, 1500);
+        error = ViE.network->ReceivedRTPPacket(tbChannel.videoChannel,
+                                               packet, 1500);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->ReceivedRTCPPacket(tbChannel.videoChannel,
-                                                      packet, 1500);
+        error = ViE.network->ReceivedRTCPPacket(tbChannel.videoChannel,
+                                                packet, 1500);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViEBase->StartReceive(tbChannel.videoChannel);
+        error = ViE.base->StartReceive(tbChannel.videoChannel);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->ReceivedRTPPacket(tbChannel.videoChannel,
-                                                     packet, 1500);
+        error = ViE.network->ReceivedRTPPacket(tbChannel.videoChannel,
+                                               packet, 1500);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->ReceivedRTCPPacket(tbChannel.videoChannel,
-                                                      packet, 1500);
+        error = ViE.network->ReceivedRTCPPacket(tbChannel.videoChannel,
+                                                packet, 1500);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->ReceivedRTPPacket(tbChannel.videoChannel,
-                                                     packet, 11);
+        error = ViE.network->ReceivedRTPPacket(tbChannel.videoChannel,
+                                               packet, 11);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->ReceivedRTPPacket(tbChannel.videoChannel,
-                                                     packet, 11);
+        error = ViE.network->ReceivedRTPPacket(tbChannel.videoChannel,
+                                               packet, 11);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->ReceivedRTPPacket(tbChannel.videoChannel,
-                                                     packet, 3000);
+        error = ViE.network->ReceivedRTPPacket(tbChannel.videoChannel,
+                                               packet, 3000);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->ReceivedRTPPacket(tbChannel.videoChannel,
-                                                     packet, 3000);
+        error = ViE.network->ReceivedRTPPacket(tbChannel.videoChannel,
+                                               packet, 3000);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViEBase->StopReceive(tbChannel.videoChannel);
+        error = ViE.base->StopReceive(tbChannel.videoChannel);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViEBase->StartSend(tbChannel.videoChannel);
+        error = ViE.base->StartSend(tbChannel.videoChannel);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->DeregisterSendTransport(
+        error = ViE.network->DeregisterSendTransport(
             tbChannel.videoChannel); // Sending
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViEBase->StopSend(tbChannel.videoChannel);
+        error = ViE.base->StopSend(tbChannel.videoChannel);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->DeregisterSendTransport(
+        error = ViE.network->DeregisterSendTransport(
             tbChannel.videoChannel);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->DeregisterSendTransport(
+        error = ViE.network->DeregisterSendTransport(
             tbChannel.videoChannel); // Already deregistered
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
@@ -492,18 +492,18 @@ int ViEAutoTest::ViENetworkAPITest()
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);*/
-        error = ViE.ptrViENetwork->SetLocalReceiver(tbChannel.videoChannel,
-                                                    1234, 1235, "127.0.0.1");
+        error = ViE.network->SetLocalReceiver(tbChannel.videoChannel,
+                                              1234, 1235, "127.0.0.1");
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->SetLocalReceiver(tbChannel.videoChannel,
-                                                    1234, 1235, "127.0.0.1");
+        error = ViE.network->SetLocalReceiver(tbChannel.videoChannel,
+                                              1234, 1235, "127.0.0.1");
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->SetLocalReceiver(tbChannel.videoChannel,
-                                                    1236, 1237, "127.0.0.1");
+        error = ViE.network->SetLocalReceiver(tbChannel.videoChannel,
+                                              1236, 1237, "127.0.0.1");
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
@@ -511,28 +511,28 @@ int ViEAutoTest::ViENetworkAPITest()
         unsigned short rtcpPort = 0;
         char ipAddress[64];
         memset(ipAddress, 0, 64);
-        error = ViE.ptrViENetwork->GetLocalReceiver(tbChannel.videoChannel,
-                                                    rtpPort, rtcpPort,
-                                                    ipAddress);
+        error = ViE.network->GetLocalReceiver(tbChannel.videoChannel,
+                                              rtpPort, rtcpPort,
+                                              ipAddress);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViEBase->StartReceive(tbChannel.videoChannel);
+        error = ViE.base->StartReceive(tbChannel.videoChannel);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->SetLocalReceiver(tbChannel.videoChannel,
-                                                    1234, 1235, "127.0.0.1");
+        error = ViE.network->SetLocalReceiver(tbChannel.videoChannel,
+                                              1234, 1235, "127.0.0.1");
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->GetLocalReceiver(tbChannel.videoChannel,
-                                                    rtpPort, rtcpPort,
-                                                    ipAddress);
+        error = ViE.network->GetLocalReceiver(tbChannel.videoChannel,
+                                              rtpPort, rtcpPort,
+                                              ipAddress);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViEBase->StopReceive(tbChannel.videoChannel);
+        error = ViE.base->StopReceive(tbChannel.videoChannel);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
@@ -540,68 +540,68 @@ int ViEAutoTest::ViENetworkAPITest()
         //
         // Send destination
         //
-        error = ViE.ptrViENetwork->SetSendDestination(tbChannel.videoChannel,
-                                                      "127.0.0.1", 1234, 1235,
-                                                      1234, 1235);
+        error = ViE.network->SetSendDestination(tbChannel.videoChannel,
+                                                "127.0.0.1", 1234, 1235,
+                                                1234, 1235);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->SetSendDestination(tbChannel.videoChannel,
-                                                      "127.0.0.1", 1236, 1237,
-                                                      1234, 1235);
+        error = ViE.network->SetSendDestination(tbChannel.videoChannel,
+                                                "127.0.0.1", 1236, 1237,
+                                                1234, 1235);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
         unsigned short sourceRtpPort = 0;
         unsigned short sourceRtcpPort = 0;
-        error = ViE.ptrViENetwork->GetSendDestination(tbChannel.videoChannel,
-                                                      ipAddress, rtpPort,
-                                                      rtcpPort, sourceRtpPort,
-                                                      sourceRtcpPort);
+        error = ViE.network->GetSendDestination(tbChannel.videoChannel,
+                                                ipAddress, rtpPort,
+                                                rtcpPort, sourceRtpPort,
+                                                sourceRtcpPort);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViEBase->StartSend(tbChannel.videoChannel);
+        error = ViE.base->StartSend(tbChannel.videoChannel);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
         // Not allowed while sending
-        error = ViE.ptrViENetwork->SetSendDestination(tbChannel.videoChannel,
-                                                      "127.0.0.1", 1234, 1235,
-                                                      1234, 1235);
+        error = ViE.network->SetSendDestination(tbChannel.videoChannel,
+                                                "127.0.0.1", 1234, 1235,
+                                                1234, 1235);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        numberOfErrors += ViETest::TestError(ViE.ptrViEBase->LastError()
-            == kViENetworkAlreadySending, "ERROR: %s at line %d", __FUNCTION__,
-                                             __LINE__);
+        numberOfErrors += ViETest::TestError(
+            ViE.base->LastError() == kViENetworkAlreadySending,
+            "ERROR: %s at line %d", __FUNCTION__, __LINE__);
 
-        error = ViE.ptrViEBase->StopSend(tbChannel.videoChannel);
+        error = ViE.base->StopSend(tbChannel.videoChannel);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
-        error = ViE.ptrViENetwork->SetSendDestination(tbChannel.videoChannel,
-                                                      "127.0.0.1", 1234, 1235,
-                                                      1234, 1235);
+        error = ViE.network->SetSendDestination(tbChannel.videoChannel,
+                                                "127.0.0.1", 1234, 1235,
+                                                1234, 1235);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
-        error = ViE.ptrViEBase->StartSend(tbChannel.videoChannel);
+        error = ViE.base->StartSend(tbChannel.videoChannel);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
-        error = ViE.ptrViENetwork->GetSendDestination(tbChannel.videoChannel,
-                                                      ipAddress, rtpPort,
-                                                      rtcpPort, sourceRtpPort,
-                                                      sourceRtcpPort);
+        error = ViE.network->GetSendDestination(tbChannel.videoChannel,
+                                                ipAddress, rtpPort,
+                                                rtcpPort, sourceRtpPort,
+                                                sourceRtcpPort);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViEBase->StopSend(tbChannel.videoChannel);
+        error = ViE.base->StopSend(tbChannel.videoChannel);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
@@ -611,7 +611,7 @@ int ViEAutoTest::ViENetworkAPITest()
         //
 
         // GetSourceInfo: Tested in functional test
-        error = ViE.ptrViENetwork->GetLocalIP(ipAddress, false);
+        error = ViE.network->GetLocalIP(ipAddress, false);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
@@ -620,41 +620,41 @@ int ViEAutoTest::ViENetworkAPITest()
         //
         // Filter
         //
-        error = ViE.ptrViENetwork->GetSourceFilter(tbChannel.videoChannel,
-                                                   rtpPort, rtcpPort, ipAddress);
+        error = ViE.network->GetSourceFilter(tbChannel.videoChannel,
+                                             rtpPort, rtcpPort, ipAddress);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->SetSourceFilter(tbChannel.videoChannel,
-                                                   1234, 1235, "10.10.10.10");
+        error = ViE.network->SetSourceFilter(tbChannel.videoChannel,
+                                             1234, 1235, "10.10.10.10");
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->SetSourceFilter(tbChannel.videoChannel,
-                                                   1236, 1237, "127.0.0.1");
+        error = ViE.network->SetSourceFilter(tbChannel.videoChannel,
+                                             1236, 1237, "127.0.0.1");
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->GetSourceFilter(tbChannel.videoChannel,
-                                                   rtpPort, rtcpPort, ipAddress);
+        error = ViE.network->GetSourceFilter(tbChannel.videoChannel,
+                                             rtpPort, rtcpPort, ipAddress);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->SetSourceFilter(tbChannel.videoChannel, 0,
-                                                   0, NULL);
+        error = ViE.network->SetSourceFilter(tbChannel.videoChannel, 0,
+                                             0, NULL);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->GetSourceFilter(tbChannel.videoChannel,
-                                                   rtpPort, rtcpPort, ipAddress);
+        error = ViE.network->GetSourceFilter(tbChannel.videoChannel,
+                                             rtpPort, rtcpPort, ipAddress);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
     }
     {
         tbVideoChannel tbChannel(ViE, numberOfErrors); // Create a video channel
-        error = ViE.ptrViENetwork->SetLocalReceiver(tbChannel.videoChannel,
-                                                    1234);
+        error = ViE.network->SetLocalReceiver(tbChannel.videoChannel,
+                                              1234);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
@@ -662,43 +662,43 @@ int ViEAutoTest::ViENetworkAPITest()
         int DSCP = 0;
         bool useSetSockOpt = false;
         // SetSockOpt should work without a locally bind socket
-        error = ViE.ptrViENetwork->GetSendToS(tbChannel.videoChannel, DSCP,
-                                              useSetSockOpt); // No ToS set
+        error = ViE.network->GetSendToS(tbChannel.videoChannel, DSCP,
+                                        useSetSockOpt); // No ToS set
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
         numberOfErrors += ViETest::TestError(DSCP == 0, "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
         // Invalid input
-        error = ViE.ptrViENetwork->SetSendToS(tbChannel.videoChannel, -1, true);        
-		numberOfErrors += ViETest::TestError(error == -1,
+        error = ViE.network->SetSendToS(tbChannel.videoChannel, -1, true);
+        numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
         // Invalid input
-        error = ViE.ptrViENetwork->SetSendToS(tbChannel.videoChannel, 64, true);
+        error = ViE.network->SetSendToS(tbChannel.videoChannel, 64, true);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
         // Valid
-        error = ViE.ptrViENetwork->SetSendToS(tbChannel.videoChannel, 20, true);
+        error = ViE.network->SetSendToS(tbChannel.videoChannel, 20, true);
 
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->GetSendToS(tbChannel.videoChannel, DSCP,
-                                              useSetSockOpt);
+        error = ViE.network->GetSendToS(tbChannel.videoChannel, DSCP,
+                                        useSetSockOpt);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
         numberOfErrors += ViETest::TestError((DSCP == 20 && useSetSockOpt
             == true), "ERROR: %s at line %d", __FUNCTION__, __LINE__);
         // Disable
-        error = ViE.ptrViENetwork->SetSendToS(tbChannel.videoChannel, 0, true);
+        error = ViE.network->SetSendToS(tbChannel.videoChannel, 0, true);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->GetSendToS(tbChannel.videoChannel, DSCP,
-                                              useSetSockOpt);
+        error = ViE.network->GetSendToS(tbChannel.videoChannel, DSCP,
+                                        useSetSockOpt);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
@@ -708,35 +708,35 @@ int ViEAutoTest::ViENetworkAPITest()
         char myIpAddress[64];
         memset(myIpAddress, 0, 64);
         // Get local ip to be able to set ToS withtou setSockOpt
-        error = ViE.ptrViENetwork->GetLocalIP(myIpAddress, false);
+        error = ViE.network->GetLocalIP(myIpAddress, false);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->SetLocalReceiver(tbChannel.videoChannel,
+        error = ViE.network->SetLocalReceiver(tbChannel.videoChannel,
                                                     1234, 1235, myIpAddress);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
         // Invalid input
-        error = ViE.ptrViENetwork->SetSendToS(tbChannel.videoChannel, -1,
-                                              false);
+        error = ViE.network->SetSendToS(tbChannel.videoChannel, -1,
+                                        false);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->SetSendToS(tbChannel.videoChannel, 64,
-                                              false); // Invalid input
+        error = ViE.network->SetSendToS(tbChannel.videoChannel, 64,
+                                        false); // Invalid input
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->GetSendToS(tbChannel.videoChannel, DSCP,
-                                              useSetSockOpt); // No ToS set
+        error = ViE.network->GetSendToS(tbChannel.videoChannel, DSCP,
+                                        useSetSockOpt); // No ToS set
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
         numberOfErrors += ViETest::TestError(DSCP == 0, "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->SetSendToS(tbChannel.videoChannel, 20,
-                                              false); // Valid
+        error = ViE.network->SetSendToS(tbChannel.videoChannel, 20,
+                                        false); // Valid
         if (error != 0)
         {
             ViETest::Log("ViESetSendToS error!.");
@@ -749,8 +749,8 @@ int ViEAutoTest::ViENetworkAPITest()
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->GetSendToS(tbChannel.videoChannel, DSCP,
-                                              useSetSockOpt);
+        error = ViE.network->GetSendToS(tbChannel.videoChannel, DSCP,
+                                        useSetSockOpt);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
@@ -765,11 +765,11 @@ int ViEAutoTest::ViENetworkAPITest()
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 #endif
-        error = ViE.ptrViENetwork->SetSendToS(tbChannel.videoChannel, 0, false);
+        error = ViE.network->SetSendToS(tbChannel.videoChannel, 0, false);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->GetSendToS(tbChannel.videoChannel, DSCP,
+        error = ViE.network->GetSendToS(tbChannel.videoChannel, DSCP,
                                               useSetSockOpt);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
@@ -801,82 +801,82 @@ int ViEAutoTest::ViENetworkAPITest()
 
 #if defined(_WIN32)
         // No socket
-        error = ViE.ptrViENetwork->SetSendGQoS(tbChannel.videoChannel, true,
+        error = ViE.network->SetSendGQoS(tbChannel.videoChannel, true,
                                                SERVICETYPE_BESTEFFORT);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
-        error = ViE.ptrViENetwork->SetLocalReceiver(tbChannel.videoChannel,
-                                                    1234);
+        error = ViE.network->SetLocalReceiver(tbChannel.videoChannel,
+                                              1234);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
         // Sender not initialized
-        error = ViE.ptrViENetwork->SetSendGQoS(tbChannel.videoChannel, true,
-                                               SERVICETYPE_BESTEFFORT);
+        error = ViE.network->SetSendGQoS(tbChannel.videoChannel, true,
+                                         SERVICETYPE_BESTEFFORT);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->SetSendDestination(tbChannel.videoChannel,
-                                                      "127.0.0.1", 12345);
+        error = ViE.network->SetSendDestination(tbChannel.videoChannel,
+                                                "127.0.0.1", 12345);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
         // Try to set all non-supported service types
-        error = ViE.ptrViENetwork->SetSendGQoS(tbChannel.videoChannel, true,
-                                               SERVICETYPE_NOTRAFFIC);
+        error = ViE.network->SetSendGQoS(tbChannel.videoChannel, true,
+                                         SERVICETYPE_NOTRAFFIC);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->SetSendGQoS(tbChannel.videoChannel, true,
-                                               SERVICETYPE_NETWORK_UNAVAILABLE);
+        error = ViE.network->SetSendGQoS(tbChannel.videoChannel, true,
+                                         SERVICETYPE_NETWORK_UNAVAILABLE);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->SetSendGQoS(tbChannel.videoChannel, true,
-                                               SERVICETYPE_GENERAL_INFORMATION);
+        error = ViE.network->SetSendGQoS(tbChannel.videoChannel, true,
+                                         SERVICETYPE_GENERAL_INFORMATION);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->SetSendGQoS(tbChannel.videoChannel, true,
-                                               SERVICETYPE_NOCHANGE);
+        error = ViE.network->SetSendGQoS(tbChannel.videoChannel, true,
+                                         SERVICETYPE_NOCHANGE);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->SetSendGQoS(tbChannel.videoChannel, true,
-                                               SERVICETYPE_NONCONFORMING);
+        error = ViE.network->SetSendGQoS(tbChannel.videoChannel, true,
+                                         SERVICETYPE_NONCONFORMING);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->SetSendGQoS(tbChannel.videoChannel, true,
-                                               SERVICETYPE_NOTRAFFIC);
+        error = ViE.network->SetSendGQoS(tbChannel.videoChannel, true,
+                                         SERVICETYPE_NOTRAFFIC);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->SetSendGQoS(tbChannel.videoChannel, true,
-                                               SERVICETYPE_NETWORK_CONTROL);
+        error = ViE.network->SetSendGQoS(tbChannel.videoChannel, true,
+                                         SERVICETYPE_NETWORK_CONTROL);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->SetSendGQoS(tbChannel.videoChannel, true,
-                                               SERVICE_BESTEFFORT);
+        error = ViE.network->SetSendGQoS(tbChannel.videoChannel, true,
+                                         SERVICE_BESTEFFORT);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->SetSendGQoS(tbChannel.videoChannel, true,
-                                               SERVICE_CONTROLLEDLOAD);
+        error = ViE.network->SetSendGQoS(tbChannel.videoChannel, true,
+                                         SERVICE_CONTROLLEDLOAD);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->SetSendGQoS(tbChannel.videoChannel, true,
-                                               SERVICE_GUARANTEED);
+        error = ViE.network->SetSendGQoS(tbChannel.videoChannel, true,
+                                         SERVICE_GUARANTEED);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->SetSendGQoS(tbChannel.videoChannel, true,
-                                               SERVICE_QUALITATIVE);
+        error = ViE.network->SetSendGQoS(tbChannel.videoChannel, true,
+                                         SERVICE_QUALITATIVE);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
@@ -886,78 +886,82 @@ int ViEAutoTest::ViENetworkAPITest()
         int serviceType = 0;
         int overrideDSCP = 0;
 
-        error = ViE.ptrViENetwork->GetSendGQoS(tbChannel.videoChannel, enabled,
-                                               serviceType, overrideDSCP);
+        error = ViE.network->GetSendGQoS(tbChannel.videoChannel, enabled,
+                                         serviceType, overrideDSCP);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
         numberOfErrors += ViETest::TestError(enabled == false,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->SetSendGQoS(tbChannel.videoChannel, true,
-                                               SERVICETYPE_BESTEFFORT);
+        error = ViE.network->SetSendGQoS(tbChannel.videoChannel, true,
+                                         SERVICETYPE_BESTEFFORT);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->GetSendGQoS(tbChannel.videoChannel, enabled,
-                                               serviceType, overrideDSCP);
+        error = ViE.network->GetSendGQoS(tbChannel.videoChannel, enabled,
+                                         serviceType, overrideDSCP);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        numberOfErrors += ViETest::TestError((enabled == true && serviceType
-            == SERVICETYPE_BESTEFFORT && overrideDSCP == false),
-                                             "ERROR: %s at line %d",
-                                             __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->SetSendGQoS(tbChannel.videoChannel, true,
-                                               SERVICETYPE_CONTROLLEDLOAD);
+        numberOfErrors += ViETest::TestError(
+            (enabled == true &&
+                serviceType == SERVICETYPE_BESTEFFORT &&
+                overrideDSCP == false),
+            "ERROR: %s at line %d", __FUNCTION__, __LINE__);
+        error = ViE.network->SetSendGQoS(tbChannel.videoChannel, true,
+                                         SERVICETYPE_CONTROLLEDLOAD);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->GetSendGQoS(tbChannel.videoChannel, enabled,
-                                               serviceType, overrideDSCP);
+        error = ViE.network->GetSendGQoS(tbChannel.videoChannel, enabled,
+                                         serviceType, overrideDSCP);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        numberOfErrors += ViETest::TestError((enabled == true && serviceType
-            == SERVICETYPE_CONTROLLEDLOAD && overrideDSCP == false),
-                                             "ERROR: %s at line %d",
-                                             __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->SetSendGQoS(tbChannel.videoChannel, true,
-                                               SERVICETYPE_GUARANTEED);
+        numberOfErrors += ViETest::TestError(
+            (enabled == true &&
+                serviceType == SERVICETYPE_CONTROLLEDLOAD &&
+                overrideDSCP == false),
+            "ERROR: %s at line %d", __FUNCTION__, __LINE__);
+        error = ViE.network->SetSendGQoS(tbChannel.videoChannel, true,
+                                         SERVICETYPE_GUARANTEED);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->GetSendGQoS(tbChannel.videoChannel, enabled,
-                                               serviceType, overrideDSCP);
+        error = ViE.network->GetSendGQoS(tbChannel.videoChannel, enabled,
+                                         serviceType, overrideDSCP);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
         numberOfErrors += ViETest::TestError(
             (enabled == true
-             && serviceType == SERVICETYPE_GUARANTEED
-             && overrideDSCP == false),
-             "ERROR: %s at line %d", __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->SetSendGQoS(tbChannel.videoChannel, true,
-                                               SERVICETYPE_QUALITATIVE);
+                && serviceType == SERVICETYPE_GUARANTEED
+                && overrideDSCP == false),
+                "ERROR: %s at line %d", __FUNCTION__, __LINE__);
+        error = ViE.network->SetSendGQoS(tbChannel.videoChannel, true,
+                                         SERVICETYPE_QUALITATIVE);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->GetSendGQoS(tbChannel.videoChannel, enabled,
-                                               serviceType, overrideDSCP);
+        error = ViE.network->GetSendGQoS(tbChannel.videoChannel, enabled,
+                                         serviceType, overrideDSCP);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        numberOfErrors += ViETest::TestError((enabled == true && serviceType
-            == SERVICETYPE_QUALITATIVE && overrideDSCP == false),
-                                             "ERROR: %s at line %d",
-                                             __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->SetSendGQoS(tbChannel.videoChannel, false,
-                                               SERVICETYPE_QUALITATIVE);
+        numberOfErrors += ViETest::TestError(
+            (enabled == true &&
+                serviceType == SERVICETYPE_QUALITATIVE &&
+                overrideDSCP == false),
+            "ERROR: %s at line %d",
+            __FUNCTION__, __LINE__);
+        error = ViE.network->SetSendGQoS(tbChannel.videoChannel, false,
+                                         SERVICETYPE_QUALITATIVE);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->GetSendGQoS(tbChannel.videoChannel, enabled,
-                                               serviceType, overrideDSCP);
+        error = ViE.network->GetSendGQoS(tbChannel.videoChannel, enabled,
+                                         serviceType, overrideDSCP);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
@@ -973,12 +977,12 @@ int ViEAutoTest::ViENetworkAPITest()
         // Create a video channel
         tbVideoChannel tbChannel(ViE, numberOfErrors);
         // Invalid input
-        error = ViE.ptrViENetwork->SetMTU(tbChannel.videoChannel, 1600);
+        error = ViE.network->SetMTU(tbChannel.videoChannel, 1600);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
         // Invalid input
-        error = ViE.ptrViENetwork->SetMTU(tbChannel.videoChannel, 800);
+        error = ViE.network->SetMTU(tbChannel.videoChannel, 800);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
@@ -987,38 +991,38 @@ int ViEAutoTest::ViENetworkAPITest()
         // Observer and timeout
         //
         ViEAutoTestNetworkObserver vieTestObserver;
-        error = ViE.ptrViENetwork->RegisterObserver(tbChannel.videoChannel,
-                                                    vieTestObserver);
+        error = ViE.network->RegisterObserver(tbChannel.videoChannel,
+                                              vieTestObserver);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->RegisterObserver(tbChannel.videoChannel,
-                                                    vieTestObserver);
+        error = ViE.network->RegisterObserver(tbChannel.videoChannel,
+                                              vieTestObserver);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->SetPeriodicDeadOrAliveStatus(
+        error = ViE.network->SetPeriodicDeadOrAliveStatus(
             tbChannel.videoChannel, true); // No observer
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->DeregisterObserver(tbChannel.videoChannel);
+        error = ViE.network->DeregisterObserver(tbChannel.videoChannel);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
-        error = ViE.ptrViENetwork->DeregisterObserver(tbChannel.videoChannel);
+        error = ViE.network->DeregisterObserver(tbChannel.videoChannel);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViENetwork->SetPeriodicDeadOrAliveStatus(
+        error = ViE.network->SetPeriodicDeadOrAliveStatus(
             tbChannel.videoChannel, true); // No observer
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
         // Packet timout notification
-        error = ViE.ptrViENetwork->SetPacketTimeoutNotification(
+        error = ViE.network->SetPacketTimeoutNotification(
             tbChannel.videoChannel, true, 10);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",

@@ -438,7 +438,7 @@ int VideoEngineSampleCode(void* window1, void* window2)
     }
 
     // Setting External transport
-    tbExternalTransport extTransport(*(ptrViENetwork));
+    TbExternalTransport extTransport(*(ptrViENetwork));
 
     int testMode = 0;
     std::cout << std::endl;

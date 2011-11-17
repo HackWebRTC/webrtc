@@ -24,25 +24,28 @@
 #include "vie_encryption.h"
 #include "vie_defines.h"
 
-class tbInterfaces
+// This class deals with all the tedium of setting up video engine interfaces.
+// It does its work in constructor and destructor, so keeping it in scope is
+// enough.
+class TbInterfaces
 {
 public:
-    tbInterfaces(const char* testName, int& nrOfErrors);
+    TbInterfaces(const char* test_name, int& number_of_errors);
+    ~TbInterfaces(void);
 
-    ~tbInterfaces(void);
-    webrtc::VideoEngine* ptrViE;
-    webrtc::ViEBase* ptrViEBase;
-    webrtc::ViECapture* ptrViECapture;
-    webrtc::ViERender* ptrViERender;
-    webrtc::ViERTP_RTCP* ptrViERtpRtcp;
-    webrtc::ViECodec* ptrViECodec;
-    webrtc::ViENetwork* ptrViENetwork;
-    webrtc::ViEImageProcess* ptrViEImageProcess;
-    webrtc::ViEEncryption* ptrViEEncryption;
+    webrtc::VideoEngine* video_engine;
+    webrtc::ViEBase* base;
+    webrtc::ViECapture* capture;
+    webrtc::ViERender* render;
+    webrtc::ViERTP_RTCP* rtp_rtcp;
+    webrtc::ViECodec* codec;
+    webrtc::ViENetwork* network;
+    webrtc::ViEImageProcess* image_process;
+    webrtc::ViEEncryption* encryption;
 
     int LastError()
     {
-        return ptrViEBase->LastError();
+        return base->LastError();
     }
 
 private:

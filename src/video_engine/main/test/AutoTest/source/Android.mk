@@ -28,7 +28,8 @@ LOCAL_SRC_FILES:= \
     vie_autotest_loopback.cc \
     vie_autotest_network.cc \
     vie_autotest_render.cc \
-    vie_autotest_rtp_rtcp.cc 
+    vie_autotest_rtp_rtcp.cc \
+    vie_comparison_tests.cc
 
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \
@@ -38,6 +39,8 @@ LOCAL_CFLAGS := \
 
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../interface \
+    $(LOCAL_PATH)/../helpers \
+    $(LOCAL_PATH)/../primitives \
     $(LOCAL_PATH)/../../../../.. \
     $(LOCAL_PATH)/../../../test/AutoTest/interface \
     $(LOCAL_PATH)/../../../interface \

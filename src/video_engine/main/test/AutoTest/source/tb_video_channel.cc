@@ -10,22 +10,22 @@
 
 #include "tb_video_channel.h"
 
-tbVideoChannel::tbVideoChannel(tbInterfaces& Engine, int& nrOfErrors,
+tbVideoChannel::tbVideoChannel(TbInterfaces& Engine, int& nrOfErrors,
                                webrtc::VideoCodecType sendCodec, int width,
                                int height, int frameRate, int startBitrate) :
     videoChannel(-1), numberOfErrors(nrOfErrors), ViE(Engine)
 {
     int error;
-    error = ViE.ptrViEBase->CreateChannel(videoChannel);
+    error = ViE.base->CreateChannel(videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
     webrtc::VideoCodec videoCodec;
     memset(&videoCodec, 0, sizeof(webrtc::VideoCodec));
     bool sendCodecSet = false;
-    for (int idx = 0; idx < ViE.ptrViECodec->NumberOfCodecs(); idx++)
+    for (int idx = 0; idx < ViE.codec->NumberOfCodecs(); idx++)
     {
-        error = ViE.ptrViECodec->GetCodec(idx, videoCodec);
+        error = ViE.codec->GetCodec(idx, videoCodec);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
@@ -40,7 +40,7 @@ tbVideoChannel::tbVideoChannel(tbInterfaces& Engine, int& nrOfErrors,
                 videoCodec.startBitrate = startBitrate;
                 videoCodec.maxBitrate = startBitrate * 3;
             }
-            error = ViE.ptrViECodec->SetSendCodec(videoChannel, videoCodec);
+            error = ViE.codec->SetSendCodec(videoChannel, videoCodec);
             numberOfErrors += ViETest::TestError(error == 0,
                                                  "ERROR: %s at line %d",
                                                  __FUNCTION__, __LINE__);
@@ -51,7 +51,7 @@ tbVideoChannel::tbVideoChannel(tbInterfaces& Engine, int& nrOfErrors,
             videoCodec.width = 352;
             videoCodec.height = 288;
         }
-        error = ViE.ptrViECodec->SetReceiveCodec(videoChannel, videoCodec);
+        error = ViE.codec->SetReceiveCodec(videoChannel, videoCodec);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
@@ -65,7 +65,7 @@ tbVideoChannel::tbVideoChannel(tbInterfaces& Engine, int& nrOfErrors,
 tbVideoChannel::~tbVideoChannel(void)
 {
     int error;
-    error = ViE.ptrViEBase->DeleteChannel(videoChannel);
+    error = ViE.base->DeleteChannel(videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 }
@@ -74,12 +74,12 @@ void tbVideoChannel::StartSend(const unsigned short rtpPort /*= 11000*/,
                                const char* ipAddress /*= "127.0.0.1"*/)
 {
     int error;
-    error = ViE.ptrViENetwork->SetSendDestination(videoChannel, ipAddress,
+    error = ViE.network->SetSendDestination(videoChannel, ipAddress,
                                                   rtpPort);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViEBase->StartSend(videoChannel);
+    error = ViE.base->StartSend(videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 }
@@ -88,18 +88,18 @@ void tbVideoChannel::SetFrameSettings(int width, int height, int frameRate)
 {
     int error;
     webrtc::VideoCodec videoCodec;
-    error = ViE.ptrViECodec->GetSendCodec(videoChannel, videoCodec);
+    error = ViE.codec->GetSendCodec(videoChannel, videoCodec);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
     videoCodec.width = width;
     videoCodec.height = height;
     videoCodec.maxFramerate = frameRate;
 
-    error = ViE.ptrViECodec->SetSendCodec(videoChannel, videoCodec);
+    error = ViE.codec->SetSendCodec(videoChannel, videoCodec);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViECodec->SetReceiveCodec(videoChannel, videoCodec);
+    error = ViE.codec->SetReceiveCodec(videoChannel, videoCodec);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
@@ -107,7 +107,7 @@ void tbVideoChannel::SetFrameSettings(int width, int height, int frameRate)
 void tbVideoChannel::StopSend()
 {
     int error;
-    error = ViE.ptrViEBase->StopSend(videoChannel);
+    error = ViE.base->StopSend(videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 }
@@ -116,11 +116,11 @@ void tbVideoChannel::StartReceive(const unsigned short rtpPort /*= 11000*/)
 {
     int error;
 
-    error = ViE.ptrViENetwork->SetLocalReceiver(videoChannel, rtpPort);
+    error = ViE.network->SetLocalReceiver(videoChannel, rtpPort);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViEBase->StartReceive(videoChannel);
+    error = ViE.base->StartReceive(videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 }
@@ -128,7 +128,7 @@ void tbVideoChannel::StartReceive(const unsigned short rtpPort /*= 11000*/)
 void tbVideoChannel::StopReceive()
 {
     int error;
-    error = ViE.ptrViEBase->StopReceive(videoChannel);
+    error = ViE.base->StopReceive(videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 }

@@ -54,11 +54,11 @@ int ViEAutoTest::ViEImageProcessStandardTest()
 
     int rtpPort = 6000;
     // Create VIE
-    tbInterfaces ViE("ViEImageProcessAPITest", numberOfErrors);
+    TbInterfaces ViE("ViEImageProcessAPITest", numberOfErrors);
     // Create a video channel
     tbVideoChannel tbChannel(ViE, numberOfErrors, webrtc::kVideoCodecVP8);
     // Create a capture device
-    tbCaptureDevice tbCapture(ViE, numberOfErrors);
+    TbCaptureDevice tbCapture(ViE, numberOfErrors);
 
     tbCapture.ConnectTo(tbChannel.videoChannel);
     tbChannel.StartReceive(rtpPort);
@@ -66,21 +66,21 @@ int ViEAutoTest::ViEImageProcessStandardTest()
 
     MyEffectFilter effectFilter;
 
-    error = ViE.ptrViERender->AddRenderer(tbCapture.captureId, _window1, 0,
-                                          0.0, 0.0, 1.0, 1.0);
+    error = ViE.render->AddRenderer(tbCapture.captureId, _window1, 0,
+                                    0.0, 0.0, 1.0, 1.0);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViERender->StartRender(tbCapture.captureId);
+    error = ViE.render->StartRender(tbCapture.captureId);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViERender->AddRenderer(tbChannel.videoChannel, _window2, 1,
-                                          0.0, 0.0, 1.0, 1.0);
+    error = ViE.render->AddRenderer(tbChannel.videoChannel, _window2, 1,
+                                    0.0, 0.0, 1.0, 1.0);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViERender->StartRender(tbChannel.videoChannel);
+    error = ViE.render->StartRender(tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
@@ -93,9 +93,8 @@ int ViEAutoTest::ViEImageProcessStandardTest()
     //***************************************************************
 
 
-    error
-        = ViE.ptrViEImageProcess->RegisterCaptureEffectFilter(
-            tbCapture.captureId, effectFilter);
+    error = ViE.image_process->RegisterCaptureEffectFilter(tbCapture.captureId,
+                                                           effectFilter);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
@@ -103,12 +102,12 @@ int ViEAutoTest::ViEImageProcessStandardTest()
                  "affects both windows");
     AutoTestSleep(KAutoTestSleepTimeMs);
 
-    error = ViE.ptrViEImageProcess->DeregisterCaptureEffectFilter(
+    error = ViE.image_process->DeregisterCaptureEffectFilter(
         tbCapture.captureId);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViEImageProcess->RegisterRenderEffectFilter(
+    error = ViE.image_process->RegisterRenderEffectFilter(
         tbChannel.videoChannel, effectFilter);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
@@ -118,11 +117,11 @@ int ViEAutoTest::ViEImageProcessStandardTest()
     ViETest::Log("Only Window 2 should be black and white");
     AutoTestSleep(KAutoTestSleepTimeMs);
 
-    error = ViE.ptrViERender->StopRender(tbCapture.captureId);
+    error = ViE.render->StopRender(tbCapture.captureId);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViERender->RemoveRenderer(tbCapture.captureId);
+    error = ViE.render->RemoveRenderer(tbCapture.captureId);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
@@ -134,16 +133,16 @@ int ViEAutoTest::ViEImageProcessStandardTest()
     tbChannel2.StartReceive(rtpPort2);
     tbChannel2.StartSend(rtpPort2);
 
-    error = ViE.ptrViERender->AddRenderer(tbChannel2.videoChannel, _window1, 1,
+    error = ViE.render->AddRenderer(tbChannel2.videoChannel, _window1, 1,
                                           0.0, 0.0, 1.0, 1.0);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViERender->StartRender(tbChannel2.videoChannel);
+    error = ViE.render->StartRender(tbChannel2.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViEImageProcess->DeregisterRenderEffectFilter(
+    error = ViE.image_process->DeregisterRenderEffectFilter(
         tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
@@ -151,7 +150,7 @@ int ViEAutoTest::ViEImageProcessStandardTest()
     ViETest::Log("Local renderer removed, added new channel and rendering in "
                  "Window1.");
 
-    error = ViE.ptrViEImageProcess->RegisterCaptureEffectFilter(
+    error = ViE.image_process->RegisterCaptureEffectFilter(
         tbCapture.captureId, effectFilter);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
@@ -160,12 +159,12 @@ int ViEAutoTest::ViEImageProcessStandardTest()
                  "affects both windows");
     AutoTestSleep(KAutoTestSleepTimeMs);
 
-    error = ViE.ptrViEImageProcess->DeregisterCaptureEffectFilter(
+    error = ViE.image_process->DeregisterCaptureEffectFilter(
         tbCapture.captureId);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViEImageProcess->RegisterSendEffectFilter(
+    error = ViE.image_process->RegisterSendEffectFilter(
         tbChannel.videoChannel, effectFilter);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
@@ -175,7 +174,7 @@ int ViEAutoTest::ViEImageProcessStandardTest()
                  "should be black and white");
     AutoTestSleep(KAutoTestSleepTimeMs);
 
-    error = ViE.ptrViEImageProcess->DeregisterSendEffectFilter(
+    error = ViE.image_process->DeregisterSendEffectFilter(
         tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
@@ -239,9 +238,9 @@ int ViEAutoTest::ViEImageProcessAPITest()
     int error = 0;
     int numberOfErrors = 0;
 
-    tbInterfaces ViE("ViEImageProcessAPITest", numberOfErrors);
+    TbInterfaces ViE("ViEImageProcessAPITest", numberOfErrors);
     tbVideoChannel tbChannel(ViE, numberOfErrors, webrtc::kVideoCodecVP8);
-    tbCaptureDevice tbCapture(ViE, numberOfErrors);
+    TbCaptureDevice tbCapture(ViE, numberOfErrors);
 
     tbCapture.ConnectTo(tbChannel.videoChannel);
 
@@ -251,26 +250,26 @@ int ViEAutoTest::ViEImageProcessAPITest()
     // Capture effect filter
     //
     // Add effect filter
-    error = ViE.ptrViEImageProcess->RegisterCaptureEffectFilter(
+    error = ViE.image_process->RegisterCaptureEffectFilter(
         tbCapture.captureId, effectFilter);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
     // Add again -> error
-    error = ViE.ptrViEImageProcess->RegisterCaptureEffectFilter(
+    error = ViE.image_process->RegisterCaptureEffectFilter(
         tbCapture.captureId, effectFilter);
     numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-    error = ViE.ptrViEImageProcess->DeregisterCaptureEffectFilter(
+    error = ViE.image_process->DeregisterCaptureEffectFilter(
         tbCapture.captureId);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
     // Double deregister
-    error = ViE.ptrViEImageProcess->DeregisterCaptureEffectFilter(
+    error = ViE.image_process->DeregisterCaptureEffectFilter(
         tbCapture.captureId);
     numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
     // Non-existing capture device
-    error = ViE.ptrViEImageProcess->RegisterCaptureEffectFilter(
+    error = ViE.image_process->RegisterCaptureEffectFilter(
         tbChannel.videoChannel, effectFilter);
     numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
@@ -278,24 +277,24 @@ int ViEAutoTest::ViEImageProcessAPITest()
     //
     // Render effect filter
     //
-    error = ViE.ptrViEImageProcess->RegisterRenderEffectFilter(
+    error = ViE.image_process->RegisterRenderEffectFilter(
         tbChannel.videoChannel, effectFilter);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-    error = ViE.ptrViEImageProcess->RegisterRenderEffectFilter(
+    error = ViE.image_process->RegisterRenderEffectFilter(
         tbChannel.videoChannel, effectFilter);
     numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-    error = ViE.ptrViEImageProcess->DeregisterRenderEffectFilter(
+    error = ViE.image_process->DeregisterRenderEffectFilter(
         tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-    error = ViE.ptrViEImageProcess->DeregisterRenderEffectFilter(
+    error = ViE.image_process->DeregisterRenderEffectFilter(
         tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
     // Non-existing channel id
-    error = ViE.ptrViEImageProcess->RegisterRenderEffectFilter(
+    error = ViE.image_process->RegisterRenderEffectFilter(
         tbCapture.captureId, effectFilter);
     numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
@@ -303,23 +302,23 @@ int ViEAutoTest::ViEImageProcessAPITest()
     //
     // Send effect filter
     //
-    error = ViE.ptrViEImageProcess->RegisterSendEffectFilter(
+    error = ViE.image_process->RegisterSendEffectFilter(
         tbChannel.videoChannel, effectFilter);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-    error = ViE.ptrViEImageProcess->RegisterSendEffectFilter(
+    error = ViE.image_process->RegisterSendEffectFilter(
         tbChannel.videoChannel, effectFilter);
     numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-    error = ViE.ptrViEImageProcess->DeregisterSendEffectFilter(
+    error = ViE.image_process->DeregisterSendEffectFilter(
         tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-    error = ViE.ptrViEImageProcess->DeregisterSendEffectFilter(
+    error = ViE.image_process->DeregisterSendEffectFilter(
         tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-    error = ViE.ptrViEImageProcess->RegisterSendEffectFilter(
+    error = ViE.image_process->RegisterSendEffectFilter(
         tbCapture.captureId, effectFilter);
     numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
@@ -327,19 +326,19 @@ int ViEAutoTest::ViEImageProcessAPITest()
     //
     // Denoising
     //
-    error = ViE.ptrViEImageProcess->EnableDenoising(tbCapture.captureId, true);
+    error = ViE.image_process->EnableDenoising(tbCapture.captureId, true);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-    error = ViE.ptrViEImageProcess->EnableDenoising(tbCapture.captureId, true);
+    error = ViE.image_process->EnableDenoising(tbCapture.captureId, true);
     numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-    error = ViE.ptrViEImageProcess->EnableDenoising(tbCapture.captureId, false);
+    error = ViE.image_process->EnableDenoising(tbCapture.captureId, false);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-    error = ViE.ptrViEImageProcess->EnableDenoising(tbCapture.captureId, false);
+    error = ViE.image_process->EnableDenoising(tbCapture.captureId, false);
     numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-    error = ViE.ptrViEImageProcess->EnableDenoising(tbChannel.videoChannel,
+    error = ViE.image_process->EnableDenoising(tbChannel.videoChannel,
                                                     true);
     numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
@@ -347,23 +346,23 @@ int ViEAutoTest::ViEImageProcessAPITest()
     //
     // Deflickering
     //
-    error = ViE.ptrViEImageProcess->EnableDeflickering(tbCapture.captureId,
+    error = ViE.image_process->EnableDeflickering(tbCapture.captureId,
                                                        true);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-    error = ViE.ptrViEImageProcess->EnableDeflickering(tbCapture.captureId,
+    error = ViE.image_process->EnableDeflickering(tbCapture.captureId,
                                                        true);
     numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-    error = ViE.ptrViEImageProcess->EnableDeflickering(tbCapture.captureId,
+    error = ViE.image_process->EnableDeflickering(tbCapture.captureId,
                                                        false);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-    error = ViE.ptrViEImageProcess->EnableDeflickering(tbCapture.captureId,
+    error = ViE.image_process->EnableDeflickering(tbCapture.captureId,
                                                        false);
     numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-    error = ViE.ptrViEImageProcess->EnableDeflickering(tbChannel.videoChannel,
+    error = ViE.image_process->EnableDeflickering(tbChannel.videoChannel,
                                                        true);
     numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
@@ -371,27 +370,27 @@ int ViEAutoTest::ViEImageProcessAPITest()
     //
     // Color enhancement
     //
-    error = ViE.ptrViEImageProcess->EnableColorEnhancement(
+    error = ViE.image_process->EnableColorEnhancement(
         tbChannel.videoChannel, false);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-    error = ViE.ptrViEImageProcess->EnableColorEnhancement(
+    error = ViE.image_process->EnableColorEnhancement(
         tbChannel.videoChannel, true);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-    error = ViE.ptrViEImageProcess->EnableColorEnhancement(
+    error = ViE.image_process->EnableColorEnhancement(
         tbChannel.videoChannel, true);
     numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-    error = ViE.ptrViEImageProcess->EnableColorEnhancement(
+    error = ViE.image_process->EnableColorEnhancement(
         tbChannel.videoChannel, false);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-    error = ViE.ptrViEImageProcess->EnableColorEnhancement(
+    error = ViE.image_process->EnableColorEnhancement(
         tbChannel.videoChannel, false);
     numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-    error = ViE.ptrViEImageProcess->EnableColorEnhancement(tbCapture.captureId,
+    error = ViE.image_process->EnableColorEnhancement(tbCapture.captureId,
                                                            true);
     numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);

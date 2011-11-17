@@ -14,18 +14,18 @@
 #include "tb_interfaces.h"
 #include "video_capture_factory.h"
 
-class tbCaptureDevice
+class TbCaptureDevice
 {
 public:
-    tbCaptureDevice(tbInterfaces& Engine, int& nrOfErrors);
-    ~tbCaptureDevice(void);
+    TbCaptureDevice(TbInterfaces& Engine, int& nrOfErrors);
+    ~TbCaptureDevice(void);
 
     int captureId;
     void ConnectTo(int videoChannel);
     void Disconnect(int videoChannel);
 private:
     int& numberOfErrors;
-    tbInterfaces& ViE;
+    TbInterfaces& ViE;
     webrtc::VideoCaptureModule* vcpm_;
 };
 

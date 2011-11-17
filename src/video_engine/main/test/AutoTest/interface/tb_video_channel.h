@@ -15,7 +15,7 @@
 class tbVideoChannel
 {
 public:
-    tbVideoChannel(tbInterfaces& Engine, int& nrOfErrors,
+    tbVideoChannel(TbInterfaces& Engine, int& nrOfErrors,
                    webrtc::VideoCodecType sendCodec = webrtc::kVideoCodecVP8,
                    int width = 352, int height = 288, int frameRate = 30,
                    int startBitrate = 300);
@@ -36,7 +36,7 @@ public:
     int videoChannel;
 private:
     int& numberOfErrors;
-    tbInterfaces& ViE;
+    TbInterfaces& ViE;
 };
 
 #endif  // WEBRTC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_INTERFACE_TB_VIDEO_CHANNEL_H_

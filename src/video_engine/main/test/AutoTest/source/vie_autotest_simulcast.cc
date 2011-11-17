@@ -8,19 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-//
-// vie_autotest_simulcast.cc
-//
-// This code is also used as sample code for ViE 3.0
-//
-
 #include "vie_autotest_defines.h"
 #include "vie_autotest.h"
-
-// ===================================================================
-//
-// BEGIN: VideoEngine 3.0 Sample Code
-//
 
 #include "common_types.h"
 #include "voe_base.h"
@@ -316,19 +305,19 @@ int VideoEngineSimulcastTest(void* window1, void* window2)
     videoCodec.simulcastStream[0].height = 180;
     videoCodec.simulcastStream[0].numberOfTemporalLayers = 0;
     videoCodec.simulcastStream[0].maxBitrate = 100;
-    videoCodec.simulcastStream[0].qpMax = videoCodec.qpMax; 
+    videoCodec.simulcastStream[0].qpMax = videoCodec.qpMax;
 
     videoCodec.simulcastStream[1].width = 640;
     videoCodec.simulcastStream[1].height = 360;
     videoCodec.simulcastStream[1].numberOfTemporalLayers = 0;
     videoCodec.simulcastStream[1].maxBitrate = 500;
-    videoCodec.simulcastStream[1].qpMax = videoCodec.qpMax; 
+    videoCodec.simulcastStream[1].qpMax = videoCodec.qpMax;
 
     videoCodec.simulcastStream[2].width = 1280;
     videoCodec.simulcastStream[2].height = 720;
     videoCodec.simulcastStream[2].numberOfTemporalLayers = 0;
     videoCodec.simulcastStream[2].maxBitrate = 1200;
-    videoCodec.simulcastStream[2].qpMax = videoCodec.qpMax; 
+    videoCodec.simulcastStream[2].qpMax = videoCodec.qpMax;
 
     // Set start bit rate
     std::string str;
@@ -359,7 +348,7 @@ int VideoEngineSimulcastTest(void* window1, void* window2)
     }
 
     // Setting External transport
-    tbExternalTransport extTransport(*(ptrViENetwork));
+    TbExternalTransport extTransport(*(ptrViENetwork));
 
     error = ptrViENetwork->RegisterSendTransport(videoChannel,
                                                  extTransport);
@@ -408,7 +397,7 @@ int VideoEngineSimulcastTest(void* window1, void* window2)
     //********************************************************
 
     printf("\nSimulcast call started\n\n");
-    do 
+    do
     {
         printf("Enter new SSRC filter 1,2 or 3\n");
         printf("Press enter to stop...");

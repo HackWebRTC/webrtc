@@ -102,19 +102,19 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
     int numberOfErrors = 0;
 
     // Create VIE
-    tbInterfaces ViE("ViERtpRtcpStandardTest", numberOfErrors);
+    TbInterfaces ViE("ViERtpRtcpStandardTest", numberOfErrors);
     // Create a video channel
     tbVideoChannel tbChannel(ViE, numberOfErrors, webrtc::kVideoCodecVP8);
 
     // Create a capture device
-    tbCaptureDevice tbCapture(ViE, numberOfErrors);
+    TbCaptureDevice tbCapture(ViE, numberOfErrors);
     tbCapture.ConnectTo(tbChannel.videoChannel);
 
     ViETest::Log("\n");
-    tbExternalTransport myTransport(*(ViE.ptrViENetwork));
+    TbExternalTransport myTransport(*(ViE.network));
 
-    error = ViE.ptrViENetwork->RegisterSendTransport(tbChannel.videoChannel,
-                                                     myTransport);
+    error = ViE.network->RegisterSendTransport(tbChannel.videoChannel,
+                                               myTransport);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
@@ -124,18 +124,18 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
 
     unsigned short startSequenceNumber = 12345;
     ViETest::Log("Set start sequence number: %u", startSequenceNumber);
-    error = ViE.ptrViERtpRtcp->SetStartSequenceNumber(tbChannel.videoChannel,
-                                                      startSequenceNumber);
+    error = ViE.rtp_rtcp->SetStartSequenceNumber(tbChannel.videoChannel,
+                                                 startSequenceNumber);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
     myTransport.EnableSequenceNumberCheck();
 
-    error = ViE.ptrViEBase->StartReceive(tbChannel.videoChannel);
+    error = ViE.base->StartReceive(tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViEBase->StartSend(tbChannel.videoChannel);
+    error = ViE.base->StartSend(tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
     AutoTestSleep(2000);
@@ -148,7 +148,7 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
         receivedSequenceNumber == startSequenceNumber, "ERROR: %s at line %d",
         __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViEBase->StopSend(tbChannel.videoChannel);
+    error = ViE.base->StopSend(tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
@@ -157,21 +157,20 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
     //
     ViETest::Log("Testing CName\n");
     const char* sendCName = "ViEAutoTestCName\0";
-    error = ViE.ptrViERtpRtcp->SetRTCPCName(tbChannel.videoChannel, sendCName);
+    error = ViE.rtp_rtcp->SetRTCPCName(tbChannel.videoChannel, sendCName);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
     char returnCName[webrtc::ViERTP_RTCP::KMaxRTCPCNameLength];
     memset(returnCName, 0, webrtc::ViERTP_RTCP::KMaxRTCPCNameLength);
-    error = ViE.ptrViERtpRtcp->GetRTCPCName(tbChannel.videoChannel,
-                                            returnCName);
+    error = ViE.rtp_rtcp->GetRTCPCName(tbChannel.videoChannel, returnCName);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
     numberOfErrors += ViETest::TestError((strcmp(sendCName, returnCName) == 0),
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
 
-    error = ViE.ptrViEBase->StartSend(tbChannel.videoChannel);
+    error = ViE.base->StartSend(tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
@@ -179,8 +178,8 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
 
     char remoteCName[webrtc::ViERTP_RTCP::KMaxRTCPCNameLength];
     memset(remoteCName, 0, webrtc::ViERTP_RTCP::KMaxRTCPCNameLength);
-    error = ViE.ptrViERtpRtcp->GetRemoteRTCPCName(tbChannel.videoChannel,
-                                                  remoteCName);
+    error = ViE.rtp_rtcp->GetRemoteRTCPCName(tbChannel.videoChannel,
+                                             remoteCName);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
     numberOfErrors += ViETest::TestError((strcmp(sendCName, remoteCName) == 0),
@@ -192,11 +191,11 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
     //
     // Stop and restart to clear stats
     ViETest::Log("Testing statistics\n");
-    error = ViE.ptrViEBase->StopReceive(tbChannel.videoChannel);
+    error = ViE.base->StopReceive(tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViEBase->StopSend(tbChannel.videoChannel);
+    error = ViE.base->StopSend(tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
@@ -206,16 +205,16 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
 
     // Start send to verify sending stats
 
-    error = ViE.ptrViERtpRtcp->SetStartSequenceNumber(tbChannel.videoChannel,
-                                                      startSequenceNumber);
+    error = ViE.rtp_rtcp->SetStartSequenceNumber(tbChannel.videoChannel,
+                                                 startSequenceNumber);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViEBase->StartSend(tbChannel.videoChannel);
+    error = ViE.base->StartSend(tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViEBase->StartReceive(tbChannel.videoChannel);
+    error = ViE.base->StartReceive(tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
@@ -237,11 +236,11 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
     unsigned int sentFecBitrate = 0;
     unsigned int sentNackBitrate = 0;
 
-    error = ViE.ptrViERtpRtcp->GetBandwidthUsage(tbChannel.videoChannel,
-                                                 sentTotalBitrate,
-                                                 sentVideoBitrate,
-                                                 sentFecBitrate,
-                                                 sentNackBitrate);
+    error = ViE.rtp_rtcp->GetBandwidthUsage(tbChannel.videoChannel,
+                                            sentTotalBitrate,
+                                            sentVideoBitrate,
+                                            sentFecBitrate,
+                                            sentNackBitrate);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
@@ -251,28 +250,30 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
                                          "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViEBase->StopReceive(tbChannel.videoChannel);
+    error = ViE.base->StopReceive(tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
     AutoTestSleep(2000);
 
-    error = ViE.ptrViERtpRtcp->GetSentRTCPStatistics(tbChannel.videoChannel,
-                                                     sentFractionsLost,
-                                                     sentCumulativeLost,
-                                                     sentExtendedMax,
-                                                     sentJitter, sentRttMs);
+    error = ViE.rtp_rtcp->GetSentRTCPStatistics(tbChannel.videoChannel,
+                                                sentFractionsLost,
+                                                sentCumulativeLost,
+                                                sentExtendedMax,
+                                                sentJitter,
+                                                sentRttMs);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
     numberOfErrors += ViETest::TestError((sentCumulativeLost > 0
         && sentExtendedMax > startSequenceNumber && sentJitter > 0 && sentRttMs
         > 0), "ERROR: %s at line %d", __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViERtpRtcp->GetReceivedRTCPStatistics(tbChannel.videoChannel,
-                                                         recFractionsLost,
-                                                         recCumulativeLost,
-                                                         recExtendedMax,
-                                                         recJitter, recRttMs);
+    error = ViE.rtp_rtcp->GetReceivedRTCPStatistics(tbChannel.videoChannel,
+                                                    recFractionsLost,
+                                                    recCumulativeLost,
+                                                    recExtendedMax,
+                                                    recJitter,
+                                                    recRttMs);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
     numberOfErrors += ViETest::TestError(
@@ -286,7 +287,7 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
 
-    error = ViE.ptrViEBase->StopSend(tbChannel.videoChannel);
+    error = ViE.base->StopSend(tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
@@ -297,25 +298,24 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
     myTransport.ClearStats();
     myTransport.SetPacketLoss(rate);
 
-    error = ViE.ptrViERtpRtcp->SetFECStatus(tbChannel.videoChannel,
-                                            true, 96, 97);
+    error = ViE.rtp_rtcp->SetFECStatus(tbChannel.videoChannel, true, 96, 97);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViEBase->StartReceive(tbChannel.videoChannel);
+    error = ViE.base->StartReceive(tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-    error = ViE.ptrViEBase->StartSend(tbChannel.videoChannel);
+    error = ViE.base->StartSend(tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
     AutoTestSleep(KAutoTestSleepTimeMs);
 
-    error = ViE.ptrViERtpRtcp->GetBandwidthUsage(tbChannel.videoChannel,
-                                                 sentTotalBitrate,
-                                                 sentVideoBitrate,
-                                                 sentFecBitrate,
-                                                 sentNackBitrate);
+    error = ViE.rtp_rtcp->GetBandwidthUsage(tbChannel.videoChannel,
+                                            sentTotalBitrate,
+                                            sentVideoBitrate,
+                                            sentFecBitrate,
+                                            sentNackBitrate);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
@@ -325,27 +325,26 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
                                          "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViEBase->StopSend(tbChannel.videoChannel);
+    error = ViE.base->StopSend(tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViERtpRtcp->SetFECStatus(tbChannel.videoChannel,
-                                            false, 96, 97);
-    error = ViE.ptrViERtpRtcp->SetNACKStatus(tbChannel.videoChannel, true);
+    error = ViE.rtp_rtcp->SetFECStatus(tbChannel.videoChannel, false, 96, 97);
+    error = ViE.rtp_rtcp->SetNACKStatus(tbChannel.videoChannel, true);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViEBase->StartSend(tbChannel.videoChannel);
+    error = ViE.base->StartSend(tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
     AutoTestSleep(KAutoTestSleepTimeMs);
 
-    error = ViE.ptrViERtpRtcp->GetBandwidthUsage(tbChannel.videoChannel,
-                                                 sentTotalBitrate,
-                                                 sentVideoBitrate,
-                                                 sentFecBitrate,
-                                                 sentNackBitrate);
+    error = ViE.rtp_rtcp->GetBandwidthUsage(tbChannel.videoChannel,
+                                            sentTotalBitrate,
+                                            sentVideoBitrate,
+                                            sentFecBitrate,
+                                            sentNackBitrate);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
     
@@ -357,11 +356,11 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
     //                                      __FUNCTION__, __LINE__);
 
 
-    error = ViE.ptrViEBase->StopReceive(tbChannel.videoChannel);
+    error = ViE.base->StopReceive(tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViERtpRtcp->SetNACKStatus(tbChannel.videoChannel, false);
+    error = ViE.rtp_rtcp->SetNACKStatus(tbChannel.videoChannel, false);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
@@ -369,10 +368,10 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
     // Keepalive
     //
     ViETest::Log("Testing RTP keep alive...\n");
-    error = ViE.ptrViEBase->StopSend(tbChannel.videoChannel);
+    error = ViE.base->StopSend(tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-    error = ViE.ptrViEBase->StartReceive(tbChannel.videoChannel);
+    error = ViE.base->StartReceive(tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
@@ -381,17 +380,19 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
 
     const char keepAlivePT = 109;
     unsigned int deltaTimeSeconds = 2;
-    error = ViE.ptrViERtpRtcp->SetRTPKeepAliveStatus(tbChannel.videoChannel,
-                                                     true, keepAlivePT,
-                                                     deltaTimeSeconds);
+    error = ViE.rtp_rtcp->SetRTPKeepAliveStatus(tbChannel.videoChannel,
+                                                true,
+                                                keepAlivePT,
+                                                deltaTimeSeconds);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
     AutoTestSleep(KAutoTestSleepTimeMs);
 
-    error = ViE.ptrViERtpRtcp->SetRTPKeepAliveStatus(tbChannel.videoChannel,
-                                                     false, keepAlivePT,
-                                                     deltaTimeSeconds);
+    error = ViE.rtp_rtcp->SetRTPKeepAliveStatus(tbChannel.videoChannel,
+                                                false,
+                                                keepAlivePT,
+                                                deltaTimeSeconds);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
@@ -408,15 +409,15 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
     // Test to set SSRC
     unsigned int setSSRC = 0x01234567;
     ViETest::Log("Set SSRC %u", setSSRC);
-    error = ViE.ptrViERtpRtcp->SetLocalSSRC(tbChannel.videoChannel, setSSRC);
+    error = ViE.rtp_rtcp->SetLocalSSRC(tbChannel.videoChannel, setSSRC);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViEBase->StartReceive(tbChannel.videoChannel);
+    error = ViE.base->StartReceive(tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViEBase->StartSend(tbChannel.videoChannel);
+    error = ViE.base->StartSend(tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
@@ -430,7 +431,7 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
                                          __LINE__);
 
     unsigned int localSSRC = 0;
-    error = ViE.ptrViERtpRtcp->GetLocalSSRC(tbChannel.videoChannel, localSSRC);
+    error = ViE.rtp_rtcp->GetLocalSSRC(tbChannel.videoChannel, localSSRC);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
     numberOfErrors += ViETest::TestError(localSSRC == setSSRC,
@@ -438,15 +439,14 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
                                          __LINE__);
 
     unsigned int remoteSSRC = 0;
-    error
-        = ViE.ptrViERtpRtcp->GetRemoteSSRC(tbChannel.videoChannel, remoteSSRC);
+    error = ViE.rtp_rtcp->GetRemoteSSRC(tbChannel.videoChannel, remoteSSRC);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
     numberOfErrors += ViETest::TestError(remoteSSRC == setSSRC,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
 
-    error = ViE.ptrViEBase->StopSend(tbChannel.videoChannel);
+    error = ViE.base->StopSend(tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
@@ -461,33 +461,35 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
     const char* outDumpName = "OutgoingRTPDump.rtp";
 #endif
 
-    error = ViE.ptrViERtpRtcp->StartRTPDump(tbChannel.videoChannel, inDumpName,
-                                            webrtc::kRtpIncoming);
+    error = ViE.rtp_rtcp->StartRTPDump(tbChannel.videoChannel,
+                                       inDumpName,
+                                       webrtc::kRtpIncoming);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-    error = ViE.ptrViERtpRtcp->StartRTPDump(tbChannel.videoChannel,
-                                            outDumpName, webrtc::kRtpOutgoing);
+    error = ViE.rtp_rtcp->StartRTPDump(tbChannel.videoChannel,
+                                       outDumpName,
+                                       webrtc::kRtpOutgoing);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViEBase->StartSend(tbChannel.videoChannel);
+    error = ViE.base->StartSend(tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
     AutoTestSleep(KAutoTestSleepTimeMs);
 
-    error = ViE.ptrViEBase->StopSend(tbChannel.videoChannel);
+    error = ViE.base->StopSend(tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
     AutoTestSleep(1000);
 
-    error = ViE.ptrViERtpRtcp->StopRTPDump(tbChannel.videoChannel,
-                                           webrtc::kRtpIncoming);
+    error = ViE.rtp_rtcp->StopRTPDump(tbChannel.videoChannel,
+                                      webrtc::kRtpIncoming);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-    error = ViE.ptrViERtpRtcp->StopRTPDump(tbChannel.videoChannel,
-                                           webrtc::kRtpOutgoing);
+    error = ViE.rtp_rtcp->StopRTPDump(tbChannel.videoChannel,
+                                      webrtc::kRtpOutgoing);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
@@ -508,7 +510,7 @@ int ViEAutoTest::ViERtpRtcpStandardTest()
                                           __LINE__);
 
     // Deregister external transport
-    error = ViE.ptrViENetwork->DeregisterSendTransport(tbChannel.videoChannel);
+    error = ViE.network->DeregisterSendTransport(tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
@@ -552,27 +554,27 @@ int ViEAutoTest::ViERtpRtcpExtendedTest()
     numberOfErrors = ViERtpRtcpStandardTest();
 
     // Create VIE
-    tbInterfaces ViE("ViERtpRtcpStandardTest", numberOfErrors);
+    TbInterfaces ViE("ViERtpRtcpExtendedTest", numberOfErrors);
     // Create a video channel
     tbVideoChannel tbChannel(ViE, numberOfErrors, webrtc::kVideoCodecVP8);
     // Create a capture device
-    tbCaptureDevice tbCapture(ViE, numberOfErrors);
+    TbCaptureDevice tbCapture(ViE, numberOfErrors);
     tbCapture.ConnectTo(tbChannel.videoChannel);
 
     //tbChannel.StartReceive(rtpPort);
     //tbChannel.StartSend(rtpPort);
-    tbExternalTransport myTransport(*(ViE.ptrViENetwork));
+    TbExternalTransport myTransport(*(ViE.network));
 
-    error = ViE.ptrViENetwork->RegisterSendTransport(tbChannel.videoChannel,
-                                                     myTransport);
+    error = ViE.network->RegisterSendTransport(tbChannel.videoChannel,
+                                               myTransport);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViEBase->StartReceive(tbChannel.videoChannel);
+    error = ViE.base->StartReceive(tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViEBase->StartSend(tbChannel.videoChannel);
+    error = ViE.base->StartSend(tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
@@ -587,8 +589,8 @@ int ViEAutoTest::ViERtpRtcpExtendedTest()
     //
 
     ViERtcpObserver rtcpObserver;
-    error = ViE.ptrViERtpRtcp->RegisterRTCPObserver(tbChannel.videoChannel,
-                                                    rtcpObserver);
+    error = ViE.rtp_rtcp->RegisterRTCPObserver(tbChannel.videoChannel,
+                                               rtcpObserver);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
@@ -597,7 +599,7 @@ int ViEAutoTest::ViERtpRtcpExtendedTest()
     const char* data = "ViEAutoTest Data of length 32 --";
     const unsigned short numBytes = 32;
 
-    error = ViE.ptrViERtpRtcp->SendApplicationDefinedRTCPPacket(
+    error = ViE.rtp_rtcp->SendApplicationDefinedRTCPPacket(
         tbChannel.videoChannel, subType, name, data, numBytes);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
@@ -617,14 +619,14 @@ int ViEAutoTest::ViERtpRtcpExtendedTest()
     //***************************************************************
 
 
-    error = ViE.ptrViEBase->StopReceive(tbChannel.videoChannel);
+    error = ViE.base->StopReceive(tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-    error = ViE.ptrViEBase->StopSend(tbChannel.videoChannel);
+    error = ViE.base->StopSend(tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViENetwork->DeregisterSendTransport(tbChannel.videoChannel);
+    error = ViE.network->DeregisterSendTransport(tbChannel.videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
@@ -661,11 +663,11 @@ int ViEAutoTest::ViERtpRtcpAPITest()
     int numberOfErrors = 0;
 
     // Create VIE
-    tbInterfaces ViE("ViERtpRtcpAPITest", numberOfErrors);
+    TbInterfaces ViE("ViERtpRtcpAPITest", numberOfErrors);
     // Create a video channel
     tbVideoChannel tbChannel(ViE, numberOfErrors, webrtc::kVideoCodecVP8);
     // Create a capture device
-    tbCaptureDevice tbCapture(ViE, numberOfErrors);
+    TbCaptureDevice tbCapture(ViE, numberOfErrors);
     tbCapture.ConnectTo(tbChannel.videoChannel);
 
     //***************************************************************
@@ -677,44 +679,48 @@ int ViEAutoTest::ViERtpRtcpAPITest()
     // Check different RTCP modes
     //
     webrtc::ViERTCPMode rtcpMode = webrtc::kRtcpNone;
-    error = ViE.ptrViERtpRtcp->GetRTCPStatus(tbChannel.videoChannel, rtcpMode);
+    error = ViE.rtp_rtcp->GetRTCPStatus(tbChannel.videoChannel,
+                                        rtcpMode);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
     numberOfErrors += ViETest::TestError(
         rtcpMode == webrtc::kRtcpCompound_RFC4585,
         "ERROR: %s at line %d", __FUNCTION__, __LINE__);
-    error = ViE.ptrViERtpRtcp->SetRTCPStatus(tbChannel.videoChannel,
-                                             webrtc::kRtcpCompound_RFC4585);
+    error = ViE.rtp_rtcp->SetRTCPStatus(tbChannel.videoChannel,
+                                        webrtc::kRtcpCompound_RFC4585);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-    error = ViE.ptrViERtpRtcp->GetRTCPStatus(tbChannel.videoChannel, rtcpMode);
+    error = ViE.rtp_rtcp->GetRTCPStatus(tbChannel.videoChannel,
+                                        rtcpMode);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
     numberOfErrors += ViETest::TestError(
         rtcpMode == webrtc::kRtcpCompound_RFC4585,
         "ERROR: %s at line %d", __FUNCTION__, __LINE__);
-    error = ViE.ptrViERtpRtcp->SetRTCPStatus(tbChannel.videoChannel,
-                                             webrtc::kRtcpNonCompound_RFC5506);
+    error = ViE.rtp_rtcp->SetRTCPStatus(tbChannel.videoChannel,
+                                        webrtc::kRtcpNonCompound_RFC5506);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-    error = ViE.ptrViERtpRtcp->GetRTCPStatus(tbChannel.videoChannel, rtcpMode);
+    error = ViE.rtp_rtcp->GetRTCPStatus(tbChannel.videoChannel,
+                                        rtcpMode);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
     numberOfErrors += ViETest::TestError(
         rtcpMode == webrtc::kRtcpNonCompound_RFC5506, "ERROR: %s at line %d",
         __FUNCTION__, __LINE__);
-    error = ViE.ptrViERtpRtcp->SetRTCPStatus(tbChannel.videoChannel,
-                                             webrtc::kRtcpNone);
+    error = ViE.rtp_rtcp->SetRTCPStatus(tbChannel.videoChannel,
+                                        webrtc::kRtcpNone);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-    error = ViE.ptrViERtpRtcp->GetRTCPStatus(tbChannel.videoChannel, rtcpMode);
+    error = ViE.rtp_rtcp->GetRTCPStatus(tbChannel.videoChannel,
+                                        rtcpMode);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
     numberOfErrors += ViETest::TestError(rtcpMode == webrtc::kRtcpNone,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
-    error = ViE.ptrViERtpRtcp->SetRTCPStatus(tbChannel.videoChannel,
-                                             webrtc::kRtcpCompound_RFC4585);
+    error = ViE.rtp_rtcp->SetRTCPStatus(tbChannel.videoChannel,
+                                        webrtc::kRtcpCompound_RFC4585);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
@@ -723,13 +729,13 @@ int ViEAutoTest::ViERtpRtcpAPITest()
     // Start sequence number is tested in SimplTEst
     //
     const char* testCName = "ViEAutotestCName";
-    error = ViE.ptrViERtpRtcp->SetRTCPCName(tbChannel.videoChannel, testCName);
+    error = ViE.rtp_rtcp->SetRTCPCName(tbChannel.videoChannel,
+                                       testCName);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
     char returnCName[256];
     memset(returnCName, 0, 256);
-    error
-        = ViE.ptrViERtpRtcp->GetRTCPCName(tbChannel.videoChannel, returnCName);
+    error = ViE.rtp_rtcp->GetRTCPCName(tbChannel.videoChannel, returnCName);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
     numberOfErrors += ViETest::TestError((strcmp(testCName, returnCName) == 0),
@@ -739,25 +745,25 @@ int ViEAutoTest::ViERtpRtcpAPITest()
     //
     // SSRC
     //
-    error = ViE.ptrViERtpRtcp->SetLocalSSRC(tbChannel.videoChannel, 0x01234567);
+    error = ViE.rtp_rtcp->SetLocalSSRC(tbChannel.videoChannel,
+                                       0x01234567);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-    error = ViE.ptrViERtpRtcp->SetLocalSSRC(tbChannel.videoChannel, 0x76543210);
+    error = ViE.rtp_rtcp->SetLocalSSRC(tbChannel.videoChannel,
+                                       0x76543210);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
     unsigned int ssrc = 0;
-    error = ViE.ptrViERtpRtcp->GetLocalSSRC(tbChannel.videoChannel, ssrc);
+    error = ViE.rtp_rtcp->GetLocalSSRC(tbChannel.videoChannel, ssrc);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViERtpRtcp->SetStartSequenceNumber(tbChannel.videoChannel,
-                                                      1000);
+    error = ViE.rtp_rtcp->SetStartSequenceNumber(tbChannel.videoChannel, 1000);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
     tbChannel.StartSend();
-    error = ViE.ptrViERtpRtcp->SetStartSequenceNumber(tbChannel.videoChannel,
-                                                      12345);
+    error = ViE.rtp_rtcp->SetStartSequenceNumber(tbChannel.videoChannel, 12345);
     numberOfErrors += ViETest::TestError(error == -1, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
     tbChannel.StopSend();
@@ -765,17 +771,14 @@ int ViEAutoTest::ViERtpRtcpAPITest()
     //
     // Start sequence number
     //
-    error = ViE.ptrViERtpRtcp->SetStartSequenceNumber(tbChannel.videoChannel,
-                                                      12345);
+    error = ViE.rtp_rtcp->SetStartSequenceNumber(tbChannel.videoChannel, 12345);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
-    error = ViE.ptrViERtpRtcp->SetStartSequenceNumber(tbChannel.videoChannel,
-                                                      1000);
+    error = ViE.rtp_rtcp->SetStartSequenceNumber(tbChannel.videoChannel, 1000);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
     tbChannel.StartSend();
-    error = ViE.ptrViERtpRtcp->SetStartSequenceNumber(tbChannel.videoChannel,
-                                                      12345);
+    error = ViE.rtp_rtcp->SetStartSequenceNumber(tbChannel.videoChannel, 12345);
     numberOfErrors += ViETest::TestError(error == -1, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
     tbChannel.StopSend();
@@ -790,38 +793,38 @@ int ViEAutoTest::ViERtpRtcpAPITest()
         const unsigned short numBytes = 32;
 
         tbChannel.StartSend();
-        error = ViE.ptrViERtpRtcp->SendApplicationDefinedRTCPPacket(
+        error = ViE.rtp_rtcp->SendApplicationDefinedRTCPPacket(
             tbChannel.videoChannel, subType, name, data, numBytes);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViERtpRtcp->SendApplicationDefinedRTCPPacket(
+        error = ViE.rtp_rtcp->SendApplicationDefinedRTCPPacket(
             tbChannel.videoChannel, subType, name, NULL, numBytes);
         // NULL input
         numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViERtpRtcp->SendApplicationDefinedRTCPPacket(
+        error = ViE.rtp_rtcp->SendApplicationDefinedRTCPPacket(
             tbChannel.videoChannel, subType, name, data, numBytes - 1);
         // incorrect length
         numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViERtpRtcp->GetRTCPStatus(tbChannel.videoChannel,
-                                                 rtcpMode);
+        error = ViE.rtp_rtcp->GetRTCPStatus(tbChannel.videoChannel,
+                                            rtcpMode);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViERtpRtcp->SendApplicationDefinedRTCPPacket(
+        error = ViE.rtp_rtcp->SendApplicationDefinedRTCPPacket(
             tbChannel.videoChannel, subType, name, data, numBytes);
         // RTCP off
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViERtpRtcp->SetRTCPStatus(tbChannel.videoChannel,
-                                                 webrtc::kRtcpCompound_RFC4585);
+        error = ViE.rtp_rtcp->SetRTCPStatus(tbChannel.videoChannel,
+                                            webrtc::kRtcpCompound_RFC4585);
         numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
         tbChannel.StopSend();
-        error = ViE.ptrViERtpRtcp->SendApplicationDefinedRTCPPacket(
+        error = ViE.rtp_rtcp->SendApplicationDefinedRTCPPacket(
             tbChannel.videoChannel, subType, name, data, numBytes);
         // Not sending
         numberOfErrors += ViETest::TestError(error != 0,
@@ -844,60 +847,56 @@ int ViEAutoTest::ViERtpRtcpAPITest()
         bool enabled = false;
         char getPT = 0;
         unsigned int getDeltaTime = 0;
-        error = ViE.ptrViERtpRtcp->SetRTPKeepAliveStatus(tbChannel.videoChannel,
-                                                         true, 119);
+        error = ViE.rtp_rtcp->SetRTPKeepAliveStatus(tbChannel.videoChannel,
+                                                    true, 119);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViERtpRtcp->SetRTPKeepAliveStatus(tbChannel.videoChannel,
-                                                         true, setPT,
-                                                         setDeltaTime);
+        error = ViE.rtp_rtcp->SetRTPKeepAliveStatus(tbChannel.videoChannel,
+                                                    true, setPT, setDeltaTime);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViERtpRtcp->SetRTPKeepAliveStatus(tbChannel.videoChannel,
-                                                         false, setPT,
-                                                         setDeltaTime);
+        error = ViE.rtp_rtcp->SetRTPKeepAliveStatus(tbChannel.videoChannel,
+                                                    false, setPT, setDeltaTime);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViERtpRtcp->SetRTPKeepAliveStatus(tbChannel.videoChannel,
-                                                         true, setPT,
-                                                         setDeltaTime);
+        error = ViE.rtp_rtcp->SetRTPKeepAliveStatus(tbChannel.videoChannel,
+                                                    true, setPT, setDeltaTime);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
-        error = ViE.ptrViERtpRtcp->GetRTPKeepAliveStatus(tbChannel.videoChannel,
-                                                         enabled, getPT,
-                                                         getDeltaTime);
+        error = ViE.rtp_rtcp->GetRTPKeepAliveStatus(tbChannel.videoChannel,
+                                                    enabled, getPT,
+                                                    getDeltaTime);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
         numberOfErrors += ViETest::TestError((enabled == true && setPT == getPT
-                                              && setDeltaTime == getDeltaTime),
-                                              "ERROR: %s at line %d",
-                                              __FUNCTION__, __LINE__);
+            && setDeltaTime == getDeltaTime),
+            "ERROR: %s at line %d",
+            __FUNCTION__, __LINE__);
 
-        error = ViE.ptrViEBase->StartSend(tbChannel.videoChannel);
+        error = ViE.base->StartSend(tbChannel.videoChannel);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
-        error = ViE.ptrViERtpRtcp->SetRTPKeepAliveStatus(tbChannel.videoChannel,
-                                                         true, setPT,
-                                                         setDeltaTime);
+        error = ViE.rtp_rtcp->SetRTPKeepAliveStatus(tbChannel.videoChannel,
+                                                    true, setPT, setDeltaTime);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
         tbChannel.StopSend();
-        error = ViE.ptrViERtpRtcp->SetRTPKeepAliveStatus(tbChannel.videoChannel,
-                                                         enabled, getPT, 0);
+        error = ViE.rtp_rtcp->SetRTPKeepAliveStatus(tbChannel.videoChannel,
+                                                    enabled, getPT, 0);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViERtpRtcp->SetRTPKeepAliveStatus(tbChannel.videoChannel,
-                                                         enabled, getPT, 61);
+        error = ViE.rtp_rtcp->SetRTPKeepAliveStatus(tbChannel.videoChannel,
+                                                    enabled, getPT, 61);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
@@ -911,40 +910,42 @@ int ViEAutoTest::ViERtpRtcpAPITest()
 #else
         const char* dumpName = "DumpFileName.rtp";
 #endif
-        error = ViE.ptrViERtpRtcp->StartRTPDump(tbChannel.videoChannel,
-                                                dumpName, webrtc::kRtpIncoming);
+        error = ViE.rtp_rtcp->StartRTPDump(tbChannel.videoChannel,
+                                           dumpName,
+                                           webrtc::kRtpIncoming);
 
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViERtpRtcp->StopRTPDump(tbChannel.videoChannel,
-                                               webrtc::kRtpIncoming);
+        error = ViE.rtp_rtcp->StopRTPDump(tbChannel.videoChannel,
+                                          webrtc::kRtpIncoming);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViERtpRtcp->StopRTPDump(tbChannel.videoChannel,
-                                               webrtc::kRtpIncoming);
+        error = ViE.rtp_rtcp->StopRTPDump(tbChannel.videoChannel,
+                                          webrtc::kRtpIncoming);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViERtpRtcp->StartRTPDump(tbChannel.videoChannel,
-                                                dumpName, webrtc::kRtpOutgoing);
+        error = ViE.rtp_rtcp->StartRTPDump(tbChannel.videoChannel,
+                                           dumpName,
+                                           webrtc::kRtpOutgoing);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViERtpRtcp->StopRTPDump(tbChannel.videoChannel,
-                                               webrtc::kRtpOutgoing);
+        error = ViE.rtp_rtcp->StopRTPDump(tbChannel.videoChannel,
+                                          webrtc::kRtpOutgoing);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViERtpRtcp->StopRTPDump(tbChannel.videoChannel,
-                                               webrtc::kRtpOutgoing);
+        error = ViE.rtp_rtcp->StopRTPDump(tbChannel.videoChannel,
+                                          webrtc::kRtpOutgoing);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViERtpRtcp->StartRTPDump(tbChannel.videoChannel,
-                                                dumpName,
-                                                (webrtc::RTPDirections) 3);
+        error = ViE.rtp_rtcp->StartRTPDump(tbChannel.videoChannel,
+                                           dumpName,
+                                           (webrtc::RTPDirections) 3);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
@@ -954,45 +955,43 @@ int ViEAutoTest::ViERtpRtcpAPITest()
     //
     {
         ViERtpObserver rtpObserver;
-        error = ViE.ptrViERtpRtcp->RegisterRTPObserver(tbChannel.videoChannel,
-                                                       rtpObserver);
+        error = ViE.rtp_rtcp->RegisterRTPObserver(tbChannel.videoChannel,
+                                                  rtpObserver);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViERtpRtcp->RegisterRTPObserver(tbChannel.videoChannel,
-                                                       rtpObserver);
+        error = ViE.rtp_rtcp->RegisterRTPObserver(tbChannel.videoChannel,
+                                                  rtpObserver);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViERtpRtcp->DeregisterRTPObserver(
+        error = ViE.rtp_rtcp->DeregisterRTPObserver(
             tbChannel.videoChannel);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViERtpRtcp->DeregisterRTPObserver(
+        error = ViE.rtp_rtcp->DeregisterRTPObserver(
             tbChannel.videoChannel);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
 
         ViERtcpObserver rtcpObserver;
-        error = ViE.ptrViERtpRtcp->RegisterRTCPObserver(tbChannel.videoChannel,
-                                                        rtcpObserver);
+        error = ViE.rtp_rtcp->RegisterRTCPObserver(tbChannel.videoChannel,
+                                                   rtcpObserver);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViERtpRtcp->RegisterRTCPObserver(tbChannel.videoChannel,
-                                                        rtcpObserver);
+        error = ViE.rtp_rtcp->
+            RegisterRTCPObserver(tbChannel.videoChannel, rtcpObserver);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViERtpRtcp->DeregisterRTCPObserver(
-            tbChannel.videoChannel);
+        error = ViE.rtp_rtcp->DeregisterRTCPObserver(tbChannel.videoChannel);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViERtpRtcp->DeregisterRTCPObserver(
-            tbChannel.videoChannel);
+        error = ViE.rtp_rtcp->DeregisterRTCPObserver(tbChannel.videoChannel);
         numberOfErrors += ViETest::TestError(error == -1,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
@@ -1001,22 +1000,22 @@ int ViEAutoTest::ViERtpRtcpAPITest()
     // PLI
     //
     {
-        error = ViE.ptrViERtpRtcp->SetKeyFrameRequestMethod(
+        error = ViE.rtp_rtcp->SetKeyFrameRequestMethod(
             tbChannel.videoChannel, webrtc::kViEKeyFrameRequestPliRtcp);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViERtpRtcp->SetKeyFrameRequestMethod(
+        error = ViE.rtp_rtcp->SetKeyFrameRequestMethod(
             tbChannel.videoChannel, webrtc::kViEKeyFrameRequestPliRtcp);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViERtpRtcp->SetKeyFrameRequestMethod(
+        error = ViE.rtp_rtcp->SetKeyFrameRequestMethod(
             tbChannel.videoChannel, webrtc::kViEKeyFrameRequestNone);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);
-        error = ViE.ptrViERtpRtcp->SetKeyFrameRequestMethod(
+        error = ViE.rtp_rtcp->SetKeyFrameRequestMethod(
             tbChannel.videoChannel, webrtc::kViEKeyFrameRequestNone);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
@@ -1026,7 +1025,8 @@ int ViEAutoTest::ViERtpRtcpAPITest()
     // NACK
     //
     {
-        error = ViE.ptrViERtpRtcp->SetNACKStatus(tbChannel.videoChannel, true);
+        error = ViE.rtp_rtcp->SetNACKStatus(tbChannel.videoChannel,
+                                                      true);
         numberOfErrors += ViETest::TestError(error == 0,
                                              "ERROR: %s at line %d",
                                              __FUNCTION__, __LINE__);

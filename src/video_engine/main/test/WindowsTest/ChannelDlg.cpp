@@ -1176,7 +1176,7 @@ void CDXChannelDlg::OnBnClickedExttransport()
         m_remoteIp1.EnableWindow(FALSE);
         m_ctrlPacketLoss.EnableWindow(TRUE);
         m_ctrlDelay.EnableWindow(TRUE);
-        _externalTransport= new tbExternalTransport(*_vieNetwork);
+        _externalTransport= new TbExternalTransport(*_vieNetwork);
         _vieNetwork->RegisterSendTransport(_channelId,*_externalTransport);
     }
     else

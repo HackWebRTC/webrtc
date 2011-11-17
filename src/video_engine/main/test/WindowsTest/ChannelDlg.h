@@ -219,7 +219,7 @@ private:
     ViECodec*    _vieCodec;
     ViENetwork*  _vieNetwork;
     ViEFile*      _vieFile;
-    tbExternalTransport* _externalTransport;
+    TbExternalTransport* _externalTransport;
     char             _fileName[256];
 
 

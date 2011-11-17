@@ -10,7 +10,7 @@
 
 #include "tb_interfaces.h"
 
-tbInterfaces::tbInterfaces(const char* testName, int& nrOfErrors) :
+TbInterfaces::TbInterfaces(const char* testName, int& nrOfErrors) :
     numberOfErrors(nrOfErrors)
 {
     char traceFile[256] = "";
@@ -23,110 +23,110 @@ tbInterfaces::tbInterfaces(const char* testName, int& nrOfErrors) :
 
     ViETest::Log("Creating ViE Interfaces for test %s\n", testName);
 
-    ptrViE = webrtc::VideoEngine::Create();
-    numberOfErrors += ViETest::TestError(ptrViE != NULL,
+    video_engine = webrtc::VideoEngine::Create();
+    numberOfErrors += ViETest::TestError(video_engine != NULL,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
 
-    int error = ptrViE->SetTraceFile(traceFile);
+    int error = video_engine->SetTraceFile(traceFile);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ptrViE->SetTraceFilter(webrtc::kTraceAll);
+    error = video_engine->SetTraceFilter(webrtc::kTraceAll);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    ptrViEBase = webrtc::ViEBase::GetInterface(ptrViE);
-    numberOfErrors += ViETest::TestError(ptrViEBase != NULL,
+    base = webrtc::ViEBase::GetInterface(video_engine);
+    numberOfErrors += ViETest::TestError(base != NULL,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
 
-    error = ptrViEBase->Init();
+    error = base->Init();
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    ptrViECapture = webrtc::ViECapture::GetInterface(ptrViE);
-    numberOfErrors += ViETest::TestError(ptrViECapture != NULL,
+    capture = webrtc::ViECapture::GetInterface(video_engine);
+    numberOfErrors += ViETest::TestError(capture != NULL,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
 
-    ptrViERtpRtcp = webrtc::ViERTP_RTCP::GetInterface(ptrViE);
-    numberOfErrors += ViETest::TestError(ptrViERtpRtcp != NULL,
+    rtp_rtcp = webrtc::ViERTP_RTCP::GetInterface(video_engine);
+    numberOfErrors += ViETest::TestError(rtp_rtcp != NULL,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
 
-    ptrViERender = webrtc::ViERender::GetInterface(ptrViE);
-    numberOfErrors += ViETest::TestError(ptrViERender != NULL,
+    render = webrtc::ViERender::GetInterface(video_engine);
+    numberOfErrors += ViETest::TestError(render != NULL,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
 
-    ptrViECodec = webrtc::ViECodec::GetInterface(ptrViE);
-    numberOfErrors += ViETest::TestError(ptrViECodec != NULL,
+    codec = webrtc::ViECodec::GetInterface(video_engine);
+    numberOfErrors += ViETest::TestError(codec != NULL,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
 
-    ptrViENetwork = webrtc::ViENetwork::GetInterface(ptrViE);
-    numberOfErrors += ViETest::TestError(ptrViENetwork != NULL,
+    network = webrtc::ViENetwork::GetInterface(video_engine);
+    numberOfErrors += ViETest::TestError(network != NULL,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
 
-    ptrViEImageProcess = webrtc::ViEImageProcess::GetInterface(ptrViE);
-    numberOfErrors += ViETest::TestError(ptrViEImageProcess != NULL,
+    image_process = webrtc::ViEImageProcess::GetInterface(video_engine);
+    numberOfErrors += ViETest::TestError(image_process != NULL,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
 
-    ptrViEEncryption = webrtc::ViEEncryption::GetInterface(ptrViE);
-    numberOfErrors += ViETest::TestError(ptrViEEncryption != NULL,
+    encryption = webrtc::ViEEncryption::GetInterface(video_engine);
+    numberOfErrors += ViETest::TestError(encryption != NULL,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
 }
 
-tbInterfaces::~tbInterfaces(void)
+TbInterfaces::~TbInterfaces(void)
 {
     int numberOfErrors = 0;
     int remainingInterfaces = 0;
 
-    remainingInterfaces = ptrViEEncryption->Release();
+    remainingInterfaces = encryption->Release();
     numberOfErrors += ViETest::TestError(remainingInterfaces == 0,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
 
-    remainingInterfaces = ptrViEImageProcess->Release();
+    remainingInterfaces = image_process->Release();
     numberOfErrors += ViETest::TestError(remainingInterfaces == 0,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
 
-    remainingInterfaces = ptrViECodec->Release();
+    remainingInterfaces = codec->Release();
     numberOfErrors += ViETest::TestError(remainingInterfaces == 0,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
 
-    remainingInterfaces = ptrViECapture->Release();
+    remainingInterfaces = capture->Release();
     numberOfErrors += ViETest::TestError(remainingInterfaces == 0,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
 
-    remainingInterfaces = ptrViERender->Release();
+    remainingInterfaces = render->Release();
     numberOfErrors += ViETest::TestError(remainingInterfaces == 0,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
 
-    remainingInterfaces = ptrViERtpRtcp->Release();
+    remainingInterfaces = rtp_rtcp->Release();
     numberOfErrors += ViETest::TestError(remainingInterfaces == 0,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
 
-    remainingInterfaces = ptrViENetwork->Release();
+    remainingInterfaces = network->Release();
     numberOfErrors += ViETest::TestError(remainingInterfaces == 0,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
 
-    remainingInterfaces = ptrViEBase->Release();
+    remainingInterfaces = base->Release();
     numberOfErrors += ViETest::TestError(remainingInterfaces == 0,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);
 
-    bool deleted = webrtc::VideoEngine::Delete(ptrViE);
+    bool deleted = webrtc::VideoEngine::Delete(video_engine);
     numberOfErrors += ViETest::TestError(deleted == true,
                                          "ERROR: %s at line %d", __FUNCTION__,
                                          __LINE__);

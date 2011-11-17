@@ -33,7 +33,7 @@
 #pragma warning(disable: 4355) // 'this' : used in base member initializer list
 #endif
 
-tbExternalTransport::tbExternalTransport(webrtc::ViENetwork& vieNetwork) :
+TbExternalTransport::TbExternalTransport(webrtc::ViENetwork& vieNetwork) :
         _vieNetwork(vieNetwork),
         _thread(*webrtc::ThreadWrapper::CreateThread(
             ViEExternalTransportRun, this, webrtc::kHighPriority,
@@ -60,7 +60,7 @@ tbExternalTransport::tbExternalTransport(webrtc::ViENetwork& vieNetwork) :
     _thread.Start(tId);
 }
 
-tbExternalTransport::~tbExternalTransport()
+TbExternalTransport::~TbExternalTransport()
 {
     _thread.SetNotAlive();
     _event.Set();
@@ -73,7 +73,7 @@ tbExternalTransport::~tbExternalTransport()
     delete &_statCrit;
 }
 
-int tbExternalTransport::SendPacket(int channel, const void *data, int len)
+int TbExternalTransport::SendPacket(int channel, const void *data, int len)
 {
     if (_filterSSRC)
     {
@@ -114,7 +114,7 @@ int tbExternalTransport::SendPacket(int channel, const void *data, int len)
     return len;
 }
 
-int tbExternalTransport::SendRTCPPacket(int channel, const void *data, int len)
+int TbExternalTransport::SendRTCPPacket(int channel, const void *data, int len)
 {
     _statCrit.Enter();
     _rtcpCount++;
@@ -133,27 +133,27 @@ int tbExternalTransport::SendRTCPPacket(int channel, const void *data, int len)
     return len;
 }
 
-WebRtc_Word32 tbExternalTransport::SetPacketLoss(WebRtc_Word32 lossRate)
+WebRtc_Word32 TbExternalTransport::SetPacketLoss(WebRtc_Word32 lossRate)
 {
     webrtc::CriticalSectionScoped cs(_statCrit);
     _lossRate = lossRate;
     return 0;
 }
 
-void tbExternalTransport::SetNetworkDelay(WebRtc_Word64 delayMs)
+void TbExternalTransport::SetNetworkDelay(WebRtc_Word64 delayMs)
 {
     webrtc::CriticalSectionScoped cs(_crit);
     _networkDelayMs = delayMs;
 }
 
-void tbExternalTransport::SetSSRCFilter(WebRtc_UWord32 ssrc)
+void TbExternalTransport::SetSSRCFilter(WebRtc_UWord32 ssrc)
 {
     webrtc::CriticalSectionScoped cs(_crit);
     _filterSSRC = true;
     _SSRC = ssrc;
 }
 
-void tbExternalTransport::ClearStats()
+void TbExternalTransport::ClearStats()
 {
     webrtc::CriticalSectionScoped cs(_statCrit);
     _rtpCount = 0;
@@ -161,7 +161,7 @@ void tbExternalTransport::ClearStats()
     _rtcpCount = 0;
 }
 
-void tbExternalTransport::GetStats(WebRtc_Word32& numRtpPackets,
+void TbExternalTransport::GetStats(WebRtc_Word32& numRtpPackets,
                                    WebRtc_Word32& numDroppedPackets,
                                    WebRtc_Word32& numRtcpPackets)
 {
@@ -171,36 +171,36 @@ void tbExternalTransport::GetStats(WebRtc_Word32& numRtpPackets,
     numRtcpPackets = _rtcpCount;
 }
 
-void tbExternalTransport::EnableSSRCCheck()
+void TbExternalTransport::EnableSSRCCheck()
 {
     webrtc::CriticalSectionScoped cs(_statCrit);
     _checkSSRC = true;
 }
 
-unsigned int tbExternalTransport::ReceivedSSRC()
+unsigned int TbExternalTransport::ReceivedSSRC()
 {
     webrtc::CriticalSectionScoped cs(_statCrit);
     return _lastSSRC;
 }
 
-void tbExternalTransport::EnableSequenceNumberCheck()
+void TbExternalTransport::EnableSequenceNumberCheck()
 {
     webrtc::CriticalSectionScoped cs(_statCrit);
     _checkSequenceNumber = true;
 }
 
-unsigned short tbExternalTransport::GetFirstSequenceNumber()
+unsigned short TbExternalTransport::GetFirstSequenceNumber()
 {
     webrtc::CriticalSectionScoped cs(_statCrit);
     return _firstSequenceNumber;
 }
 
-bool tbExternalTransport::ViEExternalTransportRun(void* object)
+bool TbExternalTransport::ViEExternalTransportRun(void* object)
 {
-    return static_cast<tbExternalTransport*>
+    return static_cast<TbExternalTransport*>
         (object)->ViEExternalTransportProcess();
 }
-bool tbExternalTransport::ViEExternalTransportProcess()
+bool TbExternalTransport::ViEExternalTransportProcess()
 {
     unsigned int waitTime = KMaxWaitTimeMs;
 
@@ -286,7 +286,7 @@ bool tbExternalTransport::ViEExternalTransportProcess()
     return true;
 }
 
-WebRtc_Word64 tbExternalTransport::NowMs()
+WebRtc_Word64 TbExternalTransport::NowMs()
 {
     return webrtc::TickTime::MillisecondTimestamp();
 }

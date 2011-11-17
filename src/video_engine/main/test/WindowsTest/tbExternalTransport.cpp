@@ -23,7 +23,7 @@
 
 using namespace webrtc;
 
-tbExternalTransport::tbExternalTransport(ViENetwork& vieNetwork)
+TbExternalTransport::TbExternalTransport(ViENetwork& vieNetwork)
     :
     _vieNetwork(vieNetwork),
     _thread(*ThreadWrapper::CreateThread(ViEExternalTransportRun, this, kHighPriority, "AutotestTransport")), 
@@ -49,7 +49,7 @@ tbExternalTransport::tbExternalTransport(ViENetwork& vieNetwork)
 }
 
 
-tbExternalTransport::~tbExternalTransport()
+TbExternalTransport::~TbExternalTransport()
 {
     // TODO: stop thread
     _thread.SetNotAlive();
@@ -67,7 +67,7 @@ tbExternalTransport::~tbExternalTransport()
 
 
     
-int tbExternalTransport::SendPacket(int channel, const void *data, int len)
+int TbExternalTransport::SendPacket(int channel, const void *data, int len)
 {
     _statCrit.Enter();
     _rtpCount++;
@@ -138,7 +138,7 @@ int tbExternalTransport::SendPacket(int channel, const void *data, int len)
     return len;
 }
 
-int tbExternalTransport::SendRTCPPacket(int channel, const void *data, int len)
+int TbExternalTransport::SendRTCPPacket(int channel, const void *data, int len)
 {
     _statCrit.Enter();
     _rtcpCount++;
@@ -157,21 +157,21 @@ int tbExternalTransport::SendRTCPPacket(int channel, const void *data, int len)
     return len;
 }
 
-WebRtc_Word32 tbExternalTransport::SetPacketLoss(WebRtc_Word32 lossRate)
+WebRtc_Word32 TbExternalTransport::SetPacketLoss(WebRtc_Word32 lossRate)
 {
     CriticalSectionScoped cs(_statCrit);
     _lossRate = lossRate;
     return 0;
 }
 
-void tbExternalTransport::SetNetworkDelay(WebRtc_Word64 delayMs)
+void TbExternalTransport::SetNetworkDelay(WebRtc_Word64 delayMs)
 {
     CriticalSectionScoped cs(_crit);
     _networkDelayMs = delayMs;
     return;
 }
 
-void tbExternalTransport::ClearStats()
+void TbExternalTransport::ClearStats()
 {
     CriticalSectionScoped cs(_statCrit);
     _rtpCount = 0;
@@ -180,7 +180,7 @@ void tbExternalTransport::ClearStats()
     return;
 }
 
-void tbExternalTransport::GetStats(WebRtc_Word32& numRtpPackets, WebRtc_Word32& numDroppedPackets, WebRtc_Word32& numRtcpPackets)
+void TbExternalTransport::GetStats(WebRtc_Word32& numRtpPackets, WebRtc_Word32& numDroppedPackets, WebRtc_Word32& numRtcpPackets)
 {
     CriticalSectionScoped cs(_statCrit);
     numRtpPackets = _rtpCount;
@@ -189,35 +189,35 @@ void tbExternalTransport::GetStats(WebRtc_Word32& numRtpPackets, WebRtc_Word32& 
     return;
 }
 
-void tbExternalTransport::EnableSSRCCheck()
+void TbExternalTransport::EnableSSRCCheck()
 {
     CriticalSectionScoped cs(_statCrit);
     _checkSSRC = true;
 }
-unsigned int tbExternalTransport::ReceivedSSRC()
+unsigned int TbExternalTransport::ReceivedSSRC()
 {
     CriticalSectionScoped cs(_statCrit);
     return _lastSSRC;
 }
 
-void tbExternalTransport::EnableSequenceNumberCheck()
+void TbExternalTransport::EnableSequenceNumberCheck()
 {
     CriticalSectionScoped cs(_statCrit);
     _checkSequenceNumber = true;
 }
 
-unsigned short tbExternalTransport::GetFirstSequenceNumber()
+unsigned short TbExternalTransport::GetFirstSequenceNumber()
 {
     CriticalSectionScoped cs(_statCrit);
     return _firstSequenceNumber;
 }
 
 
-bool tbExternalTransport::ViEExternalTransportRun(void* object)
+bool TbExternalTransport::ViEExternalTransportRun(void* object)
 {
-    return static_cast<tbExternalTransport*>(object)->ViEExternalTransportProcess();
+    return static_cast<TbExternalTransport*>(object)->ViEExternalTransportProcess();
 }
-bool tbExternalTransport::ViEExternalTransportProcess()
+bool TbExternalTransport::ViEExternalTransportProcess()
 {
     unsigned int waitTime = KMaxWaitTimeMs;
 
@@ -311,7 +311,7 @@ bool tbExternalTransport::ViEExternalTransportProcess()
     return true;
 }
 
-WebRtc_Word64 tbExternalTransport::NowMs()
+WebRtc_Word64 TbExternalTransport::NowMs()
 {
     return TickTime::MillisecondTimestamp();
 }

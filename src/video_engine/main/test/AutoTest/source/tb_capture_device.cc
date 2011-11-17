@@ -10,7 +10,7 @@
 
 #include "tb_capture_device.h"
 
-tbCaptureDevice::tbCaptureDevice(tbInterfaces& Engine, int& nrOfErrors) :
+TbCaptureDevice::TbCaptureDevice(TbInterfaces& Engine, int& nrOfErrors) :
     captureId(-1),
     numberOfErrors(nrOfErrors),
     ViE(Engine),
@@ -47,7 +47,7 @@ tbCaptureDevice::tbCaptureDevice(tbInterfaces& Engine, int& nrOfErrors) :
         }
         vcpm_->AddRef();
 
-        error = ViE.ptrViECapture->AllocateCaptureDevice(*vcpm_, captureId);
+        error = ViE.capture->AllocateCaptureDevice(*vcpm_, captureId);
         if (error == 0)
         {
             ViETest::Log("Using capture device: %s, captureId: %d", deviceName,
@@ -64,37 +64,37 @@ tbCaptureDevice::tbCaptureDevice(tbInterfaces& Engine, int& nrOfErrors) :
     ViETest::Log("Starting capture device %s with captureId %d\n", deviceName,
                  captureId);
 
-    error = ViE.ptrViECapture->StartCapture(captureId);
+    error = ViE.capture->StartCapture(captureId);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 }
 
-tbCaptureDevice::~tbCaptureDevice(void)
+TbCaptureDevice::~TbCaptureDevice(void)
 {
     ViETest::Log("Stopping capture device with id %d\n", captureId);
     int error;
-    error = ViE.ptrViECapture->StopCapture(captureId);
+    error = ViE.capture->StopCapture(captureId);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ViE.ptrViECapture->ReleaseCaptureDevice(captureId);
+    error = ViE.capture->ReleaseCaptureDevice(captureId);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
     vcpm_->Release();
 }
 
-void tbCaptureDevice::ConnectTo(int videoChannel)
+void TbCaptureDevice::ConnectTo(int videoChannel)
 {
     int error;
-    error = ViE.ptrViECapture->ConnectCaptureDevice(captureId, videoChannel);
+    error = ViE.capture->ConnectCaptureDevice(captureId, videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 }
 
-void tbCaptureDevice::Disconnect(int videoChannel)
+void TbCaptureDevice::Disconnect(int videoChannel)
 {
     int error = 0;
-    error = ViE.ptrViECapture->DisconnectCaptureDevice(videoChannel);
+    error = ViE.capture->DisconnectCaptureDevice(videoChannel);
     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 }

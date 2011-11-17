@@ -26,11 +26,11 @@ class ThreadWrapper;
 class ViENetwork;
 }
 
-class tbExternalTransport :  public webrtc::Transport
+class TbExternalTransport :  public webrtc::Transport
 {
 public:
-    tbExternalTransport(webrtc::ViENetwork& vieNetwork);
-    ~tbExternalTransport(void);
+    TbExternalTransport(webrtc::ViENetwork& vieNetwork);
+    ~TbExternalTransport(void);
 
     virtual int SendPacket(int channel, const void *data, int len);
     virtual int SendRTCPPacket(int channel, const void *data, int len);
