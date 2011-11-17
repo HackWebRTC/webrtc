@@ -41,7 +41,7 @@ LOCAL_CFLAGS := \
 
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../interface \
-    $(LOCAL_PATH)/../../codecs/CNG/main/interface \
+    $(LOCAL_PATH)/../../codecs/cng/include \
     $(LOCAL_PATH)/../../codecs/G711/main/interface \
     $(LOCAL_PATH)/../../codecs/G722/main/interface \
     $(LOCAL_PATH)/../../codecs/ilbc/interface \

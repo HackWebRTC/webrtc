@@ -15,21 +15,38 @@
         '<(webrtc_root)/common_audio/common_audio.gyp:signal_processing',
       ],
       'include_dirs': [
-        '../interface',
+        'include',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          '../interface',
+          'include',
         ],
       },
       'sources': [
-        '../interface/webrtc_cng.h',
+        'include/webrtc_cng.h',
         'webrtc_cng.c',
         'cng_helpfuns.c',
         'cng_helpfuns.h',
       ],
     },
-  ],
+  ], # targets
+  'conditions': [
+    ['build_with_chromium==0', {
+      'targets': [
+        {
+          'target_name': 'cng_unittests',
+          'type': 'executable',
+          'dependencies': [
+            'CNG',
+            '<(webrtc_root)/../test/test.gyp:test_support_main',
+          ],
+          'sources': [
+            'cng_unittest.cc',
+          ],
+        }, # CNG_unittests
+      ], # targets
+    }], # build_with_chromium
+  ], # conditions
 }
 
 # Local Variables:
