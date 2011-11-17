@@ -47,7 +47,7 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../../codecs/ilbc/interface \
     $(LOCAL_PATH)/../../codecs/iSAC/main/interface \
     $(LOCAL_PATH)/../../codecs/iSAC/fix/interface \
-    $(LOCAL_PATH)/../../codecs/PCM16B/main/interface \
+    $(LOCAL_PATH)/../../codecs/pcm16b/include \
     $(LOCAL_PATH)/../../neteq/interface \
     $(LOCAL_PATH)/../../../.. \
     $(LOCAL_PATH)/../../../interface \

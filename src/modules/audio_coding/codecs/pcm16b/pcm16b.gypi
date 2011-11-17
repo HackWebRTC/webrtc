@@ -12,19 +12,36 @@
       'target_name': 'PCM16B',
       'type': '<(library)',
       'include_dirs': [
-        '../interface',
+        'include',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          '../interface',
+          'include',
         ],
       },
       'sources': [
-        '../interface/pcm16b.h',
+        'include/pcm16b.h',
         'pcm16b.c',
       ],
     },
-  ],
+  ], # targets
+  'conditions': [
+    ['build_with_chromium==0', {
+      'targets': [
+        {
+          'target_name': 'pcm16b_unittests',
+          'type': 'executable',
+          'dependencies': [
+            'PCM16B',
+            '<(webrtc_root)/../test/test.gyp:test_support_main',
+          ],
+          'sources': [
+            'pcm16b_unittest.cc',
+          ],
+        }, # PCM16B_unittests
+      ], # targets
+    }], # build_with_chromium
+  ], # conditions
 }
 
 # Local Variables:

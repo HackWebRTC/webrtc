@@ -15,7 +15,7 @@
     'audio_coding/codecs/ilbc/ilbc.gypi',
     'audio_coding/codecs/iSAC/main/source/isac.gypi',
     'audio_coding/codecs/iSAC/fix/source/isacfix.gypi',
-    'audio_coding/codecs/PCM16B/main/source/pcm16b.gypi',
+    'audio_coding/codecs/pcm16b/pcm16b.gypi',
     'audio_coding/main/source/audio_coding_module.gypi',
     'audio_coding/neteq/neteq.gypi',
     'audio_conference_mixer/source/audio_conference_mixer.gypi',
