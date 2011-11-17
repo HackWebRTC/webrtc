@@ -36,6 +36,7 @@
 /src/supplement.gypi
 /testFiles
 /testing
+/third_party/cygwin
 /third_party/expat
 /third_party/google-gflags/src
 /third_party/jsoncpp
