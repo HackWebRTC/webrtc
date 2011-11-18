@@ -67,8 +67,7 @@ CpuWindows::CpuWindows()
     // All resources are allocated in PollingCpu().
     if (AllocateComplexDataTypes())
     {
-        const bool success = StartPollingCpu();
-        assert(success);
+        StartPollingCpu();
     }
     else
     {
@@ -135,30 +134,29 @@ void CpuWindows::DeAllocateComplexDataTypes()
     }
 }
 
-bool CpuWindows::StartPollingCpu()
+void CpuWindows::StartPollingCpu()
 {
     unsigned int dummy_id = 0;
     if (!cpu_polling_thread->Start(dummy_id))
     {
-        return false;
+        initialize_ = false;
+        assert(false);
     }
+}
+
+bool CpuWindows::StopPollingCpu()
+{
     {
+        // If StopPollingCpu is called immediately after StartPollingCpu() it is
+        // possible that cpu_polling_thread is in the process of initializing.
+        // Let initialization finish to avoid getting into a bad state.
         CriticalSectionScoped cs(*init_crit_);
         while(initialize_)
         {
             init_cond_->SleepCS(*init_crit_);
         }
     }
-    if (!has_initialized_)
-    {
-        cpu_polling_thread->Stop();
-        return false;
-    }
-    return has_initialized_;
-}
 
-bool CpuWindows::StopPollingCpu()
-{
     if (!has_initialized_)
     {
         return false;
@@ -204,7 +202,7 @@ bool CpuWindows::ProcessImpl()
         {
             has_initialized_ = false;
             terminate_ = true;
-            return false;
+            return true;
         }
     }
     // Approximately one seconds sleep for each CPU measurement. Precision is

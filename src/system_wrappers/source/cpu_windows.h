@@ -45,7 +45,7 @@ private:
     bool AllocateComplexDataTypes();
     void DeAllocateComplexDataTypes();
 
-    bool StartPollingCpu();
+    void StartPollingCpu();
     bool StopPollingCpu();
 
     static bool Process(void* thread_object);
