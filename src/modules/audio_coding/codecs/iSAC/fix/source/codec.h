@@ -131,10 +131,10 @@ void WebRtcIsacfix_NormLatticeFilterAr(WebRtc_Word16 orderCoef,
                                        WebRtc_Word16 lo_hi,
                                        WebRtc_Word16 *lat_outQ0);
 
-int WebRtcIsacfix_AutocorrFix(WebRtc_Word32        *r,
-                              const WebRtc_Word16 *x,
-                              WebRtc_Word16        N,
-                              WebRtc_Word16        order,
-                              WebRtc_Word16        *scale);
+int WebRtcIsacfix_AutocorrFix(WebRtc_Word32* __restrict r,
+                              const WebRtc_Word16*  __restrict x,
+                              WebRtc_Word16 N,
+                              WebRtc_Word16 order,
+                              WebRtc_Word16* __restrict scale);
 
 #endif /* WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_FIX_SOURCE_CODEC_H_ */
