@@ -3436,7 +3436,7 @@ int Channel::StartPlayingFileLocally(const char* fileName,
         {
             _engineStatisticsPtr->SetLastError(
                 VE_INVALID_ARGUMENT, kTraceError,
-                "StartPlayingFileLocally() filePlayer format isnot correct");
+                "StartPlayingFileLocally() filePlayer format is not correct");
             return -1;
         }
 
@@ -3463,7 +3463,7 @@ int Channel::StartPlayingFileLocally(const char* fileName,
         _outputFilePlaying = true;
     }
     // _fileCritSect cannot be taken while calling
-    // SetAnonymousMixabilityStatus since as soon as the participant is added
+    // SetAnonymousMixabilityStatus() since as soon as the participant is added
     // frames can be pulled by the mixer. Since the frames are generated from
     // the file, _fileCritSect will be taken. This would result in a deadlock.
     if (_outputMixerPtr->SetAnonymousMixabilityStatus(*this, true) != 0)
