@@ -625,6 +625,24 @@ WebRtc_Word32 AudioDeviceWindowsWave::InitMicrophone()
         }
     }
 
+    WebRtc_UWord32 maxVol = 0;
+    if (_mixerManager.MaxMicrophoneVolume(maxVol) == -1)
+    {
+        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+            "  unable to retrieve max microphone volume");
+        return -1;
+    }
+    _maxMicVolume = maxVol;
+
+    WebRtc_UWord32 minVol = 0;
+    if (_mixerManager.MinMicrophoneVolume(minVol) == -1)
+    {
+        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+            "  unable to retrieve min microphone volume");
+        return -1;
+    }
+    _minMicVolume = minVol;
+
     return 0;
 }
 
@@ -2040,24 +2058,6 @@ WebRtc_Word32 AudioDeviceWindowsWave::InitRecording()
     }
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "utilized device ID : %u", deviceID);
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "product name       : %s", caps.szPname);
-
-    WebRtc_UWord32 maxVol = 0;
-    if (_mixerManager.MaxMicrophoneVolume(maxVol) == -1)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-            "  unable to retrieve max microphone volume");
-        return -1;
-    }
-    _maxMicVolume = maxVol;
-
-    WebRtc_UWord32 minVol = 0;
-    if (_mixerManager.MinMicrophoneVolume(minVol) == -1)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-            "  unable to retrieve min microphone volume");
-        return -1;
-    }
-    _minMicVolume = minVol;
 
     // Store valid handle for the open waveform-audio input device
     _hWaveIn = hWaveIn;
