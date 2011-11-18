@@ -42,6 +42,14 @@ LOCAL_SRC_FILES := \
     spectrum_ar_model_tables.c \
     transform.c
 
+ifeq ($(ARCH_ARM_HAVE_NEON),true)
+LOCAL_SRC_FILES += \
+    filters_neon.c
+#    lattice_neon.c
+LOCAL_CFLAGS += \
+    $(MY_ARM_CFLAGS_NEON)
+endif
+
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \
     $(MY_WEBRTC_COMMON_DEFS)
@@ -49,7 +57,7 @@ LOCAL_CFLAGS := \
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../interface \
     $(LOCAL_PATH)/../../../../../.. \
-    $(LOCAL_PATH)/../../../../../../common_audio/signal_processing/include 
+    $(LOCAL_PATH)/../../../../../../common_audio/signal_processing/include
 
 LOCAL_SHARED_LIBRARIES := \
     libcutils \
@@ -61,8 +69,8 @@ include external/stlport/libstlport.mk
 endif
 include $(BUILD_STATIC_LIBRARY)
 
-
 # isac test app
+
 include $(CLEAR_VARS)
 
 LOCAL_MODULE_TAGS := tests
