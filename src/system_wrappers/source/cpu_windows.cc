@@ -35,11 +35,18 @@ WebRtc_Word32 CpuWindows::CpuUsage()
 }
 
 WebRtc_Word32 CpuWindows::CpuUsageMultiCore(WebRtc_UWord32& num_cores,
-                                                  WebRtc_UWord32*& cpu_usage)
+                                            WebRtc_UWord32*& cpu_usage)
 {
+    if (has_terminated_) {
+        num_cores = 0;
+        cpu_usage = NULL;
+        return -1;
+    }
     if (!has_initialized_)
     {
-        return -1;
+        num_cores = 0;
+        cpu_usage = NULL;
+        return 0;
     }
     num_cores = number_of_objects_ - 1;
     cpu_usage = cpu_usage_;
@@ -140,6 +147,7 @@ void CpuWindows::StartPollingCpu()
     if (!cpu_polling_thread->Start(dummy_id))
     {
         initialize_ = false;
+        has_terminated_ = true;
         assert(false);
     }
 }
