@@ -9,6 +9,9 @@
  */
 
 #include "NETEQTEST_CodecClass.h"
+
+#include <stdlib.h>  // exit
+
 #include "webrtc_neteq_help_macros.h"
 
 NETEQTEST_Decoder::NETEQTEST_Decoder(enum WebRtcNetEQDecoder type, WebRtc_UWord16 fs, const char * name, WebRtc_UWord8 pt)
@@ -46,7 +49,7 @@ NETEQTEST_Decoder(kDecoderISAC, 16000, "iSAC", pt)
     WebRtc_Word16 err = WebRtcIsac_Create((ISACStruct **) &_decoder);
     if (err)
     {
-        throw std::exception();
+        exit(EXIT_FAILURE);
     }
 
     WebRtcIsac_EncoderInit((ISACStruct *) _decoder, 0);
@@ -83,7 +86,7 @@ NETEQTEST_Decoder(kDecoderISACswb, 32000, "iSAC swb", pt)
     WebRtc_Word16 err = WebRtcIsac_Create((ISACStruct **) &_decoder);
     if (err)
     {
-        throw std::exception();
+        exit(EXIT_FAILURE);
     }
 
     WebRtcIsac_EncoderInit((ISACStruct *) _decoder, 0);
@@ -207,7 +210,7 @@ NETEQTEST_Decoder(kDecoderILBC, 8000, "iLBC", pt)
     WebRtc_Word16 err = WebRtcIlbcfix_DecoderCreate((iLBC_decinst_t **) &_decoder);
     if (err)
     {
-        throw std::exception();
+        exit(EXIT_FAILURE);
     }
 }
 
@@ -235,7 +238,7 @@ NETEQTEST_Decoder(kDecoderG729, 8000, "G.729", pt)
     WebRtc_Word16 err = WebRtcG729_CreateDec((G729_decinst_t **) &_decoder);
     if (err)
     {
-        throw std::exception();
+        exit(EXIT_FAILURE);
     }
 }
 
@@ -263,7 +266,7 @@ NETEQTEST_Decoder(kDecoderG729_1, 16000, "G.729.1", pt)
     WebRtc_Word16 err = WebRtcG7291_Create((G729_1_inst_t **) &_decoder);
     if (err)
     {
-        throw std::exception();
+        exit(EXIT_FAILURE);
     }
 }
 
@@ -291,7 +294,7 @@ NETEQTEST_Decoder(kDecoderG722, 16000, "G.722", pt)
      WebRtc_Word16 err = WebRtcG722_CreateDecoder((G722DecInst **) &_decoder);
      if (err)
      {
-         throw std::exception();
+         exit(EXIT_FAILURE);
      }
 }
 
@@ -323,7 +326,7 @@ NETEQTEST_Decoder(kDecoderG722_1_16, 16000, "G.722.1 (16 kbps)", pt)
 {
     if (WebRtcG7221_CreateDec16((G722_1_16_decinst_t **) &_decoder))
     {
-        throw std::exception();
+        exit(EXIT_FAILURE);
     }
 }
 
@@ -349,7 +352,7 @@ NETEQTEST_Decoder(kDecoderG722_1_24, 16000, "G.722.1 (24 kbps)", pt)
 {
     if (WebRtcG7221_CreateDec24((G722_1_24_decinst_t **) &_decoder))
     {
-        throw std::exception();
+        exit(EXIT_FAILURE);
     }
 }
 
@@ -375,7 +378,7 @@ NETEQTEST_Decoder(kDecoderG722_1_32, 16000, "G.722.1 (32 kbps)", pt)
 {
     if (WebRtcG7221_CreateDec32((G722_1_32_decinst_t **) &_decoder))
     {
-        throw std::exception();
+        exit(EXIT_FAILURE);
     }
 }
 
@@ -400,7 +403,7 @@ decoder_G722_1C_24::decoder_G722_1C_24(WebRtc_UWord8 pt)
 NETEQTEST_Decoder(kDecoderG722_1C_24, 32000, "G.722.1C (24 kbps)", pt)
 {
     if (WebRtcG7221C_CreateDec24((G722_1C_24_decinst_t **) &_decoder))
-        throw std::exception();
+        exit(EXIT_FAILURE);
 }
 
 decoder_G722_1C_24::~decoder_G722_1C_24()
@@ -424,7 +427,7 @@ decoder_G722_1C_32::decoder_G722_1C_32(WebRtc_UWord8 pt)
 NETEQTEST_Decoder(kDecoderG722_1C_32, 32000, "G.722.1C (32 kbps)", pt)
 {
     if (WebRtcG7221C_CreateDec32((G722_1C_32_decinst_t **) &_decoder))
-        throw std::exception();
+        exit(EXIT_FAILURE);
 }
 
 decoder_G722_1C_32::~decoder_G722_1C_32()
@@ -448,7 +451,7 @@ decoder_G722_1C_48::decoder_G722_1C_48(WebRtc_UWord8 pt)
 NETEQTEST_Decoder(kDecoderG722_1C_48, 32000, "G.722.1C (48 kbps)", pt)
 {
     if (WebRtcG7221C_CreateDec48((G722_1C_48_decinst_t **) &_decoder))
-        throw std::exception();
+        exit(EXIT_FAILURE);
 }
 
 decoder_G722_1C_48::~decoder_G722_1C_48()
@@ -474,7 +477,7 @@ decoder_AMR::decoder_AMR(WebRtc_UWord8 pt)
 NETEQTEST_Decoder(kDecoderAMR, 8000, "AMR", pt)
 {
     if (WebRtcAmr_CreateDec((AMR_decinst_t **) &_decoder))
-        throw std::exception();
+        exit(EXIT_FAILURE);
 
     WebRtcAmr_DecodeBitmode((AMR_decinst_t *) _decoder, AMRBandwidthEfficient);
 }
@@ -502,7 +505,7 @@ decoder_AMRWB::decoder_AMRWB(WebRtc_UWord8 pt)
 NETEQTEST_Decoder(kDecoderAMRWB, 16000, "AMR wb", pt)
 {
     if (WebRtcAmrWb_CreateDec((AMRWB_decinst_t **) &_decoder))
-        throw std::exception();
+        exit(EXIT_FAILURE);
 
     WebRtcAmrWb_DecodeBitmode((AMRWB_decinst_t *) _decoder, AMRBandwidthEfficient);
 }
@@ -530,7 +533,7 @@ decoder_GSMFR::decoder_GSMFR(WebRtc_UWord8 pt)
 NETEQTEST_Decoder(kDecoderGSMFR, 8000, "GSM-FR", pt)
 {
     if (WebRtcGSMFR_CreateDec((GSMFR_decinst_t **) &_decoder))
-        throw std::exception();
+        exit(EXIT_FAILURE);
 }
 
 decoder_GSMFR::~decoder_GSMFR()
@@ -559,7 +562,7 @@ NETEQTEST_Decoder(fs == 8000 ? kDecoderSPEEX_8 : kDecoderSPEEX_16,
         throw std::exception("Wrong sample rate for SPEEX");
 
     if (WebRtcSpeex_CreateDec((SPEEX_decinst_t **) &_decoder, fs, 1))
-        throw std::exception();
+        exit(EXIT_FAILURE);
 }
 
 decoder_SPEEX::~decoder_SPEEX()
@@ -607,10 +610,10 @@ decoder_CNG::decoder_CNG(WebRtc_UWord8 pt, WebRtc_UWord16 fs)
 NETEQTEST_Decoder(kDecoderCNG, fs, "CNG " + fs/1000, pt)
 {
     if (fs != 8000 && fs != 16000 && fs != 32000 && fs != 48000)
-        throw std::exception();
+        exit(EXIT_FAILURE);
 
     if (WebRtcCng_CreateDec((CNG_dec_inst **) &_decoder))
-        throw std::exception();
+        exit(EXIT_FAILURE);
 }
 
 decoder_CNG::~decoder_CNG()

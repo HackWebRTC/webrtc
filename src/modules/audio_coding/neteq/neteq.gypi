@@ -267,18 +267,6 @@
             'test/NETEQTEST_RTPpacket.h',
             'test/NETEQTEST_CodecClass.h',
           ],
-          'conditions': [
-            ['OS=="linux" or OS=="mac"', {
-              'cflags': [
-                '-fexceptions', # enable exceptions
-              ],
-            }],
-            ['OS=="mac"', {
-              'xcode_settings': {
-                'GCC_ENABLE_CPP_EXCEPTIONS': 'YES', # -fexceptions
-               }
-            }],
-          ], # conditions
         },
       ], # targets
     }], # build_with_chromium
