@@ -8,147 +8,126 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-// Performs delay estimation on a block by block basis
+// Performs delay estimation on binary converted spectra.
 // The return value is  0 - OK and -1 - Error, unless otherwise stated.
 
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_UTILITY_DELAY_ESTIMATOR_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_UTILITY_DELAY_ESTIMATOR_H_
 
+#include "signal_processing_library.h"
 #include "typedefs.h"
 
-// Releases the memory allocated by WebRtc_CreateDelayEstimator(...)
-// Input:
-//      - handle        : Pointer to the delay estimation instance
-//
-int WebRtc_FreeDelayEstimator(void* handle);
+typedef struct {
+  // Pointer to bit counts
+  int32_t* mean_bit_counts;
 
-// Allocates the memory needed by the delay estimation. The memory needs to be
-// initialized separately using the WebRtc_InitDelayEstimator(...)
-// function.
+  // Array only used locally in ProcessBinarySpectrum() but whose size is
+  // determined at run-time.
+  int32_t* bit_counts;
+
+  // Binary history variables
+  uint32_t* binary_far_history;
+
+  // Delay histogram variables
+  int* delay_histogram;
+  int vad_counter;
+
+  // Delay memory
+  int last_delay;
+
+  // Buffer size parameters
+  int history_size;
+} BinaryDelayEstimator_t;
+
+// Releases the memory allocated by WebRtc_CreateBinaryDelayEstimator(...)
+// Input:
+//    - handle            : Pointer to the delay estimation instance
+//
+int WebRtc_FreeBinaryDelayEstimator(BinaryDelayEstimator_t* handle);
+
+// Allocates the memory needed by the binary delay estimation. The memory needs
+// to be initialized separately using WebRtc_InitBinaryDelayEstimator(...).
 //
 // Inputs:
-//      - handle            : Instance that should be created
-//      - spectrum_size     : Size of the spectrum used both in far end and
-//                            near end. Used to allocate memory for spectrum
-//                            specific buffers.
-//      - history_size      : Size of the far end history used to estimate the
-//                            delay from. Used to allocate memory for history
-//                            specific buffers.
-//      - enable_alignment  : With this mode set to 1, a far end history is
-//                            created, so that the user can retrieve aligned
-//                            far end spectra using
-//                            WebRtc_AlignedFarend(...). Otherwise, only delay
-//                            values are calculated.
+//    - handle            : Instance that should be created
+//    - history_size      : Size of the far end history used to estimate the
+//                          delay from. Used to allocate memory for history
+//                          specific buffers.
 //
 // Output:
-//      - handle            : Created instance
+//    - handle            : Created instance
 //
-int WebRtc_CreateDelayEstimator(void** handle,
-                                int spectrum_size,
-                                int history_size,
-                                int enable_alignment);
+int WebRtc_CreateBinaryDelayEstimator(BinaryDelayEstimator_t** handle,
+                                      int history_size);
 
 // Initializes the delay estimation instance created with
-// WebRtc_CreateDelayEstimator(...)
+// WebRtc_CreateBinaryDelayEstimator(...)
 // Input:
-//      - handle        : Pointer to the delay estimation instance
+//    - handle            : Pointer to the delay estimation instance
 //
 // Output:
-//      - handle        : Initialized instance
+//    - handle            : Initialized instance
 //
-int WebRtc_InitDelayEstimator(void* handle);
+int WebRtc_InitBinaryDelayEstimator(BinaryDelayEstimator_t* handle);
 
-// Estimates and returns the delay between the far end and near end blocks.
+// Estimates and returns the delay between the binary far end and binary near
+// end spectra.
 // Inputs:
-//      - handle        : Pointer to the delay estimation instance
-//      - far_spectrum  : Pointer to the far end spectrum data
-//      - near_spectrum : Pointer to the near end spectrum data of the current
-//                        block
-//      - spectrum_size : The size of the data arrays (same for both far and
-//                        near end)
-//      - far_q         : The Q-domain of the far end data
-//      - vad_value     : The VAD decision of the current block
+//    - handle                : Pointer to the delay estimation instance
+//    - binary_far_spectrum   : Far end binary spectrum
+//    - binary_near_spectrum  : Near end binary spectrum of the current block
+//    - vad_value             : The VAD decision of the current block
 //
 // Output:
-//      - handle        : Updated instance
+//    - handle                : Updated instance
 //
 // Return value:
-//      - delay         :  >= 0 - Calculated delay value
-//                        -1    - Error
+//    - delay                 :  >= 0 - Calculated delay value
+//                              -1    - Error
 //
-int WebRtc_DelayEstimatorProcess(void* handle,
-                                 uint16_t* far_spectrum,
-                                 uint16_t* near_spectrum,
-                                 int spectrum_size,
-                                 int far_q,
+int WebRtc_ProcessBinarySpectrum(BinaryDelayEstimator_t* handle,
+                                 uint32_t binary_far_spectrum,
+                                 uint32_t binary_near_spectrum,
                                  int vad_value);
 
-// Returns a pointer to the far end spectrum aligned to current near end
-// spectrum. The function WebRtc_DelayEstimatorProcess(...) should have been
-// called before WebRtc_AlignedFarend(...). Otherwise, you get the pointer to
-// the previous frame. The memory is only valid until the next call of
-// WebRtc_DelayEstimatorProcess(...).
-//
-// Inputs:
-//      - handle            : Pointer to the delay estimation instance
-//      - far_spectrum_size : Size of far_spectrum allocated by the caller
-//
-// Output:
-//      - far_q             : The Q-domain of the aligned far end spectrum
-//
-// Return value:
-//      - far_spectrum      : Pointer to the aligned far end spectrum
-//                            NULL - Error
-//
-const uint16_t* WebRtc_AlignedFarend(void* handle,
-                                     int far_spectrum_size,
-                                     int* far_q);
-
 // Returns the last calculated delay updated by the function
-// WebRtc_DelayEstimatorProcess(...)
+// WebRtc_ProcessBinarySpectrum(...)
 //
 // Input:
-//      - handle        : Pointer to the delay estimation instance
+//    - handle                : Pointer to the delay estimation instance
 //
 // Return value:
-//      - delay         :  >= 0 - Last calculated delay value
-//                        -1    - Error
+//    - delay                 :  >= 0 - Last calculated delay value
+//                              -1    - Error
 //
-int WebRtc_last_delay(void* handle);
+int WebRtc_binary_last_delay(BinaryDelayEstimator_t* handle);
 
 // Returns the history size used in the far end buffers to calculate the delay
 // over.
 //
 // Input:
-//      - handle        : Pointer to the delay estimation instance
+//    - handle                : Pointer to the delay estimation instance
 //
 // Return value:
-//      - history_size  :  > 0  - Far end history size
-//                        -1    - Error
+//    - history_size          :  > 0  - Far end history size
+//                              -1    - Error
 //
-int WebRtc_history_size(void* handle);
+int WebRtc_history_size(BinaryDelayEstimator_t* handle);
 
-// Returns the fixed spectrum size used in the algorithm.
+// Updates the |mean_value| recursively with a step size of 2^-|factor|. This
+// function is used internally in the Binary Delay Estimator as well as the
+// Fixed point wrapper.
 //
-// Input:
-//      - handle        : Pointer to the delay estimation instance
+// Inputs:
+//    - new_value             : The new value the mean should be updated with.
+//    - factor                : The step size, in number of right shifts.
 //
-// Return value:
-//      - spectrum_size :  > 0  - Spectrum size
-//                        -1    - Error
+// Input/Output:
+//    - mean_value            : Pointer to the mean value.
 //
-int WebRtc_spectrum_size(void* handle);
+void WebRtc_MeanEstimatorFix(int32_t new_value,
+                             int factor,
+                             int32_t* mean_value);
 
-// Returns 1 if the far end alignment is enabled and 0 otherwise.
-//
-// Input:
-//      - handle        : Pointer to the delay estimation instance
-//
-// Return value:
-//      - alignment_enabled : 1 - Enabled
-//                            0 - Disabled
-//                           -1 - Error
-//
-int WebRtc_is_alignment_enabled(void* handle);
 
 #endif  // WEBRTC_MODULES_AUDIO_PROCESSING_UTILITY_DELAY_ESTIMATOR_H_

@@ -20,10 +20,10 @@
         ],
       },
       'sources': [
-        'delay_estimator_float.c',
-        'delay_estimator_float.h',
         'delay_estimator.c',
         'delay_estimator.h',
+        'delay_estimator_wrapper.c',
+        'delay_estimator_wrapper.h',
         'fft4g.c',
         'fft4g.h',
         'ring_buffer.c',
