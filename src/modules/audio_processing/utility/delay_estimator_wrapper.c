@@ -61,10 +61,7 @@ static void MeanEstimatorFloat(float new_value,
                                float* mean_value) {
   assert(scale < 1.0f);
   // mean_new = mean_value + ((new_value - mean_value) * scale);
-  float diff = (new_value - *mean_value) * scale;
-  float mean_new = *mean_value + diff;
-
-  *mean_value = mean_new;
+  *mean_value += (new_value - *mean_value) * scale;
 }
 
 // Computes the binary spectrum by comparing the input |spectrum| with a
