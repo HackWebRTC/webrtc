@@ -804,17 +804,16 @@ VP8Decoder::InitDecode(const VideoCodec* inst,
 #endif
 #endif
 
+    flags |=  VPX_CODEC_USE_POSTPROC;
+
     if (vpx_codec_dec_init(_decoder, vpx_codec_vp8_dx(), NULL, flags))
     {
         return WEBRTC_VIDEO_CODEC_MEMORY;
     }
 
-    // TODO(mikhal): evaluate post-proc settings
-    // config post-processing settings for decoder
-    ppcfg.post_proc_flag = VP8_DEBLOCK;
+    ppcfg.post_proc_flag = VP8_DEMACROBLOCK | VP8_DEBLOCK;
     // Strength of deblocking filter. Valid range:[0,16]
-    ppcfg.deblocking_level = 5;
-    // ppcfg.NoiseLevel     = 1; //Noise intensity. Valid range: [0,7]
+    ppcfg.deblocking_level = 3;
     vpx_codec_control(_decoder, VP8_SET_POSTPROC, &ppcfg);
 
     // Save VideoCodec instance for later; mainly for duplicating the decoder.
