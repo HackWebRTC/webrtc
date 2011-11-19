@@ -42,7 +42,7 @@ TEST(CpuWrapperTest, Usage) {
   // Should not take more than 10000 ms.
   while (cpu_usage_available && (++num_iterations < 10000)) {
     if (cores != NULL) {
-      ASSERT_GT(num_cores, 0);
+      ASSERT_GT(num_cores, 0u);
       break;
     }
     sleep_event->Wait(1);
@@ -52,14 +52,14 @@ TEST(CpuWrapperTest, Usage) {
 
   const WebRtc_Word32 total = cpu->CpuUsageMultiCore(num_cores, cores);
   ASSERT_TRUE(cores != NULL);
-  EXPECT_GT(num_cores, 0);
+  EXPECT_GT(num_cores, 0u);
   EXPECT_GE(total, 0);
 
   printf("\nNumCores:%d\n", num_cores);
   printf("Total cpu:%d\n", total);
   for (WebRtc_UWord32 i = 0; i < num_cores; i++) {
     printf("Core:%u CPU:%u \n", i, cores[i]);
-    EXPECT_LE(cores[i], total);
+    EXPECT_LE(cores[i], static_cast<WebRtc_UWord32> (total));
   }
 
   delete cpu;
