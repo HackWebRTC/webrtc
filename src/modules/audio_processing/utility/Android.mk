@@ -20,7 +20,7 @@ LOCAL_SRC_FILES := \
     fft4g.c \
     ring_buffer.c \
     delay_estimator.c \
-    delay_estimator_float.c
+    delay_estimator_wrapper.c
 
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \
