@@ -12,7 +12,6 @@
  * Empty test just to get code coverage metrics for this dir.
  */
 #include "webrtc_cng.h"
+#include "gtest/gtest.h"
 
-
-
-
+TEST(CngTest, EmptyTestToGetCodeCoverage) {}

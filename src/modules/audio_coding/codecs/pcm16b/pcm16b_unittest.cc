@@ -12,7 +12,6 @@
  * Empty test just to get code coverage metrics for this dir.
  */
 #include "pcm16b.h"
+#include "gtest/gtest.h"
 
-
-
-
+TEST(Pcm16bTest, EmptyTestToGetCodeCoverage) {}

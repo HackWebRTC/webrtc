@@ -12,7 +12,6 @@
  * Empty test just to get code coverage metrics for this dir.
  */
 #include "g711_interface.h"
+#include "gtest/gtest.h"
 
-
-
-
+TEST(G711Test, EmptyTestToGetCodeCoverage) {}

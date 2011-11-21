@@ -12,7 +12,6 @@
  * Empty test just to get code coverage metrics for this dir.
  */
 #include "g722_interface.h"
+#include "gtest/gtest.h"
 
-
-
-
+TEST(G722Test, EmptyTestToGetCodeCoverage) {}

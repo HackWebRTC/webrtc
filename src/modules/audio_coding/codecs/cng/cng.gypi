@@ -38,6 +38,7 @@
           'type': 'executable',
           'dependencies': [
             'CNG',
+            '<(webrtc_root)/../testing/gtest.gyp:gtest',
             '<(webrtc_root)/../test/test.gyp:test_support_main',
           ],
           'sources': [
