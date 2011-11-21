@@ -26,9 +26,9 @@
         'helpers/',
         'primitives',
         '../../interface',
-        '../../../',
-        '../../../../modules/video_coding/codecs/interface/',
-        '../../../../common_video/interface/',
+        '../../..',
+        '../../../../modules/video_coding/codecs/interface',
+        '../../../../common_video/interface',
       ],
       'sources': [
         'interface/tb_capture_device.h',
