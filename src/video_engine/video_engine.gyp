@@ -9,7 +9,7 @@
 {
   'includes': [
     '../build/common.gypi',
-    'main/source/video_engine_core.gypi',
+    './video_engine_core.gypi',
   ],
 
   # Test targets, excluded when building with Chromium.

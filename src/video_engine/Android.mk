@@ -10,7 +10,7 @@ LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
 
-include $(LOCAL_PATH)/../../../../android-webrtc.mk
+include $(LOCAL_PATH)/../../android-webrtc.mk
 
 LOCAL_ARM_MODE := arm
 LOCAL_MODULE := libwebrtc_vie_core
@@ -52,27 +52,27 @@ LOCAL_CFLAGS := \
     $(MY_WEBRTC_COMMON_DEFS)
 
 LOCAL_C_INCLUDES := \
-    $(LOCAL_PATH)/../interface \
-    $(LOCAL_PATH)/../../.. \
-    $(LOCAL_PATH)/../../../common_video/interface \
-    $(LOCAL_PATH)/../../../common_video/jpeg/main/interface \
-    $(LOCAL_PATH)/../../../common_video/vplib/main/interface \
-    $(LOCAL_PATH)/../../../modules/interface \
-    $(LOCAL_PATH)/../../../modules/audio_coding/main/interface \
-    $(LOCAL_PATH)/../../../modules/media_file/interface \
-    $(LOCAL_PATH)/../../../modules/rtp_rtcp/interface \
-    $(LOCAL_PATH)/../../../modules/udp_transport/interface \
-    $(LOCAL_PATH)/../../../modules/utility/interface \
-    $(LOCAL_PATH)/../../../modules/video_capture/main/interface \
-    $(LOCAL_PATH)/../../../modules/video_capture/main/source \
-    $(LOCAL_PATH)/../../../modules/video_capture/main/source/Android \
-    $(LOCAL_PATH)/../../../modules/video_coding/codecs/interface \
-    $(LOCAL_PATH)/../../../modules/video_coding/main/interface \
-    $(LOCAL_PATH)/../../../modules/video_mixer/main/interface \
-    $(LOCAL_PATH)/../../../modules/video_processing/main/interface \
-    $(LOCAL_PATH)/../../../modules/video_render/main/interface \
-    $(LOCAL_PATH)/../../../system_wrappers/interface \
-    $(LOCAL_PATH)/../../../voice_engine/main/interface
+    $(LOCAL_PATH)/main/interface \
+    $(LOCAL_PATH)/.. \
+    $(LOCAL_PATH)/../common_video/interface \
+    $(LOCAL_PATH)/../common_video/jpeg/main/interface \
+    $(LOCAL_PATH)/../common_video/vplib/main/interface \
+    $(LOCAL_PATH)/../modules/interface \
+    $(LOCAL_PATH)/../modules/audio_coding/main/interface \
+    $(LOCAL_PATH)/../modules/media_file/interface \
+    $(LOCAL_PATH)/../modules/rtp_rtcp/interface \
+    $(LOCAL_PATH)/../modules/udp_transport/interface \
+    $(LOCAL_PATH)/../modules/utility/interface \
+    $(LOCAL_PATH)/../modules/video_capture/main/interface \
+    $(LOCAL_PATH)/../modules/video_capture/main/source \
+    $(LOCAL_PATH)/../modules/video_capture/main/source/Android \
+    $(LOCAL_PATH)/../modules/video_coding/codecs/interface \
+    $(LOCAL_PATH)/../modules/video_coding/main/interface \
+    $(LOCAL_PATH)/../modules/video_mixer/main/interface \
+    $(LOCAL_PATH)/../modules/video_processing/main/interface \
+    $(LOCAL_PATH)/../modules/video_render/main/interface \
+    $(LOCAL_PATH)/../system_wrappers/interface \
+    $(LOCAL_PATH)/../voice_engine/main/interface
 
 LOCAL_SHARED_LIBRARIES := \
     libcutils \

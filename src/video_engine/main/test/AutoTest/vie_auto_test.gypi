@@ -26,7 +26,7 @@
         'helpers/',
         'primitives',
         '../../interface',
-        '../../source',
+        '../../../',
         '../../../../modules/video_coding/codecs/interface/',
         '../../../../common_video/interface/',
       ],
@@ -44,13 +44,13 @@
         'interface/vie_autotest_main.h',
         'interface/vie_autotest_window_manager_interface.h',
         'interface/vie_autotest_windows.h',
-        
+
         # Helper classes
         'helpers/vie_fake_camera.cc',
         'helpers/vie_file_capture_device.cc',
         'helpers/vie_to_file_renderer.cc',
         'helpers/vie_window_creator.cc',
-        
+
         # New, fully automated tests
         'automated/vie_api_integration_test.cc',
         'automated/vie_comparison_test.cc',
