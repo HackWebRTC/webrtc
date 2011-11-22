@@ -359,6 +359,8 @@ AudioDeviceWindowsCore::AudioDeviceWindowsCore(const WebRtc_Word32 id) :
     _ptrCaptureClient(NULL),
     _ptrCaptureVolume(NULL),
     _ptrRenderSimpleVolume(NULL),
+    _dmo(NULL),
+    _mediaBuffer(NULL),
     _builtInAecEnabled(false),
     _playAudioFrameSize(0),
     _playSampleRate(0),
@@ -491,15 +493,16 @@ AudioDeviceWindowsCore::AudioDeviceWindowsCore(const WebRtc_Word32 id) :
                               CLSCTX_INPROC_SERVER,
                               IID_IMediaObject,
                               reinterpret_cast<void**>(&ptrDMO));
+        if (FAILED(hr) || ptrDMO == NULL)
+        {
+            // Since we check that _dmo is non-NULL in EnableBuiltInAEC(), the
+            // feature is prevented from being enabled.
+            _builtInAecEnabled = false;
+            _TraceCOMError(hr);
+        }
         _dmo = ptrDMO;
-        ptrDMO->Release();
+        SAFE_RELEASE(ptrDMO);
     }
-    if (FAILED(hr))
-    {
-        _TraceCOMError(hr);
-        assert(false);
-    }
-    assert(_dmo != NULL);
 }
 
 // ----------------------------------------------------------------------------
@@ -3778,7 +3781,7 @@ DWORD AudioDeviceWindowsCore::DoCaptureThreadPollDMO()
                 // copy available data to |dmoBuffer|, and should only return
                 // 10 ms frames. The value of |dwStatus| should be ignored.
                 hr = _dmo->ProcessOutput(0, 1, &dmoBuffer, &dwStatus);
-                dmoBuffer.pBuffer->Release();
+                SAFE_RELEASE(dmoBuffer.pBuffer);
                 dwStatus = dmoBuffer.dwStatus;
             }
             if (FAILED(hr))
@@ -4052,7 +4055,7 @@ DWORD AudioDeviceWindowsCore::DoCaptureThread()
                     clock->GetPosition(&pos, NULL);
                     clock->GetFrequency(&freq);
                     _sndCardPlayDelay = ROUND((double(_writtenSamples) / _devicePlaySampleRate - double(pos) / freq) * 1000.0);
-                    clock->Release();
+                    SAFE_RELEASE(clock);
                 }
 
                 // Send the captured data to the registered consumer
@@ -4217,15 +4220,14 @@ int AudioDeviceWindowsCore::SetDMOProperties()
         IPropertyStore* ptrPS = NULL;
         hr = _dmo->QueryInterface(IID_IPropertyStore,
                                   reinterpret_cast<void**>(&ptrPS));
+        if (FAILED(hr) || ptrPS == NULL)
+        {
+            _TraceCOMError(hr);
+            return -1;
+        }
         ps = ptrPS;
-        ptrPS->Release();
+        SAFE_RELEASE(ptrPS);
     }
-    if (FAILED(hr))
-    {
-        _TraceCOMError(hr);
-        return -1;
-    }
-    assert(ps != NULL);
 
     // Set the AEC system mode.
     // SINGLE_CHANNEL_AEC - AEC processing only.
@@ -4650,13 +4652,13 @@ WebRtc_Word32 AudioDeviceWindowsCore::_GetDefaultDeviceIndex(EDataFlow dir,
         {
             IMMDevice* ptrDevice = NULL;
             hr = collection->Item(i, &ptrDevice);
+            if (FAILED(hr) || ptrDevice == NULL)
+            {
+                _TraceCOMError(hr);
+                return -1;
+            }
             device = ptrDevice;
-            ptrDevice->Release();
-        }
-        if (FAILED(hr))
-        {
-            _TraceCOMError(hr);
-            return -1;
+            SAFE_RELEASE(ptrDevice);
         }
 
         if (_GetDeviceID(device, szDeviceID, kDeviceIDLength) == -1)
