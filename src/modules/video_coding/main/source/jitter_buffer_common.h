@@ -39,6 +39,7 @@ enum VCMFrameBufferEnum
     kIncomplete           = 1,    // Frame incomplete
     kFirstPacket          = 2,
     kCompleteSession      = 3,    // at least one layer in the frame complete
+    kDecodableSession     = 4,    // Frame incomplete, but ready to be decoded
     kDuplicatePacket      = 5     // We're receiving a duplicate packet.
 };
 

@@ -33,7 +33,9 @@ public:
     virtual void Reset();
 
     VCMFrameBufferEnum InsertPacket(const VCMPacket& packet,
-                                    WebRtc_Word64 timeInMs);
+                                    WebRtc_Word64 timeInMs,
+                                    bool enableDecodableState,
+                                    WebRtc_UWord32 rttMs);
 
     // State
     // Get current state of frame
@@ -66,7 +68,7 @@ public:
     // Hybrid extension: only NACK important packets, discard FEC packets
     WebRtc_Word32 ZeroOutSeqNumHybrid(WebRtc_Word32* list,
                                       WebRtc_Word32 num,
-                                      float rttScore);
+                                      WebRtc_UWord32 rttMs);
     void IncrementNackCount();
     WebRtc_Word16 GetNackCount() const;
 

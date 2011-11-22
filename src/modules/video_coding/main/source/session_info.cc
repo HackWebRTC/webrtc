@@ -18,6 +18,7 @@ VCMSessionInfo::VCMSessionInfo():
     _markerBit(false),
     _sessionNACK(false),
     _completeSession(false),
+    _decodableSession(false),
     _frameType(kVideoFrameDelta),
     _previousFrameLoss(false),
     _lowSeqNum(-1),
@@ -70,6 +71,7 @@ VCMSessionInfo::Reset() {
   _emptySeqNumHigh = -1;
   _markerBit = false;
   _completeSession = false;
+  _decodableSession = false;
   _frameType = kVideoFrameDelta;
   _previousFrameLoss = false;
   _sessionNACK = false;
@@ -186,34 +188,37 @@ VCMSessionInfo::InsertBuffer(WebRtc_UWord8* ptrStartOfLayer,
         _markerSeqNum = packet.seqNum;
     }
 
-    UpdateCompleteSession();
-
     return returnLength;
 }
 
-void
-VCMSessionInfo::UpdateCompleteSession()
-{
-    if (_packets[0].isFirstPacket && _markerBit)
-    {
-        // Do we have all the packets in this session?
-        bool completeSession = true;
+void VCMSessionInfo::UpdateCompleteSession() {
+  if (_packets[0].isFirstPacket && _markerBit) {
+    // Do we have all the packets in this session?
+    bool completeSession = true;
 
-        for (int i = 0; i <= _highestPacketIndex; ++i)
-        {
-            if (_packets[i].completeNALU == kNaluUnset)
-            {
-                completeSession = false;
-                break;
-            }
-        }
-        _completeSession = completeSession;
+    for (int i = 0; i <= _highestPacketIndex; ++i) {
+      if (_packets[i].completeNALU == kNaluUnset) {
+        completeSession = false;
+        break;
+      }
     }
+    _completeSession = completeSession;
+  }
 }
 
-bool VCMSessionInfo::IsSessionComplete() const
-{
-    return _completeSession;
+void VCMSessionInfo::UpdateDecodableSession(WebRtc_UWord32 rttMs) {
+  // Irrelevant if session is already complete or decodable
+  if (_completeSession || _decodableSession)
+    return;
+  // First iteration - do nothing
+}
+
+bool VCMSessionInfo::IsSessionComplete() const {
+  return _completeSession;
+}
+
+bool VCMSessionInfo::IsSessionDecodable() const {
+  return _decodableSession;
 }
 
 // Find the start and end index of packetIndex packet.
@@ -537,7 +542,7 @@ VCMSessionInfo::ZeroOutSeqNum(WebRtc_Word32* list,
 WebRtc_Word32
 VCMSessionInfo::ZeroOutSeqNumHybrid(WebRtc_Word32* list,
                                     WebRtc_Word32 numberOfSeqNum,
-                                    float rttScore)
+                                    WebRtc_UWord32 rttMs)
 {
     if (NULL == list || numberOfSeqNum < 1)
     {
@@ -589,6 +594,9 @@ VCMSessionInfo::ZeroOutSeqNumHybrid(WebRtc_Word32* list,
         highMediaPacket = _emptySeqNumLow - 1 > _highSeqNum ?
                           _emptySeqNumLow - 1: _highSeqNum;
     }
+
+    // Place holder
+    int rttScore = 1.0f;
 
     while (list[index] <= highMediaPacket && index < numberOfSeqNum)
     {
@@ -659,7 +667,9 @@ VCMSessionInfo::IsRetransmitted() const
 
 WebRtc_Word64
 VCMSessionInfo::InsertPacket(const VCMPacket& packet,
-                             WebRtc_UWord8* ptrStartOfLayer)
+                             WebRtc_UWord8* ptrStartOfLayer,
+                             bool enableDecodableState,
+                             WebRtc_UWord32 rttMs)
 {
     // not allowed
     assert(!packet.insertStartCode || !packet.bits);
@@ -765,7 +775,11 @@ VCMSessionInfo::InsertPacket(const VCMPacket& packet,
     _highestPacketIndex = packetIndex > _highestPacketIndex ?
                                         packetIndex :_highestPacketIndex;
 
-    return InsertBuffer(ptrStartOfLayer, packetIndex, packet);
+    int returnLength =  InsertBuffer(ptrStartOfLayer, packetIndex, packet);
+    UpdateCompleteSession();
+    if (enableDecodableState)
+      UpdateDecodableSession(rttMs);
+    return returnLength;
 }
 
 

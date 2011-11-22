@@ -89,6 +89,7 @@ public:
     // or more packets?
     bool CompleteSequenceWithNextFrame();
 
+    // TODO (mikhal/stefan): Merge all GetFrameForDecoding into one.
     // Wait maxWaitTimeMS for a complete frame to arrive. After timeout NULL
     // is returned.
     VCMEncodedFrame* GetCompleteFrameForDecoding(WebRtc_UWord32 maxWaitTimeMS);
@@ -148,7 +149,8 @@ private:
 
     // Help functions for getting a frame
     // Find oldest complete frame, used for getting next frame to decode
-    VCMFrameListItem* FindOldestCompleteContinuousFrame();
+    // When enabled, will return a decodable frame
+    VCMFrameListItem* FindOldestCompleteContinuousFrame(bool enableDecodable);
 
     void CleanUpOldFrames();
     void CleanUpSizeZeroFrames();

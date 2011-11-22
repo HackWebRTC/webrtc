@@ -34,17 +34,20 @@ public:
     WebRtc_Word32 ZeroOutSeqNum(WebRtc_Word32* list,
                                 WebRtc_Word32 numberOfSeqNum);
     // Hybrid version: Zero out seq num for NACK list
-    // apply a score based on the packet location and the external rttScore
+    // Selectively NACK packets.
     WebRtc_Word32 ZeroOutSeqNumHybrid(WebRtc_Word32* list,
                                       WebRtc_Word32 numberOfSeqNum,
-                                      float rttScore);
+                                      WebRtc_UWord32 rttMs);
     virtual void Reset();
 
     WebRtc_Word64 InsertPacket(const VCMPacket& packet,
-                               WebRtc_UWord8* ptrStartOfLayer);
+                               WebRtc_UWord8* ptrStartOfLayer,
+                               bool enableDecodableState,
+                               WebRtc_UWord32 rttMs);
     WebRtc_Word32 InformOfEmptyPacket(const WebRtc_UWord16 seqNum);
 
     virtual bool IsSessionComplete() const;
+    virtual bool IsSessionDecodable() const;
 
     // Builds fragmentation headers for VP8, each fragment being a decodable
     // VP8 partition. Returns the total number of bytes which are decodable. Is
@@ -106,11 +109,15 @@ private:
                                  WebRtc_Word32 startIndex,
                                  WebRtc_Word32 endIndex);
     void UpdateCompleteSession();
+    // When enabled, determine if session is decodable, i.e. incomplete but
+    // would be sent to the decoder.
+    void UpdateDecodableSession(WebRtc_UWord32 rttMs);
     // If we have inserted a packet with markerbit into this frame
     bool               _markerBit;
     // If this session has been NACKed by JB
     bool               _sessionNACK;
     bool               _completeSession;
+    bool               _decodableSession;
     webrtc::FrameType  _frameType;
     bool               _previousFrameLoss;
     // Lowest/Highest packet sequence number in a session
