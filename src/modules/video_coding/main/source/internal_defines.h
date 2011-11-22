@@ -30,6 +30,7 @@ inline WebRtc_UWord32 MaskWord64ToUWord32(WebRtc_Word64 w64)
 #define VCM_DEFAULT_CODEC_HEIGHT 288
 #define VCM_DEFAULT_FRAME_RATE 30
 #define VCM_MIN_BITRATE 30
+#define VCM_FLUSH_INDICATOR 4
 
 // Helper macros for creating the static codec list
 #define VCM_NO_CODEC_IDX -1
