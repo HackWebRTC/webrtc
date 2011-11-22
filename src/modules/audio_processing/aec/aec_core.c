@@ -592,9 +592,9 @@ static void ProcessBlock(aec_t *aec, const short *farend,
     const float ramp = 1.0002f;
     const float gInitNoise[2] = {0.999f, 0.001f};
 
-#ifdef AEC_DEBUG
-    fwrite(farend, sizeof(short), PART_LEN, aec->farFile);
-    fwrite(nearend, sizeof(short), PART_LEN, aec->nearFile);
+#ifdef WEBRTC_AEC_DEBUG_DUMP
+    fwrite(farend, sizeof(int16_t), PART_LEN, aec->farFile);
+    fwrite(nearend, sizeof(int16_t), PART_LEN, aec->nearFile);
 #endif
 
     memset(dH, 0, sizeof(dH));
@@ -760,13 +760,6 @@ static void ProcessBlock(aec_t *aec, const short *farend,
     WebRtcAec_FilterAdaptation(aec, fft, ef);
     NonLinearProcessing(aec, output, outputH);
 
-#ifdef AEC_DEBUG
-    for (i = 0; i < PART_LEN; i++) {
-        eInt16[i] = (short)WEBRTC_SPL_SAT(WEBRTC_SPL_WORD16_MAX, e[i],
-            WEBRTC_SPL_WORD16_MIN);
-    }
-#endif
-
     if (aec->metricsMode == 1) {
         for (i = 0; i < PART_LEN; i++) {
             eInt16[i] = (short)WEBRTC_SPL_SAT(WEBRTC_SPL_WORD16_MAX, e[i],
@@ -781,9 +774,14 @@ static void ProcessBlock(aec_t *aec, const short *farend,
         UpdateMetrics(aec);
     }
 
-#ifdef AEC_DEBUG
-    fwrite(eInt16, sizeof(short), PART_LEN, aec->outLpFile);
-    fwrite(output, sizeof(short), PART_LEN, aec->outFile);
+#ifdef WEBRTC_AEC_DEBUG_DUMP
+    for (i = 0; i < PART_LEN; i++) {
+        eInt16[i] = (int16_t)WEBRTC_SPL_SAT(WEBRTC_SPL_WORD16_MAX, e[i],
+            WEBRTC_SPL_WORD16_MIN);
+    }
+
+    fwrite(eInt16, sizeof(int16_t), PART_LEN, aec->outLinearFile);
+    fwrite(output, sizeof(int16_t), PART_LEN, aec->outFile);
 #endif
 }
 

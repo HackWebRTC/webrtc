@@ -20,8 +20,6 @@
 #include "signal_processing_library.h"
 #include "typedefs.h"
 
-//#define AEC_DEBUG // for recording files
-
 #define FRAME_LEN 80
 #define PART_LEN 64 // Length of partition
 #define PART_LEN1 (PART_LEN + 1) // Unique fft coefficients
@@ -147,11 +145,11 @@ typedef struct {
     int delay_logging_enabled;
     void* delay_estimator;
 
-#ifdef AEC_DEBUG
+#ifdef WEBRTC_AEC_DEBUG_DUMP
     FILE *farFile;
     FILE *nearFile;
     FILE *outFile;
-    FILE *outLpFile;
+    FILE *outLinearFile;
 #endif
 } aec_t;
 

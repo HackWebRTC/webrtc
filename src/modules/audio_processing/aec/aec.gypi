@@ -11,6 +11,10 @@
     {
       'target_name': 'aec',
       'type': '<(library)',
+      'variables': {
+        # Outputs some low-level debug files.
+        'aec_debug_dump%': 0,
+      },
       'dependencies': [
         '<(webrtc_root)/common_audio/common_audio.gyp:signal_processing',
         'apm_util'
@@ -34,6 +38,11 @@
         'aec_rdft_sse2.c',
         'resampler.h',
         'resampler.c',
+      ],
+      'conditions': [
+        ['aec_debug_dump==1', {
+          'defines': [ 'WEBRTC_AEC_DEBUG_DUMP', ],
+        }],
       ],
     },
   ],
