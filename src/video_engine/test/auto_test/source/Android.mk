@@ -12,7 +12,7 @@ LOCAL_PATH:= $(call my-dir)
 
 include $(CLEAR_VARS)
 
-include $(LOCAL_PATH)/../../../../../../android-webrtc.mk
+include $(LOCAL_PATH)/../../../../../android-webrtc.mk
 
 LOCAL_MODULE_TAGS := tests
 LOCAL_CPP_EXTENSION := .cc
@@ -41,17 +41,16 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../interface \
     $(LOCAL_PATH)/../helpers \
     $(LOCAL_PATH)/../primitives \
-    $(LOCAL_PATH)/../../../../.. \
-    $(LOCAL_PATH)/../../../test/AutoTest/interface \
-    $(LOCAL_PATH)/../../../interface \
-    $(LOCAL_PATH)/../../../source \
-    $(LOCAL_PATH)/../../../../../modules/video_coding/codecs/interface \
-    $(LOCAL_PATH)/../../../../../system_wrappers/interface \
-    $(LOCAL_PATH)/../../../../../modules/video_render/main/interface \
-    $(LOCAL_PATH)/../../../../../modules/interface \
-    $(LOCAL_PATH)/../../../../../modules/video_capture/main/interface \
-    $(LOCAL_PATH)/../../../../../common_video/vplib/main/interface \
-    $(LOCAL_PATH)/../../../../../voice_engine/main/interface
+    $(LOCAL_PATH)/../../../.. \
+    $(LOCAL_PATH)/../../../main/interface \
+    $(LOCAL_PATH)/../../.. \
+    $(LOCAL_PATH)/../../../../modules/video_coding/codecs/interface \
+    $(LOCAL_PATH)/../../../../system_wrappers/interface \
+    $(LOCAL_PATH)/../../../../modules/video_render/main/interface \
+    $(LOCAL_PATH)/../../../../modules/interface \
+    $(LOCAL_PATH)/../../../../modules/video_capture/main/interface \
+    $(LOCAL_PATH)/../../../../common_video/vplib/main/interface \
+    $(LOCAL_PATH)/../../../../voice_engine/main/interface
 
 LOCAL_SHARED_LIBRARIES := \
     libutils \

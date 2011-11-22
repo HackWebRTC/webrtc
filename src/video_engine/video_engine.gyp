@@ -16,7 +16,7 @@
   'conditions': [
     ['build_with_chromium==0', {
       'includes': [
-        'main/test/AutoTest/vie_auto_test.gypi',
+        'test/auto_test/vie_auto_test.gypi',
         'main/test/WindowsTest/windowstest.gypi',
       ],
     }],

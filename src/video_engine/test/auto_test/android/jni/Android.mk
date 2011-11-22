@@ -9,8 +9,8 @@
 LOCAL_PATH := $(call my-dir)
 
 # the follow two lines are for NDK build
-INTERFACES_PATH := $(LOCAL_PATH)/../../../../../../../build/interface
-LIBS_PATH := $(LOCAL_PATH)/../../../../../../../build/libraries
+INTERFACES_PATH := $(LOCAL_PATH)/../../../../../../build/interface
+LIBS_PATH := $(LOCAL_PATH)/../../../../../../build/libraries
 
 include $(CLEAR_VARS)
 
@@ -46,18 +46,18 @@ LOCAL_C_INCLUDES := \
     external/gtest/include \
     $(LOCAL_PATH)/../interface \
     $(LOCAL_PATH)/../../interface \
-    $(LOCAL_PATH)/../../../../interface \
-    $(LOCAL_PATH)/../../../../source \
-    $(LOCAL_PATH)/../../../../../.. \
-    $(LOCAL_PATH)/../../../../../../common_video/interface \
-    $(LOCAL_PATH)/../../../../../../common_video/vplib/main/interface \
-    $(LOCAL_PATH)/../../../../../../modules/interface \
-    $(LOCAL_PATH)/../../../../../../modules/video_capture/main/interface \
-    $(LOCAL_PATH)/../../../../../../modules/video_capture/main/source \
-    $(LOCAL_PATH)/../../../../../../modules/video_coding/codecs/interface \
-    $(LOCAL_PATH)/../../../../../../modules/video_render/main/interface \
-    $(LOCAL_PATH)/../../../../../../voice_engine/main/interface \
-    $(LOCAL_PATH)/../../../../../../system_wrappers/interface 
+    $(LOCAL_PATH)/../../../interface \
+    $(LOCAL_PATH)/../../.. \
+    $(LOCAL_PATH)/../../../../.. \
+    $(LOCAL_PATH)/../../../../../common_video/interface \
+    $(LOCAL_PATH)/../../../../../common_video/vplib/main/interface \
+    $(LOCAL_PATH)/../../../../../modules/interface \
+    $(LOCAL_PATH)/../../../../../modules/video_capture/main/interface \
+    $(LOCAL_PATH)/../../../../../modules/video_capture/main/source \
+    $(LOCAL_PATH)/../../../../../modules/video_coding/codecs/interface \
+    $(LOCAL_PATH)/../../../../../modules/video_render/main/interface \
+    $(LOCAL_PATH)/../../../../../voice_engine/main/interface \
+    $(LOCAL_PATH)/../../../../../system_wrappers/interface 
 
 LOCAL_PRELINK_MODULE := false
 

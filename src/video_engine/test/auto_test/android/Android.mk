@@ -10,11 +10,11 @@ LOCAL_PATH:= $(call my-dir)
 
 include $(CLEAR_VARS)
 
-MY_CAPTURE_FOLDER := ../../../../../modules/video_capture/main/source
+MY_CAPTURE_FOLDER := ../../../../modules/video_capture/main/source
 MY_CAPTURE_JAVA_FOLDER := Android/java/org/webrtc/videoengine
 MY_CAPTURE_PATH := $(MY_CAPTURE_FOLDER)/$(MY_CAPTURE_JAVA_FOLDER)
 
-MY_RENDER_FOLDER := ../../../../../modules/video_render/main/source
+MY_RENDER_FOLDER := ../../../../modules/video_render/main/source
 MY_RENDER_JAVA_FOLDER := Android/java/org/webrtc/videoengine
 MY_RENDER_PATH := $(MY_RENDER_FOLDER)/$(MY_RENDER_JAVA_FOLDER)
 
