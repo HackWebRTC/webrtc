@@ -1,0 +1,41 @@
+This test client is a simple functional test for WebRTC enabled Chrome build.
+
+The following is necessary to run the test:
+- A WebRTC Chrome binary.
+- A peerconnection_server binary (make peerconnection_server).
+
+It can be used in two scenarios:
+1. Single client calling itself with the server test page
+(peerconnection/samples/server/server_test.html) in loopback mode as a fake
+client.
+2. Call between two clients.
+
+To start the test for scenario (1):
+1. Start peerconnection_server.
+2. Start the WebRTC Chrome build: $ <path_to_chome_binary>/chrome
+--enable-media-stream --enable-p2papi --user-data-dir=<path_to_data>
+<path_to_data> is where Chrome looks for all its states, use for example
+"temp/chrome_webrtc_data". If you don't always start the browser from the same
+directory, use an absolute path instead.
+3. Open the server test page, ensure loopback is enabled, choose a name (for
+example "loopback") and connect to the server.
+4. Open the test page, connect to the server, select the loopback peer, click
+call.
+
+To start the test for scenario (2):
+1. Start peerconnection_server.
+2. Start the WebRTC Chrome build, see scenario (1).
+3. Open the test page, connect to the server.
+4. On another machine, start the WebRTC Chrome build.
+5. Open the test page, connect to the server, select the other peer, click call.
+
+Note 1: There is currently a limitation so that the camera device can only be
+accessed once, even if in the same browser instance. Hence the need to use two
+machines for scenario (2).
+
+Note 2: The web page must normally be on a web server to be able to access the
+camera for security reasons.
+See http://blog.chromium.org/2008/12/security-in-depth-local-web-pages.html
+for more details on this topic. This can be overridden with the flag
+--allow-file-access-from-files, in which case running it over the file://
+URI scheme works.
