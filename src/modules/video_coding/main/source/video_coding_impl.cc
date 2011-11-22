@@ -1409,16 +1409,20 @@ VideoCodingModuleImpl::IncomingPacket(const WebRtc_UWord8* incomingPayload,
         ret = _dualReceiver.InsertPacket(packet,
                                          rtpInfo.type.Video.width,
                                          rtpInfo.type.Video.height);
-        if (ret < 0)
-        {
-            return ret;
+        if (ret == VCM_FLUSH_INDICATOR) {
+          RequestKeyFrame();
+          ResetDecoder();
+        } else if (ret < 0) {
+          return ret;
         }
     }
     ret = _receiver.InsertPacket(packet, rtpInfo.type.Video.width,
                                  rtpInfo.type.Video.height);
-    if (ret < 0)
-    {
-        return ret;
+    if (ret == VCM_FLUSH_INDICATOR) {
+      RequestKeyFrame();
+      ResetDecoder();
+    } else if (ret < 0) {
+      return ret;
     }
     return VCM_OK;
 }

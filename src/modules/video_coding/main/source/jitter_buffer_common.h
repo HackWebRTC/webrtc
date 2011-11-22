@@ -33,12 +33,13 @@ enum VCMJitterBufferEnum
 enum VCMFrameBufferEnum
 {
     kStateError           = -4,
+    kFlushIndicator       = -3,   // Indicator that a flush has occurred.
     kTimeStampError       = -2,
     kSizeError            = -1,
     kNoError              = 0,
     kIncomplete           = 1,    // Frame incomplete
     kFirstPacket          = 2,
-    kCompleteSession      = 3,    // at least one layer in the frame complete
+    kCompleteSession      = 3,    // at least one layer in the frame complete.
     kDecodableSession     = 4,    // Frame incomplete, but ready to be decoded
     kDuplicatePacket      = 5     // We're receiving a duplicate packet.
 };

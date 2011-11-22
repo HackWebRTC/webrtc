@@ -145,7 +145,7 @@ private:
     bool RecycleFramesUntilKeyFrame();
     // Update frame state
     // (set as complete or reconstructable if conditions are met)
-    void UpdateFrameState(VCMFrameBuffer* frameListItem);
+    VCMFrameBufferEnum UpdateFrameState(VCMFrameBuffer* frameListItem);
 
     // Help functions for getting a frame
     // Find oldest complete frame, used for getting next frame to decode
