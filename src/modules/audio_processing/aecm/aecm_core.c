@@ -211,7 +211,8 @@ int WebRtcAecm_CreateCore(AecmCore_t **aecmInst)
 
     if (WebRtc_CreateDelayEstimator(&aecm->delay_estimator,
                                     PART_LEN1,
-                                    MAX_DELAY) == -1) {
+                                    MAX_DELAY,
+                                    0) == -1) {
       WebRtcAecm_FreeCore(aecm);
       aecm = NULL;
       return -1;

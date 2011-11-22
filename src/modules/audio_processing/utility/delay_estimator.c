@@ -65,6 +65,10 @@ int WebRtc_FreeBinaryDelayEstimator(BinaryDelayEstimator_t* handle) {
     free(handle->binary_far_history);
     handle->binary_far_history = NULL;
   }
+  if (handle->binary_near_history != NULL) {
+    free(handle->binary_near_history);
+    handle->binary_near_history = NULL;
+  }
   if (handle->delay_histogram != NULL) {
     free(handle->delay_histogram);
     handle->delay_histogram = NULL;
@@ -76,13 +80,22 @@ int WebRtc_FreeBinaryDelayEstimator(BinaryDelayEstimator_t* handle) {
 }
 
 int WebRtc_CreateBinaryDelayEstimator(BinaryDelayEstimator_t** handle,
-                                      int history_size) {
+                                      int max_delay,
+                                      int lookahead) {
   BinaryDelayEstimator_t* self = NULL;
+  int history_size = max_delay + lookahead;
 
   if (handle == NULL) {
     return -1;
   }
-  if (history_size < 0) {
+  if (max_delay < 0) {
+    return -1;
+  }
+  if (lookahead < 0) {
+    return -1;
+  }
+  if (history_size < 2) {
+    // Must be this large for buffer shifting.
     return -1;
   }
 
@@ -96,6 +109,9 @@ int WebRtc_CreateBinaryDelayEstimator(BinaryDelayEstimator_t** handle,
   self->bit_counts = NULL;
   self->binary_far_history = NULL;
   self->delay_histogram = NULL;
+
+  self->history_size = history_size;
+  self->near_history_size = lookahead + 1;
 
   // Allocate memory for spectrum buffers
   self->mean_bit_counts = malloc(history_size * sizeof(int32_t));
@@ -117,6 +133,13 @@ int WebRtc_CreateBinaryDelayEstimator(BinaryDelayEstimator_t** handle,
     self = NULL;
     return -1;
   }
+  self->binary_near_history = malloc(self->near_history_size *
+      sizeof(uint32_t));
+  if (self->binary_near_history == NULL) {
+    WebRtc_FreeBinaryDelayEstimator(self);
+    self = NULL;
+    return -1;
+  }
   self->delay_histogram = malloc(history_size * sizeof(int));
   if (self->delay_histogram == NULL) {
     WebRtc_FreeBinaryDelayEstimator(self);
@@ -124,26 +147,24 @@ int WebRtc_CreateBinaryDelayEstimator(BinaryDelayEstimator_t** handle,
     return -1;
   }
 
-  self->history_size = history_size;
-
   return 0;
 }
 
 int WebRtc_InitBinaryDelayEstimator(BinaryDelayEstimator_t* handle) {
   assert(handle != NULL);
-  // Set averaged bit counts to zero
+
   memset(handle->mean_bit_counts, 0, sizeof(int32_t) * handle->history_size);
   memset(handle->bit_counts, 0, sizeof(int32_t) * handle->history_size);
-  // Set far end histories to zero
-  memset(handle->binary_far_history,
-         0,
+  memset(handle->binary_far_history, 0,
          sizeof(uint32_t) * handle->history_size);
-  // Set delay histogram to zero
+  memset(handle->binary_near_history, 0,
+         sizeof(uint32_t) * handle->near_history_size);
   memset(handle->delay_histogram, 0, sizeof(int) * handle->history_size);
-  // Set VAD counter to zero
+
   handle->vad_counter = 0;
-  // Set delay memory to zero
-  handle->last_delay = 0;
+
+  // Set to zero delay after compensating for lookahead.
+  handle->last_delay = handle->near_history_size - 1;
 
   return 0;
 }
@@ -168,6 +189,15 @@ int WebRtc_ProcessBinarySpectrum(BinaryDelayEstimator_t* handle,
           (handle->history_size - 1) * sizeof(uint32_t));
   // Insert new binary spectrum
   handle->binary_far_history[0] = binary_far_spectrum;
+
+  if (handle->near_history_size > 1) {
+    memmove(&(handle->binary_near_history[1]),
+            &(handle->binary_near_history[0]),
+            (handle->near_history_size - 1) * sizeof(uint32_t));
+    handle->binary_near_history[0] = binary_near_spectrum;
+    binary_near_spectrum =
+        handle->binary_near_history[handle->near_history_size - 1];
+  }
 
   // Compare with delayed spectra
   BitCountComparison(binary_near_spectrum,
@@ -198,7 +228,6 @@ int WebRtc_ProcessBinarySpectrum(BinaryDelayEstimator_t* handle,
         handle->delay_histogram[min_position] += 3;
       }
 
-      handle->last_delay = 0;
       for (i = 0; i < handle->history_size; i++) {
         histogram_bin = handle->delay_histogram[i];
 

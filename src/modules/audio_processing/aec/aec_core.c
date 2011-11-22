@@ -178,7 +178,8 @@ int WebRtcAec_CreateAec(aec_t **aecInst)
 
     if (WebRtc_CreateDelayEstimator(&aec->delay_estimator,
                                     PART_LEN1,
-                                    kMaxDelay) == -1) {
+                                    kMaxDelayBlocks,
+                                    kLookaheadBlocks) == -1) {
       WebRtcAec_FreeAec(aec);
       aec = NULL;
       return -1;
@@ -700,7 +701,7 @@ static void ProcessBlock(aec_t *aec, const short *farend,
                                                          PART_LEN1,
                                                          aec->echoState);
       if (delay_estimate >= 0) {
-        // Update delay estimate buffer
+        // Update delay estimate buffer.
         aec->delay_histogram[delay_estimate]++;
       }
     }

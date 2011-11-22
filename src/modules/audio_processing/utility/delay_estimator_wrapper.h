@@ -26,20 +26,29 @@ int WebRtc_FreeDelayEstimator(void* handle);
 // initialized separately through WebRtc_InitDelayEstimator(...).
 //
 // Inputs:
-//      - handle            : Instance that should be created
-//      - spectrum_size     : Size of the spectrum used both in far end and
-//                            near end. Used to allocate memory for spectrum
-//                            specific buffers.
-//      - history_size      : Size of the far end history used to estimate the
-//                            delay from. Used to allocate memory for history
-//                            specific buffers.
+//      - handle        : Instance that should be created.
+//      - spectrum_size : Size of the spectrum used both in far-end and
+//                        near-end. Used to allocate memory for spectrum
+//                        specific buffers.
+//      - max_delay     : The maximum delay which can be estimated. Needed
+//                        to allocate memory for history buffers.
+//      - lookahead     : Amount of non-causal lookahead to use. This can detect
+//                        cases in which a near-end signal occurs before the
+//                        corresponding far-end signal. It will delay the
+//                        estimate for the current block by an equal amount,
+//                        and the returned values will be offset by it.
+//
+//                        A value of zero is the typical no-lookahead case. This
+//                        also represents the minimum delay which can be
+//                        estimated.
 //
 // Output:
-//      - handle            : Created instance
+//      - handle        : Created instance
 //
 int WebRtc_CreateDelayEstimator(void** handle,
                                 int spectrum_size,
-                                int history_size);
+                                int max_delay,
+                                int lookahead);
 
 // Initializes the delay estimation instance created with
 // WebRtc_CreateDelayEstimator(...)
@@ -51,15 +60,17 @@ int WebRtc_CreateDelayEstimator(void** handle,
 //
 int WebRtc_InitDelayEstimator(void* handle);
 
-// Estimates and returns the delay between the far end and near end blocks.
+// Estimates and returns the delay between the far-end and near-end blocks. The
+// value will be offset by the lookahead (i.e. the lookahead should be
+// subtracted from the returned value).
 // Inputs:
 //      - handle        : Pointer to the delay estimation instance
-//      - far_spectrum  : Pointer to the far end spectrum data
-//      - near_spectrum : Pointer to the near end spectrum data of the current
+//      - far_spectrum  : Pointer to the far-end spectrum data
+//      - near_spectrum : Pointer to the near-end spectrum data of the current
 //                        block
-//      - spectrum_size : The size of the data arrays (same for both far and
-//                        near end)
-//      - far_q         : The Q-domain of the far end data
+//      - spectrum_size : The size of the data arrays (same for both far- and
+//                        near-end)
+//      - far_q         : The Q-domain of the far-end data
 //      - vad_value     : The VAD decision of the current block
 //
 // Output:

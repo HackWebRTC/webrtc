@@ -1144,8 +1144,8 @@ TEST_F(ApmTest, Process) {
 
       webrtc::audioproc::Test::DelayMetrics reference_delay =
           test->delay_metrics();
-      EXPECT_EQ(median, reference_delay.median());
-      EXPECT_EQ(std, reference_delay.std());
+      EXPECT_EQ(reference_delay.median(), median);
+      EXPECT_EQ(reference_delay.std(), std);
 
       EXPECT_EQ(test->rms_level(), rms_level);
 #endif

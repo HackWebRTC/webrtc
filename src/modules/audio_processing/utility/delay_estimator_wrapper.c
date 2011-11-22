@@ -133,7 +133,8 @@ int WebRtc_FreeDelayEstimator(void* handle) {
 
 int WebRtc_CreateDelayEstimator(void** handle,
                                 int spectrum_size,
-                                int history_size) {
+                                int max_delay,
+                                int lookahead) {
   DelayEstimator_t *self = NULL;
 
   // Check if the sub band used in the delay estimation is small enough to
@@ -158,7 +159,8 @@ int WebRtc_CreateDelayEstimator(void** handle,
 
   // Create binary delay estimator.
   if (WebRtc_CreateBinaryDelayEstimator(&self->binary_handle,
-                                        history_size) != 0) {
+                                        max_delay,
+                                        lookahead) != 0) {
     WebRtc_FreeDelayEstimator(self);
     self = NULL;
     return -1;

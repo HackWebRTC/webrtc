@@ -30,9 +30,10 @@
 #define FAR_BUF_LEN (FILT_LEN2 * 2)
 #define PREF_BAND_SIZE 24
 
-#define BLOCKL_MAX FRAME_LEN
-// Maximum delay in fixed point delay estimator, used for logging
-enum {kMaxDelay = 100};
+// Delay estimator constants, used for logging.
+enum { kMaxDelayBlocks = 60 };
+enum { kLookaheadBlocks = 15 };
+enum { kHistorySizeBlocks = kMaxDelayBlocks + kLookaheadBlocks };
 
 typedef float complex_t[2];
 // For performance reasons, some arrays of complex numbers are replaced by twice
@@ -141,7 +142,7 @@ typedef struct {
     int flag_Hband_cn;      //for comfort noise
     float cn_scale_Hband;   //scale for comfort noise in H band
 
-    int delay_histogram[kMaxDelay];
+    int delay_histogram[kHistorySizeBlocks];
     int delay_logging_enabled;
     void* delay_estimator;
 
