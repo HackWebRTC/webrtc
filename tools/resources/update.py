@@ -12,6 +12,7 @@ __author__ = 'kjellander@webrtc.org (Henrik Kjellander)'
 """Downloads WebRTC resources files from a remote host."""
 
 from optparse import OptionParser
+from urlparse import urljoin
 import os
 import shutil
 import sys
@@ -31,7 +32,7 @@ def main():
   """
   # Constants
   deps_key = 'webrtc_resources_revision'
-  remote_url_base = 'http://commondatastorage.googleapis.com/webrtc-resources'
+  remote_url_base = 'http://commondatastorage.googleapis.com/webrtc-resources/'
   version_filename = 'webrtc-resources-version'
   filename_prefix = 'webrtc-resources-'
   extension = '.tgz'
@@ -69,7 +70,7 @@ def main():
   if latest_version > current_version or options.force:
     temp_dir = tempfile.mkdtemp(prefix='webrtc-resources-')
     archive_name = '%s%s%s' % (filename_prefix, latest_version, extension)
-    remote_archive_url = os.path.join(remote_url_base, archive_name)
+    remote_archive_url = urljoin(remote_url_base, archive_name)
     # Download into the temporary directory with display of progress, inspired  
     # by the Stack Overflow post at http://goo.gl/JIrbo
     temp_file = os.path.join(temp_dir, archive_name)
