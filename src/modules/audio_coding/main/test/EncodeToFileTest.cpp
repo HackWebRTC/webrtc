@@ -9,8 +9,6 @@
  */
 
 #include "EncodeToFileTest.h"
-#include "audio_coding_module.h"
-#include "common_types.h"
 
 #ifdef WIN32
 #   include <Winsock2.h>
@@ -18,10 +16,13 @@
 #   include <arpa/inet.h>
 #endif
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "audio_coding_module.h"
+#include "common_types.h"
+#include "gtest/gtest.h"
 
 TestPacketization::TestPacketization(RTPStream *rtpStream, WebRtc_UWord16 frequency)
 :
@@ -90,8 +91,7 @@ void Sender::Setup(AudioCodingModule *acm, RTPStream *rtpStream)
             printf("%d %s\n", n, sendCodec.plname);
         }
         printf("Choose your codec:");
-    
-        scanf("%d", &codecNo);
+        ASSERT_GT(scanf("%d", &codecNo), 0);
         char fileName[] = "./test/data/audio_coding/testfile32kHz.pcm";
         _pcmFile.Open(fileName, 32000, "rb");
     }

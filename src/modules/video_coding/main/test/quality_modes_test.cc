@@ -236,7 +236,7 @@ QualityModesTest::Perform()
 
     while (feof(_sourceFile)== 0)
     {
-        fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile);
+        TEST(fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile) > 0);
         _frameCnt++;
         sourceFrame.CopyFrame(_lengthSourceFrame, tmpBuffer);
         sourceFrame.SetHeight(_nativeHeight);

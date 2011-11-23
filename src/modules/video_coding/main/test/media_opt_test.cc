@@ -128,7 +128,7 @@ MediaOptTest::Setup(int testType, CmdArgs& args)
         _fpinp = fopen("dat_inp","rb");
         _fpout = fopen("test_runs/dat_out","ab");
         _fpout2 = fopen("test_runs/dat_out2","ab");
-        fscanf(_fpinp,"%f %f %d \n",&rateTest,&lossTest,&numRuns);
+        TEST(fscanf(_fpinp,"%f %f %d \n",&rateTest,&lossTest,&numRuns) > 0);
         _bitRate = rateTest;
         _lossRate = lossTest;
         _testNum = 0;
@@ -311,7 +311,7 @@ MediaOptTest::Perform()
 
     while (feof(_sourceFile)== 0)
     {
-        fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile);
+        TEST(fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile) > 0);
         _frameCnt++;
 
         sourceFrame.CopyFrame(_lengthSourceFrame, tmpBuffer);

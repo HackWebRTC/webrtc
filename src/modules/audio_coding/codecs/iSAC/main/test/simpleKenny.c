@@ -108,7 +108,7 @@ int main(int argc, char* argv[])
     WebRtc_UWord16  payload[600];
     WebRtc_UWord16  payloadRCU[600];
     WebRtc_UWord16  packetLossPercent = 0;
-    WebRtc_Word16   rcuStreamLen;
+    WebRtc_Word16   rcuStreamLen = 0;
 	int onlyEncode;
 	int onlyDecode;
 

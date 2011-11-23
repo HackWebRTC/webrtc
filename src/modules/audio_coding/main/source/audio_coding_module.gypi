@@ -100,6 +100,7 @@
           'type': 'executable',
           'dependencies': [
             'audio_coding_module',
+            '<(webrtc_root)/../testing/gtest.gyp:gtest',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
           ],
           'sources': [

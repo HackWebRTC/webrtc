@@ -11,6 +11,7 @@
       'target_name': 'video_coding_test',
       'type': 'executable',
       'dependencies': [
+         '<(webrtc_root)/../testing/gtest.gyp:gtest',
          '<(webrtc_root)/../test/test.gyp:test_support',
          'webrtc_video_coding',
          'rtp_rtcp',

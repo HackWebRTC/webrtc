@@ -13,7 +13,7 @@
 #include <vector>
 
 #include "NETEQTEST_RTPpacket.h"
-
+#include "gtest/gtest.h"
 
 /*********************/
 /* Misc. definitions */
@@ -47,12 +47,14 @@ int main(int argc, char* argv[])
 	printf("Output RTP file: %s\n\n",argv[2]);
 
     // read file header and write directly to output file
+	const unsigned int kRtpDumpHeaderSize = 4 + 4 + 4 + 2 + 2;
 	char firstline[FIRSTLINELEN];
-	fgets(firstline, FIRSTLINELEN, inFile);
-	fputs(firstline, outFile);
-	fread(firstline, 4+4+4+2+2, 1, inFile); // start_sec + start_usec	+ source + port + padding
-	fwrite(firstline, 4+4+4+2+2, 1, outFile);
-
+	EXPECT_TRUE(fgets(firstline, FIRSTLINELEN, inFile) != NULL);
+	EXPECT_GT(fputs(firstline, outFile), 0);
+	EXPECT_EQ(kRtpDumpHeaderSize,
+	          fread(firstline, 1, kRtpDumpHeaderSize, inFile));
+	EXPECT_EQ(kRtpDumpHeaderSize,
+	          fwrite(firstline, 1, kRtpDumpHeaderSize, outFile));
 	NETEQTEST_RTPpacket packet;
 	int packLen = packet.readFromFile(inFile);
 	if (packLen < 0)

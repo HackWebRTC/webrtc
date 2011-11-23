@@ -102,7 +102,7 @@ int JitterBufferTest(CmdArgs& args)
         packet.seqNum = seqNum;
         packet.payloadType = 126;
         seqNum++;
-        fb->InsertPacket(packet, VCMTickTime::MillisecondTimestamp());
+        fb->InsertPacket(packet, VCMTickTime::MillisecondTimestamp(), false, 0);
         TEST(frameList.Insert(fb) == 0);
     }
     VCMFrameListItem* item = NULL;
@@ -1907,8 +1907,8 @@ int JitterBufferTest(CmdArgs& args)
     seqNum = 65485;
     timeStampStart = timeStamp +  33*90;
     WebRtc_UWord32 timeStampFirstKey = 0;
-    VCMEncodedFrame* ptrLastDeltaFrame;
-    VCMEncodedFrame* ptrFirstKeyFrame;
+    VCMEncodedFrame* ptrLastDeltaFrame = NULL;
+    VCMEncodedFrame* ptrFirstKeyFrame = NULL;
     // insert MAX_NUMBER_OF_FRAMES frames
     do
     {

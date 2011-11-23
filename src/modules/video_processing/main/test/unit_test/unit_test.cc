@@ -298,7 +298,7 @@ TEST_F(VideoProcessingModuleTest, Resampler)
   // Reading test frame
   VideoFrame sourceFrame;
   ASSERT_EQ(0, sourceFrame.VerifyAndAllocate(lengthSourceFrame));
-  fread(sourceFrame.Buffer(), 1, lengthSourceFrame, _sourceFile);
+  EXPECT_GT(fread(sourceFrame.Buffer(), 1, lengthSourceFrame, _sourceFile), 0u);
   ASSERT_EQ(0, sourceFrame.SetLength(lengthSourceFrame));
   sourceFrame.SetHeight(height);
   sourceFrame.SetWidth(width);

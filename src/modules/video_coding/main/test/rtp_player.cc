@@ -9,9 +9,6 @@
  */
 
 #include "rtp_player.h"
-#include "../source/internal_defines.h"
-#include "rtp_rtcp.h"
-#include "tick_time.h"
 
 #include <cstdlib>
 #ifdef WIN32
@@ -20,6 +17,11 @@
 #else
 #include <arpa/inet.h>
 #endif
+
+#include "../source/internal_defines.h"
+#include "gtest/gtest.h"
+#include "rtp_rtcp.h"
+#include "tick_time.h"
 
 using namespace webrtc;
 
@@ -231,7 +233,7 @@ WebRtc_Word32 RTPPlayer::ReadHeader()
     {
         return -1;
     }
-    fgets(firstline, FIRSTLINELEN, _rtpFile);
+    EXPECT_TRUE(fgets(firstline, FIRSTLINELEN, _rtpFile) != NULL);
     if(strncmp(firstline,"#!rtpplay",9) == 0) {
         if(strncmp(firstline,"#!rtpplay1.0",12) != 0){
             printf("ERROR: wrong rtpplay version, must be 1.0\n");
@@ -255,15 +257,15 @@ WebRtc_Word32 RTPPlayer::ReadHeader()
     WebRtc_UWord16 port;
     WebRtc_UWord16 padding;
 
-    fread(&start_sec, 4, 1, _rtpFile);
+    EXPECT_GT(fread(&start_sec, 4, 1, _rtpFile), 0u);
     start_sec=ntohl(start_sec);
-    fread(&start_usec, 4, 1, _rtpFile);
+    EXPECT_GT(fread(&start_usec, 4, 1, _rtpFile), 0u);
     start_usec=ntohl(start_usec);
-    fread(&source, 4, 1, _rtpFile);
+    EXPECT_GT(fread(&source, 4, 1, _rtpFile), 0u);
     source=ntohl(source);
-    fread(&port, 2, 1, _rtpFile);
+    EXPECT_GT(fread(&port, 2, 1, _rtpFile), 0u);
     port=ntohs(port);
-    fread(&padding, 2, 1, _rtpFile);
+    EXPECT_GT(fread(&padding, 2, 1, _rtpFile), 0u);
     padding=ntohs(padding);
     return 0;
 }

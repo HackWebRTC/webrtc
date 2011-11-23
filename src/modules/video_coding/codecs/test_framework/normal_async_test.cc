@@ -9,12 +9,15 @@
  */
 
 #include "normal_async_test.h"
-#include "typedefs.h"
+
 #include <sstream>
 #include <assert.h>
 #include <queue>
 #include <string.h>
+
+#include "gtest/gtest.h"
 #include "tick_util.h"
+#include "typedefs.h"
 
 using namespace webrtc;
 
@@ -391,7 +394,7 @@ bool
 NormalAsyncTest::Encode()
 {
     _lengthEncFrame = 0;
-    fread(_sourceBuffer, 1, _lengthSourceFrame, _sourceFile);
+    EXPECT_GT(fread(_sourceBuffer, 1, _lengthSourceFrame, _sourceFile), 0u);
     _inputVideoBuffer.CopyBuffer(_lengthSourceFrame, _sourceBuffer);
     _inputVideoBuffer.SetTimeStamp((unsigned int)
         (_encFrameCnt * 9e4 / _inst.maxFramerate));
@@ -448,6 +451,7 @@ NormalAsyncTest::Encode()
 
     webrtc::CodecSpecificInfo* codecSpecificInfo = CreateEncoderSpecificInfo();
     int ret = _encoder->Encode(rawImage, codecSpecificInfo, &frameType);
+    EXPECT_EQ(ret, WEBRTC_VIDEO_CODEC_OK);
     if (codecSpecificInfo != NULL)
     {
         delete codecSpecificInfo;

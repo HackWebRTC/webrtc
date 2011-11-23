@@ -56,7 +56,7 @@ int main(int argc, char* argv[])
 
     /* Runtime statistics */
     double starttime;
-    double runtime;
+    double runtime = 0;
     double length_file;
 
     WebRtc_Word16 stream_len = 0;

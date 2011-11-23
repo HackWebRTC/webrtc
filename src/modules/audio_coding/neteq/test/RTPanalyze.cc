@@ -19,8 +19,6 @@
 /* Misc. definitions */
 /*********************/
 
-#define FIRSTLINELEN 40
-
 enum {kRedPayloadType = 127};
 
 int main(int argc, char* argv[])
@@ -44,12 +42,8 @@ int main(int argc, char* argv[])
     // print file header
     fprintf(outFile, "SeqNo  TimeStamp   SendTime  Size    PT  M\n");
 
-
     // read file header 
-	char firstline[FIRSTLINELEN];
-	fgets(firstline, FIRSTLINELEN, inFile);
-	fread(firstline, 4+4+4+2+2, 1, inFile); // start_sec + start_usec	+ source + port + padding
-	
+    NETEQTEST_RTPpacket::skipFileHeader(inFile);
     NETEQTEST_RTPpacket packet;
 
     while (packet.readFromFile(inFile) >= 0)

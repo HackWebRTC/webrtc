@@ -143,7 +143,7 @@ GenericCodecTest::Perform(CmdArgs& args)
         _vcm->RegisterReceiveCodec(&receiveCodec, 1);
     }
     WebRtc_UWord8* tmpBuffer = new WebRtc_UWord8[_lengthSourceFrame];
-    fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile);
+    TEST(fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile) > 0);
     // building source frame
     sourceFrame.CopyFrame(_lengthSourceFrame, tmpBuffer);
     sourceFrame.SetHeight(_height);
@@ -191,7 +191,7 @@ GenericCodecTest::Perform(CmdArgs& args)
     //encoding 1 second of video
     for (i = 0; i < _frameRate; i++)
     {
-        fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile);
+        TEST(fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile) > 0);
         sourceFrame.CopyFrame(_lengthSourceFrame, tmpBuffer);
         sourceFrame.SetHeight(_height);
         sourceFrame.SetWidth(_width);
@@ -265,7 +265,7 @@ GenericCodecTest::Perform(CmdArgs& args)
     sourceFrame.VerifyAndAllocate(_lengthSourceFrame);
     const float bitRate[] = {100, 400, 600, 1000, 2000, 3000};
     const float nBitrates = sizeof(bitRate)/sizeof(*bitRate);
-    float _bitRate;
+    float _bitRate = 0;
     int _frameCnt = 0;
     WebRtc_Word64 startTime, currentTime, oneSecTime;
     float totalBytesOneSec;//, totalBytesTenSec;
@@ -377,7 +377,7 @@ GenericCodecTest::Perform(CmdArgs& args)
         encodeComplete = false;
         while (encodeComplete == false)
         {
-            fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile);
+            TEST(fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile) > 0);
             _frameCnt++;
             sourceFrame.CopyFrame(_lengthSourceFrame, tmpBuffer);
             sourceFrame.SetHeight(_height);
@@ -467,7 +467,7 @@ GenericCodecTest::Perform(CmdArgs& args)
     rewind(_sourceFile);
     while (!feof(_sourceFile))
     {
-        fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile);
+        TEST(fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile) > 0);
         sourceFrame.CopyFrame(_lengthSourceFrame, tmpBuffer);
         sourceFrame.SetHeight(_height);
         sourceFrame.SetWidth(_width);

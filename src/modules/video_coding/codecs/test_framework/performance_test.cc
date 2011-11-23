@@ -9,8 +9,11 @@
  */
 
 #include "performance_test.h"
-#include "tick_util.h"
+
 #include <assert.h>
+
+#include "gtest/gtest.h"
+#include "tick_util.h"
 
 using namespace webrtc;
 
@@ -129,7 +132,8 @@ PerformanceTest::Perform()
             // Read a new frame from file
             WriteLockScoped imageLock(*_rawImageLock);
             _lengthEncFrame = 0;
-            fread(_sourceBuffer, 1, _lengthSourceFrame, _sourceFile);
+            EXPECT_GT(fread(_sourceBuffer, 1, _lengthSourceFrame, _sourceFile),
+                      0u);
             if (feof(_sourceFile) != 0)
             {
                 rewind(_sourceFile);
@@ -269,6 +273,7 @@ bool PerformanceTest::Encode()
     }
     webrtc::CodecSpecificInfo* codecSpecificInfo = CreateEncoderSpecificInfo();
     int ret = _encoder->Encode(rawImage, codecSpecificInfo, &frameType);
+    EXPECT_EQ(ret, WEBRTC_VIDEO_CODEC_OK);
     if (codecSpecificInfo != NULL)
     {
         delete codecSpecificInfo;

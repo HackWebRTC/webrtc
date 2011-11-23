@@ -55,7 +55,7 @@ MainSenderThread(void* obj)
     }
     if (feof(state->_sourceFile) == 0)
     {
-        fread(tmpBuffer, 1, lengthSourceFrame,state->_sourceFile);
+        TEST(fread(tmpBuffer, 1, lengthSourceFrame,state->_sourceFile) > 0);
         state->_frameCnt++;
         sourceFrame.CopyFrame(lengthSourceFrame, tmpBuffer);
         sourceFrame.SetHeight(height);

@@ -121,7 +121,7 @@ CodecDataBaseTest::Perform(CmdArgs& args)
     VideoFrame sourceFrame;
     sourceFrame.VerifyAndAllocate(_lengthSourceFrame);
     WebRtc_UWord8* tmpBuffer = new WebRtc_UWord8[_lengthSourceFrame];
-    fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile);
+    TEST(fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile) > 0);
     sourceFrame.CopyFrame(_lengthSourceFrame, tmpBuffer);
     sourceFrame.SetHeight(_height);
     sourceFrame.SetWidth(_width);
@@ -324,7 +324,7 @@ CodecDataBaseTest::Perform(CmdArgs& args)
             for (j=0; j < int(300/VideoCodingModule::NumberOfCodecs()); j++)// assuming 300 frames, NumberOfCodecs <= 10
             {
                 frameCnt++;
-                fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile);
+                TEST(fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile) > 0);
                 // building source frame
                 sourceFrame.CopyFrame(_lengthSourceFrame, tmpBuffer);
                 sourceFrame.SetHeight(_height);

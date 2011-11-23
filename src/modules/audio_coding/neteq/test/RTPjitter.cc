@@ -22,6 +22,8 @@
 #include <search.h>
 #include <float.h>
 
+#include "gtest/gtest.h"
+
 /*********************/
 /* Misc. definitions */
 /*********************/
@@ -68,7 +70,8 @@ int main(int argc, char* argv[])
 	unsigned int	dat_len, rtp_len, Npack, k;
 	arr_time		*time_vec;
 	char			firstline[FIRSTLINELEN];
-	unsigned char	*rtp_vec, **packet_ptr, *temp_packet;
+	unsigned char	*rtp_vec = NULL, **packet_ptr, *temp_packet;
+	const unsigned int kRtpDumpHeaderSize = 4 + 4 + 4 + 2 + 2;
 	WebRtc_UWord16			len;
 	WebRtc_UWord32			*offset;
 
@@ -126,10 +129,12 @@ int main(int argc, char* argv[])
 	}
 
 	// read file header and write directly to output file
-	fgets(firstline, FIRSTLINELEN, in_file);
-	fputs(firstline, out_file);
-	fread(firstline, 4+4+4+2+2, 1, in_file); // start_sec + start_usec	+ source + port + padding
-	fwrite(firstline, 4+4+4+2+2, 1, out_file);
+	EXPECT_TRUE(fgets(firstline, FIRSTLINELEN, in_file) != NULL);
+	EXPECT_GT(fputs(firstline, out_file), 0);
+	EXPECT_EQ(kRtpDumpHeaderSize, fread(firstline, 1, kRtpDumpHeaderSize,
+	                                    in_file));
+	EXPECT_EQ(kRtpDumpHeaderSize, fwrite(firstline, 1, kRtpDumpHeaderSize,
+	                                     out_file));
 
 	// read all RTP packets into vector
 	rtp_len=0;

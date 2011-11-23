@@ -13,7 +13,7 @@
 #include <vector>
 
 #include "NETEQTEST_RTPpacket.h"
-
+#include "gtest/gtest.h"
 
 /*********************/
 /* Misc. definitions */
@@ -38,26 +38,29 @@ int main(int argc, char* argv[])
     printf("Input RTP file: %s\n",argv[1]);
 
     FILE *statFile=fopen(argv[2],"rt");
-	if (!statFile)
+	  if (!statFile)
     {
         printf("Cannot open timing file %s\n", argv[2]);
         return(-1);
     }
     printf("Timing file: %s\n",argv[2]);
 
-	FILE *outFile=fopen(argv[3],"wb");
-	if (!outFile)
+    FILE *outFile=fopen(argv[3],"wb");
+    if (!outFile)
     {
         printf("Cannot open output file %s\n", argv[3]);
         return(-1);
     }
-	printf("Output RTP file: %s\n\n",argv[3]);
+    printf("Output RTP file: %s\n\n",argv[3]);
 
     // read all statistics and insert into map
     // read first line
     char tempStr[100];
-    fgets(tempStr, 100, statFile);
-
+    if (fgets(tempStr, 100, statFile) == NULL)
+    {
+      printf("Failed to read timing file %s\n", argv[2]);
+      return (-1);
+    }
     // define map
     std::map<std::pair<WebRtc_UWord16, WebRtc_UWord32>, WebRtc_UWord32>
         packetStats;
@@ -76,11 +79,25 @@ int main(int argc, char* argv[])
     fclose(statFile);
 
     // read file header and write directly to output file
-	char firstline[FIRSTLINELEN];
-	fgets(firstline, FIRSTLINELEN, inFile);
-	fputs(firstline, outFile);
-	fread(firstline, 4+4+4+2+2, 1, inFile); // start_sec + start_usec	+ source + port + padding
-	fwrite(firstline, 4+4+4+2+2, 1, outFile);
+    char firstline[FIRSTLINELEN];
+    if (fgets(firstline, FIRSTLINELEN, inFile) == NULL)
+    {
+      printf("Failed to read first line of input file %s\n", argv[1]);
+      return (-1);
+    }
+    fputs(firstline, outFile);
+    // start_sec + start_usec + source + port + padding
+    const unsigned int kRtpDumpHeaderSize = 4 + 4 + 4 + 2 + 2;
+    if (fread(firstline, 1, kRtpDumpHeaderSize, inFile) != kRtpDumpHeaderSize)
+    {
+      printf("Failed to read RTP dump header from input file %s\n", argv[1]);
+      return (-1);
+    }
+    if (fwrite(firstline, 1, kRtpDumpHeaderSize, outFile) != kRtpDumpHeaderSize)
+    {
+      printf("Failed to write RTP dump header to output file %s\n", argv[3]);
+      return (-1);
+    }
 
     std::vector<NETEQTEST_RTPpacket *> packetVec;
 

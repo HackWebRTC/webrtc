@@ -277,7 +277,7 @@ int main(int argc, char* argv[])
     bool dtmfSent = false;
 #endif
     bool usingStereo = false;
-    int stereoMode;
+    int stereoMode = 0;
     int numChannels = 1;
 
 	/* check number of parameters */
@@ -1609,7 +1609,7 @@ int NetEQTest_free_coders(enum WebRtcNetEQDecoder coder, int numChannels) {
 int NetEQTest_encode(int coder, WebRtc_Word16 *indata, int frameLen, unsigned char * encoded,int sampleRate , 
 						  int * vad, int useVAD, int bitrate, int numChannels){
 
-	short cdlen;
+	short cdlen = 0;
 	WebRtc_Word16 *tempdata;
 	static int first_cng=1;
 	WebRtc_Word16 tempLen;

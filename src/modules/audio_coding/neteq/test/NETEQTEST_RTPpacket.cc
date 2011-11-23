@@ -21,6 +21,8 @@
 
 #include <cstdlib>
 
+#include "gtest/gtest.h"
+
 #define HDR_SIZE 8 // rtpplay packet header size in bytes
 
 
@@ -145,7 +147,9 @@ int NETEQTEST_RTPpacket::skipFileHeader(FILE *fp)
 
     const int kFirstLineLength = 40;
     char firstline[kFirstLineLength];
-    fgets(firstline, kFirstLineLength, fp);
+    if (fgets(firstline, kFirstLineLength, fp) == NULL) {
+        return -1;
+    }
     if (strncmp(firstline, "#!rtpplay", 9) == 0) {
         if (strncmp(firstline, "#!rtpplay1.0", 12) != 0) {
             return -1;

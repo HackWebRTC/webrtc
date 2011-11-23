@@ -279,7 +279,7 @@ NormalTest::Perform(CmdArgs& args)
 #if !(defined(TICK_TIME_DEBUG) || defined(EVENT_DEBUG))
         WebRtc_Word64 processStartTime = VCMTickTime::MillisecondTimestamp();
 #endif
-        fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile);
+        TEST(fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile) > 0);
         _frameCnt++;
         sourceFrame.CopyFrame(_lengthSourceFrame, tmpBuffer);
         sourceFrame.SetHeight(_height);

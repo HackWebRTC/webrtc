@@ -9,10 +9,12 @@
  */
 
 #include "EncodeDecodeTest.h"
-#include "common_types.h"
 
 #include <stdlib.h>
 #include <string.h>
+
+#include "common_types.h"
+#include "gtest/gtest.h"
 #include "trace.h"
 #include "utility.h"
 
@@ -62,8 +64,8 @@ void Receiver::Setup(AudioCodingModule *acm, RTPStream *rtpStream)
     {
         printf("\nValid output frequencies:\n");
         printf("8000\n16000\n32000\n-1, which means output freq equal to received signal freq");
-        printf("\n\nChoose output sampling frequency: ");       
-        scanf("%d", &playSampFreq);
+        printf("\n\nChoose output sampling frequency: ");
+        ASSERT_GT(scanf("%d", &playSampFreq), 0);
         char fileName[] = "./src/modules/audio_coding/main/test/outFile.pcm";
         _pcmFile.Open(fileName, 32000, "wb+");
     }

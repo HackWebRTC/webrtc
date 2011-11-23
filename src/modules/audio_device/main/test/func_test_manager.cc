@@ -776,7 +776,7 @@ WebRtc_Word32 FuncTestManager::TestAudioLayerSelection()
     {
         TEST_LOG("Would you like to try kWindowsCoreAudio instead "
             "[requires Win Vista or Win 7] (Y/N)?\n: ");
-        scanf(" %c", &ch);
+        TEST(scanf(" %c", &ch) > 0);
         ch = toupper(ch);
         if (ch == 'Y')
         {
@@ -785,7 +785,7 @@ WebRtc_Word32 FuncTestManager::TestAudioLayerSelection()
     } else if (audioLayer == AudioDeviceModule::kWindowsCoreAudio)
     {
         TEST_LOG("Would you like to try kWindowsWaveAudio instead (Y/N)?\n: ");
-        scanf(" %c", &ch);
+        TEST(scanf(" %c", &ch) > 0);
         ch = toupper(ch);
         if (ch == 'Y')
         {
@@ -1695,7 +1695,7 @@ WebRtc_Word32 FuncTestManager::TestMicrophoneVolume()
              RecordedMicrophoneVolumeFile);
     char ch;
     bool fileRecording(false);
-    scanf(" %c", &ch);
+    TEST(scanf(" %c", &ch) > 0);
     ch = toupper(ch);
     if (ch == 'Y')
     {
@@ -1834,7 +1834,7 @@ WebRtc_Word32 FuncTestManager::TestMicrophoneMute()
         RecordedMicrophoneMuteFile);
     char ch;
     bool fileRecording(false);
-    scanf(" %c", &ch);
+    TEST(scanf(" %c", &ch) > 0);
     ch = toupper(ch);
     if (ch == 'Y')
     {
@@ -1970,7 +1970,7 @@ WebRtc_Word32 FuncTestManager::TestMicrophoneBoost()
         RecordedMicrophoneBoostFile);
     char ch;
     bool fileRecording(false);
-    scanf(" %c", &ch);
+    TEST(scanf(" %c", &ch) > 0);
     ch = toupper(ch);
     if (ch == 'Y')
     {
@@ -2107,7 +2107,7 @@ WebRtc_Word32 FuncTestManager::TestMicrophoneAGC()
         RecordedMicrophoneAGCFile);
     char ch;
     bool fileRecording(false);
-    scanf(" %c", &ch);
+    TEST(scanf(" %c", &ch) > 0);
     ch = toupper(ch);
     if (ch == 'Y')
     {
@@ -2567,11 +2567,8 @@ WebRtc_Word32 FuncTestManager::SelectRecordingDevice()
         TEST_LOG(" (%d) Device %d (%s)\n", i, i, name);
     }
     TEST_LOG("\n: ");
-
     int sel(0);
-
-    scanf("%u", &sel);
-
+    TEST(scanf("%u", &sel) > 0);
     if (sel < (nDevices))
     {
         TEST((ret = _audioDevice->SetRecordingDevice(sel)) == 0);
@@ -2634,13 +2631,9 @@ WebRtc_Word32 FuncTestManager::SelectPlayoutDevice()
         TEST_LOG(" (%d) Device %d (%s)\n", i, i, name);
     }
     TEST_LOG("\n: ");
-
     int sel(0);
-
-    scanf("%u", &sel);
-
+    TEST(scanf("%u", &sel) > 0);
     WebRtc_Word32 ret(0);
-
     if (sel < (nDevices))
     {
         TEST((ret = _audioDevice->SetPlayoutDevice(sel)) == 0);

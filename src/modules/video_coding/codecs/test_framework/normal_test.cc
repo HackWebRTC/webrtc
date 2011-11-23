@@ -9,9 +9,12 @@
  */
 
 #include "normal_test.h"
+
 #include <time.h>
 #include <sstream>
 #include <string.h>
+
+#include "gtest/gtest.h"
 
 NormalTest::NormalTest()
 :
@@ -169,7 +172,7 @@ bool
 NormalTest::Encode()
 {
     _lengthEncFrame = 0;
-    fread(_sourceBuffer, 1, _lengthSourceFrame, _sourceFile);
+    EXPECT_GT(fread(_sourceBuffer, 1, _lengthSourceFrame, _sourceFile), 0u);
     if (feof(_sourceFile) != 0)
     {
         return true;

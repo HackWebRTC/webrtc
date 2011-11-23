@@ -9,20 +9,21 @@
  */
 
 #include <cctype>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #include <iostream>
 #include <ostream>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "APITest.h"
-#include "thread_wrapper.h"
+#include "common_types.h"
+#include "engine_configurations.h"
 #include "event_wrapper.h"
+#include "gtest/gtest.h"
+#include "thread_wrapper.h"
 #include "tick_util.h"
 #include "trace.h"
 #include "utility.h"
-#include "common_types.h"
-#include "engine_configurations.h"
 
 #define TEST_DURATION_SEC 600
 
@@ -310,7 +311,7 @@ APITest::SetUp()
     char print[11];
 
     printf("\nRandom Test (y/n)?");
-    fgets(print, 10, stdin); 
+    EXPECT_TRUE(fgets(print, 10, stdin) != NULL);
     print[10] = '\0';
     if(strstr(print, "y") != NULL)
     {
@@ -327,11 +328,11 @@ APITest::SetUp()
         Trace::SetTraceFile("ACMAPITest.txt", true);
         _randomTest = false;
         printf("\nPrint Tests (y/n)? ");
-        fgets(print, 10, stdin); 
+        EXPECT_TRUE(fgets(print, 10, stdin) != NULL);
         print[10] = '\0';
         if(strstr(print, "y") == NULL)
         {
-            freopen("APITest_log.txt", "w", stdout);
+            EXPECT_TRUE(freopen("APITest_log.txt", "w", stdout) != 0);
             _verbose = false;
         }
     }
@@ -1139,8 +1140,8 @@ void
 APITest::TestPlayout(char receiveSide)
 {
     AudioCodingModule* receiveACM;
-    AudioPlayoutMode* playoutMode;
-    ACMBackgroundNoiseMode* bgnMode;
+    AudioPlayoutMode* playoutMode = NULL;
+    ACMBackgroundNoiseMode* bgnMode = NULL;
     switch(receiveSide)
     {
         case 'A':

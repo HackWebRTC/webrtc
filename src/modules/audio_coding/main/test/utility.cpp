@@ -9,14 +9,14 @@
  */
 
 #include "utility.h"
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-
 #include "audio_coding_module.h"
 #include "common_types.h"
-
+#include "gtest/gtest.h"
 
 #define NUM_CODECS_WITH_FIXED_PAYLOAD_TYPE 13
 
@@ -128,7 +128,7 @@ ChooseCodec(
     do
     {
         printf("\nChoose a codec [0]: ");
-        fgets(myStr, 10, stdin);
+        EXPECT_TRUE(fgets(myStr, 10, stdin) != NULL);
         codecID = atoi(myStr);
         if((codecID < 0) || (codecID >= noCodec))
         {

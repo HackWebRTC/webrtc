@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
 	double starttime, runtime, length_file;
 
 	WebRtc_Word16 stream_len = 0;
-	WebRtc_Word16 declen, lostFrame = 0, declenTC;
+	WebRtc_Word16 declen, lostFrame = 0, declenTC = 0;
 	
 	WebRtc_Word16 shortdata[SWBFRAMESAMPLES_10ms];
 	WebRtc_Word16 vaddata[SWBFRAMESAMPLES_10ms*3];
@@ -97,10 +97,10 @@ int main(int argc, char* argv[])
     bool doTransCoding = false;
     WebRtc_Word32 rateTransCoding = 0;
     WebRtc_UWord16 streamDataTransCoding[600];
-    WebRtc_Word16 streamLenTransCoding;
-    FILE* transCodingFile;
-    FILE* transcodingBitstream;
-    WebRtc_UWord32 numTransCodingBytes=0;
+    WebRtc_Word16 streamLenTransCoding = 0;
+    FILE* transCodingFile = NULL;
+    FILE* transcodingBitstream = NULL;
+    WebRtc_UWord32 numTransCodingBytes = 0;
 
 	/* only one structure used for ISAC encoder */
 	ISACStruct* ISAC_main_inst;
@@ -368,7 +368,9 @@ int main(int argc, char* argv[])
                     {
                         /* Set pointer to beginning of file */
                         fseek(f_bn, 0L, SEEK_SET);
-                        fscanf(f_bn, "%d", &bottleneck);
+                        if (fscanf(f_bn, "%d", &bottleneck) == EOF) {
+                            exit(0);
+                        }
                     }		
 
                     /*	Bottleneck is a cosine function 
@@ -744,7 +746,9 @@ int main(int argc, char* argv[])
             {
                 /* Set pointer to beginning of file */
                 fseek(f_bn, 0L, SEEK_SET);
-                fscanf(f_bn, "%d", &bottleneck);
+                if (fscanf(f_bn, "%d", &bottleneck) == EOF) {
+                    exit(0);
+                }
             }
             if(CodingMode == 1)
             {

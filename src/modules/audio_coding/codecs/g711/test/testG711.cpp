@@ -42,7 +42,7 @@ int readframe(WebRtc_Word16 *data, FILE *inp, int length) {
 int main(int argc, char* argv[])
 {
     char inname[80], outname[40], bitname[40];
-    FILE *inp, *outp, *bitp;
+    FILE *inp, *outp, *bitp = NULL;
     int framecnt, endfile;
 
     WebRtc_Word16 framelength = 80;

@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "TwoWayCommunication.h"
+
 #include <cctype>
 #include <stdio.h>
 #include <string.h>
@@ -16,12 +18,12 @@
 #include <Windows.h>
 #endif
 
-#include "TwoWayCommunication.h"
-#include "engine_configurations.h"
-#include "PCMFile.h"
-#include "utility.h"
-#include "trace.h"
 #include "common_types.h"
+#include "engine_configurations.h"
+#include "gtest/gtest.h"
+#include "PCMFile.h"
+#include "trace.h"
+#include "utility.h"
 
 using namespace webrtc;
 
@@ -79,11 +81,11 @@ TwoWayCommunication::ChooseCodec(WebRtc_UWord8* codecID_A, WebRtc_UWord8* codecI
     }
     printf("\nChoose a send codec for side A [0]: ");
     char myStr[15] = "";
-    fgets(myStr, 10, stdin);
+    EXPECT_TRUE(fgets(myStr, 10, stdin) != NULL);
     *codecID_A = (WebRtc_UWord8)atoi(myStr);
 
     printf("\nChoose a send codec for side B [0]: ");
-    fgets(myStr, 10, stdin);
+    EXPECT_TRUE(fgets(myStr, 10, stdin) != NULL);
     *codecID_B = (WebRtc_UWord8)atoi(myStr);
 
     AudioCodingModule::Destroy(tmpACM);
@@ -97,7 +99,7 @@ TwoWayCommunication::ChooseFile(char* fileName, WebRtc_Word16 maxLen, WebRtc_UWo
     WebRtc_Word8 tmpName[MAX_FILE_NAME_LENGTH_BYTE];
     //strcpy(_fileName, "in.pcm");
     //printf("\n\nPlease enter the input file: ");
-    fgets(tmpName, MAX_FILE_NAME_LENGTH_BYTE, stdin);
+    EXPECT_TRUE(fgets(tmpName, MAX_FILE_NAME_LENGTH_BYTE, stdin) != NULL);
     tmpName[MAX_FILE_NAME_LENGTH_BYTE-1] = '\0';
     WebRtc_Word16 n = 0;
 
@@ -138,7 +140,7 @@ TwoWayCommunication::ChooseFile(char* fileName, WebRtc_Word16 maxLen, WebRtc_UWo
         strncpy(fileName, tmpName, len+1);
     }
     printf("Enter the sampling frequency (in Hz) of the above file [%u]: ", *frequencyHz);
-    fgets(tmpName, 6, stdin);
+    EXPECT_TRUE(fgets(tmpName, 6, stdin) != NULL);
     WebRtc_UWord16 tmpFreq = (WebRtc_UWord16)atoi(tmpName);
     if(tmpFreq > 0)
     {

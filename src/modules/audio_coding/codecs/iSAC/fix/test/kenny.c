@@ -101,13 +101,13 @@ int main(int argc, char* argv[])
   WebRtc_Word16 CodingMode;
   WebRtc_Word16 bottleneck;
   WebRtc_Word16 framesize = 30;           /* ms */
-  int cur_framesmpls, err, lostPackets = 0;
+  int cur_framesmpls, err = 0, lostPackets = 0;
 
   /* Runtime statistics */
   double starttime, runtime, length_file;
 
   WebRtc_Word16 stream_len = 0;
-  WebRtc_Word16 framecnt, declen;
+  WebRtc_Word16 framecnt, declen = 0;
   WebRtc_Word16 shortdata[FRAMESAMPLES_10ms];
   WebRtc_Word16 decoded[MAX_FRAMESAMPLES];
   WebRtc_UWord16 streamdata[500];
@@ -119,7 +119,7 @@ int main(int argc, char* argv[])
   WebRtc_Word32 payloadRate = 0;
   int setControlBWE = 0;
   int readLoss;
-  FILE  *plFile;
+  FILE  *plFile = NULL;
 
   char version_number[20];
   char tmpBit[5] = ".bit";
@@ -396,7 +396,9 @@ int main(int argc, char* argv[])
       if (fscanf(f_bn, "%d", &aux_var) == EOF) {
         /* Set pointer to beginning of file */
         fseek(f_bn, 0L, SEEK_SET);
-        fscanf(f_bn, "%d", &aux_var);
+        if (fscanf(f_bn, "%d", &aux_var) == EOF) {
+          exit(0);
+        }
       }
       bottleneck = (WebRtc_Word16)aux_var;
       /* Bottleneck is a cosine function
@@ -640,7 +642,9 @@ int main(int argc, char* argv[])
         if (fscanf(f_bn, "%d", &aux_var) == EOF) {
           /* Set pointer to beginning of file */
           fseek(f_bn, 0L, SEEK_SET);
-          fscanf(f_bn, "%d", &aux_var);
+          if (fscanf(f_bn, "%d", &aux_var) == EOF) {
+            exit(0);
+          }
         }
         bottleneck = (WebRtc_Word16)aux_var;
         if (CodingMode == 1) {
@@ -675,10 +679,11 @@ int main(int argc, char* argv[])
     if (fp_gns != NULL) {
       if (fscanf(fp_gns, "%d", &cur_delay) == EOF) {
         fseek(fp_gns, 0L, SEEK_SET);
-        fscanf(fp_gns, "%d", &cur_delay);
+        if (fscanf(fp_gns, "%d", &cur_delay) == EOF) {
+          exit(0);
+        }
       }
     }
-
 
     /* simulate packet handling through NetEq and the modem */
     if (!(testNum == 3 && framecnt == 0)) {

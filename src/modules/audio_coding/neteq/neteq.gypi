@@ -177,6 +177,9 @@
         {
           'target_name': 'RTPjitter',
           'type': 'executable',
+          'dependencies': [
+            '<(webrtc_root)/../testing/gtest.gyp:gtest',
+          ],
           'sources': [
             'test/RTPjitter.cc',
           ],
@@ -186,6 +189,7 @@
           'type': 'executable',
           'dependencies': [
             'NetEqTestTools',
+            '<(webrtc_root)/../testing/gtest.gyp:gtest',
           ],
           'sources': [
             'test/RTPanalyze.cc',
@@ -196,6 +200,7 @@
           'type': 'executable',
           'dependencies': [
             'NetEqTestTools',
+            '<(webrtc_root)/../testing/gtest.gyp:gtest',
           ],
           'sources': [
            'test/RTPchange.cc',
@@ -206,6 +211,7 @@
           'type': 'executable',
           'dependencies': [
            'NetEqTestTools',
+            '<(webrtc_root)/../testing/gtest.gyp:gtest',
           ],
           'sources': [
             'test/RTPtimeshift.cc',
@@ -216,6 +222,7 @@
           'type': 'executable',
           'dependencies': [
             'NetEqTestTools',
+            '<(webrtc_root)/../testing/gtest.gyp:gtest',
           ],
           'sources': [
             'test/RTPcat.cc',
@@ -232,6 +239,7 @@
             'iLBC',
             'iSAC',
             'CNG',
+            '<(webrtc_root)/../testing/gtest.gyp:gtest',
           ],
           'direct_dependent_settings': {
             'include_dirs': [

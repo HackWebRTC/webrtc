@@ -9,8 +9,7 @@
  */
 
 #include "RTPFile.h"
-#include "rw_lock_wrapper.h"
-#include "engine_configurations.h"
+
 #include <stdlib.h>
 
 #ifdef WIN32
@@ -20,6 +19,9 @@
 #endif
 
 #include "audio_coding_module.h"
+#include "engine_configurations.h"
+#include "gtest/gtest.h"
+#include "rw_lock_wrapper.h"
 
 void RTPStream::ParseRTPHeader(WebRtcRTPHeader* rtpInfo, const WebRtc_UWord8* rtpHeader)
 {
@@ -186,16 +188,16 @@ void RTPFile::ReadHeader()
     WebRtc_UWord32 start_sec, start_usec, source;
     WebRtc_UWord16 port, padding;
     char fileHeader[40];
-    fgets(fileHeader, 40, _rtpFile);
-    fread(&start_sec, 4, 1, _rtpFile);
+    EXPECT_TRUE(fgets(fileHeader, 40, _rtpFile) != 0);
+    EXPECT_GT(fread(&start_sec, 4, 1, _rtpFile), 0u);
     start_sec=ntohl(start_sec);
-    fread(&start_usec, 4, 1, _rtpFile);
+    EXPECT_GT(fread(&start_usec, 4, 1, _rtpFile), 0u);
     start_usec=ntohl(start_usec);
-    fread(&source, 4, 1, _rtpFile);
+    EXPECT_GT(fread(&source, 4, 1, _rtpFile), 0u);
     source=ntohl(source);
-    fread(&port, 2, 1, _rtpFile);
+    EXPECT_GT(fread(&port, 2, 1, _rtpFile), 0u);
     port=ntohs(port);
-    fread(&padding, 2, 1, _rtpFile);
+    EXPECT_GT(fread(&padding, 2, 1, _rtpFile), 0u);
     padding=ntohs(padding);
 }
 
@@ -237,19 +239,19 @@ WebRtc_UWord16 RTPFile::Read(WebRtcRTPHeader* rtpInfo,
     WebRtc_UWord16 lengthBytes;
     WebRtc_UWord16 plen;
     WebRtc_UWord8 rtpHeader[12];
-    fread(&lengthBytes, 2, 1, _rtpFile);
+    EXPECT_GT(fread(&lengthBytes, 2, 1, _rtpFile), 0u);
     if (feof(_rtpFile))
     {
         _rtpEOF = true;
         return 0;
     }
-    fread(&plen, 2, 1, _rtpFile);
+    EXPECT_GT(fread(&plen, 2, 1, _rtpFile), 0u);
     if (feof(_rtpFile))
     {
         _rtpEOF = true;
         return 0;
     }
-    fread(offset, 4, 1, _rtpFile);
+    EXPECT_GT(fread(offset, 4, 1, _rtpFile), 0u);
     if (feof(_rtpFile))
     {
         _rtpEOF = true;
@@ -263,7 +265,7 @@ WebRtc_UWord16 RTPFile::Read(WebRtcRTPHeader* rtpInfo,
         throw "Unable to read RTP file";
         exit(1);
     }
-    fread(rtpHeader, 12, 1, _rtpFile);
+    EXPECT_GT(fread(rtpHeader, 12, 1, _rtpFile), 0u);
     if (feof(_rtpFile))
     {
         _rtpEOF = true;
@@ -287,7 +289,7 @@ WebRtc_UWord16 RTPFile::Read(WebRtcRTPHeader* rtpInfo,
         exit(1);
     }
     lengthBytes -= 20;
-    fread(payloadData, 1, lengthBytes, _rtpFile);
+    EXPECT_GT(fread(payloadData, 1, lengthBytes, _rtpFile), 0u);
     if (feof(_rtpFile))
     {
         _rtpEOF = true;
