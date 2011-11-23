@@ -401,6 +401,7 @@ private:
     bool                    _receivedStereo;
     void*                   _masterSlaveInfo;
     AudioFrame::VADActivity _previousAudioActivity;
+    WebRtc_Word32           _extraDelay;
 
     CriticalSectionWrapper* _callbackCritSect;
 };

@@ -44,6 +44,7 @@ _numSlaves(0),
 _receivedStereo(false),
 _masterSlaveInfo(NULL),
 _previousAudioActivity(AudioFrame::kVadUnknown),
+_extraDelay(0),
 _callbackCritSect(CriticalSectionWrapper::CreateCriticalSection())
 {
     for(int n = 0; n < MAX_NUM_SLAVE_NETEQ + 1; n++)
@@ -333,6 +334,7 @@ ACMNetEQ::SetExtraDelay(
             return -1;
         }
     }
+    _extraDelay = delayInMS;
     return 0;
 }
 
@@ -1186,16 +1188,8 @@ ACMNetEQ::AddSlave(
         _numSlaves = 1;
         _isInitialized[slaveIdx] = true;
 
-        // Set Slave delay as Master delay
-        WebRtc_UWord16 currentDelayMs;
-        if(WebRtcNetEQ_GetCurrentDelay(_inst[0], &currentDelayMs) < 0)
-        {
-            LogError("GetCurrentDelay", 0);
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
-                "AddSlave: AddSlave Failed, Could not Get Current Delay from Master.");
-            return -1;
-        }
-        if(WebRtcNetEQ_SetExtraDelay(_inst[slaveIdx], currentDelayMs) < 0)
+        // Set Slave delay as all other instances.
+        if(WebRtcNetEQ_SetExtraDelay(_inst[slaveIdx], _extraDelay) < 0)
         {
             LogError("SetExtraDelay", slaveIdx);
             WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
