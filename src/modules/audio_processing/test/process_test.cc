@@ -567,7 +567,7 @@ void void_main(int argc, char* argv[]) {
         if (verbose) {
           printf("Init at frame: %d (primary), %d (reverse)\n",
               primary_count, reverse_count);
-          printf("  Sample rate: %d Hz\n", sample_rate_hz);
+          printf("  Sample rate: %d Hz\n", msg.sample_rate());
           printf("  Primary channels: %d (in), %d (out)\n",
                  msg.num_input_channels(),
                  msg.num_output_channels());
