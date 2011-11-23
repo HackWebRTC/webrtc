@@ -79,7 +79,8 @@ TEST_F(TestVP8MakeDecodable, TwoPartitionsOneLoss) {
   VCMPacket* packet = new VCMPacket(packet_buffer_, kPacketBufferSize,
                                     packet_header_);
   session_.SetStartSeqNumber(packet_header_.header.sequenceNumber);
-  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_), kPacketBufferSize);
+  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_, false, 0),
+            kPacketBufferSize);
   delete packet;
 
   packet_header_.type.Video.isFirstPacket = false;
@@ -89,7 +90,8 @@ TEST_F(TestVP8MakeDecodable, TwoPartitionsOneLoss) {
   packet_header_.header.sequenceNumber += 2;
   FillPacket(2);
   packet = new VCMPacket(packet_buffer_, kPacketBufferSize, packet_header_);
-  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_), kPacketBufferSize);
+  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_, false, 0),
+            kPacketBufferSize);
   delete packet;
 
   packet_header_.type.Video.isFirstPacket = false;
@@ -99,7 +101,8 @@ TEST_F(TestVP8MakeDecodable, TwoPartitionsOneLoss) {
   packet_header_.header.sequenceNumber += 1;
   FillPacket(3);
   packet = new VCMPacket(packet_buffer_, kPacketBufferSize, packet_header_);
-  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_), kPacketBufferSize);
+  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_, false, 0),
+            kPacketBufferSize);
   delete packet;
 
   // One packet should be removed (end of partition 0).
@@ -125,7 +128,8 @@ TEST_F(TestVP8MakeDecodable, TwoPartitionsOneLoss2) {
   VCMPacket* packet = new VCMPacket(packet_buffer_, kPacketBufferSize,
                                     packet_header_);
   session_.SetStartSeqNumber(packet_header_.header.sequenceNumber);
-  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_), kPacketBufferSize);
+  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_, false, 0)
+            , kPacketBufferSize);
   delete packet;
 
   packet_header_.type.Video.isFirstPacket = false;
@@ -135,7 +139,8 @@ TEST_F(TestVP8MakeDecodable, TwoPartitionsOneLoss2) {
   packet_header_.header.sequenceNumber += 1;
   FillPacket(2);
   packet = new VCMPacket(packet_buffer_, kPacketBufferSize, packet_header_);
-  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_), kPacketBufferSize);
+  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_, false, 0),
+            kPacketBufferSize);
   delete packet;
 
   packet_header_.type.Video.isFirstPacket = false;
@@ -145,7 +150,8 @@ TEST_F(TestVP8MakeDecodable, TwoPartitionsOneLoss2) {
   packet_header_.header.sequenceNumber += 1;
   FillPacket(3);
   packet = new VCMPacket(packet_buffer_, kPacketBufferSize, packet_header_);
-  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_), kPacketBufferSize);
+  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_, false, 0),
+            kPacketBufferSize);
   delete packet;
 
   packet_header_.type.Video.isFirstPacket = false;
@@ -155,7 +161,8 @@ TEST_F(TestVP8MakeDecodable, TwoPartitionsOneLoss2) {
   packet_header_.header.sequenceNumber += 2;
   FillPacket(5);
   packet = new VCMPacket(packet_buffer_, kPacketBufferSize, packet_header_);
-  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_), kPacketBufferSize);
+  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_, false, 0),
+            kPacketBufferSize);
   delete packet;
 
   // One packet should be removed (end of partition 2), 3 left.
@@ -181,7 +188,8 @@ TEST_F(TestVP8MakeDecodable, TwoPartitionsNoLossWrap) {
   VCMPacket* packet = new VCMPacket(packet_buffer_, kPacketBufferSize,
                                     packet_header_);
   session_.SetStartSeqNumber(packet_header_.header.sequenceNumber);
-  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_), kPacketBufferSize);
+  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_, false, 0),
+            kPacketBufferSize);
   delete packet;
 
   packet_header_.type.Video.isFirstPacket = false;
@@ -191,7 +199,8 @@ TEST_F(TestVP8MakeDecodable, TwoPartitionsNoLossWrap) {
   packet_header_.header.sequenceNumber += 1;
   FillPacket(1);
   packet = new VCMPacket(packet_buffer_, kPacketBufferSize, packet_header_);
-  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_), kPacketBufferSize);
+  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_, false, 0),
+            kPacketBufferSize);
   delete packet;
 
   packet_header_.type.Video.isFirstPacket = false;
@@ -201,7 +210,8 @@ TEST_F(TestVP8MakeDecodable, TwoPartitionsNoLossWrap) {
   packet_header_.header.sequenceNumber += 1;
   FillPacket(2);
   packet = new VCMPacket(packet_buffer_, kPacketBufferSize, packet_header_);
-  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_), kPacketBufferSize);
+  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_, false, 0),
+            kPacketBufferSize);
   delete packet;
 
   packet_header_.type.Video.isFirstPacket = false;
@@ -211,7 +221,8 @@ TEST_F(TestVP8MakeDecodable, TwoPartitionsNoLossWrap) {
   packet_header_.header.sequenceNumber += 1;
   FillPacket(3);
   packet = new VCMPacket(packet_buffer_, kPacketBufferSize, packet_header_);
-  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_), kPacketBufferSize);
+  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_, false, 0),
+            kPacketBufferSize);
   delete packet;
 
   // No packet should be removed.
@@ -237,7 +248,8 @@ TEST_F(TestVP8MakeDecodable, TwoPartitionsLossWrap) {
   VCMPacket* packet = new VCMPacket(packet_buffer_, kPacketBufferSize,
                                     packet_header_);
   session_.SetStartSeqNumber(packet_header_.header.sequenceNumber);
-  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_), kPacketBufferSize);
+  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_, false, 0),
+            kPacketBufferSize);
   delete packet;
 
   packet_header_.type.Video.isFirstPacket = false;
@@ -247,7 +259,8 @@ TEST_F(TestVP8MakeDecodable, TwoPartitionsLossWrap) {
   packet_header_.header.sequenceNumber += 1;
   FillPacket(1);
   packet = new VCMPacket(packet_buffer_, kPacketBufferSize, packet_header_);
-  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_), kPacketBufferSize);
+  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_, false, 0),
+            kPacketBufferSize);
   delete packet;
 
   packet_header_.type.Video.isFirstPacket = false;
@@ -257,7 +270,8 @@ TEST_F(TestVP8MakeDecodable, TwoPartitionsLossWrap) {
   packet_header_.header.sequenceNumber += 1;
   FillPacket(2);
   packet = new VCMPacket(packet_buffer_, kPacketBufferSize, packet_header_);
-  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_), kPacketBufferSize);
+  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_, false, 0),
+            kPacketBufferSize);
   delete packet;
 
   packet_header_.type.Video.isFirstPacket = false;
@@ -267,7 +281,8 @@ TEST_F(TestVP8MakeDecodable, TwoPartitionsLossWrap) {
   packet_header_.header.sequenceNumber += 2;
   FillPacket(3);
   packet = new VCMPacket(packet_buffer_, kPacketBufferSize, packet_header_);
-  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_), kPacketBufferSize);
+  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_, false, 0),
+            kPacketBufferSize);
   delete packet;
 
   // One packet should be removed from the last partition
@@ -294,7 +309,8 @@ TEST_F(TestVP8MakeDecodable, ThreePartitionsOneMissing) {
   VCMPacket* packet = new VCMPacket(packet_buffer_, kPacketBufferSize,
                                     packet_header_);
   session_.SetStartSeqNumber(packet_header_.header.sequenceNumber);
-  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_), kPacketBufferSize);
+  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_, false, 0),
+            kPacketBufferSize);
   delete packet;
 
   packet_header_.type.Video.isFirstPacket = false;
@@ -304,7 +320,8 @@ TEST_F(TestVP8MakeDecodable, ThreePartitionsOneMissing) {
   packet_header_.header.sequenceNumber += 1;
   FillPacket(2);
   packet = new VCMPacket(packet_buffer_, kPacketBufferSize, packet_header_);
-  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_), kPacketBufferSize);
+  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_, false, 0),
+            kPacketBufferSize);
   delete packet;
 
   packet_header_.type.Video.isFirstPacket = false;
@@ -314,7 +331,8 @@ TEST_F(TestVP8MakeDecodable, ThreePartitionsOneMissing) {
   packet_header_.header.sequenceNumber += 3;
   FillPacket(5);
   packet = new VCMPacket(packet_buffer_, kPacketBufferSize, packet_header_);
-  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_), kPacketBufferSize);
+  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_, false, 0),
+            kPacketBufferSize);
   delete packet;
 
   packet_header_.type.Video.isFirstPacket = false;
@@ -324,7 +342,8 @@ TEST_F(TestVP8MakeDecodable, ThreePartitionsOneMissing) {
   packet_header_.header.sequenceNumber += 1;
   FillPacket(6);
   packet = new VCMPacket(packet_buffer_, kPacketBufferSize, packet_header_);
-  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_), kPacketBufferSize);
+  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_, false, 0),
+            kPacketBufferSize);
   delete packet;
 
   // No packet should be removed.
@@ -350,7 +369,8 @@ TEST_F(TestVP8MakeDecodable, ThreePartitionsLossInSecond) {
   VCMPacket* packet = new VCMPacket(packet_buffer_, kPacketBufferSize,
                                     packet_header_);
   session_.SetStartSeqNumber(packet_header_.header.sequenceNumber);
-  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_), kPacketBufferSize);
+  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_, false, 0),
+            kPacketBufferSize);
   delete packet;
 
   packet_header_.type.Video.isFirstPacket = false;
@@ -360,7 +380,8 @@ TEST_F(TestVP8MakeDecodable, ThreePartitionsLossInSecond) {
   packet_header_.header.sequenceNumber += 1;
   FillPacket(2);
   packet = new VCMPacket(packet_buffer_, kPacketBufferSize, packet_header_);
-  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_), kPacketBufferSize);
+  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_, false, 0),
+            kPacketBufferSize);
   delete packet;
 
   packet_header_.type.Video.isFirstPacket = false;
@@ -370,7 +391,8 @@ TEST_F(TestVP8MakeDecodable, ThreePartitionsLossInSecond) {
   packet_header_.header.sequenceNumber += 2;
   FillPacket(4);
   packet = new VCMPacket(packet_buffer_, kPacketBufferSize, packet_header_);
-  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_), kPacketBufferSize);
+  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_, false, 0),
+            kPacketBufferSize);
   delete packet;
 
   packet_header_.type.Video.isFirstPacket = false;
@@ -380,7 +402,8 @@ TEST_F(TestVP8MakeDecodable, ThreePartitionsLossInSecond) {
   packet_header_.header.sequenceNumber += 1;
   FillPacket(5);
   packet = new VCMPacket(packet_buffer_, kPacketBufferSize, packet_header_);
-  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_), kPacketBufferSize);
+  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_, false, 0),
+            kPacketBufferSize);
   delete packet;
 
   packet_header_.type.Video.isFirstPacket = false;
@@ -390,7 +413,8 @@ TEST_F(TestVP8MakeDecodable, ThreePartitionsLossInSecond) {
   packet_header_.header.sequenceNumber += 1;
   FillPacket(6);
   packet = new VCMPacket(packet_buffer_, kPacketBufferSize, packet_header_);
-  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_), kPacketBufferSize);
+  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_, false, 0),
+            kPacketBufferSize);
   delete packet;
 
   packet_header_.type.Video.isFirstPacket = false;
@@ -400,7 +424,8 @@ TEST_F(TestVP8MakeDecodable, ThreePartitionsLossInSecond) {
   packet_header_.header.sequenceNumber += 1;
   FillPacket(7);
   packet = new VCMPacket(packet_buffer_, kPacketBufferSize, packet_header_);
-  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_), kPacketBufferSize);
+  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_, false, 0),
+            kPacketBufferSize);
   delete packet;
 
   // 2 partitions left. 2 packets removed from second partition
@@ -426,7 +451,8 @@ TEST_F(TestVP8MakeDecodable, AggregationOverTwoPackets) {
   VCMPacket* packet = new VCMPacket(packet_buffer_, kPacketBufferSize,
                                     packet_header_);
   session_.SetStartSeqNumber(packet_header_.header.sequenceNumber);
-  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_), kPacketBufferSize);
+  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_, false, 0),
+            kPacketBufferSize);
   delete packet;
 
   packet_header_.type.Video.isFirstPacket = false;
@@ -436,7 +462,8 @@ TEST_F(TestVP8MakeDecodable, AggregationOverTwoPackets) {
   packet_header_.header.sequenceNumber += 1;
   FillPacket(1);
   packet = new VCMPacket(packet_buffer_, kPacketBufferSize, packet_header_);
-  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_), kPacketBufferSize);
+  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_, false, 0),
+            kPacketBufferSize);
   delete packet;
 
   packet_header_.type.Video.isFirstPacket = false;
@@ -446,7 +473,8 @@ TEST_F(TestVP8MakeDecodable, AggregationOverTwoPackets) {
   packet_header_.header.sequenceNumber += 1;
   FillPacket(2);
   packet = new VCMPacket(packet_buffer_, kPacketBufferSize, packet_header_);
-  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_), kPacketBufferSize);
+  ASSERT_EQ(session_.InsertPacket(*packet, frame_buffer_, false, 0),
+            kPacketBufferSize);
   delete packet;
 
   // One packet should be removed (end of partition 0).
