@@ -10,338 +10,209 @@
 
 #include "vie_autotest_main.h"
 
+#include "gtest/gtest.h"
 #include "vie_autotest_window_manager_interface.h"
 #include "vie_window_creator.h"
 #include "vie_autotest.h"
 
+static const std::string kStandardTest = "ViEStandardIntegrationTest";
+static const std::string kExtendedTest = "ViEExtendedIntegrationTest";
+static const std::string kApiTest = "ViEApiIntegrationTest";
+
 ViEAutoTestMain::ViEAutoTestMain()
-    : _answers(),
-      _answersCount(0),
-      _useAnswerFile() {
+: answers_(),
+  answers_count_(0),
+  use_answer_file_() {
+
+  index_to_test_method_map_[1] = "RunsBaseTestWithoutErrors";
+  index_to_test_method_map_[2] = "RunsCaptureTestWithoutErrors";
+  index_to_test_method_map_[3] = "RunsCodecTestWithoutErrors";
+  index_to_test_method_map_[4] = "RunsEncryptionTestWithoutErrors";
+  index_to_test_method_map_[5] = "RunsFileTestWithoutErrors";
+  index_to_test_method_map_[6] = "RunsImageProcessTestWithoutErrors";
+  index_to_test_method_map_[7] = "RunsNetworkTestWithoutErrors";
+  index_to_test_method_map_[8] = "RunsRenderTestWithoutErrors";
+  index_to_test_method_map_[9] = "RunsRtpRtcpTestWithoutErrors";
+}
+
+int ViEAutoTestMain::AskUserForTestCase() {
+  int choice;
+  std::string answer;
+
+  do {
+    ViETest::Log("\nSpecific tests:");
+    ViETest::Log("\t 0. Go back to previous menu.");
+
+    // Print all test method choices. Assumes that map sorts on its key.
+    int last_valid_choice;
+    std::map<int, std::string>::const_iterator iterator;
+    for (iterator = index_to_test_method_map_.begin();
+        iterator != index_to_test_method_map_.end();
+        ++iterator) {
+      ViETest::Log("\t %d. %s", iterator->first, iterator->second.c_str());
+      last_valid_choice = iterator->first;
+    }
+
+    ViETest::Log("Choose specific test:");
+    choice = AskUserForNumber(0, last_valid_choice);
+  } while (choice == kInvalidChoice);
+
+  return choice;
+}
+
+int ViEAutoTestMain::AskUserForNumber(int min_allowed, int max_allowed) {
+  int result;
+  if (use_answer_file_) {
+    assert(0 && "Answer files are not implemented");
+    return kInvalidChoice;
+  }
+
+  if (scanf("%d", &result) <= 0) {
+    ViETest::Log("\nPlease enter a number instead, then hit enter.");
+    getchar();
+    return kInvalidChoice;
+  }
+  getchar();  // Consume enter key.
+
+  if (result < min_allowed || result > max_allowed) {
+    ViETest::Log("%d-%d are valid choices. Please try again.", min_allowed,
+                 max_allowed);
+    return kInvalidChoice;
+  }
+
+  return result;
+}
+
+int ViEAutoTestMain::RunTestMatching(const std::string test_case,
+                                     const std::string test_method) {
+  testing::FLAGS_gtest_filter = test_case + "." + test_method;
+  return RUN_ALL_TESTS();
+}
+
+int ViEAutoTestMain::RunSpecificTestCaseIn(const std::string test_case_name)
+{
+  // If user says 0, it means don't run anything.
+  int specific_choice = AskUserForTestCase();
+  if (specific_choice != 0){
+    return RunTestMatching(test_case_name,
+                           index_to_test_method_map_[specific_choice]);
+  }
+  return 0;
+}
+
+int ViEAutoTestMain::RunSpecialTestCase(int choice) {
+  // 7-9 don't run in GTest and need to initialize by themselves.
+  assert(choice >= 7 && choice <= 9);
+
+  // Create the windows
+  ViEWindowCreator windowCreator;
+  ViEAutoTestWindowManagerInterface* windowManager =
+      windowCreator.CreateTwoWindows();
+
+  // Create the test cases
+  ViEAutoTest vieAutoTest(windowManager->GetWindow1(),
+                          windowManager->GetWindow2());
+
+  int errors;
+  switch (choice) {
+    case 7: errors = vieAutoTest.ViELoopbackCall();  break;
+    case 8: errors = vieAutoTest.ViECustomCall();    break;
+    case 9: errors = vieAutoTest.ViESimulcastCall(); break;
+  }
+
+  windowCreator.TerminateWindows();
+  return errors;
 }
 
 bool ViEAutoTestMain::BeginOSIndependentTesting() {
-    // Create the windows
-    ViEWindowCreator windowCreator;
-    ViEAutoTestWindowManagerInterface* windowManager =
-        windowCreator.CreateTwoWindows();
 
-    // Create the test cases
-    ViEAutoTest
-        vieAutoTest(windowManager->GetWindow1(),
-                    windowManager->GetWindow2(),
-                    ViETest::kUseAssertsForTestErrors);
+  ViETest::Log(" ============================== ");
+  ViETest::Log("    WebRTC ViE 3.x Autotest     ");
+  ViETest::Log(" ============================== \n");
 
-    ViETest::Log(" ============================== ");
-    ViETest::Log("    WebRTC ViE 3.x Autotest     ");
-    ViETest::Log(" ============================== \n");
+  int choice = 0;
+  int errors = 0;
+  do {
+    ViETest::Log("Test types: ");
+    ViETest::Log("\t 0. Quit");
+    ViETest::Log("\t 1. All standard tests (delivery test)");
+    ViETest::Log("\t 2. All API tests");
+    ViETest::Log("\t 3. All extended test");
+    ViETest::Log("\t 4. Specific standard test");
+    ViETest::Log("\t 5. Specific API test");
+    ViETest::Log("\t 6. Specific extended test");
+    ViETest::Log("\t 7. Simple loopback call");
+    ViETest::Log("\t 8. Custom configure a call");
+    ViETest::Log("\t 9. Simulcast in loopback");
+    ViETest::Log("Select type of test:");
 
-    int testType = 0;
-    int testErrors = 0;
-    do {
-        ViETest::Log("Test types: ");
-        ViETest::Log("\t 0. Quit");
-        ViETest::Log("\t 1. All standard tests (delivery test)");
-        ViETest::Log("\t 2. All API tests");
-        ViETest::Log("\t 3. All extended test");
-        ViETest::Log("\t 4. Specific standard test");
-        ViETest::Log("\t 5. Specific API test");
-        ViETest::Log("\t 6. Specific extended test");
-        ViETest::Log("\t 7. Simple loopback call");
-        ViETest::Log("\t 8. Custom configure a call");
-        ViETest::Log("\t 9. Simulcast in loopback");
-        ViETest::Log("Select type of test: ");
-
-        if (_useAnswerFile) {
-            // GetNextAnswer(str);
-        } else {
-            if (scanf("%d", &testType) <= 0) {
-                ViETest::Log("ERROR: unable to read selection. Try again\n");
-                testType = -1;
-                getchar();
-                continue;
-            }
-            getchar();
-        }
-        ViETest::Log("");
-
-        if (testType < 0 || testType > 8) {
-            ViETest::Log("ERROR: Invalid selection. Try again\n");
-            continue;
-        }
-
-        switch (testType) {
-            case 0:
-                break;
-
-            case 1:
-            {
-                int deliveryErrors = testErrors;
-                testErrors += vieAutoTest.ViEStandardTest();
-                if (testErrors == deliveryErrors) {
-                    // No errors found in delivery test, create delivery
-                    ViETest::Log("Standard/delivery passed.");
-                } else {
-                    // Didn't pass, don't create delivery files
-                    ViETest::Log("\nStandard/delivery test failed!\n");
-                }
-                break;
-            }
-            case 2:
-                testErrors += vieAutoTest.ViEAPITest();
-                break;
-
-            case 3:
-                testErrors += vieAutoTest.ViEExtendedTest();
-                break;
-
-            case 4:  // Specific Standard
-                testType = GetClassTestSelection();
-
-                switch (testType) {
-                    case 1:  // base
-                        testErrors += vieAutoTest.ViEBaseStandardTest();
-                        break;
-
-                    case 2:  // capture
-                        testErrors += vieAutoTest.ViECaptureStandardTest();
-                        break;
-
-                    case 3:  // codec
-                        testErrors += vieAutoTest.ViECodecStandardTest();
-                        break;
-
-                    case 5:  // encryption
-                        testErrors += vieAutoTest.ViEEncryptionStandardTest();
-                        break;
-
-                    case 6:  // file
-                        testErrors += vieAutoTest.ViEFileStandardTest();
-                        break;
-
-                    case 7:  // image process
-                        testErrors += vieAutoTest.ViEImageProcessStandardTest();
-                        break;
-
-                    case 8:  // network
-                        testErrors += vieAutoTest.ViENetworkStandardTest();
-                        break;
-
-                    case 9:  // Render
-                        testErrors += vieAutoTest.ViERenderStandardTest();
-                        break;
-
-                    case 10:  // RTP/RTCP
-                        testErrors += vieAutoTest.ViERtpRtcpStandardTest();
-                        break;
-                    case 11:
-                        break;
-
-                    default:
-                        break;
-                }
-                break;
-
-            case 5:  // specific API
-                testType = GetClassTestSelection();
-
-                switch (testType) {
-                    case 1:  // base
-                        testErrors += vieAutoTest.ViEBaseAPITest();
-                        break;
-
-                    case 2:  // capture
-                        testErrors += vieAutoTest.ViECaptureAPITest();
-                        break;
-
-                    case 3:  // codec
-                        testErrors += vieAutoTest.ViECodecAPITest();
-                        break;
-
-                    case 5:  // encryption
-                        testErrors += vieAutoTest.ViEEncryptionAPITest();
-                        break;
-
-                    case 6:  // file
-                        testErrors += vieAutoTest.ViEFileAPITest();
-                        break;
-
-                    case 7:  // image process
-                        testErrors += vieAutoTest.ViEImageProcessAPITest();
-                        break;
-
-                    case 8:  // network
-                        testErrors += vieAutoTest.ViENetworkAPITest();
-                        break;
-
-                    case 9:  // Render
-                        testErrors += vieAutoTest.ViERenderAPITest();
-                        break;
-
-                    case 10:  // RTP/RTCP
-                        testErrors += vieAutoTest.ViERtpRtcpAPITest();
-                        break;
-                    case 11:
-                        break;
-                    default:
-                        break;
-                }
-                break;
-            case 6:  // specific extended
-                testType = GetClassTestSelection();
-
-                switch (testType) {
-                    case 1:  // base
-                        testErrors += vieAutoTest.ViEBaseExtendedTest();
-                        break;
-
-                    case 2:  // capture
-                        testErrors += vieAutoTest.ViECaptureExtendedTest();
-                        break;
-
-                    case 3:  // codec
-                        testErrors += vieAutoTest.ViECodecExtendedTest();
-                        break;
-
-                    case 5:  // encryption
-                        testErrors += vieAutoTest.ViEEncryptionExtendedTest();
-                        break;
-
-                    case 6:  // file
-                        testErrors += vieAutoTest.ViEFileExtendedTest();
-                        break;
-
-                    case 7:  // image process
-                        testErrors += vieAutoTest.ViEImageProcessExtendedTest();
-                        break;
-
-                    case 8:  // network
-                        testErrors += vieAutoTest.ViENetworkExtendedTest();
-                        break;
-
-                    case 9:  // Render
-                        testErrors += vieAutoTest.ViERenderExtendedTest();
-                        break;
-
-                    case 10:  // RTP/RTCP
-                        testErrors += vieAutoTest.ViERtpRtcpExtendedTest();
-                        break;
-                    case 11:
-                        break;
-
-                    default:
-                        break;
-                }
-                break;
-            case 7:
-                testErrors += vieAutoTest.ViELoopbackCall();
-                break;
-            case 8:
-                testErrors += vieAutoTest.ViECustomCall();
-                break;
-            case 9:
-                testErrors += vieAutoTest.ViESimulcastCall();
-                break;
-            default:
-                ViETest::Log("ERROR: Invalid selection. Try again\n");
-                continue;
-        }
-    } while (testType != 0);
-
-    windowCreator.TerminateWindows();
-
-    if (testErrors) {
-        ViETest::Log("Test done with errors, see ViEAutotestLog.txt for test "
-                     "result.\n");
-    } else {
-        ViETest::Log("Test done without errors, see ViEAutotestLog.txt for "
-                     "test result.\n");
+    choice = AskUserForNumber(0, 9);
+    if (choice == kInvalidChoice) {
+      continue;
     }
-    printf("Press enter to quit...");
-    char c;
-    while ((c = getchar()) != '\n' && c != EOF) {
-        /* discard */
+    switch (choice) {
+      case 0:                                                 break;
+      case 1:  errors = RunTestMatching(kStandardTest, "*");  break;
+      case 2:  errors = RunTestMatching(kApiTest,      "*");  break;
+      case 3:  errors = RunTestMatching(kExtendedTest, "*");  break;
+      case 4:  errors = RunSpecificTestCaseIn(kStandardTest); break;
+      case 5:  errors = RunSpecificTestCaseIn(kApiTest);      break;
+      case 6:  errors = RunSpecificTestCaseIn(kExtendedTest); break;
+      default: errors = RunSpecialTestCase(choice);           break;
     }
+  } while (choice != 0);
 
-    return true;
-}
-
-int ViEAutoTestMain::GetClassTestSelection() {
-    int testType = 0;
-    std::string answer;
-
-    while (1) {
-        ViETest::Log("Choose specific test: ");
-        ViETest::Log("\t 1. Base ");
-        ViETest::Log("\t 2. Capture");
-        ViETest::Log("\t 3. Codec");
-        ViETest::Log("\t 5. Encryption");
-        ViETest::Log("\t 6. File");
-        ViETest::Log("\t 7. Image Process");
-        ViETest::Log("\t 8. Network");
-        ViETest::Log("\t 9. Render");
-        ViETest::Log("\t 10. RTP/RTCP");
-        ViETest::Log("\t 11. Go back to previous menu");
-        ViETest::Log("Select type of test: ");
-
-        int items_read = 0;
-        if (_useAnswerFile) {
-            // GetNextAnswer(answer);
-        } else {
-            items_read = scanf("%d", &testType);
-            getchar();
-        }
-        ViETest::Log("\n");
-        if (items_read == 1 && testType >= 1 && testType <= 13) {
-            return testType;
-        }
-        ViETest::Log("ERROR: Invalid selection. Try again");
-    }
-
-    return -1;
+  if (errors) {
+    ViETest::Log("Test done with errors, see ViEAutotestLog.txt for test "
+        "result.\n");
+  } else {
+    ViETest::Log("Test done without errors, see ViEAutotestLog.txt for "
+        "test result.\n");
+  }
+  return true;
 }
 
 bool ViEAutoTestMain::GetAnswer(int index, std::string* answer) {
-    if (!_useAnswerFile || index > _answersCount) {
-        return false;
-    }
-    *answer = _answers[index];
-    return true;
+  if (!use_answer_file_ || index > answers_count_) {
+    return false;
+  }
+  *answer = answers_[index];
+  return true;
 }
 
 bool ViEAutoTestMain::IsUsingAnswerFile() {
-    return _useAnswerFile;
+  return use_answer_file_;
 }
 
-// TODO(unknown): write without stl
+// TODO(unknown): implement?
 bool ViEAutoTestMain::UseAnswerFile(const char* fileName) {
-    return false;
-    /*
-     _useAnswerFile = false;
+  return false;
+/*
+     use_answer_file_ = false;
 
      ViETest::Log("Opening answer file:  %s...", fileName);
 
      ifstream answerFile(fileName);
      if(!answerFile)
      {
-     ViETest::Log("failed! X(\n");
-     return false;
+       ViETest::Log("failed! X(\n");
+       return false;
      }
 
-     _answersCount = 1;
-     _answersIndex = 1;
+     answers_count_ = 1;
+     answers_index_ = 1;
      char lineContent[128] = "";
      while(!answerFile.eof())
      {
-     answerFile.getline(lineContent, 128);
-     _answers[_answersCount++] = string(lineContent);
+       answerFile.getline(lineContent, 128);
+       answers_[answers_Count++] = string(lineContent);
      }
      answerFile.close();
 
      cout << "Success :)" << endl << endl;
 
-     _useAnswerFile = true;
+     use_answer_file_ = true;
 
-     return _useAnswerFile;
-     */
+     return use_answer_file_;
+*/
 }

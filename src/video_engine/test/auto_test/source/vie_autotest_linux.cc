@@ -23,6 +23,8 @@
 #include "critical_section_wrapper.h"
 #include "thread_wrapper.h"
 
+DEFINE_bool(automated, false, "Run Video engine tests in noninteractive mode.");
+
 ViEAutoTestWindowManager::ViEAutoTestWindowManager()
     : _hdsp1(NULL),
       _hdsp2(NULL) {
@@ -136,24 +138,24 @@ bool ViEAutoTestWindowManager::SetTopmostWindow() {
 }
 
 int main(int argc, char** argv) {
-  // This command-line flag is a transitory solution until we
-  // manage to rewrite all tests to GUnit tests. This flag is
-  // currently only supported in Linux.
-  if (argc > 1 && std::string(argv[1]) == "--automated") {
-    // Let GTest and GFlags handle flags from now on
-    argc -= 1;
-    argv += 1;
+  // Initialize logging
+  ViETest::Init();
+  // Initialize the testing framework
+  testing::InitGoogleTest(&argc, argv);
+  // Parse remaining flags:
+  google::ParseCommandLineFlags(&argc, &argv, true);
 
-    // Initialize the testing framework
-    testing::InitGoogleTest(&argc, argv);
-    // Parse remaining flags:
-    google::ParseCommandLineFlags(&argc, &argv, true);
-    // Run tests
-    return RUN_ALL_TESTS();
+  int result;
+  if (FLAGS_automated) {
+    // Run in automated mode
+    result = RUN_ALL_TESTS();
+  } else {
+    // Run in interactive mode
+    ViEAutoTestMain autoTest;
+    autoTest.UseAnswerFile("answers.txt");
+    result = autoTest.BeginOSIndependentTesting();
   }
 
-  // Default: run in classic interactive mode.
-  ViEAutoTestMain autoTest;
-  autoTest.UseAnswerFile("answers.txt");
-  return autoTest.BeginOSIndependentTesting();
+  ViETest::Terminate();
+  return result;
 }

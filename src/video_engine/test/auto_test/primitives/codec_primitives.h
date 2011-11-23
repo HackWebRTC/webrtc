@@ -27,7 +27,6 @@ const int kDoNotForceResolution = 0;
 // be seen as a end-user-visible quality measure - it is more a sanity check
 // that the codec at least gets some frames through.
 void TestCodecs(const TbInterfaces& interfaces,
-                int & number_of_errors,
                 int capture_id,
                 int video_channel,
                 int forced_codec_width,
@@ -39,7 +38,6 @@ void TestCodecs(const TbInterfaces& interfaces,
 void SetSendCodec(webrtc::VideoCodecType of_type,
                   webrtc::ViECodec* codec_interface,
                   int video_channel,
-                  int* number_of_errors,
                   int forced_codec_width,
                   int forced_codec_height);
 

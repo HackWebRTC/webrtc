@@ -42,68 +42,73 @@
 class TbInterfaces;
 class ViEToFileRenderer;
 
+// This class provides a bunch of methods, implemented across several .cc
+// files, which runs tests on the video engine. All methods will report
+// errors using standard googletest macros, except when marked otherwise.
 class ViEAutoTest
 {
 public:
-    ViEAutoTest(void* window1, void* window2,
-                ViETest::TestErrorMode testErrorMode);
+    ViEAutoTest(void* window1, void* window2);
     ~ViEAutoTest();
 
-    int ViEStandardTest();
-    int ViEExtendedTest();
-    int ViEAPITest();
+    // These three are special and should not be run in a googletest harness.
+    // They keep track of their errors by themselves and return the number
+    // of errors.
     int ViELoopbackCall();
     int ViESimulcastCall();
-
-    // custom call and helper functions
     int ViECustomCall();
 
+    // All following functions are meant to run in a googletest harness.
+    void ViEStandardTest();
+    void ViEExtendedTest();
+    void ViEAPITest();
+
     // vie_autotest_base.cc
-    int ViEBaseStandardTest();
-    int ViEBaseExtendedTest();
-    int ViEBaseAPITest();
+    void ViEBaseStandardTest();
+    void ViEBaseExtendedTest();
+    void ViEBaseAPITest();
 
     // vie_autotest_capture.cc
-    int ViECaptureStandardTest();
-    int ViECaptureExtendedTest();
-    int ViECaptureAPITest();
-    int ViECaptureExternalCaptureTest();
+    void ViECaptureStandardTest();
+    void ViECaptureExtendedTest();
+    void ViECaptureAPITest();
+    void ViECaptureExternalCaptureTest();
 
     // vie_autotest_codec.cc
-    int ViECodecStandardTest();
-    int ViECodecExtendedTest();
-    int ViECodecExternalCodecTest();
-    int ViECodecAPITest();
+    void ViECodecStandardTest();
+    void ViECodecExtendedTest();
+    void ViECodecExternalCodecTest();
+    void ViECodecAPITest();
 
     // vie_autotest_encryption.cc
-    int ViEEncryptionStandardTest();
-    int ViEEncryptionExtendedTest();
-    int ViEEncryptionAPITest();
+    void ViEEncryptionStandardTest();
+    void ViEEncryptionExtendedTest();
+    void ViEEncryptionAPITest();
 
     // vie_autotest_file.ccs
-    int ViEFileStandardTest();
-    int ViEFileExtendedTest();
-    int ViEFileAPITest();
+    void ViEFileStandardTest();
+    void ViEFileExtendedTest();
+    void ViEFileAPITest();
 
     // vie_autotest_image_process.cc
-    int ViEImageProcessStandardTest();
-    int ViEImageProcessExtendedTest();
-    int ViEImageProcessAPITest();
+    void ViEImageProcessStandardTest();
+    void ViEImageProcessExtendedTest();
+    void ViEImageProcessAPITest();
 
     // vie_autotest_network.cc
-    int ViENetworkStandardTest();
-    int ViENetworkExtendedTest();
-    int ViENetworkAPITest();
+    void ViENetworkStandardTest();
+    void ViENetworkExtendedTest();
+    void ViENetworkAPITest();
 
     // vie_autotest_render.cc
-    int ViERenderStandardTest();
-    int ViERenderExtendedTest();
-    int ViERenderAPITest();
+    void ViERenderStandardTest();
+    void ViERenderExtendedTest();
+    void ViERenderAPITest();
 
     // vie_autotest_rtp_rtcp.cc
-    int ViERtpRtcpStandardTest();
-    int ViERtpRtcpExtendedTest();
-    int ViERtpRtcpAPITest();
+    void ViERtpRtcpStandardTest();
+    void ViERtpRtcpExtendedTest();
+    void ViERtpRtcpAPITest();
 
 private:
     void PrintAudioCodec(const webrtc::CodecInst audioCodec);

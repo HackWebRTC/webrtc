@@ -12,7 +12,7 @@
 #define WEBRTC_VIDEO_ENGINE_MAIN_INTERFACE_VIE_ERRORS_H_
 
 
-enum ViEErrors {     
+enum ViEErrors {
 
     //ViEBase
     kViENotInitialized = 12000,        // Init has not been called successfully.
@@ -45,7 +45,7 @@ enum ViEErrors {
 
     //ViECapture
     kViECaptureDeviceAlreadyConnected = 12300,  // ConnectCaptureDevice - A capture device has already been connected to this video channel.
-    kViECaptureDeviceDoesnNotExist,             // No capture device exist with the provided capture id or unique name.
+    kViECaptureDeviceDoesNotExist,              // No capture device exist with the provided capture id or unique name.
     kViECaptureDeviceInvalidChannelId,          // ConnectCaptureDevice, DisconnectCaptureDevice- No Channel exist with the provided channel id.
     kViECaptureDeviceNotConnected,              // DisconnectCaptureDevice- No capture device is connected to the channel.
     kViECaptureDeviceNotStarted,                // Stop- The capture device is not started.

@@ -167,7 +167,7 @@ int ViEAutoTest::ViECustomCall()
                                        "ERROR: %s at line %d", __FUNCTION__,
                                        __LINE__);
 
-  webrtc::VoEHardware* ptrVEHardware = 
+  webrtc::VoEHardware* ptrVEHardware =
       webrtc::VoEHardware::GetInterface(ptrVE);
   numberOfErrors += ViETest::TestError(ptrVEHardware != NULL,
                                        "ERROR: %s at line %d", __FUNCTION__,
@@ -194,7 +194,7 @@ int ViEAutoTest::ViECustomCall()
   numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                        __FUNCTION__, __LINE__);
 
-  webrtc::ViECapture* ptrViECapture = 
+  webrtc::ViECapture* ptrViECapture =
     webrtc::ViECapture::GetInterface(ptrViE);
   numberOfErrors += ViETest::TestError(ptrViECapture != NULL,
                                        "ERROR: %s at line %d", __FUNCTION__,
@@ -240,7 +240,7 @@ int ViEAutoTest::ViECustomCall()
   webrtc::CodecInst audioCodec;
   int audioChannel = -1;
   int protectionMethod = 0;
-  // TODO (amyfong):  Change the observers to pointers, use NULL checks to 
+  // TODO (amyfong):  Change the observers to pointers, use NULL checks to
   // toggle between registered or deregistered
   bool isEncoderObserverRegistered = false;
   bool isDecoderObserverRegistered = false;
@@ -434,8 +434,8 @@ int ViEAutoTest::ViECustomCall()
                                          __FUNCTION__, __LINE__);
     // Set all video protection to false initially
     // shouldn't be nessecary as ViE protection modes are all off
-    // initially.  
-    // TODO(amyfong):  Remove the set to false and use 
+    // initially.
+    // TODO(amyfong):  Remove the set to false and use
     // SetVideoProtection instead.
     error = ptrViERtpRtcp->SetHybridNACKFECStatus(videoChannel, false,
                                                   VCM_RED_PAYLOAD_TYPE,
@@ -454,11 +454,11 @@ int ViEAutoTest::ViECustomCall()
                                          "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
     // Set video protection for FEC,  NACK or Hybrid.
-    // TODO(amyfong):  Use SetVideoProtection instead, need to 
+    // TODO(amyfong):  Use SetVideoProtection instead, need to
     // move the set protection method after the first SetReceiveCodec
     // also should change and use videoSendCodec & videoReceiveCodec
     // instead of just videoCodec.  Helps check what exactly the call
-    // setup is onces the call is up and running. 
+    // setup is onces the call is up and running.
     switch (protectionMethod) {
       case 0: // None
         // No protection selected, all protection already at false
@@ -525,7 +525,7 @@ int ViEAutoTest::ViECustomCall()
                                          __FUNCTION__, __LINE__);
 
     // Set receive codecs for FEC and hybrid NACK/FEC.
-    // TODO(amyfong):  Use SetVideoProtection instead, need to 
+    // TODO(amyfong):  Use SetVideoProtection instead, need to
     // move the set protection method after the first SetReceiveCodec
     // also should change and use videoSendCodec & videoReceiveCodec
     // instead of just videoCodec.  Helps check what exactly the call
@@ -638,14 +638,14 @@ int ViEAutoTest::ViECustomCall()
       std::cout << "  5. Record Incoming Call" << std::endl;
       std::cout << "  6. Record Outgoing Call" << std::endl;
       std::cout << "  7. Play File on Video Channel"
-                << "(Assumes you recorded incoming & outgoing call)" 
+                << "(Assumes you recorded incoming & outgoing call)"
                 << std::endl;
       std::cout << "  8. Change Video Protection Method" << std::endl;
       std::cout << "  9. Toggle Encoder Observer" << std::endl;
       std::cout << " 10. Toggle Decoder Observer" << std::endl;
       std::cout << " 11. Print Call Information" << std::endl;
       std::cout << " 12. Print Call Statistics" << std::endl;
-      std::cout << " 13. Toggle Image Scaling " 
+      std::cout << " 13. Toggle Image Scaling "
                 << "(Warning high CPU usage when enabled)"
                 << std::endl;
       std::cout << "What do you want to do? ";
@@ -664,7 +664,7 @@ int ViEAutoTest::ViECustomCall()
           modify_call = false;
           break;
         case 1:
-          // Change video Codec 
+          // Change video Codec
           SetVideoCodecType(ptrViECodec, videoCodec);
           SetVideoCodecSize(ptrViECodec, videoCodec);
           SetVideoCodecBitrate(ptrViECodec, videoCodec);
@@ -778,7 +778,7 @@ int ViEAutoTest::ViECustomCall()
           break;
         case 5:
           // Record the incoming call
-          std::cout << "Start Recording Incoming Video " 
+          std::cout << "Start Recording Incoming Video "
                     << DEFAULT_INCOMING_FILE_NAME <<  std::endl;
           error = ptrViEFile->StartRecordIncomingVideo(
               videoChannel, DEFAULT_INCOMING_FILE_NAME,
@@ -794,7 +794,7 @@ int ViEAutoTest::ViECustomCall()
           break;
         case 6:
           // Record the outgoing call
-          std::cout << "Start Recording Outgoing Video " 
+          std::cout << "Start Recording Outgoing Video "
                     << DEFAULT_OUTGOING_FILE_NAME <<  std::endl;
           error = ptrViEFile->StartRecordOutgoingVideo(
               videoChannel, DEFAULT_OUTGOING_FILE_NAME,
@@ -814,7 +814,7 @@ int ViEAutoTest::ViECustomCall()
           std::cout << "Available files to play" << std::endl;
           std::cout << "  0. " << DEFAULT_INCOMING_FILE_NAME <<  std::endl;
           std::cout << "  1. " << DEFAULT_OUTGOING_FILE_NAME <<  std::endl;
-          std::cout << "Press enter for default (" 
+          std::cout << "Press enter for default ("
                     << DEFAULT_INCOMING_FILE_NAME << "): ";
           std::getline(std::cin, str);
           file_selection = atoi(str.c_str());
@@ -824,7 +824,7 @@ int ViEAutoTest::ViECustomCall()
                                                "ERROR:%d %s at line %d",
                                                ptrViEBase->LastError(),
                                                __FUNCTION__, __LINE__);
-          if (file_selection == 1) 
+          if (file_selection == 1)
             error = ptrViEFile->StartPlayFile(DEFAULT_OUTGOING_FILE_NAME,
                                               fileId, true);
           else
@@ -841,7 +841,7 @@ int ViEAutoTest::ViECustomCall()
                                                ptrViEBase->LastError(),
                                                __FUNCTION__, __LINE__);
           std::cout << std::endl;
-          std::cout << "Start sending the file that is played in a loop " 
+          std::cout << "Start sending the file that is played in a loop "
                     << std::endl;
           error = ptrViEFile->SendFileOnChannel(fileId, videoChannel);
           numberOfErrors += ViETest::TestError(error == 0,
@@ -887,7 +887,7 @@ int ViEAutoTest::ViECustomCall()
                                audioCodec, audioTxPort,
                                audioRxPort);
           modify_call = true;
-          break;  
+          break;
         case 9:
           // Toggle Encoder Observer
           if (!isEncoderObserverRegistered) {
@@ -936,7 +936,7 @@ int ViEAutoTest::ViECustomCall()
                                audioCodec, audioTxPort,
                                audioRxPort);
           PrintVideoStreamInformation(ptrViECodec,
-                                      videoChannel); 
+                                      videoChannel);
           modify_call = true;
           break;
         case 12:
@@ -965,7 +965,7 @@ int ViEAutoTest::ViECustomCall()
           modify_call = true;
           break;
         default:
-          // invalid selection, shows options menu again 
+          // invalid selection, shows options menu again
           std::cout << "Invalid selection. Select Again." << std::endl;
           break;
       }
@@ -1505,7 +1505,7 @@ bool GetAudioCodec(webrtc::VoECodec* ptrVeCodec,
         std::cout << "ERROR: Code = " << error << " Invalid selection"
                   << std::endl;
         continue;
-      } 
+      }
       return true;
     }
   }
@@ -1579,7 +1579,7 @@ bool SetVideoCodecType(webrtc::ViECodec* ptrViECodec,
       if (strcmp(videoCodec.plName, DEFAULT_VIDEO_CODEC) == 0) {
         defaultCodecIdx = codecIdx;
       }
-      std::cout << "   " << codecIdx+1 << ". " << videoCodec.plName                    
+      std::cout << "   " << codecIdx+1 << ". " << videoCodec.plName
                 << std::endl;
     }
     std::cout << std::endl;
@@ -1638,7 +1638,7 @@ bool SetVideoCodecResolution(webrtc::ViECodec* ptrViECodec,
 
     std::getline(std::cin, str);
     sizeOption = atoi(str.c_str());
-   
+
     switch (sizeOption) {
       case 1:
         videoCodec.width = 128;

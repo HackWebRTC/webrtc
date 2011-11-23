@@ -30,7 +30,7 @@
 class TbInterfaces
 {
 public:
-    TbInterfaces(const char* test_name, int& number_of_errors);
+    TbInterfaces(const char* test_name);
     ~TbInterfaces(void);
 
     webrtc::VideoEngine* video_engine;
@@ -43,13 +43,9 @@ public:
     webrtc::ViEImageProcess* image_process;
     webrtc::ViEEncryption* encryption;
 
-    int LastError()
-    {
+    int LastError() {
         return base->LastError();
     }
-
-private:
-    int& numberOfErrors;
 };
 
 #endif  // WEBRTC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_INTERFACE_TB_INTERFACES_H_

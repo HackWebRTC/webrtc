@@ -12,15 +12,15 @@
 #define WEBRTC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_INTERFACE_TB_VIDEO_CHANNEL_H_
 
 #include "tb_interfaces.h"
-class tbVideoChannel
+class TbVideoChannel
 {
 public:
-    tbVideoChannel(TbInterfaces& Engine, int& nrOfErrors,
+    TbVideoChannel(TbInterfaces& Engine,
                    webrtc::VideoCodecType sendCodec = webrtc::kVideoCodecVP8,
                    int width = 352, int height = 288, int frameRate = 30,
                    int startBitrate = 300);
 
-    ~tbVideoChannel(void);
+    ~TbVideoChannel(void);
 
     void SetFrameSettings(int width, int height, int frameRate);
 
@@ -35,7 +35,6 @@ public:
 
     int videoChannel;
 private:
-    int& numberOfErrors;
     TbInterfaces& ViE;
 };
 

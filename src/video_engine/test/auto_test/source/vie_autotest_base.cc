@@ -27,26 +27,18 @@ class BaseObserver : public webrtc::ViEBaseObserver {
   unsigned int cpu_load_;
 };
 
-int ViEAutoTest::ViEBaseStandardTest() {
-  ViETest::Log(" ");
-  ViETest::Log("========================================");
-  ViETest::Log(" ViEBase Standard Test");
-
+void ViEAutoTest::ViEBaseStandardTest() {
   // ***************************************************************
   // Begin create/initialize WebRTC Video Engine for testing
   // ***************************************************************
 
-  int number_of_errors = 0;
-
-  TbInterfaces interfaces("ViEBaseStandardTest", number_of_errors);
+  TbInterfaces interfaces("ViEBaseStandardTest");
 
   // ***************************************************************
   // Engine ready. Set up the test case:
   // ***************************************************************
   int video_channel = -1;
-  int error = interfaces.base->CreateChannel(video_channel);
-    number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                           __FUNCTION__, __LINE__);
+  EXPECT_EQ(0, interfaces.base->CreateChannel(video_channel));
 
   webrtc::VideoCaptureModule* video_capture_module(NULL);
   const unsigned int kMaxDeviceNameLength = 128;
@@ -62,294 +54,152 @@ int ViEAutoTest::ViEBaseStandardTest() {
                             device_name,
                             kMaxDeviceNameLength,
                             &capture_id,
-                            &number_of_errors,
                             &video_capture_module);
 
-  error = capture_interface->ConnectCaptureDevice(capture_id,
-                                                  video_channel);
-  number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+  EXPECT_EQ(0, capture_interface->ConnectCaptureDevice(capture_id,
+                                                       video_channel));
+  EXPECT_EQ(0, capture_interface->StartCapture(capture_id));
 
-  error = capture_interface->StartCapture(capture_id);
-  number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+  ConfigureRtpRtcp(interfaces.rtp_rtcp, video_channel);
 
-  ConfigureRtpRtcp(interfaces.rtp_rtcp, &number_of_errors, video_channel);
+  EXPECT_EQ(0, render_interface->RegisterVideoRenderModule(*_vrm1));
+  EXPECT_EQ(0, render_interface->RegisterVideoRenderModule(*_vrm2));
 
-  error = render_interface->RegisterVideoRenderModule(*_vrm1);
-  number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-  error = render_interface->RegisterVideoRenderModule(*_vrm2);
-  number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-
-  RenderInWindow(render_interface, &number_of_errors, capture_id,
-                 _window1, 0);
-  RenderInWindow(render_interface, &number_of_errors, video_channel,
-                 _window2, 1);
+  RenderInWindow(render_interface, capture_id, _window1, 0);
+  RenderInWindow(render_interface, video_channel, _window2, 1);
 
   // ***************************************************************
   // Run the actual test:
   // ***************************************************************
-  TestI420CallSetup(interfaces.codec, interfaces.video_engine,
-                    base_interface, interfaces.network, &number_of_errors,
-                    video_channel, device_name);
+  ::TestI420CallSetup(interfaces.codec, interfaces.video_engine,
+                      base_interface, interfaces.network, video_channel,
+                      device_name);
 
   // ***************************************************************
   // Testing finished. Tear down Video Engine
   // ***************************************************************
-  error = capture_interface->StopCapture(capture_id);
-  number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-  error = base_interface->StopReceive(video_channel);
-  number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+  EXPECT_EQ(0, capture_interface->StopCapture(capture_id));
+  EXPECT_EQ(0, base_interface->StopReceive(video_channel));
 
-  StopAndRemoveRenderers(base_interface, render_interface, &number_of_errors,
-                video_channel, capture_id);
+  StopAndRemoveRenderers(base_interface, render_interface, video_channel,
+                         capture_id);
 
-  error = render_interface->DeRegisterVideoRenderModule(*_vrm1);
-  number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-  error = render_interface->DeRegisterVideoRenderModule(*_vrm2);
-  number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
+  EXPECT_EQ(0, render_interface->DeRegisterVideoRenderModule(*_vrm1));
+  EXPECT_EQ(0, render_interface->DeRegisterVideoRenderModule(*_vrm2));
 
-  error = capture_interface->ReleaseCaptureDevice(capture_id);
-  number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+  EXPECT_EQ(0, capture_interface->ReleaseCaptureDevice(capture_id));
 
   video_capture_module->Release();
   video_capture_module = NULL;
 
-  error = base_interface->DeleteChannel(video_channel);
-  number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-
-  if (number_of_errors > 0) {
-    // Test failed
-    ViETest::Log(" ");
-    ViETest::Log(" ERROR ViEBase Standard Test FAILED!");
-    ViETest::Log(" Number of errors: %d", number_of_errors);
-    ViETest::Log("========================================");
-    ViETest::Log(" ");
-    return number_of_errors;
-  }
-
-  ViETest::Log(" ");
-  ViETest::Log(" ViEBase Standard Test PASSED!");
-  ViETest::Log("========================================");
-  ViETest::Log(" ");
-  return 0;
+  EXPECT_EQ(0, base_interface->DeleteChannel(video_channel));
 }
 
-int ViEAutoTest::ViEBaseExtendedTest() {
+void ViEAutoTest::ViEBaseExtendedTest() {
   // Start with standard test
   ViEBaseAPITest();
   ViEBaseStandardTest();
-
-  ViETest::Log(" ");
-  ViETest::Log("========================================");
-  ViETest::Log(" ViEBase Extended Test");
 
     // ***************************************************************
     // Test BaseObserver
     // ***************************************************************
     // TODO(mflodman) Add test for base observer. Cpu load must be over 75%.
 //    BaseObserver base_observer;
-//    error = ptrViEBase->RegisterObserver(base_observer);
-//    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-//                                         __FUNCTION__, __LINE__);
+//    EXPECT_EQ(ptrViEBase->RegisterObserver(base_observer), 0);
 //
 //    AutoTestSleep(KAutoTestSleepTimeMs);
 //
-//    error = ptrViEBase->DeregisterObserver();
-//    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-//                                         __FUNCTION__, __LINE__);
-//    numberOfErrors += ViETest::TestError(base_observer.cpu_load_ > 0,
-//                                         "ERROR: %s at line %d",
-//                                         __FUNCTION__, __LINE__);
-
-  ViETest::Log(" ");
-  ViETest::Log(" ViEBase Extended Test PASSED!");
-  ViETest::Log("========================================");
-  ViETest::Log(" ");
-
-  return 0;
+//    EXPECT_EQ(ptrViEBase->DeregisterObserver(), 0);
+//    EXPECT_GT(base_observer.cpu_load, 0);
 }
 
-int ViEAutoTest::ViEBaseAPITest() {
-  ViETest::Log(" ");
-  ViETest::Log("========================================");
-  ViETest::Log(" ViEBase API Test");
-
+void ViEAutoTest::ViEBaseAPITest() {
   // ***************************************************************
   // Begin create/initialize WebRTC Video Engine for testing
   // ***************************************************************
-  int error = 0;
-  int numberOfErrors = 0;
-
-  webrtc::VideoEngine* ptrViE = NULL;
-  webrtc::ViEBase* ptrViEBase = NULL;
-
   // Get the ViEBase API
-  ptrViEBase = webrtc::ViEBase::GetInterface(ptrViE);
-  numberOfErrors += ViETest::TestError(ptrViEBase == NULL);
+  webrtc::ViEBase* ptrViEBase = webrtc::ViEBase::GetInterface(NULL);
+  EXPECT_EQ(NULL, ptrViEBase) << "Should return null for a bad ViE pointer";
 
-  ptrViE = webrtc::VideoEngine::Create();
-  numberOfErrors += ViETest::TestError(ptrViE != NULL, "VideoEngine::Create");
+  webrtc::VideoEngine* ptrViE = webrtc::VideoEngine::Create();
+  EXPECT_TRUE(NULL != ptrViE);
 
 #ifdef WEBRTC_ANDROID
-  error = video_engine->SetTraceFile("/sdcard/WebRTC/ViEBaseAPI_trace.txt");
-  numberOfErrors += ViETest::TestError(error == 0, "SetTraceFile error");
+  EXPECT_EQ(0,
+            video_engine->SetTraceFile("/sdcard/WebRTC/ViEBaseAPI_trace.txt"));
 #else
-  error = ptrViE->SetTraceFile("ViEBaseAPI_trace.txt");
-  numberOfErrors += ViETest::TestError(error == 0, "SetTraceFile error");
+  EXPECT_EQ(0, ptrViE->SetTraceFile("ViEBaseAPI_trace.txt"));
 #endif
 
   ptrViEBase = webrtc::ViEBase::GetInterface(ptrViE);
-  numberOfErrors += ViETest::TestError(ptrViEBase != NULL);
+  EXPECT_TRUE(NULL != ptrViEBase);
 
   // ***************************************************************
   // Engine ready. Begin testing class
   // ***************************************************************
-
   char version[1024] = "";
-  error = ptrViEBase->GetVersion(version);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-
-  error = ptrViEBase->LastError();
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
+  EXPECT_EQ(0, ptrViEBase->GetVersion(version));
+  EXPECT_EQ(0, ptrViEBase->LastError());
 
   // Create without init
   int videoChannel = -1;
-  error = ptrViEBase->CreateChannel(videoChannel);
-  numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-
-  error = ptrViEBase->Init();
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-
-  error = ptrViEBase->CreateChannel(videoChannel);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
+  EXPECT_NE(0, ptrViEBase->CreateChannel(videoChannel)) <<
+      "Should fail since Init has not been called yet";
+  EXPECT_EQ(0, ptrViEBase->Init());
+  EXPECT_EQ(0, ptrViEBase->CreateChannel(videoChannel));
 
   int videoChannel2 = -1;
-  error = ptrViEBase->CreateChannel(videoChannel2);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-  numberOfErrors += ViETest::TestError(videoChannel != videoChannel2,
-                                       "ERROR: %s at line %d", __FUNCTION__,
-                                       __LINE__);
+  EXPECT_EQ(0, ptrViEBase->CreateChannel(videoChannel2));
+  EXPECT_NE(videoChannel, videoChannel2) <<
+      "Should allocate new number for independent channel";
 
-  error = ptrViEBase->DeleteChannel(videoChannel2);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
+  EXPECT_EQ(0, ptrViEBase->DeleteChannel(videoChannel2));
 
-  // Channel doesn't exist
-  error = ptrViEBase->CreateChannel(videoChannel2, videoChannel + 1);
-  numberOfErrors += ViETest::TestError(error == -1, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
+  EXPECT_EQ(-1, ptrViEBase->CreateChannel(videoChannel2, videoChannel + 1)) <<
+      "Should fail since neither channel exists (the second must)";
 
-  // Channel doesn't exist
-  error = ptrViEBase->CreateChannel(videoChannel2, videoChannel);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
+  EXPECT_EQ(0, ptrViEBase->CreateChannel(videoChannel2, videoChannel));
 
-  // VoiceEngine
+  // Test Voice Engine integration with Video Engine.
   webrtc::VoiceEngine* ptrVoE = NULL;
   webrtc::VoEBase* ptrVoEBase = NULL;
   int audioChannel = -1;
 
   ptrVoE = webrtc::VoiceEngine::Create();
-  numberOfErrors += ViETest::TestError(ptrVoE != NULL,
-                                       "ERROR: %s at line %d", __FUNCTION__,
-                                       __LINE__);
+  EXPECT_TRUE(NULL != ptrVoE);
 
   ptrVoEBase = webrtc::VoEBase::GetInterface(ptrVoE);
-  numberOfErrors += ViETest::TestError(ptrVoEBase != NULL,
-                                       "ERROR: %s at line %d", __FUNCTION__,
-                                       __LINE__);
-
-  error = ptrVoEBase->Init();
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
+  EXPECT_TRUE(NULL != ptrVoEBase);
+  EXPECT_EQ(0, ptrVoEBase->Init());
 
   audioChannel = ptrVoEBase->CreateChannel();
-  numberOfErrors += ViETest::TestError(audioChannel != -1,
-                                       "ERROR: %s at line %d", __FUNCTION__,
-                                       __LINE__);
+  EXPECT_NE(-1, audioChannel);
 
-  // Connect before setting VoE
-  error = ptrViEBase->ConnectAudioChannel(videoChannel, audioChannel);
-  numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
+  // Connect before setting VoE.
+  EXPECT_NE(0, ptrViEBase->ConnectAudioChannel(videoChannel, audioChannel)) <<
+      "Should fail since Voice Engine is not set yet.";
 
-  error = ptrViEBase->SetVoiceEngine(ptrVoE);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-
-  error = ptrViEBase->ConnectAudioChannel(videoChannel, audioChannel);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
+  // Then do it right.
+  EXPECT_EQ(0, ptrViEBase->SetVoiceEngine(ptrVoE));
+  EXPECT_EQ(0, ptrViEBase->ConnectAudioChannel(videoChannel, audioChannel));
 
   // ***************************************************************
   // Testing finished. Tear down Video Engine
   // ***************************************************************
-  error = ptrViEBase->DisconnectAudioChannel(videoChannel + 5);
-  numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
+  EXPECT_NE(0, ptrViEBase->DisconnectAudioChannel(videoChannel + 5)) <<
+      "Should fail: disconnecting bogus channel";
 
-  error = ptrViEBase->DisconnectAudioChannel(videoChannel);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
-
-  error = ptrViEBase->SetVoiceEngine(NULL);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
+  EXPECT_EQ(0, ptrViEBase->DisconnectAudioChannel(videoChannel));
+  EXPECT_EQ(0, ptrViEBase->SetVoiceEngine(NULL));
 
   webrtc::ViEBase* ptrViEBase2 = webrtc::ViEBase::GetInterface(ptrViE);
-  numberOfErrors += ViETest::TestError(ptrViEBase2 != NULL,
-                                       "ERROR: %s at line %d", __FUNCTION__,
-                                       __LINE__);
+  EXPECT_TRUE(NULL != ptrViEBase2);
 
-  int remainingInterfaces = ptrViEBase->Release();
-  numberOfErrors += ViETest::TestError(remainingInterfaces == 1,
-                                       "ERROR: %s at line %d", __FUNCTION__,
-                                       __LINE__);
+  EXPECT_EQ(1, ptrViEBase->Release()) << "There should be one interface left.";
 
-  bool vieDeleted = webrtc::VideoEngine::Delete(ptrViE);
-  numberOfErrors += ViETest::TestError(vieDeleted == false,
-                                       "ERROR: %s at line %d", __FUNCTION__,
-                                       __LINE__);
+  EXPECT_FALSE(webrtc::VideoEngine::Delete(ptrViE)) <<
+      "Should fail since there are interfaces left.";
 
-  remainingInterfaces = ptrViEBase->Release();
-  numberOfErrors += ViETest::TestError(remainingInterfaces == 0,
-                                       "ERROR: %s at line %d", __FUNCTION__,
-                                       __LINE__);
-
-  vieDeleted = webrtc::VideoEngine::Delete(ptrViE);
-  numberOfErrors += ViETest::TestError(vieDeleted == true,
-                                       "ERROR: %s at line %d", __FUNCTION__,
-                                       __LINE__);
-
-  if (numberOfErrors > 0) {
-    ViETest::Log(" ");
-    ViETest::Log(" ERROR ViEBase API Test FAILED!   ");
-    ViETest::Log(" Number of errors: %d", numberOfErrors);
-    ViETest::Log("========================================");
-    ViETest::Log(" ");
-
-    return numberOfErrors;
-  }
-
-  ViETest::Log(" ");
-  ViETest::Log(" ViEBase API Test PASSED!");
-  ViETest::Log("========================================");
-  ViETest::Log(" ");
-
-  return 0;
+  EXPECT_EQ(0, ptrViEBase->Release());
+  EXPECT_TRUE(webrtc::VideoEngine::Delete(ptrViE));
 }

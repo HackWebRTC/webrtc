@@ -76,144 +76,82 @@ private:
     int _width, _height;
 };
 
-int ViEAutoTest::ViERenderStandardTest()
+void ViEAutoTest::ViERenderStandardTest()
 {
-    ViETest::Log(" ");
-    ViETest::Log("========================================");
-    ViETest::Log(" ViERender Standard Test\n");
-
     //***************************************************************
     //	Begin create/initialize WebRTC Video Engine for testing
     //***************************************************************
-
-
-    int error = 0;
-    int numberOfErrors = 0;
     int rtpPort = 6000;
 
-    TbInterfaces ViE("ViERenderStandardTest", numberOfErrors);
+    TbInterfaces ViE("ViERenderStandardTest");
 
     // Create a video channel
-    tbVideoChannel tbChannel(ViE, numberOfErrors, webrtc::kVideoCodecVP8);
-    TbCaptureDevice tbCapture(ViE, numberOfErrors); // Create a capture device
+    TbVideoChannel tbChannel(ViE, webrtc::kVideoCodecVP8);
+    TbCaptureDevice tbCapture(ViE); // Create a capture device
     tbCapture.ConnectTo(tbChannel.videoChannel);
     tbChannel.StartReceive(rtpPort);
     tbChannel.StartSend(rtpPort);
 
-    error = ViE.render->RegisterVideoRenderModule(*_vrm1);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-
-    error = ViE.render->AddRenderer(tbCapture.captureId, _window1, 0,
-                                    0.0, 0.0, 1.0, 1.0);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-
-    error = ViE.render->StartRender(tbCapture.captureId);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-
-    error = ViE.render->RegisterVideoRenderModule(*_vrm2);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-
-    error = ViE.render->AddRenderer(tbChannel.videoChannel, _window2, 1,
-                                    0.0, 0.0, 1.0, 1.0);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-
-    error = ViE.render->StartRender(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.render->RegisterVideoRenderModule(*_vrm1));
+    EXPECT_EQ(0, ViE.render->AddRenderer(
+        tbCapture.captureId, _window1, 0, 0.0, 0.0, 1.0, 1.0));
+    EXPECT_EQ(0, ViE.render->StartRender(tbCapture.captureId));
+    EXPECT_EQ(0, ViE.render->RegisterVideoRenderModule(*_vrm2));
+    EXPECT_EQ(0, ViE.render->AddRenderer(
+        tbChannel.videoChannel, _window2, 1, 0.0, 0.0, 1.0, 1.0));
+    EXPECT_EQ(0, ViE.render->StartRender(tbChannel.videoChannel));
 
     ViETest::Log("\nCapture device is renderered in Window 1");
     ViETest::Log("Remote stream is renderered in Window 2");
     AutoTestSleep(KAutoTestSleepTimeMs);
 
-    error = ViE.render->StopRender(tbCapture.captureId);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-
-    error = ViE.render->RemoveRenderer(tbCapture.captureId);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.render->StopRender(tbCapture.captureId));
+    EXPECT_EQ(0, ViE.render->RemoveRenderer(tbCapture.captureId));
 
     // PIP and full screen rendering is not supported on Android
 #ifndef WEBRTC_ANDROID
-    error = ViE.render->DeRegisterVideoRenderModule(*_vrm1);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-
-    error = ViE.render->AddRenderer(tbCapture.captureId, _window2, 0,
-                                    0.75, 0.75, 1.0, 1.0);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-
-    error = ViE.render->StartRender(tbCapture.captureId);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.render->DeRegisterVideoRenderModule(*_vrm1));
+    EXPECT_EQ(0, ViE.render->AddRenderer(
+        tbCapture.captureId, _window2, 0, 0.75, 0.75, 1.0, 1.0));
+    EXPECT_EQ(0, ViE.render->StartRender(tbCapture.captureId));
 
     ViETest::Log("\nCapture device is now rendered in Window 2, PiP.");
     ViETest::Log("Switching to full screen rendering in %d seconds.\n",
                  KAutoTestSleepTimeMs / 1000);
     AutoTestSleep(KAutoTestSleepTimeMs);
 
-    error = ViE.render->RemoveRenderer(tbCapture.captureId);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.render->RemoveRenderer(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.render->DeRegisterVideoRenderModule(*_vrm2);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.render->RemoveRenderer(tbCapture.captureId));
+    EXPECT_EQ(0, ViE.render->RemoveRenderer(tbChannel.videoChannel));
+    EXPECT_EQ(0, ViE.render->DeRegisterVideoRenderModule(*_vrm2));
 
     // Destroy render module and create new in full screen mode
     webrtc::VideoRender::DestroyVideoRender(_vrm1);
     _vrm1 = NULL;
     _vrm1 = webrtc::VideoRender::CreateVideoRender(
         4563, _window1, true, _renderType);
-    numberOfErrors += ViETest::TestError(_vrm1 != NULL, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_TRUE(_vrm1 != NULL);
 
-    error = ViE.render->RegisterVideoRenderModule(*_vrm1);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.render->AddRenderer(tbCapture.captureId, _window1, 0,
-                                    0.75f, 0.75f, 1.0f, 1.0f);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.render->StartRender(tbCapture.captureId);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.render->AddRenderer(tbChannel.videoChannel, _window1, 1,
-                                    0.0, 0.0, 1.0, 1.0);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.render->StartRender(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.render->RegisterVideoRenderModule(*_vrm1));
+    EXPECT_EQ(0, ViE.render->AddRenderer(
+        tbCapture.captureId, _window1, 0, 0.75f, 0.75f, 1.0f, 1.0f));
+    EXPECT_EQ(0, ViE.render->StartRender(tbCapture.captureId));
+    EXPECT_EQ(0, ViE.render->AddRenderer(
+        tbChannel.videoChannel, _window1, 1, 0.0, 0.0, 1.0, 1.0));
+    EXPECT_EQ(0, ViE.render->StartRender(tbChannel.videoChannel));
 
     AutoTestSleep(KAutoTestSleepTimeMs);
 
-    error = ViE.render->RemoveRenderer(tbCapture.captureId);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.render->RemoveRenderer(tbCapture.captureId));
 
-    error = ViE.render->RemoveRenderer(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.render->DeRegisterVideoRenderModule(*_vrm1);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.render->RemoveRenderer(tbChannel.videoChannel));
+    EXPECT_EQ(0, ViE.render->DeRegisterVideoRenderModule(*_vrm1));
 
     // Destroy full screen render module and create new in normal mode
     webrtc::VideoRender::DestroyVideoRender(_vrm1);
     _vrm1 = NULL;
     _vrm1 = webrtc::VideoRender::CreateVideoRender(
         4561, _window1, false, _renderType);
-    numberOfErrors += ViETest::TestError(_vrm1 != NULL, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_TRUE(_vrm1 != NULL);
 #endif
 
     //***************************************************************
@@ -224,72 +162,30 @@ int ViEAutoTest::ViERenderStandardTest()
     //***************************************************************
     //	Testing finished. Tear down Video Engine
     //***************************************************************
-
     tbCapture.Disconnect(tbChannel.videoChannel);
-
-    if (numberOfErrors > 0)
-    {
-        // Test failed
-        ViETest::Log(" ");
-        ViETest::Log(" ERROR ViERender Standard Test FAILED!");
-        ViETest::Log(" Number of errors: %d", numberOfErrors);
-        ViETest::Log("========================================");
-        ViETest::Log(" ");
-        return numberOfErrors;
-    }
-
-    ViETest::Log(" ");
-    ViETest::Log(" ViERender Standard Test PASSED!");
-    ViETest::Log("========================================");
-    ViETest::Log(" ");
-
-    return 0;
 }
 
-int ViEAutoTest::ViERenderExtendedTest()
+void ViEAutoTest::ViERenderExtendedTest()
 {
-    ViETest::Log(" ");
-    ViETest::Log("========================================");
-    ViETest::Log(" ViERender Extended Test\n");
-
-    int error = 0;
-    int numberOfErrors = 0;
     int rtpPort = 6000;
 
-    TbInterfaces ViE("ViERenderExtendedTest", numberOfErrors);
+    TbInterfaces ViE("ViERenderExtendedTest");
 
     // Create a video channel
-    tbVideoChannel tbChannel(ViE, numberOfErrors, webrtc::kVideoCodecVP8);
-    TbCaptureDevice tbCapture(ViE, numberOfErrors); // Create a capture device
+    TbVideoChannel tbChannel(ViE, webrtc::kVideoCodecVP8);
+    TbCaptureDevice tbCapture(ViE); // Create a capture device
     tbCapture.ConnectTo(tbChannel.videoChannel);
     tbChannel.StartReceive(rtpPort);
     tbChannel.StartSend(rtpPort);
 
-    error = ViE.render->RegisterVideoRenderModule(*_vrm1);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-
-    error = ViE.render->AddRenderer(tbCapture.captureId, _window1, 0,
-                                    0.0, 0.0, 1.0, 1.0);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-
-    error = ViE.render->StartRender(tbCapture.captureId);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-
-    error = ViE.render->RegisterVideoRenderModule(*_vrm2);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-
-    error = ViE.render->AddRenderer(tbChannel.videoChannel, _window2, 1,
-                                    0.0, 0.0, 1.0, 1.0);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-
-    error = ViE.render->StartRender(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.render->RegisterVideoRenderModule(*_vrm1));
+    EXPECT_EQ(0, ViE.render->AddRenderer(
+        tbCapture.captureId, _window1, 0, 0.0, 0.0, 1.0, 1.0));
+    EXPECT_EQ(0, ViE.render->StartRender(tbCapture.captureId));
+    EXPECT_EQ(0, ViE.render->RegisterVideoRenderModule(*_vrm2));
+    EXPECT_EQ(0, ViE.render->AddRenderer(
+        tbChannel.videoChannel, _window2, 1, 0.0, 0.0, 1.0, 1.0));
+    EXPECT_EQ(0, ViE.render->StartRender(tbChannel.videoChannel));
 
     ViETest::Log("\nCapture device is renderered in Window 1");
     ViETest::Log("Remote stream is renderered in Window 2");
@@ -298,207 +194,102 @@ int ViEAutoTest::ViERenderExtendedTest()
 #ifdef _WIN32
     ViETest::Log("\nConfiguring Window2");
     ViETest::Log("you will see video only in first quadrant");
-    error = ViE.render->ConfigureRender(tbChannel.videoChannel, 0, 0.0f,
-                                        0.0f, 0.5f, 0.5f);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.render->ConfigureRender(
+        tbChannel.videoChannel, 0, 0.0f, 0.0f, 0.5f, 0.5f));
     AutoTestSleep(KAutoTestSleepTimeMs);
 
     ViETest::Log("you will see video only in fourth quadrant");
-    error = ViE.render->ConfigureRender(tbChannel.videoChannel, 0, 0.5f,
-                                        0.5f, 1.0f, 1.0f);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.render->ConfigureRender(
+        tbChannel.videoChannel, 0, 0.5f, 0.5f, 1.0f, 1.0f));
     AutoTestSleep(KAutoTestSleepTimeMs);
 
     ViETest::Log("normal video on Window2");
-    error = ViE.render->ConfigureRender(tbChannel.videoChannel, 0, 0.0f,
-                                        0.0f, 1.0f, 1.0f);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.render->ConfigureRender(
+        tbChannel.videoChannel, 0, 0.0f, 0.0f, 1.0f, 1.0f));
     AutoTestSleep(KAutoTestSleepTimeMs);
 #endif
 
     ViETest::Log("Mirroring Local Preview (Window1) Left-Right");
-    error = ViE.render->MirrorRenderStream(tbCapture.captureId, true,
-                                           false, true);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.render->MirrorRenderStream(
+        tbCapture.captureId, true, false, true));
     AutoTestSleep(KAutoTestSleepTimeMs);
 
     ViETest::Log("\nMirroring Local Preview (Window1) Left-Right and Up-Down");
-    error = ViE.render->MirrorRenderStream(tbCapture.captureId, true,
-                                           true, true);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.render->MirrorRenderStream(
+        tbCapture.captureId, true, true, true));
     AutoTestSleep(KAutoTestSleepTimeMs);
 
     ViETest::Log("\nMirroring Remote Window(Window2) Up-Down");
-    error = ViE.render->MirrorRenderStream(tbChannel.videoChannel, true,
-                                           true, false);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.render->MirrorRenderStream(
+        tbChannel.videoChannel, true, true, false));
     AutoTestSleep(KAutoTestSleepTimeMs);
 
     ViETest::Log("Disabling Mirroing on Window1 and Window2");
-    error = ViE.render->MirrorRenderStream(tbCapture.captureId, false,
-                                           false, false);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.render->MirrorRenderStream(
+        tbCapture.captureId, false, false, false));
     AutoTestSleep(KAutoTestSleepTimeMs);
-    error = ViE.render->MirrorRenderStream(tbChannel.videoChannel, false,
-                                           false, false);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.render->MirrorRenderStream(
+        tbChannel.videoChannel, false, false, false));
     AutoTestSleep(KAutoTestSleepTimeMs);
 
     ViETest::Log("\nEnabling Full Screen render in 5 sec");
 
-    error = ViE.render->RemoveRenderer(tbCapture.captureId);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.render->DeRegisterVideoRenderModule(*_vrm1);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.render->RemoveRenderer(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.render->DeRegisterVideoRenderModule(*_vrm2);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.render->RemoveRenderer(tbCapture.captureId));
+    EXPECT_EQ(0, ViE.render->DeRegisterVideoRenderModule(*_vrm1));
+    EXPECT_EQ(0, ViE.render->RemoveRenderer(tbChannel.videoChannel));
+    EXPECT_EQ(0, ViE.render->DeRegisterVideoRenderModule(*_vrm2));
 
     // Destroy render module and create new in full screen mode
     webrtc::VideoRender::DestroyVideoRender(_vrm1);
     _vrm1 = NULL;
     _vrm1 = webrtc::VideoRender::CreateVideoRender(
         4563, _window1, true, _renderType);
-    numberOfErrors += ViETest::TestError(_vrm1 != NULL, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_TRUE(_vrm1 != NULL);
 
-    error = ViE.render->RegisterVideoRenderModule(*_vrm1);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.render->AddRenderer(tbCapture.captureId, _window1, 0,
-                                    0.0f, 0.0f, 1.0f, 1.0f);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.render->StartRender(tbCapture.captureId);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.render->RegisterVideoRenderModule(*_vrm1));
+    EXPECT_EQ(0, ViE.render->AddRenderer(
+        tbCapture.captureId, _window1, 0, 0.0f, 0.0f, 1.0f, 1.0f));
+    EXPECT_EQ(0, ViE.render->StartRender(tbCapture.captureId));
     AutoTestSleep(KAutoTestSleepTimeMs);
 
-    error = ViE.render->StopRender(tbCapture.captureId);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-
-    /* error = ViE.ptrViERender->StopRender(tbChannel.videoChannel);
-     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d", __FUNCTION__, __LINE__);
-     */
     ViETest::Log("\nStop renderer");
-
-    error = ViE.render->RemoveRenderer(tbCapture.captureId);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-
-    /* error = ViE.ptrViERender->RemoveRenderer(tbChannel.videoChannel);
-     numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d", __FUNCTION__, __LINE__);
-     */
+    EXPECT_EQ(0, ViE.render->StopRender(tbCapture.captureId));
     ViETest::Log("\nRemove renderer");
+    EXPECT_EQ(0, ViE.render->RemoveRenderer(tbCapture.captureId));
 
-    error = ViE.render->DeRegisterVideoRenderModule(*_vrm1);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.render->DeRegisterVideoRenderModule(*_vrm1));
 
     // Destroy full screen render module and create new for external rendering
     webrtc::VideoRender::DestroyVideoRender(_vrm1);
     _vrm1 = NULL;
     _vrm1 = webrtc::VideoRender::CreateVideoRender(4564, NULL, false,
                                                    _renderType);
-    numberOfErrors += ViETest::TestError(_vrm1 != NULL, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_TRUE(_vrm1 != NULL);
 
-    error = ViE.render->RegisterVideoRenderModule(*_vrm1);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.render->RegisterVideoRenderModule(*_vrm1));
 
     ViETest::Log("\nExternal Render Test");
     ViEAutoTestExternalRenderer externalRenderObj;
-    error = ViE.render->AddRenderer(tbCapture.captureId,
-                                          webrtc::kVideoI420,
-                                          &externalRenderObj);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.render->StartRender(tbCapture.captureId);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.render->AddRenderer(
+        tbCapture.captureId, webrtc::kVideoI420, &externalRenderObj));
+    EXPECT_EQ(0, ViE.render->StartRender(tbCapture.captureId));
     AutoTestSleep(KAutoTestSleepTimeMs);
 
-    error = ViE.render->StopRender(tbCapture.captureId);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-
-    error = ViE.render->RemoveRenderer(tbCapture.captureId);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.render->DeRegisterVideoRenderModule(*_vrm1);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.render->StopRender(tbCapture.captureId));
+    EXPECT_EQ(0, ViE.render->RemoveRenderer(tbCapture.captureId));
+    EXPECT_EQ(0, ViE.render->DeRegisterVideoRenderModule(*_vrm1));
 
     // Destroy render module for external rendering and create new in normal
     // mode
     webrtc::VideoRender::DestroyVideoRender(_vrm1);
     _vrm1 = NULL;
-    _vrm1 = webrtc::VideoRender::CreateVideoRender(4561, _window1, false,
-                                                   _renderType);
-    numberOfErrors += ViETest::TestError(_vrm1 != NULL, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-
+    _vrm1 = webrtc::VideoRender::CreateVideoRender(
+        4561, _window1, false, _renderType);
+    EXPECT_TRUE(_vrm1 != NULL);
     tbCapture.Disconnect(tbChannel.videoChannel);
-
-    if (numberOfErrors > 0)
-    {
-        // Test failed
-        ViETest::Log(" ");
-        ViETest::Log(" ERROR ViERender Extended Test FAILED!");
-        ViETest::Log(" Number of errors: %d", numberOfErrors);
-        ViETest::Log("========================================");
-        ViETest::Log(" ");
-        return numberOfErrors;
-    }
-
-    ViETest::Log(" ");
-    ViETest::Log(" ViERender Extended Test PASSED!");
-    ViETest::Log("========================================");
-    ViETest::Log(" ");
-
-    return 0;
 }
 
-int ViEAutoTest::ViERenderAPITest()
+void ViEAutoTest::ViERenderAPITest()
 {
-    ViETest::Log(" ");
-    ViETest::Log("========================================");
-    ViETest::Log(" ViERender API Test\n");
-
-    int numberOfErrors = 0;
-
-    //TODO add the real tests cases
-
-    if (numberOfErrors > 0)
-    {
-        // Test failed
-        ViETest::Log(" ");
-        ViETest::Log(" ERROR ViERender API Test FAILED!");
-        ViETest::Log(" Number of errors: %d", numberOfErrors);
-        ViETest::Log("========================================");
-        ViETest::Log(" ");
-        return numberOfErrors;
-    }
-
-    ViETest::Log(" ");
-    ViETest::Log(" ViERender API Test PASSED!");
-    ViETest::Log("========================================");
-    ViETest::Log(" ");
-
-    return 0;
+    // TODO(unknown): add the real tests cases
 }

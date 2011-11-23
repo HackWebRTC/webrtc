@@ -21,10 +21,8 @@
 
 FILE* ViETest::log_file_ = NULL;
 char* ViETest::log_str_ = NULL;
-ViETest::TestErrorMode ViETest::test_error_mode_;
 
-ViEAutoTest::ViEAutoTest(void* window1, void* window2,
-                         ViETest::TestErrorMode testErrorMode) :
+ViEAutoTest::ViEAutoTest(void* window1, void* window2) :
     _window1(window1),
     _window2(window2),
     _renderType(webrtc::kRenderDefault),
@@ -35,8 +33,6 @@ ViEAutoTest::ViEAutoTest(void* window1, void* window2,
 {
     assert(_vrm1);
     assert(_vrm2);
-
-    ViETest::Init(testErrorMode);
 }
 
 ViEAutoTest::~ViEAutoTest()
@@ -45,71 +41,45 @@ ViEAutoTest::~ViEAutoTest()
     _vrm1 = NULL;
     webrtc::VideoRender::DestroyVideoRender(_vrm2);
     _vrm2 = NULL;
-
-    ViETest::Terminate();
 }
 
-int ViEAutoTest::ViEStandardTest()
+void ViEAutoTest::ViEStandardTest()
 {
-    int numErrors = 0;
-    numErrors += ViEBaseStandardTest();
-    numErrors += ViECaptureStandardTest();
-    numErrors += ViECodecStandardTest();
-    numErrors += ViEEncryptionStandardTest();
-    numErrors += ViEFileStandardTest();
-    numErrors += ViEImageProcessStandardTest();
-    numErrors += ViENetworkStandardTest();
-    numErrors += ViERenderStandardTest();
-    numErrors += ViERtpRtcpStandardTest();
-
-    if (numErrors > 0)
-    {
-        ViETest::Log("Standard Test Failed, with %d erros\n", numErrors);
-        return numErrors;
-    }
-    return numErrors;
+    ViEBaseStandardTest();
+    ViECaptureStandardTest();
+    ViECodecStandardTest();
+    ViEEncryptionStandardTest();
+    ViEFileStandardTest();
+    ViEImageProcessStandardTest();
+    ViENetworkStandardTest();
+    ViERenderStandardTest();
+    ViERtpRtcpStandardTest();
 }
 
-int ViEAutoTest::ViEExtendedTest()
+void ViEAutoTest::ViEExtendedTest()
 {
-    int numErrors = 0;
-    numErrors += ViEBaseExtendedTest();
-    numErrors += ViECaptureExtendedTest();
-    numErrors += ViECodecExtendedTest();
-    numErrors += ViEEncryptionExtendedTest();
-    numErrors += ViEFileExtendedTest();
-    numErrors += ViEImageProcessExtendedTest();
-    numErrors += ViENetworkExtendedTest();
-    numErrors += ViERenderExtendedTest();
-    numErrors += ViERtpRtcpExtendedTest();
-
-    if (numErrors > 0)
-    {
-        ViETest::Log("Extended Test Failed, with %d erros\n", numErrors);
-        return numErrors;
-    }
-    return numErrors;
+    ViEBaseExtendedTest();
+    ViECaptureExtendedTest();
+    ViECodecExtendedTest();
+    ViEEncryptionExtendedTest();
+    ViEFileExtendedTest();
+    ViEImageProcessExtendedTest();
+    ViENetworkExtendedTest();
+    ViERenderExtendedTest();
+    ViERtpRtcpExtendedTest();
 }
 
-int ViEAutoTest::ViEAPITest()
+void ViEAutoTest::ViEAPITest()
 {
-    int numErrors = 0;
-    numErrors += ViEBaseAPITest();
-    numErrors += ViECaptureAPITest();
-    numErrors += ViECodecAPITest();
-    numErrors += ViEEncryptionAPITest();
-    numErrors += ViEFileAPITest();
-    numErrors += ViEImageProcessAPITest();
-    numErrors += ViENetworkAPITest();
-    numErrors += ViERenderAPITest();
-    numErrors += ViERtpRtcpAPITest();
-
-    if (numErrors > 0)
-    {
-        ViETest::Log("API Test Failed, with %d erros\n", numErrors);
-        return numErrors;
-    }
-    return 0;
+    ViEBaseAPITest();
+    ViECaptureAPITest();
+    ViECodecAPITest();
+    ViEEncryptionAPITest();
+    ViEFileAPITest();
+    ViEImageProcessAPITest();
+    ViENetworkAPITest();
+    ViERenderAPITest();
+    ViERtpRtcpAPITest();
 }
 
 void ViEAutoTest::PrintVideoCodec(const webrtc::VideoCodec videoCodec)

@@ -22,39 +22,39 @@ class ViEExtendedIntegrationTest: public ViEIntegrationTest {
 };
 
 TEST_F(ViEExtendedIntegrationTest, RunsBaseTestWithoutErrors) {
-  ASSERT_EQ(0, tests_->ViEBaseExtendedTest());
+  tests_->ViEBaseExtendedTest();
 }
 
 TEST_F(ViEExtendedIntegrationTest, RunsCaptureTestWithoutErrors) {
-  ASSERT_EQ(0, tests_->ViECaptureExtendedTest());
+  tests_->ViECaptureExtendedTest();
 }
 
 TEST_F(ViEExtendedIntegrationTest, RunsCodecTestWithoutErrors) {
-  ASSERT_EQ(0, tests_->ViECodecExtendedTest());
+  tests_->ViECodecExtendedTest();
 }
 
 TEST_F(ViEExtendedIntegrationTest, RunsEncryptionTestWithoutErrors) {
-  ASSERT_EQ(0, tests_->ViEEncryptionExtendedTest());
+  tests_->ViEEncryptionExtendedTest();
 }
 
 TEST_F(ViEExtendedIntegrationTest, RunsFileTestWithoutErrors) {
-  ASSERT_EQ(0, tests_->ViEFileExtendedTest());
+  tests_->ViEFileExtendedTest();
 }
 
 TEST_F(ViEExtendedIntegrationTest, RunsImageProcessTestWithoutErrors) {
-  ASSERT_EQ(0, tests_->ViEImageProcessExtendedTest());
+  tests_->ViEImageProcessExtendedTest();
 }
 
 TEST_F(ViEExtendedIntegrationTest, RunsNetworkTestWithoutErrors) {
-  ASSERT_EQ(0, tests_->ViENetworkExtendedTest());
+  tests_->ViENetworkExtendedTest();
 }
 
 TEST_F(ViEExtendedIntegrationTest, RunsRenderTestWithoutErrors) {
-  ASSERT_EQ(0, tests_->ViERenderExtendedTest());
+  tests_->ViERenderExtendedTest();
 }
 
 TEST_F(ViEExtendedIntegrationTest, RunsRtpRtcpTestWithoutErrors) {
-  ASSERT_EQ(0, tests_->ViERtpRtcpExtendedTest());
+  tests_->ViERtpRtcpExtendedTest();
 }
 
 } // namespace

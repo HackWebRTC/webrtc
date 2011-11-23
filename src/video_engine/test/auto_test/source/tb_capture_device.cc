@@ -10,9 +10,8 @@
 
 #include "tb_capture_device.h"
 
-TbCaptureDevice::TbCaptureDevice(TbInterfaces& Engine, int& nrOfErrors) :
+TbCaptureDevice::TbCaptureDevice(TbInterfaces& Engine) :
     captureId(-1),
-    numberOfErrors(nrOfErrors),
     ViE(Engine),
     vcpm_(NULL)
 {
@@ -23,7 +22,6 @@ TbCaptureDevice::TbCaptureDevice(TbInterfaces& Engine, int& nrOfErrors) :
     WebRtc_UWord8 uniqueId[KMaxUniqueIdLength];
     memset(uniqueId, 0, KMaxUniqueIdLength);
 
-    int error;
     bool captureDeviceSet = false;
 
     webrtc::VideoCaptureModule::DeviceInfo* devInfo =
@@ -32,22 +30,19 @@ TbCaptureDevice::TbCaptureDevice(TbInterfaces& Engine, int& nrOfErrors) :
         captureIdx < devInfo->NumberOfDevices();
         captureIdx++)
     {
-        error = devInfo->GetDeviceName(captureIdx, deviceName,
-                                       KMaxDeviceNameLength, uniqueId,
-                                       KMaxUniqueIdLength);
-        numberOfErrors += ViETest::TestError(error == 0,
-                                             "ERROR: %s at line %d",
-                                             __FUNCTION__, __LINE__);
+        EXPECT_EQ(0, devInfo->GetDeviceName(captureIdx, deviceName,
+                                            KMaxDeviceNameLength, uniqueId,
+                                            KMaxUniqueIdLength));
 
         vcpm_ = webrtc::VideoCaptureFactory::Create(
             captureIdx, uniqueId);
-        if (vcpm_ == NULL) // Failed to open this device. Try next.
+        if (vcpm_ == NULL)  // Failed to open this device. Try next.
         {
             continue;
         }
         vcpm_->AddRef();
 
-        error = ViE.capture->AllocateCaptureDevice(*vcpm_, captureId);
+        int error = ViE.capture->AllocateCaptureDevice(*vcpm_, captureId);
         if (error == 0)
         {
             ViETest::Log("Using capture device: %s, captureId: %d", deviceName,
@@ -57,44 +52,30 @@ TbCaptureDevice::TbCaptureDevice(TbInterfaces& Engine, int& nrOfErrors) :
         }
     }
     delete devInfo;
-    numberOfErrors += ViETest::TestError(
-        captureDeviceSet, "ERROR: %s at line %d - Could not set capture device",
-        __FUNCTION__, __LINE__);
+    EXPECT_TRUE(captureDeviceSet);
+    if (!captureDeviceSet) {
+        return;
+    }
 
     ViETest::Log("Starting capture device %s with captureId %d\n", deviceName,
                  captureId);
-
-    error = ViE.capture->StartCapture(captureId);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.capture->StartCapture(captureId));
 }
 
 TbCaptureDevice::~TbCaptureDevice(void)
 {
     ViETest::Log("Stopping capture device with id %d\n", captureId);
-    int error;
-    error = ViE.capture->StopCapture(captureId);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-
-    error = ViE.capture->ReleaseCaptureDevice(captureId);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.capture->StopCapture(captureId));
+    EXPECT_EQ(0, ViE.capture->ReleaseCaptureDevice(captureId));
     vcpm_->Release();
 }
 
 void TbCaptureDevice::ConnectTo(int videoChannel)
 {
-    int error;
-    error = ViE.capture->ConnectCaptureDevice(captureId, videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.capture->ConnectCaptureDevice(captureId, videoChannel));
 }
 
 void TbCaptureDevice::Disconnect(int videoChannel)
 {
-    int error = 0;
-    error = ViE.capture->DisconnectCaptureDevice(videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.capture->DisconnectCaptureDevice(videoChannel));
 }

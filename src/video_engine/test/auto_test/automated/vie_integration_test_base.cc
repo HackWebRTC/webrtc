@@ -22,8 +22,7 @@ void ViEIntegrationTest::SetUpTestCase() {
 
   // Create the test cases
   tests_ = new ViEAutoTest(window_manager->GetWindow1(),
-                           window_manager->GetWindow2(),
-                           ViETest::kUseGTestExpectsForTestErrors);
+                           window_manager->GetWindow2());
 }
 
 void ViEIntegrationTest::TearDownTestCase() {

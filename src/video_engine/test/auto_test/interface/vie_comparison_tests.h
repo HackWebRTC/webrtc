@@ -31,9 +31,6 @@ class ViEToFileRenderer;
 // input is restarted between stages.
 class ViEComparisonTests {
  public:
-  ViEComparisonTests();
-  ~ViEComparisonTests();
-
   // Test a typical simple call setup.
   void TestCallSetup(
       const std::string& i420_test_video_path,
@@ -49,7 +46,6 @@ class ViEComparisonTests {
       int height,
       ViEToFileRenderer* local_file_renderer,
       ViEToFileRenderer* remote_file_renderer);
-
 };
 
 #endif  // SRC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_INTERFACE_VIE_COMPARISON_TESTS_H_

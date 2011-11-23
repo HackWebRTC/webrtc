@@ -26,7 +26,6 @@ void TestI420CallSetup(webrtc::ViECodec* codec_interface,
                        webrtc::VideoEngine* video_engine,
                        webrtc::ViEBase* base_interface,
                        webrtc::ViENetwork* network_interface,
-                       int* number_of_errors,
                        int video_channel,
                        const unsigned char *device_name);
 

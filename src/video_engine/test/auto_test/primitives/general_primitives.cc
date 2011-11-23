@@ -19,7 +19,6 @@ void FindCaptureDeviceOnSystem(webrtc::ViECapture* capture,
                                unsigned char* device_name,
                                unsigned int device_name_length,
                                int* device_id,
-                               int* number_of_errors,
                                webrtc::VideoCaptureModule** device_video) {
 
   bool capture_device_set = false;
@@ -31,18 +30,15 @@ void FindCaptureDeviceOnSystem(webrtc::ViECapture* capture,
   memset(unique_id, 0, kMaxUniqueIdLength);
 
   for (unsigned int i = 0; i < dev_info->NumberOfDevices(); i++) {
-    int error = dev_info->GetDeviceName(i, device_name, device_name_length,
-                                        unique_id, kMaxUniqueIdLength);
-    *number_of_errors += ViETest::TestError(
-        error == 0, "ERROR: %s at line %d", __FUNCTION__, __LINE__);
-    *device_video =
-        webrtc::VideoCaptureFactory::Create(4571, unique_id);
+    EXPECT_EQ(0, dev_info->GetDeviceName(i, device_name, device_name_length,
+                                         unique_id, kMaxUniqueIdLength));
 
-    *number_of_errors += ViETest::TestError(
-        *device_video != NULL, "ERROR: %s at line %d", __FUNCTION__, __LINE__);
+    *device_video = webrtc::VideoCaptureFactory::Create(4571, unique_id);
+    EXPECT_TRUE(*device_video != NULL);
+
     (*device_video)->AddRef();
 
-    error = capture->AllocateCaptureDevice(**device_video, *device_id);
+    int error = capture->AllocateCaptureDevice(**device_video, *device_id);
     if (error == 0) {
       ViETest::Log("Using capture device: %s, captureId: %d.",
                    device_name, *device_id);
@@ -54,69 +50,43 @@ void FindCaptureDeviceOnSystem(webrtc::ViECapture* capture,
     }
   }
   delete dev_info;
-  *number_of_errors += ViETest::TestError(
-      capture_device_set, "ERROR: %s at line %d - Could not set capture device",
-      __FUNCTION__, __LINE__);
+  EXPECT_TRUE(capture_device_set) << "Found no suitable camera on your system.";
 }
 
 void RenderInWindow(webrtc::ViERender* video_render_interface,
-                    int* numberOfErrors,
                     int frame_provider_id,
                     void* os_window,
                     float z_index) {
-  int error = video_render_interface->AddRenderer(frame_provider_id, os_window,
-                                                  z_index, 0.0, 0.0, 1.0, 1.0);
-  *numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                        __FUNCTION__, __LINE__);
-
-  error = video_render_interface->StartRender(frame_provider_id);
-  numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                       __FUNCTION__, __LINE__);
+  EXPECT_EQ(0,
+            video_render_interface->AddRenderer(frame_provider_id, os_window,
+                                                z_index, 0.0, 0.0, 1.0, 1.0));
+  EXPECT_EQ(0, video_render_interface->StartRender(frame_provider_id));
 }
 
 void RenderToFile(webrtc::ViERender* renderer_interface,
                   int frame_provider_id,
                   ViEToFileRenderer *to_file_renderer) {
-  int result = renderer_interface->AddRenderer(frame_provider_id,
-                                               webrtc::kVideoI420,
-                                               to_file_renderer);
-  ViETest::TestError(result == 0, "ERROR: %s at line %d",
-                     __FUNCTION__, __LINE__);
-  result = renderer_interface->StartRender(frame_provider_id);
-  ViETest::TestError(result == 0, "ERROR: %s at line %d",
-                     __FUNCTION__, __LINE__);
+  EXPECT_EQ(0, renderer_interface->AddRenderer(
+      frame_provider_id, webrtc::kVideoI420, to_file_renderer));
+  EXPECT_EQ(0, renderer_interface->StartRender(frame_provider_id));
 }
 
 void StopAndRemoveRenderers(webrtc::ViEBase* base_interface,
                             webrtc::ViERender* render_interface,
-                            int* number_of_errors,
                             int channel_id,
                             int capture_id) {
-  int error = render_interface->StopRender(channel_id);
-  *number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                          __FUNCTION__, __LINE__);
-  error = render_interface->RemoveRenderer(channel_id);
-  *number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                          __FUNCTION__, __LINE__);
-  error = render_interface->RemoveRenderer(capture_id);
-  *number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                          __FUNCTION__, __LINE__);
+  EXPECT_EQ(0, render_interface->StopRender(channel_id));
+  EXPECT_EQ(0, render_interface->RemoveRenderer(channel_id));
+  EXPECT_EQ(0, render_interface->RemoveRenderer(capture_id));
 }
 
 void ConfigureRtpRtcp(webrtc::ViERTP_RTCP* rtcp_interface,
-                      int* number_of_errors,
                       int video_channel) {
-  int error = rtcp_interface->SetRTCPStatus(
-      video_channel, webrtc::kRtcpCompound_RFC4585);
-  *number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                          __FUNCTION__, __LINE__);
-  error = rtcp_interface->SetKeyFrameRequestMethod(
-      video_channel, webrtc::kViEKeyFrameRequestPliRtcp);
-  *number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                          __FUNCTION__, __LINE__);
-  error = rtcp_interface->SetTMMBRStatus(video_channel, true);
-  *number_of_errors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                          __FUNCTION__, __LINE__);
+  EXPECT_EQ(0, rtcp_interface->SetRTCPStatus(video_channel,
+                                             webrtc::kRtcpCompound_RFC4585));
+  EXPECT_EQ(0, rtcp_interface->SetKeyFrameRequestMethod(
+      video_channel, webrtc::kViEKeyFrameRequestPliRtcp));
+  EXPECT_EQ(0, rtcp_interface->SetTMMBRStatus(video_channel, true));
 }
 
 bool FindSpecificCodec(webrtc::VideoCodecType of_type,

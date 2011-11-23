@@ -22,39 +22,39 @@ class ViEApiIntegrationTest: public ViEIntegrationTest {
 };
 
 TEST_F(ViEApiIntegrationTest, RunsBaseTestWithoutErrors) {
-  ASSERT_EQ(0, tests_->ViEBaseAPITest());
+  tests_->ViEBaseAPITest();
 }
 
 TEST_F(ViEApiIntegrationTest, RunsCaptureTestWithoutErrors) {
-  ASSERT_EQ(0, tests_->ViECaptureAPITest());
+  tests_->ViECaptureAPITest();
 }
 
 TEST_F(ViEApiIntegrationTest, RunsCodecTestWithoutErrors) {
-  ASSERT_EQ(0, tests_->ViECodecAPITest());
+  tests_->ViECodecAPITest();
 }
 
 TEST_F(ViEApiIntegrationTest, RunsEncryptionTestWithoutErrors) {
-  ASSERT_EQ(0, tests_->ViEEncryptionAPITest());
+  tests_->ViEEncryptionAPITest();
 }
 
 TEST_F(ViEApiIntegrationTest, RunsFileTestWithoutErrors) {
-  ASSERT_EQ(0, tests_->ViEFileAPITest());
+  tests_->ViEFileAPITest();
 }
 
 TEST_F(ViEApiIntegrationTest, RunsImageProcessTestWithoutErrors) {
-  ASSERT_EQ(0, tests_->ViEImageProcessAPITest());
+  tests_->ViEImageProcessAPITest();
 }
 
 TEST_F(ViEApiIntegrationTest, RunsNetworkTestWithoutErrors) {
-  ASSERT_EQ(0, tests_->ViENetworkAPITest());
+  tests_->ViENetworkAPITest();
 }
 
 TEST_F(ViEApiIntegrationTest, RunsRenderTestWithoutErrors) {
-  ASSERT_EQ(0, tests_->ViERenderAPITest());
+  tests_->ViERenderAPITest();
 }
 
 TEST_F(ViEApiIntegrationTest, RunsRtpRtcpTestWithoutErrors) {
-  ASSERT_EQ(0, tests_->ViERtpRtcpAPITest());
+  tests_->ViERtpRtcpAPITest();
 }
 
 } // namespace

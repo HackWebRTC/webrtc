@@ -10,9 +10,9 @@
 
 #include "tb_interfaces.h"
 
-TbInterfaces::TbInterfaces(const char* testName, int& nrOfErrors) :
-    numberOfErrors(nrOfErrors)
-{
+#include "gtest/gtest.h"
+
+TbInterfaces::TbInterfaces(const char* testName) {
     char traceFile[256] = "";
 
 #ifdef WEBRTC_ANDROID
@@ -24,111 +24,50 @@ TbInterfaces::TbInterfaces(const char* testName, int& nrOfErrors) :
     ViETest::Log("Creating ViE Interfaces for test %s\n", testName);
 
     video_engine = webrtc::VideoEngine::Create();
-    numberOfErrors += ViETest::TestError(video_engine != NULL,
-                                         "ERROR: %s at line %d", __FUNCTION__,
-                                         __LINE__);
+    EXPECT_TRUE(video_engine != NULL);
 
-    int error = video_engine->SetTraceFile(traceFile);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-
-    error = video_engine->SetTraceFilter(webrtc::kTraceAll);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, video_engine->SetTraceFile(traceFile));
+    EXPECT_EQ(0, video_engine->SetTraceFilter(webrtc::kTraceAll));
 
     base = webrtc::ViEBase::GetInterface(video_engine);
-    numberOfErrors += ViETest::TestError(base != NULL,
-                                         "ERROR: %s at line %d", __FUNCTION__,
-                                         __LINE__);
+    EXPECT_TRUE(base != NULL);
 
-    error = base->Init();
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, base->Init());
 
     capture = webrtc::ViECapture::GetInterface(video_engine);
-    numberOfErrors += ViETest::TestError(capture != NULL,
-                                         "ERROR: %s at line %d", __FUNCTION__,
-                                         __LINE__);
+    EXPECT_TRUE(capture != NULL);
 
     rtp_rtcp = webrtc::ViERTP_RTCP::GetInterface(video_engine);
-    numberOfErrors += ViETest::TestError(rtp_rtcp != NULL,
-                                         "ERROR: %s at line %d", __FUNCTION__,
-                                         __LINE__);
+    EXPECT_TRUE(rtp_rtcp != NULL);
 
     render = webrtc::ViERender::GetInterface(video_engine);
-    numberOfErrors += ViETest::TestError(render != NULL,
-                                         "ERROR: %s at line %d", __FUNCTION__,
-                                         __LINE__);
+    EXPECT_TRUE(render != NULL);
 
     codec = webrtc::ViECodec::GetInterface(video_engine);
-    numberOfErrors += ViETest::TestError(codec != NULL,
-                                         "ERROR: %s at line %d", __FUNCTION__,
-                                         __LINE__);
+    EXPECT_TRUE(codec != NULL);
 
     network = webrtc::ViENetwork::GetInterface(video_engine);
-    numberOfErrors += ViETest::TestError(network != NULL,
-                                         "ERROR: %s at line %d", __FUNCTION__,
-                                         __LINE__);
+    EXPECT_TRUE(network != NULL);
 
     image_process = webrtc::ViEImageProcess::GetInterface(video_engine);
-    numberOfErrors += ViETest::TestError(image_process != NULL,
-                                         "ERROR: %s at line %d", __FUNCTION__,
-                                         __LINE__);
+    EXPECT_TRUE(image_process != NULL);
 
     encryption = webrtc::ViEEncryption::GetInterface(video_engine);
-    numberOfErrors += ViETest::TestError(encryption != NULL,
-                                         "ERROR: %s at line %d", __FUNCTION__,
-                                         __LINE__);
+    EXPECT_TRUE(encryption != NULL);
 }
 
 TbInterfaces::~TbInterfaces(void)
 {
-    int numberOfErrors = 0;
-    int remainingInterfaces = 0;
-
-    remainingInterfaces = encryption->Release();
-    numberOfErrors += ViETest::TestError(remainingInterfaces == 0,
-                                         "ERROR: %s at line %d", __FUNCTION__,
-                                         __LINE__);
-
-    remainingInterfaces = image_process->Release();
-    numberOfErrors += ViETest::TestError(remainingInterfaces == 0,
-                                         "ERROR: %s at line %d", __FUNCTION__,
-                                         __LINE__);
-
-    remainingInterfaces = codec->Release();
-    numberOfErrors += ViETest::TestError(remainingInterfaces == 0,
-                                         "ERROR: %s at line %d", __FUNCTION__,
-                                         __LINE__);
-
-    remainingInterfaces = capture->Release();
-    numberOfErrors += ViETest::TestError(remainingInterfaces == 0,
-                                         "ERROR: %s at line %d", __FUNCTION__,
-                                         __LINE__);
-
-    remainingInterfaces = render->Release();
-    numberOfErrors += ViETest::TestError(remainingInterfaces == 0,
-                                         "ERROR: %s at line %d", __FUNCTION__,
-                                         __LINE__);
-
-    remainingInterfaces = rtp_rtcp->Release();
-    numberOfErrors += ViETest::TestError(remainingInterfaces == 0,
-                                         "ERROR: %s at line %d", __FUNCTION__,
-                                         __LINE__);
-
-    remainingInterfaces = network->Release();
-    numberOfErrors += ViETest::TestError(remainingInterfaces == 0,
-                                         "ERROR: %s at line %d", __FUNCTION__,
-                                         __LINE__);
-
-    remainingInterfaces = base->Release();
-    numberOfErrors += ViETest::TestError(remainingInterfaces == 0,
-                                         "ERROR: %s at line %d", __FUNCTION__,
-                                         __LINE__);
-
-    bool deleted = webrtc::VideoEngine::Delete(video_engine);
-    numberOfErrors += ViETest::TestError(deleted == true,
-                                         "ERROR: %s at line %d", __FUNCTION__,
-                                         __LINE__);
+    EXPECT_EQ(0, encryption->Release());
+    EXPECT_EQ(0, image_process->Release());
+    EXPECT_EQ(0, codec->Release());
+    EXPECT_EQ(0, capture->Release());
+    EXPECT_EQ(0, render->Release());
+    EXPECT_EQ(0, rtp_rtcp->Release());
+    EXPECT_EQ(0, network->Release());
+    EXPECT_EQ(0, base->Release());
+    EXPECT_TRUE(webrtc::VideoEngine::Delete(video_engine)) <<
+        "Since we have released all interfaces at this point, deletion "
+        "should be successful.";
 
 }

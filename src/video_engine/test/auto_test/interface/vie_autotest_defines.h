@@ -95,14 +95,8 @@ struct AutoTestRect {
 // ============================================
 
 class ViETest {
-public:
-  enum TestErrorMode {
-    kUseGTestExpectsForTestErrors, kUseAssertsForTestErrors
-  };
-
-  // The test error mode tells how we should assert when an error
-  // occurs, provided that VIE_ASSERT_ERROR is defined.
-  static int Init(TestErrorMode test_error_mode) {
+ public:
+  static int Init() {
 #ifdef VIE_LOG_TO_FILE
     log_file_ = fopen(VIE_LOG_FILE_NAME, "w+t");
 #else
@@ -110,8 +104,6 @@ public:
 #endif
     log_str_ = new char[kMaxLogSize];
     memset(log_str_, 0, kMaxLogSize);
-
-    test_error_mode_ = test_error_mode;
     return 0;
   }
 
@@ -156,14 +148,8 @@ public:
 #endif
   }
 
-  static int TestError(bool expr) {
-    if (!expr) {
-      AssertError("");
-      return 1;
-    }
-    return 0;
-  }
-
+  // Deprecated(qhogpat): Prefer to use googletest macros in all cases
+  // except the custom call case.
   static int TestError(bool expr, const char* fmt, ...) {
     if (!expr) {
       va_list va;
@@ -185,15 +171,7 @@ public:
 private:
   static void AssertError(const char* message) {
 #ifdef VIE_ASSERT_ERROR
-    if (test_error_mode_ == kUseAssertsForTestErrors) {
-      assert(false);
-    } else if (test_error_mode_ == kUseGTestExpectsForTestErrors) {
-      // Note that the failure gets added here, but information about where
-      // the real error occurred is usually in the message.
-      ADD_FAILURE() << message ;
-    } else {
-      assert(false && "Internal test framework logical error: unknown mode");
-    }
+    assert(false);
 #endif
   }
 
@@ -202,8 +180,6 @@ private:
     kMaxLogSize = 512
   };
   static char* log_str_;
-
-  static TestErrorMode test_error_mode_;
 };
 
 // milliseconds

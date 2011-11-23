@@ -33,7 +33,6 @@ void FindCaptureDeviceOnSystem(webrtc::ViECapture* capture,
                                unsigned char* device_name,
                                const unsigned int kDeviceNameLength,
                                int* device_id,
-                               int* number_of_errors,
                                webrtc::VideoCaptureModule** device_video);
 
 // Sets up rendering in a window previously created using a Window Manager
@@ -41,7 +40,6 @@ void FindCaptureDeviceOnSystem(webrtc::ViECapture* capture,
 // those). The frame provider id is a source of video frames, for instance
 // a capture device or a video channel.
 void RenderInWindow(webrtc::ViERender* video_render_interface,
-                    int* numberOfErrors,
                     int  frame_provider_id,
                     void* os_window,
                     float z_index);
@@ -57,13 +55,11 @@ void RenderToFile(webrtc::ViERender* renderer_interface,
 // and a video channel set up for rendering.
 void StopAndRemoveRenderers(webrtc::ViEBase* base_interface,
                             webrtc::ViERender* render_interface,
-                            int* number_of_errors,
                             int channel_id,
                             int capture_id);
 
 // Configures RTP-RTCP.
 void ConfigureRtpRtcp(webrtc::ViERTP_RTCP* rtcp_interface,
-                      int* number_of_errors,
                       int video_channel);
 
 // Finds a codec in the codec list. Returns true on success, false otherwise.

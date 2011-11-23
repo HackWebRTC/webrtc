@@ -74,52 +74,36 @@ public:
     }
 };
 
-int ViEAutoTest::ViEEncryptionStandardTest()
+void ViEAutoTest::ViEEncryptionStandardTest()
 {
-    ViETest::Log(" ");
-    ViETest::Log("========================================");
-    ViETest::Log(" ViEEncryption Standard Test\n");
-
     //***************************************************************
     //	Begin create/initialize WebRTC Video Engine for testing
     //***************************************************************
 
-    int error = 0;
-    int numberOfErrors = 0;
-
     // Create VIE
-    TbInterfaces ViE("ViEEncryptionStandardTest", numberOfErrors);
+    TbInterfaces ViE("ViEEncryptionStandardTest");
     // Create a video channel
-    tbVideoChannel tbChannel(ViE, numberOfErrors, webrtc::kVideoCodecVP8);
+    TbVideoChannel tbChannel(ViE, webrtc::kVideoCodecVP8);
 
     // Create a capture device
-    TbCaptureDevice tbCapture(ViE, numberOfErrors);
+    TbCaptureDevice tbCapture(ViE);
     tbCapture.ConnectTo(tbChannel.videoChannel);
 
     tbChannel.StartReceive();
 
     tbChannel.StartSend();
 
-    error = ViE.render->AddRenderer(tbCapture.captureId, _window1, 0,
-                                    0.0, 0.0, 1.0, 1.0);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.render->StartRender(tbCapture.captureId);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.render->AddRenderer(tbChannel.videoChannel, _window2, 1,
-                                    0.0, 0.0, 1.0, 1.0);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.render->StartRender(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.render->AddRenderer(
+        tbCapture.captureId, _window1, 0, 0.0, 0.0, 1.0, 1.0));
+    EXPECT_EQ(0, ViE.render->StartRender(tbCapture.captureId));
+    EXPECT_EQ(0, ViE.render->AddRenderer(
+        tbChannel.videoChannel, _window2, 1, 0.0, 0.0, 1.0, 1.0));
+    EXPECT_EQ(0, ViE.render->StartRender(tbChannel.videoChannel));
 
 #ifdef WEBRTC_SRTP
     //***************************************************************
     //	Engine ready. Begin testing class
     //***************************************************************
-
 
     //
     // SRTP
@@ -129,150 +113,89 @@ int ViEAutoTest::ViEEncryptionStandardTest()
         4, 5, 6, 7, 8, 9};
 
     // Encryption only
-    error = ViE.encryption->EnableSRTPReceive(
+    EXPECT_EQ(0, ViE.encryption->EnableSRTPReceive(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 30,
-        webrtc::kAuthNull, 0, 0, webrtc::kEncryption, srtpKey1);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->EnableSRTPSend(
+        webrtc::kAuthNull, 0, 0, webrtc::kEncryption, srtpKey1));
+    EXPECT_EQ(0, ViE.encryption->EnableSRTPSend(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 30,
-        webrtc::kAuthNull, 0, 0, webrtc::kEncryption, srtpKey1);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+        webrtc::kAuthNull, 0, 0, webrtc::kEncryption, srtpKey1));
     ViETest::Log("SRTP encryption only");
     AutoTestSleep(KAutoTestSleepTimeMs);
-    error = ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->DisableSRTPSend(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel));
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPSend(tbChannel.videoChannel));
 
     // Authentication only
-    error = ViE.encryption->EnableSRTPReceive(tbChannel.videoChannel,
-                                              webrtc::kCipherNull, 0,
-                                              webrtc::kAuthHmacSha1, 20,
-                                              4, webrtc::kAuthentication,
-                                              srtpKey1);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->EnableSRTPSend(tbChannel.videoChannel,
-                                           webrtc::kCipherNull, 0,
-                                           webrtc::kAuthHmacSha1, 20, 4,
-                                           webrtc::kAuthentication,
-                                           srtpKey1);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.encryption->EnableSRTPReceive(
+        tbChannel.videoChannel, webrtc::kCipherNull, 0, webrtc::kAuthHmacSha1,
+        20, 4, webrtc::kAuthentication, srtpKey1));
+    EXPECT_EQ(0, ViE.encryption->EnableSRTPSend(
+        tbChannel.videoChannel, webrtc::kCipherNull, 0, webrtc::kAuthHmacSha1,
+        20, 4, webrtc::kAuthentication, srtpKey1));
+
     ViETest::Log("SRTP authentication only");
     AutoTestSleep(KAutoTestSleepTimeMs);
-    error = ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->DisableSRTPSend(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel));
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPSend(tbChannel.videoChannel));
 
     // Full protection
-    error = ViE.encryption->EnableSRTPReceive(
+    EXPECT_EQ(0, ViE.encryption->EnableSRTPReceive(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 30,
         webrtc::kAuthHmacSha1, 20, 4, webrtc::kEncryptionAndAuthentication,
-        srtpKey1);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->EnableSRTPSend(
+        srtpKey1));
+    EXPECT_EQ(0, ViE.encryption->EnableSRTPSend(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 30,
         webrtc::kAuthHmacSha1, 20, 4, webrtc::kEncryptionAndAuthentication,
-        srtpKey1);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+        srtpKey1));
+
     ViETest::Log("SRTP full protection");
     AutoTestSleep(KAutoTestSleepTimeMs);
-    error = ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->DisableSRTPSend(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel));
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPSend(tbChannel.videoChannel));
 #endif  // WEBRTC_SRTP
+
     //
     // External encryption
     //
     ViEAutotestEncryption testEncryption;
-    error = ViE.base->StartSend(tbChannel.videoChannel);
-    error = ViE.encryption->RegisterExternalEncryption(
-        tbChannel.videoChannel, testEncryption);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    // Note(qhogpat): StartSend fails, not sure if this is intentional.
+    EXPECT_NE(0, ViE.base->StartSend(tbChannel.videoChannel));
+    EXPECT_EQ(0, ViE.encryption->RegisterExternalEncryption(
+        tbChannel.videoChannel, testEncryption));
     ViETest::Log(
         "External encryption/decryption added, you should still see video");
     AutoTestSleep(KAutoTestSleepTimeMs);
-    error = ViE.encryption->DeregisterExternalEncryption(
-        tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.encryption->DeregisterExternalEncryption(
+        tbChannel.videoChannel));
 
     //***************************************************************
     //	Testing finished. Tear down Video Engine
     //***************************************************************
-
-
-    if (numberOfErrors > 0)
-    {
-        // Test failed
-        ViETest::Log(" ");
-        ViETest::Log(" ERROR ViEEncryption Standard Test FAILED!");
-        ViETest::Log(" Number of errors: %d", numberOfErrors);
-        ViETest::Log("========================================");
-        ViETest::Log(" ");
-        return numberOfErrors;
-    }
-
-    ViETest::Log(" ");
-    ViETest::Log(" ViEEncryption Standard Test PASSED!");
-    ViETest::Log("========================================");
-    ViETest::Log(" ");
-    return 0;
-
 }
 
-int ViEAutoTest::ViEEncryptionExtendedTest()
+void ViEAutoTest::ViEEncryptionExtendedTest()
 {
-    ViETest::Log(" ");
-    ViETest::Log("========================================");
-    ViETest::Log(" ViEEncryption Extended Test\n");
-
     //***************************************************************
     //	Begin create/initialize WebRTC Video Engine for testing
     //***************************************************************
 
-    int error = 0;
-    int numberOfErrors = 0;
-
     // Create VIE
-    TbInterfaces ViE("ViEEncryptionExtendedTest", numberOfErrors);
+    TbInterfaces ViE("ViEEncryptionExtendedTest");
     // Create a video channel
-    tbVideoChannel tbChannel(ViE, numberOfErrors, webrtc::kVideoCodecVP8);
+    TbVideoChannel tbChannel(ViE, webrtc::kVideoCodecVP8);
 
     // Create a capture device
-    TbCaptureDevice tbCapture(ViE, numberOfErrors);
+    TbCaptureDevice tbCapture(ViE);
     tbCapture.ConnectTo(tbChannel.videoChannel);
 
     tbChannel.StartReceive();
     tbChannel.StartSend();
 
-    error = ViE.render->AddRenderer(tbCapture.captureId, _window1, 0,
-                                    0.0, 0.0, 1.0, 1.0);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.render->StartRender(tbCapture.captureId);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.render->AddRenderer(tbChannel.videoChannel, _window2, 1,
-                                    0.0, 0.0, 1.0, 1.0);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.render->StartRender(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.render->AddRenderer(
+        tbCapture.captureId, _window1, 0, 0.0, 0.0, 1.0, 1.0));
+    EXPECT_EQ(0, ViE.render->StartRender(tbCapture.captureId));
+    EXPECT_EQ(0, ViE.render->AddRenderer(
+        tbChannel.videoChannel, _window2, 1, 0.0, 0.0, 1.0, 1.0));
+    EXPECT_EQ(0, ViE.render->StartRender(tbChannel.videoChannel));
 
     //***************************************************************
     //	Engine ready. Begin testing class
@@ -290,201 +213,126 @@ int ViEAutoTest::ViEEncryptionExtendedTest()
     {   9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 9, 8, 7, 6,
         5, 4, 3, 2, 1, 0};
     // NULL
-    error = ViE.encryption->EnableSRTPReceive(tbChannel.videoChannel,
-                                              webrtc::kCipherNull, 0,
-                                              webrtc::kAuthNull, 0, 0,
-                                              webrtc::kNoProtection,
-                                              srtpKey1);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->EnableSRTPSend(tbChannel.videoChannel,
-                                           webrtc::kCipherNull, 0,
-                                           webrtc::kAuthNull, 0, 0,
-                                           webrtc::kNoProtection,
-                                           srtpKey1);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.encryption->EnableSRTPReceive(
+        tbChannel.videoChannel, webrtc::kCipherNull, 0, webrtc::kAuthNull, 0, 0,
+        webrtc::kNoProtection, srtpKey1));
+    EXPECT_EQ(0, ViE.encryption->EnableSRTPSend(
+        tbChannel.videoChannel, webrtc::kCipherNull, 0, webrtc::kAuthNull, 0, 0,
+        webrtc::kNoProtection, srtpKey1));
+
     ViETest::Log("SRTP NULL encryption/authentication");
     AutoTestSleep(KAutoTestSleepTimeMs);
-    error = ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->DisableSRTPSend(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel));
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPSend(tbChannel.videoChannel));
 
     // Encryption only
-    error = ViE.encryption->EnableSRTPReceive(
+    EXPECT_EQ(0, ViE.encryption->EnableSRTPReceive(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 30,
-        webrtc::kAuthNull, 0, 0, webrtc::kEncryption, srtpKey1);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->EnableSRTPSend(
+        webrtc::kAuthNull, 0, 0, webrtc::kEncryption, srtpKey1));
+    EXPECT_EQ(0, ViE.encryption->EnableSRTPSend(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 30,
-        webrtc::kAuthNull, 0, 0, webrtc::kEncryption, srtpKey1);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+        webrtc::kAuthNull, 0, 0, webrtc::kEncryption, srtpKey1));
+
     ViETest::Log("SRTP encryption only");
     AutoTestSleep(KAutoTestSleepTimeMs);
-    error = ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->DisableSRTPSend(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel));
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPSend(tbChannel.videoChannel));
 
     // Authentication only
-    error = ViE.encryption->EnableSRTPReceive(tbChannel.videoChannel,
-                                              webrtc::kCipherNull, 0,
-                                              webrtc::kAuthHmacSha1, 20,
-                                              4, webrtc::kAuthentication,
-                                              srtpKey1);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->EnableSRTPSend(tbChannel.videoChannel,
-                                           webrtc::kCipherNull, 0,
-                                           webrtc::kAuthHmacSha1, 20, 4,
-                                           webrtc::kAuthentication,
-                                           srtpKey1);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.encryption->EnableSRTPReceive(
+        tbChannel.videoChannel, webrtc::kCipherNull, 0, webrtc::kAuthHmacSha1,
+        20, 4, webrtc::kAuthentication, srtpKey1));
+    EXPECT_EQ(0, ViE.encryption->EnableSRTPSend(
+        tbChannel.videoChannel, webrtc::kCipherNull, 0, webrtc::kAuthHmacSha1,
+        20, 4, webrtc::kAuthentication, srtpKey1));
+
     ViETest::Log("SRTP authentication only");
     AutoTestSleep(KAutoTestSleepTimeMs);
-    error = ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->DisableSRTPSend(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel));
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPSend(tbChannel.videoChannel));
 
     // Full protection
-    error = ViE.encryption->EnableSRTPReceive(
+    EXPECT_EQ(0, ViE.encryption->EnableSRTPReceive(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 30,
         webrtc::kAuthHmacSha1, 20, 4, webrtc::kEncryptionAndAuthentication,
-        srtpKey1);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->EnableSRTPSend(
+        srtpKey1));
+    EXPECT_EQ(0, ViE.encryption->EnableSRTPSend(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 30,
         webrtc::kAuthHmacSha1, 20, 4, webrtc::kEncryptionAndAuthentication,
-        srtpKey1);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+        srtpKey1));
+
     ViETest::Log("SRTP full protection");
     AutoTestSleep(KAutoTestSleepTimeMs);
-    error = ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->DisableSRTPSend(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel));
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPSend(tbChannel.videoChannel));
 
     // Change receive key, but not send key...
-    error = ViE.encryption->EnableSRTPReceive(
+    EXPECT_EQ(0, ViE.encryption->EnableSRTPReceive(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 30,
         webrtc::kAuthHmacSha1, 20, 4, webrtc::kEncryptionAndAuthentication,
-        srtpKey2);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->EnableSRTPSend(
+        srtpKey2));
+
+    EXPECT_EQ(0, ViE.encryption->EnableSRTPSend(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 30,
         webrtc::kAuthHmacSha1, 20, 4, webrtc::kEncryptionAndAuthentication,
-        srtpKey1);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+        srtpKey1));
+
     ViETest::Log(
         "\nSRTP receive key changed, you should not see any remote images");
     AutoTestSleep(KAutoTestSleepTimeMs);
 
     // Change send key too
-    error = ViE.encryption->DisableSRTPSend(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->EnableSRTPSend(
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPSend(tbChannel.videoChannel));
+    EXPECT_EQ(0, ViE.encryption->EnableSRTPSend(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 30,
         webrtc::kAuthHmacSha1, 20, 4, webrtc::kEncryptionAndAuthentication,
-        srtpKey2);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+        srtpKey2));
+
     ViETest::Log("\nSRTP send key changed too, you should see remote video "
                  "again with some decoding artefacts at start");
     AutoTestSleep(KAutoTestSleepTimeMs);
-    error = ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel));
 
     // Disable receive, keep send
     ViETest::Log("SRTP receive disabled , you shouldn't see any video");
     AutoTestSleep(KAutoTestSleepTimeMs);
-    error = ViE.encryption->DisableSRTPSend(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPSend(tbChannel.videoChannel));
 
 #endif //WEBRTC_SRTP
     //
     // External encryption
     //
     ViEAutotestEncryption testEncryption;
-    error = ViE.encryption->RegisterExternalEncryption(tbChannel.videoChannel,
-                                                       testEncryption);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.encryption->RegisterExternalEncryption(
+        tbChannel.videoChannel, testEncryption));
     ViETest::Log(
         "External encryption/decryption added, you should still see video");
     AutoTestSleep(KAutoTestSleepTimeMs);
-    error = ViE.encryption->DeregisterExternalEncryption(
-        tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.encryption->DeregisterExternalEncryption(
+        tbChannel.videoChannel));
 
     //***************************************************************
     //	Testing finished. Tear down Video Engine
     //***************************************************************
-
-
-    if (numberOfErrors > 0)
-    {
-        // Test failed
-        ViETest::Log(" ");
-        ViETest::Log(" ERROR ViEEncryption Extended Test FAILED!");
-        ViETest::Log(" Number of errors: %d", numberOfErrors);
-        ViETest::Log("========================================");
-        ViETest::Log(" ");
-        return numberOfErrors;
-    }
-
-    ViETest::Log(" ");
-    ViETest::Log(" ViEEncryption Extended Test PASSED!");
-    ViETest::Log("========================================");
-    ViETest::Log(" ");
-    return 0;
 }
 
-int ViEAutoTest::ViEEncryptionAPITest()
+void ViEAutoTest::ViEEncryptionAPITest()
 {
-    ViETest::Log(" ");
-    ViETest::Log("========================================");
-    ViETest::Log(" ViEEncryption API Test\n");
-
     //***************************************************************
     //	Begin create/initialize WebRTC Video Engine for testing
     //***************************************************************
-
-
-    int error = 0;
-    int numberOfErrors = 0;
 
     //***************************************************************
     //	Engine ready. Begin testing class
     //***************************************************************
 
     // Create VIE
-    TbInterfaces ViE("ViEEncryptionAPITest", numberOfErrors);
+    TbInterfaces ViE("ViEEncryptionAPITest");
     // Create a video channel
-    tbVideoChannel tbChannel(ViE, numberOfErrors, webrtc::kVideoCodecVP8);
+    TbVideoChannel tbChannel(ViE, webrtc::kVideoCodecVP8);
 
     // Create a capture device
-    TbCaptureDevice tbCapture(ViE, numberOfErrors);
+    TbCaptureDevice tbCapture(ViE);
     // Connect to channel
     tbCapture.ConnectTo(tbChannel.videoChannel);
 
@@ -498,401 +346,232 @@ int ViEAutoTest::ViEEncryptionAPITest()
     //
 
     // Incorrect input argument, complete protection not enabled
-    error = ViE.encryption->EnableSRTPSend(
+    EXPECT_NE(0, ViE.encryption->EnableSRTPSend(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 30,
-        webrtc::kAuthHmacSha1, 20, 4, webrtc::kNoProtection, srtpKey);
-    numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->EnableSRTPSend(
+        webrtc::kAuthHmacSha1, 20, 4, webrtc::kNoProtection, srtpKey));
+    EXPECT_NE(0, ViE.encryption->EnableSRTPSend(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 30,
-        webrtc::kAuthHmacSha1, 20, 4, webrtc::kEncryption, srtpKey);
-    numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->EnableSRTPSend(
+        webrtc::kAuthHmacSha1, 20, 4, webrtc::kEncryption, srtpKey));
+    EXPECT_NE(0, ViE.encryption->EnableSRTPSend(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 30,
-        webrtc::kAuthHmacSha1, 20, 4, webrtc::kAuthentication, srtpKey);
-    numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+        webrtc::kAuthHmacSha1, 20, 4, webrtc::kAuthentication, srtpKey));
 
     // Incorrect cipher key length
-    error = ViE.encryption->EnableSRTPSend(
+    EXPECT_NE(0, ViE.encryption->EnableSRTPSend(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 15,
         webrtc::kAuthHmacSha1, 20, 4, webrtc::kEncryptionAndAuthentication,
-        srtpKey);
-    numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->EnableSRTPSend(
+        srtpKey));
+    EXPECT_NE(0, ViE.encryption->EnableSRTPSend(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 257,
         webrtc::kAuthHmacSha1, 20, 4, webrtc::kEncryptionAndAuthentication,
-        srtpKey);
-    numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->EnableSRTPSend(
+        srtpKey));
+    EXPECT_NE(0, ViE.encryption->EnableSRTPSend(
         tbChannel.videoChannel, webrtc::kCipherNull, 15, webrtc::kAuthHmacSha1,
-        20, 4, webrtc::kEncryptionAndAuthentication, srtpKey);
-    numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->EnableSRTPSend(
+        20, 4, webrtc::kEncryptionAndAuthentication, srtpKey));
+
+    EXPECT_NE(0, ViE.encryption->EnableSRTPSend(
         tbChannel.videoChannel, webrtc::kCipherNull, 257, webrtc::kAuthHmacSha1,
-        20, 4, webrtc::kEncryptionAndAuthentication, srtpKey);
-    numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+        20, 4, webrtc::kEncryptionAndAuthentication, srtpKey));
 
     // Incorrect auth key length
-    error = ViE.encryption->EnableSRTPSend(
+    EXPECT_NE(0, ViE.encryption->EnableSRTPSend(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode,
         30, webrtc::kAuthHmacSha1, 21, 4, webrtc::kEncryptionAndAuthentication,
-        srtpKey);
-    numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->EnableSRTPSend(
+        srtpKey));
+    EXPECT_NE(0, ViE.encryption->EnableSRTPSend(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 30,
         webrtc::kAuthNull, 257, 4, webrtc::kEncryptionAndAuthentication,
-        srtpKey);
-    numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->EnableSRTPSend(
+        srtpKey));
+    EXPECT_NE(0, ViE.encryption->EnableSRTPSend(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 30,
         webrtc::kAuthHmacSha1, 20, 21, webrtc::kEncryptionAndAuthentication,
-        srtpKey);
-    numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->EnableSRTPSend(
+        srtpKey));
+    EXPECT_NE(0, ViE.encryption->EnableSRTPSend(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 30,
         webrtc::kAuthNull, 20, 13, webrtc::kEncryptionAndAuthentication,
-        srtpKey);
-    numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+        srtpKey));
 
     // NULL input
-    error = ViE.encryption->EnableSRTPSend(
+    EXPECT_NE(0, ViE.encryption->EnableSRTPSend(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 30,
         webrtc::kAuthHmacSha1, 20, 4, webrtc::kEncryptionAndAuthentication,
-        NULL);
-    numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+        NULL));
 
     // Double enable and disable
-    error = ViE.encryption->EnableSRTPSend(
+    EXPECT_EQ(0, ViE.encryption->EnableSRTPSend(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 30,
         webrtc::kAuthHmacSha1, 20, 4, webrtc::kEncryptionAndAuthentication,
-        srtpKey);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->EnableSRTPSend(
+        srtpKey));
+    EXPECT_NE(0, ViE.encryption->EnableSRTPSend(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 30,
         webrtc::kAuthHmacSha1, 20, 4, webrtc::kEncryptionAndAuthentication,
-        srtpKey);
-    numberOfErrors += ViETest::TestError(error == -1, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->DisableSRTPSend(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->DisableSRTPSend(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+        srtpKey));
+
+    // Note(qhogpat): the second check is likely incorrect.
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPSend(tbChannel.videoChannel));
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPSend(tbChannel.videoChannel));
 
     // No protection
-    error = ViE.encryption->EnableSRTPSend(tbChannel.videoChannel,
-                                                 webrtc::kCipherNull, 0,
-                                                 webrtc::kAuthNull, 0, 0,
-                                                 webrtc::kNoProtection,
-                                                 srtpKey);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->DisableSRTPSend(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.encryption->EnableSRTPSend(
+        tbChannel.videoChannel, webrtc::kCipherNull, 0, webrtc::kAuthNull, 0, 0,
+        webrtc::kNoProtection, srtpKey));
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPSend(tbChannel.videoChannel));
 
     // Authentication only
-    error = ViE.encryption->EnableSRTPSend(tbChannel.videoChannel,
-                                                 webrtc::kCipherNull, 0,
-                                                 webrtc::kAuthHmacSha1, 20, 4,
-                                                 webrtc::kAuthentication,
-                                                 srtpKey);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->DisableSRTPSend(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->EnableSRTPSend(tbChannel.videoChannel,
-                                                 webrtc::kCipherNull, 0,
-                                                 webrtc::kAuthHmacSha1, 1, 4,
-                                                 webrtc::kAuthentication,
-                                                 srtpKey);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->DisableSRTPSend(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->EnableSRTPSend(tbChannel.videoChannel,
-                                                 webrtc::kCipherNull, 0,
-                                                 webrtc::kAuthHmacSha1, 20, 20,
-                                                 webrtc::kAuthentication,
-                                                 srtpKey);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->DisableSRTPSend(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->EnableSRTPSend(tbChannel.videoChannel,
-                                                 webrtc::kCipherNull, 0,
-                                                 webrtc::kAuthHmacSha1, 1, 1,
-                                                 webrtc::kAuthentication,
-                                                 srtpKey);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->DisableSRTPSend(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.encryption->EnableSRTPSend(
+        tbChannel.videoChannel, webrtc::kCipherNull, 0, webrtc::kAuthHmacSha1,
+        20, 4, webrtc::kAuthentication, srtpKey));
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPSend(tbChannel.videoChannel));
+    EXPECT_EQ(0, ViE.encryption->EnableSRTPSend(
+        tbChannel.videoChannel, webrtc::kCipherNull, 0, webrtc::kAuthHmacSha1,
+        1, 4, webrtc::kAuthentication, srtpKey));
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPSend(tbChannel.videoChannel));
+    EXPECT_EQ(0, ViE.encryption->EnableSRTPSend(
+        tbChannel.videoChannel, webrtc::kCipherNull, 0, webrtc::kAuthHmacSha1,
+        20, 20, webrtc::kAuthentication, srtpKey));
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPSend(tbChannel.videoChannel));
+    EXPECT_EQ(0, ViE.encryption->EnableSRTPSend(
+        tbChannel.videoChannel, webrtc::kCipherNull, 0, webrtc::kAuthHmacSha1,
+        1, 1, webrtc::kAuthentication, srtpKey));
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPSend(tbChannel.videoChannel));
 
     // Encryption only
-    error = ViE.encryption->EnableSRTPSend(
+    EXPECT_EQ(0, ViE.encryption->EnableSRTPSend(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 30,
-        webrtc::kAuthNull, 0, 0, webrtc::kEncryption, srtpKey);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->DisableSRTPSend(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->EnableSRTPSend(
+        webrtc::kAuthNull, 0, 0, webrtc::kEncryption, srtpKey));
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPSend(tbChannel.videoChannel));
+    EXPECT_EQ(0, ViE.encryption->EnableSRTPSend(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 16,
-        webrtc::kAuthNull, 0, 0, webrtc::kEncryption, srtpKey);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->DisableSRTPSend(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+        webrtc::kAuthNull, 0, 0, webrtc::kEncryption, srtpKey));
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPSend(tbChannel.videoChannel));
 
     // Full protection
-    error = ViE.encryption->EnableSRTPSend(
+    EXPECT_EQ(0, ViE.encryption->EnableSRTPSend(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 30,
         webrtc::kAuthHmacSha1, 20, 4, webrtc::kEncryptionAndAuthentication,
-        srtpKey);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->DisableSRTPSend(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+        srtpKey));
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPSend(tbChannel.videoChannel));
 
     //
     // EnableSRTPReceive and DisableSRTPReceive
     //
 
     // Incorrect input argument, complete protection not enabled
-    error = ViE.encryption->EnableSRTPReceive(
+    EXPECT_NE(0, ViE.encryption->EnableSRTPReceive(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 30,
-        webrtc::kAuthHmacSha1, 20, 4, webrtc::kNoProtection, srtpKey);
-    numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->EnableSRTPReceive(
+        webrtc::kAuthHmacSha1, 20, 4, webrtc::kNoProtection, srtpKey));
+    EXPECT_NE(0, ViE.encryption->EnableSRTPReceive(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 30,
-        webrtc::kAuthHmacSha1, 20, 4, webrtc::kEncryption, srtpKey);
-    numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->EnableSRTPReceive(
+        webrtc::kAuthHmacSha1, 20, 4, webrtc::kEncryption, srtpKey));
+    EXPECT_NE(0, ViE.encryption->EnableSRTPReceive(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 30,
-        webrtc::kAuthHmacSha1, 20, 4, webrtc::kAuthentication, srtpKey);
-    numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+        webrtc::kAuthHmacSha1, 20, 4, webrtc::kAuthentication, srtpKey));
 
     // Incorrect cipher key length
-    error = ViE.encryption->EnableSRTPReceive(
+    EXPECT_NE(0, ViE.encryption->EnableSRTPReceive(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 15,
         webrtc::kAuthHmacSha1, 20, 4, webrtc::kEncryptionAndAuthentication,
-        srtpKey);
-    numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->EnableSRTPReceive(
+        srtpKey));
+    EXPECT_NE(0, ViE.encryption->EnableSRTPReceive(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 257,
         webrtc::kAuthHmacSha1, 20, 4, webrtc::kEncryptionAndAuthentication,
-        srtpKey);
-    numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->EnableSRTPReceive(
+        srtpKey));
+    EXPECT_NE(0, ViE.encryption->EnableSRTPReceive(
         tbChannel.videoChannel, webrtc::kCipherNull, 15, webrtc::kAuthHmacSha1,
-        20, 4, webrtc::kEncryptionAndAuthentication, srtpKey);
-    numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->EnableSRTPReceive(
+        20, 4, webrtc::kEncryptionAndAuthentication, srtpKey));
+    EXPECT_NE(0, ViE.encryption->EnableSRTPReceive(
         tbChannel.videoChannel, webrtc::kCipherNull, 257, webrtc::kAuthHmacSha1,
-        20, 4, webrtc::kEncryptionAndAuthentication, srtpKey);
-    numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+        20, 4, webrtc::kEncryptionAndAuthentication, srtpKey));
 
     // Incorrect auth key length
-    error = ViE.encryption->EnableSRTPReceive(
+    EXPECT_NE(0, ViE.encryption->EnableSRTPReceive(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 30,
         webrtc::kAuthHmacSha1, 21, 4, webrtc::kEncryptionAndAuthentication,
-        srtpKey);
-    numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->EnableSRTPReceive(
+        srtpKey));
+    EXPECT_NE(0, ViE.encryption->EnableSRTPReceive(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 30,
         webrtc::kAuthNull, 257, 4, webrtc::kEncryptionAndAuthentication,
-        srtpKey);
-    numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->EnableSRTPReceive(
+        srtpKey));
+    EXPECT_NE(0, ViE.encryption->EnableSRTPReceive(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 30,
         webrtc::kAuthHmacSha1, 20, 21, webrtc::kEncryptionAndAuthentication,
-        srtpKey);
-    numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->EnableSRTPReceive(
+        srtpKey));
+    EXPECT_NE(0, ViE.encryption->EnableSRTPReceive(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 30,
         webrtc::kAuthNull, 20, 13, webrtc::kEncryptionAndAuthentication,
-        srtpKey);
-    numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+        srtpKey));
 
     // NULL input
-    error = ViE.encryption->EnableSRTPReceive(
+    EXPECT_NE(0, ViE.encryption->EnableSRTPReceive(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 30,
         webrtc::kAuthHmacSha1, 20, 4, webrtc::kEncryptionAndAuthentication,
-        NULL);
-    numberOfErrors += ViETest::TestError(error != 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+        NULL));
 
     // Double enable and disable
-    error = ViE.encryption->EnableSRTPSend(
+    EXPECT_EQ(0, ViE.encryption->EnableSRTPSend(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 30,
         webrtc::kAuthHmacSha1, 20, 4, webrtc::kEncryptionAndAuthentication,
-        srtpKey);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->EnableSRTPSend(
+        srtpKey));
+    EXPECT_NE(0, ViE.encryption->EnableSRTPSend(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 30,
         webrtc::kAuthHmacSha1, 20, 4, webrtc::kEncryptionAndAuthentication,
-        srtpKey);
-    numberOfErrors += ViETest::TestError(error == -1, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->DisableSRTPSend(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->DisableSRTPSend(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+        srtpKey));
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPSend(tbChannel.videoChannel));
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPSend(tbChannel.videoChannel));
 
     // No protection
-    error = ViE.encryption->EnableSRTPReceive(tbChannel.videoChannel,
-                                                    webrtc::kCipherNull, 0,
-                                                    webrtc::kAuthNull, 0, 0,
-                                                    webrtc::kNoProtection,
-                                                    srtpKey);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.encryption->EnableSRTPReceive(
+        tbChannel.videoChannel, webrtc::kCipherNull, 0, webrtc::kAuthNull, 0, 0,
+        webrtc::kNoProtection, srtpKey));
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel));
 
     // Authentication only
-
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->EnableSRTPReceive(tbChannel.videoChannel,
-                                                    webrtc::kCipherNull, 0,
-                                                    webrtc::kAuthHmacSha1, 1, 4,
-                                                    webrtc::kAuthentication,
-                                                    srtpKey);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->EnableSRTPReceive(tbChannel.videoChannel,
-                                                    webrtc::kCipherNull, 0,
-                                                    webrtc::kAuthHmacSha1, 20,
-                                                    20, webrtc::kAuthentication,
-                                                    srtpKey);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->EnableSRTPReceive(tbChannel.videoChannel,
-                                                    webrtc::kCipherNull, 0,
-                                                    webrtc::kAuthHmacSha1, 1, 1,
-                                                    webrtc::kAuthentication,
-                                                    srtpKey);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel));
+    EXPECT_EQ(0, ViE.encryption->EnableSRTPReceive(
+        tbChannel.videoChannel, webrtc::kCipherNull, 0, webrtc::kAuthHmacSha1,
+        1, 4, webrtc::kAuthentication, srtpKey));
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel));
+    EXPECT_EQ(0, ViE.encryption->EnableSRTPReceive(
+        tbChannel.videoChannel, webrtc::kCipherNull, 0,
+        webrtc::kAuthHmacSha1, 20, 20, webrtc::kAuthentication, srtpKey));
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel));
+    EXPECT_EQ(0, ViE.encryption->EnableSRTPReceive(
+        tbChannel.videoChannel, webrtc::kCipherNull, 0, webrtc::kAuthHmacSha1,
+        1, 1, webrtc::kAuthentication, srtpKey));
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel));
 
     // Encryption only
-    error = ViE.encryption->EnableSRTPReceive(
+    EXPECT_EQ(0, ViE.encryption->EnableSRTPReceive(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 30,
-        webrtc::kAuthNull, 0, 0, webrtc::kEncryption, srtpKey);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->EnableSRTPReceive(
+        webrtc::kAuthNull, 0, 0, webrtc::kEncryption, srtpKey));
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel));
+    EXPECT_EQ(0, ViE.encryption->EnableSRTPReceive(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 16,
-        webrtc::kAuthNull, 0, 0, webrtc::kEncryption, srtpKey);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+        webrtc::kAuthNull, 0, 0, webrtc::kEncryption, srtpKey));
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel));
 
     // Full protection
-    error = ViE.encryption->EnableSRTPReceive(
+    EXPECT_EQ(0, ViE.encryption->EnableSRTPReceive(
         tbChannel.videoChannel, webrtc::kCipherAes128CounterMode, 30,
         webrtc::kAuthHmacSha1, 20, 4, webrtc::kEncryptionAndAuthentication,
-        srtpKey);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+        srtpKey));
+    EXPECT_EQ(0, ViE.encryption->DisableSRTPReceive(tbChannel.videoChannel));
 #endif //WEBRTC_SRTP
     //
     // External encryption
     //
 
     ViEAutotestEncryption testEncryption;
-    error = ViE.encryption->RegisterExternalEncryption(
-        tbChannel.videoChannel, testEncryption);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->RegisterExternalEncryption(
-        tbChannel.videoChannel, testEncryption);
-    numberOfErrors += ViETest::TestError(error == -1, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->DeregisterExternalEncryption(
-        tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
-    error = ViE.encryption->DeregisterExternalEncryption(
-        tbChannel.videoChannel);
-    numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    EXPECT_EQ(0, ViE.encryption->RegisterExternalEncryption(
+        tbChannel.videoChannel, testEncryption));
+    EXPECT_NE(0, ViE.encryption->RegisterExternalEncryption(
+        tbChannel.videoChannel, testEncryption));
+    EXPECT_EQ(0, ViE.encryption->DeregisterExternalEncryption(
+        tbChannel.videoChannel));
+    EXPECT_EQ(0, ViE.encryption->DeregisterExternalEncryption(
+        tbChannel.videoChannel));
 
     //***************************************************************
     //	Testing finished. Tear down Video Engine
     //***************************************************************
-
-    if (numberOfErrors > 0)
-    {
-        // Test failed
-        ViETest::Log(" ");
-        ViETest::Log(" ERROR ViEEncryption API Test FAILED!");
-        ViETest::Log(" Number of errors: %d", numberOfErrors);
-        ViETest::Log("========================================");
-        ViETest::Log(" ");
-        return numberOfErrors;
-    }
-
-    ViETest::Log(" ");
-    ViETest::Log(" ViEEncryption API Test PASSED!");
-    ViETest::Log("========================================");
-    ViETest::Log(" ");
-    return 0;
 }

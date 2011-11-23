@@ -17,14 +17,13 @@
 class TbCaptureDevice
 {
 public:
-    TbCaptureDevice(TbInterfaces& Engine, int& nrOfErrors);
+    TbCaptureDevice(TbInterfaces& Engine);
     ~TbCaptureDevice(void);
 
     int captureId;
     void ConnectTo(int videoChannel);
     void Disconnect(int videoChannel);
 private:
-    int& numberOfErrors;
     TbInterfaces& ViE;
     webrtc::VideoCaptureModule* vcpm_;
 };

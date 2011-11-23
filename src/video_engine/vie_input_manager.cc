@@ -295,7 +295,7 @@ int ViEInputManager::CreateCaptureDevice(const WebRtc_UWord8* deviceUniqueIdUTF8
         WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideo, ViEId(_engineId),
                    "%s:%d Capture device NOT found by unique ID: %s. Returning",
                    __FUNCTION__, __LINE__, deviceUniqueIdUTF8);
-        return kViECaptureDeviceDoesnNotExist;
+        return kViECaptureDeviceDoesNotExist;
     }
 
     int newcaptureId = 0;

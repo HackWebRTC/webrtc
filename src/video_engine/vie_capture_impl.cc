@@ -265,7 +265,7 @@ int ViECaptureImpl::ReleaseCaptureDevice(const int captureId)
             WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_instanceId),
                          "%s: Capture device %d doesn't exist", __FUNCTION__,
                          captureId);
-            SetLastError(kViECaptureDeviceDoesnNotExist);
+            SetLastError(kViECaptureDeviceDoesNotExist);
             return -1;
         }
 
@@ -302,7 +302,7 @@ int ViECaptureImpl::ConnectCaptureDevice(const int captureId,
                      ViEId(_instanceId, videoChannel),
                      "%s: Capture device %d doesn't exist", __FUNCTION__,
                      captureId);
-        SetLastError(kViECaptureDeviceDoesnNotExist);
+        SetLastError(kViECaptureDeviceDoesNotExist);
         return -1;
     }
 
@@ -424,7 +424,7 @@ int ViECaptureImpl::StartCapture(const int captureId,
                      ViEId(_instanceId, captureId),
                      "%s: Capture device %d doesn't exist", __FUNCTION__,
                      captureId);
-        SetLastError(kViECaptureDeviceDoesnNotExist);
+        SetLastError(kViECaptureDeviceDoesNotExist);
         return -1;
     }
     if (ptrViECapture->Started())
@@ -458,7 +458,7 @@ int ViECaptureImpl::StopCapture(const int captureId)
                      ViEId(_instanceId, captureId),
                      "%s: Capture device %d doesn't exist", __FUNCTION__,
                      captureId);
-        SetLastError(kViECaptureDeviceDoesnNotExist);
+        SetLastError(kViECaptureDeviceDoesNotExist);
         return -1;
     }
     if (!ptrViECapture->Started())
@@ -513,7 +513,7 @@ int ViECaptureImpl::SetRotateCapturedFrames(const int captureId,
                      ViEId(_instanceId, captureId),
                      "%s: Capture device %d doesn't exist", __FUNCTION__,
                      captureId);
-        SetLastError(kViECaptureDeviceDoesnNotExist);
+        SetLastError(kViECaptureDeviceDoesNotExist);
         return -1;
     }
     if (ptrViECapture->SetRotateCapturedFrames(rotation) != 0)
@@ -548,7 +548,7 @@ int ViECaptureImpl::SetCaptureDelay(const int captureId,
                      ViEId(_instanceId, captureId),
                      "%s: Capture device %d doesn't exist", __FUNCTION__,
                      captureId);
-        SetLastError(kViECaptureDeviceDoesnNotExist);
+        SetLastError(kViECaptureDeviceDoesNotExist);
         return -1;
     }
 
@@ -711,7 +711,7 @@ int ViECaptureImpl::EnableBrightnessAlarm(const int captureId,
                      ViEId(_instanceId, captureId),
                      "%s: Capture device %d doesn't exist", __FUNCTION__,
                      captureId);
-        SetLastError(kViECaptureDeviceDoesnNotExist);
+        SetLastError(kViECaptureDeviceDoesNotExist);
         return -1;
     }
     if (ptrViECapture->EnableBrightnessAlarm(enable) != 0)
@@ -738,7 +738,7 @@ int ViECaptureImpl::RegisterObserver(const int captureId,
                      ViEId(_instanceId, captureId),
                      "%s: Capture device %d doesn't exist", __FUNCTION__,
                      captureId);
-        SetLastError(kViECaptureDeviceDoesnNotExist);
+        SetLastError(kViECaptureDeviceDoesNotExist);
         return -1;
     }
     if (ptrViECapture->IsObserverRegistered())
@@ -773,7 +773,7 @@ int ViECaptureImpl::DeregisterObserver(const int captureId)
                      ViEId(_instanceId, captureId),
                      "%s: Capture device %d doesn't exist", __FUNCTION__,
                      captureId);
-        SetLastError(kViECaptureDeviceDoesnNotExist);
+        SetLastError(kViECaptureDeviceDoesNotExist);
         return -1;
     }
     if (!ptrViECapture->IsObserverRegistered())
