@@ -13,7 +13,7 @@ vars = {
   "clang_revision": "142072",
 
   # External resources like video and audio files used for testing purposes.
-  # Downloaded on demand when neeeded.
+  # Downloaded on demand when needed.
   "webrtc_resources_revision": "1",
 }
 
@@ -103,7 +103,7 @@ hooks = [
     # Download test resources, i.e. video and audio files. If the latest
     # version is already downloaded, this takes zero seconds to run.
     # If a newer version or no current download exists, it will download
-    # the esources and extract them.
+    # the resources and extract them.
     "pattern": ".",
     "action": ["python", "trunk/tools/resources/update.py"],
   },
