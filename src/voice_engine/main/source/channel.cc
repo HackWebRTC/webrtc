@@ -6108,29 +6108,12 @@ Channel::GetNetworkStatistics(NetworkStatistics& stats)
 }
 
 int
-Channel::GetJitterStatistics(JitterStatistics& stats)
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::GetNetworkStatistics()");
-    return _audioCodingModule.JitterStatistics(
-        (ACMJitterStatistics &)stats);
-}
-
-int
 Channel::GetPreferredBufferSize(unsigned short& preferredBufferSize)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::GetPreferredBufferSize()");
     return _audioCodingModule.PreferredBufferSize(
         (WebRtc_UWord16 &)preferredBufferSize);
-}
-
-int
-Channel::ResetJitterStatistics()
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::ResetJitterStatistics()");
-    return _audioCodingModule.ResetJitterStatistics();
 }
 
 int

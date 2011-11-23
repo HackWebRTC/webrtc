@@ -28,13 +28,8 @@ public:
     virtual int GetNetworkStatistics(int channel,
                                      NetworkStatistics& stats);
 
-    virtual int GetJitterStatistics(int channel,
-                                    JitterStatistics& stats);
-
     virtual int GetPreferredBufferSize(int channel,
                                        unsigned short& preferredBufferSize);
-
-    virtual int ResetJitterStatistics(int channel);
 
 protected:
     VoENetEqStatsImpl();

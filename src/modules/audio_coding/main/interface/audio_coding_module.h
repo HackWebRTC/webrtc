@@ -915,20 +915,6 @@ class AudioCodingModule: public Module {
       ACMNetworkStatistics& networkStatistics) const = 0;
 
   ///////////////////////////////////////////////////////////////////////////
-  // WebRtc_Word32  JitterStatistics()
-  // Get the jitter statistics.
-  //
-  // Input:
-  //   -jitterStatistics   : the given jitter statistics.
-  //
-  // Return value:
-  //   -1 if failed to set the jitter statistics,
-  //    0 if jitter statistics are set successfully.
-  //
-  virtual WebRtc_Word32 JitterStatistics(
-      ACMJitterStatistics& jitterStatistics) const = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
   // WebRtc_Word32  PreferredBufferSize()
   // Get the optimal buffer size calculated for the current network
   // conditions.
@@ -943,16 +929,6 @@ class AudioCodingModule: public Module {
   //
   virtual WebRtc_Word32 PreferredBufferSize(
       WebRtc_UWord16& prefBufSize) const = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
-  // WebRtc_Word32 ResetJitterStatistics()
-  // Reset jitter statistics.
-  //
-  // Return value:
-  //   -1 if failed to reset the statistics,
-  //    0 if succeeded.
-  //
-  virtual WebRtc_Word32 ResetJitterStatistics() const = 0;
 };
 
 }  // namespace webrtc

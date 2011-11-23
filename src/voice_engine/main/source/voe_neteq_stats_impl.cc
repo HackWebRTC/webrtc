@@ -95,32 +95,6 @@ int VoENetEqStatsImpl::GetNetworkStatistics(int channel,
     return channelPtr->GetNetworkStatistics(stats);
 }
 
-int VoENetEqStatsImpl::GetJitterStatistics(int channel,
-                                           JitterStatistics& stats)
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1),
-                 "GetJitterStatistics(channel=%i)", channel);
-    ANDROID_NOT_SUPPORTED();
-    IPHONE_NOT_SUPPORTED();
-    
-    if (!_engineStatistics.Initialized())
-    {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
-        return -1;
-    }
-	voe::ScopedChannel sc(_channelManager, channel);
-	voe::Channel* channelPtr = sc.ChannelPtr();
-    if (channelPtr == NULL)
-    {
-        _engineStatistics.SetLastError(
-            VE_CHANNEL_NOT_VALID, kTraceError,
-            "GetJitterStatistics() failed to locate channel");
-        return -1;
-    }
-
-    return channelPtr->GetJitterStatistics(stats); 
-}
-
 int VoENetEqStatsImpl::GetPreferredBufferSize(
     int channel,
     unsigned short& preferredBufferSize)
@@ -146,31 +120,6 @@ int VoENetEqStatsImpl::GetPreferredBufferSize(
     }
 
     return channelPtr->GetPreferredBufferSize(preferredBufferSize);
-}
-
-int VoENetEqStatsImpl::ResetJitterStatistics(int channel)
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1),
-                 "ResetJitterStatistics(channel=%i)", channel);
-    ANDROID_NOT_SUPPORTED();
-    IPHONE_NOT_SUPPORTED();
-
-    if (!_engineStatistics.Initialized())
-    {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
-        return -1;
-    }
-    voe::ScopedChannel sc(_channelManager, channel);
-    voe::Channel* channelPtr = sc.ChannelPtr();
-    if (channelPtr == NULL)
-    {
-        _engineStatistics.SetLastError(
-            VE_CHANNEL_NOT_VALID, kTraceError,
-            "ResetJitterStatistics() failed to locate channel");
-        return -1;
-    }
-
-    return channelPtr->ResetJitterStatistics();
 }
 
 #endif  // #ifdef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API

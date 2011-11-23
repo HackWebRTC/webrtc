@@ -470,51 +470,6 @@ ACMNetEQ::NetworkStatistics(
 
 
 WebRtc_Word32
-ACMNetEQ::JitterStatistics(
-    ACMJitterStatistics* jitterStatistics) const
-{
-    WebRtcNetEQ_JitterStatistics stats;
-    CriticalSectionScoped lock(*_netEqCritSect);
-    if(!_isInitialized[0])
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
-            "JitterStatistics: NetEq is not initialized.");
-        return -1;
-    }
-    if(WebRtcNetEQ_GetJitterStatistics(_inst[0], &stats) == 0)
-    {
-        jitterStatistics->accelerateMs            = stats.accelerateMs;
-        jitterStatistics->avgPacketDelayMs        = stats.avgPacketDelayMs;
-        jitterStatistics->numExpandTiny           = stats.countExpandMoreThan120ms;
-        jitterStatistics->numExpandLong           = stats.countExpandMoreThan2000ms;
-        jitterStatistics->numExpandSmall          = stats.countExpandMoreThan250ms;
-        jitterStatistics->numExpandMedium         = stats.countExpandMoreThan500ms;
-        jitterStatistics->countIAT1000ms          = stats.countIAT1000ms;
-        jitterStatistics->countIAT2000ms          = stats.countIAT2000ms;
-        jitterStatistics->countIAT500ms           = stats.countIAT500ms;
-        jitterStatistics->flushedMs               = stats.flushedMs;
-        jitterStatistics->generatedSilentMs       = stats.generatedSilentMs;
-        jitterStatistics->interpolatedSilentMs    = stats.interpolatedSilentMs;
-        jitterStatistics->interpolatedVoiceMs     = stats.interpolatedVoiceMs;
-        jitterStatistics->jbAvgSize               = stats.jbAvgSize;
-        jitterStatistics->jbChangeCount           = stats.jbChangeCount;
-        jitterStatistics->jbMaxSize               = stats.jbMaxSize;
-        jitterStatistics->jbMinSize               = stats.jbMinSize;
-        jitterStatistics->lateLossMs              = stats.lateLossMs;
-        jitterStatistics->longestExpandDurationMs = stats.longestExpandDurationMs;
-        jitterStatistics->longestIATms            = stats.longestIATms;
-        jitterStatistics->maxPacketDelayMs        = stats.maxPacketDelayMs;
-        jitterStatistics->minPacketDelayMs        = stats.minPacketDelayMs;
-        return 0;
-    }
-    else
-    {
-        LogError("getJitterStatistics", 0);
-        return -1;
-    }
-}
-
-WebRtc_Word32
 ACMNetEQ::PreferredBufferSize(
     WebRtc_UWord16* prefBufSize) const
 {
@@ -526,21 +481,6 @@ ACMNetEQ::PreferredBufferSize(
         LogError("getPreferredBufferSize", 0);
     }
     return ok;
-}
-
-WebRtc_Word32
-ACMNetEQ::ResetJitterStatistics() const
-{
-    CriticalSectionScoped lock(*_netEqCritSect);
-    if(WebRtcNetEQ_ResetJitterStatistics(_inst[0]) < 0)
-    {
-        LogError("resetJitterStatistics", 0);
-        return -1;
-    }
-    else
-    {
-        return 0;
-    }
 }
 
 WebRtc_Word32

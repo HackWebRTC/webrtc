@@ -165,68 +165,6 @@ typedef struct {
 
 ///////////////////////////////////////////////////////////////////////////
 //
-//   Struct containing jitter statistics
-//
-// -jbMinSize               : smallest Jitter Buffer size during call in ms
-// -jbMaxSize               : largest Jitter Buffer size during call in ms
-// -jbAvgSize               : the average JB size, measured over time - ms
-// -jbChangeCount           : number of times the Jitter Buffer changed (using
-//                            Accelerate or Pre-emptive Expand)
-// -lateLossMs              : amount (in ms) of audio data received late
-// -accelerateMs            : milliseconds removed to reduce jitter buffer size
-// -flushedMs               : milliseconds discarded through buffer flushing
-// -generatedSilentMs       : milliseconds of generated silence
-// -interpolatedVoiceMs     : milliseconds of synthetic audio data
-//                           (non-background noise)
-// -interpolatedSilentMs    : milliseconds of synthetic audio data (background
-//                            noise level)
-// -numExpandTiny           : count of tiny expansions in output audio less
-//                            than 250 ms
-// -numExpandSmall          : count of small expansions in output audio 250 to
-//                            500 ms
-// -numExpandMedium         : count of medium expansions in output audio 500 to
-//                            2000 ms
-// -numExpandLong           : count of long expansions in output audio longer
-//                            than 2000
-// -longestExpandDurationMs : duration of longest audio drop-out
-// -countIAT500ms           : count of times we got small network outage
-//                            (inter-arrival time in [500, 1000) ms)
-// -countIAT1000ms          : count of times we got medium network outage
-//                            (inter-arrival time in [1000, 2000) ms)
-// -countIAT2000ms          : count of times we got large network outage
-//                            (inter-arrival time >= 2000 ms)
-// -longestIATms            : longest packet inter-arrival time in ms
-// -minPacketDelayMs        : min time incoming Packet "waited" to be played
-// -maxPacketDelayMs        : max time incoming Packet "waited" to be played
-// -avgPacketDelayMs        : avg time incoming Packet "waited" to be played
-//
-typedef struct {
-  WebRtc_UWord32 jbMinSize;
-  WebRtc_UWord32 jbMaxSize;
-  WebRtc_UWord32 jbAvgSize;
-  WebRtc_UWord32 jbChangeCount;
-  WebRtc_UWord32 lateLossMs;
-  WebRtc_UWord32 accelerateMs;
-  WebRtc_UWord32 flushedMs;
-  WebRtc_UWord32 generatedSilentMs;
-  WebRtc_UWord32 interpolatedVoiceMs;
-  WebRtc_UWord32 interpolatedSilentMs;
-  WebRtc_UWord32 numExpandTiny;
-  WebRtc_UWord32 numExpandSmall;
-  WebRtc_UWord32 numExpandMedium;
-  WebRtc_UWord32 numExpandLong;
-  WebRtc_UWord32 longestExpandDurationMs;
-  WebRtc_UWord32 countIAT500ms;
-  WebRtc_UWord32 countIAT1000ms;
-  WebRtc_UWord32 countIAT2000ms;
-  WebRtc_UWord32 longestIATms;
-  WebRtc_UWord32 minPacketDelayMs;
-  WebRtc_UWord32 maxPacketDelayMs;
-  WebRtc_UWord32 avgPacketDelayMs;
-} ACMJitterStatistics;
-
-///////////////////////////////////////////////////////////////////////////
-//
 // Enumeration of background noise mode a mapping from NetEQ interface.
 //
 // -On                  : default "normal" behavior with eternal noise

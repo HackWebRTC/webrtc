@@ -3595,59 +3595,9 @@ int VoETestManager::DoStandardTest()
     TEST_LOG("    preferredBufferSize       = %hu \n",
              nStats.preferredBufferSize);
 
-    JitterStatistics jStats;
-    TEST_MUSTPASS(neteqst->GetJitterStatistics(0, jStats));
-    TEST_LOG("\nJitter statistics: \n");
-    TEST_LOG("    jbMinSize                 = %u \n",
-             jStats.jbMinSize);
-    TEST_LOG("    jbMaxSize                 = %u \n",
-             jStats.jbMaxSize);
-    TEST_LOG("    jbAvgSize                 = %u \n",
-             jStats.jbAvgSize);
-    TEST_LOG("    jbChangeCount             = %u \n",
-             jStats.jbChangeCount);
-    TEST_LOG("    lateLossMs                = %u \n",
-             jStats.lateLossMs);
-    TEST_LOG("    accelerateMs              = %u \n",
-             jStats.accelerateMs);
-    TEST_LOG("    flushedMs                 = %u \n",
-             jStats.flushedMs);
-    TEST_LOG("    generatedSilentMs         = %u \n",
-             jStats.generatedSilentMs);
-    TEST_LOG("    interpolatedVoiceMs       = %u \n",
-             jStats.interpolatedVoiceMs);
-    TEST_LOG("    interpolatedSilentMs      = %u \n",
-             jStats.interpolatedSilentMs);
-    TEST_LOG("    countExpandMoreThan120ms  = %u \n",
-             jStats.countExpandMoreThan120ms);
-    TEST_LOG("    countExpandMoreThan250ms  = %u \n",
-             jStats.countExpandMoreThan250ms);
-    TEST_LOG("    countExpandMoreThan500ms  = %u \n",
-             jStats.countExpandMoreThan500ms);
-    TEST_LOG("    countExpandMoreThan2000ms = %u \n",
-             jStats.countExpandMoreThan2000ms);
-    TEST_LOG("    longestExpandDurationMs   = %u \n",
-             jStats.longestExpandDurationMs);
-    TEST_LOG("    countIAT500ms             = %u \n",
-             jStats.countIAT500ms);
-    TEST_LOG("    countIAT1000ms            = %u \n",
-             jStats.countIAT1000ms);
-    TEST_LOG("    countIAT2000ms            = %u \n",
-             jStats.countIAT2000ms);
-    TEST_LOG("    longestIATms              = %u \n",
-             jStats.longestIATms);
-    TEST_LOG("    minPacketDelayMs          = %u \n",
-             jStats.minPacketDelayMs);
-    TEST_LOG("    maxPacketDelayMs          = %u \n",
-             jStats.maxPacketDelayMs);
-    TEST_LOG("    avgPacketDelayMs          = %u \n",
-             jStats.avgPacketDelayMs);
-
     unsigned short preferredBufferSize;
     TEST_MUSTPASS(neteqst->GetPreferredBufferSize(0, preferredBufferSize));
     TEST_MUSTPASS(preferredBufferSize != nStats.preferredBufferSize);
-
-    TEST_MUSTPASS(neteqst->ResetJitterStatistics(0));
 #else
     TEST_LOG("Skipping NetEQ statistics tests - "
         "WEBRTC_VOICE_ENGINE_NETEQ_STATS_API not defined \n");

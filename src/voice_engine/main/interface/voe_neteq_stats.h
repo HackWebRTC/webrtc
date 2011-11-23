@@ -35,18 +35,10 @@ public:
     // The statistics are reset after the query.
     virtual int GetNetworkStatistics(int channel, NetworkStatistics& stats) = 0;
 
-    // Get the "post-call" jitter statistics from NetEQ.
-    // The statistics are not reset by the query. Use the function
-    // ResetJitterStatistics() to reset.
-    virtual int GetJitterStatistics(int channel, JitterStatistics& stats) = 0;
-
     // Get the optimal buffer size calculated for the current network
     // conditions.
     virtual int GetPreferredBufferSize(
         int channel, unsigned short& preferredBufferSize) = 0;
-
-    // Reset "post-call" jitter statistics.
-    virtual int ResetJitterStatistics(int channel) = 0;
 
 protected:
     VoENetEqStats() {}

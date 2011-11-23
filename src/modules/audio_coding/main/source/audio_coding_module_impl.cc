@@ -2136,29 +2136,12 @@ AudioCodingModuleImpl::NetworkStatistics(
 }
 
 WebRtc_Word32
-AudioCodingModuleImpl::JitterStatistics(
-    ACMJitterStatistics& jitterStatistics) const
-{
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "JitterStatistics()");
-    return _netEq.JitterStatistics(&jitterStatistics);
-}
-
-WebRtc_Word32
 AudioCodingModuleImpl::PreferredBufferSize(
     WebRtc_UWord16& prefbufsize) const
 {
     WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
         "PreferedBufferSize()");
     return _netEq.PreferredBufferSize(&prefbufsize);
-}
-
-WebRtc_Word32
-AudioCodingModuleImpl::ResetJitterStatistics() const
-{
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "ResetJitterStatistics()");
-    return _netEq.ResetJitterStatistics();
 }
 
 void

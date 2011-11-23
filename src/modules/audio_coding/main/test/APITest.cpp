@@ -964,9 +964,7 @@ APITest::TestDelay(char side)
 
     *myMinDelay = (rand() % 1000) + 1;
   
-    ACMJitterStatistics jitterStat;
     ACMNetworkStatistics networkStat;
-    CHECK_ERROR_MT(myACM->JitterStatistics(jitterStat));
     CHECK_ERROR_MT(myACM->NetworkStatistics(networkStat));
 
     if(!_randomTest)
@@ -980,31 +978,6 @@ APITest::TestDelay(char side)
         fprintf(stdout, "expand rate............. %d\n", networkStat.currentExpandRate);    
         fprintf(stdout, "Preemptive rate......... %d\n", networkStat.currentPreemptiveRate);
         fprintf(stdout, "Accelerate rate......... %d\n", networkStat.currentAccelerateRate);
-
-        fprintf(stdout, "\n\nJitter Statistics at side %c\n", side);
-        fprintf(stdout, "--------------------------------------\n");
-        fprintf(stdout, "Jitter buffer min size....... %d\n",   jitterStat.jbMinSize);              
-        fprintf(stdout, "Jitter buffer Max size....... %d\n",    jitterStat.jbMaxSize);              
-        fprintf(stdout, "Jitter buffer Average size... %d\n",    jitterStat.jbAvgSize);              
-        fprintf(stdout, "Change Count................. %d ms\n", jitterStat.jbChangeCount);          
-        fprintf(stdout, "Late Loss.................... %d ms\n", jitterStat.lateLossMs);             
-        fprintf(stdout, "Accelerate................... %d ms\n", jitterStat.accelerateMs);           
-        fprintf(stdout, "Flushed...................... %d ms\n", jitterStat.flushedMs);              
-        fprintf(stdout, "Generated Silence............ %d ms\n", jitterStat.generatedSilentMs);      
-        fprintf(stdout, "Interpolated Voice........... %d ms\n", jitterStat.interpolatedVoiceMs);    
-        fprintf(stdout, "Interpolated Silence......... %d ms\n", jitterStat.interpolatedSilentMs);   
-        fprintf(stdout, "No tiny expand............... %d\n",    jitterStat.numExpandTiny);          
-        fprintf(stdout, "No small expand.............. %d\n",    jitterStat.numExpandSmall);         
-        fprintf(stdout, "No Medium expand............. %d\n",    jitterStat.numExpandMedium);        
-        fprintf(stdout, "No long expand............... %d\n",    jitterStat.numExpandLong);          
-        fprintf(stdout, "longest expand............... %d ms\n", jitterStat.longestExpandDurationMs);
-        fprintf(stdout, "No IAT 500................... %d ms\n", jitterStat.countIAT500ms);          
-        fprintf(stdout, "No IAT 1000.................. %d ms\n", jitterStat.countIAT1000ms);         
-        fprintf(stdout, "No IAT 2000.................. %d ms\n", jitterStat.countIAT2000ms);         
-        fprintf(stdout, "longest IAT.................. %d ms\n", jitterStat.longestIATms);           
-        fprintf(stdout, "Min packet delay............. %d ms\n", jitterStat.minPacketDelayMs);       
-        fprintf(stdout, "Max packet delay............. %d ms\n", jitterStat.maxPacketDelayMs);       
-        fprintf(stdout, "Average packet delay......... %d ms\n", jitterStat.avgPacketDelayMs);       
     }
 
     CHECK_ERROR_MT(myACM->SetMinimumPlayoutDelay(*myMinDelay));

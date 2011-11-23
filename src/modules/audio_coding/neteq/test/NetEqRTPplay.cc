@@ -648,18 +648,7 @@ int main(int argc, char* argv[])
 	printf("	fraction_lost   : %d (%f%%)\n", RTCPstat.fraction_lost, (float)(100.0*RTCPstat.fraction_lost/256.0));
 	printf("	jitter          : %d\n", (int) RTCPstat.jitter);
 
-    WebRtcNetEQ_JitterStatistics jitterStats;
-    WebRtcNetEQ_GetJitterStatistics(NetEQvector[0]->instance(), &jitterStats);
-
-    printf("\nPost-call statistics:\n");
-    printf("    Call duration ms    : %u\n", simClock-start_clock);
-    printf("    Expand (voice) ms   : %u \t(%.2f%%)\n", jitterStats.interpolatedVoiceMs, (float) 100.0 * jitterStats.interpolatedVoiceMs/(simClock-start_clock));
-    printf("    Expand (silence) ms : %u \t(%.2f%%)\n", jitterStats.interpolatedSilentMs, (float) 100.0 * jitterStats.interpolatedSilentMs/(simClock-start_clock));
-    printf("    Accelerate ms       : %u \t(%.2f%%)\n", jitterStats.accelerateMs, (float) 100.0 * jitterStats.accelerateMs/(simClock-start_clock));
-    printf("    Flushed ms          : %u \t(%.2f%%)\n", jitterStats.flushedMs, (float) 100.0 * jitterStats.flushedMs/(simClock-start_clock));
-    printf("    JB avg size ms      : %u\n", jitterStats.jbAvgSize);
-    printf("    JB max size ms      : %u\n", jitterStats.jbMaxSize);
-    printf("    Max inter-arrival ms: %u\n", jitterStats.longestIATms);
+    printf("\n    Call duration ms    : %u\n", simClock-start_clock);
 
     printf("\nComplexity estimates (including sub-components):\n");
     printf("    RecIn complexity    : %.2f MCPS\n", NetEQvector[0]->getRecInTime() / ((float) 1000*(simClock-start_clock)));

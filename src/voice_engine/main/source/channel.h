@@ -243,9 +243,7 @@ public:
 
     // VoENetEqStats
     int GetNetworkStatistics(NetworkStatistics& stats);
-    int GetJitterStatistics(JitterStatistics& stats);
     int GetPreferredBufferSize(unsigned short& preferredBufferSize);
-    int ResetJitterStatistics();
 
     // VoEVideoSync
     int GetDelayEstimate(int& delayMs) const;

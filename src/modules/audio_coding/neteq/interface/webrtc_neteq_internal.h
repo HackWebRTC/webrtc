@@ -104,38 +104,6 @@ typedef struct
                                            * (in Q14) */
 } WebRtcNetEQ_NetworkStatistics;
 
-typedef struct
-{
-    WebRtc_UWord32 jbMinSize; /* smallest Jitter Buffer size during call in ms */
-    WebRtc_UWord32 jbMaxSize; /* largest Jitter Buffer size during call in ms */
-    WebRtc_UWord32 jbAvgSize; /* the average JB size, measured over time - ms */
-    WebRtc_UWord32 jbChangeCount; /* number of times the Jitter Buffer changed
-                                   * (using Accelerate or Pre-emptive Expand) */
-    WebRtc_UWord32 lateLossMs; /* amount (in ms) of audio data received late */
-    WebRtc_UWord32 accelerateMs; /* milliseconds removed to reduce jitter buffer size */
-    WebRtc_UWord32 flushedMs; /* milliseconds discarded through buffer flushing */
-    WebRtc_UWord32 generatedSilentMs; /* milliseconds of generated silence */
-    WebRtc_UWord32 interpolatedVoiceMs; /* milliseconds of synthetic audio data
-                                         * (non-background noise) */
-    WebRtc_UWord32 interpolatedSilentMs; /* milliseconds of synthetic audio data
-                                          * (background noise level) */
-    WebRtc_UWord32 countExpandMoreThan120ms; /* count of tiny expansions in output audio */
-    WebRtc_UWord32 countExpandMoreThan250ms; /* count of small expansions in output audio */
-    WebRtc_UWord32 countExpandMoreThan500ms; /* count of medium expansions in output audio */
-    WebRtc_UWord32 countExpandMoreThan2000ms; /* count of long expansions in output audio */
-    WebRtc_UWord32 longestExpandDurationMs; /* duration of longest audio drop-out */
-    WebRtc_UWord32 countIAT500ms; /* count of times we got small network outage (inter-arrival
-                                   * time in [500, 1000) ms) */
-    WebRtc_UWord32 countIAT1000ms; /* count of times we got medium network outage
-                                    * (inter-arrival time in [1000, 2000) ms) */
-    WebRtc_UWord32 countIAT2000ms; /* count of times we got large network outage
-                                    * (inter-arrival time >= 2000 ms) */
-    WebRtc_UWord32 longestIATms; /* longest packet inter-arrival time in ms */
-    WebRtc_UWord32 minPacketDelayMs; /* min time incoming Packet "waited" to be played */
-    WebRtc_UWord32 maxPacketDelayMs; /* max time incoming Packet "waited" to be played */
-    WebRtc_UWord32 avgPacketDelayMs; /* avg time incoming Packet "waited" to be played */
-} WebRtcNetEQ_JitterStatistics;
-
 /*
  * Get the "in-call" statistics from NetEQ.
  * The statistics are reset after the query.
@@ -151,18 +119,6 @@ int WebRtcNetEQ_GetPreferredBufferSize(void *inst, WebRtc_UWord16 *preferredBuff
  * Get the current buffer size in ms. Return value is 0 if ok, -1 if error.
  */
 int WebRtcNetEQ_GetCurrentDelay(const void *inst, WebRtc_UWord16 *currentDelayMs);
-
-/*
- * Get the "post-call" jitter statistics from NetEQ.
- * The statistics are not reset by the query. Use the function
- * WebRtcNetEQ_ResetJitterStatistics to reset the statistics.
- */
-int WebRtcNetEQ_GetJitterStatistics(void *inst, WebRtcNetEQ_JitterStatistics *jitterStats);
-
-/*
- * Reset "post-call" jitter statistics.
- */
-int WebRtcNetEQ_ResetJitterStatistics(void *inst);
 
 /***********************************************/
 /* Functions for post-decode VAD functionality */

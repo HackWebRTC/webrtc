@@ -214,19 +214,6 @@ public:
         ACMNetworkStatistics* statistics) const;
 
     //
-    // JitterStatistics()
-    // Get the current jitter statistics from NetEQ.
-    //
-    // Output:
-    //   - jitterStatistics      : The current jitter statistics.
-    //
-    // Return value              : 0 if ok.
-    //                            <0 if NetEQ returned an error.
-    //
-    WebRtc_Word32 JitterStatistics(
-        ACMJitterStatistics* jitterStatistics) const;
-
-    //
     // PreferredBufferSize()
     // Get the currently preferred buffer size from NetEQ.
     //
@@ -239,15 +226,6 @@ public:
     //
     WebRtc_Word32 PreferredBufferSize(
         WebRtc_UWord16* prefBufSize) const;
-
-    //
-    // ResetJitterStatistics()
-    // Resets the NetEQ jitter statistics.
-    //
-    // Return value              : 0 if ok.
-    //                            <0 if NetEQ returned an error.
-    //
-    WebRtc_Word32 ResetJitterStatistics() const;
 
     //
     // VADMode()

@@ -243,13 +243,8 @@ public:
     WebRtc_Word32  NetworkStatistics(
         ACMNetworkStatistics& statistics) const;
 
-    WebRtc_Word32  JitterStatistics(
-        ACMJitterStatistics& jitterStatistics) const;
-
     WebRtc_Word32  PreferredBufferSize(
         WebRtc_UWord16& prefbufsize) const;
-
-    WebRtc_Word32  ResetJitterStatistics() const;
 
     void DestructEncoderInst(void* ptrInst);
 
