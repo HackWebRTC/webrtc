@@ -209,6 +209,9 @@ int Resampler::Reset(int inFreq, int outFreq, ResamplerType type)
             case 6:
                 my_mode_ = kResamplerMode1To6;
                 break;
+            case 12:
+                my_mode_ = kResamplerMode1To12;
+                break;
             default:
                 my_type_ = kResamplerInvalid;
                 return -1;
@@ -228,6 +231,9 @@ int Resampler::Reset(int inFreq, int outFreq, ResamplerType type)
                 break;
             case 6:
                 my_mode_ = kResamplerMode6To1;
+                break;
+            case 12:
+                my_mode_ = kResamplerMode12To1;
                 break;
             default:
                 my_type_ = kResamplerInvalid;
@@ -299,6 +305,18 @@ int Resampler::Reset(int inFreq, int outFreq, ResamplerType type)
             state2_ = malloc(sizeof(WebRtcSpl_State16khzTo48khz));
             WebRtcSpl_ResetResample16khzTo48khz((WebRtcSpl_State16khzTo48khz *)state2_);
             break;
+        case kResamplerMode1To12:
+            // 1:2
+            state1_ = malloc(8 * sizeof(WebRtc_Word32));
+            memset(state1_, 0, 8 * sizeof(WebRtc_Word32));
+            // 2:4
+            state2_ = malloc(8 * sizeof(WebRtc_Word32));
+            memset(state2_, 0, 8 * sizeof(WebRtc_Word32));
+            // 4:12
+            state3_ = malloc(sizeof(WebRtcSpl_State16khzTo48khz));
+            WebRtcSpl_ResetResample16khzTo48khz(
+                (WebRtcSpl_State16khzTo48khz*) state3_);
+            break;
         case kResamplerMode2To3:
             // 2:6
             state1_ = malloc(sizeof(WebRtcSpl_State16khzTo48khz));
@@ -366,6 +384,18 @@ int Resampler::Reset(int inFreq, int outFreq, ResamplerType type)
             // 2:1
             state2_ = malloc(8 * sizeof(WebRtc_Word32));
             memset(state2_, 0, 8 * sizeof(WebRtc_Word32));
+            break;
+        case kResamplerMode12To1:
+            // 12:4
+            state1_ = malloc(sizeof(WebRtcSpl_State48khzTo16khz));
+            WebRtcSpl_ResetResample48khzTo16khz(
+                (WebRtcSpl_State48khzTo16khz*) state1_);
+            // 4:2
+            state2_ = malloc(8 * sizeof(WebRtc_Word32));
+            memset(state2_, 0, 8 * sizeof(WebRtc_Word32));
+            // 2:1
+            state3_ = malloc(8 * sizeof(WebRtc_Word32));
+            memset(state3_, 0, 8 * sizeof(WebRtc_Word32));
             break;
         case kResamplerMode3To2:
             // 3:6
@@ -458,8 +488,9 @@ int Resampler::Push(const WebRtc_Word16 * samplesIn, int lengthIn, WebRtc_Word16
         return 0;
     }
 
-    // Container for temp samples
+    // Containers for temp samples
     WebRtc_Word16* tmp;
+    WebRtc_Word16* tmp_2;
     // tmp data for resampling routines
     WebRtc_Word32* tmp_mem;
 
@@ -539,6 +570,41 @@ int Resampler::Push(const WebRtc_Word16 * samplesIn, int lengthIn, WebRtc_Word16
                 WebRtcSpl_Resample16khzTo48khz(tmp + i, samplesOut + i * 3,
                                                (WebRtcSpl_State16khzTo48khz *)state2_,
                                                tmp_mem);
+            }
+            outLen = outLen * 3;
+            free(tmp_mem);
+            free(tmp);
+
+            return 0;
+        case kResamplerMode1To12:
+            // We can only handle blocks of 40 samples
+            // Can be fixed, but I don't think it's needed
+            if ((lengthIn % 40) != 0) {
+              return -1;
+            }
+            if (maxLen < (lengthIn * 12)) {
+              return -1;
+            }
+
+            tmp_mem = (WebRtc_Word32*) malloc(336 * sizeof(WebRtc_Word32));
+            tmp = (WebRtc_Word16*) malloc(sizeof(WebRtc_Word16) * 4 * lengthIn);
+            //1:2
+            WebRtcSpl_UpsampleBy2(samplesIn, lengthIn, samplesOut,
+                                  (WebRtc_Word32*) state1_);
+            outLen = lengthIn * 2;
+            //2:4
+            WebRtcSpl_UpsampleBy2(samplesOut, outLen, tmp, (WebRtc_Word32*) state2_);
+            outLen = outLen * 2;
+            // 4:12
+            for (int i = 0; i < outLen; i += 160) {
+              // WebRtcSpl_Resample16khzTo48khz() takes a block of 160 samples
+              // as input and outputs a resampled block of 480 samples. The
+              // data is now actually in 32 kHz sampling rate, despite the
+              // function name, and with a resampling factor of three becomes
+              // 96 kHz.
+              WebRtcSpl_Resample16khzTo48khz(tmp + i, samplesOut + i * 3,
+                                             (WebRtcSpl_State16khzTo48khz*) state3_,
+                                             tmp_mem);
             }
             outLen = outLen * 3;
             free(tmp_mem);
@@ -781,6 +847,43 @@ int Resampler::Push(const WebRtc_Word16 * samplesIn, int lengthIn, WebRtc_Word16
             free(tmp_mem);
             WebRtcSpl_DownsampleBy2(tmp, outLen, samplesOut, (WebRtc_Word32*)state2_);
             free(tmp);
+            outLen = outLen / 2;
+            return 0;
+        case kResamplerMode12To1:
+            // We can only handle blocks of 480 samples
+            // Can be fixed, but I don't think it's needed
+            if ((lengthIn % 480) != 0) {
+              return -1;
+            }
+            if (maxLen < (lengthIn / 12)) {
+              return -1;
+            }
+
+            tmp_mem = (WebRtc_Word32*) malloc(496 * sizeof(WebRtc_Word32));
+            tmp = (WebRtc_Word16*) malloc((sizeof(WebRtc_Word16) * lengthIn) / 3);
+            tmp_2 = (WebRtc_Word16*) malloc((sizeof(WebRtc_Word16) * lengthIn) / 6);
+            // 12:4
+            for (int i = 0; i < lengthIn; i += 480) {
+              // WebRtcSpl_Resample48khzTo16khz() takes a block of 480 samples
+              // as input and outputs a resampled block of 160 samples. The
+              // data is now actually in 96 kHz sampling rate, despite the
+              // function name, and with a resampling factor of 1/3 becomes
+              // 32 kHz.
+              WebRtcSpl_Resample48khzTo16khz(samplesIn + i, tmp + i / 3,
+                                             (WebRtcSpl_State48khzTo16khz*) state1_,
+                                             tmp_mem);
+            }
+            outLen = lengthIn / 3;
+            free(tmp_mem);
+            // 4:2
+            WebRtcSpl_DownsampleBy2(tmp, outLen, tmp_2,
+                                    (WebRtc_Word32*) state2_);
+            outLen = outLen / 2;
+            free(tmp);
+            // 2:1
+            WebRtcSpl_DownsampleBy2(tmp_2, outLen, samplesOut,
+                                    (WebRtc_Word32*) state3_);
+            free(tmp_2);
             outLen = outLen / 2;
             return 0;
         case kResamplerMode3To2:

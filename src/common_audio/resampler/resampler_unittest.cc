@@ -42,9 +42,7 @@ const size_t kDataSize = kMaxRate / 100;
 bool ValidRates(int in_rate, int out_rate) {
   // Not the most compact notation, for clarity.
   if ((in_rate == 44000 && (out_rate == 48000 || out_rate == 96000)) ||
-      (out_rate == 44000 && (in_rate == 48000 || in_rate == 96000))  ||
-      (in_rate == 8000 && out_rate == 96000) ||
-      (in_rate == 96000 && out_rate == 8000)) {
+      (out_rate == 44000 && (in_rate == 48000 || in_rate == 96000))) {
     return false;
   }
 
@@ -62,14 +60,11 @@ class ResamplerTest : public testing::Test {
   int16_t data_out_[kDataSize];
 };
 
-ResamplerTest::ResamplerTest() {
-}
+ResamplerTest::ResamplerTest() {}
 
-void ResamplerTest::SetUp() {
-}
+void ResamplerTest::SetUp() {}
 
-void ResamplerTest::TearDown() {
-}
+void ResamplerTest::TearDown() {}
 
 TEST_F(ResamplerTest, Reset) {
   // The only failure mode for the constructor is if Reset() fails. For the
