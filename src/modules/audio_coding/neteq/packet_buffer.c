@@ -96,8 +96,6 @@ int WebRtcNetEQ_PacketBufferInit(PacketBuf_t *bufferInst, int maxNoOfPackets,
 
     /* Reset buffer statistics */
     bufferInst->discardedPackets = 0;
-    bufferInst->totalDiscardedPackets = 0;
-    bufferInst->totalFlushedPackets = 0;
 
     return (0);
 }
@@ -115,9 +113,6 @@ int WebRtcNetEQ_PacketBufferFlush(PacketBuf_t *bufferInst)
          know the state of the struct variables */
         return (0);
     }
-
-    /* Increase flush counter */
-    bufferInst->totalFlushedPackets += bufferInst->numPacketsInBuffer;
 
     /* Set all payload lengths to zero */
     WebRtcSpl_MemSetW16(bufferInst->payloadLengthBytes, 0, bufferInst->maxInsertPositions);
@@ -437,9 +432,8 @@ int WebRtcNetEQ_PacketBufferFindLowestTimestamp(PacketBuf_t *bufferInst,
             /* Reduce packet counter by one */
             bufferInst->numPacketsInBuffer--;
 
-            /* Increase discard counter for in-call and post-call statistics */
+            /* Increase discard counter for in-call statistics */
             bufferInst->discardedPackets++;
-            bufferInst->totalDiscardedPackets++;
         }
         else if (((newDiff < timeStampDiff) || ((newDiff == timeStampDiff)
             && (bufferInst->rcuPlCntr[i] < rcuPlCntr))) && (bufferInst->payloadLengthBytes[i]

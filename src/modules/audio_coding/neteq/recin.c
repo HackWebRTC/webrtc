@@ -33,7 +33,6 @@ int WebRtcNetEQ_RecInInternal(MCUInst_t *MCU_inst, RTPPacket_t *RTPpacketInput,
     int i_ok = 0, i_No_Of_Payloads = 1;
     WebRtc_Word16 flushed = 0;
     WebRtc_Word16 codecPos;
-    WebRtc_UWord32 diffTS, uw32_tmp;
     int curr_Codec;
     WebRtc_Word16 isREDPayload = 0;
     WebRtc_Word32 temp_bufsize = MCU_inst->PacketBuffer_inst.numPacketsInBuffer;
@@ -247,50 +246,6 @@ int WebRtcNetEQ_RecInInternal(MCUInst_t *MCU_inst, RTPPacket_t *RTPpacketInput,
                 }
                 WebRtcNetEQ_PacketBufferFlush(&MCU_inst->PacketBuffer_inst);
                 MCU_inst->new_codec = 1;
-            }
-
-            /* update post-call statistics */
-            if (MCU_inst->new_codec != 1) /* not if in codec change */
-            {
-                diffTS = RTPpacket[i_k].timeStamp - MCU_inst->timeStamp; /* waiting time */
-                if (diffTS < 0x0FFFFFFF) /* guard against re-ordering */
-                {
-                    /* waiting time in ms */
-                    diffTS = WEBRTC_SPL_UDIV(diffTS,
-                        WEBRTC_SPL_UDIV((WebRtc_UWord32) MCU_inst->fs, 1000) );
-                    if (diffTS < MCU_inst->statInst.minPacketDelayMs)
-                    {
-                        /* new all-time low */
-                        MCU_inst->statInst.minPacketDelayMs = diffTS;
-                    }
-                    if (diffTS > MCU_inst->statInst.maxPacketDelayMs)
-                    {
-                        /* new all-time high */
-                        MCU_inst->statInst.maxPacketDelayMs = diffTS;
-                    }
-
-                    /* Update avg waiting time:
-                     * avgPacketDelayMs =
-                     *    (avgPacketCount * avgPacketDelayMs + diffTS)/(avgPacketCount+1)
-                     * with proper rounding.
-                     */
-                    uw32_tmp
-                        = WEBRTC_SPL_UMUL((WebRtc_UWord32) MCU_inst->statInst.avgPacketCount,
-                            (WebRtc_UWord32) MCU_inst->statInst.avgPacketDelayMs);
-                    uw32_tmp
-                        = WEBRTC_SPL_ADD_SAT_W32(uw32_tmp,
-                            (diffTS + (MCU_inst->statInst.avgPacketCount>>1)));
-                    uw32_tmp = WebRtcSpl_DivU32U16(uw32_tmp,
-                        (WebRtc_UWord16) (MCU_inst->statInst.avgPacketCount + 1));
-                    MCU_inst->statInst.avgPacketDelayMs
-                        = (WebRtc_UWord16) WEBRTC_SPL_MIN(uw32_tmp, (WebRtc_UWord32) 65535);
-
-                    /* increase counter, but not to more than 65534 */
-                    if (MCU_inst->statInst.avgPacketCount < (0xFFFF - 1))
-                    {
-                        MCU_inst->statInst.avgPacketCount++;
-                    }
-                }
             }
 
             /* Parse the payload and insert it into the buffer */

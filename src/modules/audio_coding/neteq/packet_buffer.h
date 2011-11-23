@@ -50,10 +50,8 @@ typedef struct
     WebRtc_Word16 *rcuPlCntr; /* zero for non-RCU payload, 1 for main payload
      2 for redundant payload */
 
-    /* Statistics counters */
+    /* Statistics counter */
     WebRtc_UWord16 discardedPackets; /* Number of discarded packets */
-    WebRtc_UWord32 totalDiscardedPackets; /* Total number of discarded packets */
-    WebRtc_UWord32 totalFlushedPackets; /* Total number of flushed packets */
 
 } PacketBuf_t;
 

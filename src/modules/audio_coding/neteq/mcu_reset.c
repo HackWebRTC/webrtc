@@ -88,26 +88,6 @@ int WebRtcNetEQ_ResetMcuInCallStats(MCUInst_t *inst)
 
 int WebRtcNetEQ_ResetMcuJitterStat(MCUInst_t *inst)
 {
-    inst->statInst.jbAvgCount = 0;
-    inst->statInst.jbAvgSizeQ16 = 0;
-    inst->statInst.jbMaxSize = 0;
-    inst->statInst.jbMinSize = 0xFFFFFFFF;
-    inst->statInst.avgPacketCount = 0;
-    inst->statInst.avgPacketDelayMs = 0;
-    inst->statInst.minPacketDelayMs = 0xFFFFFFFF;
-    inst->statInst.maxPacketDelayMs = 0;
-    inst->statInst.jbChangeCount = 0;
-    inst->statInst.generatedSilentMs = 0;
-    inst->statInst.countExpandMoreThan120ms = 0;
-    inst->statInst.countExpandMoreThan250ms = 0;
-    inst->statInst.countExpandMoreThan500ms = 0;
-    inst->statInst.countExpandMoreThan2000ms = 0;
-    inst->statInst.longestExpandDurationMs = 0;
-    inst->statInst.accelerateMs = 0;
-
-    inst->PacketBuffer_inst.totalDiscardedPackets = 0;
-    inst->PacketBuffer_inst.totalFlushedPackets = 0;
-
     inst->BufferStat_inst.Automode_inst.countIAT500ms = 0;
     inst->BufferStat_inst.Automode_inst.countIAT1000ms = 0;
     inst->BufferStat_inst.Automode_inst.countIAT2000ms = 0;

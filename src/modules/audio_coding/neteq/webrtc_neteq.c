@@ -1398,12 +1398,6 @@ int WebRtcNetEQ_GetNetworkStatistics(void *inst, WebRtcNetEQ_NetworkStatistics *
         stats->currentAccelerateRate = 1 << 14; /* 1 in Q14 */
     }
 
-    /* also transfer measure to post-call statistics */
-    NetEqMainInst->MCUinst.statInst.accelerateMs
-        += WebRtcSpl_DivU32U16(
-            WEBRTC_SPL_UMUL_32_16( NetEqMainInst->DSPinst.statInst.accelerateLength, (WebRtc_UWord16) 1000),
-            NetEqMainInst->MCUinst.fs);
-
     /* timestamps elapsed since last report */
     tempU32 = NetEqMainInst->MCUinst.lastReportTS;
 

@@ -227,47 +227,10 @@ int WebRtcNetEQ_SignalMcu(MCUInst_t *inst)
         /* Subtract (dspInfo.samplesLeft + inst->timestampsPerCall) from sampleMemory */
         inst->BufferStat_inst.Automode_inst.sampleMemory -= dspInfo.samplesLeft
             + inst->timestampsPerCall;
-        /* Update post-call statistics */
-        inst->statInst.jbChangeCount++;
     }
 
     /* calculate total current buffer size (in ms*8), including sync buffer */
     w32_bufsize = WebRtcSpl_DivW32W16((w32_bufsize + dspInfo.samplesLeft), fs_mult);
-
-    if (((WebRtc_UWord32) w32_bufsize >> 3) < inst->statInst.jbMinSize)
-    {
-        /* new all-time low */
-        inst->statInst.jbMinSize = ((WebRtc_UWord32) w32_bufsize >> 3); /* shift to ms */
-    }
-    if (((WebRtc_UWord32) w32_bufsize >> 3) > inst->statInst.jbMaxSize)
-    {
-        /* new all-time high */
-        inst->statInst.jbMaxSize = ((WebRtc_UWord32) w32_bufsize >> 3); /* shift to ms */
-    }
-
-    /* Update avg bufsize:
-     * jbAvgSize = (jbAvgCount * jbAvgSize + w32_bufsize/8)/(jbAvgCount+1)
-     * with proper rounding
-     */
-    {
-        WebRtc_Word32 avgTmp;
-
-        /* Simplify the above formula to:
-         * jbAvgSizeQ16 =
-         *    jbAvgSizeQ16 + ( (w32_bufsize/8 << 16) - jbAvgSizeQ16 + d ) / (jbAvgCount+1)
-         * where d = jbAvgCount/2 for proper rounding.
-         */
-
-        avgTmp = (((WebRtc_UWord32) w32_bufsize >> 3) << 16) - inst->statInst.jbAvgSizeQ16;
-        avgTmp = WEBRTC_SPL_DIV( avgTmp + (inst->statInst.jbAvgCount>>1),
-            inst->statInst.jbAvgCount + 1 );
-        inst->statInst.jbAvgSizeQ16 += avgTmp;
-
-        if (inst->statInst.jbAvgCount < (0xFFFF - 1))
-        {
-            inst->statInst.jbAvgCount++;
-        }
-    }
 
 #ifdef NETEQ_ATEVENT_DECODE
     /* DTMF data will affect the decision */
@@ -317,36 +280,6 @@ int WebRtcNetEQ_SignalMcu(MCUInst_t *inst)
     }
     else
     {
-        /* update post-call statistics */
-        WebRtc_UWord32
-        expandTime =
-                WEBRTC_SPL_UDIV(WEBRTC_SPL_UMUL_32_16(
-                        WEBRTC_SPL_UMUL_32_16((WebRtc_UWord32) inst->NoOfExpandCalls,
-                            (WebRtc_UWord16) 1000),
-                        inst->timestampsPerCall), inst->fs); /* expand time in ms */
-
-        if (expandTime > 2000)
-        {
-            inst->statInst.countExpandMoreThan2000ms++;
-        }
-        else if (expandTime > 500)
-        {
-            inst->statInst.countExpandMoreThan500ms++;
-        }
-        else if (expandTime > 250)
-        {
-            inst->statInst.countExpandMoreThan250ms++;
-        }
-        else if (expandTime > 120)
-        {
-            inst->statInst.countExpandMoreThan120ms++;
-        }
-
-        if (expandTime > inst->statInst.longestExpandDurationMs)
-        {
-            inst->statInst.longestExpandDurationMs = expandTime;
-        }
-
         /* reset counter */
         inst->NoOfExpandCalls = 0;
     }
@@ -542,12 +475,6 @@ int WebRtcNetEQ_SignalMcu(MCUInst_t *inst)
 
         inst->timeStamp = dspInfo.playedOutTS + timeStampJump;
 
-        /* update post-call statistics (since we will reset the CNG counter) */
-        inst->statInst.generatedSilentMs
-        += WEBRTC_SPL_UDIV(
-            WEBRTC_SPL_UMUL_32_16(inst->BufferStat_inst.uw32_CNGplayedTS, (WebRtc_UWord16) 1000),
-            inst->fs);
-
         inst->BufferStat_inst.uw32_CNGplayedTS = 0;
         inst->NoOfExpandCalls = 0;
 
@@ -684,12 +611,6 @@ int WebRtcNetEQ_SignalMcu(MCUInst_t *inst)
             /* We are about to decode and use a non-CNG packet => CNG period is ended */
             inst->BufferStat_inst.w16_cngOn = CNG_OFF;
         }
-
-        /* update post-call statistics */
-        inst->statInst.generatedSilentMs
-        += WEBRTC_SPL_UDIV(
-            WEBRTC_SPL_UMUL_32_16(inst->BufferStat_inst.uw32_CNGplayedTS, (WebRtc_UWord16) 1000),
-            inst->fs);
 
         /*
          * Reset CNG timestamp as a new packet will be delivered.

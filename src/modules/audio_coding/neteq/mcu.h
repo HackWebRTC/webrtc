@@ -82,8 +82,6 @@ typedef struct
     WebRtc_Word16 TSscalingInitialized;
     enum TsScaling scalingFactor;
 
-    MCUStats_t statInst;
-
 #ifdef NETEQ_STEREO
     int usingStereo;
 #endif
