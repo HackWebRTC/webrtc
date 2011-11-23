@@ -33,8 +33,8 @@
 /gyp-mac-tool
 /Makefile
 /out
+/resources
 /src/supplement.gypi
-/testFiles
 /testing
 /third_party/cygwin
 /third_party/expat
@@ -57,5 +57,3 @@ DumpFileName.rtp
 IncomingRTPDump.rtp
 OutgoingRTPDump.rtp
 WebRTCViECapture_Standard
-*.yuv
-
