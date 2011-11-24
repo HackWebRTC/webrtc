@@ -382,6 +382,7 @@ ModuleRTPUtility::RTPPayload::SetType(RtpVideoCodecTypes videoType)
         info.VP8.hasPictureID = false;
         info.VP8.hasTl0PicIdx = false;
         info.VP8.hasTID = false;
+        info.VP8.hasKeyIdx = false;
         info.VP8.pictureID = -1;
         info.VP8.tl0PicIdx = -1;
         info.VP8.tID = -1;
