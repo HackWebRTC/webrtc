@@ -62,19 +62,19 @@ ViEBase* ViEBase::GetInterface(VideoEngine* videoEngine)
 // ----------------------------------------------------------------------------
 int ViEBaseImpl::Release()
 {
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, _instanceId,
+    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, instance_id_,
                "ViEBase::Release()");
     (*this)--; // Decrease ref count
 
     WebRtc_Word32 refCount = GetCount();
     if (refCount < 0)
     {
-        WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideo, _instanceId,
+        WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideo, instance_id_,
                    "ViEBase release too many times");
         SetLastError(kViEAPIDoesNotExist);
         return -1;
     }
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, _instanceId,
+    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, instance_id_,
                "ViEBase reference count: %d", refCount);
     return refCount;
 }
@@ -85,7 +85,7 @@ int ViEBaseImpl::Release()
 
 ViEBaseImpl::ViEBaseImpl()
 {
-    WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideo, _instanceId,
+    WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideo, instance_id_,
                "ViEBaseImpl::ViEBaseImpl() Ctor");
 }
 
@@ -95,7 +95,7 @@ ViEBaseImpl::ViEBaseImpl()
 
 ViEBaseImpl::~ViEBaseImpl()
 {
-    WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideo, _instanceId,
+    WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideo, instance_id_,
                "ViEBaseImpl::ViEBaseImpl() Dtor");
 }
 
@@ -108,10 +108,10 @@ ViEBaseImpl::~ViEBaseImpl()
 
 int ViEBaseImpl::Init()
 {
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, _instanceId, "Init");
-    if (IsInitialized())
+    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, instance_id_, "Init");
+    if (Initialized())
     {
-        WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideo, _instanceId,
+        WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideo, instance_id_,
                    "Init called twice");
         return 0;
     }
@@ -128,17 +128,17 @@ int ViEBaseImpl::Init()
 
 int ViEBaseImpl::SetVoiceEngine(VoiceEngine* ptrVoiceEngine)
 {
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(_instanceId), "%s",
+    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(instance_id_), "%s",
                __FUNCTION__);
-    if (!IsInitialized())
+    if (!Initialized())
     {
         SetLastError(kViENotInitialized);
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_instanceId),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
                    "%s - ViE instance %d not initialized", __FUNCTION__,
-                   _instanceId);
+                   instance_id_);
         return -1;
     }
-    if (_channelManager.SetVoiceEngine(ptrVoiceEngine) != 0)
+    if (channel_manager_.SetVoiceEngine(ptrVoiceEngine) != 0)
     {
         SetLastError(kViEBaseVoEFailure);
         return -1;
@@ -159,27 +159,27 @@ int ViEBaseImpl::SetVoiceEngine(VoiceEngine* ptrVoiceEngine)
 
 int ViEBaseImpl::CreateChannel(int& videoChannel)
 {
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(_instanceId), "%s",
+    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(instance_id_), "%s",
                __FUNCTION__);
 
-    if (!IsInitialized())
+    if (!Initialized())
     {
         SetLastError(kViENotInitialized);
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_instanceId),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
                    "%s - ViE instance %d not initialized", __FUNCTION__,
-                   _instanceId);
+                   instance_id_);
         return -1;
     }
 
-    if (_channelManager.CreateChannel(videoChannel) == -1)
+    if (channel_manager_.CreateChannel(videoChannel) == -1)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_instanceId),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
                    "%s: Could not create channel", __FUNCTION__);
         videoChannel = -1;
         SetLastError(kViEBaseChannelCreationFailed);
         return -1;
     }
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_instanceId),
+    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(instance_id_),
                "%s: channel created: %d", __FUNCTION__, videoChannel);
     return 0;
 }
@@ -194,35 +194,35 @@ int ViEBaseImpl::CreateChannel(int& videoChannel)
 int ViEBaseImpl::CreateChannel(int& videoChannel, int originalChannel)
 {
 
-    if (!IsInitialized())
+    if (!Initialized())
     {
         SetLastError(kViENotInitialized);
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_instanceId),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
                    "%s - ViE instance %d not initialized", __FUNCTION__,
-                   _instanceId);
+                   instance_id_);
         return -1;
     }
 
-    ViEChannelManagerScoped cs(_channelManager);
+    ViEChannelManagerScoped cs(channel_manager_);
 
     if (!cs.Channel(originalChannel))
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_instanceId),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
                    "%s - originalChannel does not exist.", __FUNCTION__,
-                   _instanceId);
+                   instance_id_);
         SetLastError(kViEBaseInvalidChannelId);
         return -1;
     }
-    if (_channelManager.CreateChannel(videoChannel,
+    if (channel_manager_.CreateChannel(videoChannel,
                                       originalChannel) == -1)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_instanceId),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
                    "%s: Could not create channel", __FUNCTION__);
         videoChannel = -1;
         SetLastError(kViEBaseChannelCreationFailed);
         return -1;
     }
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_instanceId),
+    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(instance_id_),
                "%s: channel created: %d", __FUNCTION__, videoChannel);
     return 0;
 }
@@ -235,25 +235,25 @@ int ViEBaseImpl::CreateChannel(int& videoChannel, int originalChannel)
 
 int ViEBaseImpl::DeleteChannel(const int videoChannel)
 {
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(_instanceId), "%s(%d)",
+    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(instance_id_), "%s(%d)",
                __FUNCTION__, videoChannel);
 
-    if (!IsInitialized())
+    if (!Initialized())
     {
         SetLastError(kViENotInitialized);
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_instanceId),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
                    "%s - ViE instance %d not initialized", __FUNCTION__,
-                   _instanceId);
+                   instance_id_);
         return -1;
     }
 
     {
-        ViEChannelManagerScoped cs(_channelManager);
+        ViEChannelManagerScoped cs(channel_manager_);
         ViEChannel* vieChannel = cs.Channel(videoChannel);
         if (vieChannel == NULL)
         {
             // No such channel
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_instanceId),
+            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
                        "%s: channel %d doesn't exist", __FUNCTION__,
                        videoChannel);
             SetLastError(kViEBaseInvalidChannelId);
@@ -267,7 +267,7 @@ int ViEBaseImpl::DeleteChannel(const int videoChannel)
             // No other channels using this ViEEncoder.
             // Disconnect the channel encoder from possible input.
             // capture or file.
-            ViEInputManagerScoped is(_inputManager);
+            ViEInputManagerScoped is(input_manager_);
             ViEFrameProviderBase* provider = is.FrameProvider(ptrViEEncoder);
             if (provider)
             {
@@ -275,15 +275,15 @@ int ViEBaseImpl::DeleteChannel(const int videoChannel)
             }
         }
     }
-    if (_channelManager.DeleteChannel(videoChannel) == -1)
+    if (channel_manager_.DeleteChannel(videoChannel) == -1)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_instanceId),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
                    "%s: Could not delete channel %d", __FUNCTION__,
                    videoChannel);
         SetLastError(kViEBaseUnknownError);
         return -1;
     }
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_instanceId),
+    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(instance_id_),
                "%s: channel deleted: %d", __FUNCTION__, videoChannel);
     return 0;
 }
@@ -297,29 +297,29 @@ int ViEBaseImpl::DeleteChannel(const int videoChannel)
 int ViEBaseImpl::ConnectAudioChannel(const int videoChannel,
                                      const int audioChannel)
 {
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(_instanceId), "%s(%d)",
+    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(instance_id_), "%s(%d)",
                __FUNCTION__, videoChannel);
 
-    if (!IsInitialized())
+    if (!Initialized())
     {
         SetLastError(kViENotInitialized);
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_instanceId),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
                    "%s - ViE instance %d not initialized", __FUNCTION__,
-                   _instanceId);
+                   instance_id_);
         return -1;
     }
 
-    ViEChannelManagerScoped cs(_channelManager);
+    ViEChannelManagerScoped cs(channel_manager_);
     if (cs.Channel(videoChannel) == NULL)
     {
         // No such channel
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_instanceId),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
                    "%s: channel %d doesn't exist", __FUNCTION__, videoChannel);
         SetLastError(kViEBaseInvalidChannelId);
         return -1;
     }
 
-    if (_channelManager.ConnectVoiceChannel(videoChannel, audioChannel) != 0)
+    if (channel_manager_.ConnectVoiceChannel(videoChannel, audioChannel) != 0)
     {
         SetLastError(kViEBaseVoEFailure);
         return -1;
@@ -335,27 +335,27 @@ int ViEBaseImpl::ConnectAudioChannel(const int videoChannel,
 
 int ViEBaseImpl::DisconnectAudioChannel(const int videoChannel)
 {
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(_instanceId), "%s(%d)",
+    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(instance_id_), "%s(%d)",
                __FUNCTION__, videoChannel);
-    if (!IsInitialized())
+    if (!Initialized())
     {
         SetLastError(kViENotInitialized);
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_instanceId),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
                    "%s - ViE instance %d not initialized", __FUNCTION__,
-                   _instanceId);
+                   instance_id_);
         return -1;
     }
-    ViEChannelManagerScoped cs(_channelManager);
+    ViEChannelManagerScoped cs(channel_manager_);
     if (cs.Channel(videoChannel) == NULL)
     {
         // No such channel
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_instanceId),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
                    "%s: channel %d doesn't exist", __FUNCTION__, videoChannel);
         SetLastError(kViEBaseInvalidChannelId);
         return -1;
     }
 
-    if (_channelManager.DisconnectVoiceChannel(videoChannel) != 0)
+    if (channel_manager_.DisconnectVoiceChannel(videoChannel) != 0)
     {
         SetLastError(kViEBaseVoEFailure);
         return -1;
@@ -374,17 +374,17 @@ int ViEBaseImpl::DisconnectAudioChannel(const int videoChannel)
 // ----------------------------------------------------------------------------
 int ViEBaseImpl::StartSend(const int videoChannel)
 {
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(_instanceId,
+    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(instance_id_,
                                                        videoChannel),
                "%s(channel: %d)", __FUNCTION__, videoChannel);
 
-    ViEChannelManagerScoped cs(_channelManager);
+    ViEChannelManagerScoped cs(channel_manager_);
     ViEChannel* ptrViEChannel = cs.Channel(videoChannel);
     if (ptrViEChannel == NULL)
     {
         // The channel doesn't exists
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(_instanceId, videoChannel),
+                   ViEId(instance_id_, videoChannel),
                    "%s: Channel %d does not exist", __FUNCTION__, videoChannel);
         SetLastError(kViEBaseInvalidChannelId);
         return -1;
@@ -394,7 +394,7 @@ int ViEBaseImpl::StartSend(const int videoChannel)
     {
         assert(false);
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(_instanceId, videoChannel),
+                   ViEId(instance_id_, videoChannel),
                    "%s: Could not find encoder for channel %d", __FUNCTION__,
                    videoChannel);
         return -1;
@@ -409,7 +409,7 @@ int ViEBaseImpl::StartSend(const int videoChannel)
         ptrViEEncoder->Restart();
 
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(_instanceId, videoChannel),
+                   ViEId(instance_id_, videoChannel),
                    "%s: Could not start sending on channel %d", __FUNCTION__,
                    videoChannel);
         if (error == kViEBaseAlreadySending)
@@ -435,16 +435,16 @@ int ViEBaseImpl::StartSend(const int videoChannel)
 int ViEBaseImpl::StopSend(const int videoChannel)
 {
     WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-               ViEId(_instanceId, videoChannel), "%s(channel: %d)",
+               ViEId(instance_id_, videoChannel), "%s(channel: %d)",
                __FUNCTION__, videoChannel);
 
-    ViEChannelManagerScoped cs(_channelManager);
+    ViEChannelManagerScoped cs(channel_manager_);
     ViEChannel* ptrViEChannel = cs.Channel(videoChannel);
     if (ptrViEChannel == NULL)
     {
         // The channel doesn't exists
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(_instanceId, videoChannel),
+                   ViEId(instance_id_, videoChannel),
                    "%s: Channel %d does not exist", __FUNCTION__, videoChannel);
         SetLastError(kViEBaseInvalidChannelId);
         return -1;
@@ -454,7 +454,7 @@ int ViEBaseImpl::StopSend(const int videoChannel)
     if (error != 0)
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(_instanceId, videoChannel),
+                   ViEId(instance_id_, videoChannel),
                    "%s: Could not stop sending on channel %d", __FUNCTION__,
                    videoChannel);
         if (error == kViEBaseNotSending)
@@ -478,16 +478,16 @@ int ViEBaseImpl::StopSend(const int videoChannel)
 int ViEBaseImpl::StartReceive(const int videoChannel)
 {
     WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-               ViEId(_instanceId, videoChannel), "%s(channel: %d)",
+               ViEId(instance_id_, videoChannel), "%s(channel: %d)",
                __FUNCTION__, videoChannel);
 
-    ViEChannelManagerScoped cs(_channelManager);
+    ViEChannelManagerScoped cs(channel_manager_);
     ViEChannel* ptrViEChannel = cs.Channel(videoChannel);
     if (ptrViEChannel == NULL)
     {
         // The channel doesn't exists
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(_instanceId, videoChannel),
+                   ViEId(instance_id_, videoChannel),
                    "%s: Channel %d does not exist", __FUNCTION__, videoChannel);
         SetLastError(kViEBaseInvalidChannelId);
         return -1;
@@ -495,7 +495,7 @@ int ViEBaseImpl::StartReceive(const int videoChannel)
     if (ptrViEChannel->Receiving())
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(_instanceId, videoChannel),
+                   ViEId(instance_id_, videoChannel),
                    "%s: Channel %d already receive.", __FUNCTION__,
                    videoChannel);
         SetLastError(kViEBaseAlreadyReceiving);
@@ -517,16 +517,16 @@ int ViEBaseImpl::StartReceive(const int videoChannel)
 int ViEBaseImpl::StopReceive(const int videoChannel)
 {
     WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-               ViEId(_instanceId, videoChannel), "%s(channel: %d)",
+               ViEId(instance_id_, videoChannel), "%s(channel: %d)",
                __FUNCTION__, videoChannel);
 
-    ViEChannelManagerScoped cs(_channelManager);
+    ViEChannelManagerScoped cs(channel_manager_);
     ViEChannel* ptrViEChannel = cs.Channel(videoChannel);
     if (ptrViEChannel == NULL)
     {
         // The channel doesn't exists
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(_instanceId, videoChannel),
+                   ViEId(instance_id_, videoChannel),
                    "%s: Channel %d does not exist", __FUNCTION__, videoChannel);
         SetLastError(kViEBaseInvalidChannelId);
         return -1;
@@ -551,14 +551,14 @@ int ViEBaseImpl::StopReceive(const int videoChannel)
 
 int ViEBaseImpl::RegisterObserver(ViEBaseObserver& observer)
 {
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(_instanceId),
+    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(instance_id_),
                  "%s", __FUNCTION__);
-    if (_viePerformanceMonitor.ViEBaseObserverRegistered())
+    if (vie_performance_monitor_.ViEBaseObserverRegistered())
     {
         SetLastError(kViEBaseObserverAlreadyRegistered);
         return -1;
     }
-    return _viePerformanceMonitor.Init(&observer);
+    return vie_performance_monitor_.Init(&observer);
 }
 
 // ----------------------------------------------------------------------------
@@ -569,17 +569,17 @@ int ViEBaseImpl::RegisterObserver(ViEBaseObserver& observer)
 
 int ViEBaseImpl::DeregisterObserver()
 {
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(_instanceId),
+    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(instance_id_),
                  "%s", __FUNCTION__);
 
-    if (!_viePerformanceMonitor.ViEBaseObserverRegistered())
+    if (!vie_performance_monitor_.ViEBaseObserverRegistered())
     {
         SetLastError(kViEBaseObserverNotRegistered);
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, _instanceId,
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, instance_id_,
                    "%s No observer registered.", __FUNCTION__);
         return -1;
     }
-    _viePerformanceMonitor.Terminate();
+    vie_performance_monitor_.Terminate();
     return 0;
 }
 
@@ -596,7 +596,7 @@ int ViEBaseImpl::DeregisterObserver()
 int ViEBaseImpl::GetVersion(char version[1024])
 {
 
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(_instanceId),
+    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(instance_id_),
                "GetVersion(version=?)");
     assert(kViEVersionMaxMessageSize == 1024);
 
@@ -721,7 +721,7 @@ int ViEBaseImpl::GetVersion(char version[1024])
     memcpy(version, versionBuf, accLen);
     version[accLen] = '\0';
 
-    WEBRTC_TRACE(webrtc::kTraceStateInfo, webrtc::kTraceVideo, ViEId(_instanceId),
+    WEBRTC_TRACE(webrtc::kTraceStateInfo, webrtc::kTraceVideo, ViEId(instance_id_),
                "GetVersion() => %s", version);
     return 0;
 }
@@ -760,7 +760,7 @@ WebRtc_Word32 ViEBaseImpl::AddModuleVersion(webrtc::Module* module,
 WebRtc_Word32 ViEBaseImpl::AddVCMVersion(char* str) const
 {
     webrtc::VideoCodingModule* vcmPtr =
-        webrtc::VideoCodingModule::Create(_instanceId);
+        webrtc::VideoCodingModule::Create(instance_id_);
     int len = AddModuleVersion(vcmPtr, str);
     webrtc::VideoCodingModule::Destroy(vcmPtr);
     return len;
@@ -774,7 +774,7 @@ WebRtc_Word32 ViEBaseImpl::AddVideoCaptureVersion(char* str) const
 WebRtc_Word32 ViEBaseImpl::AddVideoProcessingVersion(char* str) const
 {
     webrtc::VideoProcessingModule* videoPtr =
-        webrtc::VideoProcessingModule::Create(_instanceId);
+        webrtc::VideoProcessingModule::Create(instance_id_);
     int len = AddModuleVersion(videoPtr, str);
     webrtc::VideoProcessingModule::Destroy(videoPtr);
     return len;
@@ -791,7 +791,7 @@ WebRtc_Word32 ViEBaseImpl::AddSocketModuleVersion(char* str) const
     WebRtc_UWord8 numSockThreads(1);
     UdpTransport* socketPtr =
         UdpTransport::Create(
-            _instanceId, numSockThreads);
+            instance_id_, numSockThreads);
     int len = AddModuleVersion(socketPtr, str);
     UdpTransport::Destroy(socketPtr);
     return len;

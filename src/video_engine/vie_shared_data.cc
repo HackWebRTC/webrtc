@@ -10,84 +10,76 @@
 
 // ViESharedData.cpp
 
-#include "vie_shared_data.h"
-#include "vie_defines.h"
-
 #include "cpu_info.h"
 #include "critical_section_wrapper.h"
 #include "process_thread.h"
 #include "trace.h"
 #include "vie_channel_manager.h"
+#include "vie_defines.h"
 #include "vie_input_manager.h"
 #include "vie_render_manager.h"
+#include "vie_shared_data.h"
 
 namespace webrtc {
 
 // Active instance counter
-int ViESharedData::_instanceCounter = 0;
+int ViESharedData::instance_counter_ = 0;
 
 ViESharedData::ViESharedData()
-    : _instanceId(++_instanceCounter),
-      _apiCritsect(*CriticalSectionWrapper::CreateCriticalSection()),
-      _isInitialized(false),
-      _numberOfCores(CpuInfo::DetectNumberOfCores()),
-      _viePerformanceMonitor(ViEPerformanceMonitor(_instanceId)),
-      _channelManager(*new ViEChannelManager(_instanceId, _numberOfCores,
-                                             _viePerformanceMonitor)),
-      _inputManager(*new ViEInputManager(_instanceId)),
-      _renderManager(*new ViERenderManager(_instanceId)),
-      _moduleProcessThreadPtr(ProcessThread::CreateProcessThread()),
-      _lastError(0)
-{
-    Trace::CreateTrace();
-    _channelManager.SetModuleProcessThread(*_moduleProcessThreadPtr);
-    _inputManager.SetModuleProcessThread(*_moduleProcessThreadPtr);
-    _moduleProcessThreadPtr->Start();
+    : instance_id_(++instance_counter_),
+      api_critsect_(*CriticalSectionWrapper::CreateCriticalSection()),
+      initialized_(false),
+      number_cores_(CpuInfo::DetectNumberOfCores()),
+      vie_performance_monitor_(ViEPerformanceMonitor(instance_id_)),
+      channel_manager_(*new ViEChannelManager(instance_id_, number_cores_,
+                                              vie_performance_monitor_)),
+      input_manager_(*new ViEInputManager(instance_id_)),
+      render_manager_(*new ViERenderManager(instance_id_)),
+      module_process_thread_(ProcessThread::CreateProcessThread()),
+      last_error_(0) {
+  Trace::CreateTrace();
+  channel_manager_.SetModuleProcessThread(*module_process_thread_);
+  input_manager_.SetModuleProcessThread(*module_process_thread_);
+  module_process_thread_->Start();
 }
 
-ViESharedData::~ViESharedData()
-{
-    delete &_inputManager;
-    delete &_channelManager;
-    delete &_renderManager;
+ViESharedData::~ViESharedData() {
+  delete &input_manager_;
+  delete &channel_manager_;
+  delete &render_manager_;
 
-    _moduleProcessThreadPtr->Stop();
-    ProcessThread::DestroyProcessThread(_moduleProcessThreadPtr);
-    delete &_apiCritsect;
-    Trace::ReturnTrace();
+  module_process_thread_->Stop();
+  ProcessThread::DestroyProcessThread(module_process_thread_);
+  delete &api_critsect_;
+  Trace::ReturnTrace();
 }
 
-bool ViESharedData::IsInitialized() const
-{
-    return _isInitialized;
+bool ViESharedData::Initialized() const {
+  return initialized_;
 }
 
-int ViESharedData::SetInitialized()
-{
-    _isInitialized = true;
-    return 0;
+int ViESharedData::SetInitialized() {
+  initialized_ = true;
+  return 0;
 }
 
-int ViESharedData::SetUnInitialized()
-{
-    _isInitialized = false;
-    return 0;
+int ViESharedData::SetUnInitialized() {
+  initialized_ = false;
+  return 0;
 }
 
-void ViESharedData::SetLastError(const int error) const
-{
-    _lastError = error;
+void ViESharedData::SetLastError(const int error) const {
+  last_error_ = error;
 }
 
-int ViESharedData::LastErrorInternal() const
-{
-    int error = _lastError;
-    _lastError = 0;
-    return error;
+int ViESharedData::LastErrorInternal() const {
+  int error = last_error_;
+  last_error_ = 0;
+  return error;
 }
 
-int ViESharedData::NumberOfCores() const
-{
-    return _numberOfCores;
+int ViESharedData::NumberOfCores() const {
+  return number_cores_;
 }
-} // namespace webrtc
+
+}  // namespace webrtc

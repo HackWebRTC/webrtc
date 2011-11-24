@@ -8,49 +8,52 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-// vie_shared_data.h
+// ViESharedData contains data and instances common to all interface
+// implementations.
 
-#ifndef WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_SHARED_DATA_H_
-#define WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_SHARED_DATA_H_
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_SHARED_DATA_H_
+#define WEBRTC_VIDEO_ENGINE_VIE_SHARED_DATA_H_
 
 #include "vie_defines.h"
 #include "vie_performance_monitor.h"
 
 namespace webrtc {
+
 class CriticalSectionWrapper;
-class ViERenderManager;
+class ProcessThread;
 class ViEChannelManager;
 class ViEInputManager;
-class ProcessThread;
+class ViERenderManager;
 
-class ViESharedData
-{
-protected:
-    ViESharedData();
-    ~ViESharedData();
+class ViESharedData {
+ protected:
+  ViESharedData();
+  ~ViESharedData();
 
-    bool IsInitialized() const;
-    int SetInitialized();
-    int SetUnInitialized();
-    void SetLastError(const int error) const;
-    int LastErrorInternal() const;
-protected:
-    int NumberOfCores() const;
+  bool Initialized() const;
+  int SetInitialized();
+  int SetUnInitialized();
+  void SetLastError(const int error) const;
+  int LastErrorInternal() const;
 
-    static int _instanceCounter;
-    const int _instanceId;
-    CriticalSectionWrapper& _apiCritsect;
-    bool _isInitialized;
-    const int _numberOfCores;
+  int NumberOfCores() const;
 
-    ViEPerformanceMonitor _viePerformanceMonitor;
-    ViEChannelManager& _channelManager;
-    ViEInputManager& _inputManager;
-    ViERenderManager& _renderManager;
-    ProcessThread* _moduleProcessThreadPtr;
-private:
-    mutable int _lastError;
+  static int instance_counter_;
+  const int instance_id_;
+  CriticalSectionWrapper& api_critsect_;
+  bool initialized_;
+  const int number_cores_;
+
+  ViEPerformanceMonitor vie_performance_monitor_;
+  ViEChannelManager& channel_manager_;
+  ViEInputManager& input_manager_;
+  ViERenderManager& render_manager_;
+  ProcessThread* module_process_thread_;
+
+ private:
+  mutable int last_error_;
 };
-} // namespace webrtc
 
-#endif // WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_SHARED_DATA_H_
+}  // namespace webrtc
+
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_SHARED_DATA_H_

@@ -58,19 +58,19 @@ ViEImageProcess* ViEImageProcess::GetInterface(VideoEngine* videoEngine)
 
 int ViEImageProcessImpl::Release()
 {
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, _instanceId,
+    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, instance_id_,
                "ViEImageProcess::Release()");
     (*this)--; // Decrease ref count
 
     WebRtc_Word32 refCount = GetCount();
     if (refCount < 0)
     {
-        WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideo, _instanceId,
+        WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideo, instance_id_,
                    "ViEImageProcess release too many times");
         SetLastError(kViEAPIDoesNotExist);
         return -1;
     }
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, _instanceId,
+    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, instance_id_,
                "ViEImageProcess reference count: %d", refCount);
     return refCount;
 }
@@ -81,7 +81,7 @@ int ViEImageProcessImpl::Release()
 
 ViEImageProcessImpl::ViEImageProcessImpl()
 {
-    WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideo, _instanceId,
+    WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideo, instance_id_,
                "ViEImageProcessImpl::ViEImageProcessImpl() Ctor");
 }
 
@@ -91,7 +91,7 @@ ViEImageProcessImpl::ViEImageProcessImpl()
 
 ViEImageProcessImpl::~ViEImageProcessImpl()
 {
-    WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideo, _instanceId,
+    WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideo, instance_id_,
                "ViEImageProcessImpl::~ViEImageProcessImpl() Dtor");
 }
 
@@ -108,22 +108,22 @@ ViEImageProcessImpl::~ViEImageProcessImpl()
 int ViEImageProcessImpl::RegisterCaptureEffectFilter(
     const int captureId, ViEEffectFilter& captureFilter)
 {
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(_instanceId),
+    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(instance_id_),
                "%s(captureId: %d)", __FUNCTION__, captureId);
-    if (!IsInitialized())
+    if (!Initialized())
     {
         SetLastError(kViENotInitialized);
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_instanceId),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
                    "%s - ViE instance %d not initialized", __FUNCTION__,
-                   _instanceId);
+                   instance_id_);
         return -1;
     }
 
-    ViEInputManagerScoped is(_inputManager);
+    ViEInputManagerScoped is(input_manager_);
     ViECapturer* vieCapture = is.Capture(captureId);
     if (vieCapture == NULL)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_instanceId),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
                    "%s: Capture device %d doesn't exist", __FUNCTION__,
                    captureId);
         SetLastError(kViEImageProcessInvalidCaptureId);
@@ -146,14 +146,14 @@ int ViEImageProcessImpl::RegisterCaptureEffectFilter(
 
 int ViEImageProcessImpl::DeregisterCaptureEffectFilter(const int captureId)
 {
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(_instanceId),
+    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(instance_id_),
                "%s(captureId: %d)", __FUNCTION__, captureId);
 
-    ViEInputManagerScoped is(_inputManager);
+    ViEInputManagerScoped is(input_manager_);
     ViECapturer* vieCapture = is.Capture(captureId);
     if (vieCapture == NULL)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_instanceId),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
                    "%s: Capture device %d doesn't exist", __FUNCTION__,
                    captureId);
         SetLastError(kViEImageProcessInvalidCaptureId);
@@ -176,14 +176,14 @@ int ViEImageProcessImpl::DeregisterCaptureEffectFilter(const int captureId)
 int ViEImageProcessImpl::RegisterSendEffectFilter(const int videoChannel,
                                                   ViEEffectFilter& sendFilter)
 {
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(_instanceId),
+    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(instance_id_),
                "%s(videoChannel: %d)", __FUNCTION__, videoChannel);
 
-    ViEChannelManagerScoped cs(_channelManager);
+    ViEChannelManagerScoped cs(channel_manager_);
     ViEEncoder* vieEncoder = cs.Encoder(videoChannel);
     if (vieEncoder == NULL)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_instanceId),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
                    "%s: Channel %d doesn't exist", __FUNCTION__, videoChannel);
         SetLastError(kViEImageProcessInvalidChannelId);
         return -1;
@@ -205,14 +205,14 @@ int ViEImageProcessImpl::RegisterSendEffectFilter(const int videoChannel,
 
 int ViEImageProcessImpl::DeregisterSendEffectFilter(const int videoChannel)
 {
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(_instanceId),
+    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(instance_id_),
                "%s(videoChannel: %d)", __FUNCTION__, videoChannel);
 
-    ViEChannelManagerScoped cs(_channelManager);
+    ViEChannelManagerScoped cs(channel_manager_);
     ViEEncoder* vieEncoder = cs.Encoder(videoChannel);
     if (vieEncoder == NULL)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_instanceId),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
                    "%s: Channel %d doesn't exist", __FUNCTION__, videoChannel);
         SetLastError(kViEImageProcessInvalidChannelId);
         return -1;
@@ -234,14 +234,14 @@ int ViEImageProcessImpl::DeregisterSendEffectFilter(const int videoChannel)
 int ViEImageProcessImpl::RegisterRenderEffectFilter(
     const int videoChannel, ViEEffectFilter& renderFilter)
 {
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(_instanceId),
+    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(instance_id_),
                "%s(videoChannel: %d)", __FUNCTION__, videoChannel);
 
-    ViEChannelManagerScoped cs(_channelManager);
+    ViEChannelManagerScoped cs(channel_manager_);
     ViEChannel* vieChannel = cs.Channel(videoChannel);
     if (vieChannel == NULL)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_instanceId),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
                    "%s: Channel %d doesn't exist", __FUNCTION__, videoChannel);
         SetLastError(kViEImageProcessInvalidChannelId);
         return -1;
@@ -262,14 +262,14 @@ int ViEImageProcessImpl::RegisterRenderEffectFilter(
 
 int ViEImageProcessImpl::DeregisterRenderEffectFilter(const int videoChannel)
 {
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(_instanceId),
+    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(instance_id_),
                "%s(videoChannel: %d)", __FUNCTION__, videoChannel);
 
-    ViEChannelManagerScoped cs(_channelManager);
+    ViEChannelManagerScoped cs(channel_manager_);
     ViEChannel* vieChannel = cs.Channel(videoChannel);
     if (vieChannel == NULL)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_instanceId),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
                    "%s: Channel %d doesn't exist", __FUNCTION__, videoChannel);
         SetLastError(kViEImageProcessInvalidChannelId);
         return -1;
@@ -296,14 +296,14 @@ int ViEImageProcessImpl::DeregisterRenderEffectFilter(const int videoChannel)
 int ViEImageProcessImpl::EnableDeflickering(const int captureId,
                                             const bool enable)
 {
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(_instanceId),
+    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(instance_id_),
                "%s(captureId: %d, enable: %d)", __FUNCTION__, captureId, enable);
 
-    ViEInputManagerScoped is(_inputManager);
+    ViEInputManagerScoped is(input_manager_);
     ViECapturer* vieCapture = is.Capture(captureId);
     if (vieCapture == NULL)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_instanceId),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
                    "%s: Capture device %d doesn't exist", __FUNCTION__,
                    captureId);
         SetLastError(kViEImageProcessInvalidChannelId);
@@ -331,14 +331,14 @@ int ViEImageProcessImpl::EnableDeflickering(const int captureId,
 
 int ViEImageProcessImpl::EnableDenoising(const int captureId, const bool enable)
 {
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(_instanceId),
+    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(instance_id_),
                "%s(captureId: %d, enable: %d)", __FUNCTION__, captureId, enable);
 
-    ViEInputManagerScoped is(_inputManager);
+    ViEInputManagerScoped is(input_manager_);
     ViECapturer* vieCapture = is.Capture(captureId);
     if (vieCapture == NULL)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_instanceId),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
                    "%s: Capture device %d doesn't exist", __FUNCTION__,
                    captureId);
         SetLastError(kViEImageProcessInvalidCaptureId);
@@ -368,15 +368,15 @@ int ViEImageProcessImpl::EnableDenoising(const int captureId, const bool enable)
 int ViEImageProcessImpl::EnableColorEnhancement(const int videoChannel,
                                                 const bool enable)
 {
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(_instanceId),
+    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(instance_id_),
                "%s(videoChannel: %d, enable: %d)", __FUNCTION__, videoChannel,
                enable);
 
-    ViEChannelManagerScoped cs(_channelManager);
+    ViEChannelManagerScoped cs(channel_manager_);
     ViEChannel* vieChannel = cs.Channel(videoChannel);
     if (vieChannel == NULL)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_instanceId),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
                    "%s: Channel %d doesn't exist", __FUNCTION__, videoChannel);
         SetLastError(kViEImageProcessInvalidChannelId);
         return -1;
