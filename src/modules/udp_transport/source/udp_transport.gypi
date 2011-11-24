@@ -93,6 +93,24 @@
       ] # conditions
     },
   ], # targets
+  'conditions': [
+    ['build_with_chromium==0', {
+      'targets': [
+        {
+          'target_name': 'udp_transport_unittests',
+          'type': 'executable',
+          'dependencies': [
+            'udp_transport',
+            '<(webrtc_root)/../testing/gtest.gyp:gtest',
+            '<(webrtc_root)/../test/test.gyp:test_support_main',
+          ],
+          'sources': [
+            'udp_transport_unittest.cc',
+          ],
+        }, # udp_transport_unittests
+      ], # targets
+    }], # build_with_chromium
+  ], # conditions
 }
 
 # Local Variables:

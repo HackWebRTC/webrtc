@@ -65,7 +65,25 @@
         }],
       ],
     },
-  ],
+  ], # targets
+  'conditions': [
+    ['build_with_chromium==0', {
+      'targets': [
+        {
+          'target_name': 'webrtc_utility_unittests',
+          'type': 'executable',
+          'dependencies': [
+            'webrtc_utility',
+            '<(webrtc_root)/../testing/gtest.gyp:gtest',
+            '<(webrtc_root)/../test/test.gyp:test_support_main',
+          ],
+          'sources': [
+            'file_player_unittest.cc',
+          ],
+        }, # webrtc_utility_unittests
+      ], # targets
+    }], # build_with_chromium
+  ], # conditions
 }
 
 # Local Variables:

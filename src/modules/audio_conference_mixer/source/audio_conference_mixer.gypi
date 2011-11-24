@@ -41,7 +41,26 @@
         'time_scheduler.h',
       ],
     },
-  ],
+  ], # targets
+  'conditions': [
+    ['build_with_chromium==0', {
+      'targets': [
+        {
+          'target_name': 'audio_conference_mixer_unittests',
+          'type': 'executable',
+          'dependencies': [
+            'audio_conference_mixer',
+            '<(webrtc_root)/../testing/gtest.gyp:gtest',
+            '<(webrtc_root)/../test/test.gyp:test_support_main',
+            '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+          ],
+          'sources': [
+            'audio_conference_mixer_unittest.cc',
+          ],
+        }, # audio_conference_mixer_unittests
+      ], # targets
+    }], # build_with_chromium
+  ], # conditions
 }
 
 # Local Variables:
