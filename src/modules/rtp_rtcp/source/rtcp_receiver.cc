@@ -1278,10 +1278,17 @@ RTCPReceiver::TriggerCallbacksFromRTCPPacket(RTCPPacketInformation& rtcpPacketIn
     {
         if(rtcpPacketInformation.reportBlock)
         {
+            // We only want to trigger one OnNetworkChanged callback per RTCP
+            // packet. The callback is triggered by a SR, RR and TMMBR, so we
+            // don't want to trigger one from here if the packet also contains a
+            // TMMBR block.
+            bool triggerCallback =
+                !(rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpTmmbr);
             _rtpRtcp.OnPacketLossStatisticsUpdate(
                 rtcpPacketInformation.fractionLost,
                 rtcpPacketInformation.roundTripTime,
-                rtcpPacketInformation.lastReceivedExtendedHighSeqNum);
+                rtcpPacketInformation.lastReceivedExtendedHighSeqNum,
+                triggerCallback);
         }
     }
     if (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpSr)

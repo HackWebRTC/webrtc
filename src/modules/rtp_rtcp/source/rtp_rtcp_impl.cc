@@ -2633,7 +2633,7 @@ void ModuleRtpRtcpImpl::OnReceivedBandwidthEstimateUpdate(
     // We received a TMMBR
     const bool defaultInstance(_childModules.empty() ? false : true);
     if (defaultInstance) {
-        ProcessDefaultModuleBandwidth();
+        ProcessDefaultModuleBandwidth(true);
         return;
     }
     if (_audio) {
@@ -2674,7 +2674,8 @@ void ModuleRtpRtcpImpl::OnReceivedBandwidthEstimateUpdate(
 void ModuleRtpRtcpImpl::OnPacketLossStatisticsUpdate(
     const WebRtc_UWord8 fractionLost,
     const WebRtc_UWord16 roundTripTime,
-    const WebRtc_UWord32 lastReceivedExtendedHighSeqNum) {
+    const WebRtc_UWord32 lastReceivedExtendedHighSeqNum,
+    bool triggerOnNetworkChanged) {
 
     const bool defaultInstance(_childModules.empty() ? false : true);
     if (!defaultInstance) {
@@ -2709,18 +2710,22 @@ void ModuleRtpRtcpImpl::OnPacketLossStatisticsUpdate(
                 _defaultModule->OnPacketLossStatisticsUpdate(
                         loss,  // send in the filtered loss
                         roundTripTime,
-                        lastReceivedExtendedHighSeqNum);
+                        lastReceivedExtendedHighSeqNum,
+                        triggerOnNetworkChanged);
             }
             return;
         }
         // No default module check if we should trigger OnNetworkChanged
         // via video callback
-        _rtpReceiver.UpdateBandwidthManagement(newBitrate,
-                                               fractionLost,
-                                               roundTripTime);
+        if (triggerOnNetworkChanged)
+        {
+              _rtpReceiver.UpdateBandwidthManagement(newBitrate,
+                                                     fractionLost,
+                                                     roundTripTime);
+        }
     } else {
         if (!_simulcast) {
-            ProcessDefaultModuleBandwidth();
+            ProcessDefaultModuleBandwidth(triggerOnNetworkChanged);
         } else {
             // default and simulcast
             WebRtc_UWord32 newBitrate = 0;
@@ -2740,9 +2745,12 @@ void ModuleRtpRtcpImpl::OnPacketLossStatisticsUpdate(
             _rtpSender.SetTargetSendBitrate(newBitrate);
             // check if we should trigger OnNetworkChanged
             // via video callback
-            _rtpReceiver.UpdateBandwidthManagement(newBitrate,
-                                                   loss,
-                                                   roundTripTime);
+            if (triggerOnNetworkChanged)
+            {
+                _rtpReceiver.UpdateBandwidthManagement(newBitrate,
+                                                       loss,
+                                                       roundTripTime);
+            }
             // sanity
             if (_sendVideoCodec.codecType == kVideoCodecUnknown) {
                 return;
@@ -2779,7 +2787,9 @@ void ModuleRtpRtcpImpl::OnPacketLossStatisticsUpdate(
     }
 }
 
-void ModuleRtpRtcpImpl::ProcessDefaultModuleBandwidth() {
+void ModuleRtpRtcpImpl::ProcessDefaultModuleBandwidth(
+    bool triggerOnNetworkChanged) {
+
     WebRtc_UWord32 minBitrateBps = 0xffffffff;
     WebRtc_UWord32 maxBitrateBps = 0;
     WebRtc_UWord32 count = 0;
@@ -2833,12 +2843,15 @@ void ModuleRtpRtcpImpl::ProcessDefaultModuleBandwidth() {
         return;
     }
     _bandwidthManagement.SetSendBitrate(minBitrateBps, 0, 0);
-    // Update default module bitrate. Don't care about min max.
-    // Check if we should trigger OnNetworkChanged via video callback
-    WebRtc_UWord8 fractionLostAvg = WebRtc_UWord8(fractionLostAcc / count);
-    _rtpReceiver.UpdateBandwidthManagement(minBitrateBps,
-                                           fractionLostAvg ,
-                                           maxRoundTripTime);
+
+    if (triggerOnNetworkChanged) {
+      // Update default module bitrate. Don't care about min max.
+      // Check if we should trigger OnNetworkChanged via video callback
+      WebRtc_UWord8 fractionLostAvg = WebRtc_UWord8(fractionLostAcc / count);
+      _rtpReceiver.UpdateBandwidthManagement(minBitrateBps,
+                                             fractionLostAvg ,
+                                             maxRoundTripTime);
+    }
 }
 
 void ModuleRtpRtcpImpl::OnRequestSendReport() {
