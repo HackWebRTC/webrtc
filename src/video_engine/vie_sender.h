@@ -8,75 +8,57 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * vie_sender.h
- */
+// ViESender is responsible for encrypting, if enabled, packets and send to
+// network.
 
-#ifndef WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_SENDER_H_
-#define WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_SENDER_H_
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_SENDER_H_
+#define WEBRTC_VIDEO_ENGINE_VIE_SENDER_H_
 
-// Defines
-#include "engine_configurations.h"
-#include "vie_defines.h"
-#include "typedefs.h"
 #include "common_types.h"
-
-// Forward declarations
-
-#ifdef WEBRTC_SRTP
-  class SrtpModule;
-#endif
+#include "engine_configurations.h"
+#include "typedefs.h"
+#include "vie_defines.h"
 
 namespace webrtc {
+
 class CriticalSectionWrapper;
 class RtpDump;
 class Transport;
 class VideoCodingModule;
 
-class ViESender: public Transport
-{
-public:
-    ViESender(int engineId, int channelId);
-    ~ViESender();
+class ViESender: public Transport {
+ public:
+  ViESender(int engine_id, int channel_id);
+  ~ViESender();
 
-    int RegisterExternalEncryption(Encryption* encryption);
-    int DeregisterExternalEncryption();
+  // Registers an encryption class to use before sending packets.
+  int RegisterExternalEncryption(Encryption* encryption);
+  int DeregisterExternalEncryption();
 
-    int RegisterSendTransport(Transport* transport);
-    int DeregisterSendTransport();
+  // Registers transport to use for sending RTP and RTCP.
+  int RegisterSendTransport(Transport* transport);
+  int DeregisterSendTransport();
 
-#ifdef WEBRTC_SRTP
-    int RegisterSRTPModule(SrtpModule* srtpModule);
-    int DeregisterSRTPModule();
+  // Stores all incoming packets to file.
+  int StartRTPDump(const char file_nameUTF8[1024]);
+  int StopRTPDump();
 
-    int RegisterSRTCPModule(SrtpModule* srtpModule);
-    int DeregisterSRTCPModule();
-#endif
+  // Implements Transport.
+  virtual int SendPacket(int vie_id, const void* data, int len);
+  virtual int SendRTCPPacket(int vie_id, const void* data, int len);
 
-    int StartRTPDump(const char fileNameUTF8[1024]);
-    int StopRTPDump();
+ private:
+  int engine_id_;
+  int channel_id_;
 
-    // Implements Transport
-    virtual int SendPacket(int vieId, const void *data, int len);
-    virtual int SendRTCPPacket(int vieId, const void *data, int len);
+  CriticalSectionWrapper& critsect_;
 
-private:
-    int _engineId;
-    int _channelId;
-    CriticalSectionWrapper& _sendCritsect;
-
-#ifdef WEBRTC_SRTP
-    SrtpModule* _ptrSrtp;
-    SrtpModule* _ptrSrtcp;
-#endif
-
-    Encryption* _ptrExternalEncryption;
-    WebRtc_UWord8* _ptrSrtpBuffer;
-    WebRtc_UWord8* _ptrSrtcpBuffer;
-    WebRtc_UWord8* _ptrEncryptionBuffer;
-    Transport* _ptrTransport;
-    RtpDump* _rtpDump;
+  Encryption* external_encryption_;
+  WebRtc_UWord8* encryption_buffer_;
+  Transport* transport_;
+  RtpDump* rtp_dump_;
 };
 
-} // namespace webrtc
-#endif    // WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_SENDER_H_
+}  // namespace webrtc
+
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_SENDER_H_

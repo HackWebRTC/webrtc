@@ -8,388 +8,186 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * vie_sender.cc
- */
 #include <cassert>
 
-#include "vie_sender.h"
 #include "critical_section_wrapper.h"
-#ifdef WEBRTC_SRTP
-#include "SrtpModule.h"
-#endif
 #include "rtp_dump.h"
+#include "vie_sender.h"
 #include "trace.h"
 
 namespace webrtc {
 
-// ----------------------------------------------------------------------------
-// Constructor
-// ----------------------------------------------------------------------------
-
-ViESender::ViESender(int engineId, int channelId)
-    : _engineId(engineId), _channelId(channelId),
-      _sendCritsect(*CriticalSectionWrapper::CreateCriticalSection()),
-#ifdef WEBRTC_SRTP
-      _ptrSrtp(NULL),
-      _ptrSrtcp(NULL),
-#endif
-      _ptrExternalEncryption(NULL), _ptrSrtpBuffer(NULL),
-      _ptrSrtcpBuffer(NULL), _ptrEncryptionBuffer(NULL), _ptrTransport(NULL),
-      _rtpDump(NULL)
-{
+ViESender::ViESender(int engine_id, int channel_id)
+    : engine_id_(engine_id),
+      channel_id_(channel_id),
+      critsect_(*CriticalSectionWrapper::CreateCriticalSection()),
+      external_encryption_(NULL),
+      encryption_buffer_(NULL),
+      transport_(NULL),
+      rtp_dump_(NULL) {
 }
 
-// ----------------------------------------------------------------------------
-// Destructor
-// ----------------------------------------------------------------------------
-ViESender::~ViESender()
-{
-    delete &_sendCritsect;
+ViESender::~ViESender() {
+  delete &critsect_;
 
-    if (_ptrSrtpBuffer)
-    {
-        delete[] _ptrSrtpBuffer;
-        _ptrSrtpBuffer = NULL;
-    }
-    if (_ptrSrtcpBuffer)
-    {
-        delete[] _ptrSrtcpBuffer;
-        _ptrSrtcpBuffer = NULL;
-    }
-    if (_ptrEncryptionBuffer)
-    {
-        delete[] _ptrEncryptionBuffer;
-        _ptrEncryptionBuffer = NULL;
-    }
-    if (_rtpDump)
-    {
-        _rtpDump->Stop();
-        RtpDump::DestroyRtpDump(_rtpDump);
-        _rtpDump = NULL;
-    }
+  if (encryption_buffer_) {
+    delete[] encryption_buffer_;
+    encryption_buffer_ = NULL;
+  }
+
+  if (rtp_dump_) {
+    rtp_dump_->Stop();
+    RtpDump::DestroyRtpDump(rtp_dump_);
+    rtp_dump_ = NULL;
+  }
 }
 
-// ----------------------------------------------------------------------------
-// RegisterExternalEncryption
-// ----------------------------------------------------------------------------
-
-int ViESender::RegisterExternalEncryption(Encryption* encryption)
-{
-    CriticalSectionScoped cs(_sendCritsect);
-    if (_ptrExternalEncryption)
-    {
-        return -1;
-    }
-    _ptrEncryptionBuffer = new WebRtc_UWord8[kViEMaxMtu];
-    if (_ptrEncryptionBuffer == NULL)
-    {
-        return -1;
-    }
-    _ptrExternalEncryption = encryption;
-    return 0;
+int ViESender::RegisterExternalEncryption(Encryption* encryption) {
+  CriticalSectionScoped cs(critsect_);
+  if (external_encryption_) {
+    return -1;
+  }
+  encryption_buffer_ = new WebRtc_UWord8[kViEMaxMtu];
+  if (encryption_buffer_ == NULL) {
+    return -1;
+  }
+  external_encryption_ = encryption;
+  return 0;
 }
 
-// ----------------------------------------------------------------------------
-// DeregisterExternalEncryption
-// ----------------------------------------------------------------------------
-
-int ViESender::DeregisterExternalEncryption()
-{
-    CriticalSectionScoped cs(_sendCritsect);
-    if (_ptrExternalEncryption == NULL)
-    {
-        return -1;
-    }
-    if (_ptrEncryptionBuffer)
-    {
-        delete _ptrEncryptionBuffer;
-        _ptrEncryptionBuffer = NULL;
-    }
-    _ptrExternalEncryption = NULL;
-    return 0;
+int ViESender::DeregisterExternalEncryption() {
+  CriticalSectionScoped cs(critsect_);
+  if (external_encryption_ == NULL) {
+    return -1;
+  }
+  if (encryption_buffer_) {
+    delete encryption_buffer_;
+    encryption_buffer_ = NULL;
+  }
+  external_encryption_ = NULL;
+  return 0;
 }
 
-// ----------------------------------------------------------------------------
-// RegisterSendTransport
-// ----------------------------------------------------------------------------
-
-int ViESender::RegisterSendTransport(Transport* transport)
-{
-    CriticalSectionScoped cs(_sendCritsect);
-    if (_ptrTransport)
-    {
-        return -1;
-    }
-    _ptrTransport = transport;
-    return 0;
+int ViESender::RegisterSendTransport(Transport* transport) {
+  CriticalSectionScoped cs(critsect_);
+  if (transport_) {
+    return -1;
+  }
+  transport_ = transport;
+  return 0;
 }
 
-// ----------------------------------------------------------------------------
-// DeregisterSendTransport
-// ----------------------------------------------------------------------------
-
-int ViESender::DeregisterSendTransport()
-{
-    CriticalSectionScoped cs(_sendCritsect);
-    if (_ptrTransport == NULL)
-    {
-        return -1;
-    }
-    _ptrTransport = NULL;
-    return 0;
+int ViESender::DeregisterSendTransport() {
+  CriticalSectionScoped cs(critsect_);
+  if (transport_ == NULL) {
+    return -1;
+  }
+  transport_ = NULL;
+  return 0;
 }
 
-#ifdef WEBRTC_SRTP
-// ----------------------------------------------------------------------------
-// RegisterSRTPModule
-// ----------------------------------------------------------------------------
-
-int ViESender::RegisterSRTPModule(SrtpModule* srtpModule)
-{
-    CriticalSectionScoped cs(_sendCritsect);
-    if (_ptrSrtp ||
-        srtpModule == NULL)
-    {
-        return -1;
+int ViESender::StartRTPDump(const char file_nameUTF8[1024]) {
+  CriticalSectionScoped cs(critsect_);
+  if (rtp_dump_) {
+    // Packet dump is already started, restart it.
+    rtp_dump_->Stop();
+  } else {
+    rtp_dump_ = RtpDump::CreateRtpDump();
+    if (rtp_dump_ == NULL) {
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
+                   ViEId(engine_id_, channel_id_),
+                   "StartSRTPDump: Failed to create RTP dump");
+      return -1;
     }
-    _ptrSrtpBuffer = new WebRtc_UWord8[KMaxPacketSize];
-    if (_ptrSrtpBuffer == NULL)
-    {
-        return -1;
-    }
-    _ptrSrtp = srtpModule;
-
-    return 0;
+  }
+  if (rtp_dump_->Start(file_nameUTF8) != 0) {
+    RtpDump::DestroyRtpDump(rtp_dump_);
+    rtp_dump_ = NULL;
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
+                 ViEId(engine_id_, channel_id_),
+                 "StartRTPDump: Failed to start RTP dump");
+    return -1;
+  }
+  return 0;
 }
 
-// ----------------------------------------------------------------------------
-// DeregisterSRTPModule
-// ----------------------------------------------------------------------------
-
-int ViESender::DeregisterSRTPModule()
-{
-    CriticalSectionScoped cs(_sendCritsect);
-    if (_ptrSrtp == NULL)
-    {
-        return -1;
+int ViESender::StopRTPDump() {
+  CriticalSectionScoped cs(critsect_);
+  if (rtp_dump_) {
+    if (rtp_dump_->IsActive()) {
+      rtp_dump_->Stop();
+    } else {
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
+                   ViEId(engine_id_, channel_id_),
+                   "StopRTPDump: Dump not active");
     }
-    if (_ptrSrtpBuffer)
-    {
-        delete [] _ptrSrtpBuffer;
-        _ptrSrtpBuffer = NULL;
-    }
-    _ptrSrtp = NULL;
-    return 0;
-}
-// ----------------------------------------------------------------------------
-// RegisterSRTCPModule
-// ----------------------------------------------------------------------------
-
-int ViESender::RegisterSRTCPModule(SrtpModule* srtcpModule)
-{
-    CriticalSectionScoped cs(_sendCritsect);
-    if (_ptrSrtcp ||
-        srtcpModule == NULL)
-    {
-        return -1;
-    }
-    _ptrSrtcpBuffer = new WebRtc_UWord8[KMaxPacketSize];
-    if (_ptrSrtcpBuffer == NULL)
-    {
-        return -1;
-    }
-    _ptrSrtcp = srtcpModule;
-
-    return 0;
+    RtpDump::DestroyRtpDump(rtp_dump_);
+    rtp_dump_ = NULL;
+  } else {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
+                 ViEId(engine_id_, channel_id_),
+                 "StopRTPDump: RTP dump not started");
+    return -1;
+  }
+  return 0;
 }
 
-// ----------------------------------------------------------------------------
-// DeregisterSRTCPModule
-// ----------------------------------------------------------------------------
+int ViESender::SendPacket(int vie_id, const void* data, int len) {
+  CriticalSectionScoped cs(critsect_);
+  if (!transport_) {
+    // No transport
+    return -1;
+  }
 
-int ViESender::DeregisterSRTCPModule()
-{
-    CriticalSectionScoped cs(_sendCritsect);
-    if (_ptrSrtcp == NULL)
-    {
-        return -1;
-    }
-    if (_ptrSrtcpBuffer)
-    {
-        delete [] _ptrSrtcpBuffer;
-        _ptrSrtcpBuffer = NULL;
-    }
-    _ptrSrtcp = NULL;
-    return 0;
-}
-#endif
+  assert(ChannelId(vie_id) == channel_id_);
 
-// ----------------------------------------------------------------------------
-// StartRTPDump
-// ----------------------------------------------------------------------------
+  // TODO(mflodman) Change decrypt to get rid of this cast.
+  void* tmp_ptr = const_cast<void*>(data);
+  unsigned char* send_packet = static_cast<unsigned char*>(tmp_ptr);
+  int send_packet_length = len;
 
-int ViESender::StartRTPDump(const char fileNameUTF8[1024])
-{
-    CriticalSectionScoped cs(_sendCritsect);
-    if (_rtpDump)
-    {
-        // Restart it if it already exists and is started
-        _rtpDump->Stop();
-    } else
-    {
-        _rtpDump = RtpDump::CreateRtpDump();
-        if (_rtpDump == NULL)
-        {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId,
-                                                             _channelId),
-                       "%s: Failed to create RTP dump", __FUNCTION__);
-            return -1;
-        }
-    }
-    if (_rtpDump->Start(fileNameUTF8) != 0)
-    {
-        RtpDump::DestroyRtpDump(_rtpDump);
-        _rtpDump = NULL;
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(_engineId, _channelId),
-                   "%s: Failed to start RTP dump", __FUNCTION__);
-        return -1;
-    }
-    return 0;
+  if (rtp_dump_) {
+    rtp_dump_->DumpPacket(send_packet, send_packet_length);
+  }
+
+  if (external_encryption_) {
+    external_encryption_->encrypt(channel_id_, send_packet,
+                                  encryption_buffer_, send_packet_length,
+                                  static_cast<int*>(&send_packet_length));
+    send_packet = encryption_buffer_;
+  }
+
+  return transport_->SendPacket(channel_id_, send_packet, send_packet_length);
 }
 
-// ----------------------------------------------------------------------------
-// StopRTPDump
-// ----------------------------------------------------------------------------
+int ViESender::SendRTCPPacket(int vie_id, const void* data, int len) {
+  CriticalSectionScoped cs(critsect_);
 
-int ViESender::StopRTPDump()
-{
-    CriticalSectionScoped cs(_sendCritsect);
-    if (_rtpDump)
-    {
-        if (_rtpDump->IsActive())
-        {
-            _rtpDump->Stop();
-        } else
-        {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId,
-                                                             _channelId),
-                       "%s: Dump not active", __FUNCTION__);
-        }
-        RtpDump::DestroyRtpDump(_rtpDump);
-        _rtpDump = NULL;
-    } else
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(_engineId, _channelId), "%s: RTP dump not started",
-                   __FUNCTION__);
-        return -1;
-    }
-    return 0;
+  if (!transport_) {
+    return -1;
+  }
+
+  assert(ChannelId(vie_id) == channel_id_);
+
+  // Prepare for possible encryption and sending.
+  // TODO(mflodman) Change decrypt to get rid of this cast.
+  void* tmp_ptr = const_cast<void*>(data);
+  unsigned char* send_packet = static_cast<unsigned char*>(tmp_ptr);
+  int send_packet_length = len;
+
+  if (rtp_dump_) {
+    rtp_dump_->DumpPacket(send_packet, send_packet_length);
+  }
+
+  if (external_encryption_) {
+    external_encryption_->encrypt_rtcp(
+        channel_id_, send_packet, encryption_buffer_, send_packet_length,
+        static_cast<int*>(&send_packet_length));
+    send_packet = encryption_buffer_;
+  }
+
+  return transport_->SendRTCPPacket(channel_id_, send_packet,
+                                    send_packet_length);
 }
 
-// ----------------------------------------------------------------------------
-// SendPacket
-// ----------------------------------------------------------------------------
-int ViESender::SendPacket(int vieId, const void *data, int len)
-{
-    CriticalSectionScoped cs(_sendCritsect);
-    if (!_ptrTransport)
-    {
-        // No transport
-        return -1;
-    }
-
-    assert(ChannelId(vieId) == _channelId);
-
-    // Prepare for possible encryption and sending
-    WebRtc_UWord8* sendPacket = (WebRtc_UWord8*) data;
-    int sendPacketLength = len;
-
-    if (_rtpDump)
-    {
-        _rtpDump->DumpPacket(sendPacket, sendPacketLength);
-    }
-#ifdef WEBRTC_SRTP
-    if (_ptrSrtp)
-    {
-        _ptrSrtp->encrypt(_channelId, sendPacket, _ptrSrtpBuffer, sendPacketLength, (int*) &sendPacketLength);
-        if (sendPacketLength <= 0)
-        {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId, _channelId), "RTP encryption failed for channel");
-            return -1;
-        }
-        else if (sendPacketLength > KMaxPacketSize)
-        {
-            WEBRTC_TRACE(webrtc::kTraceCritical, webrtc::kTraceVideo, ViEId(_engineId, _channelId),
-                "  %d bytes is allocated as RTP output => memory is now corrupted", KMaxPacketSize);
-            return -1;
-        }
-        sendPacket = _ptrSrtpBuffer;
-    }
-#endif
-    if (_ptrExternalEncryption)
-    {
-        _ptrExternalEncryption->encrypt(_channelId, sendPacket,
-                                        _ptrEncryptionBuffer, sendPacketLength,
-                                        (int*) &sendPacketLength);
-        sendPacket = _ptrEncryptionBuffer;
-    }
-
-    return _ptrTransport->SendPacket(_channelId, sendPacket, sendPacketLength);
-}
-// ----------------------------------------------------------------------------
-// SendRTCPPacket
-// ----------------------------------------------------------------------------
-
-int ViESender::SendRTCPPacket(int vieId, const void *data, int len)
-{
-    CriticalSectionScoped cs(_sendCritsect);
-
-    if (!_ptrTransport)
-    {
-        // No transport
-        return -1;
-    }
-
-    assert(ChannelId(vieId) == _channelId);
-
-    // Prepare for possible encryption and sending
-    WebRtc_UWord8* sendPacket = (WebRtc_UWord8*) data;
-    int sendPacketLength = len;
-
-    if (_rtpDump)
-    {
-        _rtpDump->DumpPacket(sendPacket, sendPacketLength);
-    }
-#ifdef WEBRTC_SRTP
-    if (_ptrSrtcp)
-    {
-        _ptrSrtcp->encrypt_rtcp(_channelId, sendPacket, _ptrSrtcpBuffer, sendPacketLength, (int*) &sendPacketLength);
-        if (sendPacketLength <= 0)
-        {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId, _channelId), "RTCP encryption failed for channel");
-            return -1;
-        }
-        else if (sendPacketLength > KMaxPacketSize)
-        {
-            WEBRTC_TRACE(webrtc::kTraceCritical, webrtc::kTraceVideo, ViEId(_engineId, _channelId), "  %d bytes is allocated as RTCP output => memory is now corrupted", KMaxPacketSize);
-            return -1;
-        }
-        sendPacket = _ptrSrtcpBuffer;
-    }
-#endif
-    if (_ptrExternalEncryption)
-    {
-        _ptrExternalEncryption->encrypt_rtcp(_channelId, sendPacket,
-                                             _ptrEncryptionBuffer,
-                                             sendPacketLength,
-                                             (int*) &sendPacketLength);
-        sendPacket = _ptrEncryptionBuffer;
-    }
-
-    return _ptrTransport->SendRTCPPacket(_channelId, sendPacket,
-                                         sendPacketLength);
-}
-} // namespace webrtc
+}  // namespace webrtc
