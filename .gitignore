@@ -52,8 +52,3 @@
 /tools/win
 /x86-generic_out/
 /xcodebuild
-ViE*.txt
-DumpFileName.rtp
-IncomingRTPDump.rtp
-OutgoingRTPDump.rtp
-WebRTCViECapture_Standard
