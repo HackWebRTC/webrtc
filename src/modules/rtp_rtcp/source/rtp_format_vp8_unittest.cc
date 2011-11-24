@@ -18,11 +18,7 @@
 #include "typedefs.h"
 #include "rtp_format_vp8.h"
 
-namespace {
-
-using webrtc::RTPFragmentationHeader;
-using webrtc::RtpFormatVp8;
-using webrtc::RTPVideoHeaderVP8;
+namespace webrtc {
 
 const int kPayloadSize = 30;
 const int kBufferSize = kPayloadSize + 6; // Add space for payload descriptor.
@@ -35,7 +31,7 @@ class RtpFormatVp8Test : public ::testing::Test {
   void CheckHeader(bool first_in_frame, bool frag_start, int part_id);
   void CheckPictureID();
   void CheckTl0PicIdx();
-  void CheckTID();
+  void CheckTIDAndKeyIdx();
   void CheckPayload(int payload_end);
   void CheckLast(bool last) const;
   void CheckPacket(int send_bytes, int expect_bytes, bool last,
@@ -66,10 +62,11 @@ void RtpFormatVp8Test::SetUp() {
     fragmentation_->fragmentationOffset[1] = 10;
     fragmentation_->fragmentationOffset[2] = 20;
 
-    hdr_info_.pictureId = webrtc::kNoPictureId;
+    hdr_info_.pictureId = kNoPictureId;
     hdr_info_.nonReference = false;
-    hdr_info_.temporalIdx = webrtc::kNoTemporalIdx;
-    hdr_info_.tl0PicIdx = webrtc::kNoTl0PicIdx;
+    hdr_info_.temporalIdx = kNoTemporalIdx;
+    hdr_info_.tl0PicIdx = kNoTl0PicIdx;
+    hdr_info_.keyIdx = kNoKeyIdx;
 }
 
 void RtpFormatVp8Test::TearDown() {
@@ -96,7 +93,11 @@ void RtpFormatVp8Test::TearDown() {
 
 #define EXPECT_BIT_T_EQ(x,a) EXPECT_BIT_EQ(x, 5, a)
 
-#define EXPECT_TID_EQ(x,a) EXPECT_EQ((((x)&0xE0) >> 5), a)
+#define EXPECT_BIT_K_EQ(x,a) EXPECT_BIT_EQ(x, 4, a)
+
+#define EXPECT_TID_EQ(x,a) EXPECT_EQ((((x) & 0xE0) >> 5), a)
+
+#define EXPECT_KEYIDX_EQ(x,a) EXPECT_EQ(((x) & 0x1F), a)
 
 void RtpFormatVp8Test::CheckHeader(bool first_in_frame, bool frag_start,
                                    int part_id)
@@ -105,15 +106,16 @@ void RtpFormatVp8Test::CheckHeader(bool first_in_frame, bool frag_start,
     EXPECT_BIT_EQ(buffer_[0], 6, 0); // check reserved bit
 
 
-    if (hdr_info_.pictureId != webrtc::kNoPictureId ||
-        hdr_info_.temporalIdx != webrtc::kNoTemporalIdx ||
-        hdr_info_.tl0PicIdx != webrtc::kNoTl0PicIdx)
+    if (hdr_info_.pictureId != kNoPictureId ||
+        hdr_info_.temporalIdx != kNoTemporalIdx ||
+        hdr_info_.tl0PicIdx != kNoTl0PicIdx ||
+        hdr_info_.keyIdx != kNoKeyIdx)
     {
         EXPECT_BIT_X_EQ(buffer_[0], 1);
         ++payload_start_;
         CheckPictureID();
         CheckTl0PicIdx();
-        CheckTID();
+        CheckTIDAndKeyIdx();
     }
     else
     {
@@ -137,7 +139,7 @@ void RtpFormatVp8Test::CheckHeader(bool first_in_frame, bool frag_start,
 
 void RtpFormatVp8Test::CheckPictureID()
 {
-    if (hdr_info_.pictureId != webrtc::kNoPictureId)
+    if (hdr_info_.pictureId != kNoPictureId)
     {
         EXPECT_BIT_I_EQ(buffer_[1], 1);
         if (hdr_info_.pictureId > 0x7F)
@@ -165,7 +167,7 @@ void RtpFormatVp8Test::CheckPictureID()
 
 void RtpFormatVp8Test::CheckTl0PicIdx()
 {
-    if (hdr_info_.tl0PicIdx != webrtc::kNoTl0PicIdx)
+    if (hdr_info_.tl0PicIdx != kNoTl0PicIdx)
     {
         EXPECT_BIT_L_EQ(buffer_[1], 1);
         EXPECT_EQ(buffer_[payload_start_], hdr_info_.tl0PicIdx);
@@ -177,19 +179,36 @@ void RtpFormatVp8Test::CheckTl0PicIdx()
     }
 }
 
-void RtpFormatVp8Test::CheckTID()
+void RtpFormatVp8Test::CheckTIDAndKeyIdx()
 {
-    if (hdr_info_.temporalIdx != webrtc::kNoTemporalIdx)
+    if (hdr_info_.temporalIdx == kNoTemporalIdx &&
+        hdr_info_.keyIdx == kNoKeyIdx)
+    {
+        EXPECT_BIT_T_EQ(buffer_[1], 0);
+        EXPECT_BIT_K_EQ(buffer_[1], 0);
+        return;
+    }
+    if (hdr_info_.temporalIdx != kNoTemporalIdx)
     {
         EXPECT_BIT_T_EQ(buffer_[1], 1);
         EXPECT_TID_EQ(buffer_[payload_start_], hdr_info_.temporalIdx);
-        EXPECT_EQ(buffer_[payload_start_] & 0x1F, 0);
-        ++payload_start_;
     }
     else
     {
         EXPECT_BIT_T_EQ(buffer_[1], 0);
+        EXPECT_TID_EQ(buffer_[payload_start_], 0);
     }
+    if (hdr_info_.keyIdx != kNoKeyIdx)
+    {
+        EXPECT_BIT_K_EQ(buffer_[1], 1);
+        EXPECT_KEYIDX_EQ(buffer_[payload_start_], hdr_info_.keyIdx);
+    }
+    else
+    {
+        EXPECT_BIT_K_EQ(buffer_[1], 0);
+        EXPECT_KEYIDX_EQ(buffer_[payload_start_], 0);
+    }
+    ++payload_start_;
 }
 
 void RtpFormatVp8Test::CheckPayload(int payload_end)
@@ -232,7 +251,7 @@ TEST_F(RtpFormatVp8Test, TestStrictMode)
 
     hdr_info_.pictureId = 200; // > 0x7F should produce 2-byte PictureID
     RtpFormatVp8 packetizer = RtpFormatVp8(payload_data_, kPayloadSize,
-        hdr_info_, *fragmentation_, webrtc::kStrict);
+        hdr_info_, *fragmentation_, kStrict);
 
     // get first packet, expect balanced size ~= same as second packet
     EXPECT_EQ(0, packetizer.NextPacket(13, buffer_, &send_bytes, &last));
@@ -289,7 +308,7 @@ TEST_F(RtpFormatVp8Test, TestAggregateMode)
 
     hdr_info_.pictureId = 20; // <= 0x7F should produce 1-byte PictureID
     RtpFormatVp8 packetizer = RtpFormatVp8(payload_data_, kPayloadSize,
-        hdr_info_, *fragmentation_, webrtc::kAggregate);
+        hdr_info_, *fragmentation_, kAggregate);
 
     // get first packet
     // first part of first partition (balanced fragments are expected)
@@ -328,9 +347,9 @@ TEST_F(RtpFormatVp8Test, TestSloppyMode)
     bool last;
     bool first_in_frame = true;
 
-    hdr_info_.pictureId = webrtc::kNoPictureId; // no PictureID
+    hdr_info_.pictureId = kNoPictureId; // no PictureID
     RtpFormatVp8 packetizer = RtpFormatVp8(payload_data_, kPayloadSize,
-        hdr_info_, *fragmentation_, webrtc::kSloppy);
+        hdr_info_, *fragmentation_, kSloppy);
 
     // get first packet
     EXPECT_EQ(0, packetizer.NextPacket(9, buffer_, &send_bytes, &last));
@@ -431,7 +450,7 @@ TEST_F(RtpFormatVp8Test, TestTl0PicIdxAndTID) {
     hdr_info_.tl0PicIdx = 117;
     hdr_info_.temporalIdx = 2;
     RtpFormatVp8 packetizer = RtpFormatVp8(payload_data_, kPayloadSize,
-        hdr_info_, *fragmentation_, webrtc::kAggregate);
+        hdr_info_, *fragmentation_, kAggregate);
 
     // get first and only packet
     EXPECT_EQ(0, packetizer.NextPacket(kBufferSize, buffer_, &send_bytes,
@@ -442,10 +461,41 @@ TEST_F(RtpFormatVp8Test, TestTl0PicIdxAndTID) {
                 /* frag_start */ true);
 }
 
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
+// Verify KeyIdx field
+TEST_F(RtpFormatVp8Test, TestKeyIdx) {
+    int send_bytes = 0;
+    bool last;
 
-  return RUN_ALL_TESTS();
+    hdr_info_.keyIdx = 17;
+    RtpFormatVp8 packetizer = RtpFormatVp8(payload_data_, kPayloadSize,
+        hdr_info_, *fragmentation_, kAggregate);
+
+    // get first and only packet
+    EXPECT_EQ(0, packetizer.NextPacket(kBufferSize, buffer_, &send_bytes,
+                                       &last));
+    bool first_in_frame = true;
+    CheckPacket(send_bytes, kPayloadSize + 3, last,
+                first_in_frame,
+                /* frag_start */ true);
+}
+
+// Verify TID field and KeyIdx field in combination
+TEST_F(RtpFormatVp8Test, TestTIDAndKeyIdx) {
+    int send_bytes = 0;
+    bool last;
+
+    hdr_info_.temporalIdx = 1;
+    hdr_info_.keyIdx = 5;
+    RtpFormatVp8 packetizer = RtpFormatVp8(payload_data_, kPayloadSize,
+        hdr_info_, *fragmentation_, kAggregate);
+
+    // get first and only packet
+    EXPECT_EQ(0, packetizer.NextPacket(kBufferSize, buffer_, &send_bytes,
+                                       &last));
+    bool first_in_frame = true;
+    CheckPacket(send_bytes, kPayloadSize + 3, last,
+                first_in_frame,
+                /* frag_start */ true);
 }
 
 } // namespace

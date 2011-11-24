@@ -84,9 +84,11 @@ private:
     static const int kNBit        = 0x20;
     static const int kSBit        = 0x10;
     static const int kPartIdField = 0x0F;
+    static const int kKeyIdxField = 0x1F;
     static const int kIBit        = 0x80;
     static const int kLBit        = 0x40;
     static const int kTBit        = 0x20;
+    static const int kKBit        = 0x10;
 
     // Calculate size of next chunk to send. Returns 0 if none can be sent.
     int CalcNextSize(int max_payload_len, int remaining_bytes,
@@ -115,10 +117,11 @@ private:
     int WriteTl0PicIdxFields(WebRtc_UWord8* x_field, WebRtc_UWord8* buffer,
                              int buffer_length, int* extension_length) const;
 
-    // Set the T bit in the x_field, and write TID to the appropriate
-    // position in buffer. The function returns 0 on success, -1 otherwise.
-    int WriteTIDFields(WebRtc_UWord8* x_field, WebRtc_UWord8* buffer,
-                       int buffer_length, int* extension_length) const;
+    // Set the T and K bits in the x_field, and write TID and KeyIdx to the
+    // appropriate position in buffer. The function returns 0 on success,
+    // -1 otherwise.
+    int WriteTIDAndKeyIdxFields(WebRtc_UWord8* x_field, WebRtc_UWord8* buffer,
+                                int buffer_length, int* extension_length) const;
 
     // Write the PictureID from codec_specific_info_ to buffer. One or two
     // bytes are written, depending on magnitude of PictureID. The function
@@ -136,6 +139,7 @@ private:
     // Check whether each of the optional fields will be included in the header.
     bool XFieldPresent() const;
     bool TIDFieldPresent() const;
+    bool KeyIdxFieldPresent() const;
     bool TL0PicIdxFieldPresent() const;
     bool PictureIdPresent() const { return (PictureIdLength() > 0); }
 

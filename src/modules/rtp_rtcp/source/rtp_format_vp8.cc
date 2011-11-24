@@ -173,19 +173,19 @@ int RtpFormatVp8::WriteHeaderAndPayload(int payload_bytes,
                                         int buffer_length)
 {
     // Write the VP8 payload descriptor.
-    //     0
-    //     0 1 2 3 4 5 6 7 8
-    //    +-+-+-+-+-+-+-+-+-+
-    //    |X| |N|S| PART_ID |
-    //    +-+-+-+-+-+-+-+-+-+
-    // X: |I|L|T|           | (mandatory if any of the below are used)
-    //    +-+-+-+-+-+-+-+-+-+
-    // I: |PictureID (8/16b)| (optional)
-    //    +-+-+-+-+-+-+-+-+-+
-    // L: |   TL0PIC_IDX    | (optional)
-    //    +-+-+-+-+-+-+-+-+-+
-    // T: | TID |           | (optional)
-    //    +-+-+-+-+-+-+-+-+-+
+    //       0
+    //       0 1 2 3 4 5 6 7 8
+    //      +-+-+-+-+-+-+-+-+-+
+    //      |X| |N|S| PART_ID |
+    //      +-+-+-+-+-+-+-+-+-+
+    // X:   |I|L|T|K|         | (mandatory if any of the below are used)
+    //      +-+-+-+-+-+-+-+-+-+
+    // I:   |PictureID (8/16b)| (optional)
+    //      +-+-+-+-+-+-+-+-+-+
+    // L:   |   TL0PIC_IDX    | (optional)
+    //      +-+-+-+-+-+-+-+-+-+
+    // T/K: | TID |  KEYIDX   | (optional)
+    //      +-+-+-+-+-+-+-+-+-+
 
     assert(payload_bytes > 0);
     assert(payload_bytes_sent_ + payload_bytes <= payload_size_);
@@ -235,9 +235,9 @@ const
                 return -1;
             }
         }
-        if (TIDFieldPresent())
+        if (TIDFieldPresent() || KeyIdxFieldPresent())
         {
-            if (WriteTIDFields(x_field, buffer, buffer_length,
+            if (WriteTIDAndKeyIdxFields(x_field, buffer, buffer_length,
                     &extension_length) < 0)
             {
                 return -1;
@@ -299,19 +299,29 @@ int RtpFormatVp8::WriteTl0PicIdxFields(WebRtc_UWord8* x_field,
     return 0;
 }
 
-int RtpFormatVp8::WriteTIDFields(WebRtc_UWord8* x_field,
-                                 WebRtc_UWord8* buffer,
-                                 int buffer_length,
-                                 int* extension_length) const
+int RtpFormatVp8::WriteTIDAndKeyIdxFields(WebRtc_UWord8* x_field,
+                                          WebRtc_UWord8* buffer,
+                                          int buffer_length,
+                                          int* extension_length) const
 {
     if (buffer_length < vp8_fixed_payload_descriptor_bytes_ + *extension_length
             + 1)
     {
         return -1;
     }
-    *x_field |= kTBit;
-    buffer[vp8_fixed_payload_descriptor_bytes_ + *extension_length]
-        = hdr_info_.temporalIdx << 5;
+    WebRtc_UWord8* data_field =
+        &buffer[vp8_fixed_payload_descriptor_bytes_ + *extension_length];
+    *data_field = 0;
+    if (TIDFieldPresent())
+    {
+        *x_field |= kTBit;
+        *data_field |= hdr_info_.temporalIdx << 5;
+    }
+    if (KeyIdxFieldPresent())
+    {
+        *x_field |= kKBit;
+        *data_field |= (hdr_info_.keyIdx & kKeyIdxField);
+    }
     ++*extension_length;
     return 0;
 }
@@ -320,8 +330,8 @@ int RtpFormatVp8::PayloadDescriptorExtraLength() const
 {
     int length_bytes = PictureIdLength();
     if (TL0PicIdxFieldPresent()) ++length_bytes;
-    if (TIDFieldPresent())       ++length_bytes;
-    if (length_bytes > 0)        ++length_bytes; // Include the extension field.
+    if (TIDFieldPresent() || KeyIdxFieldPresent()) ++length_bytes;
+    if (length_bytes > 0) ++length_bytes; // Include the extension field.
     return length_bytes;
 }
 
@@ -340,12 +350,18 @@ int RtpFormatVp8::PictureIdLength() const
 
 bool RtpFormatVp8::XFieldPresent() const
 {
-    return (TIDFieldPresent() || TL0PicIdxFieldPresent() || PictureIdPresent());
+    return (TIDFieldPresent() || TL0PicIdxFieldPresent() || PictureIdPresent()
+        || KeyIdxFieldPresent());
 }
 
 bool RtpFormatVp8::TIDFieldPresent() const
 {
     return (hdr_info_.temporalIdx != kNoTemporalIdx);
+}
+
+bool RtpFormatVp8::KeyIdxFieldPresent() const
+{
+    return (hdr_info_.keyIdx != kNoKeyIdx);
 }
 
 bool RtpFormatVp8::TL0PicIdxFieldPresent() const

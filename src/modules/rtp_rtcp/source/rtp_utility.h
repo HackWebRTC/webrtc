@@ -145,9 +145,11 @@ namespace ModuleRTPUtility
         bool                 hasPictureID;
         bool                 hasTl0PicIdx;
         bool                 hasTID;
+        bool                 hasKeyIdx;
         int                  pictureID;
         int                  tl0PicIdx;
         int                  tID;
+        int                  keyIdx;
         int                  frameWidth;
         int                  frameHeight;
 
@@ -208,10 +210,10 @@ namespace ModuleRTPUtility
                               int *dataLength,
                               int *parsedBytes) const;
 
-        int ParseVP8TID(RTPPayloadVP8 *vp8,
-                        const WebRtc_UWord8 **dataPtr,
-                        int *dataLength,
-                        int *parsedBytes) const;
+        int ParseVP8TIDAndKeyIdx(RTPPayloadVP8 *vp8,
+                                 const WebRtc_UWord8 **dataPtr,
+                                 int *dataLength,
+                                 int *parsedBytes) const;
 
         int ParseVP8FrameSize(RTPPayload& parsedPacket,
                               const WebRtc_UWord8 *dataPtr,

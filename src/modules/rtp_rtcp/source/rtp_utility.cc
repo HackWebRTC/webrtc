@@ -808,26 +808,26 @@ ModuleRTPUtility::RTPPayloadParser::ParseMPEG4(
 // VP8 format:
 //
 // Payload descriptor
-//     0 1 2 3 4 5 6 7
-//    +-+-+-+-+-+-+-+-+
-//    |X|R|N|S|PartID | (REQUIRED)
-//    +-+-+-+-+-+-+-+-+
-// X: |I|L|T|  RSV-A  | (OPTIONAL)
-//    +-+-+-+-+-+-+-+-+
-// I: |   PictureID   | (OPTIONAL)
-//    +-+-+-+-+-+-+-+-+
-// L: |   TL0PICIDX   | (OPTIONAL)
-//    +-+-+-+-+-+-+-+-+
-// T: | TID |  RSV-B  | (OPTIONAL)
-//    +-+-+-+-+-+-+-+-+
+//       0 1 2 3 4 5 6 7
+//      +-+-+-+-+-+-+-+-+
+//      |X|R|N|S|PartID | (REQUIRED)
+//      +-+-+-+-+-+-+-+-+
+// X:   |I|L|T|K|  RSV  | (OPTIONAL)
+//      +-+-+-+-+-+-+-+-+
+// I:   |   PictureID   | (OPTIONAL)
+//      +-+-+-+-+-+-+-+-+
+// L:   |   TL0PICIDX   | (OPTIONAL)
+//      +-+-+-+-+-+-+-+-+
+// T/K: | TID | KEYIDX  | (OPTIONAL)
+//      +-+-+-+-+-+-+-+-+
 //
 // Payload header (considered part of the actual payload, sent to decoder)
-//     0 1 2 3 4 5 6 7
-//    +-+-+-+-+-+-+-+-+
-//    |Size0|H| VER |P|
-//    +-+-+-+-+-+-+-+-+
-//    |      ...      |
-//    +               +
+//       0 1 2 3 4 5 6 7
+//      +-+-+-+-+-+-+-+-+
+//      |Size0|H| VER |P|
+//      +-+-+-+-+-+-+-+-+
+//      |      ...      |
+//      +               +
 
 bool
 ModuleRTPUtility::RTPPayloadParser::ParseVP8(RTPPayload& parsedPacket) const
@@ -912,6 +912,7 @@ int ModuleRTPUtility::RTPPayloadParser::ParseVP8Extension(
     vp8->hasPictureID = (*dataPtr & 0x80) ? true : false; // I bit
     vp8->hasTl0PicIdx = (*dataPtr & 0x40) ? true : false; // L bit
     vp8->hasTID =       (*dataPtr & 0x20) ? true : false; // T bit
+    vp8->hasKeyIdx =    (*dataPtr & 0x10) ? true : false; // K bit
 
     // Advance dataPtr and decrease remaining payload size
     dataPtr++;
@@ -934,9 +935,9 @@ int ModuleRTPUtility::RTPPayloadParser::ParseVP8Extension(
         }
     }
 
-    if (vp8->hasTID)
+    if (vp8->hasTID || vp8->hasKeyIdx)
     {
-        if (ParseVP8TID(vp8, &dataPtr, &dataLength, &parsedBytes) != 0)
+        if (ParseVP8TIDAndKeyIdx(vp8, &dataPtr, &dataLength, &parsedBytes) != 0)
         {
             return -1;
         }
@@ -982,14 +983,21 @@ ModuleRTPUtility::RTPPayloadParser::ParseVP8Tl0PicIdx(
     return 0;
 }
 
-int ModuleRTPUtility::RTPPayloadParser::ParseVP8TID(
+int ModuleRTPUtility::RTPPayloadParser::ParseVP8TIDAndKeyIdx(
         RTPPayloadVP8 *vp8,
         const WebRtc_UWord8 **dataPtr,
         int *dataLength,
         int *parsedBytes) const
 {
     if (*dataLength <= 0) return -1;
-    vp8->tID = ((**dataPtr >> 5) & 0x07);
+    if (vp8->hasTID)
+    {
+        vp8->tID = ((**dataPtr >> 5) & 0x07);
+    }
+    if (vp8->hasKeyIdx)
+    {
+        vp8->keyIdx = (**dataPtr & 0x1F);
+    }
     (*dataPtr)++;
     (*parsedBytes)++;
     (*dataLength)--;

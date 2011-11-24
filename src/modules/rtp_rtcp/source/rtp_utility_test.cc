@@ -19,44 +19,43 @@
 #include "rtp_utility.h"
 #include "rtp_format_vp8.h"
 
-namespace {
+namespace webrtc {
 
-using webrtc::ModuleRTPUtility::RTPPayloadParser;
-using webrtc::ModuleRTPUtility::RTPPayload;
-using webrtc::ModuleRTPUtility::RTPPayloadVP8;
-using webrtc::RtpVideoCodecTypes;
+using ModuleRTPUtility::RTPPayloadParser;
+using ModuleRTPUtility::RTPPayload;
+using ModuleRTPUtility::RTPPayloadVP8;
 
 // Payload descriptor
-//     0 1 2 3 4 5 6 7
-//    +-+-+-+-+-+-+-+-+
-//    |X|R|N|S|PartID | (REQUIRED)
-//    +-+-+-+-+-+-+-+-+
-// X: |I|L|T|  RSV-A  | (OPTIONAL)
-//    +-+-+-+-+-+-+-+-+
-// I: |   PictureID   | (OPTIONAL)
-//    +-+-+-+-+-+-+-+-+
-// L: |   TL0PICIDX   | (OPTIONAL)
-//    +-+-+-+-+-+-+-+-+
-// T: | TID |  RSV-B  | (OPTIONAL)
-//    +-+-+-+-+-+-+-+-+
+//       0 1 2 3 4 5 6 7
+//      +-+-+-+-+-+-+-+-+
+//      |X|R|N|S|PartID | (REQUIRED)
+//      +-+-+-+-+-+-+-+-+
+// X:   |I|L|T|K|  RSV  | (OPTIONAL)
+//      +-+-+-+-+-+-+-+-+
+// I:   |   PictureID   | (OPTIONAL)
+//      +-+-+-+-+-+-+-+-+
+// L:   |   TL0PICIDX   | (OPTIONAL)
+//      +-+-+-+-+-+-+-+-+
+// T/K: | TID | KEYIDX  | (OPTIONAL)
+//      +-+-+-+-+-+-+-+-+
 //
 // Payload header
-//     0 1 2 3 4 5 6 7
-//    +-+-+-+-+-+-+-+-+
-//    |Size0|H| VER |P|
-//    +-+-+-+-+-+-+-+-+
-//    |     Size1     |
-//    +-+-+-+-+-+-+-+-+
-//    |     Size2     |
-//    +-+-+-+-+-+-+-+-+
-//    | Bytes 4..N of |
-//    | VP8 payload   |
-//    :               :
-//    +-+-+-+-+-+-+-+-+
-//    | OPTIONAL RTP  |
-//    | padding       |
-//    :               :
-//    +-+-+-+-+-+-+-+-+
+//       0 1 2 3 4 5 6 7
+//      +-+-+-+-+-+-+-+-+
+//      |Size0|H| VER |P|
+//      +-+-+-+-+-+-+-+-+
+//      |     Size1     |
+//      +-+-+-+-+-+-+-+-+
+//      |     Size2     |
+//      +-+-+-+-+-+-+-+-+
+//      | Bytes 4..N of |
+//      | VP8 payload   |
+//      :               :
+//      +-+-+-+-+-+-+-+-+
+//      | OPTIONAL RTP  |
+//      | padding       |
+//      :               :
+//      +-+-+-+-+-+-+-+-+
 
 void VerifyBasicHeader(const RTPPayloadVP8 &header, bool N, bool S, int PartID)
 {
@@ -65,11 +64,13 @@ void VerifyBasicHeader(const RTPPayloadVP8 &header, bool N, bool S, int PartID)
     EXPECT_EQ(PartID, header.partitionID);
 }
 
-void VerifyExtensions(const RTPPayloadVP8 &header, bool I, bool L, bool T)
+void VerifyExtensions(const RTPPayloadVP8 &header,
+                      bool I, bool L, bool T, bool K)
 {
     EXPECT_EQ(I, header.hasPictureID);
     EXPECT_EQ(L, header.hasTl0PicIdx);
     EXPECT_EQ(T, header.hasTID);
+    EXPECT_EQ(K, header.hasKeyIdx);
 }
 
 TEST(ParseVP8Test, BasicHeader) {
@@ -77,16 +78,16 @@ TEST(ParseVP8Test, BasicHeader) {
     payload[0] = 0x14; // binary 0001 0100; S = 1, PartID = 4
     payload[1] = 0x01; // P frame
 
-    RTPPayloadParser rtpPayloadParser(webrtc::kRtpVp8Video, payload, 4, 0);
+    RTPPayloadParser rtpPayloadParser(kRtpVp8Video, payload, 4, 0);
 
     RTPPayload parsedPacket;
     ASSERT_TRUE(rtpPayloadParser.Parse(parsedPacket));
 
-    EXPECT_EQ(webrtc::ModuleRTPUtility::kPFrame, parsedPacket.frameType);
-    EXPECT_EQ(webrtc::kRtpVp8Video, parsedPacket.type);
+    EXPECT_EQ(ModuleRTPUtility::kPFrame, parsedPacket.frameType);
+    EXPECT_EQ(kRtpVp8Video, parsedPacket.type);
 
     VerifyBasicHeader(parsedPacket.info.VP8, 0 /*N*/, 1 /*S*/, 4 /*PartID*/);
-    VerifyExtensions(parsedPacket.info.VP8, 0 /*I*/, 0 /*L*/, 0 /*T*/);
+    VerifyExtensions(parsedPacket.info.VP8, 0 /*I*/, 0 /*L*/, 0 /*T*/, 0 /*K*/);
 
     EXPECT_EQ(payload + 1, parsedPacket.info.VP8.data);
     EXPECT_EQ(4 - 1, parsedPacket.info.VP8.dataLength);
@@ -98,16 +99,16 @@ TEST(ParseVP8Test, PictureID) {
     payload[1] = 0x80;
     payload[2] = 17;
 
-    RTPPayloadParser rtpPayloadParser(webrtc::kRtpVp8Video, payload, 10, 0);
+    RTPPayloadParser rtpPayloadParser(kRtpVp8Video, payload, 10, 0);
 
     RTPPayload parsedPacket;
     ASSERT_TRUE(rtpPayloadParser.Parse(parsedPacket));
 
-    EXPECT_EQ(webrtc::ModuleRTPUtility::kPFrame, parsedPacket.frameType);
-    EXPECT_EQ(webrtc::kRtpVp8Video, parsedPacket.type);
+    EXPECT_EQ(ModuleRTPUtility::kPFrame, parsedPacket.frameType);
+    EXPECT_EQ(kRtpVp8Video, parsedPacket.type);
 
     VerifyBasicHeader(parsedPacket.info.VP8, 1 /*N*/, 0 /*S*/, 0 /*PartID*/);
-    VerifyExtensions(parsedPacket.info.VP8, 1 /*I*/, 0 /*L*/, 0 /*T*/);
+    VerifyExtensions(parsedPacket.info.VP8, 1 /*I*/, 0 /*L*/, 0 /*T*/, 0 /*K*/);
 
     EXPECT_EQ(17, parsedPacket.info.VP8.pictureID);
 
@@ -118,12 +119,12 @@ TEST(ParseVP8Test, PictureID) {
     // Re-use payload, but change to long PictureID
     payload[2] = 0x80 | 17;
     payload[3] = 17;
-    RTPPayloadParser rtpPayloadParser2(webrtc::kRtpVp8Video, payload, 10, 0);
+    RTPPayloadParser rtpPayloadParser2(kRtpVp8Video, payload, 10, 0);
 
     ASSERT_TRUE(rtpPayloadParser2.Parse(parsedPacket));
 
     VerifyBasicHeader(parsedPacket.info.VP8, 1 /*N*/, 0 /*S*/, 0 /*PartID*/);
-    VerifyExtensions(parsedPacket.info.VP8, 1 /*I*/, 0 /*L*/, 0 /*T*/);
+    VerifyExtensions(parsedPacket.info.VP8, 1 /*I*/, 0 /*L*/, 0 /*T*/, 0 /*K*/);
 
     EXPECT_EQ((17<<8) + 17, parsedPacket.info.VP8.pictureID);
 
@@ -137,16 +138,16 @@ TEST(ParseVP8Test, Tl0PicIdx) {
     payload[1] = 0x40;
     payload[2] = 17;
 
-    RTPPayloadParser rtpPayloadParser(webrtc::kRtpVp8Video, payload, 13, 0);
+    RTPPayloadParser rtpPayloadParser(kRtpVp8Video, payload, 13, 0);
 
     RTPPayload parsedPacket;
     ASSERT_TRUE(rtpPayloadParser.Parse(parsedPacket));
 
-    EXPECT_EQ(webrtc::ModuleRTPUtility::kIFrame, parsedPacket.frameType);
-    EXPECT_EQ(webrtc::kRtpVp8Video, parsedPacket.type);
+    EXPECT_EQ(ModuleRTPUtility::kIFrame, parsedPacket.frameType);
+    EXPECT_EQ(kRtpVp8Video, parsedPacket.type);
 
     VerifyBasicHeader(parsedPacket.info.VP8, 0 /*N*/, 1 /*S*/, 0 /*PartID*/);
-    VerifyExtensions(parsedPacket.info.VP8, 0 /*I*/, 1 /*L*/, 0 /*T*/);
+    VerifyExtensions(parsedPacket.info.VP8, 0 /*I*/, 1 /*L*/, 0 /*T*/, 0 /*K*/);
 
     EXPECT_EQ(17, parsedPacket.info.VP8.tl0PicIdx);
 
@@ -160,18 +161,41 @@ TEST(ParseVP8Test, TID) {
     payload[1] = 0x20;
     payload[2] = 0x40;
 
-    RTPPayloadParser rtpPayloadParser(webrtc::kRtpVp8Video, payload, 10, 0);
+    RTPPayloadParser rtpPayloadParser(kRtpVp8Video, payload, 10, 0);
 
     RTPPayload parsedPacket;
     ASSERT_TRUE(rtpPayloadParser.Parse(parsedPacket));
 
-    EXPECT_EQ(webrtc::ModuleRTPUtility::kPFrame, parsedPacket.frameType);
-    EXPECT_EQ(webrtc::kRtpVp8Video, parsedPacket.type);
+    EXPECT_EQ(ModuleRTPUtility::kPFrame, parsedPacket.frameType);
+    EXPECT_EQ(kRtpVp8Video, parsedPacket.type);
 
     VerifyBasicHeader(parsedPacket.info.VP8, 0 /*N*/, 0 /*S*/, 8 /*PartID*/);
-    VerifyExtensions(parsedPacket.info.VP8, 0 /*I*/, 0 /*L*/, 1 /*T*/);
+    VerifyExtensions(parsedPacket.info.VP8, 0 /*I*/, 0 /*L*/, 1 /*T*/, 0 /*K*/);
 
     EXPECT_EQ(2, parsedPacket.info.VP8.tID);
+
+    EXPECT_EQ(payload + 3, parsedPacket.info.VP8.data);
+    EXPECT_EQ(10 - 3, parsedPacket.info.VP8.dataLength);
+}
+
+TEST(ParseVP8Test, KeyIdx) {
+    WebRtc_UWord8 payload[10] = {0};
+    payload[0] = 0x88;
+    payload[1] = 0x10;  // K = 1
+    payload[2] = 0x11;  // KEYIDX = 17 decimal
+
+    RTPPayloadParser rtpPayloadParser(kRtpVp8Video, payload, 10, 0);
+
+    RTPPayload parsedPacket;
+    ASSERT_TRUE(rtpPayloadParser.Parse(parsedPacket));
+
+    EXPECT_EQ(ModuleRTPUtility::kPFrame, parsedPacket.frameType);
+    EXPECT_EQ(kRtpVp8Video, parsedPacket.type);
+
+    VerifyBasicHeader(parsedPacket.info.VP8, 0 /*N*/, 0 /*S*/, 8 /*PartID*/);
+    VerifyExtensions(parsedPacket.info.VP8, 0 /*I*/, 0 /*L*/, 0 /*T*/, 1 /*K*/);
+
+    EXPECT_EQ(17, parsedPacket.info.VP8.keyIdx);
 
     EXPECT_EQ(payload + 3, parsedPacket.info.VP8.data);
     EXPECT_EQ(10 - 3, parsedPacket.info.VP8.dataLength);
@@ -180,26 +204,27 @@ TEST(ParseVP8Test, TID) {
 TEST(ParseVP8Test, MultipleExtensions) {
     WebRtc_UWord8 payload[10] = {0};
     payload[0] = 0x88;
-    payload[1] = 0x80 | 0x40 | 0x20;
+    payload[1] = 0x80 | 0x40 | 0x20 | 0x10;
     payload[2] = 0x80 | 17; // PictureID, high 7 bits
     payload[3] = 17; // PictureID, low 8 bits
     payload[4] = 42; // Tl0PicIdx
-    payload[5] = 0x40; // TID
+    payload[5] = 0x40 | 0x11; // TID + KEYIDX
 
-    RTPPayloadParser rtpPayloadParser(webrtc::kRtpVp8Video, payload, 10, 0);
+    RTPPayloadParser rtpPayloadParser(kRtpVp8Video, payload, 10, 0);
 
     RTPPayload parsedPacket;
     ASSERT_TRUE(rtpPayloadParser.Parse(parsedPacket));
 
-    EXPECT_EQ(webrtc::ModuleRTPUtility::kPFrame, parsedPacket.frameType);
-    EXPECT_EQ(webrtc::kRtpVp8Video, parsedPacket.type);
+    EXPECT_EQ(ModuleRTPUtility::kPFrame, parsedPacket.frameType);
+    EXPECT_EQ(kRtpVp8Video, parsedPacket.type);
 
     VerifyBasicHeader(parsedPacket.info.VP8, 0 /*N*/, 0 /*S*/, 8 /*PartID*/);
-    VerifyExtensions(parsedPacket.info.VP8, 1 /*I*/, 1 /*L*/, 1 /*T*/);
+    VerifyExtensions(parsedPacket.info.VP8, 1 /*I*/, 1 /*L*/, 1 /*T*/, 1 /*K*/);
 
     EXPECT_EQ((17<<8) + 17, parsedPacket.info.VP8.pictureID);
     EXPECT_EQ(42, parsedPacket.info.VP8.tl0PicIdx);
     EXPECT_EQ(2, parsedPacket.info.VP8.tID);
+    EXPECT_EQ(17, parsedPacket.info.VP8.keyIdx);
 
     EXPECT_EQ(payload + 6, parsedPacket.info.VP8.data);
     EXPECT_EQ(10 - 6, parsedPacket.info.VP8.dataLength);
@@ -208,18 +233,15 @@ TEST(ParseVP8Test, MultipleExtensions) {
 TEST(ParseVP8Test, TooShortHeader) {
     WebRtc_UWord8 payload[4] = {0};
     payload[0] = 0x88;
-    payload[1] = 0x80 | 0x40 | 0x20; // All extensions are enabled
+    payload[1] = 0x80 | 0x40 | 0x20 | 0x10; // All extensions are enabled
     payload[2] = 0x80 | 17; //... but only 2 bytes PictureID is provided
     payload[3] = 17; // PictureID, low 8 bits
 
-    RTPPayloadParser rtpPayloadParser(webrtc::kRtpVp8Video, payload, 4, 0);
+    RTPPayloadParser rtpPayloadParser(kRtpVp8Video, payload, 4, 0);
 
     RTPPayload parsedPacket;
     EXPECT_FALSE(rtpPayloadParser.Parse(parsedPacket));
 }
-
-using webrtc::RtpFormatVp8;
-using webrtc::RTPVideoHeaderVP8;
 
 TEST(ParseVP8Test, TestWithPacketizer) {
     WebRtc_UWord8 payload[10] = {0};
@@ -228,21 +250,21 @@ TEST(ParseVP8Test, TestWithPacketizer) {
     inputHeader.nonReference = true;
     inputHeader.pictureId = 300;
     inputHeader.temporalIdx = 1;
-    inputHeader.tl0PicIdx = -1; // disable
+    inputHeader.tl0PicIdx = kNoTl0PicIdx; // disable
+    inputHeader.keyIdx = 31;
     RtpFormatVp8 packetizer = RtpFormatVp8(payload, 10, inputHeader);
     bool last;
     int send_bytes;
     ASSERT_EQ(0, packetizer.NextPacket(20, packet, &send_bytes, &last));
     ASSERT_TRUE(last);
 
-    RTPPayloadParser rtpPayloadParser(webrtc::kRtpVp8Video, packet, send_bytes,
-                                      0);
+    RTPPayloadParser rtpPayloadParser(kRtpVp8Video, packet, send_bytes, 0);
 
     RTPPayload parsedPacket;
     ASSERT_TRUE(rtpPayloadParser.Parse(parsedPacket));
 
-    EXPECT_EQ(webrtc::ModuleRTPUtility::kIFrame, parsedPacket.frameType);
-    EXPECT_EQ(webrtc::kRtpVp8Video, parsedPacket.type);
+    EXPECT_EQ(ModuleRTPUtility::kIFrame, parsedPacket.frameType);
+    EXPECT_EQ(kRtpVp8Video, parsedPacket.type);
 
     VerifyBasicHeader(parsedPacket.info.VP8,
                       inputHeader.nonReference /*N*/,
@@ -251,19 +273,15 @@ TEST(ParseVP8Test, TestWithPacketizer) {
     VerifyExtensions(parsedPacket.info.VP8,
                      1 /*I*/,
                      0 /*L*/,
-                     1 /*T*/);
+                     1 /*T*/,
+                     1 /*K*/);
 
     EXPECT_EQ(inputHeader.pictureId, parsedPacket.info.VP8.pictureID);
     EXPECT_EQ(inputHeader.temporalIdx, parsedPacket.info.VP8.tID);
+    EXPECT_EQ(inputHeader.keyIdx, parsedPacket.info.VP8.keyIdx);
 
     EXPECT_EQ(packet + 5, parsedPacket.info.VP8.data);
     EXPECT_EQ(send_bytes - 5, parsedPacket.info.VP8.dataLength);
-}
-
-int main(int argc, char** argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-
-    return RUN_ALL_TESTS();
 }
 
 } // namespace
