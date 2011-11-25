@@ -295,10 +295,12 @@ int WebRtcNetEQ_Merge(DSPInst_t *inst,
             if (w16_decodedLen <= 80)
             {
                 /* Not quite long enough, so we have to cheat a bit... */
-                WebRtcSpl_DownsampleFast(&pw16_decoded[2], (WebRtc_Word16) 80, pw16_decodedLB,
-                    (WebRtc_Word16) (40), (WebRtc_Word16*) WebRtcNetEQ_kDownsample8kHzTbl,
+                WebRtc_Word16 temp_len = w16_decodedLen - 2;
+                w16_tmp = temp_len / 2;
+                WebRtcSpl_DownsampleFast(&pw16_decoded[2], temp_len,
+                                         pw16_decodedLB, w16_tmp,
+                                         (WebRtc_Word16*) WebRtcNetEQ_kDownsample8kHzTbl,
                     (WebRtc_Word16) 3, (WebRtc_Word16) 2, (WebRtc_Word16) 0);
-                w16_tmp = ((w16_decodedLen - 2) >> 1);
                 WebRtcSpl_MemSetW16(&pw16_decodedLB[w16_tmp], 0, (40 - w16_tmp));
             }
             else
@@ -320,12 +322,13 @@ int WebRtcNetEQ_Merge(DSPInst_t *inst,
             if (w16_decodedLen<=160)
             {
                 /* Not quite long enough, so we have to cheat a bit... */
+                WebRtc_Word16 temp_len = w16_decodedLen - 4;
+                w16_tmp = temp_len / 4;
                 WebRtcSpl_DownsampleFast(
-                    &pw16_decoded[4], (WebRtc_Word16)160,
-                    pw16_decodedLB, (WebRtc_Word16)(40),
+                    &pw16_decoded[4], temp_len,
+                    pw16_decodedLB, w16_tmp,
                     (WebRtc_Word16*)WebRtcNetEQ_kDownsample16kHzTbl, (WebRtc_Word16)5,
                     (WebRtc_Word16)4, (WebRtc_Word16)0);
-                w16_tmp = ((w16_decodedLen-4)>>2);
                 WebRtcSpl_MemSetW16(&pw16_decodedLB[w16_tmp], 0, (40-w16_tmp));
             }
             else
@@ -341,6 +344,9 @@ int WebRtcNetEQ_Merge(DSPInst_t *inst,
         }
         else if (inst->fs==32000)
         {
+            /*
+             * TODO(hlundin) Why is the offset into pw16_expanded 6?
+             */
             WebRtcSpl_DownsampleFast(
                 &pw16_expanded[6], (WebRtc_Word16)(w16_expandedLen-6),
                 pw16_expandedLB, (WebRtc_Word16)(100),
@@ -349,12 +355,13 @@ int WebRtcNetEQ_Merge(DSPInst_t *inst,
             if (w16_decodedLen<=320)
             {
                 /* Not quite long enough, so we have to cheat a bit... */
+                WebRtc_Word16 temp_len = w16_decodedLen - 6;
+                w16_tmp = temp_len / 8;
                 WebRtcSpl_DownsampleFast(
-                    &pw16_decoded[6], (WebRtc_Word16)320,
-                    pw16_decodedLB, (WebRtc_Word16)(40),
-                    (WebRtc_Word16*)WebRtcNetEQ_kDownsample32kHzTbl, (WebRtc_Word16)7,
-                    (WebRtc_Word16)8, (WebRtc_Word16)0);
-                w16_tmp = ((w16_decodedLen-6)>>3);
+                      &pw16_decoded[6], temp_len,
+                      pw16_decodedLB, w16_tmp,
+                      (WebRtc_Word16*)WebRtcNetEQ_kDownsample32kHzTbl, (WebRtc_Word16)7,
+                      (WebRtc_Word16)8, (WebRtc_Word16)0);
                 WebRtcSpl_MemSetW16(&pw16_decodedLB[w16_tmp], 0, (40-w16_tmp));
             }
             else
@@ -370,6 +377,9 @@ int WebRtcNetEQ_Merge(DSPInst_t *inst,
         }
         else /* if (inst->fs==48000) */
         {
+            /*
+             * TODO(hlundin) Why is the offset into pw16_expanded 6?
+             */
             WebRtcSpl_DownsampleFast(
                 &pw16_expanded[6], (WebRtc_Word16)(w16_expandedLen-6),
                 pw16_expandedLB, (WebRtc_Word16)(100),
@@ -378,12 +388,18 @@ int WebRtcNetEQ_Merge(DSPInst_t *inst,
             if (w16_decodedLen<=320)
             {
                 /* Not quite long enough, so we have to cheat a bit... */
+                /*
+                 * TODO(hlundin): Is this correct? Downsampling is a factor 12
+                 * but w16_tmp = temp_len / 8.
+                 * (Was w16_tmp = ((w16_decodedLen-6)>>3) before re-write.)
+                 */
+                WebRtc_Word16 temp_len = w16_decodedLen - 6;
+                w16_tmp = temp_len / 8;
                 WebRtcSpl_DownsampleFast(
-                    &pw16_decoded[6], (WebRtc_Word16)320,
-                    pw16_decodedLB, (WebRtc_Word16)(40),
+                    &pw16_decoded[6], temp_len,
+                    pw16_decodedLB, w16_tmp,
                     (WebRtc_Word16*)WebRtcNetEQ_kDownsample48kHzTbl, (WebRtc_Word16)7,
                     (WebRtc_Word16)12, (WebRtc_Word16)0);
-                w16_tmp = ((w16_decodedLen-6)>>3);
                 WebRtcSpl_MemSetW16(&pw16_decodedLB[w16_tmp], 0, (40-w16_tmp));
             }
             else
