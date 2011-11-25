@@ -21,6 +21,7 @@ namespace webrtc {
 class CriticalSectionWrapper;
 
 const WebRtc_UWord32 kPulsePeriodMs = 1000;
+const WebRtc_UWord32 kMaxBufferSizeBytes = 3840; // 10ms in stereo @ 96kHz
 
 class AudioDeviceObserver;
 class MediaFile;
@@ -86,15 +87,15 @@ private:
     WebRtc_UWord8                   _recBytesPerSample;
     WebRtc_UWord8                   _playBytesPerSample;
 
-    // 10ms in stereo @ 48kHz
-    WebRtc_Word8                    _recBuffer[1920];
+    // 10ms in stereo @ 96kHz
+    WebRtc_Word8                    _recBuffer[kMaxBufferSizeBytes];
 
     // one sample <=> 2 or 4 bytes
     WebRtc_UWord32                  _recSamples;
     WebRtc_UWord32                  _recSize;           // in bytes
 
-    // 10ms in stereo @ 48kHz
-    WebRtc_Word8                    _playBuffer[1920];
+    // 10ms in stereo @ 96kHz
+    WebRtc_Word8                    _playBuffer[kMaxBufferSizeBytes];
 
     // one sample <=> 2 or 4 bytes
     WebRtc_UWord32                  _playSamples;

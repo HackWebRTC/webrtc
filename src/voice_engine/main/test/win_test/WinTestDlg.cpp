@@ -3108,8 +3108,8 @@ void CWinTestDlg::OnBnClickedCheckNs1()
 void CWinTestDlg::OnBnClickedCheckPlayFileIn()
 {
     // File path is relative to the location of 'voice_engine.gyp'.
-    const char micFile[] = "../test/data/voice_engine/audio_short16.pcm";
-    // const char micFile[] = "../test/data/voice_engine/audio_long16noise.pcm";
+    const char micFile[] = "../../test/data/voice_engine/audio_short16.pcm";
+    // const char micFile[] = "../../test/data/voice_engine/audio_long16noise.pcm";
 
     int ret(0);
     int channel(-1);
