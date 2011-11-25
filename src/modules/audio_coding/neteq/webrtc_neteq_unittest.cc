@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <string.h>  // memset
 
+#include <string>
 #include <vector>
 
 #include "gtest/gtest.h"
@@ -26,8 +27,9 @@
 #include "typedefs.h"  // NOLINT(build/include)
 #include "modules/audio_coding/neteq/interface/webrtc_neteq.h"
 #include "modules/audio_coding/neteq/interface/webrtc_neteq_help_macros.h"
+#include "testsupport/fileutils.h"
 
-namespace {
+namespace webrtc {
 
 class NetEqDecodingTest : public ::testing::Test {
  protected:
@@ -36,7 +38,8 @@ class NetEqDecodingTest : public ::testing::Test {
   virtual void TearDown();
   void SelectDecoders(WebRtcNetEQDecoder* used_codec);
   void LoadDecoders();
-  void DecodeAndCompare(const char* rtp_file, const char* ref_file);
+  void DecodeAndCompare(const std::string &rtp_file,
+                        const std::string &ref_file);
 
   NETEQTEST_NetEQClass* neteq_inst_;
   std::vector<NETEQTEST_Decoder*> dec_;
@@ -90,19 +93,33 @@ void NetEqDecodingTest::LoadDecoders() {
   }
 }
 
-void NetEqDecodingTest::DecodeAndCompare(const char* rtp_file,
-                                         const char* ref_file) {
+void NetEqDecodingTest::DecodeAndCompare(const std::string &rtp_file,
+                                         const std::string &ref_file) {
   NETEQTEST_RTPpacket rtp;
-  FILE* rtp_fp = fopen(rtp_file, "rb");
+  FILE* rtp_fp = fopen(rtp_file.c_str(), "rb");
   ASSERT_TRUE(rtp_fp != NULL);
   ASSERT_EQ(0, NETEQTEST_RTPpacket::skipFileHeader(rtp_fp));
   ASSERT_GT(rtp.readFromFile(rtp_fp), 0);
 
-  FILE* ref_fp = fopen(ref_file, "rb");
-  ASSERT_TRUE(ref_fp != NULL);
+  FILE* ref_fp = NULL;
+  FILE* out_fp = NULL;
+  if (!ref_file.empty()) {
+    ref_fp = fopen(ref_file.c_str(), "rb");
+    ASSERT_TRUE(ref_fp != NULL);
+  } else {
+    std::string out_file = webrtc::test::OutputPath() + "neteq_out.pcm";
+    out_fp = fopen(out_file.c_str(), "wb");
+    ASSERT_TRUE(out_fp != NULL);
+  }
 
   unsigned int sim_clock = 0;
-  const int kTimeStep = 10;
+  // NetEQ must be polled for data once every 10 ms. Thus, neither of the
+  // constants below can be changed.
+  const int kTimeStepMs = 10;
+  const int kBlockSize8kHz = kTimeStepMs * 8;
+  const int kBlockSize16kHz = kTimeStepMs * 16;
+  const int kBlockSize32kHz = kTimeStepMs * 32;
+  const int kMaxBlockSize = kBlockSize32kHz;
   while (rtp.dataLen() >= 0) {
     // Check if time to receive.
     while ((sim_clock >= rtp.time()) &&
@@ -115,38 +132,49 @@ void NetEqDecodingTest::DecodeAndCompare(const char* rtp_file,
     }
 
     // RecOut
-    WebRtc_Word16 out_data[10 * 32];  // 10 ms at 32 kHz
+    WebRtc_Word16 out_data[kMaxBlockSize];
     WebRtc_Word16 out_len = neteq_inst_->recOut(out_data);
-    ASSERT_TRUE((out_len == 80) || (out_len == 160) || (out_len == 320));
+    ASSERT_TRUE((out_len == kBlockSize8kHz) ||
+                (out_len == kBlockSize16kHz) ||
+                (out_len == kBlockSize32kHz));
 
-    // Read from ref file
-    WebRtc_Word16 ref_data[10 * 32];  // 10 ms at 32 kHz
-    if (static_cast<size_t>(out_len) !=
-        fread(ref_data, sizeof(WebRtc_Word16), out_len, ref_fp)) {
-      break;
+    if (ref_fp) {
+      // Read from ref file.
+      WebRtc_Word16 ref_data[kMaxBlockSize];
+      if (static_cast<size_t>(out_len) !=
+          fread(ref_data, sizeof(WebRtc_Word16), out_len, ref_fp)) {
+        break;
+      }
+
+      // Compare
+      EXPECT_EQ(0, memcmp(out_data, ref_data, sizeof(WebRtc_Word16) * out_len));
     }
 
-    // Compare
-    EXPECT_EQ(0, memcmp(out_data, ref_data, sizeof(WebRtc_Word16) * out_len));
+    if (out_fp) {
+      // Write to output file (mainly for generating new output vectors).
+      ASSERT_EQ(static_cast<size_t>(out_len),
+                fwrite(out_data, sizeof(WebRtc_Word16), out_len, out_fp));
+    }
 
-    // Increase time
-    sim_clock += kTimeStep;
+    // Increase time.
+    sim_clock += kTimeStepMs;
   }
-  ASSERT_NE(0, feof(ref_fp));  // Make sure that we reached the end.
   fclose(rtp_fp);
-  fclose(ref_fp);
+  if (ref_fp) {
+    ASSERT_NE(0, feof(ref_fp));  // Make sure that we reached the end.
+    fclose(ref_fp);
+  }
+  if (out_fp) fclose(out_fp);
 }
 
+#if defined(WEBRTC_LINUX) && defined(WEBRTC_ARCH_64_BITS)
 TEST_F(NetEqDecodingTest, TestBitExactness) {
-  DecodeAndCompare("test/data/audio_coding/universal.rtp",
-                   "test/data/audio_coding/universal_ref.pcm");
+  const std::string kInputRtpFile = webrtc::test::ProjectRootPath() +
+      "test/data/audio_coding/universal.rtp";
+  const std::string kInputRefFile = webrtc::test::ProjectRootPath() +
+      "test/data/audio_coding/universal_ref.pcm";
+  DecodeAndCompare(kInputRtpFile, kInputRefFile);
 }
+#endif  // defined(WEBRTC_LINUX) && defined(WEBRTC_ARCH_64_BITS)
 
 }  // namespace
-
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-
-  return RUN_ALL_TESTS();
-}
-

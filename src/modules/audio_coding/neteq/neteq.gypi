@@ -95,9 +95,10 @@
             'NetEq',
             'NetEqTestTools',
             '<(webrtc_root)/../testing/gtest.gyp:gtest',
+            '<(webrtc_root)/../test/test.gyp:test_support_main',
           ],
           'sources': [
-            'neteq_api_unittest.cc',
+            'webrtc_neteq_unittest.cc',
           ],
         }, # neteq_unittests
         {
