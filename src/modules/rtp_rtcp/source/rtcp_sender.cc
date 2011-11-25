@@ -457,14 +457,14 @@ From RFC 3550
       a value of the RTCP bandwidth below the intended average
 */
 
+    WebRtc_UWord32 now = ModuleRTPUtility::GetTimeInMS();
+
+    CriticalSectionScoped lock(_criticalSectionRTCPSender);
+
     if(_method == kRtcpOff)
     {
         return false;
     }
-
-    WebRtc_UWord32 now = ModuleRTPUtility::GetTimeInMS();
-
-    CriticalSectionScoped lock(_criticalSectionRTCPSender);
 
     if(!_audio && sendKeyframeBeforeRTP)
     {
@@ -1564,11 +1564,6 @@ RTCPSender::SendRTCP(const WebRtc_UWord32 packetTypeFlags,
     WebRtc_UWord32 pos = 0;
     WebRtc_UWord8 rtcpbuffer[IP_PACKET_SIZE];
 
-    if(_method == kRtcpOff)
-    {
-        WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, _id, "%s invalid state", __FUNCTION__);
-        return -1;
-    }
 
     do  // only to be able to use break :) (and the critsect must be inside its own scope)
     {
@@ -1577,8 +1572,20 @@ RTCPSender::SendRTCP(const WebRtc_UWord32 packetTypeFlags,
         bool hasReceived = false;
         WebRtc_UWord32 NTPsec = 0;
         WebRtc_UWord32 NTPfrac = 0;
+        bool rtcpCompound = false;
 
-        if( _method == kRtcpCompound ||
+        {
+          CriticalSectionScoped lock(_criticalSectionRTCPSender);
+          if(_method == kRtcpOff)
+          {
+              WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, _id,
+                           "%s invalid state", __FUNCTION__);
+              return -1;
+          }
+          rtcpCompound = (_method == kRtcpCompound) ? true : false;
+        }
+
+        if (rtcpCompound ||
             rtcpPacketTypeFlags & kRtcpReport ||
             rtcpPacketTypeFlags & kRtcpSr ||
             rtcpPacketTypeFlags & kRtcpRr)

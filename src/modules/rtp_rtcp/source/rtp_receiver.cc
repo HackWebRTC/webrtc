@@ -236,15 +236,15 @@ RTPReceiver::SetPacketTimeout(const WebRtc_UWord32 timeoutMS)
 
 void RTPReceiver::PacketTimeout()
 {
-    if(_packetTimeOutMS == 0)
-    {
-        // not configured
-        return;
-    }
-
     bool packetTimeOut = false;
     {
         CriticalSectionScoped lock(_criticalSectionRTPReceiver);
+        if(_packetTimeOutMS == 0)
+        {
+            // not configured
+            return;
+        }
+
         if(_lastReceiveTime == 0)
         {
             // not active
