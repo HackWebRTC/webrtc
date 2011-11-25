@@ -55,6 +55,7 @@ std::string ProjectRootPath() {
         kProjectRootFileName;
     file = fopen(root_filename.c_str(), "r");
     if (file != NULL) {
+      fclose(file);
       return current_path + kPathDelimiter;
     }
 
