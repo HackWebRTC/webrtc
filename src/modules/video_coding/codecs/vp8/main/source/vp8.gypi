@@ -16,48 +16,22 @@
       ],
       'include_dirs': [
         '../interface',
-        '../../../../../../common_video/interface',
-        '../../../../../../common_video/vplib/main/interface',
-        '../../../interface',
-        '../../../../../interface',
+        '<(webrtc_root)/common_video/interface',
+        '<(webrtc_root)/common_video/vplib/main/interface',
+        '<(webrtc_root)/modules/video_coding/codecs/interface',
+        '<(webrtc_root)/modules/interface',
       ],
       'conditions': [
         ['build_with_chromium==1', {
-           'conditions': [
-             ['target_arch=="arm"', {
-               'dependencies': [
-                 '<(webrtc_root)/../libvpx/libvpx.gyp:libvpx_lib',
-                 '<(webrtc_root)/../libvpx/libvpx.gyp:libvpx_include',
-               ],
-             }, {  # arm
-               'conditions': [
-                 ['OS=="win"', {
-                   'dependencies': [
-                     # We don't want to link with the static library inside Chromium
-                     # on Windows. Chromium uses the ffmpeg DLL and exports the
-                     # necessary libvpx symbols for us.
-                     '<(webrtc_root)/../libvpx/libvpx.gyp:libvpx_include',
-                   ],
-                 },{ # non-arm, win
-                   'dependencies': [
-                     '<(webrtc_root)/../libvpx/libvpx.gyp:libvpx',
-                   ],
-                   'include_dirs': [
-                     '../../../../../../../libvpx/source/libvpx',
-                   ],
-                 }], # non-arm, non-win
-               ],
-             }],
-           ],
-           'defines': [
-             'WEBRTC_LIBVPX_VERSION=960' # Bali
-           ],
+          'dependencies': [
+            '<(webrtc_root)/../libvpx/libvpx.gyp:libvpx',
+          ],
+          'defines': [
+            'WEBRTC_LIBVPX_VERSION=960' # Bali
+          ],
         },{
           'dependencies': [
             '<(webrtc_root)/../third_party/libvpx/libvpx.gyp:libvpx',
-          ],
-          'include_dirs': [
-            '../../../../../../../third_party/libvpx/source/libvpx',
           ],
           'defines': [
             'WEBRTC_LIBVPX_VERSION=971' # Cayuga
@@ -67,8 +41,8 @@
       'direct_dependent_settings': {
         'include_dirs': [
           '../interface',
-          '../../../../../../common_video/interface',
-          '../../../interface',
+          '<(webrtc_root)/common_video/interface',
+          '<(webrtc_root)/modules/video_coding/codecs/interface',
         ],
       },
       'sources': [
