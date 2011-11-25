@@ -321,11 +321,11 @@ double RemoteRateControl::RateIncreaseFactor(WebRtc_Word64 nowMs, WebRtc_Word64 
     const double c2 = 800.0;
     const double d = 0.85;
 
-    double alpha = 1.001 + B / (1 + exp( b * (d * reactionTimeMs - (c1 * noiseVar + c2))));
+    double alpha = 1.005 + B / (1 + exp( b * (d * reactionTimeMs - (c1 * noiseVar + c2))));
 
-    if (alpha < 1.001)
+    if (alpha < 1.005)
     {
-        alpha = 1.001;
+        alpha = 1.005;
     }
     else if (alpha > 1.3)
     {

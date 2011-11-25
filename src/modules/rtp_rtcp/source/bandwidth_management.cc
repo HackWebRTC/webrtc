@@ -248,8 +248,8 @@ WebRtc_UWord32 BandwidthManagement::ShapeSimple(WebRtc_Word32 packetLoss,
     }
     else
     {
-        // increase rate by 5%
-        newBitRate = static_cast<WebRtc_UWord32>(_bitRate * 1.05 + 0.5);
+        // increase rate by 8%
+        newBitRate = static_cast<WebRtc_UWord32>(_bitRate * 1.08 + 0.5);
 
         // add 1 kbps extra, just to make sure that we do not get stuck
         // (gives a little extra increase at low rates, negligible at higher rates)
