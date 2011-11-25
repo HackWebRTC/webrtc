@@ -33,6 +33,7 @@ struct CodecSpecificInfoVP8
     bool             nonReference;
     WebRtc_UWord8    simulcastIdx;
     WebRtc_UWord8    temporalIdx;
+    WebRtc_Word8     keyIdx;            // negative value to skip keyIdx
 };
 
 union CodecSpecificInfoUnion

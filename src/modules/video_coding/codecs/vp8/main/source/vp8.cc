@@ -602,6 +602,7 @@ void VP8Encoder::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
   vp8Info->pictureId = _pictureID;
   vp8Info->simulcastIdx = _simulcastIdx;;
   vp8Info->temporalIdx = kNoTemporalIdx; // TODO(pwestin) need to populate this
+  vp8Info->keyIdx = kNoKeyIdx;  // TODO(hlundin) populate this
   vp8Info->nonReference = (pkt.data.frame.flags & VPX_FRAME_IS_DROPPABLE);
   _pictureID = (_pictureID + 1) % 0x7FFF; // prepare next
 }
