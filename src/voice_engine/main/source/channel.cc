@@ -250,13 +250,16 @@ Channel::SendRTCPPacket(int channel, const void *data, int len)
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::SendRTCPPacket(channel=%d, len=%d)", channel, len);
 
-    if (_transportPtr == NULL)
     {
-        WEBRTC_TRACE(kTraceError, kTraceVoice,
-                     VoEId(_instanceId,_channelId),
-                     "Channel::SendRTCPPacket() failed to send RTCP packet"
-                     " due to invalid transport object");
-        return -1;
+        CriticalSectionScoped cs(_callbackCritSect);
+        if (_transportPtr == NULL)
+        {
+            WEBRTC_TRACE(kTraceError, kTraceVoice,
+                         VoEId(_instanceId,_channelId),
+                         "Channel::SendRTCPPacket() failed to send RTCP packet"
+                         " due to invalid transport object");
+            return -1;
+        }
     }
 
     WebRtc_UWord8* bufferToSendPtr = (WebRtc_UWord8*)data;
@@ -1532,7 +1535,12 @@ Channel::Init()
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
     // Ensure that the WebRtcSocketTransport implementation is used as
     // Transport on the sending side
-    _transportPtr = &_socketTransportModule;
+    {
+        // A lock is needed here since users can call
+        // RegisterExternalTransport() at the same time.
+        CriticalSectionScoped cs(_callbackCritSect);
+        _transportPtr = &_socketTransportModule;
+    }
 #endif
 
     // Initialize the far end AP module
@@ -2802,6 +2810,8 @@ Channel::DeRegisterExternalTransport()
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::DeRegisterExternalTransport()");
+
+    CriticalSectionScoped cs(_callbackCritSect);
 
     if (!_transportPtr)
     {
