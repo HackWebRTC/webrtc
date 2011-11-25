@@ -41,6 +41,12 @@ deps = {
   "trunk/tools/clang/scripts":
     Var("chromium_trunk") + "/src/tools/clang/scripts@" + Var("chromium_revision"),
 
+  "trunk/tools/python":
+    Var("chromium_trunk") + "/src/tools/python@" + Var("chromium_revision"),
+
+  "trunk/tools/valgrind":
+    Var("chromium_trunk") + "/src/tools/valgrind@" + Var("chromium_revision"),
+
   "trunk/third_party/protobuf/":
     Var("chromium_trunk") + "/src/third_party/protobuf@" + Var("chromium_revision"),
 
