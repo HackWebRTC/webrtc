@@ -46,9 +46,12 @@
 /third_party/libvpx
 /third_party/llvm-build
 /third_party/protobuf
+/third_party/valgrind
 /third_party/yasm
 /tools/clang
 /tools/gyp
+/tools/python
+/tools/valgrind
 /tools/win
 /x86-generic_out/
 /xcodebuild
