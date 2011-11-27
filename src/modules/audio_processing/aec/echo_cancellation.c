@@ -38,6 +38,10 @@ static const float targetSupp[3] = {-6.9f, -11.5f, -18.4f};
 static const float minOverDrive[3] = {1.0f, 2.0f, 5.0f};
 static const int initCheck = 42;
 
+#ifdef WEBRTC_AEC_DEBUG_DUMP
+static int instance_count = 0;
+#endif
+
 typedef struct {
     int delayCtr;
     int sampFreq;
@@ -133,13 +137,24 @@ WebRtc_Word32 WebRtcAec_Create(void **aecInst)
     aecpc->lastError = 0;
 
 #ifdef WEBRTC_AEC_DEBUG_DUMP
-    aecpc->aec->farFile = fopen("aec_far.pcm","wb");
-    aecpc->aec->nearFile = fopen("aec_near.pcm","wb");
-    aecpc->aec->outFile = fopen("aec_out.pcm","wb");
-    aecpc->aec->outLinearFile = fopen("aec_out_linear.pcm","wb");
-    aecpc->bufFile = fopen("aec_buf.dat", "wb");
-    aecpc->skewFile = fopen("aec_skew.dat", "wb");
-    aecpc->delayFile = fopen("aec_delay.dat", "wb");
+    {
+      char filename[64];
+      sprintf(filename, "aec_far%d.pcm", instance_count);
+      aecpc->aec->farFile = fopen(filename, "wb");
+      sprintf(filename, "aec_near%d.pcm", instance_count);
+      aecpc->aec->nearFile = fopen(filename, "wb");
+      sprintf(filename, "aec_out%d.pcm", instance_count);
+      aecpc->aec->outFile = fopen(filename, "wb");
+      sprintf(filename, "aec_out_linear%d.pcm", instance_count);
+      aecpc->aec->outLinearFile = fopen(filename, "wb");
+      sprintf(filename, "aec_buf%d.dat", instance_count);
+      aecpc->bufFile = fopen(filename, "wb");
+      sprintf(filename, "aec_skew%d.dat", instance_count);
+      aecpc->skewFile = fopen(filename, "wb");
+      sprintf(filename, "aec_delay%d.dat", instance_count);
+      aecpc->delayFile = fopen(filename, "wb");
+      instance_count++;
+    }
 #endif
 
     return 0;
