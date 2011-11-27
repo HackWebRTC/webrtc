@@ -79,6 +79,7 @@ int WebRtc_InitDelayEstimator(void* handle);
 // Return value:
 //      - delay         :  >= 0 - Calculated delay value
 //                        -1    - Error
+//                        -2    - Insufficient data for estimation.
 //
 int WebRtc_DelayEstimatorProcessFix(void* handle,
                                     uint16_t* far_spectrum,
@@ -103,6 +104,7 @@ int WebRtc_DelayEstimatorProcessFloat(void* handle,
 // Return value:
 //      - delay         :  >= 0 - Last calculated delay value
 //                        -1    - Error
+//                        -2    - Insufficient data for estimation.
 //
 int WebRtc_last_delay(void* handle);
 

@@ -79,6 +79,7 @@ int WebRtc_InitBinaryDelayEstimator(BinaryDelayEstimator_t* handle);
 // Return value:
 //    - delay                 :  >= 0 - Calculated delay value
 //                              -1    - Error
+//                              -2    - Insufficient data for estimation.
 //
 int WebRtc_ProcessBinarySpectrum(BinaryDelayEstimator_t* handle,
                                  uint32_t binary_far_spectrum,
@@ -94,6 +95,7 @@ int WebRtc_ProcessBinarySpectrum(BinaryDelayEstimator_t* handle,
 // Return value:
 //    - delay                 :  >= 0 - Last calculated delay value
 //                              -1    - Error
+//                              -2    - Insufficient data for estimation.
 //
 int WebRtc_binary_last_delay(BinaryDelayEstimator_t* handle);
 

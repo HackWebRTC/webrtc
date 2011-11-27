@@ -163,8 +163,9 @@ int WebRtc_InitBinaryDelayEstimator(BinaryDelayEstimator_t* handle) {
 
   handle->vad_counter = 0;
 
-  // Set to zero delay after compensating for lookahead.
-  handle->last_delay = handle->near_history_size - 1;
+  // Default value to return if we're unable to estimate. -1 is used for
+  // errors.
+  handle->last_delay = -2;
 
   return 0;
 }

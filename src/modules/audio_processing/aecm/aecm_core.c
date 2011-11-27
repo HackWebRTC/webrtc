@@ -144,6 +144,7 @@ static void UpdateFarHistory(AecmCore_t* self,
 //
 // Inputs:
 //      - self              : Pointer to the AECM instance.
+//      - delay             : Current delay estimate.
 //
 // Output:
 //      - far_q             : The Q-domain of the aligned far end spectrum
@@ -152,11 +153,10 @@ static void UpdateFarHistory(AecmCore_t* self,
 //      - far_spectrum      : Pointer to the aligned far end spectrum
 //                            NULL - Error
 //
-static const uint16_t* AlignedFarend(AecmCore_t* self, int* far_q) {
+static const uint16_t* AlignedFarend(AecmCore_t* self, int* far_q, int delay) {
   int buffer_position = 0;
   assert(self != NULL);
-  buffer_position = self->far_history_pos -
-      WebRtc_last_delay(self->delay_estimator);
+  buffer_position = self->far_history_pos - delay;
 
   // Check buffer position
   if (buffer_position < 0) {
@@ -307,9 +307,6 @@ int WebRtcAecm_InitCore(AecmCore_t * const aecm, int samplingFreq)
     memset(aecm->far_history, 0, sizeof(uint16_t) * PART_LEN1 * MAX_DELAY);
     memset(aecm->far_q_domains, 0, sizeof(int) * MAX_DELAY);
     aecm->far_history_pos = MAX_DELAY;
-
-    // Initialize to reasonable values
-    aecm->currentDelay = 8;
 
     aecm->nlpFlag = 1;
     aecm->fixedDelay = -1;
@@ -1215,7 +1212,7 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm,
     WebRtc_Word16 hnl[PART_LEN1];
     WebRtc_Word16 numPosCoef = 0;
     WebRtc_Word16 nlpGain = ONE_Q14;
-    WebRtc_Word16 delay;
+    int delay;
     WebRtc_Word16 tmp16no1;
     WebRtc_Word16 tmp16no2;
     WebRtc_Word16 mu;
@@ -1312,20 +1309,22 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm,
                                             PART_LEN1,
                                             far_q,
                                             aecm->currentVADValue);
-    if (delay < 0)
+    if (delay == -1)
     {
         return -1;
+    }
+    else if (delay == -2)
+    {
+        // If the delay is unknown, we assume zero.
+        // NOTE: this will have to be adjusted if we ever add lookahead.
+        delay = 0;
     }
 
     if (aecm->fixedDelay >= 0)
     {
-        // TODO(bjornv): Make this work in practice, that is, get proper
-        //               aligned farend.
         // Use fixed delay
         delay = aecm->fixedDelay;
     }
-
-    aecm->currentDelay = delay;
 
 #ifdef ARM_WINM_LOG_
     // measure tick end
@@ -1337,7 +1336,7 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm,
     QueryPerformanceCounter((LARGE_INTEGER*)&start);
 #endif
     // Get aligned far end spectrum
-    far_spectrum_ptr = AlignedFarend(aecm, &far_q);
+    far_spectrum_ptr = AlignedFarend(aecm, &far_q, delay);
     zerosXBuf = (WebRtc_Word16) far_q;
     if (far_spectrum_ptr == NULL)
     {
