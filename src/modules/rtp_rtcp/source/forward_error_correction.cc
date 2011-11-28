@@ -285,7 +285,7 @@ ForwardErrorCorrection::GenerateFEC(const ListWrapper& mediaPacketList,
             WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
                 "Packet mask has row of zeros %d %d %d ",
                 numMediaPackets, numImportantPackets, numFecPackets);
-            delete packetMask;
+            delete [] packetMask;
             return -1;
 
         }
@@ -343,7 +343,7 @@ ForwardErrorCorrection::GenerateFEC(const ListWrapper& mediaPacketList,
         memcpy(&_generatedFecPackets[i].data[12], &packetMask[i * numMaskBytes],
             numMaskBytes);
     }
-    delete packetMask; 
+    delete [] packetMask;
     return 0;
 }
 

@@ -493,7 +493,7 @@ int main()
                 } //loop over numImpPackets
             } //loop over FecPackets
         } //loop over numMediaPackets
-        delete packetMask;
+        delete [] packetMask;
     } // loop over loss rates
 
     // Have DecodeFEC free allocated memory.
