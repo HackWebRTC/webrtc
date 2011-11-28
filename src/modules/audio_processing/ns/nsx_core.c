@@ -1256,7 +1256,6 @@ void WebRtcNsx_DataAnalysis(NsxInst_t* inst, short* speechFrame, WebRtc_UWord16*
   WebRtc_Word16   realImag[ANAL_BLOCKL_MAX << 1];
 
   int i, j;
-  int outCFFT;
   int zeros;
   int net_norm = 0;
   int right_shifts_in_magnU16 = 0;
@@ -1292,7 +1291,7 @@ void WebRtcNsx_DataAnalysis(NsxInst_t* inst, short* speechFrame, WebRtc_UWord16*
 
   // bit-reverse position of elements in array and FFT the array
   WebRtcSpl_ComplexBitReverse(realImag, inst->stages); // Q(normData-stages)
-  outCFFT = WebRtcSpl_ComplexFFT(realImag, inst->stages, 1);
+  WebRtcSpl_ComplexFFT(realImag, inst->stages, 1);
 
   inst->imag[0] = 0; // Q(normData-stages)
   inst->imag[inst->anaLen2] = 0;
