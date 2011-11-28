@@ -464,52 +464,56 @@ public:
     WebRtc_UWord32 InstanceId() const
     {
         return _instanceId;
-    };
+    }
     WebRtc_Word32 ChannelId() const
     {
         return _channelId;
-    };
+    }
     bool Playing() const
     {
         return _playing;
-    };
+    }
     bool Sending() const
     {
+        // A lock is needed because |_sending| is accessed by both
+        // TransmitMixer::PrepareDemux() and StartSend()/StopSend(), which
+        // are called by different threads.
+        CriticalSectionScoped cs(_callbackCritSect);
         return _sending;
-    };
+    }
     bool Receiving() const
     {
         return _receiving;
-    };
+    }
     bool ExternalTransport() const
     {
         return _externalTransport;
-    };
+    }
     bool OutputIsOnHold() const
     {
         return _outputIsOnHold;
-    };
+    }
     bool InputIsOnHold() const
     {
         return _inputIsOnHold;
-    };
+    }
     RtpRtcp* RtpRtcpModulePtr() const
     {
         return &_rtpRtcpModule;
-    };
+    }
     WebRtc_Word8 OutputEnergyLevel() const
     {
         return _outputAudioLevel.Level();
-    };
+    }
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
     bool SendSocketsInitialized() const
     {
         return _socketTransportModule.SendSocketsInitialized();
-    };
+    }
     bool ReceiveSocketsInitialized() const
     {
         return _socketTransportModule.ReceiveSocketsInitialized();
-    };
+    }
 #endif
     WebRtc_UWord32 Demultiplex(const AudioFrame& audioFrame);
     WebRtc_UWord32 PrepareEncodeAndSend(int mixingFrequency);

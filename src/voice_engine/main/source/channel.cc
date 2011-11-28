@@ -1694,18 +1694,28 @@ Channel::StartSend()
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::StartSend()");
-    if (_sending)
     {
-        return 0;
+        // A lock is needed because |_sending| can be accessed or modified by
+        // another thread at the same time.
+        CriticalSectionScoped cs(_callbackCritSect);
+
+        if (_sending)
+        {
+            return 0;
+        }
+        _sending = true;
     }
+
     if (_rtpRtcpModule.SetSendingStatus(true) != 0)
     {
         _engineStatisticsPtr->SetLastError(
             VE_RTP_RTCP_MODULE_ERROR, kTraceError,
             "StartSend() RTP/RTCP failed to start sending");
+        CriticalSectionScoped cs(_callbackCritSect);
+        _sending = false;
         return -1;
     }
-    _sending = true;
+
     return 0;
 }
 
@@ -1714,10 +1724,18 @@ Channel::StopSend()
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::StopSend()");
-    if (!_sending)
     {
-        return 0;
+        // A lock is needed because |_sending| can be accessed or modified by
+        // another thread at the same time.
+        CriticalSectionScoped cs(_callbackCritSect);
+
+        if (!_sending)
+        {
+            return 0;
+        }
+        _sending = false;
     }
+
     // Reset sending SSRC and sequence number and triggers direct transmission
     // of RTCP BYE
     if (_rtpRtcpModule.SetSendingStatus(false) == -1 ||
@@ -1728,7 +1746,6 @@ Channel::StopSend()
             "StartSend() RTP/RTCP failed to stop sending");
     }
 
-    _sending = false;
     return 0;
 }
 
