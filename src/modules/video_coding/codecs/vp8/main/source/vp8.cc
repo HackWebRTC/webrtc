@@ -311,7 +311,7 @@ VP8Encoder::InitEncode(const VideoCodec* inst,
       _cfg->g_threads = 1;
 
     // rate control settings
-    _cfg->rc_dropframe_thresh = 0;
+    _cfg->rc_dropframe_thresh = 30;
     _cfg->rc_end_usage = VPX_CBR;
     _cfg->g_pass = VPX_RC_ONE_PASS;
     _cfg->rc_resize_allowed = 0;
