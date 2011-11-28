@@ -82,6 +82,9 @@ deps = {
 
   "trunk/third_party/jsoncpp/":
     "http://jsoncpp.svn.sourceforge.net/svnroot/jsoncpp/trunk/jsoncpp@246",
+  
+  "trunk/third_party/libyuv":
+    (Var("googlecode_url") % "libyuv") + "/trunk@54",
 }
 
 deps_os = {
