@@ -8,525 +8,262 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * ViEChannel.cpp
- */
-
 #include "vie_receiver.h"
 
 #include "critical_section_wrapper.h"
-#include "rtp_rtcp.h"
-#ifdef WEBRTC_SRTP
-#include "SrtpModule.h"
-#endif
-#include "video_coding.h"
 #include "rtp_dump.h"
+#include "rtp_rtcp.h"
+#include "video_coding.h"
 #include "trace.h"
 
 namespace webrtc {
 
-// ----------------------------------------------------------------------------
-// Constructor
-// ----------------------------------------------------------------------------
-
-ViEReceiver::ViEReceiver(int engineId, int channelId,
-                         RtpRtcp& moduleRtpRtcp,
-                         VideoCodingModule& moduleVcm)
-    :   _receiveCritsect(*CriticalSectionWrapper::CreateCriticalSection()),
-        _engineId(engineId),
-        _channelId(channelId),
-        _rtpRtcp(moduleRtpRtcp),
-        _vcm(moduleVcm),
-#ifdef WEBRTC_SRTP
-        _ptrSrtp(NULL),
-        _ptrSrtcp(NULL),
-        _ptrSrtpBuffer(NULL),
-        _ptrSrtcpBuffer(NULL),
-#endif
-        _ptrExternalDecryption(NULL), _ptrDecryptionBuffer(NULL),
-        _rtpDump(NULL), _receiving(false)
-{
+ViEReceiver::ViEReceiver(int engine_id, int channel_id,
+                         RtpRtcp& rtp_rtcp,
+                         VideoCodingModule& module_vcm)
+    : receive_critsect_(*CriticalSectionWrapper::CreateCriticalSection()),
+      engine_id_(engine_id),
+      channel_id_(channel_id),
+      rtp_rtcp_(rtp_rtcp),
+      vcm_(module_vcm),
+      external_decryption_(NULL),
+      decryption_buffer_(NULL),
+      rtp_dump_(NULL),
+      receiving_(false) {
 }
 
-// ----------------------------------------------------------------------------
-// Destructor
-// ----------------------------------------------------------------------------
+ViEReceiver::~ViEReceiver() {
+  delete &receive_critsect_;
 
-ViEReceiver::~ViEReceiver()
-{
-    delete &_receiveCritsect;
-#ifdef WEBRTC_SRTP
-    if (_ptrSrtpBuffer)
-    {
-        delete [] _ptrSrtpBuffer;
-        _ptrSrtpBuffer = NULL;
-    }
-    if (_ptrSrtcpBuffer)
-    {
-        delete [] _ptrSrtcpBuffer;
-        _ptrSrtcpBuffer = NULL;
-    }
-#endif
-    if (_ptrDecryptionBuffer)
-    {
-        delete[] _ptrDecryptionBuffer;
-        _ptrDecryptionBuffer = NULL;
-    }
-    if (_rtpDump)
-    {
-        _rtpDump->Stop();
-        RtpDump::DestroyRtpDump(_rtpDump);
-        _rtpDump = NULL;
-    }
+  if (decryption_buffer_) {
+    delete[] decryption_buffer_;
+    decryption_buffer_ = NULL;
+  }
+  if (rtp_dump_) {
+    rtp_dump_->Stop();
+    RtpDump::DestroyRtpDump(rtp_dump_);
+    rtp_dump_ = NULL;
+  }
 }
 
-// ============================================================================
-// Decryption
-// ============================================================================
-
-// ----------------------------------------------------------------------------
-// RegisterExternalDecryption
-// ----------------------------------------------------------------------------
-
-int ViEReceiver::RegisterExternalDecryption(Encryption* decryption)
-{
-    CriticalSectionScoped cs(_receiveCritsect);
-    if (_ptrExternalDecryption)
-    {
-        return -1;
-    }
-    _ptrDecryptionBuffer = new WebRtc_UWord8[kViEMaxMtu];
-    if (_ptrDecryptionBuffer == NULL)
-    {
-        return -1;
-    }
-    _ptrExternalDecryption = decryption;
-    return 0;
+int ViEReceiver::RegisterExternalDecryption(Encryption* decryption) {
+  CriticalSectionScoped cs(receive_critsect_);
+  if (external_decryption_) {
+    return -1;
+  }
+  decryption_buffer_ = new WebRtc_UWord8[kViEMaxMtu];
+  if (decryption_buffer_ == NULL) {
+    return -1;
+  }
+  external_decryption_ = decryption;
+  return 0;
 }
 
-// ----------------------------------------------------------------------------
-// DeregisterExternalDecryption
-// ----------------------------------------------------------------------------
-
-int ViEReceiver::DeregisterExternalDecryption()
-{
-    CriticalSectionScoped cs(_receiveCritsect);
-    if (_ptrExternalDecryption == NULL)
-    {
-        return -1;
-    }
-    _ptrExternalDecryption = NULL;
-    return 0;
+int ViEReceiver::DeregisterExternalDecryption() {
+  CriticalSectionScoped cs(receive_critsect_);
+  if (external_decryption_ == NULL) {
+    return -1;
+  }
+  external_decryption_ = NULL;
+  return 0;
 }
 
 void ViEReceiver::RegisterSimulcastRtpRtcpModules(
-    const std::list<RtpRtcp*>& rtpModules)
-{
-    CriticalSectionScoped cs(_receiveCritsect);
-    _rtpRtcpSimulcast.clear();
-    if (!rtpModules.empty())
-    {
-        _rtpRtcpSimulcast.insert(_rtpRtcpSimulcast.begin(),
-                                 rtpModules.begin(),
-                                 rtpModules.end());
-    }
+    const std::list<RtpRtcp*>& rtp_modules) {
+  CriticalSectionScoped cs(receive_critsect_);
+  rtp_rtcp_simulcast_.clear();
+
+  if (!rtp_modules.empty()) {
+    rtp_rtcp_simulcast_.insert(rtp_rtcp_simulcast_.begin(),
+                               rtp_modules.begin(),
+                               rtp_modules.end());
+  }
 }
 
-#ifdef WEBRTC_SRTP
-// ----------------------------------------------------------------------------
-// RegisterSRTPModule
-// ----------------------------------------------------------------------------
+void ViEReceiver::IncomingRTPPacket(const WebRtc_Word8* rtp_packet,
+                                    const WebRtc_Word32 rtp_packet_length,
+                                    const WebRtc_Word8* from_ip,
+                                    const WebRtc_UWord16 from_port) {
+  InsertRTPPacket(rtp_packet, rtp_packet_length);
+}
 
-int ViEReceiver::RegisterSRTPModule(SrtpModule* srtpModule)
-{
-    CriticalSectionScoped cs(_receiveCritsect);
-    if (_ptrSrtp ||
-        srtpModule == NULL)
-    {
-        return -1;
-    }
-    _ptrSrtpBuffer = new WebRtc_UWord8[kViEMaxMtu];
-    if (_ptrSrtpBuffer == NULL)
-    {
-        return -1;
-    }
-    _ptrSrtp = srtpModule;
+void ViEReceiver::IncomingRTCPPacket(const WebRtc_Word8* rtcp_packet,
+                                     const WebRtc_Word32 rtcp_packet_length,
+                                     const WebRtc_Word8* from_ip,
+                                     const WebRtc_UWord16 from_port) {
+  InsertRTCPPacket(rtcp_packet, rtcp_packet_length);
+}
 
+int ViEReceiver::ReceivedRTPPacket(const void* rtp_packet,
+                                   int rtp_packet_length) {
+  if (!receiving_) {
+    return -1;
+  }
+  return InsertRTPPacket((const WebRtc_Word8*) rtp_packet, rtp_packet_length);
+}
+
+int ViEReceiver::ReceivedRTCPPacket(const void* rtcp_packet,
+                                    int rtcp_packet_length) {
+  if (!receiving_) {
+    return -1;
+  }
+  return InsertRTCPPacket((const WebRtc_Word8*) rtcp_packet,
+                          rtcp_packet_length);
+}
+
+WebRtc_Word32 ViEReceiver::OnReceivedPayloadData(
+    const WebRtc_UWord8* payload_data, const WebRtc_UWord16 payload_size,
+    const WebRtcRTPHeader* rtp_header) {
+  if (rtp_header == NULL) {
     return 0;
+  }
+
+  if (vcm_.IncomingPacket(payload_data, payload_size, *rtp_header) != 0) {
+    // Check this...
+    return -1;
+  }
+  return 0;
 }
 
-// ----------------------------------------------------------------------------
-// DeregisterSRTPModule
-// ----------------------------------------------------------------------------
+int ViEReceiver::InsertRTPPacket(const WebRtc_Word8* rtp_packet,
+                                 int rtp_packet_length) {
+  // TODO(mflodman) Change decrypt to get rid of this cast.
+  WebRtc_Word8* tmp_ptr = const_cast<WebRtc_Word8*>(rtp_packet);
+  unsigned char* received_packet = reinterpret_cast<unsigned char*>(tmp_ptr);
+  int received_packet_length = rtp_packet_length;
 
-int ViEReceiver::DeregisterSRTPModule()
-{
-    CriticalSectionScoped cs(_receiveCritsect);
-    if (_ptrSrtp == NULL)
-    {
-        return -1;
-    }
-    if (_ptrSrtpBuffer)
-    {
-        delete [] _ptrSrtpBuffer;
-        _ptrSrtpBuffer = NULL;
-    }
-    _ptrSrtp = NULL;
-    return 0;
-}
+  {
+    CriticalSectionScoped cs(receive_critsect_);
 
-// ----------------------------------------------------------------------------
-// RegisterSRTCPModule
-// ----------------------------------------------------------------------------
-
-int ViEReceiver::RegisterSRTCPModule(SrtpModule* srtcpModule)
-{
-    CriticalSectionScoped cs(_receiveCritsect);
-    if (_ptrSrtcp ||
-        srtcpModule == NULL)
-    {
-        return -1;
-    }
-    _ptrSrtcpBuffer = new WebRtc_UWord8[kViEMaxMtu];
-    if (_ptrSrtcpBuffer == NULL)
-    {
-        return -1;
-    }
-    _ptrSrtcp = srtcpModule;
-
-    return 0;
-}
-
-// ----------------------------------------------------------------------------
-// DeregisterSRTPCModule
-// ----------------------------------------------------------------------------
-
-int ViEReceiver::DeregisterSRTCPModule()
-{
-    CriticalSectionScoped cs(_receiveCritsect);
-    if (_ptrSrtcp == NULL)
-    {
-        return -1;
-    }
-    if (_ptrSrtcpBuffer)
-    {
-        delete [] _ptrSrtcpBuffer;
-        _ptrSrtcpBuffer = NULL;
-    }
-    _ptrSrtcp = NULL;
-    return 0;
-}
-
-#endif
-
-// ----------------------------------------------------------------------------
-// IncomingRTPPacket
-//
-// Receives RTP packets from SocketTransport
-// ----------------------------------------------------------------------------
-
-void ViEReceiver::IncomingRTPPacket(const WebRtc_Word8* incomingRtpPacket,
-                                    const WebRtc_Word32 incomingRtpPacketLength,
-                                    const WebRtc_Word8* fromIP,
-                                    const WebRtc_UWord16 fromPort)
-{
-    InsertRTPPacket(incomingRtpPacket, incomingRtpPacketLength);
-}
-
-// ----------------------------------------------------------------------------
-// IncomingRTCPPacket
-//
-// Receives RTCP packets from SocketTransport
-// ----------------------------------------------------------------------------
-
-void ViEReceiver::IncomingRTCPPacket(const WebRtc_Word8* incomingRtcpPacket,
-                                     const WebRtc_Word32 incomingRtcpPacketLength,
-                                     const WebRtc_Word8* fromIP,
-                                     const WebRtc_UWord16 fromPort)
-{
-    InsertRTCPPacket(incomingRtcpPacket, incomingRtcpPacketLength);
-}
-
-// ----------------------------------------------------------------------------
-// ReceivedRTPPacket
-//
-// Receives RTP packets from external transport
-// ----------------------------------------------------------------------------
-
-int ViEReceiver::ReceivedRTPPacket(const void* rtpPacket, int rtpPacketLength)
-{
-    if (!_receiving)
-    {
-        return -1;
-    }
-    return InsertRTPPacket((const WebRtc_Word8*) rtpPacket, rtpPacketLength);
-}
-
-// ----------------------------------------------------------------------------
-// ReceivedRTCPPacket
-//
-// Receives RTCP packets from external transport
-// ----------------------------------------------------------------------------
-
-int ViEReceiver::ReceivedRTCPPacket(const void* rtcpPacket,
-                                    int rtcpPacketLength)
-{
-    if (!_receiving)
-    {
-        return -1;
-    }
-    return InsertRTCPPacket((const WebRtc_Word8*) rtcpPacket, rtcpPacketLength);
-}
-
-// ----------------------------------------------------------------------------
-// OnReceivedPayloadData
-//
-// From RtpData, callback for data from RTP module
-// ----------------------------------------------------------------------------
-WebRtc_Word32 ViEReceiver::OnReceivedPayloadData(const WebRtc_UWord8* payloadData,
-                                                 const WebRtc_UWord16 payloadSize,
-                                                 const WebRtcRTPHeader* rtpHeader)
-{
-    if (rtpHeader == NULL)
-    {
-        return 0;
-    }
-
-    if (_vcm.IncomingPacket(payloadData, payloadSize, *rtpHeader) != 0)
-    {
-        // Check this...
-        return -1;
-    }
-    return 0;
-}
-
-// ============================================================================
-// Private methods
-// ============================================================================
-
-// ----------------------------------------------------------------------------
-// InsertRTPPacket
-// ----------------------------------------------------------------------------
-
-int ViEReceiver::InsertRTPPacket(const WebRtc_Word8* rtpPacket,
-                                 int rtpPacketLength)
-{
-    WebRtc_UWord8* receivedPacket = (WebRtc_UWord8*) (rtpPacket);
-    int receivedPacketLength = rtpPacketLength;
-
-    {
-        CriticalSectionScoped cs(_receiveCritsect);
-
-        if (_ptrExternalDecryption)
-        {
-            int decryptedLength = 0;
-            _ptrExternalDecryption->decrypt(_channelId, receivedPacket,
-                                            _ptrDecryptionBuffer,
-                                            (int) receivedPacketLength,
-                                            (int*) &decryptedLength);
-            if (decryptedLength <= 0)
-            {
-                WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId,
-                                                                 _channelId),
-                           "RTP decryption failed");
-                return -1;
-            } else if (decryptedLength > kViEMaxMtu)
-            {
-                WEBRTC_TRACE(webrtc::kTraceCritical, webrtc::kTraceVideo,
-                           ViEId(_engineId, _channelId),
-                           "  %d bytes is allocated as RTP decrytption output => memory is now corrupted",
-                           kViEMaxMtu);
-                return -1;
-            }
-            receivedPacket = _ptrDecryptionBuffer;
-            receivedPacketLength = decryptedLength;
-        }
-#ifdef WEBRTC_SRTP
-        if (_ptrSrtp)
-        {
-            int decryptedLength = 0;
-            _ptrSrtp->decrypt(_channelId, receivedPacket, _ptrSrtpBuffer, receivedPacketLength, &decryptedLength);
-            if (decryptedLength <= 0)
-            {
-                WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId, _channelId), "RTP decryption failed");
-                return -1;
-            }
-            else if (decryptedLength > kViEMaxMtu)
-            {
-                WEBRTC_TRACE(webrtc::kTraceCritical, webrtc::kTraceVideo,ViEId(_engineId, _channelId), "  %d bytes is allocated as RTP decrytption output => memory is now corrupted", kViEMaxMtu);
-                return -1;
-            }
-            receivedPacket = _ptrSrtpBuffer;
-            receivedPacketLength = decryptedLength;
-        }
-#endif
-        if (_rtpDump)
-        {
-            _rtpDump->DumpPacket(receivedPacket,
-                                 (WebRtc_UWord16) receivedPacketLength);
-        }
-    }
-    return _rtpRtcp.IncomingPacket(receivedPacket, receivedPacketLength);
-}
-
-// ----------------------------------------------------------------------------
-// InsertRTCPPacket
-// ----------------------------------------------------------------------------
-
-int ViEReceiver::InsertRTCPPacket(const WebRtc_Word8* rtcpPacket,
-                                  int rtcpPacketLength)
-{
-    WebRtc_UWord8* receivedPacket = (WebRtc_UWord8*) rtcpPacket;
-    int receivedPacketLength = rtcpPacketLength;
-    {
-        CriticalSectionScoped cs(_receiveCritsect);
-
-        if (_ptrExternalDecryption)
-        {
-            int decryptedLength = 0;
-            _ptrExternalDecryption->decrypt_rtcp(_channelId, receivedPacket,
-                                                 _ptrDecryptionBuffer,
-                                                 (int) receivedPacketLength,
-                                                 (int*) &decryptedLength);
-            if (decryptedLength <= 0)
-            {
-                WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId,
-                                                                 _channelId),
-                           "RTP decryption failed");
-                return -1;
-            } else if (decryptedLength > kViEMaxMtu)
-            {
-                WEBRTC_TRACE(
-                           webrtc::kTraceCritical,
-                           webrtc::kTraceVideo,
-                           ViEId(_engineId, _channelId),
-                           "  %d bytes is allocated as RTP decrytption output => memory is now corrupted",
-                           kViEMaxMtu);
-                return -1;
-            }
-            receivedPacket = _ptrDecryptionBuffer;
-            receivedPacketLength = decryptedLength;
-        }
-#ifdef WEBRTC_SRTP
-        if (_ptrSrtcp)
-        {
-            int decryptedLength = 0;
-            _ptrSrtcp->decrypt_rtcp(_channelId, receivedPacket, _ptrSrtcpBuffer, (int) receivedPacketLength, (int*) &decryptedLength);
-            if (decryptedLength <= 0)
-            {
-                WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId, _channelId), "RTP decryption failed");
-                return -1;
-            }
-            else if (decryptedLength > kViEMaxMtu)
-            {
-                WEBRTC_TRACE(webrtc::kTraceCritical, webrtc::kTraceVideo, ViEId(_engineId, _channelId), "  %d bytes is allocated as RTP decrytption output => memory is now corrupted", kViEMaxMtu);
-                return -1;
-            }
-            receivedPacket = _ptrSrtcpBuffer;
-            receivedPacketLength = decryptedLength;
-        }
-#endif
-        if (_rtpDump)
-        {
-            _rtpDump->DumpPacket(receivedPacket,
-                                 (WebRtc_UWord16) receivedPacketLength);
-        }
-    }
-    {
-        CriticalSectionScoped cs(_receiveCritsect);
-        std::list<RtpRtcp*>::iterator it = _rtpRtcpSimulcast.begin();
-        while (it != _rtpRtcpSimulcast.end())
-        {
-            RtpRtcp* rtpRtcp = *it++;
-            rtpRtcp->IncomingPacket(receivedPacket, receivedPacketLength);
-        }
-    }
-    return _rtpRtcp.IncomingPacket(receivedPacket, receivedPacketLength);
-}
-
-// ----------------------------------------------------------------------------
-// StartReceive
-//
-// Only used for external transport
-// ----------------------------------------------------------------------------
-
-void ViEReceiver::StartReceive()
-{
-    _receiving = true;
-}
-
-// ----------------------------------------------------------------------------
-// StopReceive
-//
-// Only used for external transport
-// ----------------------------------------------------------------------------
-
-void ViEReceiver::StopReceive()
-{
-    _receiving = false;
-}
-
-// ----------------------------------------------------------------------------
-// StartRTPDump
-// ----------------------------------------------------------------------------
-
-int ViEReceiver::StartRTPDump(const char fileNameUTF8[1024])
-{
-    CriticalSectionScoped cs(_receiveCritsect);
-    if (_rtpDump)
-    {
-        // Restart it if it already exists and is started
-        _rtpDump->Stop();
-    } else
-    {
-        _rtpDump = RtpDump::CreateRtpDump();
-        if (_rtpDump == NULL)
-        {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId,
-                                                             _channelId),
-                       "%s: Failed to create RTP dump", __FUNCTION__);
-            return -1;
-        }
-    }
-    if (_rtpDump->Start(fileNameUTF8) != 0)
-    {
-        RtpDump::DestroyRtpDump(_rtpDump);
-        _rtpDump = NULL;
+    if (external_decryption_) {
+      int decrypted_length = 0;
+      external_decryption_->decrypt(channel_id_, received_packet,
+                                    decryption_buffer_, received_packet_length,
+                                    &decrypted_length);
+      if (decrypted_length <= 0) {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(_engineId, _channelId),
-                   "%s: Failed to start RTP dump", __FUNCTION__);
+                     ViEId(engine_id_, channel_id_), "RTP decryption failed");
         return -1;
+      } else if (decrypted_length > kViEMaxMtu) {
+        WEBRTC_TRACE(webrtc::kTraceCritical, webrtc::kTraceVideo,
+                     ViEId(engine_id_, channel_id_),
+                     "InsertRTPPacket: %d bytes is allocated as RTP decrytption"
+                     " output, external decryption used %d bytes. => memory is "
+                     " now corrupted", kViEMaxMtu, decrypted_length);
+        return -1;
+      }
+      received_packet = decryption_buffer_;
+      received_packet_length = decrypted_length;
     }
-    return 0;
+
+    if (rtp_dump_) {
+      rtp_dump_->DumpPacket(received_packet,
+                           static_cast<WebRtc_UWord16>(received_packet_length));
+    }
+  }
+  return rtp_rtcp_.IncomingPacket(received_packet, received_packet_length);
 }
 
-// ----------------------------------------------------------------------------
-// StopRTPDump
-// ----------------------------------------------------------------------------
+int ViEReceiver::InsertRTCPPacket(const WebRtc_Word8* rtcp_packet,
+                                  int rtcp_packet_length) {
+  // TODO(mflodman) Change decrypt to get rid of this cast.
+    WebRtc_Word8* tmp_ptr = const_cast<WebRtc_Word8*>(rtcp_packet);
+    unsigned char* received_packet = reinterpret_cast<unsigned char*>(tmp_ptr);
+  int received_packet_length = rtcp_packet_length;
+  {
+    CriticalSectionScoped cs(receive_critsect_);
 
-int ViEReceiver::StopRTPDump()
-{
-    CriticalSectionScoped cs(_receiveCritsect);
-    if (_rtpDump)
-    {
-        if (_rtpDump->IsActive())
-        {
-            _rtpDump->Stop();
-        } else
-        {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId,
-                                                             _channelId),
-                       "%s: Dump not active", __FUNCTION__);
-        }
-        RtpDump::DestroyRtpDump(_rtpDump);
-        _rtpDump = NULL;
-    } else
-    {
+    if (external_decryption_) {
+      int decrypted_length = 0;
+      external_decryption_->decrypt_rtcp(channel_id_, received_packet,
+                                         decryption_buffer_,
+                                         received_packet_length,
+                                         &decrypted_length);
+      if (decrypted_length <= 0) {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(_engineId, _channelId), "%s: RTP dump not started",
-                   __FUNCTION__);
+                     ViEId(engine_id_, channel_id_), "RTP decryption failed");
         return -1;
+      } else if (decrypted_length > kViEMaxMtu) {
+        WEBRTC_TRACE(webrtc::kTraceCritical, webrtc::kTraceVideo,
+                     ViEId(engine_id_, channel_id_),
+                     "InsertRTCPPacket: %d bytes is allocated as RTP "
+                     " decrytption output, external decryption used %d bytes. "
+                     " => memory is now corrupted",
+                     kViEMaxMtu, decrypted_length);
+        return -1;
+      }
+      received_packet = decryption_buffer_;
+      received_packet_length = decrypted_length;
     }
-    return 0;
+
+    if (rtp_dump_) {
+      rtp_dump_->DumpPacket(
+          received_packet, static_cast<WebRtc_UWord16>(received_packet_length));
+    }
+  }
+  {
+    CriticalSectionScoped cs(receive_critsect_);
+    std::list<RtpRtcp*>::iterator it = rtp_rtcp_simulcast_.begin();
+    while (it != rtp_rtcp_simulcast_.end()) {
+      RtpRtcp* rtp_rtcp = *it++;
+      rtp_rtcp->IncomingPacket(received_packet, received_packet_length);
+    }
+  }
+  return rtp_rtcp_.IncomingPacket(received_packet, received_packet_length);
 }
-} // namespace webrtc
+
+void ViEReceiver::StartReceive() {
+  receiving_ = true;
+}
+
+void ViEReceiver::StopReceive() {
+  receiving_ = false;
+}
+
+int ViEReceiver::StartRTPDump(const char file_nameUTF8[1024]) {
+  CriticalSectionScoped cs(receive_critsect_);
+  if (rtp_dump_) {
+    // Restart it if it already exists and is started
+    rtp_dump_->Stop();
+  } else {
+    rtp_dump_ = RtpDump::CreateRtpDump();
+    if (rtp_dump_ == NULL) {
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
+                   ViEId(engine_id_, channel_id_),
+                   "StartRTPDump: Failed to create RTP dump");
+      return -1;
+    }
+  }
+  if (rtp_dump_->Start(file_nameUTF8) != 0) {
+    RtpDump::DestroyRtpDump(rtp_dump_);
+    rtp_dump_ = NULL;
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
+                 ViEId(engine_id_, channel_id_),
+                 "StartRTPDump: Failed to start RTP dump");
+    return -1;
+  }
+  return 0;
+}
+
+int ViEReceiver::StopRTPDump() {
+  CriticalSectionScoped cs(receive_critsect_);
+  if (rtp_dump_) {
+    if (rtp_dump_->IsActive()) {
+      rtp_dump_->Stop();
+    } else {
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
+                   ViEId(engine_id_, channel_id_),
+                   "StopRTPDump: Dump not active");
+    }
+    RtpDump::DestroyRtpDump(rtp_dump_);
+    rtp_dump_ = NULL;
+  } else {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
+                 ViEId(engine_id_, channel_id_),
+                 "StopRTPDump: RTP dump not started");
+    return -1;
+  }
+  return 0;
+}
+
+}  // namespace webrtc
