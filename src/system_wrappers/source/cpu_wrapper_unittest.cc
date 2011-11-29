@@ -14,18 +14,17 @@
 #include "system_wrappers/interface/cpu_info.h"
 #include "system_wrappers/interface/event_wrapper.h"
 #include "system_wrappers/interface/trace.h"
+#include "testsupport/fileutils.h"
 
 using webrtc::CpuInfo;
 using webrtc::CpuWrapper;
 using webrtc::Trace;
 
-// Only utilizes some of the cpu_info.h and cpu_wrapper.h code. Does not verify
-// anything except that it doesn't crash.
-// TODO(kjellander): Improve this test so it verifies the implementation
-// executes as expected.
 TEST(CpuWrapperTest, Usage) {
   Trace::CreateTrace();
-  Trace::SetTraceFile("cpu_wrapper_unittest.txt");
+  std::string trace_file = webrtc::test::OutputPath() +
+      "cpu_wrapper_unittest.txt";
+  Trace::SetTraceFile(trace_file.c_str());
   Trace::SetLevelFilter(webrtc::kTraceAll);
   printf("Number of cores detected:%u\n", CpuInfo::DetectNumberOfCores());
   CpuWrapper* cpu = CpuWrapper::CreateCpu();

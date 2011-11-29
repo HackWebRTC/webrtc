@@ -165,7 +165,7 @@
           'dependencies': [
             'system_wrappers',
             '<(webrtc_root)/../testing/gtest.gyp:gtest',
-            '<(webrtc_root)/../test/test.gyp:test_support',
+            '<(webrtc_root)/../test/test.gyp:test_support_main',
           ],
           'sources': [
             'cpu_wrapper_unittest.cc',
@@ -174,7 +174,6 @@
             'data_log_helpers_unittest.cc',
             'data_log_c_helpers_unittest.c',
             'data_log_c_helpers_unittest.h',
-            '<(webrtc_root)/../test/run_all_unittests.cc',
           ],
           'conditions': [
             ['enable_data_logging==1', {
