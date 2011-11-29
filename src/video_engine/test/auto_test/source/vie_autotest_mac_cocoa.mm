@@ -51,7 +51,7 @@ int ViEAutoTestWindowManager::CreateWindows(AutoTestRect window1Size,
                                               window1Size.size.height);
     _cocoaRenderView1 = [[CocoaRenderView alloc]
                           initWithFrame:cocoaRenderView1Frame];
-    [[outWindow1 contentView] addSubview:_cocoaRenderView1];
+    [[outWindow1 contentView] addSubview:(NSView*)_cocoaRenderView1];
     [outWindow1 setTitle:[NSString stringWithFormat:@"%s", window1Title]];
     [outWindow1 makeKeyAndOrderFront:NSApp];
 
@@ -67,7 +67,7 @@ int ViEAutoTestWindowManager::CreateWindows(AutoTestRect window1Size,
                                               window2Size.size.height);
     _cocoaRenderView2 = [[CocoaRenderView alloc]
                           initWithFrame:cocoaRenderView2Frame];
-    [[outWindow2 contentView] addSubview:_cocoaRenderView2];
+    [[outWindow2 contentView] addSubview:(NSView*)_cocoaRenderView2];
     [outWindow2 setTitle:[NSString stringWithFormat:@"%s", window2Title]];
     [outWindow2 makeKeyAndOrderFront:NSApp];
 
@@ -130,7 +130,7 @@ int main(int argc, const char * argv[])
 
 @implementation AutoTestClass
 
--(void)autoTestWithArg:(NSString*)answerFile;
+-(void)autoTestWithArg:(NSString*)answerFile
 {
 
     NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
