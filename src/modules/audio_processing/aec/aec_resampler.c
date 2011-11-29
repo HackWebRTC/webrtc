@@ -12,12 +12,13 @@
  * skew by resampling the farend signal.
  */
 
+#include "aec_resampler.h"
+
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
-#include "resampler.h"
 #include "aec_core.h"
 
 enum { kFrameBufferSize = FRAME_LEN * 4 };

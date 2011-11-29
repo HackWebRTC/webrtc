@@ -21,7 +21,7 @@
 #include <string.h>
 
 #include "aec_core.h"
-#include "resampler.h"
+#include "aec_resampler.h"
 #include "ring_buffer.h"
 
 #define BUF_SIZE_FRAMES 50 // buffer size (frames)

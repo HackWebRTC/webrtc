@@ -17,7 +17,7 @@ LOCAL_MODULE := libwebrtc_aec
 LOCAL_MODULE_TAGS := optional
 LOCAL_SRC_FILES := \
     echo_cancellation.c \
-    resampler.c \
+    aec_resampler.c \
     aec_core.c \
     aec_rdft.c \
     aec_core_sse2.c \

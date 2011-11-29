@@ -36,8 +36,8 @@
         'aec_rdft.h',
         'aec_rdft.c',
         'aec_rdft_sse2.c',
-        'resampler.h',
-        'resampler.c',
+        'aec_resampler.h',
+        'aec_resampler.c',
       ],
       'conditions': [
         ['aec_debug_dump==1', {
