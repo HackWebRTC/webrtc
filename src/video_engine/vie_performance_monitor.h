@@ -8,51 +8,47 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * vie_performance_monitor.h
- */
+// ViEPerformanceMonitor is used to check the current CPU usage and triggers a
+// callback when getting over a specified threshold.
 
-#ifndef WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_PERFORMANCE_MONITOR_H_
-#define WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_PERFORMANCE_MONITOR_H_
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_PERFORMANCE_MONITOR_H_
+#define WEBRTC_VIDEO_ENGINE_VIE_PERFORMANCE_MONITOR_H_
 
-// Defines
-#include "vie_defines.h"
 #include "typedefs.h"
+#include "vie_defines.h"
 
-namespace webrtc
-{
+namespace webrtc {
+
 class CriticalSectionWrapper;
 class CpuWrapper;
 class EventWrapper;
 class ThreadWrapper;
 class ViEBaseObserver;
 
-class ViEPerformanceMonitor
-{
-public:
-    ViEPerformanceMonitor(int engineId);
-    ~ViEPerformanceMonitor();
+class ViEPerformanceMonitor {
+ public:
+  explicit ViEPerformanceMonitor(int engine_id);
+  ~ViEPerformanceMonitor();
 
-    int Init(ViEBaseObserver* vieBaseObserver);
-    void Terminate();
-    bool ViEBaseObserverRegistered();
+  int Init(ViEBaseObserver* vie_base_observer);
+  void Terminate();
+  bool ViEBaseObserverRegistered();
 
-protected:
-    static bool ViEMonitorThreadFunction(void* obj);
-    bool ViEMonitorProcess();
+ protected:
+  static bool ViEMonitorThreadFunction(void* obj);
+  bool ViEMonitorProcess();
 
-private:
-    enum { kViEMonitorPeriodMs = 975 };
-    enum { kViECpuStartValue = 75 };
-
-    const int _engineId;
-    CriticalSectionWrapper& _pointerCritsect;
-    ThreadWrapper* _ptrViEMonitorThread;
-    EventWrapper& _monitorkEvent;
-    int _averageApplicationCPU;
-    int _averageSystemCPU;
-    CpuWrapper* _cpu;
-    ViEBaseObserver* _vieBaseObserver;
+ private:
+  const int engine_id_;
+  CriticalSectionWrapper& pointer_critsect_;
+  ThreadWrapper* monitor_thread_;
+  EventWrapper& monitor_event_;
+  int average_application_cpu_;
+  int average_system_cpu_;
+  CpuWrapper* cpu_;
+  ViEBaseObserver* vie_base_observer_;
 };
-} // namespace webrtc
-#endif    // WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_PERFORMANCE_MONITOR_H_
+
+}  // namespace webrtc
+
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_PERFORMANCE_MONITOR_H_

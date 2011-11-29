@@ -8,10 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * vie_performance_monitor.cc
- */
-
 #include "vie_performance_monitor.h"
 
 #include "cpu_wrapper.h"
@@ -25,140 +21,122 @@
 
 namespace webrtc {
 
-// ----------------------------------------------------------------------------
-// Constructor
-// ----------------------------------------------------------------------------
+enum { kVieMonitorPeriodMs = 975 };
+enum { kVieCpuStartValue = 75 };
 
-ViEPerformanceMonitor::ViEPerformanceMonitor(int engineId)
-    :   _engineId(engineId),
-        _pointerCritsect(*CriticalSectionWrapper::CreateCriticalSection()),
-        _ptrViEMonitorThread(NULL),
-        _monitorkEvent(*EventWrapper::Create()),
-        _averageApplicationCPU(kViECpuStartValue),
-        _averageSystemCPU(kViECpuStartValue),
-        _cpu(NULL),
-        _vieBaseObserver(NULL)
-{
+ViEPerformanceMonitor::ViEPerformanceMonitor(int engine_id)
+    : engine_id_(engine_id),
+      pointer_critsect_(*CriticalSectionWrapper::CreateCriticalSection()),
+      monitor_thread_(NULL),
+      monitor_event_(*EventWrapper::Create()),
+      average_application_cpu_(kVieCpuStartValue),
+      average_system_cpu_(kVieCpuStartValue),
+      cpu_(NULL),
+      vie_base_observer_(NULL) {
 }
 
-ViEPerformanceMonitor::~ViEPerformanceMonitor()
-{
-    Terminate();
-    delete &_pointerCritsect;
-    delete &_monitorkEvent;
+ViEPerformanceMonitor::~ViEPerformanceMonitor() {
+  Terminate();
+  delete &pointer_critsect_;
+  delete &monitor_event_;
 }
 
-int ViEPerformanceMonitor::Init(ViEBaseObserver* vieBaseObserver)
-{
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_engineId),
-                 "%s", __FUNCTION__);
+int ViEPerformanceMonitor::Init(ViEBaseObserver* vie_base_observer) {
+  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(engine_id_),
+               "%s", __FUNCTION__);
 
-    CriticalSectionScoped cs(_pointerCritsect);
-    if (!vieBaseObserver || _vieBaseObserver)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId),
-                   "%s: Bad input argument or observer already set",
-                   __FUNCTION__);
-        return -1;
-    }
+  CriticalSectionScoped cs(pointer_critsect_);
+  if (!vie_base_observer || vie_base_observer_) {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_),
+                 "%s: Bad input argument or observer already set",
+                 __FUNCTION__);
+    return -1;
+  }
 
-    _cpu = CpuWrapper::CreateCpu();
-    if (_cpu == NULL)
-    {
-        // Performance monitoring not supported
-        WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideo,
-                     ViEId(_engineId), "%s: Not supported", __FUNCTION__);
-        return 0;
-    }
-
-    if (_ptrViEMonitorThread == NULL)
-    {
-        _monitorkEvent.StartTimer(true, kViEMonitorPeriodMs);
-        _ptrViEMonitorThread
-            = ThreadWrapper::CreateThread(ViEMonitorThreadFunction, this,
-                                       kNormalPriority,
-                                       "ViEPerformanceMonitor");
-        unsigned tId = 0;
-        if (_ptrViEMonitorThread->Start(tId))
-        {
-            WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_engineId),
-                       "%s: Performance monitor thread started %u",
-                       __FUNCTION__, tId);
-        } else
-        {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId),
-                       "%s: Could not start performance monitor", __FUNCTION__);
-            _monitorkEvent.StopTimer();
-            return -1;
-        }
-    }
-    _vieBaseObserver = vieBaseObserver;
+  cpu_ = CpuWrapper::CreateCpu();
+  if (cpu_ == NULL) {
+    // Performance monitoring not supported
+    WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideo,
+                 ViEId(engine_id_), "%s: Not supported", __FUNCTION__);
     return 0;
-}
+  }
 
-void ViEPerformanceMonitor::Terminate()
-{
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_engineId),
-                 "%s", __FUNCTION__);
-
-    _pointerCritsect.Enter();
-    if (!_vieBaseObserver)
-    {
-        _pointerCritsect.Leave();
-        return;
+  if (monitor_thread_ == NULL) {
+    monitor_event_.StartTimer(true, kVieMonitorPeriodMs);
+    monitor_thread_ = ThreadWrapper::CreateThread(ViEMonitorThreadFunction,
+                                                  this, kNormalPriority,
+                                                  "ViEPerformanceMonitor");
+    unsigned int t_id = 0;
+    if (monitor_thread_->Start(t_id)) {
+      WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(engine_id_),
+                   "%s: Performance monitor thread started %u",
+                   __FUNCTION__, t_id);
+    } else {
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_),
+                   "%s: Could not start performance monitor", __FUNCTION__);
+      monitor_event_.StopTimer();
+      return -1;
     }
-    _vieBaseObserver = NULL;
-    _monitorkEvent.StopTimer();
-    if (_ptrViEMonitorThread)
-    {
-        ThreadWrapper* tmpThread = _ptrViEMonitorThread;
-        _ptrViEMonitorThread = NULL;
-        _monitorkEvent.Set();
-        _pointerCritsect.Leave();
-        if (tmpThread->Stop())
-        {
-            _pointerCritsect.Enter();
-            delete tmpThread;
-            tmpThread = NULL;
-            delete _cpu;
-        }
-        _cpu = NULL;
-    }
-    _pointerCritsect.Leave();
+  }
+  vie_base_observer_ = vie_base_observer;
+  return 0;
 }
 
-bool ViEPerformanceMonitor::ViEBaseObserverRegistered()
-{
-    CriticalSectionScoped cs(_pointerCritsect);
-    return _vieBaseObserver != NULL;
+void ViEPerformanceMonitor::Terminate() {
+  WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(engine_id_),
+               "%s", __FUNCTION__);
+
+  pointer_critsect_.Enter();
+  if (!vie_base_observer_) {
+    pointer_critsect_.Leave();
+    return;
+  }
+
+  vie_base_observer_ = NULL;
+  monitor_event_.StopTimer();
+  if (monitor_thread_) {
+    ThreadWrapper* tmp_thread = monitor_thread_;
+    monitor_thread_ = NULL;
+    monitor_event_.Set();
+    pointer_critsect_.Leave();
+    if (tmp_thread->Stop()) {
+      pointer_critsect_.Enter();
+      delete tmp_thread;
+      tmp_thread = NULL;
+      delete cpu_;
+    }
+    cpu_ = NULL;
+  }
+  pointer_critsect_.Leave();
 }
 
-bool ViEPerformanceMonitor::ViEMonitorThreadFunction(void* obj)
-{
-    return static_cast<ViEPerformanceMonitor*> (obj)->ViEMonitorProcess();
+bool ViEPerformanceMonitor::ViEBaseObserverRegistered() {
+  CriticalSectionScoped cs(pointer_critsect_);
+  return vie_base_observer_ != NULL;
 }
 
-bool ViEPerformanceMonitor::ViEMonitorProcess()
-{
-    // Periodically triggered with time KViEMonitorPeriodMs
-    _monitorkEvent.Wait(kViEMonitorPeriodMs);
-    if (_ptrViEMonitorThread == NULL)
-    {
-        // Thread removed, exit
-        return false;
-    }
-    CriticalSectionScoped cs(_pointerCritsect);
-    if (_cpu)
-    {
-        int cpuLoad = _cpu->CpuUsage();
-        if (cpuLoad > 75)
-        {
-            if (_vieBaseObserver)
-            {
-                _vieBaseObserver->PerformanceAlarm(cpuLoad);
-            }
-        }
-    }
-    return true;
+bool ViEPerformanceMonitor::ViEMonitorThreadFunction(void* obj) {
+  return static_cast<ViEPerformanceMonitor*>(obj)->ViEMonitorProcess();
 }
-} //namespace webrtc
+
+bool ViEPerformanceMonitor::ViEMonitorProcess() {
+  // Periodically triggered with time KViEMonitorPeriodMs
+  monitor_event_.Wait(kVieMonitorPeriodMs);
+  if (monitor_thread_ == NULL) {
+    // Thread removed, exit
+    return false;
+  }
+
+  CriticalSectionScoped cs(pointer_critsect_);
+  if (cpu_) {
+    int cpu_load = cpu_->CpuUsage();
+    if (cpu_load > 75) {
+      if (vie_base_observer_) {
+        vie_base_observer_->PerformanceAlarm(cpu_load);
+      }
+    }
+  }
+  return true;
+}
+
+}  // namespace webrtc
