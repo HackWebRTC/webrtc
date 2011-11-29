@@ -13,11 +13,14 @@
 #include "gtest/gtest.h"
 #include "system_wrappers/interface/cpu_info.h"
 #include "system_wrappers/interface/event_wrapper.h"
+#include "system_wrappers/interface/scoped_ptr.h"
 #include "system_wrappers/interface/trace.h"
 #include "testsupport/fileutils.h"
 
 using webrtc::CpuInfo;
 using webrtc::CpuWrapper;
+using webrtc::EventWrapper;
+using webrtc::scoped_ptr;
 using webrtc::Trace;
 
 TEST(CpuWrapperTest, Usage) {
@@ -27,10 +30,10 @@ TEST(CpuWrapperTest, Usage) {
   Trace::SetTraceFile(trace_file.c_str());
   Trace::SetLevelFilter(webrtc::kTraceAll);
   printf("Number of cores detected:%u\n", CpuInfo::DetectNumberOfCores());
-  CpuWrapper* cpu = CpuWrapper::CreateCpu();
-  ASSERT_TRUE(cpu != NULL);
-  webrtc::EventWrapper* sleep_event = webrtc::EventWrapper::Create();
-  ASSERT_TRUE(sleep_event != NULL);
+  scoped_ptr<CpuWrapper> cpu(CpuWrapper::CreateCpu());
+  ASSERT_TRUE(cpu.get() != NULL);
+  scoped_ptr<EventWrapper> sleep_event(EventWrapper::Create());
+  ASSERT_TRUE(sleep_event.get() != NULL);
 
   int num_iterations = 0;
   WebRtc_UWord32 num_cores = 0;
@@ -49,18 +52,19 @@ TEST(CpuWrapperTest, Usage) {
   }
   ASSERT_TRUE(cpu_usage_available);
 
-  const WebRtc_Word32 total = cpu->CpuUsageMultiCore(num_cores, cores);
+  const WebRtc_Word32 average = cpu->CpuUsageMultiCore(num_cores, cores);
   ASSERT_TRUE(cores != NULL);
   EXPECT_GT(num_cores, 0u);
-  EXPECT_GE(total, 0);
+  EXPECT_GE(average, 0);
+  EXPECT_LE(average, 100);
 
-  printf("\nNumCores:%d\n", num_cores);
-  printf("Total cpu:%d\n", total);
+  printf("\nNumber of cores:%d\n", num_cores);
+  printf("Average cpu:%d\n", average);
   for (WebRtc_UWord32 i = 0; i < num_cores; i++) {
     printf("Core:%u CPU:%u \n", i, cores[i]);
-    EXPECT_LE(cores[i], static_cast<WebRtc_UWord32> (total));
+    EXPECT_GE(cores[i], 0u);
+    EXPECT_LE(cores[i], 100u);
   }
 
-  delete cpu;
   Trace::ReturnTrace();
 };

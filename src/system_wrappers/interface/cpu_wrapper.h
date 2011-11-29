@@ -32,6 +32,8 @@ public:
     // Note that the pointer passed as cpu_usage is redirected to a local member
     // of the CPU wrapper.
     // numCores is the number of cores in the cpu_usage array.
+    // The return value is -1 for failure or 0-100, indicating the average
+    // CPU usage across all cores.
     // Note: on some OSs this class is initialized lazy. This means that it
     // might not yet be possible to retrieve any CPU metrics. When this happens
     // the return value will be zero (indicating that there is not a failure),
