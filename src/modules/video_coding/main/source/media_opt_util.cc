@@ -49,10 +49,16 @@ VCMProtectionMethod::UpdateContentMetrics(const
     _qmRobustness->UpdateContent(contentMetrics);
 }
 
-VCMNackFecMethod::VCMNackFecMethod():
-VCMFecMethod()
-{
-    _type = kNackFec;
+VCMNackFecMethod::VCMNackFecMethod(int lowRttNackThresholdMs,
+                                   int highRttNackThresholdMs)
+    : VCMFecMethod(),
+      _lowRttNackMs(lowRttNackThresholdMs),
+      _highRttNackMs(highRttNackThresholdMs) {
+  assert(lowRttNackThresholdMs >= -1 && highRttNackThresholdMs >= -1);
+  assert(highRttNackThresholdMs == -1 ||
+         lowRttNackThresholdMs <= highRttNackThresholdMs);
+  assert(lowRttNackThresholdMs > -1 || highRttNackThresholdMs == -1);
+  _type = kNackFec;
 }
 
 VCMNackFecMethod::~VCMNackFecMethod()
@@ -60,13 +66,13 @@ VCMNackFecMethod::~VCMNackFecMethod()
     //
 }
 bool
-VCMNackFecMethod::ProtectionFactor(const
-                                   VCMProtectionParameters* parameters)
+VCMNackFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters)
 {
     // Hybrid Nack FEC has three operational modes:
     // 1. Low RTT (below kLowRttNackMs) - Nack only: Set FEC rate
-    //    (_protectionFactorD) to zero.
-    // 2. High RTT (above kHighRttNackMs) - FEC Only: Keep FEC factors.
+    //    (_protectionFactorD) to zero. -1 means no FEC.
+    // 2. High RTT (above _highRttNackMs) - FEC Only: Keep FEC factors.
+    //    -1 means always allow NACK.
     // 3. Medium RTT values - Hybrid mode: We will only nack the
     //    residual following the decoding of the FEC (refer to JB logic). FEC
     //    delta protection factor will be adjusted based on the RTT.
@@ -76,7 +82,7 @@ VCMNackFecMethod::ProtectionFactor(const
 
     // Compute the protection factors
     VCMFecMethod::ProtectionFactor(parameters);
-    if (parameters->rtt < kLowRttNackMs)
+    if (_lowRttNackMs == -1 || parameters->rtt < _lowRttNackMs)
     {
         _protectionFactorD = 0;
         VCMFecMethod::UpdateProtectionFactorD(_protectionFactorD);
@@ -84,7 +90,7 @@ VCMNackFecMethod::ProtectionFactor(const
 
     // When in Hybrid mode (RTT range), adjust FEC rates based on the
     // RTT (NACK effectiveness) - adjustment factor is in the range [0,1].
-    else if (parameters->rtt < kHighRttNackMs)
+    else if (_highRttNackMs == -1 || parameters->rtt < _highRttNackMs)
     {
         // TODO(mikhal): Disabling adjustment temporarily.
         // WebRtc_UWord16 rttIndex = (WebRtc_UWord16) parameters->rtt;
@@ -103,8 +109,7 @@ VCMNackFecMethod::ProtectionFactor(const
 }
 
 bool
-VCMNackFecMethod::EffectivePacketLoss(const
-                                      VCMProtectionParameters* parameters)
+VCMNackFecMethod::EffectivePacketLoss(const VCMProtectionParameters* parameters)
 {
     // Set the effective packet loss for encoder (based on FEC code).
     // Compute the effective packet loss and residual packet loss due to FEC.
@@ -125,7 +130,7 @@ VCMNackFecMethod::UpdateParameters(const VCMProtectionParameters* parameters)
     _efficiency = parameters->bitRate * fecRate * _corrFecCost;
 
     // Add NACK cost, when applicable
-    if (parameters->rtt < kHighRttNackMs)
+    if (_highRttNackMs == -1 || parameters->rtt < _highRttNackMs)
     {
         // nackCost  = (bitRate - nackCost) * (lossPr)
         _efficiency += parameters->bitRate * _residualPacketLossFec /
@@ -603,7 +608,8 @@ VCMLossProtectionLogic::SetMethod(enum VCMProtectionMethodEnum newMethodType)
         }
         case kNackFec:
         {
-            newMethod =  new VCMNackFecMethod();
+            // Default to always having NACK enabled for the hybrid mode.
+            newMethod =  new VCMNackFecMethod(kLowRttNackMs, -1);
             break;
         }
         default:

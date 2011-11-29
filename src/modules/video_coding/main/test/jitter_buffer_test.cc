@@ -8,19 +8,21 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "common_types.h"
-#include "jitter_buffer.h"
-#include "jitter_estimator.h"
-#include "inter_frame_delay.h"
-#include "packet.h"
-#include "tick_time.h"
-#include "../source/event.h"
-#include "frame_buffer.h"
-#include "jitter_estimate_test.h"
-#include "test_util.h"
-#include "test_macros.h"
 #include <stdio.h>
 #include <math.h>
+
+#include "common_types.h"
+#include "../source/event.h"
+#include "frame_buffer.h"
+#include "inter_frame_delay.h"
+#include "jitter_buffer.h"
+#include "jitter_estimate_test.h"
+#include "jitter_estimator.h"
+#include "media_opt_util.h"
+#include "packet.h"
+#include "test_util.h"
+#include "test_macros.h"
+#include "tick_time.h"
 
 using namespace webrtc;
 
@@ -1568,7 +1570,7 @@ int JitterBufferTest(CmdArgs& args)
     //  ---------------------------------------------------------------------------------------------
     // | 3 | 4 | 5 | 6 | 7 | 9 | x | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | x | 21 |.....| 102 |
     //  ---------------------------------------------------------------------------------------------
-    jb.SetNackMode(kNackInfinite);
+    jb.SetNackMode(kNackInfinite, -1, -1);
 
     TEST(jb.GetNackMode() == kNackInfinite);
 
@@ -2039,7 +2041,7 @@ int JitterBufferTest(CmdArgs& args)
 
     // testing that empty packets do not clog the jitter buffer
     // Set hybrid mode
-    jb.SetNackMode(kNackHybrid);
+    jb.SetNackMode(kNackHybrid, kLowRttNackMs, -1);
     TEST(jb.GetNackMode() == kNackHybrid);
 
     int maxSize = 100;
@@ -2067,7 +2069,7 @@ int JitterBufferTest(CmdArgs& args)
     testFrame = jb.GetFrame(packet);
     TEST(frameIn != 0);
 
-    jb.SetNackMode(kNoNack);
+    jb.SetNackMode(kNoNack, -1, -1);
     jb.Flush();
 
     // Testing that 1 empty packet inserted last will not be set for decoding
@@ -2103,7 +2105,7 @@ int JitterBufferTest(CmdArgs& args)
     // Test incomplete NALU frames
 
     jb.Flush();
-    jb.SetNackMode(kNoNack);
+    jb.SetNackMode(kNoNack, -1, -1);
     seqNum ++;
     timeStamp += 33*90;
     int insertedLength=0;

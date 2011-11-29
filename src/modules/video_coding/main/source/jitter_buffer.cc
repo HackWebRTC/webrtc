@@ -16,7 +16,6 @@
 #include "jitter_buffer.h"
 #include "jitter_buffer_common.h"
 #include "jitter_estimator.h"
-#include "media_optimization.h" // hybrid NACK/FEC thresholds.
 #include "packet.h"
 
 #include "event.h"
@@ -86,6 +85,8 @@ VCMJitterBuffer::VCMJitterBuffer(WebRtc_Word32 vcmId, WebRtc_Word32 receiverId,
     _jitterEstimate(vcmId, receiverId),
     _rttMs(0),
     _nackMode(kNoNack),
+    _lowRttNackThresholdMs(-1),
+    _highRttNackThresholdMs(-1),
     _NACKSeqNum(),
     _NACKSeqNumLength(0),
     _waitingForKeyFrame(false),
@@ -870,8 +871,10 @@ VCMJitterBuffer::GetEstimatedJitterMsInternal()
     WebRtc_UWord32 estimate = VCMJitterEstimator::OPERATING_SYSTEM_JITTER;
 
     // Compute RTT multiplier for estimation
+    // _lowRttNackThresholdMs == -1 means no FEC.
     double rttMult = 1.0f;
-    if (_nackMode == kNackHybrid && _rttMs > kLowRttNackMs)
+    if (_nackMode == kNackHybrid && (_lowRttNackThresholdMs >= 0 &&
+        static_cast<int>(_rttMs) > _lowRttNackThresholdMs))
     {
         // from here we count on FEC
         rttMult = 0.0f;
@@ -1775,10 +1778,18 @@ VCMJitterBuffer::GetNackMode() const
 
 // Set NACK mode
 void
-VCMJitterBuffer::SetNackMode(VCMNackMode mode)
+VCMJitterBuffer::SetNackMode(VCMNackMode mode,
+                             int lowRttNackThresholdMs,
+                             int highRttNackThresholdMs)
 {
     CriticalSectionScoped cs(_critSect);
     _nackMode = mode;
+    assert(lowRttNackThresholdMs >= -1 && highRttNackThresholdMs >= -1);
+    assert(highRttNackThresholdMs == -1 ||
+           lowRttNackThresholdMs <= highRttNackThresholdMs);
+    assert(lowRttNackThresholdMs > -1 || highRttNackThresholdMs == -1);
+    _lowRttNackThresholdMs = lowRttNackThresholdMs;
+    _highRttNackThresholdMs = highRttNackThresholdMs;
     if (_nackMode == kNoNack)
     {
         _jitterEstimate.ResetNackCount();
@@ -2037,7 +2048,8 @@ VCMJitterBuffer::WaitForNack()
      }
      // else: hybrid mode, evaluate
      // RTT high, don't wait
-     if (_rttMs >= kHighRttNackMs)
+     if (_highRttNackThresholdMs >= 0 &&
+         _rttMs >= static_cast<unsigned int>(_highRttNackThresholdMs))
      {
          return false;
      }
@@ -2045,5 +2057,4 @@ VCMJitterBuffer::WaitForNack()
      return true;
 }
 
-
-}
+}  // namespace webrtc

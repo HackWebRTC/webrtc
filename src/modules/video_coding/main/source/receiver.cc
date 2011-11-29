@@ -8,12 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "video_coding.h"
-#include "trace.h"
+#include "receiver.h"
+
 #include "encoded_frame.h"
 #include "internal_defines.h"
-#include "receiver.h"
+#include "media_opt_util.h"
 #include "tick_time.h"
+#include "trace.h"
+#include "video_coding.h"
 
 #include <assert.h>
 
@@ -373,7 +375,8 @@ void
 VCMReceiver::SetNackMode(VCMNackMode nackMode)
 {
     CriticalSectionScoped cs(_critSect);
-    _jitterBuffer.SetNackMode(nackMode);
+    // Default to always having NACK enabled in hybrid mode.
+    _jitterBuffer.SetNackMode(nackMode, kLowRttNackMs, -1);
     if (!_master)
     {
         _state = kPassive; // The dual decoder defaults to passive

@@ -49,7 +49,7 @@ struct VCMProtectionParameters
         residualPacketLossFec(0.0f), codecWidth(0), codecHeight(0)
         {}
 
-    WebRtc_UWord32      rtt;
+    int                 rtt;
     float               lossPr;
     float               bitRate;
     float               packetsPerFrame;
@@ -195,13 +195,18 @@ public:
 class VCMNackFecMethod : public VCMFecMethod
 {
 public:
-    VCMNackFecMethod();
+    VCMNackFecMethod(int lowRttNackThresholdMs,
+                     int highRttNackThresholdMs);
     virtual ~VCMNackFecMethod();
     virtual bool UpdateParameters(const VCMProtectionParameters* parameters);
     // Get the effective packet loss for ER
     bool EffectivePacketLoss(const VCMProtectionParameters* parameters);
     // Get the protection factors
     bool ProtectionFactor(const VCMProtectionParameters* parameters);
+
+private:
+    int _lowRttNackMs;
+    int _highRttNackMs;
 };
 
 class VCMLossProtectionLogic

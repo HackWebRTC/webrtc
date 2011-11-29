@@ -121,7 +121,15 @@ public:
     void UpdateRtt(WebRtc_UWord32 rttMs);
 
     // NACK
-    void SetNackMode(VCMNackMode mode); // Enable/disable nack
+    // Set the NACK mode. "highRttNackThreshold" is an RTT threshold in ms above
+    // which NACK will be disabled if the NACK mode is "kNackHybrid",
+    // -1 meaning that NACK is always enabled in the Hybrid mode.
+    // "lowRttNackThreshold" is an RTT threshold in ms below which we expect to
+    // rely on NACK only, and therefore are using larger buffers to have time to
+    // wait for retransmissions.
+    void SetNackMode(VCMNackMode mode,
+                     int lowRttNackThresholdMs,
+                     int highRttNackThresholdMs);
     VCMNackMode GetNackMode() const;    // Get nack mode
     // Get list of missing sequence numbers (size in number of elements)
     WebRtc_UWord16* GetNackList(WebRtc_UWord16& nackSize,
@@ -236,6 +244,8 @@ private:
 
     // NACK
     VCMNackMode             _nackMode;
+    int                     _lowRttNackThresholdMs;
+    int                     _highRttNackThresholdMs;
     // Holds the internal nack list (the missing sequence numbers)
     WebRtc_Word32           _NACKSeqNumInternal[kNackHistoryLength];
     WebRtc_UWord16          _NACKSeqNum[kNackHistoryLength];
