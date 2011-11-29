@@ -371,6 +371,7 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
     }
   }
 
+  was_stream_delay_set_ = false;
   return kNoError;
 }
 
@@ -437,7 +438,6 @@ int AudioProcessingImpl::AnalyzeReverseStream(AudioFrame* frame) {
     return err;
   }
 
-  was_stream_delay_set_ = false;
   return err;  // TODO(ajm): this is for returning warnings; necessary?
 }
 

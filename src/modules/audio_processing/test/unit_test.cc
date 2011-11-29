@@ -352,54 +352,77 @@ TEST_F(ApmTest, StreamParameters) {
   EXPECT_EQ(apm_->kNoError,
             apm_->ProcessStream(frame_));
 
-  // Missing agc level
+  // -- Missing AGC level --
   EXPECT_EQ(apm_->kNoError, apm_->Initialize());
   EXPECT_EQ(apm_->kNoError, apm_->gain_control()->Enable(true));
-  EXPECT_EQ(apm_->kStreamParameterNotSetError,
-            apm_->ProcessStream(frame_));
-  EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(100));
-  EXPECT_EQ(apm_->kNoError,
-            apm_->echo_cancellation()->set_stream_drift_samples(0));
-  EXPECT_EQ(apm_->kStreamParameterNotSetError,
-            apm_->ProcessStream(frame_));
-  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->Enable(false));
+  EXPECT_EQ(apm_->kStreamParameterNotSetError, apm_->ProcessStream(frame_));
 
-  // Missing delay
-  EXPECT_EQ(apm_->kNoError, apm_->Initialize());
-  EXPECT_EQ(apm_->kNoError, apm_->echo_cancellation()->Enable(true));
-  EXPECT_EQ(apm_->kStreamParameterNotSetError,
-            apm_->ProcessStream(frame_));
-  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->Enable(true));
-  EXPECT_EQ(apm_->kNoError,
-            apm_->echo_cancellation()->set_stream_drift_samples(0));
+  // Resets after successful ProcessStream().
   EXPECT_EQ(apm_->kNoError,
             apm_->gain_control()->set_stream_analog_level(127));
-  EXPECT_EQ(apm_->kStreamParameterNotSetError,
-            apm_->ProcessStream(frame_));
-  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->Enable(false));
+  EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
+  EXPECT_EQ(apm_->kStreamParameterNotSetError, apm_->ProcessStream(frame_));
 
-  // Missing drift
-  EXPECT_EQ(apm_->kNoError, apm_->Initialize());
+  // Other stream parameters set correctly.
+  EXPECT_EQ(apm_->kNoError, apm_->echo_cancellation()->Enable(true));
   EXPECT_EQ(apm_->kNoError,
             apm_->echo_cancellation()->enable_drift_compensation(true));
+  EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(100));
+  EXPECT_EQ(apm_->kNoError,
+            apm_->echo_cancellation()->set_stream_drift_samples(0));
   EXPECT_EQ(apm_->kStreamParameterNotSetError,
             apm_->ProcessStream(frame_));
+  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->Enable(false));
+  EXPECT_EQ(apm_->kNoError,
+            apm_->echo_cancellation()->enable_drift_compensation(false));
+
+  // -- Missing delay --
+  EXPECT_EQ(apm_->kNoError, apm_->Initialize());
+  EXPECT_EQ(apm_->kNoError, apm_->echo_cancellation()->Enable(true));
+  EXPECT_EQ(apm_->kStreamParameterNotSetError, apm_->ProcessStream(frame_));
+
+  // Resets after successful ProcessStream().
+  EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(100));
+  EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
+  EXPECT_EQ(apm_->kStreamParameterNotSetError, apm_->ProcessStream(frame_));
+
+  // Other stream parameters set correctly.
+  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->Enable(true));
+  EXPECT_EQ(apm_->kNoError,
+            apm_->echo_cancellation()->enable_drift_compensation(true));
+  EXPECT_EQ(apm_->kNoError,
+            apm_->echo_cancellation()->set_stream_drift_samples(0));
+  EXPECT_EQ(apm_->kNoError,
+            apm_->gain_control()->set_stream_analog_level(127));
+  EXPECT_EQ(apm_->kStreamParameterNotSetError, apm_->ProcessStream(frame_));
+  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->Enable(false));
+
+  // -- Missing drift --
+  EXPECT_EQ(apm_->kNoError, apm_->Initialize());
+  EXPECT_EQ(apm_->kStreamParameterNotSetError, apm_->ProcessStream(frame_));
+
+  // Resets after successful ProcessStream().
+  EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(100));
+  EXPECT_EQ(apm_->kNoError,
+            apm_->echo_cancellation()->set_stream_drift_samples(0));
+  EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
+  EXPECT_EQ(apm_->kStreamParameterNotSetError, apm_->ProcessStream(frame_));
+
+  // Other stream parameters set correctly.
   EXPECT_EQ(apm_->kNoError, apm_->gain_control()->Enable(true));
   EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(100));
   EXPECT_EQ(apm_->kNoError,
             apm_->gain_control()->set_stream_analog_level(127));
-  EXPECT_EQ(apm_->kStreamParameterNotSetError,
-            apm_->ProcessStream(frame_));
+  EXPECT_EQ(apm_->kStreamParameterNotSetError, apm_->ProcessStream(frame_));
 
-  // No stream parameters
+  // -- No stream parameters --
   EXPECT_EQ(apm_->kNoError, apm_->Initialize());
   EXPECT_EQ(apm_->kNoError,
             apm_->AnalyzeReverseStream(revframe_));
   EXPECT_EQ(apm_->kStreamParameterNotSetError,
             apm_->ProcessStream(frame_));
 
-  // All there
-  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->Enable(true));
+  // -- All there --
   EXPECT_EQ(apm_->kNoError, apm_->Initialize());
   EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(100));
   EXPECT_EQ(apm_->kNoError,
