@@ -8,11 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "common_video/libyuv/test/unit_test.h"
-
 #include <math.h>
 #include <string.h>
 
+#include "testsupport/fileutils.h"
 #include "gtest/gtest.h"
 #include "common_video/libyuv/include/libyuv.h"
 #include "common_video/libyuv/include/scaler.h"
@@ -28,7 +27,6 @@ class LibYuvTest : public ::testing::Test {
   virtual void TearDown();
 
   FILE* source_file_;
-  std::string inname_;
   const int width_;
   const int height_;
   const int frame_length_;
@@ -39,19 +37,20 @@ void ScaleSequence(ScaleMethod method,
                    int src_width, int src_height,
                    int dst_width, int dst_height);
 
-// TODO (mikhal): Update to new test file scheme when available.
 // TODO (mikhal): Use scoped_ptr when handling buffers.
 LibYuvTest::LibYuvTest()
     : source_file_(NULL),
-      inname_("testFiles/foreman_cif.yuv"),
       width_(352),
       height_(288),
       frame_length_(CalcBufferSize(kI420, 352, 288)) {
 }
 
 void LibYuvTest::SetUp() {
-  source_file_  = fopen(inname_.c_str(), "rb");
-  ASSERT_TRUE(source_file_ != NULL) << "Cannot read file: "<< inname_ << "\n";
+  const std::string input_file_name = webrtc::test::ProjectRootPath() +
+                                      "resources/foreman_cif.yuv";
+  source_file_  = fopen(input_file_name.c_str(), "rb");
+  ASSERT_TRUE(source_file_ != NULL) << "Cannot read file: "<<
+                                       input_file_name << "\n";
 }
 
 void LibYuvTest::TearDown() {
@@ -112,13 +111,12 @@ TEST_F(LibYuvTest, MirrorSanityTest) {
 TEST_F(LibYuvTest, ConvertTest) {
   // Reading YUV frame - testing on the first frame of the foreman sequence
   int j = 0;
-  // TODO (mikhal): move to correct output path.
-  std::string out_name = "conversionTest_out.yuv";
-  FILE* output_file;
-  double psnr = 0;
-
-  output_file = fopen(out_name.c_str(), "wb");
+  std::string output_file_name = webrtc::test::OutputPath() +
+                                 "LibYuvTest_conversion.yuv";
+  FILE*  output_file = fopen(output_file_name.c_str(), "wb");
   ASSERT_TRUE(output_file != NULL);
+
+  double psnr = 0;
 
   uint8_t* orig_buffer = new uint8_t[frame_length_];
   fread(orig_buffer, 1, frame_length_, source_file_);
@@ -198,28 +196,28 @@ TEST_F(LibYuvTest, ConvertTest) {
 //TODO (mikhal): Converge the test into one function that accepts the method.
 TEST_F(LibYuvTest, PointScaleTest) {
   ScaleMethod method = kScalePoint;
-  // TODO (mikhal): use webrtc::test::OutputPath()
-  std::string out_name = "PointScaleTest_176_144.yuv";
+  std::string out_name = webrtc::test::OutputPath() +
+                         "LibYuvTest_PointScale_176_144.yuv";
   ScaleSequence(method,
                 source_file_, out_name,
                 width_, height_,
                 width_ / 2, height_ / 2);
-  out_name = "PointScaleTest_320_240.yuv";
+  out_name = webrtc::test::OutputPath() + "LibYuvTest_PointScale_320_240.yuv";
   ScaleSequence(method,
                 source_file_, out_name,
                 width_, height_,
                 320, 240);
-  out_name = "PointScaleTest_704_576.yuv";
+  out_name = webrtc::test::OutputPath() + "LibYuvTest_PointScale_704_576.yuv";
   ScaleSequence(method,
                 source_file_, out_name,
                 width_, height_,
                 width_ * 2, height_ * 2);
-  out_name = "PointScaleTest_300_200.yuv";
+  out_name = webrtc::test::OutputPath() + "LibYuvTest_PointScale_300_200.yuv";
   ScaleSequence(method,
                 source_file_, out_name,
                 width_, height_,
                 300, 200);
-  out_name = "PointScaleTest_400_300.yuv";
+  out_name = webrtc::test::OutputPath() + "LibYuvTest_PointScale_400_300.yuv";
   ScaleSequence(method,
                 source_file_, out_name,
                 width_, height_,
@@ -228,27 +226,32 @@ TEST_F(LibYuvTest, PointScaleTest) {
 
 TEST_F(LibYuvTest, BiLinearScaleTest) {
   ScaleMethod method = kScaleBilinear;
-  std::string out_name = "BilinearScaleTest_176_144.yuv";
+  std::string out_name = webrtc::test::OutputPath() +
+                         "LibYuvTest_BilinearScale_176_144.yuv";
   ScaleSequence(method,
                 source_file_, out_name,
                 width_, height_,
                 width_ / 2, height_ / 2);
-  out_name = "BilinearScaleTest_320_240.yuv";
+  out_name = webrtc::test::OutputPath() +
+             "LibYuvTest_BilinearScale_320_240.yuv";
   ScaleSequence(method,
                 source_file_, out_name,
                 width_, height_,
                 320, 240);
-  out_name = "BilinearScaleTest_704_576.yuv";
+  out_name = webrtc::test::OutputPath() +
+             "LibYuvTest_BilinearScale_704_576.yuv";
   ScaleSequence(method,
                 source_file_, out_name,
                 width_, height_,
                 width_ * 2, height_ * 2);
-  out_name = "BilinearScaleTest_300_200.yuv";
+  out_name = webrtc::test::OutputPath() +
+             "LibYuvTest_BilinearScale_300_200.yuv";
   ScaleSequence(method,
                 source_file_, out_name,
                 width_, height_,
                 300, 200);
-  out_name = "BilinearScaleTest_400_300.yuv";
+  out_name = webrtc::test::OutputPath() +
+             "LibYuvTest_BilinearScale_400_300.yuv";
   ScaleSequence(method,
                 source_file_, out_name,
                 width_, height_,
@@ -257,27 +260,28 @@ TEST_F(LibYuvTest, BiLinearScaleTest) {
 
 TEST_F(LibYuvTest, BoxScaleTest) {
   ScaleMethod method = kScaleBox;
-  std::string out_name = "BoxScaleTest_176_144.yuv";
+  std::string out_name = webrtc::test::OutputPath() +
+                         "LibYuvTest_BoxScale_176_144.yuv";
   ScaleSequence(method,
                 source_file_, out_name,
                 width_, height_,
                 width_ / 2, height_ / 2);
-  out_name = "BoxScaleTest_320_240.yuv";
+  out_name = webrtc::test::OutputPath() + "LibYuvTest_BoxScale_320_240.yuv";
   ScaleSequence(method,
                 source_file_, out_name,
                 width_, height_,
                 320, 240);
-  out_name = "BoxScaleTest_704_576.yuv";
+  out_name = webrtc::test::OutputPath() + "LibYuvTest_BoxScale_704_576.yuv";
   ScaleSequence(method,
                 source_file_, out_name,
                 width_, height_,
                 width_ * 2, height_ * 2);
-  out_name = "BoxScaleTest_300_200.yuv";
+  out_name = webrtc::test::OutputPath() + "LibYuvTest_BoxScale_300_200.yuv";
   ScaleSequence(method,
                 source_file_, out_name,
                 width_, height_,
                 300, 200);
-  out_name = "BoxScaleTest_400_300.yuv";
+  out_name = webrtc::test::OutputPath() + "LibYuvTest_BoxScale_400_300.yuv";
   ScaleSequence(method,
                 source_file_, out_name,
                 width_, height_,
