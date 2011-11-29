@@ -8,32 +8,31 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * vie_ref_count.h
- */
+// TODO(mflodman) Use ref count class in system_wrappers.
 
-#ifndef WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_REF_COUNT_H_
-#define WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_REF_COUNT_H_
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_REF_COUNT_H_
+#define WEBRTC_VIDEO_ENGINE_VIE_REF_COUNT_H_
 
 namespace webrtc {
+
 class CriticalSectionWrapper;
-}
 
-class ViERefCount
-{
-public:
-    ViERefCount();
-    ~ViERefCount();
-    
-    ViERefCount& operator++(int);
-    ViERefCount& operator--(int);
-    
-    void Reset();
-    int GetCount() const;
+class ViERefCount {
+ public:
+  ViERefCount();
+  ~ViERefCount();
 
-private:
-    volatile int _count;
-    webrtc::CriticalSectionWrapper& _crit;
+  ViERefCount& operator++(int);
+  ViERefCount& operator--(int);
+
+  void Reset();
+  int GetCount() const;
+
+ private:
+  volatile int count_;
+  webrtc::CriticalSectionWrapper& crit_;
 };
 
-#endif  // WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_REF_COUNT_H_
+}  // namespace webrtc
+
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_REF_COUNT_H_

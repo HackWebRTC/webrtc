@@ -8,51 +8,40 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * ViERefCount.cpp
- */
-
-
 #include "vie_ref_count.h"
+
 #include "critical_section_wrapper.h"
 
+namespace webrtc {
 
-ViERefCount::ViERefCount() :
-    _count(0),
-    _crit(*webrtc::CriticalSectionWrapper::CreateCriticalSection())
-{
-}
-
-ViERefCount::~ViERefCount()
-{
-    delete &_crit;
+ViERefCount::ViERefCount()
+    : count_(0),
+      crit_(*webrtc::CriticalSectionWrapper::CreateCriticalSection()) {
 }
 
-ViERefCount&
-ViERefCount::operator++(int)
-{
-    webrtc::CriticalSectionScoped lock(_crit);
-    _count++;
-    return *this;
-}
-    
-ViERefCount&
-ViERefCount::operator--(int)
-{
-    webrtc::CriticalSectionScoped lock(_crit);
-    _count--;
-    return *this;
-}
-  
-void 
-ViERefCount::Reset()
-{
-    webrtc::CriticalSectionScoped lock(_crit);
-    _count = 0;
+ViERefCount::~ViERefCount() {
+  delete &crit_;
 }
 
-int 
-ViERefCount::GetCount() const
-{
-    return _count;
+ViERefCount& ViERefCount::operator++(int) {
+  CriticalSectionScoped lock(crit_);
+  count_++;
+  return *this;
 }
+
+ViERefCount& ViERefCount::operator--(int) {
+  CriticalSectionScoped lock(crit_);
+  count_--;
+  return *this;
+}
+
+void ViERefCount::Reset() {
+  CriticalSectionScoped lock(crit_);
+  count_ = 0;
+}
+
+int ViERefCount::GetCount() const {
+  return count_;
+}
+
+}  // namespace webrtc
