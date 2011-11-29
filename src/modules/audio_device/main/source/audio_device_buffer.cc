@@ -612,6 +612,14 @@ WebRtc_Word32 AudioDeviceBuffer::GetPlayoutData(WebRtc_Word8* audioBuffer)
 {
     CriticalSectionScoped lock(_critSect);
 
+    if (_playSize > kMaxBufferSizeBytes)
+    {
+       WEBRTC_TRACE(kTraceError, kTraceUtility, _id, "_playSize %i exceeds "
+       "kMaxBufferSizeBytes in AudioDeviceBuffer::GetPlayoutData", _playSize);
+       assert(false);
+       return -1;       
+    } 
+
     memcpy(audioBuffer, &_playBuffer[0], _playSize);
 
     if (_playFile.Open())
