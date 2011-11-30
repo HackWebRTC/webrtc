@@ -79,7 +79,6 @@ class Channel:
 public:
     enum {KNumSocketThreads = 1};
     enum {KNumberOfSocketBuffers = 8};
-    static WebRtc_UWord8 numSocketThreads;
 public:
     virtual ~Channel();
     static WebRtc_Word32 CreateChannel(Channel*& channel,
@@ -543,6 +542,7 @@ private:
     RtpRtcp& _rtpRtcpModule;
     AudioCodingModule& _audioCodingModule;
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
+    WebRtc_UWord8 _numSocketThreads;
     UdpTransport& _socketTransportModule;
 #endif
 #ifdef WEBRTC_SRTP

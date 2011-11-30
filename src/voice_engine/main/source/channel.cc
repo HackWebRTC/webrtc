@@ -976,8 +976,6 @@ Channel::NeededFrequency(const WebRtc_Word32 id)
     return(highestNeeded);
 }
 
-WebRtc_UWord8 Channel::numSocketThreads = KNumSocketThreads;
-
 WebRtc_Word32
 Channel::CreateChannel(Channel*& channel,
                        const WebRtc_Word32 channelId,
@@ -1078,8 +1076,9 @@ Channel::Channel(const WebRtc_Word32 channelId,
     _audioCodingModule(*AudioCodingModule::Create(
         VoEModuleId(instanceId, channelId))),
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
+     _numSocketThreads(KNumSocketThreads),
     _socketTransportModule(*UdpTransport::Create(
-        VoEModuleId(instanceId, channelId), numSocketThreads)),
+        VoEModuleId(instanceId, channelId), _numSocketThreads)),
 #endif
 #ifdef WEBRTC_SRTP
     _srtpModule(*SrtpModule::CreateSrtpModule(VoEModuleId(instanceId,
