@@ -49,7 +49,7 @@ int WebRtcCreateWindow(CocoaRenderView*& cocoaRenderer, int winNum, int width, i
     // create renderer and attach to window
     NSRect cocoaRendererFrame = NSMakeRect(10, 10, width, height);
     cocoaRenderer = [[CocoaRenderView alloc] initWithFrame:cocoaRendererFrame];
-    [[outWindow contentView] addSubview:cocoaRenderer];
+    [[outWindow contentView] addSubview:(NSView*)cocoaRenderer];
 
     [outWindow makeKeyAndOrderFront:NSApp];
 
