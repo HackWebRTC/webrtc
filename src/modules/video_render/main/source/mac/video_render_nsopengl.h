@@ -182,6 +182,8 @@ private: // variables
     std::multimap<int, int> _zOrderToChannel;
     unsigned int _threadID;
     bool _renderingIsPaused;
+    NSView* _windowRefSuperView;
+    NSRect _windowRefSuperViewFrame;
 };
 
 } //namespace webrtc
