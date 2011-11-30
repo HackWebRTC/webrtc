@@ -706,13 +706,13 @@ VP8Encoder::GetEncodedPartitions(const RawImage& input_image) {
       break;
     }
   }
-  if (_encodedImage._length == 0)
-      return WEBRTC_VIDEO_CODEC_ERROR;
-  _encodedImage._timeStamp = input_image._timeStamp;
-  _encodedImage._encodedHeight = _raw->h;
-  _encodedImage._encodedWidth = _raw->w;
-  _encodedCompleteCallback->Encoded(_encodedImage, &codecSpecific,
-      &frag_info);
+  if (_encodedImage._length > 0) {
+    _encodedImage._timeStamp = input_image._timeStamp;
+    _encodedImage._encodedHeight = _raw->h;
+    _encodedImage._encodedWidth = _raw->w;
+    _encodedCompleteCallback->Encoded(_encodedImage, &codecSpecific,
+        &frag_info);
+  }
   return WEBRTC_VIDEO_CODEC_OK;
 }
 #endif
