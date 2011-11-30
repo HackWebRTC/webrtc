@@ -10,10 +10,12 @@
 
 #include "gtest/gtest.h"
 
-#include "list_wrapper.h"
+#include "system_wrappers/interface/list_wrapper.h"
+#include "system_wrappers/interface/scoped_ptr.h"
 
 using ::webrtc::ListWrapper;
 using ::webrtc::ListItem;
+using ::webrtc::scoped_ptr;
 
 // Note: kNumberOfElements needs to be even.
 const unsigned int kNumberOfElements = 10;
@@ -38,8 +40,6 @@ public:
     virtual unsigned int GetUnsignedItem(
         const ListItem* item) const = 0;
     virtual ListItem* CreateListItem(unsigned int item_id) = 0;
-    virtual bool DestroyListItem(ListItem* item) = 0;
-
     unsigned int GetSize() const {
         return list_.GetSize();
     }
@@ -64,24 +64,52 @@ public:
     }
     virtual int Erase(ListItem* item) = 0;
     int Insert(ListItem* existing_previous_item,
-                       ListItem* new_item) {
-        return list_.Insert(existing_previous_item, new_item);
+               ListItem* new_item) {
+        const int retval = list_.Insert(existing_previous_item, new_item);
+        if (retval != 0) {
+            EXPECT_TRUE(DestroyListItem(new_item));
+        }
+        return retval;
     }
 
     int InsertBefore(ListItem* existing_next_item,
-                             ListItem* new_item) {
-        return list_.InsertBefore(existing_next_item, new_item);
+                     ListItem* new_item) {
+        const int retval = list_.InsertBefore(existing_next_item, new_item);
+        if (retval != 0) {
+            EXPECT_TRUE(DestroyListItem(new_item));
+        }
+        return retval;
     }
 protected:
     ListWrapperSimple() {}
 
+    virtual bool DestroyListItemContent(ListItem* item) = 0;
+    bool DestroyListItem(ListItem* item) {
+        const bool retval = DestroyListItemContent(item);
+        delete item;
+        return retval;
+    }
+
     ListWrapper list_;
 };
+
+void ClearList(ListWrapperSimple* list_wrapper) {
+  if (list_wrapper == NULL) {
+      return;
+  }
+  ListItem* list_item = list_wrapper->First();
+  while (list_item != NULL) {
+    EXPECT_EQ(list_wrapper->Erase(list_item), 0);
+    list_item = list_wrapper->First();
+  }
+}
 
 class ListWrapperStatic : public ListWrapperSimple {
 public:
     ListWrapperStatic() {}
-    virtual ~ListWrapperStatic() {}
+    virtual ~ListWrapperStatic() {
+        ClearList(this);
+    }
 
     virtual unsigned int GetUnsignedItem(const ListItem* item) const {
         return item->GetUnsignedItem();
@@ -89,11 +117,7 @@ public:
     virtual ListItem* CreateListItem(unsigned int item_id) {
         return new ListItem(item_id);
     }
-    virtual bool DestroyListItem(ListItem* item) {
-        if (item == NULL) {
-            return false;
-        }
-        delete item;
+    virtual bool DestroyListItemContent(ListItem* item) {
         return true;
     }
     virtual int PushBack(const unsigned int item_id) {
@@ -116,7 +140,9 @@ public:
 class ListWrapperDynamic : public ListWrapperSimple {
 public:
     ListWrapperDynamic() {}
-    virtual ~ListWrapperDynamic() {}
+    virtual ~ListWrapperDynamic() {
+        ClearList(this);
+    }
 
     virtual unsigned int GetUnsignedItem(const ListItem* item) const {
         const unsigned int* return_value_pointer =
@@ -140,7 +166,7 @@ public:
         }
         return return_value;
     }
-    virtual bool DestroyListItem(ListItem* item) {
+    virtual bool DestroyListItemContent(ListItem* item) {
         if (item == NULL) {
             return false;
         }
@@ -151,7 +177,6 @@ public:
             return_value = true;
             delete item_id_ptr;
         }
-        delete item;
         return return_value;
     }
     virtual int PushBack(const unsigned int item_id) {
@@ -190,17 +215,15 @@ public:
         if (item == NULL) {
             return -1;
         }
-        unsigned int* item_id_ptr = reinterpret_cast<unsigned int*> (
-            item->GetItem());
-        int return_value = -1;
-        if (item_id_ptr != NULL) {
-            delete item_id_ptr;
-            return_value = 0;
+        int retval = 0;
+        if (!DestroyListItemContent(item)) {
+            retval = -1;
+            ADD_FAILURE();
         }
         if (list_.Erase(item) != 0) {
-            return -1;
+            retval = -1;
         }
-        return return_value;
+        return retval;
     }
 };
 
@@ -210,15 +233,6 @@ ListWrapperSimple* ListWrapperSimple::Create(bool static_allocation) {
         return new ListWrapperStatic();
     }
     return new ListWrapperDynamic();
-}
-
-void ClearList(ListWrapperSimple* list) {
-    if (list == NULL)
-    {
-        return;
-    }
-    while (list->Erase(list->First()) == 0) {
-    }
 }
 
 ListWrapperSimple* CreateAscendingList(bool static_allocation) {
@@ -237,7 +251,7 @@ ListWrapperSimple* CreateAscendingList(bool static_allocation) {
     return return_value;
 }
 
-ListWrapperSimple* CreateDecendingList(bool static_allocation) {
+ListWrapperSimple* CreateDescendingList(bool static_allocation) {
     ListWrapperSimple* return_value = ListWrapperSimple::Create(
         static_allocation);
     if (return_value == NULL) {
@@ -323,17 +337,20 @@ bool CompareLists(const ListWrapperSimple* lhs, const ListWrapperSimple* rhs) {
 TEST(ListWrapperTest,ReverseNewIntList) {
     // Create a new temporary list with elements reversed those of
     // new_int_list_
-    const ListWrapperSimple* decending_list = CreateDecendingList(rand()%2);
-    ASSERT_FALSE(decending_list == NULL);
-    ASSERT_FALSE(decending_list->Empty());
-    ASSERT_EQ(kNumberOfElements,decending_list->GetSize());
+    const scoped_ptr<ListWrapperSimple> descending_list(
+        CreateDescendingList(rand()%2));
+    ASSERT_FALSE(descending_list.get() == NULL);
+    ASSERT_FALSE(descending_list->Empty());
+    ASSERT_EQ(kNumberOfElements,descending_list->GetSize());
 
-    const ListWrapperSimple* ascending_list = CreateAscendingList(rand()%2);
-    ASSERT_FALSE(ascending_list == NULL);
+    const scoped_ptr<ListWrapperSimple> ascending_list(
+        CreateAscendingList(rand()%2));
+    ASSERT_FALSE(ascending_list.get() == NULL);
     ASSERT_FALSE(ascending_list->Empty());
     ASSERT_EQ(kNumberOfElements,ascending_list->GetSize());
 
-    ListWrapperSimple* list_to_reverse = ListWrapperSimple::Create(rand()%2);
+    scoped_ptr<ListWrapperSimple> list_to_reverse(
+        ListWrapperSimple::Create(rand()%2));
 
     // Reverse the list using PushBack and Previous.
     for (ListItem* item = ascending_list->Last(); item != NULL;
@@ -341,58 +358,59 @@ TEST(ListWrapperTest,ReverseNewIntList) {
          list_to_reverse->PushBack(ascending_list->GetUnsignedItem(item));
     }
 
-    ASSERT_TRUE(CompareLists(decending_list,list_to_reverse));
+    ASSERT_TRUE(CompareLists(descending_list.get(), list_to_reverse.get()));
 
-    ListWrapperSimple* list_to_un_reverse =
-        ListWrapperSimple::Create(rand()%2);
-    ASSERT_FALSE(list_to_un_reverse == NULL);
+    scoped_ptr<ListWrapperSimple> list_to_un_reverse(
+        ListWrapperSimple::Create(rand()%2));
+    ASSERT_FALSE(list_to_un_reverse.get() == NULL);
     // Reverse the reversed list using PushFront and Next.
     for (ListItem* item = list_to_reverse->First(); item != NULL;
          item = list_to_reverse->Next(item)) {
          list_to_un_reverse->PushFront(list_to_reverse->GetUnsignedItem(item));
     }
-
-    ASSERT_TRUE(CompareLists(ascending_list,list_to_un_reverse));
+    ASSERT_TRUE(CompareLists(ascending_list.get(), list_to_un_reverse.get()));
 }
 
 TEST(ListWrapperTest,PopTest) {
-    ListWrapperSimple* ascending_list = CreateAscendingList(rand()%2);
-    ASSERT_FALSE(ascending_list == NULL);
+    scoped_ptr<ListWrapperSimple> ascending_list(CreateAscendingList(rand()%2));
+    ASSERT_FALSE(ascending_list.get() == NULL);
     ASSERT_FALSE(ascending_list->Empty());
-    EXPECT_EQ(0,ascending_list->PopFront());
+    EXPECT_EQ(0, ascending_list->PopFront());
     EXPECT_EQ(1U, ascending_list->GetUnsignedItem(ascending_list->First()));
 
-    EXPECT_EQ(0,ascending_list->PopBack());
-    EXPECT_EQ(kNumberOfElements - 2,ascending_list->GetUnsignedItem(
+    EXPECT_EQ(0, ascending_list->PopBack());
+    EXPECT_EQ(kNumberOfElements - 2, ascending_list->GetUnsignedItem(
               ascending_list->Last()));
     EXPECT_EQ(kNumberOfElements - 2, ascending_list->GetSize());
 }
 
 // Use Insert to interleave two lists.
 TEST(ListWrapperTest,InterLeaveTest) {
-    ListWrapperSimple* interleave_list = CreateAscendingList(rand()%2);
-    ASSERT_FALSE(interleave_list == NULL);
+    scoped_ptr<ListWrapperSimple> interleave_list(
+        CreateAscendingList(rand()%2));
+    ASSERT_FALSE(interleave_list.get() == NULL);
     ASSERT_FALSE(interleave_list->Empty());
 
-    ListWrapperSimple* decending_list = CreateDecendingList(rand()%2);
-    ASSERT_FALSE(decending_list == NULL);
+    scoped_ptr<ListWrapperSimple> descending_list(
+        CreateDescendingList(rand()%2));
+    ASSERT_FALSE(descending_list.get() == NULL);
 
     for (unsigned int i = 0; i < kNumberOfElements/2; ++i) {
-        ASSERT_EQ(0,interleave_list->PopBack());
-        ASSERT_EQ(0,decending_list->PopBack());
+        ASSERT_EQ(0, interleave_list->PopBack());
+        ASSERT_EQ(0, descending_list->PopBack());
     }
-    ASSERT_EQ(kNumberOfElements/2,interleave_list->GetSize());
-    ASSERT_EQ(kNumberOfElements/2,decending_list->GetSize());
+    ASSERT_EQ(kNumberOfElements/2, interleave_list->GetSize());
+    ASSERT_EQ(kNumberOfElements/2, descending_list->GetSize());
 
     unsigned int insert_position = kNumberOfElements/2;
     ASSERT_EQ(insert_position * 2, kNumberOfElements);
-    while (!decending_list->Empty())
+    while (!descending_list->Empty())
     {
-        ListItem* item = decending_list->Last();
+        ListItem* item = descending_list->Last();
         ASSERT_FALSE(item == NULL);
 
-        const unsigned int item_id = decending_list->GetUnsignedItem(item);
-        ASSERT_EQ(0,decending_list->Erase(item));
+        const unsigned int item_id = descending_list->GetUnsignedItem(item);
+        ASSERT_EQ(0, descending_list->Erase(item));
 
         ListItem* insert_item = interleave_list->CreateListItem(item_id);
         ASSERT_FALSE(insert_item == NULL);
@@ -402,35 +420,33 @@ TEST(ListWrapperTest,InterLeaveTest) {
             item = interleave_list->Next(item);
             ASSERT_FALSE(item == NULL);
         }
-        if (0 != interleave_list->Insert(item,insert_item)) {
-            interleave_list->DestroyListItem(insert_item);
-            FAIL();
-        }
+        EXPECT_EQ(0, interleave_list->Insert(item, insert_item));
         --insert_position;
     }
 
-    ListWrapperSimple* interleaved_list = CreateInterleavedList(rand()%2);
-    ASSERT_FALSE(interleaved_list == NULL);
+    scoped_ptr<ListWrapperSimple> interleaved_list(
+        CreateInterleavedList(rand()%2));
+    ASSERT_FALSE(interleaved_list.get() == NULL);
     ASSERT_FALSE(interleaved_list->Empty());
-
-    ASSERT_TRUE(CompareLists(interleaved_list,interleave_list));
+    ASSERT_TRUE(CompareLists(interleaved_list.get(), interleave_list.get()));
 }
 
 // Use InsertBefore to interleave two lists.
 TEST(ListWrapperTest,InterLeaveTestII) {
-    ListWrapperSimple* interleave_list = CreateDecendingList(rand()%2);
-    ASSERT_FALSE(interleave_list == NULL);
+    scoped_ptr<ListWrapperSimple> interleave_list(
+        CreateDescendingList(rand()%2));
+    ASSERT_FALSE(interleave_list.get() == NULL);
     ASSERT_FALSE(interleave_list->Empty());
 
-    ListWrapperSimple* ascending_list = CreateAscendingList(rand()%2);
-    ASSERT_FALSE(ascending_list == NULL);
+    scoped_ptr<ListWrapperSimple> ascending_list(CreateAscendingList(rand()%2));
+    ASSERT_FALSE(ascending_list.get() == NULL);
 
     for (unsigned int i = 0; i < kNumberOfElements/2; ++i) {
-        ASSERT_EQ(0,interleave_list->PopBack());
-        ASSERT_EQ(0,ascending_list->PopBack());
+        ASSERT_EQ(0, interleave_list->PopBack());
+        ASSERT_EQ(0, ascending_list->PopBack());
     }
-    ASSERT_EQ(kNumberOfElements/2,interleave_list->GetSize());
-    ASSERT_EQ(kNumberOfElements/2,ascending_list->GetSize());
+    ASSERT_EQ(kNumberOfElements/2, interleave_list->GetSize());
+    ASSERT_EQ(kNumberOfElements/2, ascending_list->GetSize());
 
     unsigned int insert_position = kNumberOfElements/2;
     ASSERT_EQ(insert_position * 2, kNumberOfElements);
@@ -450,16 +466,14 @@ TEST(ListWrapperTest,InterLeaveTestII) {
             item = interleave_list->Next(item);
             ASSERT_FALSE(item == NULL);
         }
-        if (0 != interleave_list->InsertBefore(item,insert_item)) {
-            interleave_list->DestroyListItem(insert_item);
-            FAIL();
-        }
+        EXPECT_EQ(interleave_list->InsertBefore(item, insert_item), 0);
         --insert_position;
     }
 
-    ListWrapperSimple* interleaved_list = CreateInterleavedList(rand()%2);
-    ASSERT_FALSE(interleaved_list == NULL);
+    scoped_ptr<ListWrapperSimple> interleaved_list(
+        CreateInterleavedList(rand()%2));
+    ASSERT_FALSE(interleaved_list.get() == NULL);
     ASSERT_FALSE(interleaved_list->Empty());
 
-    ASSERT_TRUE(CompareLists(interleaved_list,interleave_list));
+    ASSERT_TRUE(CompareLists(interleaved_list.get(), interleave_list.get()));
 }
