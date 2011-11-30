@@ -3354,20 +3354,6 @@ DWORD AudioDeviceWindowsCore::DoGetCaptureVolumeThread()
 
     while (1)
     {
-        DWORD waitResult = WaitForSingleObject(waitObject,
-                                               GET_MIC_VOLUME_INTERVAL_MS);
-        switch (waitResult)
-        {
-            case WAIT_OBJECT_0: // _hShutdownCaptureEvent
-                return 0;
-            case WAIT_TIMEOUT:	// timeout notification
-                break;
-            default:            // unexpected error
-                WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
-                    "  unknown wait termination on get volume thread");
-                return -1;
-        }
-
         if (AGC())
         {
             WebRtc_UWord32 currentMicLevel = 0;
@@ -3382,6 +3368,20 @@ DWORD AudioDeviceWindowsCore::DoGetCaptureVolumeThread()
                 _UnLock();
             }
         }
+
+        DWORD waitResult = WaitForSingleObject(waitObject,
+                                               GET_MIC_VOLUME_INTERVAL_MS);
+        switch (waitResult)
+        {
+            case WAIT_OBJECT_0: // _hShutdownCaptureEvent
+                return 0;
+            case WAIT_TIMEOUT:  // timeout notification
+                break;
+            default:            // unexpected error
+                WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
+                    "  unknown wait termination on get volume thread");
+                return -1;
+        }
     }
 }
 
@@ -3394,11 +3394,11 @@ DWORD AudioDeviceWindowsCore::DoSetCaptureVolumeThread()
         DWORD waitResult = WaitForMultipleObjects(2, waitArray, FALSE, INFINITE);
         switch (waitResult)
         {
-            case WAIT_OBJECT_0:     // _hShutdownCaptureEvent
+            case WAIT_OBJECT_0:      // _hShutdownCaptureEvent
                 return 0;
-           case WAIT_OBJECT_0 + 1:  // _hSetCaptureVolumeEvent
+            case WAIT_OBJECT_0 + 1:  // _hSetCaptureVolumeEvent
                 break;
-           default:                 // unexpected error
+            default:                 // unexpected error
                 WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
                     "  unknown wait termination on set volume thread");
                     return -1;
