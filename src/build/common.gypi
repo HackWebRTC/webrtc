@@ -81,10 +81,11 @@
 
         'conditions': [
           ['OS=="mac"', {
-            # TODO(andrew): clang is now the default on Mac, but we have a build
-            # error in a test. Temporarily disable clang until this is solved:
-            # http://code.google.com/p/webrtc/issues/detail?id=78
-            'clang%': 0,
+            # TODO(andrew): clang is the default on Mac. For now, disable the
+            # Chrome plugins, which causes a flood of chromium-style warnings.
+            # Investigate enabling the plugins:
+            # http://code.google.com/p/webrtc/issues/detail?id=163
+            'clang_use_chrome_plugins%': 0,
           }],
         ],
       }],
