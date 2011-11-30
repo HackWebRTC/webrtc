@@ -203,9 +203,6 @@ public:
     WebRtc_Word32 SetMinimumPlayoutDelay(
         const WebRtc_Word32 timeMs);
 
-    // current play out delay
-    WebRtc_Word32 Delay(WebRtc_UWord16& delayMs) const;
-
     // configure Dtmf playout status i.e on/off playout the incoming outband Dtmf tone
     WebRtc_Word32 SetDtmfPlayoutStatus(
         const bool enable);
@@ -242,9 +239,6 @@ public:
 
     WebRtc_Word32  NetworkStatistics(
         ACMNetworkStatistics& statistics) const;
-
-    WebRtc_Word32  PreferredBufferSize(
-        WebRtc_UWord16& prefbufsize) const;
 
     void DestructEncoderInst(void* ptrInst);
 

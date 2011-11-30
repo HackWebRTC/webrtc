@@ -6135,15 +6135,6 @@ Channel::GetNetworkStatistics(NetworkStatistics& stats)
 }
 
 int
-Channel::GetPreferredBufferSize(unsigned short& preferredBufferSize)
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
-                 "Channel::GetPreferredBufferSize()");
-    return _audioCodingModule.PreferredBufferSize(
-        (WebRtc_UWord16 &)preferredBufferSize);
-}
-
-int
 Channel::GetDelayEstimate(int& delayMs) const
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),

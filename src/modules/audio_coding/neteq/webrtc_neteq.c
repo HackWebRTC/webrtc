@@ -1188,9 +1188,28 @@ int WebRtcNetEQ_GetNetworkStatistics(void *inst, WebRtcNetEQ_NetworkStatistics *
     /* Get buffer size */
     /*******************/
 
-    if (WebRtcNetEQ_GetCurrentDelay((void *) inst, &(stats->currentBufferSize)) != 0)
+    if (NetEqMainInst->MCUinst.fs != 0)
     {
-        return (-1);
+        WebRtc_Word32 temp32;
+        /* Query packet buffer for number of samples. */
+        temp32 = WebRtcNetEQ_PacketBufferGetSize(
+            &NetEqMainInst->MCUinst.PacketBuffer_inst);
+
+        /* Divide by sample rate.
+         * Calculate temp32 * 1000 / fs to get result in ms. */
+        stats->currentBufferSize = (WebRtc_UWord16)
+            WebRtcSpl_DivU32U16(temp32 * 1000, NetEqMainInst->MCUinst.fs);
+
+        /* Add number of samples yet to play in sync buffer. */
+        temp32 = (WebRtc_Word32) (NetEqMainInst->DSPinst.endPosition -
+            NetEqMainInst->DSPinst.curPosition);
+        stats->currentBufferSize += (WebRtc_UWord16)
+            WebRtcSpl_DivU32U16(temp32 * 1000, NetEqMainInst->MCUinst.fs);
+    }
+    else
+    {
+        /* Sample rate not initialized. */
+        stats->currentBufferSize = 0;
     }
 
     /***************************/
@@ -1510,81 +1529,6 @@ int WebRtcNetEQ_GetNetworkStatistics(void *inst, WebRtcNetEQ_NetworkStatistics *
     WebRtcNetEQ_ClearInCallStats(&(NetEqMainInst->DSPinst));
 
     return (0);
-}
-
-/* Get the optimal buffer size calculated for the current network conditions. */
-int WebRtcNetEQ_GetPreferredBufferSize(void *inst, WebRtc_UWord16 *preferredBufferSize)
-{
-
-    MainInst_t *NetEqMainInst = (MainInst_t*) inst;
-
-    /***************************/
-    /* Get optimal buffer size */
-    /***************************/
-
-    if (NetEqMainInst->MCUinst.fs != 0 && NetEqMainInst->MCUinst.fs <= WEBRTC_SPL_WORD16_MAX)
-    {
-        /* preferredBufferSize = Bopt * packSizeSamples / (fs/1000) */
-        *preferredBufferSize
-            = (WebRtc_UWord16) WEBRTC_SPL_MUL_16_16(
-                (WebRtc_Word16) ((NetEqMainInst->MCUinst.BufferStat_inst.Automode_inst.optBufLevel) >> 8), /* optimal buffer level in packets shifted to Q0 */
-                WebRtcSpl_DivW32W16ResW16(
-                    (WebRtc_Word32) NetEqMainInst->MCUinst.BufferStat_inst.Automode_inst.packetSpeechLenSamp, /* samples per packet */
-                    WebRtcSpl_DivW32W16ResW16( (WebRtc_Word32) NetEqMainInst->MCUinst.fs, (WebRtc_Word16) 1000 ) /* samples per ms */
-                ) );
-
-        /* add extra delay */
-        if (NetEqMainInst->MCUinst.BufferStat_inst.Automode_inst.extraDelayMs > 0)
-        {
-            *preferredBufferSize
-                += NetEqMainInst->MCUinst.BufferStat_inst.Automode_inst.extraDelayMs;
-        }
-    }
-    else
-    {
-        /* sample rate not initialized */
-        *preferredBufferSize = 0;
-    }
-
-    return (0);
-
-}
-
-/* Get the current buffer size in ms. Return value is 0 if ok, -1 if error. */
-int WebRtcNetEQ_GetCurrentDelay(const void *inst, WebRtc_UWord16 *currentDelayMs)
-{
-    WebRtc_Word32 temp32;
-    const MainInst_t *NetEqMainInst = (const MainInst_t*) inst;
-
-    /* Instance sanity */
-    if (NetEqMainInst == NULL) return (-1);
-
-    /*******************/
-    /* Get buffer size */
-    /*******************/
-
-    if (NetEqMainInst->MCUinst.fs != 0 && NetEqMainInst->MCUinst.fs <= WEBRTC_SPL_WORD16_MAX)
-    {
-        /* query packet buffer for number of samples */
-        temp32 = WebRtcNetEQ_PacketBufferGetSize(&NetEqMainInst->MCUinst.PacketBuffer_inst);
-
-        /* divide by sample rate */
-        *currentDelayMs = WebRtcSpl_DivW32W16ResW16(temp32 * 1000, /* multiply by 1000 to get ms */
-        (WebRtc_Word16) NetEqMainInst->MCUinst.fs); /* divide by fs in samples per second */
-
-        /* add number of samples yet to play in sync buffer */
-        temp32 = (WebRtc_Word32) (NetEqMainInst->DSPinst.endPosition
-            - NetEqMainInst->DSPinst.curPosition);
-        *currentDelayMs += WebRtcSpl_DivW32W16ResW16(temp32 * 1000, /* multiply by 1000 to get ms */
-        (WebRtc_Word16) NetEqMainInst->MCUinst.fs); /* divide by fs in samples per second */
-    }
-    else
-    {
-        /* sample rate not initialized */
-        *currentDelayMs = 0;
-    }
-
-    return 0;
 }
 
 /****************************************************************************

@@ -3594,10 +3594,6 @@ int VoETestManager::DoStandardTest()
              nStats.currentPreemptiveRate);
     TEST_LOG("    preferredBufferSize       = %hu \n",
              nStats.preferredBufferSize);
-
-    unsigned short preferredBufferSize;
-    TEST_MUSTPASS(neteqst->GetPreferredBufferSize(0, preferredBufferSize));
-    TEST_MUSTPASS(preferredBufferSize != nStats.preferredBufferSize);
 #else
     TEST_LOG("Skipping NetEQ statistics tests - "
         "WEBRTC_VOICE_ENGINE_NETEQ_STATS_API not defined \n");

@@ -214,20 +214,6 @@ public:
         ACMNetworkStatistics* statistics) const;
 
     //
-    // PreferredBufferSize()
-    // Get the currently preferred buffer size from NetEQ.
-    //
-    // Output:
-    //   - prefBufSize           : The optimal buffer size for the current network
-    //                             conditions.
-    //
-    // Return value              : 0 if ok.
-    //                            <0 if NetEQ returned an error.
-    //
-    WebRtc_Word32 PreferredBufferSize(
-        WebRtc_UWord16* prefBufSize) const;
-
-    //
     // VADMode()
     // Get the current VAD Mode.
     //
@@ -282,20 +268,6 @@ public:
         WebRtcNetEQDecoder codecIdx,
         bool isStereo = false);
 
-
-    //
-    // Delay()
-    // Get the length of the current audio buffer in milliseconds. That is
-    // approximately the playout delay, which can be used for lip-synch.
-    //
-    // Output:
-    //   - currentDelayInMs      : delay in audio buffer given in milliseconds
-    //
-    // return value              : 0 if ok
-    //                            -1 if an error occurred.
-    //
-    WebRtc_Word16 Delay(
-        WebRtc_UWord16& currentDelayInMs) const;
 
     //
     // SetBackgroundNoiseMode()

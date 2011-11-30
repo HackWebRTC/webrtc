@@ -110,16 +110,6 @@ typedef struct
  */
 int WebRtcNetEQ_GetNetworkStatistics(void *inst, WebRtcNetEQ_NetworkStatistics *stats);
 
-/*
- * Get the optimal buffer size calculated for the current network conditions.
- */
-int WebRtcNetEQ_GetPreferredBufferSize(void *inst, WebRtc_UWord16 *preferredBufferSize);
-
-/*
- * Get the current buffer size in ms. Return value is 0 if ok, -1 if error.
- */
-int WebRtcNetEQ_GetCurrentDelay(const void *inst, WebRtc_UWord16 *currentDelayMs);
-
 /***********************************************/
 /* Functions for post-decode VAD functionality */
 /***********************************************/

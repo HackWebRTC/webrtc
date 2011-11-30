@@ -470,21 +470,6 @@ ACMNetEQ::NetworkStatistics(
     }
 }
 
-
-WebRtc_Word32
-ACMNetEQ::PreferredBufferSize(
-    WebRtc_UWord16* prefBufSize) const
-{
-    CriticalSectionScoped lock(*_netEqCritSect);
-    WebRtc_Word32 ok = WebRtcNetEQ_GetPreferredBufferSize(_inst[0], prefBufSize);
-    if((*prefBufSize == 0) || (*prefBufSize == 0xFFFF))
-    {
-        ok = -1;
-        LogError("getPreferredBufferSize", 0);
-    }
-    return ok;
-}
-
 WebRtc_Word32
 ACMNetEQ::RecIn(
     const WebRtc_Word8*    incomingPayload,
@@ -1027,29 +1012,6 @@ ACMNetEQ::RemoveCodec(
 
     return 0;
 }
-
-WebRtc_Word16
-ACMNetEQ::Delay(
-    WebRtc_UWord16& currentDelayInMs) const
-{
-    CriticalSectionScoped lock(*_netEqCritSect);
-    if(!_isInitialized[0])
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
-            "Delay: NetEq is not initialized.");
-        return -1;
-    }
-    if(WebRtcNetEQ_GetCurrentDelay(_inst[0], &currentDelayInMs) < 0)
-    {
-        LogError("GetCurrentDelay", 0);
-        return -1;
-    }
-    else
-    {
-        return 0;
-    }
-}
-
 
 WebRtc_Word16
 ACMNetEQ::SetBackgroundNoiseMode(

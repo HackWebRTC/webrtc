@@ -35,11 +35,6 @@ public:
     // The statistics are reset after the query.
     virtual int GetNetworkStatistics(int channel, NetworkStatistics& stats) = 0;
 
-    // Get the optimal buffer size calculated for the current network
-    // conditions.
-    virtual int GetPreferredBufferSize(
-        int channel, unsigned short& preferredBufferSize) = 0;
-
 protected:
     VoENetEqStats() {}
     virtual ~VoENetEqStats() {}

@@ -612,19 +612,6 @@ class AudioCodingModule: public Module {
   virtual WebRtc_Word32 SetMinimumPlayoutDelay(const WebRtc_Word32 timeMs) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
-  // WebRtc_Word32 Delay()
-  // Get the current playout delay.
-  //
-  // Output:
-  //   - delayInMs         : delay in millisecond
-  //
-  // Return value:
-  //   -1 if failed to get the delay,
-  //    0 if succeeded to get the delay.
-  //
-  virtual WebRtc_Word32 Delay(WebRtc_UWord16& delayMs) const = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
   // WebRtc_Word32 RegisterIncomingMessagesCallback()
   // Used by the module to deliver messages to the codec module/application
   // when a Dtmf tone is detected, as well as when it stopped.
@@ -913,22 +900,6 @@ class AudioCodingModule: public Module {
   //
   virtual WebRtc_Word32 NetworkStatistics(
       ACMNetworkStatistics& networkStatistics) const = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
-  // WebRtc_Word32  PreferredBufferSize()
-  // Get the optimal buffer size calculated for the current network
-  // conditions.
-  //
-  // Output:
-  //   -prefBuffSize       : the optimal size of the jitter buffer in
-  //                         milliseconds.
-  //
-  // Return value:
-  //   -1 if the preferred buffer size could not be computed,
-  //    0 if a valid buffer is computed successfully.
-  //
-  virtual WebRtc_Word32 PreferredBufferSize(
-      WebRtc_UWord16& prefBufSize) const = 0;
 };
 
 }  // namespace webrtc

@@ -884,16 +884,12 @@ APITest::TestDelay(char side)
     WebRtc_UWord32 inTimestamp = 0;
     WebRtc_UWord32 outTimestamp = 0;
     double estimDelay = 0;    
-    WebRtc_UWord16 delay = 0;
 
     double averageEstimDelay = 0;
     double averageDelay = 0;
 
     CircularBuffer estimDelayCB(100);
-    CircularBuffer delayCB(100);
     estimDelayCB.SetArithMean(true);
-    delayCB.SetArithMean(true);
-
 
     if(side == 'A')
     {
@@ -914,7 +910,6 @@ APITest::TestDelay(char side)
 
     inTimestamp = myChannel->LastInTimestamp();        
     CHECK_ERROR_MT(myACM->PlayoutTimestamp(outTimestamp));
-    CHECK_ERROR_MT(myACM->Delay(delay));
 
     if(!_randomTest)
     {
@@ -937,10 +932,6 @@ APITest::TestDelay(char side)
             estimDelayCB.ArithMean(averageEstimDelay);
             //printf("\n %6.1f \n", estimDelay);
             //std::cout << " " << std::flush;
-
-            CHECK_ERROR_MT(myACM->Delay(delay));
-            delayCB.Update(delay);
-            delayCB.ArithMean(averageDelay);
 
             if(_verbose)
             {

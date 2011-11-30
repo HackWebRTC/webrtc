@@ -95,33 +95,6 @@ int VoENetEqStatsImpl::GetNetworkStatistics(int channel,
     return channelPtr->GetNetworkStatistics(stats);
 }
 
-int VoENetEqStatsImpl::GetPreferredBufferSize(
-    int channel,
-    unsigned short& preferredBufferSize)
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1),
-                 "GetPreferredBufferSize(channel=%i, ?)", channel);
-    ANDROID_NOT_SUPPORTED();
-    IPHONE_NOT_SUPPORTED();
-      
-    if (!_engineStatistics.Initialized())
-    {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
-        return -1;
-    }
-	voe::ScopedChannel sc(_channelManager, channel);
-	voe::Channel* channelPtr = sc.ChannelPtr();
-    if (channelPtr == NULL)
-    {
-        _engineStatistics.SetLastError(
-            VE_CHANNEL_NOT_VALID, kTraceError,
-            "GetPreferredBufferSize() failed to locate channel");
-        return -1;
-    }
-
-    return channelPtr->GetPreferredBufferSize(preferredBufferSize);
-}
-
 #endif  // #ifdef WEBRTC_VOICE_ENGINE_NETEQ_STATS_API
 
 }   // namespace webrtc

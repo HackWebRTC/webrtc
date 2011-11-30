@@ -28,9 +28,6 @@ public:
     virtual int GetNetworkStatistics(int channel,
                                      NetworkStatistics& stats);
 
-    virtual int GetPreferredBufferSize(int channel,
-                                       unsigned short& preferredBufferSize);
-
 protected:
     VoENetEqStatsImpl();
     virtual ~VoENetEqStatsImpl();

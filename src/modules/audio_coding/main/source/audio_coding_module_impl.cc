@@ -1815,17 +1815,6 @@ AudioCodingModuleImpl::SetMinimumPlayoutDelay(
     return _netEq.SetExtraDelay(timeMs);
 }
 
-// current play out delay
-WebRtc_Word32
-AudioCodingModuleImpl::Delay(
-    WebRtc_UWord16& delayMs) const
-{
-    // NetEQ will get an API for this later.
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "Delay()");
-    return _netEq.Delay(delayMs);
-}
-
 // Get Dtmf playout status
 bool
 AudioCodingModuleImpl::DtmfPlayoutStatus() const
@@ -2133,15 +2122,6 @@ AudioCodingModuleImpl::NetworkStatistics(
     WebRtc_Word32 status;
     status = _netEq.NetworkStatistics(&statistics);
     return status;
-}
-
-WebRtc_Word32
-AudioCodingModuleImpl::PreferredBufferSize(
-    WebRtc_UWord16& prefbufsize) const
-{
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "PreferedBufferSize()");
-    return _netEq.PreferredBufferSize(&prefbufsize);
 }
 
 void
