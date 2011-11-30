@@ -8,92 +8,94 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * vie_base_impl.h
- */
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_BASE_IMPL_H_
+#define WEBRTC_VIDEO_ENGINE_VIE_BASE_IMPL_H_
 
-#ifndef WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_BASE_IMPL_H_
-#define WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_BASE_IMPL_H_
-
+#include "vie_base.h"
 #include "vie_defines.h"
-
 #include "vie_ref_count.h"
 #include "vie_shared_data.h"
-#include "vie_base.h"
 
-// Forward declarations
-namespace webrtc
-{
+namespace webrtc {
 
-class VoiceEngine;
 class Module;
+class VoiceEngine;
 
-class ViEBaseImpl: public virtual ViESharedData,
-    public ViEBase,
-    public ViERefCount
-{
-public:
-    virtual int Release();
+class ViEBaseImpl
+    : public virtual ViESharedData,
+      public ViEBase,
+      public ViERefCount {
+ public:
+  virtual int Release();
 
-    virtual int Init();
+  // Initializes VideoEngine and must be called before any other API is called.
+  virtual int Init();
 
-    virtual int SetVoiceEngine(VoiceEngine* ptrVoiceEngine);
+  // Connects ViE to a VoE instance.
+  virtual int SetVoiceEngine(VoiceEngine* voice_engine);
 
-    // Channel functions
-    virtual int CreateChannel(int& videoChannel);
+  // Creates a new ViE channel.
+  virtual int CreateChannel(int& video_channel);
 
-    virtual int CreateChannel(int& videoChannel, int originalChannel);
+  // Creates a new ViE channel that will use the same capture device and encoder
+  // as |original_channel|.
+  virtual int CreateChannel(int& video_channel, int original_channel);
 
-    virtual int DeleteChannel(const int videoChannel);
+  // Deletes a ViE channel.
+  virtual int DeleteChannel(const int video_channel);
 
-    virtual int ConnectAudioChannel(const int videoChannel,
-                                    const int audioChannel);
+  // Connects a ViE channel with a VoE channel.
+  virtual int ConnectAudioChannel(const int video_channel,
+                                  const int audio_channel);
 
-    virtual int DisconnectAudioChannel(const int videoChannel);
+  // Disconnects a video/voice channel pair.
+  virtual int DisconnectAudioChannel(const int video_channel);
 
-    // Start and stop
-    virtual int StartSend(const int videoChannel);
+  // Starts sending on video_channel and also starts the encoder.
+  virtual int StartSend(const int video_channel);
 
-    virtual int StopSend(const int videoChannel);
+  // Stops sending on the specified channel.
+  virtual int StopSend(const int video_channel);
 
-    virtual int StartReceive(const int videoChannel);
+  // Starts receiving on the channel and also start decoding.
+  virtual int StartReceive(const int video_channel);
 
-    virtual int StopReceive(const int videoChannel);
+  // Stops receiving on the specified channel.
+  virtual int StopReceive(const int video_channel);
 
-    // Callbacks
-    virtual int RegisterObserver(ViEBaseObserver& observer);
+  // Registers a customer implemented observer.
+  virtual int RegisterObserver(ViEBaseObserver& observer);
 
-    virtual int DeregisterObserver();
+  // Deregisters the observer.
+  virtual int DeregisterObserver();
 
-    // Info functions
-    virtual int GetVersion(char version[1024]);
+  // Prints version information into |verson|.
+  virtual int GetVersion(char version[1024]);
 
-    virtual int LastError();
+  // Returns the error code for the last registered error.
+  virtual int LastError();
 
-protected:
-    ViEBaseImpl();
-    virtual ~ViEBaseImpl();
-private:
+ protected:
+  ViEBaseImpl();
+  virtual ~ViEBaseImpl();
 
-    // Version functions
-    WebRtc_Word32 AddViEVersion(char* str) const;
-    WebRtc_Word32 AddBuildInfo(char* str) const;
+ private:
+  // Version functions.
+  WebRtc_Word32 AddViEVersion(char* str) const;
+  WebRtc_Word32 AddBuildInfo(char* str) const;
 #ifdef WEBRTC_EXTERNAL_TRANSPORT
-    WebRtc_Word32 AddExternalTransportBuild(char* str) const;
+  WebRtc_Word32 AddExternalTransportBuild(char* str) const;
 #else
-    WebRtc_Word32 AddSocketModuleVersion(char* str) const;
+  WebRtc_Word32 AddSocketModuleVersion(char* str) const;
 #endif
-    WebRtc_Word32 AddModuleVersion(webrtc::Module* module, char* str) const;
-    WebRtc_Word32 AddVCMVersion(char* str) const;
-    WebRtc_Word32 AddVideoCaptureVersion(char* str) const;
-    WebRtc_Word32 AddVideoProcessingVersion(char* str) const;
-    WebRtc_Word32 AddRenderVersion(char* str) const;
-#ifdef WEBRTC_SRTP
-    WebRtc_Word32 AddSRTPModuleVersion(char* str) const;
-#endif
-    WebRtc_Word32 AddRtpRtcpModuleVersion(char* str) const;
+  WebRtc_Word32 AddModuleVersion(webrtc::Module* module, char* str) const;
+  WebRtc_Word32 AddVCMVersion(char* str) const;
+  WebRtc_Word32 AddVideoCaptureVersion(char* str) const;
+  WebRtc_Word32 AddVideoProcessingVersion(char* str) const;
+  WebRtc_Word32 AddRenderVersion(char* str) const;
+  WebRtc_Word32 AddRtpRtcpModuleVersion(char* str) const;
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
-#endif  // #define WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_BASE_IMPL_H_
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_BASE_IMPL_H_
