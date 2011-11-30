@@ -21,13 +21,16 @@
 //  [Voice] Codec settings
 // ----------------------------------------------------------------------------
 
-#define WEBRTC_CODEC_ILBC
 #define WEBRTC_CODEC_ISAC       // floating-point iSAC implementation (default)
 // #define WEBRTC_CODEC_ISACFX  // fix-point iSAC implementation
+#define WEBRTC_CODEC_AVT
+
+#ifndef WEBRTC_CHROMIUM_BUILD
+#define WEBRTC_CODEC_ILBC
 #define WEBRTC_CODEC_G722
 #define WEBRTC_CODEC_PCM16
 #define WEBRTC_CODEC_RED
-#define WEBRTC_CODEC_AVT
+#endif
 
 // ----------------------------------------------------------------------------
 //  [Video] Codec settings

@@ -109,7 +109,13 @@ const int kDynamicPayloadtypes[ACMCodecDB::kMaxNumCodecs] = {
 // Each entry needs the following parameters in the given order:
 // payload type, name, sampling frequency, packet size in samples,
 // default channel support, and default rate.
+#if (defined(WEBRTC_CODEC_PCM16) || \
+     defined(WEBRTC_CODEC_AMR) || defined(WEBRTC_CODEC_AMRWB) || \
+     defined(WEBRTC_CODEC_G729_1) || defined(WEBRTC_CODEC_SPEEX) || \
+     defined(WEBRTC_CODEC_G722_1) || defined(WEBRTC_CODEC_G722_1C))
 static int count_database = 0;
+#endif
+
 const CodecInst ACMCodecDB::database_[] = {
 #if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX))
   {103, "ISAC", 16000, kIsacPacSize480, 1, kIsacWbDefaultRate},
