@@ -44,6 +44,7 @@
 /third_party/libjpeg
 /third_party/libjpeg_turbo
 /third_party/libvpx
+/third_party/libyuv
 /third_party/llvm-build
 /third_party/protobuf
 /third_party/valgrind
