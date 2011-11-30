@@ -56,7 +56,7 @@ int ReceiverTimingTests(CmdArgs& args)
 
     // Set up trace
     Trace::CreateTrace();
-    Trace::SetTraceFile("receiverTestTrace.txt");
+    Trace::SetTraceFile((test::OutputPath() + "receiverTestTrace.txt").c_str());
     Trace::SetLevelFilter(webrtc::kTraceAll);
 
     // A static random seed

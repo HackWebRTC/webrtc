@@ -15,22 +15,33 @@
  * General declarations used through out VCM offline tests.
  */
 
-#include "module_common_types.h"
-
 #include <string.h>
 #include <fstream>
 #include <cstdlib>
 
+#include "module_common_types.h"
+#include "testsupport/fileutils.h"
 
 // Class used for passing command line arguments to tests
 class CmdArgs
 {
-public:
-  CmdArgs() : codecName(""), codecType(webrtc::kVideoCodecVP8), width(-1),
-             height(-1), bitRate(-1), frameRate(-1), packetLoss(0), rtt(0),
-             protectionMode(0), camaEnable(0), inputFile(""), outputFile(""),
-             testNum(-1)
-     {}
+ public:
+  CmdArgs()
+      : codecName("VP8"),
+        codecType(webrtc::kVideoCodecVP8),
+        width(352),
+        height(288),
+        bitRate(500),
+        frameRate(30),
+        packetLoss(0),
+        rtt(0),
+        protectionMode(0),
+        camaEnable(0),
+        inputFile(webrtc::test::ProjectRootPath() +
+                  "/resources/foreman_cif.yuv"),
+        outputFile(webrtc::test::OutputPath() +
+                   "video_coding_test_output_352x288.yuv"),
+        testNum(11) {}
      std::string codecName;
      webrtc::VideoCodecType codecType;
      int width;

@@ -48,7 +48,8 @@ FrameReceiveCallback::FrameToRender(VideoFrame& videoFrame)
 {
     if (_timingFile == NULL)
     {
-        _timingFile = fopen("renderTiming.txt", "w");
+        _timingFile = fopen((test::OutputPath() + "renderTiming.txt").c_str(),
+                            "w");
         if (_timingFile == NULL)
         {
             return -1;
@@ -87,7 +88,7 @@ int RtpPlay(CmdArgs& args)
     const WebRtc_Word64 MAX_RUNTIME_MS = -1;
     std::string outFile = args.outputFile;
     if (outFile == "")
-        outFile = "RtpPlay_decoded.yuv";
+        outFile = test::OutputPath() + "RtpPlay_decoded.yuv";
     FrameReceiveCallback receiveCallback(outFile);
     VideoCodingModule* vcm = VideoCodingModule::Create(1);
     RtpDataCallback dataCallback(vcm);
@@ -98,7 +99,7 @@ int RtpPlay(CmdArgs& args)
     payloadTypes.PushFront(new PayloadCodecTuple(VCM_VP8_PAYLOAD_TYPE, "VP8", kVideoCodecVP8));
 
     Trace::CreateTrace();
-    Trace::SetTraceFile("receiverTestTrace.txt");
+    Trace::SetTraceFile((test::OutputPath() + "receiverTestTrace.txt").c_str());
     Trace::SetLevelFilter(webrtc::kTraceAll);
     // END Settings
 

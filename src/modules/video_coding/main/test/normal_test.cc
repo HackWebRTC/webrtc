@@ -35,7 +35,8 @@ int NormalTest::RunTest(CmdArgs& args)
     printf("REAL-TIME\n");
 #endif
     Trace::CreateTrace();
-    Trace::SetTraceFile("VCMNormalTestTrace.txt");
+    Trace::SetTraceFile(
+        (test::OutputPath() + "VCMNormalTestTrace.txt").c_str());
     Trace::SetLevelFilter(webrtc::kTraceAll);
     VideoCodingModule* vcm = VideoCodingModule::Create(1);
     NormalTest VCMNTest(vcm);
@@ -205,7 +206,7 @@ void
 NormalTest::Setup(CmdArgs& args)
 {
     _inname = args.inputFile;
-    _encodedName = "encoded_normaltest.yuv";
+    _encodedName = test::OutputPath() + "encoded_normaltest.yuv";
     _width = args.width;
     _height = args.height;
     _frameRate = args.frameRate;
@@ -213,7 +214,8 @@ NormalTest::Setup(CmdArgs& args)
     if (args.outputFile == "")
     {
         std::ostringstream filename;
-        filename << "../NormalTest_" << _width << "x" << _height << "_" << _frameRate << "Hz_P420.yuv";
+        filename << test::OutputPath() << "NormalTest_" <<
+            _width << "x" << _height << "_" << _frameRate << "Hz_P420.yuv";
         _outname = filename.str();
     }
     else
@@ -234,7 +236,8 @@ NormalTest::Setup(CmdArgs& args)
         exit(1);
     }
 
-    _log.open("../TestLog.txt", std::fstream::out | std::fstream::app);
+    _log.open((test::OutputPath() + "TestLog.txt").c_str(),
+              std::fstream::out | std::fstream::app);
     return;
 }
 
@@ -274,12 +277,13 @@ NormalTest::Perform(CmdArgs& args)
     sendStats.SetTargetFrameRate(static_cast<WebRtc_UWord32>(_frameRate));
     _vcm->RegisterSendStatisticsCallback(&sendStats);
 
-    while (feof(_sourceFile)== 0)
+    while (feof(_sourceFile) == 0)
     {
 #if !(defined(TICK_TIME_DEBUG) || defined(EVENT_DEBUG))
         WebRtc_Word64 processStartTime = VCMTickTime::MillisecondTimestamp();
 #endif
-        TEST(fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile) > 0);
+        TEST(fread(tmpBuffer, 1, _lengthSourceFrame, _sourceFile) > 0 ||
+             feof(_sourceFile));
         _frameCnt++;
         sourceFrame.CopyFrame(_lengthSourceFrame, tmpBuffer);
         sourceFrame.SetHeight(_height);

@@ -8,13 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "vplib.h"
 #include "video_source.h"
+
 #include <cassert>
+
+#include "testsupport/fileutils.h"
+#include "vplib.h"
 
 VideoSource::VideoSource()
 :
-_fileName("../../../../../codecs_video/testFiles/foreman.yuv"),
+_fileName(webrtc::test::ProjectRootPath() + "resources/foreman_cif.yuv"),
 _width(352),
 _height(288),
 _type(webrtc::kI420),

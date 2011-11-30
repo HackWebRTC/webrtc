@@ -52,14 +52,15 @@ int DecodeFromStorageTest(CmdArgs& args)
     std::string rtpFilename = args.inputFile;
     std::string outFilename = args.outputFile;
     if (outFilename == "")
-        outFilename = "DecodeFromStorage.yuv";
+        outFilename = test::OutputPath() + "DecodeFromStorage.yuv";
 
     FrameReceiveCallback receiveCallback(outFilename.c_str());
 
     // END Settings
 
     Trace::CreateTrace();
-    Trace::SetTraceFile("decodeFromStorageTestTrace.txt");
+    Trace::SetTraceFile(
+        (test::OutputPath() + "decodeFromStorageTestTrace.txt").c_str());
     Trace::SetLevelFilter(webrtc::kTraceAll);
 
 

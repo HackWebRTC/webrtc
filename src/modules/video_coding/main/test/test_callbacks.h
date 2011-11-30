@@ -80,7 +80,7 @@ private:
     VideoCodingModule* _VCMReceiver;
     FrameType          _frameType;
     WebRtc_UWord8*     _payloadData;
-    WebRtc_UWord8      _seqNo;
+    WebRtc_UWord16     _seqNo;
     bool               _encodeComplete;
     WebRtc_Word32      _width;
     WebRtc_Word32      _height;

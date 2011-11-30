@@ -32,7 +32,7 @@ using namespace webrtc;
 int MediaOptTest::RunTest(int testNum, CmdArgs& args)
 {
     Trace::CreateTrace();
-    Trace::SetTraceFile("mediaOptTestTrace.txt");
+    Trace::SetTraceFile((test::OutputPath() + "mediaOptTestTrace.txt").c_str());
     Trace::SetLevelFilter(webrtc::kTraceAll);
     VideoCodingModule* vcm = VideoCodingModule::Create(1);
     MediaOptTest* mot = new MediaOptTest(vcm);
@@ -98,10 +98,11 @@ MediaOptTest::Setup(int testType, CmdArgs& args)
     // test parameters
     _inname = args.inputFile;
     if (args.outputFile == "")
-        _outname = "../MOTest_out.vp8";
+        _outname = test::OutputPath() + "MOTest_out.vp8";
     else
         _outname = args.outputFile;
-    _actualSourcename = "../MOTestSource.yuv"; // actual source after frame dropping
+    // actual source after frame dropping
+    _actualSourcename = test::OutputPath() + "MOTestSource.yuv";
     _codecName = args.codecName;
     _sendCodecType = args.codecType;
     _width = args.width;
@@ -163,7 +164,8 @@ MediaOptTest::Setup(int testType, CmdArgs& args)
     /* test settings end*/
 
    _lengthSourceFrame  = 3*_width*_height/2;
-    _log.open("../VCM_MediaOptLog.txt", std::fstream::out | std::fstream::app);
+    _log.open((test::OutputPath() + "VCM_MediaOptLog.txt").c_str(),
+              std::fstream::out | std::fstream::app);
     return;
 }
 
@@ -384,12 +386,16 @@ MediaOptTest::RTTest()
     _rttMS = 20;
     _renderDelayMs = 0;
 
-    _outname = "../RTMOTest_out.yuv"; // same out name for all
-    _actualSourcename = "../RTMOTestSource.yuv"; // actual source after frame dropping
+    // same out name for all
+    _outname = test::OutputPath() + "RTMOTest_out.yuv";
+    // actual source after frame dropping
+    _actualSourcename = test::OutputPath() + "RTMOTestSource.yuv";
 
     _codecName = "VP8";  // for now just this one - later iterate over all codec types
-    _log.open("../VCM_RTMediaOptLog.txt", std::fstream::out | std::fstream::app);
-    _outputRes=fopen("../VCM_MediaOpt","ab");
+    _log.open((test::OutputPath() + "/VCM_RTMediaOptLog.txt").c_str(),
+              std::fstream::out | std::fstream::app);
+    _outputRes=fopen((test::OutputPath() + "VCM_MediaOptResults.txt").c_str(),
+                     "ab");
 
     //char filename[128];
     /* test settings end*/

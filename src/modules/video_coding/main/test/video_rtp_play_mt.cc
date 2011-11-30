@@ -76,7 +76,7 @@ int RtpPlayMT(CmdArgs& args, int releaseTestNo, webrtc::VideoCodecType releaseTe
     const WebRtc_Word64 MAX_RUNTIME_MS = 10000;
     std::string outFilename = args.outputFile;
     if (outFilename == "")
-        outFilename = "RtpPlayMT_decoded.yuv";
+        outFilename = test::OutputPath() + "RtpPlayMT_decoded.yuv";
 
     bool nackEnabled = (protectionEnabled &&
                 (protection == kProtectionDualDecoder ||
@@ -94,7 +94,7 @@ int RtpPlayMT(CmdArgs& args, int releaseTestNo, webrtc::VideoCodecType releaseTe
         {
         case webrtc::kVideoCodecVP8:
             rtpFilename = args.inputFile;
-            outFilename = "MTReceiveTest_VP8";
+            outFilename = test::OutputPath() + "MTReceiveTest_VP8";
             break;
         default:
             return -1;

@@ -21,6 +21,7 @@
 #include "test_callbacks.h"
 #include "test_macros.h"
 #include "test_util.h"
+#include "testsupport/fileutils.h"
 #include "testsupport/metrics/video_metrics.h"
 #include "vp8.h" // for external codecs test
 
@@ -60,11 +61,11 @@ CodecDataBaseTest::Setup(CmdArgs& args)
     _frameRate = args.frameRate;
     _lengthSourceFrame  = 3*_width*_height/2;
     if (args.outputFile.compare(""))
-        _outname = "CDBtest_decoded.yuv";
+        _outname = test::OutputPath() + "CDBtest_decoded.yuv";
     else
         _outname = args.outputFile;
     _outname = args.outputFile;
-    _encodedName = "../CDBtest_encoded.vp8";
+    _encodedName = test::OutputPath() + "CDBtest_encoded.vp8";
 
     if ((_sourceFile = fopen(_inname.c_str(), "rb")) == NULL)
     {
@@ -147,9 +148,10 @@ CodecDataBaseTest::Perform(CmdArgs& args)
     }
     printf("\n\nVerify that all requested codecs are used\n \n \n");
 
-    // testing with first codec registered
-    VideoCodingModule::Codec(0, &sendCodec);
+    // Testing with VP8.
+    VideoCodingModule::Codec(kVideoCodecVP8, &sendCodec);
     _vcm->RegisterSendCodec(&sendCodec, 1, 1440);
+    _encodeCompleteCallback->SetCodecType(kRTPVideoVP8);
     _vcm->InitializeReceiver();
     TEST (_vcm->AddVideoFrame(sourceFrame) == VCM_OK );
     _vcm->InitializeSender();
@@ -242,6 +244,8 @@ CodecDataBaseTest::Perform(CmdArgs& args)
     // and because no frame type request callback has been registered.
     TEST(_vcm->Decode() == VCM_MISSING_CALLBACK);
     TEST(_vcm->FrameTypeRequest(kVideoFrameKey, 0) == VCM_OK);
+    _timeStamp += (WebRtc_UWord32)(9e4 / _frameRate);
+    sourceFrame.SetTimeStamp(_timeStamp);
     TEST(_vcm->AddVideoFrame(sourceFrame) == VCM_OK);
     TEST(_vcm->Decode() == VCM_OK);
 
@@ -288,7 +292,7 @@ CodecDataBaseTest::Perform(CmdArgs& args)
     encodeCallCDT->RegisterReceiverVCM(_vcm);
     if (VideoCodingModule::NumberOfCodecs() > 0)
     {
-        // registrating all available decoders
+        // Register all available decoders.
         int i, j;
         //double psnr;
         sourceFrame.VerifyAndAllocate(_lengthSourceFrame);
@@ -319,6 +323,11 @@ CodecDataBaseTest::Perform(CmdArgs& args)
             encodeCallCDT->SetFrameDimensions(_width, _height);
             encodeCallCDT->SetCodecType(ConvertCodecType(sendCodec.plName));
             TEST(_vcm->RegisterSendCodec(&sendCodec, 1, 1440) == VCM_OK);
+
+            // We disable the frame dropper to avoid dropping frames due to
+            // bad rate control. This isn't a codec performance test, and the
+            // I420 codec is expected to produce too many bits.
+            _vcm->EnableFrameDropper(false);
 
             printf("Encoding with %s \n\n", sendCodec.plName);
             for (j=0; j < int(300/VideoCodingModule::NumberOfCodecs()); j++)// assuming 300 frames, NumberOfCodecs <= 10
@@ -357,6 +366,14 @@ CodecDataBaseTest::Perform(CmdArgs& args)
             // decode what's left in the buffer....
             _vcm->Decode();
             _vcm->Decode();
+            // Don't measure PSNR for I420 since it will be perfect.
+            if (sendCodec.codecType != kVideoCodecI420) {
+                QualityMetricsResult psnr;
+                PsnrFromFiles(_inname.c_str(), _outname.c_str(), _width, _height, &psnr);
+                printf("\n @ %d KBPS:  ", sendCodec.startBitrate);
+                printf("PSNR from encoder-decoder send-receive control test"
+                       "is %f\n\n", psnr.average);
+            }
         } // end: iterate codecs
         rewind(_sourceFile);
         sourceFrame.Free();
@@ -365,10 +382,6 @@ CodecDataBaseTest::Perform(CmdArgs& args)
         delete encodeCallCDT;
         // closing and calculating PSNR for prior encoder-decoder test
         TearDown(); // closing open files
-        QualityMetricsResult psnr;
-        PsnrFromFiles(_inname.c_str(), _outname.c_str(), _width, _height, &psnr);
-        printf(" \n @ %d KBPS:  ", sendCodec.startBitrate);
-        printf("PSNR from encoder-decoder send-receive control test is %f \n \n", psnr.average);
     } // end of #codecs >1
 
     delete waitEvent;
