@@ -10,13 +10,14 @@
 
 #include "normal_async_test.h"
 
-#include <sstream>
 #include <assert.h>
-#include <queue>
 #include <string.h>
+#include <sstream>
+#include <queue>
 
 #include "gtest/gtest.h"
 #include "tick_util.h"
+#include "testsupport/fileutils.h"
 #include "typedefs.h"
 
 using namespace webrtc;
@@ -132,12 +133,14 @@ NormalAsyncTest::Setup()
     // Check if settings exist. Otherwise use defaults.
     if (_outname == "")
     {
-        _outname = "../../out_normaltest" + strTestNo + ".yuv";
+        _outname = webrtc::test::OutputPath() + "out_normaltest" + strTestNo +
+            ".yuv";
     }
 
     if (_encodedName == "")
     {
-        _encodedName = "../../encoded_normaltest" + strTestNo + ".yuv";
+        _encodedName = webrtc::test::OutputPath() + "encoded_normaltest" +
+            strTestNo + ".yuv";
     }
 
     if ((_sourceFile = fopen(_inname.c_str(), "rb")) == NULL)
@@ -298,7 +301,7 @@ NormalAsyncTest::Decoded(const RawImage& decodedImage)
 void
 NormalAsyncTest::Perform()
 {
-    _inname = "test/testFiles/foreman_cif.yuv";
+    _inname = webrtc::test::ProjectRootPath() + "resources/foreman_cif.yuv";
     CodecSettings(352, 288, 30, _bitRate);
     Setup();
     _inputVideoBuffer.VerifyAndAllocate(_lengthSourceFrame);

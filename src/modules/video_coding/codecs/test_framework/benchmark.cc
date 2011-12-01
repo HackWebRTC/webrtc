@@ -9,18 +9,22 @@
  */
 
 #include "benchmark.h"
-#include "video_source.h"
-#include "vplib.h"
-#include <vector>
+
+#include <cassert>
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#include <cassert>
+#include <vector>
 #if defined(_WIN32)
     #include <windows.h>
 #endif
+
 #include "event_wrapper.h"
+#include "testsupport/fileutils.h"
 #include "video_codec_interface.h"
+#include "video_source.h"
+#include "vplib.h"
+
 
 #define SSIM_CALC 0 // by default, don't compute SSIM
 
@@ -29,7 +33,7 @@ using namespace webrtc;
 Benchmark::Benchmark()
 :
 NormalAsyncTest("Benchmark", "Codec benchmark over a range of test cases", 6),
-_resultsFileName("../../../../testFiles/benchmark.txt"),
+_resultsFileName(webrtc::test::OutputPath() + "benchmark.txt"),
 _codecName("Default")
 {
 }
@@ -37,7 +41,7 @@ _codecName("Default")
 Benchmark::Benchmark(std::string name, std::string description)
 :
 NormalAsyncTest(name, description, 6),
-_resultsFileName("../../../../testFiles/benchmark.txt"),
+_resultsFileName(webrtc::test::OutputPath() + "benchmark.txt"),
 _codecName("Default")
 {
 }
@@ -57,8 +61,10 @@ Benchmark::Perform()
     std::vector<const VideoSource*>::iterator it;
 
     // Configuration --------------------------
-    sources.push_back(new const VideoSource("test/testFiles/foreman_cif.yuv", kCIF));
-    sources.push_back(new const VideoSource("test/testFiles/akiyo_cif.yuv", kCIF));
+    sources.push_back(new const VideoSource(webrtc::test::ProjectRootPath() +
+                                            "resources/foreman_cif.yuv", kCIF));
+//    sources.push_back(new const VideoSource(webrtc::test::ProjectRootPath() +
+//                                            "resources/akiyo_cif.yuv", kCIF));
 
     const VideoSize size[] = {kQCIF, kCIF};
     const int frameRate[] = {10, 15, 30};

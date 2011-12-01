@@ -9,10 +9,13 @@
  */
 
 #include "unit_test.h"
-#include "../../../test_framework/video_source.h"
-#include "vp8.h"
 
 #include <string.h>
+
+#include "../../../test_framework/video_source.h"
+#include "gtest/gtest.h"
+#include "testsupport/fileutils.h"
+#include "vp8.h"
 
 using namespace webrtc;
 
@@ -35,7 +38,7 @@ VP8UnitTest::Print()
 
     // GetVersion tests.
 
-      VIDEO_TEST(_encoder->Version(versionStr, sizeof(versionStr)) > 0);
+      EXPECT_TRUE(_encoder->Version(versionStr, sizeof(versionStr)) > 0);
 //    printf("\n%s", versionStr);
 //    UnitTest::Print();
 }
@@ -44,7 +47,7 @@ WebRtc_UWord32
 VP8UnitTest::CodecSpecific_SetBitrate(WebRtc_UWord32 bitRate, WebRtc_UWord32 /*frameRate*/)
 {
     int rate = _encoder->SetRates(bitRate, _inst.maxFramerate);
-    VIDEO_TEST_EXIT_ON_ERR(rate >= 0);
+    EXPECT_TRUE(rate >= 0);
     return rate;
 }
 
@@ -87,11 +90,13 @@ VP8UnitTest::Perform()
 
     //----- Encoder parameter tests -----
     //-- Calls before InitEncode() --
-    VIDEO_TEST(enc->Release() == WEBRTC_VIDEO_CODEC_OK);
-    VIDEO_TEST(enc->SetRates(_bitRate, _inst.maxFramerate) == WEBRTC_VIDEO_CODEC_UNINITIALIZED);
+    EXPECT_EQ(enc->Release(), WEBRTC_VIDEO_CODEC_OK);
+    EXPECT_EQ(enc->SetRates(_bitRate, _inst.maxFramerate),
+              WEBRTC_VIDEO_CODEC_UNINITIALIZED);
 
-    VIDEO_TEST(enc->SetRates(_bitRate, _inst.maxFramerate) == WEBRTC_VIDEO_CODEC_UNINITIALIZED);
-   // VIDEO_TEST(enc->GetCodecConfigParameters(configParameters, sizeof(configParameters)) ==
+    EXPECT_EQ(enc->SetRates(_bitRate, _inst.maxFramerate),
+              WEBRTC_VIDEO_CODEC_UNINITIALIZED);
+   // EXPECT_TRUE(enc->GetCodecConfigParameters(configParameters, sizeof(configParameters)) ==
    //     WEBRTC_VIDEO_CODEC_UNINITIALIZED);
 
 
@@ -105,7 +110,7 @@ VP8UnitTest::Perform()
     codecInst.maxFramerate = 30;
     codecInst.startBitrate = 300;
     codecInst.codecSpecific.VP8.complexity = kComplexityNormal;
-    VIDEO_TEST(enc->InitEncode(&codecInst, 1, 1440) == WEBRTC_VIDEO_CODEC_OK);
+    EXPECT_EQ(enc->InitEncode(&codecInst, 1, 1440), WEBRTC_VIDEO_CODEC_OK);
 
 
     //-- Test two problematic level settings --
@@ -118,7 +123,7 @@ VP8UnitTest::Perform()
     codecInst.maxFramerate = 30;
     codecInst.codecSpecific.VP8.complexity = kComplexityNormal;
     codecInst.startBitrate = 300;
-    VIDEO_TEST(enc->InitEncode(&codecInst, 1, 1440) == WEBRTC_VIDEO_CODEC_OK);
+    EXPECT_EQ(enc->InitEncode(&codecInst, 1, 1440), WEBRTC_VIDEO_CODEC_OK);
 
     // Settings not correct for this profile
     strncpy(codecInst.plName, "VP8", 31);
@@ -130,36 +135,37 @@ VP8UnitTest::Perform()
     codecInst.maxFramerate = 15;
     codecInst.codecSpecific.VP8.complexity = kComplexityNormal;
     codecInst.startBitrate = 300;
-    //VIDEO_TEST(enc->InitEncode(&codecInst, 1, 1440) == WEBRTC_VIDEO_CODEC_LEVEL_EXCEEDED);
+    //EXPECT_TRUE(enc->InitEncode(&codecInst, 1, 1440) == WEBRTC_VIDEO_CODEC_LEVEL_EXCEEDED);
 
-    VIDEO_TEST_EXIT_ON_ERR(enc->InitEncode(&_inst, 1, 1440) == WEBRTC_VIDEO_CODEC_OK);
+    ASSERT_EQ(enc->InitEncode(&_inst, 1, 1440), WEBRTC_VIDEO_CODEC_OK);
 
 
     //-- ProcessNewBitrate() errors --
     // Bad bitrate.
-    VIDEO_TEST(enc->SetRates(_inst.maxBitrate + 1, _inst.maxFramerate) == WEBRTC_VIDEO_CODEC_OK);
+    EXPECT_EQ(enc->SetRates(_inst.maxBitrate + 1, _inst.maxFramerate),
+              WEBRTC_VIDEO_CODEC_OK);
 
    // Signaling not used.
 
     // Bad packetloss.
-//    VIDEO_TEST(enc->SetPacketLoss(300) < 0);
+//    EXPECT_TRUE(enc->SetPacketLoss(300) < 0);
 
     //----- Decoder parameter tests -----
     //-- Calls before InitDecode() --
-    VIDEO_TEST(dec->Release() == 0);
-    VIDEO_TEST_EXIT_ON_ERR(dec->InitDecode(&_inst, 1) == WEBRTC_VIDEO_CODEC_OK);
+    EXPECT_TRUE(dec->Release() == 0);
+    ASSERT_TRUE(dec->InitDecode(&_inst, 1) == WEBRTC_VIDEO_CODEC_OK);
 
     //-- SetCodecConfigParameters() errors --
     unsigned char tmpBuf[128];
-    VIDEO_TEST(dec->SetCodecConfigParameters(NULL, sizeof(tmpBuf)) == -1);
-    VIDEO_TEST(dec->SetCodecConfigParameters(tmpBuf, 1) == -1);
+    EXPECT_TRUE(dec->SetCodecConfigParameters(NULL, sizeof(tmpBuf)) == -1);
+    EXPECT_TRUE(dec->SetCodecConfigParameters(tmpBuf, 1) == -1);
    // Garbage data.
-    VIDEO_TEST(dec->SetCodecConfigParameters(tmpBuf, sizeof(tmpBuf)) == -1);
+    EXPECT_TRUE(dec->SetCodecConfigParameters(tmpBuf, sizeof(tmpBuf)) == -1);
 
     //----- Function tests -----
-    outFileName = "../../" + _source->GetName() + "-errResTest.yuv";
+    outFileName = webrtc::test::OutputPath() + _source->GetName() + "-errResTest.yuv";
     outFile = fopen(outFileName.c_str(), "wb");
-    VIDEO_TEST_EXIT_ON_ERR(outFile != NULL);
+    ASSERT_TRUE(outFile != NULL);
 
     UnitTest::Perform();
     Teardown();

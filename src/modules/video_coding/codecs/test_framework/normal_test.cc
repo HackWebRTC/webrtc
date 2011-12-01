@@ -15,6 +15,7 @@
 #include <string.h>
 
 #include "gtest/gtest.h"
+#include "testsupport/fileutils.h"
 
 NormalTest::NormalTest()
 :
@@ -25,7 +26,8 @@ _appendNext(false)
 {
 }
 
-NormalTest::NormalTest(std::string name, std::string description, unsigned int testNo)
+NormalTest::NormalTest(std::string name, std::string description,
+                       unsigned int testNo)
 :
 Test(name, description),
 _requestKeyFrame(false),
@@ -35,7 +37,8 @@ _appendNext(false)
 {
 }
 
-NormalTest::NormalTest(std::string name, std::string description, WebRtc_UWord32 bitRate, unsigned int testNo)
+NormalTest::NormalTest(std::string name, std::string description,
+                       WebRtc_UWord32 bitRate, unsigned int testNo)
 :
 Test(name, description, bitRate),
 _requestKeyFrame(false),
@@ -57,12 +60,14 @@ NormalTest::Setup()
     // Check if settings exist. Otherwise use defaults.
     if (_outname == "")
     {
-        _outname = "../../out_normaltest" + strTestNo + ".yuv";
+        _outname = webrtc::test::OutputPath() + "out_normaltest" + strTestNo +
+            ".yuv";
     }
 
     if (_encodedName == "")
     {
-        _encodedName = "../../encoded_normaltest" + strTestNo + ".yuv";
+        _encodedName = webrtc::test::OutputPath() + "encoded_normaltest" +
+            strTestNo + ".yuv";
     }
     
     if ((_sourceFile = fopen(_inname.c_str(), "rb")) == NULL)
@@ -103,7 +108,7 @@ NormalTest::Teardown()
 void
 NormalTest::Perform()
 {
-    _inname = "../../../../testFiles/foreman.yuv";
+    _inname = webrtc::test::ProjectRootPath() + "resources/foreman_cif.yuv";
     CodecSettings(352, 288, 30, _bitRate);
     Setup();
 

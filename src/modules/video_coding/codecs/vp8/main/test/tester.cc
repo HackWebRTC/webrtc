@@ -8,15 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "packet_loss_test.h"
-#include "benchmark.h"
-#include "unit_test.h"
-#include "normal_async_test.h"
-#include "dual_decoder_test.h"
-#include "vp8.h"
 #include <fstream>
 #include <iostream>
 #include <vector>
+
+#include "benchmark.h"
+#include "dual_decoder_test.h"
+#include "normal_async_test.h"
+#include "packet_loss_test.h"
+#include "unit_test.h"
+#include "testsupport/fileutils.h"
+#include "vp8.h"
 
 using namespace webrtc;
 
@@ -36,7 +38,8 @@ int main()
     std::vector<Test*> tests;
     PopulateTests(&tests);
     std::fstream log;
-    log.open("../../TestLog.txt", std::fstream::out | std::fstream::app);
+    std::string log_file = webrtc::test::OutputPath() + "VP8_test_log.txt";
+    log.open(log_file.c_str(), std::fstream::out | std::fstream::app);
     std::vector<Test*>::iterator it;
     for (it = tests.begin() ; it < tests.end(); it++)
     {

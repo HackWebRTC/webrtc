@@ -13,6 +13,7 @@
 #include <assert.h>
 
 #include "gtest/gtest.h"
+#include "testsupport/fileutils.h"
 #include "tick_util.h"
 
 using namespace webrtc;
@@ -87,7 +88,7 @@ PerformanceTest::~PerformanceTest()
 void
 PerformanceTest::Setup()
 {
-    _inname = "../../../../testFiles/foreman.yuv";
+    _inname = webrtc::test::ProjectRootPath() + "resources/foreman_cif.yuv";
     NormalAsyncTest::Setup(); // Setup input and output files
     CodecSettings(352, 288, 30, _bitRate); // common to all codecs
     for (int i=0; i < _numCodecs; i++)

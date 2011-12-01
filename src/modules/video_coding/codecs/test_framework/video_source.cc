@@ -9,13 +9,16 @@
  */
 
 #include "video_source.h"
-#include "vplib.h"
-#include <cassert>
+
 #include <stdio.h>
+#include <cassert>
+
+#include "testsupport/fileutils.h"
+#include "vplib.h"
 
 VideoSource::VideoSource()
 :
-_fileName("../../../../testFiles/foreman.yuv"),
+_fileName(webrtc::test::ProjectRootPath() + "resources/foreman_cif.yuv"),
 _width(352),
 _height(288),
 _type(webrtc::kI420),

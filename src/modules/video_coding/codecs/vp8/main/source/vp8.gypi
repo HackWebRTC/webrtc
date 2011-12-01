@@ -65,6 +65,8 @@
             'webrtc_vp8',
             '<(webrtc_root)/common_video/common_video.gyp:webrtc_vplib',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+            '<(webrtc_root)/../test/test.gyp:test_support',
+            '<(webrtc_root)/../testing/gtest.gyp:gtest',
           ],
          'sources': [
             # header files

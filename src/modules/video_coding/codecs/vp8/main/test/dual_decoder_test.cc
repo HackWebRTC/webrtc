@@ -14,6 +14,8 @@
 #include <string.h> // memcmp
 #include <time.h>
 
+#include "testsupport/fileutils.h"
+
 VP8DualDecoderTest::VP8DualDecoderTest(float bitRate)
 :
 VP8NormalAsyncTest(bitRate)
@@ -41,7 +43,7 @@ VP8DualDecoderTest::~VP8DualDecoderTest()
 void
 VP8DualDecoderTest::Perform()
 {
-    _inname = "test/testFiles/foreman_cif.yuv";
+    _inname = webrtc::test::ProjectRootPath() + "resources/foreman_cif.yuv";
     CodecSettings(352, 288, 30, _bitRate);
     Setup();
     _inputVideoBuffer.VerifyAndAllocate(_lengthSourceFrame);

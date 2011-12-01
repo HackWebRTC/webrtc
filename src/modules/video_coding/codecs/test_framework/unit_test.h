@@ -24,30 +24,6 @@
 #pragma warning(disable : 4127)
 #endif
 
-#define VIDEO_TEST(expr)                                                       \
-    do                                                                         \
-    {                                                                          \
-        _tests++;                                                              \
-        if (!(expr))                                                           \
-        {                                                                      \
-            fprintf(stderr, "Error at line %i of %s\nAssertion failed: %s\n\n",\
-                __LINE__, __FILE__, #expr);                                    \
-            _errors++;                                                         \
-        }                                                                      \
-    } while (0)
-
-#define VIDEO_TEST_EXIT_ON_ERR(expr)                                           \
-    do                                                                         \
-    {                                                                          \
-        if (!(expr))                                                           \
-        {                                                                      \
-            fprintf(stderr, "Error at line %i of %s\nAssertion failed: %s\n",  \
-                __LINE__, __FILE__, #expr);                                    \
-            fprintf(stderr, "Exiting...\n\n");                                 \
-            exit(EXIT_FAILURE);                                                \
-        }                                                                      \
-    } while (0)
-
 class VideoSource;
 class UnitTestEncodeCompleteCallback;
 class UnitTestDecodeCompleteCallback;
