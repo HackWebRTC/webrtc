@@ -16,7 +16,7 @@
 
 #include "signal_processing_library.h"
 
-WebRtc_Word16 WebRtcSpl_kRandNTable[] =
+const WebRtc_Word16 WebRtcSpl_kRandNTable[] =
 {
     9178,    -7260,       40,    10189,     4894,    -3531,   -13779,    14764,
    -4008,    -8884,    -8990,     1008,     7368,     5184,     3251,    -5817,

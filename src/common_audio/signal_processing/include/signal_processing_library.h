@@ -176,13 +176,13 @@ extern "C"
 
 // Trigonometric tables used for quick lookup
 // default declarations
-extern WebRtc_Word16 WebRtcSpl_kCosTable[];
-extern WebRtc_Word16 WebRtcSpl_kSinTable[];
-extern WebRtc_Word16 WebRtcSpl_kSinTable1024[];
+extern const WebRtc_Word16 WebRtcSpl_kCosTable[];
+extern const WebRtc_Word16 WebRtcSpl_kSinTable[];
+extern const WebRtc_Word16 WebRtcSpl_kSinTable1024[];
 // Hanning table
-extern WebRtc_Word16 WebRtcSpl_kHanningTable[];
+extern const WebRtc_Word16 WebRtcSpl_kHanningTable[];
 // Random table
-extern WebRtc_Word16 WebRtcSpl_kRandNTable[];
+extern const WebRtc_Word16 WebRtcSpl_kRandNTable[];
 
 // inline functions:
 #include "spl_inl.h"

@@ -16,7 +16,7 @@
 
 #include "signal_processing_library.h"
 
-WebRtc_Word16 WebRtcSpl_kCosTable[] = {
+const WebRtc_Word16 WebRtcSpl_kCosTable[] = {
         8192,  8190,  8187,  8180,  8172,  8160,  8147,  8130,  8112,
         8091,  8067,  8041,  8012,  7982,  7948,  7912,  7874,  7834,
         7791,  7745,  7697,  7647,  7595,  7540,  7483,  7424,  7362,

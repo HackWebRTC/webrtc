@@ -17,7 +17,7 @@
 #include "signal_processing_library.h"
 
 // Hanning table with 256 entries
-WebRtc_Word16 WebRtcSpl_kHanningTable[] = {
+const WebRtc_Word16 WebRtcSpl_kHanningTable[] = {
     1,      2,      6,     10,     15,     22,     30,     39,
    50,     62,     75,     89,    104,    121,    138,    157,
   178,    199,    222,    246,    271,    297,    324,    353,

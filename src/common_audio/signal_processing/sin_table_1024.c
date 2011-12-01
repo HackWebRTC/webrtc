@@ -16,7 +16,7 @@
 
 #include "signal_processing_library.h"
 
-WebRtc_Word16 WebRtcSpl_kSinTable1024[] =
+const WebRtc_Word16 WebRtcSpl_kSinTable1024[] =
 {
       0,    201,    402,    603,    804,   1005,   1206,   1406,
    1607,   1808,   2009,   2209,   2410,   2610,   2811,   3011,
