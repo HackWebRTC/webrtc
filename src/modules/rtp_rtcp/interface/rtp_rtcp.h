@@ -22,13 +22,25 @@ class RtpRtcp : public Module
 {
 public:
     /*
-    *   create a RTP/RTCP module object
+    *   create a RTP/RTCP module object using the system clock
     *
     *   id      - unique identifier of this RTP/RTCP module object
     *   audio   - true for a audio version of the RTP/RTCP module object false will create a video version
     */
     static RtpRtcp* CreateRtpRtcp(const WebRtc_Word32 id,
                                   const bool audio);
+
+    /*
+    *   create a RTP/RTCP module object
+    *
+    *   id      - unique identifier of this RTP/RTCP module object
+    *   audio   - true for a audio version of the RTP/RTCP module object
+    *             false will create a video version
+    *   clock   - the clock to use to read time; must not be NULL
+    */
+    static RtpRtcp* CreateRtpRtcp(const WebRtc_Word32 id,
+                                  const bool audio,
+                                  RtpRtcpClock* clock);
 
     /*
     *   destroy a RTP/RTCP module object

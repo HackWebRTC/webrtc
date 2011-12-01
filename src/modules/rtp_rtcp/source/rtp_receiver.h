@@ -30,6 +30,7 @@ class RTPReceiver : public RTPReceiverAudio, public RTPReceiverVideo, public Bit
 public:
     RTPReceiver(const WebRtc_Word32 id,
                 const bool audio,
+                RtpRtcpClock* clock,
                 ModuleRtpRtcpImpl* owner);
 
     virtual ~RTPReceiver();

@@ -27,13 +27,16 @@ public:
     RemoteRateControl();
     ~RemoteRateControl();
     WebRtc_Word32 SetConfiguredBitRates(WebRtc_UWord32 minBitRate, WebRtc_UWord32 maxBitRate);
-    WebRtc_UWord32 TargetBitRate(WebRtc_UWord32 RTT);
-    RateControlRegion Update(const RateControlInput& input, bool& firstOverUse);
+    WebRtc_UWord32 TargetBitRate(WebRtc_UWord32 RTT, WebRtc_Word64 nowMS);
+    RateControlRegion Update(const RateControlInput& input, bool& firstOverUse,
+                             WebRtc_Word64 nowMS);
     void Reset();
 
 private:
     WebRtc_UWord32 ChangeBitRate(WebRtc_UWord32 currentBitRate,
-        WebRtc_UWord32 incomingBitRate, double delayFactor, WebRtc_UWord32 RTT);
+                                 WebRtc_UWord32 incomingBitRate,
+                                 double delayFactor, WebRtc_UWord32 RTT,
+                                 WebRtc_Word64 nowMS);
     double RateIncreaseFactor(WebRtc_Word64 nowMs, WebRtc_Word64 lastMs, WebRtc_UWord32 reactionTimeMs, double noiseVar) const;
     void UpdateChangePeriod(WebRtc_Word64 nowMs);
     void UpdateMaxBitRateEstimate(float incomingBitRateKbps);

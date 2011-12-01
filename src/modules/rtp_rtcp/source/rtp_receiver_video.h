@@ -57,7 +57,8 @@ public:
         const RtpVideoCodecTypes videoType,
         const bool isRED,
         const WebRtc_UWord8* incomingRtpPacket,
-        const WebRtc_UWord16 incomingRtpPacketSize);
+        const WebRtc_UWord16 incomingRtpPacketSize,
+        const WebRtc_Word64 nowMS);
 
     WebRtc_Word32 SetH263InverseLogic(const bool enable);
 

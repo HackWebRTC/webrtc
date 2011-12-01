@@ -25,7 +25,8 @@ class ModuleRtpRtcpImpl;
 class RTCPSender
 {
 public:
-    RTCPSender(const WebRtc_Word32 id, const bool audio, ModuleRtpRtcpImpl* owner);
+    RTCPSender(const WebRtc_Word32 id, const bool audio,
+               RtpRtcpClock* clock, ModuleRtpRtcpImpl* owner);
     virtual ~RTCPSender();
 
     void ChangeUniqueId(const WebRtc_Word32 id);
@@ -172,6 +173,7 @@ private:
 private:
     WebRtc_Word32            _id;
     const bool               _audio;
+    RtpRtcpClock&            _clock;
     RTCPMethod               _method;
 
     ModuleRtpRtcpImpl&      _rtpRtcp;

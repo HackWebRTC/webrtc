@@ -63,7 +63,7 @@ public:
 class RTPSender : public Bitrate, public RTPSenderInterface
 {
 public:
-    RTPSender(const WebRtc_Word32 id, const bool audio);
+    RTPSender(const WebRtc_Word32 id, const bool audio, RtpRtcpClock* clock);
     virtual ~RTPSender();
 
     WebRtc_Word32 Init(const WebRtc_UWord32 remoteSSRC);

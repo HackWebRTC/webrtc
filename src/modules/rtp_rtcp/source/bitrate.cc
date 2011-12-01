@@ -10,12 +10,12 @@
 
 #include "Bitrate.h"
 #include "rtp_utility.h"
-#include "tick_util.h"
 
 #define BITRATE_AVERAGE_WINDOW 2000
 
 namespace webrtc {
-Bitrate::Bitrate() :
+Bitrate::Bitrate(RtpRtcpClock* clock) :
+    _clock(*clock),
     _packetRate(0),
     _bitrate(0),
     _bitrateNextIdx(0),
@@ -65,7 +65,7 @@ Bitrate::BitrateLast() const
 WebRtc_UWord32
 Bitrate::BitrateNow() const
 {
-    WebRtc_UWord32 now = ModuleRTPUtility::GetTimeInMS();
+    WebRtc_UWord32 now = _clock.GetTimeInMS();
     WebRtc_UWord32 diffMS = now -_timeLastRateUpdate;
 
     if(diffMS > 10000) // 10 sec
@@ -85,7 +85,7 @@ void
 Bitrate::Process()
 {
     // triggered by timer
-    WebRtc_UWord32 now = ModuleRTPUtility::GetTimeInMS();
+    WebRtc_UWord32 now = _clock.GetTimeInMS();
     WebRtc_UWord32 diffMS = now -_timeLastRateUpdate;
 
     if(diffMS > 100)

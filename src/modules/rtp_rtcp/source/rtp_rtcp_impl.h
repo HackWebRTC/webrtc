@@ -30,7 +30,8 @@ class ModuleRtpRtcpImpl : public RtpRtcp, private TMMBRHelp
 {
 public:
     ModuleRtpRtcpImpl(const WebRtc_Word32 id,
-                      const bool audio);
+                      const bool audio,
+                      RtpRtcpClock* clock);
 
     virtual ~ModuleRtpRtcpImpl();
 
@@ -531,6 +532,8 @@ protected:
 
     RTCPSender                _rtcpSender;
     RTCPReceiver              _rtcpReceiver;
+
+    RtpRtcpClock&             _clock;
 private:
     void SendKeyFrame();
     void ProcessDefaultModuleBandwidth(bool triggerOnNetworkChanged);

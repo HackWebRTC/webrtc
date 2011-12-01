@@ -27,8 +27,11 @@ namespace webrtc {
 using namespace RTCPUtility;
 using namespace RTCPHelp;
 
-RTCPReceiver::RTCPReceiver(const WebRtc_Word32 id, ModuleRtpRtcpImpl* owner) :
+RTCPReceiver::RTCPReceiver(const WebRtc_Word32 id,
+                           RtpRtcpClock* clock,
+                           ModuleRtpRtcpImpl* owner) :
     _id(id),
+    _clock(*clock),
     _method(kRtcpOff),
     _lastReceived(0),
     _rtpRtcp(*owner),
@@ -309,7 +312,7 @@ RTCPReceiver::IncomingRTCPPacket(RTCPPacketInformation& rtcpPacketInformation,
 {
     CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
 
-    _lastReceived = ModuleRTPUtility::GetTimeInMS();
+    _lastReceived = _clock.GetTimeInMS();
 
     RTCPUtility::RTCPPacketTypes pktType = rtcpParser->Begin();
     while (pktType != RTCPUtility::kRtcpNotValidCode)
@@ -423,7 +426,7 @@ RTCPReceiver::HandleSenderReceiverReport(RTCPUtility::RTCPParserV2& rtcpParser,
             _remoteSenderInfo.sendPacketCount = rtcpPacket.SR.SenderPacketCount;
             _remoteSenderInfo.sendOctetCount = rtcpPacket.SR.SenderOctetCount;
 
-            ModuleRTPUtility::CurrentNTP(_lastReceivedSRNTPsecs, _lastReceivedSRNTPfrac);
+            _clock.CurrentNTP(_lastReceivedSRNTPsecs, _lastReceivedSRNTPfrac);
         }
         else
         {
@@ -521,7 +524,7 @@ RTCPReceiver::HandleReportBlock(const RTCPUtility::RTCPPacket& rtcpPacket,
             WebRtc_UWord32 lastReceivedRRNTPsecs = 0;
             WebRtc_UWord32 lastReceivedRRNTPfrac = 0;
 
-            ModuleRTPUtility::CurrentNTP(lastReceivedRRNTPsecs, lastReceivedRRNTPfrac);
+            _clock.CurrentNTP(lastReceivedRRNTPsecs, lastReceivedRRNTPfrac);
 
             // time when we received this in MS
             WebRtc_UWord32 receiveTimeMS = ModuleRTPUtility::ConvertNTPTimeToMS(lastReceivedRRNTPsecs, lastReceivedRRNTPfrac);
@@ -681,7 +684,7 @@ void
 RTCPReceiver::UpdateReceiveInformation( RTCPReceiveInformation& receiveInformation)
 {
     // Update that this remote is alive
-    receiveInformation.lastTimeReceived = ModuleRTPUtility::GetTimeInMS();
+    receiveInformation.lastTimeReceived = _clock.GetTimeInMS();
 }
 
 bool
@@ -690,7 +693,7 @@ RTCPReceiver::UpdateRTCPReceiveInformationTimers()
     CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
 
     bool updateBoundingSet = false;
-    WebRtc_UWord32 timeNow = ModuleRTPUtility::GetTimeInMS();
+    WebRtc_UWord32 timeNow = _clock.GetTimeInMS();
     MapItem* receiveInfoItem=_receivedInfoMap.First();
 
     while(receiveInfoItem)
@@ -1002,7 +1005,8 @@ RTCPReceiver::HandleTMMBRItem(RTCPReceiveInformation& receiveInfo,
     if (_SSRC == rtcpPacket.TMMBRItem.SSRC &&
         rtcpPacket.TMMBRItem.MaxTotalMediaBitRate > 0)
     {
-        receiveInfo.InsertTMMBRItem(senderSSRC, rtcpPacket.TMMBRItem);
+        receiveInfo.InsertTMMBRItem(senderSSRC, rtcpPacket.TMMBRItem,
+                                    _clock.GetTimeInMS());
         rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpTmmbr;
     }
 }
@@ -1196,7 +1200,7 @@ RTCPReceiver::HandleFIRItem(RTCPReceiveInformation& receiveInfo,
         if (rtcpPacket.FIRItem.CommandSequenceNumber != receiveInfo.lastFIRSequenceNumber)
         {
             //
-            WebRtc_UWord32 now = ModuleRTPUtility::GetTimeInMS();
+            WebRtc_UWord32 now = _clock.GetTimeInMS();
 
             // extra sanity don't go crazy with the callbacks
             if( (now - receiveInfo.lastFIRRequest) > RTCP_MIN_FRAME_LENGTH_MS)
@@ -1478,7 +1482,8 @@ RTCPReceiver::TMMBRReceived(const WebRtc_UWord32 size,
             }
             for (WebRtc_UWord32 i = 0; (num < size) && (i < receiveInfo->TmmbrSet.lengthOfSet); i++)
             {
-                if(receiveInfo->GetTMMBRSet(i, num, candidateSet) == 0)
+                if(receiveInfo->GetTMMBRSet(i, num, candidateSet,
+                                            _clock.GetTimeInMS()) == 0)
                 {
                     num++;
                 }
@@ -1528,7 +1533,7 @@ void RTCPReceiver::PacketTimeout()
             return;
         }
 
-        WebRtc_UWord32 now = ModuleRTPUtility::GetTimeInMS();
+        WebRtc_UWord32 now = _clock.GetTimeInMS();
 
         if(now - _lastReceived > _packetTimeOutMS)
         {

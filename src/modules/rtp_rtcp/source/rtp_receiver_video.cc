@@ -15,7 +15,6 @@
 #include <math.h>
 
 #include "critical_section_wrapper.h"
-#include "tick_util.h"
 #include "receiver_fec.h"
 #include "rtp_rtcp_impl.h"
 
@@ -224,19 +223,20 @@ RTPReceiverVideo::ParseVideoCodecSpecific(WebRtcRTPHeader* rtpHeader,
                                           const RtpVideoCodecTypes videoType,
                                           const bool isRED,
                                           const WebRtc_UWord8* incomingRtpPacket,
-                                          const WebRtc_UWord16 incomingRtpPacketSize)
+                                          const WebRtc_UWord16 incomingRtpPacketSize,
+                                          const WebRtc_Word64 nowMS)
 {
     WebRtc_Word32 retVal = 0;
 
     _criticalSectionReceiverVideo.Enter();
 
-    _videoBitRate.Update(payloadDataLength, TickTime::MillisecondTimestamp());
+    _videoBitRate.Update(payloadDataLength, nowMS);
 
     // Add headers, ideally we would like to include for instance
     // Ethernet header here as well.
     const WebRtc_UWord16 packetSize = payloadDataLength + _packetOverHead +
         rtpHeader->header.headerLength + rtpHeader->header.paddingLength;
-    _overUseDetector.Update(*rtpHeader, packetSize);
+    _overUseDetector.Update(*rtpHeader, packetSize, nowMS);
 
     if (isRED)
     {
@@ -298,8 +298,7 @@ RTPReceiverVideo::ParseVideoCodecSpecific(WebRtcRTPHeader* rtpHeader,
     // detector with the current rate control region.
     _criticalSectionReceiverVideo.Enter();
     const RateControlInput input(_overUseDetector.State(),
-                                 _videoBitRate.BitRate(
-                                         TickTime::MillisecondTimestamp()),
+                                 _videoBitRate.BitRate(nowMS),
                                  _overUseDetector.NoiseVar());
     _criticalSectionReceiverVideo.Leave();
 

@@ -38,6 +38,14 @@ RtpRtcp*
 RtpRtcp::CreateRtpRtcp(const WebRtc_Word32 id,
                        const bool audio)
 {
+    return CreateRtpRtcp(id, audio, ModuleRTPUtility::GetSystemClock());
+}
+
+RtpRtcp*
+RtpRtcp::CreateRtpRtcp(const WebRtc_Word32 id,
+                       const bool audio,
+                       RtpRtcpClock* clock)
+{
     if(audio)
     {
         WEBRTC_TRACE(kTraceModuleCall,
@@ -51,7 +59,7 @@ RtpRtcp::CreateRtpRtcp(const WebRtc_Word32 id,
                      id,
                      "CreateRtpRtcp(video)");
     }
-    return new ModuleRtpRtcpImpl(id, audio);
+    return new ModuleRtpRtcpImpl(id, audio, clock);
 }
 
 void RtpRtcp::DestroyRtpRtcp(RtpRtcp* module)
@@ -67,16 +75,18 @@ void RtpRtcp::DestroyRtpRtcp(RtpRtcp* module)
 }
 
 ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const WebRtc_Word32 id,
-                                     const bool audio):
+                                     const bool audio,
+                                     RtpRtcpClock* clock):
     TMMBRHelp(audio),
-    _rtpSender(id, audio),
-    _rtpReceiver(id, audio, this),
-    _rtcpSender(id, audio, this),
-    _rtcpReceiver(id, this),
+    _rtpSender(id, audio, clock),
+    _rtpReceiver(id, audio, clock, this),
+    _rtcpSender(id, audio, clock, this),
+    _rtcpReceiver(id, clock, this),
+    _clock(*clock),
     _id(id),
     _audio(audio),
     _collisionDetected(false),
-    _lastProcessTime(ModuleRTPUtility::GetTimeInMS()),
+    _lastProcessTime(clock->GetTimeInMS()),
 
     _packetOverHead(28), // IPV4 UDP
     _criticalSectionModulePtrs(*CriticalSectionWrapper::CreateCriticalSection()),
@@ -419,7 +429,7 @@ void ModuleRtpRtcpImpl::DeRegisterVideoModule()
 // to call Process
 WebRtc_Word32 ModuleRtpRtcpImpl::TimeUntilNextProcess()
 {
-    const WebRtc_UWord32 now = ModuleRTPUtility::GetTimeInMS();
+    const WebRtc_UWord32 now = _clock.GetTimeInMS();
     return kRtpRtcpMaxIdleTimeProcess - (now -_lastProcessTime);
 }
 
@@ -427,7 +437,7 @@ WebRtc_Word32 ModuleRtpRtcpImpl::TimeUntilNextProcess()
 // non time critical events
 WebRtc_Word32 ModuleRtpRtcpImpl::Process()
 {
-    _lastProcessTime = ModuleRTPUtility::GetTimeInMS();
+    _lastProcessTime = _clock.GetTimeInMS();
 
     _rtpReceiver.PacketTimeout();
     _rtcpReceiver.PacketTimeout();
@@ -491,7 +501,7 @@ void ModuleRtpRtcpImpl::ProcessDeadOrAliveTimer()
 {
     if(_deadOrAliveActive)
     {
-        const WebRtc_UWord32 now = ModuleRTPUtility::GetTimeInMS();
+        const WebRtc_UWord32 now = _clock.GetTimeInMS();
         if(now > _deadOrAliveTimeoutMS +_deadOrAliveLastTimer)
         {
             // RTCP is alive if we have received a report the last 12 seconds
@@ -532,7 +542,7 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SetPeriodicDeadOrAliveStatus(
     _deadOrAliveActive = enable;
     _deadOrAliveTimeoutMS = sampleTimeSeconds*1000;
     // trigger the first after one period
-    _deadOrAliveLastTimer = ModuleRTPUtility::GetTimeInMS();
+    _deadOrAliveLastTimer = _clock.GetTimeInMS();
     return 0;
 }
 
@@ -1703,7 +1713,7 @@ ModuleRtpRtcpImpl::ReportBlockStatistics(WebRtc_UWord8 *fraction_lost,
     if (_plot1 == NULL)
     {
         _plot1 = eng.NewPlot(new MatlabPlot());
-        _plot1->AddTimeLine(30, "b", "lost", TickTime::MillisecondTimestamp());
+        _plot1->AddTimeLine(30, "b", "lost", _clock.GetTimeInMS());
     }
     _plot1->Append("lost", missing);
     _plot1->Plot();
@@ -1909,7 +1919,7 @@ ModuleRtpRtcpImpl::SendNACK(const WebRtc_UWord16* nackList,
     {
         waitTime = 100; //During startup we don't have an RTT
     }
-    const WebRtc_UWord32 now = ModuleRTPUtility::GetTimeInMS();
+    const WebRtc_UWord32 now = _clock.GetTimeInMS();
     const WebRtc_UWord32 timeLimit = now - waitTime;
 
     if(_nackLastTimeSent < timeLimit)
@@ -2690,7 +2700,8 @@ void ModuleRtpRtcpImpl::OnPacketLossStatisticsUpdate(
             videoRate + fecRate + nackRate,
             roundTripTime,
             &loss,
-            &newBitrate) != 0) {
+            &newBitrate,
+            _clock.GetTimeInMS()) != 0) {
             // ignore this update
             return;
         }
@@ -2738,7 +2749,8 @@ void ModuleRtpRtcpImpl::OnPacketLossStatisticsUpdate(
                                              videoRate + fecRate + nackRate,
                                              roundTripTime,
                                              &loss,
-                                             &newBitrate) != 0) {
+                                             &newBitrate,
+                                             _clock.GetTimeInMS()) != 0) {
                 // ignore this update
                 return;
             }

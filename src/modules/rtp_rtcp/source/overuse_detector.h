@@ -40,7 +40,9 @@ class OverUseDetector
 public:
     OverUseDetector();
     ~OverUseDetector();
-    bool Update(const WebRtcRTPHeader& rtpHeader, const WebRtc_UWord16 packetSize);
+    bool Update(const WebRtcRTPHeader& rtpHeader,
+                const WebRtc_UWord16 packetSize,
+                const WebRtc_Word64 nowMS);
     BandwidthUsage State() const;
     void Reset();
     double NoiseVar() const;

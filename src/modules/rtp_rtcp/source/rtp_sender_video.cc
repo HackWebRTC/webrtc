@@ -26,6 +26,7 @@ namespace webrtc {
 enum { REDForFECHeaderLength = 1 };
 
 RTPSenderVideo::RTPSenderVideo(const WebRtc_Word32 id,
+                               RtpRtcpClock* clock,
                                RTPSenderInterface* rtpSender) :
     _id(id),
     _rtpSender(*rtpSender),
@@ -47,7 +48,8 @@ RTPSenderVideo::RTPSenderVideo(const WebRtc_Word32 id,
     _fecProtectionFactor(0),
     _fecUseUepProtection(false),
     _numberFirstPartition(0),
-    _fecOverheadRate(),
+    _fecOverheadRate(clock),
+    _videoBitrate(clock),
 
     // H263
     _savedByte(0),

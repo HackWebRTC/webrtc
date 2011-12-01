@@ -38,28 +38,15 @@
 #define DEBUG_PRINT(exp)        ((void)0)
 #endif  // defined(_DEBUG) && defined(_WIN32)
 
-namespace
-{
-    const float FRAC = 4.294967296E9;
-}
-
 namespace webrtc {
-// PLATFORM SPECIFIC [BEGIN]
+
+/*
+ * Time routines.
+ */
+
 #if defined(_WIN32)
-    #include <Windows.h>
-
-    namespace ModuleRTPUtility
-    {
-        WebRtc_UWord32 GetTimeInMS()
-        {
-            return timeGetTime();
-        }
-        bool StringCompare(const WebRtc_Word8* str1 , const WebRtc_Word8* str2, const WebRtc_UWord32 length)
-        {
-            return (_strnicmp(str1, str2, length) == 0)?true: false;
-        }
-
-        class HelpTimer
+    namespace ModuleRTPUtility {
+        class WindowsHelpTimer
         {
         public:
             struct reference_point
@@ -68,7 +55,7 @@ namespace webrtc {
                 LARGE_INTEGER counterMS;
             };
 
-            HelpTimer()
+            WindowsHelpTimer()
             {
                 // set timer accuracy to 1 ms
                 timeBeginPeriod(1);
@@ -78,7 +65,7 @@ namespace webrtc {
                 synchronize();
             };
 
-            virtual ~HelpTimer()
+            virtual ~WindowsHelpTimer()
             {
                 timeEndPeriod(1);
             };
@@ -143,30 +130,186 @@ namespace webrtc {
             reference_point         _ref_point;
         };
 
-        static HelpTimer helpTimer;
+        // A clock reading times from the Windows API.
+        class WindowsSystemClock : public RtpRtcpClock {
+        public:
+            WindowsSystemClock()
+                : _helpTimer() {}
 
-    }; // end namespace
+            virtual ~WindowsSystemClock() {}
+
+            virtual WebRtc_UWord32 GetTimeInMS();
+
+            virtual void CurrentNTP(WebRtc_UWord32& secs, WebRtc_UWord32& frac);
+
+        private:
+            WindowsHelpTimer _helpTimer;
+        };
+    }; // namespace ModuleRTPUtility
 
 #elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
-    #include <sys/time.h> // gettimeofday
-    #include <time.h> // nanosleep, gettimeofday
 
-    WebRtc_UWord32
-    ModuleRTPUtility::GetTimeInMS()
-    {
-        struct timeval tv;
-        struct timezone tz;
-        WebRtc_UWord32 val;
+    namespace ModuleRTPUtility {
+        // A clock reading times from the POSIX API.
+        class UnixSystemClock : public RtpRtcpClock {
+        public:
+            UnixSystemClock() {}
+            virtual ~UnixSystemClock() {}
 
-        gettimeofday(&tv, &tz);
-        val = (WebRtc_UWord32)(tv.tv_sec*1000 + tv.tv_usec/1000);
-        return val;
-    }
-    bool ModuleRTPUtility::StringCompare(const WebRtc_Word8* str1 , const WebRtc_Word8* str2, const WebRtc_UWord32 length)
+            virtual WebRtc_UWord32 GetTimeInMS();
+
+            virtual void CurrentNTP(WebRtc_UWord32& secs, WebRtc_UWord32& frac);
+        };
+    }; // namespace ModuleRTPUtility
+#endif
+
+namespace ModuleRTPUtility {
+
+#if defined(_WIN32)
+WebRtc_UWord32 WindowsSystemClock::GetTimeInMS()
+{
+    return timeGetTime();
+}
+
+// Use the system time (roughly synchronised to the tick, and
+// extrapolated using the system performance counter.
+void WindowsSystemClock::CurrentNTP(WebRtc_UWord32& secs, WebRtc_UWord32& frac)
+{
+    const WebRtc_UWord64 FILETIME_1970 = 0x019db1ded53e8000;
+
+    FILETIME StartTime;
+    WebRtc_UWord64 Time;
+    struct timeval tv;
+
+    // we can't use query performance counter since they can change depending on speed steping
+    _helpTimer.get_time(StartTime);
+
+    Time = (((WebRtc_UWord64) StartTime.dwHighDateTime) << 32) +
+        (WebRtc_UWord64) StartTime.dwLowDateTime;
+
+    // Convert the hecto-nano second time to tv format
+    Time -= FILETIME_1970;
+
+    tv.tv_sec = (WebRtc_UWord32) ( Time / (WebRtc_UWord64)10000000);
+    tv.tv_usec = (WebRtc_UWord32) (( Time % (WebRtc_UWord64)10000000) / 10);
+
+    double dtemp;
+
+    secs = tv.tv_sec + NTP_JAN_1970;
+    dtemp = tv.tv_usec / 1e6;
+
+    if (dtemp >= 1)
     {
-        return (strncasecmp(str1, str2, length) == 0)?true: false;
+        dtemp -= 1;
+        secs++;
+    } else if (dtemp < -1)
+    {
+        dtemp += 1;
+        secs--;
     }
-#endif // PLATFORM SPECIFIC [END]
+    dtemp *= NTP_FRAC;
+    frac = (WebRtc_UWord32)dtemp;
+}
+
+#elif ((defined WEBRTC_LINUX) || (defined WEBRTC_MAC))
+
+WebRtc_UWord32 UnixSystemClock::GetTimeInMS()
+{
+    struct timeval tv;
+    struct timezone tz;
+    WebRtc_UWord32 val;
+
+    gettimeofday(&tv, &tz);
+    val = (WebRtc_UWord32)(tv.tv_sec*1000 + tv.tv_usec/1000);
+    return val;
+}
+
+// Use the system time.
+void UnixSystemClock::CurrentNTP(WebRtc_UWord32& secs, WebRtc_UWord32& frac)
+{
+    double dtemp;
+    struct timeval tv;
+    struct timezone tz;
+    tz.tz_minuteswest  = 0;
+    tz.tz_dsttime = 0;
+    gettimeofday(&tv,&tz);
+
+    secs = tv.tv_sec + NTP_JAN_1970;
+    dtemp = tv.tv_usec / 1e6;
+    if (dtemp >= 1)
+    {
+        dtemp -= 1;
+        secs++;
+    } else if (dtemp < -1)
+    {
+        dtemp += 1;
+        secs--;
+    }
+    dtemp *= NTP_FRAC;
+    frac = (WebRtc_UWord32)dtemp;
+}
+#endif
+
+#if defined(_WIN32)
+static WindowsSystemClock system_clock;
+#elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
+static UnixSystemClock system_clock;
+#endif
+
+RtpRtcpClock* GetSystemClock()
+{
+    return &system_clock;
+}
+
+WebRtc_UWord32 GetCurrentRTP(RtpRtcpClock* clock, WebRtc_UWord32 freq)
+{
+    if (clock == NULL)
+        clock = GetSystemClock();
+    WebRtc_UWord32 secs = 0, frac = 0;
+    clock->CurrentNTP(secs, frac);
+    return ConvertNTPTimeToRTP(secs, frac, freq);
+}
+
+WebRtc_UWord32 ConvertNTPTimeToRTP(WebRtc_UWord32 NTPsec,
+                                   WebRtc_UWord32 NTPfrac,
+                                   WebRtc_UWord32 freq)
+{
+    float ftemp = (float)NTPfrac/(float)NTP_FRAC;
+    WebRtc_UWord32 tmp = (WebRtc_UWord32)(ftemp * freq);
+    return NTPsec*freq + tmp;
+}
+
+WebRtc_UWord32 ConvertNTPTimeToMS(WebRtc_UWord32 NTPsec,
+                                  WebRtc_UWord32 NTPfrac)
+{
+    int freq = 1000;
+    float ftemp = (float)NTPfrac/(float)NTP_FRAC;
+    WebRtc_UWord32 tmp = (WebRtc_UWord32)(ftemp * freq);
+    WebRtc_UWord32 MStime= NTPsec*freq + tmp;
+    return MStime;
+}
+
+} // namespace ModuleRTPUtility
+
+/*
+ * Misc utility routines
+ */
+
+#if defined(_WIN32)
+bool ModuleRTPUtility::StringCompare(const WebRtc_Word8* str1,
+                                     const WebRtc_Word8* str2,
+                                     const WebRtc_UWord32 length)
+{
+    return (_strnicmp(str1, str2, length) == 0)?true: false;
+}
+#elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
+bool ModuleRTPUtility::StringCompare(const WebRtc_Word8* str1,
+                                     const WebRtc_Word8* str2,
+                                     const WebRtc_UWord32 length)
+{
+    return (strncasecmp(str1, str2, length) == 0)?true: false;
+}
+#endif
 
 #if !defined(WEBRTC_LITTLE_ENDIAN) && !defined(WEBRTC_BIG_ENDIAN)
     #error Either WEBRTC_LITTLE_ENDIAN or WEBRTC_BIG_ENDIAN must be defined
@@ -247,101 +390,6 @@ WebRtc_UWord32
 ModuleRTPUtility::pow2(WebRtc_UWord8 exp)
 {
     return 1 << exp;
-}
-
-WebRtc_Word32
-ModuleRTPUtility::CurrentNTP(WebRtc_UWord32& secs, WebRtc_UWord32& frac)
-{
-    /*
-    *  Use the system time (roughly synchronised to the tick, and
-    *  extrapolated using the system performance counter.
-    */
-    const  WebRtc_UWord32 JAN_1970 = 2208988800UL; // NTP seconds
-
-#if defined(_WIN32)
-    const WebRtc_UWord64 FILETIME_1970 = 0x019db1ded53e8000;
-
-    FILETIME StartTime;
-    WebRtc_UWord64 Time;
-    struct timeval tv;
-
-    // we can't use query performance counter since they can change depending on speed steping
-    helpTimer.get_time(StartTime);
-
-    Time = (((WebRtc_UWord64) StartTime.dwHighDateTime) << 32) +
-        (WebRtc_UWord64) StartTime.dwLowDateTime;
-
-    // Convert the hecto-nano second time to tv format
-    Time -= FILETIME_1970;
-
-    tv.tv_sec = (WebRtc_UWord32) ( Time / (WebRtc_UWord64)10000000);
-    tv.tv_usec = (WebRtc_UWord32) (( Time % (WebRtc_UWord64)10000000) / 10);
-
-    double dtemp;
-
-    secs = tv.tv_sec + JAN_1970;
-    dtemp = tv.tv_usec / 1e6;
-
-    if (dtemp >= 1)
-    {
-        dtemp -= 1;
-        secs++;
-    } else if (dtemp < -1)
-    {
-        dtemp += 1;
-        secs--;
-    }
-    dtemp *= FRAC;
-    frac = (WebRtc_UWord32)dtemp;
-    return 0;
-#endif
-
-#if ((defined WEBRTC_LINUX) || (defined WEBRTC_MAC))
-
-    double dtemp;
-    struct timeval tv;
-    struct timezone tz;
-    tz.tz_minuteswest  = 0;
-    tz.tz_dsttime = 0;
-    gettimeofday(&tv,&tz);
-
-    secs = tv.tv_sec + JAN_1970;
-    dtemp = tv.tv_usec / 1e6;
-    if (dtemp >= 1)
-    {
-        dtemp -= 1;
-        secs++;
-    } else if (dtemp < -1)
-    {
-        dtemp += 1;
-        secs--;
-    }
-    dtemp *= FRAC;
-    frac = (WebRtc_UWord32)dtemp;
-
-    return(0);
-#endif
-}
-
-WebRtc_UWord32
-ModuleRTPUtility::ConvertNTPTimeToMS(WebRtc_UWord32 NTPsec, WebRtc_UWord32 NTPfrac)
-{
-    int freq = 1000;
-    float ftemp = (float)NTPfrac/(float)FRAC;
-    WebRtc_UWord32 tmp = (WebRtc_UWord32)(ftemp * freq);
-    WebRtc_UWord32 MStime= NTPsec*freq + tmp;
-    return MStime;
-}
-
-WebRtc_UWord32
-ModuleRTPUtility::CurrentRTP(WebRtc_UWord32 freq)
-{
-    WebRtc_UWord32 NTPsec = 0;
-    WebRtc_UWord32 NTPfrac = 0;
-    CurrentNTP( NTPsec, NTPfrac);
-    float ftemp = (float)NTPfrac/(float)FRAC;
-    WebRtc_UWord32 tmp = (WebRtc_UWord32)(ftemp * freq);
-    return NTPsec*freq + tmp;
 }
 
 void

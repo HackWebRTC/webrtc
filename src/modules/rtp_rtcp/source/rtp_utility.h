@@ -32,6 +32,12 @@ const WebRtc_UWord8 kRtpMarkerBitMask = 0x80;
 
 namespace ModuleRTPUtility
 {
+    // January 1970, in NTP seconds.
+    const uint32_t NTP_JAN_1970 = 2208988800UL;
+
+    // Magic NTP fractional unit.
+    const double NTP_FRAC = 4.294967296E+9;
+
     struct AudioPayload
     {
         WebRtc_UWord32    frequency;
@@ -56,15 +62,27 @@ namespace ModuleRTPUtility
         PayloadUnion typeSpecific;
     };
 
-    WebRtc_Word32 CurrentNTP(WebRtc_UWord32& secs, WebRtc_UWord32& frac) ;
+    // Return a clock that reads the time as reported by the operating
+    // system. The returned instances are guaranteed to read the same
+    // times; in particular, they return relative times relative to
+    // the same base.
+    RtpRtcpClock* GetSystemClock();
 
-    WebRtc_UWord32 CurrentRTP(WebRtc_UWord32 freq);
+    // Return the current RTP timestamp from the NTP timestamp
+    // returned by the specified clock.
+    WebRtc_UWord32 GetCurrentRTP(RtpRtcpClock* clock, WebRtc_UWord32 freq);
+
+    // Return the current RTP absolute timestamp.
+    WebRtc_UWord32 ConvertNTPTimeToRTP(WebRtc_UWord32 NTPsec,
+                                       WebRtc_UWord32 NTPfrac,
+                                       WebRtc_UWord32 freq);
+
+    // Return the time in milliseconds corresponding to the specified
+    // NTP timestamp.
+    WebRtc_UWord32 ConvertNTPTimeToMS(WebRtc_UWord32 NTPsec,
+                                      WebRtc_UWord32 NTPfrac);
 
     WebRtc_UWord32 pow2(WebRtc_UWord8 exp);
-
-    WebRtc_UWord32 GetTimeInMS();
-
-    WebRtc_UWord32 ConvertNTPTimeToMS(WebRtc_UWord32 NTPsec, WebRtc_UWord32 NTPfrac);
 
     bool StringCompare(const WebRtc_Word8* str1 , const WebRtc_Word8* str2, const WebRtc_UWord32 length);
 

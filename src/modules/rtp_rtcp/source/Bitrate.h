@@ -18,10 +18,12 @@
 #include <list>
 
 namespace webrtc {
+class RtpRtcpClock;
+
 class Bitrate
 {
 public:
-    Bitrate();
+    Bitrate(RtpRtcpClock* clock);
 
     // initialize members
     void Init();
@@ -40,6 +42,9 @@ public:
 
     // bitrate last second, updated now
     WebRtc_UWord32 BitrateNow() const;
+
+protected:
+    RtpRtcpClock&             _clock;
 
 private:
     WebRtc_UWord32            _packetRate;

@@ -68,9 +68,12 @@ class RtcpFormatRembTest : public ::testing::Test {
 };
 
 void RtcpFormatRembTest::SetUp() {
-  dummy_rtp_rtcp_impl_ = new ModuleRtpRtcpImpl(0, false);
-  rtcp_sender_ = new RTCPSender(0, false, dummy_rtp_rtcp_impl_);
-  rtcp_receiver_ = new RTCPReceiver(0, dummy_rtp_rtcp_impl_);
+  dummy_rtp_rtcp_impl_ =
+      new ModuleRtpRtcpImpl(0, false, ModuleRTPUtility::GetSystemClock());
+  rtcp_sender_ = new RTCPSender(0, false, ModuleRTPUtility::GetSystemClock(),
+                                dummy_rtp_rtcp_impl_);
+  rtcp_receiver_ = new RTCPReceiver(0, ModuleRTPUtility::GetSystemClock(),
+                                    dummy_rtp_rtcp_impl_);
   test_transport_ = new TestTransport(rtcp_receiver_);
 
   EXPECT_EQ(0, rtcp_sender_->Init());

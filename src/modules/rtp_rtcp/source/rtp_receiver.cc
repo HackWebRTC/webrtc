@@ -23,9 +23,11 @@
 namespace webrtc {
 RTPReceiver::RTPReceiver(const WebRtc_Word32 id,
                          const bool audio,
+                         RtpRtcpClock* clock,
                          ModuleRtpRtcpImpl* owner) :
     RTPReceiverAudio(id),
     RTPReceiverVideo(id, owner),
+    Bitrate(clock),
     _id(id),
     _audio(audio),
     _rtpRtcp(*owner),
@@ -251,7 +253,7 @@ void RTPReceiver::PacketTimeout()
             return;
         }
 
-        WebRtc_UWord32 now = ModuleRTPUtility::GetTimeInMS();
+        WebRtc_UWord32 now = _clock.GetTimeInMS();
 
         if(now - _lastReceiveTime > _packetTimeOutMS)
         {
@@ -822,7 +824,8 @@ RTPReceiver::IncomingRTPPacket(WebRtcRTPHeader* rtpHeader,
                                          videoSpecific.videoCodecType,
                                          isRED,
                                          incomingRtpPacket,
-                                         incomingRtpPacketLength);
+                                         incomingRtpPacketLength,
+                                         _clock.GetTimeInMS());
     }
     if(retVal != -1)
     {
@@ -836,7 +839,9 @@ RTPReceiver::IncomingRTPPacket(WebRtcRTPHeader* rtpHeader,
         // this updates _receivedSeqMax and other members
         UpdateStatistics(rtpHeader, payloadDataLength, oldPacket);
 
-        _lastReceiveTime = ModuleRTPUtility::GetTimeInMS();     // need to be updated after RetransmitOfOldPacket & RetransmitOfOldPacketUpdateStatistics
+        // need to be updated after RetransmitOfOldPacket &
+        // RetransmitOfOldPacketUpdateStatistics
+        _lastReceiveTime = _clock.GetTimeInMS();
         _lastReceivedPayloadLength = payloadDataLength;
 
         if(retVal >= 0 && !oldPacket)
@@ -887,14 +892,16 @@ RTPReceiver::UpdateStatistics(const WebRtcRTPHeader* rtpHeader,
         _receivedSeqFirst = rtpHeader->header.sequenceNumber;
         _receivedSeqMax = rtpHeader->header.sequenceNumber;
         _receivedInorderPacketCount = 1;
-        _localTimeLastReceivedTimestamp = ModuleRTPUtility::CurrentRTP(freq); //time in samples
+        _localTimeLastReceivedTimestamp =
+            ModuleRTPUtility::GetCurrentRTP(&_clock, freq); //time in samples
         return;
     }
 
     // count only the new packets received
     if(InOrderPacket(rtpHeader->header.sequenceNumber))
     {
-        const WebRtc_UWord32 RTPtime = ModuleRTPUtility::CurrentRTP(freq); //time in samples
+        const WebRtc_UWord32 RTPtime =
+            ModuleRTPUtility::GetCurrentRTP(&_clock, freq); //time in samples
         _receivedInorderPacketCount++;
 
         // wrong if we use RetransmitOfOldPacket
@@ -953,7 +960,8 @@ RTPReceiver::RetransmitOfOldPacket(const WebRtc_UWord16 sequenceNumber,
     {
         return false;
     }
-    WebRtc_UWord32 timeDiffMS = ModuleRTPUtility::GetTimeInMS() - _lastReceiveTime;               // last time we received a packet
+    // last time we received a packet
+    WebRtc_UWord32 timeDiffMS = _clock.GetTimeInMS() - _lastReceiveTime;
     WebRtc_Word32 rtpTimeStampDiffMS = ((WebRtc_Word32)(rtpTimeStamp - _lastReceivedTimestamp))/90; // diff in time stamp since last received in order
 
     WebRtc_UWord16 minRTT = 0;
@@ -1058,7 +1066,8 @@ RTPReceiver::EstimatedRemoteTimeStamp(WebRtc_UWord32& timestamp) const
         return -1;
     }
     //time in samples
-    WebRtc_UWord32 diff = ModuleRTPUtility::CurrentRTP(freq) - _localTimeLastReceivedTimestamp;
+    WebRtc_UWord32 diff = ModuleRTPUtility::GetCurrentRTP(&_clock, freq)
+        - _localTimeLastReceivedTimestamp;
 
     timestamp = _lastReceivedTimestamp + diff;
     return 0;

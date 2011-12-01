@@ -31,7 +31,8 @@ class CriticalSectionWrapper;
 class RTPSenderVideo
 {
 public:
-    RTPSenderVideo(const WebRtc_Word32 id, RTPSenderInterface* rtpSender);
+    RTPSenderVideo(const WebRtc_Word32 id, RtpRtcpClock* clock,
+                   RTPSenderInterface* rtpSender);
     virtual ~RTPSenderVideo();
 
     WebRtc_Word32 Init();

@@ -16,7 +16,6 @@
 #include <cstdlib> // rand
 
 #include "trace.h"
-#include "tick_util.h"
 #include "common_types.h"
 #include "critical_section_wrapper.h"
 
@@ -25,9 +24,11 @@
 namespace webrtc {
 RTCPSender::RTCPSender(const WebRtc_Word32 id,
                        const bool audio,
+                       RtpRtcpClock* clock,
                        ModuleRtpRtcpImpl* owner) :
     _id(id),
     _audio(audio),
+    _clock(*clock),
     _method(kRtcpOff),
     _rtpRtcp(*owner),
     _criticalSectionTransport(*CriticalSectionWrapper::CreateCriticalSection()),
@@ -187,10 +188,10 @@ RTCPSender::SetRTCPStatus(const RTCPMethod method)
     {
         if(_audio)
         {
-            _nextTimeToSendRTCP = ModuleRTPUtility::GetTimeInMS() + (RTCP_INTERVAL_AUDIO_MS/2);
+            _nextTimeToSendRTCP = _clock.GetTimeInMS() + (RTCP_INTERVAL_AUDIO_MS/2);
         } else
         {
-            _nextTimeToSendRTCP = ModuleRTPUtility::GetTimeInMS() + (RTCP_INTERVAL_VIDEO_MS/2);
+            _nextTimeToSendRTCP = _clock.GetTimeInMS() + (RTCP_INTERVAL_VIDEO_MS/2);
         }
     }
     _method = method;
@@ -290,7 +291,8 @@ RTCPSender::SetSSRC( const WebRtc_UWord32 ssrc)
     {
         // not first SetSSRC, probably due to a collision
         // schedule a new RTCP report
-        _nextTimeToSendRTCP = ModuleRTPUtility::GetTimeInMS() + 100; // make sure that we send a RTP packet
+        // make sure that we send a RTP packet
+        _nextTimeToSendRTCP = _clock.GetTimeInMS() + 100;
     }
     _SSRC = ssrc;
 }
@@ -457,7 +459,7 @@ From RFC 3550
       a value of the RTCP bandwidth below the intended average
 */
 
-    WebRtc_UWord32 now = ModuleRTPUtility::GetTimeInMS();
+    WebRtc_UWord32 now = _clock.GetTimeInMS();
 
     CriticalSectionScoped lock(_criticalSectionRTCPSender);
 
@@ -633,7 +635,7 @@ RTCPSender::BuildSR(WebRtc_UWord8* rtcpbuffer,
     if(_audio)
     {
         freqHz =  _rtpRtcp.CurrentSendFrequencyHz();
-        RTPtime = ModuleRTPUtility::CurrentRTP(freqHz);
+        RTPtime = ModuleRTPUtility::GetCurrentRTP(&_clock, freqHz);
     }
     else // video 
     {
@@ -857,7 +859,7 @@ WebRtc_Word32
 RTCPSender::BuildFIR(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos, const WebRtc_UWord32 RTT)
 {
     bool firRepeat = false;
-    WebRtc_UWord32 diff = ModuleRTPUtility::GetTimeInMS() - _lastTimeFIR;
+    WebRtc_UWord32 diff = _clock.GetTimeInMS() - _lastTimeFIR;
     if(diff < RTT + 3) // 3 is processing jitter
     {
         // we have recently sent a FIR
@@ -872,7 +874,7 @@ RTCPSender::BuildFIR(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos, const WebRt
             firRepeat = true;
         }
     }
-    _lastTimeFIR = ModuleRTPUtility::GetTimeInMS();
+    _lastTimeFIR = _clock.GetTimeInMS();
     if(!firRepeat)
     {
         _sequenceNumberFIR++;   // do not increase if repetition
@@ -1103,7 +1105,8 @@ RTCPSender::BuildREMB(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos)
 WebRtc_UWord32
 RTCPSender::CalculateNewTargetBitrate(WebRtc_UWord32 RTT)
 {
-    WebRtc_UWord32 target_bitrate = _remoteRateControl.TargetBitRate(RTT);
+    WebRtc_UWord32 target_bitrate =
+        _remoteRateControl.TargetBitRate(RTT, _clock.GetTimeInMS());
     _tmmbr_Send = target_bitrate / 1000;
     return target_bitrate;
 }
@@ -1608,7 +1611,7 @@ RTCPSender::SendRTCP(const WebRtc_UWord32 packetTypeFlags,
                                          remoteSR);
 
                 // get our NTP as late as possible to avoid a race
-                ModuleRTPUtility::CurrentNTP(NTPsec, NTPfrac);
+                _clock.CurrentNTP(NTPsec, NTPfrac);
 
                 // Delay since last received report
                 WebRtc_UWord32 delaySinceLastReceivedSR = 0;
@@ -1630,7 +1633,7 @@ RTCPSender::SendRTCP(const WebRtc_UWord32 packetTypeFlags,
             } else
             {
                 // we need to send our NTP even if we dont have received any reports
-                ModuleRTPUtility::CurrentNTP(NTPsec, NTPfrac);
+                _clock.CurrentNTP(NTPsec, NTPfrac);
             }
         }
 
@@ -1720,7 +1723,7 @@ RTCPSender::SendRTCP(const WebRtc_UWord32 packetTypeFlags,
                 }
                 timeToNext = (minIntervalMs/2) + (minIntervalMs*random/1000);
             }
-            _nextTimeToSendRTCP = ModuleRTPUtility::GetTimeInMS() + timeToNext;
+            _nextTimeToSendRTCP = _clock.GetTimeInMS() + timeToNext;
         }
 
         // if the data does not fitt in the packet we fill it as much as possible
@@ -2136,6 +2139,7 @@ RateControlRegion
 RTCPSender::UpdateOverUseState(const RateControlInput& rateControlInput, bool& firstOverUse)
 {
     CriticalSectionScoped lock(_criticalSectionRTCPSender);
-    return _remoteRateControl.Update(rateControlInput, firstOverUse);
+    return _remoteRateControl.Update(rateControlInput, firstOverUse,
+                                     _clock.GetTimeInMS());
 }
 } // namespace webrtc

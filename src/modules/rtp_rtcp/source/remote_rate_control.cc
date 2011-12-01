@@ -9,7 +9,6 @@
  */
 
 #include "remote_rate_control.h"
-#include "tick_util.h"
 #include "trace.h"
 #include <math.h>
 #include <string.h>
@@ -100,14 +99,17 @@ WebRtc_Word32 RemoteRateControl::SetConfiguredBitRates(WebRtc_UWord32 minBitRate
     return 0;
 }
 
-WebRtc_UWord32 RemoteRateControl::TargetBitRate(WebRtc_UWord32 RTT)
+WebRtc_UWord32 RemoteRateControl::TargetBitRate(WebRtc_UWord32 RTT,
+                                                WebRtc_Word64 nowMS)
 {
     _currentBitRate = ChangeBitRate(_currentBitRate, _currentInput._incomingBitRate,
-        _currentInput._noiseVar, RTT);
+        _currentInput._noiseVar, RTT, nowMS);
     return _currentBitRate;
 }
 
-RateControlRegion RemoteRateControl::Update(const RateControlInput& input, bool& firstOverUse)
+RateControlRegion RemoteRateControl::Update(const RateControlInput& input,
+                                            bool& firstOverUse,
+                                            WebRtc_Word64 nowMS)
 {
 #ifdef MATLAB
     // Create plots
@@ -141,10 +143,10 @@ RateControlRegion RemoteRateControl::Update(const RateControlInput& input, bool&
         {
             if (input._incomingBitRate > 0)
             {
-                _timeFirstIncomingEstimate = TickTime::MillisecondTimestamp();
+                _timeFirstIncomingEstimate = nowMS;
             }
         }
-        else if (TickTime::MillisecondTimestamp() - _timeFirstIncomingEstimate > 1000 &&
+        else if (nowMS - _timeFirstIncomingEstimate > 1000 &&
             input._incomingBitRate > 0)
         {
             _currentBitRate = input._incomingBitRate;
@@ -166,16 +168,18 @@ RateControlRegion RemoteRateControl::Update(const RateControlInput& input, bool&
 }
 
 WebRtc_UWord32 RemoteRateControl::ChangeBitRate(WebRtc_UWord32 currentBitRate,
-                                              WebRtc_UWord32 incomingBitRate, double noiseVar, WebRtc_UWord32 RTT)
+                                                WebRtc_UWord32 incomingBitRate,
+                                                double noiseVar,
+                                                WebRtc_UWord32 RTT,
+                                                WebRtc_Word64 nowMS)
 {
-    const WebRtc_Word64 now = TickTime::MillisecondTimestamp();
     if (!_updated)
     {
         return _currentBitRate;
     }
     _updated = false;
-    UpdateChangePeriod(now);
-    ChangeState(_currentInput, now);
+    UpdateChangePeriod(nowMS);
+    ChangeState(_currentInput, nowMS);
     // calculated here because it's used in multiple places
     const float incomingBitRateKbps = incomingBitRate / 1000.0f;
     // Calculate the max bit rate std dev given the normalized
@@ -214,7 +218,8 @@ WebRtc_UWord32 RemoteRateControl::ChangeBitRate(WebRtc_UWord32 currentBitRate,
 #endif
 #endif
             const WebRtc_UWord32 responseTime = static_cast<WebRtc_UWord32>(_avgChangePeriod + 0.5f) + RTT + 300;
-            double alpha = RateIncreaseFactor(now, _lastBitRateChange, responseTime, noiseVar);
+            double alpha = RateIncreaseFactor(nowMS, _lastBitRateChange,
+                                              responseTime, noiseVar);
 
             WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, -1,
                 "BWE: _avgChangePeriod = %f ms; RTT = %u ms", _avgChangePeriod, RTT);
@@ -245,7 +250,7 @@ WebRtc_UWord32 RemoteRateControl::ChangeBitRate(WebRtc_UWord32 currentBitRate,
             //TODO
 #endif
 #endif
-            _lastBitRateChange = now;
+            _lastBitRateChange = nowMS;
             break;
         }
     case kRcDecrease:
@@ -285,7 +290,7 @@ WebRtc_UWord32 RemoteRateControl::ChangeBitRate(WebRtc_UWord32 currentBitRate,
             }
             // Stay on hold until the pipes are cleared.
             ChangeState(kRcHold);
-            _lastBitRateChange = now;
+            _lastBitRateChange = nowMS;
             break;
         }
     }
@@ -295,7 +300,7 @@ WebRtc_UWord32 RemoteRateControl::ChangeBitRate(WebRtc_UWord32 currentBitRate,
         // Allow changing the bit rate if we are operating at very low rates
         // Don't change the bit rate if the send side is too far off
         currentBitRate = _currentBitRate;
-        _lastBitRateChange = now;
+        _lastBitRateChange = nowMS;
     }
 #ifdef MATLAB
     if (_avgMaxBitRate >= 0.0f)

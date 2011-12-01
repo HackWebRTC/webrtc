@@ -24,7 +24,8 @@ class ModuleRtpRtcpImpl;
 class RTCPReceiver
 {
 public:
-    RTCPReceiver(const WebRtc_Word32 id, ModuleRtpRtcpImpl* owner);
+    RTCPReceiver(const WebRtc_Word32 id, RtpRtcpClock* clock,
+                 ModuleRtpRtcpImpl* owner);
     virtual ~RTCPReceiver();
 
     void ChangeUniqueId(const WebRtc_Word32 id);
@@ -181,6 +182,7 @@ protected:
 
 private:
     WebRtc_Word32           _id;
+    RtpRtcpClock&           _clock;
     RTCPMethod              _method;
     WebRtc_UWord32          _lastReceived;
     ModuleRtpRtcpImpl&      _rtpRtcp;

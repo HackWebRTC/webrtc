@@ -14,8 +14,10 @@
 #include <cassert> //assert
 
 namespace webrtc {
-RTPSenderAudio::RTPSenderAudio(const WebRtc_Word32 id, RTPSenderInterface* rtpSender) :
+RTPSenderAudio::RTPSenderAudio(const WebRtc_Word32 id, RtpRtcpClock* clock,
+                               RTPSenderInterface* rtpSender) :
     _id(id),
+    _clock(*clock),
     _rtpSender(rtpSender),
     _audioFeedbackCritsect(*CriticalSectionWrapper::CreateCriticalSection()),
     _audioFeedback(NULL),
@@ -237,7 +239,7 @@ RTPSenderAudio::SendTelephoneEventActive(WebRtc_Word8& telephoneEvent) const
         telephoneEvent = _dtmfKey;
         return true;
     }
-    WebRtc_UWord32 delaySinceLastDTMF = (ModuleRTPUtility::GetTimeInMS() - _dtmfTimeLastSent);
+    WebRtc_UWord32 delaySinceLastDTMF = (_clock.GetTimeInMS() - _dtmfTimeLastSent);
     if(delaySinceLastDTMF < 100)
     {
         telephoneEvent = _dtmfKey;
@@ -266,7 +268,7 @@ RTPSenderAudio::SendAudio(const FrameType frameType,
     {
         CriticalSectionScoped cs(_sendAudioCritsect);
 
-        WebRtc_UWord32 delaySinceLastDTMF = (ModuleRTPUtility::GetTimeInMS() - _dtmfTimeLastSent);
+        WebRtc_UWord32 delaySinceLastDTMF = (_clock.GetTimeInMS() - _dtmfTimeLastSent);
 
         if(delaySinceLastDTMF > 100)
         {
@@ -328,7 +330,7 @@ RTPSenderAudio::SendAudio(const FrameType frameType,
             {
                 ended = true;
                 _dtmfEventIsOn = false;
-                _dtmfTimeLastSent = ModuleRTPUtility::GetTimeInMS();
+                _dtmfTimeLastSent = _clock.GetTimeInMS();
             }
             // don't hold the critsect while calling SendTelephoneEventPacket
             _sendAudioCritsect.Leave();

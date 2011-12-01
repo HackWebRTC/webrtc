@@ -38,7 +38,8 @@ public:
         WebRtc_UWord32 sentBitrate,
         const WebRtc_UWord16 rtt,
         WebRtc_UWord8* loss,
-        WebRtc_UWord32* newBitrate);
+        WebRtc_UWord32* newBitrate,
+        WebRtc_Word64 nowMS);
 
     WebRtc_Word32 AvailableBandwidth(WebRtc_UWord16* bandwidthKbit) const;
 
@@ -51,7 +52,8 @@ public:
 protected:
     WebRtc_UWord32 ShapeSimple(WebRtc_Word32 packetLoss,
                                WebRtc_Word32 rtt,
-                               WebRtc_UWord32 sentBitrate);
+                               WebRtc_UWord32 sentBitrate,
+                               WebRtc_Word64 nowMS);
 
     WebRtc_Word32 CalcTFRCbps(WebRtc_Word16 avgPackSizeBytes,
                               WebRtc_Word32 rttMs,

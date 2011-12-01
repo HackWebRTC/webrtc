@@ -8,7 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "tick_util.h"
 #include "trace.h"
 #include "overuse_detector.h"
 #include "remote_rate_control.h"
@@ -135,11 +134,13 @@ void OverUseDetector::Reset()
     }
 }
 
-bool OverUseDetector::Update(const WebRtcRTPHeader& rtpHeader, const WebRtc_UWord16 packetSize)
+bool OverUseDetector::Update(const WebRtcRTPHeader& rtpHeader,
+                             const WebRtc_UWord16 packetSize,
+                             const WebRtc_Word64 nowMS)
 {
 #ifdef MATLAB
     // Create plots
-    const WebRtc_Word64 startTimeMs = TickTime::MillisecondTimestamp();
+    const WebRtc_Word64 startTimeMs = nowMS;
     if (_plot1 == NULL)
     {
         _plot1 = eng.NewPlot(new MatlabPlot());
@@ -173,7 +174,6 @@ bool OverUseDetector::Update(const WebRtcRTPHeader& rtpHeader, const WebRtc_UWor
 
     bool wrapped = false;
     bool completeFrame = false;
-    const WebRtc_Word64 nowMs = TickTime::MillisecondTimestamp();
     if (_currentFrame._timestamp == -1)
     {
         _currentFrame._timestamp = rtpHeader.header.timestamp;
@@ -206,7 +206,7 @@ bool OverUseDetector::Update(const WebRtcRTPHeader& rtpHeader, const WebRtc_UWor
     }
     // Accumulate the frame size
     _currentFrame._size += packetSize;
-    _currentFrame._completeTimeMs = nowMs;
+    _currentFrame._completeTimeMs = nowMS;
     return completeFrame;
 }
 

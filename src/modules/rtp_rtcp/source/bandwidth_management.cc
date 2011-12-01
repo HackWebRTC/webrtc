@@ -12,7 +12,6 @@
 #include "trace.h"
 #include "rtp_utility.h"
 #include "rtp_rtcp_config.h"
-#include "tick_util.h"
 
 #include <math.h>   // sqrt()
 
@@ -110,7 +109,8 @@ WebRtc_Word32 BandwidthManagement::UpdatePacketLoss(
     WebRtc_UWord32 sentBitrate,
     const WebRtc_UWord16 rtt,
     WebRtc_UWord8* loss,
-    WebRtc_UWord32* newBitrate)
+    WebRtc_UWord32* newBitrate,
+    WebRtc_Word64 nowMS)
 {
     CriticalSectionScoped cs(_critsect);
 
@@ -172,7 +172,7 @@ WebRtc_Word32 BandwidthManagement::UpdatePacketLoss(
     // Remember the sequence number until next time
     _lastPacketLossExtendedHighSeqNum = lastReceivedExtendedHighSeqNum;
 
-    WebRtc_UWord32 bitRate = ShapeSimple(*loss, rtt, sentBitrate);
+    WebRtc_UWord32 bitRate = ShapeSimple(*loss, rtt, sentBitrate, nowMS);
     if (bitRate == 0)
     {
         // no change
@@ -216,7 +216,8 @@ WebRtc_Word32 BandwidthManagement::CalcTFRCbps(WebRtc_Word16 avgPackSizeBytes,
 // protected
 WebRtc_UWord32 BandwidthManagement::ShapeSimple(WebRtc_Word32 packetLoss,
                                                 WebRtc_Word32 rtt,
-                                                WebRtc_UWord32 sentBitrate)
+                                                WebRtc_UWord32 sentBitrate,
+                                                WebRtc_Word64 nowMS)
 {
     WebRtc_UWord32 newBitRate = 0;
     bool reducing = false;
@@ -224,12 +225,12 @@ WebRtc_UWord32 BandwidthManagement::ShapeSimple(WebRtc_Word32 packetLoss,
     // Limit the rate increases to once a second.
     if (packetLoss <= 5)
     {
-        if ((TickTime::MillisecondTimestamp() - _timeLastIncrease) <
+        if ((nowMS - _timeLastIncrease) <
             kBWEUpdateIntervalMs)
         {
             return _bitRate;
         }
-        _timeLastIncrease = TickTime::MillisecondTimestamp();
+        _timeLastIncrease = nowMS;
     }
 
     if (packetLoss > 5 && packetLoss <= 26)

@@ -14,13 +14,15 @@
 
 #include "critical_section_wrapper.h"
 #include "trace.h"
-#include "tick_util.h"
 
 #include "rtp_sender_audio.h"
 #include "rtp_sender_video.h"
 
 namespace webrtc {
-RTPSender::RTPSender(const WebRtc_Word32 id, const bool audio) :
+RTPSender::RTPSender(const WebRtc_Word32 id,
+                     const bool audio,
+                     RtpRtcpClock* clock) :
+    Bitrate(clock),
     _id(id),
     _audioConfigured(audio),
     _audio(NULL),
@@ -56,7 +58,7 @@ RTPSender::RTPSender(const WebRtc_Word32 id, const bool audio) :
     // NACK
     _nackByteCountTimes(),
     _nackByteCount(),
-    _nackBitrate(),
+    _nackBitrate(clock),
 
     // statistics
     _packetsSent(0),
@@ -82,16 +84,16 @@ RTPSender::RTPSender(const WebRtc_Word32 id, const bool audio) :
     memset(_CSRC, 0, sizeof(_CSRC));
 
     // we need to seed the random generator, otherwise we get 26500 each time, hardly a random value :)
-    srand( (WebRtc_UWord32)ModuleRTPUtility::GetTimeInMS() );
+    srand( (WebRtc_UWord32)_clock.GetTimeInMS() );
 
     _ssrc = _ssrcDB.CreateSSRC(); // can't be 0
 
     if(audio)
     {
-        _audio = new RTPSenderAudio(id, this);
+        _audio = new RTPSenderAudio(id, &_clock, this);
     } else
     {
-        _video = new RTPSenderVideo(id, this); //
+        _video = new RTPSenderVideo(id, &_clock, this);
     }
     WEBRTC_TRACE(kTraceMemory, kTraceRtpRtcp, id, "%s created", __FUNCTION__);
 }
@@ -403,7 +405,7 @@ RTPSender::EnableRTPKeepalive( const WebRtc_Word8 unknownPayloadType,
 
     _keepAliveIsActive = true;
     _keepAlivePayloadType = unknownPayloadType;
-    _keepAliveLastSent = ModuleRTPUtility::GetTimeInMS();
+    _keepAliveLastSent = _clock.GetTimeInMS();
     _keepAliveDeltaTimeSend = deltaTransmitTimeMS;
     return 0;
 }
@@ -422,7 +424,7 @@ RTPSender::TimeToSendRTPKeepalive() const
 
     bool timeToSend(false);
 
-    WebRtc_UWord32 dT = ModuleRTPUtility::GetTimeInMS() - _keepAliveLastSent;
+    WebRtc_UWord32 dT = _clock.GetTimeInMS() - _keepAliveLastSent;
     if (dT > _keepAliveDeltaTimeSend)
     {
         timeToSend = true;
@@ -491,7 +493,7 @@ RTPSender::SendRTPKeepalivePacket()
     {
         CriticalSectionScoped cs(_sendCritsect);
 
-        WebRtc_UWord32 now = ModuleRTPUtility::GetTimeInMS();
+        WebRtc_UWord32 now = _clock.GetTimeInMS();
         WebRtc_UWord32 dT = now -_keepAliveLastSent; // delta time in MS
 
         WebRtc_UWord32 freqKHz = 90; // video
@@ -636,7 +638,7 @@ RTPSender::CheckPayloadType(const WebRtc_Word8 payloadType,
                         // We need to correct the timestamp again,
                         // since this might happen after we've set it
                         WebRtc_UWord32 RTPtime =
-                            ModuleRTPUtility::CurrentRTP(payloadFreqHz);
+                            ModuleRTPUtility::GetCurrentRTP(&_clock, payloadFreqHz);
                         SetStartTimestamp(RTPtime);
                         // will be ignored if it's already configured via API
                     }
@@ -686,7 +688,7 @@ RTPSender::SendOutgoingData(const FrameType frameType,
         return -1;
     }
     // update keepalive so that we don't trigger keepalive messages while sending data
-    _keepAliveLastSent = ModuleRTPUtility::GetTimeInMS();
+    _keepAliveLastSent = _clock.GetTimeInMS();
 
     if(_audioConfigured)
     {
@@ -830,7 +832,7 @@ RTPSender::ReSendToNetwork(WebRtc_UWord16 packetID,
             }
             if(seqNum == packetID)
             {
-                WebRtc_UWord32 timeNow= ModuleRTPUtility::GetTimeInMS();
+                WebRtc_UWord32 timeNow= _clock.GetTimeInMS();
                 if(minResendTime>0 && (timeNow-_prevSentPacketsResendTime[index]<minResendTime))
                 {
                     // No point in sending the packet again yet. Get out of here
@@ -889,7 +891,8 @@ RTPSender::ReSendToNetwork(WebRtc_UWord16 packetID,
 
         if(_prevSentPacketsSeqNum[index] == packetID) // Make sure the  packet is still in the array
         {
-            _prevSentPacketsResendTime[index]= ModuleRTPUtility::GetTimeInMS();  // Store the time when the frame was last resent.
+            // Store the time when the frame was last resent.
+            _prevSentPacketsResendTime[index]= _clock.GetTimeInMS();
         }
         return i; //bytes sent over network
     }
@@ -903,7 +906,7 @@ RTPSender::OnReceivedNACK(const WebRtc_UWord16 nackSequenceNumbersLength,
                           const WebRtc_UWord16* nackSequenceNumbers,
                           const WebRtc_UWord16 avgRTT)
 {
-    const WebRtc_UWord32 now = ModuleRTPUtility::GetTimeInMS();
+    const WebRtc_UWord32 now = _clock.GetTimeInMS();
     WebRtc_UWord32 bytesReSent = 0;
 
      // Enough bandwith to send NACK?
@@ -1245,7 +1248,7 @@ RTPSender::SetSendingStatus(const bool enabled)
         {
             freq = 90000; // 90 KHz for all video
         }
-        WebRtc_UWord32 RTPtime = ModuleRTPUtility::CurrentRTP(freq);
+        WebRtc_UWord32 RTPtime = ModuleRTPUtility::GetCurrentRTP(&_clock, freq);
 
         SetStartTimestamp(RTPtime); // will be ignored if it's already configured via API
 
