@@ -24,13 +24,13 @@
 
 /* array of quantization levels for bottle neck info; Matlab code: */
 /* sprintf('%4.1ff, ', logspace(log10(5000), log10(40000), 12)) */
-const float WebRtcIsac_kQRateTableWb[12] =
+static const float kQRateTableWb[12] =
 {
   10000.0f, 11115.3f, 12355.1f, 13733.1f, 15264.8f, 16967.3f,
   18859.8f, 20963.3f, 23301.4f, 25900.3f, 28789.0f, 32000.0f};
 
 
-const float WebRtcIsac_kQRateTableSwb[24] =
+static const float kQRateTableSwb[24] =
 {
   10000.0f, 11115.3f, 12355.1f, 13733.1f, 15264.8f, 16967.3f,
   18859.8f, 20963.3f, 23153.1f, 25342.9f, 27532.7f, 29722.5f,
@@ -536,13 +536,13 @@ WebRtc_Word16 WebRtcIsac_UpdateUplinkBwImpl(
 
     /* compute the BN estimate as decoded on the other side */
     bwest_str->send_bw_avg = 0.9f * bwest_str->send_bw_avg +
-        0.1f * WebRtcIsac_kQRateTableWb[index];
+        0.1f * kQRateTableWb[index];
   }
   else
   {
     /* compute the BN estimate as decoded on the other side */
     bwest_str->send_bw_avg = 0.9f * bwest_str->send_bw_avg +
-        0.1f * WebRtcIsac_kQRateTableSwb[index];
+        0.1f * kQRateTableSwb[index];
   }
 
   if (bwest_str->send_bw_avg > (float) 28000 && !bwest_str->hsn_detect_snd)
@@ -642,13 +642,13 @@ WebRtcIsac_GetDownlinkBwJitIndexImpl(
   /* Get Rate Index */
   if(decoderSamplingFreq == kIsacWideband)
   {
-    ptrQuantizationTable = WebRtcIsac_kQRateTableWb;
+    ptrQuantizationTable = kQRateTableWb;
     addJitterInfo = 1;
     maxInd = 11;
   }
   else
   {
-    ptrQuantizationTable = WebRtcIsac_kQRateTableSwb;
+    ptrQuantizationTable = kQRateTableSwb;
     addJitterInfo = 0;
     maxInd = 23;
   }

@@ -169,9 +169,6 @@ extern "C" {
       BwEstimatorstr*              bwest_str,
       WebRtc_Word32                  index);
 
-  extern const float WebRtcIsac_kQRateTableWb[12];
-  extern const float WebRtcIsac_kQRateTableSwb[24];
-
 #if defined(__cplusplus)
 }
 #endif

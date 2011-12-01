@@ -21,9 +21,6 @@
 #include "settings.h"
 #include "structs.h"
 
-/* window */
-extern const double WebRtcIsac_kLpcCorrWindow[256];
-
 double WebRtcIsac_LevDurb(double *a, double *k, double *r, int order);
 
 void WebRtcIsac_GetVars(const double *input, const WebRtc_Word16 *pitchGains_Q12,

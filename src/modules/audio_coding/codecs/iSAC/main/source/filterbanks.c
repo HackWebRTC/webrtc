@@ -26,7 +26,7 @@
  * sections are used to filter the input in a cascade manner.
  * The input is overwritten!!
  */
-static void WebRtcIsac_AllPassFilter2Float(float *InOut, float *APSectionFactors,
+static void WebRtcIsac_AllPassFilter2Float(float *InOut, const float *APSectionFactors,
                                            int lengthInOut, int NumberOfSections,
                                            float *FilterState)
 {

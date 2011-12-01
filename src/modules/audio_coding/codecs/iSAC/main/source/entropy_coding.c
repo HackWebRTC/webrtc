@@ -34,11 +34,11 @@
 #include <math.h>
 #include <string.h>
 
-static const WebRtc_UWord16 WebRtcIsac_kLpcVecPerSegmentUb12 = 5;
-static const WebRtc_UWord16 WebRtcIsac_kLpcVecPerSegmentUb16 = 4;
+static const WebRtc_UWord16 kLpcVecPerSegmentUb12 = 5;
+static const WebRtc_UWord16 kLpcVecPerSegmentUb16 = 4;
 
 /* coefficients for the stepwise rate estimation */
-const WebRtc_Word32 WebRtcIsac_kRPointsQ10[100] = {
+static const WebRtc_Word32 kRPointsQ10[100] = {
   14495,  14295,  14112,  13944,  13788,  13643,  13459,  13276,  13195,  13239,
   13243,  13191,  13133,  13216,  13263,  13330,  13316,  13242,  13191,  13106,
   12942,  12669,  12291,  11840,  11361,  10795,  10192,  9561,  8934,  8335,
@@ -52,23 +52,24 @@ const WebRtc_Word32 WebRtcIsac_kRPointsQ10[100] = {
 
 
 /* cdf array for encoder bandwidth (12 vs 16 kHz) indicator */
-static const WebRtc_UWord16 WebRtcIsac_kOneBitEqualProbCdf[3] = {
-  0, 32768, 65535};
+static const WebRtc_UWord16 kOneBitEqualProbCdf[3] = {
+  0, 32768, 65535 };
 
 /* pointer to cdf array for encoder bandwidth (12 vs 16 kHz) indicator */
-static const WebRtc_UWord16 *WebRtcIsac_kOneBitEqualProbCdf_ptr[1] = {WebRtcIsac_kOneBitEqualProbCdf};
+static const WebRtc_UWord16 *kOneBitEqualProbCdf_ptr[1] = {
+    kOneBitEqualProbCdf };
 
 /* initial cdf index for decoder of encoded bandwidth (12 vs 16 kHz) indicator */
-static const WebRtc_UWord16 WebRtcIsac_kOneBitEqualProbInitIndex[1] = {1};
+static const WebRtc_UWord16 kOneBitEqualProbInitIndex[1] = {1};
 
 
 /* coefficients for the stepwise rate estimation */
 
 
-const WebRtc_Word32 acnQ10 =  426;
-const WebRtc_Word32 bcnQ10 = -581224;
-const WebRtc_Word32 ccnQ10 =  722631;
-const WebRtc_Word32 lbcnQ10 = -402874;
+static const WebRtc_Word32 acnQ10 =  426;
+static const WebRtc_Word32 bcnQ10 = -581224;
+static const WebRtc_Word32 ccnQ10 =  722631;
+static const WebRtc_Word32 lbcnQ10 = -402874;
 #define DPMIN_Q10     -10240 // -10.00 in Q10
 #define DPMAX_Q10      10240 // 10.00 in Q10
 #define MINBITS_Q10    10240  /* 10.0 in Q10 */
@@ -124,8 +125,7 @@ __inline WebRtc_UWord32 stepwise(WebRtc_Word32 dinQ10) {
   ind = (dtQ10 * 5) >> 10;   /* 2^10 / 5 = 0.2 in Q10  */
   /* Q10 -> Q0 */
 
-  return WebRtcIsac_kRPointsQ10[ind];
-
+  return kRPointsQ10[ind];
 }
 
 
@@ -1387,14 +1387,14 @@ WebRtcIsac_DecodeInterpolLpcUb(
       {
         numGains = SUBFRAMES;
         numSegments = UB_LPC_VEC_PER_FRAME - 1;
-        numVecPerSegment = WebRtcIsac_kLpcVecPerSegmentUb12;
+        numVecPerSegment = kLpcVecPerSegmentUb12;
         break;
       }
     case isac16kHz:
       {
         numGains = SUBFRAMES << 1;
         numSegments = UB16_LPC_VEC_PER_FRAME - 1;
-        numVecPerSegment = WebRtcIsac_kLpcVecPerSegmentUb16;
+        numVecPerSegment = kLpcVecPerSegmentUb16;
         break;
       }
     default:
@@ -1843,9 +1843,9 @@ WebRtcIsac_EncodeLpcUB(
         for(interpolCntr = 0; interpolCntr < UB_INTERPOL_SEGMENTS; interpolCntr++)
         {
           WebRtcIsac_Lar2PolyInterpolUB(lpcVecs,
-                                        interpolLPCCoeff, WebRtcIsac_kLpcVecPerSegmentUb12 + 1);
+                                        interpolLPCCoeff, kLpcVecPerSegmentUb12 + 1);
           lpcVecs += UB_LPC_ORDER;
-          interpolLPCCoeff += (WebRtcIsac_kLpcVecPerSegmentUb12 * (UB_LPC_ORDER + 1));
+          interpolLPCCoeff += (kLpcVecPerSegmentUb12 * (UB_LPC_ORDER + 1));
         }
         break;
       }
@@ -1859,9 +1859,9 @@ WebRtcIsac_EncodeLpcUB(
         for(interpolCntr = 0; interpolCntr < UB16_INTERPOL_SEGMENTS; interpolCntr++)
         {
           WebRtcIsac_Lar2PolyInterpolUB(lpcVecs,
-                                        interpolLPCCoeff, WebRtcIsac_kLpcVecPerSegmentUb16 + 1);
+                                        interpolLPCCoeff, kLpcVecPerSegmentUb16 + 1);
           lpcVecs += UB_LPC_ORDER;
-          interpolLPCCoeff += (WebRtcIsac_kLpcVecPerSegmentUb16 * (UB_LPC_ORDER + 1));
+          interpolLPCCoeff += (kLpcVecPerSegmentUb16 * (UB_LPC_ORDER + 1));
         }
         break;
       }
@@ -2509,16 +2509,16 @@ int WebRtcIsac_EncodeFrameLen(WebRtc_Word16 framesamples, Bitstr *streamdata) {
 }
 
 /* cdf array for estimated bandwidth */
-const WebRtc_UWord16 WebRtcIsac_kBwCdf[25] = {
+static const WebRtc_UWord16 kBwCdf[25] = {
   0, 2731, 5461, 8192, 10923, 13653, 16384, 19114, 21845, 24576, 27306, 30037,
   32768, 35498, 38229, 40959, 43690, 46421, 49151, 51882, 54613, 57343, 60074,
   62804, 65535};
 
 /* pointer to cdf array for estimated bandwidth */
-const WebRtc_UWord16 *WebRtcIsac_kBwCdfPtr[1] = {WebRtcIsac_kBwCdf};
+static const WebRtc_UWord16 *kBwCdfPtr[1] = { kBwCdf };
 
 /* initial cdf index for decoder of estimated bandwidth*/
-const WebRtc_UWord16 WebRtcIsac_kBwInitIndex[1] = {7};
+static const WebRtc_UWord16 kBwInitIndex[1] = { 7 };
 
 
 int WebRtcIsac_DecodeSendBW(Bitstr *streamdata, WebRtc_Word16 *BWno) {
@@ -2526,7 +2526,7 @@ int WebRtcIsac_DecodeSendBW(Bitstr *streamdata, WebRtc_Word16 *BWno) {
   int BWno32, err;
 
   /* entropy decoding of sender's BW estimation [0..23] */
-  err = WebRtcIsac_DecHistOneStepMulti(&BWno32, streamdata, WebRtcIsac_kBwCdfPtr, WebRtcIsac_kBwInitIndex, 1);
+  err = WebRtcIsac_DecHistOneStepMulti(&BWno32, streamdata, kBwCdfPtr, kBwInitIndex, 1);
   if (err<0)  // error check
     return -ISAC_RANGE_ERROR_DECODE_BANDWIDTH;
   *BWno = (WebRtc_Word16)BWno32;
@@ -2537,7 +2537,7 @@ int WebRtcIsac_DecodeSendBW(Bitstr *streamdata, WebRtc_Word16 *BWno) {
 void WebRtcIsac_EncodeReceiveBw(int *BWno, Bitstr *streamdata) {
 
   /* entropy encoding of receiver's BW estimation [0..23] */
-  WebRtcIsac_EncHistMulti(streamdata, BWno, WebRtcIsac_kBwCdfPtr, 1);
+  WebRtcIsac_EncHistMulti(streamdata, BWno, kBwCdfPtr, 1);
 
 }
 
@@ -2704,7 +2704,7 @@ WebRtcIsac_EncodeBandwidth(
   }
 
   WebRtcIsac_EncHistMulti(streamData, &bandwidthMode,
-                          WebRtcIsac_kOneBitEqualProbCdf_ptr, 1);
+                          kOneBitEqualProbCdf_ptr, 1);
   return 0;
 }
 
@@ -2716,8 +2716,8 @@ WebRtcIsac_DecodeBandwidth(
   int bandwidthMode;
 
   if(WebRtcIsac_DecHistOneStepMulti(&bandwidthMode, streamData,
-                                    WebRtcIsac_kOneBitEqualProbCdf_ptr,
-                                    WebRtcIsac_kOneBitEqualProbInitIndex, 1) < 0)
+                                    kOneBitEqualProbCdf_ptr,
+                                    kOneBitEqualProbInitIndex, 1) < 0)
   {
     // error check
     return -ISAC_RANGE_ERROR_DECODE_BANDWITH;
@@ -2758,7 +2758,7 @@ WebRtcIsac_EncodeJitterInfo(
   // Use the same CDF table as for bandwidth
   // both take two values with equal probability
   WebRtcIsac_EncHistMulti(streamData, &intVar,
-                          WebRtcIsac_kOneBitEqualProbCdf_ptr, 1);
+                          kOneBitEqualProbCdf_ptr, 1);
   return 0;
 
 }
@@ -2773,8 +2773,8 @@ WebRtcIsac_DecodeJitterInfo(
   // Use the same CDF table as for bandwidth
   // both take two values with equal probability
   if(WebRtcIsac_DecHistOneStepMulti(&intVar, streamData,
-                                    WebRtcIsac_kOneBitEqualProbCdf_ptr,
-                                    WebRtcIsac_kOneBitEqualProbInitIndex, 1) < 0)
+                                    kOneBitEqualProbCdf_ptr,
+                                    kOneBitEqualProbInitIndex, 1) < 0)
   {
     // error check
     return -ISAC_RANGE_ERROR_DECODE_BANDWITH;
