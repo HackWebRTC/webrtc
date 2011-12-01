@@ -363,7 +363,6 @@ UnitTest::Perform()
     int frameLength;
     RawImage inputImage;
     EncodedImage encodedImage;
-    EventWrapper& sleepEvent = *EventWrapper::Create();
     VideoFrameType videoFrameType = kDeltaFrame;
 
     //----- Encoder parameter tests -----
@@ -454,7 +453,6 @@ UnitTest::Perform()
         EXPECT_TRUE(_encoder->Encode(inputImage, NULL, &frameType) ==
             WEBRTC_VIDEO_CODEC_OK);
         EXPECT_TRUE(WaitForEncodedFrame() > 0);
-        sleepEvent.Wait(10); // Allow the encoder's queue to realize it's empty.
     }
 
     // Init then encode.
@@ -727,9 +725,7 @@ UnitTest::Perform()
         EXPECT_TRUE(_decodedVideoBuffer.GetTimeStamp() ==
                 static_cast<unsigned>(encTimeStamp));
         frames++;
-        sleepEvent.Wait(33);
     }
-    delete &sleepEvent;
     ASSERT_TRUE(feof(_sourceFile) != 0);
     rewind(_sourceFile);
 
@@ -745,7 +741,6 @@ UnitTest::RateControlTests()
     int frames = 0;
     RawImage inputImage;
     WebRtc_UWord32 frameLength;
-    EventWrapper& sleepEvent = *EventWrapper::Create();
 
     // Do not specify maxBitRate (as in ViE).
     _inst.maxBitrate = 0;
@@ -798,8 +793,6 @@ UnitTest::RateControlTests()
 
             _encodedVideoBuffer.UpdateLength(0);
             _encodedVideoBuffer.Reset();
-
-            sleepEvent.Wait(10);
         }
         WebRtc_UWord32 actualBitrate =
             (totalBytes  / frames * _inst.maxFramerate * 8)/1000;
