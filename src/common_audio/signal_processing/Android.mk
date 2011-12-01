@@ -20,10 +20,8 @@ LOCAL_SRC_FILES := \
     auto_corr_to_refl_coef.c \
     auto_correlation.c \
     complex_fft.c \
-    complex_ifft.c \
     complex_bit_reverse.c \
     copy_set_operations.c \
-    cos_table.c \
     cross_correlation.c \
     division_operations.c \
     dot_product_with_scale.c \
@@ -34,12 +32,10 @@ LOCAL_SRC_FILES := \
     filter_ma_fast_q12.c \
     get_hanning_window.c \
     get_scaling_square.c \
-    hanning_table.c \
     ilbc_specific_functions.c \
     levinson_durbin.c \
     lpc_to_refl_coef.c \
     min_max_operations.c \
-    randn_table.c \
     randomization_functions.c \
     refl_coef_to_lpc.c \
     resample.c \
@@ -47,8 +43,6 @@ LOCAL_SRC_FILES := \
     resample_by_2.c \
     resample_by_2_internal.c \
     resample_fractional.c \
-    sin_table.c \
-    sin_table_1024.c \
     spl_sqrt.c \
     spl_sqrt_floor.c \
     spl_version.c \

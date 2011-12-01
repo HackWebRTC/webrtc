@@ -174,16 +174,6 @@ extern "C"
 #define WEBRTC_SPL_MEMMOVE_W16(v1, v2, length) \
    memmove(v1, v2, (length) * sizeof(WebRtc_Word16))
 
-// Trigonometric tables used for quick lookup
-// default declarations
-extern const WebRtc_Word16 WebRtcSpl_kCosTable[];
-extern const WebRtc_Word16 WebRtcSpl_kSinTable[];
-extern const WebRtc_Word16 WebRtcSpl_kSinTable1024[];
-// Hanning table
-extern const WebRtc_Word16 WebRtcSpl_kHanningTable[];
-// Random table
-extern const WebRtc_Word16 WebRtcSpl_kRandNTable[];
-
 // inline functions:
 #include "spl_inl.h"
 
