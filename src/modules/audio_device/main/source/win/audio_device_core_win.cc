@@ -3592,8 +3592,17 @@ DWORD AudioDeviceWindowsCore::DoRenderThread()
                 {
                     // Request data to be played out (#bytes = _playBlockSize*_audioFrameSize)
                     _UnLock();
-                    WebRtc_UWord32 nSamples = _ptrAudioBuffer->RequestPlayoutData(_playBlockSize);
+                    WebRtc_Word32 nSamples =
+                    _ptrAudioBuffer->RequestPlayoutData(_playBlockSize);
                     _Lock();
+
+                    if (nSamples == -1) 
+                    {
+                        _UnLock();
+                        WEBRTC_TRACE(kTraceCritical, kTraceAudioDevice, _id,
+                                     "failed to read data from render client");
+                        goto Exit;
+                    }
 
                     // Sanity check to ensure that essential states are not modified during the unlocked period
                     if (_ptrRenderClient == NULL || _ptrClientOut == NULL)
