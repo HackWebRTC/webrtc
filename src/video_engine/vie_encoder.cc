@@ -39,7 +39,7 @@ class QMTestVideoSettingsCallback : public VCMQMSettingsCallback {
                                    const WebRtc_UWord32 width,
                                    const WebRtc_UWord32 height);
 
-  WebRtc_Word32 SetMaxPayloadLength(WebRtc_Word32 num_cores);
+  void SetMaxPayloadLength(WebRtc_Word32 num_cores);
 
  private:
   VideoProcessingModule* vpm_;
@@ -832,7 +832,7 @@ WebRtc_Word32 QMTestVideoSettingsCallback::SetVideoQMSettings(
   return ret_val;
 }
 
-WebRtc_Word32 QMTestVideoSettingsCallback::SetMaxPayloadLength(
+void QMTestVideoSettingsCallback::SetMaxPayloadLength(
     WebRtc_Word32 max_payload_length) {
   max_payload_length_ = max_payload_length;
 }
