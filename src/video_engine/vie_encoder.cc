@@ -30,8 +30,8 @@ class QMTestVideoSettingsCallback : public VCMQMSettingsCallback {
  public:
   QMTestVideoSettingsCallback(VideoProcessingModule* vpm,
                               VideoCodingModule* vcm,
-                              WebRtc_Word32 num_of_cores_,
-                              WebRtc_Word32 max_payload_length_);
+                              WebRtc_Word32 num_of_cores,
+                              WebRtc_Word32 max_payload_length);
   ~QMTestVideoSettingsCallback();
 
   // Update VPM with QM (quality modes: frame size & frame rate) settings.
@@ -39,7 +39,7 @@ class QMTestVideoSettingsCallback : public VCMQMSettingsCallback {
                                    const WebRtc_UWord32 width,
                                    const WebRtc_UWord32 height);
 
-  void SetMaxPayloadLength(WebRtc_Word32 num_cores);
+  void SetMaxPayloadLength(WebRtc_Word32 max_payload_length);
 
  private:
   VideoProcessingModule* vpm_;
