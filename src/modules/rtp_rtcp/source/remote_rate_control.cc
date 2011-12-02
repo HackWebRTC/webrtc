@@ -8,6 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#if _WIN32
+#include <windows.h>
+#endif
+
 #include "remote_rate_control.h"
 #include "trace.h"
 #include <math.h>
