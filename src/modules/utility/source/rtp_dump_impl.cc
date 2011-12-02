@@ -39,7 +39,7 @@
 #endif  // defined(_DEBUG) && defined(_WIN32)
 
 namespace webrtc {
-const WebRtc_Word8 RTPFILE_VERSION [] = "1.0";
+const WebRtc_Word8 RTPFILE_VERSION[] = "1.0";
 const WebRtc_UWord32 MAX_UWORD32 = 0xffffffff;
 
 // This stucture is specified in the rtpdump documentation.
