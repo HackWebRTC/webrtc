@@ -342,6 +342,8 @@ TEST_F(NetEqDecodingTest, TestBitExactness) {
 }
 #endif  // defined(WEBRTC_LINUX) && defined(WEBRTC_ARCH_64_BITS)
 
+#ifndef _WIN32
+// TODO(hlundin): Enable this test for windows.
 TEST_F(NetEqDecodingTest, TestNetworkStatistics) {
   const std::string kInputRtpFile = webrtc::test::ProjectRootPath() +
       "resources/neteq_universal.rtp";
@@ -351,5 +353,6 @@ TEST_F(NetEqDecodingTest, TestNetworkStatistics) {
       "resources/neteq_rtcp_stats.dat";
   DecodeAndCheckStats(kInputRtpFile, kNetworkStatRefFile, kRtcpStatRefFile);
 }
+#endif // _WIN32
 
 }  // namespace
