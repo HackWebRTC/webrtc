@@ -434,6 +434,7 @@ enum RawVideoType
 enum { kConfigParameterSize = 128};
 enum { kPayloadNameSize = 32};
 enum { kMaxSimulcastStreams = 4};
+enum { kMaxTemporalStreams = 4};
 
 // H.263 specific
 struct VideoCodecH263

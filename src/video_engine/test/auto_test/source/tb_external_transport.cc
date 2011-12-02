@@ -14,9 +14,11 @@
 
 #include "tb_external_transport.h"
 
+#include <stdio.h> // printf
 #include <stdlib.h> // rand
+#include <cassert>
+
 #if defined(WEBRTC_LINUX) || defined(__linux__)
-#include <stdlib.h>
 #include <string.h>
 #endif
 #if defined(WEBRTC_MAC)
@@ -48,6 +50,13 @@ TbExternalTransport::TbExternalTransport(webrtc::ViENetwork& vieNetwork) :
         _dropCount(0),
         _rtpPackets(),
         _rtcpPackets(),
+        _temporalLayers(0),
+        _seqNum(0),
+        _sendPID(0),
+        _receivedPID(0),
+        _switchLayer(false),
+        _currentRelayLayer(0),
+        _lastTimeMs(webrtc::TickTime::MillisecondTimestamp()),
         _checkSSRC(false),
         _lastSSRC(0),
         _filterSSRC(false),
@@ -84,7 +93,68 @@ int TbExternalTransport::SendPacket(int channel, const void *data, int len)
         ssrc += ptr[11];
         if (ssrc != _SSRC)
         {  
-            return len; // return len to avoif error in trace file
+            return len; // return len to avoid error in trace file
+        }
+    }
+    if (_temporalLayers) {
+        // parse out vp8 temporal layers
+        // 12 bytes RTP
+        WebRtc_UWord8* ptr = (WebRtc_UWord8*)data;
+
+        if (ptr[12] & 0x80 &&  // X-bit
+            ptr[13] & 0x20)  // T-bit
+        {
+            int offset = 1;
+            if (ptr[13] & 0x80) // PID-bit
+            {
+                offset++;
+                if (ptr[14] & 0x80) // 2 byte PID
+                {
+                    offset++;
+                }
+            }
+            if (ptr[13] & 0x40)
+            {
+                offset++;
+            }
+            unsigned char TID = (ptr[13 + offset] >> 5);
+            unsigned int timeMs = NowMs();
+
+            // Every 5 second switch layer
+            if (_lastTimeMs + 5000 < timeMs)
+            {
+                _lastTimeMs = timeMs;
+                _switchLayer = true;
+            }
+            // Switch at the non ref frame
+            if (_switchLayer && (ptr[12] & 0x20))
+            {   // N-bit
+              _currentRelayLayer++;
+                if (_currentRelayLayer >= _temporalLayers)
+                  _currentRelayLayer = 0;
+
+                _switchLayer = false;
+                printf("\t Switching to layer:%d\n", _currentRelayLayer);
+            }
+            if (_currentRelayLayer < TID)
+            {
+                return len; // return len to avoid error in trace file
+            }
+            if (ptr[14] & 0x80) // 2 byte PID
+            {
+                if(_receivedPID != ptr[15])
+                {
+                    _sendPID++;
+                    _receivedPID = ptr[15];
+                }
+            } else
+            {
+              if(_receivedPID != ptr[14])
+              {
+                _sendPID++;
+                _receivedPID = ptr[14];
+              }
+            }
         }
     }
     _statCrit.Enter();
@@ -103,6 +173,24 @@ int TbExternalTransport::SendPacket(int channel, const void *data, int len)
 
     VideoPacket* newPacket = new VideoPacket();
     memcpy(newPacket->packetBuffer, data, len);
+
+    if (_temporalLayers)
+    {
+        // rewrite seqNum
+        newPacket->packetBuffer[2] = _seqNum >> 8;
+        newPacket->packetBuffer[3] = _seqNum;
+        _seqNum++;
+
+        // rewrite PID
+        if (newPacket->packetBuffer[14] & 0x80) // 2 byte PID
+        {
+            newPacket->packetBuffer[14] = (_sendPID >> 8) | 0x80;
+            newPacket->packetBuffer[15] = _sendPID;
+        } else
+        {
+            newPacket->packetBuffer[14] = (_sendPID & 0x7f);
+        }
+    }
     newPacket->length = len;
     newPacket->channel = channel;
 
@@ -112,6 +200,12 @@ int TbExternalTransport::SendPacket(int channel, const void *data, int len)
     _event.Set();
     _crit.Leave();
     return len;
+}
+
+// Set to 0 to disable.
+void TbExternalTransport::SetTemporalToggle(unsigned char layers)
+{
+    _temporalLayers = layers;
 }
 
 int TbExternalTransport::SendRTCPPacket(int channel, const void *data, int len)

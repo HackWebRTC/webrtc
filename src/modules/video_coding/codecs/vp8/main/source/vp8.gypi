@@ -50,6 +50,8 @@
         'reference_picture_selection.cc',
         '../interface/vp8.h',
         '../interface/vp8_simulcast.h',
+        'temporal_layers.h',
+        'temporal_layers.cc',
         'vp8.cc',
         'vp8_simulcast.cc',
       ],
@@ -103,6 +105,7 @@
           ],
           'sources': [
             'reference_picture_selection_unittest.cc',
+            'temporal_layers_unittest.cc',
           ],
         },
       ], # targets

@@ -22,6 +22,7 @@
 
 #include "module_common_types.h"
 #include "reference_picture_selection.h"
+#include "temporal_layers.h"
 #include "tick_util.h"
 #include "vpx/vpx_encoder.h"
 #include "vpx/vpx_decoder.h"
@@ -48,6 +49,7 @@ VP8Encoder::VP8Encoder():
     _rcMaxIntraTarget(0),
     _tokenPartitions(VP8_ONE_TOKENPARTITION),
     _rps(new ReferencePictureSelection),
+    _temporalLayers(NULL),
     _encoder(NULL),
     _cfg(NULL),
     _raw(NULL)
@@ -111,6 +113,11 @@ VP8Encoder::Release()
         delete _raw;
         _raw = NULL;
     }
+    if (_temporalLayers != NULL)
+    {
+        delete _temporalLayers;
+        _temporalLayers = NULL;
+    }
     _inited = false;
 
     return WEBRTC_VIDEO_CODEC_OK;
@@ -163,21 +170,12 @@ VP8Encoder::SetRates(WebRtc_UWord32 newBitRateKbit, WebRtc_UWord32 newFrameRate)
     {
         newBitRateKbit = _maxBitRateKbit;
     }
-
     _cfg->rc_target_bitrate = newBitRateKbit; // in kbit/s
-/*  TODO(pwestin) use number of temoral layers config
-    int ids[3] = {0,1,2};                                
-    _cfg->ts_number_layers     = 3;
-    _cfg->ts_periodicity       = 3;
-    _cfg->ts_target_bitrate[0] = (newBitRateKbit*2/5);
-    _cfg->ts_target_bitrate[1] = (newBitRateKbit*3/5);
-    _cfg->ts_target_bitrate[2] = (newBitRateKbit);
-    _cfg->ts_rate_decimator[0] = 4;
-    _cfg->ts_rate_decimator[1] = 2;
-    _cfg->ts_rate_decimator[2] = 1;
-    memcpy(_cfg->ts_layer_id, ids, sizeof(ids));
-*/
 
+    if (_temporalLayers)
+    {
+        _temporalLayers->ConfigureBitrates(newBitRateKbit, _cfg);
+    }
     _maxFrameRate = newFrameRate;
 
     // update encoder context
@@ -240,8 +238,15 @@ VP8Encoder::InitEncode(const VideoCodec* inst,
     _width = inst->width;
     _height = inst->height;
 
-    // random start 16 bits is enough
-    _pictureID = ((WebRtc_UWord16)rand()) % 0x7FFF;
+    if (inst->codecSpecific.VP8.numberOfTemporalLayers > 1)
+    {
+      assert(_temporalLayers == NULL);
+      _temporalLayers =
+          new TemporalLayers(inst->codecSpecific.VP8.numberOfTemporalLayers);
+    }
+
+    // random start 16 bits is enough.
+    _pictureID = ((WebRtc_UWord16)rand()) & 0x7FFF;
 
     // allocate memory for encoded image
     if (_encodedImage._buffer != NULL)
@@ -258,7 +263,6 @@ VP8Encoder::InitEncode(const VideoCodec* inst,
     {
          return WEBRTC_VIDEO_CODEC_ERROR;
     }
-
     _cfg->g_w = inst->width;
     _cfg->g_h = inst->height;
     if (_maxBitRateKbit > 0 &&
@@ -270,19 +274,10 @@ VP8Encoder::InitEncode(const VideoCodec* inst,
     {
       _cfg->rc_target_bitrate = inst->startBitrate;  // in kbit/s
     }
-/*  TODO(pwestin) use number of temoral layers config
-    int ids[3] = {0,1,2};                                
-    _cfg->ts_number_layers     = 3;
-    _cfg->ts_periodicity       = 3;
-    _cfg->ts_target_bitrate[0] = (inst->startBitrate*2/5);
-    _cfg->ts_target_bitrate[1] = (inst->startBitrate*3/5);
-    _cfg->ts_target_bitrate[2] = (inst->startBitrate);
-    _cfg->ts_rate_decimator[0] = 4;
-    _cfg->ts_rate_decimator[1] = 2;
-    _cfg->ts_rate_decimator[2] = 1;
-    memcpy(_cfg->ts_layer_id, ids, sizeof(ids));
-*/
-
+    if (_temporalLayers)
+    {
+        _temporalLayers->ConfigureBitrates(inst->startBitrate, _cfg);
+    }
     // setting the time base of the codec
     _cfg->g_timebase.num = 1;
     _cfg->g_timebase.den = 90000;
@@ -328,7 +323,6 @@ VP8Encoder::InitEncode(const VideoCodec* inst,
         _cfg->kf_mode = VPX_KF_AUTO;
         _cfg->kf_max_dist = 3000;
     }
-
     switch (inst->codecSpecific.VP8.complexity)
     {
         case kComplexityHigh:
@@ -352,13 +346,11 @@ VP8Encoder::InitEncode(const VideoCodec* inst,
             break;
         }
     }
-
     _rps->Init();
 
     return InitAndSetControlSettings();
-
-
 }
+
 
 WebRtc_Word32
 VP8Encoder::InitAndSetControlSettings()
@@ -369,7 +361,7 @@ VP8Encoder::InitAndSetControlSettings()
     // TODO(holmer): We should make a smarter decision on the number of
     // partitions. Eight is probably not the optimal number for low resolution
     // video.
-    _tokenPartitions = VP8_EIGHT_TOKENPARTITION;
+
 #if WEBRTC_LIBVPX_VERSION >= 971
     flags |= VPX_CODEC_USE_OUTPUT_PARTITION;
 #endif
@@ -444,10 +436,15 @@ VP8Encoder::Encode(const RawImage& inputImage,
     _raw->planes[PLANE_V] =  &inputImage._buffer[_height * _width * 5 >> 2];
 
     int flags = 0;
-    if (frameTypes && *frameTypes == kKeyFrame) {
+    if (_temporalLayers) {
+      flags |= _temporalLayers->EncodeFlags();
+    }
+    bool sendKeyFrame = frameTypes && (*frameTypes == kKeyFrame);
+    if (sendKeyFrame)
+    {
       // Key frame request from caller.
       // Will update both golden and alt-ref.
-      flags |= VPX_EFLAG_FORCE_KF;
+      flags = VPX_EFLAG_FORCE_KF;
     } else if (_feedbackModeOn && codecSpecificInfo) {
       // Handle RPSI and SLI messages and set up the appropriate encode flags.
       bool sendRefresh = false;
@@ -490,10 +487,16 @@ void VP8Encoder::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
   codec_specific->codecType = kVideoCodecVP8;
   CodecSpecificInfoVP8 *vp8Info = &(codec_specific->codecSpecific.VP8);
   vp8Info->pictureId = _pictureID;
-  vp8Info->simulcastIdx = _simulcastIdx;;
-  vp8Info->temporalIdx = kNoTemporalIdx; // TODO(pwestin) need to populate this
+  vp8Info->simulcastIdx = _simulcastIdx;
   vp8Info->keyIdx = kNoKeyIdx;  // TODO(hlundin) populate this
   vp8Info->nonReference = (pkt.data.frame.flags & VPX_FRAME_IS_DROPPABLE);
+  if (_temporalLayers) {
+    _temporalLayers->PopulateCodecSpecific(
+        (pkt.data.frame.flags & VPX_FRAME_IS_KEY) ? true : false, vp8Info);
+  } else {
+    vp8Info->temporalIdx = kNoTemporalIdx;
+    vp8Info->tl0PicIdx = kNoTl0PicIdx;
+  }
   _pictureID = (_pictureID + 1) % 0x7FFF; // prepare next
 }
 
@@ -568,6 +571,7 @@ VP8Encoder::GetEncodedPartitions(const RawImage& input_image) {
   RTPFragmentationHeader frag_info;
   frag_info.VerifyAndAllocateFragmentationHeader((1 << _tokenPartitions) + 1);
   CodecSpecificInfo codecSpecific;
+
   const vpx_codec_cx_pkt_t *pkt = NULL;
   while ((pkt = vpx_codec_get_cx_data(_encoder, &iter)) != NULL) {
     switch(pkt->kind) {

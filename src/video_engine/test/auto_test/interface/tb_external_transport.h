@@ -44,6 +44,7 @@ public:
                   WebRtc_Word32& numDroppedPackets,
                   WebRtc_Word32& numRtcpPackets);
 
+    void SetTemporalToggle(unsigned char layers);
     void EnableSSRCCheck();
     unsigned int ReceivedSSRC();
 
@@ -86,6 +87,14 @@ private:
 
     webrtc::ListWrapper _rtpPackets;
     webrtc::ListWrapper _rtcpPackets;
+
+    unsigned char _temporalLayers;
+    unsigned short _seqNum;
+    unsigned short _sendPID;
+    unsigned char _receivedPID;
+    bool _switchLayer;
+    unsigned char _currentRelayLayer;
+    unsigned int _lastTimeMs;
 
     bool _checkSSRC;
     WebRtc_UWord32 _lastSSRC;

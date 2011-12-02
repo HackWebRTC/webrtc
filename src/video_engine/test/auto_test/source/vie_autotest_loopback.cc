@@ -212,7 +212,6 @@ int VideoEngineSampleCode(void* window1, void* window2)
         printf("ERROR in ViERTP_RTCP::SetKeyFrameRequestMethod\n");
         return -1;
     }
-
     error = ptrViERtpRtcp->SetTMMBRStatus(videoChannel, true);
     if (error == -1)
     {
@@ -343,29 +342,36 @@ int VideoEngineSampleCode(void* window1, void* window2)
     switch (resolnOption)
     {
         case 1:
-        videoCodec.width = 176;
-        videoCodec.height = 144;
-          break;
-
+            videoCodec.width = 176;
+            videoCodec.height = 144;
+            break;
         case 2:
-        videoCodec.width = 352;
-        videoCodec.height = 288;
-          break;
-
+            videoCodec.width = 352;
+            videoCodec.height = 288;
+            break;
         case 3:
-        videoCodec.width = 640;
-        videoCodec.height = 480;
-          break;
-
+            videoCodec.width = 640;
+            videoCodec.height = 480;
+            break;
         case 4:
-        videoCodec.width = 704;
-        videoCodec.height = 576;
-          break;
-
+            videoCodec.width = 704;
+            videoCodec.height = 576;
+            break;
         case 5:
-        videoCodec.width = 1280;
-        videoCodec.height = 720;
-          break;
+            videoCodec.width = 1280;
+            videoCodec.height = 720;
+            break;
+    }
+
+    // Set number of temporal layers.
+    std::cout << std::endl;
+    std::cout << "Choose number of temporal layers (1 to 4).";
+    std::cout << "Press enter for default: \n";
+    std::getline(std::cin, str);
+    int numTemporalLayers = atoi(str.c_str());
+    if(numTemporalLayers != 0)
+    {
+        videoCodec.codecSpecific.VP8.numberOfTemporalLayers = numTemporalLayers;
     }
 
     // Set start bit rate
@@ -439,6 +445,12 @@ int VideoEngineSampleCode(void* window1, void* window2)
 
     // Setting External transport
     TbExternalTransport extTransport(*(ptrViENetwork));
+    if (numTemporalLayers > 1) {
+      extTransport.SetTemporalToggle(numTemporalLayers);
+    } else {
+      // Disabled
+      extTransport.SetTemporalToggle(0);
+    }
 
     int testMode = 0;
     std::cout << std::endl;
@@ -449,8 +461,11 @@ int VideoEngineSampleCode(void* window1, void* window2)
     testMode = atoi(test_str.c_str());
     if (testMode == 1)
     {
+        // Avoid changing SSRC due to collision.
+        error = ptrViERtpRtcp->SetLocalSSRC(videoChannel, 1);
+
         error = ptrViENetwork->RegisterSendTransport(videoChannel,
-                                                      extTransport);
+                                                     extTransport);
         if (error == -1)
         {
             printf("ERROR in ViECodec::RegisterSendTransport \n");

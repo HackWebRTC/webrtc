@@ -29,6 +29,7 @@ struct vpx_codec_cx_pkt;
 
 namespace webrtc
 {
+class TemporalLayers;
 
 class ReferencePictureSelection;
 
@@ -139,7 +140,7 @@ public:
                                         WebRtc_Word32 length);
 
 private:
-// Call encoder initialize function and set control settings.
+    // Call encoder initialize function and set control settings.
     WebRtc_Word32 InitAndSetControlSettings();
 
     void PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
@@ -174,6 +175,7 @@ private:
     WebRtc_UWord32             _rcMaxIntraTarget;
     int                        _tokenPartitions;
     ReferencePictureSelection* _rps;
+    TemporalLayers*            _temporalLayers;
 
     vpx_codec_ctx_t*            _encoder;
     vpx_codec_enc_cfg_t*        _cfg;
@@ -270,9 +272,7 @@ private:
     vpx_ref_frame_t*           _refFrame;
     int                        _propagationCnt;
     bool                       _latestKeyFrameComplete;
-
 };// end of VP8Decoder class
-
 } // namespace webrtc
 
 #endif // WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_H_
