@@ -130,14 +130,16 @@ public:
     // Return value                : WEBRTC_VIDEO_CODEC_OK if OK, < 0 otherwise.
     virtual WebRtc_Word32 Reset() = 0;
 
-    // Inform the encoder about the packet loss and round trip time on the network
-    // used to decide the best pattern and signaling.
+    // Inform the encoder about the packet loss and round trip time on the
+    // network used to decide the best pattern and signaling.
     //
-    //          - packetLoss       : Fraction lost
-    //                               (loss rate in percent = 100 * packetLoss / 255)
+    //          - packetLoss       : Fraction lost (loss rate in percent =
+    //                               100 * packetLoss / 255)
+    //          - rtt              : Round-trip time in milliseconds
     //
     // Return value                : WEBRTC_VIDEO_CODEC_OK if OK, < 0 otherwise.
-    virtual WebRtc_Word32 SetPacketLoss(WebRtc_UWord32 packetLoss) = 0;
+    virtual WebRtc_Word32 SetChannelParameters(WebRtc_UWord32 packetLoss,
+                                               int rtt) = 0;
 
     // Inform the encoder about the new target bit rate.
     //

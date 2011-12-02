@@ -110,9 +110,9 @@ public:
     */
     WebRtc_Word32 SetRates(WebRtc_UWord32 newBitRate, WebRtc_UWord32 frameRate);
     /**
-    * Set a new packet loss rate
+    * Set a new packet loss rate and a new round-trip time in milliseconds.
     */
-    WebRtc_Word32 SetPacketLoss(WebRtc_Word32 packetLoss);
+    WebRtc_Word32 SetChannelParameters(WebRtc_Word32 packetLoss, int rtt);
     WebRtc_Word32 CodecConfigParameters(WebRtc_UWord8* buffer, WebRtc_Word32 size);
     /**
     * Register a transport callback which will be called to deliver the encoded buffers

@@ -38,7 +38,8 @@ class MockVideoEncoder : public VideoEncoder {
                WebRtc_Word32(EncodedImageCallback* callback));
   MOCK_METHOD0(Release, WebRtc_Word32());
   MOCK_METHOD0(Reset, WebRtc_Word32());
-  MOCK_METHOD1(SetPacketLoss, WebRtc_Word32(WebRtc_UWord32 packetLoss));
+  MOCK_METHOD2(SetChannelParameters, WebRtc_Word32(WebRtc_UWord32 packetLoss,
+                                                   int rtt));
   MOCK_METHOD2(SetRates,
                WebRtc_Word32(WebRtc_UWord32 newBitRate,
                              WebRtc_UWord32 frameRate));

@@ -150,25 +150,25 @@ public:
     //      - availableBandWidth    : Band width available for the VCM in kbit/s.
     //      - lossRate              : Fractions of lost packets the past second.
     //                                (loss rate in percent = 100 * packetLoss / 255)
-    //      - RTT                   : Current round-trip time in ms.
+    //      - rtt                   : Current round-trip time in ms.
     //
     // Return value      : VCM_OK, on success.
     //                     < 0,         on error.
     virtual WebRtc_Word32 SetChannelParameters(WebRtc_UWord32 availableBandWidth,
                                                WebRtc_UWord8 lossRate,
-                                               WebRtc_UWord32 RTT) = 0;
+                                               WebRtc_UWord32 rtt) = 0;
 
     // Sets the parameters describing the receive channel. These parameters are inputs to the
     // Media Optimization inside the VCM.
     //
     // Input:
-    //      - RTT                   : Current round-trip time in ms.
+    //      - rtt                   : Current round-trip time in ms.
     //                                with the most amount available bandwidth in a conference
     //                                scenario
     //
     // Return value      : VCM_OK, on success.
     //                     < 0,         on error.
-    virtual WebRtc_Word32 SetReceiveChannelParameters(WebRtc_UWord32 RTT) = 0;
+    virtual WebRtc_Word32 SetReceiveChannelParameters(WebRtc_UWord32 rtt) = 0;
 
     // Register a transport callback which will be called to deliver the encoded data and
     // side information.

@@ -125,8 +125,8 @@ PacketLossTest::Setup()
     std::string lossRateStr;
     ss << _lossRate;
     ss >> lossRateStr;
-    _encodedName = "../../" + source.GetName() + "-" + lossRateStr;
-    _outname = "../../out-" + source.GetName() + "-" + lossRateStr;
+    _encodedName = source.GetName() + "-" + lossRateStr;
+    _outname = "out-" + source.GetName() + "-" + lossRateStr;
 
     if (_lossProbability != _lossRate)
     {
@@ -157,7 +157,11 @@ PacketLossTest::CodecSpecific_InitBitrate()
     {
         simulatedBitRate = _bitRate;
     }
-    _encoder->SetPacketLoss((WebRtc_UWord32)(_lossProbability * 255.0));
+    int rtt = 0;
+    if (_inst.maxFramerate > 0)
+      rtt = _rttFrames * (1000 / _inst.maxFramerate);
+    _encoder->SetChannelParameters((WebRtc_UWord32)(_lossProbability * 255.0),
+                                                    rtt);
     _encoder->SetRates(simulatedBitRate, _inst.maxFramerate);
 }
 
@@ -169,7 +173,6 @@ int PacketLossTest::DoPacketLoss()
         _sumChannelBytes += _frameToDecode->_frame->GetLength();
         return 0;
     }
-    //printf("Encoded: %d bytes\n", _encodedVideoBuffer.GetLength());
     unsigned char *packet = NULL;
     TestVideoEncodedBuffer newEncBuf;
     newEncBuf.VerifyAndAllocate(_lengthSourceFrame);
@@ -180,7 +183,7 @@ int PacketLossTest::DoPacketLoss()
     int thrown = 0;
     while ((size = NextPacket(1500, &packet)) > 0)
     {
-        if (!PacketLoss(_lossProbability))
+        if (!PacketLoss(_lossProbability, thrown))
         {
             InsertPacket(&newEncBuf, packet, size);
             kept++;
@@ -207,6 +210,7 @@ int PacketLossTest::DoPacketLoss()
     _sumChannelBytes += newEncBuf.GetLength();
     _totalKept += kept;
     _totalThrown += thrown;
+
     return lossResult;
     //printf("Threw away: %d out of %d packets\n", thrown, thrown + kept);
     //printf("Encoded left: %d bytes\n", _encodedVideoBuffer.GetLength());

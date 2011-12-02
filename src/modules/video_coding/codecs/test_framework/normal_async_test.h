@@ -93,10 +93,9 @@ public:
     {
         return NULL;
     };
-    virtual WebRtc_Word32
-    ReceivedDecodedReferenceFrame(const WebRtc_UWord64 pictureId) { return 0;};
-    virtual WebRtc_Word32
-    ReceivedDecodedFrame(const WebRtc_UWord64 pictureId) { return 0;};
+    virtual WebRtc_Word32 ReceivedDecodedReferenceFrame(
+        const WebRtc_UWord64 pictureId);
+    virtual WebRtc_Word32 ReceivedDecodedFrame(const WebRtc_UWord64 pictureId);
 
 protected:
     virtual void Setup();
@@ -131,7 +130,10 @@ protected:
     std::list<fbSignal>     _signalSLI;
     int                     _rttFrames;
     mutable bool            _hasReceivedSLI;
+    mutable bool            _hasReceivedRPSI;
     WebRtc_UWord8           _pictureIdSLI;
+    WebRtc_UWord16          _pictureIdRPSI;
+    WebRtc_UWord64          _lastDecRefPictureId;
     WebRtc_UWord64          _lastDecPictureId;
     std::list<fbSignal>     _signalPLI;
     bool                    _hasReceivedPLI;

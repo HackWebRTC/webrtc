@@ -96,15 +96,18 @@ public:
   virtual WebRtc_Word32 RegisterEncodeCompleteCallback(
       EncodedImageCallback* callback);
 
-// Inform the encoder of the new packet loss rate in the network
+// Inform the encoder of the new packet loss rate and round-trip time of the
+// network
 //
 //          - packetLoss       : Fraction lost
 //                               (loss rate in percent = 100 * packetLoss / 255)
+//          - rtt              : Round-trip time in milliseconds
 // Return value                : WEBRTC_VIDEO_CODEC_OK if OK
 //                               <0 - Errors:
 //                                  WEBRTC_VIDEO_CODEC_ERROR
 //
-  virtual WebRtc_Word32 SetPacketLoss(WebRtc_UWord32 packetLoss);
+  virtual WebRtc_Word32 SetChannelParameters(WebRtc_UWord32 packetLoss,
+                                             int rtt);
 
 // Inform the encoder about the new target bit rate.
 //

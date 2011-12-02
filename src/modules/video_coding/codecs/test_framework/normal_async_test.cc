@@ -36,6 +36,7 @@ _appendNext(false),
 _missingFrames(false),
 _rttFrames(0),
 _hasReceivedSLI(false),
+_hasReceivedRPSI(false),
 _hasReceivedPLI(false),
 _waitForKey(false)
 {
@@ -55,6 +56,7 @@ _appendNext(false),
 _missingFrames(false),
 _rttFrames(0),
 _hasReceivedSLI(false),
+_hasReceivedRPSI(false),
 _hasReceivedPLI(false),
 _waitForKey(false)
 {
@@ -75,6 +77,7 @@ _appendNext(false),
 _missingFrames(false),
 _rttFrames(0),
 _hasReceivedSLI(false),
+_hasReceivedRPSI(false),
 _hasReceivedPLI(false),
 _waitForKey(false)
 {
@@ -95,6 +98,7 @@ _appendNext(false),
 _missingFrames(false),
 _rttFrames(0),
 _hasReceivedSLI(false),
+_hasReceivedRPSI(false),
 _hasReceivedPLI(false),
 _waitForKey(false)
 {
@@ -116,6 +120,7 @@ _appendNext(false),
 _missingFrames(false),
 _rttFrames(rttFrames),
 _hasReceivedSLI(false),
+_hasReceivedRPSI(false),
 _hasReceivedPLI(false),
 _waitForKey(false)
 {
@@ -542,8 +547,7 @@ NormalAsyncTest::CopyCodecSpecificInfo(
         const webrtc::CodecSpecificInfo* codecSpecificInfo) const
 {
     webrtc::CodecSpecificInfo* info = new webrtc::CodecSpecificInfo;
-    info->codecType = codecSpecificInfo->codecType;
-    info->codecSpecific = codecSpecificInfo->codecSpecific;
+    *info = *codecSpecificInfo;
     return info;
 }
 
@@ -569,6 +573,19 @@ void NormalAsyncTest::CopyEncodedImage(TestVideoEncodedBuffer& dest,
     dest.SetCaptureHeight((WebRtc_UWord16)src._encodedHeight);
     dest.SetTimeStamp(src._timeStamp);
 }
+
+WebRtc_Word32 NormalAsyncTest::ReceivedDecodedReferenceFrame(
+    const WebRtc_UWord64 pictureId) {
+  _lastDecRefPictureId = pictureId;
+  return 0;
+}
+
+WebRtc_Word32 NormalAsyncTest::ReceivedDecodedFrame(
+    const WebRtc_UWord64 pictureId) {
+  _lastDecPictureId = pictureId;
+  return 0;
+}
+
 double
 NormalAsyncTest::tGetTime()
 {// return time in sec

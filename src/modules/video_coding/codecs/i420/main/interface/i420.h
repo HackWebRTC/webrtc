@@ -71,11 +71,17 @@ public:
 //                               <0 - Error
     virtual WebRtc_Word32 Reset();
 
-    virtual WebRtc_Word32 SetRates(WebRtc_UWord32 /*newBitRate*/, WebRtc_UWord32 /*frameRate*/) {return WEBRTC_VIDEO_CODEC_OK;}
+    virtual WebRtc_Word32 SetRates(WebRtc_UWord32 /*newBitRate*/,
+                                   WebRtc_UWord32 /*frameRate*/)
+    {return WEBRTC_VIDEO_CODEC_OK;}
 
-    virtual WebRtc_Word32 SetPacketLoss(WebRtc_UWord32 /*packetLoss*/){return WEBRTC_VIDEO_CODEC_OK;};
+    virtual WebRtc_Word32 SetChannelParameters(WebRtc_UWord32 /*packetLoss*/,
+                                               int /*rtt*/)
+    {return WEBRTC_VIDEO_CODEC_OK;}
 
-    virtual WebRtc_Word32 CodecConfigParameters(WebRtc_UWord8* /*buffer*/, WebRtc_Word32 /*size*/){return WEBRTC_VIDEO_CODEC_OK;};
+    virtual WebRtc_Word32 CodecConfigParameters(WebRtc_UWord8* /*buffer*/,
+                                                WebRtc_Word32 /*size*/)
+    {return WEBRTC_VIDEO_CODEC_OK;}
 
 // Get version number for the codec.
 //

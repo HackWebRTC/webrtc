@@ -15,21 +15,20 @@
  *
  */
 #include "vp8.h"
-#include "tick_util.h"
-
-#include "vpx/vpx_encoder.h"
-#include "vpx/vpx_decoder.h"
-#include "vpx/vp8cx.h"
-#include "vpx/vp8dx.h"
 
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
 #include "module_common_types.h"
+#include "reference_picture_selection.h"
+#include "tick_util.h"
+#include "vpx/vpx_encoder.h"
+#include "vpx/vpx_decoder.h"
+#include "vpx/vp8cx.h"
+#include "vpx/vp8dx.h"
 
 enum { kVp8ErrorPropagationTh = 30 };
-//#define DEV_PIC_LOSS
 
 namespace webrtc
 {
@@ -44,26 +43,23 @@ VP8Encoder::VP8Encoder():
     _timeStamp(0),
     _pictureID(0),
     _simulcastIdx(0),
-    _pictureLossIndicationOn(false),
     _feedbackModeOn(false),
-    _nextRefIsGolden(true),
-    _lastAcknowledgedIsGolden(true),
-    _haveReceivedAcknowledgement(false),
-    _pictureIDLastSentRef(0),
-    _pictureIDLastAcknowledgedRef(0),
     _cpuSpeed(-6), // default value
     _rcMaxIntraTarget(0),
     _tokenPartitions(VP8_ONE_TOKENPARTITION),
+    _rps(new ReferencePictureSelection),
     _encoder(NULL),
     _cfg(NULL),
     _raw(NULL)
 {
-    srand((WebRtc_UWord32)TickTime::MillisecondTimestamp());
+    WebRtc_UWord32 seed = (WebRtc_UWord32)TickTime::MillisecondTimestamp();
+    srand(seed);
 }
 
 VP8Encoder::~VP8Encoder()
 {
     Release();
+    delete _rps;
 }
 
 WebRtc_Word32
@@ -139,8 +135,8 @@ VP8Encoder::Reset()
     }
 
     _timeStamp = 0;
-
     _encoder = new vpx_codec_ctx_t;
+    _rps->Init();
 
     return InitAndSetControlSettings();
 }
@@ -218,11 +214,7 @@ VP8Encoder::InitEncode(const VideoCodec* inst,
     {
         return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
     }
-#ifdef DEV_PIC_LOSS
-    // we need to know if we use feedback
     _feedbackModeOn = inst->codecSpecific.VP8.feedbackModeOn;
-    _pictureLossIndicationOn = inst->codecSpecific.VP8.pictureLossIndicationOn;
-#endif
 
     WebRtc_Word32 retVal = Release();
     if (retVal < 0)
@@ -325,15 +317,13 @@ VP8Encoder::InitEncode(const VideoCodec* inst,
      // set the maximum target size of any key-frame.
     _rcMaxIntraTarget = MaxIntraTarget(_cfg->rc_buf_optimal_sz);
 
-#ifdef DEV_PIC_LOSS
-    // this can only be off if we know we use feedback
-    if (_pictureLossIndicationOn)
+    if (_feedbackModeOn)
     {
-        // don't generate key frame unless we tell you
+        // Disable periodic key frames if we get feedback from the decoder
+        // through SLI and RPSI.
         _cfg->kf_mode = VPX_KF_DISABLED;
     }
     else
-#endif
     {
         _cfg->kf_mode = VPX_KF_AUTO;
         _cfg->kf_max_dist = 3000;
@@ -362,6 +352,8 @@ VP8Encoder::InitEncode(const VideoCodec* inst,
             break;
         }
     }
+
+    _rps->Init();
 
     return InitAndSetControlSettings();
 
@@ -452,125 +444,23 @@ VP8Encoder::Encode(const RawImage& inputImage,
     _raw->planes[PLANE_V] =  &inputImage._buffer[_height * _width * 5 >> 2];
 
     int flags = 0;
-    if (frameTypes && *frameTypes == kKeyFrame)
-    {
-        flags |= VPX_EFLAG_FORCE_KF; // will update both golden and altref
-        _encodedImage._frameType = kKeyFrame;
-        _pictureIDLastSentRef = _pictureID;
-    }
-    else
-    {
-#ifdef DEV_PIC_LOSS
-        if (_feedbackModeOn && codecSpecificInfo)
-        {
-            const CodecSpecificInfo* info = static_cast<const
-                                     CodecSpecificInfo*>(codecSpecificInfo);
-            if (info->codecType == kVideoCodecVP8)
-            {
-                // codecSpecificInfo will contain received RPSI and SLI
-                // picture IDs. This will help us decide on when to switch type
-                // of reference frame
-
-                // if we receive SLI
-                // force using an old golden or altref as a reference
-
-                if (info->codecSpecific.VP8.hasReceivedSLI)
-                {
-                    // if this is older than my last acked ref we can ignore it
-                    // info->codecSpecific.VP8.pictureIdSLI valid 6 bits => 64 frames
-
-                    // since picture id can wrap check if in between our last sent and last acked
-
-                    bool sendRefresh = false;
-                    // check for a wrap in picture ID
-                    if ((_pictureIDLastAcknowledgedRef & 0x3f) > (_pictureID & 0x3f))
-                    {
-                        // we have a wrap
-                        if ( info->codecSpecific.VP8.pictureIdSLI > (_pictureIDLastAcknowledgedRef&0x3f)||
-                            info->codecSpecific.VP8.pictureIdSLI < (_pictureID & 0x3f))
-                        {
-                            sendRefresh = true;
-                        }
-                    }
-                    else if (info->codecSpecific.VP8.pictureIdSLI > (_pictureIDLastAcknowledgedRef&0x3f)&&
-                             info->codecSpecific.VP8.pictureIdSLI < (_pictureID & 0x3f))
-                    {
-                        sendRefresh = true;
-                    }
-
-                    // right now we could also ignore it if it's older than our last sent ref since
-                    // last sent ref only refers back to last acked
-                    // _pictureIDLastSentRef;
-                    if (sendRefresh)
-                    {
-                        flags |= VP8_EFLAG_NO_REF_LAST; // Don't reference the last frame
-
-                        if (_haveReceivedAcknowledgement)
-                        {
-                            // we cant set this if we refer to a key frame
-                            if (_lastAcknowledgedIsGolden)
-                            {
-                                flags |= VP8_EFLAG_NO_REF_ARF; // Don't reference the alternate reference frame
-                            }
-                            else
-                            {
-                                flags |= VP8_EFLAG_NO_REF_GF; // Don't reference the golden frame
-                            }
-                        }
-                    }
-                }
-                if (info->codecSpecific.VP8.hasReceivedRPSI)
-                {
-                    if ((info->codecSpecific.VP8.pictureIdRPSI & 0x3fff) == (_pictureIDLastSentRef & 0x3fff)) // compare 14 bits
-                    {
-                        // remote peer have received our last reference frame
-                        // switch frame type
-                        _haveReceivedAcknowledgement = true;
-                        _nextRefIsGolden = !_nextRefIsGolden;
-                        _pictureIDLastAcknowledgedRef = _pictureIDLastSentRef;
-                    }
-                }
-            }
-            const WebRtc_UWord16 periodX = 64; // we need a period X to decide on the distance between golden and altref
-            if (_pictureID % periodX == 0)
-            {
-                // only required if we have had a loss
-                // however we don't acknowledge a SLI so if that is lost it's no good
-                flags |= VP8_EFLAG_NO_REF_LAST; // Don't reference the last frame
-
-                if (_nextRefIsGolden)
-                {
-                    flags |= VP8_EFLAG_FORCE_GF; // force a golden
-                    flags |= VP8_EFLAG_NO_UPD_ARF; // don't update altref
-                    if (_haveReceivedAcknowledgement)
-                    {
-                        // we can't set this if we refer to a key frame
-                        // pw temporary as proof of concept
-                        flags |= VP8_EFLAG_NO_REF_GF; // Don't reference the golden frame
-                    }
-                }
-                else
-                {
-                    flags |= VP8_EFLAG_FORCE_ARF; // force an altref
-                    flags |= VP8_EFLAG_NO_UPD_GF; // Don't update golden
-                    if (_haveReceivedAcknowledgement)
-                    {
-                        // we can't set this if we refer to a key frame
-                        // pw temporary as proof of concept
-                        flags |= VP8_EFLAG_NO_REF_ARF; // Don't reference the alternate reference frame
-                    }
-                }
-                // remember our last reference frame
-                _pictureIDLastSentRef = _pictureID;
-            }
-            else
-            {
-                flags |= VP8_EFLAG_NO_UPD_GF;  // don't update golden
-                flags |= VP8_EFLAG_NO_UPD_ARF; // don't update altref
-            }
+    if (frameTypes && *frameTypes == kKeyFrame) {
+      // Key frame request from caller.
+      // Will update both golden and alt-ref.
+      flags |= VPX_EFLAG_FORCE_KF;
+    } else if (_feedbackModeOn && codecSpecificInfo) {
+      // Handle RPSI and SLI messages and set up the appropriate encode flags.
+      bool sendRefresh = false;
+      if (codecSpecificInfo->codecType == kVideoCodecVP8) {
+        if (codecSpecificInfo->codecSpecific.VP8.hasReceivedRPSI) {
+          _rps->ReceivedRPSI(
+              codecSpecificInfo->codecSpecific.VP8.pictureIdRPSI);
         }
-#endif
-        _encodedImage._frameType = kDeltaFrame;
+        if (codecSpecificInfo->codecSpecific.VP8.hasReceivedSLI) {
+          sendRefresh = _rps->ReceivedSLI(inputImage._timeStamp);
+        }
+      }
+      flags = _rps->EncodeFlags(_pictureID, sendRefresh, inputImage._timeStamp);
     }
 
     // TODO(holmer): Ideally the duration should be the timestamp diff of this
@@ -611,6 +501,7 @@ WebRtc_Word32
 VP8Encoder::GetEncodedFrame(const RawImage& input_image)
 {
     vpx_codec_iter_t iter = NULL;
+    _encodedImage._frameType = kDeltaFrame;
     const vpx_codec_cx_pkt_t *pkt= vpx_codec_get_cx_data(_encoder, &iter); // no lagging => 1 frame at a time
     if (pkt == NULL && !_encoder->err)
     {
@@ -632,6 +523,7 @@ VP8Encoder::GetEncodedFrame(const RawImage& input_image)
         if (pkt->data.frame.flags & VPX_FRAME_IS_KEY)
         {
             _encodedImage._frameType = kKeyFrame;
+            _rps->EncodedKeyFrame(_pictureID);
         }
 
         if (_encodedImage._length > 0)
@@ -672,6 +564,7 @@ VP8Encoder::GetEncodedPartitions(const RawImage& input_image) {
   vpx_codec_iter_t iter = NULL;
   int part_idx = 0;
   _encodedImage._length = 0;
+  _encodedImage._frameType = kDeltaFrame;
   RTPFragmentationHeader frag_info;
   frag_info.VerifyAndAllocateFragmentationHeader((1 << _tokenPartitions) + 1);
   CodecSpecificInfo codecSpecific;
@@ -701,6 +594,7 @@ VP8Encoder::GetEncodedPartitions(const RawImage& input_image) {
       if (pkt->data.frame.flags & VPX_FRAME_IS_KEY)
       {
           _encodedImage._frameType = kKeyFrame;
+          _rps->EncodedKeyFrame(_pictureID);
       }
       PopulateCodecSpecific(&codecSpecific, *pkt);
       break;
@@ -718,9 +612,9 @@ VP8Encoder::GetEncodedPartitions(const RawImage& input_image) {
 #endif
 
 WebRtc_Word32
-VP8Encoder::SetPacketLoss(WebRtc_UWord32 packetLoss)
-{
-    return WEBRTC_VIDEO_CODEC_OK;
+VP8Encoder::SetChannelParameters(WebRtc_UWord32 packetLoss, int rtt) {
+  _rps->SetRtt(rtt);
+  return WEBRTC_VIDEO_CODEC_OK;
 }
 
 WebRtc_Word32
@@ -740,7 +634,8 @@ VP8Decoder::VP8Decoder():
     _lastKeyFrame(),
     _imageFormat(VPX_IMG_FMT_NONE),
     _refFrame(NULL),
-    _propagationCnt(-1)
+    _propagationCnt(-1),
+    _latestKeyFrameComplete(false)
 {
 }
 
@@ -768,6 +663,7 @@ VP8Decoder::Reset()
         InitDecode(NULL, _numCores);
     }
     _propagationCnt = -1;
+    _latestKeyFrameComplete = false;
     return WEBRTC_VIDEO_CODEC_OK;
 }
 
@@ -785,12 +681,9 @@ VP8Decoder::InitDecode(const VideoCodec* inst,
     {
         _decoder = new vpx_dec_ctx_t;
     }
-#ifdef DEV_PIC_LOSS
-    if(inst && inst->codecType == kVideoCodecVP8)
-    {
-        _feedbackModeOn = inst->codecSpecific.VP8.feedbackModeOn;
+    if (inst && inst->codecType == kVideoCodecVP8) {
+      _feedbackModeOn = inst->codecSpecific.VP8.feedbackModeOn;
     }
-#endif
 
     vpx_codec_dec_cfg_t  cfg;
     // Setting number of threads to a constant value (1)
@@ -805,9 +698,9 @@ VP8Decoder::InitDecode(const VideoCodec* inst,
 #endif
 #endif
 
-    flags |=  VPX_CODEC_USE_POSTPROC;
+    flags |= VPX_CODEC_USE_POSTPROC;
 
-    if (vpx_codec_dec_init(_decoder, vpx_codec_vp8_dx(), NULL, flags))
+    if (vpx_codec_dec_init(_decoder, vpx_codec_vp8_dx(), &cfg, flags))
     {
         return WEBRTC_VIDEO_CODEC_MEMORY;
     }
@@ -828,6 +721,7 @@ VP8Decoder::InitDecode(const VideoCodec* inst,
     }
     _numCores = numberOfCores;
     _propagationCnt = -1;
+    _latestKeyFrameComplete = false;
 
     _inited = true;
     return WEBRTC_VIDEO_CODEC_OK;
@@ -848,16 +742,6 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
     {
         return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
     }
-    if (inputImage._completeFrame == false)
-    {
-        // future improvement
-        // we can't decode this frame
-        if (_feedbackModeOn)
-        {
-            return WEBRTC_VIDEO_CODEC_ERR_REQUEST_SLI;
-        }
-        // otherwise allow for incomplete frames to be decoded.
-    }
     if (inputImage._buffer == NULL && inputImage._length > 0)
     {
         // Reset to avoid requesting key frames too often.
@@ -873,25 +757,28 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
     }
 #endif
 
-    // Restrict error propagation
-    // Reset on a key frame refresh
-    if (inputImage._frameType == kKeyFrame && inputImage._completeFrame)
+    // Restrict error propagation using key frame requests. Disabled when
+    // the feedback mode is enabled (RPS).
+    // Reset on a key frame refresh.
+    if (!_feedbackModeOn) {
+      if (inputImage._frameType == kKeyFrame && inputImage._completeFrame)
         _propagationCnt = -1;
-    // Start count on first loss
-    else if ((!inputImage._completeFrame || missingFrames) &&
-              _propagationCnt == -1)
+      // Start count on first loss.
+      else if ((!inputImage._completeFrame || missingFrames) &&
+                _propagationCnt == -1)
         _propagationCnt = 0;
-    if (_propagationCnt >= 0)
+      if (_propagationCnt >= 0)
         _propagationCnt++;
+    }
 
     vpx_dec_iter_t iter = NULL;
     vpx_image_t* img;
     WebRtc_Word32 ret;
 
-    // check for missing frames
+    // Check for missing frames.
     if (missingFrames)
     {
-        // call decoder with zero data length to signal missing frames
+        // Call decoder with zero data length to signal missing frames.
         if (vpx_codec_decode(_decoder, NULL, 0, 0, VPX_DL_REALTIME))
         {
             // Reset to avoid requesting key frames too often.
@@ -915,7 +802,7 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
     WebRtc_UWord8* buffer = inputImage._buffer;
     if (inputImage._length == 0)
     {
-        buffer = NULL; // Triggers full frame concealment
+        buffer = NULL; // Triggers full frame concealment.
     }
     if (vpx_codec_decode(_decoder,
                          buffer,
@@ -958,25 +845,6 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
         _lastKeyFrame._length = bytesToCopy;
     }
 
-    int lastRefUpdates = 0;
-#ifdef DEV_PIC_LOSS
-    if (vpx_codec_control(_decoder, VP8D_GET_LAST_REF_UPDATES, &lastRefUpdates))
-    {
-        // Reset to avoid requesting key frames too often.
-        if (_propagationCnt > 0)
-            _propagationCnt = 0;
-        return WEBRTC_VIDEO_CODEC_ERROR;
-    }
-    int corrupted = 0;
-    if (vpx_codec_control(_decoder, VP8D_GET_FRAME_CORRUPTED, &corrupted))
-    {
-        // Reset to avoid requesting key frames too often.
-        if (_propagationCnt > 0)
-            _propagationCnt = 0;
-        return WEBRTC_VIDEO_CODEC_ERROR;
-    }
-#endif
-
     img = vpx_codec_get_frame(_decoder, &iter);
     ret = ReturnFrame(img, inputImage._timeStamp);
     if (ret != 0)
@@ -987,37 +855,49 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
         return ret;
     }
 
-    // we need to communicate that we should send a RPSI with a specific picture ID
+    if (_feedbackModeOn) {
+      // Whenever we receive an incomplete key frame all reference buffers will
+      // be corrupt. If that happens we must request new key frames until we
+      // decode a complete.
+      if (inputImage._frameType == kKeyFrame)
+        _latestKeyFrameComplete = inputImage._completeFrame;
+      if (!_latestKeyFrameComplete)
+        return WEBRTC_VIDEO_CODEC_ERROR;
 
-    // TODO(pw): how do we know it's a golden or alt reference frame? libvpx will
-    // provide an API for now I added it temporarily
-    WebRtc_Word16 pictureId = -1;
-    if (codecSpecificInfo) {
+      // Check for reference updates and last reference buffer corruption and
+      // signal successful reference propagation or frame corruption to the
+      // encoder.
+      int referenceUpdates = 0;
+      if (vpx_codec_control(_decoder, VP8D_GET_LAST_REF_UPDATES,
+                            &referenceUpdates)) {
+        // Reset to avoid requesting key frames too often.
+        if (_propagationCnt > 0)
+          _propagationCnt = 0;
+        return WEBRTC_VIDEO_CODEC_ERROR;
+      }
+      int corrupted = 0;
+      if (vpx_codec_control(_decoder, VP8D_GET_FRAME_CORRUPTED, &corrupted)) {
+        // Reset to avoid requesting key frames too often.
+        if (_propagationCnt > 0)
+          _propagationCnt = 0;
+        return WEBRTC_VIDEO_CODEC_ERROR;
+      }
+      WebRtc_Word16 pictureId = -1;
+      if (codecSpecificInfo) {
         pictureId = codecSpecificInfo->codecSpecific.VP8.pictureId;
-    }
-    if (pictureId > -1)
-    {
-        if ((lastRefUpdates & VP8_GOLD_FRAME)
-                || (lastRefUpdates & VP8_ALTR_FRAME))
-        {
-            if (!missingFrames && (inputImage._completeFrame == true))
-            //if (!corrupted) // TODO(pw): Can we engage this line instead of
-            // the above?
-            {
-                _decodeCompleteCallback->ReceivedDecodedReferenceFrame(
-                        pictureId);
-            }
+      }
+      if (pictureId > -1) {
+        if (((referenceUpdates & VP8_GOLD_FRAME) ||
+             (referenceUpdates & VP8_ALTR_FRAME)) && !corrupted) {
+          _decodeCompleteCallback->ReceivedDecodedReferenceFrame(pictureId);
         }
         _decodeCompleteCallback->ReceivedDecodedFrame(pictureId);
-    }
-
-#ifdef DEV_PIC_LOSS
-    if (corrupted)
-    {
+      }
+      if (corrupted) {
         // we can decode but with artifacts
         return WEBRTC_VIDEO_CODEC_REQUEST_SLI;
+      }
     }
-#endif
 
     // Check Vs. threshold
     if (_propagationCnt > kVp8ErrorPropagationTh)

@@ -84,10 +84,12 @@ class VideoCaptureModule: public RefCountedModule {
     //  - frameRate        : The target frame rate.
     virtual WebRtc_Word32 SetRates(WebRtc_Word32 newBitRate,
                                    WebRtc_Word32 frameRate) = 0;
-    // Inform the encoder about the packet loss.
+    // Inform the encoder about the packet loss and the round-trip time.
     //   - packetLoss   : Fraction lost
     //                    (loss rate in percent = 100 * packetLoss / 255).
-    virtual WebRtc_Word32 SetPacketLoss(WebRtc_UWord32 packetLoss) = 0;
+    //   - rtt          : Round-trip time in milliseconds.
+    virtual WebRtc_Word32 SetChannelParameters(WebRtc_UWord32 packetLoss,
+                                               int rtt) = 0;
 
     // Encode the next frame as key frame.
     virtual WebRtc_Word32 EncodeFrameType(const FrameType type) = 0;

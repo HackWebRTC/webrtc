@@ -1007,7 +1007,8 @@ WebRtc_Word32 ViECapturer::Reset()
     return 0;
 
 }
-WebRtc_Word32 ViECapturer::SetPacketLoss(WebRtc_UWord32 packetLoss)
+WebRtc_Word32 ViECapturer::SetChannelParameters(WebRtc_UWord32 packetLoss,
+                                                int rtt)
 {
     WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_engineId, _captureId),
                "%s(captureDeviceId: %d)", __FUNCTION__, _captureId);
@@ -1016,7 +1017,7 @@ WebRtc_Word32 ViECapturer::SetPacketLoss(WebRtc_UWord32 packetLoss)
     if (!_captureEncoder)
         return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
 
-    return _captureEncoder->SetPacketLoss(packetLoss);
+    return _captureEncoder->SetChannelParameters(packetLoss, rtt);
 }
 
 WebRtc_Word32 ViECapturer::SetRates(WebRtc_UWord32 newBitRate,

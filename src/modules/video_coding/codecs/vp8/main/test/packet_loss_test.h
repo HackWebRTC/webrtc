@@ -17,12 +17,17 @@ class VP8PacketLossTest : public PacketLossTest
 {
 public:
     VP8PacketLossTest();
-    VP8PacketLossTest(double lossRate, bool useNack);
+    VP8PacketLossTest(double lossRate, bool useNack, int rttFrames);
 
 protected:
     VP8PacketLossTest(std::string name, std::string description);
-    virtual void CodecSpecific_InitBitrate();
     virtual int ByteLoss(int size, unsigned char *pkg, int bytesToLose);
+    WebRtc_Word32 ReceivedDecodedReferenceFrame(const WebRtc_UWord64 pictureId);
+    // |lossRate| is the probability of packet loss between 0 and 1.
+    // |numLosses| is the number of packets already lost in the current frame.
+    virtual bool PacketLoss(double lossRate, int numLosses);
+
+    webrtc::CodecSpecificInfo* CreateEncoderSpecificInfo() const;
 
 };
 

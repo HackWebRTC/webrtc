@@ -113,10 +113,10 @@ public:
     virtual WebRtc_Word32 SetChannelParameters(
         WebRtc_UWord32 availableBandWidth,
         WebRtc_UWord8 lossRate,
-        WebRtc_UWord32 RTT);
+        WebRtc_UWord32 rtt);
 
     // Set recieve channel parameters
-    virtual WebRtc_Word32 SetReceiveChannelParameters(WebRtc_UWord32 RTT);
+    virtual WebRtc_Word32 SetReceiveChannelParameters(WebRtc_UWord32 rtt);
 
     // Register a transport callback which will be called to deliver the
     // encoded buffers

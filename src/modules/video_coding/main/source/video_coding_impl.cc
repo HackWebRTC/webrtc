@@ -547,7 +547,7 @@ VideoCodingModuleImpl::FrameRate() const
 WebRtc_Word32
 VideoCodingModuleImpl::SetChannelParameters(WebRtc_UWord32 availableBandWidth,
                                             WebRtc_UWord8 lossRate,
-                                            WebRtc_UWord32 RTT)
+                                            WebRtc_UWord32 rtt)
 {
     WEBRTC_TRACE(webrtc::kTraceModuleCall,
                  webrtc::kTraceVideoCoding,
@@ -558,10 +558,10 @@ VideoCodingModuleImpl::SetChannelParameters(WebRtc_UWord32 availableBandWidth,
         CriticalSectionScoped sendCs(_sendCritSect);
         WebRtc_UWord32 targetRate = _mediaOpt.SetTargetRates(availableBandWidth,
                                                              lossRate,
-                                                             RTT);
+                                                             rtt);
         if (_encoder != NULL)
         {
-            ret = _encoder->SetPacketLoss(lossRate);
+            ret = _encoder->SetChannelParameters(lossRate, rtt);
             if (ret < 0 )
             {
                 return ret;
@@ -582,14 +582,14 @@ VideoCodingModuleImpl::SetChannelParameters(WebRtc_UWord32 availableBandWidth,
 }
 
 WebRtc_Word32
-VideoCodingModuleImpl::SetReceiveChannelParameters(WebRtc_UWord32 RTT)
+VideoCodingModuleImpl::SetReceiveChannelParameters(WebRtc_UWord32 rtt)
 {
     WEBRTC_TRACE(webrtc::kTraceModuleCall,
                  webrtc::kTraceVideoCoding,
                  VCMId(_id),
                  "SetReceiveChannelParameters()");
     CriticalSectionScoped receiveCs(_receiveCritSect);
-    _receiver.UpdateRtt(RTT);
+    _receiver.UpdateRtt(rtt);
     return 0;
 }
 

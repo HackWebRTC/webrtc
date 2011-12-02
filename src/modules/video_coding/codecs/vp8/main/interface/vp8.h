@@ -30,6 +30,8 @@ struct vpx_codec_cx_pkt;
 namespace webrtc
 {
 
+class ReferencePictureSelection;
+
 /******************************/
 /* VP8Encoder class           */
 /******************************/
@@ -98,15 +100,18 @@ public:
     virtual WebRtc_Word32 RegisterEncodeCompleteCallback(EncodedImageCallback*
                                                          callback);
 
-// Inform the encoder of the new packet loss rate in the network
+// Inform the encoder of the new packet loss rate and the round-trip time of the
+// network.
 //
 //          - packetLoss       : Fraction lost
 //                               (loss rate in percent = 100 * packetLoss / 255)
+//          - rtt              : Round-trip time in milliseconds
 // Return value                : WEBRTC_VIDEO_CODEC_OK if OK
 //                               <0 - Errors:
 //                                  WEBRTC_VIDEO_CODEC_ERROR
 //
-    virtual WebRtc_Word32 SetPacketLoss(WebRtc_UWord32 packetLoss);
+    virtual WebRtc_Word32 SetChannelParameters(WebRtc_UWord32 packetLoss,
+                                               int rtt);
 
 // Inform the encoder about the new target bit rate.
 //
@@ -154,30 +159,25 @@ private:
 //                           percentage of the per frame bandwidth
     WebRtc_UWord32 MaxIntraTarget(WebRtc_UWord32 optimalBuffersize);
 
-    EncodedImage              _encodedImage;
-    EncodedImageCallback*     _encodedCompleteCallback;
-    WebRtc_Word32             _width;
-    WebRtc_Word32             _height;
-    WebRtc_Word32             _maxBitRateKbit;
-    WebRtc_UWord32            _maxFrameRate;
-    bool                      _inited;
-    WebRtc_UWord32            _timeStamp;
-    WebRtc_UWord16            _pictureID;
-    WebRtc_UWord8             _simulcastIdx;
-    bool                      _pictureLossIndicationOn;
-    bool                      _feedbackModeOn;
-    bool                      _nextRefIsGolden;
-    bool                      _lastAcknowledgedIsGolden;
-    bool                      _haveReceivedAcknowledgement;
-    WebRtc_UWord16            _pictureIDLastSentRef;
-    WebRtc_UWord16            _pictureIDLastAcknowledgedRef;
-    int                       _cpuSpeed;
-    WebRtc_UWord32            _rcMaxIntraTarget;
-    int                       _tokenPartitions;
+    EncodedImage               _encodedImage;
+    EncodedImageCallback*      _encodedCompleteCallback;
+    WebRtc_Word32              _width;
+    WebRtc_Word32              _height;
+    WebRtc_Word32              _maxBitRateKbit;
+    WebRtc_UWord32             _maxFrameRate;
+    bool                       _inited;
+    WebRtc_UWord32             _timeStamp;
+    WebRtc_UWord16             _pictureID;
+    WebRtc_UWord8              _simulcastIdx;
+    bool                       _feedbackModeOn;
+    int                        _cpuSpeed;
+    WebRtc_UWord32             _rcMaxIntraTarget;
+    int                        _tokenPartitions;
+    ReferencePictureSelection* _rps;
 
-    vpx_codec_ctx_t*          _encoder;
-    vpx_codec_enc_cfg_t*      _cfg;
-    vpx_image_t*              _raw;
+    vpx_codec_ctx_t*            _encoder;
+    vpx_codec_enc_cfg_t*        _cfg;
+    vpx_image_t*                _raw;
 };// end of VP8Encoder class
 
 /******************************/
@@ -269,6 +269,7 @@ private:
     int                        _imageFormat;
     vpx_ref_frame_t*           _refFrame;
     int                        _propagationCnt;
+    bool                       _latestKeyFrameComplete;
 
 };// end of VP8Decoder class
 

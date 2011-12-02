@@ -46,6 +46,8 @@
         ],
       },
       'sources': [
+        'reference_picture_selection.h',
+        'reference_picture_selection.cc',
         '../interface/vp8.h',
         '../interface/vp8_simulcast.h',
         'vp8.cc',
@@ -71,18 +73,36 @@
          'sources': [
             # header files
             '../test/benchmark.h',
+            '../test/dual_decoder_test.h',
             '../test/normal_async_test.h',
             '../test/packet_loss_test.h',
+            '../test/rps_test.h',
             '../test/unit_test.h',
-            '../test/dual_decoder_test.h',
 
            # source files
             '../test/benchmark.cc',
+            '../test/dual_decoder_test.cc',
             '../test/normal_async_test.cc',
             '../test/packet_loss_test.cc',
+            '../test/rps_test.cc',
             '../test/tester.cc',
             '../test/unit_test.cc',
-            '../test/dual_decoder_test.cc',
+          ],
+        },
+        {
+          'target_name': 'vp8_unittests',
+          'type': 'executable',
+          'dependencies': [
+            '<(webrtc_root)/../test/test.gyp:test_support_main',
+            '<(webrtc_root)/../testing/gtest.gyp:gtest',
+            '<(webrtc_root)/../third_party/libvpx/libvpx.gyp:libvpx',
+            'webrtc_vp8',
+          ],
+          'include_dirs': [
+            '<(webrtc_root)/../third_party/libvpx/source/libvpx',
+          ],
+          'sources': [
+            'reference_picture_selection_unittest.cc',
           ],
         },
       ], # targets

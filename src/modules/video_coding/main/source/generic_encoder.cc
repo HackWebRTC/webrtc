@@ -86,9 +86,9 @@ VCMGenericEncoder::Encode(const VideoFrame& inputFrame,
 }
 
 WebRtc_Word32
-VCMGenericEncoder::SetPacketLoss(WebRtc_Word32 packetLoss)
+VCMGenericEncoder::SetChannelParameters(WebRtc_Word32 packetLoss, int rtt)
 {
-    return _encoder.SetPacketLoss(packetLoss);
+    return _encoder.SetChannelParameters(packetLoss, rtt);
 }
 
 WebRtc_Word32

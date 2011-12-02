@@ -234,11 +234,13 @@ WebRtc_Word32 VP8SimulcastEncoder::RegisterEncodeCompleteCallback(
   return ret_val;
 }
 
-WebRtc_Word32 VP8SimulcastEncoder::SetPacketLoss(WebRtc_UWord32 packetLoss) {
+WebRtc_Word32 VP8SimulcastEncoder::SetChannelParameters(
+    WebRtc_UWord32 packetLoss,
+    int rtt) {
   WebRtc_Word32 ret_val = 0;
   for (int i = 0; i < kMaxSimulcastStreams; i++) {
     if (encoder_[i]) {
-      ret_val = encoder_[i]->SetPacketLoss(packetLoss);
+      ret_val = encoder_[i]->SetChannelParameters(packetLoss, rtt);
       if (ret_val < 0) {
         WEBRTC_TRACE(webrtc::kTraceError,
                      webrtc::kTraceVideoCoding,

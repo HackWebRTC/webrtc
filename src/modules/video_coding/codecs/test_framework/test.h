@@ -51,7 +51,7 @@ protected:
     static bool SSIMthread(void *ctx);
 
     double ActualBitRate(int nFrames);
-    static bool PacketLoss(double lossRate);
+    virtual bool PacketLoss(double lossRate, int /*thrown*/);
     static double RandUniform() { return (std::rand() + 1.0)/(RAND_MAX + 1.0); }
     static void VideoBufferToRawImage(TestVideoBuffer& videoBuffer,
                                       webrtc::RawImage &image);

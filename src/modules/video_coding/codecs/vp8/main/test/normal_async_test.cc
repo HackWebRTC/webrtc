@@ -73,8 +73,10 @@ VP8NormalAsyncTest::CreateEncoderSpecificInfo() const
     vp8CodecSpecificInfo->codecType = kVideoCodecVP8;
     vp8CodecSpecificInfo->codecSpecific.VP8.hasReceivedRPSI = _hasReceivedRPSI;
     vp8CodecSpecificInfo->codecSpecific.VP8.pictureIdRPSI = _pictureIdRPSI;
-    vp8CodecSpecificInfo->codecSpecific.VP8.hasReceivedSLI = false;
+    vp8CodecSpecificInfo->codecSpecific.VP8.hasReceivedSLI = _hasReceivedSLI;
+    vp8CodecSpecificInfo->codecSpecific.VP8.pictureIdSLI = _pictureIdSLI;
 
+    _hasReceivedSLI = false;
     _hasReceivedRPSI = false;
 
     return vp8CodecSpecificInfo;
