@@ -230,7 +230,7 @@ class ACMCodecDB {
   static int BasicCodingBlock(int codec_id);
 
   // Returns the NetEQ decoder database.
-  static WebRtcNetEQDecoder* NetEQDecoders();
+  static const WebRtcNetEQDecoder* NetEQDecoders();
 
   // All version numbers for the codecs in the database are listed in text.
   // Input/Output:
@@ -293,7 +293,7 @@ class ACMCodecDB {
   // neteq_decoders_ - list of supported decoders in NetEQ.
   static const CodecInst database_[kMaxNumCodecs];
   static const CodecSettings codec_settings_[kMaxNumCodecs];
-  static WebRtcNetEQDecoder neteq_decoders_[kMaxNumCodecs];
+  static const WebRtcNetEQDecoder neteq_decoders_[kMaxNumCodecs];
 };
 
 }  // namespace webrtc

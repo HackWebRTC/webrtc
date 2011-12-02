@@ -243,7 +243,7 @@ ACMNetEQ::EnableVADByIdxSafe(
 
 WebRtc_Word32
 ACMNetEQ::AllocatePacketBuffer(
-    WebRtcNetEQDecoder* usedCodecs,
+    const WebRtcNetEQDecoder* usedCodecs,
     WebRtc_Word16     noOfCodecs)
 {
     // Due to WebRtcNetEQ_GetRecommendedBufferSize
@@ -263,7 +263,7 @@ ACMNetEQ::AllocatePacketBuffer(
 
 WebRtc_Word16
 ACMNetEQ::AllocatePacketBufferByIdxSafe(
-    WebRtcNetEQDecoder*    usedCodecs,
+    const WebRtcNetEQDecoder*    usedCodecs,
     WebRtc_Word16       noOfCodecs,
     const WebRtc_Word16 idx)
 {
@@ -1107,7 +1107,7 @@ ACMNetEQ::PlayoutTimestamp(
 
 WebRtc_Word16
 ACMNetEQ::AddSlave(
-    WebRtcNetEQDecoder* usedCodecs,
+    const WebRtcNetEQDecoder* usedCodecs,
     WebRtc_Word16       noOfCodecs)
 {
     CriticalSectionScoped lock(*_netEqCritSect);

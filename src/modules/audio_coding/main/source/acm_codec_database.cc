@@ -249,7 +249,7 @@ const ACMCodecDB::CodecSettings ACMCodecDB::codec_settings_[] = {
 };
 
 // Create a database of all NetEQ decoders at compile time.
-WebRtcNetEQDecoder ACMCodecDB::neteq_decoders_[] = {
+const WebRtcNetEQDecoder ACMCodecDB::neteq_decoders_[] = {
 #if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX))
   kDecoderISAC,
 # if (defined(WEBRTC_CODEC_ISAC))
@@ -538,7 +538,7 @@ int ACMCodecDB::BasicCodingBlock(int codec_id) {
 }
 
 // Returns the NetEQ decoder database.
-WebRtcNetEQDecoder* ACMCodecDB::NetEQDecoders() {
+const WebRtcNetEQDecoder* ACMCodecDB::NetEQDecoders() {
   return neteq_decoders_;
 }
 

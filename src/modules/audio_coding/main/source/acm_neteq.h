@@ -132,7 +132,7 @@ public:
     //                            <0 if NetEQ returned an error.
     //
     WebRtc_Word32 AllocatePacketBuffer(
-        WebRtcNetEQDecoder* usedCodecs,
+        const WebRtcNetEQDecoder* usedCodecs,
         WebRtc_Word16    noOfCodecs);
 
     //
@@ -306,7 +306,7 @@ public:
     enum JB {masterJB = 0, slaveJB = 1};
 
     WebRtc_Word16 AddSlave(
-        WebRtcNetEQDecoder*    usedCodecs,
+        const WebRtcNetEQDecoder*    usedCodecs,
         WebRtc_Word16       noOfCodecs);
 
 private:
@@ -348,7 +348,7 @@ private:
         const WebRtc_Word16 idx);
 
     WebRtc_Word16 AllocatePacketBufferByIdxSafe(
-        WebRtcNetEQDecoder* usedCodecs,
+        const WebRtcNetEQDecoder* usedCodecs,
         WebRtc_Word16       noOfCodecs,
         const WebRtc_Word16 idx);
 

@@ -314,7 +314,7 @@ int WebRtcNetEQ_Assign(void **inst, void *NETEQ_inst_Addr)
     return (0);
 }
 
-int WebRtcNetEQ_GetRecommendedBufferSize(void *inst, enum WebRtcNetEQDecoder *codec,
+int WebRtcNetEQ_GetRecommendedBufferSize(void *inst, const enum WebRtcNetEQDecoder *codec,
                                          int noOfCodecs, enum WebRtcNetEQNetworkType nwType,
                                          int *MaxNoOfPackets, int *sizeinbytes)
 {

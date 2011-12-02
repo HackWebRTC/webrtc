@@ -2561,7 +2561,7 @@ WebRtc_Word32
 AudioCodingModuleImpl::UnregisterReceiveCodecSafe(
     const WebRtc_Word16 codecID)
 {
-    WebRtcNetEQDecoder *neteqDecoder = ACMCodecDB::NetEQDecoders();
+    const WebRtcNetEQDecoder *neteqDecoder = ACMCodecDB::NetEQDecoders();
     WebRtc_Word16 mirrorID = ACMCodecDB::MirrorID(codecID);
     if(_codecs[codecID] != NULL)
     {
