@@ -329,7 +329,8 @@ else
 
 -(void)autoTestWithArg:(NSString*)answerFile;
 {
-
+    // TODO(phoglund): Rewrite this file to work with the new way of running
+    // vie_auto_test. The file doesn't seem to be used at the moment though.
     NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
 
     ViEAutoTestMain autoTest;

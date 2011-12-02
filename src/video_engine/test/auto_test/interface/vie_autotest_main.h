@@ -17,25 +17,24 @@
 class ViEAutoTestMain {
  public:
   ViEAutoTestMain();
-  bool BeginOSIndependentTesting();
-  bool GetAnswer(int index, std::string* answer);
-  int AskUserForTestCase();
-  bool GetNextAnswer(std::string& answer);
-  bool IsUsingAnswerFile();
-  bool UseAnswerFile(const char* fileName);
+
+  // Runs the test according to the specified arguments.
+  // Pass in --automated to run in automated mode; interactive
+  // mode is default. All usual googletest flags also apply.
+  int RunTests(int argc, char** argv);
 
  private:
-  std::string answers_[1024];
-  int         answers_count_;
-  int         answers_index_;
-  bool        use_answer_file_;
   std::map<int, std::string> index_to_test_method_map_;
 
   static const int kInvalidChoice = -1;
 
+  // Starts interactive mode.
+  bool RunInteractiveMode();
   // Prompts the user for a specific test method in the provided test case.
   // Returns 0 on success, nonzero otherwise.
   int RunSpecificTestCaseIn(const std::string test_case_name);
+  // Asks the user for a particular test case to run.
+  int AskUserForTestCase();
   // Retrieves a number from the user in the interval
   // [min_allowed, max_allowed]. Returns kInvalidChoice on failure.
   int AskUserForNumber(int min_allowed, int max_allowed);

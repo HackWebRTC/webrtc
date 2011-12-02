@@ -10,20 +10,19 @@
 
 #include "vie_autotest_main.h"
 
+#include "gflags/gflags.h"
 #include "gtest/gtest.h"
+#include "vie_autotest.h"
 #include "vie_autotest_window_manager_interface.h"
 #include "vie_window_creator.h"
-#include "vie_autotest.h"
+
+DEFINE_bool(automated, false, "Run Video engine tests in noninteractive mode.");
 
 static const std::string kStandardTest = "ViEStandardIntegrationTest";
 static const std::string kExtendedTest = "ViEExtendedIntegrationTest";
 static const std::string kApiTest = "ViEApiIntegrationTest";
 
-ViEAutoTestMain::ViEAutoTestMain()
-: answers_(),
-  answers_count_(0),
-  use_answer_file_() {
-
+ViEAutoTestMain::ViEAutoTestMain() {
   index_to_test_method_map_[1] = "RunsBaseTestWithoutErrors";
   index_to_test_method_map_[2] = "RunsCaptureTestWithoutErrors";
   index_to_test_method_map_[3] = "RunsCodecTestWithoutErrors";
@@ -35,6 +34,27 @@ ViEAutoTestMain::ViEAutoTestMain()
   index_to_test_method_map_[9] = "RunsRtpRtcpTestWithoutErrors";
 }
 
+int ViEAutoTestMain::RunTests(int argc, char** argv) {
+  // Initialize logging.
+  ViETest::Init();
+  // Initialize the testing framework.
+  testing::InitGoogleTest(&argc, argv);
+  // Parse remaining flags:
+  google::ParseCommandLineFlags(&argc, &argv, true);
+
+  int result;
+  if (FLAGS_automated) {
+    // Run in automated mode.
+    result = RUN_ALL_TESTS();
+  } else {
+    // Run in interactive mode.
+    result = RunInteractiveMode();
+  }
+
+  ViETest::Terminate();
+  return result;
+}
+
 int ViEAutoTestMain::AskUserForTestCase() {
   int choice;
   std::string answer;
@@ -44,7 +64,7 @@ int ViEAutoTestMain::AskUserForTestCase() {
     ViETest::Log("\t 0. Go back to previous menu.");
 
     // Print all test method choices. Assumes that map sorts on its key.
-    int last_valid_choice = 0;
+    int last_valid_choice;
     std::map<int, std::string>::const_iterator iterator;
     for (iterator = index_to_test_method_map_.begin();
         iterator != index_to_test_method_map_.end();
@@ -62,11 +82,6 @@ int ViEAutoTestMain::AskUserForTestCase() {
 
 int ViEAutoTestMain::AskUserForNumber(int min_allowed, int max_allowed) {
   int result;
-  if (use_answer_file_) {
-    assert(0 && "Answer files are not implemented");
-    return kInvalidChoice;
-  }
-
   if (scanf("%d", &result) <= 0) {
     ViETest::Log("\nPlease enter a number instead, then hit enter.");
     getchar();
@@ -113,7 +128,7 @@ int ViEAutoTestMain::RunSpecialTestCase(int choice) {
   ViEAutoTest vieAutoTest(windowManager->GetWindow1(),
                           windowManager->GetWindow2());
 
-  int errors = 0;
+  int errors;
   switch (choice) {
     case 7: errors = vieAutoTest.ViELoopbackCall();  break;
     case 8: errors = vieAutoTest.ViECustomCall();    break;
@@ -124,8 +139,7 @@ int ViEAutoTestMain::RunSpecialTestCase(int choice) {
   return errors;
 }
 
-bool ViEAutoTestMain::BeginOSIndependentTesting() {
-
+bool ViEAutoTestMain::RunInteractiveMode() {
   ViETest::Log(" ============================== ");
   ViETest::Log("    WebRTC ViE 3.x Autotest     ");
   ViETest::Log(" ============================== \n");
@@ -172,47 +186,3 @@ bool ViEAutoTestMain::BeginOSIndependentTesting() {
   return true;
 }
 
-bool ViEAutoTestMain::GetAnswer(int index, std::string* answer) {
-  if (!use_answer_file_ || index > answers_count_) {
-    return false;
-  }
-  *answer = answers_[index];
-  return true;
-}
-
-bool ViEAutoTestMain::IsUsingAnswerFile() {
-  return use_answer_file_;
-}
-
-// TODO(unknown): implement?
-bool ViEAutoTestMain::UseAnswerFile(const char* fileName) {
-  return false;
-/*
-     use_answer_file_ = false;
-
-     ViETest::Log("Opening answer file:  %s...", fileName);
-
-     ifstream answerFile(fileName);
-     if(!answerFile)
-     {
-       ViETest::Log("failed! X(\n");
-       return false;
-     }
-
-     answers_count_ = 1;
-     answers_index_ = 1;
-     char lineContent[128] = "";
-     while(!answerFile.eof())
-     {
-       answerFile.getline(lineContent, 128);
-       answers_[answers_Count++] = string(lineContent);
-     }
-     answerFile.close();
-
-     cout << "Success :)" << endl << endl;
-
-     use_answer_file_ = true;
-
-     return use_answer_file_;
-*/
-}

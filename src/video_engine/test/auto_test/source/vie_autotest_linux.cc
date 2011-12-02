@@ -15,15 +15,11 @@
 
 #include <string>
 
-#include "gflags/gflags.h"
-#include "gtest/gtest.h"
 #include "vie_autotest_defines.h"
 #include "vie_autotest_main.h"
 #include "engine_configurations.h"
 #include "critical_section_wrapper.h"
 #include "thread_wrapper.h"
-
-DEFINE_bool(automated, false, "Run Video engine tests in noninteractive mode.");
 
 ViEAutoTestWindowManager::ViEAutoTestWindowManager()
     : _hdsp1(NULL),
@@ -138,24 +134,6 @@ bool ViEAutoTestWindowManager::SetTopmostWindow() {
 }
 
 int main(int argc, char** argv) {
-  // Initialize logging
-  ViETest::Init();
-  // Initialize the testing framework
-  testing::InitGoogleTest(&argc, argv);
-  // Parse remaining flags:
-  google::ParseCommandLineFlags(&argc, &argv, true);
-
-  int result;
-  if (FLAGS_automated) {
-    // Run in automated mode
-    result = RUN_ALL_TESTS();
-  } else {
-    // Run in interactive mode
-    ViEAutoTestMain autoTest;
-    autoTest.UseAnswerFile("answers.txt");
-    result = autoTest.BeginOSIndependentTesting();
-  }
-
-  ViETest::Terminate();
-  return result;
+  ViEAutoTestMain auto_test;
+  return auto_test.RunTests(argc, argv);
 }

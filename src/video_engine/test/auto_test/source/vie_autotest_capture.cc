@@ -150,15 +150,6 @@ void ViEAutoTest::ViECaptureStandardTest()
         ViETest::Log("Found capture device %s\nUnique name %s", deviceName,
                      deviceUniqueName);
 
-// not supported on MAC (is part of capture capabilities)
-#if !defined(WEBRTC_LINUX) && !defined(WEBRTC_MAC_INTEL)
-        EXPECT_EQ(0,
-                  ViE.capture->ShowCaptureSettingsDialogBox(
-                      (char*) deviceUniqueName,
-                      (unsigned int) (strlen((char*) deviceUniqueName)),
-                      "WebRTCViECapture StandardTest"));
-#endif
-
 #if !defined(WEBRTC_MAC_INTEL)  // these functions will return -1
         int numberOfCapabilities =
             devInfo->NumberOfCapabilities(deviceUniqueName);

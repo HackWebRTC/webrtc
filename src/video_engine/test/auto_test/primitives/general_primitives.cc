@@ -93,10 +93,11 @@ bool FindSpecificCodec(webrtc::VideoCodecType of_type,
                        webrtc::ViECodec* codec_interface,
                        webrtc::VideoCodec* result) {
 
-  memset(result, 1, sizeof(webrtc::VideoCodec));
+  memset(result, 0, sizeof(webrtc::VideoCodec));
 
   for (int i = 0; i < codec_interface->NumberOfCodecs(); i++) {
     webrtc::VideoCodec codec;
+    memset(&codec, 0, sizeof(webrtc::VideoCodec));
     if (codec_interface->GetCodec(i, codec) != 0) {
       return false;
     }

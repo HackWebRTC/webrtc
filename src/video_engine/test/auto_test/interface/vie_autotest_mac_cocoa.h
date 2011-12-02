@@ -22,31 +22,37 @@
 
 #import <Cocoa/Cocoa.h>
 
-class ViEAutoTestWindowManager: public ViEAutoTestWindowManagerInterface
-{
-public:
-    ViEAutoTestWindowManager();
-    virtual ~ViEAutoTestWindowManager();
-    virtual void* GetWindow1();
-    virtual void* GetWindow2();
-    virtual int CreateWindows(AutoTestRect window1Size,
-                              AutoTestRect window2Size, void* window1Title,
-                              void* window2Title);
-    virtual int TerminateWindows();
-    virtual bool SetTopmostWindow();
+class ViEAutoTestWindowManager: public ViEAutoTestWindowManagerInterface {
+ public:
+  ViEAutoTestWindowManager();
+  virtual ~ViEAutoTestWindowManager() {}
+  virtual void* GetWindow1();
+  virtual void* GetWindow2();
+  virtual int CreateWindows(AutoTestRect window1Size,
+                            AutoTestRect window2Size,
+                            void* window1Title,
+                            void* window2Title);
+  virtual int TerminateWindows();
+  virtual bool SetTopmostWindow();
 
-private:
-    CocoaRenderView* _cocoaRenderView1;
-    CocoaRenderView* _cocoaRenderView2;
+ private:
+  CocoaRenderView* _cocoaRenderView1;
+  CocoaRenderView* _cocoaRenderView2;
+  NSWindow* outWindow1_;
+  NSWindow* outWindow2_;
 };
 
-@interface AutoTestClass : NSObject
-{
+@interface AutoTestClass : NSObject {
+  int    argc_;
+  char** argv_;
+  int    result_;
 }
 
--(void)autoTestWithArg:(NSString*)answerFile;
+-(void)setArgc:(int)argc argv:(char**)argv;
+-(int) result;
+-(void)autoTestWithArg:(NSObject*)ignored;
 
 @end
 
 #endif  // WEBRTC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_INTERFACE_VIE_AUTOTEST_MAC_COCOA_H_
-#endif // COCOA_RENDERING
+#endif  // COCOA_RENDERING
