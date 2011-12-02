@@ -135,7 +135,7 @@ void VP8RpsTest::Perform() {
 bool VP8RpsTest::Encode(RpsDecodeCompleteCallback* decodeCallback) {
   _lengthEncFrame = 0;
   size_t bytes_read = fread(_sourceBuffer, 1, _lengthSourceFrame, _sourceFile);
-  if (bytes_read < 0)
+  if (bytes_read < _lengthSourceFrame)
     return true;
   _inputVideoBuffer.CopyBuffer(_lengthSourceFrame, _sourceBuffer);
   _inputVideoBuffer.SetTimeStamp((unsigned int)
