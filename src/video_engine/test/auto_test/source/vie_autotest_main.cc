@@ -64,7 +64,7 @@ int ViEAutoTestMain::AskUserForTestCase() {
     ViETest::Log("\t 0. Go back to previous menu.");
 
     // Print all test method choices. Assumes that map sorts on its key.
-    int last_valid_choice;
+    int last_valid_choice = 0;
     std::map<int, std::string>::const_iterator iterator;
     for (iterator = index_to_test_method_map_.begin();
         iterator != index_to_test_method_map_.end();
@@ -128,7 +128,7 @@ int ViEAutoTestMain::RunSpecialTestCase(int choice) {
   ViEAutoTest vieAutoTest(windowManager->GetWindow1(),
                           windowManager->GetWindow2());
 
-  int errors;
+  int errors = 0;
   switch (choice) {
     case 7: errors = vieAutoTest.ViELoopbackCall();  break;
     case 8: errors = vieAutoTest.ViECustomCall();    break;
