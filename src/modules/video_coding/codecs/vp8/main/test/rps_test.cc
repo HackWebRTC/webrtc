@@ -134,7 +134,9 @@ void VP8RpsTest::Perform() {
 
 bool VP8RpsTest::Encode(RpsDecodeCompleteCallback* decodeCallback) {
   _lengthEncFrame = 0;
-  fread(_sourceBuffer, 1, _lengthSourceFrame, _sourceFile);
+  size_t bytes_read = fread(_sourceBuffer, 1, _lengthSourceFrame, _sourceFile);
+  if (bytes_read < 0)
+    return true;
   _inputVideoBuffer.CopyBuffer(_lengthSourceFrame, _sourceBuffer);
   _inputVideoBuffer.SetTimeStamp((unsigned int)
       (_encFrameCnt * 9e4 / _inst.maxFramerate));
@@ -161,6 +163,9 @@ bool VP8RpsTest::Encode(RpsDecodeCompleteCallback* decodeCallback) {
   }
   printf("Encoding: %u\n", _framecnt);
   int ret = _encoder->Encode(rawImage, codecSpecificInfo, &frameType);
+  if (ret < 0)
+    printf("Failed to encode: %u\n", _framecnt);
+
   if (codecSpecificInfo != NULL) {
       delete codecSpecificInfo;
       codecSpecificInfo = NULL;
@@ -172,7 +177,6 @@ bool VP8RpsTest::Encode(RpsDecodeCompleteCallback* decodeCallback) {
   else {
       _totalEncodeTime += tGetTime() - _encodeTimes[rawImage._timeStamp];
   }
-  assert(ret >= 0);
   return false;
 }
 
