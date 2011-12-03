@@ -25,6 +25,7 @@ LOCAL_SRC_FILES := \
     condition_variable.cc \
     cpu_dummy.cc \
     cpu_features.cc \
+    cpu_features_arm.c \
     cpu_info.cc \
     critical_section.cc \
     event.cc \

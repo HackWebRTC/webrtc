@@ -54,6 +54,7 @@ include $(MY_WEBRTC_ROOT_PATH)/libvpx.mk
 LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
+include $(LOCAL_PATH)/../../external/webrtc/android-webrtc.mk
 
 LOCAL_ARM_MODE := arm
 LOCAL_MODULE := libwebrtc_audio_preprocessing
@@ -70,6 +71,17 @@ LOCAL_WHOLE_STATIC_LIBRARIES := \
     libwebrtc_aec \
     libwebrtc_aecm \
     libwebrtc_system_wrappers
+
+# Add Neon libraries.
+ifneq (,$(filter '-DWEBRTC_DETECT_ARM_NEON',$(MY_WEBRTC_COMMON_DEFS)))
+LOCAL_WHOLE_STATIC_LIBRARIES += \
+    libwebrtc_aecm_neon \
+    libwebrtc_ns_neon
+else ifeq ($(ARCH_ARM_HAVE_NEON),true)
+LOCAL_WHOLE_STATIC_LIBRARIES += \
+    libwebrtc_aecm_neon \
+    libwebrtc_ns_neon
+endif
 
 LOCAL_STATIC_LIBRARIES := \
     libprotobuf-cpp-2.3.0-lite

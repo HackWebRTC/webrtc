@@ -8,15 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#if defined(WEBRTC_ARCH_ARM_NEON) && defined(WEBRTC_ANDROID)
-
 #include "nsx_core.h"
 
 #include <arm_neon.h>
 #include <assert.h>
 
 // Update the noise estimation information.
-static void UpdateNoiseEstimate(NsxInst_t* inst, int offset) {
+static void UpdateNoiseEstimateNeon(NsxInst_t* inst, int offset) {
   int i = 0;
   const int16_t kExp2Const = 11819; // Q13
   int16_t* ptr_noiseEstLogQuantile = NULL;
@@ -75,7 +73,7 @@ static void UpdateNoiseEstimate(NsxInst_t* inst, int offset) {
   }
 
   // Last iteration:
-  
+
   // inst->quantile[i]=exp(inst->lquantile[offset+i]);
   // in Q21
   int32_t tmp32no2 = WEBRTC_SPL_MUL_16_16(kExp2Const,
@@ -94,10 +92,10 @@ static void UpdateNoiseEstimate(NsxInst_t* inst, int offset) {
 }
 
 // Noise Estimation
-void WebRtcNsx_NoiseEstimation(NsxInst_t* inst,
-                               uint16_t* magn,
-                               uint32_t* noise,
-                               int16_t* q_noise) {
+static void NoiseEstimationNeon(NsxInst_t* inst,
+                                uint16_t* magn,
+                                uint32_t* noise,
+                                int16_t* q_noise) {
   int32_t numerator = FACTOR_Q16;
   int16_t lmagn[HALF_ANAL_BLOCKL], counter, countDiv;
   int16_t countProd, delta, zeros, frac;
@@ -126,11 +124,11 @@ void WebRtcNsx_NoiseEstimation(NsxInst_t* inst,
     if (magn[i]) {
       zeros = WebRtcSpl_NormU32((uint32_t)magn[i]);
       frac = (int16_t)((((uint32_t)magn[i] << zeros)
-                              & 0x7FFFFFFF) >> 23);
+                        & 0x7FFFFFFF) >> 23);
       assert(frac < 256);
       // log2(magn(i))
       log2 = (int16_t)(((31 - zeros) << 8)
-                             + WebRtcNsx_kLogTableFrac[frac]);
+                       + WebRtcNsx_kLogTableFrac[frac]);
       // log2(magn(i))*log(2)
       lmagn[i] = (int16_t)WEBRTC_SPL_MUL_16_16_RSFT(log2, log2_const, 15);
       // + log(2^stages)
@@ -302,7 +300,7 @@ void WebRtcNsx_NoiseEstimation(NsxInst_t* inst,
     if (counter >= END_STARTUP_LONG) {
       inst->noiseEstCounter[s] = 0;
       if (inst->blockIndex >= END_STARTUP_LONG) {
-        UpdateNoiseEstimate(inst, offset);
+        UpdateNoiseEstimateNeon(inst, offset);
       }
     }
     inst->noiseEstCounter[s]++;
@@ -311,7 +309,7 @@ void WebRtcNsx_NoiseEstimation(NsxInst_t* inst,
 
   // Sequentially update the noise during startup
   if (inst->blockIndex < END_STARTUP_LONG) {
-    UpdateNoiseEstimate(inst, offset);
+    UpdateNoiseEstimateNeon(inst, offset);
   }
 
   for (i = 0; i < inst->magnLen; i++) {
@@ -321,7 +319,7 @@ void WebRtcNsx_NoiseEstimation(NsxInst_t* inst,
 }
 
 // Filter the data in the frequency domain, and create spectrum.
-void WebRtcNsx_PrepareSpectrum(NsxInst_t* inst, int16_t* freq_buf) {
+static void PrepareSpectrumNeon(NsxInst_t* inst, int16_t* freq_buf) {
 
   // (1) Filtering.
 
@@ -338,7 +336,7 @@ void WebRtcNsx_PrepareSpectrum(NsxInst_t* inst, int16_t* freq_buf) {
   uint16_t* ptr_noiseSupFilter = &inst->noiseSupFilter[0];
 
   // Filter the rest in the frequency domain.
-  for (; ptr_real < &inst->real[inst->magnLen - 1]; ) {
+  for (; ptr_real < &inst->real[inst->magnLen - 1];) {
     // Loop unrolled once. Both pointers are incremented by 4 twice.
     __asm__ __volatile__(
       "vld1.16 d20, [%[ptr_real]]\n\t"
@@ -368,7 +366,7 @@ void WebRtcNsx_PrepareSpectrum(NsxInst_t* inst, int16_t* freq_buf) {
       :
       :"d18", "d19", "d20", "d21", "d22", "d23", "d24", "d25",
        "q9", "q10", "q11", "q12"
-      );
+    );
   }
 
   // Filter the last pair of elements in the frequency domain.
@@ -400,7 +398,7 @@ void WebRtcNsx_PrepareSpectrum(NsxInst_t* inst, int16_t* freq_buf) {
   int16_t* ptr_realImag2 = ptr_realImag2 = &freq_buf[(inst->anaLen << 1) - 8];
   ptr_real = &inst->real[1];
   ptr_imag = &inst->imag[1];
-  for (; ptr_real < &inst->real[inst->anaLen2 - 11]; ) {
+  for (; ptr_real < &inst->real[inst->anaLen2 - 11];) {
     // Loop unrolled once. All pointers are incremented twice.
     __asm__ __volatile__(
       "vld1.16 d22, [%[ptr_real]]!\n\t"
@@ -456,13 +454,13 @@ void WebRtcNsx_PrepareSpectrum(NsxInst_t* inst, int16_t* freq_buf) {
 }
 
 // Denormalize the input buffer.
-__inline void WebRtcNsx_Denormalize(NsxInst_t* inst, int16_t* in, int factor) {
+static __inline void DenormalizeNeon(NsxInst_t* inst, int16_t* in, int factor) {
   int16_t* ptr_real = &inst->real[0];
   int16_t* ptr_in = &in[0];
 
   __asm__ __volatile__("vdup.32 q10, %0" ::
                        "r"((int32_t)(factor - inst->normData)) : "q10");
-  for (; ptr_real < &inst->real[inst->anaLen]; ) {
+  for (; ptr_real < &inst->real[inst->anaLen];) {
 
     // Loop unrolled once. Both pointers are incremented.
     __asm__ __volatile__(
@@ -495,9 +493,9 @@ __inline void WebRtcNsx_Denormalize(NsxInst_t* inst, int16_t* in, int factor) {
 
 // For the noise supress process, synthesis, read out fully processed segment,
 // and update synthesis buffer.
-void WebRtcNsx_SynthesisUpdate(NsxInst_t* inst,
-                               int16_t* out_frame,
-                               int16_t gain_factor) {
+static void SynthesisUpdateNeon(NsxInst_t* inst,
+                                int16_t* out_frame,
+                                int16_t gain_factor) {
   int16_t* ptr_real = &inst->real[0];
   int16_t* ptr_syn = &inst->synthesisBuffer[0];
   int16_t* ptr_window = &inst->window[0];
@@ -505,7 +503,7 @@ void WebRtcNsx_SynthesisUpdate(NsxInst_t* inst,
   // synthesis
   __asm__ __volatile__("vdup.16 d24, %0" : : "r"(gain_factor) : "d24");
   // Loop unrolled once. All pointers are incremented in the assembly code.
-  for (; ptr_syn < &inst->synthesisBuffer[inst->anaLen]; ) {
+  for (; ptr_syn < &inst->synthesisBuffer[inst->anaLen];) {
     __asm__ __volatile__(
       // Load variables.
       "vld1.16 d22, [%[ptr_real]]!\n\t"
@@ -553,7 +551,7 @@ void WebRtcNsx_SynthesisUpdate(NsxInst_t* inst,
   int16_t* ptr_out = &out_frame[0];
   ptr_syn = &inst->synthesisBuffer[0];
   // read out fully processed segment
-  for (; ptr_syn < &inst->synthesisBuffer[inst->blockLen10ms]; ) {
+  for (; ptr_syn < &inst->synthesisBuffer[inst->blockLen10ms];) {
     // Loop unrolled once. Both pointers are incremented in the assembly code.
     __asm__ __volatile__(
       // out_frame[i] = inst->synthesisBuffer[i]; // Q0
@@ -575,7 +573,7 @@ void WebRtcNsx_SynthesisUpdate(NsxInst_t* inst,
   //                      inst->anaLen - inst->blockLen10ms);
   ptr_out = &inst->synthesisBuffer[0],
   ptr_syn = &inst->synthesisBuffer[inst->blockLen10ms];
-  for (; ptr_syn < &inst->synthesisBuffer[inst->anaLen]; ) {
+  for (; ptr_syn < &inst->synthesisBuffer[inst->anaLen];) {
     // Loop unrolled once. Both pointers are incremented in the assembly code.
     __asm__ __volatile__(
       "vld1.16 {d22, d23}, [%[ptr_syn]]!\n\t"
@@ -593,7 +591,7 @@ void WebRtcNsx_SynthesisUpdate(NsxInst_t* inst,
   // WebRtcSpl_ZerosArrayW16(inst->synthesisBuffer
   //    + inst->anaLen - inst->blockLen10ms, inst->blockLen10ms);
   __asm__ __volatile__("vdup.16 q10, %0" : : "r"(0) : "q10");
-  for (; ptr_out < &inst->synthesisBuffer[inst->anaLen]; ) {
+  for (; ptr_out < &inst->synthesisBuffer[inst->anaLen];) {
     // Loop unrolled once. Pointer is incremented in the assembly code.
     __asm__ __volatile__(
       "vst1.16 {d20, d21}, [%[ptr_out]]!\n\t"
@@ -606,9 +604,9 @@ void WebRtcNsx_SynthesisUpdate(NsxInst_t* inst,
 }
 
 // Update analysis buffer for lower band, and window data before FFT.
-void WebRtcNsx_AnalysisUpdate(NsxInst_t* inst,
-                              int16_t* out,
-                              int16_t* new_speech) {
+static void AnalysisUpdateNeon(NsxInst_t* inst,
+                               int16_t* out,
+                               int16_t* new_speech) {
 
   int16_t* ptr_ana = &inst->analysisBuffer[inst->blockLen10ms];
   int16_t* ptr_out = &inst->analysisBuffer[0];
@@ -617,7 +615,7 @@ void WebRtcNsx_AnalysisUpdate(NsxInst_t* inst,
   // WEBRTC_SPL_MEMCPY_W16(inst->analysisBuffer,
   //                      inst->analysisBuffer + inst->blockLen10ms,
   //                      inst->anaLen - inst->blockLen10ms);
-  for (; ptr_out < &inst->analysisBuffer[inst->anaLen - inst->blockLen10ms]; ) {
+  for (; ptr_out < &inst->analysisBuffer[inst->anaLen - inst->blockLen10ms];) {
     // Loop unrolled once, so both pointers are incremented by 8 twice.
     __asm__ __volatile__(
       "vld1.16 {d20, d21}, [%[ptr_ana]]!\n\t"
@@ -633,7 +631,7 @@ void WebRtcNsx_AnalysisUpdate(NsxInst_t* inst,
 
   // WEBRTC_SPL_MEMCPY_W16(inst->analysisBuffer
   //    + inst->anaLen - inst->blockLen10ms, new_speech, inst->blockLen10ms);
-  for (ptr_ana = new_speech; ptr_out < &inst->analysisBuffer[inst->anaLen]; ) {
+  for (ptr_ana = new_speech; ptr_out < &inst->analysisBuffer[inst->anaLen];) {
     // Loop unrolled once, so both pointers are incremented by 8 twice.
     __asm__ __volatile__(
       "vld1.16 {d20, d21}, [%[ptr_ana]]!\n\t"
@@ -651,7 +649,7 @@ void WebRtcNsx_AnalysisUpdate(NsxInst_t* inst,
   int16_t* ptr_window = &inst->window[0];
   ptr_out = &out[0];
   ptr_ana = &inst->analysisBuffer[0];
-  for (; ptr_out < &out[inst->anaLen]; ) {
+  for (; ptr_out < &out[inst->anaLen];) {
 
     // Loop unrolled once, so all pointers are incremented by 4 twice.
     __asm__ __volatile__(
@@ -683,17 +681,17 @@ void WebRtcNsx_AnalysisUpdate(NsxInst_t* inst,
 
 // Create a complex number buffer (out[]) as the intput (in[]) interleaved with
 // zeros, and normalize it.
-__inline void WebRtcNsx_CreateComplexBuffer(NsxInst_t* inst,
-                                            int16_t* in,
-                                            int16_t* out) {
+static __inline void CreateComplexBufferNeon(NsxInst_t* inst,
+                                             int16_t* in,
+                                             int16_t* out) {
   int16_t* ptr_out = &out[0];
   int16_t* ptr_in = &in[0];
 
   __asm__ __volatile__("vdup.16 d25, %0" : : "r"(0) : "d25");
   __asm__ __volatile__("vdup.16 q10, %0" : : "r"(inst->normData) : "q10");
-  for (; ptr_in < &in[inst->anaLen]; ) {
+  for (; ptr_in < &in[inst->anaLen];) {
 
-    // Loop unrolled once, so ptr_in is incremented by 8 twice, 
+    // Loop unrolled once, so ptr_in is incremented by 8 twice,
     // and ptr_out is incremented by 8 four times.
     __asm__ __volatile__(
       // out[j] = WEBRTC_SPL_LSHIFT_W16(in[i], inst->normData); // Q(normData)
@@ -724,4 +722,12 @@ __inline void WebRtcNsx_CreateComplexBuffer(NsxInst_t* inst,
     );
   }
 }
-#endif // defined(WEBRTC_ARCH_ARM_NEON) && defined(WEBRTC_ANDROID)
+
+void WebRtcNsx_InitNeon(void) {
+  WebRtcNsx_NoiseEstimation = NoiseEstimationNeon;
+  WebRtcNsx_PrepareSpectrum = PrepareSpectrumNeon;
+  WebRtcNsx_SynthesisUpdate = SynthesisUpdateNeon;
+  WebRtcNsx_AnalysisUpdate = AnalysisUpdateNeon;
+  WebRtcNsx_Denormalize = DenormalizeNeon;
+  WebRtcNsx_CreateComplexBuffer = CreateComplexBufferNeon;
+}

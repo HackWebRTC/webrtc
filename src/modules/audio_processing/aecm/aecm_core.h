@@ -332,32 +332,44 @@ void WebRtcAecm_BufferFarFrame(AecmCore_t * const aecm, const WebRtc_Word16 * co
 void WebRtcAecm_FetchFarFrame(AecmCore_t * const aecm, WebRtc_Word16 * const farend,
                               const int farLen, const int knownDelay);
 
-///////////////////////////////////////////////////////////////////////////////////////////////
-// Some internal functions shared by ARM NEON and generic C code:
+///////////////////////////////////////////////////////////////////////////////
+// Some function pointers, for internal functions shared by ARM NEON and 
+// generic C code.
 //
+typedef void (*CalcLinearEnergies)(
+    AecmCore_t* aecm,
+    const WebRtc_UWord16* far_spectrum,
+    WebRtc_Word32* echoEst,
+    WebRtc_UWord32* far_energy,
+    WebRtc_UWord32* echo_energy_adapt,
+    WebRtc_UWord32* echo_energy_stored);
+extern CalcLinearEnergies WebRtcAecm_CalcLinearEnergies;
 
-void WebRtcAecm_CalcLinearEnergies(AecmCore_t* aecm,
-                                   const WebRtc_UWord16* far_spectrum,
-                                   WebRtc_Word32* echoEst,
-                                   WebRtc_UWord32* far_energy,
-                                   WebRtc_UWord32* echo_energy_adapt,
-                                   WebRtc_UWord32* echo_energy_stored);
+typedef void (*StoreAdaptiveChannel)(
+    AecmCore_t* aecm,
+    const WebRtc_UWord16* far_spectrum,
+    WebRtc_Word32* echo_est);
+extern StoreAdaptiveChannel WebRtcAecm_StoreAdaptiveChannel;
 
-void WebRtcAecm_StoreAdaptiveChannel(AecmCore_t* aecm,
-                                     const WebRtc_UWord16* far_spectrum,
-                                     WebRtc_Word32* echo_est);
+typedef void (*ResetAdaptiveChannel)(AecmCore_t* aecm);
+extern ResetAdaptiveChannel WebRtcAecm_ResetAdaptiveChannel;
 
-void WebRtcAecm_ResetAdaptiveChannel(AecmCore_t *aecm);
+typedef void (*WindowAndFFT)(
+    WebRtc_Word16* fft,
+    const WebRtc_Word16* time_signal,
+    complex16_t* freq_signal,
+    int time_signal_scaling);
+extern WindowAndFFT WebRtcAecm_WindowAndFFT;
 
-void WebRtcAecm_WindowAndFFT(WebRtc_Word16* fft,
-                             const WebRtc_Word16* time_signal,
-                             complex16_t* freq_signal,
-                             int time_signal_scaling);
+typedef void (*InverseFFTAndWindow)(
+    AecmCore_t* aecm,
+    WebRtc_Word16* fft, complex16_t* efw,
+    WebRtc_Word16* output,
+    const WebRtc_Word16* nearendClean);
+extern InverseFFTAndWindow WebRtcAecm_InverseFFTAndWindow;
 
-void WebRtcAecm_InverseFFTAndWindow(AecmCore_t* aecm,
-                                    WebRtc_Word16* fft,
-                                    complex16_t* efw,
-                                    WebRtc_Word16* output,
-                                    const WebRtc_Word16* nearendClean);
+// Initialization of the above function pointers for ARM Neon.
+void WebRtcAecm_InitNeon(void);
+
 
 #endif

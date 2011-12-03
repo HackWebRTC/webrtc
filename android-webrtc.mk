@@ -21,8 +21,9 @@ MY_WEBRTC_COMMON_DEFS := \
 #    '-DWEBRTC_MODULE_UTILITY_VIDEO' [module media_file] [module utility]
 ifeq ($(TARGET_ARCH),arm)
 MY_WEBRTC_COMMON_DEFS += \
-    '-DWEBRTC_ARM_INLINE_CALLS' \
     '-DWEBRTC_ARCH_ARM'
+#    '-DWEBRTC_DETECT_ARM_NEON' # only used in a build configuration without Neon
+# TODO(kma): figure out if the above define could be moved to NDK build only.
 
 # TODO(kma): test if the code under next two macros works with generic GCC compilers
 ifeq ($(ARCH_ARM_HAVE_NEON),true)

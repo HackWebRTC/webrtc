@@ -15,17 +15,32 @@
 extern "C" {
 #endif
 
-// list of features.
+#include <typedefs.h>
+
+// List of features in x86.
 typedef enum {
   kSSE2,
   kSSE3
 } CPUFeature;
+
+// List of features in ARM.
+enum {
+  kCPUFeatureARMv7       = (1 << 0),
+  kCPUFeatureVFPv3       = (1 << 1),
+  kCPUFeatureNEON        = (1 << 2),
+  kCPUFeatureLDREXSTREX  = (1 << 3)
+};
 
 typedef int (*WebRtc_CPUInfo)(CPUFeature feature);
 // returns true if the CPU supports the feature.
 extern WebRtc_CPUInfo WebRtc_GetCPUInfo;
 // No CPU feature is available => straight C path.
 extern WebRtc_CPUInfo WebRtc_GetCPUInfoNoASM;
+
+// Return the features in an ARM device.
+// It detects the features in the hardware platform, and returns supported 
+// values in the above enum definition as a bitmask.
+extern uint64_t WebRtc_GetCPUFeaturesARM(void);
 
 #if defined(__cplusplus) || defined(c_plusplus)
 }    // extern "C"
