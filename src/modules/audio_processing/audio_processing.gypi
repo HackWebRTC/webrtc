@@ -19,9 +19,12 @@
           'dependencies': [ 'ns' ],
           'defines': [ 'WEBRTC_NS_FLOAT' ],
         }],
+        ['enable_protobuf==1', {
+          'dependencies': [ 'audioproc_debug_proto' ],
+          'defines': [ 'WEBRTC_AUDIOPROC_DEBUG_DUMP' ],
+        }],
       ],
       'dependencies': [
-        'audioproc_debug_proto',
         'aec',
         'aecm',
         'agc',
@@ -65,18 +68,24 @@
         'voice_detection_impl.h',
       ],
     },
-    {
-      'target_name': 'audioproc_debug_proto',
-      'type': 'static_library',
-      'sources': [ 'debug.proto', ],
-      'variables': {
-        'proto_in_dir': '.',
-        # Workaround to protect against gyp's pathname relativization when this
-        # file is included by modules.gyp.
-        'proto_out_protected': 'webrtc/audio_processing',
-        'proto_out_dir': '<(proto_out_protected)',
-      },
-      'includes': [ '../../build/protoc.gypi', ],
-    },
+  ],
+  'conditions': [
+    ['enable_protobuf==1', {
+      'targets': [
+        {
+          'target_name': 'audioproc_debug_proto',
+          'type': 'static_library',
+          'sources': [ 'debug.proto', ],
+          'variables': {
+            'proto_in_dir': '.',
+            # Workaround to protect against gyp's pathname relativization when
+            # this file is included by modules.gyp.
+            'proto_out_protected': 'webrtc/audio_processing',
+            'proto_out_dir': '<(proto_out_protected)',
+          },
+          'includes': [ '../../build/protoc.gypi', ],
+        },
+      ],
+    }],
   ],
 }

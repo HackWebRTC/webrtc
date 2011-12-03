@@ -25,11 +25,15 @@
 #include "processing_component.h"
 #include "splitting_filter.h"
 #include "voice_detection_impl.h"
+
+#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
+// Files generated at build-time by the protobuf compiler.
 #ifdef WEBRTC_ANDROID
 #include "external/webrtc/src/modules/audio_processing/debug.pb.h"
 #else
 #include "webrtc/audio_processing/debug.pb.h"
 #endif
+#endif  // WEBRTC_AUDIOPROC_DEBUG_DUMP
 
 namespace webrtc {
 AudioProcessing* AudioProcessing::Create(int id) {
@@ -60,11 +64,13 @@ AudioProcessingImpl::AudioProcessingImpl(int id)
       level_estimator_(NULL),
       noise_suppression_(NULL),
       voice_detection_(NULL),
-      debug_file_(FileWrapper::Create()),
-      event_msg_(new audioproc::Event()),
       crit_(CriticalSectionWrapper::CreateCriticalSection()),
       render_audio_(NULL),
       capture_audio_(NULL),
+#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
+      debug_file_(FileWrapper::Create()),
+      event_msg_(new audioproc::Event()),
+#endif
       sample_rate_hz_(kSampleRate16kHz),
       split_sample_rate_hz_(kSampleRate16kHz),
       samples_per_channel_(sample_rate_hz_ / 100),
@@ -104,14 +110,11 @@ AudioProcessingImpl::~AudioProcessingImpl() {
     component_list_.pop_front();
   }
 
+#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   if (debug_file_->Open()) {
     debug_file_->CloseFile();
   }
-  delete debug_file_;
-  debug_file_ = NULL;
-
-  delete event_msg_;
-  event_msg_ = NULL;
+#endif
 
   delete crit_;
   crit_ = NULL;
@@ -167,12 +170,14 @@ int AudioProcessingImpl::InitializeLocked() {
     }
   }
 
+#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   if (debug_file_->Open()) {
     int err = WriteInitMessage();
     if (err != kNoError) {
       return err;
     }
   }
+#endif
 
   return kNoError;
 }
@@ -268,6 +273,7 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
     return kBadDataLengthError;
   }
 
+#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   if (debug_file_->Open()) {
     event_msg_->set_type(audioproc::Event::STREAM);
     audioproc::Stream* msg = event_msg_->mutable_stream();
@@ -279,6 +285,7 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
     msg->set_drift(echo_cancellation_->stream_drift_samples());
     msg->set_level(gain_control_->stream_analog_level());
   }
+#endif
 
   capture_audio_->DeinterleaveFrom(frame);
 
@@ -359,6 +366,7 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
 
   capture_audio_->InterleaveTo(frame, data_changed);
 
+#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   if (debug_file_->Open()) {
     audioproc::Stream* msg = event_msg_->mutable_stream();
     const size_t data_size = sizeof(int16_t) *
@@ -370,6 +378,7 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
       return err;
     }
   }
+#endif
 
   was_stream_delay_set_ = false;
   return kNoError;
@@ -395,6 +404,7 @@ int AudioProcessingImpl::AnalyzeReverseStream(AudioFrame* frame) {
     return kBadDataLengthError;
   }
 
+#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   if (debug_file_->Open()) {
     event_msg_->set_type(audioproc::Event::REVERSE_STREAM);
     audioproc::ReverseStream* msg = event_msg_->mutable_reverse_stream();
@@ -407,6 +417,7 @@ int AudioProcessingImpl::AnalyzeReverseStream(AudioFrame* frame) {
       return err;
     }
   }
+#endif
 
   render_audio_->DeinterleaveFrom(frame);
 
@@ -474,6 +485,7 @@ int AudioProcessingImpl::StartDebugRecording(
     return kNullPointerError;
   }
 
+#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   // Stop any ongoing recording.
   if (debug_file_->Open()) {
     if (debug_file_->CloseFile() == -1) {
@@ -490,20 +502,26 @@ int AudioProcessingImpl::StartDebugRecording(
   if (err != kNoError) {
     return err;
   }
-
   return kNoError;
+#else
+  return kUnsupportedFunctionError;
+#endif  // WEBRTC_AUDIOPROC_DEBUG_DUMP
 }
 
 int AudioProcessingImpl::StopDebugRecording() {
   CriticalSectionScoped crit_scoped(*crit_);
+
+#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   // We just return if recording hasn't started.
   if (debug_file_->Open()) {
     if (debug_file_->CloseFile() == -1) {
       return kFileError;
     }
   }
-
   return kNoError;
+#else
+  return kUnsupportedFunctionError;
+#endif  // WEBRTC_AUDIOPROC_DEBUG_DUMP
 }
 
 EchoCancellation* AudioProcessingImpl::echo_cancellation() const {
@@ -601,6 +619,47 @@ WebRtc_Word32 AudioProcessingImpl::ChangeUniqueId(const WebRtc_Word32 id) {
   return kNoError;
 }
 
+bool AudioProcessingImpl::stream_data_changed() const {
+  int enabled_count = 0;
+  std::list<ProcessingComponent*>::const_iterator it;
+  for (it = component_list_.begin(); it != component_list_.end(); it++) {
+    if ((*it)->is_component_enabled()) {
+      enabled_count++;
+    }
+  }
+
+  // Data is unchanged if no components are enabled, or if only level_estimator_
+  // or voice_detection_ is enabled.
+  if (enabled_count == 0) {
+    return false;
+  } else if (enabled_count == 1) {
+    if (level_estimator_->is_enabled() || voice_detection_->is_enabled()) {
+      return false;
+    }
+  } else if (enabled_count == 2) {
+    if (level_estimator_->is_enabled() && voice_detection_->is_enabled()) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool AudioProcessingImpl::synthesis_needed(bool stream_data_changed) const {
+  return (stream_data_changed && sample_rate_hz_ == kSampleRate32kHz);
+}
+
+bool AudioProcessingImpl::analysis_needed(bool stream_data_changed) const {
+  if (!stream_data_changed && !voice_detection_->is_enabled()) {
+    // Only level_estimator_ is enabled.
+    return false;
+  } else if (sample_rate_hz_ == kSampleRate32kHz) {
+    // Something besides level_estimator_ is enabled, and we have super-wb.
+    return true;
+  }
+  return false;
+}
+
+#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
 int AudioProcessingImpl::WriteMessageToDebugFile() {
   int32_t size = event_msg_->ByteSize();
   if (size <= 0) {
@@ -644,44 +703,5 @@ int AudioProcessingImpl::WriteInitMessage() {
 
   return kNoError;
 }
-
-bool AudioProcessingImpl::stream_data_changed() const {
-  int enabled_count = 0;
-  std::list<ProcessingComponent*>::const_iterator it;
-  for (it = component_list_.begin(); it != component_list_.end(); it++) {
-    if ((*it)->is_component_enabled()) {
-      enabled_count++;
-    }
-  }
-
-  // Data is unchanged if no components are enabled, or if only level_estimator_
-  // or voice_detection_ is enabled.
-  if (enabled_count == 0) {
-    return false;
-  } else if (enabled_count == 1) {
-    if (level_estimator_->is_enabled() || voice_detection_->is_enabled()) {
-      return false;
-    }
-  } else if (enabled_count == 2) {
-    if (level_estimator_->is_enabled() && voice_detection_->is_enabled()) {
-      return false;
-    }
-  }
-  return true;
-}
-
-bool AudioProcessingImpl::synthesis_needed(bool stream_data_changed) const {
-  return (stream_data_changed && sample_rate_hz_ == kSampleRate32kHz);
-}
-
-bool AudioProcessingImpl::analysis_needed(bool stream_data_changed) const {
-  if (!stream_data_changed && !voice_detection_->is_enabled()) {
-    // Only level_estimator_ is enabled.
-    return false;
-  } else if (sample_rate_hz_ == kSampleRate32kHz) {
-    // Something besides level_estimator_ is enabled, and we have super-wb.
-    return true;
-  }
-  return false;
-}
+#endif  // WEBRTC_AUDIOPROC_DEBUG_DUMP
 }  // namespace webrtc

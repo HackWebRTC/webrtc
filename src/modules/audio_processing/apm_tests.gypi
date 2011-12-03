@@ -17,6 +17,9 @@
         }, {
           'defines': [ 'WEBRTC_APM_UNIT_TEST_FLOAT_PROFILE' ],
         }],
+        ['enable_protobuf==1', {
+          'defines': [ 'WEBRTC_AUDIOPROC_DEBUG_DUMP' ],
+        }],
       ],
       'dependencies': [
         'audio_processing',
@@ -41,26 +44,31 @@
       },
       'includes': [ '../../build/protoc.gypi', ],
     },
-    {
-      'target_name': 'audioproc',
-      'type': 'executable',
-      'dependencies': [
-        'audio_processing',
-        'audioproc_debug_proto',
-        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-        '<(webrtc_root)/../testing/gtest.gyp:gtest',
+  ],
+  'conditions': [
+    ['enable_protobuf==1', {
+      'targets': [
+        {
+          'target_name': 'audioproc',
+          'type': 'executable',
+          'dependencies': [
+            'audio_processing',
+            '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+            '<(webrtc_root)/../testing/gtest.gyp:gtest',
+          ],
+          'sources': [ 'test/process_test.cc', ],
+        },
+        {
+          'target_name': 'unpack_aecdump',
+          'type': 'executable',
+          'dependencies': [
+            'audioproc_debug_proto',
+            '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+            '<(webrtc_root)/../third_party/google-gflags/google-gflags.gyp:google-gflags',
+          ],
+          'sources': [ 'test/unpack.cc', ],
+        },
       ],
-      'sources': [ 'test/process_test.cc', ],
-    },
-    {
-      'target_name': 'unpack_aecdump',
-      'type': 'executable',
-      'dependencies': [
-        'audioproc_debug_proto',
-        '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-        '<(webrtc_root)/../third_party/google-gflags/google-gflags.gyp:google-gflags',
-      ],
-      'sources': [ 'test/unpack.cc', ],
-    },
+    }],
   ],
 }

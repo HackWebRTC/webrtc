@@ -11,15 +11,14 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_MAIN_SOURCE_AUDIO_PROCESSING_IMPL_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_MAIN_SOURCE_AUDIO_PROCESSING_IMPL_H_
 
+#include "audio_processing.h"
+
 #include <list>
 #include <string>
 
-#include "audio_processing.h"
+#include "scoped_ptr.h"
 
 namespace webrtc {
-namespace audioproc {
-class Event;
-}  // audioproc
 class AudioBuffer;
 class CriticalSectionWrapper;
 class EchoCancellationImpl;
@@ -31,6 +30,14 @@ class LevelEstimatorImpl;
 class NoiseSuppressionImpl;
 class ProcessingComponent;
 class VoiceDetectionImpl;
+
+#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
+namespace audioproc {
+
+class Event;
+
+}  // namespace audioproc
+#endif
 
 class AudioProcessingImpl : public AudioProcessing {
  public:
@@ -79,8 +86,6 @@ class AudioProcessingImpl : public AudioProcessing {
   virtual WebRtc_Word32 ChangeUniqueId(const WebRtc_Word32 id);
 
  private:
-  int WriteMessageToDebugFile();
-  int WriteInitMessage();
   bool stream_data_changed() const;
   bool synthesis_needed(bool stream_data_changed) const;
   bool analysis_needed(bool stream_data_changed) const;
@@ -96,14 +101,18 @@ class AudioProcessingImpl : public AudioProcessing {
   VoiceDetectionImpl* voice_detection_;
 
   std::list<ProcessingComponent*> component_list_;
-
-  FileWrapper* debug_file_;
-  audioproc::Event* event_msg_; // Protobuf message.
-  std::string event_str_; // Memory for protobuf serialization.
   CriticalSectionWrapper* crit_;
-
   AudioBuffer* render_audio_;
   AudioBuffer* capture_audio_;
+#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
+  // TODO(andrew): make this more graceful. Ideally we would split this stuff
+  // out into a separate class with an "enabled" and "disabled" implementation.
+  int WriteMessageToDebugFile();
+  int WriteInitMessage();
+  scoped_ptr<FileWrapper> debug_file_;
+  scoped_ptr<audioproc::Event> event_msg_; // Protobuf message.
+  std::string event_str_; // Memory for protobuf serialization.
+#endif
 
   int sample_rate_hz_;
   int split_sample_rate_hz_;

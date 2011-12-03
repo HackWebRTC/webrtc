@@ -970,6 +970,34 @@ TEST_F(ApmTest, SplittingFilter) {
   EXPECT_FALSE(FrameDataAreEqual(*frame_, frame_copy));
 }
 
+// TODO(andrew): expand test to verify output.
+TEST_F(ApmTest, DebugDump) {
+  const std::string filename = webrtc::test::OutputPath() + "debug.aec";
+  EXPECT_EQ(apm_->kNullPointerError, apm_->StartDebugRecording(NULL));
+
+#ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
+  // Stopping without having started should be OK.
+  EXPECT_EQ(apm_->kNoError, apm_->StopDebugRecording());
+
+  EXPECT_EQ(apm_->kNoError, apm_->StartDebugRecording(filename.c_str()));
+  EXPECT_EQ(apm_->kNoError, apm_->AnalyzeReverseStream(revframe_));
+  EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
+  EXPECT_EQ(apm_->kNoError, apm_->StopDebugRecording());
+
+  // Verify the file has been written.
+  ASSERT_TRUE(fopen(filename.c_str(), "r") != NULL);
+  // Clean it up.
+  ASSERT_EQ(0, remove(filename.c_str()));
+#else
+  EXPECT_EQ(apm_->kUnsupportedFunctionError,
+            apm_->StartDebugRecording(filename.c_str()));
+  EXPECT_EQ(apm_->kUnsupportedFunctionError, apm_->StopDebugRecording());
+
+  // Verify the file has NOT been written.
+  ASSERT_TRUE(fopen(filename.c_str(), "r") == NULL);
+#endif  // WEBRTC_AUDIOPROC_DEBUG_DUMP
+}
+
 TEST_F(ApmTest, Process) {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
   webrtc::audioproc::OutputData output_data;
