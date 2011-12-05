@@ -29,8 +29,9 @@ struct vpx_codec_cx_pkt;
 
 namespace webrtc
 {
+#if WEBRTC_LIBVPX_VERSION >= 971
 class TemporalLayers;
-
+#endif
 class ReferencePictureSelection;
 
 /******************************/
@@ -175,7 +176,9 @@ private:
     WebRtc_UWord32             _rcMaxIntraTarget;
     int                        _tokenPartitions;
     ReferencePictureSelection* _rps;
+#if WEBRTC_LIBVPX_VERSION >= 971
     TemporalLayers*            _temporalLayers;
+#endif
 
     vpx_codec_ctx_t*            _encoder;
     vpx_codec_enc_cfg_t*        _cfg;

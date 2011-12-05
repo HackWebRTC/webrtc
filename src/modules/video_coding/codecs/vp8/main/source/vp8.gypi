@@ -36,6 +36,10 @@
           'defines': [
             'WEBRTC_LIBVPX_VERSION=971' # Cayuga
           ],
+          'sources': [
+            'temporal_layers.h',
+            'temporal_layers.cc',
+          ],
         }],
       ],
       'direct_dependent_settings': {
@@ -50,8 +54,6 @@
         'reference_picture_selection.cc',
         '../interface/vp8.h',
         '../interface/vp8_simulcast.h',
-        'temporal_layers.h',
-        'temporal_layers.cc',
         'vp8.cc',
         'vp8_simulcast.cc',
       ],
