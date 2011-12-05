@@ -1802,16 +1802,26 @@ Channel::StopReceiving()
         {
             _engineStatisticsPtr->SetLastError(
                 VE_SOCKET_TRANSPORT_MODULE_ERROR, kTraceError,
-                "StopReceiving() failed to stop receiving");
+                "StopReceiving() failed to stop receiving.");
             return -1;
         }
     }
 #endif
-
     bool dtmfDetection = _rtpRtcpModule.TelephoneEvent();
-    _rtpRtcpModule.InitReceiver();
-    // Recover Dtmf detection status
-    _rtpRtcpModule.SetTelephoneEventStatus(dtmfDetection, true, true);
+    WebRtc_Word32 ret = _rtpRtcpModule.InitReceiver();
+    if (ret != 0) {
+        _engineStatisticsPtr->SetLastError(
+            VE_RTP_RTCP_MODULE_ERROR, kTraceError,
+            "StopReceiving() failed to reinitialize the RTP receiver.");
+        return -1;
+    }
+    // Recover DTMF detection status.
+    ret = _rtpRtcpModule.SetTelephoneEventStatus(dtmfDetection, true, true);
+    if (ret != 0) {
+        _engineStatisticsPtr->SetLastError(
+            VE_INVALID_OPERATION, kTraceWarning,
+            "StopReceiving() failed to restore telephone-event status.");
+    }
     RegisterReceiveCodecsToRTPModule();
     _receiving = false;
     return 0;

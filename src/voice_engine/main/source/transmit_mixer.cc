@@ -195,7 +195,8 @@ TransmitMixer::TransmitMixer(const WebRtc_UWord32 instanceId) :
     _externalMediaCallbackPtr(NULL),
     _mute(false),
     _remainingMuteMicTimeMs(0),
-    _mixingFrequency(0)
+    _mixingFrequency(0),
+    _includeAudioLevelIndication(false)
 {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId, -1),
                  "TransmitMixer::TransmitMixer() - ctor");
