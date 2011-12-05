@@ -34,6 +34,7 @@
         'test_suite.h',
         'testsupport/fileutils.h',
         'testsupport/fileutils.cc',
+        'testsupport/metrics/video_metrics.h',
         'testsupport/metrics/video_metrics.cc',
       ],
     },
@@ -58,6 +59,7 @@
       ],
       'sources': [
         'testsupport/fileutils_unittest.cc',
+        'testsupport/metrics/video_metrics_unittest.cc',
       ],
     },
   ],

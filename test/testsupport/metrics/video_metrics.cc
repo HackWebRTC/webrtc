@@ -9,10 +9,10 @@
  */
 
 #include "video_metrics.h"
+
 #include <algorithm> // min_element, max_element
 #include <cmath>
 #include <fstream>
-#include "system_wrappers/interface/cpu_features_wrapper.h"
 
 // Calculates PSNR from MSE
 static inline double CalcPsnr(double mse) {
@@ -21,11 +21,12 @@ static inline double CalcPsnr(double mse) {
 }
 
 // Used for calculating min and max values
-static bool lessForFrameResultValue (const FrameResult& s1, const FrameResult& s2) {
+static bool LessForFrameResultValue (const FrameResult& s1,
+                                     const FrameResult& s2) {
     return s1.value < s2.value;
 }
 
-WebRtc_Word32
+int
 PsnrFromFiles(const WebRtc_Word8 *refFileName, const WebRtc_Word8 *testFileName,
               WebRtc_Word32 width, WebRtc_Word32 height, QualityMetricsResult *result)
 {
@@ -86,7 +87,7 @@ PsnrFromFiles(const WebRtc_Word8 *refFileName, const WebRtc_Word8 *testFileName,
         testBytes = (WebRtc_Word32) fread(test, 1, frameBytes, testFp);
     }
 
-    if (mse == 0)
+    if (mseSum == 0)
     {
         // The PSNR value is undefined in this case.
         // This value effectively means that the files are equal.
@@ -97,17 +98,25 @@ PsnrFromFiles(const WebRtc_Word8 *refFileName, const WebRtc_Word8 *testFileName,
         result->average = CalcPsnr(mseSum / frames);
     }
 
-    // Calculate min/max statistics
-    std::vector<FrameResult>::iterator element;
-    element = min_element(result->frames.begin(),
-                          result->frames.end(), lessForFrameResultValue);
-    result->min = element->value;
-    result->min_frame_number = element->frame_number;
-    element = max_element(result->frames.begin(),
-                          result->frames.end(), lessForFrameResultValue);
-    result->max = element->value;
-    result->max_frame_number = element->frame_number;
-
+    if (result->frames.size() == 0)
+    {
+      fprintf(stderr, "Tried to measure SSIM from empty files (reference "
+              "file: %s  test file: %s\n", refFileName, testFileName);
+      return -3;
+    }
+    else
+    {
+        // Calculate min/max statistics
+        std::vector<FrameResult>::iterator element;
+        element = min_element(result->frames.begin(),
+                              result->frames.end(), LessForFrameResultValue);
+        result->min = element->value;
+        result->min_frame_number = element->frame_number;
+        element = max_element(result->frames.begin(),
+                              result->frames.end(), LessForFrameResultValue);
+        result->max = element->value;
+        result->max_frame_number = element->frame_number;
+    }
     delete [] ref;
     delete [] test;
 
@@ -140,6 +149,7 @@ Similarity(WebRtc_UWord64 sum_s, WebRtc_UWord64 sum_r, WebRtc_UWord64 sum_sq_s,
     return ssim_n * 1.0 / ssim_d;
 }
 
+#if !defined(WEBRTC_USE_SSE2)
 static double
 Ssim8x8C(WebRtc_UWord8 *s, WebRtc_Word32 sp,
          WebRtc_UWord8 *r, WebRtc_Word32 rp)
@@ -164,6 +174,7 @@ Ssim8x8C(WebRtc_UWord8 *s, WebRtc_Word32 sp,
     }
     return Similarity(sum_s, sum_r, sum_sq_s, sum_sq_r, sum_sxr, 64);
 }
+#endif
 
 #if defined(WEBRTC_USE_SSE2)
 #include <emmintrin.h>
@@ -256,13 +267,11 @@ SsimFrame(WebRtc_UWord8 *img1, WebRtc_UWord8 *img2, WebRtc_Word32 stride_img1,
     double (*ssim_8x8)(WebRtc_UWord8*, WebRtc_Word32,
                        WebRtc_UWord8*, WebRtc_Word32 rp);
 
-    ssim_8x8 = Ssim8x8C;
-    if (WebRtc_GetCPUInfo(kSSE2))
-    {
 #if defined(WEBRTC_USE_SSE2)
-        ssim_8x8 = Ssim8x8Sse2;
+    ssim_8x8 = Ssim8x8Sse2;
+#else
+    ssim_8x8 = Ssim8x8C;
 #endif
-    }
 
     // Sample point start with each 4x4 location
     for (i = 0; i < height - 8; i += 4, img1 += stride_img1 * 4,
@@ -279,7 +288,7 @@ SsimFrame(WebRtc_UWord8 *img1, WebRtc_UWord8 *img2, WebRtc_Word32 stride_img1,
     return ssim_total;
 }
 
-WebRtc_Word32
+int
 SsimFromFiles(const WebRtc_Word8 *refFileName, const WebRtc_Word8 *testFileName,
               WebRtc_Word32 width, WebRtc_Word32 height, QualityMetricsResult *result)
 {
@@ -327,21 +336,29 @@ SsimFromFiles(const WebRtc_Word8 *refFileName, const WebRtc_Word8 *testFileName,
         testBytes = (WebRtc_Word32) fread(test, 1, frameBytes, testFp);
     }
 
-    // SSIM: normalize/average for sequence
-    ssimScene  = ssimScene / frames;
-    result->average = ssimScene;
+    if (result->frames.size() == 0)
+    {
+      fprintf(stderr, "Tried to measure SSIM from empty files (reference "
+              "file: %s  test file: %s\n", refFileName, testFileName);
+      return -3;
+    }
+    else
+    {
+        // SSIM: normalize/average for sequence
+        ssimScene  = ssimScene / frames;
+        result->average = ssimScene;
 
-    // Calculate min/max statistics
-    std::vector<FrameResult>::iterator element;
-    element = min_element(result->frames.begin(),
-                          result->frames.end(), lessForFrameResultValue);
-    result->min = element->value;
-    result->min_frame_number = element->frame_number;
-    element = max_element(result->frames.begin(),
-                          result->frames.end(), lessForFrameResultValue);
-    result->max = element->value;
-    result->max_frame_number = element->frame_number;
-
+        // Calculate min/max statistics
+        std::vector<FrameResult>::iterator element;
+        element = min_element(result->frames.begin(),
+                              result->frames.end(), LessForFrameResultValue);
+        result->min = element->value;
+        result->min_frame_number = element->frame_number;
+        element = max_element(result->frames.begin(),
+                              result->frames.end(), LessForFrameResultValue);
+        result->max = element->value;
+        result->max_frame_number = element->frame_number;
+    }
     delete [] ref;
     delete [] test;
 
