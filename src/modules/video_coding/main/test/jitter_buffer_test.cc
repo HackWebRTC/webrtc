@@ -26,6 +26,8 @@
 
 using namespace webrtc;
 
+// TODO (Mikhal/Stefan): Update as gtest and separate to specific tests.
+
 int CheckOutFrame(VCMEncodedFrame* frameOut, unsigned int size, bool startCode)
 {
     if (frameOut == 0)
@@ -39,10 +41,11 @@ int CheckOutFrame(VCMEncodedFrame* frameOut, unsigned int size, bool startCode)
 
     if(startCode)
     {
-        TEST(outData[0] == 0);
-        TEST(outData[1] == 0);
-        TEST(outData[2] == 0);
-        TEST(outData[3] == 1);
+        if (outData[0] != 0 || outData[1] != 0 || outData[2] != 0 ||
+            outData[3] != 1)
+        {
+            return -2;
+        }
         i+= 4;
     }
 
@@ -50,25 +53,32 @@ int CheckOutFrame(VCMEncodedFrame* frameOut, unsigned int size, bool startCode)
     int count = 3;
 
     // check the frame length
-    TEST(frameOut->Length() == size);
+    if (frameOut->Length() != size)
+    {
+        return -3;
+    }
 
     for(; i < size; i++)
     {
-        if (outData[i] == 0 && outData[i+1] == 0 && outData[i+2] == 0x80)
+        if (outData[i] == 0 && outData[i + 1] == 0 && outData[i + 2] == 0x80)
         {
             i += 2;
         }
-        else if(startCode && outData[i] == 0 && outData[i+1] == 0)
+        else if(startCode && outData[i] == 0 && outData[i + 1] == 0)
         {
-            TEST(outData[i] == 0);
-            TEST(outData[i+1] == 0);
-            TEST(outData[i+2] == 0);
-            TEST(outData[i+3] == 1);
+            if (outData[i] != 0 || outData[i + 1] != 0 ||
+                outData[i + 2] != 0 || outData[i + 3] != 1)
+            {
+                return -3;
+            }
             i += 3;
         }
         else
         {
-            TEST(outData[i] == count);
+            if (outData[i] != count)
+            {
+                return -4;
+            }
             count++;
             if(count == 10)
             {
@@ -754,7 +764,7 @@ int JitterBufferTest(CmdArgs& args)
     // insert start code, both packets
 
     seqNum++;
-    timeStamp += 33*90;
+    timeStamp += 33 * 90;
     packet.frameType = kVideoFrameDelta;
     packet.isFirstPacket = true;
     packet.markerBit = false;
@@ -794,7 +804,7 @@ int JitterBufferTest(CmdArgs& args)
     // get the frame
     frameOut = jb.GetCompleteFrameForDecoding(10);
 
-    TEST(CheckOutFrame(frameOut, size*2+4*2, true) == 0);
+    TEST(CheckOutFrame(frameOut, size * 2 + 4 * 2, true) == 0);
 
     // check the frame type
     TEST(frameOut->FrameType() == kVideoFrameDelta);
@@ -835,16 +845,27 @@ int JitterBufferTest(CmdArgs& args)
     //
 
     // Select a start seqNum which triggers a difficult wrap situation
+    // The JB will only output (incomplete)frames if the next one has started
+    // to arrive. Start by inserting one frame (key).
     seqNum = 0xffff - 4;
-    for (int i=0; i < 10; ++i) {
+    seqNum++;
+    timeStamp += 33*90;
+    packet.frameType = kVideoFrameKey;
+    packet.isFirstPacket = true;
+    packet.markerBit = false;
+    packet.seqNum = seqNum;
+    packet.timestamp = timeStamp;
+    packet.completeNALU = kNaluStart;
+    frameIn = jb.GetFrame(packet);
+    TEST(frameIn != 0);
+    // Insert a packet into a frame
+    TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
+
+    for (int i = 0; i < 11; ++i) {
       webrtc::FrameType frametype = kVideoFrameDelta;
-      if (i == 0)
-        frametype = kVideoFrameKey;
       seqNum++;
       timeStamp += 33*90;
       packet.frameType = frametype;
-      if (i == 0)
-        packet.frameType = frametype;
       packet.isFirstPacket = true;
       packet.markerBit = false;
       packet.seqNum = seqNum;
@@ -858,10 +879,18 @@ int JitterBufferTest(CmdArgs& args)
       TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
       // Get packet notification
-      TEST(timeStamp == jb.GetNextTimeStamp(10, incomingFrameType, renderTimeMs));
+      TEST(timeStamp - 33 * 90 == jb.GetNextTimeStamp(10, incomingFrameType,
+                                                      renderTimeMs));
 
       // Check incoming frame type
-      TEST(incomingFrameType == frametype);
+      if (i == 0)
+      {
+          TEST(incomingFrameType == kVideoFrameKey);
+      }
+      else
+      {
+          TEST(incomingFrameType == frametype);
+      }
 
       // Get the frame
       frameOut = jb.GetCompleteFrameForDecoding(10);
@@ -899,13 +928,24 @@ int JitterBufferTest(CmdArgs& args)
       // Get the frame
       frameOut = jb.GetFrameForDecoding();
 
-      // One of the packets has been discarded by the jitter buffer
-      TEST(CheckOutFrame(frameOut, size, false) == 0);
+      // One of the packets has been discarded by the jitter buffer.
+      // Last frame can't be extracted yet.
+      if (i < 10)
+      {
+          TEST(CheckOutFrame(frameOut, size, false) == 0);
 
-      // check the frame type
-      TEST(frameOut->FrameType() == frametype);
-      TEST(frameOut->Complete() == false);
-      TEST(frameOut->MissingFrame() == false);
+          // check the frame type
+          if (i == 0)
+          {
+              TEST(frameOut->FrameType() == kVideoFrameKey);
+          }
+         else
+         {
+             TEST(frameOut->FrameType() == frametype);
+         }
+          TEST(frameOut->Complete() == false);
+          TEST(frameOut->MissingFrame() == false);
+      }
 
       // Release frame (when done with decoding)
       jb.ReleaseFrame(frameOut);
@@ -914,6 +954,8 @@ int JitterBufferTest(CmdArgs& args)
     TEST(jb.NumNotDecodablePackets() == 10);
 
     // Insert 3 old packets and verify that we have 3 discarded packets
+    // Match value to actual latest timestamp decoded
+    timeStamp -= 33 * 90;
     packet.timestamp = timeStamp - 1000;
     frameIn = jb.GetFrame(packet);
     TEST(frameIn == NULL);
@@ -2107,48 +2149,62 @@ int JitterBufferTest(CmdArgs& args)
     jb.Flush();
     jb.SetNackMode(kNoNack, -1, -1);
     seqNum ++;
-    timeStamp += 33*90;
-    int insertedLength=0;
-    packet.seqNum=seqNum;
-    packet.timestamp=timeStamp;
+    timeStamp += 33 * 90;
+    int insertedLength = 0;
+    packet.seqNum = seqNum;
+    packet.timestamp = timeStamp;
     packet.frameType = kVideoFrameKey;
     packet.isFirstPacket = true;
-    packet.completeNALU=kNaluStart;
-    packet.markerBit=false;
+    packet.completeNALU = kNaluStart;
+    packet.markerBit = false;
 
-    frameIn=jb.GetFrame(packet);
+    frameIn = jb.GetFrame(packet);
 
      // Insert a packet into a frame
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
-    seqNum+=2; // Skip one packet
-    packet.seqNum=seqNum;
+    seqNum += 2; // Skip one packet
+    packet.seqNum = seqNum;
     packet.frameType = kVideoFrameKey;
     packet.isFirstPacket = false;
-    packet.completeNALU=kNaluIncomplete;
-    packet.markerBit=false;
+    packet.completeNALU = kNaluIncomplete;
+    packet.markerBit = false;
 
      // Insert a packet into a frame
     TEST(kIncomplete == jb.InsertPacket(frameIn, packet));
 
     seqNum++;
-    packet.seqNum=seqNum;
+    packet.seqNum = seqNum;
     packet.frameType = kVideoFrameKey;
     packet.isFirstPacket = false;
-    packet.completeNALU=kNaluEnd;
-    packet.markerBit=false;
+    packet.completeNALU = kNaluEnd;
+    packet.markerBit = false;
 
     // Insert a packet into a frame
     TEST(kIncomplete == jb.InsertPacket(frameIn, packet));
 
     seqNum++;
-    packet.seqNum=seqNum;
-    packet.completeNALU=kNaluComplete;
-    packet.markerBit=true; // Last packet
+    packet.seqNum = seqNum;
+    packet.completeNALU = kNaluComplete;
+    packet.markerBit = true; // Last packet
     TEST(kIncomplete == jb.InsertPacket(frameIn, packet));
 
 
-    // get packet notification
+    // The JB will only output (incomplete) frames if a packet belonging to a
+    // subsequent frame was already inserted. Insert one packet of a subsequent
+    // frame. place high timestamp so the JB would always have a next frame
+    // (otherwise, for every inserted frame we need to take care of the next
+    // frame as well).
+    packet.seqNum = 1;
+    packet.timestamp = timeStamp + 33 * 90 * 10;
+    packet.frameType = kVideoFrameDelta;
+    packet.isFirstPacket = false;
+    packet.completeNALU = kNaluStart;
+    packet.markerBit = false;
+    frameIn = jb.GetFrame(packet);
+    TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
+
+    // Get packet notification
     TEST(timeStamp == jb.GetNextTimeStamp(10, incomingFrameType, renderTimeMs));
     frameOut = jb.GetFrameForDecoding();
 
@@ -2159,63 +2215,62 @@ int JitterBufferTest(CmdArgs& args)
     jb.ReleaseFrame(frameOut);
 
     // Test reordered start frame + 1 lost
-    seqNum +=2; // Reoreder 1 frame
+    seqNum += 2; // Reoreder 1 frame
     timeStamp += 33*90;
-    insertedLength=0;
+    insertedLength = 0;
 
-    packet.seqNum=seqNum;
-    packet.timestamp=timeStamp;
+    packet.seqNum = seqNum;
+    packet.timestamp = timeStamp;
     packet.frameType = kVideoFrameKey;
     packet.isFirstPacket = false;
-    packet.completeNALU=kNaluEnd;
-    packet.markerBit=false;
+    packet.completeNALU = kNaluEnd;
+    packet.markerBit = false;
 
-    TEST(frameIn=jb.GetFrame(packet));
+    TEST(frameIn = jb.GetFrame(packet));
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
-    insertedLength+=packet.sizeBytes; // This packet should be decoded
+    insertedLength += packet.sizeBytes; // This packet should be decoded
 
     seqNum--;
-    packet.seqNum=seqNum;
-    packet.timestamp=timeStamp;
+    packet.seqNum = seqNum;
+    packet.timestamp = timeStamp;
     packet.frameType = kVideoFrameKey;
     packet.isFirstPacket = true;
-    packet.completeNALU=kNaluStart;
-    packet.markerBit=false;
+    packet.completeNALU = kNaluStart;
+    packet.markerBit = false;
     TEST(kIncomplete == jb.InsertPacket(frameIn, packet));
-    insertedLength+=packet.sizeBytes; // This packet should be decoded
+    insertedLength += packet.sizeBytes; // This packet should be decoded
 
-    seqNum+=3; // One packet drop
-    packet.seqNum=seqNum;
-    packet.timestamp=timeStamp;
+    seqNum += 3; // One packet drop
+    packet.seqNum = seqNum;
+    packet.timestamp = timeStamp;
     packet.frameType = kVideoFrameKey;
     packet.isFirstPacket = false;
-    packet.completeNALU=kNaluComplete;
-    packet.markerBit=false;
+    packet.completeNALU = kNaluComplete;
+    packet.markerBit = false;
     TEST(kIncomplete == jb.InsertPacket(frameIn, packet));
-    insertedLength+=packet.sizeBytes; // This packet should be decoded
+    insertedLength += packet.sizeBytes; // This packet should be decoded
 
-    seqNum+=1;
-    packet.seqNum=seqNum;
-    packet.timestamp=timeStamp;
+    seqNum += 1;
+    packet.seqNum = seqNum;
+    packet.timestamp = timeStamp;
     packet.frameType = kVideoFrameKey;
     packet.isFirstPacket = false;
-    packet.completeNALU=kNaluStart;
-    packet.markerBit=false;
+    packet.completeNALU = kNaluStart;
+    packet.markerBit = false;
     TEST(kIncomplete == jb.InsertPacket(frameIn, packet));
     // This packet should be decoded since it's the beginning of a NAL
-    insertedLength+=packet.sizeBytes;
+    insertedLength += packet.sizeBytes;
 
-    seqNum+=2;
-    packet.seqNum=seqNum;
-    packet.timestamp=timeStamp;
+    seqNum += 2;
+    packet.seqNum = seqNum;
+    packet.timestamp = timeStamp;
     packet.frameType = kVideoFrameKey;
     packet.isFirstPacket = false;
-    packet.completeNALU=kNaluEnd;
-    packet.markerBit=true;
+    packet.completeNALU = kNaluEnd;
+    packet.markerBit = true;
     TEST(kIncomplete == jb.InsertPacket(frameIn, packet));
     // This packet should not be decoded because it is an incomplete NAL if it
     // is the last
-    insertedLength+=0;
 
     frameOut = jb.GetFrameForDecoding();
     // Only last NALU is complete
@@ -2223,52 +2278,54 @@ int JitterBufferTest(CmdArgs& args)
     jb.ReleaseFrame(frameOut);
 
 
-    //Test to insert empty packet
-    seqNum+=1;
-    timeStamp += 33*90;
+    // Test to insert empty packet
+    seqNum += 1;
+    timeStamp += 33 * 90;
     VCMPacket emptypacket(data, 0, seqNum, timeStamp, true);
-    emptypacket.seqNum=seqNum;
-    emptypacket.timestamp=timeStamp;
+    emptypacket.seqNum = seqNum;
+    emptypacket.timestamp = timeStamp;
     emptypacket.frameType = kVideoFrameKey;
     emptypacket.isFirstPacket = true;
-    emptypacket.completeNALU=kNaluComplete;
-    emptypacket.markerBit=true;
-    TEST(frameIn=jb.GetFrame(emptypacket));
+    emptypacket.completeNALU = kNaluComplete;
+    emptypacket.markerBit = true;
+    TEST(frameIn = jb.GetFrame(emptypacket));
     TEST(kFirstPacket == jb.InsertPacket(frameIn, emptypacket));
     // This packet should not be decoded because it is an incomplete NAL if it
     // is the last
-    insertedLength+=0;
+    insertedLength += 0;
 
-    TEST(-1 == jb.GetNextTimeStamp(10, incomingFrameType, renderTimeMs));
-    TEST(NULL==jb.GetFrameForDecoding());
+    // Will be sent to the decoder, as a packet belonging to a subsequent frame
+    // has arrived.
+    frameOut = jb.GetFrameForDecoding();
 
 
     // Test that a frame can include an empty packet.
-    seqNum+=1;
-    timeStamp += 33*90;
+    seqNum += 1;
+    timeStamp += 33 * 90;
 
-    packet.seqNum=seqNum;
-    packet.timestamp=timeStamp;
+    packet.seqNum = seqNum;
+    packet.timestamp = timeStamp;
     packet.frameType = kVideoFrameKey;
     packet.isFirstPacket = true;
-    packet.completeNALU=kNaluComplete;
-    packet.markerBit=false;
-    TEST(frameIn=jb.GetFrame(packet));
+    packet.completeNALU = kNaluComplete;
+    packet.markerBit = false;
+    TEST(frameIn = jb.GetFrame(packet));
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
-    seqNum+=1;
-    emptypacket.seqNum=seqNum;
-    emptypacket.timestamp=timeStamp;
+    seqNum += 1;
+    emptypacket.seqNum = seqNum;
+    emptypacket.timestamp = timeStamp;
     emptypacket.frameType = kVideoFrameKey;
     emptypacket.isFirstPacket = true;
-    emptypacket.completeNALU=kNaluComplete;
-    emptypacket.markerBit=true;
+    emptypacket.completeNALU = kNaluComplete;
+    emptypacket.markerBit = true;
     TEST(kCompleteSession == jb.InsertPacket(frameIn, emptypacket));
 
     // get the frame
     frameOut = jb.GetCompleteFrameForDecoding(10);
     // Only last NALU is complete
     TEST(CheckOutFrame(frameOut, packet.sizeBytes, false) == 0);
+
     jb.Flush();
 
     // Three reordered H263 packets with bits.
@@ -2305,24 +2362,32 @@ int JitterBufferTest(CmdArgs& args)
     data[packet.sizeBytes - 1] = oldData2;
     TEST(frameIn = jb.GetFrame(packet));
     TEST(kCompleteSession == jb.InsertPacket(frameIn, packet));
-    frameOut = jb.GetFrameForDecoding();
+
+    frameOut = jb.GetCompleteFrameForDecoding(0);
     TEST(frameOut != NULL);
-    //CheckOutFrame(frameOut, packet.sizeBytes * 3 - 1, false);
     const WebRtc_UWord8* buf = frameOut->Buffer();
     TEST(buf[packet.sizeBytes - 1] == (startByte | endByte));
-
     // First packet lost, second packet with bits.
+
+    // The JB only outputs frame if the next one arrives:
+    // Adding dummy timestamp value so won't interfere with the test.
+    packet.seqNum = 1;
+    packet.timestamp = timeStamp + 33 * 90 * 5;
+    packet.frameType = kVideoFrameDelta;
+    packet.isFirstPacket = false;
+    packet.completeNALU = kNaluStart;
+    packet.markerBit = false;
+    frameIn = jb.GetFrame(packet);
+    TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
 
     packet.frameType = kVideoFrameDelta;
     packet.isFirstPacket = false;
     packet.markerBit = true;
     packet.bits = true;
     packet.seqNum += 2;
-    packet.timestamp += 33*90;
+    packet.timestamp = timeStamp + 33 * 90;
     data[0] = 0x07;
     data[packet.sizeBytes - 1] = 0xF8;
-    //unsigned char startByte = packet.dataPtr[0];
-    //unsigned char endByte = packet.dataPtr[packet.sizeBytes-1];
     TEST(frameIn = jb.GetFrame(packet));
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
     frameOut = jb.GetFrameForDecoding();
@@ -2332,12 +2397,14 @@ int JitterBufferTest(CmdArgs& args)
     data[0] = oldData1;
     data[packet.sizeBytes - 1] = oldData2;
     packet.codec = kVideoCodecUnknown;
+
     jb.Flush();
 
-    // Test that a we cannot get incomplete frames from the JB if we haven't received
-    // the marker bit, unless we have received a packet from a later timestamp.
+    // Test that a we cannot get incomplete frames from the JB if we haven't
+    // received the marker bit, unless we have received a packet from a later
+    // timestamp.
 
-    packet.seqNum +=2;
+    packet.seqNum += 2;
     packet.bits = false;
     packet.frameType = kVideoFrameDelta;
     packet.isFirstPacket = false;
@@ -2350,7 +2417,7 @@ int JitterBufferTest(CmdArgs& args)
     TEST(frameOut == NULL);
 
     packet.seqNum += 2;
-    packet.timestamp += 33*90;
+    packet.timestamp += 33 * 90;
 
     TEST(frameIn = jb.GetFrame(packet));
     TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
@@ -2362,20 +2429,6 @@ int JitterBufferTest(CmdArgs& args)
 
     jb.Flush();
 
-    // Test that a we can get incomplete frames from the JB if we have received
-    // the marker bit.
-    packet.seqNum +=2;
-    packet.frameType = kVideoFrameDelta;
-    packet.isFirstPacket = false;
-    packet.markerBit = true;
-
-    TEST(frameIn = jb.GetFrame(packet));
-    TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
-
-    frameOut = jb.GetFrameForDecoding();
-    TEST(frameOut != NULL);
-
-    // ---
     jb.Stop();
 
     printf("DONE !!!\n");
@@ -2390,9 +2443,6 @@ int JitterBufferTest(CmdArgs& args)
     {
         printf("ALL PASSED\n\n");
     }
-
-    EventWrapper* waitEvent = EventWrapper::Create();
-    waitEvent->Wait(5000);
 
     return 0;
 
