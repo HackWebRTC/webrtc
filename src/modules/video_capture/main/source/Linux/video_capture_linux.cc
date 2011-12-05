@@ -113,7 +113,8 @@ VideoCaptureModuleV4L2::~VideoCaptureModuleV4L2()
     {
         delete _captureCritSect;
     }
-    close(_deviceFd);
+    if (_deviceFd != -1)
+      close(_deviceFd);
 }
 
 WebRtc_Word32 VideoCaptureModuleV4L2::StartCapture(
@@ -191,7 +192,11 @@ WebRtc_Word32 VideoCaptureModuleV4L2::StartCapture(
     // initialize current width and height
     _currentWidth = video_fmt.fmt.pix.width;
     _currentHeight = video_fmt.fmt.pix.height;
-    _currentFrameRate=30; // No way of knowing on Linux.
+    _captureDelay = 120;
+    if(_currentWidth >= 800)
+      _currentFrameRate = 15;
+    else
+      _currentFrameRate = 30; // No way of knowing on Linux.
 
     if (!AllocateVideoBuffers())
     {
