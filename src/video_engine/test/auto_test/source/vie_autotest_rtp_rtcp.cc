@@ -13,14 +13,13 @@
 //
 #include <iostream>
 
-#include "vie_autotest_defines.h"
-#include "vie_autotest.h"
 #include "engine_configurations.h"
-
 #include "tb_capture_device.h"
 #include "tb_external_transport.h"
 #include "tb_interfaces.h"
 #include "tb_video_channel.h"
+#include "vie_autotest.h"
+#include "vie_autotest_defines.h"
 
 class ViERtpObserver: public webrtc::ViERTPObserver
 {
@@ -325,18 +324,14 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
 
     ViETest::Log("Testing RTP dump...\n");
 
-#ifdef WEBRTC_ANDROID
-    const char* inDumpName = "/sdcard/IncomingRTPDump.rtp";
-    const char* outDumpName = "/sdcard/OutgoingRTPDump.rtp";
-#else
-    const char* inDumpName = "IncomingRTPDump.rtp";
-    const char* outDumpName = "OutgoingRTPDump.rtp";
-#endif
-
+    std::string inDumpName =
+        ViETest::GetResultOutputPath() + "IncomingRTPDump.rtp";
+    std::string outDumpName =
+        ViETest::GetResultOutputPath() + "OutgoingRTPDump.rtp";
     EXPECT_EQ(0, ViE.rtp_rtcp->StartRTPDump(
-        tbChannel.videoChannel, inDumpName, webrtc::kRtpIncoming));
+        tbChannel.videoChannel, inDumpName.c_str(), webrtc::kRtpIncoming));
     EXPECT_EQ(0, ViE.rtp_rtcp->StartRTPDump(
-        tbChannel.videoChannel, outDumpName, webrtc::kRtpOutgoing));
+        tbChannel.videoChannel, outDumpName.c_str(), webrtc::kRtpOutgoing));
 
     EXPECT_EQ(0, ViE.base->StartSend(tbChannel.videoChannel));
 
@@ -353,11 +348,11 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
 
     // Make sure data was actually saved to the file and we stored the same
     // amount of data in both files
-    FILE* inDump = fopen(inDumpName, "r");
+    FILE* inDump = fopen(inDumpName.c_str(), "r");
     fseek(inDump, 0L, SEEK_END);
     long inEndPos = ftell(inDump);
     fclose(inDump);
-    FILE* outDump = fopen(outDumpName, "r");
+    FILE* outDump = fopen(outDumpName.c_str(), "r");
     fseek(outDump, 0L, SEEK_END);
     long outEndPos = ftell(outDump);
     fclose(outDump);

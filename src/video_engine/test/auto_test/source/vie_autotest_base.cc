@@ -71,6 +71,8 @@ void ViEAutoTest::ViEBaseStandardTest() {
   // ***************************************************************
   // Run the actual test:
   // ***************************************************************
+  ViETest::Log("You should shortly see a local preview from camera %s"
+      " in window 1 and the remote video in window 2.", device_name);
   ::TestI420CallSetup(interfaces.codec, interfaces.video_engine,
                       base_interface, interfaces.network, video_channel,
                       device_name);
@@ -124,12 +126,9 @@ void ViEAutoTest::ViEBaseAPITest() {
   webrtc::VideoEngine* ptrViE = webrtc::VideoEngine::Create();
   EXPECT_TRUE(NULL != ptrViE);
 
-#ifdef WEBRTC_ANDROID
-  EXPECT_EQ(0,
-            video_engine->SetTraceFile("/sdcard/WebRTC/ViEBaseAPI_trace.txt"));
-#else
-  EXPECT_EQ(0, ptrViE->SetTraceFile("ViEBaseAPI_trace.txt"));
-#endif
+  std::string trace_file_path =
+      ViETest::GetResultOutputPath() + "ViEBaseAPI_trace.txt";
+  EXPECT_EQ(0, ptrViE->SetTraceFile(trace_file_path.c_str()));
 
   ptrViEBase = webrtc::ViEBase::GetInterface(ptrViE);
   EXPECT_TRUE(NULL != ptrViEBase);

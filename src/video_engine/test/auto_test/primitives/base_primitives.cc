@@ -59,8 +59,6 @@ void TestI420CallSetup(webrtc::ViECodec* codec_interface,
 
   // Call started.
   ViETest::Log("Call started");
-  ViETest::Log("You should see a local preview from camera %s"
-               " in window 1 and the remote video in window 2.", device_name);
 
   AutoTestSleep(KAutoTestSleepTimeMs);
 

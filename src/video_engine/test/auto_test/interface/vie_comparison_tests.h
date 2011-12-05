@@ -31,16 +31,19 @@ class ViEToFileRenderer;
 // input is restarted between stages.
 class ViEComparisonTests {
  public:
-  // Test a typical simple call setup.
-  void TestCallSetup(
+  // Test a typical simple call setup. Returns false if the input file
+  // could not be opened; reports errors using googletest macros otherwise.
+  bool TestCallSetup(
       const std::string& i420_test_video_path,
       int width,
       int height,
       ViEToFileRenderer* local_file_renderer,
       ViEToFileRenderer* remote_file_renderer);
 
-  // Tries testing the I420 and VP8 codecs in turn.
-  void TestCodecs(
+  // Tries testing the I420 and VP8 codecs in turn. Returns false if the
+  // input file could not be opened; reports errors using googletest macros
+  // otherwise.
+  bool TestCodecs(
       const std::string& i420_video_file,
       int width,
       int height,

@@ -12,21 +12,16 @@
 
 #include "gtest/gtest.h"
 
-TbInterfaces::TbInterfaces(const char* testName) {
-    char traceFile[256] = "";
+TbInterfaces::TbInterfaces(const char* test_name) {
+    std::string trace_file_path =
+        (ViETest::GetResultOutputPath() + test_name) + "_trace.txt";
 
-#ifdef WEBRTC_ANDROID
-    strcat(traceFile,"/sdcard/");
-#endif
-    strcat(traceFile, testName);
-    strcat(traceFile, "_trace.txt");
-
-    ViETest::Log("Creating ViE Interfaces for test %s\n", testName);
+    ViETest::Log("Creating ViE Interfaces for test %s\n", test_name);
 
     video_engine = webrtc::VideoEngine::Create();
     EXPECT_TRUE(video_engine != NULL);
 
-    EXPECT_EQ(0, video_engine->SetTraceFile(traceFile));
+    EXPECT_EQ(0, video_engine->SetTraceFile(trace_file_path.c_str()));
     EXPECT_EQ(0, video_engine->SetTraceFilter(webrtc::kTraceAll));
 
     base = webrtc::ViEBase::GetInterface(video_engine);

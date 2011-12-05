@@ -23,7 +23,8 @@ class ViEToFileRenderer: public webrtc::ExternalRenderer {
   virtual ~ViEToFileRenderer();
 
   // Returns false if we fail opening the output filename for writing.
-  bool PrepareForRendering(const std::string& output_filename);
+  bool PrepareForRendering(const std::string& output_path,
+                           const std::string& output_filename);
 
   // Closes the output file.
   void StopRendering();
@@ -45,10 +46,13 @@ class ViEToFileRenderer: public webrtc::ExternalRenderer {
   int DeliverFrame(unsigned char* buffer, int buffer_size,
                    unsigned int time_stamp);
 
-  const std::string& output_filename() const;
+  std::string GetFullOutputPath() const;
 
  private:
+  void ForgetOutputFile();
+
   std::FILE* output_file_;
+  std::string output_path_;
   std::string output_filename_;
 };
 

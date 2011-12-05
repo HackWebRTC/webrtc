@@ -8,11 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "vie_autotest_defines.h"
-#include "vie_autotest.h"
+#include <iostream>
 
 #include "common_types.h"
+#include "tb_external_transport.h"
 #include "voe_base.h"
+#include "vie_autotest_defines.h"
+#include "vie_autotest.h"
 #include "vie_base.h"
 #include "vie_capture.h"
 #include "vie_codec.h"
@@ -20,8 +22,6 @@
 #include "vie_render.h"
 #include "vie_rtp_rtcp.h"
 
-#include <iostream>
-#include "tb_external_transport.h"
 #define VCM_RED_PAYLOAD_TYPE        96
 #define VCM_ULPFEC_PAYLOAD_TYPE     97
 
@@ -51,28 +51,16 @@ int VideoEngineSimulcastTest(void* window1, void* window2)
         return -1;
     }
 
-#ifdef WEBRTC_ANDROID
-    error = ptrViE->SetTraceFile("/sdcard/ViETrace.txt");
+
+    std::string trace_file =
+        ViETest::GetResultOutputPath() + "ViESimulcast_trace.txt";
+    error = ptrViE->SetTraceFile(trace_file.c_str());
     if (error == -1)
     {
         printf("ERROR in VideoEngine::SetTraceFile\n");
         return -1;
     }
 
-    error = ptrViE->SetTraceFile("/sdcard/ViEEncryptedTrace.txt");
-    if (error == -1)
-    {
-        printf("ERROR in VideoEngine::SetTraceFile\n");
-        return -1;
-    }
-#else
-    error = ptrViE->SetTraceFile("ViETrace.txt");
-    if (error == -1)
-    {
-        printf("ERROR in VideoEngine::SetTraceFile\n");
-        return -1;
-    }
-#endif
     //
     // Init VideoEngine and create a channel
     //

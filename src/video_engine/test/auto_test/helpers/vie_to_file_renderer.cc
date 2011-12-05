@@ -20,16 +20,18 @@ ViEToFileRenderer::~ViEToFileRenderer() {
 }
 
 bool ViEToFileRenderer::PrepareForRendering(
+    const std::string& output_path,
     const std::string& output_filename) {
 
   assert(output_file_ == NULL);
 
-  output_file_ = std::fopen(output_filename.c_str(), "wb");
+  output_file_ = std::fopen((output_path + output_filename).c_str(), "wb");
   if (output_file_ == NULL) {
     return false;
   }
 
   output_filename_ = output_filename;
+  output_path_ = output_path;
   return true;
 }
 
@@ -41,30 +43,34 @@ void ViEToFileRenderer::StopRendering() {
 
 bool ViEToFileRenderer::SaveOutputFile(const std::string& prefix) {
   assert(output_file_ == NULL && output_filename_ != "");
-  if (std::rename(output_filename_.c_str(),
-                  (prefix + output_filename_).c_str()) != 0) {
+  if (std::rename((output_path_ + output_filename_).c_str(),
+                  (output_path_ + prefix + output_filename_).c_str()) != 0) {
     std::perror("Failed to rename output file");
     return false;
   }
-  // Forget about the file
-  output_filename_ = "";
+  ForgetOutputFile();
   return true;
 }
 
 bool ViEToFileRenderer::DeleteOutputFile() {
   assert(output_file_ == NULL && output_filename_ != "");
-  if (std::remove(output_filename_.c_str()) != 0) {
+  if (std::remove((output_path_ + output_filename_).c_str()) != 0) {
     std::perror("Failed to delete output file");
     return false;
   }
-  output_filename_ = "";
+  ForgetOutputFile();
   return true;
 }
 
-const std::string& ViEToFileRenderer::output_filename() const {
+std::string ViEToFileRenderer::GetFullOutputPath() const {
   assert(output_file_ != NULL);
 
-  return output_filename_;
+  return output_path_ + output_filename_;
+}
+
+void ViEToFileRenderer::ForgetOutputFile() {
+  output_filename_ = "";
+  output_path_ = "";
 }
 
 int ViEToFileRenderer::DeliverFrame(unsigned char *buffer,

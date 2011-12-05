@@ -64,7 +64,7 @@ TEST_F(ViEStandardIntegrationTest, RunsRenderTestWithoutErrors)  {
   tests_->ViERenderStandardTest();
 }
 
-TEST_F(ViEStandardIntegrationTest, RunsRtpRctpTestWithoutErrors)  {
+TEST_F(ViEStandardIntegrationTest, RunsRtpRtcpTestWithoutErrors)  {
   tests_->ViERtpRtcpStandardTest();
 }
 

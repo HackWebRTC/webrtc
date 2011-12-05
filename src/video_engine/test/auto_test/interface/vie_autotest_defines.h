@@ -19,6 +19,7 @@
 #include <cassert>
 #include <stdarg.h>
 #include <stdio.h>
+#include <string>
 
 #include "engine_configurations.h"
 #include "gtest/gtest.h"
@@ -27,7 +28,6 @@
 #include <windows.h>
 #elif defined (WEBRTC_ANDROID)
 #include <android/log.h>
-#include <string>
 #elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
 #include <string.h>
 #include <time.h>
@@ -148,7 +148,7 @@ class ViETest {
 #endif
   }
 
-  // Deprecated(qhogpat): Prefer to use googletest macros in all cases
+  // Deprecated(phoglund): Prefer to use googletest macros in all cases
   // except the custom call case.
   static int TestError(bool expr, const char* fmt, ...) {
     if (!expr) {
@@ -167,6 +167,13 @@ class ViETest {
     }
     return 0;
   }
+
+  // Returns a suitable path to write trace and result files to.
+  // You should always use this when you want to write output files.
+  // The returned path is guaranteed to end with a path separator.
+  // This function may be run at any time during the program's execution.
+  // Implemented in vie_autotest.cc
+  static std::string GetResultOutputPath();
 
 private:
   static void AssertError(const char* message) {

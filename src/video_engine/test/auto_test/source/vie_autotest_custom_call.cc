@@ -13,10 +13,10 @@
  *
  */
 
-#include "vie_autotest_defines.h"
-#include "vie_autotest.h"
-
 #include <iostream>
+
+#include "vie_autotest.h"
+#include "vie_autotest_defines.h"
 
 #define VCM_RED_PAYLOAD_TYPE                            96
 #define VCM_ULPFEC_PAYLOAD_TYPE                         97
@@ -169,7 +169,7 @@ int ViEAutoTest::ViECustomCall()
                                        "ERROR: %s at line %d", __FUNCTION__,
                                        __LINE__);
 
-  webrtc::VoEHardware* ptrVEHardware = 
+  webrtc::VoEHardware* ptrVEHardware =
       webrtc::VoEHardware::GetInterface(ptrVE);
   numberOfErrors += ViETest::TestError(ptrVEHardware != NULL,
                                        "ERROR: %s at line %d", __FUNCTION__,
@@ -196,7 +196,7 @@ int ViEAutoTest::ViECustomCall()
   numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                        __FUNCTION__, __LINE__);
 
-  webrtc::ViECapture* ptrViECapture = 
+  webrtc::ViECapture* ptrViECapture =
     webrtc::ViECapture::GetInterface(ptrViE);
   numberOfErrors += ViETest::TestError(ptrViECapture != NULL,
                                        "ERROR: %s at line %d", __FUNCTION__,
@@ -367,7 +367,9 @@ int ViEAutoTest::ViECustomCall()
                                          "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ptrViE->SetTraceFile("ViECustomCall_trace.txt");
+    std::string trace_file =
+        ViETest::GetResultOutputPath() + "ViECustomCall_trace.txt";
+    error = ptrViE->SetTraceFile(trace_file.c_str());
     numberOfErrors += ViETest::TestError(error == 0,
                                          "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
@@ -504,7 +506,7 @@ int ViEAutoTest::ViECustomCall()
 
     ViEAutotestEncoderObserver* codecEncoderObserver = NULL;
     ViEAutotestDecoderObserver* codecDecoderObserver = NULL;
-    
+
     //***************************************************************
     //  Engine ready. Wait for input
     //***************************************************************
@@ -540,14 +542,14 @@ int ViEAutoTest::ViECustomCall()
       std::cout << "  5. Record Incoming Call" << std::endl;
       std::cout << "  6. Record Outgoing Call" << std::endl;
       std::cout << "  7. Play File on Video Channel"
-                << "(Assumes you recorded incoming & outgoing call)" 
+                << "(Assumes you recorded incoming & outgoing call)"
                 << std::endl;
       std::cout << "  8. Change Video Protection Method" << std::endl;
       std::cout << "  9. Toggle Encoder Observer" << std::endl;
       std::cout << " 10. Toggle Decoder Observer" << std::endl;
       std::cout << " 11. Print Call Information" << std::endl;
       std::cout << " 12. Print Call Statistics" << std::endl;
-      std::cout << " 13. Toggle Image Scaling " 
+      std::cout << " 13. Toggle Image Scaling "
                 << "(Warning high CPU usage when enabled)"
                 << std::endl;
       std::cout << "What do you want to do? ";
@@ -566,7 +568,7 @@ int ViEAutoTest::ViECustomCall()
           modify_call = false;
           break;
         case 1:
-          // Change video Codec 
+          // Change video Codec
           SetVideoCodecType(ptrViECodec, videoSendCodec);
           SetVideoCodecSize(ptrViECodec, videoSendCodec);
           SetVideoCodecBitrate(ptrViECodec, videoSendCodec);
@@ -679,7 +681,7 @@ int ViEAutoTest::ViECustomCall()
           break;
         case 5:
           // Record the incoming call
-          std::cout << "Start Recording Incoming Video " 
+          std::cout << "Start Recording Incoming Video "
                     << DEFAULT_INCOMING_FILE_NAME <<  std::endl;
           error = ptrViEFile->StartRecordIncomingVideo(
               videoChannel, DEFAULT_INCOMING_FILE_NAME,
@@ -695,7 +697,7 @@ int ViEAutoTest::ViECustomCall()
           break;
         case 6:
           // Record the outgoing call
-          std::cout << "Start Recording Outgoing Video " 
+          std::cout << "Start Recording Outgoing Video "
                     << DEFAULT_OUTGOING_FILE_NAME <<  std::endl;
           error = ptrViEFile->StartRecordOutgoingVideo(
               videoChannel, DEFAULT_OUTGOING_FILE_NAME,
@@ -715,7 +717,7 @@ int ViEAutoTest::ViECustomCall()
           std::cout << "Available files to play" << std::endl;
           std::cout << "  0. " << DEFAULT_INCOMING_FILE_NAME <<  std::endl;
           std::cout << "  1. " << DEFAULT_OUTGOING_FILE_NAME <<  std::endl;
-          std::cout << "Press enter for default (" 
+          std::cout << "Press enter for default ("
                     << DEFAULT_INCOMING_FILE_NAME << "): ";
           std::getline(std::cin, str);
           file_selection = atoi(str.c_str());
@@ -725,7 +727,7 @@ int ViEAutoTest::ViECustomCall()
                                                "ERROR:%d %s at line %d",
                                                ptrViEBase->LastError(),
                                                __FUNCTION__, __LINE__);
-          if (file_selection == 1) 
+          if (file_selection == 1)
             error = ptrViEFile->StartPlayFile(DEFAULT_OUTGOING_FILE_NAME,
                                               fileId, true);
           else
@@ -742,7 +744,7 @@ int ViEAutoTest::ViECustomCall()
                                                ptrViEBase->LastError(),
                                                __FUNCTION__, __LINE__);
           std::cout << std::endl;
-          std::cout << "Start sending the file that is played in a loop " 
+          std::cout << "Start sending the file that is played in a loop "
                     << std::endl;
           error = ptrViEFile->SendFileOnChannel(fileId, videoChannel);
           numberOfErrors += ViETest::TestError(error == 0,
@@ -782,7 +784,7 @@ int ViEAutoTest::ViECustomCall()
           SetVideoProtection(ptrViECodec, ptrViERtpRtcp,
                              videoChannel, protectionMethod);
           modify_call = true;
-          break;  
+          break;
         case 9:
           // Toggle Encoder Observer
           if (!codecEncoderObserver) {
@@ -835,7 +837,7 @@ int ViEAutoTest::ViECustomCall()
                                audioCodec, audioTxPort,
                                audioRxPort, protectionMethod);
           PrintVideoStreamInformation(ptrViECodec,
-                                      videoChannel); 
+                                      videoChannel);
           modify_call = true;
           break;
         case 12:
@@ -864,7 +866,7 @@ int ViEAutoTest::ViECustomCall()
           modify_call = true;
           break;
         default:
-          // invalid selection, shows options menu again 
+          // invalid selection, shows options menu again
           std::cout << "Invalid selection. Select Again." << std::endl;
           break;
       }
@@ -1420,7 +1422,7 @@ bool GetAudioCodec(webrtc::VoECodec* ptrVeCodec,
         std::cout << "ERROR: Code = " << error << " Invalid selection"
                   << std::endl;
         continue;
-      } 
+      }
       return true;
     }
   }
@@ -1548,7 +1550,7 @@ bool SetVideoCodecResolution(webrtc::ViECodec* ptrViECodec,
 
     std::getline(std::cin, str);
     sizeOption = atoi(str.c_str());
-   
+
     switch (sizeOption) {
       case 1:
         videoCodec.width = 128;
@@ -1667,8 +1669,8 @@ bool SetVideoCodecMaxFramerate(webrtc::ViECodec* ptrViECodec,
   }
   return true;
 }
-// GetVideoProtection only prints the prompt to get a number 
-// that SetVideoProtection method uses 
+// GetVideoProtection only prints the prompt to get a number
+// that SetVideoProtection method uses
 // 0 = None
 // 1 = FEC
 // 2 = NACK
@@ -1676,7 +1678,7 @@ bool SetVideoCodecMaxFramerate(webrtc::ViECodec* ptrViECodec,
 // Default = DEFAULT_VIDEO_PROTECTION METHOD
 int GetVideoProtection() {
   int protectionMethod = DEFAULT_VIDEO_PROTECTION_METHOD;
-  
+
   std::cout << "Available Video Protection Method." << std::endl;
   std::cout << "  0. None" << std::endl;
   std::cout << "  1. FEC" << std::endl;

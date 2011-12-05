@@ -18,8 +18,7 @@
 #include "vie_fake_camera.h"
 #include "vie_to_file_renderer.h"
 
-
-void ViEComparisonTests::TestCallSetup(
+bool ViEComparisonTests::TestCallSetup(
     const std::string& i420_video_file,
     int width,
     int height,
@@ -38,7 +37,7 @@ void ViEComparisonTests::TestCallSetup(
     // No point in continuing if we have no proper video source
     ADD_FAILURE() << "Could not open input video " << i420_video_file <<
         ": aborting test...";
-    return;
+    return false;
   }
   int capture_id = fake_camera.capture_id();
 
@@ -78,9 +77,10 @@ void ViEComparisonTests::TestCallSetup(
   fake_camera.StopCamera();
 
   EXPECT_EQ(0, interfaces.base->DeleteChannel(video_channel));
+  return true;
 }
 
-void ViEComparisonTests::TestCodecs(
+bool ViEComparisonTests::TestCodecs(
     const std::string& i420_video_file,
     int width,
     int height,
@@ -94,7 +94,7 @@ void ViEComparisonTests::TestCodecs(
     // No point in continuing if we have no proper video source
     ADD_FAILURE() << "Could not open input video " << i420_video_file <<
         ": aborting test...";
-    return;
+    return false;
   }
 
   int video_channel = -1;
@@ -115,4 +115,5 @@ void ViEComparisonTests::TestCodecs(
                width, height);
 
   fake_camera.StopCamera();
+  return true;
 }

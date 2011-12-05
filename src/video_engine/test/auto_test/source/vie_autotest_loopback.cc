@@ -14,16 +14,18 @@
 // This code is also used as sample code for ViE 3.0
 //
 
-#include "vie_autotest_defines.h"
-#include "vie_autotest.h"
-
 // ===================================================================
 //
 // BEGIN: VideoEngine 3.0 Sample Code
 //
 
+#include <iostream>
+
 #include "common_types.h"
+#include "tb_external_transport.h"
 #include "voe_base.h"
+#include "vie_autotest_defines.h"
+#include "vie_autotest.h"
 #include "vie_base.h"
 #include "vie_capture.h"
 #include "vie_codec.h"
@@ -31,8 +33,6 @@
 #include "vie_render.h"
 #include "vie_rtp_rtcp.h"
 
-#include <iostream>
-#include "tb_external_transport.h"
 #define VCM_RED_PAYLOAD_TYPE        96
 #define VCM_ULPFEC_PAYLOAD_TYPE     97
 
@@ -62,22 +62,14 @@ int VideoEngineSampleCode(void* window1, void* window2)
         return -1;
     }
 
-#ifdef WEBRTC_ANDROID
-    error = ptrViE->SetTraceFile("/sdcard/ViELoopbackCall_trace.txt");
+    std::string trace_file =
+        ViETest::GetResultOutputPath() + "ViELoopbackCall_trace.txt";
+    error = ptrViE->SetTraceFile(trace_file.c_str());
     if (error == -1)
     {
         printf("ERROR in VideoEngine::SetTraceFile\n");
         return -1;
     }
-#else
-    error = ptrViE->SetTraceFile("ViELoopbackCall_trace.txt");
-    if (error == -1)
-    {
-        printf("ERROR in VideoEngine::SetTraceFile\n");
-        return -1;
-    }
-
-#endif
 
     //
     // Init VideoEngine and create a channel
