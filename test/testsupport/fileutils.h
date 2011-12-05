@@ -9,6 +9,7 @@
  */
 
 // File utilities for testing purposes.
+//
 // The ProjectRootPath() method is a convenient way of getting an absolute
 // path to the project source tree root directory. Using this, it is easy to
 // refer to test resource files in a portable way.
@@ -98,6 +99,37 @@ std::string ProjectRootPath();
 // Returns the path WITH a trailing path delimiter. If the project root is not
 // found, the current working directory ("./") is returned as a fallback.
 std::string OutputPath();
+
+// Returns a path to a resource file for the currently executing platform.
+// Adapts to what filenames are currently present in the
+// [project-root]/resources/ dir.
+// Returns an absolute path according to this priority list (the directory
+// part of the path is left out for readability):
+// 1. [name]_[platform]_[architecture].[extension]
+// 2. [name]_[platform].[extension]
+// 3. [name]_[architecture].[extension]
+// 4. [name].[extension]
+// Where
+// * platform is either of "win", "mac" or "linux".
+// * architecture is either of "32" or "64".
+//
+// Arguments:
+//    name - Name of the resource file. If a plain filename (no directory path)
+//           is supplied, the file is assumed to be located in resources/
+//           If a directory path is prepended to the filename, a subdirectory
+//           hierarchy reflecting that path is assumed to be present.
+//    extension - File extension, without the dot, i.e. "bmp" or "yuv".
+std::string ResourcePath(std::string name, std::string extension);
+
+// Gets the current working directory for the executing program.
+// Returns "./" if for some reason it is not possible to find the working
+// directory.
+std::string WorkingDir();
+
+// Creates a directory if it not already exists.
+// Returns true if successful. Will print an error message to stderr and return
+// false if a file with the same name already exists.
+bool CreateDirectory(std::string directory_name);
 
 }  // namespace test
 }  // namespace webrtc

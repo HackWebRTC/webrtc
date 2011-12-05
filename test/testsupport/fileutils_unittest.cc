@@ -9,44 +9,91 @@
  */
 
 #include <cstdio>
-#include "fileutils.h"
+#include <list>
+#include <string>
+
 #include "gtest/gtest.h"
+#include "testsupport/fileutils.h"
 
 #ifdef WIN32
-#include <direct.h>
-#define GET_CURRENT_DIR _getcwd
 static const char* kPathDelimiter = "\\";
 #else
-#include <unistd.h>
-#define GET_CURRENT_DIR getcwd
 static const char* kPathDelimiter = "/";
 #endif
 
+static const std::string kDummyDir = "file_utils_unittest_dummy_dir";
+static const std::string kResourcesDir = "resources";
+static const std::string kTestName = "fileutils_unittest";
+static const std::string kExtension = "tmp";
+
+typedef std::list<std::string> FileList;
+
 namespace webrtc {
-namespace test {
 
 // Test fixture to restore the working directory between each test, since some
 // of them change it with chdir during execution (not restored by the
 // gtest framework).
-class FileUtilsTest: public testing::Test {
+class FileUtilsTest : public testing::Test {
  protected:
   FileUtilsTest() {
-    original_working_dir_ = GetWorkingDir();
   }
   virtual ~FileUtilsTest() {}
+  // Runs before the first test
+  static void SetUpTestCase() {
+    original_working_dir_ = webrtc::test::WorkingDir();
+    std::string resources_path = original_working_dir_ + kPathDelimiter +
+        kResourcesDir + kPathDelimiter;
+    webrtc::test::CreateDirectory(resources_path);
+
+    files_.push_back(resources_path + kTestName + "." + kExtension);
+    files_.push_back(resources_path + kTestName + "_32." + kExtension);
+    files_.push_back(resources_path + kTestName + "_64." + kExtension);
+    files_.push_back(resources_path + kTestName + "_linux." + kExtension);
+    files_.push_back(resources_path + kTestName + "_mac." + kExtension);
+    files_.push_back(resources_path + kTestName + "_win." + kExtension);
+    files_.push_back(resources_path + kTestName + "_linux_32." + kExtension);
+    files_.push_back(resources_path + kTestName + "_mac_32." + kExtension);
+    files_.push_back(resources_path + kTestName + "_win_32." + kExtension);
+    files_.push_back(resources_path + kTestName + "_linux_64." + kExtension);
+    files_.push_back(resources_path + kTestName + "_mac_64." + kExtension);
+    files_.push_back(resources_path + kTestName + "_win_64." + kExtension);
+
+    // Now that the resources dir exists, write some empty test files into it.
+    for (FileList::iterator file_it = files_.begin();
+        file_it != files_.end(); ++file_it) {
+      FILE* file = fopen(file_it->c_str(), "wb");
+      ASSERT_TRUE(file != NULL) << "Failed to write file: " << file_it->c_str();
+      ASSERT_TRUE(fprintf(file, "%s",  "Dummy data") > 0);
+      fclose(file);
+    }
+    // Create a dummy subdir that can be chdir'ed into for testing purposes.
+    empty_dummy_dir_ = original_working_dir_ + kPathDelimiter + kDummyDir;
+    webrtc::test::CreateDirectory(empty_dummy_dir_);
+  }
+  static void TearDownTestCase() {
+    // Clean up all resource files written
+    for (FileList::iterator file_it = files_.begin();
+            file_it != files_.end(); ++file_it) {
+      remove(file_it->c_str());
+    }
+    std::remove(empty_dummy_dir_.c_str());
+  }
   void SetUp() {
-    chdir(original_working_dir_.c_str());
+    ASSERT_EQ(chdir(original_working_dir_.c_str()), 0);
   }
-  void TearDown() {}
+  void TearDown() {
+    ASSERT_EQ(chdir(original_working_dir_.c_str()), 0);
+  }
+ protected:
+  static std::string empty_dummy_dir_;
  private:
-  std::string original_working_dir_;
-  static std::string GetWorkingDir() {
-    char path_buffer[FILENAME_MAX];
-    EXPECT_TRUE(GET_CURRENT_DIR(path_buffer, sizeof(path_buffer)))
-      << "Cannot get current working directory!";
-    return std::string(path_buffer);
-  }
+  static FileList files_;
+  static std::string original_working_dir_;
 };
+
+FileList FileUtilsTest::files_;
+std::string FileUtilsTest::original_working_dir_ = "";
+std::string FileUtilsTest::empty_dummy_dir_ = "";
 
 // Tests that the project root path is returned for the default working
 // directory that is automatically set when the test executable is launched.
@@ -54,7 +101,7 @@ class FileUtilsTest: public testing::Test {
 // of where the executable was launched from.
 // The test will fail if the top level directory is not named "trunk".
 TEST_F(FileUtilsTest, ProjectRootPathFromUnchangedWorkingDir) {
-  std::string path = ProjectRootPath();
+  std::string path = webrtc::test::ProjectRootPath();
   std::string expected_end = "trunk";
   expected_end = kPathDelimiter + expected_end + kPathDelimiter;
   ASSERT_EQ(path.length() - expected_end.length(), path.find(expected_end));
@@ -62,7 +109,7 @@ TEST_F(FileUtilsTest, ProjectRootPathFromUnchangedWorkingDir) {
 
 // Similar to the above test, but for the output dir
 TEST_F(FileUtilsTest, OutputPathFromUnchangedWorkingDir) {
-  std::string path = OutputPath();
+  std::string path = webrtc::test::OutputPath();
   std::string expected_end = "out";
   expected_end = kPathDelimiter + expected_end + kPathDelimiter;
   ASSERT_EQ(path.length() - expected_end.length(), path.find(expected_end));
@@ -72,21 +119,19 @@ TEST_F(FileUtilsTest, OutputPathFromUnchangedWorkingDir) {
 // deeper from the current one. Then testing that the project path returned
 // is still the same, when the function under test is called again.
 TEST_F(FileUtilsTest, ProjectRootPathFromDeeperWorkingDir) {
-  std::string path = ProjectRootPath();
+  std::string path = webrtc::test::ProjectRootPath();
   std::string original_working_dir = path;  // This is the correct project root
-  // Change to a subdirectory path (the full path doesn't have to exist).
-  path += "foo/bar/baz";
-  chdir(path.c_str());
-  ASSERT_EQ(original_working_dir, ProjectRootPath());
+  // Change to a subdirectory path.
+  ASSERT_EQ(0, chdir(empty_dummy_dir_.c_str()));
+  ASSERT_EQ(original_working_dir, webrtc::test::ProjectRootPath());
 }
 
 // Similar to the above test, but for the output dir
 TEST_F(FileUtilsTest, OutputPathFromDeeperWorkingDir) {
-  std::string path = OutputPath();
+  std::string path = webrtc::test::OutputPath();
   std::string original_working_dir = path;
-  path += "foo/bar/baz";
-  chdir(path.c_str());
-  ASSERT_EQ(original_working_dir, OutputPath());
+  ASSERT_EQ(0, chdir(empty_dummy_dir_.c_str()));
+  ASSERT_EQ(original_working_dir, webrtc::test::OutputPath());
 }
 
 // Tests with current working directory set to a directory higher up in the
@@ -95,15 +140,43 @@ TEST_F(FileUtilsTest, OutputPathFromDeeperWorkingDir) {
 TEST_F(FileUtilsTest, ProjectRootPathFromRootWorkingDir) {
   // Change current working dir to the root of the current file system
   // (this will always be "above" our project root dir).
-  chdir(kPathDelimiter);
-  ASSERT_EQ(kCannotFindProjectRootDir, ProjectRootPath());
+  ASSERT_EQ(0, chdir(kPathDelimiter));
+  ASSERT_EQ(webrtc::test::kCannotFindProjectRootDir,
+            webrtc::test::ProjectRootPath());
 }
 
 // Similar to the above test, but for the output dir
 TEST_F(FileUtilsTest, OutputPathFromRootWorkingDir) {
-  chdir(kPathDelimiter);
-  ASSERT_EQ("./", OutputPath());
+  ASSERT_EQ(0, chdir(kPathDelimiter));
+  ASSERT_EQ("./", webrtc::test::OutputPath());
 }
 
-}  // namespace test
+// Only tests that the code executes
+TEST_F(FileUtilsTest, CreateDirectory) {
+  std::string directory = "fileutils-unittest-empty-dir";
+  // Make sure it's removed if a previous test has failed:
+  std::remove(directory.c_str());
+  ASSERT_TRUE(webrtc::test::CreateDirectory(directory));
+  std::remove(directory.c_str());
+}
+
+TEST_F(FileUtilsTest, WorkingDirReturnsValue) {
+  // Hard to cover all platforms. Just test that it returns something without
+  // crashing:
+  std::string working_dir = webrtc::test::WorkingDir();
+  ASSERT_TRUE(working_dir.length() > 0);
+}
+
+// Due to multiple platforms, it is hard to make a complete test for
+// ResourcePath. Manual testing has been performed by removing files and
+// verified the result confirms with the specified documentation for the
+// function.
+TEST_F(FileUtilsTest, ResourcePathReturnsValue) {
+  std::string resource = webrtc::test::ResourcePath(kTestName, kExtension);
+  ASSERT_TRUE(resource.find(kTestName) > 0);
+  ASSERT_TRUE(resource.find(kExtension) > 0);
+  ASSERT_EQ(0, chdir(kPathDelimiter));
+  ASSERT_EQ("./", webrtc::test::OutputPath());
+}
+
 }  // namespace webrtc

@@ -25,6 +25,8 @@
 
 #include <cstdio>
 
+#include "typedefs.h"  // For architecture defines
+
 namespace webrtc {
 namespace test {
 
@@ -36,18 +38,17 @@ static const char* kPathDelimiter = "/";
 // The file we're looking for to identify the project root dir.
 static const char* kProjectRootFileName = "DEPS";
 static const char* kOutputDirName = "out";
-static const char* kOutputFallbackPath = "./";
+static const char* kFallbackPath = "./";
+static const char* kResourcesDirName = "resources";
 const char* kCannotFindProjectRootDir = "ERROR_CANNOT_FIND_PROJECT_ROOT_DIR";
 
 std::string ProjectRootPath() {
-  char path_buffer[FILENAME_MAX];
-  if (!GET_CURRENT_DIR(path_buffer, sizeof(path_buffer))) {
-    fprintf(stderr, "Cannot get current directory!\n");
+  std::string working_dir = WorkingDir();
+  if (working_dir == kFallbackPath) {
     return kCannotFindProjectRootDir;
   }
-
   // Check for our file that verifies the root dir.
-  std::string current_path(path_buffer);
+  std::string current_path(working_dir);
   FILE* file = NULL;
   int path_delimiter_index = current_path.find_last_of(kPathDelimiter);
   while (path_delimiter_index > -1) {
@@ -58,12 +59,10 @@ std::string ProjectRootPath() {
       fclose(file);
       return current_path + kPathDelimiter;
     }
-
     // Move up one directory in the directory tree.
     current_path = current_path.substr(0, path_delimiter_index);
     path_delimiter_index = current_path.find_last_of(kPathDelimiter);
   }
-
   // Reached the root directory.
   fprintf(stderr, "Cannot find project root directory!\n");
   return kCannotFindProjectRootDir;
@@ -72,25 +71,85 @@ std::string ProjectRootPath() {
 std::string OutputPath() {
   std::string path = ProjectRootPath();
   if (path == kCannotFindProjectRootDir) {
-    return kOutputFallbackPath;
+    return kFallbackPath;
   }
   path += kOutputDirName;
-  struct stat path_info = {0};
-  // Check if the path exists already:
-  if (stat(path.c_str(), &path_info) == 0) {
-    if (!S_ISDIR(path_info.st_mode)) {
-      fprintf(stderr, "Path %s exists but is not a directory! Remove this file "
-              "and re-run to create the output folder.\n", path.c_str());
-      return kOutputFallbackPath;
-    }
-  } else {
-#ifdef WIN32
-      _mkdir(path.c_str());
-#else
-      mkdir(path.c_str(),  S_IRWXU | S_IRWXG | S_IRWXO);
-#endif
+  if (!CreateDirectory(path)) {
+    return kFallbackPath;
   }
   return path + kPathDelimiter;
 }
+
+std::string WorkingDir() {
+  char path_buffer[FILENAME_MAX];
+  if (!GET_CURRENT_DIR(path_buffer, sizeof(path_buffer))) {
+    fprintf(stderr, "Cannot get current directory!\n");
+    return kFallbackPath;
+  }
+  else {
+    return std::string(path_buffer);
+  }
+}
+
+bool CreateDirectory(std::string directory_name) {
+  struct stat path_info = {0};
+  // Check if the path exists already:
+  if (stat(directory_name.c_str(), &path_info) == 0) {
+    if (!S_ISDIR(path_info.st_mode)) {
+      fprintf(stderr, "Path %s exists but is not a directory! Remove this "
+              "file and re-run to create the directory.\n",
+              directory_name.c_str());
+      return false;
+    }
+  } else {
+#ifdef WIN32
+    return _mkdir(directory_name.c_str()) == 0;
+#else
+    return mkdir(directory_name.c_str(),  S_IRWXU | S_IRWXG | S_IRWXO) == 0;
+#endif
+  }
+  return true;
+}
+
+bool FileExists(std::string file_name) {
+  struct stat file_info = {0};
+  return stat(file_name.c_str(), &file_info) == 0;
+}
+
+std::string ResourcePath(std::string name, std::string extension) {
+  std::string platform = "win";
+#ifdef WEBRTC_LINUX
+  platform = "linux";
+#endif  // WEBRTC_LINUX
+#ifdef WEBRTC_MAC
+  platform = "mac";
+#endif  // WEBRTC_MAC
+
+#ifdef WEBRTC_ARCH_64_BITS
+  std::string architecture = "64";
+#else
+  std::string architecture = "32";
+#endif  // WEBRTC_ARCH_64_BITS
+
+  std::string resources_path = ProjectRootPath() + kResourcesDirName + kPathDelimiter;
+  std::string resource_file = resources_path + name + "_" + platform + "_" +
+      architecture + "." + extension;
+  if (!FileExists(resource_file)) {
+    return resource_file;
+  }
+  // Try without architecture.
+  resource_file = resources_path + name + "_" + platform + "." + extension;
+  if (FileExists(resource_file)) {
+    return resource_file;
+  }
+  // Try without platform.
+  resource_file = resources_path + name + "_" + architecture + "." + extension;
+  if (FileExists(resource_file)) {
+    return resource_file;
+  }
+  // Fall back on name without architecture or platform.
+  return resources_path + name + "." + extension;
+}
+
 }  // namespace test
 }  // namespace webrtc
