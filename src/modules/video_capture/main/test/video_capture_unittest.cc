@@ -249,7 +249,7 @@ TEST_F(VideoCaptureTest, CreateDelete) {
     capture_observer.capability.width = kTestWidth;
     capture_observer.capability.height = kTestHeight;
     capture_observer.capability.maxFPS = kTestFramerate;
-    capture_observer.capability.rawType = kVideoUnknown;
+    capture_observer.capability.rawType = webrtc::kVideoUnknown;
 #endif
 
     StartCapture(module.get(), capture_observer.capability);
@@ -315,7 +315,7 @@ TEST_F(VideoCaptureTest, TestTwoCameras) {
   capture_observer1.capability.width = kTestWidth;
   capture_observer1.capability.height = kTestHeight;
   capture_observer1.capability.maxFPS = kTestFramerate;
-  capture_observer1.capability.rawType = kVideoUnknown;
+  capture_observer1.capability.rawType = webrtc::kVideoUnknown;
 #endif
 
   TestVideoCaptureCallback capture_observer2;
@@ -331,7 +331,7 @@ TEST_F(VideoCaptureTest, TestTwoCameras) {
   capture_observer2.capability.width = kTestWidth;
   capture_observer2.capability.height = kTestHeight;
   capture_observer2.capability.maxFPS = kTestFramerate;
-  capture_observer2.capability.rawType = kVideoUnknown;
+  capture_observer2.capability.rawType = webrtc::kVideoUnknown;
 #endif
 
   StartCapture(module1.get(), capture_observer1.capability);
