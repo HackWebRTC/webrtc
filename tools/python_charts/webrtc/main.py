@@ -24,7 +24,7 @@ def main():
   - A data file in Python format, containing the following:
     - test_configuration - a dictionary of test configuration names and values.
     - frame_data_types - a dictionary that maps the different metrics to their 
-      data types  
+      data types.
     - frame_data - a list of dictionaries where each dictionary maps a metric to 
       it's value. 
   - The gviz_api.py of the Google Visualization Python API, available at
@@ -60,7 +60,7 @@ def main():
   
   # Read data from all existing input files.
   data_list = []
-  test_configurations_list = []
+  test_configurations = []
   names = []
   
   for filename in data_filenames:
@@ -74,7 +74,7 @@ def main():
     # Verify the data in the file loaded properly.
     if not table_description or not table_data:
       messages.append('Invalid input file: %s. Missing description list or '
-                      'data dictionary variables.', filename)
+                      'data dictionary variables.' % filename)
       continue
     
     # Frame numbers appear as number type in the data, but Chart API requires
@@ -86,16 +86,25 @@ def main():
       row['frame_number'] = str(row['frame_number'])
     
     # Store the unique data from this file in the high level lists.
-    test_configurations_list.append(test_configuration)
+    test_configurations.append(test_configuration)
     data_list.append(table_data)
-    # Use the filenames for name; strip away directory path and extension.
-    names.append(filename[filename.rfind('/')+1:filename.rfind('.')])
+    # Name of the test run must be present.
+    test_name = FindConfiguration(test_configuration, 'name')
+    if not test_name:
+      messages.append('Invalid input file: %s. Missing configuration key ' 
+                      '"name"', filename)
+      continue
+    names.append(test_name)
     
   # Create data helper and build data tables for each graph.
   helper = webrtc.data_helper.DataHelper(data_list, table_description, 
                                          names, messages)
     
   # Loading it into gviz_api.DataTable objects and create JSON strings.
+  description, data = helper.CreateConfigurationTable(test_configurations)
+  configurations = gviz_api.DataTable(description, data)
+  json_configurations = configurations.ToJSon()
+  
   description, data = helper.CreateData('ssim')
   ssim = gviz_api.DataTable(description, data)
   json_ssim_data = ssim.ToJSon(helper.GetOrdering(description))
@@ -112,13 +121,11 @@ def main():
   # Add a column of data points for the desired bit rate to be plotted.
   # (uses test configuration from the last data set, assuming it is the same 
   # for all of them)
-  desired_bit_rate = -1
-  for row in test_configuration:
-    if row['name'] == 'bit_rate_in_kbps':
-      desired_bit_rate = int(row['value'])
-  if desired_bit_rate == -1:
-    ShowErrorPage('Cannot find bit rate in the test configuration.')
+  desired_bit_rate = FindConfiguration(test_configuration, 'bit_rate_in_kbps')
+  if not desired_bit_rate:
+    ShowErrorPage('Cannot configuration field named "bit_rate_in_kbps"')
     return
+  desired_bit_rate = int(desired_bit_rate)
   # Add new column data type description.
   description['desired_bit_rate'] = ('number', 'Desired bit rate (kbps)')
   for row in data:
@@ -131,6 +138,17 @@ def main():
   
   # Put the variables as JSon strings into the template.
   print page_template % vars()
+
+def FindConfiguration(configuration, name):
+  """ Finds a configuration value using it's name. 
+      Returns the first configuration with a matching name. Returns None if no
+      matching configuration is found. """
+  return_value = None
+  for row in configuration:
+    if row['name'] == name:
+      return_value = row['value']
+      break
+  return return_value
 
 def ShowErrorPage(error_message):
   print '<html><body>%s</body></html>' % error_message

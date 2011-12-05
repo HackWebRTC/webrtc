@@ -107,9 +107,9 @@ class DataHelper(object):
           self.messages.append("Couldn't find frame data for row %d "
           "for %s" % (row_number, self.names_list[dataset_index])) 
           break
-    return (result_table_description, result_data_table)
+    return result_table_description, result_data_table
 
-  def GetOrdering(self, table_description):  
+  def GetOrdering(self, table_description):
     """ Creates a list of column names, ordered alphabetically except for the
       frame_number column which always will be the first column.
      
@@ -132,3 +132,52 @@ class DataHelper(object):
       if column != 'frame_number':
         columns_ordering.append(column)
     return columns_ordering
+  
+  def CreateConfigurationTable(self, configurations):
+    """ Combines multiple test data configurations for display.
+
+    Args:
+      configurations: List of one ore more configurations. Each configuration
+      is required to be a list of dictionaries with two keys: 'name' and
+      'value'.
+      Example of a single configuration:
+      [
+        {'name': 'name', 'value': 'VP8 software'},
+        {'name': 'test_number', 'value': '0'},
+        {'name': 'input_filename', 'value': 'foreman_cif.yuv'},
+      ]
+    Returns:
+      A tuple containing:
+      - a dictionary describing the columns in the configuration table to be
+        displayed. All columns will have string as data type.
+        Example:
+        {
+          'name': 'string',
+          'test_number': 'string',
+          'input_filename': 'string',
+         }
+      - a list containing dictionaries (one per configuration) with the
+        configuration column names mapped to the value for each test run:
+
+        Example matching the columns above:
+        [
+         {'name': 'VP8 software',
+          'test_number': '12',
+          'input_filename': 'foreman_cif.yuv' },
+         {'name': 'VP8 hardware',
+          'test_number': '5',
+          'input_filename': 'foreman_cif.yuv' },
+        ]
+    """
+    result_description = {}
+    result_data = []
+
+    for configuration in configurations:
+      data = {}
+      result_data.append(data)
+      for dict in configuration:
+        name = dict['name']
+        value = dict['value']
+        result_description[name] = 'string'
+        data[name] = value
+    return result_description, result_data

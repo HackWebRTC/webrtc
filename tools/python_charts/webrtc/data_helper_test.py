@@ -30,7 +30,17 @@ class Test(unittest.TestCase):
                              'psnr': ('number', 'PSRN'),
     }
     self.names = ["Test 0", "Test 1"]
-    
+    self.configurations = [
+     [{'name': 'name', 'value': 'Test 0'},
+      {'name': 'test_number', 'value': '13'},
+      {'name': 'input_filename', 'value': 'foreman_cif.yuv'},
+     ],
+     [{'name': 'name', 'value': 'Test 1'},
+      {'name': 'test_number', 'value': '5'},
+      {'name': 'input_filename', 'value': 'foreman_cif.yuv'},
+     ],
+    ]
+
   def testCreateData(self):
     messages = []
     helper = webrtc.data_helper.DataHelper(self.all_data, self.type_description,
@@ -44,9 +54,9 @@ class Test(unittest.TestCase):
     self.assertTrue('ssim_1' in description)
     self.assertTrue('number' in description['ssim_1'][0])
     self.assertTrue('Test 1' in description['ssim_1'][1])
- 
-    self.assertEqual(0, len(messages)) 
-    
+
+    self.assertEqual(0, len(messages))
+
     self.assertEquals(2, len(data_table))
     row = data_table[0]
     self.assertEquals(0, row['frame_number'])
@@ -87,6 +97,19 @@ class Test(unittest.TestCase):
     self.assertEqual('frame_number', columns[0])
     self.assertEqual('ssim_0', columns[1])
     self.assertEqual('ssim_1', columns[2])
+    
+  def testCreateConfigurationTable(self):
+    messages = []
+    helper = webrtc.data_helper.DataHelper(self.all_data, self.type_description,
+                                           self.names, messages)
+    description, data = helper.CreateConfigurationTable(self.configurations)
+    self.assertEqual(3, len(description))  # 3 columns
+    self.assertEqual(2, len(data))  # 2 data sets
+    self.assertTrue(description.has_key('name'))
+    self.assertTrue(description.has_key('test_number'))
+    self.assertTrue(description.has_key('input_filename'))
+    self.assertEquals('Test 0', data[0]['name'])
+    self.assertEquals('Test 1', data[1]['name'])
     
 if __name__ == "__main__":
   unittest.main()
