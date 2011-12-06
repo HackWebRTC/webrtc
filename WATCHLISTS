@@ -27,7 +27,7 @@
                   'src/voice_engine/main/interface/.*',
     },
     'build_files': {
-      'filepath': '\.gyp$|\.gypi$|Android.mk$',
+      'filepath': '\.gyp$|\.gypi$|Android\.mk$',
     },
     'video_engine': {
       'filepath': 'src/video_engine/.*',
