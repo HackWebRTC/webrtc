@@ -31,7 +31,8 @@ class ViEBaseImpl
   // Initializes VideoEngine and must be called before any other API is called.
   virtual int Init();
 
-  // Connects ViE to a VoE instance.
+  // Connects ViE to a VoE instance. Pass in NULL to forget about a previously
+  // set voice engine and release all resources we allocated from it.
   virtual int SetVoiceEngine(VoiceEngine* voice_engine);
 
   // Creates a new ViE channel.

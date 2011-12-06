@@ -189,7 +189,11 @@ void ViEAutoTest::ViEBaseAPITest() {
       "Should fail: disconnecting bogus channel";
 
   EXPECT_EQ(0, ptrViEBase->DisconnectAudioChannel(videoChannel));
+
+  // Clean up voice engine
   EXPECT_EQ(0, ptrViEBase->SetVoiceEngine(NULL));
+  EXPECT_EQ(0, ptrVoEBase->Release());
+  EXPECT_TRUE(webrtc::VoiceEngine::Delete(ptrVoE));
 
   webrtc::ViEBase* ptrViEBase2 = webrtc::ViEBase::GetInterface(ptrViE);
   EXPECT_TRUE(NULL != ptrViEBase2);

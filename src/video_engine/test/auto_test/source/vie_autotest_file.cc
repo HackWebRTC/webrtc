@@ -463,6 +463,12 @@ void ViEAutoTest::ViEFileStandardTest()
         //	Testing finished. Tear down Video Engine
         //***************************************************************
 
+        EXPECT_EQ(0, ptrViEBase->DisconnectAudioChannel(videoChannel));
+        EXPECT_EQ(0, ptrViEBase->SetVoiceEngine(NULL));
+        EXPECT_EQ(0, ptrVEBase->DeleteChannel(audioChannel));
+        EXPECT_EQ(0, ptrVEBase->Release());
+        EXPECT_EQ(0, ptrVECodec->Release());
+        EXPECT_TRUE(webrtc::VoiceEngine::Delete(ptrVEEngine));
 
         EXPECT_EQ(0, ptrViEBase->StopReceive(videoChannel));
         EXPECT_EQ(0, ptrViEBase->StopSend(videoChannel));
