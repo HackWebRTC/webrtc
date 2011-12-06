@@ -86,7 +86,7 @@ TEST_F(LibYuvTest, ScaleSanityTest) {
   EXPECT_EQ(0, test_scaler.Set(352, 288, 144, 288, kI420, kI420, kScalePoint));
   uint8_t* test_buffer2 = NULL;
   size = 0;
-  fread(test_buffer, 1, frame_length_, source_file_);
+  EXPECT_GT(fread(test_buffer, 1, frame_length_, source_file_), 0U);
   EXPECT_EQ(0, test_scaler.Scale(test_buffer, test_buffer2, size));
   EXPECT_EQ(144 * 288 * 3 / 2, size);
 
@@ -119,7 +119,7 @@ TEST_F(LibYuvTest, ConvertTest) {
   double psnr = 0;
 
   uint8_t* orig_buffer = new uint8_t[frame_length_];
-  fread(orig_buffer, 1, frame_length_, source_file_);
+  EXPECT_GT(fread(orig_buffer, 1, frame_length_, source_file_), 0U);
 
   // printf("\nConvert #%d I420 <-> RGB24\n", j);
   uint8_t* res_rgb_buffer2  = new uint8_t[width_ * height_ * 3];
