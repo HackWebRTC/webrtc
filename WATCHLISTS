@@ -26,6 +26,9 @@
                   'src/video_engine/main/interface/.*|'\
                   'src/voice_engine/main/interface/.*',
     },
+    'build_files': {
+      'filepath': '\.gyp$|\.gypi$|Android.mk$',
+    },
     'video_engine': {
       'filepath': 'src/video_engine/.*',
     },
@@ -74,6 +77,7 @@
     'root_files': ['andrew@webrtc.org',
                    'niklas.enbom@webrtc.org'],
     'documented_interfaces': ['amyfong@webrtc.org'],
+    'build_files': ['leozwang@webrtc.org'],
     'common_audio': ['bjornv@webrtc.org',
                      'andrew@webrtc.org'],
     'video_engine': ['mflodman@webrtc.org',
