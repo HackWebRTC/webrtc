@@ -133,6 +133,8 @@ AudioDeviceLinuxPulse::AudioDeviceLinuxPulse(const WebRtc_Word32 id) :
                  "%s created", __FUNCTION__);
 
     memset(_paServerVersion, 0, sizeof(_paServerVersion));
+    memset(&_playBufferAttr, 0, sizeof(_playBufferAttr));
+    memset(&_recBufferAttr, 0, sizeof(_recBufferAttr));
 }
 
 AudioDeviceLinuxPulse::~AudioDeviceLinuxPulse()
@@ -1115,7 +1117,7 @@ WebRtc_Word32 AudioDeviceLinuxPulse::SetPlayoutDevice(WebRtc_UWord16 index)
         return -1;
     }
 
-    const WebRtc_UWord16 nDevices(PlayoutDevices());
+    const WebRtc_UWord16 nDevices = PlayoutDevices();
 
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
                  "  number of availiable output devices is %u", nDevices);
@@ -1149,7 +1151,7 @@ WebRtc_Word32 AudioDeviceLinuxPulse::PlayoutDeviceName(
     WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
                  "AudioDeviceLinuxPulse::PlayoutDeviceName(index=%u)", index);
 
-    const WebRtc_UWord16 nDevices(PlayoutDevices());
+    const WebRtc_UWord16 nDevices = PlayoutDevices();
 
     if ((index > (nDevices - 1)) || (name == NULL))
     {
@@ -2239,7 +2241,7 @@ WebRtc_Word32 AudioDeviceLinuxPulse::GetDefaultDeviceInfo(bool recDevice,
                                                           WebRtc_Word8* name,
                                                           WebRtc_UWord16& index)
 {
-    WebRtc_Word8 tmpName[kAdmMaxDeviceNameSize];
+    WebRtc_Word8 tmpName[kAdmMaxDeviceNameSize] = {0};
     // subtract length of "default: "
     WebRtc_UWord16 nameLen = kAdmMaxDeviceNameSize - 9;
     WebRtc_Word8* pName = NULL;
@@ -2333,6 +2335,11 @@ WebRtc_Word32 AudioDeviceLinuxPulse::InitPulseAudio()
 
     // Create a mainloop API and connection to the default server
     // the mainloop is the internal asynchronous API event loop
+    if (_paMainloop) {
+        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+                     "  PA mainloop has already existed");
+        return -1;
+    }
     _paMainloop = LATE(pa_threaded_mainloop_new)();
     if (!_paMainloop)
     {
@@ -2365,6 +2372,12 @@ WebRtc_Word32 AudioDeviceLinuxPulse::InitPulseAudio()
     }
 
     // Create a new PulseAudio context
+    if (_paContext){
+        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+                     "  PA context has already existed");
+        PaUnLock();
+        return -1;
+    }
     _paContext = LATE(pa_context_new)(_paMainloopApi, "WEBRTC VoiceEngine");
 
     if (!_paContext)

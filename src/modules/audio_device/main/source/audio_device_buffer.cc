@@ -55,6 +55,8 @@ AudioDeviceBuffer::AudioDeviceBuffer() :
 {
     // valid ID will be set later by SetId, use -1 for now
     WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, _id, "%s created", __FUNCTION__);
+    memset(_recBuffer, 0, kMaxBufferSizeBytes);
+    memset(_playBuffer, 0, kMaxBufferSizeBytes);
 }
 
 // ----------------------------------------------------------------------------

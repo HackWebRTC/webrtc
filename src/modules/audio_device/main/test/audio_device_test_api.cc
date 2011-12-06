@@ -83,6 +83,8 @@ class AudioEventObserverAPI: public AudioDeviceObserver
 {
 public:
     AudioEventObserverAPI(AudioDeviceModule* audioDevice) :
+        _error(kRecordingError),
+        _warning(kRecordingWarning),
         _audioDevice(audioDevice)
     {
     }
@@ -277,10 +279,11 @@ int api_test()
         myId, AudioDeviceModule::kWindowsWaveAudio)) == NULL);
     TEST((audioDevice = AudioDeviceModuleImpl::Create(
         myId, AudioDeviceModule::kWindowsCoreAudio)) == NULL);
-    // create default implementation (=ALSA Audio) instance
+    // create default implementation instance
     TEST((audioDevice = AudioDeviceModuleImpl::Create(
         myId, AudioDeviceModule::kPlatformDefaultAudio)) != NULL);
     audioDevice->AddRef();
+    TEST(audioDevice->Terminate() == 0);
     TEST(audioDevice->Release() == 0);
     // explicitly specify usage of Pulse Audio (same as default)
     TEST((audioDevice = AudioDeviceModuleImpl::Create(
