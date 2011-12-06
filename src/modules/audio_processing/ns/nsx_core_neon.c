@@ -96,7 +96,6 @@ static void NoiseEstimationNeon(NsxInst_t* inst,
                                 uint16_t* magn,
                                 uint32_t* noise,
                                 int16_t* q_noise) {
-  int32_t numerator = FACTOR_Q16;
   int16_t lmagn[HALF_ANAL_BLOCKL], counter, countDiv;
   int16_t countProd, delta, zeros, frac;
   int16_t log2, tabind, logval, tmp16, tmp16no1, tmp16no2;
@@ -181,8 +180,9 @@ static void NoiseEstimationNeon(NsxInst_t* inst,
       int j;
       for (j = 0; j < 8; j++) {
         if (inst->noiseEstDensity[offset + i + j] > 512) {
-          deltaBuff[j] = WebRtcSpl_DivW32W16ResW16(
-                           numerator, inst->noiseEstDensity[offset + i + j]);
+          // Get values for deltaBuff by shifting intead of dividing.
+          int factor = WebRtcSpl_NormW16(inst->noiseEstDensity[offset + i + j]);
+          deltaBuff[j] = (int16_t)(FACTOR_Q16 >> (14 - factor));
         }
       }
 
@@ -254,8 +254,9 @@ static void NoiseEstimationNeon(NsxInst_t* inst,
     // Last iteration over magnitude spectrum:
     // compute delta
     if (inst->noiseEstDensity[offset + i] > 512) {
-      delta = WebRtcSpl_DivW32W16ResW16(numerator,
-                                        inst->noiseEstDensity[offset + i]);
+      // Get values for deltaBuff by shifting intead of dividing.
+      int factor = WebRtcSpl_NormW16(inst->noiseEstDensity[offset + i]);
+      delta = (int16_t)(FACTOR_Q16 >> (14 - factor));
     } else {
       delta = FACTOR_Q7;
       if (inst->blockIndex < END_STARTUP_LONG) {

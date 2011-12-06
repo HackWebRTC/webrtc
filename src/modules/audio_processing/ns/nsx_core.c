@@ -472,7 +472,6 @@ static void NoiseEstimationC(NsxInst_t* inst,
                              uint16_t* magn,
                              uint32_t* noise,
                              int16_t* q_noise) {
-  WebRtc_Word32 numerator = FACTOR_Q16;
   WebRtc_Word16 lmagn[HALF_ANAL_BLOCKL], counter, countDiv;
   WebRtc_Word16 countProd, delta, zeros, frac;
   WebRtc_Word16 log2, tabind, logval, tmp16, tmp16no1, tmp16no2;
@@ -526,8 +525,9 @@ static void NoiseEstimationC(NsxInst_t* inst,
     for (i = 0; i < inst->magnLen; i++) {
       // compute delta
       if (inst->noiseEstDensity[offset + i] > 512) {
-        delta = WebRtcSpl_DivW32W16ResW16(numerator,
-                                          inst->noiseEstDensity[offset + i]);
+        // Get the value for delta by shifting intead of dividing.
+        int factor = WebRtcSpl_NormW16(inst->noiseEstDensity[offset + i]);
+        delta = (int16_t)(FACTOR_Q16 >> (14 - factor));
       } else {
         delta = FACTOR_Q7;
         if (inst->blockIndex < END_STARTUP_LONG) {
