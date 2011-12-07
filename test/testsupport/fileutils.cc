@@ -134,7 +134,7 @@ std::string ResourcePath(std::string name, std::string extension) {
   std::string resources_path = ProjectRootPath() + kResourcesDirName + kPathDelimiter;
   std::string resource_file = resources_path + name + "_" + platform + "_" +
       architecture + "." + extension;
-  if (!FileExists(resource_file)) {
+  if (FileExists(resource_file)) {
     return resource_file;
   }
   // Try without architecture.
