@@ -211,16 +211,9 @@ WebRtc_UWord32 RemoteRateControl::ChangeBitRate(WebRtc_UWord32 currentBitRate,
                     ChangeRegion(kRcAboveMax);
                 }
             }
-#ifdef _DEBUG
-            char logStr[256];
-#ifdef _WIN32
-            _snprintf(logStr,256, "Response time: %f + %i + 10*33\n", _avgChangePeriod, RTT);
-            OutputDebugStringA(logStr);
-#else
-            snprintf(logStr,256, "Response time: %f + %i + 10*33\n", _avgChangePeriod, RTT);
-            //TODO
-#endif
-#endif
+            WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, -1,
+                         "BWE: Response time: %f + %i + 10*33\n",
+                         _avgChangePeriod, RTT);
             const WebRtc_UWord32 responseTime = static_cast<WebRtc_UWord32>(_avgChangePeriod + 0.5f) + RTT + 300;
             double alpha = RateIncreaseFactor(nowMS, _lastBitRateChange,
                                               responseTime, noiseVar);
@@ -242,18 +235,6 @@ WebRtc_UWord32 RemoteRateControl::ChangeBitRate(WebRtc_UWord32 currentBitRate,
             _maxHoldRate = 0;
             WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, -1,
                 "BWE: Increase rate to currentBitRate = %u kbps", currentBitRate/1000);
-#ifdef _DEBUG
-            //char logStr[256];
-#ifdef _WIN32
-            _snprintf(logStr,256, "New bitRate: %lu\n",
-                      static_cast<long unsigned int> (currentBitRate / 1000));
-            OutputDebugStringA(logStr);
-#else
-            snprintf(logStr,256, "New bitRate: %lu\n",
-                     static_cast<long unsigned int> (currentBitRate / 1000));
-            //TODO
-#endif
-#endif
             _lastBitRateChange = nowMS;
             break;
         }
@@ -461,25 +442,16 @@ void RemoteRateControl::ChangeState(RateControlState newState)
 {
     _cameFromState = _rcState;
     _rcState = newState;
-#ifdef _DEBUG
-    char logStr[256];
     char state1[15];
     char state2[15];
     char state3[15];
     StateStr(_cameFromState, state1);
     StateStr(_rcState, state2);
     StateStr(_currentInput._bwState, state3);
-#ifdef _WIN32
-    _snprintf(logStr,256, "\t%s => %s due to %s\n", state1, state2, state3);
-    OutputDebugStringA(logStr);
-#else
-    snprintf(logStr,256, "\t%s => %s due to %s\n", state1, state2, state3);
-    //TODO
-#endif
-#endif
+    WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, -1,
+                 "\t%s => %s due to %s\n", state1, state2, state3);
 }
 
-#ifdef _DEBUG
 void RemoteRateControl::StateStr(RateControlState state, char* str)
 {
     switch (state)
@@ -517,6 +489,5 @@ void RemoteRateControl::StateStr(BandwidthUsage state, char* str)
         break;
     }
 }
-#endif
 
 } // namespace webrtc

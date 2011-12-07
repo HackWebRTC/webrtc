@@ -216,49 +216,6 @@ bool OverUseDetector::Update(const WebRtcRTPHeader& rtpHeader,
 
 BandwidthUsage OverUseDetector::State() const
 {
-#ifdef _DEBUG
-    char logStr[256];
-    static BandwidthUsage oldState = kBwNormal;
-    if (_hypothesis != oldState)
-    {
-        switch(_hypothesis)
-        {
-        case kBwOverusing:
-            {
-#ifdef _WIN32
-                _snprintf(logStr,256, "State: OVER-USING\n");
-#else
-                snprintf(logStr,256, "State: OVER-USING\n");
-#endif
-                break;
-            }
-        case kBwUnderUsing:
-            {
-#ifdef _WIN32
-                _snprintf(logStr,256, "State: UNDER-USING\n");
-#else
-                snprintf(logStr,256, "State: UNDER-USING\n");
-#endif
-                break;
-            }
-        case kBwNormal:
-            {
-#ifdef _WIN32
-                _snprintf(logStr,256, "State: NORMAL\n");
-#else
-                snprintf(logStr,256, "State: NORMAL\n");
-#endif
-                break;
-            }
-        }
-#ifdef _WIN32
-        OutputDebugStringA(logStr);
-#else
-        //TODO
-#endif
-        oldState = _hypothesis;
-    }
-#endif
     return _hypothesis;
 }
 

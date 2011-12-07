@@ -14,7 +14,6 @@
 #include "bwe_defines.h"
 #include "typedefs.h"
 #include "list_wrapper.h"
-#include <stdio.h>
 
 #ifdef MATLAB
 #include "../test/BWEStandAlone/MatlabPlot.h"
@@ -43,10 +42,8 @@ private:
     void ChangeState(const RateControlInput& input, WebRtc_Word64 nowMs);
     void ChangeState(RateControlState newState);
     void ChangeRegion(RateControlRegion region);
-#ifdef _DEBUG
     static void StateStr(RateControlState state, char* str);
     static void StateStr(BandwidthUsage state, char* str);
-#endif
 
     WebRtc_UWord32        _minConfiguredBitRate;
     WebRtc_UWord32        _maxConfiguredBitRate;

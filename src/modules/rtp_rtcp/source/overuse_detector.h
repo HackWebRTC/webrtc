@@ -15,7 +15,6 @@
 #include "module_common_types.h"
 #include "typedefs.h"
 #include "list_wrapper.h"
-#include <stdio.h>
 
 //#define DEBUG_FILE
 
