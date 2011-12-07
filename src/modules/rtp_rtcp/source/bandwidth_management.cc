@@ -291,6 +291,12 @@ WebRtc_UWord32 BandwidthManagement::ShapeSimple(WebRtc_Word32 packetLoss,
     }
     if (newBitRate < _minBitRateConfigured)
     {
+        WEBRTC_TRACE(kTraceWarning,
+                     kTraceRtpRtcp,
+                     _id,
+                     "The configured min bitrate (%u kbps) is greater than the "
+                     "estimated available bandwidth (%u kbps).\n",
+                     _minBitRateConfigured / 1000, newBitRate / 1000);
         newBitRate = _minBitRateConfigured;
     }
     return newBitRate;
