@@ -19,14 +19,13 @@
 #include <time.h>
 #include <cassert>
 #if defined(_WIN32)
- #include <conio.h>
+#include <conio.h>
 #endif
 
 #include "voe_stress_test.h"
 #include "voe_standard_test.h"
 
 #include "../../source/voice_engine_defines.h"  // defines build macros
-
 #include "thread_wrapper.h"
 
 using namespace webrtc;
@@ -41,11 +40,11 @@ namespace voetest {
     }
 
 #ifdef _WIN32
- // Pause if supported
- #define PAUSE_OR_SLEEP(x) PAUSE;
+// Pause if supported
+#define PAUSE_OR_SLEEP(x) PAUSE;
 #else
- // Sleep a bit instead if pause not supported
- #define PAUSE_OR_SLEEP(x) SLEEP(x);
+// Sleep a bit instead if pause not supported
+#define PAUSE_OR_SLEEP(x) SLEEP(x);
 #endif
 
 extern char* GetFilename(char* filename);
@@ -54,400 +53,363 @@ extern int GetResource(char* resource, char* dest, int destLen);
 extern char* GetResource(char* resource);
 extern const char* GetResource(const char* resource);
 
-
 const char* VoEStressTest::_key = "====YUtFWRAAAAADBtIHgAAAAAEAAAAcAAAAAQBHU0ds"
-    "b2JhbCBJUCBTb3VuZAAC\nAAAAIwAAAExpY2Vuc2VkIHRvIE5vcnRlbCBOZXR3cm9rcwAAAAA"
-    "xAAAAZxZ7/u0M\niFYyTwSwko5Uutf7mh8S0O4rYZYTFidbzQeuGonuL17F/2oD/2pfDp3jL4"
-    "Rf3z/A\nnlJsEJgEtASkDNFuwLILjGY0pzjjAYQp3pCl6z6k2MtE06AirdjGLYCjENpq/opX"
-    "\nOrs3sIuwdYK5va/aFcsjBDmlsGCUM48RDYG9s23bIHYafXUC4ofOaubbZPWiPTmL\nEVJ8WH"
-    "4F9pgNjALc14oJXfON7r/3\n=EsLx";
+  "b2JhbCBJUCBTb3VuZAAC\nAAAAIwAAAExpY2Vuc2VkIHRvIE5vcnRlbCBOZXR3cm9rcwAAAAA"
+  "xAAAAZxZ7/u0M\niFYyTwSwko5Uutf7mh8S0O4rYZYTFidbzQeuGonuL17F/2oD/2pfDp3jL4"
+  "Rf3z/A\nnlJsEJgEtASkDNFuwLILjGY0pzjjAYQp3pCl6z6k2MtE06AirdjGLYCjENpq/opX"
+  "\nOrs3sIuwdYK5va/aFcsjBDmlsGCUM48RDYG9s23bIHYafXUC4ofOaubbZPWiPTmL\nEVJ8WH"
+  "4F9pgNjALc14oJXfON7r/3\n=EsLx";
 
+int VoEStressTest::DoTest() {
+  int test(-1);
+  while (test != 0) {
+    test = MenuSelection();
+    switch (test) {
+      case 0:
+        // Quit stress test
+        break;
+      case 1:
+        // All tests
+        StartStopTest();
+        CreateDeleteChannelsTest();
+        MultipleThreadsTest();
+        break;
+      case 2:
+        StartStopTest();
+        break;
+      case 3:
+        CreateDeleteChannelsTest();
+        break;
+      case 4:
+        MultipleThreadsTest();
+        break;
+      default:
+        // Should not be possible
+        printf("Invalid selection! (Test code error)\n");
+        assert(false);
+    } // switch
+  } // while
 
-int VoEStressTest::DoTest()
-{
-    int test(-1);
-    while (test != 0)
-    {
-        test = MenuSelection();
-        switch (test)
-        {
-            case 0:
-                // Quit stress test
-                break;
-            case 1:
-                // All tests
-                StartStopTest();
-                CreateDeleteChannelsTest();
-                MultipleThreadsTest();
-                break;
-            case 2:
-                StartStopTest();
-                break;
-            case 3:
-                CreateDeleteChannelsTest();
-                break;
-            case 4:
-                MultipleThreadsTest();
-                break;
-            default:
-                // Should not be possible
-                printf("Invalid selection! (Test code error)\n");
-                assert(false);
-        } // switch
-    } // while
-
-    return 0;
+  return 0;
 }
 
+int VoEStressTest::MenuSelection() {
+  printf("------------------------------------------------\n");
+  printf("Select stress test\n\n");
+  printf(" (0)  Quit\n");
+  printf(" (1)  All\n");
+  printf("- - - - - - - - - - - - - - - - - - - - - - - - \n");
+  printf(" (2)  Start/stop\n");
+  printf(" (3)  Create/delete channels\n");
+  printf(" (4)  Multiple threads\n");
 
-int VoEStressTest::MenuSelection()
-{
-    printf("------------------------------------------------\n");
-    printf("Select stress test\n\n");
-    printf(" (0)  Quit\n");
-    printf(" (1)  All\n");
-    printf("- - - - - - - - - - - - - - - - - - - - - - - - \n");
-    printf(" (2)  Start/stop\n");
-    printf(" (3)  Create/delete channels\n");
-    printf(" (4)  Multiple threads\n");
+  const int maxMenuSelection = 4;
+  int selection(-1);
 
-    const int maxMenuSelection = 4;
-    int selection(-1);
-
-    while ((selection < 0) || (selection > maxMenuSelection))
-    {
-        printf("\n: ");
-        int retval = scanf("%d", &selection);
-        if ((retval != 1) || (selection < 0) || (selection > maxMenuSelection))
-        {
-            printf("Invalid selection!\n");
-        }
+  while ((selection < 0) || (selection > maxMenuSelection)) {
+    printf("\n: ");
+    int retval = scanf("%d", &selection);
+    if ((retval != 1) || (selection < 0) || (selection > maxMenuSelection)) {
+      printf("Invalid selection!\n");
     }
+  }
 
-    return selection;
+  return selection;
 }
 
+int VoEStressTest::StartStopTest() {
+  printf("------------------------------------------------\n");
+  printf("Running start/stop test\n");
+  printf("------------------------------------------------\n");
 
-int VoEStressTest::StartStopTest()
-{
-    printf("------------------------------------------------\n");
-    printf("Running start/stop test\n");
-    printf("------------------------------------------------\n");
+  printf("\nNOTE: this thest will fail after a while if Core audio is used\n");
+  printf("because MS returns AUDCLNT_E_CPUUSAGE_EXCEEDED (VoE Error 10013).\n");
 
-    printf("\nNOTE: this thest will fail after a while if Core audio is used\n");
-    printf("because MS returns AUDCLNT_E_CPUUSAGE_EXCEEDED (VoE Error 10013).\n");
+  // Get sub-API pointers
+  VoEBase* base = _mgr.BasePtr();
 
-    // Get sub-API pointers
-    VoEBase* base = _mgr.BasePtr();
+  // Set trace
+  //     VALIDATE_STRESS(base->SetTraceFileName(
+  //         GetFilename("VoEStressTest_StartStop_trace.txt")));
+  //     VALIDATE_STRESS(base->SetDebugTraceFileName(
+  //         GetFilename("VoEStressTest_StartStop_trace_debug.txt")));
+  //     VALIDATE_STRESS(base->SetTraceFilter(kTraceStateInfo |
+  //         kTraceWarning | kTraceError |
+  //         kTraceCritical | kTraceApiCall |
+  //         kTraceMemory | kTraceInfo));
+  VALIDATE_STRESS(base->Init());
+  VALIDATE_STRESS(base->CreateChannel());
 
-    // Set trace
-//     VALIDATE_STRESS(base->SetTraceFileName(
-//         GetFilename("VoEStressTest_StartStop_trace.txt")));
-//     VALIDATE_STRESS(base->SetDebugTraceFileName(
-//         GetFilename("VoEStressTest_StartStop_trace_debug.txt")));
-//     VALIDATE_STRESS(base->SetTraceFilter(kTraceStateInfo |
-//         kTraceWarning | kTraceError |
-//         kTraceCritical | kTraceApiCall |
-//         kTraceMemory | kTraceInfo));
+  ///////////// Start test /////////////
 
-    VALIDATE_STRESS(base->Init());
-    VALIDATE_STRESS(base->CreateChannel());
+  int numberOfLoops(2000);
+  int loopSleep(200);
+  int i(0);
+  int markInterval(20);
 
+  printf("Running %d loops with %d ms sleep. Mark every %d loop. \n",
+         numberOfLoops, loopSleep, markInterval);
+  printf("Test will take approximately %d minutes. \n",
+         numberOfLoops * loopSleep / 1000 / 60 + 1);
 
-    ///////////// Start test /////////////
-
-    int numberOfLoops(2000);
-    int loopSleep(200);
-    int i(0);
-    int markInterval(20);
-
-    printf("Running %d loops with %d ms sleep. Mark every %d loop. \n",
-        numberOfLoops, loopSleep, markInterval);
-    printf("Test will take approximately %d minutes. \n",
-           numberOfLoops*loopSleep/1000/60+1);
-
-    for (i=0; i<numberOfLoops; ++i)
-    {
-        VALIDATE_STRESS(base->SetLocalReceiver(0, 4800));
-        VALIDATE_STRESS(base->SetSendDestination(0, 4800, "127.0.0.1"));
-        VALIDATE_STRESS(base->StartReceive(0));
-        VALIDATE_STRESS(base->StartPlayout(0));
-        VALIDATE_STRESS(base->StartSend(0));
-        if (!(i % markInterval)) MARK();
-        SLEEP(loopSleep);
-        VALIDATE_STRESS(base->StopSend(0));
-        VALIDATE_STRESS(base->StopPlayout(0));
-        VALIDATE_STRESS(base->StopReceive(0));
-    }
-    ANL();
-
+  for (i = 0; i < numberOfLoops; ++i) {
     VALIDATE_STRESS(base->SetLocalReceiver(0, 4800));
     VALIDATE_STRESS(base->SetSendDestination(0, 4800, "127.0.0.1"));
     VALIDATE_STRESS(base->StartReceive(0));
     VALIDATE_STRESS(base->StartPlayout(0));
     VALIDATE_STRESS(base->StartSend(0));
-    printf("Verify that audio is good. \n");
-    PAUSE_OR_SLEEP(20000);
+    if (!(i % markInterval))
+      MARK();
+    SLEEP(loopSleep);
     VALIDATE_STRESS(base->StopSend(0));
     VALIDATE_STRESS(base->StopPlayout(0));
     VALIDATE_STRESS(base->StopReceive(0));
+  }
+  ANL();
 
-    ///////////// End test /////////////
+  VALIDATE_STRESS(base->SetLocalReceiver(0, 4800));
+  VALIDATE_STRESS(base->SetSendDestination(0, 4800, "127.0.0.1"));
+  VALIDATE_STRESS(base->StartReceive(0));
+  VALIDATE_STRESS(base->StartPlayout(0));
+  VALIDATE_STRESS(base->StartSend(0));
+  printf("Verify that audio is good. \n");
+  PAUSE_OR_SLEEP(20000);
+  VALIDATE_STRESS(base->StopSend(0));
+  VALIDATE_STRESS(base->StopPlayout(0));
+  VALIDATE_STRESS(base->StopReceive(0));
+
+  ///////////// End test /////////////
 
 
-    // Terminate
-    VALIDATE_STRESS(base->DeleteChannel(0));
-    VALIDATE_STRESS(base->Terminate());
+  // Terminate
+  VALIDATE_STRESS(base->DeleteChannel(0));
+  VALIDATE_STRESS(base->Terminate());
 
-    printf("Test finished \n");
+  printf("Test finished \n");
 
-    return 0;
+  return 0;
 }
 
+int VoEStressTest::CreateDeleteChannelsTest() {
+  printf("------------------------------------------------\n");
+  printf("Running create/delete channels test\n");
+  printf("------------------------------------------------\n");
 
-int VoEStressTest::CreateDeleteChannelsTest()
-{
-    printf("------------------------------------------------\n");
-    printf("Running create/delete channels test\n");
-    printf("------------------------------------------------\n");
+  // Get sub-API pointers
+  VoEBase* base = _mgr.BasePtr();
 
-    // Get sub-API pointers
-    VoEBase* base = _mgr.BasePtr();
+  // Set trace
+  //     VALIDATE_STRESS(base->SetTraceFileName(
+  //          GetFilename("VoEStressTest_CreateChannels_trace.txt")));
+  //     VALIDATE_STRESS(base->SetDebugTraceFileName(
+  //          GetFilename("VoEStressTest_CreateChannels_trace_debug.txt")));
+  //     VALIDATE_STRESS(base->SetTraceFilter(kTraceStateInfo |
+  //         kTraceWarning | kTraceError |
+  //         kTraceCritical | kTraceApiCall |
+  //         kTraceMemory | kTraceInfo));
+  VALIDATE_STRESS(base->Init());
 
-    // Set trace
-//     VALIDATE_STRESS(base->SetTraceFileName(
-//          GetFilename("VoEStressTest_CreateChannels_trace.txt")));
-//     VALIDATE_STRESS(base->SetDebugTraceFileName(
-//          GetFilename("VoEStressTest_CreateChannels_trace_debug.txt")));
-//     VALIDATE_STRESS(base->SetTraceFilter(kTraceStateInfo |
-//         kTraceWarning | kTraceError |
-//         kTraceCritical | kTraceApiCall |
-//         kTraceMemory | kTraceInfo));
+  ///////////// Start test /////////////
 
-    VALIDATE_STRESS(base->Init());
+  int numberOfLoops(10000);
+  int loopSleep(10);
+  int i(0);
+  int markInterval(200);
 
-    ///////////// Start test /////////////
+  printf("Running %d loops with %d ms sleep. Mark every %d loop. \n",
+         numberOfLoops, loopSleep, markInterval);
+  printf("Test will take approximately %d minutes. \n",
+         numberOfLoops * loopSleep / 1000 / 60 + 1);
 
-    int numberOfLoops(10000);
-    int loopSleep(10);
-    int i(0);
-    int markInterval(200);
+  //       Some possible extensions include:
+  //       Different sleep times (fixed or random) or zero.
+  //       Start call on all or some channels.
+  //       Two parts: first have a slight overweight to creating channels,
+  //       then to deleting. (To ensure we hit max channels and go to zero.)
+  //       Make sure audio is OK after test has finished.
 
-    printf("Running %d loops with %d ms sleep. Mark every %d loop. \n",
-        numberOfLoops, loopSleep, markInterval);
-    printf("Test will take approximately %d minutes. \n",
-           numberOfLoops * loopSleep / 1000 / 60 + 1);
+  // Set up, start with maxChannels/2 channels
+  const int maxChannels = base->MaxNumOfChannels();
+  VALIDATE_STRESS(maxChannels < 1); // Should always have at least one channel
+  bool* channelState = new bool[maxChannels];
+  memset(channelState, 0, maxChannels * sizeof(bool));
+  int channel(0);
+  int noOfActiveChannels(0);
+  for (i = 0; i < (maxChannels / 2); ++i) {
+    channel = base->CreateChannel();
+    VALIDATE_STRESS(channel < 0);
+    if (channel >= 0) {
+      channelState[channel] = true;
+      ++noOfActiveChannels;
+    }
+  }
+  srand((unsigned int) time(NULL));
+  bool action(false);
+  double rnd(0.0);
+  int res(0);
 
-    //       Some possible extensions include:
-    //       Different sleep times (fixed or random) or zero.
-    //       Start call on all or some channels.
-    //       Two parts: first have a slight overweight to creating channels,
-    //       then to deleting. (To ensure we hit max channels and go to zero.)
-    //       Make sure audio is OK after test has finished.
-
-    // Set up, start with maxChannels/2 channels
-    const int maxChannels = base->MaxNumOfChannels();
-    VALIDATE_STRESS(maxChannels < 1); // Should always have at least one channel
-    bool* channelState = new bool[maxChannels];
-    memset(channelState, 0, maxChannels*sizeof(bool));
-    int channel(0);
-    int noOfActiveChannels(0);
-    for (i=0; i<(maxChannels/2); ++i)
-    {
+  // Create/delete channels with slight
+  for (i = 0; i < numberOfLoops; ++i) {
+    // Randomize action (create or delete channel)
+    action = rand() <= (RAND_MAX / 2);
+    if (action) {
+      if (noOfActiveChannels < maxChannels) {
+        // Create new channel
         channel = base->CreateChannel();
         VALIDATE_STRESS(channel < 0);
-        if (channel >= 0)
-        {
-            channelState[channel] = true;
-            ++noOfActiveChannels;
+        if (channel >= 0) {
+          channelState[channel] = true;
+          ++noOfActiveChannels;
         }
+      }
+    } else {
+      if (noOfActiveChannels > 0) {
+        // Delete random channel that's created [0, maxChannels - 1]
+        do {
+          rnd = static_cast<double> (rand());
+          channel = static_cast<int> (rnd /
+                                      (static_cast<double> (RAND_MAX) + 1.0f) *
+                                      maxChannels);
+        } while (!channelState[channel]); // Must find a created channel
+
+        res = base->DeleteChannel(channel);
+        VALIDATE_STRESS(0 != res);
+        if (0 == res) {
+          channelState[channel] = false;
+          --noOfActiveChannels;
+        }
+      }
     }
-    srand((unsigned int)time(NULL));
-    bool action(false);
-    double rnd(0.0);
-    int res(0);
 
-    // Create/delete channels with slight 
-    for (i=0; i<numberOfLoops; ++i)
-    {
-        // Randomize action (create or delete channel)
-        action = rand() <= (RAND_MAX / 2);
-        if (action)
-        {
-            if (noOfActiveChannels < maxChannels)
-            {
-                // Create new channel
-                channel = base->CreateChannel();
-                VALIDATE_STRESS(channel < 0);
-                if (channel >= 0)
-                {
-                    channelState[channel] = true;
-                    ++noOfActiveChannels;
-                }
-            }
-        }
-        else
-        {
-            if (noOfActiveChannels > 0)
-            {
-                // Delete random channel that's created [0, maxChannels - 1]
-                do
-                {
-                    rnd = static_cast<double>(rand());
-                    channel = static_cast<int>(rnd /
-                        (static_cast<double>(RAND_MAX) + 1.0f) * maxChannels);
-                } while (!channelState[channel]); // Must find a created channel
+    if (!(i % markInterval))
+      MARK();
+    SLEEP(loopSleep);
+  }
+  ANL();
 
-                res = base->DeleteChannel(channel);
-                VALIDATE_STRESS(0 != res);
-                if (0 == res)
-                {
-                    channelState[channel] = false;
-                    --noOfActiveChannels;
-                }
-            }
-        }
+  delete[] channelState;
 
-        if (!(i % markInterval)) MARK();
-        SLEEP(loopSleep);
-    }
-    ANL();
-
-    delete [] channelState;
-
-    ///////////// End test /////////////
+  ///////////// End test /////////////
 
 
-    // Terminate
-    VALIDATE_STRESS(base->Terminate()); // Deletes all channels
+  // Terminate
+  VALIDATE_STRESS(base->Terminate()); // Deletes all channels
 
-    printf("Test finished \n");
+  printf("Test finished \n");
 
-    return 0;
+  return 0;
 }
 
+int VoEStressTest::MultipleThreadsTest() {
+  printf("------------------------------------------------\n");
+  printf("Running multiple threads test\n");
+  printf("------------------------------------------------\n");
 
-int VoEStressTest::MultipleThreadsTest()
-{
-    printf("------------------------------------------------\n");
-    printf("Running multiple threads test\n");
-    printf("------------------------------------------------\n");
+  // Get sub-API pointers
+  VoEBase* base = _mgr.BasePtr();
 
-    // Get sub-API pointers
-    VoEBase* base = _mgr.BasePtr();
+  // Set trace
+  //     VALIDATE_STRESS(base->SetTraceFileName(
+  //        GetFilename("VoEStressTest_MultipleThreads_trace.txt")));
+  //     VALIDATE_STRESS(base->SetDebugTraceFileName(
+  //        GetFilename("VoEStressTest_MultipleThreads_trace_debug.txt")));
+  //     VALIDATE_STRESS(base->SetTraceFilter(kTraceStateInfo |
+  //        kTraceWarning | kTraceError |
+  //        kTraceCritical | kTraceApiCall |
+  //        kTraceMemory | kTraceInfo));
 
-    // Set trace
-//     VALIDATE_STRESS(base->SetTraceFileName(
-//        GetFilename("VoEStressTest_MultipleThreads_trace.txt")));
-//     VALIDATE_STRESS(base->SetDebugTraceFileName(
-//        GetFilename("VoEStressTest_MultipleThreads_trace_debug.txt")));
-//     VALIDATE_STRESS(base->SetTraceFilter(kTraceStateInfo |
-//        kTraceWarning | kTraceError |
-//        kTraceCritical | kTraceApiCall |
-//        kTraceMemory | kTraceInfo));
+  // Init
+  VALIDATE_STRESS(base->Init());
+  VALIDATE_STRESS(base->CreateChannel());
 
-    // Init
-    VALIDATE_STRESS(base->Init());
-    VALIDATE_STRESS(base->CreateChannel());
+  ///////////// Start test /////////////
 
+  int numberOfLoops(10000);
+  int loopSleep(0);
+  int i(0);
+  int markInterval(1000);
 
-    ///////////// Start test /////////////
+  printf("Running %d loops with %d ms sleep. Mark every %d loop. \n",
+         numberOfLoops, loopSleep, markInterval);
+  printf("Test will take approximately %d minutes. \n",
+         numberOfLoops * loopSleep / 1000 / 60 + 1);
 
-    int numberOfLoops(10000);
-    int loopSleep(0);
-    int i(0);
-    int markInterval(1000);
+  srand((unsigned int) time(NULL));
+  int rnd(0);
 
-    printf("Running %d loops with %d ms sleep. Mark every %d loop. \n",
-        numberOfLoops, loopSleep, markInterval);
-    printf("Test will take approximately %d minutes. \n",
-           numberOfLoops * loopSleep / 1000 / 60 + 1);
+  // Start extra thread
+  const char* threadName = "StressTest Extra API Thread";
+  _ptrExtraApiThread = ThreadWrapper::CreateThread(RunExtraApi, this,
+                                                   kNormalPriority, threadName);
+  unsigned int id(0);
+  VALIDATE_STRESS(!_ptrExtraApiThread->Start(id));
 
-    srand((unsigned int)time(NULL));
-    int rnd(0);
+  //       Some possible extensions include:
+  //       Add more API calls to randomize
+  //       More threads
+  //       Different sleep times (fixed or random).
+  //       Make sure audio is OK after test has finished.
 
-    // Start extra thread
-    const char* threadName = "StressTest Extra API Thread";
-    _ptrExtraApiThread = ThreadWrapper::CreateThread(
-        RunExtraApi, this, kNormalPriority, threadName);
-    unsigned int id(0);
-    VALIDATE_STRESS(!_ptrExtraApiThread->Start(id));
-
-    //       Some possible extensions include:
-    //       Add more API calls to randomize
-    //       More threads
-    //       Different sleep times (fixed or random).
-    //       Make sure audio is OK after test has finished.
-
-    // Call random API functions here and in extra thread, ignore any error
-    for (i=0; i<numberOfLoops; ++i)
-    {
-        // This part should be equal to the marked part in the extra thread
-        // --- BEGIN ---
-        rnd = rand();
-        if (rnd < (RAND_MAX / 2))
-        {
-            // Start playout
-            base->StartPlayout(0);
-        }
-        else
-        {
-            // Stop playout
-            base->StopPlayout(0);
-        }
-        // --- END ---
-
-        if (!(i % markInterval)) MARK();
-        SLEEP(loopSleep);
-    }
-    ANL();
-
-    // Stop extra thread
-    VALIDATE_STRESS(!_ptrExtraApiThread->Stop());
-    delete _ptrExtraApiThread;
-
-    ///////////// End test /////////////
-
-    // Terminate
-    VALIDATE_STRESS(base->Terminate()); // Deletes all channels
-
-    printf("Test finished \n");
-
-    return 0;
-}
-
-
-// Thread functions
-
-bool VoEStressTest::RunExtraApi(void* ptr)
-{
-    return static_cast<VoEStressTest*>(ptr)->ProcessExtraApi();
-}
-
-bool VoEStressTest::ProcessExtraApi()
-{
-    // Prepare
-    VoEBase* base = _mgr.BasePtr();
-    int rnd(0);
-
-    // Call random API function, ignore any error
-
-    // This part should be equal to the marked part in the main thread
+  // Call random API functions here and in extra thread, ignore any error
+  for (i = 0; i < numberOfLoops; ++i) {
+    // This part should be equal to the marked part in the extra thread
     // --- BEGIN ---
     rnd = rand();
-    if (rnd < (RAND_MAX / 2))
-    {
-        // Start playout
-        base->StartPlayout(0);
-    }
-    else
-    {
-        // Stop playout
-        base->StopPlayout(0);
+    if (rnd < (RAND_MAX / 2)) {
+      // Start playout
+      base->StartPlayout(0);
+    } else {
+      // Stop playout
+      base->StopPlayout(0);
     }
     // --- END ---
 
-    return true;
+    if (!(i % markInterval))
+      MARK();
+    SLEEP(loopSleep);
+  }
+  ANL();
+
+  // Stop extra thread
+  VALIDATE_STRESS(!_ptrExtraApiThread->Stop());
+  delete _ptrExtraApiThread;
+
+  ///////////// End test /////////////
+
+  // Terminate
+  VALIDATE_STRESS(base->Terminate()); // Deletes all channels
+
+  printf("Test finished \n");
+
+  return 0;
 }
 
-}  //  namespace voetest
+// Thread functions
+
+bool VoEStressTest::RunExtraApi(void* ptr) {
+  return static_cast<VoEStressTest*> (ptr)->ProcessExtraApi();
+}
+
+bool VoEStressTest::ProcessExtraApi() {
+  // Prepare
+  VoEBase* base = _mgr.BasePtr();
+  int rnd(0);
+
+  // Call random API function, ignore any error
+
+  // This part should be equal to the marked part in the main thread
+  // --- BEGIN ---
+  rnd = rand();
+  if (rnd < (RAND_MAX / 2)) {
+    // Start playout
+    base->StartPlayout(0);
+  } else {
+    // Stop playout
+    base->StopPlayout(0);
+  }
+  // --- END ---
+
+  return true;
+}
+
+} //  namespace voetest

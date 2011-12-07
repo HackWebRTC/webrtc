@@ -15,15 +15,15 @@
 #include "engine_configurations.h"
 
 #ifdef WEBRTC_ANDROID
- #include <android/log.h>
- #define ANDROID_LOG_TAG "VoiceEngine Auto Test"
- #define TEST_LOG(...) \
+#include <android/log.h>
+#define ANDROID_LOG_TAG "VoiceEngine Auto Test"
+#define TEST_LOG(...) \
     __android_log_print(ANDROID_LOG_DEBUG, ANDROID_LOG_TAG, __VA_ARGS__)
- #define TEST_LOG_ERROR(...) \
+#define TEST_LOG_ERROR(...) \
     __android_log_print(ANDROID_LOG_ERROR, ANDROID_LOG_TAG, __VA_ARGS__)
 #else
- #define TEST_LOG printf
- #define TEST_LOG_ERROR printf
+#define TEST_LOG printf
+#define TEST_LOG_ERROR printf
 #endif
 
 // Select the tests to execute, list order below is same as they will be
@@ -110,16 +110,15 @@
 #define MARK() TEST_LOG("."); fflush(NULL);             // Add test marker
 #define ANL() TEST_LOG("\n")                            // Add New Line
 #define AOK() TEST_LOG("[Test is OK]"); fflush(NULL);   // Add OK
-
 #if defined(_WIN32)
- #define PAUSE                                      \
+#define PAUSE                                      \
     {                                               \
         TEST_LOG("Press any key to continue...");   \
         _getch();                                   \
         TEST_LOG("\n");                             \
     }
 #else
- #define PAUSE                                          \
+#define PAUSE                                          \
     {                                                   \
         TEST_LOG("Continuing (pause not supported)\n"); \
     }
@@ -146,9 +145,9 @@
         if (err != code)                                                \
         {                                                               \
             TEST_LOG_ERROR("Invalid error code (%d, should be %d) at line %d\n",
-                code, err, __LINE__); \
-        }                                                               \
-    }
+code, err, __LINE__);
+}
+}
 #else
 #define ASSERT_TRUE(expr) TEST_MUSTPASS(!(expr))
 #define ASSERT_FALSE(expr) TEST_MUSTPASS(expr)
@@ -174,7 +173,6 @@
         }															\
     }
 #endif  // #ifdef _INSTRUMENTATION_TESTING_
-
 #define EXCLUDE()                                                   \
     {                                                               \
         TEST_LOG("\n>>> Excluding test at line: %i <<<\n\n",__LINE__);  \

@@ -17,16 +17,15 @@ namespace voetest {
 
 class VoETestManager;
 
-class VoECpuTest
-{
-public:
-    VoECpuTest(VoETestManager& mgr);
-    ~VoECpuTest() {};
-    int DoTest();
-private:
-    VoETestManager& _mgr;
+class VoECpuTest {
+ public:
+  VoECpuTest(VoETestManager& mgr);
+  ~VoECpuTest() {}
+  int DoTest();
+ private:
+  VoETestManager& _mgr;
 };
 
-}  // namespace voetest
+} // namespace voetest
 
 #endif // WEBRTC_VOICE_ENGINE_VOE_CPU_TEST_H

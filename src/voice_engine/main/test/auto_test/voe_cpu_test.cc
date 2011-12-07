@@ -13,7 +13,7 @@
 #include <time.h>
 #include <cassert>
 #if defined(_WIN32)
- #include <conio.h>
+#include <conio.h>
 #endif
 
 #include "voe_cpu_test.h"
@@ -37,65 +37,63 @@ extern int GetResource(char* resource, char* dest, int destLen);
 extern char* GetResource(char* resource);
 extern const char* GetResource(const char* resource);
 
-VoECpuTest::VoECpuTest(VoETestManager& mgr) :
-	_mgr(mgr)
-{
-	
+VoECpuTest::VoECpuTest(VoETestManager& mgr)
+    : _mgr(mgr) {
+
 }
 
-int VoECpuTest::DoTest()
-{
-    printf("------------------------------------------------\n");
-    printf(" CPU Reference Test\n");
-    printf("------------------------------------------------\n");
+int VoECpuTest::DoTest() {
+  printf("------------------------------------------------\n");
+  printf(" CPU Reference Test\n");
+  printf("------------------------------------------------\n");
 
-    VoEBase* base = _mgr.BasePtr();
-    VoEFile* file = _mgr.FilePtr();
-    VoECodec* codec = _mgr.CodecPtr();
-    VoEAudioProcessing* apm = _mgr.APMPtr();
+  VoEBase* base = _mgr.BasePtr();
+  VoEFile* file = _mgr.FilePtr();
+  VoECodec* codec = _mgr.CodecPtr();
+  VoEAudioProcessing* apm = _mgr.APMPtr();
 
-    int channel(-1);
-    CodecInst isac;
+  int channel(-1);
+  CodecInst isac;
 
-    isac.pltype = 104;
-    strcpy(isac.plname, "ISAC");
-    isac.pacsize = 960;
-    isac.plfreq = 32000;
-    isac.channels = 1;
-    isac.rate = -1;
+  isac.pltype = 104;
+  strcpy(isac.plname, "ISAC");
+  isac.pacsize = 960;
+  isac.plfreq = 32000;
+  isac.channels = 1;
+  isac.rate = -1;
 
-    CHECK(base->Init());
-    channel = base->CreateChannel();
+  CHECK(base->Init());
+  channel = base->CreateChannel();
 
-    CHECK(base->SetLocalReceiver(channel, 5566));
-    CHECK(base->SetSendDestination(channel, 5566, "127.0.0.1"));
-    CHECK(codec->SetRecPayloadType(channel, isac));
-    CHECK(codec->SetSendCodec(channel, isac));
+  CHECK(base->SetLocalReceiver(channel, 5566));
+  CHECK(base->SetSendDestination(channel, 5566, "127.0.0.1"));
+  CHECK(codec->SetRecPayloadType(channel, isac));
+  CHECK(codec->SetSendCodec(channel, isac));
 
-    CHECK(base->StartReceive(channel));
-    CHECK(base->StartPlayout(channel));
-    CHECK(base->StartSend(channel));
-    CHECK(file->StartPlayingFileAsMicrophone(channel, _mgr.AudioFilename(),
-                                             true, true));
+  CHECK(base->StartReceive(channel));
+  CHECK(base->StartPlayout(channel));
+  CHECK(base->StartSend(channel));
+  CHECK(file->StartPlayingFileAsMicrophone(channel, _mgr.AudioFilename(),
+          true, true));
 
-    CHECK(codec->SetVADStatus(channel, true));
-    CHECK(apm->SetAgcStatus(true, kAgcAdaptiveAnalog));
-    CHECK(apm->SetNsStatus(true, kNsModerateSuppression));
-    CHECK(apm->SetEcStatus(true, kEcAec));
+  CHECK(codec->SetVADStatus(channel, true));
+  CHECK(apm->SetAgcStatus(true, kAgcAdaptiveAnalog));
+  CHECK(apm->SetNsStatus(true, kNsModerateSuppression));
+  CHECK(apm->SetEcStatus(true, kEcAec));
 
-    TEST_LOG("\nMeasure CPU and memory while running a full-duplex"
-        " iSAC-swb call.\n\n");
+  TEST_LOG("\nMeasure CPU and memory while running a full-duplex"
+    " iSAC-swb call.\n\n");
 
-    PAUSE
+  PAUSE
 
-    CHECK(base->StopSend(channel));
-    CHECK(base->StopPlayout(channel));
-    CHECK(base->StopReceive(channel));
+  CHECK(base->StopSend(channel));
+  CHECK(base->StopPlayout(channel));
+  CHECK(base->StopReceive(channel));
 
-    base->DeleteChannel(channel);
-    CHECK(base->Terminate());
+  base->DeleteChannel(channel);
+  CHECK(base->Terminate());
 
-    return 0;
+  return 0;
 }
 
-}  //  namespace voetest
+} //  namespace voetest

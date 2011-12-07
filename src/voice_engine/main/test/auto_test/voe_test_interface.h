@@ -29,69 +29,61 @@ namespace voetest {
 using namespace webrtc;
 
 // TestType enumerator
-enum TestType
-{
-    Invalid = -1,
-    Standard = 0,
-    Extended = 1,
-    Stress   = 2,
-    Unit     = 3,
-    CPU      = 4
+enum TestType {
+  Invalid = -1, Standard = 0, Extended = 1, Stress = 2, Unit = 3, CPU = 4
 };
 
 // ExtendedSelection enumerator
-enum ExtendedSelection
-{
-    XSEL_Invalid = -1,
-    XSEL_None = 0,
-    XSEL_All,
-    XSEL_Base,
-    XSEL_CallReport,
-    XSEL_Codec,
-    XSEL_DTMF,
-    XSEL_Encryption,
-    XSEL_ExternalMedia,
-    XSEL_File,
-    XSEL_Mixing,
-    XSEL_Hardware,
-    XSEL_NetEqStats,
-    XSEL_Network,
-    XSEL_RTP_RTCP,
-    XSEL_VideoSync,
-    XSEL_VolumeControl,
-    XSEL_AudioProcessing,
+enum ExtendedSelection {
+  XSEL_Invalid = -1,
+  XSEL_None = 0,
+  XSEL_All,
+  XSEL_Base,
+  XSEL_CallReport,
+  XSEL_Codec,
+  XSEL_DTMF,
+  XSEL_Encryption,
+  XSEL_ExternalMedia,
+  XSEL_File,
+  XSEL_Mixing,
+  XSEL_Hardware,
+  XSEL_NetEqStats,
+  XSEL_Network,
+  XSEL_RTP_RTCP,
+  XSEL_VideoSync,
+  XSEL_VolumeControl,
+  XSEL_AudioProcessing,
 };
 
 // ----------------------------------------------------------------------------
 //  External transport (Transport)
 // ----------------------------------------------------------------------------
 
-class my_transportation : public Transport
-{
-public:
-    my_transportation(VoENetwork* ptr);
-    virtual ~my_transportation();
-    VoENetwork* myNetw;
-    int SendPacket(int channel,const void *data,int len);
-    int SendRTCPPacket(int channel, const void *data, int len);
-    void SetDelayStatus(bool enabled, unsigned int delayInMs = 100);
-private:
-    static bool Run(void* ptr);
-    bool Process();
-private:
-    ThreadWrapper* _thread;
-    CriticalSectionWrapper* _lock;
-    EventWrapper* _event;
-private:
-    unsigned char _packetBuffer[1612];
-    int _length;
-    int _channel;
-    bool _delayIsEnabled;
-    int _delayTimeInMs;
+class my_transportation : public Transport {
+ public:
+  my_transportation(VoENetwork* ptr);
+  virtual ~my_transportation();
+  VoENetwork* myNetw;
+  int SendPacket(int channel, const void *data, int len);
+  int SendRTCPPacket(int channel, const void *data, int len);
+  void SetDelayStatus(bool enabled, unsigned int delayInMs = 100);
+ private:
+  static bool Run(void* ptr);
+  bool Process();
+ private:
+  ThreadWrapper* _thread;
+  CriticalSectionWrapper* _lock;
+  EventWrapper* _event;
+ private:
+  unsigned char _packetBuffer[1612];
+  int _length;
+  int _channel;
+  bool _delayIsEnabled;
+  int _delayTimeInMs;
 };
 
 // Main test function
 int runAutoTest(TestType testType, ExtendedSelection extendedSel);
 
-}  //  namespace voetest
+} //  namespace voetest
 #endif // WEBRTC_VOICE_ENGINE_VOE_TEST_INTERFACE_H
