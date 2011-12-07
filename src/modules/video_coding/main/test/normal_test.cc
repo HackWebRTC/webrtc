@@ -100,6 +100,7 @@ VCMNTEncodeCompleteCallback::SendData(
         break;
     case kVideoCodecVP8:
         rtpInfo.type.Video.codec = kRTPVideoVP8;
+        rtpInfo.type.Video.codecHeader.VP8.InitRTPVideoHeaderVP8();
         rtpInfo.type.Video.codecHeader.VP8.nonReference =
             videoHdr->codecHeader.VP8.nonReference;
         rtpInfo.type.Video.codecHeader.VP8.pictureId =
@@ -329,7 +330,7 @@ NormalTest::Perform(CmdArgs& args)
     _testTotalTime = endTime - startTime;
     _sumEncBytes = _encodeCompleteCallback.EncodedBytes();
 
-    delete tmpBuffer;
+    delete [] tmpBuffer;
     delete waitEvent;
     Teardown();
     Print();

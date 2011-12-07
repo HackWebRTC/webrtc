@@ -580,6 +580,7 @@ VCMEncComplete_KeyReqTest::SendData(
 {
     WebRtcRTPHeader rtpInfo;
     rtpInfo.header.markerBit = true; // end of frame
+    rtpInfo.type.Video.codecHeader.VP8.InitRTPVideoHeaderVP8();
     rtpInfo.type.Video.codec = kRTPVideoVP8;
     rtpInfo.header.payloadType = payloadType;
     rtpInfo.header.sequenceNumber = _seqNo;

@@ -201,6 +201,7 @@ int main(int argc, char **argv)
         ret |= CodecDataBaseTest::RunTest(args);
         ret |= ReceiverTimingTests(args);
         ret |= JitterBufferTest(args);
+        break;
     default:
         ret = -1;
         break;

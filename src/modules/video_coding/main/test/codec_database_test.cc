@@ -377,7 +377,7 @@ CodecDataBaseTest::Perform(CmdArgs& args)
         } // end: iterate codecs
         rewind(_sourceFile);
         sourceFrame.Free();
-        delete tmpBuffer;
+        delete [] tmpBuffer;
         delete decodeCallCDT;
         delete encodeCallCDT;
         // closing and calculating PSNR for prior encoder-decoder test
