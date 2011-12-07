@@ -691,7 +691,6 @@ WebRtc_Word32
 VP8Decoder::InitDecode(const VideoCodec* inst,
                        WebRtc_Word32 numberOfCores)
 {
-    vp8_postproc_cfg_t  ppcfg;
     WebRtc_Word32 retVal = Release();
     if (retVal < 0 )
     {
@@ -712,23 +711,24 @@ VP8Decoder::InitDecode(const VideoCodec* inst,
 
     vpx_codec_flags_t flags = 0;
 #if WEBRTC_LIBVPX_VERSION >= 971
-    flags = VPX_CODEC_USE_ERROR_CONCEALMENT;
+    flags = VPX_CODEC_USE_ERROR_CONCEALMENT | VPX_CODEC_USE_POSTPROC;
 #ifdef INDEPENDENT_PARTITIONS
     flags |= VPX_CODEC_USE_INPUT_PARTITION;
 #endif
 #endif
-
-    flags |= VPX_CODEC_USE_POSTPROC;
 
     if (vpx_codec_dec_init(_decoder, vpx_codec_vp8_dx(), &cfg, flags))
     {
         return WEBRTC_VIDEO_CODEC_MEMORY;
     }
 
-    ppcfg.post_proc_flag = VP8_DEMACROBLOCK | VP8_DEBLOCK;
+#if WEBRTC_LIBVPX_VERSION >= 971
+    vp8_postproc_cfg_t  ppcfg;
+    ppcfg.post_proc_flag = VP8_DEBLOCK;
     // Strength of deblocking filter. Valid range:[0,16]
     ppcfg.deblocking_level = 3;
     vpx_codec_control(_decoder, VP8_SET_POSTPROC, &ppcfg);
+#endif
 
     // Save VideoCodec instance for later; mainly for duplicating the decoder.
     if (inst && inst != _inst)
@@ -976,17 +976,18 @@ VP8Decoder::ReturnFrame(const vpx_image_t* img, WebRtc_UWord32 timeStamp)
     }
 
     WebRtc_UWord8* buf;
-    WebRtc_UWord32 locCnt = 0;
+    WebRtc_UWord32 pos = 0;
     WebRtc_UWord32 plane, y;
 
     for (plane = 0; plane < 3; plane++)
     {
+        unsigned int width = (plane ? (img->d_w + 1) >> 1 : img->d_w);
+        unsigned int height = (plane ? (img->d_h + 1) >> 1 : img->d_h);
         buf = img->planes[plane];
-        WebRtc_UWord32 shiftFactor = plane ? 1 : 0;
-        for(y = 0; y < img->d_h >> shiftFactor; y++)
+        for(y = 0; y < height; y++)
         {
-            memcpy(&_decodedImage._buffer[locCnt], buf, img->d_w >> shiftFactor);
-            locCnt += img->d_w >> shiftFactor;
+            memcpy(&_decodedImage._buffer[pos], buf, width);
+            pos += width;
             buf += img->stride[plane];
         }
     }
