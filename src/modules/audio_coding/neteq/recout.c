@@ -133,7 +133,9 @@ int WebRtcNetEQ_RecOutInternal(DSPInst_t *inst, WebRtc_Word16 *pw16_outData,
     WebRtc_Word16 dtmfValue = -1;
     WebRtc_Word16 dtmfVolume = -1;
     int playDtmf = 0;
+#ifdef NETEQ_ATEVENT_DECODE
     int dtmfSwitch = 0;
+#endif
 #ifdef NETEQ_STEREO
     MasterSlaveInfo *msInfo = inst->msInfo;
 #endif
@@ -1272,6 +1274,7 @@ int WebRtcNetEQ_RecOutInternal(DSPInst_t *inst, WebRtc_Word16 *pw16_outData,
 
     if (playDtmf != 0)
     {
+#ifdef NETEQ_ATEVENT_DECODE
         WebRtc_Word16 outDataIndex = 0;
         WebRtc_Word16 overdubLen = -1; /* default len */
         WebRtc_Word16 dtmfLen;
@@ -1280,7 +1283,6 @@ int WebRtcNetEQ_RecOutInternal(DSPInst_t *inst, WebRtc_Word16 *pw16_outData,
          * Overdub the output with DTMF. Note that this is not executed if the
          * DSP_INSTR_DTMF_GENERATE operation is performed above.
          */
-#ifdef NETEQ_ATEVENT_DECODE
         if (inst->DTMFInst.lastDtmfSample - inst->curPosition > 0)
         {
             /* special operation for transition from "DTMF only" to "DTMF overdub" */
