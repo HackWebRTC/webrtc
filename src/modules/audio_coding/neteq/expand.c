@@ -15,6 +15,8 @@
 
 #include "dsp.h"
 
+#include <assert.h>
+
 #include "signal_processing_library.h"
 
 #include "dsp_helpfunctions.h"
@@ -119,7 +121,7 @@ int WebRtcNetEQ_Expand(DSPInst_t *inst,
     WebRtc_Word16 *pw16_scaledRandVec = pw16_scratchPtr + SCRATCH_PW16_SCALED_RAND_VEC;
     WebRtc_Word16 *pw16_unvoicedVecSpace = pw16_scratchPtr + SCRATCH_PW16_UNVOICED_VEC_SPACE;
 #else
-    WebRtc_Word16 pw16_randVec[FSMULT * 120 + 30]; /* 125 for NB and 250 for WB */
+    WebRtc_Word16 pw16_randVec[FSMULT * 120 + 30]; /* 150 for NB and 270 for WB */
     WebRtc_Word16 pw16_scaledRandVec[FSMULT * 125]; /* 125 for NB and 250 for WB */
     WebRtc_Word16 pw16_unvoicedVecSpace[BGN_LPC_ORDER + FSMULT * 125];
 #endif
@@ -589,11 +591,16 @@ int WebRtcNetEQ_Expand(DSPInst_t *inst,
         }
         else
         { /* only applies to SWB where length could be larger than 256 */
+#if FSMULT >= 2  /* Makes pw16_randVec longer than RANDVEC_NO_OF_SAMPLES. */
             WEBRTC_SPL_MEMCPY_W16(pw16_randVec, (WebRtc_Word16*) WebRtcNetEQ_kRandnTbl,
                 RANDVEC_NO_OF_SAMPLES);
             inst->w16_seedInc = (inst->w16_seedInc + 2) & (RANDVEC_NO_OF_SAMPLES - 1);
+            assert(w16_randLen <= FSMULT * 120 + 30);
             WebRtcNetEQ_RandomVec(&inst->uw16_seed, &pw16_randVec[RANDVEC_NO_OF_SAMPLES],
                 (WebRtc_Word16) (w16_randLen - RANDVEC_NO_OF_SAMPLES), inst->w16_seedInc);
+#else
+            assert(0);
+#endif
         }
 
         /* Set up state vector and calculate scale factor for unvoiced filtering */
@@ -758,12 +765,17 @@ int WebRtcNetEQ_Expand(DSPInst_t *inst,
         }
         else
         { /* only applies to SWB where length could be larger than 256 */
+#if FSMULT >= 2  /* Makes pw16_randVec longer than RANDVEC_NO_OF_SAMPLES. */
             inst->w16_seedInc = (inst->w16_seedInc + 2) & (RANDVEC_NO_OF_SAMPLES - 1);
             WebRtcNetEQ_RandomVec(&inst->uw16_seed, pw16_randVec, RANDVEC_NO_OF_SAMPLES,
                 inst->w16_seedInc);
             inst->w16_seedInc = (inst->w16_seedInc + 2) & (RANDVEC_NO_OF_SAMPLES - 1);
+            assert(w16_randLen <= FSMULT * 120 + 30);
             WebRtcNetEQ_RandomVec(&inst->uw16_seed, &pw16_randVec[RANDVEC_NO_OF_SAMPLES],
                 (WebRtc_Word16) (w16_randLen - RANDVEC_NO_OF_SAMPLES), inst->w16_seedInc);
+#else
+            assert(0);
+#endif
         }
     } /* end if(first expand or BGNonly) ... else ... */
 
