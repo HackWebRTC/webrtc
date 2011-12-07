@@ -148,6 +148,7 @@
           ],
           'sources': [
             '../test/testAPI/testAPI.cpp',
+            '../test/testAPI/testAPI.h',
             '../test/testAPI/testAPI_mac.mm',
           ],
           'conditions': [

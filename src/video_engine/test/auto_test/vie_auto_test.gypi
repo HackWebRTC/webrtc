@@ -44,24 +44,33 @@
         'interface/vie_autotest_main.h',
         'interface/vie_autotest_window_manager_interface.h',
         'interface/vie_autotest_windows.h',
+        'interface/vie_window_manager_factory.h',
 
         # Helper classes
         'helpers/vie_fake_camera.cc',
+        'helpers/vie_fake_camera.h',
         'helpers/vie_file_capture_device.cc',
+        'helpers/vie_file_capture_device.h',
         'helpers/vie_to_file_renderer.cc',
+        'helpers/vie_to_file_renderer.h',
         'helpers/vie_window_creator.cc',
+        'helpers/vie_window_creator.h',
 
         # New, fully automated tests
         'automated/vie_api_integration_test.cc',
         'automated/vie_comparison_test.cc',
         'automated/vie_extended_integration_test.cc',
         'automated/vie_integration_test_base.cc',
+        'automated/vie_integration_test_base.h',
         'automated/vie_standard_integration_test.cc',
 
         # Test primitives
         'primitives/base_primitives.cc',
+        'primitives/base_primitives.h',
         'primitives/codec_primitives.cc',
+        'primitives/codec_primitives.h',
         'primitives/general_primitives.cc',
+        'primitives/general_primitives.h',
 
         # Platform independent
         'source/tb_capture_device.cc',

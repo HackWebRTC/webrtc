@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "testApi.h"
+#include "testAPI.h"
 
 #include <stdio.h>
 
@@ -194,13 +194,13 @@ int WebRtcCreateWindow(Window *outWindow, Display **outDisplay, int winNum, int 
     // get screen number
     screen = DefaultScreen(_display);
 
-    // put desired visual info for the screen in vinfo 
+    // put desired visual info for the screen in vinfo
     if( XMatchVisualInfo(_display, screen, 24, TrueColor, &vinfo) != 0 )
     {
         //printf( "Screen visual info match!\n" );
     }
 
-    // set window attributes 
+    // set window attributes
     xswa.colormap = XCreateColormap(_display, DefaultRootWindow(_display), vinfo.visual, AllocNone);
     xswa.event_mask = StructureNotifyMask | ExposureMask;
     xswa.background_pixel = 0;
@@ -245,7 +245,7 @@ int WebRtcCreateWindow(Window *outWindow, Display **outDisplay, int winNum, int 
         XSetIconName(_display, _window, "VE MM Remote Window");
     }
 
-    // make x report events for mask 
+    // make x report events for mask
     XSelectInput(_display, _window, StructureNotifyMask);
 
     // map the window to the display
@@ -437,15 +437,15 @@ int TestBitmapText(VideoRender* renderModule) {
     // Sleep and let all frames be rendered before closing
     SLEEP(renderDelayMs*2);
 
-   
+
     // Shut down
     printf("Closing...\n");
     ColorKey.dwColorSpaceHighValue = RGB(0,0,0);
-	  ColorKey.dwColorSpaceLowValue = RGB(0,0,0);
+    ColorKey.dwColorSpaceLowValue = RGB(0,0,0);
     renderModule->SetBitmap(NULL, 0, &ColorKey, 0.0f, 0.0f, 0.0f, 0.0f);
-	  renderModule->SetText(1, NULL, 20, RGB(255,255,255), 
+    renderModule->SetText(1, NULL, 20, RGB(255,255,255),
                     RGB(0,0,0), 0.0f, 0.0f, 0.0f, 0.0f);
-    
+
     error = renderModule->StopRender(streamId0);
     assert(error == 0);
 
