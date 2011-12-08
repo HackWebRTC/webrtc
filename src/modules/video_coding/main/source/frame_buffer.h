@@ -57,6 +57,8 @@ public:
     WebRtc_Word32 GetHighSeqNum() const;
 
     int PictureId() const;
+    int TemporalId() const;
+    int Tl0PicId() const;
 
     // Set counted status (as counted by JB or not)
     void SetCountedFrame(bool frameCounted);

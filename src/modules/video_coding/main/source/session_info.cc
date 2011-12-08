@@ -28,7 +28,7 @@ VCMSessionInfo::VCMSessionInfo():
     _emptySeqNumHigh(-1),
     _markerSeqNum(-1),
     _packetsNotDecodable(0),
-    _pictureId(-1)
+    _pictureId(kNoPictureId)
 {
 }
 
@@ -61,6 +61,18 @@ int VCMSessionInfo::PictureId() const {
   return _pictureId;
 }
 
+int VCMSessionInfo::TemporalId() const {
+  if (_lowSeqNum == -1 || _packets[0].codecSpecificHeader.codec != kRTPVideoVP8)
+    return kNoTemporalIdx;
+  return _packets[0].codecSpecificHeader.codecHeader.VP8.temporalIdx;
+}
+
+int VCMSessionInfo::Tl0PicId() const {
+  if (_lowSeqNum == -1 || _packets[0].codecSpecificHeader.codec != kRTPVideoVP8)
+    return kNoTl0PicIdx;
+  return _packets[0].codecSpecificHeader.codecHeader.VP8.tl0PicIdx;
+}
+
 void
 VCMSessionInfo::Reset() {
   for (int i = 0; i <= _highestPacketIndex; ++i)
@@ -78,7 +90,7 @@ VCMSessionInfo::Reset() {
   _highestPacketIndex = 0;
   _markerSeqNum = -1;
   _packetsNotDecodable = 0;
-  _pictureId = -1;
+  _pictureId = kNoPictureId;
 }
 
 WebRtc_UWord32

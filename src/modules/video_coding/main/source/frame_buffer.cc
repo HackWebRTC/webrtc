@@ -8,7 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "../../../../engine_configurations.h"
 #include "frame_buffer.h"
 #include "packet.h"
 
@@ -71,6 +70,14 @@ VCMFrameBuffer::GetHighSeqNum() const
 
 int VCMFrameBuffer::PictureId() const {
   return _sessionInfo.PictureId();
+}
+
+int VCMFrameBuffer::TemporalId() const {
+  return _sessionInfo.TemporalId();
+}
+
+int VCMFrameBuffer::Tl0PicId() const {
+  return _sessionInfo.Tl0PicId();
 }
 
 bool
