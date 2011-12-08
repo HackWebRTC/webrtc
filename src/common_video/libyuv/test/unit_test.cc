@@ -99,7 +99,6 @@ TEST_F(LibYuvTest, MirrorSanityTest) {
   uint8_t* test_buffer1 = new uint8_t[frame_length_];
   uint8_t* test_buffer2 = new uint8_t[frame_length_];
   // Setting bad initial values
-  EXPECT_EQ(-1, MirrorI420LeftRight(test_buffer1, test_buffer2, width_, -30));
   EXPECT_EQ(-1, MirrorI420LeftRight(test_buffer1, test_buffer2, -352, height_));
   EXPECT_EQ(-1, MirrorI420LeftRight(NULL, test_buffer2, width_, height_));
   EXPECT_EQ(-1, MirrorI420LeftRight(test_buffer1, NULL, width_, height_));
@@ -132,7 +131,7 @@ TEST_F(LibYuvTest, ConvertTest) {
   fwrite(res_i420_buffer, frame_length_, 1, output_file);
   ImagePSNRfromBuffer(orig_buffer, res_i420_buffer, width_, height_, &psnr);
   // Optimization Speed- quality trade-off => 45 dB only.
-  EXPECT_EQ(45.0, ceil(psnr));
+  EXPECT_GT(ceil(psnr), 45);
   j++;
   delete [] res_rgb_buffer2;
 

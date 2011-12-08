@@ -225,11 +225,6 @@ int ConvertI420ToRGBAIPhone(const uint8_t* src_frame,
                             int width, int height,
                             int dst_stride);
 
-// I420 Cut and Pad - make a center cut
-int CutI420Frame(uint8_t* frame,
-                 int src_width, int src_height,
-                 int dst_width, int dst_height);
-
 int I420Rotate(const uint8_t* src_frame,
                uint8_t* dst_frame,
                int width, int height,

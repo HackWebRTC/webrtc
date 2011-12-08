@@ -137,7 +137,7 @@ int ConvertI420ToRGBAMac(const uint8_t* src_frame,
                          uint8_t* dst_frame,
                          int width, int height,
                          int dst_stride) {
-  // Equivalent to Convert YV12ToRGBA.
+  // Equivalent to Convert YV12ToBGRA.
   // YV12 same as I420 with U and V swapped.
   if (dst_stride == 0 || dst_stride == width)
     dst_stride = 4 * width;
@@ -145,7 +145,7 @@ int ConvertI420ToRGBAMac(const uint8_t* src_frame,
   const uint8_t* uplane = src_frame + width * height;
   const uint8_t* vplane = uplane + (width * height / 4);
 
-  return libyuv::I420ToARGB(yplane, width,
+  return libyuv::I420ToBGRA(yplane, width,
                             vplane, width / 2,
                             uplane, width / 2,
                             dst_frame, dst_stride,
@@ -520,16 +520,6 @@ int ConvertYUY2ToI420(int width, int height,
                             width, height);
 }
 
-// Make a center cut
-int CutI420Frame(uint8_t* frame,
-                 int fromWidth, int fromHeight,
-                 int toWidth, int toHeight) {
-  // TODO(mikhal): Verify
-  return libyuv::I420Crop(frame,
-                          fromWidth, fromHeight,
-                          toWidth, toHeight);
-}
-
 int ConvertRGB24ToARGB(const uint8_t* src_frame, uint8_t* dst_frame,
                        int width, int height, int dst_stride) {
   if (dst_stride == 0 || dst_stride == width)
@@ -575,15 +565,14 @@ int ConvertI420ToARGBMac(const uint8_t* src_frame, uint8_t* dst_frame,
 
 int ConvertARGBMacToI420(int width, int height,
                          const uint8_t* src_frame, uint8_t* dst_frame) {
-  // Equivalent to YV12ToARGB.
-  // YV12 = YVU => use I420 and switch U and V.
+  // Equivalent to BGRAToI420
   uint8_t* yplane = dst_frame;
   uint8_t* uplane = yplane + width * height;
   uint8_t* vplane = uplane + (width * height / 4);
-  return libyuv::ARGBToI420(src_frame, width * 4,
+  return libyuv::BGRAToI420(src_frame, width * 4,
                             yplane, width,
-                            vplane, width / 2,
                             uplane, width / 2,
+                            vplane, width / 2,
                             width, height);
 }
 
