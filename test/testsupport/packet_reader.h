@@ -7,8 +7,9 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef SRC_MODULES_VIDEO_CODING_CODECS_TEST_PACKET_READER_H_
-#define SRC_MODULES_VIDEO_CODING_CODECS_TEST_PACKET_READER_H_
+
+#ifndef WEBRTC_TEST_TESTSUPPORT_PACKET_READER_H_
+#define WEBRTC_TEST_TESTSUPPORT_PACKET_READER_H_
 
 #include "typedefs.h"
 
@@ -49,4 +50,4 @@ class PacketReader {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // SRC_MODULES_VIDEO_CODING_CODECS_TEST_PACKET_READER_H_
+#endif  // WEBRTC_TEST_TESTSUPPORT_PACKET_READER_H_

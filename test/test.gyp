@@ -15,6 +15,9 @@
     {
       'target_name': 'test_support',
       'type': 'static_library',
+      'include_dirs': [
+        '.',
+      ],
       'direct_dependent_settings': {
         'include_dirs': [
           '.', # Some includes are hierarchical
@@ -34,8 +37,16 @@
         'test_suite.h',
         'testsupport/fileutils.h',
         'testsupport/fileutils.cc',
+        'testsupport/frame_reader.h',
+        'testsupport/frame_reader.cc',
+        'testsupport/frame_writer.h',
+        'testsupport/frame_writer.cc',
+        'testsupport/packet_reader.h',
+        'testsupport/packet_reader.cc',
         'testsupport/metrics/video_metrics.h',
         'testsupport/metrics/video_metrics.cc',
+        'testsupport/mock/mock_frame_reader.h',
+        'testsupport/mock/mock_frame_writer.h',
       ],
     },
     {
@@ -58,7 +69,11 @@
         '<(webrtc_root)/../testing/gtest.gyp:gtest',
       ],
       'sources': [
+        'testsupport/unittest_utils.h',
         'testsupport/fileutils_unittest.cc',
+        'testsupport/frame_reader_unittest.cc',
+        'testsupport/frame_writer_unittest.cc',
+        'testsupport/packet_reader_unittest.cc',
         'testsupport/metrics/video_metrics_unittest.cc',
       ],
     },

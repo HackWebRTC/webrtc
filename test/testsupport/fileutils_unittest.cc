@@ -8,12 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "testsupport/fileutils.h"
+
 #include <cstdio>
 #include <list>
 #include <string>
 
 #include "gtest/gtest.h"
-#include "testsupport/fileutils.h"
 
 #ifdef WIN32
 static const char* kPathDelimiter = "\\";
@@ -63,7 +64,7 @@ class FileUtilsTest : public testing::Test {
         file_it != files_.end(); ++file_it) {
       FILE* file = fopen(file_it->c_str(), "wb");
       ASSERT_TRUE(file != NULL) << "Failed to write file: " << file_it->c_str();
-      ASSERT_TRUE(fprintf(file, "%s",  "Dummy data") > 0);
+      ASSERT_GT(fprintf(file, "%s",  "Dummy data"), 0);
       fclose(file);
     }
     // Create a dummy subdir that can be chdir'ed into for testing purposes.
@@ -85,9 +86,9 @@ class FileUtilsTest : public testing::Test {
     ASSERT_EQ(chdir(original_working_dir_.c_str()), 0);
   }
  protected:
+  static FileList files_;
   static std::string empty_dummy_dir_;
  private:
-  static FileList files_;
   static std::string original_working_dir_;
 };
 
@@ -164,7 +165,7 @@ TEST_F(FileUtilsTest, WorkingDirReturnsValue) {
   // Hard to cover all platforms. Just test that it returns something without
   // crashing:
   std::string working_dir = webrtc::test::WorkingDir();
-  ASSERT_TRUE(working_dir.length() > 0);
+  ASSERT_GT(working_dir.length(), 0u);
 }
 
 // Due to multiple platforms, it is hard to make a complete test for
@@ -173,10 +174,18 @@ TEST_F(FileUtilsTest, WorkingDirReturnsValue) {
 // function.
 TEST_F(FileUtilsTest, ResourcePathReturnsValue) {
   std::string resource = webrtc::test::ResourcePath(kTestName, kExtension);
-  ASSERT_TRUE(resource.find(kTestName) > 0);
-  ASSERT_TRUE(resource.find(kExtension) > 0);
+  ASSERT_GT(resource.find(kTestName), 0u);
+  ASSERT_GT(resource.find(kExtension), 0u);
   ASSERT_EQ(0, chdir(kPathDelimiter));
   ASSERT_EQ("./", webrtc::test::OutputPath());
+}
+
+TEST_F(FileUtilsTest, GetFileSizeExistingFile) {
+  ASSERT_GT(webrtc::test::GetFileSize(files_.front()), 0u);
+}
+
+TEST_F(FileUtilsTest, GetFileSizeNonExistingFile) {
+  ASSERT_EQ(0u, webrtc::test::GetFileSize("non-existing-file.tmp"));
 }
 
 }  // namespace webrtc

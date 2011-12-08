@@ -7,14 +7,17 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
-#include "mocks.h"
-#include "packet_reader.h"
-#include "packet_manipulator.h"
+#include "modules/video_coding/codecs/test/mock/mock_packet_manipulator.h"
+#include "modules/video_coding/codecs/test/videoprocessor.h"
+#include "modules/video_coding/codecs/interface/mock/mock_video_codec_interface.h"
+#include "testsupport/mock/mock_frame_reader.h"
+#include "testsupport/mock/mock_frame_writer.h"
+#include "testsupport/packet_reader.h"
+#include "testsupport/unittest_utils.h"
 #include "typedefs.h"
-#include "unittest_utils.h"
-#include "videoprocessor.h"
 
 using ::testing::_;
 using ::testing::AtLeast;
@@ -29,24 +32,16 @@ class VideoProcessorTest: public testing::Test {
  protected:
   MockVideoEncoder encoder_mock_;
   MockVideoDecoder decoder_mock_;
-  MockFileHandler file_handler_mock_;
+  MockFrameReader frame_reader_mock_;
+  MockFrameWriter frame_writer_mock_;
   MockPacketManipulator packet_manipulator_mock_;
   Stats stats_;
   TestConfig config_;
 
-  VideoProcessorTest() {
-    // To avoid warnings when using ASSERT_DEATH
-    ::testing::FLAGS_gtest_death_test_style = "threadsafe";
-  }
-
-  virtual ~VideoProcessorTest() {
-  }
-
-  void SetUp() {
-  }
-
-  void TearDown() {
-  }
+  VideoProcessorTest() {}
+  virtual ~VideoProcessorTest() {}
+  void SetUp() {}
+  void TearDown() {}
 
   void ExpectInit() {
     EXPECT_CALL(encoder_mock_, InitEncode(_, _, _))
@@ -57,62 +52,18 @@ class VideoProcessorTest: public testing::Test {
       .Times(1);
     EXPECT_CALL(decoder_mock_, RegisterDecodeCompleteCallback(_))
       .Times(AtLeast(1));
-    EXPECT_CALL(file_handler_mock_, GetNumberOfFrames())
+    EXPECT_CALL(frame_reader_mock_, NumberOfFrames())
       .WillOnce(Return(1));
-    EXPECT_CALL(file_handler_mock_, GetFrameLength())
+    EXPECT_CALL(frame_reader_mock_, FrameLength())
       .WillOnce(Return(150000));
   }
 };
 
-TEST_F(VideoProcessorTest, ConstructorNullEncoder) {
-  ASSERT_DEATH(VideoProcessorImpl video_processor(NULL,
-                                                  &decoder_mock_,
-                                                  &file_handler_mock_,
-                                                  &packet_manipulator_mock_,
-                                                  config_,
-                                                  &stats_), "");
-}
-
-TEST_F(VideoProcessorTest, ConstructorNullDecoder) {
-  ASSERT_DEATH(VideoProcessorImpl video_processor(&encoder_mock_,
-                                                  NULL,
-                                                  &file_handler_mock_,
-                                                  &packet_manipulator_mock_,
-                                                  config_,
-                                                  &stats_), "");
-}
-
-TEST_F(VideoProcessorTest, ConstructorNullFileHandler) {
-  ASSERT_DEATH(VideoProcessorImpl video_processor(&encoder_mock_,
-                                                  &decoder_mock_,
-                                                  NULL,
-                                                  &packet_manipulator_mock_,
-                                                  config_,
-                                                  &stats_), "");
-}
-
-TEST_F(VideoProcessorTest, ConstructorNullPacketManipulator) {
-  ASSERT_DEATH(VideoProcessorImpl video_processor(&encoder_mock_,
-                                                  &decoder_mock_,
-                                                  &file_handler_mock_,
-                                                  NULL,
-                                                  config_,
-                                                  &stats_), "");
-}
-
-TEST_F(VideoProcessorTest, ConstructorNullStats) {
-  ASSERT_DEATH(VideoProcessorImpl video_processor(&encoder_mock_,
-                                                  &decoder_mock_,
-                                                  &file_handler_mock_,
-                                                  &packet_manipulator_mock_,
-                                                  config_,
-                                                  NULL), "");
-}
-
 TEST_F(VideoProcessorTest, Init) {
   ExpectInit();
   VideoProcessorImpl video_processor(&encoder_mock_, &decoder_mock_,
-                                     &file_handler_mock_,
+                                     &frame_reader_mock_,
+                                     &frame_writer_mock_,
                                      &packet_manipulator_mock_, config_,
                                      &stats_);
   video_processor.Init();
@@ -122,28 +73,18 @@ TEST_F(VideoProcessorTest, ProcessFrame) {
   ExpectInit();
   EXPECT_CALL(encoder_mock_, Encode(_, _, _))
     .Times(1);
-  EXPECT_CALL(file_handler_mock_, ReadFrame(_))
-  .WillOnce(Return(true));
+  EXPECT_CALL(frame_reader_mock_, ReadFrame(_))
+    .WillOnce(Return(true));
   // Since we don't return any callback from the mock, the decoder will not
   // be more than initialized...
   VideoProcessorImpl video_processor(&encoder_mock_, &decoder_mock_,
-                                     &file_handler_mock_,
+                                     &frame_reader_mock_,
+                                     &frame_writer_mock_,
                                      &packet_manipulator_mock_, config_,
                                      &stats_);
   video_processor.Init();
   video_processor.ProcessFrame(0);
 }
-
-TEST_F(VideoProcessorTest, ProcessFrameInvalidArgument) {
-  ExpectInit();
-  VideoProcessorImpl video_processor(&encoder_mock_, &decoder_mock_,
-                                     &file_handler_mock_,
-                                     &packet_manipulator_mock_, config_,
-                                     &stats_);
-  video_processor.Init();
-  ASSERT_DEATH(video_processor.ProcessFrame(-1), "");
-}
-
 
 }  // namespace test
 }  // namespace webrtc

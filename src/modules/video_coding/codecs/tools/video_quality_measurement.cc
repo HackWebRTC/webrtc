@@ -8,23 +8,26 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stdarg.h>
+#include <sys/stat.h>  // To check for directory existence.
+
 #include <cassert>
 #include <cstdio>
-#include <sys/stat.h>  // To check for directory existence.
 
 #ifndef S_ISDIR  // Not defined in stat.h on Windows.
 #define S_ISDIR(mode) (((mode) & S_IFMT) == S_IFDIR)
 #endif
 
 #include "google/gflags.h"
-#include "packet_manipulator.h"
-#include "packet_reader.h"
-#include "stats.h"
-#include "trace.h"
+#include "modules/video_coding/codecs/test/packet_manipulator.h"
+#include "modules/video_coding/codecs/test/stats.h"
+#include "modules/video_coding/codecs/test/videoprocessor.h"
+#include "modules/video_coding/codecs/vp8/main/interface/vp8.h"
+#include "system_wrappers/interface/trace.h"
+#include "testsupport/frame_reader.h"
+#include "testsupport/frame_writer.h"
 #include "testsupport/metrics/video_metrics.h"
-#include "util.h"
-#include "videoprocessor.h"
-#include "vp8.h"
+#include "testsupport/packet_reader.h"
 
 DEFINE_string(test_name, "Quality test", "The name of the test to run. ");
 DEFINE_string(test_description, "", "A more detailed description about what "
@@ -80,6 +83,22 @@ DEFINE_bool(python, false, "Python output. Enabling this will output all frame "
             "statistics as a Python script at the end of execution. "
             "Recommended to run combine with --noverbose to avoid mixing "
             "output.");
+DEFINE_bool(verbose, true, "Verbose mode. Prints a lot of debugging info. "
+            "Suitable for tracking progress but not for capturing output. "
+            "Disable with --noverbose flag.");
+
+// Custom log method that only prints if the verbose flag is given
+// Supports all the standard printf parameters and formatting (just forwarded)
+int Log(const char *format, ...) {
+  int result = 0;
+  if (FLAGS_verbose) {
+    va_list args;
+    va_start(args, format);
+    result = vprintf(format, args);
+    va_end(args);
+  }
+  return result;
+}
 
 // Validates the arguments given as command line flags.
 // Returns 0 if everything is OK, otherwise an exit code.
@@ -223,60 +242,61 @@ int HandleCommandLineFlags(webrtc::test::TestConfig* config) {
   }
   config->networking_config.packet_loss_burst_length =
       FLAGS_packet_loss_burst_length;
+  config->verbose = FLAGS_verbose;
   return 0;
 }
 
 void CalculateSsimVideoMetrics(webrtc::test::TestConfig* config,
                                QualityMetricsResult* ssimResult) {
-  log("Calculating SSIM...\n");
+  Log("Calculating SSIM...\n");
   SsimFromFiles(config->input_filename.c_str(), config->output_filename.c_str(),
                 config->codec_settings.width,
                 config->codec_settings.height, ssimResult);
-  log("  Average: %3.2f\n", ssimResult->average);
-  log("  Min    : %3.2f (frame %d)\n", ssimResult->min,
+  Log("  Average: %3.2f\n", ssimResult->average);
+  Log("  Min    : %3.2f (frame %d)\n", ssimResult->min,
       ssimResult->min_frame_number);
-  log("  Max    : %3.2f (frame %d)\n", ssimResult->max,
+  Log("  Max    : %3.2f (frame %d)\n", ssimResult->max,
       ssimResult->max_frame_number);
 }
 
 void CalculatePsnrVideoMetrics(webrtc::test::TestConfig* config,
                                  QualityMetricsResult* psnrResult) {
-  log("Calculating PSNR...\n");
+  Log("Calculating PSNR...\n");
   PsnrFromFiles(config->input_filename.c_str(), config->output_filename.c_str(),
                     config->codec_settings.width,
                     config->codec_settings.height, psnrResult);
-  log("  Average: %3.2f\n", psnrResult->average);
-  log("  Min    : %3.2f (frame %d)\n", psnrResult->min,
+  Log("  Average: %3.2f\n", psnrResult->average);
+  Log("  Min    : %3.2f (frame %d)\n", psnrResult->min,
       psnrResult->min_frame_number);
-  log("  Max    : %3.2f (frame %d)\n", psnrResult->max,
+  Log("  Max    : %3.2f (frame %d)\n", psnrResult->max,
       psnrResult->max_frame_number);
 }
 
 void PrintConfigurationSummary(const webrtc::test::TestConfig& config) {
-  log("Quality test with parameters:\n");
-  log("  Test name        : %s\n", config.name.c_str());
-  log("  Description      : %s\n", config.description.c_str());
-  log("  Input filename   : %s\n", config.input_filename.c_str());
-  log("  Output directory : %s\n", config.output_dir.c_str());
-  log("  Output filename  : %s\n", config.output_filename.c_str());
-  log("  Frame length       : %d bytes\n", config.frame_length_in_bytes);
-  log("  Packet size      : %d bytes\n",
+  Log("Quality test with parameters:\n");
+  Log("  Test name        : %s\n", config.name.c_str());
+  Log("  Description      : %s\n", config.description.c_str());
+  Log("  Input filename   : %s\n", config.input_filename.c_str());
+  Log("  Output directory : %s\n", config.output_dir.c_str());
+  Log("  Output filename  : %s\n", config.output_filename.c_str());
+  Log("  Frame length       : %d bytes\n", config.frame_length_in_bytes);
+  Log("  Packet size      : %d bytes\n",
       config.networking_config.packet_size_in_bytes);
-  log("  Max payload size : %d bytes\n",
+  Log("  Max payload size : %d bytes\n",
       config.networking_config.max_payload_size_in_bytes);
-  log("  Packet loss:\n");
-  log("    Mode           : %s\n",
+  Log("  Packet loss:\n");
+  Log("    Mode           : %s\n",
       PacketLossModeToStr(config.networking_config.packet_loss_mode));
-  log("    Probability    : %2.1f\n",
+  Log("    Probability    : %2.1f\n",
       config.networking_config.packet_loss_probability);
-  log("    Burst length   : %d packets\n",
+  Log("    Burst length   : %d packets\n",
       config.networking_config.packet_loss_burst_length);
 }
 
 void PrintCsvOutput(const webrtc::test::Stats& stats,
                     const QualityMetricsResult& ssimResult,
                     const QualityMetricsResult& psnrResult) {
-  log("\nCSV output (recommended to run with --noverbose to skip the "
+  Log("\nCSV output (recommended to run with --noverbose to skip the "
               "above output)\n");
   printf("frame_number encoding_successful decoding_successful "
       "encode_return_code decode_return_code "
@@ -312,7 +332,7 @@ void PrintPythonOutput(const webrtc::test::TestConfig& config,
                        const webrtc::test::Stats& stats,
                        const QualityMetricsResult& ssimResult,
                        const QualityMetricsResult& psnrResult) {
-  log("\nPython output (recommended to run with --noverbose to skip the "
+  Log("\nPython output (recommended to run with --noverbose to skip the "
                "above output)\n");
   printf("test_configuration = ["
          "{'name': 'name',                      'value': '%s'},\n"
@@ -425,16 +445,19 @@ int main(int argc, char* argv[]) {
   webrtc::VP8Encoder encoder;
   webrtc::VP8Decoder decoder;
   webrtc::test::Stats stats;
-  webrtc::test::FileHandlerImpl file_handler(config.input_filename,
-                                             config.output_filename,
+  webrtc::test::FrameReaderImpl frame_reader(config.input_filename,
                                              config.frame_length_in_bytes);
-  file_handler.Init();
+  webrtc::test::FrameWriterImpl frame_writer(config.output_filename,
+                                             config.frame_length_in_bytes);
+  frame_reader.Init();
+  frame_writer.Init();
   webrtc::test::PacketReader packet_reader;
 
   webrtc::test::PacketManipulatorImpl packet_manipulator(
-      &packet_reader, config.networking_config);
+      &packet_reader, config.networking_config, config.verbose);
   webrtc::test::VideoProcessorImpl processor(&encoder, &decoder,
-                                             &file_handler,
+                                             &frame_reader,
+                                             &frame_writer,
                                              &packet_manipulator,
                                              config, &stats);
   processor.Init();
@@ -442,13 +465,13 @@ int main(int argc, char* argv[]) {
   int frame_number = 0;
   while (processor.ProcessFrame(frame_number)) {
     if (frame_number % 80 == 0) {
-      log("\n");  // make the output a bit nicer.
+      Log("\n");  // make the output a bit nicer.
     }
-    log(".");
+    Log(".");
     frame_number++;
   }
-  log("\n");
-  log("Processed %d frames\n", frame_number);
+  Log("\n");
+  Log("Processed %d frames\n", frame_number);
 
   // Release encoder and decoder to make sure they have finished processing:
   encoder.Release();
@@ -458,7 +481,8 @@ int main(int argc, char* argv[]) {
   assert(frame_number == static_cast<int>(stats.stats_.size()));
 
   // Close the files before we start using them for SSIM/PSNR calculations.
-  file_handler.Close();
+  frame_reader.Close();
+  frame_writer.Close();
 
   stats.PrintSummary();
 
@@ -473,8 +497,6 @@ int main(int argc, char* argv[]) {
   if (FLAGS_python) {
     PrintPythonOutput(config, stats, ssimResult, psnrResult);
   }
-  log("Quality test finished!");
+  Log("Quality test finished!");
   return 0;
 }
-
-

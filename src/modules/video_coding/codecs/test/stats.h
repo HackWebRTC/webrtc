@@ -7,12 +7,13 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef SRC_MODULES_VIDEO_CODING_CODECS_TEST_STATS_H_
-#define SRC_MODULES_VIDEO_CODING_CODECS_TEST_STATS_H_
+
+#ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_STATS_H_
+#define WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_STATS_H_
 
 #include <vector>
 
-#include "video_image.h"
+#include "common_video/interface/video_image.h"
 
 namespace webrtc {
 namespace test {
@@ -24,7 +25,8 @@ struct FrameStatistic {
       encode_return_code(0), decode_return_code(0),
       encode_time_in_us(0), decode_time_in_us(0),
       frame_number(0), packets_dropped(0), total_packets(0),
-      bit_rate_in_kbps(0), encoded_frame_length_in_bytes(0) {
+      bit_rate_in_kbps(0), encoded_frame_length_in_bytes(0),
+      frame_type(kDeltaFrame) {
   };
   bool encoding_successful;
   bool decoding_successful;
@@ -71,4 +73,4 @@ class Stats {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // SRC_MODULES_VIDEO_CODING_CODECS_TEST_STATS_H_
+#endif  // WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_STATS_H_

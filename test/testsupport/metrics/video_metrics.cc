@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "video_metrics.h"
+#include "testsupport/metrics/video_metrics.h"
 
 #include <algorithm> // min_element, max_element
 #include <cmath>
@@ -43,6 +43,7 @@ PsnrFromFiles(const WebRtc_Word8 *refFileName, const WebRtc_Word8 *testFileName,
     {
         // cannot open test file
         fprintf(stderr, "Cannot open file %s\n", testFileName);
+        fclose(refFp);
         return -2;
     }
 
@@ -97,12 +98,12 @@ PsnrFromFiles(const WebRtc_Word8 *refFileName, const WebRtc_Word8 *testFileName,
     {
         result->average = CalcPsnr(mseSum / frames);
     }
-
+    int return_code = 0;
     if (result->frames.size() == 0)
     {
       fprintf(stderr, "Tried to measure SSIM from empty files (reference "
               "file: %s  test file: %s\n", refFileName, testFileName);
-      return -3;
+      return_code = -3;
     }
     else
     {
@@ -119,11 +120,9 @@ PsnrFromFiles(const WebRtc_Word8 *refFileName, const WebRtc_Word8 *testFileName,
     }
     delete [] ref;
     delete [] test;
-
     fclose(refFp);
     fclose(testFp);
-
-    return 0;
+    return return_code;
 }
 
 static double
@@ -305,6 +304,7 @@ SsimFromFiles(const WebRtc_Word8 *refFileName, const WebRtc_Word8 *testFileName,
     {
         // cannot open test file
         fprintf(stderr, "Cannot open file %s\n", testFileName);
+        fclose(refFp);
         return -2;
     }
 
@@ -335,12 +335,12 @@ SsimFromFiles(const WebRtc_Word8 *refFileName, const WebRtc_Word8 *testFileName,
         refBytes = (WebRtc_Word32) fread(ref, 1, frameBytes, refFp);
         testBytes = (WebRtc_Word32) fread(test, 1, frameBytes, testFp);
     }
-
+    int return_code = 0;
     if (result->frames.size() == 0)
     {
       fprintf(stderr, "Tried to measure SSIM from empty files (reference "
               "file: %s  test file: %s\n", refFileName, testFileName);
-      return -3;
+      return_code = -3;
     }
     else
     {
@@ -361,9 +361,7 @@ SsimFromFiles(const WebRtc_Word8 *refFileName, const WebRtc_Word8 *testFileName,
     }
     delete [] ref;
     delete [] test;
-
     fclose(refFp);
     fclose(testFp);
-
-    return 0;
+    return return_code;
 }

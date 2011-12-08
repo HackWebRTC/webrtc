@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "fileutils.h"
+#include "testsupport/fileutils.h"
 
 #ifdef WIN32
 #include <direct.h>
@@ -85,8 +85,7 @@ std::string WorkingDir() {
   if (!GET_CURRENT_DIR(path_buffer, sizeof(path_buffer))) {
     fprintf(stderr, "Cannot get current directory!\n");
     return kFallbackPath;
-  }
-  else {
+  } else {
     return std::string(path_buffer);
   }
 }
@@ -131,7 +130,8 @@ std::string ResourcePath(std::string name, std::string extension) {
   std::string architecture = "32";
 #endif  // WEBRTC_ARCH_64_BITS
 
-  std::string resources_path = ProjectRootPath() + kResourcesDirName + kPathDelimiter;
+  std::string resources_path = ProjectRootPath() + kResourcesDirName +
+      kPathDelimiter;
   std::string resource_file = resources_path + name + "_" + platform + "_" +
       architecture + "." + extension;
   if (FileExists(resource_file)) {
@@ -149,6 +149,18 @@ std::string ResourcePath(std::string name, std::string extension) {
   }
   // Fall back on name without architecture or platform.
   return resources_path + name + "." + extension;
+}
+
+size_t GetFileSize(std::string filename) {
+  FILE* f = fopen(filename.c_str(), "rb");
+  size_t size = 0;
+  if (f != NULL) {
+    if (fseek(f, 0, SEEK_END) == 0) {
+      size = ftell(f);
+    }
+    fclose(f);
+  }
+  return size;
 }
 
 }  // namespace test

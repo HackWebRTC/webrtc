@@ -16,21 +16,10 @@
           'type': 'executable',
           'dependencies': [
             'video_codecs_test_framework',
-            '<(webrtc_root)/../test/test.gyp:test_support',
             'webrtc_vp8',
-            '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-            '<(webrtc_root)/common_video/common_video.gyp:webrtc_vplib',
             '<(webrtc_root)/../third_party/google-gflags/google-gflags.gyp:google-gflags',
            ],
-           'include_dirs': [
-             '../test',
-             '../interface',
-             '<(webrtc_root)/common_video/interface',               
-           ],
            'sources': [
-             # header files
-             
-             # source files
              'video_quality_measurement.cc',
            ],
         },

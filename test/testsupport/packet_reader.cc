@@ -7,7 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "packet_reader.h"
+
+#include "testsupport/packet_reader.h"
 
 #include <cassert>
 #include <cstdio>
@@ -16,11 +17,9 @@ namespace webrtc {
 namespace test {
 
 PacketReader::PacketReader()
-    : initialized_(false) {
-}
+    : initialized_(false) {}
 
-PacketReader::~PacketReader() {
-}
+PacketReader::~PacketReader() {}
 
 void PacketReader::InitializeReading(WebRtc_UWord8* data,
                                      int data_length_in_bytes,

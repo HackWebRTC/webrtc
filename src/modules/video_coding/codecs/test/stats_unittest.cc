@@ -7,8 +7,10 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+
+#include "modules/video_coding/codecs/test/stats.h"
+
 #include "gtest/gtest.h"
-#include "stats.h"
 #include "typedefs.h"
 
 namespace webrtc {

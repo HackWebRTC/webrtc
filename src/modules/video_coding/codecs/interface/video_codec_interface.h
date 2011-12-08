@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VIDEO_CODEC_INTERFACE_H
-#define VIDEO_CODEC_INTERFACE_H
+#ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_INTERFACE_VIDEO_CODEC_INTERFACE_H
+#define WEBRTC_MODULES_VIDEO_CODING_CODECS_INTERFACE_VIDEO_CODEC_INTERFACE_H
 
 #include "common_types.h"
+#include "common_video/interface/video_image.h"
+#include "modules/video_coding/codecs/interface/video_error_codes.h"
 #include "typedefs.h"
-#include "video_image.h"
-#include "video_error_codes.h"
 
 namespace webrtc
 {
@@ -260,4 +260,4 @@ public:
 
 } // namespace webrtc
 
-#endif // VIDEO_CODEC_INTERFACE_H
+#endif // WEBRTC_MODULES_VIDEO_CODING_CODECS_INTERFACE_VIDEO_CODEC_INTERFACE_H

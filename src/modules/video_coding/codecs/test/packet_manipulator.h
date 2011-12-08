@@ -7,13 +7,14 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef SRC_MODULES_VIDEO_CODING_CODECS_TEST_PACKET_MANIPULATOR_H_
-#define SRC_MODULES_VIDEO_CODING_CODECS_TEST_PACKET_MANIPULATOR_H_
+
+#ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_PACKET_MANIPULATOR_H_
+#define WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_PACKET_MANIPULATOR_H_
 
 #include <cstdlib>
 
-#include "packet_reader.h"
-#include "video_codec_interface.h"
+#include "modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "testsupport/packet_reader.h"
 
 namespace webrtc {
 namespace test {
@@ -87,7 +88,7 @@ class PacketManipulator {
 class PacketManipulatorImpl : public PacketManipulator {
  public:
   PacketManipulatorImpl(PacketReader* packet_reader,
-                        const NetworkingConfig& config);
+                        const NetworkingConfig& config, bool verbose);
   virtual ~PacketManipulatorImpl();
   virtual int ManipulatePackets(webrtc::EncodedImage* encoded_image);
  protected:
@@ -98,9 +99,10 @@ class PacketManipulatorImpl : public PacketManipulator {
   const NetworkingConfig& config_;
   // Used to simulate a burst over several frames.
   int active_burst_packets_;
+  bool verbose_;
 };
 
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // SRC_MODULES_VIDEO_CODING_CODECS_TEST_PACKET_MANIPULATOR_H_
+#endif  // WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_PACKET_MANIPULATOR_H_

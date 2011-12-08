@@ -7,19 +7,24 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef SRC_MODULES_VIDEO_CODING_CODECS_TEST_MOCKS_H_
-#define SRC_MODULES_VIDEO_CODING_CODECS_TEST_MOCKS_H_
+
+#ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_INTERFACE_MOCK_MOCK_VIDEO_CODEC_INTERFACE_H_
+#define WEBRTC_MODULES_VIDEO_CODING_CODECS_INTERFACE_MOCK_MOCK_VIDEO_CODEC_INTERFACE_H_
 
 #include <string>
 
-#include "file_handler.h"
 #include "gmock/gmock.h"
-#include "packet_manipulator.h"
 #include "typedefs.h"
 
-// This file contains mocks that are used by the unit tests.
-
 namespace webrtc {
+
+class MockEncodedImageCallback : public EncodedImageCallback {
+ public:
+  MOCK_METHOD3(Encoded,
+               WebRtc_Word32(EncodedImage& encodedImage,
+                             const CodecSpecificInfo* codecSpecificInfo,
+                             const RTPFragmentationHeader* fragmentation));
+};
 
 class MockVideoEncoder : public VideoEncoder {
  public:
@@ -48,6 +53,16 @@ class MockVideoEncoder : public VideoEncoder {
                WebRtc_Word32(WebRtc_UWord8* /*buffer*/, WebRtc_Word32));
 };
 
+class MockDecodedImageCallback : public DecodedImageCallback {
+ public:
+  MOCK_METHOD1(Decoded,
+               WebRtc_Word32(RawImage& decodedImage));
+  MOCK_METHOD1(ReceivedDecodedReferenceFrame,
+               WebRtc_Word32(const WebRtc_UWord64 pictureId));
+  MOCK_METHOD1(ReceivedDecodedFrame,
+               WebRtc_Word32(const WebRtc_UWord64 pictureId));
+};
+
 class MockVideoDecoder : public VideoDecoder {
  public:
   MOCK_METHOD2(InitDecode,
@@ -68,25 +83,6 @@ class MockVideoDecoder : public VideoDecoder {
   MOCK_METHOD0(Copy, VideoDecoder*());
 };
 
-namespace test {
-
-class MockFileHandler : public FileHandler {
- public:
-  MOCK_METHOD0(Init, bool());
-  MOCK_METHOD1(ReadFrame, bool(WebRtc_UWord8* source_buffer));
-  MOCK_METHOD1(WriteFrame, bool(WebRtc_UWord8* frame_buffer));
-  MOCK_METHOD0(Close, void());
-  MOCK_METHOD1(GetFileSize, WebRtc_UWord64(std::string filename));
-  MOCK_METHOD0(GetFrameLength, int());
-  MOCK_METHOD0(GetNumberOfFrames, int());
-};
-
-class MockPacketManipulator : public PacketManipulator {
- public:
-  MOCK_METHOD1(ManipulatePackets, int(webrtc::EncodedImage* encoded_image));
-};
-
-}  // namespace test
 }  // namespace webrtc
 
-#endif  // SRC_MODULES_VIDEO_CODING_CODECS_TEST_MOCKS_H_
+#endif  // WEBRTC_MODULES_VIDEO_CODING_CODECS_INTERFACE_MOCK_MOCK_VIDEO_CODEC_INTERFACE_H_

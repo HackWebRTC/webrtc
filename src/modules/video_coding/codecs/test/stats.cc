@@ -7,22 +7,19 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "stats.h"
+
+#include "modules/video_coding/codecs/test/stats.h"
 
 #include <algorithm>  // min_element, max_element
 #include <cassert>
 #include <cstdio>
 
-#include "util.h"
-
 namespace webrtc {
 namespace test {
 
-Stats::Stats() {
-}
+Stats::Stats() {}
 
-Stats::~Stats() {
-}
+Stats::~Stats() {}
 
 bool LessForEncodeTime(const FrameStatistic& s1, const FrameStatistic& s2) {
     return s1.encode_time_in_us < s2.encode_time_in_us;
@@ -40,7 +37,6 @@ bool LessForBitRate(const FrameStatistic& s1, const FrameStatistic& s2) {
     return s1.bit_rate_in_kbps < s2.bit_rate_in_kbps;
 }
 
-
 FrameStatistic& Stats::NewFrame(int frame_number) {
   assert(frame_number >= 0);
   FrameStatistic stat;
@@ -50,9 +46,9 @@ FrameStatistic& Stats::NewFrame(int frame_number) {
 }
 
 void Stats::PrintSummary() {
-  log("Processing summary:\n");
+  printf("Processing summary:\n");
   if (stats_.size() == 0) {
-    log("No frame statistics have been logged yet.\n");
+    printf("No frame statistics have been logged yet.\n");
     return;
   }
 
@@ -82,22 +78,22 @@ void Stats::PrintSummary() {
   FrameStatisticsIterator frame;
 
   // ENCODING
-  log("Encoding time:\n");
+  printf("Encoding time:\n");
   frame = min_element(stats_.begin(),
                       stats_.end(), LessForEncodeTime);
-  log("  Min     : %7d us (frame %d)\n",
+  printf("  Min     : %7d us (frame %d)\n",
          frame->encode_time_in_us, frame->frame_number);
 
   frame = max_element(stats_.begin(),
                       stats_.end(), LessForEncodeTime);
-  log("  Max     : %7d us (frame %d)\n",
+  printf("  Max     : %7d us (frame %d)\n",
          frame->encode_time_in_us, frame->frame_number);
 
-  log("  Average : %7d us\n",
+  printf("  Average : %7d us\n",
          total_encoding_time_in_us / stats_.size());
 
   // DECODING
-  log("Decoding time:\n");
+  printf("Decoding time:\n");
   // only consider frames that were successfully decoded (packet loss may cause
   // failures)
   std::vector<FrameStatistic> decoded_frames;
@@ -108,67 +104,67 @@ void Stats::PrintSummary() {
     }
   }
   if (decoded_frames.size() == 0) {
-    printf("No successfully decoded frames exist in this statistics.");
+    printf("No successfully decoded frames exist in this statistics.\n");
   } else {
     frame = min_element(decoded_frames.begin(),
                         decoded_frames.end(), LessForDecodeTime);
-    log("  Min     : %7d us (frame %d)\n",
+    printf("  Min     : %7d us (frame %d)\n",
            frame->decode_time_in_us, frame->frame_number);
 
     frame = max_element(decoded_frames.begin(),
                         decoded_frames.end(), LessForDecodeTime);
-    log("  Max     : %7d us (frame %d)\n",
+    printf("  Max     : %7d us (frame %d)\n",
            frame->decode_time_in_us, frame->frame_number);
 
-    log("  Average : %7d us\n",
+    printf("  Average : %7d us\n",
            total_decoding_time_in_us / decoded_frames.size());
-    log("  Failures: %d frames failed to decode.\n",
+    printf("  Failures: %d frames failed to decode.\n",
         (stats_.size() - decoded_frames.size()));
   }
 
   // SIZE
-  log("Frame sizes:\n");
+  printf("Frame sizes:\n");
   frame = min_element(stats_.begin(),
                       stats_.end(), LessForEncodedSize);
-  log("  Min     : %7d bytes (frame %d)\n",
+  printf("  Min     : %7d bytes (frame %d)\n",
          frame->encoded_frame_length_in_bytes, frame->frame_number);
 
   frame = max_element(stats_.begin(),
                       stats_.end(), LessForEncodedSize);
-  log("  Max     : %7d bytes (frame %d)\n",
+  printf("  Max     : %7d bytes (frame %d)\n",
          frame->encoded_frame_length_in_bytes, frame->frame_number);
 
-  log("  Average : %7d bytes\n",
+  printf("  Average : %7d bytes\n",
          total_encoded_frames_lengths / stats_.size());
   if (nbr_keyframes > 0) {
-    log("  Average key frame size    : %7d bytes (%d keyframes)\n",
+    printf("  Average key frame size    : %7d bytes (%d keyframes)\n",
            total_encoded_key_frames_lengths / nbr_keyframes,
            nbr_keyframes);
   }
   if (nbr_nonkeyframes > 0) {
-    log("  Average non-key frame size: %7d bytes (%d frames)\n",
-             total_encoded_nonkey_frames_lengths / nbr_nonkeyframes,
-             nbr_nonkeyframes);
+    printf("  Average non-key frame size: %7d bytes (%d frames)\n",
+           total_encoded_nonkey_frames_lengths / nbr_nonkeyframes,
+           nbr_nonkeyframes);
   }
 
   // BIT RATE
-  log("Bit rates:\n");
+  printf("Bit rates:\n");
   frame = min_element(stats_.begin(),
                       stats_.end(), LessForBitRate);
-  log("  Min bit rate: %7d kbps (frame %d)\n",
-           frame->bit_rate_in_kbps, frame->frame_number);
+  printf("  Min bit rate: %7d kbps (frame %d)\n",
+         frame->bit_rate_in_kbps, frame->frame_number);
 
   frame = max_element(stats_.begin(),
                       stats_.end(), LessForBitRate);
-  log("  Max bit rate: %7d kbps (frame %d)\n",
-             frame->bit_rate_in_kbps, frame->frame_number);
+  printf("  Max bit rate: %7d kbps (frame %d)\n",
+         frame->bit_rate_in_kbps, frame->frame_number);
 
-  log("\n");
-  log("Total encoding time  : %7d ms.\n",
+  printf("\n");
+  printf("Total encoding time  : %7d ms.\n",
          total_encoding_time_in_us / 1000);
-  log("Total decoding time  : %7d ms.\n",
+  printf("Total decoding time  : %7d ms.\n",
          total_decoding_time_in_us / 1000);
-  log("Total processing time: %7d ms.\n",
+  printf("Total processing time: %7d ms.\n",
          (total_encoding_time_in_us + total_decoding_time_in_us) / 1000);
 }
 

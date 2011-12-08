@@ -7,20 +7,22 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "packet_manipulator.h"
+
+#include "modules/video_coding/codecs/test/packet_manipulator.h"
 
 #include <cassert>
-
-#include "util.h"
+#include <cstdio>
 
 namespace webrtc {
 namespace test {
 
 PacketManipulatorImpl::PacketManipulatorImpl(PacketReader* packet_reader,
-                                             const NetworkingConfig& config)
+                                             const NetworkingConfig& config,
+                                             bool verbose)
     : packet_reader_(packet_reader),
       config_(config),
-      active_burst_packets_(0) {
+      active_burst_packets_(0),
+      verbose_(verbose) {
   assert(packet_reader);
 }
 
@@ -66,9 +68,11 @@ int PacketManipulatorImpl::ManipulatePackets(
   if (nbr_packets_dropped > 0) {
     // Must set completeFrame to false to inform the decoder about this:
     encoded_image->_completeFrame = false;
-    log("Dropped %d packets for frame %d (frame length: %d)\n",
-           nbr_packets_dropped, encoded_image->_timeStamp,
-           encoded_image->_length);
+    if (verbose_) {
+      printf("Dropped %d packets for frame %d (frame length: %d)\n",
+             nbr_packets_dropped, encoded_image->_timeStamp,
+             encoded_image->_length);
+    }
   }
   return nbr_packets_dropped;
 }

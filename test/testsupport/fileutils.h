@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <cstdio>
+
 // File utilities for testing purposes.
 //
 // The ProjectRootPath() method is a convenient way of getting an absolute
@@ -59,8 +61,8 @@
 // /Users/user/webrtc/trunk/out/Debug
 // (or any other directory below the trunk for that matter).
 
-#ifndef TEST_TESTSUPPORT_FILEUTILS_H_
-#define TEST_TESTSUPPORT_FILEUTILS_H_
+#ifndef WEBRTC_TEST_TESTSUPPORT_FILEUTILS_H_
+#define WEBRTC_TEST_TESTSUPPORT_FILEUTILS_H_
 
 #include <string>
 
@@ -131,7 +133,11 @@ std::string WorkingDir();
 // false if a file with the same name already exists.
 bool CreateDirectory(std::string directory_name);
 
+// File size of the supplied file in bytes. Will return 0 if the file is
+// empty or if the file does not exist/is readable.
+size_t GetFileSize(std::string filename);
+
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // TEST_TESTSUPPORT_FILEUTILS_H_
+#endif  // WEBRTC_TEST_TESTSUPPORT_FILEUTILS_H_

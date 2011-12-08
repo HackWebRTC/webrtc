@@ -8,13 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "modules/video_coding/codecs/test/packet_manipulator.h"
+
 #include <queue>
 
 #include "gtest/gtest.h"
-#include "packet_manipulator.h"
+#include "modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "testsupport/unittest_utils.h"
 #include "typedefs.h"
-#include "unittest_utils.h"
-#include "video_codec_interface.h"
 
 namespace webrtc {
 namespace test {
@@ -31,9 +32,6 @@ class PacketManipulatorTest: public PacketRelatedTest {
   NetworkingConfig no_drop_config_;
 
   PacketManipulatorTest() {
-    // To avoid warnings when using ASSERT_DEATH
-    ::testing::FLAGS_gtest_death_test_style = "threadsafe";
-
     image_._buffer = packet_data_;
     image_._length = kPacketDataLength;
     image_._size = kPacketDataLength;
@@ -49,8 +47,7 @@ class PacketManipulatorTest: public PacketRelatedTest {
     no_drop_config_.packet_loss_mode = kUniform;
   }
 
-  virtual ~PacketManipulatorTest() {
-  }
+  virtual ~PacketManipulatorTest() {}
 
   void SetUp() {
     PacketRelatedTest::SetUp();
@@ -78,7 +75,7 @@ class PredictivePacketManipulatorImpl : public PacketManipulatorImpl {
  public:
   PredictivePacketManipulatorImpl(PacketReader* packet_reader,
                                   const NetworkingConfig& config)
-    : PacketManipulatorImpl(packet_reader, config) {
+    : PacketManipulatorImpl(packet_reader, config, false) {
   }
   // Adds a result. You must add at least the same number of results as the
   // expected calls to the RandomUniform method. The results are added to a
@@ -102,20 +99,11 @@ class PredictivePacketManipulatorImpl : public PacketManipulatorImpl {
 };
 
 TEST_F(PacketManipulatorTest, Constructor) {
-  PacketManipulatorImpl manipulator(&packet_reader_, no_drop_config_);
-}
-
-TEST_F(PacketManipulatorTest, ConstructorNullArgument) {
-  ASSERT_DEATH(PacketManipulatorImpl manipulator(NULL, no_drop_config_), "");
-}
-
-TEST_F(PacketManipulatorTest, NullImageArgument) {
-  PacketManipulatorImpl manipulator(&packet_reader_, no_drop_config_);
-  ASSERT_DEATH(manipulator.ManipulatePackets(NULL), "");
+  PacketManipulatorImpl manipulator(&packet_reader_, no_drop_config_, false);
 }
 
 TEST_F(PacketManipulatorTest, DropNone) {
-  PacketManipulatorImpl manipulator(&packet_reader_,  no_drop_config_);
+  PacketManipulatorImpl manipulator(&packet_reader_,  no_drop_config_, false);
   int nbr_packets_dropped = manipulator.ManipulatePackets(&image_);
   VerifyPacketLoss(0, nbr_packets_dropped, kPacketDataLength,
                    packet_data_, image_);
@@ -124,7 +112,7 @@ TEST_F(PacketManipulatorTest, DropNone) {
 TEST_F(PacketManipulatorTest, UniformDropNoneSmallFrame) {
   int data_length = 400;  // smaller than the packet size
   image_._length = data_length;
-  PacketManipulatorImpl manipulator(&packet_reader_, no_drop_config_);
+  PacketManipulatorImpl manipulator(&packet_reader_, no_drop_config_, false);
   int nbr_packets_dropped = manipulator.ManipulatePackets(&image_);
 
   VerifyPacketLoss(0, nbr_packets_dropped, data_length,
@@ -132,7 +120,7 @@ TEST_F(PacketManipulatorTest, UniformDropNoneSmallFrame) {
 }
 
 TEST_F(PacketManipulatorTest, UniformDropAll) {
-  PacketManipulatorImpl manipulator(&packet_reader_, drop_config_);
+  PacketManipulatorImpl manipulator(&packet_reader_, drop_config_, false);
   int nbr_packets_dropped = manipulator.ManipulatePackets(&image_);
   VerifyPacketLoss(kPacketDataNumberOfPackets, nbr_packets_dropped,
                    0, packet_data_, image_);

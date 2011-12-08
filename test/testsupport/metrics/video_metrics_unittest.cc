@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "video_metrics.h"
+#include "testsupport/metrics/video_metrics.h"
 
 #include <cstdio>
 

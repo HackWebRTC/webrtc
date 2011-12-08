@@ -7,16 +7,18 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef SRC_MODULES_VIDEO_CODING_CODECS_TEST_VIDEOPROCESSOR_H_
-#define SRC_MODULES_VIDEO_CODING_CODECS_TEST_VIDEOPROCESSOR_H_
+
+#ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_VIDEOPROCESSOR_H_
+#define WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_VIDEOPROCESSOR_H_
 
 #include <string>
 
-#include "file_handler.h"
-#include "packet_manipulator.h"
-#include "stats.h"
-#include "tick_util.h"
-#include "video_codec_interface.h"
+#include "modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "modules/video_coding/codecs/test/packet_manipulator.h"
+#include "modules/video_coding/codecs/test/stats.h"
+#include "system_wrappers/interface/tick_util.h"
+#include "testsupport/frame_reader.h"
+#include "testsupport/frame_writer.h"
 
 namespace webrtc {
 namespace test {
@@ -39,7 +41,8 @@ struct TestConfig {
     : name(""), description(""), test_number(0),
       input_filename(""), output_filename(""), output_dir("out"),
       networking_config(), exclude_frame_types(kExcludeOnlyFirstKeyFrame),
-      frame_length_in_bytes(-1), use_single_core(false), keyframe_interval(0) {
+      frame_length_in_bytes(-1), use_single_core(false), keyframe_interval(0),
+      verbose(true) {
   };
 
   // Name of the test. This is purely metadata and does not affect
@@ -98,6 +101,9 @@ struct TestConfig {
   // The codec settings to use for the test (target bitrate, video size,
   // framerate and so on)
   webrtc::VideoCodec codec_settings;
+
+  // If printing of information to stdout shall be performed during processing.
+  bool verbose;
 };
 
 // Returns a string representation of the enum value.
@@ -139,7 +145,8 @@ class VideoProcessorImpl : public VideoProcessor {
  public:
   VideoProcessorImpl(webrtc::VideoEncoder* encoder,
                      webrtc::VideoDecoder* decoder,
-                     FileHandler* file_handler,
+                     FrameReader* frame_reader,
+                     FrameWriter* frame_writer,
                      PacketManipulator* packet_manipulator,
                      const TestConfig& config,
                      Stats* stats);
@@ -159,7 +166,8 @@ class VideoProcessorImpl : public VideoProcessor {
 
   webrtc::VideoEncoder* encoder_;
   webrtc::VideoDecoder* decoder_;
-  FileHandler* file_handler_;
+  FrameReader* frame_reader_;
+  FrameWriter* frame_writer_;
   PacketManipulator* packet_manipulator_;
   const TestConfig& config_;
   Stats* stats_;
@@ -217,4 +225,4 @@ class VideoProcessorImpl : public VideoProcessor {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // SRC_MODULES_VIDEO_CODING_CODECS_TEST_VIDEOPROCESSOR_H_
+#endif  // WEBRTC_MODULES_VIDEO_CODING_CODECS_TEST_VIDEOPROCESSOR_H_

@@ -1,9 +1,15 @@
-// Copyright 2011 Google Inc. All Rights Reserved.
-// Author: kjellander@google.com (Henrik Kjellander)
+/*
+ *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *
+ *  Use of this source code is governed by a BSD-style license
+ *  that can be found in the LICENSE file in the root of the source
+ *  tree. An additional intellectual property rights grant can be found
+ *  in the file PATENTS.  All contributing project authors may
+ *  be found in the AUTHORS file in the root of the source tree.
+ */
 
-
-#ifndef SRC_MODULES_VIDEO_CODING_CODECS_TEST_UNITTEST_UTILS_H_
-#define SRC_MODULES_VIDEO_CODING_CODECS_TEST_UNITTEST_UTILS_H_
+#ifndef WEBRTC_TEST_TESTSUPPORT_UNITTEST_UTILS_H_
+#define WEBRTC_TEST_TESTSUPPORT_UNITTEST_UTILS_H_
 
 namespace webrtc {
 namespace test {
@@ -39,20 +45,15 @@ class PacketRelatedTest: public testing::Test {
            kPacketSizeInBytes);
     memcpy(packet_data_pointer_ + kPacketSizeInBytes * 2, packet3_, 1);
   }
-
-  virtual ~PacketRelatedTest() {
-  }
-
+  virtual ~PacketRelatedTest() {}
   void SetUp() {
     // Initialize the random generator with 0 to get deterministic behavior
     srand(0);
   }
-
-  void TearDown() {
-  }
+  void TearDown() {}
 };
 
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // SRC_MODULES_VIDEO_CODING_CODECS_TEST_UNITTEST_UTILS_H_
+#endif  // WEBRTC_TEST_TESTSUPPORT_UNITTEST_UTILS_H_

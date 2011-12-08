@@ -7,27 +7,29 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "videoprocessor.h"
+
+#include "modules/video_coding/codecs/test/videoprocessor.h"
 
 #include <cassert>
 #include <cstring>
 #include <limits>
 
-#include "cpu_info.h"
-#include "util.h"
+#include "system_wrappers/interface/cpu_info.h"
 
 namespace webrtc {
 namespace test {
 
 VideoProcessorImpl::VideoProcessorImpl(webrtc::VideoEncoder* encoder,
                                        webrtc::VideoDecoder* decoder,
-                                       FileHandler* file_handler,
+                                       FrameReader* frame_reader,
+                                       FrameWriter* frame_writer,
                                        PacketManipulator* packet_manipulator,
                                        const TestConfig& config,
                                        Stats* stats)
     : encoder_(encoder),
       decoder_(decoder),
-      file_handler_(file_handler),
+      frame_reader_(frame_reader),
+      frame_writer_(frame_writer),
       packet_manipulator_(packet_manipulator),
       config_(config),
       stats_(stats),
@@ -39,7 +41,8 @@ VideoProcessorImpl::VideoProcessorImpl(webrtc::VideoEncoder* encoder,
       initialized_(false) {
   assert(encoder);
   assert(decoder);
-  assert(file_handler);
+  assert(frame_reader);
+  assert(frame_writer);
   assert(packet_manipulator);
   assert(stats);
 }
@@ -48,7 +51,7 @@ bool VideoProcessorImpl::Init() {
   // Calculate a factor used for bit rate calculations:
   bit_rate_factor_ = config_.codec_settings.maxFramerate * 0.001 * 8;  // bits
 
-  int frame_length_in_bytes = file_handler_->GetFrameLength();
+  int frame_length_in_bytes = frame_reader_->FrameLength();
 
   // Initialize data structures used by the encoder/decoder APIs
   source_buffer_ = new WebRtc_UWord8[frame_length_in_bytes];
@@ -96,13 +99,16 @@ bool VideoProcessorImpl::Init() {
     return false;
   }
 
-  log("Video Processor:\n");
-  log("  #CPU cores used  : %d\n", nbr_of_cores);
-  log("  Total # of frames: %d\n", file_handler_->GetNumberOfFrames());
-  log("  Codec settings:\n");
-  log("    Start bitrate  : %d kbps\n", config_.codec_settings.startBitrate);
-  log("    Width          : %d\n", config_.codec_settings.width);
-  log("    Height         : %d\n", config_.codec_settings.height);
+  if (config_.verbose) {
+    printf("Video Processor:\n");
+    printf("  #CPU cores used  : %d\n", nbr_of_cores);
+    printf("  Total # of frames: %d\n", frame_reader_->NumberOfFrames());
+    printf("  Codec settings:\n");
+    printf("    Start bitrate  : %d kbps\n",
+           config_.codec_settings.startBitrate);
+    printf("    Width          : %d\n", config_.codec_settings.width);
+    printf("    Height         : %d\n", config_.codec_settings.height);
+  }
   initialized_ = true;
   return true;
 }
@@ -122,7 +128,7 @@ bool VideoProcessorImpl::ProcessFrame(int frame_number) {
     fprintf(stderr, "Attempting to use uninitialized VideoProcessor!\n");
     return false;
   }
-  if (file_handler_->ReadFrame(source_buffer_)) {
+  if (frame_reader_->ReadFrame(source_buffer_)) {
     // point the source frame buffer to the newly read frame data:
     source_frame_._buffer = source_buffer_;
 
@@ -200,7 +206,7 @@ void VideoProcessorImpl::FrameEncoded(EncodedImage* encoded_image) {
   if (decode_result != WEBRTC_VIDEO_CODEC_OK) {
     // Write the last successful frame the output file to avoid getting it out
     // of sync with the source file for SSIM and PSNR comparisons:
-    file_handler_->WriteFrame(last_successful_frame_buffer_);
+    frame_writer_->WriteFrame(last_successful_frame_buffer_);
   }
   // save status for losses so we can inform the decoder for the next frame:
   last_frame_missing_ = encoded_image->_length == 0;
@@ -217,7 +223,7 @@ void VideoProcessorImpl::FrameDecoded(const RawImage& image) {
   // Update our copy of the last successful frame:
   memcpy(last_successful_frame_buffer_, image._buffer, image._length);
 
-  bool write_success = file_handler_->WriteFrame(image._buffer);
+  bool write_success = frame_writer_->WriteFrame(image._buffer);
   if (!write_success) {
     fprintf(stderr, "Failed to write frame %d to disk!", frame_number);
   }

@@ -7,34 +7,25 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+
+#include "testsupport/packet_reader.h"
+
 #include "gtest/gtest.h"
-#include "packet_reader.h"
-#include "typedefs.h"
-#include "unittest_utils.h"
+#include "testsupport/unittest_utils.h"
 
 namespace webrtc {
 namespace test {
 
 class PacketReaderTest: public PacketRelatedTest {
  protected:
-  PacketReader* reader_;
-
-  PacketReaderTest() {
-    // To avoid warnings when using ASSERT_DEATH
-    ::testing::FLAGS_gtest_death_test_style = "threadsafe";
-  }
-
-  virtual ~PacketReaderTest() {
-  }
-
+  PacketReaderTest() {}
+  virtual ~PacketReaderTest() {}
   void SetUp() {
     reader_ = new PacketReader();
   }
-
   void TearDown() {
     delete reader_;
   }
-
   void VerifyPacketData(int expected_length,
                         int actual_length,
                         WebRtc_UWord8* original_data_pointer,
@@ -44,6 +35,7 @@ class PacketReaderTest: public PacketRelatedTest {
     EXPECT_EQ(0, memcmp(original_data_pointer, new_data_pointer,
                         actual_length));
   }
+  PacketReader* reader_;
 };
 
 // Test lack of initialization
@@ -53,24 +45,9 @@ TEST_F(PacketReaderTest, Uninitialized) {
   EXPECT_EQ(NULL, data_pointer);
 }
 
-TEST_F(PacketReaderTest, InitializeNullDataArgument) {
-  ASSERT_DEATH(reader_->InitializeReading(NULL, kPacketDataLength,
-                                          kPacketSizeInBytes), "");
-}
-
-TEST_F(PacketReaderTest, InitializeInvalidLengthArgument) {
-  ASSERT_DEATH(reader_->InitializeReading(packet_data_, -1, kPacketSizeInBytes),
-               "");
-}
-
 TEST_F(PacketReaderTest, InitializeZeroLengthArgument) {
   reader_->InitializeReading(packet_data_, 0, kPacketSizeInBytes);
   ASSERT_EQ(0, reader_->NextPacket(&packet_data_pointer_));
-}
-
-TEST_F(PacketReaderTest, InitializeInvalidPacketSizeArgument) {
-  ASSERT_DEATH(reader_->InitializeReading(packet_data_, kPacketDataLength,
-                                          0), "");
 }
 
 // Test with something smaller than one packet

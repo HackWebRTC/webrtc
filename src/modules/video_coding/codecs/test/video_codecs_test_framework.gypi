@@ -15,36 +15,16 @@
           'target_name': 'video_codecs_test_framework',
           'type': '<(library)',
           'dependencies': [
-            '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-            '<(webrtc_root)/common_video/common_video.gyp:webrtc_vplib',
-            '<(webrtc_root)/../testing/gtest.gyp:gtest',         
-            '<(webrtc_root)/../third_party/google-gflags/google-gflags.gyp:google-gflags',
+            '<(webrtc_root)/../test/test.gyp:test_support',
           ],
-          'include_dirs': [
-            '../interface',
-            '<(webrtc_root)/common_video/interface',
-          ],
-          'direct_dependent_settings': {
-            'include_dirs': [
-              '../interface',
-            ],
-          },
           'sources': [
-            # header files
-            'file_handler.h',
+            'mock/mock_packet_manipulator.h',
             'packet_manipulator.h',
-            'packet_reader.h',
-            'stats.h',
-            'videoprocessor.h',
-            'util.h',
-
-            # source files
-            'file_handler.cc',
             'packet_manipulator.cc',
-            'packet_reader.cc',
+            'stats.h',
             'stats.cc',
+            'videoprocessor.h',
             'videoprocessor.cc',
-            'util.cc',            
           ],
         },
         {
@@ -53,21 +33,11 @@
           'dependencies': [
             'video_codecs_test_framework',            
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-            '<(webrtc_root)/common_video/common_video.gyp:webrtc_vplib',
             '<(webrtc_root)/../testing/gmock.gyp:gmock',    
             '<(webrtc_root)/../test/test.gyp:test_support_main',
           ],
-          'include_dirs': [
-             '<(webrtc_root)/common_video/interface',               
-          ],
           'sources': [
-            # header files
-            'mocks.h',
-            
-            # source files
-            'file_handler_unittest.cc',
             'packet_manipulator_unittest.cc',
-            'packet_reader_unittest.cc',
             'stats_unittest.cc',
             'videoprocessor_unittest.cc',
           ],
