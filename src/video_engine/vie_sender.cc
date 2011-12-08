@@ -157,7 +157,14 @@ int ViESender::SendPacket(int vie_id, const void* data, int len) {
     send_packet = encryption_buffer_;
   }
 
-  return transport_->SendPacket(channel_id_, send_packet, send_packet_length);
+  const int bytes_sent = transport_->SendPacket(channel_id_, send_packet,
+                                                send_packet_length);
+  if (bytes_sent != send_packet_length) {
+    WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideo,
+                 ViEId(engine_id_, channel_id_),
+                 "ViESender::SendPacket - Transport failed to send RTP packet");
+  }
+  return bytes_sent;
 }
 
 int ViESender::SendRTCPPacket(int vie_id, const void* data, int len) {
@@ -186,8 +193,15 @@ int ViESender::SendRTCPPacket(int vie_id, const void* data, int len) {
     send_packet = encryption_buffer_;
   }
 
-  return transport_->SendRTCPPacket(channel_id_, send_packet,
-                                    send_packet_length);
+  const int bytes_sent = transport_->SendRTCPPacket(channel_id_, send_packet,
+                                                    send_packet_length);
+  if (bytes_sent != send_packet_length) {
+    WEBRTC_TRACE(
+        webrtc::kTraceWarning, webrtc::kTraceVideo,
+        ViEId(engine_id_, channel_id_),
+        "ViESender::SendRTCPPacket - Transport failed to send RTCP packet");
+  }
+  return bytes_sent;
 }
 
 }  // namespace webrtc
