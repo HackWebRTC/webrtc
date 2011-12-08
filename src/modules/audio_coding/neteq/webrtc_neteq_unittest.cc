@@ -336,8 +336,8 @@ void NetEqDecodingTest::DecodeAndCheckStats(const std::string &rtp_file,
 TEST_F(NetEqDecodingTest, TestBitExactness) {
   const std::string kInputRtpFile = webrtc::test::ProjectRootPath() +
       "resources/neteq_universal.rtp";
-  const std::string kInputRefFile = webrtc::test::ProjectRootPath() +
-      "resources/neteq_universal_ref_linux_64.pcm";
+  const std::string kInputRefFile =
+      webrtc::test::ResourcePath("neteq_universal_ref", "pcm");
   DecodeAndCompare(kInputRtpFile, kInputRefFile);
 }
 #endif  // defined(WEBRTC_LINUX) && defined(WEBRTC_ARCH_64_BITS)
@@ -347,10 +347,10 @@ TEST_F(NetEqDecodingTest, TestBitExactness) {
 TEST_F(NetEqDecodingTest, TestNetworkStatistics) {
   const std::string kInputRtpFile = webrtc::test::ProjectRootPath() +
       "resources/neteq_universal.rtp";
-  const std::string kNetworkStatRefFile = webrtc::test::ProjectRootPath() +
-      "resources/neteq_network_stats.dat";
-  const std::string kRtcpStatRefFile = webrtc::test::ProjectRootPath() +
-      "resources/neteq_rtcp_stats.dat";
+  const std::string kNetworkStatRefFile =
+      webrtc::test::ResourcePath("neteq_network_stats", "dat");
+  const std::string kRtcpStatRefFile =
+      webrtc::test::ResourcePath("neteq_rtcp_stats", "dat");
   DecodeAndCheckStats(kInputRtpFile, kNetworkStatRefFile, kRtcpStatRefFile);
 }
 #endif // _WIN32
