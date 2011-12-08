@@ -2472,7 +2472,7 @@ WebRtc_Word32 UdpTransport::InetPresentationToNumeric(WebRtc_Word32 af,
 #endif
 }
 
-WebRtc_Word32 UdpTransport::LocalHostAddressIPV6(WebRtc_UWord8 localIP[16])
+WebRtc_Word32 UdpTransport::LocalHostAddressIPV6(WebRtc_UWord8 n_localIP[16])
 {
     WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, -1, "%s", __FUNCTION__);
 
@@ -2506,20 +2506,21 @@ WebRtc_Word32 UdpTransport::LocalHostAddressIPV6(WebRtc_UWord8 localIP[16])
                 {
                     for(int i = 0; i< 16; i++)
                     {
-                        localIP[i] = (*(SocketAddress*)ptr->ai_addr)._sockaddr_in6.sin6_addr.Version6AddressUnion._s6_u8[i];
+                        n_localIP[i] = (*(SocketAddress*)ptr->ai_addr).
+                            _sockaddr_in6.sin6_addr.Version6AddressUnion._s6_u8[i];
                     }
                     bool islocalIP = true;
 
                     for(int n = 0; n< 15; n++)
                     {
-                        if(localIP[n] != 0)
+                        if(n_localIP[n] != 0)
                         {
                             islocalIP = false;
                             break;
                         }
                     }
 
-                    if(islocalIP && localIP[15] != 1)
+                    if(islocalIP && n_localIP[15] != 1)
                     {
                         islocalIP = false;
                     }
@@ -2528,7 +2529,8 @@ WebRtc_Word32 UdpTransport::LocalHostAddressIPV6(WebRtc_UWord8 localIP[16])
                     {
                         continue;
                     }
-                    if(localIP[0] == 0xfe && localIP[1] == 0x80 && ptr->ai_next)
+                    if(n_localIP[0] == 0xfe && 
+                       n_localIP[1] == 0x80 && ptr->ai_next)
                     {
                         continue;
                     }
@@ -2554,35 +2556,18 @@ WebRtc_Word32 UdpTransport::LocalHostAddressIPV6(WebRtc_UWord8 localIP[16])
     {
         if(ptrIfAddrs->ifa_addr->sa_family == AF_INET6)
         {
-            bool islocalIP = true;
-            for(int n = 2; n< 15; n++)
-            {
-                if(ptrIfAddrs->ifa_addr->sa_data[n+6] != 0)
-                {
-                    islocalIP = false;
-                    break;
-                }
-            }
-            if(islocalIP && ptrIfAddrs->ifa_addr->sa_data[15+6] != 1)
-            {
-                islocalIP = false;
-            }
+            const struct sockaddr_in6* sock_in6 = 
+                reinterpret_cast<struct sockaddr_in6*>(ptrIfAddrs->ifa_addr);
+            const struct in6_addr* sin6_addr = &sock_in6->sin6_addr;
 
-            if(!islocalIP)
-            {
-                for(int i = 0; i< 16; i++)
-                {
-                    localIP[i] = ptrIfAddrs->ifa_addr->sa_data[i+6];
-                }
-                if(localIP[0] == 0xfe && localIP[1] == 0x80 &&
-                   ptrIfAddrs->ifa_next)
-                {
-                    ptrIfAddrs = ptrIfAddrs->ifa_next;
-                    continue;
-                }
-                freeifaddrs(ptrIfAddrsStart);
-                return 0;
+            if (IN6_IS_ADDR_LOOPBACK(sin6_addr) || 
+                IN6_IS_ADDR_LINKLOCAL(sin6_addr)) {
+                ptrIfAddrs = ptrIfAddrs->ifa_next;
+                continue;
             }
+            memcpy(n_localIP, sin6_addr->s6_addr, sizeof(sin6_addr->s6_addr));
+            freeifaddrs(ptrIfAddrsStart);
+            return 0;
         }
         ptrIfAddrs = ptrIfAddrs->ifa_next;
     }
@@ -2705,9 +2690,9 @@ WebRtc_Word32 UdpTransport::LocalHostAddressIPV6(WebRtc_UWord8 localIP[16])
                 {
                     for(int i = 0; i< 16; i++)
                     {
-                        localIP[i] = in6p->s6_addr[i];
+                        n_localIP[i] = in6p->s6_addr[i];
                     }
-                    if(localIP[0] == 0xfe && localIP[1] == 0x80)
+                    if(n_localIP[0] == 0xfe && n_localIP[1] == 0x80)
                     {
                         // Auto configured IP.
                         continue;
