@@ -169,27 +169,45 @@ int main()
                         {
                             mediaPacket->length = 12;
                         }
-                        // Set the RTP version to 2.
-                        mediaPacket->data[0] |= 0x80; // Set the 1st bit.
-                        mediaPacket->data[0] &= 0xbf; // Clear the 2nd bit.
 
-                        mediaPacket->data[1] &= 0x7f; // Clear marker bit.
+                        // Generate random values for the first 2 bytes
+                        mediaPacket->data[0] =
+                            static_cast<WebRtc_UWord8>(rand() % 256);
+
+                        mediaPacket->data[1] =
+                            static_cast<WebRtc_UWord8>(rand() % 256);
+
+                        // The first two bits are assumed to be 10 by the
+                        // FEC encoder. In fact the FEC decoder will set the
+                        // two first bits to 10 regardless of what they
+                        // actually were. Set the first two bits to 10
+                        // so that a memcmp can be performed for the
+                        // whole restored packet.
+                        mediaPacket->data[0] |= 0x80;
+                        mediaPacket->data[0] &= 0xbf;
+
+                        // FEC is applied to a whole frame.
+                        // A frame is signaled by multiple packets without
+                        // the marker bit set followed by the last packet of
+                        // the frame for which the marker bit is set.
+                        // Only push one (fake) frame to the FEC.
+                        mediaPacket->data[1] &= 0x7f;
+
                         webrtc::ModuleRTPUtility::AssignUWord16ToBuffer(&mediaPacket->data[2],
                                                                         seqNum);
                         webrtc::ModuleRTPUtility::AssignUWord32ToBuffer(&mediaPacket->data[4],
                                                                         timeStamp);
                         webrtc::ModuleRTPUtility::AssignUWord32ToBuffer(&mediaPacket->data[8],
                                                                         ssrc);
-
+                        // Generate random values for payload
                         for (WebRtc_Word32 j = 12; j < mediaPacket->length; j++)
                         {
                             mediaPacket->data[j] =
-                                static_cast<WebRtc_UWord8>((static_cast<float>(rand()) /
-                                RAND_MAX) * 255);
+                                static_cast<WebRtc_UWord8> (rand() % 256);
                         }
                         seqNum++;
                     }
-                    mediaPacket->data[1] |= 0x80; // Set the marker bit of the last packet.
+                    mediaPacket->data[1] |= 0x80;
 
                     if (fec.GenerateFEC(mediaPacketList, protectionFactor, numImpPackets,
                         kUseUnequalProtection, fecPacketList) != 0)
