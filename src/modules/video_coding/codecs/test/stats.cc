@@ -90,7 +90,7 @@ void Stats::PrintSummary() {
          frame->encode_time_in_us, frame->frame_number);
 
   printf("  Average : %7d us\n",
-         total_encoding_time_in_us / stats_.size());
+         static_cast<int>(total_encoding_time_in_us / stats_.size()));
 
   // DECODING
   printf("Decoding time:\n");
@@ -117,9 +117,9 @@ void Stats::PrintSummary() {
            frame->decode_time_in_us, frame->frame_number);
 
     printf("  Average : %7d us\n",
-           total_decoding_time_in_us / decoded_frames.size());
+           static_cast<int>(total_decoding_time_in_us / decoded_frames.size()));
     printf("  Failures: %d frames failed to decode.\n",
-        (stats_.size() - decoded_frames.size()));
+           static_cast<int>(stats_.size() - decoded_frames.size()));
   }
 
   // SIZE
@@ -135,7 +135,7 @@ void Stats::PrintSummary() {
          frame->encoded_frame_length_in_bytes, frame->frame_number);
 
   printf("  Average : %7d bytes\n",
-         total_encoded_frames_lengths / stats_.size());
+         static_cast<int>(total_encoded_frames_lengths / stats_.size()));
   if (nbr_keyframes > 0) {
     printf("  Average key frame size    : %7d bytes (%d keyframes)\n",
            total_encoded_key_frames_lengths / nbr_keyframes,
