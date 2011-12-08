@@ -166,11 +166,11 @@ WebRtc_Word32 ViESyncModule::Process() {
         channel_delay_.extra_video_delay_ms = 0;
       }
       channel_delay_.last_video_delay_ms = video_delay_ms;
-      channel_delay_.last_video_delay_ms = -1;
+      channel_delay_.last_sync_delay = -1;
       channel_delay_.extra_audio_delay_ms = 0;
     } else {  // channel_delay_.extra_video_delay_ms > 0
       // We have no extra video delay to remove, increase the audio delay.
-      if (channel_delay_.last_video_delay_ms >= 0) {
+      if (channel_delay_.last_sync_delay >= 0) {
         // We have increased the audio delay earlier, increase it even more.
         int audio_diff_ms = current_diff_ms / 2;
         if (audio_diff_ms > kMaxAudioDiffMs) {
@@ -190,9 +190,8 @@ WebRtc_Word32 ViESyncModule::Process() {
         video_delay_ms = total_video_delay_target_ms;
         channel_delay_.extra_video_delay_ms = 0;
         channel_delay_.last_video_delay_ms = video_delay_ms;
-
-        channel_delay_.last_video_delay_ms = 1;
-      } else {  // channel_delay_.last_video_delay_ms >= 0
+        channel_delay_.last_sync_delay = 1;
+      } else {  // channel_delay_.last_sync_delay >= 0
         // First time after a delay change, don't add any extra delay.
         // This is to not toggle back and forth too much.
         channel_delay_.extra_audio_delay_ms = 0;
@@ -200,7 +199,7 @@ WebRtc_Word32 ViESyncModule::Process() {
         video_delay_ms = total_video_delay_target_ms;
         channel_delay_.extra_video_delay_ms = 0;
         channel_delay_.last_video_delay_ms = video_delay_ms;
-        channel_delay_.last_video_delay_ms = 0;
+        channel_delay_.last_sync_delay = 0;
       }
     }
   } else {  // if (current_diffMS > 0)
@@ -222,10 +221,10 @@ WebRtc_Word32 ViESyncModule::Process() {
       if (channel_delay_.extra_audio_delay_ms < 0) {
         // Negative values not allowed.
         channel_delay_.extra_audio_delay_ms = 0;
-        channel_delay_.last_video_delay_ms = 0;
+        channel_delay_.last_sync_delay = 0;
       } else {
         // There is more audio delay to use for the next round.
-        channel_delay_.last_video_delay_ms = 1;
+        channel_delay_.last_sync_delay = 1;
       }
 
       // Keep the video delay at the minimum values.
@@ -268,7 +267,7 @@ WebRtc_Word32 ViESyncModule::Process() {
       channel_delay_.extra_video_delay_ms =
           video_delay_ms - total_video_delay_target_ms;
       channel_delay_.last_video_delay_ms = video_delay_ms;
-      channel_delay_.last_video_delay_ms = -1;
+      channel_delay_.last_sync_delay = -1;
     }
   }
 
