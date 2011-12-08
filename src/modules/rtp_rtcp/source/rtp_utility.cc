@@ -250,14 +250,14 @@ void UnixSystemClock::CurrentNTP(WebRtc_UWord32& secs, WebRtc_UWord32& frac)
 }
 #endif
 
-#if defined(_WIN32)
-static WindowsSystemClock system_clock;
-#elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
-static UnixSystemClock system_clock;
-#endif
-
 RtpRtcpClock* GetSystemClock()
 {
+    // TODO(hellner): violates the style guide (non-POD static instance).
+#if defined(_WIN32)
+    static WindowsSystemClock system_clock;
+#elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
+    static UnixSystemClock system_clock;
+#endif
     return &system_clock;
 }
 
