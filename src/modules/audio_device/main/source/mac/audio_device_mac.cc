@@ -1638,19 +1638,8 @@ WebRtc_Word32 AudioDeviceMac::InitPlayout()
 
     if (_twoDevices || !_recIsInitialized)
     {
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 1050
-        if (AudioDeviceCreateIOProcID != NULL)
-        {
-            WEBRTC_CA_RETURN_ON_ERR(AudioDeviceCreateIOProcID(_outputDeviceID,
-                    deviceIOProc, this, &_deviceIOProcID));
-        }
-        else
-        {
-#endif
-        WEBRTC_CA_RETURN_ON_ERR(AudioDeviceAddIOProc(_outputDeviceID, deviceIOProc, this));
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 1050
-    }
-#endif
+        WEBRTC_CA_RETURN_ON_ERR(AudioDeviceCreateIOProcID(_outputDeviceID,
+                deviceIOProc, this, &_deviceIOProcID));
     }
 
     // Mark playout side as initialized
@@ -1868,36 +1857,12 @@ WebRtc_Word32 AudioDeviceMac::InitRecording()
 
     if (_twoDevices)
     {
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 1050
-        if (AudioDeviceCreateIOProcID != NULL)
-        {
-            WEBRTC_CA_RETURN_ON_ERR(AudioDeviceCreateIOProcID(_inputDeviceID,
-                    inDeviceIOProc, this, &_inDeviceIOProcID));
-        }
-        else
-        {
-#endif
-        WEBRTC_CA_RETURN_ON_ERR(AudioDeviceAddIOProc(_inputDeviceID, inDeviceIOProc,
-                this));
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 1050
-    }
-#endif
+        WEBRTC_CA_RETURN_ON_ERR(AudioDeviceCreateIOProcID(_inputDeviceID,
+                inDeviceIOProc, this, &_inDeviceIOProcID));
     } else if (!_playIsInitialized)
     {
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 1050
-        if (AudioDeviceCreateIOProcID != NULL)
-        {
-            WEBRTC_CA_RETURN_ON_ERR(AudioDeviceCreateIOProcID(_inputDeviceID, deviceIOProc,
-                    this, &_deviceIOProcID));
-        }
-        else
-        {
-#endif
-        WEBRTC_CA_RETURN_ON_ERR(AudioDeviceAddIOProc(_inputDeviceID, deviceIOProc,
-                this));
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 1050
-    }
-#endif
+        WEBRTC_CA_RETURN_ON_ERR(AudioDeviceCreateIOProcID(_inputDeviceID,
+                deviceIOProc, this, &_deviceIOProcID));
     }
 
     // Mark recording side as initialized
@@ -1910,7 +1875,7 @@ WebRtc_Word32 AudioDeviceMac::StartRecording()
 {
     WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
                  "%s", __FUNCTION__);
-    
+
     CriticalSectionScoped lock(_critSect);
 
     if (!_recIsInitialized)
@@ -1941,32 +1906,10 @@ WebRtc_Word32 AudioDeviceMac::StartRecording()
 
     if (_twoDevices)
     {
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 1050
-        if (AudioDeviceCreateIOProcID != NULL)
-        {
-            WEBRTC_CA_RETURN_ON_ERR(AudioDeviceStart(_inputDeviceID, _inDeviceIOProcID));
-        }
-        else
-        {
-#endif
-        WEBRTC_CA_RETURN_ON_ERR(AudioDeviceStart(_inputDeviceID, inDeviceIOProc));
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 1050
-    }
-#endif
+        WEBRTC_CA_RETURN_ON_ERR(AudioDeviceStart(_inputDeviceID, _inDeviceIOProcID));
     } else if (!_playing)
     {
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 1050
-        if (AudioDeviceCreateIOProcID != NULL)
-        {
-            WEBRTC_CA_RETURN_ON_ERR(AudioDeviceStart(_inputDeviceID, _deviceIOProcID));
-        }
-        else
-        {
-#endif
-        WEBRTC_CA_RETURN_ON_ERR(AudioDeviceStart(_inputDeviceID, deviceIOProc));
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 1050
-    }
-#endif
+        WEBRTC_CA_RETURN_ON_ERR(AudioDeviceStart(_inputDeviceID, _deviceIOProcID));
     }
 
     _recording = true;
@@ -2133,18 +2076,7 @@ WebRtc_Word32 AudioDeviceMac::StartPlayout()
 
     if (_twoDevices || !_recording)
     {
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 1050
-        if (AudioDeviceCreateIOProcID != NULL)
-        {
-            WEBRTC_CA_RETURN_ON_ERR(AudioDeviceStart(_outputDeviceID, _deviceIOProcID));
-        }
-        else
-        {
-#endif
-        WEBRTC_CA_RETURN_ON_ERR(AudioDeviceStart(_outputDeviceID, deviceIOProc));
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 1050
-    }
-#endif
+        WEBRTC_CA_RETURN_ON_ERR(AudioDeviceStart(_outputDeviceID, _deviceIOProcID));
     }
     _playing = true;
 
@@ -3043,24 +2975,10 @@ OSStatus AudioDeviceMac::implDeviceIOProc(const AudioBufferList *inputData,
             {
                // In the case of a shared device, the single driving ioProc
                // is stopped here
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 1050
-               if (AudioDeviceCreateIOProcID != NULL)
-               {
-                   WEBRTC_CA_LOG_ERR(AudioDeviceStop(_outputDeviceID,
-                                                     _deviceIOProcID));
-                   WEBRTC_CA_LOG_WARN(AudioDeviceDestroyIOProcID(_outputDeviceID,
-                                                                 _deviceIOProcID));
-               }
-               else
-               {
-#endif
-                   WEBRTC_CA_LOG_ERR(AudioDeviceStop(_outputDeviceID,
-                                                     deviceIOProc));
-                   WEBRTC_CA_LOG_WARN(AudioDeviceRemoveIOProc(_outputDeviceID,
-                                                              deviceIOProc));
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 1050
-               }
-#endif
+               WEBRTC_CA_LOG_ERR(AudioDeviceStop(_outputDeviceID,
+                                                 _deviceIOProcID));
+               WEBRTC_CA_LOG_WARN(AudioDeviceDestroyIOProcID(_outputDeviceID,
+                                                             _deviceIOProcID));
                if (err == noErr)
                {
                   WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice,
@@ -3164,22 +3082,9 @@ OSStatus AudioDeviceMac::implInDeviceIOProc(const AudioBufferList *inputData,
         if (_doStopRec)
         {
             // This will be signalled only when a shared device is not in use.
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 1050
-            if (AudioDeviceCreateIOProcID != NULL)
-            {
-                WEBRTC_CA_LOG_ERR(AudioDeviceStop(_inputDeviceID, _inDeviceIOProcID));
-                WEBRTC_CA_LOG_WARN(AudioDeviceDestroyIOProcID(_inputDeviceID,
-                                                              _inDeviceIOProcID));
-            }
-            else
-            {
-#endif
-                WEBRTC_CA_LOG_ERR(AudioDeviceStop(_inputDeviceID, inDeviceIOProc));
-                WEBRTC_CA_LOG_WARN(AudioDeviceRemoveIOProc(_inputDeviceID,
-                                                           inDeviceIOProc));
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 1050
-            }
-#endif
+            WEBRTC_CA_LOG_ERR(AudioDeviceStop(_inputDeviceID, _inDeviceIOProcID));
+            WEBRTC_CA_LOG_WARN(AudioDeviceDestroyIOProcID(_inputDeviceID,
+                                                          _inDeviceIOProcID));
             if (err == noErr)
             {
                 WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice,
