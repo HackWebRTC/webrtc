@@ -136,16 +136,16 @@
         if ((expr))                                                       \
         {                                                                 \
             TEST_LOG_ERROR("Error at line:%i, %s \n",__LINE__, #expr);    \
-            TEST_LOG_ERROR("Error code: %i\n",base->LastError());  \
+            TEST_LOG_ERROR("Error code: %i\n",voe_base_->LastError());    \
         }                                                                 \
     }
 #define TEST_ERROR(code)                                                \
     {                                                                   \
-        int err = base->LastError();                             \
+        int err = voe_base_->LastError();                               \
         if (err != code)                                                \
         {                                                               \
             TEST_LOG_ERROR("Invalid error code (%d, should be %d) at line %d\n",
-code, err, __LINE__);
+                           code, err, __LINE__);
 }
 }
 #else
@@ -157,20 +157,21 @@ code, err, __LINE__);
         if ((expr))                                                      \
         {                                                                \
             TEST_LOG_ERROR("\nError at line:%i, %s \n",__LINE__, #expr); \
-            TEST_LOG_ERROR("Error code: %i\n",base->LastError()); \
+            TEST_LOG_ERROR("Error code: %i\n", voe_base_->LastError());  \
             PAUSE                                                        \
-            return -1;                                               \
+            return -1;                                                   \
         }                                                                \
     }
-#define TEST_ERROR(code)											\
-    {																\
-        int err = base->LastError();                                    \
-        if (err != code)                                                \
-        {                                                               \
-            TEST_LOG_ERROR("Invalid error code (%d, should be %d) at line %d\n", err, code, __LINE__);                        \
-            PAUSE                                                       \
-            return -1;                                                  \
-        }															\
+#define TEST_ERROR(code) \
+    {																                                         \
+      int err = voe_base_->LastError();                                      \
+      if (err != code)                                                       \
+      {                                                                      \
+        TEST_LOG_ERROR("Invalid error code (%d, should be %d) at line %d\n", \
+                       err, code, __LINE__);                                 \
+        PAUSE                                                                \
+        return -1;                                                           \
+      }															                                         \
     }
 #endif  // #ifdef _INSTRUMENTATION_TESTING_
 #define EXCLUDE()                                                   \

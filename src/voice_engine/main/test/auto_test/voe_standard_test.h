@@ -273,88 +273,101 @@ class VoETestManager {
   int DoStandardTest();
 
   const char* AudioFilename() const {
-    return audioFilename_.c_str();
+    return audio_filename_.c_str();
   }
 
   VoiceEngine* VoiceEnginePtr() const {
-    return ve;
+    return voice_engine_;
   }
   VoEBase* BasePtr() const {
-    return base;
+    return voe_base_;
   }
   VoECodec* CodecPtr() const {
-    return codec;
+    return voe_codec_;
   }
   VoEVolumeControl* VolumeControlPtr() const {
-    return volume;
+    return voe_volume_control_;
   }
   VoEDtmf* DtmfPtr() const {
-    return dtmf;
+    return voe_dtmf_;
   }
   VoERTP_RTCP* RTP_RTCPPtr() const {
-    return rtp_rtcp;
+    return voe_rtp_rtcp_;
   }
   VoEAudioProcessing* APMPtr() const {
-    return apm;
+    return voe_apm_;
   }
 
   VoENetwork* NetworkPtr() const {
-    return netw;
+    return voe_network_;
   }
 
   VoEFile* FilePtr() const {
-    return file;
+    return voe_file_;
   }
 
   VoEHardware* HardwarePtr() const {
-    return hardware;
+    return voe_hardware_;
   }
 
   VoEVideoSync* VideoSyncPtr() const {
-    return vsync;
+    return voe_vsync_;
   }
 
   VoEEncryption* EncryptionPtr() const {
-    return encrypt;
+    return voe_encrypt_;
   }
 
   VoEExternalMedia* ExternalMediaPtr() const {
-    return xmedia;
+    return voe_xmedia_;
   }
 
   VoECallReport* CallReportPtr() const {
-    return report;
+    return voe_call_report_;
   }
 
 #ifdef _TEST_NETEQ_STATS_
   VoENetEqStats* NetEqStatsPtr() const {
-    return neteqst;
+    return voe_neteq_stats_;
   }
 
 #endif
 
  private:
-  bool initialized_;
-  VoiceEngine* ve;
-  VoEBase* base;
-  VoECallReport* report;
-  VoECodec* codec;
-  VoEDtmf* dtmf;
-  VoEEncryption* encrypt;
-  VoEExternalMedia* xmedia;
-  VoEFile* file;
-  VoEHardware* hardware;
+  int TestTraceApi();
+  int TestHardwareBeforeInitializing();
+  int SetUp();
+  int TestRtpRtcpBeforeStreaming();
+  int TestHardwareBeforeStreaming();
+  int TestCodecsBeforeStreaming();
+  int TestNetworkBeforeStreaming();
+  int TestStartStreaming(FakeExternalTransport& channel0_transport);
+  int TestStartPlaying();
+  int TestHoldAndNetEq();
+  int TestCodecs();
+
+  bool                   initialized_;
+
+  VoiceEngine*           voice_engine_;
+  VoEBase*               voe_base_;
+  VoECallReport*         voe_call_report_;
+  VoECodec*              voe_codec_;
+  VoEDtmf*               voe_dtmf_;
+  VoEEncryption*         voe_encrypt_;
+  VoEExternalMedia*      voe_xmedia_;
+  VoEFile*               voe_file_;
+  VoEHardware*           voe_hardware_;
+  VoENetwork*            voe_network_;
 #ifdef _TEST_NETEQ_STATS_
-  VoENetEqStats* neteqst;
+  VoENetEqStats*         voe_neteq_stats_;
 #endif
-  VoENetwork* netw;
-  VoERTP_RTCP* rtp_rtcp;
-  VoEVideoSync* vsync;
-  VoEVolumeControl* volume;
-  VoEAudioProcessing* apm;
-  int instanceCount;
-  std::string resourcePath_;
-  std::string audioFilename_;
+  VoERTP_RTCP*           voe_rtp_rtcp_;
+  VoEVideoSync*          voe_vsync_;
+  VoEVolumeControl*      voe_volume_control_;
+  VoEAudioProcessing*    voe_apm_;
+
+  std::string            resource_path_;
+  std::string            audio_filename_;
 };
 
 } // namespace voetest

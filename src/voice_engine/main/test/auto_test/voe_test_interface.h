@@ -59,11 +59,11 @@ enum ExtendedSelection {
 //  External transport (Transport)
 // ----------------------------------------------------------------------------
 
-class my_transportation : public Transport {
+class FakeExternalTransport : public Transport {
  public:
-  my_transportation(VoENetwork* ptr);
-  virtual ~my_transportation();
-  VoENetwork* myNetw;
+  FakeExternalTransport(VoENetwork* ptr);
+  virtual ~FakeExternalTransport();
+  VoENetwork* my_network_;
   int SendPacket(int channel, const void *data, int len);
   int SendRTCPPacket(int channel, const void *data, int len);
   void SetDelayStatus(bool enabled, unsigned int delayInMs = 100);
@@ -71,15 +71,15 @@ class my_transportation : public Transport {
   static bool Run(void* ptr);
   bool Process();
  private:
-  ThreadWrapper* _thread;
-  CriticalSectionWrapper* _lock;
-  EventWrapper* _event;
+  ThreadWrapper*          thread_;
+  CriticalSectionWrapper* lock_;
+  EventWrapper*           event_;
  private:
-  unsigned char _packetBuffer[1612];
-  int _length;
-  int _channel;
-  bool _delayIsEnabled;
-  int _delayTimeInMs;
+  unsigned char           packet_buffer_[1612];
+  int                     length_;
+  int                     channel_;
+  bool                    delay_is_enabled_;
+  int                     delay_time_in_ms_;
 };
 
 // Main test function
