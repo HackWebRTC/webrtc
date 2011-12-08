@@ -25,21 +25,30 @@ function parsed = parseLog(filename)
 % be found in the AUTHORS file in the root of the source tree.
 
 table = importdata(filename, ',', 1);
+if ~isstruct(table)
+  error('Malformed file, possibly empty or lacking data entries')
+end
+
+colheaders = table.textdata;
+if length(colheaders) == 1
+  colheaders = regexp(table.textdata{1}, ',', 'split');
+end
+
 parsed = struct;
 i = 1;
-while i <= length(table.colheaders)
+while i <= length(colheaders)
   % Checking for a multi-value column.
-  m = regexp(table.colheaders{i}, '([\w\t]+)\[(\d+)\]', 'tokens');
+  m = regexp(colheaders{i}, '([\w\t]+)\[(\d+)\]', 'tokens');
   if ~isempty(m)
     % Parse a multi-value column
     n = str2double(m{1}{2}) - 1;
     parsed.(strrep(m{1}{1}, ' ', '_')) = table.data(:, i:i+n);
     i = i + n + 1;
-  elseif ~isempty(table.colheaders{i})
+  elseif ~isempty(colheaders{i})
     % Parse a single-value column
-    parsed.(strrep(table.colheaders{i}, ' ', '_')) = table.data(:, i);
+    parsed.(strrep(colheaders{i}, ' ', '_')) = table.data(:, i);
     i = i + 1;
   else
-    error('Error: Empty column');
+    error('Empty column');
   end
 end
