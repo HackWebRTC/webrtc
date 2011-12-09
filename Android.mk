@@ -45,7 +45,7 @@ include $(MY_WEBRTC_ROOT_PATH)/src/modules/video_coding/codecs/vp8/main/source/A
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/video_coding/main/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/video_processing/main/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/video_render/main/source/Android.mk
-include $(MY_WEBRTC_ROOT_PATH)/src/video_engine/main/source/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/src/video_engine/Android.mk
 
 # third party
 include $(MY_WEBRTC_ROOT_PATH)/libvpx.mk
@@ -158,5 +158,5 @@ include $(BUILD_SHARED_LIBRARY)
 include $(MY_WEBRTC_ROOT_PATH)/src/voice_engine/main/test/cmd_test/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/voice_engine/main/test/auto_test/Android.mk
 # video engien test apps
-include $(MY_WEBRTC_ROOT_PATH)/src/video_engine/main/test/AutoTest/android/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/src/video_engine/test/auto_test/android/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/video_engine/main/test/android_test/Android.mk
