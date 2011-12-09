@@ -100,10 +100,15 @@ int ConvertToI420(VideoType src_video_type,
                   bool interlaced,
                   VideoRotationMode rotate);
 
+// TODO(andrew): return to the int width and height types. This was swapped
+// temporarily to satisfy a linking error with the libjingle revision we and
+// Chrome pull, due to the removed vplib.
 int ConvertFromI420(VideoType dst_video_type,
                     const uint8_t* src_frame,
-                    int width,
-                    int height,
+                    //int width,
+                    //int height,
+                    WebRtc_UWord32 width,
+                    WebRtc_UWord32 height,
                     uint8_t* dst_frame,
                     bool interlaced,
                     VideoRotationMode rotate);

@@ -673,8 +673,10 @@ int ConvertToI420(VideoType src_video_type,
 
 int ConvertFromI420(VideoType dst_video_type,
                     const uint8_t* src_frame,
-                    int width,
-                    int height,
+                    //int width,
+                    //int height,
+                    WebRtc_UWord32 width,
+                    WebRtc_UWord32 height,
                     uint8_t* dst_frame,
                     bool interlaced,
                     VideoRotationMode rotate) {

@@ -13,8 +13,7 @@
       'target_name': 'All',
       'type': 'none',
       'dependencies': [
-        # TODO(andrew): re-enable when libjingle is rolled.
-        #'peerconnection/peerconnection.gyp:*',
+        'peerconnection/peerconnection.gyp:*',
         'src/common_audio/common_audio.gyp:*',
         'src/common_video/common_video.gyp:*',
         'src/modules/modules.gyp:*',
