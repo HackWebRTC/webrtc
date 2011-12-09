@@ -33,16 +33,24 @@ public:
     virtual void Leave() = 0;
 };
 
-// RAII extension of the critical section. Prevents Enter/Leave missmatches and
+// RAII extension of the critical section. Prevents Enter/Leave mismatches and
 // provides more compact critical section syntax.
 class CriticalSectionScoped
 {
 public:
-    CriticalSectionScoped(CriticalSectionWrapper& critsec)
-        :
-        _ptrCritSec(&critsec)
+    // Deprecated, don't add more users of this constructor.
+    // TODO(mflodman) Remove this version of the constructor when no one is
+    // using it any longer.
+    explicit CriticalSectionScoped(CriticalSectionWrapper& critsec)
+        : _ptrCritSec(&critsec)
     {
         _ptrCritSec->Enter();
+    }
+
+    explicit CriticalSectionScoped(CriticalSectionWrapper* critsec)
+        : _ptrCritSec(critsec)
+    {
+      _ptrCritSec->Enter();
     }
 
     ~CriticalSectionScoped()
