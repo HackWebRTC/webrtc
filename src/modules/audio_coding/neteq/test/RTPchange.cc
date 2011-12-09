@@ -116,17 +116,8 @@ int main(int argc, char* argv[])
             std::pair<WebRtc_UWord16, WebRtc_UWord32>(newPacket->sequenceNumber(), newPacket->timeStamp());
 
         WebRtc_UWord32 newSendTime = packetStats[tempPair];
-        if (newSendTime >= 0) 
-        {
-            newPacket->setTime(newSendTime); // set new send time
-            packetVec.push_back(newPacket); // insert in vector
-        }
-        else
-        {
-            // negative value represents lost packet
-            // don't insert, but delete packet object
-            delete newPacket;
-        }
+        newPacket->setTime(newSendTime); // set new send time
+        packetVec.push_back(newPacket); // insert in vector
 
     }
 

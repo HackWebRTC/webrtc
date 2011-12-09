@@ -1410,7 +1410,7 @@ int NetEQTest_init_coders(enum WebRtcNetEQDecoder coder, int enc_frameSize, int 
             if (ok!=0) {
                 printf("Error: Couldn't allocate memory for iSAC SWB instance\n");
                 exit(0);
-            }if ((enc_frameSize==960)) {
+            }if (enc_frameSize==960) {
             } else {
                 printf("\nError - iSAC SWB only supports frameSize 30 ms\n");
                 exit(0);
@@ -1675,12 +1675,12 @@ int NetEQTest_encode(int coder, WebRtc_Word16 *indata, int frameLen, unsigned ch
     for (int k = 0; k < numChannels; k++)
     {
         /* Encode with the selected coder type */
-        if ((coder==kDecoderPCMu)) { /*g711 u-law */
+        if (coder==kDecoderPCMu) { /*g711 u-law */
 #ifdef CODEC_G711
             cdlen = WebRtcG711_EncodeU(G711state[k], indata, frameLen, (WebRtc_Word16*) encoded);
 #endif
         }  
-        else if ((coder==kDecoderPCMa)) { /*g711 A-law */
+        else if (coder==kDecoderPCMa) { /*g711 A-law */
 #ifdef CODEC_G711
             cdlen = WebRtcG711_EncodeA(G711state[k], indata, frameLen, (WebRtc_Word16*) encoded);
         }
@@ -1692,7 +1692,7 @@ int NetEQTest_encode(int coder, WebRtc_Word16 *indata, int frameLen, unsigned ch
             }
 #endif
 #ifdef CODEC_G722
-        else if ((coder==kDecoderG722)) { /*g722 */
+        else if (coder==kDecoderG722) { /*g722 */
             cdlen=WebRtcG722_Encode(g722EncState[k], indata, frameLen, (WebRtc_Word16*)encoded);
             cdlen=frameLen>>1;
         }
@@ -1728,7 +1728,7 @@ int NetEQTest_encode(int coder, WebRtc_Word16 *indata, int frameLen, unsigned ch
         }
 #endif
 #ifdef CODEC_G729
-        else if ((coder==kDecoderG729)) { /*g729 */
+        else if (coder==kDecoderG729) { /*g729 */
             WebRtc_Word16 dataPos=0;
             WebRtc_Word16 len=0;
             cdlen = 0;
@@ -1739,7 +1739,7 @@ int NetEQTest_encode(int coder, WebRtc_Word16 *indata, int frameLen, unsigned ch
         }
 #endif
 #ifdef CODEC_G729_1
-        else if ((coder==kDecoderG729_1)) { /*g729.1 */
+        else if (coder==kDecoderG729_1) { /*g729.1 */
             WebRtc_Word16 dataPos=0;
             WebRtc_Word16 len=0;
             cdlen = 0;
@@ -1760,7 +1760,7 @@ int NetEQTest_encode(int coder, WebRtc_Word16 *indata, int frameLen, unsigned ch
         }
 #endif
 #ifdef CODEC_ILBC
-        else if ((coder==kDecoderILBC)) { /*iLBC */
+        else if (coder==kDecoderILBC) { /*iLBC */
             cdlen=WebRtcIlbcfix_Encode(iLBCenc_inst[k], indata,frameLen,(WebRtc_Word16*)encoded);
         }
 #endif
@@ -1789,7 +1789,7 @@ int NetEQTest_encode(int coder, WebRtc_Word16 *indata, int frameLen, unsigned ch
         }
 #endif
 #ifdef CODEC_GSMFR
-        else if ((coder==kDecoderGSMFR)) { /* GSM FR */
+        else if (coder==kDecoderGSMFR) { /* GSM FR */
             cdlen=WebRtcGSMFR_Encode(GSMFRenc_inst[k], indata, frameLen, (WebRtc_Word16*)encoded);
         }
 #endif
