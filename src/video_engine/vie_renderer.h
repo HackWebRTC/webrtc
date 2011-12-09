@@ -8,18 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * vie_renderer.h
- */
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_RENDERER_H_
+#define WEBRTC_VIDEO_ENGINE_VIE_RENDERER_H_
 
-#ifndef WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_RENDERER_H_
-#define WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_RENDERER_H_
-
-
-#include "vie_frame_provider_base.h"
-#include "map_wrapper.h"
-#include "vie_render.h"
-#include "video_render_defines.h"
+#include "modules/video_render/main/interface/video_render_defines.h"
+#include "system_wrappers/interface/map_wrapper.h"
+#include "video_engine/main/interface/vie_render.h"
+#include "video_engine/vie_frame_provider_base.h"
 
 namespace webrtc {
 
@@ -27,94 +22,94 @@ class VideoRender;
 class VideoRenderCallback;
 class ViERenderManager;
 
-
-class ViEExternalRendererImpl : public VideoRenderCallback
-{
-public:
+class ViEExternalRendererImpl : public VideoRenderCallback {
+ public:
   ViEExternalRendererImpl();
-  int SetViEExternalRenderer(ExternalRenderer* externalRenderer, webrtc::RawVideoType videoInputFormat);
+  virtual ~ViEExternalRendererImpl() {}
 
-  // implements VideoRenderCallback
-  virtual WebRtc_Word32 RenderFrame(const WebRtc_UWord32 streamId,
-                                  webrtc::VideoFrame&   videoFrame);
+  int SetViEExternalRenderer(ExternalRenderer* external_renderer,
+                             RawVideoType video_input_format);
 
-  virtual ~ViEExternalRendererImpl(){};
+  // Implements VideoRenderCallback.
+  virtual WebRtc_Word32 RenderFrame(const WebRtc_UWord32 stream_id,
+                                    VideoFrame& video_frame);
 
-private:
-  ExternalRenderer*  _externalRenderer;
-  webrtc::RawVideoType      _externalRendererFormat;
-  WebRtc_UWord32          _externalRendererWidth;
-  WebRtc_UWord32          _externalRendererHeight;
+ private:
+  ExternalRenderer* external_renderer_;
+  RawVideoType external_renderer_format_;
+  WebRtc_UWord32 external_renderer_width_;
+  WebRtc_UWord32 external_renderer_height_;
 };
 
-
-class ViERenderer: public ViEFrameCallback
-{
-public:
-  static ViERenderer* CreateViERenderer(const WebRtc_Word32 renderId,
-                          const WebRtc_Word32 engineId,
-                          VideoRender& renderModule,
-                          ViERenderManager& renderManager,
-                          const WebRtc_UWord32 zOrder,
-                          const float left,
-                          const float top,
-                          const float right,
-                          const float bottom);
-
+class ViERenderer: public ViEFrameCallback {
+ public:
+  static ViERenderer* CreateViERenderer(const WebRtc_Word32 render_id,
+                                        const WebRtc_Word32 engine_id,
+                                        VideoRender& render_module,
+                                        ViERenderManager& render_manager,
+                                        const WebRtc_UWord32 z_order,
+                                        const float left,
+                                        const float top,
+                                        const float right,
+                                        const float bottom);
   ~ViERenderer(void);
 
   WebRtc_Word32 StartRender();
   WebRtc_Word32 StopRender();
 
-  WebRtc_Word32 GetLastRenderedFrame(const WebRtc_Word32 renderID, webrtc::VideoFrame& videoFrame);
+  WebRtc_Word32 GetLastRenderedFrame(const WebRtc_Word32 renderID,
+                                     VideoFrame& video_frame);
 
-  WebRtc_Word32 ConfigureRenderer(const unsigned int zOrder,
-                const float left,
-                const float top,
-                const float right,
-                const float bottom);
-
+  WebRtc_Word32 ConfigureRenderer(const unsigned int z_order,
+                                  const float left,
+                                  const float top,
+                                  const float right,
+                                  const float bottom);
 
   VideoRender& RenderModule();
 
-  WebRtc_Word32 EnableMirroring(const WebRtc_Word32 renderId, const bool enable, const bool mirrorXAxis, const bool mirrorYAxis);
+  WebRtc_Word32 EnableMirroring(const WebRtc_Word32 render_id,
+                                const bool enable,
+                                const bool mirror_xaxis,
+                                const bool mirror_yaxis);
 
-  WebRtc_Word32 SetTimeoutImage(const webrtc::VideoFrame& timeoutImage,const WebRtc_Word32 timeoutValue);
-  WebRtc_Word32 SetRenderStartImage(const webrtc::VideoFrame& startImage);
-  WebRtc_Word32 SetExternalRenderer(const WebRtc_Word32 renderId, webrtc::RawVideoType videoInputFormat, ExternalRenderer* externalRenderer);
+  WebRtc_Word32 SetTimeoutImage(const VideoFrame& timeout_image,
+                                const WebRtc_Word32 timeout_value);
+  WebRtc_Word32 SetRenderStartImage(const VideoFrame& start_image);
+  WebRtc_Word32 SetExternalRenderer(const WebRtc_Word32 render_id,
+                                    RawVideoType video_input_format,
+                                    ExternalRenderer* external_renderer);
 
-private:
-  WebRtc_Word32 Init(const WebRtc_UWord32 zOrder,
-             const float left,
-             const float top,
-             const float right,
-             const float bottom);
+ private:
+  ViERenderer(const WebRtc_Word32 render_id, const WebRtc_Word32 engine_id,
+                VideoRender& render_module,
+                ViERenderManager& render_manager);
 
-  ViERenderer(const WebRtc_Word32 renderId,const WebRtc_Word32 engineId,
-              VideoRender& renderModule,
-              ViERenderManager& renderManager);
-
+  WebRtc_Word32 Init(const WebRtc_UWord32 z_order,
+                     const float left,
+                     const float top,
+                     const float right,
+                     const float bottom);
 
   // Implement ViEFrameCallback
-
-  virtual void DeliverFrame(int id, VideoFrame& videoFrame, int numCSRCs = 0,
+  virtual void DeliverFrame(int id,
+                            VideoFrame& video_frame,
+                            int num_csrcs = 0,
                             const WebRtc_UWord32 CSRC[kRtpCsrcSize] = NULL);
-  virtual void DelayChanged(int id, int frameDelay){return;}
-  virtual int GetPreferedFrameSettings(int &width, int &height,
-                                       int &frameRate){return -1;}
-
+  virtual void DelayChanged(int id, int frame_delay);
+  virtual int GetPreferedFrameSettings(int& width,
+                                       int& height,
+                                       int& frame_rate);
   virtual void ProviderDestroyed(int id);
 
-
-  WebRtc_UWord32          _renderId;
-  WebRtc_Word32            _engineId;
-  VideoRender&      _renderModule;
-  ViERenderManager&        _renderManager;
-  VideoRenderCallback*    _ptrRenderCallback;
-  ViEExternalRendererImpl*  _ptrIncomingExternalCallback;
-
+  WebRtc_UWord32 render_id_;
+  WebRtc_Word32 engine_id_;
+  VideoRender& render_module_;
+  ViERenderManager& render_manager_;
+  VideoRenderCallback* render_callback_;
+  ViEExternalRendererImpl* incoming_external_callback_;
 };
 
-} //namespace webrtc
+}  // namespace webrtc
 
-#endif // WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_RENDERER_H_
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_RENDERER_H_

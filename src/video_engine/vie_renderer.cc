@@ -8,243 +8,249 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "vie_renderer.h"
-#include "video_render.h"
-#include "video_render_defines.h"
-#include "vie_render_manager.h"
+#include "video_engine/vie_renderer.h"
+
 #include "common_video/libyuv/include/libyuv.h"
+#include "modules/video_render/main/interface/video_render.h"
+#include "modules/video_render/main/interface/video_render_defines.h"
+#include "video_engine/vie_render_manager.h"
 
 namespace webrtc {
 
-ViERenderer* ViERenderer::CreateViERenderer(
-                            const WebRtc_Word32 renderId,
-                            const WebRtc_Word32 engineId,
-                            VideoRender& renderModule,
-                            ViERenderManager& renderManager,
-                            const WebRtc_UWord32 zOrder,
-                            const float left,
-                            const float top,
-                            const float right,
-                            const float bottom)
-{
-    ViERenderer* self=new ViERenderer(renderId,engineId,renderModule,renderManager);
-    if(!self || self->Init(zOrder,left,top,right,bottom)!=0)
-    {
-        delete self;
-        self=NULL;
-    }
-    return self;
-}
-
-ViERenderer::~ViERenderer(void)
-{
-    if(_ptrRenderCallback)
-    {
-        _renderModule.DeleteIncomingRenderStream( _renderId);
-    }
-
-  if(_ptrIncomingExternalCallback){
-    delete _ptrIncomingExternalCallback;
+ViERenderer* ViERenderer::CreateViERenderer(const WebRtc_Word32 render_id,
+                                            const WebRtc_Word32 engine_id,
+                                            VideoRender& render_module,
+                                            ViERenderManager& render_manager,
+                                            const WebRtc_UWord32 z_order,
+                                            const float left,
+                                            const float top,
+                                            const float right,
+                                            const float bottom) {
+  ViERenderer* self = new ViERenderer(render_id, engine_id, render_module,
+                                      render_manager);
+  if (!self || self->Init(z_order, left, top, right, bottom) != 0) {
+    delete self;
+    self = NULL;
   }
-
+  return self;
 }
 
-ViERenderer::ViERenderer(const WebRtc_Word32 renderId,const WebRtc_Word32 engineId,
-                        VideoRender& renderModule,
-                        ViERenderManager& renderManager)
-:
-_renderId(renderId),
-_engineId(engineId),
-_renderModule(renderModule),
-_renderManager(renderManager),
-_ptrRenderCallback(NULL),
-_ptrIncomingExternalCallback(new ViEExternalRendererImpl())
-{
+ViERenderer::~ViERenderer(void) {
+  if (render_callback_)
+    render_module_.DeleteIncomingRenderStream(render_id_);
 
+  if (incoming_external_callback_)
+    delete incoming_external_callback_;
 }
 
-WebRtc_Word32 ViERenderer::Init(const WebRtc_UWord32 zOrder,
-               const float left,
-               const float top,
-               const float right,
-               const float bottom)
-{
-    _ptrRenderCallback = (VideoRenderCallback*)_renderModule.AddIncomingRenderStream( _renderId, zOrder, left, top, right, bottom);
-    if (_ptrRenderCallback == NULL)
-    {
-        // Logging done
-        return -1;
-    }
-
-    return 0;
+WebRtc_Word32 ViERenderer::StartRender() {
+  return render_module_.StartRender(render_id_);
+}
+WebRtc_Word32 ViERenderer::StopRender() {
+  return render_module_.StopRender(render_id_);
 }
 
-WebRtc_Word32 ViERenderer::GetLastRenderedFrame(const WebRtc_Word32 renderID, webrtc::VideoFrame& videoFrame)
-{
-  return _renderModule.GetLastRenderedFrame(renderID, videoFrame);
+WebRtc_Word32 ViERenderer::GetLastRenderedFrame(const WebRtc_Word32 renderID,
+                                                VideoFrame& video_frame) {
+  return render_module_.GetLastRenderedFrame(renderID, video_frame);
 }
 
-WebRtc_Word32 ViERenderer::StartRender()
-{
-  return _renderModule.StartRender(_renderId);
-}
-WebRtc_Word32 ViERenderer::StopRender()
-{
-    return _renderModule.StopRender(_renderId);
-}
-
-    // Implement ViEFrameCallback
-void ViERenderer::DeliverFrame(int id,
-                                webrtc::VideoFrame& videoFrame,
-                                int numCSRCs,
-                                const WebRtc_UWord32 CSRC[kRtpCsrcSize])
-{
-
-
-    _ptrRenderCallback->RenderFrame(_renderId,videoFrame);
-
+WebRtc_Word32 ViERenderer::ConfigureRenderer(const unsigned int z_order,
+                                             const float left,
+                                             const float top,
+                                             const float right,
+                                             const float bottom) {
+  return render_module_.ConfigureRenderer(render_id_, z_order, left, top, right,
+                                          bottom);
 }
 
-// Implement ViEFrameCallback
-void ViERenderer::ProviderDestroyed(int id)
-{
-    _renderManager.RemoveRenderStream(_renderId); // Remove the render stream since the provider is destroyed.
+VideoRender& ViERenderer::RenderModule() {
+  return render_module_;
 }
 
-VideoRender& ViERenderer::RenderModule()
-{
-    return _renderModule;
+WebRtc_Word32 ViERenderer::EnableMirroring(const WebRtc_Word32 render_id,
+                                           const bool enable,
+                                           const bool mirror_xaxis,
+                                           const bool mirror_yaxis) {
+  return render_module_.MirrorRenderStream(render_id, enable, mirror_xaxis,
+                                           mirror_yaxis);
 }
 
-WebRtc_Word32 ViERenderer::ConfigureRenderer(const unsigned int zOrder,
-              const float left,
-              const float top,
-              const float right,
-              const float bottom)
-{
-  return _renderModule.ConfigureRenderer(_renderId, zOrder, left, top, right, bottom);
+WebRtc_Word32 ViERenderer::SetTimeoutImage(const VideoFrame& timeout_image,
+                                           const WebRtc_Word32 timeout_value) {
+  return render_module_.SetTimeoutImage(render_id_, timeout_image,
+                                        timeout_value);
 }
 
-
-
-WebRtc_Word32 ViERenderer::SetTimeoutImage(const webrtc::VideoFrame& timeoutImage,const WebRtc_Word32 timeoutValue)
-{
-    return _renderModule.SetTimeoutImage(_renderId,timeoutImage,timeoutValue);
+WebRtc_Word32  ViERenderer::SetRenderStartImage(const VideoFrame& start_image) {
+  return render_module_.SetStartImage(render_id_, start_image);
 }
 
-WebRtc_Word32  ViERenderer::SetRenderStartImage(const webrtc::VideoFrame& startImage)
-{
-    return _renderModule.SetStartImage(_renderId,startImage);
+WebRtc_Word32 ViERenderer::SetExternalRenderer(
+    const WebRtc_Word32 render_id,
+    RawVideoType video_input_format,
+    ExternalRenderer* external_renderer) {
+  if (!incoming_external_callback_)
+    return -1;
+
+  incoming_external_callback_->SetViEExternalRenderer(external_renderer,
+                                                      video_input_format);
+  return render_module_.AddExternalRenderCallback(render_id,
+                                                  incoming_external_callback_);
 }
 
-
-
-WebRtc_Word32 ViERenderer::EnableMirroring(const WebRtc_Word32 renderId, const bool enable, const bool mirrorXAxis, const bool mirrorYAxis)
-{
-    return _renderModule.MirrorRenderStream(renderId, enable, mirrorXAxis, mirrorYAxis);
+ViERenderer::ViERenderer(const WebRtc_Word32 render_id,
+                         const WebRtc_Word32 engine_id,
+                         VideoRender& render_module,
+                         ViERenderManager& render_manager)
+    : render_id_(render_id),
+      engine_id_(engine_id),
+      render_module_(render_module),
+      render_manager_(render_manager),
+      render_callback_(NULL),
+      incoming_external_callback_(new ViEExternalRendererImpl()) {
 }
 
-
-WebRtc_Word32 ViERenderer::SetExternalRenderer(const WebRtc_Word32 renderId, webrtc::RawVideoType videoInputFormat, ExternalRenderer* externalRenderer)
-{
-  if(NULL == _ptrIncomingExternalCallback){
+WebRtc_Word32 ViERenderer::Init(const WebRtc_UWord32 z_order,
+                                const float left,
+                                const float top,
+                                const float right,
+                                const float bottom) {
+  render_callback_ =
+      static_cast<VideoRenderCallback*>(render_module_.AddIncomingRenderStream(
+          render_id_, z_order, left, top, right, bottom));
+  if (!render_callback_) {
+    // Logging done.
     return -1;
   }
-
-  _ptrIncomingExternalCallback->SetViEExternalRenderer(externalRenderer, videoInputFormat);
-  return _renderModule.AddExternalRenderCallback(renderId, _ptrIncomingExternalCallback);
-}
-
-
-
-ViEExternalRendererImpl::ViEExternalRendererImpl() :
-_externalRenderer(NULL),
-_externalRendererFormat(),
-_externalRendererWidth(0),
-_externalRendererHeight(0)
-{
-}
-
-int ViEExternalRendererImpl::SetViEExternalRenderer(ExternalRenderer* externalRenderer, webrtc::RawVideoType videoInputFormat)
-{
-  _externalRenderer = externalRenderer;
-  _externalRendererFormat = videoInputFormat;
   return 0;
 }
 
-// implements VideoRenderCallback
-WebRtc_Word32 ViEExternalRendererImpl::RenderFrame(const WebRtc_UWord32 streamId,
-                                webrtc::VideoFrame&   videoFrame)
-{
-  webrtc::VideoFrame convertedFrame;
-  webrtc::VideoFrame* pConvertedFrame = &convertedFrame;
+void ViERenderer::DeliverFrame(int id,
+                               VideoFrame& video_frame,
+                               int num_csrcs,
+                               const WebRtc_UWord32 CSRC[kRtpCsrcSize]) {
+  render_callback_->RenderFrame(render_id_, video_frame);
+}
 
-  // convert to requested format
-  switch(_externalRendererFormat)
-  {
-  case webrtc::kVideoI420:
-    pConvertedFrame = &videoFrame;
-    break;
-  case webrtc::kVideoYV12:
-    convertedFrame.VerifyAndAllocate(webrtc::CalcBufferSize(webrtc::kYV12,videoFrame.Width(),videoFrame.Height()));
-    webrtc::ConvertI420ToYV12(videoFrame.Buffer(), convertedFrame.Buffer(), videoFrame.Width(), videoFrame.Height(), 0);
-    break;
-  case webrtc::kVideoYUY2:
-    convertedFrame.VerifyAndAllocate(webrtc::CalcBufferSize(webrtc::kYUY2,videoFrame.Width(),videoFrame.Height()));
-    webrtc::ConvertI420ToYUY2(videoFrame.Buffer(), convertedFrame.Buffer(), videoFrame.Width(), videoFrame.Height(), 0);
-    break;
-  case webrtc::kVideoUYVY:
-    convertedFrame.VerifyAndAllocate(webrtc::CalcBufferSize(webrtc::kUYVY,videoFrame.Width(),videoFrame.Height()));
-    webrtc::ConvertI420ToUYVY(videoFrame.Buffer(), convertedFrame.Buffer(), videoFrame.Width(), videoFrame.Height(), 0);
-    break;
-  case webrtc::kVideoIYUV:
-    // no conversion available
-    break;
-  case webrtc::kVideoARGB:
-    convertedFrame.VerifyAndAllocate(webrtc::CalcBufferSize(webrtc::kARGB,videoFrame.Width(),videoFrame.Height()));
-    webrtc::ConvertI420ToARGB(videoFrame.Buffer(), convertedFrame.Buffer(), videoFrame.Width(), videoFrame.Height(), 0);
-    break;
-  case webrtc::kVideoRGB24:
-    convertedFrame.VerifyAndAllocate(webrtc::CalcBufferSize(webrtc::kRGB24,videoFrame.Width(),videoFrame.Height()));
-    webrtc::ConvertI420ToRGB24(videoFrame.Buffer(), convertedFrame.Buffer(), videoFrame.Width(), videoFrame.Height());
-    break;
-  case webrtc::kVideoRGB565:
-    convertedFrame.VerifyAndAllocate(webrtc::CalcBufferSize(webrtc::kRGB565,videoFrame.Width(),videoFrame.Height()));
-    webrtc::ConvertI420ToRGB565(videoFrame.Buffer(), convertedFrame.Buffer(), videoFrame.Width(), videoFrame.Height());
-    break;
-  case webrtc::kVideoARGB4444:
-    convertedFrame.VerifyAndAllocate(webrtc::CalcBufferSize(webrtc::kARGB4444,videoFrame.Width(),videoFrame.Height()));
-    webrtc::ConvertI420ToARGB4444(videoFrame.Buffer(), convertedFrame.Buffer(), videoFrame.Width(), videoFrame.Height(), 0);
-    break;
-  case webrtc::kVideoARGB1555 :
-    convertedFrame.VerifyAndAllocate(webrtc::CalcBufferSize(webrtc::kARGB1555,videoFrame.Width(),videoFrame.Height()));
-    webrtc::ConvertI420ToARGB1555(videoFrame.Buffer(), convertedFrame.Buffer(), videoFrame.Width(), videoFrame.Height(), 0);
-    break;
-  default:
-    // the format is something funny. Should never reach here...
-    assert(false);
-    pConvertedFrame = NULL;
-    break;
+void ViERenderer::DelayChanged(int id, int frame_delay) {}
+
+int ViERenderer::GetPreferedFrameSettings(int& width,
+                                          int& height,
+                                          int& frame_rate) {
+    return -1;
+}
+
+void ViERenderer::ProviderDestroyed(int id) {
+  // Remove the render stream since the provider is destroyed.
+  render_manager_.RemoveRenderStream(render_id_);
+}
+
+ViEExternalRendererImpl::ViEExternalRendererImpl()
+    : external_renderer_(NULL),
+      external_renderer_format_(kVideoUnknown),
+      external_renderer_width_(0),
+      external_renderer_height_(0) {
+}
+
+int ViEExternalRendererImpl::SetViEExternalRenderer(
+    ExternalRenderer* external_renderer,
+    RawVideoType video_input_format) {
+  external_renderer_ = external_renderer;
+  external_renderer_format_ = video_input_format;
+  return 0;
+}
+
+WebRtc_Word32 ViEExternalRendererImpl::RenderFrame(
+    const WebRtc_UWord32 stream_id,
+    VideoFrame&   video_frame) {
+  VideoFrame converted_frame;
+  VideoFrame* p_converted_frame = &converted_frame;
+
+  // Convert to requested format.
+  switch (external_renderer_format_) {
+    case kVideoI420:
+      p_converted_frame = &video_frame;
+      break;
+    case kVideoYV12:
+      converted_frame.VerifyAndAllocate(CalcBufferSize(kYV12,
+                                                       video_frame.Width(),
+                                                       video_frame.Height()));
+      ConvertI420ToYV12(video_frame.Buffer(), converted_frame.Buffer(),
+                        video_frame.Width(), video_frame.Height(), 0);
+      break;
+    case kVideoYUY2:
+      converted_frame.VerifyAndAllocate(CalcBufferSize(kYUY2,
+                                                       video_frame.Width(),
+                                                       video_frame.Height()));
+      ConvertI420ToYUY2(video_frame.Buffer(), converted_frame.Buffer(),
+                        video_frame.Width(), video_frame.Height(), 0);
+      break;
+    case kVideoUYVY:
+      converted_frame.VerifyAndAllocate(CalcBufferSize(kUYVY,
+                                                       video_frame.Width(),
+                                                       video_frame.Height()));
+      ConvertI420ToUYVY(video_frame.Buffer(), converted_frame.Buffer(),
+                        video_frame.Width(), video_frame.Height(), 0);
+      break;
+    case kVideoIYUV:
+      // no conversion available
+      break;
+    case kVideoARGB:
+      converted_frame.VerifyAndAllocate(CalcBufferSize(kARGB,
+                                                       video_frame.Width(),
+                                                       video_frame.Height()));
+      ConvertI420ToARGB(video_frame.Buffer(), converted_frame.Buffer(),
+                        video_frame.Width(), video_frame.Height(), 0);
+      break;
+    case kVideoRGB24:
+      converted_frame.VerifyAndAllocate(CalcBufferSize(kRGB24,
+                                                       video_frame.Width(),
+                                                       video_frame.Height()));
+      ConvertI420ToRGB24(video_frame.Buffer(), converted_frame.Buffer(),
+                         video_frame.Width(), video_frame.Height());
+      break;
+    case kVideoRGB565:
+      converted_frame.VerifyAndAllocate(CalcBufferSize(kRGB565,
+                                                       video_frame.Width(),
+                                                       video_frame.Height()));
+      ConvertI420ToRGB565(video_frame.Buffer(), converted_frame.Buffer(),
+                          video_frame.Width(), video_frame.Height());
+      break;
+    case kVideoARGB4444:
+      converted_frame.VerifyAndAllocate(CalcBufferSize(kARGB4444,
+                                                       video_frame.Width(),
+                                                       video_frame.Height()));
+      ConvertI420ToARGB4444(video_frame.Buffer(), converted_frame.Buffer(),
+                            video_frame.Width(), video_frame.Height(), 0);
+      break;
+    case kVideoARGB1555 :
+      converted_frame.VerifyAndAllocate(CalcBufferSize(kARGB1555,
+                                                       video_frame.Width(),
+                                                       video_frame.Height()));
+      ConvertI420ToARGB1555(video_frame.Buffer(), converted_frame.Buffer(),
+                            video_frame.Width(), video_frame.Height(), 0);
+      break;
+    default:
+      assert(false);
+      p_converted_frame = NULL;
+      break;
   }
 
-  if(_externalRendererWidth!=videoFrame.Width() || _externalRendererHeight!=videoFrame.Height())
-  {
-    _externalRendererWidth = videoFrame.Width();
-    _externalRendererHeight = videoFrame.Height();
-    _externalRenderer->FrameSizeChange(_externalRendererWidth, _externalRendererHeight, streamId);
+  if (external_renderer_width_ != video_frame.Width() ||
+      external_renderer_height_ != video_frame.Height()) {
+    external_renderer_width_ = video_frame.Width();
+    external_renderer_height_ = video_frame.Height();
+    external_renderer_->FrameSizeChange(external_renderer_width_,
+                                        external_renderer_height_, stream_id);
   }
 
-  if(pConvertedFrame)
-  {
-    _externalRenderer->DeliverFrame(pConvertedFrame->Buffer(),
-                                    pConvertedFrame->Length(),
-                                    videoFrame.TimeStamp());
+  if (p_converted_frame) {
+    external_renderer_->DeliverFrame(p_converted_frame->Buffer(),
+                                     p_converted_frame->Length(),
+                                     video_frame.TimeStamp());
   }
   return 0;
 }
 
-} //namespace webrtc
-
-
-
-
+}  // namespace webrtc
