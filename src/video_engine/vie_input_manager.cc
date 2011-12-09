@@ -405,7 +405,7 @@ int ViEInputManager::DestroyCaptureDevice(const int captureId)
                        __FUNCTION__, captureId);
             return -1;
         }
-        WebRtc_UWord32 numCallbacks = vieCapture->NumberOfRegistersFrameCallbacks();
+        WebRtc_UWord32 numCallbacks = vieCapture->NumberOfRegisteredFrameCallbacks();
         if (numCallbacks > 0)
         {
             WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideo, ViEId(_engineId),
@@ -537,7 +537,7 @@ int ViEInputManager::DestroyFilePlayer(int fileId)
             return -1;
         }
         int numCallbacks =
-            vieFilePlayer->NumberOfRegistersFrameCallbacks();
+            vieFilePlayer->NumberOfRegisteredFrameCallbacks();
         if (numCallbacks > 0)
         {
             WEBRTC_TRACE( webrtc::kTraceWarning, webrtc::kTraceVideo, ViEId(_engineId),

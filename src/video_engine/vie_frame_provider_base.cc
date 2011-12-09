@@ -8,307 +8,260 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "vie_frame_provider_base.h"
-#include "critical_section_wrapper.h"
-#include "tick_util.h"
-#include "trace.h"
-#include "vie_defines.h"
+#include "video_engine/vie_frame_provider_base.h"
+
+#include "system_wrappers/interface/critical_section_wrapper.h"
+#include "system_wrappers/interface/tick_util.h"
+#include "system_wrappers/interface/trace.h"
+#include "video_engine/vie_defines.h"
 
 namespace webrtc {
 
-ViEFrameProviderBase::ViEFrameProviderBase(int Id, int engineId):
-_id(Id),
-_engineId(engineId),
-_frameCallbackMap(),
-_providerCritSect(*CriticalSectionWrapper::CreateCriticalSection()),
-_ptrExtraFrame(NULL),
-_frameDelay(0)
-{
+ViEFrameProviderBase::ViEFrameProviderBase(int Id, int engine_id)
+    : id_(Id),
+      engine_id_(engine_id),
+      frame_callbacks_(),
+      provider_crit_sect_(*CriticalSectionWrapper::CreateCriticalSection()),
+      extra_frame_(NULL),
+      frame_delay_(0) {
 }
 
-ViEFrameProviderBase::~ViEFrameProviderBase()
-{
-    if(_frameCallbackMap.Size()>0)
-    {
-        WEBRTC_TRACE(webrtc::kTraceWarning,
-                     webrtc::kTraceVideo,
-                     ViEId(_engineId,_id),
-                     "FrameCallbacks still exist when Provider deleted %d",
-                     _frameCallbackMap.Size());
-    }
-    for(MapItem* item=_frameCallbackMap.First();item!=NULL;item=_frameCallbackMap.Next(item))
-    {
-        static_cast<ViEFrameCallback*>(item->GetItem())->ProviderDestroyed(_id);
-    }
+ViEFrameProviderBase::~ViEFrameProviderBase() {
+  if (frame_callbacks_.Size() > 0) {
+    WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(engine_id_, id_),
+                 "FrameCallbacks still exist when Provider deleted %d",
+                 frame_callbacks_.Size());
+  }
+  for (MapItem* item = frame_callbacks_.First(); item != NULL;
+       item = frame_callbacks_.Next(item)) {
+    static_cast<ViEFrameCallback*>(item->GetItem())->ProviderDestroyed(id_);
+  }
 
-    while(_frameCallbackMap.Erase(_frameCallbackMap.First()) == 0)
-        ;
+  while (frame_callbacks_.Erase(frame_callbacks_.First()) == 0) {
+  }
 
-    delete &_providerCritSect;
-    delete _ptrExtraFrame;
+  delete &provider_crit_sect_;
+  delete extra_frame_;
 }
 
-int ViEFrameProviderBase::Id()
-{
-    return _id;
+int ViEFrameProviderBase::Id() {
+  return id_;
 }
 
-void ViEFrameProviderBase::DeliverFrame(webrtc::VideoFrame& videoFrame,int numCSRCs,
-                                const WebRtc_UWord32 CSRC[kRtpCsrcSize])
-{
-#ifdef _DEBUG
-    const TickTime startProcessTime=TickTime::Now();
+void ViEFrameProviderBase::DeliverFrame(
+    VideoFrame& video_frame,
+    int num_csrcs,
+    const WebRtc_UWord32 CSRC[kRtpCsrcSize]) {
+#ifdef DEBUG_
+  const TickTime start_process_time = TickTime::Now();
 #endif
-    CriticalSectionScoped cs(_providerCritSect);
+  CriticalSectionScoped cs(provider_crit_sect_);
 
-    // Deliver the frame to all registered callbacks
-    if (_frameCallbackMap.Size() > 0)
-    {
-        if(_frameCallbackMap.Size()==1)
-        {
-            ViEFrameCallback* frameObserver = static_cast<ViEFrameCallback*>(_frameCallbackMap.First()->GetItem());
-            frameObserver->DeliverFrame(_id,videoFrame,numCSRCs,CSRC);
+  // Deliver the frame to all registered callbacks.
+  if (frame_callbacks_.Size() > 0) {
+    if (frame_callbacks_.Size() == 1) {
+      // We don't have to copy the frame.
+      ViEFrameCallback* frame_observer =
+          static_cast<ViEFrameCallback*>(frame_callbacks_.First()->GetItem());
+      frame_observer->DeliverFrame(id_, video_frame, num_csrcs, CSRC);
+    } else {
+      // Make a copy of the frame for all callbacks.
+      for (MapItem* map_item = frame_callbacks_.First(); map_item != NULL;
+           map_item = frame_callbacks_.Next(map_item)) {
+        if (extra_frame_ == NULL) {
+          extra_frame_ = new VideoFrame();
         }
-        else
-        {
-            // Make a copy of the frame for all callbacks
-            for (MapItem* mapItem = _frameCallbackMap.First();
-                mapItem != NULL;
-                mapItem = _frameCallbackMap.Next(mapItem))
-            {
-                if (_ptrExtraFrame == NULL)
-                {
-                    _ptrExtraFrame = new webrtc::VideoFrame();
-                }
-                if (mapItem != NULL)
-                {
-                    ViEFrameCallback* frameObserver = static_cast<ViEFrameCallback*>(mapItem->GetItem());
-                    if (frameObserver != NULL)
-                    {
-                        // We must copy the frame each time since the previous receiver might swap it...
-                        _ptrExtraFrame->CopyFrame(videoFrame);
-                        frameObserver->DeliverFrame(_id, *_ptrExtraFrame,numCSRCs,CSRC);
-                    }
-                }
-            }
+        if (map_item != NULL) {
+          ViEFrameCallback* frame_observer =
+              static_cast<ViEFrameCallback*>(map_item->GetItem());
+          if (frame_observer != NULL) {
+            // We must copy the frame each time since the previous receiver
+            // might swap it to avoid a copy.
+            extra_frame_->CopyFrame(video_frame);
+            frame_observer->DeliverFrame(id_, *extra_frame_, num_csrcs, CSRC);
+          }
         }
+      }
     }
-
-#ifdef _DEBUG
-    const int processTime=(int) (TickTime::Now()-startProcessTime).Milliseconds();
-    if(processTime>25) // Warn If the delivery time is too long.
-    {
-        WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideo, ViEId(_engineId,_id), "%s Too long time: %ums",__FUNCTION__,processTime);
-    }
+  }
+#ifdef DEBUG_
+  const int process_time =
+      static_cast<int>((TickTime::Now() - start_process_time).Milliseconds());
+  if (process_time > 25) {
+    // Warn if the delivery time is too long.
+    WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(engine_id_, id_),
+                 "%s Too long time: %ums", __FUNCTION__, process_time);
+  }
 #endif
 }
 
-void ViEFrameProviderBase::SetFrameDelay(int frameDelay)
-{
+void ViEFrameProviderBase::SetFrameDelay(int frame_delay) {
+  CriticalSectionScoped cs(provider_crit_sect_);
+  frame_delay_ = frame_delay;
 
-    CriticalSectionScoped cs(_providerCritSect);
-    _frameDelay=frameDelay;
+  for (MapItem* map_item = frame_callbacks_.First(); map_item != NULL;
+       map_item = frame_callbacks_.Next(map_item)) {
+    ViEFrameCallback* frame_observer =
+        static_cast<ViEFrameCallback*>(map_item->GetItem());
+    assert(frame_observer);
+    frame_observer->DelayChanged(id_, frame_delay);
+  }
+}
 
-    for (MapItem* mapItem = _frameCallbackMap.First();
-                mapItem != NULL;
-                mapItem = _frameCallbackMap.Next(mapItem))
-    {
-        ViEFrameCallback* frameObserver = static_cast<ViEFrameCallback*>(mapItem->GetItem());
-        assert(frameObserver);
-        frameObserver->DelayChanged(_id,frameDelay);
+int ViEFrameProviderBase::FrameDelay() {
+  return frame_delay_;
+}
+
+int ViEFrameProviderBase::GetBestFormat(int& best_width,
+                                        int& best_height,
+                                        int& best_frame_rate) {
+  int largest_width = 0;
+  int largest_height = 0;
+  int highest_frame_rate = 0;
+
+  CriticalSectionScoped cs(provider_crit_sect_);
+
+  // Check if this one already exists.
+  for (MapItem* map_item = frame_callbacks_.First(); map_item != NULL;
+       map_item = frame_callbacks_.Next(map_item)) {
+    int prefered_width = 0;
+    int prefered_height = 0;
+    int prefered_frame_rate = 0;
+
+    ViEFrameCallback* callback_object =
+        static_cast<ViEFrameCallback*>(map_item->GetItem());
+    assert(callback_object);
+    if (callback_object->GetPreferedFrameSettings(prefered_width,
+                                                  prefered_height,
+                                                  prefered_frame_rate) == 0) {
+      if (prefered_width > largest_width) {
+        largest_width = prefered_width;
+      }
+      if (prefered_height > largest_height) {
+        largest_height = prefered_height;
+      }
+      if (prefered_frame_rate > highest_frame_rate) {
+        highest_frame_rate = prefered_frame_rate;
+      }
     }
+  }
 
+  best_width = largest_width;
+  best_height = largest_height;
+  best_frame_rate = highest_frame_rate;
+
+  return 0;
 }
 
-int ViEFrameProviderBase::FrameDelay()
-{
-    return _frameDelay;
-}
+int ViEFrameProviderBase::RegisterFrameCallback(
+    int observer_id, ViEFrameCallback* callback_object) {
+  if (callback_object == NULL) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, id_),
+                 "%s: No argument", __FUNCTION__);
+    return -1;
+  }
+  WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, id_), "%s(0x%p)",
+               __FUNCTION__, callback_object);
 
-int ViEFrameProviderBase::GetBestFormat(int& bestWidth,
-                                        int& bestHeight,
-                                        int& bestFrameRate)
-{
+  {
+    CriticalSectionScoped cs(provider_crit_sect_);
 
-    int largestWidth = 0;
-    int largestHeight = 0;
-    int highestFrameRate = 0;
-
-    CriticalSectionScoped cs(_providerCritSect);
-
-    // Check if this one already exists...
-    for (MapItem* mapItem = _frameCallbackMap.First();
-         mapItem != NULL;
-         mapItem = _frameCallbackMap.Next(mapItem))
-    {
-
-
-        int preferedWidth=0;
-        int preferedHeight=0;
-        int preferedFrameRate=0;
-
-        ViEFrameCallback* callbackObject = static_cast<ViEFrameCallback*>(mapItem->GetItem());
-        assert(callbackObject);
-        if(callbackObject->GetPreferedFrameSettings(preferedWidth,preferedHeight,preferedFrameRate)==0)
-        {
-            if (preferedWidth > largestWidth)
-            {
-                largestWidth = preferedWidth;
-            }
-            if (preferedHeight > largestHeight)
-            {
-                largestHeight = preferedHeight;
-            }
-            if (preferedFrameRate > highestFrameRate)
-            {
-                highestFrameRate = preferedFrameRate;
-            }
-        }
-    }
-
-    bestWidth = largestWidth;
-    bestHeight = largestHeight;
-    bestFrameRate = highestFrameRate;
-
-    return 0;
-}
-
-int ViEFrameProviderBase::RegisterFrameCallback(int observerId,ViEFrameCallback* callbackObject)
-{
-    if (callbackObject == NULL)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId, _id),
-            "%s: No argument", __FUNCTION__);
+    // Check if the callback already exists.
+    for (MapItem* map_item = frame_callbacks_.First();
+         map_item != NULL;
+         map_item = frame_callbacks_.Next(map_item)) {
+      const ViEFrameCallback* observer =
+          static_cast<ViEFrameCallback*>(map_item->GetItem());
+      if (observer == callback_object) {
+        // This callback is already registered.
+        WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(engine_id_, id_),
+                     "%s 0x%p already registered", __FUNCTION__,
+                     callback_object);
+        assert("!frameObserver already registered");
         return -1;
+      }
     }
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_engineId, _id),
-        "%s(0x%p)", __FUNCTION__, callbackObject);
 
-    {
-        CriticalSectionScoped cs(_providerCritSect);
-
-        // Check if this one already exists...
-        for (MapItem* mapItem = _frameCallbackMap.First();
-             mapItem != NULL;
-             mapItem = _frameCallbackMap.Next(mapItem))
-        {
-            const ViEFrameCallback* observer=static_cast<ViEFrameCallback*> (mapItem->GetItem());
-            if (observer == callbackObject)
-            {
-                // This callback is already registered
-                WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideo, ViEId(_engineId, _id),
-                    "%s 0x%p already registered", __FUNCTION__, callbackObject);
-
-                assert("!frameObserver already registered");
-                return -1;
-            }
-        }
-
-        if (_frameCallbackMap.Insert(observerId,callbackObject) != 0)
-        {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId, _id),
-                "%s: Could not add 0x%p to list", __FUNCTION__, callbackObject);
-            return -1;
-        }
+    if (frame_callbacks_.Insert(observer_id, callback_object) != 0) {
+      WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, id_),
+                   "%s: Could not add 0x%p to list", __FUNCTION__,
+                   callback_object);
+      return -1;
     }
-    // Report current capture delay
-    callbackObject->DelayChanged(_id,_frameDelay);
+  }
+  // Report current capture delay
+  callback_object->DelayChanged(id_, frame_delay_);
 
-    FrameCallbackChanged(); // Notify implementer of this class that the callback list have changed
-    return 0;
-
-
+  // Notify implementer of this class that the callback list have changed.
+  FrameCallbackChanged();
+  return 0;
 }
 
+int ViEFrameProviderBase::DeregisterFrameCallback(
+    const ViEFrameCallback* callback_object) {
+  if (!callback_object) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, id_),
+                 "%s: No argument", __FUNCTION__);
+    return -1;
+  }
+  WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, id_), "%s(0x%p)",
+               __FUNCTION__, callback_object);
 
-// ----------------------------------------------------------------------------
-// DeregisterFrameCallback
-// ----------------------------------------------------------------------------
+  {
+    CriticalSectionScoped cs(provider_crit_sect_);
+    bool item_found = false;
 
-int ViEFrameProviderBase::DeregisterFrameCallback(const ViEFrameCallback* callbackObject)
-{
-    if (callbackObject == NULL)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId, _id),
-            "%s: No argument", __FUNCTION__);
-        return -1;
+    // Try to find the callback in our list.
+    for (MapItem* map_item = frame_callbacks_.First(); map_item != NULL;
+         map_item = frame_callbacks_.Next(map_item)) {
+      const ViEFrameCallback* observer =
+          static_cast<ViEFrameCallback*>(map_item->GetItem());
+      if (observer == callback_object) {
+        // We found it, remove it!
+        frame_callbacks_.Erase(map_item);
+        WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, id_),
+                     "%s 0x%p deregistered", __FUNCTION__, callback_object);
+        item_found = true;
+        break;
+      }
     }
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_engineId, _id),
-        "%s(0x%p)", __FUNCTION__, callbackObject);
-
-
-    {
-        CriticalSectionScoped cs(_providerCritSect);
-        bool itemFound=false;
-
-
-        // Try to find the callback in our list
-        for (MapItem* mapItem = _frameCallbackMap.First();
-             mapItem != NULL;
-             mapItem = _frameCallbackMap.Next(mapItem))
-        {
-            const ViEFrameCallback* observer=static_cast<ViEFrameCallback*> (mapItem->GetItem());
-            if (observer == callbackObject)
-            {
-                // We found it, remove it!
-                _frameCallbackMap.Erase(mapItem);
-                WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_engineId, _id),
-                    "%s 0x%p deregistered", __FUNCTION__, callbackObject);
-                itemFound=true;
-                break;
-            }
-        }
-        if(!itemFound)
-        {
-            WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideo, ViEId(_engineId, _id),
-                    "%s 0x%p not found", __FUNCTION__, callbackObject);
-            return -1;
-        }
+    if (!item_found) {
+      WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(engine_id_, id_),
+                   "%s 0x%p not found", __FUNCTION__, callback_object);
+      return -1;
     }
-
-    FrameCallbackChanged(); // Notify implementer of this class that the callback list have changed
-    return 0;
+  }
+  // Notify implementer of this class that the callback list have changed.
+  FrameCallbackChanged();
+  return 0;
 }
 
-// ----------------------------------------------------------------------------
-// IsFrameCallbackRegistered
-// ----------------------------------------------------------------------------
-
-bool ViEFrameProviderBase::IsFrameCallbackRegistered(const ViEFrameCallback* callbackObject)
-{
-    if (callbackObject == NULL)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId, _id),
-            "%s: No argument", __FUNCTION__);
-        return false;
-    }
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_engineId, _id),
-        "%s(0x%p)", __FUNCTION__, callbackObject);
-
-    for (MapItem* mapItem = _frameCallbackMap.First();
-         mapItem != NULL;
-         mapItem = _frameCallbackMap.Next(mapItem))
-    {
-        if (callbackObject == mapItem->GetItem())
-        {
-            // We found the callback
-            WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_engineId, _id),
-                "%s 0x%p is registered", __FUNCTION__, callbackObject);
-            return true;
-        }
-    }
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_engineId, _id),
-        "%s 0x%p not registered", __FUNCTION__, callbackObject);
+bool ViEFrameProviderBase::IsFrameCallbackRegistered(
+    const ViEFrameCallback* callback_object) {
+  if (!callback_object) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, id_),
+                 "%s: No argument", __FUNCTION__);
     return false;
+  }
+  WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, id_),
+               "%s(0x%p)", __FUNCTION__, callback_object);
+
+  for (MapItem* map_item = frame_callbacks_.First(); map_item != NULL;
+       map_item = frame_callbacks_.Next(map_item)) {
+    if (callback_object == map_item->GetItem()) {
+      // We found the callback.
+      WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, id_),
+                   "%s 0x%p is registered", __FUNCTION__, callback_object);
+      return true;
+    }
+  }
+  WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, id_),
+               "%s 0x%p not registered", __FUNCTION__, callback_object);
+  return false;
 }
 
-// ----------------------------------------------------------------------------
-// NumberOfRegistersFrameCallbacks
-// ----------------------------------------------------------------------------
-
-int ViEFrameProviderBase::NumberOfRegistersFrameCallbacks()
-{
-    CriticalSectionScoped cs(_providerCritSect);
-    return _frameCallbackMap.Size();
+int ViEFrameProviderBase::NumberOfRegisteredFrameCallbacks() {
+  CriticalSectionScoped cs(provider_crit_sect_);
+  return frame_callbacks_.Size();
 }
-} // namespac webrtc
+}  // namespac webrtc

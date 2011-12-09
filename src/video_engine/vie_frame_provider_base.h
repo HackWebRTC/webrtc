@@ -8,95 +8,91 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * vie_frame_provider_base.h
- */
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_FRAME_PROVIDER_BASE_H_
+#define WEBRTC_VIDEO_ENGINE_VIE_FRAME_PROVIDER_BASE_H_
 
-#ifndef WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_FRAME_PROVIDER_BASE_H_
-#define WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_FRAME_PROVIDER_BASE_H_
-
-// Defines
+#include "modules/interface/module_common_types.h"
+#include "system_wrappers/interface/map_wrapper.h"
 #include "typedefs.h"
-#include "module_common_types.h"
-#include "map_wrapper.h"
 
 namespace webrtc {
+
 class CriticalSectionWrapper;
 class VideoEncoder;
 
-class ViEFrameCallback
-{
-public:
-    virtual void DeliverFrame(int id, VideoFrame& videoFrame, int numCSRCs = 0,
-                              const WebRtc_UWord32 CSRC[kRtpCsrcSize] = NULL) = 0;
-    /*
-     * Delay has changed from the provider.
-     * frameDelay new capture delay in Ms.
-     */
-    virtual void DelayChanged(int id, int frameDelay)=0;
+// ViEFrameCallback shall be implemented by all classes receiving frames from a
+// frame provider.
+class ViEFrameCallback {
+ public:
+  virtual void DeliverFrame(int id,
+                            VideoFrame& video_frame,
+                            int num_csrcs = 0,
+                            const WebRtc_UWord32 CSRC[kRtpCsrcSize] = NULL) = 0;
 
-    /*
-     Fetch the width, height and frame rate preferred by this observer.
-     return 0 on success, -1 otherwise.
-     */
-    virtual int GetPreferedFrameSettings(int &width, int &height,
-                                         int &frameRate)=0;
+  // The capture delay has changed from the provider. |frame_delay| is given in
+  // ms.
+  virtual void DelayChanged(int id, int frame_delay) = 0;
 
-    virtual void ProviderDestroyed(int id) = 0;
+  // Get the width, height and frame rate preferred by this observer.
+  virtual int GetPreferedFrameSettings(int& width,
+                                       int& height,
+                                       int& frame_rate) = 0;
 
-protected:
-    virtual ~ViEFrameCallback()
-    {
-    }
-    ;
+  // ProviderDestroyed is called when the frame is about to be destroyed. There
+  // must not be any more calls to the frame provider after this.
+  virtual void ProviderDestroyed(int id) = 0;
+
+  virtual ~ViEFrameCallback() {}
 };
 
-class ViEFrameProviderBase
-{
-public:
-    ViEFrameProviderBase(int Id, int engineId);
-    virtual ~ViEFrameProviderBase();
-    int Id();
+// ViEFrameProviderBase is a base class that will deliver frames to all
+// registered ViEFrameCallbacks.
+class ViEFrameProviderBase {
+ public:
+  ViEFrameProviderBase(int Id, int engine_id);
+  virtual ~ViEFrameProviderBase();
 
-    // Register frame callbacks, i.e. a receiver of the captured frame.
-    virtual int RegisterFrameCallback(int observerId,
-                                      ViEFrameCallback* callbackObject);
-    virtual int
-    DeregisterFrameCallback(const ViEFrameCallback* callbackObject);
-    virtual bool
-    IsFrameCallbackRegistered(const ViEFrameCallback* callbackObject);
+  // Returns the frame provider id.
+  int Id();
 
-    int NumberOfRegistersFrameCallbacks();
+  // Register frame callbacks, i.e. a receiver of the captured frame.
+  virtual int RegisterFrameCallback(int observer_id,
+                                    ViEFrameCallback* callback_object);
 
-    // FrameCallbackChanged
-    // Inherited classes should check for new frameSettings and reconfigure output if possible.
-    // Return 0 on success, -1 otherwise.
-    virtual int FrameCallbackChanged() = 0;
+  virtual int DeregisterFrameCallback(const ViEFrameCallback* callback_object);
 
-protected:
-    void DeliverFrame(VideoFrame& videoFrame, int numCSRCs = 0,
-                      const WebRtc_UWord32 CSRC[kRtpCsrcSize] = NULL);
-    void SetFrameDelay(int frameDelay);
-    int FrameDelay();
-    int GetBestFormat(int& bestWidth,
-                      int& bestHeight,
-                      int& bestFrameRate);
+  virtual bool IsFrameCallbackRegistered(
+      const ViEFrameCallback* callback_object);
 
-    int _id;
-    int _engineId;
+  int NumberOfRegisteredFrameCallbacks();
 
-protected:
-    // Frame callbacks
-    MapWrapper _frameCallbackMap;
-    CriticalSectionWrapper& _providerCritSect;
-private:
+  // FrameCallbackChanged
+  // Inherited classes should check for new frame_settings and reconfigure
+  // output if possible.
+  virtual int FrameCallbackChanged() = 0;
 
-    VideoFrame* _ptrExtraFrame;
+ protected:
+  void DeliverFrame(VideoFrame& video_frame,
+                    int num_csrcs = 0,
+                    const WebRtc_UWord32 CSRC[kRtpCsrcSize] = NULL);
+  void SetFrameDelay(int frame_delay);
+  int FrameDelay();
+  int GetBestFormat(int& best_width,
+                    int& best_height,
+                    int& best_frame_rate);
 
-    //Members
-    int _frameDelay;
+  int id_;
+  int engine_id_;
 
+  // Frame callbacks.
+  MapWrapper frame_callbacks_;
+  CriticalSectionWrapper& provider_crit_sect_;
+
+ private:
+  VideoFrame* extra_frame_;
+  int frame_delay_;
 };
 
-} //namespace webrtc
-#endif  // WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_FRAME_PROVIDER_BASE_H_
+}  // namespace webrtc
+
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_FRAME_PROVIDER_BASE_H_

@@ -66,7 +66,7 @@ int ViEFilePlayer::Init(const char* fileNameUTF8, const bool loop,
     _ptrFeedBackCritSect = CriticalSectionWrapper::CreateCriticalSection();
     if (!_ptrFeedBackCritSect)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId, _id),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_, id_),
                    "ViEFilePlayer::StartPlay() failed to allocate critsect");
         return -1;
     }
@@ -74,7 +74,7 @@ int ViEFilePlayer::Init(const char* fileNameUTF8, const bool loop,
     _ptrAudioCritSect = CriticalSectionWrapper::CreateCriticalSection();
     if (!_ptrAudioCritSect)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId, _id),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_, id_),
                    "ViEFilePlayer::StartPlay() failed to allocate critsect");
         return -1;
     }
@@ -82,30 +82,30 @@ int ViEFilePlayer::Init(const char* fileNameUTF8, const bool loop,
     _ptrDecodeEvent = EventWrapper::Create();
     if (!_ptrDecodeEvent)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId, _id),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_, id_),
                    "ViEFilePlayer::StartPlay() failed to allocate event");
         return -1;
 
     }
     if (strlen(fileNameUTF8) > FileWrapper::kMaxFileNameSize)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId, _id),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_, id_),
                    "ViEFilePlayer::StartPlay() To long filename");
         return -1;
     }
     strncpy(_fileName, fileNameUTF8, strlen(fileNameUTF8) + 1);
 
-    _filePlayer = FilePlayer::CreateFilePlayer(ViEId(_engineId, _id),
+    _filePlayer = FilePlayer::CreateFilePlayer(ViEId(engine_id_, id_),
                                                fileFormat);
     if (!_filePlayer)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId, _id),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_, id_),
                    "ViEFilePlayer::StartPlay() failed to create file player");
         return -1;
     }
     if (_filePlayer->RegisterModuleFileCallback(this) == -1)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId, _id),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_, id_),
                    "ViEFilePlayer::StartPlay() failed to RegisterModuleFileCallback");
         _filePlayer = NULL;
         return -1;
@@ -115,7 +115,7 @@ int ViEFilePlayer::Init(const char* fileNameUTF8, const bool loop,
                                                 "ViEFilePlayThread");
     if (!_ptrDecodeThread)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId, _id),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_, id_),
                    "ViEFilePlayer::StartPlay() failed to start decode thread.");
         _filePlayer = NULL;
         return -1;
@@ -131,7 +131,7 @@ int ViEFilePlayer::Init(const char* fileNameUTF8, const bool loop,
         _audioStream = false;
         if (error)
         {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId, _id),
+            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_, id_),
                        "ViEFilePlayer::StartPlay() failed to Start play video file");
             return -1;
         }
@@ -149,7 +149,7 @@ int ViEFilePlayer::Init(const char* fileNameUTF8, const bool loop,
             if (!_veFileInterface)
             {
                 WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                           ViEId(_engineId, _id),
+                           ViEId(engine_id_, id_),
                            "ViEFilePlayer::StartPlay() failed to get VEFile interface");
                 return -1;
             }
@@ -157,7 +157,7 @@ int ViEFilePlayer::Init(const char* fileNameUTF8, const bool loop,
             if (!_veVideoSync)
             {
                 WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                           ViEId(_engineId, _id),
+                           ViEId(engine_id_, id_),
                            "ViEFilePlayer::StartPlay() failed to get "
                                "VoEVideoSync interface");
                 return -1;
@@ -175,7 +175,7 @@ int ViEFilePlayer::Init(const char* fileNameUTF8, const bool loop,
  */
 int ViEFilePlayer::FrameCallbackChanged()
 {
-    if (ViEFrameProviderBase::NumberOfRegistersFrameCallbacks() > _videoClients)
+    if (ViEFrameProviderBase::NumberOfRegisteredFrameCallbacks() > _videoClients)
     {
         if (!_playBackStarted)
         {
@@ -186,13 +186,13 @@ int ViEFilePlayer::FrameCallbackChanged()
                 WEBRTC_TRACE(
                            webrtc::kTraceStateInfo,
                            webrtc::kTraceVideo,
-                           ViEId(_engineId, _id),
+                           ViEId(engine_id_, id_),
                            "ViEFilePlayer::FrameCallbackChanged() Started filedecode thread %u",
                            threadId);
             } else
             {
                 WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                           ViEId(_engineId, _id),
+                           ViEId(engine_id_, id_),
                            "ViEFilePlayer::FrameCallbackChanged() Failed to start file decode thread.");
             }
         } else if (!_filePlayer->IsPlayingFile())
@@ -201,14 +201,14 @@ int ViEFilePlayer::FrameCallbackChanged()
                                                    !_audioStream) != 0)
             {
                 WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                           ViEId(_engineId, _id),
+                           ViEId(engine_id_, id_),
                            "ViEFilePlayer::FrameCallbackChanged(), Failed to restart the file player.");
 
             }
 
         }
     }
-    _videoClients = ViEFrameProviderBase::NumberOfRegistersFrameCallbacks();
+    _videoClients = ViEFrameProviderBase::NumberOfRegisteredFrameCallbacks();
     return 0;
 
 }
@@ -265,7 +265,7 @@ int ViEFilePlayer::StopPlay() //Only called from destructor.
         } else
         {
             assert(!"ViEFilePlayer::StopPlay() Failed to stop decode thread");
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId, _id),
+            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_, id_),
                        "ViEFilePlayer::StartPlay() Failed to stop file decode thread.");
         }
     }
@@ -372,15 +372,15 @@ bool ViEFilePlayer::NeedsAudioFromFile(void* buf)
 // From FileCallback
 void ViEFilePlayer::PlayFileEnded(const WebRtc_Word32 id)
 {
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(_engineId, id),
-               "%s: fileId %d", __FUNCTION__, _id);
+    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(engine_id_, id),
+               "%s: fileId %d", __FUNCTION__, id_);
 
     _filePlayer->StopPlayingFile();
 
     CriticalSectionScoped lock(*_ptrFeedBackCritSect);
     if (_observer)
     {
-        _observer->PlayFileEnded(_id);
+        _observer->PlayFileEnded(id_);
     }
 }
 
@@ -415,7 +415,7 @@ int ViEFilePlayer::SendAudioOnChannel(const int audioChannel,
 
     if (!_veFileInterface)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId, _id),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_, id_),
                    "%s No VEFile interface.", __FUNCTION__);
         return -1;
     }
@@ -425,7 +425,7 @@ int ViEFilePlayer::SendAudioOnChannel(const int audioChannel,
                                                        kFileFormatPcm16kHzFile,
                                                        volumeScaling) != 0)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId, _id),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_, id_),
                    "ViEFilePlayer::SendAudioOnChannel() VE_StartPlayingFileAsMicrophone failed. audioChannel %d, mixMicrophone %d, volumeScaling %.2f",
                    audioChannel, mixMicrophone, volumeScaling);
         return -1;
@@ -448,14 +448,14 @@ int ViEFilePlayer::StopSendAudioOnChannel(const int audioChannel)
     MapItem* audioItem = _audioChannelsSending.Find(audioChannel);
     if (!audioItem)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId, _id),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_, id_),
                    "_s AudioChannel %d not sending", __FUNCTION__, audioChannel);
         return -1;
     }
     result = _veFileInterface->StopPlayingFileAsMicrophone(audioChannel);
     if (result != 0)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId, _id),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_, id_),
                    "ViEFilePlayer::StopSendAudioOnChannel() VE_StopPlayingFileAsMicrophone failed. audioChannel %d",
                    audioChannel);
     }
@@ -470,7 +470,7 @@ int ViEFilePlayer::PlayAudioLocally(const int audioChannel, float volumeScaling)
 {
     if (!_veFileInterface)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId, _id),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_, id_),
                    "%s No VEFile interface.", __FUNCTION__);
         return -1;
     }
@@ -480,7 +480,7 @@ int ViEFilePlayer::PlayAudioLocally(const int audioChannel, float volumeScaling)
                                                   kFileFormatPcm16kHzFile,
                                                   volumeScaling) != 0)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId, _id),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_, id_),
                    "%s  VE_StartPlayingFileAsMicrophone failed. audioChannel %d, mixMicrophone %d, volumeScaling %.2f",
                    __FUNCTION__, audioChannel, volumeScaling);
         return -1;
@@ -498,13 +498,13 @@ int ViEFilePlayer::StopPlayAudioLocally(const int audioChannel)
 {
     if (!_veFileInterface)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId, _id),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_, id_),
                    "%s No VEFile interface.", __FUNCTION__);
         return -1;
     }
     if (_veFileInterface->StopPlayingFileLocally(audioChannel) != 0)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(_engineId, _id),
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_, id_),
                    "%s VE_StopPlayingFileLocally failed. audioChannel %d.",
                    __FUNCTION__, audioChannel);
         return -1;
