@@ -23,17 +23,9 @@
 #import <CoreFoundation/CoreFoundation.h>
 #import <CoreVideo/CoreVideo.h>
 
-
-
 #import "video_capture_recursive_lock.h"
 
-
 #include "video_capture_qtkit.h"
-
-using namespace webrtc;
-using namespace videocapturemodule;
-
-
 
 @interface VideoCaptureMacQTKitObjC : NSObject{
     // class properties
@@ -48,7 +40,7 @@ using namespace videocapturemodule;
     bool                                _captureInitialized;
     
     // WebRTC Custom classes
-    VideoCaptureMacQTKit*                _owner;
+    webrtc::videocapturemodule::VideoCaptureMacQTKit* _owner;
     VideoCaptureRecursiveLock*            _rLock;
     
     // QTKit variables
@@ -90,9 +82,7 @@ using namespace videocapturemodule;
  ***************************************************************************/
 
 
-- (NSNumber*)getCaptureDeviceWithIndex:(int)index ToString:(char*)name WithLength:(int)length;
 - (NSNumber*)registerOwner:(webrtc::videocapturemodule::VideoCaptureMacQTKit*)owner;
-- (NSNumber*)setCaptureDeviceByIndex:(int)index;
 - (NSNumber*)setCaptureDeviceById:(char*)uniqueId;
 - (NSNumber*)setCaptureHeight:(int)height AndWidth:(int)width AndFrameRate:(int)frameRate;
 - (NSNumber*)startCapture;

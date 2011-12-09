@@ -289,7 +289,7 @@ int VideoChannelNSOpenGL::RenderOffScreenBuffer()
 
     //	if(_fullscreen)
     //	{
-    NSRect mainDisplayRect = [[NSScreen mainScreen] frame];
+    // NSRect mainDisplayRect = [[NSScreen mainScreen] frame];
     //		_width = mainDisplayRect.size.width;
     //		_height = mainDisplayRect.size.height;
     //		glViewport(0, 0, mainDisplayRect.size.width, mainDisplayRect.size.height);

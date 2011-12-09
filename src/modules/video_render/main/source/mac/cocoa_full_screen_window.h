@@ -26,7 +26,7 @@
 -(id)init;
 -(void)grabFullScreen;
 -(void)releaseFullScreen;
-
+-(NSWindow*)window;
 
 @end
 

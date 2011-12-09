@@ -17,6 +17,8 @@
 #include "video_capture_qtkit_utility.h"
 #include "trace.h"
 
+using namespace webrtc;
+using namespace videocapturemodule;
 
 @implementation VideoCaptureMacQTKitObjC
 
@@ -67,28 +69,6 @@
         return [NSNumber numberWithInt:-1];
     }
     _owner = owner;
-    return [NSNumber numberWithInt:0];
-}
-
-/// ***** Supposed to get capture device by index.
-/// ***** Currently not used
-- (NSNumber*)getCaptureDeviceWithIndex:(int)index ToString:(char*)name
-        WithLength:(int)length{
-    WEBRTC_TRACE(kTraceModuleCall, kTraceVideoCapture, 0,
-                 "%s:%d index=%s name=%s", __FUNCTION__, __LINE__, name);
-
-    index = index;
-    name = name;
-    length = length;
-    return [NSNumber numberWithInt:0];
-}
-
-/// ***** Supposed to set capture device by index.
-/// ***** Currently not used
-- (NSNumber*)setCaptureDeviceByIndex:(int)index {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceVideoCapture, 0,
-                 "%s:%d name", __FUNCTION__, __LINE__);
-    index = index;
     return [NSNumber numberWithInt:0];
 }
 
@@ -215,8 +195,9 @@
     _frameHeight = height;
     _frameRate = frameRate;
 
-    [_captureDecompressedVideoOutput
-     setMinimumVideoFrameInterval:(NSTimeInterval)1/(float)_frameRate];
+    // TODO(mflodman) Check fps settings.
+    // [_captureDecompressedVideoOutput
+    //     setMinimumVideoFrameInterval:(NSTimeInterval)1/(float)_frameRate];
     NSDictionary* captureDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
                                        [NSNumber numberWithDouble:_frameWidth], (id)kCVPixelBufferWidthKey,
                                        [NSNumber numberWithDouble:_frameHeight], (id)kCVPixelBufferHeightKey,
@@ -417,9 +398,10 @@
             [NSNumber numberWithUnsignedInt:kCVPixelFormatType_32ARGB],
             (id)kCVPixelBufferPixelFormatTypeKey, nil]];
 
-    [_captureDecompressedVideoOutput setMinimumVideoFrameInterval:
-        (NSTimeInterval)1/(float)_frameRate];
-    [_captureDecompressedVideoOutput setAutomaticallyDropsLateVideoFrames:YES];
+    // TODO(mflodman) Check fps settings.
+    //[_captureDecompressedVideoOutput setMinimumVideoFrameInterval:
+    //    (NSTimeInterval)1/(float)_frameRate];
+    //[_captureDecompressedVideoOutput setAutomaticallyDropsLateVideoFrames:YES];
 
     success = [_captureSession addOutput:_captureDecompressedVideoOutput
                error:&error];
@@ -465,7 +447,6 @@
     CVPixelBufferLockBaseAddress(videoFrame, LOCK_FLAGS);
     void* baseAddress = CVPixelBufferGetBaseAddress(videoFrame);
     size_t bytesPerRow = CVPixelBufferGetBytesPerRow(videoFrame);
-    int frameWidth = CVPixelBufferGetWidth(videoFrame);
     int frameHeight = CVPixelBufferGetHeight(videoFrame);
     CVPixelBufferUnlockBaseAddress(videoFrame, LOCK_FLAGS);
 
@@ -490,10 +471,6 @@
 
     _framesDelivered++;
     _framesRendered++;
-
-    captureOutput = captureOutput;
-    sampleBuffer = sampleBuffer;
-    connection = connection;
 
     if(YES == [_rLock locked])
     {

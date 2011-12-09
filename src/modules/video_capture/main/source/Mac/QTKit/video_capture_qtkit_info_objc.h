@@ -21,9 +21,6 @@
 #include "video_capture_qtkit_utility.h"
 #include "video_capture_qtkit_info.h"
 
-
-using namespace webrtc;
-
 @interface VideoCaptureMacQTKitInfoObjC : NSObject{
     bool                                _OSSupportedInfo;
     NSArray*                            _captureDevicesInfo;

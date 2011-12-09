@@ -28,11 +28,9 @@ using namespace webrtc;
 }
 
 
--(NSOpenGLContext*)nsOpenGLContext{
+-(NSOpenGLContext*)nsOpenGLContext {
     return _nsOpenGLContext;
 }
-
-
 
 -(void)initCocoaRenderViewFullScreen:(NSOpenGLPixelFormat*)fmt{
 	WEBRTC_TRACE(kTraceModuleCall, kTraceVideoRenderer, 0, "%s:%d", __FUNCTION__, __LINE__); 

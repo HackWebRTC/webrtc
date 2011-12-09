@@ -17,12 +17,12 @@ class ViEToFileRenderer;
 
 namespace webrtc {
 class VideoCaptureModule;
-class VideoCodec;
 class ViEBase;
 class ViECapture;
 class ViECodec;
 class ViERender;
 class ViERTP_RTCP;
+struct VideoCodec;
 }
 
 // Finds a suitable capture device (e.g. camera) on the current system

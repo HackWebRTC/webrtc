@@ -23,11 +23,13 @@ namespace videocapturemodule
 
 VideoCaptureMacQTKit::VideoCaptureMacQTKit(const WebRtc_Word32 id) :
     VideoCaptureImpl(id),
+    _captureDevice(NULL),
+    _captureInfo(NULL),
+    _isCapturing(false),
     _id(id),
     _captureWidth(QTKIT_DEFAULT_WIDTH),
     _captureHeight(QTKIT_DEFAULT_HEIGHT),
     _captureFrameRate(QTKIT_DEFAULT_FRAME_RATE),
-    _isCapturing(false),
     _frameCount(0)
 {
     WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, id,
@@ -64,7 +66,6 @@ WebRtc_Word32 VideoCaptureMacQTKit::Init(
                  "VideoCaptureMacQTKit::Init() called with id %d and unique "
                  "device %s", id, iDeviceUniqueIdUTF8);
 
-    WebRtc_Word32 result=0;
     const WebRtc_Word32 nameLength =
         (WebRtc_Word32) strlen((char*)iDeviceUniqueIdUTF8);
     if(nameLength>kVideoCaptureUniqueNameLength)

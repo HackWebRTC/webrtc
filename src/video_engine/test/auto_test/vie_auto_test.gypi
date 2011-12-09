@@ -154,6 +154,9 @@
           ],
         }],
         ['OS=="mac"', {
+          'include_dirs': [
+            '../../../modules/video_render/main/source/mac',
+          ],
           'xcode_settings': {
             'OTHER_LDFLAGS': [
               '-framework Foundation -framework AppKit -framework Cocoa -framework OpenGL -framework CoreVideo -framework CoreAudio -framework AudioToolbox',

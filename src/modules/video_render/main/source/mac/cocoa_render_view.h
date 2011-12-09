@@ -9,7 +9,7 @@
  */
 
 //
-//  cocoa_render_view.h 
+//  cocoa_render_view.h
 //
 
 #ifndef WEBRTC_MODULES_VIDEO_RENDER_MAIN_SOURCE_MAC_COCOA_RENDER_VIEW_H_
@@ -20,16 +20,13 @@
 #import <OpenGL/glu.h>
 #import <OpenGL/OpenGL.h>
 
-
-
 @interface CocoaRenderView : NSOpenGLView {
-	NSOpenGLContext*	_nsOpenGLContext;
+  NSOpenGLContext* _nsOpenGLContext;
 }
-
-
 
 -(void)initCocoaRenderView:(NSOpenGLPixelFormat*)fmt;
 -(void)initCocoaRenderViewFullScreen:(NSOpenGLPixelFormat*)fmt;
+-(NSOpenGLContext*)nsOpenGLContext;
 @end
 
 #endif  // WEBRTC_MODULES_VIDEO_RENDER_MAIN_SOURCE_MAC_COCOA_RENDER_VIEW_H_

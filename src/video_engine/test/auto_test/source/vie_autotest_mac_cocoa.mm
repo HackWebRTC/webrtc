@@ -8,15 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include	"engine_configurations.h"
+#include "engine_configurations.h"
 
 #if defined(COCOA_RENDERING)
-#include	"vie_autotest_mac_cocoa.h"
-#include	"vie_autotest_defines.h"
-#include	"vie_autotest.h"
-#include	"vie_autotest_main.h"
+#import "cocoa_render_view.h"
+#include "vie_autotest_mac_cocoa.h"
+#include "vie_autotest_defines.h"
+#include "vie_autotest.h"
+#include "vie_autotest_main.h"
 
-ViEAutoTestWindowManager::ViEAutoTestWindowManager() 
+ViEAutoTestWindowManager::ViEAutoTestWindowManager()
     : _cocoaRenderView1(nil), _cocoaRenderView2(nil) {
 }
 
@@ -85,19 +86,19 @@ int main(int argc, char * argv[]) {
     int result = 0;
 #if defined(MAC_COCOA_USE_NSRUNLOOP)
     AutoTestClass* tests = [[AutoTestClass alloc] init];
-    
+
     [tests setArgc:argc argv:argv];
     [NSThread detachNewThreadSelector:@selector(autoTestWithArg:)
       toTarget:tests withObject:nil];
-    // Process OS events. Blocking call. 
+    // Process OS events. Blocking call.
     [[NSRunLoop mainRunLoop]run];
-    
+
     result = [tests result];
 
 #else
     ViEAutoTestMain autoTest;
     result = autoTest.RunTests(argc, argv);
-  
+
 #endif
     [pool release];
     return result;

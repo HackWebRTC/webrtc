@@ -131,6 +131,7 @@ void ViEAutoTest::ViECaptureStandardTest()
     EXPECT_GT(numberOfCaptureDevices, 0);
 
     int captureDeviceId[10];
+    memset(captureDeviceId, 0, sizeof(captureDeviceId));
     webrtc::VideoCaptureModule* vcpms[10];
     memset(vcpms, 0, sizeof(vcpms));
 

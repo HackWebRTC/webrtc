@@ -25,11 +25,6 @@ using namespace webrtc;
 	return self;
 }
 
--(NSWindow*)window{
-    return _window;
-}
-
-
 -(void)grabFullScreen{
 	WEBRTC_TRACE(kTraceModuleCall, kTraceVideoRenderer, 0, "%s:%d", __FUNCTION__, __LINE__); 
 	
@@ -73,6 +68,11 @@ using namespace webrtc;
 	{
 		WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, 0, "%s:%d Could not release the displays", __FUNCTION__, __LINE__); 
 	}		
+}
+
+- (NSWindow*)window
+{
+  return _window;
 }
 
 - (void) dealloc

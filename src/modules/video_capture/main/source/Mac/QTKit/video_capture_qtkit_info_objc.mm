@@ -10,7 +10,7 @@
 
 #include "trace.h"
 
-
+using namespace webrtc;
 
 #pragma mark **** hidden class interface
 
@@ -126,21 +126,6 @@
 
 // ****************** "private" category functions below here  ******************
 #pragma mark **** "private" method implementations
-
-- (NSNumber*)getCaptureDeviceWithIndex:(int)index ToString:(char*)name
-    WithLength:(int)length
-{
-    index = index;
-    name = name;
-    length = length;
-    return [NSNumber numberWithInt:0];
-}
-
-- (NSNumber*)setCaptureDeviceByIndex:(int)index
-{
-    index = index;
-    return [NSNumber numberWithInt:0];
-}
 
 - (NSNumber*)initializeVariables
 {
