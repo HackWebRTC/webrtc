@@ -20,16 +20,30 @@
 #include "udp_socket_posix.h"
 
 namespace webrtc {
-UdpSocketManagerPosix::UdpSocketManagerPosix(const WebRtc_Word32 id,
-                                             WebRtc_UWord8& numOfWorkThreads)
-    : UdpSocketManager(id, numOfWorkThreads),
-      _id(id),
+UdpSocketManagerPosix::UdpSocketManagerPosix()
+    : UdpSocketManager(),
+      _id(-1),
       _critSect(CriticalSectionWrapper::CreateCriticalSection()),
-      _numberOfSocketMgr(numOfWorkThreads),
+      _numberOfSocketMgr(-1),
       _incSocketMgrNextTime(0),
       _nextSocketMgrToAssign(0),
       _socketMgr()
 {
+}
+
+bool UdpSocketManagerPosix::Init(WebRtc_Word32 id,
+                                 WebRtc_UWord8& numOfWorkThreads) {
+    CriticalSectionScoped cs(*_critSect);
+    if ((_id != -1) || (_numOfWorkThreads != 0)) {
+        assert(_id != -1);
+        assert(_numOfWorkThreads != 0);
+        return false;
+    }
+
+    _id = id;
+    _numberOfSocketMgr = numOfWorkThreads;
+    _numOfWorkThreads = numOfWorkThreads;
+
     if(MAX_NUMBER_OF_SOCKET_MANAGERS_LINUX < _numberOfSocketMgr)
     {
         _numberOfSocketMgr = MAX_NUMBER_OF_SOCKET_MANAGERS_LINUX;
@@ -38,14 +52,13 @@ UdpSocketManagerPosix::UdpSocketManagerPosix(const WebRtc_Word32 id,
     {
         _socketMgr[i] = new UdpSocketManagerPosixImpl();
     }
-
-    WEBRTC_TRACE(kTraceDebug, kTraceTransport, _id,
-                 "UdpSocketManagerPosix(%d)::UdpSocketManagerPosix()",
-                 _numberOfSocketMgr);
+    return true;
 }
+
 
 UdpSocketManagerPosix::~UdpSocketManagerPosix()
 {
+    Stop();
     WEBRTC_TRACE(kTraceDebug, kTraceTransport, _id,
                  "UdpSocketManagerPosix(%d)::UdpSocketManagerPosix()",
                  _numberOfSocketMgr);
@@ -95,7 +108,7 @@ bool UdpSocketManagerPosix::Stop()
 
     _critSect->Enter();
     bool retVal = true;
-    for(int i = 0;i < _numberOfSocketMgr && retVal; i++)
+    for(int i = 0; i < _numberOfSocketMgr && retVal; i++)
     {
         retVal = _socketMgr[i]->Stop();
     }
@@ -105,8 +118,8 @@ bool UdpSocketManagerPosix::Stop()
             kTraceError,
             kTraceTransport,
             _id,
-            "UdpSocketManagerPosix(%d)::Stop() there are still active socket\
- managers",
+            "UdpSocketManagerPosix(%d)::Stop() there are still active socket "
+            "managers",
             _numberOfSocketMgr);
     }
     _critSect->Leave();

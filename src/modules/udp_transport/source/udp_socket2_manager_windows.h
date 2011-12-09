@@ -96,10 +96,10 @@ private:
 class UdpSocket2ManagerWindows : public UdpSocketManager
 {
 public:
-    UdpSocket2ManagerWindows(const WebRtc_Word32 id,
-                             WebRtc_UWord8& numOfWorkThreads);
+    UdpSocket2ManagerWindows();
     virtual ~UdpSocket2ManagerWindows();
 
+    virtual bool Init(WebRtc_Word32 id, WebRtc_UWord8& numOfWorkThreads);
     virtual WebRtc_Word32 ChangeUniqueId(const WebRtc_Word32 id);
 
     virtual bool Start();
@@ -117,7 +117,7 @@ public:
 
 private:
     bool StopWorkerThreads();
-    WebRtc_Word32 Init();
+    bool StartWorkerThreads();
     bool AddSocketPrv(UdpSocket2Windows* s);
     bool RemoveSocketPrv(UdpSocket2Windows* s);
 
@@ -127,7 +127,7 @@ private:
     WebRtc_Word32 _id;
     CriticalSectionWrapper* _pCrit;
     WebRtc_Word32 _managerNumber;
-    volatile bool _stoped;
+    volatile bool _stopped;
     bool _init;
     WebRtc_Word32 _numActiveSockets;
     ListWrapper _workerThreadsList;

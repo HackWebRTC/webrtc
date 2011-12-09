@@ -20,183 +20,53 @@
 #include "udp_socket_manager_posix.h"
 #endif
 
-#ifndef _WIN32
-#include <memory>
-#endif
-
 namespace webrtc {
-UdpSocketManager* UdpSocketManager::CreateSocketManager(
-    const WebRtc_Word32 id,
-    WebRtc_UWord8& numOfWorkThreads)
+UdpSocketManager* UdpSocketManager::CreateInstance()
 {
 #if defined(_WIN32)
     #if (defined(USE_WINSOCK2))
         return static_cast<UdpSocketManager*>(
-            new UdpSocket2ManagerWindows(id, numOfWorkThreads));
+            new UdpSocket2ManagerWindows());
     #else
         numOfWorkThreads = 1;
         return static_cast<UdpSocketManager*>(
-            new UdpSocketManagerWindows(id, numOfWorkThreads));
+            new UdpSocketManagerWindows());
     #endif
 #else
-    return new UdpSocketManagerPosix(id, numOfWorkThreads);
+    return new UdpSocketManagerPosix();
 #endif
 }
 
-// TODO (hellner): more or less the same code is used in trace_impl.cc.
-// Should be possible to avoid duplication here.
-// Construct On First Use idiom. Avoids "static initialization order fiasco".
 UdpSocketManager* UdpSocketManager::StaticInstance(
-    const UdpSocketManagerCount inc,
+    CountOperation count_operation,
     const WebRtc_Word32 id,
     WebRtc_UWord8& numOfWorkThreads)
 {
-    // TODO (hellner): use atomic wrapper instead.
-    static volatile long theUdpSocketManagerCount = 0;
-    static UdpSocketManager* volatile theUdpSocketManager = NULL;
-
-    UdpSocketManagerState state = kUdpSocketManagerExist;
-
-#ifndef _WIN32
-
-    static std::auto_ptr<CriticalSectionWrapper> crtiSect =
-        std::auto_ptr<CriticalSectionWrapper>(
-            CriticalSectionWrapper::CreateCriticalSection());
-    CriticalSectionScoped lock(*crtiSect);
-
-    if(inc == kUdpSocketManagerInc)
-    {
-        theUdpSocketManagerCount++;
-        if(theUdpSocketManagerCount == 1)
-        {
-            state = kUdpSocketManagerCreate;
-        }
-    } else
-    {
-        theUdpSocketManagerCount--;
-        if(theUdpSocketManagerCount == 0)
-        {
-            state = kUdpSocketManagerDestroy;
+    UdpSocketManager* impl =
+        GetStaticInstance<UdpSocketManager>(count_operation);
+    if (count_operation == kAddRef && impl != NULL) {
+        if (impl->Init(id, numOfWorkThreads)) {
+            impl->Start();
         }
     }
-    if(state == kUdpSocketManagerCreate)
-    {
-        theUdpSocketManager =
-            UdpSocketManager::CreateSocketManager(id, numOfWorkThreads);
-        theUdpSocketManager->Start();
-        assert(theUdpSocketManager);
-        return theUdpSocketManager;
-
-    }else if(state == kUdpSocketManagerDestroy)
-    {
-        UdpSocketManager* oldValue = theUdpSocketManager;
-        theUdpSocketManager = NULL;
-        if(oldValue)
-        {
-            if(oldValue->Stop())
-            {
-                delete static_cast<UdpSocketManager*>(oldValue);
-            }
-        }
-        return NULL;
-    } else
-    {
-        if(theUdpSocketManager)
-        {
-            numOfWorkThreads = theUdpSocketManager->WorkThreads();
-        }
-    }
-#else // _WIN32
-    if(inc == kUdpSocketManagerInc)
-    {
-        if(theUdpSocketManagerCount == 0)
-        {
-            state = kUdpSocketManagerCreate;
-        }else {
-            if(1 == InterlockedIncrement(&theUdpSocketManagerCount))
-            {
-                // The instance has been destroyed by some other thread.
-                // Rollback.
-                InterlockedDecrement(&theUdpSocketManagerCount);
-                state = kUdpSocketManagerCreate;
-            }
-        }
-    } else
-    {
-        WebRtc_Word32 newValue = InterlockedDecrement(
-            &theUdpSocketManagerCount);
-        if(newValue == 0)
-        {
-            state = kUdpSocketManagerDestroy;
-        }
-    }
-    if(state == kUdpSocketManagerCreate)
-    {
-        // Create instance and let whichever thread finishes first assign its
-        // local copy to the global instance. All other threads reclaim their
-        // local copy.
-        UdpSocketManager* newSocketMgr=
-            UdpSocketManager::CreateSocketManager(id, numOfWorkThreads);
-        if(1 == InterlockedIncrement(&theUdpSocketManagerCount))
-        {
-            UdpSocketManager* oldValue = (UdpSocketManager*)
-                InterlockedExchangePointer(
-                    reinterpret_cast<void* volatile*>(&theUdpSocketManager),
-                    newSocketMgr);
-            newSocketMgr->Start();
-            assert(oldValue == NULL);
-            assert(theUdpSocketManager);
-            return newSocketMgr;
-
-        }
-        InterlockedDecrement(&theUdpSocketManagerCount);
-        if(newSocketMgr)
-        {
-            delete static_cast<UdpSocketManager*>(newSocketMgr);
-        }
-        return NULL;
-    } else if(state == kUdpSocketManagerDestroy)
-    {
-        UdpSocketManager* oldValue = (UdpSocketManager*)
-            InterlockedExchangePointer(
-                reinterpret_cast<void* volatile*>(&theUdpSocketManager),
-                NULL);
-        if(oldValue)
-        {
-            if(oldValue->Stop())
-            {
-                delete static_cast<UdpSocketManager*>(oldValue);
-            }
-        }
-        return NULL;
-    } else
-    {
-        if(theUdpSocketManager)
-        {
-            numOfWorkThreads = theUdpSocketManager->WorkThreads();
-        }
-    }
-#endif // #ifndef _WIN32
-    return theUdpSocketManager;
+    return impl;
 }
 
 UdpSocketManager* UdpSocketManager::Create(const WebRtc_Word32 id,
                                            WebRtc_UWord8& numOfWorkThreads)
 {
-    return UdpSocketManager::StaticInstance(kUdpSocketManagerInc, id,
+    return UdpSocketManager::StaticInstance(kAddRef, id,
                                             numOfWorkThreads);
 }
 
 void UdpSocketManager::Return()
 {
     WebRtc_UWord8 numOfWorkThreads = 0;
-    UdpSocketManager::StaticInstance(kUdpSocketManagerDec, -1,
+    UdpSocketManager::StaticInstance(kRelease, -1,
                                      numOfWorkThreads);
 }
 
-UdpSocketManager::UdpSocketManager(const WebRtc_Word32 /*id*/,
-                                   WebRtc_UWord8& numOfWorkThreads)
-    : _numOfWorkThreads(numOfWorkThreads)
+UdpSocketManager::UdpSocketManager() : _numOfWorkThreads(0)
 {
 }
 

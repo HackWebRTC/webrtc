@@ -14,11 +14,9 @@
 namespace webrtc {
 WebRtc_UWord32 UdpSocketManagerWindows::_numOfActiveManagers = 0;
 
-UdpSocketManagerWindows::UdpSocketManagerWindows(
-    const WebRtc_Word32 id,
-    WebRtc_UWord8& numOfWorkThreads)
-    : _id(id),
-      UdpSocketManager(id, numOfWorkThreads)
+UdpSocketManagerWindows::UdpSocketManagerWindows()
+    : UdpSocketManager(),
+      _id(-1)
 {
     const WebRtc_Word8* threadName = "UdpSocketManagerWindows_Thread";
     _critSectList = CriticalSectionWrapper::CreateCriticalSection();
@@ -30,8 +28,22 @@ UdpSocketManagerWindows::UdpSocketManagerWindows(
     _numOfActiveManagers++;
 }
 
+bool UdpSocketManagerWindows::Init(WebRtc_Word32 id,
+                                   WebRtc_UWord8& numOfWorkThreads) {
+    CriticalSectionScoped cs(*_critSectList);
+    if ((_id != -1) || (_numOfWorkThreads != 0)) {
+        assert(_id == -1);
+        assert(_numOfWorkThreads == 0);
+        return false;
+    }
+    _id = id;
+    _numOfWorkThreads = numOfWorkThreads;
+    return true;
+}
+
 UdpSocketManagerWindows::~UdpSocketManagerWindows()
 {
+    Stop();
     if(_thread != NULL)
     {
         delete _thread;

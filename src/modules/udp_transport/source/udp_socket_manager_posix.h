@@ -24,14 +24,18 @@
 #define MAX_NUMBER_OF_SOCKET_MANAGERS_LINUX 8
 
 namespace webrtc {
+
+class ConditionVariableWrapper;
 class UdpSocketManagerPosixImpl;
 
 class UdpSocketManagerPosix : public UdpSocketManager
 {
 public:
-    UdpSocketManagerPosix(const WebRtc_Word32 id,
-                          WebRtc_UWord8& numOfWorkThreads);
+    UdpSocketManagerPosix();
     virtual ~UdpSocketManagerPosix();
+
+    virtual bool Init(WebRtc_Word32 id,
+                      WebRtc_UWord8& numOfWorkThreads);
 
     virtual WebRtc_Word32 ChangeUniqueId(const WebRtc_Word32 id);
 

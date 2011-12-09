@@ -20,122 +20,35 @@
     #include <windows.h>
     #include <MMSystem.h> //timeGetTime
 
+// TODO(hellner): investigate if it is necessary to disable these warnings.
     #pragma warning(disable:4311)
     #pragma warning(disable:4312)
-
-    // Platform SDK fixes when building with /Wp64 for a 32 bits target.
-    #if !defined(_WIN64) && defined(_Wp64)
-        #ifdef InterlockedExchangePointer
-            #undef InterlockedExchangePointer
-            // The problem is that the macro provided for InterlockedExchangePointer() is
-            // doing a (LONG) C-style cast that triggers invariably the warning C4312 when
-            // building on 32 bits.
-            inline void* InterlockedExchangePointer(void* volatile* target, void* value)
-            {
-                return reinterpret_cast<void*>(static_cast<LONG_PTR>(InterlockedExchange(
-                    reinterpret_cast<volatile LONG*>(target),
-                    static_cast<LONG>(reinterpret_cast<LONG_PTR>(value)))));
-            }
-        #endif  // #ifdef InterlockedExchangePointer
-    #endif  //!defined(_WIN64) && defined(_Wp64)
-
 #else
     #include <stdio.h>
     #include <string.h>
     #include <time.h>
     #include <sys/time.h>
-    #include <memory>       // definition of auto_ptr
 #endif
 
 namespace webrtc {
-// Construct On First Use idiom. Avoids "static initialization order fiasco" (JFGI).
-SSRCDatabase*&
-SSRCDatabase::StaticInstance(SsrcDatabaseCount inc)
+SSRCDatabase*
+SSRCDatabase::StaticInstance(CountOperation count_operation)
 {
-    static volatile long theSSRCDatabaseCount = 0; // this needs to be long due to Windows, not an issue due to its usage
-    static SSRCDatabase* theSSRCDatabase = NULL;
-
-    SsrcDatabaseCreate state = kSsrcDbExist;
-
-#ifndef _WIN32
-    static std::auto_ptr<CriticalSectionWrapper> crtiSect = std::auto_ptr<CriticalSectionWrapper>(CriticalSectionWrapper::CreateCriticalSection());
-    CriticalSectionScoped lock(*crtiSect);
-
-    if(inc == kSsrcDbInc)
-    {
-        theSSRCDatabaseCount++;
-        if(theSSRCDatabaseCount == 1)
-        {
-            state = kSsrcDbCreate;
-        }
-    } else
-    {
-        theSSRCDatabaseCount--;
-        if(theSSRCDatabaseCount == 0)
-        {
-            state = kSsrcDbDestroy;
-        }
-    }
-    if(state == kSsrcDbCreate)
-    {
-        theSSRCDatabase = new SSRCDatabase();
-
-    }else if(state == kSsrcDbDestroy)
-    {
-        SSRCDatabase* oldValue = theSSRCDatabase;
-        theSSRCDatabase = NULL;
-        if(oldValue)
-        {
-            delete oldValue;
-        }
-        return theSSRCDatabase;
-    }
-#else
-    // Windows
-    if(inc == kSsrcDbInc)
-    {
-        if(1 == InterlockedIncrement(&theSSRCDatabaseCount))
-        {
-            state = kSsrcDbCreate;
-        }
-    } else
-    {
-        int newValue = InterlockedDecrement(&theSSRCDatabaseCount);
-        if(newValue == 0)
-        {
-            state = kSsrcDbDestroy;
-        }
-    }
-    if(state == kSsrcDbCreate)
-    {
-        SSRCDatabase* newValue = new SSRCDatabase();
-        SSRCDatabase* oldValue = (SSRCDatabase*)InterlockedExchangePointer(reinterpret_cast<void* volatile*>(&theSSRCDatabase), newValue);
-        assert(oldValue == NULL);
-
-    }else if(state == kSsrcDbDestroy)
-    {
-        SSRCDatabase* oldValue = (SSRCDatabase*)InterlockedExchangePointer(reinterpret_cast<void* volatile*>(&theSSRCDatabase), NULL);
-        if(oldValue)
-        {
-            delete oldValue;
-        }
-        return theSSRCDatabase;
-    }
-#endif
-    assert(theSSRCDatabase);
-    return theSSRCDatabase;
+  SSRCDatabase* impl =
+      GetStaticInstance<SSRCDatabase>(count_operation);
+  return impl;
 }
 
 SSRCDatabase*
 SSRCDatabase::GetSSRCDatabase()
 {
-    return StaticInstance(kSsrcDbInc);
+    return StaticInstance(kAddRef);
 }
 
 void
 SSRCDatabase::ReturnSSRCDatabase()
 {
-    StaticInstance(kSsrcDbDec);
+    StaticInstance(kRelease);
 }
 
 WebRtc_UWord32

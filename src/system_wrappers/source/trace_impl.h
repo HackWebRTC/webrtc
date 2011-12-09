@@ -14,23 +14,11 @@
 #include "system_wrappers/interface/critical_section_wrapper.h"
 #include "system_wrappers/interface/event_wrapper.h"
 #include "system_wrappers/interface/file_wrapper.h"
+#include "system_wrappers/interface/static_instance.h"
 #include "system_wrappers/interface/trace.h"
 #include "system_wrappers/interface/thread_wrapper.h"
 
 namespace webrtc {
-enum TraceCount
-{
-    WEBRTC_TRACE_DEC    = 0,
-    WEBRTC_TRACE_INC    = 1,
-    WEBRTC_TRACE_INC_NO_CREATE = 2
-};
-
-enum TraceCreate
-{
-    WEBRTC_TRACE_EXIST    = 0,
-    WEBRTC_TRACE_CREATE   = 1,
-    WEBRTC_TRACE_DESTROY  = 2
-};
 
 // TODO (pwestin) WEBRTC_TRACE_MAX_QUEUE needs to be tweaked
 // TODO (hellner) the buffer should be close to how much the system can write to
@@ -58,11 +46,8 @@ class TraceImpl : public Trace
 public:
     virtual ~TraceImpl();
 
-    static Trace* CreateTrace();
+    static TraceImpl* CreateInstance();
     static TraceImpl* GetTrace(const TraceLevel level = kTraceAll);
-
-    static Trace* StaticInstance(TraceCount inc,
-                                 const TraceLevel level = kTraceAll);
 
     WebRtc_Word32 SetTraceFileImpl(const WebRtc_Word8* fileName,
                                    const bool addFileCounter);
@@ -81,6 +66,9 @@ public:
 protected:
     TraceImpl();
 
+    static TraceImpl* StaticInstance(CountOperation count_operation,
+        const TraceLevel level = kTraceAll);
+
     // OS specific implementations
     virtual WebRtc_Word32 AddThreadId(char* traceMessage) const = 0;
     virtual WebRtc_Word32 AddTime(char* traceMessage,
@@ -93,6 +81,8 @@ protected:
     bool Process();
 
 private:
+    friend class Trace;
+
     WebRtc_Word32 AddLevel(char* szMessage, const TraceLevel level) const;
 
     WebRtc_Word32 AddModuleAndId(char* traceMessage, const TraceModule module,

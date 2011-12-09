@@ -11,30 +11,18 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_SSRC_DATABASE_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_SSRC_DATABASE_H_
 
-#include "typedefs.h"
-
 #ifndef WEBRTC_NO_STL
     #include <map>
 #endif
+
+#include "system_wrappers/interface/static_instance.h"
+#include "typedefs.h"
 
 namespace webrtc {
 class CriticalSectionWrapper;
 
 class SSRCDatabase
 {
-    enum SsrcDatabaseCount
-    {
-        kSsrcDbDec    = 0,
-        kSsrcDbInc    = 1
-    };
-
-    enum SsrcDatabaseCreate
-    {
-        kSsrcDbExist    = 0,
-        kSsrcDbCreate    = 1,
-        kSsrcDbDestroy   = 2
-    };
-
 public:
     static SSRCDatabase* GetSSRCDatabase();
     static void ReturnSSRCDatabase();
@@ -43,12 +31,18 @@ public:
     WebRtc_Word32 RegisterSSRC(const WebRtc_UWord32 ssrc);
     WebRtc_Word32 ReturnSSRC(const WebRtc_UWord32 ssrc);
 
-private:
-    static SSRCDatabase*& StaticInstance(SsrcDatabaseCount inc);
-
-private:
+protected:
     SSRCDatabase();
     virtual ~SSRCDatabase();
+
+    static SSRCDatabase* CreateInstance() { return new SSRCDatabase(); }
+
+private:
+    // Friend function to allow the SSRC destructor to be accessed from the
+    // template class.
+    friend SSRCDatabase* GetStaticInstance<SSRCDatabase>(
+        CountOperation count_operation);
+    static SSRCDatabase* StaticInstance(CountOperation count_operation);
 
     WebRtc_UWord32 GenerateRandom();
 

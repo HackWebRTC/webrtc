@@ -29,9 +29,11 @@ class UdpSocketWindows;
 class UdpSocketManagerWindows : public UdpSocketManager
 {
 public:
-    UdpSocketManagerWindows(const WebRtc_Word32 id,
-                            WebRtc_UWord8& numOfWorkThreads);
+    UdpSocketManagerWindows();
     virtual ~UdpSocketManagerWindows();
+
+    virtual bool Init(WebRtc_Word32 id,
+                      WebRtc_UWord8& numOfWorkThreads);
 
     virtual WebRtc_Word32 ChangeUniqueId(const WebRtc_Word32 id);
 
