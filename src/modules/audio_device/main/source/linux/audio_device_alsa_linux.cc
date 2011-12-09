@@ -94,7 +94,7 @@ AudioDeviceLinuxALSA::AudioDeviceLinuxALSA(const WebRtc_Word32 id) :
     _recordingFramesLeft(0),
     _playoutFramesLeft(0),
     _playbackBufferSize(0),
-    _playBufType(AudioDeviceModule::kAdaptiveBufferSize),
+    _playBufType(AudioDeviceModule::kFixedBufferSize),
     _initialized(false),
     _recording(false),
     _playing(false),

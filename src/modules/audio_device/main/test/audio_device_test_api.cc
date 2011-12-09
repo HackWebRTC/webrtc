@@ -338,6 +338,17 @@ int api_test()
 
     TEST_LOG("Version: %s\n\n", version);
 
+    AudioDeviceModule::AudioLayer audioLayer =
+        AudioDeviceModule::kPlatformDefaultAudio;
+    TEST(audioDevice->ActiveAudioLayer(&audioLayer) == 0);
+    if (audioLayer == AudioDeviceModule::kLinuxAlsaAudio) {
+      TEST_LOG("API Test is not available on ALSA. \n");
+      processThread->DeRegisterModule(audioDevice);
+      TEST(audioDevice->Terminate() == 0);
+      TEST(audioDevice->Release() == 0);
+      return 0;
+    }
+
     TEST_LOG("Testing...\n\n");
 
     // =====================
