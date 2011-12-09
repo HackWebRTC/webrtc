@@ -39,8 +39,8 @@
             'samples/client/main_wnd.h',
             'samples/client/peer_connection_client.cc',
             'samples/client/peer_connection_client.h',
-            'third_party/libjingle/source/talk/base/win32socketinit.cc',
-            'third_party/libjingle/source/talk/base/win32socketserver.cc',
+            '../third_party/libjingle/source/talk/base/win32socketinit.cc',
+            '../third_party/libjingle/source/talk/base/win32socketserver.cc',
           ],
           'msvs_settings': {
             'VCLinkerTool': {
