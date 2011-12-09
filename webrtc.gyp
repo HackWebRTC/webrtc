@@ -26,11 +26,5 @@
     },
   ],
   'conditions': [
-    ['build_with_chromium==1', {
-      # Exclude components in engine_configuration.h.
-      'defines': [
-        'WEBRTC_CHROMIUM_BUILD',
-      ],
-    }, ],  # build_with_chromium=1
   ],  # conditions
 }

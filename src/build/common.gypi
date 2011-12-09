@@ -103,6 +103,8 @@
     'conditions': [
       ['build_with_chromium==1', {
         'defines': [
+          # Changes settings for Chromium build.
+          'WEBRTC_CHROMIUM_BUILD',
           # This turns off tracing in webrtc to reduce the noise from
           # the Chrome memory bots. Down the line we will enable WebRTC
           # tracing for Chromium and remove this.

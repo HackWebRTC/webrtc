@@ -1493,7 +1493,10 @@ WebRtc_Word32 ModuleFileUtility::InitCompressedReading(
         start,
         stop);
 
+#if defined(WEBRTC_CODEC_GSMAMR) || defined(WEBRTC_CODEC_GSMAMRWB) || \
+    defined(WEBRTC_CODEC_ILBC)
     WebRtc_Word16 read_len = 0;
+#endif
     _codecId = kCodecNoCodec;
     _playoutPositionMs = 0;
     _reading = false;
