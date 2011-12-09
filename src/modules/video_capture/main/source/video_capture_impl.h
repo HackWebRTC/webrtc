@@ -18,7 +18,7 @@
 #include "video_capture.h"
 #include "video_capture_config.h"
 #include "tick_util.h"
-#include "vplib.h"
+#include "common_video/libyuv/include/libyuv.h"
 
 namespace webrtc
 {

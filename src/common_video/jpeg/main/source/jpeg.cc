@@ -20,7 +20,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "vplib.h"
 #include "jpeg.h"
 #include "data_manager.h"
 extern "C" {

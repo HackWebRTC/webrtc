@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_TEST_VIDEO_SOURCE_H_
 #define WEBRTC_MODULES_VIDEO_CODING_TEST_VIDEO_SOURCE_H_
 
-#include "vplib.h"
+#include "common_video/libyuv/include/libyuv.h"
 #include "typedefs.h"
 
 #include <string>

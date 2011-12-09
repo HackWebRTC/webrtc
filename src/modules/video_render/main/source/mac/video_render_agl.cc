@@ -19,7 +19,7 @@
 #include "event_wrapper.h"
 #include "trace.h"
 #include "thread_wrapper.h"
-#include "vplib.h"
+#include "common_video/libyuv/include/libyuv.h"
 
 namespace webrtc {
 
@@ -236,8 +236,8 @@ int VideoChannelAGL::DeliverFrame(unsigned char* buffer, int bufferSize, unsigne
         return -1;
     }
 
-    int rgbLength = ConvertI420ToRGBAMac((WebRtc_UWord8*)buffer, (WebRtc_UWord8*)_buffer, (WebRtc_Word32)_width, (WebRtc_Word32)_height, 0);
-    if (rgbLength == -1)
+    int rgbret = ConvertI420ToRGBAMac((WebRtc_UWord8*)buffer, (WebRtc_UWord8*)_buffer, (WebRtc_Word32)_width, (WebRtc_Word32)_height, 0);
+    if (rgbret < 0)
     {
         _owner->UnlockAGLCntx();
         return -1;

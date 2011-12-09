@@ -20,59 +20,48 @@
 #include "module_common_types.h"
 #include "video_processing_defines.h"
 
-#include "vplib.h"
-#include "interpolator.h"
+#include "common_video/libyuv/include/libyuv.h"
+#include "common_video/libyuv/include/scaler.h"
 
 namespace webrtc {
 
 class VPMSpatialResampler
 {
 public:
-    virtual ~VPMSpatialResampler() {};
-    virtual WebRtc_Word32 SetTargetFrameSize(WebRtc_UWord32 width,
-                                             WebRtc_UWord32 height) = 0;
-    virtual void SetInputFrameResampleMode(VideoFrameResampling
-                                           resamplingMode) = 0;
-    virtual void Reset() = 0;
-    virtual WebRtc_Word32 ResampleFrame(const VideoFrame& inFrame,
-                                        VideoFrame& outFrame) = 0;
-    virtual WebRtc_UWord32 TargetWidth() = 0;
-    virtual WebRtc_UWord32 TargetHeight() = 0;
-    virtual WebRtc_Word32 Release() = 0;
-    virtual bool ApplyResample(WebRtc_UWord32 width, WebRtc_UWord32 height) = 0;
+  virtual ~VPMSpatialResampler() {};
+  virtual WebRtc_Word32 SetTargetFrameSize(WebRtc_Word32 width,
+                                           WebRtc_Word32 height) = 0;
+  virtual void SetInputFrameResampleMode(VideoFrameResampling
+                                         resamplingMode) = 0;
+  virtual void Reset() = 0;
+  virtual WebRtc_Word32 ResampleFrame(const VideoFrame& inFrame,
+                                      VideoFrame& outFrame) = 0;
+  virtual WebRtc_Word32 TargetWidth() = 0;
+  virtual WebRtc_Word32 TargetHeight() = 0;
+  virtual bool ApplyResample(WebRtc_Word32 width, WebRtc_Word32 height) = 0;
 };
 
 class VPMSimpleSpatialResampler : public VPMSpatialResampler
 {
 public:
-    VPMSimpleSpatialResampler();
-    ~VPMSimpleSpatialResampler();
-    virtual WebRtc_Word32 SetTargetFrameSize(WebRtc_UWord32 width,
-                                             WebRtc_UWord32 height);
-    virtual void SetInputFrameResampleMode(VideoFrameResampling resamplingMode);
-    virtual void Reset();
-    virtual WebRtc_Word32 ResampleFrame(const VideoFrame& inFrame,
-                                        VideoFrame& outFrame);
-    virtual WebRtc_UWord32 TargetWidth();
-    virtual WebRtc_UWord32 TargetHeight();
-    virtual WebRtc_Word32 Release();
-    virtual bool ApplyResample(WebRtc_UWord32 width, WebRtc_UWord32 height);
+  VPMSimpleSpatialResampler();
+  ~VPMSimpleSpatialResampler();
+  virtual WebRtc_Word32 SetTargetFrameSize(WebRtc_Word32 width,
+                                           WebRtc_Word32 height);
+  virtual void SetInputFrameResampleMode(VideoFrameResampling resamplingMode);
+  virtual void Reset();
+  virtual WebRtc_Word32 ResampleFrame(const VideoFrame& inFrame,
+                                      VideoFrame& outFrame);
+  virtual WebRtc_Word32 TargetWidth();
+  virtual WebRtc_Word32 TargetHeight();
+  virtual bool ApplyResample(WebRtc_Word32 width, WebRtc_Word32 height);
 
 private:
-    WebRtc_Word32 UpsampleFrame(const VideoFrame& inFrame, VideoFrame& outFrame);
-    WebRtc_Word32 CropSize(WebRtc_UWord32 width, WebRtc_UWord32 height,
-                           WebRtc_UWord32& croppedWidth,
-                           WebRtc_UWord32& croppedHeight) const;
-    WebRtc_Word32 SubsampleMultipleOf2(VideoFrame& frame);
-    bool ExactMultiplier(WebRtc_UWord32 width, WebRtc_UWord32 height) const;
-    WebRtc_Word32 BiLinearInterpolation(const VideoFrame& inFrame,
-                                        VideoFrame& outFrame);
 
-
-    VideoFrameResampling         _resamplingMode;
-    WebRtc_UWord32               _targetWidth;
-    WebRtc_UWord32               _targetHeight;
-    interpolator*                _interpolatorPtr;
+  VideoFrameResampling        _resamplingMode;
+  WebRtc_Word32               _targetWidth;
+  WebRtc_Word32               _targetHeight;
+  Scaler                      _scaler;
 };
 
 } //namespace

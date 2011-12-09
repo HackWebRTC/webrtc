@@ -13,7 +13,7 @@
 #include <string.h>     // memcpy
 
 #include "test_buffer.h"
-#include "vplib.h"
+#include "common_video/libyuv/include/libyuv.h"
 
 TestBuffer::TestBuffer():
 _buffer(0),

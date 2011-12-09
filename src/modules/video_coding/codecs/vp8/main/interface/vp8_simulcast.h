@@ -20,7 +20,8 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_SIMULCAST_H_
 #define WEBRTC_MODULES_VIDEO_CODING_CODECS_VP8_SIMULCAST_H_
 
-#include "interpolator.h"
+#include "common_video/libyuv/include/scaler.h"
+
 #include "video_codec_interface.h"
 #include "vp8.h"
 
@@ -138,7 +139,7 @@ private:
   VP8Encoder* encoder_[kMaxSimulcastStreams];
   bool encode_stream_[kMaxSimulcastStreams];
   VideoFrameType frame_type_[kMaxSimulcastStreams];
-  interpolator* interpolator_[kMaxSimulcastStreams];
+  Scaler* scaler_[kMaxSimulcastStreams];
   RawImage video_frame_[kMaxSimulcastStreams];
   VideoCodec video_codec_;
 };// end of VP8SimulcastEncoder class

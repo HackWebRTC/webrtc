@@ -21,9 +21,9 @@
 
 #include "event_wrapper.h"
 #include "testsupport/fileutils.h"
+#include "common_video/libyuv/include/libyuv.h"
 #include "video_codec_interface.h"
 #include "video_source.h"
-#include "vplib.h"
 
 
 #define SSIM_CALC 0 // by default, don't compute SSIM

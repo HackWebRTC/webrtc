@@ -10,7 +10,7 @@
 
 #include "test.h"
 #include "video_source.h"
-#include "vplib.h"
+#include "common_video/libyuv/include/libyuv.h"
 #include "event_wrapper.h"
 #include "thread_wrapper.h"
 #include <iostream>

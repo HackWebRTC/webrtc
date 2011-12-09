@@ -12,13 +12,14 @@
 #define WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_VPLIB_CONVERSIONS_H_
 
 #include "video_capture.h"
-#include "vplib.h"
+#include "common_video/libyuv/include/libyuv.h"
 
+// TODO (mikhal): Update file name
 namespace webrtc
 { 
 namespace videocapturemodule
 {
-    VideoType RawVideoTypeToVplibVideoType(RawVideoType type);
+    VideoType RawVideoTypeToCommonVideoVideoType(RawVideoType type);
 } // namespace videocapturemodule
 } // namespace webrtc
 #endif // WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_VPLIB_CONVERSIONS_H_

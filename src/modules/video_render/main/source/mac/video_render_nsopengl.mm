@@ -16,7 +16,7 @@
 #include "event_wrapper.h"
 #include "trace.h"
 #include "thread_wrapper.h"
-#include "vplib.h"
+#include "common_video/libyuv/include/libyuv.h"
 
 namespace webrtc {
 
@@ -232,7 +232,7 @@ int VideoChannelNSOpenGL::DeliverFrame(unsigned char* buffer, int bufferSize, un
         return -1;
     }
 
-    int rgbLength = ConvertFromI420(kRGBAMac, buffer, _width, _height, _buffer);
+    int rgbLength = ConvertI420ToRGBAMac(buffer, _buffer, _width, _height, 0);
     if (rgbLength == -1)
     {
         _owner->UnlockAGLCntx();

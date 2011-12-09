@@ -13,7 +13,7 @@
 
 #include "typedefs.h"
 #include "i_video_render_win.h"
-#include "vplib.h"
+#include "common_video/libyuv/include/libyuv.h"
 
 #include "ddraw.h"
 #include <Map>

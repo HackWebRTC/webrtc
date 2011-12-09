@@ -14,7 +14,7 @@
       'dependencies': [
 
         # common_video
-       '<(webrtc_root)/common_video/common_video.gyp:webrtc_vplib',
+       '<(webrtc_root)/common_video/common_video.gyp:webrtc_libyuv',
        '<(webrtc_root)/common_video/common_video.gyp:webrtc_jpeg',
 
         # ModulesShared

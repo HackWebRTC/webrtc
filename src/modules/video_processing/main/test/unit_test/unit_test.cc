@@ -9,8 +9,11 @@
  */
 
 #include "unit_test.h"
-#include "trace.h"
+
+#include "common_video/libyuv/include/libyuv.h"
 #include "tick_util.h"
+#include "trace.h"
+
 
 using webrtc::Trace;
 

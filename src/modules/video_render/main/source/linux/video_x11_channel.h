@@ -12,7 +12,7 @@
 #define WEBRTC_MODULES_VIDEO_RENDER_MAIN_SOURCE_LINUX_VIDEO_X11_CHANNEL_H_
 
 #include "video_render_defines.h"
-#include "vplib.h"
+#include "common_video/libyuv/include/libyuv.h"
 #include <sys/shm.h>
 
 #include <X11/Xlib.h>

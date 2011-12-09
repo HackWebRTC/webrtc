@@ -10,7 +10,6 @@
 
 #include "unit_test.h"
 #include "video_processing.h"
-#include "vplib.h"
 #include "tick_util.h"
 
 #include <cstdio>

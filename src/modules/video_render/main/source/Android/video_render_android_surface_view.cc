@@ -10,7 +10,7 @@
 
 #include "video_render_android_surface_view.h"
 #include "critical_section_wrapper.h"
-#include "vplib.h"
+#include "common_video/libyuv/include/libyuv.h"
 #include "tick_util.h"
 #ifdef ANDROID_NDK_8_OR_ABOVE
     #include <android/bitmap.h>
@@ -402,7 +402,7 @@ void AndroidSurfaceViewChannel::DeliverFrame(JNIEnv* jniEnv)
         WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id, "%s: Locked bitmap", __FUNCTION__);
         // Convert I420 straight into the Java bitmap.
         const int conversionResult=ConvertI420ToRGB565( (unsigned char* )_bufferToRender.Buffer(), (unsigned char* ) pixels, _bitmapWidth, _bitmapHeight);
-        if(conversionResult<=0)
+        if(conversionResult<0)
         {
             WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id, "%s: Color conversion failed.", __FUNCTION__);
         }
@@ -448,8 +448,8 @@ void AndroidSurfaceViewChannel::DeliverFrame(JNIEnv* jniEnv)
 	if(_javaByteBufferObj && _bitmapWidth && _bitmapHeight)
 	{
 	    const int conversionResult=ConvertI420ToRGB565Android((unsigned char* )_bufferToRender.Buffer(), _directBuffer, _bitmapWidth, _bitmapHeight);
-	    if(conversionResult<=0)
-        {
+      if(conversionResult<0)
+      {
             WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id, "%s: Color conversion failed.", __FUNCTION__);
             _renderCritSect.Leave();
             return;

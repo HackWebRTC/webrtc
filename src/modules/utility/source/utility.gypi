@@ -55,7 +55,6 @@
           ],
           'include_dirs': [
             '../../video_coding/main/interface',
-            '../../../common_video/vplib/main/interface',
           ],
           'sources': [
             'frame_scaler.cc',

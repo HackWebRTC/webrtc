@@ -304,9 +304,9 @@ WebRtc_Word32 VideoCaptureImpl::IncomingFrame(WebRtc_UWord8* videoFrame,
 
     if (frameInfo.codecType == kVideoCodecUnknown) // None encoded. Convert to I420.
     {
-        const VideoType vpLibType = videocapturemodule::
-            RawVideoTypeToVplibVideoType(frameInfo.rawType);
-        int size = CalcBufferSize(vpLibType, width, height);
+        const VideoType commonVideoType = videocapturemodule::
+            RawVideoTypeToCommonVideoVideoType(frameInfo.rawType);
+        int size = CalcBufferSize(commonVideoType, width, height);
         if (size != videoFrameLength)
         {
             WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
@@ -315,7 +315,8 @@ WebRtc_Word32 VideoCaptureImpl::IncomingFrame(WebRtc_UWord8* videoFrame,
         }
 
         // Allocate I420 buffer
-        _captureFrame.VerifyAndAllocate(CalcBufferSize(kI420, width, height));
+        int requiredLength = CalcBufferSize(kI420, width, height);
+        _captureFrame.VerifyAndAllocate(requiredLength);
         if (!_captureFrame.Buffer())
         {
             WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
@@ -324,19 +325,19 @@ WebRtc_Word32 VideoCaptureImpl::IncomingFrame(WebRtc_UWord8* videoFrame,
         }
 
         memset(_captureFrame.Buffer(), 0, _captureFrame.Size());
-        const WebRtc_Word32 conversionResult = ConvertToI420(vpLibType, videoFrame,
+        const WebRtc_Word32 conversionResult = ConvertToI420(commonVideoType, videoFrame,
                                                              width, height,
                                                              _captureFrame.Buffer(),
                                                              _requestedCapability.interlaced,
                                                              _rotateFrame);
-        if (conversionResult <= 0)
+        if (conversionResult < 0)
         {
             WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
                        "Failed to convert capture frame from type %d to I420",
                        frameInfo.rawType);
             return -1;
         }
-        _captureFrame.SetLength(conversionResult);
+        _captureFrame.SetLength(requiredLength);
     }
     else // Encoded format
     {
@@ -426,13 +427,13 @@ WebRtc_Word32 VideoCaptureImpl::SetCaptureRotation(VideoCaptureRotation rotation
             _rotateFrame = kRotateNone;
             break;
         case kCameraRotate90:
-            _rotateFrame = kRotateClockwise;
+            _rotateFrame = kRotate90;
             break;
         case kCameraRotate180:
             _rotateFrame = kRotate180;
             break;
         case kCameraRotate270:
-            _rotateFrame = kRotateAntiClockwise;
+            _rotateFrame = kRotate270;
             break;
     }
     return 0;

@@ -13,19 +13,19 @@
       'type': '<(library)',
       'dependencies': [
         'webrtc_utility',
-        '<(webrtc_root)/common_video/common_video.gyp:webrtc_vplib',
+          '<(webrtc_root)/common_video/common_video.gyp:webrtc_libyuv',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
       'include_dirs': [
         '../interface',
         '../../../interface',
-        '../../../../common_video/vplib/main/interface',
+        '<(webrtc_root)/common_video/libyuv/include',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
           '../interface',
           '../../../interface',
-          '../../../../common_video/vplib/main/interface',
+          '<(webrtc_root)/common_video/libyuv/include',
         ],
       },
       'sources': [

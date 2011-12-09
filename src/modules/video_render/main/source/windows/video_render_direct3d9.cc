@@ -19,7 +19,7 @@
 #include "event_wrapper.h"
 #include "trace.h"
 #include "thread_wrapper.h"
-#include "vplib.h"
+#include "common_video/libyuv/include/libyuv.h"
 
 namespace webrtc {
 

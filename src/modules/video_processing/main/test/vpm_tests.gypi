@@ -18,7 +18,7 @@
       ],
       'include_dirs': [
         '../../../../system_wrappers/interface',
-        '../../../../common_video/vplib/main/interface',
+        '<(webrtc_root)/common_video/libyuv/include',
         '../../../../modules/video_processing/main/source',
       ],
       'sources': [

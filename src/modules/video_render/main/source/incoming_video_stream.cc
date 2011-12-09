@@ -17,7 +17,7 @@
 #include "video_render_frames.h"
 #include "tick_util.h"
 #include "map_wrapper.h"
-#include "vplib.h"
+#include "common_video/libyuv/include/libyuv.h"
 
 #include <cassert>
 

@@ -14,7 +14,7 @@ namespace webrtc
 {
 namespace videocapturemodule
 {
-VideoType RawVideoTypeToVplibVideoType(RawVideoType type)
+VideoType RawVideoTypeToCommonVideoVideoType(RawVideoType type)
 {
     switch (type)
     {
@@ -43,7 +43,7 @@ VideoType RawVideoTypeToVplibVideoType(RawVideoType type)
         case kVideoNV12:
             return kNV12;
         default:
-            assert(!"RawVideoTypeToVplibVideoType unknown type");
+            assert(!"RawVideoTypeToCommonVideoVideoType unknown type");
     }
     return kUnknown;
 }

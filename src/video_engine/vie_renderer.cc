@@ -12,7 +12,7 @@
 #include "video_render.h"
 #include "video_render_defines.h"
 #include "vie_render_manager.h"
-#include "vplib.h"
+#include "common_video/libyuv/include/libyuv.h"
 
 namespace webrtc {
 

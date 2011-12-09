@@ -25,14 +25,17 @@ namespace webrtc {
 #define VPM_GENERAL_ERROR       -1
 #define VPM_MEMORY              -2
 #define VPM_PARAMETER_ERROR     -3
-#define VPM_UNINITIALIZED       -4
-#define VPM_UNIMPLEMENTED       -5
+#define VPM_SCALE_ERROR         -4
+#define VPM_UNINITIALIZED       -5
+#define VPM_UNIMPLEMENTED       -6
 
 enum VideoFrameResampling
 {
+  // TODO: Do we still need crop/pad?
     kNoRescaling,         // disables rescaling
-    kFastRescaling,       // fast up/down scaling; crop/pad when needed.
+    kFastRescaling,       // point
     kBiLinear,            // bi-linear interpolation
+    kBox,                 // Box inteprolation
 };
 
 } //namespace

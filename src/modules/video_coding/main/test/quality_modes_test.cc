@@ -18,7 +18,7 @@
 #include "test_callbacks.h"
 #include "test_macros.h"
 #include "testsupport/metrics/video_metrics.h"
-#include "vplib.h"
+#include "common_video/libyuv/include/libyuv.h"
 
 using namespace webrtc;
 

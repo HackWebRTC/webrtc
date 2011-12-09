@@ -9,7 +9,7 @@
 {
   'includes': [
     '../common_settings.gypi', # Common settings
-    'vplib/main/source/vplib.gypi',
+    'libyuv/libyuv.gypi',
     'jpeg/main/source/jpeg.gypi',
   ],
 }

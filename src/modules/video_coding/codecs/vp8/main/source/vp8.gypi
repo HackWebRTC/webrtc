@@ -13,11 +13,11 @@
       'type': '<(library)',
       'dependencies': [
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+        '<(webrtc_root)/common_video/common_video.gyp:webrtc_libyuv',
       ],
       'include_dirs': [
         '../interface',
         '<(webrtc_root)/common_video/interface',
-        '<(webrtc_root)/common_video/vplib/main/interface',
         '<(webrtc_root)/modules/video_coding/codecs/interface',
         '<(webrtc_root)/modules/interface',
       ],
@@ -69,7 +69,7 @@
           'dependencies': [
             'test_framework',
             'webrtc_vp8',
-            '<(webrtc_root)/common_video/common_video.gyp:webrtc_vplib',
+            '<(webrtc_root)/common_video/common_video.gyp:webrtc_libyuv',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
             '<(webrtc_root)/../test/test.gyp:test_support',
             '<(webrtc_root)/../testing/gtest.gyp:gtest',

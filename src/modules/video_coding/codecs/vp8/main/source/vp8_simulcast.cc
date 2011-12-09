@@ -27,14 +27,14 @@ VP8SimulcastEncoder::VP8SimulcastEncoder() {
     encoder_[i] = NULL;
     encode_stream_[i] = false;
     frame_type_[i] = kKeyFrame;
-    interpolator_[i] = NULL;
+    scaler_[i] = NULL;
   }
 }
 
 VP8SimulcastEncoder::~VP8SimulcastEncoder() {
   for (int i = 0; i < kMaxSimulcastStreams; i++) {
     delete encoder_[i];
-    delete interpolator_[i];
+    delete scaler_[i];
     delete [] video_frame_[i]._buffer;
   }
 }
@@ -43,8 +43,8 @@ WebRtc_Word32 VP8SimulcastEncoder::Release() {
   for (int i = 0; i < kMaxSimulcastStreams; i++) {
     delete encoder_[i];
     encoder_[i] = NULL;
-    delete interpolator_[i];
-    interpolator_[i] = NULL;
+    delete scaler_[i];
+    scaler_[i] = NULL;
     delete [] video_frame_[i]._buffer;
     video_frame_[i]._buffer = NULL;
     video_frame_[i]._size = 0;
@@ -121,17 +121,12 @@ WebRtc_Word32 VP8SimulcastEncoder::InitEncode(const VideoCodec* codecSettings,
     }
     if (codecSettings->width != video_codec.width ||
         codecSettings->height != video_codec.height) {
-      if (interpolator_[i] == NULL) {
-        interpolator_[i] = new interpolator();
+      if (scaler_[i] == NULL) {
+        scaler_[i] = new Scaler();
       }
-      interpolator_[i]->Set(
-          codecSettings->width,
-          codecSettings->height,
-          video_codec.width,
-          video_codec.height,
-          kI420,
-          kI420,
-          kBilinear);
+      scaler_[i]->Set(codecSettings->width, codecSettings->height,
+                      video_codec.width, video_codec.height,
+                      kI420, kI420, kScaleBox);
 
       if (video_frame_[i]._size <
           (3u * video_codec.width * video_codec.height / 2u)) {
@@ -183,18 +178,15 @@ WebRtc_Word32  VP8SimulcastEncoder::Encode(
 
   for (int i = 0; i < numberOfStreams; i++) {
     if (encoder_[i] && encode_stream_[i]) {
-      // need the simulcastIdx to keep track of which encoder encoded the frame
+      // Need the simulcastIdx to keep track of which encoder encoded the frame.
       info.codecSpecific.VP8.simulcastIdx = i;
       VideoFrameType requested_frame_type = frame_type_[i];
-      if (interpolator_[i]) {
-        interpolator_[i]->Interpolate(inputImage._buffer,
-                                      video_frame_[i]._buffer,
-                                      video_frame_[i]._size);
-        video_frame_[i]._length =
-            3 *
-            video_codec_.simulcastStream[i].width *
-            video_codec_.simulcastStream[i].height /
-            2;
+      if (scaler_[i]) {
+        int video_frame_size = static_cast<int>(video_frame_[i]._size);
+        scaler_[i]->Scale(inputImage._buffer,
+                          video_frame_[i]._buffer,
+                          video_frame_size);
+        video_frame_[i]._length = video_frame_[i]._size = video_frame_size;
         ret_val = encoder_[i]->Encode(video_frame_[i],
                                       &info,
                                       &requested_frame_type);

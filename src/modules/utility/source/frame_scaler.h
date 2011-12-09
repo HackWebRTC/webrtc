@@ -16,18 +16,12 @@
 
 #include "engine_configurations.h"
 #include "module_common_types.h"
+#include "system_wrappers/interface/scoped_ptr.h"
 #include "typedefs.h"
 
 namespace webrtc
 {
-// TODO (perkj): add interpolator. Current implementation only support scaling
-// (up or down) where the width and height are scaled by a constant factor 2-4.
-// Also remove NO_INTERPOLATOR.
-
-// Disable usage of the old intertpolator implementation.
-#define NO_INTERPOLATOR 1
-
-
+class Scaler;
 class VideoFrame;
 class FrameScaler
 {
@@ -41,10 +35,8 @@ public:
                                       WebRtc_UWord32 outWidth,
                                       WebRtc_UWord32 outHeight);
 private:
-    typedef WebRtc_Word8* VideoInterpolator;
-    VideoInterpolator*_ptrVideoInterpolator;
-
-    VideoFrame _interpolatorBuffer;
+    scoped_ptr<Scaler> _scaler;
+    VideoFrame _scalerBuffer;
     WebRtc_UWord32 _outWidth;
     WebRtc_UWord32 _outHeight;
     WebRtc_UWord32 _inWidth;

@@ -13,7 +13,6 @@
 #include <cassert>
 
 #include "testsupport/fileutils.h"
-#include "vplib.h"
 
 VideoSource::VideoSource()
 :

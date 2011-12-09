@@ -8,12 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef UNIT_TEST_H
-#define UNIT_TEST_H
+#ifndef VPM_UNIT_TEST_H
+#define VPM_UNIT_TEST_H
 
 #include "video_processing.h"
 
-#include "vplib.h"
 
 #include <gtest/gtest.h>
 
@@ -35,4 +34,4 @@ protected:
 };
 
 
-#endif // UNIT_TEST_H
+#endif // VPM_UNIT_TEST_H
