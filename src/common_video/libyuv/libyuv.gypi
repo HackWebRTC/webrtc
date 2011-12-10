@@ -20,6 +20,9 @@
         'libyuv.cc',
         'scaler.cc',
       ],
+      'include_dirs': [
+        '<(DEPTH)',
+      ],
     },
   ], # targets
   'conditions': [   
