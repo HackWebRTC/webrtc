@@ -22,7 +22,6 @@ class FileWrapper : public InStream, public OutStream
 {
 public:
     enum { kMaxFileNameSize = 1024};
-    enum { kFileMaxTextMessageSize = 1024};
 
     // Factory method. Constructor disabled.
     static FileWrapper* Create();
@@ -52,15 +51,14 @@ public:
 
     // Write text to the opened file. The written text can contain plain text
     // and text with type specifiers in the same way as sprintf works.
-    virtual WebRtc_Word32 WriteText(const WebRtc_Word8* text, ...) = 0;
+    virtual WebRtc_Word32 WriteText(const char* format, ...) = 0;
 
     // Reads len number of bytes from buf to file.
     virtual int Read(void* buf, int len) = 0;
 
-    // Writes len number of bytes to buf from file. Please note that the actual
-    // writing to file may happen some time later. Call flush to force a write
-    // to take affect
-    virtual bool Write(const void *buf,int len) = 0;
+    // Writes len number of bytes to buf from file. The actual writing to file
+    // may happen some time later. Call flush to force a write to take effect.
+    virtual bool Write(const void *buf, int len) = 0;
 
     // Rewinds the file to the start. Only available when OpenFile() has been
     // called with loop argument set to true. Or readOnly argument has been set

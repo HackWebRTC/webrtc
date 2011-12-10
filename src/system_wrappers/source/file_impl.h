@@ -40,7 +40,7 @@ public:
     virtual bool Write(const void *buf, int len);
     virtual int Rewind();
 
-    virtual WebRtc_Word32 WriteText(const WebRtc_Word8* text, ...);
+    virtual WebRtc_Word32 WriteText(const char* format, ...);
 
 private:
     FILE*          _id;

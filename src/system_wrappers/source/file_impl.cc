@@ -10,13 +10,13 @@
 
 #include "file_impl.h"
 
-#include <cassert>
+#include <assert.h>
 
 #ifdef _WIN32
-    #include <Windows.h>
+#include <Windows.h>
 #else
-    #include <stdarg.h>
-    #include <string.h>
+#include <stdarg.h>
+#include <string.h>
 #endif
 
 namespace webrtc {
@@ -125,6 +125,7 @@ WebRtc_Word32 FileWrapperImpl::OpenFile(const WebRtc_Word8 *fileNameUTF8,
     }
 
     _readOnly = readOnly;
+    _text = text;
 
     FILE *tmpId = NULL;
 #if defined _WIN32
@@ -174,7 +175,7 @@ WebRtc_Word32 FileWrapperImpl::OpenFile(const WebRtc_Word8 *fileNameUTF8,
 
     if (tmpId != NULL)
     {
-        // + 1 comes fro copying the NULL termination charachter too
+        // +1 comes from copying the NULL termination character.
         memcpy(_fileNameUTF8, fileNameUTF8, length + 1);
         if (_id != NULL)
         {
@@ -196,7 +197,7 @@ int FileWrapperImpl::Read(void *buf, int len)
     }
     if (_id != NULL)
     {
-        WebRtc_Word32 res = static_cast<WebRtc_Word32>(fread(buf, 1, len, _id));
+        int res = static_cast<int>(fread(buf, 1, len, _id));
         if (res != len)
         {
             if(!_looping)
@@ -209,41 +210,43 @@ int FileWrapperImpl::Read(void *buf, int len)
     return -1;
 }
 
-WebRtc_Word32 FileWrapperImpl::WriteText(const WebRtc_Word8* text, ...)
+WebRtc_Word32 FileWrapperImpl::WriteText(const char* format, ...)
 {
-    assert(!_readOnly);
-    assert(!_text);
+    if (_readOnly)
+        return -1;
+
+    if (!_text)
+        return -1;
 
     if (_id == NULL)
+        return -1;
+
+    if (format == NULL)
+        return -1;
+
+    va_list args;
+    va_start(args, format);
+    int num_bytes = vfprintf(_id, format, args);
+    va_end(args);
+
+    if (num_bytes > 0)
     {
+        return 0;
+    }
+    else
+    {
+        CloseFile();
         return -1;
     }
-
-    char tempBuff[kFileMaxTextMessageSize];
-    if (text)
-    {
-        va_list args;
-        va_start(args, text);
-#ifdef _WIN32
-        _vsnprintf(tempBuff, kFileMaxTextMessageSize-1, text, args);
-#else
-        vsnprintf(tempBuff, kFileMaxTextMessageSize-1, text, args);
-#endif
-        va_end(args);
-        WebRtc_Word32 nBytes;
-        nBytes = fprintf(_id, "%s", tempBuff);
-        if (nBytes > 0)
-        {
-            return 0;
-        }
-        CloseFile();
-    }
-    return -1;
 }
 
 bool FileWrapperImpl::Write(const void* buf, int len)
 {
-    assert(!_readOnly);
+    if (!_readOnly)
+    {
+        return false;
+    }
+
     if (_id != NULL)
     {
         // Check if it's time to stop writing.
