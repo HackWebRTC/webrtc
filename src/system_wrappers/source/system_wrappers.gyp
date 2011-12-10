@@ -84,6 +84,7 @@
         'thread_windows.h',
         'thread_windows_set_name.h',
         'trace_impl.cc',
+        'trace_impl_no_op.cc',
         'trace_impl.h',
         'trace_posix.h',
         'trace_windows.h',
@@ -147,10 +148,12 @@
         ['build_with_chromium==1', {
           'sources!': [
             'cpu.cc',
+            'trace_impl.cc',
           ],
         }, {
           'sources!': [
             'cpu_dummy.cc',
+            'trace_impl_no_op.cc',
           ],
         }]
       ] # conditions

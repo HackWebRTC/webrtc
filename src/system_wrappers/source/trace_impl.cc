@@ -33,20 +33,6 @@
 namespace webrtc {
 static WebRtc_UWord32 levelFilter = kTraceDefault;
 
-#ifdef WEBRTC_NO_TRACE
-class TraceNoop : public Trace
-{
-public:
-    TraceNoop()
-    {
-    }
-
-    virtual ~TraceNoop()
-    {
-    }
-};
-#endif
-
 // Construct On First Use idiom. Avoids "static initialization order fiasco".
 TraceImpl* TraceImpl::StaticInstance(CountOperation count_operation,
                                      const TraceLevel level)
@@ -74,9 +60,7 @@ TraceImpl* TraceImpl::GetTrace(const TraceLevel level)
 
 TraceImpl* TraceImpl::CreateInstance()
 {
-#ifdef WEBRTC_NO_TRACE
-    return new TraceNoop();
-#elif defined(_WIN32)
+#if defined(_WIN32)
     return new TraceWindows();
 #else
     return new TracePosix();
@@ -754,8 +738,6 @@ bool TraceImpl::CreateFileName(
     return true;
 }
 
-#ifndef WEBRTC_NO_TRACE
-
 void Trace::CreateTrace()
 {
     TraceImpl::StaticInstance(kAddRef);
@@ -843,45 +825,5 @@ void Trace::Add(const TraceLevel level, const TraceModule module,
         ReturnTrace();
     }
 }
-#else
-void Trace::CreateTrace()
-{
-}
 
-void Trace::ReturnTrace()
-{
-}
-
-WebRtc_Word32 Trace::SetLevelFilter(WebRtc_UWord32 filter)
-{
-    return 0;
-}
-
-WebRtc_Word32 Trace::LevelFilter(WebRtc_UWord32& filter)
-{
-    return 0;
-}
-
-WebRtc_Word32 Trace::TraceFile(WebRtc_Word8 fileName[FileWrapper::kMaxFileNameSize])
-{
-    return -1;
-}
-
-WebRtc_Word32 Trace::SetTraceFile(const WebRtc_Word8* fileName,
-                                  const bool addFileCounter)
-{
-    return -1;
-}
-
-WebRtc_Word32 Trace::SetTraceCallback(TraceCallback* callback)
-{
-    return -1;
-}
-
-void Trace::Add(const TraceLevel level, const TraceModule module,
-                const WebRtc_Word32 id, const char* msg, ...)
-
-{
-}
-#endif
 } // namespace webrtc
