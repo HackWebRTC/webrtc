@@ -80,6 +80,10 @@ int VCMFrameBuffer::Tl0PicId() const {
   return _sessionInfo.Tl0PicId();
 }
 
+bool VCMFrameBuffer::NonReference() const {
+  return _sessionInfo.NonReference();
+}
+
 bool
 VCMFrameBuffer::IsSessionComplete() const
 {

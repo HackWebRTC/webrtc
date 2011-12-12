@@ -73,6 +73,12 @@ int VCMSessionInfo::Tl0PicId() const {
   return _packets[0].codecSpecificHeader.codecHeader.VP8.tl0PicIdx;
 }
 
+bool VCMSessionInfo::NonReference() const {
+  if (_lowSeqNum == -1 || _packets[0].codecSpecificHeader.codec != kRTPVideoVP8)
+    return false;
+  return _packets[0].codecSpecificHeader.codecHeader.VP8.nonReference;
+}
+
 void
 VCMSessionInfo::Reset() {
   for (int i = 0; i <= _highestPacketIndex; ++i)

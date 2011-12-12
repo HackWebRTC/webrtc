@@ -59,6 +59,7 @@ public:
     int PictureId() const;
     int TemporalId() const;
     int Tl0PicId() const;
+    bool NonReference() const;
 
     // Set counted status (as counted by JB or not)
     void SetCountedFrame(bool frameCounted);

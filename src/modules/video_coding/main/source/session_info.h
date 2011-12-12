@@ -79,6 +79,7 @@ public:
     int PictureId() const;
     int TemporalId() const;
     int Tl0PicId() const;
+    bool NonReference() const;
 
     WebRtc_UWord32 PrepareForDecode(WebRtc_UWord8* ptrStartOfLayer,
                                     VideoCodecType codec);
