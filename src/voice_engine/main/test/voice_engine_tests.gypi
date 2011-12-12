@@ -17,6 +17,7 @@
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
         '<(webrtc_root)/../test/test.gyp:test_support',
         '<(webrtc_root)/../testing/gtest.gyp:gtest',
+        '<(webrtc_root)/../testing/gmock.gyp:gmock',
       ],
       'include_dirs': [
         'auto_test',
@@ -25,6 +26,8 @@
       ],
       'sources': [
         'auto_test/automated_mode.cc',
+        'auto_test/standard/hardware_before_initializing_test.cc',
+        'auto_test/standard/rtp_rtcp_before_streaming_test.cc',
         'auto_test/voe_cpu_test.cc',
         'auto_test/voe_cpu_test.h',
         'auto_test/voe_extended_test.cc',

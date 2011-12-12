@@ -334,10 +334,7 @@ class VoETestManager {
 #endif
 
  private:
-  int TestTraceApi();
-  int TestHardwareBeforeInitializing();
   int SetUp();
-  int TestRtpRtcpBeforeStreaming();
   int TestHardwareBeforeStreaming();
   int TestCodecsBeforeStreaming();
   int TestNetworkBeforeStreaming();

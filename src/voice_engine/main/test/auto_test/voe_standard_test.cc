@@ -897,72 +897,10 @@ int VoETestManager::ReleaseInterfaces() {
   return (releaseOK == true) ? 0 : -1;
 }
 
-int VoETestManager::TestTraceApi() {
-  // Test trace callbacks.
-  TEST_LOG("Enabling the trace callback => default trace messages "
-      "shall be printed... \n\n");
-  MyTraceCallback* callback = new MyTraceCallback();
-  VoiceEngine::SetTraceCallback(callback);
-
-  // Test the remaining trace APIs.
-  TEST_MUSTPASS(VoiceEngine::SetTraceFile(GetFilename("webrtc_voe_trace.txt"),
-                                          true));
-  TEST_MUSTPASS(VoiceEngine::SetTraceFile(NULL));
-  TEST_MUSTPASS(VoiceEngine::SetTraceFile(GetFilename(
-      "webrtc_voe_trace.txt")));
-
-  VoiceEngine* extra = VoiceEngine::Create();
-  TEST_LOG("\nVerify that the VoE ID is now changed from 1 to 2\n\n");
-  TEST_MUSTPASS(VoiceEngine::SetTraceFile(NULL));
-  TEST_MUSTPASS(VoiceEngine::SetTraceFile(GetFilename(
-      "webrtc_voe_trace.txt")));
-  TEST_MUSTPASS(VoiceEngine::SetTraceFile(NULL));
-  VoiceEngine::Delete(extra);
-  SLEEP(10);
-  TEST_LOG("\nVerify that the VoE ID is now changed back to 1\n");
-  TEST_LOG("NOTE: Currently it will still be 2, this is OK\n\n");
-
-  // The API below shall be the first line in the stored trace file
-  // (verify after test).
-  TEST_MUSTPASS(VoiceEngine::SetTraceFile(GetFilename(
-      "webrtc_voe_trace.txt")));
-  VoiceEngine::SetTraceCallback(NULL);
-  delete callback;
-  TEST_LOG("\n...the trace callback is now disabled.\n\n");
-
-  return 0;
-}
-
-int VoETestManager::TestHardwareBeforeInitializing() {
-#ifdef _TEST_HARDWARE_
-  TEST_LOG("Set/Get audio device layer\n");
-  AudioLayers wantedLayer = TESTED_AUDIO_LAYER;
-  AudioLayers givenLayer;
-  TEST_MUSTPASS(voe_hardware_->SetAudioDeviceLayer(wantedLayer));
-  TEST_MUSTPASS(voe_hardware_->GetAudioDeviceLayer(givenLayer));
-  TEST_MUSTPASS(wantedLayer != givenLayer);   // Should be same before init
-#endif //_TEST_HARDWARE_
-  TEST_LOG("Init \n");
-#if defined BLACKFIN
-  TEST_MUSTPASS(voe_base_->Init(0,LINUX_AUDIO_OSS));
-#else
-  TEST_MUSTPASS(voe_base_->Init());
-#endif
-
-#if defined(WEBRTC_ANDROID)
-  TEST_LOG("Setting loudspeaker status to false \n");
-  TEST_MUSTPASS(voe_hardware_->SetLoudspeakerStatus(false));
-#endif
-
-#ifndef __INSURE__
-  TEST_LOG("Enabling the observer \n");
-  TEST_MUSTPASS(voe_base_->RegisterVoiceEngineObserver(obs));
-#endif
-  return 0;
-}
-
 int VoETestManager::SetUp() {
   char char_buffer[1024];
+
+  TEST_MUSTPASS(voe_base_->Init());
 
   TEST_LOG("Get version \n");
   TEST_MUSTPASS(voe_base_->GetVersion(char_buffer));
@@ -973,66 +911,7 @@ int VoETestManager::SetUp() {
   TEST_MUSTPASS(!(nChannels > 0));
   TEST_LOG("Max number of channels = %d \n", nChannels);
   TEST_MUSTPASS(voe_base_->CreateChannel());
-  return 0;
-}
 
-int VoETestManager::TestRtpRtcpBeforeStreaming() {
-#ifdef _TEST_RTP_RTCP_
-  TEST_LOG("\n\n+++ RTP/RTCP tests +++\n\n");
-
-  TEST_LOG("Set/Get RTCP and CName \n");
-  bool on;
-  // Should be on by default.
-  TEST_MUSTPASS(voe_rtp_rtcp_->GetRTCPStatus(0, on));
-  TEST_MUSTPASS(on != true);
-  TEST_MUSTPASS(voe_rtp_rtcp_->SetRTCPStatus(0, false));
-  TEST_MUSTPASS(voe_rtp_rtcp_->GetRTCPStatus(0, on));
-  TEST_MUSTPASS(on != false);
-  TEST_MUSTPASS(voe_rtp_rtcp_->SetRTCPStatus(0, true));
-  TEST_MUSTPASS(voe_rtp_rtcp_->GetRTCPStatus(0, on));
-  TEST_MUSTPASS(on != true);
-  TEST_MUSTPASS(voe_rtp_rtcp_->SetRTCP_CNAME(0, "Niklas"));
-
-  TEST_LOG("Set/Get RTP Keepalive\n");
-  unsigned char pt;
-  int dt;
-  TEST_MUSTPASS(!voe_rtp_rtcp_->GetRTPKeepaliveStatus(-1, on, pt, dt));
-  // Should be off by default.
-  TEST_MUSTPASS(voe_rtp_rtcp_->GetRTPKeepaliveStatus(0, on, pt, dt));
-  TEST_MUSTPASS(on != false);
-  TEST_MUSTPASS(pt != 255);
-  TEST_MUSTPASS(dt != 0);
-
-  // Verify invalid input parameters.
-  TEST_MUSTPASS(!voe_rtp_rtcp_->SetRTPKeepaliveStatus(-1, true, 0, 15));
-  TEST_MUSTPASS(!voe_rtp_rtcp_->SetRTPKeepaliveStatus(0, true, -1, 15));
-  TEST_MUSTPASS(!voe_rtp_rtcp_->SetRTPKeepaliveStatus(0, true, 0, 61));
-  // Should still be off.
-  TEST_MUSTPASS(voe_rtp_rtcp_->GetRTPKeepaliveStatus(0, on, pt, dt));
-  TEST_MUSTPASS(!voe_rtp_rtcp_->SetRTPKeepaliveStatus(0, true, 0));
-  // Should fail since default 0 is used bu PCMU.
-  TEST_MUSTPASS(on != false);
-  // Try valid settings.
-  TEST_MUSTPASS(voe_rtp_rtcp_->SetRTPKeepaliveStatus(0, true, 1));
-  TEST_MUSTPASS(voe_rtp_rtcp_->SetRTPKeepaliveStatus(0, true, 1));
-  // Should be on now.
-  TEST_MUSTPASS(voe_rtp_rtcp_->GetRTPKeepaliveStatus(0, on, pt, dt));
-  TEST_MUSTPASS(on != true);TEST_MUSTPASS(pt != 1);TEST_MUSTPASS(dt != 15);
-  // Set the Keep alive payload to 60, and this payloadtype could not used
-  // by the codecs.
-  TEST_MUSTPASS(voe_rtp_rtcp_->SetRTPKeepaliveStatus(0, true, 60, 3));
-  TEST_MUSTPASS(voe_rtp_rtcp_->GetRTPKeepaliveStatus(0, on, pt, dt));
-  TEST_MUSTPASS(on != true);TEST_MUSTPASS(pt != 60);TEST_MUSTPASS(dt != 3);
-  TEST_MUSTPASS(voe_rtp_rtcp_->SetRTPKeepaliveStatus(0, false, 60));
-
-  TEST_LOG("Set and get SSRC \n");
-  TEST_MUSTPASS(voe_rtp_rtcp_->SetLocalSSRC(0, 1234));
-  unsigned int send_ssrc = 0;
-  TEST_MUSTPASS(voe_rtp_rtcp_->GetLocalSSRC(0, send_ssrc));
-  TEST_MUSTPASS(1234 != send_ssrc);
-#else
-  TEST_LOG("\n\n+++ RTP/RTCP tests NOT ENABLED +++\n");
-#endif
   return 0;
 }
 
@@ -1720,12 +1599,8 @@ int VoETestManager::TestCodecs() {
 int VoETestManager::DoStandardTest() {
   TEST_LOG("\n\n+++ Base tests +++\n\n");
 
-  if (TestTraceApi() != 0) return -1;
-  if (TestHardwareBeforeInitializing() != 0) return -1;
-
   if (SetUp() != 0) return -1;
 
-  if (TestRtpRtcpBeforeStreaming() != 0) return -1;
   if (TestHardwareBeforeStreaming() != 0) return -1;
   if (TestCodecsBeforeStreaming() != 0) return -1;
   if (TestNetworkBeforeStreaming() != 0) return -1;
