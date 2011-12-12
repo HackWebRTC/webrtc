@@ -26,7 +26,7 @@ protected:
     virtual void Setup();
     virtual void Teardown();
     virtual bool Encode();
-    virtual int Decode();
+    virtual int Decode(int lossValue = 0);
     virtual void CodecSpecific_InitBitrate()=0;
     virtual int DoPacketLoss() {return 0;};
 

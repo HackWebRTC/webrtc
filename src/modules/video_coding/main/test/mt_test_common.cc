@@ -14,6 +14,7 @@
 
 #include "rtp_dump.h"
 
+namespace webrtc {
 
 TransportCallback::TransportCallback(webrtc::RtpRtcp* rtp,
                                      const char* filename):
@@ -130,3 +131,5 @@ bool TransportThread(void *obj)
     state->_transport.TransportPackets();
     return true;
 }
+
+}  // namespace webrtc

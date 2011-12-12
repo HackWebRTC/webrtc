@@ -235,7 +235,7 @@ NormalTest::Encode()
 }
 
 int
-NormalTest::Decode()
+NormalTest::Decode(int lossValue)
 {
     _encodedVideoBuffer.SetWidth(_inst.width);
     _encodedVideoBuffer.SetHeight(_inst.height);

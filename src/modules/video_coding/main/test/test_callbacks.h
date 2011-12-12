@@ -28,12 +28,9 @@
 #include "trace.h"
 #include "video_coding.h"
 
-using namespace webrtc;
-
 namespace webrtc
 {
     class RtpDump;
-}
 
 // Send Side - Packetization callback - send an encoded frame to the VCMReceiver
 class VCMEncodeCompleteCallback: public VCMPacketizationCallback
@@ -238,7 +235,7 @@ class VideoProtectionCallback: public VCMProtectionCallback
 public:
     VideoProtectionCallback();
     virtual ~VideoProtectionCallback();
-    void RegisterRtpModule(RtpRtcp*  rtp){_rtp = rtp;}
+    void RegisterRtpModule(RtpRtcp* rtp) {_rtp = rtp;}
     WebRtc_Word32 ProtectionRequest(const WebRtc_UWord8 deltaFECRate,
                                     const WebRtc_UWord8 keyFECRate,
                                     const bool deltaUseUepProtection,
@@ -259,23 +256,22 @@ private:
 };
 
 // Feed back from the RTP Module callback
-class RTPFeedbackCallback: public RtpVideoFeedback
-{
-public:
-    RTPFeedbackCallback(VideoCodingModule* vcm) {_vcm = vcm;};
-   void OnReceivedIntraFrameRequest(const WebRtc_Word32 id,
-                                    const WebRtc_UWord8 message = 0){};
+class RTPFeedbackCallback : public RtpVideoFeedback {
+ public:
+  RTPFeedbackCallback(VideoCodingModule* vcm) {_vcm = vcm;};
+  void OnReceivedIntraFrameRequest(const WebRtc_Word32 id,
+                                   const FrameType type,
+                                   const WebRtc_UWord8 streamIdx) {};
 
    void OnNetworkChanged(const WebRtc_Word32 id,
-                          const WebRtc_UWord16 bitrateTargetKbit,
-                          const WebRtc_UWord8 fractionLost,
-                          const WebRtc_UWord16 roundTripTimeMs,
-                          const WebRtc_UWord32 jitterMS,
-                          const WebRtc_UWord16 bwEstimateKbitMin,
-                          const WebRtc_UWord16 bwEstimateKbitMax);
-private:
-   VideoCodingModule* _vcm;
+                         const WebRtc_UWord32 bitrateBps,
+                         const WebRtc_UWord8 fractionLost,
+                         const WebRtc_UWord16 roundTripTimeMs);
+
+ private:
+  VideoCodingModule* _vcm;
 };
 
+}  // namespace webrtc
 
 #endif

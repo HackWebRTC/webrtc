@@ -20,7 +20,7 @@
 #include "test_util.h"
 #include "video_coding.h"
 
-using namespace webrtc;
+namespace webrtc {
 
 class SendSharedState
 {
@@ -83,5 +83,6 @@ bool VCMProcessingThread(void* obj);
 bool VCMDecodeThread(void* obj);
 bool TransportThread(void *obj);
 
+}  // namespace webrtc
 
 #endif  // WEBRTC_MODULES_VIDEO_CODING_TEST_MT_TEST_COMMON_H_

@@ -26,6 +26,9 @@ Test consists of:
 4. Decoder control test / General API functionality
 
 */
+
+namespace webrtc {
+
 int VCMGenericCodecTest(CmdArgs& args);
 
 class GenericCodecTest
@@ -96,5 +99,7 @@ private:
     WebRtc_UWord16 _seqNo;
     WebRtc_UWord32 _timeStamp;
 }; // end of VCMEncodeCompleteCallback
+
+}  // namespace webrtc
 
 #endif // WEBRTC_MODULES_VIDEO_CODING_TEST_GENERIC_CODEC_TEST_H_

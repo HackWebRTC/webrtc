@@ -15,6 +15,8 @@
 #include "rtp_dump.h"
 #include "test_macros.h"
 
+namespace webrtc {
+
 /******************************
  *  VCMEncodeCompleteCallback
  *****************************/
@@ -503,14 +505,13 @@ VideoProtectionCallback::FECKeyUepProtection()
 
 void
 RTPFeedbackCallback::OnNetworkChanged(const WebRtc_Word32 id,
-                                      const WebRtc_UWord16 bitrateTargetKbit,
+                                      const WebRtc_UWord32 bitrateBps,
                                       const WebRtc_UWord8 fractionLost,
-                                      const WebRtc_UWord16 roundTripTimeMs,
-                                      const WebRtc_UWord32 jitterMS,
-                                      const WebRtc_UWord16 bwEstimateKbitMin,
-                                      const WebRtc_UWord16 bwEstimateKbitMax)
+                                      const WebRtc_UWord16 roundTripTimeMs)
 {
 
-    _vcm->SetChannelParameters(bitrateTargetKbit, fractionLost,
+    _vcm->SetChannelParameters(bitrateBps / 1000, fractionLost,
                                (WebRtc_UWord8)roundTripTimeMs);
 }
+
+}  // namespace webrtc
