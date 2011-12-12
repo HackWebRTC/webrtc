@@ -90,7 +90,7 @@ protected:
     WebRtc_UWord32 TargetDelayInternal() const;
 
 private:
-    CriticalSectionWrapper&          _critSect;
+    CriticalSectionWrapper*       _critSect;
     WebRtc_Word32                 _vcmId;
     WebRtc_Word32                 _timingId;
     bool                          _master;

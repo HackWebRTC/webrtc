@@ -30,7 +30,7 @@ public:
 private:
     void CheckForWrapArounds(WebRtc_UWord32 ts90khz);
     bool DelayChangeDetection(double error, bool trace = true);
-    RWLockWrapper&         _rwLock;
+    RWLockWrapper*        _rwLock;
     WebRtc_Word32         _vcmId;
     WebRtc_Word32         _id;
     bool                _trace;

@@ -18,7 +18,7 @@ namespace webrtc {
 
 VCMDecodedFrameCallback::VCMDecodedFrameCallback(VCMTiming& timing)
 :
-_critSect(*CriticalSectionWrapper::CreateCriticalSection()),
+_critSect(CriticalSectionWrapper::CreateCriticalSection()),
 _receiveCallback(NULL),
 _timing(timing),
 _timestampMap(kDecoderFrameMemoryLength)
@@ -27,7 +27,7 @@ _timestampMap(kDecoderFrameMemoryLength)
 
 VCMDecodedFrameCallback::~VCMDecodedFrameCallback()
 {
-    delete &_critSect;
+    delete _critSect;
 }
 
 void VCMDecodedFrameCallback::SetUserReceiveCallback(

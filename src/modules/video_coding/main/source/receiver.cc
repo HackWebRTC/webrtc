@@ -26,7 +26,7 @@ VCMReceiver::VCMReceiver(VCMTiming& timing,
                          WebRtc_Word32 receiverId,
                          bool master)
 :
-_critSect(*CriticalSectionWrapper::CreateCriticalSection()),
+_critSect(CriticalSectionWrapper::CreateCriticalSection()),
 _vcmId(vcmId),
 _receiverId(receiverId),
 _master(master),
@@ -41,7 +41,7 @@ VCMReceiver::~VCMReceiver()
 {
     _renderWaitEvent.Set();
     delete &_renderWaitEvent;
-    delete &_critSect;
+    delete _critSect;
 }
 
 void

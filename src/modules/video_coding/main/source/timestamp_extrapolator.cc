@@ -17,7 +17,7 @@ namespace webrtc {
 
 VCMTimestampExtrapolator::VCMTimestampExtrapolator(WebRtc_Word32 vcmId, WebRtc_Word32 id)
 :
-_rwLock(*RWLockWrapper::CreateRWLock()),
+_rwLock(RWLockWrapper::CreateRWLock()),
 _vcmId(vcmId),
 _id(id),
 _startMs(0),
@@ -40,13 +40,13 @@ _P11(1e10)
 
 VCMTimestampExtrapolator::~VCMTimestampExtrapolator()
 {
-    delete &_rwLock;
+    delete _rwLock;
 }
 
 void
 VCMTimestampExtrapolator::Reset(const WebRtc_Word64 nowMs /* = -1 */)
 {
-    WriteLockScoped wl(_rwLock);
+    WriteLockScoped wl(*_rwLock);
     if (nowMs > -1)
     {
         _startMs = nowMs;
@@ -74,14 +74,14 @@ void
 VCMTimestampExtrapolator::Update(WebRtc_Word64 tMs, WebRtc_UWord32 ts90khz, bool trace)
 {
 
-    _rwLock.AcquireLockExclusive();
+    _rwLock->AcquireLockExclusive();
     if (tMs - _prevMs > 10e3)
     {
         // Ten seconds without a complete frame.
         // Reset the extrapolator
-        _rwLock.ReleaseLockExclusive();
+        _rwLock->ReleaseLockExclusive();
         Reset();
-        _rwLock.AcquireLockExclusive();
+        _rwLock->AcquireLockExclusive();
     }
     else
     {
@@ -97,7 +97,7 @@ VCMTimestampExtrapolator::Update(WebRtc_Word64 tMs, WebRtc_UWord32 ts90khz, bool
 
     if (wrapAroundsSincePrev == 0 && ts90khz < _prevTs90khz)
     {
-        _rwLock.ReleaseLockExclusive();
+        _rwLock->ReleaseLockExclusive();
         return;
     }
 
@@ -150,13 +150,13 @@ VCMTimestampExtrapolator::Update(WebRtc_Word64 tMs, WebRtc_UWord32 ts90khz, bool
     {
         WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, VCMId(_vcmId, _id),  "w[0]=%f w[1]=%f ts=%u tMs=%u", _w[0], _w[1], ts90khz, tMs);
     }
-    _rwLock.ReleaseLockExclusive();
+    _rwLock->ReleaseLockExclusive();
 }
 
 WebRtc_UWord32
 VCMTimestampExtrapolator::ExtrapolateTimestamp(WebRtc_Word64 tMs) const
 {
-    ReadLockScoped rl(_rwLock);
+    ReadLockScoped rl(*_rwLock);
     WebRtc_UWord32 timestamp = 0;
     if (_packetCount == 0)
     {
@@ -176,7 +176,7 @@ VCMTimestampExtrapolator::ExtrapolateTimestamp(WebRtc_Word64 tMs) const
 WebRtc_Word64
 VCMTimestampExtrapolator::ExtrapolateLocalTime(WebRtc_UWord32 timestamp90khz) const
 {
-    ReadLockScoped rl(_rwLock);
+    ReadLockScoped rl(*_rwLock);
     WebRtc_Word64 localTimeMs = 0;
     if (_packetCount == 0)
     {

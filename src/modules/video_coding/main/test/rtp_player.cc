@@ -40,7 +40,7 @@ RawRtpPacket::~RawRtpPacket()
 
 LostPackets::LostPackets()
 :
-_critSect(*CriticalSectionWrapper::CreateCriticalSection()),
+_critSect(CriticalSectionWrapper::CreateCriticalSection()),
 _lossCount(0),
 _debugFile(NULL)
 {
@@ -64,7 +64,7 @@ LostPackets::~LostPackets()
         Erase(item);
         item = First();
     }
-    delete &_critSect;
+    delete _critSect;
 }
 
 WebRtc_UWord32 LostPackets::AddPacket(WebRtc_UWord8* rtpData, WebRtc_UWord16 rtpLen)

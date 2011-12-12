@@ -81,7 +81,7 @@ private:
     void UpdateState(VCMEncodedFrame& frame);
     static WebRtc_Word32 GenerateReceiverId();
 
-    CriticalSectionWrapper&    _critSect;
+    CriticalSectionWrapper* _critSect;
     WebRtc_Word32           _vcmId;
     WebRtc_Word32           _receiverId;
     bool                    _master;

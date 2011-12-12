@@ -151,7 +151,8 @@ VCMNTEncodeCompleteCallback::SkipCnt()
 // Decoded Frame Callback Implementation
 VCMNTDecodeCompleCallback::~VCMNTDecodeCompleCallback()
 {
-    //
+  if (_decodedFile)
+    fclose(_decodedFile);
 }
  WebRtc_Word32
 VCMNTDecodeCompleCallback::FrameToRender(webrtc::VideoFrame& videoFrame)

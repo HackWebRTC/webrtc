@@ -46,10 +46,10 @@ public:
     WebRtc_UWord32 TotalNumberOfLosses() const { return _lossCount; };
     WebRtc_UWord32 NumberOfPacketsToResend() const;
     void ResentPacket(WebRtc_UWord16 seqNo);
-    void Lock()     {_critSect.Enter();};
-    void Unlock()   {_critSect.Leave();};
+    void Lock()     {_critSect->Enter();};
+    void Unlock()   {_critSect->Leave();};
 private:
-    webrtc::CriticalSectionWrapper& _critSect;
+    webrtc::CriticalSectionWrapper* _critSect;
     WebRtc_UWord32                  _lossCount;
     FILE*                           _debugFile;
 };

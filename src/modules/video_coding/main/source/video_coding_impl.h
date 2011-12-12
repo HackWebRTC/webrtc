@@ -259,7 +259,7 @@ protected:
 
 private:
     WebRtc_Word32                       _id;
-    CriticalSectionWrapper&             _receiveCritSect;
+    CriticalSectionWrapper*             _receiveCritSect;
     bool                                _receiverInited;
     VCMTiming                           _timing;
     VCMTiming                           _dualTiming;
@@ -278,7 +278,7 @@ private:
     VCMKeyRequestMode                   _keyRequestMode;
     bool                                _scheduleKeyRequest;
 
-    CriticalSectionWrapper&             _sendCritSect; // Critical section for send side
+    CriticalSectionWrapper*             _sendCritSect; // Critical section for send side
     VCMGenericEncoder*                  _encoder;
     VCMEncodedFrameCallback             _encodedFrameCallback;
     FrameType                           _nextFrameType[kMaxSimulcastStreams];

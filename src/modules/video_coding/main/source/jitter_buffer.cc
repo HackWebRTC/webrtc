@@ -62,7 +62,7 @@ VCMJitterBuffer::VCMJitterBuffer(WebRtc_Word32 vcmId, WebRtc_Word32 receiverId,
     _vcmId(vcmId),
     _receiverId(receiverId),
     _running(false),
-    _critSect(*CriticalSectionWrapper::CreateCriticalSection()),
+    _critSect(CriticalSectionWrapper::CreateCriticalSection()),
     _master(master),
     _frameEvent(),
     _packetEvent(),
@@ -113,7 +113,7 @@ VCMJitterBuffer::~VCMJitterBuffer()
             delete _frameBuffers[i];
         }
     }
-    delete &_critSect;
+    delete _critSect;
 }
 
 void
@@ -121,8 +121,8 @@ VCMJitterBuffer::CopyFrom(const VCMJitterBuffer& rhs)
 {
     if (this != &rhs)
     {
-        _critSect.Enter();
-        rhs._critSect.Enter();
+        _critSect->Enter();
+        rhs._critSect->Enter();
         _vcmId = rhs._vcmId;
         _receiverId = rhs._receiverId;
         _running = rhs._running;
@@ -170,8 +170,8 @@ VCMJitterBuffer::CopyFrom(const VCMJitterBuffer& rhs)
                 _frameBuffersTSOrder.Insert(_frameBuffers[i]);
             }
         }
-        rhs._critSect.Leave();
-        _critSect.Leave();
+        rhs._critSect->Leave();
+        _critSect->Leave();
     }
 }
 
@@ -211,7 +211,7 @@ VCMJitterBuffer::Start()
 void
 VCMJitterBuffer::Stop()
 {
-    _critSect.Enter();
+    _critSect->Enter();
     _running = false;
     _lastDecodedTimeStamp = -1;
     _lastDecodedSeqNum = -1;
@@ -225,7 +225,7 @@ VCMJitterBuffer::Stop()
         }
     }
 
-    _critSect.Leave();
+    _critSect->Leave();
     _frameEvent.Set(); // Make sure we exit from trying to get a frame to decoder
     _packetEvent.Set(); // Make sure we exit from trying to get a sequence number
     WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, VCMId(_vcmId,
@@ -441,7 +441,7 @@ VCMJitterBuffer::GetFrame(const VCMPacket& packet, VCMEncodedFrame*& frame)
         return VCM_UNINITIALIZED;
     }
 
-    _critSect.Enter();
+    _critSect->Enter();
     // Make sure that old empty packets are inserted.
     if (LatestTimestamp(static_cast<WebRtc_UWord32>(_lastDecodedTimeStamp),
                         packet.timestamp, NULL) == _lastDecodedTimeStamp
@@ -453,10 +453,10 @@ VCMJitterBuffer::GetFrame(const VCMPacket& packet, VCMEncodedFrame*& frame)
         if (_numConsecutiveOldPackets > kMaxConsecutiveOldPackets)
         {
             FlushInternal();
-            _critSect.Leave();
+            _critSect->Leave();
             return VCM_FLUSH_INDICATOR;
         }
-        _critSect.Leave();
+        _critSect->Leave();
         return VCM_OLD_PACKET_ERROR;
     }
     _numConsecutiveOldPackets = 0;
@@ -464,7 +464,7 @@ VCMJitterBuffer::GetFrame(const VCMPacket& packet, VCMEncodedFrame*& frame)
     frame = _frameBuffersTSOrder.FindFrame(FrameEqualTimestamp,
                                            &packet.timestamp);
 
-    _critSect.Leave();
+    _critSect->Leave();
 
     if (frame != NULL)
     {
@@ -478,9 +478,9 @@ VCMJitterBuffer::GetFrame(const VCMPacket& packet, VCMEncodedFrame*& frame)
         return VCM_OK;
     }
     // No free frame! Try to reclaim some...
-    _critSect.Enter();
+    _critSect->Enter();
     RecycleFramesUntilKeyFrame();
-    _critSect.Leave();
+    _critSect->Leave();
 
     frame = GetEmptyFrame();
     if (frame != NULL)
@@ -511,7 +511,7 @@ VCMJitterBuffer::GetEmptyFrame()
         return NULL;
     }
 
-    _critSect.Enter();
+    _critSect->Enter();
 
     for (int i = 0; i <_maxNumberOfFrames; ++i)
     {
@@ -519,7 +519,7 @@ VCMJitterBuffer::GetEmptyFrame()
         {
             // found a free buffer
             _frameBuffers[i]->SetState(kStateEmpty);
-            _critSect.Leave();
+            _critSect->Leave();
             return _frameBuffers[i];
         }
     }
@@ -532,13 +532,13 @@ VCMJitterBuffer::GetEmptyFrame()
         _frameBuffers[_maxNumberOfFrames] = ptrNewBuffer;
         _maxNumberOfFrames++;
 
-        _critSect.Leave();
+        _critSect->Leave();
         WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding,
         VCMId(_vcmId, _receiverId), "JB(0x%x) FB(0x%x): Jitter buffer "
         "increased to:%d frames", this, ptrNewBuffer, _maxNumberOfFrames);
         return ptrNewBuffer;
     }
-    _critSect.Leave();
+    _critSect->Leave();
 
     // We have reached max size, cannot increase JB size
     return NULL;
@@ -743,7 +743,7 @@ VCMJitterBuffer::GetCompleteFrameForDecoding(WebRtc_UWord32 maxWaitTimeMS)
         return NULL;
     }
 
-    _critSect.Enter();
+    _critSect->Enter();
 
     CleanUpOldFrames();
     CleanUpSizeZeroFrames();
@@ -763,7 +763,7 @@ VCMJitterBuffer::GetCompleteFrameForDecoding(WebRtc_UWord32 maxWaitTimeMS)
     {
         if (maxWaitTimeMS == 0)
         {
-            _critSect.Leave();
+            _critSect->Leave();
             return NULL;
         }
         const WebRtc_Word64 endWaitTimeMs = VCMTickTime::MillisecondTimestamp()
@@ -771,16 +771,16 @@ VCMJitterBuffer::GetCompleteFrameForDecoding(WebRtc_UWord32 maxWaitTimeMS)
         WebRtc_Word64 waitTimeMs = maxWaitTimeMS;
         while (waitTimeMs > 0)
         {
-            _critSect.Leave();
+            _critSect->Leave();
             const EventTypeWrapper ret =
                   _frameEvent.Wait(static_cast<WebRtc_UWord32>(waitTimeMs));
-            _critSect.Enter();
+            _critSect->Enter();
             if (ret == kEventSignaled)
             {
                 // are we closing down the Jitter buffer
                 if (!_running)
                 {
-                    _critSect.Leave();
+                    _critSect->Leave();
                     return NULL;
                 }
 
@@ -805,7 +805,7 @@ VCMJitterBuffer::GetCompleteFrameForDecoding(WebRtc_UWord32 maxWaitTimeMS)
             }
             else
             {
-                _critSect.Leave();
+                _critSect->Leave();
                 return NULL;
             }
         }
@@ -820,7 +820,7 @@ VCMJitterBuffer::GetCompleteFrameForDecoding(WebRtc_UWord32 maxWaitTimeMS)
     if (oldestFrame == NULL)
     {
         // Even after signaling we're still missing a complete continuous frame
-        _critSect.Leave();
+        _critSect->Leave();
         return NULL;
     }
 
@@ -848,7 +848,7 @@ VCMJitterBuffer::GetCompleteFrameForDecoding(WebRtc_UWord32 maxWaitTimeMS)
         _waitingForKeyFrame = false;
     }
 
-    _critSect.Leave();
+    _critSect->Leave();
 
     // We have a frame - store seqnum & timestamp
     _lastDecodedSeqNum = oldestFrame->GetHighSeqNum();
@@ -903,7 +903,7 @@ VCMJitterBuffer::GetNextTimeStamp(WebRtc_UWord32 maxWaitTimeMS,
         return -1;
     }
 
-    _critSect.Enter();
+    _critSect->Enter();
 
     // Finding oldest frame ready for decoder, check sequence number and size
     CleanUpOldFrames();
@@ -914,7 +914,7 @@ VCMJitterBuffer::GetNextTimeStamp(WebRtc_UWord32 maxWaitTimeMS,
     if (oldestFrame == NULL)
     {
         _packetEvent.Reset();
-        _critSect.Leave();
+        _critSect->Leave();
 
         if (_packetEvent.Wait(maxWaitTimeMS) == kEventSignaled)
         {
@@ -923,7 +923,7 @@ VCMJitterBuffer::GetNextTimeStamp(WebRtc_UWord32 maxWaitTimeMS,
             {
                 return -1;
             }
-            _critSect.Enter();
+            _critSect->Enter();
 
             CleanUpOldFrames();
             CleanUpSizeZeroFrames();
@@ -931,13 +931,13 @@ VCMJitterBuffer::GetNextTimeStamp(WebRtc_UWord32 maxWaitTimeMS,
         }
         else
         {
-            _critSect.Enter();
+            _critSect->Enter();
         }
     }
 
     if (oldestFrame == NULL)
     {
-        _critSect.Leave();
+        _critSect->Leave();
         return -1;
     }
     // we have a frame
@@ -950,7 +950,7 @@ VCMJitterBuffer::GetNextTimeStamp(WebRtc_UWord32 maxWaitTimeMS,
 
     const WebRtc_UWord32 timestamp = oldestFrame->TimeStamp();
 
-    _critSect.Leave();
+    _critSect->Leave();
 
     // return current time
     return timestamp;

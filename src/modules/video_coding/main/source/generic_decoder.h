@@ -48,12 +48,12 @@ public:
     WebRtc_Word32 Pop(WebRtc_UWord32 timestamp);
 
 private:
-    CriticalSectionWrapper&        _critSect;
-    VideoFrame                  _frame;
-    VCMReceiveCallback*         _receiveCallback;
-    VCMTiming&                  _timing;
-    VCMTimestampMap             _timestampMap;
-    WebRtc_UWord64				_lastReceivedPictureID;
+    CriticalSectionWrapper* _critSect;
+    VideoFrame _frame;
+    VCMReceiveCallback* _receiveCallback;
+    VCMTiming& _timing;
+    VCMTimestampMap _timestampMap;
+    WebRtc_UWord64 _lastReceivedPictureID;
 };
 
 

@@ -45,7 +45,7 @@ VCMProcessTimer::Processed()
 VideoCodingModuleImpl::VideoCodingModuleImpl(const WebRtc_Word32 id)
 :
 _id(id),
-_receiveCritSect(*CriticalSectionWrapper::CreateCriticalSection()),
+_receiveCritSect(CriticalSectionWrapper::CreateCriticalSection()),
 _receiverInited(false),
 _timing(id, 1),
 _dualTiming(id, 2, &_timing),
@@ -64,7 +64,7 @@ _frameFromFile(),
 _keyRequestMode(kKeyOnError),
 _scheduleKeyRequest(false),
 
-_sendCritSect(*CriticalSectionWrapper::CreateCriticalSection()),
+_sendCritSect(CriticalSectionWrapper::CreateCriticalSection()),
 _encoder(),
 _encodedFrameCallback(),
 _mediaOpt(id),
@@ -96,8 +96,8 @@ VideoCodingModuleImpl::~VideoCodingModuleImpl()
     {
         _codecDataBase.ReleaseDecoder(_dualDecoder);
     }
-    delete &_receiveCritSect;
-    delete &_sendCritSect;
+    delete _receiveCritSect;
+    delete _sendCritSect;
 #ifdef DEBUG_DECODER_BIT_STREAM
     fclose(_bitStreamBeforeDecoder);
 #endif

@@ -195,7 +195,7 @@ private:
     WebRtc_Word32                 _receiverId;
     // If we are running (have started) or not
     bool                          _running;
-    CriticalSectionWrapper&       _critSect;
+    CriticalSectionWrapper*       _critSect;
     bool                          _master;
     // Event to signal when we have a frame ready for decoder
     VCMEvent                      _frameEvent;
