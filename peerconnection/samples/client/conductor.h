@@ -24,6 +24,7 @@
 
 namespace cricket {
 class VideoRenderer;
+class PortAllocator;
 }  // namespace cricket
 
 class Conductor
@@ -106,6 +107,7 @@ class Conductor
   MainWindow* main_wnd_;
   std::deque<std::string*> pending_messages_;
   std::set<std::string> active_streams_;
+  talk_base::scoped_ptr<cricket::PortAllocator> port_allocator_;
 };
 
 #endif  // PEERCONNECTION_SAMPLES_CLIENT_CONDUCTOR_H_

@@ -60,17 +60,8 @@ bool Conductor::InitializePeerConnection() {
     return false;
   }
 
-  cricket::PortAllocator* port_allocator =
-      new cricket::BasicPortAllocator(
-          new talk_base::BasicNetworkManager(),
-          talk_base::SocketAddress("stun.l.google.com", 19302),
-          talk_base::SocketAddress(),
-          talk_base::SocketAddress(),
-          talk_base::SocketAddress());
-
   peer_connection_factory_.reset(
-      new webrtc::PeerConnectionFactory(port_allocator,
-                                        worker_thread_.get()));
+      new webrtc::PeerConnectionFactory(worker_thread_.get()));
   if (!peer_connection_factory_->Initialize()) {
     main_wnd_->MessageBox("Error",
         "Failed to initialize PeerConnectionFactory", true);
@@ -78,10 +69,17 @@ bool Conductor::InitializePeerConnection() {
     return false;
   }
 
+  port_allocator_.reset(new cricket::BasicPortAllocator(
+      new talk_base::BasicNetworkManager(),
+      talk_base::SocketAddress("stun.l.google.com", 19302),
+      talk_base::SocketAddress(),
+      talk_base::SocketAddress(),
+      talk_base::SocketAddress()));
+
   // Since we only ever use a single PeerConnection instance, we share
   // the worker thread between the factory and the PC instance.
   peer_connection_.reset(peer_connection_factory_->CreatePeerConnection(
-      worker_thread_.get()));
+      port_allocator_.get(), worker_thread_.get()));
   if (!peer_connection_.get()) {
     main_wnd_->MessageBox("Error",
         "CreatePeerConnection failed", true);
@@ -96,9 +94,10 @@ bool Conductor::InitializePeerConnection() {
 
 void Conductor::DeletePeerConnection() {
   peer_connection_.reset();
-  worker_thread_.reset();
   active_streams_.clear();
+  port_allocator_.reset();
   peer_connection_factory_.reset();
+  worker_thread_.reset();
   peer_id_ = -1;
 }
 
