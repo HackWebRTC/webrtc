@@ -62,7 +62,10 @@ class ResamplerTest : public testing::Test {
 
 ResamplerTest::ResamplerTest() {}
 
-void ResamplerTest::SetUp() {}
+void ResamplerTest::SetUp() {
+  // Initialize input data with anything. The tests are content independent.
+  memset(data_in_, 1, sizeof(data_in_));
+}
 
 void ResamplerTest::TearDown() {}
 
