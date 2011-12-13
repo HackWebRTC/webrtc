@@ -438,17 +438,20 @@ VideoProtectionCallback::~VideoProtectionCallback()
 }
 
 WebRtc_Word32
-VideoProtectionCallback::ProtectionRequest(const WebRtc_UWord8 deltaFECRate,
-                                           const WebRtc_UWord8 keyFECRate,
-                                           const bool deltaUseUepProtection,
-                                           const bool keyUseUepProtection,
-                                           const bool nack)
+VideoProtectionCallback::ProtectionRequest(WebRtc_UWord8 deltaFECRate,
+                                           WebRtc_UWord8 keyFECRate,
+                                           bool deltaUseUepProtection,
+                                           bool keyUseUepProtection,
+                                           bool nack_enabled,
+                                           WebRtc_UWord32* sent_video_rate_bps,
+                                           WebRtc_UWord32* sent_nack_rate_bps,
+                                           WebRtc_UWord32* sent_fec_rate_bps)
 {
     _deltaFECRate = deltaFECRate;
     _keyFECRate = keyFECRate;
     _deltaUseUepProtection = deltaUseUepProtection;
     _keyUseUepProtection = keyUseUepProtection;
-    if (nack == true)
+    if (nack_enabled)
     {
         _nack = kNackRtcp;
     }

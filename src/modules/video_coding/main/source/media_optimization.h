@@ -139,7 +139,10 @@ private:
     /*
      *  Update protection callback with protection settings
      */
-    WebRtc_UWord32 UpdateProtectionCallback(VCMProtectionMethod *selectedMethod);
+    int UpdateProtectionCallback(VCMProtectionMethod *selected_method,
+                                 uint32_t* total_video_rate_bps,
+                                 uint32_t* nack_overhead_rate_bps,
+                                 uint32_t* fec_overhead_rate_bps);
 
     void UpdateBitRateEstimate(WebRtc_Word64 encodedLength, WebRtc_Word64 nowMs);
     /*
@@ -168,7 +171,6 @@ private:
 
     VCMFrameDropper*                  _frameDropper;
     VCMLossProtectionLogic*           _lossProtLogic;
-    WebRtc_UWord32                    _lossProtOverhead;
     WebRtc_UWord8                     _packetLossEnc;
     WebRtc_UWord8                     _fractionLost;
 

@@ -101,11 +101,15 @@ class ViEEncoder
     const RTPVideoHeader* rtp_video_hdr);
 
   // Implements VideoProtectionCallback.
-  virtual WebRtc_Word32 ProtectionRequest(const WebRtc_UWord8 delta_fecrate,
-                                          const WebRtc_UWord8 key_fecrate,
-                                          const bool delta_use_uep_protection,
-                                          const bool key_use_uep_protection,
-                                          const bool nack);
+  virtual WebRtc_Word32 ProtectionRequest(
+      WebRtc_UWord8 delta_fecrate,
+      WebRtc_UWord8 key_fecrate,
+      bool delta_use_uep_protection,
+      bool key_use_uep_protection,
+      bool nack_enabled,
+      WebRtc_UWord32* sent_video_rate_bps,
+      WebRtc_UWord32* sent_nack_rate_bps,
+      WebRtc_UWord32* sent_fec_rate_bps);
 
   // Implements VideoSendStatisticsCallback.
   virtual WebRtc_Word32 SendStatistics(const WebRtc_UWord32 bit_rate,

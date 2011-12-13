@@ -236,11 +236,14 @@ public:
     VideoProtectionCallback();
     virtual ~VideoProtectionCallback();
     void RegisterRtpModule(RtpRtcp* rtp) {_rtp = rtp;}
-    WebRtc_Word32 ProtectionRequest(const WebRtc_UWord8 deltaFECRate,
-                                    const WebRtc_UWord8 keyFECRate,
-                                    const bool deltaUseUepProtection,
-                                    const bool keyUseUepProtection,
-                                    const bool nack);
+    WebRtc_Word32 ProtectionRequest(WebRtc_UWord8 deltaFECRate,
+                                    WebRtc_UWord8 keyFECRate,
+                                    bool deltaUseUepProtection,
+                                    bool keyUseUepProtection,
+                                    bool nack_enabled,
+                                    WebRtc_UWord32* sent_video_rate_bps,
+                                    WebRtc_UWord32* sent_nack_rate_bps,
+                                    WebRtc_UWord32* sent_fec_rate_bps);
     enum NACKMethod   NACKMethod();
     WebRtc_UWord8     FECDeltaRate();
     WebRtc_UWord8     FECKeyRate();

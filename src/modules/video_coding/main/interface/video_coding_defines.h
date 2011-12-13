@@ -147,11 +147,15 @@ protected:
 class VCMProtectionCallback
 {
 public:
-    virtual WebRtc_Word32 ProtectionRequest(const WebRtc_UWord8 deltaFECRate,
-                                            const WebRtc_UWord8 keyFECRate,
-                                            const bool deltaUseUepProtection,
-                                            const bool keyUseUepProtection,
-                                            const bool nack) = 0;
+    virtual int ProtectionRequest(
+        uint8_t delta_fec_rate,
+        uint8_t key_fec_rate,
+        bool delta_use_uep_protection,
+        bool key_use_uep_protection,
+        bool nack_enabled,
+        uint32_t* sent_video_rate_bps,
+        uint32_t* sent_nack_rate_bps,
+        uint32_t* sent_fec_rate_bps) = 0;
 
 protected:
     virtual ~VCMProtectionCallback() {}

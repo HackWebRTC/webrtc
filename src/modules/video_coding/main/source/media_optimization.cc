@@ -22,7 +22,6 @@ _sendCodecType(kVideoCodecUnknown),
 _codecWidth(0),
 _codecHeight(0),
 _userFrameRate(0),
-_lossProtOverhead(0),
 _packetLossEnc(0),
 _fractionLost(0),
 _sendStatisticsZeroEncode(0),
@@ -71,7 +70,6 @@ VCMMediaOptimization::Reset()
     _lossProtLogic->Reset();
     _sendStatisticsZeroEncode = 0;
     _targetBitRate = 0;
-    _lossProtOverhead = 0;
     _codecWidth = 0;
     _codecHeight = 0;
     _userFrameRate = 0;
@@ -124,7 +122,7 @@ VCMMediaOptimization::SetTargetRates(WebRtc_UWord32 bitRate,
     _lossProtLogic->UpdateFilteredLossPr(packetLossEnc);
 
     // Rate cost of the protection methods
-    _lossProtOverhead = 0;
+    uint32_t protection_overhead_kbps = 0;
 
     // Update protection settings, when applicable
     if (selectedMethod)
@@ -137,24 +135,40 @@ VCMMediaOptimization::SetTargetRates(WebRtc_UWord32 bitRate,
         // the protection method is set by the user via SetVideoProtection.
         _lossProtLogic->UpdateMethod();
 
-        // Update protection callback with protection settings
-        UpdateProtectionCallback(selectedMethod);
-
-        // Get the bit cost of protection method
-        _lossProtOverhead = static_cast<WebRtc_UWord32>
-                            (_lossProtLogic->RequiredBitRate() + 0.5f);
+        // Update protection callback with protection settings.
+        uint32_t sent_video_rate_bps = 0;
+        uint32_t sent_nack_rate_bps = 0;
+        uint32_t sent_fec_rate_bps = 0;
+        // Get the bit cost of protection method, based on the amount of
+        // overhead data actually transmitted (including headers) the last
+        // second.
+        UpdateProtectionCallback(selectedMethod,
+                                 &sent_video_rate_bps,
+                                 &sent_nack_rate_bps,
+                                 &sent_fec_rate_bps);
+        uint32_t sent_total_rate_bps = sent_video_rate_bps +
+            sent_nack_rate_bps + sent_fec_rate_bps;
+        // Estimate the overhead costs of the next second as staying the same
+        // wrt the source bitrate.
+        if (sent_total_rate_bps > 0) {
+          protection_overhead_kbps = static_cast<uint32_t>(bitRate *
+              static_cast<double>(sent_nack_rate_bps + sent_fec_rate_bps) /
+              sent_total_rate_bps + 0.5);
+        }
+        // Cap the overhead estimate to 50%.
+        if (protection_overhead_kbps > bitRate / 2)
+          protection_overhead_kbps = bitRate / 2;
 
         // Get the effective packet loss for encoder ER
         // when applicable, should be passed to encoder via fractionLost
         packetLossEnc = selectedMethod->RequiredPacketLossER();
     }
 
-    // Update encoding rates following protection settings
-    _frameDropper->SetRates(static_cast<float>(bitRate -
-                                                 _lossProtOverhead), 0);
-
     // Source coding rate: total rate - protection overhead
-    _targetBitRate = bitRate - _lossProtOverhead;
+    _targetBitRate = bitRate - protection_overhead_kbps;
+
+    // Update encoding rates following protection settings
+    _frameDropper->SetRates(static_cast<float>(_targetBitRate), 0);
 
     if (_enableQm)
     {
@@ -174,9 +188,11 @@ VCMMediaOptimization::SetTargetRates(WebRtc_UWord32 bitRate,
     return _targetBitRate;
 }
 
-WebRtc_UWord32
-VCMMediaOptimization::UpdateProtectionCallback(VCMProtectionMethod
-                                               *selectedMethod)
+int VCMMediaOptimization::UpdateProtectionCallback(
+    VCMProtectionMethod *selected_method,
+    uint32_t* video_rate_bps,
+    uint32_t* nack_overhead_rate_bps,
+    uint32_t* fec_overhead_rate_bps)
 {
     if (!_videoProtectionCallback)
     {
@@ -184,29 +200,32 @@ VCMMediaOptimization::UpdateProtectionCallback(VCMProtectionMethod
     }
     // Get the FEC code rate for Key frames (set to 0 when NA)
     const WebRtc_UWord8
-    codeRateKeyRTP  = selectedMethod->RequiredProtectionFactorK();
+    codeRateKeyRTP  = selected_method->RequiredProtectionFactorK();
 
     // Get the FEC code rate for Delta frames (set to 0 when NA)
     const WebRtc_UWord8
-    codeRateDeltaRTP = selectedMethod->RequiredProtectionFactorD();
+    codeRateDeltaRTP = selected_method->RequiredProtectionFactorD();
 
     // Get the FEC-UEP protection status for Key frames: UEP on/off
     const bool
-    useUepProtectionKeyRTP  = selectedMethod->RequiredUepProtectionK();
+    useUepProtectionKeyRTP  = selected_method->RequiredUepProtectionK();
 
     // Get the FEC-UEP protection status for Delta frames: UEP on/off
     const bool
-    useUepProtectionDeltaRTP = selectedMethod->RequiredUepProtectionD();
+    useUepProtectionDeltaRTP = selected_method->RequiredUepProtectionD();
 
     // NACK is on for NACK and NackFec protection method: off for FEC method
-    bool nackStatus = (selectedMethod->Type() == kNackFec ||
-                       selectedMethod->Type() == kNack);
+    bool nackStatus = (selected_method->Type() == kNackFec ||
+                       selected_method->Type() == kNack);
 
-   return _videoProtectionCallback->ProtectionRequest(codeRateDeltaRTP,
-                                                      codeRateKeyRTP,
-                                                      useUepProtectionDeltaRTP,
-                                                      useUepProtectionKeyRTP,
-                                                      nackStatus);
+    return _videoProtectionCallback->ProtectionRequest(codeRateDeltaRTP,
+                                                       codeRateKeyRTP,
+                                                       useUepProtectionDeltaRTP,
+                                                       useUepProtectionKeyRTP,
+                                                       nackStatus,
+                                                       video_rate_bps,
+                                                       nack_overhead_rate_bps,
+                                                       fec_overhead_rate_bps);
 }
 
 bool

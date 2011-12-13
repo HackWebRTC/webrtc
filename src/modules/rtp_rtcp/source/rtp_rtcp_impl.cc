@@ -2363,6 +2363,15 @@ void ModuleRtpRtcpImpl::BitrateSent(WebRtc_UWord32* totalRate,
         // for default we need to update the send bitrate
         CriticalSectionScoped lock(_criticalSectionModulePtrsFeedback);
 
+        if (totalRate != NULL)
+            *totalRate = 0;
+        if (videoRate != NULL)
+            *videoRate = 0;
+        if (fecRate != NULL)
+            *fecRate = 0;
+        if (nackRate != NULL)
+            *nackRate = 0;
+
         std::list<ModuleRtpRtcpImpl*>::const_iterator it =
             _childModules.begin();
         while (it != _childModules.end()) {
@@ -2378,6 +2387,8 @@ void ModuleRtpRtcpImpl::BitrateSent(WebRtc_UWord32* totalRate,
                                     &childNackRate);
                 if (totalRate != NULL && childTotalRate > *totalRate)
                     *totalRate = childTotalRate;
+                if (videoRate != NULL && childVideoRate > *videoRate)
+                    *videoRate = childVideoRate;
                 if (fecRate != NULL && childFecRate > *fecRate)
                     *fecRate = childFecRate;
                 if (nackRate != NULL && childNackRate > *nackRate)
