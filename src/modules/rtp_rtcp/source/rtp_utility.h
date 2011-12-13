@@ -167,6 +167,7 @@ namespace ModuleRTPUtility
         int                  pictureID;
         int                  tl0PicIdx;
         int                  tID;
+        bool                 layerSync;
         int                  keyIdx;
         int                  frameWidth;
         int                  frameHeight;

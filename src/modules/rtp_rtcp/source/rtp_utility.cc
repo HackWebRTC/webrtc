@@ -434,6 +434,7 @@ ModuleRTPUtility::RTPPayload::SetType(RtpVideoCodecTypes videoType)
         info.VP8.pictureID = -1;
         info.VP8.tl0PicIdx = -1;
         info.VP8.tID = -1;
+        info.VP8.layerSync = false;
         info.VP8.frameWidth = 0;
         info.VP8.frameHeight = 0;
         break;
@@ -867,7 +868,7 @@ ModuleRTPUtility::RTPPayloadParser::ParseMPEG4(
 //      +-+-+-+-+-+-+-+-+
 // L:   |   TL0PICIDX   | (OPTIONAL)
 //      +-+-+-+-+-+-+-+-+
-// T/K: | TID | KEYIDX  | (OPTIONAL)
+// T/K: |TID:Y| KEYIDX  | (OPTIONAL)
 //      +-+-+-+-+-+-+-+-+
 //
 // Payload header (considered part of the actual payload, sent to decoder)
@@ -1041,7 +1042,8 @@ int ModuleRTPUtility::RTPPayloadParser::ParseVP8TIDAndKeyIdx(
     if (*dataLength <= 0) return -1;
     if (vp8->hasTID)
     {
-        vp8->tID = ((**dataPtr >> 5) & 0x07);
+        vp8->tID = ((**dataPtr >> 6) & 0x03);
+        vp8->layerSync = (**dataPtr & 0x20) ? true : false;  // Y bit
     }
     if (vp8->hasKeyIdx)
     {

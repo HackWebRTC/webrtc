@@ -35,7 +35,7 @@ using ModuleRTPUtility::RTPPayloadVP8;
 //      +-+-+-+-+-+-+-+-+
 // L:   |   TL0PICIDX   | (OPTIONAL)
 //      +-+-+-+-+-+-+-+-+
-// T/K: | TID | KEYIDX  | (OPTIONAL)
+// T/K: |TID:Y| KEYIDX  | (OPTIONAL)
 //      +-+-+-+-+-+-+-+-+
 //
 // Payload header
@@ -153,11 +153,11 @@ TEST(ParseVP8Test, Tl0PicIdx) {
   EXPECT_EQ(13 - 3, parsedPacket.info.VP8.dataLength);
 }
 
-TEST(ParseVP8Test, TID) {
+TEST(ParseVP8Test, TIDAndLayerSync) {
   WebRtc_UWord8 payload[10] = {0};
   payload[0] = 0x88;
   payload[1] = 0x20;
-  payload[2] = 0x40;
+  payload[2] = 0x80;  // TID(2) + LayerSync(false)
 
   RTPPayloadParser rtpPayloadParser(kRtpVp8Video, payload, 10, 0);
 
@@ -171,6 +171,7 @@ TEST(ParseVP8Test, TID) {
   VerifyExtensions(parsedPacket.info.VP8, 0 /*I*/, 0 /*L*/, 1 /*T*/, 0 /*K*/);
 
   EXPECT_EQ(2, parsedPacket.info.VP8.tID);
+  EXPECT_FALSE(parsedPacket.info.VP8.layerSync);
 
   EXPECT_EQ(payload + 3, parsedPacket.info.VP8.data);
   EXPECT_EQ(10 - 3, parsedPacket.info.VP8.dataLength);
@@ -206,7 +207,7 @@ TEST(ParseVP8Test, MultipleExtensions) {
   payload[2] = 0x80 | 17;    // PictureID, high 7 bits.
   payload[3] = 17;           // PictureID, low 8 bits.
   payload[4] = 42;           // Tl0PicIdx.
-  payload[5] = 0x40 | 0x11;  // TID + KEYIDX.
+  payload[5] = 0x40 | 0x20 | 0x11;  // TID(1) + LayerSync(true) + KEYIDX(17).
 
   RTPPayloadParser rtpPayloadParser(kRtpVp8Video, payload, 10, 0);
 
@@ -221,7 +222,7 @@ TEST(ParseVP8Test, MultipleExtensions) {
 
   EXPECT_EQ((17<<8) + 17, parsedPacket.info.VP8.pictureID);
   EXPECT_EQ(42, parsedPacket.info.VP8.tl0PicIdx);
-  EXPECT_EQ(2, parsedPacket.info.VP8.tID);
+  EXPECT_EQ(1, parsedPacket.info.VP8.tID);
   EXPECT_EQ(17, parsedPacket.info.VP8.keyIdx);
 
   EXPECT_EQ(payload + 6, parsedPacket.info.VP8.data);
@@ -248,6 +249,7 @@ TEST(ParseVP8Test, TestWithPacketizer) {
   inputHeader.nonReference = true;
   inputHeader.pictureId = 300;
   inputHeader.temporalIdx = 1;
+  inputHeader.layerSync = false;
   inputHeader.tl0PicIdx = kNoTl0PicIdx;  // Disable.
   inputHeader.keyIdx = 31;
   RtpFormatVp8 packetizer = RtpFormatVp8(payload, 10, inputHeader);
@@ -276,6 +278,7 @@ TEST(ParseVP8Test, TestWithPacketizer) {
 
   EXPECT_EQ(inputHeader.pictureId, parsedPacket.info.VP8.pictureID);
   EXPECT_EQ(inputHeader.temporalIdx, parsedPacket.info.VP8.tID);
+  EXPECT_EQ(inputHeader.layerSync, parsedPacket.info.VP8.layerSync);
   EXPECT_EQ(inputHeader.keyIdx, parsedPacket.info.VP8.keyIdx);
 
   EXPECT_EQ(packet + 5, parsedPacket.info.VP8.data);

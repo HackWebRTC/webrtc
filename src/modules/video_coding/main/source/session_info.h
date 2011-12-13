@@ -63,6 +63,7 @@ class VCMSessionInfo {
   int HighSequenceNumber() const;
   int PictureId() const;
   int TemporalId() const;
+  bool LayerSync() const;
   int Tl0PicId() const;
   bool NonReference() const;
   int PrepareForDecode(uint8_t* frame_buffer);

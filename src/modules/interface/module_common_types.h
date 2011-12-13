@@ -57,6 +57,7 @@ struct RTPVideoHeaderVP8
         pictureId = kNoPictureId;
         tl0PicIdx = kNoTl0PicIdx;
         temporalIdx = kNoTemporalIdx;
+        layerSync = false;
         keyIdx = kNoKeyIdx;
         partitionId = 0;
         beginningOfPartition = false;
@@ -64,18 +65,20 @@ struct RTPVideoHeaderVP8
         frameHeight = 0;
     }
 
-    bool           nonReference;    // Frame is discardable.
-    WebRtc_Word16  pictureId;       // Picture ID index, 15 bits;
-                                    // kNoPictureId if PictureID does not exist.
-    WebRtc_Word16  tl0PicIdx;       // TL0PIC_IDX, 8 bits;
-                                    // kNoTl0PicIdx means no value provided.
-    WebRtc_Word8   temporalIdx;     // Temporal layer index, or kNoTemporalIdx.
-    int            keyIdx;          // 5 bits; kNoKeyIdx means not used.
-    int            partitionId;     // VP8 partition ID
+    bool           nonReference;   // Frame is discardable.
+    WebRtc_Word16  pictureId;      // Picture ID index, 15 bits;
+                                   // kNoPictureId if PictureID does not exist.
+    WebRtc_Word16  tl0PicIdx;      // TL0PIC_IDX, 8 bits;
+                                   // kNoTl0PicIdx means no value provided.
+    WebRtc_Word8   temporalIdx;    // Temporal layer index, or kNoTemporalIdx.
+    bool           layerSync;      // This frame is a layer sync frame.
+                                   // Disabled if temporalIdx == kNoTemporalIdx.
+    int            keyIdx;         // 5 bits; kNoKeyIdx means not used.
+    int            partitionId;    // VP8 partition ID
     bool           beginningOfPartition;  // True if this packet is the first
                                           // in a VP8 partition. Otherwise false
-    int            frameWidth;      // Exists for key frames.
-    int            frameHeight;     // Exists for key frames.
+    int            frameWidth;     // Exists for key frames.
+    int            frameHeight;    // Exists for key frames.
 };
 union RTPVideoTypeHeader
 {

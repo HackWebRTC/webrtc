@@ -262,15 +262,17 @@ void VCMEncodedFrameCallback::CopyCodecSpecific(const CodecSpecificInfo& info,
         case kVideoCodecVP8: {
             (*rtp)->codecHeader.VP8.InitRTPVideoHeaderVP8();
             (*rtp)->codecHeader.VP8.pictureId =
-                 info.codecSpecific.VP8.pictureId;
+                info.codecSpecific.VP8.pictureId;
             (*rtp)->codecHeader.VP8.nonReference =
-                 info.codecSpecific.VP8.nonReference;
+                info.codecSpecific.VP8.nonReference;
             (*rtp)->codecHeader.VP8.temporalIdx =
-                 info.codecSpecific.VP8.temporalIdx;
+                info.codecSpecific.VP8.temporalIdx;
+            (*rtp)->codecHeader.VP8.layerSync =
+                info.codecSpecific.VP8.layerSync;
             (*rtp)->codecHeader.VP8.tl0PicIdx =
                 info.codecSpecific.VP8.tl0PicIdx;
             (*rtp)->codecHeader.VP8.keyIdx =
-                 info.codecSpecific.VP8.keyIdx;
+                info.codecSpecific.VP8.keyIdx;
             (*rtp)->simulcastIdx = info.codecSpecific.VP8.simulcastIdx;
             return;
         }

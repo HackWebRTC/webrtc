@@ -509,6 +509,7 @@ void VP8Encoder::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
   } else {
 #endif
     vp8Info->temporalIdx = kNoTemporalIdx;
+    vp8Info->layerSync = false;
     vp8Info->tl0PicIdx = kNoTl0PicIdx;
 #if WEBRTC_LIBVPX_VERSION >= 971
   }

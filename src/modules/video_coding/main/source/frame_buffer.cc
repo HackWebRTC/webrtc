@@ -76,6 +76,10 @@ int VCMFrameBuffer::TemporalId() const {
   return _sessionInfo.TemporalId();
 }
 
+bool VCMFrameBuffer::LayerSync() const {
+  return _sessionInfo.LayerSync();
+}
+
 int VCMFrameBuffer::Tl0PicId() const {
   return _sessionInfo.Tl0PicId();
 }

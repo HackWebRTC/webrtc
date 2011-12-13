@@ -86,6 +86,7 @@ class RtpFormatVp8 {
   static const int kLBit        = 0x40;
   static const int kTBit        = 0x20;
   static const int kKBit        = 0x10;
+  static const int kYBit        = 0x20;
 
   // Calculate size of next chunk to send. Returns 0 if none can be sent.
   int CalcNextSize(int max_payload_len, int remaining_bytes,
@@ -114,7 +115,7 @@ class RtpFormatVp8 {
   int WriteTl0PicIdxFields(WebRtc_UWord8* x_field, WebRtc_UWord8* buffer,
                            int buffer_length, int* extension_length) const;
 
-  // Set the T and K bits in the x_field, and write TID and KeyIdx to the
+  // Set the T and K bits in the x_field, and write TID, Y and KeyIdx to the
   // appropriate position in buffer. The function returns 0 on success,
   // -1 otherwise.
   int WriteTIDAndKeyIdxFields(WebRtc_UWord8* x_field, WebRtc_UWord8* buffer,

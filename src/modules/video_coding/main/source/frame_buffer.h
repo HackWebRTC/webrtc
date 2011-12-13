@@ -58,6 +58,7 @@ public:
 
     int PictureId() const;
     int TemporalId() const;
+    bool LayerSync() const;
     int Tl0PicId() const;
     bool NonReference() const;
 

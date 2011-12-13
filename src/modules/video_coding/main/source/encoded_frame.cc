@@ -112,6 +112,7 @@ void VCMEncodedFrame::CopyCodecSpecific(const RTPVideoHeader* header)
                     // This is the first packet for this frame.
                     _codecSpecificInfo.codecSpecific.VP8.pictureId = -1;
                     _codecSpecificInfo.codecSpecific.VP8.temporalIdx = 0;
+                    _codecSpecificInfo.codecSpecific.VP8.layerSync = false;
                     _codecSpecificInfo.codecSpecific.VP8.keyIdx = -1;
                     _codecSpecificInfo.codecType = kVideoCodecVP8;
                 }
@@ -126,6 +127,8 @@ void VCMEncodedFrame::CopyCodecSpecific(const RTPVideoHeader* header)
                 {
                     _codecSpecificInfo.codecSpecific.VP8.temporalIdx =
                         header->codecHeader.VP8.temporalIdx;
+                    _codecSpecificInfo.codecSpecific.VP8.layerSync =
+                        header->codecHeader.VP8.layerSync;
                 }
                 if (header->codecHeader.VP8.keyIdx != kNoKeyIdx)
                 {

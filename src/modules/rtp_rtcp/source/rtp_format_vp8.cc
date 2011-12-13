@@ -167,7 +167,7 @@ int RtpFormatVp8::WriteHeaderAndPayload(int payload_bytes,
   //      +-+-+-+-+-+-+-+-+-+
   // L:   |   TL0PIC_IDX    | (optional)
   //      +-+-+-+-+-+-+-+-+-+
-  // T/K: | TID |  KEYIDX   | (optional)
+  // T/K: |TID:Y|  KEYIDX   | (optional)
   //      +-+-+-+-+-+-+-+-+-+
 
   assert(payload_bytes > 0);
@@ -280,7 +280,9 @@ int RtpFormatVp8::WriteTIDAndKeyIdxFields(WebRtc_UWord8* x_field,
   *data_field = 0;
   if (TIDFieldPresent()) {
     *x_field |= kTBit;
-    *data_field |= hdr_info_.temporalIdx << 5;
+    assert(hdr_info_.temporalIdx >= 0 && hdr_info_.temporalIdx <= 3);
+    *data_field |= hdr_info_.temporalIdx << 6;
+    *data_field |= hdr_info_.layerSync ? kYBit : 0;
   }
   if (KeyIdxFieldPresent()) {
     *x_field |= kKBit;
@@ -314,6 +316,8 @@ bool RtpFormatVp8::XFieldPresent() const {
 }
 
 bool RtpFormatVp8::TIDFieldPresent() const {
+  assert((hdr_info_.layerSync == false) ||
+         (hdr_info_.temporalIdx != kNoTemporalIdx));
   return (hdr_info_.temporalIdx != kNoTemporalIdx);
 }
 

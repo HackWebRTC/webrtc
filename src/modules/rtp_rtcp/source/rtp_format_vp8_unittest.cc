@@ -94,7 +94,9 @@ void RtpFormatVp8Test::TearDown() {
 
 #define EXPECT_BIT_K_EQ(x, a) EXPECT_BIT_EQ(x, 4, a)
 
-#define EXPECT_TID_EQ(x, a) EXPECT_EQ((((x) & 0xE0) >> 5), a)
+#define EXPECT_TID_EQ(x, a) EXPECT_EQ((((x) & 0xC0) >> 6), a)
+
+#define EXPECT_BIT_Y_EQ(x, a) EXPECT_BIT_EQ(x, 5, a)
 
 #define EXPECT_KEYIDX_EQ(x, a) EXPECT_EQ(((x) & 0x1F), a)
 
@@ -170,9 +172,11 @@ void RtpFormatVp8Test::CheckTIDAndKeyIdx() {
   if (hdr_info_.temporalIdx != kNoTemporalIdx) {
     EXPECT_BIT_T_EQ(buffer_[1], 1);
     EXPECT_TID_EQ(buffer_[payload_start_], hdr_info_.temporalIdx);
+    EXPECT_BIT_Y_EQ(buffer_[payload_start_], hdr_info_.layerSync);
   } else {
     EXPECT_BIT_T_EQ(buffer_[1], 0);
     EXPECT_TID_EQ(buffer_[payload_start_], 0);
+    EXPECT_BIT_Y_EQ(buffer_[payload_start_], false);
   }
   if (hdr_info_.keyIdx != kNoKeyIdx) {
     EXPECT_BIT_K_EQ(buffer_[1], 1);
@@ -404,13 +408,14 @@ TEST_F(RtpFormatVp8Test, TestNonReferenceBit) {
   EXPECT_BIT_N_EQ(buffer_[0], 1);
 }
 
-// Verify Tl0PicIdx and TID fields
+// Verify Tl0PicIdx and TID fields, and layerSync bit.
 TEST_F(RtpFormatVp8Test, TestTl0PicIdxAndTID) {
   int send_bytes = 0;
   bool last;
 
   hdr_info_.tl0PicIdx = 117;
   hdr_info_.temporalIdx = 2;
+  hdr_info_.layerSync = true;
   RtpFormatVp8 packetizer = RtpFormatVp8(payload_data_, kPayloadSize,
                                          hdr_info_, *fragmentation_,
                                          kAggregate);

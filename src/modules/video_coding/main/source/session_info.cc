@@ -59,6 +59,13 @@ int VCMSessionInfo::TemporalId() const {
   return packets_.front().codecSpecificHeader.codecHeader.VP8.temporalIdx;
 }
 
+bool VCMSessionInfo::LayerSync() const {
+  if (packets_.empty() ||
+        packets_.front().codecSpecificHeader.codec != kRTPVideoVP8)
+    return false;
+  return packets_.front().codecSpecificHeader.codecHeader.VP8.layerSync;
+}
+
 int VCMSessionInfo::Tl0PicId() const {
   if (packets_.empty() ||
       packets_.front().codecSpecificHeader.codec != kRTPVideoVP8)

@@ -644,8 +644,13 @@ RTPReceiverVideo::ReceiveVp8Codec(WebRtcRTPHeader* rtpHeader,
                           kNoPictureId;
     toHeader->tl0PicIdx = fromHeader->hasTl0PicIdx ? fromHeader->tl0PicIdx :
                           kNoTl0PicIdx;
-    toHeader->temporalIdx = fromHeader->hasTID ? fromHeader->tID :
-                            kNoTemporalIdx;
+    if (fromHeader->hasTID) {
+      toHeader->temporalIdx = fromHeader->tID;
+      toHeader->layerSync = fromHeader->layerSync;
+    } else {
+      toHeader->temporalIdx = kNoTemporalIdx;
+      toHeader->layerSync = false;
+    }
     toHeader->keyIdx = fromHeader->hasKeyIdx ? fromHeader->keyIdx : kNoKeyIdx;
 
     toHeader->frameWidth = fromHeader->frameWidth;
