@@ -69,9 +69,7 @@ VCMJitterBuffer::VCMJitterBuffer(WebRtc_Word32 vcmId, WebRtc_Word32 receiverId,
     _maxNumberOfFrames(kStartNumberOfFrames),
     _frameBuffers(),
     _frameBuffersTSOrder(),
-    _lastDecodedSeqNum(-1),
-    _lastDecodedTimeStamp(-1),
-    _lastDecodedPictureId(-1),
+    _lastDecodedState(),
     _packetsNotDecodable(0),
     _receiveStatistics(),
     _incomingFrameRate(0),
@@ -143,9 +141,7 @@ VCMJitterBuffer::CopyFrom(const VCMJitterBuffer& rhs)
         _NACKSeqNumLength = rhs._NACKSeqNumLength;
         _waitingForKeyFrame = rhs._waitingForKeyFrame;
         _firstPacket = rhs._firstPacket;
-        _lastDecodedSeqNum =  rhs._lastDecodedSeqNum;
-        _lastDecodedTimeStamp = rhs._lastDecodedTimeStamp;
-        _lastDecodedPictureId = rhs._lastDecodedPictureId;
+        _lastDecodedState =  rhs._lastDecodedState;
         _packetsNotDecodable = rhs._packetsNotDecodable;
         memcpy(_receiveStatistics, rhs._receiveStatistics,
                sizeof(_receiveStatistics));
@@ -213,9 +209,7 @@ VCMJitterBuffer::Stop()
 {
     _critSect->Enter();
     _running = false;
-    _lastDecodedTimeStamp = -1;
-    _lastDecodedSeqNum = -1;
-    _lastDecodedPictureId = -1;
+    _lastDecodedState.Reset();
     _frameBuffersTSOrder.Flush();
     for (int i = 0; i < kMaxNumberOfFrames; i++)
     {
@@ -257,9 +251,7 @@ VCMJitterBuffer::FlushInternal()
     {
         ReleaseFrameInternal(_frameBuffers[i]);
     }
-    _lastDecodedSeqNum = -1;
-    _lastDecodedTimeStamp = -1;
-    _lastDecodedPictureId = -1;
+    _lastDecodedState.Reset(); // TODO (mikhal): sync reset
     _packetsNotDecodable = 0;
 
     _frameEvent.Reset();
@@ -331,9 +323,7 @@ VCMJitterBuffer::UpdateFrameState(VCMFrameBuffer* frame)
 
     // Check if we should drop frame
     // an old complete frame can arrive too late
-    if (_lastDecodedTimeStamp > 0 &&
-            LatestTimestamp(static_cast<WebRtc_UWord32>(_lastDecodedTimeStamp),
-                            frame->TimeStamp(), NULL) == _lastDecodedTimeStamp)
+    if (_lastDecodedState.IsOldFrame(frame))
     {
         // Frame is older than the latest decoded frame, drop it.
         // This will trigger a release in CleanUpSizeZeroFrames later.
@@ -442,14 +432,15 @@ VCMJitterBuffer::GetFrame(const VCMPacket& packet, VCMEncodedFrame*& frame)
     }
 
     _critSect->Enter();
-    // Make sure that old empty packets are inserted.
-    if (LatestTimestamp(static_cast<WebRtc_UWord32>(_lastDecodedTimeStamp),
-                        packet.timestamp, NULL) == _lastDecodedTimeStamp
-        && packet.sizeBytes > 0)
+    // Does this packet belong to an old frame?
+    if (_lastDecodedState.IsOldPacket(&packet))
     {
-        _discardedPackets++;  // Only counts discarded media packets
-        // Trying to get an old frame.
-        _numConsecutiveOldPackets++;
+        // Account only for media packets
+        if (packet.sizeBytes > 0)
+        {
+            _discardedPackets++;
+            _numConsecutiveOldPackets++;
+        }
         if (_numConsecutiveOldPackets > kMaxConsecutiveOldPackets)
         {
             FlushInternal();
@@ -544,51 +535,6 @@ VCMJitterBuffer::GetEmptyFrame()
     return NULL;
 }
 
-// Must be called under the critical section _critSect.
-VCMFrameListItem*
-VCMJitterBuffer::FindOldestSequenceNum() const
-{
-    WebRtc_UWord16 currentLow = 0xffff;
-    WebRtc_UWord16 sequenceNumber = 0;
-    bool first = true;
-    VCMFrameListItem* frameListItem = _frameBuffersTSOrder.First();
-    VCMFrameListItem* oldestFrameListItem = NULL;
-
-    while (frameListItem != NULL)
-    {
-        // if we have more than one frame done since last time,
-        // pick oldest
-        VCMFrameBuffer* ptrFrame = NULL;
-        ptrFrame = frameListItem->GetItem();
-        sequenceNumber = static_cast<WebRtc_UWord16>(ptrFrame->GetLowSeqNum());
-
-        // Find the oldest, hence lowest, using sequence numbers
-        if (first)
-        {
-            currentLow = sequenceNumber;
-            oldestFrameListItem = frameListItem;
-            first = false;
-        }
-        else if ((currentLow < 0x0fff) && (sequenceNumber > 0xf000))
-        {
-            // We have a wrap and this one is older
-            currentLow = sequenceNumber;
-            oldestFrameListItem = frameListItem;
-        }
-        else if ((sequenceNumber < 0x0fff) && (currentLow > 0xf000))
-        {
-            // This one is after a wrap, leave as is
-        }
-        else if (currentLow > sequenceNumber)
-        {
-            // Normal case, this one is lower.
-            currentLow = sequenceNumber;
-            oldestFrameListItem = frameListItem;
-        }
-        frameListItem = _frameBuffersTSOrder.Next(frameListItem);
-    }
-    return oldestFrameListItem;
-}
 
 // Find oldest complete frame used for getting next frame to decode
 // Must be called under critical section
@@ -598,7 +544,6 @@ VCMFrameListItem*
 VCMJitterBuffer::FindOldestCompleteContinuousFrame(bool enableDecodable) {
   // If we have more than one frame done since last time, pick oldest.
   VCMFrameBuffer* oldestFrame = NULL;
-  int currentLow = -1;
 
   VCMFrameListItem* oldestFrameItem = _frameBuffersTSOrder.First();
   if (oldestFrameItem != NULL) {
@@ -626,23 +571,11 @@ VCMJitterBuffer::FindOldestCompleteContinuousFrame(bool enableDecodable) {
   if (_waitingForKeyFrame && oldestFrame->FrameType() != kVideoFrameKey) {
     return NULL;
   }
-  // Is this the first frame to be decoded?
-  // Otherwise, establish continuity - use PictureId when available.
-  if (_lastDecodedSeqNum == -1) {
+  // We have a complete frame - establish continuity.
+  if (_lastDecodedState.init()) {
     return oldestFrameItem;
-  } else if (oldestFrame->PictureId() == kNoPictureId) {
-    currentLow = oldestFrame->GetLowSeqNum();
-    WebRtc_UWord16 lastDecodedSeqNum = (WebRtc_UWord16)_lastDecodedSeqNum;
-
-    // We could have received the first packet of the last frame before a long
-    // period if drop, that case is handled by GetNackList (when applicable).
-    if (((WebRtc_UWord16)(lastDecodedSeqNum + 1)) != currentLow) {
-      // Wait since we want a complete continuous frame.
+  } else if (!_lastDecodedState.ContinuousFrame(oldestFrame)) {
       return NULL;
-    }
-  } else if (!ContinuousPictureId(oldestFrame->PictureId())) {
-    // We don't have a continuous frame.
-    return NULL;
   }
   return oldestFrameItem;
 }
@@ -748,7 +681,7 @@ VCMJitterBuffer::GetCompleteFrameForDecoding(WebRtc_UWord32 maxWaitTimeMS)
     CleanUpOldFrames();
     CleanUpSizeZeroFrames();
 
-    if (_lastDecodedSeqNum == -1 && WaitForNack()) {
+    if (_lastDecodedState.init() && WaitForNack()) {
       _waitingForKeyFrame = true;
     }
     VCMFrameListItem*
@@ -850,10 +783,8 @@ VCMJitterBuffer::GetCompleteFrameForDecoding(WebRtc_UWord32 maxWaitTimeMS)
 
     _critSect->Leave();
 
-    // We have a frame - store seqnum & timestamp
-    _lastDecodedSeqNum = oldestFrame->GetHighSeqNum();
-    _lastDecodedTimeStamp = oldestFrame->TimeStamp();
-    _lastDecodedPictureId = oldestFrame->PictureId();
+    // We have a frame - update decoded state with frame info.
+    _lastDecodedState.SetState(oldestFrame);
 
     return oldestFrame;
 }
@@ -990,9 +921,9 @@ VCMJitterBuffer::CompleteSequenceWithNextFrame()
     }
 
     // See if we have lost a frame before this one.
-    if (_lastDecodedSeqNum == -1)
+    if (_lastDecodedState.init())
     {
-        // The sequence is not complete since we haven't yet.
+        // Following start, reset or flush -> check for key frame.
         if (oldestFrame->FrameType() != kVideoFrameKey)
         {
             return false;
@@ -1002,18 +933,7 @@ VCMJitterBuffer::CompleteSequenceWithNextFrame()
     {
         return false;
     }
-    // We can't use sequence numbers to detect frame loss when FEC is enabled.
-    // Assume FEC is only enabled for VP8 with picture ids, and use picture ids
-    // to detect frame loss in that situation.
-    else if (oldestFrame->PictureId() == kNoPictureId)
-    {
-        if (oldestFrame->GetLowSeqNum() !=
-            (_lastDecodedSeqNum + 1) % 0x00010000)
-        {
-            return false;
-        }
-    }
-    else if (!ContinuousPictureId(oldestFrame->PictureId()))
+    else if (!_lastDecodedState.ContinuousFrame(oldestFrame))
     {
         return false;
     }
@@ -1098,10 +1018,8 @@ VCMJitterBuffer::GetFrameForDecoding()
 
     _packetsNotDecodable += oldestFrame->NotDecodablePackets();
 
-    // Store current seqnum & time
-    _lastDecodedSeqNum = oldestFrame->GetHighSeqNum();
-    _lastDecodedTimeStamp = oldestFrame->TimeStamp();
-    _lastDecodedPictureId = oldestFrame->PictureId();
+    // We have a frame - update decoded state with frame info.
+    _lastDecodedState.SetState(oldestFrame);
 
     return oldestFrame;
 }
@@ -1119,8 +1037,8 @@ VCMJitterBuffer::GetFrameForDecodingNACK()
 
     // First look for a complete _continuous_ frame.
     // When waiting for nack, wait for a key frame, if a continuous frame cannot
-    // be determined (i.e. lastDecodedSeqNum = -1)
-    if (_lastDecodedSeqNum == -1) {
+    // be determined (i.e. initial decoding state).
+    if (_lastDecodedState.init()) {
       _waitingForKeyFrame = true;
     }
 
@@ -1178,11 +1096,8 @@ VCMJitterBuffer::GetFrameForDecodingNACK()
         _waitingForKeyFrame = false;
     }
 
-    // We have a complete/decodable continuous frame, decode it.
-    // Store seqnum & timestamp
-    _lastDecodedSeqNum = oldestFrame->GetHighSeqNum();
-    _lastDecodedTimeStamp = oldestFrame->TimeStamp();
-    _lastDecodedPictureId = oldestFrame->PictureId();
+    // We have a frame - update decoded state with frame info.
+    _lastDecodedState.SetState(oldestFrame);
 
     return oldestFrame;
 }
@@ -1299,11 +1214,12 @@ WebRtc_Word32
 VCMJitterBuffer::GetLowHighSequenceNumbers(WebRtc_Word32& lowSeqNum,
                                            WebRtc_Word32& highSeqNum) const
 {
+    // TODO (mikhal/stefan): refactor to use lastDecodedState
     WebRtc_Word32 i = 0;
     WebRtc_Word32 seqNum = -1;
 
     highSeqNum = -1;
-    lowSeqNum = _lastDecodedSeqNum;
+    lowSeqNum = _lastDecodedState.sequence_num();
 
     // find highest seq numbers
     for (i = 0; i < _maxNumberOfFrames; ++i)
@@ -1329,6 +1245,7 @@ VCMJitterBuffer::GetLowHighSequenceNumbers(WebRtc_Word32& lowSeqNum,
 WebRtc_UWord16*
 VCMJitterBuffer::CreateNackList(WebRtc_UWord16& nackSize, bool& listExtended)
 {
+    // TODO (mikhal/stefan): Refactor to use lastDecodedState.
     CriticalSectionScoped cs(_critSect);
     int i = 0;
     WebRtc_Word32 lowSeqNum = -1;
@@ -1388,13 +1305,13 @@ VCMJitterBuffer::CreateNackList(WebRtc_UWord16& nackSize, bool& listExtended)
                      "from seq: %d. Lowest seq in jb %d", highSeqNum,lowSeqNum);
 
         // This nack size will trigger a key request...
-        bool foundIFrame = false;
+        bool foundKeyFrame = false;
 
         while (numberOfSeqNum > kNackHistoryLength)
         {
-            foundIFrame = RecycleFramesUntilKeyFrame();
+          foundKeyFrame = RecycleFramesUntilKeyFrame();
 
-            if (!foundIFrame)
+            if (!foundKeyFrame)
             {
                 break;
             }
@@ -1428,20 +1345,20 @@ VCMJitterBuffer::CreateNackList(WebRtc_UWord16& nackSize, bool& listExtended)
 
         } // end while
 
-        if (!foundIFrame)
+        if (!foundKeyFrame)
         {
-            // No I frame in JB.
+            // No key frame in JB.
 
             // Set the last decoded sequence number to current high.
             // This is to not get a large nack list again right away
-            _lastDecodedSeqNum = highSeqNum;
+            _lastDecodedState.SetSeqNum(static_cast<uint16_t>(highSeqNum));
             _waitingForKeyFrame = true;
             // Set to trigger key frame signal
             nackSize = 0xffff;
             listExtended = true;
             WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, -1,
                     "\tNo key frame found, request one. _lastDecodedSeqNum[0] "
-                    "%d", _lastDecodedSeqNum);
+                    "%d", _lastDecodedState.sequence_num());
         }
         else
         {
@@ -1449,7 +1366,7 @@ VCMJitterBuffer::CreateNackList(WebRtc_UWord16& nackSize, bool& listExtended)
             // The function itself has set last decoded seq.
             WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, -1,
                     "\tKey frame found. _lastDecodedSeqNum[0] %d",
-                    _lastDecodedSeqNum);
+                    _lastDecodedState.sequence_num());
             nackSize = 0;
         }
 
@@ -1598,7 +1515,7 @@ WebRtc_Word64
 VCMJitterBuffer::LastDecodedTimestamp() const
 {
     CriticalSectionScoped cs(_critSect);
-    return _lastDecodedTimeStamp;
+    return _lastDecodedState.time_stamp();
 }
 
 // Insert packet
@@ -1647,14 +1564,7 @@ VCMJitterBuffer::InsertPacket(VCMEncodedFrame* buffer, const VCMPacket& packet)
     if (frame != NULL)
     {
         VCMFrameBufferStateEnum state = frame->GetState();
-        if (packet.sizeBytes == 0 && packet.timestamp == _lastDecodedTimeStamp)
-        {
-            // Empty packet (sizeBytes = 0), make sure we update the last
-            // decoded sequence number
-            _lastDecodedSeqNum = LatestSequenceNumber(packet.seqNum,
-                                                      _lastDecodedSeqNum, NULL);
-        }
-
+        _lastDecodedState.UpdateEmptyPacket(&packet);
         // Insert packet
         // Check for first packet
         // High sequence number will be -1 if neither an empty packet nor
@@ -1811,8 +1721,8 @@ VCMJitterBuffer::RecycleFramesUntilKeyFrame()
     }
 
     // Remove up to oldest key frame
-    bool foundIFrame = false;
-    while (oldestFrameListItem != NULL && !foundIFrame)
+    bool foundKeyFrame = false;
+    while (oldestFrameListItem != NULL && !foundKeyFrame)
     {
         // Throw at least one frame.
         _dropCount++;
@@ -1831,208 +1741,125 @@ VCMJitterBuffer::RecycleFramesUntilKeyFrame()
 
         if (oldestFrame != NULL)
         {
-            foundIFrame = foundIFrame ||
-                          (oldestFrame->FrameType() != kVideoFrameDelta);
-            if (foundIFrame)
+            foundKeyFrame = foundKeyFrame ||
+                            (oldestFrame->FrameType() != kVideoFrameDelta);
+            if (foundKeyFrame)
             {
-                // fake the last played out to match the start of this key frame
-                _lastDecodedSeqNum = (WebRtc_UWord16)((WebRtc_UWord16)
-                                     (oldestFrame->GetLowSeqNum()) - 1);
-                _lastDecodedTimeStamp = (WebRtc_UWord32)
-                                        (oldestFrame->TimeStamp() - 1);
+                // Fake the lastDecodedState to match this key frame.
+                _lastDecodedState.SetStateOneBack(oldestFrame);
                 break;
             }
         }
     }
-    _lastDecodedSeqNum = -1;
-    return foundIFrame;
+    _lastDecodedState.Reset(); // TODO (mikhal): no sync
+    return foundKeyFrame;
 }
 
 // Must be called under the critical section _critSect.
-void
-VCMJitterBuffer::CleanUpOldFrames()
+VCMFrameListItem*
+VCMJitterBuffer::FindOldestSequenceNum() const
 {
-    VCMFrameListItem* oldestFrameListItem = _frameBuffersTSOrder.First();
-    VCMFrameBuffer* oldestFrame = NULL;
-
-    if (_lastDecodedTimeStamp == -1)
-    {
-        return;
-    }
-
-    while (oldestFrameListItem != NULL)
-    {
-        oldestFrame = oldestFrameListItem->GetItem();
-        WebRtc_UWord32 frameTimeStamp = oldestFrame->TimeStamp();
-
-        // Release the frame if it's older than the last decoded frame.
-        if (_lastDecodedTimeStamp > -1 &&
-            LatestTimestamp(static_cast<WebRtc_UWord32>(_lastDecodedTimeStamp),
-                            frameTimeStamp, NULL) ==
-                            static_cast<WebRtc_UWord32>(_lastDecodedTimeStamp))
-        {
-            const WebRtc_Word32 frameLowSeqNum = oldestFrame->GetLowSeqNum();
-            const WebRtc_Word32 frameHighSeqNum = oldestFrame->GetHighSeqNum();
-            if (frameTimeStamp == _lastDecodedTimeStamp &&
-                ((frameLowSeqNum == (_lastDecodedSeqNum + 1)) ||
-                ((frameLowSeqNum == 0) &&
-                (_lastDecodedSeqNum == 0xffff))))
-            {
-                // Could happen when sending empty packets
-                // Empty packet (size = 0) belonging to last decoded frame.
-                // Frame: | packet | packet | packet M=1 |
-                // empty data (size = 0) | empty data (size = 0)| ...
-
-                // This frame follows the last decoded frame
-                _lastDecodedSeqNum = frameHighSeqNum;
-            }
-
-            _frameBuffersTSOrder.Erase(oldestFrameListItem);
-            ReleaseFrameInternal(oldestFrame);
-            oldestFrameListItem = _frameBuffersTSOrder.First();
-        }
-        else
-        {
-            break;
-        }
-    }
-}
-
-// This function has changed to use sequence numbers
-// Using timestamp won't work since can get
-// nack requests with a higher time stamp than
-// the following encoded frame, but with a lower sequence number.
-// Must be called under _critSect.
-void
-VCMJitterBuffer::CleanUpSizeZeroFrames()
-{
-    VCMFrameListItem* frameListItem = FindOldestSequenceNum();
+    WebRtc_UWord16 currentLow = 0xffff;
+    WebRtc_UWord16 sequenceNumber = 0;
+    bool first = true;
+    VCMFrameListItem* frameListItem = _frameBuffersTSOrder.First();
+    VCMFrameListItem* oldestFrameListItem = NULL;
 
     while (frameListItem != NULL)
     {
-        VCMFrameBuffer* ptrTempBuffer = frameListItem->GetItem();
+        // if we have more than one frame done since last time,
+        // pick oldest
+        VCMFrameBuffer* ptrFrame = NULL;
+        ptrFrame = frameListItem->GetItem();
+        sequenceNumber = static_cast<WebRtc_UWord16>(ptrFrame->GetLowSeqNum());
 
-        // pop frame if its size zero but store seqnum
-        if (ptrTempBuffer->Length() == 0)
+        // Find the oldest, hence lowest, using sequence numbers
+        if (first)
         {
-            WebRtc_Word32 frameHighSeqNum = ptrTempBuffer->GetHighSeqNum();
-            if (frameHighSeqNum == -1)
-            {
-                // This frame has been Reset for this function to clean it up
-                _frameBuffersTSOrder.Erase(frameListItem);
-                ReleaseFrameInternal(ptrTempBuffer);
-                frameListItem = FindOldestSequenceNum();
-            }
-            else
-            {
-                bool releaseFrame = false;
-                const WebRtc_Word32 frameHighSeqNum =
-                                    ptrTempBuffer->GetHighSeqNum();
-                const WebRtc_Word32 frameLowSeqNum =
-                                    ptrTempBuffer->GetLowSeqNum();
-
-                if ((frameLowSeqNum == (_lastDecodedSeqNum + 1)) ||
-                    // Frame is next in line
-                    ((frameLowSeqNum == 0) && (_lastDecodedSeqNum== 0xffff)))
-                {
-                    // This frame follows the last decoded frame, release it.
-                    _lastDecodedSeqNum = frameHighSeqNum;
-                    releaseFrame = true;
-                }
-                // If frameHighSeqNum < _lastDecodedSeqNum
-                // but need to take wrap into account.
-                else if (frameHighSeqNum < _lastDecodedSeqNum)
-                {
-                    if (frameHighSeqNum < 0x0fff &&
-                        _lastDecodedSeqNum> 0xf000)
-                    {
-                        // Wrap, we don't want release this one. It's newer...
-                    }
-                    else
-                    {
-                        // This frame has lower seq than last decoded,
-                        // and we have no wrap -> it's older.
-                        releaseFrame = true;
-                    }
-                }
-                else if (frameHighSeqNum > _lastDecodedSeqNum &&
-                        _lastDecodedSeqNum < 0x0fff &&
-                        frameHighSeqNum > 0xf000)
-                {
-                    // Higher seq than last decoded,
-                    // but last decoded has recently wrapped.
-                    releaseFrame = true;
-                }
-
-                if (releaseFrame)
-                {
-                    _frameBuffersTSOrder.Erase(frameListItem);
-                    ReleaseFrameInternal(ptrTempBuffer);
-                    frameListItem = FindOldestSequenceNum();
-                }
-                else
-                {
-                    // We couldn't release this one and we're using nack,
-                    // stop trying...
-                    frameListItem = NULL;
-                }
-            }
+            currentLow = sequenceNumber;
+            oldestFrameListItem = frameListItem;
+            first = false;
         }
-        else
+        else if ((currentLow < 0x0fff) && (sequenceNumber > 0xf000))
         {
-            // we have a length
-            break;
+            // We have a wrap and this one is older
+            currentLow = sequenceNumber;
+            oldestFrameListItem = frameListItem;
         }
+        else if ((sequenceNumber < 0x0fff) && (currentLow > 0xf000))
+        {
+            // This one is after a wrap, leave as is
+        }
+        else if (currentLow > sequenceNumber)
+        {
+            // Normal case, this one is lower.
+            currentLow = sequenceNumber;
+            oldestFrameListItem = frameListItem;
+        }
+        frameListItem = _frameBuffersTSOrder.Next(frameListItem);
     }
+    return oldestFrameListItem;
+}
+
+
+// Must be called under the critical section _critSect.
+void VCMJitterBuffer::CleanUpOldFrames() {
+  if (_lastDecodedState.init())
+    return;
+
+  VCMFrameListItem* oldestFrameListItem = _frameBuffersTSOrder.First();
+  VCMFrameBuffer* oldestFrame = NULL;
+
+  while (oldestFrameListItem != NULL) {
+    oldestFrame = oldestFrameListItem->GetItem();
+    if (_lastDecodedState.IsOldFrame(oldestFrame)) {
+      _frameBuffersTSOrder.Erase(oldestFrameListItem);
+      ReleaseFrameInternal(oldestFrame);
+      oldestFrameListItem = _frameBuffersTSOrder.First();
+    } else {
+      break;
+    }
+  }
+}
+
+// TODO (mikhal):
+// 1. Merge with previous function.
+// 2. Modify to use timestamps and not seqnum.
+// Must be called under _critSect.
+void VCMJitterBuffer::CleanUpSizeZeroFrames() {
+  VCMFrameListItem* frameListItem = FindOldestSequenceNum();
+
+  while (frameListItem != NULL) {
+    VCMFrameBuffer* ptrTempBuffer = frameListItem->GetItem();
+
+    // Pop frame if its size zero but store seqnum.
+    if (ptrTempBuffer->Length() == 0) {
+      WebRtc_Word32 frameHighSeqNum = ptrTempBuffer->GetHighSeqNum();
+      if (frameHighSeqNum == -1) {
+        // This frame has been Reset for this function to clean it up
+        _frameBuffersTSOrder.Erase(frameListItem);
+        ReleaseFrameInternal(ptrTempBuffer);
+        frameListItem = FindOldestSequenceNum();
+      }
+    } else {
+      // we have a length
+      break;
+    }
+  }
 }
 
 // Used in GetFrameForDecoding
-void
-VCMJitterBuffer::VerifyAndSetPreviousFrameLost(VCMFrameBuffer& frame)
-{
-    frame.MakeSessionDecodable(); // make sure the session can be decoded.
-    if (frame.FrameType() == kVideoFrameKey)
-        return;
+void VCMJitterBuffer::VerifyAndSetPreviousFrameLost(VCMFrameBuffer& frame) {
+  frame.MakeSessionDecodable();  // Make sure the session can be decoded.
+  if (frame.FrameType() == kVideoFrameKey)
+    return;
 
-    if (_lastDecodedSeqNum == -1)
-    {
-        // First frame is not a key frame
-        frame.SetPreviousFrameLoss();
-        return;
-    }
-    // We can't use sequence numbers to detect frame loss when FEC is enabled.
-    // Assume FEC is only enabled for VP8 with picture ids, and use picture ids
-    // to detect frame loss in that situation.
-    if (frame.PictureId() == kNoPictureId)
-    {
-        WebRtc_UWord16 nextExpectedSeqNum =
-            static_cast<WebRtc_UWord16>(_lastDecodedSeqNum + 1);
-        if (static_cast<WebRtc_UWord16>(frame.GetLowSeqNum()) !=
-            nextExpectedSeqNum)
-        {
-            frame.SetPreviousFrameLoss();
-        }
-    }
-    else if (!ContinuousPictureId(frame.PictureId()))
-    {
-        frame.SetPreviousFrameLoss();
-    }
-}
-
-bool VCMJitterBuffer::ContinuousPictureId(int pictureId) const {
-  if (pictureId < _lastDecodedPictureId) {
-    // Wrap
-    if (_lastDecodedPictureId >= (1<<8)) {
-      // 15 bits used for picture id
-      return (((_lastDecodedPictureId + 1) % 0x7FFF) == pictureId);
-    } else {
-      // 7 bits used for picture id
-      return (((_lastDecodedPictureId + 1) % 0x7F) == pictureId);
-    }
+  if (_lastDecodedState.init() ||
+      !_lastDecodedState.ContinuousFrame(&frame)) {
+    frame.SetPreviousFrameLoss();
   }
-  // No wrap
-  return (_lastDecodedPictureId + 1 == pictureId);
 }
+
 
 bool
 VCMJitterBuffer::WaitForNack()

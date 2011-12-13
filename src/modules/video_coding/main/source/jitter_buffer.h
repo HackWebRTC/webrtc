@@ -13,6 +13,7 @@
 
 #include "typedefs.h"
 #include "critical_section_wrapper.h"
+#include "decoding_state.h"
 #include "module_common_types.h"
 #include "video_coding_defines.h"
 #include "inter_frame_delay.h"
@@ -144,7 +145,6 @@ private:
     void ReleaseFrameInternal(VCMFrameBuffer* frame);
     // Flush and reset the jitter buffer. Call under critical section.
     void FlushInternal();
-    VCMFrameListItem* FindOldestSequenceNum() const;
 
     // Help functions for insert packet
     // Get empty frame, creates new (i.e. increases JB size) if necessary
@@ -187,9 +187,9 @@ private:
                                     const void* timestamp);
     static bool CompleteDecodableKeyFrameCriteria(VCMFrameBuffer* frame,
                                                   const void* notUsed);
-    bool ContinuousPictureId(int pictureId) const;
     // Decide whether should wait for NACK (mainly relevant for hybrid mode)
     bool WaitForNack();
+    VCMFrameListItem* FindOldestSequenceNum() const;
 
     WebRtc_Word32                 _vcmId;
     WebRtc_Word32                 _receiverId;
@@ -208,11 +208,7 @@ private:
     VCMFrameListTimestampOrderAsc _frameBuffersTSOrder;
 
     // timing
-    // Sequence number of last frame that was given to decoder
-    WebRtc_Word32           _lastDecodedSeqNum;
-    // Timestamp of last frame that was given to decoder
-    WebRtc_Word64           _lastDecodedTimeStamp;
-    int                     _lastDecodedPictureId;
+    VCMDecodingState       _lastDecodedState;
     WebRtc_UWord32          _packetsNotDecodable;
 
     // Statistics
