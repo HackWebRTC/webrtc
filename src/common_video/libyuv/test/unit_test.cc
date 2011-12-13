@@ -150,10 +150,10 @@ TEST_F(LibYuvTest, ConvertTest) {
   delete [] out_uyvy_buffer;
 
   // printf("\nConvert #%d I420 <-> I420 \n", j);
-  uint8_t* out_i420_buffer = new uint8_t[width_ * height_ * 2];
+  uint8_t* out_i420_buffer = new uint8_t[width_ * height_ * 3 / 2 ];
   EXPECT_EQ(0, ConvertToI420(kI420, orig_buffer, width_, height_,
                              out_i420_buffer, false, kRotateNone));
-  EXPECT_EQ(0, ConvertToI420(kI420 , out_i420_buffer, width_, height_,
+  EXPECT_EQ(0, ConvertFromI420(kI420 , out_i420_buffer, width_, height_,
                              res_i420_buffer, false, kRotateNone));
   fwrite(res_i420_buffer, frame_length_, 1, output_file);
   ImagePSNRfromBuffer(orig_buffer, res_i420_buffer, width_, height_, &psnr);
@@ -175,7 +175,7 @@ TEST_F(LibYuvTest, ConvertTest) {
   j++;
   delete [] outYV120Buffer;
 
-  // printf("\nTEST #%d I420 <-> YUY2\n", j);
+  // printf("\nConvert #%d I420 <-> YUY2\n", j);
   uint8_t* out_yuy2_buffer = new uint8_t[width_ * height_ * 2];
 
   EXPECT_EQ(0, ConvertFromI420(kYUY2, orig_buffer, width_, height_,

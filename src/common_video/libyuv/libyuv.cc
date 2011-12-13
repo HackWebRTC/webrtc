@@ -107,7 +107,7 @@ int CalcBufferSize(VideoType src_video_type,
 int ConvertI420ToRGB24(const uint8_t* src_frame, uint8_t* dst_frame,
                        int width, int height) {
   const uint8_t* yplane = src_frame;
-  const uint8_t* uplane = src_frame + width * height;
+  const uint8_t* uplane = yplane + width * height;
   const uint8_t* vplane = uplane + (width * height / 4);
 
   return libyuv::I420ToRGB24(yplane, width,
@@ -490,9 +490,9 @@ int ConvertI420ToI420(const uint8_t* src_frame, uint8_t* dst_frame,
   return libyuv::I420Copy(src_yplane, width,
                           src_uplane, width / 2,
                           src_vplane, width / 2,
-                          dst_yplane, width,
-                          dst_uplane, width / 2,
-                          dst_vplane, width / 2,
+                          dst_yplane, dst_stride,
+                          dst_uplane, dst_stride / 2,
+                          dst_vplane, dst_stride / 2,
                           width, height);
 }
 
@@ -781,7 +781,7 @@ int I420Rotate(const uint8_t* src_frame,
                VideoRotationMode rotation_mode) {
   const uint8_t* src_yplane = src_frame;
   const uint8_t* src_uplane = src_frame + width * height;
-  const uint8_t* src_vplane = src_frame + (width * height / 4);
+  const uint8_t* src_vplane = src_uplane + (width * height / 4);
   uint8_t* dst_yplane = dst_frame;
   uint8_t* dst_uplane = dst_frame + width * height;
   uint8_t* dst_vplane = dst_uplane + (width * height / 4);
