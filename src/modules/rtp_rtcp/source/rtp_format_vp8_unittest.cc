@@ -64,6 +64,7 @@ void RtpFormatVp8Test::SetUp() {
   hdr_info_.pictureId = kNoPictureId;
   hdr_info_.nonReference = false;
   hdr_info_.temporalIdx = kNoTemporalIdx;
+  hdr_info_.layerSync = false;
   hdr_info_.tl0PicIdx = kNoTl0PicIdx;
   hdr_info_.keyIdx = kNoKeyIdx;
 }
