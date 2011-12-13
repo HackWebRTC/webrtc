@@ -20,6 +20,7 @@
 #endif
 
 namespace webrtc {
+
 FileWrapper* FileWrapper::Create()
 {
     return new FileWrapperImpl();
@@ -30,8 +31,7 @@ FileWrapperImpl::FileWrapperImpl()
       _open(false),
       _looping(false),
       _readOnly(false),
-      _text(false),
-      _maxSizeInBytes(-1),
+      _maxSizeInBytes(0),
       _sizeInBytes(0)
 {
     memset(_fileNameUTF8, 0, kMaxFileNameSize);
@@ -45,7 +45,7 @@ FileWrapperImpl::~FileWrapperImpl()
     }
 }
 
-WebRtc_Word32 FileWrapperImpl::CloseFile()
+int FileWrapperImpl::CloseFile()
 {
     if (_id != NULL)
     {
@@ -70,13 +70,13 @@ int FileWrapperImpl::Rewind()
     return -1;
 }
 
-WebRtc_Word32 FileWrapperImpl::SetMaxFileSize(WebRtc_Word32 bytes)
+int FileWrapperImpl::SetMaxFileSize(size_t bytes)
 {
     _maxSizeInBytes = bytes;
     return 0;
 }
 
-WebRtc_Word32 FileWrapperImpl::Flush()
+int FileWrapperImpl::Flush()
 {
     if (_id != NULL)
     {
@@ -85,10 +85,10 @@ WebRtc_Word32 FileWrapperImpl::Flush()
     return -1;
 }
 
-WebRtc_Word32 FileWrapperImpl::FileName(WebRtc_Word8* fileNameUTF8,
-                                        WebRtc_UWord32 size) const
+int FileWrapperImpl::FileName(char* fileNameUTF8,
+                              size_t size) const
 {
-    WebRtc_Word32 len = static_cast<WebRtc_Word32>(strlen(_fileNameUTF8));
+    size_t len = strlen(_fileNameUTF8);
     if(len > kMaxFileNameSize)
     {
         assert(false);
@@ -99,7 +99,7 @@ WebRtc_Word32 FileWrapperImpl::FileName(WebRtc_Word8* fileNameUTF8,
         return -1;
     }
     // Make sure to NULL terminate
-    if(size < (WebRtc_UWord32)len)
+    if(size < len)
     {
         len = size - 1;
     }
@@ -108,24 +108,21 @@ WebRtc_Word32 FileWrapperImpl::FileName(WebRtc_Word8* fileNameUTF8,
     return 0;
 }
 
-bool
-FileWrapperImpl::Open() const
+bool FileWrapperImpl::Open() const
 {
     return _open;
 }
 
-WebRtc_Word32 FileWrapperImpl::OpenFile(const WebRtc_Word8 *fileNameUTF8,
-                                        const bool readOnly, const bool loop,
-                                        const bool text)
+int FileWrapperImpl::OpenFile(const char *fileNameUTF8, bool readOnly,
+                              bool loop, bool text)
 {
-    WebRtc_Word32 length = (WebRtc_Word32)strlen(fileNameUTF8);
+    size_t length = strlen(fileNameUTF8);
     if (length > kMaxFileNameSize)
     {
         return -1;
     }
 
     _readOnly = readOnly;
-    _text = text;
 
     FILE *tmpId = NULL;
 #if defined _WIN32
@@ -191,10 +188,6 @@ WebRtc_Word32 FileWrapperImpl::OpenFile(const WebRtc_Word8 *fileNameUTF8,
 
 int FileWrapperImpl::Read(void *buf, int len)
 {
-    if(len < 0)
-    {
-        return 0;
-    }
     if (_id != NULL)
     {
         int res = static_cast<int>(fread(buf, 1, len, _id));
@@ -205,17 +198,14 @@ int FileWrapperImpl::Read(void *buf, int len)
                 CloseFile();
             }
         }
-        return res;
+        return 0;
     }
     return -1;
 }
 
-WebRtc_Word32 FileWrapperImpl::WriteText(const char* format, ...)
+int FileWrapperImpl::WriteText(const char* format, ...)
 {
     if (_readOnly)
-        return -1;
-
-    if (!_text)
         return -1;
 
     if (_id == NULL)
@@ -226,10 +216,10 @@ WebRtc_Word32 FileWrapperImpl::WriteText(const char* format, ...)
 
     va_list args;
     va_start(args, format);
-    int num_bytes = vfprintf(_id, format, args);
+    int num_chars = vfprintf(_id, format, args);
     va_end(args);
 
-    if (num_bytes > 0)
+    if (num_chars > 0)
     {
         return 0;
     }
@@ -250,21 +240,21 @@ bool FileWrapperImpl::Write(const void* buf, int len)
     if (_id != NULL)
     {
         // Check if it's time to stop writing.
-        if ((_maxSizeInBytes != -1) &&
-             _sizeInBytes + len > (WebRtc_UWord32)_maxSizeInBytes)
+        if (_sizeInBytes + len > _maxSizeInBytes)
         {
             Flush();
             return false;
         }
 
-        size_t nBytes = fwrite((WebRtc_UWord8*)buf, 1, len, _id);
-        if (nBytes > 0)
+        size_t num_bytes = fwrite(buf, 1, len, _id);
+        if (num_bytes > 0)
         {
-            _sizeInBytes += static_cast<WebRtc_Word32>(nBytes);
+            _sizeInBytes += num_bytes;
             return true;
         }
         CloseFile();
     }
     return false;
 }
+
 } // namespace webrtc

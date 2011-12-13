@@ -16,42 +16,42 @@
 #include <stdio.h>
 
 namespace webrtc {
+
 class FileWrapperImpl : public FileWrapper
 {
 public:
     FileWrapperImpl();
     virtual ~FileWrapperImpl();
 
-    virtual WebRtc_Word32 FileName(WebRtc_Word8* fileNameUTF8,
-                                   WebRtc_UWord32 size) const;
+    virtual int FileName(char* fileNameUTF8,
+                         size_t size) const;
 
     virtual bool Open() const;
 
-    virtual WebRtc_Word32 OpenFile(const WebRtc_Word8* fileNameUTF8,
-                                 const bool readOnly,
-                                 const bool loop = false,
-                                 const bool text = false);
+    virtual int OpenFile(const char* fileNameUTF8,
+                         bool readOnly,
+                         bool loop = false,
+                         bool text = false);
 
-    virtual WebRtc_Word32 CloseFile();
-    virtual WebRtc_Word32 SetMaxFileSize(WebRtc_Word32 bytes);
-    virtual WebRtc_Word32 Flush();
+    virtual int CloseFile();
+    virtual int SetMaxFileSize(size_t bytes);
+    virtual int Flush();
 
     virtual int Read(void* buf, int len);
     virtual bool Write(const void *buf, int len);
+    virtual int WriteText(const char* format, ...);
     virtual int Rewind();
 
-    virtual WebRtc_Word32 WriteText(const char* format, ...);
-
 private:
-    FILE*          _id;
-    bool           _open;
-    bool           _looping;
-    bool           _readOnly;
-    bool           _text;
-    WebRtc_Word32  _maxSizeInBytes; // -1 indicates file size limitation is off
-    WebRtc_UWord32 _sizeInBytes;
-    WebRtc_Word8   _fileNameUTF8[kMaxFileNameSize];
+    FILE* _id;
+    bool _open;
+    bool _looping;
+    bool _readOnly;
+    size_t _maxSizeInBytes; // -1 indicates file size limitation is off
+    size_t _sizeInBytes;
+    char _fileNameUTF8[kMaxFileNameSize];
 };
+
 } // namespace webrtc
 
 #endif // WEBRTC_SYSTEM_WRAPPERS_SOURCE_FILE_IMPL_H_

@@ -114,7 +114,12 @@ WebRtc_Word32 RtpDumpImpl::Start(const WebRtc_Word8* fileNameUTF8)
     // All rtp dump files start with #!rtpplay.
     WebRtc_Word8 magic[16];
     sprintf(magic, "#!rtpplay%s \n", RTPFILE_VERSION);
-    _file.WriteText(magic);
+    if (_file.WriteText(magic) == -1)
+    {
+        WEBRTC_TRACE(kTraceError, kTraceUtility, -1,
+                     "error writing to file");
+        return -1;
+    }
 
     // The header according to the rtpdump documentation is sizeof(RD_hdr_t)
     // which is 8 + 4 + 2 = 14 bytes for 32-bit architecture (and 22 bytes on
@@ -125,7 +130,12 @@ WebRtc_Word32 RtpDumpImpl::Start(const WebRtc_Word8* fileNameUTF8)
     // of padding should be added to the header.
     WebRtc_Word8 dummyHdr[16];
     memset(dummyHdr, 0, 16);
-    _file.Write(dummyHdr, sizeof(dummyHdr));
+    if (!_file.Write(dummyHdr, sizeof(dummyHdr)))
+    {
+        WEBRTC_TRACE(kTraceError, kTraceUtility, -1,
+                     "error writing to file");
+        return -1;
+    }
     return 0;
 }
 
@@ -190,8 +200,20 @@ WebRtc_Word32 RtpDumpImpl::DumpPacket(const WebRtc_UWord8* packet,
     {
         hdr.plen = RtpDumpHtons((WebRtc_UWord16)packetLength);
     }
-    _file.Write(&hdr, sizeof(hdr));
-    _file.Write(packet, packetLength);
+
+    if (!_file.Write(&hdr, sizeof(hdr)))
+    {
+        WEBRTC_TRACE(kTraceError, kTraceUtility, -1,
+                     "error writing to file");
+        return -1;
+    }
+    if (!_file.Write(packet, packetLength))
+    {
+        WEBRTC_TRACE(kTraceError, kTraceUtility, -1,
+                     "error writing to file");
+        return -1;
+    }
+
     return 0;
 }
 

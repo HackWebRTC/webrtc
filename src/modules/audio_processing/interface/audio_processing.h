@@ -191,7 +191,7 @@ class AudioProcessing : public Module {
   // a NULL-terminated string. If there is an ongoing recording, the old file
   // will be closed, and recording will continue in the newly specified file.
   // An already existing file will be overwritten without warning.
-  static const int kMaxFilenameSize = 1024;
+  static const size_t kMaxFilenameSize = 1024;
   virtual int StartDebugRecording(const char filename[kMaxFilenameSize]) = 0;
 
   // Stops recording debugging information, and closes the file. Recording
