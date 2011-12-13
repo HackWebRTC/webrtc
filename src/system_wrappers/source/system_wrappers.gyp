@@ -149,6 +149,8 @@
           'sources!': [
             'cpu.cc',
             'trace_impl.cc',
+            'trace_posix.cc',
+            'trace_windows.cc',
           ],
         }, {
           'sources!': [
