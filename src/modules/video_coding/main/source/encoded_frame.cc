@@ -61,7 +61,7 @@ VCMEncodedFrame::VCMEncodedFrame(const VCMEncodedFrame& rhs)
   _length = 0;
   if (rhs._buffer != NULL)
   {
-      VerifyAndAllocate(rhs._size);
+      VerifyAndAllocate(rhs._length);
       memcpy(_buffer, rhs._buffer, rhs._length);
       _length = rhs._length;
   }
