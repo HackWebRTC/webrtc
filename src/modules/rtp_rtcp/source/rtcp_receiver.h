@@ -187,11 +187,11 @@ private:
     WebRtc_UWord32          _lastReceived;
     ModuleRtpRtcpImpl&      _rtpRtcp;
 
-    CriticalSectionWrapper& _criticalSectionFeedbacks;
+    CriticalSectionWrapper* _criticalSectionFeedbacks;
     RtcpFeedback*           _cbRtcpFeedback;
     RtpVideoFeedback*       _cbVideoFeedback;
 
-    CriticalSectionWrapper& _criticalSectionRTCPReceiver;
+    CriticalSectionWrapper* _criticalSectionRTCPReceiver;
     WebRtc_UWord32          _SSRC;
     WebRtc_UWord32          _remoteSSRC;
 

@@ -89,7 +89,7 @@ private:
     WebRtc_Word8              _G722PayloadType;
     bool                    _lastReceivedG722;
 
-    CriticalSectionWrapper&    _criticalSectionFeedback;
+    CriticalSectionWrapper* _criticalSectionFeedback;
     RtpAudioFeedback*   _cbAudioFeedback;
 };
 } // namespace webrtc

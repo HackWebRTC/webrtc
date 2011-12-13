@@ -29,7 +29,7 @@ public:
     void ResetDTMF();
 
 private:
-    CriticalSectionWrapper& _DTMFCritsect;
+    CriticalSectionWrapper* _DTMFCritsect;
     WebRtc_UWord8        _nextEmptyIndex;
     WebRtc_UWord8        _DTMFKey[DTMF_OUTBAND_MAX];
     WebRtc_UWord16       _DTMFLen[DTMF_OUTBAND_MAX];

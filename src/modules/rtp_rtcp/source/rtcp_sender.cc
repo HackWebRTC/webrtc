@@ -31,10 +31,10 @@ RTCPSender::RTCPSender(const WebRtc_Word32 id,
     _clock(*clock),
     _method(kRtcpOff),
     _rtpRtcp(*owner),
-    _criticalSectionTransport(*CriticalSectionWrapper::CreateCriticalSection()),
+    _criticalSectionTransport(CriticalSectionWrapper::CreateCriticalSection()),
     _cbTransport(NULL),
 
-    _criticalSectionRTCPSender(*CriticalSectionWrapper::CreateCriticalSection()),
+    _criticalSectionRTCPSender(CriticalSectionWrapper::CreateCriticalSection()),
     _usingNack(false),
     _sending(false),
     _sendTMMBN(false),
@@ -112,8 +112,8 @@ RTCPSender::~RTCPSender()
         _csrcCNAMEs.Erase(item);
         item = _csrcCNAMEs.First();
     }
-    delete &_criticalSectionTransport;
-    delete &_criticalSectionRTCPSender;
+    delete _criticalSectionTransport;
+    delete _criticalSectionRTCPSender;
 
     WEBRTC_TRACE(kTraceMemory, kTraceRtpRtcp, _id, "%s deleted", __FUNCTION__);
 }

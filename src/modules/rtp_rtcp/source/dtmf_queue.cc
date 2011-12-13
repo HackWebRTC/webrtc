@@ -14,7 +14,7 @@
 
 namespace webrtc {
 DTMFqueue::DTMFqueue():
-    _DTMFCritsect(*CriticalSectionWrapper::CreateCriticalSection()),
+    _DTMFCritsect(CriticalSectionWrapper::CreateCriticalSection()),
     _nextEmptyIndex(0)
 {
     memset(_DTMFKey,0, sizeof(_DTMFKey));
@@ -24,7 +24,7 @@ DTMFqueue::DTMFqueue():
 
 DTMFqueue::~DTMFqueue()
 {
-    delete &_DTMFCritsect;
+    delete _DTMFCritsect;
 }
 
 WebRtc_Word32

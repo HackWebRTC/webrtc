@@ -33,7 +33,7 @@ bool SenderThreadFunction(void *obj)
 
 TestLoadGenerator::TestLoadGenerator(TestSenderReceiver *sender, WebRtc_Word32 rtpSampleRate)
 :
-_critSect(*CriticalSectionWrapper::CreateCriticalSection()),
+_critSect(CriticalSectionWrapper::CreateCriticalSection()),
 _eventPtr(NULL),
 _genThread(NULL),
 _bitrateKbps(0),
@@ -50,7 +50,7 @@ TestLoadGenerator::~TestLoadGenerator ()
         Stop();
     }
 
-    delete &_critSect;
+    delete _critSect;
 }
 
 WebRtc_Word32 TestLoadGenerator::SetBitrate (WebRtc_Word32 newBitrateKbps)

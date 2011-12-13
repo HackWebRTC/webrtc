@@ -30,7 +30,7 @@ RTPSenderVideo::RTPSenderVideo(const WebRtc_Word32 id,
                                RTPSenderInterface* rtpSender) :
     _id(id),
     _rtpSender(*rtpSender),
-    _sendVideoCritsect(*CriticalSectionWrapper::CreateCriticalSection()),
+    _sendVideoCritsect(CriticalSectionWrapper::CreateCriticalSection()),
 
     _videoType(kRtpNoVideo),
     _videoCodecInformation(NULL),
@@ -63,7 +63,7 @@ RTPSenderVideo::~RTPSenderVideo()
     {
         delete _videoCodecInformation;
     }
-    delete &_sendVideoCritsect;
+    delete _sendVideoCritsect;
 }
 
 WebRtc_Word32

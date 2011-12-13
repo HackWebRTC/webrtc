@@ -199,7 +199,7 @@ _eventPtr(NULL),
 _procThread(NULL),
 _startTimeMs(-1),
 _stopTimeMs(-1),
-_statCritSect(*CriticalSectionWrapper::CreateCriticalSection())
+_statCritSect(CriticalSectionWrapper::CreateCriticalSection())
 {
     _sendrec = new TestSenderReceiver();
 }
@@ -212,7 +212,7 @@ BWETest::~BWETest()
         Stop();
     }
 
-    _statCritSect.Enter();
+    _statCritSect->Enter();
     delete &_statCritSect;
 
     if (_sendrec)

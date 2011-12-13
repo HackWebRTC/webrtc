@@ -31,11 +31,12 @@ RTPReceiver::RTPReceiver(const WebRtc_Word32 id,
     _id(id),
     _audio(audio),
     _rtpRtcp(*owner),
-    _criticalSectionCbs(*CriticalSectionWrapper::CreateCriticalSection()),
+    _criticalSectionCbs(CriticalSectionWrapper::CreateCriticalSection()),
     _cbRtpFeedback(NULL),
     _cbRtpData(NULL),
 
-    _criticalSectionRTPReceiver(*CriticalSectionWrapper::CreateCriticalSection()),
+    _criticalSectionRTPReceiver(
+        CriticalSectionWrapper::CreateCriticalSection()),
     _lastReceiveTime(0),
     _lastReceivedPayloadLength(0),
     _lastReceivedPayloadType(-1),
@@ -101,8 +102,8 @@ RTPReceiver::~RTPReceiver()
             _cbRtpFeedback->OnIncomingCSRCChanged(_id,_currentRemoteCSRC[i], false);
         }
     }
-    delete &_criticalSectionCbs;
-    delete &_criticalSectionRTPReceiver;
+    delete _criticalSectionCbs;
+    delete _criticalSectionRTPReceiver;
 
     // empty map
     bool loop = true;

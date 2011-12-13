@@ -544,8 +544,8 @@ private:
     WebRtc_UWord32            _lastProcessTime;
     WebRtc_UWord16            _packetOverHead;
 
-    CriticalSectionWrapper&       _criticalSectionModulePtrs;
-    CriticalSectionWrapper&       _criticalSectionModulePtrsFeedback;
+    CriticalSectionWrapper*       _criticalSectionModulePtrs;
+    CriticalSectionWrapper*       _criticalSectionModulePtrsFeedback;
     ModuleRtpRtcpImpl*            _defaultModule;
     ModuleRtpRtcpImpl*            _audioModule;
     ModuleRtpRtcpImpl*            _videoModule;

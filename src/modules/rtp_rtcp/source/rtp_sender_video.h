@@ -150,7 +150,7 @@ private:
     WebRtc_Word32             _id;
     RTPSenderInterface&        _rtpSender;
 
-    CriticalSectionWrapper&    _sendVideoCritsect;
+    CriticalSectionWrapper*   _sendVideoCritsect;
     RtpVideoCodecTypes  _videoType;
     VideoCodecInformation*  _videoCodecInformation;
     WebRtc_UWord32            _maxBitrate;

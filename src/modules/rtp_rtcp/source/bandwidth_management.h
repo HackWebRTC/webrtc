@@ -64,7 +64,7 @@ private:
 
     WebRtc_Word32         _id;
 
-    CriticalSectionWrapper& _critsect;
+    CriticalSectionWrapper* _critsect;
 
     // incoming filters
     WebRtc_UWord32        _lastPacketLossExtendedHighSeqNum;

@@ -31,14 +31,14 @@ RTPReceiverAudio::RTPReceiverAudio(const WebRtc_Word32 id):
     _cngPayloadType(-1),
     _G722PayloadType(-1),
     _lastReceivedG722(false),
-    _criticalSectionFeedback(*CriticalSectionWrapper::CreateCriticalSection()),
+    _criticalSectionFeedback(CriticalSectionWrapper::CreateCriticalSection()),
     _cbAudioFeedback(NULL)
 {
 }
 
 RTPReceiverAudio::~RTPReceiverAudio()
 {
-    delete &_criticalSectionFeedback;
+    delete _criticalSectionFeedback;
 }
 
 WebRtc_Word32

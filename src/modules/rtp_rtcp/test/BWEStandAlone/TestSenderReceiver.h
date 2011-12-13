@@ -148,7 +148,7 @@ public:
 private:
     RtpRtcp* _rtp;
     UdpTransport* _transport;
-    webrtc::CriticalSectionWrapper& _critSect;
+    webrtc::CriticalSectionWrapper* _critSect;
     webrtc::EventWrapper *_eventPtr;
     webrtc::ThreadWrapper* _procThread;
     bool _running;

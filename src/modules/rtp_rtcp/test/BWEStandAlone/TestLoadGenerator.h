@@ -42,7 +42,7 @@ protected:
         const WebRtc_UWord32 payloadSize,
         const webrtc::FrameType frameType = webrtc::kVideoFrameDelta);
 
-    webrtc::CriticalSectionWrapper& _critSect;
+    webrtc::CriticalSectionWrapper* _critSect;
     webrtc::EventWrapper *_eventPtr;
     webrtc::ThreadWrapper* _genThread;
     WebRtc_Word32 _bitrateKbps;

@@ -62,7 +62,7 @@ TMMBRSet::VerifyAndAllocateSet(WebRtc_UWord32 minimumSize)
 }
 
 TMMBRHelp::TMMBRHelp(const bool audio) :
-    _criticalSection(*CriticalSectionWrapper::CreateCriticalSection()),
+    _criticalSection(CriticalSectionWrapper::CreateCriticalSection()),
     _audio(audio),
     _candidateSet(),
     _boundingSet(),
@@ -78,7 +78,7 @@ TMMBRHelp::~TMMBRHelp()
     delete [] _ptrMaxPRBoundingSet;
     _ptrIntersectionBoundingSet = 0;
     _ptrMaxPRBoundingSet = 0;
-    delete &_criticalSection;
+    delete _criticalSection;
 }
 
 TMMBRSet*

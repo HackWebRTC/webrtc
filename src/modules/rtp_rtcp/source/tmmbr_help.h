@@ -65,7 +65,7 @@ protected:
     WebRtc_Word32 FindTMMBRBoundingSet(WebRtc_Word32 numCandidates, TMMBRSet& candidateSet);
 
 private:
-    CriticalSectionWrapper& _criticalSection;
+    CriticalSectionWrapper* _criticalSection;
     const bool              _audio;
     TMMBRSet                _candidateSet;
     TMMBRSet                _boundingSet;

@@ -174,11 +174,11 @@ private:
     const bool              _audio;
     ModuleRtpRtcpImpl&      _rtpRtcp;
 
-    CriticalSectionWrapper&    _criticalSectionCbs;
+    CriticalSectionWrapper*    _criticalSectionCbs;
     RtpFeedback*        _cbRtpFeedback;
     RtpData*            _cbRtpData;
 
-    CriticalSectionWrapper&    _criticalSectionRTPReceiver;
+    CriticalSectionWrapper*    _criticalSectionRTPReceiver;
     mutable WebRtc_UWord32    _lastReceiveTime;
     WebRtc_UWord16            _lastReceivedPayloadLength;
     WebRtc_Word8              _lastReceivedPayloadType;

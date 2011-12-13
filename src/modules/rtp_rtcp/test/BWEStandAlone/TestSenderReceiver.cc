@@ -37,7 +37,7 @@ bool ProcThreadFunction(void *obj)
 
 TestSenderReceiver::TestSenderReceiver (void)
 :
-_critSect(*CriticalSectionWrapper::CreateCriticalSection()),
+_critSect(CriticalSectionWrapper::CreateCriticalSection()),
 _eventPtr(NULL),
 _procThread(NULL),
 _running(false),
@@ -85,7 +85,7 @@ TestSenderReceiver::~TestSenderReceiver (void)
 
     Stop(); // N.B. without critSect
 
-    _critSect.Enter();
+    _critSect->Enter();
 
     if (_rtp)
     {
@@ -99,7 +99,7 @@ TestSenderReceiver::~TestSenderReceiver (void)
         _transport = NULL;
     }
 
-    delete &_critSect;
+    delete _critSect;
 
 }
 
@@ -440,5 +440,3 @@ void TestSenderReceiver::OnNetworkChanged(const WebRtc_Word32 id,
             bwEstimateKbitMax);
     }
 }
-
-

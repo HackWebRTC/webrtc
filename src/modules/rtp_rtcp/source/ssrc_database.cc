@@ -54,7 +54,7 @@ SSRCDatabase::ReturnSSRCDatabase()
 WebRtc_UWord32
 SSRCDatabase::CreateSSRC()
 {
-    CriticalSectionScoped lock(*_critSect);
+    CriticalSectionScoped lock(_critSect);
 
     WebRtc_UWord32 ssrc = GenerateRandom();
 
@@ -103,7 +103,7 @@ SSRCDatabase::CreateSSRC()
 WebRtc_Word32
 SSRCDatabase::RegisterSSRC(const WebRtc_UWord32 ssrc)
 {
-    CriticalSectionScoped lock(*_critSect);
+    CriticalSectionScoped lock(_critSect);
 
 #ifndef WEBRTC_NO_STL
 
@@ -143,7 +143,7 @@ SSRCDatabase::RegisterSSRC(const WebRtc_UWord32 ssrc)
 WebRtc_Word32
 SSRCDatabase::ReturnSSRC(const WebRtc_UWord32 ssrc)
 {
-    CriticalSectionScoped lock(*_critSect);
+    CriticalSectionScoped lock(_critSect);
 
 #ifndef WEBRTC_NO_STL
     _ssrcMap.erase(ssrc);

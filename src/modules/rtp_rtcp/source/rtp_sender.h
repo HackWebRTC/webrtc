@@ -267,9 +267,9 @@ private:
     RTPSenderAudio*         _audio;
     RTPSenderVideo*         _video;
 
-    CriticalSectionWrapper&    _sendCritsect;
+    CriticalSectionWrapper*    _sendCritsect;
 
-    CriticalSectionWrapper&    _transportCritsect;
+    CriticalSectionWrapper*    _transportCritsect;
     Transport*         _transport;
 
     bool                      _sendingMedia;
@@ -288,7 +288,7 @@ private:
 
     bool                      _storeSentPackets;
     WebRtc_UWord16            _storeSentPacketsNumber;
-    CriticalSectionWrapper&    _prevSentPacketsCritsect;
+    CriticalSectionWrapper*    _prevSentPacketsCritsect;
     WebRtc_Word32             _prevSentPacketsIndex;
     WebRtc_Word8**            _ptrPrevSentPackets;
     WebRtc_UWord16*           _prevSentPacketsSeqNum;

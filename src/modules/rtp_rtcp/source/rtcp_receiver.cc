@@ -35,10 +35,11 @@ RTCPReceiver::RTCPReceiver(const WebRtc_Word32 id,
     _method(kRtcpOff),
     _lastReceived(0),
     _rtpRtcp(*owner),
-    _criticalSectionFeedbacks(*CriticalSectionWrapper::CreateCriticalSection()),
+    _criticalSectionFeedbacks(CriticalSectionWrapper::CreateCriticalSection()),
     _cbRtcpFeedback(NULL),
     _cbVideoFeedback(NULL),
-    _criticalSectionRTCPReceiver(*CriticalSectionWrapper::CreateCriticalSection()),
+    _criticalSectionRTCPReceiver(
+        CriticalSectionWrapper::CreateCriticalSection()),
     _SSRC(0),
     _remoteSSRC(0),
     _remoteSenderInfo(),
@@ -53,8 +54,8 @@ RTCPReceiver::RTCPReceiver(const WebRtc_Word32 id,
 
 RTCPReceiver::~RTCPReceiver()
 {
-    delete &_criticalSectionRTCPReceiver;
-    delete &_criticalSectionFeedbacks;
+    delete _criticalSectionRTCPReceiver;
+    delete _criticalSectionFeedbacks;
 
     bool loop = true;
     do
@@ -481,13 +482,13 @@ RTCPReceiver::HandleReportBlock(const RTCPUtility::RTCPPacket& rtcpPacket,
         }
     }
 
-    _criticalSectionRTCPReceiver.Leave();
+    _criticalSectionRTCPReceiver->Leave();
      // to avoid problem with accuireing _criticalSectionRTCPSender while holding _criticalSectionRTCPReceiver
 
     WebRtc_UWord32 sendTimeMS = 
         _rtpRtcp.SendTimeOfSendReport(rtcpPacket.ReportBlockItem.LastSR);
 
-    _criticalSectionRTCPReceiver.Enter();
+    _criticalSectionRTCPReceiver->Enter();
 
     // ReportBlockItem.SSRC is who it's to
     // we store all incoming reports, used in conference relay

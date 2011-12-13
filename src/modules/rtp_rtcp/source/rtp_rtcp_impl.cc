@@ -89,8 +89,9 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const WebRtc_Word32 id,
     _lastProcessTime(clock->GetTimeInMS()),
 
     _packetOverHead(28), // IPV4 UDP
-    _criticalSectionModulePtrs(*CriticalSectionWrapper::CreateCriticalSection()),
-    _criticalSectionModulePtrsFeedback(*CriticalSectionWrapper::CreateCriticalSection()),
+    _criticalSectionModulePtrs(CriticalSectionWrapper::CreateCriticalSection()),
+    _criticalSectionModulePtrsFeedback(
+        CriticalSectionWrapper::CreateCriticalSection()),
     _defaultModule(NULL),
     _audioModule(NULL),
     _videoModule(NULL),
@@ -165,8 +166,8 @@ ModuleRtpRtcpImpl::~ModuleRtpRtcpImpl()
     }
 #endif
 
-    delete &_criticalSectionModulePtrs;
-    delete &_criticalSectionModulePtrsFeedback;
+    delete _criticalSectionModulePtrs;
+    delete _criticalSectionModulePtrsFeedback;
 }
 
 WebRtc_Word32

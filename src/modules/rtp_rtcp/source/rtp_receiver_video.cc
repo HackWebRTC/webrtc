@@ -28,10 +28,10 @@ RTPReceiverVideo::RTPReceiverVideo(const WebRtc_Word32 id,
                                    ModuleRtpRtcpImpl* owner):
     _id(id),
     _rtpRtcp(*owner),
-    _criticalSectionFeedback(*CriticalSectionWrapper::CreateCriticalSection()),
+    _criticalSectionFeedback(CriticalSectionWrapper::CreateCriticalSection()),
     _cbVideoFeedback(NULL),
-    _criticalSectionReceiverVideo(*CriticalSectionWrapper::CreateCriticalSection()),
-
+    _criticalSectionReceiverVideo(
+        CriticalSectionWrapper::CreateCriticalSection()),
     _completeFrame(false),
     _packetStartTimeMs(0),
     _receivedBW(),
@@ -49,8 +49,8 @@ RTPReceiverVideo::RTPReceiverVideo(const WebRtc_Word32 id,
 
 RTPReceiverVideo::~RTPReceiverVideo()
 {
-    delete &_criticalSectionFeedback;
-    delete &_criticalSectionReceiverVideo;
+    delete _criticalSectionFeedback;
+    delete _criticalSectionReceiverVideo;
     delete _receiveFEC;
 }
 
@@ -228,7 +228,7 @@ RTPReceiverVideo::ParseVideoCodecSpecific(WebRtcRTPHeader* rtpHeader,
 {
     WebRtc_Word32 retVal = 0;
 
-    _criticalSectionReceiverVideo.Enter();
+    _criticalSectionReceiverVideo->Enter();
 
     _videoBitRate.Update(payloadDataLength, nowMS);
 
@@ -242,7 +242,7 @@ RTPReceiverVideo::ParseVideoCodecSpecific(WebRtcRTPHeader* rtpHeader,
     {
         if(_receiveFEC == NULL)
         {
-            _criticalSectionReceiverVideo.Leave();
+            _criticalSectionReceiverVideo->Leave();
             return -1;
         }
         if (rtpHeader->header.timestamp != TimeStamp())
@@ -269,7 +269,7 @@ RTPReceiverVideo::ParseVideoCodecSpecific(WebRtcRTPHeader* rtpHeader,
                 _receiveFEC->AddReceivedFECInfo(rtpHeader,incomingRtpPacket, FECpacket);
             }
         }
-        _criticalSectionReceiverVideo.Leave();
+        _criticalSectionReceiverVideo->Leave();
 
         if(retVal == 0 && FECpacket )
         {
@@ -296,18 +296,18 @@ RTPReceiverVideo::ParseVideoCodecSpecific(WebRtcRTPHeader* rtpHeader,
 
     // Update the remote rate control object and update the overuse
     // detector with the current rate control region.
-    _criticalSectionReceiverVideo.Enter();
+    _criticalSectionReceiverVideo->Enter();
     const RateControlInput input(_overUseDetector.State(),
                                  _videoBitRate.BitRate(nowMS),
                                  _overUseDetector.NoiseVar());
-    _criticalSectionReceiverVideo.Leave();
+    _criticalSectionReceiverVideo->Leave();
 
     // Call the callback outside critical section
     const RateControlRegion region = _rtpRtcp.OnOverUseStateUpdate(input);
 
-    _criticalSectionReceiverVideo.Enter();
+    _criticalSectionReceiverVideo->Enter();
     _overUseDetector.SetRateControlRegion(region);
-    _criticalSectionReceiverVideo.Leave();
+    _criticalSectionReceiverVideo->Leave();
 
     return retVal;
 }
@@ -356,7 +356,7 @@ RTPReceiverVideo::ReceiveRecoveredPacketCallback(WebRtcRTPHeader* rtpHeader,
                                                  const WebRtc_UWord8* payloadData,
                                                  const WebRtc_UWord16 payloadDataLength)
 {
-     _criticalSectionReceiverVideo.Enter();
+     _criticalSectionReceiverVideo->Enter();
 
     _currentFecFrameDecoded = true;
 
@@ -450,7 +450,7 @@ RTPReceiverVideo::ParseVideoCodecSpecificSwitch(WebRtcRTPHeader* rtpHeader,
         retVal = ReceiveMPEG4Codec(rtpHeader,payloadData, payloadDataLength);
         break;
     default:
-        _criticalSectionReceiverVideo.Leave();
+        _criticalSectionReceiverVideo->Leave();
         assert(((void)"ParseCodecSpecific videoType can not be unknown here!", false));
         return -1;
     }
@@ -470,7 +470,7 @@ RTPReceiverVideo::ReceiveH263Codec(WebRtcRTPHeader* rtpHeader,
     const bool success = rtpPayloadParser.Parse(parsedPacket);
 
     // from here down we only work on local data
-    _criticalSectionReceiverVideo.Leave();
+    _criticalSectionReceiverVideo->Leave();
 
     if (!success)
     {
@@ -498,17 +498,17 @@ RTPReceiverVideo::ReceiveH2631998Codec(WebRtcRTPHeader* rtpHeader,
     const bool success = rtpPayloadParser.Parse(parsedPacket);
     if (!success)
     {
-        _criticalSectionReceiverVideo.Leave();
+        _criticalSectionReceiverVideo->Leave();
         return -1;
     }
     if (IP_PACKET_SIZE < parsedPacket.info.H263.dataLength +
         (parsedPacket.info.H263.insert2byteStartCode ? 2 : 0))
     {
-        _criticalSectionReceiverVideo.Leave();
+        _criticalSectionReceiverVideo->Leave();
         return -1;
     }
     // from here down we only work on local data
-    _criticalSectionReceiverVideo.Leave();
+    _criticalSectionReceiverVideo->Leave();
 
     return ReceiveH263CodecCommon(parsedPacket, rtpHeader);
 }
@@ -590,11 +590,11 @@ RTPReceiverVideo::ReceiveMPEG4Codec(WebRtcRTPHeader* rtpHeader,
     const bool success = rtpPayloadParser.Parse(parsedPacket);
     if (!success)
     {
-        _criticalSectionReceiverVideo.Leave();
+        _criticalSectionReceiverVideo->Leave();
         return -1;
     }
     // from here down we only work on local data
-    _criticalSectionReceiverVideo.Leave();
+    _criticalSectionReceiverVideo->Leave();
 
     rtpHeader->frameType = (parsedPacket.frameType == ModuleRTPUtility::kIFrame) ? kVideoFrameKey : kVideoFrameDelta;
     rtpHeader->type.Video.isFirstPacket = parsedPacket.info.MPEG4.isFirstPacket;
@@ -622,7 +622,7 @@ RTPReceiverVideo::ReceiveVp8Codec(WebRtcRTPHeader* rtpHeader,
     const bool success = rtpPayloadParser.Parse(parsedPacket);
 
     // from here down we only work on local data
-    _criticalSectionReceiverVideo.Leave();
+    _criticalSectionReceiverVideo->Leave();
 
     if (!success)
     {
@@ -681,7 +681,7 @@ RTPReceiverVideo::ReceiveGenericCodec(WebRtcRTPHeader* rtpHeader,
     {
         rtpHeader->type.Video.isFirstPacket = true;
     }
-    _criticalSectionReceiverVideo.Leave();
+    _criticalSectionReceiverVideo->Leave();
 
     if(CallbackOfReceivedPayloadData(payloadData, payloadDataLength, rtpHeader) != 0)
     {

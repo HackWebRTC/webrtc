@@ -178,10 +178,10 @@ private:
 
     ModuleRtpRtcpImpl&      _rtpRtcp;
 
-    CriticalSectionWrapper& _criticalSectionTransport;
+    CriticalSectionWrapper* _criticalSectionTransport;
     Transport*              _cbTransport;
 
-    CriticalSectionWrapper& _criticalSectionRTCPSender;
+    CriticalSectionWrapper* _criticalSectionRTCPSender;
     bool                    _usingNack;
     bool                    _sending;
     bool                    _sendTMMBN;

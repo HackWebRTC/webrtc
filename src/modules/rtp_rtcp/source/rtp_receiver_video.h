@@ -132,10 +132,10 @@ private:
     WebRtc_Word32             _id;
     ModuleRtpRtcpImpl&        _rtpRtcp;
 
-    CriticalSectionWrapper&   _criticalSectionFeedback;
+    CriticalSectionWrapper*   _criticalSectionFeedback;
     RtpVideoFeedback*         _cbVideoFeedback;
 
-    CriticalSectionWrapper&   _criticalSectionReceiverVideo;
+    CriticalSectionWrapper*   _criticalSectionReceiverVideo;
 
     // bandwidth
     bool                      _completeFrame;

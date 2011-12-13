@@ -27,8 +27,8 @@ RTPSender::RTPSender(const WebRtc_Word32 id,
     _audioConfigured(audio),
     _audio(NULL),
     _video(NULL),
-    _sendCritsect(*CriticalSectionWrapper::CreateCriticalSection()),
-    _transportCritsect(*CriticalSectionWrapper::CreateCriticalSection()),
+    _sendCritsect(CriticalSectionWrapper::CreateCriticalSection()),
+    _transportCritsect(CriticalSectionWrapper::CreateCriticalSection()),
 
     _transport(NULL),
 
@@ -48,7 +48,7 @@ RTPSender::RTPSender(const WebRtc_Word32 id,
 
     _storeSentPackets(false),
     _storeSentPacketsNumber(0),
-    _prevSentPacketsCritsect(*CriticalSectionWrapper::CreateCriticalSection()),
+    _prevSentPacketsCritsect(CriticalSectionWrapper::CreateCriticalSection()),
     _prevSentPacketsIndex(0),
     _ptrPrevSentPackets(NULL),
     _prevSentPacketsSeqNum(NULL),
@@ -107,9 +107,9 @@ RTPSender::~RTPSender()
     _ssrcDB.ReturnSSRC(_ssrc);
 
     SSRCDatabase::ReturnSSRCDatabase();
-    delete &_prevSentPacketsCritsect;
-    delete &_sendCritsect;
-    delete &_transportCritsect;
+    delete _prevSentPacketsCritsect;
+    delete _sendCritsect;
+    delete _transportCritsect;
 
     // empty map
     bool loop = true;

@@ -76,7 +76,7 @@ protected:
     WebRtc_Word64 _stopTimeMs;
 
     // Statistics, protected by separate CritSect
-    CriticalSectionWrapper& _statCritSect;
+    CriticalSectionWrapper* _statCritSect;
     StatVec _rateVecKbps;
     StatVec _rttVecMs;
     StatVec _lossVec;

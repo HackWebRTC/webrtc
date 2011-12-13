@@ -386,7 +386,7 @@ _firstPlot(true),
 _legendEnabled(true),
 _donePlottingEvent(EventWrapper::Create())
 {
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
 
     _xlim[0] = 0;
     _xlim[1] = 0;
@@ -419,7 +419,7 @@ MatlabPlot::~MatlabPlot()
 
 int MatlabPlot::AddLine(int maxLen /*= -1*/, const char *plotAttrib /*= NULL*/, const char *name /*= NULL*/)
 {
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
     if (!_enabled)
     {
         return -1;
@@ -435,7 +435,7 @@ int MatlabPlot::AddLine(int maxLen /*= -1*/, const char *plotAttrib /*= NULL*/, 
 int MatlabPlot::AddTimeLine(int maxLen /*= -1*/, const char *plotAttrib /*= NULL*/, const char *name /*= NULL*/,
                             WebRtc_Word64 refTimeMs /*= -1*/)
 {
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
 
     if (!_enabled)
     {
@@ -451,7 +451,7 @@ int MatlabPlot::AddTimeLine(int maxLen /*= -1*/, const char *plotAttrib /*= NULL
 
 int MatlabPlot::GetLineIx(const char *name)
 {
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
 
     if (!_enabled)
     {
@@ -485,7 +485,7 @@ int MatlabPlot::GetLineIx(const char *name)
 
 void MatlabPlot::Append(int lineIndex, double x, double y)
 {
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
 
     if (!_enabled)
     {
@@ -505,7 +505,7 @@ void MatlabPlot::Append(int lineIndex, double x, double y)
 
 void MatlabPlot::Append(int lineIndex, double y)
 {
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
 
     if (!_enabled)
     {
@@ -525,7 +525,7 @@ void MatlabPlot::Append(int lineIndex, double y)
 
 int MatlabPlot::Append(const char *name, double x, double y)
 {
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
 
     if (!_enabled)
     {
@@ -548,7 +548,7 @@ int MatlabPlot::Append(const char *name, double x, double y)
 
 int MatlabPlot::Append(const char *name, double y)
 {
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
 
     if (!_enabled)
     {
@@ -571,7 +571,7 @@ int MatlabPlot::Append(const char *name, double y)
 
 int MatlabPlot::Length(char *name)
 {
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
 
     if (!_enabled)
     {
@@ -592,7 +592,7 @@ int MatlabPlot::Length(char *name)
 
 void MatlabPlot::SetPlotAttribute(char *name, char *plotAttrib)
 {
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
 
     if (!_enabled)
     {
@@ -789,7 +789,7 @@ bool MatlabPlot::DataAvailable()
 
 void MatlabPlot::Plot()
 {
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
 
     _timeToPlot = true;
 
@@ -801,7 +801,7 @@ void MatlabPlot::Plot()
 
 void MatlabPlot::Reset()
 {
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
 
     _enabled = true;
 
@@ -814,7 +814,7 @@ void MatlabPlot::Reset()
 
 void MatlabPlot::SetFigHandle(int handle)
 {
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
 
     if (handle > 0)
         _figHandle = handle;
@@ -823,21 +823,21 @@ void MatlabPlot::SetFigHandle(int handle)
 bool
 MatlabPlot::TimeToPlot()
 {
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
     return _enabled && _timeToPlot;
 }
 
 void
 MatlabPlot::Plotting()
 {
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
     _plotting = true;
 }
 
 void
 MatlabPlot::DonePlotting()
 {
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
     _timeToPlot = false;
     _plotting = false;
     _donePlottingEvent->Set();
@@ -858,7 +858,7 @@ MatlabPlot::DisablePlot()
 
 int MatlabPlot::MakeTrend(const char *sourceName, const char *trendName, double slope, double offset, const char *plotAttrib)
 {
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
 
     int sourceIx;
     int trendIx;
@@ -941,7 +941,7 @@ MatlabEngine::~MatlabEngine()
 
 MatlabPlot * MatlabEngine::NewPlot(MatlabPlot *newPlot)
 {
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
 
     //MatlabPlot *newPlot = new MatlabPlot();
 
@@ -958,7 +958,7 @@ MatlabPlot * MatlabEngine::NewPlot(MatlabPlot *newPlot)
 
 void MatlabEngine::DeletePlot(MatlabPlot *plot)
 {
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
 
     if (plot == NULL)
     {

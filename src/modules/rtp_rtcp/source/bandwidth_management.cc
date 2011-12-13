@@ -19,7 +19,7 @@ namespace webrtc {
 
 BandwidthManagement::BandwidthManagement(const WebRtc_Word32 id) :
     _id(id),
-    _critsect(*CriticalSectionWrapper::CreateCriticalSection()),
+    _critsect(CriticalSectionWrapper::CreateCriticalSection()),
     _lastPacketLossExtendedHighSeqNum(0),
     _lastReportAllLost(false),
     _lastLoss(0),
@@ -39,7 +39,7 @@ BandwidthManagement::BandwidthManagement(const WebRtc_Word32 id) :
 
 BandwidthManagement::~BandwidthManagement()
 {
-    delete &_critsect;
+    delete _critsect;
 }
 
 WebRtc_Word32
