@@ -25,7 +25,7 @@ enum VCMJitterBufferEnum
 {
     kMaxConsecutiveOldFrames        = 60,
     kMaxConsecutiveOldPackets       = 300,
-    kMaxPacketsInJitterBuffer       = 800,
+    kMaxPacketsInSession            = 800,
     kBufferIncStepSizeBytes         = 30000,       // >20 packets
     kMaxJBFrameSizeBytes            = 4000000      // sanity don't go above 4Mbyte
 };

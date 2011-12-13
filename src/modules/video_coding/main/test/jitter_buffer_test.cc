@@ -1868,7 +1868,7 @@ int JitterBufferTest(CmdArgs& args)
         TEST(incomingFrameType == kVideoFrameDelta);
 
         loop++;
-    } while (loop < kMaxPacketsInJitterBuffer);
+    } while (loop < kMaxPacketsInSession);
 
     // Max number of packets inserted
 

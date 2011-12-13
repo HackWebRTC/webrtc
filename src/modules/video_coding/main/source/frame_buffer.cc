@@ -59,13 +59,13 @@ VCMFrameBuffer::SetPreviousFrameLoss()
 WebRtc_Word32
 VCMFrameBuffer::GetLowSeqNum() const
 {
-    return _sessionInfo.GetLowSeqNum();
+    return _sessionInfo.LowSequenceNumber();
 }
 
 WebRtc_Word32
 VCMFrameBuffer::GetHighSeqNum() const
 {
-    return _sessionInfo.GetHighSeqNum();
+    return _sessionInfo.HighSequenceNumber();
 }
 
 int VCMFrameBuffer::PictureId() const {
@@ -87,7 +87,7 @@ bool VCMFrameBuffer::NonReference() const {
 bool
 VCMFrameBuffer::IsSessionComplete() const
 {
-    return _sessionInfo.IsSessionComplete();
+    return _sessionInfo.complete();
 }
 
 // Insert packet
@@ -123,11 +123,6 @@ VCMFrameBuffer::InsertPacket(const VCMPacket& packet, WebRtc_Word64 timeInMs,
     if (NULL == packet.dataPtr && packet.sizeBytes > 0)
     {
         return kSizeError;
-    }
-    if ((packet.frameType != kFrameEmpty) &&
-        (!_sessionInfo.HaveStartSeqNumber()))
-    {
-        _sessionInfo.SetStartSeqNumber(packet.seqNum);
     }
     if (packet.dataPtr != NULL)
     {
@@ -166,14 +161,14 @@ VCMFrameBuffer::InsertPacket(const VCMPacket& packet, WebRtc_Word64 timeInMs,
         {
             return kSizeError;
         }
-        _sessionInfo.UpdateDataPointers(_buffer, prevBuffer);
+        _sessionInfo.UpdateDataPointers(_buffer - prevBuffer);
     }
 
     CopyCodecSpecific(&packet.codecSpecificHeader);
 
-    WebRtc_Word64 retVal = _sessionInfo.InsertPacket(packet, _buffer,
-                                                     enableDecodableState,
-                                                     rttMS);
+    int retVal = _sessionInfo.InsertPacket(packet, _buffer,
+                                           enableDecodableState,
+                                           rttMS);
     if (retVal == -1)
     {
         return kSizeError;
@@ -187,9 +182,9 @@ VCMFrameBuffer::InsertPacket(const VCMPacket& packet, WebRtc_Word64 timeInMs,
 
     _latestPacketTimeMs = timeInMs;
 
-    if (_sessionInfo.IsSessionComplete()) {
+    if (_sessionInfo.complete()) {
       return kCompleteSession;
-    } else if (_sessionInfo.IsSessionDecodable()) {
+    } else if (_sessionInfo.decodable()) {
       SetState(kStateDecodable);
       return kDecodableSession;
     } else {
@@ -272,11 +267,11 @@ VCMFrameBuffer::MakeSessionDecodable()
     WebRtc_UWord32 retVal;
 #ifdef INDEPENDENT_PARTITIONS
     if (_codec != kVideoCodecVP8) {
-        retVal = _sessionInfo.MakeDecodable(_buffer);
+        retVal = _sessionInfo.MakeDecodable();
         _length -= retVal;
     }
 #else
-    retVal = _sessionInfo.MakeDecodable(_buffer);
+    retVal = _sessionInfo.MakeDecodable();
     _length -= retVal;
 #endif
 }
@@ -350,7 +345,7 @@ VCMFrameBuffer::RestructureFrameInformation()
 {
     PrepareForDecode();
     _frameType = ConvertFrameType(_sessionInfo.FrameType());
-    _completeFrame = _sessionInfo.IsSessionComplete();
+    _completeFrame = _sessionInfo.complete();
     _missingFrame = _sessionInfo.PreviousFrameLoss();
 }
 
@@ -371,14 +366,14 @@ VCMFrameBuffer::ExtractFromStorage(const EncodedVideoData& frameFromStorage)
     {
         return VCM_MEMORY;
     }
-    _sessionInfo.UpdateDataPointers(_buffer, prevBuffer);
+    _sessionInfo.UpdateDataPointers(_buffer - prevBuffer);
     memcpy(_buffer, frameFromStorage.payloadData, frameFromStorage.payloadSize);
     _length = frameFromStorage.payloadSize;
     return VCM_OK;
 }
 
 int VCMFrameBuffer::NotDecodablePackets() const {
-  return _sessionInfo.NotDecodablePackets();
+  return _sessionInfo.packets_not_decodable();
 }
 
 // Set counted status (as counted by JB or not)
@@ -410,7 +405,7 @@ VCMFrameBuffer::GetState(WebRtc_UWord32& timeStamp) const
 bool
 VCMFrameBuffer::IsRetransmitted() const
 {
-    return _sessionInfo.IsRetransmitted();
+    return _sessionInfo.session_nack();
 }
 
 void
@@ -425,10 +420,10 @@ VCMFrameBuffer::PrepareForDecode()
     }
     else
     {
-        _length = _sessionInfo.PrepareForDecode(_buffer, _codec);
+        _length = _sessionInfo.PrepareForDecode(_buffer);
     }
 #else
-    _length = _sessionInfo.PrepareForDecode(_buffer, _codec);
+    _length = _sessionInfo.PrepareForDecode(_buffer);
 #endif
 }
 

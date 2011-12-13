@@ -8,373 +8,245 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "session_info.h"
+#include "modules/video_coding/main/source/session_info.h"
 
-#include "packet.h"
+#include "modules/video_coding/main/source/packet.h"
 
 namespace webrtc {
 
-VCMSessionInfo::VCMSessionInfo():
-    _markerBit(false),
-    _sessionNACK(false),
-    _completeSession(false),
-    _decodableSession(false),
-    _frameType(kVideoFrameDelta),
-    _previousFrameLoss(false),
-    _lowSeqNum(-1),
-    _highSeqNum(-1),
-    _highestPacketIndex(0),
-    _emptySeqNumLow(-1),
-    _emptySeqNumHigh(-1),
-    _markerSeqNum(-1),
-    _packetsNotDecodable(0),
-    _pictureId(kNoPictureId)
-{
+VCMSessionInfo::VCMSessionInfo()
+    : session_nack_(false),
+      complete_(false),
+      decodable_(false),
+      frame_type_(kVideoFrameDelta),
+      previous_frame_loss_(false),
+      packets_(),
+      empty_seq_num_low_(-1),
+      empty_seq_num_high_(-1),
+      packets_not_decodable_(0) {
 }
 
-VCMSessionInfo::~VCMSessionInfo()
-{
+void VCMSessionInfo::UpdateDataPointers(ptrdiff_t address_delta) {
+  for (PacketIterator it = packets_.begin(); it != packets_.end(); ++it)
+    if ((*it).dataPtr != NULL)
+      (*it).dataPtr = (*it).dataPtr + address_delta;
 }
 
-void
-VCMSessionInfo::UpdateDataPointers(const WebRtc_UWord8* frame_buffer,
-                                   const WebRtc_UWord8* prev_buffer_address) {
-  for (int i = 0; i <= _highestPacketIndex; ++i)
-    if (_packets[i].dataPtr != NULL)
-      _packets[i].dataPtr = frame_buffer + (_packets[i].dataPtr -
-                                            prev_buffer_address);
+int VCMSessionInfo::LowSequenceNumber() const {
+  if (packets_.empty())
+    return empty_seq_num_low_;
+  return packets_.front().seqNum;
 }
 
-WebRtc_Word32
-VCMSessionInfo::GetLowSeqNum() const
-{
-    return _lowSeqNum;
-}
-
-WebRtc_Word32
-VCMSessionInfo::GetHighSeqNum() const
-{
-    return LatestSequenceNumber(_emptySeqNumHigh, _highSeqNum, NULL);
+int VCMSessionInfo::HighSequenceNumber() const {
+  if (packets_.empty())
+    return empty_seq_num_high_;
+  return LatestSequenceNumber(packets_.back().seqNum, empty_seq_num_high_,
+                              NULL);
 }
 
 int VCMSessionInfo::PictureId() const {
-  return _pictureId;
+  if (packets_.empty() ||
+      packets_.front().codecSpecificHeader.codec != kRTPVideoVP8)
+    return kNoPictureId;
+  return packets_.front().codecSpecificHeader.codecHeader.VP8.pictureId;
 }
 
 int VCMSessionInfo::TemporalId() const {
-  if (_lowSeqNum == -1 || _packets[0].codecSpecificHeader.codec != kRTPVideoVP8)
+  if (packets_.empty() ||
+      packets_.front().codecSpecificHeader.codec != kRTPVideoVP8)
     return kNoTemporalIdx;
-  return _packets[0].codecSpecificHeader.codecHeader.VP8.temporalIdx;
+  return packets_.front().codecSpecificHeader.codecHeader.VP8.temporalIdx;
 }
 
 int VCMSessionInfo::Tl0PicId() const {
-  if (_lowSeqNum == -1 || _packets[0].codecSpecificHeader.codec != kRTPVideoVP8)
+  if (packets_.empty() ||
+      packets_.front().codecSpecificHeader.codec != kRTPVideoVP8)
     return kNoTl0PicIdx;
-  return _packets[0].codecSpecificHeader.codecHeader.VP8.tl0PicIdx;
+  return packets_.front().codecSpecificHeader.codecHeader.VP8.tl0PicIdx;
 }
 
 bool VCMSessionInfo::NonReference() const {
-  if (_lowSeqNum == -1 || _packets[0].codecSpecificHeader.codec != kRTPVideoVP8)
+  if (packets_.empty() ||
+      packets_.front().codecSpecificHeader.codec != kRTPVideoVP8)
     return false;
-  return _packets[0].codecSpecificHeader.codecHeader.VP8.nonReference;
+  return packets_.front().codecSpecificHeader.codecHeader.VP8.nonReference;
 }
 
-void
-VCMSessionInfo::Reset() {
-  for (int i = 0; i <= _highestPacketIndex; ++i)
-    _packets[i].Reset();
-  _lowSeqNum = -1;
-  _highSeqNum = -1;
-  _emptySeqNumLow = -1;
-  _emptySeqNumHigh = -1;
-  _markerBit = false;
-  _completeSession = false;
-  _decodableSession = false;
-  _frameType = kVideoFrameDelta;
-  _previousFrameLoss = false;
-  _sessionNACK = false;
-  _highestPacketIndex = 0;
-  _markerSeqNum = -1;
-  _packetsNotDecodable = 0;
-  _pictureId = kNoPictureId;
+void VCMSessionInfo::Reset() {
+  session_nack_ = false;
+  complete_ = false;
+  decodable_ = false;
+  frame_type_ = kVideoFrameDelta;
+  previous_frame_loss_ = false;
+  packets_.clear();
+  empty_seq_num_low_ = -1;
+  empty_seq_num_high_ = -1;
+  packets_not_decodable_ = 0;
 }
 
-WebRtc_UWord32
-VCMSessionInfo::GetSessionLength()
-{
-    WebRtc_UWord32 length = 0;
-    for (WebRtc_Word32 i = 0; i <= _highestPacketIndex; ++i)
-    {
-        length += _packets[i].sizeBytes;
-    }
-    return length;
+int VCMSessionInfo::SessionLength() const {
+  int length = 0;
+  for (PacketIteratorConst it = packets_.begin(); it != packets_.end(); ++it)
+    length += (*it).sizeBytes;
+  return length;
 }
 
-void
-VCMSessionInfo::SetStartSeqNumber(WebRtc_UWord16 seqNumber)
-{
-    _lowSeqNum = seqNumber;
-    _highSeqNum = seqNumber;
+int VCMSessionInfo::InsertBuffer(uint8_t* frame_buffer,
+                                 PacketIterator packet_it) {
+  VCMPacket& packet = *packet_it;
+  PacketIterator it;
+
+  int packet_size = packet.sizeBytes;
+  if (!packet.bits)
+    packet_size += (packet.insertStartCode ? kH264StartCodeLengthBytes : 0);
+
+  // Calculate the offset into the frame buffer for this packet.
+  int offset = 0;
+  for (it = packets_.begin(); it != packet_it; ++it)
+    offset += (*it).sizeBytes;
+
+  // Set the data pointer to pointing to the start of this packet in the
+  // frame buffer.
+  const uint8_t* data = packet.dataPtr;
+  packet.dataPtr = frame_buffer + offset;
+  packet.sizeBytes = packet_size;
+
+  ShiftSubsequentPackets(packet_it, packet_size);
+
+  const unsigned char startCode[] = {0, 0, 0, 1};
+  if (packet.insertStartCode) {
+    memcpy(const_cast<uint8_t*>(packet.dataPtr), startCode,
+           kH264StartCodeLengthBytes);
+  }
+  memcpy(const_cast<uint8_t*>(packet.dataPtr
+      + (packet.insertStartCode ? kH264StartCodeLengthBytes : 0)),
+      data,
+      packet.sizeBytes);
+
+  return packet_size;
 }
 
-bool
-VCMSessionInfo::HaveStartSeqNumber()
-{
-    if (_lowSeqNum == -1 || _highSeqNum == -1)
-    {
-        return false;
-    }
-    return true;
-}
-
-WebRtc_UWord32
-VCMSessionInfo::InsertBuffer(WebRtc_UWord8* ptrStartOfLayer,
-                             WebRtc_Word32 packetIndex,
-                             const VCMPacket& packet)
-{
-    WebRtc_UWord32 moveLength = 0;
-    WebRtc_UWord32 returnLength = 0;
-    int i = 0;
-
-    // need to calc offset before updating _packetSizeBytes
-    WebRtc_UWord32 offset = 0;
-    WebRtc_UWord32 packetSize = 0;
-
-    // Shallow copy without overwriting the dataPtr and the sizeBytes
-    const WebRtc_UWord8* dataPtr = _packets[packetIndex].dataPtr;
-    const WebRtc_UWord32 sizeBytes = _packets[packetIndex].sizeBytes;
-    _packets[packetIndex] = packet;
-    _packets[packetIndex].dataPtr = dataPtr;
-    _packets[packetIndex].sizeBytes = sizeBytes;
-
-    // Store this packet length. Add length since we could have data present
-    // already (e.g. multicall case).
-    packetSize = packet.sizeBytes;
-    if (!packet.bits)
-    {
-        packetSize += (packet.insertStartCode ? kH264StartCodeLengthBytes : 0);
-    }
-
-    // count only the one in our layer
-    for (i = 0; i < packetIndex; ++i)
-    {
-        offset += _packets[i].sizeBytes;
-    }
-
-    // Set the data pointer to pointing to the first part of this packet.
-    if (_packets[packetIndex].dataPtr == NULL)
-        _packets[packetIndex].dataPtr = ptrStartOfLayer + offset;
-
-    _packets[packetIndex].sizeBytes += packetSize;
-
-    // Calculate the total move length and move the data pointers in advance.
-    for (i = packetIndex + 1; i <= _highestPacketIndex; ++i)
-    {
-        moveLength += _packets[i].sizeBytes;
-        if (_packets[i].dataPtr != NULL)
-            _packets[i].dataPtr += packetSize;
-    }
-    if (moveLength > 0)
-    {
-        memmove((void*)(_packets[packetIndex].dataPtr + packetSize),
-                _packets[packetIndex].dataPtr, moveLength);
-    }
-
-    if (packet.dataPtr != NULL)
-    {
-        const unsigned char startCode[] = {0, 0, 0, 1};
-        if (packet.insertStartCode)
-        {
-            memcpy((void*)(_packets[packetIndex].dataPtr), startCode,
-                   kH264StartCodeLengthBytes);
-        }
-        memcpy((void*)(_packets[packetIndex].dataPtr
-            + (packet.insertStartCode ? kH264StartCodeLengthBytes : 0)),
-            packet.dataPtr,
-            packet.sizeBytes);
-    }
-    returnLength = packetSize;
-
-    if (packet.codecSpecificHeader.codec == kRTPVideoVP8)
-    {
-        _pictureId = packet.codecSpecificHeader.codecHeader.VP8.pictureId;
-    }
-
-    if (packet.markerBit)
-    {
-        _markerBit = true;
-        _markerSeqNum = packet.seqNum;
-    }
-
-    return returnLength;
+void VCMSessionInfo::ShiftSubsequentPackets(PacketIterator it,
+                                            int steps_to_shift) {
+  ++it;
+  if (it == packets_.end())
+    return;
+  uint8_t* first_packet_ptr = const_cast<WebRtc_UWord8*>((*it).dataPtr);
+  int shift_length = 0;
+  // Calculate the total move length and move the data pointers in advance.
+  for (; it != packets_.end(); ++it) {
+    shift_length += (*it).sizeBytes;
+    if ((*it).dataPtr != NULL)
+      (*it).dataPtr += steps_to_shift;
+  }
+  memmove(first_packet_ptr + steps_to_shift, first_packet_ptr, shift_length);
 }
 
 void VCMSessionInfo::UpdateCompleteSession() {
-  if (_packets[0].isFirstPacket && _markerBit) {
+  if (packets_.front().isFirstPacket && packets_.back().markerBit) {
     // Do we have all the packets in this session?
-    bool completeSession = true;
-
-    for (int i = 0; i <= _highestPacketIndex; ++i) {
-      if (_packets[i].completeNALU == kNaluUnset) {
-        completeSession = false;
+    bool complete_session = true;
+    PacketIterator it = packets_.begin();
+    PacketIterator prev_it = it;
+    ++it;
+    for (; it != packets_.end(); ++it) {
+      if (!InSequence(it, prev_it)) {
+        complete_session = false;
         break;
       }
+      prev_it = it;
     }
-    _completeSession = completeSession;
+    complete_ = complete_session;
   }
 }
 
-void VCMSessionInfo::UpdateDecodableSession(WebRtc_UWord32 rttMs) {
+void VCMSessionInfo::UpdateDecodableSession(int rttMs) {
   // Irrelevant if session is already complete or decodable
-  if (_completeSession || _decodableSession)
+  if (complete_ || decodable_)
     return;
   // First iteration - do nothing
 }
 
-bool VCMSessionInfo::IsSessionComplete() const {
-  return _completeSession;
+bool VCMSessionInfo::complete() const {
+  return complete_;
 }
 
-bool VCMSessionInfo::IsSessionDecodable() const {
-  return _decodableSession;
+bool VCMSessionInfo::decodable() const {
+  return decodable_;
 }
 
-// Find the start and end index of packetIndex packet.
-// startIndex -1 if start not found endIndex = -1 if end index not found
-void
-VCMSessionInfo::FindNaluBorder(WebRtc_Word32 packetIndex,
-                               WebRtc_Word32& startIndex,
-                               WebRtc_Word32& endIndex)
-{
-        if (_packets[packetIndex].completeNALU == kNaluStart ||
-            _packets[packetIndex].completeNALU == kNaluComplete)
-        {
-            startIndex = packetIndex;
-        }
-        else // Need to find the start
-        {
-            for (startIndex = packetIndex - 1; startIndex >= 0; --startIndex)
-            {
-
-                if ((_packets[startIndex].completeNALU == kNaluComplete &&
-                    _packets[startIndex].sizeBytes > 0) ||
-                     // Found previous NALU.
-                     (_packets[startIndex].completeNALU == kNaluEnd &&
-                      startIndex > 0))
-                {
-                    startIndex++;
-                    break;
-                }
-                // This is where the NALU start.
-                if (_packets[startIndex].completeNALU == kNaluStart)
-                {
-                    break;
-                }
-            }
-        }
-
-        if (_packets[packetIndex].completeNALU == kNaluEnd ||
-            _packets[packetIndex].completeNALU == kNaluComplete)
-        {
-            endIndex = packetIndex;
-        }
-        else
-        {
-            // Find the next NALU
-            for (endIndex = packetIndex + 1; endIndex <= _highestPacketIndex;
-                 ++endIndex)
-            {
-                if ((_packets[endIndex].completeNALU == kNaluComplete &&
-                    _packets[endIndex].completeNALU > 0) ||
-                    // Found next NALU.
-                    _packets[endIndex].completeNALU == kNaluStart)
-                {
-                    endIndex--;
-                    break;
-                }
-                if (_packets[endIndex].completeNALU == kNaluEnd)
-                {
-                    // This is where the NALU end.
-                    break;
-                }
-            }
-            if (endIndex > _highestPacketIndex)
-            {
-                endIndex = -1;
-            }
-        }
+// Find the end of the NAL unit which the packet pointed to by |packet_it|
+// belongs to. Returns an iterator to the last packet of the frame if the end
+// of the NAL unit wasn't found.
+VCMSessionInfo::PacketIterator VCMSessionInfo::FindNaluEnd(
+    PacketIterator packet_it) const {
+  if ((*packet_it).completeNALU == kNaluEnd ||
+      (*packet_it).completeNALU == kNaluComplete) {
+    return packet_it;
+  }
+  // Find the end of the NAL unit.
+  for (; packet_it != packets_.end(); ++packet_it) {
+    if (((*packet_it).completeNALU == kNaluComplete &&
+        (*packet_it).sizeBytes > 0) ||
+        // Found next NALU.
+        (*packet_it).completeNALU == kNaluStart)
+      return --packet_it;
+    if ((*packet_it).completeNALU == kNaluEnd)
+      return packet_it;
+  }
+  // The end wasn't found.
+  return --packet_it;
 }
 
-// Deletes all packets between startIndex and endIndex
-WebRtc_UWord32
-VCMSessionInfo::DeletePackets(WebRtc_UWord8* ptrStartOfLayer,
-                              WebRtc_Word32 startIndex,
-                              WebRtc_Word32 endIndex)
-{
+int VCMSessionInfo::DeletePacketData(PacketIterator start,
+                                     PacketIterator end) {
+  int bytes_to_delete = 0;  // The number of bytes to delete.
+  PacketIterator packet_after_end = end;
+  ++packet_after_end;
 
-    //Get the number of bytes to delete.
-    //Clear the size of these packets.
-    WebRtc_UWord32 bytesToDelete = 0; /// The number of bytes to delete.
-    for (int j = startIndex;j <= endIndex; ++j)
-    {
-        bytesToDelete += _packets[j].sizeBytes;
-        _packets[j].Reset();
-        ++_packetsNotDecodable;
-    }
-    if (bytesToDelete > 0)
-    {
-        // Get the offset we want to move to.
-        int destOffset = 0;
-        for (int j = 0;j < startIndex;j++)
-        {
-           destOffset += _packets[j].sizeBytes;
-        }
-
-        // Get the number of bytes to move and move the data pointers in advance
-        WebRtc_UWord32 numberOfBytesToMove = 0;
-        for (int j = endIndex + 1; j <= _highestPacketIndex; ++j)
-        {
-            if (_packets[j].dataPtr != NULL)
-                _packets[j].dataPtr -= bytesToDelete;
-            numberOfBytesToMove += _packets[j].sizeBytes;
-        }
-        memmove((void*)(ptrStartOfLayer + destOffset),(void*)(ptrStartOfLayer +
-            destOffset + bytesToDelete), numberOfBytesToMove);
-
-    }
-
-    return bytesToDelete;
+  // Get the number of bytes to delete.
+  // Clear the size of these packets.
+  for (PacketIterator it = start; it != packet_after_end; ++it) {
+    bytes_to_delete += (*it).sizeBytes;
+    (*it).sizeBytes = 0;
+    (*it).dataPtr = NULL;
+    ++packets_not_decodable_;
+  }
+  if (bytes_to_delete > 0)
+    ShiftSubsequentPackets(end, -bytes_to_delete);
+  return bytes_to_delete;
 }
 
-int
-VCMSessionInfo::BuildVP8FragmentationHeader(
-                                        WebRtc_UWord8* frame_buffer,
-                                        int frame_buffer_length,
-                                        RTPFragmentationHeader* fragmentation) {
+int VCMSessionInfo::BuildVP8FragmentationHeader(
+    uint8_t* frame_buffer,
+    int frame_buffer_length,
+    RTPFragmentationHeader* fragmentation) {
   int new_length = 0;
   // Allocate space for max number of partitions
   fragmentation->VerifyAndAllocateFragmentationHeader(kMaxVP8Partitions);
   fragmentation->fragmentationVectorSize = 0;
   memset(fragmentation->fragmentationLength, 0,
          kMaxVP8Partitions * sizeof(WebRtc_UWord32));
-  if (_lowSeqNum < 0)
+  if (packets_.empty())
       return new_length;
-  int i = FindNextPartitionBeginning(0);
-  while (i <= _highestPacketIndex) {
+  PacketIterator it = FindNextPartitionBeginning(packets_.begin(),
+                                                 &packets_not_decodable_);
+  while (it != packets_.end()) {
     const int partition_id =
-        _packets[i].codecSpecificHeader.codecHeader.VP8.partitionId;
-    const int partition_end = FindPartitionEnd(i);
+        (*it).codecSpecificHeader.codecHeader.VP8.partitionId;
+    PacketIterator partition_end = FindPartitionEnd(it);
     fragmentation->fragmentationOffset[partition_id] =
-        _packets[i].dataPtr - frame_buffer;
+        (*it).dataPtr - frame_buffer;
     assert(fragmentation->fragmentationOffset[partition_id] <
            static_cast<WebRtc_UWord32>(frame_buffer_length));
     fragmentation->fragmentationLength[partition_id] =
-        _packets[partition_end].dataPtr + _packets[partition_end].sizeBytes -
-        _packets[i].dataPtr;
+        (*partition_end).dataPtr + (*partition_end).sizeBytes - (*it).dataPtr;
     assert(fragmentation->fragmentationLength[partition_id] <=
            static_cast<WebRtc_UWord32>(frame_buffer_length));
     new_length += fragmentation->fragmentationLength[partition_id];
-    i = FindNextPartitionBeginning(partition_end + 1);
+    ++partition_end;
+    it = FindNextPartitionBeginning(partition_end, &packets_not_decodable_);
     if (partition_id + 1 > fragmentation->fragmentationVectorSize)
       fragmentation->fragmentationVectorSize = partition_id + 1;
   }
@@ -382,7 +254,7 @@ VCMSessionInfo::BuildVP8FragmentationHeader(
   // and have zero length.
   if (fragmentation->fragmentationLength[0] == 0)
       fragmentation->fragmentationOffset[0] = 0;
-  for (i = 1; i < fragmentation->fragmentationVectorSize; ++i) {
+  for (int i = 1; i < fragmentation->fragmentationVectorSize; ++i) {
     if (fragmentation->fragmentationLength[i] == 0)
       fragmentation->fragmentationOffset[i] =
           fragmentation->fragmentationOffset[i - 1] +
@@ -395,535 +267,376 @@ VCMSessionInfo::BuildVP8FragmentationHeader(
   return new_length;
 }
 
-int VCMSessionInfo::FindNextPartitionBeginning(int packet_index) {
-  while (packet_index <= _highestPacketIndex) {
-    if (_packets[packet_index].completeNALU == kNaluUnset) {
-      // Missing packet
-      ++packet_index;
-      continue;
-    }
-    const bool beginning = _packets[packet_index].codecSpecificHeader.
-        codecHeader.VP8.beginningOfPartition;
-    if (beginning) {
-      return packet_index;
-    } else {
+VCMSessionInfo::PacketIterator VCMSessionInfo::FindNextPartitionBeginning(
+    PacketIterator it, int* packets_skipped) const {
+  while (it != packets_.end()) {
+    if ((*it).codecSpecificHeader.codecHeader.VP8.beginningOfPartition) {
+      return it;
+    } else if (packets_skipped !=  NULL) {
       // This packet belongs to a partition with a previous loss and can't
       // be decoded.
-      ++_packetsNotDecodable;
+      ++(*packets_skipped);
     }
-    ++packet_index;
+    ++it;
   }
-  return packet_index;
+  return it;
 }
 
-int VCMSessionInfo::FindPartitionEnd(int packet_index) const {
-  const int partition_id = _packets[packet_index].codecSpecificHeader.
-      codecHeader.VP8.partitionId;
-  while (packet_index <= _highestPacketIndex) {
-    const bool beginning = _packets[packet_index].codecSpecificHeader.
-        codecHeader.VP8.beginningOfPartition;
-    const bool packet_loss_found =
-        (_packets[packet_index].completeNALU == kNaluUnset || (!beginning &&
-         !InSequence(_packets[packet_index].seqNum,
-                     _packets[packet_index - 1].seqNum)));
-    const int current_partition_id = _packets[packet_index].codecSpecificHeader.
-          codecHeader.VP8.partitionId;
-    if (packet_loss_found || (beginning &&
-                              current_partition_id != partition_id)) {
+VCMSessionInfo::PacketIterator VCMSessionInfo::FindPartitionEnd(
+    PacketIterator it) const {
+  assert((*it).codec == kVideoCodecVP8);
+  PacketIterator prev_it = it;
+  const int partition_id =
+      (*it).codecSpecificHeader.codecHeader.VP8.partitionId;
+  while (it != packets_.end()) {
+    bool beginning =
+        (*it).codecSpecificHeader.codecHeader.VP8.beginningOfPartition;
+    int current_partition_id =
+        (*it).codecSpecificHeader.codecHeader.VP8.partitionId;
+    bool packet_loss_found = (!beginning && !InSequence(it, prev_it));
+    if (packet_loss_found ||
+        (beginning && current_partition_id != partition_id)) {
       // Missing packet, the previous packet was the last in sequence.
-      return packet_index - 1;
+      return prev_it;
     }
-    ++packet_index;
+    prev_it = it;
+    ++it;
   }
-  return packet_index - 1;
+  return prev_it;
 }
 
-bool VCMSessionInfo::InSequence(WebRtc_UWord16 seqNum,
-                                WebRtc_UWord16 prevSeqNum) {
-  // prevSeqNum is allowed to wrap around here
-  return (static_cast<WebRtc_UWord16>(prevSeqNum + 1) == seqNum);
+bool VCMSessionInfo::InSequence(const PacketIterator& packet_it,
+                                const PacketIterator& prev_packet_it) {
+  // If the two iterators are pointing to the same packet they are considered
+  // to be in sequence.
+  return (packet_it == prev_packet_it ||
+      (static_cast<WebRtc_UWord16>((*prev_packet_it).seqNum + 1) ==
+          (*packet_it).seqNum));
 }
 
-WebRtc_UWord32
-VCMSessionInfo::MakeDecodable(WebRtc_UWord8* ptrStartOfLayer)
-{
-    if (_lowSeqNum < 0) // No packets in this session
-    {
-        return 0;
+int VCMSessionInfo::MakeDecodable() {
+  int return_length = 0;
+  PacketIterator it = packets_.begin();
+  // Make sure we remove the first NAL unit if it's not decodable.
+  if ((*it).completeNALU == kNaluIncomplete ||
+      (*it).completeNALU == kNaluEnd) {
+    PacketIterator nalu_end = FindNaluEnd(it);
+    return_length += DeletePacketData(it, nalu_end);
+    it = nalu_end;
+  }
+  PacketIterator prev_it = it;
+  // Take care of the rest of the NAL units.
+  for (; it != packets_.end(); ++it) {
+    bool start_of_nalu = ((*it).completeNALU == kNaluStart ||
+        (*it).completeNALU == kNaluComplete);
+    if (!start_of_nalu && !InSequence(it, prev_it)) {
+      // Found a sequence number gap due to packet loss.
+      PacketIterator nalu_end = FindNaluEnd(it);
+      return_length += DeletePacketData(it, nalu_end);
+      it = nalu_end;
     }
-
-    WebRtc_Word32 startIndex = 0;
-    WebRtc_Word32 endIndex = 0;
-    int packetIndex = 0;
-    WebRtc_UWord32 returnLength = 0;
-    for (packetIndex = 0; packetIndex <= _highestPacketIndex; ++packetIndex)
-    {
-        if (_packets[packetIndex].completeNALU == kNaluUnset) // Found a lost packet
-        {
-            FindNaluBorder(packetIndex, startIndex, endIndex);
-            if (startIndex == -1)
-            {
-                startIndex = 0;
-            }
-            if (endIndex == -1)
-            {
-                endIndex = _highestPacketIndex;
-            }
-
-            returnLength += DeletePackets(ptrStartOfLayer,
-                                          packetIndex + 1, endIndex);
-            packetIndex = endIndex;
-        }// end lost packet
-    }
-
-    // Make sure the first packet is decodable (Either complete nalu or start
-    // of NALU)
-    if (_packets[0].sizeBytes > 0)
-    {
-        switch (_packets[0].completeNALU)
-        {
-            case kNaluComplete: // Packet can be decoded as is.
-                break;
-
-            case kNaluStart:
-                // Packet contain beginning of NALU- No need to do anything.
-                break;
-            case kNaluIncomplete: //Packet is not beginning or end of NALU
-                // Need to find the end of this NALU and delete all packets.
-                FindNaluBorder(0, startIndex, endIndex);
-                if (endIndex == -1) // No end found. Delete
-                {
-                    endIndex = _highestPacketIndex;
-                }
-                // Delete this NALU.
-                returnLength += DeletePackets(ptrStartOfLayer, 0, endIndex);
-                break;
-            case kNaluEnd:    // Packet is the end of a NALU
-                // Delete this NALU
-                returnLength += DeletePackets(ptrStartOfLayer, 0, 0);
-                break;
-            default:
-                assert(false);
-        }
-    }
-
-    return returnLength;
+    prev_it = it;
+  }
+  return return_length;
 }
 
-WebRtc_Word32
-VCMSessionInfo::ZeroOutSeqNum(WebRtc_Word32* list,
-                              WebRtc_Word32 numberOfSeqNum)
-{
-    if (NULL == list || numberOfSeqNum < 1)
-    {
-        return -1;
-    }
-    if (_lowSeqNum == -1)
-    {
-        // no packets in this frame
-        return 0;
-    }
-
-    // Find end point (index of entry that equals _lowSeqNum)
-    int index = 0;
-    for (; index < numberOfSeqNum; index++)
-    {
-        if (list[index] == _lowSeqNum)
-        {
-            list[index] = -1;
-            break;
-        }
-    }
-
-    // Zero out between first entry and end point
-    int i = 0;
-    while ( i <= _highestPacketIndex && index < numberOfSeqNum)
-    {
-        if (_packets[i].completeNALU != kNaluUnset)
-        {
-            list[index] = -1;
-        }
-        else
-        {
-            _sessionNACK = true;
-        }
-        i++;
-        index++;
-    }
-    if (!_packets[0].isFirstPacket)
-    {
-        _sessionNACK = true;
-    }
+int VCMSessionInfo::ZeroOutSeqNum(int* seq_num_list,
+                                  int seq_num_list_length) {
+  if (NULL == seq_num_list || seq_num_list_length < 1) {
+    return -1;
+  }
+  if (packets_.empty()) {
     return 0;
+  }
+
+  // Find end point (index of entry equals the sequence number of the first
+  // packet).
+  int index = 0;
+  for (; index < seq_num_list_length; ++index) {
+    if (seq_num_list[index] == packets_.front().seqNum) {
+      seq_num_list[index] = -1;
+      ++index;
+      break;
+    }
+  }
+
+  // Zero out between the first entry and the end point.
+  PacketIterator it = packets_.begin();
+  PacketIterator prev_it = it;
+  ++it;
+  while (it != packets_.end() && index < seq_num_list_length) {
+    if (!InSequence(it, prev_it)) {
+      // Found a sequence number gap due to packet loss.
+      index += PacketsMissing(it, prev_it);
+      session_nack_ = true;
+    }
+    seq_num_list[index] = -1;
+    ++index;
+    prev_it = it;
+    ++it;
+  }
+  if (!packets_.front().isFirstPacket)
+    session_nack_ = true;
+  return 0;
 }
 
-WebRtc_Word32
-VCMSessionInfo::ZeroOutSeqNumHybrid(WebRtc_Word32* list,
-                                    WebRtc_Word32 numberOfSeqNum,
-                                    WebRtc_UWord32 rttMs)
-{
-    if (NULL == list || numberOfSeqNum < 1)
-    {
-        return -1;
-    }
-
-    WebRtc_Word32 index = 0;
-    // Find end point (index of entry that equals _lowSeqNum)
-    for (; index < numberOfSeqNum; index++)
-    {
-        if (list[index] == _lowSeqNum)
-        {
-            list[index] = -1;
-            break;
-        }
-    }
-
-    // TODO(mikhal): 1. update score based on RTT value 2. add partition data
-    // use the previous available
-    bool isBaseAvailable = false;
-    if ((index > 0) && (list[index] == -1))
-    {
-        // found first packet, for now let's go only one back
-        if ((list[index - 1] == -1) || (list[index - 1] == -2))
-        {
-            // This is indeed the first packet, as previous packet was populated
-            isBaseAvailable = true;
-        }
-    }
-    bool allowNack = false;
-    if (!_packets[0].isFirstPacket || !isBaseAvailable)
-    {
-        allowNack = true;
-    }
-
-    // Zero out between first entry and end point
-    WebRtc_Word32 i = 0;
-    // Score place holder - based on RTT and partition (when available).
-    const float nackScoreTh = 0.25f;
-
-    WebRtc_Word32 highMediaPacket;
-    if (_markerSeqNum != -1)
-    {
-        highMediaPacket = _markerSeqNum;
-    }
-    else
-    {
-        // Estimation
-        highMediaPacket = _emptySeqNumLow - 1 > _highSeqNum ?
-                          _emptySeqNumLow - 1: _highSeqNum;
-    }
-
-    // Place holder
-    int rttScore = 1.0f;
-
-    while (list[index] <= highMediaPacket && index < numberOfSeqNum)
-    {
-        if (_packets[i].completeNALU != kNaluUnset)
-        {
-            list[index] = -1;
-        }
-        else
-        {
-            // compute score of the packet
-            float score = 1.0f;
-            // multiply internal score (importance) by external score (RTT)
-            score *= rttScore;
-            if (score > nackScoreTh)
-            {
-                allowNack = true;
-            }
-            else
-            {
-                list[index] = -1;
-            }
-        }
-        i++;
-        index++;
-    }
-    // Empty packets follow the data packets, and therefore have a higher
-    // sequence number. We do not want to NACK empty packets.
-
-    if ((_emptySeqNumLow != -1) && (_emptySeqNumHigh != -1) &&
-        (index < numberOfSeqNum))
-    {
-        // first make sure that we are at least at the minimum value
-        // (if not we are missing last packet(s))
-        while (list[index] < _emptySeqNumLow && index < numberOfSeqNum)
-        {
-            index++;
-        }
-
-        // mark empty packets
-        while (list[index] <= _emptySeqNumHigh && index < numberOfSeqNum)
-        {
-            list[index] = -2;
-            index++;
-        }
-    }
-
-    _sessionNACK  = allowNack;
+int VCMSessionInfo::ZeroOutSeqNumHybrid(int* seq_num_list,
+                                        int seq_num_list_length,
+                                        int rtt_ms) {
+  if (NULL == seq_num_list || seq_num_list_length < 1) {
+    return -1;
+  }
+  if (packets_.empty() && empty_seq_num_low_ == -1) {
     return 0;
+  }
+
+  WebRtc_Word32 index = 0;
+  // Find end point (index of entry equals the sequence number of the first
+  // packet).
+  for (; index < seq_num_list_length; ++index) {
+    if (seq_num_list[index] == packets_.front().seqNum) {
+      seq_num_list[index] = -1;
+      break;
+    }
+  }
+
+  // TODO(mikhal): 1. Update score based on RTT value 2. Add partition data.
+  // Use the previous available.
+  bool base_available = false;
+  if ((index > 0) && (seq_num_list[index] == -1)) {
+    // found first packet, for now let's go only one back
+    if ((seq_num_list[index - 1] == -1) || (seq_num_list[index - 1] == -2)) {
+      // This is indeed the first packet, as previous packet was populated
+      base_available = true;
+    }
+  }
+  bool allow_nack = (!packets_.front().isFirstPacket || !base_available);
+
+  // Zero out between first entry and end point.
+  // Score place holder - based on RTT and partition (when available).
+  const float nack_score_threshold = 0.25f;
+
+  WebRtc_Word32 media_high_seq_num;
+  if (HaveLastPacket()) {
+    media_high_seq_num = packets_.back().seqNum;
+  } else {
+    // Estimation.
+    media_high_seq_num = empty_seq_num_low_ - 1 > packets_.back().seqNum ?
+                      empty_seq_num_low_ - 1: packets_.back().seqNum;
+  }
+
+  // Place holder.
+  int rtt_score = 1.0f;
+  // Zero out between first entry and end point.
+  PacketIterator it = packets_.begin();
+  PacketIterator prev_it = it;
+  ++index;
+  ++it;
+  // TODO(holmer): Rewrite this in a way which better makes use of the list.
+  while (it != packets_.end() && index < seq_num_list_length) {
+    // Only process media packet sequence numbers.
+    if (LatestSequenceNumber((*it).seqNum, media_high_seq_num, NULL) ==
+        (*it).seqNum && (*it).seqNum != media_high_seq_num)
+      break;
+    if (!InSequence(it, prev_it)) {
+      // Found a sequence number gap due to packet loss.
+      int num_lost = PacketsMissing(it, prev_it);
+      for (int i = 0 ; i < num_lost; ++i) {
+        // Compute score of the packet.
+        float score = 1.0f;
+        // Multiply internal score (importance) by external score (RTT).
+        score *= rtt_score;
+        if (score > nack_score_threshold) {
+          allow_nack = true;
+        } else {
+          seq_num_list[index] = -1;
+        }
+        ++index;
+      }
+    }
+    seq_num_list[index] = -1;
+    ++index;
+    prev_it = it;
+    ++it;
+  }
+
+  // Empty packets follow the data packets, and therefore have a higher
+  // sequence number. We do not want to NACK empty packets.
+  if ((empty_seq_num_low_ != -1) && (empty_seq_num_high_ != -1) &&
+      (index < seq_num_list_length)) {
+    // First make sure that we are at least at the minimum value (if not we are
+    // missing last packet(s)).
+    while (seq_num_list[index] < empty_seq_num_low_ &&
+        index < seq_num_list_length) {
+      ++index;
+    }
+
+    // Mark empty packets.
+    while (seq_num_list[index] <= empty_seq_num_high_ &&
+        index < seq_num_list_length) {
+      seq_num_list[index] = -2;
+      ++index;
+    }
+  }
+
+  session_nack_ = allow_nack;
+  return 0;
 }
 
-WebRtc_Word32
-VCMSessionInfo::GetHighestPacketIndex()
-{
-    return _highestPacketIndex;
+int VCMSessionInfo::PacketsMissing(const PacketIterator& packet_it,
+                                   const PacketIterator& prev_packet_it) {
+  if (packet_it == prev_packet_it)
+    return 0;
+  if ((*prev_packet_it).seqNum > (*packet_it).seqNum)  // Wrap.
+    return static_cast<WebRtc_UWord16>(
+        static_cast<WebRtc_UWord32>((*packet_it).seqNum + 0x10000) -
+        (*prev_packet_it).seqNum) - 1;
+  else
+    return (*packet_it).seqNum - (*prev_packet_it).seqNum - 1;
 }
 
 bool
-VCMSessionInfo::HaveLastPacket() const
-{
-    return _markerBit;
+VCMSessionInfo::HaveLastPacket() const {
+  return (!packets_.empty() && packets_.back().markerBit);
 }
 
 bool
-VCMSessionInfo::IsRetransmitted() const
-{
-    return _sessionNACK;
+VCMSessionInfo::session_nack() const {
+  return session_nack_;
 }
 
-WebRtc_Word64
-VCMSessionInfo::InsertPacket(const VCMPacket& packet,
-                             WebRtc_UWord8* ptrStartOfLayer,
-                             bool enableDecodableState,
-                             WebRtc_UWord32 rttMs)
-{
-    // not allowed
-    assert(!packet.insertStartCode || !packet.bits);
-    // Check if this is first packet (only valid for some codecs)
-    if (packet.isFirstPacket)
-    {
-        // the first packet in the frame always signals the frametype
-        _frameType = packet.frameType;
-    }
-    else if (_frameType == kFrameEmpty && packet.frameType != kFrameEmpty)
-    {
-        // Update the frame type with the first media packet
-        _frameType = packet.frameType;
-    }
-    if (packet.frameType == kFrameEmpty)
-    {
-        // Update seq number as an empty packet
-        return InformOfEmptyPacket(packet.seqNum);
-    }
-
-    // Check sequence number and update highest and lowest sequence numbers
-    // received. Move data if this seq num is lower than previously lowest.
-
-    if (packet.seqNum > _highSeqNum)
-    {
-        // This packet's seq num is higher than previously highest seq num;
-        // normal case if we have a wrap, only update with wrapped values
-        if (!(_highSeqNum < 0x00ff && packet.seqNum > 0xff00))
-        {
-            _highSeqNum = packet.seqNum;
-        }
-    }
-    else if (_highSeqNum > 0xff00 && packet.seqNum < 0x00ff)
-    {
-        // wrap
-        _highSeqNum = packet.seqNum;
-    }
-    int packetIndex = packet.seqNum - (WebRtc_UWord16)_lowSeqNum;
-    if (_lowSeqNum < 0x00ff && packet.seqNum > 0xff00)
-    {
-        // negative wrap
-        packetIndex = packet.seqNum - 0x10000 - _lowSeqNum;
-    }
-    if (packetIndex < 0)
-    {
-        if (_lowSeqNum > 0xff00 && packet.seqNum < 0x00ff)
-        {
-            // we have a false detect due to the wrap
-            packetIndex = (0xffff - (WebRtc_UWord16)_lowSeqNum) + packet.seqNum
-                          + (WebRtc_UWord16)1;
-        } else
-        {
-            // This packet's seq num is lower than previously lowest seq num,
-            // but no wrap We need to move the data in all arrays indexed by
-            // packetIndex and insert the new packet's info
-            // How many packets should we leave room for (positions to shift)?
-            // Example - this seq num is 3 lower than previously lowest seq num
-            // Before: |--prev packet with lowest seq num--|--|...|
-            // After:  |--new lowest seq num--|--|--|--prev packet with
-            // lowest seq num--|--|...|
-
-            WebRtc_UWord16 positionsToShift   = (WebRtc_UWord16)_lowSeqNum -
-                                                                packet.seqNum;
-            WebRtc_UWord16 numOfPacketsToMove = _highestPacketIndex + 1;
-
-            // sanity, do we have room for the shift?
-            if ((positionsToShift + numOfPacketsToMove) >
-                kMaxPacketsInJitterBuffer)
-            {
-                return -1;
-            }
-
-            // Shift _packetSizeBytes array
-            memmove(&_packets[positionsToShift],
-                    &_packets[0], numOfPacketsToMove * sizeof(VCMPacket));
-            for (int i = 0; i < positionsToShift; ++i)
-                _packets[i].Reset();
-
-            _highestPacketIndex += positionsToShift;
-            _lowSeqNum = packet.seqNum;
-            packetIndex = 0; // (seqNum - _lowSeqNum) = 0
-        }
-    } // if (_lowSeqNum > seqNum)
-
-    // sanity
-    if (packetIndex >= kMaxPacketsInJitterBuffer )
-    {
-        return -1;
-    }
-    if (packetIndex < 0 )
-    {
-        return -1;
-    }
-
-    // Check for duplicate packets
-    if (_packets[packetIndex].sizeBytes != 0)
-    {
-        // We have already received a packet with this seq number, ignore it.
-        return -2;
-    }
-
-    // update highest packet index
-    _highestPacketIndex = packetIndex > _highestPacketIndex ?
-                                        packetIndex :_highestPacketIndex;
-
-    int returnLength =  InsertBuffer(ptrStartOfLayer, packetIndex, packet);
-    UpdateCompleteSession();
-    if (enableDecodableState)
-      UpdateDecodableSession(rttMs);
-    return returnLength;
-}
-
-
-WebRtc_Word32
-VCMSessionInfo::InformOfEmptyPacket(const WebRtc_UWord16 seqNum)
-{
-    // Empty packets may be FEC or filler packets. They are sequential and
-    // follow the data packets, therefore, we should only keep track of the high
-    // and low sequence numbers and may assume that the packets in between are
-    // empty packets belonging to the same frame (timestamp).
-
-    if (_emptySeqNumLow == -1 && _emptySeqNumHigh == -1)
-    {
-        _emptySeqNumLow = seqNum;
-        _emptySeqNumHigh = seqNum;
-    }
-    else
-    {
-        if (seqNum > _emptySeqNumHigh)
-        {
-            // This packet's seq num is higher than previously highest seq num;
-            // normal case if we have a wrap, only update with wrapped values
-            if (!(_emptySeqNumHigh < 0x00ff && seqNum > 0xff00))
-            {
-                _emptySeqNumHigh = seqNum;
-            }
-        }
-        else if (_emptySeqNumHigh > 0xff00 && seqNum < 0x00ff)
-        {
-             // wrap
-             _emptySeqNumHigh = seqNum;
-        }
-        if (_emptySeqNumLow < 0x00ff && seqNum > 0xff00)
-        {
-            // negative wrap
-            if (seqNum - 0x10000 - _emptySeqNumLow < 0)
-            {
-                _emptySeqNumLow = seqNum;
-            }
-        }
-    }
+int VCMSessionInfo::InsertPacket(const VCMPacket& packet,
+                                 uint8_t* frame_buffer,
+                                 bool enable_decodable_state,
+                                 int rtt_ms) {
+  assert(!packet.insertStartCode || !packet.bits);
+  // Check if this is first packet (only valid for some codecs)
+  if (packet.isFirstPacket) {
+    // The first packet in a frame signals the frame type.
+    frame_type_ = packet.frameType;
+  } else if (frame_type_ == kFrameEmpty && packet.frameType != kFrameEmpty) {
+    // Update the frame type with the first media packet.
+    frame_type_ = packet.frameType;
+  }
+  if (packet.frameType == kFrameEmpty) {
+    // Update sequence number of an empty packet.
+    // Only media packets are inserted into the packet list.
+    InformOfEmptyPacket(packet.seqNum);
     return 0;
+  }
+
+  if (packets_.size() == kMaxPacketsInSession)
+    return -1;
+
+  // Find the position of this packet in the packet list in sequence number
+  // order and insert it. Loop over the list in reverse order.
+  ReversePacketIterator rit = packets_.rbegin();
+  for (; rit != packets_.rend(); ++rit)
+    if (LatestSequenceNumber((*rit).seqNum, packet.seqNum, NULL) ==
+        packet.seqNum)
+      break;
+
+  // Check for duplicate packets.
+  if (rit != packets_.rend() &&
+      (*rit).seqNum == packet.seqNum && (*rit).sizeBytes > 0)
+    return -2;
+
+  // The insert operation invalidates the iterator |rit|.
+  PacketIterator packet_list_it = packets_.insert(rit.base(), packet);
+
+  int returnLength = InsertBuffer(frame_buffer, packet_list_it);
+  UpdateCompleteSession();
+  if (enable_decodable_state)
+    UpdateDecodableSession(rtt_ms);
+  return returnLength;
 }
 
-WebRtc_UWord32
-VCMSessionInfo::PrepareForDecode(WebRtc_UWord8* ptrStartOfLayer,
-                                 VideoCodecType codec)
-{
-    WebRtc_UWord32 currentPacketOffset = 0;
-    WebRtc_UWord32 length = GetSessionLength();
-    WebRtc_UWord32 realDataBytes = 0;
-    if (length == 0)
-    {
-        return length;
-    }
-    bool previousLost = false;
-    for (int i = 0; i <= _highestPacketIndex; i++)
-    {
-        if (_packets[i].bits)
-        {
-            if (currentPacketOffset > 0)
-            {
-                WebRtc_UWord8* ptrFirstByte = ptrStartOfLayer +
-                                              currentPacketOffset;
 
-                if (_packets[i - 1].sizeBytes == 0 || previousLost)
-                {
-                    // It is be better to throw away this packet if we are
-                    // missing the previous packet.
-                    memset(ptrFirstByte, 0, _packets[i].sizeBytes);
-                    previousLost = true;
-                    ++_packetsNotDecodable;
-                }
-                else if (_packets[i].sizeBytes > 0) // Ignore if empty packet
-                {
-                    // Glue with previous byte
-                    // Move everything from [this packet start + 1,
-                    // end of buffer] one byte to the left
-                    WebRtc_UWord8* ptrPrevByte = ptrFirstByte - 1;
-                    *ptrPrevByte = (*ptrPrevByte) | (*ptrFirstByte);
-                    WebRtc_UWord32 lengthToEnd = length -
-                                                 (currentPacketOffset + 1);
-                    memmove((void*)ptrFirstByte, (void*)(ptrFirstByte + 1),
-                            lengthToEnd);
-                    _packets[i].sizeBytes--;
-                    length--;
-                    previousLost = false;
-                    realDataBytes += _packets[i].sizeBytes;
-                }
-            }
-            else
-            {
-                memset(ptrStartOfLayer, 0, _packets[i].sizeBytes);
-                previousLost = true;
-                ++_packetsNotDecodable;
-            }
+void VCMSessionInfo::InformOfEmptyPacket(uint16_t seq_num) {
+  // Empty packets may be FEC or filler packets. They are sequential and
+  // follow the data packets, therefore, we should only keep track of the high
+  // and low sequence numbers and may assume that the packets in between are
+  // empty packets belonging to the same frame (timestamp).
+  empty_seq_num_high_ = LatestSequenceNumber(seq_num, empty_seq_num_high_,
+                                             NULL);
+  if (LatestSequenceNumber(seq_num, empty_seq_num_low_, NULL) ==
+      empty_seq_num_low_)
+    empty_seq_num_low_ = seq_num;
+}
+
+int VCMSessionInfo::PrepareForDecode(uint8_t* frame_buffer) {
+  int length = SessionLength();
+  int real_data_bytes = 0;
+  if (length == 0)
+      return length;
+  bool previous_lost = false;
+  PacketIterator it = packets_.begin();
+  PacketIterator prev_it = it;
+  for (; it != packets_.end(); ++it) {
+    bool packet_loss = ((*prev_it).sizeBytes == 0 ||
+        !InSequence(it, prev_it));
+    if ((*it).bits) {
+      if (prev_it != it) {  // Not the first packet.
+        uint8_t* ptr_first_byte =
+            const_cast<uint8_t*>((*it).dataPtr);
+
+        if (packet_loss) {
+          // It is be better to throw away this packet if we are
+          // missing the previous packet.
+          memset(ptr_first_byte, 0, (*it).sizeBytes);
+          previous_lost = true;
+          ++packets_not_decodable_;
+        } else if ((*it).sizeBytes > 0) {
+          // Glue with previous byte.
+          // Move everything from [this packet start + 1, end of buffer] one
+          // byte to the left.
+          uint8_t* ptr_prev_byte =
+              const_cast<uint8_t*>((*prev_it).dataPtr) +
+              (*prev_it).sizeBytes - 1;
+          *ptr_prev_byte = (*ptr_prev_byte) | (*ptr_first_byte);
+          memmove(const_cast<uint8_t*>((*it).dataPtr),
+                  (*it).dataPtr + 1, (*it).sizeBytes - 1);
+          ShiftSubsequentPackets(it, -1);
+          (*it).sizeBytes--;
+          length--;
+          previous_lost = false;
+          real_data_bytes += (*it).sizeBytes;
         }
-        else if (_packets[i].sizeBytes == 0 && codec == kVideoCodecH263)
-        {
-            WebRtc_UWord8* ptrFirstByte = ptrStartOfLayer + currentPacketOffset;
-            memmove(ptrFirstByte + 10, ptrFirstByte,
-                    length - currentPacketOffset);
-            memset(ptrFirstByte, 0, 10);
-            _packets[i].sizeBytes = 10;
-            length += _packets[i].sizeBytes;
-            previousLost = true;
-        }
-        else
-        {
-            realDataBytes += _packets[i].sizeBytes;
-            previousLost = false;
-        }
-        currentPacketOffset += _packets[i].sizeBytes;
+      } else {
+        memset(const_cast<uint8_t*>((*it).dataPtr), 0,
+               (*it).sizeBytes);
+        previous_lost = true;
+        ++packets_not_decodable_;
+      }
+    } else if (packet_loss &&
+      (*it).codecSpecificHeader.codec == kRTPVideoH263) {
+      // Pad H.263 packet losses with 10 zeros to make it easier
+      // for the decoder.
+      const int kPaddingLength = 10;
+      WebRtc_UWord8 padding_data[kPaddingLength] = {0};
+      // Make a copy of the previous packet.
+      VCMPacket padding_packet(*it);
+      ++padding_packet.seqNum;
+      padding_packet.dataPtr = padding_data;
+      padding_packet.sizeBytes = kPaddingLength;
+      length += InsertPacket(padding_packet, frame_buffer, false, 0);
+      previous_lost = true;
+    } else {
+      real_data_bytes += (*it).sizeBytes;
+      previous_lost = false;
     }
-    if (realDataBytes == 0)
-    {
-        // Drop the frame since all it contains are zeros
-        length = 0;
-        for (int i = 0; i <= _highestPacketIndex; ++i)
-            _packets[i].Reset();
-    }
-    return length;
+    prev_it = it;
+  }
+  if (real_data_bytes == 0) {
+    // Drop the frame since all it contains are zeros.
+    length = 0;
+    packets_.clear();
+  }
+  return length;
 }
 
-int VCMSessionInfo::NotDecodablePackets() const {
-  return _packetsNotDecodable;
+int VCMSessionInfo::packets_not_decodable() const {
+  return packets_not_decodable_;
 }
 
-}
+}  // namespace webrtc

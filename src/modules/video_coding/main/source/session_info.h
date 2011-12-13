@@ -11,138 +11,121 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_SESSION_INFO_H_
 #define WEBRTC_MODULES_VIDEO_CODING_SESSION_INFO_H_
 
-#include "typedefs.h"
-#include "module_common_types.h"
-#include "packet.h"
+#include <cstddef>
+#include <list>
 
-namespace webrtc
-{
+#include "modules/interface/module_common_types.h"
+#include "modules/video_coding/main/source/packet.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
-enum { kMaxVP8Partitions = 9 };
+namespace webrtc {
 
-class VCMSessionInfo
-{
-public:
-    VCMSessionInfo();
-    virtual ~VCMSessionInfo();
+class VCMSessionInfo {
+ public:
+  VCMSessionInfo();
 
-    VCMSessionInfo(const VCMSessionInfo& rhs);
+  void UpdateDataPointers(ptrdiff_t address_delta);
+  int ZeroOutSeqNum(int* seq_num_list,
+                    int seq_num_list_length);
 
-    void UpdateDataPointers(const WebRtc_UWord8* frame_buffer,
-                            const WebRtc_UWord8* prev_buffer_address);
+  // Hybrid version: Zero out seq num for NACK list
+  // Selectively NACK packets.
+  int ZeroOutSeqNumHybrid(int* seq_num_list,
+                          int seq_num_list_length,
+                          int rtt_ms);
+  void Reset();
+  int InsertPacket(const VCMPacket& packet,
+                   uint8_t* frame_buffer,
+                   bool enable_decodable_state,
+                   int rtt_ms);
+  bool complete() const;
+  bool decodable() const;
 
-    WebRtc_Word32 ZeroOutSeqNum(WebRtc_Word32* list,
-                                WebRtc_Word32 numberOfSeqNum);
-    // Hybrid version: Zero out seq num for NACK list
-    // Selectively NACK packets.
-    WebRtc_Word32 ZeroOutSeqNumHybrid(WebRtc_Word32* list,
-                                      WebRtc_Word32 numberOfSeqNum,
-                                      WebRtc_UWord32 rttMs);
-    virtual void Reset();
+  // Builds fragmentation headers for VP8, each fragment being a decodable
+  // VP8 partition. Returns the total number of bytes which are decodable. Is
+  // used instead of MakeDecodable for VP8.
+  int BuildVP8FragmentationHeader(uint8_t* frame_buffer,
+                                  int frame_buffer_length,
+                                  RTPFragmentationHeader* fragmentation);
 
-    WebRtc_Word64 InsertPacket(const VCMPacket& packet,
-                               WebRtc_UWord8* ptrStartOfLayer,
-                               bool enableDecodableState,
-                               WebRtc_UWord32 rttMs);
-    WebRtc_Word32 InformOfEmptyPacket(const WebRtc_UWord16 seqNum);
+  // Makes the frame decodable. I.e., only contain decodable NALUs. All
+  // non-decodable NALUs will be deleted and packets will be moved to in
+  // memory to remove any empty space.
+  // Returns the number of bytes deleted from the session.
+  int MakeDecodable();
+  int SessionLength() const;
+  bool HaveLastPacket() const;
+  bool session_nack() const;
+  webrtc::FrameType FrameType() const { return frame_type_; }
+  int LowSequenceNumber() const;
 
-    virtual bool IsSessionComplete() const;
-    virtual bool IsSessionDecodable() const;
+  // Returns highest sequence number, media or empty.
+  int HighSequenceNumber() const;
+  int PictureId() const;
+  int TemporalId() const;
+  int Tl0PicId() const;
+  bool NonReference() const;
+  int PrepareForDecode(uint8_t* frame_buffer);
+  void SetPreviousFrameLoss() { previous_frame_loss_ = true; }
+  bool PreviousFrameLoss() const { return previous_frame_loss_; }
 
-    // Builds fragmentation headers for VP8, each fragment being a decodable
-    // VP8 partition. Returns the total number of bytes which are decodable. Is
-    // used instead of MakeDecodable for VP8.
-    int BuildVP8FragmentationHeader(WebRtc_UWord8* frame_buffer,
-                                    int frame_buffer_length,
-                                    RTPFragmentationHeader* fragmentation);
+  // The number of packets discarded because the decoder can't make use of
+  // them.
+  int packets_not_decodable() const;
 
-    // Makes the frame decodable. I.e., only contain decodable NALUs. All
-    // non-decodable NALUs will be deleted and packets will be moved to in
-    // memory to remove any empty space.
-    // Returns the number of bytes deleted from the session.
-    WebRtc_UWord32 MakeDecodable(WebRtc_UWord8* ptrStartOfLayer);
+ private:
+  enum { kMaxVP8Partitions = 9 };
 
-    WebRtc_UWord32 GetSessionLength();
-    bool HaveLastPacket() const;
-    bool IsRetransmitted() const;
-    webrtc::FrameType FrameType() const { return _frameType; }
+  typedef std::list<VCMPacket> PacketList;
+  typedef PacketList::iterator PacketIterator;
+  typedef PacketList::const_iterator PacketIteratorConst;
+  typedef PacketList::reverse_iterator ReversePacketIterator;
 
-    virtual WebRtc_Word32 GetHighestPacketIndex();
+  void InformOfEmptyPacket(uint16_t seq_num);
 
-    void SetStartSeqNumber(WebRtc_UWord16 seqNumber);
+  // Finds the packet of the beginning of the next VP8 partition. If
+  // none is found the returned iterator points to |packets_.end()|.
+  // |it| is expected to point to the last packet of the previous partition,
+  // or to the first packet of the frame. |packets_skipped| is incremented
+  // for each packet found which doesn't have the beginning bit set.
+  PacketIterator FindNextPartitionBeginning(PacketIterator it,
+                                            int* packets_skipped) const;
 
-    bool HaveStartSeqNumber();
+  // Returns an iterator pointing to the last packet of the partition pointed to
+  // by |it|.
+  PacketIterator FindPartitionEnd(PacketIterator it) const;
+  static bool InSequence(const PacketIterator& it,
+                         const PacketIterator& prev_it);
+  static int PacketsMissing(const PacketIterator& packet_it,
+                            const PacketIterator& prev_packet_it);
+  int InsertBuffer(uint8_t* frame_buffer,
+                   PacketIterator packetIterator);
+  void ShiftSubsequentPackets(PacketIterator it, int steps_to_shift);
+  PacketIterator FindNaluEnd(PacketIterator packet_iter) const;
+  // Deletes the data of all packets between |start| and |end|, inclusively.
+  // Note that this function doesn't delete the actual packets.
+  int DeletePacketData(PacketIterator start,
+                       PacketIterator end);
+  void UpdateCompleteSession();
 
-    WebRtc_Word32 GetLowSeqNum() const;
-    // returns highest seqNum, media or empty
-    WebRtc_Word32 GetHighSeqNum() const;
-    int PictureId() const;
-    int TemporalId() const;
-    int Tl0PicId() const;
-    bool NonReference() const;
+  // When enabled, determine if session is decodable, i.e. incomplete but
+  // would be sent to the decoder.
+  void UpdateDecodableSession(int rtt_ms);
 
-    WebRtc_UWord32 PrepareForDecode(WebRtc_UWord8* ptrStartOfLayer,
-                                    VideoCodecType codec);
-
-    void SetPreviousFrameLoss() { _previousFrameLoss = true; }
-    bool PreviousFrameLoss() const { return _previousFrameLoss; }
-
-    // The number of packets discarded because the decoder can't make use of
-    // them.
-    int NotDecodablePackets() const;
-
-private:
-    // Finds the packet index of the beginning of the next VP8 partition. If
-    // none is found _highestPacketIndex + 1 is returned. packet_index is
-    // expected to be the index of the last decodable packet of the previous
-    // partitions + 1, or 0 for the first partition.
-    int FindNextPartitionBeginning(int packet_index);
-
-    // Finds the packet index of the end of the partition with index
-    // partitionIndex.
-    int FindPartitionEnd(int packet_index) const;
-    static bool InSequence(WebRtc_UWord16 seqNum, WebRtc_UWord16 prevSeqNum);
-    WebRtc_UWord32 InsertBuffer(WebRtc_UWord8* ptrStartOfLayer,
-                                WebRtc_Word32 packetIndex,
-                                const VCMPacket& packet);
-    void FindNaluBorder(WebRtc_Word32 packetIndex,
-                        WebRtc_Word32& startIndex,
-                        WebRtc_Word32& endIndex);
-    WebRtc_UWord32 DeletePackets(WebRtc_UWord8* ptrStartOfLayer,
-                                 WebRtc_Word32 startIndex,
-                                 WebRtc_Word32 endIndex);
-    void UpdateCompleteSession();
-    // When enabled, determine if session is decodable, i.e. incomplete but
-    // would be sent to the decoder.
-    void UpdateDecodableSession(WebRtc_UWord32 rttMs);
-    // If we have inserted a packet with markerbit into this frame
-    bool               _markerBit;
-    // If this session has been NACKed by JB
-    bool               _sessionNACK;
-    bool               _completeSession;
-    bool               _decodableSession;
-    webrtc::FrameType  _frameType;
-    bool               _previousFrameLoss;
-    // Lowest/Highest packet sequence number in a session
-    WebRtc_Word32      _lowSeqNum;
-    WebRtc_Word32      _highSeqNum;
-
-    // Highest packet index in this frame
-    WebRtc_UWord16     _highestPacketIndex;
-    // Packets in this frame.
-    // TODO(holmer): Replace this with a std::list<VCMPacket*>. Doing that will
-    //               make it possible to get rid of _markerBit, _lowSeqNum,
-    //               _highSeqNum, _highestPacketIndex, etc.
-    VCMPacket          _packets[kMaxPacketsInJitterBuffer];
-    WebRtc_Word32      _emptySeqNumLow;
-    WebRtc_Word32      _emptySeqNumHigh;
-    // Store the sequence number that marks the last media packet
-    WebRtc_Word32      _markerSeqNum;
-    // Number of packets discarded because the decoder can't use them.
-    int                _packetsNotDecodable;
-    int                _pictureId;
+  // If this session has been NACKed by the jitter buffer.
+  bool session_nack_;
+  bool complete_;
+  bool decodable_;
+  webrtc::FrameType frame_type_;
+  bool previous_frame_loss_;
+  // Packets in this frame.
+  PacketList packets_;
+  int empty_seq_num_low_;
+  int empty_seq_num_high_;
+  // Number of packets discarded because the decoder can't use them.
+  int packets_not_decodable_;
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
-#endif // WEBRTC_MODULES_VIDEO_CODING_SESSION_INFO_H_
+#endif  // WEBRTC_MODULES_VIDEO_CODING_SESSION_INFO_H_
