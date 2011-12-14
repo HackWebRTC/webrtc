@@ -637,7 +637,6 @@ int VCMSessionInfo::PrepareForDecode(uint8_t* frame_buffer) {
   if (real_data_bytes == 0) {
     // Drop the frame since all it contains are zeros.
     length = 0;
-    packets_.clear();
   }
   return length;
 }

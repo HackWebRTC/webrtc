@@ -724,10 +724,12 @@ VP8Decoder::InitDecode(const VideoCodec* inst,
     }
 
 #if WEBRTC_LIBVPX_VERSION >= 971
+
     vp8_postproc_cfg_t  ppcfg;
-    ppcfg.post_proc_flag = VP8_DEBLOCK;
+    // Disable deblocking for now due to uninitialized memory being returned.
+    ppcfg.post_proc_flag = 0;
     // Strength of deblocking filter. Valid range:[0,16]
-    ppcfg.deblocking_level = 3;
+    //ppcfg.deblocking_level = 3;
     vpx_codec_control(_decoder, VP8_SET_POSTPROC, &ppcfg);
 #endif
 
