@@ -21,6 +21,7 @@ LOCAL_SRC_FILES := \
     codec_database.cc \
     codec_timer.cc \
     content_metrics_processing.cc \
+    decoding_state.cc \
     encoded_frame.cc \
     exp_filter.cc \
     frame_buffer.cc \
