@@ -164,11 +164,11 @@ void WebRtcIsacfix_FilterMaLoopNeon(int16_t input0,
  **** and WebRtcIsacfix_FilterMaLoopC() / WebRtcIsacfix_FilterMaLoopNeon().
  ****/
 
-typedef int (*AutocorrFix)(WebRtc_Word32* __restrict__ r,
-                           const WebRtc_Word16* __restrict__ x,
+typedef int (*AutocorrFix)(WebRtc_Word32* __restrict r,
+                           const WebRtc_Word16* __restrict x,
                            WebRtc_Word16 N,
                            WebRtc_Word16 order,
-                           WebRtc_Word16* __restrict__ scale);
+                           WebRtc_Word16* __restrict scale);
 extern AutocorrFix WebRtcIsacfix_AutocorrFix;
 
 typedef void (*FilterMaLoopFix)(int16_t input0,
