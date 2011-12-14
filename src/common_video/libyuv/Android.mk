@@ -13,12 +13,12 @@ include $(CLEAR_VARS)
 include $(LOCAL_PATH)/../../../android-webrtc.mk
 
 LOCAL_MODULE_CLASS := STATIC_LIBRARIES
-LOCAL_MODULE := libwebrtc_libyuv
+LOCAL_MODULE := libwebrtc_yuv
 LOCAL_MODULE_TAGS := optional
 LOCAL_CPP_EXTENSION := .cc
 LOCAL_SRC_FILES := \
     libyuv.cc \
-    scaler.cc \
+    scaler.cc
 
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \
@@ -26,7 +26,10 @@ LOCAL_CFLAGS := \
 
 # Include paths placed before CFLAGS/CPPFLAGS
 LOCAL_C_INCLUDES := \
-    $(LOCAL_PATH)/include 
+    $(LOCAL_PATH)/../.. \
+    $(LOCAL_PATH)/../../../.. \
+    $(LOCAL_PATH)/../../../../libyuv/files/include
+
 
 LOCAL_SHARED_LIBRARIES := \
     libcutils \
