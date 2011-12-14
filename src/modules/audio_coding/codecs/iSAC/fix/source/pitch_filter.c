@@ -162,9 +162,9 @@ void WebRtcIsacfix_PitchFilter(WebRtc_Word16 *indatQQ, /* Q10 if type is 1 or 4,
 
       /* Subtract from input and update buffer */
       tmpW32 = indatQQ[ind] - WEBRTC_SPL_MUL_16_16(sign, tmpW16);
-      outdatQQ[ind] = (WebRtc_Word16)WEBRTC_SPL_SAT(32767, tmpW32, -32768);
+      outdatQQ[ind] = (WebRtc_Word16)WebRtcSpl_SatW32ToW16(tmpW32);
       tmpW32 = indatQQ[ind] + (WebRtc_Word32)outdatQQ[ind];
-      ubufQQ[pos] = (WebRtc_Word16)WEBRTC_SPL_SAT(32767, tmpW32, -32768);
+      ubufQQ[pos] = (WebRtc_Word16)WebRtcSpl_SatW32ToW16(tmpW32);
 
       ind++;
       cnt--;
@@ -213,9 +213,9 @@ void WebRtcIsacfix_PitchFilter(WebRtc_Word16 *indatQQ, /* Q10 if type is 1 or 4,
 
       /* Subtract from input and update buffer */
       tmpW32 = indatQQ[ind] - (WebRtc_Word32)tmpW16;
-      outdatQQ[ind] = (WebRtc_Word16)WEBRTC_SPL_SAT(32767, tmpW32, -32768);
+      outdatQQ[ind] = (WebRtc_Word16)WebRtcSpl_SatW32ToW16(tmpW32);
       tmpW32 = indatQQ[ind] + (WebRtc_Word32)outdatQQ[ind];
-      ubufQQ[pos] = (WebRtc_Word16)WEBRTC_SPL_SAT(32767, tmpW32, -32768);
+      ubufQQ[pos] = (WebRtc_Word16)WebRtcSpl_SatW32ToW16(tmpW32);
 
       ind++;
     }

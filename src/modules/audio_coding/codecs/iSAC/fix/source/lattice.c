@@ -245,16 +245,16 @@ void WebRtcIsacfix_NormLatticeFilterAr(WebRtc_Word16 orderCoef,
       tmp32 = WEBRTC_SPL_MUL_16_32_RSFT16(inv_gain16, tmp32); //lat_in[]*inv_gain in (Q(18-sh)*Q26)>>16 = Q(28-sh)
       tmp32 = WEBRTC_SPL_SHIFT_W32(tmp32, -(28-sh)); // lat_in[]*inv_gain in Q0
 
-      ARfQ0vec[i] = (WebRtc_Word16) WEBRTC_SPL_SAT(32767, tmp32, -32768); // Q0
+      ARfQ0vec[i] = (WebRtc_Word16)WebRtcSpl_SatW32ToW16(tmp32); // Q0
     }
 
     for (i=orderCoef-1;i>=0;i--) //get the state of f&g for the first input, for all orders
     {
       tmp32 = WEBRTC_SPL_RSHIFT_W32(((WEBRTC_SPL_MUL_16_16(cthQ15[i],ARfQ0vec[0])) - (WEBRTC_SPL_MUL_16_16(sthQ15[i],stateGQ0[i])) + 16384), 15);
-      tmpAR = (WebRtc_Word16) WEBRTC_SPL_SAT(32767, tmp32, -32768); // Q0
+      tmpAR = (WebRtc_Word16)WebRtcSpl_SatW32ToW16(tmp32); // Q0
 
       tmp32 = WEBRTC_SPL_RSHIFT_W32(((WEBRTC_SPL_MUL_16_16(sthQ15[i],ARfQ0vec[0])) + (WEBRTC_SPL_MUL_16_16(cthQ15[i], stateGQ0[i])) + 16384), 15);
-      ARgQ0vec[i+1] = (WebRtc_Word16) WEBRTC_SPL_SAT(32767, tmp32, -32768); // Q0
+      ARgQ0vec[i+1] = (WebRtc_Word16)WebRtcSpl_SatW32ToW16(tmp32); // Q0
       ARfQ0vec[0] = tmpAR;
     }
     ARgQ0vec[0] = ARfQ0vec[0];
@@ -266,10 +266,8 @@ void WebRtcIsacfix_NormLatticeFilterAr(WebRtc_Word16 orderCoef,
       {
         tmp32 = WEBRTC_SPL_RSHIFT_W32(((WEBRTC_SPL_MUL_16_16(cthQ15[k], tmpAR)) - (WEBRTC_SPL_MUL_16_16(sthQ15[k], ARgQ0vec[k])) + 16384), 15);
         tmp32_2 = WEBRTC_SPL_RSHIFT_W32(((WEBRTC_SPL_MUL_16_16(sthQ15[k], tmpAR)) + (WEBRTC_SPL_MUL_16_16(cthQ15[k], ARgQ0vec[k])) + 16384), 15);
-        tmpAR   = (WebRtc_Word16) WEBRTC_SPL_SAT(32767, tmp32, -32768); // Q0
-
-        ARgQ0vec[k+1] = (WebRtc_Word16) WEBRTC_SPL_SAT(32767, tmp32_2, -32768); // Q0
-
+        tmpAR   = (WebRtc_Word16)WebRtcSpl_SatW32ToW16(tmp32); // Q0
+        ARgQ0vec[k+1] = (WebRtc_Word16)WebRtcSpl_SatW32ToW16(tmp32_2); // Q0
       }
       ARfQ0vec[n+1] = tmpAR;
       ARgQ0vec[0] = tmpAR;

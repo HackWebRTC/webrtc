@@ -68,7 +68,7 @@ static void HighpassFilterFixDec32(
 
     c = ((WebRtc_Word32)in) + WEBRTC_SPL_RSHIFT_W32(a+b, 7); // Q0
     //c = WEBRTC_SPL_RSHIFT_W32(c, 1); // Q-1
-    io[k] = (WebRtc_Word16)WEBRTC_SPL_SAT((WebRtc_Word32)32767, c, (WebRtc_Word32)-32768);  // Write output as Q0
+    io[k] = (WebRtc_Word16)WebRtcSpl_SatW32ToW16(c);  // Write output as Q0
 
     /* Q30 * Q4 = Q34 ; shift 32 bit => Q2 */
     a = WEBRTC_SPL_MUL_32_32_RSFT32(coeff[2*0], coeff[2*0+1], state[0]);
@@ -144,9 +144,9 @@ void WebRtcIsacfix_SplitAndFilter1(WebRtc_Word16 *pin,
     tmp1 = (WebRtc_Word32)tempin_ch1[k]; // Q0 -> Q0
     tmp2 = (WebRtc_Word32)tempin_ch2[k]; // Q0 -> Q0
     tmp3 = (WebRtc_Word32)WEBRTC_SPL_RSHIFT_W32((tmp1 + tmp2), 1);/* low pass signal*/
-    LP16[k] = (WebRtc_Word16) WEBRTC_SPL_SAT(32767, tmp3, -32768); /*low pass */
+    LP16[k] = (WebRtc_Word16)WebRtcSpl_SatW32ToW16(tmp3); /*low pass */
     tmp3 = (WebRtc_Word32)WEBRTC_SPL_RSHIFT_W32((tmp1 - tmp2), 1);/* high pass signal*/
-    HP16[k] = (WebRtc_Word16) WEBRTC_SPL_SAT(32767, tmp3, -32768); /*high pass */
+    HP16[k] = (WebRtc_Word16)WebRtcSpl_SatW32ToW16(tmp3); /*high pass */
   }
 
 }/*end of WebRtcIsacfix_SplitAndFilter */
@@ -199,9 +199,9 @@ void WebRtcIsacfix_SplitAndFilter2(WebRtc_Word16 *pin,
     tmp1 = (WebRtc_Word32)tempin_ch1[k]; // Q0 -> Q0
     tmp2 = (WebRtc_Word32)tempin_ch2[k]; // Q0 -> Q0
     tmp3 = (WebRtc_Word32)WEBRTC_SPL_RSHIFT_W32((tmp1 + tmp2), 1);/* low pass signal*/
-    LP16[k] = (WebRtc_Word16) WEBRTC_SPL_SAT(32767, tmp3, -32768); /*low pass */
+    LP16[k] = (WebRtc_Word16)WebRtcSpl_SatW32ToW16(tmp3); /*low pass */
     tmp3 = (WebRtc_Word32)WEBRTC_SPL_RSHIFT_W32((tmp1 - tmp2), 1);/* high pass signal*/
-    HP16[k] = (WebRtc_Word16) WEBRTC_SPL_SAT(32767, tmp3, -32768); /*high pass */
+    HP16[k] = (WebRtc_Word16)WebRtcSpl_SatW32ToW16(tmp3); /*high pass */
   }
 
 }/*end of WebRtcIsacfix_SplitAndFilter */

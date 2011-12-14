@@ -810,11 +810,11 @@ WebRtc_Word16 WebRtcIsacfix_DecodePlcImpl(WebRtc_Word16 *signal_out16,
   for (k=0;k<FRAMESAMPLES_HALF;k++)
   {
     /* Construct a new upper channel signal*/
-    tmp_1 = (WebRtc_Word16) WEBRTC_SPL_SAT(32767,
-                                           (((WebRtc_Word32)Vector_Word16_1[k]+Vector_Word16_2[k] + 1)), -32768);
+    tmp_1 = (WebRtc_Word16)WebRtcSpl_SatW32ToW16(
+                                           ((WebRtc_Word32)Vector_Word16_1[k]+Vector_Word16_2[k] + 1));
     /* Construct a new lower channel signal*/
-    tmp_2 = (WebRtc_Word16) WEBRTC_SPL_SAT(32767,
-                                           (((WebRtc_Word32)Vector_Word16_1[k]-Vector_Word16_2[k])), -32768);
+    tmp_2 = (WebRtc_Word16)WebRtcSpl_SatW32ToW16(
+                                           ((WebRtc_Word32)Vector_Word16_1[k]-Vector_Word16_2[k]));
     Vector_Word16_1[k] = tmp_1;
     Vector_Word16_2[k] = tmp_2;
   }

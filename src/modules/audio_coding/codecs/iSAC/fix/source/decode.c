@@ -204,8 +204,8 @@ WebRtc_Word16 WebRtcIsacfix_DecodeImpl(WebRtc_Word16       *signal_out16,
 
     /* Form the polyphase signals, and compensate for DC offset */
     for (k=0;k<FRAMESAMPLES/2;k++) {
-      tmp_1 = (WebRtc_Word16) WEBRTC_SPL_SAT(32767, (((WebRtc_Word32)Vector_Word16_1[k]+Vector_Word16_2[k] + 1)), -32768); /* Construct a new upper channel signal*/
-      tmp_2 = (WebRtc_Word16) WEBRTC_SPL_SAT(32767, (((WebRtc_Word32)Vector_Word16_1[k]-Vector_Word16_2[k])), -32768); /* Construct a new lower channel signal*/
+      tmp_1 = (WebRtc_Word16)WebRtcSpl_SatW32ToW16(((WebRtc_Word32)Vector_Word16_1[k]+Vector_Word16_2[k] + 1)); /* Construct a new upper channel signal*/
+      tmp_2 = (WebRtc_Word16)WebRtcSpl_SatW32ToW16(((WebRtc_Word32)Vector_Word16_1[k]-Vector_Word16_2[k])); /* Construct a new lower channel signal*/
       Vector_Word16_1[k] = tmp_1;
       Vector_Word16_2[k] = tmp_2;
     }
