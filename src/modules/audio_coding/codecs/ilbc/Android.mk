@@ -120,9 +120,12 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/interface \
     $(LOCAL_PATH)/../../../..
 
+LOCAL_STATIC_LIBRARIES := \
+    libwebrtc_ilbc \
+    libwebrtc_spl
+
 LOCAL_SHARED_LIBRARIES := \
-    libutils \
-    libwebrtc
+    libutils
 
 LOCAL_MODULE:= webrtc_ilbc_test
 
@@ -146,9 +149,12 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/interface \
     $(LOCAL_PATH)/../../../..
 
+LOCAL_STATIC_LIBRARIES := \
+    libwebrtc_ilbc \
+    libwebrtc_spl
+
 LOCAL_SHARED_LIBRARIES := \
-    libutils \
-    libwebrtc
+    libutils
 
 LOCAL_MODULE:= webrtc_ilbc_testLib
 

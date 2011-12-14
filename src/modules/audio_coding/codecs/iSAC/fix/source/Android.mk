@@ -83,9 +83,12 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../interface \
     $(LOCAL_PATH)/../../../../../..
 
+LOCAL_STATIC_LIBRARIES := \
+    libwebrtc_isacfix \
+    libwebrtc_spl
+
 LOCAL_SHARED_LIBRARIES := \
-    libutils \
-    libwebrtc
+    libutils
 
 LOCAL_MODULE:= webrtc_isac_test
 
