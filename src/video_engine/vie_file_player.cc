@@ -8,562 +8,493 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * vie_file_player.cc
- *
- */
+#include "video_engine/vie_file_player.h"
 
-#include "critical_section_wrapper.h"
-#include "trace.h"
-#include "vie_file_player.h"
-#include "tick_util.h"
-#include "thread_wrapper.h"
-#include "event_wrapper.h"
-#include "vie_input_manager.h"
+#include "modules/utility/interface/file_player.h"
+#include "system_wrappers/interface/critical_section_wrapper.h"
+#include "system_wrappers/interface/event_wrapper.h"
+#include "system_wrappers/interface/thread_wrapper.h"
+#include "system_wrappers/interface/tick_util.h"
+#include "system_wrappers/interface/trace.h"
+#include "video_engine/main/interface/vie_file.h"
+#include "video_engine/vie_input_manager.h"
+#include "voice_engine/main/interface/voe_base.h"
+#include "voice_engine/main/interface/voe_file.h"
+#include "voice_engine/main/interface/voe_video_sync.h"
+
 namespace webrtc {
-ViEFilePlayer* ViEFilePlayer::CreateViEFilePlayer(int fileId,
-                                                  int engineId,
-                                                  const char* fileNameUTF8,
-                                                  const bool loop,
-                                                  const webrtc::FileFormats fileFormat,
-                                                  ViEInputManager& inputManager,
-                                                  VoiceEngine* vePtr)
-{
-    ViEFilePlayer* self = new ViEFilePlayer(fileId, engineId, inputManager);
-    if (!self || self->Init(fileNameUTF8, loop, fileFormat, vePtr) != 0)
-    {
-        delete self;
-        self = NULL;
-    }
-    return self;
+
+const int kThreadWaitTimeMs = 100;
+
+ViEFilePlayer* ViEFilePlayer::CreateViEFilePlayer(
+    int file_id,
+    int engine_id,
+    const char* file_nameUTF8,
+    const bool loop,
+    const FileFormats file_format,
+    ViEInputManager& input_manager,
+    VoiceEngine* voe_ptr) {
+  ViEFilePlayer* self = new ViEFilePlayer(file_id, engine_id, input_manager);
+  if (!self || self->Init(file_nameUTF8, loop, file_format, voe_ptr) != 0) {
+    delete self;
+    self = NULL;
+  }
+  return self;
 }
 
-ViEFilePlayer::ViEFilePlayer(int Id, int engineId,
-                             ViEInputManager& inputManager)
-    : ViEFrameProviderBase(Id, engineId), _playBackStarted(false),
-      _inputManager(inputManager), _ptrFeedBackCritSect(NULL),
-      _ptrAudioCritSect(NULL), _filePlayer(NULL), _audioStream(false),
-      _videoClients(0), _audioClients(0), _localAudioChannel(-1), _observer(NULL),
-      _veFileInterface(NULL), _veVideoSync(NULL), _ptrDecodeThread(NULL),
-      _ptrDecodeEvent(NULL), _decodedAudioLength(0), _audioChannelBuffers(),
-      _decodedVideo()
-{
+ViEFilePlayer::ViEFilePlayer(int Id,
+                             int engine_id,
+                             ViEInputManager& input_manager)
+    : ViEFrameProviderBase(Id, engine_id),
+      play_back_started_(false),
+      input_manager_(input_manager),
+      feedback_cs_(NULL),
+      audio_cs_(NULL),
+      file_player_(NULL),
+      audio_stream_(false),
+      video_clients_(0),
+      audio_clients_(0),
+      local_audio_channel_(-1),
+      observer_(NULL),
+      voe_file_interface_(NULL),
+      voe_video_sync_(NULL),
+      decode_thread_(NULL),
+      decode_event_(NULL),
+      decoded_audio_length_(0) {
 }
 
-ViEFilePlayer::~ViEFilePlayer()
-{
-    StopPlay();
-    delete _ptrDecodeEvent;
-    delete _ptrAudioCritSect;
-    delete _ptrFeedBackCritSect;
+ViEFilePlayer::~ViEFilePlayer() {
+  // StopPlay deletes decode_thread_.
+  StopPlay();
+  delete decode_event_;
+  delete audio_cs_;
+  delete feedback_cs_;
 }
 
-int ViEFilePlayer::Init(const char* fileNameUTF8, const bool loop,
-                        const webrtc::FileFormats fileFormat,
-                        VoiceEngine* vePtr)
-{
+int ViEFilePlayer::Init(const char* file_nameUTF8,
+                        const bool loop,
+                        const FileFormats file_format,
+                        VoiceEngine* voice_engine) {
+  feedback_cs_ = CriticalSectionWrapper::CreateCriticalSection();
+  if (!feedback_cs_) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, id_),
+                 "ViEFilePlayer::StartPlay() failed to allocate critsect");
+    return -1;
+  }
 
-    _ptrFeedBackCritSect = CriticalSectionWrapper::CreateCriticalSection();
-    if (!_ptrFeedBackCritSect)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_, id_),
-                   "ViEFilePlayer::StartPlay() failed to allocate critsect");
+  audio_cs_ = CriticalSectionWrapper::CreateCriticalSection();
+  if (!audio_cs_) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, id_),
+                 "ViEFilePlayer::StartPlay() failed to allocate critsect");
+    return -1;
+  }
+
+  decode_event_ = EventWrapper::Create();
+  if (!decode_event_) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, id_),
+                 "ViEFilePlayer::StartPlay() failed to allocate event");
+    return -1;
+  }
+  if (strlen(file_nameUTF8) > FileWrapper::kMaxFileNameSize) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, id_),
+                 "ViEFilePlayer::StartPlay() Too long filename");
+    return -1;
+  }
+  strncpy(file_name_, file_nameUTF8, strlen(file_nameUTF8) + 1);
+
+  file_player_ = FilePlayer::CreateFilePlayer(ViEId(engine_id_, id_),
+                                              file_format);
+  if (!file_player_) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, id_),
+                 "ViEFilePlayer::StartPlay() failed to create file player");
+    return -1;
+  }
+  if (file_player_->RegisterModuleFileCallback(this) == -1) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, id_),
+                 "ViEFilePlayer::StartPlay() failed to "
+                 "RegisterModuleFileCallback");
+    file_player_ = NULL;
+    return -1;
+  }
+  decode_thread_ = ThreadWrapper::CreateThread(FilePlayDecodeThreadFunction,
+                                               this, kHighestPriority,
+                                               "ViEFilePlayThread");
+  if (!decode_thread_) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, id_),
+                 "ViEFilePlayer::StartPlay() failed to start decode thread.");
+    file_player_ = NULL;
+    return -1;
+  }
+
+  // Always try to open with Audio since we don't know on what channels the
+  // audio should be played on.
+  WebRtc_Word32 error = file_player_->StartPlayingVideoFile(file_name_, loop,
+                                                            false);
+  if (error) {
+    // Failed to open the file with audio, try without.
+    error = file_player_->StartPlayingVideoFile(file_name_, loop, true);
+    audio_stream_ = false;
+    if (error) {
+      WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, id_),
+                   "ViEFilePlayer::StartPlay() failed to Start play video "
+                   "file");
+      return -1;
+    }
+
+  } else {
+    audio_stream_ = true;
+  }
+
+  if (audio_stream_) {
+    if (voice_engine) {
+      // A VoiceEngine has been provided and we want to play audio on local
+      // a channel.
+      voe_file_interface_ = VoEFile::GetInterface(voice_engine);
+      if (!voe_file_interface_) {
+        WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, id_),
+                     "ViEFilePlayer::StartPlay() failed to get VEFile "
+                     "interface");
         return -1;
-    }
-
-    _ptrAudioCritSect = CriticalSectionWrapper::CreateCriticalSection();
-    if (!_ptrAudioCritSect)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_, id_),
-                   "ViEFilePlayer::StartPlay() failed to allocate critsect");
+      }
+      voe_video_sync_ = VoEVideoSync::GetInterface(voice_engine);
+      if (!voe_video_sync_) {
+        WEBRTC_TRACE(kTraceError, kTraceVideo,
+                     ViEId(engine_id_, id_),
+                     "ViEFilePlayer::StartPlay() failed to get "
+                     "VoEVideoSync interface");
         return -1;
+      }
     }
+  }
 
-    _ptrDecodeEvent = EventWrapper::Create();
-    if (!_ptrDecodeEvent)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_, id_),
-                   "ViEFilePlayer::StartPlay() failed to allocate event");
-        return -1;
-
-    }
-    if (strlen(fileNameUTF8) > FileWrapper::kMaxFileNameSize)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_, id_),
-                   "ViEFilePlayer::StartPlay() To long filename");
-        return -1;
-    }
-    strncpy(_fileName, fileNameUTF8, strlen(fileNameUTF8) + 1);
-
-    _filePlayer = FilePlayer::CreateFilePlayer(ViEId(engine_id_, id_),
-                                               fileFormat);
-    if (!_filePlayer)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_, id_),
-                   "ViEFilePlayer::StartPlay() failed to create file player");
-        return -1;
-    }
-    if (_filePlayer->RegisterModuleFileCallback(this) == -1)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_, id_),
-                   "ViEFilePlayer::StartPlay() failed to RegisterModuleFileCallback");
-        _filePlayer = NULL;
-        return -1;
-    }
-    _ptrDecodeThread = ThreadWrapper::CreateThread(FilePlayDecodeThreadFunction,
-                                                this, kHighestPriority,
-                                                "ViEFilePlayThread");
-    if (!_ptrDecodeThread)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_, id_),
-                   "ViEFilePlayer::StartPlay() failed to start decode thread.");
-        _filePlayer = NULL;
-        return -1;
-
-    }
-
-    // Always try to open with Audio since we don't know on what channels the audio should be played on.
-    WebRtc_Word32 error = _filePlayer->StartPlayingVideoFile(_fileName, loop,
-                                                             false);
-    if (error) // Failed to open the file with audio. Try without
-    {
-        error = _filePlayer->StartPlayingVideoFile(_fileName, loop, true);
-        _audioStream = false;
-        if (error)
-        {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_, id_),
-                       "ViEFilePlayer::StartPlay() failed to Start play video file");
-            return -1;
-        }
-
-    } else
-    {
-        _audioStream = true;
-    }
-
-    if (_audioStream) // The file contain an audiostream
-    {
-        if (vePtr) // && localAudioChannel!=-1) // VeInterface have been provided and we want to play audio on local channel.
-        {
-            _veFileInterface = VoEFile::GetInterface(vePtr);
-            if (!_veFileInterface)
-            {
-                WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                           ViEId(engine_id_, id_),
-                           "ViEFilePlayer::StartPlay() failed to get VEFile interface");
-                return -1;
-            }
-            _veVideoSync = VoEVideoSync::GetInterface(vePtr);
-            if (!_veVideoSync)
-            {
-                WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                           ViEId(engine_id_, id_),
-                           "ViEFilePlayer::StartPlay() failed to get "
-                               "VoEVideoSync interface");
-                return -1;
-            }
-        }
-    }
-
-    _ptrDecodeEvent->StartTimer(true, 10); // Read audio /(or just video) every 10ms.
-
-    return 0;
-}
-/*
- //Implements ViEFrameProviderBase
- // Starts the decode thread when someone cares.
- */
-int ViEFilePlayer::FrameCallbackChanged()
-{
-    if (ViEFrameProviderBase::NumberOfRegisteredFrameCallbacks() > _videoClients)
-    {
-        if (!_playBackStarted)
-        {
-            _playBackStarted = true;
-            unsigned int threadId;
-            if (_ptrDecodeThread->Start(threadId))
-            {
-                WEBRTC_TRACE(
-                           webrtc::kTraceStateInfo,
-                           webrtc::kTraceVideo,
-                           ViEId(engine_id_, id_),
-                           "ViEFilePlayer::FrameCallbackChanged() Started filedecode thread %u",
-                           threadId);
-            } else
-            {
-                WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                           ViEId(engine_id_, id_),
-                           "ViEFilePlayer::FrameCallbackChanged() Failed to start file decode thread.");
-            }
-        } else if (!_filePlayer->IsPlayingFile())
-        {
-            if (_filePlayer->StartPlayingVideoFile(_fileName, false,
-                                                   !_audioStream) != 0)
-            {
-                WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                           ViEId(engine_id_, id_),
-                           "ViEFilePlayer::FrameCallbackChanged(), Failed to restart the file player.");
-
-            }
-
-        }
-    }
-    _videoClients = ViEFrameProviderBase::NumberOfRegisteredFrameCallbacks();
-    return 0;
-
+  // Read audio /(or just video) every 10ms.
+  decode_event_->StartTimer(true, 10);
+  return 0;
 }
 
-// File play decode function.
-bool ViEFilePlayer::FilePlayDecodeThreadFunction(void* obj)
-{
-    return static_cast<ViEFilePlayer*> (obj)->FilePlayDecodeProcess();
-}
-bool ViEFilePlayer::FilePlayDecodeProcess()
-{
-
-    if (_ptrDecodeEvent->Wait(kThreadWaitTimeMs) == kEventSignaled)
-    {
-        if (_audioStream && _audioClients == 0) // If there is audio but no one cares- read the audio self
-        {
-            Read(NULL, 0);
-        }
-        if (_filePlayer->TimeUntilNextVideoFrame() < 10) // Less than 10ms to next videoframe
-        {
-            if (_filePlayer->GetVideoFromFile(_decodedVideo) != 0)
-            {
-            }
-        }
-        if (_decodedVideo.Length() > 0)
-        {
-
-            if (_localAudioChannel != -1 && _veVideoSync) // We are playing audio locally
-            {
-                int audioDelay = 0;
-                if (_veVideoSync->GetPlayoutBufferSize(audioDelay) == 0)
-                {
-                    _decodedVideo.SetRenderTime(_decodedVideo.RenderTimeMs()
-                        + audioDelay);
-                }
-            }
-            DeliverFrame(_decodedVideo);
-            _decodedVideo.SetLength(0);
-        }
-
+int ViEFilePlayer::FrameCallbackChanged() {
+  // Starts the decode thread when someone cares.
+  if (ViEFrameProviderBase::NumberOfRegisteredFrameCallbacks() >
+      video_clients_) {
+    if (!play_back_started_) {
+      play_back_started_ = true;
+      unsigned int thread_id;
+      if (decode_thread_->Start(thread_id)) {
+        WEBRTC_TRACE(kTraceStateInfo, kTraceVideo, ViEId(engine_id_, id_),
+                     "ViEFilePlayer::FrameCallbackChanged() Started file decode"
+                     " thread %u", thread_id);
+      } else {
+        WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, id_),
+                     "ViEFilePlayer::FrameCallbackChanged() Failed to start "
+                     "file decode thread.");
+      }
+    } else if (!file_player_->IsPlayingFile()) {
+      if (file_player_->StartPlayingVideoFile(file_name_, false,
+                                              !audio_stream_) != 0) {
+        WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, id_),
+                     "ViEFilePlayer::FrameCallbackChanged(), Failed to restart "
+                     "the file player.");
+      }
     }
+  }
+  video_clients_ = ViEFrameProviderBase::NumberOfRegisteredFrameCallbacks();
+  return 0;
+}
+
+bool ViEFilePlayer::FilePlayDecodeThreadFunction(void* obj) {
+  return static_cast<ViEFilePlayer*>(obj)->FilePlayDecodeProcess();
+}
+
+bool ViEFilePlayer::FilePlayDecodeProcess() {
+  if (decode_event_->Wait(kThreadWaitTimeMs) == kEventSignaled) {
+    if (audio_stream_ && audio_clients_ == 0) {
+      // There is audio but no one cares, read the audio here.
+      Read(NULL, 0);
+    }
+    if (file_player_->TimeUntilNextVideoFrame() < 10) {
+      // Less than 10ms to next videoframe.
+      if (file_player_->GetVideoFromFile(decoded_video_) != 0) {
+      }
+    }
+    if (decoded_video_.Length() > 0) {
+      if (local_audio_channel_ != -1 && voe_video_sync_) {
+        // We are playing audio locally.
+        int audio_delay = 0;
+        if (voe_video_sync_->GetPlayoutBufferSize(audio_delay) == 0) {
+          decoded_video_.SetRenderTime(decoded_video_.RenderTimeMs() +
+                                       audio_delay);
+        }
+      }
+      DeliverFrame(decoded_video_);
+      decoded_video_.SetLength(0);
+    }
+  }
+  return true;
+}
+
+int ViEFilePlayer::StopPlay() {
+  // Only called from destructor.
+  if (decode_thread_) {
+    decode_thread_->SetNotAlive();
+    if (decode_thread_->Stop()) {
+      delete decode_thread_;
+    } else {
+      assert(!"ViEFilePlayer::StopPlay() Failed to stop decode thread");
+      WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, id_),
+                   "ViEFilePlayer::StartPlay() Failed to stop file decode "
+                   "thread.");
+    }
+  }
+  decode_thread_ = NULL;
+  if (decode_event_) {
+    decode_event_->StopTimer();
+  }
+  StopPlayAudio();
+
+  if (voe_file_interface_) {
+    voe_file_interface_->Release();
+    voe_file_interface_ = NULL;
+  }
+  if (voe_video_sync_) {
+    voe_video_sync_->Release();
+    voe_video_sync_ = NULL;
+  }
+
+  if (file_player_) {
+    file_player_->StopPlayingFile();
+    FilePlayer::DestroyFilePlayer(file_player_);
+    file_player_ = NULL;
+  }
+  return 0;
+}
+
+int ViEFilePlayer::StopPlayAudio() {
+  // Stop sending audio.
+  while (MapItem* audio_item = audio_channels_sending_.First()) {
+    StopSendAudioOnChannel(audio_item->GetId());
+  }
+
+  // Stop local audio playback.
+  if (local_audio_channel_ != -1) {
+    StopPlayAudioLocally(local_audio_channel_);
+  }
+  local_audio_channel_ = -1;
+  while (audio_channel_buffers_.PopFront() != -1) {
+  }
+  while (audio_channels_sending_.Erase(audio_channels_sending_.First()) != -1) {
+  }
+  audio_clients_ = 0;
+  return 0;
+}
+
+int ViEFilePlayer::Read(void* buf, int len) {
+  // Protect from simultaneous reading from multiple channels.
+  CriticalSectionScoped lock(*audio_cs_);
+  if (NeedsAudioFromFile(buf)) {
+    // We will run the VoE in 16KHz.
+    if (file_player_->Get10msAudioFromFile(decoded_audio_,
+                                           decoded_audio_length_, 16000) != 0) {
+      // No data.
+      decoded_audio_length_ = 0;
+      return 0;
+    }
+    // 2 bytes per sample.
+    decoded_audio_length_ *= 2;
+    if (buf != 0) {
+      audio_channel_buffers_.PushBack(buf);
+    }
+  } else {
+    // No need for new audiobuffer from file, ie the buffer read from file has
+    // not been played on this channel.
+  }
+  if (buf) {
+    memcpy(buf, decoded_audio_, decoded_audio_length_);
+  }
+  return decoded_audio_length_;
+}
+
+bool ViEFilePlayer::NeedsAudioFromFile(void* buf) {
+  bool needs_new_audio = false;
+  if (audio_channel_buffers_.GetSize() == 0) {
     return true;
+  }
+
+  // Check if we the buf already have read the current audio.
+  for (ListItem* item = audio_channel_buffers_.First(); item != NULL;
+       item = audio_channel_buffers_.Next(item)) {
+    if (item->GetItem() == buf) {
+      needs_new_audio = true;
+      audio_channel_buffers_.Erase(item);
+      break;
+    }
+  }
+  return needs_new_audio;
 }
 
-int ViEFilePlayer::StopPlay() //Only called from destructor.
-{
-    if (_ptrDecodeThread)
-    {
-        _ptrDecodeThread->SetNotAlive();
-        if (_ptrDecodeThread->Stop())
-        {
+void ViEFilePlayer::PlayFileEnded(const WebRtc_Word32 id) {
+  WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, id),
+               "%s: file_id %d", __FUNCTION__, id_);
+  file_player_->StopPlayingFile();
 
-            delete _ptrDecodeThread;
-        } else
-        {
-            assert(!"ViEFilePlayer::StopPlay() Failed to stop decode thread");
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_, id_),
-                       "ViEFilePlayer::StartPlay() Failed to stop file decode thread.");
-        }
-    }
-
-    _ptrDecodeThread = NULL;
-    if (_ptrDecodeEvent)
-    {
-        _ptrDecodeEvent->StopTimer();
-    }
-
-    StopPlayAudio();
-
-    if (_veFileInterface)
-    {
-        _veFileInterface->Release();
-        _veFileInterface = NULL;
-    }
-    if (_veVideoSync)
-    {
-        _veVideoSync->Release();
-        _veVideoSync = NULL;
-    }
-
-    if (_filePlayer)
-    {
-        _filePlayer->StopPlayingFile();
-        FilePlayer::DestroyFilePlayer(_filePlayer);
-        _filePlayer = NULL;
-    }
-
-    return 0;
-}
-int ViEFilePlayer::StopPlayAudio()
-{
-    // Stop sending audio
-    while (MapItem* audioItem = _audioChannelsSending.First())
-    {
-        StopSendAudioOnChannel(audioItem->GetId());
-    }
-
-    // Stop local audio playback
-    if (_localAudioChannel != -1)
-    {
-        StopPlayAudioLocally(_localAudioChannel);
-    }
-    _localAudioChannel = -1;
-    while (_audioChannelBuffers.PopFront() != -1) {}
-    while (_audioChannelsSending.Erase(_audioChannelsSending.First()) != -1) {}
-    _audioClients = 0;
-    return 0;
+  CriticalSectionScoped lock(*feedback_cs_);
+  if (observer_) {
+    observer_->PlayFileEnded(id_);
+  }
 }
 
-// From webrtc::InStream
-int ViEFilePlayer::Read(void *buf, int len)
-{
-    CriticalSectionScoped lock(*_ptrAudioCritSect); // Protect from simultaneouse reading from multiple channels
-    if (NeedsAudioFromFile(buf))
-    {
-        if (_filePlayer->Get10msAudioFromFile(_decodedAudio,
-                                              _decodedAudioLength, 16000) != 0) // we will run the VE in 16KHz
-        {
-            // No data
-            _decodedAudioLength = 0;
-            return 0;
-        }
-        _decodedAudioLength *= 2; // 2 bytes per sample
-        if (buf != 0)
-        {
-            _audioChannelBuffers.PushBack(buf);
-        }
-    } else
-    {
-        // No need for new audiobuffer from file. Ie the buffer read from file has not been played on this channel.
-    }
-    if (buf)
-    {
-        memcpy(buf, _decodedAudio, _decodedAudioLength);
-    }
-    return _decodedAudioLength;
-
-}
-bool ViEFilePlayer::NeedsAudioFromFile(void* buf)
-{
-    bool needsNewAudio = false;
-    if (_audioChannelBuffers.GetSize() == 0)
-    {
-        return true;
-    }
-
-    //Check if we the buf already have read the current audio.
-    for (ListItem* item = _audioChannelBuffers.First(); item != NULL; item
-        = _audioChannelBuffers.Next(item))
-    {
-        if (item->GetItem() == buf)
-        {
-            needsNewAudio = true;
-            _audioChannelBuffers.Erase(item);
-            break;
-        }
-    }
-    return needsNewAudio;
+bool ViEFilePlayer::IsObserverRegistered() {
+  CriticalSectionScoped lock(*feedback_cs_);
+  return observer_ != NULL;
 }
 
-// From FileCallback
-void ViEFilePlayer::PlayFileEnded(const WebRtc_Word32 id)
-{
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(engine_id_, id),
-               "%s: fileId %d", __FUNCTION__, id_);
-
-    _filePlayer->StopPlayingFile();
-
-    CriticalSectionScoped lock(*_ptrFeedBackCritSect);
-    if (_observer)
-    {
-        _observer->PlayFileEnded(id_);
-    }
+int ViEFilePlayer::RegisterObserver(ViEFileObserver& observer) {
+  CriticalSectionScoped lock(*feedback_cs_);
+  if (observer_) {
+    return -1;
+  }
+  observer_ = &observer;
+  return 0;
 }
 
-bool ViEFilePlayer::IsObserverRegistered()
-{
-    CriticalSectionScoped lock(*_ptrFeedBackCritSect);
-    return _observer != NULL;
-
-}
-int ViEFilePlayer::RegisterObserver(ViEFileObserver& observer)
-{
-    CriticalSectionScoped lock(*_ptrFeedBackCritSect);
-    if (_observer)
-        return -1;
-    _observer = &observer;
-    return 0;
-}
-int ViEFilePlayer::DeRegisterObserver()
-{
-    CriticalSectionScoped lock(*_ptrFeedBackCritSect);
-    _observer = NULL;
-    return 0;
+int ViEFilePlayer::DeRegisterObserver() {
+  CriticalSectionScoped lock(*feedback_cs_);
+  observer_ = NULL;
+  return 0;
 }
 
-// ----------------------------------------------------------------------------
-// SendAudioOnChannel
-// Order the voice engine to send the audio on a channel
-// ----------------------------------------------------------------------------
-int ViEFilePlayer::SendAudioOnChannel(const int audioChannel,
-                                      bool mixMicrophone, float volumeScaling)
-{
-
-    if (!_veFileInterface)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_, id_),
-                   "%s No VEFile interface.", __FUNCTION__);
-        return -1;
-    }
-    if (_veFileInterface->StartPlayingFileAsMicrophone(audioChannel,
-                                                       this,
-                                                       mixMicrophone,
+int ViEFilePlayer::SendAudioOnChannel(const int audio_channel,
+                                      bool mix_microphone,
+                                      float volume_scaling) {
+  if (!voe_file_interface_) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, id_),
+                 "%s No VEFile interface.", __FUNCTION__);
+    return -1;
+  }
+  if (voe_file_interface_->StartPlayingFileAsMicrophone(audio_channel, this,
+                                                       mix_microphone,
                                                        kFileFormatPcm16kHzFile,
-                                                       volumeScaling) != 0)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_, id_),
-                   "ViEFilePlayer::SendAudioOnChannel() VE_StartPlayingFileAsMicrophone failed. audioChannel %d, mixMicrophone %d, volumeScaling %.2f",
-                   audioChannel, mixMicrophone, volumeScaling);
-        return -1;
-    }
-    _audioChannelsSending.Insert(audioChannel, NULL);
+                                                       volume_scaling) != 0) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, id_),
+                 "ViEFilePlayer::SendAudioOnChannel() "
+                 "VE_StartPlayingFileAsMicrophone failed. audio_channel %d, "
+                 " mix_microphone %d, volume_scaling %.2f",
+                 audio_channel, mix_microphone, volume_scaling);
+    return -1;
+  }
+  audio_channels_sending_.Insert(audio_channel, NULL);
 
-    CriticalSectionScoped lock(*_ptrAudioCritSect);
-    _audioClients++; // Increase the number of audioClients;
-
-    return 0;
+  CriticalSectionScoped lock(*audio_cs_);
+  audio_clients_++;
+  return 0;
 }
 
-// ----------------------------------------------------------------------------
-// StopSendAudioOnChannel
-// Order the voice engine to stop send the audio on a channel
-// ----------------------------------------------------------------------------
-int ViEFilePlayer::StopSendAudioOnChannel(const int audioChannel)
-{
-    int result = 0;
-    MapItem* audioItem = _audioChannelsSending.Find(audioChannel);
-    if (!audioItem)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_, id_),
-                   "_s AudioChannel %d not sending", __FUNCTION__, audioChannel);
-        return -1;
-    }
-    result = _veFileInterface->StopPlayingFileAsMicrophone(audioChannel);
-    if (result != 0)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_, id_),
-                   "ViEFilePlayer::StopSendAudioOnChannel() VE_StopPlayingFileAsMicrophone failed. audioChannel %d",
-                   audioChannel);
-    }
-    _audioChannelsSending.Erase(audioItem);
-    CriticalSectionScoped lock(*_ptrAudioCritSect);
-    _audioClients--; // Decrease the number of audioClients;
-    assert(_audioClients>=0);
-    return 0;
-
-}
-int ViEFilePlayer::PlayAudioLocally(const int audioChannel, float volumeScaling)
-{
-    if (!_veFileInterface)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_, id_),
-                   "%s No VEFile interface.", __FUNCTION__);
-        return -1;
-    }
-    if (_veFileInterface->StartPlayingFileLocally(
-                                                  audioChannel,
-                                                  this,
-                                                  kFileFormatPcm16kHzFile,
-                                                  volumeScaling) != 0)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_, id_),
-                   "%s  VE_StartPlayingFileAsMicrophone failed. audioChannel %d, mixMicrophone %d, volumeScaling %.2f",
-                   __FUNCTION__, audioChannel, volumeScaling);
-        return -1;
-    }
-
-    CriticalSectionScoped lock(*_ptrAudioCritSect);
-    _localAudioChannel = audioChannel;
-    _audioClients++; // Increase the number of audioClients;
-
-    return 0;
-
+int ViEFilePlayer::StopSendAudioOnChannel(const int audio_channel) {
+  int result = 0;
+  MapItem* audio_item = audio_channels_sending_.Find(audio_channel);
+  if (!audio_item) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, id_),
+                 "ViEFilePlayer::StopSendAudioOnChannel AudioChannel %d not "
+                 "sending", audio_channel);
+    return -1;
+  }
+  result = voe_file_interface_->StopPlayingFileAsMicrophone(audio_channel);
+  if (result != 0) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, id_),
+                 "ViEFilePlayer::StopSendAudioOnChannel() "
+                 "VE_StopPlayingFileAsMicrophone failed. audio_channel %d",
+                 audio_channel);
+  }
+  audio_channels_sending_.Erase(audio_item);
+  CriticalSectionScoped lock(*audio_cs_);
+  audio_clients_--;
+  assert(audio_clients_ >= 0);
+  return 0;
 }
 
-int ViEFilePlayer::StopPlayAudioLocally(const int audioChannel)
-{
-    if (!_veFileInterface)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_, id_),
-                   "%s No VEFile interface.", __FUNCTION__);
-        return -1;
-    }
-    if (_veFileInterface->StopPlayingFileLocally(audioChannel) != 0)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_, id_),
-                   "%s VE_StopPlayingFileLocally failed. audioChannel %d.",
-                   __FUNCTION__, audioChannel);
-        return -1;
-    }
+int ViEFilePlayer::PlayAudioLocally(const int audio_channel,
+                                    float volume_scaling) {
+  if (!voe_file_interface_) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, id_),
+                 "%s No VEFile interface.", __FUNCTION__);
+    return -1;
+  }
+  if (voe_file_interface_->StartPlayingFileLocally(audio_channel, this,
+                                                   kFileFormatPcm16kHzFile,
+                                                   volume_scaling) != 0) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, id_),
+                 "%s  VE_StartPlayingFileAsMicrophone failed. audio_channel %d,"
+                 " mix_microphone %d, volume_scaling %.2f",
+                 __FUNCTION__, audio_channel, volume_scaling);
+    return -1;
+  }
 
-    CriticalSectionScoped lock(*_ptrAudioCritSect);
-    _localAudioChannel = -1;
-    _audioClients--; // Decrease the number of audioClients;
-
-    return 0;
-
+  CriticalSectionScoped lock(*audio_cs_);
+  local_audio_channel_ = audio_channel;
+  audio_clients_++;
+  return 0;
 }
 
-//static
-int ViEFilePlayer::GetFileInformation(int engineId, const char* fileName,
-                                      VideoCodec& videoCodec,
-                                      webrtc::CodecInst& audioCodec,
-                                      const webrtc::FileFormats fileFormat)
-{
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, engineId, "%s ", __FUNCTION__);
+int ViEFilePlayer::StopPlayAudioLocally(const int audio_channel) {
+  if (!voe_file_interface_) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, id_),
+                 "%s No VEFile interface.", __FUNCTION__);
+    return -1;
+  }
+  if (voe_file_interface_->StopPlayingFileLocally(audio_channel) != 0) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, id_),
+                 "%s VE_StopPlayingFileLocally failed. audio_channel %d.",
+                 __FUNCTION__, audio_channel);
+    return -1;
+  }
 
-    FilePlayer* filePlayer = FilePlayer::CreateFilePlayer(engineId, fileFormat);
-    if (!filePlayer)
-    {
-        return -1;
-    }
-
-    bool videoOnly = false;
-
-    memset(&videoCodec, 0, sizeof(videoCodec));
-    memset(&audioCodec, 0, sizeof(audioCodec));
-
-    if (filePlayer->StartPlayingVideoFile(fileName, false, false) != 0)
-    {
-        videoOnly = true;
-        if (filePlayer->StartPlayingVideoFile(fileName, false, true) != 0)
-        {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, engineId,
-                       "%s Failed to open file.", __FUNCTION__);
-            FilePlayer::DestroyFilePlayer(filePlayer);
-            return -1;
-        }
-    }
-
-    if (!videoOnly && filePlayer->AudioCodec(audioCodec) != 0)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, engineId,
-                   "%s Failed to get audio codec.", __FUNCTION__);
-        FilePlayer::DestroyFilePlayer(filePlayer);
-        return -1;
-    }
-    if (filePlayer->video_codec_info(videoCodec) != 0)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, engineId,
-                   "%s Failed to get video codec.", __FUNCTION__);
-        FilePlayer::DestroyFilePlayer(filePlayer);
-        return -1;
-    }
-    FilePlayer::DestroyFilePlayer(filePlayer);
-    return 0;
+  CriticalSectionScoped lock(*audio_cs_);
+  local_audio_channel_ = -1;
+  audio_clients_--;
+  return 0;
 }
-} // namespace webrtc
+
+int ViEFilePlayer::GetFileInformation(int engine_id,
+                                      const char* file_name,
+                                      VideoCodec& video_codec,
+                                      CodecInst& audio_codec,
+                                      const FileFormats file_format) {
+  WEBRTC_TRACE(kTraceInfo, kTraceVideo, engine_id, "%s ", __FUNCTION__);
+
+  FilePlayer* file_player = FilePlayer::CreateFilePlayer(engine_id,
+                                                         file_format);
+  if (!file_player) {
+    return -1;
+  }
+
+  bool video_only = false;
+
+  memset(&video_codec, 0, sizeof(video_codec));
+  memset(&audio_codec, 0, sizeof(audio_codec));
+
+  if (file_player->StartPlayingVideoFile(file_name, false, false) != 0) {
+    video_only = true;
+    if (file_player->StartPlayingVideoFile(file_name, false, true) != 0) {
+      WEBRTC_TRACE(kTraceError, kTraceVideo, engine_id,
+                   "%s Failed to open file.", __FUNCTION__);
+      FilePlayer::DestroyFilePlayer(file_player);
+      return -1;
+    }
+  }
+
+  if (!video_only && file_player->AudioCodec(audio_codec) != 0) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, engine_id,
+                 "%s Failed to get audio codec.", __FUNCTION__);
+    FilePlayer::DestroyFilePlayer(file_player);
+    return -1;
+  }
+  if (file_player->video_codec_info(video_codec) != 0) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, engine_id,
+                 "%s Failed to get video codec.", __FUNCTION__);
+    FilePlayer::DestroyFilePlayer(file_player);
+    return -1;
+  }
+  FilePlayer::DestroyFilePlayer(file_player);
+  return 0;
+}
+
+}  // namespace webrtc
