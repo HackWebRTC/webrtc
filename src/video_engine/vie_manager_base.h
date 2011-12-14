@@ -8,56 +8,67 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_MANAGER_BASE_H_
-#define WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_MANAGER_BASE_H_
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_MANAGER_BASE_H_
+#define WEBRTC_VIDEO_ENGINE_VIE_MANAGER_BASE_H_
 
 namespace webrtc {
+
 class RWLockWrapper;
 
-class ViEManagerBase
-{
-    friend class ViEManagerScopedBase;
-    friend class ViEManagedItemScopedBase;
-    friend class ViEManagerWriteScoped;
-public:
-    ViEManagerBase(void);
-    ~ViEManagerBase(void);
-private:
-    void WriteLockManager();
-    void ReleaseWriteLockManager();
-    void ReadLockManager() const;
-    void ReleaseLockManager() const;
-    RWLockWrapper& _instanceRWLock;
+class ViEManagerBase {
+  friend class ViEManagerScopedBase;
+  friend class ViEManagedItemScopedBase;
+  friend class ViEManagerWriteScoped;
+ public:
+  ViEManagerBase();
+  ~ViEManagerBase();
+
+ private:
+  // Exclusive lock, used by ViEManagerWriteScoped
+  void WriteLockManager();
+
+  // Releases exclusive lock, used by ViEManagerWriteScoped.
+  void ReleaseWriteLockManager();
+
+  // Increases lock count, used by ViEManagerScopedBase.
+  void ReadLockManager() const;
+
+  // Releases the lock count, used by ViEManagerScopedBase.
+  void ReleaseLockManager() const;
+
+  RWLockWrapper& instance_rwlock_;
 };
 
-class ViEManagerWriteScoped
-{
-public:
-    ViEManagerWriteScoped(ViEManagerBase& vieManager);
-    ~ViEManagerWriteScoped();
-private:
-    ViEManagerBase* _vieManager;
+class ViEManagerWriteScoped {
+ public:
+  explicit ViEManagerWriteScoped(ViEManagerBase& vie_manager);
+  ~ViEManagerWriteScoped();
+
+ private:
+  ViEManagerBase* vie_manager_;
 };
 
-class ViEManagerScopedBase
-{
-    friend class ViEManagedItemScopedBase;
-public:
-    ViEManagerScopedBase(const ViEManagerBase& vieManager);
-    ~ViEManagerScopedBase();
-protected:
-    const ViEManagerBase* _vieManager;
-private:
-    int _refCount;
+class ViEManagerScopedBase {
+  friend class ViEManagedItemScopedBase;
+ public:
+  explicit ViEManagerScopedBase(const ViEManagerBase& vie_manager);
+  ~ViEManagerScopedBase();
+
+ protected:
+  const ViEManagerBase* vie_manager_;
+
+ private:
+  int ref_count_;
 };
 
-class ViEManagedItemScopedBase
-{
-public:
-    ViEManagedItemScopedBase(ViEManagerScopedBase& vieScopedManager);
-    ~ViEManagedItemScopedBase();
-protected:
-    ViEManagerScopedBase& _vieScopedManager;
+class ViEManagedItemScopedBase {
+ public:
+  explicit ViEManagedItemScopedBase(ViEManagerScopedBase& vie_scoped_manager);
+  ~ViEManagedItemScopedBase();
+ protected:
+  ViEManagerScopedBase& vie_scoped_manager_;
 };
-} // namespace webrtc
-#endif // WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_MANAGER_BASE_H_
+
+}  // namespace webrtc
+
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_MANAGER_BASE_H_

@@ -36,19 +36,19 @@ ViEChannelManagerScoped::ViEChannelManagerScoped(
 
 ViEChannel* ViEChannelManagerScoped::Channel(int vieChannelId) const
 {
-    return static_cast<const ViEChannelManager*>
-                                    (_vieManager)->ViEChannelPtr(vieChannelId);
+    return static_cast<const ViEChannelManager*>(vie_manager_)->ViEChannelPtr(
+        vieChannelId);
 }
 ViEEncoder* ViEChannelManagerScoped::Encoder(int vieChannelId) const
 {
-    return static_cast<const ViEChannelManager*>
-                                    (_vieManager)->ViEEncoderPtr(vieChannelId);
+    return static_cast<const ViEChannelManager*>(vie_manager_)->ViEEncoderPtr(
+        vieChannelId);
 }
 
 bool ViEChannelManagerScoped::ChannelUsingViEEncoder(int channelId) const
 {
-    return (static_cast<const ViEChannelManager*>
-                    (_vieManager))->ChannelUsingViEEncoder( channelId);
+    return (static_cast<const ViEChannelManager*>(vie_manager_))->
+        ChannelUsingViEEncoder(channelId);
 }
 
 // ============================================================================

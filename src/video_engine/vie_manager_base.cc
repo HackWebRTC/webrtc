@@ -8,106 +8,65 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "vie_manager_base.h"
-#include "rw_lock_wrapper.h"
 #include "assert.h"
+
+#include "system_wrappers/interface/rw_lock_wrapper.h"
+#include "video_engine/vie_manager_base.h"
 
 namespace webrtc {
 
-ViEManagerBase::ViEManagerBase() :
-    _instanceRWLock(*RWLockWrapper::CreateRWLock())
-{
-}
-ViEManagerBase::~ViEManagerBase()
-{
-    delete &_instanceRWLock;
+ViEManagerBase::ViEManagerBase()
+    : instance_rwlock_(*RWLockWrapper::CreateRWLock()) {
 }
 
-// ----------------------------------------------------------------------------
-// ReadLockManager
-//
-// Lock count increase. Used  by ViEManagerScopedBase
-// ----------------------------------------------------------------------------
-void ViEManagerBase::ReadLockManager() const
-{
-    _instanceRWLock.AcquireLockShared();
+ViEManagerBase::~ViEManagerBase() {
+  delete &instance_rwlock_;
 }
 
-// ----------------------------------------------------------------------------
-// ReleaseLockManager
-//
-// Releases the lock count.
-// ----------------------------------------------------------------------------
-void ViEManagerBase::ReleaseLockManager() const
-{
-    _instanceRWLock.ReleaseLockShared();
+void ViEManagerBase::ReadLockManager() const {
+  instance_rwlock_.AcquireLockShared();
 }
 
-// ----------------------------------------------------------------------------
-// WriteLockManager
-//
-// Lock count increase. Used  by ViEManagerWriteScoped
-// ----------------------------------------------------------------------------
-void ViEManagerBase::WriteLockManager()
-{
-    _instanceRWLock.AcquireLockExclusive();
+void ViEManagerBase::ReleaseLockManager() const {
+  instance_rwlock_.ReleaseLockShared();
 }
 
-// ----------------------------------------------------------------------------
-// ReleaseLockManager
-//
-// Releases the lock count.
-// ----------------------------------------------------------------------------
-void ViEManagerBase::ReleaseWriteLockManager()
-{
-    _instanceRWLock.ReleaseLockExclusive();
+void ViEManagerBase::WriteLockManager() {
+  instance_rwlock_.AcquireLockExclusive();
 }
 
-// ----------------------------------------------------------------------------
-// ViEManagerScopedBase
-//
-// ----------------------------------------------------------------------------
-ViEManagerScopedBase::ViEManagerScopedBase(const ViEManagerBase& ViEManagerBase) :
-    _vieManager(&ViEManagerBase), _refCount(0)
-{
-    _vieManager->ReadLockManager();
+void ViEManagerBase::ReleaseWriteLockManager() {
+  instance_rwlock_.ReleaseLockExclusive();
 }
 
-ViEManagerScopedBase::~ViEManagerScopedBase()
-{
-    assert(_refCount==0);
-    _vieManager->ReleaseLockManager();
+ViEManagerScopedBase::ViEManagerScopedBase(const ViEManagerBase& ViEManagerBase)
+    : vie_manager_(&ViEManagerBase),
+      ref_count_(0) {
+  vie_manager_->ReadLockManager();
 }
 
-// ----------------------------------------------------------------------------
-///
-// ViEManagerWriteScoped
-//
-// ----------------------------------------------------------------------------
-ViEManagerWriteScoped::ViEManagerWriteScoped(ViEManagerBase& vieManager) :
-    _vieManager(&vieManager)
-{
-    _vieManager->WriteLockManager();
+ViEManagerScopedBase::~ViEManagerScopedBase() {
+  assert(ref_count_ == 0);
+  vie_manager_->ReleaseLockManager();
 }
 
-ViEManagerWriteScoped::~ViEManagerWriteScoped()
-{
-    _vieManager->ReleaseWriteLockManager();
+ViEManagerWriteScoped::ViEManagerWriteScoped(ViEManagerBase& vie_manager)
+    : vie_manager_(&vie_manager) {
+  vie_manager_->WriteLockManager();
 }
 
-// ----------------------------------------------------------------------------
-// ViEManagedItemScopedBase
-//
-// ----------------------------------------------------------------------------
+ViEManagerWriteScoped::~ViEManagerWriteScoped() {
+  vie_manager_->ReleaseWriteLockManager();
+}
+
 ViEManagedItemScopedBase::ViEManagedItemScopedBase(
-                                                   ViEManagerScopedBase& vieScopedManager) :
-    _vieScopedManager(vieScopedManager)
-{
-    _vieScopedManager._refCount++;
+    ViEManagerScopedBase& vie_scoped_manager)
+    : vie_scoped_manager_(vie_scoped_manager) {
+  vie_scoped_manager_.ref_count_++;
 }
 
-ViEManagedItemScopedBase::~ViEManagedItemScopedBase()
-{
-    _vieScopedManager._refCount--;
+ViEManagedItemScopedBase::~ViEManagedItemScopedBase() {
+  vie_scoped_manager_.ref_count_--;
 }
-} // namespace webrtc
+
+}  // namespace webrtc

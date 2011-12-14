@@ -46,7 +46,8 @@ ViERenderManagerScoped::ViERenderManagerScoped(const ViERenderManager& vieRender
 
 ViERenderer* ViERenderManagerScoped::Renderer(WebRtc_Word32 renderId) const
 {
-    return static_cast<const ViERenderManager*> (_vieManager)->ViERenderPtr(renderId);
+    return static_cast<const ViERenderManager*> (vie_manager_)->ViERenderPtr(
+        renderId);
 }
 
 
@@ -293,4 +294,3 @@ ViERenderer* ViERenderManager::ViERenderPtr(WebRtc_Word32 renderId) const
 }
 
 } //namespace webrtc
-

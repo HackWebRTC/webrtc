@@ -784,24 +784,24 @@ ViEInputManagerScoped::ViEInputManagerScoped(
 ViECapturer* ViEInputManagerScoped::Capture(int captureId) const
 {
     return static_cast<const ViEInputManager*>
-           (_vieManager)->ViECapturePtr(captureId);
+           (vie_manager_)->ViECapturePtr(captureId);
 }
 ViEFrameProviderBase* ViEInputManagerScoped::FrameProvider(
                                       const ViEFrameCallback* captureObserver) const
 {
     return static_cast<const ViEInputManager*>
-           (_vieManager)->ViEFrameProvider(captureObserver);
+           (vie_manager_)->ViEFrameProvider(captureObserver);
 }
 ViEFrameProviderBase* ViEInputManagerScoped::FrameProvider(int providerId) const
 {
     return static_cast<const ViEInputManager*>
-            (_vieManager)->ViEFrameProvider( providerId);
+            (vie_manager_)->ViEFrameProvider( providerId);
 }
 
 ViEFilePlayer* ViEInputManagerScoped::FilePlayer(int fileId) const
 {
     return static_cast<const ViEInputManager*>
-           (_vieManager)->ViEFilePlayerPtr(fileId);
+           (vie_manager_)->ViEFilePlayerPtr(fileId);
 }
 
 } // namespace webrtc
