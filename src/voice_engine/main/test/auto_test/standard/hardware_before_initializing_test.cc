@@ -9,11 +9,11 @@
  */
 
 #include "common_types.h"
-#include "test_base.h"
+#include "before_initialization_fixture.h"
 
 using namespace webrtc;
 
-class HardwareBeforeInitializingTest : public TestBase {
+class HardwareBeforeInitializingTest : public BeforeInitializationFixture {
 };
 
 TEST_F(HardwareBeforeInitializingTest,

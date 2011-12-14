@@ -902,6 +902,12 @@ int VoETestManager::SetUp() {
 
   TEST_MUSTPASS(voe_base_->Init());
 
+#if defined(WEBRTC_ANDROID)
+  TEST_MUSTPASS(voe_hardware_->SetLoudspeakerStatus(false));
+#endif
+
+  TEST_MUSTPASS(voe_base_->RegisterVoiceEngineObserver(obs));
+
   TEST_LOG("Get version \n");
   TEST_MUSTPASS(voe_base_->GetVersion(char_buffer));
   TEST_LOG("--------------------\n%s\n--------------------\n", char_buffer);
@@ -912,144 +918,6 @@ int VoETestManager::SetUp() {
   TEST_LOG("Max number of channels = %d \n", nChannels);
   TEST_MUSTPASS(voe_base_->CreateChannel());
 
-  return 0;
-}
-
-int VoETestManager::TestHardwareBeforeStreaming() {
-#ifdef _TEST_HARDWARE_
-  TEST_LOG("\n\n+++ Hardware tests +++\n\n");
-
-  AudioLayers wanted_layer = TESTED_AUDIO_LAYER;
-  AudioLayers given_layer;
-  TEST_LOG("Set/Get audio device layer\n");
-  TEST_MUSTPASS(-1 != voe_hardware_->SetAudioDeviceLayer(wanted_layer));
-  TEST_MUSTPASS(VE_ALREADY_INITED != voe_base_->LastError());
-  TEST_MUSTPASS(voe_hardware_->GetAudioDeviceLayer(given_layer));
-  switch (given_layer) {
-    case kAudioPlatformDefault:
-      // Already set above.
-      break;
-    case kAudioWindowsCore:
-      TEST_LOG("Running kAudioWindowsCore\n");
-      break;
-    case kAudioWindowsWave:
-      TEST_LOG("Running kAudioWindowsWave\n");
-      break;
-    case kAudioLinuxAlsa:
-      TEST_LOG("Running kAudioLinuxAlsa\n");
-      break;
-    case kAudioLinuxPulse:
-      TEST_LOG("Running kAudioLinuxPulse\n");
-      break;
-    default:
-      TEST_LOG("ERROR: Running unknown audio layer!!\n");
-      return -1;
-  }
-
-  int load_percent;
-#if defined(_WIN32)
-  TEST_LOG("CPU load \n");
-  TEST_MUSTPASS(voe_hardware_->GetCPULoad(load_percent));
-  TEST_LOG("GetCPULoad => %d%%\n", load_percent);
-#else
-  TEST_MUSTPASS(!voe_hardware_->GetCPULoad(load_percent));
-#endif
-#if !defined(MAC_IPHONE) & !defined(WEBRTC_ANDROID)
-  TEST_MUSTPASS(voe_hardware_->GetSystemCPULoad(load_percent));
-  TEST_LOG("GetSystemCPULoad => %d%%\n", load_percent);
-#endif
-
-#if !defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID)
-  bool play_available = false;
-  bool recording_available = false;
-  TEST_LOG("Get device status \n");
-  TEST_MUSTPASS(voe_hardware_->GetPlayoutDeviceStatus(play_available));
-  TEST_MUSTPASS(voe_hardware_->GetRecordingDeviceStatus(recording_available));
-  TEST_MUSTPASS(!(recording_available && play_available));
-#endif
-  // Win, Mac and Linux sound device tests.
-#if (defined(WEBRTC_MAC) && !defined(MAC_IPHONE)) || defined(_WIN32) || \
-    (defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID))
-
-  char device_name[128] = {0};
-  char guid_name[128] = {0};
-
-  TEST_LOG("Printing names of default sound devices \n");
-#if defined(_WIN32)
-  TEST_MUSTPASS(voe_hardware_->GetRecordingDeviceName(-1, device_name,
-                                                      guid_name));
-  TEST_LOG("Recording device= %s, guid=%s\n", device_name, guid_name);
-  TEST_MUSTPASS(voe_hardware_->GetPlayoutDeviceName(-1, device_name,
-                                                    guid_name));
-  TEST_LOG("Playout device= %s, guid=%s\n", device_name, guid_name);
-#else
-  TEST_MUSTPASS(voe_hardware_->GetRecordingDeviceName(0, device_name,
-                                                      guid_name));
-  TEST_LOG("Recording device= %s\n",device_name);
-  TEST_MUSTPASS(voe_hardware_->GetPlayoutDeviceName(0, device_name,
-                                                    guid_name));
-  TEST_LOG("Playout device= %s\n",device_name);
-#endif
-
-  // Check recording side.
-  // Extended Win32 enumeration tests: unique GUID outputs on Vista and up:
-  // Win XP and below : device_name is copied to guid_name.
-  // Win Vista and up : device_name is the friendly name and GUID is a unique
-  //                    identifier.
-  // Other            : guid_name is left unchanged.
-  int num_of_recording_devices = 0;
-  TEST_MUSTPASS(voe_hardware_->GetNumOfRecordingDevices(
-      num_of_recording_devices));
-  TEST_LOG("GetNumOfRecordingDevices = %d\n", num_of_recording_devices);
-  for (int i = 0; i < num_of_recording_devices; i++) {
-    TEST_MUSTPASS(voe_hardware_->GetRecordingDeviceName(i, device_name,
-                                                        guid_name));
-#if defined(_WIN32)
-    TEST_LOG("GetRecordingDeviceName(%d) => name=%s, guid=%s\n",
-             i, device_name, guid_name);
-#else
-    TEST_LOG("GetRecordingDeviceName(%d) => name=%s\n", i, device_name);
-#endif
-    TEST_MUSTPASS(voe_hardware_->SetRecordingDevice(i));
-  }
-
-  // Check playout side (the check is similar to the recording side).
-  int num_plays = 0;
-  TEST_MUSTPASS(voe_hardware_->GetNumOfPlayoutDevices(num_plays));
-  TEST_LOG("GetNumDevsPlayout = %d\n", num_plays);
-  for (int i = 0; i < num_plays; i++) {
-    TEST_MUSTPASS(voe_hardware_->GetPlayoutDeviceName(i, device_name,
-                                                      guid_name));
-#if defined(_WIN32)
-    TEST_LOG("GetPlayoutDeviceName(%d) => name=%s, guid=%s\n",
-             i, device_name, guid_name);
-#else
-    TEST_LOG("GetPlayoutDeviceName(%d) => name=%s\n", i, device_name);
-#endif
-    TEST_MUSTPASS(voe_hardware_->SetPlayoutDevice(i));
-  }
-
-#endif // #if (defined(WEBRTC_MAC) && !defined(MAC_IPHONE)) || (defined(_WI...&
-  TEST_LOG("Setting default sound devices \n");
-#ifdef _WIN32
-  TEST_MUSTPASS(voe_hardware_->SetRecordingDevice(-1));
-  TEST_MUSTPASS(voe_hardware_->SetPlayoutDevice(-1));
-#else
-#if !defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID)
-  TEST_MUSTPASS(voe_hardware_->SetRecordingDevice(0));
-  TEST_MUSTPASS(voe_hardware_->SetPlayoutDevice(0));
-#endif
-#endif
-
-#ifdef MAC_IPHONE
-  // Reset sound device
-  TEST_LOG("Reset sound device \n");
-  TEST_MUSTPASS(voe_hardware_->ResetAudioDevice());
-#endif
-
-#else
-  TEST_LOG("\n\n+++ Hardware tests NOT ENABLED +++\n");
-#endif  // #ifdef _TEST_HARDWARE_
   return 0;
 }
 
@@ -1597,13 +1465,18 @@ int VoETestManager::TestCodecs() {
 }
 
 int VoETestManager::DoStandardTest() {
+
   TEST_LOG("\n\n+++ Base tests +++\n\n");
 
   if (SetUp() != 0) return -1;
 
-  if (TestHardwareBeforeStreaming() != 0) return -1;
   if (TestCodecsBeforeStreaming() != 0) return -1;
   if (TestNetworkBeforeStreaming() != 0) return -1;
+
+  // TODO(qhogpat): this gets verified way later - quite ugly. Make sure to
+  // put this into setup when rewriting the test that requires this.
+  TEST_MUSTPASS(voe_rtp_rtcp_->SetRTCP_CNAME(0, "Niklas"));
+  TEST_MUSTPASS(voe_rtp_rtcp_->SetLocalSSRC(0, 1234));
 
   FakeExternalTransport channel0_transport(voe_network_);
   if (TestStartStreaming(channel0_transport) != 0) return -1;

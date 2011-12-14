@@ -8,25 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "test_base.h"
+#include "after_initialization_fixture.h"
 
 using namespace webrtc;
 using namespace testing;
 
-class TestErrorObserver : public VoiceEngineObserver {
- public:
-  TestErrorObserver() {}
-  virtual ~TestErrorObserver() {}
-  void CallbackOnError(const int channel, const int error_code) {
-    ADD_FAILURE() << "Unexpected error on channel " << channel <<
-        ": error code " << error_code;
-  }
-};
-
-class RtpRtcpBeforeStreamingTest : public TestBase {
+class RtpRtcpBeforeStreamingTest : public AfterInitializationFixture {
  protected:
-  TestErrorObserver error_observer_;
-
   void SetUp();
   void TearDown();
 
@@ -34,39 +22,16 @@ class RtpRtcpBeforeStreamingTest : public TestBase {
 };
 
 void RtpRtcpBeforeStreamingTest::SetUp() {
-#if defined BLACKFIN
-  EXPECT_EQ(0, voe_base_->Init(0, LINUX_AUDIO_OSS));
-#else
-  EXPECT_EQ(0, voe_base_->Init());
-#endif
-
-#if defined(WEBRTC_ANDROID)
-  EXPECT_EQ(0, voe_hardware_->SetLoudspeakerStatus(false));
-#endif
-
-  // Ensure we have an error observer and a channel up.
-  EXPECT_EQ(0, voe_base_->RegisterVoiceEngineObserver(error_observer_));
   EXPECT_THAT(channel_ = voe_base_->CreateChannel(), Not(Lt(0)));
 }
 
 void RtpRtcpBeforeStreamingTest::TearDown() {
   EXPECT_EQ(0, voe_base_->DeleteChannel(channel_));
-  EXPECT_EQ(0, voe_base_->DeRegisterVoiceEngineObserver());
-}
-
-TEST_F(RtpRtcpBeforeStreamingTest, MaxNumChannelsIsBiggerThanZero) {
-  EXPECT_GT(voe_base_->MaxNumOfChannels(), 0);
-}
-
-TEST_F(RtpRtcpBeforeStreamingTest, GetVersionPrintsSomeUsefulInformation) {
-  char char_buffer[1024];
-  EXPECT_EQ(0, voe_base_->GetVersion(char_buffer));
-  EXPECT_THAT(char_buffer, ContainsRegex("VoiceEngine [0-9].[0-9].[0-9]"));
 }
 
 TEST_F(RtpRtcpBeforeStreamingTest,
        GetRtcpStatusReturnsTrueByDefaultAndObeysSetRtcpStatus) {
-  bool on;
+  bool on = false;
   EXPECT_EQ(0, voe_rtp_rtcp_->GetRTCPStatus(channel_, on));
   EXPECT_TRUE(on);
   EXPECT_EQ(0, voe_rtp_rtcp_->SetRTCPStatus(channel_, false));

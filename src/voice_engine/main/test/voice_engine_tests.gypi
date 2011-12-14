@@ -26,8 +26,12 @@
       ],
       'sources': [
         'auto_test/automated_mode.cc',
+        'auto_test/standard/after_initialization_fixture.cc',
+        'auto_test/standard/before_initialization_fixture.cc',
         'auto_test/standard/hardware_before_initializing_test.cc',
+        'auto_test/standard/hardware_before_streaming_test.cc',
         'auto_test/standard/rtp_rtcp_before_streaming_test.cc',
+        'auto_test/standard/voe_base_misc_test.cc',
         'auto_test/voe_cpu_test.cc',
         'auto_test/voe_cpu_test.h',
         'auto_test/voe_extended_test.cc',
