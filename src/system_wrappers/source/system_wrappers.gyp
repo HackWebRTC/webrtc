@@ -46,6 +46,7 @@
         '../interface/scoped_ptr.h',
         '../interface/scoped_refptr.h',
         '../interface/sort.h',
+        '../interface/static_instance.h',
         '../interface/thread_wrapper.h',
         '../interface/tick_util.h',
         '../interface/trace.h',

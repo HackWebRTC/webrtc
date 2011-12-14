@@ -131,7 +131,6 @@ private:
     bool _init;
     WebRtc_Word32 _numActiveSockets;
     ListWrapper _workerThreadsList;
-    WebRtc_UWord32 _numOfWorkThreads;
     EventWrapper* _event;
 
     HANDLE _ioCompletionHandle;

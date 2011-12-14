@@ -138,7 +138,6 @@ static T* GetStaticInstance(CountOperation count_operation) {
         delete static_cast<T*>(new_instance);
       }
     }
-    return NULL;
   } else if (state == kDestroy) {
     T* old_value = static_cast<T*> (InterlockedExchangePointer(
         reinterpret_cast<void* volatile*>(&instance), NULL));

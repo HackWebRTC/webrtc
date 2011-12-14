@@ -25,9 +25,10 @@ UdpSocket2ManagerWindows::UdpSocket2ManagerWindows()
       _id(-1),
       _stopped(false),
       _init(false),
-      _pCrit(NULL),
+      _pCrit(CriticalSectionWrapper::CreateCriticalSection()),
       _ioCompletionHandle(NULL),
-      _numActiveSockets(0)
+      _numActiveSockets(0),
+      _event(EventWrapper::Create())
 {
     _managerNumber = _numOfActiveManagers++;
 
@@ -40,7 +41,6 @@ UdpSocket2ManagerWindows::UdpSocket2ManagerWindows()
         //                 if a UdpSocket2ManagerWindows() created and destroyed
         //                 without being initialized.
     }
-    _event = EventWrapper::Create();
 }
 
 UdpSocket2ManagerWindows::~UdpSocket2ManagerWindows()
@@ -87,10 +87,10 @@ UdpSocket2ManagerWindows::~UdpSocket2ManagerWindows()
                 WSACleanup();
             }
         }
-        if(_pCrit)
-        {
-            delete _pCrit;
-        }
+    }
+    if(_pCrit)
+    {
+        delete _pCrit;
     }
     if(_event)
     {
@@ -164,11 +164,6 @@ bool UdpSocket2ManagerWindows::StartWorkerThreads()
 {
     if(!_init)
     {
-        _pCrit = CriticalSectionWrapper::CreateCriticalSection();
-        if(_pCrit == NULL)
-        {
-            return false;
-        }
         _pCrit->Enter();
 
         _ioCompletionHandle = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL,
