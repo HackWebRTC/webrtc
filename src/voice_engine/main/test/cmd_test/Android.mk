@@ -22,11 +22,13 @@ LOCAL_SRC_FILES:= \
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \
     '-DWEBRTC_TARGET_PC' \
+    '-DWEBRTC_ANDROID' \
     '-DDEBUG'
 
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../../interface \
     $(LOCAL_PATH)/../../../.. \
+    $(LOCAL_PATH)/../../../../.. \
     external/gtest/include \
     frameworks/base/include
 
