@@ -161,7 +161,6 @@ private:
     VCMFrameListItem* FindOldestCompleteContinuousFrame(bool enableDecodable);
 
     void CleanUpOldFrames();
-    void CleanUpSizeZeroFrames();
 
     void VerifyAndSetPreviousFrameLost(VCMFrameBuffer& frame);
     bool IsPacketRetransmitted(const VCMPacket& packet) const;
@@ -189,7 +188,6 @@ private:
                                                   const void* notUsed);
     // Decide whether should wait for NACK (mainly relevant for hybrid mode)
     bool WaitForNack();
-    VCMFrameListItem* FindOldestSequenceNum() const;
 
     WebRtc_Word32                 _vcmId;
     WebRtc_Word32                 _receiverId;
