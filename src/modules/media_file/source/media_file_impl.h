@@ -223,8 +223,8 @@ private:
     void HandlePlayCallbacks(WebRtc_Word32 bytesRead);
 
     WebRtc_Word32 _id;
-    CriticalSectionWrapper& _crit;
-    CriticalSectionWrapper& _callbackCrit;
+    CriticalSectionWrapper* _crit;
+    CriticalSectionWrapper* _callbackCrit;
 
     ModuleFileUtility* _ptrFileUtilityObj;
     CodecInst codec_info_;

@@ -39,8 +39,8 @@ void MediaFile::DestroyMediaFile(MediaFile* module)
 
 MediaFileImpl::MediaFileImpl(const WebRtc_Word32 id)
     : _id(id),
-      _crit(*CriticalSectionWrapper::CreateCriticalSection()),
-      _callbackCrit(*CriticalSectionWrapper::CreateCriticalSection()),
+      _crit(CriticalSectionWrapper::CreateCriticalSection()),
+      _callbackCrit(CriticalSectionWrapper::CreateCriticalSection()),
       _ptrFileUtilityObj(NULL),
       codec_info_(),
       _ptrInStream(NULL),
@@ -90,8 +90,8 @@ MediaFileImpl::~MediaFileImpl()
         }
     }
 
-    delete &_crit;
-    delete &_callbackCrit;
+    delete _crit;
+    delete _callbackCrit;
 }
 
 WebRtc_Word32 MediaFileImpl::Version(WebRtc_Word8* version,
