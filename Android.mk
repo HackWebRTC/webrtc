@@ -39,6 +39,7 @@ include $(MY_WEBRTC_ROOT_PATH)/src/voice_engine/main/source/Android.mk
 # video
 include $(MY_WEBRTC_ROOT_PATH)/src/common_video/jpeg/main/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/common_video/vplib/main/source/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/src/common_video/libyuv/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/video_capture/main/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/video_coding/codecs/i420/main/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/video_coding/codecs/vp8/main/source/Android.mk
@@ -103,7 +104,6 @@ include $(BUILD_SHARED_LIBRARY)
 LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
-include $(LOCAL_PATH)/../../external/webrtc/android-webrtc.mk
 
 LOCAL_ARM_MODE := arm
 LOCAL_MODULE := libwebrtc
@@ -134,7 +134,7 @@ LOCAL_WHOLE_STATIC_LIBRARIES := \
     libwebrtc_video_processing \
     libwebrtc_vp8 \
     libwebrtc_vie_core \
-    libwebrtc_vplib \
+    libwebrtc_yuv \
     libwebrtc_jpeg \
     libwebrtc_vpx
 
@@ -146,6 +146,9 @@ else ifeq ($(ARCH_ARM_HAVE_NEON),true)
 LOCAL_WHOLE_STATIC_LIBRARIES += \
     libwebrtc_isacfix_neon
 endif
+
+LOCAL_STATIC_LIBRARIES := \
+    libyuv_static
 
 LOCAL_SHARED_LIBRARIES := \
     libcutils \
@@ -166,7 +169,7 @@ include $(BUILD_SHARED_LIBRARY)
 # test apps, they're for test only; all these test apps have LOCAL_MODULE_TAGS:=tests
 # voice engine test apps
 include $(MY_WEBRTC_ROOT_PATH)/src/voice_engine/main/test/cmd_test/Android.mk
-include $(MY_WEBRTC_ROOT_PATH)/src/voice_engine/main/test/auto_test/Android.mk
+#include $(MY_WEBRTC_ROOT_PATH)/src/voice_engine/main/test/auto_test/Android.mk
 # video engien test apps
-include $(MY_WEBRTC_ROOT_PATH)/src/video_engine/test/auto_test/android/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/video_engine/main/test/android_test/Android.mk
+#include $(MY_WEBRTC_ROOT_PATH)/src/video_engine/test/auto_test/android/Android.mk
