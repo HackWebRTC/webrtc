@@ -34,6 +34,7 @@
 #include "vie_impl.h"
 #include "vie_input_manager.h"
 #include "vie_render_manager.h"
+#include "video_engine/vie_renderer.h"
 #endif
 
 namespace webrtc
