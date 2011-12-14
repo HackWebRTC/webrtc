@@ -67,10 +67,15 @@ TEST(TemporalLayersTest, 2Layers) {
   int expected_temporal_idx[16] =
       { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1 };
 
+  bool expected_layer_sync[16] =
+      { false, true, false, false, false, false, false, false,
+        false, true, false, false, false, false, false, false };
+
   for (int i = 0; i < 16; ++i) {
     EXPECT_EQ(expected_flags[i], tl.EncodeFlags());
     tl.PopulateCodecSpecific(false, &vp8_info);
     EXPECT_EQ(expected_temporal_idx[i], vp8_info.temporalIdx);
+    EXPECT_EQ(expected_layer_sync[i], vp8_info.layerSync);
   }
 }
 
@@ -100,10 +105,15 @@ TEST(TemporalLayersTest, 3Layers) {
   int expected_temporal_idx[16] =
       { 0, 2, 1, 2, 0, 2, 1, 2, 0, 2, 1, 2, 0, 2, 1, 2 };
 
+  bool expected_layer_sync[16] =
+      { false, true, true, false, false, false, false, false,
+        false, true, true, false, false, false, false, false };
+
   for (int i = 0; i < 16; ++i) {
     EXPECT_EQ(expected_flags[i], tl.EncodeFlags());
     tl.PopulateCodecSpecific(false, &vp8_info);
     EXPECT_EQ(expected_temporal_idx[i], vp8_info.temporalIdx);
+    EXPECT_EQ(expected_layer_sync[i], vp8_info.layerSync);
   }
 }
 
@@ -133,10 +143,15 @@ TEST(TemporalLayersTest, 4Layers) {
   int expected_temporal_idx[16] =
       { 0, 3, 2, 3, 1, 3, 2, 3, 0, 3, 2, 3, 1, 3, 2, 3 };
 
+  bool expected_layer_sync[16] =
+      { false, true, true, true, true, true, false, true,
+        false, true, false, true, false, true, false, true };
+
   for (int i = 0; i < 16; ++i) {
     EXPECT_EQ(expected_flags[i], tl.EncodeFlags());
     tl.PopulateCodecSpecific(false, &vp8_info);
     EXPECT_EQ(expected_temporal_idx[i], vp8_info.temporalIdx);
+    EXPECT_EQ(expected_layer_sync[i], vp8_info.layerSync);
   }
 }
 
@@ -159,13 +174,18 @@ TEST(TemporalLayersTest, KeyFrame) {
   int expected_temporal_idx[8] =
       { 0, 0, 0, 0, 0, 0, 0, 2};
 
+  bool expected_layer_sync[8] =
+      { false, true, true, false, false, false, false, false };
+
   for (int i = 0; i < 7; ++i) {
     EXPECT_EQ(expected_flags[i], tl.EncodeFlags());
     tl.PopulateCodecSpecific(true, &vp8_info);
     EXPECT_EQ(expected_temporal_idx[i], vp8_info.temporalIdx);
+    EXPECT_EQ(expected_layer_sync[i], vp8_info.layerSync);
   }
   EXPECT_EQ(expected_flags[7], tl.EncodeFlags());
   tl.PopulateCodecSpecific(false, &vp8_info);
   EXPECT_EQ(expected_temporal_idx[7], vp8_info.temporalIdx);
+  EXPECT_EQ(expected_layer_sync[7], vp8_info.layerSync);
 }
 }  // namespace webrtc

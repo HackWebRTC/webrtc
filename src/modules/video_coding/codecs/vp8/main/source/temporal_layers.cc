@@ -194,6 +194,18 @@ void TemporalLayers::PopulateCodecSpecific(bool key_frame,
   } else {
     vp8_info->temporalIdx = temporal_ids_[pattern_idx_ % temporal_ids_length_];
   }
+  TemporalReferences temporal_reference =
+      temporal_pattern_[pattern_idx_ % temporal_pattern_length_];
+
+  if (temporal_reference == kTemporalUpdateAltrefWithoutDependency ||
+      temporal_reference == kTemporalUpdateGoldenWithoutDependency ||
+      (temporal_reference == kTemporalUpdateNone &&
+      number_of_temporal_layers_ == 4)) {
+    vp8_info->layerSync = true;
+  } else {
+    vp8_info->layerSync = false;
+  }
+
   if (vp8_info->temporalIdx == 0) {
     tl0_pic_idx_++;
   }
