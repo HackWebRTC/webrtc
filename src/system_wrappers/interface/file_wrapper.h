@@ -40,7 +40,8 @@ public:
 
     virtual int CloseFile() = 0;
 
-    // Limits the file size.
+    // Limits the file size to |bytes|. Writing will fail after the cap
+    // is hit. Pass zero to use an unlimited size.
     virtual int SetMaxFileSize(size_t bytes)  = 0;
 
     // Flush any pending writes.

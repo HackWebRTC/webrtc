@@ -232,7 +232,7 @@ int FileWrapperImpl::WriteText(const char* format, ...)
 
 bool FileWrapperImpl::Write(const void* buf, int len)
 {
-    if (!_readOnly)
+    if (_readOnly)
     {
         return false;
     }
@@ -240,7 +240,7 @@ bool FileWrapperImpl::Write(const void* buf, int len)
     if (_id != NULL)
     {
         // Check if it's time to stop writing.
-        if (_sizeInBytes + len > _maxSizeInBytes)
+        if (_maxSizeInBytes > 0 && (_sizeInBytes + len) > _maxSizeInBytes)
         {
             Flush();
             return false;
