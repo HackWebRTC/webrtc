@@ -18,6 +18,64 @@
 #include "codec.h"
 #include "settings.h"
 
+#define LATTICE_MUL_32_32_RSFT16(a32a, a32b, b32)                  \
+  ((WebRtc_Word32)(WEBRTC_SPL_MUL(a32a, b32) + (WEBRTC_SPL_MUL_16_32_RSFT16(a32b, b32))))
+/* This macro is FORBIDDEN to use elsewhere than in a function in this file and
+   its corresponding neon version. It might give unpredictable results, since a
+   general WebRtc_Word32*WebRtc_Word32 multiplication results in a 64 bit value.
+   The result is then shifted just 16 steps to the right, giving need for 48
+   bits, i.e. in the generel case, it will NOT fit in a WebRtc_Word32. In the
+   cases used in here, the WebRtc_Word32 will be enough, since (for a good
+   reason) the involved multiplicands aren't big enough to overflow a
+   WebRtc_Word32 after shifting right 16 bits. I have compared the result of a
+   multiplication between t32 and tmp32, done in two ways:
+   1) Using (WebRtc_Word32) (((float)(tmp32))*((float)(tmp32b))/65536.0);
+   2) Using LATTICE_MUL_32_32_RSFT16(t16a, t16b, tmp32b);
+   By running 25 files, I haven't found any bigger diff than 64 - this was in the
+   case when  method 1) gave 650235648 and 2) gave 650235712.
+*/
+
+/* Inner loop used for function WebRtcIsacfix_NormLatticeFilterMa().
+   It does:
+   for 0 <= n < HALF_SUBFRAMELEN - 1:
+     *ptr2 = input2 * (*ptr2) + input0 * (*ptr0));
+     *ptr1 = input1 * (*ptr0) + input0 * (*ptr2);
+*/
+void WebRtcIsacfix_FilterMaLoopC(int16_t input0,  // Filter coefficient
+                                 int16_t input1,  // Filter coefficient
+                                 int32_t input2,  // Inverse coeff. (1/input1)
+                                 int32_t* ptr0,   // Sample buffer
+                                 int32_t* ptr1,   // Sample buffer
+                                 int32_t* ptr2) { // Sample buffer
+  int n = 0;
+
+  // Separate the 32-bit variable input2 into two 16-bit integers (high 16 and
+  // low 16 bits), for using LATTICE_MUL_32_32_RSFT16 in the loop.
+  int16_t t16a = (int16_t)(input2 >> 16);
+  int16_t t16b = (int16_t)input2;
+  if (t16b < 0) t16a++;
+
+  // The loop filtering the samples *ptr0, *ptr1, *ptr2 with filter coefficients
+  // input0, input1, and input2.
+  for(n = 0; n < HALF_SUBFRAMELEN - 1; n++, ptr0++, ptr1++, ptr2++) {
+    int32_t tmp32a = 0;
+    int32_t tmp32b = 0;
+
+    // Calculate *ptr2 = input2 * (*ptr2 + input0 * (*ptr0));
+    tmp32a = WEBRTC_SPL_MUL_16_32_RSFT15(input0, *ptr0); // Q15 * Q15 >> 15 = Q15
+    tmp32b = *ptr2 + tmp32a; // Q15 + Q15 = Q15
+    *ptr2 = LATTICE_MUL_32_32_RSFT16(t16a, t16b, tmp32b);
+
+    // Calculate *ptr1 = input1 * (*ptr0) + input0 * (*ptr2);
+    tmp32a = WEBRTC_SPL_MUL_16_32_RSFT15(input1, *ptr0); // Q15*Q15>>15 = Q15
+    tmp32b = WEBRTC_SPL_MUL_16_32_RSFT15(input0, *ptr2); // Q15*Q15>>15 = Q15
+    *ptr1 = tmp32a + tmp32b; // Q15 + Q15 = Q15
+  }
+}
+
+// Declare a function pointer.
+FilterMaLoopFix WebRtcIsacfix_FilterMaLoopFix;
+
 /* filter the signal using normalized lattice filter */
 /* MA filter */
 void WebRtcIsacfix_NormLatticeFilterMa(WebRtc_Word16 orderCoef,
@@ -46,30 +104,6 @@ void WebRtcIsacfix_NormLatticeFilterMa(WebRtc_Word16 orderCoef,
   WebRtc_Word16 sh;
   WebRtc_Word16 t16a;
   WebRtc_Word16 t16b;
-
-#define LATTICE_MUL_32_32_RSFT16(a32a, a32b, b32)                  \
-  ((WebRtc_Word32)(WEBRTC_SPL_MUL(a32a, b32) + (WEBRTC_SPL_MUL_16_32_RSFT16(a32b, b32))))
-  /* This macro is FORBIDDEN to use elsewhere than in two places in this file
-     since it might give unpredictable results, since a general WebRtc_Word32*WebRtc_Word32
-     multiplication results in a 64 bit value. The result is then shifted just
-     16 steps to the right, giving need for 48 bits, i.e. in the generel case,
-     it will NOT fit in a WebRtc_Word32. In the cases used in here, the WebRtc_Word32 will be
-     enough, since (FOR SOME REASON!!!) the involved multiplicands aren't big
-     enough to overflow a WebRtc_Word32 after shifting right 16 bits. I have compared
-     the result of a multiplication between t32 and tmp32, done in two ways:
-
-     1) Using (WebRtc_Word32) (((float)(tmp32))*((float)(tmp32b))/65536.0);
-
-     2) Using LATTICE_MUL_32_32_RSFT16(t16a, t16b, tmp32b);
-
-     By running 25 files, I haven't found any bigger diff than 64 - this was in the
-     case when  method 1) gave 650235648 and 2) gave 650235712.
-
-     It might be good to investigate this further, in order to PROVE why it seems to
-     work without any problems. This might be done, by using the properties of
-     all reflection coefficients etc.
-
-  */
 
   for (u=0;u<SUBFRAMES;u++)
   {
@@ -133,24 +167,11 @@ void WebRtcIsacfix_NormLatticeFilterMa(WebRtc_Word16 orderCoef,
     /* save the states */
     for(k=0;k<orderCoef;k++)
     {
-      for(n=0;n<HALF_SUBFRAMELEN-1;n++)
-      {
-        // Calculate f[k+1][n+1] = inv_cth[k]*(f[k][n+1] + sth[k]*g[k][n]);
-        tmp32 = WEBRTC_SPL_MUL_16_32_RSFT15(sthQ15[k], gQ15[k][n]);//Q15*Q15>>15 = Q15
-        tmp32b= fQ15vec[n+1] + tmp32; //Q15+Q15=Q15
-        tmp32 = inv_cthQ16[k]; //Q16
-        t16a = (WebRtc_Word16) WEBRTC_SPL_RSHIFT_W32(tmp32, 16);
-        t16b = (WebRtc_Word16) (tmp32-WEBRTC_SPL_LSHIFT_W32(((WebRtc_Word32)t16a), 16));
-        if (t16b<0) t16a++;
-        tmp32 = LATTICE_MUL_32_32_RSFT16(t16a, t16b, tmp32b);
-        fQ15vec[n+1] = tmp32; // Q15
-
-        // Calculate g[k+1][n+1] = cth[k]*g[k][n] + sth[k]* f[k+1][n+1];
-        tmp32  = WEBRTC_SPL_MUL_16_32_RSFT15(cthQ15[k], gQ15[k][n]); //Q15*Q15>>15 = Q15
-        tmp32b = WEBRTC_SPL_MUL_16_32_RSFT15(sthQ15[k], fQ15vec[n+1]); //Q15*Q15>>15 = Q15
-        tmp32  = tmp32 + tmp32b;//Q15+Q15 = Q15
-        gQ15[k+1][n+1] = tmp32; // Q15
-      }
+      // for 0 <= n < HALF_SUBFRAMELEN - 1:
+      //   f[k+1][n+1] = inv_cth[k]*(f[k][n+1] + sth[k]*g[k][n]);
+      //   g[k+1][n+1] = cth[k]*g[k][n] + sth[k]* f[k+1][n+1];
+      WebRtcIsacfix_FilterMaLoopFix(sthQ15[k], cthQ15[k], inv_cthQ16[k],
+                                    &gQ15[k][0], &gQ15[k+1][1], &fQ15vec[1]);
     }
 
     fQ15vec[0] = fQtmp;

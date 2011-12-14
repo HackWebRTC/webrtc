@@ -11,7 +11,7 @@
 /*
  * filters.c
  *
- * This file contains function WebRtcIsacfix_AutocorrFix,
+ * This file contains function WebRtcIsacfix_AutocorrC,
  * AllpassFilterForDec32, and WebRtcIsacfix_DecimateAllpass32
  *
  */
@@ -22,16 +22,13 @@
 #include "lpc_masking_model.h"
 #include "codec.h"
 
-#if !(defined(WEBRTC_ANDROID) && defined(WEBRTC_ARCH_ARM_NEON))
 // Autocorrelation function in fixed point.
 // NOTE! Different from SPLIB-version in how it scales the signal.
-int WebRtcIsacfix_AutocorrFix(
-    WebRtc_Word32* __restrict r,
-    const WebRtc_Word16* __restrict x,
-    WebRtc_Word16 N,
-    WebRtc_Word16 order,
-    WebRtc_Word16* __restrict scale) {
-
+int WebRtcIsacfix_AutocorrC(WebRtc_Word32* __restrict r,
+                            const WebRtc_Word16* __restrict x,
+                            WebRtc_Word16 N,
+                            WebRtc_Word16 order,
+                            WebRtc_Word16* __restrict scale) {
   int i = 0;
   int j = 0;
   int16_t scaling = 0;
@@ -67,7 +64,6 @@ int WebRtcIsacfix_AutocorrFix(
 
   return(order + 1);
 }
-#endif // !(defined(WEBRTC_ANDROID) && defined(WEBRTC_ARCH_ARM_NEON))
 
 static const WebRtc_Word32 kApUpperQ15[ALLPASSSECTIONS] = { 1137, 12537 };
 static const WebRtc_Word32 kApLowerQ15[ALLPASSSECTIONS] = { 5059, 24379 };

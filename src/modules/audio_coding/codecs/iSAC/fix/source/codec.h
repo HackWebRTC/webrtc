@@ -122,7 +122,6 @@ void WebRtcIsacfix_NormLatticeFilterMa(WebRtc_Word16 orderCoef,
                                        WebRtc_Word16 lo_hi,
                                        WebRtc_Word16 *lat_outQ9);
 
-
 void WebRtcIsacfix_NormLatticeFilterAr(WebRtc_Word16 orderCoef,
                                        WebRtc_Word16 *stateGQ0,
                                        WebRtc_Word32 *lat_inQ25,
@@ -131,10 +130,54 @@ void WebRtcIsacfix_NormLatticeFilterAr(WebRtc_Word16 orderCoef,
                                        WebRtc_Word16 lo_hi,
                                        WebRtc_Word16 *lat_outQ0);
 
-int WebRtcIsacfix_AutocorrFix(WebRtc_Word32* __restrict r,
-                              const WebRtc_Word16*  __restrict x,
-                              WebRtc_Word16 N,
-                              WebRtc_Word16 order,
-                              WebRtc_Word16* __restrict scale);
+int WebRtcIsacfix_AutocorrC(WebRtc_Word32* __restrict r,
+                            const WebRtc_Word16* __restrict x,
+                            WebRtc_Word16 N,
+                            WebRtc_Word16 order,
+                            WebRtc_Word16* __restrict scale);
+
+void WebRtcIsacfix_FilterMaLoopC(int16_t input0,
+                                 int16_t input1,
+                                 int32_t input2,
+                                 int32_t* ptr0,
+                                 int32_t* ptr1,
+                                 int32_t* ptr2);
+
+// Functions for ARM-Neon platforms, in place of the above two generic C ones.
+#if (defined(WEBRTC_ANDROID) && defined(WEBRTC_ARCH_ARM_NEON))
+int WebRtcIsacfix_AutocorrNeon(WebRtc_Word32* __restrict r,
+                               const WebRtc_Word16* __restrict x,
+                               WebRtc_Word16 N,
+                               WebRtc_Word16 order,
+                               WebRtc_Word16* __restrict scale);
+
+void WebRtcIsacfix_FilterMaLoopNeon(int16_t input0,
+                                    int16_t input1,
+                                    int32_t input2,
+                                    int32_t* ptr0,
+                                    int32_t* ptr1,
+                                    int32_t* ptr2);
+#endif
+
+/**** Function pointers associated with 
+ **** WebRtcIsacfix_AutocorrC() / WebRtcIsacfix_AutocorrNeon()
+ **** and WebRtcIsacfix_FilterMaLoopC() / WebRtcIsacfix_FilterMaLoopNeon().
+ ****/
+
+typedef int (*AutocorrFix)(WebRtc_Word32* __restrict__ r,
+                           const WebRtc_Word16* __restrict__ x,
+                           WebRtc_Word16 N,
+                           WebRtc_Word16 order,
+                           WebRtc_Word16* __restrict__ scale);
+extern AutocorrFix WebRtcIsacfix_AutocorrFix;
+
+typedef void (*FilterMaLoopFix)(int16_t input0,
+                                int16_t input1,
+                                int32_t input2,
+                                int32_t* ptr0,
+                                int32_t* ptr1,
+                                int32_t* ptr2);
+extern FilterMaLoopFix WebRtcIsacfix_FilterMaLoopFix;
+
 
 #endif /* WEBRTC_MODULES_AUDIO_CODING_CODECS_ISAC_FIX_SOURCE_CODEC_H_ */

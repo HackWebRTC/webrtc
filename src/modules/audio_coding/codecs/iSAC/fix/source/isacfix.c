@@ -246,10 +246,17 @@ WebRtc_Word16 WebRtcIsacfix_EncoderInit(ISACFIX_MainStruct *ISAC_main_inst,
   WebRtcIsacfix_InitPostFilterbank(&ISAC_inst->ISACenc_obj.interpolatorstr_obj);
 #endif
 
+  // Initiaze function pointers.
+  WebRtcIsacfix_AutocorrFix = WebRtcIsacfix_AutocorrC;
+  WebRtcIsacfix_FilterMaLoopFix = WebRtcIsacfix_FilterMaLoopC;
+
+#ifdef WEBRTC_ARCH_ARM_NEON
+  WebRtcIsacfix_AutocorrFix = WebRtcIsacfix_AutocorrNeon;
+  WebRtcIsacfix_FilterMaLoopFix = WebRtcIsacfix_FilterMaLoopNeon;
+#endif
 
   return statusInit;
 }
-
 
 /****************************************************************************
  * WebRtcIsacfix_Encode(...)

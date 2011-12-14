@@ -11,7 +11,7 @@
 /*
  * filters_neon.c
  *
- * This file contains function WebRtcIsacfix_AutocorrFix, optimized for
+ * This file contains function WebRtcIsacfix_AutocorrNeon, optimized for
  * ARM Neon platform.
  *
  */
@@ -23,7 +23,7 @@
 
 // Autocorrelation function in fixed point.
 // NOTE! Different from SPLIB-version in how it scales the signal.
-int WebRtcIsacfix_AutocorrFix(
+int WebRtcIsacfix_AutocorrNeon(
     WebRtc_Word32* __restrict r,
     const WebRtc_Word16* __restrict x,
     WebRtc_Word16 N,

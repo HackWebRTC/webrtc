@@ -103,6 +103,7 @@ include $(BUILD_SHARED_LIBRARY)
 LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
+include $(LOCAL_PATH)/../../external/webrtc/android-webrtc.mk
 
 LOCAL_ARM_MODE := arm
 LOCAL_MODULE := libwebrtc
@@ -136,6 +137,15 @@ LOCAL_WHOLE_STATIC_LIBRARIES := \
     libwebrtc_vplib \
     libwebrtc_jpeg \
     libwebrtc_vpx
+
+# Add Neon libraries.
+ifneq (,$(filter '-DWEBRTC_DETECT_ARM_NEON',$(MY_WEBRTC_COMMON_DEFS)))
+LOCAL_WHOLE_STATIC_LIBRARIES += \
+    libwebrtc_isacfix_neon
+else ifeq ($(ARCH_ARM_HAVE_NEON),true)
+LOCAL_WHOLE_STATIC_LIBRARIES += \
+    libwebrtc_isacfix_neon
+endif
 
 LOCAL_SHARED_LIBRARIES := \
     libcutils \

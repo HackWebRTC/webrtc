@@ -6,6 +6,9 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+#############################
+# Build the non-neon library.
+
 LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
@@ -68,8 +71,41 @@ include external/stlport/libstlport.mk
 endif
 include $(BUILD_STATIC_LIBRARY)
 
+#########################
+# Build the neon library.
 
+include $(CLEAR_VARS)
+
+LOCAL_ARM_MODE := arm
+LOCAL_MODULE_CLASS := STATIC_LIBRARIES
+LOCAL_MODULE := libwebrtc_isacfix_neon
+LOCAL_MODULE_TAGS := optional
+LOCAL_SRC_FILES := \
+    filters_neon.c \
+    lattice_neon.S #.S extention is for including a header file in assembly.
+# TODO(kma): Check with C compiler team and on line community for any status
+# in the file name (.s vs .S), for a better solution.
+
+# Flags passed to both C and C++ files.
+LOCAL_CFLAGS := \
+    $(MY_WEBRTC_COMMON_DEFS) \
+    -mfpu=neon \
+    -flax-vector-conversions
+
+LOCAL_C_INCLUDES := \
+    $(LOCAL_PATH)/../interface \
+    $(LOCAL_PATH)/../../../../../.. \
+    $(LOCAL_PATH)/../../../../../../common_audio/signal_processing/include 
+
+
+ifndef NDK_ROOT
+include external/stlport/libstlport.mk
+endif
+include $(BUILD_STATIC_LIBRARY)
+
+###########################
 # isac test app
+
 include $(CLEAR_VARS)
 
 LOCAL_MODULE_TAGS := tests
