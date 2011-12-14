@@ -460,7 +460,8 @@ static __inline WebRtc_Word16  exp2_Q10_T(WebRtc_Word16 x) { // Both in and out 
 }
 
 
-
+// Declare a function pointer.
+AutocorrFix WebRtcIsacfix_AutocorrFix;
 
 void WebRtcIsacfix_GetLpcCoef(WebRtc_Word16 *inLoQ0,
                               WebRtc_Word16 *inHiQ0,
