@@ -188,6 +188,10 @@ int FileWrapperImpl::OpenFile(const char *fileNameUTF8, bool readOnly,
 
 int FileWrapperImpl::Read(void *buf, int len)
 {
+    if (len < 0)
+    {
+        return -1;
+    }
     if (_id != NULL)
     {
         int res = static_cast<int>(fread(buf, 1, len, _id));
@@ -198,7 +202,7 @@ int FileWrapperImpl::Read(void *buf, int len)
                 CloseFile();
             }
         }
-        return 0;
+        return res;
     }
     return -1;
 }
@@ -219,9 +223,9 @@ int FileWrapperImpl::WriteText(const char* format, ...)
     int num_chars = vfprintf(_id, format, args);
     va_end(args);
 
-    if (num_chars > 0)
+    if (num_chars >= 0)
     {
-        return 0;
+        return num_chars;
     }
     else
     {

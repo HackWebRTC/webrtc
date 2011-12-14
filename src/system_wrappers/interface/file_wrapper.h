@@ -53,12 +53,14 @@ public:
     virtual int FileName(char* fileNameUTF8,
                          size_t size) const = 0;
 
-    // Write text to the opened file. The written text can contain plain text
-    // and text with type specifiers in the same way as sprintf works.
+    // Write |format| to the opened file. Supply arguments to this function as
+    // you would printf. Returns the number of characters written or -1 on
+    // error.
     virtual int WriteText(const char* format, ...) = 0;
 
     // Inherited from Instream.
-    // Reads |len| bytes from file to |buf|.
+    // Reads |len| bytes from file to |buf|. Returns the number of bytes read
+    // or -1 on error.
     virtual int Read(void* buf, int len) = 0;
 
     // Inherited from OutStream.
