@@ -8,95 +8,106 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * vie_channel_manager.h
- */
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_CHANNEL_MANAGER_H_
+#define WEBRTC_VIDEO_ENGINE_VIE_CHANNEL_MANAGER_H_
 
-#ifndef WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_CHANNEL_MANAGER_H_
-#define WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_CHANNEL_MANAGER_H_
-
-// Defines
 #include "engine_configurations.h"
-#include "vie_defines.h"
+#include "system_wrappers/interface/map_wrapper.h"
 #include "typedefs.h"
-#include "map_wrapper.h"
-#include "vie_manager_base.h"
+#include "video_engine/vie_defines.h"
+#include "video_engine/vie_manager_base.h"
 
-namespace webrtc
-{
+namespace webrtc {
+
 class CriticalSectionWrapper;
-//class VoiceEngine;
 class ProcessThread;
 class ViEChannel;
-class VoEVideoSync;
-class ViEPerformanceMonitor;
 class ViEEncoder;
+class ViEPerformanceMonitor;
+class VoEVideoSync;
 class VoiceEngine;
 
-// ------------------------------------------------------------------
-// ViEChannelManager
-// ------------------------------------------------------------------
+class ViEChannelManager: private ViEManagerBase {
+  friend class ViEChannelManagerScoped;
+ public:
+  ViEChannelManager(int engine_id,
+                    int number_of_cores,
+                    ViEPerformanceMonitor& vie_performance_monitor);
+  ~ViEChannelManager();
 
-class ViEChannelManager: private ViEManagerBase
-{
-    friend class ViEChannelManagerScoped;
+  void SetModuleProcessThread(ProcessThread& module_process_thread);
 
-public:
-    ViEChannelManager(int engineId, int numberOfCores,
-                      ViEPerformanceMonitor& viePerformanceMonitor);
-    ~ViEChannelManager();
+  // Creates a new channel. 'channelId' will be the id of the created channel.
+  int CreateChannel(int& channel_id);
 
-    void SetModuleProcessThread(ProcessThread& moduleProcessThread);
-    int CreateChannel(int& channelId);
-    int CreateChannel(int& channelId, int originalChannel);
-    int DeleteChannel(int channelId);
-    int SetVoiceEngine(VoiceEngine* voiceEngine);
-    int ConnectVoiceChannel(int channelId, int audioChannelId);
-    int DisconnectVoiceChannel(int channelId);
-    VoiceEngine* GetVoiceEngine();
+  // Creates a channel and attaches to an already existing ViEEncoder.
+  int CreateChannel(int& channel_id, int original_channel);
 
-private:
-    // Used by ViEChannelScoped, forcing a manager user to use scoped
-    ViEChannel* ViEChannelPtr(int channelId) const;
-    void GetViEChannels(MapWrapper& channelMap);
+  // Deletes a channel.
+  int DeleteChannel(int channel_id);
 
-    // Methods used by ViECaptureScoped and ViEEncoderScoped
-    ViEEncoder* ViEEncoderPtr(int videoChannelId) const;
+  // Set the voice engine instance to be used by all video channels.
+  int SetVoiceEngine(VoiceEngine* voice_engine);
 
-    bool GetFreeChannelId(int& freeChannelId);
-    void ReturnChannelId(int channelId);
+  // Enables lip sync of the channel.
+  int ConnectVoiceChannel(int channel_id, int audio_channel_id);
 
-    // Returns true if at least one other channels uses the same ViEEncoder as channelId
-    bool ChannelUsingViEEncoder(int channelId) const;
+  // Disables lip sync of the channel.
+  int DisconnectVoiceChannel(int channel_id);
 
-    // Members
-    CriticalSectionWrapper* _ptrChannelIdCritsect; // protecting _channelMap and _freeChannelIds
-    int _engineId;
-    int _numberOfCores;
-    ViEPerformanceMonitor& _viePerformanceMonitor;
-    MapWrapper _channelMap;
-    bool* _freeChannelIds;
-    int _freeChannelIdsSize;
-    // Encoder
-    MapWrapper _vieEncoderMap; // Channel id -> ViEEncoder
-    VoEVideoSync* _voiceSyncInterface;
-    VoiceEngine* _voiceEngine;
-    ProcessThread* _moduleProcessThread;
+  VoiceEngine* GetVoiceEngine();
+
+ private:
+  // Used by ViEChannelScoped, forcing a manager user to use scoped.
+  // Returns a pointer to the channel with id 'channelId'.
+  ViEChannel* ViEChannelPtr(int channel_id) const;
+
+  // Adds all channels to channel_map.
+  void GetViEChannels(MapWrapper& channel_map);
+
+  // Methods used by ViECaptureScoped and ViEEncoderScoped.
+  // Gets the ViEEncoder used as input for video_channel_id
+  ViEEncoder* ViEEncoderPtr(int video_channel_id) const;
+
+  // Returns true if we found a new channel id, free_channel_id, false
+  // otherwise.
+  bool GetFreeChannelId(int& free_channel_id);
+
+  // Returns a previously allocated channel id.
+  void ReturnChannelId(int channel_id);
+
+  // Returns true if at least one other channels uses the same ViEEncoder as
+  // channel_id.
+  bool ChannelUsingViEEncoder(int channel_id) const;
+
+  // Protects channel_map_ and free_channel_ids_.
+  CriticalSectionWrapper* channel_id_critsect_;
+  int engine_id_;
+  int number_of_cores_;
+  ViEPerformanceMonitor& vie_performance_monitor_;
+  MapWrapper channel_map_;
+  bool* free_channel_ids_;
+  int free_channel_ids_size_;
+
+  // Maps Channel id -> ViEEncoder.
+  MapWrapper vie_encoder_map_;
+  VoEVideoSync* voice_sync_interface_;
+  VoiceEngine* voice_engine_;
+  ProcessThread* module_process_thread_;
 };
 
-// ------------------------------------------------------------------
-// ViEChannelManagerScoped
-// ------------------------------------------------------------------
-class ViEChannelManagerScoped: private ViEManagerScopedBase
-{
-public:
-    ViEChannelManagerScoped(const ViEChannelManager& vieChannelManager);
-    ViEChannel* Channel(int vieChannelId) const;
-    ViEEncoder* Encoder(int vieChannelId) const;
+class ViEChannelManagerScoped: private ViEManagerScopedBase {
+ public:
+  explicit ViEChannelManagerScoped(
+      const ViEChannelManager& vie_channel_manager);
+  ViEChannel* Channel(int vie_channel_id) const;
+  ViEEncoder* Encoder(int vie_channel_id) const;
 
-    // Returns true if at lease one other channels uses the same ViEEncoder as channelId
-    bool ChannelUsingViEEncoder(int channelId) const;
+  // Returns true if at lease one other channels uses the same ViEEncoder as
+  // channel_id.
+  bool ChannelUsingViEEncoder(int channel_id) const;
 };
 
-} //namespace webrtc
-#endif    // WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_CHANNEL_MANAGER_H_
+}  // namespace webrtc
+
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_CHANNEL_MANAGER_H_
