@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "trace_windows.h"
+#include "trace_win.h"
 
 #include <cassert>
 #include <stdarg.h>

@@ -13,7 +13,7 @@
 #include <assert.h>
 
 #if defined(_WIN32)
-    #include "rw_lock_windows.h"
+    #include "rw_lock_win.h"
 #elif defined(WEBRTC_ANDROID)
     #include <stdlib.h>
     #include "rw_lock_generic.h"

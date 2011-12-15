@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "event_windows.h"
+#include "event_win.h"
 
 #include "Mmsystem.h"
 

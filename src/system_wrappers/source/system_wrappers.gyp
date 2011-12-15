@@ -6,12 +6,8 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
-# TODO: Rename files to use *_linux.cpp etc. names, to automatically include relevant files. Remove conditions section.
-
 {
-  'includes': [
-    '../../common_settings.gypi', # Common settings
-  ],
+  'includes': [ '../../build/common.gypi', ],
   'targets': [
     {
       'target_name': 'system_wrappers',
@@ -38,7 +34,7 @@
         '../interface/data_log_impl.h',
         '../interface/event_wrapper.h',
         '../interface/file_wrapper.h',
-        '../interface/fix_interlocked_exchange_pointer_windows.h',
+        '../interface/fix_interlocked_exchange_pointer_win.h',
         '../interface/list_wrapper.h',
         '../interface/map_wrapper.h',
         '../interface/ref_count.h',
@@ -54,108 +50,96 @@
         'atomic32.cc',
         'atomic32_linux.h',
         'atomic32_mac.h',
-        'atomic32_windows.h',
+        'atomic32_win.h',
         'condition_variable.cc',
+        'condition_variable_posix.cc',
         'condition_variable_posix.h',
-        'condition_variable_windows.h',
+        'condition_variable_win.cc',
+        'condition_variable_win.h',
         'cpu.cc',
-        'cpu_dummy.cc',
+        'cpu_no_op.cc',
         'cpu_info.cc',
+        'cpu_linux.cc',
         'cpu_linux.h',
+        'cpu_mac.cc',
         'cpu_mac.h',
-        'cpu_windows.h',
+        'cpu_win.cc',
+        'cpu_win.h',
         'cpu_features.cc',
         'critical_section.cc',
+        'critical_section_posix.cc',
         'critical_section_posix.h',
-        'critical_section_windows.h',
+        'critical_section_win.cc',
+        'critical_section_win.h',
+        'data_log.cc',
         'data_log_c.cc',
+        'data_log_no_op.cc',
         'event.cc',
+        'event_posix.cc',
         'event_posix.h',
-        'event_windows.h',
+        'event_win.cc',
+        'event_win.h',
         'file_impl.cc',
         'file_impl.h',
         'list_no_stl.cc',
         'map.cc',
         'rw_lock.cc',
+        'rw_lock_posix.cc',
         'rw_lock_posix.h',
-        'rw_lock_windows.h',
+        'rw_lock_win.cc',
+        'rw_lock_win.h',
         'sort.cc',
         'thread.cc',
+        'thread_posix.cc',
         'thread_posix.h',
-        'thread_windows.h',
-        'thread_windows_set_name.h',
+        'thread_win.cc',
+        'thread_win.h',
+        'set_thread_name_win.h',
         'trace_impl.cc',
-        'trace_impl_no_op.cc',
         'trace_impl.h',
+        'trace_impl_no_op.cc',
+        'trace_posix.cc',
         'trace_posix.h',
-        'trace_windows.h',
+        'trace_win.cc',
+        'trace_win.h',
       ],
       'conditions': [
-        ['os_posix==1', {
-          'sources': [
-            'condition_variable_posix.cc',
-            'critical_section_posix.cc',
-            'event_posix.cc',
-            'rw_lock_posix.cc',
-            'thread_posix.cc',
-            'trace_posix.cc',
-          ],
-        }],
         ['enable_data_logging==1', {
-          'sources': [
-            'data_log.cc',
-          ],
+          'sources!': [ 'data_log_no_op.cc', ],
         },{
-          'sources': [
-            'data_log_dummy.cc',
-          ],
+          'sources!': [ 'data_log.cc', ],
         },],
         ['OS=="linux"', {
-          'sources': [
-            'cpu_linux.cc',
-          ],
           'link_settings': {
-            'libraries': [
-              '-lrt',
-            ],
+            'libraries': [ '-lrt', ],
           },
         }],
         ['OS=="mac"', {
-          'sources': [
-            'cpu_mac.cc',
-          ],
           'link_settings': {
-            'libraries': [
-              '$(SDKROOT)/System/Library/Frameworks/ApplicationServices.framework',
-            ],
+            'libraries': [ '$(SDKROOT)/System/Library/Frameworks/ApplicationServices.framework', ],
           },
         }],
         ['OS=="win"', {
-          'sources': [
-            'condition_variable_windows.cc',
-            'cpu_windows.cc',
-            'critical_section_windows.cc',
-            'event_windows.cc',
-            'rw_lock_windows.cc',
-            'thread_windows.cc',
-            'trace_windows.cc',
-          ],
           'link_settings': {
-            'libraries': [
-              '-lwinmm.lib',
-            ],
+            'libraries': [ '-lwinmm.lib', ],
           },
         }],
         ['build_with_chromium==1', {
           'sources!': [
             'cpu.cc',
+            'cpu_linux.h',
+            'cpu_mac.h',
+            'cpu_win.h',
             'trace_impl.cc',
+            'trace_impl.h',
             'trace_posix.cc',
-            'trace_windows.cc',
+            'trace_posix.h',
+            'trace_win.cc',
+            'trace_win.h',
           ],
         }, {
           'sources!': [
-            'cpu_dummy.cc',
+            'cpu_no_op.cc',
             'trace_impl_no_op.cc',
           ],
         }]
@@ -177,15 +161,17 @@
             'cpu_wrapper_unittest.cc',
             'list_unittest.cc',
             'map_unittest.cc',
+            'data_log_unittest.cc',
+            'data_log_unittest_disabled.cc',
             'data_log_helpers_unittest.cc',
             'data_log_c_helpers_unittest.c',
             'data_log_c_helpers_unittest.h',
           ],
           'conditions': [
             ['enable_data_logging==1', {
-              'sources': [ 'data_log_unittest.cc', ],
+              'sources!': [ 'data_log_unittest_disabled.cc', ],
             }, {
-              'sources': [ 'data_log_unittest_disabled.cc', ],
+              'sources!': [ 'data_log_unittest.cc', ],
             }],
           ],
         },

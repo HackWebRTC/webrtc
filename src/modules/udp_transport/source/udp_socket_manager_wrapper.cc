@@ -13,7 +13,7 @@
 #include <cassert>
 
 #ifdef _WIN32
-#include "fix_interlocked_exchange_pointer_windows.h"
+#include "fix_interlocked_exchange_pointer_win.h"
 #include "udp_socket_manager_windows.h"
 #include "udp_socket2_manager_windows.h"
 #else

@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "thread_windows.h"
+#include "thread_win.h"
 
 #include <assert.h>
 #include <process.h>
 #include <stdio.h>
 #include <windows.h>
 
-#include "thread_windows_set_name.h"
+#include "set_thread_name_win.h"
 #include "trace.h"
 
 #if defined(_WIN32)

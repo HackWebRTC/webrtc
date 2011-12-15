@@ -15,7 +15,7 @@
 
 #include "critical_section_wrapper.h"
 #ifdef _WIN32
-#include "fix_interlocked_exchange_pointer_windows.h"
+#include "fix_interlocked_exchange_pointer_win.h"
 #endif
 
 namespace webrtc {

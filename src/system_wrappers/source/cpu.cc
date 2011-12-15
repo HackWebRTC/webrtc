@@ -11,7 +11,7 @@
 #include "cpu_wrapper.h"
 
 #if defined(_WIN32)
-    #include "cpu_windows.h"
+    #include "cpu_win.h"
 #elif defined(WEBRTC_MAC)
     #include "cpu_mac.h"
 #elif defined(WEBRTC_MAC_INTEL)

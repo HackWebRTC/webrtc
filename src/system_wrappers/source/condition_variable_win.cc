@@ -18,9 +18,9 @@
 // TODO (hellner): probably nicer to split up native and generic
 // implementation into two different files
 
-#include "condition_variable_windows.h"
+#include "condition_variable_win.h"
 
-#include "critical_section_windows.h"
+#include "critical_section_win.h"
 #include "trace.h"
 
 namespace webrtc {

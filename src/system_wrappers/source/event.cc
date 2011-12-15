@@ -12,7 +12,7 @@
 
 #if defined(_WIN32)
     #include <windows.h>
-    #include "event_windows.h"
+    #include "event_win.h"
 #elif defined(WEBRTC_MAC_INTEL)
     #include <ApplicationServices/ApplicationServices.h>
     #include <pthread.h>

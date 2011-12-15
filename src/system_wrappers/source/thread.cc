@@ -11,7 +11,7 @@
 #include "thread_wrapper.h"
 
 #if defined(_WIN32)
-    #include "thread_windows.h"
+    #include "thread_win.h"
 #else
     #include "thread_posix.h"
 #endif

@@ -11,7 +11,7 @@
 #if defined(_WIN32)
    #include <windows.h>
    #include "condition_variable_wrapper.h"
-   #include "condition_variable_windows.h"
+   #include "condition_variable_win.h"
 #elif defined(WEBRTC_LINUX)
    #include <pthread.h>
    #include "condition_variable_wrapper.h"

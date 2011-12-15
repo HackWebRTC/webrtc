@@ -11,7 +11,7 @@
 #include "atomic32_wrapper.h"
 
 #if defined(_WIN32)
-    #include "atomic32_windows.h"
+    #include "atomic32_win.h"
 #elif defined(WEBRTC_LINUX)
     #include "atomic32_linux.h"
 #elif defined(WEBRTC_MAC)

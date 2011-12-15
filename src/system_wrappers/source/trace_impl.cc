@@ -14,7 +14,7 @@
 #include <string.h> // memset
 
 #ifdef _WIN32
-#include "trace_windows.h"
+#include "trace_win.h"
 #else
 #include <stdio.h>
 #include <time.h>

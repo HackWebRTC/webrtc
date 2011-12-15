@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rw_lock_windows.h"
+#include "rw_lock_win.h"
 
 #include "critical_section_wrapper.h"
 #include "condition_variable_wrapper.h"
