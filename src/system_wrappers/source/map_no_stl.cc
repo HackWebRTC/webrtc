@@ -75,7 +75,7 @@ int MapNoStl::Insert(int id, void* ptr)
 {
     MapNoStlItem* new_item = new MapNoStlItem(id, ptr);
 
-    CriticalSectionScoped lock(*critical_section_);
+    CriticalSectionScoped lock(critical_section_);
     MapNoStlItem* item = first_;
     size_++;
     if (!item)
@@ -144,7 +144,7 @@ MapNoStlItem* MapNoStl::Previous(MapNoStlItem* item) const
 
 MapNoStlItem* MapNoStl::Find(int id) const
 {
-    CriticalSectionScoped lock(*critical_section_);
+    CriticalSectionScoped lock(critical_section_);
     MapNoStlItem* item = Locate(id);
     return item;
 }
@@ -155,13 +155,13 @@ int MapNoStl::Erase(MapNoStlItem* item)
     {
         return -1;
     }
-    CriticalSectionScoped lock(*critical_section_);
+    CriticalSectionScoped lock(critical_section_);
     return Remove(item);
 }
 
 int MapNoStl::Erase(const int id)
 {
-    CriticalSectionScoped lock(*critical_section_);
+    CriticalSectionScoped lock(critical_section_);
     MapNoStlItem* item = Locate(id);
     if(!item)
     {

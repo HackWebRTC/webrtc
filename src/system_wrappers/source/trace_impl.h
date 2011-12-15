@@ -109,7 +109,7 @@ private:
 
     void WriteToFile();
 
-    CriticalSectionWrapper& _critsectInterface;
+    CriticalSectionWrapper* _critsectInterface;
     TraceCallback* _callback;
     WebRtc_UWord32 _rowCountText;
     WebRtc_UWord32 _fileCountText;
@@ -119,7 +119,7 @@ private:
     EventWrapper& _event;
 
     // _critsectArray protects _activeQueue
-    CriticalSectionWrapper& _critsectArray;
+    CriticalSectionWrapper* _critsectArray;
     WebRtc_UWord16 _nextFreeIdx[WEBRTC_TRACE_NUM_ARRAY];
     TraceLevel _level[WEBRTC_TRACE_NUM_ARRAY][WEBRTC_TRACE_MAX_QUEUE];
     WebRtc_UWord16 _length[WEBRTC_TRACE_NUM_ARRAY][WEBRTC_TRACE_MAX_QUEUE];

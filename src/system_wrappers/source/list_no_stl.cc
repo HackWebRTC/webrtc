@@ -79,7 +79,7 @@ unsigned int ListWrapper::GetSize() const
 int ListWrapper::PushBack(const void* ptr)
 {
     ListItem* item = new ListItem(ptr);
-    CriticalSectionScoped lock(*critical_section_);
+    CriticalSectionScoped lock(critical_section_);
     PushBackImpl(item);
     return 0;
 }
@@ -87,7 +87,7 @@ int ListWrapper::PushBack(const void* ptr)
 int ListWrapper::PushBack(const unsigned int item_id)
 {
     ListItem* item = new ListItem(item_id);
-    CriticalSectionScoped lock(*critical_section_);
+    CriticalSectionScoped lock(critical_section_);
     PushBackImpl(item);
     return 0;
 }
@@ -95,7 +95,7 @@ int ListWrapper::PushBack(const unsigned int item_id)
 int ListWrapper::PushFront(const unsigned int item_id)
 {
     ListItem* item = new ListItem(item_id);
-    CriticalSectionScoped lock(*critical_section_);
+    CriticalSectionScoped lock(critical_section_);
     PushFrontImpl(item);
     return 0;
 }
@@ -103,7 +103,7 @@ int ListWrapper::PushFront(const unsigned int item_id)
 int ListWrapper::PushFront(const void* ptr)
 {
     ListItem* item = new ListItem(ptr);
-    CriticalSectionScoped lock(*critical_section_);
+    CriticalSectionScoped lock(critical_section_);
     PushFrontImpl(item);
     return 0;
 }
@@ -159,7 +159,7 @@ int ListWrapper::Insert(ListItem* existing_previous_item, ListItem* new_item)
     {
         return -1;
     }
-    CriticalSectionScoped lock(*critical_section_);
+    CriticalSectionScoped lock(critical_section_);
     if (!existing_previous_item)
     {
         PushBackImpl(new_item);
@@ -195,7 +195,7 @@ int ListWrapper::InsertBefore(ListItem* existing_next_item,
     {
         return -1;
     }
-    CriticalSectionScoped lock(*critical_section_);
+    CriticalSectionScoped lock(critical_section_);
     if (!existing_next_item)
     {
         PushBackImpl(new_item);

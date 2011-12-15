@@ -68,7 +68,7 @@ TraceImpl* TraceImpl::CreateInstance()
 }
 
 TraceImpl::TraceImpl()
-    : _critsectInterface(*CriticalSectionWrapper::CreateCriticalSection()),
+    : _critsectInterface(CriticalSectionWrapper::CreateCriticalSection()),
       _callback(NULL),
       _rowCountText(0),
       _fileCountText(0),
@@ -76,7 +76,7 @@ TraceImpl::TraceImpl()
       _thread(*ThreadWrapper::CreateThread(TraceImpl::Run, this,
                                            kHighestPriority, "Trace")),
       _event(*EventWrapper::Create()),
-      _critsectArray(*CriticalSectionWrapper::CreateCriticalSection()),
+      _critsectArray(CriticalSectionWrapper::CreateCriticalSection()),
       _nextFreeIdx(),
       _level(),
       _length(),
@@ -135,8 +135,8 @@ TraceImpl::~TraceImpl()
     delete &_event;
     delete &_traceFile;
     delete &_thread;
-    delete &_critsectInterface;
-    delete &_critsectArray;
+    delete _critsectInterface;
+    delete _critsectArray;
 
     for(int m = 0; m < WEBRTC_TRACE_NUM_ARRAY; m++)
     {

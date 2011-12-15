@@ -120,7 +120,7 @@ Row::~Row() {
 
 int Row::InsertCell(const std::string& column_name,
                     const Container* value_container) {
-  CriticalSectionScoped synchronize(*cells_lock_);
+  CriticalSectionScoped synchronize(cells_lock_);
   assert(cells_.count(column_name) == 0);
   if (cells_.count(column_name) > 0)
     return -1;
@@ -130,7 +130,7 @@ int Row::InsertCell(const std::string& column_name,
 
 void Row::ToString(const std::string& column_name,
                    std::string* value_string) {
-  CriticalSectionScoped synchronize(*cells_lock_);
+  CriticalSectionScoped synchronize(cells_lock_);
   const Container* container = cells_[column_name];
   if (container == NULL) {
     *value_string = "NaN,";
@@ -179,7 +179,7 @@ int LogTable::AddColumn(const std::string& column_name,
     assert(false);
     return -1;
   } else {
-    CriticalSectionScoped synchronize(*table_lock_);
+    CriticalSectionScoped synchronize(table_lock_);
     if (write_header_)
       columns_[column_name] = multi_value_length;
     else
@@ -189,14 +189,14 @@ int LogTable::AddColumn(const std::string& column_name,
 }
 
 void LogTable::NextRow() {
-  CriticalSectionScoped sync_rows(*table_lock_);
+  CriticalSectionScoped sync_rows(table_lock_);
   rows_history_->push_back(current_row_);
   current_row_ = new Row;
 }
 
 int LogTable::InsertCell(const std::string& column_name,
                          const Container* value_container) {
-  CriticalSectionScoped synchronize(*table_lock_);
+  CriticalSectionScoped synchronize(table_lock_);
   assert(columns_.count(column_name) > 0);
   if (columns_.count(column_name) == 0)
     return -1;
@@ -222,7 +222,7 @@ void LogTable::Flush() {
   ColumnMap::iterator column_it;
   bool commit_header = false;
   if (write_header_) {
-    CriticalSectionScoped synchronize(*table_lock_);
+    CriticalSectionScoped synchronize(table_lock_);
     if (write_header_) {
       commit_header = true;
       write_header_ = false;
@@ -250,7 +250,7 @@ void LogTable::Flush() {
   // calls this function while we are writing.
   // We don't want to block the list while we're writing to file.
   {
-    CriticalSectionScoped synchronize(*table_lock_);
+    CriticalSectionScoped synchronize(table_lock_);
     RowList* tmp = rows_flush_;
     rows_flush_ = rows_history_;
     rows_history_ = tmp;
@@ -340,7 +340,7 @@ DataLogImpl::~DataLogImpl() {
 }
 
 int DataLogImpl::CreateLog() {
-  CriticalSectionScoped synchronize(*crit_sect_);
+  CriticalSectionScoped synchronize(crit_sect_);
   if (instance_ == NULL) {
     instance_ = new DataLogImpl();
     return instance_->Init();
@@ -370,7 +370,7 @@ DataLogImpl* DataLogImpl::StaticInstance() {
 }
 
 void DataLogImpl::ReturnLog() {
-  CriticalSectionScoped synchronize(*crit_sect_);
+  CriticalSectionScoped synchronize(crit_sect_);
   if (instance_ && instance_->counter_ > 1) {
     --instance_->counter_;
     return;

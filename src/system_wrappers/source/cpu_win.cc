@@ -158,7 +158,7 @@ bool CpuWindows::StopPollingCpu()
         // If StopPollingCpu is called immediately after StartPollingCpu() it is
         // possible that cpu_polling_thread is in the process of initializing.
         // Let initialization finish to avoid getting into a bad state.
-        CriticalSectionScoped cs(*init_crit_);
+        CriticalSectionScoped cs(init_crit_);
         while(initialize_)
         {
             init_cond_->SleepCS(*init_crit_);
@@ -169,7 +169,7 @@ bool CpuWindows::StopPollingCpu()
     {
         return false;
     }
-    CriticalSectionScoped cs(*terminate_crit_);
+    CriticalSectionScoped cs(terminate_crit_);
     terminate_ = true;
     sleep_event->Set();
     while (!has_terminated_)
@@ -190,7 +190,7 @@ bool CpuWindows::Process(void* thread_object)
 bool CpuWindows::ProcessImpl()
 {
     {
-        CriticalSectionScoped cs(*terminate_crit_);
+        CriticalSectionScoped cs(terminate_crit_);
         if (terminate_)
         {
             const bool success = Terminate();
@@ -202,7 +202,7 @@ bool CpuWindows::ProcessImpl()
     // Initialize on first iteration
     if (initialize_)
     {
-        CriticalSectionScoped cs(*init_crit_);
+        CriticalSectionScoped cs(init_crit_);
         initialize_ = false;
         const bool success = Initialize();
         init_cond_->WakeAll();

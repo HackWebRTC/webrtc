@@ -47,7 +47,7 @@ static T* GetStaticInstance(CountOperation count_operation) {
   // reachable from statics leaked so no noise is added by doing this.
   static CriticalSectionWrapper* crit_sect(
       CriticalSectionWrapper::CreateCriticalSection());
-  CriticalSectionScoped lock(*crit_sect);
+  CriticalSectionScoped lock(crit_sect);
 
   if (count_operation ==
       kAddRefNoCreate && instance_count == 0) {
