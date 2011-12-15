@@ -37,8 +37,8 @@ public:
     virtual int SetMaxFileSize(size_t bytes);
     virtual int Flush();
 
-    virtual int Read(void* buf, int len);
-    virtual bool Write(const void *buf, int len);
+    virtual int Read(void* buf, int length);
+    virtual bool Write(const void *buf, int length);
     virtual int WriteText(const char* format, ...);
     virtual int Rewind();
 

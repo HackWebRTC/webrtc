@@ -88,23 +88,24 @@ int FileWrapperImpl::Flush()
 int FileWrapperImpl::FileName(char* fileNameUTF8,
                               size_t size) const
 {
-    size_t len = strlen(_fileNameUTF8);
-    if(len > kMaxFileNameSize)
+    size_t length = strlen(_fileNameUTF8);
+    if(length > kMaxFileNameSize)
     {
         assert(false);
         return -1;
     }
-    if(len < 1)
+    if(length < 1)
     {
         return -1;
     }
+
     // Make sure to NULL terminate
-    if(size < len)
+    if(size < length)
     {
-        len = size - 1;
+        length = size - 1;
     }
-    memcpy(fileNameUTF8, _fileNameUTF8, len);
-    fileNameUTF8[len] = 0;
+    memcpy(fileNameUTF8, _fileNameUTF8, length);
+    fileNameUTF8[length] = 0;
     return 0;
 }
 
@@ -186,36 +187,31 @@ int FileWrapperImpl::OpenFile(const char *fileNameUTF8, bool readOnly,
     return -1;
 }
 
-int FileWrapperImpl::Read(void *buf, int len)
+int FileWrapperImpl::Read(void* buf, int length)
 {
-    if (len < 0)
-    {
-        return -1;
-    }
-    if (_id != NULL)
-    {
-        int res = static_cast<int>(fread(buf, 1, len, _id));
-        if (res != len)
-        {
-            if(!_looping)
-            {
-                CloseFile();
-            }
-        }
-        return res;
-    }
-    return -1;
-}
-
-int FileWrapperImpl::WriteText(const char* format, ...)
-{
-    if (_readOnly)
+    if (length < 0)
         return -1;
 
     if (_id == NULL)
         return -1;
 
+    int bytes_read = static_cast<int>(fread(buf, 1, length, _id));
+    if (bytes_read != length && !_looping)
+    {
+        CloseFile();
+    }
+    return bytes_read;
+}
+
+int FileWrapperImpl::WriteText(const char* format, ...)
+{
     if (format == NULL)
+        return -1;
+
+    if (_readOnly)
+        return -1;
+
+    if (_id == NULL)
         return -1;
 
     va_list args;
@@ -234,30 +230,35 @@ int FileWrapperImpl::WriteText(const char* format, ...)
     }
 }
 
-bool FileWrapperImpl::Write(const void* buf, int len)
+bool FileWrapperImpl::Write(const void* buf, int length)
 {
+    if (buf == NULL)
+        return false;
+
+    if (length < 0)
+        return false;
+
     if (_readOnly)
+        return false;
+
+    if (_id == NULL)
+        return false;
+
+    // Check if it's time to stop writing.
+    if (_maxSizeInBytes > 0 && (_sizeInBytes + length) > _maxSizeInBytes)
     {
+        Flush();
         return false;
     }
 
-    if (_id != NULL)
+    size_t num_bytes = fwrite(buf, 1, length, _id);
+    if (num_bytes > 0)
     {
-        // Check if it's time to stop writing.
-        if (_maxSizeInBytes > 0 && (_sizeInBytes + len) > _maxSizeInBytes)
-        {
-            Flush();
-            return false;
-        }
-
-        size_t num_bytes = fwrite(buf, 1, len, _id);
-        if (num_bytes > 0)
-        {
-            _sizeInBytes += num_bytes;
-            return true;
-        }
-        CloseFile();
+        _sizeInBytes += num_bytes;
+        return true;
     }
+
+    CloseFile();
     return false;
 }
 

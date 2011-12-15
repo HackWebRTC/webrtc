@@ -53,20 +53,20 @@ public:
     virtual int FileName(char* fileNameUTF8,
                          size_t size) const = 0;
 
-    // Write |format| to the opened file. Supply arguments to this function as
-    // you would printf. Returns the number of characters written or -1 on
-    // error.
+    // Write |format| to the opened file. Arguments are taken in the same manner
+    // as printf. That is, supply a format string containing text and
+    // specifiers. Returns the number of characters written or -1 on error.
     virtual int WriteText(const char* format, ...) = 0;
 
     // Inherited from Instream.
-    // Reads |len| bytes from file to |buf|. Returns the number of bytes read
+    // Reads |length| bytes from file to |buf|. Returns the number of bytes read
     // or -1 on error.
-    virtual int Read(void* buf, int len) = 0;
+    virtual int Read(void* buf, int length) = 0;
 
     // Inherited from OutStream.
-    // Writes |len| bytes from |buf| to file. The actual writing may happen
+    // Writes |length| bytes from |buf| to file. The actual writing may happen
     // some time later. Call Flush() to force a write.
-    virtual bool Write(const void *buf, int len) = 0;
+    virtual bool Write(const void *buf, int length) = 0;
 
     // Inherited from both Instream and OutStream.
     // Rewinds the file to the start. Only available when OpenFile() has been
