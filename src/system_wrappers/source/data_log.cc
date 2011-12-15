@@ -340,7 +340,7 @@ DataLogImpl::~DataLogImpl() {
 }
 
 int DataLogImpl::CreateLog() {
-  CriticalSectionScoped synchronize(crit_sect_);
+  CriticalSectionScoped synchronize(crit_sect_.get());
   if (instance_ == NULL) {
     instance_ = new DataLogImpl();
     return instance_->Init();
@@ -370,7 +370,7 @@ DataLogImpl* DataLogImpl::StaticInstance() {
 }
 
 void DataLogImpl::ReturnLog() {
-  CriticalSectionScoped synchronize(crit_sect_);
+  CriticalSectionScoped synchronize(crit_sect_.get());
   if (instance_ && instance_->counter_ > 1) {
     --instance_->counter_;
     return;
