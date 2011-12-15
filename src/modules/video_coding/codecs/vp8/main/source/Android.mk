@@ -16,12 +16,16 @@ LOCAL_MODULE_CLASS := STATIC_LIBRARIES
 LOCAL_MODULE := libwebrtc_vp8
 LOCAL_MODULE_TAGS := optional
 LOCAL_CPP_EXTENSION := .cc
-LOCAL_SRC_FILES := vp8.cc \
+LOCAL_SRC_FILES := \
+    reference_picture_selection.cc \
+    vp8.cc \
     vp8_simulcast.cc
 
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \
     $(MY_WEBRTC_COMMON_DEFS)
+# TODO(leozwang) Enable WEBRTC_LIBVPX_VERSION after libvpx is updateed
+# to a new version and also add temporal_layers.cc
 
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../interface \
