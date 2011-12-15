@@ -921,59 +921,6 @@ int VoETestManager::SetUp() {
   return 0;
 }
 
-int VoETestManager::TestCodecsBeforeStreaming() {
-  CodecInst codec_instance;
-  memset(&codec_instance, 0, sizeof(codec_instance));
-
-  // This testing must be done before we start playing.
-#ifdef _TEST_CODEC_
-  // Test that set and get payload type work.
-#if defined(WEBRTC_CODEC_ISAC)
-  TEST_LOG("Getting payload type for iSAC\n");
-  strcpy(codec_instance.plname, "niklas");
-  codec_instance.channels = 1;
-  codec_instance.plfreq = 16000;
-  codec_instance.pacsize = 480;
-  // Should fail since niklas is not a valid codec name.
-  TEST_MUSTPASS(!voe_codec_->GetRecPayloadType(0, codec_instance));
-  // Both iSAC and ISAC should work here.
-  strcpy(codec_instance.plname, "iSAC");
-  TEST_MUSTPASS(voe_codec_->GetRecPayloadType(0, codec_instance));
-  strcpy(codec_instance.plname, "ISAC");
-  TEST_MUSTPASS(voe_codec_->GetRecPayloadType(0,codec_instance));
-  int original_pltype = codec_instance.pltype;  // Default payload type is 103.
-  TEST_LOG("Setting payload type for iSAC to 127\n");
-  codec_instance.pltype = 123;
-  TEST_MUSTPASS(voe_codec_->SetRecPayloadType(0,codec_instance));
-  TEST_MUSTPASS(voe_codec_->GetRecPayloadType(0,codec_instance));
-  TEST_MUSTPASS(!(codec_instance.pltype==123));
-  TEST_LOG("Setting it back\n");
-  codec_instance.pltype = original_pltype;
-  TEST_MUSTPASS(voe_codec_->SetRecPayloadType(0,codec_instance));
-  TEST_MUSTPASS(voe_codec_->GetRecPayloadType(0,codec_instance));
-  TEST_MUSTPASS(!(codec_instance.pltype==original_pltype));
-  codec_instance.pltype = 123;
-  codec_instance.plfreq = 8000;
-  codec_instance.pacsize = 240;
-  codec_instance.rate = 13300;
-#ifdef WEBRTC_CODEC_ILBC
-  strcpy(codec_instance.plname, "iLBC");
-  TEST_MUSTPASS(voe_codec_->GetRecPayloadType(0,codec_instance));
-  original_pltype = codec_instance.pltype;
-  codec_instance.pltype = 123;
-  TEST_MUSTPASS(voe_codec_->SetRecPayloadType(0,codec_instance));
-  TEST_MUSTPASS(voe_codec_->GetRecPayloadType(0,codec_instance));
-  TEST_LOG("Setting it back\n");
-  codec_instance.pltype = original_pltype;
-  TEST_MUSTPASS(voe_codec_->SetRecPayloadType(0,codec_instance));
-  TEST_MUSTPASS(voe_codec_->GetRecPayloadType(0,codec_instance));
-  TEST_MUSTPASS(!(codec_instance.pltype==original_pltype));
-#endif // #ifdef WEBRTC_CODEC_ILBC
-#endif // #if defined(WEBRTC_CODEC_ISAC)
-#endif // #ifdef _TEST_CODEC_
-  return 0;
-}
-
 int VoETestManager::TestNetworkBeforeStreaming() {
   ///////////////////////////////////////////////
   // Network (test before streaming is activated)
@@ -1470,7 +1417,6 @@ int VoETestManager::DoStandardTest() {
 
   if (SetUp() != 0) return -1;
 
-  if (TestCodecsBeforeStreaming() != 0) return -1;
   if (TestNetworkBeforeStreaming() != 0) return -1;
 
   // TODO(qhogpat): this gets verified way later - quite ugly. Make sure to
