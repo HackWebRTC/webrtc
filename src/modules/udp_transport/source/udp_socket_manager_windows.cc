@@ -30,7 +30,7 @@ UdpSocketManagerWindows::UdpSocketManagerWindows()
 
 bool UdpSocketManagerWindows::Init(WebRtc_Word32 id,
                                    WebRtc_UWord8& numOfWorkThreads) {
-    CriticalSectionScoped cs(*_critSectList);
+    CriticalSectionScoped cs(_critSectList);
     if ((_id != -1) || (_numOfWorkThreads != 0)) {
         assert(_id == -1);
         assert(_numOfWorkThreads == 0);

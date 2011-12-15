@@ -1318,7 +1318,7 @@ void UdpSocket2Windows::OutstandingCallCompleted()
     {
         // Only one thread will enter here. The thread with the last outstanding
         // call.
-        CriticalSectionScoped cs(*_ptrDeleteCrit);
+        CriticalSectionScoped cs(_ptrDeleteCrit);
         _safeTodelete = true;
         _ptrDeleteCond->Wake();
     }
@@ -1341,7 +1341,7 @@ void UdpSocket2Windows::DisableNewOutstandingCalls()
 
     if(noOutstandingCalls)
     {
-        CriticalSectionScoped cs(*_ptrDeleteCrit);
+        CriticalSectionScoped cs(_ptrDeleteCrit);
         _safeTodelete = true;
         _ptrDeleteCond->Wake();
     }
@@ -1349,7 +1349,7 @@ void UdpSocket2Windows::DisableNewOutstandingCalls()
 
 void UdpSocket2Windows::WaitForOutstandingCalls()
 {
-    CriticalSectionScoped cs(*_ptrDeleteCrit);
+    CriticalSectionScoped cs(_ptrDeleteCrit);
     while(!_safeTodelete)
     {
         _ptrDeleteCond->SleepCS(*_ptrDeleteCrit);
