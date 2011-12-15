@@ -8,274 +8,233 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * vie_file_recorder.cc
- *
- */
-#include "vie_file_recorder.h"
-#include "critical_section_wrapper.h"
-#include "trace.h"
-#include "tick_util.h"
-#include "file_player.h"
-#include "file_recorder.h"
-#include "vie_defines.h"
+#include "video_engine/vie_file_recorder.h"
+
+#include "modules/utility/interface/file_player.h"
+#include "modules/utility/interface/file_recorder.h"
+#include "system_wrappers/interface/critical_section_wrapper.h"
+#include "system_wrappers/interface/tick_util.h"
+#include "system_wrappers/interface/trace.h"
+#include "video_engine/vie_defines.h"
 
 namespace webrtc {
 
 ViEFileRecorder::ViEFileRecorder(int instanceID)
-    :   _ptrCritSec(CriticalSectionWrapper::CreateCriticalSection()),
-        _fileRecorder(NULL), _isFirstFrameRecorded(false),
-        _isOutStreamStarted(false), _instanceID(instanceID), _frameDelay(0),
-        _audioChannel(-1), _audioSource(NO_AUDIO),
-        _veFileInterface(NULL)
-{
+    : recorder_cs_(CriticalSectionWrapper::CreateCriticalSection()),
+      file_recorder_(NULL),
+      is_first_frame_recorded_(false),
+      is_out_stream_started_(false),
+      instance_id_(instanceID),
+      frame_delay_(0),
+      audio_channel_(-1),
+      audio_source_(NO_AUDIO),
+      voe_file_interface_(NULL) {
 }
 
-ViEFileRecorder::~ViEFileRecorder()
-{
-    StopRecording();
-    delete _ptrCritSec;
+ViEFileRecorder::~ViEFileRecorder() {
+  StopRecording();
+  delete recorder_cs_;
 }
 
-int ViEFileRecorder::StartRecording(const char* fileNameUTF8,
-                                    const VideoCodec& codecInst,
-                                    AudioSource audioSource,
-                                    int audioChannel,
-                                    const webrtc::CodecInst audioCodecInst,
-                                    VoiceEngine* vePtr,
-                                    const webrtc::FileFormats fileFormat)
-{
-    CriticalSectionScoped lock(*_ptrCritSec);
+int ViEFileRecorder::StartRecording(const char* file_nameUTF8,
+                                    const VideoCodec& codec_inst,
+                                    AudioSource audio_source,
+                                    int audio_channel,
+                                    const CodecInst audio_codec_inst,
+                                    VoiceEngine* voe_ptr,
+                                    const FileFormats file_format) {
+  CriticalSectionScoped lock(*recorder_cs_);
 
-    if (_fileRecorder)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, _instanceID,
-                   "ViEFileRecorder::StartRecording() failed, already recording.");
-        return -1;
-    }
-    _fileRecorder = FileRecorder::CreateFileRecorder(_instanceID, fileFormat);
-    if (!_fileRecorder)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, _instanceID,
-                   "ViEFileRecorder::StartRecording() failed to create file recoder.");
-        return -1;
-    }
-
-    int error = _fileRecorder->StartRecordingVideoFile(fileNameUTF8,
-                                                       audioCodecInst,
-                                                       codecInst,
-                                                       AMRFileStorage,
-                                                       audioSource == NO_AUDIO);
-    if (error)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, _instanceID,
-                   "ViEFileRecorder::StartRecording() failed to StartRecordingVideoFile.");
-        FileRecorder::DestroyFileRecorder(_fileRecorder);
-        _fileRecorder = NULL;
-        return -1;
-    }
-
-    _audioSource = audioSource;
-    if (vePtr && audioSource != NO_AUDIO) // VeInterface have been provided and we want to record audio
-    {
-        _veFileInterface = VoEFile::GetInterface(vePtr);
-        if (!_veFileInterface)
-        {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, _instanceID,
-                       "ViEFileRecorder::StartRecording() failed to get VEFile interface");
-            return -1;
-        }
-        // always drive VoE in L16
-        CodecInst engineAudioCodecInst = { 96, // .pltype
-                                            "L16", // .plname
-                                            audioCodecInst.plfreq, // .plfreq
-                                            audioCodecInst.plfreq / 100, // .pacsize (10ms)
-                                            1, // .channels
-                                            audioCodecInst.plfreq * 16 // .rate
-                                         };
-
-        switch (audioSource)
-        {
-            case MICROPHONE:
-                error
-                    = _veFileInterface->StartRecordingMicrophone(
-                                                                 this,
-                                                                 &engineAudioCodecInst);
-                break;
-            case PLAYOUT:
-                error
-                    = _veFileInterface->StartRecordingPlayout(
-                                                              audioChannel,
-                                                              this,
-                                                              &engineAudioCodecInst);
-                break;
-            case NO_AUDIO:
-                break;
-            default:
-                assert(!"Unknown audioSource");
-        }
-        if (error != 0)
-        {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, _instanceID,
-                       "ViEFileRecorder::StartRecording() failed to start recording audio");
-            FileRecorder::DestroyFileRecorder(_fileRecorder);
-            _fileRecorder = NULL;
-            return -1;
-        }
-        _isOutStreamStarted = true;
-        _audioChannel = audioChannel;
-    }
-
-    _isFirstFrameRecorded = false;
-    return 0;
-}
-
-int ViEFileRecorder::StopRecording()
-{
-
-    int error = 0;
-    // Stop recording audio
-    // Note - we can not hold the _ptrCritSect while accessing VE functions. It might cause deadlock in Write
-    if (_veFileInterface)
-    {
-        switch (_audioSource)
-        {
-            case MICROPHONE:
-                error = _veFileInterface->StopRecordingMicrophone();
-                break;
-            case PLAYOUT:
-                error = _veFileInterface->StopRecordingPlayout(_audioChannel);
-                break;
-            case NO_AUDIO:
-                break;
-            default:
-                assert(!"Unknown audioSource");
-        }
-        if (error != 0)
-        {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, _instanceID,
-                       "ViEFileRecorder::StopRecording() failed to stop recording audio");
-        }
-    }
-    CriticalSectionScoped lock(*_ptrCritSec);
-    if (_veFileInterface)
-    {
-        _veFileInterface->Release();
-        _veFileInterface = NULL;
-    }
-
-    if (_fileRecorder)
-    {
-        if (_fileRecorder->IsRecording())
-        {
-            int error = _fileRecorder->StopRecording();
-            if (error)
-            {
-                return -1;
-            }
-        }
-        FileRecorder::DestroyFileRecorder(_fileRecorder);
-        _fileRecorder = NULL;
-    }
-    _isFirstFrameRecorded = false;
-    _isOutStreamStarted = false;
-    return 0;
-}
-
-void ViEFileRecorder::SetFrameDelay(int frameDelay)
-{
-    CriticalSectionScoped lock(*_ptrCritSec);
-    _frameDelay = frameDelay;
-}
-
-bool ViEFileRecorder::RecordingStarted()
-{
-    CriticalSectionScoped lock(*_ptrCritSec);
-    return _fileRecorder && _fileRecorder->IsRecording();
-}
-
-bool ViEFileRecorder::FirstFrameRecorded()
-{
-    CriticalSectionScoped lock(*_ptrCritSec);
-    return _isFirstFrameRecorded;
-}
-
-bool ViEFileRecorder::IsRecordingFileFormat(const webrtc::FileFormats fileFormat)
-{
-    CriticalSectionScoped lock(*_ptrCritSec);
-    return (_fileRecorder->RecordingFileFormat() == fileFormat) ? true : false;
-}
-
-/*******************************************************************************
- * void RecordVideoFrame()
- *
- * Records incoming decoded video frame to AVI-file.
- *
- */
-void ViEFileRecorder::RecordVideoFrame(const VideoFrame& videoFrame)
-{
-    CriticalSectionScoped lock(*_ptrCritSec);
-
-    if (_fileRecorder && _fileRecorder->IsRecording())
-    {
-        if (!IsRecordingFileFormat(webrtc::kFileFormatAviFile))
-        {
-            return;
-        }
-
-        //Compensate for frame delay in order to get audiosync when recording local video.
-        const WebRtc_UWord32 timeStamp = videoFrame.TimeStamp();
-        const WebRtc_Word64 renderTimeStamp = videoFrame.RenderTimeMs();
-        VideoFrame& unconstVideoFrame =
-            const_cast<VideoFrame&> (videoFrame);
-        unconstVideoFrame.SetTimeStamp(timeStamp - 90 * _frameDelay);
-        unconstVideoFrame.SetRenderTime(renderTimeStamp - _frameDelay);
-
-        _fileRecorder->RecordVideoToFile(unconstVideoFrame);
-
-        unconstVideoFrame.SetRenderTime(renderTimeStamp);
-        unconstVideoFrame.SetTimeStamp(timeStamp);
-    }
-}
-
-// ---------------------
-// From OutStream
-// ---------------------
-// 10 ms block of PCM 16
-bool ViEFileRecorder::Write(const void* buf, int len)
-{
-    if (!_isOutStreamStarted)
-        return true;
-
-    // always L16 from VoCE
-    if (len % (2 * 80)) // 2 bytes 80 samples
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, _audioChannel,
-                   "Audio length not supported: %d.", len);
-        return true;
-    }
-    AudioFrame audioFrame;
-    WebRtc_UWord16 lengthInSamples = len / 2;
-
-    audioFrame.UpdateFrame(_audioChannel, 0, (const WebRtc_Word16*) buf,
-                           lengthInSamples, lengthInSamples * 100,
-                           AudioFrame::kUndefined,
-                           AudioFrame::kVadUnknown);
-
-    CriticalSectionScoped lock(*_ptrCritSec);
-
-    if (_fileRecorder && _fileRecorder->IsRecording())
-    {
-        TickTime tickTime = TickTime::Now();
-        _fileRecorder->RecordAudioToFile(audioFrame, &tickTime);
-    }
-    return true; // Always return true!
-}
-
-int ViEFileRecorder::Rewind()
-{
-    // Not supported!
+  if (file_recorder_) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, instance_id_,
+                 "ViEFileRecorder::StartRecording() - already recording.");
     return -1;
-}
-} // namespace webrtc
+  }
+  file_recorder_ = FileRecorder::CreateFileRecorder(instance_id_, file_format);
+  if (!file_recorder_) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, instance_id_,
+                 "ViEFileRecorder::StartRecording() failed to create recoder.");
+    return -1;
+  }
 
+  int error = file_recorder_->StartRecordingVideoFile(file_nameUTF8,
+                                                      audio_codec_inst,
+                                                      codec_inst,
+                                                      AMRFileStorage,
+                                                      audio_source == NO_AUDIO);
+  if (error) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, instance_id_,
+                 "ViEFileRecorder::StartRecording() failed to "
+                 "StartRecordingVideoFile.");
+    FileRecorder::DestroyFileRecorder(file_recorder_);
+    file_recorder_ = NULL;
+    return -1;
+  }
+
+  audio_source_ = audio_source;
+  if (voe_ptr && audio_source != NO_AUDIO) {
+    // VoE interface has been provided and we want to record audio.
+    voe_file_interface_ = VoEFile::GetInterface(voe_ptr);
+    if (!voe_file_interface_) {
+      WEBRTC_TRACE(kTraceError, kTraceVideo, instance_id_,
+                   "ViEFileRecorder::StartRecording() failed to get VEFile "
+                   "interface");
+      return -1;
+    }
+
+    // Always L16.
+    CodecInst engine_audio_codec_inst = {96, "L16", audio_codec_inst.plfreq,
+                                         audio_codec_inst.plfreq / 100, 1,
+                                         audio_codec_inst.plfreq * 16 };
+
+    switch (audio_source) {
+      case MICROPHONE:
+        error = voe_file_interface_->StartRecordingMicrophone(
+            this, &engine_audio_codec_inst);
+        break;
+      case PLAYOUT:
+        error = voe_file_interface_->StartRecordingPlayout(
+            audio_channel, this, &engine_audio_codec_inst);
+        break;
+      case NO_AUDIO:
+        break;
+      default:
+        assert(!"Unknown audio_source");
+    }
+    if (error != 0) {
+      WEBRTC_TRACE(kTraceError, kTraceVideo, instance_id_,
+                   "ViEFileRecorder::StartRecording() failed to start recording"
+                   " audio");
+      FileRecorder::DestroyFileRecorder(file_recorder_);
+      file_recorder_ = NULL;
+      return -1;
+    }
+    is_out_stream_started_ = true;
+    audio_channel_ = audio_channel;
+  }
+  is_first_frame_recorded_ = false;
+  return 0;
+}
+
+int ViEFileRecorder::StopRecording() {
+  int error = 0;
+  // We can not hold the ptr_cs_ while accessing VoE functions. It might cause
+  // deadlock in Write.
+  if (voe_file_interface_) {
+    switch (audio_source_) {
+      case MICROPHONE:
+        error = voe_file_interface_->StopRecordingMicrophone();
+        break;
+      case PLAYOUT:
+        error = voe_file_interface_->StopRecordingPlayout(audio_channel_);
+        break;
+      case NO_AUDIO:
+        break;
+      default:
+        assert(!"Unknown audio_source");
+    }
+    if (error != 0) {
+      WEBRTC_TRACE(kTraceError, kTraceVideo, instance_id_,
+                   "ViEFileRecorder::StopRecording() failed to stop recording "
+                   "audio");
+    }
+  }
+  CriticalSectionScoped lock(*recorder_cs_);
+  if (voe_file_interface_) {
+    voe_file_interface_->Release();
+    voe_file_interface_ = NULL;
+  }
+
+  if (file_recorder_) {
+    if (file_recorder_->IsRecording()) {
+      int error = file_recorder_->StopRecording();
+      if (error) {
+        return -1;
+      }
+    }
+    FileRecorder::DestroyFileRecorder(file_recorder_);
+    file_recorder_ = NULL;
+  }
+  is_first_frame_recorded_ = false;
+  is_out_stream_started_ = false;
+  return 0;
+}
+
+void ViEFileRecorder::SetFrameDelay(int frame_delay) {
+  CriticalSectionScoped lock(*recorder_cs_);
+  frame_delay_ = frame_delay;
+}
+
+bool ViEFileRecorder::RecordingStarted() {
+  CriticalSectionScoped lock(*recorder_cs_);
+  return file_recorder_ && file_recorder_->IsRecording();
+}
+
+bool ViEFileRecorder::FirstFrameRecorded() {
+  CriticalSectionScoped lock(*recorder_cs_);
+  return is_first_frame_recorded_;
+}
+
+bool ViEFileRecorder::IsRecordingFileFormat(const FileFormats file_format) {
+  CriticalSectionScoped lock(*recorder_cs_);
+  return (file_recorder_->RecordingFileFormat() == file_format) ? true : false;
+}
+
+void ViEFileRecorder::RecordVideoFrame(const VideoFrame& video_frame) {
+  CriticalSectionScoped lock(*recorder_cs_);
+
+  if (file_recorder_ && file_recorder_->IsRecording()) {
+    if (!IsRecordingFileFormat(kFileFormatAviFile))
+      return;
+
+    // Compensate for frame delay in order to get audio/video sync when
+    // recording local video.
+    const WebRtc_UWord32 time_stamp = video_frame.TimeStamp();
+    const WebRtc_Word64 render_time_stamp = video_frame.RenderTimeMs();
+    VideoFrame& unconst_video_frame = const_cast<VideoFrame&>(video_frame);
+    unconst_video_frame.SetTimeStamp(time_stamp - 90 * frame_delay_);
+    unconst_video_frame.SetRenderTime(render_time_stamp - frame_delay_);
+
+    file_recorder_->RecordVideoToFile(unconst_video_frame);
+
+    unconst_video_frame.SetRenderTime(render_time_stamp);
+    unconst_video_frame.SetTimeStamp(time_stamp);
+  }
+}
+
+bool ViEFileRecorder::Write(const void* buf, int len) {
+  if (!is_out_stream_started_)
+    return true;
+
+  // Always 10 ms L16 from VoE.
+  if (len % (2 * 80)) {
+    // Not 2 bytes 80 samples.
+    WEBRTC_TRACE(kTraceError, kTraceVideo, audio_channel_,
+                 "Audio length not supported: %d.", len);
+    return true;
+  }
+
+  AudioFrame audio_frame;
+  WebRtc_UWord16 length_in_samples = len / 2;
+  audio_frame.UpdateFrame(audio_channel_, 0,
+                          static_cast<const WebRtc_Word16*>(buf),
+                          length_in_samples, length_in_samples * 100,
+                          AudioFrame::kUndefined,
+                          AudioFrame::kVadUnknown);
+
+  CriticalSectionScoped lock(*recorder_cs_);
+  if (file_recorder_ && file_recorder_->IsRecording()) {
+    TickTime tick_time = TickTime::Now();
+    file_recorder_->RecordAudioToFile(audio_frame, &tick_time);
+  }
+
+  // Always return true to continue recording.
+  return true;
+}
+
+int ViEFileRecorder::Rewind() {
+  // Not supported!
+  return -1;
+}
+
+}  // namespace webrtc
