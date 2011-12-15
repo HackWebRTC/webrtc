@@ -8,18 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/video_coding/main/source/tick_time_wrapper.h"
-
 #ifndef WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_MOCK_FAKE_TICK_TIME_WRAPPER_H_
 #define WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_MOCK_FAKE_TICK_TIME_WRAPPER_H_
 
+#include "modules/video_coding/main/source/tick_time_interface.h"
+
 namespace webrtc {
 
-class FakeTickTime : public TickTimeInterface
-{
+class FakeTickTime : public TickTimeInterface {
  public:
-  FakeTickTime(int64_t start_time_ms)
-    : fake_now_(TickTime::Now()) {
+  explicit FakeTickTime(int64_t start_time_ms) : fake_now_(TickTime::Now()) {
     fake_now_ += (MillisecondsToTicks(start_time_ms) - fake_now_.Ticks());
   }
   virtual TickTime Now() const { return fake_now_; }
