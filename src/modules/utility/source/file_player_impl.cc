@@ -464,7 +464,7 @@ VideoFilePlayerImpl::VideoFilePlayerImpl(WebRtc_UWord32 instanceID,
       _decodedVideoFrames(0),
       _encodedData(*new EncodedVideoData()),
       _frameScaler(*new FrameScaler()),
-      _critSec(*CriticalSectionWrapper::CreateCriticalSection()),
+      _critSec(CriticalSectionWrapper::CreateCriticalSection()),
       _accumulatedRenderTimeMs(0),
       _numberOfFramesRead(0),
       _videoOnly(false)
@@ -474,7 +474,7 @@ VideoFilePlayerImpl::VideoFilePlayerImpl(WebRtc_UWord32 instanceID,
 
 VideoFilePlayerImpl::~VideoFilePlayerImpl()
 {
-    delete &_critSec;
+    delete _critSec;
     delete &_frameScaler;
     delete &_videoDecoder;
     delete &_encodedData;

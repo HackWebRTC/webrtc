@@ -69,7 +69,7 @@ void RtpDump::DestroyRtpDump(RtpDump* object)
 }
 
 RtpDumpImpl::RtpDumpImpl()
-    : _critSect(*CriticalSectionWrapper::CreateCriticalSection()),
+    : _critSect(CriticalSectionWrapper::CreateCriticalSection()),
       _file(*FileWrapper::Create()),
       _startTime(0)
 {
@@ -85,7 +85,7 @@ RtpDumpImpl::~RtpDumpImpl()
     _file.Flush();
     _file.CloseFile();
     delete &_file;
-    delete &_critSect;
+    delete _critSect;
     WEBRTC_TRACE(kTraceMemory, kTraceUtility, -1, "%s deleted", __FUNCTION__);
 }
 

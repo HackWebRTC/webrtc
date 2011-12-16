@@ -38,7 +38,7 @@ protected:
 
 private:
     EventWrapper&           _timeEvent;
-    CriticalSectionWrapper& _critSectModules;
+    CriticalSectionWrapper* _critSectModules;
     ListWrapper             _modules;
     ThreadWrapper*          _thread;
 };

@@ -110,7 +110,7 @@ private:
     EncodedVideoData& _encodedData;
 
     FrameScaler& _frameScaler;
-    CriticalSectionWrapper& _critSec;
+    CriticalSectionWrapper* _critSec;
     TickTime _startTime;
     WebRtc_Word64 _accumulatedRenderTimeMs;
     WebRtc_UWord32 _frameLengthMS;

@@ -351,7 +351,7 @@ AviRecorder::AviRecorder(WebRtc_UWord32 instanceID, FileFormats fileFormat)
       _videoOnly(false),
       _thread( 0),
       _timeEvent(*EventWrapper::Create()),
-      _critSec(*CriticalSectionWrapper::CreateCriticalSection()),
+      _critSec(CriticalSectionWrapper::CreateCriticalSection()),
       _writtenVideoFramesCounter(0),
       _writtenAudioMS(0),
       _writtenVideoMS(0)
@@ -372,7 +372,7 @@ AviRecorder::~AviRecorder( )
     delete _videoFramesQueue;
     delete _thread;
     delete &_timeEvent;
-    delete &_critSec;
+    delete _critSec;
 }
 
 WebRtc_Word32 AviRecorder::StartRecordingVideoFile(
@@ -484,7 +484,7 @@ bool AviRecorder::StartThread()
 
 bool AviRecorder::StopThread()
 {
-    _critSec.Enter();
+    _critSec->Enter();
 
     if(_thread)
     {
@@ -495,7 +495,7 @@ bool AviRecorder::StopThread()
 
         _timeEvent.Set();
 
-        _critSec.Leave();
+        _critSec->Leave();
 
         if(thread->Stop())
         {
@@ -504,7 +504,7 @@ bool AviRecorder::StopThread()
             return false;
         }
     } else {
-        _critSec.Leave();
+        _critSec->Leave();
     }
     return true;
 }

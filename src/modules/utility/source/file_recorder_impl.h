@@ -154,7 +154,7 @@ private:
 
     ThreadWrapper* _thread;
     EventWrapper& _timeEvent;
-    CriticalSectionWrapper& _critSec;
+    CriticalSectionWrapper* _critSec;
     WebRtc_Word64 _writtenVideoFramesCounter;
     WebRtc_Word64 _writtenAudioMS;
     WebRtc_Word64 _writtenVideoMS;

@@ -41,7 +41,7 @@ private:
     bool RTCP(const WebRtc_UWord8* packet) const;
 
 private:
-    CriticalSectionWrapper& _critSect;
+    CriticalSectionWrapper* _critSect;
     FileWrapper& _file;
     WebRtc_UWord32 _startTime;
 };

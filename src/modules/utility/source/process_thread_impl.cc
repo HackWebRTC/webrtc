@@ -31,7 +31,7 @@ void ProcessThread::DestroyProcessThread(ProcessThread* module)
 
 ProcessThreadImpl::ProcessThreadImpl()
     : _timeEvent(*EventWrapper::Create()),
-      _critSectModules(*CriticalSectionWrapper::CreateCriticalSection()),
+      _critSectModules(CriticalSectionWrapper::CreateCriticalSection()),
       _thread(NULL)
 {
     WEBRTC_TRACE(kTraceMemory, kTraceUtility, -1, "%s created", __FUNCTION__);
@@ -39,7 +39,7 @@ ProcessThreadImpl::ProcessThreadImpl()
 
 ProcessThreadImpl::~ProcessThreadImpl()
 {
-    delete &_critSectModules;
+    delete _critSectModules;
     delete &_timeEvent;
     WEBRTC_TRACE(kTraceMemory, kTraceUtility, -1, "%s deleted", __FUNCTION__);
 }
@@ -66,7 +66,7 @@ WebRtc_Word32 ProcessThreadImpl::Start()
 
 WebRtc_Word32 ProcessThreadImpl::Stop()
 {
-    _critSectModules.Enter();
+    _critSectModules->Enter();
     if(_thread)
     {
         _thread->SetNotAlive();
@@ -75,7 +75,7 @@ WebRtc_Word32 ProcessThreadImpl::Stop()
         _thread = NULL;
 
         _timeEvent.Set();
-        _critSectModules.Leave();
+        _critSectModules->Leave();
 
         if(thread->Stop())
         {
@@ -84,7 +84,7 @@ WebRtc_Word32 ProcessThreadImpl::Stop()
             return -1;
         }
     } else {
-        _critSectModules.Leave();
+        _critSectModules->Leave();
     }
     return 0;
 }
