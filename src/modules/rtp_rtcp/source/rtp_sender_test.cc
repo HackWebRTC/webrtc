@@ -37,13 +37,13 @@ class RtpSenderTest : public ::testing::Test {
   RTPSender* rtp_sender_;
   const bool kMarkerBit;
   RTPExtensionType kType;
-  enum {kId = 1};
-  enum {kTypeLength = TRANSMISSION_TIME_OFFSET_LENGTH_IN_BYTES};
-  enum {kPayload = 100};
-  enum {kTimestamp = 10};
-  enum {kSeqNum = 33};
-  enum {kTimeOffset = 22222};
-  enum {kMaxPacketLength = 1500};
+  static const int kId = 1;
+  static const int kTypeLength = TRANSMISSION_TIME_OFFSET_LENGTH_IN_BYTES;
+  static const int kPayload = 100;
+  static const uint32_t kTimestamp = 10;
+  static const uint16_t kSeqNum = 33;
+  static const int kTimeOffset = 22222;
+  static const int kMaxPacketLength = 1500;
   uint8_t packet_[kMaxPacketLength];
 
   void VerifyRTPHeaderCommon(const WebRtcRTPHeader& rtp_header) {
