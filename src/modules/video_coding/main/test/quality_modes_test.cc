@@ -15,6 +15,7 @@
 #include <time.h>
 
 #include "../source/event.h"
+#include "modules/video_coding/main/source/tick_time_interface.h"
 #include "test_callbacks.h"
 #include "test_macros.h"
 #include "testsupport/metrics/video_metrics.h"
@@ -24,20 +25,22 @@ using namespace webrtc;
 
 int qualityModeTest()
 {
-    // Don't run this test with debug time
-#if defined(TICK_TIME_DEBUG) || defined(EVENT_DEBUG)
+    // Don't run this test with debug events.
+#if defined(EVENT_DEBUG)
     return -1;
 #endif
-    VideoCodingModule* vcm = VideoCodingModule::Create(1);
-    QualityModesTest QMTest(vcm);
+    TickTimeInterface clock;
+    VideoCodingModule* vcm = VideoCodingModule::Create(1, &clock);
+    QualityModesTest QMTest(vcm, &clock);
     QMTest.Perform();
     VideoCodingModule::Destroy(vcm);
     return 0;
 }
 
 
-QualityModesTest::QualityModesTest(VideoCodingModule *vcm):
-NormalTest(vcm),
+QualityModesTest::QualityModesTest(VideoCodingModule* vcm,
+                                   TickTimeInterface* clock):
+NormalTest(vcm, clock),
 _vpm()
 {
     //

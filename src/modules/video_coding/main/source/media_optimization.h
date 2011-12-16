@@ -24,6 +24,7 @@ namespace webrtc
 enum { kBitrateMaxFrameSamples = 60 };
 enum { kBitrateAverageWinMs    = 1000 };
 
+class TickTimeInterface;
 class VCMContentMetricsProcessing;
 class VCMFrameDropper;
 
@@ -38,7 +39,7 @@ struct VCMEncodedFrameSample
 class VCMMediaOptimization
 {
 public:
-    VCMMediaOptimization(WebRtc_Word32 id);
+    VCMMediaOptimization(WebRtc_Word32 id, TickTimeInterface* clock);
     ~VCMMediaOptimization(void);
     /*
     * Reset the Media Optimization module
@@ -162,7 +163,7 @@ private:
     enum { kFrameHistoryWinMs = 2000};
 
     WebRtc_Word32                     _id;
-
+    TickTimeInterface*                  _clock;
     WebRtc_Word32                     _maxBitRate;
     VideoCodecType                    _sendCodecType;
     WebRtc_UWord16                    _codecWidth;

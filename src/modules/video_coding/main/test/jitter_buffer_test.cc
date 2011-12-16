@@ -19,10 +19,10 @@
 #include "jitter_estimate_test.h"
 #include "jitter_estimator.h"
 #include "media_opt_util.h"
+#include "modules/video_coding/main/source/tick_time_interface.h"
 #include "packet.h"
 #include "test_util.h"
 #include "test_macros.h"
-#include "tick_time.h"
 
 using namespace webrtc;
 
@@ -92,10 +92,11 @@ int CheckOutFrame(VCMEncodedFrame* frameOut, unsigned int size, bool startCode)
 
 int JitterBufferTest(CmdArgs& args)
 {
-    // Don't run these tests with debug time
-#if defined(TICK_TIME_DEBUG) || defined(EVENT_DEBUG)
+    // Don't run these tests with debug event.
+#if defined(EVENT_DEBUG)
     return -1;
 #endif
+    TickTimeInterface clock;
 
     // Start test
     WebRtc_UWord16 seqNum = 1234;
@@ -114,7 +115,7 @@ int JitterBufferTest(CmdArgs& args)
         packet.seqNum = seqNum;
         packet.payloadType = 126;
         seqNum++;
-        fb->InsertPacket(packet, VCMTickTime::MillisecondTimestamp(), false, 0);
+        fb->InsertPacket(packet, clock.MillisecondTimestamp(), false, 0);
         TEST(frameList.Insert(fb) == 0);
     }
     VCMFrameListItem* item = NULL;
@@ -135,7 +136,7 @@ int JitterBufferTest(CmdArgs& args)
 
     //printf("DONE timestamp ordered frame list\n");
 
-    VCMJitterBuffer jb;
+    VCMJitterBuffer jb(&clock);
 
     seqNum = 1234;
     timeStamp = 123*90;

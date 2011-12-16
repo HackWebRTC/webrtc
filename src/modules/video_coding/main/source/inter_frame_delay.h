@@ -19,10 +19,10 @@ namespace webrtc
 class VCMInterFrameDelay
 {
 public:
-    VCMInterFrameDelay();
+    VCMInterFrameDelay(int64_t currentWallClock);
 
     // Resets the estimate. Zeros are given as parameters.
-    void Reset();
+    void Reset(int64_t currentWallClock);
 
     // Calculates the delay of a frame with the given timestamp.
     // This method is called when the frame is complete.
@@ -35,7 +35,7 @@ public:
     // Return value                 : true if OK, false when reordered timestamps
     bool CalculateDelay(WebRtc_UWord32 timestamp,
                         WebRtc_Word64 *delay,
-                        WebRtc_Word64 currentWallClock = -1);
+                        int64_t currentWallClock);
 
     // Returns the current difference between incoming timestamps
     //

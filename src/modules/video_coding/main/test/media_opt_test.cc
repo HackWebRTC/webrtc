@@ -34,8 +34,9 @@ int MediaOptTest::RunTest(int testNum, CmdArgs& args)
     Trace::CreateTrace();
     Trace::SetTraceFile((test::OutputPath() + "mediaOptTestTrace.txt").c_str());
     Trace::SetLevelFilter(webrtc::kTraceAll);
-    VideoCodingModule* vcm = VideoCodingModule::Create(1);
-    MediaOptTest* mot = new MediaOptTest(vcm);
+    TickTimeInterface clock;
+    VideoCodingModule* vcm = VideoCodingModule::Create(1, &clock);
+    MediaOptTest* mot = new MediaOptTest(vcm, &clock);
     if (testNum == 0)
     { // regular
          mot->Setup(0, args);
@@ -66,8 +67,9 @@ int MediaOptTest::RunTest(int testNum, CmdArgs& args)
 }
 
 
-MediaOptTest::MediaOptTest(VideoCodingModule* vcm):
+MediaOptTest::MediaOptTest(VideoCodingModule* vcm, TickTimeInterface* clock):
 _vcm(vcm),
+_clock(clock),
 _width(0),
 _height(0),
 _lengthSourceFrame(0),
@@ -279,7 +281,8 @@ MediaOptTest::Perform()
     encodeCompleteCallback->SetCodecType(ConvertCodecType(_codecName.c_str()));
     encodeCompleteCallback->SetFrameDimensions(_width, _height);
     // frame ready to be sent to network
-    RTPSendCompleteCallback* outgoingTransport = new RTPSendCompleteCallback(_rtp);
+    RTPSendCompleteCallback* outgoingTransport =
+        new RTPSendCompleteCallback(_rtp, _clock);
     _rtp->RegisterSendTransport(outgoingTransport);
     //FrameReceiveCallback
     VCMDecodeCompleteCallback receiveCallback(_decodedFile);

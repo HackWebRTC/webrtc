@@ -20,7 +20,7 @@
 
 #include "event.h"
 #include "trace.h"
-#include "tick_time.h"
+#include "modules/video_coding/main/source/tick_time_interface.h"
 #include "list_wrapper.h"
 
 #include <cassert>
@@ -57,10 +57,13 @@ VCMJitterBuffer::CompleteDecodableKeyFrameCriteria(VCMFrameBuffer* frame,
 }
 
 // Constructor
-VCMJitterBuffer::VCMJitterBuffer(WebRtc_Word32 vcmId, WebRtc_Word32 receiverId,
+VCMJitterBuffer::VCMJitterBuffer(TickTimeInterface* clock,
+                                 WebRtc_Word32 vcmId,
+                                 WebRtc_Word32 receiverId,
                                  bool master) :
     _vcmId(vcmId),
     _receiverId(receiverId),
+    _clock(clock),
     _running(false),
     _critSect(CriticalSectionWrapper::CreateCriticalSection()),
     _master(master),
@@ -81,6 +84,7 @@ VCMJitterBuffer::VCMJitterBuffer(WebRtc_Word32 vcmId, WebRtc_Word32 receiverId,
     _numConsecutiveOldPackets(0),
     _discardedPackets(0),
     _jitterEstimate(vcmId, receiverId),
+    _delayEstimate(_clock->MillisecondTimestamp()),
     _rttMs(0),
     _nackMode(kNoNack),
     _lowRttNackThresholdMs(-1),
@@ -180,7 +184,7 @@ VCMJitterBuffer::Start()
     _incomingFrameCount = 0;
     _incomingFrameRate = 0;
     _incomingBitCount = 0;
-    _timeLastIncomingFrameCount = VCMTickTime::MillisecondTimestamp();
+    _timeLastIncomingFrameCount = _clock->MillisecondTimestamp();
     memset(_receiveStatistics, 0, sizeof(_receiveStatistics));
 
     _numConsecutiveOldFrames = 0;
@@ -262,7 +266,7 @@ VCMJitterBuffer::FlushInternal()
 
     // Also reset the jitter and delay estimates
     _jitterEstimate.Reset();
-    _delayEstimate.Reset();
+    _delayEstimate.Reset(_clock->MillisecondTimestamp());
 
     _waitingForCompletion.frameSize = 0;
     _waitingForCompletion.timestamp = 0;
@@ -602,7 +606,7 @@ WebRtc_Word32
 VCMJitterBuffer::GetUpdate(WebRtc_UWord32& frameRate, WebRtc_UWord32& bitRate)
 {
     CriticalSectionScoped cs(_critSect);
-    const WebRtc_Word64 now = VCMTickTime::MillisecondTimestamp();
+    const WebRtc_Word64 now = _clock->MillisecondTimestamp();
     WebRtc_Word64 diff = now - _timeLastIncomingFrameCount;
     if (diff < 1000 && _incomingFrameRate > 0 && _incomingBitRate > 0)
     {
@@ -657,7 +661,7 @@ VCMJitterBuffer::GetUpdate(WebRtc_UWord32& frameRate, WebRtc_UWord32& bitRate)
     else
     {
         // No frames since last call
-        _timeLastIncomingFrameCount = VCMTickTime::MillisecondTimestamp();
+        _timeLastIncomingFrameCount = _clock->MillisecondTimestamp();
         frameRate = 0;
         bitRate = 0;
         _incomingBitRate = 0;
@@ -698,7 +702,7 @@ VCMJitterBuffer::GetCompleteFrameForDecoding(WebRtc_UWord32 maxWaitTimeMS)
             _critSect->Leave();
             return NULL;
         }
-        const WebRtc_Word64 endWaitTimeMs = VCMTickTime::MillisecondTimestamp()
+        const WebRtc_Word64 endWaitTimeMs = _clock->MillisecondTimestamp()
                                             + maxWaitTimeMS;
         WebRtc_Word64 waitTimeMs = maxWaitTimeMS;
         while (waitTimeMs > 0)
@@ -727,7 +731,7 @@ VCMJitterBuffer::GetCompleteFrameForDecoding(WebRtc_UWord32 maxWaitTimeMS)
                 if (oldestFrame == NULL)
                 {
                     waitTimeMs = endWaitTimeMs -
-                                 VCMTickTime::MillisecondTimestamp();
+                                 _clock->MillisecondTimestamp();
                 }
                 else
                 {
@@ -1514,7 +1518,7 @@ VCMFrameBufferEnum
 VCMJitterBuffer::InsertPacket(VCMEncodedFrame* buffer, const VCMPacket& packet)
 {
     CriticalSectionScoped cs(_critSect);
-    WebRtc_Word64 nowMs = VCMTickTime::MillisecondTimestamp();
+    WebRtc_Word64 nowMs = _clock->MillisecondTimestamp();
     VCMFrameBufferEnum bufferReturn = kSizeError;
     VCMFrameBufferEnum ret = kSizeError;
     VCMFrameBuffer* frame = static_cast<VCMFrameBuffer*>(buffer);
@@ -1525,7 +1529,7 @@ VCMJitterBuffer::InsertPacket(VCMEncodedFrame* buffer, const VCMPacket& packet)
     {
         // Now it's time to start estimating jitter
         // reset the delay estimate.
-        _delayEstimate.Reset();
+        _delayEstimate.Reset(_clock->MillisecondTimestamp());
         _firstPacket = false;
     }
 

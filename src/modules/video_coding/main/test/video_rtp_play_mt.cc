@@ -14,7 +14,6 @@
 #include "trace.h"
 #include "thread_wrapper.h"
 #include "../source/event.h"
-#include "tick_time.h"
 #include "test_macros.h"
 #include "rtp_player.h"
 
@@ -40,8 +39,8 @@ bool RtpReaderThread(void* obj)
     SharedState* state = static_cast<SharedState*>(obj);
     EventWrapper& waitEvent = *EventWrapper::Create();
     // RTP stream main loop
-    WebRtc_Word64 nowMs = VCMTickTime::MillisecondTimestamp();
-    if (state->_rtpPlayer.NextPacket(nowMs) < 0)
+    TickTimeInterface clock;
+    if (state->_rtpPlayer.NextPacket(clock.MillisecondTimestamp()) < 0)
     {
         return false;
     }
@@ -60,8 +59,8 @@ bool DecodeThread(void* obj)
 
 int RtpPlayMT(CmdArgs& args, int releaseTestNo, webrtc::VideoCodecType releaseTestVideoType)
 {
-    // Don't run these tests with debug time
-#if defined(TICK_TIME_DEBUG) || defined(EVENT_DEBUG)
+    // Don't run these tests with debug events.
+#if defined(EVENT_DEBUG)
     return -1;
 #endif
 
@@ -82,8 +81,9 @@ int RtpPlayMT(CmdArgs& args, int releaseTestNo, webrtc::VideoCodecType releaseTe
                 (protection == kProtectionDualDecoder ||
                 protection == kProtectionNack ||
                 kProtectionNackFEC));
+    TickTimeInterface clock;
     VideoCodingModule* vcm =
-            VideoCodingModule::Create(1);
+            VideoCodingModule::Create(1, &clock);
     RtpDataCallback dataCallback(vcm);
     std::string rtpFilename;
     rtpFilename = args.inputFile;
@@ -136,7 +136,7 @@ int RtpPlayMT(CmdArgs& args, int releaseTestNo, webrtc::VideoCodecType releaseTe
         }
         printf("Watch %s to verify that the output is reasonable\n", outFilename.c_str());
     }
-    RTPPlayer rtpStream(rtpFilename.c_str(), &dataCallback);
+    RTPPlayer rtpStream(rtpFilename.c_str(), &dataCallback, &clock);
     ListWrapper payloadTypes;
     payloadTypes.PushFront(new PayloadCodecTuple(VCM_VP8_PAYLOAD_TYPE,
                                                  "VP8", kVideoCodecVP8));

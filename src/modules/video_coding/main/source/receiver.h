@@ -13,6 +13,7 @@
 
 #include "critical_section_wrapper.h"
 #include "jitter_buffer.h"
+#include "modules/video_coding/main/source/tick_time_interface.h"
 #include "timing.h"
 #include "packet.h"
 
@@ -40,6 +41,7 @@ class VCMReceiver
 {
 public:
     VCMReceiver(VCMTiming& timing,
+                TickTimeInterface* clock,
                 WebRtc_Word32 vcmId = -1,
                 WebRtc_Word32 receiverId = -1,
                 bool master = true);
@@ -83,6 +85,7 @@ private:
 
     CriticalSectionWrapper* _critSect;
     WebRtc_Word32           _vcmId;
+    TickTimeInterface*        _clock;
     WebRtc_Word32           _receiverId;
     bool                    _master;
     VCMJitterBuffer         _jitterBuffer;

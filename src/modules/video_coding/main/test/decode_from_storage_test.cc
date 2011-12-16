@@ -12,9 +12,9 @@
 #include "video_coding.h"
 #include "rtp_rtcp.h"
 #include "trace.h"
-#include "tick_time.h"
 #include "../source/event.h"
 #include "rtp_player.h"
+#include "modules/video_coding/main/source/mock/fake_tick_time_interface.h"
 
 using namespace webrtc;
 
@@ -35,8 +35,8 @@ private:
 
 int DecodeFromStorageTest(CmdArgs& args)
 {
-    // Make sure this test isn't executed without simulated clocks
-#if !defined(TICK_TIME_DEBUG) || !defined(EVENT_DEBUG)
+    // Make sure this test isn't executed without simulated events.
+#if !defined(EVENT_DEBUG)
     return -1;
 #endif
     // BEGIN Settings
@@ -64,8 +64,10 @@ int DecodeFromStorageTest(CmdArgs& args)
     Trace::SetLevelFilter(webrtc::kTraceAll);
 
 
-    VideoCodingModule* vcm = VideoCodingModule::Create(1);
-    VideoCodingModule* vcmPlayback = VideoCodingModule::Create(2);
+    FakeTickTime clock(0);
+    // TODO(hlundin): This test was not verified after changing to FakeTickTime.
+    VideoCodingModule* vcm = VideoCodingModule::Create(1, &clock);
+    VideoCodingModule* vcmPlayback = VideoCodingModule::Create(2, &clock);
     FrameStorageCallback storageCallback(vcmPlayback);
     RtpDataCallback dataCallback(vcm);
     WebRtc_Word32 ret = vcm->InitializeReceiver();
@@ -80,7 +82,7 @@ int DecodeFromStorageTest(CmdArgs& args)
     }
     vcm->RegisterFrameStorageCallback(&storageCallback);
     vcmPlayback->RegisterReceiveCallback(&receiveCallback);
-    RTPPlayer rtpStream(rtpFilename.c_str(), &dataCallback);
+    RTPPlayer rtpStream(rtpFilename.c_str(), &dataCallback, &clock);
     ListWrapper payloadTypes;
     payloadTypes.PushFront(new PayloadCodecTuple(VCM_VP8_PAYLOAD_TYPE, "VP8", kVideoCodecVP8));
 
@@ -124,9 +126,9 @@ int DecodeFromStorageTest(CmdArgs& args)
     ret = 0;
 
     // RTP stream main loop
-    while ((ret = rtpStream.NextPacket(VCMTickTime::MillisecondTimestamp())) == 0)
+    while ((ret = rtpStream.NextPacket(clock.MillisecondTimestamp())) == 0)
     {
-        if (VCMTickTime::MillisecondTimestamp() % 5 == 0)
+        if (clock.MillisecondTimestamp() % 5 == 0)
         {
             ret = vcm->Decode();
             if (ret < 0)
@@ -138,11 +140,11 @@ int DecodeFromStorageTest(CmdArgs& args)
         {
             vcm->Process();
         }
-        if (MAX_RUNTIME_MS > -1 && VCMTickTime::MillisecondTimestamp() >= MAX_RUNTIME_MS)
+        if (MAX_RUNTIME_MS > -1 && clock.MillisecondTimestamp() >= MAX_RUNTIME_MS)
         {
             break;
         }
-        VCMTickTime::IncrementDebugClock();
+        clock.IncrementDebugClock(1);
     }
 
     switch (ret)
