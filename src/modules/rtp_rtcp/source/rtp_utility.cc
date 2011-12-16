@@ -507,10 +507,10 @@ ModuleRTPUtility::RTPHeaderParser::RTCP() const
         RTCP = true;
         break;
     case 193:
-    case 195:
         // not supported
         // pass through and check for a potential RTP packet
         break;
+    case 195:
     case 200:
     case 201:
     case 202:
@@ -526,7 +526,8 @@ ModuleRTPUtility::RTPHeaderParser::RTCP() const
 }
 
 bool
-ModuleRTPUtility::RTPHeaderParser::Parse(WebRtcRTPHeader& parsedPacket) const
+ModuleRTPUtility::RTPHeaderParser::Parse(
+    WebRtcRTPHeader& parsedPacket, RtpHeaderExtensionMap* ptrExtensionMap) const
 {
     const ptrdiff_t length = _ptrRTPDataEnd - _ptrRTPDataBegin;
 
@@ -588,8 +589,22 @@ ModuleRTPUtility::RTPHeaderParser::Parse(WebRtcRTPHeader& parsedPacket) const
     parsedPacket.type.Audio.numEnergy = parsedPacket.header.numCSRCs;
 
     parsedPacket.header.headerLength   = 12 + CSRCocts;
+
+    // If in effect, MAY be omitted for those packets for which the offset
+    // is zero.
+    parsedPacket.extension.transmissionTimeOffset = 0;
+
     if (X)
     {
+        /* RTP header extension, RFC 3550.
+         0                   1                   2                   3
+         0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        |      defined by profile       |           length              |
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        |                        header extension                       |
+        |                             ....                              |
+        */
         const ptrdiff_t remain = _ptrRTPDataEnd - ptr;
         if (remain < 4)
         {
@@ -609,32 +624,119 @@ ModuleRTPUtility::RTPHeaderParser::Parse(WebRtcRTPHeader& parsedPacket) const
         {
             return false;
         }
-        if(definedByProfile == RTP_AUDIO_LEVEL_UNIQUE_ID && XLen == 4)
+        if (definedByProfile == RTP_ONE_BYTE_HEADER_EXTENSION)
         {
-            // --- Only used for debugging ---
-
-            /*
-            0                   1                   2                   3
-            0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-            +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-            |      0xBE     |      0xDE     |            length=1           |
-            +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-            |  ID   | len=0 |V|   level     |      0x00     |      0x00     |
-            +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-            */
-
-            // Parse out the fields but only use it for debugging for now.
-            //const WebRtc_UWord8 ID = (*ptr & 0xf0) >> 4;
-            //const WebRtc_UWord8 len = (*ptr & 0x0f);
-            ptr++;
-            //const WebRtc_UWord8 V = (*ptr & 0x80) >> 7;
-            //const WebRtc_UWord8 level = (*ptr & 0x7f);
-            // DEBUG_PRINT("RTP_AUDIO_LEVEL_UNIQUE_ID: ID=%u, len=%u, V=%u, level=%u", ID, len, V, level);
+            const WebRtc_UWord8* ptrRTPDataExtensionEnd = ptr + XLen;
+            ParseOneByteExtensionHeader(parsedPacket,
+                                        ptrExtensionMap,
+                                        ptrRTPDataExtensionEnd,
+                                        ptr);
         }
         parsedPacket.header.headerLength += XLen;
     }
 
     return true;
+}
+
+void ModuleRTPUtility::RTPHeaderParser::ParseOneByteExtensionHeader(
+    WebRtcRTPHeader& parsedPacket,
+    const RtpHeaderExtensionMap* ptrExtensionMap,
+    const WebRtc_UWord8* ptrRTPDataExtensionEnd,
+    const WebRtc_UWord8* ptr) const
+{
+    if (!ptrExtensionMap) {
+        WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, -1, "No extension map.");
+      return;
+    }
+
+    while (ptrRTPDataExtensionEnd - ptr > 0)
+    {
+      //  0
+      //  0 1 2 3 4 5 6 7
+      // +-+-+-+-+-+-+-+-+
+      // |  ID   |  len  |
+      // +-+-+-+-+-+-+-+-+
+
+      const WebRtc_UWord8 id = (*ptr & 0xf0) >> 4;
+      const WebRtc_UWord8 len = (*ptr & 0x0f);
+      ptr++;
+
+      if (id == 15) {
+        WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, -1,
+            "Ext id: 15 encountered, parsing terminated.");
+        return;
+      }
+
+      RTPExtensionType type;
+      if (ptrExtensionMap->GetType(id, &type) != 0) {
+        WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, -1,
+            "Failed to find extension id: %d", id);
+        return;
+      }
+
+      switch (type)
+      {
+      case TRANSMISSION_TIME_OFFSET:
+      {
+        if (len != 2)
+        {
+          WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, -1,
+              "Incorrect transmission time offset len: %d", len);
+          return;
+        }
+        //  0                   1                   2                   3
+        //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        // |  ID   | len=2 |              transmission offset              |
+        // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+        WebRtc_Word32 transmissionTimeOffset = *ptr++ << 16;
+        transmissionTimeOffset += *ptr++ << 8;
+        transmissionTimeOffset += *ptr++;
+        parsedPacket.extension.transmissionTimeOffset = transmissionTimeOffset;
+        break;
+      }
+      //case RTP_AUDIO_LEVEL_ID;
+      //{
+      //   --- Only used for debugging ---
+      //  0                   1                   2                   3
+      //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+      // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+      // |  ID   | len=0 |V|   level     |      0x00     |      0x00     |
+      // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+      //
+
+      // Parse out the fields but only use it for debugging for now.
+      //const WebRtc_UWord8 V = (*ptr & 0x80) >> 7;
+      //const WebRtc_UWord8 level = (*ptr & 0x7f);
+      //DEBUG_PRINT("RTP_AUDIO_LEVEL_UNIQUE_ID: ID=%u, len=%u, V=%u, level=%u",
+      //    ID, len, V, level);
+      //}
+      default:
+      {
+        WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, -1,
+            "Extension type not implemented.");
+        return;
+      }
+      }
+      WebRtc_UWord8 num_bytes = ParsePaddingBytes(ptrRTPDataExtensionEnd, ptr);
+      ptr += num_bytes;
+    }
+}
+
+WebRtc_UWord8 ModuleRTPUtility::RTPHeaderParser::ParsePaddingBytes(
+    const WebRtc_UWord8* ptrRTPDataExtensionEnd,
+    const WebRtc_UWord8* ptr) const {
+
+  WebRtc_UWord8 num_zero_bytes = 0;
+  while (ptrRTPDataExtensionEnd - ptr > 0) {
+    if (*ptr != 0) {
+      return num_zero_bytes;
+    }
+    ptr++;
+    num_zero_bytes++;
+  }
+  return num_zero_bytes;
 }
 
 // RTP payload parser

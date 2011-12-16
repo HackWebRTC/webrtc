@@ -14,7 +14,9 @@
 #include "typedefs.h"
 #include "rtp_utility.h"
 
+#include "rtp_header_extension.h"
 #include "rtp_rtcp.h"
+#include "rtp_rtcp_defines.h"
 #include "rtp_receiver_audio.h"
 #include "rtp_receiver_video.h"
 #include "rtcp_receiver_help.h"
@@ -109,15 +111,17 @@ public:
     WebRtc_Word32 Statistics(WebRtc_UWord8  *fraction_lost,
                              WebRtc_UWord32 *cum_lost,
                              WebRtc_UWord32 *ext_max,
-                             WebRtc_UWord32 *jitter,               // will be moved from JB
+                             WebRtc_UWord32 *jitter,  // will be moved from JB
                              WebRtc_UWord32 *max_jitter,
+                             WebRtc_UWord32 *jitter_transmission_time_offset,
                              bool reset = false) const;
 
     WebRtc_Word32 Statistics(WebRtc_UWord8  *fraction_lost,
                              WebRtc_UWord32 *cum_lost,
                              WebRtc_UWord32 *ext_max,
-                             WebRtc_UWord32 *jitter,               // will be moved from JB
+                             WebRtc_UWord32 *jitter,  // will be moved from JB
                              WebRtc_UWord32 *max_jitter,
+                             WebRtc_UWord32 *jitter_transmission_time_offset,
                              WebRtc_Word32 *missing,
                              bool reset = false) const;
 
@@ -133,6 +137,13 @@ public:
     WebRtc_UWord32 PacketCountReceived() const;
 
     WebRtc_UWord32 ByteCountReceived() const;
+
+    WebRtc_Word32 RegisterRtpHeaderExtension(const RTPExtensionType type,
+                                             const WebRtc_UWord8 id);
+
+    WebRtc_Word32 DeregisterRtpHeaderExtension(const RTPExtensionType type);
+
+    void GetHeaderExtensionMapCopy(RtpHeaderExtensionMap* map) const;
 
     virtual WebRtc_UWord32 PayloadTypeToPayload(const WebRtc_UWord8 payloadType,
                                                 ModuleRTPUtility::Payload*& payload) const;
@@ -192,7 +203,8 @@ private:
     WebRtc_Word8              _redPayloadType;
 
     //
-    MapWrapper                    _payloadTypeMap;
+    MapWrapper                _payloadTypeMap;
+    RtpHeaderExtensionMap     _rtpHeaderExtensionMap;
 
     // SSRCs
     WebRtc_UWord32            _SSRC;
@@ -201,17 +213,19 @@ private:
     WebRtc_UWord8             _numEnergy;
     WebRtc_UWord8             _currentRemoteEnergy[kRtpCsrcSize];
 
-    bool                    _useSSRCFilter;
+    bool                      _useSSRCFilter;
     WebRtc_UWord32            _SSRCFilter;
 
     // stats on received RTP packets
     WebRtc_UWord32            _jitterQ4;
     mutable WebRtc_UWord32    _jitterMaxQ4;
     mutable WebRtc_UWord32    _cumulativeLoss;
+    WebRtc_UWord32            _jitterQ4TransmissionTimeOffset;
 
     WebRtc_UWord32            _localTimeLastReceivedTimestamp;
     WebRtc_UWord32            _lastReceivedTimestamp;
     WebRtc_UWord16            _lastReceivedSequenceNumber;
+    WebRtc_Word32             _lastReceivedTransmissionTimeOffset;
     WebRtc_UWord16            _receivedSeqFirst;
     WebRtc_UWord16            _receivedSeqMax;
     WebRtc_UWord16            _receivedSeqWraps;
@@ -230,6 +244,7 @@ private:
     mutable WebRtc_UWord32    _lastReportCumulativeLost;  // 24 bits valid
     mutable WebRtc_UWord32    _lastReportExtendedHighSeqNum;
     mutable WebRtc_UWord32    _lastReportJitter;
+    mutable WebRtc_UWord32    _lastReportJitterTransmissionTimeOffset;
 
     // NACK
     NACKMethod          _nackMethod;

@@ -48,6 +48,7 @@ RTPReceiver::RTPReceiver(const WebRtc_Word32 id,
 
     _redPayloadType(-1),
     _payloadTypeMap(),
+    _rtpHeaderExtensionMap(),
     _SSRC(0),
     _numCSRCs(0),
     _currentRemoteCSRC(),
@@ -59,9 +60,11 @@ RTPReceiver::RTPReceiver(const WebRtc_Word32 id,
     _jitterQ4(0),
     _jitterMaxQ4(0),
     _cumulativeLoss(0),
+    _jitterQ4TransmissionTimeOffset(0),
     _localTimeLastReceivedTimestamp(0),
     _lastReceivedTimestamp(0),
     _lastReceivedSequenceNumber(0),
+    _lastReceivedTransmissionTimeOffset(0),
 
     _receivedSeqFirst(0),
     _receivedSeqMax(0),
@@ -79,6 +82,7 @@ RTPReceiver::RTPReceiver(const WebRtc_Word32 id,
     _lastReportCumulativeLost(0),
     _lastReportExtendedHighSeqNum(0),
     _lastReportJitter(0),
+    _lastReportJitterTransmissionTimeOffset(0),
 
     _nackMethod(kNackOff)
 {
@@ -150,12 +154,14 @@ RTPReceiver::Init()
     _jitterQ4 = 0;
     _jitterMaxQ4 = 0;
     _cumulativeLoss = 0;
+    _jitterQ4TransmissionTimeOffset = 0;
     _useSSRCFilter = false;
     _SSRCFilter = 0;
 
     _localTimeLastReceivedTimestamp = 0;
     _lastReceivedTimestamp = 0;
     _lastReceivedSequenceNumber = 0;
+    _lastReceivedTransmissionTimeOffset = 0;
 
     _receivedSeqFirst = 0;
     _receivedSeqMax = 0;
@@ -173,6 +179,9 @@ RTPReceiver::Init()
     _lastReportCumulativeLost = 0;
     _lastReportExtendedHighSeqNum = 0;
     _lastReportJitter = 0;
+    _lastReportJitterTransmissionTimeOffset = 0;
+
+    _rtpHeaderExtensionMap.Erase();
 
     // clear db
     bool loop = true;
@@ -683,6 +692,27 @@ RTPReceiver::RemotePayload(WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
     return -1;
 }
 
+WebRtc_Word32
+RTPReceiver::RegisterRtpHeaderExtension(const RTPExtensionType type,
+                                        const WebRtc_UWord8 id)
+{
+    CriticalSectionScoped cs(_criticalSectionRTPReceiver);
+    return _rtpHeaderExtensionMap.Register(type, id);
+}
+
+WebRtc_Word32
+RTPReceiver::DeregisterRtpHeaderExtension(const RTPExtensionType type)
+{
+    CriticalSectionScoped cs(_criticalSectionRTPReceiver);
+    return _rtpHeaderExtensionMap.Deregister(type);
+}
+
+void RTPReceiver::GetHeaderExtensionMapCopy(RtpHeaderExtensionMap* map) const
+{
+    CriticalSectionScoped cs(_criticalSectionRTPReceiver);
+    _rtpHeaderExtensionMap.GetCopy(map);
+}
+
 NACKMethod
 RTPReceiver::NACK() const
 {
@@ -852,6 +882,8 @@ RTPReceiver::IncomingRTPPacket(WebRtcRTPHeader* rtpHeader,
                 _lastReceivedTimestamp = rtpHeader->header.timestamp;
             }
             _lastReceivedSequenceNumber = rtpHeader->header.sequenceNumber;
+            _lastReceivedTransmissionTimeOffset =
+                rtpHeader->extension.transmissionTimeOffset;
         }
     }
     return retVal;
@@ -930,6 +962,26 @@ RTPReceiver::UpdateStatistics(const WebRtcRTPHeader* rtpHeader,
                 // note we calculate in Q4 to avoid using float
                 WebRtc_Word32 jitterDiffQ4 = (timeDiffSamples << 4) - _jitterQ4;
                 _jitterQ4 += ((jitterDiffQ4 + 8) >> 4);
+            }
+
+            // Extended jitter report, RFC 5450.
+            // Actual network jitter, excluding the source-introduced jitter.
+            WebRtc_Word32 timeDiffSamplesExt =
+                (RTPtime - _localTimeLastReceivedTimestamp) -
+                ((rtpHeader->header.timestamp +
+                  rtpHeader->extension.transmissionTimeOffset) -
+                (_lastReceivedTimestamp +
+                 _lastReceivedTransmissionTimeOffset));
+
+            timeDiffSamplesExt = abs(timeDiffSamplesExt);
+
+            if(timeDiffSamplesExt < 450000)  // Use 5 secs video freq as border
+            {
+                // note we calculate in Q4 to avoid using float
+                WebRtc_Word32 jitterDiffQ4TransmissionTimeOffset =
+                    (timeDiffSamplesExt << 4) - _jitterQ4TransmissionTimeOffset;
+                _jitterQ4TransmissionTimeOffset +=
+                    ((jitterDiffQ4TransmissionTimeOffset + 8) >> 4);
             }
         }
         _localTimeLastReceivedTimestamp = RTPtime;
@@ -1130,6 +1182,7 @@ RTPReceiver::CheckSSRCChanged(const WebRtcRTPHeader* rtpHeader)
 
             _lastReceivedTimestamp      = 0;
             _lastReceivedSequenceNumber = 0;
+            _lastReceivedTransmissionTimeOffset = 0;
 
             if (_SSRC)   // do we have a SSRC? then the stream is restarted
             {
@@ -1461,9 +1514,11 @@ RTPReceiver::ResetStatistics()
     _lastReportCumulativeLost = 0;
     _lastReportExtendedHighSeqNum = 0;
     _lastReportJitter = 0;
+    _lastReportJitterTransmissionTimeOffset = 0;
     _jitterQ4 = 0;
     _jitterMaxQ4 = 0;
     _cumulativeLoss = 0;
+    _jitterQ4TransmissionTimeOffset = 0;
     _receivedSeqWraps = 0;
     _receivedSeqMax = 0;
     _receivedSeqFirst = 0;
@@ -1492,6 +1547,7 @@ RTPReceiver::Statistics(WebRtc_UWord8  *fraction_lost,
                        WebRtc_UWord32 *ext_max,
                        WebRtc_UWord32 *jitter,
                        WebRtc_UWord32 *max_jitter,
+                       WebRtc_UWord32 *jitter_transmission_time_offset,
                        bool reset) const
 {
     WebRtc_Word32 missing;
@@ -1500,6 +1556,7 @@ RTPReceiver::Statistics(WebRtc_UWord8  *fraction_lost,
                       ext_max,
                       jitter,
                       max_jitter,
+                      jitter_transmission_time_offset,
                       &missing,
                       reset);
 }
@@ -1510,6 +1567,7 @@ RTPReceiver::Statistics(WebRtc_UWord8  *fraction_lost,
                         WebRtc_UWord32 *ext_max,
                         WebRtc_UWord32 *jitter,
                         WebRtc_UWord32 *max_jitter,
+                        WebRtc_UWord32 *jitter_transmission_time_offset,
                         WebRtc_Word32  *missing,
                         bool reset) const
 {
@@ -1554,6 +1612,11 @@ RTPReceiver::Statistics(WebRtc_UWord8  *fraction_lost,
             // note that the internal jitter value is in Q4
             // and needs to be scaled by 1/16
             *max_jitter = (_jitterMaxQ4 >> 4);
+        }
+        if(jitter_transmission_time_offset)
+        {
+            *jitter_transmission_time_offset =
+               _lastReportJitterTransmissionTimeOffset;
         }
         return 0;
     }
@@ -1636,6 +1699,13 @@ RTPReceiver::Statistics(WebRtc_UWord8  *fraction_lost,
         // and needs to be scaled by 1/16
         *max_jitter = (_jitterMaxQ4 >> 4);
     }
+    if(jitter_transmission_time_offset)
+    {
+        // note that the internal jitter value is in Q4
+        // and needs to be scaled by 1/16
+        *jitter_transmission_time_offset =
+            (_jitterQ4TransmissionTimeOffset >> 4);
+    }
     if(reset)
     {
         // store this report
@@ -1643,6 +1713,8 @@ RTPReceiver::Statistics(WebRtc_UWord8  *fraction_lost,
         _lastReportCumulativeLost = _cumulativeLoss;  // 24 bits valid
         _lastReportExtendedHighSeqNum = (_receivedSeqWraps<<16) + _receivedSeqMax;
         _lastReportJitter  = (_jitterQ4 >> 4);
+        _lastReportJitterTransmissionTimeOffset =
+            (_jitterQ4TransmissionTimeOffset >> 4);
 
         // only for report blocks in RTCP SR and RR
         _lastReportInorderPackets = _receivedInorderPacketCount;

@@ -12,11 +12,13 @@
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_SENDER_H_
 
 #include "rtp_rtcp_config.h"           // misc. defines (e.g. MAX_PACKET_LENGTH)
+#include "rtp_rtcp_defines.h"
 #include "common_types.h"          // Encryption
 #include "ssrc_database.h"
 #include "list_wrapper.h"
 #include "map_wrapper.h"
 #include "Bitrate.h"
+#include "rtp_header_extension.h"
 #include "video_codec_information.h"
 
 #include <cassert>
@@ -138,6 +140,24 @@ public:
                      const RTPFragmentationHeader* fragmentation,
                      VideoCodecInformation* codecInfo = NULL,
                      const RTPVideoTypeHeader* rtpTypeHdr = NULL);
+
+    /*
+    * RTP header extension
+    */
+    WebRtc_Word32 SetTransmissionTimeOffset(
+        const WebRtc_Word32 transmissionTimeOffset);
+
+    WebRtc_Word32 RegisterRtpHeaderExtension(const RTPExtensionType type,
+                                             const WebRtc_UWord8 id);
+
+    WebRtc_Word32 DeregisterRtpHeaderExtension(const RTPExtensionType type);
+
+    WebRtc_UWord16 RtpHeaderExtensionTotalLength() const;
+
+    WebRtc_UWord16 BuildRTPHeaderExtension(WebRtc_UWord8* dataBuffer) const;
+
+    WebRtc_UWord8 BuildTransmissionTimeOffsetExtension(
+        WebRtc_UWord8* dataBuffer) const;
 
     /*
     *    NACK
@@ -270,7 +290,7 @@ private:
     CriticalSectionWrapper*    _sendCritsect;
 
     CriticalSectionWrapper*    _transportCritsect;
-    Transport*         _transport;
+    Transport*                 _transport;
 
     bool                      _sendingMedia;
 
@@ -280,6 +300,9 @@ private:
 
     WebRtc_Word8              _payloadType;
     MapWrapper                _payloadTypeMap;
+
+    RtpHeaderExtensionMap     _rtpHeaderExtensionMap;
+    WebRtc_Word32             _transmissionTimeOffset;
 
     bool                      _keepAliveIsActive;
     WebRtc_Word8              _keepAlivePayloadType;
@@ -305,13 +328,13 @@ private:
     WebRtc_UWord32            _payloadBytesSent;
 
     // RTP variables
-    bool                    _startTimeStampForced;
+    bool                      _startTimeStampForced;
     WebRtc_UWord32            _startTimeStamp;
-    SSRCDatabase&           _ssrcDB;
+    SSRCDatabase&             _ssrcDB;
     WebRtc_UWord32            _remoteSSRC;
-    bool                    _sequenceNumberForced;
+    bool                      _sequenceNumberForced;
     WebRtc_UWord16            _sequenceNumber;
-    bool                    _ssrcForced;
+    bool                      _ssrcForced;
     WebRtc_UWord32            _ssrc;
     WebRtc_UWord32            _timeStamp;
     WebRtc_UWord8             _CSRCs;

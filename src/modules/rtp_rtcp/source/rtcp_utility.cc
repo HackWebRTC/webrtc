@@ -100,6 +100,9 @@ RTCPUtility::RTCPParserV2::Iterate()
         case State_BYEItem:
             IterateBYEItem();
             break;
+        case State_ExtendedJitterItem:
+            IterateExtendedJitterItem();
+            break;
         case State_RTPFB_NACKItem:
             IterateNACKItem();
             break;
@@ -196,6 +199,13 @@ RTCPUtility::RTCPParserV2::IterateTopLevel()
             }
             return;
         }
+        case PT_IJ:
+        {
+            // number of Report blocks
+            _numberOfBlocks = header.IC;
+            ParseIJ();
+            return;
+        }
         case PT_RTPFB: // Fall through!
         case PT_PSFB:
         {
@@ -260,6 +270,16 @@ void
 RTCPUtility::RTCPParserV2::IterateBYEItem()
 {
     const bool success = ParseBYEItem();
+    if (!success)
+    {
+        Iterate();
+    }
+}
+
+void
+RTCPUtility::RTCPParserV2::IterateExtendedJitterItem()
+{
+    const bool success = ParseIJItem();
     if (!success)
     {
         Iterate();
@@ -584,6 +604,62 @@ RTCPUtility::RTCPParserV2::ParseReportBlockItem()
 
     _numberOfBlocks--;
     _packetType = kRtcpReportBlockItemCode;
+    return true;
+}
+
+/* From RFC 5450: Transmission Time Offsets in RTP Streams.
+      0                   1                   2                   3
+      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ hdr |V=2|P|    RC   |   PT=IJ=195   |             length            |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |                      inter-arrival jitter                     |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     .                                                               .
+     .                                                               .
+     .                                                               .
+     |                      inter-arrival jitter                     |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+*/
+
+bool
+RTCPUtility::RTCPParserV2::ParseIJ()
+{
+    const ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
+
+    if (length < 4)
+    {
+        return false;
+    }
+
+    _ptrRTCPData += 4; // Skip header
+
+    _packetType = kRtcpExtendedIjCode;
+
+    // State transition
+    _state = State_ExtendedJitterItem;
+    return true;
+}
+
+bool
+RTCPUtility::RTCPParserV2::ParseIJItem()
+{
+    const ptrdiff_t length = _ptrRTCPBlockEnd - _ptrRTCPData;
+
+    if (length < 4 || _numberOfBlocks <= 0)
+    {
+        _state = State_TopLevel;
+        EndCurrentBlock();
+        return false;
+    }
+
+    _packet.ExtendedJitterReportItem.Jitter = *_ptrRTCPData++ << 24;
+    _packet.ExtendedJitterReportItem.Jitter += *_ptrRTCPData++ << 16;
+    _packet.ExtendedJitterReportItem.Jitter += *_ptrRTCPData++ << 8;
+    _packet.ExtendedJitterReportItem.Jitter += *_ptrRTCPData++;
+
+    _numberOfBlocks--;
+    _packetType = kRtcpExtendedIjItemCode;
     return true;
 }
 

@@ -39,6 +39,12 @@ enum RTPAliveType
     kRtpAlive  = 2
 };
 
+enum RTPExtensionType
+{
+   NONE,
+   TRANSMISSION_TIME_OFFSET
+};
+
 enum RTCPAppSubTypes
 {
     kAppSubtypeBwe     = 0x00
@@ -60,7 +66,8 @@ enum RTCPPacketType
     kRtcpApp            = 0x0800,
     kRtcpSli            = 0x4000,
     kRtcpRpsi           = 0x8000,
-    kRtcpRemb           = 0x10000
+    kRtcpRemb           = 0x10000,
+    kRtcpTransmissionTimeOffset = 0x20000
 };
 
 enum KeyFrameRequestMethod

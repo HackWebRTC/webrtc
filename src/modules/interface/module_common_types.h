@@ -27,6 +27,11 @@ struct RTPHeader
     WebRtc_UWord16 headerLength;
 };
 
+struct RTPHeaderExtension
+{
+    WebRtc_Word32  transmissionTimeOffset;
+};
+
 struct RTPAudioHeader
 {
     WebRtc_UWord8  numEnergy;                         // number of valid entries in arrOfEnergy
@@ -118,6 +123,7 @@ struct WebRtcRTPHeader
     RTPHeader       header;
     FrameType       frameType;
     RTPTypeHeader   type;
+    RTPHeaderExtension extension;
 };
 
 class RTPFragmentationHeader

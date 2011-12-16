@@ -30,6 +30,7 @@ RTCPPacketInformation::RTCPPacketInformation() :
     roundTripTime(0),
     lastReceivedExtendedHighSeqNum(0),
     jitter(0),
+    interArrivalJitter(0),
     sliPictureId(0),
     rpsiPictureId(0),
     VoIPMetric(NULL)

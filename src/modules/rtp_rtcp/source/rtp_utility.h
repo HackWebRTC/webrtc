@@ -14,6 +14,7 @@
 #include <cstddef> // size_t, ptrdiff_t
 
 #include "typedefs.h"
+#include "rtp_header_extension.h"
 #include "rtp_rtcp_config.h"
 #include "rtp_rtcp_defines.h"
 
@@ -118,10 +119,21 @@ namespace ModuleRTPUtility
                         const WebRtc_UWord32 rtpDataLength);
         ~RTPHeaderParser();
 
-        bool RTCP( ) const;
-        bool Parse( WebRtcRTPHeader& parsedPacket) const;
+        bool RTCP() const;
+        bool Parse(WebRtcRTPHeader& parsedPacket,
+                   RtpHeaderExtensionMap* ptrExtensionMap = NULL) const;
 
     private:
+        void ParseOneByteExtensionHeader(
+            WebRtcRTPHeader& parsedPacket,
+            const RtpHeaderExtensionMap* ptrExtensionMap,
+            const WebRtc_UWord8* ptrRTPDataExtensionEnd,
+            const WebRtc_UWord8* ptr) const;
+
+        WebRtc_UWord8 ParsePaddingBytes(
+            const WebRtc_UWord8* ptrRTPDataExtensionEnd,
+            const WebRtc_UWord8* ptr) const;
+
         const WebRtc_UWord8* const _ptrRTPDataBegin;
         const WebRtc_UWord8* const _ptrRTPDataEnd;
     };

@@ -98,6 +98,13 @@ public:
                                const WebRtc_UWord32 packetOH);
 
     /*
+    *   Extended jitter report
+    */
+    bool IJ() const;
+
+    WebRtc_Word32 SetIJStatus(const bool enable);
+
+    /*
     *
     */
 
@@ -146,6 +153,11 @@ private:
                         const WebRtc_UWord32 NTPfrac,
                         const RTCPReportBlock* received = NULL);
 
+    WebRtc_Word32 BuildExtendedJitterReport(
+        WebRtc_UWord8* rtcpbuffer,
+        WebRtc_UWord32& pos,
+        const WebRtc_UWord32 jitterTransmissionTimeOffset);
+
     WebRtc_Word32 BuildSDEC(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos);
     WebRtc_Word32 BuildPLI(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos);
     WebRtc_Word32 BuildREMB(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos);
@@ -188,6 +200,7 @@ private:
     bool                    _REMB;
     bool                    _sendREMB;
     bool                    _TMMBR;
+    bool                    _IJ;
 
     WebRtc_UWord32        _nextTimeToSendRTCP;
 

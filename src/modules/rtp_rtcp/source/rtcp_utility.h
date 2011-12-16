@@ -67,6 +67,12 @@ namespace RTCPUtility {
         WebRtc_UWord8  CNameLength;
     };
 
+    struct RTCPPacketExtendedJitterReportItem
+    {
+        // RFC 5450
+        WebRtc_UWord32 Jitter;
+    };
+
     struct RTCPPacketBYE
     {
         WebRtc_UWord32 SenderSSRC;
@@ -203,6 +209,8 @@ namespace RTCPUtility {
         RTCPPacketSDESCName       CName;
         RTCPPacketBYE             BYE;
 
+        RTCPPacketExtendedJitterReportItem ExtendedJitterReportItem;
+
         RTCPPacketRTPFBNACK       NACK;
         RTCPPacketRTPFBNACKItem   NACKItem;
 
@@ -237,6 +245,10 @@ namespace RTCPUtility {
         kRtcpSdesCode,
         kRtcpSdesChunkCode,
         kRtcpByeCode,
+
+        // RFC5450
+        kRtcpExtendedIjCode,
+        kRtcpExtendedIjItemCode,
 
         // RFC4585
         kRtcpRtpfbNackCode,
@@ -290,6 +302,7 @@ namespace RTCPUtility {
 
     enum RTCPPT
     {
+        PT_IJ    = 195,
         PT_SR    = 200,
         PT_RR    = 201,
         PT_SDES  = 202,
@@ -329,6 +342,7 @@ namespace RTCPUtility {
             State_ReportBlockItem, // SR/RR report block
             State_SDESChunk,       // SDES chunk
             State_BYEItem,         // BYE item
+            State_ExtendedJitterItem, // Extended jitter report item
             State_RTPFB_NACKItem,  // NACK FCI item
             State_RTPFB_TMMBRItem, // TMMBR FCI item
             State_RTPFB_TMMBNItem, // TMMBN FCI item
@@ -346,6 +360,7 @@ namespace RTCPUtility {
         void IterateReportBlockItem();
         void IterateSDESChunk();
         void IterateBYEItem();
+        void IterateExtendedJitterItem();
         void IterateNACKItem();
         void IterateTMMBRItem();
         void IterateTMMBNItem();
@@ -369,6 +384,9 @@ namespace RTCPUtility {
 
         bool ParseBYE();
         bool ParseBYEItem();
+
+        bool ParseIJ();
+        bool ParseIJItem();
 
         bool ParseXR();
         bool ParseXRItem();

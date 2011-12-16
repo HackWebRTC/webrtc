@@ -356,6 +356,9 @@ RTCPReceiver::IncomingRTCPPacket(RTCPPacketInformation& rtcpPacketInformation,
         case RTCPUtility::kRtcpPsfbRpsiCode:
             HandleRPSI(*rtcpParser, rtcpPacketInformation);
             break;
+        case RTCPUtility::kRtcpExtendedIjCode:
+            HandleIJ(*rtcpParser, rtcpPacketInformation);
+            break;
         case RTCPUtility::kRtcpPsfbFirCode:
             HandleFIR(*rtcpParser, rtcpPacketInformation);
             break;
@@ -1149,6 +1152,30 @@ RTCPReceiver::HandlePsfbApp(RTCPUtility::RTCPParserV2& rtcpParser,
     {
         HandleREMBItem(rtcpParser, rtcpPacketInformation);
     }
+}
+
+// no need for critsect we have _criticalSectionRTCPReceiver
+void
+RTCPReceiver::HandleIJ(RTCPUtility::RTCPParserV2& rtcpParser,
+                       RTCPPacketInformation& rtcpPacketInformation)
+{
+    const RTCPUtility::RTCPPacket& rtcpPacket = rtcpParser.Packet();
+
+    RTCPUtility::RTCPPacketTypes pktType = rtcpParser.Iterate();
+    while (pktType == RTCPUtility::kRtcpExtendedIjItemCode)
+    {
+        HandleIJItem(rtcpPacket, rtcpPacketInformation);
+        pktType = rtcpParser.Iterate();
+    }
+}
+
+void
+RTCPReceiver::HandleIJItem(const RTCPUtility::RTCPPacket& rtcpPacket,
+                           RTCPPacketInformation& rtcpPacketInformation)
+{
+    rtcpPacketInformation.rtcpPacketTypeFlags |= kRtcpTransmissionTimeOffset;
+    rtcpPacketInformation.interArrivalJitter =
+    rtcpPacket.ExtendedJitterReportItem.Jitter;
 }
 
 void

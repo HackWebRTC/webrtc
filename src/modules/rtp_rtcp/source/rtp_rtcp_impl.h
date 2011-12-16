@@ -97,6 +97,14 @@ public:
     virtual WebRtc_Word32 DeRegisterReceivePayload(
         const WebRtc_Word8 payloadType);
 
+    // register RTP header extension
+    virtual WebRtc_Word32 RegisterReceiveRtpHeaderExtension(
+        const RTPExtensionType type,
+        const WebRtc_UWord8 id);
+
+    virtual WebRtc_Word32 DeregisterReceiveRtpHeaderExtension(
+        const RTPExtensionType type);
+
     // get the currently configured SSRC filter
     virtual WebRtc_Word32 SSRCFilter(WebRtc_UWord32& allowedSSRC) const;
 
@@ -165,6 +173,14 @@ public:
     virtual WebRtc_Word32 DeRegisterSendPayload(const WebRtc_Word8 payloadType);
 
     virtual WebRtc_Word8 SendPayloadType() const;
+
+    // register RTP header extension
+    virtual WebRtc_Word32 RegisterSendRtpHeaderExtension(
+        const RTPExtensionType type,
+        const WebRtc_UWord8 id);
+
+    virtual WebRtc_Word32 DeregisterSendRtpHeaderExtension(
+        const RTPExtensionType type);
 
     // get start timestamp
     virtual WebRtc_UWord32 StartTimestamp() const;
@@ -289,10 +305,12 @@ public:
                                           WebRtc_UWord32 *bytesReceived,
                                           WebRtc_UWord32 *packetsReceived) const;
 
-    virtual WebRtc_Word32 ReportBlockStatistics(WebRtc_UWord8 *fraction_lost,
-                                                WebRtc_UWord32 *cum_lost,
-                                                WebRtc_UWord32 *ext_max,
-                                                WebRtc_UWord32 *jitter);
+    virtual WebRtc_Word32 ReportBlockStatistics(
+        WebRtc_UWord8 *fraction_lost,
+        WebRtc_UWord32 *cum_lost,
+        WebRtc_UWord32 *ext_max,
+        WebRtc_UWord32 *jitter,
+        WebRtc_UWord32 *jitter_transmission_time_offset);
 
     // Get received RTCP report, sender info
     virtual WebRtc_Word32 RemoteRTCPStat( RTCPSenderInfo* senderInfo);
@@ -317,6 +335,14 @@ public:
     virtual WebRtc_Word32 SetREMBData(const WebRtc_UWord32 bitrate,
                                       const WebRtc_UWord8 numberOfSSRC,
                                       const WebRtc_UWord32* SSRC);
+
+    /*
+    *   (IJ) Extended jitter report.
+    */
+    virtual bool IJ() const;
+
+    virtual WebRtc_Word32 SetIJStatus(const bool enable);
+
     /*
     *   (TMMBR) Temporary Max Media Bit Rate
     */

@@ -151,6 +151,12 @@ protected:
     void HandleREMBItem(RTCPUtility::RTCPParserV2& rtcpParser,
                         RTCPHelp::RTCPPacketInformation& rtcpPacketInformation);
 
+    void HandleIJ(RTCPUtility::RTCPParserV2& rtcpParser,
+                  RTCPHelp::RTCPPacketInformation& rtcpPacketInformation);
+
+    void HandleIJItem(const RTCPUtility::RTCPPacket& rtcpPacket,
+                      RTCPHelp::RTCPPacketInformation& rtcpPacketInformation);
+
     void HandleTMMBR(RTCPUtility::RTCPParserV2& rtcpParser,
                      RTCPHelp::RTCPPacketInformation& rtcpPacketInformation);
 

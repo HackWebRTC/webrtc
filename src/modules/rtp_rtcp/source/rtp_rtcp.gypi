@@ -41,6 +41,8 @@
         'rtcp_sender.h',
         'rtcp_utility.cc',
         'rtcp_utility.h',
+        'rtp_header_extension.cc',
+        'rtp_header_extension.h',
         'rtp_receiver.cc',
         'rtp_receiver.h',
         'rtp_sender.cc',

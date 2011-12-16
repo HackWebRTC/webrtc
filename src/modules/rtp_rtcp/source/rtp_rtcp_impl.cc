@@ -790,7 +790,10 @@ ModuleRtpRtcpImpl::IncomingPacket(const WebRtc_UWord8* incomingPacket,
         WebRtcRTPHeader rtpHeader;
         memset(&rtpHeader, 0, sizeof(rtpHeader));
 
-        const bool validRTPHeader = rtpParser.Parse(rtpHeader);
+        RtpHeaderExtensionMap map;
+        _rtpReceiver.GetHeaderExtensionMapCopy(&map);
+
+        const bool validRTPHeader = rtpParser.Parse(rtpHeader, &map);
         if(!validRTPHeader)
         {
             WEBRTC_TRACE(kTraceDebug,
@@ -1668,7 +1671,11 @@ ModuleRtpRtcpImpl::StatisticsRTP(WebRtc_UWord8  *fraction_lost,
 {
     WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, _id, "StatisticsRTP()");
 
-    WebRtc_Word32 retVal =_rtpReceiver.Statistics(fraction_lost,cum_lost,ext_max,jitter, max_jitter,(_rtcpSender.Status() == kRtcpOff));
+    WebRtc_UWord32 jitter_transmission_time_offset = 0;
+
+    WebRtc_Word32 retVal =_rtpReceiver.Statistics(fraction_lost, cum_lost,
+        ext_max, jitter, max_jitter, &jitter_transmission_time_offset,
+        (_rtcpSender.Status() == kRtcpOff));
     if(retVal == -1)
     {
         WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, _id, "StatisticsRTP() no statisitics availble");
@@ -1696,17 +1703,21 @@ ModuleRtpRtcpImpl::DataCountersRTP(WebRtc_UWord32 *bytesSent,
 }
 
 WebRtc_Word32
-ModuleRtpRtcpImpl::ReportBlockStatistics(WebRtc_UWord8 *fraction_lost,
-                                         WebRtc_UWord32 *cum_lost,
-                                         WebRtc_UWord32 *ext_max,
-                                         WebRtc_UWord32 *jitter)
+ModuleRtpRtcpImpl::ReportBlockStatistics(
+    WebRtc_UWord8 *fraction_lost,
+    WebRtc_UWord32 *cum_lost,
+    WebRtc_UWord32 *ext_max,
+    WebRtc_UWord32 *jitter,
+    WebRtc_UWord32 *jitter_transmission_time_offset)
 {
     WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, _id, "ReportBlockStatistics()");
     WebRtc_Word32 missing = 0;
     WebRtc_Word32 ret = _rtpReceiver.Statistics(fraction_lost,
-                                                cum_lost,ext_max,
+                                                cum_lost,
+                                                ext_max,
                                                 jitter,
                                                 NULL,
+                                                jitter_transmission_time_offset,
                                                 &missing,
                                                 true);
 
@@ -1791,6 +1802,52 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SetREMBData(const WebRtc_UWord32 bitrate,
 {
     WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, _id, "SetREMBData(bitrate:%d,?,?)", bitrate);
     return _rtcpSender.SetREMBData(bitrate, numberOfSSRC, SSRC);
+}
+
+    /*
+    *   (IJ) Extended jitter report.
+    */
+bool ModuleRtpRtcpImpl::IJ() const
+{
+    WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, _id, "IJ()");
+
+    return _rtcpSender.IJ();
+}
+
+WebRtc_Word32 ModuleRtpRtcpImpl::SetIJStatus(const bool enable)
+{
+    WEBRTC_TRACE(kTraceModuleCall,
+                 kTraceRtpRtcp,
+                 _id,
+                 "SetIJStatus(%s)", enable ? "true" : "false");
+
+    return _rtcpSender.SetIJStatus(enable);
+}
+
+WebRtc_Word32 ModuleRtpRtcpImpl::RegisterSendRtpHeaderExtension(
+    const RTPExtensionType type,
+    const WebRtc_UWord8 id)
+{
+    return _rtpSender.RegisterRtpHeaderExtension(type, id);
+}
+
+WebRtc_Word32 ModuleRtpRtcpImpl::DeregisterSendRtpHeaderExtension(
+    const RTPExtensionType type)
+{
+    return _rtpSender.DeregisterRtpHeaderExtension(type);
+}
+
+WebRtc_Word32 ModuleRtpRtcpImpl::RegisterReceiveRtpHeaderExtension(
+    const RTPExtensionType type,
+    const WebRtc_UWord8 id)
+{
+    return _rtpReceiver.RegisterRtpHeaderExtension(type, id);
+}
+
+WebRtc_Word32 ModuleRtpRtcpImpl::DeregisterReceiveRtpHeaderExtension(
+    const RTPExtensionType type)
+{
+    return _rtpReceiver.DeregisterRtpHeaderExtension(type);
 }
 
     /*

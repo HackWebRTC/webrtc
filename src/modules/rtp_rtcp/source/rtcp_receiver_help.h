@@ -57,6 +57,8 @@ public:
     WebRtc_UWord32  lastReceivedExtendedHighSeqNum;
     WebRtc_UWord32  jitter;
 
+    WebRtc_UWord32  interArrivalJitter;
+
     WebRtc_UWord8   sliPictureId;
     WebRtc_UWord64  rpsiPictureId;
     WebRtc_UWord32  receiverEstimatedMaxBitrate;
