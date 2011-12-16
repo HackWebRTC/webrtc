@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "unit_test.h"
-#include "video_processing.h"
-
-#include "tick_util.h"
-
 #include <cstdio>
 #include <cstdlib>
 
-using namespace webrtc;
+#include "modules/video_processing/main/interface/video_processing.h"
+#include "modules/video_processing/main/test/unit_test/unit_test.h"
+#include "system_wrappers/interface/tick_util.h"
+#include "testsupport/fileutils.h"
+
+namespace webrtc {
 
 TEST_F(VideoProcessingModuleTest, Denoising)
 {
@@ -26,11 +26,17 @@ TEST_F(VideoProcessingModuleTest, Denoising)
     WebRtc_Word64 minRuntime = 0;
     WebRtc_Word64 avgRuntime = 0;
 
-    FILE* denoiseFile = fopen("denoise_testfile.yuv", "wb");
-    ASSERT_TRUE(denoiseFile != NULL) << "Could not open output file.\n";
+    const std::string denoise_filename =
+        webrtc::test::OutputPath() + "denoise_testfile.yuv";
+    FILE* denoiseFile = fopen(denoise_filename.c_str(), "wb");
+    ASSERT_TRUE(denoiseFile != NULL) <<
+        "Could not open output file: " << denoise_filename << "\n";
 
-    FILE* noiseFile = fopen("noise_testfile.yuv", "wb");
-    ASSERT_TRUE(noiseFile != NULL) << "Could not open noisy file.\n";
+    const std::string noise_filename =
+        webrtc::test::OutputPath() + "noise_testfile.yuv";
+    FILE* noiseFile = fopen(noise_filename.c_str(), "wb");
+    ASSERT_TRUE(noiseFile != NULL) <<
+        "Could not open noisy file: " << noise_filename << "\n";
 
     printf("\nRun time [us / frame]:\n");
     for (WebRtc_UWord32 runIdx = 0; runIdx < NumRuns; runIdx++)
@@ -110,9 +116,12 @@ TEST_F(VideoProcessingModuleTest, Denoising)
 
         rewind(_sourceFile);
     }
-
+    ASSERT_EQ(0, fclose(denoiseFile));
+    ASSERT_EQ(0, fclose(noiseFile));
     printf("\nAverage run time = %d us / frame\n", 
         static_cast<int>(avgRuntime / frameNum / NumRuns));
     printf("Min run time = %d us / frame\n\n", 
         static_cast<int>(minRuntime / frameNum));
 }
+
+}  // namespace webrtc

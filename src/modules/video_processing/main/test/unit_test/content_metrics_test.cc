@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "unit_test.h"
-#include "video_processing.h"
-#include "content_analysis.h"
+#include "modules/video_processing/main/interface/video_processing.h"
+#include "modules/video_processing/main/source/content_analysis.h"
+#include "modules/video_processing/main/test/unit_test/unit_test.h"
 
-using namespace webrtc;
+namespace webrtc {
 
 TEST_F(VideoProcessingModuleTest, ContentAnalysis)
 {
@@ -36,3 +36,5 @@ TEST_F(VideoProcessingModuleTest, ContentAnalysis)
     }
     ASSERT_NE(0, feof(_sourceFile)) << "Error reading source file";
 }
+
+}  // namespace webrtc

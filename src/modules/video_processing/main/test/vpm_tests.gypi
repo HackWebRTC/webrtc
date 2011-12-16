@@ -14,17 +14,12 @@
       'dependencies': [
         'video_processing',
         'webrtc_utility',
+        '<(webrtc_root)/../test/test.gyp:test_support_main',
         '<(webrtc_root)/../testing/gtest.gyp:gtest',
-      ],
-      'include_dirs': [
-        '../../../../system_wrappers/interface',
-        '<(webrtc_root)/common_video/libyuv/include',
-        '../../../../modules/video_processing/main/source',
       ],
       'sources': [
         # headers
         'unit_test/unit_test.h',
-
         # sources
         'unit_test/brightness_detection_test.cc',
         'unit_test/color_enhancement_test.cc',
@@ -32,7 +27,7 @@
         'unit_test/deflickering_test.cc',
         'unit_test/denoising_test.cc',
         'unit_test/unit_test.cc',
-      ], # source
+      ], # sources
     },
   ],
 }

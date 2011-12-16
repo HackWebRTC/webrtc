@@ -8,14 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "unit_test.h"
-#include "video_processing.h"
-#include "tick_util.h"
-
 #include <cstdio>
 #include <cstdlib>
 
-using namespace webrtc;
+#include "modules/video_processing/main/interface/video_processing.h"
+#include "modules/video_processing/main/test/unit_test/unit_test.h"
+#include "system_wrappers/interface/tick_util.h"
+#include "testsupport/fileutils.h"
+
+namespace webrtc {
 
 TEST_F(VideoProcessingModuleTest, Deflickering)
 {
@@ -28,12 +29,17 @@ TEST_F(VideoProcessingModuleTest, Deflickering)
 
     // Close automatically opened Foreman.
     fclose(_sourceFile);
-    _sourceFile  = fopen("deflicker_testfile_before.yuv", "rb");
+    const std::string input_file =
+        webrtc::test::ResourcePath("deflicker_before_cif_short", "yuv");
+    _sourceFile  = fopen(input_file.c_str(), "rb");
     ASSERT_TRUE(_sourceFile != NULL) <<
-        "Cannot read input file deflicker_testfile_before.yuv\n";
+        "Cannot read input file: " << input_file << "\n";
 
-    FILE* deflickerFile = fopen("deflicker_testfile.yuv", "wb");
-    ASSERT_TRUE(deflickerFile != NULL) << "Could not open output file.\n";
+    const std::string output_file =
+        webrtc::test::OutputPath() + "deflicker_output_cif_short.yuv";
+    FILE* deflickerFile = fopen(output_file.c_str(), "wb");
+    ASSERT_TRUE(deflickerFile != NULL) <<
+        "Could not open output file: " << output_file << "\n";
 
     printf("\nRun time [us / frame]:\n");
     for (WebRtc_UWord32 runIdx = 0; runIdx < NumRuns; runIdx++)
@@ -73,9 +79,13 @@ TEST_F(VideoProcessingModuleTest, Deflickering)
 
         rewind(_sourceFile);
     }
+    ASSERT_EQ(0, fclose(deflickerFile));
+    // TODO(kjellander): Add verification of deflicker output file.
 
     printf("\nAverage run time = %d us / frame\n", 
         static_cast<int>(avgRuntime / frameNum / NumRuns));
     printf("Min run time = %d us / frame\n\n", 
         static_cast<int>(minRuntime / frameNum));
 }
+
+}  // namespace webrtc

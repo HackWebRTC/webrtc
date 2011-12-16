@@ -8,33 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "unit_test.h"
+#include "modules/video_processing/main/test/unit_test/unit_test.h"
+
+#include <string>
 
 #include "common_video/libyuv/include/libyuv.h"
-#include "tick_util.h"
-#include "trace.h"
+#include "system_wrappers/interface/tick_util.h"
+#include "testsupport/fileutils.h"
 
-
-using webrtc::Trace;
+namespace webrtc {
 
 void TestSize(VideoFrame& sourceFrame,
               WebRtc_UWord32 targetWidth, WebRtc_UWord32 targetHeight,
               WebRtc_UWord32 mode, VideoProcessingModule *vpm);
 
-class VPMEnvironment : public ::testing::Environment
-{
-public:
-  virtual void SetUp()
-  {
-    Trace::CreateTrace();
-    ASSERT_EQ(0, Trace::SetTraceFile("VPMTrace.txt"));
-  }
-
-  virtual void TearDown()
-  {
-    Trace::ReturnTrace();
-  }
-};
 VideoProcessingModuleTest::VideoProcessingModuleTest() :
   _vpm(NULL),
   _sourceFile(NULL),
@@ -53,9 +40,11 @@ void VideoProcessingModuleTest::SetUp()
   _videoFrame.SetWidth(_width);
   _videoFrame.SetHeight(_height);
 
-  _sourceFile  = fopen("testFiles/foreman_cif.yuv","rb");
+  const std::string video_file =
+      webrtc::test::ResourcePath("foreman_cif", "yuv");
+  _sourceFile  = fopen(video_file.c_str(),"rb");
   ASSERT_TRUE(_sourceFile != NULL) <<
-      "Cannot read source file: testFiles/foreman_cif.yuv\n";
+      "Cannot read source file: " + video_file + "\n";
 }
 
 void VideoProcessingModuleTest::TearDown()
@@ -357,8 +346,9 @@ void TestSize(VideoFrame& sourceFrame, WebRtc_UWord32 targetWidth,
 {
     VideoFrame *outFrame = NULL;
   std::ostringstream filename;
-  filename << "Resampler_"<< mode <<"_" << targetWidth << "x" <<
-              targetHeight << "_30Hz_P420.yuv";
+  filename << webrtc::test::OutputPath() << "Resampler_"<< mode << "_" <<
+      targetWidth << "x" << targetHeight << "_30Hz_P420.yuv";
+  // TODO(kjellander): Add automatic verification of these output files:
   std::cout << "Watch " << filename.str() << " and verify that it is okay."
             << std::endl;
   FILE* standAloneFile = fopen(filename.str().c_str(), "wb");
@@ -375,14 +365,4 @@ void TestSize(VideoFrame& sourceFrame, WebRtc_UWord32 targetWidth,
   fclose(standAloneFile);
 }
 
-// TODO(kjellander): Get rid of this main and use test_support_main instead
-// This can be done by inheriting TestSuite instead of testing::Test and
-// override Initialize().
-int main(int argc, char** argv)
-{
-  ::testing::InitGoogleTest(&argc, argv);
-  VPMEnvironment* env = new VPMEnvironment;
-  ::testing::AddGlobalTestEnvironment(env);
-
-  return RUN_ALL_TESTS();
-}
+}  // namespace webrtc

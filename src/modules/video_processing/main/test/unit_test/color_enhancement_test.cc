@@ -8,14 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "unit_test.h"
-#include "video_processing.h"
-#include "tick_util.h"
-
 #include <cstdio>
 #include <cstdlib>
 
-using namespace webrtc;
+#include "modules/video_processing/main/interface/video_processing.h"
+#include "modules/video_processing/main/test/unit_test/unit_test.h"
+#include "system_wrappers/interface/tick_util.h"
+#include "testsupport/fileutils.h"
+
+namespace webrtc {
 
 TEST_F(VideoProcessingModuleTest, ColorEnhancement)
 {
@@ -23,7 +24,17 @@ TEST_F(VideoProcessingModuleTest, ColorEnhancement)
     TickTime t1;
     TickInterval accTicks;
 
-    FILE* modFile = fopen("foremanColorEnhancedVPM.yuv", "w+b");
+    // Use a shorter version of the Foreman clip for this test.
+    fclose(_sourceFile);
+    const std::string video_file =
+      webrtc::test::ResourcePath("foreman_cif_short", "yuv");
+    _sourceFile  = fopen(video_file.c_str(), "rb");
+    ASSERT_TRUE(_sourceFile != NULL) <<
+        "Cannot read source file: " + video_file + "\n";
+
+    std::string output_file = webrtc::test::OutputPath() +
+        "foremanColorEnhancedVPM_cif_short.yuv";
+    FILE* modFile = fopen(output_file.c_str(), "w+b");
     ASSERT_TRUE(modFile != NULL) << "Could not open output file.\n";
         
     WebRtc_UWord32 frameNum = 0;
@@ -43,8 +54,11 @@ TEST_F(VideoProcessingModuleTest, ColorEnhancement)
     rewind(modFile);
 
     printf("Comparing files...\n\n");
-    FILE* refFile = fopen("foremanColorEnhanced.yuv", "rb");
-    ASSERT_TRUE(refFile != NULL) << "Cannot open reference file foremanColorEnhanced.yuv\n"
+    std::string reference_filename =
+        webrtc::test::ResourcePath("foremanColorEnhanced_cif_short", "yuv");
+    FILE* refFile = fopen(reference_filename.c_str(), "rb");
+    ASSERT_TRUE(refFile != NULL) << "Cannot open reference file: " <<
+        reference_filename << "\n"
         "Create the reference by running Matlab script createTable.m.";
 
     // get file lenghts
@@ -102,7 +116,10 @@ TEST_F(VideoProcessingModuleTest, ColorEnhancement)
         &refFrame[safeGuard + numPixels], numPixels / 2)) <<
         "Function is not modifying all chrominance pixels";
 
+    ASSERT_EQ(0, fclose(refFile));
+    ASSERT_EQ(0, fclose(modFile));
     delete [] testFrame;
     delete [] refFrame;
 }
 
+}  // namespace webrtc
