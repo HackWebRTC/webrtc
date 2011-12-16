@@ -12,12 +12,13 @@
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RECEIVER_FEC_H_
 
 #include "rtp_rtcp_defines.h"
+// This header is included to get the nested declaration of Packet structure.
+#include "forward_error_correction.h"
 
 #include "typedefs.h"
 #include "list_wrapper.h"
 
 namespace webrtc {
-class ForwardErrorCorrection;
 class RTPReceiverVideo;
 
 class ReceiverFEC
@@ -27,9 +28,10 @@ public:
     virtual ~ReceiverFEC();
 
     WebRtc_Word32 AddReceivedFECPacket(const WebRtcRTPHeader* rtpHeader,
-                                     const WebRtc_UWord8* incomingRtpPacket,
-                                     const WebRtc_UWord16 payloadDataLength,
-                                     bool& FECpacket);
+                                       const WebRtc_UWord8* incomingRtpPacket,
+                                       const WebRtc_UWord16 payloadDataLength,
+                                       bool& FECpacket,
+                                       bool oldPacket);
 
     void AddReceivedFECInfo(const WebRtcRTPHeader* rtpHeader,
                             const WebRtc_UWord8* incomingRtpPacket,
@@ -40,6 +42,7 @@ public:
     void SetPayloadTypeFEC(const WebRtc_Word8 payloadType);
 
 private:
+    int ParseAndReceivePacket(const ForwardErrorCorrection::Packet* packet);
     RTPReceiverVideo*        _owner;
     ForwardErrorCorrection* _fec;
     ListWrapper                _receivedPacketList;

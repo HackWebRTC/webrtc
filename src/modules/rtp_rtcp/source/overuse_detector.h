@@ -48,7 +48,6 @@ public:
     void SetRateControlRegion(RateControlRegion region);
 
 private:
-    static bool OldTimestamp(WebRtc_UWord32 newTimestamp, WebRtc_UWord32 existingTimestamp, bool& wrapped);
     void CompensatedTimeDelta(const FrameSample& currentFrame, const FrameSample& prevFrame, WebRtc_Word64& tDelta,
                                 double& tsDelta, bool wrapped);
     void UpdateKalman(WebRtc_Word64 tDelta, double tsDelta, WebRtc_UWord32 frameSize, WebRtc_UWord32 prevFrameSize);

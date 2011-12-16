@@ -289,6 +289,32 @@ WebRtc_UWord32 ConvertNTPTimeToMS(WebRtc_UWord32 NTPsec,
     return MStime;
 }
 
+bool OldTimestamp(uint32_t newTimestamp,
+                  uint32_t existingTimestamp,
+                  bool* wrapped)
+{
+    bool tmpWrapped =
+        (newTimestamp < 0x0000ffff && existingTimestamp > 0xffff0000) ||
+        (newTimestamp > 0xffff0000 && existingTimestamp < 0x0000ffff);
+    *wrapped = tmpWrapped;
+    if (existingTimestamp > newTimestamp && !tmpWrapped)
+    {
+        return true;
+    }
+    else if (existingTimestamp <= newTimestamp && !tmpWrapped)
+    {
+        return false;
+    }
+    else if (existingTimestamp < newTimestamp && tmpWrapped)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
 } // namespace ModuleRTPUtility
 
 /*

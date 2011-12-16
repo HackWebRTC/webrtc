@@ -85,7 +85,16 @@ namespace ModuleRTPUtility
 
     WebRtc_UWord32 pow2(WebRtc_UWord8 exp);
 
-    bool StringCompare(const WebRtc_Word8* str1 , const WebRtc_Word8* str2, const WebRtc_UWord32 length);
+    // Returns true if |newTimestamp| is older than |existingTimestamp|.
+    // |wrapped| will be set to true if there has been a wraparound between the
+    // two timestamps.
+    bool OldTimestamp(uint32_t newTimestamp,
+                      uint32_t existingTimestamp,
+                      bool* wrapped);
+
+    bool StringCompare(const WebRtc_Word8* str1,
+                       const WebRtc_Word8* str2,
+                       const WebRtc_UWord32 length);
 
     void AssignUWord32ToBuffer(WebRtc_UWord8* dataBuffer, WebRtc_UWord32 value);
     void AssignUWord24ToBuffer(WebRtc_UWord8* dataBuffer, WebRtc_UWord32 value);

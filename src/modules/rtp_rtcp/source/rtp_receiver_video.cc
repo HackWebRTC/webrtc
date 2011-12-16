@@ -17,6 +17,7 @@
 #include "critical_section_wrapper.h"
 #include "receiver_fec.h"
 #include "rtp_rtcp_impl.h"
+#include "rtp_utility.h"
 
 namespace webrtc {
 WebRtc_UWord32 BitRateBPS(WebRtc_UWord16 x )
@@ -245,45 +246,78 @@ RTPReceiverVideo::ParseVideoCodecSpecific(WebRtcRTPHeader* rtpHeader,
             _criticalSectionReceiverVideo->Leave();
             return -1;
         }
-        if (rtpHeader->header.timestamp != TimeStamp())
-        {
-            // We have a new frame. Force a decode with the existing packets.
-            retVal = _receiveFEC->ProcessReceivedFEC(true);
-            _currentFecFrameDecoded = false;
-        }
-
+        bool oldPacket = false;
         bool FECpacket = false;
-        if(retVal != -1)
-        {
-            if (!_currentFecFrameDecoded)
-            {
-                retVal = _receiveFEC->AddReceivedFECPacket(rtpHeader, incomingRtpPacket, payloadDataLength, FECpacket);
+        bool wrapped = false;  // Not used; just for OldTimeStamp().
 
-                if (retVal != -1 && (FECpacket || rtpHeader->header.markerBit))
-                {
-                    // Only attempt a decode after receiving the last media packet.
-                    retVal = _receiveFEC->ProcessReceivedFEC(false);
-                }
-            }else
+        // Check for old packets.
+        if (ModuleRTPUtility::OldTimestamp(rtpHeader->header.timestamp,
+                                           TimeStamp(),
+                                           &wrapped))
+        {
+            // We have an old packet.
+            // FEC receiver holds a list of packets with current timestamp.
+            // Setting "oldPacket = true" will send old packets directly
+            // to the jitter buffer.
+            oldPacket = true;
+            retVal = _receiveFEC->AddReceivedFECPacket(rtpHeader,
+                                                       incomingRtpPacket,
+                                                       payloadDataLength,
+                                                       FECpacket,
+                                                       oldPacket);
+        }
+        else
+        {
+            // Check for future packets.
+            if (rtpHeader->header.timestamp != TimeStamp())
             {
-                _receiveFEC->AddReceivedFECInfo(rtpHeader,incomingRtpPacket, FECpacket);
+                // We have a packet from next frame.
+                // Force a decode with the existing packets.
+                retVal = _receiveFEC->ProcessReceivedFEC(true);
+                _currentFecFrameDecoded = false;
+            }
+            if(retVal != -1)
+            {
+                if (!_currentFecFrameDecoded)
+                {
+                    retVal = _receiveFEC->AddReceivedFECPacket(
+                        rtpHeader,
+                        incomingRtpPacket,
+                        payloadDataLength,
+                        FECpacket,
+                        oldPacket);
+
+                    if (retVal != -1 && (FECpacket ||
+                        rtpHeader->header.markerBit))
+                    {
+                        // Only attempt a decode after receiving the
+                        // last media packet or an FEC packet.
+                        retVal = _receiveFEC->ProcessReceivedFEC(false);
+                    }
+                }else
+                {
+                    _receiveFEC->AddReceivedFECInfo(rtpHeader,
+                                                    incomingRtpPacket,
+                                                    FECpacket);
+                }
             }
         }
         _criticalSectionReceiverVideo->Leave();
 
-        if(retVal == 0 && FECpacket )
+        if(retVal == 0 && FECpacket)
         {
-            // callback with the received FEC packet, the normal packets are deliverd after parsing
-            // this contain the original RTP packet header but with empty payload and data length
+            // Callback with the received FEC packet.
+            // The normal packets are delivered after parsing.
+            // This contains the original RTP packet header but with
+            // empty payload and data length.
             rtpHeader->frameType = kFrameEmpty;
-            WebRtc_Word32 retVal = SetCodecType(videoType, rtpHeader);       //we need this for the routing
+            // We need this for the routing.
+            WebRtc_Word32 retVal = SetCodecType(videoType, rtpHeader);
             if(retVal != 0)
             {
                 return retVal;
             }
-            retVal =CallbackOfReceivedPayloadData(NULL,
-                                                  0,
-                                                  rtpHeader);
+            retVal = CallbackOfReceivedPayloadData(NULL, 0, rtpHeader);
         }
     }else
     {

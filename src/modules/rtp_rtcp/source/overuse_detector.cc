@@ -15,6 +15,7 @@
 #include "trace.h"
 #include "overuse_detector.h"
 #include "remote_rate_control.h"
+#include "rtp_utility.h"
 #include <math.h>
 #include <stdlib.h> //abs
 
@@ -182,7 +183,10 @@ bool OverUseDetector::Update(const WebRtcRTPHeader& rtpHeader,
     {
         _currentFrame._timestamp = rtpHeader.header.timestamp;
     }
-    else if (OldTimestamp(rtpHeader.header.timestamp, static_cast<WebRtc_UWord32>(_currentFrame._timestamp), wrapped))
+    else if (ModuleRTPUtility::OldTimestamp(
+                 rtpHeader.header.timestamp,
+                 static_cast<WebRtc_UWord32>(_currentFrame._timestamp),
+                 &wrapped))
     {
         // Don't update with old data
         return completeFrame;
@@ -196,7 +200,10 @@ bool OverUseDetector::Update(const WebRtcRTPHeader& rtpHeader,
             WebRtc_Word64 tDelta = 0;
             double tsDelta = 0;
             // Check for wrap
-            OldTimestamp(static_cast<WebRtc_UWord32>(_prevFrame._timestamp), static_cast<WebRtc_UWord32>(_currentFrame._timestamp), wrapped);
+            ModuleRTPUtility::OldTimestamp(
+                static_cast<WebRtc_UWord32>(_prevFrame._timestamp),
+                static_cast<WebRtc_UWord32>(_currentFrame._timestamp),
+                &wrapped);
             CompensatedTimeDelta(_currentFrame, _prevFrame, tDelta, tsDelta, wrapped);
             UpdateKalman(tDelta, tsDelta, _currentFrame._size, _prevFrame._size);
         }
@@ -476,25 +483,4 @@ BandwidthUsage OverUseDetector::Detect(double tsDelta)
     return _hypothesis;
 }
 
-bool OverUseDetector::OldTimestamp(WebRtc_UWord32 newTimestamp, WebRtc_UWord32 existingTimestamp, bool& wrapped)
-{
-    wrapped = (newTimestamp < 0x0000ffff && existingTimestamp > 0xffff0000) ||
-                (newTimestamp > 0xffff0000 && existingTimestamp < 0x0000ffff);
-    if (existingTimestamp > newTimestamp && !wrapped)
-    {
-        return true;
-    }
-    else if (existingTimestamp <= newTimestamp && !wrapped)
-    {
-        return false;
-    }
-    else if (existingTimestamp < newTimestamp && wrapped)
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
 } // namespace webrtc

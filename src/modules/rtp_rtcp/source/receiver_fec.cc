@@ -12,7 +12,6 @@
 
 #include "receiver_fec.h"
 #include "rtp_receiver_video.h"
-#include "forward_error_correction.h"
 #include "rtp_utility.h"
 
 // RFC 5109
@@ -89,7 +88,8 @@ WebRtc_Word32
 ReceiverFEC::AddReceivedFECPacket(const WebRtcRTPHeader* rtpHeader,
                                   const WebRtc_UWord8* incomingRtpPacket,
                                   const WebRtc_UWord16 payloadDataLength,
-                                  bool& FECpacket )
+                                  bool& FECpacket,
+                                  bool oldPacket)
 {
     if (_payloadTypeFEC == -1)
     {
@@ -112,6 +112,11 @@ ReceiverFEC::AddReceivedFECPacket(const WebRtcRTPHeader* rtpHeader,
     {
         receivedPacket->isFec = true;
         FECpacket = true;
+        // We don't need to parse old FEC packets.
+        // Old FEC packets are sent to jitter buffer as empty packets in the
+        // callback in rtp_receiver_video.
+        if (oldPacket)
+          return 0;
     } else
     {
         receivedPacket->isFec = false;
@@ -229,11 +234,28 @@ ReceiverFEC::AddReceivedFECPacket(const WebRtcRTPHeader* rtpHeader,
         delete receivedPacket;
         return 0;
     }
-    _receivedPacketList.PushBack(receivedPacket);
-    if (secondReceivedPacket)
+
+    // Send any old media packets to jitter buffer, don't push them onto
+    // received list for FEC decoding (we don't do FEC decoding on old packets).
+    if (oldPacket && receivedPacket->isFec == false)
     {
-        _receivedPacketList.PushBack(secondReceivedPacket);
+        if (ParseAndReceivePacket(receivedPacket->pkt) != 0) {
+          return -1;
+        }
+
+        delete receivedPacket->pkt;
+        delete receivedPacket;
     }
+
+    else
+    {
+        _receivedPacketList.PushBack(receivedPacket);
+        if (secondReceivedPacket)
+        {
+            _receivedPacketList.PushBack(secondReceivedPacket);
+        }
+    }
+
     return 0;
 }
 
@@ -306,21 +328,8 @@ ReceiverFEC::ProcessReceivedFEC(const bool forceFrameDecode)
             ForwardErrorCorrection::RecoveredPacket* recoveredPacket =
                 static_cast<ForwardErrorCorrection::RecoveredPacket*>(_recoveredPacketList.First()->GetItem());
 
-            WebRtcRTPHeader rtpHeader;
-            memset(&rtpHeader, 0, sizeof(rtpHeader));
-
-            ModuleRTPUtility::RTPHeaderParser rtpHeaderParser(recoveredPacket->pkt->data,
-                                                              recoveredPacket->pkt->length);
-
-            if (!rtpHeaderParser.Parse(rtpHeader))
-            {
-                return -1;
-            }
-            if (_owner->ReceiveRecoveredPacketCallback(&rtpHeader,
-                                               &recoveredPacket->pkt->data[rtpHeader.header.headerLength],
-                                               recoveredPacket->pkt->length - rtpHeader.header.headerLength) != 0)
-            {
-                return -1;
+            if (ParseAndReceivePacket(recoveredPacket->pkt) != 0) {
+              return -1;
             }
 
             delete recoveredPacket->pkt;
@@ -332,5 +341,24 @@ ReceiverFEC::ProcessReceivedFEC(const bool forceFrameDecode)
     }
 
     return 0;
+}
+
+int ReceiverFEC::ParseAndReceivePacket(
+    const ForwardErrorCorrection::Packet* packet) {
+
+  WebRtcRTPHeader header;
+  memset(&header, 0, sizeof(header));
+  ModuleRTPUtility::RTPHeaderParser parser(packet->data,
+                                             packet->length);
+  if (!parser.Parse(header)) {
+    return -1;
+  }
+  if (_owner->ReceiveRecoveredPacketCallback(
+          &header,
+          &packet->data[header.header.headerLength],
+          packet->length - header.header.headerLength) != 0) {
+    return -1;
+  }
+  return 0;
 }
 } // namespace webrtc
