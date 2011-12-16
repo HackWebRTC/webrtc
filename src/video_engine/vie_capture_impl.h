@@ -8,103 +8,71 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * vie_capture_impl.h
- */
-
-#ifndef WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_CAPTURE_IMPL_H_
-#define WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_CAPTURE_IMPL_H_
-
-#include "vie_defines.h"
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_CAPTURE_IMPL_H_
+#define WEBRTC_VIDEO_ENGINE_VIE_CAPTURE_IMPL_H_
 
 #include "typedefs.h"
-#include "vie_capture.h"
-#include "vie_ref_count.h"
-#include "vie_shared_data.h"
+#include "video_engine/main/interface/vie_capture.h"
+#include "video_engine/vie_defines.h"
+#include "video_engine/vie_ref_count.h"
+#include "video_engine/vie_shared_data.h"
 
-namespace webrtc
-{
+namespace webrtc {
 
-// ----------------------------------------------------------------------------
-//	ViECaptureImpl
-// ----------------------------------------------------------------------------
+class ViECaptureImpl
+    : public virtual ViESharedData,
+      public ViECapture,
+      public ViERefCount {
+ public:
+  // Implements ViECapture.
+  virtual int Release();
+  virtual int NumberOfCaptureDevices();
+  virtual int GetCaptureDevice(unsigned int list_number, char* device_nameUTF8,
+                               const unsigned int device_nameUTF8Length,
+                               char* unique_idUTF8,
+                               const unsigned int unique_idUTF8Length);
+  virtual int AllocateCaptureDevice(const char* unique_idUTF8,
+                                    const unsigned int unique_idUTF8Length,
+                                    int& capture_id);
+  virtual int AllocateCaptureDevice(VideoCaptureModule& capture_module,
+                                    int& capture_id);
+  virtual int AllocateExternalCaptureDevice(
+      int& capture_id, ViEExternalCapture *&external_capture);
+  virtual int ReleaseCaptureDevice(const int capture_id);
 
-class ViECaptureImpl: public virtual ViESharedData,
-                      public ViECapture,
-                      public ViERefCount
-{
-public:
-    virtual int Release();
+  virtual int ConnectCaptureDevice(const int capture_id,
+                                   const int video_channel);
+  virtual int DisconnectCaptureDevice(const int video_channel);
+  virtual int StartCapture(
+      const int capture_id,
+      const CaptureCapability capture_capability = CaptureCapability());
+  virtual int StopCapture(const int capture_id);
+  virtual int SetRotateCapturedFrames(const int capture_id,
+                                      const RotateCapturedFrame rotation);
+  virtual int SetCaptureDelay(const int capture_id,
+                              const unsigned int capture_delay_ms);
+  virtual int NumberOfCapabilities(const char* unique_idUTF8,
+                                   const unsigned int unique_idUTF8Length);
+  virtual int GetCaptureCapability(const char* unique_idUTF8,
+                                   const unsigned int unique_idUTF8Length,
+                                   const unsigned int capability_number,
+                                   CaptureCapability& capability);
+  virtual int ShowCaptureSettingsDialogBox(
+    const char* unique_idUTF8, const unsigned int unique_idUTF8Length,
+    const char* dialog_title, void* parent_window = NULL,
+    const unsigned int x = 200, const unsigned int y = 200);
+  virtual int GetOrientation(const char* unique_idUTF8,
+                             RotateCapturedFrame& orientation);
+  virtual int EnableBrightnessAlarm(const int capture_id, const bool enable);
+  virtual int RegisterObserver(const int capture_id,
+                               ViECaptureObserver& observer);
+  virtual int DeregisterObserver(const int capture_id);
 
-    // Available devices
-    virtual int NumberOfCaptureDevices();
-
-    virtual int GetCaptureDevice(unsigned int listNumber, char* deviceNameUTF8,
-                                 const unsigned int deviceNameUTF8Length,
-                                 char* uniqueIdUTF8,
-                                 const unsigned int uniqueIdUTF8Length);
-
-    // Allocate capture device
-    virtual int AllocateCaptureDevice(const char* uniqueIdUTF8,
-                                      const unsigned int uniqueIdUTF8Length,
-                                      int& captureId);
-
-    // Allocate capture device
-    virtual int AllocateCaptureDevice(VideoCaptureModule& captureModule,
-                                      int& captureId);
-    // Allocate external capture device
-    virtual int AllocateExternalCaptureDevice(
-        int& captureId, ViEExternalCapture *&externalCapture);
-
-    virtual int ReleaseCaptureDevice(const int captureId);
-
-    // Pair capture device and channel
-    virtual int ConnectCaptureDevice(const int captureId,
-                                     const int videoChannel);
-
-    virtual int DisconnectCaptureDevice(const int videoChannel);
-
-    // Start/stop
-    virtual int StartCapture(const int captureId,
-                             const CaptureCapability captureCapability =
-                                 CaptureCapability());
-
-    virtual int StopCapture(const int captureId);
-
-    virtual int SetRotateCapturedFrames(const int captureId,
-                                        const RotateCapturedFrame rotation);
-
-    virtual int SetCaptureDelay(const int captureId,
-                                const unsigned int captureDelayMs);
-
-    // Capture capabilities
-    virtual int NumberOfCapabilities(const char* uniqueIdUTF8,
-                                     const unsigned int uniqueIdUTF8Length);
-
-    virtual int GetCaptureCapability(const char* uniqueIdUTF8,
-                                     const unsigned int uniqueIdUTF8Length,
-                                     const unsigned int capabilityNumber,
-                                     CaptureCapability& capability);
-
-    virtual int ShowCaptureSettingsDialogBox(
-        const char* uniqueIdUTF8, const unsigned int uniqueIdUTF8Length,
-        const char* dialogTitle, void* parentWindow = NULL,
-        const unsigned int x = 200, const unsigned int y = 200);
-
-    virtual int GetOrientation(const char* uniqueIdUTF8,
-                               RotateCapturedFrame &orientation);
-
-    // Callbacks
-    virtual int EnableBrightnessAlarm(const int captureId, const bool enable);
-
-    virtual int RegisterObserver(const int captureId,
-                                 ViECaptureObserver& observer);
-
-    virtual int DeregisterObserver(const int captureId);
-
-protected:
-    ViECaptureImpl();
-    virtual ~ViECaptureImpl();
+ protected:
+  ViECaptureImpl();
+  virtual ~ViECaptureImpl();
 };
-} // namespace webrtc
-#endif  // WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_CAPTURE_IMPL_H_
+
+}  // namespace webrtc
+
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_CAPTURE_IMPL_H_
