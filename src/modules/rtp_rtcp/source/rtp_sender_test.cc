@@ -22,6 +22,16 @@
 
 namespace webrtc {
 
+namespace {
+const int kId = 1;
+const int kTypeLength = TRANSMISSION_TIME_OFFSET_LENGTH_IN_BYTES;
+const int kPayload = 100;
+const uint32_t kTimestamp = 10;
+const uint16_t kSeqNum = 33;
+const int kTimeOffset = 22222;
+const int kMaxPacketLength = 1500;
+}  // namespace
+
 class RtpSenderTest : public ::testing::Test {
  protected:
   RtpSenderTest()
@@ -37,13 +47,6 @@ class RtpSenderTest : public ::testing::Test {
   RTPSender* rtp_sender_;
   const bool kMarkerBit;
   RTPExtensionType kType;
-  static const int kId = 1;
-  static const int kTypeLength = TRANSMISSION_TIME_OFFSET_LENGTH_IN_BYTES;
-  static const int kPayload = 100;
-  static const uint32_t kTimestamp = 10;
-  static const uint16_t kSeqNum = 33;
-  static const int kTimeOffset = 22222;
-  static const int kMaxPacketLength = 1500;
   uint8_t packet_[kMaxPacketLength];
 
   void VerifyRTPHeaderCommon(const WebRtcRTPHeader& rtp_header) {
