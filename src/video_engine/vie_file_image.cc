@@ -8,110 +8,97 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * vie_file_image.cc
- */
-
+// Placed first to get WEBRTC_VIDEO_ENGINE_FILE_API.
 #include "engine_configurations.h"
 
 #ifdef WEBRTC_VIDEO_ENGINE_FILE_API
+
+#include "video_engine/vie_file_image.h"
+
 #include <stdio.h>
-#include "vie_file_image.h"
-#include "video_image.h"
-#include "jpeg.h"
-#include "trace.h"
+
+#include "common_video/interface/video_image.h"
+#include "common_video/jpeg/main/interface/jpeg.h"
+#include "system_wrappers/interface/trace.h"
 
 namespace webrtc {
 
-int ViEFileImage::ConvertJPEGToVideoFrame(int engineId,
-                                          const char* fileNameUTF8,
-                                          VideoFrame& videoFrame)
-{
-    // read jpeg file into temporary buffer
-    EncodedImage imageBuffer;
+int ViEFileImage::ConvertJPEGToVideoFrame(int engine_id,
+                                          const char* file_nameUTF8,
+                                          VideoFrame& video_frame) {
+  // Read jpeg file into temporary buffer.
+  EncodedImage image_buffer;
 
-    FILE* imageFile = fopen(fileNameUTF8, "rb");
-    if (NULL == imageFile)
-    {
-        // error reading file
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, engineId,
-                   "%s could not open file %s", __FUNCTION__, fileNameUTF8);
-        return -1;
-    }
-    fseek(imageFile, 0, SEEK_END);
-    imageBuffer._size = ftell(imageFile);
-    fseek(imageFile, 0, SEEK_SET);
-    imageBuffer._buffer = new WebRtc_UWord8[ imageBuffer._size + 1];
-    if ( imageBuffer._size != fread(imageBuffer._buffer, sizeof(WebRtc_UWord8),
-                                    imageBuffer._size, imageFile))
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, engineId,
-                   "%s could not read file %s", __FUNCTION__, fileNameUTF8);
-        delete [] imageBuffer._buffer;
-        return -1;
-    }
-    fclose(imageFile);
+  FILE* image_file = fopen(file_nameUTF8, "rb");
+  if (!image_file) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, engine_id,
+                 "%s could not open file %s", __FUNCTION__, file_nameUTF8);
+    return -1;
+  }
+  fseek(image_file, 0, SEEK_END);
+  image_buffer._size = ftell(image_file);
+  fseek(image_file, 0, SEEK_SET);
+  image_buffer._buffer = new WebRtc_UWord8[ image_buffer._size + 1];
+  if (image_buffer._size != fread(image_buffer._buffer, sizeof(WebRtc_UWord8),
+                                  image_buffer._size, image_file)) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, engine_id,
+                 "%s could not read file %s", __FUNCTION__, file_nameUTF8);
+    delete [] image_buffer._buffer;
+    return -1;
+  }
+  fclose(image_file);
 
-    // if this is a jpeg file, decode it
-    JpegDecoder decoder;
+  JpegDecoder decoder;
+  RawImage decoded_image;
+  int ret = decoder.Decode(image_buffer, decoded_image);
 
-    int ret = 0;
+  delete [] image_buffer._buffer;
+  image_buffer._buffer = NULL;
 
-    RawImage decodedImage;
-    ret = decoder.Decode(imageBuffer, decodedImage);
+  if (ret == -1) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, engine_id,
+                 "%s could decode file %s from jpeg format", __FUNCTION__,
+                 file_nameUTF8);
+    return -1;
+  } else if (ret == -3) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, engine_id,
+                 "%s could not convert jpeg's data to i420 format",
+                 __FUNCTION__, file_nameUTF8);
+  }
 
-    // done with this.
-    delete [] imageBuffer._buffer;
-    imageBuffer._buffer = NULL;
+  // Image length in I420.
+  WebRtc_UWord32 image_length = (WebRtc_UWord32)(decoded_image._width *
+                                                 decoded_image._height * 1.5);
+  if (-1 == video_frame.Swap(decoded_image._buffer, image_length,
+                             image_length)) {
+    WEBRTC_TRACE(kTraceDebug, kTraceVideo, engine_id,
+                 "%s could not copy frame image_decoded_buffer to video_frame ",
+                 __FUNCTION__, file_nameUTF8);
+    return -1;
+  }
 
-    if (-1 == ret)
-    {
-        // error decoding the file
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, engineId,
-                   "%s could decode file %s from jpeg format", __FUNCTION__,
-                   fileNameUTF8);
-        return -1;
-    } else if (-3 == ret)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, engineId,
-                   "%s could not convert jpeg's data to i420 format",
-                   __FUNCTION__, fileNameUTF8);
-    }
+  if (decoded_image._buffer) {
+    delete [] decoded_image._buffer;
+    decoded_image._buffer = NULL;
+  }
 
-    WebRtc_UWord32 imageLength = (WebRtc_UWord32)(decodedImage._width *
-                                                  decodedImage._height * 1.5);
-    if (-1 == videoFrame.Swap(decodedImage._buffer, imageLength, imageLength))
-    {
-        WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideo,
-                   engineId,
-                   "%s could not copy frame imageDecodedBuffer to videoFrame ",
-                   __FUNCTION__, fileNameUTF8);
-        return -1;
-    }
-
-    if (decodedImage._buffer)
-    {
-        delete [] decodedImage._buffer;
-        decodedImage._buffer = NULL;
-    }
-
-    videoFrame.SetWidth(decodedImage._width);
-    videoFrame.SetHeight(decodedImage._height);
-    return 0;
+  video_frame.SetWidth(decoded_image._width);
+  video_frame.SetHeight(decoded_image._height);
+  return 0;
 }
 
-int ViEFileImage::ConvertPictureToVideoFrame(int engineId,
+int ViEFileImage::ConvertPictureToVideoFrame(int engine_id,
                                              const ViEPicture& picture,
-                                             VideoFrame& videoFrame)
-{
-    WebRtc_UWord32 pictureLength = (WebRtc_UWord32)(picture.width
-              * picture.height * 1.5);
-    videoFrame.CopyFrame(pictureLength, picture.data);
-    videoFrame.SetWidth(picture.width);
-    videoFrame.SetHeight(picture.height);
-    videoFrame.SetLength(pictureLength);
-
-    return 0;
+                                             VideoFrame& video_frame) {
+  WebRtc_UWord32 picture_length = (WebRtc_UWord32)(picture.width *
+                                                   picture.height * 1.5);
+  video_frame.CopyFrame(picture_length, picture.data);
+  video_frame.SetWidth(picture.width);
+  video_frame.SetHeight(picture.height);
+  video_frame.SetLength(picture_length);
+  return 0;
 }
-} // namespace webrtc
+
+}  // namespace webrtc
+
 #endif  // WEBRTC_VIDEO_ENGINE_FILE_API

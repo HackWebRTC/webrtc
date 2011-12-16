@@ -8,27 +8,25 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * vie_file_image.h
- */
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_FILE_IMAGE_H_
+#define WEBRTC_VIDEO_ENGINE_VIE_FILE_IMAGE_H_
 
-#ifndef WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_FILE_IMAGE_H_
-#define WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_FILE_IMAGE_H_
-
+#include "modules/interface/module_common_types.h"
 #include "typedefs.h"
-#include "vie_file.h"
-#include "module_common_types.h"
-namespace webrtc {
-class ViEFileImage
-{
-public:
-    static int ConvertJPEGToVideoFrame(int engineId,
-                                       const char* fileNameUTF8,
-                                       VideoFrame& videoFrame);
-    static int ConvertPictureToVideoFrame(int engineId,
-                                          const ViEPicture& picture,
-                                          VideoFrame& videoFrame);
-};
-} // namespace webrtc
+#include "video_engine/main/interface/vie_file.h"
 
-#endif // WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_FILE_IMAGE_H_
+namespace webrtc {
+
+class ViEFileImage {
+ public:
+  static int ConvertJPEGToVideoFrame(int engine_id,
+                                     const char* file_nameUTF8,
+                                     VideoFrame& video_frame);
+  static int ConvertPictureToVideoFrame(int engine_id,
+                                        const ViEPicture& picture,
+                                        VideoFrame& video_frame);
+};
+
+}  // namespace webrtc
+
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_FILE_IMAGE_H_
