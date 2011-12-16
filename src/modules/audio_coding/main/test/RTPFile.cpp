@@ -220,9 +220,9 @@ WebRtc_UWord16 RTPFile::Read(WebRtcRTPHeader* rtpInfo,
     WebRtc_UWord16 lengthBytes;
     WebRtc_UWord16 plen;
     WebRtc_UWord8 rtpHeader[12];
-    fread(&lengthBytes, 2, 1, _rtpFile);
+    size_t read_len = fread(&lengthBytes, 2, 1, _rtpFile);
     /* Check if we have reached end of file. */
-    if (feof(_rtpFile))
+    if ((read_len == 0) && feof(_rtpFile))
     {
         _rtpEOF = true;
         return 0;
