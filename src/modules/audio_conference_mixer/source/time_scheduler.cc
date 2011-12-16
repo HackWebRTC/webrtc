@@ -29,7 +29,7 @@ TimeScheduler::~TimeScheduler()
 
 WebRtc_Word32 TimeScheduler::UpdateScheduler()
 {
-    CriticalSectionScoped cs(*_crit);
+    CriticalSectionScoped cs(_crit);
     if(!_isStarted)
     {
         _isStarted = true;
@@ -79,7 +79,7 @@ WebRtc_Word32 TimeScheduler::UpdateScheduler()
 WebRtc_Word32 TimeScheduler::TimeToNextUpdate(
     WebRtc_Word32& updateTimeInMS) const
 {
-    CriticalSectionScoped cs(*_crit);
+    CriticalSectionScoped cs(_crit);
     // Missed periods means that the next UpdateScheduler() should happen
     // immediately.
     if(_missedPeriods > 0)

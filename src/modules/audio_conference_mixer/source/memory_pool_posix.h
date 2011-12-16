@@ -70,7 +70,7 @@ MemoryPoolImpl<MemoryType>::~MemoryPoolImpl()
 template<class MemoryType>
 WebRtc_Word32 MemoryPoolImpl<MemoryType>::PopMemory(MemoryType*& memory)
 {
-    CriticalSectionScoped cs(*_crit);
+    CriticalSectionScoped cs(_crit);
     if(_terminate)
     {
         memory = NULL;
@@ -101,7 +101,7 @@ WebRtc_Word32 MemoryPoolImpl<MemoryType>::PushMemory(MemoryType*& memory)
     {
         return -1;
     }
-    CriticalSectionScoped cs(*_crit);
+    CriticalSectionScoped cs(_crit);
     _outstandingMemory--;
     if(_memoryPool.GetSize() > (_initialPoolSize << 1))
     {
@@ -119,14 +119,14 @@ WebRtc_Word32 MemoryPoolImpl<MemoryType>::PushMemory(MemoryType*& memory)
 template<class MemoryType>
 bool MemoryPoolImpl<MemoryType>::Initialize()
 {
-    CriticalSectionScoped cs(*_crit);
+    CriticalSectionScoped cs(_crit);
     return CreateMemory(_initialPoolSize) == 0;
 }
 
 template<class MemoryType>
 WebRtc_Word32 MemoryPoolImpl<MemoryType>::Terminate()
 {
-    CriticalSectionScoped cs(*_crit);
+    CriticalSectionScoped cs(_crit);
     assert(_createdMemory == _outstandingMemory + _memoryPool.GetSize());
 
     _terminate = true;
