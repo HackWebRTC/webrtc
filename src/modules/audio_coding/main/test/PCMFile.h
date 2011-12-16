@@ -16,7 +16,7 @@
 #include <cstdio>
 #include <cstdlib>
 
-using namespace webrtc;
+namespace webrtc {
 
 class PCMFile
 {
@@ -59,5 +59,7 @@ private:
     bool            _readStereo;
     bool            _saveStereo;
 };
+
+} // namespace webrtc
 
 #endif

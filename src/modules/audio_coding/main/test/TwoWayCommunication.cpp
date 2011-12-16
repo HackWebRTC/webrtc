@@ -25,7 +25,7 @@
 #include "trace.h"
 #include "utility.h"
 
-using namespace webrtc;
+namespace webrtc {
 
 #define MAX_FILE_NAME_LENGTH_BYTE 500
 
@@ -67,7 +67,8 @@ TwoWayCommunication::~TwoWayCommunication()
 
 
 WebRtc_UWord8
-TwoWayCommunication::ChooseCodec(WebRtc_UWord8* codecID_A, WebRtc_UWord8* codecID_B)
+TwoWayCommunication::ChooseCodec(WebRtc_UWord8* codecID_A,
+                                 WebRtc_UWord8* codecID_B)
 {
     AudioCodingModule* tmpACM = AudioCodingModule::Create(0);
     WebRtc_UWord8 noCodec = tmpACM->NumberOfCodecs();
@@ -94,7 +95,8 @@ TwoWayCommunication::ChooseCodec(WebRtc_UWord8* codecID_A, WebRtc_UWord8* codecI
 }
 
 WebRtc_Word16
-TwoWayCommunication::ChooseFile(char* fileName, WebRtc_Word16 maxLen, WebRtc_UWord16* frequencyHz)
+TwoWayCommunication::ChooseFile(char* fileName, WebRtc_Word16 maxLen,
+                                WebRtc_UWord16* frequencyHz)
 {
     WebRtc_Word8 tmpName[MAX_FILE_NAME_LENGTH_BYTE];
     //strcpy(_fileName, "in.pcm");
@@ -139,7 +141,8 @@ TwoWayCommunication::ChooseFile(char* fileName, WebRtc_Word16 maxLen, WebRtc_UWo
     {
         strncpy(fileName, tmpName, len+1);
     }
-    printf("Enter the sampling frequency (in Hz) of the above file [%u]: ", *frequencyHz);
+    printf("Enter the sampling frequency (in Hz) of the above file [%u]: ",
+           *frequencyHz);
     EXPECT_TRUE(fgets(tmpName, 6, stdin) != NULL);
     WebRtc_UWord16 tmpFreq = (WebRtc_UWord16)atoi(tmpName);
     if(tmpFreq > 0)
@@ -174,7 +177,8 @@ WebRtc_Word16 TwoWayCommunication::SetUp()
     CHECK_ERROR(_acmA->RegisterReceiveCodec(codecInst_B));
 #ifdef WEBRTC_DTMF_DETECTION
     _dtmfDetectorA = new(DTMFDetector);
-    CHECK_ERROR(_acmA->RegisterIncomingMessagesCallback(_dtmfDetectorA, ACMUSA));
+    CHECK_ERROR(_acmA->RegisterIncomingMessagesCallback(_dtmfDetectorA,
+                                                        ACMUSA));
 #endif
     //--- Set ref-A codecs
     CHECK_ERROR(_acmRefA->RegisterSendCodec(codecInst_A));
@@ -185,7 +189,8 @@ WebRtc_Word16 TwoWayCommunication::SetUp()
     CHECK_ERROR(_acmB->RegisterReceiveCodec(codecInst_A));
 #ifdef WEBRTC_DTMF_DETECTION
     _dtmfDetectorB = new(DTMFDetector);
-    CHECK_ERROR(_acmB->RegisterIncomingMessagesCallback(_dtmfDetectorB, ACMUSA));
+    CHECK_ERROR(_acmB->RegisterIncomingMessagesCallback(_dtmfDetectorB,
+                                                        ACMUSA));
 #endif
 
     //--- Set ref-B codecs
@@ -279,7 +284,8 @@ WebRtc_Word16 TwoWayCommunication::SetUpAutotest()
     CHECK_ERROR(_acmA->RegisterReceiveCodec(codecInst_B));
 #ifdef WEBRTC_DTMF_DETECTION
     _dtmfDetectorA = new(DTMFDetector);
-    CHECK_ERROR(_acmA->RegisterIncomingMessagesCallback(_dtmfDetectorA, ACMUSA));
+    CHECK_ERROR(_acmA->RegisterIncomingMessagesCallback(_dtmfDetectorA,
+                                                        ACMUSA));
 #endif
 
     //--- Set ref-A codecs
@@ -291,7 +297,8 @@ WebRtc_Word16 TwoWayCommunication::SetUpAutotest()
     CHECK_ERROR(_acmB->RegisterReceiveCodec(codecInst_A));
 #ifdef WEBRTC_DTMF_DETECTION
     _dtmfDetectorB = new(DTMFDetector);
-    CHECK_ERROR(_acmB->RegisterIncomingMessagesCallback(_dtmfDetectorB, ACMUSA));
+    CHECK_ERROR(_acmB->RegisterIncomingMessagesCallback(_dtmfDetectorB,
+                                                        ACMUSA));
 #endif
 
     //--- Set ref-B codecs
@@ -312,7 +319,8 @@ WebRtc_Word16 TwoWayCommunication::SetUpAutotest()
     strcpy(fileName, "./src/modules/audio_coding/main/test/outAutotestA.pcm");
     frequencyHz = 16000;
     _outFileA.Open(fileName, frequencyHz, "wb");
-    strcpy(refFileName, "./src/modules/audio_coding/main/test/ref_outAutotestA.pcm");
+    strcpy(refFileName,
+           "./src/modules/audio_coding/main/test/ref_outAutotestA.pcm");
     _outFileRefA.Open(refFileName, frequencyHz, "wb");
 
     //--- Input B
@@ -324,7 +332,8 @@ WebRtc_Word16 TwoWayCommunication::SetUpAutotest()
     strcpy(fileName, "./src/modules/audio_coding/main/test/outAutotestB.pcm");
     frequencyHz = 16000;
     _outFileB.Open(fileName, frequencyHz, "wb");
-    strcpy(refFileName, "./src/modules/audio_coding/main/test/ref_outAutotestB.pcm");
+    strcpy(refFileName,
+           "./src/modules/audio_coding/main/test/ref_outAutotestB.pcm");
     _outFileRefB.Open(refFileName, frequencyHz, "wb");
 
     //--- Set A-to-B channel
@@ -359,7 +368,8 @@ TwoWayCommunication::Perform()
     if(_testMode == 0)
     {
         printf("Running TwoWayCommunication Test");
-        WEBRTC_TRACE(webrtc::kTraceStateInfo, webrtc::kTraceAudioCoding, -1, "---------- TwoWayCommunication ----------");
+        WEBRTC_TRACE(kTraceStateInfo, kTraceAudioCoding, -1,
+                     "---------- TwoWayCommunication ----------");
         SetUpAutotest();
     }
     else
@@ -382,8 +392,8 @@ TwoWayCommunication::Perform()
     if(_testMode != 0)
     {
         printf("\n");
-        printf("sec:msec                   A                                                  B\n");
-        printf("--------                 -----                                              -----\n");
+        printf("sec:msec                   A                              B\n");
+        printf("--------                 -----                        -----\n");
     }
 
     while(!_inFileA.EndOfFile() && !_inFileB.EndOfFile())
@@ -429,7 +439,8 @@ TwoWayCommunication::Perform()
             _acmA->ResetEncoder();
             if(_testMode == 0)
             {
-                WEBRTC_TRACE(webrtc::kTraceStateInfo, webrtc::kTraceAudioCoding, -1, "---------- Errors epected");
+                WEBRTC_TRACE(kTraceStateInfo, kTraceAudioCoding, -1,
+                             "---------- Errors epected");
                 printf(".");
             }
             else
@@ -443,7 +454,8 @@ TwoWayCommunication::Perform()
         {
             if(_testMode == 0)
             {
-                WEBRTC_TRACE(webrtc::kTraceStateInfo, webrtc::kTraceAudioCoding, -1, "----- END: Errors epected");
+                WEBRTC_TRACE(kTraceStateInfo, kTraceAudioCoding, -1,
+                             "----- END: Errors epected");
                 printf(".");
             }
             else
@@ -460,7 +472,8 @@ TwoWayCommunication::Perform()
             CHECK_ERROR(_acmB->ResetDecoder());
             if(_testMode == 0)
             {
-                WEBRTC_TRACE(webrtc::kTraceStateInfo, webrtc::kTraceAudioCoding, -1, "---------- Errors epected");
+                WEBRTC_TRACE(kTraceStateInfo, kTraceAudioCoding, -1,
+                             "---------- Errors epected");
                 printf(".");
             }
             else
@@ -475,7 +488,8 @@ TwoWayCommunication::Perform()
         {
             if(_testMode == 0)
             {
-                WEBRTC_TRACE(webrtc::kTraceStateInfo, webrtc::kTraceAudioCoding, -1, "----- END: Errors epected");
+                WEBRTC_TRACE(kTraceStateInfo, kTraceAudioCoding, -1,
+                             "----- END: Errors epected");
                 printf(".");
             }
             else
@@ -500,6 +514,6 @@ TwoWayCommunication::Perform()
     _dtmfDetectorB->PrintDetectedDigits();
 #endif
 
-
 }
 
+} // namespace webrtc

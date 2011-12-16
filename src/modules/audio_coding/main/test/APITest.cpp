@@ -25,6 +25,8 @@
 #include "trace.h"
 #include "utility.h"
 
+namespace webrtc {
+
 #define TEST_DURATION_SEC 600
 
 #define NUMBER_OF_SENDER_TESTS 6
@@ -32,7 +34,6 @@
 #define MAX_FILE_NAME_LENGTH_BYTE 500
 #define CHECK_THREAD_NULLITY(myThread, S) if(myThread != NULL){unsigned int i; (myThread)->Start(i);}else{throw S; exit(1);}
 
-using namespace webrtc;
 
 void
 APITest::Wait(WebRtc_UWord32 waitLengthMs)
@@ -1545,3 +1546,6 @@ APITest::LookForDTMF(char side)
         _acmB->RegisterIncomingMessagesCallback(NULL);
     }
 }
+
+} // namespace webrtc
+

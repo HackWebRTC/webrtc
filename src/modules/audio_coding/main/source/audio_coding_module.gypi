@@ -108,7 +108,6 @@
              '../test/APITest.cpp',
              '../test/Channel.cpp',
              '../test/EncodeDecodeTest.cpp',
-             '../test/EncodeToFileTest.cpp',
              '../test/iSACTest.cpp',
              '../test/PCMFile.cpp',
              '../test/RTPFile.cpp',

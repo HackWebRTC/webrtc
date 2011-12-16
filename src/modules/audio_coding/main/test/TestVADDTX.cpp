@@ -17,6 +17,7 @@
 #include <iostream>
 #include "trace.h"
 
+namespace webrtc {
 
 TestVADDTX::TestVADDTX(int testMode):
 _acmA(NULL),
@@ -29,7 +30,6 @@ _testResults(0)
    _testMode = testMode;
 }
 
-using namespace std;
 TestVADDTX::~TestVADDTX()
 {
     if(_acmA != NULL)
@@ -275,7 +275,7 @@ WebRtc_Word16 TestVADDTX::RegisterSendCodec(char side,
     {
         printf("Registering %s for side %c\n", codecName, side);
     }
-    cout << flush;
+    std::cout << std::flush;
     AudioCodingModule* myACM;
     switch(side)
     {
@@ -500,3 +500,5 @@ void ActivityMonitor::GetStatistics(WebRtc_UWord32* getCounter)
         getCounter[ii] = _counter[ii];
     }
 }
+
+} // namespace webrtc

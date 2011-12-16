@@ -17,7 +17,7 @@
 #include "typedefs.h"
 #include "common_types.h"
 
-using namespace webrtc;
+namespace webrtc {
 
 WebRtc_Word32 
 Channel::SendData(
@@ -479,3 +479,5 @@ Channel::BitRate()
     _channelCritSect->Leave();
     return rate;
 }   
+
+} // namespace webrtc

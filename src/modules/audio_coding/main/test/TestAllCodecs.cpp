@@ -18,6 +18,8 @@
 #include "trace.h"
 #include "utility.h"
 
+namespace webrtc {
+
 // Class for simulating packet handling
 TestPack::TestPack():
 _receiverACM(NULL),
@@ -114,7 +116,6 @@ _counter(0)
     _testMode = testMode;
 }
 
-using namespace std;
 TestAllCodecs::~TestAllCodecs()
 {
     if(_acmA != NULL)
@@ -143,7 +144,7 @@ void TestAllCodecs::Perform()
     if(_testMode == 0)
     {
         printf("Running All Codecs Test");
-        WEBRTC_TRACE(webrtc::kTraceStateInfo, webrtc::kTraceAudioCoding, -1,
+        WEBRTC_TRACE(kTraceStateInfo, kTraceAudioCoding, -1,
                      "---------- TestAllCodecs ----------");
     }
 
@@ -853,4 +854,6 @@ void TestAllCodecs::DisplaySendReceiveCodec()
     _acmB->ReceiveCodec(myCodecParam);
     printf("%s\n", myCodecParam.plname);
 }
+
+} // namespace webrtc
 

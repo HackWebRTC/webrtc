@@ -15,6 +15,8 @@
 #include "Channel.h"
 #include "PCMFile.h"
 
+namespace webrtc {
+
 class TestFEC : public ACMTest
 {
 public:
@@ -42,6 +44,6 @@ private:
     int                    _testMode;
 };
 
+} // namespace webrtc
 
 #endif
-

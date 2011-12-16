@@ -19,6 +19,7 @@
 
 #define MAX_FILE_NAME_LENGTH_BYTE 500
 
+namespace webrtc {
 
 class SpatialAudio : public ACMTest
 {
@@ -40,4 +41,7 @@ private:
     PCMFile                _outFile;
     int                    _testMode;
 };
+
+} // namespace webrtc
+
 #endif

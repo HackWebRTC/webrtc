@@ -18,9 +18,9 @@
 #include "gtest/gtest.h"
 #include "module_common_types.h"
 
+namespace webrtc {
+
 #define MAX_FILE_NAME_LENGTH_BYTE 500
-
-
 
 PCMFile::PCMFile(): 
 _pcmFile(NULL), 
@@ -300,3 +300,5 @@ PCMFile::ReadStereo(
 {
     _readStereo = readStereo;
 }
+
+} // namespace webrtc

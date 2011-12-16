@@ -17,6 +17,7 @@
 #include "critical_section_wrapper.h"
 #include "rw_lock_wrapper.h"
 
+namespace webrtc {
 
 #define MAX_NUM_PAYLOADS   50
 #define MAX_NUM_FRAMESIZES  6
@@ -42,8 +43,6 @@ struct ACMTestPayloadStats
     WebRtc_UWord32        lastTimestamp;
     ACMTestFrameSizeStats frameSizeStats[MAX_NUM_FRAMESIZES];
 };
-
-using namespace webrtc;
 
 class Channel: public AudioPacketizationCallback
 {
@@ -96,7 +95,7 @@ public:
 
 private:
     void CalcStatistics(
-        WebRtcRTPHeader& rtpInfo, 
+        WebRtcRTPHeader& rtpInfo,
         WebRtc_UWord16   payloadSize);
 
     AudioCodingModule*      _receiverACM;
@@ -121,5 +120,6 @@ private:
     WebRtc_UWord64          _totalBytes;
 };
 
+} // namespace webrtc
 
 #endif

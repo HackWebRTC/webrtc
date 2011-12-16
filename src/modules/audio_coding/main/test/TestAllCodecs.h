@@ -15,6 +15,8 @@
 #include "Channel.h"
 #include "PCMFile.h"
 
+namespace webrtc {
+
 class TestPack : public AudioPacketizationCallback
 {
 public:
@@ -89,6 +91,6 @@ private:
     int                    _counter;
 };
 
-
 #endif // TEST_ALL_CODECS_H
 
+} // namespace webrtc

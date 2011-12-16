@@ -28,6 +28,7 @@
 
 #include "tick_util.h"
 
+namespace webrtc {
 
 void SetISACConfigDefault(
     ACMTestISACConfig& isacConfig)
@@ -595,3 +596,5 @@ ISACTest::SwitchingSamplingRate(
     _inFileA.Close();
     _inFileB.Close();
 }
+
+} // namespace webrtc

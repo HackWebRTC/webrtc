@@ -19,6 +19,8 @@
 #include "trace.h"
 #include "utility.h"
 
+namespace webrtc {
+
 TestFEC::TestFEC(int testMode):
 _acmA(NULL),
 _acmB(NULL),
@@ -27,8 +29,6 @@ _testCntr(0)
 {
     _testMode = testMode;
 }
-
-using namespace std;
 
 TestFEC::~TestFEC()
 {
@@ -55,7 +55,7 @@ void TestFEC::Perform()
     if(_testMode == 0)
     {
         printf("Running FEC Test");
-        WEBRTC_TRACE(webrtc::kTraceStateInfo, webrtc::kTraceAudioCoding, -1,
+        WEBRTC_TRACE(kTraceStateInfo, kTraceAudioCoding, -1,
                      "---------- TestFEC ----------");
     }
     char fileName[] = "./test/data/audio_coding/testfile32kHz.pcm";
@@ -527,7 +527,7 @@ WebRtc_Word16 TestFEC::RegisterSendCodec(char side, char* codecName, WebRtc_Word
             printf("Registering %s for side %c\n", codecName, side);
         }
     }
-    cout << flush;
+    std::cout << std::flush;
     AudioCodingModule* myACM;
     switch(side)
     {
@@ -619,3 +619,5 @@ void TestFEC::DisplaySendReceiveCodec()
     _acmB->ReceiveCodec(myCodecParam);
     printf("%s\n", myCodecParam.plname);
 }
+
+} // namespace webrtc

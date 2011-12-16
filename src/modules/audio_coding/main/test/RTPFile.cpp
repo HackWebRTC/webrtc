@@ -20,8 +20,10 @@
 
 #include "audio_coding_module.h"
 #include "engine_configurations.h"
-#include "gtest/gtest.h"
+#include "gtest/gtest.h" // TODO (tlegrand): Consider removing usage of gtest.
 #include "rw_lock_wrapper.h"
+
+namespace webrtc {
 
 void RTPStream::ParseRTPHeader(WebRtcRTPHeader* rtpInfo, const WebRtc_UWord8* rtpHeader)
 {
@@ -123,21 +125,10 @@ RTPBuffer::Read(WebRtcRTPHeader* rtpInfo,
     }
     else
     {
-        throw "Payload buffer too small";
-        exit(1);
+      return -1;
     }
-/*#ifdef WEBRTC_CODEC_G722
-    if(ACMCodecDB::_mycodecs[ACMCodecDB::g722].pltype == packet->payloadType)
-    {
-        *offset = (packet->timeStamp/(packet->frequency/1000))<<1;
-    }
-    else
-    {
-#endif*/
-        *offset = (packet->timeStamp/(packet->frequency/1000));
-/*#ifdef WEBRTC_CODEC_G722
-    }
-#endif*/
+    *offset = (packet->timeStamp/(packet->frequency/1000));
+
     return packet->payloadSize;
 }
 
@@ -189,15 +180,15 @@ void RTPFile::ReadHeader()
     WebRtc_UWord16 port, padding;
     char fileHeader[40];
     EXPECT_TRUE(fgets(fileHeader, 40, _rtpFile) != 0);
-    EXPECT_GT(fread(&start_sec, 4, 1, _rtpFile), 0u);
+    EXPECT_EQ(1u, fread(&start_sec, 4, 1, _rtpFile));
     start_sec=ntohl(start_sec);
-    EXPECT_GT(fread(&start_usec, 4, 1, _rtpFile), 0u);
+    EXPECT_EQ(1u, fread(&start_usec, 4, 1, _rtpFile));
     start_usec=ntohl(start_usec);
-    EXPECT_GT(fread(&source, 4, 1, _rtpFile), 0u);
+    EXPECT_EQ(1u, fread(&source, 4, 1, _rtpFile));
     source=ntohl(source);
-    EXPECT_GT(fread(&port, 2, 1, _rtpFile), 0u);
+    EXPECT_EQ(1u, fread(&port, 2, 1, _rtpFile));
     port=ntohs(port);
-    EXPECT_GT(fread(&padding, 2, 1, _rtpFile), 0u);
+    EXPECT_EQ(1u, fread(&padding, 2, 1, _rtpFile));
     padding=ntohs(padding);
 }
 
@@ -211,18 +202,8 @@ void RTPFile::Write(const WebRtc_UWord8 payloadType, const WebRtc_UWord32 timeSt
     WebRtc_UWord16 lengthBytes = htons(12 + payloadSize + 8);
     WebRtc_UWord16 plen = htons(12 + payloadSize);
     WebRtc_UWord32 offsetMs;
-/*#ifdef WEBRTC_CODEC_G722
-    if(ACMCodecDB::_mycodecs[ACMCodecDB::g722].pltype == payloadType)
-    {
-        offsetMs = (timeStamp/(frequency/1000))<<1;
-    }
-    else
-    {
-#endif*/
+
     offsetMs = (timeStamp/(frequency/1000));
-/*#ifdef WEBRTC_CODEC_G722
-    }
-#endif*/
     offsetMs = htonl(offsetMs);
     fwrite(&lengthBytes, 2, 1, _rtpFile);
     fwrite(&plen, 2, 1, _rtpFile);
@@ -239,61 +220,41 @@ WebRtc_UWord16 RTPFile::Read(WebRtcRTPHeader* rtpInfo,
     WebRtc_UWord16 lengthBytes;
     WebRtc_UWord16 plen;
     WebRtc_UWord8 rtpHeader[12];
-    EXPECT_GT(fread(&lengthBytes, 2, 1, _rtpFile), 0u);
+    fread(&lengthBytes, 2, 1, _rtpFile);
+    /* Check if we have reached end of file. */
     if (feof(_rtpFile))
     {
         _rtpEOF = true;
         return 0;
     }
-    EXPECT_GT(fread(&plen, 2, 1, _rtpFile), 0u);
-    if (feof(_rtpFile))
-    {
-        _rtpEOF = true;
-        return 0;
-    }
-    EXPECT_GT(fread(offset, 4, 1, _rtpFile), 0u);
-    if (feof(_rtpFile))
-    {
-        _rtpEOF = true;
-        return 0;
-    }
+    EXPECT_EQ(1u, fread(&plen, 2, 1, _rtpFile));
+    EXPECT_EQ(1u, fread(offset, 4, 1, _rtpFile));
     lengthBytes = ntohs(lengthBytes);
     plen = ntohs(plen);
     *offset = ntohl(*offset);
-    if (plen < 12)
-    {
-        throw "Unable to read RTP file";
-        exit(1);
-    }
-    EXPECT_GT(fread(rtpHeader, 12, 1, _rtpFile), 0u);
-    if (feof(_rtpFile))
-    {
-        _rtpEOF = true;
-        return 0;
-    }
+    EXPECT_GT(plen, 11);
+
+    EXPECT_EQ(1u, fread(rtpHeader, 12, 1, _rtpFile));
     ParseRTPHeader(rtpInfo, rtpHeader);
     rtpInfo->type.Audio.isCNG = false;
     rtpInfo->type.Audio.channel = 1;
-    if (lengthBytes != plen + 8)
-    {
-        throw "Length parameters in RTP file doesn't match";
-        exit(1);
-    }
+    EXPECT_EQ(lengthBytes, plen + 8);
+
     if (plen == 0)
     {
         return 0;
     }
-    else if (lengthBytes - 20 > payloadSize)
+    if (payloadSize < (lengthBytes - 20))
     {
-        throw "Payload buffer too small";
-        exit(1);
+      return -1;
     }
     lengthBytes -= 20;
-    EXPECT_GT(fread(payloadData, 1, lengthBytes, _rtpFile), 0u);
-    if (feof(_rtpFile))
+    if (lengthBytes < 0)
     {
-        _rtpEOF = true;
+      return -1;
     }
+    EXPECT_EQ(lengthBytes, fread(payloadData, 1, lengthBytes, _rtpFile));
     return lengthBytes;
 }
 
+} // namespace webrtc

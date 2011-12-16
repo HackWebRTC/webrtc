@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <queue>
 
-using namespace webrtc;
+namespace webrtc {
 
 class RTPStream
 {
@@ -96,4 +96,5 @@ private:
     bool    _rtpEOF;
 };
 
+} // namespace webrtc
 #endif

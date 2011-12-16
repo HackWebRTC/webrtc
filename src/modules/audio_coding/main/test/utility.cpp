@@ -20,6 +20,7 @@
 
 #define NUM_CODECS_WITH_FIXED_PAYLOAD_TYPE 13
 
+namespace webrtc {
 
 ACMTestTimer::ACMTestTimer() :
 _msec(0),
@@ -429,3 +430,5 @@ VADCallback::InFrameType(
     _numFrameTypes[frameType]++;
     return 0;
 }
+
+} // namespace webrtc

@@ -17,6 +17,7 @@
 #include "audio_coding_module.h"
 #include "utility.h"
 
+namespace webrtc {
 
 class TwoWayCommunication : public ACMTest
 {
@@ -58,5 +59,6 @@ private:
     int _testMode;
 };
 
+} // namespace webrtc
 
 #endif

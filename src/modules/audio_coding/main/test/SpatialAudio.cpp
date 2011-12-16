@@ -18,7 +18,7 @@
 #include "trace.h"
 #include "common_types.h"
 
-using namespace webrtc;
+namespace webrtc {
 
 #define NUM_PANN_COEFFS 10
 
@@ -236,4 +236,4 @@ SpatialAudio::EncodeDecode()
     _inFile.Rewind();
 }
 
-
+} // namespace webrtc

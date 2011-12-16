@@ -15,6 +15,8 @@
 #include "Channel.h"
 #include "PCMFile.h"
 
+namespace webrtc {
+
 typedef struct 
 {
     bool statusDTX;
@@ -83,5 +85,6 @@ private:
     VADDTXstruct           _getStruct;
 };
 
+} // namespace webrtc
 
 #endif

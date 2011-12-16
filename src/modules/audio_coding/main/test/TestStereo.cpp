@@ -18,6 +18,7 @@
 #include <cassert>
 #include "trace.h"
 
+namespace webrtc {
 
 // Class for simulating packet handling
 TestPackStereo::TestPackStereo():
@@ -167,7 +168,6 @@ _counter(0)
     _testMode = testMode;
 }
 
-using namespace std;
 TestStereo::~TestStereo()
 {
     if(_acmA != NULL)
@@ -195,7 +195,7 @@ void TestStereo::Perform()
      if(_testMode == 0)
       {
           printf("Running Stereo Test");
-          WEBRTC_TRACE(webrtc::kTraceStateInfo, webrtc::kTraceAudioCoding, -1,
+          WEBRTC_TRACE(kTraceStateInfo, kTraceAudioCoding, -1,
                        "---------- TestStereo ----------");
       }
 
@@ -550,3 +550,4 @@ void TestStereo::DisplaySendReceiveCodec()
     }
 }
 
+} // namespace webrtc

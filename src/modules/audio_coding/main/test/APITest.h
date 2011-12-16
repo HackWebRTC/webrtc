@@ -17,6 +17,8 @@
 #include "event_wrapper.h"
 #include "utility.h"
 
+namespace webrtc {
+
 enum APITESTAction {TEST_CHANGE_CODEC_ONLY = 0, DTX_TEST = 1};
 
 class APITest : public ACMTest
@@ -170,5 +172,6 @@ private:
     int            _testNumB;
 };
 
+} // namespace webrtc
 
 #endif

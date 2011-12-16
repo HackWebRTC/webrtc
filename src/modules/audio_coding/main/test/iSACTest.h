@@ -21,6 +21,8 @@
 #define MAX_FILE_NAME_LENGTH_BYTE 500
 #define NO_OF_CLIENTS             15
 
+namespace webrtc {
+
 struct ACMTestISACConfig
 {
     WebRtc_Word32  currentRateBitPerSec;
@@ -96,5 +98,6 @@ private:
     PCMFile                _clientOutFile[NO_OF_CLIENTS];
 };
 
+} // namespace webrtc
 
 #endif

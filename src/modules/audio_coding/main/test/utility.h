@@ -13,6 +13,8 @@
 
 #include "audio_coding_module.h"
 
+namespace webrtc {
+
 //-----------------------------
 #define CHECK_ERROR(f)                                                                      \
     do {                                                                                    \
@@ -87,8 +89,6 @@
             p = NULL;                                                                       \
         }                                                                                   \
     } while(0)
-
-using namespace webrtc;
 
 class ACMTestTimer
 {
@@ -197,6 +197,6 @@ private:
     WebRtc_UWord32 _numFrameTypes[6];
 };
 
-
+} // namespace webrtc
 
 #endif // ACM_TEST_UTILITY_H
