@@ -275,7 +275,19 @@ VCMReceiver::FrameForDecoding(WebRtc_UWord16 maxWaitTimeMs,
     {
         // No time to wait for a complete frame,
         // check if we have an incomplete
-        frame = _jitterBuffer.GetFrameForDecoding();
+        const bool dualReceiverEnabledAndPassive = (dualReceiver != NULL &&
+                                     dualReceiver->State() == kPassive &&
+                                     dualReceiver->NackMode() == kNackInfinite);
+        if (dualReceiverEnabledAndPassive &&
+            !_jitterBuffer.CompleteSequenceWithNextFrame())
+        {
+            // Jitter buffer state might get corrupt with this frame.
+            dualReceiver->CopyJitterBufferStateFromReceiver(*this);
+            frame = _jitterBuffer.GetFrameForDecoding();
+            assert(frame);
+        } else {
+            frame = _jitterBuffer.GetFrameForDecoding();
+        }
     }
     if (frame == NULL)
     {
