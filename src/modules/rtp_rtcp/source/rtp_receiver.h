@@ -114,7 +114,7 @@ public:
                              WebRtc_UWord32 *jitter,  // will be moved from JB
                              WebRtc_UWord32 *max_jitter,
                              WebRtc_UWord32 *jitter_transmission_time_offset,
-                             bool reset = false) const;
+                             bool reset) const;
 
     WebRtc_Word32 Statistics(WebRtc_UWord8  *fraction_lost,
                              WebRtc_UWord32 *cum_lost,
@@ -123,7 +123,7 @@ public:
                              WebRtc_UWord32 *max_jitter,
                              WebRtc_UWord32 *jitter_transmission_time_offset,
                              WebRtc_Word32 *missing,
-                             bool reset = false) const;
+                             bool reset) const;
 
     WebRtc_Word32 DataCounters(WebRtc_UWord32 *bytesReceived,
                                WebRtc_UWord32 *packetsReceived) const;

@@ -2905,6 +2905,7 @@ void ModuleRtpRtcpImpl::ProcessDefaultModuleBandwidth(
                                             NULL,
                                             NULL,
                                             NULL,
+                                            NULL,
                                             false);
                 fractionLostAcc += fractionLost;
                 childRtcpReceiver.RTT(childRtpReceiver.SSRC(),
