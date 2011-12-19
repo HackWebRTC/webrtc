@@ -514,7 +514,7 @@ void VP8Encoder::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
 #if WEBRTC_LIBVPX_VERSION >= 971
   }
 #endif
-  _pictureID = (_pictureID + 1) % 0x7FFF; // prepare next
+  _pictureID = (_pictureID + 1) & 0x7FFF;  // prepare next
 }
 
 WebRtc_Word32
