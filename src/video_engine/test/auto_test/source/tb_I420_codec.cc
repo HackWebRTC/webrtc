@@ -79,6 +79,11 @@ WebRtc_Word32 TbI420Encoder::Reset()
 
 }
 
+WebRtc_Word32 TbI420Encoder::SetChannelParameters(WebRtc_UWord32 packetLoss,
+                                                  int rtt) {
+  return 0;
+}
+
 WebRtc_Word32 TbI420Encoder::InitEncode(const webrtc::VideoCodec* inst,
                                         WebRtc_Word32 /*numberOfCores*/,
                                         WebRtc_UWord32 /*maxPayloadSize */)

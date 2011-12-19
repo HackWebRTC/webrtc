@@ -48,6 +48,9 @@ public:
 
     virtual WebRtc_Word32 Reset();
 
+    virtual WebRtc_Word32 SetChannelParameters(WebRtc_UWord32 packetLoss,
+                                               int rtt);
+
     virtual WebRtc_Word32 SetPacketLoss(WebRtc_UWord32 packetLoss);
 
     virtual WebRtc_Word32 SetRates(WebRtc_UWord32 newBitRate,
