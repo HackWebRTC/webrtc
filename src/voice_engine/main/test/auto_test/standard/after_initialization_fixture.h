@@ -18,7 +18,9 @@ class TestErrorObserver;
 
 // This fixture initializes the voice engine in addition to the work
 // done by the before-initialization fixture. It also registers an error
-// observer which will fail tests on error callbacks.
+// observer which will fail tests on error callbacks. This fixture is
+// useful to tests that want to run before we have started any form of
+// streaming through the voice engine.
 class AfterInitializationFixture : public BeforeInitializationFixture {
  public:
   AfterInitializationFixture();

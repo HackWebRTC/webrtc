@@ -22,17 +22,24 @@
       'include_dirs': [
         'auto_test',
         '<(webrtc_root)/modules/interface',
+        # TODO(phoglund): We only depend on voice_engine_defines.h here -
+        # move that file to interface and then remove this dependency.
+        '<(webrtc_root)/voice_engine/main/source',
         '<(webrtc_root)/modules/audio_device/main/interface',
       ],
       'sources': [
         'auto_test/automated_mode.cc',
         'auto_test/standard/after_initialization_fixture.cc',
+        'auto_test/standard/after_streaming_fixture.cc',
         'auto_test/standard/before_initialization_fixture.cc',
         'auto_test/standard/codec_before_streaming_test.cc',
         'auto_test/standard/hardware_before_initializing_test.cc',
         'auto_test/standard/hardware_before_streaming_test.cc',
+        'auto_test/standard/manual_hold_test.cc',
+        'auto_test/standard/network_before_streaming_test.cc',
         'auto_test/standard/rtp_rtcp_before_streaming_test.cc',
         'auto_test/standard/voe_base_misc_test.cc',
+        'auto_test/resource_manager.cc',
         'auto_test/voe_cpu_test.cc',
         'auto_test/voe_cpu_test.h',
         'auto_test/voe_extended_test.cc',

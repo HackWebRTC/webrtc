@@ -34,7 +34,6 @@
 #include "critical_section_wrapper.h"
 #include "event_wrapper.h"
 #include "thread_wrapper.h"
-#include "testsupport/fileutils.h"
 
 #ifdef _TEST_NETEQ_STATS_
 #include "../../interface/voe_neteq_stats.h" // Not available in delivery folder
@@ -621,9 +620,7 @@ VoETestManager::VoETestManager()
       voe_rtp_rtcp_(0),
       voe_vsync_(0),
       voe_volume_control_(0),
-      voe_apm_(0),
-      resource_path_(),
-      audio_filename_()
+      voe_apm_(0)
 {
 }
 
@@ -641,18 +638,6 @@ bool VoETestManager::Init() {
       "should fail)!\n", __LINE__);
     return false;
   }
-
-#if defined(WEBRTC_ANDROID)
-  resource_path_ = "/sdcard/";
-#else
-  resource_path_ = webrtc::test::ProjectRootPath();
-  if (resource_path_ == webrtc::test::kCannotFindProjectRootDir) {
-    TEST_LOG("Failed to get project root directory\n");
-    return false;
-  }
-  resource_path_ += "test/data/voice_engine/";
-#endif
-  audio_filename_ = resource_path_ + "audio_long16.pcm";
 
   voice_engine_ = VoiceEngine::Create();
   if (!voice_engine_) {
@@ -921,46 +906,6 @@ int VoETestManager::SetUp() {
   return 0;
 }
 
-int VoETestManager::TestNetworkBeforeStreaming() {
-  ///////////////////////////////////////////////
-  // Network (test before streaming is activated)
-
-#ifdef _TEST_NETWORK_
-  TEST_LOG("\n\n+++ Network tests +++\n\n");
-
-#ifndef WEBRTC_EXTERNAL_TRANSPORT
-  int filter_port = -1;
-  int filter_port_rtcp = -1;
-  char src_ip[32] = "0.0.0.0";
-  char filter_ip[32] = "0.0.0.0";
-
-  TEST_LOG("GetSourceInfo \n");
-  int src_rtp_port = 1234;
-  int src_rtcp_port = 1235;
-  TEST_MUSTPASS(voe_network_->GetSourceInfo(0, src_rtp_port, src_rtcp_port,
-                                            src_ip));
-  TEST_MUSTPASS(0 != src_rtp_port);
-  TEST_MUSTPASS(0 != src_rtcp_port);
-  TEST_MUSTPASS(_stricmp(src_ip, ""));
-
-  TEST_LOG("GetSourceFilter \n");
-  TEST_MUSTPASS(voe_network_->GetSourceFilter(0, filter_port, filter_port_rtcp,
-                                      filter_ip));
-  TEST_MUSTPASS(0 != filter_port);
-  TEST_MUSTPASS(0 != filter_port_rtcp);
-  TEST_MUSTPASS(_stricmp(filter_ip, ""));
-
-  TEST_LOG("SetSourceFilter \n");
-  TEST_MUSTPASS(voe_network_->SetSourceFilter(0, src_rtp_port));
-#else
-  TEST_LOG("Skipping network tests - WEBRTC_EXTERNAL_TRANSPORT is defined \n");
-#endif // #ifndef WEBRTC_EXTERNAL_TRANSPORT
-#else
-  TEST_LOG("\n\n+++ Network tests NOT ENABLED +++\n");
-#endif
-  return 0;
-}
-
 int VoETestManager::TestStartStreaming(FakeExternalTransport& channel0_transport) {
   TEST_LOG("\n\n+++ Starting streaming +++\n\n");
 
@@ -1026,35 +971,8 @@ int VoETestManager::TestStartPlaying() {
   return 0;
 }
 
-int VoETestManager::TestHoldAndNetEq() {
+int VoETestManager::TestNetEq() {
 #ifdef _TEST_BASE_
-  TEST_LOG("Put channel on hold => should *not* hear audio \n");
-  // HOLD_SEND_AND_PLAY is the default mode.
-  TEST_MUSTPASS(voe_base_->SetOnHoldStatus(0, true));
-  SLEEP(2000);
-  TEST_LOG("Remove on hold => should hear audio again \n");
-  TEST_MUSTPASS(voe_base_->SetOnHoldStatus(0, false));
-  SLEEP(2000);
-  TEST_LOG("Put sending on hold => should *not* hear audio \n");
-  TEST_MUSTPASS(voe_base_->SetOnHoldStatus(0, true, kHoldSendOnly));
-  SLEEP(2000);
-  if (voe_file_) {
-    TEST_LOG("Start playing a file locally => "
-      "you should now hear this file being played out \n");
-    TEST_MUSTPASS(voe_file_->StartPlayingFileLocally(0, AudioFilename(),
-            true));
-    SLEEP(2000);
-  }
-  TEST_LOG("Put playing on hold => should *not* hear audio \n");
-  TEST_MUSTPASS(voe_base_->SetOnHoldStatus(0, true, kHoldPlayOnly));
-  SLEEP(2000);
-  TEST_LOG("Remove on hold => should hear audio again \n");
-  if (voe_file_) {
-    TEST_MUSTPASS(voe_file_->StopPlayingFileLocally(0));
-  }
-  TEST_MUSTPASS(voe_base_->SetOnHoldStatus(0, false));
-  SLEEP(2000);
-
   NetEqModes mode;
   TEST_MUSTPASS(voe_base_->GetNetEQPlayoutMode(0, mode));
   TEST_MUSTPASS(mode != kNetEqDefault);
@@ -1412,23 +1330,24 @@ int VoETestManager::TestCodecs() {
 }
 
 int VoETestManager::DoStandardTest() {
+  // Ensure we have all input files:
+  TEST_MUSTPASS(!strcmp("", AudioFilename()));
 
   TEST_LOG("\n\n+++ Base tests +++\n\n");
 
   if (SetUp() != 0) return -1;
 
-  if (TestNetworkBeforeStreaming() != 0) return -1;
-
   // TODO(qhogpat): this gets verified way later - quite ugly. Make sure to
   // put this into setup when rewriting the test that requires this.
   TEST_MUSTPASS(voe_rtp_rtcp_->SetRTCP_CNAME(0, "Niklas"));
   TEST_MUSTPASS(voe_rtp_rtcp_->SetLocalSSRC(0, 1234));
+  voe_network_->SetSourceFilter(0, 0);
 
   FakeExternalTransport channel0_transport(voe_network_);
   if (TestStartStreaming(channel0_transport) != 0) return -1;
 
   if (TestStartPlaying() != 0) return -1;
-  if (TestHoldAndNetEq() != 0) return -1;
+  if (TestNetEq() != 0) return -1;
   if (TestCodecs() != 0) return -1;
 
   /////////////////////////

@@ -14,15 +14,15 @@
 #include <stdio.h>
 #include <string>
 
+#include "resource_manager.h"
+#include "voe_audio_processing.h"
+#include "voe_base.h"
+#include "voe_dtmf.h"
+#include "voe_errors.h"
+#include "voe_file.h"
+#include "voe_rtp_rtcp.h"
 #include "voe_test_defines.h"
 #include "voe_test_interface.h"
-
-#include "voe_errors.h"
-#include "voe_base.h"
-#include "voe_file.h"
-#include "voe_dtmf.h"
-#include "voe_rtp_rtcp.h"
-#include "voe_audio_processing.h"
 #ifdef WEBRTC_VOICE_ENGINE_CALL_REPORT_API
 #include "voe_call_report.h"
 #endif
@@ -273,7 +273,11 @@ class VoETestManager {
   int DoStandardTest();
 
   const char* AudioFilename() const {
-    return audio_filename_.c_str();
+    const std::string& result = resource_manager_.long_audio_file_path();
+    if (result.length() == 0) {
+      TEST_LOG("ERROR: Failed to open input file!");
+    }
+    return result.c_str();
   }
 
   VoiceEngine* VoiceEnginePtr() const {
@@ -340,7 +344,7 @@ class VoETestManager {
   int TestNetworkBeforeStreaming();
   int TestStartStreaming(FakeExternalTransport& channel0_transport);
   int TestStartPlaying();
-  int TestHoldAndNetEq();
+  int TestNetEq();
   int TestCodecs();
 
   bool                   initialized_;
@@ -363,8 +367,7 @@ class VoETestManager {
   VoEVolumeControl*      voe_volume_control_;
   VoEAudioProcessing*    voe_apm_;
 
-  std::string            resource_path_;
-  std::string            audio_filename_;
+  ResourceManager        resource_manager_;
 };
 
 } // namespace voetest
