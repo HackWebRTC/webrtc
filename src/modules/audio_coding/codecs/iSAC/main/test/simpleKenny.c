@@ -373,10 +373,6 @@ valid values are 8 and 16.\n", sampFreqKHz);
 				cur_framesmpls += samplesIn10Ms;
 	            
 				//-------- iSAC encoding ---------
-				if(framecnt == 11)
-				{
-					framecnt = framecnt;
-				}
 				stream_len = WebRtcIsac_Encode(ISAC_main_inst, shortdata, 
 					(WebRtc_Word16*)payload);
 	            
