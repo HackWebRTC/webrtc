@@ -121,8 +121,7 @@ void VCMDecodingState::UpdateSyncState(const VCMFrameBuffer* frame) {
   if (frame->TemporalId() == kNoTemporalIdx ||
       frame->Tl0PicId() == kNoTl0PicIdx) {
     full_sync_ = true;
-  } else if (frame->FrameType() == kVideoFrameKey ||
-             frame->NonReference()) {
+  } else if (frame->FrameType() == kVideoFrameKey || frame->LayerSync()) {
     full_sync_ = true;
   } else if (full_sync_) {
     // Verify that we are still in sync.
@@ -149,7 +148,9 @@ bool VCMDecodingState::ContinuousFrame(const VCMFrameBuffer* frame) const {
 
   if (!ContinuousLayer(frame->TemporalId(), frame->Tl0PicId())) {
     // Base layers are not continuous or temporal layers are inactive.
-    if (!full_sync_)
+    // In the presence of temporal layers, check for Picture ID/sequence number
+    // continuity if sync can be restored by this frame.
+    if (!full_sync_ && !frame->LayerSync())
       return false;
     else if (!ContinuousPictureId(frame->PictureId()))
       return ContinuousSeqNum(static_cast<uint16_t>(frame->GetLowSeqNum()));
@@ -193,7 +194,7 @@ bool VCMDecodingState::ContinuousLayer(int temporal_id,
            temporal_id == 0)
     return true;
 
-  // Current implementation: applicable for base layer only.
+  // Current implementation: Look for base layer continuity.
   if (temporal_id != 0)
     return false;
   return (static_cast<uint8_t>(tl0_pic_id_ + 1) ==
