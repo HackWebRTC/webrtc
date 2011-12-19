@@ -8,150 +8,108 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * vie_rtp_rtcp_impl.h
- */
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_RTP_RTCP_IMPL_H_
+#define WEBRTC_VIDEO_ENGINE_VIE_RTP_RTCP_IMPL_H_
 
-#ifndef WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_RTP_RTCP_IMPL_H_
-#define WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_RTP_RTCP_IMPL_H_
-
-#include "vie_defines.h"
-
-#include "rtp_rtcp_defines.h"
+#include "modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "typedefs.h"
-#include "vie_ref_count.h"
-#include "vie_rtp_rtcp.h"
-#include "vie_shared_data.h"
+#include "video_engine/main/interface/vie_rtp_rtcp.h"
+#include "video_engine/vie_ref_count.h"
+#include "video_engine/vie_shared_data.h"
 
-namespace webrtc
-{
+namespace webrtc {
 
-// ----------------------------------------------------------------------------
-//	ViERTP_RTCPImpl
-// ----------------------------------------------------------------------------
+class ViERTP_RTCPImpl
+    : public virtual ViESharedData,
+      public ViERTP_RTCP,
+      public ViERefCount {
+ public:
+  // Implements ViERTP_RTCP
+  virtual int Release();
+  virtual int SetLocalSSRC(const int video_channel,
+                           const unsigned int SSRC,
+                           const StreamType usage,
+                           const unsigned char simulcast_idx);
+  virtual int GetLocalSSRC(const int video_channel, unsigned int& SSRC) const;
+  virtual int SetRemoteSSRCType(const int video_channel,
+                                const StreamType usage,
+                                const unsigned int SSRC) const;
+  virtual int GetRemoteSSRC(const int video_channel, unsigned int& SSRC) const;
+  virtual int GetRemoteCSRCs(const int video_channel,
+                             unsigned int CSRCs[kRtpCsrcSize]) const;
+  virtual int SetStartSequenceNumber(const int video_channel,
+                                     unsigned short sequence_number);
+  virtual int SetRTCPStatus(const int video_channel,
+                            const ViERTCPMode rtcp_mode);
+  virtual int GetRTCPStatus(const int video_channel,
+                            ViERTCPMode& rtcp_mode) const;
+  virtual int SetRTCPCName(const int video_channel,
+                           const char rtcp_cname[KMaxRTCPCNameLength]);
+  virtual int GetRTCPCName(const int video_channel,
+                           char rtcp_cname[KMaxRTCPCNameLength]) const;
+  virtual int GetRemoteRTCPCName(const int video_channel,
+                                 char rtcp_cname[KMaxRTCPCNameLength]) const;
+  virtual int SendApplicationDefinedRTCPPacket(
+      const int video_channel,
+      const unsigned char sub_type,
+      unsigned int name,
+      const char* data,
+      unsigned short data_length_in_bytes);
+  virtual int SetNACKStatus(const int video_channel, const bool enable);
+  virtual int SetFECStatus(const int video_channel, const bool enable,
+                           const unsigned char payload_typeRED,
+                           const unsigned char payload_typeFEC);
+  virtual int SetHybridNACKFECStatus(const int video_channel, const bool enable,
+                                     const unsigned char payload_typeRED,
+                                     const unsigned char payload_typeFEC);
+  virtual int SetKeyFrameRequestMethod(const int video_channel,
+                                       const ViEKeyFrameRequestMethod method);
+  virtual int SetTMMBRStatus(const int video_channel, const bool enable);
+  virtual int GetReceivedRTCPStatistics(const int video_channel,
+                                        unsigned short& fraction_lost,
+                                        unsigned int& cumulative_lost,
+                                        unsigned int& extended_max,
+                                        unsigned int& jitter,
+                                        int& rtt_ms) const;
+  virtual int GetSentRTCPStatistics(const int video_channel,
+                                    unsigned short& fraction_lost,
+                                    unsigned int& cumulative_lost,
+                                    unsigned int& extended_max,
+                                    unsigned int& jitter, int& rtt_ms) const;
+  virtual int GetRTPStatistics(const int video_channel,
+                               unsigned int& bytes_sent,
+                               unsigned int& packets_sent,
+                               unsigned int& bytes_received,
+                               unsigned int& packets_received) const;
+  virtual int GetBandwidthUsage(const int video_channel,
+                                unsigned int& total_bitrate_sent,
+                                unsigned int& video_bitrate_sent,
+                                unsigned int& fec_bitrate_sent,
+                                unsigned int& nackBitrateSent) const;
+  virtual int SetRTPKeepAliveStatus(
+      const int video_channel, bool enable, const char unknown_payload_type,
+      const unsigned int delta_transmit_time_seconds);
+  virtual int GetRTPKeepAliveStatus(
+      const int video_channel,
+      bool& enabled,
+      char& unkown_payload_type,
+      unsigned int& delta_transmit_time_seconds) const;
+  virtual int StartRTPDump(const int video_channel,
+                           const char file_nameUTF8[1024],
+                           RTPDirections direction);
+  virtual int StopRTPDump(const int video_channel, RTPDirections direction);
+  virtual int RegisterRTPObserver(const int video_channel,
+                                  ViERTPObserver& observer);
+  virtual int DeregisterRTPObserver(const int video_channel);
+  virtual int RegisterRTCPObserver(const int video_channel,
+                                   ViERTCPObserver& observer);
+  virtual int DeregisterRTCPObserver(const int video_channel);
 
-class ViERTP_RTCPImpl : public virtual ViESharedData,
-                        public ViERTP_RTCP,
-                        public ViERefCount
-{
-public:
-    virtual int Release();
-
-    // SSRC/CSRC
-    virtual int SetLocalSSRC(const int videoChannel,
-                             const unsigned int SSRC,
-                             const StreamType usage,
-                             const unsigned char simulcastIdx);
-
-    virtual int GetLocalSSRC(const int videoChannel, unsigned int& SSRC) const;
-
-    virtual int SetRemoteSSRCType(const int videoChannel,
-                                  const StreamType usage,
-                                  const unsigned int SSRC) const;
-
-    virtual int GetRemoteSSRC(const int videoChannel, unsigned int& SSRC) const;
-
-    virtual int GetRemoteCSRCs(const int videoChannel,
-                               unsigned int CSRCs[kRtpCsrcSize]) const;
-
-    virtual int SetStartSequenceNumber(const int videoChannel,
-                                       unsigned short sequenceNumber);
-
-    // RTCP
-    virtual int SetRTCPStatus(const int videoChannel,
-                              const ViERTCPMode rtcpMode);
-
-    virtual int GetRTCPStatus(const int videoChannel, ViERTCPMode& rtcpMode);
-
-    virtual int SetRTCPCName(const int videoChannel,
-                             const char rtcpCName[KMaxRTCPCNameLength]);
-
-    virtual int GetRTCPCName(const int videoChannel,
-                             char rtcpCName[KMaxRTCPCNameLength]);
-
-    virtual int GetRemoteRTCPCName(const int videoChannel,
-                                   char rtcpCName[KMaxRTCPCNameLength]) const;
-
-    virtual int
-        SendApplicationDefinedRTCPPacket(const int videoChannel,
-                                         const unsigned char subType,
-                                         unsigned int name, const char* data,
-                                         unsigned short dataLengthInBytes);
-
-    virtual int SetNACKStatus(const int videoChannel, const bool enable);
-
-    virtual int SetFECStatus(const int videoChannel, const bool enable,
-                             const unsigned char payloadTypeRED,
-                             const unsigned char payloadTypeFEC);
-    virtual int SetHybridNACKFECStatus(const int videoChannel, const bool enable,
-                                       const unsigned char payloadTypeRED,
-                                       const unsigned char payloadTypeFEC);
-
-    virtual int SetKeyFrameRequestMethod(const int videoChannel,
-                                         const ViEKeyFrameRequestMethod method);
-
-    virtual int SetTMMBRStatus(const int videoChannel, const bool enable);
-
-    // Statistics
-    virtual int GetReceivedRTCPStatistics(
-        const int videoChannel, unsigned short& fractionLost,
-        unsigned int& cumulativeLost, unsigned int& extendedMax,
-        unsigned int& jitter, int& rttMs) const;
-
-    virtual int GetSentRTCPStatistics(const int videoChannel,
-                                      unsigned short& fractionLost,
-                                      unsigned int& cumulativeLost,
-                                      unsigned int& extendedMax,
-                                      unsigned int& jitter, int& rttMs) const;
-
-    virtual int GetRTPStatistics(const int videoChannel,
-                                 unsigned int& bytesSent,
-                                 unsigned int& packetsSent,
-                                 unsigned int& bytesReceived,
-                                 unsigned int& packetsReceived) const;
-
-    virtual int GetBandwidthUsage(const int videoChannel,
-                                  unsigned int& totalBitrateSent,
-                                  unsigned int& videoBitrateSent,
-                                  unsigned int& fecBitrateSent,
-                                  unsigned int& nackBitrateSent) const;
-
-    // Keep alive
-    virtual int SetRTPKeepAliveStatus(
-        const int videoChannel, bool enable, const char unknownPayloadType,
-        const unsigned int deltaTransmitTimeSeconds);
-
-    virtual int GetRTPKeepAliveStatus(const int videoChannel, bool& enabled,
-                                      char& unkownPayloadType,
-                                      unsigned int& deltaTransmitTimeSeconds);
-
-    // Dump RTP stream, for debug purpose
-    virtual int StartRTPDump(const int videoChannel,
-                             const char fileNameUTF8[1024],
-                             RTPDirections direction);
-
-    virtual int StopRTPDump(const int videoChannel, RTPDirections direction);
-
-    // Callbacks
-    virtual int RegisterRTPObserver(const int videoChannel,
-                                    ViERTPObserver& observer);
-
-    virtual int DeregisterRTPObserver(const int videoChannel);
-
-    virtual int RegisterRTCPObserver(const int videoChannel,
-                                     ViERTCPObserver& observer);
-
-    virtual int DeregisterRTCPObserver(const int videoChannel);
-
-protected:
-    ViERTP_RTCPImpl();
-    virtual ~ViERTP_RTCPImpl();
-
-private:
-    RTCPMethod ViERTCPModeToRTCPMethod(ViERTCPMode apiMode);
-    ViERTCPMode RTCPMethodToViERTCPMode(RTCPMethod moduleMethod);
-    KeyFrameRequestMethod
-    APIRequestToModuleRequest(const ViEKeyFrameRequestMethod apiMethod);
+ protected:
+  ViERTP_RTCPImpl();
+  virtual ~ViERTP_RTCPImpl();
 };
-} // namespace webrtc
-#endif  // WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_RTP_RTCP_IMPL_H_
+
+}  // namespace webrtc
+
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_RTP_RTCP_IMPL_H_

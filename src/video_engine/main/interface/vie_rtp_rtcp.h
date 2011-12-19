@@ -162,7 +162,7 @@ public:
 
     // This function gets the RTCP status for the specified channel.
     virtual int GetRTCPStatus(const int videoChannel,
-                              ViERTCPMode& rtcpMode) = 0;
+                              ViERTCPMode& rtcpMode) const = 0;
 
     // This function sets the RTCP canonical name (CNAME) for the RTCP reports
     // on a specific channel.
@@ -172,7 +172,7 @@ public:
     // This function gets the RTCP canonical name (CNAME) for the RTCP reports
     // sent the specified channel.
     virtual int GetRTCPCName(const int videoChannel,
-                             char rtcpCName[KMaxRTCPCNameLength]) = 0;
+                             char rtcpCName[KMaxRTCPCNameLength]) const = 0;
 
     // This function gets the RTCP canonical name (CNAME) for the RTCP reports
     // received on the specified channel.
@@ -260,7 +260,7 @@ public:
     // This function gets the RTP keep-alive status.
     virtual int GetRTPKeepAliveStatus(
         const int videoChannel, bool& enabled, char& unkownPayloadType,
-        unsigned int& deltaTransmitTimeSeconds) = 0;
+        unsigned int& deltaTransmitTimeSeconds) const = 0;
 
     // This function enables capturing of RTP packets to a binary file on a
     // specific channel and for a given direction. The file can later be

@@ -8,70 +8,46 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * vie_render_impl.h
- */
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_RENDER_IMPL_H_
+#define WEBRTC_VIDEO_ENGINE_VIE_RENDER_IMPL_H_
 
-#ifndef WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_RENDER_IMPL_H_
-#define WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_RENDER_IMPL_H_
-
-#include "vie_defines.h"
-
+#include "modules/video_render/main/interface/video_render_defines.h"
 #include "typedefs.h"
-#include "video_render_defines.h"
-#include "vie_ref_count.h"
-#include "vie_render.h"
-#include "vie_shared_data.h"
+#include "video_engine/main/interface/vie_render.h"
+#include "video_engine/vie_ref_count.h"
+#include "video_engine/vie_shared_data.h"
 
-namespace webrtc
-{
+namespace webrtc {
 
-// ----------------------------------------------------------------------------
-//	ViERenderImpl
-// ----------------------------------------------------------------------------
+class ViERenderImpl
+    : public virtual ViESharedData,
+      public ViERender,
+      public ViERefCount {
+ public:
+  // Implements ViERender
+  virtual int Release();
+  virtual int RegisterVideoRenderModule(VideoRender& render_module);
+  virtual int DeRegisterVideoRenderModule(VideoRender& render_module);
+  virtual int AddRenderer(const int render_id, void* window,
+                          const unsigned int z_order, const float left,
+                          const float top, const float right,
+                          const float bottom);
+  virtual int RemoveRenderer(const int render_id);
+  virtual int StartRender(const int render_id);
+  virtual int StopRender(const int render_id);
+  virtual int ConfigureRender(int render_id, const unsigned int z_order,
+                              const float left, const float top,
+                              const float right, const float bottom);
+  virtual int MirrorRenderStream(const int render_id, const bool enable,
+                                 const bool mirror_xaxis,
+                                 const bool mirror_yaxis);
+  virtual int AddRenderer(const int render_id, RawVideoType video_input_format,
+                          ExternalRenderer* renderer);
 
-class ViERenderImpl: public virtual ViESharedData,
-                     public ViERender,
-                     public ViERefCount
-{
-public:
-    virtual int Release();
-
-    // Registration of render module
-    virtual int RegisterVideoRenderModule(VideoRender& renderModule);
-
-    virtual int DeRegisterVideoRenderModule(
-        VideoRender& renderModule);
-
-    // Add/remove renderer
-    virtual int AddRenderer(const int renderId, void* window,
-                            const unsigned int zOrder, const float left,
-                            const float top, const float right,
-                            const float bottom);
-
-    virtual int RemoveRenderer(const int renderId);
-
-    // Start/stop
-    virtual int StartRender(const int renderId);
-
-    virtual int StopRender(const int renderId);
-
-    virtual int ConfigureRender(int renderId, const unsigned int zOrder,
-                                const float left, const float top,
-                                const float right, const float bottom);
-
-    virtual int MirrorRenderStream(const int renderId, const bool enable,
-                                   const bool mirrorXAxis,
-                                   const bool mirrorYAxis);
-
-    // External render
-    virtual int AddRenderer(const int renderId,
-                            webrtc::RawVideoType videoInputFormat,
-                            ExternalRenderer* renderer);
-
-protected:
-    ViERenderImpl();
-    virtual ~ViERenderImpl();
+ protected:
+  ViERenderImpl();
+  virtual ~ViERenderImpl();
 };
-} // namespace webrtc
-#endif  // WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_RENDER_IMPL_H_
+
+}  // namespace webrtc
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_RENDER_IMPL_H_
