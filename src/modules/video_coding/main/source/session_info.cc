@@ -387,6 +387,7 @@ int VCMSessionInfo::ZeroOutSeqNum(int* seq_num_list,
   return 0;
 }
 
+// TODO(mikhal): Rename function.
 int VCMSessionInfo::ZeroOutSeqNumHybrid(int* seq_num_list,
                                         int seq_num_list_length,
                                         int rtt_ms) {
@@ -397,8 +398,8 @@ int VCMSessionInfo::ZeroOutSeqNumHybrid(int* seq_num_list,
     return 0;
   }
 
-  WebRtc_Word32 index = 0;
-  // Find end point (index of entry equals the sequence number of the first
+  int index = 0;
+  // Find entrance point (index of entry equals the sequence number of the first
   // packet).
   for (; index < seq_num_list_length; ++index) {
     if (seq_num_list[index] == packets_.front().seqNum) {
@@ -411,17 +412,15 @@ int VCMSessionInfo::ZeroOutSeqNumHybrid(int* seq_num_list,
   // Use the previous available.
   bool base_available = false;
   if ((index > 0) && (seq_num_list[index] == -1)) {
-    // found first packet, for now let's go only one back
+    // Found first packet, for now let's go only one back.
     if ((seq_num_list[index - 1] == -1) || (seq_num_list[index - 1] == -2)) {
-      // This is indeed the first packet, as previous packet was populated
+      // This is indeed the first packet, as previous packet was populated.
       base_available = true;
     }
   }
   bool allow_nack = (!packets_.front().isFirstPacket || !base_available);
 
   // Zero out between first entry and end point.
-  // Score place holder - based on RTT and partition (when available).
-  const float nack_score_threshold = 0.25f;
 
   WebRtc_Word32 media_high_seq_num;
   if (HaveLastPacket()) {
@@ -432,8 +431,12 @@ int VCMSessionInfo::ZeroOutSeqNumHybrid(int* seq_num_list,
                       empty_seq_num_low_ - 1: packets_.back().seqNum;
   }
 
-  // Place holder.
-  int rtt_score = 1.0f;
+  // Compute session/packet scores and thresholds:
+  // based on RTT and layer info (when available).
+  float nack_score_threshold = 0.25f;
+  float layer_score = TemporalId() > 0 ? 0.0f : 1.0f;
+  float rtt_score = 1.0f;
+  float score_multiplier = rtt_score * layer_score;
   // Zero out between first entry and end point.
   PacketIterator it = packets_.begin();
   PacketIterator prev_it = it;
@@ -451,8 +454,8 @@ int VCMSessionInfo::ZeroOutSeqNumHybrid(int* seq_num_list,
       for (int i = 0 ; i < num_lost; ++i) {
         // Compute score of the packet.
         float score = 1.0f;
-        // Multiply internal score (importance) by external score (RTT).
-        score *= rtt_score;
+        // Multiply internal score (packet) by score multiplier.
+        score *= score_multiplier;
         if (score > nack_score_threshold) {
           allow_nack = true;
         } else {
