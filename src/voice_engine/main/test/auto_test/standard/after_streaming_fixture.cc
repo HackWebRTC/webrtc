@@ -21,7 +21,7 @@ AfterStreamingFixture::AfterStreamingFixture()
   EXPECT_GE(channel_, 0);
 
   const std::string& input_file = resource_manager_.long_audio_file_path();
-  ASSERT_FALSE(input_file.empty());
+  EXPECT_FALSE(input_file.empty());
 
   SetUpLocalPlayback();
   StartPlaying(input_file);
