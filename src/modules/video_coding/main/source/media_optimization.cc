@@ -36,7 +36,8 @@ _avgSentBitRateBps(0.0f),
 _keyFrameCnt(0),
 _deltaFrameCnt(0),
 _lastQMUpdateTime(0),
-_lastChangeTime(0)
+_lastChangeTime(0),
+_numLayers(0)
 {
     memset(_sendStatistics, 0, sizeof(_sendStatistics));
     memset(_incomingFrameTimes, -1, sizeof(_incomingFrameTimes));
@@ -83,6 +84,7 @@ VCMMediaOptimization::Reset()
         _encodedFrameSamples[i]._timeCompleteMs = -1;
     }
     _avgSentBitRateBps = 0.0f;
+    _numLayers = 1;
     return VCM_OK;
 }
 
@@ -170,7 +172,7 @@ VCMMediaOptimization::SetTargetRates(WebRtc_UWord32 bitRate,
     // Update encoding rates following protection settings
     _frameDropper->SetRates(static_cast<float>(_targetBitRate), 0);
 
-    if (_enableQm)
+    if (_enableQm && _numLayers == 1)
     {
         // Update QM with rates
         _qmResolution->UpdateRates((float)_targetBitRate, _avgSentBitRateBps,
@@ -218,6 +220,8 @@ int VCMMediaOptimization::UpdateProtectionCallback(
     bool nackStatus = (selected_method->Type() == kNackFec ||
                        selected_method->Type() == kNack);
 
+    // TODO(Marco): Pass FEC protection values per layer.
+
     return _videoProtectionCallback->ProtectionRequest(codeRateDeltaRTP,
                                                        codeRateKeyRTP,
                                                        useUepProtectionDeltaRTP,
@@ -245,9 +249,13 @@ VCMMediaOptimization::SentFrameCount(VCMFrameCount &frameCount) const
 }
 
 WebRtc_Word32
-VCMMediaOptimization::SetEncodingData(VideoCodecType sendCodecType, WebRtc_Word32 maxBitRate,
-                                      WebRtc_UWord32 frameRate, WebRtc_UWord32 bitRate,
-                                      WebRtc_UWord16 width, WebRtc_UWord16 height)
+VCMMediaOptimization::SetEncodingData(VideoCodecType sendCodecType,
+                                      WebRtc_Word32 maxBitRate,
+                                      WebRtc_UWord32 frameRate,
+                                      WebRtc_UWord32 bitRate,
+                                      WebRtc_UWord16 width,
+                                      WebRtc_UWord16 height,
+                                      int numLayers)
 {
     // Everything codec specific should be reset here since this means the codec
     // has changed. If native dimension values have changed, then either user
@@ -263,12 +271,14 @@ VCMMediaOptimization::SetEncodingData(VideoCodecType sendCodecType, WebRtc_Word3
     _lossProtLogic->UpdateBitRate(static_cast<float>(bitRate));
     _lossProtLogic->UpdateFrameRate(static_cast<float>(frameRate));
     _lossProtLogic->UpdateFrameSize(width, height);
+    _lossProtLogic->UpdateNumLayers(numLayers);
     _frameDropper->Reset();
     _frameDropper->SetRates(static_cast<float>(bitRate),
                             static_cast<float>(frameRate));
     _userFrameRate = static_cast<float>(frameRate);
     _codecWidth = width;
     _codecHeight = height;
+    _numLayers = (numLayers <= 1) ? 1 : numLayers;  // Can also be zero.
     WebRtc_Word32 ret = VCM_OK;
     ret = _qmResolution->Initialize((float)_targetBitRate, _userFrameRate,
                                     _codecWidth, _codecHeight);

@@ -65,7 +65,8 @@ public:
                                   WebRtc_UWord32 frameRate,
                                   WebRtc_UWord32 bitRate,
                                   WebRtc_UWord16 width,
-                                  WebRtc_UWord16 height);
+                                  WebRtc_UWord16 height,
+                                  int numTemporalLayers);
     /**
     * Enable protection method
     */
@@ -199,6 +200,7 @@ private:
 
     WebRtc_Word64                     _lastQMUpdateTime;
     WebRtc_Word64                     _lastChangeTime; // content/user triggered
+    int                               _numLayers;
 
 
 }; // end of VCMMediaOptimization class definition

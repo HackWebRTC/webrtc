@@ -436,6 +436,11 @@ RTPSenderVideo::SendVideo(const RtpVideoCodecTypes videoType,
     {
         _fecProtectionFactor = _codeRateKey;
         _fecUseUepProtection = _useUepProtectionKey;
+    } else if (videoType == kRtpVp8Video && rtpTypeHdr->VP8.temporalIdx > 0)
+    {
+        // In current version, we only apply FEC on the base layer.
+        _fecProtectionFactor = 0;
+        _fecUseUepProtection = false;
     } else
     {
         _fecProtectionFactor = _codeRateDelta;

@@ -46,7 +46,8 @@ struct VCMProtectionParameters
     VCMProtectionParameters() : rtt(0), lossPr(0.0f), bitRate(0.0f),
         packetsPerFrame(0.0f), packetsPerFrameKey(0.0f), frameRate(0.0f),
         keyFrameSize(0.0f), fecRateDelta(0), fecRateKey(0),
-        residualPacketLossFec(0.0f), codecWidth(0), codecHeight(0)
+        residualPacketLossFec(0.0f), codecWidth(0), codecHeight(0),
+        numLayers(1)
         {}
 
     int                 rtt;
@@ -61,6 +62,7 @@ struct VCMProtectionParameters
     float               residualPacketLossFec;
     WebRtc_UWord16      codecWidth;
     WebRtc_UWord16      codecHeight;
+    int                 numLayers;
 };
 
 
@@ -189,6 +191,8 @@ public:
     void UpdateProtectionFactorD(WebRtc_UWord8 protectionFactorD);
     // Update FEC with protectionFactorK
     void UpdateProtectionFactorK(WebRtc_UWord8 protectionFactorK);
+    // Compute the bits per frame. Account for temporal layers when applicable.
+    int BitsPerFrame(const VCMProtectionParameters* parameters);
 };
 
 
@@ -297,6 +301,12 @@ public:
     //          - height       : The codec frame height.
     void UpdateFrameSize(WebRtc_UWord16 width, WebRtc_UWord16 height);
 
+    // Update the number of active layers
+    //
+    // Input:
+    //          - numLayers    : Number of layers used.
+    void UpdateNumLayers(int numLayers);
+
     // The amount of packet loss to cover for with FEC.
     //
     // Input:
@@ -355,6 +365,7 @@ private:
     WebRtc_UWord8             _boostRateKey;
     WebRtc_UWord16            _codecWidth;
     WebRtc_UWord16            _codecHeight;
+    int                       _numLayers;
 };
 
 } // namespace webrtc

@@ -366,7 +366,7 @@ VideoCodingModuleImpl::InitializeSender()
     _encoder = NULL;
     _encodedFrameCallback.SetTransportCallback(NULL);
     // setting default bitRate and frameRate to 0
-    _mediaOpt.SetEncodingData(kVideoCodecUnknown, 0, 0, 0, 0, 0);
+    _mediaOpt.SetEncodingData(kVideoCodecUnknown, 0, 0, 0, 0, 0, 0);
     _mediaOpt.Reset(); // Resetting frame dropper
     return VCM_OK;
 }
@@ -420,12 +420,16 @@ VideoCodingModuleImpl::RegisterSendCodec(const VideoCodec* sendCodec,
         return VCM_CODEC_ERROR;
     }
     _sendCodecType = sendCodec->codecType;
+    int numLayers = (_sendCodecType != kVideoCodecVP8) ? 1 :
+                        sendCodec->codecSpecific.VP8.numberOfTemporalLayers;
+
     _mediaOpt.SetEncodingData(_sendCodecType,
                               sendCodec->maxBitrate,
                               sendCodec->maxFramerate,
                               sendCodec->startBitrate,
                               sendCodec->width,
-                              sendCodec->height);
+                              sendCodec->height,
+                              numLayers);
     _mediaOpt.SetMtu(maxPayloadSize);
 
     return VCM_OK;

@@ -8,16 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "video_coding_defines.h"
-#include "fec_tables_xor.h"
-#include "er_tables_xor.h"
-#include "nack_fec_tables.h"
-#include "qm_select_data.h"
-#include "media_opt_util.h"
+#include "modules/video_coding/main/source/media_opt_util.h"
 
 #include <math.h>
 #include <float.h>
 #include <limits.h>
+
+#include "modules/interface/module_common_types.h"
+#include "modules/video_coding/codecs/vp8/main/interface/vp8_common_types.h"
+#include "modules/video_coding/main/interface/video_coding_defines.h"
+#include "modules/video_coding/main/source/er_tables_xor.h"
+#include "modules/video_coding/main/source/fec_tables_xor.h"
+#include "modules/video_coding/main/source/nack_fec_tables.h"
+#include "modules/video_coding/main/source/qm_select_data.h"
+
 
 namespace webrtc {
 
@@ -345,12 +349,8 @@ VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters)
     // Use a smaller exponent (< 1) to control/soften system size effect.
     const float resolnFac = 1.0 / powf(spatialSizeToRef, 0.3f);
 
-    const float bitRate = parameters->bitRate;
-    const float frameRate = parameters->frameRate;
+    const int bitRatePerFrame = BitsPerFrame(parameters);
 
-    // Average bits per frame (units of kbits)
-    const WebRtc_UWord16 bitRatePerFrame = static_cast<WebRtc_UWord16>
-                                           (bitRate / frameRate);
 
     // Average number of packets per frame (source and fec):
     const WebRtc_UWord8 avgTotPackets = 1 + (WebRtc_UWord8)
@@ -399,11 +399,17 @@ VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters)
         codeRateDelta = kPacketLossMax - 1;
     }
 
-    float adjustFec = _qmRobustness->AdjustFecFactor(codeRateDelta,
-                                                     bitRate,
-                                                     frameRate,
-                                                     parameters->rtt,
-                                                     packetLoss);
+    float adjustFec = 1.0f;
+    // Avoid additional adjustments when layers are active.
+    // TODO(mikhal/marco): Update adjusmtent based on layer info.
+    if (parameters->numLayers == 1)
+    {
+        adjustFec = _qmRobustness->AdjustFecFactor(codeRateDelta,
+                                                   parameters->bitRate,
+                                                   parameters->frameRate,
+                                                   parameters->rtt,
+                                                   packetLoss);
+    }
 
     codeRateDelta = static_cast<WebRtc_UWord8>(codeRateDelta * adjustFec);
 
@@ -481,14 +487,34 @@ VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters)
     }
 
      // TODO (marpan): Set the UEP protection on/off for Key and Delta frames
-    _useUepProtectionK = _qmRobustness->SetUepProtection(codeRateKey, bitRate,
-                                                         packetLoss, 0);
+    _useUepProtectionK = _qmRobustness->SetUepProtection(codeRateKey,
+                                                         parameters->bitRate,
+                                                         packetLoss,
+                                                         0);
 
-    _useUepProtectionD = _qmRobustness->SetUepProtection(codeRateDelta, bitRate,
-                                                         packetLoss, 1);
+    _useUepProtectionD = _qmRobustness->SetUepProtection(codeRateDelta,
+                                                         parameters->bitRate,
+                                                         packetLoss,
+                                                         1);
 
     // DONE WITH FEC PROTECTION SETTINGS
     return true;
+}
+
+int VCMFecMethod::BitsPerFrame(const VCMProtectionParameters* parameters) {
+  // When temporal layers are available FEC will only be applied on the base
+  // layer.
+  const float bitRateRatio =
+    kVp8LayerRateAlloction[parameters->numLayers - 1][0];
+  float frameRateRatio = powf(1 / 2, parameters->numLayers - 1);
+  float bitRate = parameters->bitRate * bitRateRatio;
+  float frameRate = parameters->frameRate * frameRateRatio;
+
+  // TODO(mikhal): Update factor following testing.
+  float adjustmentFactor = 1;
+
+  // Average bits per frame (units of kbits)
+  return static_cast<int>(adjustmentFactor * bitRate / frameRate);
 }
 
 bool
@@ -570,7 +596,8 @@ _packetsPerFrameKey(0.9999f),
 _residualPacketLossFec(0),
 _boostRateKey(2),
 _codecWidth(0),
-_codecHeight(0)
+_codecHeight(0),
+_numLayers(1)
 {
     Reset();
 }
@@ -801,6 +828,10 @@ VCMLossProtectionLogic::UpdateFrameSize(WebRtc_UWord16 width,
     _codecHeight = height;
 }
 
+void VCMLossProtectionLogic::UpdateNumLayers(int numLayers) {
+  _numLayers = (numLayers == 0) ? 1 : numLayers;
+}
+
 bool
 VCMLossProtectionLogic::UpdateMethod()
 {
@@ -820,6 +851,7 @@ VCMLossProtectionLogic::UpdateMethod()
     _currentParameters.residualPacketLossFec = _residualPacketLossFec;
     _currentParameters.codecWidth = _codecWidth;
     _currentParameters.codecHeight = _codecHeight;
+    _currentParameters.numLayers = _numLayers;
     return _selectedMethod->UpdateParameters(&_currentParameters);
 }
 
