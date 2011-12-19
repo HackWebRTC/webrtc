@@ -18,26 +18,7 @@
 #include "common_types.h"
 #include "typedefs.h"
 
-#ifdef WEBRTC_NO_TRACE
-#ifdef WIN32
-   // Use __noop to avoid the C4353 compiler warning on Windows.
-   #define WEBRTC_TRACE  __noop()
-#else
-   // This is a workaround.  Ideally we should be able to do
-   // something like:
-   // #define WEBRTC_TRACE(...)  ((void)0)
-   // However, we have code that creates variables with the only
-   // intent of tracing out their value.  So, if we take the above
-   // approach, then we'll get a compiler error about unused variables. :(
-   inline void WebRtcNoTrace(...) {}
-   #define WEBRTC_TRACE WebRtcNoTrace
-#endif
-#else
-   // Ideally we would use _VA_ARGS_ but it's not supported by all compilers
-   // such as VS2003 (it's supported in VS2005). TODO (hellner) why
-   // would this be better than current implementation (not convinced)?
-   #define WEBRTC_TRACE Trace::Add
-#endif
+#define WEBRTC_TRACE Trace::Add
 
 namespace webrtc {
 class Trace
