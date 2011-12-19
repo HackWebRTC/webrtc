@@ -17,14 +17,10 @@
 namespace webrtc
 {
 
-class TickTimeInterface;
-
 class VCMTimestampExtrapolator
 {
 public:
-    VCMTimestampExtrapolator(TickTimeInterface* clock,
-                             WebRtc_Word32 vcmId = 0,
-                             WebRtc_Word32 receiverId = 0);
+    VCMTimestampExtrapolator(WebRtc_Word32 vcmId = 0, WebRtc_Word32 receiverId = 0);
     ~VCMTimestampExtrapolator();
     void Update(WebRtc_Word64 tMs, WebRtc_UWord32 ts90khz, bool trace = true);
     WebRtc_UWord32 ExtrapolateTimestamp(WebRtc_Word64 tMs) const;
@@ -37,7 +33,6 @@ private:
     RWLockWrapper*        _rwLock;
     WebRtc_Word32         _vcmId;
     WebRtc_Word32         _id;
-    TickTimeInterface*    _clock;
     bool                _trace;
     double              _w[2];
     double              _P[2][2];

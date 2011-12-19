@@ -63,6 +63,7 @@
         'receiver.h',
         'rtt_filter.h',
         'session_info.h',
+        'tick_time.h',
         'tick_time_interface.h',
         'timestamp_extrapolator.h',
         'timestamp_map.h',

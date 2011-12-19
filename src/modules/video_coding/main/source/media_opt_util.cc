@@ -551,7 +551,7 @@ VCMFecMethod::UpdateParameters(const VCMProtectionParameters* parameters)
 
     return true;
 }
-VCMLossProtectionLogic::VCMLossProtectionLogic(int64_t nowMs):
+VCMLossProtectionLogic::VCMLossProtectionLogic():
 _selectedMethod(NULL),
 _currentParameters(),
 _rtt(0),
@@ -572,7 +572,7 @@ _boostRateKey(2),
 _codecWidth(0),
 _codecHeight(0)
 {
-    Reset(nowMs);
+    Reset();
 }
 
 VCMLossProtectionLogic::~VCMLossProtectionLogic()
@@ -661,13 +661,13 @@ VCMLossProtectionLogic::UpdateResidualPacketLoss(float residualPacketLoss)
 }
 
 void
-VCMLossProtectionLogic::UpdateLossPr(WebRtc_UWord8 lossPr255,
-                                     int64_t nowMs)
+VCMLossProtectionLogic::UpdateLossPr(WebRtc_UWord8 lossPr255)
 {
-    UpdateMaxLossHistory(lossPr255, nowMs);
-    _lossPr255.Apply(static_cast<float> (nowMs - _lastPrUpdateT),
+    const WebRtc_Word64 now = VCMTickTime::MillisecondTimestamp();
+    UpdateMaxLossHistory(lossPr255, now);
+    _lossPr255.Apply(static_cast<float> (now - _lastPrUpdateT),
                      static_cast<float> (lossPr255));
-    _lastPrUpdateT = nowMs;
+    _lastPrUpdateT = now;
     _lossPr = _lossPr255.Value() / 255.0f;
 }
 
@@ -741,14 +741,14 @@ VCMLossProtectionLogic::MaxFilteredLossPr(WebRtc_Word64 nowMs) const
 }
 
 WebRtc_UWord8
-VCMLossProtectionLogic::FilteredLoss(int64_t nowMs) const
+VCMLossProtectionLogic::FilteredLoss() const
 {
     if (_selectedMethod != NULL &&
         (_selectedMethod->Type() == kFec ||
          _selectedMethod->Type() == kNackFec))
     {
         // Take the windowed max of the received loss.
-        return MaxFilteredLossPr(nowMs);
+        return MaxFilteredLossPr(VCMTickTime::MillisecondTimestamp());
     }
     else
     {
@@ -770,19 +770,21 @@ VCMLossProtectionLogic::UpdateBitRate(float bitRate)
 }
 
 void
-VCMLossProtectionLogic::UpdatePacketsPerFrame(float nPackets, int64_t nowMs)
+VCMLossProtectionLogic::UpdatePacketsPerFrame(float nPackets)
 {
-    _packetsPerFrame.Apply(static_cast<float>(nowMs - _lastPacketPerFrameUpdateT),
+    const WebRtc_Word64 now = VCMTickTime::MillisecondTimestamp();
+    _packetsPerFrame.Apply(static_cast<float>(now - _lastPacketPerFrameUpdateT),
                            nPackets);
-    _lastPacketPerFrameUpdateT = nowMs;
+    _lastPacketPerFrameUpdateT = now;
 }
 
 void
-VCMLossProtectionLogic::UpdatePacketsPerFrameKey(float nPackets, int64_t nowMs)
+VCMLossProtectionLogic::UpdatePacketsPerFrameKey(float nPackets)
 {
-    _packetsPerFrameKey.Apply(static_cast<float>(nowMs -
+    const WebRtc_Word64 now = VCMTickTime::MillisecondTimestamp();
+    _packetsPerFrameKey.Apply(static_cast<float>(now -
                               _lastPacketPerFrameUpdateTKey), nPackets);
-    _lastPacketPerFrameUpdateTKey = nowMs;
+    _lastPacketPerFrameUpdateTKey = now;
 }
 
 void
@@ -834,11 +836,12 @@ VCMLossProtectionLogic::SelectedType() const
 }
 
 void
-VCMLossProtectionLogic::Reset(int64_t nowMs)
+VCMLossProtectionLogic::Reset()
 {
-    _lastPrUpdateT = nowMs;
-    _lastPacketPerFrameUpdateT = nowMs;
-    _lastPacketPerFrameUpdateTKey = nowMs;
+    const WebRtc_Word64 now = VCMTickTime::MillisecondTimestamp();
+    _lastPrUpdateT = now;
+    _lastPacketPerFrameUpdateT = now;
+    _lastPacketPerFrameUpdateTKey = now;
     _lossPr255.Reset(0.9999f);
     _packetsPerFrame.Reset(0.9999f);
     _fecRateDelta = _fecRateKey = 0;

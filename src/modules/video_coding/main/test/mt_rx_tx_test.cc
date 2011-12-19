@@ -170,8 +170,7 @@ int MTRxTxTest(CmdArgs& args)
     TEST(rtp->SetGenericFECStatus(fecEnabled, VCM_RED_PAYLOAD_TYPE, VCM_ULPFEC_PAYLOAD_TYPE) == 0);
 
     //VCM
-    TickTimeInterface clock;
-    VideoCodingModule* vcm = VideoCodingModule::Create(1, &clock);
+    VideoCodingModule* vcm = VideoCodingModule::Create(1);
     if (vcm->InitializeReceiver() < 0)
     {
         return -1;
@@ -216,8 +215,7 @@ int MTRxTxTest(CmdArgs& args)
     encodeCompleteCallback->SetCodecType(ConvertCodecType(args.codecName.c_str()));
     encodeCompleteCallback->SetFrameDimensions(width, height);
     // frame ready to be sent to network
-    RTPSendCompleteCallback* outgoingTransport =
-        new RTPSendCompleteCallback(rtp, &clock, "dump.rtp");
+    RTPSendCompleteCallback* outgoingTransport = new RTPSendCompleteCallback(rtp, "dump.rtp");
     rtp->RegisterSendTransport(outgoingTransport);
     // FrameReceiveCallback
     VCMDecodeCompleteCallback receiveCallback(decodedFile);

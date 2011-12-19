@@ -27,9 +27,15 @@
 using namespace webrtc;
 
 /*
- * Build with EVENT_DEBUG defined
- * to build the tests with simulated events.
+ * Build with TICK_TIME_DEBUG and EVENT_DEBUG defined
+ * to build the tests with simulated clock.
  */
+
+// TODO(holmer): How do we get debug time into the cmd line interface?
+/* Debug time */
+#if defined(TICK_TIME_DEBUG) && defined(EVENT_DEBUG)
+WebRtc_Word64 VCMTickTime::_timeNowDebug = 0; // current time in ms
+#endif
 
 int vcmMacrosTests = 0;
 int vcmMacrosErrors = 0;

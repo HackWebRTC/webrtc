@@ -16,7 +16,6 @@
 #include "list_wrapper.h"
 #include "critical_section_wrapper.h"
 #include "video_coding_defines.h"
-#include "modules/video_coding/main/source/tick_time_interface.h"
 
 #include <stdio.h>
 #include <string>
@@ -43,12 +42,10 @@ public:
     ~LostPackets();
 
     WebRtc_UWord32 AddPacket(WebRtc_UWord8* rtpData, WebRtc_UWord16 rtpLen);
-    WebRtc_UWord32 SetResendTime(WebRtc_UWord16 sequenceNumber,
-                                 WebRtc_Word64 resendTime,
-                                 WebRtc_Word64 nowMs);
+    WebRtc_UWord32 SetResendTime(WebRtc_UWord16 sequenceNumber, WebRtc_Word64 resendTime);
     WebRtc_UWord32 TotalNumberOfLosses() const { return _lossCount; };
     WebRtc_UWord32 NumberOfPacketsToResend() const;
-    void ResentPacket(WebRtc_UWord16 seqNo, WebRtc_Word64 nowMs);
+    void ResentPacket(WebRtc_UWord16 seqNo);
     void Lock()     {_critSect->Enter();};
     void Unlock()   {_critSect->Leave();};
 private:
@@ -69,9 +66,7 @@ struct PayloadCodecTuple
 class RTPPlayer : public webrtc::VCMPacketRequestCallback
 {
 public:
-    RTPPlayer(const char* filename,
-              webrtc::RtpData* callback,
-              webrtc::TickTimeInterface* clock);
+    RTPPlayer(const char* filename, webrtc::RtpData* callback);
     virtual ~RTPPlayer();
 
     WebRtc_Word32 Initialize(const webrtc::ListWrapper& payloadList);
@@ -86,7 +81,6 @@ private:
     WebRtc_Word32 SendPacket(WebRtc_UWord8* rtpData, WebRtc_UWord16 rtpLen);
     WebRtc_Word32 ReadPacket(WebRtc_Word16* rtpdata, WebRtc_UWord32* offset);
     WebRtc_Word32 ReadHeader();
-    webrtc::TickTimeInterface* _clock;
     FILE*              _rtpFile;
     webrtc::RtpRtcp&   _rtpModule;
     WebRtc_UWord32     _nextRtpTime;

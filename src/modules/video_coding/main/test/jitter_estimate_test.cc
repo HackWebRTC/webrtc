@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <ctime>
 #include "JitterEstimateTest.h"
+#include "tick_time.h"
 
 using namespace webrtc;
 

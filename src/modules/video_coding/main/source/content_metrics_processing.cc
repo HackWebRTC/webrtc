@@ -9,6 +9,7 @@
  */
 
 #include "content_metrics_processing.h"
+#include "tick_time.h"
 #include "module_common_types.h"
 #include "video_coding_defines.h"
 

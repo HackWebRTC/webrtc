@@ -31,8 +31,7 @@
 class MediaOptTest
 {
 public:
-    MediaOptTest(webrtc::VideoCodingModule* vcm,
-                 webrtc::TickTimeInterface* clock);
+    MediaOptTest(webrtc::VideoCodingModule* vcm);
     ~MediaOptTest();
 
     static int RunTest(int testNum, CmdArgs& args);
@@ -52,7 +51,6 @@ private:
 
     webrtc::VideoCodingModule*       _vcm;
     webrtc::RtpRtcp*                 _rtp;
-    webrtc::TickTimeInterface*       _clock;
     std::string                      _inname;
     std::string                      _outname;
     std::string                      _actualSourcename;

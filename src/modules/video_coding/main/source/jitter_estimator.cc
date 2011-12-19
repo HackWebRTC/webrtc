@@ -12,8 +12,8 @@
 #include "internal_defines.h"
 #include "jitter_estimator.h"
 #include "rtt_filter.h"
+#include "tick_time.h"
 
-#include <assert.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>

@@ -12,15 +12,13 @@
 #include "trace.h"
 #include "generic_decoder.h"
 #include "internal_defines.h"
-#include "tick_time_interface.h"
+#include "tick_time.h"
 
 namespace webrtc {
 
-VCMDecodedFrameCallback::VCMDecodedFrameCallback(VCMTiming& timing,
-                                                 TickTimeInterface* clock)
+VCMDecodedFrameCallback::VCMDecodedFrameCallback(VCMTiming& timing)
 :
 _critSect(CriticalSectionWrapper::CreateCriticalSection()),
-_clock(clock),
 _receiveCallback(NULL),
 _timing(timing),
 _timestampMap(kDecoderFrameMemoryLength)
@@ -55,7 +53,7 @@ WebRtc_Word32 VCMDecodedFrameCallback::Decoded(RawImage& decodedImage)
     _timing.StopDecodeTimer(
         decodedImage._timeStamp,
         frameInfo->decodeStartTimeMs,
-        _clock->MillisecondTimestamp());
+        VCMTickTime::MillisecondTimestamp());
 
     if (_receiveCallback != NULL)
     {
@@ -148,8 +146,7 @@ WebRtc_Word32 VCMGenericDecoder::InitDecode(const VideoCodec* settings,
     return _decoder.InitDecode(settings, numberOfCores);
 }
 
-WebRtc_Word32 VCMGenericDecoder::Decode(const VCMEncodedFrame& frame,
-                                        int64_t nowMs)
+WebRtc_Word32 VCMGenericDecoder::Decode(const VCMEncodedFrame& frame)
 {
     if (_requireKeyFrame &&
         !_keyFrameDecoded &&
@@ -160,7 +157,7 @@ WebRtc_Word32 VCMGenericDecoder::Decode(const VCMEncodedFrame& frame,
         // before we can decode delta frames.
         return VCM_CODEC_ERROR;
     }
-    _frameInfos[_nextFrameInfoIdx].decodeStartTimeMs = nowMs;
+    _frameInfos[_nextFrameInfoIdx].decodeStartTimeMs = VCMTickTime::MillisecondTimestamp();
     _frameInfos[_nextFrameInfoIdx].renderTimeMs = frame.RenderTimeMs();
     _callback->Map(frame.TimeStamp(), &_frameInfos[_nextFrameInfoIdx]);
 

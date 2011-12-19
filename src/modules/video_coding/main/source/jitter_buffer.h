@@ -33,7 +33,6 @@ enum VCMNackMode
 };
 
 // forward declarations
-class TickTimeInterface;
 class VCMFrameBuffer;
 class VCMPacket;
 class VCMEncodedFrame;
@@ -50,8 +49,7 @@ public:
 class VCMJitterBuffer
 {
 public:
-    VCMJitterBuffer(TickTimeInterface* clock,
-                    WebRtc_Word32 vcmId = -1,
+    VCMJitterBuffer(WebRtc_Word32 vcmId = -1,
                     WebRtc_Word32 receiverId = -1,
                     bool master = true);
     virtual ~VCMJitterBuffer();
@@ -193,7 +191,6 @@ private:
 
     WebRtc_Word32                 _vcmId;
     WebRtc_Word32                 _receiverId;
-    TickTimeInterface*              _clock;
     // If we are running (have started) or not
     bool                          _running;
     CriticalSectionWrapper*       _critSect;

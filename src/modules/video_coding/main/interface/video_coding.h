@@ -18,7 +18,6 @@
 namespace webrtc
 {
 
-class TickTimeInterface;
 class VideoEncoder;
 class VideoDecoder;
 struct CodecSpecificInfo;
@@ -27,9 +26,6 @@ class VideoCodingModule : public Module
 {
 public:
     static VideoCodingModule* Create(const WebRtc_Word32 id);
-
-    static VideoCodingModule* Create(const WebRtc_Word32 id,
-                                     TickTimeInterface* clock);
 
     static void Destroy(VideoCodingModule* module);
 

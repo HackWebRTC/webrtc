@@ -31,13 +31,10 @@ namespace webrtc {
 
 int VCMGenericCodecTest(CmdArgs& args);
 
-class FakeTickTime;
-
 class GenericCodecTest
 {
 public:
-    GenericCodecTest(webrtc::VideoCodingModule* vcm,
-                     webrtc::FakeTickTime* clock);
+    GenericCodecTest(webrtc::VideoCodingModule* vcm);
     ~GenericCodecTest();
     static int RunTest(CmdArgs& args);
     WebRtc_Word32 Perform(CmdArgs& args);
@@ -49,7 +46,6 @@ private:
     WebRtc_Word32 TearDown();
     void IncrementDebugClock(float frameRate);
 
-    webrtc::FakeTickTime*                _clock;
     webrtc::VideoCodingModule*           _vcm;
     webrtc::VideoCodec                   _sendCodec;
     webrtc::VideoCodec                   _receiveCodec;

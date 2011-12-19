@@ -12,15 +12,13 @@
 
 #include <cmath>
 
-#include "modules/video_coding/main/source/tick_time_interface.h"
 #include "rtp_dump.h"
 
 namespace webrtc {
 
 TransportCallback::TransportCallback(webrtc::RtpRtcp* rtp,
-                                     TickTimeInterface* clock,
                                      const char* filename):
-RTPSendCompleteCallback(rtp, clock, filename)
+RTPSendCompleteCallback(rtp, filename)
 {
     //
 }
@@ -51,8 +49,7 @@ TransportCallback::SendPacket(int channel, const void *data, int len)
         transmitPacket = PacketLoss();
     }
 
-    TickTimeInterface clock;
-    int64_t now = clock.MillisecondTimestamp();
+    WebRtc_UWord64 now = VCMTickTime::MillisecondTimestamp();
     // Insert outgoing packet into list
     if (transmitPacket)
     {
@@ -76,8 +73,7 @@ TransportCallback::TransportPackets()
 {
     // Are we ready to send packets to the receiver?
     rtpPacket* packet = NULL;
-    TickTimeInterface clock;
-    int64_t now = clock.MillisecondTimestamp();
+    WebRtc_UWord64 now = VCMTickTime::MillisecondTimestamp();
 
     while (!_rtpPackets.Empty())
     {

@@ -15,7 +15,6 @@
 #include "packet.h"
 #include "trace.h"
 #include "video_codec_interface.h"
-#include "modules/video_coding/main/source/tick_time_interface.h"
 
 namespace webrtc
 {
@@ -34,30 +33,26 @@ VCMProcessTimer::TimeUntilProcess() const
 {
     return static_cast<WebRtc_UWord32>(
         VCM_MAX(static_cast<WebRtc_Word64>(_periodMs) -
-                (_clock->MillisecondTimestamp() - _latestMs), 0));
+                (VCMTickTime::MillisecondTimestamp() - _latestMs), 0));
 }
 
 void
 VCMProcessTimer::Processed()
 {
-    _latestMs = _clock->MillisecondTimestamp();
+    _latestMs = VCMTickTime::MillisecondTimestamp();
 }
 
-VideoCodingModuleImpl::VideoCodingModuleImpl(const WebRtc_Word32 id,
-                                             TickTimeInterface* clock,
-                                             bool delete_clock_on_destroy)
+VideoCodingModuleImpl::VideoCodingModuleImpl(const WebRtc_Word32 id)
 :
 _id(id),
-clock_(clock),
-delete_clock_on_destroy_(delete_clock_on_destroy),
 _receiveCritSect(CriticalSectionWrapper::CreateCriticalSection()),
 _receiverInited(false),
-_timing(clock_, id, 1),
-_dualTiming(clock_, id, 2, &_timing),
-_receiver(_timing, clock_, id, 1),
-_dualReceiver(_dualTiming, clock_, id, 2, false),
-_decodedFrameCallback(_timing, clock_),
-_dualDecodedFrameCallback(_dualTiming, clock_),
+_timing(id, 1),
+_dualTiming(id, 2, &_timing),
+_receiver(_timing, id, 1),
+_dualReceiver(_dualTiming, id, 2, false),
+_decodedFrameCallback(_timing),
+_dualDecodedFrameCallback(_dualTiming),
 _frameTypeCallback(NULL),
 _frameStorageCallback(NULL),
 _receiveStatsCallback(NULL),
@@ -72,18 +67,17 @@ _scheduleKeyRequest(false),
 _sendCritSect(CriticalSectionWrapper::CreateCriticalSection()),
 _encoder(),
 _encodedFrameCallback(),
-_mediaOpt(id, clock_),
+_mediaOpt(id),
 _sendCodecType(kVideoCodecUnknown),
 _sendStatsCallback(NULL),
 _encoderInputFile(NULL),
 
 _codecDataBase(id),
-_receiveStatsTimer(1000, clock_),
-_sendStatsTimer(1000, clock_),
-_retransmissionTimer(10, clock_),
-_keyRequestTimer(500, clock_)
+_receiveStatsTimer(1000),
+_sendStatsTimer(1000),
+_retransmissionTimer(10),
+_keyRequestTimer(500)
 {
-    assert(clock_);
     for (int i = 0; i < kMaxSimulcastStreams; i++)
     {
         _nextFrameType[i] = kVideoFrameDelta;
@@ -104,7 +98,6 @@ VideoCodingModuleImpl::~VideoCodingModuleImpl()
     }
     delete _receiveCritSect;
     delete _sendCritSect;
-    if (delete_clock_on_destroy_) delete clock_;
 #ifdef DEBUG_DECODER_BIT_STREAM
     fclose(_bitStreamBeforeDecoder);
 #endif
@@ -120,18 +113,7 @@ VideoCodingModule::Create(const WebRtc_Word32 id)
                  webrtc::kTraceVideoCoding,
                  VCMId(id),
                  "VideoCodingModule::Create()");
-    return new VideoCodingModuleImpl(id, new TickTimeInterface(), true);
-}
-
-VideoCodingModule*
-VideoCodingModule::Create(const WebRtc_Word32 id, TickTimeInterface* clock)
-{
-    WEBRTC_TRACE(webrtc::kTraceModuleCall,
-                 webrtc::kTraceVideoCoding,
-                 VCMId(id),
-                 "VideoCodingModule::Create()");
-    assert(clock);
-    return new VideoCodingModuleImpl(id, clock, false);
+    return new VideoCodingModuleImpl(id);
 }
 
 void
@@ -1103,7 +1085,7 @@ VideoCodingModuleImpl::Decode(WebRtc_UWord16 maxWaitTimeMs)
 
         // If this frame was too late, we should adjust the delay accordingly
         _timing.UpdateCurrentDelay(frame->RenderTimeMs(),
-                                   clock_->MillisecondTimestamp());
+                                   VCMTickTime::MillisecondTimestamp());
 
 #ifdef DEBUG_DECODER_BIT_STREAM
         if (_bitStreamBeforeDecoder != NULL)
@@ -1220,8 +1202,7 @@ VideoCodingModuleImpl::DecodeDualFrame(WebRtc_UWord16 maxWaitTimeMs)
                      "Decoding frame %u with dual decoder",
                      dualFrame->TimeStamp());
         // Decode dualFrame and try to catch up
-        WebRtc_Word32 ret = _dualDecoder->Decode(*dualFrame,
-                                                 clock_->MillisecondTimestamp());
+        WebRtc_Word32 ret = _dualDecoder->Decode(*dualFrame);
         if (ret != WEBRTC_VIDEO_CODEC_OK)
         {
             WEBRTC_TRACE(webrtc::kTraceWarning,
@@ -1269,7 +1250,7 @@ VideoCodingModuleImpl::Decode(const VCMEncodedFrame& frame)
         return VCM_NO_CODEC_REGISTERED;
     }
     // Decode a frame
-    WebRtc_Word32 ret = _decoder->Decode(frame, clock_->MillisecondTimestamp());
+    WebRtc_Word32 ret = _decoder->Decode(frame);
 
     // Check for failed decoding, run frame type request callback if needed.
     if (ret < 0)
