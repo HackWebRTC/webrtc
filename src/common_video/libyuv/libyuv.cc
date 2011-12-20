@@ -891,4 +891,58 @@ int ConvertToI420AndRotate180(const uint8_t* src_frame,
                             src_width, src_height,
                             libyuv::kRotate180);
 }
+
+// Compute PSNR for an I420 frame (all planes)
+double I420PSNR(const uint8_t* ref_frame,
+                const uint8_t* test_frame,
+                int width, int height) {
+  if (!ref_frame || !test_frame)
+    return -1;
+  else if (height < 0 || width < 0)
+    return -1;
+  const uint8_t* src_y_a = ref_frame;
+  const uint8_t* src_u_a = src_y_a + width * height;
+  const uint8_t* src_v_a = src_u_a + (width * height / 4);
+  const uint8_t* src_y_b = test_frame;
+  const uint8_t* src_u_b = src_y_b + width * height;
+  const uint8_t* src_v_b = src_u_b + (width * height / 4);
+  int stride_y = width;
+  int stride_uv = (width + 1) / 2;
+  double psnr = libyuv::I420Psnr(src_y_a, stride_y,
+                                 src_u_a, stride_uv,
+                                 src_v_a, stride_uv,
+                                 src_y_b, stride_y,
+                                 src_u_b, stride_uv,
+                                 src_v_b, stride_uv,
+                                 width, height);
+  // LibYuv sets the max psnr value to 128, we restrict it to 48.
+  // In case of 0 mse in one frame, 128 can skew the results significantly.
+  return (psnr > 48.0) ? 48.0 : psnr;
+}
+// Compute SSIM for an I420 frame (all planes)
+double I420SSIM(const uint8_t* ref_frame,
+                const uint8_t* test_frame,
+                int width, int height) {
+  if (!ref_frame || !test_frame)
+     return -1;
+  else if (height < 0 || width < 0)
+     return -1;
+  const uint8_t* src_y_a = ref_frame;
+  const uint8_t* src_u_a = src_y_a + width * height;
+  const uint8_t* src_v_a = src_u_a + (width * height / 4);
+  const uint8_t* src_y_b = test_frame;
+  const uint8_t* src_u_b = src_y_b + width * height;
+  const uint8_t* src_v_b = src_u_b + (width * height / 4);
+  int stride_y = width;
+  int stride_uv = (width + 1) / 2;
+  return libyuv::I420Ssim(src_y_a, stride_y,
+                          src_u_a, stride_uv,
+                          src_v_a, stride_uv,
+                          src_y_b, stride_y,
+                          src_u_b, stride_uv,
+                          src_v_b, stride_uv,
+                          width, height);
+
+}
+
 }  // namespace webrtc

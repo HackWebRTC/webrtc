@@ -306,6 +306,14 @@ int ConvertToI420AndRotate(const uint8_t* src_frame,
                            int width,
                            VideoType src_video_type,
                            VideoRotationMode mode);
+// Compute PSNR for an I420 frame (all planes).
+double I420PSNR(const uint8_t* ref_frame,
+                const uint8_t* test_frame,
+                int width, int height);
+// Compute SSIM for an I420 frame (all planes).
+double I420SSIM(const uint8_t* ref_frame,
+                const uint8_t* test_frame,
+                int width, int height);
 }
 
 #endif  // WEBRTC_COMMON_VIDEO_LIBYUV_INCLUDE_LIBYUV_H_

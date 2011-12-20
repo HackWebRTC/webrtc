@@ -38,9 +38,8 @@
             '<(webrtc_root)/../test/test.gyp:test_support_main',
           ],
           'sources': [
-            'test/test_util.h',
-            'test/test_util.cc',
-            'test/unit_test.cc',
+            'libyuv_unittest.cc',
+            'scaler_unittest.cc', 
           ], 
         },
       ], # targets
