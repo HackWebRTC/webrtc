@@ -804,12 +804,6 @@ RTPReceiver::IncomingRTPPacket(WebRtcRTPHeader* rtpHeader,
             }
         }
     }
-    if(length - rtpHeader->header.headerLength == 0)
-    {
-        // ok keepalive packet
-        return 0;
-    }
-
     WebRtc_Word8 firstPayloadByte = 0;
     if(length > 0)
     {
@@ -829,9 +823,23 @@ RTPReceiver::IncomingRTPPacket(WebRtcRTPHeader* rtpHeader,
     audioSpecific.channels = 0;
     audioSpecific.frequency = 0;
 
-    if(CheckPayloadChanged(rtpHeader, firstPayloadByte, isRED, audioSpecific, videoSpecific) == -1)
+    if (CheckPayloadChanged(rtpHeader,
+                            firstPayloadByte,
+                            isRED,
+                            audioSpecific,
+                            videoSpecific) == -1)
     {
-        WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, _id, "%s received invalid payloadtype", __FUNCTION__);
+        if (length - rtpHeader->header.headerLength == 0)
+        {
+            // ok keepalive packet
+            WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, _id,
+                 "%s received keepalive",
+                  __FUNCTION__);
+            return 0;
+        }
+        WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, _id,
+             "%s received invalid payloadtype",
+              __FUNCTION__);
         return -1;
     }
     CheckCSRC(rtpHeader);
@@ -847,7 +855,7 @@ RTPReceiver::IncomingRTPPacket(WebRtcRTPHeader* rtpHeader,
                                          payloadDataLength,
                                          audioSpecific,
                                          isRED);
-    }else
+    } else
     {
         retVal = ParseVideoCodecSpecific(rtpHeader,
                                          payloadData,

@@ -68,8 +68,9 @@ public:
 
     WebRtc_UWord32 MaxConfiguredBitrateVideo() const;
 
-    WebRtc_Word32 SendPadData(const WebRtcRTPHeader* rtpHeader,
-                              const WebRtc_UWord32 bytes);
+    void SendPadData(WebRtc_Word8 payload_type,
+                     WebRtc_UWord32 capture_timestamp,
+                     WebRtc_Word32 bytes);
 
     // FEC
     WebRtc_Word32 SetGenericFECStatus(const bool enable,

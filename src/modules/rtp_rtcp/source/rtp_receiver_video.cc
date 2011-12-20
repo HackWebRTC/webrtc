@@ -231,7 +231,8 @@ RTPReceiverVideo::ParseVideoCodecSpecific(WebRtcRTPHeader* rtpHeader,
 
     _criticalSectionReceiverVideo->Enter();
 
-    _videoBitRate.Update(payloadDataLength, nowMS);
+    _videoBitRate.Update(payloadDataLength + rtpHeader->header.paddingLength,
+                         nowMS);
 
     // Add headers, ideally we would like to include for instance
     // Ethernet header here as well.
@@ -647,14 +648,21 @@ RTPReceiverVideo::ReceiveVp8Codec(WebRtcRTPHeader* rtpHeader,
                                   const WebRtc_UWord8* payloadData,
                                   const WebRtc_UWord16 payloadDataLength)
 {
-    ModuleRTPUtility::RTPPayloadParser rtpPayloadParser(kRtpVp8Video,
-                                                        payloadData,
-                                                        payloadDataLength,
-                                                        _id);
-
+    bool success;
     ModuleRTPUtility::RTPPayload parsedPacket;
-    const bool success = rtpPayloadParser.Parse(parsedPacket);
-
+    if (payloadDataLength == 0)
+    {
+        success = true;
+        parsedPacket.info.VP8.dataLength = 0;
+    } else
+    {
+        ModuleRTPUtility::RTPPayloadParser rtpPayloadParser(kRtpVp8Video,
+                                                            payloadData,
+                                                            payloadDataLength,
+                                                           _id);
+ 
+        success = rtpPayloadParser.Parse(parsedPacket);
+    }
     // from here down we only work on local data
     _criticalSectionReceiverVideo->Leave();
 
@@ -665,6 +673,12 @@ RTPReceiverVideo::ReceiveVp8Codec(WebRtcRTPHeader* rtpHeader,
     if (parsedPacket.info.VP8.dataLength == 0)
     {
         // we have an "empty" VP8 packet, it's ok, could be one way video
+        // Inform the jitter buffer about this packet.
+        rtpHeader->frameType = kFrameEmpty;
+        if (CallbackOfReceivedPayloadData(NULL, 0, rtpHeader) != 0)
+        {
+            return -1;
+        }
         return 0;
     }
     rtpHeader->frameType = (parsedPacket.frameType == ModuleRTPUtility::kIFrame) ? kVideoFrameKey : kVideoFrameDelta;
