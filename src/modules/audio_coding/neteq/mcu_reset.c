@@ -14,6 +14,7 @@
 
 #include "mcu.h"
 
+#include <assert.h>
 #include <string.h>
 
 #include "automode.h"
@@ -61,6 +62,8 @@ int WebRtcNetEQ_McuReset(MCUInst_t *inst)
 
     WebRtcNetEQ_ResetMcuInCallStats(inst);
 
+    WebRtcNetEQ_ResetWaitingTimeStats(inst);
+
     WebRtcNetEQ_ResetMcuJitterStat(inst);
 
     WebRtcNetEQ_ResetAutomode(&(inst->BufferStat_inst.Automode_inst),
@@ -80,6 +83,33 @@ int WebRtcNetEQ_ResetMcuInCallStats(MCUInst_t *inst)
     inst->PacketBuffer_inst.discardedPackets = 0;
 
     return 0;
+}
+
+/*
+ * Reset waiting-time statistics.
+ */
+
+void WebRtcNetEQ_ResetWaitingTimeStats(MCUInst_t *inst) {
+  memset(inst->waiting_times, 0,
+         kLenWaitingTimes * sizeof(inst->waiting_times[0]));
+  inst->len_waiting_times = 0;
+  inst->next_waiting_time_index = 0;
+}
+
+/*
+ * Store waiting-time in the statistics.
+ */
+
+void WebRtcNetEQ_StoreWaitingTime(MCUInst_t *inst, int waiting_time) {
+  assert(inst->next_waiting_time_index < kLenWaitingTimes);
+  inst->waiting_times[inst->next_waiting_time_index] = waiting_time;
+  inst->next_waiting_time_index++;
+  if (inst->next_waiting_time_index >= kLenWaitingTimes) {
+    inst->next_waiting_time_index = 0;
+  }
+  if (inst->len_waiting_times < kLenWaitingTimes) {
+    inst->len_waiting_times++;
+  }
 }
 
 /*

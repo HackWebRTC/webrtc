@@ -110,6 +110,17 @@ typedef struct
  */
 int WebRtcNetEQ_GetNetworkStatistics(void *inst, WebRtcNetEQ_NetworkStatistics *stats);
 
+/*
+ * Get the raw waiting times for decoded frames. The function writes the last
+ * recorded waiting times (from frame arrival to frame decoding) to the memory
+ * pointed to by waitingTimeMs. The number of elements written is in the return
+ * value. No more than maxLength elements are written. Statistics are reset on
+ * each query.
+ */
+int WebRtcNetEQ_GetRawFrameWaitingTimes(void *inst,
+                                        int max_length,
+                                        int* waiting_times_ms);
+
 /***********************************************/
 /* Functions for post-decode VAD functionality */
 /***********************************************/

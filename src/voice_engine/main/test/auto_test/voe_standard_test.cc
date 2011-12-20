@@ -3081,6 +3081,12 @@ TEST_MUSTPASS(voe_codec_->SetSendCodec(0, ci));
            nStats.currentPreemptiveRate);
   TEST_LOG("    preferredBufferSize       = %hu \n",
            nStats.preferredBufferSize);
+  TEST_LOG("    meanWaitingTimeMs         = %i \n",
+           nStats.meanWaitingTimeMs);
+  TEST_LOG("    medianWaitingTimeMs       = %i \n",
+           nStats.medianWaitingTimeMs);
+  TEST_LOG("    maxWaitingTimeMs          = %i \n",
+           nStats.maxWaitingTimeMs);
 #else
   TEST_LOG("Skipping NetEQ statistics tests - "
       "WEBRTC_VOICE_ENGINE_NETEQ_STATS_API not defined \n");

@@ -9,7 +9,9 @@
  */
 
 
-#include <stdlib.h> // malloc
+#include <algorithm>  // sort
+#include <stdlib.h>  // malloc
+#include <vector>
 
 #include "acm_neteq.h"
 #include "common_types.h"
@@ -461,13 +463,46 @@ ACMNetEQ::NetworkStatistics(
         statistics->currentPacketLossRate = stats.currentPacketLossRate;
         statistics->currentPreemptiveRate = stats.currentPreemptiveRate;
         statistics->preferredBufferSize = stats.preferredBufferSize;
-        return 0;
     }
     else
     {
         LogError("getNetworkStatistics", 0);
         return -1;
     }
+    const int kArrayLen = 100;
+    int waiting_times[kArrayLen];
+    int waiting_times_len = WebRtcNetEQ_GetRawFrameWaitingTimes(
+        _inst[0], kArrayLen, waiting_times);
+    if (waiting_times_len >= 0)
+    {
+        std::vector<int> waiting_times_vec(waiting_times,
+                                           waiting_times + waiting_times_len);
+        sort(waiting_times_vec.begin(), waiting_times_vec.end());
+        size_t size = waiting_times_vec.size();
+        assert(size == static_cast<size_t>(waiting_times_len));
+        if (size % 2 == 0)
+        {
+            statistics->medianWaitingTimeMs =
+                (waiting_times_vec[size / 2 - 1] +
+                    waiting_times_vec[size / 2]) / 2;
+        }
+        else
+        {
+            statistics->medianWaitingTimeMs = waiting_times_vec[size / 2];
+        }
+        statistics->maxWaitingTimeMs = waiting_times_vec.back();
+        double sum = 0;
+        for (size_t i = 0; i < size; ++i) {
+          sum += waiting_times_vec[i];
+        }
+        statistics->meanWaitingTimeMs = static_cast<int>(sum / size);
+    }
+    else
+    {
+        LogError("getRawFrameWaitingTimes", 0);
+        return -1;
+    }
+    return 0;
 }
 
 WebRtc_Word32

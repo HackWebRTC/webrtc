@@ -22,6 +22,7 @@
 
 #include "modules/audio_coding/neteq/interface/webrtc_neteq.h"
 #include "modules/audio_coding/neteq/interface/webrtc_neteq_help_macros.h"
+#include "modules/audio_coding/neteq/interface/webrtc_neteq_internal.h"
 #include "modules/audio_coding/neteq/test/NETEQTEST_CodecClass.h"
 #include "modules/audio_coding/neteq/test/NETEQTEST_NetEQClass.h"
 #include "modules/audio_coding/neteq/test/NETEQTEST_RTPpacket.h"
@@ -353,6 +354,69 @@ TEST_F(NetEqDecodingTest, TestNetworkStatistics) {
       webrtc::test::ResourcePath("neteq_rtcp_stats", "dat");
   DecodeAndCheckStats(kInputRtpFile, kNetworkStatRefFile, kRtcpStatRefFile);
 }
-#endif // _WIN32
+#endif  // _WIN32
+
+TEST_F(NetEqDecodingTest, TestFrameWaitingTimeStatistics) {
+  // Use fax mode to avoid time-scaling. This is to simplify the testing of
+  // packet waiting times in the packet buffer.
+  ASSERT_EQ(0,
+            WebRtcNetEQ_SetPlayoutMode(neteq_inst_->instance(), kPlayoutFax));
+  // Insert 30 dummy packets at once. Each packet contains 10 ms 16 kHz audio.
+  int num_frames = 30;
+  const int kSamples = 10 * 16;
+  const int kPayloadBytes = kSamples * 2;
+  for (int i = 0; i < num_frames; ++i) {
+    uint16_t payload[kSamples] = {0};
+    WebRtcNetEQ_RTPInfo rtp_info;
+    rtp_info.sequenceNumber = i;
+    rtp_info.timeStamp = i * kSamples;
+    rtp_info.SSRC = 0x1234;  // Just an arbitrary SSRC.
+    rtp_info.payloadType = 94;  // PCM16b WB codec.
+    rtp_info.markerBit = 0;
+    ASSERT_EQ(0, WebRtcNetEQ_RecInRTPStruct(neteq_inst_->instance(), &rtp_info,
+                                            reinterpret_cast<uint8_t*>(payload),
+                                            kPayloadBytes, 0));
+  }
+  // Pull out all data.
+  for (int i = 0; i < num_frames; ++i) {
+    ASSERT_TRUE(kBlockSize16kHz == neteq_inst_->recOut(out_data_));
+  }
+  const int kVecLen = 110;  // More than kLenWaitingTimes in mcu.h.
+  int waiting_times[kVecLen];
+  int len = WebRtcNetEQ_GetRawFrameWaitingTimes(neteq_inst_->instance(),
+                                                kVecLen, waiting_times);
+  EXPECT_EQ(num_frames, len);
+  // Since all frames are dumped into NetEQ at once, but pulled out with 10 ms
+  // spacing (per definition), we expect the delay to increase with 10 ms for
+  // each packet.
+  for (int i = 0; i < len; ++i) {
+    EXPECT_EQ((i + 1) * 10, waiting_times[i]);
+  }
+
+  // Check statistics again and make sure it's been reset.
+  EXPECT_EQ(0, WebRtcNetEQ_GetRawFrameWaitingTimes(neteq_inst_->instance(),
+                                                   kVecLen, waiting_times));
+
+  // Process > 100 frames, and make sure that that we get statistics
+  // only for 100 frames. Note the new SSRC, causing NetEQ to reset.
+  num_frames = 110;
+  for (int i = 0; i < num_frames; ++i) {
+    uint16_t payload[kSamples] = {0};
+    WebRtcNetEQ_RTPInfo rtp_info;
+    rtp_info.sequenceNumber = i;
+    rtp_info.timeStamp = i * kSamples;
+    rtp_info.SSRC = 0x1235;  // Just an arbitrary SSRC.
+    rtp_info.payloadType = 94;  // PCM16b WB codec.
+    rtp_info.markerBit = 0;
+    ASSERT_EQ(0, WebRtcNetEQ_RecInRTPStruct(neteq_inst_->instance(), &rtp_info,
+                                            reinterpret_cast<uint8_t*>(payload),
+                                            kPayloadBytes, 0));
+    ASSERT_TRUE(kBlockSize16kHz == neteq_inst_->recOut(out_data_));
+  }
+
+  len = WebRtcNetEQ_GetRawFrameWaitingTimes(neteq_inst_->instance(),
+                                            kVecLen, waiting_times);
+  EXPECT_EQ(100, len);
+}
 
 }  // namespace

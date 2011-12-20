@@ -38,6 +38,8 @@ enum TsScaling
     kTSscalingFourThirds
 };
 
+enum { kLenWaitingTimes = 100 };
+
 typedef struct
 {
 
@@ -77,6 +79,10 @@ typedef struct
     WebRtc_UWord32 lostTS; /* Number of timestamps lost */
     WebRtc_UWord32 lastReportTS; /* Timestamp elapsed since last report was given */
 
+    int waiting_times[kLenWaitingTimes];  /* Waiting time statistics storage. */
+    int len_waiting_times;
+    int next_waiting_time_index;
+
     WebRtc_UWord32 externalTS;
     WebRtc_UWord32 internalTS;
     WebRtc_Word16 TSscalingInitialized;
@@ -113,6 +119,31 @@ int WebRtcNetEQ_McuReset(MCUInst_t *inst);
  *                        <0 - Error
  */
 int WebRtcNetEQ_ResetMcuInCallStats(MCUInst_t *inst);
+
+/****************************************************************************
+ * WebRtcNetEQ_ResetWaitingTimeStats(...)
+ *
+ * Reset waiting-time statistics.
+ *
+ * Input:
+ *      - inst          : MCU instance.
+ *
+ * Return value         : n/a
+ */
+void WebRtcNetEQ_ResetWaitingTimeStats(MCUInst_t *inst);
+
+/****************************************************************************
+ * WebRtcNetEQ_LogWaitingTime(...)
+ *
+ * Log waiting-time to the statistics.
+ *
+ * Input:
+ *      - inst          : MCU instance.
+ *      - waiting_time  : Waiting time in "RecOut calls" (i.e., 1 call = 10 ms).
+ *
+ * Return value         : n/a
+ */
+void WebRtcNetEQ_StoreWaitingTime(MCUInst_t *inst, int waiting_time);
 
 /****************************************************************************
  * WebRtcNetEQ_ResetMcuJitterStat(...)

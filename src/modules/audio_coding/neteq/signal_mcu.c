@@ -63,6 +63,9 @@ int WebRtcNetEQ_SignalMcu(MCUInst_t *inst)
     /* Increment counter since last statistics report */
     inst->lastReportTS += inst->timestampsPerCall;
 
+    /* Increment waiting time for all packets. */
+    WebRtcNetEQ_IncrementWaitingTimes(&inst->PacketBuffer_inst);
+
     /* Read info from DSP so we now current status */
 
     WEBRTC_SPL_MEMCPY_W8(&dspInfo,inst->pw16_readAddress,sizeof(DSP2MCU_info_t));
@@ -159,13 +162,15 @@ int WebRtcNetEQ_SignalMcu(MCUInst_t *inst)
                 && (WebRtcNetEQ_DbGetPayload(&(inst->codec_DB_inst),
                     (enum WebRtcNetEQDecoder) inst->current_Codec) == payloadType))
             {
+                int waitingTime;
                 temp_pkt.payload = blockPtr + 1;
                 i_res = WebRtcNetEQ_PacketBufferExtract(&inst->PacketBuffer_inst, &temp_pkt,
-                    i_bufferpos);
+                    i_bufferpos, &waitingTime);
                 if (i_res < 0)
                 { /* error returned */
                     return i_res;
                 }
+                WebRtcNetEQ_StoreWaitingTime(inst, waitingTime);
                 *blockPtr = temp_pkt.payloadLen;
                 /* set the flag if this is a redundant payload */
                 if (temp_pkt.rcuPlCntr > 0)
@@ -626,17 +631,19 @@ int WebRtcNetEQ_SignalMcu(MCUInst_t *inst)
         inst->pw16_writeAddress[0] = inst->pw16_writeAddress[0] & 0xFF3F;
         do
         {
+            int waitingTime;
             inst->timeStamp = uw32_availableTS;
             /* Write directly to shared memory */
             temp_pkt.payload = blockPtr + 1;
             i_res = WebRtcNetEQ_PacketBufferExtract(&inst->PacketBuffer_inst, &temp_pkt,
-                i_bufferpos);
+                i_bufferpos, &waitingTime);
 
             if (i_res < 0)
             {
                 /* error returned */
                 return i_res;
             }
+            WebRtcNetEQ_StoreWaitingTime(inst, waitingTime);
 
 #ifdef NETEQ_DELAY_LOGGING
             temp_var = NETEQ_DELAY_LOGGING_SIGNAL_DECODE;

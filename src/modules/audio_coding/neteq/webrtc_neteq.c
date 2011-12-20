@@ -15,6 +15,7 @@
 #include "webrtc_neteq.h"
 #include "webrtc_neteq_internal.h"
 
+#include <assert.h>
 #include <string.h>
 
 #include "typedefs.h"
@@ -1529,6 +1530,23 @@ int WebRtcNetEQ_GetNetworkStatistics(void *inst, WebRtcNetEQ_NetworkStatistics *
     WebRtcNetEQ_ClearInCallStats(&(NetEqMainInst->DSPinst));
 
     return (0);
+}
+
+int WebRtcNetEQ_GetRawFrameWaitingTimes(void *inst,
+                                        int max_length,
+                                        int* waiting_times_ms) {
+  int i = 0;
+  MainInst_t *main_inst = (MainInst_t*) inst;
+  if (main_inst == NULL) return -1;
+
+  while ((i < max_length) && (i < main_inst->MCUinst.len_waiting_times)) {
+    waiting_times_ms[i] = main_inst->MCUinst.waiting_times[i] *
+        main_inst->DSPinst.millisecondsPerCall;
+    ++i;
+  }
+  assert(i <= kLenWaitingTimes);
+  WebRtcNetEQ_ResetWaitingTimeStats(&main_inst->MCUinst);
+  return i;
 }
 
 /****************************************************************************

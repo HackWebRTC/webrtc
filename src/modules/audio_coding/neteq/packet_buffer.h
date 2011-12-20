@@ -49,6 +49,8 @@ typedef struct
     WebRtc_Word16 *payloadLengthBytes; /* Payload length of packet in slot n */
     WebRtc_Word16 *rcuPlCntr; /* zero for non-RCU payload, 1 for main payload
      2 for redundant payload */
+    int *waitingTime;
+
 
     /* Statistics counter */
     WebRtc_UWord16 discardedPackets; /* Number of discarded packets */
@@ -136,7 +138,7 @@ int WebRtcNetEQ_PacketBufferInsert(PacketBuf_t *bufferInst, const RTPPacket_t *R
  */
 
 int WebRtcNetEQ_PacketBufferExtract(PacketBuf_t *bufferInst, RTPPacket_t *RTPpacket,
-                                    int bufferPosition);
+                                    int bufferPosition, int *waitingTime);
 
 /****************************************************************************
  * WebRtcNetEQ_PacketBufferFindLowestTimestamp(...)
@@ -180,6 +182,19 @@ int WebRtcNetEQ_PacketBufferFindLowestTimestamp(PacketBuf_t *bufferInst,
  */
 
 WebRtc_Word32 WebRtcNetEQ_PacketBufferGetSize(const PacketBuf_t *bufferInst);
+
+/****************************************************************************
+ * WebRtcNetEQ_IncrementWaitingTimes(...)
+ *
+ * Increment the waiting time for all packets in the buffer by one.
+ *
+ * Input:
+ *    - bufferInst  : Buffer instance
+ *
+ * Return value     : n/a
+ */
+
+void WebRtcNetEQ_IncrementWaitingTimes(PacketBuf_t *buffer_inst);
 
 /****************************************************************************
  * WebRtcNetEQ_GetDefaultCodecSettings(...)

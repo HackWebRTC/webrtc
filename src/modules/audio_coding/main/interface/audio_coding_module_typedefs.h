@@ -153,6 +153,9 @@ enum ACMAMRPackingFormat {
 //                           pre-emptive expansion (in Q14)
 // -currentAccelerateRate  : fraction of data removed through acceleration
 //                           (in Q14)
+// -meanWaitingTimeMs      : average packet waiting time in the buffer
+// -medianWaitingTimeMs    : median packet waiting time in the buffer
+// -maxWaitingTimeMs       : max packet waiting time in the buffer
 typedef struct {
   WebRtc_UWord16 currentBufferSize;
   WebRtc_UWord16 preferredBufferSize;
@@ -161,6 +164,9 @@ typedef struct {
   WebRtc_UWord16 currentExpandRate;
   WebRtc_UWord16 currentPreemptiveRate;
   WebRtc_UWord16 currentAccelerateRate;
+  int meanWaitingTimeMs;
+  int medianWaitingTimeMs;
+  int maxWaitingTimeMs;
 } ACMNetworkStatistics;
 
 ///////////////////////////////////////////////////////////////////////////

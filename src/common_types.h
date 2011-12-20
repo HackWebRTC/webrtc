@@ -263,6 +263,12 @@ struct NetworkStatistics           // NETEQ statistics
     WebRtc_UWord16 currentPreemptiveRate;
     // fraction of data removed through acceleration (in Q14)
     WebRtc_UWord16 currentAccelerateRate;
+    // average packet waiting time in the jitter buffer (ms)
+    int meanWaitingTimeMs;
+    // median packet waiting time in the jitter buffer (ms)
+    int medianWaitingTimeMs;
+    // max packet waiting time in the jitter buffer (ms)
+    int maxWaitingTimeMs;
 };
 
 typedef struct
