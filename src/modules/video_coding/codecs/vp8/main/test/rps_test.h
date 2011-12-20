@@ -25,7 +25,7 @@ class VP8RpsTest : public VP8NormalAsyncTest {
  private:
   VP8RpsTest(std::string name, std::string description, unsigned int testNo)
   : VP8NormalAsyncTest(name, description, testNo) {}
-  virtual bool Encode(RpsDecodeCompleteCallback* decodeCallback);
+  virtual bool EncodeRps(RpsDecodeCompleteCallback* decodeCallback);
   virtual int Decode(int lossValue = 0);
 
   static bool CheckIfBitExact(const void *ptrA, unsigned int aLengthBytes,

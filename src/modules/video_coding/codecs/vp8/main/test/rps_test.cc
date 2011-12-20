@@ -77,7 +77,7 @@ void VP8RpsTest::Perform() {
   double starttime = clock()/(double)CLOCKS_PER_SEC;
   while (!complete) {
     CodecSpecific_InitBitrate();
-    complete = Encode(&decCallback2);
+    complete = EncodeRps(&decCallback2);
     if (!frameQueue.Empty() || complete) {
       while (!frameQueue.Empty()) {
         _frameToDecode =
@@ -132,7 +132,7 @@ void VP8RpsTest::Perform() {
   Teardown();
 }
 
-bool VP8RpsTest::Encode(RpsDecodeCompleteCallback* decodeCallback) {
+bool VP8RpsTest::EncodeRps(RpsDecodeCompleteCallback* decodeCallback) {
   _lengthEncFrame = 0;
   size_t bytes_read = fread(_sourceBuffer, 1, _lengthSourceFrame, _sourceFile);
   if (bytes_read < _lengthSourceFrame)
