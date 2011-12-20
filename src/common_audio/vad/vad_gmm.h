@@ -8,40 +8,32 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+// Gaussian probability calculations internally used in vad_core.c.
 
-/*
- * This header file includes the description of the internal VAD call
- * WebRtcVad_GaussianProbability.
- */
-
-#ifndef WEBRTC_VAD_GMM_H_
-#define WEBRTC_VAD_GMM_H_
+#ifndef WEBRTC_COMMON_AUDIO_VAD_VAD_GMM_H_
+#define WEBRTC_COMMON_AUDIO_VAD_VAD_GMM_H_
 
 #include "typedefs.h"
 
-/****************************************************************************
- * WebRtcVad_GaussianProbability(...)
- *
- * This function calculates the probability for the value 'in_sample', given that in_sample
- * comes from a normal distribution with mean 'mean' and standard deviation 'std'.
- *
- * Input:
- *      - in_sample     : Input sample in Q4
- *      - mean          : mean value in the statistical model, Q7
- *      - std           : standard deviation, Q7
- *
- * Output:
- *
- *      - delta         : Value used when updating the model, Q11
- *
- * Return:
- *      - out           : out = 1/std * exp(-(x-m)^2/(2*std^2));
- *                        Probability for x.
- *
- */
-WebRtc_Word32 WebRtcVad_GaussianProbability(WebRtc_Word16 in_sample,
-                                            WebRtc_Word16 mean,
-                                            WebRtc_Word16 std,
-                                            WebRtc_Word16 *delta);
+// Calculates the probability for |input|, given that |input| comes from a
+// normal distribution with mean and standard deviation (|mean|, |std|).
+//
+// Inputs:
+//      - input         : input sample in Q4.
+//      - mean          : mean input in the statistical model, Q7.
+//      - std           : standard deviation, Q7.
+//
+// Output:
+//
+//      - delta         : input used when updating the model, Q11.
+//                        |delta| = (|input| - |mean|) / |std|^2.
+//
+// Return:
+//   (probability for |input|) =
+//    1 / |std| * exp(-(|input| - |mean|)^2 / (2 * |std|^2));
+int32_t WebRtcVad_GaussianProbability(int16_t input,
+                                      int16_t mean,
+                                      int16_t std,
+                                      int16_t* delta);
 
-#endif // WEBRTC_VAD_GMM_H_
+#endif  // WEBRTC_COMMON_AUDIO_VAD_VAD_GMM_H_

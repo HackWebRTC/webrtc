@@ -8,12 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <stddef.h> // size_t
+#include <stddef.h>  // size_t
 #include <stdlib.h>
 
 #include "gtest/gtest.h"
 #include "typedefs.h"
 #include "webrtc_vad.h"
+
+#ifdef __cplusplus
+extern "C"
+{
+#include "vad_gmm.h"
+}
+#endif
 
 namespace webrtc {
 namespace {
@@ -150,6 +157,29 @@ TEST_F(VadTest, ApiTest) {
   }
 
   EXPECT_EQ(0, WebRtcVad_Free(handle));
+}
+
+TEST_F(VadTest, GMMTests) {
+  int16_t delta = 0;
+  // Input value at mean.
+  EXPECT_EQ(1048576, WebRtcVad_GaussianProbability(0, 0, 128, &delta));
+  EXPECT_EQ(0, delta);
+  EXPECT_EQ(1048576, WebRtcVad_GaussianProbability(16, 128, 128, &delta));
+  EXPECT_EQ(0, delta);
+  EXPECT_EQ(1048576, WebRtcVad_GaussianProbability(-16, -128, 128, &delta));
+  EXPECT_EQ(0, delta);
+
+  // Largest possible input to give non-zero probability.
+  EXPECT_EQ(1024, WebRtcVad_GaussianProbability(59, 0, 128, &delta));
+  EXPECT_EQ(7552, delta);
+  EXPECT_EQ(1024, WebRtcVad_GaussianProbability(75, 128, 128, &delta));
+  EXPECT_EQ(7552, delta);
+  EXPECT_EQ(1024, WebRtcVad_GaussianProbability(-75, -128, 128, &delta));
+  EXPECT_EQ(-7552, delta);
+
+  // Too large input, should give zero probability.
+  EXPECT_EQ(0, WebRtcVad_GaussianProbability(105, 0, 128, &delta));
+  EXPECT_EQ(13440, delta);
 }
 
 // TODO(bjornv): Add a process test, run on file.
