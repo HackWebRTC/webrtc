@@ -971,75 +971,6 @@ int VoETestManager::TestStartPlaying() {
   return 0;
 }
 
-int VoETestManager::TestNetEq() {
-#ifdef _TEST_BASE_
-  NetEqModes mode;
-  TEST_MUSTPASS(voe_base_->GetNetEQPlayoutMode(0, mode));
-  TEST_MUSTPASS(mode != kNetEqDefault);
-  TEST_LOG("NetEQ DEFAULT playout mode enabled => should hear OK audio \n");
-  TEST_MUSTPASS(voe_base_->SetNetEQPlayoutMode(0, kNetEqDefault));
-  SLEEP(3000);
-  TEST_LOG("NetEQ STREAMING playout mode enabled => should hear OK audio \n");
-  TEST_MUSTPASS(voe_base_->SetNetEQPlayoutMode(0, kNetEqStreaming));
-  SLEEP(3000);
-  TEST_LOG("NetEQ FAX playout mode enabled => should hear OK audio \n");
-  TEST_MUSTPASS(voe_base_->SetNetEQPlayoutMode(0, kNetEqFax));
-  SLEEP(3000);
-  TEST_LOG("NetEQ default mode is restored \n");
-  TEST_MUSTPASS(voe_base_->SetNetEQPlayoutMode(0, kNetEqDefault));
-  TEST_MUSTPASS(voe_base_->GetNetEQPlayoutMode(0, mode));
-  TEST_MUSTPASS(mode != kNetEqDefault);
-  TEST_MUSTPASS(voe_base_->GetNetEQPlayoutMode(0, mode));
-  TEST_MUSTPASS(mode != kNetEqDefault);
-  TEST_LOG("NetEQ DEFAULT playout mode enabled => should hear OK audio \n");
-  TEST_MUSTPASS(voe_base_->SetNetEQPlayoutMode(0, kNetEqDefault));
-  SLEEP(3000);
-  TEST_LOG("NetEQ STREAMING playout mode enabled => should hear OK audio \n");
-  TEST_MUSTPASS(voe_base_->SetNetEQPlayoutMode(0, kNetEqStreaming));
-  SLEEP(3000);
-  TEST_LOG("NetEQ FAX playout mode enabled => should hear OK audio \n");
-  TEST_MUSTPASS(voe_base_->SetNetEQPlayoutMode(0, kNetEqFax));
-  SLEEP(3000);
-  TEST_LOG("NetEQ default mode is restored \n");
-  TEST_MUSTPASS(voe_base_->SetNetEQPlayoutMode(0, kNetEqDefault));
-  TEST_MUSTPASS(voe_base_->GetNetEQPlayoutMode(0, mode));
-  TEST_MUSTPASS(mode != kNetEqDefault);
-  TEST_MUSTPASS(voe_base_->GetNetEQPlayoutMode(0, mode));
-  TEST_MUSTPASS(mode != kNetEqDefault);
-  TEST_LOG("NetEQ DEFAULT playout mode enabled => should hear OK audio \n");
-  TEST_MUSTPASS(voe_base_->SetNetEQPlayoutMode(0, kNetEqDefault));
-  SLEEP(3000);
-  TEST_LOG("NetEQ STREAMING playout mode enabled => should hear OK audio \n");
-  TEST_MUSTPASS(voe_base_->SetNetEQPlayoutMode(0, kNetEqStreaming));
-  SLEEP(3000);
-  TEST_LOG("NetEQ FAX playout mode enabled => should hear OK audio \n");
-  TEST_MUSTPASS(voe_base_->SetNetEQPlayoutMode(0, kNetEqFax));
-  SLEEP(3000);
-  TEST_LOG("NetEQ default mode is restored \n");
-  TEST_MUSTPASS(voe_base_->SetNetEQPlayoutMode(0, kNetEqDefault));
-  TEST_MUSTPASS(voe_base_->GetNetEQPlayoutMode(0, mode));
-  TEST_MUSTPASS(mode != kNetEqDefault);
-
-  TEST_LOG("Scan all possible NetEQ BGN modes\n"); // skip listening test
-  enum NetEqBgnModes neteq_bgn_mode;
-  TEST_MUSTPASS(voe_base_->GetNetEQBGNMode(0, neteq_bgn_mode));
-  TEST_MUSTPASS(neteq_bgn_mode != kBgnOn);
-  TEST_MUSTPASS(voe_base_->SetNetEQBGNMode(0, kBgnOn));
-  TEST_MUSTPASS(voe_base_->GetNetEQBGNMode(0, neteq_bgn_mode));
-  TEST_MUSTPASS(neteq_bgn_mode != kBgnOn);
-  TEST_MUSTPASS(voe_base_->SetNetEQBGNMode(0, kBgnFade));
-  TEST_MUSTPASS(voe_base_->GetNetEQBGNMode(0, neteq_bgn_mode));
-  TEST_MUSTPASS(neteq_bgn_mode != kBgnFade);
-  TEST_MUSTPASS(voe_base_->SetNetEQBGNMode(0, kBgnOff));
-  TEST_MUSTPASS(voe_base_->GetNetEQBGNMode(0, neteq_bgn_mode));
-  TEST_MUSTPASS(neteq_bgn_mode != kBgnOff);
-#else
-  TEST_LOG("Skipping on hold and NetEQ playout tests -"
-      "Base tests are not enabled \n");
-#endif // #ifdef _TEST_BASE_
-  return 0;
-}
-
 int VoETestManager::TestCodecs() {
 
 #ifdef _TEST_CODEC_
@@ -1347,7 +1278,6 @@ int VoETestManager::DoStandardTest() {
   if (TestStartStreaming(channel0_transport) != 0) return -1;
 
   if (TestStartPlaying() != 0) return -1;
-  if (TestNetEq() != 0) return -1;
   if (TestCodecs() != 0) return -1;
 
   /////////////////////////
@@ -3660,7 +3590,7 @@ unsigned int WINAPI mainTest::StartSend()
 
 } // namespace voetest
 
-int RunInManualMode() {
+int RunInManualMode(int argc, char** argv) {
   using namespace voetest;
 
   SubAPIManager apiMgr;
@@ -3709,6 +3639,15 @@ int RunInManualMode() {
       return 0;
   }
 
+  if (testType == Standard) {
+    TEST_LOG("\n\n+++ Running gtest-rewritten standard tests first +++\n\n");
+
+    // Run the automated tests too in standard mode since we are gradually
+    // rewriting the standard test to be automated. Running this will give
+    // the standard suite the same completeness.
+    RunInAutomatedMode(argc, argv);
+  }
+
   // Function that can be called from other entry functions.
   return runAutoTest(testType, extendedSel);
 }
@@ -3725,6 +3664,6 @@ int main(int argc, char** argv) {
     return RunInAutomatedMode(argc, argv);
   }
 
-  return RunInManualMode();
+  return RunInManualMode(argc, argv);
 }
 #endif //#if !defined(MAC_IPHONE)
