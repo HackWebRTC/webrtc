@@ -167,7 +167,7 @@ _calcVar(false),
 _sum(0),
 _sumSqr(0)
 {
-    _buff = new(double[len]);
+    _buff = new double[len];
     if(_buff == NULL)
     {
         _buffLen = 0;
