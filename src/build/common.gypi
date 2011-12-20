@@ -44,6 +44,10 @@
     # which can be easily parsed for offline processing.
     'enable_data_logging%': 0,
 
+    # Disable these to not build components which can be externally provided.
+    'build_libjpeg%': 1,
+    'build_libyuv%': 1,
+
     'conditions': [
       ['OS=="win"', {
         # TODO(andrew, perkj): does this need to be here?

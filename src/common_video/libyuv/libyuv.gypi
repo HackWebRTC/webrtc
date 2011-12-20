@@ -11,8 +11,15 @@
     {
       'target_name': 'webrtc_libyuv',
       'type': '<(library)',
-      'dependencies': [
-        '<(DEPTH)/third_party/libyuv/libyuv.gyp:libyuv'
+      'conditions': [
+        ['build_libyuv==1', {
+          'dependencies': [
+            '<(DEPTH)/third_party/libyuv/libyuv.gyp:libyuv'
+          ],
+        }, {
+          # Need to add a directory normally exported by libyuv.gyp.
+          'include_dirs': [ '<(DEPTH)/third_party/libyuv/include', ],
+        }],
       ],
       'sources': [
         'include/libyuv.h',
@@ -25,7 +32,7 @@
       ],
     },
   ], # targets
-  'conditions': [   
+  'conditions': [
     ['build_with_chromium==0', {
       'targets': [
         {

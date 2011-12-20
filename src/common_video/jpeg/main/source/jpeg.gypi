@@ -29,39 +29,38 @@
         ],
       },
       'conditions': [
-        ['build_with_chromium==1', {
-          'dependencies': [
-            '<(libjpeg_gyp_path):libjpeg',
-          ],
-        }, {
+        ['build_libjpeg==1', {
           'conditions': [
-            ['use_libjpeg_turbo==1', {
+            ['build_with_chromium==1', {
               'dependencies': [
-                '../../third_party/libjpeg_turbo/libjpeg.gyp:libjpeg',
+                '<(libjpeg_gyp_path):libjpeg',
               ],
             }, {
-              'dependencies': [
-                '../../third_party/libjpeg/libjpeg.gyp:libjpeg',
+              'conditions': [
+                ['use_libjpeg_turbo==1', {
+                  'dependencies': [
+                    '<(DEPTH)/third_party/libjpeg_turbo/libjpeg.gyp:libjpeg',
+                  ],
+                }, {
+                  'dependencies': [
+                    '<(DEPTH)/third_party/libjpeg/libjpeg.gyp:libjpeg',
+                  ],
+                }],
               ],
             }],
           ],
         }],
       ],
       'sources': [
-        # interfaces
         '../interface/jpeg.h',
-       
-        # headers
-        'data_manager.h',
-
-        # sources
-        'jpeg.cc',
         'data_manager.cc',
+        'data_manager.h',
+        'jpeg.cc',
       ],
     },
   ], # targets
   # Exclude the test target when building with chromium.
-  'conditions': [   
+  'conditions': [
     ['build_with_chromium==0', {
       'targets': [
         {
@@ -75,12 +74,8 @@
             '../source',
           ],
           'sources': [
-
-            # headers        
-
-            # sources
             '../test/test_jpeg.cc',
-          ], # source
+          ],
         },
       ] # targets
     }], # build_with_chromium
