@@ -116,6 +116,39 @@
       ],
     },
   ],
+  'conditions': [
+    ['build_with_chromium==0', {
+      'targets': [
+        {
+          'target_name': 'voice_engine_unittests',
+          'type': 'executable',
+          'dependencies': [
+            'voice_engine_core',
+            '<(webrtc_root)/common_audio/common_audio.gyp:resampler',
+            '<(webrtc_root)/common_audio/common_audio.gyp:signal_processing',
+            '<(webrtc_root)/modules/modules.gyp:audio_coding_module',
+            '<(webrtc_root)/modules/modules.gyp:audio_conference_mixer',
+            '<(webrtc_root)/modules/modules.gyp:audio_device',
+            '<(webrtc_root)/modules/modules.gyp:audio_processing',
+            '<(webrtc_root)/modules/modules.gyp:media_file',
+            '<(webrtc_root)/modules/modules.gyp:rtp_rtcp',
+            '<(webrtc_root)/modules/modules.gyp:udp_transport',
+            '<(webrtc_root)/modules/modules.gyp:webrtc_utility',
+            '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
+            '<(webrtc_root)/../test/test.gyp:test_support_main',
+            '<(webrtc_root)/../testing/gtest.gyp:gtest',
+          ],
+          'include_dirs': [            
+            '../../..',
+            '../interface',
+          ],
+          'sources': [
+            'channel_unittest.cc',
+          ],
+        },
+      ], # targets
+    }], # build_with_chromium
+  ], # conditions
 }
 
 # Local Variables:
