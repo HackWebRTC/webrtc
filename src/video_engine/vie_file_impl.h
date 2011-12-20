@@ -8,168 +8,120 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * vie_file_impl.h
- */
-
-#ifndef WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_FILE_IMPL_H_
-#define WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_FILE_IMPL_H_
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_FILE_IMPL_H_
+#define WEBRTC_VIDEO_ENGINE_VIE_FILE_IMPL_H_
 
 #include "typedefs.h"
-#include "vie_defines.h"
-#include "vie_file.h"
-#include "vie_frame_provider_base.h"
-#include "vie_ref_count.h"
-#include "vie_shared_data.h"
+#include "video_engine/main/interface/vie_file.h"
+#include "video_engine/vie_defines.h"
+#include "video_engine/vie_frame_provider_base.h"
+#include "video_engine/vie_ref_count.h"
+#include "video_engine/vie_shared_data.h"
 
-namespace webrtc
-{
+namespace webrtc {
+
 class ConditionVariableWrapper;
 
-// ----------------------------------------------------------------------------
-//	ViECaptureSnapshot
-// ----------------------------------------------------------------------------
+class ViECaptureSnapshot : public ViEFrameCallback {
+ public:
+  ViECaptureSnapshot();
+  ~ViECaptureSnapshot();
 
-class ViECaptureSnapshot: public ViEFrameCallback
-{
-public:
-    ViECaptureSnapshot();
-    ~ViECaptureSnapshot();
+  bool GetSnapshot(VideoFrame& video_frame, unsigned int max_wait_time);
 
-    bool GetSnapshot(VideoFrame& videoFrame, unsigned int maxWaitTime);
+  // Implements ViEFrameCallback.
+  virtual void DeliverFrame(int id, VideoFrame& video_frame, int num_csrcs = 0,
+                            const WebRtc_UWord32 CSRC[kRtpCsrcSize] = NULL);
+  virtual void DelayChanged(int id, int frame_delay) {}
+  virtual int GetPreferedFrameSettings(int& width, int& height,
+                                       int& frame_rate) {
+    return -1;
+  }
+  virtual void ProviderDestroyed(int id) {}
 
-    // From ViEFrameCallback
-    virtual void DeliverFrame(int id, VideoFrame& videoFrame, int numCSRCs = 0,
-                              const WebRtc_UWord32 CSRC[kRtpCsrcSize] = NULL);
-
-    virtual void DelayChanged(int id, int frameDelay) {}
-
-    virtual int GetPreferedFrameSettings(int &width, int &height,
-                                         int &frameRate)
-    {
-        return -1;
-    }
-
-    virtual void ProviderDestroyed(int id) {}
-
-private:
-    CriticalSectionWrapper& _crit;
-    ConditionVariableWrapper& _conditionVaraible;
-    VideoFrame* _ptrVideoFrame;
+ private:
+  CriticalSectionWrapper& crit_;
+  ConditionVariableWrapper& condition_varaible_;
+  VideoFrame* video_frame_;
 };
 
-// ----------------------------------------------------------------------------
-//	VideoFileImpl
-// ----------------------------------------------------------------------------
-
-class ViEFileImpl: public virtual ViESharedData,
-                   public ViEFile,
-                   public ViERefCount
-
-{
-public:
-    virtual int Release();
-
-    // Play file
-    virtual int StartPlayFile(const char* fileNameUTF8, int& fileId,
-                              const bool loop = false,
-                              const webrtc::FileFormats fileFormat =
-                                  webrtc::kFileFormatAviFile);
-
-    virtual int StopPlayFile(const int fileId);
-
-    virtual int RegisterObserver(int fileId, ViEFileObserver& observer);
-
-    virtual int DeregisterObserver(int fileId, ViEFileObserver& observer);
-
-    virtual int SendFileOnChannel(const int fileId, const int videoChannel);
-
-    virtual int StopSendFileOnChannel(const int videoChannel);
-
-    virtual int StartPlayFileAsMicrophone(const int fileId,
-                                          const int audioChannel,
-                                          bool mixMicrophone = false,
-                                          float volumeScaling = 1);
-
-    virtual int StopPlayFileAsMicrophone(const int fileId,
-                                         const int audioChannel);
-
-    virtual int StartPlayAudioLocally(const int fileId, const int audioChannel,
-                                      float volumeScaling = 1);
-
-    virtual int StopPlayAudioLocally(const int fileId, const int audioChannel);
-
-    virtual int StartRecordOutgoingVideo(const int videoChannel,
-                                         const char* fileNameUTF8,
-                                         AudioSource audioSource,
-                                         const webrtc::CodecInst& audioCodec,
-                                         const VideoCodec& videoCodec,
-                                         const webrtc::FileFormats fileFormat =
-                                             webrtc::kFileFormatAviFile);
-
-    virtual int StartRecordIncomingVideo(const int videoChannel,
-                                         const char* fileNameUTF8,
-                                         AudioSource audioSource,
-                                         const webrtc::CodecInst& audioCodec,
-                                         const VideoCodec& videoCodec,
-                                         const webrtc::FileFormats fileFormat =
-                                             webrtc::kFileFormatAviFile);
-
-    virtual int StopRecordOutgoingVideo(const int videoChannel);
-
-    virtual int StopRecordIncomingVideo(const int videoChannel);
-
-    // File information
-    virtual int GetFileInformation(const char* fileName,
-                                   VideoCodec& videoCodec,
-                                   webrtc::CodecInst& audioCodec,
-                                   const webrtc::FileFormats fileFormat =
-                                       webrtc::kFileFormatAviFile);
-
-    // Snapshot
-    virtual int GetRenderSnapshot(const int videoChannel,
-                                  const char* fileNameUTF8);
-
-    virtual int GetRenderSnapshot(const int videoChannel, ViEPicture& picture);
-
-    virtual int FreePicture(ViEPicture& picture);
-
-    virtual int GetCaptureDeviceSnapshot(const int captureId,
-                                         const char* fileNameUTF8);
-
-    virtual int GetCaptureDeviceSnapshot(const int captureId,
-                                         ViEPicture& picture);
-
-    // Capture device images
-    virtual int SetCaptureDeviceImage(const int captureId,
-                                      const char* fileNameUTF8);
-
-    virtual int SetCaptureDeviceImage(const int captureId,
-                                      const ViEPicture& picture);
-    // Render images
-    virtual int SetRenderStartImage(const int videoChannel,
-                                    const char* fileNameUTF8);
-
-    virtual int SetRenderStartImage(const int videoChannel,
+class ViEFileImpl
+    : public virtual ViESharedData,
+      public ViEFile,
+      public ViERefCount {
+ public:
+  // Implements ViEFile.
+  virtual int Release();
+  virtual int StartPlayFile(const char* file_nameUTF8, int& file_id,
+                            const bool loop = false,
+                            const FileFormats file_format = kFileFormatAviFile);
+  virtual int StopPlayFile(const int file_id);
+  virtual int RegisterObserver(int file_id, ViEFileObserver& observer);
+  virtual int DeregisterObserver(int file_id, ViEFileObserver& observer);
+  virtual int SendFileOnChannel(const int file_id, const int video_channel);
+  virtual int StopSendFileOnChannel(const int video_channel);
+  virtual int StartPlayFileAsMicrophone(const int file_id,
+                                        const int audio_channel,
+                                        bool mix_microphone = false,
+                                        float volume_scaling = 1);
+  virtual int StopPlayFileAsMicrophone(const int file_id,
+                                       const int audio_channel);
+  virtual int StartPlayAudioLocally(const int file_id, const int audio_channel,
+                                    float volume_scaling = 1);
+  virtual int StopPlayAudioLocally(const int file_id, const int audio_channel);
+  virtual int StartRecordOutgoingVideo(
+      const int video_channel,
+      const char* file_nameUTF8,
+      AudioSource audio_source,
+      const CodecInst& audio_codec,
+      const VideoCodec& video_codec,
+      const FileFormats file_format = kFileFormatAviFile);
+  virtual int StartRecordIncomingVideo(
+      const int video_channel,
+      const char* file_nameUTF8,
+      AudioSource audio_source,
+      const CodecInst& audio_codec,
+      const VideoCodec& video_codec,
+      const FileFormats file_format = kFileFormatAviFile);
+  virtual int StopRecordOutgoingVideo(const int video_channel);
+  virtual int StopRecordIncomingVideo(const int video_channel);
+  virtual int GetFileInformation(
+      const char* file_name,
+      VideoCodec& video_codec,
+      CodecInst& audio_codec,
+      const FileFormats file_format = kFileFormatAviFile);
+  virtual int GetRenderSnapshot(const int video_channel,
+                                const char* file_nameUTF8);
+  virtual int GetRenderSnapshot(const int video_channel, ViEPicture& picture);
+  virtual int FreePicture(ViEPicture& picture);
+  virtual int GetCaptureDeviceSnapshot(const int capture_id,
+                                       const char* file_nameUTF8);
+  virtual int GetCaptureDeviceSnapshot(const int capture_id,
+                                       ViEPicture& picture);
+  virtual int SetCaptureDeviceImage(const int capture_id,
+                                    const char* file_nameUTF8);
+  virtual int SetCaptureDeviceImage(const int capture_id,
                                     const ViEPicture& picture);
+  virtual int SetRenderStartImage(const int video_channel,
+                                  const char* file_nameUTF8);
+  virtual int SetRenderStartImage(const int video_channel,
+                                  const ViEPicture& picture);
+  virtual int SetRenderTimeoutImage(const int video_channel,
+                                    const char* file_nameUTF8,
+                                    const unsigned int timeout_ms);
+  virtual int SetRenderTimeoutImage(const int video_channel,
+                                    const ViEPicture& picture,
+                                    const unsigned int timeout_ms);
 
-    // Timeout image
-    virtual int SetRenderTimeoutImage(const int videoChannel,
-                                      const char* fileNameUTF8,
-                                      const unsigned int timeoutMs);
+ protected:
+  ViEFileImpl();
+  virtual ~ViEFileImpl();
 
-    virtual int SetRenderTimeoutImage(const int videoChannel,
-                                      const ViEPicture& picture,
-                                      const unsigned int timeoutMs);
-
-protected:
-    ViEFileImpl();
-    virtual ~ViEFileImpl();
-
-private:
-    WebRtc_Word32 GetNextCapturedFrame(WebRtc_Word32 captureId,
-                                       VideoFrame& videoFrame);
-
+ private:
+  WebRtc_Word32 GetNextCapturedFrame(WebRtc_Word32 capture_id,
+                                     VideoFrame& video_frame);
 };
-} // namespace webrtc
-#endif  // WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_FILE_IMPL_H_
+
+}  // namespace webrtc
+
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_FILE_IMPL_H_

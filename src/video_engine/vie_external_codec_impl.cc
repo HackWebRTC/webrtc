@@ -8,196 +8,159 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * vie_external_codec_impl.cc
- */
+#include "video_engine/vie_external_codec_impl.h"
 
 #include "engine_configurations.h"
-#include "vie_external_codec_impl.h"
-#include "vie_errors.h"
-#include "trace.h"
-#include "vie_impl.h"
-#include "vie_channel.h"
-#include "vie_encoder.h"
-#include "vie_channel_manager.h"
+#include "system_wrappers/interface/trace.h"
+#include "video_engine/main/interface/vie_errors.h"
+#include "video_engine/vie_channel.h"
+#include "video_engine/vie_channel_manager.h"
+#include "video_engine/vie_encoder.h"
+#include "video_engine/vie_impl.h"
 
-namespace webrtc
-{
+namespace webrtc {
 
-// ----------------------------------------------------------------------------
-// GetInterface
-// ----------------------------------------------------------------------------
-
-ViEExternalCodec* ViEExternalCodec::GetInterface(VideoEngine* videoEngine)
-{
+ViEExternalCodec* ViEExternalCodec::GetInterface(VideoEngine* video_engine) {
 #ifdef WEBRTC_VIDEO_ENGINE_EXTERNAL_CODEC_API
-    if (videoEngine == NULL)
-    {
-        return NULL;
-    }
-    VideoEngineImpl* vieImpl = reinterpret_cast<VideoEngineImpl*> (videoEngine);
-    ViEExternalCodecImpl* vieExternalCodecImpl = vieImpl;
-    (*vieExternalCodecImpl)++; // Increase ref count
-
-    return vieExternalCodecImpl;
-#else
+  if (video_engine == NULL) {
     return NULL;
+  }
+  VideoEngineImpl* vie_impl = reinterpret_cast<VideoEngineImpl*>(video_engine);
+  ViEExternalCodecImpl* vie_external_codec_impl = vie_impl;
+  // Increase ref count.
+  (*vie_external_codec_impl)++;
+  return vie_external_codec_impl;
+#else
+  return NULL;
 #endif
 }
 
-// ----------------------------------------------------------------------------
-// Release
-//
-// Releases the interface, i.e. reduces the reference counter. The number of
-// remaining references is returned, -1 if released too many times.
-// ----------------------------------------------------------------------------
-
-int ViEExternalCodecImpl::Release()
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, instance_id_,
+int ViEExternalCodecImpl::Release() {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, instance_id_,
                "ViEExternalCodec::Release()");
-    (*this)--; // Decrease ref count
+  // Decrease ref count.
+  (*this)--;
 
-    WebRtc_Word32 refCount = GetCount();
-    if (refCount < 0)
-    {
-        WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideo, instance_id_,
-                   "ViEExternalCodec release too many times");
-        SetLastError(kViEAPIDoesNotExist);
-        return -1;
-    }
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, instance_id_,
-               "ViEExternalCodec reference count: %d", refCount);
-    return refCount;
+  WebRtc_Word32 ref_count = GetCount();
+  if (ref_count < 0) {
+    WEBRTC_TRACE(kTraceWarning, kTraceVideo, instance_id_,
+                 "ViEExternalCodec release too many times");
+    SetLastError(kViEAPIDoesNotExist);
+    return -1;
+  }
+  WEBRTC_TRACE(kTraceInfo, kTraceVideo, instance_id_,
+               "ViEExternalCodec reference count: %d", ref_count);
+  return ref_count;
 }
 
-// ----------------------------------------------------------------------------
-//	RegisterExternalSendCodec
-// ----------------------------------------------------------------------------
+int ViEExternalCodecImpl::RegisterExternalSendCodec(const int video_channel,
+                                                    const unsigned char pl_type,
+                                                    VideoEncoder* encoder) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_),
+               "%s channel %d pl_type %d encoder 0x%x", __FUNCTION__,
+               video_channel, pl_type, encoder);
 
-int ViEExternalCodecImpl::RegisterExternalSendCodec(const int videoChannel,
-                                                    const unsigned char plType,
-                                                    VideoEncoder* encoder)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(instance_id_),
-               "%s channel %d plType %d encoder 0x%x", __FUNCTION__,
-               videoChannel, plType, encoder);
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEEncoder* vie_encoder = cs.Encoder(video_channel);
+  if (!vie_encoder) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s: Invalid argument video_channel %u. Does it exist?",
+                 __FUNCTION__, video_channel);
+    SetLastError(kViECodecInvalidArgument);
+    return -1;
+  }
+  if (!encoder) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s: Invalid argument Encoder 0x%x.", __FUNCTION__, encoder);
+    SetLastError(kViECodecInvalidArgument);
+    return -1;
+  }
 
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEEncoder* vieEncoder = cs.Encoder(videoChannel);
-    if (!vieEncoder)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(instance_id_, videoChannel),
-                   "%s: Invalid argument videoChannel %u. Does it exist?",
-                   __FUNCTION__, videoChannel);
-        SetLastError(kViECodecInvalidArgument);
-        return -1;
-    }
-    if (!encoder)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(instance_id_, videoChannel),
-                   "%s: Invalid argument Encoder 0x%x.", __FUNCTION__, encoder);
-        SetLastError(kViECodecInvalidArgument);
-        return -1;
-    }
-
-    if (vieEncoder->RegisterExternalEncoder(encoder, plType) != 0)
-    {
-        SetLastError(kViECodecUnknownError);
-        return -1;
-    }
-    return 0;
+  if (vie_encoder->RegisterExternalEncoder(encoder, pl_type) != 0) {
+    SetLastError(kViECodecUnknownError);
+    return -1;
+  }
+  return 0;
 }
 
 int ViEExternalCodecImpl::DeRegisterExternalSendCodec(
-    const int videoChannel, const unsigned char plType)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(instance_id_),
-               "%s channel %d plType %d", __FUNCTION__, videoChannel, plType);
+  const int video_channel, const unsigned char pl_type) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_),
+               "%s channel %d pl_type %d", __FUNCTION__, video_channel,
+               pl_type);
 
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEEncoder* vieEncoder = cs.Encoder(videoChannel);
-    if (!vieEncoder)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(instance_id_, videoChannel),
-                   "%s: Invalid argument videoChannel %u. Does it exist?",
-                   __FUNCTION__, videoChannel);
-        SetLastError(kViECodecInvalidArgument);
-        return -1;
-    }
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEEncoder* vie_encoder = cs.Encoder(video_channel);
+  if (!vie_encoder) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s: Invalid argument video_channel %u. Does it exist?",
+                 __FUNCTION__, video_channel);
+    SetLastError(kViECodecInvalidArgument);
+    return -1;
+  }
 
-    if (vieEncoder->DeRegisterExternalEncoder(plType) != 0)
-    {
-        SetLastError(kViECodecUnknownError);
-        return -1;
-    }
-    return 0;
-
+  if (vie_encoder->DeRegisterExternalEncoder(pl_type) != 0) {
+    SetLastError(kViECodecUnknownError);
+    return -1;
+  }
+  return 0;
 }
 
 int ViEExternalCodecImpl::RegisterExternalReceiveCodec(
-    const int videoChannel, const unsigned int plType, VideoDecoder* decoder,
-    bool decoderRender /*= false*/, int renderDelay /*= 0*/)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(instance_id_),
-               "%s channel %d plType %d decoder 0x%x, decoderRender %d, "
-               "renderDelay %d", __FUNCTION__, videoChannel, plType, decoder,
-               decoderRender, renderDelay);
+    const int video_channel,
+    const unsigned int pl_type,
+    VideoDecoder* decoder,
+    bool decoder_render,
+    int render_delay) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_),
+               "%s channel %d pl_type %d decoder 0x%x, decoder_render %d, "
+               "renderDelay %d", __FUNCTION__, video_channel, pl_type, decoder,
+               decoder_render, render_delay);
 
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEChannel* vieChannel = cs.Channel(videoChannel);
-    if (!vieChannel)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(instance_id_, videoChannel),
-                   "%s: Invalid argument videoChannel %u. Does it exist?",
-                   __FUNCTION__, videoChannel);
-        SetLastError(kViECodecInvalidArgument);
-        return -1;
-    }
-    if (!decoder)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(instance_id_, videoChannel),
-                   "%s: Invalid argument decoder 0x%x.", __FUNCTION__, decoder);
-        SetLastError(kViECodecInvalidArgument);
-        return -1;
-    }
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s: Invalid argument video_channel %u. Does it exist?",
+                 __FUNCTION__, video_channel);
+    SetLastError(kViECodecInvalidArgument);
+    return -1;
+  }
+  if (!decoder) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s: Invalid argument decoder 0x%x.", __FUNCTION__, decoder);
+    SetLastError(kViECodecInvalidArgument);
+    return -1;
+  }
 
-    if (vieChannel->RegisterExternalDecoder(plType, decoder, decoderRender,
-                                            renderDelay) != 0)
-    {
-        SetLastError(kViECodecUnknownError);
-        return -1;
-    }
-    return 0;
+  if (vie_channel->RegisterExternalDecoder(pl_type, decoder, decoder_render,
+                                           render_delay) != 0) {
+    SetLastError(kViECodecUnknownError);
+    return -1;
+  }
+  return 0;
 }
 
 int ViEExternalCodecImpl::DeRegisterExternalReceiveCodec(
-    const int videoChannel, const unsigned char plType)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(instance_id_),
-               "%s channel %d plType %u", __FUNCTION__, videoChannel, plType);
+const int video_channel, const unsigned char pl_type) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_),
+               "%s channel %d pl_type %u", __FUNCTION__, video_channel,
+               pl_type);
 
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEChannel* vieChannel = cs.Channel(videoChannel);
-    if (!vieChannel)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(instance_id_, videoChannel),
-                   "%s: Invalid argument videoChannel %u. Does it exist?",
-                   __FUNCTION__, videoChannel);
-        SetLastError(kViECodecInvalidArgument);
-        return -1;
-    }
-    if (vieChannel->DeRegisterExternalDecoder(plType) != 0)
-    {
-        SetLastError(kViECodecUnknownError);
-        return -1;
-    }
-    return 0;
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s: Invalid argument video_channel %u. Does it exist?",
+                 __FUNCTION__, video_channel);
+    SetLastError(kViECodecInvalidArgument);
+    return -1;
+  }
+  if (vie_channel->DeRegisterExternalDecoder(pl_type) != 0) {
+    SetLastError(kViECodecUnknownError);
+    return -1;
+  }
+  return 0;
 }
-} // namespace webrtc
+
+}  // namespace webrtc

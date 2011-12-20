@@ -8,47 +8,36 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * vie_external_codec_impl.h
- */
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_EXTERNAL_CODEC_IMPL_H_
+#define WEBRTC_VIDEO_ENGINE_VIE_EXTERNAL_CODEC_IMPL_H_
 
-#ifndef WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_EXTERNAL_CODEC_IMPL_H_
-#define WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_EXTERNAL_CODEC_IMPL_H_
+#include "video_engine/main/interface/vie_external_codec.h"
+#include "video_engine/vie_ref_count.h"
+#include "video_engine/vie_shared_data.h"
 
-#include "vie_external_codec.h"
-#include "vie_ref_count.h"
-#include "vie_shared_data.h"
+namespace webrtc {
 
-namespace webrtc
-{
-
-// ----------------------------------------------------------------------------
-//	ViEExternalCodec
-// ----------------------------------------------------------------------------
-
-class ViEExternalCodecImpl : public virtual ViESharedData,
-                             public ViEExternalCodec,
-                             public ViERefCount
-{
-public:
-
-    virtual int Release();
-
-    virtual int RegisterExternalSendCodec(const int videoChannel,
-                                          const unsigned char plType,
-                                          VideoEncoder* encoder);
-
-    virtual int DeRegisterExternalSendCodec(const int videoChannel,
-                                            const unsigned char plType);
-
-    virtual int RegisterExternalReceiveCodec(const int videoChannel,
-                                             const unsigned int plType,
-                                             VideoDecoder* decoder,
-                                             bool decoderRender = false,
-                                             int renderDelay = 0);
-
-    virtual int DeRegisterExternalReceiveCodec(const int videoChannel,
-                                               const unsigned char plType);
+class ViEExternalCodecImpl
+    : public virtual ViESharedData,
+      public ViEExternalCodec,
+      public ViERefCount {
+ public:
+  // Implements ViEExternalCodec.
+  virtual int Release();
+  virtual int RegisterExternalSendCodec(const int video_channel,
+                                        const unsigned char pl_type,
+                                        VideoEncoder* encoder);
+  virtual int DeRegisterExternalSendCodec(const int video_channel,
+                                          const unsigned char pl_type);
+  virtual int RegisterExternalReceiveCodec(const int video_channel,
+                                           const unsigned int pl_type,
+                                           VideoDecoder* decoder,
+                                           bool decoder_render = false,
+                                           int render_delay = 0);
+  virtual int DeRegisterExternalReceiveCodec(const int video_channel,
+                                             const unsigned char pl_type);
 };
-} // namespace webrtc
-#endif  // WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_EXTERNAL_CODEC_IMPL_H_
+
+}  // namespace webrtc
+
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_EXTERNAL_CODEC_IMPL_H_

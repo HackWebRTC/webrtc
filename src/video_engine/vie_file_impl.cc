@@ -8,1312 +8,988 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * vie_file_impl.cc
- */
+#include "engine_configurations.h"
 
-#include "vie_file_impl.h"
+#include "video_engine/vie_file_impl.h"
 
 #ifdef WEBRTC_VIDEO_ENGINE_FILE_API
-// Defines
-#include "vie_defines.h"
-
-// Includes
-#include "condition_variable_wrapper.h"
-#include "critical_section_wrapper.h"
-#include "jpeg.h"
-#include "trace.h"
-#include "vie_capturer.h"
-#include "vie_channel.h"
-#include "vie_channel_manager.h"
-#include "vie_encoder.h"
-#include "vie_errors.h"
-#include "vie_file_image.h"
-#include "vie_file_player.h"
-#include "vie_file_recorder.h"
-#include "vie_impl.h"
-#include "vie_input_manager.h"
-#include "vie_render_manager.h"
+#include "common_video/jpeg/main/interface/jpeg.h"
+#include "system_wrappers/interface/condition_variable_wrapper.h"
+#include "system_wrappers/interface/critical_section_wrapper.h"
+#include "system_wrappers/interface/trace.h"
+#include "video_engine/main/interface/vie_errors.h"
+#include "video_engine/vie_capturer.h"
+#include "video_engine/vie_channel.h"
+#include "video_engine/vie_channel_manager.h"
+#include "video_engine/vie_defines.h"
+#include "video_engine/vie_encoder.h"
+#include "video_engine/vie_file_image.h"
+#include "video_engine/vie_file_player.h"
+#include "video_engine/vie_file_recorder.h"
+#include "video_engine/vie_impl.h"
+#include "video_engine/vie_input_manager.h"
+#include "video_engine/vie_render_manager.h"
 #include "video_engine/vie_renderer.h"
 #endif
 
-namespace webrtc
-{
+namespace webrtc {
 
-// ----------------------------------------------------------------------------
-// GetInterface
-// ----------------------------------------------------------------------------
-
-ViEFile* ViEFile::GetInterface(VideoEngine* videoEngine)
-{
+ViEFile* ViEFile::GetInterface(VideoEngine* video_engine) {
 #ifdef WEBRTC_VIDEO_ENGINE_FILE_API
-    if (videoEngine == NULL)
-    {
-        return NULL;
-    }
-    VideoEngineImpl* vieImpl = reinterpret_cast<VideoEngineImpl*> (videoEngine);
-    ViEFileImpl* vieFileImpl = vieImpl;
-    (*vieFileImpl)++; // Increase ref count
-
-    return vieFileImpl;
-#else
+  if (!video_engine) {
     return NULL;
+  }
+  VideoEngineImpl* vie_impl = reinterpret_cast<VideoEngineImpl*>(video_engine);
+  ViEFileImpl* vie_file_impl = vie_impl;
+  // Increase ref count.
+  (*vie_file_impl)++;
+  return vie_file_impl;
+#else
+  return NULL;
 #endif
 }
 
 #ifdef WEBRTC_VIDEO_ENGINE_FILE_API
-// ----------------------------------------------------------------------------
-// Release
-//
-// Releases the interface, i.e. reduces the reference counter. The number of
-// remaining references is returned, -1 if released too many times.
-// ----------------------------------------------------------------------------
 
-int ViEFileImpl::Release()
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, instance_id_,
-                 "ViEFile::Release()");
-    (*this)--; // Decrease ref count
-
-    WebRtc_Word32 refCount = GetCount();
-    if (refCount < 0)
-    {
-        WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideo, instance_id_,
-                     "ViEFile release too many times");
-        SetLastError(kViEAPIDoesNotExist);
-        return -1;
-    }
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, instance_id_,
-                 "ViEFile reference count: %d", refCount);
-    return refCount;
-}
-
-// ----------------------------------------------------------------------------
-// Constructor
-// ----------------------------------------------------------------------------
-
-ViEFileImpl::ViEFileImpl()
-
-{
-    WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideo, instance_id_,
-                 "ViEFileImpl::ViEFileImpl() Ctor");
-
-}
-
-// ----------------------------------------------------------------------------
-// Destructor
-// ----------------------------------------------------------------------------
-
-ViEFileImpl::~ViEFileImpl()
-{
-
-    WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideo, instance_id_,
-                 "ViEFileImpl::~ViEFileImpl() Dtor");
-}
-
-// ----------------------------------------------------------------------------
-// StartPlayFile
-// ----------------------------------------------------------------------------
-// Play file
-int ViEFileImpl::StartPlayFile(const char* fileNameUTF8, int& fileId,
-                               const bool loop /*= false*/,
-                               const webrtc::FileFormats fileFormat
-                               /*= webrtc::kFileFormatAviFile*/)
-{
-
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(instance_id_), "%s",
-                 __FUNCTION__);
-
-    if (!Initialized())
-    {
-        SetLastError(kViENotInitialized);
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
-                     "%s - ViE instance %d not initialized", __FUNCTION__,
-                     instance_id_);
-        return -1;
-    }
-
-    VoiceEngine* voice = channel_manager_.GetVoiceEngine();
-    const WebRtc_Word32 result = input_manager_.CreateFilePlayer(fileNameUTF8,
-                                                                loop,
-                                                                fileFormat,
-                                                                voice, fileId);
-    if (result != 0)
-    {
-        SetLastError(result);
-        return -1;
-    }
-    return 0;
-}
-
-int ViEFileImpl::StopPlayFile(const int fileId)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(instance_id_),
-                 "%s(fileId: %d)", __FUNCTION__, fileId);
-
-    {
-        ViEInputManagerScoped is(input_manager_);
-        ViEFilePlayer* ptrViEFilePlayer = is.FilePlayer(fileId);
-        if (ptrViEFilePlayer == NULL)
-        {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
-                         "%s: File with id %d is not playing.", __FUNCTION__,
-                         fileId);
-            SetLastError(kViEFileNotPlaying);
-            return -1;
-        }
-    }
-
-    // Destroy the capture device
-    return input_manager_.DestroyFilePlayer(fileId);
-
-}
-
-int ViEFileImpl::RegisterObserver(int fileId, ViEFileObserver& observer)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(instance_id_),
-                 "%s(fileId: %d)", __FUNCTION__, fileId);
-
-    ViEInputManagerScoped is(input_manager_);
-    ViEFilePlayer* ptrViEFilePlayer = is.FilePlayer(fileId);
-    if (ptrViEFilePlayer == NULL)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
-                     "%s: File with id %d is not playing.", __FUNCTION__,
-                     fileId);
-        SetLastError(kViEFileNotPlaying);
-        return -1;
-    }
-    if (ptrViEFilePlayer->IsObserverRegistered())
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, fileId),
-                     "%s: Observer already registered", __FUNCTION__);
-        SetLastError(kViEFileObserverAlreadyRegistered);
-        return -1;
-    }
-    if (ptrViEFilePlayer->RegisterObserver(observer) != 0)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, fileId),
-                     "%s: Failed to register observer", __FUNCTION__, fileId);
-        SetLastError(kViEFileUnknownError);
-        return -1;
-    }
-    return 0;
-
-}
-
-int ViEFileImpl::DeregisterObserver(int fileId, ViEFileObserver& observer)
-{
-
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(instance_id_),
-                 "%s(fileId: %d)", __FUNCTION__, fileId);
-
-    ViEInputManagerScoped is(input_manager_);
-    ViEFilePlayer* ptrViEFilePlayer = is.FilePlayer(fileId);
-    if (ptrViEFilePlayer == NULL)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
-                     "%s: File with id %d is not playing.", __FUNCTION__,
-                     fileId);
-        SetLastError(kViEFileNotPlaying);
-        return -1;
-    }
-    if (!ptrViEFilePlayer->IsObserverRegistered())
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, fileId), "%s: No Observer registered",
-                     __FUNCTION__);
-        SetLastError(kViEFileObserverNotRegistered);
-        return -1;
-    }
-    if (ptrViEFilePlayer->DeRegisterObserver() != 0)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, fileId),
-                     "%s: Failed to deregister observer", __FUNCTION__, fileId);
-        SetLastError(kViEFileUnknownError);
-        return -1;
-    }
-    return 0;
-
-}
-
-int ViEFileImpl::SendFileOnChannel(const int fileId, const int videoChannel)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(instance_id_),
-                 "%s(fileId: %d)", __FUNCTION__, fileId);
-
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEEncoder* ptrViEEncoder = cs.Encoder(videoChannel);
-    if (ptrViEEncoder == NULL)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel),
-                     "%s: Channel %d doesn't exist", __FUNCTION__,
-                     videoChannel);
-        SetLastError(kViEFileInvalidChannelId);
-        return -1;
-    }
-
-    ViEInputManagerScoped is(input_manager_);
-    if (is.FrameProvider(ptrViEEncoder) != NULL)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel),
-                     "%s: Channel %d already connected to a capture device or "
-                     "file.", __FUNCTION__, videoChannel);
-        SetLastError(kViEFileInputAlreadyConnected);
-        return -1;
-    }
-
-    ViEFilePlayer* ptrViEFilePlayer = is.FilePlayer(fileId);
-    if (ptrViEFilePlayer == NULL)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
-                     "%s: File with id %d is not playing.", __FUNCTION__,
-                     fileId);
-        SetLastError(kViEFileNotPlaying);
-        return -1;
-    }
-
-    if (ptrViEFilePlayer->RegisterFrameCallback(videoChannel, ptrViEEncoder)
-        != 0)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
-                     "%s: Failed to register frame callback.", __FUNCTION__,
-                     fileId);
-        SetLastError(kViEFileUnknownError);
-        return -1;
-    }
-    return 0;
-}
-
-int ViEFileImpl::StopSendFileOnChannel(const int videoChannel)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(instance_id_),
-                 "%s(videoChannel: %d)", __FUNCTION__, videoChannel);
-
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEEncoder* ptrViEEncoder = cs.Encoder(videoChannel);
-    if (ptrViEEncoder == NULL)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel),
-                     "%s: Channel %d doesn't exist", __FUNCTION__,
-                     videoChannel);
-        SetLastError(kViEFileInvalidChannelId);
-        return -1;
-    }
-
-    ViEInputManagerScoped is(input_manager_);
-    ViEFrameProviderBase* frameProvider = is.FrameProvider(ptrViEEncoder);
-    if (frameProvider == NULL
-        || frameProvider->Id() < kViEFileIdBase
-        || frameProvider->Id() > kViEFileIdMax)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel),
-                     "%s: No file connected to Channel %d", __FUNCTION__,
-                     videoChannel);
-        SetLastError(kViEFileNotConnected);
-        return -1;
-    }
-    if (frameProvider->DeregisterFrameCallback(ptrViEEncoder) != 0)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel),
-                     "%s: Failed to deregister file from channel %d",
-                     __FUNCTION__, videoChannel);
-        SetLastError(kViEFileUnknownError);
-    }
-    return 0;
-
-}
-
-int ViEFileImpl::StartPlayFileAsMicrophone(const int fileId,
-                                           const int audioChannel,
-                                           bool mixMicrophone /*= false*/,
-                                           float volumeScaling /*= 1*/)
-{
-    ViEInputManagerScoped is(input_manager_);
-
-    ViEFilePlayer* ptrViEFilePlayer = is.FilePlayer(fileId);
-    if (ptrViEFilePlayer == NULL)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
-                     "%s: File with id %d is not playing.", __FUNCTION__,
-                     fileId);
-        SetLastError(kViEFileNotPlaying);
-        return -1;
-    }
-    if (ptrViEFilePlayer->SendAudioOnChannel(audioChannel, mixMicrophone,
-                                             volumeScaling) != 0)
-    {
-        SetLastError(kViEFileVoEFailure);
-        return -1;
-    }
-    return 0;
-
-}
-
-int ViEFileImpl::StopPlayFileAsMicrophone(const int fileId,
-                                          const int audioChannel)
-{
-    ViEInputManagerScoped is(input_manager_);
-
-    ViEFilePlayer* ptrViEFilePlayer = is.FilePlayer(fileId);
-    if (ptrViEFilePlayer == NULL)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
-                     "%s: File with id %d is not playing.", __FUNCTION__,
-                     fileId);
-        SetLastError(kViEFileNotPlaying);
-        return -1;
-    }
-
-    if (ptrViEFilePlayer->StopSendAudioOnChannel(audioChannel) != 0)
-    {
-        SetLastError(kViEFileVoEFailure);
-        return -1;
-    }
-    return 0;
-}
-
-int ViEFileImpl::StartPlayAudioLocally(const int fileId,
-                                       const int audioChannel,
-                                       float volumeScaling /*=1*/)
-{
-    ViEInputManagerScoped is(input_manager_);
-
-    ViEFilePlayer* ptrViEFilePlayer = is.FilePlayer(fileId);
-    if (ptrViEFilePlayer == NULL)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
-                     "%s: File with id %d is not playing.", __FUNCTION__,
-                     fileId);
-        SetLastError(kViEFileNotPlaying);
-        return -1;
-    }
-    if (ptrViEFilePlayer->PlayAudioLocally(audioChannel, volumeScaling) != 0)
-    {
-        SetLastError(kViEFileVoEFailure);
-        return -1;
-    }
-    return 0;
-}
-
-int ViEFileImpl::StopPlayAudioLocally(const int fileId, const int audioChannel)
-{
-    ViEInputManagerScoped is(input_manager_);
-
-    ViEFilePlayer* ptrViEFilePlayer = is.FilePlayer(fileId);
-    if (ptrViEFilePlayer == NULL)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
-                     "%s: File with id %d is not playing.", __FUNCTION__,
-                     fileId);
-        SetLastError(kViEFileNotPlaying);
-        return -1;
-    }
-    if (ptrViEFilePlayer->StopPlayAudioLocally(audioChannel) != 0)
-    {
-        SetLastError(kViEFileVoEFailure);
-        return -1;
-    }
-    return 0;
-}
-
-// ----------------------------------------------------------------------------
-// StartRecordOutgoingVideo
-// ----------------------------------------------------------------------------
-int ViEFileImpl::StartRecordOutgoingVideo(const int videoChannel,
-                                          const char* fileNameUTF8,
-                                          AudioSource audioSource,
-                                          const webrtc::CodecInst& audioCodec,
-                                          const VideoCodec& videoCodec,
-                                          const webrtc::FileFormats fileFormat
-                                          /*= webrtc::kFileFormatAviFile*/)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-                 ViEId(instance_id_, videoChannel), "%s videoChannel: %d)",
-                 __FUNCTION__, videoChannel);
-
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEEncoder* ptrViEEncoder = cs.Encoder(videoChannel);
-    if (ptrViEEncoder == NULL)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel),
-                     "%s: Channel %d doesn't exist", __FUNCTION__,
-                     videoChannel);
-        SetLastError(kViEFileInvalidChannelId);
-        return -1;
-    }
-    ViEFileRecorder& fileRecorder = ptrViEEncoder->GetOutgoingFileRecorder();
-    if (fileRecorder.RecordingStarted())
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel),
-                     "%s: Already recording outgoing video on channel %d",
-                     __FUNCTION__, videoChannel);
-        SetLastError(kViEFileAlreadyRecording);
-        return -1;
-    }
-
-    WebRtc_Word32 veChannelId = -1;
-    VoiceEngine* vePtr = NULL;
-    if (audioSource != NO_AUDIO)
-    {
-        ViEChannel* ptrViEChannel = cs.Channel(videoChannel);
-        veChannelId = ptrViEChannel->VoiceChannel();
-        vePtr = channel_manager_.GetVoiceEngine();
-
-        if (!vePtr)
-        {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                         ViEId(instance_id_, videoChannel),
-                         "%s: Can't access voice engine. Have SetVoiceEngine "
-                         "been called?", __FUNCTION__);
-            SetLastError(kViEFileVoENotSet);
-            return -1;
-        }
-    }
-    if (fileRecorder.StartRecording(fileNameUTF8, videoCodec, audioSource,
-                                    veChannelId, audioCodec, vePtr,
-                                    fileFormat) != 0)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel),
-                     "%s: Failed to start recording. Check arguments.",
-                     __FUNCTION__);
-        SetLastError(kViEFileUnknownError);
-        return -1;
-    }
-
-    return 0;
-}
-
-int ViEFileImpl::StopRecordOutgoingVideo(const int videoChannel)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-                 ViEId(instance_id_, videoChannel), "%s videoChannel: %d)",
-                 __FUNCTION__, videoChannel);
-
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEEncoder* ptrViEEncoder = cs.Encoder(videoChannel);
-    if (ptrViEEncoder == NULL)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel),
-                     "%s: Channel %d doesn't exist", __FUNCTION__,
-                     videoChannel);
-        SetLastError(kViEFileInvalidChannelId);
-        return -1;
-    }
-    ViEFileRecorder& fileRecorder = ptrViEEncoder->GetOutgoingFileRecorder();
-    if (!fileRecorder.RecordingStarted())
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel),
-                     "%s: Channel %d is not recording.", __FUNCTION__,
-                     videoChannel);
-        SetLastError(kViEFileNotRecording);
-        return -1;
-    }
-    if (fileRecorder.StopRecording() != 0)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel),
-                     "%s: Failed to stop recording of channel %d.",
-                     __FUNCTION__, videoChannel);
-        SetLastError(kViEFileUnknownError);
-        return -1;
-    }
-    return 0;
-
-}
-int ViEFileImpl::StopRecordIncomingVideo(const int videoChannel)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-                 ViEId(instance_id_, videoChannel), "%s videoChannel: %d)",
-                 __FUNCTION__, videoChannel);
-
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEChannel* ptrViEChannel = cs.Channel(videoChannel);
-    if (ptrViEChannel == NULL)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel),
-                     "%s: Channel %d doesn't exist", __FUNCTION__,
-                     videoChannel);
-        SetLastError(kViEFileInvalidChannelId);
-        return -1;
-    }
-    ViEFileRecorder& fileRecorder = ptrViEChannel->GetIncomingFileRecorder();
-    if (!fileRecorder.RecordingStarted())
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel),
-                     "%s: Channel %d is not recording.", __FUNCTION__,
-                     videoChannel);
-        SetLastError(kViEFileNotRecording);
-        ptrViEChannel->ReleaseIncomingFileRecorder();
-
-        return -1;
-    }
-    if (fileRecorder.StopRecording() != 0)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel),
-                     "%s: Failed to stop recording of channel %d.",
-                     __FUNCTION__, videoChannel);
-        SetLastError(kViEFileUnknownError);
-        ptrViEChannel->ReleaseIncomingFileRecorder();
-        return -1;
-    }
-    // Let the channel know we are no longer recording
-    ptrViEChannel->ReleaseIncomingFileRecorder();
-    return 0;
-
-}
-
-int ViEFileImpl::StartRecordIncomingVideo(const int videoChannel,
-                                          const char* fileNameUTF8,
-                                          AudioSource audioSource,
-                                          const webrtc::CodecInst& audioCodec,
-                                          const VideoCodec& videoCodec,
-                                          const webrtc::FileFormats fileFormat
-                                          /*= webrtc::kFileFormatAviFile*/)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-                 ViEId(instance_id_, videoChannel), "%s videoChannel: %d)",
-                 __FUNCTION__, videoChannel);
-
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEChannel* ptrViEChannel = cs.Channel(videoChannel);
-    if (ptrViEChannel == NULL)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel),
-                     "%s: Channel %d doesn't exist", __FUNCTION__,
-                     videoChannel);
-        SetLastError(kViEFileInvalidChannelId);
-        return -1;
-    }
-    ViEFileRecorder& fileRecorder = ptrViEChannel->GetIncomingFileRecorder();
-    if (fileRecorder.RecordingStarted())
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel),
-                     "%s: Already recording outgoing video on channel %d",
-                     __FUNCTION__, videoChannel);
-        SetLastError(kViEFileAlreadyRecording);
-        return -1;
-    }
-
-    WebRtc_Word32 veChannelId = -1;
-    VoiceEngine* vePtr = NULL;
-    if (audioSource != NO_AUDIO)
-    {
-        veChannelId = ptrViEChannel->VoiceChannel();
-        vePtr = channel_manager_.GetVoiceEngine();
-
-        if (!vePtr)
-        {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                         ViEId(instance_id_, videoChannel),
-                         "%s: Can't access voice engine. Have SetVoiceEngine "
-                         "been called?", __FUNCTION__);
-            SetLastError(kViEFileVoENotSet);
-            return -1;
-        }
-    }
-    if (fileRecorder.StartRecording(fileNameUTF8, videoCodec, audioSource,
-                                    veChannelId, audioCodec, vePtr, fileFormat)
-        != 0)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel),
-                     "%s: Failed to start recording. Check arguments.",
-                     __FUNCTION__);
-        SetLastError(kViEFileUnknownError);
-        return -1;
-    }
-    return 0;
-}
-
-// ============================================================================
-// File information
-// ============================================================================
-
-// ----------------------------------------------------------------------------
-// GetFileInformation
-//
-//
-// ----------------------------------------------------------------------------
-
-int ViEFileImpl::GetFileInformation(const char* fileName,
-                                    VideoCodec& videoCodec,
-                                    webrtc::CodecInst& audioCodec,
-                                    const webrtc::FileFormats fileFormat
-                                    /*= webrtc::kFileFormatAviFile*/)
-{
-    return ViEFilePlayer::GetFileInformation(
-        instance_id_, (WebRtc_Word8*) fileName,
-        videoCodec, audioCodec, fileFormat);
-}
-
-// ============================================================================
-// Snapshot
-// ============================================================================
-// ----------------------------------------------------------------------------
-
-int ViEFileImpl::GetRenderSnapshot(const int videoChannel,
-                                   const char* fileNameUTF8)
-{
-    // gain access to the renderer for the specified channel and get it's
-    // current frame
-    ViERenderManagerScoped rs(render_manager_);
-    ViERenderer* ptrRender = rs.Renderer(videoChannel);
-    if (!ptrRender)
-    {
-        return -1;
-    }
-
-    VideoFrame videoFrame;
-    if (-1 == ptrRender->GetLastRenderedFrame(videoChannel, videoFrame))
-    {
-        return -1;
-    }
-
-    const int JPEG_FORMAT = 0;
-    int format = JPEG_FORMAT;
-
-    switch (format)
-    {
-        case JPEG_FORMAT:
-        {
-            // *** JPEGEncoder writes the jpeg file for you (no control
-            // over it) and does not return you the buffer
-            // *** Thusly, we are not going to be writing to the disk here
-
-            JpegEncoder jpegEncoder;
-            RawImage inputImage;
-
-            if (-1 == jpegEncoder.SetFileName(fileNameUTF8))
-            {
-                // could not set filename for whatever reason
-                WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                             instance_id_,
-                             "\tCould not open output file '%s' for writing!",
-                             fileNameUTF8);
-                return -1;
-            }
-
-            inputImage._width = videoFrame.Width();
-            inputImage._height = videoFrame.Height();
-            videoFrame.Swap(inputImage._buffer, inputImage._length,
-                            inputImage._size);
-
-            if (-1 == jpegEncoder.Encode(inputImage))
-            {
-                // could not encode i420->jpeg
-                WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                             instance_id_,
-                             "\tCould not encode i420 -> jpeg file '%s' for "
-                             "writing!", fileNameUTF8);
-                if (inputImage._buffer)
-                {
-                    delete [] inputImage._buffer;
-                }
-                return -1;
-            }
-
-            delete [] inputImage._buffer;
-            inputImage._buffer = NULL;
-
-            break;
-        }
-        default:
-        {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceFile, instance_id_,
-                         "\tUnsupported file format for %s", __FUNCTION__);
-            return -1;
-            break;
-        }
-    }
-    return 0;
-}
-
-// ----------------------------------------------------------------------------
-//
-// GetRenderSnapshot
-// ----------------------------------------------------------------------------
-
-int ViEFileImpl::GetRenderSnapshot(const int videoChannel, ViEPicture& picture)
-{
-
-    // gain access to the renderer for the specified channel and get it's
-    // current frame
-    ViERenderManagerScoped rs(render_manager_);
-    ViERenderer* ptrRender = rs.Renderer(videoChannel);
-    if (!ptrRender)
-    {
-        return -1;
-    }
-
-    VideoFrame videoFrame;
-    if (-1 == ptrRender->GetLastRenderedFrame(videoChannel, videoFrame))
-    {
-        return -1;
-    }
-
-    // copy from VideoFrame class to ViEPicture struct
-    int bufferLength = (int) (videoFrame.Width() * videoFrame.Height() * 1.5);
-    picture.data
-        = (WebRtc_UWord8*) malloc(bufferLength * sizeof(WebRtc_UWord8));
-    memcpy(picture.data, videoFrame.Buffer(), bufferLength);
-    picture.size = bufferLength;
-    picture.width = videoFrame.Width();
-    picture.height = videoFrame.Height();
-    picture.type = kVideoI420;
-
-    return 0;
-}
-
-// ----------------------------------------------------------------------------
-//
-//
-// GetCaptureDeviceSnapshot
-// ----------------------------------------------------------------------------
-
-int ViEFileImpl::GetCaptureDeviceSnapshot(const int captureId,
-                                          const char* fileNameUTF8)
-{
-    ViEInputManagerScoped is(input_manager_);
-    ViECapturer* ptrCapture = is.Capture(captureId);
-    if (!ptrCapture)
-    {
-        return -1;
-    }
-
-    VideoFrame videoFrame;
-    if (GetNextCapturedFrame(captureId, videoFrame) == -1)
-    {
-        // Failed to get a snapshot...
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, instance_id_,
-                     "Could not gain acces to capture device %d video frame "
-                     "%s:%d", captureId, __FUNCTION__);
-        return -1;
-    }
-
-    const int JPEG_FORMAT = 0;
-    int format = JPEG_FORMAT;
-
-    switch (format)
-    {
-        case JPEG_FORMAT:
-        {
-            // *** JPEGEncoder writes the jpeg file for you (no control
-            // over it) and does not return you the buffer
-            // *** Thusly, we are not going to be writing to the disk here
-
-            JpegEncoder jpegEncoder;
-            RawImage inputImage;
-
-            inputImage._width = videoFrame.Width();
-            inputImage._height = videoFrame.Height();
-            videoFrame.Swap(inputImage._buffer, inputImage._length,
-                            inputImage._size);
-
-            if (-1 == jpegEncoder.SetFileName(fileNameUTF8))
-            {
-                // could not set filename for whatever reason
-                WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                             instance_id_,
-                             "\tCould not open output file '%s' for writing!",
-                             fileNameUTF8);
-
-                if (inputImage._buffer)
-                {
-                    delete [] inputImage._buffer;
-                }
-                return -1;
-            }
-
-            if (-1 == jpegEncoder.Encode(inputImage))
-            {
-                // could not encode i420->jpeg
-                WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                             instance_id_,
-                             "\tCould not encode i420 -> jpeg file '%s' for "
-                             "writing!", fileNameUTF8);
-
-                if (inputImage._buffer)
-                {
-                    delete [] inputImage._buffer;
-                }
-                return -1;
-            }
-
-            delete [] inputImage._buffer;
-            inputImage._buffer = NULL;
-            break;
-        }
-        default:
-        {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceFile, instance_id_,
-                         "\tUnsupported file format for %s", __FUNCTION__);
-            return -1;
-            break;
-        }
-    }
-    return 0;
-}
-
-// ----------------------------------------------------------------------------
-//
-//
-// GetCaptureDeviceSnapshot
-// ----------------------------------------------------------------------------
-
-int ViEFileImpl::GetCaptureDeviceSnapshot(const int captureId,
-                                          ViEPicture& picture)
-{
-    VideoFrame videoFrame;
-    ViEInputManagerScoped is(input_manager_);
-    ViECapturer* ptrCapture = is.Capture(captureId);
-    if (!ptrCapture)
-    {
-        return -1;
-    }
-
-    if (GetNextCapturedFrame(captureId, videoFrame) == -1)
-    {
-        // Failed to get a snapshot...
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, instance_id_,
-                     "Could not gain acces to capture device %d video frame "
-                     "%s:%d", captureId, __FUNCTION__);
-        return -1;
-    }
-
-    // copy from VideoFrame class to ViEPicture struct
-    int bufferLength = (int) (videoFrame.Width() * videoFrame.Height() * 1.5);
-    picture.data
-        = (WebRtc_UWord8*) malloc(bufferLength * sizeof(WebRtc_UWord8));
-    memcpy(picture.data, videoFrame.Buffer(), bufferLength);
-    picture.size = bufferLength;
-    picture.width = videoFrame.Width();
-    picture.height = videoFrame.Height();
-    picture.type = kVideoI420;
-
-    return 0;
-}
-
-// ----------------------------------------------------------------------------
-//
-//
-// FreePicture
-// ----------------------------------------------------------------------------
-
-int ViEFileImpl::FreePicture(ViEPicture& picture)
-{
-    if (picture.data)
-        free(picture.data);
-
-    picture.data = NULL;
-    picture.size = 0;
-    picture.width = 0;
-    picture.height = 0;
-    picture.type = kVideoUnknown;
-
-    return 0;
-}
-
-// ============================================================================
-// Capture device images
-// ============================================================================
-
-// ----------------------------------------------------------------------------
-//
-//
-// SetCaptureDeviceImage
-// ----------------------------------------------------------------------------
-
-int ViEFileImpl::SetCaptureDeviceImage(const int captureId,
-                                       const char* fileNameUTF8)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, instance_id_,
-                 "%s(captureId: %d)", __FUNCTION__, captureId);
-
-    ViEInputManagerScoped is(input_manager_);
-    ViECapturer* ptrCapture = is.Capture(captureId);
-    if (!ptrCapture)
-    {
-        SetLastError(kViEFileInvalidCaptureId);
-        return -1;
-    }
-
-    VideoFrame captureImage;
-    if (ViEFileImage::ConvertJPEGToVideoFrame(
-        ViEId(instance_id_, captureId), fileNameUTF8, captureImage) != 0)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, captureId),
-                     "%s(captureId: %d) Failed to open file.", __FUNCTION__,
-                     captureId);
-        SetLastError(kViEFileInvalidFile);
-        return -1;
-    }
-    if (ptrCapture->SetCaptureDeviceImage(captureImage))
-    {
-        SetLastError(kViEFileSetCaptureImageError);
-        return -1;
-    }
-    return 0;
-}
-
-// ----------------------------------------------------------------------------
-//
-//
-// SetCaptureDeviceImage
-// ----------------------------------------------------------------------------
-
-int ViEFileImpl::SetCaptureDeviceImage(const int captureId,
-                                       const ViEPicture& picture)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, instance_id_,
-                 "%s(captureId: %d)", __FUNCTION__, captureId);
-
-    if (picture.type != kVideoI420)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, captureId),
-                     "%s(captureId: %d) Not a valid picture type.",
-                     __FUNCTION__, captureId);
-        SetLastError(kViEFileInvalidArgument);
-        return -1;
-    }
-    ViEInputManagerScoped is(input_manager_);
-    ViECapturer* ptrCapture = is.Capture(captureId);
-    if (!ptrCapture)
-    {
-        SetLastError(kViEFileSetCaptureImageError);
-        return -1;
-    }
-
-    VideoFrame captureImage;
-    if (ViEFileImage::ConvertPictureToVideoFrame(
-            ViEId(instance_id_,captureId), picture, captureImage) != 0)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, captureId),
-                     "%s(captureId: %d) Failed to use picture.", __FUNCTION__,
-                     captureId);
-        SetLastError(kViEFileInvalidFile);
-        return -1;
-    }
-    if (ptrCapture->SetCaptureDeviceImage(captureImage))
-    {
-        SetLastError(kViEFileInvalidCapture);
-        return -1;
-    }
-    return 0;
-}
-
-// ============================================================================
-// Render images
-// ============================================================================
-
-// ----------------------------------------------------------------------------
-//
-//
-// SetRenderStartImage
-// ----------------------------------------------------------------------------
-
-int ViEFileImpl::SetRenderStartImage(const int videoChannel,
-                                     const char* fileNameUTF8)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-                 ViEId(instance_id_, videoChannel), "%s(videoChannel: %d)",
-                 __FUNCTION__, videoChannel);
-
-    ViERenderManagerScoped rs(render_manager_);
-    ViERenderer* ptrRender = rs.Renderer(videoChannel);
-    if (!ptrRender)
-    {
-        SetLastError(kViEFileInvalidRenderId);
-        return -1;
-    }
-
-    VideoFrame startImage;
-    if (ViEFileImage::ConvertJPEGToVideoFrame(
-            ViEId(instance_id_, videoChannel), fileNameUTF8, startImage) != 0)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel),
-                     "%s(videoChannel: %d) Failed to open file.", __FUNCTION__,
-                     videoChannel);
-        SetLastError(kViEFileInvalidFile);
-        return -1;
-    }
-    if (ptrRender->SetRenderStartImage(startImage) != 0)
-    {
-        SetLastError(kViEFileSetStartImageError);
-        return -1;
-    }
-    return 0;
-}
-
-// ----------------------------------------------------------------------------
-//
-//
-// SetRenderStartImage
-// ----------------------------------------------------------------------------
-
-int ViEFileImpl::SetRenderStartImage(const int videoChannel,
-                                     const ViEPicture& picture)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-                 ViEId(instance_id_, videoChannel), "%s(videoChannel: %d)",
-                 __FUNCTION__, videoChannel);
-
-    if (picture.type != kVideoI420)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel),
-                     "%s(videoChannel: %d) Not a valid picture type.",
-                     __FUNCTION__, videoChannel);
-        SetLastError(kViEFileInvalidArgument);
-        return -1;
-    }
-
-    ViERenderManagerScoped rs(render_manager_);
-    ViERenderer* ptrRender = rs.Renderer(videoChannel);
-    if (!ptrRender)
-    {
-        SetLastError(kViEFileInvalidRenderId);
-        return -1;
-    }
-
-    VideoFrame startImage;
-    if (ViEFileImage::ConvertPictureToVideoFrame(
-            ViEId(instance_id_, videoChannel), picture, startImage) != 0)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel),
-                     "%s(videoChannel: %d) Failed to use picture.",
-                     __FUNCTION__, videoChannel);
-        SetLastError(kViEFileInvalidCapture);
-        return -1;
-    }
-    if (ptrRender->SetRenderStartImage(startImage) != 0)
-    {
-        SetLastError(kViEFileSetStartImageError);
-        return -1;
-    }
-    return 0;
-}
-
-// ============================================================================
-// Timeout image
-// ============================================================================
-
-// ----------------------------------------------------------------------------
-//
-//
-// SetRenderTimeoutImage
-// ----------------------------------------------------------------------------
-
-int ViEFileImpl::SetRenderTimeoutImage(const int videoChannel,
-                                       const char* fileNameUTF8,
-                                       const unsigned int timeoutMs)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-                 ViEId(instance_id_, videoChannel), "%s(videoChannel: %d)",
-                 __FUNCTION__, videoChannel);
-
-    ViERenderManagerScoped rs(render_manager_);
-    ViERenderer* ptrRender = rs.Renderer(videoChannel);
-    if (!ptrRender)
-    {
-        SetLastError(kViEFileInvalidRenderId);
-        return -1;
-    }
-    VideoFrame timeoutImage;
-    if (ViEFileImage::ConvertJPEGToVideoFrame(
-            ViEId(instance_id_,videoChannel), fileNameUTF8, timeoutImage) != 0)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel),
-                     "%s(videoChannel: %d) Failed to open file.", __FUNCTION__,
-                     videoChannel);
-        SetLastError(kViEFileInvalidFile);
-        return -1;
-    }
-    WebRtc_Word32 timeoutTime = timeoutMs;
-    if (timeoutMs < kViEMinRenderTimeoutTimeMs)
-    {
-        WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel),
-                     "%s(videoChannel: %d) Invalid timeoutMs, using %d.",
-                     __FUNCTION__, videoChannel, kViEMinRenderTimeoutTimeMs);
-        timeoutTime = kViEMinRenderTimeoutTimeMs;
-    }
-    if (timeoutMs > kViEMaxRenderTimeoutTimeMs)
-    {
-        WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel),
-                     "%s(videoChannel: %d) Invalid timeoutMs, using %d.",
-                     __FUNCTION__, videoChannel, kViEMaxRenderTimeoutTimeMs);
-        timeoutTime = kViEMaxRenderTimeoutTimeMs;
-    }
-    if (ptrRender->SetTimeoutImage(timeoutImage, timeoutTime) != 0)
-    {
-        SetLastError(kViEFileSetRenderTimeoutError);
-        return -1;
-    }
-    return 0;
-}
-
-int ViEFileImpl::SetRenderTimeoutImage(const int videoChannel,
-                                       const ViEPicture& picture,
-                                       const unsigned int timeoutMs)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-                 ViEId(instance_id_, videoChannel), "%s(videoChannel: %d)",
-                 __FUNCTION__, videoChannel);
-
-    if (picture.type != kVideoI420)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel),
-                     "%s(videoChannel: %d) Not a valid picture type.",
-                     __FUNCTION__, videoChannel);
-        SetLastError(kViEFileInvalidArgument);
-        return -1;
-    }
-
-    ViERenderManagerScoped rs(render_manager_);
-    ViERenderer* ptrRender = rs.Renderer(videoChannel);
-    if (!ptrRender)
-    {
-        SetLastError(kViEFileSetRenderTimeoutError);
-        return -1;
-    }
-    VideoFrame timeoutImage;
-    if (ViEFileImage::ConvertPictureToVideoFrame(
-            ViEId(instance_id_, videoChannel), picture, timeoutImage) != 0)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel),
-                     "%s(videoChannel: %d) Failed to use picture.",
-                     __FUNCTION__, videoChannel);
-        SetLastError(kViEFileInvalidCapture);
-        return -1;
-    }
-    WebRtc_Word32 timeoutTime = timeoutMs;
-    if (timeoutMs < kViEMinRenderTimeoutTimeMs)
-    {
-        WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel),
-                     "%s(videoChannel: %d) Invalid timeoutMs, using %d.",
-                     __FUNCTION__, videoChannel, kViEMinRenderTimeoutTimeMs);
-        timeoutTime = kViEMinRenderTimeoutTimeMs;
-    }
-    if (timeoutMs > kViEMaxRenderTimeoutTimeMs)
-    {
-        WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel),
-                     "%s(videoChannel: %d) Invalid timeoutMs, using %d.",
-                     __FUNCTION__, videoChannel, kViEMaxRenderTimeoutTimeMs);
-        timeoutTime = kViEMaxRenderTimeoutTimeMs;
-    }
-    if (ptrRender->SetTimeoutImage(timeoutImage, timeoutTime) != 0)
-    {
-        SetLastError(kViEFileSetRenderTimeoutError);
-        return -1;
-    }
-    return 0;
-}
-
-WebRtc_Word32 ViEFileImpl::GetNextCapturedFrame(WebRtc_Word32 captureId,
-                                                VideoFrame& videoFrame)
-{
-    ViEInputManagerScoped is(input_manager_);
-    ViECapturer* ptrCapture = is.Capture(captureId);
-    if (!ptrCapture)
-    {
-        return -1;
-    }
-
-    ViECaptureSnapshot* snapShot = new ViECaptureSnapshot();
-    ptrCapture->RegisterFrameCallback(-1, snapShot);
-    bool snapshotTaken =
-        snapShot->GetSnapshot(videoFrame, kViECaptureMaxSnapshotWaitTimeMs);
-
-    // Check once again if it has been destroyed...
-    ptrCapture->DeregisterFrameCallback(snapShot);
-    delete snapShot;
-    snapShot = NULL;
-
-    if (snapshotTaken)
-    {
-        return 0;
-    }
+int ViEFileImpl::Release() {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, instance_id_,
+               "ViEFile::Release()");
+  // Decrease ref count.
+  (*this)--;
+  WebRtc_Word32 ref_count = GetCount();
+  if (ref_count < 0) {
+    WEBRTC_TRACE(kTraceWarning, kTraceVideo, instance_id_,
+                 "ViEFile release too many times");
+    SetLastError(kViEAPIDoesNotExist);
     return -1;
+  }
+  WEBRTC_TRACE(kTraceInfo, kTraceVideo, instance_id_,
+               "ViEFile reference count: %d", ref_count);
+  return ref_count;
 }
 
-ViECaptureSnapshot::ViECaptureSnapshot() :
-        _crit(*CriticalSectionWrapper::CreateCriticalSection()),
-        _conditionVaraible(*ConditionVariableWrapper::CreateConditionVariable()),
-        _ptrVideoFrame(NULL)
-{
+ViEFileImpl::ViEFileImpl() {
+  WEBRTC_TRACE(kTraceMemory, kTraceVideo, instance_id_,
+               "ViEFileImpl::ViEFileImpl() Ctor");
 }
 
-ViECaptureSnapshot::~ViECaptureSnapshot()
-{
-    _crit.Enter();
-    _crit.Leave();
-    delete &_crit;
-    if (_ptrVideoFrame)
-    {
-        delete _ptrVideoFrame;
-        _ptrVideoFrame = NULL;
+ViEFileImpl::~ViEFileImpl() {
+  WEBRTC_TRACE(kTraceMemory, kTraceVideo, instance_id_,
+               "ViEFileImpl::~ViEFileImpl() Dtor");
+}
+
+int ViEFileImpl::StartPlayFile(const char* file_nameUTF8,
+                               int& file_id,
+                               const bool loop,
+                               const FileFormats file_format) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_), "%s",
+               __FUNCTION__);
+
+  if (!Initialized()) {
+    SetLastError(kViENotInitialized);
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_),
+                 "%s - ViE instance %d not initialized", __FUNCTION__,
+                 instance_id_);
+    return -1;
+  }
+
+  VoiceEngine* voice = channel_manager_.GetVoiceEngine();
+  const WebRtc_Word32 result = input_manager_.CreateFilePlayer(file_nameUTF8,
+                                                               loop,
+                                                               file_format,
+                                                               voice, file_id);
+  if (result != 0) {
+    SetLastError(result);
+    return -1;
+  }
+  return 0;
+}
+
+int ViEFileImpl::StopPlayFile(const int file_id) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_),
+               "%s(file_id: %d)", __FUNCTION__, file_id);
+  {
+    ViEInputManagerScoped is(input_manager_);
+    ViEFilePlayer* vie_file_player = is.FilePlayer(file_id);
+    if (!vie_file_player) {
+      WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_),
+                   "%s: File with id %d is not playing.", __FUNCTION__,
+                   file_id);
+      SetLastError(kViEFileNotPlaying);
+      return -1;
     }
+  }
+  // Destroy the capture device.
+  return input_manager_.DestroyFilePlayer(file_id);
 }
 
-bool ViECaptureSnapshot::GetSnapshot(VideoFrame& videoFrame,
-                                     unsigned int maxWaitTime)
-{
-    _crit.Enter();
-    _ptrVideoFrame = new VideoFrame();
-    if (_conditionVaraible.SleepCS(_crit, maxWaitTime))
-    {
-        // Snapshot taken
-        videoFrame.SwapFrame(*_ptrVideoFrame);
-        delete _ptrVideoFrame;
-        _ptrVideoFrame = NULL;
-        _crit.Leave();
-        return true;
-    }
-    return false;
+int ViEFileImpl::RegisterObserver(int file_id, ViEFileObserver& observer) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_),
+               "%s(file_id: %d)", __FUNCTION__, file_id);
+
+  ViEInputManagerScoped is(input_manager_);
+  ViEFilePlayer* vie_file_player = is.FilePlayer(file_id);
+  if (!vie_file_player) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_),
+                 "%s: File with id %d is not playing.", __FUNCTION__,
+                 file_id);
+    SetLastError(kViEFileNotPlaying);
+    return -1;
+  }
+  if (vie_file_player->IsObserverRegistered()) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, file_id),
+                 "%s: Observer already registered", __FUNCTION__);
+    SetLastError(kViEFileObserverAlreadyRegistered);
+    return -1;
+  }
+  if (vie_file_player->RegisterObserver(observer) != 0) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, file_id),
+                 "%s: Failed to register observer", __FUNCTION__, file_id);
+    SetLastError(kViEFileUnknownError);
+    return -1;
+  }
+  return 0;
 }
 
-void ViECaptureSnapshot::DeliverFrame(int id, VideoFrame& videoFrame,
-                                      int numCSRCs,
-                                      const WebRtc_UWord32 CSRC[kRtpCsrcSize])
-{
-    CriticalSectionScoped cs(_crit);
-    if (!_ptrVideoFrame)
-    {
-        return;
+int ViEFileImpl::DeregisterObserver(int file_id, ViEFileObserver& observer) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_),
+               "%s(file_id: %d)", __FUNCTION__, file_id);
+
+  ViEInputManagerScoped is(input_manager_);
+  ViEFilePlayer* vie_file_player = is.FilePlayer(file_id);
+  if (!vie_file_player) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_),
+                 "%s: File with id %d is not playing.", __FUNCTION__,
+                 file_id);
+    SetLastError(kViEFileNotPlaying);
+    return -1;
+  }
+  if (!vie_file_player->IsObserverRegistered()) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo,
+                 ViEId(instance_id_, file_id), "%s: No Observer registered",
+                 __FUNCTION__);
+    SetLastError(kViEFileObserverNotRegistered);
+    return -1;
+  }
+  if (vie_file_player->DeRegisterObserver() != 0) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, file_id),
+                 "%s: Failed to deregister observer", __FUNCTION__, file_id);
+    SetLastError(kViEFileUnknownError);
+    return -1;
+  }
+  return 0;
+}
+
+int ViEFileImpl::SendFileOnChannel(const int file_id, const int video_channel) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_),
+               "%s(file_id: %d)", __FUNCTION__, file_id);
+
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEEncoder* vie_encoder = cs.Encoder(video_channel);
+  if (!vie_encoder) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s: Channel %d doesn't exist", __FUNCTION__, video_channel);
+    SetLastError(kViEFileInvalidChannelId);
+    return -1;
+  }
+
+  ViEInputManagerScoped is(input_manager_);
+  if (is.FrameProvider(vie_encoder) != NULL) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s: Channel %d already connected to a capture device or "
+                 "file.", __FUNCTION__, video_channel);
+    SetLastError(kViEFileInputAlreadyConnected);
+    return -1;
+  }
+
+  ViEFilePlayer* vie_file_player = is.FilePlayer(file_id);
+  if (!vie_file_player) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_),
+                 "%s: File with id %d is not playing.", __FUNCTION__,
+                 file_id);
+    SetLastError(kViEFileNotPlaying);
+    return -1;
+  }
+
+  if (vie_file_player->RegisterFrameCallback(video_channel, vie_encoder)
+      != 0) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_),
+                 "%s: Failed to register frame callback.", __FUNCTION__,
+                 file_id);
+    SetLastError(kViEFileUnknownError);
+    return -1;
+  }
+  return 0;
+}
+
+int ViEFileImpl::StopSendFileOnChannel(const int video_channel) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_),
+               "%s(video_channel: %d)", __FUNCTION__, video_channel);
+
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEEncoder* vie_encoder = cs.Encoder(video_channel);
+  if (!vie_encoder) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s: Channel %d doesn't exist", __FUNCTION__, video_channel);
+    SetLastError(kViEFileInvalidChannelId);
+    return -1;
+  }
+
+  ViEInputManagerScoped is(input_manager_);
+  ViEFrameProviderBase* frame_provider = is.FrameProvider(vie_encoder);
+  if (!frame_provider ||
+      frame_provider->Id() < kViEFileIdBase ||
+      frame_provider->Id() > kViEFileIdMax) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s: No file connected to Channel %d", __FUNCTION__,
+                 video_channel);
+    SetLastError(kViEFileNotConnected);
+    return -1;
+  }
+  if (frame_provider->DeregisterFrameCallback(vie_encoder) != 0) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s: Failed to deregister file from channel %d",
+                 __FUNCTION__, video_channel);
+    SetLastError(kViEFileUnknownError);
+  }
+  return 0;
+}
+
+int ViEFileImpl::StartPlayFileAsMicrophone(const int file_id,
+                                           const int audio_channel,
+                                           bool mix_microphone,
+                                           float volume_scaling) {
+  ViEInputManagerScoped is(input_manager_);
+
+  ViEFilePlayer* vie_file_player = is.FilePlayer(file_id);
+  if (!vie_file_player) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_),
+                 "%s: File with id %d is not playing.", __FUNCTION__,
+                 file_id);
+    SetLastError(kViEFileNotPlaying);
+    return -1;
+  }
+  if (vie_file_player->SendAudioOnChannel(audio_channel, mix_microphone,
+  volume_scaling) != 0) {
+    SetLastError(kViEFileVoEFailure);
+    return -1;
+  }
+  return 0;
+}
+
+int ViEFileImpl::StopPlayFileAsMicrophone(const int file_id,
+const int audio_channel) {
+  ViEInputManagerScoped is(input_manager_);
+
+  ViEFilePlayer* vie_file_player = is.FilePlayer(file_id);
+  if (!vie_file_player) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_),
+                 "%s: File with id %d is not playing.", __FUNCTION__,
+                 file_id);
+    SetLastError(kViEFileNotPlaying);
+    return -1;
+  }
+
+  if (vie_file_player->StopSendAudioOnChannel(audio_channel) != 0) {
+    SetLastError(kViEFileVoEFailure);
+    return -1;
+  }
+  return 0;
+}
+
+int ViEFileImpl::StartPlayAudioLocally(const int file_id,
+                                       const int audio_channel,
+                                       float volume_scaling) {
+  ViEInputManagerScoped is(input_manager_);
+
+  ViEFilePlayer* vie_file_player = is.FilePlayer(file_id);
+  if (!vie_file_player) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_),
+                 "%s: File with id %d is not playing.", __FUNCTION__,
+                 file_id);
+    SetLastError(kViEFileNotPlaying);
+    return -1;
+  }
+  if (vie_file_player->PlayAudioLocally(audio_channel, volume_scaling) != 0) {
+    SetLastError(kViEFileVoEFailure);
+    return -1;
+  }
+  return 0;
+}
+
+int ViEFileImpl::StopPlayAudioLocally(const int file_id,
+                                      const int audio_channel) {
+  ViEInputManagerScoped is(input_manager_);
+
+  ViEFilePlayer* vie_file_player = is.FilePlayer(file_id);
+  if (!vie_file_player) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_),
+                 "%s: File with id %d is not playing.", __FUNCTION__,
+                 file_id);
+    SetLastError(kViEFileNotPlaying);
+    return -1;
+  }
+  if (vie_file_player->StopPlayAudioLocally(audio_channel) != 0) {
+    SetLastError(kViEFileVoEFailure);
+    return -1;
+  }
+  return 0;
+}
+
+int ViEFileImpl::StartRecordOutgoingVideo(const int video_channel,
+                                          const char* file_nameUTF8,
+                                          AudioSource audio_source,
+                                          const CodecInst& audio_codec,
+                                          const VideoCodec& video_codec,
+                                          const FileFormats file_format) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+               "%s video_channel: %d)", __FUNCTION__, video_channel);
+
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEEncoder* vie_encoder = cs.Encoder(video_channel);
+  if (!vie_encoder) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s: Channel %d doesn't exist", __FUNCTION__, video_channel);
+    SetLastError(kViEFileInvalidChannelId);
+    return -1;
+  }
+  ViEFileRecorder& file_recorder = vie_encoder->GetOutgoingFileRecorder();
+  if (file_recorder.RecordingStarted()) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s: Already recording outgoing video on channel %d",
+                 __FUNCTION__, video_channel);
+    SetLastError(kViEFileAlreadyRecording);
+    return -1;
+  }
+
+  WebRtc_Word32 ve_channel_id = -1;
+  VoiceEngine* ve_ptr = NULL;
+  if (audio_source != NO_AUDIO) {
+    ViEChannel* vie_channel = cs.Channel(video_channel);
+    ve_channel_id = vie_channel->VoiceChannel();
+    ve_ptr = channel_manager_.GetVoiceEngine();
+    if (!ve_ptr) {
+      WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                   "%s: Can't access voice engine. Have SetVoiceEngine "
+                   "been called?", __FUNCTION__);
+      SetLastError(kViEFileVoENotSet);
+      return -1;
     }
-    _ptrVideoFrame->SwapFrame(videoFrame);
-    _conditionVaraible.WakeAll();
+  }
+  if (file_recorder.StartRecording(file_nameUTF8, video_codec, audio_source,
+                                   ve_channel_id, audio_codec, ve_ptr,
+                                   file_format) != 0) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s: Failed to start recording. Check arguments.",
+                 __FUNCTION__);
+    SetLastError(kViEFileUnknownError);
+    return -1;
+  }
+
+  return 0;
+}
+
+int ViEFileImpl::StopRecordOutgoingVideo(const int video_channel) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
+               ViEId(instance_id_, video_channel), "%s video_channel: %d)",
+               __FUNCTION__, video_channel);
+
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEEncoder* vie_encoder = cs.Encoder(video_channel);
+  if (!vie_encoder) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s: Channel %d doesn't exist", __FUNCTION__, video_channel);
+    SetLastError(kViEFileInvalidChannelId);
+    return -1;
+  }
+  ViEFileRecorder& file_recorder = vie_encoder->GetOutgoingFileRecorder();
+  if (!file_recorder.RecordingStarted()) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s: Channel %d is not recording.", __FUNCTION__,
+                 video_channel);
+    SetLastError(kViEFileNotRecording);
+    return -1;
+  }
+  if (file_recorder.StopRecording() != 0) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s: Failed to stop recording of channel %d.", __FUNCTION__,
+                 video_channel);
+    SetLastError(kViEFileUnknownError);
+    return -1;
+  }
+  return 0;
+}
+
+int ViEFileImpl::StopRecordIncomingVideo(const int video_channel) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+               "%s video_channel: %d)", __FUNCTION__, video_channel);
+
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s: Channel %d doesn't exist", __FUNCTION__, video_channel);
+    SetLastError(kViEFileInvalidChannelId);
+    return -1;
+  }
+  ViEFileRecorder& file_recorder = vie_channel->GetIncomingFileRecorder();
+  if (!file_recorder.RecordingStarted()) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s: Channel %d is not recording.", __FUNCTION__,
+                 video_channel);
+    SetLastError(kViEFileNotRecording);
+    vie_channel->ReleaseIncomingFileRecorder();
+    return -1;
+  }
+  if (file_recorder.StopRecording() != 0) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s: Failed to stop recording of channel %d.",
+                 __FUNCTION__, video_channel);
+    SetLastError(kViEFileUnknownError);
+    vie_channel->ReleaseIncomingFileRecorder();
+    return -1;
+  }
+  // Let the channel know we are no longer recording.
+  vie_channel->ReleaseIncomingFileRecorder();
+  return 0;
+}
+
+int ViEFileImpl::StartRecordIncomingVideo(const int video_channel,
+                                          const char* file_nameUTF8,
+                                          AudioSource audio_source,
+                                          const CodecInst& audio_codec,
+                                          const VideoCodec& video_codec,
+                                          const FileFormats file_format) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+               "%s video_channel: %d)", __FUNCTION__, video_channel);
+
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s: Channel %d doesn't exist", __FUNCTION__,
+                 video_channel);
+    SetLastError(kViEFileInvalidChannelId);
+    return -1;
+  }
+  ViEFileRecorder& file_recorder = vie_channel->GetIncomingFileRecorder();
+  if (file_recorder.RecordingStarted()) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s: Already recording outgoing video on channel %d",
+                 __FUNCTION__, video_channel);
+    SetLastError(kViEFileAlreadyRecording);
+    return -1;
+  }
+
+  WebRtc_Word32 ve_channel_id = -1;
+  VoiceEngine* ve_ptr = NULL;
+  if (audio_source != NO_AUDIO) {
+    ve_channel_id = vie_channel->VoiceChannel();
+    ve_ptr = channel_manager_.GetVoiceEngine();
+
+    if (!ve_ptr) {
+      WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                   "%s: Can't access voice engine. Have SetVoiceEngine "
+                   "been called?", __FUNCTION__);
+      SetLastError(kViEFileVoENotSet);
+      return -1;
+    }
+  }
+  if (file_recorder.StartRecording(file_nameUTF8, video_codec, audio_source,
+                                   ve_channel_id, audio_codec, ve_ptr,
+                                   file_format) != 0) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s: Failed to start recording. Check arguments.",
+                 __FUNCTION__);
+    SetLastError(kViEFileUnknownError);
+    return -1;
+  }
+  return 0;
+}
+
+int ViEFileImpl::GetFileInformation(const char* file_name,
+                                    VideoCodec& video_codec,
+                                    CodecInst& audio_codec,
+                                    const FileFormats file_format) {
+  return ViEFilePlayer::GetFileInformation(
+           instance_id_, static_cast<const WebRtc_Word8*>(file_name),
+           video_codec, audio_codec, file_format);
+}
+
+int ViEFileImpl::GetRenderSnapshot(const int video_channel,
+                                   const char* file_nameUTF8) {
+  // Gain access to the renderer for the specified channel and get it's
+  // current frame.
+  ViERenderManagerScoped rs(render_manager_);
+  ViERenderer* renderer = rs.Renderer(video_channel);
+  if (!renderer) {
+    return -1;
+  }
+
+  VideoFrame video_frame;
+  if (renderer->GetLastRenderedFrame(video_channel, video_frame) == -1) {
+    return -1;
+  }
+
+  const int JPEG_FORMAT = 0;
+  int format = JPEG_FORMAT;
+  switch (format) {
+    case JPEG_FORMAT: {
+      // JPEGEncoder writes the jpeg file for you (no control over it) and does
+      // not return you the buffer. Thus, we are not going to be writing to the
+      // disk here.
+      JpegEncoder jpeg_encoder;
+      RawImage input_image;
+      if (jpeg_encoder.SetFileName(file_nameUTF8) == -1) {
+        WEBRTC_TRACE(kTraceError, kTraceVideo, instance_id_,
+                     "\tCould not open output file '%s' for writing!",
+                     file_nameUTF8);
+        return -1;
+      }
+
+      input_image._width = video_frame.Width();
+      input_image._height = video_frame.Height();
+      video_frame.Swap(input_image._buffer, input_image._length,
+                       input_image._size);
+
+      if (jpeg_encoder.Encode(input_image) == -1) {
+        WEBRTC_TRACE(kTraceError, kTraceVideo, instance_id_,
+                     "\tCould not encode i420 -> jpeg file '%s' for writing!",
+                     file_nameUTF8);
+        if (input_image._buffer) {
+          delete [] input_image._buffer;
+        }
+        return -1;
+      }
+      delete [] input_image._buffer;
+      input_image._buffer = NULL;
+      break;
+    }
+    default: {
+      WEBRTC_TRACE(kTraceError, kTraceFile, instance_id_,
+                   "\tUnsupported file format for %s", __FUNCTION__);
+      return -1;
+      break;
+    }
+  }
+  return 0;
+}
+
+int ViEFileImpl::GetRenderSnapshot(const int video_channel,
+                                   ViEPicture& picture) {
+  // Gain access to the renderer for the specified channel and get it's
+  // current frame.
+  ViERenderManagerScoped rs(render_manager_);
+  ViERenderer* renderer = rs.Renderer(video_channel);
+  if (!renderer) {
+    return -1;
+  }
+
+  VideoFrame video_frame;
+  if (renderer->GetLastRenderedFrame(video_channel, video_frame) == -1) {
+    return -1;
+  }
+
+  // Copy from VideoFrame class to ViEPicture struct.
+  int buffer_length =
+      static_cast<int>(video_frame.Width() * video_frame.Height() * 1.5);
+  picture.data =  static_cast<WebRtc_UWord8*>(malloc(
+      buffer_length * sizeof(WebRtc_UWord8)));
+  memcpy(picture.data, video_frame.Buffer(), buffer_length);
+  picture.size = buffer_length;
+  picture.width = video_frame.Width();
+  picture.height = video_frame.Height();
+  picture.type = kVideoI420;
+  return 0;
+}
+
+int ViEFileImpl::GetCaptureDeviceSnapshot(const int capture_id,
+                                          const char* file_nameUTF8) {
+  ViEInputManagerScoped is(input_manager_);
+  ViECapturer* capturer = is.Capture(capture_id);
+  if (!capturer) {
+    return -1;
+  }
+
+  VideoFrame video_frame;
+  if (GetNextCapturedFrame(capture_id, video_frame) == -1) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, instance_id_,
+                 "Could not gain acces to capture device %d video frame "
+                 "%s:%d", capture_id, __FUNCTION__);
+    return -1;
+  }
+
+  const int JPEG_FORMAT = 0;
+  int format = JPEG_FORMAT;
+  switch (format) {
+    case JPEG_FORMAT: {
+      // JPEGEncoder writes the jpeg file for you (no control over it) and does
+      // not return you the buffer Thusly, we are not going to be writing to the
+      // disk here.
+      JpegEncoder jpeg_encoder;
+      RawImage input_image;
+      input_image._width = video_frame.Width();
+      input_image._height = video_frame.Height();
+      video_frame.Swap(input_image._buffer, input_image._length,
+                       input_image._size);
+
+      if (jpeg_encoder.SetFileName(file_nameUTF8) == -1) {
+        WEBRTC_TRACE(kTraceError, kTraceVideo, instance_id_,
+                     "\tCould not open output file '%s' for writing!",
+                     file_nameUTF8);
+
+        if (input_image._buffer) {
+          delete [] input_image._buffer;
+        }
+        return -1;
+      }
+      if (jpeg_encoder.Encode(input_image) == -1) {
+        WEBRTC_TRACE(kTraceError, kTraceVideo, instance_id_,
+                     "\tCould not encode i420 -> jpeg file '%s' for "
+                     "writing!", file_nameUTF8);
+        if (input_image._buffer) {
+          delete [] input_image._buffer;
+        }
+        return -1;
+      }
+      delete [] input_image._buffer;
+      input_image._buffer = NULL;
+      break;
+    }
+    default: {
+      WEBRTC_TRACE(kTraceError, kTraceFile, instance_id_,
+                   "\tUnsupported file format for %s", __FUNCTION__);
+      return -1;
+      break;
+    }
+  }
+  return 0;
+}
+
+int ViEFileImpl::GetCaptureDeviceSnapshot(const int capture_id,
+                                          ViEPicture& picture) {
+  VideoFrame video_frame;
+  ViEInputManagerScoped is(input_manager_);
+  ViECapturer* capturer = is.Capture(capture_id);
+  if (!capturer) {
+    return -1;
+  }
+  if (GetNextCapturedFrame(capture_id, video_frame) == -1) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, instance_id_,
+                 "Could not gain acces to capture device %d video frame "
+                 "%s:%d", capture_id, __FUNCTION__);
+    return -1;
+  }
+
+  // Copy from VideoFrame class to ViEPicture struct.
+  int buffer_length =
+      static_cast<int>(video_frame.Width() * video_frame.Height() * 1.5);
+  picture.data = static_cast<WebRtc_UWord8*>(malloc(
+      buffer_length * sizeof(WebRtc_UWord8)));
+  memcpy(picture.data, video_frame.Buffer(), buffer_length);
+  picture.size = buffer_length;
+  picture.width = video_frame.Width();
+  picture.height = video_frame.Height();
+  picture.type = kVideoI420;
+  return 0;
+}
+
+int ViEFileImpl::FreePicture(ViEPicture& picture) {
+  if (picture.data) {
+    free(picture.data);
+  }
+
+  picture.data = NULL;
+  picture.size = 0;
+  picture.width = 0;
+  picture.height = 0;
+  picture.type = kVideoUnknown;
+  return 0;
+}
+int ViEFileImpl::SetCaptureDeviceImage(const int capture_id,
+                                       const char* file_nameUTF8) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, instance_id_,
+               "%s(capture_id: %d)", __FUNCTION__, capture_id);
+
+  ViEInputManagerScoped is(input_manager_);
+  ViECapturer* capturer = is.Capture(capture_id);
+  if (!capturer) {
+    SetLastError(kViEFileInvalidCaptureId);
+    return -1;
+  }
+
+  VideoFrame capture_image;
+  if (ViEFileImage::ConvertJPEGToVideoFrame(
+  ViEId(instance_id_, capture_id), file_nameUTF8, capture_image) != 0) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo,
+                 ViEId(instance_id_, capture_id),
+                 "%s(capture_id: %d) Failed to open file.", __FUNCTION__,
+                 capture_id);
+    SetLastError(kViEFileInvalidFile);
+    return -1;
+  }
+  if (capturer->SetCaptureDeviceImage(capture_image)) {
+    SetLastError(kViEFileSetCaptureImageError);
+    return -1;
+  }
+  return 0;
+}
+
+int ViEFileImpl::SetCaptureDeviceImage(const int capture_id,
+const ViEPicture& picture) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, instance_id_,
+               "%s(capture_id: %d)", __FUNCTION__, capture_id);
+
+  if (picture.type != kVideoI420) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, capture_id),
+                 "%s(capture_id: %d) Not a valid picture type.",
+                 __FUNCTION__, capture_id);
+    SetLastError(kViEFileInvalidArgument);
+    return -1;
+  }
+  ViEInputManagerScoped is(input_manager_);
+  ViECapturer* capturer = is.Capture(capture_id);
+  if (!capturer) {
+    SetLastError(kViEFileSetCaptureImageError);
+    return -1;
+  }
+
+  VideoFrame capture_image;
+  if (ViEFileImage::ConvertPictureToVideoFrame(
+  ViEId(instance_id_, capture_id), picture, capture_image) != 0) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, capture_id),
+                 "%s(capture_id: %d) Failed to use picture.", __FUNCTION__,
+                 capture_id);
+    SetLastError(kViEFileInvalidFile);
+    return -1;
+  }
+  if (capturer->SetCaptureDeviceImage(capture_image)) {
+    SetLastError(kViEFileInvalidCapture);
+    return -1;
+  }
+  return 0;
+}
+
+int ViEFileImpl::SetRenderStartImage(const int video_channel,
+const char* file_nameUTF8) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+               "%s(video_channel: %d)", __FUNCTION__, video_channel);
+
+  ViERenderManagerScoped rs(render_manager_);
+  ViERenderer* renderer = rs.Renderer(video_channel);
+  if (!renderer) {
+    SetLastError(kViEFileInvalidRenderId);
+    return -1;
+  }
+
+  VideoFrame start_image;
+  if (ViEFileImage::ConvertJPEGToVideoFrame(
+  ViEId(instance_id_, video_channel), file_nameUTF8, start_image) != 0) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s(video_channel: %d) Failed to open file.", __FUNCTION__,
+                 video_channel);
+    SetLastError(kViEFileInvalidFile);
+    return -1;
+  }
+  if (renderer->SetRenderStartImage(start_image) != 0) {
+    SetLastError(kViEFileSetStartImageError);
+    return -1;
+  }
+  return 0;
+}
+
+int ViEFileImpl::SetRenderStartImage(const int video_channel,
+                                     const ViEPicture& picture) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
+               ViEId(instance_id_, video_channel), "%s(video_channel: %d)",
+               __FUNCTION__, video_channel);
+  if (picture.type != kVideoI420) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s(video_channel: %d) Not a valid picture type.",
+                 __FUNCTION__, video_channel);
+    SetLastError(kViEFileInvalidArgument);
+    return -1;
+  }
+
+  ViERenderManagerScoped rs(render_manager_);
+  ViERenderer* renderer = rs.Renderer(video_channel);
+  if (!renderer) {
+    SetLastError(kViEFileInvalidRenderId);
+    return -1;
+  }
+
+  VideoFrame start_image;
+  if (ViEFileImage::ConvertPictureToVideoFrame(
+  ViEId(instance_id_, video_channel), picture, start_image) != 0) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s(video_channel: %d) Failed to use picture.",
+                 __FUNCTION__, video_channel);
+    SetLastError(kViEFileInvalidCapture);
+    return -1;
+  }
+  if (renderer->SetRenderStartImage(start_image) != 0) {
+    SetLastError(kViEFileSetStartImageError);
+    return -1;
+  }
+  return 0;
+}
+int ViEFileImpl::SetRenderTimeoutImage(const int video_channel,
+                                       const char* file_nameUTF8,
+                                       const unsigned int timeout_ms) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+               "%s(video_channel: %d)", __FUNCTION__, video_channel);
+
+  ViERenderManagerScoped rs(render_manager_);
+  ViERenderer* renderer = rs.Renderer(video_channel);
+  if (!renderer) {
+    SetLastError(kViEFileInvalidRenderId);
+    return -1;
+  }
+  VideoFrame timeout_image;
+  if (ViEFileImage::ConvertJPEGToVideoFrame(
+  ViEId(instance_id_, video_channel), file_nameUTF8, timeout_image) != 0) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s(video_channel: %d) Failed to open file.", __FUNCTION__,
+                 video_channel);
+    SetLastError(kViEFileInvalidFile);
+    return -1;
+  }
+  WebRtc_Word32 timeout_time = timeout_ms;
+  if (timeout_ms < kViEMinRenderTimeoutTimeMs) {
+    WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s(video_channel: %d) Invalid timeout_ms, using %d.",
+                 __FUNCTION__, video_channel, kViEMinRenderTimeoutTimeMs);
+    timeout_time = kViEMinRenderTimeoutTimeMs;
+  }
+  if (timeout_ms > kViEMaxRenderTimeoutTimeMs) {
+    WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s(video_channel: %d) Invalid timeout_ms, using %d.",
+                 __FUNCTION__, video_channel, kViEMaxRenderTimeoutTimeMs);
+    timeout_time = kViEMaxRenderTimeoutTimeMs;
+  }
+  if (renderer->SetTimeoutImage(timeout_image, timeout_time) != 0) {
+    SetLastError(kViEFileSetRenderTimeoutError);
+    return -1;
+  }
+  return 0;
+}
+
+int ViEFileImpl::SetRenderTimeoutImage(const int video_channel,
+                                       const ViEPicture& picture,
+const unsigned int timeout_ms) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+               "%s(video_channel: %d)", __FUNCTION__, video_channel);
+
+  if (picture.type != kVideoI420) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s(video_channel: %d) Not a valid picture type.",
+                 __FUNCTION__, video_channel);
+    SetLastError(kViEFileInvalidArgument);
+    return -1;
+  }
+
+  ViERenderManagerScoped rs(render_manager_);
+  ViERenderer* renderer = rs.Renderer(video_channel);
+  if (!renderer) {
+    SetLastError(kViEFileSetRenderTimeoutError);
+    return -1;
+  }
+  VideoFrame timeout_image;
+  if (ViEFileImage::ConvertPictureToVideoFrame(
+  ViEId(instance_id_, video_channel), picture, timeout_image) != 0) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s(video_channel: %d) Failed to use picture.",
+                 __FUNCTION__, video_channel);
+    SetLastError(kViEFileInvalidCapture);
+    return -1;
+  }
+  WebRtc_Word32 timeout_time = timeout_ms;
+  if (timeout_ms < kViEMinRenderTimeoutTimeMs) {
+    WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s(video_channel: %d) Invalid timeout_ms, using %d.",
+                 __FUNCTION__, video_channel, kViEMinRenderTimeoutTimeMs);
+    timeout_time = kViEMinRenderTimeoutTimeMs;
+  }
+  if (timeout_ms > kViEMaxRenderTimeoutTimeMs) {
+    WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s(video_channel: %d) Invalid timeout_ms, using %d.",
+                 __FUNCTION__, video_channel, kViEMaxRenderTimeoutTimeMs);
+    timeout_time = kViEMaxRenderTimeoutTimeMs;
+  }
+  if (renderer->SetTimeoutImage(timeout_image, timeout_time) != 0) {
+    SetLastError(kViEFileSetRenderTimeoutError);
+    return -1;
+  }
+  return 0;
+}
+
+WebRtc_Word32 ViEFileImpl::GetNextCapturedFrame(WebRtc_Word32 capture_id,
+VideoFrame& video_frame) {
+  ViEInputManagerScoped is(input_manager_);
+  ViECapturer* capturer = is.Capture(capture_id);
+  if (!capturer) {
+    return -1;
+  }
+
+  ViECaptureSnapshot* snap_shot = new ViECaptureSnapshot();
+  capturer->RegisterFrameCallback(-1, snap_shot);
+  bool snapshot_taken = snap_shot->GetSnapshot(
+      video_frame, kViECaptureMaxSnapshotWaitTimeMs);
+
+  // Check once again if it has been destroyed.
+  capturer->DeregisterFrameCallback(snap_shot);
+  delete snap_shot;
+  snap_shot = NULL;
+
+  if (snapshot_taken) {
+    return 0;
+  }
+  return -1;
+}
+
+ViECaptureSnapshot::ViECaptureSnapshot()
+    : crit_(*CriticalSectionWrapper::CreateCriticalSection()),
+      condition_varaible_(*ConditionVariableWrapper::CreateConditionVariable()),
+      video_frame_(NULL) {
+}
+
+ViECaptureSnapshot::~ViECaptureSnapshot() {
+  crit_.Enter();
+  crit_.Leave();
+  delete &crit_;
+  if (video_frame_) {
+    delete video_frame_;
+    video_frame_ = NULL;
+  }
+}
+
+bool ViECaptureSnapshot::GetSnapshot(VideoFrame& video_frame,
+unsigned int max_wait_time) {
+  crit_.Enter();
+  video_frame_ = new VideoFrame();
+  if (condition_varaible_.SleepCS(crit_, max_wait_time)) {
+    // Snapshot taken
+    video_frame.SwapFrame(*video_frame_);
+    delete video_frame_;
+    video_frame_ = NULL;
+    crit_.Leave();
+    return true;
+  }
+  return false;
+}
+
+void ViECaptureSnapshot::DeliverFrame(int id, VideoFrame& video_frame,
+                                      int num_csrcs,
+const WebRtc_UWord32 CSRC[kRtpCsrcSize]) {
+  CriticalSectionScoped cs(crit_);
+  if (!video_frame_) {
     return;
+  }
+  video_frame_->SwapFrame(video_frame);
+  condition_varaible_.WakeAll();
+  return;
 }
+
 #endif
-} // namespace webrtc
+
+}  // namespace webrtc
