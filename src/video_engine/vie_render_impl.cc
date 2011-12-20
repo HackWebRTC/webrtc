@@ -109,7 +109,7 @@ int ViERenderImpl::AddRenderer(const int render_id, void* window,
   }
   {
     ViERenderManagerScoped rs(render_manager_);
-    if (rs.Renderer(render_id) != NULL) {
+    if (rs.Renderer(render_id)) {
       WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_),
                    "%s - Renderer already exist %d.", __FUNCTION__,
                    render_id);
@@ -326,9 +326,9 @@ int ViERenderImpl::AddRenderer(const int render_id,
     return -1;
   }
   {
-    // Verify the renderer exists.
+    // Verify the renderer doesn't exist.
     ViERenderManagerScoped rs(render_manager_);
-    if (!rs.Renderer(render_id)) {
+    if (rs.Renderer(render_id)) {
       WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_),
                    "%s - Renderer already exist %d.", __FUNCTION__,
                    render_id);
