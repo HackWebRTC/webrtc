@@ -8,1119 +8,733 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * vie_network_impl.cpp
- */
+#include "video_engine/vie_network_impl.h"
 
-#include "vie_network_impl.h"
-
-// Defines
-#include "engine_configurations.h"
-#include "vie_defines.h"
-
-// WebRTC include
-#include "vie_errors.h"
-#include "trace.h"
-#include "vie_impl.h"
-#include "vie_channel.h"
-#include "vie_channel_manager.h"
-#include "vie_encoder.h"
-
-// System include
 #include <stdio.h>
-
-// Conditional system include
-#if (defined(_WIN32) || defined(_WIN64))
+#if (defined(WIN32_) || defined(WIN64_))
 #include <qos.h>
 #endif
 
-namespace webrtc
-{
+#include "engine_configurations.h"
+#include "system_wrappers/interface/trace.h"
+#include "video_engine/main/interface/vie_errors.h"
+#include "video_engine/vie_channel.h"
+#include "video_engine/vie_channel_manager.h"
+#include "video_engine/vie_defines.h"
+#include "video_engine/vie_encoder.h"
+#include "video_engine/vie_impl.h"
 
-// ----------------------------------------------------------------------------
-// GetInterface
-// ----------------------------------------------------------------------------
+namespace webrtc {
 
-ViENetwork* ViENetwork::GetInterface(VideoEngine* videoEngine)
-{
+ViENetwork* ViENetwork::GetInterface(VideoEngine* video_engine) {
 #ifdef WEBRTC_VIDEO_ENGINE_NETWORK_API
-    if (videoEngine == NULL)
-    {
-        return NULL;
-    }
-    VideoEngineImpl* vieImpl = reinterpret_cast<VideoEngineImpl*> (videoEngine);
-    ViENetworkImpl* vieNetworkImpl = vieImpl;
-    (*vieNetworkImpl)++; // Increase ref count
-
-    return vieNetworkImpl;
-#else
+  if (!video_engine) {
     return NULL;
+  }
+  VideoEngineImpl* vie_impl = reinterpret_cast<VideoEngineImpl*>(video_engine);
+  ViENetworkImpl* vie_networkImpl = vie_impl;
+  // Increase ref count.
+  (*vie_networkImpl)++;
+  return vie_networkImpl;
+#else
+  return NULL;
 #endif
 }
 
-// ----------------------------------------------------------------------------
-// Release
-//
-// Releases the interface, i.e. reduces the reference counter. The number of
-// remaining references is returned, -1 if released too many times.
-// ----------------------------------------------------------------------------
+int ViENetworkImpl::Release() {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, instance_id_,
+               "ViENetwork::Release()");
+  // Decrease ref count.
+  (*this)--;
 
-int ViENetworkImpl::Release()
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, instance_id_,
-                 "ViENetwork::Release()");
-    (*this)--; // Decrease ref count
-
-    WebRtc_Word32 refCount = GetCount();
-    if (refCount < 0)
-    {
-        WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideo, instance_id_,
-                     "ViENetwork release too many times");
-        SetLastError(kViEAPIDoesNotExist);
-        return -1;
-    }
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, instance_id_,
-                 "ViENetwork reference count: %d", refCount);
-    return refCount;
+  WebRtc_Word32 ref_count = GetCount();
+  if (ref_count < 0) {
+    WEBRTC_TRACE(kTraceWarning, kTraceVideo, instance_id_,
+                 "ViENetwork release too many times");
+    SetLastError(kViEAPIDoesNotExist);
+    return -1;
+  }
+  WEBRTC_TRACE(kTraceInfo, kTraceVideo, instance_id_,
+               "ViENetwork reference count: %d", ref_count);
+  return ref_count;
 }
 
-// ----------------------------------------------------------------------------
-// Constructor
-// ----------------------------------------------------------------------------
-
-ViENetworkImpl::ViENetworkImpl()
-{
-    WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideo, instance_id_,
-                 "ViENetworkImpl::ViENetworkImpl() Ctor");
+ViENetworkImpl::ViENetworkImpl() {
+  WEBRTC_TRACE(kTraceMemory, kTraceVideo, instance_id_,
+               "ViENetworkImpl::ViENetworkImpl() Ctor");
 }
 
-// ----------------------------------------------------------------------------
-// Destructor
-// ----------------------------------------------------------------------------
-
-ViENetworkImpl::~ViENetworkImpl()
-{
-    WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideo, instance_id_,
-                 "ViENetworkImpl::~ViENetworkImpl() Dtor");
+ViENetworkImpl::~ViENetworkImpl() {
+  WEBRTC_TRACE(kTraceMemory, kTraceVideo, instance_id_,
+               "ViENetworkImpl::~ViENetworkImpl() Dtor");
 }
 
-// ============================================================================
-// Receive functions
-// ============================================================================
+int ViENetworkImpl::SetLocalReceiver(const int video_channel,
+                                     const unsigned short rtp_port,
+                                     const unsigned short rtcp_port,
+                                     const char* ip_address) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+               "%s(channel: %d, rtp_port: %u, rtcp_port: %u, ip_address: %s)",
+               __FUNCTION__, video_channel, rtp_port, rtcp_port, ip_address);
+  if (!Initialized()) {
+    SetLastError(kViENotInitialized);
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_),
+                 "%s - ViE instance %d not initialized", __FUNCTION__,
+                 instance_id_);
+    return -1;
+  }
 
-// ----------------------------------------------------------------------------
-// SetLocalReceiver
-//
-// Initializes the receive socket
-// ----------------------------------------------------------------------------
-int ViENetworkImpl::SetLocalReceiver(const int videoChannel,
-                                     const unsigned short rtpPort,
-                                     const unsigned short rtcpPort,
-                                     const char* ipAddress)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-                 ViEId(instance_id_, videoChannel),
-                 "%s(channel: %d, rtpPort: %u, rtcpPort: %u, ipAddress: %s)",
-                 __FUNCTION__, videoChannel, rtpPort, rtcpPort, ipAddress);
-    if (!Initialized())
-    {
-        SetLastError(kViENotInitialized);
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
-                     "%s - ViE instance %d not initialized", __FUNCTION__,
-                     instance_id_);
-        return -1;
-    }
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    // The channel doesn't exists.
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "Channel doesn't exist");
+    SetLastError(kViENetworkInvalidChannelId);
+    return -1;
+  }
 
-    // Get the channel
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEChannel* ptrViEChannel = cs.Channel(videoChannel);
-    if (ptrViEChannel == NULL)
-    {
-        // The channel doesn't exists
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_,videoChannel), "Channel doesn't exist");
-        SetLastError(kViENetworkInvalidChannelId);
-        return -1;
-    }
-
-    if (ptrViEChannel->Receiving())
-    {
-        SetLastError(kViENetworkAlreadyReceiving);
-        return -1;
-    }
-    if (ptrViEChannel->SetLocalReceiver(rtpPort, rtcpPort, ipAddress) != 0)
-    {
-        SetLastError(kViENetworkUnknownError);
-        return -1;
-    }
-    return 0;
+  if (vie_channel->Receiving()) {
+    SetLastError(kViENetworkAlreadyReceiving);
+    return -1;
+  }
+  if (vie_channel->SetLocalReceiver(rtp_port, rtcp_port, ip_address) != 0) {
+    SetLastError(kViENetworkUnknownError);
+    return -1;
+  }
+  return 0;
 }
 
-// ----------------------------------------------------------------------------
-// GetLocalReceiver
-//
-// Gets settings for an initialized receive socket
-// ----------------------------------------------------------------------------
-int ViENetworkImpl::GetLocalReceiver(const int videoChannel,
-                                     unsigned short& rtpPort,
-                                     unsigned short& rtcpPort, char* ipAddress)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-                 ViEId(instance_id_, videoChannel), "%s(channel: %d)",
-                 __FUNCTION__, videoChannel);
+int ViENetworkImpl::GetLocalReceiver(const int video_channel,
+                                     unsigned short& rtp_port,
+                                     unsigned short& rtcp_port,
+                                     char* ip_address) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+               "%s(channel: %d)", __FUNCTION__, video_channel);
 
-    // Get the channel
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEChannel* ptrViEChannel = cs.Channel(videoChannel);
-    if (ptrViEChannel == NULL)
-    {
-        // The channel doesn't exists
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel), "Channel doesn't exist");
-        SetLastError(kViENetworkInvalidChannelId);
-        return -1;
-    }
-    if (ptrViEChannel->GetLocalReceiver(rtpPort, rtcpPort, ipAddress) != 0)
-    {
-        SetLastError(kViENetworkLocalReceiverNotSet);
-        return -1;
-    }
-    return 0;
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "Channel doesn't exist");
+    SetLastError(kViENetworkInvalidChannelId);
+    return -1;
+  }
+  if (vie_channel->GetLocalReceiver(rtp_port, rtcp_port, ip_address) != 0) {
+    SetLastError(kViENetworkLocalReceiverNotSet);
+    return -1;
+  }
+  return 0;
 }
 
-// ============================================================================
-// Send functions
-// ============================================================================
+int ViENetworkImpl::SetSendDestination(const int video_channel,
+                                       const char* ip_address,
+                                       const unsigned short rtp_port,
+                                       const unsigned short rtcp_port,
+                                       const unsigned short source_rtp_port,
+                                       const unsigned short source_rtcp_port) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+               "%s(channel: %d, ip_address: %s, rtp_port: %u, rtcp_port: %u, "
+               "sourceRtpPort: %u, source_rtcp_port: %u)",
+               __FUNCTION__, video_channel, ip_address, rtp_port, rtcp_port,
+               source_rtp_port, source_rtcp_port);
+  if (!Initialized()) {
+    SetLastError(kViENotInitialized);
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_),
+                 "%s - ViE instance %d not initialized", __FUNCTION__,
+                 instance_id_);
+    return -1;
+  }
 
-// ----------------------------------------------------------------------------
-// SetSendDestination
-//
-// Initializes the send socket
-// ----------------------------------------------------------------------------
-int ViENetworkImpl::SetSendDestination(const int videoChannel,
-                                       const char* ipAddress,
-                                       const unsigned short rtpPort,
-                                       const unsigned short rtcpPort,
-                                       const unsigned short sourceRtpPort,
-                                       const unsigned short sourceRtcpPort)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-                 ViEId(instance_id_, videoChannel),
-                 "%s(channel: %d, ipAddress: %s, rtpPort: %u, rtcpPort: %u, "
-                 "sourceRtpPort: %u, sourceRtcpPort: %u)",
-                 __FUNCTION__, videoChannel, ipAddress, rtpPort, rtcpPort,
-                 sourceRtpPort, sourceRtcpPort);
-    if (!Initialized())
-    {
-        SetLastError(kViENotInitialized);
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
-                     "%s - ViE instance %d not initialized", __FUNCTION__,
-                     instance_id_);
-        return -1;
-    }
-
-    // Get the channel
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEChannel* ptrViEChannel = cs.Channel(videoChannel);
-    if (ptrViEChannel == NULL)
-    {
-        // The channel doesn't exists
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel),
-                     "%s Channel doesn't exist", __FUNCTION__);
-        SetLastError(kViENetworkInvalidChannelId);
-        return -1;
-    }
-    if (ptrViEChannel->Sending())
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel),
-                     "%s Channel already sending.", __FUNCTION__);
-        SetLastError(kViENetworkAlreadySending);
-        return -1;
-    }
-    if (ptrViEChannel->SetSendDestination(ipAddress, rtpPort, rtcpPort,
-                                          sourceRtpPort, sourceRtcpPort) != 0)
-    {
-        SetLastError(kViENetworkUnknownError);
-        return -1;
-    }
-
-    return 0;
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s Channel doesn't exist", __FUNCTION__);
+    SetLastError(kViENetworkInvalidChannelId);
+    return -1;
+  }
+  if (vie_channel->Sending()) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s Channel already sending.", __FUNCTION__);
+    SetLastError(kViENetworkAlreadySending);
+    return -1;
+  }
+  if (vie_channel->SetSendDestination(ip_address, rtp_port, rtcp_port,
+                                          source_rtp_port,
+                                          source_rtcp_port) != 0) {
+    SetLastError(kViENetworkUnknownError);
+    return -1;
+  }
+  return 0;
 }
 
-// ----------------------------------------------------------------------------
-// GetSendDestination
-//
-// Gets settings for an initialized send socket
-// ----------------------------------------------------------------------------
-int ViENetworkImpl::GetSendDestination(const int videoChannel, char* ipAddress,
-                                       unsigned short& rtpPort,
-                                       unsigned short& rtcpPort,
-                                       unsigned short& sourceRtpPort,
-                                       unsigned short& sourceRtcpPort)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-                 ViEId(instance_id_, videoChannel), "%s(channel: %d)",
-                 __FUNCTION__, videoChannel);
-
-    // Get the channel
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEChannel* ptrViEChannel = cs.Channel(videoChannel);
-    if (ptrViEChannel == NULL)
-    {
-        // The channel doesn't exists
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel), "Channel doesn't exist");
-        SetLastError(kViENetworkInvalidChannelId);
-        return -1;
-    }
-    if (ptrViEChannel->GetSendDestination(ipAddress, rtpPort, rtcpPort,
-                                          sourceRtpPort, sourceRtcpPort) != 0)
-    {
-        SetLastError(kViENetworkDestinationNotSet);
-        return -1;
-    }
-    return 0;
+int ViENetworkImpl::GetSendDestination(const int video_channel,
+                                       char* ip_address,
+                                       unsigned short& rtp_port,
+                                       unsigned short& rtcp_port,
+                                       unsigned short& source_rtp_port,
+                                       unsigned short& source_rtcp_port) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+               "%s(channel: %d)", __FUNCTION__, video_channel);
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo,
+                 ViEId(instance_id_, video_channel), "Channel doesn't exist");
+    SetLastError(kViENetworkInvalidChannelId);
+    return -1;
+  }
+  if (vie_channel->GetSendDestination(ip_address, rtp_port, rtcp_port,
+                                          source_rtp_port,
+                                          source_rtcp_port) != 0) {
+    SetLastError(kViENetworkDestinationNotSet);
+    return -1;
+  }
+  return 0;
 }
 
-// ============================================================================
-// External transport
-// ============================================================================
-
-// ----------------------------------------------------------------------------
-// RegisterSendTransport
-//
-// Registers the customer implemented send transport
-// ----------------------------------------------------------------------------
-int ViENetworkImpl::RegisterSendTransport(const int videoChannel,
-                                          Transport& transport)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-                 ViEId(instance_id_, videoChannel), "%s(channel: %d)",
-                 __FUNCTION__, videoChannel);
-    if (!Initialized())
-    {
-        SetLastError(kViENotInitialized);
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
-                     "%s - ViE instance %d not initialized", __FUNCTION__,
-                     instance_id_);
-        return -1;
-    }
-
-    // Get the channel
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEChannel* ptrViEChannel = cs.Channel(videoChannel);
-    if (ptrViEChannel == NULL)
-    {
-        // The channel doesn't exists
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel),
-                     "%s Channel doesn't exist", __FUNCTION__);
-        SetLastError(kViENetworkInvalidChannelId);
-        return -1;
-    }
-    if (ptrViEChannel->Sending())
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel),
-                     "%s Channel already sending.", __FUNCTION__);
-        SetLastError(kViENetworkAlreadySending);
-        return -1;
-    }
-    if (ptrViEChannel->RegisterSendTransport(transport) != 0)
-    {
-        SetLastError(kViENetworkUnknownError);
-        return -1;
-    }
-    return 0;
+int ViENetworkImpl::RegisterSendTransport(const int video_channel,
+                                          Transport& transport) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+               "%s(channel: %d)", __FUNCTION__, video_channel);
+  if (!Initialized()) {
+    SetLastError(kViENotInitialized);
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_),
+                 "%s - ViE instance %d not initialized", __FUNCTION__,
+                 instance_id_);
+    return -1;
+  }
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s Channel doesn't exist", __FUNCTION__);
+    SetLastError(kViENetworkInvalidChannelId);
+    return -1;
+  }
+  if (vie_channel->Sending()) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s Channel already sending.", __FUNCTION__);
+    SetLastError(kViENetworkAlreadySending);
+    return -1;
+  }
+  if (vie_channel->RegisterSendTransport(transport) != 0) {
+    SetLastError(kViENetworkUnknownError);
+    return -1;
+  }
+  return 0;
 }
 
-// ----------------------------------------------------------------------------
-// DeregisterSendTransport
-//
-// Deregisters the send transport implementation from
-// RegisterSendTransport
-// ----------------------------------------------------------------------------
-int ViENetworkImpl::DeregisterSendTransport(const int videoChannel)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-                 ViEId(instance_id_, videoChannel), "%s(channel: %d)",
-                 __FUNCTION__, videoChannel);
-
-    // Get the channel
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEChannel* ptrViEChannel = cs.Channel(videoChannel);
-    if (ptrViEChannel == NULL)
-    {
-        // The channel doesn't exists
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel),
-                     "%s Channel doesn't exist", __FUNCTION__);
-        SetLastError(kViENetworkInvalidChannelId);
-        return -1;
-    }
-    if (ptrViEChannel->Sending())
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel),
-                     "%s Channel already sending", __FUNCTION__);
-        SetLastError(kViENetworkAlreadySending);
-        return -1;
-    }
-    if (ptrViEChannel->DeregisterSendTransport() != 0)
-    {
-        SetLastError(kViENetworkUnknownError);
-        return -1;
-    }
-    return 0;
+int ViENetworkImpl::DeregisterSendTransport(const int video_channel) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+               "%s(channel: %d)", __FUNCTION__, video_channel);
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s Channel doesn't exist", __FUNCTION__);
+    SetLastError(kViENetworkInvalidChannelId);
+    return -1;
+  }
+  if (vie_channel->Sending()) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s Channel already sending", __FUNCTION__);
+    SetLastError(kViENetworkAlreadySending);
+    return -1;
+  }
+  if (vie_channel->DeregisterSendTransport() != 0) {
+    SetLastError(kViENetworkUnknownError);
+    return -1;
+  }
+  return 0;
 }
 
-// ----------------------------------------------------------------------------
-// ReceivedRTPPacket
-//
-// Function for inserting a RTP packet received by a customer transport
-// ----------------------------------------------------------------------------
-int ViENetworkImpl::ReceivedRTPPacket(const int videoChannel, const void* data,
-                                      const int length)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-                 ViEId(instance_id_, videoChannel),
-                 "%s(channel: %d, data: -, length: %d)", __FUNCTION__,
-                 videoChannel, length);
-    if (!Initialized())
-    {
-        SetLastError(kViENotInitialized);
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
-                     "%s - ViE instance %d not initialized", __FUNCTION__,
-                     instance_id_);
-        return -1;
-    }
-
-    // Get the channel
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEChannel* ptrViEChannel = cs.Channel(videoChannel);
-    if (ptrViEChannel == NULL)
-    {
-        // The channel doesn't exists
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel), "Channel doesn't exist");
-        SetLastError(kViENetworkInvalidChannelId);
-        return -1;
-    }
-    return ptrViEChannel->ReceivedRTPPacket(data, length);
+int ViENetworkImpl::ReceivedRTPPacket(const int video_channel, const void* data,
+                                      const int length) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+               "%s(channel: %d, data: -, length: %d)", __FUNCTION__,
+               video_channel, length);
+  if (!Initialized()) {
+    SetLastError(kViENotInitialized);
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_),
+                 "%s - ViE instance %d not initialized", __FUNCTION__,
+                 instance_id_);
+    return -1;
+  }
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    // The channel doesn't exists
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "Channel doesn't exist");
+    SetLastError(kViENetworkInvalidChannelId);
+    return -1;
+  }
+  return vie_channel->ReceivedRTPPacket(data, length);
 }
 
-// ----------------------------------------------------------------------------
-// ReceivedRTCPPacket
-//
-// Function for inserting a RTCP packet received by a customer transport
-// ----------------------------------------------------------------------------
-int ViENetworkImpl::ReceivedRTCPPacket(const int videoChannel,
-                                       const void* data, const int length)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-                 ViEId(instance_id_, videoChannel),
-                 "%s(channel: %d, data: -, length: %d)", __FUNCTION__,
-                 videoChannel, length);
-    if (!Initialized())
-    {
-        SetLastError(kViENotInitialized);
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
-                     "%s - ViE instance %d not initialized", __FUNCTION__,
-                     instance_id_);
-        return -1;
-    }
-
-    // Get the channel
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEChannel* ptrViEChannel = cs.Channel(videoChannel);
-    if (ptrViEChannel == NULL)
-    {
-        // The channel doesn't exists
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel), "Channel doesn't exist");
-        SetLastError(kViENetworkInvalidChannelId);
-        return -1;
-    }
-    return ptrViEChannel->ReceivedRTCPPacket(data, length);
+int ViENetworkImpl::ReceivedRTCPPacket(const int video_channel,
+                                       const void* data, const int length) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+               "%s(channel: %d, data: -, length: %d)", __FUNCTION__,
+               video_channel, length);
+  if (!Initialized()) {
+    SetLastError(kViENotInitialized);
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_),
+                 "%s - ViE instance %d not initialized", __FUNCTION__,
+                 instance_id_);
+    return -1;
+  }
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "Channel doesn't exist");
+    SetLastError(kViENetworkInvalidChannelId);
+    return -1;
+  }
+  return vie_channel->ReceivedRTCPPacket(data, length);
 }
 
-// ============================================================================
-// Get info
-// ============================================================================
-
-// ----------------------------------------------------------------------------
-// GetSourceInfo
-//
-// Retreives informatino about the remote side sockets
-// ----------------------------------------------------------------------------
-int ViENetworkImpl::GetSourceInfo(const int videoChannel,
-                                  unsigned short& rtpPort,
-                                  unsigned short& rtcpPort, char* ipAddress,
-                                  unsigned int ipAddressLength)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-                 ViEId(instance_id_, videoChannel), "%s(channel: %d)",
-                 __FUNCTION__, videoChannel);
-
-    // Get the channel
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEChannel* ptrViEChannel = cs.Channel(videoChannel);
-    if (ptrViEChannel == NULL)
-    {
-        // The channel doesn't exists
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel), "Channel doesn't exist");
-        SetLastError(kViENetworkInvalidChannelId);
-        return -1;
-    }
-    if (ptrViEChannel->GetSourceInfo(rtpPort, rtcpPort, ipAddress,
-                                     ipAddressLength) != 0)
-    {
-        SetLastError(kViENetworkUnknownError);
-        return -1;
-    }
-    return 0;
+int ViENetworkImpl::GetSourceInfo(const int video_channel,
+                                  unsigned short& rtp_port,
+                                  unsigned short& rtcp_port, char* ip_address,
+                                  unsigned int ip_address_length) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+               "%s(channel: %d)", __FUNCTION__, video_channel);
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "Channel doesn't exist");
+    SetLastError(kViENetworkInvalidChannelId);
+    return -1;
+  }
+  if (vie_channel->GetSourceInfo(rtp_port, rtcp_port, ip_address,
+                                 ip_address_length) != 0) {
+    SetLastError(kViENetworkUnknownError);
+    return -1;
+  }
+  return 0;
 }
 
-// ----------------------------------------------------------------------------
-// GetLocalIP
-//
-// Gets the local ip address
-// ----------------------------------------------------------------------------
-int ViENetworkImpl::GetLocalIP(char ipAddress[64], bool ipv6)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, ViEId(instance_id_),
-                 "%s( ipAddress, ipV6: %d)", __FUNCTION__, ipv6);
+int ViENetworkImpl::GetLocalIP(char ip_address[64], bool ipv6) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_),
+               "%s( ip_address, ipV6: %d)", __FUNCTION__, ipv6);
 
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
-    if (!Initialized())
-    {
-        SetLastError(kViENotInitialized);
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
-                     "%s - ViE instance %d not initialized", __FUNCTION__,
-                     instance_id_);
-        return -1;
-    }
-
-    if (ipAddress == NULL)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
-                     "%s: No argument", __FUNCTION__);
-        SetLastError(kViENetworkInvalidArgument);
-        return -1;
-    }
-
-    WebRtc_UWord8 numSocketThreads = 1;
-    UdpTransport* ptrSocketTransport =
-        UdpTransport::Create(
-            ViEModuleId(instance_id_,-1),numSocketThreads);
-
-    if (ptrSocketTransport == NULL)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
-                     "%s: Could not create socket module", __FUNCTION__);
-        SetLastError(kViENetworkUnknownError);
-        return -1;
-    }
-
-    WebRtc_Word8 localIpAddress[64];
-    if (ipv6)
-    {
-        WebRtc_UWord8 localIP[16];
-        if (ptrSocketTransport->LocalHostAddressIPV6(localIP) != 0)
-        {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
-                         "%s: Could not get local IP", __FUNCTION__);
-            SetLastError(kViENetworkUnknownError);
-            return -1;
-        }
-        // Convert 128-bit address to character string (a:b:c:d:e:f:g:h)
-        sprintf(localIpAddress,
-                "%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x",
-                localIP[0], localIP[1], localIP[2], localIP[3], localIP[4],
-                localIP[5], localIP[6], localIP[7], localIP[8], localIP[9],
-                localIP[10], localIP[11], localIP[12], localIP[13],
-                localIP[14], localIP[15]);
-    }
-    else
-    {
-        WebRtc_UWord32 localIP = 0;
-        if (ptrSocketTransport->LocalHostAddress(localIP) != 0)
-        {
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
-                         "%s: Could not get local IP", __FUNCTION__);
-            SetLastError(kViENetworkUnknownError);
-            return -1;
-        }
-        // Convert 32-bit address to character string (x.y.z.w)
-        sprintf(localIpAddress, "%d.%d.%d.%d", (int) ((localIP >> 24) & 0x0ff),
-                (int) ((localIP >> 16) & 0x0ff),
-                (int) ((localIP >> 8) & 0x0ff), (int) (localIP & 0x0ff));
-    }
-    strcpy(ipAddress, localIpAddress);
-    UdpTransport::Destroy(
-        ptrSocketTransport);
-    WEBRTC_TRACE(webrtc::kTraceStateInfo, webrtc::kTraceVideo, ViEId(instance_id_),
-                 "%s: local ip = %s", __FUNCTION__, localIpAddress);
-
-    return 0;
-#else
-    WEBRTC_TRACE(webrtc::kTraceStateInfo, webrtc::kTraceVideo, ViEId(instance_id_),
-        "%s: not available for external transport", __FUNCTION__);
-
+  if (!Initialized()) {
+    SetLastError(kViENotInitialized);
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_),
+                 "%s - ViE instance %d not initialized", __FUNCTION__,
+                 instance_id_);
     return -1;
+  }
+
+  if (!ip_address) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_),
+                 "%s: No argument", __FUNCTION__);
+    SetLastError(kViENetworkInvalidArgument);
+    return -1;
+  }
+
+  WebRtc_UWord8 num_socket_threads = 1;
+  UdpTransport* socket_transport = UdpTransport::Create(
+      ViEModuleId(instance_id_, -1), num_socket_threads);
+
+  if (!socket_transport) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_),
+                 "%s: Could not create socket module", __FUNCTION__);
+    SetLastError(kViENetworkUnknownError);
+    return -1;
+  }
+
+  WebRtc_Word8 local_ip_address[64];
+  if (ipv6) {
+    WebRtc_UWord8 local_ip[16];
+    if (socket_transport->LocalHostAddressIPV6(local_ip) != 0) {
+      WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_),
+                   "%s: Could not get local IP", __FUNCTION__);
+      SetLastError(kViENetworkUnknownError);
+      return -1;
+    }
+    // Convert 128-bit address to character string (a:b:c:d:e:f:g:h).
+    sprintf(local_ip_address,
+            "%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:"
+            "%.2x%.2x",
+            local_ip[0], local_ip[1], local_ip[2], local_ip[3], local_ip[4],
+            local_ip[5], local_ip[6], local_ip[7], local_ip[8], local_ip[9],
+            local_ip[10], local_ip[11], local_ip[12], local_ip[13],
+            local_ip[14], local_ip[15]);
+  } else {
+    WebRtc_UWord32 local_ip = 0;
+    if (socket_transport->LocalHostAddress(local_ip) != 0) {
+      WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_),
+                   "%s: Could not get local IP", __FUNCTION__);
+      SetLastError(kViENetworkUnknownError);
+      return -1;
+    }
+    // Convert 32-bit address to character string (x.y.z.w).
+    sprintf(local_ip_address, "%d.%d.%d.%d",
+            static_cast<int>((local_ip >> 24) & 0x0ff),
+            static_cast<int>((local_ip >> 16) & 0x0ff),
+            static_cast<int>((local_ip >> 8) & 0x0ff),
+            static_cast<int>(local_ip & 0x0ff));
+  }
+  strcpy(ip_address, local_ip_address);
+  UdpTransport::Destroy(socket_transport);
+  WEBRTC_TRACE(kTraceStateInfo, kTraceVideo, ViEId(instance_id_),
+               "%s: local ip = %s", __FUNCTION__, local_ip_address);
+  return 0;
+#else
+  WEBRTC_TRACE(kTraceStateInfo, kTraceVideo, ViEId(instance_id_),
+               "%s: not available for external transport", __FUNCTION__);
+
+  return -1;
 #endif
 }
 
-// ============================================================================
-// IPv6
-// ============================================================================
-
-// ----------------------------------------------------------------------------
-// EnableIPv6
-//
-// Enables IPv6
-// ----------------------------------------------------------------------------
-int ViENetworkImpl::EnableIPv6(int videoChannel)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-                 ViEId(instance_id_, videoChannel), "%s(channel: %d)",
-                 __FUNCTION__, videoChannel);
-
-    // Get the channel
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEChannel* ptrViEChannel = cs.Channel(videoChannel);
-    if (ptrViEChannel == NULL)
-    {
-        // The channel doesn't exists
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel), "Channel doesn't exist");
-        SetLastError(kViENetworkInvalidChannelId);
-        return -1;
-    }
-    if (ptrViEChannel->EnableIPv6() != 0)
-    {
-        SetLastError(kViENetworkUnknownError);
-        return -1;
-    }
-    return 0;
+int ViENetworkImpl::EnableIPv6(int video_channel) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+               "%s(channel: %d)", __FUNCTION__, video_channel);
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "Channel doesn't exist");
+    SetLastError(kViENetworkInvalidChannelId);
+    return -1;
+  }
+  if (vie_channel->EnableIPv6() != 0) {
+    SetLastError(kViENetworkUnknownError);
+    return -1;
+  }
+  return 0;
 }
 
-// ----------------------------------------------------------------------------
-// IsIPv6Enabled
-//
-// Returns true if IPv6 is enabled, false otherwise.
-// ----------------------------------------------------------------------------
-bool ViENetworkImpl::IsIPv6Enabled(int videoChannel)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-                 ViEId(instance_id_, videoChannel), "%s(channel: %d)",
-                 __FUNCTION__, videoChannel);
-
-    // Get the channel
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEChannel* ptrViEChannel = cs.Channel(videoChannel);
-    if (ptrViEChannel == NULL)
-    {
-        // The channel doesn't exists
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel), "Channel doesn't exist");
-        SetLastError(kViENetworkInvalidChannelId);
-        return false;
-    }
-    return ptrViEChannel->IsIPv6Enabled();
+bool ViENetworkImpl::IsIPv6Enabled(int video_channel) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+               "%s(channel: %d)", __FUNCTION__, video_channel);
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "Channel doesn't exist");
+    SetLastError(kViENetworkInvalidChannelId);
+    return false;
+  }
+  return vie_channel->IsIPv6Enabled();
 }
 
-// ============================================================================
-// Source IP address and port filter
-// ============================================================================
-
-// ----------------------------------------------------------------------------
-// SetSourceFilter
-//
-// Sets filter source port and IP address. Packets from all other sources
-// will be discarded.
-// ----------------------------------------------------------------------------
-int ViENetworkImpl::SetSourceFilter(const int videoChannel,
-                                    const unsigned short rtpPort,
-                                    const unsigned short rtcpPort,
-                                    const char* ipAddress)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-                 ViEId(instance_id_, videoChannel),
-                 "%s(channel: %d, rtpPort: %u, rtcpPort: %u, ipAddress: %s)",
-                 __FUNCTION__, videoChannel, rtpPort, rtcpPort, ipAddress);
-
-    // Get the channel
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEChannel* ptrViEChannel = cs.Channel(videoChannel);
-    if (ptrViEChannel == NULL)
-    {
-        // The channel doesn't exists
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel), "Channel doesn't exist");
-        SetLastError(kViENetworkInvalidChannelId);
-        return -1;
-    }
-    if (ptrViEChannel->SetSourceFilter(rtpPort, rtcpPort, ipAddress) != 0)
-    {
-        SetLastError(kViENetworkUnknownError);
-        return -1;
-    }
-    return 0;
+int ViENetworkImpl::SetSourceFilter(const int video_channel,
+                                    const unsigned short rtp_port,
+                                    const unsigned short rtcp_port,
+                                    const char* ip_address) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+               "%s(channel: %d, rtp_port: %u, rtcp_port: %u, ip_address: %s)",
+               __FUNCTION__, video_channel, rtp_port, rtcp_port, ip_address);
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "Channel doesn't exist");
+    SetLastError(kViENetworkInvalidChannelId);
+    return -1;
+  }
+  if (vie_channel->SetSourceFilter(rtp_port, rtcp_port, ip_address) != 0) {
+    SetLastError(kViENetworkUnknownError);
+    return -1;
+  }
+  return 0;
 }
 
-// ----------------------------------------------------------------------------
-// GetSourceFilter
-//
-// Gets vaules set by SetSourceFilter
-// ----------------------------------------------------------------------------
-int ViENetworkImpl::GetSourceFilter(const int videoChannel,
-                                    unsigned short& rtpPort,
-                                    unsigned short& rtcpPort, char* ipAddress)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-                 ViEId(instance_id_, videoChannel), "%s(channel: %d)",
-                 __FUNCTION__, videoChannel);
-
-    // Get the channel
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEChannel* ptrViEChannel = cs.Channel(videoChannel);
-    if (ptrViEChannel == NULL)
-    {
-        // The channel doesn't exists
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel), "Channel doesn't exist");
-        SetLastError(kViENetworkInvalidChannelId);
-        return -1;
-    }
-    if (ptrViEChannel->GetSourceFilter(rtpPort, rtcpPort, ipAddress) != 0)
-    {
-        SetLastError(kViENetworkUnknownError);
-        return -1;
-    }
-    return 0;
+int ViENetworkImpl::GetSourceFilter(const int video_channel,
+                                    unsigned short& rtp_port,
+                                    unsigned short& rtcp_port,
+                                    char* ip_address) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+               "%s(channel: %d)", __FUNCTION__, video_channel);
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "Channel doesn't exist");
+    SetLastError(kViENetworkInvalidChannelId);
+    return -1;
+  }
+  if (vie_channel->GetSourceFilter(rtp_port, rtcp_port, ip_address) != 0) {
+    SetLastError(kViENetworkUnknownError);
+    return -1;
+  }
+  return 0;
 }
 
-// ============================================================================
-// ToS
-// ============================================================================
-
-// ----------------------------------------------------------------------------
-// SetToS
-//
-// Sets values for ToS
-// ----------------------------------------------------------------------------
-int ViENetworkImpl::SetSendToS(const int videoChannel, const int DSCP,
-                               const bool useSetSockOpt = false)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-                 ViEId(instance_id_, videoChannel),
-                 "%s(channel: %d, DSCP: %d, useSetSockOpt: %d)", __FUNCTION__,
-                 videoChannel, DSCP, useSetSockOpt);
-
-    // Get the channel
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEChannel* ptrViEChannel = cs.Channel(videoChannel);
-    if (ptrViEChannel == NULL)
-    {
-        // The channel doesn't exists
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel), "Channel doesn't exist");
-        SetLastError(kViENetworkInvalidChannelId);
-        return -1;
-    }
+int ViENetworkImpl::SetSendToS(const int video_channel, const int DSCP,
+                               const bool use_set_sockOpt = false) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+               "%s(channel: %d, DSCP: %d, use_set_sockOpt: %d)", __FUNCTION__,
+               video_channel, DSCP, use_set_sockOpt);
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "Channel doesn't exist");
+    SetLastError(kViENetworkInvalidChannelId);
+    return -1;
+  }
 
 #if defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
-    WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(instance_id_, videoChannel),
-                 "   force useSetSockopt=true since there is no alternative"
-                 " implementation");
-    if (ptrViEChannel->SetToS(DSCP, true) != 0)
+  WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(instance_id_, video_channel),
+               "   force use_set_sockopt=true since there is no alternative"
+               " implementation");
+  if (vie_channel->SetToS(DSCP, true) != 0) {
 #else
-    if (ptrViEChannel->SetToS(DSCP, useSetSockOpt) != 0)
+  if (vie_channel->SetToS(DSCP, use_set_sockOpt) != 0) {
 #endif
-    {
-        SetLastError(kViENetworkUnknownError);
-        return -1;
-    }
-    return 0;
-}
-
-// ----------------------------------------------------------------------------
-// GetToS
-//
-// Gets values set by SetToS
-// ----------------------------------------------------------------------------
-int ViENetworkImpl::GetSendToS(const int videoChannel, int& DSCP,
-                               bool& useSetSockOpt)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-                 ViEId(instance_id_, videoChannel), "%s(channel: %d)",
-                 __FUNCTION__, videoChannel);
-
-    // Get the channel
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEChannel* ptrViEChannel = cs.Channel(videoChannel);
-    if (ptrViEChannel == NULL)
-    {
-        // The channel doesn't exists
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel), "Channel doesn't exist");
-        SetLastError(kViENetworkInvalidChannelId);
-        return -1;
-    }
-    if (ptrViEChannel->GetToS((WebRtc_Word32&) DSCP, useSetSockOpt) != 0)
-    {
-        SetLastError(kViENetworkUnknownError);
-        return -1;
-    }
-    return 0;
-}
-
-// ============================================================================
-// GQoS
-// ============================================================================
-
-// ----------------------------------------------------------------------------
-// SetSendGQoS
-//
-// Sets settings for GQoS. Must be called after SetSendCodec to get correct
-// bitrate setting.
-// ----------------------------------------------------------------------------
-int ViENetworkImpl::SetSendGQoS(const int videoChannel, const bool enable,
-                                const int serviceType, const int overrideDSCP)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-                 ViEId(instance_id_, videoChannel),
-                 "%s(channel: %d, enable: %d, serviceType: %d, "
-                 "overrideDSCP: %d)",
-                 __FUNCTION__, videoChannel, enable, serviceType, overrideDSCP);
-    if (!Initialized())
-    {
-        SetLastError(kViENotInitialized);
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
-                     "%s - ViE instance %d not initialized", __FUNCTION__,
-                     instance_id_);
-        return -1;
-    }
-
-#if (defined(_WIN32) || defined(_WIN64))
-    // Sanity check. We might crash if testing and relying on an OS socket error
-    if (enable
-        && (serviceType != SERVICETYPE_BESTEFFORT)
-        && (serviceType != SERVICETYPE_CONTROLLEDLOAD)
-        && (serviceType != SERVICETYPE_GUARANTEED) &&
-        (serviceType != SERVICETYPE_QUALITATIVE))
-    {
-        WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel),
-                     "%s: service type %d not supported", __FUNCTION__,
-                     videoChannel, serviceType);
-        SetLastError(kViENetworkServiceTypeNotSupported);
-        return -1;
-    }
-
-    // Get the channel
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEChannel* ptrViEChannel = cs.Channel(videoChannel);
-    if (ptrViEChannel == NULL)
-    {
-        // The channel doesn't exists
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel), "Channel doesn't exist");
-        SetLastError(kViENetworkInvalidChannelId);
-        return -1;
-    }
-    ViEEncoder* ptrVieEncoder = cs.Encoder(videoChannel);
-    if (ptrVieEncoder == NULL)
-    {
-        // The channel doesn't exists
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel), "Channel doesn't exist");
-        SetLastError(kViENetworkInvalidChannelId);
-        return -1;
-    }
-    VideoCodec videoCodec;
-    if (ptrVieEncoder->GetEncoder(videoCodec) != 0)
-    {
-        // Could not get
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel),
-                     "%s: Could not get max bitrate for the channel",
-                     __FUNCTION__);
-        SetLastError(kViENetworkSendCodecNotSet);
-        return -1;
-    }
-    if(ptrViEChannel->SetSendGQoS(enable, serviceType, videoCodec.maxBitrate,
-                                  overrideDSCP)!=0)
-    {
-        SetLastError(kViENetworkUnknownError);
-        return -1;
-    }
-    return 0;
-
-#else
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-                 ViEId(instance_id_, videoChannel), "%s: Not supported",
-                 __FUNCTION__);
-    SetLastError(kViENetworkNotSupported);
+    SetLastError(kViENetworkUnknownError);
     return -1;
+  }
+  return 0;
+}
+
+int ViENetworkImpl::GetSendToS(const int video_channel, int& DSCP,
+                               bool& use_set_sockOpt) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+               "%s(channel: %d)", __FUNCTION__, video_channel);
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "Channel doesn't exist");
+    SetLastError(kViENetworkInvalidChannelId);
+    return -1;
+  }
+  if (vie_channel->GetToS((WebRtc_Word32&) DSCP, use_set_sockOpt) != 0) {
+    SetLastError(kViENetworkUnknownError);
+    return -1;
+  }
+  return 0;
+}
+
+int ViENetworkImpl::SetSendGQoS(const int video_channel, const bool enable,
+                                const int service_type,
+                                const int overrideDSCP) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+               "%s(channel: %d, enable: %d, service_type: %d, "
+               "overrideDSCP: %d)", __FUNCTION__, video_channel, enable,
+               service_type, overrideDSCP);
+  if (!Initialized()) {
+    SetLastError(kViENotInitialized);
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_),
+                 "%s - ViE instance %d not initialized", __FUNCTION__,
+                 instance_id_);
+    return -1;
+  }
+
+#if (defined(WIN32_) || defined(WIN64_))
+  // Sanity check. We might crash if testing and relying on an OS socket error.
+  if (enable &&
+      (service_type != SERVICETYPE_BESTEFFORT) &&
+      (service_type != SERVICETYPE_CONTROLLEDLOAD) &&
+      (service_type != SERVICETYPE_GUARANTEED) &&
+      (service_type != SERVICETYPE_QUALITATIVE)) {
+    WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s: service type %d not supported", __FUNCTION__,
+                 video_channel, service_type);
+    SetLastError(kViENetworkServiceTypeNotSupported);
+    return -1;
+  }
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "Channel doesn't exist");
+    SetLastError(kViENetworkInvalidChannelId);
+    return -1;
+  }
+  ViEEncoder* vie_encoder = cs.Encoder(video_channel);
+  if (!vie_encoder) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "Channel doesn't exist");
+    SetLastError(kViENetworkInvalidChannelId);
+    return -1;
+  }
+  VideoCodec video_codec;
+  if (vie_encoder->GetEncoder(video_codec) != 0) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s: Could not get max bitrate for the channel",
+                 __FUNCTION__);
+    SetLastError(kViENetworkSendCodecNotSet);
+    return -1;
+  }
+  if (vie_channel->SetSendGQoS(enable, service_type, video_codec.maxBitrate,
+                               overrideDSCP) != 0) {
+    SetLastError(kViENetworkUnknownError);
+    return -1;
+  }
+  return 0;
+#else
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+               "%s: Not supported", __FUNCTION__);
+  SetLastError(kViENetworkNotSupported);
+  return -1;
 #endif
 }
 
-// ----------------------------------------------------------------------------
-// GetSendGQoS
-//
-// Gets the settigns set by SetSendGQoS
-// ----------------------------------------------------------------------------
-int ViENetworkImpl::GetSendGQoS(const int videoChannel, bool& enabled,
-                                int& serviceType, int& overrideDSCP)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-                 ViEId(instance_id_, videoChannel), "%s(channel: %d)",
-                 __FUNCTION__, videoChannel);
-
-    // Get the channel
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEChannel* ptrViEChannel = cs.Channel(videoChannel);
-    if (ptrViEChannel == NULL)
-    {
-        // The channel doesn't exists
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel), "Channel doesn't exist");
-        SetLastError(kViENetworkInvalidChannelId);
-        return -1;
-    }
-    if (ptrViEChannel->GetSendGQoS(enabled, (WebRtc_Word32&) serviceType,
-                                   (WebRtc_Word32&) overrideDSCP) != 0)
-    {
-        SetLastError(kViENetworkUnknownError);
-        return -1;
-    }
-    return 0;
-
+int ViENetworkImpl::GetSendGQoS(const int video_channel, bool& enabled,
+                                int& service_type, int& overrideDSCP) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+               "%s(channel: %d)", __FUNCTION__, video_channel);
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "Channel doesn't exist");
+    SetLastError(kViENetworkInvalidChannelId);
+    return -1;
+  }
+  if (vie_channel->GetSendGQoS(enabled, service_type, overrideDSCP) != 0) {
+    SetLastError(kViENetworkUnknownError);
+    return -1;
+  }
+  return 0;
 }
 
-// ============================================================================
-// Network settings
-// ============================================================================
-
-// ----------------------------------------------------------------------------
-// SetMTU
-// ----------------------------------------------------------------------------
-int ViENetworkImpl::SetMTU(int videoChannel, unsigned int mtu)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-                 ViEId(instance_id_, videoChannel), "%s(channel: %d, mtu: %u)",
-                 __FUNCTION__, videoChannel, mtu);
-
-    // Get the channel
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEChannel* ptrViEChannel = cs.Channel(videoChannel);
-    if (ptrViEChannel == NULL)
-    {
-        // The channel doesn't exists
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel), "Channel doesn't exist");
-        SetLastError(kViENetworkInvalidChannelId);
-        return -1;
-    }
-    if (ptrViEChannel->SetMTU(mtu) != 0)
-    {
-        SetLastError(kViENetworkUnknownError);
-        return -1;
-    }
-    return 0;
-
+int ViENetworkImpl::SetMTU(int video_channel, unsigned int mtu) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+               "%s(channel: %d, mtu: %u)", __FUNCTION__, video_channel, mtu);
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "Channel doesn't exist");
+    SetLastError(kViENetworkInvalidChannelId);
+    return -1;
+  }
+  if (vie_channel->SetMTU(mtu) != 0) {
+    SetLastError(kViENetworkUnknownError);
+    return -1;
+  }
+  return 0;
 }
 
-// ============================================================================
-// Packet timout notification
-// ============================================================================
-
-// ----------------------------------------------------------------------------
-// SetPacketTimeoutNotification
-//
-// Sets the time for packet timout notifications
-// ----------------------------------------------------------------------------
-int ViENetworkImpl::SetPacketTimeoutNotification(const int videoChannel,
+int ViENetworkImpl::SetPacketTimeoutNotification(const int video_channel,
                                                  bool enable,
-                                                 int timeoutSeconds)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-                 ViEId(instance_id_, videoChannel),
-                 "%s(channel: %d, enable: %d, timeoutSeconds: %u)",
-                 __FUNCTION__, videoChannel, enable, timeoutSeconds);
-
-    // Get the channel
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEChannel* ptrViEChannel = cs.Channel(videoChannel);
-    if (ptrViEChannel == NULL)
-    {
-        // The channel doesn't exists
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel), "Channel doesn't exist");
-        SetLastError(kViENetworkInvalidChannelId);
-        return -1;
-    }
-    if (ptrViEChannel->SetPacketTimeoutNotification(enable, timeoutSeconds)
-        != 0)
-    {
-        SetLastError(kViENetworkUnknownError);
-        return -1;
-    }
-    return 0;
+                                                 int timeout_seconds) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+               "%s(channel: %d, enable: %d, timeout_seconds: %u)",
+               __FUNCTION__, video_channel, enable, timeout_seconds);
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "Channel doesn't exist");
+    SetLastError(kViENetworkInvalidChannelId);
+    return -1;
+  }
+  if (vie_channel->SetPacketTimeoutNotification(enable,
+                                                timeout_seconds) != 0) {
+    SetLastError(kViENetworkUnknownError);
+    return -1;
+  }
+  return 0;
 }
 
-// ============================================================================
-// Periodic dead-or-alive reports
-// ============================================================================
-
-// ----------------------------------------------------------------------------
-// RegisterObserver
-// ----------------------------------------------------------------------------
-int ViENetworkImpl::RegisterObserver(const int videoChannel,
-                                     ViENetworkObserver& observer)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-                 ViEId(instance_id_, videoChannel), "%s(channel: %d)",
-                 __FUNCTION__, videoChannel);
-
-    // Get the channel
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEChannel* ptrViEChannel = cs.Channel(videoChannel);
-    if (ptrViEChannel == NULL)
-    {
-        // The channel doesn't exists
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel), "Channel doesn't exist");
-        SetLastError(kViENetworkInvalidChannelId);
-        return -1;
-    }
-    if (ptrViEChannel->RegisterNetworkObserver(&observer) != 0)
-    {
-        SetLastError(kViENetworkObserverAlreadyRegistered);
-        return -1;
-    }
-    return 0;
+int ViENetworkImpl::RegisterObserver(const int video_channel,
+                                     ViENetworkObserver& observer) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+               "%s(channel: %d)", __FUNCTION__, video_channel);
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "Channel doesn't exist");
+    SetLastError(kViENetworkInvalidChannelId);
+    return -1;
+  }
+  if (vie_channel->RegisterNetworkObserver(&observer) != 0) {
+    SetLastError(kViENetworkObserverAlreadyRegistered);
+    return -1;
+  }
+  return 0;
 }
 
-// ----------------------------------------------------------------------------
-// DeregisterObserver
-// ----------------------------------------------------------------------------
-int ViENetworkImpl::DeregisterObserver(const int videoChannel)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-                 ViEId(instance_id_, videoChannel), "%s(channel: %d)",
-                 __FUNCTION__, videoChannel);
-
-    // Get the channel
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEChannel* ptrViEChannel = cs.Channel(videoChannel);
-    if (ptrViEChannel == NULL)
-    {
-        // The channel doesn't exists
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel), "Channel doesn't exist");
-        SetLastError(kViENetworkInvalidChannelId);
-        return -1;
-    }
-    if (!ptrViEChannel->NetworkObserverRegistered())
-    {
-        SetLastError(kViENetworkObserverNotRegistered);
-        return -1;
-    }
-    return ptrViEChannel->RegisterNetworkObserver(NULL);
+int ViENetworkImpl::DeregisterObserver(const int video_channel) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+               "%s(channel: %d)", __FUNCTION__, video_channel);
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "Channel doesn't exist");
+    SetLastError(kViENetworkInvalidChannelId);
+    return -1;
+  }
+  if (!vie_channel->NetworkObserverRegistered()) {
+    SetLastError(kViENetworkObserverNotRegistered);
+    return -1;
+  }
+  return vie_channel->RegisterNetworkObserver(NULL);
 }
 
-// ----------------------------------------------------------------------------
-// SetPeriodicDeadOrAliveStatus
-//
-// Enables/disables the dead-or-alive callback
-// ----------------------------------------------------------------------------
-int ViENetworkImpl::SetPeriodicDeadOrAliveStatus(const int videoChannel,
-                                                 bool enable,
-                                                 unsigned int sampleTimeSeconds)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-                 ViEId(instance_id_, videoChannel),
-                 "%s(channel: %d, enable: %d, sampleTimeSeconds: %ul)",
-                 __FUNCTION__, videoChannel, enable, sampleTimeSeconds);
-
-    // Get the channel
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEChannel* ptrViEChannel = cs.Channel(videoChannel);
-    if (ptrViEChannel == NULL)
-    {
-        // The channel doesn't exists
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel), "Channel doesn't exist");
-        SetLastError(kViENetworkInvalidChannelId);
-        return -1;
-    }
-    if (!ptrViEChannel->NetworkObserverRegistered())
-    {
-        SetLastError(kViENetworkObserverNotRegistered);
-        return -1;
-    }
-
-    if (ptrViEChannel->SetPeriodicDeadOrAliveStatus(enable, sampleTimeSeconds)
-        != 0)
-    {
-        SetLastError(kViENetworkUnknownError);
-        return -1;
-    }
-    return 0;
+int ViENetworkImpl::SetPeriodicDeadOrAliveStatus(
+    const int video_channel,
+    bool enable,
+    unsigned int sample_time_seconds) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+               "%s(channel: %d, enable: %d, sample_time_seconds: %ul)",
+               __FUNCTION__, video_channel, enable, sample_time_seconds);
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "Channel doesn't exist");
+    SetLastError(kViENetworkInvalidChannelId);
+    return -1;
+  }
+  if (!vie_channel->NetworkObserverRegistered()) {
+    SetLastError(kViENetworkObserverNotRegistered);
+    return -1;
+  }
+  if (vie_channel->SetPeriodicDeadOrAliveStatus(enable, sample_time_seconds)
+      != 0) {
+    SetLastError(kViENetworkUnknownError);
+    return -1;
+  }
+  return 0;
 }
 
-// ============================================================================
-// Send packet using the User Datagram Protocol (UDP)
-// ============================================================================
-
-// ----------------------------------------------------------------------------
-// SendUDPPacket
-//
-// Send an extra UDP packet
-// ----------------------------------------------------------------------------
-int ViENetworkImpl::SendUDPPacket(const int videoChannel, const void* data,
+int ViENetworkImpl::SendUDPPacket(const int video_channel, const void* data,
                                   const unsigned int length,
-                                  int& transmittedBytes,
-                                  bool useRtcpSocket = false)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-                 ViEId(instance_id_, videoChannel),
-                 "%s(channel: %d, data: -, length: %d, transmitterBytes: -, "
-                 "useRtcpSocket: %d)", __FUNCTION__, videoChannel, length,
-                 useRtcpSocket);
-    if (!Initialized())
-    {
-        SetLastError(kViENotInitialized);
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
-                     "%s - ViE instance %d not initialized", __FUNCTION__,
-                     instance_id_);
-        return -1;
-    }
-
-    // Get the channel
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEChannel* ptrViEChannel = cs.Channel(videoChannel);
-    if (ptrViEChannel == NULL)
-    {
-        // The channel doesn't exists
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                     ViEId(instance_id_, videoChannel), "Channel doesn't exist");
-        SetLastError(kViENetworkInvalidChannelId);
-        return -1;
-    }
-    if (ptrViEChannel->SendUDPPacket((const WebRtc_Word8*) data, length,
-                                     (WebRtc_Word32&) transmittedBytes,
-                                     useRtcpSocket) < 0)
-    {
-        SetLastError(kViENetworkUnknownError);
-        return -1;
-    }
-    return 0;
+                                  int& transmitted_bytes,
+                                  bool use_rtcp_socket = false) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+               "%s(channel: %d, data: -, length: %d, transmitter_bytes: -, "
+               "useRtcpSocket: %d)", __FUNCTION__, video_channel, length,
+               use_rtcp_socket);
+  if (!Initialized()) {
+    SetLastError(kViENotInitialized);
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_),
+                 "%s - ViE instance %d not initialized", __FUNCTION__,
+                 instance_id_);
+    return -1;
+  }
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (!vie_channel) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "Channel doesn't exist");
+    SetLastError(kViENetworkInvalidChannelId);
+    return -1;
+  }
+  if (vie_channel->SendUDPPacket((const WebRtc_Word8*) data, length,
+                                     (WebRtc_Word32&) transmitted_bytes,
+                                     use_rtcp_socket) < 0) {
+    SetLastError(kViENetworkUnknownError);
+    return -1;
+  }
+  return 0;
 }
-} // namespace webrtc
+
+}  // namespace webrtc

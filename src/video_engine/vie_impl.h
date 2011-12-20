@@ -8,83 +8,79 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * vie_impl.h
- */
-
-#ifndef WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_IMPL_H_
-#define WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_IMPL_H_
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_IMPL_H_
+#define WEBRTC_VIDEO_ENGINE_VIE_IMPL_H_
 
 #include "engine_configurations.h"
-#include "vie_defines.h"
+#include "video_engine/vie_defines.h"
 
-// Include all sub API:s
-
-#include "vie_base_impl.h"
+#include "video_engine/vie_base_impl.h"
 
 #ifdef WEBRTC_VIDEO_ENGINE_CAPTURE_API
-#include "vie_capture_impl.h"
+#include "video_engine/vie_capture_impl.h"
 #endif
 #ifdef WEBRTC_VIDEO_ENGINE_CODEC_API
-#include "vie_codec_impl.h"
+#include "video_engine/vie_codec_impl.h"
 #endif
 #ifdef WEBRTC_VIDEO_ENGINE_ENCRYPTION_API
-#include "vie_encryption_impl.h"
+#include "video_engine/vie_encryption_impl.h"
 #endif
 #ifdef WEBRTC_VIDEO_ENGINE_FILE_API
-#include "vie_file_impl.h"
+#include "video_engine/vie_file_impl.h"
 #endif
 #ifdef WEBRTC_VIDEO_ENGINE_IMAGE_PROCESS_API
-#include "vie_image_process_impl.h"
+#include "video_engine/vie_image_process_impl.h"
 #endif
 #ifdef WEBRTC_VIDEO_ENGINE_NETWORK_API
-#include "vie_network_impl.h"
+#include "video_engine/vie_network_impl.h"
 #endif
 #ifdef WEBRTC_VIDEO_ENGINE_RENDER_API
-#include "vie_render_impl.h"
+#include "video_engine/vie_render_impl.h"
 #endif
 #ifdef WEBRTC_VIDEO_ENGINE_RTP_RTCP_API
-#include "vie_rtp_rtcp_impl.h"
+#include "video_engine/vie_rtp_rtcp_impl.h"
 #endif
 #ifdef WEBRTC_VIDEO_ENGINE_EXTERNAL_CODEC_API
-#include "vie_external_codec_impl.h"
+#include "video_engine/vie_external_codec_impl.h"
 #endif
 
-namespace webrtc
-{
+namespace webrtc {
 
-class VideoEngineImpl: public ViEBaseImpl
+class VideoEngineImpl
+    : public ViEBaseImpl
 #ifdef WEBRTC_VIDEO_ENGINE_CODEC_API
-    , public ViECodecImpl
+      , public ViECodecImpl
 #endif
 #ifdef WEBRTC_VIDEO_ENGINE_CAPTURE_API
-    , public ViECaptureImpl
+      , public ViECaptureImpl
 #endif
 #ifdef WEBRTC_VIDEO_ENGINE_ENCRYPTION_API
-    , public ViEEncryptionImpl
+      , public ViEEncryptionImpl
 #endif
 #ifdef WEBRTC_VIDEO_ENGINE_FILE_API
-    , public ViEFileImpl
+      , public ViEFileImpl
 #endif
 #ifdef WEBRTC_VIDEO_ENGINE_IMAGE_PROCESS_API
-    , public ViEImageProcessImpl
+      , public ViEImageProcessImpl
 #endif
 #ifdef WEBRTC_VIDEO_ENGINE_NETWORK_API
-    , public ViENetworkImpl
+      , public ViENetworkImpl
 #endif
 #ifdef WEBRTC_VIDEO_ENGINE_RENDER_API
-    , public ViERenderImpl
+      , public ViERenderImpl
 #endif
 #ifdef WEBRTC_VIDEO_ENGINE_RTP_RTCP_API
-    , public ViERTP_RTCPImpl
+      , public ViERTP_RTCPImpl
 #endif
 #ifdef WEBRTC_VIDEO_ENGINE_EXTERNAL_CODEC_API
-,public ViEExternalCodecImpl
+      , public ViEExternalCodecImpl
 #endif
-{
-public:
-    VideoEngineImpl() {};
-    virtual ~VideoEngineImpl() {};
+{  // NOLINT
+ public:
+  VideoEngineImpl() {}
+  virtual ~VideoEngineImpl() {}
 };
+
 }  // namespace webrtc
-#endif  // WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_IMPL_H_
+
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_IMPL_H_
