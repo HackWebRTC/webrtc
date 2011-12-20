@@ -36,6 +36,7 @@
 /resources
 /src/supplement.gypi
 /testing
+/third_party/asan
 /third_party/cygwin
 /third_party/expat
 /third_party/google-gflags/src
