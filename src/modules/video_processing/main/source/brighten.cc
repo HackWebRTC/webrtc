@@ -15,6 +15,7 @@
 #include "system_wrappers/interface/trace.h"
 
 namespace webrtc {
+namespace VideoProcessing {
 
 WebRtc_Word32 Brighten(WebRtc_UWord8* frame,
                        int width, int height, int delta) {
@@ -47,4 +48,5 @@ WebRtc_Word32 Brighten(WebRtc_UWord8* frame,
   return VPM_OK;
 }
 
+}  // namespace VideoProcessing
 }  // namespace webrtc

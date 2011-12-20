@@ -250,7 +250,7 @@ VideoProcessingModule::Brighten(WebRtc_UWord8* frame,
                                     int height,
                                     int delta)
 {
-    return Brighten(frame, width, height, delta);
+    return VideoProcessing::Brighten(frame, width, height, delta);
 }
 
 WebRtc_Word32

@@ -15,9 +15,12 @@
 #include "modules/video_processing/main/interface/video_processing.h"
 
 namespace webrtc {
+namespace VideoProcessing {
 
 WebRtc_Word32 Brighten(WebRtc_UWord8* frame,
                        int width, int height, int delta);
-}  // namespace
+
+}  // namespace VideoProcessing
+}  // namespace webrtc
 
 #endif  // MODULES_VIDEO_PROCESSING_MAIN_SOURCE_BRIGHTEN_H_
