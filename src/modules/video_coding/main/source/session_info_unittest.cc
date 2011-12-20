@@ -889,6 +889,37 @@ TEST_F(TestZeroOutSeqNum, FirstAndLastLost) {
   EXPECT_EQ(1, seq_num_list_[2]);
 }
 
+TEST_F(TestZeroOutSeqNum, LostAllButEmptyPackets) {
+  uint16_t low = 0;
+  packet_.seqNum = low + 1;
+  packet_.isFirstPacket = false;
+  packet_.markerBit = false;
+  packet_.frameType = kFrameEmpty;
+  packet_.sizeBytes = 0;
+  FillPacket(0);
+  ASSERT_EQ(session_.InsertPacket(packet_, frame_buffer_, false, 0), 0);
+
+  packet_.seqNum = low + 3;
+  packet_.isFirstPacket = false;
+  packet_.markerBit = false;
+  packet_.frameType = kFrameEmpty;
+  packet_.sizeBytes = 0;
+  FillPacket(0);
+  ASSERT_EQ(session_.InsertPacket(packet_, frame_buffer_, false, 0), 0);
+
+  EXPECT_EQ(0, session_.SessionLength());
+  BuildSeqNumList(low, packet_.seqNum + 1);
+  EXPECT_EQ(0, session_.ZeroOutSeqNumHybrid(seq_num_list_,
+                                            seq_num_list_length_,
+                                            60));
+  EXPECT_EQ(true, session_.session_nack());
+  EXPECT_EQ(0, seq_num_list_[0]);
+  EXPECT_EQ(-1, seq_num_list_[1]);
+  EXPECT_EQ(-2, seq_num_list_[2]);
+  EXPECT_EQ(-2, seq_num_list_[3]);
+  EXPECT_EQ(4, seq_num_list_[4]);
+}
+
 TEST_F(TestSessionInfo, PacketPriorBitsPacketLost) {
   packet_.seqNum = 0;
   packet_.codecSpecificHeader.codec = kRTPVideoH263;

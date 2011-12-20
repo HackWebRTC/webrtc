@@ -399,10 +399,12 @@ int VCMSessionInfo::ZeroOutSeqNumHybrid(int* seq_num_list,
   }
 
   int index = 0;
-  // Find entrance point (index of entry equals the sequence number of the first
-  // packet).
+  int low_seq_num = (packets_.empty()) ? empty_seq_num_low_:
+      packets_.front().seqNum;
+  // Find entrance point (index of entry equals the sequence number of the
+  // first packet).
   for (; index < seq_num_list_length; ++index) {
-    if (seq_num_list[index] == packets_.front().seqNum) {
+    if (seq_num_list[index] == low_seq_num) {
       seq_num_list[index] = -1;
       break;
     }
@@ -422,13 +424,19 @@ int VCMSessionInfo::ZeroOutSeqNumHybrid(int* seq_num_list,
 
   // Zero out between first entry and end point.
 
-  WebRtc_Word32 media_high_seq_num;
+  int media_high_seq_num;
   if (HaveLastPacket()) {
     media_high_seq_num = packets_.back().seqNum;
   } else {
     // Estimation.
-    media_high_seq_num = empty_seq_num_low_ - 1 > packets_.back().seqNum ?
-                      empty_seq_num_low_ - 1: packets_.back().seqNum;
+    if (empty_seq_num_low_ >= 0) {
+      // Assuming empty packets have later sequence numbers than media packets.
+      media_high_seq_num = empty_seq_num_low_ - 1;
+    } else {
+      // Since this frame doesn't have the marker bit we can assume it should
+      // contain at least one more packet.
+      media_high_seq_num = static_cast<uint16_t>(packets_.back().seqNum + 1);
+    }
   }
 
   // Compute session/packet scores and thresholds:
@@ -561,7 +569,6 @@ int VCMSessionInfo::InsertPacket(const VCMPacket& packet,
   return returnLength;
 }
 
-
 void VCMSessionInfo::InformOfEmptyPacket(uint16_t seq_num) {
   // Empty packets may be FEC or filler packets. They are sequential and
   // follow the data packets, therefore, we should only keep track of the high
@@ -569,8 +576,9 @@ void VCMSessionInfo::InformOfEmptyPacket(uint16_t seq_num) {
   // empty packets belonging to the same frame (timestamp).
   empty_seq_num_high_ = LatestSequenceNumber(seq_num, empty_seq_num_high_,
                                              NULL);
-  if (LatestSequenceNumber(seq_num, empty_seq_num_low_, NULL) ==
-      empty_seq_num_low_)
+  if (empty_seq_num_low_ == -1 ||
+      LatestSequenceNumber(seq_num, empty_seq_num_low_, NULL) ==
+          empty_seq_num_low_)
     empty_seq_num_low_ = seq_num;
 }
 
