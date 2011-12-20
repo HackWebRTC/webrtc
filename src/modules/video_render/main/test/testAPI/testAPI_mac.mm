@@ -17,11 +17,9 @@
 #import <AppKit/AppKit.h>
 #import <QTKit/QTKit.h>
 #include <sys/time.h>
-using namespace std;
-
-@class CocoaRenderView;
 
 #include "common_types.h"
+#import "modules/video_render/main/source/mac/cocoa_render_view.h"
 #include "module_common_types.h"
 #include "process_thread.h"
 #include "tick_util.h"
