@@ -538,46 +538,51 @@ VCMJitterBuffer::GetEmptyFrame()
 
 // Find oldest complete frame used for getting next frame to decode
 // Must be called under critical section
-// Based on sequence number
-// Return NULL for lost packets
 VCMFrameListItem*
-VCMJitterBuffer::FindOldestCompleteContinuousFrame(bool enableDecodable) {
+VCMJitterBuffer::FindOldestCompleteContinuousFrame(bool enable_decodable) {
   // If we have more than one frame done since last time, pick oldest.
-  VCMFrameBuffer* oldestFrame = NULL;
+  VCMFrameListItem* oldest_frame_item = _frameBuffersTSOrder.First();
+  VCMFrameBuffer* oldest_frame = NULL;
 
-  VCMFrameListItem* oldestFrameItem = _frameBuffersTSOrder.First();
-  if (oldestFrameItem != NULL) {
-    oldestFrame = oldestFrameItem->GetItem();
-  }
-  if (oldestFrame != NULL) {
-    // Check for a complete or decodable frame (when enabled).
-    VCMFrameBufferStateEnum state = oldestFrame->GetState();
-    bool decodable = enableDecodable && (state == kStateDecodable);
-    if ((state != kStateComplete) && !decodable) {
-      oldestFrame = NULL;
+  // When temporal layers are available, we search for a complete or decodable
+  // frame until we hit one of the following:
+  // 1. Continuous base or sync layer.
+  // 2. The end of the list was reached.
+  while (oldest_frame_item != NULL) {
+    oldest_frame = oldest_frame_item->GetItem();
+    if (oldest_frame) {
+      VCMFrameBufferStateEnum state = oldest_frame->GetState();
+      // Is this frame complete or decodable and continuous?
+      if ((state == kStateComplete ||
+          (enable_decodable && state == kStateDecodable)) &&
+          _lastDecodedState.ContinuousFrame(oldest_frame)) {
+        break;
+      } else {
+        int temporal_id = oldest_frame->TemporalId();
+        oldest_frame = NULL;
+        if (temporal_id <= 0) {
+          // When temporal layers are disabled or we have hit a base layer
+          // we break (regardless of continuity and completeness).
+          break;
+        }
+      }
     }
+    // Temporal layers are available, and we have yet to reach a base layer
+    // frame (complete/decodable or not) => Read next frame.
+    oldest_frame_item = _frameBuffersTSOrder.Next(oldest_frame_item);
   }
-  if (oldestFrame == NULL) {
-    // No complete frame no point to continue
+
+  if (oldest_frame == NULL) {
+    // No complete frame no point to continue.
+    return NULL;
+  } else  if (_waitingForKeyFrame &&
+              oldest_frame->FrameType() != kVideoFrameKey) {
+    // We are waiting for a key frame.
     return NULL;
   }
 
-  // We have a complete frame.
-  // Check if it's continuous, otherwise we are missing a full frame.
-
-  // Use pictureId if available. Otherwise use seqNum and not timestamps, as
-  // a complete frame might be lost.
-  // First determine if we are waiting for a key frame.
-  if (_waitingForKeyFrame && oldestFrame->FrameType() != kVideoFrameKey) {
-    return NULL;
-  }
-  // We have a complete frame - establish continuity.
-  if (_lastDecodedState.init()) {
-    return oldestFrameItem;
-  } else if (!_lastDecodedState.ContinuousFrame(oldestFrame)) {
-      return NULL;
-  }
-  return oldestFrameItem;
+  // We have a complete continuous frame.
+  return oldest_frame_item;
 }
 
 // Call from inside the critical section _critSect
@@ -1771,10 +1776,8 @@ void VCMJitterBuffer::VerifyAndSetPreviousFrameLost(VCMFrameBuffer& frame) {
   if (frame.FrameType() == kVideoFrameKey)
     return;
 
-  if (_lastDecodedState.init() ||
-      !_lastDecodedState.ContinuousFrame(&frame)) {
+  if (!_lastDecodedState.ContinuousFrame(&frame))
     frame.SetPreviousFrameLoss();
-  }
 }
 
 
