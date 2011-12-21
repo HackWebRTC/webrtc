@@ -3,14 +3,8 @@ vars = {
   # If you do not know, use the full path while defining your new deps entry.
   "googlecode_url": "http://%s.googlecode.com/svn",
   "chromium_trunk" : "http://src.chromium.org/svn/trunk",
-  "chromium_revision": "106036",
+  "chromium_revision": "114939",
   "libjingle_revision": "100",
-
-  # Note: On most bots, clang is not checked out via DEPS but by
-  # tools/clang/scripts/update.sh. The script reads this line here.
-  # Do NOT CHANGE this if you don't know what you're doing -- see
-  # http://code.google.com/p/chromium/wiki/UpdatingClang
-  "clang_revision": "142072",
 
   # External resources like video and audio files used for testing purposes.
   # Downloaded on demand when needed.
@@ -32,7 +26,7 @@ deps = {
     (Var("googlecode_url") % "googlemock") + "/trunk@386",
 
   "trunk/tools/gyp":
-    (Var("googlecode_url") % "gyp") + "/trunk@1080",
+    (Var("googlecode_url") % "gyp") + "/trunk@1107",
 
   # Needed by build/common.gypi.
   "trunk/tools/win/supalink":
