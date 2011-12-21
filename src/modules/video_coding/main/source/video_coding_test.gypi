@@ -69,13 +69,17 @@
         'webrtc_video_coding',
         '<(webrtc_root)/../test/test.gyp:test_support_main',
         '<(webrtc_root)/../testing/gtest.gyp:gtest',
+        '<(webrtc_root)/../testing/gmock.gyp:gmock',
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
       'include_dirs': [
         '../../../interface',
+        '../../codecs/interface',
       ],
       'sources': [
+        '../interface/mock/mock_vcm_callbacks.h',
         'session_info_unittest.cc',
+        'video_coding_robustness_unittest.cc',
       ],
     },
   ],

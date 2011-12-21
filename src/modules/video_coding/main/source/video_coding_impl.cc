@@ -1578,4 +1578,85 @@ WebRtc_UWord32 VideoCodingModuleImpl::DiscardedPackets() const {
   return _receiver.DiscardedPackets();
 }
 
+int VideoCodingModuleImpl::SetSenderNackMode(SenderNackMode mode) {
+  CriticalSectionScoped cs(_sendCritSect);
+
+  switch (mode) {
+    case kNackNone:
+      _mediaOpt.EnableProtectionMethod(false, kNack);
+      break;
+    case kNackAll:
+      _mediaOpt.EnableProtectionMethod(true, kNack);
+      break;
+    case kNackSelective:
+      return VCM_NOT_IMPLEMENTED;
+      break;
+  }
+  return VCM_OK;
+}
+
+int VideoCodingModuleImpl::SetSenderReferenceSelection(bool enable) {
+  return VCM_NOT_IMPLEMENTED;
+}
+
+int VideoCodingModuleImpl::SetSenderFEC(bool enable) {
+  CriticalSectionScoped cs(_sendCritSect);
+  _mediaOpt.EnableProtectionMethod(enable, kFec);
+  return VCM_OK;
+}
+
+int VideoCodingModuleImpl::SetSenderKeyFramePeriod(int periodMs) {
+  return VCM_NOT_IMPLEMENTED;
+}
+
+int VideoCodingModuleImpl::SetReceiverRobustnessMode(
+    ReceiverRobustness robustnessMode,
+    DecodeErrors errorMode) {
+  CriticalSectionScoped cs(_receiveCritSect);
+  switch (robustnessMode) {
+    case kNone:
+      _receiver.SetNackMode(kNoNack);
+      _dualReceiver.SetNackMode(kNoNack);
+      if (errorMode == kNoDecodeErrors) {
+        _keyRequestMode = kKeyOnLoss;
+      } else {
+        _keyRequestMode = kKeyOnError;
+      }
+      break;
+    case kHardNack:
+      if (errorMode == kAllowDecodeErrors) {
+        return VCM_PARAMETER_ERROR;
+      }
+      _receiver.SetNackMode(kNackInfinite);
+      _dualReceiver.SetNackMode(kNoNack);
+      _keyRequestMode = kKeyOnError;  // TODO(hlundin): On long NACK list?
+      break;
+    case kSoftNack:
+      assert(false); // TODO(hlundin): Not completed.
+      return VCM_NOT_IMPLEMENTED;
+      _receiver.SetNackMode(kNackHybrid);
+      _dualReceiver.SetNackMode(kNoNack);
+      _keyRequestMode = kKeyOnError;
+      break;
+    case kDualDecoder:
+      if (errorMode == kNoDecodeErrors) {
+        return VCM_PARAMETER_ERROR;
+      }
+      _receiver.SetNackMode(kNoNack);
+      _dualReceiver.SetNackMode(kNackInfinite);
+      _keyRequestMode = kKeyOnError;
+      break;
+    case kReferenceSelection:
+      assert(false); // TODO(hlundin): Not completed.
+      return VCM_NOT_IMPLEMENTED;
+      if (errorMode == kNoDecodeErrors) {
+        return VCM_PARAMETER_ERROR;
+      }
+      _receiver.SetNackMode(kNoNack);
+      _dualReceiver.SetNackMode(kNoNack);
+      break;
+  }
+  return VCM_OK;
+}
+
 }  // namespace webrtc

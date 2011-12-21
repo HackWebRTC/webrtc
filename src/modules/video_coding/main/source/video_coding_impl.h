@@ -256,6 +256,25 @@ public:
     // Returns the number of packets discarded by the jitter buffer.
     virtual WebRtc_UWord32 DiscardedPackets() const;
 
+
+    // Robustness APIs
+
+    // Set the sender RTX/NACK mode.
+    virtual int SetSenderNackMode(SenderNackMode mode);
+
+    // Set the sender reference picture selection (RPS) mode.
+    virtual int SetSenderReferenceSelection(bool enable);
+
+    // Set the sender forward error correction (FEC) mode.
+    virtual int SetSenderFEC(bool enable);
+
+    // Set the key frame period, or disable periodic key frames (I-frames).
+    virtual int SetSenderKeyFramePeriod(int periodMs);
+
+    // Set the receiver robustness mode.
+    virtual int SetReceiverRobustnessMode(ReceiverRobustness robustnessMode,
+                                          DecodeErrors errorMode);
+
 protected:
     WebRtc_Word32 Decode(const webrtc::VCMEncodedFrame& frame);
     WebRtc_Word32 RequestKeyFrame();
