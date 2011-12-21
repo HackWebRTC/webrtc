@@ -616,7 +616,7 @@ bool ViECodecImpl::CodecValid(const VideoCodec& video_codec) {
   // Check pl_name matches codec_type.
   if (video_codec.codecType == kVideoCodecRED) {
 #if defined(WIN32)
-    if (strnicmp_(video_codec.plName, "red", 3) == 0) {
+    if (_strnicmp(video_codec.plName, "red", 3) == 0) {
 #else
     if (strncasecmp(video_codec.plName, "red", 3) == 0) {
 #endif
@@ -628,7 +628,7 @@ bool ViECodecImpl::CodecValid(const VideoCodec& video_codec) {
     return false;
   } else if (video_codec.codecType == kVideoCodecULPFEC) {
 #if defined(WIN32)
-    if (strnicmp_(video_codec.plName, "ULPFEC", 6) == 0) {
+    if (_strnicmp(video_codec.plName, "ULPFEC", 6) == 0) {
 #else
     if (strncasecmp(video_codec.plName, "ULPFEC", 6) == 0) {
 #endif
