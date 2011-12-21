@@ -176,26 +176,31 @@ int VoECodecImpl::SetSendCodec(int channel, const CodecInst& codec)
     channelPtr = sc2.GetFirstChannel(iterator);
     int maxNumChannels = 1;
     while (channelPtr != NULL)
-    {   
+    {
         CodecInst tmpCdc;
         channelPtr->GetSendCodec(tmpCdc);
         if (tmpCdc.channels > maxNumChannels)
-           maxNumChannels = tmpCdc.channels;
-        
+            maxNumChannels = tmpCdc.channels;
+
         channelPtr = sc2.GetNextChannel(iterator);
     }
 
-    bool available(false);
-    _audioDevicePtr->StereoRecordingIsAvailable(&available);
-    int recordingChannels = available ? 2 : 1;
-
-    if (_audioProcessingModulePtr->set_num_channels(recordingChannels, maxNumChannels) != 0)
+    // Reuse the currently set number of capture channels. We need to wait
+    // until receiving a frame to determine the true number.
+    //
+    // TODO(andrew): AudioProcessing will return an error if there are more
+    // output than input channels (it doesn't want to produce fake channels).
+    // This will happen with a stereo codec and a device which doesn't support
+    // stereo. AudioCoding should probably do the faking; look into how to
+    // handle this case properly.
+    if (_audioProcessingModulePtr->set_num_channels(
+            _audioProcessingModulePtr->num_input_channels(),
+            maxNumChannels) != 0)
     {
         _engineStatistics.SetLastError(VE_SOUNDCARD_ERROR, kTraceError,
             "Init() failed to set APM channels for the send audio stream");
         return -1;
     }
-
 
     return 0;
 }

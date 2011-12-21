@@ -365,7 +365,7 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm)
         }
     }
 
-    // Create and internal ADM if the user has not added and external
+    // Create an internal ADM if the user has not added an external
     // ADM implementation as input to Init().
     if (external_adm == NULL)
     {
@@ -478,13 +478,20 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm)
         _engineStatistics.SetLastError(VE_SOUNDCARD_ERROR, kTraceWarning,
             "Init() failed to set mono/stereo playout mode");
     }
+
+    // TODO(andrew): These functions don't tell us whether stereo recording
+    // is truly available. We simply set the AudioProcessing input to stereo
+    // here, because we have to wait until receiving the first frame to
+    // determine the actual number of channels anyway.
+    //
+    // These functions may be changed; tracked here:
+    // http://code.google.com/p/webrtc/issues/detail?id=204
     _audioDevicePtr->StereoRecordingIsAvailable(&available);
     if (_audioDevicePtr->SetStereoRecording(available) != 0)
     {
         _engineStatistics.SetLastError(VE_SOUNDCARD_ERROR, kTraceWarning,
             "Init() failed to set mono/stereo recording mode");
     }
-    int recordingChannels = available ? 2 : 1;
 
     // APM initialization done after sound card since we need
     // to know if we support stereo recording or not.
@@ -525,8 +532,11 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm)
             return -1;
         }
 
-        // Assume mono sending until a send codec is set.
-        if (_audioProcessingModulePtr->set_num_channels(recordingChannels, 1) != 0)
+        // Assume mono output until a send codec is set, and stereo input until
+        // we receive the first captured frame. We set stereo input here to
+        // avoid triggering a possible error in SetSendCodec when a stereo
+        // codec is selected.
+        if (_audioProcessingModulePtr->set_num_channels(2, 1) != 0)
         {
             _engineStatistics.SetLastError(VE_SOUNDCARD_ERROR, kTraceError,
                 "Init() failed to set channels for the primary audio stream");

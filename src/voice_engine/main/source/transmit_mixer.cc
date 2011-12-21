@@ -1273,17 +1273,32 @@ WebRtc_Word32 TransmitMixer::APMProcessStream(
 {
     WebRtc_UWord16 captureLevel(currentMicLevel);
 
-    // If the frequency has changed we need to change APM settings
-    // Sending side is "master"
-    if (_audioProcessingModulePtr->sample_rate_hz()
-        != _audioFrame._frequencyInHz)
+    // Check if the number of input channels has changed. Retain the number
+    // of output channels.
+    if (_audioFrame._audioChannel !=
+        _audioProcessingModulePtr->num_input_channels())
     {
-        if (_audioProcessingModulePtr->set_sample_rate_hz(
-            _audioFrame._frequencyInHz))
+        if (_audioProcessingModulePtr->set_num_channels(
+                _audioFrame._audioChannel,
+                _audioProcessingModulePtr->num_output_channels()))
         {
             WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
-                         "AudioProcessingModule::set_sample_rate_hz("
-                         "_frequencyInHz=%u) => error",
+                         "AudioProcessing::set_num_channels(%d, %d) => error",
+                         _audioFrame._frequencyInHz,
+                         _audioProcessingModulePtr->num_output_channels());
+        }
+    }
+
+    // If the frequency has changed we need to change APM settings
+    // Sending side is "master"
+    if (_audioProcessingModulePtr->sample_rate_hz() !=
+        _audioFrame._frequencyInHz)
+    {
+        if (_audioProcessingModulePtr->set_sample_rate_hz(
+                _audioFrame._frequencyInHz))
+        {
+            WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
+                         "AudioProcessing::set_sample_rate_hz(%u) => error",
                          _audioFrame._frequencyInHz);
         }
     }
@@ -1291,37 +1306,34 @@ WebRtc_Word32 TransmitMixer::APMProcessStream(
     if (_audioProcessingModulePtr->set_stream_delay_ms(totalDelayMS) == -1)
     {
         WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
-                     "AudioProcessingModule::set_stream_delay_ms("
-                     "totalDelayMS=%u) => error",
+                     "AudioProcessing::set_stream_delay_ms(%u) => error",
                      totalDelayMS);
     }
     if (_audioProcessingModulePtr->gain_control()->set_stream_analog_level(
-        captureLevel) == -1)
+            captureLevel) == -1)
     {
         WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
-                   "AudioProcessingModule::set_stream_analog_level "
-                   "(captureLevel=%u,) => error",
-                   captureLevel);
+                     "AudioProcessing::set_stream_analog_level(%u) => error",
+                     captureLevel);
     }
     if (_audioProcessingModulePtr->echo_cancellation()->
-        is_drift_compensation_enabled())
+            is_drift_compensation_enabled())
     {
         if (_audioProcessingModulePtr->echo_cancellation()->
-            set_stream_drift_samples(clockDrift) == -1)
+                set_stream_drift_samples(clockDrift) == -1)
         {
             WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
-                       "AudioProcessingModule::set_stream_drift_samples("
-                       "clockDrift=%u,) => error",
-                       clockDrift);
+                "AudioProcessing::set_stream_drift_samples(%u) => error",
+                clockDrift);
         }
     }
     if (_audioProcessingModulePtr->ProcessStream(&_audioFrame) == -1)
     {
         WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
-                   "AudioProcessingModule::ProcessStream() => error");
+                     "AudioProcessing::ProcessStream() => error");
     }
-    captureLevel
-        = _audioProcessingModulePtr->gain_control()->stream_analog_level();
+    captureLevel =
+        _audioProcessingModulePtr->gain_control()->stream_analog_level();
 
     // Store new capture level (only updated when analog AGC is enabled)
     _captureLevel = captureLevel;
