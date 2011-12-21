@@ -64,9 +64,7 @@ UdpSocket2ManagerWindows::~UdpSocket2ManagerWindows()
         StopWorkerThreads();
 
         // All threads are stopped. Safe to delete them.
-        ListItem* pItem = NULL;
-        UdpSocket2WorkerWindows* pWorker;
-        while((pItem = _workerThreadsList.First()) != NULL)
+        while(_workerThreadsList.First() != NULL)
         {
             _workerThreadsList.PopFront();
         }
@@ -211,9 +209,7 @@ bool UdpSocket2ManagerWindows::StartWorkerThreads()
                 "creating work threads",
                 _managerNumber);
             // Delete worker threads.
-            ListItem* pItem = NULL;
-            UdpSocket2WorkerWindows* pWorker;
-            while((pItem = _workerThreadsList.First()) != NULL)
+            while(_workerThreadsList.First() != NULL)
             {
                 _workerThreadsList.PopFront();
             }
