@@ -8,24 +8,24 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_TICK_TIME_WRAPPER_H_
-#define WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_TICK_TIME_WRAPPER_H_
+#ifndef WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_TICK_TIME_BASE_H_
+#define WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_TICK_TIME_BASE_H_
 
 #include "system_wrappers/interface/tick_util.h"
 
 namespace webrtc {
 
-class TickTimeInterface : public TickTime {
+// This class provides a mockable wrapper to TickTime.
+class TickTimeBase {
  public:
-  // Current time in the tick domain.
-  virtual TickTime Now() const { return TickTime::Now(); }
+  virtual ~TickTimeBase() {}
 
-  // Now in the time domain in ms.
+  // "Now" in milliseconds.
   virtual int64_t MillisecondTimestamp() const {
     return TickTime::MillisecondTimestamp();
   }
 
-  // Now in the time domain in us.
+  // "Now" in microseconds.
   virtual int64_t MicrosecondTimestamp() const {
     return TickTime::MicrosecondTimestamp();
   }
@@ -33,4 +33,4 @@ class TickTimeInterface : public TickTime {
 
 }  // namespace
 
-#endif  // WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_TICK_TIME_WRAPPER_H_
+#endif  // WEBRTC_MODULES_VIDEO_CODING_MAIN_SOURCE_TICK_TIME_BASE_H_

@@ -12,6 +12,7 @@
 
 #include <cmath>
 
+#include "modules/video_coding/main/source/tick_time_base.h"
 #include "rtp_dump.h"
 #include "test_macros.h"
 
@@ -199,7 +200,9 @@ VCMDecodeCompleteCallback::DecodedBytes()
 }
 
 RTPSendCompleteCallback::RTPSendCompleteCallback(RtpRtcp* rtp,
+                                                 TickTimeBase* clock,
                                                  const char* filename):
+    _clock(clock),
     _sendCount(0),
     _rtp(rtp),
     _lossPct(0),
@@ -251,7 +254,7 @@ RTPSendCompleteCallback::SendPacket(int channel, const void *data, int len)
     bool transmitPacket = true;
     transmitPacket = PacketLoss();
 
-    WebRtc_UWord64 now = VCMTickTime::MillisecondTimestamp();
+    WebRtc_UWord64 now = _clock->MillisecondTimestamp();
     // Insert outgoing packet into list
     if (transmitPacket)
     {

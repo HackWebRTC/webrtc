@@ -20,7 +20,8 @@ int qualityModeTest();
 class QualityModesTest : public NormalTest
 {
 public:
-    QualityModesTest(webrtc::VideoCodingModule* vcm);
+    QualityModesTest(webrtc::VideoCodingModule* vcm,
+                     webrtc::TickTimeBase* clock);
     virtual ~QualityModesTest();
     WebRtc_Word32 Perform();
 

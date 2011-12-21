@@ -11,7 +11,6 @@
 #include "receiver_tests.h"
 #include "video_coding.h"
 #include "trace.h"
-#include "tick_time.h"
 #include "../source/event.h"
 #include "../source/internal_defines.h"
 #include "timing.h"
@@ -49,8 +48,8 @@ public:
 
 int ReceiverTimingTests(CmdArgs& args)
 {
-    // Make sure this test is never executed with simulated clocks
-#if defined(TICK_TIME_DEBUG) || defined(EVENT_DEBUG)
+    // Make sure this test is never executed with simulated events.
+#if defined(EVENT_DEBUG)
     return -1;
 #endif
 
@@ -62,7 +61,8 @@ int ReceiverTimingTests(CmdArgs& args)
     // A static random seed
     srand(0);
 
-    VCMTiming timing;
+    TickTimeBase clock;
+    VCMTiming timing(&clock);
     float clockInMs = 0.0;
     WebRtc_UWord32 waitTime = 0;
     WebRtc_UWord32 jitterDelayMs = 0;

@@ -9,17 +9,20 @@
  */
 
 #include "internal_defines.h"
+#include "modules/video_coding/main/source/tick_time_base.h"
 #include "timestamp_extrapolator.h"
-#include "tick_time.h"
 #include "trace.h"
 
 namespace webrtc {
 
-VCMTimestampExtrapolator::VCMTimestampExtrapolator(WebRtc_Word32 vcmId, WebRtc_Word32 id)
+VCMTimestampExtrapolator::VCMTimestampExtrapolator(TickTimeBase* clock,
+                                                   WebRtc_Word32 vcmId,
+                                                   WebRtc_Word32 id)
 :
 _rwLock(RWLockWrapper::CreateRWLock()),
 _vcmId(vcmId),
 _id(id),
+_clock(clock),
 _startMs(0),
 _firstTimestamp(0),
 _wrapArounds(0),
@@ -35,7 +38,7 @@ _accDrift(6600), // in timestamp ticks, i.e. 15 ms
 _accMaxError(7000),
 _P11(1e10)
 {
-    Reset(VCMTickTime::MillisecondTimestamp());
+    Reset(_clock->MillisecondTimestamp());
 }
 
 VCMTimestampExtrapolator::~VCMTimestampExtrapolator()
@@ -53,7 +56,7 @@ VCMTimestampExtrapolator::Reset(const WebRtc_Word64 nowMs /* = -1 */)
     }
     else
     {
-        _startMs = VCMTickTime::MillisecondTimestamp();
+        _startMs = _clock->MillisecondTimestamp();
     }
     _prevMs = _startMs;
     _firstTimestamp = 0;

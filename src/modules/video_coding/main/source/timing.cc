@@ -16,10 +16,14 @@
 
 namespace webrtc {
 
-VCMTiming::VCMTiming(WebRtc_Word32 vcmId, WebRtc_Word32 timingId, VCMTiming* masterTiming)
+VCMTiming::VCMTiming(TickTimeBase* clock,
+                     WebRtc_Word32 vcmId,
+                     WebRtc_Word32 timingId,
+                     VCMTiming* masterTiming)
 :
 _critSect(CriticalSectionWrapper::CreateCriticalSection()),
 _vcmId(vcmId),
+_clock(clock),
 _timingId(timingId),
 _master(false),
 _tsExtrapolator(),
@@ -33,7 +37,7 @@ _prevFrameTimestamp(0)
     if (masterTiming == NULL)
     {
         _master = true;
-        _tsExtrapolator = new VCMTimestampExtrapolator(vcmId, timingId);
+        _tsExtrapolator = new VCMTimestampExtrapolator(_clock, vcmId, timingId);
     }
     else
     {

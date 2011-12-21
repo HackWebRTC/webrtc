@@ -9,20 +9,19 @@
  */
 
 #include "inter_frame_delay.h"
-#include "tick_time.h"
 
 namespace webrtc {
 
-VCMInterFrameDelay::VCMInterFrameDelay()
+VCMInterFrameDelay::VCMInterFrameDelay(int64_t currentWallClock)
 {
-    Reset();
+    Reset(currentWallClock);
 }
 
 // Resets the delay estimate
 void
-VCMInterFrameDelay::Reset()
+VCMInterFrameDelay::Reset(int64_t currentWallClock)
 {
-    _zeroWallClock = VCMTickTime::MillisecondTimestamp();
+    _zeroWallClock = currentWallClock;
     _wrapArounds = 0;
     _prevWallClock = 0;
     _prevTimestamp = 0;
@@ -34,13 +33,8 @@ VCMInterFrameDelay::Reset()
 bool
 VCMInterFrameDelay::CalculateDelay(WebRtc_UWord32 timestamp,
                                 WebRtc_Word64 *delay,
-                                WebRtc_Word64 currentWallClock /* = -1 */)
+                                int64_t currentWallClock)
 {
-    if (currentWallClock <= -1)
-    {
-        currentWallClock = VCMTickTime::MillisecondTimestamp();
-    }
-
     if (_prevWallClock == 0)
     {
         // First set of data, initialization, wait for next frame

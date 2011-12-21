@@ -15,7 +15,6 @@
 #include "trace.h"
 #include "exp_filter.h"
 #include "internal_defines.h"
-#include "tick_time.h"
 #include "qm_select.h"
 
 #include <cmath>
@@ -216,7 +215,7 @@ private:
 class VCMLossProtectionLogic
 {
 public:
-    VCMLossProtectionLogic();
+    VCMLossProtectionLogic(int64_t nowMs);
     ~VCMLossProtectionLogic();
 
     // Set the protection method to be used
@@ -255,7 +254,7 @@ public:
     // Input:
     //          - lossPr255        : The packet loss probability [0, 255],
     //                               reported by RTCP.
-    void UpdateLossPr(WebRtc_UWord8 lossPr255);
+    void UpdateLossPr(WebRtc_UWord8 lossPr255, int64_t nowMs);
 
     // Update the filtered packet loss.
     //
@@ -274,13 +273,13 @@ public:
     //
     // Input:
     //          - nPackets         : Number of packets in the latest sent frame.
-    void UpdatePacketsPerFrame(float nPackets);
+    void UpdatePacketsPerFrame(float nPackets, int64_t nowMs);
 
    // Update the number of packets per frame estimate, for key frames
     //
     // Input:
     //          - nPackets         : umber of packets in the latest sent frame.
-    void UpdatePacketsPerFrameKey(float nPackets);
+    void UpdatePacketsPerFrameKey(float nPackets, int64_t nowMs);
 
     // Update the keyFrameSize estimate
     //
@@ -334,9 +333,9 @@ public:
     // Returns the filtered loss probability in the interval [0, 255].
     //
     // Return value                 : The filtered loss probability
-    WebRtc_UWord8 FilteredLoss() const;
+    WebRtc_UWord8 FilteredLoss(int64_t nowMs) const;
 
-    void Reset();
+    void Reset(int64_t nowMs);
 
     void Release();
 

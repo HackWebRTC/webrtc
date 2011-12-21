@@ -21,6 +21,7 @@
 #include "generic_decoder.h"
 #include "generic_encoder.h"
 #include "media_optimization.h"
+#include "modules/video_coding/main/source/tick_time_base.h"
 
 #include <stdio.h>
 
@@ -30,13 +31,16 @@ namespace webrtc
 class VCMProcessTimer
 {
 public:
-    VCMProcessTimer(WebRtc_UWord32 periodMs) :
-        _periodMs(periodMs), _latestMs(VCMTickTime::MillisecondTimestamp()) {}
+    VCMProcessTimer(WebRtc_UWord32 periodMs, TickTimeBase* clock)
+        : _clock(clock),
+          _periodMs(periodMs),
+          _latestMs(_clock->MillisecondTimestamp()) {}
     WebRtc_UWord32 Period() const;
     WebRtc_UWord32 TimeUntilProcess() const;
     void Processed();
 
 private:
+    TickTimeBase*         _clock;
     WebRtc_UWord32        _periodMs;
     WebRtc_Word64         _latestMs;
 };
@@ -53,7 +57,9 @@ enum VCMKeyRequestMode
 class VideoCodingModuleImpl : public VideoCodingModule
 {
 public:
-    VideoCodingModuleImpl(const WebRtc_Word32 id);
+    VideoCodingModuleImpl(const WebRtc_Word32 id,
+                          TickTimeBase* clock,
+                          bool delete_clock_on_destroy);
 
     virtual ~VideoCodingModuleImpl();
 
@@ -259,6 +265,8 @@ protected:
 
 private:
     WebRtc_Word32                       _id;
+    TickTimeBase*                       clock_;
+    bool                                delete_clock_on_destroy_;
     CriticalSectionWrapper*             _receiveCritSect;
     bool                                _receiverInited;
     VCMTiming                           _timing;

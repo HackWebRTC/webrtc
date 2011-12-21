@@ -34,7 +34,7 @@ struct VCMFrameInformation
 class VCMDecodedFrameCallback : public DecodedImageCallback
 {
 public:
-    VCMDecodedFrameCallback(VCMTiming& timing);
+    VCMDecodedFrameCallback(VCMTiming& timing, TickTimeBase* clock);
     virtual ~VCMDecodedFrameCallback();
     void SetUserReceiveCallback(VCMReceiveCallback* receiveCallback);
 
@@ -49,6 +49,7 @@ public:
 
 private:
     CriticalSectionWrapper* _critSect;
+    TickTimeBase* _clock;
     VideoFrame _frame;
     VCMReceiveCallback* _receiveCallback;
     VCMTiming& _timing;
@@ -76,7 +77,7 @@ public:
     *
     *	inputVideoBuffer	reference to encoded video frame
     */
-    WebRtc_Word32 Decode(const VCMEncodedFrame& inputFrame);
+    WebRtc_Word32 Decode(const VCMEncodedFrame& inputFrame, int64_t nowMs);
 
     /**
     *	Free the decoder memory

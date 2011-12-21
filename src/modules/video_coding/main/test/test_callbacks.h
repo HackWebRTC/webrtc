@@ -24,7 +24,6 @@
 #include "module_common_types.h"
 #include "rtp_rtcp.h"
 #include "test_util.h"
-#include "tick_time.h"
 #include "trace.h"
 #include "video_coding.h"
 
@@ -157,7 +156,7 @@ class RTPSendCompleteCallback: public Transport
 {
 public:
     // Constructor input: (receive side) rtp module to send encoded data to
-    RTPSendCompleteCallback(RtpRtcp* rtp,
+    RTPSendCompleteCallback(RtpRtcp* rtp, TickTimeBase* clock,
                             const char* filename = NULL);
     virtual ~RTPSendCompleteCallback();
     // Send Packet to receive side RTP module
@@ -184,6 +183,7 @@ protected:
     // Random uniform loss model
     bool UnifomLoss(double lossPct);
 
+    TickTimeBase*           _clock;
     WebRtc_UWord32          _sendCount;
     RtpRtcp*                _rtp;
     double                  _lossPct;
