@@ -31,6 +31,7 @@ enum {
                           VP8_EFLAG_NO_UPD_ARF |
                           VP8_EFLAG_NO_UPD_LAST,
   kTemporalUpdateAltrefWithoutDependency = VP8_EFLAG_NO_REF_ARF |
+                                           VP8_EFLAG_NO_REF_GF |
                                            VP8_EFLAG_NO_UPD_GF |
                                            VP8_EFLAG_NO_UPD_LAST,
   kTemporalUpdateAltref = VP8_EFLAG_NO_UPD_GF |

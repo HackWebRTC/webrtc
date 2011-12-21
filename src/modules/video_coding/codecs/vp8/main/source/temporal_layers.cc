@@ -161,7 +161,7 @@ int TemporalLayers::EncodeFlags() {
       break;
     case kTemporalUpdateGoldenWithoutDependency:
       flags |= VP8_EFLAG_NO_REF_GF;
-      // Deliberetely no break here.
+      // Deliberately no break here.
     case kTemporalUpdateGolden:
       flags |= VP8_EFLAG_NO_REF_ARF;
       flags |= VP8_EFLAG_NO_UPD_ARF;
@@ -169,7 +169,8 @@ int TemporalLayers::EncodeFlags() {
       break;
     case kTemporalUpdateAltrefWithoutDependency:
       flags |= VP8_EFLAG_NO_REF_ARF;
-      // Deliberetely no break here.
+      flags |= VP8_EFLAG_NO_REF_GF;
+      // Deliberately no break here.
     case kTemporalUpdateAltref:
       flags |= VP8_EFLAG_NO_UPD_GF;
       flags |= VP8_EFLAG_NO_UPD_LAST;
