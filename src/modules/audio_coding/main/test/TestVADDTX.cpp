@@ -10,12 +10,14 @@
 
 #include "TestVADDTX.h"
 
-#include "common_types.h"
-#include "audio_coding_module_typedefs.h"
-#include "utility.h"
-#include "engine_configurations.h"
 #include <iostream>
+
+#include "audio_coding_module_typedefs.h"
+#include "common_types.h"
+#include "engine_configurations.h"
+#include "testsupport/fileutils.h"
 #include "trace.h"
+#include "utility.h"
 
 namespace webrtc {
 
@@ -351,15 +353,17 @@ void TestVADDTX::Run()
 
 void TestVADDTX::OpenOutFile(WebRtc_Word16 testNumber)
 {
-    char fileName[500] = "./src/modules/audio_coding/main/test/testVADDTX_outFile_";
-    char cntrStr[10];
-
+    char fileName[500];
     if(_testMode == 0)
     {
-        sprintf(fileName, "./src/modules/audio_coding/main/test/testVADDTX_autoFile_");
+        sprintf(fileName, "%s/testVADDTX_autoFile_%02d.pcm",
+                webrtc::test::OutputPath().c_str(), testNumber);
     }
-    sprintf(cntrStr, "%02d.pcm", testNumber);
-    strcat(fileName, cntrStr);
+    else
+    {
+        sprintf(fileName, "%s/testVADDTX_outFile_%02d.pcm",
+                webrtc::test::OutputPath().c_str(), testNumber);
+    }
     _outFileB.Open(fileName, 16000, "wb");
 }
 

@@ -141,12 +141,12 @@ RTPBuffer::EndOfFile() const
     return eof;
 }
 
-void RTPFile::Open(char *filename, const char *mode)
+void RTPFile::Open(const char *filename, const char *mode)
 {
     if ((_rtpFile = fopen(filename, mode)) == NULL)
     {
         printf("Cannot write file %s.\n", filename);
-        throw "Unable to write file";
+        ADD_FAILURE() << "Unable to write file";
         exit(1);
     }
 }

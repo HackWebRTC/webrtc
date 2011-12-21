@@ -9,6 +9,7 @@
  */
 
 #include <stdio.h>
+#include <string>
 #include <vector>
 
 #include "audio_coding_module.h"
@@ -16,6 +17,7 @@
 
 #include "APITest.h"
 #include "EncodeDecodeTest.h"
+#include "gtest/gtest.h"
 #include "iSACTest.h"
 #include "SpatialAudio.h"
 #include "TestAllCodecs.h"
@@ -23,6 +25,7 @@
 #include "TestStereo.h"
 #include "TestVADDTX.h"
 #include "TwoWayCommunication.h"
+#include "testsupport/fileutils.h"
 
 using webrtc::AudioCodingModule;
 using webrtc::Trace;
@@ -48,7 +51,8 @@ void PopulateTests(std::vector<ACMTest*>* tests)
 {
 
      Trace::CreateTrace();
-     Trace::SetTraceFile("acm_trace.txt");
+     std::string trace_file = webrtc::test::OutputPath() + "acm_trace.txt";
+     Trace::SetTraceFile(trace_file.c_str());
 
      printf("The following tests will be executed:\n");
 #ifdef ACM_AUTO_TEST
@@ -98,7 +102,9 @@ void PopulateTests(std::vector<ACMTest*>* tests)
     printf("\n");
 }
 
-int main()
+// TODO(kjellander): Make this a proper gtest instead of using this single test
+// to run all the tests.
+TEST(AudioCodingModuleTest, RunAllTests)
 {
     std::vector<ACMTest*> tests;
     PopulateTests(&tests);
@@ -113,21 +119,10 @@ int main()
     printf("%s\n", version);
     for (it=tests.begin() ; it < tests.end(); it++)
     {
-        try {
-
-            (*it)->Perform();
-        }
-        catch (char *except)
-        {
-            printf("Test failed with message: %s", except);
-            getchar(); 
-            return -1;
-        }
+        (*it)->Perform();
         delete (*it);
     }
 
     Trace::ReturnTrace();
     printf("ACM test completed\n");
-
-    return 0;
 }

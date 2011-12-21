@@ -10,13 +10,14 @@
 
 #include "TestFEC.h"
 
+#include <cassert>
+#include <iostream>
+
 #include "audio_coding_module_typedefs.h"
 #include "common_types.h"
 #include "engine_configurations.h"
-
-#include <cassert>
-#include <iostream>
 #include "trace.h"
+#include "testsupport/fileutils.h"
 #include "utility.h"
 
 namespace webrtc {
@@ -599,15 +600,18 @@ void TestFEC::Run()
 
 void TestFEC::OpenOutFile(WebRtc_Word16 testNumber)
 {
-    char fileName[500] = "./src/modules/audio_coding/main/test/TestFEC_outFile_";
-    char cntrStr[10];
+    char fileName[500];
 
     if(_testMode == 0)
     {
-        sprintf(fileName, "./src/modules/audio_coding/main/test/TestFEC_autoFile_");
+        sprintf(fileName, "%s/TestFEC_autoFile_%02d.pcm",
+                webrtc::test::OutputPath().c_str(), testNumber);
     }
-    sprintf(cntrStr, "%02d.pcm", testNumber);
-    strcat(fileName, cntrStr);
+    else
+    {
+        sprintf(fileName, "%s/TestFEC_outFile_%02d.pcm",
+                webrtc::test::OutputPath().c_str(), testNumber);
+    }
     _outFileB.Open(fileName, 32000, "wb");
 }
 

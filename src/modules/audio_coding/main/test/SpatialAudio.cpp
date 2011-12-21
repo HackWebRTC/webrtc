@@ -13,10 +13,11 @@
 
 #include <math.h>
 
-#include "SpatialAudio.h"
-#include "utility.h"
-#include "trace.h"
 #include "common_types.h"
+#include "SpatialAudio.h"
+#include "trace.h"
+#include "testsupport/fileutils.h"
+#include "utility.h"
 
 namespace webrtc {
 
@@ -66,21 +67,27 @@ SpatialAudio::Setup()
 
     if(_testMode == 0)
     {
-        strncpy(audioFileName, "./src/modules/audio_coding/main/test/out_spatial_autotest.pcm",
+        std::string outputFile = webrtc::test::OutputPath() +
+            "out_spatial_autotest.pcm";
+        strncpy(audioFileName, outputFile.c_str(),
                 MAX_FILE_NAME_LENGTH_BYTE - 1);
     }
     else if(_testMode == 1)
     {
         printf("\n");
-        strncpy(audioFileName, "./src/modules/audio_coding/main/test/testspatial_out.pcm",
+        std::string outputFile = webrtc::test::OutputPath() +
+            "testspatial_out.pcm";
+        strncpy(audioFileName, outputFile.c_str(),
                 MAX_FILE_NAME_LENGTH_BYTE - 1);
         printf("Enter the output file [%s]: ", audioFileName);
         PCMFile::ChooseFile(audioFileName, MAX_FILE_NAME_LENGTH_BYTE, &sampFreqHz);
     }
     else
     {
-        strncpy(audioFileName, "./src/modules/audio_coding/main/test/testspatial_out.pcm",
-                        MAX_FILE_NAME_LENGTH_BYTE - 1);
+        std::string outputFile = webrtc::test::OutputPath() +
+            "testspatial_out.pcm";
+        strncpy(audioFileName, outputFile.c_str(),
+                MAX_FILE_NAME_LENGTH_BYTE - 1);
     }
     _outFile.Open(audioFileName, sampFreqHz, "wb", false);
     _outFile.SaveStereo(true);

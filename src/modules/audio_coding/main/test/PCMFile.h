@@ -29,7 +29,8 @@ public:
             fclose(_pcmFile);
         }
     }
-    void Open(char *filename, WebRtc_UWord16 frequency, const char *mode, bool autoRewind = false);
+    void Open(const char *filename, WebRtc_UWord16 frequency, const char *mode,
+              bool autoRewind = false);
     
     WebRtc_Word32 Read10MsData(AudioFrame& audioFrame);
     
@@ -41,7 +42,8 @@ public:
     void Close();
     bool EndOfFile() const { return _endOfFile; }
     void Rewind();
-    static WebRtc_Word16 ChooseFile(char* fileName, WebRtc_Word16 maxLen, WebRtc_UWord16* frequencyHz);
+    static WebRtc_Word16 ChooseFile(char* fileName, WebRtc_Word16 maxLen,
+                                    WebRtc_UWord16* frequencyHz);
     static WebRtc_Word16 ChooseFile(char* fileName, WebRtc_Word16 maxLen);
     bool Rewinded();
     void SaveStereo(

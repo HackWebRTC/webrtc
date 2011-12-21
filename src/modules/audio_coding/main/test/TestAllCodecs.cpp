@@ -10,11 +10,13 @@
 
 #include "TestAllCodecs.h"
 
+#include <cassert>
+#include <iostream>
+
 #include "audio_coding_module_typedefs.h"
 #include "common_types.h"
 #include "engine_configurations.h"
-#include <cassert>
-#include <iostream>
+#include "testsupport/fileutils.h"
 #include "trace.h"
 #include "utility.h"
 
@@ -838,11 +840,9 @@ void TestAllCodecs::Run(TestPack* channel)
 
 void TestAllCodecs::OpenOutFile(WebRtc_Word16 testNumber)
 {
-    char fileName[500] = "testallcodecs_out_";
-    char cntrStr[10];
-
-    sprintf(cntrStr, "%02d.pcm", testNumber);
-    strcat(fileName, cntrStr);
+    char fileName[500];
+    sprintf(fileName, "%s/testallcodecs_out_%02d.pcm",
+            webrtc::test::OutputPath().c_str(), testNumber);
     _outFileB.Open(fileName, 32000, "wb");
 }
 

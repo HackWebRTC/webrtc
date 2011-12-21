@@ -23,6 +23,7 @@
 #include "gtest/gtest.h"
 #include "PCMFile.h"
 #include "trace.h"
+#include "testsupport/fileutils.h"
 #include "utility.h"
 
 namespace webrtc {
@@ -211,7 +212,8 @@ WebRtc_Word16 TwoWayCommunication::SetUp()
     _inFileA.Open(fileName, frequencyHz, "rb");
 
     //--- Output A
-    strcpy(fileName, "outA.pcm");
+    std::string outputFileA = webrtc::test::OutputPath() + "outA.pcm";
+    strcpy(fileName, outputFileA.c_str());
     frequencyHz = 16000;
     printf("Enter output file at side A [%s]: ", fileName);
     ChooseFile(fileName, 499, &frequencyHz);
@@ -228,7 +230,8 @@ WebRtc_Word16 TwoWayCommunication::SetUp()
     _inFileB.Open(fileName, frequencyHz, "rb");
 
     //--- Output B
-    strcpy(fileName, "outB.pcm");
+    std::string outputFileB = webrtc::test::OutputPath() + "outB.pcm";
+    strcpy(fileName, outputFileB.c_str());
     frequencyHz = 16000;
     printf("Enter output file at side B [%s]: ", fileName);
     ChooseFile(fileName, 499, &frequencyHz);
@@ -316,11 +319,12 @@ WebRtc_Word16 TwoWayCommunication::SetUpAutotest()
     _inFileA.Open(fileName, frequencyHz, "rb");
 
     //--- Output A
-    strcpy(fileName, "./src/modules/audio_coding/main/test/outAutotestA.pcm");
+    std::string outputFileA = webrtc::test::OutputPath() + "outAutotestA.pcm";
+    strcpy(fileName, outputFileA.c_str());
     frequencyHz = 16000;
     _outFileA.Open(fileName, frequencyHz, "wb");
-    strcpy(refFileName,
-           "./src/modules/audio_coding/main/test/ref_outAutotestA.pcm");
+    std::string outputRefFileA = webrtc::test::OutputPath() + "ref_outAutotestA.pcm";
+    strcpy(refFileName, outputRefFileA.c_str());
     _outFileRefA.Open(refFileName, frequencyHz, "wb");
 
     //--- Input B
@@ -329,11 +333,12 @@ WebRtc_Word16 TwoWayCommunication::SetUpAutotest()
     _inFileB.Open(fileName, frequencyHz, "rb");
 
     //--- Output B
-    strcpy(fileName, "./src/modules/audio_coding/main/test/outAutotestB.pcm");
+    std::string outputFileB = webrtc::test::OutputPath() + "outAutotestB.pcm";
+    strcpy(fileName, outputFileB.c_str());
     frequencyHz = 16000;
     _outFileB.Open(fileName, frequencyHz, "wb");
-    strcpy(refFileName,
-           "./src/modules/audio_coding/main/test/ref_outAutotestB.pcm");
+    std::string outputRefFileB = webrtc::test::OutputPath() + "ref_outAutotestB.pcm";
+    strcpy(refFileName, outputRefFileB.c_str());
     _outFileRefB.Open(refFileName, frequencyHz, "wb");
 
     //--- Set A-to-B channel

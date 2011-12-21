@@ -18,6 +18,7 @@
 #include "common_types.h"
 #include "gtest/gtest.h"
 #include "trace.h"
+#include "testsupport/fileutils.h"
 #include "utility.h"
 
 namespace webrtc {
@@ -158,15 +159,14 @@ void Receiver::Setup(AudioCodingModule *acm, RTPStream *rtpStream) {
   if (testMode == 1) {
     playSampFreq=recvCodec.plfreq;
     //output file for current run
-    sprintf(filename,"./src/modules/audio_coding/main/test/out%dFile.pcm",
+    sprintf(filename,"%s/out%dFile.pcm", webrtc::test::OutputPath().c_str(),
             codeId);
     _pcmFile.Open(filename, recvCodec.plfreq, "wb+");
   } else if (testMode == 0) {
     playSampFreq=32000;
     //output file for current run
-    sprintf(filename,
-            "./src/modules/audio_coding/main/test/encodeDecode_out%d.pcm",
-            codeId);
+    sprintf(filename,  "%s/encodeDecode_out%d.pcm",
+            webrtc::test::OutputPath().c_str(), codeId);
     _pcmFile.Open(filename, 32000/*recvCodec.plfreq*/, "wb+");
   } else {
     printf("\nValid output frequencies:\n");
@@ -174,8 +174,8 @@ void Receiver::Setup(AudioCodingModule *acm, RTPStream *rtpStream) {
     printf("which means output freq equal to received signal freq");
     printf("\n\nChoose output sampling frequency: ");
     ASSERT_GT(scanf("%d", &playSampFreq), 0);
-    char fileName[] = "./src/modules/audio_coding/main/test/outFile.pcm";
-    _pcmFile.Open(fileName, 32000, "wb+");
+    sprintf(filename,  "%s/outFile.pcm", webrtc::test::OutputPath().c_str());
+    _pcmFile.Open(filename, 32000, "wb+");
   }
      
   _realPayloadSizeBytes = 0;
@@ -361,8 +361,8 @@ void EncodeDecodeTest::Perform() {
 
       AudioCodingModule *acm = AudioCodingModule::Create(10);
       RTPFile rtpFile;
-      char fileName[] = "outFile.rtp";
-      rtpFile.Open(fileName, "rb");
+      std::string fileName = webrtc::test::OutputPath() + "outFile.rtp";
+      rtpFile.Open(fileName.c_str(), "rb");
 
       _receiver.codeId = codeId;
 
@@ -389,8 +389,8 @@ void EncodeDecodeTest::EncodeToFile(int fileType, int codeId, int* codePars,
                                     int testMode) {
   AudioCodingModule *acm = AudioCodingModule::Create(0);
   RTPFile rtpFile;
-  char fileName[] = "outFile.rtp";
-  rtpFile.Open(fileName, "wb+");
+  std::string fileName = webrtc::test::OutputPath() + "outFile.rtp";
+  rtpFile.Open(fileName.c_str(), "wb+");
   rtpFile.WriteHeader();
 
   //for auto_test and logging

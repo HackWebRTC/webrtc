@@ -25,7 +25,7 @@
 #include "iSACTest.h"
 #include "utility.h"
 #include "trace.h"
-
+#include "testsupport/fileutils.h"
 #include "tick_util.h"
 
 namespace webrtc {
@@ -200,20 +200,10 @@ ISACTest::Setup()
     }
 
     _inFileA.Open(_fileNameSWB, 32000, "rb");
-    if(_testMode == 0)
-    {
-        char fileNameA[] = "./src/modules/audio_coding/main/test/testisac_a.pcm";
-        char fileNameB[] = "./src/modules/audio_coding/main/test/testisac_b.pcm";
-        _outFileA.Open(fileNameA, 32000, "wb");
-        _outFileB.Open(fileNameB, 32000, "wb");
-    }
-    else
-    {
-        char fileNameA[] = "./src/modules/audio_coding/main/test/testisac_a.pcm";
-        char fileNameB[] = "./src/modules/audio_coding/main/test/testisac_b.pcm";
-        _outFileA.Open(fileNameA, 32000, "wb");
-        _outFileB.Open(fileNameB, 32000, "wb");
-    }
+    std::string fileNameA = webrtc::test::OutputPath() + "testisac_a.pcm";
+    std::string fileNameB = webrtc::test::OutputPath() + "testisac_b.pcm";
+    _outFileA.Open(fileNameA.c_str(), 32000, "wb");
+    _outFileB.Open(fileNameB.c_str(), 32000, "wb");
 
     while(!_inFileA.EndOfFile())
     {
@@ -395,14 +385,16 @@ ISACTest::EncodeDecode(
     if(_testMode == 0)
     {
         sprintf(fileNameOut,
-                "./src/modules/audio_coding/main/test/out_iSACTest_%s_%02d.pcm",
+                "%s/out_iSACTest_%s_%02d.pcm",
+                webrtc::test::OutputPath().c_str(),
                 "A",
                 testNr);
     }
     else
     {
         sprintf(fileNameOut,
-                "./src/modules/audio_coding/main/test/out%s_%02d.pcm",
+                "%s/out%s_%02d.pcm",
+                webrtc::test::OutputPath().c_str(),
                 "A",
                 testNr);
     }
@@ -413,14 +405,16 @@ ISACTest::EncodeDecode(
     if(_testMode == 0)
     {
         sprintf(fileNameOut,
-                "./src/modules/audio_coding/main/test/out_iSACTest_%s_%02d.pcm",
+                "%s/out_iSACTest_%s_%02d.pcm",
+                webrtc::test::OutputPath().c_str(),
                 "B",
                 testNr);
     }
     else
     {
         sprintf(fileNameOut,
-                "./src/modules/audio_coding/main/test/out%s_%02d.pcm",
+                "%s/out%s_%02d.pcm",
+                webrtc::test::OutputPath().c_str(),
                 "B",
                 testNr);
     }
@@ -504,7 +498,8 @@ ISACTest::SwitchingSamplingRate(
     if(_testMode == 0)
     {
         sprintf(fileNameOut,
-                "./src/modules/audio_coding/main/test/out_iSACTest_%s_%02d.pcm",
+                "%s/out_iSACTest_%s_%02d.pcm",
+                webrtc::test::OutputPath().c_str(),
                 "A",
                 testNr);
     }
@@ -513,7 +508,8 @@ ISACTest::SwitchingSamplingRate(
         printf("\nTest %d", testNr);
         printf("    Alternate between WB and SWB at the sender Side\n\n");
         sprintf(fileNameOut,
-                "./src/modules/audio_coding/main/test/out%s_%02d.pcm",
+                "%s/out%s_%02d.pcm",
+                webrtc::test::OutputPath().c_str(),
                 "A",
                 testNr);
     }
@@ -524,13 +520,15 @@ ISACTest::SwitchingSamplingRate(
     if(_testMode == 0)
     {
         sprintf(fileNameOut,
-                "./src/modules/audio_coding/main/test/out_iSACTest_%s_%02d.pcm",
+                "%s/out_iSACTest_%s_%02d.pcm",
+                webrtc::test::OutputPath().c_str(),
                 "B",
                 testNr);
     }
     else
     {
-        sprintf(fileNameOut, "./src/modules/audio_coding/main/test/out%s_%02d.pcm",
+        sprintf(fileNameOut, "%s/out%s_%02d.pcm",
+                webrtc::test::OutputPath().c_str(),
                 "B",
                 testNr);
     }

@@ -100,6 +100,7 @@
           'type': 'executable',
           'dependencies': [
             'audio_coding_module',
+            '<(webrtc_root)/../test/test.gyp:test_support_main',
             '<(webrtc_root)/../testing/gtest.gyp:gtest',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
           ],
@@ -120,18 +121,6 @@
              '../test/TimedTrace.cpp',
              '../test/TwoWayCommunication.cpp',
              '../test/utility.cpp',
-          ],
-          'conditions': [
-            ['OS=="linux" or OS=="mac"', {
-              'cflags': [
-                '-fexceptions', # enable exceptions
-              ],
-            }],
-            ['OS=="mac"', {
-              'xcode_settings': {
-                'GCC_ENABLE_CPP_EXCEPTIONS': 'YES', # -fexceptions
-              }
-            }],
           ],
         },
         {
