@@ -1884,8 +1884,6 @@ int JitterBufferTest(CmdArgs& args)
     // Insert the packet -> frame recycled
     TEST(kSizeError == jb.InsertPacket(frameIn, packet));
 
-    // should fail
-    TEST(-1 == jb.GetNextTimeStamp(10, incomingFrameType, renderTimeMs));
     TEST(0 == jb.GetCompleteFrameForDecoding(10));
 
     //printf("DONE fill frame - packets > max number of packets\n");

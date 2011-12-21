@@ -1752,15 +1752,15 @@ VCMJitterBuffer::RecycleFramesUntilKeyFrame()
 
 // Must be called under the critical section _critSect.
 void VCMJitterBuffer::CleanUpOldFrames() {
-  if (_lastDecodedState.init())
-    return;
-
   VCMFrameListItem* oldestFrameListItem = _frameBuffersTSOrder.First();
   VCMFrameBuffer* oldestFrame = NULL;
 
   while (oldestFrameListItem != NULL) {
     oldestFrame = oldestFrameListItem->GetItem();
-    if (_lastDecodedState.IsOldFrame(oldestFrame)) {
+    bool nextFrameEmpty = (_lastDecodedState.ContinuousFrame(oldestFrame) &&
+        oldestFrame->GetState() == kStateEmpty);
+    if (_lastDecodedState.IsOldFrame(oldestFrame) || (nextFrameEmpty &&
+        _frameBuffersTSOrder.Next(oldestFrameListItem) != NULL)) {
       _frameBuffersTSOrder.Erase(oldestFrameListItem);
       ReleaseFrameInternal(oldestFrame);
       oldestFrameListItem = _frameBuffersTSOrder.First();
