@@ -64,8 +64,10 @@ UdpSocket2ManagerWindows::~UdpSocket2ManagerWindows()
         StopWorkerThreads();
 
         // All threads are stopped. Safe to delete them.
-        while(_workerThreadsList.First() != NULL)
+        ListItem* pItem = NULL;
+        while((pItem = _workerThreadsList.First()) != NULL)
         {
+            delete static_cast<UdpSocket2WorkerWindows*>(pItem->GetItem());
             _workerThreadsList.PopFront();
         }
 
@@ -180,19 +182,14 @@ bool UdpSocket2ManagerWindows::StartWorkerThreads()
 
         // Create worker threads.
         WebRtc_UWord32 i = 0;
-        WebRtc_Word32 error = 0;
+        bool error = false;
         while(i < _numOfWorkThreads && !error)
         {
             UdpSocket2WorkerWindows* pWorker =
                 new UdpSocket2WorkerWindows(_ioCompletionHandle);
-            if(pWorker == NULL)
+            if(pWorker->Init() != 0)
             {
-                error = 1;
-                break;
-            }
-            if(pWorker->Init())
-            {
-                error = 1;
+                error = true;
                 delete pWorker;
                 break;
             }
@@ -209,8 +206,10 @@ bool UdpSocket2ManagerWindows::StartWorkerThreads()
                 "creating work threads",
                 _managerNumber);
             // Delete worker threads.
-            while(_workerThreadsList.First() != NULL)
+            ListItem* pItem = NULL;
+            while((pItem = _workerThreadsList.First()) != NULL)
             {
+                delete static_cast<UdpSocket2WorkerWindows*>(pItem->GetItem());
                 _workerThreadsList.PopFront();
             }
             _pCrit->Leave();
