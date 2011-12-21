@@ -22,6 +22,8 @@
       ],
       'sources': [
         'rtp_format_vp8_unittest.cc',
+        'rtp_format_vp8_test_helper.cc',
+        'rtp_format_vp8_test_helper.h',
         'rtcp_format_remb_unittest.cc',
         'rtp_utility_test.cc',
         'rtp_header_extension_test.cc',
