@@ -15,6 +15,12 @@
 //                              Voice and Video
 // ============================================================================
 
+// Don't link in socket support in Chrome
+#ifdef WEBRTC_CHROMIUM_BUILD
+#define WEBRTC_EXTERNAL_TRANSPORT
+#endif
+
+// Optional to enable stand-alone
 // #define WEBRTC_EXTERNAL_TRANSPORT
 
 // ----------------------------------------------------------------------------
