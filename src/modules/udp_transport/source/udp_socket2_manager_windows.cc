@@ -68,8 +68,6 @@ UdpSocket2ManagerWindows::~UdpSocket2ManagerWindows()
         UdpSocket2WorkerWindows* pWorker;
         while((pItem = _workerThreadsList.First()) != NULL)
         {
-            pWorker = (UdpSocket2WorkerWindows*)pItem->GetItem();
-            delete pWorker;
             _workerThreadsList.PopFront();
         }
 
@@ -217,8 +215,6 @@ bool UdpSocket2ManagerWindows::StartWorkerThreads()
             UdpSocket2WorkerWindows* pWorker;
             while((pItem = _workerThreadsList.First()) != NULL)
             {
-                pWorker = (UdpSocket2WorkerWindows*)pItem->GetItem();
-                delete pWorker;
                 _workerThreadsList.PopFront();
             }
             _pCrit->Leave();
