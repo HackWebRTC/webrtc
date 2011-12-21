@@ -62,9 +62,7 @@ bool ViEToFileRenderer::DeleteOutputFile() {
   return true;
 }
 
-std::string ViEToFileRenderer::GetFullOutputPath() const {
-  assert(output_file_ != NULL);
-
+const std::string ViEToFileRenderer::GetFullOutputPath() const {
   return output_path_ + output_filename_;
 }
 

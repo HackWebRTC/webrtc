@@ -8,11 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef SRC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_INTERFACE_VIE_COMPARISON_TESTS_H_
-#define SRC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_INTERFACE_VIE_COMPARISON_TESTS_H_
+#ifndef SRC_VIDEO_ENGINE_TEST_AUTO_TEST_INTERFACE_VIE_COMPARISON_TESTS_H_
+#define SRC_VIDEO_ENGINE_TEST_AUTO_TEST_INTERFACE_VIE_COMPARISON_TESTS_H_
 
 #include <string>
 
+class FrameDropDetector;
 class ViEToFileRenderer;
 
 // This class contains comparison tests, which will exercise video engine
@@ -29,7 +30,7 @@ class ViEToFileRenderer;
 // The local preview is a straight, unaltered copy of the input. This can be
 // useful for comparisons if the test method contains several stages where the
 // input is restarted between stages.
-class ViEComparisonTests {
+class ViEFileBasedComparisonTests {
  public:
   // Test a typical simple call setup. Returns false if the input file
   // could not be opened; reports errors using googletest macros otherwise.
@@ -49,6 +50,17 @@ class ViEComparisonTests {
       int height,
       ViEToFileRenderer* local_file_renderer,
       ViEToFileRenderer* remote_file_renderer);
+
+  // Runs a full stack test using the VP8 codec. Tests the full stack and uses
+  // RTP timestamps to sync frames between the endpoints.
+  void TestFullStack(
+      const std::string& i420_video_file,
+      int width,
+      int height,
+      int bit_rate_kbps,
+      ViEToFileRenderer* local_file_renderer,
+      ViEToFileRenderer* remote_file_renderer,
+      FrameDropDetector* frame_drop_detector);
 };
 
-#endif  // SRC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_INTERFACE_VIE_COMPARISON_TESTS_H_
+#endif  // SRC_VIDEO_ENGINE_TEST_AUTO_TEST_INTERFACE_VIE_COMPARISON_TESTS_H_

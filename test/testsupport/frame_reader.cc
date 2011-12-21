@@ -60,7 +60,7 @@ void FrameReaderImpl::Close() {
 bool FrameReaderImpl::ReadFrame(WebRtc_UWord8* source_buffer) {
   assert(source_buffer);
   if (input_file_ == NULL) {
-    fprintf(stderr, "FileHandler is not initialized (input file is NULL)\n");
+    fprintf(stderr, "FrameReader is not initialized (input file is NULL)\n");
     return false;
   }
   size_t nbr_read = fread(source_buffer, 1, frame_length_in_bytes_,

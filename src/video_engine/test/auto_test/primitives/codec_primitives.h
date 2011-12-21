@@ -8,24 +8,24 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef SRC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_PRIMITIVES_CODEC_PRIMITIVES_H_
-#define SRC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_PRIMITIVES_CODEC_PRIMITIVES_H_
+#ifndef WEBRTC_VIDEO_ENGINE_TEST_AUTO_TEST_PRIMITIVES_CODEC_PRIMITIVES_H_
+#define WEBRTC_VIDEO_ENGINE_TEST_AUTO_TEST_PRIMITIVES_CODEC_PRIMITIVES_H_
 
-#include "vie_autotest_defines.h"
-#include "vie_codec.h"
-#include "vie_image_process.h"
+#include "video_engine/main/interface/vie_codec.h"
+#include "video_engine/main/interface/vie_image_process.h"
+#include "video_engine/test/auto_test/interface/vie_autotest_defines.h"
+#include "video_engine/test/auto_test/primitives/general_primitives.h"
 
 class TbInterfaces;
-
-// This can be passed into TestCodecs and SetSendCodec
-// in order to let the function choose resolutions itself.
-const int kDoNotForceResolution = 0;
 
 // Tests that a codec actually renders frames by registering a basic
 // render effect filter on the codec and then running it. This test is
 // quite lenient on the number of frames that get rendered, so it should not
 // be seen as a end-user-visible quality measure - it is more a sanity check
 // that the codec at least gets some frames through.
+
+// The codec resolution can be forced by specifying the forced* variables
+// (pass in kDoNotForceResolution if you don't care).
 void TestCodecs(const TbInterfaces& interfaces,
                 int capture_id,
                 int video_channel,
@@ -35,6 +35,9 @@ void TestCodecs(const TbInterfaces& interfaces,
 // This helper function will set the send codec in the codec interface to a
 // codec of the specified type. It will generate a test failure if we do not
 // support the provided codec type.
+
+// The codec resolution can be forced by specifying the forced* variables
+// (pass in kDoNotForceResolution if you don't care).
 void SetSendCodec(webrtc::VideoCodecType of_type,
                   webrtc::ViECodec* codec_interface,
                   int video_channel,
@@ -102,14 +105,14 @@ class ViEAutotestCodecObserver: public webrtc::ViEEncoderObserver,
   }
 };
 
-class ViEAutoTestEffectFilter: public webrtc::ViEEffectFilter
+class FrameCounterEffectFilter : public webrtc::ViEEffectFilter
 {
  public:
   int numFrames;
-  ViEAutoTestEffectFilter() {
+  FrameCounterEffectFilter() {
     numFrames = 0;
   }
-  virtual ~ViEAutoTestEffectFilter() {
+  virtual ~FrameCounterEffectFilter() {
   }
 
   virtual int Transform(int size, unsigned char* frameBuffer,
@@ -120,4 +123,4 @@ class ViEAutoTestEffectFilter: public webrtc::ViEEffectFilter
   }
 };
 
-#endif  // SRC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_PRIMITIVES_CODEC_PRIMITIVES_H_
+#endif  // WEBRTC_VIDEO_ENGINE_TEST_AUTO_TEST_PRIMITIVES_CODEC_PRIMITIVES_H_

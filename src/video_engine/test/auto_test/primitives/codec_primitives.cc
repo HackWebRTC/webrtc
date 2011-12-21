@@ -17,28 +17,7 @@
 #include "video_capture_factory.h"
 #include "tb_interfaces.h"
 
-// Helper functions
-
-void SetSuitableResolution(webrtc::VideoCodec* video_codec,
-                           int forced_codec_width,
-                           int forced_codec_height) {
-  if (forced_codec_width != kDoNotForceResolution &&
-      forced_codec_height != kDoNotForceResolution) {
-    video_codec->width = forced_codec_width;
-    video_codec->height = forced_codec_height;
-  } else if (video_codec->codecType == webrtc::kVideoCodecI420) {
-    // I420 is very bandwidth heavy, so limit it here.
-    video_codec->width = 176;
-    video_codec->height = 144;
-  } else if (video_codec->codecType == webrtc::kVideoCodecH263) {
-    video_codec->width = 352;
-    video_codec->height = 288;
-  } else {
-    // Otherwise go with 640x480.
-    video_codec->width = 640;
-    video_codec->height = 480;
-  }
-}
+// Helper functions.
 
 void TestCodecImageProcess(webrtc::VideoCodec video_codec,
                            webrtc::ViECodec* codec_interface,
@@ -46,7 +25,7 @@ void TestCodecImageProcess(webrtc::VideoCodec video_codec,
                            webrtc::ViEImageProcess* image_process) {
 
   EXPECT_EQ(0, codec_interface->SetSendCodec(video_channel, video_codec));
-  ViEAutoTestEffectFilter frame_counter;
+  FrameCounterEffectFilter frame_counter;
   EXPECT_EQ(0, image_process->RegisterRenderEffectFilter(video_channel,
                                                          frame_counter));
   AutoTestSleep (KAutoTestSleepTimeMs);
@@ -202,6 +181,5 @@ void SetSendCodec(webrtc::VideoCodecType of_type,
   }
 
   SetSuitableResolution(&codec, forced_codec_width, forced_codec_height);
-
   EXPECT_EQ(0, codec_interface->SetSendCodec(video_channel, codec));
 }

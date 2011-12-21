@@ -111,3 +111,23 @@ bool FindSpecificCodec(webrtc::VideoCodecType of_type,
   return false;
 }
 
+void SetSuitableResolution(webrtc::VideoCodec* video_codec,
+                           int forced_codec_width,
+                           int forced_codec_height) {
+  if (forced_codec_width != kDoNotForceResolution &&
+      forced_codec_height != kDoNotForceResolution) {
+    video_codec->width = forced_codec_width;
+    video_codec->height = forced_codec_height;
+  } else if (video_codec->codecType == webrtc::kVideoCodecI420) {
+    // I420 is very bandwidth heavy, so limit it here.
+    video_codec->width = 176;
+    video_codec->height = 144;
+  } else if (video_codec->codecType == webrtc::kVideoCodecH263) {
+    video_codec->width = 352;
+    video_codec->height = 288;
+  } else {
+    // Otherwise go with 640x480.
+    video_codec->width = 640;
+    video_codec->height = 480;
+  }
+}

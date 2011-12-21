@@ -44,6 +44,7 @@
         'interface/vie_autotest_main.h',
         'interface/vie_autotest_window_manager_interface.h',
         'interface/vie_autotest_windows.h',
+        'interface/vie_file_based_comparison_tests.h',
         'interface/vie_window_manager_factory.h',
 
         # Helper classes
@@ -58,17 +59,19 @@
 
         # New, fully automated tests
         'automated/vie_api_integration_test.cc',
-        'automated/vie_comparison_test.cc',
         'automated/vie_extended_integration_test.cc',
         'automated/vie_integration_test_base.cc',
         'automated/vie_integration_test_base.h',
         'automated/vie_standard_integration_test.cc',
+        'automated/vie_video_verification_test.cc',
 
         # Test primitives
         'primitives/base_primitives.cc',
         'primitives/base_primitives.h',
         'primitives/codec_primitives.cc',
         'primitives/codec_primitives.h',
+        'primitives/framedrop_primitives.h',
+        'primitives/framedrop_primitives.cc',
         'primitives/general_primitives.cc',
         'primitives/general_primitives.h',
 
@@ -92,7 +95,7 @@
         'source/vie_autotest_rtp_rtcp.cc',
         'source/vie_autotest_custom_call.cc',
         'source/vie_autotest_simulcast.cc',
-        'source/vie_comparison_tests.cc',
+        'source/vie_file_based_comparison_tests.cc',
 
         # Platform dependent
         # Linux

@@ -51,7 +51,7 @@ void FrameWriterImpl::Close() {
 bool FrameWriterImpl::WriteFrame(WebRtc_UWord8* frame_buffer) {
   assert(frame_buffer);
   if (output_file_ == NULL) {
-    fprintf(stderr, "FileHandler is not initialized (output file is NULL)\n");
+    fprintf(stderr, "FrameWriter is not initialized (output file is NULL)\n");
     return false;
   }
   int bytes_written = fwrite(frame_buffer, 1, frame_length_in_bytes_,

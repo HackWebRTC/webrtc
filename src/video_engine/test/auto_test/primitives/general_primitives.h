@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef SRC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_PRIMITIVES_GENERAL_PRIMITIVES_H_
-#define SRC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_PRIMITIVES_GENERAL_PRIMITIVES_H_
+#ifndef WEBRTC_VIDEO_ENGINE_TEST_AUTO_TEST_PRIMITIVES_GENERAL_PRIMITIVES_H_
+#define WEBRTC_VIDEO_ENGINE_TEST_AUTO_TEST_PRIMITIVES_GENERAL_PRIMITIVES_H_
 
 class ViEToFileRenderer;
 
@@ -24,6 +24,10 @@ class ViERender;
 class ViERTP_RTCP;
 struct VideoCodec;
 }
+
+// This constant can be used as input to various functions to not force the
+// codec resolution.
+const int kDoNotForceResolution = 0;
 
 // Finds a suitable capture device (e.g. camera) on the current system
 // and allocates it. Details about the found device are filled into the out
@@ -69,4 +73,11 @@ bool FindSpecificCodec(webrtc::VideoCodecType of_type,
                        webrtc::ViECodec* codec_interface,
                        webrtc::VideoCodec* result);
 
-#endif  // SRC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_PRIMITIVES_GENERAL_PRIMITIVES_H_
+// Sets up the provided codec with a resolution that takes individual codec
+// quirks into account (except if the forced* variables are
+// != kDoNotForceResolution)
+void SetSuitableResolution(webrtc::VideoCodec* video_codec,
+                           int forced_codec_width,
+                           int forced_codec_height);
+
+#endif  // WEBRTC_VIDEO_ENGINE_TEST_AUTO_TEST_PRIMITIVES_GENERAL_PRIMITIVES_H_

@@ -8,17 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "vie_comparison_tests.h"
+#include "vie_file_based_comparison_tests.h"
 
 #include "base_primitives.h"
 #include "codec_primitives.h"
+#include "framedrop_primitives.h"
 #include "general_primitives.h"
 #include "tb_interfaces.h"
 #include "vie_autotest_defines.h"
 #include "vie_fake_camera.h"
 #include "vie_to_file_renderer.h"
 
-bool ViEComparisonTests::TestCallSetup(
+bool ViEFileBasedComparisonTests::TestCallSetup(
     const std::string& i420_video_file,
     int width,
     int height,
@@ -80,7 +81,7 @@ bool ViEComparisonTests::TestCallSetup(
   return true;
 }
 
-bool ViEComparisonTests::TestCodecs(
+bool ViEFileBasedComparisonTests::TestCodecs(
     const std::string& i420_video_file,
     int width,
     int height,
@@ -111,9 +112,39 @@ bool ViEComparisonTests::TestCodecs(
 
   // Force the codec resolution to what our input video is so we can make
   // comparisons later. Our comparison algorithms wouldn't like scaling.
-  ::TestCodecs(interfaces, fake_camera.capture_id(), video_channel,
-               width, height);
+  ::TestCodecs(interfaces, capture_id, video_channel, width, height);
 
   fake_camera.StopCamera();
   return true;
+}
+
+void ViEFileBasedComparisonTests::TestFullStack(
+    const std::string& i420_video_file,
+    int width,
+    int height,
+    int bit_rate_kbps,
+    ViEToFileRenderer* local_file_renderer,
+    ViEToFileRenderer* remote_file_renderer,
+    FrameDropDetector* frame_drop_detector) {
+  TbInterfaces interfaces = TbInterfaces("TestFullStack");
+
+  ViEFakeCamera fake_camera(interfaces.capture);
+  if (!fake_camera.StartCameraInNewThread(i420_video_file, width, height)) {
+    // No point in continuing if we have no proper video source
+    ADD_FAILURE() << "Could not open input video " << i420_video_file <<
+        ": aborting test...";
+    return;
+  }
+  int video_channel = -1;
+  int capture_id = fake_camera.capture_id();
+  EXPECT_EQ(0, interfaces.base->CreateChannel(video_channel));
+  EXPECT_EQ(0, interfaces.capture->ConnectCaptureDevice(
+      capture_id, video_channel));
+  ConfigureRtpRtcp(interfaces.rtp_rtcp, video_channel);
+  RenderToFile(interfaces.render, capture_id, local_file_renderer);
+  RenderToFile(interfaces.render, video_channel, remote_file_renderer);
+
+  ::TestFullStack(interfaces, capture_id, video_channel, width, height,
+                  bit_rate_kbps, frame_drop_detector);
+  fake_camera.StopCamera();
 }

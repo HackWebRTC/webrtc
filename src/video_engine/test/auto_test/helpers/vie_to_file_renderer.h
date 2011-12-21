@@ -8,14 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef SRC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_HELPERS_VIE_TO_FILE_RENDERER_H_
-#define SRC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_HELPERS_VIE_TO_FILE_RENDERER_H_
+#ifndef SRC_VIDEO_ENGINE_TEST_AUTO_TEST_HELPERS_VIE_TO_FILE_RENDERER_H_
+#define SRC_VIDEO_ENGINE_TEST_AUTO_TEST_HELPERS_VIE_TO_FILE_RENDERER_H_
 
 #include <cstdio>
-
 #include <string>
 
-#include "vie_render.h"
+#include "video_engine/main/interface/vie_render.h"
 
 class ViEToFileRenderer: public webrtc::ExternalRenderer {
  public:
@@ -46,7 +45,7 @@ class ViEToFileRenderer: public webrtc::ExternalRenderer {
   int DeliverFrame(unsigned char* buffer, int buffer_size,
                    unsigned int time_stamp);
 
-  std::string GetFullOutputPath() const;
+  const std::string GetFullOutputPath() const;
 
  private:
   void ForgetOutputFile();
@@ -56,4 +55,4 @@ class ViEToFileRenderer: public webrtc::ExternalRenderer {
   std::string output_filename_;
 };
 
-#endif  // SRC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_HELPERS_VIE_TO_FILE_RENDERER_H_
+#endif  // SRC_VIDEO_ENGINE_TEST_AUTO_TEST_HELPERS_VIE_TO_FILE_RENDERER_H_
