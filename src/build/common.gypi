@@ -142,11 +142,6 @@
     'target_conditions': [
       # TODO(andrew): This block disables some warnings from the chromium_code
       # configuration. Remove when possible.
-      ['OS=="mac"', {
-        'xcode_settings': {
-          'GCC_TREAT_WARNINGS_AS_ERRORS': 'NO',
-        },
-      }],
       ['OS=="win"', {
         'msvs_disabled_warnings': [4389], # Signed/unsigned mismatch.
         'msvs_settings': {
@@ -159,8 +154,3 @@
   }, # target_defaults
 }
 
-# Local Variables:
-# tab-width:2
-# indent-tabs-mode:nil
-# End:
-# vim: set expandtab tabstop=2 shiftwidth=2:
