@@ -8,105 +8,71 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * vie_codec_impl.h
- */
-
-#ifndef WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_CODEC_IMPL_H_
-#define WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_CODEC_IMPL_H_
-
-#include "vie_defines.h"
+#ifndef WEBRTC_VIDEO_ENGINE_VIE_CODEC_IMPL_H_
+#define WEBRTC_VIDEO_ENGINE_VIE_CODEC_IMPL_H_
 
 #include "typedefs.h"
-#include "vie_ref_count.h"
-#include "vie_shared_data.h"
-#include "vie_codec.h"
+#include "video_engine/main/interface/vie_codec.h"
+#include "video_engine/vie_defines.h"
+#include "video_engine/vie_ref_count.h"
+#include "video_engine/vie_shared_data.h"
 
-namespace webrtc
-{
+namespace webrtc {
 
-// ----------------------------------------------------------------------------
-//	ViECodecImpl
-// ----------------------------------------------------------------------------
+class ViECodecImpl
+    : public virtual ViESharedData,
+      public ViECodec,
+      public ViERefCount {
+ public:
+  virtual int Release();
 
-class ViECodecImpl : public virtual ViESharedData,
-                         public ViECodec,
-                         public ViERefCount
-{
-public:
-    virtual int Release();
+  // Implements ViECodec.
+  virtual int NumberOfCodecs() const;
+  virtual int GetCodec(const unsigned char list_number,
+                       VideoCodec& video_codec) const;
+  virtual int SetSendCodec(const int video_channel,
+                           const VideoCodec& video_codec);
+  virtual int GetSendCodec(const int video_channel,
+                           VideoCodec& video_codec) const;
+  virtual int SetReceiveCodec(const int video_channel,
+                              const VideoCodec& video_codec);
+  virtual int GetReceiveCodec(const int video_channel,
+                              VideoCodec& video_codec) const;
+  virtual int GetCodecConfigParameters(
+    const int video_channel,
+    unsigned char config_parameters[kConfigParameterSize],
+    unsigned char& config_parameters_size) const;
+  virtual int SetImageScaleStatus(const int video_channel, const bool enable);
+  virtual int GetSendCodecStastistics(const int video_channel,
+                                      unsigned int& key_frames,
+                                      unsigned int& delta_frames) const;
+  virtual int GetReceiveCodecStastistics(const int video_channel,
+                                         unsigned int& key_frames,
+                                         unsigned int& delta_frames) const;
+  virtual unsigned int GetDiscardedPackets(const int video_channel) const;
+  virtual int SetKeyFrameRequestCallbackStatus(const int video_channel,
+                                               const bool enable);
+  virtual int SetSignalKeyPacketLossStatus(const int video_channel,
+                                           const bool enable,
+                                           const bool only_key_frames = false);
+  virtual int RegisterEncoderObserver(const int video_channel,
+                                      ViEEncoderObserver& observer);
+  virtual int DeregisterEncoderObserver(const int video_channel);
+  virtual int RegisterDecoderObserver(const int video_channel,
+                                      ViEDecoderObserver& observer);
+  virtual int DeregisterDecoderObserver(const int video_channel);
+  virtual int SendKeyFrame(const int video_channel);
+  virtual int WaitForFirstKeyFrame(const int video_channel, const bool wait);
+  virtual int SetInverseH263Logic(int video_channel, bool enable);
 
-    // Available codecs
-    virtual int NumberOfCodecs() const;
+ protected:
+  ViECodecImpl();
+  virtual ~ViECodecImpl();
 
-    virtual int GetCodec(const unsigned char listNumber,
-                         VideoCodec& videoCodec) const;
-
-    // Codec settings
-    virtual int SetSendCodec(const int videoChannel,
-                             const VideoCodec& videoCodec);
-
-    virtual int GetSendCodec(const int videoChannel,
-                             VideoCodec& videoCodec) const;
-
-    virtual int SetReceiveCodec(const int videoChannel,
-                                const VideoCodec& videoCodec);
-
-    virtual int GetReceiveCodec(const int videoChannel,
-                                VideoCodec& videoCodec) const;
-
-    virtual int GetCodecConfigParameters(
-        const int videoChannel,
-        unsigned char configParameters[kConfigParameterSize],
-        unsigned char& configParametersSize) const;
-
-    // Input image scaling
-    virtual int SetImageScaleStatus(const int videoChannel, const bool enable);
-
-    // Codec statistics
-    virtual int GetSendCodecStastistics(const int videoChannel,
-                                        unsigned int& keyFrames,
-                                        unsigned int& deltaFrames) const;
-
-    virtual int GetReceiveCodecStastistics(const int videoChannel,
-                                           unsigned int& keyFrames,
-                                           unsigned int& deltaFrames) const;
-
-    virtual unsigned int GetDiscardedPackets(const int videoChannel) const;
-
-    // Callbacks
-    virtual int SetKeyFrameRequestCallbackStatus(const int videoChannel,
-                                                 const bool enable);
-
-    virtual int SetSignalKeyPacketLossStatus(const int videoChannel,
-                                             const bool enable,
-                                             const bool onlyKeyFrames = false);
-
-    virtual int RegisterEncoderObserver(const int videoChannel,
-                                        ViEEncoderObserver& observer);
-
-    virtual int DeregisterEncoderObserver(const int videoChannel);
-
-    virtual int RegisterDecoderObserver(const int videoChannel,
-                                        ViEDecoderObserver& observer);
-
-    virtual int DeregisterDecoderObserver(const int videoChannel);
-
-    // Key frame settings
-    virtual int SendKeyFrame(const int videoChannel);
-
-    virtual int WaitForFirstKeyFrame(const int videoChannel, const bool wait);
-
-    // H263 Specific
-    virtual int SetInverseH263Logic(int videoChannel, bool enable);
-
-protected:
-    ViECodecImpl();
-    virtual ~ViECodecImpl();
-
-private:
-    bool CodecValid(const VideoCodec& videoCodec);
+ private:
+  bool CodecValid(const VideoCodec& video_codec);
 };
-} // namespace webrtc
 
-#endif  // WEBRTC_VIDEO_ENGINE_MAIN_SOURCE_VIE_CODEC_IMPL_H_
+}  // namespace webrtc
+
+#endif  // WEBRTC_VIDEO_ENGINE_VIE_CODEC_IMPL_H_

@@ -8,536 +8,99 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * vie_encryption_impl.cc
- */
+#include "video_engine/vie_encryption_impl.h"
 
-#include "vie_encryption_impl.h"
+#include "system_wrappers/interface/trace.h"
+#include "video_engine/main/interface/vie_errors.h"
+#include "video_engine/vie_channel.h"
+#include "video_engine/vie_channel_manager.h"
+#include "video_engine/vie_defines.h"
+#include "video_engine/vie_impl.h"
 
-// Defines
-#include "vie_defines.h"
-#include "vie_errors.h"
-#include "vie_channel.h"
-#include "vie_channel_manager.h"
+namespace webrtc {
 
-#include "trace.h"
-#include "vie_impl.h"
-
-#ifdef WEBRTC_SRTP
-#include "SrtpModule.h"
-#endif
-
-namespace webrtc
-{
-
-// ----------------------------------------------------------------------------
-// GetInterface
-// ----------------------------------------------------------------------------
-
-ViEEncryption* ViEEncryption::GetInterface(VideoEngine* videoEngine)
-{
+ViEEncryption* ViEEncryption::GetInterface(VideoEngine* video_engine) {
 #ifdef WEBRTC_VIDEO_ENGINE_ENCRYPTION_API
-    if (videoEngine == NULL)
-    {
-        return NULL;
-    }
-    VideoEngineImpl* vieImpl = reinterpret_cast<VideoEngineImpl*> (videoEngine);
-    ViEEncryptionImpl* vieEncryptionImpl = vieImpl;
-    (*vieEncryptionImpl)++; // Increase ref count
-
-    return vieEncryptionImpl;
-#else
+  if (video_engine == NULL) {
     return NULL;
+  }
+  VideoEngineImpl* vie_impl = reinterpret_cast<VideoEngineImpl*>(video_engine);
+  ViEEncryptionImpl* vie_encryption_impl = vie_impl;
+  // Increase ref count.
+  (*vie_encryption_impl)++;
+  return vie_encryption_impl;
+#else
+  return NULL;
 #endif
 }
 
-// ----------------------------------------------------------------------------
-// Release
-//
-// Releases the interface, i.e. reduces the reference counter. The number of
-// remaining references is returned, -1 if released too many times.
-// ----------------------------------------------------------------------------
-
-int ViEEncryptionImpl::Release()
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, instance_id_,
+int ViEEncryptionImpl::Release() {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, instance_id_,
                "ViEEncryptionImpl::Release()");
-    (*this)--; // Decrease ref count
+  // Decrease ref count.
+  (*this)--;
 
-    WebRtc_Word32 refCount = GetCount();
-    if (refCount < 0)
-    {
-        WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideo, instance_id_,
-                   "ViEEncryptionImpl release too many times");
-        SetLastError(kViEAPIDoesNotExist);
-        return -1;
-    }
-    WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, instance_id_,
-               "ViEEncryptionImpl reference count: %d", refCount);
-    return refCount;
+  WebRtc_Word32 ref_count = GetCount();
+  if (ref_count < 0) {
+    WEBRTC_TRACE(kTraceWarning, kTraceVideo, instance_id_,
+                 "ViEEncryptionImpl release too many times");
+    SetLastError(kViEAPIDoesNotExist);
+    return -1;
+  }
+  WEBRTC_TRACE(kTraceInfo, kTraceVideo, instance_id_,
+               "ViEEncryptionImpl reference count: %d", ref_count);
+  return ref_count;
 }
 
-// ----------------------------------------------------------------------------
-// Constructor
-// ----------------------------------------------------------------------------
-
-ViEEncryptionImpl::ViEEncryptionImpl()
-{
-    WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideo, instance_id_,
+ViEEncryptionImpl::ViEEncryptionImpl() {
+  WEBRTC_TRACE(kTraceMemory, kTraceVideo, instance_id_,
                "ViEEncryptionImpl::ViEEncryptionImpl() Ctor");
 }
 
-// ----------------------------------------------------------------------------
-// Destructor
-// ----------------------------------------------------------------------------
-
-ViEEncryptionImpl::~ViEEncryptionImpl()
-{
-    WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideo, instance_id_,
+ViEEncryptionImpl::~ViEEncryptionImpl() {
+  WEBRTC_TRACE(kTraceMemory, kTraceVideo, instance_id_,
                "ViEEncryptionImpl::~ViEEncryptionImpl() Dtor");
 }
 
-// ============================================================================
-// SRTP
-// ============================================================================
+int ViEEncryptionImpl::RegisterExternalEncryption(const int video_channel,
+                                                  Encryption& encryption) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+               "RegisterExternalEncryption(video_channel=%d)", video_channel);
 
-// ----------------------------------------------------------------------------
-// EnableSRTPSend
-//
-// ----------------------------------------------------------------------------
-
-int ViEEncryptionImpl::EnableSRTPSend(
-    const int videoChannel, const CipherTypes cipherType,
-    const unsigned int cipherKeyLength, const AuthenticationTypes authType,
-    const unsigned int authKeyLength, const unsigned int authTagLength,
-    const SecurityLevels level, const unsigned char key[kViEMaxSrtpKeyLength],
-    const bool useForRTCP)
-{
-
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo, instance_id_,
-               "EnableSRTPSend(channel=%d, cipherType=%d, cipherKeyLength=%d, "
-               "authType=%d, authKeyLength=%d, authTagLength=%d, level=%d, "
-               "key=?, RTCP=%s",
-               videoChannel, cipherType, cipherKeyLength, authType,
-               authKeyLength, authTagLength, level,
-               useForRTCP ? "true" : "false");
-#ifdef WEBRTC_SRTP
-    if (!IsInitialized())
-    {
-        SetLastError(kViENotInitialized);
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
-                   "%s - ViE instance %d not initialized", __FUNCTION__,
-                   instance_id_);
-        return -1;
-    }
-
-    bool cipherAllZero = (kCipherNull == cipherType) && (0 == cipherKeyLength);
-    bool authAllZero = (kAuthNull == authType) &&
-                       (0 == authKeyLength) &&
-                       (0 == authTagLength);
-
-    // 1. For no protection all cipher and auth must be zero
-    // 2. For encryption only all auth must be zero
-    // 3. For authentication only all cipher must be zero
-    if (((kNoProtection == level) && (!cipherAllZero || !authAllZero))
-        || ((kEncryption == level) && !authAllZero)
-        || ((kAuthentication == level) && !cipherAllZero))
-
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, instance_id_,
-                   "  Invalid input argument");
-        SetLastError(kViEEncryptionInvalidSrtpParameter);
-        return -1;
-    }
-
-    // 16 <= cipherKeyLength <= 256
-    if (((kEncryption == level) || (kEncryptionAndAuthentication == level))
-        && ((cipherKeyLength < kViEMinSrtpEncryptLength)
-            || (cipherKeyLength > kViEMaxSrtpEncryptLength)))
-
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, instance_id_,
-                   "  Invalid cipher key length");
-        SetLastError(kViEEncryptionInvalidSrtpParameter);
-        return -1;
-    }
-
-    // For HMAC_SHA1 auth:
-    // authKeyLength <= 20, authTagLength <= 20
-    if (((kAuthentication == level) || (kEncryptionAndAuthentication == level))
-        && (kAuthHmacSha1 == authType)
-        && ((authKeyLength > kViEMaxSrtpAuthSh1Length)
-            || (authTagLength > kViEMaxSrtpAuthSh1Length)))
-
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, instance_id_,
-                   "  Invalid auth key or tag length");
-        SetLastError(kViEEncryptionInvalidSrtpParameter);
-        return -1;
-    }
-
-    // For NULL auth:
-    // authKeyLength <= 256, authTagLength <= 12
-    if (((kAuthentication == level) || (kEncryptionAndAuthentication == level))
-        && (kAuthNull == authType)
-        && ((authKeyLength > kViEMaxSrtpKeyAuthNullLength)
-            || (authTagLength > kViEMaxSrtpTagAuthNullLength)))
-
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, instance_id_,
-                   "  Invalid auth key or tag length");
-        SetLastError(kViEEncryptionInvalidSrtpParameter);
-        return -1;
-    }
-    if (!key)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, instance_id_,
-                   "  key NULL pointer");
-        SetLastError(kViEEncryptionInvalidSrtpParameter);
-        return -1;
-    }
-
-    const SrtpModule::CipherTypes cipher_type =
-        static_cast<const SrtpModule::CipherTypes> (cipherType);
-    const SrtpModule::AuthenticationTypes auth_type =
-        static_cast<const SrtpModule::AuthenticationTypes> (authType);
-    const SrtpModule::SecurityLevels security_level =
-        static_cast<const SrtpModule::SecurityLevels> (level);
-
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEChannel* vieChannel = cs.Channel(videoChannel);
-    if (vieChannel == NULL)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(instance_id_, videoChannel), "%s: No channel %d",
-                   __FUNCTION__, videoChannel);
-        SetLastError(kViEEncryptionInvalidChannelId);
-        return -1;
-    }
-
-    if (0 != vieChannel->EnableSRTPSend(cipher_type, cipherKeyLength, auth_type,
-                                        authKeyLength, authTagLength,
-                                        security_level, key, useForRTCP))
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, instance_id_,
-                   "Failed to configure SRTP Encryption for sending");
-        SetLastError(kViEEncryptionUnknownError);
-        return -1;
-    }
-
-    WEBRTC_TRACE(webrtc::kTraceStateInfo, webrtc::kTraceVideo, instance_id_,
-               "SRTP Enabled for sending");
-    return 0;
-#else    
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice,
-               ViEId(instance_id_, videoChannel),
-               "  _SRTP is undefined => _lastError = %d",
-               LastErrorInternal());
-    SetLastError(kViEEncryptionSrtpNotSupported);
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (vie_channel == NULL) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo,
+                 ViEId(instance_id_, video_channel), "%s: No channel %d",
+                 __FUNCTION__, video_channel);
+    SetLastError(kViEEncryptionInvalidChannelId);
     return -1;
-#endif
-}
-
-// ----------------------------------------------------------------------------
-// DisableSRTPSend
-//
-// ----------------------------------------------------------------------------
-
-int ViEEncryptionImpl::DisableSRTPSend(const int videoChannel)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-               ViEId(instance_id_, videoChannel),
-               "DisableSRTPSend(videoChannel=%d)", videoChannel);
-#ifdef WEBRTC_SRTP
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEChannel* vieChannel = cs.Channel(videoChannel);
-    if (vieChannel == NULL)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(instance_id_, videoChannel), "%s: No channel %d",
-                   __FUNCTION__, videoChannel);
-        SetLastError(kViEEncryptionInvalidChannelId);
-        return -1;
-    }
-
-    if (0 != vieChannel->DisableSRTPSend())
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(instance_id_, videoChannel),
-                   "Failed to Disable SRTP Encryption for sending");
-        SetLastError(kViEEncryptionUnknownError);
-        return -1;
-    }
-
-    WEBRTC_TRACE(webrtc::kTraceStateInfo, webrtc::kTraceVideo,
-               ViEId(instance_id_, videoChannel),
-               "SRTP Disabled for sending");
-    return 0;
-#else    
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice,
-               ViEId(instance_id_, videoChannel),
-               "  _SRTP is undefined => _lastError = %d",
-               LastErrorInternal());
-    SetLastError(kViEEncryptionSrtpNotSupported);
+  }
+  if (vie_channel->RegisterExternalEncryption(&encryption) != 0) {
+    SetLastError(kViEEncryptionUnknownError);
     return -1;
-#endif
-
+  }
+  return 0;
 }
 
-// ----------------------------------------------------------------------------
-// EnableSRTPReceive
-//
-// ----------------------------------------------------------------------------
+int ViEEncryptionImpl::DeregisterExternalEncryption(const int video_channel) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+               "RegisterExternalEncryption(video_channel=%d)", video_channel);
 
-int ViEEncryptionImpl::EnableSRTPReceive(
-    const int videoChannel, const CipherTypes cipherType,
-    const unsigned int cipherKeyLength, const AuthenticationTypes authType,
-    const unsigned int authKeyLength, const unsigned int authTagLength,
-    const SecurityLevels level,
-    const unsigned char key[kViEMaxSrtpKeyLength], const bool useForRTCP)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-               ViEId(instance_id_, videoChannel),
-               "EnableSRTPReceive(channel=%d, cipherType=%d, "
-               "cipherKeyLength=%d, authType=%d, authKeyLength=%d, "
-               "authTagLength=%d, level=%d, key=?, RTCP=%s)",
-               videoChannel, cipherType, cipherKeyLength, authType,
-               authKeyLength, authTagLength, level,
-               useForRTCP ? "true" : "false");
-
-#ifdef WEBRTC_SRTP
-    if (!IsInitialized())
-    {
-        SetLastError(kViENotInitialized);
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(instance_id_),
-                   "%s - ViE instance %d not initialized", __FUNCTION__,
-                   instance_id_);
-        return -1;
-    }
-
-    bool cipherAllZero = (kCipherNull == cipherType) && (0 == cipherKeyLength);
-    bool authAllZero = (kAuthNull == authType)
-                       && (0 == authKeyLength)
-                       && (0 == authTagLength);
-
-    // 1. For no protection all cipher and auth must be zero
-    // 2. For encryption only all auth must be zero
-    // 3. For authentication only all cipher must be zero
-    if (((kNoProtection == level) && (!cipherAllZero || !authAllZero)) ||
-        ((kEncryption == level) && !authAllZero) ||
-        ((kAuthentication == level) && !cipherAllZero))
-
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(instance_id_, videoChannel),
-                   "  Invalid input argument");
-        SetLastError(kViEEncryptionInvalidSrtpParameter);
-        return -1;
-    }
-
-    // 16 <= cipherKeyLength <= 256
-    if (((kEncryption == level) || (kEncryptionAndAuthentication == level))
-        && ((cipherKeyLength < kViEMinSrtpEncryptLength)
-            || (cipherKeyLength > kViEMaxSrtpEncryptLength)))
-
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(instance_id_, videoChannel),
-                   "  Invalid cipher key length");
-        SetLastError(kViEEncryptionInvalidSrtpParameter);
-        return -1;
-    }
-
-    // For HMAC_SHA1 auth:
-    // authKeyLength <= 20, authTagLength <= 20
-    if (((kAuthentication == level) || (kEncryptionAndAuthentication == level))
-        && (kAuthHmacSha1 == authType)
-        && ((authKeyLength > kViEMaxSrtpAuthSh1Length)
-            || (authTagLength > kViEMaxSrtpAuthSh1Length)))
-
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(instance_id_, videoChannel),
-                   "  Invalid auth key or tag length");
-        SetLastError(kViEEncryptionInvalidSrtpParameter);
-        return -1;
-    }
-
-    // For NULL auth:
-    // authKeyLength <= 256, authTagLength <= 12
-    if (((kAuthentication == level) || (kEncryptionAndAuthentication == level))
-        && (kAuthNull == authType)
-        && ((authKeyLength > kViEMaxSrtpKeyAuthNullLength)
-            || (authTagLength > kViEMaxSrtpTagAuthNullLength)))
-
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(instance_id_, videoChannel),
-                   "  Invalid auth key or tag length");
-        SetLastError(kViEEncryptionInvalidSrtpParameter);
-        return -1;
-    }
-
-    if (!key)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(instance_id_, videoChannel), "  key NULL pointer");
-        SetLastError(kViEEncryptionInvalidSrtpParameter);
-        return -1;
-    }
-
-    const SrtpModule::CipherTypes cipher_type =
-        static_cast<const SrtpModule::CipherTypes> (cipherType);
-    const SrtpModule::AuthenticationTypes auth_type =
-        static_cast<const SrtpModule::AuthenticationTypes> (authType);
-    const SrtpModule::SecurityLevels security_level =
-        static_cast<const SrtpModule::SecurityLevels> (level);
-
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEChannel* vieChannel = cs.Channel(videoChannel);
-    if (vieChannel == NULL)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(instance_id_, videoChannel), "%s: No channel %d",
-                   __FUNCTION__, videoChannel);
-        SetLastError(kViEEncryptionInvalidChannelId);
-        return -1;
-    }
-
-    if (0 != vieChannel->EnableSRTPReceive(cipher_type, cipherKeyLength,
-                                           auth_type, authKeyLength,
-                                           authTagLength, security_level, key,
-                                           useForRTCP))
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(instance_id_, videoChannel),
-                   "Failed to configure SRTP Encryption for receiving");
-        SetLastError(kViEEncryptionUnknownError);
-        return -1;
-    }
-
-    WEBRTC_TRACE(webrtc::kTraceStateInfo, webrtc::kTraceVideo,
-               ViEId(instance_id_, videoChannel),
-               "SRTP Enabled for receiving");
-    return 0;
-
-#else    
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice,
-               ViEId(instance_id_, videoChannel),
-               "  _SRTP is undefined => _lastError = %d",
-               LastErrorInternal());
-    SetLastError(kViEEncryptionSrtpNotSupported);
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEChannel* vie_channel = cs.Channel(video_channel);
+  if (vie_channel == NULL) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "%s: No channel %d", __FUNCTION__, video_channel);
+    SetLastError(kViEEncryptionInvalidChannelId);
     return -1;
-#endif
-}
+  }
 
-// ----------------------------------------------------------------------------
-// DisableSRTPReceive
-//
-// ----------------------------------------------------------------------------
-
-int ViEEncryptionImpl::DisableSRTPReceive(const int videoChannel)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-               ViEId(instance_id_, videoChannel),
-               "DisableSRTPReceive(videoChannel=%d)", videoChannel);
-
-#ifdef WEBRTC_SRTP
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEChannel* vieChannel = cs.Channel(videoChannel);
-    if (vieChannel == NULL)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(instance_id_, videoChannel), "%s: No channel %d",
-                   __FUNCTION__, videoChannel);
-        SetLastError(kViEEncryptionInvalidChannelId);
-        return -1;
-    }
-
-    if (0 != vieChannel->DisableSRTPReceive())
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(instance_id_, videoChannel),
-                   "Failed to Disable SRTP Encryption for receiving");
-        SetLastError(kViEEncryptionUnknownError);
-        return -1;
-    }
-
-    WEBRTC_TRACE(webrtc::kTraceStateInfo, webrtc::kTraceVideo,
-               ViEId(instance_id_, videoChannel), "SRTP Disabled for receiving");
-    return 0;
-#else    
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVoice,
-               ViEId(instance_id_, videoChannel),
-               "  _SRTP is undefined => _lastError = %d",
-               LastErrorInternal());
-    SetLastError(kViEEncryptionSrtpNotSupported);
+  if (vie_channel->DeRegisterExternalEncryption() != 0) {
+    SetLastError(kViEEncryptionUnknownError);
     return -1;
-#endif
+  }
+  return 0;
 }
 
-// ============================================================================
-// External encryption
-// ============================================================================
-
-// ----------------------------------------------------------------------------
-// RegisterExternalEncryption
-//
-// ----------------------------------------------------------------------------
-
-int ViEEncryptionImpl::RegisterExternalEncryption(const int videoChannel,
-                                                  Encryption& encryption)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-               ViEId(instance_id_, videoChannel),
-               "RegisterExternalEncryption(videoChannel=%d)", videoChannel);
-
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEChannel* vieChannel = cs.Channel(videoChannel);
-    if (vieChannel == NULL)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(instance_id_, videoChannel), "%s: No channel %d",
-                   __FUNCTION__, videoChannel);
-        SetLastError(kViEEncryptionInvalidChannelId);
-        return -1;
-    }
-    if (vieChannel->RegisterExternalEncryption(&encryption) != 0)
-    {
-        SetLastError(kViEEncryptionUnknownError);
-        return -1;
-    }
-
-    return 0;
-}
-
-// ----------------------------------------------------------------------------
-// DeregisterExternalEncryption
-//
-// ----------------------------------------------------------------------------
-
-int ViEEncryptionImpl::DeregisterExternalEncryption(const int videoChannel)
-{
-    WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
-               ViEId(instance_id_, videoChannel),
-               "RegisterExternalEncryption(videoChannel=%d)", videoChannel);
-
-    ViEChannelManagerScoped cs(channel_manager_);
-    ViEChannel* vieChannel = cs.Channel(videoChannel);
-    if (vieChannel == NULL)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                   ViEId(instance_id_, videoChannel), "%s: No channel %d",
-                   __FUNCTION__, videoChannel);
-        SetLastError(kViEEncryptionInvalidChannelId);
-        return -1;
-    }
-
-    if (vieChannel->DeRegisterExternalEncryption() != 0)
-    {
-        SetLastError(kViEEncryptionUnknownError);
-        return -1;
-    }
-    return 0;
-}
-} // namespace webrtc
+}  // namespace webrtc

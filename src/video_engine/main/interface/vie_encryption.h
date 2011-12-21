@@ -29,11 +29,6 @@ class VideoEngine;
 class WEBRTC_DLLEXPORT ViEEncryption
 {
 public:
-    enum
-    {
-        kMaxSrtpKeyLength = 30
-    };
-
     // Factory for the ViEEncryption sub‐API and increases an internal reference
     // counter if successful. Returns NULL if the API is not supported or if
     // construction fails.
@@ -44,35 +39,6 @@ public:
     // Returns the new reference count. This value should be zero
     // for all sub-API:s before the VideoEngine object can be safely deleted.
     virtual int Release() = 0;
-
-    // This function enables SRTP on send packets for a specific channel.
-    virtual int EnableSRTPSend(const int videoChannel,
-                               const CipherTypes cipherType,
-                               const unsigned int cipherKeyLength,
-                               const AuthenticationTypes authType,
-                               const unsigned int authKeyLength,
-                               const unsigned int authTagLength,
-                               const SecurityLevels level,
-                               const unsigned char key[kMaxSrtpKeyLength],
-                               const bool useForRTCP = false) = 0;
-
-    // This function disables SRTP for the specified channel.
-    virtual int DisableSRTPSend(const int videoChannel) = 0;
-
-    // This function enables SRTP on the received packets for a specific
-    // channel.
-    virtual int EnableSRTPReceive(const int videoChannel,
-                                  const CipherTypes cipherType,
-                                  const unsigned int cipherKeyLength,
-                                  const AuthenticationTypes authType,
-                                  const unsigned int authKeyLength,
-                                  const unsigned int authTagLength,
-                                  const SecurityLevels level,
-                                  const unsigned char key[kMaxSrtpKeyLength],
-                                  const bool useForRTCP = false) = 0;
-
-    // This function disables SRTP on received packets for a specific channel.
-    virtual int DisableSRTPReceive(const int videoChannel) = 0;
 
     // This function registers a encryption derived instance and enables
     // external encryption for the specified channel.
