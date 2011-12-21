@@ -457,16 +457,13 @@ void RemoteRateControl::StateStr(RateControlState state, char* str)
     switch (state)
     {
     case kRcDecrease:
-        strncpy(str, "DECREASE", 8);
-        str[8] = 0;
+        strncpy(str, "DECREASE", 9);
         break;
     case kRcHold:
-        strncpy(str, "HOLD", 4);
-        str[4] = 0;
+        strncpy(str, "HOLD", 5);
         break;
     case kRcIncrease:
-        strncpy(str, "INCREASE", 8);
-        str[8] = 0;
+        strncpy(str, "INCREASE", 9);
         break;
     }
 }
@@ -476,16 +473,13 @@ void RemoteRateControl::StateStr(BandwidthUsage state, char* str)
     switch (state)
     {
     case kBwNormal:
-        strncpy(str, "NORMAL", 6);
-        str[6] = 0;
+        strncpy(str, "NORMAL", 7);
         break;
     case kBwOverusing:
-        strncpy(str, "OVER USING", 10);
-        str[10] = 0;
+        strncpy(str, "OVER USING", 11);
         break;
     case kBwUnderUsing:
-        strncpy(str, "UNDER USING", 11);
-        str[11] = 0;
+        strncpy(str, "UNDER USING", 12);
         break;
     }
 }
