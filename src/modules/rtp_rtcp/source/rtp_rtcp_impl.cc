@@ -1196,7 +1196,10 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SetSendingStatus(const bool sending)
     if(_rtcpSender.Sending() != sending)
     {
         // sends RTCP BYE when going from true to false
-        WebRtc_Word32 retVal = _rtcpSender.SetSendingStatus(sending);
+        if (_rtcpSender.SetSendingStatus(sending) != 0) {
+          WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, _id,
+                       "Failed to send RTCP BYE");
+        }
 
         _collisionDetected = false;
 
@@ -1208,7 +1211,7 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SetSendingStatus(const bool sending)
         WebRtc_UWord32 SSRC = _rtpSender.SSRC();
         _rtcpReceiver.SetSSRC(SSRC);
         _rtcpSender.SetSSRC(SSRC);
-        return retVal;
+        return 0;
     }
     return 0;
 }
