@@ -36,7 +36,8 @@ const int kRates[] = {
   kMaxRate
 };
 const size_t kRatesSize = sizeof(kRates) / sizeof(*kRates);
-const size_t kDataSize = kMaxRate / 100;
+const int kMaxChannels = 2;
+const size_t kDataSize = static_cast<size_t> (kMaxChannels * kMaxRate / 100);
 
 // TODO(andrew): should we be supporting these combinations?
 bool ValidRates(int in_rate, int out_rate) {
@@ -91,6 +92,8 @@ TEST_F(ResamplerTest, Reset) {
   }
 }
 
+// TODO(tlegrand): Replace code inside the two tests below with a function
+// with number of channels and ResamplerType as input.
 TEST_F(ResamplerTest, Synchronous) {
   for (size_t i = 0; i < kRatesSize; ++i) {
     for (size_t j = 0; j < kRatesSize; ++j) {
@@ -110,8 +113,31 @@ TEST_F(ResamplerTest, Synchronous) {
       }
     }
   }
+}
 
-  // TODO(andrew): test stereo.
+TEST_F(ResamplerTest, SynchronousStereo) {
+  // Number of channels is 2, stereo mode.
+  const int kChannels = 2;
+  for (size_t i = 0; i < kRatesSize; ++i) {
+    for (size_t j = 0; j < kRatesSize; ++j) {
+      std::ostringstream ss;
+      ss << "Input rate: " << kRates[i] << ", output rate: " << kRates[j];
+      SCOPED_TRACE(ss.str());
+
+      if (ValidRates(kRates[i], kRates[j])) {
+        int in_length = kChannels * kRates[i] / 100;
+        int out_length = 0;
+        EXPECT_EQ(0, rs_.Reset(kRates[i], kRates[j],
+                               kResamplerSynchronousStereo));
+        EXPECT_EQ(0, rs_.Push(data_in_, in_length, data_out_, kDataSize,
+                              out_length));
+        EXPECT_EQ(kChannels * kRates[j] / 100, out_length);
+      } else {
+        EXPECT_EQ(-1, rs_.Reset(kRates[i], kRates[j],
+                                kResamplerSynchronousStereo));
+      }
+    }
+  }
 }
 }  // namespace
 }  // namespace webrtc
