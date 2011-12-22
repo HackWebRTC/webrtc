@@ -84,6 +84,11 @@ public:
     WebRtc_Word32 SetREMBData(const WebRtc_UWord32 bitrate,
                               const WebRtc_UWord8 numberOfSSRC,
                               const WebRtc_UWord32* SSRC);
+
+    bool SetRemoteBitrateObserver(RtpRemoteBitrateObserver* observer);
+
+    void UpdateRemoteBitrateEstimate(unsigned int target_bitrate);
+
     /*
     *   TMMBR
     */
@@ -231,6 +236,7 @@ private:
     WebRtc_UWord8       _sizeRembSSRC;
     WebRtc_UWord32*     _rembSSRC;
     WebRtc_UWord32      _rembBitrate;
+    RtpRemoteBitrateObserver* _bitrate_observer;
 
     TMMBRHelp           _tmmbrHelp;
     WebRtc_UWord32      _tmmbr_Send;

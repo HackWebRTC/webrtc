@@ -13,6 +13,7 @@
 
 #include "engine_configurations.h"
 #include "system_wrappers/interface/map_wrapper.h"
+#include "system_wrappers/interface/scoped_ptr.h"
 #include "typedefs.h"
 #include "video_engine/vie_defines.h"
 #include "video_engine/vie_manager_base.h"
@@ -24,6 +25,7 @@ class ProcessThread;
 class ViEChannel;
 class ViEEncoder;
 class ViEPerformanceMonitor;
+class VieRemb;
 class VoEVideoSync;
 class VoiceEngine;
 
@@ -56,6 +58,9 @@ class ViEChannelManager: private ViEManagerBase {
   int DisconnectVoiceChannel(int channel_id);
 
   VoiceEngine* GetVoiceEngine();
+
+  // Adds a channel to include when sending REMB.
+  bool SetRembStatus(int channel_id, bool sender, bool receiver);
 
  private:
   // Used by ViEChannelScoped, forcing a manager user to use scoped.
@@ -92,6 +97,7 @@ class ViEChannelManager: private ViEManagerBase {
   // Maps Channel id -> ViEEncoder.
   MapWrapper vie_encoder_map_;
   VoEVideoSync* voice_sync_interface_;
+  scoped_ptr<VieRemb> remb_;
   VoiceEngine* voice_engine_;
   ProcessThread* module_process_thread_;
 };

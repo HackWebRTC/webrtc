@@ -767,6 +767,11 @@ public:
                                       const WebRtc_UWord8 numberOfSSRC,
                                       const WebRtc_UWord32* SSRC) = 0;
 
+    // Registers an observer to call when the estimate of the incoming channel
+    // changes.
+    virtual bool SetRemoteBitrateObserver(
+        RtpRemoteBitrateObserver* observer) = 0;
+
     /*
     *   (IJ) Extended jitter report.
     */

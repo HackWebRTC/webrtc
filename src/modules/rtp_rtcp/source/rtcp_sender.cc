@@ -266,7 +266,24 @@ RTCPSender::SetREMBData(const WebRtc_UWord32 bitrate,
     {  
         _rembSSRC[i] = SSRC[i];
     }
+    _sendREMB = true;
     return 0;
+}
+
+bool RTCPSender::SetRemoteBitrateObserver(RtpRemoteBitrateObserver* observer) {
+  CriticalSectionScoped lock(_criticalSectionRTCPSender);
+  if (observer && _bitrate_observer) {
+    return false;
+  }
+  _bitrate_observer = observer;
+  return true;
+}
+
+void RTCPSender::UpdateRemoteBitrateEstimate(unsigned int target_bitrate) {
+  CriticalSectionScoped lock(_criticalSectionRTCPSender);
+  if (_bitrate_observer && _remoteSSRC != 0) {
+    _bitrate_observer->OnReceiveBitrateChanged(_remoteSSRC, target_bitrate);
+  }
 }
 
 bool
@@ -1719,8 +1736,9 @@ RTCPSender::SendRTCP(const WebRtc_UWord32 packetTypeFlags,
         }
         if(_REMB && _sendREMB)
         {
+            // Always attach REMB to SR if that is configured. Note that REMB is
+            // only sent on one of the RTP modules in the REMB group.
             rtcpPacketTypeFlags |= kRtcpRemb;
-            _sendREMB = false;
         }        
         if(_xrSendVoIPMetric)
         {

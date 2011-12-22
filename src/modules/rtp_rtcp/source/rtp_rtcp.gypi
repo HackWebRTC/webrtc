@@ -84,6 +84,8 @@
         'video_codec_information.h',
         'rtp_format_vp8.cc',
         'rtp_format_vp8.h',
+        # Mocks
+        '../mocks/mock_rtp_rtcp.h',
       ], # source
     },
   ],

@@ -71,6 +71,7 @@
         'vie_impl.h',
         'vie_network_impl.h',
         'vie_ref_count.h',
+        'vie_remb.h',
         'vie_render_impl.h',
         'vie_rtp_rtcp_impl.h',
         'vie_shared_data.h',
@@ -117,13 +118,38 @@
         'vie_manager_base.cc',
         'vie_performance_monitor.cc',
         'vie_receiver.cc',
+        'vie_remb.cc',
         'vie_renderer.cc',
         'vie_render_manager.cc',
         'vie_sender.cc',
         'vie_sync_module.cc',
       ], # source
     },
-  ],
+  ], # targets
+  'conditions': [
+    ['build_with_chromium==0', {
+      'targets': [
+        {
+          'target_name': 'video_engine_core_unittests',
+          'type': 'executable',
+          'dependencies': [
+            'video_engine_core',
+            '<(webrtc_root)/../testing/gtest.gyp:gtest',
+            '<(webrtc_root)/../testing/gmock.gyp:gmock',
+            '<(webrtc_root)/../test/test.gyp:test_support_main',
+          ],
+          'include_dirs': [
+            '..',
+            '../modules/interface',
+            '../modules/rtp_rtcp/interface',
+          ],
+          'sources': [
+            'vie_remb_unittest.cc',
+          ],
+        },
+      ], # targets
+    }], # build_with_chromium
+  ], # conditions
 }
 
 # Local Variables:

@@ -204,7 +204,8 @@ int VideoEngineSampleCode(void* window1, void* window2)
         printf("ERROR in ViERTP_RTCP::SetKeyFrameRequestMethod\n");
         return -1;
     }
-    error = ptrViERtpRtcp->SetTMMBRStatus(videoChannel, true);
+
+    error = ptrViERtpRtcp->SetRembStatus(videoChannel, true, true);
     if (error == -1)
     {
         printf("ERROR in ViERTP_RTCP::SetTMMBRStatus\n");

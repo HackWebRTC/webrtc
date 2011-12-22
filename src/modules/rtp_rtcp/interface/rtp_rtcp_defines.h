@@ -245,6 +245,16 @@ protected:
     virtual ~RtpRtcpClock() {}
 };
 
+// RtpReceiveBitrateUpdate is used to signal changes in bitrate estimates for
+// the incoming stream.
+class RtpRemoteBitrateObserver
+{
+public:
+    virtual void OnReceiveBitrateChanged(unsigned int ssrc,
+                                         unsigned int bitrate) = 0;
+    virtual ~RtpRemoteBitrateObserver() {}
+};
+
 } // namespace webrtc
 
 #endif // WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_RTCP_DEFINES_H_

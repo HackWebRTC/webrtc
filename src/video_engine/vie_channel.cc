@@ -704,6 +704,14 @@ WebRtc_Word32 ViEChannel::SetKeyFrameRequestMethod(
   return rtp_rtcp_.SetKeyFrameRequestMethod(method);
 }
 
+bool ViEChannel::EnableRemb(bool enable) {
+  WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
+               "ViEChannel::EnableRemb: %d", enable);
+  if (rtp_rtcp_.SetREMBStatus(enable) != 0)
+    return false;
+  return true;
+}
+
 WebRtc_Word32 ViEChannel::EnableTMMBR(const bool enable) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s: %d", __FUNCTION__, enable);
@@ -2075,6 +2083,11 @@ WebRtc_Word32 ViEChannel::DeregisterSendRtpRtcpModule() {
   }
   return rtp_rtcp_.DeRegisterDefaultModule();
 }
+
+RtpRtcp* ViEChannel::rtp_rtcp() {
+  return &rtp_rtcp_;
+}
+
 
 WebRtc_Word32 ViEChannel::FrameToRender(VideoFrame& video_frame) {
   CriticalSectionScoped cs(callbackCritsect_);

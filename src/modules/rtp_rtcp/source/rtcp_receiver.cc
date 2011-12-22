@@ -1311,11 +1311,14 @@ RTCPReceiver::TriggerCallbacksFromRTCPPacket(RTCPPacketInformation& rtcpPacketIn
         if(rtcpPacketInformation.reportBlock)
         {
             // We only want to trigger one OnNetworkChanged callback per RTCP
-            // packet. The callback is triggered by a SR, RR and TMMBR, so we
-            // don't want to trigger one from here if the packet also contains a
-            // TMMBR block.
-            bool triggerCallback =
-                !(rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpTmmbr);
+            // packet. The callback is triggered by a SR, RR, REMB or TMMBR, so
+            // we don't want to trigger one from here if the packet also
+            // contains a REMB or TMMBR block.
+            bool triggerCallback = true;
+            if (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpRemb ||
+                rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpTmmbr) {
+              triggerCallback = false;
+            }
             _rtpRtcp.OnPacketLossStatisticsUpdate(
                 rtcpPacketInformation.fractionLost,
                 rtcpPacketInformation.roundTripTime,
@@ -1367,7 +1370,7 @@ RTCPReceiver::TriggerCallbacksFromRTCPPacket(RTCPPacketInformation& rtcpPacketIn
     }
     if (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpRemb)
     {
-       // We need to bounce this to the default channel
+       // We need to bounce this to the default channel.
         _rtpRtcp.OnReceivedEstimatedMaxBitrate(
             rtcpPacketInformation.receiverEstimatedMaxBitrate);
     }

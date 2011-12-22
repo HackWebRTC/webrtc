@@ -541,6 +541,14 @@ int ViERTP_RTCPImpl::SetTMMBRStatus(const int video_channel,
   return 0;
 }
 
+bool ViERTP_RTCPImpl::SetRembStatus(int video_channel, bool sender,
+                                   bool receiver) {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+               "ViERTP_RTCPImpl::SetRembStatus(%d, %d, %d)", video_channel,
+               sender, receiver);
+  return channel_manager_.SetRembStatus(video_channel, sender, receiver);
+}
+
 int ViERTP_RTCPImpl::GetReceivedRTCPStatistics(const int video_channel,
                                                unsigned short& fraction_lost,
                                                unsigned int& cumulative_lost,

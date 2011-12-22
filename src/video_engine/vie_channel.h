@@ -101,6 +101,7 @@ class ViEChannel
                                        const unsigned char payload_typeRED,
                                        const unsigned char payload_typeFEC);
   WebRtc_Word32 SetKeyFrameRequestMethod(const KeyFrameRequestMethod method);
+  bool EnableRemb(bool enable);
   WebRtc_Word32 EnableTMMBR(const bool enable);
   WebRtc_Word32 EnableKeyFrameRequestCallback(const bool enable);
 
@@ -288,6 +289,9 @@ class ViEChannel
   // Deregisters the send RTP RTCP module, which will stop the encoder input to
   // the channel.
   WebRtc_Word32 DeregisterSendRtpRtcpModule();
+
+  // Gets the modules used by the channel.
+  RtpRtcp* rtp_rtcp();
 
   // Implements VCMReceiveCallback.
   virtual WebRtc_Word32 FrameToRender(VideoFrame& video_frame);

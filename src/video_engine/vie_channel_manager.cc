@@ -11,12 +11,14 @@
 #include "video_engine/vie_channel_manager.h"
 
 #include "engine_configurations.h"
+#include "modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "modules/utility/interface/process_thread.h"
 #include "system_wrappers/interface/critical_section_wrapper.h"
 #include "system_wrappers/interface/trace.h"
 #include "video_engine/vie_channel.h"
 #include "video_engine/vie_defines.h"
 #include "video_engine/vie_encoder.h"
+#include "video_engine/vie_remb.h"
 #include "voice_engine/main/interface/voe_video_sync.h"
 
 namespace webrtc {
@@ -32,6 +34,7 @@ ViEChannelManager::ViEChannelManager(
       free_channel_ids_(new bool[kViEMaxNumberOfChannels]),
       free_channel_ids_size_(kViEMaxNumberOfChannels),
       voice_sync_interface_(NULL),
+      remb_(new VieRemb(engine_id)),
       voice_engine_(NULL),
       module_process_thread_(NULL) {
   WEBRTC_TRACE(kTraceMemory, kTraceVideo, ViEId(engine_id),
@@ -46,6 +49,7 @@ ViEChannelManager::~ViEChannelManager() {
   WEBRTC_TRACE(kTraceMemory, kTraceVideo, ViEId(engine_id_),
                "ViEChannelManager Destructor, engine_id: %d", engine_id_);
 
+  module_process_thread_->DeRegisterModule(remb_.get());
   while (channel_map_.Size() != 0) {
     MapItem* item = channel_map_.First();
     const int channel_id = item->GetId();
@@ -71,6 +75,7 @@ void ViEChannelManager::SetModuleProcessThread(
     ProcessThread& module_process_thread) {
   assert(!module_process_thread_);
   module_process_thread_ = &module_process_thread;
+  module_process_thread_->RegisterModule(remb_.get());
 }
 
 int ViEChannelManager::CreateChannel(int& channel_id) {
@@ -346,6 +351,38 @@ int ViEChannelManager::DisconnectVoiceChannel(int channel_id) {
 VoiceEngine* ViEChannelManager::GetVoiceEngine() {
   CriticalSectionScoped cs(*channel_id_critsect_);
   return voice_engine_;
+}
+
+bool ViEChannelManager::SetRembStatus(int channel_id, bool sender,
+                                      bool receiver) {
+  CriticalSectionScoped cs(*channel_id_critsect_);
+  ViEChannel* channel = ViEChannelPtr(channel_id);
+  if (!channel) {
+    return false;
+  }
+
+  if (sender || receiver) {
+    if (!channel->EnableRemb(true)) {
+      return false;
+    }
+  } else {
+    channel->EnableRemb(false);
+  }
+  RtpRtcp* rtp_module = channel->rtp_rtcp();
+  // TODO(mflodman) Add when implemented.
+  if (sender) {
+    // remb_->AddSendChannel(rtp_module);
+  } else {
+    // remb_->RemoveSendChannel(rtp_module);
+  }
+  if (receiver) {
+    remb_->AddReceiveChannel(rtp_module);
+    rtp_module->SetRemoteBitrateObserver(remb_.get());
+  } else {
+    remb_->RemoveReceiveChannel(rtp_module);
+    rtp_module->SetRemoteBitrateObserver(NULL);
+  }
+  return true;
 }
 
 ViEChannel* ViEChannelManager::ViEChannelPtr(int channel_id) const {
