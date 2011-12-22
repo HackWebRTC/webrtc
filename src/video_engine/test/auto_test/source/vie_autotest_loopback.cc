@@ -396,27 +396,33 @@ int VideoEngineSampleCode(void* window1, void* window2)
     std::getline(std::cin, str);
     int protectionMethod = atoi(str.c_str());
     error = 0;
+    bool temporalToggling = true;
     switch (protectionMethod)
     {
         case 0: // None: default is no protection
-          break;
+            break;
 
         case 1: // FEC only
-        error = ptrViERtpRtcp->SetFECStatus(videoChannel, true,
-                                            VCM_RED_PAYLOAD_TYPE,
-                                            VCM_ULPFEC_PAYLOAD_TYPE);
-          break;
+            error = ptrViERtpRtcp->SetFECStatus(videoChannel,
+                                                true,
+                                                VCM_RED_PAYLOAD_TYPE,
+                                                VCM_ULPFEC_PAYLOAD_TYPE);
+            temporalToggling = false;
+            break;
 
         case 2: // Nack only
-        error = ptrViERtpRtcp->SetNACKStatus(videoChannel, true);
+            error = ptrViERtpRtcp->SetNACKStatus(videoChannel, true);
 
-          break;
+            break;
 
         case 3: // Hybrid NAck and FEC
-        error = ptrViERtpRtcp->SetHybridNACKFECStatus(videoChannel, true,
-                                                      VCM_RED_PAYLOAD_TYPE,
-                                                      VCM_ULPFEC_PAYLOAD_TYPE);
-          break;
+            error = ptrViERtpRtcp->SetHybridNACKFECStatus(
+                videoChannel,
+                true,
+                VCM_RED_PAYLOAD_TYPE,
+                VCM_ULPFEC_PAYLOAD_TYPE);
+            temporalToggling = false;
+            break;
      }
 
     if (error < 0)
@@ -438,12 +444,6 @@ int VideoEngineSampleCode(void* window1, void* window2)
 
     // Setting External transport
     TbExternalTransport extTransport(*(ptrViENetwork));
-    if (numTemporalLayers > 1) {
-      extTransport.SetTemporalToggle(numTemporalLayers);
-    } else {
-      // Disabled
-      extTransport.SetTemporalToggle(0);
-    }
 
     int testMode = 0;
     std::cout << std::endl;
@@ -471,6 +471,9 @@ int VideoEngineSampleCode(void* window1, void* window2)
         std::getline(std::cin, rate_str);
         int rate = atoi(rate_str.c_str());
         extTransport.SetPacketLoss(rate);
+        if (rate) {
+          temporalToggling = false;
+        }
 
         // Set network delay value
         std::cout << "Enter network delay value [mS]" << std::endl;
@@ -478,6 +481,13 @@ int VideoEngineSampleCode(void* window1, void* window2)
         std::getline(std::cin, delay_str);
         int delayMs = atoi(delay_str.c_str());
         extTransport.SetNetworkDelay(delayMs);
+
+        if (numTemporalLayers > 1 && temporalToggling) {
+          extTransport.SetTemporalToggle(numTemporalLayers);
+        } else {
+          // Disabled
+          extTransport.SetTemporalToggle(0);
+        }
     }
     else
     {
