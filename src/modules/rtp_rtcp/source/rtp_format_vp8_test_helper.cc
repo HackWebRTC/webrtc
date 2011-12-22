@@ -64,7 +64,6 @@ void RtpFormatVp8TestHelper::GetAllPacketsAndCheck(
     const int* expected_sizes,
     const int* expected_part,
     const bool* expected_frag_start,
-    const int* max_size,
     int expected_num_packets) {
   ASSERT_TRUE(inited_);
   int send_bytes = 0;
@@ -74,10 +73,11 @@ void RtpFormatVp8TestHelper::GetAllPacketsAndCheck(
     ss << "Checking packet " << i;
     SCOPED_TRACE(ss.str());
     EXPECT_EQ(expected_part[i],
-              packetizer->NextPacket(max_size[i], buffer_, &send_bytes, &last));
+              packetizer->NextPacket(buffer_, &send_bytes, &last));
     CheckPacket(send_bytes, expected_sizes[i], last,
                 expected_frag_start[i]);
   }
+  EXPECT_TRUE(last);
 }
 
 // Payload descriptor
@@ -237,7 +237,7 @@ void RtpFormatVp8TestHelper::CheckPacket(int send_bytes,
                                          int expect_bytes,
                                          bool last,
                                          bool frag_start) {
-  EXPECT_EQ(send_bytes, expect_bytes);
+  EXPECT_EQ(expect_bytes, send_bytes);
   CheckHeader(frag_start);
   CheckPayload(send_bytes);
   CheckLast(last);

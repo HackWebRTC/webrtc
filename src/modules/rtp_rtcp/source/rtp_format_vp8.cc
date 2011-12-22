@@ -28,6 +28,7 @@ const bool RtpFormatVp8::separate_first_modes_[kNumModes] =
 RtpFormatVp8::RtpFormatVp8(const WebRtc_UWord8* payload_data,
                            WebRtc_UWord32 payload_size,
                            const RTPVideoHeaderVP8& hdr_info,
+                           int max_payload_len,
                            const RTPFragmentationHeader& fragmentation,
                            VP8PacketizerMode mode)
     : payload_data_(payload_data),
@@ -41,13 +42,15 @@ RtpFormatVp8::RtpFormatVp8(const WebRtc_UWord8* payload_data,
       balance_(balance_modes_[mode]),
       separate_first_(separate_first_modes_[mode]),
       hdr_info_(hdr_info),
-      first_partition_in_packet_(0) {
+      first_partition_in_packet_(0),
+      max_payload_len_(max_payload_len) {
   part_info_ = fragmentation;
 }
 
 RtpFormatVp8::RtpFormatVp8(const WebRtc_UWord8* payload_data,
                            WebRtc_UWord32 payload_size,
-                           const RTPVideoHeaderVP8& hdr_info)
+                           const RTPVideoHeaderVP8& hdr_info,
+                           int max_payload_len)
     : payload_data_(payload_data),
       payload_size_(static_cast<int>(payload_size)),
       part_info_(),
@@ -60,7 +63,8 @@ RtpFormatVp8::RtpFormatVp8(const WebRtc_UWord8* payload_data,
       balance_(balance_modes_[kSloppy]),
       separate_first_(separate_first_modes_[kSloppy]),
       hdr_info_(hdr_info),
-      first_partition_in_packet_(0) {
+      first_partition_in_packet_(0),
+      max_payload_len_(max_payload_len) {
     part_info_.VerifyAndAllocateFragmentationHeader(1);
     part_info_.fragmentationLength[0] = payload_size;
     part_info_.fragmentationOffset[0] = 0;
@@ -89,9 +93,10 @@ int RtpFormatVp8::CalcNextSize(int max_payload_len, int remaining_bytes,
   }
 }
 
-int RtpFormatVp8::NextPacket(int max_payload_len, WebRtc_UWord8* buffer,
-                             int* bytes_to_send, bool* last_packet) {
-  if (max_payload_len < vp8_fixed_payload_descriptor_bytes_
+int RtpFormatVp8::NextPacket(WebRtc_UWord8* buffer,
+                             int* bytes_to_send,
+                             bool* last_packet) {
+  if (max_payload_len_ < vp8_fixed_payload_descriptor_bytes_
       + PayloadDescriptorExtraLength() + 1) {
     // The provided payload length is not long enough for the payload
     // descriptor and one payload byte. Return an error.
@@ -103,7 +108,7 @@ int RtpFormatVp8::NextPacket(int max_payload_len, WebRtc_UWord8* buffer,
   int remaining_in_partition = part_info_.fragmentationOffset[part_ix_] -
       payload_bytes_sent_ + part_info_.fragmentationLength[part_ix_] +
       PayloadDescriptorExtraLength();
-  int rem_payload_len = max_payload_len - vp8_fixed_payload_descriptor_bytes_;
+  int rem_payload_len = max_payload_len_ - vp8_fixed_payload_descriptor_bytes_;
   first_partition_in_packet_ = part_ix_;
   if (first_partition_in_packet_ > 8) return -1;
 
@@ -139,7 +144,7 @@ int RtpFormatVp8::NextPacket(int max_payload_len, WebRtc_UWord8* buffer,
   send_bytes -= PayloadDescriptorExtraLength();  // Remove extra length again.
   assert(send_bytes > 0);
   // Write the payload header and the payload to buffer.
-  *bytes_to_send = WriteHeaderAndPayload(send_bytes, buffer, max_payload_len);
+  *bytes_to_send = WriteHeaderAndPayload(send_bytes, buffer, max_payload_len_);
   if (*bytes_to_send < 0) {
     return -1;
   }

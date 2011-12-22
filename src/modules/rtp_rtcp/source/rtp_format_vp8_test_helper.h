@@ -36,7 +36,6 @@ class RtpFormatVp8TestHelper {
                              const int* expected_sizes,
                              const int* expected_part,
                              const bool* expected_frag_start,
-                             const int* max_size,
                              int expected_num_packets);
 
   uint8_t* payload_data() const { return payload_data_; }

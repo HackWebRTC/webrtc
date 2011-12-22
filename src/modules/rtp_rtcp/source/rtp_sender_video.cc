@@ -1279,7 +1279,7 @@ RTPSenderVideo::SendVP8(const FrameType frameType,
 
     assert(rtpTypeHdr);
     RtpFormatVp8 packetizer(data, payloadBytesToSend, rtpTypeHdr->VP8,
-                            *fragmentation, kAggregate);
+                            maxPayloadLengthVP8, *fragmentation, kAggregate);
 
     bool last = false;
     _numberFirstPartition = 0;
@@ -1289,8 +1289,7 @@ RTPSenderVideo::SendVP8(const FrameType frameType,
         WebRtc_UWord8 dataBuffer[IP_PACKET_SIZE] = {0};
         int payloadBytesInPacket = 0;
         int packetStartPartition =
-            packetizer.NextPacket(maxPayloadLengthVP8,
-                                  &dataBuffer[rtpHeaderLength],
+            packetizer.NextPacket(&dataBuffer[rtpHeaderLength],
                                   &payloadBytesInPacket, &last);
         if (packetStartPartition == 0)
         {
