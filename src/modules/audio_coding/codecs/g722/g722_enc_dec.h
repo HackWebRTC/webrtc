@@ -133,19 +133,23 @@ typedef struct
 extern "C" {
 #endif
 
-g722_encode_state_t *g722_encode_init(g722_encode_state_t *s, int rate, int options);
-int g722_encode_release(g722_encode_state_t *s);
-int g722_encode(g722_encode_state_t *s,
-                WebRtc_UWord8 g722_data[],
-                const WebRtc_Word16 amp[],
-                int len);
+g722_encode_state_t *WebRtc_g722_encode_init(g722_encode_state_t *s,
+                                             int rate,
+                                             int options);
+int WebRtc_g722_encode_release(g722_encode_state_t *s);
+int WebRtc_g722_encode(g722_encode_state_t *s,
+                       WebRtc_UWord8 g722_data[],
+                       const WebRtc_Word16 amp[],
+                       int len);
 
-g722_decode_state_t *g722_decode_init(g722_decode_state_t *s, int rate, int options);
-int g722_decode_release(g722_decode_state_t *s);
-int g722_decode(g722_decode_state_t *s,
-                WebRtc_Word16 amp[],
-                const WebRtc_UWord8 g722_data[],
-                int len);
+g722_decode_state_t *WebRtc_g722_decode_init(g722_decode_state_t *s,
+                                             int rate,
+                                             int options);
+int WebRtc_g722_decode_release(g722_decode_state_t *s);
+int WebRtc_g722_decode(g722_decode_state_t *s,
+                       WebRtc_Word16 amp[],
+                       const WebRtc_UWord8 g722_data[],
+                       int len);
 
 #ifdef __cplusplus
 }

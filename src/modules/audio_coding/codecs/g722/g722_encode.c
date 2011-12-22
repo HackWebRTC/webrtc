@@ -151,7 +151,8 @@ static void block4(g722_encode_state_t *s, int band, int d)
 }
 /*- End of function --------------------------------------------------------*/
 
-g722_encode_state_t *g722_encode_init(g722_encode_state_t *s, int rate, int options)
+g722_encode_state_t *WebRtc_g722_encode_init(g722_encode_state_t *s,
+                                             int rate, int options)
 {
     if (s == NULL)
     {
@@ -177,7 +178,7 @@ g722_encode_state_t *g722_encode_init(g722_encode_state_t *s, int rate, int opti
 }
 /*- End of function --------------------------------------------------------*/
 
-int g722_encode_release(g722_encode_state_t *s)
+int WebRtc_g722_encode_release(g722_encode_state_t *s)
 {
     free(s);
     return 0;
@@ -201,8 +202,8 @@ WebRtc_Word16 limitValues (WebRtc_Word16 rl)
 }
 #endif
 
-int g722_encode(g722_encode_state_t *s, WebRtc_UWord8 g722_data[],
-                const WebRtc_Word16 amp[], int len)
+int WebRtc_g722_encode(g722_encode_state_t *s, WebRtc_UWord8 g722_data[],
+                       const WebRtc_Word16 amp[], int len)
 {
     static const int q6[32] =
     {

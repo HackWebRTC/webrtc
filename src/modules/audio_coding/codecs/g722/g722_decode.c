@@ -155,7 +155,9 @@ static void block4(g722_decode_state_t *s, int band, int d)
 }
 /*- End of function --------------------------------------------------------*/
 
-g722_decode_state_t *g722_decode_init(g722_decode_state_t *s, int rate, int options)
+g722_decode_state_t *WebRtc_g722_decode_init(g722_decode_state_t *s,
+                                             int rate,
+                                             int options)
 {
     if (s == NULL)
     {
@@ -181,18 +183,19 @@ g722_decode_state_t *g722_decode_init(g722_decode_state_t *s, int rate, int opti
 }
 /*- End of function --------------------------------------------------------*/
 
-int g722_decode_release(g722_decode_state_t *s)
+int WebRtc_g722_decode_release(g722_decode_state_t *s)
 {
     free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
-int g722_decode(g722_decode_state_t *s, WebRtc_Word16 amp[],
-                const WebRtc_UWord8 g722_data[], int len)
+int WebRtc_g722_decode(g722_decode_state_t *s, WebRtc_Word16 amp[],
+                       const WebRtc_UWord8 g722_data[], int len)
 {
     static const int wl[8] = {-60, -30, 58, 172, 334, 538, 1198, 3042 };
-    static const int rl42[16] = {0, 7, 6, 5, 4, 3, 2, 1, 7, 6, 5, 4, 3,  2, 1, 0 };
+    static const int rl42[16] = {0, 7, 6, 5, 4, 3, 2, 1,
+                                 7, 6, 5, 4, 3,  2, 1, 0 };
     static const int ilb[32] =
     {
         2048, 2093, 2139, 2186, 2233, 2282, 2332,
