@@ -14,7 +14,7 @@
 #include "modules/video_capture/main/interface/video_capture.h"
 #include "system_wrappers/interface/map_wrapper.h"
 #include "typedefs.h"
-#include "video_engine/main/interface/vie_capture.h"
+#include "video_engine/include/vie_capture.h"
 #include "video_engine/vie_defines.h"
 #include "video_engine/vie_frame_provider_base.h"
 #include "video_engine/vie_manager_base.h"

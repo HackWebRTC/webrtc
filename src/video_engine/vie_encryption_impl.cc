@@ -11,7 +11,7 @@
 #include "video_engine/vie_encryption_impl.h"
 
 #include "system_wrappers/interface/trace.h"
-#include "video_engine/main/interface/vie_errors.h"
+#include "video_engine/include/vie_errors.h"
 #include "video_engine/vie_channel.h"
 #include "video_engine/vie_channel_manager.h"
 #include "video_engine/vie_defines.h"

@@ -13,7 +13,7 @@
 
 #include "modules/interface/module_common_types.h"
 #include "typedefs.h"
-#include "video_engine/main/interface/vie_file.h"
+#include "video_engine/include/vie_file.h"
 
 namespace webrtc {
 

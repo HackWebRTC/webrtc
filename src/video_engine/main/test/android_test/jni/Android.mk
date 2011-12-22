@@ -24,7 +24,7 @@ LOCAL_CFLAGS := \
 LOCAL_C_INCLUDES := \
     external/gtest/include \
     $(LOCAL_PATH)/../../../../.. \
-    $(LOCAL_PATH)/../../../interface \
+    $(LOCAL_PATH)/../../../../include \
     $(LOCAL_PATH)/../../../../../voice_engine/main/interface 
 
 LOCAL_PRELINK_MODULE := false
@@ -38,4 +38,3 @@ LOCAL_SHARED_LIBRARIES := \
 LOCAL_LDLIBS := $(LIBS_PATH)/VideoEngine_android_gcc.a -llog -lgcc 
 
 include $(BUILD_SHARED_LIBRARY)
-

@@ -14,7 +14,7 @@
 #include <cstdio>
 #include <string>
 
-#include "video_engine/main/interface/vie_render.h"
+#include "video_engine/include/vie_render.h"
 
 class ViEToFileRenderer: public webrtc::ExternalRenderer {
  public:

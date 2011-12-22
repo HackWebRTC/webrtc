@@ -19,7 +19,7 @@
 #include "system_wrappers/interface/event_wrapper.h"
 #include "system_wrappers/interface/thread_wrapper.h"
 #include "system_wrappers/interface/trace.h"
-#include "video_engine/main/interface/vie_image_process.h"
+#include "video_engine/include/vie_image_process.h"
 #include "video_engine/vie_defines.h"
 #include "video_engine/vie_encoder.h"
 

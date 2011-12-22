@@ -12,7 +12,7 @@
 #define WEBRTC_VIDEO_ENGINE_VIE_FILE_IMPL_H_
 
 #include "typedefs.h"
-#include "video_engine/main/interface/vie_file.h"
+#include "video_engine/include/vie_file.h"
 #include "video_engine/vie_defines.h"
 #include "video_engine/vie_frame_provider_base.h"
 #include "video_engine/vie_ref_count.h"

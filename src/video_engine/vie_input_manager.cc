@@ -19,7 +19,7 @@
 #include "system_wrappers/interface/critical_section_wrapper.h"
 #include "system_wrappers/interface/rw_lock_wrapper.h"
 #include "system_wrappers/interface/trace.h"
-#include "video_engine/main/interface/vie_errors.h"
+#include "video_engine/include/vie_errors.h"
 #include "video_engine/vie_capturer.h"
 #include "video_engine/vie_defines.h"
 #include "video_engine/vie_file_player.h"

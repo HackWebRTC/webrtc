@@ -13,7 +13,7 @@
 
 #include "modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "typedefs.h"
-#include "video_engine/main/interface/vie_rtp_rtcp.h"
+#include "video_engine/include/vie_rtp_rtcp.h"
 #include "video_engine/vie_ref_count.h"
 #include "video_engine/vie_shared_data.h"
 

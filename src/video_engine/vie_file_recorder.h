@@ -13,7 +13,7 @@
 
 #include "modules/utility/interface/file_recorder.h"
 #include "typedefs.h"
-#include "video_engine/main/interface/vie_file.h"
+#include "video_engine/include/vie_file.h"
 #include "voice_engine/main/interface/voe_file.h"
 
 namespace webrtc {

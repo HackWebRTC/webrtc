@@ -12,7 +12,7 @@
 #define WEBRTC_VIDEO_ENGINE_VIE_IMAGE_PROCESS_IMPL_H_
 
 #include "typedefs.h"
-#include "video_engine/main/interface/vie_image_process.h"
+#include "video_engine/include/vie_image_process.h"
 #include "video_engine/vie_ref_count.h"
 #include "video_engine/vie_shared_data.h"
 

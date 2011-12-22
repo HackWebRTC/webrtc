@@ -14,7 +14,7 @@
 #include "modules/video_render/main/interface/video_render.h"
 #include "modules/video_render/main/interface/video_render_defines.h"
 #include "system_wrappers/interface/trace.h"
-#include "video_engine/main/interface/vie_errors.h"
+#include "video_engine/include/vie_errors.h"
 #include "video_engine/vie_capturer.h"
 #include "video_engine/vie_channel.h"
 #include "video_engine/vie_channel_manager.h"

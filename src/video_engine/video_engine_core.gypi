@@ -35,29 +35,29 @@
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
       'include_dirs': [
-        'main/interface',
+        'include',
         '../common_video/interface',
         '../modules/video_capture/main/interface',
         '../modules/video_render/main/interface',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          'main/interface',
+          'include',
         ],
       },
       'sources': [
         # interface
-        'main/interface/vie_base.h',
-        'main/interface/vie_capture.h',
-        'main/interface/vie_codec.h',
-        'main/interface/vie_encryption.h',
-        'main/interface/vie_errors.h',
-        'main/interface/vie_external_codec.h',
-        'main/interface/vie_file.h',
-        'main/interface/vie_image_process.h',
-        'main/interface/vie_network.h',
-        'main/interface/vie_render.h',
-        'main/interface/vie_rtp_rtcp.h',
+        'include/vie_base.h',
+        'include/vie_capture.h',
+        'include/vie_codec.h',
+        'include/vie_encryption.h',
+        'include/vie_errors.h',
+        'include/vie_external_codec.h',
+        'include/vie_file.h',
+        'include/vie_image_process.h',
+        'include/vie_network.h',
+        'include/vie_render.h',
+        'include/vie_rtp_rtcp.h',
 
         # headers
         'vie_base_impl.h',

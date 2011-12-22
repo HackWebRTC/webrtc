@@ -4,7 +4,7 @@ vars = {
   "googlecode_url": "http://%s.googlecode.com/svn",
   "chromium_trunk" : "http://src.chromium.org/svn/trunk",
   "chromium_revision": "114939",
-  "libjingle_revision": "100",
+  "libjingle_revision": "101",
 
   # External resources like video and audio files used for testing purposes.
   # Downloaded on demand when needed.

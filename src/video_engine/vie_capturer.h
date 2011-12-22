@@ -18,7 +18,7 @@
 #include "modules/video_coding/main/interface/video_coding.h"
 #include "modules/video_processing/main/interface/video_processing.h"
 #include "typedefs.h"
-#include "video_engine/main/interface/vie_capture.h"
+#include "video_engine/include/vie_capture.h"
 #include "video_engine/vie_defines.h"
 #include "video_engine/vie_frame_provider_base.h"
 

@@ -25,7 +25,7 @@
         'interface/',
         'helpers/',
         'primitives',
-        '../../main/interface',
+        '../../include',
         '../..',
         '../../../modules/video_coding/codecs/interface',
         '../../../common_video/interface',

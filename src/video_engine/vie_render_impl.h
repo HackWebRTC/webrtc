@@ -13,7 +13,7 @@
 
 #include "modules/video_render/main/interface/video_render_defines.h"
 #include "typedefs.h"
-#include "video_engine/main/interface/vie_render.h"
+#include "video_engine/include/vie_render.h"
 #include "video_engine/vie_ref_count.h"
 #include "video_engine/vie_shared_data.h"
 

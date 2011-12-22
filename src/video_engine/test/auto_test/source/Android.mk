@@ -42,7 +42,7 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../helpers \
     $(LOCAL_PATH)/../primitives \
     $(LOCAL_PATH)/../../../.. \
-    $(LOCAL_PATH)/../../../main/interface \
+    $(LOCAL_PATH)/../../../include \
     $(LOCAL_PATH)/../../.. \
     $(LOCAL_PATH)/../../../../modules/video_coding/codecs/interface \
     $(LOCAL_PATH)/../../../../system_wrappers/interface \

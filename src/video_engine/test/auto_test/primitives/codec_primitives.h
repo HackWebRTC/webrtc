@@ -11,8 +11,8 @@
 #ifndef WEBRTC_VIDEO_ENGINE_TEST_AUTO_TEST_PRIMITIVES_CODEC_PRIMITIVES_H_
 #define WEBRTC_VIDEO_ENGINE_TEST_AUTO_TEST_PRIMITIVES_CODEC_PRIMITIVES_H_
 
-#include "video_engine/main/interface/vie_codec.h"
-#include "video_engine/main/interface/vie_image_process.h"
+#include "video_engine/include/vie_codec.h"
+#include "video_engine/include/vie_image_process.h"
 #include "video_engine/test/auto_test/interface/vie_autotest_defines.h"
 #include "video_engine/test/auto_test/primitives/general_primitives.h"
 

@@ -13,7 +13,7 @@
 
 #include "modules/video_render/main/interface/video_render_defines.h"
 #include "system_wrappers/interface/map_wrapper.h"
-#include "video_engine/main/interface/vie_render.h"
+#include "video_engine/include/vie_render.h"
 #include "video_engine/vie_frame_provider_base.h"
 
 namespace webrtc {

@@ -16,7 +16,7 @@
 #include "system_wrappers/interface/thread_wrapper.h"
 #include "system_wrappers/interface/tick_util.h"
 #include "system_wrappers/interface/trace.h"
-#include "video_engine/main/interface/vie_file.h"
+#include "video_engine/include/vie_file.h"
 #include "video_engine/vie_input_manager.h"
 #include "voice_engine/main/interface/voe_base.h"
 #include "voice_engine/main/interface/voe_file.h"
