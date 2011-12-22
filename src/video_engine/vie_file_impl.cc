@@ -948,15 +948,12 @@ VideoFrame& video_frame) {
 }
 
 ViECaptureSnapshot::ViECaptureSnapshot()
-    : crit_(*CriticalSectionWrapper::CreateCriticalSection()),
+    : crit_(CriticalSectionWrapper::CreateCriticalSection()),
       condition_varaible_(*ConditionVariableWrapper::CreateConditionVariable()),
       video_frame_(NULL) {
 }
 
 ViECaptureSnapshot::~ViECaptureSnapshot() {
-  crit_.Enter();
-  crit_.Leave();
-  delete &crit_;
   if (video_frame_) {
     delete video_frame_;
     video_frame_ = NULL;
@@ -964,24 +961,25 @@ ViECaptureSnapshot::~ViECaptureSnapshot() {
 }
 
 bool ViECaptureSnapshot::GetSnapshot(VideoFrame& video_frame,
-unsigned int max_wait_time) {
-  crit_.Enter();
+                                     unsigned int max_wait_time) {
+  crit_->Enter();
   video_frame_ = new VideoFrame();
-  if (condition_varaible_.SleepCS(crit_, max_wait_time)) {
-    // Snapshot taken
+  if (condition_varaible_.SleepCS(*(crit_.get()), max_wait_time)) {
+    // Snapshot taken.
     video_frame.SwapFrame(*video_frame_);
     delete video_frame_;
     video_frame_ = NULL;
-    crit_.Leave();
+    crit_->Leave();
     return true;
   }
+  crit_->Leave();
   return false;
 }
 
 void ViECaptureSnapshot::DeliverFrame(int id, VideoFrame& video_frame,
                                       int num_csrcs,
 const WebRtc_UWord32 CSRC[kRtpCsrcSize]) {
-  CriticalSectionScoped cs(crit_);
+  CriticalSectionScoped cs(crit_.get());
   if (!video_frame_) {
     return;
   }

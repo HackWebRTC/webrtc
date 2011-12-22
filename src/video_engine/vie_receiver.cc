@@ -21,7 +21,7 @@ namespace webrtc {
 ViEReceiver::ViEReceiver(int engine_id, int channel_id,
                          RtpRtcp& rtp_rtcp,
                          VideoCodingModule& module_vcm)
-    : receive_critsect_(*CriticalSectionWrapper::CreateCriticalSection()),
+    : receive_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       engine_id_(engine_id),
       channel_id_(channel_id),
       rtp_rtcp_(rtp_rtcp),
@@ -33,8 +33,6 @@ ViEReceiver::ViEReceiver(int engine_id, int channel_id,
 }
 
 ViEReceiver::~ViEReceiver() {
-  delete &receive_critsect_;
-
   if (decryption_buffer_) {
     delete[] decryption_buffer_;
     decryption_buffer_ = NULL;
@@ -47,7 +45,7 @@ ViEReceiver::~ViEReceiver() {
 }
 
 int ViEReceiver::RegisterExternalDecryption(Encryption* decryption) {
-  CriticalSectionScoped cs(receive_critsect_);
+  CriticalSectionScoped cs(receive_cs_.get());
   if (external_decryption_) {
     return -1;
   }
@@ -60,7 +58,7 @@ int ViEReceiver::RegisterExternalDecryption(Encryption* decryption) {
 }
 
 int ViEReceiver::DeregisterExternalDecryption() {
-  CriticalSectionScoped cs(receive_critsect_);
+  CriticalSectionScoped cs(receive_cs_.get());
   if (external_decryption_ == NULL) {
     return -1;
   }
@@ -70,7 +68,7 @@ int ViEReceiver::DeregisterExternalDecryption() {
 
 void ViEReceiver::RegisterSimulcastRtpRtcpModules(
     const std::list<RtpRtcp*>& rtp_modules) {
-  CriticalSectionScoped cs(receive_critsect_);
+  CriticalSectionScoped cs(receive_cs_.get());
   rtp_rtcp_simulcast_.clear();
 
   if (!rtp_modules.empty()) {
@@ -133,7 +131,7 @@ int ViEReceiver::InsertRTPPacket(const WebRtc_Word8* rtp_packet,
   int received_packet_length = rtp_packet_length;
 
   {
-    CriticalSectionScoped cs(receive_critsect_);
+    CriticalSectionScoped cs(receive_cs_.get());
 
     if (external_decryption_) {
       int decrypted_length = 0;
@@ -171,7 +169,7 @@ int ViEReceiver::InsertRTCPPacket(const WebRtc_Word8* rtcp_packet,
     unsigned char* received_packet = reinterpret_cast<unsigned char*>(tmp_ptr);
   int received_packet_length = rtcp_packet_length;
   {
-    CriticalSectionScoped cs(receive_critsect_);
+    CriticalSectionScoped cs(receive_cs_.get());
 
     if (external_decryption_) {
       int decrypted_length = 0;
@@ -202,7 +200,7 @@ int ViEReceiver::InsertRTCPPacket(const WebRtc_Word8* rtcp_packet,
     }
   }
   {
-    CriticalSectionScoped cs(receive_critsect_);
+    CriticalSectionScoped cs(receive_cs_.get());
     std::list<RtpRtcp*>::iterator it = rtp_rtcp_simulcast_.begin();
     while (it != rtp_rtcp_simulcast_.end()) {
       RtpRtcp* rtp_rtcp = *it++;
@@ -221,7 +219,7 @@ void ViEReceiver::StopReceive() {
 }
 
 int ViEReceiver::StartRTPDump(const char file_nameUTF8[1024]) {
-  CriticalSectionScoped cs(receive_critsect_);
+  CriticalSectionScoped cs(receive_cs_.get());
   if (rtp_dump_) {
     // Restart it if it already exists and is started
     rtp_dump_->Stop();
@@ -246,7 +244,7 @@ int ViEReceiver::StartRTPDump(const char file_nameUTF8[1024]) {
 }
 
 int ViEReceiver::StopRTPDump() {
-  CriticalSectionScoped cs(receive_critsect_);
+  CriticalSectionScoped cs(receive_cs_.get());
   if (rtp_dump_) {
     if (rtp_dump_->IsActive()) {
       rtp_dump_->Stop();

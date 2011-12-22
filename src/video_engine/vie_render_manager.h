@@ -13,6 +13,7 @@
 
 #include "system_wrappers/interface/list_wrapper.h"
 #include "system_wrappers/interface/map_wrapper.h"
+#include "system_wrappers/interface/scoped_ptr.h"
 #include "typedefs.h"
 #include "video_engine/vie_manager_base.h"
 
@@ -51,7 +52,7 @@ class ViERenderManager : private ViEManagerBase {
   // Methods used by ViERenderScoped.
   ViERenderer* ViERenderPtr(WebRtc_Word32 render_id) const;
 
-  CriticalSectionWrapper& list_critsect_;
+  scoped_ptr<CriticalSectionWrapper> list_cs_;
   WebRtc_Word32 engine_id_;
   MapWrapper stream_to_vie_renderer_;  // Protected by ViEManagerBase.
   ListWrapper render_list_;

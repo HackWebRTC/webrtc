@@ -18,6 +18,7 @@
 #include "modules/rtp_rtcp/interface/rtp_rtcp_defines.h"
 #include "modules/udp_transport/interface/udp_transport.h"
 #include "modules/video_coding/main/interface/video_coding_defines.h"
+#include "system_wrappers/interface/scoped_ptr.h"
 #include "system_wrappers/interface/tick_util.h"
 #include "typedefs.h"
 #include "video_engine/include/vie_network.h"
@@ -356,7 +357,7 @@ class ViEChannel
   WebRtc_UWord8 num_socket_threads_;
 
   // Used for all registered callbacks except rendering.
-  CriticalSectionWrapper& callbackCritsect_;
+  scoped_ptr<CriticalSectionWrapper> callback_cs_;
 
   // Owned modules/classes.
   RtpRtcp& rtp_rtcp_;

@@ -21,7 +21,7 @@ ViEFrameProviderBase::ViEFrameProviderBase(int Id, int engine_id)
     : id_(Id),
       engine_id_(engine_id),
       frame_callbacks_(),
-      provider_crit_sect_(*CriticalSectionWrapper::CreateCriticalSection()),
+      provider_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       extra_frame_(NULL),
       frame_delay_(0) {
 }
@@ -40,7 +40,6 @@ ViEFrameProviderBase::~ViEFrameProviderBase() {
   while (frame_callbacks_.Erase(frame_callbacks_.First()) == 0) {
   }
 
-  delete &provider_crit_sect_;
   delete extra_frame_;
 }
 
@@ -55,7 +54,7 @@ void ViEFrameProviderBase::DeliverFrame(
 #ifdef DEBUG_
   const TickTime start_process_time = TickTime::Now();
 #endif
-  CriticalSectionScoped cs(provider_crit_sect_);
+  CriticalSectionScoped cs(provider_cs_.get());
 
   // Deliver the frame to all registered callbacks.
   if (frame_callbacks_.Size() > 0) {
@@ -96,7 +95,7 @@ void ViEFrameProviderBase::DeliverFrame(
 }
 
 void ViEFrameProviderBase::SetFrameDelay(int frame_delay) {
-  CriticalSectionScoped cs(provider_crit_sect_);
+  CriticalSectionScoped cs(provider_cs_.get());
   frame_delay_ = frame_delay;
 
   for (MapItem* map_item = frame_callbacks_.First(); map_item != NULL;
@@ -119,7 +118,7 @@ int ViEFrameProviderBase::GetBestFormat(int& best_width,
   int largest_height = 0;
   int highest_frame_rate = 0;
 
-  CriticalSectionScoped cs(provider_crit_sect_);
+  CriticalSectionScoped cs(provider_cs_.get());
 
   // Check if this one already exists.
   for (MapItem* map_item = frame_callbacks_.First(); map_item != NULL;
@@ -164,7 +163,7 @@ int ViEFrameProviderBase::RegisterFrameCallback(
                __FUNCTION__, callback_object);
 
   {
-    CriticalSectionScoped cs(provider_crit_sect_);
+    CriticalSectionScoped cs(provider_cs_.get());
 
     // Check if the callback already exists.
     for (MapItem* map_item = frame_callbacks_.First();
@@ -208,7 +207,7 @@ int ViEFrameProviderBase::DeregisterFrameCallback(
                __FUNCTION__, callback_object);
 
   {
-    CriticalSectionScoped cs(provider_crit_sect_);
+    CriticalSectionScoped cs(provider_cs_.get());
     bool item_found = false;
 
     // Try to find the callback in our list.
@@ -261,7 +260,7 @@ bool ViEFrameProviderBase::IsFrameCallbackRegistered(
 }
 
 int ViEFrameProviderBase::NumberOfRegisteredFrameCallbacks() {
-  CriticalSectionScoped cs(provider_crit_sect_);
+  CriticalSectionScoped cs(provider_cs_.get());
   return frame_callbacks_.Size();
 }
 }  // namespac webrtc

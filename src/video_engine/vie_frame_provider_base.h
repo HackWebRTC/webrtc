@@ -13,6 +13,7 @@
 
 #include "modules/interface/module_common_types.h"
 #include "system_wrappers/interface/map_wrapper.h"
+#include "system_wrappers/interface/scoped_ptr.h"
 #include "typedefs.h"
 
 namespace webrtc {
@@ -86,7 +87,7 @@ class ViEFrameProviderBase {
 
   // Frame callbacks.
   MapWrapper frame_callbacks_;
-  CriticalSectionWrapper& provider_crit_sect_;
+  scoped_ptr<CriticalSectionWrapper> provider_cs_;
 
  private:
   VideoFrame* extra_frame_;

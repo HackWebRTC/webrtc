@@ -17,6 +17,7 @@
 #include "modules/video_coding/codecs/interface/video_codec_interface.h"
 #include "modules/video_coding/main/interface/video_coding.h"
 #include "modules/video_processing/main/interface/video_processing.h"
+#include "system_wrappers/interface/scoped_ptr.h"
 #include "typedefs.h"
 #include "video_engine/include/vie_capture.h"
 #include "video_engine/vie_defines.h"
@@ -168,8 +169,8 @@ class ViECapturer
 
  private:
   // Never take capture_cs_ before deliver_cs_!
-  CriticalSectionWrapper& capture_cs_;
-  CriticalSectionWrapper& deliver_cs_;
+  scoped_ptr<CriticalSectionWrapper> capture_cs_;
+  scoped_ptr<CriticalSectionWrapper> deliver_cs_;
   VideoCaptureModule* capture_module_;
   VideoCaptureExternal* external_capture_module_;
   ProcessThread& module_process_thread_;
@@ -195,11 +196,11 @@ class ViECapturer
   bool denoising_enabled_;
 
   // Statistics observer.
-  CriticalSectionWrapper& observer_cs_;
+  scoped_ptr<CriticalSectionWrapper> observer_cs_;
   ViECaptureObserver* observer_;
 
   // Encoding using encoding capable cameras.
-  CriticalSectionWrapper& encoding_critsect_;
+  scoped_ptr<CriticalSectionWrapper> encoding_cs_;
   VideoCaptureModule::VideoCaptureEncodeInterface* capture_encoder_;
   EncodedImageCallback* encode_complete_callback_;
   VideoCodec codec_;

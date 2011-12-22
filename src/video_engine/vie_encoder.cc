@@ -61,8 +61,8 @@ ViEEncoder::ViEEncoder(WebRtc_Word32 engine_id, WebRtc_Word32 channel_id,
                                                             channel_id))),
     default_rtp_rtcp_(*RtpRtcp::CreateRtpRtcp(
         ViEModuleId(engine_id, channel_id), false)),
-    callback_critsect_(*CriticalSectionWrapper::CreateCriticalSection()),
-    data_critsect_(*CriticalSectionWrapper::CreateCriticalSection()),
+    callback_cs_(CriticalSectionWrapper::CreateCriticalSection()),
+    data_cs_(CriticalSectionWrapper::CreateCriticalSection()),
     paused_(false),
     channels_dropping_delta_frames_(0),
     drop_next_frame_(false),
@@ -155,8 +155,6 @@ ViEEncoder::~ViEEncoder() {
   delete &vcm_;
   delete &vpm_;
   delete &default_rtp_rtcp_;
-  delete &callback_critsect_;
-  delete &data_critsect_;
   delete qm_callback_;
 }
 
@@ -164,7 +162,7 @@ void ViEEncoder::Pause() {
   WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
                ViEId(engine_id_, channel_id_),
                "%s", __FUNCTION__);
-  CriticalSectionScoped cs(data_critsect_);
+  CriticalSectionScoped cs(data_cs_.get());
   paused_ = true;
 }
 
@@ -172,7 +170,7 @@ void ViEEncoder::Restart() {
   WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
                ViEId(engine_id_, channel_id_),
                "%s", __FUNCTION__);
-  CriticalSectionScoped cs(data_critsect_);
+  CriticalSectionScoped cs(data_cs_.get());
   paused_ = false;
 }
 
@@ -180,7 +178,7 @@ WebRtc_Word32 ViEEncoder::DropDeltaAfterKey(bool enable) {
   WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
                ViEId(engine_id_, channel_id_),
                "%s(%d)", __FUNCTION__, enable);
-  CriticalSectionScoped cs(data_critsect_);
+  CriticalSectionScoped cs(data_cs_.get());
 
   if (enable) {
     channels_dropping_delta_frames_++;
@@ -308,9 +306,9 @@ WebRtc_Word32 ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
     return -1;
   }
 
-  data_critsect_.Enter();
+  data_cs_->Enter();
   memcpy(&send_codec_, &video_codec, sizeof(send_codec_));
-  data_critsect_.Leave();
+  data_cs_->Leave();
 
   // Set this module as sending right away, let the slave module in the channel
   // start and stop sending.
@@ -390,7 +388,7 @@ void ViEEncoder::DeliverFrame(int id, webrtc::VideoFrame& video_frame,
                video_frame.TimeStamp());
 
   {
-    CriticalSectionScoped cs(data_critsect_);
+    CriticalSectionScoped cs(data_cs_.get());
     if (paused_ || default_rtp_rtcp_.SendingMedia() == false) {
       // We've paused or we have no channels attached, don't encode.
       return;
@@ -411,7 +409,7 @@ void ViEEncoder::DeliverFrame(int id, webrtc::VideoFrame& video_frame,
       90 * static_cast<WebRtc_UWord32>(video_frame.RenderTimeMs());
   video_frame.SetTimeStamp(time_stamp);
   {
-    CriticalSectionScoped cs(callback_critsect_);
+    CriticalSectionScoped cs(callback_cs_.get());
     if (effect_filter_) {
       effect_filter_->Transform(video_frame.Length(), video_frame.Buffer(),
                                 video_frame.TimeStamp(),
@@ -628,7 +626,7 @@ WebRtc_Word32 ViEEncoder::SendData(
     const webrtc::RTPFragmentationHeader& fragmentation_header,
     const RTPVideoHeader* rtp_video_hdr) {
   {
-    CriticalSectionScoped cs(data_critsect_);
+    CriticalSectionScoped cs(data_cs_.get());
     if (paused_) {
       // Paused, don't send this packet.
       return 0;
@@ -685,7 +683,7 @@ WebRtc_Word32 ViEEncoder::ProtectionRequest(
 
 WebRtc_Word32 ViEEncoder::SendStatistics(const WebRtc_UWord32 bit_rate,
                                          const WebRtc_UWord32 frame_rate) {
-  CriticalSectionScoped cs(callback_critsect_);
+  CriticalSectionScoped cs(callback_cs_.get());
   if (codec_observer_) {
     WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
                  ViEId(engine_id_, channel_id_), "%s: bitrate %u, framerate %u",
@@ -696,7 +694,7 @@ WebRtc_Word32 ViEEncoder::SendStatistics(const WebRtc_UWord32 bit_rate,
 }
 
 WebRtc_Word32 ViEEncoder::RegisterCodecObserver(ViEEncoderObserver* observer) {
-  CriticalSectionScoped cs(callback_critsect_);
+  CriticalSectionScoped cs(callback_cs_.get());
   if (observer) {
     WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
                  ViEId(engine_id_, channel_id_), "%s: observer added",
@@ -770,7 +768,7 @@ void ViEEncoder::OnNetworkChanged(const WebRtc_Word32 id,
 }
 
 WebRtc_Word32 ViEEncoder::RegisterEffectFilter(ViEEffectFilter* effect_filter) {
-  CriticalSectionScoped cs(callback_critsect_);
+  CriticalSectionScoped cs(callback_cs_.get());
   if (effect_filter == NULL) {
     if (effect_filter_ == NULL) {
       WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,

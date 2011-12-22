@@ -15,6 +15,7 @@
 #define WEBRTC_VIDEO_ENGINE_VIE_SYNC_MODULE_H_
 
 #include "module.h"
+#include "system_wrappers/interface/scoped_ptr.h"
 #include "tick_util.h"
 
 namespace webrtc {
@@ -45,7 +46,7 @@ class ViESyncModule : public Module {
   virtual WebRtc_Word32 Process();
 
  private:
-  CriticalSectionWrapper& data_critsect_;
+  scoped_ptr<CriticalSectionWrapper> data_cs_;
   int id_;
   VideoCodingModule& vcm_;
   RtpRtcp& rtcp_module_;

@@ -20,7 +20,7 @@ namespace webrtc {
 ViESender::ViESender(int engine_id, int channel_id)
     : engine_id_(engine_id),
       channel_id_(channel_id),
-      critsect_(*CriticalSectionWrapper::CreateCriticalSection()),
+      critsect_(CriticalSectionWrapper::CreateCriticalSection()),
       external_encryption_(NULL),
       encryption_buffer_(NULL),
       transport_(NULL),
@@ -28,8 +28,6 @@ ViESender::ViESender(int engine_id, int channel_id)
 }
 
 ViESender::~ViESender() {
-  delete &critsect_;
-
   if (encryption_buffer_) {
     delete[] encryption_buffer_;
     encryption_buffer_ = NULL;
@@ -43,7 +41,7 @@ ViESender::~ViESender() {
 }
 
 int ViESender::RegisterExternalEncryption(Encryption* encryption) {
-  CriticalSectionScoped cs(critsect_);
+  CriticalSectionScoped cs(critsect_.get());
   if (external_encryption_) {
     return -1;
   }
@@ -56,7 +54,7 @@ int ViESender::RegisterExternalEncryption(Encryption* encryption) {
 }
 
 int ViESender::DeregisterExternalEncryption() {
-  CriticalSectionScoped cs(critsect_);
+  CriticalSectionScoped cs(critsect_.get());
   if (external_encryption_ == NULL) {
     return -1;
   }
@@ -69,7 +67,7 @@ int ViESender::DeregisterExternalEncryption() {
 }
 
 int ViESender::RegisterSendTransport(Transport* transport) {
-  CriticalSectionScoped cs(critsect_);
+  CriticalSectionScoped cs(critsect_.get());
   if (transport_) {
     return -1;
   }
@@ -78,7 +76,7 @@ int ViESender::RegisterSendTransport(Transport* transport) {
 }
 
 int ViESender::DeregisterSendTransport() {
-  CriticalSectionScoped cs(critsect_);
+  CriticalSectionScoped cs(critsect_.get());
   if (transport_ == NULL) {
     return -1;
   }
@@ -87,7 +85,7 @@ int ViESender::DeregisterSendTransport() {
 }
 
 int ViESender::StartRTPDump(const char file_nameUTF8[1024]) {
-  CriticalSectionScoped cs(critsect_);
+  CriticalSectionScoped cs(critsect_.get());
   if (rtp_dump_) {
     // Packet dump is already started, restart it.
     rtp_dump_->Stop();
@@ -112,7 +110,7 @@ int ViESender::StartRTPDump(const char file_nameUTF8[1024]) {
 }
 
 int ViESender::StopRTPDump() {
-  CriticalSectionScoped cs(critsect_);
+  CriticalSectionScoped cs(critsect_.get());
   if (rtp_dump_) {
     if (rtp_dump_->IsActive()) {
       rtp_dump_->Stop();
@@ -133,7 +131,7 @@ int ViESender::StopRTPDump() {
 }
 
 int ViESender::SendPacket(int vie_id, const void* data, int len) {
-  CriticalSectionScoped cs(critsect_);
+  CriticalSectionScoped cs(critsect_.get());
   if (!transport_) {
     // No transport
     return -1;
@@ -168,7 +166,7 @@ int ViESender::SendPacket(int vie_id, const void* data, int len) {
 }
 
 int ViESender::SendRTCPPacket(int vie_id, const void* data, int len) {
-  CriticalSectionScoped cs(critsect_);
+  CriticalSectionScoped cs(critsect_.get());
 
   if (!transport_) {
     return -1;

@@ -8,10 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-// ViESharedData.cpp
-
 #include "cpu_info.h"
-#include "critical_section_wrapper.h"
 #include "process_thread.h"
 #include "trace.h"
 #include "vie_channel_manager.h"
@@ -27,7 +24,6 @@ int ViESharedData::instance_counter_ = 0;
 
 ViESharedData::ViESharedData()
     : instance_id_(++instance_counter_),
-      api_critsect_(*CriticalSectionWrapper::CreateCriticalSection()),
       initialized_(false),
       number_cores_(CpuInfo::DetectNumberOfCores()),
       vie_performance_monitor_(ViEPerformanceMonitor(instance_id_)),
@@ -50,7 +46,6 @@ ViESharedData::~ViESharedData() {
 
   module_process_thread_->Stop();
   ProcessThread::DestroyProcessThread(module_process_thread_);
-  delete &api_critsect_;
   Trace::ReturnTrace();
 }
 

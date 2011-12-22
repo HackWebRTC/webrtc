@@ -16,27 +16,26 @@ namespace webrtc {
 
 ViERefCount::ViERefCount()
     : count_(0),
-      crit_(*webrtc::CriticalSectionWrapper::CreateCriticalSection()) {
+      crit_(CriticalSectionWrapper::CreateCriticalSection()) {
 }
 
 ViERefCount::~ViERefCount() {
-  delete &crit_;
 }
 
 ViERefCount& ViERefCount::operator++(int) {
-  CriticalSectionScoped lock(crit_);
+  CriticalSectionScoped lock(crit_.get());
   count_++;
   return *this;
 }
 
 ViERefCount& ViERefCount::operator--(int) {
-  CriticalSectionScoped lock(crit_);
+  CriticalSectionScoped lock(crit_.get());
   count_--;
   return *this;
 }
 
 void ViERefCount::Reset() {
-  CriticalSectionScoped lock(crit_);
+  CriticalSectionScoped lock(crit_.get());
   count_ = 0;
 }
 

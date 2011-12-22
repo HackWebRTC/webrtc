@@ -19,7 +19,6 @@
 
 namespace webrtc {
 
-class CriticalSectionWrapper;
 class ProcessThread;
 class ViEChannelManager;
 class ViEInputManager;
@@ -40,7 +39,6 @@ class ViESharedData {
 
   static int instance_counter_;
   const int instance_id_;
-  CriticalSectionWrapper& api_critsect_;
   bool initialized_;
   const int number_cores_;
 

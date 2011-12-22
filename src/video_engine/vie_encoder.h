@@ -19,6 +19,7 @@
 #include "vie_defines.h"
 #include "vie_file_recorder.h"
 #include "vie_frame_provider_base.h"
+#include "system_wrappers/interface/scoped_ptr.h"
 
 namespace webrtc {
 
@@ -146,8 +147,8 @@ class ViEEncoder
   VideoCodingModule& vcm_;
   VideoProcessingModule& vpm_;
   RtpRtcp& default_rtp_rtcp_;
-  CriticalSectionWrapper& callback_critsect_;
-  CriticalSectionWrapper& data_critsect_;
+  scoped_ptr<CriticalSectionWrapper> callback_cs_;
+  scoped_ptr<CriticalSectionWrapper> data_cs_;
   VideoCodec send_codec_;
 
   bool paused_;

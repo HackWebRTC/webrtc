@@ -13,6 +13,7 @@
 
 #include "modules/video_capture/main/interface/video_capture.h"
 #include "system_wrappers/interface/map_wrapper.h"
+#include "system_wrappers/interface/scoped_ptr.h"
 #include "typedefs.h"
 #include "video_engine/include/vie_capture.h"
 #include "video_engine/vie_defines.h"
@@ -112,7 +113,7 @@ class ViEInputManager : private ViEManagerBase {
   ViEFilePlayer* ViEFilePlayerPtr(int file_id) const;
 
   int engine_id_;
-  CriticalSectionWrapper& map_cs_;
+  scoped_ptr<CriticalSectionWrapper> map_cs_;
   MapWrapper vie_frame_provider_map_;
 
   // Capture devices.

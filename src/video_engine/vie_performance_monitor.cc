@@ -26,7 +26,7 @@ enum { kVieCpuStartValue = 75 };
 
 ViEPerformanceMonitor::ViEPerformanceMonitor(int engine_id)
     : engine_id_(engine_id),
-      pointer_critsect_(*CriticalSectionWrapper::CreateCriticalSection()),
+      pointer_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       monitor_thread_(NULL),
       monitor_event_(*EventWrapper::Create()),
       average_application_cpu_(kVieCpuStartValue),
@@ -37,7 +37,7 @@ ViEPerformanceMonitor::ViEPerformanceMonitor(int engine_id)
 
 ViEPerformanceMonitor::~ViEPerformanceMonitor() {
   Terminate();
-  delete &pointer_critsect_;
+  delete pointer_cs_;
   delete &monitor_event_;
 }
 
@@ -45,7 +45,7 @@ int ViEPerformanceMonitor::Init(ViEBaseObserver* vie_base_observer) {
   WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(engine_id_),
                "%s", __FUNCTION__);
 
-  CriticalSectionScoped cs(pointer_critsect_);
+  CriticalSectionScoped cs(pointer_cs_);
   if (!vie_base_observer || vie_base_observer_) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo, ViEId(engine_id_),
                  "%s: Bad input argument or observer already set",
@@ -86,9 +86,9 @@ void ViEPerformanceMonitor::Terminate() {
   WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(engine_id_),
                "%s", __FUNCTION__);
 
-  pointer_critsect_.Enter();
+  pointer_cs_->Enter();
   if (!vie_base_observer_) {
-    pointer_critsect_.Leave();
+    pointer_cs_->Leave();
     return;
   }
 
@@ -98,20 +98,20 @@ void ViEPerformanceMonitor::Terminate() {
     ThreadWrapper* tmp_thread = monitor_thread_;
     monitor_thread_ = NULL;
     monitor_event_.Set();
-    pointer_critsect_.Leave();
+    pointer_cs_->Leave();
     if (tmp_thread->Stop()) {
-      pointer_critsect_.Enter();
+      pointer_cs_->Enter();
       delete tmp_thread;
       tmp_thread = NULL;
       delete cpu_;
     }
     cpu_ = NULL;
   }
-  pointer_critsect_.Leave();
+  pointer_cs_->Leave();
 }
 
 bool ViEPerformanceMonitor::ViEBaseObserverRegistered() {
-  CriticalSectionScoped cs(pointer_critsect_);
+  CriticalSectionScoped cs(pointer_cs_);
   return vie_base_observer_ != NULL;
 }
 
@@ -127,7 +127,7 @@ bool ViEPerformanceMonitor::ViEMonitorProcess() {
     return false;
   }
 
-  CriticalSectionScoped cs(pointer_critsect_);
+  CriticalSectionScoped cs(pointer_cs_);
   if (cpu_) {
     int cpu_load = cpu_->CpuUsage();
     if (cpu_load > 75) {

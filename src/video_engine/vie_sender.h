@@ -16,6 +16,7 @@
 
 #include "common_types.h"
 #include "engine_configurations.h"
+#include "system_wrappers/interface/scoped_ptr.h"
 #include "typedefs.h"
 #include "vie_defines.h"
 
@@ -51,7 +52,7 @@ class ViESender: public Transport {
   int engine_id_;
   int channel_id_;
 
-  CriticalSectionWrapper& critsect_;
+  scoped_ptr<CriticalSectionWrapper> critsect_;
 
   Encryption* external_encryption_;
   WebRtc_UWord8* encryption_buffer_;

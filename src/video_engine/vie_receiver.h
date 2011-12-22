@@ -15,6 +15,7 @@
 
 #include "engine_configurations.h"
 #include "rtp_rtcp_defines.h"
+#include "system_wrappers/interface/scoped_ptr.h"
 #include "typedefs.h"
 #include "udp_transport.h"
 #include "vie_defines.h"
@@ -68,7 +69,7 @@ class ViEReceiver : public UdpTransportData, public RtpData {
   int InsertRTPPacket(const WebRtc_Word8* rtp_packet, int rtp_packet_length);
   int InsertRTCPPacket(const WebRtc_Word8* rtcp_packet, int rtcp_packet_length);
 
-  CriticalSectionWrapper& receive_critsect_;
+  scoped_ptr<CriticalSectionWrapper> receive_cs_;
   int engine_id_;
   int channel_id_;
   RtpRtcp& rtp_rtcp_;

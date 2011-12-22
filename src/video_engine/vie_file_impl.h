@@ -11,6 +11,7 @@
 #ifndef WEBRTC_VIDEO_ENGINE_VIE_FILE_IMPL_H_
 #define WEBRTC_VIDEO_ENGINE_VIE_FILE_IMPL_H_
 
+#include "system_wrappers/interface/scoped_ptr.h"
 #include "typedefs.h"
 #include "video_engine/include/vie_file.h"
 #include "video_engine/vie_defines.h"
@@ -21,6 +22,7 @@
 namespace webrtc {
 
 class ConditionVariableWrapper;
+class CriticalSectionWrapper;
 
 class ViECaptureSnapshot : public ViEFrameCallback {
  public:
@@ -40,7 +42,7 @@ class ViECaptureSnapshot : public ViEFrameCallback {
   virtual void ProviderDestroyed(int id) {}
 
  private:
-  CriticalSectionWrapper& crit_;
+  scoped_ptr<CriticalSectionWrapper> crit_;
   ConditionVariableWrapper& condition_varaible_;
   VideoFrame* video_frame_;
 };

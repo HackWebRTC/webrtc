@@ -25,7 +25,7 @@ enum { kMaxDelay = 1500 };
 
 ViESyncModule::ViESyncModule(int id, VideoCodingModule& vcm,
                              RtpRtcp& rtcp_module)
-    : data_critsect_(*CriticalSectionWrapper::CreateCriticalSection()),
+    : data_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       id_(id),
       vcm_(vcm),
       rtcp_module_(rtcp_module),
@@ -35,12 +35,11 @@ ViESyncModule::ViESyncModule(int id, VideoCodingModule& vcm,
 }
 
 ViESyncModule::~ViESyncModule() {
-  delete &data_critsect_;
 }
 
 int ViESyncModule::SetVoiceChannel(int voe_channel_id,
                                    VoEVideoSync* voe_sync_interface) {
-  CriticalSectionScoped cs(data_critsect_);
+  CriticalSectionScoped cs(data_cs_.get());
   voe_channel_id_ = voe_channel_id;
   voe_sync_interface_ = voe_sync_interface;
   rtcp_module_.DeRegisterSyncModule();
@@ -97,7 +96,7 @@ WebRtc_Word32 ViESyncModule::TimeUntilNextProcess() {
 }
 
 WebRtc_Word32 ViESyncModule::Process() {
-  CriticalSectionScoped cs(data_critsect_);
+  CriticalSectionScoped cs(data_cs_.get());
   last_sync_time_ = TickTime::Now();
 
   int total_video_delay_target_ms = vcm_.Delay();

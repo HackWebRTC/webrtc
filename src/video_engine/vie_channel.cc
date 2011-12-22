@@ -43,7 +43,7 @@ ViEChannel::ViEChannel(WebRtc_Word32 channel_id,
       engine_id_(engine_id),
       number_of_cores_(number_of_cores),
       num_socket_threads_(kViESocketThreads),
-      callbackCritsect_(*CriticalSectionWrapper::CreateCriticalSection()),
+      callback_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       rtp_rtcp_(*RtpRtcp::CreateRtpRtcp(ViEModuleId(engine_id, channel_id),
                                         false)),
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
@@ -209,8 +209,6 @@ ViEChannel::~ViEChannel() {
   delete &vie_receiver_;
   delete &vie_sender_;
   delete &vie_sync_;
-
-  delete &callbackCritsect_;
 
   // Release modules.
   RtpRtcp::DestroyRtpRtcp(&rtp_rtcp_);
@@ -434,7 +432,7 @@ WebRtc_Word32 ViEChannel::GetReceiveCodec(VideoCodec& video_codec) {
 }
 
 WebRtc_Word32 ViEChannel::RegisterCodecObserver(ViEDecoderObserver* observer) {
-  CriticalSectionScoped cs(callbackCritsect_);
+  CriticalSectionScoped cs(callback_cs_.get());
   if (observer) {
     if (codec_observer_) {
       WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
@@ -722,7 +720,7 @@ WebRtc_Word32 ViEChannel::EnableKeyFrameRequestCallback(const bool enable) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s: %d", __FUNCTION__, enable);
 
-  CriticalSectionScoped cs(callbackCritsect_);
+  CriticalSectionScoped cs(callback_cs_.get());
   if (enable && !codec_observer_) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
                  "%s: No ViECodecObserver set", __FUNCTION__, enable);
@@ -828,7 +826,7 @@ WebRtc_Word32 ViEChannel::GetRemoteRTCPCName(WebRtc_Word8 rtcp_cname[]) {
 }
 
 WebRtc_Word32 ViEChannel::RegisterRtpObserver(ViERTPObserver* observer) {
-  CriticalSectionScoped cs(callbackCritsect_);
+  CriticalSectionScoped cs(callback_cs_.get());
   if (observer) {
     if (rtp_observer_) {
       WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
@@ -852,7 +850,7 @@ WebRtc_Word32 ViEChannel::RegisterRtpObserver(ViERTPObserver* observer) {
 }
 
 WebRtc_Word32 ViEChannel::RegisterRtcpObserver(ViERTCPObserver* observer) {
-  CriticalSectionScoped cs(callbackCritsect_);
+  CriticalSectionScoped cs(callback_cs_.get());
   if (observer) {
     if (rtcp_observer_) {
       WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
@@ -1148,14 +1146,14 @@ WebRtc_Word32 ViEChannel::SetLocalReceiver(const WebRtc_UWord16 rtp_port,
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
 
-  callbackCritsect_.Enter();
+  callback_cs_->Enter();
   if (external_transport_) {
-    callbackCritsect_.Leave();
+    callback_cs_->Leave();
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
                  "%s: external transport registered", __FUNCTION__);
     return -1;
   }
-  callbackCritsect_.Leave();
+  callback_cs_->Leave();
 
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
   if (socket_transport_.Receiving()) {
@@ -1189,14 +1187,14 @@ WebRtc_Word32 ViEChannel::GetLocalReceiver(WebRtc_UWord16& rtp_port,
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
 
-  callbackCritsect_.Enter();
+  callback_cs_->Enter();
   if (external_transport_) {
-    callbackCritsect_.Leave();
+    callback_cs_->Leave();
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
                  "%s: external transport registered", __FUNCTION__);
     return -1;
   }
-  callbackCritsect_.Leave();
+  callback_cs_->Leave();
 
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
   if (socket_transport_.ReceiveSocketsInitialized() == false) {
@@ -1232,14 +1230,14 @@ WebRtc_Word32 ViEChannel::SetSendDestination(
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
 
-  callbackCritsect_.Enter();
+  callback_cs_->Enter();
   if (external_transport_) {
-    callbackCritsect_.Leave();
+    callback_cs_->Leave();
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
                  "%s: external transport registered", __FUNCTION__);
     return -1;
   }
-  callbackCritsect_.Leave();
+  callback_cs_->Leave();
 
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
   const bool is_ipv6 = socket_transport_.IpV6Enabled();
@@ -1351,14 +1349,14 @@ WebRtc_Word32 ViEChannel::GetSendDestination(
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
 
-  callbackCritsect_.Enter();
+  callback_cs_->Enter();
   if (external_transport_) {
-    callbackCritsect_.Leave();
+    callback_cs_->Leave();
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
                  "%s: external transport registered", __FUNCTION__);
     return -1;
   }
-  callbackCritsect_.Leave();
+  callback_cs_->Leave();
 
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
   if (socket_transport_.SendSocketsInitialized() == false) {
@@ -1388,7 +1386,7 @@ WebRtc_Word32 ViEChannel::GetSendDestination(
 }
 
 WebRtc_Word32 ViEChannel::StartSend() {
-  CriticalSectionScoped cs(callbackCritsect_);
+  CriticalSectionScoped cs(callback_cs_.get());
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s", __FUNCTION__);
 
@@ -1471,7 +1469,7 @@ bool ViEChannel::Sending() {
 }
 
 WebRtc_Word32 ViEChannel::StartReceive() {
-  CriticalSectionScoped cs(callbackCritsect_);
+  CriticalSectionScoped cs(callback_cs_.get());
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
 
@@ -1520,7 +1518,7 @@ WebRtc_Word32 ViEChannel::StopReceive() {
   StopDecodeThread();
   vcm_.ResetDecoder();
   {
-    CriticalSectionScoped cs(callbackCritsect_);
+    CriticalSectionScoped cs(callback_cs_.get());
     if (external_transport_) {
       return 0;
     }
@@ -1558,7 +1556,7 @@ WebRtc_Word32 ViEChannel::GetSourceInfo(WebRtc_UWord16& rtp_port,
                                         WebRtc_Word8* ip_address,
                                         WebRtc_UWord32 ip_address_length) {
   {
-    CriticalSectionScoped cs(callbackCritsect_);
+    CriticalSectionScoped cs(callback_cs_.get());
     WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                  __FUNCTION__);
     if (external_transport_) {
@@ -1612,7 +1610,7 @@ WebRtc_Word32 ViEChannel::RegisterSendTransport(Transport& transport) {
     return -1;
   }
 
-  CriticalSectionScoped cs(callbackCritsect_);
+  CriticalSectionScoped cs(callback_cs_.get());
   if (external_transport_) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
                  "%s: transport already registered", __FUNCTION__);
@@ -1628,7 +1626,7 @@ WebRtc_Word32 ViEChannel::RegisterSendTransport(Transport& transport) {
 }
 
 WebRtc_Word32 ViEChannel::DeregisterSendTransport() {
-  CriticalSectionScoped cs(callbackCritsect_);
+  CriticalSectionScoped cs(callback_cs_.get());
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
 
@@ -1650,7 +1648,7 @@ WebRtc_Word32 ViEChannel::DeregisterSendTransport() {
 WebRtc_Word32 ViEChannel::ReceivedRTPPacket(
     const void* rtp_packet, const WebRtc_Word32 rtp_packet_length) {
   {
-    CriticalSectionScoped cs(callbackCritsect_);
+    CriticalSectionScoped cs(callback_cs_.get());
     if (!external_transport_) {
       return -1;
     }
@@ -1661,7 +1659,7 @@ WebRtc_Word32 ViEChannel::ReceivedRTPPacket(
 WebRtc_Word32 ViEChannel::ReceivedRTCPPacket(
   const void* rtcp_packet, const WebRtc_Word32 rtcp_packet_length) {
   {
-    CriticalSectionScoped cs(callbackCritsect_);
+    CriticalSectionScoped cs(callback_cs_.get());
     if (!external_transport_) {
       return -1;
     }
@@ -1670,18 +1668,18 @@ WebRtc_Word32 ViEChannel::ReceivedRTCPPacket(
 }
 
 WebRtc_Word32 ViEChannel::EnableIPv6() {
-  callbackCritsect_.Enter();
+  callback_cs_->Enter();
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s", __FUNCTION__);
 
   if (external_transport_) {
-    callbackCritsect_.Leave();
+    callback_cs_->Leave();
     WEBRTC_TRACE(kTraceError, kTraceVideo,
                  ViEId(engine_id_, channel_id_),
                  "%s: External transport registered", __FUNCTION__);
     return -1;
   }
-  callbackCritsect_.Leave();
+  callback_cs_->Leave();
 
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
   if (socket_transport_.IpV6Enabled()) {
@@ -1709,7 +1707,7 @@ bool ViEChannel::IsIPv6Enabled() {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
   {
-    CriticalSectionScoped cs(callbackCritsect_);
+    CriticalSectionScoped cs(callback_cs_.get());
     if (external_transport_) {
       WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
                    "%s: External transport registered", __FUNCTION__);
@@ -1728,17 +1726,17 @@ bool ViEChannel::IsIPv6Enabled() {
 WebRtc_Word32 ViEChannel::SetSourceFilter(const WebRtc_UWord16 rtp_port,
                                           const WebRtc_UWord16 rtcp_port,
                                           const WebRtc_Word8* ip_address) {
-  callbackCritsect_.Enter();
+  callback_cs_->Enter();
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
 
   if (external_transport_) {
-    callbackCritsect_.Leave();
+    callback_cs_->Leave();
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
                  "%s: External transport registered", __FUNCTION__);
     return -1;
   }
-  callbackCritsect_.Leave();
+  callback_cs_->Leave();
 
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
   if (socket_transport_.SetFilterIP(ip_address) != 0) {
@@ -1760,17 +1758,17 @@ WebRtc_Word32 ViEChannel::SetSourceFilter(const WebRtc_UWord16 rtp_port,
 WebRtc_Word32 ViEChannel::GetSourceFilter(WebRtc_UWord16& rtp_port,
                                           WebRtc_UWord16& rtcp_port,
                                           WebRtc_Word8* ip_address) const {
-  callbackCritsect_.Enter();
+  callback_cs_->Enter();
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
 
   if (external_transport_) {
-    callbackCritsect_.Leave();
+    callback_cs_->Leave();
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
                  "%s: External transport registered", __FUNCTION__);
     return -1;
   }
-  callbackCritsect_.Leave();
+  callback_cs_->Leave();
 
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
   if (socket_transport_.FilterIP(ip_address) != 0) {
@@ -1794,7 +1792,7 @@ WebRtc_Word32 ViEChannel::SetToS(const WebRtc_Word32 DSCP,
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
   {
-    CriticalSectionScoped cs(callbackCritsect_);
+    CriticalSectionScoped cs(callback_cs_.get());
     if (external_transport_) {
       WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
                    "%s: External transport registered", __FUNCTION__);
@@ -1821,7 +1819,7 @@ WebRtc_Word32 ViEChannel::GetToS(WebRtc_Word32& DSCP,
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
   {
-    CriticalSectionScoped cs(callbackCritsect_);
+    CriticalSectionScoped cs(callback_cs_.get());
     if (external_transport_) {
       WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
                    "%s: External transport registered", __FUNCTION__);
@@ -1850,7 +1848,7 @@ WebRtc_Word32 ViEChannel::SetSendGQoS(const bool enable,
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
   {
-    CriticalSectionScoped cs(callbackCritsect_);
+    CriticalSectionScoped cs(callback_cs_.get());
     if (external_transport_) {
       WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
                    "%s: External transport registered", __FUNCTION__);
@@ -1879,7 +1877,7 @@ WebRtc_Word32 ViEChannel::GetSendGQoS(bool& enabled,
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
   {
-    CriticalSectionScoped cs(callbackCritsect_);
+    CriticalSectionScoped cs(callback_cs_.get());
     if (external_transport_) {
       WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
                    "%s: External transport registered", __FUNCTION__);
@@ -1946,7 +1944,7 @@ WebRtc_Word32 ViEChannel::SetPacketTimeoutNotification(
 
 WebRtc_Word32 ViEChannel::RegisterNetworkObserver(
     ViENetworkObserver* observer) {
-  CriticalSectionScoped cs(callbackCritsect_);
+  CriticalSectionScoped cs(callback_cs_.get());
   if (observer) {
     if (networkObserver_) {
       WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
@@ -1970,7 +1968,7 @@ WebRtc_Word32 ViEChannel::RegisterNetworkObserver(
 }
 
 bool ViEChannel::NetworkObserverRegistered() {
-  CriticalSectionScoped cs(callbackCritsect_);
+  CriticalSectionScoped cs(callback_cs_.get());
   return networkObserver_ != NULL;
 }
 
@@ -1979,7 +1977,7 @@ WebRtc_Word32 ViEChannel::SetPeriodicDeadOrAliveStatus(
   WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
 
-  CriticalSectionScoped cs(callbackCritsect_);
+  CriticalSectionScoped cs(callback_cs_.get());
   if (!networkObserver_) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
                  "%s: no observer added", __FUNCTION__);
@@ -2016,7 +2014,7 @@ WebRtc_Word32 ViEChannel::SendUDPPacket(const WebRtc_Word8* data,
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
   {
-    CriticalSectionScoped cs(callbackCritsect_);
+    CriticalSectionScoped cs(callback_cs_.get());
     if (external_transport_) {
       WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
                    "%s: External transport registered", __FUNCTION__);
@@ -2042,7 +2040,7 @@ WebRtc_Word32 ViEChannel::EnableColorEnhancement(bool enable) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s(enable: %d)", __FUNCTION__, enable);
 
-  CriticalSectionScoped cs(callbackCritsect_);
+  CriticalSectionScoped cs(callback_cs_.get());
   if (enable && color_enhancement_) {
     WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(engine_id_, channel_id_),
                  "%s: Already enabled", __FUNCTION__);
@@ -2090,7 +2088,7 @@ RtpRtcp* ViEChannel::rtp_rtcp() {
 
 
 WebRtc_Word32 ViEChannel::FrameToRender(VideoFrame& video_frame) {
-  CriticalSectionScoped cs(callbackCritsect_);
+  CriticalSectionScoped cs(callback_cs_.get());
 
   if (decoder_reset_) {
     // Trigger a callback to the user if the incoming codec has changed.
@@ -2146,7 +2144,7 @@ WebRtc_Word32 ViEChannel::StoreReceivedFrame(
 
 WebRtc_Word32 ViEChannel::ReceiveStatistics(const WebRtc_UWord32 bit_rate,
                                             const WebRtc_UWord32 frame_rate) {
-  CriticalSectionScoped cs(callbackCritsect_);
+  CriticalSectionScoped cs(callback_cs_.get());
   if (codec_observer_) {
     WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                  "%s: bitrate %u, framerate %u", __FUNCTION__, bit_rate,
@@ -2160,7 +2158,7 @@ WebRtc_Word32 ViEChannel::FrameTypeRequest(const FrameType frame_type) {
   WEBRTC_TRACE(kTraceStream, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s(frame_type: %d)", __FUNCTION__, frame_type);
   {
-    CriticalSectionScoped cs(callbackCritsect_);
+    CriticalSectionScoped cs(callback_cs_.get());
     if (codec_observer_ && do_key_frame_callbackRequest_) {
       codec_observer_->RequestNewKeyFrame(channel_id_);
     }
@@ -2256,7 +2254,7 @@ WebRtc_Word32 ViEChannel::RegisterExternalEncryption(Encryption* encryption) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
 
-  CriticalSectionScoped cs(callbackCritsect_);
+  CriticalSectionScoped cs(callback_cs_.get());
   if (external_encryption_) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
                  "%s: external encryption already registered", __FUNCTION__);
@@ -2278,7 +2276,7 @@ WebRtc_Word32 ViEChannel::DeRegisterExternalEncryption() {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
 
-  CriticalSectionScoped cs(callbackCritsect_);
+  CriticalSectionScoped cs(callback_cs_.get());
   if (!external_encryption_) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
                  "%s: external encryption is not registered", __FUNCTION__);
@@ -2314,7 +2312,7 @@ WebRtc_Word32 ViEChannel::VoiceChannel() {
 }
 
 WebRtc_Word32 ViEChannel::RegisterEffectFilter(ViEEffectFilter* effect_filter) {
-  CriticalSectionScoped cs(callbackCritsect_);
+  CriticalSectionScoped cs(callback_cs_.get());
   if (!effect_filter) {
     if (!effect_filter_) {
       WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
@@ -2371,7 +2369,7 @@ void ViEChannel::OnApplicationDataReceived(const WebRtc_Word32 id,
                  "%s, incorrect id", __FUNCTION__, id);
     return;
   }
-  CriticalSectionScoped cs(callbackCritsect_);
+  CriticalSectionScoped cs(callback_cs_.get());
   {
     if (rtcp_observer_) {
       rtcp_observer_->OnApplicationDataReceived(
@@ -2393,9 +2391,9 @@ WebRtc_Word32 ViEChannel::OnInitializeDecoder(
                payload_type, payload_name);
   vcm_.ResetDecoder();
 
-  callbackCritsect_.Enter();
+  callback_cs_->Enter();
   decoder_reset_ = true;
-  callbackCritsect_.Leave();
+  callback_cs_->Leave();
   return 0;
 }
 
@@ -2404,7 +2402,7 @@ void ViEChannel::OnPacketTimeout(const WebRtc_Word32 id) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
 
-  CriticalSectionScoped cs(callbackCritsect_);
+  CriticalSectionScoped cs(callback_cs_.get());
   if (networkObserver_) {
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
     if (socket_transport_.Receiving() || external_transport_) {
@@ -2423,7 +2421,7 @@ void ViEChannel::OnReceivedPacket(const WebRtc_Word32 id,
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
   if (rtp_packet_timeout_ && packet_type == kPacketRtp) {
-    CriticalSectionScoped cs(callbackCritsect_);
+    CriticalSectionScoped cs(callback_cs_.get());
     if (networkObserver_) {
       networkObserver_->PacketTimeout(channel_id_, PacketReceived);
     }
@@ -2439,7 +2437,7 @@ void ViEChannel::OnPeriodicDeadOrAlive(const WebRtc_Word32 id,
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s(id=%d, alive=%d)", __FUNCTION__, id, alive);
 
-  CriticalSectionScoped cs(callbackCritsect_);
+  CriticalSectionScoped cs(callback_cs_.get());
   if (!networkObserver_) {
     return;
   }
@@ -2463,7 +2461,7 @@ void ViEChannel::OnIncomingSSRCChanged(const WebRtc_Word32 id,
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s: %u", __FUNCTION__, SSRC);
 
-  CriticalSectionScoped cs(callbackCritsect_);
+  CriticalSectionScoped cs(callback_cs_.get());
   {
     if (rtp_observer_) {
       rtp_observer_->IncomingSSRCChanged(channel_id_, SSRC);
@@ -2487,7 +2485,7 @@ void ViEChannel::OnIncomingCSRCChanged(const WebRtc_Word32 id,
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s: %u", __FUNCTION__, CSRC);
 
-  CriticalSectionScoped cs(callbackCritsect_);
+  CriticalSectionScoped cs(callback_cs_.get());
   {
     if (rtp_observer_) {
       rtp_observer_->IncomingCSRCChanged(channel_id_, CSRC, added);

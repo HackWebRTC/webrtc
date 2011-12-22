@@ -32,7 +32,7 @@ ViERenderer* ViERenderManagerScoped::Renderer(WebRtc_Word32 render_id) const {
 }
 
 ViERenderManager::ViERenderManager(WebRtc_Word32 engine_id)
-    : list_critsect_(*CriticalSectionWrapper::CreateCriticalSection()),
+    : list_cs_(CriticalSectionWrapper::CreateCriticalSection()),
       engine_id_(engine_id),
       use_external_render_module_(false) {
   WEBRTC_TRACE(webrtc::kTraceMemory, webrtc::kTraceVideo, ViEId(engine_id),
@@ -52,7 +52,6 @@ ViERenderManager::~ViERenderManager() {
     item = NULL;
     RemoveRenderStream(render_id);
   }
-  delete &list_critsect_;
 }
 
 WebRtc_Word32 ViERenderManager::RegisterVideoRenderModule(
@@ -112,7 +111,7 @@ ViERenderer* ViERenderManager::AddRenderStream(const WebRtc_Word32 render_id,
                                                const float top,
                                                const float right,
                                                const float bottom) {
-  CriticalSectionScoped cs(list_critsect_);
+  CriticalSectionScoped cs(list_cs_.get());
 
   if (stream_to_vie_renderer_.Find(render_id) != NULL) {
     // This stream is already added to a renderer, not allowed!
@@ -157,7 +156,7 @@ WebRtc_Word32 ViERenderManager::RemoveRenderStream(
   // stream.
   ViEManagerWriteScoped(*this);
 
-  CriticalSectionScoped cs(list_critsect_);
+  CriticalSectionScoped cs(list_cs_.get());
   MapItem* map_item = stream_to_vie_renderer_.Find(render_id);
   if (!map_item) {
     // No such stream
