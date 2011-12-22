@@ -63,15 +63,6 @@
    (int)(nlh)->nlmsg_len >= (int)sizeof(struct nlmsghdr) &&             \
    (int)(nlh)->nlmsg_len <= (len))
 
-WebRtc_UWord32 timeGetTime()
-{
-    struct timeval tv;
-    struct timezone tz;
-    WebRtc_UWord32 val;
-    gettimeofday(&tv, &tz);
-    val= tv.tv_sec*1000+ tv.tv_usec/1000;
-    return(val);
-}
 #endif // defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
 
 namespace webrtc {
