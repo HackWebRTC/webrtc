@@ -2010,7 +2010,11 @@ RTCPSender::SendRTCP(const WebRtc_UWord32 packetTypeFlags,
             }
         }
     }while (false);
-
+    // Sanity don't send empty packets.
+    if (pos == 0)
+    {
+        return -1;
+    }
     return SendToNetwork(rtcpbuffer, (WebRtc_UWord16)pos);
 }
 
