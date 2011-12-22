@@ -23,7 +23,7 @@
 #include "typedefs.h"
 
 
-extern const double meanLARUB16[UB_LPC_ORDER];
+extern const double WebRtcIsac_kMeanLarUb16[UB_LPC_ORDER];
 
 extern const double WebRtcIsac_kIintraVecDecorrMatUb16[UB_LPC_ORDER][UB_LPC_ORDER];
 

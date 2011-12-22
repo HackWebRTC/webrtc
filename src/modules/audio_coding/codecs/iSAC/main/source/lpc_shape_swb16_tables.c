@@ -23,7 +23,7 @@
 /*
 * Mean value of LAR
 */
-const double meanLARUB16[UB_LPC_ORDER] =
+const double WebRtcIsac_kMeanLarUb16[UB_LPC_ORDER] =
 {
 0.454978, 0.364747, 0.102999, 0.104523
 };

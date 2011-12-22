@@ -33,7 +33,7 @@
  * returns the total number of bytes in the stream
  */
 
-WebRtc_Word16 plc_filterma_Fast(
+static WebRtc_Word16 plc_filterma_Fast(
     WebRtc_Word16 *In,  /* (i)   Vector to be filtered. InOut[-orderCoef+1]
                            to InOut[-1] contains state */
     WebRtc_Word16 *Out,  /* (o)   Filtered vector */

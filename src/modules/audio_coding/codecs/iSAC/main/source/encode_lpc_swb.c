@@ -64,7 +64,7 @@ WebRtcIsac_RemoveLarMean(
     case isac16kHz:
       {
         numVec = UB16_LPC_VEC_PER_FRAME;
-        meanLAR = meanLARUB16;
+        meanLAR = WebRtcIsac_kMeanLarUb16;
         break;
       }
     default:
@@ -516,7 +516,7 @@ WebRtcIsac_AddLarMean(
     case isac16kHz:
       {
         numVec = UB16_LPC_VEC_PER_FRAME;
-        meanLAR = meanLARUB16;
+        meanLAR = WebRtcIsac_kMeanLarUb16;
         break;
       }
     default:

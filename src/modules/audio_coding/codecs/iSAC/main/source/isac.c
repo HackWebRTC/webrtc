@@ -454,7 +454,7 @@ static WebRtc_Word16 EncoderInitUb(
          (MAX_FRAMESAMPLES + LB_TOTAL_DELAY_SAMPLES) * sizeof(float));
 
   memcpy(&(instUB->ISACencUB_obj.lastLPCVec),
-         meanLARUB16, sizeof(double) * UB_LPC_ORDER);
+         WebRtcIsac_kMeanLarUb16, sizeof(double) * UB_LPC_ORDER);
 
   return statusInit;
 }
@@ -1856,7 +1856,7 @@ WebRtc_Word16 WebRtcIsac_Control(
 	    instISAC->instLB.ISACencLB_obj.buffer_index;
 
 	  memcpy(&(instISAC->instUB.ISACencUB_obj.lastLPCVec),
-		 meanLARUB16, sizeof(double) * UB_LPC_ORDER);
+            WebRtcIsac_kMeanLarUb16, sizeof(double) * UB_LPC_ORDER);
 	}
     }
 
