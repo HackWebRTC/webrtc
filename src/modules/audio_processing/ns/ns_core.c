@@ -111,7 +111,7 @@ int WebRtcNs_InitCore(NSinst_t* inst, WebRtc_UWord32 fs) {
   // Initialize fft work arrays.
   inst->ip[0] = 0; // Setting this triggers initialization.
   memset(inst->dataBuf, 0, sizeof(float) * ANAL_BLOCKL_MAX);
-  rdft(inst->anaLen, 1, inst->dataBuf, inst->ip, inst->wfft);
+  WebRtc_rdft(inst->anaLen, 1, inst->dataBuf, inst->ip, inst->wfft);
 
   memset(inst->dataBuf, 0, sizeof(float) * ANAL_BLOCKL_MAX);
   memset(inst->syntBuf, 0, sizeof(float) * ANAL_BLOCKL_MAX);
@@ -862,7 +862,7 @@ int WebRtcNs_ProcessCore(NSinst_t* inst,
     //
     inst->blockInd++; // Update the block index only when we process a block.
     // FFT
-    rdft(inst->anaLen, 1, winData, inst->ip, inst->wfft);
+    WebRtc_rdft(inst->anaLen, 1, winData, inst->ip, inst->wfft);
 
     imag[0] = 0;
     real[0] = winData[0];
@@ -1155,7 +1155,7 @@ int WebRtcNs_ProcessCore(NSinst_t* inst,
       winData[2 * i] = real[i];
       winData[2 * i + 1] = imag[i];
     }
-    rdft(inst->anaLen, -1, winData, inst->ip, inst->wfft);
+    WebRtc_rdft(inst->anaLen, -1, winData, inst->ip, inst->wfft);
 
     for (i = 0; i < inst->anaLen; i++) {
       real[i] = 2.0f * winData[i] / inst->anaLen; // fft scaling

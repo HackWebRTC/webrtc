@@ -11,8 +11,7 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_UTILITY_FFT4G_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_UTILITY_FFT4G_H_
 
-void rdft(int, int, float *, int *, float *);
-void cdft(int, int, float *, int *, float *);
+void WebRtc_rdft(int, int, float *, int *, float *);
+void WebRtc_cdft(int, int, float *, int *, float *);
 
 #endif
-

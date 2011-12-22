@@ -286,14 +286,24 @@ Appendix :
     w[] and ip[] are compatible with all routines.
 */
 
-void cdft(int n, int isgn, float *a, int *ip, float *w)
-{
-    void makewt(int nw, int *ip, float *w);
-    void bitrv2(int n, int *ip, float *a);
-    void bitrv2conj(int n, int *ip, float *a);
-    void cftfsub(int n, float *a, float *w);
-    void cftbsub(int n, float *a, float *w);
+static void makewt(int nw, int *ip, float *w);
+static void makect(int nc, int *ip, float *c);
+static void bitrv2(int n, int *ip, float *a);
+static void bitrv2conj(int n, int *ip, float *a);
+static void cftfsub(int n, float *a, float *w);
+static void cftbsub(int n, float *a, float *w);
+static void cft1st(int n, float *a, float *w);
+static void cftmdl(int n, int l, float *a, float *w);
+static void rftfsub(int n, float *a, int nc, float *c);
+static void rftbsub(int n, float *a, int nc, float *c);
+#if 0  // Not used.
+static void dctsub(int n, float *a, int nc, float *c)
+static void dstsub(int n, float *a, int nc, float *c)
+#endif
 
+
+void WebRtc_cdft(int n, int isgn, float *a, int *ip, float *w)
+{
     if (n > (ip[0] << 2)) {
         makewt(n >> 2, ip, w);
     }
@@ -311,15 +321,8 @@ void cdft(int n, int isgn, float *a, int *ip, float *w)
 }
 
 
-void rdft(int n, int isgn, float *a, int *ip, float *w)
+void WebRtc_rdft(int n, int isgn, float *a, int *ip, float *w)
 {
-    void makewt(int nw, int *ip, float *w);
-    void makect(int nc, int *ip, float *c);
-    void bitrv2(int n, int *ip, float *a);
-    void cftfsub(int n, float *a, float *w);
-    void cftbsub(int n, float *a, float *w);
-    void rftfsub(int n, float *a, int nc, float *c);
-    void rftbsub(int n, float *a, int nc, float *c);
     int nw, nc;
     float xi;
 
@@ -357,17 +360,9 @@ void rdft(int n, int isgn, float *a, int *ip, float *w)
     }
 }
 
-
-void ddct(int n, int isgn, float *a, int *ip, float *w)
+#if 0  // Not used.
+static void ddct(int n, int isgn, float *a, int *ip, float *w)
 {
-    void makewt(int nw, int *ip, float *w);
-    void makect(int nc, int *ip, float *c);
-    void bitrv2(int n, int *ip, float *a);
-    void cftfsub(int n, float *a, float *w);
-    void cftbsub(int n, float *a, float *w);
-    void rftfsub(int n, float *a, int nc, float *c);
-    void rftbsub(int n, float *a, int nc, float *c);
-    void dctsub(int n, float *a, int nc, float *c);
     int j, nw, nc;
     float xr;
 
@@ -417,16 +412,8 @@ void ddct(int n, int isgn, float *a, int *ip, float *w)
 }
 
 
-void ddst(int n, int isgn, float *a, int *ip, float *w)
+static void ddst(int n, int isgn, float *a, int *ip, float *w)
 {
-    void makewt(int nw, int *ip, float *w);
-    void makect(int nc, int *ip, float *c);
-    void bitrv2(int n, int *ip, float *a);
-    void cftfsub(int n, float *a, float *w);
-    void cftbsub(int n, float *a, float *w);
-    void rftfsub(int n, float *a, int nc, float *c);
-    void rftbsub(int n, float *a, int nc, float *c);
-    void dstsub(int n, float *a, int nc, float *c);
     int j, nw, nc;
     float xr;
 
@@ -476,14 +463,8 @@ void ddst(int n, int isgn, float *a, int *ip, float *w)
 }
 
 
-void dfct(int n, float *a, float *t, int *ip, float *w)
+static void dfct(int n, float *a, float *t, int *ip, float *w)
 {
-    void makewt(int nw, int *ip, float *w);
-    void makect(int nc, int *ip, float *c);
-    void bitrv2(int n, int *ip, float *a);
-    void cftfsub(int n, float *a, float *w);
-    void rftfsub(int n, float *a, int nc, float *c);
-    void dctsub(int n, float *a, int nc, float *c);
     int j, k, l, m, mh, nw, nc;
     float xr, xi, yr, yi;
 
@@ -571,15 +552,8 @@ void dfct(int n, float *a, float *t, int *ip, float *w)
     }
 }
 
-
-void dfst(int n, float *a, float *t, int *ip, float *w)
+static void dfst(int n, float *a, float *t, int *ip, float *w)
 {
-    void makewt(int nw, int *ip, float *w);
-    void makect(int nc, int *ip, float *c);
-    void bitrv2(int n, int *ip, float *a);
-    void cftfsub(int n, float *a, float *w);
-    void rftfsub(int n, float *a, int nc, float *c);
-    void dstsub(int n, float *a, int nc, float *c);
     int j, k, l, m, mh, nw, nc;
     float xr, xi, yr, yi;
 
@@ -657,6 +631,7 @@ void dfst(int n, float *a, float *t, int *ip, float *w)
     }
     a[0] = 0;
 }
+#endif  // Not used.
 
 
 /* -------- initializing routines -------- */
@@ -664,9 +639,8 @@ void dfst(int n, float *a, float *t, int *ip, float *w)
 
 #include <math.h>
 
-void makewt(int nw, int *ip, float *w)
+static void makewt(int nw, int *ip, float *w)
 {
-    void bitrv2(int n, int *ip, float *a);
     int j, nwh;
     float delta, x, y;
 
@@ -694,7 +668,7 @@ void makewt(int nw, int *ip, float *w)
 }
 
 
-void makect(int nc, int *ip, float *c)
+static void makect(int nc, int *ip, float *c)
 {
     int j, nch;
     float delta;
@@ -716,7 +690,7 @@ void makect(int nc, int *ip, float *c)
 /* -------- child routines -------- */
 
 
-void bitrv2(int n, int *ip, float *a)
+static void bitrv2(int n, int *ip, float *a)
 {
     int j, j1, k, k1, l, m, m2;
     float xr, xi, yr, yi;
@@ -816,7 +790,7 @@ void bitrv2(int n, int *ip, float *a)
 }
 
 
-void bitrv2conj(int n, int *ip, float *a)
+static void bitrv2conj(int n, int *ip, float *a)
 {
     int j, j1, k, k1, l, m, m2;
     float xr, xi, yr, yi;
@@ -925,10 +899,8 @@ void bitrv2conj(int n, int *ip, float *a)
 }
 
 
-void cftfsub(int n, float *a, float *w)
+static void cftfsub(int n, float *a, float *w)
 {
-    void cft1st(int n, float *a, float *w);
-    void cftmdl(int n, int l, float *a, float *w);
     int j, j1, j2, j3, l;
     float x0r, x0i, x1r, x1i, x2r, x2i, x3r, x3i;
 
@@ -977,10 +949,8 @@ void cftfsub(int n, float *a, float *w)
 }
 
 
-void cftbsub(int n, float *a, float *w)
+static void cftbsub(int n, float *a, float *w)
 {
-    void cft1st(int n, float *a, float *w);
-    void cftmdl(int n, int l, float *a, float *w);
     int j, j1, j2, j3, l;
     float x0r, x0i, x1r, x1i, x2r, x2i, x3r, x3i;
 
@@ -1029,7 +999,7 @@ void cftbsub(int n, float *a, float *w)
 }
 
 
-void cft1st(int n, float *a, float *w)
+static void cft1st(int n, float *a, float *w)
 {
     int j, k1, k2;
     float wk1r, wk1i, wk2r, wk2i, wk3r, wk3i;
@@ -1134,7 +1104,7 @@ void cft1st(int n, float *a, float *w)
 }
 
 
-void cftmdl(int n, int l, float *a, float *w)
+static void cftmdl(int n, int l, float *a, float *w)
 {
     int j, j1, j2, j3, k, k1, k2, m, m2;
     float wk1r, wk1i, wk2r, wk2i, wk3r, wk3i;
@@ -1261,7 +1231,7 @@ void cftmdl(int n, int l, float *a, float *w)
 }
 
 
-void rftfsub(int n, float *a, int nc, float *c)
+static void rftfsub(int n, float *a, int nc, float *c)
 {
     int j, k, kk, ks, m;
     float wkr, wki, xr, xi, yr, yi;
@@ -1286,7 +1256,7 @@ void rftfsub(int n, float *a, int nc, float *c)
 }
 
 
-void rftbsub(int n, float *a, int nc, float *c)
+static void rftbsub(int n, float *a, int nc, float *c)
 {
     int j, k, kk, ks, m;
     float wkr, wki, xr, xi, yr, yi;
@@ -1312,8 +1282,8 @@ void rftbsub(int n, float *a, int nc, float *c)
     a[m + 1] = -a[m + 1];
 }
 
-
-void dctsub(int n, float *a, int nc, float *c)
+#if 0  // Not used.
+static void dctsub(int n, float *a, int nc, float *c)
 {
     int j, k, kk, ks, m;
     float wkr, wki, xr;
@@ -1334,7 +1304,7 @@ void dctsub(int n, float *a, int nc, float *c)
 }
 
 
-void dstsub(int n, float *a, int nc, float *c)
+static void dstsub(int n, float *a, int nc, float *c)
 {
     int j, k, kk, ks, m;
     float wkr, wki, xr;
@@ -1353,4 +1323,4 @@ void dstsub(int n, float *a, int nc, float *c)
     }
     a[m] *= c[0];
 }
-
+#endif  // Not used.
