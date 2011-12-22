@@ -587,7 +587,6 @@ int VCMSessionInfo::PrepareForDecode(uint8_t* frame_buffer) {
   int real_data_bytes = 0;
   if (length == 0)
       return length;
-  bool previous_lost = false;
   PacketIterator it = packets_.begin();
   PacketIterator prev_it = it;
   for (; it != packets_.end(); ++it) {
@@ -602,7 +601,6 @@ int VCMSessionInfo::PrepareForDecode(uint8_t* frame_buffer) {
           // It is be better to throw away this packet if we are
           // missing the previous packet.
           memset(ptr_first_byte, 0, (*it).sizeBytes);
-          previous_lost = true;
           ++packets_not_decodable_;
         } else if ((*it).sizeBytes > 0) {
           // Glue with previous byte.
@@ -617,13 +615,11 @@ int VCMSessionInfo::PrepareForDecode(uint8_t* frame_buffer) {
           ShiftSubsequentPackets(it, -1);
           (*it).sizeBytes--;
           length--;
-          previous_lost = false;
           real_data_bytes += (*it).sizeBytes;
         }
       } else {
         memset(const_cast<uint8_t*>((*it).dataPtr), 0,
                (*it).sizeBytes);
-        previous_lost = true;
         ++packets_not_decodable_;
       }
     } else if (packet_loss &&
@@ -638,10 +634,8 @@ int VCMSessionInfo::PrepareForDecode(uint8_t* frame_buffer) {
       padding_packet.dataPtr = padding_data;
       padding_packet.sizeBytes = kPaddingLength;
       length += InsertPacket(padding_packet, frame_buffer, false, 0);
-      previous_lost = true;
     } else {
       real_data_bytes += (*it).sizeBytes;
-      previous_lost = false;
     }
     prev_it = it;
   }
