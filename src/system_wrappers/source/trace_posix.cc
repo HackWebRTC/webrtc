@@ -15,7 +15,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
-
+#ifdef __linux__
+    #include <sys/syscall.h>
+#endif
 #ifdef WEBRTC_ANDROID
     #include <pthread.h>
 #else
@@ -48,13 +50,17 @@ TracePosix::~TracePosix()
     StopThread();
 }
 
-WebRtc_Word32 TracePosix::AddThreadId(char* traceMessage) const
-{
-    WebRtc_UWord64 threadId = (WebRtc_UWord64)pthread_self();
-    sprintf(traceMessage, "%10llu; ",
-            static_cast<long long unsigned int>(threadId));
-    // 12 bytes are written.
-    return 12;
+WebRtc_Word32 TracePosix::AddThreadId(char* traceMessage) const {
+#ifdef __linux__
+  pid_t threadId = (pid_t) syscall(SYS_gettid);
+  sprintf(traceMessage, "%10d; ", threadId);
+#else
+  WebRtc_UWord64 threadId = (WebRtc_UWord64)pthread_self();
+  sprintf(traceMessage, "%10llu; ",
+          static_cast<long long unsigned int>(threadId));
+#endif
+  // 12 bytes are written.
+  return 12;
 }
 
 WebRtc_Word32 TracePosix::AddTime(char* traceMessage,
