@@ -194,6 +194,10 @@ class MockRtpRtcp : public RtpRtcp {
       NACKMethod());
   MOCK_METHOD1(SetNACKStatus,
       WebRtc_Word32(const NACKMethod method));
+  MOCK_CONST_METHOD0(SelectiveRetransmissions,
+      int());
+  MOCK_METHOD1(SetSelectiveRetransmissions,
+      int(uint8_t settings));
   MOCK_METHOD2(SendNACK,
       WebRtc_Word32(const WebRtc_UWord16* nackList, const WebRtc_UWord16 size));
   MOCK_METHOD2(SetStorePacketsStatus,

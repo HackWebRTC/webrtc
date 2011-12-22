@@ -1963,6 +1963,26 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SetNACKStatus(NACKMethod method)
     return 0;
 }
 
+// Returns the currently configured retransmission mode.
+int ModuleRtpRtcpImpl::SelectiveRetransmissions() const {
+  WEBRTC_TRACE(kTraceModuleCall,
+               kTraceRtpRtcp,
+               _id,
+               "SelectiveRetransmissions()");
+  return _rtpSender.SelectiveRetransmissions();
+}
+
+// Enable or disable a retransmission mode, which decides which packets will
+// be retransmitted if NACKed.
+int ModuleRtpRtcpImpl::SetSelectiveRetransmissions(uint8_t settings) {
+  WEBRTC_TRACE(kTraceModuleCall,
+               kTraceRtpRtcp,
+               _id,
+               "SetSelectiveRetransmissions(%u)",
+               settings);
+  return _rtpSender.SetSelectiveRetransmissions(settings);
+}
+
     // Send a Negative acknowledgement packet
 WebRtc_Word32
 ModuleRtpRtcpImpl::SendNACK(const WebRtc_UWord16* nackList,

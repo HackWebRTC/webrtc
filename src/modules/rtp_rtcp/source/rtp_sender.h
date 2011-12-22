@@ -31,6 +31,12 @@ class CriticalSectionWrapper;
 class RTPSenderAudio;
 class RTPSenderVideo;
 
+enum StorageType {
+  kDontStore,
+  kDontRetransmit,
+  kAllowRetransmission
+};
+
 class RTPSenderInterface
 {
 public:
@@ -57,9 +63,9 @@ public:
     virtual WebRtc_UWord16 ActualSendBitrateKbit() const = 0;
 
     virtual WebRtc_Word32 SendToNetwork(const WebRtc_UWord8* dataBuffer,
-                                      const WebRtc_UWord16 payloadLength,
-                                      const WebRtc_UWord16 rtpHeaderLength,
-                                      const bool dontStore = false) = 0;
+                                        const WebRtc_UWord16 payloadLength,
+                                        const WebRtc_UWord16 rtpHeaderLength,
+                                        const StorageType storage) = 0;
 };
 
 class RTPSender : public Bitrate, public RTPSenderInterface
@@ -162,6 +168,8 @@ public:
     /*
     *    NACK
     */
+    int SelectiveRetransmissions() const;
+    int SetSelectiveRetransmissions(uint8_t settings);
     void OnReceivedNACK(const WebRtc_UWord16 nackSequenceNumbersLength,
                         const WebRtc_UWord16* nackSequenceNumbers,
                         const WebRtc_UWord16 avgRTT);
@@ -216,9 +224,9 @@ public:
     virtual WebRtc_UWord32 SSRC() const;
 
     virtual WebRtc_Word32 SendToNetwork(const WebRtc_UWord8* dataBuffer,
-                                      const WebRtc_UWord16 payloadLength,
-                                      const WebRtc_UWord16 rtpHeaderLength,
-                                      const bool dontStore = false);
+                                        const WebRtc_UWord16 payloadLength,
+                                        const WebRtc_UWord16 rtpHeaderLength,
+                                        const StorageType storage);
 
     /*
     *    Audio
@@ -282,6 +290,9 @@ protected:
     WebRtc_Word32 CheckPayloadType(const WebRtc_Word8 payloadType, RtpVideoCodecTypes& videoType);
 
 private:
+    void StorePacket(const uint8_t* buffer, uint16_t length,
+                     uint16_t sequence_number);
+
     WebRtc_Word32             _id;
     const bool              _audioConfigured;
     RTPSenderAudio*         _audio;

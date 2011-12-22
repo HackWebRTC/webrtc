@@ -89,6 +89,14 @@ enum NACKMethod
     kNackRtcp     = 2
 };
 
+enum RetransmissionMode {
+  kRetransmitOff          = 0x0,
+  kRetransmitFECPackets   = 0x1,
+  kRetransmitBaseLayer    = 0x2,
+  kRetransmitHigherLayers = 0x4,
+  kRetransmitAllPackets   = 0xFF
+};
+
 struct RTCPSenderInfo
 {
     WebRtc_UWord32 NTPseconds;

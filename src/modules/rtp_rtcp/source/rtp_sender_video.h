@@ -92,11 +92,15 @@ public:
     WebRtc_UWord32 VideoBitrateSent() const;
     WebRtc_UWord32 FecOverheadRate() const;
 
+    int SelectiveRetransmissions() const;
+    int SetSelectiveRetransmissions(uint8_t settings);
+
 protected:
     virtual WebRtc_Word32 SendVideoPacket(const FrameType frameType,
-                                        const WebRtc_UWord8* dataBuffer,
-                                        const WebRtc_UWord16 payloadLength,
-                                        const WebRtc_UWord16 rtpHeaderLength);
+                                          const WebRtc_UWord8* dataBuffer,
+                                          const WebRtc_UWord16 payloadLength,
+                                          const WebRtc_UWord16 rtpHeaderLength,
+                                          StorageType storage);
 
 private:
     WebRtc_Word32 SendGeneric(const WebRtc_Word8 payloadType,
@@ -155,6 +159,7 @@ private:
     RtpVideoCodecTypes  _videoType;
     VideoCodecInformation*  _videoCodecInformation;
     WebRtc_UWord32            _maxBitrate;
+    WebRtc_Word32             _retransmissionSettings;
 
     // FEC
     ForwardErrorCorrection  _fec;

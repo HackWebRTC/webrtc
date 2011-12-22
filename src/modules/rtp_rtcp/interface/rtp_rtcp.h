@@ -811,12 +811,32 @@ public:
     virtual WebRtc_Word32 SetNACKStatus(const NACKMethod method) = 0;
 
     /*
+     *  TODO(holmer): Propagate this API to VideoEngine.
+     *  Returns the currently configured selective retransmission settings.
+     */
+    virtual int SelectiveRetransmissions() const = 0;
+
+    /*
+     *  TODO(holmer): Propagate this API to VideoEngine.
+     *  Sets the selective retransmission settings, which will decide which
+     *  packets will be retransmitted if NACKed. Settings are constructed by
+     *  combining the constants in enum RetransmissionMode with bitwise OR.
+     *  All packets are retransmitted if kRetransmitAllPackets is set, while no
+     *  packets are retransmitted if kRetransmitOff is set.
+     *  By default all packets except FEC packets are retransmitted. For VP8
+     *  with temporal scalability only base layer packets are retransmitted.
+     *
+     *  Returns -1 on failure, otherwise 0.
+     */
+    virtual int SetSelectiveRetransmissions(uint8_t settings) = 0;
+
+    /*
     *   Send a Negative acknowledgement packet
     *
     *   return -1 on failure else 0
     */
     virtual WebRtc_Word32 SendNACK(const WebRtc_UWord16* nackList,
-                                 const WebRtc_UWord16 size) = 0;
+                                   const WebRtc_UWord16 size) = 0;
 
     /*
     *   Store the sent packets, needed to answer to a Negative acknowledgement requests

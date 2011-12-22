@@ -527,7 +527,11 @@ RTPSenderAudio::SendAudio(const FrameType frameType,
 
     }   // end critical section
 
-    return _rtpSender->SendToNetwork(dataBuffer, payloadSize, (WebRtc_UWord16)rtpHeaderLength);
+    return _rtpSender->SendToNetwork(
+        dataBuffer,
+        payloadSize,
+        static_cast<WebRtc_UWord16>(rtpHeaderLength),
+        kAllowRetransmission);
 }
 
 
@@ -662,7 +666,8 @@ RTPSenderAudio::SendTelephoneEventPacket(const bool ended,
         ModuleRTPUtility::AssignUWord16ToBuffer(dtmfbuffer+14, duration);
 
         _sendAudioCritsect->Leave();
-        retVal = _rtpSender->SendToNetwork(dtmfbuffer, 4, 12);
+        retVal = _rtpSender->SendToNetwork(dtmfbuffer, 4, 12,
+                                           kAllowRetransmission);
         sendCount--;
 
     }while (sendCount > 0 && retVal == 0);

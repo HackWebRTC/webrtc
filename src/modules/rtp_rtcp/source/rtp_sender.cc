@@ -554,7 +554,7 @@ RTPSender::SendRTPKeepalivePacket()
         BuildRTPheader(dataBuffer, _keepAlivePayloadType, false, 0, false);
     }
 
-    return SendToNetwork(dataBuffer, 0, rtpHeaderLength);
+    return SendToNetwork(dataBuffer, 0, rtpHeaderLength, kAllowRetransmission);
 }
 
 WebRtc_Word32
@@ -899,11 +899,11 @@ RTPSender::ReSendToNetwork(WebRtc_UWord16 packetID,
                 return -1;
             }
         }
-        if(length ==0)
+        if (length == 0)
         {
-          WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, _id,
-                       "Resend packet length == 0 for seqNum %u", seqNum);
-            return -1;
+            // This is a valid case since packets which we decide not to
+            // retransmit are stored but with length zero.
+            return 0;
         }
 
         // copy to local buffer for callback
@@ -940,6 +940,16 @@ RTPSender::ReSendToNetwork(WebRtc_UWord16 packetID,
     WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, _id,
                  "Transport failed to resend packetID %u", packetID);
     return -1;
+}
+
+int RTPSender::SelectiveRetransmissions() const {
+  if (!_video) return -1;
+  return _video->SelectiveRetransmissions();
+}
+
+int RTPSender::SetSelectiveRetransmissions(uint8_t settings) {
+  if (!_video) return -1;
+  return _video->SetSelectiveRetransmissions(settings);
 }
 
 void
@@ -1069,7 +1079,7 @@ WebRtc_Word32
 RTPSender::SendToNetwork(const WebRtc_UWord8* buffer,
                          const WebRtc_UWord16 length,
                          const WebRtc_UWord16 rtpLength,
-                         const bool dontStore)
+                         const StorageType storage)
 {
     WebRtc_Word32 retVal = -1;
     // sanity
@@ -1078,34 +1088,22 @@ RTPSender::SendToNetwork(const WebRtc_UWord8* buffer,
         return -1;
     }
 
-    if(!dontStore)
-    {
-        // Store my packets
-        // Used for NACK
-        CriticalSectionScoped lock(_prevSentPacketsCritsect);
-        if(_storeSentPackets && length > 0)
-        {
-            if(_ptrPrevSentPackets[0] == NULL)
-            {
-                for(WebRtc_Word32 i=0; i< _storeSentPacketsNumber; i++)
-                {
-                    _ptrPrevSentPackets[i] = new char[_maxPayloadLength];
-                    memset(_ptrPrevSentPackets[i],0, _maxPayloadLength);
-                }
-            }
-
-            const WebRtc_UWord16 sequenceNumber = (buffer[2] << 8) + buffer[3];
-
-            memcpy(_ptrPrevSentPackets[_prevSentPacketsIndex], buffer, length + rtpLength);
-            _prevSentPacketsSeqNum[_prevSentPacketsIndex] = sequenceNumber;
-            _prevSentPacketsLength[_prevSentPacketsIndex]= length + rtpLength;
-            _prevSentPacketsResendTime[_prevSentPacketsIndex]=0; // Packet has not been re-sent.
-            _prevSentPacketsIndex++;
-            if(_prevSentPacketsIndex >= _storeSentPacketsNumber)
-            {
-                _prevSentPacketsIndex = 0;
-            }
-        }
+    // Make sure the packet is big enough for us to parse the sequence number.
+    assert(length + rtpLength > 3);
+    // Parse the sequence number from the RTP header.
+    WebRtc_UWord16 sequenceNumber = (buffer[2] << 8) + buffer[3];
+    switch (storage) {
+      case kAllowRetransmission:
+        StorePacket(buffer, length + rtpLength, sequenceNumber);
+        break;
+      case kDontRetransmit:
+        // Store an empty packet. Won't be retransmitted if NACKed.
+        StorePacket(NULL, 0, sequenceNumber);
+        break;
+      case kDontStore:
+        break;
+      default:
+        assert(false);
     }
     // Send packet
     {
@@ -1131,6 +1129,32 @@ RTPSender::SendToNetwork(const WebRtc_UWord8* buffer,
         return 0;
     }
     return -1;
+}
+
+void RTPSender::StorePacket(const uint8_t* buffer, uint16_t length,
+                            uint16_t sequence_number) {
+  // Store packet to be used for NACK.
+  CriticalSectionScoped lock(_prevSentPacketsCritsect);
+  if(_storeSentPackets) {
+    if(_ptrPrevSentPackets[0] == NULL) {
+      for(WebRtc_Word32 i = 0; i < _storeSentPacketsNumber; i++) {
+          _ptrPrevSentPackets[i] = new char[_maxPayloadLength];
+          memset(_ptrPrevSentPackets[i], 0, _maxPayloadLength);
+      }
+    }
+
+    if (buffer != NULL && length > 0) {
+      memcpy(_ptrPrevSentPackets[_prevSentPacketsIndex], buffer, length);
+    }
+    _prevSentPacketsSeqNum[_prevSentPacketsIndex] = sequence_number;
+    _prevSentPacketsLength[_prevSentPacketsIndex] = length;
+    // Packet has not been re-sent.
+    _prevSentPacketsResendTime[_prevSentPacketsIndex] = 0;
+    _prevSentPacketsIndex++;
+    if(_prevSentPacketsIndex >= _storeSentPacketsNumber) {
+      _prevSentPacketsIndex = 0;
+    }
+  }
 }
 
 void
