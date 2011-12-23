@@ -9,10 +9,10 @@
  */
 
 #include "modules/video_coding/main/source/decoding_state.h"
+
 #include "modules/video_coding/main/source/frame_buffer.h"
 #include "modules/video_coding/main/source/jitter_buffer_common.h"
 #include "modules/video_coding/main/source/packet.h"
-
 #include "modules/interface/module_common_types.h"
 
 namespace webrtc {
@@ -76,7 +76,7 @@ void VCMDecodingState::SetState(const VCMFrameBuffer* frame) {
 
 void VCMDecodingState::SetStateOneBack(const VCMFrameBuffer* frame) {
   assert(frame != NULL && frame->GetHighSeqNum() >= 0);
-  sequence_num_ = static_cast <uint16_t>(frame->GetHighSeqNum()) - 1u;
+  sequence_num_ = static_cast<uint16_t>(frame->GetHighSeqNum()) - 1u;
   time_stamp_ = frame->TimeStamp() - 1u;
   temporal_id_ = frame->TemporalId();
   if (frame->PictureId() != kNoPictureId) {
@@ -162,21 +162,20 @@ bool VCMDecodingState::ContinuousPictureId(int picture_id) const {
   // First, check if applicable.
   if (picture_id == kNoPictureId || picture_id_ == kNoPictureId)
     return false;
-  uint16_t local_pic_id = static_cast<uint16_t>(picture_id_);
-  uint16_t new_pic_id = static_cast<uint16_t>(picture_id);
 
-  if (new_pic_id < local_pic_id) {
+  int next_picture_id = picture_id_ + 1;
+  if (picture_id < picture_id_) {
     // Wrap
-    if (local_pic_id >= (1 << 8)) {
+    if (picture_id_ >= 0x80) {
       // 15 bits used for picture id
-      return (((local_pic_id + 1) % 0x7FFF) == new_pic_id);
+      return ((next_picture_id & 0x7FFF) == picture_id);
     } else {
       // 7 bits used for picture id
-      return (((local_pic_id + 1) % 0x7F) == new_pic_id);
+      return ((next_picture_id & 0x7F) == picture_id);
     }
   }
   // No wrap
-  return (local_pic_id + 1 == new_pic_id);
+  return (next_picture_id == picture_id);
 }
 
 bool VCMDecodingState::ContinuousSeqNum(uint16_t seq_num) const {
@@ -197,8 +196,7 @@ bool VCMDecodingState::ContinuousLayer(int temporal_id,
   // Current implementation: Look for base layer continuity.
   if (temporal_id != 0)
     return false;
-  return (static_cast<uint8_t>(tl0_pic_id_ + 1) ==
-      static_cast<uint8_t>(tl0_pic_id));
+  return (static_cast<uint8_t>(tl0_pic_id_ + 1) == tl0_pic_id);
 }
 
 }  // namespace webrtc

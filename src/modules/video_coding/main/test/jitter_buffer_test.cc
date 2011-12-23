@@ -2428,6 +2428,53 @@ int JitterBufferTest(CmdArgs& args)
 
     jb.Flush();
 
+    // Verify that a key frame is the next frame after the nack list gets full.
+    jb.SetNackMode(kNackInfinite, -1, -1);
+    seqNum += 1;
+    timeStamp += 33 * 90;
+    packet.seqNum = seqNum;
+    packet.timestamp = timeStamp;
+    packet.frameType = kVideoFrameKey;
+    packet.isFirstPacket = true;
+    packet.completeNALU = kNaluComplete;
+    packet.markerBit = true;
+    TEST(frameIn = jb.GetFrame(packet));
+    TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
+
+    TEST(jb.GetCompleteFrameForDecoding(0) != NULL);
+
+    seqNum += kNackHistoryLength + 1;
+    timeStamp += 33 * 90;
+    packet.seqNum = seqNum;
+    packet.timestamp = timeStamp;
+    packet.frameType = kVideoFrameDelta;
+    packet.isFirstPacket = true;
+    packet.completeNALU = kNaluComplete;
+    packet.markerBit = true;
+    TEST(frameIn = jb.GetFrame(packet));
+    TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
+
+    TEST(jb.GetCompleteFrameForDecoding(0) == NULL);
+
+    uint16_t nack_list_length = kNackHistoryLength;
+    uint16_t *nack_list;
+    nack_list = jb.GetNackList(nack_list_length, extended);
+    TEST(nack_list_length == 0xffff && nack_list == NULL);
+
+    seqNum += 1;
+    timeStamp += 33 * 90;
+    packet.seqNum = seqNum;
+    packet.timestamp = timeStamp;
+    packet.frameType = kVideoFrameDelta;
+    packet.isFirstPacket = true;
+    packet.completeNALU = kNaluComplete;
+    packet.markerBit = true;
+    TEST(frameIn = jb.GetFrame(packet));
+    TEST(kFirstPacket == jb.InsertPacket(frameIn, packet));
+
+    TEST(jb.GetCompleteFrameForDecoding(0) == NULL);
+    TEST(jb.GetFrameForDecoding() == NULL);
+
     jb.Stop();
 
     printf("DONE !!!\n");

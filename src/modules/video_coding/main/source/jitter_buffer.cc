@@ -1720,8 +1720,7 @@ VCMJitterBuffer::RecycleFramesUntilKeyFrame()
     }
 
     // Remove up to oldest key frame
-    bool foundKeyFrame = false;
-    while (oldestFrameListItem != NULL && !foundKeyFrame)
+    while (oldestFrameListItem != NULL)
     {
         // Throw at least one frame.
         _dropCount++;
@@ -1737,21 +1736,15 @@ VCMJitterBuffer::RecycleFramesUntilKeyFrame()
         {
             oldestFrame = oldestFrameListItem->GetItem();
         }
-
-        if (oldestFrame != NULL)
+        if (oldestFrame != NULL && oldestFrame->FrameType() == kVideoFrameKey)
         {
-            foundKeyFrame = foundKeyFrame ||
-                            (oldestFrame->FrameType() != kVideoFrameDelta);
-            if (foundKeyFrame)
-            {
-                // Fake the lastDecodedState to match this key frame.
-                _lastDecodedState.SetStateOneBack(oldestFrame);
-                break;
-            }
+            // Fake the lastDecodedState to match this key frame.
+            _lastDecodedState.SetStateOneBack(oldestFrame);
+            return true;
         }
     }
     _lastDecodedState.Reset(); // TODO (mikhal): no sync
-    return foundKeyFrame;
+    return false;
 }
 
 // Must be called under the critical section _critSect.
