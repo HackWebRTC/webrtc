@@ -226,10 +226,6 @@ RTPSenderVideo::SendVideoPacket(const FrameType frameType,
                 RtpPacket* packetToSend =
                     static_cast<RtpPacket*>(item->GetItem());
 
-                item = _mediaPacketListFec.First();
-                ForwardErrorCorrection::Packet* mediaPacket =
-                  static_cast<ForwardErrorCorrection::Packet*>(item->GetItem());
-
                 // Copy RTP header
                 memcpy(newDataBuffer, packetToSend->pkt->data,
                        packetToSend->rtpHeaderLength);
@@ -267,11 +263,8 @@ RTPSenderVideo::SendVideoPacket(const FrameType frameType,
 
                 if (packetSuccess == 0)
                 {
-                    videoSent += mediaPacket->length;
-                    fecOverheadSent += (packetToSend->pkt->length -
-                        mediaPacket->length +
-                        packetToSend->rtpHeaderLength +
-                        REDForFECHeaderLength);
+                    videoSent += packetToSend->pkt->length +
+                        REDForFECHeaderLength;
                 }
 
                 delete packetToSend->pkt;
