@@ -21,6 +21,38 @@
 
 namespace webrtc {
 
+VideoType RawVideoTypeToCommonVideoVideoType(RawVideoType type) {
+  switch (type) {
+    case kVideoI420:
+      return kI420;
+    case kVideoIYUV:
+      return kIYUV;
+    case kVideoRGB24:
+      return kRGB24;
+    case kVideoARGB:
+      return kARGB;
+    case kVideoARGB4444:
+      return kARGB4444;
+    case kVideoRGB565:
+      return kRGB565;
+    case kVideoARGB1555:
+      return kARGB1555;
+    case kVideoYUY2:
+      return kYUY2;
+    case kVideoYV12:
+      return kYV12;
+    case kVideoUYVY:
+      return kUYVY;
+    case kVideoNV21:
+      return kNV21;
+    case kVideoNV12:
+      return kNV12;
+    default:
+      assert(false);
+  }
+  return kUnknown;
+}
+
 int CalcBufferSize(VideoType type, int width, int height) {
   int bits_per_pixel = 32;
   switch (type) {

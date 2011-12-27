@@ -15,6 +15,7 @@
 #ifndef WEBRTC_COMMON_VIDEO_LIBYUV_INCLUDE_LIBYUV_H_
 #define WEBRTC_COMMON_VIDEO_LIBYUV_INCLUDE_LIBYUV_H_
 
+#include "common_types.h"  // RawVideoTypes.
 #include "typedefs.h"
 
 namespace webrtc {
@@ -42,6 +43,10 @@ enum VideoType {
   kRGBAMac,
   kNumberOfVideoTypes
 };
+
+// Conversion between the RawVideoType and the LibYuv videoType.
+// TODO(wu): Consolidate types into one type throughout WebRtc.
+VideoType RawVideoTypeToCommonVideoVideoType(RawVideoType type);
 
 // Supported rotation
 // Direction of rotation - clockwise.

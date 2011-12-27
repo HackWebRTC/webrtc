@@ -37,13 +37,11 @@
         'video_capture_config.h',
         'video_capture_delay.h',
         'video_capture_impl.h',
-        'vplib_conversions.h',
         'device_info_impl.h',
 
         # DEFINE PLATFORM INDEPENDENT SOURCE FILES
         'video_capture_factory.cc',
         'video_capture_impl.cc',
-        'vplib_conversions.cc',
         'device_info_impl.cc',
       ],
       'conditions': [

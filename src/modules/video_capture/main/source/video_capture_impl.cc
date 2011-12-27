@@ -9,13 +9,14 @@
  */
 
 #include "video_capture_impl.h"
-#include "trace.h"
+
+#include "common_video/libyuv/include/libyuv.h"
 #include "critical_section_wrapper.h"
-#include "tick_util.h"
-#include "vplib_conversions.h"
-#include "video_capture_config.h"
 #include "module_common_types.h"
 #include "ref_count.h"
+#include "tick_util.h"
+#include "trace.h"
+#include "video_capture_config.h"
 
 #ifdef WEBRTC_ANDROID
 #include "video_capture_android.h" // Need inclusion here to set Java environment.
@@ -304,7 +305,7 @@ WebRtc_Word32 VideoCaptureImpl::IncomingFrame(WebRtc_UWord8* videoFrame,
 
     if (frameInfo.codecType == kVideoCodecUnknown) // None encoded. Convert to I420.
     {
-        const VideoType commonVideoType = videocapturemodule::
+        const VideoType commonVideoType =
             RawVideoTypeToCommonVideoVideoType(frameInfo.rawType);
         int size = CalcBufferSize(commonVideoType, width, height);
         if (size != videoFrameLength)
