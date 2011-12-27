@@ -79,7 +79,7 @@
                 'giles@mozilla.com'],
     'root_files': ['andrew@webrtc.org',
                    'niklas.enbom@webrtc.org'],
-    'documented_interfaces': ['amyfong@webrtc.org'],
+    'documented_interfaces': ['interface-changes@webrtc.org'],
     'build_files': ['leozwang@webrtc.org'],
     'java_files': ['leozwang@webrtc.org'],
     'common_audio': ['bjornv@webrtc.org',
