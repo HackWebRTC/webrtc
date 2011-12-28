@@ -59,12 +59,12 @@ static size_t GetBufferReadRegions(buf_t* buf,
   // Check to see if read is not contiguous.
   if (read_elements > margin) {
     // Write data in two blocks that wrap the buffer.
-    *data_ptr_1 = buf->data + (buf->read_pos * buf->element_size);
+    *data_ptr_1 = ((char*) buf->data) + (buf->read_pos * buf->element_size);
     *data_ptr_bytes_1 = margin * buf->element_size;
     *data_ptr_2 = buf->data;
     *data_ptr_bytes_2 = (read_elements - margin) * buf->element_size;
   } else {
-    *data_ptr_1 = buf->data + (buf->read_pos * buf->element_size);
+    *data_ptr_1 = ((char*) buf->data) + (buf->read_pos * buf->element_size);
     *data_ptr_bytes_1 = read_elements * buf->element_size;
     *data_ptr_2 = NULL;
     *data_ptr_bytes_2 = 0;
@@ -361,7 +361,7 @@ size_t WebRtc_ReadBuffer(void* handle,
       // We have a wrap around when reading the buffer. Copy the buffer data to
       // |data| and point to it.
       memcpy(data, buf_ptr_1, buf_ptr_bytes_1);
-      memcpy(data + buf_ptr_bytes_1, buf_ptr_2, buf_ptr_bytes_2);
+      memcpy(((char*) data) + buf_ptr_bytes_1, buf_ptr_2, buf_ptr_bytes_2);
       *data_ptr = data;
     } else {
       *data_ptr = buf_ptr_1;
@@ -396,14 +396,14 @@ size_t WebRtc_WriteBuffer(void* handle,
 
     if (write_elements > margin) {
       // Buffer wrap around when writing.
-      memcpy(self->data + (self->write_pos * self->element_size),
+      memcpy(((char*) self->data) + (self->write_pos * self->element_size),
              data, margin * self->element_size);
       self->write_pos = 0;
       n -= margin;
       self->rw_wrap = DIFF_WRAP;
     }
-    memcpy(self->data + (self->write_pos * self->element_size),
-           data + ((write_elements - n) * self->element_size),
+    memcpy(((char*) self->data) + (self->write_pos * self->element_size),
+           ((const char*) data) + ((write_elements - n) * self->element_size),
            n * self->element_size);
     self->write_pos += n;
 
