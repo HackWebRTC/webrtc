@@ -208,9 +208,10 @@ int ConvertI420ToARGB4444(const uint8_t* src_frame,
 int ConvertI420ToRGB565(const uint8_t* src_frame,
                         uint8_t* dst_frame,
                         int width, int height) {
+  int abs_height = (height < 0) ? -height : height;
   const uint8_t* yplane = src_frame;
-  const uint8_t* uplane = src_frame + width * height;
-  const uint8_t* vplane = uplane + (width * height / 4);
+  const uint8_t* uplane = src_frame + width * abs_height;
+  const uint8_t* vplane = uplane + (width * abs_height / 4);
 
   return libyuv::I420ToRGB565(yplane, width,
                               uplane, width / 2,
@@ -221,6 +222,7 @@ int ConvertI420ToRGB565(const uint8_t* src_frame,
 
 
 // Same as ConvertI420ToRGB565 with a vertical flip.
+// TODO (mikhal): Deprecate
 int ConvertI420ToRGB565Android(const uint8_t* src_frame,
                                uint8_t* dst_frame,
                                int width, int height) {
@@ -571,12 +573,11 @@ int ConvertRGB24ToI420(int width, int height,
   uint8_t* yplane = dst_frame;
   uint8_t* uplane = yplane + width * height;
   uint8_t* vplane = uplane + (width * height / 4);
-  // WebRtc expects a vertical flipped image.
   return libyuv::RGB24ToI420(src_frame, width * 3,
                              yplane, width,
                              uplane, width / 2,
                              vplane, width / 2,
-                             width, -height);
+                             width, height);
 }
 
 int ConvertI420ToARGBMac(const uint8_t* src_frame, uint8_t* dst_frame,
@@ -610,6 +611,131 @@ int ConvertARGBMacToI420(int width, int height,
                             uplane, width / 2,
                             vplane, width / 2,
                             width, height);
+}
+
+libyuv::RotationMode ConvertRotationMode(VideoRotationMode rotation) {
+  switch(rotation) {
+    case kRotateNone:
+      return libyuv::kRotate0;
+      break;
+    case kRotate90:
+      return libyuv::kRotate90;
+      break;
+    case kRotate180:
+      return libyuv::kRotate180;
+      break;
+    case kRotate270:
+      return libyuv::kRotate270;
+      break;
+  }
+  assert(false);
+}
+
+int ConvertVideoType(VideoType video_type) {
+  switch(video_type) {
+    case kUnknown:
+      return libyuv::FOURCC_ANY;
+      break;
+    case  kI420:
+      return libyuv::FOURCC_I420;
+      break;
+    case kIYUV:  // same as KYV12
+    case kYV12:
+      return libyuv::FOURCC_YV12;
+      break;
+    case kRGB24:
+      return libyuv::FOURCC_24BG;
+      break;
+    case kABGR:
+      return libyuv::FOURCC_ABGR;
+      break;
+    case kARGB4444:
+    case kRGB565:
+    case kARGB1555:
+    case kARGBMac:
+    case kRGBAMac:
+      // TODO(mikhal): Not supported;
+      assert(false);
+      return libyuv::FOURCC_ANY;
+      break;
+    case kYUY2:
+      return libyuv::FOURCC_YUY2;
+      break;
+    case kUYVY:
+      return libyuv::FOURCC_UYVY;
+      break;
+    case kMJPG:
+      return libyuv::FOURCC_MJPG;
+      break;
+    case kNV21:
+      return libyuv::FOURCC_NV21;
+      break;
+    case kNV12:
+      return libyuv::FOURCC_NV12;
+      break;
+    case kARGB:
+      return libyuv::FOURCC_ARGB;
+      break;
+    case kBGRA:
+      return libyuv::FOURCC_BGRA;
+      break;
+  }
+  // default value
+  return libyuv::FOURCC_ANY;
+}
+
+int ConvertToI420(VideoType src_video_type,
+                  const uint8_t* src_frame,
+                  int crop_x, int crop_y,
+                  int src_width, int src_height,
+                  int sample_size,
+                  int dst_width, int dst_height, int dst_stride,
+                  VideoRotationMode rotation,
+                  uint8_t* dst_frame) {
+  // All sanity tests are conducted within LibYuv.
+  uint8_t* dst_yplane = dst_frame;
+  uint8_t* dst_uplane = dst_yplane + dst_width * dst_height;
+  uint8_t* dst_vplane = dst_uplane + (dst_width * dst_height / 4);
+  return libyuv::ConvertToI420(src_frame, sample_size,
+                               dst_yplane, dst_stride,
+                               dst_uplane, (dst_stride + 1) / 2,
+                               dst_vplane, (dst_stride + 1) / 2,
+                               crop_x, crop_y,
+                               src_width, src_height,
+                               dst_width, dst_height,
+                               ConvertRotationMode(rotation),
+                               ConvertVideoType(src_video_type));
+}
+
+int ConvertFromI420(const uint8_t* src_frame, int src_stride,
+                    VideoType dst_video_type, int dst_sample_size,
+                    int width, int height,
+                    uint8_t* dst_frame) {
+  const uint8_t* src_yplane = src_frame;
+  const uint8_t* src_uplane = src_yplane + width * height;
+  const uint8_t* src_vplane = src_uplane + (width * height / 4);
+  return libyuv::ConvertFromI420(src_yplane, src_stride,
+                                 src_uplane, (src_stride + 1) / 2,
+                                 src_vplane, (src_stride + 1) / 2,
+                                 dst_frame, dst_sample_size,
+                                 width, height,
+                                 ConvertVideoType(dst_video_type));
+}
+
+int ConvertFromYV12(const uint8_t* src_frame, int src_stride,
+                    VideoType dst_video_type, int dst_sample_size,
+                    int width, int height,
+                    uint8_t* dst_frame) {
+  const uint8_t* src_yplane = src_frame;
+  const uint8_t* src_uplane = src_yplane + width * height;
+  const uint8_t* src_vplane = src_uplane + (width * height / 4);
+  // YV12 = Y, V, U
+  return libyuv::ConvertFromI420(src_yplane, src_stride,
+                                 src_vplane, (src_stride + 1) / 2,
+                                 src_uplane, (src_stride + 1) / 2,
+                                 dst_frame, dst_sample_size,
+                                 width, height,
+                                 ConvertVideoType(dst_video_type));
 }
 
 int ConvertToI420(VideoType src_video_type,
@@ -974,7 +1100,6 @@ double I420SSIM(const uint8_t* ref_frame,
                           src_u_b, stride_uv,
                           src_v_b, stride_uv,
                           width, height);
-
 }
 
 }  // namespace webrtc

@@ -29,6 +29,7 @@ enum VideoType {
   kI420,
   kIYUV,
   kRGB24,
+  kABGR,
   kARGB,
   kARGB4444,
   kRGB565,
@@ -39,9 +40,9 @@ enum VideoType {
   kMJPG,
   kNV21,
   kNV12,
-  kARGBMac,
-  kRGBAMac,
-  kNumberOfVideoTypes
+  kBGRA,
+  kARGBMac, // TODO (mikhal): remove
+  kRGBAMac, // TODO (mikhal): remove
 };
 
 // Conversion between the RawVideoType and the LibYuv videoType.
@@ -105,6 +106,32 @@ int ConvertToI420(VideoType src_video_type,
                   bool interlaced,
                   VideoRotationMode rotate);
 
+// The previous function will soon be removed.
+// TODO(mikhal): Remove legacy function after integration.
+
+// Convert From/To I420
+// Input:
+//   - src_video_type   : Type of input video.
+//   - src_frame        : Pointer to a source frame.
+//   - crop_x/crop_y    : Starting positions for cropping (0 for no crop).
+//   - src/dst_width    : src/dst width in pixels.
+//   - src/dst_height   : src/dst height in pixels.
+//   - sample_size      : Required only for the parsing of MJPG (set to 0 else).
+//   - dst_stride       : Number of bytes in a row of the dst Y plane.
+//   - rotate           : Rotation mode of output image.
+// Output:
+//   - dst_frame        : Pointer to a destination frame.
+// Return value: 0 if OK, < 0 otherwise.
+
+int ConvertToI420(VideoType src_video_type,
+                  const uint8_t* src_frame,
+                  int crop_x, int crop_y,
+                  int src_width, int src_height,
+                  int sample_size,
+                  int dst_width, int dst_height, int dst_stride,
+                  VideoRotationMode rotation,
+                  uint8_t* dst_frame);
+
 // TODO(andrew): return to the int width and height types. This was swapped
 // temporarily to satisfy a linking error with the libjingle revision we and
 // Chrome pull, due to the removed vplib.
@@ -117,6 +144,29 @@ int ConvertFromI420(VideoType dst_video_type,
                     uint8_t* dst_frame,
                     bool interlaced,
                     VideoRotationMode rotate);
+// The previous function will soon be removed.
+// TODO(mikhal): Remove legacy function after integration.
+// Input:
+//   - src_frame        : Pointer to a source frame.
+//   - src_stride       : Number of bytes in a row of the src Y plane.
+//   - dst_video_type   : Type of output video.
+//   - dst_sample_size  : Required only for the parsing of MJPG.
+//   - width            : Width in pixels.
+//   - height           : Height in pixels.
+//   - dst_frame        : Pointer to a source frame.
+
+//   - dst_frame        : Pointer to a destination frame.
+// Return value: 0 if OK, < 0 otherwise.
+int ConvertFromI420(const uint8_t* src_frame, int src_stride,
+                    VideoType dst_video_type, int dst_sample_size,
+                    int width, int height,
+                    uint8_t* dst_frame);
+// ConvertFrom YV12.
+// Interface - same as above.
+int ConvertFromYV12(const uint8_t* src_frame, int src_stride,
+                    VideoType dst_video_type, int dst_sample_size,
+                    int width, int height,
+                    uint8_t* dst_frame);
 
 // The following list describes the designated conversion function which
 // are called by the two prior general conversion function.
