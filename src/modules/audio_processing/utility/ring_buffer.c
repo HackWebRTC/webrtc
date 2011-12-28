@@ -28,16 +28,19 @@ typedef struct {
     bufdata_t *data;
 } tmp_buf_t;
 
+enum Wrap {
+  SAME_WRAP,
+  DIFF_WRAP
+};
+
 typedef struct {
   size_t read_pos;
   size_t write_pos;
   size_t element_count;
   size_t element_size;
-  char rw_wrap;
-  void* data;
+  enum Wrap rw_wrap;
+  char* data;
 } buf_t;
-
-enum { SAME_WRAP, DIFF_WRAP };
 
 // Get address of region(s) from which we can read data.
 // If the region is contiguous, |data_ptr_bytes_2| will be zero.
@@ -59,12 +62,12 @@ static size_t GetBufferReadRegions(buf_t* buf,
   // Check to see if read is not contiguous.
   if (read_elements > margin) {
     // Write data in two blocks that wrap the buffer.
-    *data_ptr_1 = ((char*) buf->data) + (buf->read_pos * buf->element_size);
+    *data_ptr_1 = buf->data + buf->read_pos * buf->element_size;
     *data_ptr_bytes_1 = margin * buf->element_size;
     *data_ptr_2 = buf->data;
     *data_ptr_bytes_2 = (read_elements - margin) * buf->element_size;
   } else {
-    *data_ptr_1 = ((char*) buf->data) + (buf->read_pos * buf->element_size);
+    *data_ptr_1 = buf->data + buf->read_pos * buf->element_size;
     *data_ptr_bytes_1 = read_elements * buf->element_size;
     *data_ptr_2 = NULL;
     *data_ptr_bytes_2 = 0;
@@ -396,13 +399,13 @@ size_t WebRtc_WriteBuffer(void* handle,
 
     if (write_elements > margin) {
       // Buffer wrap around when writing.
-      memcpy(((char*) self->data) + (self->write_pos * self->element_size),
+      memcpy(self->data + self->write_pos * self->element_size,
              data, margin * self->element_size);
       self->write_pos = 0;
       n -= margin;
       self->rw_wrap = DIFF_WRAP;
     }
-    memcpy(((char*) self->data) + (self->write_pos * self->element_size),
+    memcpy(self->data + self->write_pos * self->element_size,
            ((const char*) data) + ((write_elements - n) * self->element_size),
            n * self->element_size);
     self->write_pos += n;
