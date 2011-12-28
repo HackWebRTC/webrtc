@@ -24,10 +24,7 @@
 #define PART_LEN 64 // Length of partition
 #define PART_LEN1 (PART_LEN + 1) // Unique fft coefficients
 #define PART_LEN2 (PART_LEN * 2) // Length of partition * 2
-#define NR_PART 12 // Number of partitions
-#define FILT_LEN (PART_LEN * NR_PART) // Filter length
-#define FILT_LEN2 (FILT_LEN * 2) // Double filter length
-#define FAR_BUF_LEN (FILT_LEN2 * 2)
+#define NR_PART 12  // Number of partitions in filter.
 #define PREF_BAND_SIZE 24
 
 // Delay estimator constants, used for logging.
@@ -76,12 +73,11 @@ typedef struct {
     int inSamples, outSamples;
     int delayEstCtr;
 
-    void *farFrBuf, *nearFrBuf, *outFrBuf;
+    void *nearFrBuf, *outFrBuf;
 
     void *nearFrBufH;
     void *outFrBufH;
 
-    float xBuf[PART_LEN2]; // farend
     float dBuf[PART_LEN2]; // nearend
     float eBuf[PART_LEN2]; // error
 
@@ -114,9 +110,11 @@ typedef struct {
 
     int xfBufBlockPos;
 
-    short farBuf[FILT_LEN2 * 2];
+    void* far_buf;
+    void* far_buf_windowed;
+    int system_delay;  // Current system delay buffered in AEC.
 
-    short mult; // sampling frequency multiple
+    int mult;  // sampling frequency multiple
     int sampFreq;
     WebRtc_UWord32 seed;
 
@@ -147,6 +145,7 @@ typedef struct {
     void* delay_estimator;
 
 #ifdef WEBRTC_AEC_DEBUG_DUMP
+    void* far_time_buf;
     FILE *farFile;
     FILE *nearFile;
     FILE *outFile;
@@ -171,10 +170,10 @@ int WebRtcAec_InitAec(aec_t *aec, int sampFreq);
 void WebRtcAec_InitAec_SSE2(void);
 
 void WebRtcAec_InitMetrics(aec_t *aec);
-void WebRtcAec_ProcessFrame(aec_t *aec, const short *farend,
-                       const short *nearend, const short *nearendH,
-                       short *out, short *outH,
-                       int knownDelay);
+void WebRtcAec_BufferFarendPartition(aec_t *aec, const float* farend);
+void WebRtcAec_ProcessFrame(aec_t* aec,
+                            const short *nearend,
+                            const short *nearendH,
+                            int knownDelay);
 
-#endif // WEBRTC_MODULES_AUDIO_PROCESSING_AEC_MAIN_SOURCE_AEC_CORE_H_
-
+#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AEC_MAIN_SOURCE_AEC_CORE_H_
