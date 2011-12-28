@@ -617,71 +617,49 @@ libyuv::RotationMode ConvertRotationMode(VideoRotationMode rotation) {
   switch(rotation) {
     case kRotateNone:
       return libyuv::kRotate0;
-      break;
     case kRotate90:
       return libyuv::kRotate90;
-      break;
     case kRotate180:
       return libyuv::kRotate180;
-      break;
     case kRotate270:
       return libyuv::kRotate270;
-      break;
+    default:
+      assert(false);
+      return libyuv::kRotate0;
   }
-  assert(false);
 }
 
 int ConvertVideoType(VideoType video_type) {
   switch(video_type) {
     case kUnknown:
       return libyuv::FOURCC_ANY;
-      break;
     case  kI420:
       return libyuv::FOURCC_I420;
-      break;
     case kIYUV:  // same as KYV12
     case kYV12:
       return libyuv::FOURCC_YV12;
-      break;
     case kRGB24:
       return libyuv::FOURCC_24BG;
-      break;
     case kABGR:
       return libyuv::FOURCC_ABGR;
-      break;
-    case kARGB4444:
-    case kRGB565:
-    case kARGB1555:
-    case kARGBMac:
-    case kRGBAMac:
-      // TODO(mikhal): Not supported;
-      assert(false);
-      return libyuv::FOURCC_ANY;
-      break;
     case kYUY2:
       return libyuv::FOURCC_YUY2;
-      break;
     case kUYVY:
       return libyuv::FOURCC_UYVY;
-      break;
     case kMJPG:
       return libyuv::FOURCC_MJPG;
-      break;
     case kNV21:
       return libyuv::FOURCC_NV21;
-      break;
     case kNV12:
       return libyuv::FOURCC_NV12;
-      break;
     case kARGB:
       return libyuv::FOURCC_ARGB;
-      break;
     case kBGRA:
       return libyuv::FOURCC_BGRA;
-      break;
+    default:
+      assert(false);
+      return libyuv::FOURCC_ANY;
   }
-  // default value
-  return libyuv::FOURCC_ANY;
 }
 
 int ConvertToI420(VideoType src_video_type,
