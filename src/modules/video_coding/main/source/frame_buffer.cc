@@ -102,7 +102,7 @@ VCMFrameBuffer::InsertPacket(const VCMPacket& packet, WebRtc_Word64 timeInMs,
     if (_state == kStateDecoding)
     {
         // Do not insert packet
-        return kIncomplete;
+        return kNoError;
     }
 
     // Sanity to check if the frame has been freed. (Too old for example)
