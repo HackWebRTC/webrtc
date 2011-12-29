@@ -292,11 +292,26 @@ VP8Encoder::InitEncode(const VideoCodec* inst,
     _cfg->g_timebase.num = 1;
     _cfg->g_timebase.den = 90000;
 
+    // Set the error resilience mode according to user settings.
+    switch (inst->codecSpecific.VP8.resilience) {
+      case kResilienceOff:
+        _cfg->g_error_resilient = 0;
+        break;
+      case kResilientStream:
+        _cfg->g_error_resilient = 1;  // TODO(holmer): Replace with
+                                      // VPX_ERROR_RESILIENT_DEFAULT when we
+                                      // drop support for libvpx 9.6.0.
+        break;
+      case kResilientFrames:
 #ifdef INDEPENDENT_PARTITIONS
-    _cfg->g_error_resilient = VPX_ERROR_RESILIENT_DEFAULT | VPX_ERROR_RESILIENT_PARTITIONS;
+        _cfg->g_error_resilient = VPX_ERROR_RESILIENT_DEFAULT |
+                                  VPX_ERROR_RESILIENT_PARTITIONS;
 #else
-    _cfg->g_error_resilient = 1;
+        return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;  // Not supported
 #endif
+        break;
+    }
+
     _cfg->g_lag_in_frames = 0; // 0- no frame lagging
 
     // Determining number of threads based on the image size

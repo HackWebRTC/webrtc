@@ -469,6 +469,17 @@ enum VideoCodecProfile
     kProfileMain = 0x01
 };
 
+enum VP8ResilienceMode {
+  kResilienceOff,    // The stream produced by the encoder requires a
+                     // recovery frame (typically a key frame) to be
+                     // decodable after a packet loss.
+  kResilientStream,  // A stream produced by the encoder is resilient to
+                     // packet losses, but packets within a frame subsequent
+                     // to a loss can't be decoded.
+  kResilientFrames   // Same as kResilientStream but with added resilience
+                     // within a frame.
+};
+
 struct VideoCodecH264
 {
     H264Packetization          packetization;
@@ -489,6 +500,7 @@ struct VideoCodecVP8
     bool                 pictureLossIndicationOn;
     bool                 feedbackModeOn;
     VideoCodecComplexity complexity;
+    VP8ResilienceMode    resilience;
     unsigned char        numberOfTemporalLayers;
 };
 
