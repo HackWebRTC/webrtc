@@ -751,8 +751,7 @@ static void ProcessBlock(aec_t* aec) {
       delay_estimate = WebRtc_DelayEstimatorProcessFloat(aec->delay_estimator,
                                                          abs_far_spectrum,
                                                          abs_near_spectrum,
-                                                         PART_LEN1,
-                                                         aec->echoState);
+                                                         PART_LEN1);
       if (delay_estimate >= 0) {
         // Update delay estimate buffer.
         aec->delay_histogram[delay_estimate]++;

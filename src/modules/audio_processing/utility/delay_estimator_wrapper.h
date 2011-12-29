@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-// Performs delay estimation on a block by block basis
+// Performs delay estimation on block by block basis.
 // The return value is  0 - OK and -1 - Error, unless otherwise stated.
 
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_UTILITY_DELAY_ESTIMATOR_WRAPPER_H_
@@ -18,7 +18,7 @@
 
 // Releases the memory allocated by WebRtc_CreateDelayEstimator(...)
 // Input:
-//      - handle        : Pointer to the delay estimation instance
+//      - handle        : Pointer to the delay estimation instance.
 //
 int WebRtc_FreeDelayEstimator(void* handle);
 
@@ -30,20 +30,20 @@ int WebRtc_FreeDelayEstimator(void* handle);
 //      - spectrum_size : Size of the spectrum used both in far-end and
 //                        near-end. Used to allocate memory for spectrum
 //                        specific buffers.
-//      - max_delay     : The maximum delay which can be estimated. Needed
-//                        to allocate memory for history buffers.
-//      - lookahead     : Amount of non-causal lookahead to use. This can detect
-//                        cases in which a near-end signal occurs before the
-//                        corresponding far-end signal. It will delay the
+//      - max_delay     : The maximum delay which can be estimated. Needed to
+//                        allocate memory for history buffers.
+//      - lookahead     : Amount of non-causal lookahead to use. This can
+//                        detect cases in which a near-end signal occurs before
+//                        the corresponding far-end signal. It will delay the
 //                        estimate for the current block by an equal amount,
 //                        and the returned values will be offset by it.
 //
-//                        A value of zero is the typical no-lookahead case. This
-//                        also represents the minimum delay which can be
+//                        A value of zero is the typical no-lookahead case.
+//                        This also represents the minimum delay which can be
 //                        estimated.
 //
 // Output:
-//      - handle        : Created instance
+//      - handle        : Created instance.
 //
 int WebRtc_CreateDelayEstimator(void** handle,
                                 int spectrum_size,
@@ -53,10 +53,10 @@ int WebRtc_CreateDelayEstimator(void** handle,
 // Initializes the delay estimation instance created with
 // WebRtc_CreateDelayEstimator(...)
 // Input:
-//      - handle        : Pointer to the delay estimation instance
+//      - handle        : Pointer to the delay estimation instance.
 //
 // Output:
-//      - handle        : Initialized instance
+//      - handle        : Initialized instance.
 //
 int WebRtc_InitDelayEstimator(void* handle);
 
@@ -64,21 +64,21 @@ int WebRtc_InitDelayEstimator(void* handle);
 // value will be offset by the lookahead (i.e. the lookahead should be
 // subtracted from the returned value).
 // Inputs:
-//      - handle        : Pointer to the delay estimation instance
-//      - far_spectrum  : Pointer to the far-end spectrum data
+//      - handle        : Pointer to the delay estimation instance.
+//      - far_spectrum  : Pointer to the far-end spectrum data.
 //      - near_spectrum : Pointer to the near-end spectrum data of the current
-//                        block
+//                        block.
 //      - spectrum_size : The size of the data arrays (same for both far- and
-//                        near-end)
-//      - far_q         : The Q-domain of the far-end data
-//      - vad_value     : The VAD decision of the current block
+//                        near-end).
+//      - far_q         : The Q-domain of the far-end data.
+//      - near_q        : The Q-domain of the near-end data.
 //
 // Output:
-//      - handle        : Updated instance
+//      - handle        : Updated instance.
 //
 // Return value:
-//      - delay         :  >= 0 - Calculated delay value
-//                        -1    - Error
+//      - delay         :  >= 0 - Calculated delay value.
+//                        -1    - Error.
 //                        -2    - Insufficient data for estimation.
 //
 int WebRtc_DelayEstimatorProcessFix(void* handle,
@@ -86,24 +86,23 @@ int WebRtc_DelayEstimatorProcessFix(void* handle,
                                     uint16_t* near_spectrum,
                                     int spectrum_size,
                                     int far_q,
-                                    int vad_value);
+                                    int near_q);
 
 // See WebRtc_DelayEstimatorProcessFix() for description.
 int WebRtc_DelayEstimatorProcessFloat(void* handle,
                                       float* far_spectrum,
                                       float* near_spectrum,
-                                      int spectrum_size,
-                                      int vad_value);
+                                      int spectrum_size);
 
 // Returns the last calculated delay updated by the function
-// WebRtc_DelayEstimatorProcess(...)
+// WebRtc_DelayEstimatorProcess(...).
 //
 // Input:
-//      - handle        : Pointer to the delay estimation instance
+//      - handle        : Pointer to the delay estimation instance.
 //
 // Return value:
-//      - delay         :  >= 0 - Last calculated delay value
-//                        -1    - Error
+//      - delay         :  >= 0 - Last calculated delay value.
+//                        -1    - Error.
 //                        -2    - Insufficient data for estimation.
 //
 int WebRtc_last_delay(void* handle);

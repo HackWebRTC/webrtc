@@ -15,32 +15,33 @@
 #include <string.h>
 
 #include "delay_estimator.h"
-#include "signal_processing_library.h"
 
 typedef union {
   float float_;
   int32_t int32_;
-} SpectrumType_t;
+} SpectrumType;
 
 typedef struct {
-  // Pointers to mean values of spectrum
-  SpectrumType_t* mean_far_spectrum;
-  SpectrumType_t* mean_near_spectrum;
+  // Pointers to mean values of spectrum.
+  SpectrumType* mean_far_spectrum;
+  SpectrumType* mean_near_spectrum;
+  // |mean_*_spectrum| initialization indicator.
+  int far_spectrum_initialized;
+  int near_spectrum_initialized;
 
-  // Spectrum size
   int spectrum_size;
 
   // Binary spectrum based delay estimator
-  BinaryDelayEstimator_t* binary_handle;
-} DelayEstimator_t;
+  BinaryDelayEstimator* binary_handle;
+} DelayEstimator;
 
-// Only bit |kBandFirst| through bit |kBandLast| are processed
-// |kBandFirst| - |kBandLast| must be < 32
+// Only bit |kBandFirst| through bit |kBandLast| are processed and
+// |kBandFirst| - |kBandLast| must be < 32.
 static const int kBandFirst = 12;
 static const int kBandLast = 43;
 
 static __inline uint32_t SetBit(uint32_t in, int pos) {
-  uint32_t mask = WEBRTC_SPL_LSHIFT_W32(1, pos);
+  uint32_t mask = (1 << pos);
   uint32_t out = (in | mask);
 
   return out;
@@ -50,17 +51,16 @@ static __inline uint32_t SetBit(uint32_t in, int pos) {
 // but for float.
 //
 // Inputs:
-//    - new_value             : new additional value.
-//    - scale                 : scale for smoothing (should be less than 1.0).
+//    - new_value             : New additional value.
+//    - scale                 : Scale for smoothing (should be less than 1.0).
 //
 // Input/Output:
-//    - mean_value            : pointer to the mean value for updating.
+//    - mean_value            : Pointer to the mean value for updating.
 //
 static void MeanEstimatorFloat(float new_value,
                                float scale,
                                float* mean_value) {
   assert(scale < 1.0f);
-  // mean_new = mean_value + ((new_value - mean_value) * scale);
   *mean_value += (new_value - *mean_value) * scale;
 }
 
@@ -73,19 +73,37 @@ static void MeanEstimatorFloat(float new_value,
 //      - threshold_spectrum  : Threshold spectrum with which the input
 //                              spectrum is compared.
 // Return:
-//      - out                 : Binary spectrum
+//      - out                 : Binary spectrum.
 //
 static uint32_t BinarySpectrumFix(uint16_t* spectrum,
-                                  SpectrumType_t* threshold_spectrum) {
-  int k = kBandFirst;
+                                  SpectrumType* threshold_spectrum,
+                                  int q_domain,
+                                  int* threshold_initialized) {
+  int i = kBandFirst;
   uint32_t out = 0;
 
-  for (; k <= kBandLast; k++) {
-    WebRtc_MeanEstimatorFix((int32_t) spectrum[k],
-                            6,
-                            &(threshold_spectrum[k].int32_));
-    if (spectrum[k] > threshold_spectrum[k].int32_) {
-      out = SetBit(out, k - kBandFirst);
+  assert(q_domain < 16);
+
+  if (!(*threshold_initialized)) {
+    // Set the |threshold_spectrum| to half the input |spectrum| as starting
+    // value. This speeds up the convergence.
+    for (i = kBandFirst; i <= kBandLast; i++) {
+      if (spectrum[i] > 0) {
+        // Convert input spectrum from Q(|q_domain|) to Q15.
+        int32_t spectrum_q15 = ((int32_t) spectrum[i]) << (15 - q_domain);
+        threshold_spectrum[i].int32_ = (spectrum_q15 >> 1);
+        *threshold_initialized = 1;
+      }
+    }
+  }
+  for (i = kBandFirst; i <= kBandLast; i++) {
+    // Convert input spectrum from Q(|q_domain|) to Q15.
+    int32_t spectrum_q15 = ((int32_t) spectrum[i]) << (15 - q_domain);
+    // Update the |threshold_spectrum|.
+    WebRtc_MeanEstimatorFix(spectrum_q15, 6, &(threshold_spectrum[i].int32_));
+    // Convert |spectrum| at current frequency bin to a binary value.
+    if (spectrum_q15 > threshold_spectrum[i].int32_) {
+      out = SetBit(out, i - kBandFirst);
     }
   }
 
@@ -93,15 +111,29 @@ static uint32_t BinarySpectrumFix(uint16_t* spectrum,
 }
 
 static uint32_t BinarySpectrumFloat(float* spectrum,
-                                    SpectrumType_t* threshold_spectrum) {
-  int k = kBandFirst;
+                                    SpectrumType* threshold_spectrum,
+                                    int* threshold_initialized) {
+  int i = kBandFirst;
   uint32_t out = 0;
-  float scale = 1 / 64.0;
+  const float kScale = 1 / 64.0;
 
-  for (; k <= kBandLast; k++) {
-    MeanEstimatorFloat(spectrum[k], scale, &(threshold_spectrum[k].float_));
-    if (spectrum[k] > threshold_spectrum[k].float_) {
-      out = SetBit(out, k - kBandFirst);
+  if (!(*threshold_initialized)) {
+    // Set the |threshold_spectrum| to half the input |spectrum| as starting
+    // value. This speeds up the convergence.
+    for (i = kBandFirst; i <= kBandLast; i++) {
+      if (spectrum[i] > 0.0f) {
+        threshold_spectrum[i].float_ = (spectrum[i] / 2);
+        *threshold_initialized = 1;
+      }
+    }
+  }
+
+  for (i = kBandFirst; i <= kBandLast; i++) {
+    // Update the |threshold_spectrum|.
+    MeanEstimatorFloat(spectrum[i], kScale, &(threshold_spectrum[i].float_));
+    // Convert |spectrum| at current frequency bin to a binary value.
+    if (spectrum[i] > threshold_spectrum[i].float_) {
+      out = SetBit(out, i - kBandFirst);
     }
   }
 
@@ -109,7 +141,7 @@ static uint32_t BinarySpectrumFloat(float* spectrum,
 }
 
 int WebRtc_FreeDelayEstimator(void* handle) {
-  DelayEstimator_t* self = (DelayEstimator_t*) handle;
+  DelayEstimator* self = (DelayEstimator*) handle;
 
   if (self == NULL) {
     return -1;
@@ -135,10 +167,10 @@ int WebRtc_CreateDelayEstimator(void** handle,
                                 int spectrum_size,
                                 int max_delay,
                                 int lookahead) {
-  DelayEstimator_t *self = NULL;
+  DelayEstimator* self = NULL;
 
-  // Check if the sub band used in the delay estimation is small enough to
-  // fit the binary spectra in a uint32.
+  // Check if the sub band used in the delay estimation is small enough to fit
+  // the binary spectra in a uint32_t.
   assert(kBandLast - kBandFirst < 32);
 
   if (handle == NULL) {
@@ -148,7 +180,7 @@ int WebRtc_CreateDelayEstimator(void** handle,
     return -1;
   }
 
-  self = malloc(sizeof(DelayEstimator_t));
+  self = malloc(sizeof(DelayEstimator));
   *handle = self;
   if (self == NULL) {
     return -1;
@@ -165,14 +197,14 @@ int WebRtc_CreateDelayEstimator(void** handle,
     self = NULL;
     return -1;
   }
-  // Allocate memory for spectrum buffers
-  self->mean_far_spectrum = malloc(spectrum_size * sizeof(SpectrumType_t));
+  // Allocate memory for spectrum buffers.
+  self->mean_far_spectrum = malloc(spectrum_size * sizeof(SpectrumType));
   if (self->mean_far_spectrum == NULL) {
     WebRtc_FreeDelayEstimator(self);
     self = NULL;
     return -1;
   }
-  self->mean_near_spectrum = malloc(spectrum_size * sizeof(SpectrumType_t));
+  self->mean_near_spectrum = malloc(spectrum_size * sizeof(SpectrumType));
   if (self->mean_near_spectrum == NULL) {
     WebRtc_FreeDelayEstimator(self);
     self = NULL;
@@ -185,23 +217,24 @@ int WebRtc_CreateDelayEstimator(void** handle,
 }
 
 int WebRtc_InitDelayEstimator(void* handle) {
-  DelayEstimator_t* self = (DelayEstimator_t*) handle;
+  DelayEstimator* self = (DelayEstimator*) handle;
 
   if (self == NULL) {
     return -1;
   }
 
-  // Initialize binary delay estimator
+  // Initialize binary delay estimator.
   if (WebRtc_InitBinaryDelayEstimator(self->binary_handle) != 0) {
     return -1;
   }
-  // Set averaged far and near end spectra to zero
-  memset(self->mean_far_spectrum,
-         0,
-         sizeof(SpectrumType_t) * self->spectrum_size);
-  memset(self->mean_near_spectrum,
-         0,
-         sizeof(SpectrumType_t) * self->spectrum_size);
+  // Set averaged far and near end spectra to zero.
+  memset(self->mean_far_spectrum, 0,
+         sizeof(SpectrumType) * self->spectrum_size);
+  memset(self->mean_near_spectrum, 0,
+         sizeof(SpectrumType) * self->spectrum_size);
+  // Reset initialization indicators.
+  self->far_spectrum_initialized = 0;
+  self->near_spectrum_initialized = 0;
 
   return 0;
 }
@@ -211,8 +244,8 @@ int WebRtc_DelayEstimatorProcessFix(void* handle,
                                     uint16_t* near_spectrum,
                                     int spectrum_size,
                                     int far_q,
-                                    int vad_value) {
-  DelayEstimator_t* self = (DelayEstimator_t*) handle;
+                                    int near_q) {
+  DelayEstimator* self = (DelayEstimator*) handle;
   uint32_t binary_far_spectrum = 0;
   uint32_t binary_near_spectrum = 0;
 
@@ -220,40 +253,46 @@ int WebRtc_DelayEstimatorProcessFix(void* handle,
     return -1;
   }
   if (far_spectrum == NULL) {
-    // Empty far end spectrum
+    // Empty far end spectrum.
     return -1;
   }
   if (near_spectrum == NULL) {
-    // Empty near end spectrum
+    // Empty near end spectrum.
     return -1;
   }
   if (spectrum_size != self->spectrum_size) {
-    // Data sizes don't match
+    // Data sizes don't match.
     return -1;
   }
   if (far_q > 15) {
-    // If |far_q| is larger than 15 we cannot guarantee no wrap around
+    // If |far_q| is larger than 15 we cannot guarantee no wrap around.
+    return -1;
+  }
+  if (near_q > 15) {
+    // If |near_q| is larger than 15 we cannot guarantee no wrap around.
     return -1;
   }
 
-  // Get binary spectra
+  // Get binary spectra.
   binary_far_spectrum = BinarySpectrumFix(far_spectrum,
-                                          self->mean_far_spectrum);
+                                          self->mean_far_spectrum,
+                                          far_q,
+                                          &(self->far_spectrum_initialized));
   binary_near_spectrum = BinarySpectrumFix(near_spectrum,
-                                           self->mean_near_spectrum);
+                                           self->mean_near_spectrum,
+                                           near_q,
+                                           &(self->near_spectrum_initialized));
 
   return WebRtc_ProcessBinarySpectrum(self->binary_handle,
                                       binary_far_spectrum,
-                                      binary_near_spectrum,
-                                      vad_value);
+                                      binary_near_spectrum);
 }
 
 int WebRtc_DelayEstimatorProcessFloat(void* handle,
                                       float* far_spectrum,
                                       float* near_spectrum,
-                                      int spectrum_size,
-                                      int vad_value) {
-  DelayEstimator_t* self = (DelayEstimator_t*) handle;
+                                      int spectrum_size) {
+  DelayEstimator* self = (DelayEstimator*) handle;
   uint32_t binary_far_spectrum = 0;
   uint32_t binary_near_spectrum = 0;
 
@@ -261,32 +300,33 @@ int WebRtc_DelayEstimatorProcessFloat(void* handle,
     return -1;
   }
   if (far_spectrum == NULL) {
-    // Empty far end spectrum
+    // Empty far end spectrum.
     return -1;
   }
   if (near_spectrum == NULL) {
-    // Empty near end spectrum
+    // Empty near end spectrum.
     return -1;
   }
   if (spectrum_size != self->spectrum_size) {
-    // Data sizes don't match
+    // Data sizes don't match.
     return -1;
   }
 
-  // Get binary spectra
+  // Get binary spectra.
   binary_far_spectrum = BinarySpectrumFloat(far_spectrum,
-                                            self->mean_far_spectrum);
+                                            self->mean_far_spectrum,
+                                            &(self->far_spectrum_initialized));
   binary_near_spectrum = BinarySpectrumFloat(near_spectrum,
-                                             self->mean_near_spectrum);
+                                             self->mean_near_spectrum,
+                                             &(self->near_spectrum_initialized));
 
   return WebRtc_ProcessBinarySpectrum(self->binary_handle,
                                       binary_far_spectrum,
-                                      binary_near_spectrum,
-                                      vad_value);
+                                      binary_near_spectrum);
 }
 
 int WebRtc_last_delay(void* handle) {
-  DelayEstimator_t* self = (DelayEstimator_t*) handle;
+  DelayEstimator* self = (DelayEstimator*) handle;
 
   if (self == NULL) {
     return -1;

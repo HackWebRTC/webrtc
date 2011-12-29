@@ -1612,7 +1612,7 @@ int WebRtcAecm_ProcessBlock(AecmCore_t * aecm,
                                             dfaNoisy,
                                             PART_LEN1,
                                             far_q,
-                                            aecm->currentVADValue);
+                                            zerosDBufNoisy);
     if (delay == -1)
     {
         return -1;
