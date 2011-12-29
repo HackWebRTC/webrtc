@@ -94,11 +94,10 @@ void VCMDecodingState::SetStateOneBack(const VCMFrameBuffer* frame) {
   init_ = false;
 }
 
-void VCMDecodingState::UpdateEmptyPacket(const VCMPacket* packet) {
+void VCMDecodingState::UpdateZeroSizePacket(const VCMPacket* packet) {
   assert(packet != NULL);
   if (packet->sizeBytes == 0 && packet->timestamp == time_stamp_) {
-    // Empty packet (sizeBytes = 0), make sure we update the last
-    // decoded sequence number.
+    // Zero size packet - make sure we update the last decoded sequence number.
     sequence_num_ = LatestSequenceNumber(packet->seqNum, sequence_num_, NULL);
   }
 }

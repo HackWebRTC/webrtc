@@ -34,8 +34,8 @@ class VCMDecodingState {
   // Set the decoding state one frame back.
   void SetStateOneBack(const VCMFrameBuffer* frame);
   // Update the sequence number if the timestamp matches current state and the
-  // packet is empty.
-  void UpdateEmptyPacket(const VCMPacket* packet);
+  // packet is of zero size.
+  void UpdateZeroSizePacket(const VCMPacket* packet);
   void SetSeqNum(uint16_t new_seq_num);
   void Reset();
   uint32_t time_stamp() const;
