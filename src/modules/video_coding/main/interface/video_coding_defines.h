@@ -12,7 +12,7 @@
 #define WEBRTC_MODULES_INTERFACE_VIDEO_CODING_DEFINES_H_
 
 #include "typedefs.h"
-#include "module_common_types.h"
+#include "modules/interface/module_common_types.h"
 
 namespace webrtc
 {

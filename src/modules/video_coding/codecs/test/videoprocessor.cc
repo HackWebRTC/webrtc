@@ -49,7 +49,7 @@ VideoProcessorImpl::VideoProcessorImpl(webrtc::VideoEncoder* encoder,
 
 bool VideoProcessorImpl::Init() {
   // Calculate a factor used for bit rate calculations:
-  bit_rate_factor_ = config_.codec_settings.maxFramerate * 0.001 * 8;  // bits
+  bit_rate_factor_ = config_.codec_settings->maxFramerate * 0.001 * 8;  // bits
 
   int frame_length_in_bytes = frame_reader_->FrameLength();
 
@@ -58,8 +58,8 @@ bool VideoProcessorImpl::Init() {
   last_successful_frame_buffer_ = new WebRtc_UWord8[frame_length_in_bytes];
 
   // Set fixed properties common for all frames:
-  source_frame_._width = config_.codec_settings.width;
-  source_frame_._height = config_.codec_settings.height;
+  source_frame_._width = config_.codec_settings->width;
+  source_frame_._height = config_.codec_settings->height;
   source_frame_._length = frame_length_in_bytes;
   source_frame_._size = frame_length_in_bytes;
 
@@ -85,14 +85,14 @@ bool VideoProcessorImpl::Init() {
     nbr_of_cores = CpuInfo::DetectNumberOfCores();
   }
   WebRtc_Word32 init_result =
-      encoder_->InitEncode(&config_.codec_settings, nbr_of_cores,
+      encoder_->InitEncode(config_.codec_settings, nbr_of_cores,
                            config_.networking_config.max_payload_size_in_bytes);
   if (init_result != WEBRTC_VIDEO_CODEC_OK) {
     fprintf(stderr, "Failed to initialize VideoEncoder, return code: %d\n",
             init_result);
     return false;
   }
-  init_result = decoder_->InitDecode(&config_.codec_settings, nbr_of_cores);
+  init_result = decoder_->InitDecode(config_.codec_settings, nbr_of_cores);
   if (init_result != WEBRTC_VIDEO_CODEC_OK) {
     fprintf(stderr, "Failed to initialize VideoDecoder, return code: %d\n",
             init_result);
@@ -105,9 +105,9 @@ bool VideoProcessorImpl::Init() {
     printf("  Total # of frames: %d\n", frame_reader_->NumberOfFrames());
     printf("  Codec settings:\n");
     printf("    Start bitrate  : %d kbps\n",
-           config_.codec_settings.startBitrate);
-    printf("    Width          : %d\n", config_.codec_settings.width);
-    printf("    Height         : %d\n", config_.codec_settings.height);
+           config_.codec_settings->startBitrate);
+    printf("    Width          : %d\n", config_.codec_settings->width);
+    printf("    Height         : %d\n", config_.codec_settings->height);
   }
   initialized_ = true;
   return true;

@@ -42,7 +42,7 @@ struct TestConfig {
       input_filename(""), output_filename(""), output_dir("out"),
       networking_config(), exclude_frame_types(kExcludeOnlyFirstKeyFrame),
       frame_length_in_bytes(-1), use_single_core(false), keyframe_interval(0),
-      verbose(true) {
+      codec_settings(NULL), verbose(true) {
   };
 
   // Name of the test. This is purely metadata and does not affect
@@ -99,8 +99,9 @@ struct TestConfig {
   int keyframe_interval;
 
   // The codec settings to use for the test (target bitrate, video size,
-  // framerate and so on)
-  webrtc::VideoCodec codec_settings;
+  // framerate and so on). This struct must be created and filled in using
+  // the VideoCodingModule::Codec() method.
+  webrtc::VideoCodec* codec_settings;
 
   // If printing of information to stdout shall be performed during processing.
   bool verbose;

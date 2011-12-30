@@ -11,9 +11,9 @@
 #ifndef WEBRTC_MODULES_INTERFACE_VIDEO_CODING_H_
 #define WEBRTC_MODULES_INTERFACE_VIDEO_CODING_H_
 
-#include "module.h"
-#include "module_common_types.h"
-#include "video_coding_defines.h"
+#include "modules/interface/module.h"
+#include "modules/interface/module_common_types.h"
+#include "modules/video_coding/main/interface/video_coding_defines.h"
 
 namespace webrtc
 {

@@ -31,15 +31,29 @@
           'target_name': 'video_codecs_test_framework_unittests',
           'type': 'executable',
           'dependencies': [
-            'video_codecs_test_framework',            
+            'video_codecs_test_framework',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
-            '<(webrtc_root)/../testing/gmock.gyp:gmock',    
+            '<(webrtc_root)/../testing/gmock.gyp:gmock',
             '<(webrtc_root)/../test/test.gyp:test_support_main',
           ],
           'sources': [
             'packet_manipulator_unittest.cc',
             'stats_unittest.cc',
             'videoprocessor_unittest.cc',
+          ],
+        },
+        {
+          'target_name': 'video_codecs_test_framework_integrationtests',
+          'type': 'executable',
+          'dependencies': [
+            'video_codecs_test_framework',
+            'webrtc_video_coding',
+            'webrtc_vp8',
+            '<(webrtc_root)/../testing/gtest.gyp:gtest',
+            '<(webrtc_root)/../test/test.gyp:test_support_main',
+          ],
+          'sources': [
+            'videoprocessor_integrationtest.cc',
           ],
         },
       ], # targets

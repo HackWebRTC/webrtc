@@ -16,6 +16,7 @@
           'type': 'executable',
           'dependencies': [
             'video_codecs_test_framework',
+            'webrtc_video_coding',
             'webrtc_vp8',
             '<(webrtc_root)/../third_party/google-gflags/google-gflags.gyp:google-gflags',
            ],
