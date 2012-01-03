@@ -445,12 +445,10 @@ VCMJitterBuffer::GetFrame(const VCMPacket& packet, VCMEncodedFrame*& frame)
             _discardedPackets++;
             _numConsecutiveOldPackets++;
         }
-        else
-        {
-            // Update last decoded sequence number if packet belongs to a zero
-            // size frame with a timestamp equal to the last decoded timestamp.
-            _lastDecodedState.UpdateZeroSizePacket(&packet);
-        }
+        // Update last decoded sequence number if the packet arrived late and
+        // belongs to a frame with a timestamp equal to the last decoded
+        // timestamp.
+        _lastDecodedState.UpdateOldPacket(&packet);
 
         if (_numConsecutiveOldPackets > kMaxConsecutiveOldPackets)
         {
@@ -1570,7 +1568,7 @@ VCMJitterBuffer::InsertPacket(VCMEncodedFrame* buffer, const VCMPacket& packet)
     if (frame != NULL)
     {
         VCMFrameBufferStateEnum state = frame->GetState();
-        _lastDecodedState.UpdateZeroSizePacket(&packet);
+        _lastDecodedState.UpdateOldPacket(&packet);
         // Insert packet
         // Check for first packet
         // High sequence number will be -1 if neither an empty packet nor

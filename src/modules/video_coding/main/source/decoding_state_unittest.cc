@@ -194,7 +194,7 @@ TEST(TestDecodingState, SetStateOneBack) {
   delete packet;
 }
 
-TEST(TestDecodingState, UpdateZeroSizePacket) {
+TEST(TestDecodingState, UpdateOldPacket) {
   VCMDecodingState dec_state;
   // Update only if zero size and newer than previous.
   // Should only update if the timeStamp match.
@@ -210,15 +210,30 @@ TEST(TestDecodingState, UpdateZeroSizePacket) {
   // Insert an empty packet that does not belong to the same frame.
   // => Sequence num should be the same.
   packet->timestamp = 2;
-  dec_state.UpdateZeroSizePacket(packet);
+  dec_state.UpdateOldPacket(packet);
   EXPECT_EQ(dec_state.sequence_num(), 1);
   // Now insert empty packet belonging to the same frame.
   packet->timestamp = 1;
   packet->seqNum = 2;
   packet->frameType = kFrameEmpty;
   packet->sizeBytes = 0;
-  dec_state.UpdateZeroSizePacket(packet);
+  dec_state.UpdateOldPacket(packet);
   EXPECT_EQ(dec_state.sequence_num(), 2);
+  // Now insert delta packet belonging to the same frame.
+  packet->timestamp = 1;
+  packet->seqNum = 3;
+  packet->frameType = kVideoFrameDelta;
+  packet->sizeBytes = 1400;
+  dec_state.UpdateOldPacket(packet);
+  EXPECT_EQ(dec_state.sequence_num(), 3);
+  // Insert a packet belonging to an older timestamp - should not update the
+  // sequence number.
+  packet->timestamp = 0;
+  packet->seqNum = 4;
+  packet->frameType = kFrameEmpty;
+  packet->sizeBytes = 0;
+  dec_state.UpdateOldPacket(packet);
+  EXPECT_EQ(dec_state.sequence_num(), 3);
 
   delete packet;
 }
