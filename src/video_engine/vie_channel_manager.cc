@@ -473,10 +473,18 @@ bool ViEChannelManager::ChannelUsingViEEncoder(int channel_id) const {
 void ViEChannelManager::ChannelsUsingViEEncoder(int channel_id,
                                                 ChannelList* channels) const {
   CriticalSectionScoped cs(*channel_id_critsect_);
-  assert(vie_encoder_map_.Find(channel_id));
+  MapItem* original_item = vie_encoder_map_.Find(channel_id);
+  assert(original_item);
+  ViEEncoder* original_encoder =
+      static_cast<ViEEncoder*>(original_item->GetItem());
+
   MapItem* channel_item = channel_map_.First();
   while (channel_item) {
-    if (vie_encoder_map_.Find(channel_item->GetId())) {
+    MapItem* compare_item = vie_encoder_map_.Find(channel_item->GetId());
+    assert(compare_item);
+    ViEEncoder* compare_encoder =
+        static_cast<ViEEncoder*>(compare_item->GetItem());
+    if (compare_encoder == original_encoder) {
         channels->push_back(static_cast<ViEChannel*>(channel_item->GetItem()));
     }
     channel_item = channel_map_.Next(channel_item);
