@@ -25,14 +25,17 @@ class VCMSessionInfo {
   VCMSessionInfo();
 
   void UpdateDataPointers(ptrdiff_t address_delta);
-  int ZeroOutSeqNum(int* seq_num_list,
-                    int seq_num_list_length);
+  // NACK - Building the NACK lists.
+  // Build hard NACK list: Zero out all entries in list up to and including
+  // _lowSeqNum.
+  int BuildHardNackList(int* seq_num_list,
+                        int seq_num_list_length);
 
-  // Hybrid version: Zero out seq num for NACK list
-  // Selectively NACK packets.
-  int ZeroOutSeqNumHybrid(int* seq_num_list,
-                          int seq_num_list_length,
-                          int rtt_ms);
+  // Build soft NACK list:  Zero out only a subset of the packets, discard
+  // empty packets.
+  int BuildSoftNackList(int* seq_num_list,
+                        int seq_num_list_length,
+                        int rtt_ms);
   void Reset();
   int InsertPacket(const VCMPacket& packet,
                    uint8_t* frame_buffer,

@@ -103,7 +103,7 @@ class TestNalUnits : public TestSessionInfo {
   }
 };
 
-class TestZeroOutSeqNum : public TestSessionInfo {
+class TestNackList : public TestSessionInfo {
  protected:
   enum { kMaxSeqNumListLength = 30 };
 
@@ -776,7 +776,7 @@ TEST_F(TestNalUnits, ReorderWrapLosses) {
   EXPECT_EQ(2, session_.packets_not_decodable());
 }
 
-TEST_F(TestZeroOutSeqNum, NoLosses) {
+TEST_F(TestNackList, NoLosses) {
   uint16_t low = 0xFFFF - 5;
 
   packet_.seqNum = low;
@@ -804,20 +804,19 @@ TEST_F(TestZeroOutSeqNum, NoLosses) {
 
   EXPECT_EQ(10 * kPacketBufferSize, session_.SessionLength());
   BuildSeqNumList(low, packet_.seqNum);
-  EXPECT_EQ(0, session_.ZeroOutSeqNum(seq_num_list_, seq_num_list_length_));
+  EXPECT_EQ(0, session_.BuildHardNackList(seq_num_list_, seq_num_list_length_));
   EXPECT_EQ(false, session_.session_nack());
   SCOPED_TRACE("Calling VerifyAll");
   VerifyAll(-1);
 
   BuildSeqNumList(low, packet_.seqNum);
-  EXPECT_EQ(0, session_.ZeroOutSeqNumHybrid(seq_num_list_,
-                                            seq_num_list_length_,
-                                            60));
+  EXPECT_EQ(0, session_.BuildSoftNackList(seq_num_list_, seq_num_list_length_,
+                                          60));
   SCOPED_TRACE("Calling VerifyAll");
   VerifyAll(-1);
 }
 
-TEST_F(TestZeroOutSeqNum, FiveLossesSpreadOut) {
+TEST_F(TestNackList, FiveLossesSpreadOut) {
   uint16_t low = 0xFFFF - 5;
 
   packet_.seqNum = low;
@@ -841,7 +840,7 @@ TEST_F(TestZeroOutSeqNum, FiveLossesSpreadOut) {
 
   EXPECT_EQ(5 * kPacketBufferSize, session_.SessionLength());
   BuildSeqNumList(low, packet_.seqNum);
-  EXPECT_EQ(0, session_.ZeroOutSeqNum(seq_num_list_, seq_num_list_length_));
+  EXPECT_EQ(0, session_.BuildHardNackList(seq_num_list_, seq_num_list_length_));
   for (int i = 0; i < seq_num_list_length_; ++i) {
     if (i % 2)
       EXPECT_EQ(static_cast<uint16_t>(low + i), seq_num_list_[i]);
@@ -850,9 +849,8 @@ TEST_F(TestZeroOutSeqNum, FiveLossesSpreadOut) {
   }
 
   BuildSeqNumList(low, packet_.seqNum);
-  EXPECT_EQ(0, session_.ZeroOutSeqNumHybrid(seq_num_list_,
-                                            seq_num_list_length_,
-                                            60));
+  EXPECT_EQ(0, session_.BuildSoftNackList(seq_num_list_, seq_num_list_length_,
+                                          60));
   EXPECT_EQ(true, session_.session_nack());
   for (int i = 0; i < seq_num_list_length_; ++i) {
     if (i % 2)
@@ -862,7 +860,7 @@ TEST_F(TestZeroOutSeqNum, FiveLossesSpreadOut) {
   }
 }
 
-TEST_F(TestZeroOutSeqNum, FirstAndLastLost) {
+TEST_F(TestNackList, FirstAndLastLost) {
   uint16_t low = 0xFFFF;
 
   packet_.seqNum = low + 1;
@@ -874,22 +872,21 @@ TEST_F(TestZeroOutSeqNum, FirstAndLastLost) {
 
   EXPECT_EQ(kPacketBufferSize, session_.SessionLength());
   BuildSeqNumList(low, packet_.seqNum + 1);
-  EXPECT_EQ(0, session_.ZeroOutSeqNum(seq_num_list_, seq_num_list_length_));
+  EXPECT_EQ(0, session_.BuildHardNackList(seq_num_list_, seq_num_list_length_));
   EXPECT_EQ(0xFFFF, seq_num_list_[0]);
   EXPECT_EQ(-1, seq_num_list_[1]);
   EXPECT_EQ(1, seq_num_list_[2]);
 
   BuildSeqNumList(low, packet_.seqNum + 1);
-  EXPECT_EQ(0, session_.ZeroOutSeqNumHybrid(seq_num_list_,
-                                            seq_num_list_length_,
-                                            60));
+  EXPECT_EQ(0, session_.BuildSoftNackList(seq_num_list_,seq_num_list_length_,
+                                          60));
   EXPECT_EQ(true, session_.session_nack());
   EXPECT_EQ(0xFFFF, seq_num_list_[0]);
   EXPECT_EQ(-1, seq_num_list_[1]);
   EXPECT_EQ(1, seq_num_list_[2]);
 }
 
-TEST_F(TestZeroOutSeqNum, LostAllButEmptyPackets) {
+TEST_F(TestNackList, LostAllButEmptyPackets) {
   uint16_t low = 0;
   packet_.seqNum = low + 1;
   packet_.isFirstPacket = false;
@@ -909,9 +906,8 @@ TEST_F(TestZeroOutSeqNum, LostAllButEmptyPackets) {
 
   EXPECT_EQ(0, session_.SessionLength());
   BuildSeqNumList(low, packet_.seqNum + 1);
-  EXPECT_EQ(0, session_.ZeroOutSeqNumHybrid(seq_num_list_,
-                                            seq_num_list_length_,
-                                            60));
+  EXPECT_EQ(0, session_.BuildSoftNackList(seq_num_list_, seq_num_list_length_,
+                                          60));
   EXPECT_EQ(true, session_.session_nack());
   EXPECT_EQ(0, seq_num_list_[0]);
   EXPECT_EQ(-1, seq_num_list_[1]);

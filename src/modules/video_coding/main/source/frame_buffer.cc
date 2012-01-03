@@ -208,28 +208,19 @@ VCMFrameBuffer::LatestPacketTimeMs()
     return _latestPacketTimeMs;
 }
 
-// Zero out all entries in list up to and including the (first)
-// entry equal to _lowSeqNum
-WebRtc_Word32
-VCMFrameBuffer::ZeroOutSeqNum(WebRtc_Word32* list, WebRtc_Word32 num)
-{
-    if (_sessionInfo.ZeroOutSeqNum(list, num) != 0)
-    {
-       return -1;
-    }
-    return 0;
+// Build hard NACK list:Zero out all entries in list up to and including the
+// (first) entry equal to _lowSeqNum.
+int VCMFrameBuffer::BuildHardNackList(int* list, int num) {
+  if (_sessionInfo.BuildHardNackList(list, num) != 0) {
+   return -1;
+  }
+  return 0;
 }
 
-// Zero out all entries in list up to and including the (first) entry equal to
-// _lowSeqNum. Hybrid mode: 1. Don't NACK FEC packets 2. Make a smart decision
-// on whether to NACK or not
-
-WebRtc_Word32
-VCMFrameBuffer::ZeroOutSeqNumHybrid(WebRtc_Word32* list,
-                                    WebRtc_Word32 num,
-                                    WebRtc_UWord32 rttMs)
-{
-    return _sessionInfo.ZeroOutSeqNumHybrid(list, num, rttMs);
+// Build selective NACK list: Create a soft (selective) list of entries to zero
+// out up to and including the (first) entry equal to _lowSeqNum.
+int VCMFrameBuffer::BuildSoftNackList(int* list, int num, int rttMs) {
+  return _sessionInfo.BuildSoftNackList(list, num, rttMs);
 }
 
 void

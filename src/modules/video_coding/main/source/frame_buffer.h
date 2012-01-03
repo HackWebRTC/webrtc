@@ -66,13 +66,13 @@ public:
     void SetCountedFrame(bool frameCounted);
     bool GetCountedFrame() const;
 
-    // NACK
-    // Zero out all entries in list up to and including _lowSeqNum
-    WebRtc_Word32 ZeroOutSeqNum(WebRtc_Word32* list, WebRtc_Word32 num);
-    // Hybrid extension: only NACK important packets, discard FEC packets
-    WebRtc_Word32 ZeroOutSeqNumHybrid(WebRtc_Word32* list,
-                                      WebRtc_Word32 num,
-                                      WebRtc_UWord32 rttMs);
+    // NACK - Building the NACK lists.
+    // Build hard NACK list: Zero out all entries in list up to and including
+    // _lowSeqNum.
+    int BuildHardNackList(int* list, int num);
+    // Build soft NACK list: Zero out only a subset of the packets, discard
+    // empty packets.
+    int BuildSoftNackList(int* list, int num, int rttMs);
     void IncrementNackCount();
     WebRtc_Word16 GetNackCount() const;
 

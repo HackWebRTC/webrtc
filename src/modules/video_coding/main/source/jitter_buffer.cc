@@ -1400,20 +1400,19 @@ VCMJitterBuffer::CreateNackList(WebRtc_UWord16& nackSize, bool& listExtended)
             (kStateDecoding != state))
         {
             // Reaching thus far means we are going to update the nack list
-            // When in hybrid mode, we also need to check empty frames, so as
-            // not to add empty packets to the nack list
+            // When in hybrid mode, we use the soft NACKing feature.
             if (_nackMode == kNackHybrid)
             {
-                _frameBuffers[i]->ZeroOutSeqNumHybrid(_NACKSeqNumInternal,
-                                                      numberOfSeqNum,
-                                                      _rttMs);
+                _frameBuffers[i]->BuildSoftNackList(_NACKSeqNumInternal,
+                                                    numberOfSeqNum,
+                                                    _rttMs);
             }
             else
             {
                 // Used when the frame is being processed by the decoding thread
                 // don't need to use that info in this loop.
-                _frameBuffers[i]->ZeroOutSeqNum(_NACKSeqNumInternal,
-                                                numberOfSeqNum);
+                _frameBuffers[i]->BuildHardNackList(_NACKSeqNumInternal,
+                                                    numberOfSeqNum);
             }
         }
     }

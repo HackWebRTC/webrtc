@@ -347,8 +347,8 @@ int VCMSessionInfo::MakeDecodable() {
   return return_length;
 }
 
-int VCMSessionInfo::ZeroOutSeqNum(int* seq_num_list,
-                                  int seq_num_list_length) {
+int VCMSessionInfo::BuildHardNackList(int* seq_num_list,
+                                      int seq_num_list_length) {
   if (NULL == seq_num_list || seq_num_list_length < 1) {
     return -1;
   }
@@ -387,10 +387,9 @@ int VCMSessionInfo::ZeroOutSeqNum(int* seq_num_list,
   return 0;
 }
 
-// TODO(mikhal): Rename function.
-int VCMSessionInfo::ZeroOutSeqNumHybrid(int* seq_num_list,
-                                        int seq_num_list_length,
-                                        int rtt_ms) {
+int VCMSessionInfo::BuildSoftNackList(int* seq_num_list,
+                                      int seq_num_list_length,
+                                      int rtt_ms) {
   if (NULL == seq_num_list || seq_num_list_length < 1) {
     return -1;
   }
