@@ -11,6 +11,8 @@
 #ifndef WEBRTC_VIDEO_ENGINE_VIE_CHANNEL_MANAGER_H_
 #define WEBRTC_VIDEO_ENGINE_VIE_CHANNEL_MANAGER_H_
 
+#include <list>
+
 #include "engine_configurations.h"
 #include "system_wrappers/interface/map_wrapper.h"
 #include "system_wrappers/interface/scoped_ptr.h"
@@ -28,6 +30,8 @@ class ViEPerformanceMonitor;
 class VieRemb;
 class VoEVideoSync;
 class VoiceEngine;
+
+typedef std::list<ViEChannel*> ChannelList;
 
 class ViEChannelManager: private ViEManagerBase {
   friend class ViEChannelManagerScoped;
@@ -84,6 +88,7 @@ class ViEChannelManager: private ViEManagerBase {
   // Returns true if at least one other channels uses the same ViEEncoder as
   // channel_id.
   bool ChannelUsingViEEncoder(int channel_id) const;
+  void ChannelsUsingViEEncoder(int channel_id, ChannelList* channels) const;
 
   // Protects channel_map_ and free_channel_ids_.
   CriticalSectionWrapper* channel_id_critsect_;
@@ -109,9 +114,13 @@ class ViEChannelManagerScoped: private ViEManagerScopedBase {
   ViEChannel* Channel(int vie_channel_id) const;
   ViEEncoder* Encoder(int vie_channel_id) const;
 
-  // Returns true if at lease one other channels uses the same ViEEncoder as
+  // Returns true if at least one other channels uses the same ViEEncoder as
   // channel_id.
   bool ChannelUsingViEEncoder(int channel_id) const;
+
+  // Returns a list with pointers to all channels using the same encoder as the
+  // channel with |channel_id|, including the one with the specified id.
+  void ChannelsUsingViEEncoder(int channel_id, ChannelList* channels) const;
 };
 
 }  // namespace webrtc

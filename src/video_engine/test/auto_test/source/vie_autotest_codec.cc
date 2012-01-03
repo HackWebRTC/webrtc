@@ -19,6 +19,25 @@
 #include "tb_video_channel.h"
 #include "vie_autotest_defines.h"
 
+class RenderFilter : public webrtc::ViEEffectFilter {
+ public:
+  RenderFilter()
+      : last_render_width_(0),
+        last_render_height_(0) {}
+
+  ~RenderFilter() {}
+
+  virtual int Transform(int size, unsigned char* frame_buffer,
+                        unsigned int time_stamp, unsigned int width,
+                        unsigned int height) {
+    last_render_width_ = width;
+    last_render_height_ = height;
+    return 0;
+  }
+  unsigned int last_render_width_;
+  unsigned int last_render_height_;
+};
+
 void ViEAutoTest::ViECodecStandardTest()
 {
     TbInterfaces interfaces = TbInterfaces("ViECodecStandardTest");
@@ -174,6 +193,8 @@ void ViEAutoTest::ViECodecExtendedTest()
             }
         }
         EXPECT_TRUE(codecSet);
+        webrtc::VideoCodec send_codec;
+        memcpy(&send_codec, &videoCodec, sizeof(videoCodec));
 
         EXPECT_EQ(0, ViE.base->StartSend(videoChannel1));
         EXPECT_EQ(0, ViE.base->StartReceive(videoChannel1));
@@ -215,13 +236,40 @@ void ViEAutoTest::ViECodecExtendedTest()
 
         AutoTestSleep(KAutoTestSleepTimeMs);
 
-        // Check that we received H.263 on both channels
         EXPECT_EQ(webrtc::kVideoCodecVP8,
                   codecObserver1.incomingCodec.codecType);
-        EXPECT_EQ(176, codecObserver1.incomingCodec.width);
+        EXPECT_EQ(send_codec.width, codecObserver1.incomingCodec.width);
         EXPECT_EQ(webrtc::kVideoCodecVP8,
                   codecObserver2.incomingCodec.codecType);
-        EXPECT_EQ(176, codecObserver2.incomingCodec.width);
+        EXPECT_EQ(send_codec.width, codecObserver2.incomingCodec.width);
+
+        // Change resolution on one of the channels and verify it changes for
+        // the other channel too.
+        send_codec.width = 2 * codecWidth;
+        send_codec.height = 2 * codecHeight;
+        EXPECT_EQ(0, ViE.codec->SetSendCodec(videoChannel1, send_codec));
+
+        // We need to verify using render effect filter since we won't trigger
+        // a decode reset in loopback (due to using the same SSRC).
+        RenderFilter filter1;
+        RenderFilter filter2;
+        EXPECT_EQ(0,
+                  ViE.image_process->RegisterRenderEffectFilter(videoChannel1,
+                                                                filter1));
+        EXPECT_EQ(0,
+                  ViE.image_process->RegisterRenderEffectFilter(videoChannel2,
+                                                                filter2));
+
+        AutoTestSleep(KAutoTestSleepTimeMs);
+
+        EXPECT_EQ(0, ViE.image_process->DeregisterRenderEffectFilter(
+            videoChannel1));
+        EXPECT_EQ(0, ViE.image_process->DeregisterRenderEffectFilter(
+            videoChannel2));
+        EXPECT_EQ(send_codec.width, filter1.last_render_width_);
+        EXPECT_EQ(send_codec.height, filter1.last_render_height_);
+        EXPECT_EQ(send_codec.width, filter2.last_render_width_);
+        EXPECT_EQ(send_codec.height, filter2.last_render_height_);
 
         // Delete the first channel and keep the second
         EXPECT_EQ(0, ViE.base->DeleteChannel(videoChannel1));

@@ -106,12 +106,23 @@ int ViECodecImpl::SetSendCodec(const int video_channel,
                video_channel, video_codec.codecType);
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(instance_id_, video_channel),
                "%s: codec: %d, pl_type: %d, width: %d, height: %d, bitrate: %d"
-               "maxBr: %d, min_br: %d, frame_rate: %d)", __FUNCTION__,
+               "maxBr: %d, min_br: %d, frame_rate: %d, qpMax: %u,"
+               "numberOfSimulcastStreams: %u )", __FUNCTION__,
                video_codec.codecType, video_codec.plType, video_codec.width,
                video_codec.height, video_codec.startBitrate,
                video_codec.maxBitrate, video_codec.minBitrate,
-               video_codec.maxFramerate);
-
+               video_codec.maxFramerate, video_codec.qpMax,
+               video_codec.numberOfSimulcastStreams);
+  if (video_codec.codecType == kVideoCodecVP8) {
+    WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(instance_id_, video_channel),
+                 "pictureLossIndicationOn: %d, feedbackModeOn: %d, "
+                 "complexity: %d, resilience: %d, numberOfTemporalLayers: %u",
+                 video_codec.codecSpecific.VP8.pictureLossIndicationOn,
+                 video_codec.codecSpecific.VP8.feedbackModeOn,
+                 video_codec.codecSpecific.VP8.complexity,
+                 video_codec.codecSpecific.VP8.resilience,
+                 video_codec.codecSpecific.VP8.numberOfTemporalLayers);
+  }
   if (!CodecValid(video_codec)) {
     // Error logged.
     SetLastError(kViECodecInvalidCodec);
@@ -154,23 +165,23 @@ int ViECodecImpl::SetSendCodec(const int video_channel,
     return -1;
   }
 
-  // We need to check if the codec settings changed, then we need a new SSRC.
-  bool new_rtp_stream = false;
-
   VideoCodec encoder;
   vie_encoder->GetEncoder(encoder);
-  if (encoder.codecType != video_codec_internal.codecType ||
-      encoder.width != video_codec_internal.width ||
-      encoder.height != video_codec_internal.height) {
-    if (cs.ChannelUsingViEEncoder(video_channel)) {
-      // We don't allow changing codec type or size when several
-      // channels share encoder.
+  if (encoder.codecType != video_codec_internal.codecType &&
+      cs.ChannelUsingViEEncoder(video_channel)) {
+      // We don't allow changing codec type when several channels share encoder.
       WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(instance_id_, video_channel),
                    "%s: Settings differs from other channels using encoder",
                    __FUNCTION__);
       SetLastError(kViECodecInUse);
       return -1;
-    }
+  }
+  // Make sure to generate a new SSRC if the codec type and/or resolution has
+  // changed. This won't have any effect if the user has set an SSRC.
+  bool new_rtp_stream = false;
+  if (encoder.codecType != video_codec_internal.codecType ||
+      encoder.width != video_codec_internal.width ||
+      encoder.height != video_codec_internal.height) {
     new_rtp_stream = true;
   }
   if (video_codec_internal.numberOfSimulcastStreams > 1) {
@@ -219,13 +230,22 @@ int ViECodecImpl::SetSendCodec(const int video_channel,
     return -1;
   }
 
-  // Give the channel the new information.
-  if (vie_channel->SetSendCodec(video_codec_internal, new_rtp_stream) != 0) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
-                 "%s: Could not set send codec for channel %d", __FUNCTION__,
-                 video_channel);
-    SetLastError(kViECodecUnknownError);
-    return -1;
+  // Give the channel(s) the new information.
+  ChannelList channels;
+  cs.ChannelsUsingViEEncoder(video_channel, &channels);
+  for (ChannelList::iterator it = channels.begin(); it != channels.end();
+       ++it) {
+    bool ret = true;
+    if ((*it)->SetSendCodec(video_codec_internal, new_rtp_stream) != 0) {
+      WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+                   "%s: Could not set send codec for channel %d", __FUNCTION__,
+                   video_channel);
+      ret = false;
+    }
+    if (!ret) {
+      SetLastError(kViECodecUnknownError);
+      return -1;
+    }
   }
 
   // Update the protection mode, we might be switching NACK/FEC.

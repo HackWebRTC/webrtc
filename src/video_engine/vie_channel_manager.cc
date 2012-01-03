@@ -470,6 +470,20 @@ bool ViEChannelManager::ChannelUsingViEEncoder(int channel_id) const {
   return false;
 }
 
+void ViEChannelManager::ChannelsUsingViEEncoder(int channel_id,
+                                                ChannelList* channels) const {
+  CriticalSectionScoped cs(*channel_id_critsect_);
+  MapItem* encoder_item = vie_encoder_map_.Find(channel_id);
+  assert(encoder_item);
+  MapItem* channel_item = channel_map_.First();
+  while (channel_item) {
+    if (vie_encoder_map_.Find(channel_item->GetId())) {
+        channels->push_back(static_cast<ViEChannel*>(channel_item->GetItem()));
+    }
+    channel_item = channel_map_.Next(channel_item);
+  }
+}
+
 ViEChannelManagerScoped::ViEChannelManagerScoped(
     const ViEChannelManager& vie_channel_manager)
     : ViEManagerScopedBase(vie_channel_manager) {
@@ -487,6 +501,12 @@ ViEEncoder* ViEChannelManagerScoped::Encoder(int vie_channel_id) const {
 bool ViEChannelManagerScoped::ChannelUsingViEEncoder(int channel_id) const {
   return (static_cast<const ViEChannelManager*>(vie_manager_))->
       ChannelUsingViEEncoder(channel_id);
+}
+
+void ViEChannelManagerScoped::ChannelsUsingViEEncoder(
+    int channel_id, ChannelList* channels) const {
+  (static_cast<const ViEChannelManager*>(vie_manager_))->
+      ChannelsUsingViEEncoder(channel_id, channels);
 }
 
 }  // namespace webrtc
