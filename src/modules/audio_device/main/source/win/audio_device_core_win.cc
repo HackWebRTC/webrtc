@@ -246,7 +246,7 @@ bool AudioDeviceWindowsCore::CoreAudioIsSupported()
         StringCchPrintf(buf, MAXERRORLENGTH, TEXT("Error details: "));
         errorText = error.ErrorMessage();
         StringCchCat(buf, MAXERRORLENGTH, errorText);
-        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, -1, "%s", buf);
+        WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, -1, "%S", buf);
     }
     else
     {
