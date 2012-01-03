@@ -139,14 +139,14 @@ class ViEChannel
       const WebRtc_UWord8* data,
       WebRtc_UWord16 data_length_in_bytes);
 
-  // Gets statistics sent in RTCP packets to remote side.
+  // Returns statistics reported by the remote client in an RTCP packet.
   WebRtc_Word32 GetSendRtcpStatistics(WebRtc_UWord16& fraction_lost,
                                       WebRtc_UWord32& cumulative_lost,
                                       WebRtc_UWord32& extended_max,
                                       WebRtc_UWord32& jitter_samples,
                                       WebRtc_Word32& rtt_ms);
 
-  // Gets statistics received in RTCP packets from remote side.
+  // Returns our localy created statistics of the received RTP stream.
   WebRtc_Word32 GetReceivedRtcpStatistics(WebRtc_UWord16& fraction_lost,
                                           WebRtc_UWord32& cumulative_lost,
                                           WebRtc_UWord32& extended_max,

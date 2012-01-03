@@ -929,7 +929,7 @@ WebRtc_Word32 ViEChannel::GetSendRtcpStatistics(WebRtc_UWord16& fraction_lost,
   WebRtc_UWord32 remoteSSRC = rtp_rtcp_.RemoteSSRC();
   RTCPReportBlock remote_stat;
   if (rtp_rtcp_.RemoteRTCPStat(remoteSSRC, &remote_stat) != 0) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
+    WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(engine_id_, channel_id_),
                  "%s: Could not get remote stats", __FUNCTION__);
     return -1;
   }
@@ -941,7 +941,7 @@ WebRtc_Word32 ViEChannel::GetSendRtcpStatistics(WebRtc_UWord16& fraction_lost,
   WebRtc_UWord16 dummy;
   WebRtc_UWord16 rtt = 0;
   if (rtp_rtcp_.RTT(remoteSSRC, &rtt, &dummy, &dummy, &dummy) != 0) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
+    WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(engine_id_, channel_id_),
                  "%s: Could not get RTT", __FUNCTION__);
     return -1;
   }
@@ -971,9 +971,8 @@ WebRtc_Word32 ViEChannel::GetReceivedRtcpStatistics(
   WebRtc_UWord16 dummy = 0;
   WebRtc_UWord16 rtt = 0;
   if (rtp_rtcp_.RTT(remoteSSRC, &rtt, &dummy, &dummy, &dummy) != 0) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
+    WEBRTC_TRACE(kTraceStateInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                  "%s: Could not get RTT", __FUNCTION__);
-    return -1;
   }
   rtt_ms = rtt;
   return 0;
