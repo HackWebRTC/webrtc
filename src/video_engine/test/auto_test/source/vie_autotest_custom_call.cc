@@ -26,6 +26,7 @@
 #define DEFAULT_VIDEO_CODEC_WIDTH                       640
 #define DEFAULT_VIDEO_CODEC_HEIGHT                      480
 #define DEFAULT_VIDEO_CODEC_BITRATE                     300
+#define DEFAULT_VIDEO_CODEC_MIN_BITRATE                 100
 #define DEFAULT_VIDEO_CODEC_MAX_BITRATE                 1000
 #define DEFAULT_AUDIO_PORT                              11113
 #define DEFAULT_AUDIO_CODEC                             "ISAC"
@@ -122,6 +123,8 @@ bool SetVideoCodecSize(webrtc::ViECodec* ptrViECodec,
                        webrtc::VideoCodec& videoCodec);
 bool SetVideoCodecBitrate(webrtc::ViECodec* ptrViECodec,
                           webrtc::VideoCodec& videoCodec);
+bool SetVideoCodecMinBitrate(webrtc::ViECodec* ptrViECodec,
+                             webrtc::VideoCodec& videoCodec);
 bool SetVideoCodecMaxBitrate(webrtc::ViECodec* ptrViECodec,
                              webrtc::VideoCodec& videoCodec);
 bool SetVideoCodecMaxFramerate(webrtc::ViECodec* ptrViECodec,
@@ -268,6 +271,7 @@ int ViEAutoTest::ViECustomCall()
     SetVideoCodecType(ptrViECodec, videoSendCodec);
     SetVideoCodecSize(ptrViECodec, videoSendCodec);
     SetVideoCodecBitrate(ptrViECodec, videoSendCodec);
+    SetVideoCodecMinBitrate(ptrViECodec, videoSendCodec);
     SetVideoCodecMaxBitrate(ptrViECodec, videoSendCodec);
     SetVideoCodecMaxFramerate(ptrViECodec, videoSendCodec);
     SetVideoCodecTemporalLayer(videoSendCodec);
@@ -576,6 +580,7 @@ int ViEAutoTest::ViECustomCall()
           SetVideoCodecType(ptrViECodec, videoSendCodec);
           SetVideoCodecSize(ptrViECodec, videoSendCodec);
           SetVideoCodecBitrate(ptrViECodec, videoSendCodec);
+          SetVideoCodecMinBitrate(ptrViECodec, videoSendCodec);
           SetVideoCodecMaxBitrate(ptrViECodec, videoSendCodec);
           SetVideoCodecMaxFramerate(ptrViECodec, videoSendCodec);
           SetVideoCodecTemporalLayer(videoSendCodec);
@@ -1660,6 +1665,21 @@ bool SetVideoCodecMaxBitrate(webrtc::ViECodec* ptrViECodec,
   return true;
 }
 
+bool SetVideoCodecMinBitrate(webrtc::ViECodec* ptrViECodec,
+                             webrtc::VideoCodec& videoCodec) {
+  std::string str;
+  std::cout << std::endl;
+  std::cout << "Choose min bitrate (in fps). Press enter for default ("
+            << DEFAULT_VIDEO_CODEC_MIN_BITRATE << "):  ";
+  std::getline(std::cin, str);
+  char minBitRate = atoi(str.c_str());
+  videoCodec.minBitrate = DEFAULT_VIDEO_CODEC_MIN_BITRATE;
+  if (minBitRate != 0) {
+    videoCodec.minBitrate = minBitRate;
+  }
+  return true;
+}
+
 bool SetVideoCodecMaxFramerate(webrtc::ViECodec* ptrViECodec,
                                webrtc::VideoCodec& videoCodec) {
   std::string str;
@@ -2006,6 +2026,8 @@ void PrintVideoCodec(webrtc::VideoCodec videoCodec) {
   std::cout << "\t\twidth: " << videoCodec.width << std::endl;
   std::cout << "\t\theight: " << videoCodec.height << std::endl;
   std::cout << "\t\tstartBitrate: " << videoCodec.startBitrate
+            << std::endl;
+  std::cout << "\t\tminBitrate: " << videoCodec.minBitrate
             << std::endl;
   std::cout << "\t\tmaxBitrate: " << videoCodec.maxBitrate
             << std::endl;
