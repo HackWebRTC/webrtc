@@ -433,6 +433,7 @@ enum RawVideoType
     kVideoMJPEG    = 10,
     kVideoNV12     = 11,
     kVideoNV21     = 12,
+    kVideoBGRA     = 13,
     kVideoUnknown  = 99
 };
 

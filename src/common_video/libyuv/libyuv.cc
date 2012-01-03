@@ -47,6 +47,8 @@ VideoType RawVideoTypeToCommonVideoVideoType(RawVideoType type) {
       return kNV21;
     case kVideoNV12:
       return kNV12;
+    case kVideoBGRA:
+      return kBGRA;
     default:
       assert(false);
   }
@@ -73,6 +75,7 @@ int CalcBufferSize(VideoType type, int width, int height) {
     case kRGB24:
       bits_per_pixel = 24;
       break;
+    case kBGRA:
     case kARGB:
       bits_per_pixel = 32;
       break;
@@ -105,6 +108,7 @@ int CalcBufferSize(VideoType src_video_type,
     case kRGB24:
       src_bits_per_pixel = 24;
       break;
+    case kBGRA:
     case kARGB:
       src_bits_per_pixel = 32;
       break;
@@ -130,6 +134,7 @@ int CalcBufferSize(VideoType src_video_type,
     case kRGB24:
       dst_bits_per_pixel = 24;
       break;
+    case kBGRA:
     case kARGB:
       dst_bits_per_pixel = 32;
       break;
