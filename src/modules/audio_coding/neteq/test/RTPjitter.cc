@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+//TODO(hlundin): Reformat file to meet style guide.
+
 /* header includes */
 #include "typedefs.h"
 #include <stdio.h>
@@ -31,15 +33,6 @@
 #define FIRSTLINELEN 40
 #define CHECK_ZERO(a) {int errCode = a; if((errCode)!=0){fprintf(stderr,"\n %s \n line: %d \n error at %s\n Error Code = %d\n",__FILE__,__LINE__,#a, WebRtcNetEQ_GetErrorCode(inst)); exit(0);}}
 #define CHECK_NOT_NULL(a) if((a)==NULL){fprintf(stderr,"\n %s \n line: %d \nerror at %s\n",__FILE__,__LINE__,#a );return(-1);}
-
-/********************/
-/* Global variables */
-/********************/
-
-FILE *in_file;
-FILE *out_file;
-FILE *dat_file;       
-
 
 struct arr_time {
 	float time;
@@ -97,13 +90,13 @@ int main(int argc, char* argv[])
 		return(0);
 	}
 
-	in_file=fopen(argv[1],"rb");
+	FILE* in_file=fopen(argv[1],"rb");
 	CHECK_NOT_NULL(in_file);
 	printf("Input file: %s\n",argv[1]);
-	dat_file=fopen(argv[2],"rb");
+	FILE* dat_file=fopen(argv[2],"rb");
 	CHECK_NOT_NULL(dat_file);
 	printf("Dat-file: %s\n",argv[2]);
-	out_file=fopen(argv[3],"wb");
+	FILE* out_file=fopen(argv[3],"wb");
 	CHECK_NOT_NULL(out_file);
 	printf("Output file: %s\n\n",argv[3]);
 	

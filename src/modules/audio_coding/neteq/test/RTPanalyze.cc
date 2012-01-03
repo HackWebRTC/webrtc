@@ -12,62 +12,54 @@
 #include <stdio.h>
 #include <vector>
 
-#include "NETEQTEST_RTPpacket.h"
+#include "modules/audio_coding/neteq/test/NETEQTEST_RTPpacket.h"
 
+enum {
+  kRedPayloadType = 127
+};
 
-/*********************/
-/* Misc. definitions */
-/*********************/
+int main(int argc, char* argv[]) {
+  FILE* in_file = fopen(argv[1], "rb");
+  if (!in_file) {
+    printf("Cannot open input file %s\n", argv[1]);
+    return -1;
+  }
+  printf("Input file: %s\n", argv[1]);
 
-enum {kRedPayloadType = 127};
+  FILE* out_file = fopen(argv[2], "wt");
+  if (!out_file) {
+    printf("Cannot open output file %s\n", argv[2]);
+    return -1;
+  }
+  printf("Output file: %s\n\n", argv[2]);
 
-int main(int argc, char* argv[])
-{
-	FILE *inFile=fopen(argv[1],"rb");
-	if (!inFile)
-    {
-        printf("Cannot open input file %s\n", argv[1]);
-        return(-1);
-    }
-    printf("Input file: %s\n",argv[1]);
+  // Print file header.
+  fprintf(out_file, "SeqNo  TimeStamp   SendTime  Size    PT  M\n");
 
-	FILE *outFile=fopen(argv[2],"wt");
-	if (!outFile)
-    {
-        printf("Cannot open output file %s\n", argv[2]);
-        return(-1);
-    }
-	printf("Output file: %s\n\n",argv[2]);
+  // Read file header.
+  NETEQTEST_RTPpacket::skipFileHeader(in_file);
+  NETEQTEST_RTPpacket packet;
 
-    // print file header
-    fprintf(outFile, "SeqNo  TimeStamp   SendTime  Size    PT  M\n");
-
-    // read file header 
-    NETEQTEST_RTPpacket::skipFileHeader(inFile);
-    NETEQTEST_RTPpacket packet;
-
-    while (packet.readFromFile(inFile) >= 0)
-    {
-        // write packet data to file
-        fprintf(outFile, "%5u %10u %10u %5i %5i %2i\n",
+  while (packet.readFromFile(in_file) >= 0) {
+    // Write packet data to file.
+    fprintf(out_file, "%5u %10u %10u %5i %5i %2i\n",
             packet.sequenceNumber(), packet.timeStamp(), packet.time(),
             packet.dataLen(), packet.payloadType(), packet.markerBit());
-        if (packet.payloadType() == kRedPayloadType) {
-            WebRtcNetEQ_RTPInfo redHdr;
-            int len;
-            int redIndex = 0;
-            while ((len = packet.extractRED(redIndex++, redHdr)) >= 0)
-            {
-                fprintf(outFile, "* %5u %10u %10u %5i %5i\n",
-                    redHdr.sequenceNumber, redHdr.timeStamp, packet.time(),
-                    len, redHdr.payloadType);
-            }
-            assert(redIndex > 1);  // We must get at least one payload.
-        }
+    if (packet.payloadType() == kRedPayloadType) {
+      WebRtcNetEQ_RTPInfo red_header;
+      int len;
+      int red_index = 0;
+      while ((len = packet.extractRED(red_index++, red_header)) >= 0) {
+        fprintf(out_file, "* %5u %10u %10u %5i %5i\n",
+                red_header.sequenceNumber, red_header.timeStamp,
+                packet.time(), len, red_header.payloadType);
+      }
+      assert(red_index > 1);  // We must get at least one payload.
     }
+  }
 
-    fclose(inFile);
-    fclose(outFile);
+  fclose(in_file);
+  fclose(out_file);
 
-    return 0;
+  return 0;
 }

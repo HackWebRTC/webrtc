@@ -8,73 +8,68 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <algorithm>
 #include <stdio.h>
+
+#include <algorithm>
 #include <vector>
 
-#include "NETEQTEST_RTPpacket.h"
 #include "gtest/gtest.h"
-
-/*********************/
-/* Misc. definitions */
-/*********************/
+#include "modules/audio_coding/neteq/test/NETEQTEST_RTPpacket.h"
 
 #define FIRSTLINELEN 40
 
-int main(int argc, char* argv[])
-{
-    if (argc < 3) {
-        printf("Usage: RTPcat in1.rtp int2.rtp [...] out.rtp\n");
-        exit(1);
+int main(int argc, char* argv[]) {
+  if (argc < 3) {
+    printf("Usage: RTPcat in1.rtp int2.rtp [...] out.rtp\n");
+    exit(1);
+  }
+
+  FILE* in_file = fopen(argv[1], "rb");
+  if (!in_file) {
+    printf("Cannot open input file %s\n", argv[1]);
+    return -1;
+  }
+
+  FILE* out_file = fopen(argv[argc - 1], "wb");  // Last parameter is out file.
+  if (!out_file) {
+    printf("Cannot open output file %s\n", argv[argc - 1]);
+    return -1;
+  }
+  printf("Output RTP file: %s\n\n", argv[argc - 1]);
+
+  // Read file header and write directly to output file.
+  char firstline[FIRSTLINELEN];
+  const unsigned int kRtpDumpHeaderSize = 4 + 4 + 4 + 2 + 2;
+  EXPECT_TRUE(fgets(firstline, FIRSTLINELEN, in_file) != NULL);
+  EXPECT_GT(fputs(firstline, out_file), 0);
+  EXPECT_EQ(kRtpDumpHeaderSize, fread(firstline, 1, kRtpDumpHeaderSize,
+                                      in_file));
+  EXPECT_EQ(kRtpDumpHeaderSize, fwrite(firstline, 1, kRtpDumpHeaderSize,
+                                       out_file));
+
+  // Close input file and re-open it later (easier to write the loop below).
+  fclose(in_file);
+
+  for (int i = 1; i < argc - 1; i++) {
+    in_file = fopen(argv[i], "rb");
+    if (!in_file) {
+      printf("Cannot open input file %s\n", argv[i]);
+      return -1;
     }
+    printf("Input RTP file: %s\n", argv[i]);
 
-    FILE *inFile = fopen(argv[1], "rb");
-    if (!inFile) {
-        printf("Cannot open input file %s\n", argv[1]);
-        return (-1);
+    NETEQTEST_RTPpacket::skipFileHeader(in_file);
+    NETEQTEST_RTPpacket packet;
+    int pack_len = packet.readFromFile(in_file);
+    if (pack_len < 0) {
+      exit(1);
     }
-
-    FILE *outFile = fopen(argv[argc - 1], "wb"); // last parameter is output file
-    if (!outFile) {
-        printf("Cannot open output file %s\n", argv[argc - 1]);
-        return (-1);
+    while (pack_len >= 0) {
+      packet.writeToFile(out_file);
+      pack_len = packet.readFromFile(in_file);
     }
-    printf("Output RTP file: %s\n\n", argv[argc - 1]);
-
-    // read file header and write directly to output file
-    char firstline[FIRSTLINELEN];
-    const unsigned int kRtpDumpHeaderSize = 4 + 4 + 4 + 2 + 2;
-    EXPECT_TRUE(fgets(firstline, FIRSTLINELEN, inFile) != NULL);
-    EXPECT_GT(fputs(firstline, outFile), 0);
-    EXPECT_EQ(kRtpDumpHeaderSize, fread(firstline, 1, kRtpDumpHeaderSize,
-                                        inFile));
-    EXPECT_EQ(kRtpDumpHeaderSize, fwrite(firstline, 1, kRtpDumpHeaderSize,
-                                         outFile));
-
-    // close input file and re-open it later (easier to write the loop below)
-    fclose(inFile);
-
-    for (int i = 1; i < argc - 1; i++) {
-        inFile = fopen(argv[i], "rb");
-        if (!inFile) {
-            printf("Cannot open input file %s\n", argv[i]);
-            return (-1);
-        }
-        printf("Input RTP file: %s\n", argv[i]);
-
-        // skip file header
-        NETEQTEST_RTPpacket::skipFileHeader(inFile);
-        NETEQTEST_RTPpacket packet;
-        int packLen = packet.readFromFile(inFile);
-        if (packLen < 0) {
-            exit(1);
-        }
-        while (packLen >= 0) {
-            packet.writeToFile(outFile);
-            packLen = packet.readFromFile(inFile);
-        }
-        fclose(inFile);
-    }
-    fclose(outFile);
-    return 0;
+    fclose(in_file);
+  }
+  fclose(out_file);
+  return 0;
 }

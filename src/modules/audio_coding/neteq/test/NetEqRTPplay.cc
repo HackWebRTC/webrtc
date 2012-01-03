@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+//TODO(hlundin): Reformat file to meet style guide.
+
 /* header includes */
 #include "typedefs.h"
 #include "stdio.h"
@@ -127,8 +129,6 @@ bool changeStereoMode(NETEQTEST_RTPpacket & rtp, std::map<WebRtc_UWord8, decoder
 
 WebRtc_Word16 NetEqPacketBuffer[MAX_NETEQ_BUFFERSIZE>>1];
 WebRtc_Word16 NetEqPacketBufferSlave[MAX_NETEQ_BUFFERSIZE>>1];
-FILE *in_file;
-FILE *out_file;
 
 #ifdef NETEQ_DELAY_LOGGING
 extern "C" { 
@@ -240,7 +240,7 @@ int main(int argc, char* argv[])
 		return(ok);
 	}
 
-	in_file=fopen(argv[1],"rb");
+	FILE* in_file=fopen(argv[1],"rb");
 	CHECK_NOT_NULL(in_file);
 	printf("Input file: %s\n",argv[1]);
 
@@ -258,7 +258,7 @@ int main(int argc, char* argv[])
 		return(-1);
 #endif
 	}
-	out_file=fopen(outfilename,"wb");
+	FILE* out_file=fopen(outfilename,"wb");
 	if (out_file==NULL) {
 		fprintf(stderr,"Could not open file %s for writing\n", outfilename);
 		return(-1);

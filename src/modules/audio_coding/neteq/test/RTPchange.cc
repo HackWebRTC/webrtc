@@ -8,138 +8,121 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <algorithm>
 #include <stdio.h>
+
+#include <algorithm>
 #include <vector>
 
-#include "NETEQTEST_RTPpacket.h"
 #include "gtest/gtest.h"
-
-/*********************/
-/* Misc. definitions */
-/*********************/
+#include "modules/audio_coding/neteq/test/NETEQTEST_RTPpacket.h"
 
 #define FIRSTLINELEN 40
 
-bool pktCmp (NETEQTEST_RTPpacket *a, NETEQTEST_RTPpacket *b) 
-{
-    return (a->time() < b->time());
+static bool pktCmp(NETEQTEST_RTPpacket *a, NETEQTEST_RTPpacket *b) {
+  return (a->time() < b->time());
 }
 
+int main(int argc, char* argv[]) {
+  FILE* in_file = fopen(argv[1], "rb");
+  if (!in_file) {
+    printf("Cannot open input file %s\n", argv[1]);
+    return -1;
+  }
+  printf("Input RTP file: %s\n", argv[1]);
 
-int main(int argc, char* argv[])
-{
-	FILE *inFile=fopen(argv[1],"rb");
-	if (!inFile)
-    {
-        printf("Cannot open input file %s\n", argv[1]);
-        return(-1);
-    }
-    printf("Input RTP file: %s\n",argv[1]);
+  FILE* stat_file = fopen(argv[2], "rt");
+  if (!stat_file) {
+    printf("Cannot open timing file %s\n", argv[2]);
+    return -1;
+  }
+  printf("Timing file: %s\n", argv[2]);
 
-    FILE *statFile=fopen(argv[2],"rt");
-	  if (!statFile)
-    {
-        printf("Cannot open timing file %s\n", argv[2]);
-        return(-1);
-    }
-    printf("Timing file: %s\n",argv[2]);
+  FILE* out_file = fopen(argv[3], "wb");
+  if (!out_file) {
+    printf("Cannot open output file %s\n", argv[3]);
+    return -1;
+  }
+  printf("Output RTP file: %s\n\n", argv[3]);
 
-    FILE *outFile=fopen(argv[3],"wb");
-    if (!outFile)
-    {
-        printf("Cannot open output file %s\n", argv[3]);
-        return(-1);
-    }
-    printf("Output RTP file: %s\n\n",argv[3]);
+  // Read all statistics and insert into map.
+  // Read first line.
+  char temp_str[100];
+  if (fgets(temp_str, 100, stat_file) == NULL) {
+    printf("Failed to read timing file %s\n", argv[2]);
+    return -1;
+  }
+  // Define map.
+  std::map<std::pair<uint16_t, uint32_t>, uint32_t> packet_stats;
+  uint16_t seq_no;
+  uint32_t ts;
+  uint32_t send_time;
 
-    // read all statistics and insert into map
-    // read first line
-    char tempStr[100];
-    if (fgets(tempStr, 100, statFile) == NULL)
-    {
-      printf("Failed to read timing file %s\n", argv[2]);
-      return (-1);
-    }
-    // define map
-    std::map<std::pair<WebRtc_UWord16, WebRtc_UWord32>, WebRtc_UWord32>
-        packetStats;
-    WebRtc_UWord16 seqNo;
-    WebRtc_UWord32 ts;
-    WebRtc_UWord32 sendTime;
+  while (fscanf(stat_file,
+                "%hu %u %u %*i %*i\n", &seq_no, &ts, &send_time) == 3) {
+    std::pair<uint16_t, uint32_t>
+        temp_pair = std::pair<uint16_t, uint32_t>(seq_no, ts);
 
-    while(fscanf(statFile, "%hu %u %u %*i %*i\n", &seqNo, &ts, &sendTime) == 3)
-    {
-        std::pair<WebRtc_UWord16, WebRtc_UWord32> tempPair =
-            std::pair<WebRtc_UWord16, WebRtc_UWord32>(seqNo, ts);
+    packet_stats[temp_pair] = send_time;
+  }
 
-        packetStats[tempPair] = sendTime;
-    }
+  fclose(stat_file);
 
-    fclose(statFile);
+  // Read file header and write directly to output file.
+  char first_line[FIRSTLINELEN];
+  if (fgets(first_line, FIRSTLINELEN, in_file) == NULL) {
+    printf("Failed to read first line of input file %s\n", argv[1]);
+    return -1;
+  }
+  fputs(first_line, out_file);
+  // start_sec + start_usec + source + port + padding
+  const unsigned int kRtpDumpHeaderSize = 4 + 4 + 4 + 2 + 2;
+  if (fread(first_line, 1, kRtpDumpHeaderSize, in_file)
+      != kRtpDumpHeaderSize) {
+    printf("Failed to read RTP dump header from input file %s\n", argv[1]);
+    return -1;
+  }
+  if (fwrite(first_line, 1, kRtpDumpHeaderSize, out_file)
+      != kRtpDumpHeaderSize) {
+    printf("Failed to write RTP dump header to output file %s\n", argv[3]);
+    return -1;
+  }
 
-    // read file header and write directly to output file
-    char firstline[FIRSTLINELEN];
-    if (fgets(firstline, FIRSTLINELEN, inFile) == NULL)
-    {
-      printf("Failed to read first line of input file %s\n", argv[1]);
-      return (-1);
-    }
-    fputs(firstline, outFile);
-    // start_sec + start_usec + source + port + padding
-    const unsigned int kRtpDumpHeaderSize = 4 + 4 + 4 + 2 + 2;
-    if (fread(firstline, 1, kRtpDumpHeaderSize, inFile) != kRtpDumpHeaderSize)
-    {
-      printf("Failed to read RTP dump header from input file %s\n", argv[1]);
-      return (-1);
-    }
-    if (fwrite(firstline, 1, kRtpDumpHeaderSize, outFile) != kRtpDumpHeaderSize)
-    {
-      printf("Failed to write RTP dump header to output file %s\n", argv[3]);
-      return (-1);
-    }
+  std::vector<NETEQTEST_RTPpacket *> packet_vec;
 
-    std::vector<NETEQTEST_RTPpacket *> packetVec;
-
-    while (1)
-    {
-        // insert in vector
-        NETEQTEST_RTPpacket *newPacket = new NETEQTEST_RTPpacket();
-        if (newPacket->readFromFile(inFile) < 0)
-        {
-            // end of file
-            break;
-        }
-        
-        // look for new send time in statistics vector
-        std::pair<WebRtc_UWord16, WebRtc_UWord32> tempPair = 
-            std::pair<WebRtc_UWord16, WebRtc_UWord32>(newPacket->sequenceNumber(), newPacket->timeStamp());
-
-        WebRtc_UWord32 newSendTime = packetStats[tempPair];
-        newPacket->setTime(newSendTime); // set new send time
-        packetVec.push_back(newPacket); // insert in vector
-
+  while (1) {
+    // Insert in vector.
+    NETEQTEST_RTPpacket *new_packet = new NETEQTEST_RTPpacket();
+    if (new_packet->readFromFile(in_file) < 0) {
+      // End of file.
+      break;
     }
 
-    // sort the vector according to send times
-    std::sort(packetVec.begin(), packetVec.end(), pktCmp);
+    // Look for new send time in statistics vector.
+    std::pair<uint16_t, uint32_t> temp_pair =
+        std::pair<uint16_t, uint32_t>(new_packet->sequenceNumber(),
+                                      new_packet->timeStamp());
 
-    std::vector<NETEQTEST_RTPpacket *>::iterator it;
-    for (it = packetVec.begin(); it != packetVec.end(); it++)
-    {
-        // write to out file
-        if ((*it)->writeToFile(outFile) < 0)
-        {
-            printf("Error writing to file\n");
-            return(-1);
-        }
+    uint32_t new_send_time = packet_stats[temp_pair];
+    new_packet->setTime(new_send_time);  // Set new send time.
+    packet_vec.push_back(new_packet);  // Insert in vector.
+  }
 
-        // delete packet
-        delete *it;
+  // Sort the vector according to send times.
+  std::sort(packet_vec.begin(), packet_vec.end(), pktCmp);
+
+  std::vector<NETEQTEST_RTPpacket *>::iterator it;
+  for (it = packet_vec.begin(); it != packet_vec.end(); it++) {
+    // Write to out file.
+    if ((*it)->writeToFile(out_file) < 0) {
+      printf("Error writing to file\n");
+      return -1;
     }
+    // Delete packet.
+    delete *it;
+  }
 
-    fclose(inFile);
-    fclose(outFile);
+  fclose(in_file);
+  fclose(out_file);
 
-    return 0;
+  return 0;
 }

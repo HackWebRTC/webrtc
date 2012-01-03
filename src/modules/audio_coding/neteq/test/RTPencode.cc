@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+//TODO(hlundin): Reformat file to meet style guide.
+
 /* header includes */
 #include "typedefs.h"
 #include "stdio.h"
@@ -78,17 +80,6 @@ int makeRedundantHeader(unsigned char* rtp_data, int *payloadType, int numPayloa
 int makeDTMFpayload(unsigned char* payload_data, int Event, int End, int Volume, int Duration);
 void stereoDeInterleave(WebRtc_Word16* audioSamples, int numSamples);
 void stereoInterleave(unsigned char* data, int dataLen, int stride);
-
-/********************/
-/* Global variables */
-/********************/
-
-FILE *in_file;
-FILE *out_file;
-FILE *dat_file;       
-
-
-
 
 /*********************/
 /* Codec definitions */
@@ -399,10 +390,10 @@ int main(int argc, char* argv[])
 		return(0);
 	}
 
-	in_file=fopen(argv[1],"rb");
+	FILE* in_file=fopen(argv[1],"rb");
 	CHECK_NOT_NULL(in_file);
 	printf("Input file: %s\n",argv[1]);
-	out_file=fopen(argv[2],"wb");
+	FILE* out_file=fopen(argv[2],"wb");
 	CHECK_NOT_NULL(out_file);
 	printf("Output file: %s\n\n",argv[2]);
 	packet_size=atoi(argv[3]);
