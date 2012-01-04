@@ -36,7 +36,7 @@
 // zoom on;
 
 // Generator table for y=log2(1+e^x) in Q8.
-static const int kGenFuncTableSize = 128;
+enum { kGenFuncTableSize = 128 };
 static const WebRtc_UWord16 kGenFuncTable[kGenFuncTableSize] = {
           256,   485,   786,  1126,  1484,  1849,  2217,  2586,
          2955,  3324,  3693,  4063,  4432,  4801,  5171,  5540,
