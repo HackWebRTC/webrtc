@@ -112,7 +112,7 @@ WebRtc_Word32 RtpHeaderExtensionMap::Size() const {
 RTPExtensionType RtpHeaderExtensionMap::First() const {
   MapItem* item = extensionMap_.First();
   if (item == NULL) {
-     return NONE;
+     return kRtpExtensionNone;
   }
   HeaderExtension* extension = (HeaderExtension*)item->GetItem();
   return extension->type;
@@ -122,15 +122,15 @@ RTPExtensionType RtpHeaderExtensionMap::Next(RTPExtensionType type) const
 {
   WebRtc_UWord8 id;
   if (GetId(type, &id) != 0) {
-    return NONE;
+    return kRtpExtensionNone;
   }
   MapItem* item = extensionMap_.Find(id);
   if (item == NULL) {
-    return NONE;
+    return kRtpExtensionNone;
   }
   item = extensionMap_.Next(item);
   if (item == NULL) {
-    return NONE;
+    return kRtpExtensionNone;
   }
   HeaderExtension* extension = (HeaderExtension*)item->GetItem();
   return extension->type;

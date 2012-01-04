@@ -2090,13 +2090,19 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SetRTPAudioLevelIndicationStatus(
     const bool enable,
     const WebRtc_UWord8 ID) {
 
-    WEBRTC_TRACE(kTraceModuleCall,
-                 kTraceRtpRtcp,
-                 _id,
-                 "SetRTPAudioLevelIndicationStatus(enable=%d, ID=%u)",
-                 enable,
-                 ID);
-    return _rtpSender.SetAudioLevelIndicationStatus(enable, ID);
+  WEBRTC_TRACE(kTraceModuleCall,
+               kTraceRtpRtcp,
+               _id,
+               "SetRTPAudioLevelIndicationStatus(enable=%d, ID=%u)",
+               enable,
+               ID);
+
+  if (enable) {
+    _rtpReceiver.RegisterRtpHeaderExtension(kRtpExtensionAudioLevel, ID);
+  } else {
+    _rtpReceiver.DeregisterRtpHeaderExtension(kRtpExtensionAudioLevel);
+  }
+  return _rtpSender.SetAudioLevelIndicationStatus(enable, ID);
 }
 
 WebRtc_Word32 ModuleRtpRtcpImpl::GetRTPAudioLevelIndicationStatus(

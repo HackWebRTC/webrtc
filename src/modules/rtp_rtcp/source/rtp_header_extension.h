@@ -28,7 +28,7 @@ struct HeaderExtension {
   HeaderExtension(RTPExtensionType extension_type)
     : type(extension_type),
       length(0) {
-     if (type == TRANSMISSION_TIME_OFFSET) {
+     if (type == kRtpExtensionTransmissionTimeOffset) {
        length = TRANSMISSION_TIME_OFFSET_LENGTH_IN_BYTES;
      }
    }

@@ -37,7 +37,7 @@ class RtpSenderTest : public ::testing::Test {
   RtpSenderTest()
     : rtp_sender_(new RTPSender(0, false, ModuleRTPUtility::GetSystemClock())),
       kMarkerBit(true),
-      kType(TRANSMISSION_TIME_OFFSET) {
+      kType(kRtpExtensionTransmissionTimeOffset) {
     EXPECT_EQ(0, rtp_sender_->SetSequenceNumber(kSeqNum));
   }
   ~RtpSenderTest() {

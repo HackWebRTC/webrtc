@@ -1314,10 +1314,10 @@ RTPSender::BuildRTPHeaderExtension(WebRtc_UWord8* dataBuffer) const
     WebRtc_UWord16 total_block_length = 0;
 
     RTPExtensionType type = _rtpHeaderExtensionMap.First();
-    while (type != NONE)
+    while (type != kRtpExtensionNone)
     {
         WebRtc_UWord8 block_length = 0;
-        if (type == TRANSMISSION_TIME_OFFSET)
+        if (type == kRtpExtensionTransmissionTimeOffset)
         {
             block_length = BuildTransmissionTimeOffsetExtension(
                 dataBuffer + kHeaderLength + total_block_length);
@@ -1363,7 +1363,8 @@ RTPSender::BuildTransmissionTimeOffsetExtension(WebRtc_UWord8* dataBuffer) const
 
     // Get id defined by user.
     WebRtc_UWord8 id;
-    if (_rtpHeaderExtensionMap.GetId(TRANSMISSION_TIME_OFFSET, &id) != 0) {
+    if (_rtpHeaderExtensionMap.GetId(kRtpExtensionTransmissionTimeOffset, &id)
+        != 0) {
       // Not registered.
       return 0;
     }

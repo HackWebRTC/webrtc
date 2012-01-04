@@ -32,31 +32,31 @@ class RtpHeaderExtensionTest : public ::testing::Test {
 
 TEST_F(RtpHeaderExtensionTest, Register) {
   EXPECT_EQ(0, map_.Size());
-  EXPECT_EQ(0, map_.Register(TRANSMISSION_TIME_OFFSET, kId));
+  EXPECT_EQ(0, map_.Register(kRtpExtensionTransmissionTimeOffset, kId));
   EXPECT_EQ(1, map_.Size());
-  EXPECT_EQ(0, map_.Deregister(TRANSMISSION_TIME_OFFSET));
+  EXPECT_EQ(0, map_.Deregister(kRtpExtensionTransmissionTimeOffset));
   EXPECT_EQ(0, map_.Size());
 }
 
 TEST_F(RtpHeaderExtensionTest, RegisterIllegalArg) {
   // Valid range for id: [1-14].
-  EXPECT_EQ(-1, map_.Register(TRANSMISSION_TIME_OFFSET, 0));
-  EXPECT_EQ(-1, map_.Register(TRANSMISSION_TIME_OFFSET, 15));
+  EXPECT_EQ(-1, map_.Register(kRtpExtensionTransmissionTimeOffset, 0));
+  EXPECT_EQ(-1, map_.Register(kRtpExtensionTransmissionTimeOffset, 15));
 }
 
 TEST_F(RtpHeaderExtensionTest, DeregisterIllegalArg) {
   // Not registered.
-  EXPECT_EQ(-1, map_.Deregister(TRANSMISSION_TIME_OFFSET));
+  EXPECT_EQ(-1, map_.Deregister(kRtpExtensionTransmissionTimeOffset));
 }
 
 TEST_F(RtpHeaderExtensionTest, NonUniqueId) {
-  EXPECT_EQ(0, map_.Register(TRANSMISSION_TIME_OFFSET, kId));
-  EXPECT_EQ(-1, map_.Register(TRANSMISSION_TIME_OFFSET, kId));
+  EXPECT_EQ(0, map_.Register(kRtpExtensionTransmissionTimeOffset, kId));
+  EXPECT_EQ(-1, map_.Register(kRtpExtensionTransmissionTimeOffset, kId));
 }
 
 TEST_F(RtpHeaderExtensionTest, GetLength) {
   EXPECT_EQ(0, map_.GetTotalLengthInBytes());
-  EXPECT_EQ(0, map_.Register(TRANSMISSION_TIME_OFFSET, kId));
+  EXPECT_EQ(0, map_.Register(kRtpExtensionTransmissionTimeOffset, kId));
   EXPECT_EQ(RTP_ONE_BYTE_HEADER_LENGTH_IN_BYTES +
             TRANSMISSION_TIME_OFFSET_LENGTH_IN_BYTES,
             map_.GetTotalLengthInBytes());
@@ -66,41 +66,41 @@ TEST_F(RtpHeaderExtensionTest, GetType) {
   RTPExtensionType typeOut;
   EXPECT_EQ(-1, map_.GetType(kId, &typeOut));
 
-  EXPECT_EQ(0, map_.Register(TRANSMISSION_TIME_OFFSET, kId));
+  EXPECT_EQ(0, map_.Register(kRtpExtensionTransmissionTimeOffset, kId));
   EXPECT_EQ(0, map_.GetType(kId, &typeOut));
-  EXPECT_EQ(TRANSMISSION_TIME_OFFSET, typeOut);
+  EXPECT_EQ(kRtpExtensionTransmissionTimeOffset, typeOut);
 }
 
 TEST_F(RtpHeaderExtensionTest, GetId) {
   WebRtc_UWord8 idOut;
-  EXPECT_EQ(-1, map_.GetId(TRANSMISSION_TIME_OFFSET, &idOut));
+  EXPECT_EQ(-1, map_.GetId(kRtpExtensionTransmissionTimeOffset, &idOut));
 
-  EXPECT_EQ(0, map_.Register(TRANSMISSION_TIME_OFFSET, kId));
-  EXPECT_EQ(0, map_.GetId(TRANSMISSION_TIME_OFFSET, &idOut));
+  EXPECT_EQ(0, map_.Register(kRtpExtensionTransmissionTimeOffset, kId));
+  EXPECT_EQ(0, map_.GetId(kRtpExtensionTransmissionTimeOffset, &idOut));
   EXPECT_EQ(kId, idOut);
 }
 
 TEST_F(RtpHeaderExtensionTest, IterateTypes) {
-  EXPECT_EQ(NONE, map_.First());
-  EXPECT_EQ(NONE, map_.Next(TRANSMISSION_TIME_OFFSET));
+  EXPECT_EQ(kRtpExtensionNone, map_.First());
+  EXPECT_EQ(kRtpExtensionNone, map_.Next(kRtpExtensionTransmissionTimeOffset));
 
-  EXPECT_EQ(0, map_.Register(TRANSMISSION_TIME_OFFSET, kId));
+  EXPECT_EQ(0, map_.Register(kRtpExtensionTransmissionTimeOffset, kId));
 
-  EXPECT_EQ(TRANSMISSION_TIME_OFFSET, map_.First());
-  EXPECT_EQ(NONE, map_.Next(TRANSMISSION_TIME_OFFSET));
+  EXPECT_EQ(kRtpExtensionTransmissionTimeOffset, map_.First());
+  EXPECT_EQ(kRtpExtensionNone, map_.Next(kRtpExtensionTransmissionTimeOffset));
 }
 
 TEST_F(RtpHeaderExtensionTest, GetCopy) {
-  EXPECT_EQ(0, map_.Register(TRANSMISSION_TIME_OFFSET, kId));
+  EXPECT_EQ(0, map_.Register(kRtpExtensionTransmissionTimeOffset, kId));
 
   RtpHeaderExtensionMap mapOut;
   map_.GetCopy(&mapOut);
   EXPECT_EQ(1, mapOut.Size());
-  EXPECT_EQ(TRANSMISSION_TIME_OFFSET, mapOut.First());
+  EXPECT_EQ(kRtpExtensionTransmissionTimeOffset, mapOut.First());
 }
 
 TEST_F(RtpHeaderExtensionTest, Erase) {
-  EXPECT_EQ(0, map_.Register(TRANSMISSION_TIME_OFFSET, kId));
+  EXPECT_EQ(0, map_.Register(kRtpExtensionTransmissionTimeOffset, kId));
   EXPECT_EQ(1, map_.Size());
   map_.Erase();
   EXPECT_EQ(0, map_.Size());

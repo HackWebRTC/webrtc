@@ -41,8 +41,9 @@ enum RTPAliveType
 
 enum RTPExtensionType
 {
-   NONE,
-   TRANSMISSION_TIME_OFFSET
+   kRtpExtensionNone,
+   kRtpExtensionTransmissionTimeOffset,
+   kRtpExtensionAudioLevel,
 };
 
 enum RTCPAppSubTypes

@@ -695,14 +695,14 @@ void ModuleRTPUtility::RTPHeaderParser::ParseOneByteExtensionHeader(
 
       RTPExtensionType type;
       if (ptrExtensionMap->GetType(id, &type) != 0) {
-        WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, -1,
+        WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, -1,
             "Failed to find extension id: %d", id);
         return;
       }
 
       switch (type)
       {
-      case TRANSMISSION_TIME_OFFSET:
+      case kRtpExtensionTransmissionTimeOffset:
       {
         if (len != 2)
         {
@@ -722,8 +722,8 @@ void ModuleRTPUtility::RTPHeaderParser::ParseOneByteExtensionHeader(
         parsedPacket.extension.transmissionTimeOffset = transmissionTimeOffset;
         break;
       }
-      //case RTP_AUDIO_LEVEL_ID;
-      //{
+      case kRtpExtensionAudioLevel:
+      {
       //   --- Only used for debugging ---
       //  0                   1                   2                   3
       //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -737,7 +737,8 @@ void ModuleRTPUtility::RTPHeaderParser::ParseOneByteExtensionHeader(
       //const WebRtc_UWord8 level = (*ptr & 0x7f);
       //DEBUG_PRINT("RTP_AUDIO_LEVEL_UNIQUE_ID: ID=%u, len=%u, V=%u, level=%u",
       //    ID, len, V, level);
-      //}
+        break;
+      }
       default:
       {
         WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, -1,
