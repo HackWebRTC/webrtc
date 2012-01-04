@@ -16,35 +16,6 @@
 
 #include <stddef.h> // size_t
 
-// Determines buffer datatype
-typedef short bufdata_t; // TODO(bjornv): Remove together with the below.
-
-// TODO(bjornv): Remove WebRtcApm_CreateBuffer, WebRtcApm_InitBuffer and
-//               WebRtcApm_FreeBuffer when replaced in APM.
-//               Rename WebRtcApm_FreeBuffer to WebRtc_FreeBuffer() and replace.
-//               Replace WebRtcApm_FlushBuffer and WebRtcApm_StuffBuffer with
-//               WebRtc_MoveReadPtr and Read/Write-Buffer with its new versions.
-
-int WebRtcApm_CreateBuffer(void **bufInst, int size);
-int WebRtcApm_InitBuffer(void *bufInst);
-int WebRtcApm_FreeBuffer(void *bufInst);
-
-// Returns number of samples read
-int WebRtcApm_ReadBuffer(void *bufInst, bufdata_t *data, int size);
-
-// Returns number of samples written
-int WebRtcApm_WriteBuffer(void *bufInst, const bufdata_t *data, int size);
-
-// Returns number of samples flushed
-int WebRtcApm_FlushBuffer(void *bufInst, int size);
-
-// Returns number of samples stuffed
-int WebRtcApm_StuffBuffer(void *bufInst, int size);
-
-// Returns number of samples in buffer
-int WebRtcApm_get_buffer_size(const void *bufInst);
-
-// TODO(bjornv): Below are the new functions, to replace the older ones above.
 int WebRtc_CreateBuffer(void** handle,
                         size_t element_count,
                         size_t element_size);
