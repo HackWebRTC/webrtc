@@ -9,52 +9,46 @@
  */
 
 
-/*
- * This header file includes the VAD internal calls for Downsampling and FindMinimum.
- * Specific function calls are given below.
- */
+// This file includes specific signal processing tools used in vad_core.c.
 
-#ifndef WEBRTC_VAD_SP_H_
-#define WEBRTC_VAD_SP_H_
+#ifndef WEBRTC_COMMON_AUDIO_VAD_VAD_SP_H_
+#define WEBRTC_COMMON_AUDIO_VAD_VAD_SP_H_
 
+#include "typedefs.h"
 #include "vad_core.h"
 
-/****************************************************************************
- * WebRtcVad_Downsampling(...)
- *
- * Downsamples the signal a factor 2, eg. 32->16 or 16->8
- *
- * Input:
- *      - signal_in     : Input signal
- *      - in_length     : Length of input signal in samples
- *
- * Input & Output:
- *      - filter_state  : Filter state for first all-pass filters
- *
- * Output:
- *      - signal_out    : Downsampled signal (of length len/2)
- */
-void WebRtcVad_Downsampling(WebRtc_Word16* signal_in,
-                            WebRtc_Word16* signal_out,
-                            WebRtc_Word32* filter_state,
+// Downsamples the signal by a factor 2, eg. 32->16 or 16->8.
+//
+// Inputs:
+//      - signal_in     : Input signal.
+//      - in_length     : Length of input signal in samples.
+//
+// Input & Output:
+//      - filter_state  : Current filter states of the two all-pass filters. The
+//                        |filter_state| is updated after all samples have been
+//                        processed.
+//
+// Output:
+//      - signal_out    : Downsampled signal (of length |in_length| / 2).
+void WebRtcVad_Downsampling(int16_t* signal_in,
+                            int16_t* signal_out,
+                            int32_t* filter_state,
                             int in_length);
 
-/****************************************************************************
- * WebRtcVad_FindMinimum(...)
- *
- * Find the five lowest values of x in 100 frames long window. Return a mean
- * value of these five values.
- *
- * Input:
- *      - feature_value : Feature value
- *      - channel       : Channel number
- *
- * Input & Output:
- *      - inst          : State information
- *
- * Output:
- *      return value    : Weighted minimum value for a moving window.
- */
-WebRtc_Word16 WebRtcVad_FindMinimum(VadInstT* inst, WebRtc_Word16 feature_value, int channel);
+// Updates and returns the smoothed feature minimum. As minimum we use the
+// median of the five smallest feature values in a 100 frames long window.
+//
+// Inputs:
+//      - feature_value : New feature value to update with.
+//      - channel       : Channel number.
+//
+// Input & Output:
+//      - handle        : State information of the VAD.
+//
+// Returns:
+//                      : Smoothed minimum value for a moving window.
+int16_t WebRtcVad_FindMinimum(VadInstT* handle,
+                              int16_t feature_value,
+                              int channel);
 
-#endif // WEBRTC_VAD_SP_H_
+#endif  // WEBRTC_COMMON_AUDIO_VAD_VAD_SP_H_

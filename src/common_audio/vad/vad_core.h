@@ -28,11 +28,14 @@ typedef struct VadInstT_
     WebRtc_Word16 speech_means[NUM_TABLE_VALUES];
     WebRtc_Word16 noise_stds[NUM_TABLE_VALUES];
     WebRtc_Word16 speech_stds[NUM_TABLE_VALUES];
+    // TODO(bjornv): Change to |frame_count|.
     WebRtc_Word32 frame_counter;
     WebRtc_Word16 over_hang; // Over Hang
     WebRtc_Word16 num_of_speech;
+    // TODO(bjornv): Change to |age_vector|.
     WebRtc_Word16 index_vector[16 * NUM_CHANNELS];
     WebRtc_Word16 low_value_vector[16 * NUM_CHANNELS];
+    // TODO(bjornv): Change to |median|.
     WebRtc_Word16 mean_value[NUM_CHANNELS];
     WebRtc_Word16 upper_state[5];
     WebRtc_Word16 lower_state[5];
