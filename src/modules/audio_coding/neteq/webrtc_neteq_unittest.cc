@@ -346,7 +346,6 @@ void NetEqDecodingTest::PopulateRtpInfo(int frame_index,
   rtp_info->markerBit = 0;
 }
 
-#if defined(WEBRTC_LINUX) && defined(WEBRTC_ARCH_64_BITS)
 TEST_F(NetEqDecodingTest, TestBitExactness) {
   const std::string kInputRtpFile = webrtc::test::ProjectRootPath() +
       "resources/neteq_universal.rtp";
@@ -354,10 +353,7 @@ TEST_F(NetEqDecodingTest, TestBitExactness) {
       webrtc::test::ResourcePath("neteq_universal_ref", "pcm");
   DecodeAndCompare(kInputRtpFile, kInputRefFile);
 }
-#endif  // defined(WEBRTC_LINUX) && defined(WEBRTC_ARCH_64_BITS)
 
-#ifndef _WIN32
-// TODO(hlundin): Enable this test for windows.
 TEST_F(NetEqDecodingTest, TestNetworkStatistics) {
   const std::string kInputRtpFile = webrtc::test::ProjectRootPath() +
       "resources/neteq_universal.rtp";
@@ -367,7 +363,6 @@ TEST_F(NetEqDecodingTest, TestNetworkStatistics) {
       webrtc::test::ResourcePath("neteq_rtcp_stats", "dat");
   DecodeAndCheckStats(kInputRtpFile, kNetworkStatRefFile, kRtcpStatRefFile);
 }
-#endif  // _WIN32
 
 TEST_F(NetEqDecodingTest, TestFrameWaitingTimeStatistics) {
   // Use fax mode to avoid time-scaling. This is to simplify the testing of
