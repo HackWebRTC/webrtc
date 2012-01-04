@@ -459,7 +459,8 @@ using namespace videocapturemodule;
         tempCaptureCapability.width = _frameWidth;
         tempCaptureCapability.height = _frameHeight;
         tempCaptureCapability.maxFPS = _frameRate;
-        tempCaptureCapability.rawType = kVideoARGB;
+        // TODO(wu) : Update actual type and not hard-coded value. 
+        tempCaptureCapability.rawType = kVideoBGRA;
 
         _owner->IncomingFrame((unsigned char*)baseAddress,
                               frameSize,

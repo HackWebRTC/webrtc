@@ -294,11 +294,15 @@ WebRtc_Word32 VideoCaptureImpl::IncomingFrame(WebRtc_UWord8* videoFrame,
         }
 
         memset(_captureFrame.Buffer(), 0, _captureFrame.Size());
-        const WebRtc_Word32 conversionResult = ConvertToI420(commonVideoType, videoFrame,
-                                                             width, height,
-                                                             _captureFrame.Buffer(),
-                                                             _requestedCapability.interlaced,
-                                                             _rotateFrame);
+        int dstStride  = width;  // Keeping stride = width for I420 destination.
+        const int conversionResult = ConvertToI420(commonVideoType,
+                                                   videoFrame,
+                                                   0, 0,  // No cropping
+                                                   width, height,
+                                                   0,  // Ignored for non-JPG.
+                                                   width, height, dstStride,
+                                                   _rotateFrame,
+                                                   _captureFrame.Buffer());
         if (conversionResult < 0)
         {
             WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
