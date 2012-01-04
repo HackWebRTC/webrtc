@@ -28,8 +28,8 @@
 #include "encode_lpc_swb.h"
 #include "lpc_shape_swb12_tables.h"
 #include "lpc_shape_swb16_tables.h"
-
 #include "lpc_gain_swb_tables.h"
+#include "os_specific_inline.h"
 
 #include <math.h>
 #include <string.h>
@@ -74,42 +74,6 @@ static const WebRtc_Word32 lbcnQ10 = -402874;
 #define DPMAX_Q10      10240 // 10.00 in Q10
 #define MINBITS_Q10    10240  /* 10.0 in Q10 */
 #define IS_SWB_12KHZ       1
-
-#if defined(WEBRTC_LINUX)
-extern long int lrint(double x); /* Note! This declaration is missing in math.h, that is why it is declared as extern*/
-#define WebRtcIsac_lrint lrint
-#elif defined(WEBRTC_MAC)
-extern long int lrint(double x); /* Note! This declaration is missing in math.h, that is why it is declared as extern*/
-#define WebRtcIsac_lrint lrint
-#elif defined(X64)
-static __inline WebRtc_Word32 WebRtcIsac_lrint(double flt) {
-  WebRtc_Word32 intgr;
-  intgr = (WebRtc_Word32)floor(flt+.499999999999);
-  return intgr ;
-}
-#elif defined(WEBRTC_TARGET_PC)
-
-static __inline WebRtc_Word32 WebRtcIsac_lrint(double flt) {
-
-  WebRtc_Word32 intgr;
-
-  _asm
-  {
-    fld flt
-        fistp intgr
-        } ;
-
-  return intgr ;
-}
-#else // Do a slow but correct implementation of lrint
-
-static __inline WebRtc_Word32 WebRtcIsac_lrint(double flt) {
-  WebRtc_Word32 intgr;
-  intgr = (WebRtc_Word32)floor(flt+.499999999999);
-  return intgr ;
-}
-
-#endif
 
 __inline WebRtc_UWord32 stepwise(WebRtc_Word32 dinQ10) {
 

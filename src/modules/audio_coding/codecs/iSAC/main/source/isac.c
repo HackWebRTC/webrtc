@@ -23,6 +23,7 @@
 #include "structs.h"
 #include "signal_processing_library.h"
 #include "lpc_shape_swb16_tables.h"
+#include "os_specific_inline.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -1200,35 +1201,6 @@ WebRtc_Word16 WebRtcIsac_UpdateBwEstimate(
   return 0;
 }
 
-
-#if defined(WEBRTC_LINUX)
-#define WebRtcIsac_W16RIntF(x) ((WebRtc_Word16)(x))
-#elif defined(WEBRTC_MAC)
-#define WebRtcIsac_W16RIntF(x) ((WebRtc_Word16)(x))
-#elif defined(X64)
-#define WebRtcIsac_W16RIntF(x) ((WebRtc_Word16)(x))
-#elif defined(WEBRTC_TARGET_PC)
-
-static __inline WebRtc_Word16 WebRtcIsac_W16RIntF(float flt) {
-
-  short intgr;
-
-  _asm
-    {
-      fld flt
-        fistp intgr
-        } ;
-
-  return intgr ;
-}
-#else
-
-#define WebRtcIsac_W16RIntF(x) ((WebRtc_Word16)(x))
-#endif
-
-
-
-
 static WebRtc_Word16 Decode(
 			    ISACStruct*         ISAC_main_inst,
 			    const WebRtc_UWord16* encoded,
@@ -1338,7 +1310,7 @@ static WebRtc_Word16 Decode(
 	    }
 	  else
 	    {
-	      decoded[k] = (WebRtc_Word16)WebRtcIsac_W16RIntF(outFrame[k]);
+              decoded[k] = (WebRtc_Word16)WebRtcIsac_lrint(outFrame[k]);
 	    }
 	}
       numSamplesUB = 0;
@@ -1360,7 +1332,7 @@ static WebRtc_Word16 Decode(
 	    }
 	  else
 	    {
-	      outFrameLB[k] = (WebRtc_Word16)WebRtcIsac_W16RIntF(outFrame[k]);
+              outFrameLB[k] = (WebRtc_Word16)WebRtcIsac_lrint(outFrame[k]);
 	    }
 	}
 
@@ -1553,8 +1525,8 @@ static WebRtc_Word16 Decode(
 		    }
 		  else
 		    {
-		      outFrameUB[k] = (WebRtc_Word16)WebRtcIsac_W16RIntF(
-									 outFrame[k]);
+                      outFrameUB[k] = (WebRtc_Word16)WebRtcIsac_lrint(
+                          outFrame[k]);
 		    }
 		}
 	    }

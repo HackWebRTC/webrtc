@@ -11,47 +11,13 @@
 #include "settings.h"
 #include "fft.h"
 #include "codec.h"
+#include "os_specific_inline.h"
 #include <math.h>
 
 static double costab1[FRAMESAMPLES_HALF];
 static double sintab1[FRAMESAMPLES_HALF];
 static double costab2[FRAMESAMPLES_QUARTER];
 static double sintab2[FRAMESAMPLES_QUARTER];
-
-#if defined(WEBRTC_LINUX)
-extern long int lrint(double x); /* Note! This declaration is missing in math.h, that is why it is declared as extern*/
-#define WebRtcIsac_lrint lrint
-#elif defined(WEBRTC_MAC)
-extern long int lrint(double x); /* Note! This declaration is missing in math.h, that is why it is declared as extern*/
-#define WebRtcIsac_lrint lrint
-#elif defined(X64)
-static __inline WebRtc_Word32 WebRtcIsac_lrint(double flt) {
-  WebRtc_Word32 intgr;
-  intgr = (WebRtc_Word32)floor(flt+.499999999999);
-  return intgr ;
-}
-#elif defined(WEBRTC_TARGET_PC)
-
-static __inline WebRtc_Word32 WebRtcIsac_lrint(double flt) {
-
-  WebRtc_Word32 intgr;
-
-  _asm
-  {
-    fld flt
-        fistp intgr
- } ;
-
-  return intgr ;
-}
-#else// Do a slow but correct implementation of lrint
-
-static __inline WebRtc_Word32 WebRtcIsac_lrint(double flt) {
-  WebRtc_Word32 intgr;
-  intgr = (WebRtc_Word32)floor(flt+.499999999999);
-  return intgr ;
-}
-#endif
 
 void WebRtcIsac_InitTransform()
 {

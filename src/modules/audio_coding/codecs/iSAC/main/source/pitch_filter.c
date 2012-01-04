@@ -9,6 +9,8 @@
  */
 
 #include "pitch_estimator.h"
+#include "os_specific_inline.h"
+
 #include <stdlib.h>
 #include <memory.h>
 #include <math.h>
@@ -27,41 +29,6 @@ static const double kIntrpCoef[PITCH_FRACS][PITCH_FRACORDER] = {
   { 0.01654127246315, -0.04533310458085,  0.09585268418557, -0.20266133815190, 0.79117042386878,  0.44560418147640, -0.13991265473712,  0.05816126837865, -0.01985640750433}
 };
 
-#if defined(WEBRTC_LINUX)
-extern long int lrint(double x); /* Note! This declaration is missing in math.h, that is why it is declared as extern*/
-#define WebRtcIsac_lrint lrint
-#elif defined(WEBRTC_MAC)
-extern long int lrint(double x); /* Note! This declaration is missing in math.h, that is why it is declared as extern*/
-#define WebRtcIsac_lrint lrint
-#elif defined(X64)
-static __inline WebRtc_Word32 WebRtcIsac_lrint(double flt) {
-  WebRtc_Word32 intgr;
-  intgr = (WebRtc_Word32)floor(flt+.499999999999);
-  return intgr ;
-}
-#elif defined(WEBRTC_TARGET_PC)
-
-static __inline WebRtc_Word32 WebRtcIsac_lrint(double flt) {
-
-  WebRtc_Word32 intgr;
-
-  _asm
-  {
-    fld flt
-        fistp intgr
-        } ;
-
-  return intgr ;
-}
-
-#else// Do a slow but correct implementation of lrint
-
-static __inline WebRtc_Word32 WebRtcIsac_lrint(double flt) {
-  WebRtc_Word32 intgr;
-  intgr = (WebRtc_Word32)floor(flt+.499999999999);
-  return intgr ;
-}
-#endif
 
 void WebRtcIsac_PitchfilterPre(double *indat,
                                 double *outdat,

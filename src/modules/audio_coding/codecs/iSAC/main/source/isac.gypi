@@ -71,6 +71,7 @@
         'settings.h',
         'spectrum_ar_model_tables.h',
         'structs.h',
+        'os_specific_inline.h',
      ],
       'conditions': [
         ['OS!="win"', {
