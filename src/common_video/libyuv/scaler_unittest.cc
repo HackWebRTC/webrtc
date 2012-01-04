@@ -24,16 +24,19 @@ class TestScaler : public ::testing::Test {
   virtual void SetUp();
   virtual void TearDown();
 
+  void ScaleSequence(ScaleMethod method,
+                     FILE* source_file, std::string out_name,
+                     int src_width, int src_height,
+                     int dst_width, int dst_height);
+
+  Scaler test_scaler_;
   FILE* source_file_;
+  uint8_t* test_buffer_;
   const int width_;
   const int height_;
   const int frame_length_;
 };
 
-void ScaleSequence(ScaleMethod method,
-                   FILE* source_file, std::string out_name,
-                   int src_width, int src_height,
-                   int dst_width, int dst_height);
 
 // TODO (mikhal): Use scoped_ptr when handling buffers.
 TestScaler::TestScaler()
@@ -44,11 +47,12 @@ TestScaler::TestScaler()
 }
 
 void TestScaler::SetUp() {
-  const std::string input_file_name = webrtc::test::ProjectRootPath() +
-                                      "resources/foreman_cif.yuv";
+  const std::string input_file_name =
+      webrtc::test::ResourcePath("foreman_cif", "yuv");
   source_file_  = fopen(input_file_name.c_str(), "rb");
   ASSERT_TRUE(source_file_ != NULL) << "Cannot read file: "<<
                                        input_file_name << "\n";
+  test_buffer_ = new uint8_t[frame_length_];
 }
 
 void TestScaler::TearDown() {
@@ -56,35 +60,36 @@ void TestScaler::TearDown() {
     ASSERT_EQ(0, fclose(source_file_));
   }
   source_file_ = NULL;
+  delete [] test_buffer_;
 }
 
-TEST_F(TestScaler, ScaleSanityTest) {
-  Scaler test_scaler;
-  uint8_t* test_buffer = new uint8_t[frame_length_];
-  // Scaling without setting values
+TEST_F(TestScaler, ScaleWithoutSettingValues) {
   int size = 100;
-  EXPECT_EQ(-2, test_scaler.Scale(test_buffer, test_buffer, size));
+  EXPECT_EQ(-2, test_scaler_.Scale(test_buffer_, test_buffer_, size));
+}
 
-  // Setting bad initial values
-  EXPECT_EQ(-1, test_scaler.Set(0, 288, 352, 288, kI420, kI420, kScalePoint));
-  EXPECT_EQ(-1, test_scaler.Set(704, 0, 352, 288, kI420, kI420, kScaleBox));
-  EXPECT_EQ(-1, test_scaler.Set(704, 576, 352, 0, kI420, kI420,
+TEST_F(TestScaler, ScaleBadInitialValues) {
+  EXPECT_EQ(-1, test_scaler_.Set(0, 288, 352, 288, kI420, kI420, kScalePoint));
+  EXPECT_EQ(-1, test_scaler_.Set(704, 0, 352, 288, kI420, kI420, kScaleBox));
+  EXPECT_EQ(-1, test_scaler_.Set(704, 576, 352, 0, kI420, kI420,
                                  kScaleBilinear));
-  EXPECT_EQ(-1, test_scaler.Set(704, 576, 0, 288, kI420, kI420, kScalePoint));
+  EXPECT_EQ(-1, test_scaler_.Set(704, 576, 0, 288, kI420, kI420, kScalePoint));
+}
 
-  // Sending NULL pointer
-  size = 0;
-  EXPECT_EQ(-1, test_scaler.Scale(NULL, test_buffer, size));
+TEST_F(TestScaler, ScaleSendingNullSourcePointer) {
+  int size = 0;
+  EXPECT_EQ(-1, test_scaler_.Scale(NULL, test_buffer_, size));
+}
 
+TEST_F(TestScaler, ScaleSendingBufferTooSmall) {
   // Sending a buffer which is too small (should reallocate and update size)
-  EXPECT_EQ(0, test_scaler.Set(352, 288, 144, 288, kI420, kI420, kScalePoint));
+  EXPECT_EQ(0, test_scaler_.Set(352, 288, 144, 288, kI420, kI420, kScalePoint));
   uint8_t* test_buffer2 = NULL;
-  size = 0;
-  EXPECT_GT(fread(test_buffer, 1, frame_length_, source_file_), 0U);
-  EXPECT_EQ(0, test_scaler.Scale(test_buffer, test_buffer2, size));
+  int size = 0;
+  EXPECT_GT(fread(test_buffer_, 1, frame_length_, source_file_), 0U);
+  EXPECT_EQ(0, test_scaler_.Scale(test_buffer_, test_buffer2, size));
   EXPECT_EQ(144 * 288 * 3 / 2, size);
-
-  delete [] test_buffer;
+  delete [] test_buffer2;
 }
 
 //TODO (mikhal): Converge the test into one function that accepts the method.
@@ -183,13 +188,12 @@ TEST_F(TestScaler, BoxScaleTest) {
 }
 
 // TODO (mikhal): Move part to a separate scale test.
-void ScaleSequence(ScaleMethod method,
+void TestScaler::ScaleSequence(ScaleMethod method,
                    FILE* source_file, std::string out_name,
                    int src_width, int src_height,
                    int dst_width, int dst_height) {
-  Scaler test_scaler;
   FILE* output_file;
-  EXPECT_EQ(0, test_scaler.Set(src_width, src_height,
+  EXPECT_EQ(0, test_scaler_.Set(src_width, src_height,
                                dst_width, dst_height,
                                kI420, kI420, method));
 
@@ -214,7 +218,7 @@ void ScaleSequence(ScaleMethod method,
         break;
 
     start_clock = TickTime::MillisecondTimestamp();
-    EXPECT_EQ(0, test_scaler.Scale(input_buffer, output_buffer,
+    EXPECT_EQ(0, test_scaler_.Scale(input_buffer, output_buffer,
                                    out_required_size));
     total_clock += TickTime::MillisecondTimestamp() - start_clock;
     fwrite(output_buffer, out_required_size, 1, output_file);
@@ -227,8 +231,9 @@ void ScaleSequence(ScaleMethod method,
     printf("Average time per frame[ms]: %.2lf\n",
              (static_cast<double>(total_clock) / frame_count));
   }
+  ASSERT_EQ(0, fclose(output_file));
   delete [] input_buffer;
   delete [] output_buffer;
 }
 
-}  // namespace
+}  // namespace webrtc

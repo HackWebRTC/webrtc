@@ -188,8 +188,8 @@ TEST_F(TestLibYuv, ConvertTest) {
   fwrite(res_i420_buffer, frame_length_, 1, output_file);
   psnr = I420PSNR(orig_buffer, res_i420_buffer, width_, height_);
   EXPECT_EQ(48.0, psnr);
+  ASSERT_EQ(0, fclose(output_file));
   delete [] out_yuy2_buffer;
-
   delete [] res_i420_buffer;
   delete [] orig_buffer;
 }
