@@ -458,11 +458,13 @@ ACMNetEQ::NetworkStatistics(
     {
         statistics->currentAccelerateRate = stats.currentAccelerateRate;
         statistics->currentBufferSize = stats.currentBufferSize;
+        statistics->jitterPeaksFound = (stats.jitterPeaksFound > 0);
         statistics->currentDiscardRate = stats.currentDiscardRate;
         statistics->currentExpandRate = stats.currentExpandRate;
         statistics->currentPacketLossRate = stats.currentPacketLossRate;
         statistics->currentPreemptiveRate = stats.currentPreemptiveRate;
         statistics->preferredBufferSize = stats.preferredBufferSize;
+        statistics->clockDriftPPM = stats.clockDriftPPM;
     }
     else
     {

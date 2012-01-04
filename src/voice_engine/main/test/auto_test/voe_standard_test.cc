@@ -3081,6 +3081,10 @@ TEST_MUSTPASS(voe_codec_->SetSendCodec(0, ci));
            nStats.currentPreemptiveRate);
   TEST_LOG("    preferredBufferSize       = %hu \n",
            nStats.preferredBufferSize);
+  TEST_LOG("    jitterPeaksFound          = %i \n",
+           nStats.jitterPeaksFound);
+  TEST_LOG("    clockDriftPPM             = %i \n",
+           nStats.clockDriftPPM);
   TEST_LOG("    meanWaitingTimeMs         = %i \n",
            nStats.meanWaitingTimeMs);
   TEST_LOG("    medianWaitingTimeMs       = %i \n",

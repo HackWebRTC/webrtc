@@ -1241,6 +1241,13 @@ int WebRtcNetEQ_GetNetworkStatistics(void *inst, WebRtcNetEQ_NetworkStatistics *
         stats->preferredBufferSize = 0;
     }
 
+    /***********************************/
+    /* Check if jitter peaks are found */
+    /***********************************/
+
+    stats->jitterPeaksFound =
+        NetEqMainInst->MCUinst.BufferStat_inst.Automode_inst.peakFound;
+
     /***********************/
     /* Calculate loss rate */
     /***********************/
@@ -1524,6 +1531,9 @@ int WebRtcNetEQ_GetNetworkStatistics(void *inst, WebRtcNetEQ_NetworkStatistics *
         /* set loss rate = 1 */
         stats->currentPreemptiveRate = 1 << 14; /* 1 in Q14 */
     }
+
+    stats->clockDriftPPM = WebRtcNetEQ_AverageIAT(
+        &NetEqMainInst->MCUinst.BufferStat_inst.Automode_inst);
 
     /* reset counters */
     WebRtcNetEQ_ResetMcuInCallStats(&(NetEqMainInst->MCUinst));

@@ -92,16 +92,21 @@ int WebRtcNetEQ_RecOutMasterSlave(void *inst, WebRtc_Word16 *pw16_outData,
 
 typedef struct
 {
-    WebRtc_UWord16 currentBufferSize; /* current jitter buffer size in ms */
-    WebRtc_UWord16 preferredBufferSize; /* preferred (optimal) buffer size in ms */
-    WebRtc_UWord16 currentPacketLossRate; /* loss rate (network + late) (in Q14) */
-    WebRtc_UWord16 currentDiscardRate; /* late loss rate (in Q14) */
-    WebRtc_UWord16 currentExpandRate; /* fraction (of original stream) of synthesized speech
-                                       * inserted through expansion (in Q14) */
-    WebRtc_UWord16 currentPreemptiveRate; /* fraction of synthesized speech inserted through
-                                           * pre-emptive expansion (in Q14) */
-    WebRtc_UWord16 currentAccelerateRate; /* fraction of data removed through acceleration
-                                           * (in Q14) */
+    uint16_t currentBufferSize;         /* Current jitter buffer size in ms. */
+    uint16_t preferredBufferSize;       /* Preferred buffer size in ms. */
+    uint16_t jitterPeaksFound;          /* 1 if adding extra delay due to peaky
+                                         * jitter; 0 otherwise. */
+    uint16_t currentPacketLossRate;     /* Loss rate (network + late) (Q14). */
+    uint16_t currentDiscardRate;        /* Late loss rate (Q14). */
+    uint16_t currentExpandRate;         /* Fraction (of original stream) of
+                                         * synthesized speech inserted through
+                                         * expansion (in Q14). */
+    uint16_t currentPreemptiveRate;     /* Fraction of data inserted through
+                                         * pre-emptive expansion (in Q14). */
+    uint16_t currentAccelerateRate;     /* Fraction of data removed through
+                                         * acceleration (in Q14). */
+    int32_t clockDriftPPM;              /* Average clock-drift in parts-per-
+                                         * million (positive or negative). */
 } WebRtcNetEQ_NetworkStatistics;
 
 /*

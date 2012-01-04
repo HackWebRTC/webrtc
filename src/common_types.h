@@ -251,6 +251,8 @@ struct NetworkStatistics           // NETEQ statistics
     WebRtc_UWord16 currentBufferSize;
     // preferred (optimal) buffer size in ms
     WebRtc_UWord16 preferredBufferSize;
+    // adding extra delay due to "peaky jitter"
+    bool jitterPeaksFound;
     // loss rate (network + late) in percent (in Q14)
     WebRtc_UWord16 currentPacketLossRate;
     // late loss rate in percent (in Q14)
@@ -263,6 +265,8 @@ struct NetworkStatistics           // NETEQ statistics
     WebRtc_UWord16 currentPreemptiveRate;
     // fraction of data removed through acceleration (in Q14)
     WebRtc_UWord16 currentAccelerateRate;
+    // clock-drift in parts-per-million (negative or positive)
+    int32_t clockDriftPPM;
     // average packet waiting time in the jitter buffer (ms)
     int meanWaitingTimeMs;
     // median packet waiting time in the jitter buffer (ms)

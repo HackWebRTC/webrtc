@@ -8,7 +8,7 @@ vars = {
 
   # External resources like video and audio files used for testing purposes.
   # Downloaded on demand when needed.
-  "webrtc_resources_revision": "5",
+  "webrtc_resources_revision": "6",
 }
 
 # NOTE: Prefer revision numbers to tags for svn deps.

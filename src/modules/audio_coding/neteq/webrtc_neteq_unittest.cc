@@ -183,6 +183,9 @@ class NetEqDecodingTest : public ::testing::Test {
   void DecodeAndCheckStats(const std::string &rtp_file,
                            const std::string &stat_ref_file,
                            const std::string &rtcp_ref_file);
+  static void PopulateRtpInfo(int frame_index,
+                              int samples_per_frame,
+                              WebRtcNetEQ_RTPInfo* rtp_info);
 
   NETEQTEST_NetEQClass* neteq_inst_;
   std::vector<NETEQTEST_Decoder*> dec_;
@@ -333,6 +336,16 @@ void NetEqDecodingTest::DecodeAndCheckStats(const std::string &rtp_file,
   }
 }
 
+void NetEqDecodingTest::PopulateRtpInfo(int frame_index,
+                                        int samples_per_frame,
+                                        WebRtcNetEQ_RTPInfo* rtp_info) {
+  rtp_info->sequenceNumber = frame_index;
+  rtp_info->timeStamp = frame_index * samples_per_frame;
+  rtp_info->SSRC = 0x1234;  // Just an arbitrary SSRC.
+  rtp_info->payloadType = 94;  // PCM16b WB codec.
+  rtp_info->markerBit = 0;
+}
+
 #if defined(WEBRTC_LINUX) && defined(WEBRTC_ARCH_64_BITS)
 TEST_F(NetEqDecodingTest, TestBitExactness) {
   const std::string kInputRtpFile = webrtc::test::ProjectRootPath() +
@@ -417,6 +430,68 @@ TEST_F(NetEqDecodingTest, TestFrameWaitingTimeStatistics) {
   len = WebRtcNetEQ_GetRawFrameWaitingTimes(neteq_inst_->instance(),
                                             kVecLen, waiting_times);
   EXPECT_EQ(100, len);
+}
+
+TEST_F(NetEqDecodingTest, TestAverageInterArrivalTimeNegative) {
+  const int kNumFrames = 3000;  // Needed for convergence.
+  int frame_index = 0;
+  const int kSamples = 10 * 16;
+  const int kPayloadBytes = kSamples * 2;
+  while (frame_index < kNumFrames) {
+    // Insert one packet each time, except every 10th time where we insert two
+    // packets at once. This will create a negative clock-drift of approx. 10%.
+    int num_packets = (frame_index % 10 == 0 ? 2 : 1);
+    for (int n = 0; n < num_packets; ++n) {
+      uint8_t payload[kPayloadBytes] = {0};
+      WebRtcNetEQ_RTPInfo rtp_info;
+      PopulateRtpInfo(frame_index, kSamples, &rtp_info);
+      ASSERT_EQ(0,
+                WebRtcNetEQ_RecInRTPStruct(neteq_inst_->instance(),
+                                           &rtp_info,
+                                           payload,
+                                           kPayloadBytes, 0));
+      ++frame_index;
+    }
+
+    // Pull out data once.
+    ASSERT_TRUE(kBlockSize16kHz == neteq_inst_->recOut(out_data_));
+  }
+
+  WebRtcNetEQ_NetworkStatistics network_stats;
+  ASSERT_EQ(0, WebRtcNetEQ_GetNetworkStatistics(neteq_inst_->instance(),
+                                                &network_stats));
+  EXPECT_EQ(-106911, network_stats.clockDriftPPM);
+}
+
+TEST_F(NetEqDecodingTest, TestAverageInterArrivalTimePositive) {
+  const int kNumFrames = 5000;  // Needed for convergence.
+  int frame_index = 0;
+  const int kSamples = 10 * 16;
+  const int kPayloadBytes = kSamples * 2;
+  for (int i = 0; i < kNumFrames; ++i) {
+    // Insert one packet each time, except every 10th time where we don't insert
+    // any packet. This will create a positive clock-drift of approx. 11%.
+    int num_packets = (i % 10 == 9 ? 0 : 1);
+    for (int n = 0; n < num_packets; ++n) {
+      uint8_t payload[kPayloadBytes] = {0};
+      WebRtcNetEQ_RTPInfo rtp_info;
+      PopulateRtpInfo(frame_index, kSamples, &rtp_info);
+      ASSERT_EQ(0,
+                WebRtcNetEQ_RecInRTPStruct(neteq_inst_->instance(),
+                                           &rtp_info,
+                                           payload,
+                                           kPayloadBytes, 0));
+      ++frame_index;
+    }
+
+    // Pull out data once.
+    ASSERT_TRUE(kBlockSize16kHz == neteq_inst_->recOut(out_data_));
+  }
+
+  WebRtcNetEQ_NetworkStatistics network_stats;
+  ASSERT_EQ(0, WebRtcNetEQ_GetNetworkStatistics(neteq_inst_->instance(),
+                                                &network_stats));
+  EXPECT_EQ(108352, network_stats.clockDriftPPM);
 }
 
 }  // namespace

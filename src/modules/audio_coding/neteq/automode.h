@@ -103,6 +103,8 @@ typedef struct
     WebRtc_Word16 curPeakHeight; /* derived from peakHeightPkt vector;
      used as optimal buffer level in peak mode */
     WebRtc_Word16 peakModeDisabled; /* ==0 if peak mode can be engaged; >0 if not */
+    uint16_t peakFound; /* 1 if peaks are detected and extra delay is applied;
+                        * 0 otherwise. */
 
     /* Post-call statistics */
     WebRtc_UWord32 countIAT500ms; /* number of times we got small network outage */
@@ -239,5 +241,24 @@ int WebRtcNetEQ_SetPacketSpeechLen(AutomodeInst_t *inst, WebRtc_Word16 newLenSam
  */
 
 int WebRtcNetEQ_ResetAutomode(AutomodeInst_t *inst, int maxBufLenPackets);
+
+/****************************************************************************
+ * WebRtcNetEQ_AverageIAT(...)
+ *
+ * Calculate the average inter-arrival time based on current statistics.
+ * The average is expressed in parts per million relative the nominal. That is,
+ * if the average inter-arrival time is equal to the nominal frame time,
+ * the return value is zero. A positive value corresponds to packet spacing
+ * being too large, while a negative value means that the packets arrive with
+ * less spacing than expected.
+ *
+ *
+ * Input:
+ *    - inst              : Automode instance.
+ *
+ * Return value           : Average relative inter-arrival time in samples.
+ */
+
+int32_t WebRtcNetEQ_AverageIAT(const AutomodeInst_t *inst);
 
 #endif /* AUTOMODE_H */

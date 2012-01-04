@@ -103,6 +103,15 @@ TEST_F(AcmNetEqTest, NetworkStatistics) {
 
   ACMNetworkStatistics stats;
   ASSERT_EQ(0, neteq_.NetworkStatistics(&stats));
+  EXPECT_EQ(0, stats.currentBufferSize);
+  EXPECT_EQ(0, stats.preferredBufferSize);
+  EXPECT_FALSE(stats.jitterPeaksFound);
+  EXPECT_EQ(0, stats.currentPacketLossRate);
+  EXPECT_EQ(0, stats.currentDiscardRate);
+  EXPECT_EQ(0, stats.currentExpandRate);
+  EXPECT_EQ(0, stats.currentPreemptiveRate);
+  EXPECT_EQ(0, stats.currentAccelerateRate);
+  EXPECT_EQ(-916, stats.clockDriftPPM);
   EXPECT_EQ(300, stats.maxWaitingTimeMs);
   EXPECT_EQ(159, stats.meanWaitingTimeMs);
   EXPECT_EQ(160, stats.medianWaitingTimeMs);

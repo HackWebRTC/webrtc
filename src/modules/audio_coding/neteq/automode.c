@@ -14,6 +14,8 @@
 
 #include "automode.h"
 
+#include <assert.h>
+
 #include "signal_processing_library.h"
 
 #include "neteq_defines.h"
@@ -496,11 +498,12 @@ WebRtc_Word16 WebRtcNetEQ_CalcOptimalBufLvl(AutomodeInst_t *inst, WebRtc_Word32 
      * If not disabled (enough peaks have been observed) and
      * time since last peak is less than two peak periods.
      */
+    inst->peakFound = 0;
     if ((!inst->peakModeDisabled) && (inst->peakIatCountSamp
         <= WEBRTC_SPL_LSHIFT_W32(inst->curPeakPeriod , 1)))
     {
         /* Engage peak mode */
-
+        inst->peakFound = 1;
         /* Set optimal buffer level to curPeakHeight (if it's not already larger) */
         Bopt = WEBRTC_SPL_MAX(Bopt, inst->curPeakHeight);
 
@@ -688,7 +691,7 @@ int WebRtcNetEQ_ResetAutomode(AutomodeInst_t *inst, int maxBufLenPackets)
     }
 
     /*
-     * Calculate the optimal buffer level corresponing to the initial PDF.
+     * Calculate the optimal buffer level corresponding to the initial PDF.
      * No need to call WebRtcNetEQ_CalcOptimalBufLvl() since we have just hard-coded
      * all the variables that the buffer level depends on => we know the result
      */
@@ -715,3 +718,19 @@ int WebRtcNetEQ_ResetAutomode(AutomodeInst_t *inst, int maxBufLenPackets)
     return 0;
 }
 
+int32_t WebRtcNetEQ_AverageIAT(const AutomodeInst_t *inst) {
+  int i;
+  int32_t sum_q24 = 0;
+  assert(inst);
+  for (i = 0; i <= MAX_IAT; ++i) {
+    /* Shift 6 to fit worst case: 2^30 * 64. */
+    sum_q24 += (inst->iatProb[i] >> 6) * i;
+  }
+  /* Subtract the nominal inter-arrival time 1 = 2^24 in Q24. */
+  sum_q24 -= (1 << 24);
+  /*
+   * Multiply with 1000000 / 2^24 = 15625 / 2^18 to get the average.
+   * Shift 7 to Q17 first, then multiply with 15625 and shift another 11.
+   */
+  return ((sum_q24 >> 7) * 15625) >> 11;
+}

@@ -977,12 +977,17 @@ APITest::TestDelay(char side)
         fprintf(stdout, "\n\nJitter Statistics at Side %c\n", side);
         fprintf(stdout, "--------------------------------------\n");
         fprintf(stdout, "buffer-size............. %d\n", networkStat.currentBufferSize);    
-        fprintf(stdout, "Preferred buffer-size... %d\n", networkStat.preferredBufferSize);  
+        fprintf(stdout, "Preferred buffer-size... %d\n", networkStat.preferredBufferSize);
+        fprintf(stdout, "Peaky jitter mode........%d\n", networkStat.jitterPeaksFound);
         fprintf(stdout, "packet-size rate........ %d\n", networkStat.currentPacketLossRate);
         fprintf(stdout, "discard rate............ %d\n", networkStat.currentDiscardRate);   
         fprintf(stdout, "expand rate............. %d\n", networkStat.currentExpandRate);    
         fprintf(stdout, "Preemptive rate......... %d\n", networkStat.currentPreemptiveRate);
         fprintf(stdout, "Accelerate rate......... %d\n", networkStat.currentAccelerateRate);
+        fprintf(stdout, "Clock-drift............. %d\n", networkStat.clockDriftPPM);
+        fprintf(stdout, "Mean waiting time....... %d\n", networkStat.meanWaitingTimeMs);
+        fprintf(stdout, "Median waiting time..... %d\n", networkStat.medianWaitingTimeMs);
+        fprintf(stdout, "Max waiting time........ %d\n", networkStat.maxWaitingTimeMs);
     }
 
     CHECK_ERROR_MT(myACM->SetMinimumPlayoutDelay(*myMinDelay));

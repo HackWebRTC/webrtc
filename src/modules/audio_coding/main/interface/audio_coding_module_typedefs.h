@@ -145,6 +145,8 @@ enum ACMAMRPackingFormat {
 //
 // -currentBufferSize      : current jitter buffer size in ms
 // -preferredBufferSize    : preferred (optimal) buffer size in ms
+// -jitterPeaksFound       : indicate if peaky-jitter mode is engaged, that is,
+//                           if severe but sparse network delays have occurred.
 // -currentPacketLossRate  : loss rate (network + late) (in Q14)
 // -currentDiscardRate     : late loss rate (in Q14)
 // -currentExpandRate      : fraction (of original stream) of synthesized
@@ -153,17 +155,22 @@ enum ACMAMRPackingFormat {
 //                           pre-emptive expansion (in Q14)
 // -currentAccelerateRate  : fraction of data removed through acceleration
 //                           (in Q14)
+// -clockDriftPPM          : clock-drift between sender and receiver in parts-
+//                           per-million. Positive means that receiver sample
+//                           rate is higher than sender sample rate.
 // -meanWaitingTimeMs      : average packet waiting time in the buffer
 // -medianWaitingTimeMs    : median packet waiting time in the buffer
 // -maxWaitingTimeMs       : max packet waiting time in the buffer
 typedef struct {
   WebRtc_UWord16 currentBufferSize;
   WebRtc_UWord16 preferredBufferSize;
+  bool jitterPeaksFound;
   WebRtc_UWord16 currentPacketLossRate;
   WebRtc_UWord16 currentDiscardRate;
   WebRtc_UWord16 currentExpandRate;
   WebRtc_UWord16 currentPreemptiveRate;
   WebRtc_UWord16 currentAccelerateRate;
+  int32_t clockDriftPPM;
   int meanWaitingTimeMs;
   int medianWaitingTimeMs;
   int maxWaitingTimeMs;
