@@ -200,6 +200,10 @@ int WebRtcAgc_AddMic(void *state, WebRtc_Word16 *in_mic, WebRtc_Word16 *in_mic_H
     /* apply slowly varying digital gain */
     if (stt->micVol > stt->maxAnalog)
     {
+        /* |maxLevel| is strictly >= |micVol|, so this condition should be
+         * satisfied here, ensuring there is no divide-by-zero. */
+        assert(stt->maxLevel > stt->maxAnalog);
+
         /* Q1 */
         tmp16 = (WebRtc_Word16)(stt->micVol - stt->maxAnalog);
         tmp32 = WEBRTC_SPL_MUL_16_16(GAIN_TBL_LEN - 1, tmp16);

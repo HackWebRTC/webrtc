@@ -12,11 +12,14 @@
  *
  */
 
+#include "digital_agc.h"
+
+#include <assert.h>
 #include <string.h>
 #ifdef AGC_DEBUG
 #include <stdio.h>
 #endif
-#include "digital_agc.h"
+
 #include "gain_control.h"
 
 // To generate the gaintable, copy&paste the following lines to a Matlab window:
@@ -33,7 +36,8 @@
 // zoom on;
 
 // Generator table for y=log2(1+e^x) in Q8.
-static const WebRtc_UWord16 kGenFuncTable[128] = {
+static const int kGenFuncTableSize = 128;
+static const WebRtc_UWord16 kGenFuncTable[kGenFuncTableSize] = {
           256,   485,   786,  1126,  1484,  1849,  2217,  2586,
          2955,  3324,  3693,  4063,  4432,  4801,  5171,  5540,
          5909,  6279,  6648,  7017,  7387,  7756,  8125,  8495,
@@ -102,8 +106,9 @@ WebRtc_Word32 WebRtcAgc_CalculateGainTable(WebRtc_Word32 *gainTable, // Q16
     //           = (compRatio-1)*digCompGaindB/compRatio
     tmp32no1 = WEBRTC_SPL_MUL_16_16(digCompGaindB, kCompRatio - 1);
     diffGain = WebRtcSpl_DivW32W16ResW16(tmp32no1 + (kCompRatio >> 1), kCompRatio);
-    if (diffGain < 0)
+    if (diffGain < 0 || diffGain >= kGenFuncTableSize)
     {
+        assert(0);
         return -1;
     }
 
@@ -185,8 +190,15 @@ WebRtc_Word32 WebRtcAgc_CalculateGainTable(WebRtc_Word32 *gainTable, // Q16
         numFIX -= WEBRTC_SPL_MUL_32_16((WebRtc_Word32)logApprox, diffGain); // Q14
 
         // Calculate ratio
-        // Shift numFIX as much as possible
-        zeros = WebRtcSpl_NormW32(numFIX);
+        // Shift |numFIX| as much as possible.
+        // Ensure we avoid wrap-around in |den| as well.
+        if (numFIX > (den >> 8))  // |den| is Q8.
+        {
+            zeros = WebRtcSpl_NormW32(numFIX);
+        } else
+        {
+            zeros = WebRtcSpl_NormW32(den) + 8;
+        }
         numFIX = WEBRTC_SPL_LSHIFT_W32(numFIX, zeros); // Q(14+zeros)
 
         // Shift den so we end up in Qy1
