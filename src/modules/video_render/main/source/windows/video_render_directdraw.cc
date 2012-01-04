@@ -1020,7 +1020,7 @@ int DirectDrawChannel::DeliverFrame(unsigned char* buffer, int bufferSize,
                 }
                 case kARGB:
                   ConvertFromI420(buffer, ddsd.lPitch, kARGB, 0,
-                                  _width, _height, ptrTempBuffer);
+                                  _width, _height, ptr);
                     break;
                 case kARGB4444:
                     ConvertI420ToARGB4444(buffer, ptr, _width, _height,
