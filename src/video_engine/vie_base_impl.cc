@@ -462,7 +462,7 @@ WebRtc_Word32 ViEBaseImpl::AddBuildInfo(char* str) const {
 }
 
 WebRtc_Word32 ViEBaseImpl::AddViEVersion(char* str) const {
-  return sprintf(str, "VideoEngine 3.1.0\n");
+  return sprintf(str, "VideoEngine 3.2.0\n");
 }
 
 WebRtc_Word32 ViEBaseImpl::AddExternalTransportBuild(char* str) const {
