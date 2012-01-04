@@ -18,6 +18,7 @@
         '<(webrtc_root)/voice_engine/voice_engine.gyp:voice_engine_core',
         '<(webrtc_root)/../testing/gtest.gyp:gtest',
         '<(webrtc_root)/../third_party/google-gflags/google-gflags.gyp:google-gflags',
+        '<(webrtc_root)/../test/metrics.gyp:metrics',
         '<(webrtc_root)/../test/test.gyp:test_support',
         'video_engine_core',
       ],

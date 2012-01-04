@@ -8,17 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_VIDEO_CODING_TEST_VIDEO_METRICS_H_
-#define WEBRTC_MODULES_VIDEO_CODING_TEST_VIDEO_METRICS_H_
+#ifndef WEBRTC_TESTSUPPORT_METRICS_VIDEO_METRICS_H_
+#define WEBRTC_TESTSUPPORT_METRICS_VIDEO_METRICS_H_
 
 #include <limits>
 #include <vector>
 
-#include "typedefs.h"
+namespace webrtc {
+namespace test {
 
 // Contains video quality metrics result for a single frame.
 struct FrameResult {
-  WebRtc_Word32 frame_number;
+  int frame_number;
   double value;
 };
 
@@ -35,46 +36,77 @@ struct QualityMetricsResult {
   double average;
   double min;
   double max;
-  WebRtc_Word32 min_frame_number;
-  WebRtc_Word32 max_frame_number;
+  int min_frame_number;
+  int max_frame_number;
   std::vector<FrameResult> frames;
 };
 
-// PSNR & SSIM calculations
-
-// PSNR values are filled into the QualityMetricsResult struct.
-// If the result is std::numerical_limits<double>::max() the videos were
-// equal. Otherwise, PSNR values are in decibel (higher is better). This
-// algorithm only compares up to the point when the shortest video ends.
-// By definition of PSNR, the result value is undefined if the reference file
-// and the test file are identical. In that case the max value for double
-// will be set in the result struct.
-//
-// Returns 0 if successful, negative on errors:
+// Calculates PSNR and SSIM values for the reference and test video files
+// (must be in I420 format). All calculated values are filled into the
+// QualityMetricsResult stucts.
+// PSNR values have the unit decibel (dB) where a high value means the test file
+// is similar to the reference file. The higher value, the more similar.
+// For more info about PSNR, see http://en.wikipedia.org/wiki/PSNR
+// SSIM values range between -1.0 and 1.0, where 1.0 means the files are
+// identical. For more info about SSIM, see http://en.wikipedia.org/wiki/SSIM
+// This function only compares video frames up to the point when the shortest
+// video ends.
+// Return value:
+//  0 if successful, negative on errors:
 // -1 if the source file cannot be opened
 // -2 if the test file cannot be opened
 // -3 if any of the files are empty
-int PsnrFromFiles(const WebRtc_Word8 *refFileName,
-                  const WebRtc_Word8 *testFileName, WebRtc_Word32 width,
-                  WebRtc_Word32 height, QualityMetricsResult *result);
+// -4 if any arguments are invalid.
+int I420MetricsFromFiles(const char* ref_filename,
+                         const char* test_filename,
+                         int width,
+                         int height,
+                         QualityMetricsResult* psnr_result,
+                         QualityMetricsResult* ssim_result);
 
-// SSIM values are filled into the QualityMetricsResult struct.
-// Values range between -1 and 1, where 1 means the files were identical. This
-// algorithm only compares up to the point when the shortest video ends.
-// By definition, SSIM values varies from -1.0, when everything is different
-// between the reference file and the test file, up to 1.0 for two identical
-// files.
+// Calculates PSNR values for the reference and test video files (must be in
+// I420 format). All calculated values are filled into the QualityMetricsResult
+// struct.
+// PSNR values have the unit decibel (dB) where a high value means the test file
+// is similar to the reference file. The higher value, the more similar.
+// This function only compares video frames up to the point when the shortest
+// video ends.
+// For more info about PSNR, see http://en.wikipedia.org/wiki/PSNR
 //
-// Returns 0 if successful, negative on errors:
+// Return value:
+//  0 if successful, negative on errors:
 // -1 if the source file cannot be opened
 // -2 if the test file cannot be opened
 // -3 if any of the files are empty
-int SsimFromFiles(const WebRtc_Word8 *refFileName,
-                  const WebRtc_Word8 *testFileName, WebRtc_Word32 width,
-                  WebRtc_Word32 height, QualityMetricsResult *result);
+// -4 if any arguments are invalid.
+int I420PSNRFromFiles(const char* ref_filename,
+                      const char* test_filename,
+                      int width,
+                      int height,
+                      QualityMetricsResult* result);
 
-double SsimFrame(WebRtc_UWord8 *img1, WebRtc_UWord8 *img2,
-                 WebRtc_Word32 stride_img1, WebRtc_Word32 stride_img2,
-                 WebRtc_Word32 width, WebRtc_Word32 height);
+// Calculates SSIM values for the reference and test video files (must be in
+// I420 format). All calculated values are filled into the QualityMetricsResult
+// struct.
+// SSIM values range between -1.0 and 1.0, where 1.0 means the files are
+// identical.
+// This function only compares video frames up to the point when the shortest
+// video ends.
+// For more info about SSIM, see http://en.wikipedia.org/wiki/SSIM
+//
+// Return value:
+//  0 if successful, negative on errors:
+// -1 if the source file cannot be opened
+// -2 if the test file cannot be opened
+// -3 if any of the files are empty
+// -4 if any arguments are invalid.
+int I420SSIMFromFiles(const char* ref_filename,
+                      const char* test_filename,
+                      int width,
+                      int height,
+                      QualityMetricsResult* result);
 
-#endif // WEBRTC_MODULES_VIDEO_CODING_TEST_VIDEO_METRICS_H_
+}  // namespace test
+}  // namespace webrtc
+
+#endif // WEBRTC_TESTSUPPORT_METRICS_VIDEO_METRICS_H_

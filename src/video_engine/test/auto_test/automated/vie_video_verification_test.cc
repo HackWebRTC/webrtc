@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "framedrop_primitives.h"
 #include "gflags/gflags.h"
 #include "gtest/gtest.h"
 #include "testsupport/fileutils.h"
 #include "testsupport/metrics/video_metrics.h"
-#include "vie_autotest.h"
-#include "vie_file_based_comparison_tests.h"
-#include "vie_integration_test_base.h"
-#include "vie_to_file_renderer.h"
+#include "video_engine/test/auto_test/automated/vie_integration_test_base.h"
+#include "video_engine/test/auto_test/helpers/vie_to_file_renderer.h"
+#include "video_engine/test/auto_test/interface/vie_autotest.h"
+#include "video_engine/test/auto_test/interface/vie_file_based_comparison_tests.h"
+#include "video_engine/test/auto_test/primitives/framedrop_primitives.h"
 
 namespace {
 
@@ -79,17 +79,17 @@ class ViEVideoVerificationTest : public testing::Test {
   void CompareFiles(const std::string& reference_file,
                     const std::string& test_file,
                     double minimum_psnr, double minimum_ssim) {
-    QualityMetricsResult psnr;
-    int psnr_error = PsnrFromFiles(reference_file.c_str(), test_file.c_str(),
-                                   kInputWidth, kInputHeight, &psnr);
-    ASSERT_EQ(0, psnr_error) << "PSNR routine failed - output files missing?";
-    ASSERT_GT(psnr.average, minimum_psnr);
+    webrtc::test::QualityMetricsResult psnr;
+    int error = I420PSNRFromFiles(reference_file.c_str(), test_file.c_str(),
+                                  kInputWidth, kInputHeight, &psnr);
+    EXPECT_EQ(0, error) << "PSNR routine failed - output files missing?";
+    EXPECT_GT(psnr.average, minimum_psnr);
 
-    QualityMetricsResult ssim;
-    int ssim_error = SsimFromFiles(reference_file.c_str(), test_file.c_str(),
-                                   kInputWidth, kInputHeight, &ssim);
-    ASSERT_EQ(0, ssim_error) << "SSIM routine failed - output files missing?";
-    ASSERT_GT(ssim.average, minimum_ssim);  // 1 = perfect, -1 = terrible
+    webrtc::test::QualityMetricsResult ssim;
+    error = I420SSIMFromFiles(reference_file.c_str(), test_file.c_str(),
+                              kInputWidth, kInputHeight, &ssim);
+    EXPECT_EQ(0, error) << "SSIM routine failed - output files missing?";
+    EXPECT_GT(ssim.average, minimum_ssim);  // 1 = perfect, -1 = terrible
 
     ViETest::Log("Results: PSNR: %f (db)   SSIM: %f",
                  psnr.average, ssim.average);

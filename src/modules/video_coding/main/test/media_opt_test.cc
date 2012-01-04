@@ -480,8 +480,9 @@ MediaOptTest::Print(int mode)
 {
     double ActualBitRate =  8.0 *( _sumEncBytes / (_frameCnt / _frameRate));
     double actualBitRate = ActualBitRate / 1000.0;
-    QualityMetricsResult psnr;
-    PsnrFromFiles(_actualSourcename.c_str(), _outname.c_str(), _width, _height, &psnr);
+    webrtc::test::QualityMetricsResult psnr;
+    I420PSNRFromFiles(_actualSourcename.c_str(), _outname.c_str(), _width,
+                      _height, &psnr);
 
     (_log) << "VCM: Media Optimization Test Cycle Completed!" << std::endl;
     (_log) << "Input file: " << _inname << std::endl;

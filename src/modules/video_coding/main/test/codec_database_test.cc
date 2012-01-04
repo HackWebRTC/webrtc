@@ -368,8 +368,9 @@ CodecDataBaseTest::Perform(CmdArgs& args)
             _vcm->Decode();
             // Don't measure PSNR for I420 since it will be perfect.
             if (sendCodec.codecType != kVideoCodecI420) {
-                QualityMetricsResult psnr;
-                PsnrFromFiles(_inname.c_str(), _outname.c_str(), _width, _height, &psnr);
+                webrtc::test::QualityMetricsResult psnr;
+                I420PSNRFromFiles(_inname.c_str(), _outname.c_str(), _width,
+                                  _height, &psnr);
                 printf("\n @ %d KBPS:  ", sendCodec.startBitrate);
                 printf("PSNR from encoder-decoder send-receive control test"
                        "is %f\n\n", psnr.average);

@@ -117,20 +117,18 @@ class VideoProcessorIntegrationTest: public testing::Test {
     frame_reader_->Close();
     frame_writer_->Close();
 
-    QualityMetricsResult result;
-    EXPECT_EQ(0, PsnrFromFiles(config_.input_filename.c_str(),
-                               config_.output_filename.c_str(),
-                               config_.codec_settings->width,
-                               config_.codec_settings->height, &result));
-    EXPECT_GT(result.average, minimum_psnr + 2.0);
-    EXPECT_GT(result.min, minimum_psnr);
-
-    EXPECT_EQ(0, SsimFromFiles(config_.input_filename.c_str(),
-                               config_.output_filename.c_str(),
-                               config_.codec_settings->width,
-                               config_.codec_settings->height, &result));
-    EXPECT_GT(result.average, minimum_ssim + 0.1);
-    EXPECT_GT(result.min, minimum_ssim);
+    webrtc::test::QualityMetricsResult psnr_result, ssim_result;
+    EXPECT_EQ(0, webrtc::test::I420MetricsFromFiles(
+        config_.input_filename.c_str(),
+        config_.output_filename.c_str(),
+        config_.codec_settings->width,
+        config_.codec_settings->height,
+        &psnr_result,
+        &ssim_result));
+    EXPECT_GT(psnr_result.average, minimum_psnr + 2.0);
+    EXPECT_GT(psnr_result.min, minimum_psnr);
+    EXPECT_GT(ssim_result.average, minimum_ssim + 0.1);
+    EXPECT_GT(ssim_result.min, minimum_ssim);
   }
 };
 

@@ -11,7 +11,6 @@
 #include "benchmark.h"
 
 #include <cassert>
-#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <vector>
@@ -19,12 +18,11 @@
     #include <windows.h>
 #endif
 
-#include "event_wrapper.h"
-#include "testsupport/fileutils.h"
 #include "common_video/libyuv/include/libyuv.h"
-#include "video_codec_interface.h"
-#include "video_source.h"
-
+#include "system_wrappers/interface/event_wrapper.h"
+#include "modules/video_coding/codecs/test_framework/video_source.h"
+#include "testsupport/fileutils.h"
+#include "testsupport/metrics/video_metrics.h"
 
 #define SSIM_CALC 0 // by default, don't compute SSIM
 
@@ -80,8 +78,8 @@ Benchmark::Perform()
     const int nBitrates = sizeof(bitRate)/sizeof(*bitRate);
     int testIterations = 10;
 
-    double psnr[nBitrates];
-    double ssim[nBitrates];
+    webrtc::test::QualityMetricsResult psnr[nBitrates];
+    webrtc::test::QualityMetricsResult ssim[nBitrates];
     double fps[nBitrates];
     double totalEncodeTime[nBitrates];
     double totalDecodeTime[nBitrates];
@@ -153,12 +151,14 @@ Benchmark::Perform()
                     double actualBitRate = ActualBitRate(_framecnt) / 1000.0;
                     std::cout << " " << actualBitRate;
                     _results << "," << actualBitRate;
-                    PSNRfromFiles(_inname.c_str(), _outname.c_str(), _inst.width,
-                        _inst.height, &psnr[k]);
+                    webrtc::test::QualityMetricsResult psnr_result;
+                    I420PSNRFromFiles(_inname.c_str(), _outname.c_str(),
+                                      _inst.width, _inst.height, &psnr[k]);
                     if (SSIM_CALC)
                     {
-                        SSIMfromFiles(_inname.c_str(), _outname.c_str(), _inst.width,
-                        _inst.height, &ssim[k]);
+                        webrtc::test::QualityMetricsResult ssim_result;
+                        I420SSIMFromFiles(_inname.c_str(), _outname.c_str(),
+                                          _inst.width, _inst.height, &ssim[k]);
 
                     }
                     fps[k] = avgFps;
@@ -167,8 +167,8 @@ Benchmark::Perform()
                 _results << std::endl << "Y-PSNR [dB]";
                 for (int k = 0; k < nBitrates; k++)
                 {
-                    std::cout << " " << psnr[k];
-                    _results << "," << psnr[k];
+                    std::cout << " " << psnr[k].average;
+                    _results << "," << psnr[k].average;
 
                 }
                 if (SSIM_CALC)
@@ -177,8 +177,8 @@ Benchmark::Perform()
                     _results << std::endl << "SSIM ";
                     for (int k = 0; k < nBitrates; k++)
                     {
-                        std::cout << " " << ssim[k];
-                        _results << "," << ssim[k];
+                        std::cout << " " << ssim[k].average;
+                        _results << "," << ssim[k].average;
                     }
 
                 }

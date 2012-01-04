@@ -16,6 +16,7 @@
           'type': '<(library)',
 
           'dependencies': [
+            '<(webrtc_root)/../test/metrics.gyp:metrics',
             '<(webrtc_root)/../test/test.gyp:test_support',
             '<(webrtc_root)/../testing/gtest.gyp:gtest',
             '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',

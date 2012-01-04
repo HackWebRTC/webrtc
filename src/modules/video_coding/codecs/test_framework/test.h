@@ -36,20 +36,6 @@ protected:
                                WebRtc_UWord32 frameRate=30,
                                WebRtc_UWord32 bitRate=0);
     virtual void Teardown();
-    static int PSNRfromFiles(const char *refFileName,
-                             const char *testFileName,
-                             int width,
-                             int height,
-                             double *YPSNRptr);
-    static int SSIMfromFiles(const char *refFileName,
-                             const char *testFileName,
-                             int width,
-                             int height,
-                             double *SSIMptr,
-        int startByte = -1, int endByte = -1);
-    double SSIMfromFilesMT(int numThreads);
-    static bool SSIMthread(void *ctx);
-
     double ActualBitRate(int nFrames);
     virtual bool PacketLoss(double lossRate, int /*thrown*/);
     static double RandUniform() { return (std::rand() + 1.0)/(RAND_MAX + 1.0); }

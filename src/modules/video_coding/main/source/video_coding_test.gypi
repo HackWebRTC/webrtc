@@ -13,6 +13,7 @@
       'dependencies': [
          '<(webrtc_root)/../testing/gtest.gyp:gtest',
          '<(webrtc_root)/../test/test.gyp:test_support',
+         '<(webrtc_root)/../test/metrics.gyp:metrics',
          'webrtc_video_coding',
          'rtp_rtcp',
          'webrtc_utility',

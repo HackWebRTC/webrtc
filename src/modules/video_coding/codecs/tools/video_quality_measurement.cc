@@ -265,29 +265,27 @@ int HandleCommandLineFlags(webrtc::test::TestConfig* config) {
 }
 
 void CalculateSsimVideoMetrics(webrtc::test::TestConfig* config,
-                               QualityMetricsResult* ssimResult) {
+                               webrtc::test::QualityMetricsResult* result) {
   Log("Calculating SSIM...\n");
-  SsimFromFiles(config->input_filename.c_str(), config->output_filename.c_str(),
-                config->codec_settings->width,
-                config->codec_settings->height, ssimResult);
-  Log("  Average: %3.2f\n", ssimResult->average);
-  Log("  Min    : %3.2f (frame %d)\n", ssimResult->min,
-      ssimResult->min_frame_number);
-  Log("  Max    : %3.2f (frame %d)\n", ssimResult->max,
-      ssimResult->max_frame_number);
+  I420SSIMFromFiles(config->input_filename.c_str(),
+                    config->output_filename.c_str(),
+                    config->codec_settings->width,
+                    config->codec_settings->height, result);
+  Log("  Average: %3.2f\n", result->average);
+  Log("  Min    : %3.2f (frame %d)\n", result->min, result->min_frame_number);
+  Log("  Max    : %3.2f (frame %d)\n", result->max, result->max_frame_number);
 }
 
 void CalculatePsnrVideoMetrics(webrtc::test::TestConfig* config,
-                                 QualityMetricsResult* psnrResult) {
+                               webrtc::test::QualityMetricsResult* result) {
   Log("Calculating PSNR...\n");
-  PsnrFromFiles(config->input_filename.c_str(), config->output_filename.c_str(),
+  I420PSNRFromFiles(config->input_filename.c_str(),
+                    config->output_filename.c_str(),
                     config->codec_settings->width,
-                    config->codec_settings->height, psnrResult);
-  Log("  Average: %3.2f\n", psnrResult->average);
-  Log("  Min    : %3.2f (frame %d)\n", psnrResult->min,
-      psnrResult->min_frame_number);
-  Log("  Max    : %3.2f (frame %d)\n", psnrResult->max,
-      psnrResult->max_frame_number);
+                    config->codec_settings->height, result);
+  Log("  Average: %3.2f\n", result->average);
+  Log("  Min    : %3.2f (frame %d)\n", result->min, result->min_frame_number);
+  Log("  Max    : %3.2f (frame %d)\n", result->max, result->max_frame_number);
 }
 
 void PrintConfigurationSummary(const webrtc::test::TestConfig& config) {
@@ -312,8 +310,8 @@ void PrintConfigurationSummary(const webrtc::test::TestConfig& config) {
 }
 
 void PrintCsvOutput(const webrtc::test::Stats& stats,
-                    const QualityMetricsResult& ssimResult,
-                    const QualityMetricsResult& psnrResult) {
+                    const webrtc::test::QualityMetricsResult& ssim_result,
+                    const webrtc::test::QualityMetricsResult& psnr_result) {
   Log("\nCSV output (recommended to run with --noverbose to skip the "
               "above output)\n");
   printf("frame_number encoding_successful decoding_successful "
@@ -325,8 +323,8 @@ void PrintCsvOutput(const webrtc::test::Stats& stats,
 
   for (unsigned int i = 0; i < stats.stats_.size(); ++i) {
     const webrtc::test::FrameStatistic& f = stats.stats_[i];
-    const FrameResult& ssim = ssimResult.frames[i];
-    const FrameResult& psnr = psnrResult.frames[i];
+    const webrtc::test::FrameResult& ssim = ssim_result.frames[i];
+    const webrtc::test::FrameResult& psnr = psnr_result.frames[i];
     printf("%4d, %d, %d, %2d, %2d, %6d, %6d, %5d, %7d, %d, %2d, %2d, "
            "%5.3f, %5.2f\n",
            f.frame_number,
@@ -348,8 +346,8 @@ void PrintCsvOutput(const webrtc::test::Stats& stats,
 
 void PrintPythonOutput(const webrtc::test::TestConfig& config,
                        const webrtc::test::Stats& stats,
-                       const QualityMetricsResult& ssimResult,
-                       const QualityMetricsResult& psnrResult) {
+                       const webrtc::test::QualityMetricsResult& ssim_result,
+                       const webrtc::test::QualityMetricsResult& psnr_result) {
   Log("\nPython output (recommended to run with --noverbose to skip the "
                "above output)\n");
   printf("test_configuration = ["
@@ -412,8 +410,8 @@ void PrintPythonOutput(const webrtc::test::TestConfig& config,
   printf("frame_data = [");
   for (unsigned int i = 0; i < stats.stats_.size(); ++i) {
     const webrtc::test::FrameStatistic& f = stats.stats_[i];
-    const FrameResult& ssim = ssimResult.frames[i];
-    const FrameResult& psnr = psnrResult.frames[i];
+    const webrtc::test::FrameResult& ssim = ssim_result.frames[i];
+    const webrtc::test::FrameResult& psnr = psnr_result.frames[i];
     printf("{'frame_number': %d, "
            "'encoding_successful': %s, 'decoding_successful': %s, "
            "'encode_time': %d, 'decode_time': %d, "
@@ -508,9 +506,9 @@ int main(int argc, char* argv[]) {
 
   stats.PrintSummary();
 
-  QualityMetricsResult ssim_result;
+  webrtc::test::QualityMetricsResult ssim_result;
   CalculateSsimVideoMetrics(&config, &ssim_result);
-  QualityMetricsResult psnr_result;
+  webrtc::test::QualityMetricsResult psnr_result;
   CalculatePsnrVideoMetrics(&config, &psnr_result);
 
   if (FLAGS_csv) {

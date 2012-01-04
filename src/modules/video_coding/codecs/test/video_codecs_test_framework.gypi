@@ -50,6 +50,7 @@
             'webrtc_video_coding',
             'webrtc_vp8',
             '<(webrtc_root)/../testing/gtest.gyp:gtest',
+            '<(webrtc_root)/../test/metrics.gyp:metrics',
             '<(webrtc_root)/../test/test.gyp:test_support_main',
           ],
           'sources': [

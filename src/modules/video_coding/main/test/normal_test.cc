@@ -367,9 +367,11 @@ NormalTest::Print()
     double actualBitRate = ActualBitRate / 1000.0;
     double avgEncTime = _totalEncodeTime / _frameCnt;
     double avgDecTime = _totalDecodeTime / _frameCnt;
-    QualityMetricsResult psnr, ssim;
-    PsnrFromFiles(_inname.c_str(), _outname.c_str(), _width, _height, &psnr);
-    SsimFromFiles(_inname.c_str(), _outname.c_str(), _width, _height, &ssim);
+    webrtc::test::QualityMetricsResult psnr, ssim;
+    I420PSNRFromFiles(_inname.c_str(), _outname.c_str(), _width, _height,
+                      &psnr);
+    I420SSIMFromFiles(_inname.c_str(), _outname.c_str(), _width, _height,
+                      &ssim);
     printf("Actual bitrate: %f kbps\n", actualBitRate);
     printf("Target bitrate: %f kbps\n", _bitRate);
     ( _log) << "Actual bitrate: " << actualBitRate<< " kbps\tTarget: " << _bitRate << " kbps" << std::endl;

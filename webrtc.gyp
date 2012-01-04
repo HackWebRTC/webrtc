@@ -20,6 +20,7 @@
         'src/system_wrappers/source/system_wrappers.gyp:*',
         'src/video_engine/video_engine.gyp:*',
         'src/voice_engine/voice_engine.gyp:*',
+        'test/metrics.gyp:*',
         'test/test.gyp:*',
       ],
     },
