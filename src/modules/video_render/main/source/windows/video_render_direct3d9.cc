@@ -200,7 +200,7 @@ int D3D9Channel::DeliverFrame(unsigned char* buffer,
     }
     UCHAR* pRect = (UCHAR*) lr.pBits;
 
-    ConvertI420ToARGB(buffer, pRect, _width, _height, 0);
+    ConvertFromI420(buffer, _width, kARGB, 0, _width, _height, pRect);
 
     if (FAILED(_pTexture->UnlockRect(0)))
     {

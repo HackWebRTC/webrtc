@@ -365,102 +365,106 @@ WebRtc_Word32 AndroidSurfaceViewChannel::RenderFrame(const WebRtc_UWord32 /*stre
 /*Implements AndroidStream
  * Calls the Java object and render the buffer in _bufferToRender
  */
-void AndroidSurfaceViewChannel::DeliverFrame(JNIEnv* jniEnv)
-{
-    _renderCritSect.Enter();
-//	TickTime timeNow=TickTime::Now();
-
+void AndroidSurfaceViewChannel::DeliverFrame(JNIEnv* jniEnv) {
+  _renderCritSect.Enter();
 
 #ifdef ANDROID_NDK_8_OR_ABOVE
-	if(_bitmapWidth!=_bufferToRender.Width() || _bitmapHeight!=_bufferToRender.Height())
-	{
-
-		// Create the bitmap to write to
-	    WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id, "%s: Creating bitmap %u %u", __FUNCTION__,_bufferToRender.Width(),_bufferToRender.Height());
-	    if(_javaBitmapObj)
-	    {
-	        jniEnv->DeleteGlobalRef(_javaBitmapObj);
-	        _javaBitmapObj=NULL;
-	    }
-	    jobject javaBitmap=jniEnv->CallObjectMethod(_javaRenderObj,_createBitmapCid,videoFrame.Width(),videoFrame.Height());
-	    _javaBitmapObj = jniEnv->NewGlobalRef(javaBitmap);
-        if (!_javaBitmapObj)
-        {
-            WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,  "%s: could not create Java Bitmap object reference", __FUNCTION__);
-            _renderCritSect.Leave();
-            return;
-        }
-        else
-        {
-            _bitmapWidth=_bufferToRender.Width();
-            _bitmapHeight=_bufferToRender.Height();
-        }
-	}
-    void* pixels;
-    if (_javaBitmapObj && AndroidBitmap_lockPixels(jniEnv, _javaBitmapObj, &pixels) >= 0)
-    {
-        WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id, "%s: Locked bitmap", __FUNCTION__);
-        // Convert I420 straight into the Java bitmap.
-        const int conversionResult=ConvertI420ToRGB565( (unsigned char* )_bufferToRender.Buffer(), (unsigned char* ) pixels, _bitmapWidth, _bitmapHeight);
-        if(conversionResult<0)
-        {
-            WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id, "%s: Color conversion failed.", __FUNCTION__);
-        }
-
-       AndroidBitmap_unlockPixels(jniEnv, _javaBitmapObj);
-
-        //Draw the Surface
-        jniEnv->CallVoidMethod(_javaRenderObj,_drawCid);
-
+  if (_bitmapWidth != _bufferToRender.Width() ||
+    _bitmapHeight != _bufferToRender.Height()) {
+    // Create the bitmap to write to
+    WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id, "%s: Creating bitmap %u "
+                 "%u", __FUNCTION__, _bufferToRender.Width(),
+                 _bufferToRender.Height());
+    if (_javaBitmapObj) {
+      jniEnv->DeleteGlobalRef(_javaBitmapObj);
+     _javaBitmapObj = NULL;
     }
-    else
-    {
-        WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id, "%s: Could not lock bitmap", __FUNCTION__);
+    jobject javaBitmap = jniEnv->CallObjectMethod(_javaRenderObj,
+                                                  _createBitmapCid,
+                                                  videoFrame.Width(),
+                                                  videoFrame.Height());
+    _javaBitmapObj = jniEnv->NewGlobalRef(javaBitmap);
+     if (!_javaBitmapObj) {
+       WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id, "%s: could not "
+                    "create Java Bitmap object reference", __FUNCTION__);
+       _renderCritSect.Leave();
+       return;
+    } else {
+      _bitmapWidth=_bufferToRender.Width();
+      _bitmapHeight=_bufferToRender.Height();
     }
-    _renderCritSect.Leave();
+  }
+  void* pixels;
+  if (_javaBitmapObj &&
+      AndroidBitmap_lockPixels(jniEnv, _javaBitmapObj, &pixels) >= 0) {
+    WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id, "%s: Locked bitmap",
+                 __FUNCTION__);
+    // Convert I420 straight into the Java bitmap.
+    int ret = ConvertI420ToRGB565((unsigned char* )_bufferToRender.Buffer(),
+                                  (unsigned char* ) pixels,
+                                  _bitmapWidth, _bitmapHeight);
+    if (ret < 0) {
+      WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id, "%s: Color conversion "
+                   "failed.", __FUNCTION__);
+    }
+
+    AndroidBitmap_unlockPixels(jniEnv, _javaBitmapObj);
+    // Draw the Surface.
+    jniEnv->CallVoidMethod(_javaRenderObj,_drawCid);
+
+  } else {
+    WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id, "%s: Could not lock "
+                 "bitmap", __FUNCTION__);
+  }
+  _renderCritSect.Leave();
 
 #else
-    if(_bitmapWidth!=_bufferToRender.Width() || _bitmapHeight!=_bufferToRender.Height())
-    {
-        WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer,_id, "%s: New render size %d %d",__FUNCTION__, _bufferToRender.Width(), _bufferToRender.Height());
-        if(_javaByteBufferObj)
-        {
-            jniEnv->DeleteGlobalRef(_javaByteBufferObj);
-            _javaByteBufferObj=NULL;
-            _directBuffer=NULL;
-        }
-        jobject javaByteBufferObj=jniEnv->CallObjectMethod(_javaRenderObj,_createByteBufferCid,_bufferToRender.Width(),_bufferToRender.Height());
-        _javaByteBufferObj = jniEnv->NewGlobalRef(javaByteBufferObj);
-        if (!_javaByteBufferObj)
-        {
-            WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,  "%s: could not create Java ByteBuffer object reference", __FUNCTION__);
-            _renderCritSect.Leave();
-            return;
-        }
-        else
-        {
-            _directBuffer=(unsigned char*) jniEnv->GetDirectBufferAddress(_javaByteBufferObj);
-            _bitmapWidth=_bufferToRender.Width();
-            _bitmapHeight=_bufferToRender.Height();
-        }
-	}
+  if (_bitmapWidth != _bufferToRender.Width() ||
+      _bitmapHeight != _bufferToRender.Height()) {
+    WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id, "%s: New render size %d "
+                 "%d",__FUNCTION__,
+                 _bufferToRender.Width(), _bufferToRender.Height());
+    if (_javaByteBufferObj) {
+        jniEnv->DeleteGlobalRef(_javaByteBufferObj);
+        _javaByteBufferObj = NULL;
+        _directBuffer = NULL;
+    }
+    jobject javaByteBufferObj =
+      jniEnv->CallObjectMethod(_javaRenderObj, _createByteBufferCid,
+                               _bufferToRender.Width(),
+                               _bufferToRender.Height());
+    _javaByteBufferObj = jniEnv->NewGlobalRef(javaByteBufferObj);
+    if (!_javaByteBufferObj) {
+      WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,  "%s: could not "
+                   "create Java ByteBuffer object reference", __FUNCTION__);
+      _renderCritSect.Leave();
+      return;
+    } else {
+      _directBuffer = static_cast<unsigned char*>
+          (jniEnv->GetDirectBufferAddress(_javaByteBufferObj));
+      _bitmapWidth = _bufferToRender.Width();
+      _bitmapHeight = _bufferToRender.Height();
+    }
+  }
 
-	if(_javaByteBufferObj && _bitmapWidth && _bitmapHeight)
-	{
-	    const int conversionResult=ConvertI420ToRGB565Android((unsigned char* )_bufferToRender.Buffer(), _directBuffer, _bitmapWidth, _bitmapHeight);
-      if(conversionResult<0)
-      {
-            WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id, "%s: Color conversion failed.", __FUNCTION__);
-            _renderCritSect.Leave();
-            return;
-        }
-	}
-	_renderCritSect.Leave();
-	//Draw the Surface
-	jniEnv->CallVoidMethod(_javaRenderObj,_drawByteBufferCid);
+  if(_javaByteBufferObj && _bitmapWidth && _bitmapHeight) {
+    // Android requires a vertically flipped image compared to std convert.
+    // This is done by giving a negative height input.
+    const int conversionResult =
+      ConvertI420ToRGB565((unsigned char* )_bufferToRender.Buffer(),
+                          _directBuffer, _bitmapWidth, -_bitmapHeight);
+    if (conversionResult < 0)  {
+      WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id, "%s: Color conversion"
+                   " failed.", __FUNCTION__);
+      _renderCritSect.Leave();
+      return;
+    }
+  }
+  _renderCritSect.Leave();
+  // Draw the Surface
+  jniEnv->CallVoidMethod(_javaRenderObj, _drawByteBufferCid);
 #endif
-	//WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer,_id, "%s: time to deliver %lld" ,__FUNCTION__,(TickTime::Now()-timeNow).Milliseconds());
 }
 
-} //namespace webrtc
+}  // namespace webrtc
 

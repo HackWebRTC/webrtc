@@ -236,7 +236,9 @@ int VideoChannelAGL::DeliverFrame(unsigned char* buffer, int bufferSize, unsigne
         return -1;
     }
 
-    int rgbret = ConvertI420ToRGBAMac((WebRtc_UWord8*)buffer, (WebRtc_UWord8*)_buffer, (WebRtc_Word32)_width, (WebRtc_Word32)_height, 0);
+    // Setting stride = width.
+    int rgbret = ConvertFromYV12(buffer, _width, kBGRA, 0, _width, _height,
+                                 _buffer);
     if (rgbret < 0)
     {
         _owner->UnlockAGLCntx();

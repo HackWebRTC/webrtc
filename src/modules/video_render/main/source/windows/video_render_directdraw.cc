@@ -996,26 +996,20 @@ int DirectDrawChannel::DeliverFrame(unsigned char* buffer, int bufferSize,
             switch (_blitVideoType)
             {
                 case kYUY2:
-                    ConvertI420ToYUY2(buffer, ptr, _width, _height,
-                                              ddsd.lPitch);
-                    break;
                 case kUYVY:
-                    ConvertI420ToUYVY(buffer, ptr, _width, _height,
-                                              ddsd.lPitch);
-                    break;
-                case kIYUV: // same as kYV12
+                case kIYUV:  // same as kYV12
                 case kYV12:
-                    ConvertI420ToYV12(buffer, ptr, _width, _height,
-                                              ddsd.lPitch);
+                    ConvertFromI420(buffer, _width,
+                                    _blitVideoType, 0,
+                                    _width, _height,
+                                    ptr);
                     break;
                 case kRGB24:
                 {
                     _tempRenderBuffer.VerifyAndAllocate(_width * _height * 3);
-                    //unsigned char *ptrTempBuffer=_tempRenderBuffer.GetBuffer();
                     unsigned char *ptrTempBuffer = _tempRenderBuffer.Buffer();
-                    //ConvertI420ToRGB24(buffer ,(int*) ptrTempBuffer, _width, _height);
-                    ConvertI420ToRGB24(buffer, ptrTempBuffer, _width,
-                                               _height);
+                    ConvertFromI420(buffer, _width, kRGB24, 0, _width, _height,
+                                    ptrTempBuffer);
                     for (int i = 0; i < _height; i++)
                     {
                         memcpy(ptr, ptrTempBuffer, _width * 3);
@@ -1025,25 +1019,22 @@ int DirectDrawChannel::DeliverFrame(unsigned char* buffer, int bufferSize,
                     break;
                 }
                 case kARGB:
-                    ConvertI420ToARGB(buffer, ptr, _width, _height,
-                                              (ddsd.lPitch >> 2) - _width);
+                  ConvertFromI420(buffer, ddsd.lPitch, kARGB, 0,
+                                  _width, _height, ptrTempBuffer);
                     break;
                 case kARGB4444:
                     ConvertI420ToARGB4444(buffer, ptr, _width, _height,
-                                                  (ddsd.lPitch >> 1) - _width);
+                                          (ddsd.lPitch >> 1) - _width);
                     break;
                 case kARGB1555:
                     ConvertI420ToARGB1555(buffer, ptr, _width, _height,
-                                                  (ddsd.lPitch >> 1) - _width);
+                                          (ddsd.lPitch >> 1) - _width);
                     break;
                 case kRGB565:
                 {
                     _tempRenderBuffer.VerifyAndAllocate(_width * _height * 2);
-                    //unsigned char *ptrTempBuffer=_tempRenderBuffer.GetBuffer();
                     unsigned char *ptrTempBuffer = _tempRenderBuffer.Buffer();
-                    //ConvertI420ToRGB565(buffer ,(int*) ptrTempBuffer, _width, _height);
-                    ConvertI420ToRGB565(buffer, ptrTempBuffer, _width,
-                                                _height);
+                    ConvertI420ToRGB565(buffer, ptrTempBuffer, _width, _height);
                     ptr += ddsd.lPitch * (_height - 1);
                     for (int i = 0; i < _height; i++)
                     {

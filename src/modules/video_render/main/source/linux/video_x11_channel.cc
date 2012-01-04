@@ -93,8 +93,8 @@ WebRtc_Word32 VideoX11Channel::DeliverFrame(unsigned char* buffer,
     }
 
     unsigned char *pBuf = buffer;
-    // convert to RGB32
-    ConvertI420ToARGB(pBuf, _buffer, _width, _height, 0);
+    // convert to RGB32, setting stride = width.
+    ConvertFromI420(pBuf, _width, kARGB, 0, _width, _height, _buffer);
 
     // put image in window
     XShmPutImage(_display, _window, _gc, _image, 0, 0, _xPos, _yPos, _width,

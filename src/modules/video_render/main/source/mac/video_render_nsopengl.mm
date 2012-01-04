@@ -232,8 +232,10 @@ int VideoChannelNSOpenGL::DeliverFrame(unsigned char* buffer, int bufferSize, un
         return -1;
     }
 
-    int rgbLength = ConvertI420ToRGBAMac(buffer, _buffer, _width, _height, 0);
-    if (rgbLength == -1)
+    int rgbRet = ConvertFromYV12(buffer, _width,
+                                 kBGRA, 0, _width, _height,
+                                 _buffer);
+    if (rgbRet < 0)
     {
         _owner->UnlockAGLCntx();
         return -1;
