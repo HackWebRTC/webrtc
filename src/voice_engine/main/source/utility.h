@@ -47,12 +47,6 @@ public:
     static void ScaleWithSat(WebRtc_Word16 vector[],
                              float scale,
                              WebRtc_UWord16 len);
-
-    static void TraceModuleVersion(const WebRtc_Word32 id,
-                                   const Module& module);
-
-private:
-    enum {kMaxVersionSize = 640};
 };
 
 } // namespace voe

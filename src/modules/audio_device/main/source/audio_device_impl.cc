@@ -460,32 +460,6 @@ WebRtc_Word32 AudioDeviceModuleImpl::ChangeUniqueId(const WebRtc_Word32 id)
 }
 
 // ----------------------------------------------------------------------------
-//  Module::Version
-// ----------------------------------------------------------------------------
-
-WebRtc_Word32 AudioDeviceModuleImpl::Version(WebRtc_Word8* version, WebRtc_UWord32& remainingBufferInBytes, WebRtc_UWord32& position) const
-{
-    if (version == NULL)
-    {
-        WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, -1, "invalid buffer pointer in argument");
-        return -1;
-    }
-    WebRtc_Word8 ourVersion[] = "AudioDevice 1.1.0";
-    WebRtc_UWord32 ourLength = (WebRtc_UWord32)strlen(ourVersion);
-    if (remainingBufferInBytes < (ourLength + 1))
-    {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, -1, "version string requires %d bytes", (ourLength + 1));
-        return -1;
-    }
-    memcpy(&version[position], ourVersion, ourLength);
-    version[position + ourLength] = '\0'; // null terminaion
-    remainingBufferInBytes -= (ourLength + 1);
-    position += (ourLength + 1);
-    WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, -1, "version: %s", version);
-    return 0;
-}
-
-// ----------------------------------------------------------------------------
 //  Module::TimeUntilNextProcess
 //
 //  Returns the number of milliseconds until the module want a worker thread

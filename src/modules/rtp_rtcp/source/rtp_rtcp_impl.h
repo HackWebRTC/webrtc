@@ -38,11 +38,6 @@ public:
     // get Module ID
     WebRtc_Word32 Id()   {return _id;}
 
-    // Get Module version
-    WebRtc_Word32 Version(WebRtc_Word8* version,
-                        WebRtc_UWord32& remainingBufferInBytes,
-                        WebRtc_UWord32& position) const;
-
     virtual WebRtc_Word32 ChangeUniqueId(const WebRtc_Word32 id);
 
     // De-muxing functionality for

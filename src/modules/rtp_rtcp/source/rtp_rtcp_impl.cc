@@ -171,44 +171,6 @@ ModuleRtpRtcpImpl::~ModuleRtpRtcpImpl()
 }
 
 WebRtc_Word32
-ModuleRtpRtcpImpl::Version(WebRtc_Word8*   version,
-                           WebRtc_UWord32& remainingBufferInBytes,
-                           WebRtc_UWord32& position) const
-{
-    WEBRTC_TRACE(kTraceModuleCall,
-                 kTraceRtpRtcp,
-                 _id,
-                 "Version(bufferLength:%d)",
-                 remainingBufferInBytes);
-    return GetVersion(version, remainingBufferInBytes, position);
-}
-
-WebRtc_Word32 RtpRtcp::GetVersion(WebRtc_Word8*   version,
-                                  WebRtc_UWord32& remainingBufferInBytes,
-                                  WebRtc_UWord32& position)
-{
-    if(version == NULL)
-    {
-        WEBRTC_TRACE(kTraceWarning,
-                     kTraceRtpRtcp,
-                     -1,
-                     "Invalid in argument to Version()");
-        return -1;
-    }
-    WebRtc_Word8 ourVersion[] = "Module RTP RTCP 1.3.0";
-    WebRtc_UWord32 ourLength = (WebRtc_UWord32)strlen(ourVersion);
-    if(remainingBufferInBytes < ourLength +1)
-    {
-        return -1;
-    }
-    memcpy(version, ourVersion, ourLength);
-    version[ourLength] = '\0'; // null terminaion
-    remainingBufferInBytes -= (ourLength + 1);
-    position += (ourLength + 1);
-    return 0;
-}
-
-WebRtc_Word32
 ModuleRtpRtcpImpl::ChangeUniqueId(const WebRtc_Word32 id)
 {
     WEBRTC_TRACE(kTraceModuleCall,

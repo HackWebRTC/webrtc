@@ -37,13 +37,6 @@ public:
     virtual ~ModuleVideoRenderImpl();
 
     /*
-     *   Returns version of the module and its components
-     */
-    virtual WebRtc_Word32 Version(WebRtc_Word8* version,
-                                  WebRtc_UWord32& remainingBufferInBytes,
-                                  WebRtc_UWord32& position) const;
-
-    /*
      *   Change the unique identifier of this object
      */
     virtual WebRtc_Word32 ChangeUniqueId(const WebRtc_Word32 id);

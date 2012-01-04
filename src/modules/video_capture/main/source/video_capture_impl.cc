@@ -36,38 +36,6 @@ VideoCaptureModule* VideoCaptureImpl::Create(
     return implementation;
 }
 
-WebRtc_Word32 VideoCaptureImpl::Version(WebRtc_Word8* version,
-                                              WebRtc_UWord32& remainingBufferInBytes,
-                                              WebRtc_UWord32& position) const
-{
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, _id, "Version(bufferLength:%u)",
-               (unsigned int) remainingBufferInBytes);
-    return GetVersion(version, remainingBufferInBytes, position);
-}
-
-WebRtc_Word32 VideoCaptureImpl::GetVersion(WebRtc_Word8* version,
-                                                 WebRtc_UWord32& remainingBufferInBytes,
-                                                 WebRtc_UWord32& position)
-{
-    if (version == NULL)
-    {
-        WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideoCapture, -1,
-                   "Invalid in argument to Version()");
-        return -1;
-    }
-    WebRtc_Word8 ourVersion[] = "VideoCaptureModule 1.1.0";
-    WebRtc_UWord32 ourLength = (WebRtc_UWord32) strlen(ourVersion);
-    if (remainingBufferInBytes < ourLength + 1)
-    {
-        return -1;
-    }
-    memcpy(version, ourVersion, ourLength);
-    version[ourLength] = '\0'; // null terminaion
-    remainingBufferInBytes -= (ourLength + 1);
-    position += (ourLength + 1);
-    return 0;
-}
-
 const WebRtc_UWord8* VideoCaptureImpl::CurrentDeviceName() const
 {
     return _deviceUniqueId;

@@ -1383,21 +1383,7 @@ Channel::Init()
             "Channel::Init() modules not registered");
         return -1;
     }
-
-    // --- Log module versions
-
-    Utility::TraceModuleVersion(VoEId(_instanceId,_channelId),
-                                _audioCodingModule);
-#ifndef WEBRTC_EXTERNAL_TRANSPORT
-    Utility::TraceModuleVersion(VoEId(_instanceId,_channelId),
-                                _socketTransportModule);
-#endif
-#ifdef WEBRTC_SRTP
-    Utility::TraceModuleVersion(VoEId(_instanceId,_channelId), _srtpModule);
-#endif
-    Utility::TraceModuleVersion(VoEId(_instanceId,_channelId), _rtpRtcpModule);
-
-     // --- ACM initialization
+    // --- ACM initialization
 
     if ((_audioCodingModule.InitializeReceiver() == -1) ||
 #ifdef WEBRTC_CODEC_AVT

@@ -81,47 +81,10 @@ VideoProcessingModuleImpl::ChangeUniqueId(const WebRtc_Word32 id)
 }
 
 WebRtc_Word32
-VideoProcessingModuleImpl::Version(WebRtc_Word8* version,
-                                       WebRtc_UWord32& remainingBufferInBytes,
-                                       WebRtc_UWord32& position) const
-{
-    CriticalSectionScoped mutex(_mutex);
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoPreocessing, _id, "Version(bufferLength:%d)",
-        remainingBufferInBytes);
-    return GetVersion(version, remainingBufferInBytes, position);
-}
-
-WebRtc_Word32
 VideoProcessingModuleImpl::Id() const
 {
     CriticalSectionScoped mutex(_mutex);
     return _id;
-}
-
-WebRtc_Word32
-VideoProcessingModule::GetVersion(WebRtc_Word8* version,
-                                      WebRtc_UWord32& remainingBufferInBytes,
-                                      WebRtc_UWord32& position)
-{
-    if (version == NULL)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing, -1,
-            "Null version pointer");
-        return -1;
-    }
-    WebRtc_Word8 ourVersion[] = "VideoProcessingModule 1.1.0";
-    WebRtc_UWord32 ourLength = (WebRtc_UWord32)sizeof(ourVersion); // Includes null termination.
-    if (remainingBufferInBytes < ourLength)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoPreocessing, -1,
-            "Buffer of insufficient length");
-        return VPM_PARAMETER_ERROR;
-    }
-    memcpy(&version[position], ourVersion, ourLength);
-    remainingBufferInBytes -= ourLength;
-    position += ourLength;
-
-    return VPM_OK;
 }
 
 VideoProcessingModuleImpl::VideoProcessingModuleImpl(const WebRtc_Word32 id) :

@@ -320,24 +320,6 @@ int api_test()
 
     processThread->RegisterModule(audioDevice);
 
-    // ===============
-    // Module::Version
-    // ===============
-
-    WebRtc_Word8 version[256];
-    WebRtc_UWord32 remainingBufferInBytes = 256;
-    WebRtc_UWord32 tooFewBytes = 10;
-    WebRtc_UWord32 position = 0;
-
-    TEST(audioDevice->Version(version, tooFewBytes, position) == -1);
-    TEST(audioDevice->Version(NULL, remainingBufferInBytes, position) == -1);
-
-    TEST(audioDevice->Version(version, remainingBufferInBytes, position) == 0);
-    TEST(position == 18); // assumes "AudioDevice x.y.z" + NULL
-    TEST(remainingBufferInBytes == (256-position));
-
-    TEST_LOG("Version: %s\n\n", version);
-
     AudioDeviceModule::AudioLayer audioLayer =
         AudioDeviceModule::kPlatformDefaultAudio;
     TEST(audioDevice->ActiveAudioLayer(&audioLayer) == 0);

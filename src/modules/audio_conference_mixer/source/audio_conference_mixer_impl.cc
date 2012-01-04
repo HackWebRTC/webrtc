@@ -169,58 +169,11 @@ AudioConferenceMixerImpl::~AudioConferenceMixerImpl()
     assert(_audioFramePool == NULL);
 }
 
-WebRtc_Word32 AudioConferenceMixerImpl::Version(
-    WebRtc_Word8* version,
-    WebRtc_UWord32& remainingBufferInBytes,
-    WebRtc_UWord32& position) const
-{
-    WEBRTC_TRACE(
-        kTraceModuleCall,
-        kTraceAudioMixerServer,
-        _id,
-        "Version(version%s,remainingBufferLengthInBytes:%d,position:%d)",
-        (version==NULL) ? ":NULL" : "",
-        remainingBufferInBytes,position);
-    return GetVersion(version,remainingBufferInBytes,position);
-}
-
 WebRtc_Word32 AudioConferenceMixerImpl::ChangeUniqueId(const WebRtc_Word32 id)
 {
     WEBRTC_TRACE(kTraceModuleCall, kTraceAudioMixerServer, _id,
                  "ChangeUniqueId(new id:%d)", id);
     _id = id;
-    return 0;
-}
-
-WebRtc_Word32 AudioConferenceMixer::GetVersion(
-    WebRtc_Word8* version,
-    WebRtc_UWord32& remainingBufferInBytes,
-    WebRtc_UWord32& position)
-{
-    WEBRTC_TRACE(
-        kTraceModuleCall,
-        kTraceAudioMixerServer,
-        -1,
-        "Version(version%s,remainingBufferLengthInBytes:%d,position:%d)",
-        (version==NULL) ? "NULL" : "",
-        remainingBufferInBytes,
-        position);
-    if(version == NULL)
-    {
-        WEBRTC_TRACE(kTraceWarning, kTraceAudioMixerServer, -1,
-                     "Invalid in argument to GetVersion()");
-        return -1;
-    }
-    const char moduleVersion[] = VERSION_STRING;
-    if(remainingBufferInBytes < sizeof(moduleVersion))
-    {
-        WEBRTC_TRACE(kTraceWarning, kTraceAudioMixerServer, -1,
-                     "Too small buffer in GetVersion()");
-        return -1;
-    }
-    strncpy(version, moduleVersion, sizeof(moduleVersion));  // null termination
-    remainingBufferInBytes -= sizeof(moduleVersion);
-    position += sizeof(moduleVersion);
     return 0;
 }
 

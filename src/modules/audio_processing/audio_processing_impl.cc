@@ -552,61 +552,6 @@ VoiceDetection* AudioProcessingImpl::voice_detection() const {
   return voice_detection_;
 }
 
-WebRtc_Word32 AudioProcessingImpl::Version(WebRtc_Word8* version,
-    WebRtc_UWord32& bytes_remaining, WebRtc_UWord32& position) const {
-  if (version == NULL) {
-    /*WEBRTC_TRACE(webrtc::kTraceError,
-               webrtc::kTraceAudioProcessing,
-               -1,
-               "Null version pointer");*/
-    return kNullPointerError;
-  }
-  memset(&version[position], 0, bytes_remaining);
-
-  char my_version[] = "AudioProcessing 1.0.0";
-  // Includes null termination.
-  WebRtc_UWord32 length = static_cast<WebRtc_UWord32>(strlen(my_version));
-  if (bytes_remaining < length) {
-    /*WEBRTC_TRACE(webrtc::kTraceError,
-               webrtc::kTraceAudioProcessing,
-               -1,
-               "Buffer of insufficient length");*/
-    return kBadParameterError;
-  }
-  memcpy(&version[position], my_version, length);
-  bytes_remaining -= length;
-  position += length;
-
-  std::list<ProcessingComponent*>::const_iterator it;
-  for (it = component_list_.begin(); it != component_list_.end(); it++) {
-    char component_version[256];
-    strcpy(component_version, "\n");
-    int err = (*it)->get_version(&component_version[1],
-                                 sizeof(component_version) - 1);
-    if (err != kNoError) {
-      return err;
-    }
-    if (strncmp(&component_version[1], "\0", 1) == 0) {
-      // Assume empty if first byte is NULL.
-      continue;
-    }
-
-    length = static_cast<WebRtc_UWord32>(strlen(component_version));
-    if (bytes_remaining < length) {
-      /*WEBRTC_TRACE(webrtc::kTraceError,
-                 webrtc::kTraceAudioProcessing,
-                 -1,
-                 "Buffer of insufficient length");*/
-      return kBadParameterError;
-    }
-    memcpy(&version[position], component_version, length);
-    bytes_remaining -= length;
-    position += length;
-  }
-
-  return kNoError;
-}
-
 WebRtc_Word32 AudioProcessingImpl::ChangeUniqueId(const WebRtc_Word32 id) {
   CriticalSectionScoped crit_scoped(*crit_);
   /*WEBRTC_TRACE(webrtc::kTraceModuleCall,

@@ -132,23 +132,10 @@ private:
     WebRtc_Word32 AddVoEVersion(char* str) const;
 #ifdef WEBRTC_EXTERNAL_TRANSPORT
     WebRtc_Word32 AddExternalTransportBuild(char* str) const;
-#else
-    WebRtc_Word32 AddSocketModuleVersion(char* str) const;
 #endif
 #ifdef WEBRTC_VOE_EXTERNAL_REC_AND_PLAYOUT
     WebRtc_Word32 AddExternalRecAndPlayoutBuild(char* str) const;
 #endif
-    WebRtc_Word32 AddModuleVersion(Module* module, char* str) const;
-    WebRtc_Word32 AddADMVersion(char* str) const;
-    int AddAudioProcessingModuleVersion(char* str) const;
-    WebRtc_Word32 AddACMVersion(char* str) const;
-    WebRtc_Word32 AddConferenceMixerVersion(char* str) const;
-#ifdef WEBRTC_SRTP
-    WebRtc_Word32 AddSRTPModuleVersion(char* str) const;
-#endif
-    WebRtc_Word32 AddRtpRtcpModuleVersion(char* str) const;
-    WebRtc_Word32 AddSPLIBVersion(char* str) const;
-
     VoiceEngineObserver* _voiceEngineObserverPtr;
     CriticalSectionWrapper& _callbackCritSect;
 

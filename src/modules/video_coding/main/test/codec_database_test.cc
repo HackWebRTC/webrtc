@@ -104,11 +104,6 @@ CodecDataBaseTest::Perform(CmdArgs& args)
     /************************/
     VideoCodec sendCodec, receiveCodec;
     TEST(VideoCodingModule::NumberOfCodecs() > 0);
-    WebRtc_Word8 version[512];
-    WebRtc_UWord32 length = 512;
-    WebRtc_UWord32 position = 0;
-    TEST(_vcm->Version(version, length, position) == VCM_OK);
-    printf("%s", version);
     _vcm->InitializeReceiver();
     _vcm->InitializeSender();
     VCMDecodeCompleteCallback *_decodeCallback = new VCMDecodeCompleteCallback(_decodedFile);

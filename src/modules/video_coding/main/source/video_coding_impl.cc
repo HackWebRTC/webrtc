@@ -229,51 +229,6 @@ VideoCodingModuleImpl::Process()
     return returnValue;
 }
 
-// Returns version of the module and its components
-WebRtc_Word32
-VideoCodingModuleImpl::Version(WebRtc_Word8* version,
-                                WebRtc_UWord32& remainingBufferInBytes,
-                                WebRtc_UWord32& position) const
-{
-    WEBRTC_TRACE(webrtc::kTraceModuleCall,
-                 webrtc::kTraceVideoCoding,
-                 VCMId(_id),
-                 "Version()");
-    if (version == NULL)
-    {
-        WEBRTC_TRACE(webrtc::kTraceWarning,
-                     webrtc::kTraceVideoCoding,
-                     VCMId(_id),
-                     "Invalid buffer pointer in argument to Version()");
-        return VCM_PARAMETER_ERROR;
-    }
-    WebRtc_Word8 ourVersion[] = "VideoCodingModule 1.1.0\n";
-    WebRtc_UWord32 ourLength = (WebRtc_UWord32)strlen(ourVersion);
-    if (remainingBufferInBytes < ourLength)
-    {
-        return VCM_MEMORY;
-    }
-    memcpy(&version[position], ourVersion, ourLength);
-    remainingBufferInBytes -= ourLength;
-    position += ourLength;
-
-    // Safe to truncate here.
-    WebRtc_Word32 ret = _codecDataBase.Version(version,
-                                               remainingBufferInBytes,
-                                               position);
-    if (ret < 0)
-    {
-        return ret;
-    }
-    // Ensure the strlen call is safe by terminating at the end of version.
-    version[position + remainingBufferInBytes - 1] = '\0';
-    ourLength = (WebRtc_UWord32)strlen(&version[position]);
-    remainingBufferInBytes -= (ourLength + 1); // include null termination.
-    position += (ourLength + 1);
-
-    return VCM_OK;
-}
-
 WebRtc_Word32
 VideoCodingModuleImpl::Id() const
 {

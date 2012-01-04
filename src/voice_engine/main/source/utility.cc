@@ -94,27 +94,6 @@ void Utility::ScaleWithSat(WebRtc_Word16 vector[], float scale,
     }
 }
 
-void Utility::TraceModuleVersion(const WebRtc_Word32 id,
-                                 const Module& module)
-{
-    WebRtc_Word8 version[Utility::kMaxVersionSize] = { 0 };
-    WebRtc_UWord32 remainingBufferInBytes = Utility::kMaxVersionSize;
-    WebRtc_UWord32 position = 0;
-    if (module.Version(version, remainingBufferInBytes, position) == 0)
-    {
-        WebRtc_Word8* ptr(NULL);
-        while ((ptr = strchr(version, '\t')) != NULL)
-        {
-            *ptr = ' ';
-        }
-        while ((ptr = strchr(version, '\n')) != NULL)
-        {
-            *ptr = ' ';
-        }
-        WEBRTC_TRACE(kTraceInfo, kTraceVoice, id, "%s", version);
-    }
-}
-
 } // namespace voe
 
 } // namespace webrtc

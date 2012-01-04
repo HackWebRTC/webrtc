@@ -26,15 +26,6 @@ public:
     static MediaFile* CreateMediaFile(const WebRtc_Word32 id);
     static void DestroyMediaFile(MediaFile* module);
 
-    // Writes the version of the MediaFile to version. remainingBufferInBytes
-    // is both an input parameter and an output parameter. It indicates the size
-    // of version less messages in it. position is both an input parameter and
-    // an output parameter. It indicates the position of the NULL termination
-    // in the version string.
-    static WebRtc_Word32 GetVersion(WebRtc_Word8* version,
-                                    WebRtc_UWord32& remainingBufferInBytes,
-                                    WebRtc_UWord32& position);
-
     // Set the MediaFile instance identifier.
     virtual WebRtc_Word32 ChangeUniqueId(const WebRtc_Word32 id) = 0;
 

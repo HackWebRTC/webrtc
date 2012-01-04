@@ -21,8 +21,6 @@
 #include "scoped_ptr.h"
 #include "time_scheduler.h"
 
-#define VERSION_STRING "Audio Conference Mixer Module 1.1.0"
-
 namespace webrtc {
 class AudioProcessing;
 class CriticalSectionWrapper;
@@ -62,9 +60,6 @@ public:
     bool Init();
 
     // Module functions
-    virtual WebRtc_Word32 Version(WebRtc_Word8* version,
-                                  WebRtc_UWord32& remainingBufferInBytes,
-                                  WebRtc_UWord32& position) const;
     virtual WebRtc_Word32 ChangeUniqueId(const WebRtc_Word32 id);
     virtual WebRtc_Word32 TimeUntilNextProcess();
     virtual WebRtc_Word32 Process();

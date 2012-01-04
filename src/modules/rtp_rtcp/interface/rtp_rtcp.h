@@ -50,17 +50,6 @@ public:
     static void DestroyRtpRtcp(RtpRtcp* module);
 
     /*
-    *   Returns version of the module and its components
-    *
-    *   version                 - buffer to which the version will be written
-    *   remainingBufferInBytes  - remaining number of WebRtc_Word8 in the version buffer
-    *   position                - position of the next empty WebRtc_Word8 in the version buffer
-    */
-    static WebRtc_Word32 GetVersion(WebRtc_Word8* version,
-                                  WebRtc_UWord32& remainingBufferInBytes,
-                                  WebRtc_UWord32& position);
-
-    /*
     *   Change the unique identifier of this object
     *
     *   id      - new unique identifier of this RTP/RTCP module object

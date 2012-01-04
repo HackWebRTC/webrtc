@@ -616,14 +616,6 @@ WebRtc_Word32 FuncTestManager::Init()
     _audioTransport = new AudioTransportImpl(_audioDevice);
     TEST(_audioDevice->RegisterAudioCallback(_audioTransport) == 0);
 
-    WebRtc_Word8 version[256];
-    WebRtc_UWord32 remainingBufferInBytes = 256;
-    WebRtc_UWord32 position = 0;
-
-    // log version
-    TEST(_audioDevice->Version(version, remainingBufferInBytes, position) == 0);
-    TEST_LOG("Version: %s\n \n", version);
-
     return 0;
 }
 

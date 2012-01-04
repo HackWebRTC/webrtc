@@ -50,18 +50,8 @@ public:
 
     static DeviceInfo* CreateDeviceInfo(const WebRtc_Word32 id);
 
-    static WebRtc_Word32 GetVersion(WebRtc_Word8* version,
-                                    WebRtc_UWord32& remainingBufferInBytes,
-                                    WebRtc_UWord32& position);
-
-
-
     // Implements Module declared functions.
     virtual WebRtc_Word32 ChangeUniqueId(const WebRtc_Word32 id);
-
-    virtual WebRtc_Word32 Version(WebRtc_Word8* version,
-                                  WebRtc_UWord32& remainingBufferInBytes,
-                                  WebRtc_UWord32& position) const;
 
     //Call backs
     virtual WebRtc_Word32 RegisterCaptureDataCallback(VideoCaptureDataCallback& dataCallback);

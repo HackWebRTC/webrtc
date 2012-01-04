@@ -436,65 +436,7 @@ int ViEBaseImpl::GetVersion(char version[1024]) {
   acc_len += len;
   assert(acc_len < kViEVersionMaxMessageSize);
 
-#ifdef WEBRTC_EXTERNAL_TRANSPORT
   len = AddExternalTransportBuild(version_ptr);
-  if (len == -1) {
-    SetLastError(kViEBaseUnknownError);
-    return -1;
-  }
-  version_ptr += len;
-  acc_len += len;
-  assert(acc_len < kViEVersionMaxMessageSize);
-#endif
-
-  len = AddVCMVersion(version_ptr);
-  if (len == -1) {
-    SetLastError(kViEBaseUnknownError);
-    return -1;
-  }
-  version_ptr += len;
-  acc_len += len;
-  assert(acc_len < kViEVersionMaxMessageSize);
-
-#ifndef WEBRTC_EXTERNAL_TRANSPORT
-  len = AddSocketModuleVersion(version_ptr);
-  if (len == -1) {
-    SetLastError(kViEBaseUnknownError);
-    return -1;
-  }
-  version_ptr += len;
-  acc_len += len;
-  assert(acc_len < kViEVersionMaxMessageSize);
-#endif
-
-  len = AddRtpRtcpModuleVersion(version_ptr);
-  if (len == -1) {
-    SetLastError(kViEBaseUnknownError);
-    return -1;
-  }
-  version_ptr += len;
-  acc_len += len;
-  assert(acc_len < kViEVersionMaxMessageSize);
-
-  len = AddVideoCaptureVersion(version_ptr);
-  if (len == -1) {
-    SetLastError(kViEBaseUnknownError);
-    return -1;
-  }
-  version_ptr += len;
-  acc_len += len;
-  assert(acc_len < kViEVersionMaxMessageSize);
-
-  len = AddRenderVersion(version_ptr);
-  if (len == -1) {
-    SetLastError(kViEBaseUnknownError);
-    return -1;
-  }
-  version_ptr += len;
-  acc_len += len;
-  assert(acc_len < kViEVersionMaxMessageSize);
-
-  len = AddVideoProcessingVersion(version_ptr);
   if (len == -1) {
     SetLastError(kViEBaseUnknownError);
     return -1;
@@ -523,63 +465,12 @@ WebRtc_Word32 ViEBaseImpl::AddViEVersion(char* str) const {
   return sprintf(str, "VideoEngine 3.1.0\n");
 }
 
-#ifdef WEBRTC_EXTERNAL_TRANSPORT
 WebRtc_Word32 ViEBaseImpl::AddExternalTransportBuild(char* str) const {
+#ifdef WEBRTC_EXTERNAL_TRANSPORT
   return sprintf(str, "External transport build\n");
-}
-#endif
-
-WebRtc_Word32 ViEBaseImpl::AddModuleVersion(webrtc::Module* module,
-                                            char* str) const {
-  WebRtc_Word8 version[kViEMaxModuleVersionSize];
-  WebRtc_UWord32 remaining_buffer_in_bytes(kViEMaxModuleVersionSize);
-  WebRtc_UWord32 position(0);
-  if (module && module->Version(version, remaining_buffer_in_bytes, position)
-      == 0) {
-    return sprintf(str, "%s\n", version);
-  }
-  return -1;
-}
-
-WebRtc_Word32 ViEBaseImpl::AddVCMVersion(char* str) const {
-  webrtc::VideoCodingModule* vcm_ptr =
-    webrtc::VideoCodingModule::Create(instance_id_);
-  int len = AddModuleVersion(vcm_ptr, str);
-  webrtc::VideoCodingModule::Destroy(vcm_ptr);
-  return len;
-}
-
-WebRtc_Word32 ViEBaseImpl::AddVideoCaptureVersion(char* str) const {
+#else
   return 0;
-}
-
-WebRtc_Word32 ViEBaseImpl::AddVideoProcessingVersion(char* str) const {
-  webrtc::VideoProcessingModule* video_ptr =
-    webrtc::VideoProcessingModule::Create(instance_id_);
-  int len = AddModuleVersion(video_ptr, str);
-  webrtc::VideoProcessingModule::Destroy(video_ptr);
-  return len;
-}
-WebRtc_Word32 ViEBaseImpl::AddRenderVersion(char* str) const {
-  return 0;
-}
-
-#ifndef WEBRTC_EXTERNAL_TRANSPORT
-WebRtc_Word32 ViEBaseImpl::AddSocketModuleVersion(char* str) const {
-  WebRtc_UWord8 num_sock_threads(1);
-  UdpTransport* transport = UdpTransport::Create(instance_id_,
-                                                 num_sock_threads);
-  int len = AddModuleVersion(transport, str);
-  UdpTransport::Destroy(transport);
-  return len;
-}
 #endif
-
-WebRtc_Word32 ViEBaseImpl::AddRtpRtcpModuleVersion(char* str) const {
-  RtpRtcp* rtp_rtcp = RtpRtcp::CreateRtpRtcp(-1, true);
-  int len = AddModuleVersion(rtp_rtcp, str);
-  RtpRtcp::DestroyRtpRtcp(rtp_rtcp);
-  return len;
 }
 
 }  // namespace webrtc

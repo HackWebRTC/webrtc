@@ -84,17 +84,7 @@ class ViEBaseImpl
   // Version functions.
   WebRtc_Word32 AddViEVersion(char* str) const;
   WebRtc_Word32 AddBuildInfo(char* str) const;
-#ifdef WEBRTC_EXTERNAL_TRANSPORT
   WebRtc_Word32 AddExternalTransportBuild(char* str) const;
-#else
-  WebRtc_Word32 AddSocketModuleVersion(char* str) const;
-#endif
-  WebRtc_Word32 AddModuleVersion(webrtc::Module* module, char* str) const;
-  WebRtc_Word32 AddVCMVersion(char* str) const;
-  WebRtc_Word32 AddVideoCaptureVersion(char* str) const;
-  WebRtc_Word32 AddVideoProcessingVersion(char* str) const;
-  WebRtc_Word32 AddRenderVersion(char* str) const;
-  WebRtc_Word32 AddRtpRtcpModuleVersion(char* str) const;
 };
 
 }  // namespace webrtc

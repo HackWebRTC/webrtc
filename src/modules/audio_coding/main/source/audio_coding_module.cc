@@ -33,42 +33,6 @@ AudioCodingModule::Destroy(
     delete static_cast<AudioCodingModuleImpl*> (module);
 }
 
-// Returns version of the module and its components.
-WebRtc_Word32
-AudioCodingModule::GetVersion(
-    WebRtc_Word8*   version,
-    WebRtc_UWord32& remainingBufferInBytes,
-    WebRtc_UWord32& position)
-{
-    WebRtc_Word32 len = position;
-    strncpy(&version[position], "AudioCodingModule 1.3.0\n", remainingBufferInBytes);
-
-    position = static_cast<WebRtc_UWord32>(strlen(version));
-    remainingBufferInBytes -= (position - len);
-
-    // Get NetEQ version.
-    if(ACMNetEQ::GetVersion(version,
-        remainingBufferInBytes, position) < 0)
-    {
-        return -1;
-    }
-
-    // Set position and size before calling ACMCodecDB::CodecsVersion
-    // to get versions of all codecs.
-    size_t current_position = position;
-    size_t current_remaining_bytes = remainingBufferInBytes;
-    if(ACMCodecDB::CodecsVersion(version,
-          &current_remaining_bytes, &current_position) < 0)
-    {
-        return -1;
-    }
-
-    // Update position and size of version vector.
-    remainingBufferInBytes = current_remaining_bytes;
-    position = current_position;
-    return 0;
-}
-
 // Get number of supported codecs
 WebRtc_UWord8 AudioCodingModule::NumberOfCodecs()
 {

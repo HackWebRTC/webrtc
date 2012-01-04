@@ -63,11 +63,6 @@ public:
 
     virtual ~VideoCodingModuleImpl();
 
-    // Returns version of the module and its components
-    WebRtc_Word32 Version(WebRtc_Word8* version,
-                          WebRtc_UWord32& remainingBufferInBytes,
-                          WebRtc_UWord32& position) const;
-
     WebRtc_Word32 Id() const;
 
     //  Change the unique identifier of this object

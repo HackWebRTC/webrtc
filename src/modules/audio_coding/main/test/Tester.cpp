@@ -109,14 +109,6 @@ TEST(AudioCodingModuleTest, RunAllTests)
     std::vector<ACMTest*> tests;
     PopulateTests(&tests);
     std::vector<ACMTest*>::iterator it;
-    WebRtc_Word8 version[5000];
-    version[0] = '\0';
-
-    WebRtc_UWord32 remainingBufferInByte = 4999;
-    WebRtc_UWord32 position = 0;
-    AudioCodingModule::GetVersion(version, remainingBufferInByte, position);
-    
-    printf("%s\n", version);
     for (it=tests.begin() ; it < tests.end(); it++)
     {
         (*it)->Perform();

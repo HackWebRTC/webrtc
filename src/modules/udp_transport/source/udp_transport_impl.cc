@@ -195,31 +195,6 @@ WebRtc_Word32 UdpTransportImpl::ChangeUniqueId(const WebRtc_Word32 id)
     return 0;
 }
 
-WebRtc_Word32 UdpTransportImpl::Version(WebRtc_Word8* version,
-                                        WebRtc_UWord32& remainingBufferInBytes,
-                                        WebRtc_UWord32& position) const
-{
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id, "%s", __FUNCTION__);
-    if(version == NULL)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceTransport, _id,
-                     "Version pointer is NULL");
-        return -1;
-    }
-    WebRtc_Word8 ourVersion[256] = "UdpTransport 1.1.0";
-    WebRtc_Word32 ourLength = (WebRtc_Word32)strlen(ourVersion);
-    if((WebRtc_Word32)remainingBufferInBytes < ourLength +1)
-    {
-        WEBRTC_TRACE(kTraceWarning, kTraceTransport, _id,
-                     "Version buffer not long enough");
-        return -1;
-    }
-    memcpy(version, ourVersion, ourLength);
-    version[ourLength] = 0;
-    position += ourLength;
-    return 0;
-}
-
 WebRtc_Word32 UdpTransportImpl::TimeUntilNextProcess()
 {
     return 100;

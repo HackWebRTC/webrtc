@@ -30,10 +30,6 @@ public:
 
     virtual ~VideoProcessingModuleImpl();
 
-    virtual WebRtc_Word32 Version(WebRtc_Word8* version,
-                                  WebRtc_UWord32& remainingBufferInBytes,
-                                  WebRtc_UWord32& position) const;
-
     WebRtc_Word32 Id() const;
 
     virtual WebRtc_Word32 ChangeUniqueId(const WebRtc_Word32 id);

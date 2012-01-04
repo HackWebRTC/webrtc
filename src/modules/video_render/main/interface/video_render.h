@@ -52,17 +52,6 @@ public:
     static void DestroyVideoRender(VideoRender* module);
 
     /*
-     *   Returns version of the module and its components
-     *
-     *   version                 - buffer to which the version will be written
-     *   remainingBufferInBytes  - remaining number of WebRtc_Word8 in the version buffer
-     *   position                - position of the next empty WebRtc_Word8 in the version buffer
-     */
-    virtual WebRtc_Word32 Version(WebRtc_Word8* version,
-                                  WebRtc_UWord32& remainingBufferInBytes,
-                                  WebRtc_UWord32& position) const = 0;
-
-    /*
      *   Change the unique identifier of this object
      *
      *   id      - new unique identifier of this video render module object

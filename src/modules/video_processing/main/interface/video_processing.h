@@ -90,27 +90,6 @@ public:
     static void Destroy(VideoProcessingModule* module);
 
     /**
-       Retrieves the version of the module and its components.
-      
-       \param[in,out] version
-           Buffer to which the null-terminated version string will be copied.
-      
-       \param[in,out] remainingBufferInBytes 
-           Bytes remaining between the supplied position and the end of the buffer.
-           This will reflect the new remaining size at return.
-       
-       \param[in,out] position
-           Position in bytes within the buffer to place the version string. This 
-           will reflect the first byte position following the version string at 
-           return. 
-      
-       \return 0 on success, -1 on failure.
-    */
-    static WebRtc_Word32 GetVersion(WebRtc_Word8* version,
-                                  WebRtc_UWord32& remainingBufferInBytes,
-                                  WebRtc_UWord32& position);
-
-    /**
        Not supported.
     */
     virtual WebRtc_Word32 TimeUntilNextProcess() { return -1; }

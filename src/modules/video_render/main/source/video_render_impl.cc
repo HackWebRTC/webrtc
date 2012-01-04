@@ -328,33 +328,6 @@ ModuleVideoRenderImpl::~ModuleVideoRenderImpl()
     }
 }
 
-WebRtc_Word32 ModuleVideoRenderImpl::Version(
-                                             WebRtc_Word8* version,
-                                             WebRtc_UWord32& remainingBufferInBytes,
-                                             WebRtc_UWord32& position) const
-{
-    WEBRTC_TRACE(kTraceModuleCall, kTraceVideoRenderer, _id,
-                 "%s", __FUNCTION__);
-    if (version == NULL)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
-                     "Version pointer is NULL");
-        return -1;
-    }
-    WebRtc_Word8 ourVersion[256] = "VideoRender 1.1.0";
-    WebRtc_Word32 ourLength = (WebRtc_Word32) strlen(ourVersion);
-    if ((WebRtc_Word32) remainingBufferInBytes < ourLength + 1)
-    {
-        WEBRTC_TRACE(kTraceWarning, kTraceVideoRenderer, _id,
-                     "Version buffer not long enough");
-        return -1;
-    }
-    memcpy(version, ourVersion, ourLength);
-    version[ourLength] = 0; // null terminaion
-    position += ourLength;
-    return 0;
-}
-
 WebRtc_Word32 ModuleVideoRenderImpl::ChangeUniqueId(const WebRtc_Word32 id)
 {
     WEBRTC_TRACE(kTraceModuleCall, kTraceVideoRenderer, _id,

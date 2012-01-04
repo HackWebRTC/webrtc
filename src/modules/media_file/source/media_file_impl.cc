@@ -94,42 +94,6 @@ MediaFileImpl::~MediaFileImpl()
     delete _callbackCrit;
 }
 
-WebRtc_Word32 MediaFileImpl::Version(WebRtc_Word8* version,
-                                     WebRtc_UWord32& remainingBufferInBytes,
-                                     WebRtc_UWord32& position) const
-{
-    WEBRTC_TRACE(kTraceModuleCall, kTraceFile, _id,
-                 "Version(?,bufferLength:%d,position:%d)",
-                 remainingBufferInBytes, position);
-    return GetVersion(version, remainingBufferInBytes, position);
-}
-
-WebRtc_Word32 MediaFile::GetVersion(WebRtc_Word8* version,
-                                    WebRtc_UWord32& remainingBufferInBytes,
-                                    WebRtc_UWord32& position)
-{
-    WEBRTC_TRACE(kTraceModuleCall, kTraceFile, -1,
-                 "GetVersion(?,bufferLength:%d,position:%d)",
-                 remainingBufferInBytes, position);
-    if(version == NULL)
-    {
-        WEBRTC_TRACE(kTraceWarning, kTraceFile, -1,
-                     "Invalid buffer pointer in argument to Version()");
-        return -1;
-    }
-    const WebRtc_Word8 ourVersion[] = "MediaFile 1.0.0";
-    const WebRtc_UWord32 ourLength =(WebRtc_UWord32)strlen(ourVersion);
-    if(remainingBufferInBytes <(ourLength + 1))
-    {
-        return -1;
-    }
-    memcpy(&version[position], ourVersion, ourLength);
-    version[position + ourLength] = '\0';
-    remainingBufferInBytes -=(ourLength + 1);
-    position +=(ourLength + 1);
-    return 0;
-}
-
 WebRtc_Word32 MediaFileImpl::ChangeUniqueId(const WebRtc_Word32 id)
 {
     WEBRTC_TRACE(kTraceModuleCall, kTraceFile, _id, "ChangeUniqueId(new id:%d)",

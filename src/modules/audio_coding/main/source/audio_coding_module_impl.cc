@@ -289,23 +289,6 @@ AudioCodingModuleImpl::ChangeUniqueId(
     return 0;
 }
 
-WebRtc_Word32
-AudioCodingModuleImpl::Version(
-    WebRtc_Word8*   version,
-    WebRtc_UWord32& remainingBufferInBytes,
-    WebRtc_UWord32& position) const
-{
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "Version()");
-    if(version == NULL)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
-            "Input buffer is NULL");
-        return -1;
-    }
-    return GetVersion(version, remainingBufferInBytes, position);
-}
-
 // returns the number of milliseconds until the module want a
 // worker thread to call Process
 WebRtc_Word32

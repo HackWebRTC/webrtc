@@ -81,25 +81,6 @@ class AudioCodingModule: public Module {
   //
 
   ///////////////////////////////////////////////////////////////////////////
-  // WebRtc_Word32 GetVersion()
-  // Returns version of the module and its components.
-  //
-  // Outputs:
-  //   -version            : a buffer that the version string is stored.
-  //   -remainBuffBytes    : remaining size of the buffer "version" in
-  //                         bytes, excluding terminating-null.
-  //   -position           : the first character of the ACM version will
-  //                         written to version[position] and so on.
-  //
-  // Return value:
-  //   -1 if failed to write the whole version string,
-  //    0 if succeeded.
-  //
-  static WebRtc_Word32 GetVersion(WebRtc_Word8* version,
-                                  WebRtc_UWord32& remainBuffBytes,
-                                  WebRtc_UWord32& position);
-
-  ///////////////////////////////////////////////////////////////////////////
   // WebRtc_UWord8 NumberOfCodecs()
   // Returns number of supported codecs.
   //

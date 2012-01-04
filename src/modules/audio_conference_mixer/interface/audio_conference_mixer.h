@@ -38,11 +38,6 @@ public:
     static AudioConferenceMixer* Create(int id);
     virtual ~AudioConferenceMixer() {}
 
-    // Returns version of the module and its components
-    static WebRtc_Word32 GetVersion(WebRtc_Word8* version,
-                                    WebRtc_UWord32& remainingBufferInBytes,
-                                    WebRtc_UWord32& position);
-
     // Module functions
     virtual WebRtc_Word32 ChangeUniqueId(const WebRtc_Word32 id) = 0;
     virtual WebRtc_Word32 TimeUntilNextProcess() = 0 ;

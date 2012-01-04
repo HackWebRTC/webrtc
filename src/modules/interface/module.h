@@ -19,11 +19,6 @@ namespace webrtc {
 
 class Module {
  public:
-  // Returns version of the module and its components.
-  virtual int32_t Version(char* version,
-                          uint32_t& remaining_buffer_in_bytes,
-                          uint32_t& position) const = 0;
-
   // Change the unique identifier of this object.
   virtual int32_t ChangeUniqueId(const int32_t id) = 0;
 

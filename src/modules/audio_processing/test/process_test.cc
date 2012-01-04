@@ -127,7 +127,6 @@ void usage() {
   printf("  --quiet            Suppress text output.\n");
   printf("  --no_progress      Suppress progress.\n");
   printf("  --debug_file FILE  Dump a debug recording.\n");
-  printf("  --version          Print version information and exit.\n");
 }
 
 // void function for gtest.
@@ -144,10 +143,6 @@ void void_main(int argc, char* argv[]) {
 
   AudioProcessing* apm = AudioProcessing::Create(0);
   ASSERT_TRUE(apm != NULL);
-
-  WebRtc_Word8 version[1024];
-  WebRtc_UWord32 version_bytes_remaining = sizeof(version);
-  WebRtc_UWord32 version_position = 0;
 
   const char* pb_filename = NULL;
   const char* far_filename = NULL;
@@ -367,13 +362,6 @@ void void_main(int argc, char* argv[]) {
 
     } else if (strcmp(argv[i], "--no_progress") == 0) {
       progress = false;
-
-    } else if (strcmp(argv[i], "--version") == 0) {
-      ASSERT_EQ(apm->kNoError, apm->Version(version,
-                                            version_bytes_remaining,
-                                            version_position));
-      printf("%s\n", version);
-      return;
 
     } else if (strcmp(argv[i], "--debug_file") == 0) {
       i++;

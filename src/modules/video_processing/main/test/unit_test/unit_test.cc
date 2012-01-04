@@ -60,31 +60,6 @@ void VideoProcessingModuleTest::TearDown()
   _vpm = NULL;
 }
 
-TEST_F(VideoProcessingModuleTest, GetVersionTest)
-{
-  WebRtc_Word8 version[255];
-  WebRtc_UWord32 remainingBuffer = sizeof(version);
-  WebRtc_UWord32 position = 0;
-
-  EXPECT_EQ(-1, VideoProcessingModule::GetVersion(NULL, remainingBuffer,
-                                                  position));
-  EXPECT_EQ(-1, _vpm->GetVersion(NULL, remainingBuffer, position));
-
-  WebRtc_UWord32 badRemainingBuffer = 5;
-  EXPECT_EQ(-3, VideoProcessingModule::GetVersion(version, badRemainingBuffer,
-                                                  position));
-  EXPECT_EQ(-3, _vpm->GetVersion(version, badRemainingBuffer, position));
-
-  EXPECT_EQ(0, VideoProcessingModule::GetVersion(version, remainingBuffer,
-                                                 position));
-  EXPECT_EQ(remainingBuffer, sizeof(version) - position);
-  printf("\n%s\n\n", version);
-
-  EXPECT_EQ(0, _vpm->GetVersion(&version[position], remainingBuffer,
-                                position));
-  EXPECT_EQ(remainingBuffer, sizeof(version) - position);
-}
-
 TEST_F(VideoProcessingModuleTest, HandleNullBuffer)
 {
   VideoProcessingModule::FrameStats stats;
