@@ -33,6 +33,11 @@ MY_ARM_CFLAGS_NEON := \
     -flax-vector-conversions
 endif
 
+ifneq (,$(filter '-DWEBRTC_DETECT_ARM_NEON' '-DWEBRTC_ARCH_ARM_NEON', \
+    $(MY_WEBRTC_COMMON_DEFS)))
+WEBRTC_BUILD_NEON_LIBS := true
+endif
+
 ifeq ($(ARCH_ARM_HAVE_ARMV7A),true)
 MY_WEBRTC_COMMON_DEFS += \
     '-DWEBRTC_ARCH_ARM_V7A'

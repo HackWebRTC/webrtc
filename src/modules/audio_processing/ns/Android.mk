@@ -49,13 +49,14 @@ include $(BUILD_STATIC_LIBRARY)
 
 #############################
 # Build the neon library.
+ifeq ($(WEBRTC_BUILD_NEON_LIBS),true)
 
 include $(CLEAR_VARS)
 
+LOCAL_ARM_MODE := arm
 LOCAL_MODULE_CLASS := STATIC_LIBRARIES
 LOCAL_MODULE := libwebrtc_ns_neon
 LOCAL_MODULE_TAGS := optional
-LOCAL_GENERATED_SOURCES :=
 
 LOCAL_SRC_FILES := nsx_core_neon.c
 
@@ -63,6 +64,7 @@ LOCAL_SRC_FILES := nsx_core_neon.c
 LOCAL_CFLAGS := \
     $(MY_WEBRTC_COMMON_DEFS) \
     -mfpu=neon \
+    -mfloat-abi=softfp \
     -flax-vector-conversions
 
 LOCAL_C_INCLUDES := \
@@ -74,3 +76,4 @@ ifndef NDK_ROOT
 include external/stlport/libstlport.mk
 endif
 include $(BUILD_STATIC_LIBRARY)
+endif # ifeq ($(WEBRTC_BUILD_NEON_LIBS),true)
