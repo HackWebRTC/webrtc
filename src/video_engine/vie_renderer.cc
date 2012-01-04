@@ -173,42 +173,23 @@ WebRtc_Word32 ViEExternalRendererImpl::RenderFrame(
       p_converted_frame = &video_frame;
       break;
     case kVideoYV12:
-      converted_frame.VerifyAndAllocate(CalcBufferSize(kYV12,
-                                                       video_frame.Width(),
-                                                       video_frame.Height()));
-      ConvertI420ToYV12(video_frame.Buffer(), converted_frame.Buffer(),
-                        video_frame.Width(), video_frame.Height(), 0);
-      break;
     case kVideoYUY2:
-      converted_frame.VerifyAndAllocate(CalcBufferSize(kYUY2,
-                                                       video_frame.Width(),
-                                                       video_frame.Height()));
-      ConvertI420ToYUY2(video_frame.Buffer(), converted_frame.Buffer(),
-                        video_frame.Width(), video_frame.Height(), 0);
-      break;
     case kVideoUYVY:
-      converted_frame.VerifyAndAllocate(CalcBufferSize(kUYVY,
-                                                       video_frame.Width(),
-                                                       video_frame.Height()));
-      ConvertI420ToUYVY(video_frame.Buffer(), converted_frame.Buffer(),
-                        video_frame.Width(), video_frame.Height(), 0);
+    case kVideoARGB:
+    case kVideoRGB24:
+      {
+        VideoType type =
+            RawVideoTypeToCommonVideoVideoType(external_renderer_format_);
+        converted_frame.VerifyAndAllocate(CalcBufferSize(type,
+                                                         video_frame.Width(),
+                                                         video_frame.Height()));
+        ConvertFromI420(video_frame.Buffer(), video_frame.Width(), type, 0,
+                        video_frame.Width(), video_frame.Height(),
+                        converted_frame.Buffer());
+      }
       break;
     case kVideoIYUV:
       // no conversion available
-      break;
-    case kVideoARGB:
-      converted_frame.VerifyAndAllocate(CalcBufferSize(kARGB,
-                                                       video_frame.Width(),
-                                                       video_frame.Height()));
-      ConvertI420ToARGB(video_frame.Buffer(), converted_frame.Buffer(),
-                        video_frame.Width(), video_frame.Height(), 0);
-      break;
-    case kVideoRGB24:
-      converted_frame.VerifyAndAllocate(CalcBufferSize(kRGB24,
-                                                       video_frame.Width(),
-                                                       video_frame.Height()));
-      ConvertI420ToRGB24(video_frame.Buffer(), converted_frame.Buffer(),
-                         video_frame.Width(), video_frame.Height());
       break;
     case kVideoRGB565:
       converted_frame.VerifyAndAllocate(CalcBufferSize(kRGB565,
