@@ -549,55 +549,6 @@ RTPSenderVideo::SendGeneric(const WebRtc_Word8 payloadType,
     return 0;
 }
 
-void RTPSenderVideo::SendPadData(WebRtc_Word8 payload_type,
-                                 WebRtc_UWord32 capture_timestamp,
-                                 WebRtc_Word32 bytes) {
-  // Max in the RFC 3550 is 255 bytes, we limit it to be modulus 32 for SRTP.
-  int max_length = 224;
-  WebRtc_UWord8 data_buffer[IP_PACKET_SIZE];
-
-  for (; bytes > 0; bytes -= max_length) {
-    WebRtc_Word32 header_length;
-    {
-      CriticalSectionScoped cs(_sendVideoCritsect);
-
-      // Correct seq num, timestamp and payload type.
-      header_length = _rtpSender.BuildRTPheader(
-          data_buffer,
-          payload_type,
-          false,  // No markerbit.
-          capture_timestamp,
-          true,  // Timestamp provided.
-          true);  // Increment sequence number.
-
-    }
-    data_buffer[0] |= 0x20;  // Set padding bit.
-    WebRtc_Word32* data =
-        reinterpret_cast<WebRtc_Word32*>(&(data_buffer[header_length]));
-
-    int padding_bytes_in_packet = max_length;
-    if (bytes < max_length) {
-      padding_bytes_in_packet = (bytes + 16) & 0xffe0;  // Keep our modulus 32.
-    }
-    if (padding_bytes_in_packet < 32) {
-       // Sanity don't send empty packets.
-       return;
-    }
-    // Fill data buffer with random data.
-    for(int j = 0; j < (padding_bytes_in_packet >> 2); j++) {
-      data[j] = rand();
-    }
-    // Set number of padding bytes in the last byte of the packet.
-    data_buffer[header_length + padding_bytes_in_packet - 1] =
-        padding_bytes_in_packet;
-    // Send the packet
-    _rtpSender.SendToNetwork(data_buffer,
-                             padding_bytes_in_packet,
-                             header_length,
-                             kDontRetransmit);
-  }
-}
-
 WebRtc_Word32
 RTPSenderVideo::SendMPEG4(const FrameType frameType,
                           const WebRtc_Word8 payloadType,

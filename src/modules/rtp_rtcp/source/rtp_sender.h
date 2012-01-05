@@ -147,6 +147,9 @@ public:
                      VideoCodecInformation* codecInfo = NULL,
                      const RTPVideoTypeHeader* rtpTypeHdr = NULL);
 
+    WebRtc_Word32 SendPadData(WebRtc_Word8 payload_type,
+                              WebRtc_UWord32 capture_timestamp,
+                              WebRtc_Word32 bytes);
     /*
     * RTP header extension
     */
