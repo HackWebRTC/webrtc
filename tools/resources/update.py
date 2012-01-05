@@ -28,16 +28,17 @@ def main():
   This script will download WebRTC resource files used for testing, like audio
   and video files. It will check the current version in the DEPS file and
   compare it with the one downloaded (kept in a text file in the download dir).
-  If there's a new version of the resources available it will be downloaded.
+  If the DEPS version is different than the one downloaded, the correct version
+  will be downloaded.
   """
-  # Constants
+  # Constants.
   deps_key = 'webrtc_resources_revision'
   remote_url_base = 'http://commondatastorage.googleapis.com/webrtc-resources/'
   version_filename = 'webrtc-resources-version'
   filename_prefix = 'webrtc-resources-'
   extension = '.tgz'
 
-  # Variables used by the script
+  # Variables used by the script.
   project_root_dir = os.path.normpath(sys.path[0] + '/../../') 
   deps_file = os.path.join(project_root_dir, 'DEPS')
   downloads_dir = os.path.join(project_root_dir, 'resources')
@@ -66,8 +67,8 @@ def main():
   latest_version = int(deps_vars[deps_key])
   print 'Version in DEPS file: %d' % latest_version
   
-  # Download archive if forced or latest version is newer than our current.
-  if latest_version > current_version or options.force:
+  # Download archive if forced or DEPS version is different than our current.
+  if latest_version != current_version or options.force:
     temp_dir = tempfile.mkdtemp(prefix='webrtc-resources-')
     archive_name = '%s%s%s' % (filename_prefix, latest_version, extension)
     remote_archive_url = urljoin(remote_url_base, archive_name)
@@ -101,22 +102,22 @@ def main():
     shutil.rmtree(downloads_dir)
     os.mkdir(downloads_dir)
 
-    # Write the latest version to a text file in the resources dir to avoid 
-    # re-download of the same version in the future:
+    # Write the downloaded version to a text file in the resources dir to avoid
+    # re-download of the same version in the future.
     new_version_file = os.path.join(downloads_dir, version_filename)
     f = open(new_version_file, 'w')
     f.write('%d' % latest_version)
     f.close()
   
-    # Extract the archive
+    # Extract the archive.
     archive = tarfile.open(temp_file, 'r:gz')
     archive.extractall(downloads_dir)
     archive.close()
     print 'Extracted resource files into %s' % downloads_dir
-    # Clean up the temp dir
+    # Clean up the temp dir.
     shutil.rmtree(temp_dir)
   else:
-    print 'Already have latest (or newer) version: %s' % current_version
+    print 'Already have correct version: %s' % current_version
 
 
 def EvalDepsFile(path):
