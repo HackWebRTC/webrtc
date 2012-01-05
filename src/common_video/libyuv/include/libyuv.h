@@ -41,8 +41,6 @@ enum VideoType {
   kNV21,
   kNV12,
   kBGRA,
-  kARGBMac, // TODO (mikhal): remove
-  kRGBAMac, // TODO (mikhal): remove
 };
 
 // Conversion between the RawVideoType and the LibYuv videoType.
@@ -79,37 +77,8 @@ int CalcBufferSize(VideoType src_video_type,
                    int length);
 // TODO (mikhal): Merge the two functions above.
 
-// TODO(mikhal): If WebRTC doesn't switch to three plane representation,
-// use helper functions for the planes and widths.
 
-// Convert To/From I420
-// The following two functions convert an image to/from a I420 type to/from
-// a specified format.
-//
-// Input:
-//   - src_video_type  : Type of input video
-//   - src_frame   : Pointer to a source frame.
-//   - width       : Image width in pixels.
-//   - height      : Image height in pixels.
-//   - dst_frame   : Pointer to a destination frame.
-//   - interlaced  : Flag indicating if interlaced I420 output.
-//   - rotate      : Rotation mode of output image.
-// Return value: 0 if OK, < 0 otherwise.
-//
-// Note: the following functions includes the most common usage cases; for
-// a more specific usage, refer to explicit function.
-int ConvertToI420(VideoType src_video_type,
-                  const uint8_t* src_frame,
-                  int width,
-                  int height,
-                  uint8_t* dst_frame,
-                  bool interlaced,
-                  VideoRotationMode rotate);
-
-// The previous function will soon be removed.
-// TODO(mikhal): Remove legacy function after integration.
-
-// Convert From/To I420
+// Convert To I420
 // Input:
 //   - src_video_type   : Type of input video.
 //   - src_frame        : Pointer to a source frame.
@@ -132,20 +101,7 @@ int ConvertToI420(VideoType src_video_type,
                   VideoRotationMode rotation,
                   uint8_t* dst_frame);
 
-// TODO(andrew): return to the int width and height types. This was swapped
-// temporarily to satisfy a linking error with the libjingle revision we and
-// Chrome pull, due to the removed vplib.
-int ConvertFromI420(VideoType dst_video_type,
-                    const uint8_t* src_frame,
-                    //int width,
-                    //int height,
-                    WebRtc_UWord32 width,
-                    WebRtc_UWord32 height,
-                    uint8_t* dst_frame,
-                    bool interlaced,
-                    VideoRotationMode rotate);
-// The previous function will soon be removed.
-// TODO(mikhal): Remove legacy function after integration.
+// Convert From I420
 // Input:
 //   - src_frame        : Pointer to a source frame.
 //   - src_stride       : Number of bytes in a row of the src Y plane.
@@ -168,19 +124,12 @@ int ConvertFromYV12(const uint8_t* src_frame, int src_stride,
                     int width, int height,
                     uint8_t* dst_frame);
 
-// The following list describes the designated conversion function which
-// are called by the two prior general conversion function.
+// The following list describes designated conversion functions which
+// are not covered by the previous general functions.
 // Input and output descriptions mostly match the above descriptions, and are
 // therefore omitted.
 // Possible additional input value - dst_stride - stride of the dst frame.
 
-int ConvertI420ToRGB24(const uint8_t* src_frame,
-                       uint8_t* dst_frame,
-                       int width, int height);
-int ConvertI420ToARGB(const uint8_t* src_frame,
-                      uint8_t* dst_frame,
-                      int width, int height,
-                      int dst_stride);
 int ConvertI420ToARGB4444(const uint8_t* src_frame,
                           uint8_t* dst_frame,
                           int width,
@@ -190,139 +139,18 @@ int ConvertI420ToRGB565(const uint8_t* src_frame,
                         uint8_t* dst_frame,
                         int width,
                         int height);
-int ConvertI420ToRGB565Android(const uint8_t* src_frame,
-                               uint8_t* dst_frame,
-                               int width,
-                               int height);
 int ConvertI420ToARGB1555(const uint8_t* src_frame,
                           uint8_t* dst_frame,
                           int width,
                           int height,
                           int dst_stride);
-int ConvertI420ToARGBMac(const uint8_t* src_frame,
-                         uint8_t* dst_frame,
-                         int width, int height,
-                         int dst_stride);
-int ConvertI420ToRGBAMac(const uint8_t* src_frame,
-                         uint8_t* dst_frame,
-                         int width, int height,
-                         int dst_stride);
-int ConvertI420ToI420(const uint8_t* src_frame,
-                      uint8_t* dst_frame,
-                      int width, int height,
-                      int dst_stride = 0);
-int ConvertI420ToUYVY(const uint8_t* src_frame,
-                      uint8_t* dst_frame,
-                      int width, int height,
-                      int dst_stride = 0);
-int ConvertI420ToYUY2(const uint8_t* src_frame, uint8_t* dst_frame,
-                      int width, int height,
-                      int dst_stride = 0);
-int ConvertI420ToYV12(const uint8_t* src_frame,
-                      uint8_t* dst_frame,
-                      int width, int height,
-                      int dst_stride);
-int ConvertYUY2ToI420(int width, int height,
-                      const uint8_t* src_frame,
-                      uint8_t* dst_frame);
-int ConvertYV12ToI420(const uint8_t* src_frame,
-                      int width, int height,
-                      uint8_t* dst_frame);
 int ConvertRGB24ToARGB(const uint8_t* src_frame,
                        uint8_t* dst_frame,
                        int width, int height,
                        int dst_stride);
-int ConvertRGB24ToI420(int width, int height,
-                       const uint8_t* src_frame,
-                       uint8_t* dst_frame);
-
-int ConvertARGBMacToI420(int width, int height,
-                         const uint8_t* src_frame,
-                         uint8_t* dst_frame);
-int ConvertUYVYToI420(int width, int height,
-                      const uint8_t* src_frame,
-                      uint8_t* dst_frame);
-
-// NV12 conversion and rotation
-int ConvertNV12ToI420(const uint8_t* src_frame,
-                      uint8_t* dst_frame,
-                      int width, int height);
-int ConvertNV12ToI420AndRotate180(const uint8_t* src_frame,
-                                  uint8_t* dst_frame, int width,
-                                  int height);
-int ConvertNV12ToI420AndRotateAntiClockwise(const uint8_t* src_frame,
-                                            uint8_t* dst_frame,
-                                            int width,
-                                            int height);
-int ConvertNV12ToI420AndRotateClockwise(const uint8_t* src_frame,
-                                        uint8_t* dst_frame,
-                                        int width,
-                                        int height);
 int ConvertNV12ToRGB565(const uint8_t* src_frame,
                         uint8_t* dst_frame,
                         int width, int height);
-
-// NV21 Conversion/Rotation
-int ConvertNV21ToI420(const uint8_t* src_frame,
-                      uint8_t* dst_frame,
-                      int width, int height);
-int ConvertNV21ToI420AndRotate180(const uint8_t* src_frame,
-                                  uint8_t* dst_frame,
-                                  int width, int height);
-// TODO (mikhal): Rename to counterClockwise.
-int ConvertNV21ToI420AndRotateAntiClockwise(const uint8_t* src_frame,
-                                            uint8_t* dst_frame,
-                                            int width,
-                                            int height);
-int ConvertNV21ToI420AndRotateClockwise(const uint8_t* src_frame,
-                                        uint8_t* dst_frame,
-                                        int width,
-                                        int height);
-
-// IPhone
-int ConvertI420ToRGBAIPhone(const uint8_t* src_frame,
-                            uint8_t* dst_frame,
-                            int width, int height,
-                            int dst_stride);
-
-int I420Rotate(const uint8_t* src_frame,
-               uint8_t* dst_frame,
-               int width, int height,
-               VideoRotationMode rotation_mode);
-// Following three functions:
-// Convert from I420/YV12 to I420 and rotate.
-// Input:
-//    - src_frame       : Pointer to a source frame.
-//    - src_width       : Width of source frame in pixels.
-//    - src_height      : Height of source frame in pixels.
-//    - dst_frame       : Pointer to a destination frame.
-//    - dst_width       : Width of destination frame in pixels.
-//    - dst_height      : Height of destination frame in pixels.
-//    - src_color_space : Input color space.
-// Return value: 0 if OK, < 0 otherwise.
-int ConvertToI420AndRotateClockwise(const uint8_t* src_frame,
-                                    int src_width,
-                                    int src_height,
-                                    uint8_t* dst_frame,
-                                    int dst_width,
-                                    int dst_height,
-                                    VideoType src_video_type);
-
-int ConvertToI420AndRotateAntiClockwise(const uint8_t* src_frame,
-                                        int src_width,
-                                        int src_height,
-                                        uint8_t* dst_frame,
-                                        int dst_width,
-                                        int dst_height,
-                                        VideoType src_video_type);
-
-int ConvertToI420AndRotate180(const uint8_t* srcBuffer,
-                              int srcWidth,
-                              int srcHeight,
-                              uint8_t* dstBuffer,
-                              int dst_width,
-                              int dst_height,
-                              VideoType src_video_type);
 
 // Mirror functions
 // The following 2 functions perform mirroring on a given image
@@ -355,12 +183,6 @@ int ConvertToI420AndMirrorUpDown(const uint8_t* src_frame,
                                  int src_height,
                                  VideoType src_video_type);
 
-int ConvertToI420AndRotate(const uint8_t* src_frame,
-                           uint8_t* dst_frame,
-                           int height,
-                           int width,
-                           VideoType src_video_type,
-                           VideoRotationMode mode);
 // Compute PSNR for an I420 frame (all planes).
 double I420PSNR(const uint8_t* ref_frame,
                 const uint8_t* test_frame,
