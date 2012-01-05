@@ -34,14 +34,14 @@ static const int16_t kAllPassCoefsQ15[2] = { 20972, 5571 };
 static const int16_t kOffsetVector[6] = { 368, 368, 272, 176, 176, 176 };
 
 void WebRtcVad_HpOutput(int16_t* in_vector,
-                        int16_t in_vector_length,
-                        int16_t* out_vector,
-                        int16_t* filter_state) {
-  int16_t i, *pi, *outPtr;
-  int32_t tmpW32;
+                        int in_vector_length,
+                        int16_t* filter_state,
+                        int16_t* out_vector) {
+  int i;
+  int16_t* in_ptr = in_vector;
+  int16_t* out_ptr = out_vector;
+  int32_t tmp32 = 0;
 
-  pi = &in_vector[0];
-  outPtr = &out_vector[0];
 
   // The sum of the absolute values of the impulse response:
   // The zero/pole-filter has a max amplification of a single sample of: 1.4546
@@ -53,41 +53,40 @@ void WebRtcVad_HpOutput(int16_t* in_vector,
 
   for (i = 0; i < in_vector_length; i++) {
     // all-zero section (filter coefficients in Q14)
-    tmpW32 = (int32_t) WEBRTC_SPL_MUL_16_16(kHpZeroCoefs[0], (*pi));
-    tmpW32 += (int32_t) WEBRTC_SPL_MUL_16_16(kHpZeroCoefs[1], filter_state[0]);
-    tmpW32 += (int32_t) WEBRTC_SPL_MUL_16_16(kHpZeroCoefs[2],
-                                             filter_state[1]);  // Q14
+    tmp32 = (int32_t) WEBRTC_SPL_MUL_16_16(kHpZeroCoefs[0], (*in_ptr));
+    tmp32 += (int32_t) WEBRTC_SPL_MUL_16_16(kHpZeroCoefs[1], filter_state[0]);
+    tmp32 += (int32_t) WEBRTC_SPL_MUL_16_16(kHpZeroCoefs[2],
+                                            filter_state[1]);  // Q14
     filter_state[1] = filter_state[0];
-    filter_state[0] = *pi++;
+    filter_state[0] = *in_ptr++;
 
     // all-pole section
-    tmpW32 -= (int32_t) WEBRTC_SPL_MUL_16_16(kHpPoleCoefs[1],
-                                             filter_state[2]);  // Q14
-    tmpW32 -= (int32_t) WEBRTC_SPL_MUL_16_16(kHpPoleCoefs[2], filter_state[3]);
+    tmp32 -= (int32_t) WEBRTC_SPL_MUL_16_16(kHpPoleCoefs[1],
+                                            filter_state[2]);  // Q14
+    tmp32 -= (int32_t) WEBRTC_SPL_MUL_16_16(kHpPoleCoefs[2], filter_state[3]);
     filter_state[3] = filter_state[2];
-    filter_state[2] = (int16_t) WEBRTC_SPL_RSHIFT_W32 (tmpW32, 14);
-    *outPtr++ = filter_state[2];
+    filter_state[2] = (int16_t) WEBRTC_SPL_RSHIFT_W32 (tmp32, 14);
+    *out_ptr++ = filter_state[2];
   }
 }
 
 void WebRtcVad_Allpass(int16_t* in_vector,
-                       int16_t* out_vector,
                        int16_t filter_coefficients,
                        int vector_length,
-                       int16_t* filter_state) {
+                       int16_t* filter_state,
+                       int16_t* out_vector) {
   // The filter can only cause overflow (in the w16 output variable)
   // if more than 4 consecutive input numbers are of maximum value and
   // has the the same sign as the impulse responses first taps.
   // First 6 taps of the impulse response: 0.6399 0.5905 -0.3779
   // 0.2418 -0.1547 0.0990
 
-  int n;
-  int16_t tmp16;
-  int32_t tmp32, in32, state32;
+  int i;
+  int16_t tmp16 = 0;
+  int32_t tmp32 = 0, in32 = 0;
+  int32_t state32 = WEBRTC_SPL_LSHIFT_W32((int32_t) (*filter_state), 16); // Q31
 
-  state32 = WEBRTC_SPL_LSHIFT_W32(((int32_t) (*filter_state)), 16);  // Q31
-
-  for (n = 0; n < vector_length; n++) {
+  for (i = 0; i < vector_length; i++) {
     tmp32 = state32 + WEBRTC_SPL_MUL_16_16(filter_coefficients, (*in_vector));
     tmp16 = (int16_t) WEBRTC_SPL_RSHIFT_W32(tmp32, 16);
     *out_vector++ = tmp16;
@@ -101,30 +100,28 @@ void WebRtcVad_Allpass(int16_t* in_vector,
 }
 
 void WebRtcVad_SplitFilter(int16_t* in_vector,
-                           int16_t* out_vector_hp,
-                           int16_t* out_vector_lp,
+                           int in_vector_length,
                            int16_t* upper_state,
                            int16_t* lower_state,
-                           int in_vector_length) {
-  int16_t tmpOut;
-  int k, halflen;
-
-  // Downsampling by 2 and get two branches
-  halflen = WEBRTC_SPL_RSHIFT_W16(in_vector_length, 1);
+                           int16_t* out_vector_hp,
+                           int16_t* out_vector_lp) {
+  int16_t tmp_out;
+  int i;
+  int half_length = WEBRTC_SPL_RSHIFT_W16(in_vector_length, 1);
 
   // All-pass filtering upper branch
-  WebRtcVad_Allpass(&in_vector[0], out_vector_hp, kAllPassCoefsQ15[0], halflen,
-                    upper_state);
+  WebRtcVad_Allpass(&in_vector[0], kAllPassCoefsQ15[0], half_length,
+                    upper_state, out_vector_hp);
 
   // All-pass filtering lower branch
-  WebRtcVad_Allpass(&in_vector[1], out_vector_lp, kAllPassCoefsQ15[1], halflen,
-                    lower_state);
+  WebRtcVad_Allpass(&in_vector[1], kAllPassCoefsQ15[1], half_length,
+                    lower_state, out_vector_lp);
 
   // Make LP and HP signals
-  for (k = 0; k < halflen; k++) {
-    tmpOut = *out_vector_hp;
+  for (i = 0; i < half_length; i++) {
+    tmp_out = *out_vector_hp;
     *out_vector_hp++ -= *out_vector_lp;
-    *out_vector_lp++ += tmpOut;
+    *out_vector_lp++ += tmp_out;
   }
 }
 
@@ -132,145 +129,150 @@ int16_t WebRtcVad_get_features(VadInstT* inst,
                                int16_t* in_vector,
                                int frame_size,
                                int16_t* out_vector) {
-  int curlen, filtno;
-  int16_t vecHP1[120], vecLP1[120];
-  int16_t vecHP2[60], vecLP2[60];
-  int16_t *ptin;
-  int16_t *hptout, *lptout;
   int16_t power = 0;
+  // We expect |frame_size| to be 80, 160 or 240 samples, which corresponds to
+  // 10, 20 or 30 ms in 8 kHz. Therefore, the intermediate downsampled data will
+  // have at most 120 samples after the first split and at most 60 samples after
+  // the second split.
+  int16_t hp_120[120], lp_120[120];
+  int16_t hp_60[60], lp_60[60];
+  // Initialize variables for the first SplitFilter().
+  int length = frame_size;
+  int frequency_band = 0;
+  int16_t* in_ptr = in_vector;
+  int16_t* hp_out_ptr = hp_120;
+  int16_t* lp_out_ptr = lp_120;
 
   // Split at 2000 Hz and downsample
-  filtno = 0;
-  ptin = in_vector;
-  hptout = vecHP1;
-  lptout = vecLP1;
-  curlen = frame_size;
-  WebRtcVad_SplitFilter(ptin, hptout, lptout, &inst->upper_state[filtno],
-                        &inst->lower_state[filtno], curlen);
+  WebRtcVad_SplitFilter(in_ptr, length, &inst->upper_state[frequency_band],
+                        &inst->lower_state[frequency_band], hp_out_ptr,
+                        lp_out_ptr);
 
   // Split at 3000 Hz and downsample
-  filtno = 1;
-  ptin = vecHP1;
-  hptout = vecHP2;
-  lptout = vecLP2;
-  curlen = WEBRTC_SPL_RSHIFT_W16(frame_size, 1);
+  frequency_band = 1;
+  in_ptr = hp_120;
+  hp_out_ptr = hp_60;
+  lp_out_ptr = lp_60;
+  length = WEBRTC_SPL_RSHIFT_W16(frame_size, 1);
 
-  WebRtcVad_SplitFilter(ptin, hptout, lptout, &inst->upper_state[filtno],
-                        &inst->lower_state[filtno], curlen);
+  WebRtcVad_SplitFilter(in_ptr, length, &inst->upper_state[frequency_band],
+                        &inst->lower_state[frequency_band], hp_out_ptr,
+                        lp_out_ptr);
 
   // Energy in 3000 Hz - 4000 Hz
-  curlen = WEBRTC_SPL_RSHIFT_W16(curlen, 1);
-  WebRtcVad_LogOfEnergy(vecHP2, &out_vector[5], &power, kOffsetVector[5],
-                        curlen);
+  length = WEBRTC_SPL_RSHIFT_W16(length, 1);
+  WebRtcVad_LogOfEnergy(hp_60, length, kOffsetVector[5], &power,
+                        &out_vector[5]);
 
   // Energy in 2000 Hz - 3000 Hz
-  WebRtcVad_LogOfEnergy(vecLP2, &out_vector[4], &power, kOffsetVector[4],
-                        curlen);
+  WebRtcVad_LogOfEnergy(lp_60, length, kOffsetVector[4], &power,
+                        &out_vector[4]);
 
   // Split at 1000 Hz and downsample
-  filtno = 2;
-  ptin = vecLP1;
-  hptout = vecHP2;
-  lptout = vecLP2;
-  curlen = WEBRTC_SPL_RSHIFT_W16(frame_size, 1);
-  WebRtcVad_SplitFilter(ptin, hptout, lptout, &inst->upper_state[filtno],
-                        &inst->lower_state[filtno], curlen);
+  frequency_band = 2;
+  in_ptr = lp_120;
+  hp_out_ptr = hp_60;
+  lp_out_ptr = lp_60;
+  length = WEBRTC_SPL_RSHIFT_W16(frame_size, 1);
+  WebRtcVad_SplitFilter(in_ptr, length, &inst->upper_state[frequency_band],
+                        &inst->lower_state[frequency_band], hp_out_ptr,
+                        lp_out_ptr);
 
   // Energy in 1000 Hz - 2000 Hz
-  curlen = WEBRTC_SPL_RSHIFT_W16(curlen, 1);
-  WebRtcVad_LogOfEnergy(vecHP2, &out_vector[3], &power, kOffsetVector[3],
-                        curlen);
+  length = WEBRTC_SPL_RSHIFT_W16(length, 1);
+  WebRtcVad_LogOfEnergy(hp_60, length, kOffsetVector[3], &power,
+                        &out_vector[3]);
 
   // Split at 500 Hz
-  filtno = 3;
-  ptin = vecLP2;
-  hptout = vecHP1;
-  lptout = vecLP1;
+  frequency_band = 3;
+  in_ptr = lp_60;
+  hp_out_ptr = hp_120;
+  lp_out_ptr = lp_120;
 
-  WebRtcVad_SplitFilter(ptin, hptout, lptout, &inst->upper_state[filtno],
-                        &inst->lower_state[filtno], curlen);
+  WebRtcVad_SplitFilter(in_ptr, length, &inst->upper_state[frequency_band],
+                        &inst->lower_state[frequency_band], hp_out_ptr,
+                        lp_out_ptr);
 
   // Energy in 500 Hz - 1000 Hz
-  curlen = WEBRTC_SPL_RSHIFT_W16(curlen, 1);
-  WebRtcVad_LogOfEnergy(vecHP1, &out_vector[2], &power, kOffsetVector[2],
-                        curlen);
-  // Split at 250 Hz
-  filtno = 4;
-  ptin = vecLP1;
-  hptout = vecHP2;
-  lptout = vecLP2;
+  length = WEBRTC_SPL_RSHIFT_W16(length, 1);
+  WebRtcVad_LogOfEnergy(hp_120, length, kOffsetVector[2], &power,
+                        &out_vector[2]);
 
-  WebRtcVad_SplitFilter(ptin, hptout, lptout, &inst->upper_state[filtno],
-                        &inst->lower_state[filtno], curlen);
+  // Split at 250 Hz
+  frequency_band = 4;
+  in_ptr = lp_120;
+  hp_out_ptr = hp_60;
+  lp_out_ptr = lp_60;
+
+  WebRtcVad_SplitFilter(in_ptr, length, &inst->upper_state[frequency_band],
+                        &inst->lower_state[frequency_band], hp_out_ptr,
+                        lp_out_ptr);
 
   // Energy in 250 Hz - 500 Hz
-  curlen = WEBRTC_SPL_RSHIFT_W16(curlen, 1);
-  WebRtcVad_LogOfEnergy(vecHP2, &out_vector[1], &power, kOffsetVector[1],
-                        curlen);
+  length = WEBRTC_SPL_RSHIFT_W16(length, 1);
+  WebRtcVad_LogOfEnergy(hp_60, length, kOffsetVector[1], &power,
+                        &out_vector[1]);
 
   // Remove DC and LFs
-  WebRtcVad_HpOutput(vecLP2, curlen, vecHP1, inst->hp_filter_state);
+  WebRtcVad_HpOutput(lp_60, length, inst->hp_filter_state, hp_120);
 
   // Power in 80 Hz - 250 Hz
-  WebRtcVad_LogOfEnergy(vecHP1, &out_vector[0], &power, kOffsetVector[0],
-                        curlen);
+  WebRtcVad_LogOfEnergy(hp_120, length, kOffsetVector[0], &power,
+                        &out_vector[0]);
 
   return power;
 }
 
 void WebRtcVad_LogOfEnergy(int16_t* vector,
-                           int16_t* enerlogval,
-                           int16_t* power,
+                           int vector_length,
                            int16_t offset,
-                           int vector_length) {
-  int16_t enerSum = 0;
-  int16_t zeros, frac, log2;
-  int32_t energy;
-
-  int shfts = 0, shfts2;
-
-  energy = WebRtcSpl_Energy(vector, vector_length, &shfts);
+                           int16_t* power,
+                           int16_t* log_energy) {
+  int shfts = 0, shfts2 = 0;
+  int16_t energy_s16 = 0;
+  int16_t zeros = 0, frac = 0, log2 = 0;
+  int32_t energy = WebRtcSpl_Energy(vector, vector_length, &shfts);
 
   if (energy > 0) {
 
     shfts2 = 16 - WebRtcSpl_NormW32(energy);
     shfts += shfts2;
     // "shfts" is the total number of right shifts that has been done to
-    // enerSum.
-    enerSum = (int16_t) WEBRTC_SPL_SHIFT_W32(energy, -shfts2);
+    // energy_s16.
+    energy_s16 = (int16_t) WEBRTC_SPL_SHIFT_W32(energy, -shfts2);
 
     // Find:
-    // 160*log10(enerSum*2^shfts) = 160*log10(2)*log2(enerSum*2^shfts) =
-    // 160*log10(2)*(log2(enerSum) + log2(2^shfts)) =
-    // 160*log10(2)*(log2(enerSum) + shfts)
+    // 160*log10(energy_s16*2^shfts) = 160*log10(2)*log2(energy_s16*2^shfts) =
+    // 160*log10(2)*(log2(energy_s16) + log2(2^shfts)) =
+    // 160*log10(2)*(log2(energy_s16) + shfts)
 
-    zeros = WebRtcSpl_NormU32(enerSum);
-    frac = (int16_t) (((uint32_t) ((int32_t) (enerSum) << zeros) & 0x7FFFFFFF)
-        >> 21);
+    zeros = WebRtcSpl_NormU32(energy_s16);
+    frac = (int16_t) (((uint32_t) ((int32_t) (energy_s16) << zeros)
+        & 0x7FFFFFFF) >> 21);
     log2 = (int16_t) (((31 - zeros) << 10) + frac);
 
-    *enerlogval = (int16_t) WEBRTC_SPL_MUL_16_16_RSFT(kLogConst, log2, 19)
+    *log_energy = (int16_t) WEBRTC_SPL_MUL_16_16_RSFT(kLogConst, log2, 19)
         + (int16_t) WEBRTC_SPL_MUL_16_16_RSFT(shfts, kLogConst, 9);
 
-    if (*enerlogval < 0) {
-      *enerlogval = 0;
+    if (*log_energy < 0) {
+      *log_energy = 0;
     }
   } else {
-    *enerlogval = 0;
+    *log_energy = 0;
     shfts = -15;
-    enerSum = 0;
+    energy_s16 = 0;
   }
 
-  *enerlogval += offset;
+  *log_energy += offset;
 
   // Total power in frame
   if (*power <= MIN_ENERGY) {
     if (shfts > 0) {
       *power += MIN_ENERGY + 1;
-    } else if (WEBRTC_SPL_SHIFT_W16(enerSum, shfts) > MIN_ENERGY) {
+    } else if (WEBRTC_SPL_SHIFT_W16(energy_s16, shfts) > MIN_ENERGY) {
       *power += MIN_ENERGY + 1;
     } else {
-      *power += WEBRTC_SPL_SHIFT_W16(enerSum, shfts);
+      *power += WEBRTC_SPL_SHIFT_W16(energy_s16, shfts);
     }
   }
 }

@@ -36,9 +36,9 @@
  *
  */
 void WebRtcVad_HpOutput(int16_t* in_vector,
-                        int16_t in_vector_length,
-                        int16_t* out_vector,
-                        int16_t* filter_state);
+                        int in_vector_length,
+                        int16_t* filter_state,
+                        int16_t* out_vector);
 
 /****************************************************************************
  * WebRtcVad_Allpass(...)
@@ -60,10 +60,10 @@ void WebRtcVad_HpOutput(int16_t* in_vector,
  *
  */
 void WebRtcVad_Allpass(int16_t* in_vector,
-                       int16_t* outw16,
                        int16_t filter_coefficients,
                        int vector_length,
-                       int16_t* filter_state);
+                       int16_t* filter_state,
+                       int16_t* outw16);
 
 /****************************************************************************
  * WebRtcVad_SplitFilter(...)
@@ -85,11 +85,11 @@ void WebRtcVad_Allpass(int16_t* in_vector,
  *
  */
 void WebRtcVad_SplitFilter(int16_t* in_vector,
-                           int16_t* out_vector_hp,
-                           int16_t* out_vector_lp,
+                           int in_vector_length,
                            int16_t* upper_state,
                            int16_t* lower_state,
-                           int in_vector_length);
+                           int16_t* out_vector_hp,
+                           int16_t* out_vector_lp);
 
 /****************************************************************************
  * WebRtcVad_get_features(...)
@@ -130,15 +130,15 @@ int16_t WebRtcVad_get_features(VadInstT* inst,
  *      - vector_length     : Length of input vector
  *
  * Output:
- *      - enerlogval        : 10*log10(energy);
+ *      - log_energy        : 10*log10(energy);
  *      - power             : Update total power in speech frame. NOTE! This value
  *                            is not exact since it is only used in a comparison.
  *     
  */
 void WebRtcVad_LogOfEnergy(int16_t* vector,
-                           int16_t* enerlogval,
-                           int16_t* power,
+                           int vector_length,
                            int16_t offset,
-                           int vector_length);
+                           int16_t* power,
+                           int16_t* log_energy);
 
 #endif  // WEBRTC_COMMON_AUDIO_VAD_VAD_FILTERBANK_H_
