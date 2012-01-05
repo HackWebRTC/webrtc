@@ -508,8 +508,7 @@ public:
     void OnPacketLossStatisticsUpdate(
         const WebRtc_UWord8 fractionLost,
         const WebRtc_UWord16 roundTripTime,
-        const WebRtc_UWord32 lastReceivedExtendedHighSeqNum,
-        bool triggerOnNetworkChanged);
+        const WebRtc_UWord32 lastReceivedExtendedHighSeqNum);
 
     void OnReceivedTMMBR();
 
@@ -562,7 +561,7 @@ protected:
     RtpRtcpClock&             _clock;
 private:
     void SendKeyFrame();
-    void ProcessDefaultModuleBandwidth(bool triggerOnNetworkChanged);
+    void ProcessDefaultModuleBandwidth();
 
     WebRtc_Word32             _id;
     const bool                _audio;

@@ -1301,29 +1301,37 @@ RTCPReceiver::OnReceivedReferencePictureSelectionIndication(const WebRtc_UWord64
 }
 
 // Holding no Critical section
-void
-RTCPReceiver::TriggerCallbacksFromRTCPPacket(RTCPPacketInformation& rtcpPacketInformation)
+void RTCPReceiver::TriggerCallbacksFromRTCPPacket(
+    RTCPPacketInformation& rtcpPacketInformation)
 {
-    // callback if SR or RR
+    // Process TMMBR and REMB first to avoid multiple callbacks
+    // to OnNetworkChanged.  
+    if (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpTmmbr)
+    {
+        WEBRTC_TRACE(kTraceStateInfo, kTraceRtpRtcp, _id,
+                     "SIG [RTCP] Incoming TMMBR to id:%d", _id);
+
+        // Might trigger a OnReceivedBandwidthEstimateUpdate.
+        _rtpRtcp.OnReceivedTMMBR();
+    }
+    if (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpRemb)
+    {
+        WEBRTC_TRACE(kTraceStateInfo, kTraceRtpRtcp, _id,
+                     "SIG [RTCP] Incoming REMB to id:%d", _id);
+
+       // We need to bounce this to the default channel.
+        _rtpRtcp.OnReceivedEstimatedMaxBitrate(
+            rtcpPacketInformation.receiverEstimatedMaxBitrate);
+    }
     if (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpSr ||
         rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpRr)
     {
-        if(rtcpPacketInformation.reportBlock)
+        if (rtcpPacketInformation.reportBlock)
         {
-            // We only want to trigger one OnNetworkChanged callback per RTCP
-            // packet. The callback is triggered by a SR, RR, REMB or TMMBR, so
-            // we don't want to trigger one from here if the packet also
-            // contains a REMB or TMMBR block.
-            bool triggerCallback = true;
-            if (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpRemb ||
-                rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpTmmbr) {
-              triggerCallback = false;
-            }
             _rtpRtcp.OnPacketLossStatisticsUpdate(
                 rtcpPacketInformation.fractionLost,
                 rtcpPacketInformation.roundTripTime,
-                rtcpPacketInformation.lastReceivedExtendedHighSeqNum,
-                triggerCallback);
+                rtcpPacketInformation.lastReceivedExtendedHighSeqNum);
         }
     }
     if (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpSr)
@@ -1338,27 +1346,24 @@ RTCPReceiver::TriggerCallbacksFromRTCPPacket(RTCPPacketInformation& rtcpPacketIn
     {
         if (rtcpPacketInformation.nackSequenceNumbersLength > 0)
         {
-            WEBRTC_TRACE(kTraceStateInfo, kTraceRtpRtcp, _id, "SIG [RTCP] Incoming NACK to id:%d", _id);
-            _rtpRtcp.OnReceivedNACK(rtcpPacketInformation.nackSequenceNumbersLength,
-                                          rtcpPacketInformation.nackSequenceNumbers);
+            WEBRTC_TRACE(kTraceStateInfo, kTraceRtpRtcp, _id,
+                         "SIG [RTCP] Incoming NACK to id:%d", _id);
+            _rtpRtcp.OnReceivedNACK(
+                rtcpPacketInformation.nackSequenceNumbersLength,
+                rtcpPacketInformation.nackSequenceNumbers);
         }
-    }
-    if (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpTmmbr)
-    {
-        WEBRTC_TRACE(kTraceStateInfo, kTraceRtpRtcp, _id, "SIG [RTCP] Incoming TMMBR to id:%d", _id);
-
-        // might trigger a OnReceivedBandwidthEstimateUpdate
-        _rtpRtcp.OnReceivedTMMBR();
     }
     if ((rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpPli) ||
         (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpFir))
     {
         if (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpPli)
         {
-            WEBRTC_TRACE(kTraceStateInfo, kTraceRtpRtcp, _id, "SIG [RTCP] Incoming PLI to id:%d", _id);
-        }else
+            WEBRTC_TRACE(kTraceStateInfo, kTraceRtpRtcp, _id,
+                         "SIG [RTCP] Incoming PLI to id:%d", _id);
+        } else
         {
-            WEBRTC_TRACE(kTraceStateInfo, kTraceRtpRtcp, _id, "SIG [RTCP] Incoming FIR to id:%d", _id);
+            WEBRTC_TRACE(kTraceStateInfo, kTraceRtpRtcp, _id,
+                         "SIG [RTCP] Incoming FIR to id:%d", _id);
         }
         _rtpRtcp.OnReceivedIntraFrameRequest(&_rtpRtcp);
     }
@@ -1367,12 +1372,6 @@ RTCPReceiver::TriggerCallbacksFromRTCPPacket(RTCPPacketInformation& rtcpPacketIn
          // we need use a bounce it up to handle default channel
         _rtpRtcp.OnReceivedSliceLossIndication(
             rtcpPacketInformation.sliPictureId);
-    }
-    if (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpRemb)
-    {
-       // We need to bounce this to the default channel.
-        _rtpRtcp.OnReceivedEstimatedMaxBitrate(
-            rtcpPacketInformation.receiverEstimatedMaxBitrate);
     }
     if (rtcpPacketInformation.rtcpPacketTypeFlags & kRtcpRpsi)
     {
