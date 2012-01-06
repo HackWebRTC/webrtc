@@ -52,7 +52,7 @@ TracePosix::~TracePosix()
 
 WebRtc_Word32 TracePosix::AddThreadId(char* traceMessage) const {
 #ifdef __linux__
-  pid_t threadId = (pid_t) syscall(SYS_gettid);
+  pid_t threadId = (pid_t) syscall(__NR_gettid);
   sprintf(traceMessage, "%10d; ", threadId);
 #else
   WebRtc_UWord64 threadId = (WebRtc_UWord64)pthread_self();
