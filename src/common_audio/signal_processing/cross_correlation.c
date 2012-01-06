@@ -15,6 +15,10 @@
  *
  */
 
+/* TODO(kma): Clean up the code in this file, and break it up for
+ * various platforms (Xscale, ARM/Neon etc.).
+ */
+
 #include "signal_processing_library.h"
 
 void WebRtcSpl_CrossCorrelation(WebRtc_Word32* cross_correlation, WebRtc_Word16* seq1,

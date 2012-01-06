@@ -22,7 +22,6 @@ LOCAL_SRC_FILES := \
     complex_fft.c \
     complex_bit_reverse.c \
     copy_set_operations.c \
-    cross_correlation.c \
     division_operations.c \
     dot_product_with_scale.c \
     downsample_fast.c \
@@ -60,9 +59,13 @@ LOCAL_C_INCLUDES := \
 
 ifeq ($(ARCH_ARM_HAVE_NEON),true)
 LOCAL_SRC_FILES += \
-    min_max_operations_neon.c
+    min_max_operations_neon.c \
+    cross_correlation_neon.s
 LOCAL_CFLAGS += \
     $(MY_ARM_CFLAGS_NEON)
+else
+LOCAL_SRC_FILES += \
+    cross_correlation.c
 endif
 
 LOCAL_SHARED_LIBRARIES := libstlport
