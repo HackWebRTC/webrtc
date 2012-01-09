@@ -24,6 +24,7 @@
 #else
 #define TEST_LOG printf
 #define TEST_LOG_ERROR printf
+#define TEST_LOG_FLUSH fflush(NULL)
 #endif
 
 // Select the tests to execute, list order below is same as they will be
