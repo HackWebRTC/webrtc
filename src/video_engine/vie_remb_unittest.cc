@@ -47,10 +47,8 @@ class ViERembTest : public ::testing::Test {
 TEST_F(ViERembTest, OneModuleTestForSendingRemb)
 {
   MockRtpRtcp rtp;
-  EXPECT_CALL(rtp, Sending())
-      .WillRepeatedly(Return(true));
-
   vie_remb_->AddReceiveChannel(&rtp);
+  vie_remb_->AddSendChannel(&rtp);
 
   const unsigned int bitrate_estimate = 456;
   unsigned int ssrc[] = { 1234 };
@@ -72,15 +70,14 @@ TEST_F(ViERembTest, OneModuleTestForSendingRemb)
   vie_remb_->Process();
 
   vie_remb_->RemoveReceiveChannel(&rtp);
+  vie_remb_->RemoveSendChannel(&rtp);
 }
 
 TEST_F(ViERembTest, LowerEstimateToSendRemb)
 {
   MockRtpRtcp rtp;
-  EXPECT_CALL(rtp, Sending())
-      .WillRepeatedly(Return(true));
-
   vie_remb_->AddReceiveChannel(&rtp);
+  vie_remb_->AddSendChannel(&rtp);
 
   unsigned int bitrate_estimate = 456;
   unsigned int ssrc[] = { 1234 };
@@ -101,13 +98,9 @@ TEST_F(ViERembTest, LowerEstimateToSendRemb)
 TEST_F(ViERembTest, VerifyCombinedBitrateEstimate)
 {
   MockRtpRtcp rtp_0;
-  EXPECT_CALL(rtp_0, Sending())
-      .WillRepeatedly(Return(true));
   MockRtpRtcp rtp_1;
-  EXPECT_CALL(rtp_1, Sending())
-      .WillRepeatedly(Return(true));
-
   vie_remb_->AddReceiveChannel(&rtp_0);
+  vie_remb_->AddSendChannel(&rtp_0);
   vie_remb_->AddReceiveChannel(&rtp_1);
 
   unsigned int bitrate_estimate[] = { 456, 789 };
@@ -131,19 +124,16 @@ TEST_F(ViERembTest, VerifyCombinedBitrateEstimate)
   vie_remb_->Process();
 
   vie_remb_->RemoveReceiveChannel(&rtp_0);
+  vie_remb_->RemoveSendChannel(&rtp_0);
   vie_remb_->RemoveReceiveChannel(&rtp_1);
 }
 
 TEST_F(ViERembTest, NoRembForIncreasedBitrate)
 {
   MockRtpRtcp rtp_0;
-  EXPECT_CALL(rtp_0, Sending())
-      .WillRepeatedly(Return(true));
   MockRtpRtcp rtp_1;
-  EXPECT_CALL(rtp_1, Sending())
-      .WillRepeatedly(Return(true));
-
   vie_remb_->AddReceiveChannel(&rtp_0);
+  vie_remb_->AddSendChannel(&rtp_0);
   vie_remb_->AddReceiveChannel(&rtp_1);
 
   unsigned int bitrate_estimate[] = { 456, 789 };
@@ -181,18 +171,15 @@ TEST_F(ViERembTest, NoRembForIncreasedBitrate)
   vie_remb_->Process();
   vie_remb_->RemoveReceiveChannel(&rtp_1);
   vie_remb_->RemoveReceiveChannel(&rtp_0);
+  vie_remb_->RemoveSendChannel(&rtp_0);
 }
 
 TEST_F(ViERembTest, ChangeSendRtpModule)
 {
   MockRtpRtcp rtp_0;
-  EXPECT_CALL(rtp_0, Sending())
-      .WillRepeatedly(Return(true));
   MockRtpRtcp rtp_1;
-  EXPECT_CALL(rtp_1, Sending())
-      .WillRepeatedly(Return(true));
-
   vie_remb_->AddReceiveChannel(&rtp_0);
+  vie_remb_->AddSendChannel(&rtp_0);
   vie_remb_->AddReceiveChannel(&rtp_1);
 
   unsigned int bitrate_estimate[] = { 456, 789 };
@@ -218,8 +205,8 @@ TEST_F(ViERembTest, ChangeSendRtpModule)
 
   // Remove the sending module, add it again -> should get remb on the second
   // module.
-  vie_remb_->RemoveReceiveChannel(&rtp_0);
-  vie_remb_->AddReceiveChannel(&rtp_0);
+  vie_remb_->RemoveSendChannel(&rtp_0);
+  vie_remb_->AddSendChannel(&rtp_1);
   vie_remb_->OnReceiveBitrateChanged(ssrc[0], bitrate_estimate[0]);
 
   bitrate_estimate[1] = bitrate_estimate[1] - 100;
@@ -231,18 +218,17 @@ TEST_F(ViERembTest, ChangeSendRtpModule)
 
   vie_remb_->RemoveReceiveChannel(&rtp_0);
   vie_remb_->RemoveReceiveChannel(&rtp_1);
+  vie_remb_->RemoveSendChannel(&rtp_1);
 }
 
 TEST_F(ViERembTest, OnlyOneRembForDoubleProcess)
 {
   MockRtpRtcp rtp;
-  EXPECT_CALL(rtp, Sending())
-      .WillRepeatedly(Return(true));
-
   unsigned int bitrate_estimate = 456;
   unsigned int ssrc[] = { 1234 };
 
   vie_remb_->AddReceiveChannel(&rtp);
+  vie_remb_->AddSendChannel(&rtp);
   vie_remb_->OnReceiveBitrateChanged(ssrc[0], bitrate_estimate);
   EXPECT_CALL(rtp, RemoteSSRC())
       .WillRepeatedly(Return(ssrc[0]));
@@ -259,6 +245,7 @@ TEST_F(ViERembTest, OnlyOneRembForDoubleProcess)
       .Times(0);
   vie_remb_->Process();
   vie_remb_->RemoveReceiveChannel(&rtp);
+  vie_remb_->RemoveSendChannel(&rtp);
 }
 
 TEST_F(ViERembTest, NoOnReceivedBitrateChangedCall)
@@ -268,6 +255,7 @@ TEST_F(ViERembTest, NoOnReceivedBitrateChangedCall)
         .WillRepeatedly(Return(1234));
 
   vie_remb_->AddReceiveChannel(&rtp);
+  vie_remb_->AddSendChannel(&rtp);
   // TODO(mflodman) Add fake clock.
   TestSleep(1010);
   // No bitrate estimate given, no callback expected.
@@ -276,14 +264,12 @@ TEST_F(ViERembTest, NoOnReceivedBitrateChangedCall)
   vie_remb_->Process();
 
   vie_remb_->RemoveReceiveChannel(&rtp);
+  vie_remb_->RemoveSendChannel(&rtp);
 }
 
 TEST_F(ViERembTest, NoSendingRtpModule)
 {
   MockRtpRtcp rtp;
-  EXPECT_CALL(rtp, Sending())
-      .WillRepeatedly(Return(false));
-
   vie_remb_->AddReceiveChannel(&rtp);
 
   unsigned int bitrate_estimate = 456;

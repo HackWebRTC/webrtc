@@ -369,11 +369,10 @@ bool ViEChannelManager::SetRembStatus(int channel_id, bool sender,
     channel->EnableRemb(false);
   }
   RtpRtcp* rtp_module = channel->rtp_rtcp();
-  // TODO(mflodman) Add when implemented.
   if (sender) {
-    // remb_->AddSendChannel(rtp_module);
+    remb_->AddSendChannel(rtp_module);
   } else {
-    // remb_->RemoveSendChannel(rtp_module);
+    remb_->RemoveSendChannel(rtp_module);
   }
   if (receiver) {
     remb_->AddReceiveChannel(rtp_module);

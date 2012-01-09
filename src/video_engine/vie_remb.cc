@@ -61,7 +61,7 @@ void VieRemb::RemoveReceiveChannel(RtpRtcp* rtp_rtcp) {
   unsigned int ssrc = rtp_rtcp->RemoteSSRC();
   for (RtpModules::iterator it = receive_modules_.begin();
        it != receive_modules_.end(); ++it) {
-    if ((*it)->RemoteSSRC() == ssrc) {
+    if ((*it) == rtp_rtcp) {
       receive_modules_.erase(it);
       break;
     }
@@ -73,16 +73,28 @@ void VieRemb::AddSendChannel(RtpRtcp* rtp_rtcp) {
   WEBRTC_TRACE(kTraceStateInfo, kTraceVideo, engine_id_,
                "VieRemb::AddSendChannel");
   assert(rtp_rtcp);
-  assert(false);
-  return;
+
+  CriticalSectionScoped cs(list_crit_.get());
+
+  // TODO(mflodman) Allow multiple senders.
+  assert(send_modules_.empty());
+
+  send_modules_.push_back(rtp_rtcp);
 }
 
 void VieRemb::RemoveSendChannel(RtpRtcp* rtp_rtcp) {
   WEBRTC_TRACE(kTraceStateInfo, kTraceVideo, engine_id_,
                "VieRemb::AddSendChannel");
   assert(rtp_rtcp);
-  assert(false);
-  return;
+
+  CriticalSectionScoped cs(list_crit_.get());
+  for (RtpModules::iterator it = send_modules_.begin();
+       it != send_modules_.end(); ++it) {
+    if ((*it) == rtp_rtcp) {
+      send_modules_.erase(it);
+      return;
+    }
+  }
 }
 
 void VieRemb::OnReceiveBitrateChanged(unsigned int ssrc, unsigned int bitrate) {
@@ -151,14 +163,6 @@ WebRtc_Word32 VieRemb::Process() {
   RtpRtcp* sender = NULL;
   if (!send_modules_.empty()) {
     sender = send_modules_.front();
-  } else {
-    for (RtpModules::iterator it = receive_modules_.begin();
-         it != receive_modules_.end(); ++it) {
-      if ((*it)->Sending()) {
-        sender = *it;
-        break;
-      }
-    }
   }
   last_send_bitrate_ = total_bitrate;
   list_crit_->Leave();
