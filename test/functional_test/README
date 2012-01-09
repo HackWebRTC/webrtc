@@ -39,3 +39,6 @@ See http://blog.chromium.org/2008/12/security-in-depth-local-web-pages.html
 for more details on this topic. This can be overridden with the flag
 --allow-file-access-from-files, in which case running it over the file://
 URI scheme works.
+
+Note 3: It's possible to specify the server and name in the url:
+.../webrtc.html?server=my_server&name=my_name

@@ -1,7 +1,7 @@
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 
 <!--
-Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+Copyright (c) 2011-2012 The WebRTC project authors. All Rights Reserved.
 
 Use of this source code is governed by a BSD-style license
 that can be found in the LICENSE file in the root of the source
@@ -44,6 +44,13 @@ var callState = 0; // 0 - Not started, 1 - Call ongoing
 
 
 // General
+
+function setElementValuesFromURL() {
+  window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi,
+    function(m, key, value) {
+      document.getElementById(key).value = unescape(value);
+    });
+}
 
 function toggleExtraButtons() {
   document.getElementById("createPcBtn").hidden =
@@ -466,7 +473,7 @@ function signIn() {
 }
 
 function connect() {
-  myName = document.getElementById("local").value.toLowerCase();
+  myName = document.getElementById("name").value.toLowerCase();
   server = document.getElementById("server").value.toLowerCase();
   if (myName.length == 0) {
     alert("I need a name please.");
@@ -515,7 +522,11 @@ function disconnect() {
 
 // Window event handling
 
-window.onload = getUserMedia;
+window.onload = function() {
+  setElementValuesFromURL();
+  getUserMedia();
+}
+
 window.onbeforeunload = disconnect;
 
 
@@ -553,7 +564,7 @@ page.<br>&nbsp;
    </td>
   </tr>
   <tr>
-   <td>Name:</td><td><input type="text" id="local" size="30" value="name"/></td>
+   <td>Name:</td><td><input type="text" id="name" size="30" value="name"/></td>
   </tr>
   </table>
  </td>
