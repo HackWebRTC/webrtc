@@ -66,58 +66,61 @@ int ViEAutoTestWindowManager::CreateWindows(AutoTestRect window1Size,
   return 0;
 }
 
-int ViEAutoTestWindowManager::ViECreateWindow(Window *outWindow,
-                                              Display **outDisplay, int xpos,
-                                              int ypos, int width, int height,
+int ViEAutoTestWindowManager::ViECreateWindow(Window *out_window,
+                                              Display **out_display, int x_pos,
+                                              int y_pos, int width, int height,
                                               char* title) {
-  int screen;
-  XEvent evnt;
-  XSetWindowAttributes xswa;  // window attribute struct
-  XVisualInfo vinfo;          // screen visual info struct
-  unsigned long mask;         // attribute mask
-
-  // get connection handle to xserver
-  Display* _display = XOpenDisplay(NULL);
-
-  // get screen number
-  screen = DefaultScreen(_display);
-
-  // put desired visual info for the screen in vinfo
-  // TODO(unknown): more display settings should be allowed
-  if (XMatchVisualInfo(_display, screen, 24, TrueColor, &vinfo) != 0) {
-    // printf( "Screen visual info match!\n" );
+  Display* display = XOpenDisplay(NULL);
+  if (display == NULL) {
+    // There's no point to continue if this happens: nothing will work anyway.
+    printf("Failed to connect to X server: X environment likely broken\n");
+    exit(-1);
   }
-  // set window attributes
-  xswa.colormap = XCreateColormap(_display, DefaultRootWindow(_display),
-                                  vinfo.visual, AllocNone);
-  xswa.event_mask = StructureNotifyMask | ExposureMask;
-  xswa.background_pixel = 0;
-  xswa.border_pixel = 0;
 
-  // value mask for attributes
-  mask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask;
+  int screen = DefaultScreen(display);
 
-  Window _window = XCreateWindow(_display, DefaultRootWindow(_display), xpos,
-                                 ypos, width, height, 0, vinfo.depth,
-                                 InputOutput, vinfo.visual, mask, &xswa);
+  // Try to establish a 24-bit TrueColor display
+  // (our environment must allow this).
+  XVisualInfo visual_info;
+  if (XMatchVisualInfo(display, screen, 24, TrueColor, &visual_info) == 0) {
+    printf("Failed to establish 24-bit TrueColor in X environment.\n");
+    exit(-1);
+  }
 
-  // Set window name
-  XStoreName(_display, _window, title);
-  XSetIconName(_display, _window, title);
+  // Create suitable window attributes.
+  XSetWindowAttributes window_attributes;
+  window_attributes.colormap = XCreateColormap(
+      display, DefaultRootWindow(display), visual_info.visual, AllocNone);
+  window_attributes.event_mask = StructureNotifyMask | ExposureMask;
+  window_attributes.background_pixel = 0;
+  window_attributes.border_pixel = 0;
 
-  // make x report events for mask
-  XSelectInput(_display, _window, StructureNotifyMask);
+  unsigned long attribute_mask = CWBackPixel | CWBorderPixel | CWColormap |
+                                 CWEventMask;
 
-  // map the window to the display
-  XMapWindow(_display, _window);
+  Window _window = XCreateWindow(display, DefaultRootWindow(display), x_pos,
+                                 y_pos, width, height, 0, visual_info.depth,
+                                 InputOutput, visual_info.visual,
+                                 attribute_mask, &window_attributes);
 
-  // wait for map event
+  // Set window name.
+  XStoreName(display, _window, title);
+  XSetIconName(display, _window, title);
+
+  // Make x report events for mask.
+  XSelectInput(display, _window, StructureNotifyMask);
+
+  // Map the window to the display.
+  XMapWindow(display, _window);
+
+  // Wait for map event.
+  XEvent event;
   do {
-    XNextEvent(_display, &evnt);
-  } while (evnt.type != MapNotify || evnt.xmap.event != _window);
+    XNextEvent(display, &event);
+  } while (event.type != MapNotify || event.xmap.event != _window);
 
-  *outWindow = _window;
-  *outDisplay = _display;
+  *out_window = _window;
+  *out_display = display;
   return 0;
 }
 
