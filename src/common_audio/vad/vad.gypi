@@ -50,6 +50,10 @@
           ],
           'sources': [
             'vad_unittest.cc',
+            'vad_filterbank_unittest.cc',
+            'vad_gmm_unittest.cc',
+            'vad_sp_unittest.cc',
+            'vad_unittest.h',
           ],
         }, # vad_unittests
       ], # targets
