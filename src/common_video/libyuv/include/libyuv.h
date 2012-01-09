@@ -109,8 +109,6 @@ int ConvertToI420(VideoType src_video_type,
 //   - dst_sample_size  : Required only for the parsing of MJPG.
 //   - width            : Width in pixels.
 //   - height           : Height in pixels.
-//   - dst_frame        : Pointer to a source frame.
-
 //   - dst_frame        : Pointer to a destination frame.
 // Return value: 0 if OK, < 0 otherwise.
 int ConvertFromI420(const uint8_t* src_frame, int src_stride,
