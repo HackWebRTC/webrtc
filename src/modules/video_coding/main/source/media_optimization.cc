@@ -98,7 +98,6 @@ VCMMediaOptimization::SetTargetRates(WebRtc_UWord32 bitRate,
 {
     VCMProtectionMethod *selectedMethod = _lossProtLogic->SelectedMethod();
     _lossProtLogic->UpdateBitRate(static_cast<float>(bitRate));
-    _lossProtLogic->UpdateLossPr(fractionLost, _clock->MillisecondTimestamp());
     _lossProtLogic->UpdateRtt(roundTripTimeMs);
     _lossProtLogic->UpdateResidualPacketLoss(static_cast<float>(fractionLost));
 
@@ -117,12 +116,13 @@ VCMMediaOptimization::SetTargetRates(WebRtc_UWord32 bitRate,
 
     _fractionLost = fractionLost;
 
-    // The effective packet loss may be the received loss or filtered, i.e.,
-    // average or max filter may be used.
-    // We should think about which filter is appropriate for low/high bit rates,
-    // low/high loss rates, etc.
+    // Returns the filtered packet loss, used for the protection setting.
+    // The filtered loss may be the received loss (no filter), or some
+    // filtered value (average or max window filter).
+    // Use max window filter for now.
+    FilterPacketLossMode filter_mode = kMaxFilter;
     WebRtc_UWord8 packetLossEnc = _lossProtLogic->FilteredLoss(
-        _clock->MillisecondTimestamp());
+        _clock->MillisecondTimestamp(), filter_mode, fractionLost);
 
     // For now use the filtered loss for computing the robustness settings
     _lossProtLogic->UpdateFilteredLossPr(packetLossEnc);

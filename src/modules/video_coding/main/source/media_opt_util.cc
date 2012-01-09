@@ -688,17 +688,6 @@ VCMLossProtectionLogic::UpdateResidualPacketLoss(float residualPacketLoss)
 }
 
 void
-VCMLossProtectionLogic::UpdateLossPr(WebRtc_UWord8 lossPr255,
-                                     int64_t nowMs)
-{
-    UpdateMaxLossHistory(lossPr255, nowMs);
-    _lossPr255.Apply(static_cast<float> (nowMs - _lastPrUpdateT),
-                     static_cast<float> (lossPr255));
-    _lastPrUpdateT = nowMs;
-    _lossPr = _lossPr255.Value() / 255.0f;
-}
-
-void
 VCMLossProtectionLogic::UpdateMaxLossHistory(WebRtc_UWord8 lossPr255,
                                              WebRtc_Word64 now)
 {
@@ -767,21 +756,34 @@ VCMLossProtectionLogic::MaxFilteredLossPr(WebRtc_Word64 nowMs) const
     return maxFound;
 }
 
-WebRtc_UWord8
-VCMLossProtectionLogic::FilteredLoss(int64_t nowMs) const
-{
-    if (_selectedMethod != NULL &&
-        (_selectedMethod->Type() == kFec ||
-         _selectedMethod->Type() == kNackFec))
-    {
-        // Take the windowed max of the received loss.
-        return MaxFilteredLossPr(nowMs);
-    }
-    else
-    {
-        // Take the average received loss.
-        return static_cast<WebRtc_UWord8> (_lossPr255.Value() + 0.5);
-    }
+WebRtc_UWord8 VCMLossProtectionLogic::FilteredLoss(
+    int64_t nowMs,
+    FilterPacketLossMode filter_mode,
+    WebRtc_UWord8 lossPr255) {
+
+  // Update the max window filter.
+  UpdateMaxLossHistory(lossPr255, nowMs);
+
+  // Update the recursive average filter.
+  _lossPr255.Apply(static_cast<float> (nowMs - _lastPrUpdateT),
+                   static_cast<float> (lossPr255));
+  _lastPrUpdateT = nowMs;
+
+  // Filtered loss: default is received loss (no filtering).
+  WebRtc_UWord8 filtered_loss = lossPr255;
+
+  switch (filter_mode) {
+    case kNoFilter:
+      break;
+    case kAvgFilter:
+      filtered_loss = static_cast<WebRtc_UWord8> (_lossPr255.Value() + 0.5);
+      break;
+    case kMaxFilter:
+      filtered_loss = MaxFilteredLossPr(nowMs);
+      break;
+  }
+
+  return filtered_loss;
 }
 
 void
