@@ -261,7 +261,20 @@ public:
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 SetSSRCFilter(const bool enable, const WebRtc_UWord32 allowedSSRC) = 0;
+    virtual WebRtc_Word32 SetSSRCFilter(const bool enable,
+                                        const WebRtc_UWord32 allowedSSRC) = 0;
+
+    /*
+    * Turn on/off receiving RTX (RFC 4588) on a specific SSRC.
+    */
+    virtual WebRtc_Word32 SetRTXReceiveStatus(const bool enable,
+                                              const WebRtc_UWord32 SSRC) = 0;
+
+    /*
+    * Get status of receiving RTX (RFC 4588) on a specific SSRC.
+    */
+    virtual WebRtc_Word32 RTXReceiveStatus(bool* enable,
+                                           WebRtc_UWord32* SSRC) const = 0;
 
     /*
     *   called by the network module when we receive a packet
@@ -360,9 +373,10 @@ public:
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 SetRTPKeepaliveStatus(const bool enable,
-                                              const WebRtc_Word8 unknownPayloadType,
-                                              const WebRtc_UWord16 deltaTransmitTimeMS) = 0;
+    virtual WebRtc_Word32 SetRTPKeepaliveStatus(
+        const bool enable,
+        const WebRtc_Word8 unknownPayloadType,
+        const WebRtc_UWord16 deltaTransmitTimeMS) = 0;
 
     /*
     *   Get RTPKeepaliveStatus
@@ -406,7 +420,8 @@ public:
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 DeRegisterSendPayload(const WebRtc_Word8 payloadType) = 0;
+    virtual WebRtc_Word32 DeRegisterSendPayload(
+        const WebRtc_Word8 payloadType) = 0;
 
    /*
     *   (De)register RTP header extension type and id.
@@ -432,7 +447,8 @@ public:
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 SetStartTimestamp(const WebRtc_UWord32 timestamp) = 0;
+    virtual WebRtc_Word32 SetStartTimestamp(
+        const WebRtc_UWord32 timestamp) = 0;
 
     /*
     *   Get SequenceNumber
@@ -465,7 +481,8 @@ public:
     *
     *   return -1 on failure else number of valid entries in the array
     */
-    virtual WebRtc_Word32 CSRCs( WebRtc_UWord32 arrOfCSRC[kRtpCsrcSize]) const = 0;
+    virtual WebRtc_Word32 CSRCs(
+        WebRtc_UWord32 arrOfCSRC[kRtpCsrcSize]) const = 0;
 
     /*
     *   Set CSRC
@@ -475,8 +492,9 @@ public:
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 SetCSRCs( const WebRtc_UWord32 arrOfCSRC[kRtpCsrcSize],
-                                  const WebRtc_UWord8 arrLength) = 0;
+    virtual WebRtc_Word32 SetCSRCs(
+        const WebRtc_UWord32 arrOfCSRC[kRtpCsrcSize],
+        const WebRtc_UWord8 arrLength) = 0;
 
     /*
     *   includes CSRCs in RTP header if enabled
@@ -488,6 +506,20 @@ public:
     *   return -1 on failure else 0
     */
     virtual WebRtc_Word32 SetCSRCStatus(const bool include) = 0;
+
+    /*
+    * Turn on/off sending RTX (RFC 4588) on a specific SSRC.
+    */
+    virtual WebRtc_Word32 SetRTXSendStatus(const bool enable,
+                                           const bool setSSRC,
+                                           const WebRtc_UWord32 SSRC) = 0;
+
+
+    /*
+    * Get status of sending RTX (RFC 4588) on a specific SSRC.
+    */
+    virtual WebRtc_Word32 RTXSendStatus(bool* enable,
+                                        WebRtc_UWord32* SSRC) const = 0;
 
     /*
     *   sends kRtcpByeCode when going from true to false
@@ -537,14 +569,14 @@ public:
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32
-    SendOutgoingData(const FrameType frameType,
-                     const WebRtc_Word8 payloadType,
-                     const WebRtc_UWord32 timeStamp,
-                     const WebRtc_UWord8* payloadData,
-                     const WebRtc_UWord32 payloadSize,
-                     const RTPFragmentationHeader* fragmentation = NULL,
-                     const RTPVideoHeader* rtpVideoHdr = NULL) = 0;
+    virtual WebRtc_Word32 SendOutgoingData(
+        const FrameType frameType,
+        const WebRtc_Word8 payloadType,
+        const WebRtc_UWord32 timeStamp,
+        const WebRtc_UWord8* payloadData,
+        const WebRtc_UWord32 payloadSize,
+        const RTPFragmentationHeader* fragmentation = NULL,
+        const RTPVideoHeader* rtpVideoHdr = NULL) = 0;
 
     /**************************************************************************
     *
@@ -594,26 +626,29 @@ public:
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 RemoteCNAME(const WebRtc_UWord32 remoteSSRC,
-                                    WebRtc_Word8 cName[RTCP_CNAME_SIZE]) const = 0;
+    virtual WebRtc_Word32 RemoteCNAME(
+        const WebRtc_UWord32 remoteSSRC,
+        WebRtc_Word8 cName[RTCP_CNAME_SIZE]) const = 0;
 
     /*
     *   Get remote NTP
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 RemoteNTP(WebRtc_UWord32 *ReceivedNTPsecs,
-                                  WebRtc_UWord32 *ReceivedNTPfrac,
-                                  WebRtc_UWord32 *RTCPArrivalTimeSecs,
-                                  WebRtc_UWord32 *RTCPArrivalTimeFrac) const  = 0;
+    virtual WebRtc_Word32 RemoteNTP(
+        WebRtc_UWord32 *ReceivedNTPsecs,
+        WebRtc_UWord32 *ReceivedNTPfrac,
+        WebRtc_UWord32 *RTCPArrivalTimeSecs,
+        WebRtc_UWord32 *RTCPArrivalTimeFrac) const  = 0;
 
     /*
     *   AddMixedCNAME
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 AddMixedCNAME(const WebRtc_UWord32 SSRC,
-                                      const WebRtc_Word8 cName[RTCP_CNAME_SIZE]) = 0;
+    virtual WebRtc_Word32 AddMixedCNAME(
+        const WebRtc_UWord32 SSRC,
+        const WebRtc_Word8 cName[RTCP_CNAME_SIZE]) = 0;
 
     /*
     *   RemoveMixedCNAME
@@ -628,10 +663,10 @@ public:
     *   return -1 on failure else 0
     */
     virtual WebRtc_Word32 RTT(const WebRtc_UWord32 remoteSSRC,
-                            WebRtc_UWord16* RTT,
-                            WebRtc_UWord16* avgRTT,
-                            WebRtc_UWord16* minRTT,
-                            WebRtc_UWord16* maxRTT) const = 0 ;
+                              WebRtc_UWord16* RTT,
+                              WebRtc_UWord16* avgRTT,
+                              WebRtc_UWord16* minRTT,
+                              WebRtc_UWord16* maxRTT) const = 0 ;
 
     /*
     *   Reset RoundTripTime statistics

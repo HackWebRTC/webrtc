@@ -74,12 +74,15 @@ RTPSender::RTPSender(const WebRtc_Word32 id,
     _remoteSSRC(0),
     _sequenceNumberForced(false),
     _sequenceNumber(0),
+    _sequenceNumberRTX(0),
     _ssrcForced(false),
     _ssrc(0),
     _timeStamp(0),
     _CSRCs(0),
     _CSRC(),
-    _includeCSRCs(true)
+    _includeCSRCs(true),
+    _RTX(false),
+    _ssrcRTX(0)
 {
     memset(_nackByteCountTimes, 0, sizeof(_nackByteCountTimes));
     memset(_nackByteCount, 0, sizeof(_nackByteCount));
@@ -173,6 +176,7 @@ RTPSender::Init(const WebRtc_UWord32 remoteSSRC)
         _ssrcDB.RegisterSSRC(remoteSSRC);
     }
     _sequenceNumber = rand() / (RAND_MAX / MAX_INIT_RTP_SEQ_NUMBER);
+    _sequenceNumberRTX = rand() / (RAND_MAX / MAX_INIT_RTP_SEQ_NUMBER);
     _packetsSent = 0;
     _payloadBytesSent = 0;
     _packetOverHead = 28;
@@ -592,16 +596,14 @@ RTPSender::SetMaxPayloadLength(const WebRtc_UWord16 maxPayloadLength, const WebR
     return 0;
 }
 
-WebRtc_UWord16
-RTPSender::MaxDataPayloadLength() const
-{
-    if(_audioConfigured)
-    {
-        return _maxPayloadLength - RTPHeaderLength();
-    } else
-    {
-        return _maxPayloadLength - RTPHeaderLength() - _video->FECPacketOverhead(); // Include the FEC/ULP/RED overhead.
-    }
+WebRtc_UWord16 RTPSender::MaxDataPayloadLength() const {
+  if(_audioConfigured) {
+    return _maxPayloadLength - RTPHeaderLength();
+  } else {
+    return _maxPayloadLength - RTPHeaderLength() -
+        _video->FECPacketOverhead() - ((_RTX) ? 2 : 0);
+        // Include the FEC/ULP/RED overhead.
+  }
 }
 
 WebRtc_UWord16
@@ -614,6 +616,27 @@ WebRtc_UWord16
 RTPSender::PacketOverHead() const
 {
     return _packetOverHead;
+}
+
+void RTPSender::SetRTXStatus(const bool enable,
+                             const bool setSSRC,
+                             const WebRtc_UWord32 SSRC) {
+  CriticalSectionScoped cs(_sendCritsect);
+  _RTX = enable;
+  if (enable) {
+    if (setSSRC) {
+     _ssrcRTX = SSRC;
+    } else {
+     _ssrcRTX = _ssrcDB.CreateSSRC();   // can't be 0
+    }
+  }
+}
+
+void RTPSender::RTXStatus(bool* enable,
+                          WebRtc_UWord32* SSRC) const {
+  CriticalSectionScoped cs(_sendCritsect);
+  *enable = _RTX;
+  *SSRC = _ssrcRTX;
 }
 
 WebRtc_Word32
@@ -876,127 +899,159 @@ RTPSender::SetStorePacketsStatus(const bool enable, const WebRtc_UWord16 numberT
     return 0;
 }
 
-bool
-RTPSender::StorePackets() const
-{
-    return _storeSentPackets;
+bool RTPSender::StorePackets() const {
+  return _storeSentPackets;
 }
 
-WebRtc_Word32
-RTPSender::ReSendToNetwork(WebRtc_UWord16 packetID,
-                           WebRtc_UWord32 minResendTime)
-{
-#ifdef DEBUG_RTP_SEQUENCE_NUMBER
-    char str[256];
-    sprintf(str,"Re-Send sequenceNumber %d\n", packetID) ;
-    OutputDebugString(str);
-#endif
+WebRtc_Word32 RTPSender::ReSendPacket(WebRtc_UWord16 packetID,
+                                      WebRtc_UWord32 minResendTime) {
+  WebRtc_Word32 length = 0;
+  WebRtc_Word32 index = 0;
+  WebRtc_UWord8 dataBuffer[IP_PACKET_SIZE];
+  {
+    CriticalSectionScoped lock(_prevSentPacketsCritsect);
 
-    WebRtc_Word32 i = -1;
-    WebRtc_Word32 length = 0;
-    WebRtc_Word32 index =0;
-    WebRtc_UWord8 dataBuffer[IP_PACKET_SIZE];
-
-    {
-        CriticalSectionScoped lock(_prevSentPacketsCritsect);
-
-        WebRtc_UWord16 seqNum = 0;
-        if(_storeSentPackets)
-        {
-            if(_prevSentPacketsIndex)
-            {
-                seqNum = _prevSentPacketsSeqNum[_prevSentPacketsIndex-1];
-            }else
-            {
-                seqNum = _prevSentPacketsSeqNum[_storeSentPacketsNumber-1];
-            }
-            index = (_prevSentPacketsIndex-1) - (seqNum - packetID);
-            if (index >= 0 && index < _storeSentPacketsNumber)
-            {
-                seqNum = _prevSentPacketsSeqNum[index];
-            }
-            if(seqNum != packetID)
-            {
-                //we did not found a match, search all
-                for (WebRtc_Word32 m = 0; m < _storeSentPacketsNumber ;m++)
-                {
-                    if(_prevSentPacketsSeqNum[m] == packetID)
-                    {
-                        index = m;
-                        seqNum = _prevSentPacketsSeqNum[index];
-                        break;
-                    }
-                }
-            }
-            if(seqNum == packetID)
-            {
-                WebRtc_UWord32 timeNow= _clock.GetTimeInMS();
-                if(minResendTime>0 && (timeNow-_prevSentPacketsResendTime[index]<minResendTime))
-                {
-                    // No point in sending the packet again yet. Get out of here
-                    WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, _id, "Skipping to resend RTP packet %d because it was just resent", seqNum);
-                    return 0;
-                }
-
-                length = _prevSentPacketsLength[index];
-
-                if(length > _maxPayloadLength || _ptrPrevSentPackets[index] == 0)
-                {
-                    WEBRTC_TRACE(
-                        kTraceWarning, kTraceRtpRtcp, _id,
-                        "Failed to resend seqNum %u: length = %d index = %d",
-                        seqNum, length, index);
-                    return -1;
-                }
-            } else
-            {
-                WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, _id,
-                             "No match for resending seqNum %u and packetId %u",
-                             seqNum, packetID);
-                return -1;
-            }
-        }
-        if (length == 0)
-        {
-            // This is a valid case since packets which we decide not to
-            // retransmit are stored but with length zero.
-            return 0;
-        }
-
-        // copy to local buffer for callback
-        memcpy(dataBuffer, _ptrPrevSentPackets[index], length);
+    WebRtc_UWord16 seqNum = 0;
+    if (!_storeSentPackets) {
+      WEBRTC_TRACE(kTraceWarning,
+                   kTraceRtpRtcp,
+                   _id,
+                   "Ignoring request to ReSendPacket:%u we're not storing.",
+                   seqNum);
+      return -1;
     }
-    {
-        CriticalSectionScoped lock(_transportCritsect);
-        if(_transport)
-        {
-            i = _transport->SendPacket(_id, dataBuffer, length);
+    if (_prevSentPacketsIndex) {
+      seqNum = _prevSentPacketsSeqNum[_prevSentPacketsIndex-1];
+    } else {
+      seqNum = _prevSentPacketsSeqNum[_storeSentPacketsNumber-1];
+    }
+    index = (_prevSentPacketsIndex-1) - (seqNum - packetID);
+    if (index >= 0 && index < _storeSentPacketsNumber) {
+      seqNum = _prevSentPacketsSeqNum[index];
+    }
+    if (seqNum != packetID) {
+      // we did not found a match, search all
+      for (WebRtc_Word32 m = 0; m < _storeSentPacketsNumber; m++)  {
+        if(_prevSentPacketsSeqNum[m] == packetID) {
+          index = m;
+          seqNum = _prevSentPacketsSeqNum[index];
+          break;
         }
+      }
     }
-    if(i > 0)
-    {
-        CriticalSectionScoped cs(_sendCritsect);
-
-        Bitrate::Update(i);
-
-        _packetsSent++;
-
-        // we on purpose don't add to _payloadBytesSent since this is a re-transmit and not new payload data
+    if (seqNum != packetID) {
+      WEBRTC_TRACE(kTraceWarning,
+                   kTraceRtpRtcp,
+                   _id,
+                   "No match for resending seqNum %u and packetId %u",
+                   seqNum, packetID);
+      return -1;
     }
-    if(_storeSentPackets && i > 0)
-    {
-        CriticalSectionScoped lock(_prevSentPacketsCritsect);
-
-        if(_prevSentPacketsSeqNum[index] == packetID) // Make sure the  packet is still in the array
-        {
-            // Store the time when the frame was last resent.
-            _prevSentPacketsResendTime[index]= _clock.GetTimeInMS();
-        }
-        return i; //bytes sent over network
+    WebRtc_UWord32 timeNow = _clock.GetTimeInMS();
+    if (minResendTime > 0 &&
+        (timeNow-_prevSentPacketsResendTime[index] < minResendTime)) {
+      // No point in sending the packet again yet. Get out of here
+      WEBRTC_TRACE(kTraceStream,
+                   kTraceRtpRtcp,
+                   _id,
+                   "Skipping to resend RTP packet %d, it was just resent",
+                   seqNum);
+      return 0;
     }
-    WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, _id,
-                 "Transport failed to resend packetID %u", packetID);
-    return -1;
+    length = _prevSentPacketsLength[index];
+    if (length > _maxPayloadLength || _ptrPrevSentPackets[index] == 0) {
+      WEBRTC_TRACE(kTraceWarning,
+                   kTraceRtpRtcp,
+                   _id,
+                   "Failed to resend seqNum %u: length = %d index = %d",
+                   seqNum, length, index);
+      return -1;
+    }
+    if (length == 0) {
+      WEBRTC_TRACE(kTraceWarning,
+                   kTraceRtpRtcp,
+                   _id,
+                   "Resend packet length == 0 for seqNum %u",
+                   seqNum);
+      return -1;
+    }
+    if (_RTX) {
+      CriticalSectionScoped cs(_sendCritsect);
+      // Copy to local buffer for callback and add RTX header.
+      ModuleRTPUtility::RTPHeaderParser rtpParser(
+          reinterpret_cast<const WebRtc_UWord8*>(_ptrPrevSentPackets[index]),
+          length);
+
+      WebRtcRTPHeader rtp_header;
+      rtpParser.Parse(rtp_header);
+
+      // Add original RTP header.
+      memcpy(dataBuffer, _ptrPrevSentPackets[index],
+        rtp_header.header.headerLength);
+
+      // Replace sequence number.
+      WebRtc_UWord8* ptr = dataBuffer + 2;
+      ModuleRTPUtility::AssignUWord16ToBuffer(ptr, _sequenceNumberRTX++);
+
+      // Replace SSRC.
+      ptr += 6;
+      ModuleRTPUtility::AssignUWord32ToBuffer(ptr, _ssrcRTX);
+
+      // Add OSN (original sequence number).
+      ptr = dataBuffer + rtp_header.header.headerLength;
+      ModuleRTPUtility::AssignUWord16ToBuffer(
+          ptr, rtp_header.header.sequenceNumber);
+      ptr += 2;
+
+      // Add original payload data.
+      memcpy(ptr,
+             _ptrPrevSentPackets[index] + rtp_header.header.headerLength,
+             length - rtp_header.header.headerLength);
+      length += 2;
+    } else {
+      // copy to local buffer for callback
+      memcpy(dataBuffer, _ptrPrevSentPackets[index], length);
+    }
+  }  // End of scope lock(_prevSentPacketsCritsect).
+  WebRtc_Word32 i = ReSendToNetwork(dataBuffer, length);
+
+  if (_storeSentPackets && i > 0) {
+    CriticalSectionScoped lock(_prevSentPacketsCritsect);
+
+    // Make sure the  packet is still in the array
+    if(_prevSentPacketsSeqNum[index] == packetID) {
+      // Store the time when the frame was last resent.
+      _prevSentPacketsResendTime[index]= _clock.GetTimeInMS();
+    }
+    return i; //bytes sent over network
+  }
+  WEBRTC_TRACE(kTraceWarning,
+               kTraceRtpRtcp,
+               _id,
+               "Transport failed to resend packetID %u",
+               packetID);
+  return -1;
+}
+
+WebRtc_Word32 RTPSender::ReSendToNetwork(const WebRtc_UWord8* packet,
+                                         const WebRtc_UWord32 size) {
+  WebRtc_Word32 i = -1;
+  {
+    CriticalSectionScoped lock(_transportCritsect);
+    if(_transport) {
+      i = _transport->SendPacket(_id, packet, size);
+    }
+  }
+  if(i > 0) {
+    CriticalSectionScoped cs(_sendCritsect);
+
+    Bitrate::Update(i);
+
+    _packetsSent++;
+    // We on purpose don't add to _payloadBytesSent since this is a re-transmit
+    // and not new payload data
+  }
+  return i;
 }
 
 int RTPSender::SelectiveRetransmissions() const {
@@ -1012,124 +1067,111 @@ int RTPSender::SetSelectiveRetransmissions(uint8_t settings) {
 void
 RTPSender::OnReceivedNACK(const WebRtc_UWord16 nackSequenceNumbersLength,
                           const WebRtc_UWord16* nackSequenceNumbers,
-                          const WebRtc_UWord16 avgRTT)
-{
+                          const WebRtc_UWord16 avgRTT) {
     const WebRtc_UWord32 now = _clock.GetTimeInMS();
     WebRtc_UWord32 bytesReSent = 0;
 
-     // Enough bandwith to send NACK?
-    if(ProcessNACKBitRate(now))
-    {
-        for (WebRtc_UWord16 i = 0; i < nackSequenceNumbersLength; ++i)
-        {
-            const WebRtc_Word32 bytesSent = ReSendToNetwork(nackSequenceNumbers[i],
-                                                          5+avgRTT);
-            if (bytesSent > 0)
-            {
-                bytesReSent += bytesSent;
+  // Enough bandwith to send NACK?
+  if (!ProcessNACKBitRate(now)) {
+    WEBRTC_TRACE(kTraceStream,
+                 kTraceRtpRtcp,
+                 _id,
+                 "NACK bitrate reached. Skipp sending NACK response. Target %d",
+                 TargetSendBitrateKbit());
+    return;
+  }
 
-            } else if(bytesSent==0)
-            {
-                continue; // The packet has previously been resent. Try resending next packet in the list.
-
-            } else if(bytesSent<0) // Failed to send one Sequence number. Give up the rest in this nack.
-            {
-                WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, _id, "Failed resending RTP packet %d, Discard rest of NACK RTP packets", nackSequenceNumbers[i]);
-                break;
-            }
-            // delay bandwidth estimate (RTT * BW)
-            if(TargetSendBitrateKbit() != 0 && avgRTT)
-            {
-                if(bytesReSent > (WebRtc_UWord32)(TargetSendBitrateKbit() * avgRTT)>>3 ) // kbits/s * ms= bits/8 = bytes
-                {
-                    break; // ignore the rest of the packets in the list
-                }
-            }
-        }
-        if (bytesReSent > 0)
-        {
-            UpdateNACKBitRate(bytesReSent,now); // Update the nack bit rate
-            _nackBitrate.Update(bytesReSent);
-        }
-    }else
-    {
-        WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, _id, "NACK bitrate reached. Skipp sending NACK response. Target %d",TargetSendBitrateKbit());
+  for (WebRtc_UWord16 i = 0; i < nackSequenceNumbersLength; ++i) {
+    const WebRtc_Word32 bytesSent = ReSendPacket(nackSequenceNumbers[i],
+                                                 5+avgRTT);
+    if (bytesSent > 0) {
+      bytesReSent += bytesSent;
+    } else if (bytesSent == 0) {
+      // The packet has previously been resent.
+      // Try resending next packet in the list.
+      continue;
+    } else if (bytesSent < 0) {
+      // Failed to send one Sequence number. Give up the rest in this nack.
+      WEBRTC_TRACE(kTraceWarning,
+                   kTraceRtpRtcp,
+                   _id,
+                   "Failed resending RTP packet %d, Discard rest of packets",
+                   nackSequenceNumbers[i]);
+      break;
     }
+    // delay bandwidth estimate (RTT * BW)
+    if (TargetSendBitrateKbit() != 0 && avgRTT) {
+      // kbits/s * ms = bits => bits/8 = bytes
+      WebRtc_UWord32 targetBytes =
+          (static_cast<WebRtc_UWord32>(TargetSendBitrateKbit()) * avgRTT) >> 3;
+      if (bytesReSent > targetBytes) {
+        break; // ignore the rest of the packets in the list
+      }
+    }
+  }
+  if (bytesReSent > 0) {
+    // TODO(pwestin) consolidate these two methods.
+    UpdateNACKBitRate(bytesReSent, now);
+    _nackBitrate.Update(bytesReSent);
+  }
 }
 
 /**
 *    @return true if the nack bitrate is lower than the requested max bitrate
 */
-bool
-RTPSender::ProcessNACKBitRate(const WebRtc_UWord32 now)
-{
-    WebRtc_UWord32 num = 0;
-    WebRtc_Word32 byteCount = 0;
-    const WebRtc_UWord32 avgInterval=1000;
+bool RTPSender::ProcessNACKBitRate(const WebRtc_UWord32 now) {
+  WebRtc_UWord32 num = 0;
+  WebRtc_Word32 byteCount = 0;
+  const WebRtc_UWord32 avgInterval=1000;
 
-    CriticalSectionScoped cs(_sendCritsect);
+  CriticalSectionScoped cs(_sendCritsect);
 
-    if(_targetSendBitrate == 0)
-    {
-        return true;
+  if (_targetSendBitrate == 0) {
+    return true;
+  }
+  for (num = 0; num < NACK_BYTECOUNT_SIZE; num++) {
+    if ((now - _nackByteCountTimes[num]) > avgInterval) {
+      // don't use data older than 1sec
+      break;
+    } else {
+      byteCount += _nackByteCount[num];
     }
-
-    for(num = 0; num < NACK_BYTECOUNT_SIZE; num++)
-    {
-        if((now - _nackByteCountTimes[num]) > avgInterval)
-        {
-            // don't use data older than 1sec
-            break;
-        } else
-        {
-            byteCount += _nackByteCount[num];
-        }
+  }
+  WebRtc_Word32 timeInterval = avgInterval;
+  if (num == NACK_BYTECOUNT_SIZE) {
+    // More than NACK_BYTECOUNT_SIZE nack messages has been received
+    // during the last msgInterval
+    timeInterval = now - _nackByteCountTimes[num-1];
+    if(timeInterval < 0) {
+      timeInterval = avgInterval;
     }
-    WebRtc_Word32 timeInterval = avgInterval;
-    if (num == NACK_BYTECOUNT_SIZE)
-    {
-        // More than NACK_BYTECOUNT_SIZE nack messages has been received
-        // during the last msgInterval
-        timeInterval = now - _nackByteCountTimes[num-1];
-        if(timeInterval < 0)
-        {
-            timeInterval = avgInterval;
-        }
-    }
-    return (byteCount*8) < (_targetSendBitrate * timeInterval);
+  }
+  return (byteCount*8) < (_targetSendBitrate * timeInterval);
 }
 
-void
-RTPSender::UpdateNACKBitRate(const WebRtc_UWord32 bytes,
-                             const WebRtc_UWord32 now)
-{
-    CriticalSectionScoped cs(_sendCritsect);
+void RTPSender::UpdateNACKBitRate(const WebRtc_UWord32 bytes,
+                                  const WebRtc_UWord32 now) {
+  CriticalSectionScoped cs(_sendCritsect);
 
-    // save bitrate statistics
-    if(bytes > 0)
-    {
-        if(now == 0)
-        {
-            // add padding length
-            _nackByteCount[0] += bytes;
-        } else
-        {
-            if(_nackByteCountTimes[0] == 0)
-            {
-                // first no shift
-            } else
-            {
-                // shift
-                for(int i = (NACK_BYTECOUNT_SIZE-2); i >= 0 ; i--)
-                {
-                    _nackByteCount[i+1] = _nackByteCount[i];
-                    _nackByteCountTimes[i+1] = _nackByteCountTimes[i];
-                }
-            }
-            _nackByteCount[0] = bytes;
-            _nackByteCountTimes[0] = now;
+  // save bitrate statistics
+  if(bytes > 0) {
+    if(now == 0) {
+      // add padding length
+      _nackByteCount[0] += bytes;
+    } else {
+      if(_nackByteCountTimes[0] == 0) {
+        // first no shift
+      } else {
+        // shift
+        for(int i = (NACK_BYTECOUNT_SIZE-2); i >= 0 ; i--) {
+          _nackByteCount[i+1] = _nackByteCount[i];
+          _nackByteCountTimes[i+1] = _nackByteCountTimes[i];
         }
+      }
+      _nackByteCount[0] = bytes;
+      _nackByteCountTimes[0] = now;
     }
+  }
 }
 
 WebRtc_Word32

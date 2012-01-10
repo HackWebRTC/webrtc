@@ -144,6 +144,33 @@ int ViERTP_RTCPImpl::SetLocalSSRC(const int video_channel,
   return 0;
 }
 
+int ViERTP_RTCPImpl::SetRemoteSSRCType(const int videoChannel,
+                                       const StreamType usage,
+                                       const unsigned int SSRC) const {
+  WEBRTC_TRACE(webrtc::kTraceApiCall, webrtc::kTraceVideo,
+               ViEId(instance_id_, videoChannel),
+               "%s(channel: %d, usage:%d SSRC: 0x%x)",
+               __FUNCTION__, usage, videoChannel, SSRC);
+
+  // Get the channel
+  ViEChannelManagerScoped cs(channel_manager_);
+  ViEChannel* ptrViEChannel = cs.Channel(videoChannel);
+  if (ptrViEChannel == NULL) {
+    // The channel doesn't exists
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
+                 ViEId(instance_id_, videoChannel),
+                 "%s: Channel %d doesn't exist",
+                 __FUNCTION__, videoChannel);
+    SetLastError(kViERtpRtcpInvalidChannelId);
+    return -1;
+  }
+  if (ptrViEChannel->SetRemoteSSRCType(usage, SSRC) != 0) {
+    SetLastError(kViERtpRtcpUnknownError);
+    return -1;
+  }
+  return 0;
+}
+
 int ViERTP_RTCPImpl::GetLocalSSRC(const int video_channel,
                                   unsigned int& SSRC) const {
   WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
@@ -161,13 +188,6 @@ int ViERTP_RTCPImpl::GetLocalSSRC(const int video_channel,
     return -1;
   }
   return 0;
-}
-
-int ViERTP_RTCPImpl::SetRemoteSSRCType(const int video_channel,
-                                       const StreamType usage,
-                                       const unsigned int SSRC) const {
-  // TODO(pwestin) add support for RTX.
-  return -1;
 }
 
 int ViERTP_RTCPImpl::GetRemoteSSRC(const int video_channel,

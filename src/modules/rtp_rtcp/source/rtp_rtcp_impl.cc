@@ -690,6 +690,33 @@ ModuleRtpRtcpImpl::RemoteCSRCs( WebRtc_UWord32 arrOfCSRC[kRtpCsrcSize]) const
     return _rtpReceiver.CSRCs(arrOfCSRC);
 }
 
+WebRtc_Word32 ModuleRtpRtcpImpl::SetRTXSendStatus(
+    const bool enable,
+    const bool setSSRC,
+    const WebRtc_UWord32 SSRC) {
+  _rtpSender.SetRTXStatus(enable, setSSRC, SSRC);
+  return 0;
+}
+
+WebRtc_Word32 ModuleRtpRtcpImpl::RTXSendStatus(bool* enable,
+                                               WebRtc_UWord32* SSRC) const {
+  _rtpSender.RTXStatus(enable, SSRC);
+  return 0;
+}
+
+WebRtc_Word32 ModuleRtpRtcpImpl::SetRTXReceiveStatus(
+    const bool enable,
+    const WebRtc_UWord32 SSRC) {
+  _rtpReceiver.SetRTXStatus(enable, SSRC);
+  return 0;
+}
+
+WebRtc_Word32 ModuleRtpRtcpImpl::RTXReceiveStatus(bool* enable,
+                                                  WebRtc_UWord32* SSRC) const {
+  _rtpReceiver.RTXStatus(enable, SSRC);
+  return 0;
+}
+
 // called by the network module when we receive a packet
 WebRtc_Word32
 ModuleRtpRtcpImpl::IncomingPacket(const WebRtc_UWord8* incomingPacket,

@@ -60,6 +60,10 @@ class MockRtpRtcp : public RtpRtcp {
       WebRtc_Word32(WebRtc_UWord32& allowedSSRC));
   MOCK_METHOD2(SetSSRCFilter,
       WebRtc_Word32(const bool enable, const WebRtc_UWord32 allowedSSRC));
+  MOCK_METHOD2(SetRTXReceiveStatus,
+      WebRtc_Word32(const bool enable, const WebRtc_UWord32 SSRC));
+  MOCK_CONST_METHOD2(RTXReceiveStatus,
+      WebRtc_Word32(bool* enable, WebRtc_UWord32* SSRC));
   MOCK_METHOD2(IncomingPacket,
       WebRtc_Word32(const WebRtc_UWord8* incomingPacket, const WebRtc_UWord16 packetLength));
   MOCK_METHOD4(IncomingAudioNTP,
@@ -110,6 +114,10 @@ class MockRtpRtcp : public RtpRtcp {
       WebRtc_Word32(const WebRtc_UWord32 arrOfCSRC[kRtpCsrcSize], const WebRtc_UWord8 arrLength));
   MOCK_METHOD1(SetCSRCStatus,
       WebRtc_Word32(const bool include));
+  MOCK_METHOD3(SetRTXSendStatus,
+      WebRtc_Word32(const bool enable, const bool setSSRC, const WebRtc_UWord32 SSRC));
+ MOCK_CONST_METHOD2(RTXSendStatus,
+      WebRtc_Word32(bool* enable, WebRtc_UWord32* SSRC));
   MOCK_METHOD1(SetSendingStatus,
       WebRtc_Word32(const bool sending));
   MOCK_CONST_METHOD0(Sending,

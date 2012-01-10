@@ -93,11 +93,12 @@ public:
     // callback
     WebRtc_Word32 RegisterSendTransport(Transport* outgoingTransport);
 
-    WebRtc_Word32 RegisterPayload(const WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
-                                const WebRtc_Word8 payloadType,
-                                const WebRtc_UWord32 frequency,
-                                 const WebRtc_UWord8 channels,
-                                const WebRtc_UWord32 rate);
+    WebRtc_Word32 RegisterPayload(
+        const WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
+        const WebRtc_Word8 payloadType,
+        const WebRtc_UWord32 frequency,
+        const WebRtc_UWord8 channels,
+        const WebRtc_UWord32 rate);
 
     WebRtc_Word32 DeRegisterSendPayload(const WebRtc_Word8 payloadType);
 
@@ -119,7 +120,8 @@ public:
     WebRtc_Word32 ResetDataCounters();
 
     WebRtc_UWord32 StartTimestamp() const;
-    WebRtc_Word32 SetStartTimestamp( const WebRtc_UWord32 timestamp, const bool force = false);
+    WebRtc_Word32 SetStartTimestamp(const WebRtc_UWord32 timestamp,
+                                    const bool force = false);
 
     WebRtc_UWord32 GenerateNewSSRC();
     WebRtc_Word32 SetSSRC( const WebRtc_UWord32 ssrc);
@@ -132,20 +134,19 @@ public:
     WebRtc_Word32 SetCSRCStatus(const bool include);
 
     WebRtc_Word32 SetCSRCs(const WebRtc_UWord32 arrOfCSRC[kRtpCsrcSize],
-                         const WebRtc_UWord8 arrLength);
+                           const WebRtc_UWord8 arrLength);
 
     WebRtc_Word32 SetMaxPayloadLength(const WebRtc_UWord16 length,
-                                    const WebRtc_UWord16 packetOverHead);
+                                      const WebRtc_UWord16 packetOverHead);
 
-    WebRtc_Word32
-    SendOutgoingData(const FrameType frameType,
-                     const WebRtc_Word8 payloadType,
-                     const WebRtc_UWord32 timeStamp,
-                     const WebRtc_UWord8* payloadData,
-                     const WebRtc_UWord32 payloadSize,
-                     const RTPFragmentationHeader* fragmentation,
-                     VideoCodecInformation* codecInfo = NULL,
-                     const RTPVideoTypeHeader* rtpTypeHdr = NULL);
+    WebRtc_Word32 SendOutgoingData(const FrameType frameType,
+                                   const WebRtc_Word8 payloadType,
+                                   const WebRtc_UWord32 timeStamp,
+                                   const WebRtc_UWord8* payloadData,
+                                   const WebRtc_UWord32 payloadSize,
+                                   const RTPFragmentationHeader* fragmentation,
+                                   VideoCodecInformation* codecInfo = NULL,
+                                   const RTPVideoTypeHeader* rtpTypeHdr = NULL);
 
     WebRtc_Word32 SendPadData(WebRtc_Word8 payload_type,
                               WebRtc_UWord32 capture_timestamp,
@@ -177,17 +178,18 @@ public:
                         const WebRtc_UWord16* nackSequenceNumbers,
                         const WebRtc_UWord16 avgRTT);
 
-    WebRtc_Word32 SetStorePacketsStatus(const bool enable, const WebRtc_UWord16 numberToStore);
+    WebRtc_Word32 SetStorePacketsStatus(const bool enable,
+                                        const WebRtc_UWord16 numberToStore);
 
     bool StorePackets() const;
 
-    WebRtc_Word32 ReSendToNetwork(WebRtc_UWord16 packetID,
-                                WebRtc_UWord32 minResendTime=0);
+    WebRtc_Word32 ReSendPacket(WebRtc_UWord16 packetID,
+                               WebRtc_UWord32 minResendTime=0);
+
+    WebRtc_Word32 ReSendToNetwork(const WebRtc_UWord8* packet,
+                                  const WebRtc_UWord32 size);
 
     bool ProcessNACKBitRate(const WebRtc_UWord32 now);
-
-    void UpdateNACKBitRate( const WebRtc_UWord32 bytes,
-                            const WebRtc_UWord32 now);
 
     /*
     *    Keep alive
@@ -206,6 +208,15 @@ public:
     bool TimeToSendRTPKeepalive() const;
 
     WebRtc_Word32 SendRTPKeepalivePacket();
+
+    /*
+    *  RTX
+    */
+    void SetRTXStatus(const bool enable,
+                      const bool setSSRC,
+                      const WebRtc_UWord32 SSRC);
+
+    void RTXStatus(bool* enable, WebRtc_UWord32* SSRC) const;
 
     /*
     * Functions wrapping RTPSenderInterface
@@ -237,9 +248,9 @@ public:
     WebRtc_Word32 RegisterAudioCallback(RtpAudioFeedback* messagesCallback);
 
     // Send a DTMF tone using RFC 2833 (4733)
-      WebRtc_Word32 SendTelephoneEvent(const WebRtc_UWord8 key,
-                                   const WebRtc_UWord16 time_ms,
-                                   const WebRtc_UWord8 level);
+    WebRtc_Word32 SendTelephoneEvent(const WebRtc_UWord8 key,
+                                     const WebRtc_UWord16 time_ms,
+                                     const WebRtc_UWord8 level);
 
     bool SendTelephoneEventActive(WebRtc_Word8& telephoneEvent) const;
 
@@ -293,6 +304,9 @@ protected:
     WebRtc_Word32 CheckPayloadType(const WebRtc_Word8 payloadType, RtpVideoCodecTypes& videoType);
 
 private:
+    void UpdateNACKBitRate(const WebRtc_UWord32 bytes,
+                           const WebRtc_UWord32 now);
+
     void StorePacket(const uint8_t* buffer, uint16_t length,
                      uint16_t sequence_number);
 
@@ -326,6 +340,7 @@ private:
     bool                      _storeSentPackets;
     WebRtc_UWord16            _storeSentPacketsNumber;
     CriticalSectionWrapper*    _prevSentPacketsCritsect;
+
     WebRtc_Word32             _prevSentPacketsIndex;
     WebRtc_Word8**            _ptrPrevSentPackets;
     WebRtc_UWord16*           _prevSentPacketsSeqNum;
@@ -348,12 +363,15 @@ private:
     WebRtc_UWord32            _remoteSSRC;
     bool                      _sequenceNumberForced;
     WebRtc_UWord16            _sequenceNumber;
+    WebRtc_UWord16            _sequenceNumberRTX;
     bool                      _ssrcForced;
     WebRtc_UWord32            _ssrc;
     WebRtc_UWord32            _timeStamp;
     WebRtc_UWord8             _CSRCs;
     WebRtc_UWord32            _CSRC[kRtpCsrcSize];
     bool                      _includeCSRCs;
+    bool                      _RTX;
+    WebRtc_UWord32            _ssrcRTX;
 };
 } // namespace webrtc
 

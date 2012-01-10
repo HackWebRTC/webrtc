@@ -147,6 +147,12 @@ public:
 
     virtual WebRtc_UWord32 PayloadTypeToPayload(const WebRtc_UWord8 payloadType,
                                                 ModuleRTPUtility::Payload*& payload) const;
+    /*
+    *  RTX
+    */
+    void SetRTXStatus(const bool enable, const WebRtc_UWord32 SSRC);
+
+    void RTXStatus(bool* enable, WebRtc_UWord32* SSRC) const;
 
 protected:
     virtual WebRtc_Word32 CallbackOfReceivedPayloadData(const WebRtc_UWord8* payloadData,
@@ -246,8 +252,10 @@ private:
     mutable WebRtc_UWord32    _lastReportJitter;
     mutable WebRtc_UWord32    _lastReportJitterTransmissionTimeOffset;
 
-    // NACK
-    NACKMethod          _nackMethod;
+    NACKMethod _nackMethod;
+
+    bool _RTX;
+    WebRtc_UWord32 _ssrcRTX;
 };
 } // namespace webrtc
 

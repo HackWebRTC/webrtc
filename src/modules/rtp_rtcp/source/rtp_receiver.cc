@@ -84,17 +84,18 @@ RTPReceiver::RTPReceiver(const WebRtc_Word32 id,
     _lastReportJitter(0),
     _lastReportJitterTransmissionTimeOffset(0),
 
-    _nackMethod(kNackOff)
-{
-    memset(_currentRemoteCSRC, 0, sizeof(_currentRemoteCSRC));
-    memset(_currentRemoteEnergy, 0, sizeof(_currentRemoteEnergy));
-    memset(&_lastReceivedAudioSpecific, 0, sizeof(_lastReceivedAudioSpecific));
+    _nackMethod(kNackOff),
+    _RTX(false),
+    _ssrcRTX(0) {
+  memset(_currentRemoteCSRC, 0, sizeof(_currentRemoteCSRC));
+  memset(_currentRemoteEnergy, 0, sizeof(_currentRemoteEnergy));
+  memset(&_lastReceivedAudioSpecific, 0, sizeof(_lastReceivedAudioSpecific));
 
-    _lastReceivedAudioSpecific.channels = 1;
-    _lastReceivedVideoSpecific.maxRate = 0;
-    _lastReceivedVideoSpecific.videoCodecType = kRtpNoVideo;
+  _lastReceivedAudioSpecific.channels = 1;
+  _lastReceivedVideoSpecific.maxRate = 0;
+  _lastReceivedVideoSpecific.videoCodecType = kRtpNoVideo;
 
-    WEBRTC_TRACE(kTraceMemory, kTraceRtpRtcp, id, "%s created", __FUNCTION__);
+  WEBRTC_TRACE(kTraceMemory, kTraceRtpRtcp, id, "%s created", __FUNCTION__);
 }
 
 RTPReceiver::~RTPReceiver()
@@ -729,6 +730,19 @@ RTPReceiver::SetNACKStatus(const NACKMethod method)
     return 0;
 }
 
+void RTPReceiver::SetRTXStatus(const bool enable,
+                               const WebRtc_UWord32 SSRC) {
+  CriticalSectionScoped lock(_criticalSectionRTPReceiver);
+  _RTX = enable;
+  _ssrcRTX = SSRC;
+}
+
+void RTPReceiver::RTXStatus(bool* enable, WebRtc_UWord32* SSRC) const {
+  CriticalSectionScoped lock(_criticalSectionRTPReceiver);
+  *enable = _RTX;
+  *SSRC = _ssrcRTX;
+}
+
 WebRtc_UWord32
 RTPReceiver::SSRC() const
 {
@@ -765,136 +779,143 @@ RTPReceiver::Energy( WebRtc_UWord8 arrOfEnergy[kRtpCsrcSize]) const
     return _numEnergy;
 }
 
-WebRtc_Word32
-RTPReceiver::IncomingRTPPacket(WebRtcRTPHeader* rtpHeader,
-                               const WebRtc_UWord8* incomingRtpPacket,
-                               const WebRtc_UWord16 incomingRtpPacketLength)
-{
-    // rtpHeader now contains the parsed RTP header.
-    // Adjust packet length w r t RTP padding.
-    WebRtc_Word32 length = incomingRtpPacketLength - rtpHeader->header.paddingLength;
+WebRtc_Word32 RTPReceiver::IncomingRTPPacket(
+    WebRtcRTPHeader* rtp_header,
+    const WebRtc_UWord8* packet,
+    const WebRtc_UWord16 packet_length) {
+  // rtp_header contains the parsed RTP header.
+  // Adjust packet length w r t RTP padding.
+  int length = packet_length - rtp_header->header.paddingLength;
 
-    // length sanity
-    if((length - rtpHeader->header.headerLength) < 0)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id, "%s invalid argument", __FUNCTION__);
-        return -1;
-    }
-    if(_useSSRCFilter)
-    {
-        if(rtpHeader->header.ssrc != _SSRCFilter)
-        {
-            WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, _id, "%s drop packet due to SSRC filter", __FUNCTION__);
-            return -1;
-        }
-    }
-    if(_lastReceiveTime == 0)
-    {
-        // trigger only once
-        CriticalSectionScoped lock(_criticalSectionCbs);
-        if(_cbRtpFeedback)
-        {
-            if(length - rtpHeader->header.headerLength == 0)
-            {
-                // keepalive packet
-                _cbRtpFeedback->OnReceivedPacket(_id, kPacketKeepAlive);
-            }else
-            {
-                _cbRtpFeedback->OnReceivedPacket(_id, kPacketRtp);
-            }
-        }
-    }
-    WebRtc_Word8 firstPayloadByte = 0;
-    if(length > 0)
-    {
-        firstPayloadByte = incomingRtpPacket[rtpHeader->header.headerLength];
-    }
-
-    // trigger our callbacks
-    CheckSSRCChanged(rtpHeader);
-
-    bool isRED = false;
-    ModuleRTPUtility::VideoPayload videoSpecific;
-    videoSpecific.maxRate = 0;
-    videoSpecific.videoCodecType = kRtpNoVideo;
-
-    ModuleRTPUtility::AudioPayload audioSpecific;
-    audioSpecific.bitsPerSample = 0;
-    audioSpecific.channels = 0;
-    audioSpecific.frequency = 0;
-
-    if (CheckPayloadChanged(rtpHeader,
-                            firstPayloadByte,
-                            isRED,
-                            audioSpecific,
-                            videoSpecific) == -1)
-    {
-        if (length - rtpHeader->header.headerLength == 0)
-        {
-            // ok keepalive packet
-            WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, _id,
-                 "%s received keepalive",
+  // length sanity
+  if ((length - rtp_header->header.headerLength) < 0) {
+     WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
+                  "%s invalid argument",
                   __FUNCTION__);
-            return 0;
-        }
-        WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, _id,
-             "%s received invalid payloadtype",
-              __FUNCTION__);
+     return -1;
+  }
+  if (_RTX) {
+    if (_ssrcRTX == rtp_header->header.ssrc) {
+      // Sanity check.
+      if (rtp_header->header.headerLength + 2 > packet_length) {
         return -1;
+      }
+      rtp_header->header.ssrc = _SSRC;
+      rtp_header->header.sequenceNumber =
+          (packet[rtp_header->header.headerLength] << 8) +
+          packet[1 + rtp_header->header.headerLength];
+      // Count the RTX header as part of the RTP header.
+      rtp_header->header.headerLength += 2;
     }
-    CheckCSRC(rtpHeader);
-
-    WebRtc_Word32 retVal = 0;
-    const WebRtc_UWord8* payloadData       = incomingRtpPacket + rtpHeader->header.headerLength;
-    const WebRtc_UWord16 payloadDataLength = (WebRtc_UWord16)(length - rtpHeader->header.headerLength);
-
-    if(_audio)
-    {
-        retVal = ParseAudioCodecSpecific(rtpHeader,
-                                         payloadData,
-                                         payloadDataLength,
-                                         audioSpecific,
-                                         isRED);
-    } else
-    {
-        retVal = ParseVideoCodecSpecific(rtpHeader,
-                                         payloadData,
-                                         payloadDataLength,
-                                         videoSpecific.videoCodecType,
-                                         isRED,
-                                         incomingRtpPacket,
-                                         incomingRtpPacketLength,
-                                         _clock.GetTimeInMS());
+  }
+  if (_useSSRCFilter) {
+    if (rtp_header->header.ssrc != _SSRCFilter) {
+      WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, _id,
+                   "%s drop packet due to SSRC filter",
+                   __FUNCTION__);
+      return -1;
     }
-    if(retVal != -1)
-    {
-        CriticalSectionScoped lock(_criticalSectionRTPReceiver);
-
-        // this compare to _receivedSeqMax
-        // we store the last received after we have done the callback
-        const bool oldPacket = RetransmitOfOldPacket(rtpHeader->header.sequenceNumber,
-                                                     rtpHeader->header.timestamp);
-
-        // this updates _receivedSeqMax and other members
-        UpdateStatistics(rtpHeader, payloadDataLength, oldPacket);
-
-        // need to be updated after RetransmitOfOldPacket &
-        // RetransmitOfOldPacketUpdateStatistics
-        _lastReceiveTime = _clock.GetTimeInMS();
-        _lastReceivedPayloadLength = payloadDataLength;
-
-        if(retVal >= 0 && !oldPacket)
-        {
-            if(_lastReceivedTimestamp != rtpHeader->header.timestamp)
-            {
-                _lastReceivedTimestamp = rtpHeader->header.timestamp;
-            }
-            _lastReceivedSequenceNumber = rtpHeader->header.sequenceNumber;
-            _lastReceivedTransmissionTimeOffset =
-                rtpHeader->extension.transmissionTimeOffset;
-        }
+  }
+  if (_lastReceiveTime == 0) {
+    // trigger only once
+    CriticalSectionScoped lock(_criticalSectionCbs);
+    if (_cbRtpFeedback) {
+      if (length - rtp_header->header.headerLength == 0) {
+        // keepalive packet
+        _cbRtpFeedback->OnReceivedPacket(_id, kPacketKeepAlive);
+      } else {
+        _cbRtpFeedback->OnReceivedPacket(_id, kPacketRtp);
+      }
     }
+  }
+  WebRtc_Word8 first_payload_byte = 0;
+  if (length > 0) {
+    first_payload_byte = packet[rtp_header->header.headerLength];
+  }
+  // trigger our callbacks
+  CheckSSRCChanged(rtp_header);
+
+  bool is_red = false;
+  ModuleRTPUtility::VideoPayload video_specific;
+  video_specific.maxRate = 0;
+  video_specific.videoCodecType = kRtpNoVideo;
+
+  ModuleRTPUtility::AudioPayload audio_specific;
+  audio_specific.bitsPerSample = 0;
+  audio_specific.channels = 0;
+  audio_specific.frequency = 0;
+
+  if (CheckPayloadChanged(rtp_header,
+                          first_payload_byte,
+                          is_red,
+                          audio_specific,
+                          video_specific) == -1) {
+    if (length - rtp_header->header.headerLength == 0)
+    {
+      // ok keepalive packet
+      WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, _id,
+                   "%s received keepalive",
+                   __FUNCTION__);
+      return 0;
+    }
+    WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, _id,
+                 "%s received invalid payloadtype",
+                 __FUNCTION__);
+    return -1;
+  }
+  CheckCSRC(rtp_header);
+
+  const WebRtc_UWord8* payload_data =
+      packet + rtp_header->header.headerLength;
+
+  WebRtc_UWord16 payload_data_length =
+      static_cast<WebRtc_UWord16>(length - rtp_header->header.headerLength);
+
+  WebRtc_Word32 retVal = 0;
+  if(_audio) {
+    retVal = ParseAudioCodecSpecific(rtp_header,
+                                     payload_data,
+                                     payload_data_length,
+                                     audio_specific,
+                                     is_red);
+  } else {
+    retVal = ParseVideoCodecSpecific(rtp_header,
+                                     payload_data,
+                                     payload_data_length,
+                                     video_specific.videoCodecType,
+                                     is_red,
+                                     packet,
+                                     packet_length,
+                                     _clock.GetTimeInMS());
+  }
+  if(retVal < 0) {
     return retVal;
+  }
+
+  CriticalSectionScoped lock(_criticalSectionRTPReceiver);
+
+  // this compare to _receivedSeqMax
+  // we store the last received after we have done the callback
+  bool old_packet = RetransmitOfOldPacket(rtp_header->header.sequenceNumber,
+                                          rtp_header->header.timestamp);
+
+  // this updates _receivedSeqMax and other members
+  UpdateStatistics(rtp_header, payload_data_length, old_packet);
+
+  // Need to be updated after RetransmitOfOldPacket &
+  // RetransmitOfOldPacketUpdateStatistics
+  _lastReceiveTime = _clock.GetTimeInMS();
+  _lastReceivedPayloadLength = payload_data_length;
+
+  if (!old_packet) {
+    if (_lastReceivedTimestamp != rtp_header->header.timestamp) {
+      _lastReceivedTimestamp = rtp_header->header.timestamp;
+    }
+    _lastReceivedSequenceNumber = rtp_header->header.sequenceNumber;
+    _lastReceivedTransmissionTimeOffset =
+        rtp_header->extension.transmissionTimeOffset;
+  }
+  return retVal;
 }
 
 // must not have critsect when called

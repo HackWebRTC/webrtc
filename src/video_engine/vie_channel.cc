@@ -731,24 +731,38 @@ WebRtc_Word32 ViEChannel::EnableKeyFrameRequestCallback(const bool enable) {
 }
 
 WebRtc_Word32 ViEChannel::SetSSRC(const WebRtc_UWord32 SSRC,
-                                  const StreamType /*usage*/,
-                                  const unsigned char simulcast_idx) {
-  // TODO(pwestin) add support for stream_type when we add RTX.
-  WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
-               "%s(SSRC: %u, idx:%u)", __FUNCTION__, SSRC, simulcast_idx);
-
+                                  const StreamType usage,
+                                  const uint8_t simulcast_idx) {
+  WEBRTC_TRACE(webrtc::kTraceInfo,
+               webrtc::kTraceVideo,
+               ViEId(engine_id_, channel_id_),
+               "%s(usage:%d, SSRC: 0x%x, idx:%u)",
+               __FUNCTION__, usage, SSRC, simulcast_idx);
   if (simulcast_idx == 0) {
     return rtp_rtcp_.SetSSRC(SSRC);
   }
   std::list<RtpRtcp*>::const_iterator it = simulcast_rtp_rtcp_.begin();
-  for (int i = 1; i < simulcast_idx; i++) {
-    it++;
-    if (it == simulcast_rtp_rtcp_.end()) {
+  for (int i = 1; i < simulcast_idx; ++i, ++it) {
+    if (it ==  simulcast_rtp_rtcp_.end()) {
       return -1;
     }
   }
   RtpRtcp* rtp_rtcp = *it;
+  if (usage == kViEStreamTypeRtx) {
+    return rtp_rtcp->SetRTXSendStatus(true, true, SSRC);
+  }
   return rtp_rtcp->SetSSRC(SSRC);
+}
+
+WebRtc_Word32 ViEChannel::SetRemoteSSRCType(const StreamType usage,
+                                            const uint32_t SSRC) const {
+  WEBRTC_TRACE(webrtc::kTraceInfo,
+               webrtc::kTraceVideo,
+               ViEId(engine_id_, channel_id_),
+               "%s(usage:%d, SSRC: 0x%x)",
+               __FUNCTION__, usage, SSRC);
+
+  return rtp_rtcp_.SetRTXReceiveStatus(true, SSRC);
 }
 
 WebRtc_Word32 ViEChannel::GetLocalSSRC(WebRtc_UWord32& SSRC) {

@@ -112,11 +112,15 @@ public:
     // Get the current estimated remote timestamp
     virtual WebRtc_Word32 EstimatedRemoteTimeStamp(WebRtc_UWord32& timestamp) const;
 
-    // Get incoming SSRC
     virtual WebRtc_UWord32 RemoteSSRC() const;
 
-    // Get remote CSRC
     virtual WebRtc_Word32 RemoteCSRCs( WebRtc_UWord32 arrOfCSRC[kRtpCsrcSize]) const ;
+
+    virtual WebRtc_Word32 SetRTXReceiveStatus(const bool enable,
+                                              const WebRtc_UWord32 SSRC);
+
+    virtual WebRtc_Word32 RTXReceiveStatus(bool* enable,
+                                           WebRtc_UWord32* SSRC) const;
 
     // called by the network module when we receive a packet
     virtual WebRtc_Word32 IncomingPacket( const WebRtc_UWord8* incomingPacket,
@@ -183,22 +187,18 @@ public:
     // configure start timestamp, default is a random number
     virtual WebRtc_Word32 SetStartTimestamp(const WebRtc_UWord32 timestamp);
 
-    // Get SequenceNumber
     virtual WebRtc_UWord16 SequenceNumber() const;
 
     // Set SequenceNumber, default is a random number
     virtual WebRtc_Word32 SetSequenceNumber(const WebRtc_UWord16 seq);
 
-    // Get SSRC
     virtual WebRtc_UWord32 SSRC() const;
 
     // configure SSRC, default is a random number
     virtual WebRtc_Word32 SetSSRC(const WebRtc_UWord32 ssrc);
 
-    // Get CSRC
     virtual WebRtc_Word32 CSRCs( WebRtc_UWord32 arrOfCSRC[kRtpCsrcSize]) const ;
 
-    // Set CSRC
     virtual WebRtc_Word32 SetCSRCs( const WebRtc_UWord32 arrOfCSRC[kRtpCsrcSize],
                                   const WebRtc_UWord8 arrLength);
 
@@ -210,30 +210,35 @@ public:
 
     virtual WebRtc_UWord32 ByteCountSent() const;
 
+    virtual WebRtc_Word32 SetRTXSendStatus(const bool enable,
+                                           const bool setSSRC,
+                                           const WebRtc_UWord32 SSRC);
+
+    virtual WebRtc_Word32 RTXSendStatus(bool* enable,
+                                        WebRtc_UWord32* SSRC) const;
+
     // sends kRtcpByeCode when going from true to false
     virtual WebRtc_Word32 SetSendingStatus(const bool sending);
 
-    // get send status
     virtual bool Sending() const;
 
     // Drops or relays media packets
     virtual WebRtc_Word32 SetSendingMediaStatus(const bool sending);
 
-    // Send media status
     virtual bool SendingMedia() const;
 
     // Used by the module to send RTP and RTCP packet to the network module
     virtual WebRtc_Word32 RegisterSendTransport(Transport* outgoingTransport);
 
     // Used by the codec module to deliver a video or audio frame for packetization
-    virtual WebRtc_Word32
-    SendOutgoingData(const FrameType frameType,
-                     const WebRtc_Word8 payloadType,
-                     const WebRtc_UWord32 timeStamp,
-                     const WebRtc_UWord8* payloadData,
-                     const WebRtc_UWord32 payloadSize,
-                     const RTPFragmentationHeader* fragmentation = NULL,
-                     const RTPVideoHeader* rtpVideoHdr = NULL);
+    virtual WebRtc_Word32 SendOutgoingData(
+        const FrameType frameType,
+        const WebRtc_Word8 payloadType,
+        const WebRtc_UWord32 timeStamp,
+        const WebRtc_UWord8* payloadData,
+        const WebRtc_UWord32 payloadSize,
+        const RTPFragmentationHeader* fragmentation = NULL,
+        const RTPVideoHeader* rtpVideoHdr = NULL);
 
     /*
     *   RTCP
