@@ -729,7 +729,7 @@ int32_t WebRtcNetEQ_AverageIAT(const AutomodeInst_t *inst) {
   /* Subtract the nominal inter-arrival time 1 = 2^24 in Q24. */
   sum_q24 -= (1 << 24);
   /*
-   * Multiply with 1000000 / 2^24 = 15625 / 2^18 to get the average.
+   * Multiply with 1000000 / 2^24 = 15625 / 2^18 to get in parts-per-million.
    * Shift 7 to Q17 first, then multiply with 15625 and shift another 11.
    */
   return ((sum_q24 >> 7) * 15625) >> 11;

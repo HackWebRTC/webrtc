@@ -111,10 +111,35 @@ TEST_F(AcmNetEqTest, NetworkStatistics) {
   EXPECT_EQ(0, stats.currentExpandRate);
   EXPECT_EQ(0, stats.currentPreemptiveRate);
   EXPECT_EQ(0, stats.currentAccelerateRate);
-  EXPECT_EQ(-916, stats.clockDriftPPM);
+  EXPECT_EQ(-916, stats.clockDriftPPM);  // Initial value is slightly off.
   EXPECT_EQ(300, stats.maxWaitingTimeMs);
   EXPECT_EQ(159, stats.meanWaitingTimeMs);
   EXPECT_EQ(160, stats.medianWaitingTimeMs);
+}
+
+TEST_F(AcmNetEqTest, TestZeroLengthWaitingTimesVector) {
+  // Insert one packet.
+  const int kSamples = 10 * 16;
+  const int kPayloadBytes = kSamples * 2;
+  int i = 0;
+  InsertZeroPacket(i, i * kSamples, kPcm16WbPayloadType, 0x1234, false,
+                   kPayloadBytes);
+  // Do not pull out any data.
+
+  ACMNetworkStatistics stats;
+  ASSERT_EQ(0, neteq_.NetworkStatistics(&stats));
+  EXPECT_EQ(0, stats.currentBufferSize);
+  EXPECT_EQ(0, stats.preferredBufferSize);
+  EXPECT_FALSE(stats.jitterPeaksFound);
+  EXPECT_EQ(0, stats.currentPacketLossRate);
+  EXPECT_EQ(0, stats.currentDiscardRate);
+  EXPECT_EQ(0, stats.currentExpandRate);
+  EXPECT_EQ(0, stats.currentPreemptiveRate);
+  EXPECT_EQ(0, stats.currentAccelerateRate);
+  EXPECT_EQ(-916, stats.clockDriftPPM);  // Initial value is slightly off.
+  EXPECT_EQ(-1, stats.maxWaitingTimeMs);
+  EXPECT_EQ(-1, stats.meanWaitingTimeMs);
+  EXPECT_EQ(-1, stats.medianWaitingTimeMs);
 }
 
 }  // namespace
