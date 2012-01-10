@@ -175,6 +175,11 @@ ForwardErrorCorrection::GenerateFEC(const ListWrapper& mediaPacketList,
     // Result in Q0 with an unsigned round.
     WebRtc_UWord32 numFecPackets = (numMediaPackets * protectionFactor +
                                    (1 << 7)) >> 8;
+    // Generate at least one FEC packet if we need protection.
+    if (protectionFactor > 0 && numFecPackets == 0)
+    {
+        numFecPackets = 1;
+    }
     if (numFecPackets == 0)
     {
         return 0;
