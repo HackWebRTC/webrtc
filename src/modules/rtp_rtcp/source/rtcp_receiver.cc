@@ -1151,6 +1151,7 @@ RTCPReceiver::HandlePsfbApp(RTCPUtility::RTCPParserV2& rtcpParser,
     if (pktType == RTCPUtility::kRtcpPsfbRembItemCode)
     {
         HandleREMBItem(rtcpParser, rtcpPacketInformation);
+        rtcpParser.Iterate();
     }
 }
 
