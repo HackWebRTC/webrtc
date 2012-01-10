@@ -49,8 +49,8 @@ TEST_F(VadTest, vad_filterbank) {
   for (size_t j = 0; j < kFrameLengthsSize; ++j) {
     if (ValidRatesAndFrameLengths(8000, kFrameLengths[j])) {
       EXPECT_EQ(kReference[frame_length_index],
-                WebRtcVad_get_features(self, speech, kFrameLengths[j],
-                                       data_out));
+                WebRtcVad_CalculateFeatures(self, speech, kFrameLengths[j],
+                                            data_out));
       for (int k = 0; k < NUM_CHANNELS; ++k) {
         EXPECT_EQ(kReferencePowers[k + frame_length_index * NUM_CHANNELS],
                   data_out[k]);
@@ -65,8 +65,8 @@ TEST_F(VadTest, vad_filterbank) {
   ASSERT_EQ(0, WebRtcVad_InitCore(self, 0));
   for (size_t j = 0; j < kFrameLengthsSize; ++j) {
     if (ValidRatesAndFrameLengths(8000, kFrameLengths[j])) {
-      EXPECT_EQ(0, WebRtcVad_get_features(self, speech, kFrameLengths[j],
-                                          data_out));
+      EXPECT_EQ(0, WebRtcVad_CalculateFeatures(self, speech, kFrameLengths[j],
+                                               data_out));
       for (int k = 0; k < NUM_CHANNELS; ++k) {
         EXPECT_EQ(kOffsetVector[k], data_out[k]);
       }
@@ -81,8 +81,8 @@ TEST_F(VadTest, vad_filterbank) {
   for (size_t j = 0; j < kFrameLengthsSize; ++j) {
     if (ValidRatesAndFrameLengths(8000, kFrameLengths[j])) {
       ASSERT_EQ(0, WebRtcVad_InitCore(self, 0));
-      EXPECT_EQ(0, WebRtcVad_get_features(self, speech, kFrameLengths[j],
-                                          data_out));
+      EXPECT_EQ(0, WebRtcVad_CalculateFeatures(self, speech, kFrameLengths[j],
+                                               data_out));
       for (int k = 0; k < NUM_CHANNELS; ++k) {
         EXPECT_EQ(kOffsetVector[k], data_out[k]);
       }

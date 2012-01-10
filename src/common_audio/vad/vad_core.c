@@ -316,7 +316,8 @@ WebRtc_Word16 WebRtcVad_CalcVad8khz(VadInstT *inst, WebRtc_Word16 *speech_frame,
     WebRtc_Word16 feature_vector[NUM_CHANNELS], total_power;
 
     // Get power in the bands
-    total_power = WebRtcVad_get_features(inst, speech_frame, frame_length, feature_vector);
+    total_power = WebRtcVad_CalculateFeatures(inst, speech_frame, frame_length,
+                                              feature_vector);
 
     // Make a VAD
     inst->vad = WebRtcVad_GmmProbability(inst, feature_vector, total_power, frame_length);
