@@ -1536,6 +1536,27 @@ AudioCodingModuleImpl::RegisterReceiveCodec(
                     "Cannot Add Slave jitter buffer to NetEQ.");
                 return -1;
             }
+
+            // Register RED and CN in slave.
+            bool reg_in_neteq = false;
+            for (int i = (ACMCodecDB::kNumCodecs - 1); i > -1; i--) {
+                if((STR_CASE_CMP(ACMCodecDB::database_[i].plname, "RED") == 0)) {
+                    reg_in_neteq = true;
+                } else if ((STR_CASE_CMP(ACMCodecDB::database_[i].plname, "CN") == 0)) {
+                    reg_in_neteq = true;
+                }
+
+                if (reg_in_neteq) {
+                   if(RegisterRecCodecMSSafe(ACMCodecDB::database_[i], i, i,
+                        ACMNetEQ::slaveJB) < 0) {
+                        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
+                            "Cannot register slave codec.");
+                        return -1;
+                    }
+                    _registeredPlTypes[i] = ACMCodecDB::database_[i].pltype;
+                    reg_in_neteq = false;
+                }
+            }
         }
 
         if(RegisterRecCodecMSSafe(receiveCodec, codecId, mirrorId,
