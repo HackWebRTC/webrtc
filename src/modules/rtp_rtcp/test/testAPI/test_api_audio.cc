@@ -384,7 +384,7 @@ TEST_F(RtpRtcpAudioTest, Stereo) {
   EXPECT_EQ(0, module2->RegisterReceivePayload(voiceCodec));
 
   // Test sample based multi channel codec, 3 channels 8 bits.
-  WebRtc_UWord8 test3channels[13] = "ttteeesssttt";
+  WebRtc_UWord8 test3channels[15] = "ttteeesssttt";
   WebRtc_UWord32 timeStamp = 160;
   EXPECT_EQ(0, module1->SendOutgoingData(webrtc::kAudioFrameSpeech, 98,
                                          timeStamp, test3channels, 12));
