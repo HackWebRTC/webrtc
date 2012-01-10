@@ -667,6 +667,7 @@
         '<(libjingle_orig)/source/talk/app/webrtc/webrtcjson.h',                  
       ],
       'dependencies': [
+        '<(DEPTH)/third_party/libsrtp/libsrtp.gyp:libsrtp',
         'jsoncpp',
       ],
       'conditions': [
