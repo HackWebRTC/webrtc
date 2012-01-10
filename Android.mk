@@ -93,7 +93,7 @@ LOCAL_PRELINK_MODULE := false
 ifndef NDK_ROOT
 include external/stlport/libstlport.mk
 endif
-include $(BUILD_SHARED_LIBRARY)
+#include $(BUILD_SHARED_LIBRARY)
 
 ###
 
