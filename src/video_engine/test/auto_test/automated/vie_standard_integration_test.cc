@@ -64,9 +64,7 @@ TEST_F(ViEStandardIntegrationTest, RunsRenderTestWithoutErrors)  {
   tests_->ViERenderStandardTest();
 }
 
-// TODO(phoglund): enable this once the flakiness gets resolved. Also, update
-// the wiki at test engineering > known issues on build-bot.
-TEST_F(ViEStandardIntegrationTest, DISABLED_RunsRtpRtcpTestWithoutErrors)  {
+TEST_F(ViEStandardIntegrationTest, RunsRtpRtcpTestWithoutErrors)  {
   tests_->ViERtpRtcpStandardTest();
 }
 
