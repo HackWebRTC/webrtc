@@ -19,7 +19,7 @@
 #include <math.h>
 #include <stdlib.h> //abs
 
-#ifdef MATLAB
+#ifdef WEBRTC_BWE_MATLAB
 extern MatlabEngine eng; // global variable defined elsewhere
 #endif
 
@@ -47,10 +47,7 @@ _prevOffset(0.0),
 _timeOverUsing(-1),
 _overUseCounter(0),
 _hypothesis(kBwNormal)
-#ifdef DEBUG_FILE
-,_debugFile(NULL)
-#endif
-#ifdef MATLAB
+#ifdef WEBRTC_BWE_MATLAB
 ,_plot1(NULL),
 _plot2(NULL),
 _plot3(NULL),
@@ -62,22 +59,11 @@ _plot4(NULL)
     _E[0][1] = _E[1][0] = 0;
     _processNoise[0] = 1e-10;
     _processNoise[1] = 1e-2;
-#ifdef DEBUG_FILE
-    _debugFile = fopen("detectorData.txt", "w");
-    if (_debugFile)
-      fprintf(_debugFile, "data = [\n");
-#endif
 }
 
 OverUseDetector::~OverUseDetector()
 {
-#ifdef DEBUG_FILE
-    if (_debugFile) {
-      fprintf(_debugFile, "];\n");
-      fclose(_debugFile);
-    }
-#endif
-#ifdef MATLAB
+#ifdef WEBRTC_BWE_MATLAB
     if (_plot1)
     {
         eng.DeletePlot(_plot1);
@@ -143,7 +129,7 @@ bool OverUseDetector::Update(const WebRtcRTPHeader& rtpHeader,
                              const WebRtc_UWord16 packetSize,
                              const WebRtc_Word64 nowMS)
 {
-#ifdef MATLAB
+#ifdef WEBRTC_BWE_MATLAB
     // Create plots
     const WebRtc_Word64 startTimeMs = nowMS;
     if (_plot1 == NULL)
@@ -281,13 +267,6 @@ void OverUseDetector::UpdateKalman(WebRtc_Word64 tDelta, double tsDelta, WebRtc_
     const double tTsDelta = tDelta - tsDelta / drift;
     double fsDelta = static_cast<double>(frameSize) - prevFrameSize;
 
-#ifdef DEBUG_FILE
-    if (_debugFile) {
-      fprintf(_debugFile, "%I64i %f %I64i %lu;\n", tDelta, tsDelta, static_cast<WebRtc_Word64>(fsDelta), frameSize);
-      fflush(_debugFile);
-    }
-#endif
-
     // Update the Kalman filter
     const double scaleFactor =  minFramePeriod / (1000.0 / 30.0);
     _E[0][0] += _processNoise[0] * scaleFactor;
@@ -338,7 +317,7 @@ void OverUseDetector::UpdateKalman(WebRtc_Word64 tDelta, double tsDelta, WebRtc_
            _E[0][0] * _E[1][1] - _E[0][1] * _E[1][0] >= 0 &&
            _E[0][0] >= 0);
 
-#ifdef MATLAB
+#ifdef WEBRTC_BWE_MATLAB
     //_plot4->Append("p11",_E[0][0]);
     //_plot4->Append("p12",_E[0][1]);
     _plot4->Append("p22",_E[1][1]);
@@ -353,7 +332,7 @@ void OverUseDetector::UpdateKalman(WebRtc_Word64 tDelta, double tsDelta, WebRtc_
 
     Detect(tsDelta);
 
-#ifdef MATLAB
+#ifdef WEBRTC_BWE_MATLAB
     _plot1->Append("scatter", static_cast<double>(_currentFrame._size) - _prevFrame._size,
         static_cast<double>(tDelta-tsDelta));
     _plot1->MakeTrend("scatter", "slope", _slope, _offset, "k-");
@@ -450,12 +429,12 @@ BandwidthUsage OverUseDetector::Detect(double tsDelta)
                     _timeOverUsing = 0;
                     _overUseCounter = 0;
                     _hypothesis = kBwOverusing;
-#ifdef MATLAB
+#ifdef WEBRTC_BWE_MATLAB
                     _plot2->Append("detection",_offset); // plot it later
 #endif
                 }
             }
-#ifdef MATLAB
+#ifdef WEBRTC_BWE_MATLAB
             _plot2->Append("trigger",_offset); // plot it later
 #endif
         }
@@ -473,8 +452,8 @@ BandwidthUsage OverUseDetector::Detect(double tsDelta)
     else
     {
 #ifdef _DEBUG
-            if (_hypothesis != kBwNormal)
-                    WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, -1, "BWE: kBwNormal");
+        if (_hypothesis != kBwNormal)
+                WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, -1, "BWE: kBwNormal");
 #endif
         _timeOverUsing = -1;
         _overUseCounter = 0;

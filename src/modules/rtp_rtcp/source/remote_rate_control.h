@@ -63,9 +63,6 @@ private:
     float               _avgChangePeriod;
     WebRtc_Word64         _lastChangeMs;
     float               _beta;
-#ifdef DEBUG_DELAY_SAMPLES
-    FILE*               _delayFile;
-#endif
 #ifdef MATLAB
     MatlabPlot          *_plot1;
     MatlabPlot          *_plot2;

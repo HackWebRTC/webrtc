@@ -16,9 +16,7 @@
 #include "typedefs.h"
 #include "list_wrapper.h"
 
-//#define DEBUG_FILE
-
-#ifdef MATLAB
+#ifdef WEBRTC_BWE_MATLAB
 #include "../test/BWEStandAlone/MatlabPlot.h"
 #endif
 
@@ -76,10 +74,7 @@ private:
     WebRtc_UWord16        _overUseCounter;
     BandwidthUsage  _hypothesis;
 
-#ifdef DEBUG_FILE
-    FILE*               _debugFile;
-#endif
-#ifdef MATLAB
+#ifdef WEBRTC_BWE_MATLAB
     MatlabPlot          *_plot1;
     MatlabPlot          *_plot2;
     MatlabPlot          *_plot3;
