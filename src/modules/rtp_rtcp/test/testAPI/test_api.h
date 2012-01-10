@@ -12,7 +12,7 @@
 #include "rtp_rtcp.h"
 #include "rtp_rtcp_defines.h"
 
-using namespace webrtc;
+namespace webrtc {
 
 class FakeRtpRtcpClock : public RtpRtcpClock {
  public:
@@ -82,4 +82,5 @@ class RtpReceiver : public RtpData {
   }
 };
 
-
+}  // namespace webrtc
+ 
