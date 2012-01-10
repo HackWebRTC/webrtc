@@ -26,10 +26,13 @@ VCMSessionInfo::VCMSessionInfo()
       packets_not_decodable_(0) {
 }
 
-void VCMSessionInfo::UpdateDataPointers(ptrdiff_t address_delta) {
+void VCMSessionInfo::UpdateDataPointers(const uint8_t* old_base_ptr,
+                                        const uint8_t* new_base_ptr) {
   for (PacketIterator it = packets_.begin(); it != packets_.end(); ++it)
-    if ((*it).dataPtr != NULL)
-      (*it).dataPtr = (*it).dataPtr + address_delta;
+    if ((*it).dataPtr != NULL) {
+      assert(old_base_ptr != NULL && new_base_ptr != NULL);
+      (*it).dataPtr = new_base_ptr + ((*it).dataPtr - old_base_ptr);
+    }
 }
 
 int VCMSessionInfo::LowSequenceNumber() const {

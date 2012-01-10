@@ -42,6 +42,7 @@ _nackCount(rhs._nackCount),
 _latestPacketTimeMs(rhs._latestPacketTimeMs)
 {
     _sessionInfo = rhs._sessionInfo;
+    _sessionInfo.UpdateDataPointers(rhs._buffer, _buffer);
 }
 
 webrtc::FrameType
@@ -165,7 +166,7 @@ VCMFrameBuffer::InsertPacket(const VCMPacket& packet, WebRtc_Word64 timeInMs,
         {
             return kSizeError;
         }
-        _sessionInfo.UpdateDataPointers(_buffer - prevBuffer);
+        _sessionInfo.UpdateDataPointers(prevBuffer, _buffer);
     }
 
     CopyCodecSpecific(&packet.codecSpecificHeader);
@@ -361,7 +362,7 @@ VCMFrameBuffer::ExtractFromStorage(const EncodedVideoData& frameFromStorage)
     {
         return VCM_MEMORY;
     }
-    _sessionInfo.UpdateDataPointers(_buffer - prevBuffer);
+    _sessionInfo.UpdateDataPointers(prevBuffer, _buffer);
     memcpy(_buffer, frameFromStorage.payloadData, frameFromStorage.payloadSize);
     _length = frameFromStorage.payloadSize;
     return VCM_OK;
