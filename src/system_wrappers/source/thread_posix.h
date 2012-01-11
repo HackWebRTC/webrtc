@@ -59,7 +59,9 @@ private:
     // handle to thread
     pthread_attr_t          _attr;
     pthread_t               _thread;
+#if (defined(WEBRTC_LINUX) || defined(WEBRTC_ANDROID))
     pid_t                   _pid;
+#endif
 };
 } // namespace webrtc
 

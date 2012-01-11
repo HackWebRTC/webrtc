@@ -64,9 +64,11 @@ ThreadPosix::ThreadPosix(ThreadRunFunction func, ThreadObj obj,
       _dead(true),
       _prio(prio),
       _event(EventWrapper::Create()),
-      _setThreadName(false),
-      _pid(-1)
+      _setThreadName(false)
 {
+#if (defined(WEBRTC_LINUX) || defined(WEBRTC_ANDROID))
+    _pid = -1;
+#endif
     if (threadName != NULL)
     {
         _setThreadName = true;
@@ -279,7 +281,9 @@ void ThreadPosix::Run()
 {
     _alive = true;
     _dead  = false;
+#if (defined(WEBRTC_LINUX) || defined(WEBRTC_ANDROID))
     _pid = GetThreadId();
+#endif
     // The event the Start() is waiting for.
     _event->Set();
 
