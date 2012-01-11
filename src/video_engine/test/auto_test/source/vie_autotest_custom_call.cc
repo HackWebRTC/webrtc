@@ -134,6 +134,7 @@ int GetVideoProtection();
 bool SetVideoProtection(webrtc::ViECodec* ptrViECodec,
                         webrtc::ViERTP_RTCP* ptrViERtpRtcp,
                         int videoChannel, int protectionMethod);
+bool GetBitrateSignaling();
 
 // The following are audio helper functions.
 bool GetAudioDevices(webrtc::VoEBase* ptrVEBase,
@@ -250,6 +251,7 @@ int ViEAutoTest::ViECustomCall()
   int audioChannel = -1;
   bool isImageScaleEnabled = false;
   int protectionMethod = DEFAULT_VIDEO_PROTECTION_METHOD;
+  bool remb = true;
 
   while (!startCall) {
     // Get the IP address to use from call.
@@ -275,6 +277,7 @@ int ViEAutoTest::ViECustomCall()
     SetVideoCodecMaxBitrate(ptrViECodec, videoSendCodec);
     SetVideoCodecMaxFramerate(ptrViECodec, videoSendCodec);
     SetVideoCodecTemporalLayer(videoSendCodec);
+    remb = GetBitrateSignaling();
 
     // Get the video protection method for the call.
     protectionMethod = GetVideoProtection();
@@ -433,10 +436,15 @@ int ViEAutoTest::ViECustomCall()
                                          "ERROR: %s at line %d",
                                          __FUNCTION__, __LINE__);
 
-    error = ptrViERtpRtcp->SetTMMBRStatus(videoChannel, true);
-    numberOfErrors += ViETest::TestError(error == 0,
-                                         "ERROR: %s at line %d",
-                                         __FUNCTION__, __LINE__);
+    if (remb) {
+      bool ret = ptrViERtpRtcp->SetRembStatus(videoChannel, true, true);
+      numberOfErrors += ViETest::TestError(ret, "ERROR: %s at line %d",
+                                           __FUNCTION__, __LINE__);
+    } else  {
+      error = ptrViERtpRtcp->SetTMMBRStatus(videoChannel, true);
+      numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
+                                           __FUNCTION__, __LINE__);
+    }
 
     error = ptrViERender->AddRenderer(captureId, _window1, 0, 0.0, 0.0,
                                       1.0, 1.0);
@@ -1833,6 +1841,21 @@ bool SetVideoProtection(webrtc::ViECodec* ptrViECodec,
 
 
 
+  return true;
+}
+
+bool GetBitrateSignaling() {
+  std::cout << std::endl;
+  std::cout << "Available bitrate signaling methods." << std::endl;
+  std::cout << "  0. REMB" << std::endl;
+  std::cout << "  1. TMMBR" << std::endl;
+  std::cout << "Enter bitrate signaling methods. "
+            << "Press enter for default (REMB): " << std::endl;
+  std::string method;
+  std::getline(std::cin, method);
+  if (atoi(method.c_str()) == 1) {
+    return false;
+  }
   return true;
 }
 
