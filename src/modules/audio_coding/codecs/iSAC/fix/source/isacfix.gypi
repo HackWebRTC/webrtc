@@ -40,6 +40,7 @@
         'initialize.c',
         'isacfix.c',
         'lattice.c',
+        'lattice_c.c',
         'lpc_masking_model.c',
         'lpc_tables.c',
         'pitch_estimator.c',
