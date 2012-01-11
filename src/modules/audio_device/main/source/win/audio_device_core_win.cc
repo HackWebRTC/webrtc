@@ -4160,15 +4160,18 @@ Exit:
 
     if (keepRecording)
     {
-        hr = _ptrClientIn->Stop();
-        if (FAILED(hr))
+        if (_ptrClientIn != NULL)
         {
-            _TraceCOMError(hr);
-        }
-        hr = _ptrClientIn->Reset();
-        if (FAILED(hr))
-        {
-            _TraceCOMError(hr);
+            hr = _ptrClientIn->Stop();
+            if (FAILED(hr))
+            {
+                _TraceCOMError(hr);
+            }
+            hr = _ptrClientIn->Reset();
+            if (FAILED(hr))
+            {
+                _TraceCOMError(hr);
+            }
         }
 
         // Trigger callback from module process thread
