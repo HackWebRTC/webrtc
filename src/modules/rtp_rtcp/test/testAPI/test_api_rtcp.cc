@@ -113,6 +113,41 @@ class RtpRtcpRtcpTest : public ::testing::Test {
     delete receiver;
   }
 
+  void SetUpCallFromModule1(RtcpCallback* feedback1, RtcpCallback* feedback2 ) {
+    EXPECT_EQ(0, module1->RegisterIncomingRTCPCallback(feedback1));
+    EXPECT_EQ(0, module2->RegisterIncomingRTCPCallback(feedback2));
+
+    EXPECT_EQ(0, module1->SetRTCPStatus(kRtcpCompound));
+    EXPECT_EQ(0, module2->SetRTCPStatus(kRtcpCompound));
+
+    EXPECT_EQ(0, module2->SetSSRC(test_ssrc + 1));
+    EXPECT_EQ(0, module1->SetSSRC(test_ssrc));
+    EXPECT_EQ(0, module1->SetSequenceNumber(test_sequence_number));
+    EXPECT_EQ(0, module1->SetStartTimestamp(test_timestamp));
+    EXPECT_EQ(0, module1->SetCSRCs(test_CSRC, 2));
+    EXPECT_EQ(0, module1->SetCNAME("john.doe@test.test"));
+
+    EXPECT_EQ(0, module1->SetSendingStatus(true));
+
+    CodecInst voiceCodec;
+    voiceCodec.pltype = 96;
+    voiceCodec.plfreq = 8000;
+    voiceCodec.rate = 64000;
+    memcpy(voiceCodec.plname, "PCMU", 5);
+
+    EXPECT_EQ(0, module1->RegisterSendPayload(voiceCodec));
+    EXPECT_EQ(0, module1->RegisterReceivePayload(voiceCodec));
+    EXPECT_EQ(0, module2->RegisterSendPayload(voiceCodec));
+    EXPECT_EQ(0, module2->RegisterReceivePayload(voiceCodec));
+
+    // We need to send one RTP packet to get the RTCP packet to be accepted by
+    // the receiving module.
+    // send RTP packet with the data "testtest"
+    const WebRtc_UWord8 test[9] = "testtest";
+    EXPECT_EQ(0, module1->SendOutgoingData(webrtc::kAudioFrameSpeech, 96,
+                                           0, test, 8));
+  }
+
   int test_id;
   RtpRtcp* module1;
   RtpRtcp* module2;
@@ -129,38 +164,8 @@ class RtpRtcpRtcpTest : public ::testing::Test {
 TEST_F(RtpRtcpRtcpTest, RTCP) {
   RtcpCallback* myRTCPFeedback1 = new RtcpCallback(module1);
   RtcpCallback* myRTCPFeedback2 = new RtcpCallback(module2);
-  EXPECT_EQ(0, module1->RegisterIncomingRTCPCallback(myRTCPFeedback1));
-  EXPECT_EQ(0, module2->RegisterIncomingRTCPCallback(myRTCPFeedback2));
 
-  EXPECT_EQ(0, module1->SetRTCPStatus(kRtcpCompound));
-  EXPECT_EQ(0, module2->SetRTCPStatus(kRtcpCompound));
-
-  EXPECT_EQ(0, module2->SetSSRC(test_ssrc + 1));
-  EXPECT_EQ(0, module1->SetSSRC(test_ssrc));
-  EXPECT_EQ(0, module1->SetSequenceNumber(test_sequence_number));
-  EXPECT_EQ(0, module1->SetStartTimestamp(test_timestamp));
-  EXPECT_EQ(0, module1->SetCSRCs(test_CSRC, 2));
-  EXPECT_EQ(0, module1->SetCNAME("john.doe@test.test"));
-
-  EXPECT_EQ(0, module1->SetSendingStatus(true));
-
-  CodecInst voiceCodec;
-  voiceCodec.pltype = 96;
-  voiceCodec.plfreq = 8000;
-  voiceCodec.rate = 64000;
-  memcpy(voiceCodec.plname, "PCMU", 5);
-
-  EXPECT_EQ(0, module1->RegisterSendPayload(voiceCodec));
-  EXPECT_EQ(0, module1->RegisterReceivePayload(voiceCodec));
-  EXPECT_EQ(0, module2->RegisterSendPayload(voiceCodec));
-  EXPECT_EQ(0, module2->RegisterReceivePayload(voiceCodec));
-
-  // We need to send one RTP packet to get the RTCP packet to be accepted by
-  // the receiving module.
-  // send RTP packet with the data "testtest"
-  const WebRtc_UWord8 test[9] = "testtest";
-  EXPECT_EQ(0, module1->SendOutgoingData(webrtc::kAudioFrameSpeech, 96,
-                                         0, test, 8));
+  SetUpCallFromModule1(myRTCPFeedback1, myRTCPFeedback2);
 
   EXPECT_EQ(0, module1->SendRTCPReferencePictureSelection(kTestPictureId));
   EXPECT_EQ(0, module1->SendRTCPSliceLossIndication(156));
@@ -237,10 +242,12 @@ TEST_F(RtpRtcpRtcpTest, RTCP) {
   EXPECT_EQ(0, strncmp(cName, "jane@192.168.0.2", RTCP_CNAME_SIZE));
 
   // get all report blocks
-  RTCPReportBlock reportBlockReceived;
-  EXPECT_EQ(-1, module1->RemoteRTCPStat(test_ssrc, &reportBlockReceived));
-  EXPECT_EQ(-1, module1->RemoteRTCPStat(test_ssrc + 1, NULL));
-  EXPECT_EQ(0, module1->RemoteRTCPStat(test_ssrc + 1, &reportBlockReceived));
+  std::vector<RTCPReportBlock> report_blocks;
+  EXPECT_EQ(-1, module1->RemoteRTCPStat(NULL));
+  EXPECT_EQ(0, module1->RemoteRTCPStat(&report_blocks));
+  EXPECT_EQ(1u, report_blocks.size());
+  const RTCPReportBlock& reportBlockReceived = report_blocks[0];
+
   float secSinceLastReport =
       static_cast<float>(reportBlockReceived.delaySinceLastSR) / 65536.0f;
   EXPECT_GE(0.101f, secSinceLastReport);
@@ -294,4 +301,33 @@ TEST_F(RtpRtcpRtcpTest, RTCP) {
 
   delete myRTCPFeedback1;
   delete myRTCPFeedback2;
+}
+
+TEST_F(RtpRtcpRtcpTest, RemoteRTCPStatRemote) {
+  std::vector<RTCPReportBlock> report_blocks;
+
+  RtcpCallback feedback1(module1);
+  RtcpCallback feedback2(module2);
+
+  SetUpCallFromModule1(&feedback1, &feedback2);
+  EXPECT_EQ(0, module1->RemoteRTCPStat(&report_blocks));
+  EXPECT_EQ(0u, report_blocks.size());
+
+  // send RTCP packet, triggered by timer
+  fake_clock.IncrementTime(7500);
+  module1->Process();
+  fake_clock.IncrementTime(100);
+  module2->Process();
+
+  EXPECT_EQ(0, module1->RemoteRTCPStat(&report_blocks));
+  ASSERT_EQ(1u, report_blocks.size());
+
+  // |test_ssrc+1| is the SSRC of module2 that send the report.
+  EXPECT_EQ(test_ssrc+1, report_blocks[0].remoteSSRC);
+  EXPECT_EQ(test_ssrc, report_blocks[0].sourceSSRC);
+
+  EXPECT_EQ(0u, report_blocks[0].cumulativeLost);
+  EXPECT_LT(0u, report_blocks[0].delaySinceLastSR);
+  EXPECT_EQ(test_sequence_number, report_blocks[0].extendedHighSeqNum);
+  EXPECT_EQ(0u, report_blocks[0].fractionLost);
 }

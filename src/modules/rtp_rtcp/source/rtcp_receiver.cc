@@ -179,56 +179,52 @@ RTCPReceiver::SetSSRC( const WebRtc_UWord32 ssrc)
     _SSRC = ssrc;
 }
 
-WebRtc_Word32
-RTCPReceiver::ResetRTT(const WebRtc_UWord32 remoteSSRC)
-{
-    CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
-    RTCPReportBlockInformation* reportBlock = GetReportBlockInformation(remoteSSRC);
-    if(reportBlock == NULL)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,  "\tfailed to GetReportBlockInformation(%d)", remoteSSRC);
-        return -1;
-    }
-    reportBlock->RTT = 0;
-    reportBlock->avgRTT = 0;
-    reportBlock->minRTT = 0;
-    reportBlock->maxRTT = 0;
+WebRtc_Word32 RTCPReceiver::ResetRTT(const WebRtc_UWord32 remoteSSRC) {
+  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+  RTCPReportBlockInformation* reportBlock =
+      GetReportBlockInformation(remoteSSRC);
+  if (reportBlock == NULL) {
+    WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
+                 "\tfailed to GetReportBlockInformation(%u)", remoteSSRC);
+    return -1;
+  }
+  reportBlock->RTT = 0;
+  reportBlock->avgRTT = 0;
+  reportBlock->minRTT = 0;
+  reportBlock->maxRTT = 0;
 
-    return 0;
+  return 0;
 }
 
-WebRtc_Word32
-RTCPReceiver::RTT(const WebRtc_UWord32 remoteSSRC,
-                  WebRtc_UWord16* RTT,
-                  WebRtc_UWord16* avgRTT,
-                  WebRtc_UWord16* minRTT,
-                  WebRtc_UWord16* maxRTT) const
+WebRtc_Word32 RTCPReceiver::RTT(const WebRtc_UWord32 remoteSSRC,
+                                WebRtc_UWord16* RTT,
+                                WebRtc_UWord16* avgRTT,
+                                WebRtc_UWord16* minRTT,
+                                WebRtc_UWord16* maxRTT) const {
+  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
 
-{
-    CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
-    RTCPReportBlockInformation* reportBlock = GetReportBlockInformation(remoteSSRC);
-    if(reportBlock == NULL)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,  "\tfailed to GetReportBlockInformation(%d)", remoteSSRC);
-        return -1;
-    }
-    if(RTT)
-    {
-        *RTT = reportBlock->RTT;
-    }
-    if(avgRTT)
-    {
-        *avgRTT = reportBlock->avgRTT;
-    }
-    if(minRTT)
-    {
-        *minRTT = reportBlock->minRTT;
-    }
-    if(maxRTT)
-    {
-        *maxRTT = reportBlock->maxRTT;
-    }
-    return 0;
+  RTCPReportBlockInformation* reportBlock =
+      GetReportBlockInformation(remoteSSRC);
+
+  if (reportBlock == NULL) {
+    WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
+                 "\tfailed to GetReportBlockInformation(%u)",
+                 remoteSSRC);
+    return -1;
+  }
+  if (RTT) {
+    *RTT = reportBlock->RTT;
+  }
+  if (avgRTT) {
+    *avgRTT = reportBlock->avgRTT;
+  }
+  if (minRTT) {
+    *minRTT = reportBlock->minRTT;
+  }
+  if (maxRTT) {
+    *maxRTT = reportBlock->maxRTT;
+  }
+  return 0;
 }
 
 void
@@ -287,24 +283,25 @@ RTCPReceiver::SenderInfoReceived(RTCPSenderInfo* senderInfo) const
 
 // statistics
 // we can get multiple receive reports when we receive the report from a CE
-WebRtc_Word32
-RTCPReceiver::StatisticsReceived(const WebRtc_UWord32 remoteSSRC,
-                                 RTCPReportBlock* receiveBlock) const
-{
-    if(receiveBlock == NULL)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id, "%s invalid argument", __FUNCTION__);
-        return -1;
-    }
-    CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
-    RTCPReportBlockInformation* reportBlockInfo = GetReportBlockInformation(remoteSSRC);
-    if(reportBlockInfo == NULL)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,  "\tfailed to GetReportBlockInformation(%d)", remoteSSRC);
-        return -1;
-    }
-    memcpy(receiveBlock, &(reportBlockInfo->remoteReceiveBlock), sizeof(RTCPReportBlock));
-    return 0;
+WebRtc_Word32 RTCPReceiver::StatisticsReceived(
+    std::vector<RTCPReportBlock>* receiveBlocks) const {
+  if (receiveBlocks == NULL) {
+    WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id, "%s invalid argument",
+                 __FUNCTION__);
+    return -1;
+  }
+  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+
+  MapItem* ptrReportBlockInfoItem = _receivedReportBlockMap.First();
+  while (ptrReportBlockInfoItem != NULL) {
+    RTCPReportBlockInformation* item =
+        static_cast<RTCPReportBlockInformation*> (
+            ptrReportBlockInfoItem->GetItem());
+    receiveBlocks->push_back(item->remoteReceiveBlock);
+    ptrReportBlockInfoItem =
+        _receivedReportBlockMap.Next(ptrReportBlockInfoItem);
+  }
+  return 0;
 }
 
 WebRtc_Word32
@@ -459,135 +456,113 @@ void
 RTCPReceiver::HandleReportBlock(const RTCPUtility::RTCPPacket& rtcpPacket,
                                 RTCPPacketInformation& rtcpPacketInformation,
                                 const WebRtc_UWord32 remoteSSRC,
-                                const WebRtc_UWord8 numberOfReportBlocks)
-{
-    // this will be called once per report block in the RTCP packet
-    // we store all incoming reports
-    // each packet has max 31 RR blocks
-    //
-    // we can calc RTT if we send a send report and get a report block back
+                                const WebRtc_UWord8 numberOfReportBlocks) {
+  // This will be called once per report block in the RTCP packet.
+  // We filter out all report blocks that are not for us.
+  // Each packet has max 31 RR blocks.
+  //
+  // We can calc RTT if we send a send report and get a report block back.
 
-    /*
-        rtcpPacket.ReportBlockItem.SSRC
-        The SSRC identifier of the source to which the information in this
-        reception report block pertains.
-    */
+  // |rtcpPacket.ReportBlockItem.SSRC| is the SSRC identifier of the source to
+  // which the information in this reception report block pertains.
 
-    // if we receive a RTCP packet with multiple reportBlocks only store the ones to us
-    if( _SSRC &&
-        numberOfReportBlocks > 1)
-    {
-        // we have more than one reportBlock in the RTCP packet
-        if(rtcpPacket.ReportBlockItem.SSRC != _SSRC)
-        {
-            // this block is not for us ignore it
-            return;
-        }
+  // Filter out all report blocks that are not for us.
+  if (rtcpPacket.ReportBlockItem.SSRC != _SSRC) {
+    // This block is not for us ignore it.
+    return;
+  }
+
+  // To avoid problem with acquiring _criticalSectionRTCPSender while holding
+  // _criticalSectionRTCPReceiver.
+  _criticalSectionRTCPReceiver->Leave();
+  WebRtc_UWord32 sendTimeMS =
+      _rtpRtcp.SendTimeOfSendReport(rtcpPacket.ReportBlockItem.LastSR);
+  _criticalSectionRTCPReceiver->Enter();
+
+  RTCPReportBlockInformation* reportBlock =
+      CreateReportBlockInformation(remoteSSRC);
+  if (reportBlock == NULL) {
+    WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
+                 "\tfailed to CreateReportBlockInformation(%u)", remoteSSRC);
+    return;
+  }
+  const RTCPPacketReportBlockItem& rb = rtcpPacket.ReportBlockItem;
+  reportBlock->remoteReceiveBlock.remoteSSRC = remoteSSRC;
+  reportBlock->remoteReceiveBlock.sourceSSRC = rb.SSRC;
+  reportBlock->remoteReceiveBlock.fractionLost = rb.FractionLost;
+  reportBlock->remoteReceiveBlock.cumulativeLost =
+      rb.CumulativeNumOfPacketsLost;
+  reportBlock->remoteReceiveBlock.extendedHighSeqNum =
+      rb.ExtendedHighestSequenceNumber;
+  reportBlock->remoteReceiveBlock.jitter = rb.Jitter;
+  reportBlock->remoteReceiveBlock.delaySinceLastSR = rb.DelayLastSR;
+  reportBlock->remoteReceiveBlock.lastSR = rb.LastSR;
+
+  if (rtcpPacket.ReportBlockItem.Jitter > reportBlock->remoteMaxJitter) {
+    reportBlock->remoteMaxJitter = rtcpPacket.ReportBlockItem.Jitter;
+  }
+
+  WebRtc_UWord32 delaySinceLastSendReport =
+      rtcpPacket.ReportBlockItem.DelayLastSR;
+
+  // local NTP time when we received this
+  WebRtc_UWord32 lastReceivedRRNTPsecs = 0;
+  WebRtc_UWord32 lastReceivedRRNTPfrac = 0;
+
+  _clock.CurrentNTP(lastReceivedRRNTPsecs, lastReceivedRRNTPfrac);
+
+  // time when we received this in MS
+  WebRtc_UWord32 receiveTimeMS = ModuleRTPUtility::ConvertNTPTimeToMS(
+      lastReceivedRRNTPsecs, lastReceivedRRNTPfrac);
+
+  // Estimate RTT
+  WebRtc_UWord32 d = (delaySinceLastSendReport & 0x0000ffff) * 1000;
+  d /= 65536;
+  d += ((delaySinceLastSendReport & 0xffff0000) >> 16) * 1000;
+
+  WebRtc_Word32 RTT = 0;
+
+  if (sendTimeMS > 0) {
+    RTT = receiveTimeMS - d - sendTimeMS;
+    if (RTT <= 0) {
+      RTT = 1;
     }
-
-    _criticalSectionRTCPReceiver->Leave();
-     // to avoid problem with accuireing _criticalSectionRTCPSender while holding _criticalSectionRTCPReceiver
-
-    WebRtc_UWord32 sendTimeMS = 
-        _rtpRtcp.SendTimeOfSendReport(rtcpPacket.ReportBlockItem.LastSR);
-
-    _criticalSectionRTCPReceiver->Enter();
-
-    // ReportBlockItem.SSRC is who it's to
-    // we store all incoming reports, used in conference relay
-
-    RTCPReportBlockInformation* reportBlock = CreateReportBlockInformation(remoteSSRC);
-    if(reportBlock == NULL)
-    {
-        return;
+    if (RTT > reportBlock->maxRTT) {
+      // store max RTT
+      reportBlock->maxRTT = (WebRtc_UWord16) RTT;
     }
-
-    reportBlock->remoteReceiveBlock.fractionLost      = rtcpPacket.ReportBlockItem.FractionLost;
-    reportBlock->remoteReceiveBlock.cumulativeLost    = rtcpPacket.ReportBlockItem.CumulativeNumOfPacketsLost;
-    reportBlock->remoteReceiveBlock.extendedHighSeqNum= rtcpPacket.ReportBlockItem.ExtendedHighestSequenceNumber;
-    reportBlock->remoteReceiveBlock.jitter            = rtcpPacket.ReportBlockItem.Jitter;
-    reportBlock->remoteReceiveBlock.delaySinceLastSR  = rtcpPacket.ReportBlockItem.DelayLastSR;
-    reportBlock->remoteReceiveBlock.lastSR            = rtcpPacket.ReportBlockItem.LastSR;
-
-    if(rtcpPacket.ReportBlockItem.Jitter > reportBlock->remoteMaxJitter)
-    {
-        reportBlock->remoteMaxJitter = rtcpPacket.ReportBlockItem.Jitter;
+    if (reportBlock->minRTT == 0) {
+      // first RTT
+      reportBlock->minRTT = (WebRtc_UWord16) RTT;
+    } else if (RTT < reportBlock->minRTT) {
+      // Store min RTT
+      reportBlock->minRTT = (WebRtc_UWord16) RTT;
     }
+    // store last RTT
+    reportBlock->RTT = (WebRtc_UWord16) RTT;
 
-    WebRtc_UWord32 delaySinceLastSendReport   = rtcpPacket.ReportBlockItem.DelayLastSR;
-
-    // do we have a local SSRC
-    // keep track of our relayed SSRC too
-    if(_SSRC)
-    {
-        // we filter rtcpPacket.ReportBlockItem.SSRC to our SSRC
-        // hence only reports to us
-        if( rtcpPacket.ReportBlockItem.SSRC == _SSRC)
-        {
-            // local NTP time when we received this
-            WebRtc_UWord32 lastReceivedRRNTPsecs = 0;
-            WebRtc_UWord32 lastReceivedRRNTPfrac = 0;
-
-            _clock.CurrentNTP(lastReceivedRRNTPsecs, lastReceivedRRNTPfrac);
-
-            // time when we received this in MS
-            WebRtc_UWord32 receiveTimeMS = ModuleRTPUtility::ConvertNTPTimeToMS(lastReceivedRRNTPsecs, lastReceivedRRNTPfrac);
-
-            // Estimate RTT
-            WebRtc_UWord32 d =(delaySinceLastSendReport&0x0000ffff)*1000;
-            d /= 65536;
-            d+=((delaySinceLastSendReport&0xffff0000)>>16)*1000;
-
-            WebRtc_Word32 RTT = 0;
-
-            if(sendTimeMS > 0)
-            {
-                RTT = receiveTimeMS - d - sendTimeMS;
-                if( RTT <= 0)
-                {
-                    RTT = 1;
-                }
-                if (RTT > reportBlock->maxRTT)
-                {
-                    // store max RTT
-                    reportBlock->maxRTT = (WebRtc_UWord16)RTT;
-                }
-                if(reportBlock->minRTT == 0)
-                {
-                    // first RTT
-                    reportBlock->minRTT = (WebRtc_UWord16)RTT;
-                }else if (RTT < reportBlock->minRTT)
-                {
-                    // Store min RTT
-                    reportBlock->minRTT = (WebRtc_UWord16)RTT;
-                }
-                // store last RTT
-                reportBlock->RTT = (WebRtc_UWord16)RTT;
-
-                // store average RTT
-                if(reportBlock->numAverageCalcs != 0)
-                {
-                    float ac = static_cast<float>(reportBlock->numAverageCalcs);
-                    float newAverage = ((ac / (ac + 1)) * reportBlock->avgRTT) + ((1 / (ac + 1)) * RTT);
-                    reportBlock->avgRTT = static_cast<int>(newAverage + 0.5f);
-                }else
-                {
-                    // first RTT
-                    reportBlock->avgRTT = (WebRtc_UWord16)RTT;
-                }
-                reportBlock->numAverageCalcs++;
-            }
-
-            WEBRTC_TRACE(kTraceDebug, kTraceRtpRtcp, _id,
-                " -> Received report block(%d), from SSRC:0x%x, RTT:%d, loss:%d", _id, remoteSSRC, RTT, rtcpPacket.ReportBlockItem.FractionLost);
-
-            // rtcpPacketInformation
-            rtcpPacketInformation.AddReportInfo(reportBlock->remoteReceiveBlock.fractionLost,
-                                                (WebRtc_UWord16)RTT,
-                                                reportBlock->remoteReceiveBlock.extendedHighSeqNum,
-                                                reportBlock->remoteReceiveBlock.jitter);
-        }
+    // store average RTT
+    if (reportBlock->numAverageCalcs != 0) {
+      float ac = static_cast<float> (reportBlock->numAverageCalcs);
+      float newAverage = ((ac / (ac + 1)) * reportBlock->avgRTT)
+          + ((1 / (ac + 1)) * RTT);
+      reportBlock->avgRTT = static_cast<int> (newAverage + 0.5f);
+    } else {
+      // first RTT
+      reportBlock->avgRTT = (WebRtc_UWord16) RTT;
     }
+    reportBlock->numAverageCalcs++;
+  }
+
+  WEBRTC_TRACE(kTraceDebug, kTraceRtpRtcp, _id,
+               " -> Received report block(%d), from SSRC:0x%x, RTT:%d, loss:%d",
+               _id, remoteSSRC, RTT, rtcpPacket.ReportBlockItem.FractionLost);
+
+  // rtcpPacketInformation
+  rtcpPacketInformation.AddReportInfo(
+      reportBlock->remoteReceiveBlock.fractionLost, (WebRtc_UWord16) RTT,
+      reportBlock->remoteReceiveBlock.extendedHighSeqNum,
+      reportBlock->remoteReceiveBlock.jitter);
 }
 
 RTCPReportBlockInformation*

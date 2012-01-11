@@ -1738,13 +1738,11 @@ WebRtc_Word32 ModuleRtpRtcpImpl::RemoteRTCPStat( RTCPSenderInfo* senderInfo)
 }
 
     // received RTCP report
-WebRtc_Word32
-ModuleRtpRtcpImpl::RemoteRTCPStat(const WebRtc_UWord32 remoteSSRC,
-                                  RTCPReportBlock* receiveBlock)
-{
-    WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, _id, "RemoteRTCPStat()");
+WebRtc_Word32 ModuleRtpRtcpImpl::RemoteRTCPStat(
+  std::vector<RTCPReportBlock>* receiveBlocks) const {
+  WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, _id, "RemoteRTCPStat()");
 
-    return _rtcpReceiver.StatisticsReceived(remoteSSRC, receiveBlock);
+  return _rtcpReceiver.StatisticsReceived(receiveBlocks);
 }
 
 WebRtc_Word32

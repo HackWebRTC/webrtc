@@ -170,8 +170,8 @@ class MockRtpRtcp : public RtpRtcp {
       WebRtc_Word32(WebRtc_UWord32 *bytesSent, WebRtc_UWord32 *packetsSent, WebRtc_UWord32 *bytesReceived, WebRtc_UWord32 *packetsReceived));
   MOCK_METHOD1(RemoteRTCPStat,
       WebRtc_Word32(RTCPSenderInfo* senderInfo));
-  MOCK_METHOD2(RemoteRTCPStat,
-      WebRtc_Word32(const WebRtc_UWord32 remoteSSRC, RTCPReportBlock* receiveBlock));
+  MOCK_CONST_METHOD1(RemoteRTCPStat,
+      WebRtc_Word32(std::vector<RTCPReportBlock>* receiveBlocks));
   MOCK_METHOD2(AddRTCPReportBlock,
       WebRtc_Word32(const WebRtc_UWord32 SSRC, const RTCPReportBlock* receiveBlock));
   MOCK_METHOD1(RemoveRTCPReportBlock,

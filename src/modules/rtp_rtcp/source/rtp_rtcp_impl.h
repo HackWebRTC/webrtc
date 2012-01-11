@@ -316,8 +316,8 @@ public:
     virtual WebRtc_Word32 RemoteRTCPStat( RTCPSenderInfo* senderInfo);
 
     // Get received RTCP report, report block
-    virtual WebRtc_Word32 RemoteRTCPStat( const WebRtc_UWord32 remoteSSRC,
-                                        RTCPReportBlock* receiveBlock);
+    virtual WebRtc_Word32 RemoteRTCPStat(
+        std::vector<RTCPReportBlock>* receiveBlocks) const;
 
     // Set received RTCP report block
     virtual WebRtc_Word32 AddRTCPReportBlock(const WebRtc_UWord32 SSRC,

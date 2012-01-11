@@ -11,6 +11,7 @@
 #include "video_engine/vie_channel.h"
 
 #include <algorithm>
+#include <vector>
 
 #include "modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "modules/udp_transport/interface/udp_transport.h"
@@ -941,16 +942,36 @@ WebRtc_Word32 ViEChannel::GetSendRtcpStatistics(WebRtc_UWord16& fraction_lost,
   //   RtpRtcp* rtp_rtcp = *it;
   // }
   WebRtc_UWord32 remoteSSRC = rtp_rtcp_.RemoteSSRC();
-  RTCPReportBlock remote_stat;
-  if (rtp_rtcp_.RemoteRTCPStat(remoteSSRC, &remote_stat) != 0) {
+
+  // Get all RTCP receiver report blocks that have been received on this
+  // channel. If we receive RTP packets from a remote source we know the
+  // remote SSRC and use the report block from him.
+  // Otherwise use the first report block.
+  std::vector<RTCPReportBlock> remote_stats;
+  if (rtp_rtcp_.RemoteRTCPStat(&remote_stats) != 0 || remote_stats.empty()) {
     WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(engine_id_, channel_id_),
                  "%s: Could not get remote stats", __FUNCTION__);
     return -1;
   }
-  fraction_lost = remote_stat.fractionLost;
-  cumulative_lost = remote_stat.cumulativeLost;
-  extended_max = remote_stat.extendedHighSeqNum;
-  jitter_samples = remote_stat.jitter;
+  std::vector<RTCPReportBlock>::const_iterator statistics =
+      remote_stats.begin();
+  for (; statistics != remote_stats.end(); ++statistics) {
+    if (statistics->remoteSSRC == remoteSSRC)
+      break;
+  }
+
+  if (statistics == remote_stats.end()) {
+    // If we have not received any RTCP packets from this SSRC it probably means
+    // we have not received any RTP packets.
+    // Use the first received report block instead.
+    statistics = remote_stats.begin();
+    remoteSSRC = statistics->remoteSSRC;
+  }
+
+  fraction_lost = statistics->fractionLost;
+  cumulative_lost = statistics->cumulativeLost;
+  extended_max = statistics->extendedHighSeqNum;
+  jitter_samples = statistics->jitter;
 
   WebRtc_UWord16 dummy;
   WebRtc_UWord16 rtt = 0;

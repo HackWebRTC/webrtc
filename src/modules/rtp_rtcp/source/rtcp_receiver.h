@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_RECEIVER_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_RECEIVER_H_
 
+#include <vector>
+
 #include "typedefs.h"
 #include "map_wrapper.h"
 #include "rtp_utility.h"
@@ -81,8 +83,9 @@ public:
         const WebRtc_UWord64 pitureID) const;
 
     // get statistics
-    WebRtc_Word32 StatisticsReceived(const WebRtc_UWord32 remoteSSRC,
-                                     RTCPReportBlock* receiveBlock) const;
+    WebRtc_Word32 StatisticsReceived(
+        std::vector<RTCPReportBlock>* receiveBlocks) const;
+
     // Get TMMBR
     WebRtc_Word32 TMMBRReceived(const WebRtc_UWord32 size,
                                 const WebRtc_UWord32 accNumCandidates,

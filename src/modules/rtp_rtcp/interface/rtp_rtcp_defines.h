@@ -109,6 +109,9 @@ struct RTCPSenderInfo
 
 struct RTCPReportBlock
 {
+  // Fields as described by RFC 3550 6.4.2.
+    WebRtc_UWord32 remoteSSRC;  // SSRC of sender of this report.
+    WebRtc_UWord32 sourceSSRC;  // SSRC of the RTP packet sender.
     WebRtc_UWord8 fractionLost;
     WebRtc_UWord32 cumulativeLost;  // 24 bits valid
     WebRtc_UWord32 extendedHighSeqNum;

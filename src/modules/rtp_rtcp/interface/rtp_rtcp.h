@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_RTCP_H_
 #define WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_RTCP_H_
 
+#include <vector>
+
 #include "module.h"
 #include "rtp_rtcp_defines.h"
 
@@ -740,22 +742,23 @@ public:
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 RemoteRTCPStat( RTCPSenderInfo* senderInfo) = 0;
+    virtual WebRtc_Word32 RemoteRTCPStat(RTCPSenderInfo* senderInfo) = 0;
 
     /*
     *   Get received RTCP report block
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 RemoteRTCPStat( const WebRtc_UWord32 remoteSSRC,
-                                        RTCPReportBlock* receiveBlock) = 0;
+    virtual WebRtc_Word32 RemoteRTCPStat(
+        std::vector<RTCPReportBlock>* receiveBlocks) const = 0;
     /*
     *   Set received RTCP report block
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 AddRTCPReportBlock(const WebRtc_UWord32 SSRC,
-                                           const RTCPReportBlock* receiveBlock) = 0;
+    virtual WebRtc_Word32 AddRTCPReportBlock(
+        const WebRtc_UWord32 SSRC,
+        const RTCPReportBlock* receiveBlock) = 0;
 
     /*
     *   RemoveRTCPReportBlock
