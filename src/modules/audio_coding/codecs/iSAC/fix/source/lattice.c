@@ -99,7 +99,7 @@ void WebRtcIsacfix_NormLatticeFilterMa(WebRtc_Word16 orderCoef,
   WebRtc_Word16 sthQ15[MAX_AR_MODEL_ORDER];
   WebRtc_Word16 cthQ15[MAX_AR_MODEL_ORDER];
 
-  int u, i, ii, k, n;
+  int u, i, k, n;
   WebRtc_Word16 temp2,temp3;
   WebRtc_Word16 ord_1 = orderCoef+1;
   WebRtc_Word32 inv_cthQ16[MAX_AR_MODEL_ORDER];
@@ -223,7 +223,7 @@ void WebRtcIsacfix_NormLatticeFilterAr(WebRtc_Word16 orderCoef,
   int ii,n,k,i,u;
   WebRtc_Word16 sthQ15[MAX_AR_MODEL_ORDER];
   WebRtc_Word16 cthQ15[MAX_AR_MODEL_ORDER];
-  WebRtc_Word32 tmp32, tmp32_2;
+  WebRtc_Word32 tmp32;
 
 
   WebRtc_Word16 tmpAR;
