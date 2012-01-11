@@ -189,9 +189,7 @@ inline int ChannelId(const int moduleId)
 	//  Build information macros
 	#define TEXT(x) x
 	#if defined(_DEBUG)
-		#define BUILDM//#define webrtc::kFileFormatAviFile 3
-//#define __LINUX__ // needed for InterObjects
-ODE TEXT("d")
+    #define BUILDMODE TEXT("d")
 	#elif defined(DEBUG)
 		#define BUILDMODE TEXT("d")
 	#elif defined(NDEBUG)
@@ -208,9 +206,6 @@ ODE TEXT("d")
 
 	#define RENDER_MODULE_TYPE kRenderWindows
 #endif
-
-//#define webrtc::kFileFormatAviFile 3
-//#define __LINUX__ // needed for InterObjects
 
 //-------------------------------------
 // Linux
