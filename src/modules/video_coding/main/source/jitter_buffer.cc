@@ -1313,7 +1313,7 @@ VCMJitterBuffer::CreateNackList(WebRtc_UWord16& nackSize, bool& listExtended)
 
         while (numberOfSeqNum > kNackHistoryLength)
         {
-          foundKeyFrame = RecycleFramesUntilKeyFrame();
+            foundKeyFrame = RecycleFramesUntilKeyFrame();
 
             if (!foundKeyFrame)
             {
@@ -1356,7 +1356,6 @@ VCMJitterBuffer::CreateNackList(WebRtc_UWord16& nackSize, bool& listExtended)
             // Set the last decoded sequence number to current high.
             // This is to not get a large nack list again right away
             _lastDecodedState.SetSeqNum(static_cast<uint16_t>(highSeqNum));
-            _waitingForKeyFrame = true;
             // Set to trigger key frame signal
             nackSize = 0xffff;
             listExtended = true;
@@ -1747,6 +1746,7 @@ VCMJitterBuffer::RecycleFramesUntilKeyFrame()
             return true;
         }
     }
+    _waitingForKeyFrame = true;
     _lastDecodedState.Reset(); // TODO (mikhal): no sync
     return false;
 }
