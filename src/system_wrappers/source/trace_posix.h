@@ -21,7 +21,6 @@ public:
     TracePosix();
     virtual ~TracePosix();
 
-    virtual WebRtc_Word32 AddThreadId(char *traceMessage) const;
     virtual WebRtc_Word32 AddTime(char* traceMessage,
                                   const TraceLevel level) const;
 

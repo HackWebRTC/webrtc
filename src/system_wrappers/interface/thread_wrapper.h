@@ -16,6 +16,9 @@
 #ifndef WEBRTC_SYSTEM_WRAPPERS_INTERFACE_THREAD_WRAPPER_H_
 #define WEBRTC_SYSTEM_WRAPPERS_INTERFACE_THREAD_WRAPPER_H_
 
+#include "common_types.h"
+#include "typedefs.h"
+
 namespace webrtc {
 // Object that will be passed by the spawned thread when it enters the callback
 // function.
@@ -51,9 +54,12 @@ public:
     // threadName  NULL terminated thread name, will be visable in the Windows
     //             debugger.
     static ThreadWrapper* CreateThread(ThreadRunFunction func = 0,
-                                    ThreadObj obj= 0,
-                                    ThreadPriority prio = kNormalPriority,
-                                    const char* threadName = 0);
+                                       ThreadObj obj= 0,
+                                       ThreadPriority prio = kNormalPriority,
+                                       const char* threadName = 0);
+
+    // Get the current thread's kernel thread ID.
+    static uint32_t GetThreadId();
 
     // Non blocking termination of the spawned thread. Note that it is not safe
     // to delete this class until the spawned thread has been reclaimed.
@@ -69,8 +75,9 @@ public:
     // should be lower than (number of CPUs - 1). amountOfProcessors should be
     // equal to the number of processors listed in processorNumbers
     virtual bool SetAffinity(const int* /*processorNumbers*/,
-                             const unsigned int /*amountOfProcessors*/)
-                            {return false;}
+                             const unsigned int /*amountOfProcessors*/) {
+      return false;
+    }
 
     // Stops the spawned thread and waits for it to be reclaimed with a timeout
     // of two seconds. Will return false if the thread was not reclaimed.

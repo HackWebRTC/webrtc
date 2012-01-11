@@ -22,6 +22,10 @@
 #include <sys/prctl.h>
 #endif
 
+#if defined(WEBRTC_MAC)
+#include <mach/mach.h>
+#endif
+
 #include "event_wrapper.h"
 #include "trace.h"
 
@@ -34,17 +38,6 @@ extern "C"
         return 0;
     }
 }
-
-#if (defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID))
-static pid_t gettid()
-{
-#if defined(__NR_gettid)
-    return  syscall(__NR_gettid);
-#else
-    return -1;
-#endif
-}
-#endif
 
 ThreadWrapper* ThreadPosix::Create(ThreadRunFunction func, ThreadObj obj,
                                    ThreadPriority prio, const char* threadName)
@@ -71,16 +64,24 @@ ThreadPosix::ThreadPosix(ThreadRunFunction func, ThreadObj obj,
       _dead(true),
       _prio(prio),
       _event(EventWrapper::Create()),
-      _setThreadName(false)
+      _setThreadName(false),
+      _pid(-1)
 {
-#ifdef WEBRTC_LINUX
-    _linuxPid = -1;
-#endif
     if (threadName != NULL)
     {
         _setThreadName = true;
         strncpy(_name, threadName, kThreadMaxNameLength);
     }
+}
+
+uint32_t ThreadWrapper::GetThreadId() {
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_LINUX)
+  return static_cast<uint32_t>(syscall(__NR_gettid));
+#elif defined(WEBRTC_MAC)
+  return static_cast<uint32_t>(mach_thread_self());
+#else
+  return reinterpret_cast<uint32_t>(pthread_self());
+#endif
 }
 
 int ThreadPosix::Construct()
@@ -104,7 +105,6 @@ int ThreadPosix::Construct()
     {
         return -1;
     }
-
     return 0;
 }
 
@@ -191,33 +191,38 @@ bool ThreadPosix::Start(unsigned int& /*threadID*/)
     return true;
 }
 
-#if (defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID))
+#if (defined(WEBRTC_LINUX) || defined(WEBRTC_ANDROID))
 bool ThreadPosix::SetAffinity(const int* processorNumbers,
-                              const unsigned int amountOfProcessors)
-{
-    if (!processorNumbers || (amountOfProcessors == 0))
-    {
-        return false;
-    }
+                              const unsigned int amountOfProcessors) {
+  if (!processorNumbers || (amountOfProcessors == 0)) {
+    return false;
+  }
+  cpu_set_t mask;
+  CPU_ZERO(&mask);
 
-    cpu_set_t mask;
-    CPU_ZERO(&mask);
-
-    for(unsigned int processor = 0;
-        processor < amountOfProcessors;
-        processor++)
-    {
-        CPU_SET(processorNumbers[processor], &mask);
-    }
-    const int result = sched_setaffinity(_linuxPid, (unsigned int)sizeof(mask),
-                                         &mask);
-    if (result != 0)
-    {
-        return false;
-
-    }
-    return true;
+  for (unsigned int processor = 0;
+      processor < amountOfProcessors;
+      processor++) {
+    CPU_SET(processorNumbers[processor], &mask);
+  }
+#if defined(WEBRTC_ANDROID)
+  // Android.
+  const int result = syscall(__NR_sched_setaffinity,
+                             _pid,
+                             sizeof(mask),
+                             &mask);
+#else
+  // "Normal" Linux.
+  const int result = sched_setaffinity(_pid,
+                                       sizeof(mask),
+                                       &mask);
+#endif
+  if (result != 0) {
+    return false;
+  }
+  return true;
 }
+
 #else
 // NOTE: On Mac OS X, use the Thread affinity API in
 // /usr/include/mach/thread_policy.h: thread_policy_set and mach_thread_self()
@@ -274,34 +279,21 @@ void ThreadPosix::Run()
 {
     _alive = true;
     _dead  = false;
-#ifdef WEBRTC_LINUX
-    if(_linuxPid == -1)
-    {
-        _linuxPid = gettid();
-    }
-#endif
+    _pid = GetThreadId();
     // The event the Start() is waiting for.
     _event->Set();
 
     if (_setThreadName)
     {
 #ifdef WEBRTC_LINUX
-        WEBRTC_TRACE(kTraceStateInfo, kTraceUtility,-1,
-                     "Thread with id:%d name:%s started ", _linuxPid, _name);
         prctl(PR_SET_NAME, (unsigned long)_name, 0, 0, 0);
-#else
+#endif
         WEBRTC_TRACE(kTraceStateInfo, kTraceUtility,-1,
                      "Thread with name:%s started ", _name);
-#endif
-    }else
+    } else
     {
-#ifdef WEBRTC_LINUX
-        WEBRTC_TRACE(kTraceStateInfo, kTraceUtility, -1,
-                     "Thread with id:%d without name started", _linuxPid);
-#else
         WEBRTC_TRACE(kTraceStateInfo, kTraceUtility, -1,
                      "Thread without name started");
-#endif
     }
     do
     {

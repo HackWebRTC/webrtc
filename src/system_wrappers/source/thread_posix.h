@@ -59,10 +59,7 @@ private:
     // handle to thread
     pthread_attr_t          _attr;
     pthread_t               _thread;
-#ifdef WEBRTC_LINUX
-    pid_t                   _linuxPid;
-#endif
-
+    pid_t                   _pid;
 };
 } // namespace webrtc
 

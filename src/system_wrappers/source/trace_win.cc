@@ -41,14 +41,6 @@ TraceWindows::~TraceWindows()
     StopThread();
 }
 
-WebRtc_Word32 TraceWindows::AddThreadId(char* traceMessage) const
-{
-    WebRtc_UWord32 threadId= GetCurrentThreadId();
-    sprintf (traceMessage, "%10u; ", threadId);
-    // Messages is 12 characters.
-    return 12;
-}
-
 WebRtc_Word32 TraceWindows::AddTime(char* traceMessage,
                                     const TraceLevel level) const
 {

@@ -20,9 +20,8 @@ class TraceWindows : public TraceImpl
 {
 public:
     TraceWindows();
-      virtual ~TraceWindows();
+    virtual ~TraceWindows();
 
-    virtual WebRtc_Word32 AddThreadId(char *traceMessage) const;
     virtual WebRtc_Word32 AddTime(char* traceMessage,
                                   const TraceLevel level) const;
 

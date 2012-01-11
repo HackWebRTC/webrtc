@@ -68,6 +68,10 @@ ThreadWindows::~ThreadWindows()
     }
 }
 
+uint32_t ThreadWrapper::GetThreadId() {
+  return GetCurrentThreadId();
+}
+
 unsigned int WINAPI ThreadWindows::StartThread(LPVOID lpParameter)
 {
     static_cast<ThreadWindows*>(lpParameter)->Run();

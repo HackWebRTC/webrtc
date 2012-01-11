@@ -147,6 +147,12 @@ TraceImpl::~TraceImpl()
     }
 }
 
+WebRtc_Word32 TraceImpl::AddThreadId(char* traceMessage) const {
+  WebRtc_UWord32 threadId = ThreadWrapper::GetThreadId();
+  // Messages is 12 characters.
+  return sprintf(traceMessage, "%10u; ", threadId);
+}
+
 WebRtc_Word32 TraceImpl::AddLevel(char* szMessage, const TraceLevel level) const
 {
     switch (level)
@@ -637,7 +643,7 @@ void TraceImpl::AddImpl(const TraceLevel level, const TraceModule module,
         ackLen += len;
 
         len = AddThreadId(meassagePtr);
-        if(len == -1)
+        if(len < 0)
         {
             return;
         }

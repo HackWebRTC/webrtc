@@ -69,8 +69,9 @@ protected:
     static TraceImpl* StaticInstance(CountOperation count_operation,
         const TraceLevel level = kTraceAll);
 
+    WebRtc_Word32 AddThreadId(char* traceMessage) const;
+
     // OS specific implementations
-    virtual WebRtc_Word32 AddThreadId(char* traceMessage) const = 0;
     virtual WebRtc_Word32 AddTime(char* traceMessage,
                                   const TraceLevel level) const = 0;
 
