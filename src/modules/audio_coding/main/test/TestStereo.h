@@ -65,9 +65,10 @@ private:
         char* codecName, 
         WebRtc_Word32 sampFreqHz,
         int rate,
-        int packSize);
+        int packSize,
+        int channels);
 
-    void Run(TestPackStereo* channel);
+    void Run(TestPackStereo* channel, int in_channels, int out_channels);
     void OpenOutFile(WebRtc_Word16 testNumber);
     void DisplaySendReceiveCodec();
 
@@ -86,9 +87,9 @@ private:
 
     TestPackStereo*        _channelA2B;
 
-    PCMFile                _inFileA;
+    PCMFile                _in_file_stereo;
+    PCMFile                _in_file_mono;
     PCMFile                _outFileB;
-    PCMFile                _inFileStereo;
     WebRtc_Word16          _testCntr;
     WebRtc_UWord16         _packSizeSamp;
     WebRtc_UWord16         _packSizeBytes;

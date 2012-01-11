@@ -54,6 +54,8 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(
     _dtxEnabled(false),
     _vadMode(VADNormal),
     _stereoSend(false),
+    _prev_received_channel(0),
+    _expected_channels(1),
     _currentSendCodecIdx(-1),    // invalid value
     _sendCodecRegistered(false),
     _acmCritSect(CriticalSectionWrapper::CreateCriticalSection()),
@@ -806,7 +808,7 @@ mono codecs are supported, i.e. channels=1.", sendCodec.channels);
             // could not initialize the encoder
 
             // Check if already have a registered codec
-            // Depending on that differet messages are logged
+            // Depending on that different messages are logged
             if(!_sendCodecRegistered)
             {
                 _currentSendCodecIdx = -1;     // invalid value
@@ -1154,9 +1156,35 @@ match");
     bool resamplingRequired =
         ((WebRtc_Word32)audioFrame._frequencyInHz != _sendCodecInst.plfreq);
 
+    // If number of channels in audio doesn't match codec mode, we need
+    // either mono-to-stereo or stereo-to-mono conversion.
+    WebRtc_Word16 audio[WEBRTC_10MS_PCM_AUDIO];
+    int audio_channels = _sendCodecInst.channels;
+    if (audioFrame._audioChannel != _sendCodecInst.channels) {
+      if (_sendCodecInst.channels == 2) {
+        // Do mono-to-stereo conversion by copying each sample.
+        for (int k = 0; k < audioFrame._payloadDataLengthInSamples; k++) {
+          audio[k * 2] = audioFrame._payloadData[k];
+          audio[(k * 2) + 1] = audioFrame._payloadData[k];
+        }
+      } else if (_sendCodecInst.channels == 1) {
+        // Do stereo-to-mono conversion by creating the average of the stereo
+        // samples.
+        for (int k = 0; k < audioFrame._payloadDataLengthInSamples; k++) {
+          audio[k] = (audioFrame._payloadData[k * 2] +
+              audioFrame._payloadData[(k * 2) + 1]) >> 1;
+        }
+      }
+    } else {
+      // Copy payload data for future use.
+      memcpy(audio, audioFrame._payloadData,
+             audioFrame._payloadDataLengthInSamples * audio_channels *
+             sizeof(WebRtc_UWord16));
+    }
+
     WebRtc_UWord32 currentTimestamp;
     WebRtc_Word32 status;
-    // if it is required, we have to do a resampling
+    // if it is required, we have to do a resampling.
     if(resamplingRequired)
     {
         WebRtc_Word16 resampledAudio[WEBRTC_10MS_PCM_AUDIO];
@@ -1179,8 +1207,8 @@ match");
             ((double)_sendCodecInst.plfreq / (double)audioFrame._frequencyInHz));
 
          newLengthSmpl = _inputResampler.Resample10Msec(
-            audioFrame._payloadData, audioFrame._frequencyInHz,
-            resampledAudio, sendPlFreq, _sendCodecInst.channels);
+             audio, audioFrame._frequencyInHz, resampledAudio, sendPlFreq,
+             audio_channels);
 
         if(newLengthSmpl < 0)
         {
@@ -1189,15 +1217,15 @@ match");
             return -1;
         }
         status = _codecs[_currentSendCodecIdx]->Add10MsData(currentTimestamp,
-            resampledAudio, newLengthSmpl, audioFrame._audioChannel);
+            resampledAudio, newLengthSmpl, audio_channels);
     }
     else
     {
         currentTimestamp = audioFrame._timeStamp;
 
         status = _codecs[_currentSendCodecIdx]->Add10MsData(currentTimestamp,
-            audioFrame._payloadData, audioFrame._payloadDataLengthInSamples,
-            audioFrame._audioChannel);
+            audio, audioFrame._payloadDataLengthInSamples,
+            audio_channels);
     }
     _lastInTimestamp = audioFrame._timeStamp;
     _lastTimestamp = currentTimestamp;
@@ -1773,10 +1801,6 @@ AudioCodingModuleImpl::IncomingPacket(
                 // we are going to use ONE iSAC instance for decoding both WB and
                 // SWB payloads. If payload is changed there might be a need to reset
                 // sampling rate of decoder. depending what we have received "now".
-                // TODO (tlegrand): Change or remove the following comment
-                // I cannot use the function that BV has written, i.e.
-                // "DecoderParamByPlType()" as for iSAC there is one instance and
-                // multiple payloads.
                 for(int i = 0; i < ACMCodecDB::kMaxNumCodecs; i++)
                 {
                     if(_registeredPlTypes[i] == myPayloadType)
@@ -1792,6 +1816,16 @@ AudioCodingModuleImpl::IncomingPacket(
                         }
                         _codecs[i]->UpdateDecoderSampFreq(i);
                         _netEq.SetReceivedStereo(_stereoReceive[i]);
+
+                        // Store number of channels we expect to receive for the
+                        // current payload type.
+                        if (_stereoReceive[i]) {
+                          _expected_channels = 2;
+                        }
+
+                        // Reset previous received channel
+                        _prev_received_channel = 0;
+
                         break;
                     }
                 }
@@ -1800,6 +1834,27 @@ AudioCodingModuleImpl::IncomingPacket(
         }
     }
 
+    // Check that number of received channels match the setup for the
+    // received codec.
+    if (_expected_channels == 2) {
+      if ((_prev_received_channel == 1) && (rtpInfo.type.Audio.channel == 1)) {
+        // We expect every second call to this function to be for channel 2,
+        // since we are in stereo-receive mode.
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
+                    "IncomingPacket() Error, payload is"
+                    "mono, but codec registered as stereo.");
+        return -1;
+      }
+      _prev_received_channel = rtpInfo.type.Audio.channel;
+    } else if (rtpInfo.type.Audio.channel == 2) {
+      // Codec is registered as mono, but we receive a stereo packet.
+      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
+                   "IncomingPacket() Error, payload is"
+                   "stereo, but codec registered as mono.");
+      return -1;
+    }
+
+    // Insert packet into NetEQ.
     return _netEq.RecIn(incomingPayload, payloadLength, rtpInfo);
 }
 

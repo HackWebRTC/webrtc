@@ -326,6 +326,8 @@ private:
     WebRtc_Word16                  _mirrorCodecIdx[ACMCodecDB::kMaxNumCodecs];
     bool                           _stereoReceive[ACMCodecDB::kMaxNumCodecs];
     bool                           _stereoSend;
+    int                            _prev_received_channel;
+    int                            _expected_channels;
     WebRtc_Word32                  _currentSendCodecIdx;
     bool                           _sendCodecRegistered;
     ACMResampler                   _inputResampler;
