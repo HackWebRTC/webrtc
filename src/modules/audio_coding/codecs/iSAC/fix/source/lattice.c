@@ -35,6 +35,16 @@
    case when  method 1) gave 650235648 and 2) gave 650235712.
 */
 
+/* Function prototype: filtering ar_g_Q0[] and ar_f_Q0[] through an AR filter
+   with coefficients cth_Q15[] and sth_Q15[].
+   Implemented for both generic and ARMv7 platforms.
+ */
+void WebRtcIsacfix_FilterArLoop(int16_t* ar_g_Q0,
+                                int16_t* ar_f_Q0,
+                                int16_t* cth_Q15,
+                                int16_t* sth_Q15,
+                                int16_t order_coef);
+
 /* Inner loop used for function WebRtcIsacfix_NormLatticeFilterMa().
    It does:
    for 0 <= n < HALF_SUBFRAMELEN - 1:
@@ -107,14 +117,14 @@ void WebRtcIsacfix_NormLatticeFilterMa(WebRtc_Word16 orderCoef,
 
   for (u=0;u<SUBFRAMES;u++)
   {
+    int32_t temp1 = WEBRTC_SPL_MUL_16_16(u, HALF_SUBFRAMELEN);
+
     /* set the Direct Form coefficients */
     temp2 = (WebRtc_Word16)WEBRTC_SPL_MUL_16_16(u, orderCoef);
     temp3 = (WebRtc_Word16)WEBRTC_SPL_MUL_16_16(2, u)+lo_hi;
 
     /* compute lattice filter coefficients */
-    for (ii=0; ii<orderCoef; ii++) {
-      sthQ15[ii] = filt_coefQ15[temp2+ii];
-    }
+    memcpy(sthQ15, &filt_coefQ15[temp2], orderCoef * sizeof(WebRtc_Word16));
 
     WebRtcSpl_SqrtOfOneMinusXSquared(sthQ15, orderCoef, cthQ15);
 
@@ -136,8 +146,8 @@ void WebRtcIsacfix_NormLatticeFilterMa(WebRtc_Word16 orderCoef,
     /* initial conditions */
     for (i=0;i<HALF_SUBFRAMELEN;i++)
     {
-      fQ15vec[i] = WEBRTC_SPL_LSHIFT_W32((WebRtc_Word32)lat_inQ0[i + WEBRTC_SPL_MUL_16_16(u, HALF_SUBFRAMELEN)], 15); //Q15
-      gQ15[0][i] = WEBRTC_SPL_LSHIFT_W32((WebRtc_Word32)lat_inQ0[i + WEBRTC_SPL_MUL_16_16(u, HALF_SUBFRAMELEN)], 15); //Q15
+      fQ15vec[i] = WEBRTC_SPL_LSHIFT_W32((WebRtc_Word32)lat_inQ0[i + temp1], 15); //Q15
+      gQ15[0][i] = WEBRTC_SPL_LSHIFT_W32((WebRtc_Word32)lat_inQ0[i + temp1], 15); //Q15
     }
 
 
@@ -182,7 +192,7 @@ void WebRtcIsacfix_NormLatticeFilterMa(WebRtc_Word16 orderCoef,
       tmp32 = WEBRTC_SPL_MUL_16_32_RSFT16(gain16, fQ15vec[n]); //Q(1+gain_sh)*Q15>>16 = Q(gain_sh)
       sh = 9-gain_sh; //number of needed shifts to reach Q9
       t16a = (WebRtc_Word16) WEBRTC_SPL_SHIFT_W32(tmp32, sh);
-      lat_outQ9[n + WEBRTC_SPL_MUL_16_16(u, HALF_SUBFRAMELEN)] = t16a;
+      lat_outQ9[n + temp1] = t16a;
     }
 
     /* save the states */
@@ -230,6 +240,8 @@ void WebRtcIsacfix_NormLatticeFilterAr(WebRtc_Word16 orderCoef,
 
   for (u=0;u<SUBFRAMES;u++)
   {
+    int32_t temp1 = WEBRTC_SPL_MUL_16_16(u, HALF_SUBFRAMELEN);
+
     //set the denominator and numerator of the Direct Form
     temp2 = (WebRtc_Word16)WEBRTC_SPL_MUL_16_16(u, orderCoef);
     temp3 = (WebRtc_Word16)WEBRTC_SPL_MUL_16_16(2, u) + lo_hi;
@@ -262,7 +274,7 @@ void WebRtcIsacfix_NormLatticeFilterAr(WebRtc_Word16 orderCoef,
     for (i=0;i<HALF_SUBFRAMELEN;i++)
     {
 
-      tmp32 = WEBRTC_SPL_LSHIFT_W32(lat_inQ25[i + WEBRTC_SPL_MUL_16_16(u, HALF_SUBFRAMELEN)], 1); //Q25->Q26
+      tmp32 = WEBRTC_SPL_LSHIFT_W32(lat_inQ25[i + temp1], 1); //Q25->Q26
       tmp32 = WEBRTC_SPL_MUL_16_32_RSFT16(inv_gain16, tmp32); //lat_in[]*inv_gain in (Q(18-sh)*Q26)>>16 = Q(28-sh)
       tmp32 = WEBRTC_SPL_SHIFT_W32(tmp32, -(28-sh)); // lat_in[]*inv_gain in Q0
 
@@ -280,23 +292,12 @@ void WebRtcIsacfix_NormLatticeFilterAr(WebRtc_Word16 orderCoef,
     }
     ARgQ0vec[0] = ARfQ0vec[0];
 
-    for(n=0;n<HALF_SUBFRAMELEN-1;n++)
-    {
-      tmpAR = ARfQ0vec[n+1];
-      for(k=orderCoef-1;k>=0;k--)
-      {
-        tmp32 = WEBRTC_SPL_RSHIFT_W32(((WEBRTC_SPL_MUL_16_16(cthQ15[k], tmpAR)) - (WEBRTC_SPL_MUL_16_16(sthQ15[k], ARgQ0vec[k])) + 16384), 15);
-        tmp32_2 = WEBRTC_SPL_RSHIFT_W32(((WEBRTC_SPL_MUL_16_16(sthQ15[k], tmpAR)) + (WEBRTC_SPL_MUL_16_16(cthQ15[k], ARgQ0vec[k])) + 16384), 15);
-        tmpAR   = (WebRtc_Word16)WebRtcSpl_SatW32ToW16(tmp32); // Q0
-        ARgQ0vec[k+1] = (WebRtc_Word16)WebRtcSpl_SatW32ToW16(tmp32_2); // Q0
-      }
-      ARfQ0vec[n+1] = tmpAR;
-      ARgQ0vec[0] = tmpAR;
-    }
+    // Filter ARgQ0vec[] and ARfQ0vec[] through coefficients cthQ15[] and sthQ15[].
+    WebRtcIsacfix_FilterArLoop(ARgQ0vec, ARfQ0vec, cthQ15, sthQ15, orderCoef);
 
     for(n=0;n<HALF_SUBFRAMELEN;n++)
     {
-      lat_outQ0[n + WEBRTC_SPL_MUL_16_16(u, HALF_SUBFRAMELEN)] = ARfQ0vec[n];
+      lat_outQ0[n + temp1] = ARfQ0vec[n];
     }
 
 
