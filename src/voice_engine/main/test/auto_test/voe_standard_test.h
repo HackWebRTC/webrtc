@@ -65,10 +65,10 @@ namespace voetest {
 void createSummary(VoiceEngine* ve);
 void prepareDelivery();
 
-class MyRTPObserver : public VoERTPObserver {
+class TestRtpObserver : public VoERTPObserver {
  public:
-  MyRTPObserver();
-  ~MyRTPObserver();
+  TestRtpObserver();
+  virtual ~TestRtpObserver();
   virtual void OnIncomingCSRCChanged(const int channel,
                                      const unsigned int CSRC,
                                      const bool added);
@@ -76,10 +76,10 @@ class MyRTPObserver : public VoERTPObserver {
                                      const unsigned int SSRC);
   void Reset();
  public:
-  unsigned int _SSRC[2];
-  unsigned int _CSRC[2][2]; // stores 2 SSRCs for each channel
-  bool _added[2][2];
-  int _size[2];
+  unsigned int ssrc_[2];
+  unsigned int csrc_[2][2];  // Stores 2 CSRCs for each channel.
+  bool added_[2][2];
+  int size_[2];
 };
 
 class MyTraceCallback : public TraceCallback {
@@ -103,16 +103,16 @@ class ErrorObserver : public VoiceEngineObserver {
 class RtcpAppHandler : public VoERTCPObserver {
  public:
   void OnApplicationDataReceived(const int channel,
-                                 const unsigned char subType,
+                                 const unsigned char sub_type,
                                  const unsigned int name,
                                  const unsigned char* data,
-                                 const unsigned short dataLengthInBytes);
+                                 const unsigned short length_in_bytes);
   void Reset();
   ~RtcpAppHandler() {}
-  unsigned short _lengthBytes;
-  unsigned char _data[256];
-  unsigned char _subType;
-  unsigned int _name;
+  unsigned short length_in_bytes_;
+  unsigned char data_[256];
+  unsigned char sub_type_;
+  unsigned int name_;
 };
 
 class DtmfCallback : public VoETelephoneEventObserver {
@@ -338,14 +338,9 @@ class VoETestManager {
 #endif
 
  private:
-  int SetUp();
-  int TestHardwareBeforeStreaming();
-  int TestCodecsBeforeStreaming();
-  int TestNetworkBeforeStreaming();
+  int SetUp(ErrorObserver* error_observer);
   int TestStartStreaming(FakeExternalTransport& channel0_transport);
   int TestStartPlaying();
-  int TestNetEq();
-  int TestCodecs();
 
   bool                   initialized_;
 

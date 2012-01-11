@@ -44,6 +44,7 @@
         'auto_test/standard/neteq_test.cc',
         'auto_test/standard/network_before_streaming_test.cc',
         'auto_test/standard/rtp_rtcp_before_streaming_test.cc',
+        'auto_test/standard/rtp_rtcp_test.cc',
         'auto_test/standard/voe_base_misc_test.cc',
         'auto_test/resource_manager.cc',
         'auto_test/voe_cpu_test.cc',

@@ -131,27 +131,27 @@ const char* summaryFilename = "/tmp/VoiceEngineSummary.txt";
 
 int dummy = 0;  // Dummy used in different functions to avoid warnings
 
-MyRTPObserver::MyRTPObserver() {
+TestRtpObserver::TestRtpObserver() {
   Reset();
 }
 
-MyRTPObserver::~MyRTPObserver() {
+TestRtpObserver::~TestRtpObserver() {
 }
 
-void MyRTPObserver::Reset() {
+void TestRtpObserver::Reset() {
   for (int i = 0; i < 2; i++) {
-    _SSRC[i] = 0;
-    _CSRC[i][0] = 0;
-    _CSRC[i][1] = 0;
-    _added[i][0] = false;
-    _added[i][1] = false;
-    _size[i] = 0;
+    ssrc_[i] = 0;
+    csrc_[i][0] = 0;
+    csrc_[i][1] = 0;
+    added_[i][0] = false;
+    added_[i][1] = false;
+    size_[i] = 0;
   }
 }
 
-void MyRTPObserver::OnIncomingCSRCChanged(const int channel,
-                                          const unsigned int CSRC,
-                                          const bool added) {
+void TestRtpObserver::OnIncomingCSRCChanged(const int channel,
+                                            const unsigned int CSRC,
+                                            const bool added) {
   char msg[128];
   sprintf(msg, "=> OnIncomingCSRCChanged(channel=%d, CSRC=%u, added=%d)\n",
           channel, CSRC, added);
@@ -160,22 +160,22 @@ void MyRTPObserver::OnIncomingCSRCChanged(const int channel,
   if (channel > 1)
     return;  // Not enough memory.
 
-  _CSRC[channel][_size[channel]] = CSRC;
-  _added[channel][_size[channel]] = added;
+  csrc_[channel][size_[channel]] = CSRC;
+  added_[channel][size_[channel]] = added;
 
-  _size[channel]++;
-  if (_size[channel] == 2)
-    _size[channel] = 0;
+  size_[channel]++;
+  if (size_[channel] == 2)
+    size_[channel] = 0;
 }
 
-void MyRTPObserver::OnIncomingSSRCChanged(const int channel,
-                                          const unsigned int SSRC) {
+void TestRtpObserver::OnIncomingSSRCChanged(const int channel,
+                                            const unsigned int SSRC) {
   char msg[128];
   sprintf(msg, "\n=> OnIncomingSSRCChanged(channel=%d, SSRC=%u)\n", channel,
           SSRC);
   TEST_LOG("%s", msg);
 
-  _SSRC[channel] = SSRC;
+  ssrc_[channel] = SSRC;
 }
 
 void MyDeadOrAlive::OnPeriodicDeadOrAlive(const int /*channel*/,
@@ -316,24 +316,21 @@ void MyTraceCallback::Print(const TraceLevel level,
 }
 
 void RtcpAppHandler::OnApplicationDataReceived(
-    const int /*channel*/, const unsigned char subType, const unsigned int name,
-    const unsigned char* data, const unsigned short dataLengthInBytes) {
-  _lengthBytes = dataLengthInBytes;
-  memcpy(_data, &data[0], dataLengthInBytes);
-  _subType = subType;
-  _name = name;
+    const int /*channel*/, const unsigned char sub_type,
+    const unsigned int name, const unsigned char* data,
+    const unsigned short length_in_bytes) {
+  length_in_bytes_ = length_in_bytes;
+  memcpy(data_, &data[0], length_in_bytes);
+  sub_type_ = sub_type;
+  name_ = name;
 }
 
 void RtcpAppHandler::Reset() {
-  _lengthBytes = 0;
-  memset(_data, 0, sizeof(_data));
-  _subType = 0;
-  _name = 0;
+  length_in_bytes_ = 0;
+  memset(data_, 0, sizeof(data_));
+  sub_type_ = 0;
+  name_ = 0;
 }
-
-ErrorObserver obs;
-RtcpAppHandler myRtcpAppHandler;
-MyRTPObserver rtpObserver;
 
 void my_encryption::encrypt(int, unsigned char * in_data,
                             unsigned char * out_data,
@@ -882,7 +879,7 @@ int VoETestManager::ReleaseInterfaces() {
   return (releaseOK == true) ? 0 : -1;
 }
 
-int VoETestManager::SetUp() {
+int VoETestManager::SetUp(ErrorObserver* error_observer) {
   char char_buffer[1024];
 
   TEST_MUSTPASS(voe_base_->Init());
@@ -891,7 +888,7 @@ int VoETestManager::SetUp() {
   TEST_MUSTPASS(voe_hardware_->SetLoudspeakerStatus(false));
 #endif
 
-  TEST_MUSTPASS(voe_base_->RegisterVoiceEngineObserver(obs));
+  TEST_MUSTPASS(voe_base_->RegisterVoiceEngineObserver(*error_observer));
 
   TEST_LOG("Get version \n");
   TEST_MUSTPASS(voe_base_->GetVersion(char_buffer));
@@ -977,208 +974,18 @@ int VoETestManager::DoStandardTest() {
 
   TEST_LOG("\n\n+++ Base tests +++\n\n");
 
-  if (SetUp() != 0) return -1;
+  ErrorObserver error_observer;
+  if (SetUp(&error_observer) != 0) return -1;
 
-  // TODO(qhogpat): this gets verified way later - quite ugly. Make sure to
-  // put this into setup when rewriting the test that requires this.
-  TEST_MUSTPASS(voe_rtp_rtcp_->SetRTCP_CNAME(0, "Niklas"));
-  TEST_MUSTPASS(voe_rtp_rtcp_->SetLocalSSRC(0, 1234));
   voe_network_->SetSourceFilter(0, 0);
 
   FakeExternalTransport channel0_transport(voe_network_);
   if (TestStartStreaming(channel0_transport) != 0) return -1;
   if (TestStartPlaying() != 0) return -1;
 
-  /////////////////////////
-  // Start another channel
-
-#if defined(_TEST_RTP_RTCP_)
-  TEST_LOG("\n\n+++ Preparing another channel for"
-    " RTP/RTCP tests +++ \n\n");
-
-  TEST_LOG("Create one more channel and start it up\n");
-  TEST_MUSTPASS(!(1==voe_base_->CreateChannel()));
-#ifdef WEBRTC_EXTERNAL_TRANSPORT
-  FakeExternalTransport ch1transport(voe_network_);
-  TEST_MUSTPASS(voe_network_->RegisterExternalTransport(1, ch1transport));
-#else
-  TEST_MUSTPASS(voe_base_->SetSendDestination(1, 8002, "127.0.0.1"));
-  TEST_MUSTPASS(voe_base_->SetLocalReceiver(1, 8002));
-#endif
-  TEST_MUSTPASS(voe_base_->StartReceive(1));
-  TEST_MUSTPASS(voe_base_->StartPlayout(1));
-  // Ensures SSSR_ch1 = 5678.
-  TEST_MUSTPASS(voe_rtp_rtcp_->SetLocalSSRC(1, 5678));
-  TEST_MUSTPASS(voe_base_->StartSend(1));
-  SLEEP(2000);
-#else
-  TEST_LOG("\n\n+++ Preparing another channel NOT NEEDED +++ \n");
-#endif // defined(_TEST_RTP_RTCP_)
-  /////////////////
-  // Conferencing
-
 #ifndef _TEST_BASE_
-
   TEST_LOG("\n\n+++ (Base) tests NOT ENABLED +++\n");
 #endif // #ifdef _TEST_BASE_
-  ////////////////////////////////////////////////
-  // RTP/RTCP (test after streaming is activated)
-
-#if (defined(_TEST_RTP_RTCP_) && defined(_TEST_BASE_))
-
-  TEST_LOG("\n\n+++ More RTP/RTCP tests +++\n\n");
-
-  SLEEP(8000);
-
-  char char_buffer[256];
-  TEST_LOG("Check that we have gotten RTCP packet, and collected CName\n");
-  TEST_MUSTPASS(voe_rtp_rtcp_->GetRemoteRTCP_CNAME(0, char_buffer));
-  TEST_LOG("default cname is %s", char_buffer);
-  TEST_MUSTPASS(_stricmp("Niklas", char_buffer));
-
-  TEST_LOG("Check that we have received the right SSRC\n");
-  unsigned int ssrc1;
-  TEST_MUSTPASS(voe_rtp_rtcp_->GetLocalSSRC(0, ssrc1));
-  TEST_LOG("SSRC chan 0 = %lu \n", (long unsigned int) ssrc1);
-  TEST_MUSTPASS(voe_rtp_rtcp_->GetRemoteSSRC(0, ssrc1));
-  // the originally set 1234 should be maintained
-  TEST_MUSTPASS(1234 != ssrc1);
-
-  // RTCP APP tests
-  TEST_LOG("Check RTCP APP send/receive \n");
-  TEST_MUSTPASS(voe_rtp_rtcp_->RegisterRTCPObserver(0, myRtcpAppHandler));
-  SLEEP(100);
-  // send RTCP APP packet (fill up data message to multiple of 32 bits)
-  const char* data = "application-dependent data------"; // multiple of 32byte
-  unsigned short lenBytes(static_cast<unsigned short> (strlen(data)));
-  unsigned int name = static_cast<unsigned int> (0x41424344); // 'ABCD';
-  unsigned char subType = 1;
-  TEST_MUSTPASS(voe_rtp_rtcp_->SendApplicationDefinedRTCPPacket(0,
-          subType,
-          name,
-          data,
-          lenBytes));
-  TEST_LOG("Waiting for RTCP APP callback...\n");
-  SLEEP(8000); // ensures that RTCP is scheduled
-  TEST_MUSTPASS(strlen(data) != myRtcpAppHandler._lengthBytes);
-  TEST_MUSTPASS(memcmp(data, myRtcpAppHandler._data, lenBytes));
-  TEST_MUSTPASS(myRtcpAppHandler._name != name);
-  TEST_MUSTPASS(myRtcpAppHandler._subType != subType);
-  TEST_LOG("=> application-dependent data of size %d bytes was received\n",
-           lenBytes);
-  // disable the callback and verify that no callback is received this time
-  myRtcpAppHandler.Reset();
-  TEST_MUSTPASS(voe_rtp_rtcp_->DeRegisterRTCPObserver(0));
-
-  TEST_MUSTPASS(voe_rtp_rtcp_->SendApplicationDefinedRTCPPacket(0,
-          subType,
-          name,
-          data,
-          lenBytes));
-  TEST_LOG("RTCP APP callback should not be received since the observer "
-    "is disabled...\n");
-  SLEEP(5000); // ensures that RTCP is scheduled
-  TEST_MUSTPASS(myRtcpAppHandler._name != 0);
-  TEST_MUSTPASS(myRtcpAppHandler._subType != 0);
-
-#if !defined(WEBRTC_EXTERNAL_TRANSPORT)
-  printf("Tesing InsertExtraRTPPacket\n");
-
-  const char payloadData[8] = { 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H' };
-
-  // fail tests
-  // invalid channel
-  TEST_MUSTPASS(-1 != voe_rtp_rtcp_->InsertExtraRTPPacket(-1,
-          0,
-          false,
-          payloadData,
-          8));
-  // invalid payload type
-  TEST_MUSTPASS(-1 != voe_rtp_rtcp_->InsertExtraRTPPacket(0,
-          -1,
-          false,
-          payloadData,
-          8));
-  // invalid payload type
-  TEST_MUSTPASS(-1 != voe_rtp_rtcp_->InsertExtraRTPPacket(0,
-          128,
-          false,
-          payloadData,
-          8));
-  // invalid pointer
-  TEST_MUSTPASS(-1 != voe_rtp_rtcp_->InsertExtraRTPPacket(0,
-          99,
-          false,
-          NULL,
-          8));
-  // invalid size
-  TEST_MUSTPASS(-1 != voe_rtp_rtcp_->InsertExtraRTPPacket(0,
-          99,
-          false,
-          payloadData,
-          1500 - 28 + 1));
-
-  // transmit some extra RTP packets
-  for (int pt = 0; pt < 128; pt++) {
-    TEST_MUSTPASS(voe_rtp_rtcp_->InsertExtraRTPPacket(0,
-            pt,
-            false,
-            payloadData,
-            8));
-    TEST_MUSTPASS(voe_rtp_rtcp_->InsertExtraRTPPacket(0,
-            pt,
-            true,
-            payloadData,
-            8));
-  }
-#else
-  printf("Skipping InsertExtraRTPPacket tests -"
-      " WEBRTC_EXTERNAL_TRANSPORT is defined \n");
-#endif
-
-  TEST_LOG("Enable the RTP observer\n");
-  TEST_MUSTPASS(voe_rtp_rtcp_->RegisterRTPObserver(0, rtpObserver));
-  TEST_MUSTPASS(voe_rtp_rtcp_->RegisterRTPObserver(1, rtpObserver));
-  rtpObserver.Reset();
-
-  // Create two RTP-dump files (3 seconds long).
-  // Verify using rtpplay or NetEqRTPplay when test is done.
-  TEST_LOG("Creating two RTP-dump files...\n");
-  TEST_MUSTPASS(voe_rtp_rtcp_->StartRTPDump(0,
-          GetFilename("dump_in_3sec.rtp"),
-          kRtpIncoming));
-  MARK();
-  TEST_MUSTPASS(voe_rtp_rtcp_->StartRTPDump(0,
-          GetFilename("dump_out_3sec.rtp"),
-          kRtpOutgoing));
-  MARK();
-  SLEEP(3000);
-  TEST_MUSTPASS(voe_rtp_rtcp_->StopRTPDump(0, kRtpIncoming));
-  MARK();
-  TEST_MUSTPASS(voe_rtp_rtcp_->StopRTPDump(0, kRtpOutgoing));
-  MARK();
-
-  rtpObserver.Reset();
-
-  TEST_LOG("Verify the OnIncomingSSRCChanged callback\n");
-  TEST_MUSTPASS(voe_base_->StopSend(0));
-  TEST_MUSTPASS(voe_rtp_rtcp_->SetLocalSSRC(0, 7777));
-  TEST_MUSTPASS(voe_base_->StartSend(0));
-  SLEEP(500);
-  TEST_MUSTPASS(rtpObserver._SSRC[0] != 7777);
-  TEST_MUSTPASS(voe_base_->StopSend(0));
-  TEST_MUSTPASS(voe_rtp_rtcp_->SetLocalSSRC(0, 1234));
-  TEST_MUSTPASS(voe_base_->StartSend(0));
-  SLEEP(500);
-  TEST_MUSTPASS(rtpObserver._SSRC[0] != 1234);
-  rtpObserver.Reset();
-  if (voe_file_) {
-    TEST_LOG("Start playing a file as microphone again...\n");
-    TEST_MUSTPASS(voe_file_->StartPlayingFileAsMicrophone(0,
-            AudioFilename(),
-            true,
-            true));
-  }
 
 #ifdef WEBRTC_CODEC_RED
   TEST_LOG("Enabling FEC \n");
@@ -1191,20 +998,7 @@ int VoETestManager::DoStandardTest() {
 #else
   TEST_LOG("Skipping FEC tests - WEBRTC_CODEC_RED not defined \n");
 #endif // #ifdef WEBRTC_CODEC_RED
-#else
-  TEST_LOG("\n\n+++ More RTP/RTCP tests NOT ENABLED +++\n");
-#endif // #ifdef _TEST_RTP_RTCP_
-  /////////////////////////
-  // Delete extra channel
 
-#if defined(_TEST_RTP_RTCP_)
-  TEST_LOG("\n\n+++ Delete extra channel +++ \n\n");
-
-  TEST_LOG("Delete channel 1, stopping everything\n");
-  TEST_MUSTPASS(voe_base_->DeleteChannel(1));
-#else
-  TEST_LOG("\n\n+++ Delete extra channel NOT NEEDED +++ \n");
-#endif // #if defined(WEBRTC_VOICE_ENGINE_CONFERENCING) && (define......
   /////////////////////////////////////////////////
   // Hardware (test after streaming is activated)
 
@@ -2345,10 +2139,10 @@ TEST_MUSTPASS(voe_codec_->SetSendCodec(0, ci));
   SLEEP(3000);
 
 #if !defined(_INSTRUMENTATION_TESTING_)
-  TEST_LOG("obs.code is %d\n", obs.code);
-  TEST_MUSTPASS(obs.code != VE_RECEIVE_PACKET_TIMEOUT);
+  TEST_LOG("error_observer.code is %d\n", error_observer.code);
+  TEST_MUSTPASS(error_observer.code != VE_RECEIVE_PACKET_TIMEOUT);
 #endif
-  obs.code = -1;
+  error_observer.code = -1;
   TEST_MUSTPASS(voe_base_->StartSend(0));
   if (voe_file_) {
     TEST_LOG("Start playing a file as microphone again \n");
@@ -2360,17 +2154,17 @@ TEST_MUSTPASS(voe_codec_->SetSendCodec(0, ci));
   TEST_LOG("You should see runtime error %d\n", VE_PACKET_RECEIPT_RESTARTED);
   SLEEP(1000);
 #if !defined(_INSTRUMENTATION_TESTING_)
-  TEST_MUSTPASS(obs.code != VE_PACKET_RECEIPT_RESTARTED);
+  TEST_MUSTPASS(error_observer.code != VE_PACKET_RECEIPT_RESTARTED);
 #endif
 
 #if !defined(_INSTRUMENTATION_TESTING_)
   TEST_LOG("Disabling observer, no runtime error should be seen...\n");
   TEST_MUSTPASS(voe_base_->DeRegisterVoiceEngineObserver());
-  obs.code = -1;
+  error_observer.code = -1;
   TEST_MUSTPASS(voe_base_->StopSend(0));
   TEST_MUSTPASS(voe_network_->SetPacketTimeoutNotification(0, true, 2));
   SLEEP(2500);
-  TEST_MUSTPASS(obs.code != -1);
+  TEST_MUSTPASS(error_observer.code != -1);
   // disable notifications to avoid additional 8082 callbacks
   TEST_MUSTPASS(voe_network_->SetPacketTimeoutNotification(0, false, 2));
   TEST_MUSTPASS(voe_base_->StartSend(0));
@@ -2384,14 +2178,15 @@ TEST_MUSTPASS(voe_codec_->SetSendCodec(0, ci));
   SLEEP(1000);
   ///    TEST_MUSTPASS(obs.code != -1);
   TEST_LOG("Enabling observer again\n");
-  TEST_MUSTPASS(voe_base_->RegisterVoiceEngineObserver(obs));
+  TEST_MUSTPASS(voe_base_->RegisterVoiceEngineObserver(error_observer));
 #endif
 
   TEST_LOG("Enable dead-or-alive callbacks for 4 seconds (dT=1sec)...\n");
   TEST_LOG("You should see ALIVE messages\n");
 
-  MyDeadOrAlive obs;
-  TEST_MUSTPASS(voe_network_->RegisterDeadOrAliveObserver(0, obs));
+  MyDeadOrAlive dead_or_alive_observer;
+  TEST_MUSTPASS(voe_network_->RegisterDeadOrAliveObserver(
+      0, dead_or_alive_observer));
   TEST_MUSTPASS(voe_network_->SetPeriodicDeadOrAliveStatus(0, true, 1));
   SLEEP(4000);
 
