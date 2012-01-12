@@ -54,9 +54,7 @@
         'reference_picture_selection.cc',
         '../interface/vp8.h',
         '../interface/vp8_common_types.h',
-        '../interface/vp8_simulcast.h',
         'vp8.cc',
-        'vp8_simulcast.cc',
       ],
     },
   ], # targets

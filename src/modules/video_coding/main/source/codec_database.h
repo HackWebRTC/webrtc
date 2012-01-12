@@ -182,8 +182,7 @@ protected:
     /**
     * Create an internal Encoder given a codec type
     */
-    VCMGenericEncoder* CreateEncoder(const VideoCodecType type,
-                                     const bool simulcast) const;
+    VCMGenericEncoder* CreateEncoder(const VideoCodecType type) const;
 
     void DeleteEncoder();
     /*

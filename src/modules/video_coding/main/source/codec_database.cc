@@ -26,7 +26,6 @@
 // Supported codecs
 #ifdef  VIDEOCODEC_VP8
     #include "vp8.h"
-    #include "vp8_simulcast.h"
 #endif
 #ifdef  VIDEOCODEC_I420
     #include "i420.h"
@@ -95,7 +94,7 @@ VCMCodecDataBase::Version(WebRtc_Word8* version,
         {
             return ret;
         }
-        encoder = CreateEncoder(settings.codecType, false);
+        encoder = CreateEncoder(settings.codecType);
         if (encoder == NULL)
         {
             return VCM_MEMORY;
@@ -138,25 +137,17 @@ VCMCodecDataBase::ResetSender()
 }
 
 VCMGenericEncoder* VCMCodecDataBase::CreateEncoder(
-    const VideoCodecType type,
-    const bool simulcast) const {
+    const VideoCodecType type) const {
 
     switch(type)
     {
 #ifdef  VIDEOCODEC_VP8
         case kVideoCodecVP8:
-            if (simulcast) {
-                return new VCMGenericEncoder(*(new VP8SimulcastEncoder));
-            } else {
-                return new VCMGenericEncoder(*(new VP8Encoder));
-            }
+            return new VCMGenericEncoder(*(new VP8Encoder));
 #endif
 #ifdef VIDEOCODEC_I420
         case kVideoCodecI420:
-            if (!simulcast) {
-                return new VCMGenericEncoder(*(new I420Encoder));
-            }
-            return NULL;
+            return new VCMGenericEncoder(*(new I420Encoder));
 #endif
         default:
             return NULL;
@@ -400,12 +391,7 @@ VCMCodecDataBase::SetEncoder(const VideoCodec* settings,
     }
     else
     {
-         bool simulcast = false;
-         if (settings->numberOfSimulcastStreams > 1)
-         {
-             simulcast = true;
-         }
-        _ptrEncoder = CreateEncoder(settings->codecType, simulcast);
+        _ptrEncoder = CreateEncoder(settings->codecType);
         _currentEncIsExternal = false;
     }
     VCMencodedFrameCallback->SetPayloadType(settings->plType);
