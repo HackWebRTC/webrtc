@@ -306,7 +306,7 @@ int ViECapturer::IncomingFrame(unsigned char* video_frame,
                                RawVideoType video_type,
                                unsigned long long capture_time) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, capture_id_),
-               "%ExternalCapture::IncomingFrame width %d, height %d, "
+               "ExternalCapture::IncomingFrame width %d, height %d, "
                "capture_time %u", width, height, capture_time);
 
   if (!external_capture_module_) {
@@ -324,7 +324,7 @@ int ViECapturer::IncomingFrame(unsigned char* video_frame,
 int ViECapturer::IncomingFrameI420(const ViEVideoFrameI420& video_frame,
                                    unsigned long long capture_time) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, capture_id_),
-               "%ExternalCapture::IncomingFrame width %d, height %d, "
+               "ExternalCapture::IncomingFrame width %d, height %d, "
                " capture_time %u", video_frame.width, video_frame.height,
                capture_time);
 
