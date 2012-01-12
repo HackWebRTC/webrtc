@@ -271,6 +271,8 @@ struct NetworkStatistics           // NETEQ statistics
     int meanWaitingTimeMs;
     // median packet waiting time in the jitter buffer (ms)
     int medianWaitingTimeMs;
+    // min packet waiting time in the jitter buffer (ms)
+    int minWaitingTimeMs;
     // max packet waiting time in the jitter buffer (ms)
     int maxWaitingTimeMs;
 };

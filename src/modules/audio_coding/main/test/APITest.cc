@@ -987,6 +987,7 @@ APITest::TestDelay(char side)
         fprintf(stdout, "Clock-drift............. %d\n", networkStat.clockDriftPPM);
         fprintf(stdout, "Mean waiting time....... %d\n", networkStat.meanWaitingTimeMs);
         fprintf(stdout, "Median waiting time..... %d\n", networkStat.medianWaitingTimeMs);
+        fprintf(stdout, "Min waiting time........ %d\n", networkStat.minWaitingTimeMs);
         fprintf(stdout, "Max waiting time........ %d\n", networkStat.maxWaitingTimeMs);
     }
 

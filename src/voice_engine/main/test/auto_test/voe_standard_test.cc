@@ -2593,6 +2593,8 @@ TEST_MUSTPASS(voe_codec_->SetSendCodec(0, ci));
            nStats.meanWaitingTimeMs);
   TEST_LOG("    medianWaitingTimeMs       = %i \n",
            nStats.medianWaitingTimeMs);
+  TEST_LOG("    minWaitingTimeMs          = %i \n",
+           nStats.minWaitingTimeMs);
   TEST_LOG("    maxWaitingTimeMs          = %i \n",
            nStats.maxWaitingTimeMs);
 #else
