@@ -24,6 +24,7 @@
         '<(webrtc_root)/modules/modules.gyp:webrtc_utility',
 
         # ModulesVideo
+        '<(webrtc_root)/modules/modules.gyp:video_capture_module',
         '<(webrtc_root)/modules/modules.gyp:webrtc_video_coding',
         '<(webrtc_root)/modules/modules.gyp:video_processing',
         '<(webrtc_root)/modules/modules.gyp:video_render_module',
