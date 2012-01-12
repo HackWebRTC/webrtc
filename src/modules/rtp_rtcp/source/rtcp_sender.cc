@@ -65,6 +65,7 @@ RTCPSender::RTCPSender(const WebRtc_Word32 id,
     _sizeRembSSRC(0),
     _rembSSRC(NULL),
     _rembBitrate(0),
+    _bitrate_observer(NULL),
 
     _tmmbrHelp(audio),
     _tmmbr_Send(0),
