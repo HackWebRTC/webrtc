@@ -80,6 +80,7 @@
       'sources': [
         '../interface/mock/mock_vcm_callbacks.h',
         'decoding_state_unittest.cc',
+        'jitter_buffer_unittest.cc',
         'session_info_unittest.cc',
         'video_coding_robustness_unittest.cc',
       ],

@@ -1223,7 +1223,9 @@ VCMJitterBuffer::GetLowHighSequenceNumbers(WebRtc_Word32& lowSeqNum,
     WebRtc_Word32 seqNum = -1;
 
     highSeqNum = -1;
-    lowSeqNum = _lastDecodedState.sequence_num();
+    lowSeqNum = -1;
+    if (!_lastDecodedState.init())
+      lowSeqNum = _lastDecodedState.sequence_num();
 
     // find highest seq numbers
     for (i = 0; i < _maxNumberOfFrames; ++i)

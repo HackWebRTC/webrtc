@@ -132,6 +132,29 @@ TEST_F(VCMRobustnessTest, TestHardNack) {
   ASSERT_EQ(VCM_OK, vcm_->Decode(0));
 }
 
+TEST_F(VCMRobustnessTest, TestHardNackNoneDecoded) {
+  EXPECT_CALL(request_callback_, ResendPackets(_, _))
+      .Times(0);
+  EXPECT_CALL(frame_type_callback_, FrameTypeRequest(kVideoFrameKey))
+        .Times(1);
+
+  ASSERT_EQ(VCM_OK, vcm_->SetReceiverRobustnessMode(
+      VideoCodingModule::kHardNack,
+      VideoCodingModule::kNoDecodeErrors));
+
+  InsertPacket(3000, 3, true, false, kVideoFrameDelta);
+  InsertPacket(3000, 4, false, false, kVideoFrameDelta);
+  InsertPacket(3000, 5, false, true, kVideoFrameDelta);
+
+  EXPECT_EQ(VCM_FRAME_NOT_READY, vcm_->Decode(0));
+  ASSERT_EQ(VCM_OK, vcm_->Process());
+
+  clock_->IncrementDebugClock(10);
+
+  EXPECT_EQ(VCM_FRAME_NOT_READY, vcm_->Decode(0));
+  ASSERT_EQ(VCM_OK, vcm_->Process());
+}
+
 TEST_F(VCMRobustnessTest, TestDualDecoder) {
   Sequence s1, s2;
   EXPECT_CALL(request_callback_, ResendPackets(_, 1))
