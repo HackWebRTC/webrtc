@@ -968,12 +968,9 @@ WebRtc_Word32 RTPSender::ReSendPacket(WebRtc_UWord16 packetID,
       return -1;
     }
     if (length == 0) {
-      WEBRTC_TRACE(kTraceWarning,
-                   kTraceRtpRtcp,
-                   _id,
-                   "Resend packet length == 0 for seqNum %u",
-                   seqNum);
-      return -1;
+      // This is a valid case since packets which we decide not to retransmit
+      // are stored but with length zero.
+      return 0;
     }
     if (_RTX) {
       CriticalSectionScoped cs(_sendCritsect);
