@@ -50,7 +50,7 @@
             'G711',
           ],
           'sources': [
-            'test/testG711.cpp',
+            'test/testG711.cc',
           ],
         },
       ], # targets

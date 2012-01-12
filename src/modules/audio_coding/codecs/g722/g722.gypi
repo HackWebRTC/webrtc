@@ -50,7 +50,7 @@
             'G722',
           ],
           'sources': [
-            'test/testG722.cpp',
+            'test/testG722.cc',
           ],
         },
       ], # targets

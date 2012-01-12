@@ -147,7 +147,7 @@
             '<(webrtc_root)/common_video/common_video.gyp:webrtc_libyuv',
           ],
           'sources': [
-            '../test/testAPI/testAPI.cpp',
+            '../test/testAPI/testAPI.cc',
             '../test/testAPI/testAPI.h',
             '../test/testAPI/testAPI_mac.mm',
           ],

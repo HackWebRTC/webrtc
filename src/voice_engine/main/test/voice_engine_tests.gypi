@@ -92,14 +92,14 @@
           ],
           'sources': [
             'win_test/Resource.h',
-            'win_test/WinTest.cpp',
+            'win_test/WinTest.cc',
             'win_test/WinTest.h',
             'win_test/WinTest.rc',
-            'win_test/WinTestDlg.cpp',
+            'win_test/WinTestDlg.cc',
             'win_test/WinTestDlg.h',
             'win_test/res/WinTest.ico',
             'win_test/res/WinTest.rc2',
-            'win_test/stdafx.cpp',
+            'win_test/stdafx.cc',
             'win_test/stdafx.h',
           ],
           'configurations': {
