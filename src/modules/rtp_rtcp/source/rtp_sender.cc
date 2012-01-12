@@ -745,7 +745,7 @@ RTPSender::SendOutgoingData(const FrameType frameType,
             return 0;
         }
     }
-    RtpVideoCodecTypes videoType;
+    RtpVideoCodecTypes videoType = kRtpNoVideo;
     if(CheckPayloadType(payloadType, videoType) != 0)
     {
         WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id, "%s invalid argument failed to find payloadType:%d", __FUNCTION__, payloadType);
