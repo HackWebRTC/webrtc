@@ -829,12 +829,17 @@ WebRtc_Word32 Channel::GetAudioFrame(const WebRtc_Word32 id,
                  "Channel::GetAudioFrame(id=%d)", id);
 
     // Get 10ms raw PCM data from the ACM (mixer limits output frequency)
-    if (_audioCodingModule.PlayoutData10Ms(
-        audioFrame._frequencyInHz, (AudioFrame&)audioFrame) == -1)
+    if (_audioCodingModule.PlayoutData10Ms(audioFrame._frequencyInHz,
+                                           audioFrame) == -1)
     {
         WEBRTC_TRACE(kTraceError, kTraceVoice,
                      VoEId(_instanceId,_channelId),
                      "Channel::GetAudioFrame() PlayoutData10Ms() failed!");
+        // In all likelihood, the audio in this frame is garbage. We return an
+        // error so that the audio mixer module doesn't add it to the mix. As
+        // a result, it won't be played out and the actions skipped here are
+        // irrelevant.
+        return -1;
     }
 
     if (_RxVadDetection)

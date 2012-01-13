@@ -24,6 +24,8 @@ class MixerParticipant
 public:
     // The implementation of this function should update audioFrame with new
     // audio every time it's called.
+    //
+    // If it returns -1, the frame will not be added to the mix.
     virtual WebRtc_Word32 GetAudioFrame(const WebRtc_Word32 id,
                                         AudioFrame& audioFrame) = 0;
 
