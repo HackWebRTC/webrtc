@@ -79,6 +79,10 @@ void RemoteRateControl::Reset()
     _initializedBitRate = false;
 }
 
+bool RemoteRateControl::ValidEstimate() {
+  return _initializedBitRate;
+}
+
 WebRtc_Word32 RemoteRateControl::SetConfiguredBitRates(WebRtc_UWord32 minBitRateBps, WebRtc_UWord32 maxBitRateBps)
 {
     if (minBitRateBps > maxBitRateBps)

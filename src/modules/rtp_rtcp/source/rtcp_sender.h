@@ -133,6 +133,10 @@ public:
 
     WebRtc_UWord32 CalculateNewTargetBitrate(WebRtc_UWord32 RTT);
 
+    // Returns true if there is a valid estimate of the incoming bitrate, false
+    // otherwise.
+    bool ValidBitrateEstimate();
+
 private:
     WebRtc_Word32 SendToNetwork(const WebRtc_UWord8* dataBuffer,
                               const WebRtc_UWord16 length);

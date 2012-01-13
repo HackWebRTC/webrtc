@@ -415,7 +415,7 @@ WebRtc_Word32 ModuleRtpRtcpImpl::Process()
     {
         WebRtc_UWord16 RTT = 0;
         _rtcpReceiver.RTT(_rtpReceiver.SSRC(), &RTT, NULL, NULL, NULL);
-        if (REMB())
+        if (REMB() && _rtcpSender.ValidBitrateEstimate())
         {
           unsigned int target_bitrate =
               _rtcpSender.CalculateNewTargetBitrate(RTT);

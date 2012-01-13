@@ -31,6 +31,10 @@ public:
                              WebRtc_Word64 nowMS);
     void Reset();
 
+    // Returns true if there is a valid estimate of the incoming bitrate, false
+    // otherwise.
+    bool ValidEstimate();
+
 private:
     WebRtc_UWord32 ChangeBitRate(WebRtc_UWord32 currentBitRate,
                                  WebRtc_UWord32 incomingBitRate,
