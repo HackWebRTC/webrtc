@@ -475,40 +475,37 @@ ACMNetEQ::NetworkStatistics(
     int waiting_times[kArrayLen];
     int waiting_times_len = WebRtcNetEQ_GetRawFrameWaitingTimes(
         _inst[0], kArrayLen, waiting_times);
-    if (waiting_times_len >= 0)
+    if (waiting_times_len > 0)
     {
         std::vector<int> waiting_times_vec(waiting_times,
                                            waiting_times + waiting_times_len);
         sort(waiting_times_vec.begin(), waiting_times_vec.end());
         size_t size = waiting_times_vec.size();
         assert(size == static_cast<size_t>(waiting_times_len));
-        if (size == 0)
+        if (size % 2 == 0)
         {
-            statistics->meanWaitingTimeMs = -1;
-            statistics->medianWaitingTimeMs = -1;
-            statistics->minWaitingTimeMs = -1;
-            statistics->maxWaitingTimeMs = -1;
+            statistics->medianWaitingTimeMs =
+                (waiting_times_vec[size / 2 - 1] +
+                    waiting_times_vec[size / 2]) / 2;
         }
         else
         {
-            if (size % 2 == 0)
-            {
-                statistics->medianWaitingTimeMs =
-                    (waiting_times_vec[size / 2 - 1] +
-                        waiting_times_vec[size / 2]) / 2;
-            }
-            else
-            {
-                statistics->medianWaitingTimeMs = waiting_times_vec[size / 2];
-            }
-            statistics->minWaitingTimeMs = waiting_times_vec.front();
-            statistics->maxWaitingTimeMs = waiting_times_vec.back();
-            double sum = 0;
-            for (size_t i = 0; i < size; ++i) {
-              sum += waiting_times_vec[i];
-            }
-            statistics->meanWaitingTimeMs = static_cast<int>(sum / size);
+            statistics->medianWaitingTimeMs = waiting_times_vec[size / 2];
         }
+        statistics->minWaitingTimeMs = waiting_times_vec.front();
+        statistics->maxWaitingTimeMs = waiting_times_vec.back();
+        double sum = 0;
+        for (size_t i = 0; i < size; ++i) {
+          sum += waiting_times_vec[i];
+        }
+        statistics->meanWaitingTimeMs = static_cast<int>(sum / size);
+    }
+    else if (waiting_times_len == 0)
+    {
+        statistics->meanWaitingTimeMs = -1;
+        statistics->medianWaitingTimeMs = -1;
+        statistics->minWaitingTimeMs = -1;
+        statistics->maxWaitingTimeMs = -1;
     }
     else
     {
