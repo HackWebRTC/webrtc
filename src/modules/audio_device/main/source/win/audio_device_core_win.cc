@@ -189,7 +189,7 @@ bool AudioDeviceWindowsCore::CoreAudioIsSupported()
 
     HRESULT hr(S_OK);
     TCHAR buf[MAXERRORLENGTH];
-    LPCTSTR errorText;
+    TCHAR errorText[MAXERRORLENGTH];
 
     // 1) Initializes the COM library for use by the calling thread.
 
@@ -238,13 +238,35 @@ bool AudioDeviceWindowsCore::CoreAudioIsSupported()
 
     if (FAILED(hr))
     {
-        _com_error error(hr);
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, -1,
             "AudioDeviceWindowsCore::CoreAudioIsSupported() Failed to create the required COM object", hr);
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, -1,
             "AudioDeviceWindowsCore::CoreAudioIsSupported() CoCreateInstance(MMDeviceEnumerator) failed (hr=0x%x)", hr);
+
+        const DWORD dwFlags = FORMAT_MESSAGE_FROM_SYSTEM |
+                              FORMAT_MESSAGE_IGNORE_INSERTS;
+        const DWORD dwLangID = MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US);
+    
+        // Gets the system's human readable message string for this HRESULT.
+        // All error message in English by default.
+        DWORD messageLength = ::FormatMessageW(dwFlags, 
+                                               0,
+                                               hr,
+                                               dwLangID,
+                                               errorText,  
+                                               MAXERRORLENGTH,  
+                                               NULL);
+        
+        assert(messageLength <= MAXERRORLENGTH);
+
+        // Trims tailing white space (FormatMessage() leaves a trailing cr-lf.).
+        for (; messageLength && ::isspace(errorText[messageLength - 1]);
+             --messageLength)
+        {
+            errorText[messageLength - 1] = '\0';
+        }
+
         StringCchPrintf(buf, MAXERRORLENGTH, TEXT("Error details: "));
-        errorText = error.ErrorMessage();
         StringCchCat(buf, MAXERRORLENGTH, errorText);
         WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, -1, "%S", buf);
     }
@@ -5055,10 +5077,30 @@ Exit:
 void AudioDeviceWindowsCore::_TraceCOMError(HRESULT hr) const
 {
     TCHAR buf[MAXERRORLENGTH];
-    LPCTSTR errorText;
+    TCHAR errorText[MAXERRORLENGTH];
 
-    _com_error error(hr);
-    errorText = error.ErrorMessage();
+    const DWORD dwFlags = FORMAT_MESSAGE_FROM_SYSTEM |
+                          FORMAT_MESSAGE_IGNORE_INSERTS;
+    const DWORD dwLangID = MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US);
+    
+    // Gets the system's human readable message string for this HRESULT.
+    // All error message in English by default.
+    DWORD messageLength = ::FormatMessageW(dwFlags, 
+                                           0,
+                                           hr,
+                                           dwLangID,
+                                           errorText,  
+                                           MAXERRORLENGTH,  
+                                           NULL);
+
+    assert(messageLength <= MAXERRORLENGTH);
+
+    // Trims tailing white space (FormatMessage() leaves a trailing cr-lf.).
+    for (; messageLength && ::isspace(errorText[messageLength - 1]);
+         --messageLength)
+    {
+        errorText[messageLength - 1] = '\0';
+    }
 
     WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
         "Core Audio method failed (hr=0x%x)", hr);
