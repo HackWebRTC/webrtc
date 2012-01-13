@@ -15,9 +15,10 @@
 #ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AEC_MAIN_SOURCE_AEC_CORE_H_
 #define WEBRTC_MODULES_AUDIO_PROCESSING_AEC_MAIN_SOURCE_AEC_CORE_H_
 
+#ifdef WEBRTC_AEC_DEBUG_DUMP
 #include <stdio.h>
+#endif
 
-#include "signal_processing_library.h"
 #include "typedefs.h"
 
 #define FRAME_LEN 80

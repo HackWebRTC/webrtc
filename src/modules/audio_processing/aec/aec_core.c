@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include "aec_rdft.h"
+#include "common_audio/signal_processing/include/signal_processing_library.h"
 #include "delay_estimator_wrapper.h"
 #include "ring_buffer.h"
 #include "system_wrappers/interface/cpu_features_wrapper.h"
@@ -516,11 +517,13 @@ int WebRtcAec_InitAec(aec_t *aec, int sampFreq)
     WebRtcAec_ScaleErrorSignal = ScaleErrorSignal;
     WebRtcAec_FilterAdaptation = FilterAdaptation;
     WebRtcAec_OverdriveAndSuppress = OverdriveAndSuppress;
+
+#if defined(WEBRTC_ARCH_X86_FAMILY)
     if (WebRtc_GetCPUInfo(kSSE2)) {
-#if defined(WEBRTC_USE_SSE2)
       WebRtcAec_InitAec_SSE2();
-#endif
     }
+#endif
+
     aec_rdft_init();
 
     return 0;

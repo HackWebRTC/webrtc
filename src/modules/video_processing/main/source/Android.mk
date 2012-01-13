@@ -18,7 +18,6 @@ LOCAL_MODULE := libwebrtc_video_processing
 LOCAL_MODULE_TAGS := optional
 LOCAL_CPP_EXTENSION := .cc
 LOCAL_SRC_FILES := \
-    video_processing_impl.cc \
     brightness_detection.cc \
     color_enhancement.cc \
     content_analysis.cc \
@@ -27,6 +26,12 @@ LOCAL_SRC_FILES := \
     frame_preprocessor.cc \
     spatial_resampler.cc \
     video_decimator.cc
+    video_processing_impl.cc \
+
+ifeq ($(TARGET_ARCH),x86)
+LOCAL_SRC_FILES += \
+    content_analysis_sse2.cc
+endif
 
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \

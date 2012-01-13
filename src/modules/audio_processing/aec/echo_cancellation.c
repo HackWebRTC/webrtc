@@ -22,6 +22,7 @@
 
 #include "aec_core.h"
 #include "aec_resampler.h"
+#include "common_audio/signal_processing/include/signal_processing_library.h"
 #include "ring_buffer.h"
 #include "typedefs.h"
 

@@ -22,7 +22,7 @@ _resampledFrame(),
 _enableCA(false)
 {
     _spatialResampler = new VPMSimpleSpatialResampler();
-    _ca = new VPMContentAnalysis();
+    _ca = new VPMContentAnalysis(true);
     _vd = new VPMVideoDecimator();
 }
 

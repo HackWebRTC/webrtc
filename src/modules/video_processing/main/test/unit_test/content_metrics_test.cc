@@ -17,7 +17,7 @@ namespace webrtc {
 TEST_F(VideoProcessingModuleTest, ContentAnalysis)
 {
     VPMContentAnalysis    _ca_c(false);
-    VPMContentAnalysis    _ca_sse;
+    VPMContentAnalysis    _ca_sse(true);
     VideoContentMetrics  *_cM_c, *_cM_SSE;
 
     _ca_c.Initialize(_width,_height);

@@ -12,13 +12,12 @@
  * The core AEC algorithm, SSE2 version of speed-critical functions.
  */
 
-#include "typedefs.h"
+#include "aec_core.h"
 
-#if defined(WEBRTC_USE_SSE2)
 #include <emmintrin.h>
 #include <math.h>
+#include <string.h>  // memset
 
-#include "aec_core.h"
 #include "aec_rdft.h"
 
 __inline static float MulRe(float aRe, float aIm, float bRe, float bIm)
@@ -414,4 +413,3 @@ void WebRtcAec_InitAec_SSE2(void) {
   WebRtcAec_OverdriveAndSuppress = OverdriveAndSuppressSSE2;
 }
 
-#endif   // WEBRTC_USE_SSE2

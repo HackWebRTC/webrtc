@@ -8,10 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * content_analysis.h
- */
-
 #ifndef VPM_CONTENT_ANALYSIS_H
 #define VPM_CONTENT_ANALYSIS_H
 
@@ -24,7 +20,9 @@ namespace webrtc {
 class VPMContentAnalysis
 {
 public:
-    VPMContentAnalysis(bool RTCD = true);
+    // When |runtime_cpu_detection| is true, runtime selection of an optimized
+    // code path is allowed.
+    VPMContentAnalysis(bool runtime_cpu_detection);
     ~VPMContentAnalysis();
 
     // Initialize ContentAnalysis - should be called prior to
@@ -62,7 +60,7 @@ private:
     ComputeSpatialMetricsFunc ComputeSpatialMetrics;
     WebRtc_Word32 ComputeSpatialMetrics_C();
 
-#if defined(WEBRTC_USE_SSE2)
+#if defined(WEBRTC_ARCH_X86_FAMILY)
     WebRtc_Word32 ComputeSpatialMetrics_SSE2();
     WebRtc_Word32 TemporalDiffMetric_SSE2();
 #endif
