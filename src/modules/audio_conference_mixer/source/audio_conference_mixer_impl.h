@@ -153,8 +153,6 @@ private:
 
     bool LimitMixedAudio(AudioFrame& mixedAudio);
 
-    bool _initialized;
-
     // Scratch memory
     // Note that the scratch memory may only be touched in the scope of
     // Process().
