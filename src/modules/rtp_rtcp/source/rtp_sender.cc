@@ -1074,15 +1074,19 @@ void RTPSender::ProcessSendToNetwork() {
     WebRtc_UWord16 length = IP_PACKET_SIZE;
     WebRtc_UWord32 stored_time_ms;
     StorageType type;
-    assert(_packetHistory->GetRTPPacket(seq_num, 0, data_buffer, &length,
-        &stored_time_ms, &type));
+    bool found = _packetHistory->GetRTPPacket(seq_num, 0, data_buffer, &length,
+        &stored_time_ms, &type);
+    if (!found) {
+      assert(false);
+      return;
+    }
     assert(length > 0);
 
     WebRtc_UWord32 diff_ms = _clock.GetTimeInMS() - stored_time_ms;
 
     ModuleRTPUtility::RTPHeaderParser rtpParser(data_buffer, length);
     WebRtcRTPHeader rtp_header;
-    assert(rtpParser.Parse(rtp_header));
+    rtpParser.Parse(rtp_header);
 
     UpdateTransmissionTimeOffset(data_buffer, length, rtp_header, diff_ms);
 
