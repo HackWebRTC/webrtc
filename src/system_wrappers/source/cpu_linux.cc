@@ -179,6 +179,7 @@ int CpuLinux::GetNumCores()
     char line[100];
     if (!fgets(line, 100, fp))
     {
+        fclose(fp);
         return -1;
     }
     int numCores = -1;
