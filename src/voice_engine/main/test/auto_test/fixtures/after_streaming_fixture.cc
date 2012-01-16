@@ -12,8 +12,6 @@
 
 #include <cstring>
 
-#include "voice_engine_defines.h"
-
 static const char* kLoopbackIp = "127.0.0.1";
 
 AfterStreamingFixture::AfterStreamingFixture()
@@ -52,15 +50,9 @@ void AfterStreamingFixture::SetUpLocalPlayback() {
 }
 
 void AfterStreamingFixture::StartPlaying(const std::string& input_file) {
-  EXPECT_EQ(0, voe_base_->StartReceive(0));
-  EXPECT_EQ(0, voe_base_->StartPlayout(0));
-  EXPECT_EQ(0, voe_base_->StartSend(0));
+  EXPECT_EQ(0, voe_base_->StartReceive(channel_));
+  EXPECT_EQ(0, voe_base_->StartPlayout(channel_));
+  EXPECT_EQ(0, voe_base_->StartSend(channel_));
   EXPECT_EQ(0, voe_file_->StartPlayingFileAsMicrophone(
-      0, input_file.c_str(), true, true));
-}
-
-void AfterStreamingFixture::Sleep(long milliseconds) {
-  // Implementation note: This method is used to reduce usage of the macro and
-  // avoid ugly errors in Eclipse (its parser can't deal with the sleep macro).
-  SLEEP(milliseconds);
+      channel_, input_file.c_str(), true, true));
 }

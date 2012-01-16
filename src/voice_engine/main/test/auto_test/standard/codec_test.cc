@@ -9,6 +9,7 @@
  */
 
 #include "after_streaming_fixture.h"
+#include "voe_test_defines.h"
 #include "voice_engine_defines.h"
 
 class CodecTest : public AfterStreamingFixture {

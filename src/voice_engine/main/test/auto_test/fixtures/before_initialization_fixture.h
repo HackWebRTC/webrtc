@@ -56,6 +56,9 @@ class BeforeInitializationFixture : public testing::Test {
   virtual ~BeforeInitializationFixture();
 
  protected:
+  // Use this sleep function to sleep in test (avoid sleep macro).
+  void Sleep(long milliseconds);
+
   webrtc::VoiceEngine*        voice_engine_;
   webrtc::VoEBase*            voe_base_;
   webrtc::VoECodec*           voe_codec_;

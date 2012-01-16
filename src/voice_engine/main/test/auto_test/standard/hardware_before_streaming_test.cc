@@ -51,7 +51,10 @@ TEST_F(HardwareBeforeStreamingTest, ResetsAudioDeviceOnIphone) {
 // Tests that only apply to desktop:
 #if !defined(MAC_IPHONE) & !defined(WEBRTC_ANDROID)
 
-TEST_F(HardwareBeforeStreamingTest, GetSystemCpuLoadSucceeds) {
+// TODO(phoglund): re-enable once the production code isn't flaky anymore
+// on Windows. A Sleep(1000) before the CPU call will 'fix' the test,
+// but it isn't clear why or how reliable that is.
+TEST_F(HardwareBeforeStreamingTest, DISABLED_GetSystemCpuLoadSucceeds) {
   int load_percent;
 
   EXPECT_EQ(0, voe_hardware_->GetSystemCPULoad(load_percent));

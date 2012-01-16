@@ -27,8 +27,6 @@ class AfterStreamingFixture : public AfterInitializationFixture {
   int             channel_;
   ResourceManager resource_manager_;
 
-  // Use this sleep function to sleep in test (avoid sleep macro).
-  void Sleep(long milliseconds);
  private:
   void SetUpLocalPlayback();
   void StartPlaying(const std::string& input_file);

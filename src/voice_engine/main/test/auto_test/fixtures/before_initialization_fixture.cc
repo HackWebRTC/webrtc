@@ -10,6 +10,8 @@
 
 #include "before_initialization_fixture.h"
 
+#include "voice_engine_defines.h"
+
 BeforeInitializationFixture::BeforeInitializationFixture()
     : voice_engine_(webrtc::VoiceEngine::Create()) {
   EXPECT_TRUE(voice_engine_ != NULL);
@@ -47,4 +49,10 @@ BeforeInitializationFixture::~BeforeInitializationFixture() {
   EXPECT_EQ(0, voe_neteq_stats_->Release());
 
   EXPECT_TRUE(webrtc::VoiceEngine::Delete(voice_engine_));
+}
+
+void BeforeInitializationFixture::Sleep(long milliseconds) {
+  // Implementation note: This method is used to reduce usage of the macro and
+  // avoid ugly errors in Eclipse (its parser can't deal with the sleep macro).
+  SLEEP(milliseconds);
 }

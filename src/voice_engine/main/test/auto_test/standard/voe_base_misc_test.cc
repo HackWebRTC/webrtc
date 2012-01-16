@@ -22,5 +22,5 @@ TEST_F(VoeBaseMiscTest, MaxNumChannelsIs32) {
 TEST_F(VoeBaseMiscTest, GetVersionPrintsSomeUsefulInformation) {
   char char_buffer[1024];
   EXPECT_EQ(0, voe_base_->GetVersion(char_buffer));
-  EXPECT_THAT(char_buffer, ContainsRegex("VoiceEngine [0-9].[0-9].[0-9]"));
+  EXPECT_THAT(char_buffer, ContainsRegex("VoiceEngine"));
 }
