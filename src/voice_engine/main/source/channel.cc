@@ -645,15 +645,15 @@ Channel::OnInitializeDecoder(
 
     assert(VoEChannelId(id) == _channelId);
 
-    CodecInst receiveCodec;
-    CodecInst dummyCodec;
+    CodecInst receiveCodec = {0};
+    CodecInst dummyCodec = {0};
 
     receiveCodec.pltype = payloadType;
-    strcpy(receiveCodec.plname, payloadName);
     receiveCodec.plfreq = frequency;
     receiveCodec.channels = channels;
     receiveCodec.rate = rate;
-
+    strncpy(receiveCodec.plname, payloadName, RTP_PAYLOAD_NAME_SIZE - 1);
+    
     _audioCodingModule.Codec(payloadName, dummyCodec, frequency);
     receiveCodec.pacsize = dummyCodec.pacsize;
 

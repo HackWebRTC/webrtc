@@ -25,6 +25,8 @@
     #define NULL 0
 #endif
 
+#define RTP_PAYLOAD_NAME_SIZE 32
+
 namespace webrtc {
 
 class InStream
@@ -203,7 +205,7 @@ protected:
 struct CodecInst
 {
     int pltype;
-    char plname[32];
+    char plname[RTP_PAYLOAD_NAME_SIZE];
     int plfreq;
     int pacsize;
     int channels;
