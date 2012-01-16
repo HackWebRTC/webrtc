@@ -11,7 +11,6 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_TRANSMISSION_BUCKET_H_
 #define WEBRTC_MODULES_RTP_RTCP_TRANSMISSION_BUCKET_H_
 
-#include <stdint.h>
 #include <vector>
 
 #include "typedefs.h"

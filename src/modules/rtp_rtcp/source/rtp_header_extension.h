@@ -11,8 +11,6 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_RTP_HEADER_EXTENSION_H_
 #define WEBRTC_MODULES_RTP_RTCP_RTP_HEADER_EXTENSION_H_
 
-#include <stdint.h>
-
 #include "map_wrapper.h"
 #include "rtp_rtcp_defines.h"
 #include "typedefs.h"

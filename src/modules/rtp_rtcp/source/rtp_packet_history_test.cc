@@ -13,11 +13,9 @@
  */
 
 #include <gtest/gtest.h>
-#include <stdint.h>
 
 #include "rtp_packet_history.h"
 #include "rtp_rtcp_defines.h"
-#include "rtp_utility.h"
 #include "typedefs.h"
 
 namespace webrtc {

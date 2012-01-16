@@ -15,11 +15,11 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_RTP_PACKET_HISTORY_H_
 #define WEBRTC_MODULES_RTP_RTCP_RTP_PACKET_HISTORY_H_
 
-#include <stdint.h>
 #include <vector>
 
 #include "module_common_types.h"
 #include "rtp_rtcp_defines.h"
+#include "typedefs.h"
 
 namespace webrtc {
 
