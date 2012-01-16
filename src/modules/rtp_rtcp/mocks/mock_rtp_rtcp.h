@@ -96,6 +96,10 @@ class MockRtpRtcp : public RtpRtcp {
       WebRtc_Word32(const RTPExtensionType type, const WebRtc_UWord8 id));
   MOCK_METHOD1(DeregisterSendRtpHeaderExtension,
       WebRtc_Word32(const RTPExtensionType type));
+  MOCK_METHOD1(SetTransmissionSmoothingStatus,
+      void(const bool enable));
+  MOCK_CONST_METHOD0(TransmissionSmoothingStatus,
+      bool());
   MOCK_CONST_METHOD0(StartTimestamp,
       WebRtc_UWord32());
   MOCK_METHOD1(SetStartTimestamp,

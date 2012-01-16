@@ -32,19 +32,66 @@ const int kTimeOffset = 22222;
 const int kMaxPacketLength = 1500;
 }  // namespace
 
+class FakeClockTest : public RtpRtcpClock {
+ public:
+  FakeClockTest() {
+    time_in_ms_ = 123456;
+  }
+  // Return a timestamp in milliseconds relative to some arbitrary
+  // source; the source is fixed for this clock.
+  virtual WebRtc_UWord32 GetTimeInMS() {
+    return time_in_ms_;
+  }
+  // Retrieve an NTP absolute timestamp.
+  virtual void CurrentNTP(WebRtc_UWord32& secs, WebRtc_UWord32& frac) {
+    secs = time_in_ms_ / 1000;
+    frac = (time_in_ms_ % 1000) * 4294967;
+  }
+  void IncrementTime(WebRtc_UWord32 time_increment_ms) {
+    time_in_ms_ += time_increment_ms;
+  }
+ private:
+  WebRtc_UWord32 time_in_ms_;
+};
+
+class LoopbackTransportTest : public webrtc::Transport {
+ public:
+  LoopbackTransportTest()
+    : packets_sent_(0),
+      last_sent_packet_len_(0) {
+  }
+  virtual int SendPacket(int channel, const void *data, int len) {
+    packets_sent_++;
+    memcpy(last_sent_packet_, data, len);
+    last_sent_packet_len_ = len;
+    return len;
+  }
+  virtual int SendRTCPPacket(int channel, const void *data, int len) {
+    return -1;
+  }
+  int packets_sent_;
+  int last_sent_packet_len_;
+  uint8_t last_sent_packet_[kMaxPacketLength];
+};
+
 class RtpSenderTest : public ::testing::Test {
  protected:
   RtpSenderTest()
-    : rtp_sender_(new RTPSender(0, false, ModuleRTPUtility::GetSystemClock())),
+    : fake_clock_(),
+      rtp_sender_(new RTPSender(0, false, &fake_clock_)),
+      transport_(),
       kMarkerBit(true),
-      kType(kRtpExtensionTransmissionTimeOffset) {
+      kType(kRtpExtensionTransmissionTimeOffset),
+      packet_() {
     EXPECT_EQ(0, rtp_sender_->SetSequenceNumber(kSeqNum));
   }
   ~RtpSenderTest() {
     delete rtp_sender_;
   }
 
+  FakeClockTest fake_clock_;
   RTPSender* rtp_sender_;
+  LoopbackTransportTest transport_;
   const bool kMarkerBit;
   RTPExtensionType kType;
   uint8_t packet_[kMaxPacketLength];
@@ -123,5 +170,58 @@ TEST_F(RtpSenderTest, BuildRTPPacketWithExtension) {
   VerifyRTPHeaderCommon(rtp_header2);
   EXPECT_EQ(length, rtp_header2.header.headerLength);
   EXPECT_EQ(0, rtp_header2.extension.transmissionTimeOffset);
+}
+
+TEST_F(RtpSenderTest, NoTrafficSmoothing) {
+  EXPECT_EQ(0, rtp_sender_->RegisterSendTransport(&transport_));
+
+  WebRtc_Word32 rtp_length = rtp_sender_->BuildRTPheader(packet_,
+                                                         kPayload,
+                                                         kMarkerBit,
+                                                         kTimestamp);
+
+  // Packet should be sent immediately.
+  EXPECT_EQ(0, rtp_sender_->SendToNetwork(packet_, 0, rtp_length,
+                                          kAllowRetransmission));
+  EXPECT_EQ(1, transport_.packets_sent_);
+  EXPECT_EQ(rtp_length, transport_.last_sent_packet_len_);
+}
+
+TEST_F(RtpSenderTest, TrafficSmoothing) {
+  rtp_sender_->SetTransmissionSmoothingStatus(true);
+  EXPECT_EQ(0, rtp_sender_->SetStorePacketsStatus(true, 10));
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(kType, kId));
+  EXPECT_EQ(0, rtp_sender_->RegisterSendTransport(&transport_));
+
+  WebRtc_Word32 rtp_length = rtp_sender_->BuildRTPheader(packet_,
+                                                         kPayload,
+                                                         kMarkerBit,
+                                                         kTimestamp);
+
+  // Packet should be stored in a send bucket.
+  EXPECT_EQ(0, rtp_sender_->SendToNetwork(packet_, 0, rtp_length,
+                                          kAllowRetransmission));
+  EXPECT_EQ(0, transport_.packets_sent_);
+
+  const int kStoredTimeInMs = 100;
+  fake_clock_.IncrementTime(kStoredTimeInMs);
+
+  // Process send bucket. Packet should now be sent.
+  rtp_sender_->ProcessSendToNetwork();
+  EXPECT_EQ(1, transport_.packets_sent_);
+  EXPECT_EQ(rtp_length, transport_.last_sent_packet_len_);
+
+  // Parse sent packet.
+  webrtc::ModuleRTPUtility::RTPHeaderParser rtpParser(
+      transport_.last_sent_packet_, rtp_length);
+  webrtc::WebRtcRTPHeader rtp_header;
+
+  RtpHeaderExtensionMap map;
+  map.Register(kType, kId);
+  const bool valid_rtp_header = rtpParser.Parse(rtp_header, &map);
+  ASSERT_TRUE(valid_rtp_header);
+
+  // Verify transmission time offset.
+  EXPECT_EQ(kStoredTimeInMs * 90, rtp_header.extension.transmissionTimeOffset);
 }
 }  // namespace webrtc

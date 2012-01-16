@@ -54,12 +54,21 @@ TEST_F(RtpHeaderExtensionTest, NonUniqueId) {
   EXPECT_EQ(-1, map_.Register(kRtpExtensionTransmissionTimeOffset, kId));
 }
 
-TEST_F(RtpHeaderExtensionTest, GetLength) {
+TEST_F(RtpHeaderExtensionTest, GetTotalLength) {
   EXPECT_EQ(0, map_.GetTotalLengthInBytes());
   EXPECT_EQ(0, map_.Register(kRtpExtensionTransmissionTimeOffset, kId));
   EXPECT_EQ(RTP_ONE_BYTE_HEADER_LENGTH_IN_BYTES +
             TRANSMISSION_TIME_OFFSET_LENGTH_IN_BYTES,
             map_.GetTotalLengthInBytes());
+}
+
+TEST_F(RtpHeaderExtensionTest, GetLengthUntilBlockStart) {
+  EXPECT_EQ(-1, map_.GetLengthUntilBlockStartInBytes(
+      kRtpExtensionTransmissionTimeOffset));
+  EXPECT_EQ(0, map_.Register(kRtpExtensionTransmissionTimeOffset, kId));
+  EXPECT_EQ(RTP_ONE_BYTE_HEADER_LENGTH_IN_BYTES,
+      map_.GetLengthUntilBlockStartInBytes(
+      kRtpExtensionTransmissionTimeOffset));
 }
 
 TEST_F(RtpHeaderExtensionTest, GetType) {
@@ -72,7 +81,7 @@ TEST_F(RtpHeaderExtensionTest, GetType) {
 }
 
 TEST_F(RtpHeaderExtensionTest, GetId) {
-  WebRtc_UWord8 idOut;
+  uint8_t idOut;
   EXPECT_EQ(-1, map_.GetId(kRtpExtensionTransmissionTimeOffset, &idOut));
 
   EXPECT_EQ(0, map_.Register(kRtpExtensionTransmissionTimeOffset, kId));

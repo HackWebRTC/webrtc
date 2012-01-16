@@ -181,6 +181,10 @@ public:
     virtual WebRtc_Word32 DeregisterSendRtpHeaderExtension(
         const RTPExtensionType type);
 
+    virtual void SetTransmissionSmoothingStatus(const bool enable);
+
+    virtual bool TransmissionSmoothingStatus() const;
+
     // get start timestamp
     virtual WebRtc_UWord32 StartTimestamp() const;
 
@@ -572,6 +576,8 @@ private:
     const bool                _audio;
     bool                      _collisionDetected;
     WebRtc_UWord32            _lastProcessTime;
+    WebRtc_UWord32            _lastBitrateProcessTime;
+    WebRtc_UWord32            _lastPacketTimeoutProcessTime;
     WebRtc_UWord16            _packetOverHead;
 
     CriticalSectionWrapper*       _criticalSectionModulePtrs;

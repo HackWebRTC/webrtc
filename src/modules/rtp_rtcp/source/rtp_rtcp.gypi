@@ -75,6 +75,8 @@
         'h263_information.h',
         'remote_rate_control.cc',
         'remote_rate_control.h',
+        'rtp_packet_history.cc',
+        'rtp_packet_history.h',
         'rtp_receiver_video.cc',
         'rtp_receiver_video.h',
         'rtp_sender_video.cc',
@@ -84,6 +86,8 @@
         'video_codec_information.h',
         'rtp_format_vp8.cc',
         'rtp_format_vp8.h',
+        'transmission_bucket.cc',
+        'transmission_bucket.h',
         # Mocks
         '../mocks/mock_rtp_rtcp.h',
       ], # source

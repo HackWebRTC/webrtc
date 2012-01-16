@@ -87,6 +87,8 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const WebRtc_Word32 id,
     _audio(audio),
     _collisionDetected(false),
     _lastProcessTime(clock->GetTimeInMS()),
+    _lastBitrateProcessTime(clock->GetTimeInMS()),
+    _lastPacketTimeoutProcessTime(clock->GetTimeInMS()),
 
     _packetOverHead(28), // IPV4 UDP
     _criticalSectionModulePtrs(CriticalSectionWrapper::CreateCriticalSection()),
@@ -398,47 +400,55 @@ WebRtc_Word32 ModuleRtpRtcpImpl::TimeUntilNextProcess()
 
 // Process any pending tasks such as timeouts
 // non time critical events
-WebRtc_Word32 ModuleRtpRtcpImpl::Process()
-{
-    _lastProcessTime = _clock.GetTimeInMS();
+WebRtc_Word32 ModuleRtpRtcpImpl::Process() {
+  const WebRtc_UWord32 now = _clock.GetTimeInMS();
+  _lastProcessTime = now;
 
+  _rtpSender.ProcessSendToNetwork();
+
+  if (now >= _lastPacketTimeoutProcessTime +
+      kRtpRtcpPacketTimeoutProcessTimeMs) {
     _rtpReceiver.PacketTimeout();
     _rtcpReceiver.PacketTimeout();
+    _lastPacketTimeoutProcessTime = now;
+  }
 
+  if (now >= _lastBitrateProcessTime + kRtpRtcpBitrateProcessTimeMs) {
     _rtpSender.ProcessBitrate();
     _rtpReceiver.ProcessBitrate();
+    _lastBitrateProcessTime = now;
+  }
 
-    ProcessDeadOrAliveTimer();
+  ProcessDeadOrAliveTimer();
 
-    const bool defaultInstance(_childModules.empty() ? false : true);
-    if(!defaultInstance &&_rtcpSender.TimeToSendRTCPReport())
-    {
-        WebRtc_UWord16 RTT = 0;
-        _rtcpReceiver.RTT(_rtpReceiver.SSRC(), &RTT, NULL, NULL, NULL);
-        if (REMB() && _rtcpSender.ValidBitrateEstimate())
-        {
-          unsigned int target_bitrate =
-              _rtcpSender.CalculateNewTargetBitrate(RTT);
-          _rtcpSender.UpdateRemoteBitrateEstimate(target_bitrate);
-        } else if (TMMBR()) {
+  const bool defaultInstance(_childModules.empty() ? false : true);
+  if(!defaultInstance &&_rtcpSender.TimeToSendRTCPReport())
+  {
+      WebRtc_UWord16 RTT = 0;
+      _rtcpReceiver.RTT(_rtpReceiver.SSRC(), &RTT, NULL, NULL, NULL);
+      if (REMB() && _rtcpSender.ValidBitrateEstimate())
+      {
+        unsigned int target_bitrate =
             _rtcpSender.CalculateNewTargetBitrate(RTT);
-        }
-        _rtcpSender.SendRTCP(kRtcpReport, 0, 0, RTT);
+        _rtcpSender.UpdateRemoteBitrateEstimate(target_bitrate);
+      } else if (TMMBR()) {
+          _rtcpSender.CalculateNewTargetBitrate(RTT);
+      }
+      _rtcpSender.SendRTCP(kRtcpReport, 0, 0, RTT);
+  }
+
+  if (_rtpSender.RTPKeepalive()) {
+    // check time to send RTP keep alive
+    if (_rtpSender.TimeToSendRTPKeepalive()) {
+      _rtpSender.SendRTPKeepalivePacket();
     }
-    if(_rtpSender.RTPKeepalive())
-    {
-        // check time to send RTP keep alive
-        if( _rtpSender.TimeToSendRTPKeepalive())
-        {
-            _rtpSender.SendRTPKeepalivePacket();
-        }
-    }
-    if(UpdateRTCPReceiveInformationTimers())
-    {
-        // a receiver has timed out
-        UpdateTMMBR();
-    }
-    return 0;
+  }
+
+  if (UpdateRTCPReceiveInformationTimers()) {
+    // a receiver has timed out
+    UpdateTMMBR();
+  }
+  return 0;
 }
 
     /**
@@ -1847,6 +1857,14 @@ WebRtc_Word32 ModuleRtpRtcpImpl::DeregisterReceiveRtpHeaderExtension(
     const RTPExtensionType type)
 {
     return _rtpReceiver.DeregisterRtpHeaderExtension(type);
+}
+
+void ModuleRtpRtcpImpl::SetTransmissionSmoothingStatus(const bool enable) {
+  _rtpSender.SetTransmissionSmoothingStatus(enable);
+}
+
+bool ModuleRtpRtcpImpl::TransmissionSmoothingStatus() const {
+  return _rtpSender.TransmissionSmoothingStatus();
 }
 
     /*

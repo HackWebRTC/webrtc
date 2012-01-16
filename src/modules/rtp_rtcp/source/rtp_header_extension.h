@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_RTP_HEADER_EXTENSION_H_
 #define WEBRTC_MODULES_RTP_RTCP_RTP_HEADER_EXTENSION_H_
 
+#include <stdint.h>
+
 #include "map_wrapper.h"
 #include "rtp_rtcp_defines.h"
 #include "typedefs.h"
@@ -34,7 +36,7 @@ struct HeaderExtension {
    }
 
    const RTPExtensionType type;
-   WebRtc_UWord8 length;
+   uint8_t length;
 };
 
 class RtpHeaderExtensionMap {
@@ -44,19 +46,21 @@ class RtpHeaderExtensionMap {
 
   void Erase();
 
-  WebRtc_Word32 Register(const RTPExtensionType type, const WebRtc_UWord8 id);
+  int32_t Register(const RTPExtensionType type, const uint8_t id);
 
-  WebRtc_Word32 Deregister(const RTPExtensionType type);
+  int32_t Deregister(const RTPExtensionType type);
 
-  WebRtc_Word32 GetType(const WebRtc_UWord8 id, RTPExtensionType* type) const;
+  int32_t GetType(const uint8_t id, RTPExtensionType* type) const;
 
-  WebRtc_Word32 GetId(const RTPExtensionType type, WebRtc_UWord8* id) const;
+  int32_t GetId(const RTPExtensionType type, uint8_t* id) const;
 
-  WebRtc_UWord16 GetTotalLengthInBytes() const;
+  uint16_t GetTotalLengthInBytes() const;
+
+  int32_t GetLengthUntilBlockStartInBytes(const RTPExtensionType type) const;
 
   void GetCopy(RtpHeaderExtensionMap* map) const;
 
-  WebRtc_Word32 Size() const;
+  int32_t Size() const;
 
   RTPExtensionType First() const;
 

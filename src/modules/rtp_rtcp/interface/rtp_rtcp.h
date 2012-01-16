@@ -437,6 +437,13 @@ public:
     virtual WebRtc_Word32 DeregisterSendRtpHeaderExtension(
         const RTPExtensionType type) = 0;
 
+   /*
+    *   Enable/disable traffic smoothing of sending stream.
+    */
+    virtual void SetTransmissionSmoothingStatus(const bool enable) = 0;
+
+    virtual bool TransmissionSmoothingStatus() const = 0;
+
     /*
     *   get start timestamp
     */

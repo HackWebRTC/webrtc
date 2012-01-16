@@ -11,7 +11,7 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_SENDER_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_SENDER_H_
 
-#include "rtp_rtcp_config.h"           // misc. defines (e.g. MAX_PACKET_LENGTH)
+#include "rtp_rtcp_config.h"       // misc. defines (e.g. MAX_PACKET_LENGTH)
 #include "rtp_rtcp_defines.h"
 #include "common_types.h"          // Encryption
 #include "ssrc_database.h"
@@ -20,6 +20,7 @@
 #include "Bitrate.h"
 #include "rtp_header_extension.h"
 #include "video_codec_information.h"
+#include "transmission_bucket.h"
 
 #include <cassert>
 #include <cmath>
@@ -28,14 +29,9 @@
 
 namespace webrtc {
 class CriticalSectionWrapper;
+class RTPPacketHistory;
 class RTPSenderAudio;
 class RTPSenderVideo;
-
-enum StorageType {
-  kDontStore,
-  kDontRetransmit,
-  kAllowRetransmission
-};
 
 class RTPSenderInterface
 {
@@ -78,6 +74,7 @@ public:
     void ChangeUniqueId(const WebRtc_Word32 id);
 
     void ProcessBitrate();
+    void ProcessSendToNetwork();
 
     WebRtc_UWord16 TargetSendBitrateKbit() const;
     WebRtc_UWord16 ActualSendBitrateKbit() const;
@@ -169,6 +166,15 @@ public:
     WebRtc_UWord8 BuildTransmissionTimeOffsetExtension(
         WebRtc_UWord8* dataBuffer) const;
 
+    void UpdateTransmissionTimeOffset(WebRtc_UWord8* rtp_packet,
+                                      const WebRtc_UWord16 rtp_packet_length,
+                                      const WebRtcRTPHeader& rtp_header,
+                                      const WebRtc_UWord32 time_ms) const;
+
+    void SetTransmissionSmoothingStatus(const bool enable);
+
+    bool TransmissionSmoothingStatus() const;
+
     /*
     *    NACK
     */
@@ -183,8 +189,8 @@ public:
 
     bool StorePackets() const;
 
-    WebRtc_Word32 ReSendPacket(WebRtc_UWord16 packetID,
-                               WebRtc_UWord32 minResendTime=0);
+    WebRtc_Word32 ReSendPacket(WebRtc_UWord16 packet_id,
+                               WebRtc_UWord32 min_resend_time = 0);
 
     WebRtc_Word32 ReSendToNetwork(const WebRtc_UWord8* packet,
                                   const WebRtc_UWord32 size);
@@ -301,20 +307,18 @@ public:
                                       const bool deltaUseUepProtection);
 
 protected:
-    WebRtc_Word32 CheckPayloadType(const WebRtc_Word8 payloadType, RtpVideoCodecTypes& videoType);
+    WebRtc_Word32 CheckPayloadType(const WebRtc_Word8 payloadType,
+                                   RtpVideoCodecTypes& videoType);
 
 private:
     void UpdateNACKBitRate(const WebRtc_UWord32 bytes,
                            const WebRtc_UWord32 now);
 
-    void StorePacket(const uint8_t* buffer, uint16_t length,
-                     uint16_t sequence_number);
-
-    WebRtc_Word32             _id;
-    const bool              _audioConfigured;
-    RTPSenderAudio*         _audio;
-    RTPSenderVideo*         _video;
-
+    WebRtc_Word32              _id;
+    const bool                 _audioConfigured;
+    RTPSenderAudio*            _audio;
+    RTPSenderVideo*            _video;
+ 
     CriticalSectionWrapper*    _sendCritsect;
 
     CriticalSectionWrapper*    _transportCritsect;
@@ -337,20 +341,15 @@ private:
     WebRtc_UWord32            _keepAliveLastSent;
     WebRtc_UWord16            _keepAliveDeltaTimeSend;
 
-    bool                      _storeSentPackets;
-    WebRtc_UWord16            _storeSentPacketsNumber;
-    CriticalSectionWrapper*    _prevSentPacketsCritsect;
-
-    WebRtc_Word32             _prevSentPacketsIndex;
-    WebRtc_Word8**            _ptrPrevSentPackets;
-    WebRtc_UWord16*           _prevSentPacketsSeqNum;
-    WebRtc_UWord16*           _prevSentPacketsLength;
-    WebRtc_UWord32*           _prevSentPacketsResendTime;
-
     // NACK
     WebRtc_UWord32            _nackByteCountTimes[NACK_BYTECOUNT_SIZE];
     WebRtc_Word32             _nackByteCount[NACK_BYTECOUNT_SIZE];
     Bitrate                   _nackBitrate;
+
+    RTPPacketHistory*         _packetHistory;
+    TransmissionBucket        _sendBucket;
+    WebRtc_UWord32            _timeLastSendToNetworkUpdate;
+    bool                      _transmissionSmoothing;
 
     // statistics
     WebRtc_UWord32            _packetsSent;

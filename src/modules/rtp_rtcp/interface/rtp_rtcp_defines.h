@@ -38,6 +38,12 @@ enum RTPAliveType
     kRtpAlive  = 2
 };
 
+enum StorageType {
+  kDontStore,
+  kDontRetransmit,
+  kAllowRetransmission
+};
+
 enum RTPExtensionType
 {
    kRtpExtensionNone,
