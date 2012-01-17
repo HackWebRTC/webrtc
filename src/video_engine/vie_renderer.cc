@@ -150,7 +150,8 @@ ViEExternalRendererImpl::ViEExternalRendererImpl()
     : external_renderer_(NULL),
       external_renderer_format_(kVideoUnknown),
       external_renderer_width_(0),
-      external_renderer_height_(0) {
+      external_renderer_height_(0),
+      converted_frame_(new VideoFrame()){
 }
 
 int ViEExternalRendererImpl::SetViEExternalRenderer(
@@ -164,13 +165,23 @@ int ViEExternalRendererImpl::SetViEExternalRenderer(
 WebRtc_Word32 ViEExternalRendererImpl::RenderFrame(
     const WebRtc_UWord32 stream_id,
     VideoFrame&   video_frame) {
-  VideoFrame converted_frame;
-  VideoFrame* p_converted_frame = &converted_frame;
+  VideoFrame* out_frame = converted_frame_.get();
 
   // Convert to requested format.
+  VideoType type =
+      RawVideoTypeToCommonVideoVideoType(external_renderer_format_);
+  int buffer_size = CalcBufferSize(type, video_frame.Width(),
+                                   video_frame.Height());
+  if (buffer_size <= 0) {
+    // Unsupported video format.
+    assert(false);
+    return -1;
+  }
+  converted_frame_->VerifyAndAllocate(buffer_size);
+
   switch (external_renderer_format_) {
     case kVideoI420:
-      p_converted_frame = &video_frame;
+      out_frame = &video_frame;
       break;
     case kVideoYV12:
     case kVideoYUY2:
@@ -178,43 +189,29 @@ WebRtc_Word32 ViEExternalRendererImpl::RenderFrame(
     case kVideoARGB:
     case kVideoRGB24:
       {
-        VideoType type =
-            RawVideoTypeToCommonVideoVideoType(external_renderer_format_);
-        converted_frame.VerifyAndAllocate(CalcBufferSize(type,
-                                                         video_frame.Width(),
-                                                         video_frame.Height()));
         ConvertFromI420(video_frame.Buffer(), video_frame.Width(), type, 0,
                         video_frame.Width(), video_frame.Height(),
-                        converted_frame.Buffer());
+                        converted_frame_->Buffer());
       }
       break;
     case kVideoIYUV:
       // no conversion available
       break;
     case kVideoRGB565:
-      converted_frame.VerifyAndAllocate(CalcBufferSize(kRGB565,
-                                                       video_frame.Width(),
-                                                       video_frame.Height()));
-      ConvertI420ToRGB565(video_frame.Buffer(), converted_frame.Buffer(),
+      ConvertI420ToRGB565(video_frame.Buffer(), converted_frame_->Buffer(),
                           video_frame.Width(), video_frame.Height());
       break;
     case kVideoARGB4444:
-      converted_frame.VerifyAndAllocate(CalcBufferSize(kARGB4444,
-                                                       video_frame.Width(),
-                                                       video_frame.Height()));
-      ConvertI420ToARGB4444(video_frame.Buffer(), converted_frame.Buffer(),
+      ConvertI420ToARGB4444(video_frame.Buffer(), converted_frame_->Buffer(),
                             video_frame.Width(), video_frame.Height(), 0);
       break;
     case kVideoARGB1555 :
-      converted_frame.VerifyAndAllocate(CalcBufferSize(kARGB1555,
-                                                       video_frame.Width(),
-                                                       video_frame.Height()));
-      ConvertI420ToARGB1555(video_frame.Buffer(), converted_frame.Buffer(),
+      ConvertI420ToARGB1555(video_frame.Buffer(), converted_frame_->Buffer(),
                             video_frame.Width(), video_frame.Height(), 0);
       break;
     default:
       assert(false);
-      p_converted_frame = NULL;
+      out_frame = NULL;
       break;
   }
 
@@ -226,9 +223,9 @@ WebRtc_Word32 ViEExternalRendererImpl::RenderFrame(
                                         external_renderer_height_, stream_id);
   }
 
-  if (p_converted_frame) {
-    external_renderer_->DeliverFrame(p_converted_frame->Buffer(),
-                                     p_converted_frame->Length(),
+  if (out_frame) {
+    external_renderer_->DeliverFrame(out_frame->Buffer(),
+                                     out_frame->Length(),
                                      video_frame.TimeStamp());
   }
   return 0;

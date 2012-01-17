@@ -13,6 +13,7 @@
 
 #include "modules/video_render/main/interface/video_render_defines.h"
 #include "system_wrappers/interface/map_wrapper.h"
+#include "system_wrappers/interface/scoped_ptr.h"
 #include "video_engine/include/vie_render.h"
 #include "video_engine/vie_frame_provider_base.h"
 
@@ -39,6 +40,7 @@ class ViEExternalRendererImpl : public VideoRenderCallback {
   RawVideoType external_renderer_format_;
   WebRtc_UWord32 external_renderer_width_;
   WebRtc_UWord32 external_renderer_height_;
+  scoped_ptr<VideoFrame> converted_frame_;
 };
 
 class ViERenderer: public ViEFrameCallback {
