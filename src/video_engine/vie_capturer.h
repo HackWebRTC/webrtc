@@ -78,7 +78,7 @@ class ViECapturer
 
   // Start/Stop.
   WebRtc_Word32 Start(
-      const CaptureCapability capture_capability = CaptureCapability());
+      const CaptureCapability& capture_capability = CaptureCapability());
   WebRtc_Word32 Stop();
   bool Started();
 

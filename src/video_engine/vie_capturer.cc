@@ -211,7 +211,7 @@ int ViECapturer::FrameCallbackChanged() {
   return 0;
 }
 
-WebRtc_Word32 ViECapturer::Start(const CaptureCapability capture_capability) {
+WebRtc_Word32 ViECapturer::Start(const CaptureCapability& capture_capability) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, capture_id_), "%s",
                __FUNCTION__);
   int width;

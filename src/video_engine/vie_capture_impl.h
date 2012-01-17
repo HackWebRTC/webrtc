@@ -45,7 +45,7 @@ class ViECaptureImpl
   virtual int DisconnectCaptureDevice(const int video_channel);
   virtual int StartCapture(
       const int capture_id,
-      const CaptureCapability capture_capability = CaptureCapability());
+      const CaptureCapability& capture_capability = CaptureCapability());
   virtual int StopCapture(const int capture_id);
   virtual int SetRotateCapturedFrames(const int capture_id,
                                       const RotateCapturedFrame rotation);

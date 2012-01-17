@@ -28,7 +28,7 @@ class ViEFileRecorder : protected OutStream {
   int StartRecording(const char* file_nameUTF8,
                      const VideoCodec& codec_inst,
                      AudioSource audio_source, int audio_channel,
-                     const CodecInst audio_codec_inst,
+                     const CodecInst& audio_codec_inst,
                      VoiceEngine* voe_ptr,
                      const FileFormats file_format = kFileFormatAviFile);
   int StopRecording();

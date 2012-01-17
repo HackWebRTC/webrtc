@@ -279,7 +279,7 @@ int ViECaptureImpl::DisconnectCaptureDevice(const int video_channel) {
 }
 
 int ViECaptureImpl::StartCapture(const int capture_id,
-                                 const CaptureCapability capture_capability) {
+                                 const CaptureCapability& capture_capability) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_),
                "%s(capture_id: %d)", __FUNCTION__, capture_id);
 

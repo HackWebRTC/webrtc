@@ -191,7 +191,7 @@ class WEBRTC_DLLEXPORT ViECapture {
   // Makes a capture device start capturing video frames.
   virtual int StartCapture(
       const int capture_id,
-      const CaptureCapability capture_capability = CaptureCapability()) = 0;
+      const CaptureCapability& capture_capability = CaptureCapability()) = 0;
 
   // Stops a started capture device from capturing video frames.
   virtual int StopCapture(const int capture_id) = 0;
