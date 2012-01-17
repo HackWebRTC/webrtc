@@ -13,8 +13,8 @@
  * This header file includes the descriptions of the core VAD calls.
  */
 
-#ifndef WEBRTC_VAD_CORE_H_
-#define WEBRTC_VAD_CORE_H_
+#ifndef WEBRTC_COMMON_AUDIO_VAD_VAD_CORE_H_
+#define WEBRTC_COMMON_AUDIO_VAD_VAD_CORE_H_
 
 #include "typedefs.h"
 #include "vad_defines.h"
@@ -112,24 +112,4 @@ WebRtc_Word16 WebRtcVad_CalcVad16khz(VadInstT* inst, WebRtc_Word16* speech_frame
 WebRtc_Word16 WebRtcVad_CalcVad8khz(VadInstT* inst, WebRtc_Word16* speech_frame,
                                     int frame_length);
 
-/****************************************************************************
- * WebRtcVad_GmmProbability(...)
- *
- * This function calculates the probabilities for background noise and
- * speech using Gaussian Mixture Models. A hypothesis-test is performed to decide
- * which type of signal is most probable.
- *
- * Input:
- *      - inst              : Pointer to VAD instance
- *      - feature_vector    : Feature vector = log10(energy in frequency band)
- *      - total_power       : Total power in frame.
- *      - frame_length      : Number of input samples
- *
- * Output:
- *      VAD decision        : 0 - noise, 1 - speech
- *    
- */
-WebRtc_Word16 WebRtcVad_GmmProbability(VadInstT* inst, WebRtc_Word16* feature_vector,
-                                       WebRtc_Word16 total_power, int frame_length);
-
-#endif // WEBRTC_VAD_CORE_H_
+#endif  // WEBRTC_COMMON_AUDIO_VAD_VAD_CORE_H_

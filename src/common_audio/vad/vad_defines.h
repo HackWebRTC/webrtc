@@ -23,8 +23,6 @@
 #define MIN_ENERGY          10
 #define ALPHA1              6553    // 0.2 in Q15
 #define ALPHA2              32439   // 0.99 in Q15
-#define NSP_MAX             6       // Maximum number of VAD=1 frames in a row counted
-#define MIN_STD             384     // Minimum standard deviation
 // Mode 0, Quality thresholds - Different thresholds for the different frame lengths
 #define INDIVIDUAL_10MS_Q   24
 #define INDIVIDUAL_20MS_Q   21      // (log10(2)*66)<<2 ~=16

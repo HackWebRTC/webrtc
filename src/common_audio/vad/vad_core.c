@@ -8,12 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-
-/*
- * This file includes the implementation of the core functionality in VAD.
- * For function description, see vad_core.h.
- */
-
 #include "vad_core.h"
 
 #include "signal_processing_library.h"
@@ -60,275 +54,27 @@ static const WebRtc_Word16 kNoiseDataStds[12] = {
 static const WebRtc_Word16 kSpeechDataStds[12] = {
     555, 505, 567, 524, 585, 1231, 509, 828, 492, 1540, 1079, 850 };
 
+// Constants used in GmmProbability().
+//
+// Maximum number of counted speech (VAD = 1) frames in a row.
+static const int16_t kMaxSpeechFrames = 6;
+// Minimum standard deviation for both speech and noise.
+static const int16_t kMinStd = 384;
+
 static const int kInitCheck = 42;
 
-// Initialize VAD
-int WebRtcVad_InitCore(VadInstT *inst, short mode)
-{
-    int i;
-
-    // Initialization of struct
-    inst->vad = 1;
-    inst->frame_counter = 0;
-    inst->over_hang = 0;
-    inst->num_of_speech = 0;
-
-    // Initialization of downsampling filter state
-    inst->downsampling_filter_states[0] = 0;
-    inst->downsampling_filter_states[1] = 0;
-    inst->downsampling_filter_states[2] = 0;
-    inst->downsampling_filter_states[3] = 0;
-
-    // Read initial PDF parameters
-    for (i = 0; i < NUM_TABLE_VALUES; i++)
-    {
-        inst->noise_means[i] = kNoiseDataMeans[i];
-        inst->speech_means[i] = kSpeechDataMeans[i];
-        inst->noise_stds[i] = kNoiseDataStds[i];
-        inst->speech_stds[i] = kSpeechDataStds[i];
-    }
-
-    // Index and Minimum value vectors are initialized
-    for (i = 0; i < 16 * NUM_CHANNELS; i++)
-    {
-        inst->low_value_vector[i] = 10000;
-        inst->index_vector[i] = 0;
-    }
-
-    for (i = 0; i < 5; i++)
-    {
-        inst->upper_state[i] = 0;
-        inst->lower_state[i] = 0;
-    }
-
-    for (i = 0; i < 4; i++)
-    {
-        inst->hp_filter_state[i] = 0;
-    }
-
-    // Init mean value memory, for FindMin function
-    inst->mean_value[0] = 1600;
-    inst->mean_value[1] = 1600;
-    inst->mean_value[2] = 1600;
-    inst->mean_value[3] = 1600;
-    inst->mean_value[4] = 1600;
-    inst->mean_value[5] = 1600;
-
-    if (mode == 0)
-    {
-        // Quality mode
-        inst->over_hang_max_1[0] = OHMAX1_10MS_Q; // Overhang short speech burst
-        inst->over_hang_max_1[1] = OHMAX1_20MS_Q; // Overhang short speech burst
-        inst->over_hang_max_1[2] = OHMAX1_30MS_Q; // Overhang short speech burst
-        inst->over_hang_max_2[0] = OHMAX2_10MS_Q; // Overhang long speech burst
-        inst->over_hang_max_2[1] = OHMAX2_20MS_Q; // Overhang long speech burst
-        inst->over_hang_max_2[2] = OHMAX2_30MS_Q; // Overhang long speech burst
-
-        inst->individual[0] = INDIVIDUAL_10MS_Q;
-        inst->individual[1] = INDIVIDUAL_20MS_Q;
-        inst->individual[2] = INDIVIDUAL_30MS_Q;
-
-        inst->total[0] = TOTAL_10MS_Q;
-        inst->total[1] = TOTAL_20MS_Q;
-        inst->total[2] = TOTAL_30MS_Q;
-    } else if (mode == 1)
-    {
-        // Low bitrate mode
-        inst->over_hang_max_1[0] = OHMAX1_10MS_LBR; // Overhang short speech burst
-        inst->over_hang_max_1[1] = OHMAX1_20MS_LBR; // Overhang short speech burst
-        inst->over_hang_max_1[2] = OHMAX1_30MS_LBR; // Overhang short speech burst
-        inst->over_hang_max_2[0] = OHMAX2_10MS_LBR; // Overhang long speech burst
-        inst->over_hang_max_2[1] = OHMAX2_20MS_LBR; // Overhang long speech burst
-        inst->over_hang_max_2[2] = OHMAX2_30MS_LBR; // Overhang long speech burst
-
-        inst->individual[0] = INDIVIDUAL_10MS_LBR;
-        inst->individual[1] = INDIVIDUAL_20MS_LBR;
-        inst->individual[2] = INDIVIDUAL_30MS_LBR;
-
-        inst->total[0] = TOTAL_10MS_LBR;
-        inst->total[1] = TOTAL_20MS_LBR;
-        inst->total[2] = TOTAL_30MS_LBR;
-    } else if (mode == 2)
-    {
-        // Aggressive mode
-        inst->over_hang_max_1[0] = OHMAX1_10MS_AGG; // Overhang short speech burst
-        inst->over_hang_max_1[1] = OHMAX1_20MS_AGG; // Overhang short speech burst
-        inst->over_hang_max_1[2] = OHMAX1_30MS_AGG; // Overhang short speech burst
-        inst->over_hang_max_2[0] = OHMAX2_10MS_AGG; // Overhang long speech burst
-        inst->over_hang_max_2[1] = OHMAX2_20MS_AGG; // Overhang long speech burst
-        inst->over_hang_max_2[2] = OHMAX2_30MS_AGG; // Overhang long speech burst
-
-        inst->individual[0] = INDIVIDUAL_10MS_AGG;
-        inst->individual[1] = INDIVIDUAL_20MS_AGG;
-        inst->individual[2] = INDIVIDUAL_30MS_AGG;
-
-        inst->total[0] = TOTAL_10MS_AGG;
-        inst->total[1] = TOTAL_20MS_AGG;
-        inst->total[2] = TOTAL_30MS_AGG;
-    } else
-    {
-        // Very aggressive mode
-        inst->over_hang_max_1[0] = OHMAX1_10MS_VAG; // Overhang short speech burst
-        inst->over_hang_max_1[1] = OHMAX1_20MS_VAG; // Overhang short speech burst
-        inst->over_hang_max_1[2] = OHMAX1_30MS_VAG; // Overhang short speech burst
-        inst->over_hang_max_2[0] = OHMAX2_10MS_VAG; // Overhang long speech burst
-        inst->over_hang_max_2[1] = OHMAX2_20MS_VAG; // Overhang long speech burst
-        inst->over_hang_max_2[2] = OHMAX2_30MS_VAG; // Overhang long speech burst
-
-        inst->individual[0] = INDIVIDUAL_10MS_VAG;
-        inst->individual[1] = INDIVIDUAL_20MS_VAG;
-        inst->individual[2] = INDIVIDUAL_30MS_VAG;
-
-        inst->total[0] = TOTAL_10MS_VAG;
-        inst->total[1] = TOTAL_20MS_VAG;
-        inst->total[2] = TOTAL_30MS_VAG;
-    }
-
-    inst->init_flag = kInitCheck;
-
-    return 0;
-}
-
-// Set aggressiveness mode
-int WebRtcVad_set_mode_core(VadInstT *inst, short mode)
-{
-
-    if (mode == 0)
-    {
-        // Quality mode
-        inst->over_hang_max_1[0] = OHMAX1_10MS_Q; // Overhang short speech burst
-        inst->over_hang_max_1[1] = OHMAX1_20MS_Q; // Overhang short speech burst
-        inst->over_hang_max_1[2] = OHMAX1_30MS_Q; // Overhang short speech burst
-        inst->over_hang_max_2[0] = OHMAX2_10MS_Q; // Overhang long speech burst
-        inst->over_hang_max_2[1] = OHMAX2_20MS_Q; // Overhang long speech burst
-        inst->over_hang_max_2[2] = OHMAX2_30MS_Q; // Overhang long speech burst
-
-        inst->individual[0] = INDIVIDUAL_10MS_Q;
-        inst->individual[1] = INDIVIDUAL_20MS_Q;
-        inst->individual[2] = INDIVIDUAL_30MS_Q;
-
-        inst->total[0] = TOTAL_10MS_Q;
-        inst->total[1] = TOTAL_20MS_Q;
-        inst->total[2] = TOTAL_30MS_Q;
-    } else if (mode == 1)
-    {
-        // Low bitrate mode
-        inst->over_hang_max_1[0] = OHMAX1_10MS_LBR; // Overhang short speech burst
-        inst->over_hang_max_1[1] = OHMAX1_20MS_LBR; // Overhang short speech burst
-        inst->over_hang_max_1[2] = OHMAX1_30MS_LBR; // Overhang short speech burst
-        inst->over_hang_max_2[0] = OHMAX2_10MS_LBR; // Overhang long speech burst
-        inst->over_hang_max_2[1] = OHMAX2_20MS_LBR; // Overhang long speech burst
-        inst->over_hang_max_2[2] = OHMAX2_30MS_LBR; // Overhang long speech burst
-
-        inst->individual[0] = INDIVIDUAL_10MS_LBR;
-        inst->individual[1] = INDIVIDUAL_20MS_LBR;
-        inst->individual[2] = INDIVIDUAL_30MS_LBR;
-
-        inst->total[0] = TOTAL_10MS_LBR;
-        inst->total[1] = TOTAL_20MS_LBR;
-        inst->total[2] = TOTAL_30MS_LBR;
-    } else if (mode == 2)
-    {
-        // Aggressive mode
-        inst->over_hang_max_1[0] = OHMAX1_10MS_AGG; // Overhang short speech burst
-        inst->over_hang_max_1[1] = OHMAX1_20MS_AGG; // Overhang short speech burst
-        inst->over_hang_max_1[2] = OHMAX1_30MS_AGG; // Overhang short speech burst
-        inst->over_hang_max_2[0] = OHMAX2_10MS_AGG; // Overhang long speech burst
-        inst->over_hang_max_2[1] = OHMAX2_20MS_AGG; // Overhang long speech burst
-        inst->over_hang_max_2[2] = OHMAX2_30MS_AGG; // Overhang long speech burst
-
-        inst->individual[0] = INDIVIDUAL_10MS_AGG;
-        inst->individual[1] = INDIVIDUAL_20MS_AGG;
-        inst->individual[2] = INDIVIDUAL_30MS_AGG;
-
-        inst->total[0] = TOTAL_10MS_AGG;
-        inst->total[1] = TOTAL_20MS_AGG;
-        inst->total[2] = TOTAL_30MS_AGG;
-    } else if (mode == 3)
-    {
-        // Very aggressive mode
-        inst->over_hang_max_1[0] = OHMAX1_10MS_VAG; // Overhang short speech burst
-        inst->over_hang_max_1[1] = OHMAX1_20MS_VAG; // Overhang short speech burst
-        inst->over_hang_max_1[2] = OHMAX1_30MS_VAG; // Overhang short speech burst
-        inst->over_hang_max_2[0] = OHMAX2_10MS_VAG; // Overhang long speech burst
-        inst->over_hang_max_2[1] = OHMAX2_20MS_VAG; // Overhang long speech burst
-        inst->over_hang_max_2[2] = OHMAX2_30MS_VAG; // Overhang long speech burst
-
-        inst->individual[0] = INDIVIDUAL_10MS_VAG;
-        inst->individual[1] = INDIVIDUAL_20MS_VAG;
-        inst->individual[2] = INDIVIDUAL_30MS_VAG;
-
-        inst->total[0] = TOTAL_10MS_VAG;
-        inst->total[1] = TOTAL_20MS_VAG;
-        inst->total[2] = TOTAL_30MS_VAG;
-    } else
-    {
-        return -1;
-    }
-
-    return 0;
-}
-
-// Calculate VAD decision by first extracting feature values and then calculate
-// probability for both speech and background noise.
-
-WebRtc_Word16 WebRtcVad_CalcVad32khz(VadInstT *inst, WebRtc_Word16 *speech_frame,
-                                     int frame_length)
-{
-    WebRtc_Word16 len, vad;
-    WebRtc_Word16 speechWB[480]; // Downsampled speech frame: 960 samples (30ms in SWB)
-    WebRtc_Word16 speechNB[240]; // Downsampled speech frame: 480 samples (30ms in WB)
-
-
-    // Downsample signal 32->16->8 before doing VAD
-    WebRtcVad_Downsampling(speech_frame, speechWB, &(inst->downsampling_filter_states[2]),
-                           frame_length);
-    len = WEBRTC_SPL_RSHIFT_W16(frame_length, 1);
-
-    WebRtcVad_Downsampling(speechWB, speechNB, inst->downsampling_filter_states, len);
-    len = WEBRTC_SPL_RSHIFT_W16(len, 1);
-
-    // Do VAD on an 8 kHz signal
-    vad = WebRtcVad_CalcVad8khz(inst, speechNB, len);
-
-    return vad;
-}
-
-WebRtc_Word16 WebRtcVad_CalcVad16khz(VadInstT *inst, WebRtc_Word16 *speech_frame,
-                                     int frame_length)
-{
-    WebRtc_Word16 len, vad;
-    WebRtc_Word16 speechNB[240]; // Downsampled speech frame: 480 samples (30ms in WB)
-
-    // Wideband: Downsample signal before doing VAD
-    WebRtcVad_Downsampling(speech_frame, speechNB, inst->downsampling_filter_states,
-                           frame_length);
-
-    len = WEBRTC_SPL_RSHIFT_W16(frame_length, 1);
-    vad = WebRtcVad_CalcVad8khz(inst, speechNB, len);
-
-    return vad;
-}
-
-WebRtc_Word16 WebRtcVad_CalcVad8khz(VadInstT *inst, WebRtc_Word16 *speech_frame,
-                                    int frame_length)
-{
-    WebRtc_Word16 feature_vector[NUM_CHANNELS], total_power;
-
-    // Get power in the bands
-    total_power = WebRtcVad_CalculateFeatures(inst, speech_frame, frame_length,
-                                              feature_vector);
-
-    // Make a VAD
-    inst->vad = WebRtcVad_GmmProbability(inst, feature_vector, total_power, frame_length);
-
-    return inst->vad;
-}
-
-// Calculate probability for both speech and background noise, and perform a
-// hypothesis-test.
-WebRtc_Word16 WebRtcVad_GmmProbability(VadInstT *inst, WebRtc_Word16 *feature_vector,
-                                       WebRtc_Word16 total_power, int frame_length)
+// Calculates the probabilities for both speech and background noise using
+// Gaussian Mixture Models. A hypothesis-test is performed to decide which type
+// of signal is most probable.
+//
+// - inst           [i/o] : Pointer to VAD instance
+// - feature_vector [i]   : Feature vector = log10(energy in frequency band)
+// - total_power    [i]   : Total power in audio frame.
+// - frame_length   [i]   : Number of input samples
+//
+// - returns              : the VAD decision (0 - noise, 1 - speech).
+static int16_t GmmProbability(VadInstT *inst, WebRtc_Word16 *feature_vector,
+                              WebRtc_Word16 total_power, int frame_length)
 {
     int n, k;
     WebRtc_Word16 backval;
@@ -590,8 +336,8 @@ WebRtc_Word16 WebRtcVad_GmmProbability(VadInstT *inst, WebRtc_Word16 *feature_ve
                     tmp16 += 128; // Rounding
                     ssk += WEBRTC_SPL_RSHIFT_W16(tmp16, 8);
                     // Division with 8 plus Q7
-                    if (ssk < MIN_STD)
-                        ssk = MIN_STD;
+                    if (ssk < kMinStd)
+                        ssk = kMinStd;
                     *sstd2ptr = ssk;
                 } else
                 {
@@ -618,8 +364,8 @@ WebRtc_Word16 WebRtcVad_GmmProbability(VadInstT *inst, WebRtc_Word16 *feature_ve
                     tmp16 += 32; // Rounding
                     nsk += WEBRTC_SPL_RSHIFT_W16(tmp16, 6);
 
-                    if (nsk < MIN_STD)
-                        nsk = MIN_STD;
+                    if (nsk < kMinStd)
+                        nsk = kMinStd;
 
                     *nstd2ptr = nsk;
                 }
@@ -713,12 +459,209 @@ WebRtc_Word16 WebRtcVad_GmmProbability(VadInstT *inst, WebRtc_Word16 *feature_ve
     } else
     {
         inst->num_of_speech = inst->num_of_speech + 1;
-        if (inst->num_of_speech > NSP_MAX)
+        if (inst->num_of_speech > kMaxSpeechFrames)
         {
-            inst->num_of_speech = NSP_MAX;
+            inst->num_of_speech = kMaxSpeechFrames;
             inst->over_hang = overhead2;
         } else
             inst->over_hang = overhead1;
     }
     return vadflag;
+}
+
+// Initialize VAD
+int WebRtcVad_InitCore(VadInstT *inst, short mode)
+{
+    int i;
+
+    // Initialization of struct
+    inst->vad = 1;
+    inst->frame_counter = 0;
+    inst->over_hang = 0;
+    inst->num_of_speech = 0;
+
+    // Initialization of downsampling filter state
+    inst->downsampling_filter_states[0] = 0;
+    inst->downsampling_filter_states[1] = 0;
+    inst->downsampling_filter_states[2] = 0;
+    inst->downsampling_filter_states[3] = 0;
+
+    // Read initial PDF parameters
+    for (i = 0; i < NUM_TABLE_VALUES; i++)
+    {
+        inst->noise_means[i] = kNoiseDataMeans[i];
+        inst->speech_means[i] = kSpeechDataMeans[i];
+        inst->noise_stds[i] = kNoiseDataStds[i];
+        inst->speech_stds[i] = kSpeechDataStds[i];
+    }
+
+    // Index and Minimum value vectors are initialized
+    for (i = 0; i < 16 * NUM_CHANNELS; i++)
+    {
+        inst->low_value_vector[i] = 10000;
+        inst->index_vector[i] = 0;
+    }
+
+    for (i = 0; i < 5; i++)
+    {
+        inst->upper_state[i] = 0;
+        inst->lower_state[i] = 0;
+    }
+
+    for (i = 0; i < 4; i++)
+    {
+        inst->hp_filter_state[i] = 0;
+    }
+
+    // Init mean value memory, for FindMin function
+    inst->mean_value[0] = 1600;
+    inst->mean_value[1] = 1600;
+    inst->mean_value[2] = 1600;
+    inst->mean_value[3] = 1600;
+    inst->mean_value[4] = 1600;
+    inst->mean_value[5] = 1600;
+
+    if (WebRtcVad_set_mode_core(inst, mode) != 0) {
+      return -1;
+    }
+
+    inst->init_flag = kInitCheck;
+
+    return 0;
+}
+
+// Set aggressiveness mode
+int WebRtcVad_set_mode_core(VadInstT *inst, short mode)
+{
+
+    if (mode == 0)
+    {
+        // Quality mode
+        inst->over_hang_max_1[0] = OHMAX1_10MS_Q; // Overhang short speech burst
+        inst->over_hang_max_1[1] = OHMAX1_20MS_Q; // Overhang short speech burst
+        inst->over_hang_max_1[2] = OHMAX1_30MS_Q; // Overhang short speech burst
+        inst->over_hang_max_2[0] = OHMAX2_10MS_Q; // Overhang long speech burst
+        inst->over_hang_max_2[1] = OHMAX2_20MS_Q; // Overhang long speech burst
+        inst->over_hang_max_2[2] = OHMAX2_30MS_Q; // Overhang long speech burst
+
+        inst->individual[0] = INDIVIDUAL_10MS_Q;
+        inst->individual[1] = INDIVIDUAL_20MS_Q;
+        inst->individual[2] = INDIVIDUAL_30MS_Q;
+
+        inst->total[0] = TOTAL_10MS_Q;
+        inst->total[1] = TOTAL_20MS_Q;
+        inst->total[2] = TOTAL_30MS_Q;
+    } else if (mode == 1)
+    {
+        // Low bitrate mode
+        inst->over_hang_max_1[0] = OHMAX1_10MS_LBR; // Overhang short speech burst
+        inst->over_hang_max_1[1] = OHMAX1_20MS_LBR; // Overhang short speech burst
+        inst->over_hang_max_1[2] = OHMAX1_30MS_LBR; // Overhang short speech burst
+        inst->over_hang_max_2[0] = OHMAX2_10MS_LBR; // Overhang long speech burst
+        inst->over_hang_max_2[1] = OHMAX2_20MS_LBR; // Overhang long speech burst
+        inst->over_hang_max_2[2] = OHMAX2_30MS_LBR; // Overhang long speech burst
+
+        inst->individual[0] = INDIVIDUAL_10MS_LBR;
+        inst->individual[1] = INDIVIDUAL_20MS_LBR;
+        inst->individual[2] = INDIVIDUAL_30MS_LBR;
+
+        inst->total[0] = TOTAL_10MS_LBR;
+        inst->total[1] = TOTAL_20MS_LBR;
+        inst->total[2] = TOTAL_30MS_LBR;
+    } else if (mode == 2)
+    {
+        // Aggressive mode
+        inst->over_hang_max_1[0] = OHMAX1_10MS_AGG; // Overhang short speech burst
+        inst->over_hang_max_1[1] = OHMAX1_20MS_AGG; // Overhang short speech burst
+        inst->over_hang_max_1[2] = OHMAX1_30MS_AGG; // Overhang short speech burst
+        inst->over_hang_max_2[0] = OHMAX2_10MS_AGG; // Overhang long speech burst
+        inst->over_hang_max_2[1] = OHMAX2_20MS_AGG; // Overhang long speech burst
+        inst->over_hang_max_2[2] = OHMAX2_30MS_AGG; // Overhang long speech burst
+
+        inst->individual[0] = INDIVIDUAL_10MS_AGG;
+        inst->individual[1] = INDIVIDUAL_20MS_AGG;
+        inst->individual[2] = INDIVIDUAL_30MS_AGG;
+
+        inst->total[0] = TOTAL_10MS_AGG;
+        inst->total[1] = TOTAL_20MS_AGG;
+        inst->total[2] = TOTAL_30MS_AGG;
+    } else if (mode == 3)
+    {
+        // Very aggressive mode
+        inst->over_hang_max_1[0] = OHMAX1_10MS_VAG; // Overhang short speech burst
+        inst->over_hang_max_1[1] = OHMAX1_20MS_VAG; // Overhang short speech burst
+        inst->over_hang_max_1[2] = OHMAX1_30MS_VAG; // Overhang short speech burst
+        inst->over_hang_max_2[0] = OHMAX2_10MS_VAG; // Overhang long speech burst
+        inst->over_hang_max_2[1] = OHMAX2_20MS_VAG; // Overhang long speech burst
+        inst->over_hang_max_2[2] = OHMAX2_30MS_VAG; // Overhang long speech burst
+
+        inst->individual[0] = INDIVIDUAL_10MS_VAG;
+        inst->individual[1] = INDIVIDUAL_20MS_VAG;
+        inst->individual[2] = INDIVIDUAL_30MS_VAG;
+
+        inst->total[0] = TOTAL_10MS_VAG;
+        inst->total[1] = TOTAL_20MS_VAG;
+        inst->total[2] = TOTAL_30MS_VAG;
+    } else
+    {
+        return -1;
+    }
+
+    return 0;
+}
+
+// Calculate VAD decision by first extracting feature values and then calculate
+// probability for both speech and background noise.
+
+WebRtc_Word16 WebRtcVad_CalcVad32khz(VadInstT *inst, WebRtc_Word16 *speech_frame,
+                                     int frame_length)
+{
+    WebRtc_Word16 len, vad;
+    WebRtc_Word16 speechWB[480]; // Downsampled speech frame: 960 samples (30ms in SWB)
+    WebRtc_Word16 speechNB[240]; // Downsampled speech frame: 480 samples (30ms in WB)
+
+
+    // Downsample signal 32->16->8 before doing VAD
+    WebRtcVad_Downsampling(speech_frame, speechWB, &(inst->downsampling_filter_states[2]),
+                           frame_length);
+    len = WEBRTC_SPL_RSHIFT_W16(frame_length, 1);
+
+    WebRtcVad_Downsampling(speechWB, speechNB, inst->downsampling_filter_states, len);
+    len = WEBRTC_SPL_RSHIFT_W16(len, 1);
+
+    // Do VAD on an 8 kHz signal
+    vad = WebRtcVad_CalcVad8khz(inst, speechNB, len);
+
+    return vad;
+}
+
+WebRtc_Word16 WebRtcVad_CalcVad16khz(VadInstT *inst, WebRtc_Word16 *speech_frame,
+                                     int frame_length)
+{
+    WebRtc_Word16 len, vad;
+    WebRtc_Word16 speechNB[240]; // Downsampled speech frame: 480 samples (30ms in WB)
+
+    // Wideband: Downsample signal before doing VAD
+    WebRtcVad_Downsampling(speech_frame, speechNB, inst->downsampling_filter_states,
+                           frame_length);
+
+    len = WEBRTC_SPL_RSHIFT_W16(frame_length, 1);
+    vad = WebRtcVad_CalcVad8khz(inst, speechNB, len);
+
+    return vad;
+}
+
+WebRtc_Word16 WebRtcVad_CalcVad8khz(VadInstT *inst, WebRtc_Word16 *speech_frame,
+                                    int frame_length)
+{
+    WebRtc_Word16 feature_vector[NUM_CHANNELS], total_power;
+
+    // Get power in the bands
+    total_power = WebRtcVad_CalculateFeatures(inst, speech_frame, frame_length,
+                                              feature_vector);
+
+    // Make a VAD
+    inst->vad = GmmProbability(inst, feature_vector, total_power, frame_length);
+
+    return inst->vad;
 }
