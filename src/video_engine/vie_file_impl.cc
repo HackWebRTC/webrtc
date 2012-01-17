@@ -949,7 +949,7 @@ VideoFrame& video_frame) {
 
 ViECaptureSnapshot::ViECaptureSnapshot()
     : crit_(CriticalSectionWrapper::CreateCriticalSection()),
-      condition_varaible_(*ConditionVariableWrapper::CreateConditionVariable()),
+      condition_varaible_(ConditionVariableWrapper::CreateConditionVariable()),
       video_frame_(NULL) {
 }
 
@@ -964,7 +964,7 @@ bool ViECaptureSnapshot::GetSnapshot(VideoFrame& video_frame,
                                      unsigned int max_wait_time) {
   crit_->Enter();
   video_frame_ = new VideoFrame();
-  if (condition_varaible_.SleepCS(*(crit_.get()), max_wait_time)) {
+  if (condition_varaible_->SleepCS(*(crit_.get()), max_wait_time)) {
     // Snapshot taken.
     video_frame.SwapFrame(*video_frame_);
     delete video_frame_;
@@ -984,7 +984,7 @@ const WebRtc_UWord32 CSRC[kRtpCsrcSize]) {
     return;
   }
   video_frame_->SwapFrame(video_frame);
-  condition_varaible_.WakeAll();
+  condition_varaible_->WakeAll();
   return;
 }
 

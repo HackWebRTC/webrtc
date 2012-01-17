@@ -43,6 +43,7 @@ int ViEFileImage::ConvertJPEGToVideoFrame(int engine_id,
                                   image_buffer._size, image_file)) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, engine_id,
                  "%s could not read file %s", __FUNCTION__, file_nameUTF8);
+    fclose(image_file);
     delete [] image_buffer._buffer;
     return -1;
   }

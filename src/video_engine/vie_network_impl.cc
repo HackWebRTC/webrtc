@@ -354,6 +354,7 @@ int ViENetworkImpl::GetLocalIP(char ip_address[64], bool ipv6) {
   if (ipv6) {
     WebRtc_UWord8 local_ip[16];
     if (socket_transport->LocalHostAddressIPV6(local_ip) != 0) {
+      UdpTransport::Destroy(socket_transport);
       WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_),
                    "%s: Could not get local IP", __FUNCTION__);
       SetLastError(kViENetworkUnknownError);
@@ -370,6 +371,7 @@ int ViENetworkImpl::GetLocalIP(char ip_address[64], bool ipv6) {
   } else {
     WebRtc_UWord32 local_ip = 0;
     if (socket_transport->LocalHostAddress(local_ip) != 0) {
+      UdpTransport::Destroy(socket_transport);
       WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_),
                    "%s: Could not get local IP", __FUNCTION__);
       SetLastError(kViENetworkUnknownError);

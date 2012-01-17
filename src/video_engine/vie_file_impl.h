@@ -43,7 +43,7 @@ class ViECaptureSnapshot : public ViEFrameCallback {
 
  private:
   scoped_ptr<CriticalSectionWrapper> crit_;
-  ConditionVariableWrapper& condition_varaible_;
+  scoped_ptr<ConditionVariableWrapper> condition_varaible_;
   VideoFrame* video_frame_;
 };
 
