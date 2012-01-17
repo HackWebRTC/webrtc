@@ -516,13 +516,6 @@ void CDXChannelDlg::SetSendCodec()
     }
     TEST_MUSTPASS(_vieCodec->SetSendCodec(_channelId, codec),-5);
 
-    if (codec.codecType == webrtc::kVideoCodecMPEG4)
-    {
-        unsigned char configParameterSize = 0;
-        _vieCodec->GetCodecConfigParameters(_channelId, codec.codecSpecific.MPEG4.configParameters, configParameterSize);
-        codec.codecSpecific.MPEG4.configParametersSize = configParameterSize;
-        _vieCodec->SetReceiveCodec(_channelId, codec);
-    }
     if (codec.codecType == webrtc::kVideoCodecI420)
     {        // Need to set the receive codec size
         _vieCodec->SetReceiveCodec(_channelId, codec);
