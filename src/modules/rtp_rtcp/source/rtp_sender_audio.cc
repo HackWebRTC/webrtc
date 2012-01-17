@@ -40,8 +40,8 @@ RTPSenderAudio::RTPSenderAudio(const WebRtc_Word32 id, RtpRtcpClock* clock,
     _cngSWBPayloadType(-1),
     _lastPayloadType(-1),
     _includeAudioLevelIndication(false),    // @TODO - reset at Init()?
-    _audioLevelIndicationID(0)
-{
+    _audioLevelIndicationID(0),
+    _audioLevel_dBov(0) {
 };
 
 RTPSenderAudio::~RTPSenderAudio()

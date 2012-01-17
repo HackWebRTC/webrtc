@@ -17,24 +17,25 @@
 namespace webrtc {
 using namespace RTCPHelp;
 
-RTCPPacketInformation::RTCPPacketInformation() :
-    rtcpPacketTypeFlags(0),
-    nackSequenceNumbers(0),
-    nackSequenceNumbersLength(0),
-    applicationSubType(0),
-    applicationName(0),
-    applicationData(),
-    applicationLength(0),
-    reportBlock(false),
-    fractionLost(0),
-    roundTripTime(0),
-    lastReceivedExtendedHighSeqNum(0),
-    jitter(0),
-    interArrivalJitter(0),
-    sliPictureId(0),
-    rpsiPictureId(0),
-    VoIPMetric(NULL)
-{
+RTCPPacketInformation::RTCPPacketInformation()
+    : rtcpPacketTypeFlags(0),
+      remoteSSRC(0),
+      nackSequenceNumbers(0),
+      nackSequenceNumbersLength(0),
+      applicationSubType(0),
+      applicationName(0),
+      applicationData(),
+      applicationLength(0),
+      reportBlock(false),
+      fractionLost(0),
+      roundTripTime(0),
+      lastReceivedExtendedHighSeqNum(0),
+      jitter(0),
+      interArrivalJitter(0),
+      sliPictureId(0),
+      rpsiPictureId(0),
+      receiverEstimatedMaxBitrate(0),
+      VoIPMetric(NULL) {
 }
 
 RTCPPacketInformation::~RTCPPacketInformation()

@@ -29,27 +29,22 @@ RTCPUtility::RTCPCnameInformation::~RTCPCnameInformation()
 ///////////
 // RTCPParserV2 : currently read only
 
-RTCPUtility::RTCPParserV2::RTCPParserV2( const WebRtc_UWord8* rtcpData,
+RTCPUtility::RTCPParserV2::RTCPParserV2(const WebRtc_UWord8* rtcpData,
                                         size_t rtcpDataLength,
                                         bool rtcpReducedSizeEnable)
-    :
-    _ptrRTCPDataBegin(rtcpData),
-    _RTCPReducedSizeEnable(rtcpReducedSizeEnable),
-    _ptrRTCPDataEnd(rtcpData + rtcpDataLength),
-
-    _validPacket(false),
-    _ptrRTCPData(rtcpData),
-
-    _state(State_TopLevel),
-    _numberOfBlocks(0),
-
-    _packetType(kRtcpNotValidCode)
-{
-    Validate();
+    : _ptrRTCPDataBegin(rtcpData),
+      _RTCPReducedSizeEnable(rtcpReducedSizeEnable),
+      _ptrRTCPDataEnd(rtcpData + rtcpDataLength),
+      _validPacket(false),
+      _ptrRTCPData(rtcpData),
+      _ptrRTCPBlockEnd(NULL),
+      _state(State_TopLevel),
+      _numberOfBlocks(0),
+      _packetType(kRtcpNotValidCode) {
+  Validate();
 }
 
-RTCPUtility::RTCPParserV2::~RTCPParserV2()
-{
+RTCPUtility::RTCPParserV2::~RTCPParserV2() {
 }
 
 ptrdiff_t
@@ -1475,17 +1470,15 @@ RTCPUtility::RTCPParserV2::ParseAPPItem()
     return true;
 }
 
-RTCPUtility::RTCPPacketIterator::RTCPPacketIterator(
-    WebRtc_UWord8* rtcpData,
-    size_t rtcpDataLength)
-    :
-    _ptrBegin(rtcpData),
-    _ptrEnd(rtcpData + rtcpDataLength)
-{
+RTCPUtility::RTCPPacketIterator::RTCPPacketIterator(WebRtc_UWord8* rtcpData,
+                                                    size_t rtcpDataLength)
+    : _ptrBegin(rtcpData),
+      _ptrEnd(rtcpData + rtcpDataLength),
+      _ptrBlock(NULL) {
+  memset(&_header, 0, sizeof(_header));
 }
 
-RTCPUtility::RTCPPacketIterator::~RTCPPacketIterator()
-{
+RTCPUtility::RTCPPacketIterator::~RTCPPacketIterator() {
 }
 
 const RTCPUtility::RTCPCommonHeader*
