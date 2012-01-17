@@ -35,13 +35,6 @@ public:
     WebRtc_Word32 SetDecodeCodec(VideoCodec& videoCodecInst,
                                  WebRtc_Word32 numberOfCores);
 
-    WebRtc_Word32 CodecConfigParameters(WebRtc_UWord8* buffer,
-                                        WebRtc_Word32 size);
-
-    WebRtc_Word32 SetCodecConfigParameters(WebRtc_UWord8 payloadType,
-                                           const WebRtc_UWord8* buffer,
-                                           WebRtc_Word32 length);
-
     WebRtc_Word32 Decode(VideoFrame& decodedVideo,
                          const EncodedVideoData& encodedData);
 

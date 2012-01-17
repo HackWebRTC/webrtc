@@ -251,14 +251,8 @@ const char* ExcludeFrameTypesToStr(ExcludeFrameTypes e) {
 
 const char* VideoCodecTypeToStr(webrtc::VideoCodecType e) {
   switch (e) {
-    case kVideoCodecH263:
-      return "H263";
-    case kVideoCodecH264:
-      return "H264";
     case kVideoCodecVP8:
       return "VP8";
-    case kVideoCodecMPEG4:
-      return "MPEG4";
     case kVideoCodecI420:
       return "I420";
     case kVideoCodecRED:

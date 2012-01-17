@@ -228,11 +228,6 @@ public:
     virtual WebRtc_Word32 DecodeFromStorage(
         const EncodedVideoData& frameFromStorage);
 
-    // Set codec config parameters
-    virtual WebRtc_Word32 SetCodecConfigParameters(WebRtc_UWord8 payloadType,
-                                                   const WebRtc_UWord8* buffer,
-                                                   WebRtc_Word32 length);
-
     // Minimum playout delay (Used for lip-sync). This is the minimum delay
     // required to sync with audio. Not included in  VideoCodingModule::Delay()
     // Defaults to 0 ms.

@@ -100,8 +100,7 @@ void ViEAutoTest::ViECodecExtendedTest()
         {
             EXPECT_EQ(0, ptrViECodec->GetCodec(idx, videoCodec));
 
-            if (videoCodec.codecType != webrtc::kVideoCodecH263
-                && videoCodec.codecType != webrtc::kVideoCodecI420)
+            if (videoCodec.codecType != webrtc::kVideoCodecI420)
             {
                 videoCodec.width = 640;
                 videoCodec.height = 480;

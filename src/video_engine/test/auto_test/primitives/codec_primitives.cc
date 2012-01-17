@@ -136,8 +136,7 @@ void TestCodecs(const TbInterfaces& interfaces,
   for (int i = 0; i < codec_interface->NumberOfCodecs(); i++) {
     EXPECT_EQ(0, codec_interface->GetCodec(i, video_codec));
 
-    if (video_codec.codecType == webrtc::kVideoCodecMPEG4 ||
-        video_codec.codecType == webrtc::kVideoCodecRED ||
+    if (video_codec.codecType == webrtc::kVideoCodecRED ||
         video_codec.codecType == webrtc::kVideoCodecULPFEC) {
       ViETest::Log("\t %d. %s not tested", i, video_codec.plName);
     } else {

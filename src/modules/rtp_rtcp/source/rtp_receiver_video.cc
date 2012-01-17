@@ -39,7 +39,6 @@ RTPReceiverVideo::RTPReceiverVideo(const WebRtc_Word32 id,
     _estimatedBW(0),
     _currentFecFrameDecoded(false),
     _receiveFEC(NULL),
-    _h263InverseLogic(false),
     _overUseDetector(),
     _videoBitRate(),
     _lastBitRateChange(0),
@@ -109,24 +108,9 @@ RTPReceiverVideo::RegisterReceiveVideoPayload(const WebRtc_Word8 payloadName[RTP
     if (ModuleRTPUtility::StringCompare(payloadName, "VP8",3))
     {
         videoType = kRtpVp8Video;
-
-    } else if ((ModuleRTPUtility::StringCompare(payloadName, "H263-1998", 9)) ||
-               (ModuleRTPUtility::StringCompare(payloadName, "H263-2000", 9)))
-    {
-        videoType = kRtpH2631998Video;
-
-    } else if (ModuleRTPUtility::StringCompare(payloadName, "H263", 4))
-    {
-        videoType = kRtpH263Video;
-
-    } else if (ModuleRTPUtility::StringCompare(payloadName, "MP4V-ES", 7))
-    {
-        videoType = kRtpMpeg4Video;
-
     } else if (ModuleRTPUtility::StringCompare(payloadName, "I420", 4))
     {
         videoType = kRtpNoVideo;
-
     } else if (ModuleRTPUtility::StringCompare(payloadName, "ULPFEC", 6))
     {
         // store this
@@ -136,7 +120,7 @@ RTPReceiverVideo::RegisterReceiveVideoPayload(const WebRtc_Word8 payloadName[RTP
         }
         _receiveFEC->SetPayloadTypeFEC(payloadType);
         videoType = kRtpFecVideo;
-    }else
+    } else
     {
         return NULL;
     }
@@ -434,15 +418,6 @@ RTPReceiverVideo::SetCodecType(const RtpVideoCodecTypes videoType,
     case kRtpVp8Video:
         rtpHeader->type.Video.codec = kRTPVideoVP8;
         break;
-    case kRtpH263Video:
-        rtpHeader->type.Video.codec = kRTPVideoH263;
-        break;
-    case kRtpH2631998Video:
-        rtpHeader->type.Video.codec = kRTPVideoH263;
-        break;
-    case kRtpMpeg4Video:
-        rtpHeader->type.Video.codec = kRTPVideoMPEG4;
-        break;
     case kRtpFecVideo:
         rtpHeader->type.Video.codec = kRTPVideoFEC;
         break;
@@ -475,15 +450,6 @@ RTPReceiverVideo::ParseVideoCodecSpecificSwitch(WebRtcRTPHeader* rtpHeader,
     case kRtpVp8Video:
         retVal = ReceiveVp8Codec(rtpHeader, payloadData, payloadDataLength);
         break;
-    case kRtpH263Video:
-        retVal = ReceiveH263Codec(rtpHeader, payloadData, payloadDataLength);
-        break;
-    case kRtpH2631998Video:
-        retVal = ReceiveH2631998Codec(rtpHeader,payloadData, payloadDataLength);
-        break;
-    case kRtpMpeg4Video:
-        retVal = ReceiveMPEG4Codec(rtpHeader,payloadData, payloadDataLength);
-        break;
     default:
         _criticalSectionReceiverVideo->Leave();
         assert(((void)"ParseCodecSpecific videoType can not be unknown here!", false));
@@ -491,157 +457,6 @@ RTPReceiverVideo::ParseVideoCodecSpecificSwitch(WebRtcRTPHeader* rtpHeader,
     }
     return retVal;
 }
-
-WebRtc_Word32
-RTPReceiverVideo::ReceiveH263Codec(WebRtcRTPHeader* rtpHeader,
-                                   const WebRtc_UWord8* payloadData,
-                                   const WebRtc_UWord16 payloadDataLength)
-{
-    ModuleRTPUtility::RTPPayloadParser rtpPayloadParser(kRtpH263Video,
-                                                        payloadData,
-                                                        payloadDataLength,
-                                                        _id);
-    ModuleRTPUtility::RTPPayload parsedPacket;
-    const bool success = rtpPayloadParser.Parse(parsedPacket);
-
-    // from here down we only work on local data
-    _criticalSectionReceiverVideo->Leave();
-
-    if (!success)
-    {
-        return -1;
-    }
-    if (IP_PACKET_SIZE < parsedPacket.info.H263.dataLength +
-        (parsedPacket.info.H263.insert2byteStartCode ? 2 : 0))
-    {
-        return -1;
-    }
-    return ReceiveH263CodecCommon(parsedPacket, rtpHeader);
-}
-
-WebRtc_Word32
-RTPReceiverVideo::ReceiveH2631998Codec(WebRtcRTPHeader* rtpHeader,
-                                       const WebRtc_UWord8* payloadData,
-                                       const WebRtc_UWord16 payloadDataLength)
-{
-    ModuleRTPUtility::RTPPayloadParser rtpPayloadParser(kRtpH2631998Video,
-                                                        payloadData,
-                                                        payloadDataLength,
-                                                        _id);
-
-    ModuleRTPUtility::RTPPayload parsedPacket;
-    const bool success = rtpPayloadParser.Parse(parsedPacket);
-    if (!success)
-    {
-        _criticalSectionReceiverVideo->Leave();
-        return -1;
-    }
-    if (IP_PACKET_SIZE < parsedPacket.info.H263.dataLength +
-        (parsedPacket.info.H263.insert2byteStartCode ? 2 : 0))
-    {
-        _criticalSectionReceiverVideo->Leave();
-        return -1;
-    }
-    // from here down we only work on local data
-    _criticalSectionReceiverVideo->Leave();
-
-    return ReceiveH263CodecCommon(parsedPacket, rtpHeader);
-}
-
-WebRtc_Word32
-RTPReceiverVideo::ReceiveH263CodecCommon(ModuleRTPUtility::RTPPayload& parsedPacket,
-                                         WebRtcRTPHeader* rtpHeader)
-{
-    rtpHeader->frameType = (parsedPacket.frameType == ModuleRTPUtility::kIFrame) ? kVideoFrameKey : kVideoFrameDelta;
-    if (_h263InverseLogic) // Microsoft H263 bug
-    {
-        if (rtpHeader->frameType == kVideoFrameKey)
-            rtpHeader->frameType = kVideoFrameDelta;
-        else
-            rtpHeader->frameType = kVideoFrameKey;
-    }
-    rtpHeader->type.Video.isFirstPacket = parsedPacket.info.H263.hasPictureStartCode;
-
-    // if p == 0
-    // it's a follow-on packet, hence it's not independently decodable
-    rtpHeader->type.Video.codecHeader.H263.independentlyDecodable = parsedPacket.info.H263.hasPbit;
-
-    if (parsedPacket.info.H263.hasPictureStartCode)
-    {
-        rtpHeader->type.Video.width = parsedPacket.info.H263.frameWidth;
-        rtpHeader->type.Video.height = parsedPacket.info.H263.frameHeight;
-    } else
-    {
-        rtpHeader->type.Video.width = 0;
-        rtpHeader->type.Video.height = 0;
-    }
-    rtpHeader->type.Video.codecHeader.H263.bits = (parsedPacket.info.H263.startBits > 0)?true:false;
-
-    // copy to a local buffer
-    WebRtc_UWord8 dataBuffer[IP_PACKET_SIZE];
-    WebRtc_UWord16 dataLength = 0;
-
-    // we need to copy since we modify the first byte
-    if(parsedPacket.info.H263.insert2byteStartCode)
-    {
-        dataBuffer[0] = 0;
-        dataBuffer[1] = 0;
-        memcpy(dataBuffer+2, parsedPacket.info.H263.data, parsedPacket.info.H263.dataLength);
-        dataLength = 2 + parsedPacket.info.H263.dataLength;
-    } else
-    {
-        memcpy(dataBuffer, parsedPacket.info.H263.data, parsedPacket.info.H263.dataLength);
-        dataLength = parsedPacket.info.H263.dataLength;
-    }
-
-    if(parsedPacket.info.H263.dataLength > 0)
-    {
-        if(parsedPacket.info.H263.startBits > 0)
-        {
-            // make sure that the ignored start bits are zero
-            dataBuffer[0] &= (0xff >> parsedPacket.info.H263.startBits);
-        }
-        if(parsedPacket.info.H263.endBits > 0)
-        {
-            // make sure that the ignored end bits are zero
-            dataBuffer[parsedPacket.info.H263.dataLength -1] &= ((0xff << parsedPacket.info.H263.endBits) & 0xff);
-        }
-    }
-
-    return CallbackOfReceivedPayloadData(dataBuffer, dataLength, rtpHeader);
-}
-
-WebRtc_Word32
-RTPReceiverVideo::ReceiveMPEG4Codec(WebRtcRTPHeader* rtpHeader,
-                                    const WebRtc_UWord8* payloadData,
-                                    const WebRtc_UWord16 payloadDataLength)
-{
-    ModuleRTPUtility::RTPPayloadParser rtpPayloadParser(kRtpMpeg4Video,
-                                                        payloadData,
-                                                        payloadDataLength,
-                                                        _id);
-
-    ModuleRTPUtility::RTPPayload parsedPacket;
-    const bool success = rtpPayloadParser.Parse(parsedPacket);
-    if (!success)
-    {
-        _criticalSectionReceiverVideo->Leave();
-        return -1;
-    }
-    // from here down we only work on local data
-    _criticalSectionReceiverVideo->Leave();
-
-    rtpHeader->frameType = (parsedPacket.frameType == ModuleRTPUtility::kIFrame) ? kVideoFrameKey : kVideoFrameDelta;
-    rtpHeader->type.Video.isFirstPacket = parsedPacket.info.MPEG4.isFirstPacket;
-
-    if(CallbackOfReceivedPayloadData(parsedPacket.info.MPEG4.data,
-                                     parsedPacket.info.MPEG4.dataLength,
-                                     rtpHeader) != 0)
-                        {
-                            return -1;
-                        }
-            return 0;
-        }
 
 WebRtc_Word32
 RTPReceiverVideo::ReceiveVp8Codec(WebRtcRTPHeader* rtpHeader,
@@ -735,12 +550,6 @@ RTPReceiverVideo::ReceiveGenericCodec(WebRtcRTPHeader* rtpHeader,
     {
         return -1;
     }
-    return 0;
-}
-
-WebRtc_Word32 RTPReceiverVideo::SetH263InverseLogic(const bool enable)
-{
-    _h263InverseLogic = enable;
     return 0;
 }
 

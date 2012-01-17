@@ -3121,15 +3121,6 @@ WebRtc_Word32 ModuleRtpRtcpImpl::BoundingSet(bool &tmmbrOwner,
                                      boundingSet);
 }
 
-WebRtc_Word32 ModuleRtpRtcpImpl::SetH263InverseLogic(const bool enable) {
-    WEBRTC_TRACE(kTraceModuleCall,
-                 kTraceRtpRtcp,
-                 _id,
-                 "SetH263InverseLogic(%s)",
-                 enable ? "true":"false");
-    return _rtpReceiver.SetH263InverseLogic(enable);
-}
-
 void ModuleRtpRtcpImpl::SendKeyFrame() {
     WEBRTC_TRACE(kTraceStream, kTraceRtpRtcp, _id, "SendKeyFrame()");
     OnReceivedIntraFrameRequest(0);

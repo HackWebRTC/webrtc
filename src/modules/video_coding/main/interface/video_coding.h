@@ -463,21 +463,6 @@ public:
                                        WebRtc_UWord32 payloadLength,
                                        const WebRtcRTPHeader& rtpInfo) = 0;
 
-    // Sets codec config parameters received out-of-band to the currently
-    // selected receive codec.
-    //
-    // Input:
-    //      - payloadType   : Payload type which specifies which codec to set these
-    //                        parameters to.
-    //      - buffer        : Codec config parameters.
-    //      - length        : Length of the parameter data.
-    //
-    // Return value      : VCM_OK, on success.
-    //                     < 0,         on error.
-    virtual WebRtc_Word32 SetCodecConfigParameters(WebRtc_UWord8 payloadType,
-                                                   const WebRtc_UWord8* buffer,
-                                                   WebRtc_Word32 length) = 0;
-
     // Minimum playout delay (Used for lip-sync). This is the minimum delay required
     // to sync with audio. Not included in  VideoCodingModule::Delay()
     // Defaults to 0 ms.

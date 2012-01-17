@@ -122,9 +122,6 @@ void SetSuitableResolution(webrtc::VideoCodec* video_codec,
     // I420 is very bandwidth heavy, so limit it here.
     video_codec->width = 176;
     video_codec->height = 144;
-  } else if (video_codec->codecType == webrtc::kVideoCodecH263) {
-    video_codec->width = 352;
-    video_codec->height = 288;
   } else {
     // Otherwise go with 640x480.
     video_codec->width = 640;

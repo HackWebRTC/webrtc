@@ -90,10 +90,6 @@ int ParseArguments(int argc, char **argv, CmdArgs& args)
             {
                 args.codecType = kVideoCodecI420;
             }
-            else if (strncmp(argv[i+1], "H263", 4) == 0)
-            {
-                args.codecType = kVideoCodecH263;
-            }
             else
                 return -1;
 

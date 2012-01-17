@@ -32,7 +32,6 @@ class TestSessionInfo : public ::testing::Test {
     packet_.dataPtr = packet_buffer_;
     packet_.seqNum = 0;
     packet_.timestamp = 0;
-    packet_.bits = false;
   }
 
   void FillPacket(uint8_t start_value) {
@@ -89,7 +88,7 @@ class TestNalUnits : public TestSessionInfo {
  protected:
   virtual void SetUp() {
     TestSessionInfo::SetUp();
-    packet_.codec = kVideoCodecH264;
+    packet_.codec = kVideoCodecVP8;
   }
 
   bool VerifyNalu(int offset, int packets_expected, int start_value) {
@@ -915,72 +914,4 @@ TEST_F(TestNackList, LostAllButEmptyPackets) {
   EXPECT_EQ(-2, seq_num_list_[3]);
   EXPECT_EQ(4, seq_num_list_[4]);
 }
-
-TEST_F(TestSessionInfo, PacketPriorBitsPacketLost) {
-  packet_.seqNum = 0;
-  packet_.codecSpecificHeader.codec = kRTPVideoH263;
-  packet_.bits = true;
-  packet_.isFirstPacket = false;
-  packet_.markerBit = true;
-  FillPacket(1);
-  ASSERT_EQ(session_.InsertPacket(packet_, frame_buffer_, false, 0),
-            kPacketBufferSize);
-
-  EXPECT_EQ(0, session_.PrepareForDecode(frame_buffer_));
-  EXPECT_EQ(0, session_.SessionLength());
-  EXPECT_EQ(1, session_.packets_not_decodable());
-}
-
-TEST_F(TestSessionInfo, MiddlePacketPriorBitsPacketLost) {
-  packet_.codecSpecificHeader.codec = kRTPVideoH263;
-  packet_.bits = false;
-  packet_.isFirstPacket = true;
-  packet_.seqNum = 0;
-  packet_.markerBit = false;
-  FillPacket(2);
-  ASSERT_EQ(session_.InsertPacket(packet_, frame_buffer_, false, 0),
-            kPacketBufferSize);
-
-  packet_.bits = true;
-  packet_.isFirstPacket = false;
-  packet_.seqNum += 2;
-  packet_.markerBit = true;
-  FillPacket(2);
-  ASSERT_EQ(session_.InsertPacket(packet_, frame_buffer_, false, 0),
-            kPacketBufferSize);
-
-  EXPECT_EQ(2 * kPacketBufferSize, session_.PrepareForDecode(frame_buffer_));
-  EXPECT_EQ(2 * kPacketBufferSize, session_.SessionLength());
-  EXPECT_EQ(1, session_.packets_not_decodable());
-}
-
-TEST_F(TestSessionInfo, ORingReorderedBitsPackets) {
-  const uint8_t kEndByte = 0x07;
-  const uint8_t kStartByte = 0xF8;
-  packet_.codecSpecificHeader.codec = kRTPVideoH263;
-  packet_.bits = true;
-  packet_.isFirstPacket = false;
-  packet_.seqNum = 1;
-  packet_.markerBit = true;
-  FillPacket(2);
-  packet_buffer_[0] = kStartByte;
-  ASSERT_EQ(session_.InsertPacket(packet_, frame_buffer_, false, 0),
-            kPacketBufferSize);
-
-  packet_.bits = false;
-  packet_.isFirstPacket = true;
-  packet_.seqNum = 0;
-  packet_.markerBit = false;
-  FillPacket(1);
-  packet_buffer_[kPacketBufferSize - 1] = kEndByte;
-  ASSERT_EQ(session_.InsertPacket(packet_, frame_buffer_, false, 0),
-            kPacketBufferSize);
-
-  EXPECT_EQ(2 * kPacketBufferSize - 1,
-            session_.PrepareForDecode(frame_buffer_));
-  EXPECT_EQ(2 * kPacketBufferSize - 1, session_.SessionLength());
-  EXPECT_EQ(kStartByte | kEndByte, frame_buffer_[kPacketBufferSize - 1]);
-  EXPECT_EQ(0, session_.packets_not_decodable());
-}
-
 }  // namespace webrtc

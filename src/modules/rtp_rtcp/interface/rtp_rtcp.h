@@ -1073,11 +1073,6 @@ public:
     *   return -1 on failure else 0
     */
     virtual WebRtc_Word32 RequestKeyFrame(const FrameType frameType = kVideoFrameKey) = 0;
-
-    /*
-    *   Only for H.263 to interop with bad endpoints
-    */
-    virtual WebRtc_Word32 SetH263InverseLogic(const bool enable) = 0;
 };
 } // namespace webrtc
 #endif // WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_RTCP_H_

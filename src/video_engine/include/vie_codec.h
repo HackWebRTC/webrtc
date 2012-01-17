@@ -162,10 +162,6 @@ class WEBRTC_DLLEXPORT ViECodec {
   virtual int WaitForFirstKeyFrame(const int video_channel,
                                    const bool wait) = 0;
 
-  // This function makes VideoEngine decode all incoming H.263 key frames as
-  // delta frames and all incoming delta frames as key frames.
-  virtual int SetInverseH263Logic(int video_channel, bool enable) = 0;
-
  protected:
   ViECodec() {}
   virtual ~ViECodec() {}

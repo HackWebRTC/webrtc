@@ -157,26 +157,13 @@ WebRtc_Word32 ModuleFileUtility::InitAviWriting(
     bitMapInfoHeader.biSizeImage    = bitMapInfoHeader.biWidth *
         bitMapInfoHeader.biHeight * bitMapInfoHeader.biBitCount / 8;
 
-    if(videoCodecInst.codecType == kVideoCodecMPEG4)
+    if (_aviOutFile->CreateVideoStream(
+        videoStreamHeader,
+        bitMapInfoHeader,
+        NULL,
+        0) != 0)
     {
-        if(_aviOutFile->CreateVideoStream(
-            videoStreamHeader,
-            bitMapInfoHeader,
-            videoCodecInst.codecSpecific.MPEG4.configParameters,
-            videoCodecInst.codecSpecific.MPEG4.configParametersSize) != 0)
-        {
-            return -1;
-        }
-    } else
-    {
-        if(_aviOutFile->CreateVideoStream(
-            videoStreamHeader,
-            bitMapInfoHeader,
-            NULL,
-            0) != 0)
-        {
-            return -1;
-        }
+        return -1;
     }
 
     if(!videoOnly)
@@ -349,34 +336,10 @@ WebRtc_Word32 ModuleFileUtility::InitAviReading(const WebRtc_Word8* filename,
         videoInStreamHeader.dwRate);
 
     const size_t plnameLen = sizeof(_videoCodec.plName) / sizeof(char);
-    if (bitmapInfo.biCompression == AviFile::MakeFourCc('M','4','S','2'))
-    {
-        strncpy(_videoCodec.plName, "MP4V-ES", plnameLen);
-        if (configLength > 0)
-        {
-            if (configLength < kConfigParameterSize)
-            {
-                _videoCodec.codecSpecific.MPEG4.configParametersSize =
-                    (WebRtc_UWord8)configLength;
-                memcpy(_videoCodec.codecSpecific.MPEG4.configParameters,
-                       &codecConfigParameters,
-                       _videoCodec.codecSpecific.MPEG4.configParametersSize);
-            }
-            else
-            {
-                return -1;
-            }
-        }
-    }
-    else if (bitmapInfo.biCompression == AviFile::MakeFourCc('I','4','2','0'))
+    if (bitmapInfo.biCompression == AviFile::MakeFourCc('I','4','2','0'))
     {
         strncpy(_videoCodec.plName, "I420", plnameLen);
        _videoCodec.codecType = kVideoCodecI420;
-    }
-    else if (bitmapInfo.biCompression == AviFile::MakeFourCc('H','2','6','3'))
-    {
-        strncpy(_videoCodec.plName, "H263", plnameLen);
-        _videoCodec.codecType = kVideoCodecH263;
     }
     else if (bitmapInfo.biCompression ==
              AviFile::MakeFourCc('V', 'P', '8', '0'))

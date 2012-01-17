@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stdio.h>
 
 #include "critical_section_wrapper.h"
 #include "engine_configurations.h"
 #include "rtp_rtcp.h"
-#include "stdio.h"
 #include "trace.h"
 #include "video_coding.h"
 #include "video_processing.h"

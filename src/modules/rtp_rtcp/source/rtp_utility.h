@@ -22,9 +22,6 @@ namespace webrtc {
 enum RtpVideoCodecTypes
 {
     kRtpNoVideo       = 0,
-    kRtpH263Video     = 1,
-    kRtpH2631998Video = 2,
-    kRtpMpeg4Video    = 5,
     kRtpFecVideo      = 10,
     kRtpVp8Video      = 11
 };
@@ -153,29 +150,6 @@ namespace ModuleRTPUtility
         kPFrame         // Delta frame
     };
 
-    struct RTPPayloadH263
-    {
-        // H.263 and H.263+
-        bool                hasPictureStartCode;
-        bool                insert2byteStartCode;
-        bool                hasPbit;
-        WebRtc_UWord16      frameWidth;
-        WebRtc_UWord16      frameHeight;
-
-        WebRtc_UWord8         endBits;   // ignore last end bits
-        WebRtc_UWord8         startBits; // ignore first bits
-
-        const WebRtc_UWord8*  data;
-        WebRtc_UWord16        dataLength;
-    };
-
-    struct RTPPayloadMPEG4
-    {
-        // MPEG4
-        bool                   isFirstPacket;
-        const WebRtc_UWord8*   data;
-        WebRtc_UWord16         dataLength;
-    };
     struct RTPPayloadVP8
     {
         bool                 nonReferenceFrame;
@@ -199,8 +173,6 @@ namespace ModuleRTPUtility
 
     union RTPPayloadUnion
     {
-        RTPPayloadH263  H263;
-        RTPPayloadMPEG4 MPEG4;
         RTPPayloadVP8   VP8;
     };
 
@@ -229,11 +201,6 @@ namespace ModuleRTPUtility
     private:
         bool ParseGeneric(RTPPayload& parsedPacket) const;
 
-        bool ParseH263(RTPPayload& parsedPacket) const;
-        bool ParseH2631998(RTPPayload& parsedPacket) const;
-
-        bool ParseMPEG4(RTPPayload& parsedPacket) const;
-
         bool ParseVP8(RTPPayload& parsedPacket) const;
 
         int ParseVP8Extension(RTPPayloadVP8 *vp8,
@@ -258,16 +225,6 @@ namespace ModuleRTPUtility
         int ParseVP8FrameSize(RTPPayload& parsedPacket,
                               const WebRtc_UWord8 *dataPtr,
                               int dataLength) const;
-
-        // H.263
-        bool H263PictureStartCode(const WebRtc_UWord8* data,
-                                  const bool skipFirst2bytes = false) const;
-
-        void GetH263FrameSize(const WebRtc_UWord8* inputVideoBuffer,
-                              WebRtc_UWord16& width,
-                              WebRtc_UWord16& height) const;
-
-        FrameTypes GetH263FrameType(const WebRtc_UWord8* inputVideoBuffer) const;
 
     private:
         WebRtc_Word32               _id;

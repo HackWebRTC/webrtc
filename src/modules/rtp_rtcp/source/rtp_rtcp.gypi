@@ -71,8 +71,6 @@
         'forward_error_correction_internal.h',
         'overuse_detector.cc',
         'overuse_detector.h',
-        'h263_information.cc',
-        'h263_information.h',
         'remote_rate_control.cc',
         'remote_rate_control.h',
         'rtp_packet_history.cc',

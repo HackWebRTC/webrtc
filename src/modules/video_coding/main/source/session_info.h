@@ -69,7 +69,6 @@ class VCMSessionInfo {
   bool LayerSync() const;
   int Tl0PicId() const;
   bool NonReference() const;
-  int PrepareForDecode(uint8_t* frame_buffer);
   void SetPreviousFrameLoss() { previous_frame_loss_ = true; }
   bool PreviousFrameLoss() const { return previous_frame_loss_; }
 

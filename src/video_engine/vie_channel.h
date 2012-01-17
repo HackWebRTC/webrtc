@@ -334,8 +334,6 @@ class ViEChannel
 
   WebRtc_Word32 RegisterEffectFilter(ViEEffectFilter* effect_filter);
 
-  WebRtc_Word32 SetInverseH263Logic(const bool enable);
-
   ViEFileRecorder& GetIncomingFileRecorder();
   void ReleaseIncomingFileRecorder();
 

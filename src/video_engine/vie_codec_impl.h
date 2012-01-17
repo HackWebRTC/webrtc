@@ -63,7 +63,6 @@ class ViECodecImpl
   virtual int DeregisterDecoderObserver(const int video_channel);
   virtual int SendKeyFrame(const int video_channel);
   virtual int WaitForFirstKeyFrame(const int video_channel, const bool wait);
-  virtual int SetInverseH263Logic(int video_channel, bool enable);
 
  protected:
   ViECodecImpl();

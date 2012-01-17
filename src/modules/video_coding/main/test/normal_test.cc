@@ -92,13 +92,6 @@ VCMNTEncodeCompleteCallback::SendData(
     rtpInfo.type.Video.height = 0;
     switch (_test.VideoType())
     {
-    case kVideoCodecH263:
-        rtpInfo.type.Video.codec = kRTPVideoH263;
-        rtpInfo.type.Video.codecHeader.H263.bits = false;
-        rtpInfo.type.Video.codecHeader.H263.independentlyDecodable = false;
-        rtpInfo.type.Video.height = (WebRtc_UWord16)_test.Height();
-        rtpInfo.type.Video.width = (WebRtc_UWord16)_test.Width();
-        break;
     case kVideoCodecVP8:
         rtpInfo.type.Video.codec = kRTPVideoVP8;
         rtpInfo.type.Video.codecHeader.VP8.InitRTPVideoHeaderVP8();

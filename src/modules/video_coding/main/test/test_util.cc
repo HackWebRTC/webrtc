@@ -34,14 +34,6 @@ ConvertCodecType(const char* plname)
     {
         return kRTPVideoVP8;
     }
-    else if (strncmp(plname,"H263" , 5) == 0)
-    {
-        return kRTPVideoH263;
-    }
-    else if (strncmp(plname, "H263-1998",10) == 0)
-    {
-        return kRTPVideoH263;
-    }
     else if (strncmp(plname,"I420" , 5) == 0)
     {
         return kRTPVideoI420;

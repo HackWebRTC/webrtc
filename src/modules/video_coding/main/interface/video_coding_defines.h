@@ -36,22 +36,14 @@ namespace webrtc
 #define VCM_ERROR_REQUEST_SLI   -12
 #define VCM_NOT_IMPLEMENTED     -20
 
-#define VCM_H263_PAYLOAD_TYPE       34
 #define VCM_RED_PAYLOAD_TYPE        96
 #define VCM_ULPFEC_PAYLOAD_TYPE     97
-#define VCM_H263_1998_PAYLOAD_TYPE 121
 #define VCM_VP8_PAYLOAD_TYPE       120
 #define VCM_I420_PAYLOAD_TYPE      124
 
 enum VCMNackProperties
 {
     kNackHistoryLength = 450
-};
-
-enum VCMH263FrameDrop
-{
-    kDecodePFrames,
-    kDropPFrames
 };
 
 enum VCMVideoProtection

@@ -76,20 +76,6 @@ WebRtc_Word32 VideoCoder::SetDecodeCodec(VideoCodec& videoCodecInst,
     return 0;
 }
 
-
-WebRtc_Word32 VideoCoder::CodecConfigParameters(WebRtc_UWord8* buffer,
-                                                WebRtc_Word32 size)
-{
-    return _vcm->CodecConfigParameters(buffer, size);
-}
-
-WebRtc_Word32 VideoCoder::SetCodecConfigParameters(WebRtc_UWord8 payloadType,
-                                                   const WebRtc_UWord8* buffer,
-                                                   WebRtc_Word32 length)
-{
-    return _vcm->SetCodecConfigParameters(payloadType, buffer, length);
-}
-
 WebRtc_Word32 VideoCoder::Decode(VideoFrame& decodedVideo,
                                  const EncodedVideoData& encodedData)
 {

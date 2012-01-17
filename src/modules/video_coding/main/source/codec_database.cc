@@ -274,11 +274,6 @@ VCMCodecDataBase::RegisterSendCodec(const VideoCodec* sendCodec,
     {
         return VCM_PARAMETER_ERROR;
     }
-    if (strcmp(sendCodec->plName, "H263") == 0 &&
-        (sendCodec->plType != 34))
-    {
-        return VCM_PARAMETER_ERROR;
-    }
     if (sendCodec->plType <= 0)
     {
         return VCM_PARAMETER_ERROR;
@@ -656,9 +651,6 @@ VCMCodecDataBase::CreateAndInitDecoder(WebRtc_UWord8 payloadType,
         ReleaseDecoder(ptrDecoder);
         return NULL;
     }
-
-    SetCodecConfigParameters(*ptrDecoder, *decoderItem->_settings);
-
     memcpy(&newCodec, decoderItem->_settings, sizeof(VideoCodec));
     return ptrDecoder;
 }
@@ -721,36 +713,6 @@ VCMCodecDataBase::ReleaseDecoder(VCMGenericDecoder* decoder) const
     }
 }
 
-WebRtc_Word32
-VCMCodecDataBase::SetCodecConfigParameters(WebRtc_UWord8 payloadType,
-                                           const WebRtc_UWord8* buffer,
-                                           WebRtc_Word32 length)
-{
-    VCMDecoderMapItem* decItem = FindDecoderItem(payloadType);
-    if (decItem == NULL)
-    {
-        return VCM_PARAMETER_ERROR;
-    }
-    switch (decItem->_settings->codecType)
-    {
-    case kVideoCodecMPEG4:
-    {
-        memcpy(decItem->_settings->codecSpecific.MPEG4.configParameters, buffer, length);
-        decItem->_settings->codecSpecific.MPEG4.configParametersSize =
-                static_cast<WebRtc_UWord8>(length);
-        break;
-    }
-    default:
-        // This codec doesn't have codec config parameters
-        return VCM_GENERAL_ERROR;
-    }
-    if (_ptrDecoder != NULL && _receiveCodec.plType == decItem->_settings->plType)
-    {
-        return _ptrDecoder->SetCodecConfigParameters(buffer, length);
-    }
-    return VCM_OK;
-}
-
 VCMDecoderMapItem*
 VCMCodecDataBase::FindDecoderItem(WebRtc_UWord8 payloadType) const
 {
@@ -790,28 +752,4 @@ VCMCodecDataBase::CreateDecoder(VideoCodecType type) const
         return NULL;
     }
 }
-
-void
-VCMCodecDataBase::SetCodecConfigParameters(VCMGenericDecoder& decoder,
-                                           const VideoCodec& settings)
-{
-    switch (settings.codecType)
-    {
-    case kVideoCodecMPEG4:
-    {
-        if (settings.codecSpecific.MPEG4.configParametersSize > 0)
-        {
-            decoder.SetCodecConfigParameters(
-                                    settings.codecSpecific.MPEG4.configParameters,
-                                    settings.codecSpecific.MPEG4.configParametersSize);
-        }
-        break;
-    }
-    default:
-        // No codec config parameters for this codec
-        return;
-    }
-    return;
-}
-
 }

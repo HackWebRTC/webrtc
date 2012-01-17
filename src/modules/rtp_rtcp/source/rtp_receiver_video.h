@@ -60,8 +60,6 @@ public:
         const WebRtc_UWord16 incomingRtpPacketSize,
         const WebRtc_Word64 nowMS);
 
-    WebRtc_Word32 SetH263InverseLogic(const bool enable);
-
     WebRtc_Word32 ReceiveRecoveredPacketCallback(
         WebRtcRTPHeader* rtpHeader,
         const WebRtc_UWord8* payloadData,
@@ -105,22 +103,6 @@ protected:
                                       const WebRtc_UWord8* payloadData,
                                       const WebRtc_UWord16 payloadDataLength);
 
-    WebRtc_Word32 ReceiveH263Codec(WebRtcRTPHeader *rtpHeader,
-                                   const WebRtc_UWord8* payloadData,
-                                   const WebRtc_UWord16 payloadDataLength);
-
-    WebRtc_Word32 ReceiveH2631998Codec(WebRtcRTPHeader *rtpHeader,
-                                       const WebRtc_UWord8* payloadData,
-                                       const WebRtc_UWord16 payloadDataLength);
-
-    WebRtc_Word32 ReceiveH263CodecCommon(
-        ModuleRTPUtility::RTPPayload& parsedPacket,
-        WebRtcRTPHeader* rtpHeader);
-
-    WebRtc_Word32 ReceiveMPEG4Codec(WebRtcRTPHeader *rtpHeader,
-                                    const WebRtc_UWord8* payloadData,
-                                    const WebRtc_UWord16 payloadDataLength);
-
     WebRtc_Word32 ReceiveVp8Codec(WebRtcRTPHeader *rtpHeader,
                                   const WebRtc_UWord8* payloadData,
                                   const WebRtc_UWord16 payloadDataLength);
@@ -146,9 +128,6 @@ private:
       // FEC
     bool                      _currentFecFrameDecoded;
     ReceiverFEC*              _receiveFEC;
-
-    // H263
-    bool                      _h263InverseLogic;
 
     // BWE
     OverUseDetector           _overUseDetector;

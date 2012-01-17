@@ -108,8 +108,7 @@ int VCMSessionInfo::InsertBuffer(uint8_t* frame_buffer,
   PacketIterator it;
 
   int packet_size = packet.sizeBytes;
-  if (!packet.bits)
-    packet_size += (packet.insertStartCode ? kH264StartCodeLengthBytes : 0);
+  packet_size += (packet.insertStartCode ? kH264StartCodeLengthBytes : 0);
 
   // Calculate the offset into the frame buffer for this packet.
   int offset = 0;
@@ -529,7 +528,6 @@ int VCMSessionInfo::InsertPacket(const VCMPacket& packet,
                                  uint8_t* frame_buffer,
                                  bool enable_decodable_state,
                                  int rtt_ms) {
-  assert(!packet.insertStartCode || !packet.bits);
   // Check if this is first packet (only valid for some codecs)
   if (packet.isFirstPacket) {
     // The first packet in a frame signals the frame type.
@@ -582,72 +580,6 @@ void VCMSessionInfo::InformOfEmptyPacket(uint16_t seq_num) {
       LatestSequenceNumber(seq_num, empty_seq_num_low_, NULL) ==
           empty_seq_num_low_)
     empty_seq_num_low_ = seq_num;
-}
-
-int VCMSessionInfo::PrepareForDecode(uint8_t* frame_buffer) {
-  int length = SessionLength();
-  int real_data_bytes = 0;
-  if (length == 0)
-      return length;
-  PacketIterator it = packets_.begin();
-  PacketIterator prev_it = it;
-  for (; it != packets_.end(); ++it) {
-    bool packet_loss = ((*prev_it).sizeBytes == 0 ||
-        !InSequence(it, prev_it));
-    if ((*it).bits) {
-      if (prev_it != it) {  // Not the first packet.
-        uint8_t* ptr_first_byte =
-            const_cast<uint8_t*>((*it).dataPtr);
-
-        if (packet_loss) {
-          // It is be better to throw away this packet if we are
-          // missing the previous packet.
-          memset(ptr_first_byte, 0, (*it).sizeBytes);
-          ++packets_not_decodable_;
-        } else if ((*it).sizeBytes > 0) {
-          // Glue with previous byte.
-          // Move everything from [this packet start + 1, end of buffer] one
-          // byte to the left.
-          uint8_t* ptr_prev_byte =
-              const_cast<uint8_t*>((*prev_it).dataPtr) +
-              (*prev_it).sizeBytes - 1;
-          *ptr_prev_byte = (*ptr_prev_byte) | (*ptr_first_byte);
-          memmove(const_cast<uint8_t*>((*it).dataPtr),
-                  (*it).dataPtr + 1, (*it).sizeBytes - 1);
-          ShiftSubsequentPackets(it, -1);
-          (*it).sizeBytes--;
-          length--;
-          real_data_bytes += (*it).sizeBytes;
-        }
-      } else {
-        memset(const_cast<uint8_t*>((*it).dataPtr), 0,
-               (*it).sizeBytes);
-        ++packets_not_decodable_;
-      }
-    } else if (packet_loss &&
-      (*it).codecSpecificHeader.codec == kRTPVideoH263) {
-      // Pad H.263 packet losses with 10 zeros to make it easier
-      // for the decoder.
-      const int kPaddingLength = 10;
-      WebRtc_UWord8 padding_data[kPaddingLength] = {0};
-      // Make a copy of the previous packet.
-      VCMPacket padding_packet(*it);
-      ++padding_packet.seqNum;
-      padding_packet.dataPtr = padding_data;
-      padding_packet.sizeBytes = kPaddingLength;
-      length += InsertPacket(padding_packet, frame_buffer, false, 0);
-    } else {
-      real_data_bytes += (*it).sizeBytes;
-    }
-    prev_it = it;
-  }
-  if (real_data_bytes == 0) {
-    // Drop the frame since all it contains are zeros.
-    for (it = packets_.begin(); it != packets_.end(); ++it)
-      (*it).sizeBytes = 0;
-    length = 0;
-  }
-  return length;
 }
 
 int VCMSessionInfo::packets_not_decodable() const {

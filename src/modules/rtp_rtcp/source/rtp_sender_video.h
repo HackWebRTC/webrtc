@@ -20,7 +20,6 @@
 #include "list_wrapper.h"
 
 #include "video_codec_information.h"
-#include "h263_information.h"
 #include "forward_error_correction.h"
 #include "Bitrate.h"
 
@@ -104,26 +103,6 @@ private:
                             const WebRtc_UWord8* payloadData,
                             const WebRtc_UWord32 payloadSize);
 
-    WebRtc_Word32 SendH263(const FrameType frameType,
-                         const WebRtc_Word8 payloadType,
-                         const WebRtc_UWord32 captureTimeStamp,
-                         const WebRtc_UWord8* payloadData,
-                         const WebRtc_UWord32 payloadSize,
-                         VideoCodecInformation* codecInfo);
-
-    WebRtc_Word32 SendH2631998(const FrameType frameType,
-                             const WebRtc_Word8 payloadType,
-                             const WebRtc_UWord32 captureTimeStamp,
-                             const WebRtc_UWord8* payloadData,
-                             const WebRtc_UWord32 payloadSize,
-                             VideoCodecInformation* codecInfo);
-
-    WebRtc_Word32 SendMPEG4(const FrameType frameType,
-                          const WebRtc_Word8 payloadType,
-                          const WebRtc_UWord32 captureTimeStamp,
-                          const WebRtc_UWord8* payloadData,
-                          const WebRtc_UWord32 payloadSize);
-
     WebRtc_Word32 SendVP8(const FrameType frameType,
                         const WebRtc_Word8 payloadType,
                         const WebRtc_UWord32 captureTimeStamp,
@@ -131,21 +110,6 @@ private:
                         const WebRtc_UWord32 payloadSize,
                         const RTPFragmentationHeader* fragmentation,
                         const RTPVideoTypeHeader* rtpTypeHdr);
-
-    // MPEG 4
-    WebRtc_Word32 FindMPEG4NALU(const WebRtc_UWord8* inData ,WebRtc_Word32 MaxPayloadLength);
-
-    // H263
-    WebRtc_Word32 SendH263MBs(const FrameType frameType,
-                            const WebRtc_Word8 payloadType,
-                            const WebRtc_UWord32 captureTimeStamp,
-                            WebRtc_UWord8* dataBuffer,
-                            const WebRtc_UWord8 *data,
-                            const WebRtc_UWord16 rtpHeaderLength,
-                            const WebRtc_UWord8 numOfGOB,
-                            const H263Info& info,
-                            const H263MBInfo& infoMB,
-                            const WebRtc_Word32 offset);
 
 private:
     WebRtc_Word32             _id;
@@ -176,10 +140,6 @@ private:
     Bitrate                   _fecOverheadRate;
     // Bitrate used for video payload and RTP headers
     Bitrate                   _videoBitrate;
-
-    // H263
-    WebRtc_UWord8             _savedByte;
-    WebRtc_UWord8             _eBit;
 };
 } // namespace webrtc
 

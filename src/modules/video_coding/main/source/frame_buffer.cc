@@ -414,12 +414,6 @@ VCMFrameBuffer::PrepareForDecode()
             _sessionInfo.BuildVP8FragmentationHeader(_buffer, _length,
                                                      &_fragmentation);
     }
-    else
-    {
-        _length = _sessionInfo.PrepareForDecode(_buffer);
-    }
-#else
-    _length = _sessionInfo.PrepareForDecode(_buffer);
 #endif
 }
 

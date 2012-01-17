@@ -36,7 +36,6 @@ LOCAL_SRC_FILES := \
     forward_error_correction.cc \
     forward_error_correction_internal.cc \
     overuse_detector.cc \
-    h263_information.cc \
     remote_rate_control.cc \
     receiver_fec.cc \
     rtp_receiver_video.cc \

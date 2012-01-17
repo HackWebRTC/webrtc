@@ -613,25 +613,6 @@ int ViECodecImpl::WaitForFirstKeyFrame(const int video_channel,
   return 0;
 }
 
-int ViECodecImpl::SetInverseH263Logic(int video_channel, bool enable) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_),
-               "%s(video_channel: %d)", __FUNCTION__, video_channel);
-
-  ViEChannelManagerScoped cs(channel_manager_);
-  ViEChannel* vie_channel = cs.Channel(video_channel);
-  if (!vie_channel) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
-                 "%s: No channel %d", __FUNCTION__, video_channel);
-    SetLastError(kViECodecInvalidChannelId);
-    return -1;
-  }
-  if (vie_channel->SetInverseH263Logic(enable) != 0) {
-    SetLastError(kViECodecUnknownError);
-    return -1;
-  }
-  return 0;
-}
-
 bool ViECodecImpl::CodecValid(const VideoCodec& video_codec) {
   // Check pl_name matches codec_type.
   if (video_codec.codecType == kVideoCodecRED) {
@@ -658,16 +639,10 @@ bool ViECodecImpl::CodecValid(const VideoCodec& video_codec) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, -1,
                  "Codec type doesn't match pl_name", video_codec.plType);
     return false;
-  } else if ((video_codec.codecType == kVideoCodecH263 &&
-              strncmp(video_codec.plName, "H263", 4) == 0) ||
-              (video_codec.codecType == kVideoCodecH263 &&
-                  strncmp(video_codec.plName, "H263-1998", 9) == 0) ||
-              (video_codec.codecType == kVideoCodecVP8 &&
+  } else if ((video_codec.codecType == kVideoCodecVP8 &&
                   strncmp(video_codec.plName, "VP8", 4) == 0) ||
               (video_codec.codecType == kVideoCodecI420 &&
-                  strncmp(video_codec.plName, "I420", 4) == 0) ||
-              (video_codec.codecType == kVideoCodecH264 &&
-                  strncmp(video_codec.plName, "H264", 4) == 0)) {
+                  strncmp(video_codec.plName, "I420", 4) == 0)) {
     // OK.
   } else {
     WEBRTC_TRACE(kTraceError, kTraceVideo, -1,
@@ -702,17 +677,6 @@ bool ViECodecImpl::CodecValid(const VideoCodec& video_codec) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, -1,
                  "Number of Simulcast streams can not be 1");
     return false;
-  }
-  if (video_codec.codecType == kVideoCodecH263) {
-    if ((video_codec.width == 704 && video_codec.height == 576) ||
-        (video_codec.width == 352 && video_codec.height == 288) ||
-        (video_codec.width == 176 && video_codec.height == 144) ||
-        (video_codec.width == 128 && video_codec.height == 96)) {
-      // OK.
-    } else {
-      WEBRTC_TRACE(kTraceError, kTraceVideo, -1, "Invalid size for H.263");
-      return false;
-    }
   }
   return true;
 }

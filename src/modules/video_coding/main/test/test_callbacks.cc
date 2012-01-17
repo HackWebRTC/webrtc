@@ -68,10 +68,6 @@ VCMEncodeCompleteCallback::SendData(
     rtpInfo.type.Video.width = (WebRtc_UWord16)_width;
     switch (_codecType)
     {
-    case webrtc::kRTPVideoH263:
-        rtpInfo.type.Video.codecHeader.H263.bits = false;
-        rtpInfo.type.Video.codecHeader.H263.independentlyDecodable = false;
-        break;
     case webrtc::kRTPVideoVP8:
         rtpInfo.type.Video.codecHeader.VP8.InitRTPVideoHeaderVP8();
         rtpInfo.type.Video.codecHeader.VP8.nonReference =

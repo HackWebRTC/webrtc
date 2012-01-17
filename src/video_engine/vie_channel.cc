@@ -2527,8 +2527,4 @@ void ViEChannel::OnIncomingCSRCChanged(const WebRtc_Word32 id,
   }
 }
 
-WebRtc_Word32 ViEChannel::SetInverseH263Logic(const bool enable) {
-  return rtp_rtcp_.SetH263InverseLogic(enable);
-}
-
 }  // namespace webrtc

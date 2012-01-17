@@ -40,14 +40,6 @@ struct RTPAudioHeader
     WebRtc_UWord8  channel;                           // number of channels 2 = stereo
 };
 
-struct RTPVideoHeaderH263
-{
-    void InitRTPVideoHeaderH263() {};
-    bool independentlyDecodable;  // H.263-1998 if no P bit it's not independently decodable
-    bool bits;                    // H.263 mode B, Xor the lasy byte of previus packet with the
-                                  // first byte of this packet
-};
-
 enum {kNoPictureId = -1};
 enum {kNoTl0PicIdx = -1};
 enum {kNoTemporalIdx = -1};
@@ -87,15 +79,12 @@ struct RTPVideoHeaderVP8
 };
 union RTPVideoTypeHeader
 {
-    RTPVideoHeaderH263      H263;
     RTPVideoHeaderVP8       VP8;
 };
 
 enum RTPVideoCodecTypes
 {
     kRTPVideoGeneric  = 0,
-    kRTPVideoH263     = 1,
-    kRTPVideoMPEG4    = 5,
     kRTPVideoVP8      = 8,
     kRTPVideoNoVideo  = 10,
     kRTPVideoFEC      = 11,

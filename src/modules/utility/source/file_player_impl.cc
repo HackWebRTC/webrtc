@@ -696,18 +696,6 @@ WebRtc_Word32 VideoFilePlayerImpl::SetUpVideoDecoder()
         return -1;
     }
 
-    if(strncmp(video_codec_info_.plName, "MP4V-ES", 8) == 0)
-    {
-        if(_videoDecoder.SetCodecConfigParameters(
-                video_codec_info_.plType,
-                video_codec_info_.codecSpecific.MPEG4.configParameters,
-                video_codec_info_.codecSpecific.MPEG4.configParametersSize) !=
-           0)
-        {
-            return -1;
-        }
-    }
-
     _frameLengthMS = 1000/video_codec_info_.maxFramerate;
 
     // Size of unencoded data (I420) should be the largest possible frame size

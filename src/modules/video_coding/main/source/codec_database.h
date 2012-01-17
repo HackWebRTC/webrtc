@@ -174,10 +174,6 @@ public:
 
     bool RenderTiming() const;
 
-    WebRtc_Word32 SetCodecConfigParameters(WebRtc_UWord8 payloadType,
-                                         const WebRtc_UWord8* buffer,
-                                         WebRtc_Word32 length);
-
 protected:
     /**
     * Create an internal Encoder given a codec type
@@ -189,9 +185,6 @@ protected:
     * Create an internal Decoder given a codec type
     */
     VCMGenericDecoder* CreateDecoder(VideoCodecType type) const;
-
-    static void SetCodecConfigParameters(VCMGenericDecoder& decoder,
-                                         const VideoCodec& settings);
 
     VCMDecoderMapItem* FindDecoderItem(WebRtc_UWord8 payloadType) const;
 

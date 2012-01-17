@@ -486,8 +486,6 @@ public:
     virtual WebRtc_Word32 SetFECUepProtection(const bool keyUseUepProtection,
                                               const bool deltaUseUepProtection);
 
-    virtual WebRtc_Word32 SetH263InverseLogic(const bool enable);
-
     virtual WebRtc_Word32 LastReceivedNTP(WebRtc_UWord32& NTPsecs,
                                           WebRtc_UWord32& NTPfrac,
                                           WebRtc_UWord32& remoteSR);

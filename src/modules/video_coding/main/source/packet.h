@@ -23,13 +23,13 @@ class VCMPacket
 public:
     VCMPacket();
     VCMPacket(const WebRtc_UWord8* ptr,
-                   const WebRtc_UWord32 size,
-                   const WebRtcRTPHeader& rtpHeader);
+              const WebRtc_UWord32 size,
+              const WebRtcRTPHeader& rtpHeader);
     VCMPacket(const WebRtc_UWord8* ptr,
-                   WebRtc_UWord32 size,
-                   WebRtc_UWord16 seqNum,
-                   WebRtc_UWord32 timestamp,
-                   bool markerBit);
+              WebRtc_UWord32 size,
+              WebRtc_UWord16 seqNum,
+              WebRtc_UWord32 timestamp,
+              bool markerBit);
 
     void Reset();
 
@@ -47,10 +47,6 @@ public:
     VCMNaluCompleteness completeNALU;   // Default is kNaluIncomplete.
     bool insertStartCode;               // True if a start code should be inserted before this
                                         // packet.
-    bool bits;                          // The first bits of this packets are zero and the
-                                        // first
-                                        // byte should be ORed with the last packet of the
-                                        // previous frame.
     RTPVideoHeader codecSpecificHeader;
 
 protected:
@@ -58,5 +54,4 @@ protected:
 };
 
 } // namespace webrtc
-
 #endif // WEBRTC_MODULES_VIDEO_CODING_PACKET_H_

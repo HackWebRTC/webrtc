@@ -1405,32 +1405,6 @@ VideoCodingModuleImpl::IncomingPacket(const WebRtc_UWord8* incomingPayload,
     return VCM_OK;
 }
 
-// Set codec config parameters
-WebRtc_Word32
-VideoCodingModuleImpl::SetCodecConfigParameters(WebRtc_UWord8 payloadType,
-                                                const WebRtc_UWord8* buffer,
-                                                WebRtc_Word32 length)
-{
-    WEBRTC_TRACE(webrtc::kTraceModuleCall,
-                 webrtc::kTraceVideoCoding,
-                 VCMId(_id),
-                 "SetCodecConfigParameters()");
-    CriticalSectionScoped cs(_receiveCritSect);
-
-    WebRtc_Word32 ret = _codecDataBase.SetCodecConfigParameters(payloadType,
-                                                                buffer,
-                                                                length);
-    if (ret < 0)
-    {
-        WEBRTC_TRACE(webrtc::kTraceError,
-                     webrtc::kTraceVideoCoding,
-                     VCMId(_id),
-                     "SetCodecConfigParameters() failed, %d", ret);
-        return ret;
-    }
-    return VCM_OK;
-}
-
 // Minimum playout delay (used for lip-sync). This is the minimum delay required
 // to sync with audio. Not included in  VideoCodingModule::Delay()
 // Defaults to 0 ms.

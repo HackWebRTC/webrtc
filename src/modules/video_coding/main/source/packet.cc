@@ -28,7 +28,6 @@ VCMPacket::VCMPacket()
     isFirstPacket(false),
     completeNALU(kNaluUnset),
     insertStartCode(false),
-    bits(false),
     codecSpecificHeader() {
 }
 
@@ -47,7 +46,6 @@ VCMPacket::VCMPacket(const WebRtc_UWord8* ptr,
     isFirstPacket(rtpHeader.type.Video.isFirstPacket),
     completeNALU(kNaluComplete),
     insertStartCode(false),
-    bits(false),
     codecSpecificHeader(rtpHeader.type.Video)
 {
     CopyCodecSpecifics(rtpHeader.type.Video);
@@ -66,7 +64,6 @@ VCMPacket::VCMPacket(const WebRtc_UWord8* ptr, WebRtc_UWord32 size, WebRtc_UWord
     isFirstPacket(false),
     completeNALU(kNaluComplete),
     insertStartCode(false),
-    bits(false),
     codecSpecificHeader()
 {}
 
@@ -82,7 +79,6 @@ void VCMPacket::Reset() {
   isFirstPacket = false;
   completeNALU = kNaluUnset;
   insertStartCode = false;
-  bits = false;
   memset(&codecSpecificHeader, 0, sizeof(RTPVideoHeader));
 }
 
