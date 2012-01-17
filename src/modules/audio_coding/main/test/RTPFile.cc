@@ -106,7 +106,7 @@ RTPBuffer::Write(const WebRtc_UWord8 payloadType, const WebRtc_UWord32 timeStamp
 
 WebRtc_UWord16
 RTPBuffer::Read(WebRtcRTPHeader* rtpInfo,
-                WebRtc_Word8* payloadData, 
+                WebRtc_Word8* payloadData,
                 WebRtc_UWord16 payloadSize,
                 WebRtc_UWord32* offset)
 {
@@ -125,7 +125,7 @@ RTPBuffer::Read(WebRtcRTPHeader* rtpInfo,
     }
     else
     {
-      return -1;
+        return 0;
     }
     *offset = (packet->timeStamp/(packet->frequency/1000));
 
@@ -248,11 +248,11 @@ WebRtc_UWord16 RTPFile::Read(WebRtcRTPHeader* rtpInfo,
     {
       return -1;
     }
-    lengthBytes -= 20;
-    if (lengthBytes < 0)
+    if (lengthBytes < 20)
     {
       return -1;
     }
+    lengthBytes -= 20;
     EXPECT_EQ(lengthBytes, fread(payloadData, 1, lengthBytes, _rtpFile));
     return lengthBytes;
 }

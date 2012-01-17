@@ -24,12 +24,15 @@ class RTPStream
 {
 public:
     virtual ~RTPStream(){}
-    
+
     virtual void Write(const WebRtc_UWord8 payloadType, const WebRtc_UWord32 timeStamp,
                                      const WebRtc_Word16 seqNo, const WebRtc_UWord8* payloadData,
                                      const WebRtc_UWord16 payloadSize, WebRtc_UWord32 frequency) = 0;
+
+    // Returns the packet's payload size. Zero should be treated as an
+    // end-of-stream (in the case that EndOfFile() is true) or an error.
     virtual WebRtc_UWord16 Read(WebRtcRTPHeader* rtpInfo,
-                    WebRtc_Word8* payloadData, 
+                    WebRtc_Word8* payloadData,
                     WebRtc_UWord16 payloadSize,
                     WebRtc_UWord32* offset) = 0;
     virtual bool EndOfFile() const = 0;
@@ -65,7 +68,7 @@ public:
                                      const WebRtc_Word16 seqNo, const WebRtc_UWord8* payloadData,
                                      const WebRtc_UWord16 payloadSize, WebRtc_UWord32 frequency);
     WebRtc_UWord16 Read(WebRtcRTPHeader* rtpInfo,
-                    WebRtc_Word8* payloadData, 
+                    WebRtc_Word8* payloadData,
                     WebRtc_UWord16 payloadSize,
                     WebRtc_UWord32* offset);
     virtual bool EndOfFile() const;

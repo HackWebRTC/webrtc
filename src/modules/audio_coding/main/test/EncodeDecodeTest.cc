@@ -198,14 +198,15 @@ bool Receiver::IncomingPacket() {
       _firstTime = false;
       _realPayloadSizeBytes = _rtpStream->Read(&_rtpInfo, _incomingPayload,
                                                _payloadSizeBytes, &_nextTime);
-      if (_realPayloadSizeBytes < 0) {
-        printf("Error in reading incoming payload.\n");
-        return false;
+      if (_realPayloadSizeBytes == 0) {
+        if (_rtpStream->EndOfFile()) {
+          _firstTime = true;
+          return true;
+        } else {
+          printf("Error in reading incoming payload.\n");
+          return false;
+        }
       }
-      if (_realPayloadSizeBytes == 0 && _rtpStream->EndOfFile()) {
-        _firstTime = true;
-        return true;
-     }
    }
 
    WebRtc_Word32 ok = _acm->IncomingPacket(_incomingPayload,
