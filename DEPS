@@ -82,6 +82,9 @@ deps = {
 
   "trunk/third_party/libyuv":
     (Var("googlecode_url") % "libyuv") + "/trunk@121",
+    
+  "trunk/third_party/google-visualization-python":
+    (Var("googlecode_url") % "google-visualization-python") + "/trunk@15",
 }
 
 deps_os = {

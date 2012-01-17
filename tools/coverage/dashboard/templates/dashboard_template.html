@@ -1,0 +1,47 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
+    "http://www.w3.org/TR/html4/strict.dtd">
+<html>  
+  <!--
+  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
+
+  Use of this source code is governed by a BSD-style license
+  that can be found in the LICENSE file in the root of the source
+  tree. An additional intellectual property rights grant can be found
+  in the file PATENTS.  All contributing project authors may
+  be found in the AUTHORS file in the root of the source tree.
+
+  Template file to be used to generate the WebRTC dashboard.
+  -->
+  <head>
+    <title>WebRTC Coverage Dashboard</title>
+    <link href="http://code.google.com/css/codesite.pack.04102009.css"
+          rel="stylesheet" type="text/css">
+    
+    <script src="https://www.google.com/jsapi" type="text/javascript"></script>
+    <script type="text/javascript">
+      google.load('visualization', '1', {packages:['table', 'corechart']});
+
+      google.setOnLoadCallback(drawTable);
+      function drawTable() {
+        /* Build data tables and views */      
+        var coverage_data_table =
+          new google.visualization.DataTable(%(coverage_json_data)s);
+
+        /* Display tables and charts */
+        var coverage_chart = new google.visualization.LineChart(
+          document.getElementById('table_div_coverage'));
+        coverage_chart.draw(coverage_data_table, {
+          colors: ['blue', 'red'],
+          vAxis: {title: 'Coverage'},
+          hAxis: {title: 'Date'},
+          width: 1200, height: 300,
+        });
+      }
+    </script>
+  </head>
+  <body>
+    <h1>WebRTC Dashboard</h1>
+    <h3>Coverage:</h3>
+    <div id="table_div_coverage"></div>
+  </body>
+</html>

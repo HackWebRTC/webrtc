@@ -1,0 +1,23 @@
+This file describes the coverage tracking script and the coverage dashboard.
+
+ABSTRACT:
+The intention of this small tracking system is to track code coverage data
+over time. Since code coverage is continuously recomputed on the build bots,
+the track_coverage.py script is intended to run on the build bot as a cron job
+and extract the data from there. The dashboard doesn't care how often this
+script runs, but running each hour should be more than enough.
+
+The track_coverage.py script communicates with the dashboard using plain GET
+requests (that, and POST, are basically the only way to get data into a
+appengine application such as the dashboard). The dashboard is intented to
+run on the Google appengine.
+
+HOW TO RUN LOCALLY:
+Follow the following instructions:
+http://code.google.com/appengine/docs/python/gettingstartedpython27/devenvironment.html
+The dashboard can be started on 127.0.0.1:8080 using the dev_appserver.py script 
+as described in the above URL (and in the following 'hello world' page).
+
+HOW TO DEPLOY:
+Follow the following instructions:
+http://code.google.com/appengine/docs/python/gettingstartedpython27/uploading.html
