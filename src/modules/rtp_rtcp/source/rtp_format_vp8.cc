@@ -13,6 +13,9 @@
 #include <string.h>  // memcpy
 
 #include <cassert>   // assert
+#include <vector>
+
+#include "modules/rtp_rtcp/source/vp8_partition_aggregator.h"
 
 namespace webrtc {
 
@@ -33,17 +36,14 @@ RtpFormatVp8::RtpFormatVp8(const WebRtc_UWord8* payload_data,
                            VP8PacketizerMode mode)
     : payload_data_(payload_data),
       payload_size_(static_cast<int>(payload_size)),
-      payload_bytes_sent_(0),
-      part_ix_(0),
-      beginning_(true),
-      first_fragment_(true),
       vp8_fixed_payload_descriptor_bytes_(1),
       aggr_mode_(aggr_modes_[mode]),
       balance_(balance_modes_[mode]),
       separate_first_(separate_first_modes_[mode]),
       hdr_info_(hdr_info),
-      first_partition_in_packet_(0),
-      max_payload_len_(max_payload_len) {
+      num_partitions_(fragmentation.fragmentationVectorSize),
+      max_payload_len_(max_payload_len),
+      packets_calculated_(false) {
   part_info_ = fragmentation;
 }
 
@@ -54,20 +54,46 @@ RtpFormatVp8::RtpFormatVp8(const WebRtc_UWord8* payload_data,
     : payload_data_(payload_data),
       payload_size_(static_cast<int>(payload_size)),
       part_info_(),
-      payload_bytes_sent_(0),
-      part_ix_(0),
-      beginning_(true),
-      first_fragment_(true),
       vp8_fixed_payload_descriptor_bytes_(1),
       aggr_mode_(aggr_modes_[kSloppy]),
       balance_(balance_modes_[kSloppy]),
       separate_first_(separate_first_modes_[kSloppy]),
       hdr_info_(hdr_info),
-      first_partition_in_packet_(0),
-      max_payload_len_(max_payload_len) {
+      num_partitions_(1),
+      max_payload_len_(max_payload_len),
+      packets_calculated_(false) {
     part_info_.VerifyAndAllocateFragmentationHeader(1);
     part_info_.fragmentationLength[0] = payload_size;
     part_info_.fragmentationOffset[0] = 0;
+}
+
+int RtpFormatVp8::NextPacket(WebRtc_UWord8* buffer,
+                             int* bytes_to_send,
+                             bool* last_packet) {
+  if (!packets_calculated_) {
+    int ret = 0;
+    if (aggr_mode_ == kAggrPartitions && balance_) {
+      ret = GeneratePacketsBalancedAggregates();
+    } else {
+      ret = GeneratePackets();
+    }
+    if (ret < 0) {
+      return ret;
+    }
+  }
+  if (packets_.empty()) {
+    return -1;
+  }
+  InfoStruct packet_info = packets_.front();
+  packets_.pop();
+
+  *bytes_to_send = WriteHeaderAndPayload(packet_info, buffer, max_payload_len_);
+  if (*bytes_to_send < 0) {
+    return -1;
+  }
+
+  *last_packet = packets_.empty();
+  return packet_info.first_partition_ix;
 }
 
 int RtpFormatVp8::CalcNextSize(int max_payload_len, int remaining_bytes,
@@ -93,73 +119,186 @@ int RtpFormatVp8::CalcNextSize(int max_payload_len, int remaining_bytes,
   }
 }
 
-int RtpFormatVp8::NextPacket(WebRtc_UWord8* buffer,
-                             int* bytes_to_send,
-                             bool* last_packet) {
+int RtpFormatVp8::GeneratePackets() {
   if (max_payload_len_ < vp8_fixed_payload_descriptor_bytes_
       + PayloadDescriptorExtraLength() + 1) {
     // The provided payload length is not long enough for the payload
     // descriptor and one payload byte. Return an error.
     return -1;
   }
-  const int num_partitions = part_info_.fragmentationVectorSize;
-  int send_bytes = 0;  // How much data to send in this packet.
-  bool split_payload = true;  // Splitting of partitions is initially allowed.
-  int remaining_in_partition = part_info_.fragmentationOffset[part_ix_] -
-      payload_bytes_sent_ + part_info_.fragmentationLength[part_ix_] +
-      PayloadDescriptorExtraLength();
-  int rem_payload_len = max_payload_len_ - vp8_fixed_payload_descriptor_bytes_;
-  first_partition_in_packet_ = part_ix_;
-  if (first_partition_in_packet_ > 8) return -1;
+  int total_bytes_processed = 0;
+  bool start_on_new_fragment = true;
+  bool beginning = true;
+  int part_ix = 0;
+  while (total_bytes_processed < payload_size_) {
+    int packet_bytes = 0;  // How much data to send in this packet.
+    bool split_payload = true;  // Splitting of partitions is initially allowed.
+    int remaining_in_partition = part_info_.fragmentationOffset[part_ix] -
+        total_bytes_processed + part_info_.fragmentationLength[part_ix];
+    int rem_payload_len = max_payload_len_ -
+        (vp8_fixed_payload_descriptor_bytes_ + PayloadDescriptorExtraLength());
+    int first_partition_in_packet = part_ix;
 
-  while (int next_size = CalcNextSize(rem_payload_len, remaining_in_partition,
-                                      split_payload)) {
-    send_bytes += next_size;
-    rem_payload_len -= next_size;
-    remaining_in_partition -= next_size;
+    while (int next_size = CalcNextSize(rem_payload_len, remaining_in_partition,
+                                        split_payload)) {
+      packet_bytes += next_size;
+      rem_payload_len -= next_size;
+      remaining_in_partition -= next_size;
 
-    if (remaining_in_partition == 0 && !(beginning_ && separate_first_)) {
-      // Advance to next partition?
-      // Check that there are more partitions; verify that we are either
-      // allowed to aggregate fragments, or that we are allowed to
-      // aggregate intact partitions and that we started this packet
-      // with an intact partition (indicated by first_fragment_ == true).
-      if (part_ix_ + 1 < num_partitions &&
-          ((aggr_mode_ == kAggrFragments) ||
-              (aggr_mode_ == kAggrPartitions && first_fragment_))) {
-        remaining_in_partition
-        = part_info_.fragmentationLength[++part_ix_];
-        // Disallow splitting unless kAggrFragments. In kAggrPartitions,
-        // we can only aggregate intact partitions.
-        split_payload = (aggr_mode_ == kAggrFragments);
+      if (remaining_in_partition == 0 && !(beginning && separate_first_)) {
+        // Advance to next partition?
+        // Check that there are more partitions; verify that we are either
+        // allowed to aggregate fragments, or that we are allowed to
+        // aggregate intact partitions and that we started this packet
+        // with an intact partition (indicated by first_fragment_ == true).
+        if (part_ix + 1 < num_partitions_ &&
+            ((aggr_mode_ == kAggrFragments) ||
+                (aggr_mode_ == kAggrPartitions && start_on_new_fragment))) {
+          assert(part_ix < num_partitions_);
+          remaining_in_partition = part_info_.fragmentationLength[++part_ix];
+          // Disallow splitting unless kAggrFragments. In kAggrPartitions,
+          // we can only aggregate intact partitions.
+          split_payload = (aggr_mode_ == kAggrFragments);
+        }
+      } else if (balance_ && remaining_in_partition > 0) {
+        break;
       }
-    } else if (balance_ && remaining_in_partition > 0) {
-      break;
     }
-  }
-  if (remaining_in_partition == 0) {
-    ++part_ix_;  // Advance to next partition.
-  }
+    if (remaining_in_partition == 0) {
+      ++part_ix;  // Advance to next partition.
+    }
+    assert(packet_bytes > 0);
 
-  send_bytes -= PayloadDescriptorExtraLength();  // Remove extra length again.
-  assert(send_bytes > 0);
-  // Write the payload header and the payload to buffer.
-  *bytes_to_send = WriteHeaderAndPayload(send_bytes, buffer, max_payload_len_);
-  if (*bytes_to_send < 0) {
-    return -1;
+    QueuePacket(total_bytes_processed, packet_bytes, first_partition_in_packet,
+                start_on_new_fragment);
+    total_bytes_processed += packet_bytes;
+    start_on_new_fragment = (remaining_in_partition == 0);
+    beginning = false;  // Next packet cannot be first packet in frame.
   }
-
-  beginning_ = false;  // Next packet cannot be first packet in frame.
-  // Next packet starts new fragment if this ended one.
-  first_fragment_ = (remaining_in_partition == 0);
-  *last_packet = (payload_bytes_sent_ >= payload_size_);
-  assert(!*last_packet || (payload_bytes_sent_ == payload_size_));
-  return first_partition_in_packet_;
+  packets_calculated_ = true;
+  assert(total_bytes_processed == payload_size_);
+  return 0;
 }
 
-int RtpFormatVp8::WriteHeaderAndPayload(int payload_bytes,
+int RtpFormatVp8::GeneratePacketsBalancedAggregates() {
+  if (max_payload_len_ < vp8_fixed_payload_descriptor_bytes_
+      + PayloadDescriptorExtraLength() + 1) {
+    // The provided payload length is not long enough for the payload
+    // descriptor and one payload byte. Return an error.
+    return -1;
+  }
+  std::vector<int> partition_decision;
+  const int overhead = vp8_fixed_payload_descriptor_bytes_ +
+      PayloadDescriptorExtraLength();
+  const uint32_t max_payload_len = max_payload_len_ - overhead;
+  int min_size, max_size;
+  AggregateSmallPartitions(&partition_decision, &min_size, &max_size);
+
+  int total_bytes_processed = 0;
+  int part_ix = 0;
+  while (part_ix < num_partitions_) {
+    if (partition_decision[part_ix] == -1) {
+      // Split large partitions.
+      int remaining_partition = part_info_.fragmentationLength[part_ix];
+      int num_fragments = Vp8PartitionAggregator::CalcNumberOfFragments(
+          remaining_partition, max_payload_len, overhead, min_size, max_size);
+      const int packet_bytes =
+          (remaining_partition + num_fragments - 1) / num_fragments;
+      for (int n = 0; n < num_fragments; ++n) {
+        const int this_packet_bytes = packet_bytes < remaining_partition ?
+            packet_bytes : remaining_partition;
+        QueuePacket(total_bytes_processed, this_packet_bytes, part_ix,
+                    (n == 0));
+        remaining_partition -= this_packet_bytes;
+        total_bytes_processed += this_packet_bytes;
+        if (this_packet_bytes < min_size) {
+          min_size = this_packet_bytes;
+        }
+        if (this_packet_bytes > max_size) {
+          max_size = this_packet_bytes;
+        }
+      }
+      assert(remaining_partition == 0);
+      ++part_ix;
+    } else {
+      int this_packet_bytes = 0;
+      const int first_partition_in_packet = part_ix;
+      const int aggregation_index = partition_decision[part_ix];
+      while (static_cast<size_t>(part_ix) < partition_decision.size() &&
+          partition_decision[part_ix] == aggregation_index) {
+        // Collect all partitions that were aggregated into the same packet.
+        this_packet_bytes += part_info_.fragmentationLength[part_ix];
+        ++part_ix;
+      }
+      QueuePacket(total_bytes_processed, this_packet_bytes,
+                  first_partition_in_packet, true);
+      total_bytes_processed += this_packet_bytes;
+    }
+  }
+  packets_calculated_ = true;
+  return 0;
+}
+
+void RtpFormatVp8::AggregateSmallPartitions(std::vector<int>* partition_vec,
+                                            int* min_size,
+                                            int* max_size) {
+  assert(min_size && max_size);
+  *min_size = -1;
+  *max_size = -1;
+  assert(partition_vec);
+  partition_vec->assign(num_partitions_, -1);
+  const int overhead = vp8_fixed_payload_descriptor_bytes_ +
+      PayloadDescriptorExtraLength();
+  const uint32_t max_payload_len = max_payload_len_ - overhead;
+  int first_in_set = 0;
+  int last_in_set = 0;
+  int num_aggregate_packets = 0;
+  // Find sets of partitions smaller than max_payload_len_.
+  while (first_in_set < num_partitions_) {
+    if (part_info_.fragmentationLength[first_in_set] < max_payload_len) {
+      // Found start of a set.
+      last_in_set = first_in_set;
+      while (last_in_set + 1 < num_partitions_ &&
+          part_info_.fragmentationLength[last_in_set + 1] < max_payload_len) {
+        ++last_in_set;
+      }
+      // Found end of a set. Run optimized aggregator. It is ok if start == end.
+      Vp8PartitionAggregator aggregator(part_info_, first_in_set,
+                                        last_in_set);
+      if (*min_size >= 0 && *max_size >= 0) {
+        aggregator.SetPriorMinMax(*min_size, *max_size);
+      }
+      Vp8PartitionAggregator::ConfigVec optimal_config =
+          aggregator.FindOptimalConfiguration(max_payload_len, overhead);
+      aggregator.CalcMinMax(optimal_config, min_size, max_size);
+      for (int i = first_in_set, j = 0; i <= last_in_set; ++i, ++j) {
+        // Transfer configuration for this set of partitions to the joint
+        // partition vector representing all partitions in the frame.
+        (*partition_vec)[i] = num_aggregate_packets + optimal_config[j];
+      }
+      num_aggregate_packets += optimal_config.back() + 1;
+      first_in_set = last_in_set;
+    }
+    ++first_in_set;
+  }
+}
+
+void RtpFormatVp8::QueuePacket(int start_pos,
+                               int packet_size,
+                               int first_partition_in_packet,
+                               bool start_on_new_fragment) {
+  // Write info to packet info struct and store in packet info queue.
+  InfoStruct packet_info;
+  packet_info.payload_start_pos = start_pos;
+  packet_info.size = packet_size;
+  packet_info.first_partition_ix = first_partition_in_packet;
+  packet_info.first_fragment = start_on_new_fragment;
+  packets_.push(packet_info);
+}
+
+int RtpFormatVp8::WriteHeaderAndPayload(const InfoStruct& packet_info,
                                         WebRtc_UWord8* buffer,
-                                        int buffer_length) {
+                                        int buffer_length) const {
   // Write the VP8 payload descriptor.
   //       0
   //       0 1 2 3 4 5 6 7 8
@@ -175,26 +314,20 @@ int RtpFormatVp8::WriteHeaderAndPayload(int payload_bytes,
   // T/K: |TID:Y|  KEYIDX   | (optional)
   //      +-+-+-+-+-+-+-+-+-+
 
-  assert(payload_bytes > 0);
-  assert(payload_bytes_sent_ + payload_bytes <= payload_size_);
-  assert(vp8_fixed_payload_descriptor_bytes_ + PayloadDescriptorExtraLength()
-         + payload_bytes <= buffer_length);
-
+  assert(packet_info.size > 0);
   buffer[0] = 0;
-  if (XFieldPresent())        buffer[0] |= kXBit;
-  if (hdr_info_.nonReference) buffer[0] |= kNBit;
-  if (first_fragment_)        buffer[0] |= kSBit;
-  buffer[0] |= (first_partition_in_packet_ & kPartIdField);
+  if (XFieldPresent())            buffer[0] |= kXBit;
+  if (hdr_info_.nonReference)     buffer[0] |= kNBit;
+  if (packet_info.first_fragment) buffer[0] |= kSBit;
+  buffer[0] |= (packet_info.first_partition_ix & kPartIdField);
 
   const int extension_length = WriteExtensionFields(buffer, buffer_length);
 
   memcpy(&buffer[vp8_fixed_payload_descriptor_bytes_ + extension_length],
-         &payload_data_[payload_bytes_sent_], payload_bytes);
-
-  payload_bytes_sent_ += payload_bytes;
+         &payload_data_[packet_info.payload_start_pos], packet_info.size);
 
   // Return total length of written data.
-  return payload_bytes + vp8_fixed_payload_descriptor_bytes_
+  return packet_info.size + vp8_fixed_payload_descriptor_bytes_
       + extension_length;
 }
 

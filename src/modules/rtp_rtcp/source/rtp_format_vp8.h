@@ -25,7 +25,11 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_VP8_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_VP8_H_
 
+#include <queue>
+#include <vector>
+
 #include "modules/interface/module_common_types.h"
+#include "system_wrappers/interface/constructor_magic.h"
 #include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
@@ -71,6 +75,13 @@ class RtpFormatVp8 {
                  bool* last_packet);
 
  private:
+  typedef struct {
+    int payload_start_pos;
+    int size;
+    bool first_fragment;
+    int first_partition_ix;
+  } InfoStruct;
+  typedef std::queue<InfoStruct> InfoQueue;
   enum AggregationMode {
     kAggrNone = 0,    // No aggregation.
     kAggrPartitions,  // Aggregate intact partitions.
@@ -95,12 +106,38 @@ class RtpFormatVp8 {
   int CalcNextSize(int max_payload_len, int remaining_bytes,
                    bool split_payload) const;
 
+  // Calculate all packet sizes and load to packet info queue.
+  int GeneratePackets();
+
+  // Calculate all packet sizes using Vp8PartitionAggregator and load to packet
+  // info queue.
+  int GeneratePacketsBalancedAggregates();
+
+  // Helper function to GeneratePacketsBalancedAggregates(). Find all
+  // continuous sets of partitions smaller than the max payload size (not
+  // max_size), and aggregate them into balanced packets. The result is written
+  // to partition_vec, which is of the same length as the number of partitions.
+  // A value of -1 indicates that the partition is too large and must be split.
+  // Aggregates are numbered 0, 1, 2, etc. For each set of small partitions,
+  // the aggregate numbers restart at 0. Output values min_size and max_size
+  // will hold the smallest and largest resulting aggregates (i.e., not counting
+  // those that must be split).
+  void AggregateSmallPartitions(std::vector<int>* partition_vec,
+                                int* min_size,
+                                int* max_size);
+
+  // Insert packet into packet queue.
+  void QueuePacket(int start_pos,
+                   int packet_size,
+                   int first_partition_in_packet,
+                   bool start_on_new_fragment);
+
   // Write the payload header and copy the payload to the buffer.
-  // Will copy send_bytes bytes from the current position on the payload data.
-  // last_fragment indicates that this packet ends with the last byte of a
-  // partition.
-  int WriteHeaderAndPayload(int send_bytes, WebRtc_UWord8* buffer,
-                            int buffer_length);
+  // The info in packet_info determines which part of the payload is written
+  // and what to write in the header fields.
+  int WriteHeaderAndPayload(const InfoStruct& packet_info,
+                            WebRtc_UWord8* buffer,
+                            int buffer_length) const;
 
 
   // Write the X field and the appropriate extension fields to buffer.
@@ -147,18 +184,18 @@ class RtpFormatVp8 {
   const WebRtc_UWord8* payload_data_;
   const int payload_size_;
   RTPFragmentationHeader part_info_;
-  int payload_bytes_sent_;
-  int part_ix_;
-  bool beginning_;  // First partition in this frame.
-  bool first_fragment_;  // First fragment of a partition.
   const int vp8_fixed_payload_descriptor_bytes_;  // Length of VP8 payload
                                                   // descriptors's fixed part.
-  AggregationMode aggr_mode_;
-  bool balance_;
-  bool separate_first_;
+  const AggregationMode aggr_mode_;
+  const bool balance_;
+  const bool separate_first_;
   const RTPVideoHeaderVP8 hdr_info_;
-  int first_partition_in_packet_;
-  int max_payload_len_;
+  const int num_partitions_;
+  const int max_payload_len_;
+  InfoQueue packets_;
+  bool packets_calculated_;
+
+  DISALLOW_COPY_AND_ASSIGN(RtpFormatVp8);
 };
 
 }  // namespace

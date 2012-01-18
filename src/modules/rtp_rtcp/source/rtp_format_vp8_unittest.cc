@@ -56,15 +56,15 @@ TEST_F(RtpFormatVp8Test, TestStrictMode) {
 
   hdr_info_.pictureId = 200;  // > 0x7F should produce 2-byte PictureID.
   const int kMaxSize = 13;
-  RtpFormatVp8 packetizer = RtpFormatVp8(helper_->payload_data(),
-                                         helper_->payload_size(),
-                                         hdr_info_,
-                                         kMaxSize,
-                                         *(helper_->fragmentation()),
-                                         kStrict);
+  RtpFormatVp8 packetizer(helper_->payload_data(),
+                          helper_->payload_size(),
+                          hdr_info_,
+                          kMaxSize,
+                          *(helper_->fragmentation()),
+                          kStrict);
 
   // The expected sizes are obtained by running a verified good implementation.
-  const int kExpectedSizes[] = {8, 10, 12, 11, 13, 8, 11};
+  const int kExpectedSizes[] = {9, 9, 12, 11, 11, 11, 10};
   const int kExpectedPart[] = {0, 0, 1, 2, 2, 2, 2};
   const bool kExpectedFragStart[] =
       {true, false, true, true, false, false, false};
@@ -87,17 +87,77 @@ TEST_F(RtpFormatVp8Test, TestAggregateMode) {
 
   hdr_info_.pictureId = 20;  // <= 0x7F should produce 1-byte PictureID.
   const int kMaxSize = 25;
-  RtpFormatVp8 packetizer = RtpFormatVp8(helper_->payload_data(),
-                                         helper_->payload_size(),
-                                         hdr_info_,
-                                         kMaxSize,
-                                         *(helper_->fragmentation()),
-                                         kAggregate);
+  RtpFormatVp8 packetizer(helper_->payload_data(),
+                          helper_->payload_size(),
+                          hdr_info_,
+                          kMaxSize,
+                          *(helper_->fragmentation()),
+                          kAggregate);
 
   // The expected sizes are obtained by running a verified good implementation.
-  const int kExpectedSizes[] = {22, 23, 24, 23};
+  const int kExpectedSizes[] = {23, 23, 23, 23};
   const int kExpectedPart[] = {0, 0, 0, 1};
   const bool kExpectedFragStart[] = {true, false, false, true};
+  const int kExpectedNum = sizeof(kExpectedSizes) / sizeof(kExpectedSizes[0]);
+  COMPILE_ASSERT(kExpectedNum ==
+      sizeof(kExpectedPart) / sizeof(kExpectedPart[0]),
+      kExpectedPart_wrong_size);
+  COMPILE_ASSERT(kExpectedNum ==
+      sizeof(kExpectedFragStart) / sizeof(kExpectedFragStart[0]),
+      kExpectedFragStart_wrong_size);
+
+  helper_->GetAllPacketsAndCheck(&packetizer, kExpectedSizes, kExpectedPart,
+                                 kExpectedFragStart, kExpectedNum);
+}
+
+TEST_F(RtpFormatVp8Test, TestAggregateModeManyPartitions1) {
+  const int kSizeVector[] = {1600, 200, 200, 200, 200, 200, 200, 200, 200};
+  const int kNumPartitions = sizeof(kSizeVector) / sizeof(kSizeVector[0]);
+  ASSERT_TRUE(Init(kSizeVector, kNumPartitions));
+
+  hdr_info_.pictureId = 20;  // <= 0x7F should produce 1-byte PictureID.
+  const int kMaxSize = 1500;
+  RtpFormatVp8 packetizer(helper_->payload_data(),
+                          helper_->payload_size(),
+                          hdr_info_,
+                          kMaxSize,
+                          *(helper_->fragmentation()),
+                          kAggregate);
+
+  // The expected sizes are obtained by running a verified good implementation.
+  const int kExpectedSizes[] = {803, 803, 803, 803};
+  const int kExpectedPart[] = {0, 0, 1, 5};
+  const bool kExpectedFragStart[] = {true, false, true, true};
+  const int kExpectedNum = sizeof(kExpectedSizes) / sizeof(kExpectedSizes[0]);
+  COMPILE_ASSERT(kExpectedNum ==
+      sizeof(kExpectedPart) / sizeof(kExpectedPart[0]),
+      kExpectedPart_wrong_size);
+  COMPILE_ASSERT(kExpectedNum ==
+      sizeof(kExpectedFragStart) / sizeof(kExpectedFragStart[0]),
+      kExpectedFragStart_wrong_size);
+
+  helper_->GetAllPacketsAndCheck(&packetizer, kExpectedSizes, kExpectedPart,
+                                 kExpectedFragStart, kExpectedNum);
+}
+
+TEST_F(RtpFormatVp8Test, TestAggregateModeManyPartitions2) {
+  const int kSizeVector[] = {1599, 200, 200, 200, 1600, 200, 200, 200, 200};
+  const int kNumPartitions = sizeof(kSizeVector) / sizeof(kSizeVector[0]);
+  ASSERT_TRUE(Init(kSizeVector, kNumPartitions));
+
+  hdr_info_.pictureId = 20;  // <= 0x7F should produce 1-byte PictureID.
+  const int kMaxSize = 1500;
+  RtpFormatVp8 packetizer(helper_->payload_data(),
+                          helper_->payload_size(),
+                          hdr_info_,
+                          kMaxSize,
+                          *(helper_->fragmentation()),
+                          kAggregate);
+
+  // The expected sizes are obtained by running a verified good implementation.
+  const int kExpectedSizes[] = {803, 802, 603, 803, 803, 803};
+  const int kExpectedPart[] = {0, 0, 1, 4, 4, 5};
+  const bool kExpectedFragStart[] = {true, false, true, true, false, true};
   const int kExpectedNum = sizeof(kExpectedSizes) / sizeof(kExpectedSizes[0]);
   COMPILE_ASSERT(kExpectedNum ==
       sizeof(kExpectedPart) / sizeof(kExpectedPart[0]),
@@ -117,12 +177,12 @@ TEST_F(RtpFormatVp8Test, TestSloppyMode) {
 
   hdr_info_.pictureId = kNoPictureId;  // No PictureID.
   const int kMaxSize = 9;
-  RtpFormatVp8 packetizer = RtpFormatVp8(helper_->payload_data(),
-                                         helper_->payload_size(),
-                                         hdr_info_,
-                                         kMaxSize,
-                                         *(helper_->fragmentation()),
-                                         kSloppy);
+  RtpFormatVp8 packetizer(helper_->payload_data(),
+                          helper_->payload_size(),
+                          hdr_info_,
+                          kMaxSize,
+                          *(helper_->fragmentation()),
+                          kSloppy);
 
   // The expected sizes are obtained by running a verified good implementation.
   const int kExpectedSizes[] = {9, 9, 9, 7};
@@ -148,10 +208,10 @@ TEST_F(RtpFormatVp8Test, TestSloppyModeFallback) {
 
   hdr_info_.pictureId = 200;  // > 0x7F should produce 2-byte PictureID
   const int kMaxSize = 12;  // Small enough to produce 4 packets.
-  RtpFormatVp8 packetizer = RtpFormatVp8(helper_->payload_data(),
-                                         helper_->payload_size(),
-                                         hdr_info_,
-                                         kMaxSize);
+  RtpFormatVp8 packetizer(helper_->payload_data(),
+                          helper_->payload_size(),
+                          hdr_info_,
+                          kMaxSize);
 
   // Expecting three full packets, and one with the remainder.
   const int kExpectedSizes[] = {12, 12, 12, 10};
@@ -179,10 +239,10 @@ TEST_F(RtpFormatVp8Test, TestNonReferenceBit) {
 
   hdr_info_.nonReference = true;
   const int kMaxSize = 25;  // Small enough to produce two packets.
-  RtpFormatVp8 packetizer = RtpFormatVp8(helper_->payload_data(),
-                                         helper_->payload_size(),
-                                         hdr_info_,
-                                         kMaxSize);
+  RtpFormatVp8 packetizer(helper_->payload_data(),
+                          helper_->payload_size(),
+                          hdr_info_,
+                          kMaxSize);
 
   // Sloppy mode => First packet full; other not.
   const int kExpectedSizes[] = {25, 7};
@@ -213,12 +273,12 @@ TEST_F(RtpFormatVp8Test, TestTl0PicIdxAndTID) {
   hdr_info_.layerSync = true;
   // kMaxSize is only limited by allocated buffer size.
   const int kMaxSize = helper_->buffer_size();
-  RtpFormatVp8 packetizer = RtpFormatVp8(helper_->payload_data(),
-                                         helper_->payload_size(),
-                                         hdr_info_,
-                                         kMaxSize,
-                                         *(helper_->fragmentation()),
-                                         kAggregate);
+  RtpFormatVp8 packetizer(helper_->payload_data(),
+                          helper_->payload_size(),
+                          hdr_info_,
+                          kMaxSize,
+                          *(helper_->fragmentation()),
+                          kAggregate);
 
   // Expect one single packet of payload_size() + 4 bytes header.
   const int kExpectedSizes[1] = {helper_->payload_size() + 4};
@@ -245,12 +305,12 @@ TEST_F(RtpFormatVp8Test, TestKeyIdx) {
   hdr_info_.keyIdx = 17;
   // kMaxSize is only limited by allocated buffer size.
   const int kMaxSize = helper_->buffer_size();
-  RtpFormatVp8 packetizer = RtpFormatVp8(helper_->payload_data(),
-                                         helper_->payload_size(),
-                                         hdr_info_,
-                                         kMaxSize,
-                                         *(helper_->fragmentation()),
-                                         kAggregate);
+  RtpFormatVp8 packetizer(helper_->payload_data(),
+                          helper_->payload_size(),
+                          hdr_info_,
+                          kMaxSize,
+                          *(helper_->fragmentation()),
+                          kAggregate);
 
   // Expect one single packet of payload_size() + 3 bytes header.
   const int kExpectedSizes[1] = {helper_->payload_size() + 3};
@@ -278,12 +338,12 @@ TEST_F(RtpFormatVp8Test, TestTIDAndKeyIdx) {
   hdr_info_.keyIdx = 5;
   // kMaxSize is only limited by allocated buffer size.
   const int kMaxSize = helper_->buffer_size();
-  RtpFormatVp8 packetizer = RtpFormatVp8(helper_->payload_data(),
-                                         helper_->payload_size(),
-                                         hdr_info_,
-                                         kMaxSize,
-                                         *(helper_->fragmentation()),
-                                         kAggregate);
+  RtpFormatVp8 packetizer(helper_->payload_data(),
+                          helper_->payload_size(),
+                          hdr_info_,
+                          kMaxSize,
+                          *(helper_->fragmentation()),
+                          kAggregate);
 
   // Expect one single packet of payload_size() + 3 bytes header.
   const int kExpectedSizes[1] = {helper_->payload_size() + 3};

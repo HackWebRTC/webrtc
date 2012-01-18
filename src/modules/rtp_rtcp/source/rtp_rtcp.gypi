@@ -86,6 +86,8 @@
         'rtp_format_vp8.h',
         'transmission_bucket.cc',
         'transmission_bucket.h',
+        'vp8_partition_aggregator.cc',
+        'vp8_partition_aggregator.h',
         # Mocks
         '../mocks/mock_rtp_rtcp.h',
       ], # source
