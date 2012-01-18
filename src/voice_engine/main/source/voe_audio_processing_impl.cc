@@ -1154,11 +1154,11 @@ int VoEAudioProcessingImpl::SetTypingDetectionStatus(bool enable)
         return -1;
     }
     if (_audioProcessingModulePtr->voice_detection()->set_likelihood(
-        VoiceDetection::kHighLikelihood))
+        VoiceDetection::kVeryLowLikelihood))
     {
         _engineStatistics.SetLastError(
             VE_APM_ERROR, kTraceWarning,
-            "SetTypingDetectionStatus() failed to set VAD likelihood to high");
+            "SetTypingDetectionStatus() failed to set VAD likelihood to low");
         return -1;
     }
 
