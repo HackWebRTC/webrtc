@@ -35,9 +35,29 @@ int ViEFileImage::ConvertJPEGToVideoFrame(int engine_id,
                  "%s could not open file %s", __FUNCTION__, file_nameUTF8);
     return -1;
   }
-  fseek(image_file, 0, SEEK_END);
-  image_buffer._size = ftell(image_file);
-  fseek(image_file, 0, SEEK_SET);
+  if (fseek(image_file, 0, SEEK_END) != 0) {
+    fclose(image_file);
+    WEBRTC_TRACE(kTraceError, kTraceVideo, engine_id,
+                 "ConvertJPEGToVideoFrame fseek SEEK_END error for file %s",
+                 file_nameUTF8);
+    return -1;
+  }
+  int buffer_size = ftell(image_file);
+  if (buffer_size == -1) {
+    fclose(image_file);
+    WEBRTC_TRACE(kTraceError, kTraceVideo, engine_id,
+                 "ConvertJPEGToVideoFrame could tell file size for file %s",
+                 file_nameUTF8);
+    return -1;
+  }
+  image_buffer._size = buffer_size;
+  if (fseek(image_file, 0, SEEK_SET) != 0) {
+    fclose(image_file);
+    WEBRTC_TRACE(kTraceError, kTraceVideo, engine_id,
+                 "ConvertJPEGToVideoFrame fseek SEEK_SET error for file %s",
+                 file_nameUTF8);
+    return -1;
+  }
   image_buffer._buffer = new WebRtc_UWord8[ image_buffer._size + 1];
   if (image_buffer._size != fread(image_buffer._buffer, sizeof(WebRtc_UWord8),
                                   image_buffer._size, image_file)) {
