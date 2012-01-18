@@ -70,11 +70,13 @@ TEST_F(HardwareTest, GetCpuLoadReturnsErrorOnNonWindowsPlatform) {
 #endif
 
 #if !defined(WEBRTC_MAC) && !defined(WEBRTC_ANDROID)
-// TODO(phoglund): re-enable once the production code isn't flaky anymore
-// on Windows. A Sleep(1000) before the CPU call will 'fix' the test,
-// but it isn't clear why or how reliable that is.
-TEST_F(HardwareTest, DISABLED_GetSystemCpuLoadWorksExceptOnMacAndAndroid) {
-    int load = -1;
+TEST_F(HardwareTest, GetSystemCpuLoadWorksExceptOnMacAndAndroid) {
+#ifdef _WIN32
+  // This method needs some warm-up time on Windows. We sleep a good amount
+  // of time instead of retrying to make the test simpler.
+  Sleep(2000);
+#endif
+  int load = -1;
   EXPECT_EQ(0, voe_hardware_->GetSystemCPULoad(load));
   EXPECT_GE(load, 0);
   TEST_LOG("System CPU load = %d%%\n", load);

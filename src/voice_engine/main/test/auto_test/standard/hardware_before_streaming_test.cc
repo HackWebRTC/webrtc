@@ -51,12 +51,14 @@ TEST_F(HardwareBeforeStreamingTest, ResetsAudioDeviceOnIphone) {
 // Tests that only apply to desktop:
 #if !defined(MAC_IPHONE) & !defined(WEBRTC_ANDROID)
 
-// TODO(phoglund): re-enable once the production code isn't flaky anymore
-// on Windows. A Sleep(1000) before the CPU call will 'fix' the test,
-// but it isn't clear why or how reliable that is.
-TEST_F(HardwareBeforeStreamingTest, DISABLED_GetSystemCpuLoadSucceeds) {
-  int load_percent;
+TEST_F(HardwareBeforeStreamingTest, GetSystemCpuLoadSucceeds) {
+#ifdef _WIN32
+  // This method needs some warm-up time on Windows. We sleep a good amount
+  // of time instead of retrying to make the test simpler.
+  Sleep(2000);
+#endif
 
+  int load_percent;
   EXPECT_EQ(0, voe_hardware_->GetSystemCPULoad(load_percent));
 }
 
@@ -80,7 +82,7 @@ TEST_F(HardwareBeforeStreamingTest,
   char device_name[128] = {0};
   char guid_name[128] = {0};
 
-#if defined(_WIN32)
+#ifdef _WIN32
   EXPECT_EQ(0, voe_hardware_->GetRecordingDeviceName(
       -1, device_name, guid_name));
   EXPECT_GT(strlen(device_name), 0u) << kNoDevicesErrorMessage;
@@ -99,7 +101,7 @@ TEST_F(HardwareBeforeStreamingTest,
   EXPECT_EQ(0, voe_hardware_->GetPlayoutDeviceName(
       0, device_name, guid_name));
   EXPECT_GT(strlen(device_name), 0u) << kNoDevicesErrorMessage;
-#endif // !WIN32
+#endif  // !WIN32
 }
 
 TEST_F(HardwareBeforeStreamingTest,

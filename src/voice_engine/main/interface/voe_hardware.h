@@ -89,12 +89,15 @@ public:
     // Gets the currently used (active) audio device layer.
     virtual int GetAudioDeviceLayer(AudioLayers& audioLayer) = 0;
 
-    // Gets the VoiceEngine’s current CPU consumption in terms of the percent
+    // Gets the VoiceEngine's current CPU consumption in terms of the percent
     // of total CPU availability. [Windows only]
     virtual int GetCPULoad(int& loadPercent) = 0;
 
-    // Gets the computer’s current CPU consumption in terms of the percent
-    // of the total CPU availability.
+    // Gets the computer's current CPU consumption in terms of the percent
+    // of the total CPU availability. This method may fail a few times on
+    // Windows because it needs a certain warm-up time before reporting the
+    // result. You should check the return value and either try again or
+    // give up when it fails.
     virtual int GetSystemCPULoad(int& loadPercent) = 0;
 
     // Not supported
