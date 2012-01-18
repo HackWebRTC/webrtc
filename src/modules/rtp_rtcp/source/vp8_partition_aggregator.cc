@@ -229,9 +229,15 @@ int Vp8PartitionAggregator::CalcNumberOfFragments(int large_partition_size,
                                                   int max_size) {
   assert(max_size <= max_payload_size);
   assert(min_size <= max_size);
+  assert(max_payload_size > 0);
   // Divisions with rounding up.
   const int min_number_of_fragments =
       (large_partition_size + max_payload_size - 1) / max_payload_size;
+  if (min_size < 0 || max_size < 0) {
+    // No aggregates produced, so we do not have any size boundaries.
+    // Simply split in as few partitions as possible.
+    return min_number_of_fragments;
+  }
   const int max_number_of_fragments =
       (large_partition_size + min_size - 1) / min_size;
   int num_fragments = -1;
