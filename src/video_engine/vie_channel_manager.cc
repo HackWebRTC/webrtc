@@ -301,10 +301,6 @@ int ViEChannelManager::SetVoiceEngine(VoiceEngine* voice_engine) {
       WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_),
                    "%s Can't get audio sync interface from VoiceEngine.",
                    __FUNCTION__);
-
-      if (sync_interface) {
-        sync_interface->Release();
-      }
       return -1;
     }
   }

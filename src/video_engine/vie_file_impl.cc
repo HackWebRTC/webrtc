@@ -531,47 +531,35 @@ int ViEFileImpl::GetRenderSnapshot(const int video_channel,
     return -1;
   }
 
-  const int JPEG_FORMAT = 0;
-  int format = JPEG_FORMAT;
-  switch (format) {
-    case JPEG_FORMAT: {
-      // JPEGEncoder writes the jpeg file for you (no control over it) and does
-      // not return you the buffer. Thus, we are not going to be writing to the
-      // disk here.
-      JpegEncoder jpeg_encoder;
-      RawImage input_image;
-      if (jpeg_encoder.SetFileName(file_nameUTF8) == -1) {
-        WEBRTC_TRACE(kTraceError, kTraceVideo, instance_id_,
-                     "\tCould not open output file '%s' for writing!",
-                     file_nameUTF8);
-        return -1;
-      }
+  // JPEGEncoder writes the jpeg file for you (no control over it) and does
+  // not return you the buffer. Thus, we are not going to be writing to the
+  // disk here.
+  JpegEncoder jpeg_encoder;
+  RawImage input_image;
+  if (jpeg_encoder.SetFileName(file_nameUTF8) == -1) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, instance_id_,
+                 "\tCould not open output file '%s' for writing!",
+                 file_nameUTF8);
+    return -1;
+  }
 
-      input_image._width = video_frame.Width();
-      input_image._height = video_frame.Height();
-      video_frame.Swap(input_image._buffer, input_image._length,
-                       input_image._size);
+  input_image._width = video_frame.Width();
+  input_image._height = video_frame.Height();
+  video_frame.Swap(input_image._buffer, input_image._length,
+                   input_image._size);
 
-      if (jpeg_encoder.Encode(input_image) == -1) {
-        WEBRTC_TRACE(kTraceError, kTraceVideo, instance_id_,
-                     "\tCould not encode i420 -> jpeg file '%s' for writing!",
-                     file_nameUTF8);
-        if (input_image._buffer) {
-          delete [] input_image._buffer;
-        }
-        return -1;
-      }
+  if (jpeg_encoder.Encode(input_image) == -1) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, instance_id_,
+                 "\tCould not encode i420 -> jpeg file '%s' for writing!",
+                 file_nameUTF8);
+    if (input_image._buffer) {
       delete [] input_image._buffer;
       input_image._buffer = NULL;
-      break;
     }
-    default: {
-      WEBRTC_TRACE(kTraceError, kTraceFile, instance_id_,
-                   "\tUnsupported file format for %s", __FUNCTION__);
-      return -1;
-      break;
-    }
+    return -1;
   }
+  delete [] input_image._buffer;
+  input_image._buffer = NULL;
   return 0;
 }
 
@@ -619,50 +607,37 @@ int ViEFileImpl::GetCaptureDeviceSnapshot(const int capture_id,
     return -1;
   }
 
-  const int JPEG_FORMAT = 0;
-  int format = JPEG_FORMAT;
-  switch (format) {
-    case JPEG_FORMAT: {
-      // JPEGEncoder writes the jpeg file for you (no control over it) and does
-      // not return you the buffer Thusly, we are not going to be writing to the
-      // disk here.
-      JpegEncoder jpeg_encoder;
-      RawImage input_image;
-      input_image._width = video_frame.Width();
-      input_image._height = video_frame.Height();
-      video_frame.Swap(input_image._buffer, input_image._length,
-                       input_image._size);
+  // JPEGEncoder writes the jpeg file for you (no control over it) and does
+  // not return you the buffer Thusly, we are not going to be writing to the
+  // disk here.
+  JpegEncoder jpeg_encoder;
+  RawImage input_image;
+  input_image._width = video_frame.Width();
+  input_image._height = video_frame.Height();
+  video_frame.Swap(input_image._buffer, input_image._length,
+                   input_image._size);
 
-      if (jpeg_encoder.SetFileName(file_nameUTF8) == -1) {
-        WEBRTC_TRACE(kTraceError, kTraceVideo, instance_id_,
-                     "\tCould not open output file '%s' for writing!",
-                     file_nameUTF8);
+  if (jpeg_encoder.SetFileName(file_nameUTF8) == -1) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, instance_id_,
+                 "\tCould not open output file '%s' for writing!",
+                 file_nameUTF8);
 
-        if (input_image._buffer) {
-          delete [] input_image._buffer;
-        }
-        return -1;
-      }
-      if (jpeg_encoder.Encode(input_image) == -1) {
-        WEBRTC_TRACE(kTraceError, kTraceVideo, instance_id_,
-                     "\tCould not encode i420 -> jpeg file '%s' for "
-                     "writing!", file_nameUTF8);
-        if (input_image._buffer) {
-          delete [] input_image._buffer;
-        }
-        return -1;
-      }
+    if (input_image._buffer) {
       delete [] input_image._buffer;
-      input_image._buffer = NULL;
-      break;
     }
-    default: {
-      WEBRTC_TRACE(kTraceError, kTraceFile, instance_id_,
-                   "\tUnsupported file format for %s", __FUNCTION__);
-      return -1;
-      break;
-    }
+    return -1;
   }
+  if (jpeg_encoder.Encode(input_image) == -1) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, instance_id_,
+                 "\tCould not encode i420 -> jpeg file '%s' for "
+                 "writing!", file_nameUTF8);
+    if (input_image._buffer) {
+      delete [] input_image._buffer;
+    }
+    return -1;
+  }
+  delete [] input_image._buffer;
+  input_image._buffer = NULL;
   return 0;
 }
 

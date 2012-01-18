@@ -88,6 +88,7 @@ int ViEFileRecorder::StartRecording(const char* file_nameUTF8,
                                          audio_codec_inst.plfreq * 16 };
 
     switch (audio_source) {
+      // case NO_AUDIO is checked above.
       case MICROPHONE:
         error = voe_file_interface_->StartRecordingMicrophone(
             this, &engine_audio_codec_inst);
@@ -95,8 +96,6 @@ int ViEFileRecorder::StartRecording(const char* file_nameUTF8,
       case PLAYOUT:
         error = voe_file_interface_->StartRecordingPlayout(
             audio_channel, this, &engine_audio_codec_inst);
-        break;
-      case NO_AUDIO:
         break;
       default:
         assert(!"Unknown audio_source");

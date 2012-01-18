@@ -158,8 +158,6 @@ int ViERenderImpl::AddRenderer(const int render_id, void* window,
     }
     return frame_provider->RegisterFrameCallback(render_id, renderer);
   }
-  SetLastError(kViERenderInvalidRenderId);
-  return -1;
 }
 
 int ViERenderImpl::RemoveRenderer(const int render_id) {
@@ -386,8 +384,6 @@ int ViERenderImpl::AddRenderer(const int render_id,
     }
     return frame_provider->RegisterFrameCallback(render_id, renderer);
   }
-  SetLastError(kViERenderInvalidRenderId);
-  return -1;
 }
 
 }  // namespace webrtc
