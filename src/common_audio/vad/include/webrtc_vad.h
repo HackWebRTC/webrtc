@@ -110,7 +110,7 @@ WebRtc_Word16 WebRtcVad_Free(VadInst *vad_inst);
  * Return value         :  0 - Ok
  *                        -1 - Error
  */
-WebRtc_Word16 WebRtcVad_Init(VadInst *vad_inst);
+int WebRtcVad_Init(VadInst *vad_inst);
 
 /****************************************************************************
  * WebRtcVad_set_mode(...)

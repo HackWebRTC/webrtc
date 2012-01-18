@@ -429,7 +429,7 @@ int WebRtcNetEQ_InitVAD(PostDecodeVAD_t *VADInst, WebRtc_UWord16 fs)
         && VADInst->setmodeFunction != NULL /* ... pointers ... */
         && VADInst->VADFunction != NULL) /* ... are defined */
     {
-        res = (int) VADInst->initFunction( VADInst->VADState ); /* call VAD init function */
+        res = VADInst->initFunction( VADInst->VADState ); /* call VAD init function */
         res |= WebRtcNetEQ_SetVADModeInternal( VADInst, VADInst->VADMode );
 
         if (res!=0)

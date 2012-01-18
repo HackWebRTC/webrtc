@@ -101,7 +101,7 @@ WebRtc_Word16 WebRtcVad_Free(VadInst *vad_inst)
     return 0;
 }
 
-WebRtc_Word16 WebRtcVad_Init(VadInst *vad_inst)
+int WebRtcVad_Init(VadInst *vad_inst)
 {
     short mode = 0; // Default high quality
 

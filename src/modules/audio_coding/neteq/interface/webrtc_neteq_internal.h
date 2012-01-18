@@ -138,7 +138,7 @@ int WebRtcNetEQ_GetRawFrameWaitingTimes(void *inst,
  * These function pointers match the definitions of webrtc VAD functions WebRtcVad_Init,
  * WebRtcVad_set_mode and WebRtcVad_Process, respectively, all found in webrtc_vad.h.
  */
-typedef WebRtc_Word16 (*WebRtcNetEQ_VADInitFunction)(void *VAD_inst);
+typedef int (*WebRtcNetEQ_VADInitFunction)(void *VAD_inst);
 typedef WebRtc_Word16 (*WebRtcNetEQ_VADSetmodeFunction)(void *VAD_inst, WebRtc_Word16 mode);
 typedef WebRtc_Word16 (*WebRtcNetEQ_VADFunction)(void *VAD_inst, WebRtc_Word16 fs,
                                                  WebRtc_Word16 *frame, WebRtc_Word16 frameLen);
