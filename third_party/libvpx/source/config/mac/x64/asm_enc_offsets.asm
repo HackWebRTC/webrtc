@@ -7,9 +7,9 @@ vp8_block_zbin_extra EQU 64
 vp8_block_zrun_zbin_boost EQU 48
 vp8_block_quant_shift EQU 32
 vp8_blockd_qcoeff EQU 0
-vp8_blockd_dequant EQU 32
+vp8_blockd_dequant EQU 24
 vp8_blockd_dqcoeff EQU 8
-vp8_blockd_eob EQU 72
+vp8_blockd_eob EQU 64
 vp8_block_base_src EQU 72
 vp8_block_src EQU 80
 vp8_block_src_diff EQU 0
@@ -21,6 +21,8 @@ vp8_writer_value EQU 8
 vp8_writer_count EQU 12
 vp8_writer_pos EQU 16
 vp8_writer_buffer EQU 24
+vp8_writer_buffer_end EQU 32
+vp8_writer_error EQU 40
 tokenextra_token EQU 10
 tokenextra_extra EQU 8
 tokenextra_context_tree EQU 0
@@ -33,10 +35,11 @@ vp8_extra_bit_struct_tree EQU 0
 vp8_extra_bit_struct_prob EQU 8
 vp8_extra_bit_struct_len EQU 16
 vp8_extra_bit_struct_base_val EQU 20
-vp8_comp_tplist EQU 183768
-vp8_comp_common EQU 107360
-vp8_comp_bc2 EQU 130768
+vp8_comp_tplist EQU 172952
+vp8_comp_common EQU 106496
+vp8_comp_bc EQU 119168
+vp8_writer_sz EQU 64
 tokenlist_start EQU 0
 tokenlist_stop EQU 8
 TOKENLIST_SZ EQU 16
-vp8_common_mb_rows EQU 13092
+vp8_common_mb_rows EQU 2424
