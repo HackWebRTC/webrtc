@@ -108,7 +108,7 @@ int32_t TransmissionBucket::GetNextPacket() {
   bytes_rem_total_ -= num_bytes;
   bytes_rem_interval_ -= num_bytes;
 
-  assert(accumulator_ - num_bytes >= 0);
+  assert(accumulator_ >= num_bytes);
   accumulator_ -= num_bytes;
 
   packets_.erase(packets_.begin());
