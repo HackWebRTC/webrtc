@@ -90,7 +90,12 @@ ViEEncoder::ViEEncoder(WebRtc_Word32 engine_id, WebRtc_Word32 channel_id,
   vpm_.EnableContentAnalysis(false);
 
   module_process_thread_.RegisterModule(&vcm_);
-  default_rtp_rtcp_.InitSender();
+  if (default_rtp_rtcp_.InitSender() != 0) {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
+                 ViEId(engine_id_, channel_id_),
+                 "ViEEncoder: RTP::InitSender failure");
+    assert(false);
+  }
   default_rtp_rtcp_.RegisterIncomingVideoCallback(this);
   default_rtp_rtcp_.RegisterIncomingRTCPCallback(this);
   module_process_thread_.RegisterModule(&default_rtp_rtcp_);
@@ -121,12 +126,12 @@ ViEEncoder::ViEEncoder(WebRtc_Word32 engine_id, WebRtc_Word32 channel_id,
   if (vcm_.RegisterTransportCallback(this) != 0) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
                  ViEId(engine_id_, channel_id_),
-                 "%s: VCM::RegisterTransportCallback failure");
+                 "ViEEncoder: VCM::RegisterTransportCallback failure");
   }
   if (vcm_.RegisterSendStatisticsCallback(this) != 0) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
                  ViEId(engine_id_, channel_id_),
-                 "%s: VCM::RegisterSendStatisticsCallback failure");
+                 "ViEEncoder: VCM::RegisterSendStatisticsCallback failure");
   }
 
   if (vcm_.RegisterVideoQMCallback(qm_callback_) != 0) {
@@ -188,7 +193,7 @@ WebRtc_Word32 ViEEncoder::DropDeltaAfterKey(bool enable) {
       channels_dropping_delta_frames_ = 0;
       WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
                    ViEId(engine_id_, channel_id_),
-                   "%s: Called too many times", __FUNCTION__, enable);
+                   "%s: Called too many times", __FUNCTION__);
       return -1;
     }
   }
@@ -708,8 +713,8 @@ WebRtc_Word32 ViEEncoder::RegisterCodecObserver(ViEEncoderObserver* observer) {
     codec_observer_ = observer;
   } else {
     if (codec_observer_ == NULL) {
-      WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo, ViEId(engine_id_,
-                                                                  channel_id_),
+      WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
+                   ViEId(engine_id_, channel_id_),
                    "%s: observer does not exist.", __FUNCTION__);
       return -1;
     }
