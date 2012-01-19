@@ -18,8 +18,7 @@
 
 namespace webrtc {
 
-class VoEVideoSyncImpl : public virtual voe::SharedData,
-                         public VoEVideoSync,
+class VoEVideoSyncImpl : public VoEVideoSync,
                          public voe::RefCount
 {
 public:
@@ -37,12 +36,14 @@ public:
 
     virtual int GetPlayoutTimestamp(int channel, unsigned int& timestamp);
 
-	virtual int GetRtpRtcp (int channel,
-	                                  RtpRtcp* &rtpRtcpModule);
+    virtual int GetRtpRtcp(int channel, RtpRtcp* &rtpRtcpModule);
 
 protected:
-    VoEVideoSyncImpl();
+    VoEVideoSyncImpl(voe::SharedData* data);
     virtual ~VoEVideoSyncImpl();
+
+private:
+    voe::SharedData* _data;
 };
 
 }   // namespace webrtc

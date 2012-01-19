@@ -37,53 +37,53 @@ VoEVideoSync* VoEVideoSync::GetInterface(VoiceEngine* voiceEngine)
 
 #ifdef WEBRTC_VOICE_ENGINE_VIDEO_SYNC_API
 
-VoEVideoSyncImpl::VoEVideoSyncImpl()
+VoEVideoSyncImpl::VoEVideoSyncImpl(voe::SharedData* data) : _data(data)
 {
-    WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId,-1),
+    WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_data->instance_id(),-1),
                  "VoEVideoSyncImpl::VoEVideoSyncImpl() - ctor");
 }
 
 VoEVideoSyncImpl::~VoEVideoSyncImpl()
 {
-    WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId,-1),
+    WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_data->instance_id(),-1),
                  "VoEVideoSyncImpl::~VoEVideoSyncImpl() - dtor");
 }
 
 int VoEVideoSyncImpl::Release()
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1),
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_data->instance_id(),-1),
                  "VoEVideoSync::Release()");
     (*this)--;
     int refCount = GetCount();
     if (refCount < 0)
     {
         Reset();  // reset reference counter to zero => OK to delete VE
-        _engineStatistics.SetLastError(VE_INTERFACE_NOT_FOUND,
-                                       kTraceWarning);
+        _data->statistics().SetLastError(VE_INTERFACE_NOT_FOUND,
+                                         kTraceWarning);
         return (-1);
     }
-    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_instanceId,-1),
+    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_data->instance_id(),-1),
                  "VoEVideoSync reference counter = %d", refCount);
     return (refCount);
 }
 
 int VoEVideoSyncImpl::GetPlayoutTimestamp(int channel, unsigned int& timestamp)
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1),
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_data->instance_id(),-1),
                  "GetPlayoutTimestamp(channel=%d, timestamp=?)", channel);
     ANDROID_NOT_SUPPORTED();
     IPHONE_NOT_SUPPORTED();
 
-    if (!_engineStatistics.Initialized())
+    if (!_data->statistics().Initialized())
     {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
+        _data->statistics().SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-	voe::ScopedChannel sc(_channelManager, channel);
-	voe::Channel* channelPtr = sc.ChannelPtr();
+    voe::ScopedChannel sc(_data->channel_manager(), channel);
+    voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
-        _engineStatistics.SetLastError(
+        _data->statistics().SetLastError(
             VE_CHANNEL_NOT_VALID, kTraceError,
             "GetPlayoutTimestamp() failed to locate channel");
         return -1;
@@ -94,22 +94,22 @@ int VoEVideoSyncImpl::GetPlayoutTimestamp(int channel, unsigned int& timestamp)
 int VoEVideoSyncImpl::SetInitTimestamp(int channel,
                                        unsigned int timestamp)
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1),
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_data->instance_id(),-1),
                  "SetInitTimestamp(channel=%d, timestamp=%lu)",
                  channel, timestamp);
     ANDROID_NOT_SUPPORTED();
     IPHONE_NOT_SUPPORTED();
 
-    if (!_engineStatistics.Initialized())
+    if (!_data->statistics().Initialized())
     {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
+        _data->statistics().SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-    voe::ScopedChannel sc(_channelManager, channel);
+    voe::ScopedChannel sc(_data->channel_manager(), channel);
     voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
-        _engineStatistics.SetLastError(
+        _data->statistics().SetLastError(
             VE_CHANNEL_NOT_VALID, kTraceError,
             "SetInitTimestamp() failed to locate channel");
         return -1;
@@ -120,22 +120,22 @@ int VoEVideoSyncImpl::SetInitTimestamp(int channel,
 int VoEVideoSyncImpl::SetInitSequenceNumber(int channel,
                                             short sequenceNumber)
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1),
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_data->instance_id(),-1),
                  "SetInitSequenceNumber(channel=%d, sequenceNumber=%hd)",
                  channel, sequenceNumber);
     ANDROID_NOT_SUPPORTED();
     IPHONE_NOT_SUPPORTED();
 
-    if (!_engineStatistics.Initialized())
+    if (!_data->statistics().Initialized())
     {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
+        _data->statistics().SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-    voe::ScopedChannel sc(_channelManager, channel);
+    voe::ScopedChannel sc(_data->channel_manager(), channel);
     voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
-        _engineStatistics.SetLastError(
+        _data->statistics().SetLastError(
             VE_CHANNEL_NOT_VALID, kTraceError,
             "SetInitSequenceNumber() failed to locate channel");
         return -1;
@@ -145,22 +145,22 @@ int VoEVideoSyncImpl::SetInitSequenceNumber(int channel,
 
 int VoEVideoSyncImpl::SetMinimumPlayoutDelay(int channel,int delayMs)
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1),
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_data->instance_id(),-1),
                  "SetMinimumPlayoutDelay(channel=%d, delayMs=%d)",
                  channel, delayMs);
     ANDROID_NOT_SUPPORTED();
     IPHONE_NOT_SUPPORTED();
 
-    if (!_engineStatistics.Initialized())
+    if (!_data->statistics().Initialized())
     {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
+        _data->statistics().SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-	voe::ScopedChannel sc(_channelManager, channel);
-	voe::Channel* channelPtr = sc.ChannelPtr();
+    voe::ScopedChannel sc(_data->channel_manager(), channel);
+    voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
-        _engineStatistics.SetLastError(
+        _data->statistics().SetLastError(
             VE_CHANNEL_NOT_VALID, kTraceError,
             "SetMinimumPlayoutDelay() failed to locate channel");
         return -1;
@@ -170,21 +170,21 @@ int VoEVideoSyncImpl::SetMinimumPlayoutDelay(int channel,int delayMs)
 
 int VoEVideoSyncImpl::GetDelayEstimate(int channel, int& delayMs)
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1),
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_data->instance_id(),-1),
                  "GetDelayEstimate(channel=%d, delayMs=?)", channel);
     ANDROID_NOT_SUPPORTED();
     IPHONE_NOT_SUPPORTED();
 
-    if (!_engineStatistics.Initialized())
+    if (!_data->statistics().Initialized())
     {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
+        _data->statistics().SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-    voe::ScopedChannel sc(_channelManager, channel);
+    voe::ScopedChannel sc(_data->channel_manager(), channel);
     voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
-        _engineStatistics.SetLastError(
+        _data->statistics().SetLastError(
             VE_CHANNEL_NOT_VALID, kTraceError,
             "GetDelayEstimate() failed to locate channel");
         return -1;
@@ -194,48 +194,47 @@ int VoEVideoSyncImpl::GetDelayEstimate(int channel, int& delayMs)
 
 int VoEVideoSyncImpl::GetPlayoutBufferSize(int& bufferMs)
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1),
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_data->instance_id(),-1),
                "GetPlayoutBufferSize(bufferMs=?)");
     ANDROID_NOT_SUPPORTED();
     IPHONE_NOT_SUPPORTED();
 
-    if (!_engineStatistics.Initialized())
+    if (!_data->statistics().Initialized())
     {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
+        _data->statistics().SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
     AudioDeviceModule::BufferType type
         (AudioDeviceModule::kFixedBufferSize);
     WebRtc_UWord16 sizeMS(0);
-    if (_audioDevicePtr->PlayoutBuffer(&type, &sizeMS) != 0)
+    if (_data->audio_device()->PlayoutBuffer(&type, &sizeMS) != 0)
     {
-        _engineStatistics.SetLastError(
-	    VE_AUDIO_DEVICE_MODULE_ERROR, kTraceError,
-	    "GetPlayoutBufferSize() failed to read buffer size");
+        _data->statistics().SetLastError(
+            VE_AUDIO_DEVICE_MODULE_ERROR, kTraceError,
+            "GetPlayoutBufferSize() failed to read buffer size");
         return -1;
     }
     bufferMs = sizeMS;
-    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_instanceId,-1),
+    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_data->instance_id(),-1),
                  "GetPlayoutBufferSize() => bufferMs=%d", bufferMs);
     return 0;
 }
 
-int VoEVideoSyncImpl::GetRtpRtcp(int channel,
-                                           RtpRtcp* &rtpRtcpModule)
+int VoEVideoSyncImpl::GetRtpRtcp(int channel, RtpRtcp* &rtpRtcpModule)
 {
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1),
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_data->instance_id(),-1),
                  "GetRtpRtcp(channel=%i)", channel);
     
-    if (!_engineStatistics.Initialized())
+    if (!_data->statistics().Initialized())
     {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
+        _data->statistics().SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-    voe::ScopedChannel sc(_channelManager, channel);
+    voe::ScopedChannel sc(_data->channel_manager(), channel);
     voe::Channel* channelPtr = sc.ChannelPtr();
     if (channelPtr == NULL)
     {
-        _engineStatistics.SetLastError(
+        _data->statistics().SetLastError(
             VE_CHANNEL_NOT_VALID, kTraceError,
             "GetPlayoutTimestamp() failed to locate channel");
         return -1;

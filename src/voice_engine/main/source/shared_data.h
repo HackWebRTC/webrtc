@@ -29,11 +29,19 @@ namespace voe {
 
 class TransmitMixer;
 class OutputMixer;
-class SharedData
 
+class SharedData
 {
+public:
+    // Public accessors.
+    WebRtc_UWord32 instance_id() const { return _instanceId; }
+    Statistics& statistics() { return _engineStatistics; }
+    ChannelManager& channel_manager() { return _channelManager; }
+    AudioDeviceModule* audio_device() { return _audioDevicePtr; }
+
 protected:
     WebRtc_UWord16 NumOfSendingChannels();
+
 protected:
     const WebRtc_UWord32 _instanceId;
     CriticalSectionWrapper* _apiCritPtr;

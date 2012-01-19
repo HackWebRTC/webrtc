@@ -33,7 +33,7 @@ class Statistics
     WebRtc_Word32 SetUnInitialized();
     bool Initialized() const;
     WebRtc_Word32 SetLastError(const WebRtc_Word32 error) const;
-     WebRtc_Word32 SetLastError(const WebRtc_Word32 error,
+    WebRtc_Word32 SetLastError(const WebRtc_Word32 error,
                                const TraceLevel level) const;
     WebRtc_Word32 SetLastError(const WebRtc_Word32 error,
                                const TraceLevel level,

@@ -100,12 +100,17 @@ class VoiceEngineImpl :
                             public VoEBaseImpl
 {
 public:
-    VoiceEngineImpl()
+    VoiceEngineImpl() : 
+#ifdef WEBRTC_VOICE_ENGINE_VIDEO_SYNC_API
+      VoEVideoSyncImpl(this),
+#endif
+      VoEBaseImpl()  // Included in initializer list to satisfy condition when
+                     // none of the WEBRTC_VOICE_XXX defines are set.
     {
-    };
+    }
     virtual ~VoiceEngineImpl()
     {
-    };
+    }
 };
 
 } // namespace webrtc
