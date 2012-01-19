@@ -9,9 +9,9 @@
 MY_WEBRTC_ROOT_PATH := $(call my-dir)
 
 # voice
-#include $(MY_WEBRTC_ROOT_PATH)/src/common_audio/resampler/Android.mk
-#include $(MY_WEBRTC_ROOT_PATH)/src/common_audio/signal_processing/Android.mk
-#include $(MY_WEBRTC_ROOT_PATH)/src/common_audio/vad/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/src/common_audio/resampler/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/src/common_audio/signal_processing/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/src/common_audio/vad/Android.mk
 #include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_coding/neteq/Android.mk
 #include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_coding/codecs/cng/Android.mk
 #include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_coding/codecs/g711/Android.mk
