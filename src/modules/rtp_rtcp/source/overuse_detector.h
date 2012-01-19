@@ -11,10 +11,11 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_OVERUSE_DETECTOR_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_OVERUSE_DETECTOR_H_
 
+#include <list>
+
 #include "bwe_defines.h"
 #include "module_common_types.h"
 #include "typedefs.h"
-#include "list_wrapper.h"
 
 #ifdef WEBRTC_BWE_MATLAB
 #include "../test/BWEStandAlone/MatlabPlot.h"
@@ -71,7 +72,7 @@ private:
     double _avgNoise;
     double _varNoise;
     double _threshold;
-    ListWrapper _tsDeltaHist;
+    std::list<double> _tsDeltaHist;
     double _prevOffset;
     double _timeOverUsing;
     WebRtc_UWord16 _overUseCounter;

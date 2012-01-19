@@ -85,12 +85,8 @@ OverUseDetector::~OverUseDetector()
         _plot4 = NULL;
     }
 #endif
-    while (!_tsDeltaHist.Empty())
-    {
-        ListItem* item = _tsDeltaHist.First();
-        delete static_cast<double*>(item->GetItem());
-        _tsDeltaHist.Erase(item);
-    }
+
+    _tsDeltaHist.clear();
 }
 
 void OverUseDetector::Reset()
@@ -117,12 +113,7 @@ void OverUseDetector::Reset()
     _timeOverUsing = -1;
     _overUseCounter = 0;
     _hypothesis = kBwNormal;
-    while (!_tsDeltaHist.Empty())
-    {
-        ListItem* item = _tsDeltaHist.First();
-        delete static_cast<double*>(item->GetItem());
-        _tsDeltaHist.Erase(item);
-    }
+    _tsDeltaHist.clear();
 }
 
 bool OverUseDetector::Update(const WebRtcRTPHeader& rtpHeader,
@@ -349,24 +340,18 @@ void OverUseDetector::UpdateKalman(WebRtc_Word64 tDelta, double tsDelta, WebRtc_
 #endif
 }
 
-double OverUseDetector::UpdateMinFramePeriod(double tsDelta)
-{
-    double minFramePeriod = tsDelta;
-    if (_tsDeltaHist.GetSize() >= MIN_FRAME_PERIOD_HISTORY_LEN)
-    {
-        ListItem* firstItem = _tsDeltaHist.First();
-        delete static_cast<double*>(firstItem->GetItem());
-        _tsDeltaHist.Erase(firstItem);
-    }
-    for (ListItem* item = _tsDeltaHist.First();
-        item != NULL;
-        item = _tsDeltaHist.Next(item))
-    {
-        const double* histDelta = static_cast<double*>(item->GetItem());
-        minFramePeriod = BWE_MIN(*histDelta, minFramePeriod);
-    }
-    _tsDeltaHist.PushBack(new double(tsDelta));
-    return minFramePeriod;
+double OverUseDetector::UpdateMinFramePeriod(double tsDelta) {
+  double minFramePeriod = tsDelta;
+  if (_tsDeltaHist.size() >= MIN_FRAME_PERIOD_HISTORY_LEN) {
+    std::list<double>::iterator firstItem = _tsDeltaHist.begin();
+    _tsDeltaHist.erase(firstItem);
+  }
+  std::list<double>::iterator it = _tsDeltaHist.begin();
+  for (; it != _tsDeltaHist.end(); it++) {
+    minFramePeriod = BWE_MIN(*it, minFramePeriod);
+  }
+  _tsDeltaHist.push_back(tsDelta);
+  return minFramePeriod;
 }
 
 void OverUseDetector::UpdateNoiseEstimate(double residual, double tsDelta, bool stableState)
