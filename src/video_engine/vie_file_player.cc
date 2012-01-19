@@ -270,8 +270,12 @@ int ViEFilePlayer::StopPlay() {
 
 int ViEFilePlayer::StopPlayAudio() {
   // Stop sending audio.
-  while (MapItem* audio_item = audio_channels_sending_.First()) {
-    StopSendAudioOnChannel(audio_item->GetId());
+
+  std::set<int>::iterator it = audio_channels_sending_.begin();
+  while (it != audio_channels_sending_.end()) {
+    StopSendAudioOnChannel(*it);
+    // StopSendAudioOnChannel erases the item from the map.
+    it = audio_channels_sending_.begin();
   }
 
   // Stop local audio playback.
@@ -279,10 +283,7 @@ int ViEFilePlayer::StopPlayAudio() {
     StopPlayAudioLocally(local_audio_channel_);
   }
   local_audio_channel_ = -1;
-  while (audio_channel_buffers_.PopFront() != -1) {
-  }
-  while (audio_channels_sending_.Erase(audio_channels_sending_.First()) != -1) {
-  }
+  audio_channel_buffers_.clear();
   audio_clients_ = 0;
   return 0;
 }
@@ -300,8 +301,8 @@ int ViEFilePlayer::Read(void* buf, int len) {
     }
     // 2 bytes per sample.
     decoded_audio_length_ *= 2;
-    if (buf != 0) {
-      audio_channel_buffers_.PushBack(buf);
+    if (buf) {
+      audio_channel_buffers_.push_back(buf);
     }
   } else {
     // No need for new audiobuffer from file, ie the buffer read from file has
@@ -315,16 +316,16 @@ int ViEFilePlayer::Read(void* buf, int len) {
 
 bool ViEFilePlayer::NeedsAudioFromFile(void* buf) {
   bool needs_new_audio = false;
-  if (audio_channel_buffers_.GetSize() == 0) {
+  if (audio_channel_buffers_.size() == 0) {
     return true;
   }
 
   // Check if we the buf already have read the current audio.
-  for (ListItem* item = audio_channel_buffers_.First(); item != NULL;
-       item = audio_channel_buffers_.Next(item)) {
-    if (item->GetItem() == buf) {
+  for (std::list<void*>::iterator it = audio_channel_buffers_.begin();
+       it != audio_channel_buffers_.end(); ++it) {
+    if (*it == buf) {
       needs_new_audio = true;
-      audio_channel_buffers_.Erase(item);
+      audio_channel_buffers_.erase(it);
       break;
     }
   }
@@ -381,7 +382,7 @@ int ViEFilePlayer::SendAudioOnChannel(const int audio_channel,
                  audio_channel, mix_microphone, volume_scaling);
     return -1;
   }
-  audio_channels_sending_.Insert(audio_channel, NULL);
+  audio_channels_sending_.insert(audio_channel);
 
   CriticalSectionScoped lock(*audio_cs_);
   audio_clients_++;
@@ -390,8 +391,8 @@ int ViEFilePlayer::SendAudioOnChannel(const int audio_channel,
 
 int ViEFilePlayer::StopSendAudioOnChannel(const int audio_channel) {
   int result = 0;
-  MapItem* audio_item = audio_channels_sending_.Find(audio_channel);
-  if (!audio_item) {
+  std::set<int>::iterator it = audio_channels_sending_.find(audio_channel);
+  if (it == audio_channels_sending_.end()) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, id_),
                  "ViEFilePlayer::StopSendAudioOnChannel AudioChannel %d not "
                  "sending", audio_channel);
@@ -404,7 +405,7 @@ int ViEFilePlayer::StopSendAudioOnChannel(const int audio_channel) {
                  "VE_StopPlayingFileAsMicrophone failed. audio_channel %d",
                  audio_channel);
   }
-  audio_channels_sending_.Erase(audio_item);
+  audio_channels_sending_.erase(audio_channel);
   CriticalSectionScoped lock(*audio_cs_);
   audio_clients_--;
   assert(audio_clients_ >= 0);

@@ -15,8 +15,9 @@
 #ifndef WEBRTC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_INTERFACE_TB_EXTERNAL_TRANSPORT_H_
 #define WEBRTC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_INTERFACE_TB_EXTERNAL_TRANSPORT_H_
 
+#include <list>
+
 #include "common_types.h"
-#include "list_wrapper.h"
 
 namespace webrtc
 {
@@ -85,8 +86,8 @@ private:
     WebRtc_Word32 _rtcpCount;
     WebRtc_Word32 _dropCount;
 
-    webrtc::ListWrapper _rtpPackets;
-    webrtc::ListWrapper _rtcpPackets;
+    std::list<VideoPacket*> _rtpPackets;
+    std::list<VideoPacket*> _rtcpPackets;
 
     unsigned char _temporalLayers;
     unsigned short _seqNum;

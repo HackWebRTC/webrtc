@@ -48,8 +48,6 @@ TbExternalTransport::TbExternalTransport(webrtc::ViENetwork& vieNetwork) :
         _rtpCount(0),
         _rtcpCount(0),
         _dropCount(0),
-        _rtpPackets(),
-        _rtcpPackets(),
         _temporalLayers(0),
         _seqNum(0),
         _sendPID(0),
@@ -196,7 +194,7 @@ int TbExternalTransport::SendPacket(int channel, const void *data, int len)
 
     _crit.Enter();
     newPacket->receiveTime = NowMs() + _networkDelayMs;
-    _rtpPackets.PushBack(newPacket);
+    _rtpPackets.push_back(newPacket);
     _event.Set();
     _crit.Leave();
     return len;
@@ -221,7 +219,7 @@ int TbExternalTransport::SendRTCPPacket(int channel, const void *data, int len)
 
     _crit.Enter();
     newPacket->receiveTime = NowMs() + _networkDelayMs;
-    _rtcpPackets.PushBack(newPacket);
+    _rtcpPackets.push_back(newPacket);
     _event.Set();
     _crit.Leave();
     return len;
@@ -300,11 +298,11 @@ bool TbExternalTransport::ViEExternalTransportProcess()
 
     VideoPacket* packet = NULL;
 
-    while (!_rtpPackets.Empty())
+    while (!_rtpPackets.empty())
     {
         // Take first packet in queue
         _crit.Enter();
-        packet = static_cast<VideoPacket*> ((_rtpPackets.First())->GetItem());
+        packet = _rtpPackets.front();
         WebRtc_Word64 timeToReceive = packet->receiveTime - NowMs();
         if (timeToReceive > 0)
         {
@@ -316,7 +314,7 @@ bool TbExternalTransport::ViEExternalTransportProcess()
             _crit.Leave();
             break;
         }
-        _rtpPackets.PopFront();
+        _rtpPackets.pop_front();
         _crit.Leave();
 
         // Send to ViE
@@ -347,11 +345,11 @@ bool TbExternalTransport::ViEExternalTransportProcess()
             packet = NULL;
         }
     }
-    while (!_rtcpPackets.Empty())
+    while (!_rtcpPackets.empty())
     {
         // Take first packet in queue
         _crit.Enter();
-        packet = static_cast<VideoPacket*> ((_rtcpPackets.First())->GetItem());
+        packet = _rtcpPackets.front();
         WebRtc_Word64 timeToReceive = packet->receiveTime - NowMs();
         if (timeToReceive > 0)
         {
@@ -363,7 +361,7 @@ bool TbExternalTransport::ViEExternalTransportProcess()
             _crit.Leave();
             break;
         }
-        _rtcpPackets.PopFront();
+        _rtcpPackets.pop_front();
         _crit.Leave();
 
         // Send to ViE

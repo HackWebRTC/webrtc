@@ -11,10 +11,12 @@
 #ifndef WEBRTC_VIDEO_ENGINE_VIE_FILE_PLAYER_H_
 #define WEBRTC_VIDEO_ENGINE_VIE_FILE_PLAYER_H_
 
+#include <list>
+#include <set>
+
 #include "common_types.h"
 #include "modules/media_file/interface/media_file_defines.h"
 #include "system_wrappers/interface/file_wrapper.h"
-#include "system_wrappers/interface/list_wrapper.h"
 #include "typedefs.h"
 #include "video_engine/vie_frame_provider_base.h"
 
@@ -124,10 +126,10 @@ class ViEFilePlayer
 
   // Trick - list containing VoE buffer reading this file. Used if multiple
   // audio channels are sending.
-  ListWrapper audio_channel_buffers_;
+  std::list<void*> audio_channel_buffers_;
 
   // AudioChannels sending audio from this file.
-  MapWrapper audio_channels_sending_;
+  std::set<int> audio_channels_sending_;
 
   // Frame receiving decoded video from file.
   VideoFrame decoded_video_;
