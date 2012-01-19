@@ -238,6 +238,12 @@ int ViEChannelManager::DeleteChannel(int channel_id) {
     }
     vie_channel = reinterpret_cast<ViEChannel*>(map_item->GetItem());
     channel_map_.Erase(map_item);
+
+    // Deregister possible remb modules.
+    RtpRtcp* rtp_module = vie_channel->rtp_rtcp();
+    remb_->RemoveSendChannel(rtp_module);
+    remb_->RemoveReceiveChannel(rtp_module);
+
     // Deregister the channel from the ViEEncoder to stop the media flow.
     vie_channel->DeregisterSendRtpRtcpModule();
     ReturnChannelId(channel_id);
