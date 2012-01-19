@@ -101,44 +101,26 @@ RTPSender::RTPSender(const WebRtc_Word32 id,
     WEBRTC_TRACE(kTraceMemory, kTraceRtpRtcp, id, "%s created", __FUNCTION__);
 }
 
-RTPSender::~RTPSender()
-{
-    if(_remoteSSRC != 0)
-    {
-        _ssrcDB.ReturnSSRC(_remoteSSRC);
-    }
-    _ssrcDB.ReturnSSRC(_ssrc);
+RTPSender::~RTPSender() {
+  if(_remoteSSRC != 0) {
+    _ssrcDB.ReturnSSRC(_remoteSSRC);
+  }
+  _ssrcDB.ReturnSSRC(_ssrc);
 
-    SSRCDatabase::ReturnSSRCDatabase();
+  SSRCDatabase::ReturnSSRCDatabase();
+  delete _sendCritsect;
+  delete _transportCritsect;
+  while (!_payloadTypeMap.empty()) {
+    std::map<WebRtc_Word8, ModuleRTPUtility::Payload*>::iterator it =
+        _payloadTypeMap.begin();
+    delete it->second;
+    _payloadTypeMap.erase(it);
+  }
+  delete _packetHistory;
+  delete _audio;
+  delete _video;
 
-    delete _sendCritsect;
-    delete _transportCritsect;
-
-    // empty map
-    bool loop = true;
-    do
-    {
-        MapItem* item = _payloadTypeMap.First();
-        if(item)
-        {
-            // delete
-            ModuleRTPUtility::Payload* payload= ((ModuleRTPUtility::Payload*)item->GetItem());
-            delete payload;
-
-            // remove from map and delete Item
-            _payloadTypeMap.Erase(item);
-        } else
-        {
-            loop = false;
-        }
-    } while (loop);
-
-    delete _packetHistory;
-
-    delete _audio;
-    delete _video;
-
-    WEBRTC_TRACE(kTraceMemory, kTraceRtpRtcp, _id, "%s deleted", __FUNCTION__);
+  WEBRTC_TRACE(kTraceMemory, kTraceRtpRtcp, _id, "%s deleted", __FUNCTION__);
 }
 
 WebRtc_Word32
@@ -171,20 +153,12 @@ RTPSender::Init(const WebRtc_UWord32 remoteSSRC)
 
     _rtpHeaderExtensionMap.Erase();
 
-    bool loop = true;
-    do
-    {
-        MapItem* item = _payloadTypeMap.First();
-        if(item)
-        {
-            ModuleRTPUtility::Payload* payload= ((ModuleRTPUtility::Payload*)item->GetItem());
-            delete payload;
-            _payloadTypeMap.Erase(item);
-        } else
-        {
-            loop = false;
-        }
-    } while (loop);
+    while (!_payloadTypeMap.empty()) {
+      std::map<WebRtc_Word8, ModuleRTPUtility::Payload*>::iterator it =
+          _payloadTypeMap.begin();
+      delete it->second;
+      _payloadTypeMap.erase(it);
+    }
 
     memset(_CSRC, 0, sizeof(_CSRC));
 
@@ -297,89 +271,80 @@ RTPSender::RtpHeaderExtensionTotalLength() const
 }
 
 //can be called multiple times
-WebRtc_Word32
-RTPSender::RegisterPayload(const WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
-                           const WebRtc_Word8 payloadNumber,
-                           const WebRtc_UWord32 frequency,
-                           const WebRtc_UWord8 channels,
-                           const WebRtc_UWord32 rate)
-{
-    if (!payloadName)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id, "%s invalid argument", __FUNCTION__);
-        return -1;
-    }
+WebRtc_Word32 RTPSender::RegisterPayload(
+    const WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
+    const WebRtc_Word8 payloadNumber,
+    const WebRtc_UWord32 frequency,
+    const WebRtc_UWord8 channels,
+    const WebRtc_UWord32 rate) {
+  if (!payloadName) {
+    WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id, "%s invalid argument",
+                 __FUNCTION__);
+    return -1;
+  }
+  CriticalSectionScoped cs(_sendCritsect);
 
-    CriticalSectionScoped cs(_sendCritsect);
+  if (payloadNumber == _keepAlivePayloadType) {
+    WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, _id, "invalid state",
+                 __FUNCTION__);
+    return -1;
+  }
+  std::map<WebRtc_Word8, ModuleRTPUtility::Payload*>::iterator it =
+      _payloadTypeMap.find(payloadNumber);
 
-    if(payloadNumber == _keepAlivePayloadType)
-    {
-        WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, _id, "invalid state", __FUNCTION__);
-        return -1;
-    }
+  if (_payloadTypeMap.end() != it) {
+    // we already use this payload type
+    ModuleRTPUtility::Payload* payload = it->second;
+    assert(payload);
 
-    MapItem* item = _payloadTypeMap.Find(payloadNumber);
-    if( NULL != item)
-    {
-        // we already use this payload type
-
-        ModuleRTPUtility::Payload* payload = (ModuleRTPUtility::Payload*)item->GetItem();
-        assert(payload);
-
-        // check if it's the same as we already have
-        WebRtc_Word32 payloadNameLength = (WebRtc_Word32)strlen(payloadName);
-        WebRtc_Word32 nameLength = (WebRtc_Word32)strlen(payload->name);
-        if(payloadNameLength == nameLength && ModuleRTPUtility::StringCompare(payload->name, payloadName, nameLength))
-        {
-            if(_audioConfigured && payload->audio &&
-                payload->typeSpecific.Audio.frequency == frequency &&
-                (payload->typeSpecific.Audio.rate == rate || payload->typeSpecific.Audio.rate == 0 || rate == 0))
-            {
-                payload->typeSpecific.Audio.rate = rate; // Ensure that we update the rate if new or old is zero
-                return 0;
-            }
-            if(!_audioConfigured && !payload->audio)
-            {
-                return 0;
-            }
-        }
-        return -1;
-    }
-
-    WebRtc_Word32 retVal = -1;
-    ModuleRTPUtility::Payload* payload = NULL;
-
-    if(_audioConfigured)
-    {
-        retVal = _audio->RegisterAudioPayload(payloadName, payloadNumber, frequency, channels, rate, payload);
-    } else
-    {
-        retVal = _video->RegisterVideoPayload(payloadName, payloadNumber, rate, payload);
-    }
-    if(payload)
-    {
-        _payloadTypeMap.Insert(payloadNumber, payload);
-    }
-    return retVal;
-}
-
-WebRtc_Word32
-RTPSender::DeRegisterSendPayload(const WebRtc_Word8 payloadType)
-{
-    CriticalSectionScoped lock(_sendCritsect);
-
-    MapItem* item = _payloadTypeMap.Find(payloadType);
-    if( NULL != item)
-    {
-        ModuleRTPUtility::Payload* payload = (ModuleRTPUtility::Payload*)item->GetItem();
-        delete payload;
-
-        _payloadTypeMap.Erase(item);
+    // check if it's the same as we already have
+    WebRtc_Word32 payloadNameLength = (WebRtc_Word32)strlen(payloadName);
+    WebRtc_Word32 nameLength = (WebRtc_Word32)strlen(payload->name);
+    if (payloadNameLength == nameLength &&
+        ModuleRTPUtility::StringCompare(payload->name, payloadName,
+                                        nameLength)) {
+      if (_audioConfigured && payload->audio &&
+          payload->typeSpecific.Audio.frequency == frequency &&
+          (payload->typeSpecific.Audio.rate == rate ||
+              payload->typeSpecific.Audio.rate == 0 || rate == 0)) {
+        payload->typeSpecific.Audio.rate = rate;
+        // Ensure that we update the rate if new or old is zero
         return 0;
+      }
+      if(!_audioConfigured && !payload->audio) {
+        return 0;
+      }
     }
     return -1;
+  }
+  WebRtc_Word32 retVal = -1;
+  ModuleRTPUtility::Payload* payload = NULL;
+  if (_audioConfigured) {
+    retVal = _audio->RegisterAudioPayload(payloadName, payloadNumber, frequency,
+                                          channels, rate, payload);
+  } else {
+    retVal = _video->RegisterVideoPayload(payloadName, payloadNumber, rate,
+                                          payload);
+  }
+  if(payload) {
+    _payloadTypeMap[payloadNumber] = payload;
+  }
+  return retVal;
 }
 
+WebRtc_Word32 RTPSender::DeRegisterSendPayload(const WebRtc_Word8 payloadType) {
+  CriticalSectionScoped lock(_sendCritsect);
+
+  std::map<WebRtc_Word8, ModuleRTPUtility::Payload*>::iterator it =
+      _payloadTypeMap.find(payloadType);
+
+  if (_payloadTypeMap.end() == it) return -1;
+
+  ModuleRTPUtility::Payload* payload = it->second;
+  delete payload;
+  _payloadTypeMap.erase(it);
+  return 0;
+}
 
 WebRtc_Word8 RTPSender::SendPayloadType() const
 {
@@ -423,23 +388,24 @@ RTPSender::RTPKeepaliveStatus(bool* enable,
     return 0;
 }
 
-WebRtc_Word32
-RTPSender::EnableRTPKeepalive( const WebRtc_Word8 unknownPayloadType,
-                               const WebRtc_UWord16 deltaTransmitTimeMS)
-{
-    CriticalSectionScoped cs(_sendCritsect);
+WebRtc_Word32 RTPSender::EnableRTPKeepalive(
+    const WebRtc_Word8 unknownPayloadType,
+    const WebRtc_UWord16 deltaTransmitTimeMS) {
+  CriticalSectionScoped cs(_sendCritsect);
 
-    if( NULL != _payloadTypeMap.Find(unknownPayloadType))
-    {
-        WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id, "%s invalid argument", __FUNCTION__);
-        return -1;
-    }
+  std::map<WebRtc_Word8, ModuleRTPUtility::Payload*>::iterator it =
+      _payloadTypeMap.find(unknownPayloadType);
 
-    _keepAliveIsActive = true;
-    _keepAlivePayloadType = unknownPayloadType;
-    _keepAliveLastSent = _clock.GetTimeInMS();
-    _keepAliveDeltaTimeSend = deltaTransmitTimeMS;
-    return 0;
+  if (it != _payloadTypeMap.end()) {
+    WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id, "%s invalid argument",
+                 __FUNCTION__);
+    return -1;
+  }
+  _keepAliveIsActive = true;
+  _keepAlivePayloadType = unknownPayloadType;
+  _keepAliveLastSent = _clock.GetTimeInMS();
+  _keepAliveDeltaTimeSend = deltaTransmitTimeMS;
+  return 0;
 }
 
 WebRtc_Word32
@@ -619,92 +585,75 @@ void RTPSender::RTXStatus(bool* enable,
   *SSRC = _ssrcRTX;
 }
 
-WebRtc_Word32
-RTPSender::CheckPayloadType(const WebRtc_Word8 payloadType,
-                            RtpVideoCodecTypes& videoType)
-{
-    CriticalSectionScoped cs(_sendCritsect);
+WebRtc_Word32 RTPSender::CheckPayloadType(const WebRtc_Word8 payloadType,
+                                          RtpVideoCodecTypes& videoType) {
+  CriticalSectionScoped cs(_sendCritsect);
 
-    if(payloadType < 0)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id, "\tinvalid payloadType (%d)", payloadType);
-        return -1;
+  if (payloadType < 0) {
+    WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
+                 "\tinvalid payloadType (%d)", payloadType);
+    return -1;
+  }
+  if (_audioConfigured) {
+    WebRtc_Word8 redPlType = -1;
+    if (_audio->RED(redPlType) == 0) {
+      // We have configured RED.
+      if(redPlType == payloadType) {
+        // And it's a match...
+        return 0;
+      }
     }
-
-    if(_audioConfigured)
-    {
-        WebRtc_Word8 redPlType = -1;
-        if(_audio->RED(redPlType) == 0)
-        {
-            // we have configured RED
-            if(redPlType == payloadType)
-            {
-                // and it's a match
-                return 0;
-            }
-        }
-    }
-
-    if(_payloadType != payloadType)
-    {
-        MapItem* item = _payloadTypeMap.Find(payloadType);
-        if( NULL == item)
-        {
-            WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id, "\tpayloadType:%d not registered", payloadType);
-            return -1;
-        }
-        _payloadType = payloadType;
-        ModuleRTPUtility::Payload* payload = (ModuleRTPUtility::Payload*)item->GetItem();
-        if(payload)
-        {
-            if(payload->audio)
-            {
-                if(_audioConfigured)
-                {
-                    // Extract payload frequency
-                    int payloadFreqHz;
-                    if(ModuleRTPUtility::StringCompare(payload->name,"g722",4)&&
-                        (payload->name[4] == 0)) //Check that strings end there, g722.1...
-                    {
-                        // Special case for G.722, bug in spec
-                        payloadFreqHz=8000;
-                    }
-                    else
-                    {
-                        payloadFreqHz=payload->typeSpecific.Audio.frequency;
-                    }
-
-                    //we don't do anything if it's CN
-                    if((_audio->AudioFrequency() != payloadFreqHz)&&
-                        (!ModuleRTPUtility::StringCompare(payload->name,"cn",2)))
-                    {
-                        _audio->SetAudioFrequency(payloadFreqHz);
-                        // We need to correct the timestamp again,
-                        // since this might happen after we've set it
-                        WebRtc_UWord32 RTPtime =
-                            ModuleRTPUtility::GetCurrentRTP(&_clock, payloadFreqHz);
-                        SetStartTimestamp(RTPtime);
-                        // will be ignored if it's already configured via API
-                    }
-                }
-            }else
-            {
-                if(!_audioConfigured)
-                {
-                    _video->SetVideoCodecType(payload->typeSpecific.Video.videoCodecType);
-                    videoType = payload->typeSpecific.Video.videoCodecType;
-                    _video->SetMaxConfiguredBitrateVideo(payload->typeSpecific.Video.maxRate);
-                }
-            }
-        }
-    } else
-    {
-        if(!_audioConfigured)
-        {
-            videoType = _video->VideoCodecType();
-        }
+  }
+  if (_payloadType == payloadType) {
+    if (!_audioConfigured) {
+      videoType = _video->VideoCodecType();
     }
     return 0;
+  }
+  std::map<WebRtc_Word8, ModuleRTPUtility::Payload*>::iterator it =
+      _payloadTypeMap.find(payloadType);
+  if (it == _payloadTypeMap.end()) {
+    WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
+                 "\tpayloadType:%d not registered", payloadType);
+    return -1;
+  }
+  _payloadType = payloadType;
+  ModuleRTPUtility::Payload* payload = it->second;
+  assert(payload);
+  if (payload->audio) {
+    if (_audioConfigured) {
+      // Extract payload frequency
+      int payloadFreqHz;
+      if (ModuleRTPUtility::StringCompare(payload->name,"g722",4)&&
+          (payload->name[4] == 0)) {
+        //Check that strings end there, g722.1...
+        // Special case for G.722, bug in spec
+        payloadFreqHz=8000;
+      } else {
+        payloadFreqHz=payload->typeSpecific.Audio.frequency;
+      }
+
+      //we don't do anything if it's CN
+      if ((_audio->AudioFrequency() != payloadFreqHz)&&
+          (!ModuleRTPUtility::StringCompare(payload->name,"cn",2))) {
+        _audio->SetAudioFrequency(payloadFreqHz);
+        // We need to correct the timestamp again,
+        // since this might happen after we've set it
+        WebRtc_UWord32 RTPtime =
+            ModuleRTPUtility::GetCurrentRTP(&_clock, payloadFreqHz);
+        SetStartTimestamp(RTPtime);
+        // will be ignored if it's already configured via API
+      }
+    }
+  } else {
+    if(!_audioConfigured) {
+      _video->SetVideoCodecType(payload->typeSpecific.Video.videoCodecType);
+      videoType = payload->typeSpecific.Video.videoCodecType;
+      _video->SetMaxConfiguredBitrateVideo(
+          payload->typeSpecific.Video.maxRate);
+    }
+  }
+  return 0;
 }
 
 WebRtc_Word32

@@ -11,19 +11,18 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_SENDER_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_SENDER_H_
 
+#include <cassert>
+#include <cmath>
+#include <map>
+
 #include "rtp_rtcp_config.h"       // misc. defines (e.g. MAX_PACKET_LENGTH)
 #include "rtp_rtcp_defines.h"
 #include "common_types.h"          // Encryption
 #include "ssrc_database.h"
-#include "list_wrapper.h"
-#include "map_wrapper.h"
 #include "Bitrate.h"
 #include "rtp_header_extension.h"
 #include "video_codec_information.h"
 #include "transmission_bucket.h"
-
-#include <cassert>
-#include <cmath>
 
 #define MAX_INIT_RTP_SEQ_NUMBER 32767 // 2^15 -1
 
@@ -331,7 +330,7 @@ private:
     WebRtc_UWord16            _packetOverHead;
 
     WebRtc_Word8              _payloadType;
-    MapWrapper                _payloadTypeMap;
+    std::map<WebRtc_Word8, ModuleRTPUtility::Payload*> _payloadTypeMap;
 
     RtpHeaderExtensionMap     _rtpHeaderExtensionMap;
     WebRtc_Word32             _transmissionTimeOffset;
