@@ -63,7 +63,7 @@ bool TemporalLayers::ConfigureBitrates(int bitrateKbit,
       temporal_pattern_[4] = kTemporalUpdateLast;
       temporal_pattern_[5] = kTemporalUpdateGolden;
       temporal_pattern_[6] = kTemporalUpdateLast;
-      temporal_pattern_[7] = kTemporalUpdateNone;
+      temporal_pattern_[7] = kTemporalUpdateNoneNoRefAltref;
       break;
     case 3:
       temporal_ids_length_ = 4;
@@ -175,6 +175,9 @@ int TemporalLayers::EncodeFlags() {
       flags |= VP8_EFLAG_NO_UPD_GF;
       flags |= VP8_EFLAG_NO_UPD_LAST;
       break;
+    case kTemporalUpdateNoneNoRefAltref:
+      flags |= VP8_EFLAG_NO_REF_ARF;
+      // Deliberately no break here.
     case kTemporalUpdateNone:
       flags |= VP8_EFLAG_NO_UPD_GF;
       flags |= VP8_EFLAG_NO_UPD_ARF;

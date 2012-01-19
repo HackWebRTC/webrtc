@@ -35,6 +35,8 @@ class TemporalLayers {
 
  private:
   enum TemporalReferences {
+    // Second layer and last frame in cycle, for 2 layers.
+    kTemporalUpdateNoneNoRefAltref = 6,
     // Highest enhancement layer.
     kTemporalUpdateNone = 5,
     // Second enhancement layer.

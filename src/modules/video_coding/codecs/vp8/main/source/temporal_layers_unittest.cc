@@ -40,6 +40,11 @@ enum {
                         VP8_EFLAG_NO_UPD_ARF |
                         VP8_EFLAG_NO_UPD_LAST |
                         VP8_EFLAG_NO_UPD_ENTROPY,
+  kTemporalUpdateNoneNoRefAltRef = VP8_EFLAG_NO_REF_ARF |
+                                   VP8_EFLAG_NO_UPD_GF |
+                                   VP8_EFLAG_NO_UPD_ARF |
+                                   VP8_EFLAG_NO_UPD_LAST |
+                                   VP8_EFLAG_NO_UPD_ENTROPY,
 };
 
 TEST(TemporalLayersTest, 2Layers) {
@@ -55,7 +60,7 @@ TEST(TemporalLayersTest, 2Layers) {
                              kTemporalUpdateLast,
                              kTemporalUpdateGolden,
                              kTemporalUpdateLast,
-                             kTemporalUpdateNone,
+                             kTemporalUpdateNoneNoRefAltRef,
                              kTemporalUpdateLast,
                              kTemporalUpdateGoldenWithoutDependency,
                              kTemporalUpdateLast,
@@ -63,7 +68,7 @@ TEST(TemporalLayersTest, 2Layers) {
                              kTemporalUpdateLast,
                              kTemporalUpdateGolden,
                              kTemporalUpdateLast,
-                             kTemporalUpdateNone
+                             kTemporalUpdateNoneNoRefAltRef
   };
   int expected_temporal_idx[16] =
       { 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1 };
