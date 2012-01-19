@@ -15,8 +15,6 @@
 #include "rtp_utility.h"
 
 #include "typedefs.h"
-#include "map_wrapper.h"
-#include "list_wrapper.h"
 
 #include "overuse_detector.h"
 #include "remote_rate_control.h"
@@ -25,12 +23,12 @@
 namespace webrtc {
 class ReceiverFEC;
 class ModuleRtpRtcpImpl;
+class CriticalSectionWrapper;
 
 class RTPReceiverVideo
 {
 public:
-    RTPReceiverVideo(const WebRtc_Word32 id,
-                     ModuleRtpRtcpImpl* owner);
+    RTPReceiverVideo(const WebRtc_Word32 id, ModuleRtpRtcpImpl* owner);
 
     virtual ~RTPReceiverVideo();
 

@@ -24,7 +24,6 @@ RTPReceiverAudio::RTPReceiverAudio(const WebRtc_Word32 id):
     _telephoneEventForwardToDecoder(false),
     _telephoneEventDetectEndOfTone(false),
     _telephoneEventPayloadType(-1),
-    _telephoneEventReported(),
     _cngNBPayloadType(-1),
     _cngWBPayloadType(-1),
     _cngSWBPayloadType(-1),
@@ -41,26 +40,22 @@ RTPReceiverAudio::~RTPReceiverAudio()
     delete _criticalSectionFeedback;
 }
 
-WebRtc_Word32
-RTPReceiverAudio::Init()
-{
-    _lastReceivedFrequency = 8000;
-    _telephoneEvent = false;
-    _telephoneEventForwardToDecoder = false;
-    _telephoneEventDetectEndOfTone = false;
-    _telephoneEventPayloadType = -1;
+WebRtc_Word32 RTPReceiverAudio::Init() {
+  _lastReceivedFrequency = 8000;
+  _telephoneEvent = false;
+  _telephoneEventForwardToDecoder = false;
+  _telephoneEventDetectEndOfTone = false;
+  _telephoneEventPayloadType = -1;
 
-    while(_telephoneEventReported.Size() > 0)
-    {
-        _telephoneEventReported.Erase(_telephoneEventReported.First());
-    }
-    _cngNBPayloadType = -1;
-    _cngWBPayloadType = -1;
-    _cngSWBPayloadType = -1;
-    _cngPayloadType = -1;
-    _G722PayloadType = -1;
-    _lastReceivedG722 = false;
-    return 0;
+  _telephoneEventReported.clear();
+
+  _cngNBPayloadType = -1;
+  _cngWBPayloadType = -1;
+  _cngSWBPayloadType = -1;
+  _cngPayloadType = -1;
+  _G722PayloadType = -1;
+  _lastReceivedG722 = false;
+  return 0;
 }
 
 void
@@ -342,14 +337,17 @@ RTPReceiverAudio::ParseAudioCodecSpecific(WebRtcRTPHeader* rtpHeader,
             {
                 bool end = (payloadData[(4*n)+1] & 0x80)? true:false;
 
-                if(_telephoneEventReported.Find(payloadData[4*n]) != NULL)
+                std::set<WebRtc_UWord8>::iterator event =
+                    _telephoneEventReported.find(payloadData[4*n]);
+
+                if(event != _telephoneEventReported.end())
                 {
                     // we have already seen this event
                     if(end)
                     {
                         removedEvents[numberOfRemovedEvents]= payloadData[4*n];
                         numberOfRemovedEvents++;
-                        _telephoneEventReported.Erase(payloadData[4*n]);
+                        _telephoneEventReported.erase(payloadData[4*n]);
                     }
                 }else
                 {
@@ -360,7 +358,7 @@ RTPReceiverAudio::ParseAudioCodecSpecific(WebRtcRTPHeader* rtpHeader,
                     {
                         newEvents[numberOfNewEvents] = payloadData[4*n];
                         numberOfNewEvents++;
-                        _telephoneEventReported.Insert(payloadData[4*n],NULL);
+                        _telephoneEventReported.insert(payloadData[4*n]);
                     }
                 }
             }
@@ -411,8 +409,9 @@ RTPReceiverAudio::ParseAudioCodecSpecific(WebRtcRTPHeader* rtpHeader,
             // don't forward event to decoder
             return 0;
         }
-        MapItem* first = _telephoneEventReported.First();
-        if(first && first->GetId() > 15)
+        std::set<WebRtc_UWord8>::iterator first =
+            _telephoneEventReported.begin();
+        if(first != _telephoneEventReported.end() && *first > 15)
         {
             // don't forward non DTMF events
             return 0;

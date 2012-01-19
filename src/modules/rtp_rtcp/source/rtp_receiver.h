@@ -11,6 +11,8 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_RECEIVER_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_RECEIVER_H_
 
+#include <map>
+
 #include "typedefs.h"
 #include "rtp_utility.h"
 
@@ -208,8 +210,7 @@ private:
 
     WebRtc_Word8              _redPayloadType;
 
-    //
-    MapWrapper                _payloadTypeMap;
+    std::map<WebRtc_Word8, ModuleRTPUtility::Payload*> _payloadTypeMap;
     RtpHeaderExtensionMap     _rtpHeaderExtensionMap;
 
     // SSRCs

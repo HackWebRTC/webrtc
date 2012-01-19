@@ -11,11 +11,12 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_RECEIVER_AUDIO_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_RECEIVER_AUDIO_H_
 
+#include <set>
+
 #include "rtp_rtcp_defines.h"
 #include "rtp_utility.h"
 
 #include "typedefs.h"
-#include "map_wrapper.h"
 
 namespace webrtc {
 class CriticalSectionWrapper;
@@ -77,8 +78,8 @@ private:
     bool                    _telephoneEvent;
     bool                    _telephoneEventForwardToDecoder;
     bool                    _telephoneEventDetectEndOfTone;
-    WebRtc_Word8              _telephoneEventPayloadType;
-    MapWrapper                 _telephoneEventReported;
+    WebRtc_Word8            _telephoneEventPayloadType;
+    std::set<WebRtc_UWord8> _telephoneEventReported;
 
     WebRtc_Word8              _cngNBPayloadType;
     WebRtc_Word8              _cngWBPayloadType;
