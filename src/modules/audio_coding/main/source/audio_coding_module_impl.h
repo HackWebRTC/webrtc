@@ -315,9 +315,7 @@ private:
     CodecInst                      _cngWB;
     CodecInst                      _cngSWB;
     CodecInst                      _RED;
-    bool                           _REDRegistered;
     CodecInst                      _DTMF;
-    bool                           _DTMFRegistered;
     bool                           _vadEnabled;
     bool                           _dtxEnabled;
     ACMVADMode                     _vadMode;

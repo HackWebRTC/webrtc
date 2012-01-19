@@ -42,10 +42,10 @@ namespace webrtc {
 
 #ifndef WEBRTC_CODEC_GSMFR
 
-ACMGSMFR::ACMGSMFR(
-    WebRtc_Word16 /* codecID */)
-{
-    return;
+ACMGSMFR::ACMGSMFR(WebRtc_Word16 /* codecID */)
+    : _encoderInstPtr(NULL),
+      _decoderInstPtr(NULL) {
+  return;
 }
 
 

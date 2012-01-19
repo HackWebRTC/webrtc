@@ -86,10 +86,18 @@ const WebRtc_Word32 isacRatesSWB[NR_ISAC_BANDWIDTHS] =
 
 #if (!defined(WEBRTC_CODEC_ISAC) && !defined(WEBRTC_CODEC_ISACFX))
 
-ACMISAC::ACMISAC(
-    WebRtc_Word16 /* codecID */)
-{
-    return;
+ACMISAC::ACMISAC(WebRtc_Word16 /* codecID */)
+    : _codecInstPtr(NULL),
+      _isEncInitialized(false),
+      _isacCodingMode(CHANNEL_INDEPENDENT),
+      _enforceFrameSize(false),
+      _isacCurrentBN(32000),
+      _samplesIn10MsAudio(160) {  // Initiates to 16 kHz mode.
+  // Initiate decoder parameters for the 32 kHz mode.
+  memset(&_decoderParams32kHz, 0, sizeof(WebRtcACMCodecParams));
+  _decoderParams32kHz.codecInstant.pltype = -1;
+
+  return;
 }
 
 
@@ -453,24 +461,29 @@ ACMISACFixGetDecSampRate(
 
 
 
-ACMISAC::ACMISAC(
-    WebRtc_Word16 codecID):
-_codecInstPtr(NULL)
-{
-    _codecInstPtr = new ACMISACInst;
-    if (_codecInstPtr == NULL)
-    {
-        return;
-    }
-    _codecInstPtr->inst = NULL;
-    _codecID = codecID;
-    _enforceFrameSize = false;
-    // by default a 16 kHz iSAC is created.
-    _samplesIn10MsAudio = 160;
+ACMISAC::ACMISAC(WebRtc_Word16 codecID)
+    : _isEncInitialized(false),
+      _isacCodingMode(CHANNEL_INDEPENDENT),
+      _enforceFrameSize(false),
+      _isacCurrentBN(32000),
+      _samplesIn10MsAudio(160) {  // Initiates to 16 kHz mode.
+  _codecID = codecID;
 
-    // Initialize values that can be used uninitialized otherwise
-    _decoderParams.codecInstant.pltype = -1;
-    _decoderParams32kHz.codecInstant.pltype = -1;
+  // Create codec instance.
+  _codecInstPtr = new ACMISACInst;
+  if (_codecInstPtr == NULL) {
+    return;
+  }
+  _codecInstPtr->inst = NULL;
+
+  // Initiate decoder parameters for the 32 kHz mode.
+  memset(&_decoderParams32kHz, 0, sizeof(WebRtcACMCodecParams));
+  _decoderParams32kHz.codecInstant.pltype = -1;
+
+  // TODO(tlegrand): Check if the following is really needed, now that
+  // ACMGenericCodec has been updated to initialize this value.
+  // Initialize values that can be used uninitialized otherwise
+  _decoderParams.codecInstant.pltype = -1;
 }
 
 
@@ -893,7 +906,7 @@ ACMISAC::GetEstimatedBandwidthSafe()
     ACM_ISAC_GETSENDBWE(_codecInstPtr->inst, &bandwidthIndex, &delayIndex);
 
     // Validy check of index
-    if ((bandwidthIndex < 0) || (bandwidthIndex > NR_ISAC_BANDWIDTHS))
+    if ((bandwidthIndex < 0) || (bandwidthIndex >= NR_ISAC_BANDWIDTHS))
     {
         return -1;
     }

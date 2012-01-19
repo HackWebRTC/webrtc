@@ -26,10 +26,14 @@ namespace webrtc
 
 #ifndef WEBRTC_CODEC_OPUS
 
-ACMOPUS::ACMOPUS(
-    WebRtc_Word16 /* codecID */)
-{
-    return;
+ACMOPUS::ACMOPUS(WebRtc_Word16 /* codecID */)
+    : _encoderInstPtr(NULL),
+      _decoderInstPtr(NULL),
+      _mySampFreq(0),
+      _myRate(0),
+      _opusMode(0),
+      _flagVBR(0) {
+  return;
 }
 
 
@@ -164,25 +168,19 @@ extern WebRtc_Word16 WebRtcOpus_DecodeBwe(OPUS_inst_t_* decInst, WebRtc_Word16* 
 extern WebRtc_Word16 WebRtcOpus_DecodePlc(OPUS_inst_t_* decInst);
 extern WebRtc_Word16 WebRtcOpus_DecoderInit(OPUS_inst_t_* decInst);
 
-ACMOPUS::ACMOPUS(
-    WebRtc_Word16 codecID):
-_encoderInstPtr(NULL),
-_decoderInstPtr(NULL),
-_opusMode(1),           // default mode is the hybrid mode
-_flagVBR(0)             // default VBR off
-{
-    _codecID = codecID;
+ACMOPUS::ACMOPUS(WebRtc_Word16 codecID)
+    : _encoderInstPtr(NULL),
+      _decoderInstPtr(NULL),
+      _mySampFreq(48000),  // Default sampling frequency.
+      _myRate(50000),  // Default rate.
+      _opusMode(1),  // Default mode is the hybrid mode.
+      _flagVBR(0) {  // Default VBR off.
+  _codecID = codecID;
 
-    // Current implementation doesn't have DTX. That might change.
-    _hasInternalDTX = false;
+  // Current implementation doesn't have DTX. That might change.
+  _hasInternalDTX = false;
 
-    // Default sampling frequency
-    _mySampFreq = 48000;
-
-    // default rate
-    _myRate = 50000;
-
-    return;
+  return;
 }
 
 ACMOPUS::~ACMOPUS()

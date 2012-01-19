@@ -24,10 +24,10 @@ namespace webrtc
 
 #ifndef WEBRTC_CODEC_ILBC
 
-ACMILBC::ACMILBC(
-    WebRtc_Word16 /* codecID */)
-{
-    return;
+ACMILBC::ACMILBC(WebRtc_Word16 /* codecID */)
+    : _encoderInstPtr(NULL),
+      _decoderInstPtr(NULL) {
+  return;
 }
 
 

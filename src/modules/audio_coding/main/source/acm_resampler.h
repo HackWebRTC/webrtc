@@ -31,14 +31,10 @@ public:
         const WebRtc_Word32  outFreqHz,
         WebRtc_UWord8        numAudioChannels);
 
-    void SetUniqueId(
-        WebRtc_Word32 id);
-
 private:
 
     //Use the Resampler class
     Resampler               _resampler;
-    WebRtc_Word32           _id;
     CriticalSectionWrapper& _resamplerCritSect;
 };
 

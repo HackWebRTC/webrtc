@@ -88,8 +88,20 @@ namespace webrtc {
 
 #ifndef WEBRTC_CODEC_G722_1C
 
-ACMG722_1C::ACMG722_1C(
-    WebRtc_Word16 /* codecID */) {
+ACMG722_1C::ACMG722_1C(WebRtc_Word16 /* codecID */)
+    : _operationalRate(-1),
+      _encoderInstPtr(NULL),
+      _encoderInstPtrRight(NULL),
+      _decoderInstPtr(NULL),
+      _encoderInst24Ptr(NULL),
+      _encoderInst24PtrR(NULL),
+      _encoderInst32Ptr(NULL),
+      _encoderInst32PtrR(NULL),
+      _encoderInst48Ptr(NULL),
+      _encoderInst48PtrR(NULL),
+      _decoderInst24Ptr(NULL),
+      _decoderInst32Ptr(NULL),
+      _decoderInst48Ptr(NULL) {
   return;
 }
 

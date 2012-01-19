@@ -45,8 +45,9 @@ ACMResampler::Resample10Msec(
 
     if(inFreqHz == outFreqHz)
     {
-        memcpy(outAudio, inAudio, (inFreqHz*numAudioChannels / 100) * sizeof(WebRtc_Word16));
-        return (WebRtc_Word16)(inFreqHz / 100);
+        size_t length = static_cast<size_t>(inFreqHz * numAudioChannels / 100);
+        memcpy(outAudio, inAudio, length * sizeof(WebRtc_Word16));
+        return static_cast<WebRtc_Word16>(inFreqHz / 100);
     }
 
     int maxLen = 480 * numAudioChannels; //max number of samples for 10ms at 48kHz
@@ -60,7 +61,7 @@ ACMResampler::Resample10Msec(
     ret = _resampler.ResetIfNeeded(inFreqHz,outFreqHz,type);
     if (ret < 0)
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, 0,
             "Error in reset of resampler");
         return -1;
     }
@@ -68,7 +69,7 @@ ACMResampler::Resample10Msec(
     ret = _resampler.Push(inAudio, lengthIn, outAudio, maxLen, outLen);
     if (ret < 0 )
     {
-        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
+        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, 0,
             "Error in resampler: resampler.Push");
         return -1;
     }
@@ -77,14 +78,6 @@ ACMResampler::Resample10Msec(
 
    return outAudioLenSmpl;
 
-}
-
-void
-ACMResampler::SetUniqueId(
-    WebRtc_Word32 id)
-{
-    CriticalSectionScoped lock(_resamplerCritSect);
-    _id = id;
 }
 
 } // namespace webrtc

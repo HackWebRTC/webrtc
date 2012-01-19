@@ -53,8 +53,9 @@ namespace webrtc {
 
 #ifndef WEBRTC_CODEC_SPEEX
 ACMSPEEX::ACMSPEEX(WebRtc_Word16 /* codecID*/)
-{
-    return;
+    : _encoderInstPtr(NULL),
+      _decoderInstPtr(NULL) {
+  return;
 }
 
 ACMSPEEX::~ACMSPEEX()

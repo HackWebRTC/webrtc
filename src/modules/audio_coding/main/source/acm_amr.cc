@@ -50,7 +50,13 @@
 namespace webrtc {
 
 #ifndef WEBRTC_CODEC_AMR
-ACMAMR::ACMAMR(WebRtc_Word16 /* codecID */) {
+ACMAMR::ACMAMR(WebRtc_Word16 /* codecID */)
+    : _encoderInstPtr(NULL),
+      _decoderInstPtr(NULL),
+      _encodingMode(-1),  // Invalid value.
+      _encodingRate(0),  // Invalid value.
+      _encoderPackingFormat(AMRBandwidthEfficient),
+      _decoderPackingFormat(AMRBandwidthEfficient) {
   return;
 }
 

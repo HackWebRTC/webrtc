@@ -40,9 +40,9 @@ ACMGenericCodec::ACMGenericCodec()
       _inTimestampIxWrite(0),
       _inAudio(NULL),
       _inTimestamp(NULL),
-      _frameLenSmpl(-1),    // invalid value
+      _frameLenSmpl(-1),  // invalid value
       _noChannels(1),
-      _codecID(-1), // invalid value
+      _codecID(-1),  // invalid value
       _noMissedSamples(0),
       _encoderExist(false),
       _decoderExist(false),
@@ -61,12 +61,22 @@ ACMGenericCodec::ACMGenericCodec()
       _netEqDecodeLock(NULL),
       _codecWrapperLock(*RWLockWrapper::CreateRWLock()),
       _lastEncodedTimestamp(0),
-      _lastTimestamp(0),
+      _lastTimestamp(0xD87F3F9F),
       _isAudioBuffFresh(true),
       _uniqueID(0) {
-  _lastTimestamp = 0xD87F3F9F;
-  //NullifyCodecInstance();
+  // Initialize VAD vector.
+  for (int i = 0; i < MAX_FRAME_SIZE_10MSEC; i++) {
+    _vadLabel[i] = 0;
+  }
+
+  // Nullify memory for encoder and decoder, and set payload type to an
+  // invalid value.
+  memset(&_encoderParams, 0, sizeof(WebRtcACMCodecParams));
+  _encoderParams.codecInstant.pltype = -1;
+  memset(&_decoderParams, 0, sizeof(WebRtcACMCodecParams));
+  _decoderParams.codecInstant.pltype = -1;
 }
+
 ACMGenericCodec::~ACMGenericCodec()
 {
     // Check all the members which are pointers and

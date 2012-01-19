@@ -65,9 +65,11 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(
     _fecEnabled(false),
     _fragmentation(NULL),
     _lastFECTimestamp(0),
+    _redPayloadType(255),
     _receiveREDPayloadType(255),  // invalid value
     _previousPayloadType(255),
     _dummyRTPHeader(NULL),
+    _recvPlFrameSizeSmpls(0),
     _receiverInitialized(false),
     _dtmfDetector(NULL),
     _dtmfCallback(NULL),
@@ -76,8 +78,19 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(
 {
     _lastTimestamp = 0xD87F3F9F;
     _lastInTimestamp = 0xD87F3F9F;
-    // nullify the codec name
+
+    // Nullify send codec memory, set payload type and set codec name to
+    // invalid values.
+    memset(&_sendCodecInst, 0, sizeof(CodecInst));
     strncpy(_sendCodecInst.plname, "noCodecRegistered", 31);
+    _sendCodecInst.pltype = -1;
+
+    // Nullify memory for CNG, DTMF and RED.
+    memset(&_cngNB, 0, sizeof(CodecInst));
+    memset(&_cngWB, 0, sizeof(CodecInst));
+    memset(&_cngSWB, 0, sizeof(CodecInst));
+    memset(&_RED, 0, sizeof(CodecInst));
+    memset(&_DTMF, 0, sizeof(CodecInst));
 
     for (int i = 0; i < ACMCodecDB::kMaxNumCodecs; i++)
     {
@@ -1177,9 +1190,10 @@ match");
       }
     } else {
       // Copy payload data for future use.
-      memcpy(audio, audioFrame._payloadData,
-             audioFrame._payloadDataLengthInSamples * audio_channels *
-             sizeof(WebRtc_UWord16));
+      size_t length = static_cast<size_t>(
+          audioFrame._payloadDataLengthInSamples * audio_channels *
+          sizeof(WebRtc_UWord16));
+      memcpy(audio, audioFrame._payloadData, length);
     }
 
     WebRtc_UWord32 currentTimestamp;

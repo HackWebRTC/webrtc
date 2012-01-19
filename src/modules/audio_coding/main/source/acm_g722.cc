@@ -21,7 +21,12 @@ namespace webrtc {
 
 #ifndef WEBRTC_CODEC_G722
 
-ACMG722::ACMG722(WebRtc_Word16 /* codecID */) {
+ACMG722::ACMG722(WebRtc_Word16 /* codecID */)
+    : _ptrEncStr(NULL),
+      _ptrDecStr(NULL),
+      _encoderInstPtr(NULL),
+      _encoderInstPtrRight(NULL),
+      _decoderInstPtr(NULL) {
   return;
 }
 
@@ -106,7 +111,10 @@ struct ACMG722DecStr {
   G722DecInst* instRight; // instance for right channel in case of stereo
 };
 
-ACMG722::ACMG722(WebRtc_Word16 codecID) {
+ACMG722::ACMG722(WebRtc_Word16 codecID)
+    : _encoderInstPtr(NULL),
+      _encoderInstPtrRight(NULL),
+      _decoderInstPtr(NULL) {
   // Encoder
   _ptrEncStr = new ACMG722EncStr;
   if (_ptrEncStr != NULL) {

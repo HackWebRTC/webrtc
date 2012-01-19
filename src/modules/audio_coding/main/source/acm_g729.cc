@@ -42,10 +42,10 @@ namespace webrtc {
 
 #ifndef WEBRTC_CODEC_G729
 
-ACMG729::ACMG729(
-    WebRtc_Word16 /* codecID */)
-{
-    return;
+ACMG729::ACMG729(WebRtc_Word16 /* codecID */)
+    : _encoderInstPtr(NULL),
+      _decoderInstPtr(NULL) {
+  return;
 }
 
 
