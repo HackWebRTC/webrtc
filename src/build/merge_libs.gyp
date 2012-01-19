@@ -10,42 +10,12 @@
   'includes': [ 'common.gypi', ],
   'targets': [
     {
-      'target_name': 'no_op_voice',
-      'type': 'executable',
-      'dependencies': [
-        '../voice_engine/voice_engine.gyp:voice_engine_core',
-      ],
-      'sources': [ 'no_op.cc', ],
-    },
-    {
       'target_name': 'no_op',
       'type': 'executable',
       'dependencies': [
         '../video_engine/video_engine.gyp:video_engine_core',
       ],
       'sources': [ 'no_op.cc', ],
-    },
-    {
-      'target_name': 'merged_lib_voice',
-      'type': 'none',
-      'dependencies': [
-        'no_op_voice',
-      ],
-      'actions': [
-        {
-          'variables': {
-            'output_lib_name': 'webrtc_voice_engine',
-            'output_lib': '<(PRODUCT_DIR)/<(STATIC_LIB_PREFIX)<(output_lib_name)_<(OS)<(STATIC_LIB_SUFFIX)',
-          },
-          'action_name': 'merge_libs',
-          'inputs': ['<(PRODUCT_DIR)/<(EXECUTABLE_PREFIX)no_op_voice<(EXECUTABLE_SUFFIX)'],
-          'outputs': ['<(output_lib)'],
-          'action': ['python',
-                     'merge_libs.py',
-                     '<(PRODUCT_DIR)',
-                     '<(output_lib)'],
-        },
-      ],
     },
     {
       'target_name': 'merged_lib',
