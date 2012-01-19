@@ -10,14 +10,12 @@
 
 {
   'variables': {
-    # Putting a variables dict inside another variables dict looks kind of
-    # weird.  This is done so that 'build_with_chromium' is defined as
-    # variable within the outer variables dict here.  This is necessary
-    # to get these variables defined for the conditions within this variables
-    # dict that operate on these variables (e.g., for setting
-    # 'include_pulse_audio', we need to have 'build_with_chromium' already set).
+    # These variables need to be nested in order to use them in a conditions
+    # block to set other variables.
     'variables': {
-      'build_with_chromium%': 1, # 1 to build webrtc with chromium
+      # This will be set to zero in the supplement.gypi triggered by a gclient
+      # hook in the standalone build.
+      'build_with_chromium%': 1,
     },
 
     'build_with_chromium%': '<(build_with_chromium)',
@@ -26,9 +24,8 @@
     # chromium_code==1 as third party code. This disables many of the
     # preferred warning settings.
     #
-    # We can set this here to have WebRTC code treated as Chromium code. In a
-    # standalone build, our third party code will still have the reduced
-    # warning settings.
+    # We can set this here to have WebRTC code treated as Chromium code. Our
+    # third party code will still have the reduced warning settings.
     'chromium_code': 1,
 
     # Adds video support to dependencies shared by voice and video engine.
@@ -64,10 +61,10 @@
         # Exclude internal ADM since Chromium uses its own IO handling.
         'include_internal_audio_device%': 0,
 
-        # Exclude internal VCM on Chromium build
+        # Exclude internal VCM in Chromium build.
         'include_internal_video_capture%': 0,
 
-        # Exclude internal video render module on Chromium build
+        # Exclude internal video render module in Chromium build.
         'include_internal_video_render%': 0,
 
         # Disable the use of protocol buffers in production code.
@@ -76,6 +73,7 @@
         'webrtc_root%': '<(DEPTH)/third_party/webrtc',
       }, {
         # Settings for the standalone (not-in-Chromium) build.
+
         'include_pulse_audio%': 1,
 
         'include_internal_audio_device%': 1,
@@ -109,7 +107,19 @@
         'defines': [
           # Changes settings for Chromium build.
           'WEBRTC_CHROMIUM_BUILD',
-         ],
+        ],
+      }, {
+        'conditions': [
+          ['os_posix==1', {
+            'cflags': [
+              '-Wextra',
+              # We need to repeat some flags from Chromium's common.gypi here
+              # that get overridden by -Wextra.
+              '-Wno-unused-parameter',
+              '-Wno-missing-field-initializers',
+            ],
+          }],
+        ],
       }],
       ['OS=="linux"', {
         'defines': [
@@ -135,14 +145,8 @@
       ['OS=="win"', {
         'defines': [
           'WEBRTC_TARGET_PC',
-         ],
-      }],
-    ], # conditions
-
-    'target_conditions': [
-      # TODO(andrew): This block disables some warnings from the chromium_code
-      # configuration. Remove when possible.
-      ['OS=="win"', {
+        ],
+        # TODO(andrew): remove this block when possible.
         'msvs_disabled_warnings': [4389], # Signed/unsigned mismatch.
         'msvs_settings': {
           'VCCLCompilerTool': {
@@ -150,7 +154,7 @@
           },
         },
       }],
-    ], # target_conditions
+    ], # conditions
   }, # target_defaults
 }
 
