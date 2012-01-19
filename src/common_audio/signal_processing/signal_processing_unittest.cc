@@ -332,11 +332,12 @@ TEST_F(SplTest, EstimatorsTest) {
 
 TEST_F(SplTest, FilterTest) {
     const int kVectorSize = 4;
+    const int kFilterOrder = 3;
     WebRtc_Word16 A[] = {1, 2, 33, 100};
     WebRtc_Word16 A5[] = {1, 2, 33, 100, -5};
     WebRtc_Word16 B[] = {4, 12, 133, 110};
-    WebRtc_Word16 b16[kVectorSize];
-    WebRtc_Word16 bTmp16[kVectorSize];
+    WebRtc_Word16 data_in[kVectorSize];
+    WebRtc_Word16 data_out[kVectorSize];
     WebRtc_Word16 bTmp16Low[kVectorSize];
     WebRtc_Word16 bState[kVectorSize];
     WebRtc_Word16 bStateLow[kVectorSize];
@@ -345,28 +346,32 @@ TEST_F(SplTest, FilterTest) {
     WebRtcSpl_ZerosArrayW16(bStateLow, kVectorSize);
 
     for (int kk = 0; kk < kVectorSize; ++kk) {
-        b16[kk] = A[kk];
+        data_in[kk] = A[kk];
+        data_out[kk] = 0;
     }
 
-    // MA filters
-    WebRtcSpl_FilterMAFastQ12(b16, bTmp16, B, kVectorSize, kVectorSize);
-    for (int kk = 0; kk < kVectorSize; ++kk) {
-        //EXPECT_EQ(aTmp16[kk], bTmp16[kk]);
-    }
-    // AR filters
-    WebRtcSpl_FilterARFastQ12(b16, bTmp16, A, kVectorSize, kVectorSize);
-    for (int kk = 0; kk < kVectorSize; ++kk) {
-//        EXPECT_EQ(aTmp16[kk], bTmp16[kk]);
-    }
+    // MA filters.
+    // Note that the input data has |kFilterOrder| states before the actual
+    // data (one sample).
+    WebRtcSpl_FilterMAFastQ12(&data_in[kFilterOrder], data_out, B,
+                              kFilterOrder + 1, 1);
+    EXPECT_EQ(0, data_out[0]);
+    // AR filters.
+    // Note that the output data has |kFilterOrder| states before the actual
+    // data (one sample).
+    WebRtcSpl_FilterARFastQ12(data_in, &data_out[kFilterOrder], A,
+                              kFilterOrder + 1, 1);
+    EXPECT_EQ(0, data_out[kFilterOrder]);
+
     EXPECT_EQ(kVectorSize, WebRtcSpl_FilterAR(A5,
                                               5,
-                                              b16,
+                                              data_in,
                                               kVectorSize,
                                               bState,
                                               kVectorSize,
                                               bStateLow,
                                               kVectorSize,
-                                              bTmp16,
+                                              data_out,
                                               bTmp16Low,
                                               kVectorSize));
 }
