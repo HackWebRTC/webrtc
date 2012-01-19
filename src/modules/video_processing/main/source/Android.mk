@@ -25,8 +25,8 @@ LOCAL_SRC_FILES := \
     denoising.cc \
     frame_preprocessor.cc \
     spatial_resampler.cc \
-    video_decimator.cc
-    video_processing_impl.cc \
+    video_decimator.cc \
+    video_processing_impl.cc
 
 ifeq ($(TARGET_ARCH),x86)
 LOCAL_SRC_FILES += \

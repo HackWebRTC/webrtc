@@ -19,7 +19,6 @@ LOCAL_MODULE_TAGS := optional
 LOCAL_CPP_EXTENSION := .cc
 LOCAL_SRC_FILES := \
     video_capture_impl.cc \
-    vplib_conversions.cc \
     device_info_impl.cc \
     video_capture_factory.cc \
     Android/video_capture_android.cc \
