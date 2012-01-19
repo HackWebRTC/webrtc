@@ -13,7 +13,6 @@
 
 #include "rtp_rtcp_config.h"          // misc. defines (e.g. MAX_PACKET_LENGTH)
 #include "common_types.h"             // Transport
-#include "map_wrapper.h"
 #include "typedefs.h"
 
 #include "dtmf_queue.h"
