@@ -13,7 +13,6 @@
 
 #include "bwe_defines.h"
 #include "typedefs.h"
-#include "list_wrapper.h"
 
 #ifdef MATLAB
 #include "../test/BWEStandAlone/MatlabPlot.h"
