@@ -421,7 +421,9 @@ VCMReceiver::NackList(WebRtc_UWord16* nackList, WebRtc_UWord16& size)
         size = nackListSize;
         return kNackNeedMoreMemory;
     }
-    memcpy(nackList, internalNackList, nackListSize * sizeof(WebRtc_UWord16));
+    if (internalNackList != NULL && nackListSize > 0) {
+      memcpy(nackList, internalNackList, nackListSize * sizeof(WebRtc_UWord16));
+    }
     size = nackListSize;
     return kNackOk;
 }

@@ -164,6 +164,7 @@ VCMGenericEncoder::InternalSource() const
   ***************************/
 VCMEncodedFrameCallback::VCMEncodedFrameCallback():
 _sendCallback(),
+_mediaOpt(NULL),
 _encodedBytes(0),
 _payloadType(0),
 _bitStreamAfterEncoder(NULL)
@@ -236,10 +237,12 @@ VCMEncodedFrameCallback::Encoded(
         return VCM_UNINITIALIZED;
     }
     _encodedBytes = encodedBytes;
-    _mediaOpt->UpdateWithEncodedData(_encodedBytes, frameType);
-    if (_internalSource)
-    {
-        return _mediaOpt->DropFrame(); // Signal to encoder to drop next frame
+    if (_mediaOpt != NULL) {
+      _mediaOpt->UpdateWithEncodedData(_encodedBytes, frameType);
+      if (_internalSource)
+      {
+          return _mediaOpt->DropFrame(); // Signal to encoder to drop next frame
+      }
     }
     return VCM_OK;
 }

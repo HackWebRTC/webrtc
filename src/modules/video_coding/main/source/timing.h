@@ -104,8 +104,6 @@ private:
     WebRtc_UWord32                _requiredDelayMs;
     WebRtc_UWord32                _currentDelayMs;
     WebRtc_UWord32                _prevFrameTimestamp;
-    WebRtc_Word64                 _startStoragePlaybackMs;
-    WebRtc_Word64                 _firstStoredRenderTimeMs;
 };
 
 } // namespace webrtc

@@ -40,6 +40,7 @@ VP8Encoder::VP8Encoder():
     _width(0),
     _height(0),
     _maxBitRateKbit(0),
+    _maxFrameRate(30),
     _inited(false),
     _timeStamp(0),
     _pictureID(0),
@@ -537,11 +538,14 @@ VP8Encoder::GetEncodedFrame(const RawImage& input_image)
 {
     vpx_codec_iter_t iter = NULL;
     _encodedImage._frameType = kDeltaFrame;
-    const vpx_codec_cx_pkt_t *pkt= vpx_codec_get_cx_data(_encoder, &iter); // no lagging => 1 frame at a time
-    if (pkt == NULL && !_encoder->err)
-    {
+    const vpx_codec_cx_pkt_t *pkt= vpx_codec_get_cx_data(_encoder, &iter);
+    if (pkt == NULL) {
+      if (!_encoder->err) {
         // dropped frame
         return WEBRTC_VIDEO_CODEC_OK;
+      } else {
+        return WEBRTC_VIDEO_CODEC_ERROR;
+      }
     }
     else if (pkt->kind == VPX_CODEC_CX_FRAME_PKT)
     {
@@ -856,7 +860,7 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
 #endif
 
     // Store encoded frame if key frame. (Used in Copy method.)
-    if (inputImage._frameType == kKeyFrame)
+    if (inputImage._frameType == kKeyFrame && inputImage._buffer != NULL)
     {
         // Reduce size due to PictureID that we won't copy.
         const WebRtc_UWord32 bytesToCopy = inputImage._length;

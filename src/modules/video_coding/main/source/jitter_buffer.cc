@@ -79,6 +79,7 @@ VCMJitterBuffer::VCMJitterBuffer(TickTimeBase* clock,
     _incomingFrameCount(0),
     _timeLastIncomingFrameCount(0),
     _incomingBitCount(0),
+    _incomingBitRate(0),
     _dropCount(0),
     _numConsecutiveOldFrames(0),
     _numConsecutiveOldPackets(0),
@@ -134,6 +135,7 @@ VCMJitterBuffer::CopyFrom(const VCMJitterBuffer& rhs)
         _incomingFrameCount = rhs._incomingFrameCount;
         _timeLastIncomingFrameCount = rhs._timeLastIncomingFrameCount;
         _incomingBitCount = rhs._incomingBitCount;
+        _incomingBitRate = rhs._incomingBitRate;
         _dropCount = rhs._dropCount;
         _numConsecutiveOldFrames = rhs._numConsecutiveOldFrames;
         _numConsecutiveOldPackets = rhs._numConsecutiveOldPackets;
@@ -184,6 +186,7 @@ VCMJitterBuffer::Start()
     _incomingFrameCount = 0;
     _incomingFrameRate = 0;
     _incomingBitCount = 0;
+    _incomingBitRate = 0;
     _timeLastIncomingFrameCount = _clock->MillisecondTimestamp();
     memset(_receiveStatistics, 0, sizeof(_receiveStatistics));
 

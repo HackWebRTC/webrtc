@@ -23,7 +23,8 @@ _critSect(CriticalSectionWrapper::CreateCriticalSection()),
 _clock(clock),
 _receiveCallback(NULL),
 _timing(timing),
-_timestampMap(kDecoderFrameMemoryLength)
+_timestampMap(kDecoderFrameMemoryLength),
+_lastReceivedPictureID(0)
 {
 }
 

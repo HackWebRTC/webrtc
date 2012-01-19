@@ -1308,8 +1308,8 @@ VideoCodingModuleImpl::ResetDecoder()
     {
         _receiver.Initialize();
         _timing.Reset();
-        return _decoder->Reset();
         _scheduleKeyRequest = false;
+        _decoder->Reset();
     }
     if (_dualReceiver.State() != kPassive)
     {

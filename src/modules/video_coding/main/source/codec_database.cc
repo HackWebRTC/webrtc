@@ -193,7 +193,7 @@ VCMCodecDataBase::Codec(WebRtc_UWord8 listId, VideoCodec *settings)
 #ifdef VIDEOCODEC_VP8
     case VCM_VP8_IDX:
         {
-            strncpy(settings->plName, "VP8", 3);
+            strncpy(settings->plName, "VP8", 4);
             settings->codecType = kVideoCodecVP8;
             // 96 to 127 dynamic payload types for video codecs
             settings->plType = VCM_VP8_PAYLOAD_TYPE;
@@ -212,7 +212,7 @@ VCMCodecDataBase::Codec(WebRtc_UWord8 listId, VideoCodec *settings)
 #ifdef VIDEOCODEC_I420
     case VCM_I420_IDX:
         {
-            strncpy(settings->plName, "I420", 4);
+            strncpy(settings->plName, "I420", 5);
             settings->codecType = kVideoCodecI420;
             // 96 to 127 dynamic payload types for video codecs
             settings->plType = VCM_I420_PAYLOAD_TYPE;
@@ -704,8 +704,9 @@ VCMCodecDataBase::ReleaseDecoder(VCMGenericDecoder* decoder) const
 {
     if (decoder != NULL)
     {
+        assert(&decoder->_decoder != NULL);
         decoder->Release();
-        if (!decoder->External() && &decoder->_decoder != NULL)
+        if (!decoder->External())
         {
             delete &decoder->_decoder;
         }

@@ -38,7 +38,6 @@ private:
     WebRtc_Word32         _vcmId;
     WebRtc_Word32         _id;
     TickTimeBase*         _clock;
-    bool                _trace;
     double              _w[2];
     double              _P[2][2];
     WebRtc_Word64         _startMs;
