@@ -11,9 +11,11 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_SENDER_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_SENDER_H_
 
+#include <map>
+
 #include "typedefs.h"
+#include "rtcp_utility.h"
 #include "rtp_utility.h"
-#include "map_wrapper.h"
 #include "rtp_rtcp_defines.h"
 #include "remote_rate_control.h"
 #include "tmmbr_help.h"
@@ -213,12 +215,12 @@ private:
 
     WebRtc_UWord32        _nextTimeToSendRTCP;
 
-    WebRtc_UWord32        _SSRC;
-    WebRtc_UWord32        _remoteSSRC;                    // SSRC that we receive on our RTP channel
-    WebRtc_UWord8         _CNAME[RTCP_CNAME_SIZE];
+    WebRtc_UWord32 _SSRC;
+    WebRtc_UWord32 _remoteSSRC;  // SSRC that we receive on our RTP channel
+    char _CNAME[RTCP_CNAME_SIZE];
 
-    MapWrapper             _reportBlocks;      // map of SSRC to RTCPReportBlock
-    MapWrapper             _csrcCNAMEs;        // map of SSRC to Cnames
+    std::map<WebRtc_UWord32, RTCPReportBlock*> _reportBlocks;
+    std::map<WebRtc_UWord32, RTCPUtility::RTCPCnameInformation*> _csrcCNAMEs;
 
     WebRtc_Word32         _cameraDelayMS;
 

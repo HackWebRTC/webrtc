@@ -52,66 +52,30 @@ RTCPReceiver::RTCPReceiver(const WebRtc_Word32 id,
     WEBRTC_TRACE(kTraceMemory, kTraceRtpRtcp, id, "%s created", __FUNCTION__);
 }
 
-RTCPReceiver::~RTCPReceiver()
-{
-    delete _criticalSectionRTCPReceiver;
-    delete _criticalSectionFeedbacks;
+RTCPReceiver::~RTCPReceiver() {
+  delete _criticalSectionRTCPReceiver;
+  delete _criticalSectionFeedbacks;
 
-    bool loop = true;
-    do
-    {
-        MapItem* item = _receivedReportBlockMap.First();
-        if(item)
-        {
-            // delete
-            RTCPReportBlockInformation* block= ((RTCPReportBlockInformation*)item->GetItem());
-            delete block;
-
-            // remove from map and delete Item
-            _receivedReportBlockMap.Erase(item);
-        } else
-        {
-            loop = false;
-        }
-    } while (loop);
-
-    loop = true;
-    do
-    {
-        MapItem* item = _receivedInfoMap.First();
-        if(item)
-        {
-            // delete
-            RTCPReceiveInformation* block= ((RTCPReceiveInformation*)item->GetItem());
-            delete block;
-
-            // remove from map and delete Item
-            _receivedInfoMap.Erase(item);
-        } else
-        {
-            loop = false;
-        }
-    } while (loop);
-
-    loop = true;
-    do
-    {
-        MapItem* item = _receivedCnameMap.First();
-        if(item)
-        {
-            // delete
-            RTCPCnameInformation* block= ((RTCPCnameInformation*)item->GetItem());
-            delete block;
-
-            // remove from map and delete Item
-            _receivedCnameMap.Erase(item);
-        } else
-        {
-            loop = false;
-        }
-    } while (loop);
-
-    WEBRTC_TRACE(kTraceMemory, kTraceRtpRtcp, _id, "%s deleted", __FUNCTION__);
+  while (!_receivedReportBlockMap.empty()) {
+    std::map<WebRtc_UWord32, RTCPReportBlockInformation*>::iterator first =
+        _receivedReportBlockMap.begin();
+    delete first->second;
+    _receivedReportBlockMap.erase(first);
+  }
+  while (!_receivedInfoMap.empty()) {
+    std::map<WebRtc_UWord32, RTCPReceiveInformation*>::iterator first =
+        _receivedInfoMap.begin();
+    delete first->second;
+    _receivedInfoMap.erase(first);
+  }
+  while (!_receivedCnameMap.empty()) {
+    std::map<WebRtc_UWord32, RTCPCnameInformation*>::iterator first =
+        _receivedCnameMap.begin();
+    delete first->second;
+    _receivedCnameMap.erase(first);
+  }
+  WEBRTC_TRACE(kTraceMemory, kTraceRtpRtcp, _id,
+               "%s deleted", __FUNCTION__);
 }
 
 void
@@ -285,21 +249,15 @@ RTCPReceiver::SenderInfoReceived(RTCPSenderInfo* senderInfo) const
 // we can get multiple receive reports when we receive the report from a CE
 WebRtc_Word32 RTCPReceiver::StatisticsReceived(
     std::vector<RTCPReportBlock>* receiveBlocks) const {
-  if (receiveBlocks == NULL) {
-    WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id, "%s invalid argument",
-                 __FUNCTION__);
-    return -1;
-  }
+  assert(receiveBlocks);
   CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
 
-  MapItem* ptrReportBlockInfoItem = _receivedReportBlockMap.First();
-  while (ptrReportBlockInfoItem != NULL) {
-    RTCPReportBlockInformation* item =
-        static_cast<RTCPReportBlockInformation*> (
-            ptrReportBlockInfoItem->GetItem());
-    receiveBlocks->push_back(item->remoteReceiveBlock);
-    ptrReportBlockInfoItem =
-        _receivedReportBlockMap.Next(ptrReportBlockInfoItem);
+  std::map<WebRtc_UWord32, RTCPReportBlockInformation*>::const_iterator it =
+      _receivedReportBlockMap.begin();
+
+  while (it != _receivedReportBlockMap.end()) {
+    receiveBlocks->push_back(it->second->remoteReceiveBlock);
+    it++;
   }
   return 0;
 }
@@ -566,190 +524,174 @@ RTCPReceiver::HandleReportBlock(const RTCPUtility::RTCPPacket& rtcpPacket,
 }
 
 RTCPReportBlockInformation*
-RTCPReceiver::CreateReportBlockInformation(WebRtc_UWord32 remoteSSRC)
-{
-    CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+RTCPReceiver::CreateReportBlockInformation(WebRtc_UWord32 remoteSSRC) {
+  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
 
-    RTCPReportBlockInformation* ptrReportBlockInfo = NULL;
-    MapItem* ptrReportBlockInfoItem = _receivedReportBlockMap.Find(remoteSSRC);
-    if (ptrReportBlockInfoItem == NULL)
-    {
-        ptrReportBlockInfo = new RTCPReportBlockInformation;
-        _receivedReportBlockMap.Insert(remoteSSRC, ptrReportBlockInfo);
-    } else
-    {
-        ptrReportBlockInfo = static_cast<RTCPReportBlockInformation*>(ptrReportBlockInfoItem->GetItem());
-    }
-    return ptrReportBlockInfo;
+  std::map<WebRtc_UWord32, RTCPReportBlockInformation*>::iterator it =
+      _receivedReportBlockMap.find(remoteSSRC);
 
+  RTCPReportBlockInformation* ptrReportBlockInfo = NULL;
+  if (it != _receivedReportBlockMap.end()) {
+    ptrReportBlockInfo = it->second;
+  } else {
+    ptrReportBlockInfo = new RTCPReportBlockInformation;
+    _receivedReportBlockMap[remoteSSRC] = ptrReportBlockInfo;
+  }
+  return ptrReportBlockInfo;
 }
 
 RTCPReportBlockInformation*
-RTCPReceiver::GetReportBlockInformation(WebRtc_UWord32 remoteSSRC) const
-{
-    CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+RTCPReceiver::GetReportBlockInformation(WebRtc_UWord32 remoteSSRC) const {
+  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
 
-    MapItem* ptrReportBlockInfoItem = _receivedReportBlockMap.Find(remoteSSRC);
-    if (ptrReportBlockInfoItem == NULL)
-    {
-        return NULL;
-    }
-    return static_cast<RTCPReportBlockInformation*>(ptrReportBlockInfoItem->GetItem());
+  std::map<WebRtc_UWord32, RTCPReportBlockInformation*>::const_iterator it =
+      _receivedReportBlockMap.find(remoteSSRC);
+
+  if (it == _receivedReportBlockMap.end()) {
+    return NULL;
+  }
+  return it->second;
 }
 
 RTCPCnameInformation*
-RTCPReceiver::CreateCnameInformation(WebRtc_UWord32 remoteSSRC)
-{
-    CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+RTCPReceiver::CreateCnameInformation(WebRtc_UWord32 remoteSSRC) {
+  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
 
-    RTCPCnameInformation* ptrCnameInfo = NULL;
-    MapItem* ptrCnameInfoItem = _receivedCnameMap.Find(remoteSSRC);
-    if (ptrCnameInfoItem == NULL)
-    {
-        ptrCnameInfo = new RTCPCnameInformation;
-        _receivedCnameMap.Insert(remoteSSRC, ptrCnameInfo);
-    } else
-    {
-        ptrCnameInfo = static_cast<RTCPCnameInformation*>(ptrCnameInfoItem->GetItem());
-    }
-    return ptrCnameInfo;
+  std::map<WebRtc_UWord32, RTCPCnameInformation*>::iterator it =
+      _receivedCnameMap.find(remoteSSRC);
+
+  if (it != _receivedCnameMap.end()) {
+    return it->second;
+  }
+  RTCPCnameInformation* cnameInfo = new RTCPCnameInformation;
+  _receivedCnameMap[remoteSSRC] = cnameInfo;
+  return cnameInfo;
 }
 
 RTCPCnameInformation*
-RTCPReceiver::GetCnameInformation(WebRtc_UWord32 remoteSSRC) const
-{
-    CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+RTCPReceiver::GetCnameInformation(WebRtc_UWord32 remoteSSRC) const {
+  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
 
-    MapItem* ptrCnameInfoItem = _receivedCnameMap.Find(remoteSSRC);
-    if (ptrCnameInfoItem == NULL)
-    {
-        return NULL;
-    }
-    return static_cast<RTCPCnameInformation*>(ptrCnameInfoItem->GetItem());
+  std::map<WebRtc_UWord32, RTCPCnameInformation*>::const_iterator it =
+      _receivedCnameMap.find(remoteSSRC);
+
+  if (it == _receivedCnameMap.end()) {
+    return NULL;
+  }
+  return it->second;
 }
 
 RTCPReceiveInformation*
-RTCPReceiver::CreateReceiveInformation(WebRtc_UWord32 remoteSSRC)
-{
-    CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+RTCPReceiver::CreateReceiveInformation(WebRtc_UWord32 remoteSSRC) {
+  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
 
-    RTCPReceiveInformation* ptrReceiveInfo = NULL;
-    MapItem* ptrReceiveInfoItem = _receivedInfoMap.Find(remoteSSRC);
-    if (ptrReceiveInfoItem == NULL)
-    {
-        ptrReceiveInfo = new RTCPReceiveInformation;
-        _receivedInfoMap.Insert(remoteSSRC, ptrReceiveInfo);
-    } else
-    {
-        ptrReceiveInfo = static_cast<RTCPReceiveInformation*>(ptrReceiveInfoItem->GetItem());
-    }
-    return ptrReceiveInfo;
+  std::map<WebRtc_UWord32, RTCPReceiveInformation*>::iterator it =
+      _receivedInfoMap.find(remoteSSRC);
+
+  if (it != _receivedInfoMap.end()) {
+    return it->second;
+  }
+  RTCPReceiveInformation* receiveInfo = new RTCPReceiveInformation;
+  _receivedInfoMap[remoteSSRC] = receiveInfo;
+  return receiveInfo;
 }
 
 RTCPReceiveInformation*
-RTCPReceiver::GetReceiveInformation(WebRtc_UWord32 remoteSSRC)
-{
-    CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+RTCPReceiver::GetReceiveInformation(WebRtc_UWord32 remoteSSRC) {
+  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
 
-    MapItem* ptrReceiveInfoItem = _receivedInfoMap.Find(remoteSSRC);
-    if (ptrReceiveInfoItem == NULL)
-    {
-        return NULL;
-    }
-    return  static_cast<RTCPReceiveInformation*>(ptrReceiveInfoItem->GetItem());
+  std::map<WebRtc_UWord32, RTCPReceiveInformation*>::iterator it =
+      _receivedInfoMap.find(remoteSSRC);
+  if (it == _receivedInfoMap.end()) {
+    return NULL;
+  }
+  return it->second;
 }
 
-void
-RTCPReceiver::UpdateReceiveInformation( RTCPReceiveInformation& receiveInformation)
-{
-    // Update that this remote is alive
-    receiveInformation.lastTimeReceived = _clock.GetTimeInMS();
+void RTCPReceiver::UpdateReceiveInformation(
+    RTCPReceiveInformation& receiveInformation) {
+  // Update that this remote is alive
+  receiveInformation.lastTimeReceived = _clock.GetTimeInMS();
 }
 
-bool
-RTCPReceiver::UpdateRTCPReceiveInformationTimers()
-{
-    CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+bool RTCPReceiver::UpdateRTCPReceiveInformationTimers() {
+  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
 
-    bool updateBoundingSet = false;
-    WebRtc_UWord32 timeNow = _clock.GetTimeInMS();
-    MapItem* receiveInfoItem=_receivedInfoMap.First();
+  bool updateBoundingSet = false;
+  WebRtc_UWord32 timeNow = _clock.GetTimeInMS();
 
-    while(receiveInfoItem)
-    {
-        RTCPReceiveInformation* receiveInfo = (RTCPReceiveInformation*)receiveInfoItem->GetItem();
-        if(receiveInfo == NULL)
-        {
-            return updateBoundingSet;
-        }
-        // time since last received rtcp packet
-        // when we dont have a lastTimeReceived and the object is marked readyForDelete
-        // it's removed from the map
-        if( receiveInfo->lastTimeReceived)
-        {
-            if((timeNow - receiveInfo->lastTimeReceived) > 5*RTCP_INTERVAL_AUDIO_MS)  // use audio define since we don't know what interval the remote peer is using
-            {
-                // no rtcp packet for the last five regular intervals, reset limitations
-                receiveInfo->TmmbrSet.lengthOfSet = 0;
-                receiveInfo->lastTimeReceived = 0; // prevent that we call this over and over again
-                updateBoundingSet = true;  // send new TMMBN to all channels using the default codec
-            }
-            receiveInfoItem = _receivedInfoMap.Next(receiveInfoItem);
-        }else
-        {
-            if(receiveInfo->readyForDelete)
-            {
-                // store our current receiveInfoItem
-                MapItem* receiveInfoItemToBeErased = receiveInfoItem;
+  std::map<WebRtc_UWord32, RTCPReceiveInformation*>::iterator receiveInfoIt =
+      _receivedInfoMap.begin();
 
-                // iterate
-                receiveInfoItem = _receivedInfoMap.Next(receiveInfoItem);
-
-                // delete current
-                delete receiveInfo;
-                _receivedInfoMap.Erase(receiveInfoItemToBeErased);
-            }else
-            {
-                receiveInfoItem = _receivedInfoMap.Next(receiveInfoItem);
-            }
-        }
-
+  while (receiveInfoIt != _receivedInfoMap.end()) {
+    RTCPReceiveInformation* receiveInfo = receiveInfoIt->second;
+    if (receiveInfo == NULL) {
+      return updateBoundingSet;
     }
-    return updateBoundingSet;
+    // time since last received rtcp packet
+    // when we dont have a lastTimeReceived and the object is marked
+    // readyForDelete it's removed from the map
+    if (receiveInfo->lastTimeReceived) {
+      /// use audio define since we don't know what interval the remote peer is
+      // using
+      if ((timeNow - receiveInfo->lastTimeReceived) >
+          5 * RTCP_INTERVAL_AUDIO_MS) {
+        // no rtcp packet for the last five regular intervals, reset limitations
+        receiveInfo->TmmbrSet.lengthOfSet = 0;
+        // prevent that we call this over and over again
+        receiveInfo->lastTimeReceived = 0;
+        // send new TMMBN to all channels using the default codec
+        updateBoundingSet = true;
+      }
+      receiveInfoIt++;
+    } else if (receiveInfo->readyForDelete) {
+      // store our current receiveInfoItem
+      std::map<WebRtc_UWord32, RTCPReceiveInformation*>::iterator
+      receiveInfoItemToBeErased = receiveInfoIt;
+      receiveInfoIt++;
+      delete receiveInfoItemToBeErased->second;
+      _receivedInfoMap.erase(receiveInfoItemToBeErased);
+    } else {
+      receiveInfoIt++;
+    }
+  }
+  return updateBoundingSet;
 }
 
-WebRtc_Word32
-RTCPReceiver::BoundingSet(bool &tmmbrOwner, TMMBRSet*& boundingSetRec)
-{
-    CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+WebRtc_Word32 RTCPReceiver::BoundingSet(bool &tmmbrOwner,
+                                        TMMBRSet*& boundingSetRec) {
+  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
 
-    MapItem* receiveInfoItem=_receivedInfoMap.Find(_remoteSSRC);
-    if(receiveInfoItem )
-    {
-        RTCPReceiveInformation* receiveInfo = (RTCPReceiveInformation*)receiveInfoItem->GetItem();
-        if(receiveInfo == NULL)
-        {
-            WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id, "%s failed to get RTCPReceiveInformation", __FUNCTION__);
-            return -1;
-        }
-        if(receiveInfo->TmmbnBoundingSet.lengthOfSet > 0)
-        {
-            boundingSetRec->VerifyAndAllocateSet(receiveInfo->TmmbnBoundingSet.lengthOfSet + 1);
-            for(WebRtc_UWord32 i=0; i< receiveInfo->TmmbnBoundingSet.lengthOfSet; i++)
-            {
-                if(receiveInfo->TmmbnBoundingSet.ptrSsrcSet[i] == _SSRC)
-                {
-                    // owner of bounding set
-                    tmmbrOwner = true;
-                }
-                boundingSetRec->ptrTmmbrSet[i]    = receiveInfo->TmmbnBoundingSet.ptrTmmbrSet[i];
-                boundingSetRec->ptrPacketOHSet[i] = receiveInfo->TmmbnBoundingSet.ptrPacketOHSet[i];
-                boundingSetRec->ptrSsrcSet[i]     = receiveInfo->TmmbnBoundingSet.ptrSsrcSet[i];
-            }
-            return receiveInfo->TmmbnBoundingSet.lengthOfSet;
-        }
-    }
+  std::map<WebRtc_UWord32, RTCPReceiveInformation*>::iterator receiveInfoIt =
+      _receivedInfoMap.find(_remoteSSRC);
+
+  if (receiveInfoIt == _receivedInfoMap.end()) {
     return -1;
+  }
+  RTCPReceiveInformation* receiveInfo = receiveInfoIt->second;
+  if (receiveInfo == NULL) {
+    WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
+                 "%s failed to get RTCPReceiveInformation",
+                 __FUNCTION__);
+    return -1;
+  }
+  if (receiveInfo->TmmbnBoundingSet.lengthOfSet > 0) {
+    boundingSetRec->VerifyAndAllocateSet(
+        receiveInfo->TmmbnBoundingSet.lengthOfSet + 1);
+    for(WebRtc_UWord32 i=0; i< receiveInfo->TmmbnBoundingSet.lengthOfSet; i++) {
+      if(receiveInfo->TmmbnBoundingSet.ptrSsrcSet[i] == _SSRC) {
+        // owner of bounding set
+        tmmbrOwner = true;
+      }
+      boundingSetRec->ptrTmmbrSet[i] =
+          receiveInfo->TmmbnBoundingSet.ptrTmmbrSet[i];
+      boundingSetRec->ptrPacketOHSet[i] =
+          receiveInfo->TmmbnBoundingSet.ptrPacketOHSet[i];
+      boundingSetRec->ptrSsrcSet[i] =
+          receiveInfo->TmmbnBoundingSet.ptrSsrcSet[i];
+    }
+  }
+  return receiveInfo->TmmbnBoundingSet.lengthOfSet;
 }
 
 // no need for critsect we have _criticalSectionRTCPReceiver
@@ -833,34 +775,35 @@ RTCPReceiver::HandleNACKItem(const RTCPUtility::RTCPPacket& rtcpPacket,
 }
 
 // no need for critsect we have _criticalSectionRTCPReceiver
-void
-RTCPReceiver::HandleBYE(RTCPUtility::RTCPParserV2& rtcpParser)
-{
-    const RTCPUtility::RTCPPacket& rtcpPacket = rtcpParser.Packet();
+void RTCPReceiver::HandleBYE(RTCPUtility::RTCPParserV2& rtcpParser) {
+  const RTCPUtility::RTCPPacket& rtcpPacket = rtcpParser.Packet();
 
-    // clear our lists
-    CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+  // clear our lists
+  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+  std::map<WebRtc_UWord32, RTCPReportBlockInformation*>::iterator
+      reportBlockInfoIt = _receivedReportBlockMap.find(
+          rtcpPacket.BYE.SenderSSRC);
 
-    MapItem* ptrReportBlockInfoItem = _receivedReportBlockMap.Find(rtcpPacket.BYE.SenderSSRC);
-    if (ptrReportBlockInfoItem != NULL)
-    {
-        delete static_cast<RTCPReportBlockInformation*>(ptrReportBlockInfoItem->GetItem());
-        _receivedReportBlockMap.Erase(ptrReportBlockInfoItem);
-    }
-    //  we can't delete it due to TMMBR
-    MapItem* ptrReceiveInfoItem = _receivedInfoMap.Find(rtcpPacket.BYE.SenderSSRC);
-    if (ptrReceiveInfoItem != NULL)
-    {
-        static_cast<RTCPReceiveInformation*>(ptrReceiveInfoItem->GetItem())->readyForDelete = true;
-    }
+  if (reportBlockInfoIt != _receivedReportBlockMap.end()) {
+    delete reportBlockInfoIt->second;
+    _receivedReportBlockMap.erase(reportBlockInfoIt);
+  }
+  //  we can't delete it due to TMMBR
+  std::map<WebRtc_UWord32, RTCPReceiveInformation*>::iterator receiveInfoIt =
+      _receivedInfoMap.find(rtcpPacket.BYE.SenderSSRC);
 
-    MapItem* ptrCnameInfoItem = _receivedCnameMap.Find(rtcpPacket.BYE.SenderSSRC);
-    if (ptrCnameInfoItem != NULL)
-    {
-        delete static_cast<RTCPCnameInformation*>(ptrCnameInfoItem->GetItem());
-        _receivedCnameMap.Erase(ptrCnameInfoItem);
-    }
-    rtcpParser.Iterate();
+  if (receiveInfoIt != _receivedInfoMap.end()) {
+    receiveInfoIt->second->readyForDelete = true;
+  }
+
+  std::map<WebRtc_UWord32, RTCPCnameInformation*>::iterator cnameInfoIt =
+      _receivedCnameMap.find(rtcpPacket.BYE.SenderSSRC);
+
+  if (cnameInfoIt != _receivedCnameMap.end()) {
+    delete cnameInfoIt->second;
+    _receivedCnameMap.erase(cnameInfoIt);
+  }
+  rtcpParser.Iterate();
 }
 
 // no need for critsect we have _criticalSectionRTCPReceiver
@@ -1464,54 +1407,46 @@ RTCPReceiver::CNAME(const WebRtc_UWord32 remoteSSRC,
 }
 
 // no callbacks allowed inside this function
-WebRtc_Word32
-RTCPReceiver::TMMBRReceived(const WebRtc_UWord32 size,
-                            const WebRtc_UWord32 accNumCandidates,
-                            TMMBRSet* candidateSet) const
-{
-    CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+WebRtc_Word32 RTCPReceiver::TMMBRReceived(const WebRtc_UWord32 size,
+                                          const WebRtc_UWord32 accNumCandidates,
+                                          TMMBRSet* candidateSet) const {
+  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
 
-    MapItem* receiveInfoItem=_receivedInfoMap.First();
-    if(receiveInfoItem == NULL)
-    {
+  std::map<WebRtc_UWord32, RTCPReceiveInformation*>::const_iterator
+      receiveInfoIt = _receivedInfoMap.begin();
+  if (receiveInfoIt == _receivedInfoMap.end()) {
+    return -1;
+  }
+  WebRtc_UWord32 num = accNumCandidates;
+  if (candidateSet) {
+    while( num < size && receiveInfoIt != _receivedInfoMap.end()) {
+      RTCPReceiveInformation* receiveInfo = receiveInfoIt->second;
+      if (receiveInfo == NULL) {
+        return 0;
+      }
+      for (WebRtc_UWord32 i = 0;
+          (num < size) && (i < receiveInfo->TmmbrSet.lengthOfSet); i++) {
+        if (receiveInfo->GetTMMBRSet(i, num, candidateSet,
+                                     _clock.GetTimeInMS()) == 0) {
+          num++;
+        }
+      }
+      receiveInfoIt++;
+    }
+  } else {
+    while (receiveInfoIt != _receivedInfoMap.end()) {
+      RTCPReceiveInformation* receiveInfo = receiveInfoIt->second;
+      if(receiveInfo == NULL) {
+        WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
+                     "%s failed to get RTCPReceiveInformation",
+                     __FUNCTION__);
         return -1;
+      }
+      num += receiveInfo->TmmbrSet.lengthOfSet;
+      receiveInfoIt++;
     }
-    WebRtc_UWord32 num = accNumCandidates;
-    if(candidateSet)
-    {
-        while( num < size && receiveInfoItem)
-        {
-            RTCPReceiveInformation* receiveInfo = (RTCPReceiveInformation*)receiveInfoItem->GetItem();
-            if(receiveInfo == NULL)
-            {
-                return 0;
-            }
-            for (WebRtc_UWord32 i = 0; (num < size) && (i < receiveInfo->TmmbrSet.lengthOfSet); i++)
-            {
-                if(receiveInfo->GetTMMBRSet(i, num, candidateSet,
-                                            _clock.GetTimeInMS()) == 0)
-                {
-                    num++;
-                }
-            }
-            receiveInfoItem = _receivedInfoMap.Next(receiveInfoItem);
-        }
-    } else
-    {
-        while(receiveInfoItem)
-        {
-            RTCPReceiveInformation* receiveInfo = (RTCPReceiveInformation*)receiveInfoItem->GetItem();
-            if(receiveInfo == NULL)
-            {
-                WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id, "%s failed to get RTCPReceiveInformation", __FUNCTION__);
-                return -1;
-            }
-            num += receiveInfo->TmmbrSet.lengthOfSet;
-
-            receiveInfoItem = _receivedInfoMap.Next(receiveInfoItem);
-        }
-    }
-    return num;
+  }
+  return num;
 }
 
 WebRtc_Word32

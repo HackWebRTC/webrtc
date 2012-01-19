@@ -11,10 +11,10 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_RECEIVER_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_RECEIVER_H_
 
+#include <map>
 #include <vector>
 
 #include "typedefs.h"
-#include "map_wrapper.h"
 #include "rtp_utility.h"
 #include "rtcp_utility.h"
 #include "rtp_rtcp_defines.h"
@@ -189,33 +189,36 @@ protected:
     void HandleAPPItem(RTCPUtility::RTCPParserV2& rtcpParser,
                        RTCPHelp::RTCPPacketInformation& rtcpPacketInformation);
 
-private:
-    WebRtc_Word32           _id;
-    RtpRtcpClock&           _clock;
-    RTCPMethod              _method;
-    WebRtc_UWord32          _lastReceived;
-    ModuleRtpRtcpImpl&      _rtpRtcp;
+ private:
+  WebRtc_Word32           _id;
+  RtpRtcpClock&           _clock;
+  RTCPMethod              _method;
+  WebRtc_UWord32          _lastReceived;
+  ModuleRtpRtcpImpl&      _rtpRtcp;
 
-    CriticalSectionWrapper* _criticalSectionFeedbacks;
-    RtcpFeedback*           _cbRtcpFeedback;
-    RtpVideoFeedback*       _cbVideoFeedback;
+  CriticalSectionWrapper* _criticalSectionFeedbacks;
+  RtcpFeedback*           _cbRtcpFeedback;
+  RtpVideoFeedback*       _cbVideoFeedback;
 
-    CriticalSectionWrapper* _criticalSectionRTCPReceiver;
-    WebRtc_UWord32          _SSRC;
-    WebRtc_UWord32          _remoteSSRC;
+  CriticalSectionWrapper* _criticalSectionRTCPReceiver;
+  WebRtc_UWord32          _SSRC;
+  WebRtc_UWord32          _remoteSSRC;
 
-    // Received send report
-    RTCPSenderInfo      _remoteSenderInfo;
-    WebRtc_UWord32            _lastReceivedSRNTPsecs;     // when did we receive the last send report
-    WebRtc_UWord32            _lastReceivedSRNTPfrac;
+  // Received send report
+  RTCPSenderInfo _remoteSenderInfo;
+  // when did we receive the last send report
+  WebRtc_UWord32 _lastReceivedSRNTPsecs;
+  WebRtc_UWord32 _lastReceivedSRNTPfrac;
 
-    // Received report block
-    MapWrapper                 _receivedReportBlockMap;    // pair SSRC to report block
-    MapWrapper                 _receivedInfoMap;           // pair SSRC of sender to might not be a SSRC that have any data (i.e. a conference)
-    MapWrapper                 _receivedCnameMap;          // pair SSRC to Cname
+  // Received report blocks.
+  std::map<WebRtc_UWord32, RTCPHelp::RTCPReportBlockInformation*>
+      _receivedReportBlockMap;
+  std::map<WebRtc_UWord32, RTCPHelp::RTCPReceiveInformation*>
+      _receivedInfoMap;
+  std::map<WebRtc_UWord32, RTCPUtility::RTCPCnameInformation*>
+      _receivedCnameMap;
 
-    // timeout
-    WebRtc_UWord32            _packetTimeOutMS;
+  WebRtc_UWord32            _packetTimeOutMS;
 };
 } // namespace webrtc
 #endif // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_RECEIVER_H_
