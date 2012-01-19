@@ -366,6 +366,8 @@ int ViEFileImpl::StartRecordOutgoingVideo(const int video_channel,
   VoiceEngine* ve_ptr = NULL;
   if (audio_source != NO_AUDIO) {
     ViEChannel* vie_channel = cs.Channel(video_channel);
+    // Channel should exists since we have a ViEEncoder.
+    assert(vie_channel);
     ve_channel_id = vie_channel->VoiceChannel();
     ve_ptr = channel_manager_.GetVoiceEngine();
     if (!ve_ptr) {
