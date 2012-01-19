@@ -862,7 +862,6 @@ VP8Decoder::Decode(const EncodedImage& inputImage,
     // Store encoded frame if key frame. (Used in Copy method.)
     if (inputImage._frameType == kKeyFrame && inputImage._buffer != NULL)
     {
-        // Reduce size due to PictureID that we won't copy.
         const WebRtc_UWord32 bytesToCopy = inputImage._length;
         if (_lastKeyFrame._size < bytesToCopy)
         {
