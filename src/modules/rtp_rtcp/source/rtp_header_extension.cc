@@ -23,12 +23,11 @@ RtpHeaderExtensionMap::~RtpHeaderExtensionMap() {
 }
 
 void RtpHeaderExtensionMap::Erase() {
-  while (extensionMap_.Size() != 0) {
-    MapItem* item = extensionMap_.First();
-    assert(item);
-    HeaderExtension* extension = (HeaderExtension*)item->GetItem();
-    extensionMap_.Erase(item);
-    delete extension;
+  while (!extensionMap_.empty()) {
+    std::map<uint8_t, HeaderExtension*>::iterator it =
+        extensionMap_.begin();
+    delete it->second;
+    extensionMap_.erase(it);
   }
 }
 
@@ -37,12 +36,12 @@ int32_t RtpHeaderExtensionMap::Register(const RTPExtensionType type,
   if (id < 1 || id > 14) {
     return -1;
   }
-  MapItem* item = extensionMap_.Find(id);
-  if (item != NULL) {
+  std::map<uint8_t, HeaderExtension*>::iterator it =
+      extensionMap_.find(id);
+  if (it != extensionMap_.end()) {
     return -1;
   }
-  HeaderExtension* extension = new HeaderExtension(type);
-  extensionMap_.Insert(id, extension);
+  extensionMap_[id] = new HeaderExtension(type);
   return 0;
 }
 
@@ -51,24 +50,25 @@ int32_t RtpHeaderExtensionMap::Deregister(const RTPExtensionType type) {
   if (GetId(type, &id) != 0) {
     return -1;
   }
-  MapItem* item = extensionMap_.Find(id);
-  if (item == NULL) {
+  std::map<uint8_t, HeaderExtension*>::iterator it =
+      extensionMap_.find(id);
+  if (it == extensionMap_.end()) {
     return -1;
   }
-  HeaderExtension* extension = (HeaderExtension*)item->GetItem();
-  extensionMap_.Erase(item);
-  delete extension;
+  delete it->second;
+  extensionMap_.erase(it);
   return 0;
 }
 
 int32_t RtpHeaderExtensionMap::GetType(const uint8_t id,
                                        RTPExtensionType* type) const {
   assert(type);
-  MapItem* item = extensionMap_.Find(id);
-  if (item == NULL) {
+  std::map<uint8_t, HeaderExtension*>::const_iterator it =
+      extensionMap_.find(id);
+  if (it == extensionMap_.end()) {
     return -1;
   }
-  HeaderExtension* extension = (HeaderExtension*)item->GetItem();
+  HeaderExtension* extension = it->second;
   *type = extension->type;
   return 0;
 }
@@ -76,14 +76,16 @@ int32_t RtpHeaderExtensionMap::GetType(const uint8_t id,
 int32_t RtpHeaderExtensionMap::GetId(const RTPExtensionType type,
                                      uint8_t* id) const {
   assert(id);
-  MapItem* item = extensionMap_.First();
-  while (item != NULL) {
-    HeaderExtension* extension = (HeaderExtension*)item->GetItem();
+  std::map<uint8_t, HeaderExtension*>::const_iterator it =
+      extensionMap_.begin();
+
+  while (it != extensionMap_.end()) {
+    HeaderExtension* extension = it->second;
     if (extension->type == type) {
-      *id = item->GetId();
+      *id = it->first;
       return 0;
     }
-    item = extensionMap_.Next(item);
+    it++;
   }
   return -1;
 }
@@ -91,11 +93,12 @@ int32_t RtpHeaderExtensionMap::GetId(const RTPExtensionType type,
 uint16_t RtpHeaderExtensionMap::GetTotalLengthInBytes() const {
   // Get length for each extension block.
   uint16_t length = 0;
-  MapItem* item = extensionMap_.First();
-  while (item != NULL) {
-    HeaderExtension* extension = (HeaderExtension*)item->GetItem();
+  std::map<uint8_t, HeaderExtension*>::const_iterator it =
+      extensionMap_.begin();
+  while (it != extensionMap_.end()) {
+    HeaderExtension* extension = it->second;
     length += extension->length;
-    item = extensionMap_.Next(item);
+    it++;
   }
   // Add RTP extension header length.
   if (length > 0) {
@@ -113,29 +116,32 @@ int32_t RtpHeaderExtensionMap::GetLengthUntilBlockStartInBytes(
   }
   // Get length until start of extension block type.
   uint16_t length = RTP_ONE_BYTE_HEADER_LENGTH_IN_BYTES;
-  MapItem* item = extensionMap_.First();
-  while (item != NULL) {
-    HeaderExtension* extension = (HeaderExtension*)item->GetItem();
+
+  std::map<uint8_t, HeaderExtension*>::const_iterator it =
+      extensionMap_.begin();
+  while (it != extensionMap_.end()) {
+    HeaderExtension* extension = it->second;
     if (extension->type == type) {
       break;
     } else {
       length += extension->length;
     }
-    item = extensionMap_.Next(item);
+    it++;
   }
   return length;
 }
 
 int32_t RtpHeaderExtensionMap::Size() const {
-  return extensionMap_.Size();
+  return extensionMap_.size();
 }
 
 RTPExtensionType RtpHeaderExtensionMap::First() const {
-  MapItem* item = extensionMap_.First();
-  if (item == NULL) {
+  std::map<uint8_t, HeaderExtension*>::const_iterator it =
+      extensionMap_.begin();
+  if (it == extensionMap_.end()) {
      return kRtpExtensionNone;
   }
-  HeaderExtension* extension = (HeaderExtension*)item->GetItem();
+  HeaderExtension* extension = it->second;
   return extension->type;
 }
 
@@ -144,25 +150,27 @@ RTPExtensionType RtpHeaderExtensionMap::Next(RTPExtensionType type) const {
   if (GetId(type, &id) != 0) {
     return kRtpExtensionNone;
   }
-  MapItem* item = extensionMap_.Find(id);
-  if (item == NULL) {
+  std::map<uint8_t, HeaderExtension*>::const_iterator it =
+      extensionMap_.find(id);
+  if (it == extensionMap_.end()) {
     return kRtpExtensionNone;
   }
-  item = extensionMap_.Next(item);
-  if (item == NULL) {
+  it++;
+  if (it == extensionMap_.end()) {
     return kRtpExtensionNone;
   }
-  HeaderExtension* extension = (HeaderExtension*)item->GetItem();
+  HeaderExtension* extension = it->second;
   return extension->type;
 }
 
 void RtpHeaderExtensionMap::GetCopy(RtpHeaderExtensionMap* map) const {
   assert(map);
-  MapItem* item = extensionMap_.First();
-  while (item != NULL) {
-    HeaderExtension* extension = (HeaderExtension*)item->GetItem();
-    map->Register(extension->type, item->GetId());
-    item = extensionMap_.Next(item);
+  std::map<uint8_t, HeaderExtension*>::const_iterator it =
+      extensionMap_.begin();
+  while (it != extensionMap_.end()) {
+    HeaderExtension* extension = it->second;
+    map->Register(extension->type, it->first);
+    it++;
   }
 }
 } // namespace webrtc
