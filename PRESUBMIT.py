@@ -3,7 +3,7 @@
 
 
 webrtc_license_header = (
-      r'.*? Copyright \(c\) 2011 The WebRTC project authors'
+      r'.*? Copyright \(c\) 2012 The WebRTC project authors'
       r'.*?Use of this source code is governed by a BSD-style license\n'
       r'.*? that can be found in the LICENSE file in the root of the source\n'
       r'.*? tree. An additional intellectual property rights grant can be found\n'
@@ -33,4 +33,3 @@ def CheckChangeOnCommit (input_api, output_api):
 
 
 #sources = lambda x: input_api.FilterSourceFile(x, black_list=black_list)
-
