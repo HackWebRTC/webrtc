@@ -479,7 +479,7 @@ ACMNetEQ::NetworkStatistics(
     {
         std::vector<int> waiting_times_vec(waiting_times,
                                            waiting_times + waiting_times_len);
-        sort(waiting_times_vec.begin(), waiting_times_vec.end());
+        std::sort(waiting_times_vec.begin(), waiting_times_vec.end());
         size_t size = waiting_times_vec.size();
         assert(size == static_cast<size_t>(waiting_times_len));
         if (size % 2 == 0)

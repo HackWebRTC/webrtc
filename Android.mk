@@ -20,7 +20,7 @@ include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_coding/codecs/pcm16b/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_coding/codecs/ilbc/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_coding/codecs/iSAC/fix/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_coding/codecs/iSAC/main/source/Android.mk
-#include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_coding/main/source/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_coding/main/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_conference_mixer/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_device/main/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/audio_processing/aec/Android.mk
