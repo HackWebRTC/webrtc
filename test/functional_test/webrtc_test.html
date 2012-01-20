@@ -52,13 +52,6 @@ function setElementValuesFromURL() {
     });
 }
 
-function toggleExtraButtons() {
-  document.getElementById("createPcBtn").hidden =
-    !document.getElementById("createPcBtn").hidden;
-  document.getElementById("test1Btn").hidden =
-    !document.getElementById("test1Btn").hidden;
-}
-
 function trace(txt) {
   var elem = document.getElementById("debug");
   elem.innerHTML += txt + "<br>";
@@ -130,15 +123,14 @@ function peerExists(id) {
 }
 
 function addPeer(id, pname) {
-  var peerList = document.getElementById("peers");
-  var option = document.createElement("option");
-  option.text = pname;
-  option.value = id;
   try {
-    // For IE earlier than version 8
-    peerList.add(option, x.options[null]);
-  } catch (e) {
+    var peerList = document.getElementById("peers");
+    var option = document.createElement("option");
+    option.text = pname;
+    option.value = id;
     peerList.add(option, null);
+  } catch (e) {
+    trace_exception(e, "Error adding peer");
   }
 }
 
@@ -523,21 +515,32 @@ function disconnect() {
 // Window event handling
 
 window.onload = function() {
-  setElementValuesFromURL();
-  getUserMedia();
+  if (navigator.webkitGetUserMedia) {
+    document.getElementById('testApp').hidden = false;
+    setElementValuesFromURL();
+    getUserMedia();
+  } else {
+    document.getElementById('errorText').hidden = false;
+  }
 }
 
 window.onbeforeunload = disconnect;
-
 
 </script>
 </head>
 
 <body>
 <h1>WebRTC</h1>
-You must have a WebRTC capable browser in order to make calls using this test
-page.<br>&nbsp;
+<section id="errorText" hidden="true">
+Could not detect WebRTC support.<p>
+You must have WebRTC enabled Chrome browser to use this test page. The browser
+must be started with the --enable-media-stream command line flag. For more
+information, please see
+<a href="https://sites.google.com/site/webrtc/blog/webrtcnowavailableinthechromedevchannel">
+this blog post</a>.
+</section>
 
+<section id="testApp" hidden="true">
 <table border="0">
 <tr>
  <td>Local Preview</td>
@@ -585,19 +588,13 @@ page.<br>&nbsp;
   <button id="call" onclick="doCall();" disabled="true">Call</button><br>
   <button id="hangup" onclick="hangUp();" disabled="true">Hang up</button><br>
  </td>
- <td>&nbsp;&nbsp;&nbsp;</td>
- <td valign="top">
-  <button onclick="toggleExtraButtons();">Toggle extra buttons (debug)</button>
-  <br>
-  <button id="createPcBtn" onclick="createPeerConnection();" hidden="true">
-  Create peer connection</button>
- </td>
 </tr>
 </table>
 
 <button onclick="document.getElementById('debug').innerHTML='';">Clear log
 </button>
 <pre id="debug"></pre>
+</section>
 
 </body>
 

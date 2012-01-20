@@ -1,7 +1,10 @@
-This test client is a simple functional test for WebRTC enabled Chrome build.
+This test client is a simple functional test for a WebRTC enabled browser. It
+has only been tested with Chrome, and is most likely only working with Chrome at
+the moment. The following instructions are in part Chrome specific.
 
 The following is necessary to run the test:
-- A WebRTC Chrome binary.
+- A WebRTC enabled Chrome binary. (Available in dev or canary channel, 18.0.1008
+or newer.)
 - A peerconnection_server binary (make peerconnection_server).
 
 It can be used in two scenarios:
@@ -12,11 +15,9 @@ client.
 
 To start the test for scenario (1):
 1. Start peerconnection_server.
-2. Start the WebRTC Chrome build: $ <path_to_chome_binary>/chrome
---enable-media-stream --enable-p2papi --user-data-dir=<path_to_data>
-<path_to_data> is where Chrome looks for all its states, use for example
-"temp/chrome_webrtc_data". If you don't always start the browser from the same
-directory, use an absolute path instead.
+2. Start the WebRTC Chrome build:
+$ <path_to_chrome_binary>/chrome --enable-media-stream
+The --enable-media-stream flag is required for the time being.
 3. Open the server test page, ensure loopback is enabled, choose a name (for
 example "loopback") and connect to the server.
 4. Open the test page, connect to the server, select the loopback peer, click
