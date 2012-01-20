@@ -210,7 +210,7 @@ class WebRTCLinuxFactory(WebRTCFactory):
         name="make_%s" % make_descriptor))
 
   def AddCommonGYPStep(self, gyp_file, gyp_params=[], descriptor="gyp"):
-    cmd = ["./build/gyp_chromium", "--depth=.", gyp_file] 
+    cmd = ["./build/gyp_chromium", "--depth=.", gyp_file]
     cmd += gyp_params + self.gyp_params
     self.addStep(shell.ShellCommand(command=cmd, workdir="build/trunk",
                                     description=[descriptor, "running..."],
@@ -225,7 +225,7 @@ class WebRTCLinuxFactory(WebRTCFactory):
     self.AddCommonStep(['lcov', '--extract', 'webrtc.info', '*/src/*',
                         '--output', 'test.info'],
                        workdir="build/trunk", descriptor="LCOV_Extract")
-    self.AddCommonStep(["lcov", "--remove", "test.info", "*/usr/include/*", 
+    self.AddCommonStep(["lcov", "--remove", "test.info", "*/usr/include/*",
                         "/third*", "/testing/*", "--output",
                         "final.info"],
                        workdir="build/trunk", descriptor="LCOV_Filter")
@@ -235,10 +235,10 @@ class WebRTCLinuxFactory(WebRTCFactory):
 
   def AddCommonTestSteps(self, test):
     """Add common steps for test.
-     
+
        test: test to be run.
     """
-    self.AddCommonMakeStep(test, descriptor="_test")  
+    self.AddCommonMakeStep(test, descriptor="_test")
     self.AddCommonTestRunStep(test, descriptor="_test")
 
   def EnableTest(self, test):
@@ -247,18 +247,13 @@ class WebRTCLinuxFactory(WebRTCFactory):
        test: test to be run.
     """
     if test == "audioproc_unittest":
-      self.AddCommonMakeStep(test, descriptor="_test")
-      self.AddCommonTestRunStep(test,
-           cmd=["../../../out/Debug/audioproc_unittest"],
-           workdir="build/trunk/test/data/audio_processing")
+      self.AddCommonTestRunStep(test)
       # Fixed point run:
-      self.AddCommonGYPStep("src/modules/modules.gyp",
+      self.AddCommonGYPStep("webrtc.gyp",
                             gyp_params=["-Dprefer_fixed_point=1"],
-                            descriptor="tests_fp")
-      self.AddCommonMakeStep(test, "_test_(FP)")
-      self.AddCommonTestRunStep(test, descriptor="_(FP)",
-           cmd=["../../../out/Debug/audioproc_unittest"],
-           workdir="build/trunk/test/data/audio_processing")
+                            descriptor="fixed_point")
+      self.AddCommonMakeStep(test, descriptor="_fixed_point")
+      self.AddCommonTestRunStep(test, descriptor="_fixed_point")
     elif test == "signal_processing_unittests":
       self.AddCommonTestRunStep(test, descriptor="_test")
     elif test == "resampler_unittests":
@@ -274,7 +269,7 @@ class WebRTCLinuxFactory(WebRTCFactory):
     elif test == "audio_device_test_api":
       self.AddCommonTestRunStep(test, descriptor="_test")
     elif test == "audio_device_test_func":
-      self.AddCommonTestRunStep(test, descriptor="_test")    
+      self.AddCommonTestRunStep(test, descriptor="_test")
     elif test == "audio_coding_module_test":
       self.AddCommonTestRunStep(test, descriptor="_test")
     elif test == "video_processing_unittests":

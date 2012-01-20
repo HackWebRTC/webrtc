@@ -998,6 +998,9 @@ TEST_F(ApmTest, DebugDump) {
 #endif  // WEBRTC_AUDIOPROC_DEBUG_DUMP
 }
 
+// TODO(andrew): Make this test more robust such that it can be run on multiple
+// platforms. It currently requires bit-exactness.
+#if defined(WEBRTC_LINUX) && defined(WEBRTC_ARCH_X86_64) && !defined(NDEBUG)
 TEST_F(ApmTest, Process) {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
   webrtc::audioproc::OutputData output_data;
@@ -1237,6 +1240,9 @@ TEST_F(ApmTest, Process) {
     WriteMessageLiteToFile(output_filename, output_data);
   }
 }
+#endif  // defined(WEBRTC_LINUX) && defined(WEBRTC_ARCH_X86_64) &&
+        // !defined(NDEBUG)
+
 }  // namespace
 
 int main(int argc, char** argv) {
