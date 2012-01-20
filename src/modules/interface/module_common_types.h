@@ -564,10 +564,14 @@ VideoFrame::VerifyAndAllocate(const WebRtc_UWord32 minimumSize)
             memcpy(newBufferBuffer, _buffer, _bufferSize);
             delete [] _buffer;
         }
+        else
+        {
+            memset(newBufferBuffer, 0, minimumSize * sizeof(WebRtc_UWord8));
+        }
         _buffer = newBufferBuffer;
         _bufferSize = minimumSize;
     }
-     return 0;
+    return 0;
 }
 
 inline
