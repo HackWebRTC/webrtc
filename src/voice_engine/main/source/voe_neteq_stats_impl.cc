@@ -74,10 +74,10 @@ int VoENetEqStatsImpl::GetNetworkStatistics(int channel,
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1),
                  "GetNetworkStatistics(channel=%d, stats=?)", channel);
-    ANDROID_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_engineStatistics);
     IPHONE_NOT_SUPPORTED();
-	
-    if (!_engineStatistics.Initialized())
+
+   if (!_engineStatistics.Initialized())
     {
         _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
         return -1;

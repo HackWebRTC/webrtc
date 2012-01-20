@@ -34,7 +34,7 @@ include $(MY_WEBRTC_ROOT_PATH)/src/modules/rtp_rtcp/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/udp_transport/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/utility/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/system_wrappers/source/Android.mk
-#include $(MY_WEBRTC_ROOT_PATH)/src/voice_engine/main/source/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/src/voice_engine/main/source/Android.mk
 
 # video
 include $(MY_WEBRTC_ROOT_PATH)/src/common_video/jpeg/main/source/Android.mk

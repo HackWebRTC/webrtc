@@ -71,7 +71,7 @@ int VoEVideoSyncImpl::GetPlayoutTimestamp(int channel, unsigned int& timestamp)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_data->instance_id(),-1),
                  "GetPlayoutTimestamp(channel=%d, timestamp=?)", channel);
-    ANDROID_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_data->statistics());
     IPHONE_NOT_SUPPORTED();
 
     if (!_data->statistics().Initialized())
@@ -97,7 +97,7 @@ int VoEVideoSyncImpl::SetInitTimestamp(int channel,
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_data->instance_id(),-1),
                  "SetInitTimestamp(channel=%d, timestamp=%lu)",
                  channel, timestamp);
-    ANDROID_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_data->statistics());
     IPHONE_NOT_SUPPORTED();
 
     if (!_data->statistics().Initialized())
@@ -123,7 +123,7 @@ int VoEVideoSyncImpl::SetInitSequenceNumber(int channel,
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_data->instance_id(),-1),
                  "SetInitSequenceNumber(channel=%d, sequenceNumber=%hd)",
                  channel, sequenceNumber);
-    ANDROID_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_data->statistics());
     IPHONE_NOT_SUPPORTED();
 
     if (!_data->statistics().Initialized())
@@ -148,7 +148,7 @@ int VoEVideoSyncImpl::SetMinimumPlayoutDelay(int channel,int delayMs)
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_data->instance_id(),-1),
                  "SetMinimumPlayoutDelay(channel=%d, delayMs=%d)",
                  channel, delayMs);
-    ANDROID_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_data->statistics());
     IPHONE_NOT_SUPPORTED();
 
     if (!_data->statistics().Initialized())
@@ -172,7 +172,7 @@ int VoEVideoSyncImpl::GetDelayEstimate(int channel, int& delayMs)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_data->instance_id(),-1),
                  "GetDelayEstimate(channel=%d, delayMs=?)", channel);
-    ANDROID_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_data->statistics());
     IPHONE_NOT_SUPPORTED();
 
     if (!_data->statistics().Initialized())
@@ -196,7 +196,7 @@ int VoEVideoSyncImpl::GetPlayoutBufferSize(int& bufferMs)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_data->instance_id(),-1),
                "GetPlayoutBufferSize(bufferMs=?)");
-    ANDROID_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_data->statistics());
     IPHONE_NOT_SUPPORTED();
 
     if (!_data->statistics().Initialized())

@@ -77,7 +77,7 @@ int VoEExternalMediaImpl::RegisterExternalMediaProcessing(
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1),
                  "RegisterExternalMediaProcessing(channel=%d, type=%d, "
                  "processObject=0x%x)", channel, type, &processObject);
-    ANDROID_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_engineStatistics);
     IPHONE_NOT_SUPPORTED();
     if (!_engineStatistics.Initialized())
     {
@@ -129,7 +129,7 @@ int VoEExternalMediaImpl::DeRegisterExternalMediaProcessing(
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1),
                  "DeRegisterExternalMediaProcessing(channel=%d)", channel);
-    ANDROID_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_engineStatistics);
     IPHONE_NOT_SUPPORTED();
     if (!_engineStatistics.Initialized())
     {
@@ -175,7 +175,7 @@ int VoEExternalMediaImpl::SetExternalRecordingStatus(bool enable)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1),
                  "SetExternalRecordingStatus(enable=%d)", enable);
-    ANDROID_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_engineStatistics);
     IPHONE_NOT_SUPPORTED();
 #ifdef WEBRTC_VOE_EXTERNAL_REC_AND_PLAYOUT
     if (_audioDevicePtr->Recording())
@@ -208,7 +208,7 @@ int VoEExternalMediaImpl::ExternalRecordingInsertData(
                  " lengthSamples=%u, samplingFreqHz=%d, current_delay_ms=%d)",
                  &speechData10ms[0], lengthSamples, samplingFreqHz,
               current_delay_ms);
-    ANDROID_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_engineStatistics);
     IPHONE_NOT_SUPPORTED();
 
 #ifdef WEBRTC_VOE_EXTERNAL_REC_AND_PLAYOUT
@@ -309,7 +309,7 @@ int VoEExternalMediaImpl::SetExternalPlayoutStatus(bool enable)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1),
                  "SetExternalPlayoutStatus(enable=%d)", enable);
-    ANDROID_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_engineStatistics);
     IPHONE_NOT_SUPPORTED();
 #ifdef WEBRTC_VOE_EXTERNAL_REC_AND_PLAYOUT
     if (_audioDevicePtr->Playing())
@@ -341,7 +341,7 @@ int VoEExternalMediaImpl::ExternalPlayoutGetData(
                  "ExternalPlayoutGetData(speechData10ms=0x%x, samplingFreqHz=%d"
                  ",  current_delay_ms=%d)", &speechData10ms[0], samplingFreqHz,
                  current_delay_ms);
-    ANDROID_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_engineStatistics);
     IPHONE_NOT_SUPPORTED();
 #ifdef WEBRTC_VOE_EXTERNAL_REC_AND_PLAYOUT
     if (!_engineStatistics.Initialized())

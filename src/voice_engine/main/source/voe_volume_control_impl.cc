@@ -203,7 +203,7 @@ int VoEVolumeControlImpl::SetMicVolume(unsigned int volume)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1),
                "SetMicVolume(volume=%u)", volume);
-    ANDROID_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_engineStatistics);
     IPHONE_NOT_SUPPORTED();
 
     if (!_engineStatistics.Initialized())
@@ -249,7 +249,7 @@ int VoEVolumeControlImpl::GetMicVolume(unsigned int& volume)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1),
                "GetMicVolume()");
-    ANDROID_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_engineStatistics);
     IPHONE_NOT_SUPPORTED();
 
     if (!_engineStatistics.Initialized())
@@ -554,7 +554,7 @@ int VoEVolumeControlImpl::SetOutputVolumePan(int channel,
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1),
                "SetOutputVolumePan(channel=%d, left=%2.1f, right=%2.1f)",
                channel, left, right);
-    ANDROID_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_engineStatistics);
     IPHONE_NOT_SUPPORTED();
 
     if (!_engineStatistics.Initialized())
@@ -611,7 +611,7 @@ int VoEVolumeControlImpl::GetOutputVolumePan(int channel,
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1),
                "GetOutputVolumePan(channel=%d, left=?, right=?)", channel);
-    ANDROID_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_engineStatistics);
     IPHONE_NOT_SUPPORTED();
 
     if (!_engineStatistics.Initialized())

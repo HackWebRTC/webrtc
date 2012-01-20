@@ -185,7 +185,8 @@ int VoEHardwareImpl::GetNumOfRecordingDevices(int& devices)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
                  "GetNumOfRecordingDevices(devices=?)");
-    ANDROID_NOT_SUPPORTED(); IPHONE_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_engineStatistics);
+    IPHONE_NOT_SUPPORTED();
 
     if (!_engineStatistics.Initialized())
     {
@@ -205,7 +206,8 @@ int VoEHardwareImpl::GetNumOfPlayoutDevices(int& devices)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
                  "GetNumOfPlayoutDevices(devices=?)");
-    ANDROID_NOT_SUPPORTED(); IPHONE_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_engineStatistics);
+    IPHONE_NOT_SUPPORTED();
 
     if (!_engineStatistics.Initialized())
     {
@@ -227,7 +229,7 @@ int VoEHardwareImpl::GetRecordingDeviceName(int index,
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
                  "GetRecordingDeviceName(index=%d)", index);
-    ANDROID_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_engineStatistics);
     IPHONE_NOT_SUPPORTED();
 
     if (!_engineStatistics.Initialized())
@@ -285,7 +287,7 @@ int VoEHardwareImpl::GetPlayoutDeviceName(int index,
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
                  "GetPlayoutDeviceName(index=%d)", index);
-    ANDROID_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_engineStatistics);
     IPHONE_NOT_SUPPORTED();
 
     if (!_engineStatistics.Initialized())
@@ -344,7 +346,7 @@ int VoEHardwareImpl::SetRecordingDevice(int index,
                  "SetRecordingDevice(index=%d, recordingChannel=%d)",
                  index, (int) recordingChannel);
     CriticalSectionScoped cs(*_apiCritPtr);
-    ANDROID_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_engineStatistics);
     IPHONE_NOT_SUPPORTED();
 
     if (!_engineStatistics.Initialized())
@@ -478,7 +480,8 @@ int VoEHardwareImpl::SetPlayoutDevice(int index)
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
                  "SetPlayoutDevice(index=%d)", index);
     CriticalSectionScoped cs(*_apiCritPtr);
-    ANDROID_NOT_SUPPORTED(); IPHONE_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_engineStatistics);
+    IPHONE_NOT_SUPPORTED();
 
     if (!_engineStatistics.Initialized())
     {
@@ -584,7 +587,7 @@ int VoEHardwareImpl::GetRecordingDeviceStatus(bool& isAvailable)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
                  "GetRecordingDeviceStatus()");
-    ANDROID_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_engineStatistics);
     IPHONE_NOT_SUPPORTED();
 
     if (!_engineStatistics.Initialized())
@@ -617,7 +620,7 @@ int VoEHardwareImpl::GetPlayoutDeviceStatus(bool& isAvailable)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
                  "GetPlayoutDeviceStatus()");
-    ANDROID_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_engineStatistics);
     IPHONE_NOT_SUPPORTED();
 
     if (!_engineStatistics.Initialized())
@@ -650,7 +653,7 @@ int VoEHardwareImpl::ResetAudioDevice()
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
                  "ResetAudioDevice()");
-    ANDROID_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_engineStatistics);
 
     if (!_engineStatistics.Initialized())
     {
@@ -679,7 +682,7 @@ int VoEHardwareImpl::AudioDeviceControl(unsigned int par1, unsigned int par2,
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
                  "AudioDeviceControl(%i, %i, %i)", par1, par2, par3);
-    ANDROID_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_engineStatistics);
     IPHONE_NOT_SUPPORTED();
     if (!_engineStatistics.Initialized())
     {
@@ -752,7 +755,8 @@ int VoEHardwareImpl::GetCPULoad(int& loadPercent)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
                  "GetCPULoad()");
-    ANDROID_NOT_SUPPORTED(); IPHONE_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_engineStatistics);
+    IPHONE_NOT_SUPPORTED();
 
     if (!_engineStatistics.Initialized())
     {
@@ -781,7 +785,8 @@ int VoEHardwareImpl::GetSystemCPULoad(int& loadPercent)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
                  "GetSystemCPULoad(loadPercent=?)");
-    ANDROID_NOT_SUPPORTED(); IPHONE_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_engineStatistics);
+    IPHONE_NOT_SUPPORTED();
 
     if (!_engineStatistics.Initialized())
     {

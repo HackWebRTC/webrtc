@@ -413,10 +413,10 @@ namespace webrtc
       GainControl::kAdaptiveDigital
   #define WEBRTC_VOICE_ENGINE_EC_DEFAULT_MODE  EcAecm
 
-  #define ANDROID_NOT_SUPPORTED() \
-    _engineStatistics.SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError, \
+  #define ANDROID_NOT_SUPPORTED(stat)                         \
+      stat.SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,   \
                                    "API call not supported"); \
-    return -1;
+      return -1;
 
 #else // LINUX PC
 // ----------------------------------------------------------------------------
@@ -435,12 +435,12 @@ namespace webrtc
 //  Defines
 // ----------------------------------------------------------------------------
 
-  #define ANDROID_NOT_SUPPORTED()
+  #define ANDROID_NOT_SUPPORTED(stat)
 
 #endif // ANDROID - LINUX PC
 
 #else
-#define ANDROID_NOT_SUPPORTED()
+#define ANDROID_NOT_SUPPORTED(stat)
 #endif  // #ifdef WEBRTC_LINUX
 
 // *** WEBRTC_MAC ***

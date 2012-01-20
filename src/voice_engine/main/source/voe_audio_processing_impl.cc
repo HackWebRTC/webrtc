@@ -876,7 +876,7 @@ int VoEAudioProcessingImpl::RegisterRxVadObserver(
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1),
                  "RegisterRxVadObserver()");
-    ANDROID_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_engineStatistics);
     IPHONE_NOT_SUPPORTED();
 
     if (!_engineStatistics.Initialized())
@@ -900,7 +900,7 @@ int VoEAudioProcessingImpl::DeRegisterRxVadObserver(int channel)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1),
                  "DeRegisterRxVadObserver()");
-    ANDROID_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_engineStatistics);
     IPHONE_NOT_SUPPORTED();
 
     if (!_engineStatistics.Initialized())
@@ -949,7 +949,7 @@ int VoEAudioProcessingImpl::VoiceActivityIndicator(int channel)
 int VoEAudioProcessingImpl::SetEcMetricsStatus(bool enable) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
                "SetEcMetricsStatus(enable=%d)", enable);
-  ANDROID_NOT_SUPPORTED();
+  ANDROID_NOT_SUPPORTED(_engineStatistics);
   IPHONE_NOT_SUPPORTED();
 
 #ifdef WEBRTC_VOICE_ENGINE_ECHO
@@ -978,7 +978,7 @@ int VoEAudioProcessingImpl::SetEcMetricsStatus(bool enable) {
 int VoEAudioProcessingImpl::GetEcMetricsStatus(bool& enabled) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
                "GetEcMetricsStatus(enabled=?)");
-  ANDROID_NOT_SUPPORTED();
+  ANDROID_NOT_SUPPORTED(_engineStatistics);
   IPHONE_NOT_SUPPORTED();
 
 #ifdef WEBRTC_VOICE_ENGINE_ECHO
@@ -1017,7 +1017,7 @@ int VoEAudioProcessingImpl::GetEchoMetrics(int& ERL,
                                            int& A_NLP) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
                "GetEchoMetrics(ERL=?, ERLE=?, RERL=?, A_NLP=?)");
-  ANDROID_NOT_SUPPORTED();
+  ANDROID_NOT_SUPPORTED(_engineStatistics);
   IPHONE_NOT_SUPPORTED();
 
 #ifdef WEBRTC_VOICE_ENGINE_ECHO
@@ -1062,7 +1062,7 @@ int VoEAudioProcessingImpl::GetEcDelayMetrics(int& delay_median,
                                               int& delay_std) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
                "GetEcDelayMetrics(median=?, std=?)");
-  ANDROID_NOT_SUPPORTED();
+  ANDROID_NOT_SUPPORTED(_engineStatistics);
   IPHONE_NOT_SUPPORTED();
 
 #ifdef WEBRTC_VOICE_ENGINE_ECHO
@@ -1134,7 +1134,7 @@ int VoEAudioProcessingImpl::SetTypingDetectionStatus(bool enable)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1),
                  "SetTypingDetectionStatus()");
-    ANDROID_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_engineStatistics);
     IPHONE_NOT_SUPPORTED();
 #ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION
     if (!_engineStatistics.Initialized())
@@ -1175,7 +1175,7 @@ int VoEAudioProcessingImpl::GetTypingDetectionStatus(bool& enabled)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1),
                  "GetTypingDetectionStatus()");
-    ANDROID_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_engineStatistics);
     IPHONE_NOT_SUPPORTED();
 
 #ifdef WEBRTC_VOICE_ENGINE_TYPING_DETECTION

@@ -338,7 +338,7 @@ int VoENetworkImpl::EnableIPv6(int channel)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
                  "EnableIPv6(channel=%d)", channel);
-    ANDROID_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_engineStatistics);
     IPHONE_NOT_SUPPORTED();
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
     if (!_engineStatistics.Initialized())
@@ -650,7 +650,8 @@ int VoENetworkImpl::SetSendGQoS(int channel,
                  "SetSendGQOS(channel=%d, enable=%d, serviceType=%d,"
                  " overrideDSCP=%d)",
                  channel, (int) enable, serviceType, overrideDSCP);
-    ANDROID_NOT_SUPPORTED(); IPHONE_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_engineStatistics);
+    IPHONE_NOT_SUPPORTED();
 #if !defined(_WIN32)
     _engineStatistics.SetLastError(
         VE_FUNC_NOT_SUPPORTED, kTraceWarning,
@@ -693,7 +694,7 @@ int VoENetworkImpl::GetSendGQoS(int channel,
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
                  "GetSendGQOS(channel=%d)", channel);
-    ANDROID_NOT_SUPPORTED();
+    ANDROID_NOT_SUPPORTED(_engineStatistics);
     IPHONE_NOT_SUPPORTED();
 #if !defined(_WIN32)
     _engineStatistics.SetLastError(
