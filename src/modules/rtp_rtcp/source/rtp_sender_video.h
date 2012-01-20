@@ -11,22 +11,24 @@
 #ifndef WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_SENDER_VIDEO_H_
 #define WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_SENDER_VIDEO_H_
 
+#include <list>
+
 #include "typedefs.h"
 #include "common_types.h"               // Transport
 #include "rtp_rtcp_config.h"
 
 #include "rtp_rtcp_defines.h"
 #include "rtp_utility.h"
-#include "list_wrapper.h"
 
 #include "video_codec_information.h"
 #include "forward_error_correction.h"
 #include "Bitrate.h"
-
 #include "rtp_sender.h"
 
 namespace webrtc {
 class CriticalSectionWrapper;
+struct RtpPacket;
+
 class RTPSenderVideo
 {
 public:
@@ -42,10 +44,11 @@ public:
 
     WebRtc_UWord16 FECPacketOverhead() const;
 
-    WebRtc_Word32 RegisterVideoPayload(const WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
-                                     const WebRtc_Word8 payloadType,
-                                     const WebRtc_UWord32 maxBitRate,
-                                     ModuleRTPUtility::Payload*& payload);
+    WebRtc_Word32 RegisterVideoPayload(
+        const char payloadName[RTP_PAYLOAD_NAME_SIZE],
+        const WebRtc_Word8 payloadType,
+        const WebRtc_UWord32 maxBitRate,
+        ModuleRTPUtility::Payload*& payload);
 
     WebRtc_Word32 SendVideo(const RtpVideoCodecTypes videoType,
                           const FrameType frameType,
@@ -133,8 +136,8 @@ private:
     WebRtc_UWord8             _fecProtectionFactor;
     bool                      _fecUseUepProtection;
     int                       _numberFirstPartition;
-    ListWrapper               _mediaPacketListFec;
-    ListWrapper               _rtpPacketListFec;
+    std::list<ForwardErrorCorrection::Packet*> _mediaPacketListFec;
+    std::list<RtpPacket*> _rtpPacketListFec;
     // Bitrate used for FEC payload, RED headers, RTP headers for FEC packets
     // and any padding overhead.
     Bitrate                   _fecOverheadRate;

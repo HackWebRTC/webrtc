@@ -100,34 +100,29 @@ RTPSenderVideo::VideoCodecType() const
     return _videoType;
 }
 
-WebRtc_Word32
-RTPSenderVideo::RegisterVideoPayload(
-        const WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
-        const WebRtc_Word8 payloadType,
-        const WebRtc_UWord32 maxBitRate,
-        ModuleRTPUtility::Payload*& payload)
-{
-    CriticalSectionScoped cs(_sendVideoCritsect);
+WebRtc_Word32 RTPSenderVideo::RegisterVideoPayload(
+    const char payloadName[RTP_PAYLOAD_NAME_SIZE],
+    const WebRtc_Word8 payloadType,
+    const WebRtc_UWord32 maxBitRate,
+    ModuleRTPUtility::Payload*& payload) {
+  CriticalSectionScoped cs(_sendVideoCritsect);
 
-    RtpVideoCodecTypes videoType = kRtpNoVideo;
-    if (ModuleRTPUtility::StringCompare(payloadName, "VP8",3))
-    {
-        videoType = kRtpVp8Video;
-    } else if (ModuleRTPUtility::StringCompare(payloadName, "I420", 4))
-    {
-        videoType = kRtpNoVideo;
-    }else
-    {
-        videoType = kRtpNoVideo;
-        return -1;
-    }
-    payload = new ModuleRTPUtility::Payload;
-    strncpy(payload->name, payloadName, RTP_PAYLOAD_NAME_SIZE);
-    payload->typeSpecific.Video.videoCodecType = videoType;
-    payload->typeSpecific.Video.maxRate = maxBitRate;
-    payload->audio = false;
-
-    return 0;
+  RtpVideoCodecTypes videoType = kRtpNoVideo;
+  if (ModuleRTPUtility::StringCompare(payloadName, "VP8",3)) {
+    videoType = kRtpVp8Video;
+  } else if (ModuleRTPUtility::StringCompare(payloadName, "I420", 4)) {
+    videoType = kRtpNoVideo;
+  } else {
+    videoType = kRtpNoVideo;
+    return -1;
+  }
+  payload = new ModuleRTPUtility::Payload;
+  strncpy(payload->name, payloadName, RTP_PAYLOAD_NAME_SIZE - 1);
+  payload->name[RTP_PAYLOAD_NAME_SIZE - 1] = 0; // Null terminate string.
+  payload->typeSpecific.Video.videoCodecType = videoType;
+  payload->typeSpecific.Video.maxRate = maxBitRate;
+  payload->audio = false;
+  return 0;
 }
 
 struct RtpPacket
@@ -156,19 +151,17 @@ RTPSenderVideo::SendVideoPacket(const FrameType frameType,
                ptrGenericFEC->pkt->length);
 
         // Add packet to FEC list
-        _rtpPacketListFec.PushBack(ptrGenericFEC);
+        _rtpPacketListFec.push_back(ptrGenericFEC);
         // FEC can only protect up to kMaxMediaPackets packets
-        if (static_cast<int>(_mediaPacketListFec.GetSize()) <
+        if (static_cast<int>(_mediaPacketListFec.size()) <
             ForwardErrorCorrection::kMaxMediaPackets)
         {
-            _mediaPacketListFec.PushBack(ptrGenericFEC->pkt);
+            _mediaPacketListFec.push_back(ptrGenericFEC->pkt);
         }
 
         // Last packet in frame
         if (markerBit)
         {
-            // Interface for FEC
-            ListWrapper fecPacketList;
 
             // Retain the RTP header of the last media packet to construct FEC
             // packet RTP headers.
@@ -189,23 +182,22 @@ RTPSenderVideo::SendVideoPacket(const FrameType frameType,
                     ForwardErrorCorrection::kMaxMediaPackets;
             }
 
+            std::list<ForwardErrorCorrection::Packet*> fecPacketList;
             retVal = _fec.GenerateFEC(_mediaPacketListFec,
                                       _fecProtectionFactor,
                                       _numberFirstPartition,
                                       _fecUseUepProtection,
-                                      fecPacketList);
+                                      &fecPacketList);
 
             int fecOverheadSent = 0;
             int videoSent = 0;
 
-            while(!_rtpPacketListFec.Empty())
+            while(!_rtpPacketListFec.empty())
             {
                 WebRtc_UWord8 newDataBuffer[IP_PACKET_SIZE];
                 memset(newDataBuffer, 0, sizeof(newDataBuffer));
 
-                ListItem* item = _rtpPacketListFec.First();
-                RtpPacket* packetToSend =
-                    static_cast<RtpPacket*>(item->GetItem());
+                RtpPacket* packetToSend = _rtpPacketListFec.front();
 
                 // Copy RTP header
                 memcpy(newDataBuffer, packetToSend->pkt->data,
@@ -229,8 +221,8 @@ RTPSenderVideo::SendVideoPacket(const FrameType frameType,
                        packetToSend->pkt->length -
                            packetToSend->rtpHeaderLength);
 
-                _rtpPacketListFec.PopFront();
-                _mediaPacketListFec.PopFront();
+                _rtpPacketListFec.pop_front();
+                _mediaPacketListFec.pop_front();
 
                 // Send normal packet with RED header
                 int packetSuccess = _rtpSender.SendToNetwork(
@@ -252,19 +244,15 @@ RTPSenderVideo::SendVideoPacket(const FrameType frameType,
                 delete packetToSend;
                 packetToSend = NULL;
             }
-            assert(_mediaPacketListFec.Empty());
-            assert(_rtpPacketListFec.Empty());
+            assert(_mediaPacketListFec.empty());
+            assert(_rtpPacketListFec.empty());
 
-            while(!fecPacketList.Empty())
+            while(!fecPacketList.empty())
             {
                 WebRtc_UWord8 newDataBuffer[IP_PACKET_SIZE];
 
-                ListItem* item = fecPacketList.First();
-
                 // Build FEC packets
-                ForwardErrorCorrection::Packet* packetToSend =
-                    static_cast<ForwardErrorCorrection::Packet*>
-                    (item->GetItem());
+                ForwardErrorCorrection::Packet* packetToSend = fecPacketList.front();
 
                 // The returned FEC packets have no RTP headers.
                 // Copy the last media packet's modified RTP header.
@@ -285,7 +273,7 @@ RTPSenderVideo::SendVideoPacket(const FrameType frameType,
                        packetToSend->data,
                        packetToSend->length);
 
-                fecPacketList.PopFront();
+                fecPacketList.pop_front();
 
                 // Invalid FEC packet
                 assert(packetToSend->length != 0);
