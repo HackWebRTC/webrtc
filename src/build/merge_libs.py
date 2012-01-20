@@ -22,33 +22,33 @@ if __name__ == '__main__':
   search_path = sys.argv[1]
   output_lib = sys.argv[2]
 
-  from subprocess import Popen, PIPE
+  from subprocess import call, PIPE
   if sys.platform.startswith('linux'):
-    Popen(["rm -f " + output_lib], shell=True)
-    Popen(["rm -rf " + search_path + "/obj.target/*do_not_use*"], shell=True)
-    Popen(["ar crs " + output_lib + " $(find " + search_path +
+    call(["rm -f " + output_lib], shell=True)
+    call(["rm -rf " + search_path + "/obj.target/*do_not_use*"], shell=True)
+    call(["ar crs " + output_lib + " $(find " + search_path +
           "/obj.target -name *\.o)"], shell=True)
-    Popen(["ar crs " + output_lib + " $(find " + search_path +
+    call(["ar crs " + output_lib + " $(find " + search_path +
           "/obj/gen -name *\.o)"], shell=True)
 
   elif sys.platform == 'darwin':
-    Popen(["rm -f " + output_lib], shell=True)
-    Popen(["rm -f " + search_path + "/*do_not_use*"], shell=True)
-    Popen(["libtool -static -v -o " + output_lib + " " + search_path + "/*.a"],
-          shell=True)
+    call(["rm -f " + output_lib], shell=True)
+    call(["rm -f " + search_path + "/*do_not_use*"], shell=True)
+    call(["libtool -static -v -o " + output_lib + " " + search_path + "/*.a"],
+         shell=True)
 
   elif sys.platform == 'win32':
     # We need to execute a batch file to set some environment variables for the
     # lib command. VS 8 uses vsvars.bat and VS 9 uses vsvars32.bat. It's
     # required that at least one of them is in the system PATH. We try both and
     # suppress stderr and stdout to fail silently.
-    Popen(["del " + output_lib], stderr=PIPE, stdout=PIPE, shell=True)
-    Popen(["del /F /S /Q " + search_path + "/lib/*do_not_use*"],
+    call(["vsvars.bat"], stderr=PIPE, stdout=PIPE, shell=True)
+    call(["vsvars32.bat"], stderr=PIPE, stdout=PIPE, shell=True)
+    call(["del " + output_lib], shell=True)
+    call(["del /F /S /Q " + search_path + "/lib/*do_not_use*"],
           shell=True)
-    Popen(["vsvars.bat"], stderr=PIPE, stdout=PIPE, shell=True)
-    Popen(["vsvars32.bat"], stderr=PIPE, stdout=PIPE, shell=True)
-    Popen(["lib /OUT:" + output_lib + " " + search_path + "/lib/*.lib"],
-          shell=True)
+    call(["lib /OUT:" + output_lib + " " + search_path + "/lib/*.lib"],
+         shell=True)
 
   else:
     sys.stderr.write('Platform not supported: %r\n\n' % sys.platform)
