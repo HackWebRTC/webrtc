@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -11,12 +11,13 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_CODEC_DATABASE_H_
 #define WEBRTC_MODULES_VIDEO_CODING_CODEC_DATABASE_H_
 
-#include "video_coding.h"
-#include "video_codec_interface.h"
-#include "generic_decoder.h"
-#include "generic_encoder.h"
+#include <map>
+
+#include "modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "modules/video_coding/main/interface/video_coding.h"
+#include "modules/video_coding/main/source/generic_decoder.h"
+#include "modules/video_coding/main/source/generic_encoder.h"
 #include "typedefs.h"
-#include "map_wrapper.h"
 
 namespace webrtc
 {
@@ -191,22 +192,23 @@ protected:
     VCMExtDecoderMapItem* FindExternalDecoderItem(WebRtc_UWord8 payloadType) const;
 
 private:
-    WebRtc_Word32         _id;
-    WebRtc_UWord32        _numberOfCores;
-    WebRtc_UWord32        _maxPayloadSize;
-    bool                  _periodicKeyFrames;
-    bool                  _currentEncIsExternal;
-    VideoCodec            _sendCodec;
-    VideoCodec            _receiveCodec;
-    WebRtc_UWord8         _externalPayloadType;
-    VideoEncoder*         _externalEncoder;
-    bool                  _internalSource;
-    VCMGenericEncoder*    _ptrEncoder;
-    VCMGenericDecoder*    _ptrDecoder;
-    bool                  _currentDecIsExternal;
-    MapWrapper               _decMap;
-    MapWrapper               _decExternalMap;
-
+    typedef std::map<uint8_t, VCMDecoderMapItem*> DecoderMap;
+    typedef std::map<uint8_t, VCMExtDecoderMapItem*> ExternalDecoderMap;
+    WebRtc_Word32 _id;
+    WebRtc_UWord32 _numberOfCores;
+    WebRtc_UWord32 _maxPayloadSize;
+    bool _periodicKeyFrames;
+    bool _currentEncIsExternal;
+    VideoCodec _sendCodec;
+    VideoCodec _receiveCodec;
+    WebRtc_UWord8 _externalPayloadType;
+    VideoEncoder* _externalEncoder;
+    bool _internalSource;
+    VCMGenericEncoder* _ptrEncoder;
+    VCMGenericDecoder* _ptrDecoder;
+    bool _currentDecIsExternal;
+    DecoderMap _decMap;
+    ExternalDecoderMap _decExternalMap;
 }; // end of VCMCodecDataBase class definition
 
 } // namespace webrtc

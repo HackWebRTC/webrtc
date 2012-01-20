@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -451,23 +451,24 @@ VCMCodecDataBase::RegisterReceiveCodec(const VideoCodec* receiveCodec,
         return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
     }
     VideoCodec* newReceiveCodec = new VideoCodec(*receiveCodec);
-    _decMap.Insert(receiveCodec->plType,
-        new VCMDecoderMapItem(newReceiveCodec, numberOfCores, requireKeyFrame));
+    _decMap[receiveCodec->plType] =
+        new VCMDecoderMapItem(newReceiveCodec, numberOfCores, requireKeyFrame);
 
     return VCM_OK;
 }
 
-WebRtc_Word32 VCMCodecDataBase::DeRegisterReceiveCodec(WebRtc_UWord8 payloadType)
+WebRtc_Word32 VCMCodecDataBase::DeRegisterReceiveCodec(
+    WebRtc_UWord8 payloadType)
 {
-    MapItem* item = _decMap.Find(payloadType);
-    if (item == NULL)
+    DecoderMap::iterator it = _decMap.find(payloadType);
+    if (it == _decMap.end())
     {
         return VCM_PARAMETER_ERROR;
     }
-    VCMDecoderMapItem* decItem = static_cast<VCMDecoderMapItem*>(item->GetItem());
+    VCMDecoderMapItem* decItem = (*it).second;
     delete decItem->_settings;
     delete decItem;
-    _decMap.Erase(item);
+    _decMap.erase(it);
     if (_receiveCodec.plType == payloadType)
     {
         // This codec is currently in use.
@@ -483,31 +484,18 @@ VCMCodecDataBase::ResetReceiver()
     ReleaseDecoder(_ptrDecoder);
     _ptrDecoder = NULL;
     memset(&_receiveCodec, 0, sizeof(VideoCodec));
-    MapItem* item = _decMap.First();
-    while (item != NULL)
-    {
-        VCMDecoderMapItem* decItem = static_cast<VCMDecoderMapItem*>(item->GetItem());
-        if (decItem != NULL)
+    for (DecoderMap::iterator it = _decMap.begin(); it != _decMap.end(); ++it) {
+        if ((*it).second->_settings != NULL)
         {
-            if (decItem->_settings != NULL)
-            {
-                delete decItem->_settings;
-            }
-            delete decItem;
+            delete (*it).second->_settings;
         }
-        _decMap.Erase(item);
-        item = _decMap.First();
+        delete (*it).second;
+        _decMap.erase(it);
     }
-    item = _decExternalMap.First();
-    while (item != NULL)
-    {
-        VCMExtDecoderMapItem* decItem = static_cast<VCMExtDecoderMapItem*>(item->GetItem());
-        if (decItem != NULL)
-        {
-            delete decItem;
-        }
-        _decExternalMap.Erase(item);
-        item = _decExternalMap.First();
+    for (ExternalDecoderMap::iterator it = _decExternalMap.begin();
+        it != _decExternalMap.end(); ++it) {
+        delete (*it).second;
+        _decExternalMap.erase(it);
     }
     _currentDecIsExternal = false;
     return VCM_OK;
@@ -516,8 +504,8 @@ VCMCodecDataBase::ResetReceiver()
 WebRtc_Word32
 VCMCodecDataBase::DeRegisterExternalDecoder(WebRtc_UWord8 payloadType)
 {
-    MapItem* item = _decExternalMap.Find(payloadType);
-    if (item == NULL)
+    ExternalDecoderMap::iterator it = _decExternalMap.find(payloadType);
+    if (it == _decExternalMap.end())
     {
         // Not found
         return VCM_PARAMETER_ERROR;
@@ -529,9 +517,8 @@ VCMCodecDataBase::DeRegisterExternalDecoder(WebRtc_UWord8 payloadType)
         _ptrDecoder = NULL;
     }
     DeRegisterReceiveCodec(payloadType);
-    VCMExtDecoderMapItem* decItem = static_cast<VCMExtDecoderMapItem*>(item->GetItem());
-    delete decItem;
-    _decExternalMap.Erase(item);
+    delete (*it).second;
+    _decExternalMap.erase(it);
     return VCM_OK;
 }
 
@@ -551,7 +538,7 @@ VCMCodecDataBase::RegisterExternalDecoder(VideoDecoder* externalDecoder,
         return VCM_MEMORY;
     }
     DeRegisterExternalDecoder(payloadType);
-    _decExternalMap.Insert(payloadType, extDecoder);
+    _decExternalMap[payloadType] = extDecoder;
 
     return VCM_OK;
 }
@@ -559,7 +546,7 @@ VCMCodecDataBase::RegisterExternalDecoder(VideoDecoder* externalDecoder,
 bool
 VCMCodecDataBase::DecoderRegistered() const
 {
-    return (_decMap.Size() > 0);
+    return !_decMap.empty();
 }
 
 WebRtc_Word32
@@ -584,7 +571,8 @@ VCMCodecDataBase::ReceiveCodec() const
 }
 
 VCMGenericDecoder*
-VCMCodecDataBase::SetDecoder(WebRtc_UWord8 payloadType, VCMDecodedFrameCallback& callback)
+VCMCodecDataBase::SetDecoder(WebRtc_UWord8 payloadType,
+                             VCMDecodedFrameCallback& callback)
 {
     if (payloadType == _receiveCodec.plType || payloadType == 0)
     {
@@ -597,7 +585,8 @@ VCMCodecDataBase::SetDecoder(WebRtc_UWord8 payloadType, VCMDecodedFrameCallback&
         _ptrDecoder = NULL;
         memset(&_receiveCodec, 0, sizeof(VideoCodec));
     }
-    _ptrDecoder = CreateAndInitDecoder(payloadType, _receiveCodec, _currentDecIsExternal);
+    _ptrDecoder = CreateAndInitDecoder(payloadType, _receiveCodec,
+                                       _currentDecIsExternal);
     if (_ptrDecoder == NULL)
     {
         return NULL;
@@ -625,12 +614,15 @@ VCMCodecDataBase::CreateAndInitDecoder(WebRtc_UWord8 payloadType,
         return NULL;
     }
     VCMGenericDecoder* ptrDecoder = NULL;
-    VCMExtDecoderMapItem* externalDecItem = FindExternalDecoderItem(payloadType);
+    VCMExtDecoderMapItem* externalDecItem = FindExternalDecoderItem(
+        payloadType);
     if (externalDecItem != NULL)
     {
         // External codec
-        ptrDecoder = new VCMGenericDecoder(*externalDecItem->_externalDecoderInstance, _id,
-                                           true);
+        ptrDecoder = new VCMGenericDecoder(
+            *externalDecItem->_externalDecoderInstance,
+            _id,
+            true);
         external = true;
     }
     else
@@ -717,10 +709,10 @@ VCMCodecDataBase::ReleaseDecoder(VCMGenericDecoder* decoder) const
 VCMDecoderMapItem*
 VCMCodecDataBase::FindDecoderItem(WebRtc_UWord8 payloadType) const
 {
-    MapItem* item = _decMap.Find(payloadType);
-    if (item != NULL)
+    DecoderMap::const_iterator it = _decMap.find(payloadType);
+    if (it != _decMap.end())
     {
-        return static_cast<VCMDecoderMapItem*>(item->GetItem());
+        return (*it).second;
     }
     return NULL;
 }
@@ -728,10 +720,10 @@ VCMCodecDataBase::FindDecoderItem(WebRtc_UWord8 payloadType) const
 VCMExtDecoderMapItem*
 VCMCodecDataBase::FindExternalDecoderItem(WebRtc_UWord8 payloadType) const
 {
-    MapItem* item = _decExternalMap.Find(payloadType);
-    if (item != NULL)
+    ExternalDecoderMap::const_iterator it = _decExternalMap.find(payloadType);
+    if (it != _decExternalMap.end())
     {
-        return static_cast<VCMExtDecoderMapItem*>(item->GetItem());
+        return (*it).second;
     }
     return NULL;
 }
