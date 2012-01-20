@@ -206,8 +206,9 @@ int main() {
 
           if (fecPacketList.size() != numFecPackets) {
             printf("Error: we requested %u FEC packets, "
-                "but GenerateFEC() produced %ld\n",
-                numFecPackets, fecPacketList.size());
+                "but GenerateFEC() produced %u\n",
+                numFecPackets, 
+                static_cast<WebRtc_UWord32>(fecPacketList.size()));
             return -1;
           }
           memset(mediaLossMask, 0, sizeof(mediaLossMask));
@@ -411,7 +412,8 @@ int main() {
           }
           if (!recoveredPacketList.empty()) {
             printf("Error: excessive number of recovered packets.\n");
-            printf("\t size is:%ld\n", recoveredPacketList.size());
+            printf("\t size is:%u\n",
+                static_cast<WebRtc_UWord32>(recoveredPacketList.size()));
             return -1;
           }
           // -- Teardown --
