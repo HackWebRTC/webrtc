@@ -128,7 +128,7 @@ int WebRtcNetEQ_RecOutInternal(DSPInst_t *inst, WebRtc_Word16 *pw16_outData,
     void *mainInstBackup = inst->main_inst;
 
 #ifdef NETEQ_DELAY_LOGGING
-    int i, j, temp_var;
+    int temp_var;
 #endif
     WebRtc_Word16 dtmfValue = -1;
     WebRtc_Word16 dtmfVolume = -1;

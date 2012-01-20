@@ -263,7 +263,7 @@ int main(int argc, char* argv[])
 		fprintf(stderr,"Could not open file %s for writing\n", outfilename);
 		return(-1);
 	}
-	printf("Output file: %s\n\n",outfilename);
+	printf("Output file: %s\n",outfilename);
 
     // Parse for more arguments, all beginning with '-'
     
@@ -345,8 +345,19 @@ int main(int argc, char* argv[])
   strcpy(ptypesfile, "ptypes.txt");
 #endif
     FILE *ptypeFile = fopen(ptypesfile,"rt");
+    if (!ptypeFile) {
+        // Check if we can find the file at the usual place in the trunk.
+        if (strstr(argv[0], "out/Debug/")) {
+            int path_len = strstr(argv[0], "out/Debug/") - argv[0];
+            strncpy(ptypesfile, argv[0], path_len);
+            ptypesfile[path_len] = '\0';
+            strcat(ptypesfile,
+                   "src/modules/audio_coding/NetEQ/main/test/ptypes.txt");
+            ptypeFile = fopen(ptypesfile,"rt");
+        }
+    }
     CHECK_NOT_NULL(ptypeFile);
-
+    printf("Ptypes file: %s\n\n", ptypesfile);
 
     parsePtypeFile(ptypeFile, &decoders);
     fclose(ptypeFile);
