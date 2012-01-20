@@ -42,6 +42,7 @@ LOCAL_SRC_FILES := \
     vie_manager_base.cc \
     vie_performance_monitor.cc \
     vie_receiver.cc \
+    vie_remb.cc \
     vie_renderer.cc \
     vie_render_manager.cc \
     vie_sender.cc \
