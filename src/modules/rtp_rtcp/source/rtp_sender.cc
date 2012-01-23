@@ -801,8 +801,8 @@ WebRtc_Word32 RTPSender::ReSendPacket(WebRtc_UWord16 packet_id,
     return 0;
   }
 
+  WebRtc_UWord8 data_buffer_rtx[IP_PACKET_SIZE];
   if (_RTX) {
-    WebRtc_UWord8 data_buffer_rtx[IP_PACKET_SIZE];
     buffer_to_send_ptr = data_buffer_rtx;
 
     CriticalSectionScoped cs(_sendCritsect);
