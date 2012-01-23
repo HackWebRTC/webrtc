@@ -38,6 +38,7 @@
         'auto_test/fixtures/before_initialization_fixture.h',
         'auto_test/standard/codec_before_streaming_test.cc',
         'auto_test/standard/codec_test.cc',
+        'auto_test/standard/dtmf_test.cc',
         'auto_test/standard/hardware_before_initializing_test.cc',
         'auto_test/standard/hardware_before_streaming_test.cc',
         'auto_test/standard/hardware_test.cc',
