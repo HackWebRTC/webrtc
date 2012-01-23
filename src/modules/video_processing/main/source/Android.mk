@@ -18,6 +18,7 @@ LOCAL_MODULE := libwebrtc_video_processing
 LOCAL_MODULE_TAGS := optional
 LOCAL_CPP_EXTENSION := .cc
 LOCAL_SRC_FILES := \
+    brighten.cc \
     brightness_detection.cc \
     color_enhancement.cc \
     content_analysis.cc \
