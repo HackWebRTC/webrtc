@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -61,12 +61,11 @@ class CmdArgs
 int MTRxTxTest(CmdArgs& args);
 double NormalDist(double mean, double stdDev);
 
-typedef struct
-{
-        WebRtc_Word8 data[1650]; // max packet size
-        WebRtc_Word32 length;
-        WebRtc_Word64 receiveTime;
-} rtpPacket;
+struct RtpPacket {
+  WebRtc_Word8 data[1650]; // max packet size
+  WebRtc_Word32 length;
+  WebRtc_Word64 receiveTime;
+};
 
 
 // Codec type conversion

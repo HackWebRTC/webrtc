@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -137,10 +137,9 @@ int RtpPlayMT(CmdArgs& args, int releaseTestNo, webrtc::VideoCodecType releaseTe
         printf("Watch %s to verify that the output is reasonable\n", outFilename.c_str());
     }
     RTPPlayer rtpStream(rtpFilename.c_str(), &dataCallback, &clock);
-    ListWrapper payloadTypes;
-    payloadTypes.PushFront(new PayloadCodecTuple(VCM_VP8_PAYLOAD_TYPE,
-                                                 "VP8", kVideoCodecVP8));
-
+    PayloadTypeList payloadTypes;
+    payloadTypes.push_front(new PayloadCodecTuple(VCM_VP8_PAYLOAD_TYPE, "VP8",
+                                                  kVideoCodecVP8));
     Trace::CreateTrace();
     Trace::SetTraceFile("receiverTestTrace.txt");
     Trace::SetLevelFilter(webrtc::kTraceAll);
@@ -151,7 +150,7 @@ int RtpPlayMT(CmdArgs& args, int releaseTestNo, webrtc::VideoCodecType releaseTe
 
     SharedState mtState(*vcm, rtpStream);
 
-    if (rtpStream.Initialize(payloadTypes) < 0)
+    if (rtpStream.Initialize(&payloadTypes) < 0)
     {
         return -1;
     }
@@ -172,10 +171,9 @@ int RtpPlayMT(CmdArgs& args, int releaseTestNo, webrtc::VideoCodecType releaseTe
             &mtState, kNormalPriority, "DecodeThread");
 
     // Register receive codecs in VCM
-    ListItem* item = payloadTypes.First();
-    while (item != NULL)
-    {
-        PayloadCodecTuple* payloadType = static_cast<PayloadCodecTuple*>(item->GetItem());
+    for (PayloadTypeList::iterator it = payloadTypes.begin();
+        it != payloadTypes.end(); ++it) {
+        PayloadCodecTuple* payloadType = *it;
         if (payloadType != NULL)
         {
             VideoCodec codec;
@@ -186,7 +184,6 @@ int RtpPlayMT(CmdArgs& args, int releaseTestNo, webrtc::VideoCodecType releaseTe
                 return -1;
             }
         }
-        item = payloadTypes.Next(item);
     }
 
     if (processingThread != NULL)
@@ -235,17 +232,10 @@ int RtpPlayMT(CmdArgs& args, int releaseTestNo, webrtc::VideoCodecType releaseTe
     waitEvent.Wait(MAX_RUNTIME_MS);
 
     // Tear down
-    item = payloadTypes.First();
-    while (item != NULL)
+    while (!payloadTypes.empty())
     {
-        PayloadCodecTuple* payloadType = static_cast<PayloadCodecTuple*>(item->GetItem());
-        if (payloadType != NULL)
-        {
-            delete payloadType;
-        }
-        ListItem* itemToRemove = item;
-        item = payloadTypes.Next(item);
-        payloadTypes.Erase(itemToRemove);
+        delete payloadTypes.front();
+        payloadTypes.pop_front();
     }
     while (!processingThread->Stop())
     {

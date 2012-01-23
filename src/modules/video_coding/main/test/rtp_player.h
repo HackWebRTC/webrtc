@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -13,48 +13,55 @@
 
 #include "typedefs.h"
 #include "rtp_rtcp.h"
-#include "list_wrapper.h"
 #include "critical_section_wrapper.h"
 #include "video_coding_defines.h"
 #include "modules/video_coding/main/source/tick_time_base.h"
 
 #include <stdio.h>
+#include <list>
 #include <string>
 
 #define HDR_SIZE 8 // rtpplay packet header size in bytes
 #define FIRSTLINELEN 40
 #define RAND_VEC_LENGTH 4096
 
+class PayloadCodecTuple;
+
 struct RawRtpPacket
 {
 public:
-    RawRtpPacket(WebRtc_UWord8* data, WebRtc_UWord16 len);
+    RawRtpPacket(WebRtc_UWord8* rtp_data, WebRtc_UWord16 rtp_length);
     ~RawRtpPacket();
 
-    WebRtc_UWord8* rtpData;
-    WebRtc_UWord16 rtpLen;
-    WebRtc_Word64 resendTimeMs;
+    uint8_t* data;
+    uint16_t length;
+    int64_t resend_time_ms;
 };
 
-class LostPackets : public webrtc::ListWrapper
-{
-public:
-    LostPackets();
-    ~LostPackets();
+typedef std::list<PayloadCodecTuple*> PayloadTypeList;
+typedef std::list<RawRtpPacket*> RtpPacketList;
+typedef RtpPacketList::iterator RtpPacketIterator;
+typedef RtpPacketList::const_iterator ConstRtpPacketIterator;
 
-    WebRtc_UWord32 AddPacket(WebRtc_UWord8* rtpData, WebRtc_UWord16 rtpLen);
-    WebRtc_UWord32 SetResendTime(WebRtc_UWord16 sequenceNumber,
-                                 WebRtc_Word64 resendTime,
-                                 WebRtc_Word64 nowMs);
-    WebRtc_UWord32 TotalNumberOfLosses() const { return _lossCount; };
-    WebRtc_UWord32 NumberOfPacketsToResend() const;
-    void ResentPacket(WebRtc_UWord16 seqNo, WebRtc_Word64 nowMs);
-    void Lock()     {_critSect->Enter();};
-    void Unlock()   {_critSect->Leave();};
-private:
-    webrtc::CriticalSectionWrapper* _critSect;
-    WebRtc_UWord32                  _lossCount;
-    FILE*                           _debugFile;
+class LostPackets {
+ public:
+  LostPackets();
+  ~LostPackets();
+
+  void AddPacket(RawRtpPacket* packet);
+  void SetResendTime(uint16_t sequenceNumber,
+                     int64_t resendTime,
+                     int64_t nowMs);
+  RawRtpPacket* NextPacketToResend(int64_t timeNow);
+  int NumberOfPacketsToResend() const;
+  void SetPacketResent(uint16_t seqNo, int64_t nowMs);
+  void Print() const;
+
+ private:
+  webrtc::CriticalSectionWrapper* crit_sect_;
+  int loss_count_;
+  FILE* debug_file_;
+  RtpPacketList packets_;
 };
 
 struct PayloadCodecTuple
@@ -74,7 +81,7 @@ public:
               webrtc::TickTimeBase* clock);
     virtual ~RTPPlayer();
 
-    WebRtc_Word32 Initialize(const webrtc::ListWrapper& payloadList);
+    WebRtc_Word32 Initialize(const PayloadTypeList* payloadList);
     WebRtc_Word32 NextPacket(const WebRtc_Word64 timeNow);
     WebRtc_UWord32 TimeUntilNextPacket() const;
     WebRtc_Word32 SimulatePacketLoss(float lossRate, bool enableNack = false, WebRtc_UWord32 rttMs = 0);

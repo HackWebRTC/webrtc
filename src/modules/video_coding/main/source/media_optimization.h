@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -11,7 +11,6 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_MEDIA_OPTIMIZATION_H_
 #define WEBRTC_MODULES_VIDEO_CODING_MEDIA_OPTIMIZATION_H_
 
-#include "list_wrapper.h"
 #include "module_common_types.h"
 #include "video_coding.h"
 #include "trace.h"

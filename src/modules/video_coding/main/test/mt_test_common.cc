@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -56,7 +56,7 @@ TransportCallback::SendPacket(int channel, const void *data, int len)
     // Insert outgoing packet into list
     if (transmitPacket)
     {
-        rtpPacket* newPacket = new rtpPacket();
+        RtpPacket* newPacket = new RtpPacket();
         memcpy(newPacket->data, data, len);
         newPacket->length = len;
         // Simulate receive time = network delay + packet jitter
@@ -66,7 +66,7 @@ TransportCallback::SendPacket(int channel, const void *data, int len)
         simulatedDelay = (WebRtc_Word32)NormalDist(_networkDelayMs,
                                                    sqrt(_jitterVar));
         newPacket->receiveTime = now + simulatedDelay;
-        _rtpPackets.PushBack(newPacket);
+        _rtpPackets.push_back(newPacket);
     }
     return 0;
 }
@@ -75,14 +75,14 @@ int
 TransportCallback::TransportPackets()
 {
     // Are we ready to send packets to the receiver?
-    rtpPacket* packet = NULL;
+    RtpPacket* packet = NULL;
     TickTimeBase clock;
     int64_t now = clock.MillisecondTimestamp();
 
-    while (!_rtpPackets.Empty())
+    while (!_rtpPackets.empty())
     {
         // Take first packet in list
-        packet = static_cast<rtpPacket*>((_rtpPackets.First())->GetItem());
+        packet = _rtpPackets.front();
         WebRtc_Word64 timeToReceive = packet->receiveTime - now;
         if (timeToReceive > 0)
         {
@@ -90,7 +90,7 @@ TransportCallback::TransportPackets()
             break;
         }
 
-        _rtpPackets.PopFront();
+        _rtpPackets.pop_front();
         // Send to receive side
         if (_rtp->IncomingPacket((const WebRtc_UWord8*)packet->data,
                                      packet->length) < 0)

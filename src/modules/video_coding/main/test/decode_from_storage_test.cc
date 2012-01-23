@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -83,14 +83,14 @@ int DecodeFromStorageTest(CmdArgs& args)
     vcm->RegisterFrameStorageCallback(&storageCallback);
     vcmPlayback->RegisterReceiveCallback(&receiveCallback);
     RTPPlayer rtpStream(rtpFilename.c_str(), &dataCallback, &clock);
-    ListWrapper payloadTypes;
-    payloadTypes.PushFront(new PayloadCodecTuple(VCM_VP8_PAYLOAD_TYPE, "VP8", kVideoCodecVP8));
+    PayloadTypeList payloadTypes;
+    payloadTypes.push_front(new PayloadCodecTuple(VCM_VP8_PAYLOAD_TYPE, "VP8",
+                                                  kVideoCodecVP8));
 
     // Register receive codecs in VCM
-    ListItem* item = payloadTypes.First();
-    while (item != NULL)
-    {
-        PayloadCodecTuple* payloadType = static_cast<PayloadCodecTuple*>(item->GetItem());
+    for (PayloadTypeList::iterator it = payloadTypes.begin();
+        it != payloadTypes.end(); ++it) {
+        PayloadCodecTuple* payloadType = *it;
         if (payloadType != NULL)
         {
             VideoCodec codec;
@@ -108,9 +108,8 @@ int DecodeFromStorageTest(CmdArgs& args)
                 return -1;
             }
         }
-        item = payloadTypes.Next(item);
     }
-    if (rtpStream.Initialize(payloadTypes) < 0)
+    if (rtpStream.Initialize(&payloadTypes) < 0)
     {
         return -1;
     }
@@ -163,17 +162,10 @@ int DecodeFromStorageTest(CmdArgs& args)
     rtpStream.Print();
 
     // Tear down
-    item = payloadTypes.First();
-    while (item != NULL)
+    while (!payloadTypes.empty())
     {
-        PayloadCodecTuple* payloadType = static_cast<PayloadCodecTuple*>(item->GetItem());
-        if (payloadType != NULL)
-        {
-            delete payloadType;
-        }
-        ListItem* itemToRemove = item;
-        item = payloadTypes.Next(item);
-        payloadTypes.Erase(itemToRemove);
+        delete payloadTypes.front();
+        payloadTypes.pop_front();
     }
     VideoCodingModule::Destroy(vcm);
     vcm = NULL;

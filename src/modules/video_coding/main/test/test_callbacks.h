@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -16,11 +16,11 @@
  */
 
 
+#include <string.h>
 #include <cstdlib>
 #include <fstream>
-#include <string.h>
+#include <list>
 
-#include "list_wrapper.h"
 #include "module_common_types.h"
 #include "rtp_rtcp.h"
 #include "test_util.h"
@@ -29,7 +29,7 @@
 
 namespace webrtc
 {
-    class RtpDump;
+class RtpDump;
 
 // Send Side - Packetization callback - send an encoded frame to the VCMReceiver
 class VCMEncodeCompleteCallback: public VCMPacketizationCallback
@@ -147,7 +147,6 @@ private:
     WebRtc_UWord32      _decodedBytes;
 }; // end of VCMDecodeCompleCallback class
 
-
 // Transport callback
 // Called by the RTP Sender - simulates sending packets through a network to the
 // RTP receiver. User can set network conditions as: RTT, packet loss,
@@ -192,7 +191,7 @@ protected:
     double                  _jitterVar;
     bool                    _prevLossState;
     WebRtc_UWord32          _totalSentLength;
-    ListWrapper             _rtpPackets;
+    std::list<RtpPacket*>   _rtpPackets;
     RtpDump*                _rtpDump;
 };
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -25,113 +25,114 @@
 
 using namespace webrtc;
 
-RawRtpPacket::RawRtpPacket(WebRtc_UWord8* data, WebRtc_UWord16 len)
-:
-rtpData(), rtpLen(len), resendTimeMs(-1)
-{
-    rtpData = new WebRtc_UWord8[rtpLen];
-    memcpy(rtpData, data, rtpLen);
+RawRtpPacket::RawRtpPacket(uint8_t* rtp_data, uint16_t rtp_length)
+    : data(rtp_data),
+      length(rtp_length),
+      resend_time_ms(-1) {
+  data = new uint8_t[length];
+  memcpy(data, rtp_data, length);
 }
 
-RawRtpPacket::~RawRtpPacket()
-{
-    delete [] rtpData;
+RawRtpPacket::~RawRtpPacket() {
+  delete [] data;
 }
 
 LostPackets::LostPackets()
-:
-_critSect(CriticalSectionWrapper::CreateCriticalSection()),
-_lossCount(0),
-_debugFile(NULL)
-{
-    _debugFile = fopen("PacketLossDebug.txt", "w");
+    : crit_sect_(CriticalSectionWrapper::CreateCriticalSection()),
+      loss_count_(0),
+      debug_file_(NULL),
+      packets_() {
+  debug_file_ = fopen("PacketLossDebug.txt", "w");
 }
 
-LostPackets::~LostPackets()
-{
-    if (_debugFile)
-    {
-        fclose(_debugFile);
-    }
-    ListItem* item = First();
-    while (item != NULL)
-    {
-        RawRtpPacket* packet = static_cast<RawRtpPacket*>(item->GetItem());
-        if (packet != NULL)
-        {
-            delete packet;
+LostPackets::~LostPackets() {
+  if (debug_file_) {
+      fclose(debug_file_);
+  }
+  while (!packets_.empty()) {
+    delete packets_.front();
+    packets_.pop_front();
+  }
+  delete crit_sect_;
+}
+
+void LostPackets::AddPacket(RawRtpPacket* packet) {
+  CriticalSectionScoped cs(crit_sect_);
+  packets_.push_back(packet);
+  uint16_t seq_num = (packet->data[2] << 8) + packet->data[3];
+  if (debug_file_ != NULL) {
+    fprintf(debug_file_, "%u Lost packet: %u\n", loss_count_, seq_num);
+  }
+  ++loss_count_;
+}
+
+void LostPackets::SetResendTime(uint16_t resend_seq_num,
+                                int64_t resend_time_ms,
+                                int64_t now_ms) {
+  CriticalSectionScoped cs(crit_sect_);
+  for (RtpPacketIterator it = packets_.begin(); it != packets_.end(); ++it) {
+    const uint16_t seq_num = ((*it)->data[2] << 8) +
+        (*it)->data[3];
+    if (resend_seq_num == seq_num) {
+      if ((*it)->resend_time_ms + 10 < now_ms) {
+        if (debug_file_ != NULL) {
+          fprintf(debug_file_, "Resend %u at %u\n", seq_num,
+                  MaskWord64ToUWord32(resend_time_ms));
         }
-        Erase(item);
-        item = First();
+        (*it)->resend_time_ms = resend_time_ms;
+      }
+      return;
     }
-    delete _critSect;
+  }
+  assert(false);
 }
 
-WebRtc_UWord32 LostPackets::AddPacket(WebRtc_UWord8* rtpData, WebRtc_UWord16 rtpLen)
-{
-    CriticalSectionScoped cs(_critSect);
-    RawRtpPacket* packet = new RawRtpPacket(rtpData, rtpLen);
-    ListItem* newItem = new ListItem(packet);
-    Insert(Last(), newItem);
-    const WebRtc_UWord16 seqNo = (rtpData[2] << 8) + rtpData[3];
-    if (_debugFile != NULL)
-    {
-        fprintf(_debugFile, "%u Lost packet: %u\n", _lossCount, seqNo);
+RawRtpPacket* LostPackets::NextPacketToResend(int64_t timeNow) {
+  CriticalSectionScoped cs(crit_sect_);
+  for (RtpPacketIterator it = packets_.begin(); it != packets_.end(); ++it) {
+    if (timeNow >= (*it)->resend_time_ms && (*it)->resend_time_ms != -1) {
+      RawRtpPacket* packet = *it;
+      it = packets_.erase(it);
+      return packet;
     }
-    _lossCount++;
-    return 0;
+  }
+  return NULL;
 }
 
-WebRtc_UWord32 LostPackets::SetResendTime(WebRtc_UWord16 sequenceNumber,
-                                          WebRtc_Word64 resendTime,
-                                          WebRtc_Word64 nowMs)
-{
-    CriticalSectionScoped cs(_critSect);
-    ListItem* item = First();
-    while (item != NULL)
-    {
-        RawRtpPacket* packet = static_cast<RawRtpPacket*>(item->GetItem());
-        const WebRtc_UWord16 seqNo = (packet->rtpData[2] << 8) + packet->rtpData[3];
-        if (sequenceNumber == seqNo && packet->resendTimeMs + 10 < nowMs)
-        {
-            if (_debugFile != NULL)
-            {
-                fprintf(_debugFile, "Resend %u at %u\n", seqNo, MaskWord64ToUWord32(resendTime));
-            }
-            packet->resendTimeMs = resendTime;
-            return 0;
-        }
-        item = Next(item);
+int LostPackets::NumberOfPacketsToResend() const {
+  CriticalSectionScoped cs(crit_sect_);
+  int count = 0;
+  for (ConstRtpPacketIterator it = packets_.begin(); it != packets_.end();
+      ++it) {
+    if ((*it)->resend_time_ms >= 0) {
+        count++;
     }
-    fprintf(_debugFile, "Packet not lost %u\n", sequenceNumber);
-    return -1;
+  }
+  return count;
 }
 
-WebRtc_UWord32 LostPackets::NumberOfPacketsToResend() const
-{
-    CriticalSectionScoped cs(_critSect);
-    WebRtc_UWord32 count = 0;
-    ListItem* item = First();
-    while (item != NULL)
-    {
-        RawRtpPacket* packet = static_cast<RawRtpPacket*>(item->GetItem());
-        if (packet->resendTimeMs >= 0)
-        {
-            count++;
-        }
-        item = Next(item);
-    }
-    return count;
+void LostPackets::SetPacketResent(uint16_t seq_num, int64_t now_ms) {
+  CriticalSectionScoped cs(crit_sect_);
+  if (debug_file_ != NULL) {
+    fprintf(debug_file_, "Resent %u at %u\n", seq_num,
+            MaskWord64ToUWord32(now_ms));
+  }
 }
 
-void LostPackets::ResentPacket(WebRtc_UWord16 seqNo, WebRtc_Word64 nowMs)
-{
-    CriticalSectionScoped cs(_critSect);
-    if (_debugFile != NULL)
-    {
-        fprintf(_debugFile, "Resent %u at %u\n", seqNo,
-                MaskWord64ToUWord32(nowMs));
-    }
+void LostPackets::Print() const {
+  CriticalSectionScoped cs(crit_sect_);
+  printf("Lost packets: %u\n", loss_count_);
+  printf("Packets waiting to be resent: %u\n",
+         NumberOfPacketsToResend());
+  printf("Packets still lost: %u\n",
+         static_cast<unsigned int>(packets_.size()));
+  printf("Sequence numbers:\n");
+  for (ConstRtpPacketIterator it = packets_.begin(); it != packets_.end();
+      ++it) {
+    uint16_t seq_num = ((*it)->data[2] << 8) + (*it)->data[3];
+    printf("%u, ", seq_num);
+  }
+  printf("\n");
 }
 
 RTPPlayer::RTPPlayer(const char* filename,
@@ -176,7 +177,7 @@ RTPPlayer::~RTPPlayer()
     }
 }
 
-WebRtc_Word32 RTPPlayer::Initialize(const ListWrapper& payloadList)
+WebRtc_Word32 RTPPlayer::Initialize(const PayloadTypeList* payloadList)
 {
     std::srand(321);
     for (int i=0; i < RAND_VEC_LENGTH; i++)
@@ -205,10 +206,9 @@ WebRtc_Word32 RTPPlayer::Initialize(const ListWrapper& payloadList)
         return -1;
     }
     // Register payload types
-    ListItem* item = payloadList.First();
-    while (item != NULL)
-    {
-        PayloadCodecTuple* payloadType = static_cast<PayloadCodecTuple*>(item->GetItem());
+    for (PayloadTypeList::const_iterator it = payloadList->begin();
+        it != payloadList->end(); ++it) {
+        PayloadCodecTuple* payloadType = *it;
         if (payloadType != NULL)
         {
             VideoCodec videoCodec;
@@ -219,7 +219,6 @@ WebRtc_Word32 RTPPlayer::Initialize(const ListWrapper& payloadList)
                 return -1;
             }
         }
-        item = payloadList.Next(item);
     }
     if (ReadHeader() < 0)
     {
@@ -286,43 +285,21 @@ WebRtc_UWord32 RTPPlayer::TimeUntilNextPacket() const
 
 WebRtc_Word32 RTPPlayer::NextPacket(const WebRtc_Word64 timeNow)
 {
-    // Send any packets ready to be resent
-    _lostPackets.Lock();
-    ListItem* item = _lostPackets.First();
-    _lostPackets.Unlock();
-    while (item != NULL)
-    {
-        _lostPackets.Lock();
-        RawRtpPacket* packet = static_cast<RawRtpPacket*>(item->GetItem());
-        _lostPackets.Unlock();
-        if (timeNow >= packet->resendTimeMs && packet->resendTimeMs != -1)
-        {
-            const WebRtc_UWord16 seqNo = (packet->rtpData[2] << 8) + packet->rtpData[3];
-            printf("Resend: %u\n", seqNo);
-            WebRtc_Word32 ret = SendPacket(packet->rtpData, packet->rtpLen);
-            ListItem* itemToRemove = item;
-            _lostPackets.Lock();
-            item = _lostPackets.Next(item);
-            _lostPackets.Erase(itemToRemove);
-            delete packet;
-            _lostPackets.Unlock();
-            _resendPacketCount++;
-            if (ret > 0)
-            {
-                _lostPackets.ResentPacket(seqNo,
-                                          _clock->MillisecondTimestamp());
-            }
-            else if (ret < 0)
-            {
-                return ret;
-            }
-        }
-        else
-        {
-            _lostPackets.Lock();
-            item = _lostPackets.Next(item);
-            _lostPackets.Unlock();
-        }
+    // Send any packets ready to be resent,
+    RawRtpPacket* resend_packet = _lostPackets.NextPacketToResend(timeNow);
+    while (resend_packet != NULL) {
+      const uint16_t seqNo = (resend_packet->data[2] << 8) +
+          resend_packet->data[3];
+      printf("Resend: %u\n", seqNo);
+      int ret = SendPacket(resend_packet->data, resend_packet->length);
+      delete resend_packet;
+      _resendPacketCount++;
+      if (ret > 0) {
+        _lostPackets.SetPacketResent(seqNo, _clock->MillisecondTimestamp());
+      } else if (ret < 0) {
+        return ret;
+      }
+      resend_packet = _lostPackets.NextPacketToResend(timeNow);
     }
 
     // Send any packets from rtp file
@@ -344,7 +321,7 @@ WebRtc_Word32 RTPPlayer::NextPacket(const WebRtc_Word64 timeNow)
         {
             RawRtpPacket* rtpPacket = _reorderBuffer;
             _reorderBuffer = NULL;
-            SendPacket(rtpPacket->rtpData, rtpPacket->rtpLen);
+            SendPacket(rtpPacket->data, rtpPacket->length);
             delete rtpPacket;
         }
         _firstPacket = false;
@@ -379,11 +356,11 @@ WebRtc_Word32 RTPPlayer::SendPacket(WebRtc_UWord8* rtpData, WebRtc_UWord16 rtpLe
         {
             const WebRtc_UWord16 seqNo = (rtpData[2] << 8) + rtpData[3];
             printf("Throw: %u\n", seqNo);
-            _lostPackets.AddPacket(rtpData, rtpLen);
+            _lostPackets.AddPacket(new RawRtpPacket(rtpData, rtpLen));
             return 0;
         }
     }
-    else
+    else if (rtpLen > 0)
     {
         WebRtc_Word32 ret = _rtpModule.IncomingPacket(rtpData, rtpLen);
         if (ret < 0)
@@ -461,17 +438,6 @@ WebRtc_Word32 RTPPlayer::ResendPackets(const WebRtc_UWord16* sequenceNumbers, We
 
 void RTPPlayer::Print() const
 {
-    printf("Lost packets: %u, resent packets: %u\n", _lostPackets.TotalNumberOfLosses(), _resendPacketCount);
-    printf("Packets still lost: %u\n", _lostPackets.GetSize());
-    printf("Packets waiting to be resent: %u\n", _lostPackets.NumberOfPacketsToResend());
-    printf("Sequence numbers:\n");
-    ListItem* item = _lostPackets.First();
-    while (item != NULL)
-    {
-        RawRtpPacket* packet = static_cast<RawRtpPacket*>(item->GetItem());
-        const WebRtc_UWord16 seqNo = (packet->rtpData[2] << 8) + packet->rtpData[3];
-        printf("%u, ", seqNo);
-        item = _lostPackets.Next(item);
-    }
-    printf("\n");
+    printf("Resent packets: %u\n", _resendPacketCount);
+    _lostPackets.Print();
 }
