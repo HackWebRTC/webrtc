@@ -206,7 +206,7 @@ int VideoEngine::SetTraceCallback(TraceCallback* callback) {
   return Trace::SetTraceCallback(callback);
 }
 
-int VideoEngine::SetAndroidObjects(void* javaVM, void* java_context) {
+int VideoEngine::SetAndroidObjects(void* javaVM, void* javaContext) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVideo, g_vie_active_instance_counter,
                "SetAndroidObjects()");
 
