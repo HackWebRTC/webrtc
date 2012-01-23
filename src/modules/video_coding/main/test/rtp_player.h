@@ -25,7 +25,7 @@
 #define FIRSTLINELEN 40
 #define RAND_VEC_LENGTH 4096
 
-class PayloadCodecTuple;
+struct PayloadCodecTuple;
 
 struct RawRtpPacket
 {
