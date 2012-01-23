@@ -415,7 +415,7 @@ namespace webrtc
 
   #define ANDROID_NOT_SUPPORTED(stat)                         \
       stat.SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,   \
-                                   "API call not supported"); \
+                        "API call not supported");            \
       return -1;
 
 #else // LINUX PC
