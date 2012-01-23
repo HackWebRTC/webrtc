@@ -138,7 +138,7 @@ int32_t RTPPacketHistory::PutRTPPacket(const uint8_t* packet,
   // Store packet
   std::vector<std::vector<uint8_t> >::iterator it =
       stored_packets_.begin() + prev_index_;
-  copy(packet, packet + packet_length, it->begin());
+  std::copy(packet, packet + packet_length, it->begin());
 
   stored_seq_nums_[prev_index_] = seq_num;
   stored_lengths_[prev_index_] = packet_length;
@@ -218,7 +218,7 @@ bool RTPPacketHistory::GetRTPPacket(uint16_t sequence_number,
   // Get packet.
   std::vector<std::vector<uint8_t> >::const_iterator it_found_packet =
       stored_packets_.begin() + index;
-  copy(it_found_packet->begin(), it_found_packet->begin() + length, packet);
+  std::copy(it_found_packet->begin(), it_found_packet->begin() + length, packet);
   *packet_length = stored_lengths_.at(index);
   *stored_time_ms = stored_times_.at(index);
   *type = stored_types_.at(index);

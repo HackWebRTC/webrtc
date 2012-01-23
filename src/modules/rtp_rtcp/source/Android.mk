@@ -27,6 +27,7 @@ LOCAL_SRC_FILES := \
     rtp_receiver.cc \
     rtp_sender.cc \
     rtp_utility.cc \
+    rtp_header_extension.cc \
     ssrc_database.cc \
     tmmbr_help.cc \
     dtmf_queue.cc \
@@ -37,10 +38,13 @@ LOCAL_SRC_FILES := \
     forward_error_correction_internal.cc \
     overuse_detector.cc \
     remote_rate_control.cc \
+    rtp_packet_history.cc \
     receiver_fec.cc \
     rtp_receiver_video.cc \
     rtp_sender_video.cc \
-    rtp_format_vp8.cc
+    rtp_format_vp8.cc \
+    transmission_bucket.cc \
+    vp8_partition_aggregator.cc
 
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \
