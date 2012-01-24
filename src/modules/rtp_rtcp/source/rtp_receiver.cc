@@ -992,12 +992,12 @@ bool RTPReceiver::RetransmitOfOldPacket(
   WebRtc_Word32 maxDelayMs = 0;
   _rtpRtcp.RTT(_SSRC, NULL, NULL, &minRTT, NULL);
   if (minRTT == 0) {
-    WebRtc_UWord32 jitter = _jitterQ4 >> 4;  // Jitter variance in samples.
+    float jitter = _jitterQ4 >> 4;  // Jitter variance in samples.
     // Jitter standard deviation in samples.
-    WebRtc_UWord32 jitterStd = sqrt(jitter);
+    float jitterStd = sqrt(jitter);
     // 2 times the std deviation => 95% confidence.
     // And transform to ms by dividing by the frequency in kHz.
-    maxDelayMs = (2 * jitterStd) / frequencyKHz;
+    maxDelayMs = static_cast<WebRtc_Word32>((2 * jitterStd) / frequencyKHz);
 
     // Min maxDelayMs is 1.
     if (maxDelayMs == 0) {
