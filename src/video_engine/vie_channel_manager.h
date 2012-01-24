@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -12,9 +12,9 @@
 #define WEBRTC_VIDEO_ENGINE_VIE_CHANNEL_MANAGER_H_
 
 #include <list>
+#include <map>
 
 #include "engine_configurations.h"
-#include "system_wrappers/interface/map_wrapper.h"
 #include "system_wrappers/interface/scoped_ptr.h"
 #include "typedefs.h"
 #include "video_engine/vie_defines.h"
@@ -23,6 +23,7 @@
 namespace webrtc {
 
 class CriticalSectionWrapper;
+class MapWrapper;
 class ProcessThread;
 class ViEChannel;
 class ViEEncoder;
@@ -32,6 +33,8 @@ class VoEVideoSync;
 class VoiceEngine;
 
 typedef std::list<ViEChannel*> ChannelList;
+typedef std::map<int, ViEChannel*> ChannelMap;
+typedef std::map<int, ViEEncoder*> EncoderMap;
 
 class ViEChannelManager: private ViEManagerBase {
   friend class ViEChannelManagerScoped;
@@ -95,12 +98,12 @@ class ViEChannelManager: private ViEManagerBase {
   int engine_id_;
   int number_of_cores_;
   ViEPerformanceMonitor& vie_performance_monitor_;
-  MapWrapper channel_map_;
+  ChannelMap channel_map_;
   bool* free_channel_ids_;
   int free_channel_ids_size_;
 
   // Maps Channel id -> ViEEncoder.
-  MapWrapper vie_encoder_map_;
+  EncoderMap vie_encoder_map_;
   VoEVideoSync* voice_sync_interface_;
   scoped_ptr<VieRemb> remb_;
   VoiceEngine* voice_engine_;

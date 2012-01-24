@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -14,6 +14,7 @@
 #include "modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "modules/utility/interface/process_thread.h"
 #include "system_wrappers/interface/critical_section_wrapper.h"
+#include "system_wrappers/interface/map_wrapper.h"
 #include "system_wrappers/interface/trace.h"
 #include "video_engine/vie_channel.h"
 #include "video_engine/vie_defines.h"
@@ -50,11 +51,11 @@ ViEChannelManager::~ViEChannelManager() {
                "ViEChannelManager Destructor, engine_id: %d", engine_id_);
 
   module_process_thread_->DeRegisterModule(remb_.get());
-  while (channel_map_.Size() != 0) {
-    MapItem* item = channel_map_.First();
-    const int channel_id = item->GetId();
-    item = NULL;
-    DeleteChannel(channel_id);
+  ChannelMap::iterator it = channel_map_.begin();
+  while (it != channel_map_.end()) {
+    DeleteChannel(it->first);
+    channel_map_.erase(it);
+    it = channel_map_.begin();
   }
 
   if (voice_sync_interface_) {
@@ -84,7 +85,7 @@ int ViEChannelManager::CreateChannel(int& channel_id) {
   // Get a free id for the new channel.
   if (!GetFreeChannelId(channel_id)) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_),
-                 "Max number of channels reached: %d", channel_map_.Size());
+                 "Max number of channels reached: %d", channel_map_.size());
     return -1;
   }
 
@@ -116,22 +117,15 @@ int ViEChannelManager::CreateChannel(int& channel_id) {
     return -1;
   }
 
-  if (vie_encoder_map_.Insert(channel_id, vie_encoder) != 0) {
-    // Could not add to the map.
-    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_),
-                 "%s: Could not add new encoder for video channel %d",
-                 __FUNCTION__, channel_id);
-    delete vie_channel;
-    delete vie_encoder;
-    return -1;
-  }
-  channel_map_.Insert(channel_id, vie_channel);
+  vie_encoder_map_[channel_id] = vie_encoder;
+  channel_map_[channel_id] = vie_channel;
+
   // Register the channel at the encoder.
   RtpRtcp* send_rtp_rtcp_module = vie_encoder->SendRtpRtcpModule();
   if (vie_channel->RegisterSendRtpRtcpModule(*send_rtp_rtcp_module) != 0) {
     assert(false);
-    vie_encoder_map_.Erase(channel_id);
-    channel_map_.Erase(channel_id);
+    vie_encoder_map_.erase(channel_id);
+    channel_map_.erase(channel_id);
     ReturnChannelId(channel_id);
     delete vie_channel;
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id),
@@ -167,7 +161,7 @@ int ViEChannelManager::CreateChannel(int& channel_id, int original_channel) {
   // Get a free id for the new channel.
   if (GetFreeChannelId(channel_id) == false) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_),
-                 "Max number of channels reached: %d", channel_map_.Size());
+                 "Max number of channels reached: %d", channel_map_.size());
     return -1;
   }
   ViEChannel* vie_channel = new ViEChannel(channel_id, engine_id_,
@@ -185,14 +179,7 @@ int ViEChannelManager::CreateChannel(int& channel_id, int original_channel) {
     vie_channel = NULL;
     return -1;
   }
-  if (vie_encoder_map_.Insert(channel_id, vie_encoder) != 0) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_),
-                 "%s: Could not add new encoder for video channel %d",
-                 __FUNCTION__, channel_id);
-    ReturnChannelId(channel_id);
-    delete vie_channel;
-    return -1;
-  }
+  vie_encoder_map_[channel_id] = vie_encoder;
 
   // Set the same encoder settings for the channel as used by the master
   // channel. Do this before attaching rtp module to ensure all rtp children has
@@ -201,14 +188,14 @@ int ViEChannelManager::CreateChannel(int& channel_id, int original_channel) {
   if (vie_encoder->GetEncoder(encoder) == 0) {
     vie_channel->SetSendCodec(encoder);
   }
-  channel_map_.Insert(channel_id, vie_channel);
+  channel_map_[channel_id] = vie_channel;
 
   // Register the channel at the encoder.
   RtpRtcp* send_rtp_rtcp_module = vie_encoder->SendRtpRtcpModule();
   if (vie_channel->RegisterSendRtpRtcpModule(*send_rtp_rtcp_module) != 0) {
     assert(false);
-    vie_encoder_map_.Erase(channel_id);
-    channel_map_.Erase(channel_id);
+    vie_encoder_map_.erase(channel_id);
+    channel_map_.erase(channel_id);
     ReturnChannelId(channel_id);
     delete vie_channel;
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id),
@@ -228,16 +215,15 @@ int ViEChannelManager::DeleteChannel(int channel_id) {
 
     // Protect the map.
     CriticalSectionScoped cs(*channel_id_critsect_);
-
-    MapItem* map_item = channel_map_.Find(channel_id);
-    if (!map_item) {
+    ChannelMap::iterator c_it = channel_map_.find(channel_id);
+    if (c_it == channel_map_.end()) {
       // No such channel.
       WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_),
                    "%s Channel doesn't exist: %d", __FUNCTION__, channel_id);
       return -1;
     }
-    vie_channel = reinterpret_cast<ViEChannel*>(map_item->GetItem());
-    channel_map_.Erase(map_item);
+    vie_channel = c_it->second;
+    channel_map_.erase(c_it);
 
     // Deregister possible remb modules.
     RtpRtcp* rtp_module = vie_channel->rtp_rtcp();
@@ -249,17 +235,9 @@ int ViEChannelManager::DeleteChannel(int channel_id) {
     ReturnChannelId(channel_id);
 
     // Find the encoder object.
-    map_item = vie_encoder_map_.Find(channel_id);
-    if (!map_item) {
-      assert(false);
-      WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_),
-                   "%s ViEEncoder not found for channel %d", __FUNCTION__,
-                   channel_id);
-      return -1;
-    }
-
-    // Get the ViEEncoder item.
-    vie_encoder = reinterpret_cast<ViEEncoder*>(map_item->GetItem());
+    EncoderMap::iterator e_it = vie_encoder_map_.find(channel_id);
+    assert(e_it != vie_encoder_map_.end());
+    vie_encoder = e_it->second;
 
     // Check if other channels are using the same encoder.
     if (ChannelUsingViEEncoder(channel_id)) {
@@ -277,7 +255,7 @@ int ViEChannelManager::DeleteChannel(int channel_id) {
 
     // We can't erase the item before we've checked for other channels using
     // same ViEEncoder.
-    vie_encoder_map_.Erase(map_item);
+    vie_encoder_map_.erase(e_it);
   }
 
   // Leave the write critsect before deleting the objects.
@@ -311,11 +289,9 @@ int ViEChannelManager::SetVoiceEngine(VoiceEngine* voice_engine) {
     }
   }
 
-  for (MapItem* item = channel_map_.First(); item != NULL;
-       item = channel_map_.Next(item)) {
-    ViEChannel* channel = static_cast<ViEChannel*>(item->GetItem());
-    assert(channel);
-    channel->SetVoiceChannel(-1, sync_interface);
+  for (ChannelMap::iterator it = channel_map_.begin(); it != channel_map_.end();
+       ++it) {
+    it->second->SetVoiceChannel(-1, sync_interface);
   }
   if (voice_sync_interface_) {
     voice_sync_interface_->Release();
@@ -388,15 +364,13 @@ bool ViEChannelManager::SetRembStatus(int channel_id, bool sender,
 
 ViEChannel* ViEChannelManager::ViEChannelPtr(int channel_id) const {
   CriticalSectionScoped cs(*channel_id_critsect_);
-  MapItem* map_item = channel_map_.Find(channel_id);
-  if (!map_item) {
-    // No such channel.
+  ChannelMap::const_iterator it = channel_map_.find(channel_id);
+  if (it == channel_map_.end()) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_),
                  "%s Channel doesn't exist: %d", __FUNCTION__, channel_id);
     return NULL;
   }
-  ViEChannel* vie_channel = reinterpret_cast<ViEChannel*>(map_item->GetItem());
-  return vie_channel;
+  return it->second;
 }
 
 void ViEChannelManager::GetViEChannels(MapWrapper& channel_map) {
@@ -406,21 +380,19 @@ void ViEChannelManager::GetViEChannels(MapWrapper& channel_map) {
   }
 
   // Add all items to 'channelMap'.
-  for (MapItem* item = channel_map_.First(); item != NULL;
-       item = channel_map_.Next(item)) {
-    channel_map.Insert(item->GetId(), item->GetItem());
+  for (ChannelMap::iterator it = channel_map_.begin(); it != channel_map_.end();
+       ++it) {
+    channel_map.Insert(it->first, it->second);
   }
-  return;
 }
 
 ViEEncoder* ViEChannelManager::ViEEncoderPtr(int video_channel_id) const {
   CriticalSectionScoped cs(*channel_id_critsect_);
-  MapItem* map_item = vie_encoder_map_.Find(video_channel_id);
-  if (!map_item) {
+  EncoderMap::const_iterator it = vie_encoder_map_.find(video_channel_id);
+  if (it == vie_encoder_map_.end()) {
     return NULL;
   }
-  ViEEncoder* vie_encoder = static_cast<ViEEncoder*>(map_item->GetItem());
-  return vie_encoder;
+  return it->second;
 }
 
 bool ViEChannelManager::GetFreeChannelId(int& free_channel_id) {
@@ -449,24 +421,22 @@ void ViEChannelManager::ReturnChannelId(int channel_id) {
 
 bool ViEChannelManager::ChannelUsingViEEncoder(int channel_id) const {
   CriticalSectionScoped cs(*channel_id_critsect_);
-  MapItem* channel_item = vie_encoder_map_.Find(channel_id);
-  if (!channel_item) {
+  EncoderMap::const_iterator orig_it = vie_encoder_map_.find(channel_id);
+  if(orig_it == vie_encoder_map_.end()) {
     // No ViEEncoder for this channel.
     return false;
   }
-  ViEEncoder* channel_encoder =
-      static_cast<ViEEncoder*>(channel_item->GetItem());
 
   // Loop through all other channels to see if anyone points at the same
   // ViEEncoder.
-  MapItem* map_item = vie_encoder_map_.First();
-  while (map_item) {
-    if (map_item->GetId() != channel_id) {
-      if (channel_encoder == static_cast<ViEEncoder*>(map_item->GetItem())) {
+  for (EncoderMap::const_iterator comp_it = vie_encoder_map_.begin();
+       comp_it != vie_encoder_map_.end(); ++comp_it) {
+    // Make sure we're not comparing the same channel with itself.
+    if (comp_it->first != channel_id) {
+      if (comp_it->second == orig_it->second) {
         return true;
       }
     }
-    map_item = vie_encoder_map_.Next(map_item);
   }
   return false;
 }
@@ -474,21 +444,15 @@ bool ViEChannelManager::ChannelUsingViEEncoder(int channel_id) const {
 void ViEChannelManager::ChannelsUsingViEEncoder(int channel_id,
                                                 ChannelList* channels) const {
   CriticalSectionScoped cs(*channel_id_critsect_);
-  MapItem* original_item = vie_encoder_map_.Find(channel_id);
-  assert(original_item);
-  ViEEncoder* original_encoder =
-      static_cast<ViEEncoder*>(original_item->GetItem());
+  EncoderMap::const_iterator orig_it = vie_encoder_map_.find(channel_id);
 
-  MapItem* channel_item = channel_map_.First();
-  while (channel_item) {
-    MapItem* compare_item = vie_encoder_map_.Find(channel_item->GetId());
-    assert(compare_item);
-    ViEEncoder* compare_encoder =
-        static_cast<ViEEncoder*>(compare_item->GetItem());
-    if (compare_encoder == original_encoder) {
-        channels->push_back(static_cast<ViEChannel*>(channel_item->GetItem()));
+  for (ChannelMap::const_iterator c_it = channel_map_.begin();
+       c_it != channel_map_.end(); ++c_it) {
+    EncoderMap::const_iterator comp_it = vie_encoder_map_.find(c_it->first);
+    assert(comp_it != vie_encoder_map_.end());
+    if (comp_it->second == orig_it->second) {
+      channels->push_back(c_it->second);
     }
-    channel_item = channel_map_.Next(channel_item);
   }
 }
 
