@@ -985,8 +985,11 @@ TEST_F(ApmTest, DebugDump) {
   EXPECT_EQ(apm_->kNoError, apm_->StopDebugRecording());
 
   // Verify the file has been written.
-  ASSERT_TRUE(fopen(filename.c_str(), "r") != NULL);
+  FILE* fid = fopen(filename.c_str(), "r");
+  ASSERT_TRUE(fid != NULL);
+
   // Clean it up.
+  ASSERT_EQ(0, fclose(fid));
   ASSERT_EQ(0, remove(filename.c_str()));
 #else
   EXPECT_EQ(apm_->kUnsupportedFunctionError,
