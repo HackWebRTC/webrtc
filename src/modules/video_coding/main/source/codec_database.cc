@@ -484,19 +484,23 @@ VCMCodecDataBase::ResetReceiver()
     ReleaseDecoder(_ptrDecoder);
     _ptrDecoder = NULL;
     memset(&_receiveCodec, 0, sizeof(VideoCodec));
-    for (DecoderMap::iterator it = _decMap.begin(); it != _decMap.end(); ++it) {
+    DecoderMap::iterator it = _decMap.begin();
+    while (it != _decMap.end()) {
         if ((*it).second->_settings != NULL)
         {
             delete (*it).second->_settings;
         }
         delete (*it).second;
         _decMap.erase(it);
+        it = _decMap.begin();
     }
-    for (ExternalDecoderMap::iterator it = _decExternalMap.begin();
-        it != _decExternalMap.end(); ++it) {
-        delete (*it).second;
-        _decExternalMap.erase(it);
+    ExternalDecoderMap::iterator exterit = _decExternalMap.begin();
+    while (exterit != _decExternalMap.begin()) {
+        delete (*exterit).second;
+        _decExternalMap.erase(exterit);
+        exterit = _decExternalMap.begin();
     }
+
     _currentDecIsExternal = false;
     return VCM_OK;
 }
