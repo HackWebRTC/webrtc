@@ -61,6 +61,8 @@ ViEFilePlayer::ViEFilePlayer(int Id,
       decode_thread_(NULL),
       decode_event_(NULL),
       decoded_audio_length_(0) {
+  memset(file_name_, 0, FileWrapper::kMaxFileNameSize);
+  memset(decoded_audio_, 0, kMaxDecodedAudioLength);
 }
 
 ViEFilePlayer::~ViEFilePlayer() {

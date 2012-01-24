@@ -33,6 +33,7 @@ bool StreamVideoFileRepeatedlyIntoCaptureDevice(void* data) {
 
 ViEFakeCamera::ViEFakeCamera(webrtc::ViECapture* capture_interface)
     : capture_interface_(capture_interface),
+      capture_id_(-1),
       camera_thread_(NULL),
       file_capture_device_(NULL) {
 }

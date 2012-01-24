@@ -93,6 +93,7 @@ class ViEFilePlayer
   virtual void RecordFileEnded(const WebRtc_Word32 /*id*/) {}
 
  private:
+  static const int kMaxDecodedAudioLength = 320;
   bool play_back_started_;
   ViEInputManager& input_manager_;
 
@@ -121,7 +122,7 @@ class ViEFilePlayer
   // Thread for decoding video (and audio if no audio clients connected).
   ThreadWrapper* decode_thread_;
   EventWrapper* decode_event_;
-  WebRtc_Word16 decoded_audio_[320];
+  WebRtc_Word16 decoded_audio_[kMaxDecodedAudioLength];
   WebRtc_UWord32 decoded_audio_length_;
 
   // Trick - list containing VoE buffer reading this file. Used if multiple
