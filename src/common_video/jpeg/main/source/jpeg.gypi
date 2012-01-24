@@ -49,6 +49,9 @@
               ],
             }],
           ],
+        }, {
+          # Need to add a directory normally exported by libjpeg.gyp.
+          'include_dirs': [ '<(DEPTH)/third_party/libjpeg', ],
         }],
       ],
       'sources': [
