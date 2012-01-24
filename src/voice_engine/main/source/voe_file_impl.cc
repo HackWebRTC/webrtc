@@ -1418,6 +1418,6 @@ int VoEFileImpl::GetPlaybackPosition(int channel, int& positionMs)
     return channelPtr->GetLocalPlayoutPosition(positionMs);
 }
 
-}  // namespace webrtc
-
 #endif  // #ifdef WEBRTC_VOICE_ENGINE_FILE_API
+
+}  // namespace webrtc
