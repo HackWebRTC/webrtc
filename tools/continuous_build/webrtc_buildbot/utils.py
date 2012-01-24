@@ -22,7 +22,7 @@ SVN_LOCATION = "http://webrtc.googlecode.com/svn/trunk"
 
 class WebRTCFactory(factory.BuildFactory):
   """A Build Factory affected by properties."""
-  
+
   def __init__(self, build_factory_properties=None, steps=None,
                enable_coverage=False, account=None):
     factory.BuildFactory.__init__(self, steps)
@@ -42,7 +42,6 @@ class WebRTCFactory(factory.BuildFactory):
     else:
       self.coverage_url = "http://www.corp.google.com/~%s" % self.account
       self.coverage_dir = "/home/%s/www" % self.account
-      
 
   def EnableBuild(self, force_sync):
     """Build the binary [must be overridden]."""
@@ -97,7 +96,7 @@ class WebRTCFactory(factory.BuildFactory):
     """Enable Test to be run.
 
        tests: list of test to be run.
-    """  
+    """
     print "Headless tests:%s" % self.headless_tests
     if self.enable_coverage:
       self.EnableBaseCoverage()
@@ -110,7 +109,7 @@ class WebRTCFactory(factory.BuildFactory):
     """Add headless (build only) tests.
 
        tests: list of headless test.
-    """  
+    """
     self.headless_tests += tests
 
   def EnableBaseCoverage(self):
@@ -153,7 +152,7 @@ class GenerateCodeCoverage(ShellCommand):
       for f in files:
         os.chmod(os.path.join(root, f), 0777)
     self.addURL("coverage", coverage_url)
-  
+
   def start(self):
     ShellCommand.start(self)
 
@@ -174,7 +173,7 @@ class WebRTCAndroidFactory(WebRTCFactory):
                     prefix + "SHARE_LIBRARIES/libwebrtc_*",
                     prefix + "EXECUTABLES/webrtc_*"
                     ]
-    cmd = " ; ".join(cleanup_list)             
+    cmd = " ; ".join(cleanup_list)
     self.addStep(shell.Compile(command=(cmd), workdir="build/trunk",
                  description=["cleanup", "running..."], haltOnFailure=False,
                  warnOnFailure=True, flunkOnFailure =False,
@@ -256,7 +255,7 @@ class WebRTCLinuxFactory(WebRTCFactory):
     if clang:
       self.AddCommonStep(["trunk/tools/clang/scripts/update.sh"],
                           descriptor="Update_Clang")
-    
+
     if self.release:
       self.AddCommonMakeStep("all", make_extra="BUILDTYPE=Release")
     else:
@@ -336,10 +335,11 @@ class WebRTCLinuxFactory(WebRTCFactory):
        test: test to be run.
     """
     if test == "audioproc_unittest":
+      self.AddCommonTestRunStep(test)
       self.AddCommonGYPStep("webrtc.gyp", gyp_params=["-Dprefer_fixed_point=1"],
-                            descriptor="gyp_tests_fp")
-      self.AddCommonMakeStep(test, descriptor="_fixed_point")
-      self.AddCommonTestRunStep(test, descriptor="_fixed_point")
+                            descriptor="fixed_point")
+      self.AddCommonMakeStep(test, descriptor="make_fixed_point")
+      self.AddCommonTestRunStep(test, descriptor="fixed_point")
     elif test == "signal_processing_unittests":
       self.AddCommonTestRunStep(test)
     elif test == "resampler_unittests":
@@ -436,9 +436,9 @@ class WebRTCMacFactory(WebRTCFactory):
     if force_sync:
       cmd.append("--force")
     self.AddCommonStep(cmd, descriptor="Sync")
-    if self.build_type == "make" or self.build_type == "both":                             
+    if self.build_type == "make" or self.build_type == "both":
       self.AddCommonGYPStep("webrtc.gyp", gyp_params=["-f", "make"],
-                            descriptor="EnableMake")      
+                            descriptor="EnableMake")
     self.AddCommonMakeStep("all")
 
   def AddCommonTestRunStep(self, test, descriptor="", cmd=None,
@@ -478,7 +478,7 @@ class WebRTCMacFactory(WebRTCFactory):
        test: test to be run.
     """
     if test == "audioproc_unittest":
-      print "Does not run on Mac now"
+      self.AddCommonTestRunStep(test)
     elif test == "signal_processing_unittests":
       self.AddCommonTestRunStep(test)
     elif test == "resampler_unittests":
@@ -494,7 +494,7 @@ class WebRTCMacFactory(WebRTCFactory):
     elif test == "audio_device_test_api":
       self.AddCommonTestRunStep(test)
     elif test == "audio_device_test_func":
-      self.AddCommonTestRunStep(test)       
+      self.AddCommonTestRunStep(test)
     elif test == "audio_coding_module_test":
       self.AddCommonTestRunStep(test)
     elif test == "video_processing_unittests":
@@ -562,7 +562,7 @@ class WebRTCWinFactory(WebRTCFactory):
       if force_sync:
         cmd.append("--force")
       self.AddCommonStep(cmd, descriptor="Sync")
-    
+
     if self.configuration == "Debug" or self.configuration == "both":
       cmd = ["msbuild", "webrtc.sln", "/t:Clean",
              "/p:Configuration=Debug;Platform=%s" % (self.platform)]
@@ -600,7 +600,7 @@ class WebRTCWinFactory(WebRTCFactory):
        test: test to be run.
     """
     if test == "audioproc_unittest":
-      print "Does not run on Windows now"
+      self.AddCommonTestRunStep(test)
     elif test == "resampler_unittests":
       self.AddCommonTestRunStep(test)
     elif test == "vad_unittests":
