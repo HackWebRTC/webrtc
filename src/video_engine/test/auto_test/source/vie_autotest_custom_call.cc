@@ -437,8 +437,8 @@ int ViEAutoTest::ViECustomCall()
                                          __FUNCTION__, __LINE__);
 
     if (remb) {
-      bool ret = ptrViERtpRtcp->SetRembStatus(videoChannel, true, true);
-      numberOfErrors += ViETest::TestError(ret, "ERROR: %s at line %d",
+      error = ptrViERtpRtcp->SetRembStatus(videoChannel, true, true);
+      numberOfErrors += ViETest::TestError(error == 0, "ERROR: %s at line %d",
                                            __FUNCTION__, __LINE__);
     } else  {
       error = ptrViERtpRtcp->SetTMMBRStatus(videoChannel, true);

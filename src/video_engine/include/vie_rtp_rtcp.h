@@ -206,9 +206,9 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
   // Enables and disables REMB packets for this channel. |sender| indicates
   // this channel is encoding, |receiver| tells the bitrate estimate for
   // this channel should be included in the REMB packet.
-  virtual bool SetRembStatus(int video_channel,
-                             bool sender,
-                             bool receiver) = 0;
+  virtual int SetRembStatus(int video_channel,
+                            bool sender,
+                            bool receiver) = 0;
 
   // The function gets statistics from the received RTCP report.
   virtual int GetReceivedRTCPStatistics(
