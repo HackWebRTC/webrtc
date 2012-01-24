@@ -124,10 +124,11 @@ WebRtc_Word32 ReceiverFEC::AddReceivedFECPacket(
     timestampOffset += incomingRtpPacket[rtpHeader->header.headerLength+2];
     timestampOffset = timestampOffset >> 2;
     if(timestampOffset != 0) {
-      // sanity timestampOffset must be 0
-      assert(false);
+      // timestampOffset should be 0, however, this is a valid error case in
+      // the event of garbage payload.
       return -1;
     }
+
     blockLength =
         (0x03 & incomingRtpPacket[rtpHeader->header.headerLength + 2]) << 8;
     blockLength += (incomingRtpPacket[rtpHeader->header.headerLength + 3]);
