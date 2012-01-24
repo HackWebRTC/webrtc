@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -106,56 +106,44 @@ RTPSenderAudio::SetAudioPacketSize(const WebRtc_UWord16 packetSizeSamples)
     return 0;
 }
 
-WebRtc_Word32
-RTPSenderAudio::RegisterAudioPayload(const WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
-                                     const WebRtc_Word8 payloadType,
-                                     const WebRtc_UWord32 frequency,
-                                     const WebRtc_UWord8 channels,
-                                     const WebRtc_UWord32 rate,
-                                     ModuleRTPUtility::Payload*& payload)
-{
-    WebRtc_Word32 length = (WebRtc_Word32)strlen(payloadName);
-    if(length > RTP_PAYLOAD_NAME_SIZE)
-    {
-        return -1;
+WebRtc_Word32 RTPSenderAudio::RegisterAudioPayload(
+    const char payloadName[RTP_PAYLOAD_NAME_SIZE],
+    const WebRtc_Word8 payloadType,
+    const WebRtc_UWord32 frequency,
+    const WebRtc_UWord8 channels,
+    const WebRtc_UWord32 rate,
+    ModuleRTPUtility::Payload*& payload) {
+  CriticalSectionScoped cs(_sendAudioCritsect);
+
+  if (ModuleRTPUtility::StringCompare(payloadName, "cn", 2))  {
+    //  we can have multiple CNG payload types
+    if (frequency == 8000) {
+      _cngNBPayloadType = payloadType;
+
+    } else if (frequency == 16000) {
+      _cngWBPayloadType = payloadType;
+
+    } else if (frequency == 32000) {
+      _cngSWBPayloadType = payloadType;
+    } else {
+      return -1;
     }
-
-    CriticalSectionScoped cs(_sendAudioCritsect);
-
-    if (ModuleRTPUtility::StringCompare(payloadName,"cn",2))
-    {
-        //  we can have multiple CNG payload types
-        if(frequency == 8000)
-        {
-            _cngNBPayloadType = payloadType;
-
-        } else if(frequency == 16000)
-        {
-            _cngWBPayloadType = payloadType;
-
-        } else if(frequency == 32000)
-        {
-            _cngSWBPayloadType = payloadType;
-        }else
-        {
-            return -1;
-        }
-    }
-    if (ModuleRTPUtility::StringCompare(payloadName,"telephone-event",15))
-    {
-        // Don't add it to the list
-        // we dont want to allow send with a DTMF payloadtype
-        _dtmfPayloadType = payloadType;
-        return 0;
-        // The default timestamp rate is 8000 Hz, but other rates may be defined.
-    }
-    payload = new ModuleRTPUtility::Payload;
-    payload->typeSpecific.Audio.frequency = frequency;
-    payload->typeSpecific.Audio.channels = channels;
-    payload->typeSpecific.Audio.rate = rate;
-    payload->audio = true;
-    memcpy(payload->name, payloadName, length+1);
+  }
+  if (ModuleRTPUtility::StringCompare(payloadName, "telephone-event", 15)) {
+    // Don't add it to the list
+    // we dont want to allow send with a DTMF payloadtype
+    _dtmfPayloadType = payloadType;
     return 0;
+    // The default timestamp rate is 8000 Hz, but other rates may be defined.
+  }
+  payload = new ModuleRTPUtility::Payload;
+  payload->typeSpecific.Audio.frequency = frequency;
+  payload->typeSpecific.Audio.channels = channels;
+  payload->typeSpecific.Audio.rate = rate;
+  payload->audio = true;
+  payload->name[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
+  strncpy(payload->name, payloadName, RTP_PAYLOAD_NAME_SIZE - 1);
+  return 0;
 }
 
 bool

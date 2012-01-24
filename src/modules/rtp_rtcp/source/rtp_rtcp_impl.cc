@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -1523,46 +1523,38 @@ WebRtc_UWord32 ModuleRtpRtcpImpl::LastSendReport(WebRtc_UWord32& lastRTCPTime)
     return _rtcpSender.LastSendReport(lastRTCPTime);
 }
 
-WebRtc_Word32
-ModuleRtpRtcpImpl::SetCNAME(const WebRtc_Word8 cName[RTCP_CNAME_SIZE])
-{
-    WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, _id, "SetCNAME(%s)", cName);
-
-    return _rtcpSender.SetCNAME(cName);
+WebRtc_Word32 ModuleRtpRtcpImpl::SetCNAME(const char cName[RTCP_CNAME_SIZE]) {
+  WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, _id, "SetCNAME(%s)", cName);
+  return _rtcpSender.SetCNAME(cName);
 }
 
-WebRtc_Word32
-ModuleRtpRtcpImpl::CNAME(WebRtc_Word8 cName[RTCP_CNAME_SIZE])
-{
+WebRtc_Word32 ModuleRtpRtcpImpl::CNAME(char cName[RTCP_CNAME_SIZE]) {
     WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, _id, "CNAME()");
-
     return _rtcpSender.CNAME(cName);
 }
 
-WebRtc_Word32
-ModuleRtpRtcpImpl::AddMixedCNAME(const WebRtc_UWord32 SSRC,
-                                 const WebRtc_Word8 cName[RTCP_CNAME_SIZE])
-{
-    WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, _id, "AddMixedCNAME(SSRC:%u)", SSRC);
+WebRtc_Word32 ModuleRtpRtcpImpl::AddMixedCNAME(
+    const WebRtc_UWord32 SSRC,
+    const char cName[RTCP_CNAME_SIZE]) {
+  WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, _id,
+               "AddMixedCNAME(SSRC:%u)", SSRC);
 
-    return _rtcpSender.AddMixedCNAME(SSRC, cName);
+  return _rtcpSender.AddMixedCNAME(SSRC, cName);
 }
 
-WebRtc_Word32
-ModuleRtpRtcpImpl::RemoveMixedCNAME(const WebRtc_UWord32 SSRC)
-{
-    WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, _id, "RemoveMixedCNAME(SSRC:%u)", SSRC);
-
+WebRtc_Word32 ModuleRtpRtcpImpl::RemoveMixedCNAME(const WebRtc_UWord32 SSRC) {
+    WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, _id,
+                 "RemoveMixedCNAME(SSRC:%u)", SSRC);
     return _rtcpSender.RemoveMixedCNAME(SSRC);
 }
 
-WebRtc_Word32
-ModuleRtpRtcpImpl::RemoteCNAME(const WebRtc_UWord32 remoteSSRC,
-                               WebRtc_Word8 cName[RTCP_CNAME_SIZE]) const
-{
-    WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, _id, "RemoteCNAME(SSRC:%u)", remoteSSRC);
+WebRtc_Word32 ModuleRtpRtcpImpl::RemoteCNAME(
+    const WebRtc_UWord32 remoteSSRC,
+    char cName[RTCP_CNAME_SIZE]) const {
+  WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, _id,
+               "RemoteCNAME(SSRC:%u)", remoteSSRC);
 
-    return _rtcpReceiver.CNAME(remoteSSRC, cName);
+  return _rtcpReceiver.CNAME(remoteSSRC, cName);
 }
 
 WebRtc_UWord16 ModuleRtpRtcpImpl::RemoteSequenceNumber() const

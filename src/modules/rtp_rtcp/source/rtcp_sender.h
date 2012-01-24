@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -51,11 +51,11 @@ public:
 
     WebRtc_Word32 SetCameraDelay(const WebRtc_Word32 delayMS);
 
-    WebRtc_Word32 CNAME(WebRtc_Word8 cName[RTCP_CNAME_SIZE]);
-    WebRtc_Word32 SetCNAME(const WebRtc_Word8 cName[RTCP_CNAME_SIZE]);
+    WebRtc_Word32 CNAME(char cName[RTCP_CNAME_SIZE]);
+    WebRtc_Word32 SetCNAME(const char cName[RTCP_CNAME_SIZE]);
 
     WebRtc_Word32 AddMixedCNAME(const WebRtc_UWord32 SSRC,
-                              const WebRtc_Word8 cName[RTCP_CNAME_SIZE]);
+                                const char cName[RTCP_CNAME_SIZE]);
 
     WebRtc_Word32 RemoveMixedCNAME(const WebRtc_UWord32 SSRC);
 

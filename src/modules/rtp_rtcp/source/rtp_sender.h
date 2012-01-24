@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -90,7 +90,7 @@ public:
     WebRtc_Word32 RegisterSendTransport(Transport* outgoingTransport);
 
     WebRtc_Word32 RegisterPayload(
-        const WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
+        const char payloadName[RTP_PAYLOAD_NAME_SIZE],
         const WebRtc_Word8 payloadType,
         const WebRtc_UWord32 frequency,
         const WebRtc_UWord8 channels,

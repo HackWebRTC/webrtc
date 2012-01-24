@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -55,8 +55,8 @@ namespace ModuleRTPUtility
     };
     struct Payload
     {
-        WebRtc_Word8 name[RTP_PAYLOAD_NAME_SIZE];
-        bool         audio;
+        char name[RTP_PAYLOAD_NAME_SIZE];
+        bool audio;
         PayloadUnion typeSpecific;
     };
 
@@ -89,8 +89,8 @@ namespace ModuleRTPUtility
                       uint32_t existingTimestamp,
                       bool* wrapped);
 
-    bool StringCompare(const WebRtc_Word8* str1,
-                       const WebRtc_Word8* str2,
+    bool StringCompare(const char* str1,
+                       const char* str2,
                        const WebRtc_UWord32 length);
 
     void AssignUWord32ToBuffer(WebRtc_UWord8* dataBuffer, WebRtc_UWord32 value);

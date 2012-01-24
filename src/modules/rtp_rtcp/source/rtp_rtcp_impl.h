@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -162,13 +162,6 @@ public:
 
     virtual WebRtc_Word32 RegisterSendPayload(const VideoCodec& videoCodec);
 
-    // set codec name and payload type
-    WebRtc_Word32 RegisterSendPayload(const WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
-                                            const WebRtc_Word8 payloadType,
-                                            const WebRtc_UWord32 frequency,
-                                            const WebRtc_UWord8 channels,
-                                            const WebRtc_UWord32 rate);
-
     virtual WebRtc_Word32 DeRegisterSendPayload(const WebRtc_Word8 payloadType);
 
     virtual WebRtc_Word8 SendPayloadType() const;
@@ -255,14 +248,14 @@ public:
     virtual WebRtc_Word32 SetRTCPStatus(const RTCPMethod method);
 
     // Set RTCP CName
-    virtual WebRtc_Word32 SetCNAME(const WebRtc_Word8 cName[RTCP_CNAME_SIZE]);
+    virtual WebRtc_Word32 SetCNAME(const char cName[RTCP_CNAME_SIZE]);
 
     // Get RTCP CName
-    virtual WebRtc_Word32 CNAME(WebRtc_Word8 cName[RTCP_CNAME_SIZE]);
+    virtual WebRtc_Word32 CNAME(char cName[RTCP_CNAME_SIZE]);
 
     // Get remote CName
     virtual WebRtc_Word32 RemoteCNAME(const WebRtc_UWord32 remoteSSRC,
-                                    WebRtc_Word8 cName[RTCP_CNAME_SIZE]) const;
+                                      char cName[RTCP_CNAME_SIZE]) const;
 
     // Get remote NTP
     virtual WebRtc_Word32 RemoteNTP(WebRtc_UWord32 *ReceivedNTPsecs,
@@ -271,7 +264,7 @@ public:
                                   WebRtc_UWord32 *RTCPArrivalTimeFrac) const ;
 
     virtual WebRtc_Word32 AddMixedCNAME(const WebRtc_UWord32 SSRC,
-                                      const WebRtc_Word8 cName[RTCP_CNAME_SIZE]);
+                                        const char cName[RTCP_CNAME_SIZE]);
 
     virtual WebRtc_Word32 RemoveMixedCNAME(const WebRtc_UWord32 SSRC);
 

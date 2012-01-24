@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -322,15 +322,15 @@ bool OldTimestamp(uint32_t newTimestamp,
  */
 
 #if defined(_WIN32)
-bool ModuleRTPUtility::StringCompare(const WebRtc_Word8* str1,
-                                     const WebRtc_Word8* str2,
+bool ModuleRTPUtility::StringCompare(const char* str1,
+                                     const char* str2,
                                      const WebRtc_UWord32 length)
 {
     return (_strnicmp(str1, str2, length) == 0)?true: false;
 }
 #elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
-bool ModuleRTPUtility::StringCompare(const WebRtc_Word8* str1,
-                                     const WebRtc_Word8* str2,
+bool ModuleRTPUtility::StringCompare(const char* str1,
+                                     const char* str2,
                                      const WebRtc_UWord32 length)
 {
     return (strncasecmp(str1, str2, length) == 0)?true: false;

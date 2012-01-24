@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -272,16 +272,12 @@ RTPSender::RtpHeaderExtensionTotalLength() const
 
 //can be called multiple times
 WebRtc_Word32 RTPSender::RegisterPayload(
-    const WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
+    const char payloadName[RTP_PAYLOAD_NAME_SIZE],
     const WebRtc_Word8 payloadNumber,
     const WebRtc_UWord32 frequency,
     const WebRtc_UWord8 channels,
     const WebRtc_UWord32 rate) {
-  if (!payloadName) {
-    WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id, "%s invalid argument",
-                 __FUNCTION__);
-    return -1;
-  }
+  assert(payloadName);
   CriticalSectionScoped cs(_sendCritsect);
 
   if (payloadNumber == _keepAlivePayloadType) {
@@ -298,11 +294,8 @@ WebRtc_Word32 RTPSender::RegisterPayload(
     assert(payload);
 
     // check if it's the same as we already have
-    WebRtc_Word32 payloadNameLength = (WebRtc_Word32)strlen(payloadName);
-    WebRtc_Word32 nameLength = (WebRtc_Word32)strlen(payload->name);
-    if (payloadNameLength == nameLength &&
-        ModuleRTPUtility::StringCompare(payload->name, payloadName,
-                                        nameLength)) {
+    if (ModuleRTPUtility::StringCompare(payload->name, payloadName,
+                                        RTP_PAYLOAD_NAME_SIZE - 1)) {
       if (_audioConfigured && payload->audio &&
           payload->typeSpecific.Audio.frequency == frequency &&
           (payload->typeSpecific.Audio.rate == rate ||

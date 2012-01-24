@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -99,38 +99,33 @@ RTPReceiverVideo::UpdateBandwidthManagement(const WebRtc_UWord32 bitrateBps,
     }
 }
 
-ModuleRTPUtility::Payload*
-RTPReceiverVideo::RegisterReceiveVideoPayload(const WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
-                                              const WebRtc_Word8 payloadType,
-                                              const WebRtc_UWord32 maxRate)
-{
-    RtpVideoCodecTypes videoType = kRtpNoVideo;
-    if (ModuleRTPUtility::StringCompare(payloadName, "VP8",3))
-    {
-        videoType = kRtpVp8Video;
-    } else if (ModuleRTPUtility::StringCompare(payloadName, "I420", 4))
-    {
-        videoType = kRtpNoVideo;
-    } else if (ModuleRTPUtility::StringCompare(payloadName, "ULPFEC", 6))
-    {
-        // store this
-        if(_receiveFEC == NULL)
-        {
-            _receiveFEC = new ReceiverFEC(_id, this);
-        }
-        _receiveFEC->SetPayloadTypeFEC(payloadType);
-        videoType = kRtpFecVideo;
-    } else
-    {
-        return NULL;
+ModuleRTPUtility::Payload* RTPReceiverVideo::RegisterReceiveVideoPayload(
+    const char payloadName[RTP_PAYLOAD_NAME_SIZE],
+    const WebRtc_Word8 payloadType,
+    const WebRtc_UWord32 maxRate) {
+  RtpVideoCodecTypes videoType = kRtpNoVideo;
+  if (ModuleRTPUtility::StringCompare(payloadName, "VP8", 3)) {
+    videoType = kRtpVp8Video;
+  } else if (ModuleRTPUtility::StringCompare(payloadName, "I420", 4)) {
+    videoType = kRtpNoVideo;
+  } else if (ModuleRTPUtility::StringCompare(payloadName, "ULPFEC", 6)) {
+    // store this
+    if (_receiveFEC == NULL) {
+      _receiveFEC = new ReceiverFEC(_id, this);
     }
+    _receiveFEC->SetPayloadTypeFEC(payloadType);
+    videoType = kRtpFecVideo;
+  } else {
+    return NULL;
+  }
+  ModuleRTPUtility::Payload* payload =  new ModuleRTPUtility::Payload;
 
-    ModuleRTPUtility::Payload* payload =  new ModuleRTPUtility::Payload;
-    strncpy(payload->name, payloadName, RTP_PAYLOAD_NAME_SIZE);
-    payload->typeSpecific.Video.videoCodecType = videoType;
-    payload->typeSpecific.Video.maxRate = maxRate;
-    payload->audio = false;
-    return payload;
+  payload->name[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
+  strncpy(payload->name, payloadName, RTP_PAYLOAD_NAME_SIZE - 1);
+  payload->typeSpecific.Video.videoCodecType = videoType;
+  payload->typeSpecific.Video.maxRate = maxRate;
+  payload->audio = false;
+  return payload;
 }
 
 void RTPReceiverVideo::ResetOverUseDetector()
@@ -406,56 +401,43 @@ RTPReceiverVideo::ReceiveRecoveredPacketCallback(WebRtcRTPHeader* rtpHeader,
                                          payload->typeSpecific.Video.videoCodecType);
 }
 
-WebRtc_Word32
-RTPReceiverVideo::SetCodecType(const RtpVideoCodecTypes videoType,
-                               WebRtcRTPHeader* rtpHeader) const
-{
-    switch (videoType)
-    {
+WebRtc_Word32 RTPReceiverVideo::SetCodecType(const RtpVideoCodecTypes videoType,
+                                             WebRtcRTPHeader* rtpHeader) const {
+  switch (videoType) {
     case kRtpNoVideo:
-        rtpHeader->type.Video.codec = kRTPVideoGeneric;
-        break;
+      rtpHeader->type.Video.codec = kRTPVideoGeneric;
+      break;
     case kRtpVp8Video:
-        rtpHeader->type.Video.codec = kRTPVideoVP8;
-        break;
+      rtpHeader->type.Video.codec = kRTPVideoVP8;
+      break;
     case kRtpFecVideo:
-        rtpHeader->type.Video.codec = kRTPVideoFEC;
-        break;
-    default:
-        assert(((void)"ParseCodecSpecific videoType can not be unknown here!", false));
-        return -1;
-    }
-    return 0;
+      rtpHeader->type.Video.codec = kRTPVideoFEC;
+      break;
+  }
+  return 0;
 }
 
-
-WebRtc_Word32
-RTPReceiverVideo::ParseVideoCodecSpecificSwitch(WebRtcRTPHeader* rtpHeader,
-                                                const WebRtc_UWord8* payloadData,
-                                                const WebRtc_UWord16 payloadDataLength,
-                                                const RtpVideoCodecTypes videoType)
-{
-    WebRtc_Word32 retVal = SetCodecType(videoType, rtpHeader);
-    if(retVal != 0)
-    {
-        return retVal;
-    }
-
-    // all receive functions release _criticalSectionReceiverVideo before returning
-    switch (videoType)
-    {
-    case kRtpNoVideo:
-        retVal = ReceiveGenericCodec(rtpHeader, payloadData, payloadDataLength);
-        break;
-    case kRtpVp8Video:
-        retVal = ReceiveVp8Codec(rtpHeader, payloadData, payloadDataLength);
-        break;
-    default:
-        _criticalSectionReceiverVideo->Leave();
-        assert(((void)"ParseCodecSpecific videoType can not be unknown here!", false));
-        return -1;
-    }
+WebRtc_Word32 RTPReceiverVideo::ParseVideoCodecSpecificSwitch(
+    WebRtcRTPHeader* rtpHeader,
+    const WebRtc_UWord8* payloadData,
+    const WebRtc_UWord16 payloadDataLength,
+    const RtpVideoCodecTypes videoType) {
+  WebRtc_Word32 retVal = SetCodecType(videoType, rtpHeader);
+  if (retVal != 0) {
     return retVal;
+  }
+  // All receive functions release _criticalSectionReceiverVideo before
+  // returning.
+  switch (videoType) {
+    case kRtpNoVideo:
+      return ReceiveGenericCodec(rtpHeader, payloadData, payloadDataLength);
+    case kRtpVp8Video:
+      return ReceiveVp8Codec(rtpHeader, payloadData, payloadDataLength);
+    case kRtpFecVideo:
+      break;
+  }
+  _criticalSectionReceiverVideo->Leave();
+  return -1;
 }
 
 WebRtc_Word32

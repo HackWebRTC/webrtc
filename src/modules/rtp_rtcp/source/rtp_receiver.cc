@@ -348,7 +348,7 @@ RTPReceiver::RegisterIncomingDataCallback(RtpData* incomingDataCallback)
 }
 
 WebRtc_Word32 RTPReceiver::RegisterReceivePayload(
-    const WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
+    const char payloadName[RTP_PAYLOAD_NAME_SIZE],
     const WebRtc_Word8 payloadType,
     const WebRtc_UWord32 frequency,
     const WebRtc_UWord8 channels,
@@ -450,7 +450,8 @@ WebRtc_Word32 RTPReceiver::RegisterReceivePayload(
     _redPayloadType = payloadType;
     payload = new Payload;
     payload->audio = false;
-    memcpy(payload->name, payloadName, RTP_PAYLOAD_NAME_SIZE);
+    payload->name[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
+    strncpy(payload->name, payloadName, RTP_PAYLOAD_NAME_SIZE - 1);
   } else {
     if (_audio) {
       payload = RegisterReceiveAudioPayload(payloadName, payloadType,
@@ -493,7 +494,7 @@ WebRtc_Word32 RTPReceiver::DeRegisterReceivePayload(
 }
 
 WebRtc_Word32 RTPReceiver::ReceivePayloadType(
-    const WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
+    const char payloadName[RTP_PAYLOAD_NAME_SIZE],
     const WebRtc_UWord32 frequency,
     const WebRtc_UWord8 channels,
     const WebRtc_UWord32 rate,
@@ -549,7 +550,7 @@ WebRtc_Word32 RTPReceiver::ReceivePayloadType(
 
 WebRtc_Word32 RTPReceiver::ReceivePayload(
     const WebRtc_Word8 payloadType,
-    WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
+    char payloadName[RTP_PAYLOAD_NAME_SIZE],
     WebRtc_UWord32* frequency,
     WebRtc_UWord8* channels,
     WebRtc_UWord32* rate) const {
@@ -587,18 +588,20 @@ WebRtc_Word32 RTPReceiver::ReceivePayload(
     }
   }
   if (payloadName) {
-    memcpy(payloadName, payload->name, RTP_PAYLOAD_NAME_SIZE);
+    payloadName[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
+    strncpy(payloadName, payload->name, RTP_PAYLOAD_NAME_SIZE - 1);
   }
   return 0;
 }
 
 WebRtc_Word32 RTPReceiver::RemotePayload(
-    WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
+    char payloadName[RTP_PAYLOAD_NAME_SIZE],
     WebRtc_Word8* payloadType,
     WebRtc_UWord32* frequency,
     WebRtc_UWord8* channels) const {
   if(_lastReceivedPayloadType == -1) {
-    WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, _id, "%s invalid state", __FUNCTION__);
+    WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, _id,
+                 "%s invalid state", __FUNCTION__);
     return -1;
   }
   std::map<WebRtc_Word8, Payload*>::const_iterator it =
@@ -610,7 +613,7 @@ WebRtc_Word32 RTPReceiver::RemotePayload(
   Payload* payload = it->second;
   assert(payload);
   payloadName[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
-  memcpy(payloadName, payload->name, RTP_PAYLOAD_NAME_SIZE - 1);
+  strncpy(payloadName, payload->name, RTP_PAYLOAD_NAME_SIZE - 1);
 
   if (payloadType) {
     *payloadType = _lastReceivedPayloadType;
@@ -1134,11 +1137,10 @@ RTPReceiver::SetSSRCFilter(const bool enable, const WebRtc_UWord32 allowedSSRC)
 void RTPReceiver::CheckSSRCChanged(const WebRtcRTPHeader* rtpHeader) {
   bool newSSRC = false;
   bool reInitializeDecoder = false;
-  WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE];
+  char payloadName[RTP_PAYLOAD_NAME_SIZE];
   WebRtc_UWord32 frequency = 90000; // default video freq
   WebRtc_UWord8 channels = 1;
   WebRtc_UWord32 rate = 0;
-  memset(payloadName, 0, sizeof(payloadName));
 
   {
     CriticalSectionScoped lock(_criticalSectionRTPReceiver);
@@ -1170,7 +1172,7 @@ void RTPReceiver::CheckSSRCChanged(const WebRtcRTPHeader* rtpHeader) {
           Payload* payload = it->second;
           assert(payload);
           payloadName[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
-          memcpy(payloadName, payload->name, RTP_PAYLOAD_NAME_SIZE - 1);
+          strncpy(payloadName, payload->name, RTP_PAYLOAD_NAME_SIZE - 1);
           if(payload->audio) {
             frequency = payload->typeSpecific.Audio.frequency;
             channels =  payload->typeSpecific.Audio.channels;
@@ -1214,7 +1216,7 @@ WebRtc_Word32 RTPReceiver::CheckPayloadChanged(
     VideoPayload& videoSpecificPayload) {
   bool reInitializeDecoder = false;
 
-  WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE];
+  char payloadName[RTP_PAYLOAD_NAME_SIZE];
   WebRtc_Word8 payloadType = rtpHeader->header.payloadType;
 
   {
@@ -1262,7 +1264,7 @@ WebRtc_Word32 RTPReceiver::CheckPayloadChanged(
       Payload* payload = it->second;
       assert(payload);
       payloadName[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
-      memcpy(payloadName, payload->name, RTP_PAYLOAD_NAME_SIZE - 1);
+      strncpy(payloadName, payload->name, RTP_PAYLOAD_NAME_SIZE - 1);
       _lastReceivedPayloadType = payloadType;
 
       reInitializeDecoder = true;

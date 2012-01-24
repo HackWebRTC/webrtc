@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -564,6 +564,7 @@ RTCPReceiver::CreateCnameInformation(WebRtc_UWord32 remoteSSRC) {
     return it->second;
   }
   RTCPCnameInformation* cnameInfo = new RTCPCnameInformation;
+  memset(cnameInfo->name, 0, RTCP_CNAME_SIZE);
   _receivedCnameMap[remoteSSRC] = cnameInfo;
   return cnameInfo;
 }
@@ -707,17 +708,14 @@ RTCPReceiver::HandleSDES(RTCPUtility::RTCPParserV2& rtcpParser)
 }
 
 // no need for critsect we have _criticalSectionRTCPReceiver
-void
-RTCPReceiver::HandleSDESChunk(RTCPUtility::RTCPParserV2& rtcpParser)
-{
-    const RTCPUtility::RTCPPacket& rtcpPacket = rtcpParser.Packet();
+void RTCPReceiver::HandleSDESChunk(RTCPUtility::RTCPParserV2& rtcpParser) {
+  const RTCPUtility::RTCPPacket& rtcpPacket = rtcpParser.Packet();
+  RTCPCnameInformation* cnameInfo =
+      CreateCnameInformation(rtcpPacket.CName.SenderSSRC);
+  assert(cnameInfo);
 
-    RTCPCnameInformation* cnameInfo = CreateCnameInformation(rtcpPacket.CName.SenderSSRC);
-    if (cnameInfo)
-    {
-        memcpy(cnameInfo->name, rtcpPacket.CName.CName, rtcpPacket.CName.CNameLength);
-        cnameInfo->length = rtcpPacket.CName.CNameLength;
-    }
+  cnameInfo->name[RTCP_CNAME_SIZE - 1] = 0;
+  strncpy(cnameInfo->name, rtcpPacket.CName.CName, RTCP_CNAME_SIZE - 1);
 }
 
 // no need for critsect we have _criticalSectionRTCPReceiver
@@ -1383,27 +1381,20 @@ RTCPReceiver::UpdateBandwidthEstimate(const WebRtc_UWord16 bwEstimateKbit)
 
 }
 
-WebRtc_Word32
-RTCPReceiver::CNAME(const WebRtc_UWord32 remoteSSRC,
-                    WebRtc_Word8 cName[RTCP_CNAME_SIZE]) const
-{
-    if(cName == NULL)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id, "%s invalid argument", __FUNCTION__);
-        return -1;
-    }
+WebRtc_Word32 RTCPReceiver::CNAME(const WebRtc_UWord32 remoteSSRC,
+                                  char cName[RTCP_CNAME_SIZE]) const {
+  if (cName == NULL) {
+    WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
+                 "%s invalid argument", __FUNCTION__);
+    return -1;
+  }
+  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+  RTCPCnameInformation* cnameInfo = GetCnameInformation(remoteSSRC);
+  assert(cnameInfo);
 
-    CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
-
-    RTCPCnameInformation* cnameInfo = GetCnameInformation(remoteSSRC);
-    if(cnameInfo == NULL)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,  "\tfailed to GetCnameInformation(%d)", remoteSSRC);
-        return -1;
-    }
-    memcpy(cName, cnameInfo->name, cnameInfo->length);
-    cName[cnameInfo->length] = 0;
-    return 0;
+  cName[RTCP_CNAME_SIZE - 1] = 0;
+  strncpy(cName, cnameInfo->name, RTCP_CNAME_SIZE - 1);
+  return 0;
 }
 
 // no callbacks allowed inside this function

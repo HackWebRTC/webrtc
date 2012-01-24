@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -45,11 +45,11 @@ public:
     // Sets the file name. If addFileCounter is false the same file will be
     // reused when it fills up. If it's true a new file with incremented name
     // will be used.
-    static WebRtc_Word32 SetTraceFile(const WebRtc_Word8* fileName,
+    static WebRtc_Word32 SetTraceFile(const char* fileName,
                                       const bool addFileCounter = false);
 
     // Returns the name of the file that the trace is currently writing to.
-    static WebRtc_Word32 TraceFile(WebRtc_Word8 fileName[1024]);
+    static WebRtc_Word32 TraceFile(char fileName[1024]);
 
     // Registers callback to receive trace messages. TODO (hellner)
     // why not use OutStream instead? Why is TraceCallback not defined in this

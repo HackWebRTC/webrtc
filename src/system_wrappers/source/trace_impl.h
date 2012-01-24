@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -49,10 +49,10 @@ public:
     static TraceImpl* CreateInstance();
     static TraceImpl* GetTrace(const TraceLevel level = kTraceAll);
 
-    WebRtc_Word32 SetTraceFileImpl(const WebRtc_Word8* fileName,
+    WebRtc_Word32 SetTraceFileImpl(const char* fileName,
                                    const bool addFileCounter);
     WebRtc_Word32 TraceFileImpl(
-        WebRtc_Word8 fileName[FileWrapper::kMaxFileNameSize]);
+        char fileName[FileWrapper::kMaxFileNameSize]);
 
     WebRtc_Word32 SetTraceCallbackImpl(TraceCallback* callback);
 
@@ -99,13 +99,13 @@ private:
         const TraceLevel level);
 
     bool UpdateFileName(
-        const WebRtc_Word8 fileNameUTF8[FileWrapper::kMaxFileNameSize],
-        WebRtc_Word8 fileNameWithCounterUTF8[FileWrapper::kMaxFileNameSize],
+        const char fileNameUTF8[FileWrapper::kMaxFileNameSize],
+        char fileNameWithCounterUTF8[FileWrapper::kMaxFileNameSize],
         const WebRtc_UWord32 newCount) const;
 
     bool CreateFileName(
-        const WebRtc_Word8 fileNameUTF8[FileWrapper::kMaxFileNameSize],
-        WebRtc_Word8 fileNameWithCounterUTF8[FileWrapper::kMaxFileNameSize],
+        const char fileNameUTF8[FileWrapper::kMaxFileNameSize],
+        char fileNameWithCounterUTF8[FileWrapper::kMaxFileNameSize],
         const WebRtc_UWord32 newCount) const;
 
     void WriteToFile();
@@ -124,7 +124,7 @@ private:
     WebRtc_UWord16 _nextFreeIdx[WEBRTC_TRACE_NUM_ARRAY];
     TraceLevel _level[WEBRTC_TRACE_NUM_ARRAY][WEBRTC_TRACE_MAX_QUEUE];
     WebRtc_UWord16 _length[WEBRTC_TRACE_NUM_ARRAY][WEBRTC_TRACE_MAX_QUEUE];
-    WebRtc_Word8* _messageQueue[WEBRTC_TRACE_NUM_ARRAY][WEBRTC_TRACE_MAX_QUEUE];
+    char* _messageQueue[WEBRTC_TRACE_NUM_ARRAY][WEBRTC_TRACE_MAX_QUEUE];
     WebRtc_UWord8 _activeQueue;
 };
 } // namespace webrtc

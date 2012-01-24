@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -16,17 +16,6 @@
 
 
 namespace webrtc {
-RTCPUtility::RTCPCnameInformation::RTCPCnameInformation() :
-    length(0)
-{
-    memset(name, 0, sizeof(name));
-}
-
-RTCPUtility::RTCPCnameInformation::~RTCPCnameInformation()
-{
-}
-
-///////////
 // RTCPParserV2 : currently read only
 
 RTCPUtility::RTCPParserV2::RTCPParserV2(const WebRtc_UWord8* rtcpData,
@@ -759,8 +748,8 @@ RTCPUtility::RTCPParserV2::ParseSDESItem()
                     EndCurrentBlock();
                     return false;
                 }
-
-                for (unsigned int i = 0; i < len; ++i)
+                WebRtc_UWord8 i = 0;
+                for (; i < len; ++i)
                 {
                     const WebRtc_UWord8 c = _ptrRTCPData[i];
                     if ((c < ' ') || (c > '{') || (c == '%') || (c == '\\'))
@@ -771,16 +760,14 @@ RTCPUtility::RTCPParserV2::ParseSDESItem()
                         EndCurrentBlock();
                         return false;
                     }
-
                     _packet.CName.CName[i] = c;
                 }
-
-                _packetType               = kRtcpSdesChunkCode;
-                _packet.CName.CNameLength = len;
+                // Make sure we are null terminated.
+                _packet.CName.CName[i] = 0;
+                _packetType = kRtcpSdesChunkCode;
 
                 foundCName = true;
             }
-
             _ptrRTCPData += len;
             itemOctetsRead += len;
         }

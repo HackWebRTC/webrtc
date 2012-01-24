@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -56,31 +56,32 @@ public:
     WebRtc_Word32 RegisterIncomingDataCallback(RtpData* incomingDataCallback);
     WebRtc_Word32 RegisterIncomingRTPCallback(RtpFeedback* incomingMessagesCallback);
 
-    WebRtc_Word32 RegisterReceivePayload( const WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
-                                        const WebRtc_Word8 payloadType,
-                                        const WebRtc_UWord32 frequency,
-                                        const WebRtc_UWord8 channels,
-                                        const WebRtc_UWord32 rate);
+    WebRtc_Word32 RegisterReceivePayload(
+        const char payloadName[RTP_PAYLOAD_NAME_SIZE],
+        const WebRtc_Word8 payloadType,
+        const WebRtc_UWord32 frequency,
+        const WebRtc_UWord8 channels,
+        const WebRtc_UWord32 rate);
 
     WebRtc_Word32 DeRegisterReceivePayload(const WebRtc_Word8 payloadType);
 
     WebRtc_Word32 ReceivePayloadType(
-        const WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
+        const char payloadName[RTP_PAYLOAD_NAME_SIZE],
         const WebRtc_UWord32 frequency,
         const WebRtc_UWord8 channels,
         const WebRtc_UWord32 rate,
         WebRtc_Word8* payloadType) const;
 
     WebRtc_Word32 ReceivePayload(const WebRtc_Word8 payloadType,
-                                 WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
+                                 char payloadName[RTP_PAYLOAD_NAME_SIZE],
                                  WebRtc_UWord32* frequency,
                                  WebRtc_UWord8* channels,
                                  WebRtc_UWord32* rate) const;
 
-    WebRtc_Word32 RemotePayload(WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
-                              WebRtc_Word8* payloadType,
-                              WebRtc_UWord32* frequency,
-                              WebRtc_UWord8* channels) const;
+    WebRtc_Word32 RemotePayload(char payloadName[RTP_PAYLOAD_NAME_SIZE],
+                                WebRtc_Word8* payloadType,
+                                WebRtc_UWord32* frequency,
+                                WebRtc_UWord8* channels) const;
 
     WebRtc_Word32 IncomingRTPPacket(WebRtcRTPHeader* rtpheader,
                                     const WebRtc_UWord8* incomingRtpPacket,

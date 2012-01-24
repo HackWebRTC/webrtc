@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -32,19 +32,20 @@ public:
 
     WebRtc_Word32 Init();
 
-    WebRtc_Word32 RegisterAudioPayload(const WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
-                                     const WebRtc_Word8 payloadType,
-                                     const WebRtc_UWord32 frequency,
-                                     const WebRtc_UWord8 channels,
-                                     const WebRtc_UWord32 rate,
-                                     ModuleRTPUtility::Payload*& payload);
+    WebRtc_Word32 RegisterAudioPayload(
+        const char payloadName[RTP_PAYLOAD_NAME_SIZE],
+        const WebRtc_Word8 payloadType,
+        const WebRtc_UWord32 frequency,
+        const WebRtc_UWord8 channels,
+        const WebRtc_UWord32 rate,
+        ModuleRTPUtility::Payload*& payload);
 
     WebRtc_Word32 SendAudio(const FrameType frameType,
-                          const WebRtc_Word8 payloadType,
-                          const WebRtc_UWord32 captureTimeStamp,
-                          const WebRtc_UWord8* payloadData,
-                          const WebRtc_UWord32 payloadSize,
-                          const RTPFragmentationHeader* fragmentation);
+                            const WebRtc_Word8 payloadType,
+                            const WebRtc_UWord32 captureTimeStamp,
+                            const WebRtc_UWord8* payloadData,
+                            const WebRtc_UWord32 payloadSize,
+                            const RTPFragmentationHeader* fragmentation);
 
     // set audio packet size, used to determine when it's time to send a DTMF packet in silence (CNG)
     WebRtc_Word32 SetAudioPacketSize(const WebRtc_UWord16 packetSizeSamples);

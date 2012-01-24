@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -621,14 +621,14 @@ public:
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 SetCNAME(const WebRtc_Word8 cName[RTCP_CNAME_SIZE]) = 0;
+    virtual WebRtc_Word32 SetCNAME(const char cName[RTCP_CNAME_SIZE]) = 0;
 
     /*
     *   Get RTCP CName (i.e unique identifier)
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 CNAME(WebRtc_Word8 cName[RTCP_CNAME_SIZE]) = 0;
+    virtual WebRtc_Word32 CNAME(char cName[RTCP_CNAME_SIZE]) = 0;
 
     /*
     *   Get remote CName
@@ -637,7 +637,7 @@ public:
     */
     virtual WebRtc_Word32 RemoteCNAME(
         const WebRtc_UWord32 remoteSSRC,
-        WebRtc_Word8 cName[RTCP_CNAME_SIZE]) const = 0;
+        char cName[RTCP_CNAME_SIZE]) const = 0;
 
     /*
     *   Get remote NTP
@@ -657,7 +657,7 @@ public:
     */
     virtual WebRtc_Word32 AddMixedCNAME(
         const WebRtc_UWord32 SSRC,
-        const WebRtc_Word8 cName[RTCP_CNAME_SIZE]) = 0;
+        const char cName[RTCP_CNAME_SIZE]) = 0;
 
     /*
     *   RemoveMixedCNAME

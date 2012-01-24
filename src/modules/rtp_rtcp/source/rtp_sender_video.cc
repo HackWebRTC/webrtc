@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -113,12 +113,11 @@ WebRtc_Word32 RTPSenderVideo::RegisterVideoPayload(
   } else if (ModuleRTPUtility::StringCompare(payloadName, "I420", 4)) {
     videoType = kRtpNoVideo;
   } else {
-    videoType = kRtpNoVideo;
     return -1;
   }
   payload = new ModuleRTPUtility::Payload;
+  payload->name[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
   strncpy(payload->name, payloadName, RTP_PAYLOAD_NAME_SIZE - 1);
-  payload->name[RTP_PAYLOAD_NAME_SIZE - 1] = 0; // Null terminate string.
   payload->typeSpecific.Video.videoCodecType = videoType;
   payload->typeSpecific.Video.maxRate = maxBitRate;
   payload->audio = false;

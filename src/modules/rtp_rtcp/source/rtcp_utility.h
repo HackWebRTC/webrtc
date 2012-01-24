@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -20,16 +20,10 @@
 namespace webrtc {
 namespace RTCPUtility {
     // CNAME
-    class RTCPCnameInformation
+    struct RTCPCnameInformation
     {
-    public:
-        RTCPCnameInformation();
-        ~RTCPCnameInformation();
-
-        WebRtc_UWord8      name[RTCP_CNAME_SIZE];
-        WebRtc_UWord8      length;
+        char name[RTCP_CNAME_SIZE];
     };
-
     struct RTCPPacketRR
     {
         WebRtc_UWord32 SenderSSRC;
@@ -58,13 +52,11 @@ namespace RTCPUtility {
         WebRtc_UWord32 LastSR;
         WebRtc_UWord32 DelayLastSR;
     };
-
     struct RTCPPacketSDESCName
     {
         // RFC3550
         WebRtc_UWord32 SenderSSRC;
-        WebRtc_UWord8  CName[RTCP_CNAME_SIZE];
-        WebRtc_UWord8  CNameLength;
+        char CName[RTCP_CNAME_SIZE];
     };
 
     struct RTCPPacketExtendedJitterReportItem

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -345,54 +345,38 @@ RTCPSender::SetCameraDelay(const WebRtc_Word32 delayMS)
     return 0;
 }
 
-WebRtc_Word32
-RTCPSender::CNAME(WebRtc_Word8 cName[RTCP_CNAME_SIZE])
-{
-    if(cName == NULL)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id, "%s invalid argument", __FUNCTION__);
-        return -1;
-    }
-    CriticalSectionScoped lock(_criticalSectionRTCPSender);
-    memcpy(cName, _CNAME, RTCP_CNAME_SIZE);
-    return 0;
-}
-
-WebRtc_Word32 RTCPSender::SetCNAME(const WebRtc_Word8 cName[RTCP_CNAME_SIZE]) {
-  size_t length = strlen(cName);
-  if (length >= RTCP_CNAME_SIZE) {
-    WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
-                 "%s invalid argument, too long cName", __FUNCTION__);
-    return -1;
-  }
+WebRtc_Word32 RTCPSender::CNAME(char cName[RTCP_CNAME_SIZE]) {
+  assert(cName);
   CriticalSectionScoped lock(_criticalSectionRTCPSender);
-  memcpy(_CNAME, cName, length + 1);
+  cName[RTCP_CNAME_SIZE - 1] = 0;
+  strncpy(cName, _CNAME, RTCP_CNAME_SIZE - 1);
   return 0;
 }
 
-WebRtc_Word32 RTCPSender::AddMixedCNAME(
-    const WebRtc_UWord32 SSRC,
-    const WebRtc_Word8 cName[RTCP_CNAME_SIZE]) {
-  size_t length = strlen(cName);
-  if (length >= RTCP_CNAME_SIZE) {
-    WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
-                 "%s invalid argument, too long cName", __FUNCTION__);
-    return -1;
-  }
+WebRtc_Word32 RTCPSender::SetCNAME(const char cName[RTCP_CNAME_SIZE]) {
+  assert(cName);
+  CriticalSectionScoped lock(_criticalSectionRTCPSender);
+  _CNAME[RTCP_CNAME_SIZE - 1] = 0;
+  strncpy(_CNAME, cName, RTCP_CNAME_SIZE - 1);
+  return 0;
+}
+
+WebRtc_Word32 RTCPSender::AddMixedCNAME(const WebRtc_UWord32 SSRC,
+                                        const char cName[RTCP_CNAME_SIZE]) {
+  assert(cName);
   CriticalSectionScoped lock(_criticalSectionRTCPSender);
   if (_csrcCNAMEs.size() >= kRtpCsrcSize) {
     return -1;
   }
   RTCPCnameInformation* ptr = new RTCPCnameInformation();
-  memcpy(ptr->name, cName, length + 1);
-  ptr->length = static_cast<WebRtc_UWord8>(length);
+  ptr->name[RTCP_CNAME_SIZE - 1] = 0;
+  strncpy(ptr->name, cName, RTCP_CNAME_SIZE - 1);
   _csrcCNAMEs[SSRC] = ptr;
   return 0;
 }
 
 WebRtc_Word32 RTCPSender::RemoveMixedCNAME(const WebRtc_UWord32 SSRC) {
   CriticalSectionScoped lock(_criticalSectionRTCPSender);
-
   std::map<WebRtc_UWord32, RTCPCnameInformation*>::iterator it =
       _csrcCNAMEs.find(SSRC);
 
@@ -747,14 +731,16 @@ WebRtc_Word32 RTCPSender::BuildSDEC(WebRtc_UWord8* rtcpbuffer,
     // CNAME = 1
     rtcpbuffer[pos++] = static_cast<WebRtc_UWord8>(1);
 
-    rtcpbuffer[pos++]= cname->length;
+    size_t length = strlen(cname->name);
+    assert(length < RTCP_CNAME_SIZE);
 
+    rtcpbuffer[pos++]= static_cast<WebRtc_UWord8>(length);
     SDESLength += 6;
 
-    memcpy(&rtcpbuffer[pos], cname->name, cname->length);
-    pos += cname->length;
-    SDESLength += cname->length;
+    memcpy(&rtcpbuffer[pos],cname->name, length);
 
+    pos += length;
+    SDESLength += length;
     WebRtc_UWord16 padding = 0;
 
     // We must have a zero field even if we have an even multiple of 4 bytes
@@ -769,8 +755,9 @@ WebRtc_Word32 RTCPSender::BuildSDEC(WebRtc_UWord8* rtcpbuffer,
     SDESLength += padding;
   }
   // in 32-bit words minus one and we don't count the header
-  WebRtc_UWord16 length = (SDESLength / 4) - 1;
-  ModuleRTPUtility::AssignUWord16ToBuffer(rtcpbuffer + SDESLengthPos, length);
+  WebRtc_UWord16 buffer_length = (SDESLength / 4) - 1;
+  ModuleRTPUtility::AssignUWord16ToBuffer(rtcpbuffer + SDESLengthPos,
+                                          buffer_length);
   return 0;
 }
 
