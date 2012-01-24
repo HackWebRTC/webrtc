@@ -2192,10 +2192,9 @@ RtpVideoCodecTypes ModuleRtpRtcpImpl::SendVideoCodec() const {
     return _rtpSender.VideoCodecType();
 }
 
-WebRtc_Word32 ModuleRtpRtcpImpl::SetSendBitrate(
-    const WebRtc_UWord32 startBitrate,
-    const WebRtc_UWord16 minBitrateKbit,
-    const WebRtc_UWord16 maxBitrateKbit) {
+void ModuleRtpRtcpImpl::SetSendBitrate(const WebRtc_UWord32 startBitrate,
+                                       const WebRtc_UWord16 minBitrateKbit,
+                                       const WebRtc_UWord16 maxBitrateKbit) {
 
     WEBRTC_TRACE(kTraceModuleCall,
                  kTraceRtpRtcp,
@@ -2220,11 +2219,12 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SetSendBitrate(
             it++;
         }
     }
+    // TODO(henrike): this function also returns a value. It never fails so
+    // make it return void.
     _rtpSender.SetTargetSendBitrate(startBitrate);
 
-    return _bandwidthManagement.SetSendBitrate(startBitrate,
-                                               minBitrateKbit,
-                                               maxBitrateKbit);
+    _bandwidthManagement.SetSendBitrate(startBitrate, minBitrateKbit,
+                                        maxBitrateKbit);
 }
 
 WebRtc_Word32 ModuleRtpRtcpImpl::SetKeyFrameRequestMethod(

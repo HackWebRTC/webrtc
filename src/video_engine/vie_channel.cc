@@ -251,13 +251,8 @@ WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
         std::min(start_bitrate, video_codec.simulcastStream[0].maxBitrate);
     start_bitrate -= stream_bitrate;
     // Set correct bitrate to base layer.
-    if (rtp_rtcp_.SetSendBitrate(
-          stream_bitrate, video_codec.minBitrate,
-          video_codec.simulcastStream[0].maxBitrate) != 0) {
-      WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
-                   "%s: could not set send bitrates", __FUNCTION__);
-      return -1;
-    }
+    rtp_rtcp_.SetSendBitrate(stream_bitrate, video_codec.minBitrate,
+                             video_codec.simulcastStream[0].maxBitrate);
     // Create our simulcast RTP modules.
     for (int i = simulcast_rtp_rtcp_.size();
          i < video_codec.numberOfSimulcastStreams - 1;
@@ -333,13 +328,8 @@ WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
       const WebRtc_UWord32 stream_bitrate =
           std::min(start_bitrate, video_codec.simulcastStream[idx].maxBitrate);
       start_bitrate -= stream_bitrate;
-      if (rtp_rtcp->SetSendBitrate(
-            stream_bitrate, video_codec.minBitrate,
-            video_codec.simulcastStream[idx].maxBitrate) != 0) {
-        WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
-                     "%s: could not set send bitrates", __FUNCTION__);
-        return -1;
-      }
+      rtp_rtcp->SetSendBitrate(stream_bitrate, video_codec.minBitrate,
+                               video_codec.simulcastStream[idx].maxBitrate);
     }
     vie_receiver_.RegisterSimulcastRtpRtcpModules(simulcast_rtp_rtcp_);
   } else {
@@ -357,13 +347,9 @@ WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
     // Clear any previous modules.
     vie_receiver_.RegisterSimulcastRtpRtcpModules(simulcast_rtp_rtcp_);
 
-    if (rtp_rtcp_.SetSendBitrate(video_codec.startBitrate * 1000,
-                                 video_codec.minBitrate,
-                                 video_codec.maxBitrate) != 0) {
-      WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
-                   "%s: could not set send bitrates", __FUNCTION__);
-      return -1;
-    }
+    rtp_rtcp_.SetSendBitrate(video_codec.startBitrate * 1000,
+                             video_codec.minBitrate,
+                             video_codec.maxBitrate);
   }
   // Enable this if H264 is available.
   // This sets the wanted packetization mode.

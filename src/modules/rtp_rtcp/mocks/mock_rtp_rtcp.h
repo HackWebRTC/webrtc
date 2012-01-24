@@ -243,7 +243,7 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_METHOD1(SetCameraDelay,
       WebRtc_Word32(const WebRtc_Word32 delayMS));
   MOCK_METHOD3(SetSendBitrate,
-      WebRtc_Word32(const WebRtc_UWord32 startBitrate, const WebRtc_UWord16 minBitrateKbit, const WebRtc_UWord16 maxBitrateKbit));
+      void(const WebRtc_UWord32 startBitrate, const WebRtc_UWord16 minBitrateKbit, const WebRtc_UWord16 maxBitrateKbit));
   MOCK_METHOD3(SetGenericFECStatus,
       WebRtc_Word32(const bool enable, const WebRtc_UWord8 payloadTypeRED, const WebRtc_UWord8 payloadTypeFEC));
   MOCK_METHOD3(GenericFECStatus,

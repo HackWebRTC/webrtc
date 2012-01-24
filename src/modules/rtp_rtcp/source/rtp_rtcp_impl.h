@@ -460,9 +460,9 @@ public:
 
     virtual WebRtc_Word32 SetCameraDelay(const WebRtc_Word32 delayMS);
 
-    virtual WebRtc_Word32 SetSendBitrate(const WebRtc_UWord32 startBitrate,
-                                       const WebRtc_UWord16 minBitrateKbit,
-                                       const WebRtc_UWord16 maxBitrateKbit);
+    virtual void SetSendBitrate(const WebRtc_UWord32 startBitrate,
+                                const WebRtc_UWord16 minBitrateKbit,
+                                const WebRtc_UWord16 maxBitrateKbit);
 
     virtual WebRtc_Word32 SetGenericFECStatus(const bool enable,
                                             const WebRtc_UWord8 payloadTypeRED,

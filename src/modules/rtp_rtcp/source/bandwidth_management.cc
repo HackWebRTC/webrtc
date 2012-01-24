@@ -42,7 +42,7 @@ BandwidthManagement::~BandwidthManagement()
     delete _critsect;
 }
 
-WebRtc_Word32
+void
 BandwidthManagement::SetSendBitrate(const WebRtc_UWord32 startBitrate,
                                     const WebRtc_UWord16 minBitrateKbit,
                                     const WebRtc_UWord16 maxBitrateKbit)
@@ -59,7 +59,6 @@ BandwidthManagement::SetSendBitrate(const WebRtc_UWord32 startBitrate,
     {
         _maxBitRateConfigured = maxBitrateKbit*1000;
     }
-    return 0;
 }
 
 WebRtc_Word32

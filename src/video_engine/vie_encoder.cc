@@ -273,14 +273,9 @@ WebRtc_Word32 ViEEncoder::SetEncoder(const webrtc::VideoCodec& video_codec) {
                video_codec.codecType, video_codec.width, video_codec.height);
 
   // Convert from kbps to bps.
-  if (default_rtp_rtcp_.SetSendBitrate(video_codec.startBitrate * 1000,
-                                       video_codec.minBitrate,
-                                       video_codec.maxBitrate) != 0) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                 ViEId(engine_id_, channel_id_),
-                 "Could not set RTP module bitrates");
-    return -1;
-  }
+  default_rtp_rtcp_.SetSendBitrate(video_codec.startBitrate * 1000,
+                                   video_codec.minBitrate,
+                                   video_codec.maxBitrate);
 
   // Setting target width and height for VPM.
   if (vpm_.SetTargetResolution(video_codec.width, video_codec.height,

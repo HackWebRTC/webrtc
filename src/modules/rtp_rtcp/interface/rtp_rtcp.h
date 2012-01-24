@@ -1010,9 +1010,9 @@ public:
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 SetSendBitrate(const WebRtc_UWord32 startBitrate,
-                                       const WebRtc_UWord16 minBitrateKbit,
-                                       const WebRtc_UWord16 maxBitrateKbit) = 0;
+    virtual void SetSendBitrate(const WebRtc_UWord32 startBitrate,
+                                const WebRtc_UWord16 minBitrateKbit,
+                                const WebRtc_UWord16 maxBitrateKbit) = 0;
 
     /*
     *   Turn on/off generic FEC

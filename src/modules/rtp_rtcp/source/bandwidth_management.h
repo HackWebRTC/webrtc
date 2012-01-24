@@ -43,9 +43,9 @@ public:
 
     WebRtc_Word32 AvailableBandwidth(WebRtc_UWord16* bandwidthKbit) const;
 
-    WebRtc_Word32 SetSendBitrate(const WebRtc_UWord32 startBitrate,
-                                 const WebRtc_UWord16 minBitrateKbit,
-                                 const WebRtc_UWord16 maxBitrateKbit);
+    void SetSendBitrate(const WebRtc_UWord32 startBitrate,
+                        const WebRtc_UWord16 minBitrateKbit,
+                        const WebRtc_UWord16 maxBitrateKbit);
 
     WebRtc_Word32 MaxConfiguredBitrate(WebRtc_UWord16* maxBitrateKbit);
 
