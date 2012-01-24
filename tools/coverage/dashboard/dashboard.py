@@ -12,9 +12,16 @@
 __author__ = 'phoglund@webrtc.org (Patrik Hoglund)'
 
 import datetime
+from google.appengine.api import oauth
+from google.appengine.api import users
 from google.appengine.ext import db
 import webapp2
 import gviz_api
+
+
+class UserNotAuthenticatedException(Exception):
+  """Gets thrown if a user is not permitted to store coverage data."""
+  pass
 
 
 class CoverageData(db.Model):
@@ -40,8 +47,8 @@ class ShowDashboard(webapp2.RequestHandler):
       page_template = template_file.read()
       template_file.close()
     except IOError as exception:
-      self.ShowErrorPage('Cannot open page template file: %s<br>Details: %s' %
-                         (page_template_filename, exception))
+      self._show_error_page('Cannot open page template file: %s<br>Details: %s'
+                            % (page_template_filename, exception))
       return
 
     coverage_entries = db.GqlQuery('SELECT * '
@@ -65,18 +72,24 @@ class ShowDashboard(webapp2.RequestHandler):
     # Fill in the template with the data and respond:
     self.response.write(page_template % vars())
 
-  def ShowErrorPage(self, error_message):
+  def _show_error_page(self, error_message):
     self.response.write('<html><body>%s</body></html>' % error_message)
 
 
 class AddCoverageData(webapp2.RequestHandler):
   """Used to report coverage data.
 
-     It will verify the data, but not the sender. Thus, it should be secured
-     more properly if accessible from an outside network.
+     The user is required to have obtained an OAuth access token from an
+     administrator for this application earlier.
   """
 
-  def get(self):
+  def post(self):
+    try:
+      self._authenticate_user()
+    except UserNotAuthenticatedException as exception:
+      self._show_error_page('Failed to authenticate user: %s' % exception)
+      return
+
     try:
       posix_time = int(self.request.get('date'))
       parsed_date = datetime.datetime.fromtimestamp(posix_time)
@@ -84,8 +97,8 @@ class AddCoverageData(webapp2.RequestHandler):
       line_coverage = float(self.request.get('line_coverage'))
       function_coverage = float(self.request.get('function_coverage'))
     except ValueError as exception:
-      self.ShowErrorPage('Invalid parameter in request. Details: %s' %
-                         exception)
+      self._show_error_page('Invalid parameter in request. Details: %s' %
+                            exception)
       return
 
     item = CoverageData(date=parsed_date,
@@ -93,7 +106,22 @@ class AddCoverageData(webapp2.RequestHandler):
                         function_coverage=function_coverage)
     item.put()
 
-  def ShowErrorPage(self, error_message):
+  def _authenticate_user(self):
+    try:
+      if oauth.is_current_user_admin():
+        # The user on whose behalf we are acting is indeed an administrator
+        # of this application, so we're good to go.
+        return
+      else:
+        raise UserNotAuthenticatedException('We are acting on behalf of '
+                                            'user %s, but that user is not '
+                                            'an administrator.' %
+                                            oauth.get_current_user())
+    except oauth.OAuthRequestError as exception:
+      raise UserNotAuthenticatedException('Invalid OAuth request: %s' %
+                                          exception)
+
+  def _show_error_page(self, error_message):
     self.response.write('<html><body>%s</body></html>' % error_message)
 
 app = webapp2.WSGIApplication([('/', ShowDashboard),

@@ -49,6 +49,7 @@
 /third_party/libvpx
 /third_party/libyuv
 /third_party/llvm-build
+/third_party/oauth2
 /third_party/protobuf
 /third_party/valgrind
 /third_party/yasm
