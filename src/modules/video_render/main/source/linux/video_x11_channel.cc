@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -261,6 +261,10 @@ WebRtc_Word32 VideoX11Channel::CreateLocalRenderer(WebRtc_Word32 width,
     _shminfo.shmid = shmget(IPC_PRIVATE, (_image->bytes_per_line
             * _image->height), IPC_CREAT | 0777);
     _shminfo.shmaddr = _image->data = (char*) shmat(_shminfo.shmid, 0, 0);
+    if (_image->data == reinterpret_cast<char*>(-1))
+    {
+        return -1;
+    }
     _buffer = (unsigned char*) _image->data;
     _shminfo.readOnly = False;
 
