@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -7,43 +7,37 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-
-
-/*
- * This file contains the function WebRtcSpl_FilterARFastQ12().
- * The description header can be found in signal_processing_library.h
- *
- */
+#include <assert.h>
 
 #include "signal_processing_library.h"
 
-void WebRtcSpl_FilterARFastQ12(WebRtc_Word16 *in, WebRtc_Word16 *out, WebRtc_Word16 *A,
-                               WebRtc_Word16 A_length, WebRtc_Word16 length)
-{
-    WebRtc_Word32 o;
-    int i, j;
+// TODO(bjornv): Change the return type to report errors.
 
-    WebRtc_Word16 *x_ptr = &in[0];
-    WebRtc_Word16 *filtered_ptr = &out[0];
+void WebRtcSpl_FilterARFastQ12(int16_t* data_in,
+                               int16_t* data_out,
+                               int16_t* __restrict coefficients,
+                               int coefficients_length,
+                               int data_length) {
+  int i = 0;
+  int j = 0;
 
-    for (i = 0; i < length; i++)
-    {
-        // Calculate filtered[i]
-        G_CONST WebRtc_Word16 *a_ptr = &A[0];
-        WebRtc_Word16 *state_ptr = &out[i - 1];
+  assert(data_length > 0);
+  assert(coefficients_length > 1);
 
-        o = WEBRTC_SPL_MUL_16_16(*x_ptr++, *a_ptr++);
+  for (i = 0; i < data_length; i++) {
+    int32_t output = 0;
+    int32_t sum = 0;
 
-        for (j = 1; j < A_length; j++)
-        {
-            o -= WEBRTC_SPL_MUL_16_16(*a_ptr++,*state_ptr--);
-        }
-
-        // Saturate the output
-        o = WEBRTC_SPL_SAT((WebRtc_Word32)134215679, o, (WebRtc_Word32)-134217728);
-
-        *filtered_ptr++ = (WebRtc_Word16)((o + (WebRtc_Word32)2048) >> 12);
+    for (j = coefficients_length - 1; j > 0; j--) {
+      sum += coefficients[j] * data_out[i - j];
     }
 
-    return;
+    output = coefficients[0] * data_in[i];
+    output -= sum;
+
+    // Saturate and store the output.
+    output = WEBRTC_SPL_SAT(134215679, output, -134217728);
+    data_out[i] = (int16_t)((output + 2048) >> 12);
+  }
 }
+

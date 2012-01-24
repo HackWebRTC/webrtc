@@ -1,4 +1,4 @@
-# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+# Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
@@ -27,7 +27,6 @@ LOCAL_SRC_FILES := \
     downsample_fast.c \
     energy.c \
     filter_ar.c \
-    filter_ar_fast_q12.c \
     filter_ma_fast_q12.c \
     get_hanning_window.c \
     get_scaling_square.c \
@@ -66,6 +65,14 @@ LOCAL_CFLAGS += \
 else
 LOCAL_SRC_FILES += \
     cross_correlation.c
+endif
+
+ifeq ($(ARCH_ARM_HAVE_ARMV7A),true)
+LOCAL_SRC_FILES += \
+    filter_ar_fast_q12_armv7.s
+else
+LOCAL_SRC_FILES += \
+    filter_ar_fast_q12.c
 endif
 
 LOCAL_SHARED_LIBRARIES := libstlport

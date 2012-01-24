@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -385,11 +385,28 @@ void WebRtcSpl_FilterMAFastQ12(WebRtc_Word16* in_vector,
                                WebRtc_Word16* ma_coef,
                                WebRtc_Word16 ma_coef_length,
                                WebRtc_Word16 vector_length);
-void WebRtcSpl_FilterARFastQ12(WebRtc_Word16* in_vector,
-                               WebRtc_Word16* out_vector,
-                               WebRtc_Word16* ar_coef,
-                               WebRtc_Word16 ar_coef_length,
-                               WebRtc_Word16 vector_length);
+
+// WebRtcSpl_FilterARFastQ12(...)
+//
+// Performs a AR filtering on a vector in Q12
+//
+// Input:
+//      - data_in                : Input samples
+//      - data_out               : State information in positions
+//                                   data_out[-order] .. data_out[-1]
+//      - coefficients           : Filter coefficients (in Q12)
+//      - coefficients_length    : Number of coefficients (order+1)
+//      - data_length            : Number of samples to be filtered
+//
+// Output:
+//      - data_out               : Filtered samples
+
+void WebRtcSpl_FilterARFastQ12(int16_t* data_in,
+                               int16_t* data_out,
+                               int16_t* __restrict coefficients,
+                               int coefficients_length,
+                               int data_length);
+
 int WebRtcSpl_DownsampleFast(WebRtc_Word16* in_vector,
                              WebRtc_Word16 in_vector_length,
                              WebRtc_Word16* out_vector,
@@ -1431,23 +1448,6 @@ void WebRtcSpl_SynthesisQMF(const WebRtc_Word16* low_band,
 //                            in_vector[-order] .. in_vector[-1])
 //      - ma_coef           : Filter coefficients (in Q12)
 //      - ma_coef_length    : Number of B coefficients (order+1)
-//      - vector_length     : Number of samples to be filtered
-//
-// Output:
-//      - out_vector        : Filtered samples
-//
-
-//
-// WebRtcSpl_FilterARFastQ12(...)
-//
-// Performs a AR filtering on a vector in Q12
-//
-// Input:
-//      - in_vector         : Input samples
-//      - out_vector        : State information in positions
-//                            out_vector[-order] .. out_vector[-1]
-//      - ar_coef           : Filter coefficients (in Q12)
-//      - ar_coef_length    : Number of B coefficients (order+1)
 //      - vector_length     : Number of samples to be filtered
 //
 // Output:
