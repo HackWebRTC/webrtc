@@ -46,7 +46,7 @@ namespace webrtc
 enum { kViEMinKeyRequestIntervalMs = 300};
 
 // ViEBase
-enum { kViEMaxNumberOfChannels = 4};
+enum { kViEMaxNumberOfChannels = 32};
 enum { kViEVersionMaxMessageSize = 1024 };
 enum { kViEMaxModuleVersionSize = 960 };
 
