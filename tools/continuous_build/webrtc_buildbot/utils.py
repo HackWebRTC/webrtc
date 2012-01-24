@@ -617,6 +617,8 @@ class WebRTCWinFactory(WebRTCFactory):
       self.AddCommonTestRunStep(test)
     elif test == "video_engine_core_unittests":
       self.AddCommonTestRunStep(test)
+    elif test == "video_processing_unittests":
+      self.AddCommonTestRunStep(test)
     elif test == "audio_coding_unittests":
       self.AddCommonTestRunStep(test)
     else:
