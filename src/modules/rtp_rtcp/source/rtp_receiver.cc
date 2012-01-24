@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -973,32 +973,44 @@ RTPReceiver::UpdateStatistics(const WebRtcRTPHeader* rtpHeader,
 }
 
 // we already have the _criticalSectionRTPReceiver critsect when we call this
-bool
-RTPReceiver::RetransmitOfOldPacket(const WebRtc_UWord16 sequenceNumber,
-                                   const WebRtc_UWord32 rtpTimeStamp) const
-{
-    if(InOrderPacket(sequenceNumber))
-    {
-        return false;
-    }
-    // last time we received a packet
-    WebRtc_UWord32 timeDiffMS = _clock.GetTimeInMS() - _lastReceiveTime;
-    WebRtc_Word32 rtpTimeStampDiffMS = ((WebRtc_Word32)(rtpTimeStamp - _lastReceivedTimestamp))/90; // diff in time stamp since last received in order
-
-    WebRtc_UWord16 minRTT = 0;
-    _rtpRtcp.RTT(_SSRC,NULL,NULL,&minRTT, NULL);
-    if(minRTT == 0)
-    {
-        // no update
-        // assume loss
-        return true;
-    }
-    WebRtc_UWord16 timeWindow = (minRTT/3)+1;
-    if((WebRtc_Word32)timeDiffMS > rtpTimeStampDiffMS + timeWindow)
-    {
-        return true;
-    }
+bool RTPReceiver::RetransmitOfOldPacket(
+    const WebRtc_UWord16 sequenceNumber,
+    const WebRtc_UWord32 rtpTimeStamp) const {
+  if (InOrderPacket(sequenceNumber)) {
     return false;
+  }
+  WebRtc_UWord32 frequencyKHz = 90;  // Video frequency.
+  if (_audio) {
+    frequencyKHz = AudioFrequency() / 1000;
+  }
+  WebRtc_UWord32 timeDiffMS = _clock.GetTimeInMS() - _lastReceiveTime;
+  // Diff in time stamp since last received in order.
+  WebRtc_Word32 rtpTimeStampDiffMS = static_cast<WebRtc_Word32>(
+      rtpTimeStamp - _lastReceivedTimestamp) / frequencyKHz;
+
+  WebRtc_UWord16 minRTT = 0;
+  WebRtc_Word32 maxDelayMs = 0;
+  _rtpRtcp.RTT(_SSRC, NULL, NULL, &minRTT, NULL);
+  if (minRTT == 0) {
+    WebRtc_UWord32 jitter = _jitterQ4 >> 4;  // Jitter variance in samples.
+    // Jitter standard deviation in samples.
+    WebRtc_UWord32 jitterStd = sqrt(jitter);
+    // 2 times the std deviation => 95% confidence.
+    // And transform to ms by dividing by the frequency in kHz.
+    maxDelayMs = (2 * jitterStd) / frequencyKHz;
+
+    // Min maxDelayMs is 1.
+    if (maxDelayMs == 0) {
+      maxDelayMs = 1; 
+    }
+  } else {
+    maxDelayMs = (minRTT / 3) + 1;
+  }
+  if (static_cast<WebRtc_Word32>(timeDiffMS) >
+      rtpTimeStampDiffMS + maxDelayMs) {
+    return true;
+  }
+  return false;
 }
 
 bool
