@@ -62,10 +62,6 @@ public:
     virtual WebRtc_Word32 MixabilityStatus(
         MixerParticipant& participant,
         bool& mixable) = 0;
-    // amountOfMixableParticipants is set to the number of participants that are
-    // eligible for mixing.
-    virtual WebRtc_Word32 AmountOfMixables(
-        WebRtc_UWord32& amountOfMixableParticipants) = 0;
 
     // Inform the mixer that the participant should always be mixed and not
     // count toward the number of mixed participants. Note that a participant

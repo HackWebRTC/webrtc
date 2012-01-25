@@ -4762,10 +4762,14 @@ int VoEExtendedTest::TestFile() {
 //  VoEExtendedTest::TestMixing
 // ----------------------------------------------------------------------------
 
-// Creates and mixes |num_channels| with a constant amplitude of |input_value|.
+// Creates and mixes |num_remote_channels| which play a file "as microphone"
+// with |num_local_channels| which play a file "locally", using a constant
+// amplitude of |input_value|.
+//
 // The mixed output is verified to always fall between |max_output_value| and
 // |min_output_value|, after a startup phase.
-int VoEExtendedTest::RunMixingTest(int num_channels,
+int VoEExtendedTest::RunMixingTest(int num_remote_channels,
+                                   int num_local_channels,
                                    int16_t input_value,
                                    int16_t max_output_value,
                                    int16_t min_output_value) {
@@ -4799,43 +4803,54 @@ int VoEExtendedTest::RunMixingTest(int num_channels,
 
   TEST_MUSTPASS(voe_base_->Init());
 
-  std::vector<int> channels(num_channels);
-  for (int channel_index = 0; channel_index < num_channels; ++channel_index) {
-    const int channel = voe_base_->CreateChannel();
-    channels[channel_index] = channel;
-    ASSERT_TRUE(channel != -1);
-    TEST_MUSTPASS(codec->SetRecPayloadType(channel, codec_inst));
-    TEST_MUSTPASS(voe_base_->SetLocalReceiver(channel,
-            1234 + 2 * channel_index));
-    TEST_MUSTPASS(voe_base_->SetSendDestination(channel,
-            1234 + 2 * channel_index,
-            "127.0.0.1"));
-    TEST_MUSTPASS(voe_base_->StartReceive(channel));
-    TEST_MUSTPASS(voe_base_->StartPlayout(channel));
-    TEST_MUSTPASS(codec->SetSendCodec(channel, codec_inst));
-    TEST_MUSTPASS(voe_base_->StartSend(channel));
+  std::vector<int> local_channels(num_local_channels);
+  for (int i = 0; i < num_local_channels; ++i) {
+    local_channels[i] = voe_base_->CreateChannel();
+    ASSERT_TRUE(local_channels[i] != -1);
+    TEST_MUSTPASS(voe_base_->StartPlayout(local_channels[i]));
+    TEST_MUSTPASS(file->StartPlayingFileLocally(local_channels[i],
+                                                input_filename,
+                                                true));
   }
-  for (int channel_index = 0; channel_index < num_channels; ++channel_index) {
-    const int channel = channels[channel_index];
-    TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(channel,
-            input_filename,
-            true));
+
+  std::vector<int> remote_channels(num_remote_channels);
+  for (int i = 0; i < num_remote_channels; ++i) {
+    remote_channels[i] = voe_base_->CreateChannel();
+    ASSERT_TRUE(remote_channels[i] != -1);
+    TEST_MUSTPASS(codec->SetRecPayloadType(remote_channels[i], codec_inst));
+    TEST_MUSTPASS(voe_base_->SetLocalReceiver(remote_channels[i],
+                                              1234 + 2 * i));
+    TEST_MUSTPASS(voe_base_->SetSendDestination(remote_channels[i],
+                                                1234 + 2 * i,
+                                                "127.0.0.1"));
+    TEST_MUSTPASS(voe_base_->StartReceive(remote_channels[i]));
+    TEST_MUSTPASS(voe_base_->StartPlayout(remote_channels[i]));
+    TEST_MUSTPASS(codec->SetSendCodec(remote_channels[i], codec_inst));
+    TEST_MUSTPASS(voe_base_->StartSend(remote_channels[i]));
+    TEST_MUSTPASS(file->StartPlayingFileAsMicrophone(remote_channels[i],
+                                                     input_filename,
+                                                     true));
   }
+
   const char mix_result[] = "mix_result.pcm";
   TEST_MUSTPASS(file->StartRecordingPlayout(-1/*record meeting*/,
           mix_result));
-  TEST_LOG("Playing %d channels\n", num_channels);
+  TEST_LOG("Playing %d remote channels.\n", num_remote_channels);
+  TEST_LOG("Playing %d local channels.\n", num_local_channels);
   SLEEP(5000);
   TEST_MUSTPASS(file->StopRecordingPlayout(-1));
   TEST_LOG("Stopping\n");
 
-  for (int channel_index = 0; channel_index < num_channels; ++channel_index) {
-    const int channel = channels[channel_index];
-    channels[channel_index] = channel;
-    TEST_MUSTPASS(voe_base_->StopSend(channel));
-    TEST_MUSTPASS(voe_base_->StopPlayout(channel));
-    TEST_MUSTPASS(voe_base_->StopReceive(channel));
-    TEST_MUSTPASS(voe_base_->DeleteChannel(channel));
+  for (int i = 0; i < num_local_channels; ++i) {
+    TEST_MUSTPASS(voe_base_->StopPlayout(local_channels[i]));
+    TEST_MUSTPASS(voe_base_->DeleteChannel(local_channels[i]));
+  }
+
+  for (int i = 0; i < num_remote_channels; ++i) {
+    TEST_MUSTPASS(voe_base_->StopSend(remote_channels[i]));
+    TEST_MUSTPASS(voe_base_->StopPlayout(remote_channels[i]));
+    TEST_MUSTPASS(voe_base_->StopReceive(remote_channels[i]));
+    TEST_MUSTPASS(voe_base_->DeleteChannel(remote_channels[i]));
   }
 
   FILE* verification_file = fopen(mix_result, "rb");
@@ -4862,7 +4877,7 @@ int VoEExtendedTest::TestMixing() {
   TEST_LOG("Test max-three-participant mixing.\n");
   int16_t input_value = 1000;
   int16_t expected_output = input_value * 3;
-  if (RunMixingTest(4, input_value, 1.1 * expected_output,
+  if (RunMixingTest(4, 0, input_value, 1.1 * expected_output,
                     0.9 * expected_output) != 0) {
     return -1;
   }
@@ -4876,7 +4891,7 @@ int VoEExtendedTest::TestMixing() {
   // If this isn't satisfied, we're not testing anything.
   assert(input_value * 3 > 32767);
   assert(1.1 * expected_output < 32767);
-  if (RunMixingTest(3, input_value, 1.1 * expected_output,
+  if (RunMixingTest(3, 0, input_value, 1.1 * expected_output,
                     0.9 * expected_output) != 0) {
     return -1;
   }
@@ -4888,8 +4903,25 @@ int VoEExtendedTest::TestMixing() {
   expected_output = 32767;
   // If this isn't satisfied, we're not testing anything.
   assert(0.95 * expected_output > 29204); // = -1 dBFS, the limiter headroom.
-  if (RunMixingTest(1, input_value, expected_output,
+  if (RunMixingTest(1, 0, input_value, expected_output,
                     0.95 * expected_output) != 0) {
+    return -1;
+  }
+
+  TEST_LOG("Test combinations of 'anonymous' participants and regular "
+           "participants.\n");
+  input_value = 1000;
+  expected_output = input_value * 2;
+  if (RunMixingTest(1, 1, input_value, 1.1 * expected_output,
+                    0.9 * expected_output) != 0) {
+
+    return -1;
+  }
+
+  expected_output = input_value * 4;
+  if (RunMixingTest(3, 1, input_value, 1.1 * expected_output,
+                    0.9 * expected_output) != 0) {
+
     return -1;
   }
 

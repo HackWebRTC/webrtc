@@ -106,7 +106,7 @@ AudioConferenceMixerImpl::AudioConferenceMixerImpl(int id)
       _audioFramePool(NULL),
       _participantList(),
       _additionalParticipantList(),
-      _amountOfMixableParticipants(0),
+      _numMixedParticipants(0),
       _timeStamp(0),
       _timeScheduler(kProcessPeriodicityInMs),
       _mixedAudioLevel(),
@@ -525,7 +525,7 @@ WebRtc_Word32 AudioConferenceMixerImpl::SetMixabilityStatus(
         // participant is in the _participantList if it is being mixed.
         SetAnonymousMixabilityStatus(participant, false);
     }
-    WebRtc_UWord32 amountOfMixableParticipants;
+    WebRtc_UWord32 numMixedParticipants;
     {
         CriticalSectionScoped cs(_cbCrit.get());
         const bool isMixed =
@@ -555,13 +555,19 @@ WebRtc_Word32 AudioConferenceMixerImpl::SetMixabilityStatus(
             assert(false);
             return -1;
         }
-        amountOfMixableParticipants = _participantList.GetSize();
+
+        const int numMixedNonAnonymous = (_participantList.GetSize() <
+            kMaximumAmountOfMixedParticipants) ? _participantList.GetSize() :
+            kMaximumAmountOfMixedParticipants;
+
+        numMixedParticipants = numMixedNonAnonymous +
+                               _additionalParticipantList.GetSize();
     }
     // A MixerParticipant was added or removed. Make sure the scratch
     // buffer is updated if necessary.
     // Note: The scratch buffer may only be updated in Process().
     CriticalSectionScoped cs(_crit.get());
-    _amountOfMixableParticipants = amountOfMixableParticipants;
+    _numMixedParticipants = numMixedParticipants;
     return 0;
 }
 
@@ -573,16 +579,6 @@ WebRtc_Word32 AudioConferenceMixerImpl::MixabilityStatus(
                  "MixabilityStatus(participant,mixable)");
     CriticalSectionScoped cs(_cbCrit.get());
     mixable = IsParticipantInList(participant, _participantList);
-    return 0;
-}
-
-WebRtc_Word32 AudioConferenceMixerImpl::AmountOfMixables(
-    WebRtc_UWord32& amountOfMixableParticipants)
-{
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioMixerServer, _id,
-                 "AmountOfMixables(amountOfMixableParticipants)");
-    CriticalSectionScoped cs(_crit.get());
-    amountOfMixableParticipants = _amountOfMixableParticipants;
     return 0;
 }
 
@@ -1104,7 +1100,7 @@ WebRtc_Word32 AudioConferenceMixerImpl::MixFromList(
         return 0;
     }
 
-    if(_amountOfMixableParticipants == 1)
+    if(_numMixedParticipants == 1)
     {
         // No mixing required here; skip the saturation protection.
         AudioFrame* audioFrame = static_cast<AudioFrame*>(item->GetItem());
@@ -1155,7 +1151,7 @@ WebRtc_Word32 AudioConferenceMixerImpl::MixAnonomouslyFromList(
     if(item == NULL)
         return 0;
 
-    if(_amountOfMixableParticipants == 1)
+    if(_numMixedParticipants == 1)
     {
         // No mixing required here; skip the saturation protection.
         AudioFrame* audioFrame = static_cast<AudioFrame*>(item->GetItem());
@@ -1176,7 +1172,7 @@ WebRtc_Word32 AudioConferenceMixerImpl::MixAnonomouslyFromList(
 
 bool AudioConferenceMixerImpl::LimitMixedAudio(AudioFrame& mixedAudio)
 {
-    if(_amountOfMixableParticipants == 1)
+    if(_numMixedParticipants == 1)
     {
         return true;
     }

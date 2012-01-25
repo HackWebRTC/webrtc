@@ -77,8 +77,6 @@ public:
     virtual WebRtc_Word32 MixabilityStatus(MixerParticipant& participant,
                                            bool& mixable);
     virtual WebRtc_Word32 SetMinimumMixingFrequency(Frequency freq);
-    virtual WebRtc_Word32 AmountOfMixables(
-        WebRtc_UWord32& amountOfMixableParticipants);
     virtual WebRtc_Word32 SetAnonymousMixabilityStatus(
         MixerParticipant& participant, const bool mixable);
     virtual WebRtc_Word32 AnonymousMixabilityStatus(
@@ -189,7 +187,7 @@ private:
     ListWrapper _participantList;              // May be mixed.
     ListWrapper _additionalParticipantList;    // Always mixed, anonomously.
 
-    WebRtc_UWord32 _amountOfMixableParticipants;
+    WebRtc_UWord32 _numMixedParticipants;
 
     WebRtc_UWord32 _timeStamp;
 
