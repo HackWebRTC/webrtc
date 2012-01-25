@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -61,6 +61,9 @@ static const int16_t kMaxSpeechFrames = 6;
 // Minimum standard deviation for both speech and noise.
 static const int16_t kMinStd = 384;
 
+// Constants in WebRtcVad_InitCore().
+// Default aggressiveness mode.
+static const short kDefaultMode = 0;
 static const int kInitCheck = 42;
 
 // Calculates the probabilities for both speech and background noise using
@@ -469,65 +472,58 @@ static int16_t GmmProbability(VadInstT *inst, WebRtc_Word16 *feature_vector,
     return vadflag;
 }
 
-// Initialize VAD
-int WebRtcVad_InitCore(VadInstT *inst, short mode)
-{
-    int i;
+// Initialize the VAD. Set aggressiveness mode to default value.
+int WebRtcVad_InitCore(VadInstT* self) {
+  int i;
 
-    // Initialization of struct
-    inst->vad = 1;
-    inst->frame_counter = 0;
-    inst->over_hang = 0;
-    inst->num_of_speech = 0;
+  if (self == NULL) {
+    return -1;
+  }
 
-    // Initialization of downsampling filter state
-    inst->downsampling_filter_states[0] = 0;
-    inst->downsampling_filter_states[1] = 0;
-    inst->downsampling_filter_states[2] = 0;
-    inst->downsampling_filter_states[3] = 0;
+  // Initialization of general struct variables.
+  self->vad = 1;  // Speech active (=1).
+  self->frame_counter = 0;
+  self->over_hang = 0;
+  self->num_of_speech = 0;
 
-    // Read initial PDF parameters
-    for (i = 0; i < NUM_TABLE_VALUES; i++)
-    {
-        inst->noise_means[i] = kNoiseDataMeans[i];
-        inst->speech_means[i] = kSpeechDataMeans[i];
-        inst->noise_stds[i] = kNoiseDataStds[i];
-        inst->speech_stds[i] = kSpeechDataStds[i];
-    }
+  // Initialization of downsampling filter state.
+  memset(self->downsampling_filter_states, 0,
+         sizeof(self->downsampling_filter_states));
 
-    // Index and Minimum value vectors are initialized
-    for (i = 0; i < 16 * NUM_CHANNELS; i++)
-    {
-        inst->low_value_vector[i] = 10000;
-        inst->index_vector[i] = 0;
-    }
+  // Read initial PDF parameters.
+  for (i = 0; i < NUM_TABLE_VALUES; i++) {
+    self->noise_means[i] = kNoiseDataMeans[i];
+    self->speech_means[i] = kSpeechDataMeans[i];
+    self->noise_stds[i] = kNoiseDataStds[i];
+    self->speech_stds[i] = kSpeechDataStds[i];
+  }
 
-    for (i = 0; i < 5; i++)
-    {
-        inst->upper_state[i] = 0;
-        inst->lower_state[i] = 0;
-    }
+  // Initialize Index and Minimum value vectors.
+  for (i = 0; i < 16 * NUM_CHANNELS; i++) {
+    self->low_value_vector[i] = 10000;
+    self->index_vector[i] = 0;
+  }
 
-    for (i = 0; i < 4; i++)
-    {
-        inst->hp_filter_state[i] = 0;
-    }
+  // Initialize splitting filter states.
+  memset(self->upper_state, 0, sizeof(self->upper_state));
+  memset(self->lower_state, 0, sizeof(self->lower_state));
 
-    // Init mean value memory, for FindMin function
-    inst->mean_value[0] = 1600;
-    inst->mean_value[1] = 1600;
-    inst->mean_value[2] = 1600;
-    inst->mean_value[3] = 1600;
-    inst->mean_value[4] = 1600;
-    inst->mean_value[5] = 1600;
+  // Initialize high pass filter states.
+  memset(self->hp_filter_state, 0, sizeof(self->hp_filter_state));
 
-    if (WebRtcVad_set_mode_core(inst, mode) != 0) {
-      return -1;
-    }
+  // Initialize mean value memory, for WebRtcVad_FindMinimum().
+  for (i = 0; i < NUM_CHANNELS; i++) {
+    self->mean_value[i] = 1600;
+  }
 
-    inst->init_flag = kInitCheck;
+  // Set aggressiveness mode to default (=|kDefaultMode|).
+  if (WebRtcVad_set_mode_core(self, kDefaultMode) != 0) {
+    return -1;
+  }
 
-    return 0;
+  self->init_flag = kInitCheck;
+
+  return 0;
 }
 
 // Set aggressiveness mode

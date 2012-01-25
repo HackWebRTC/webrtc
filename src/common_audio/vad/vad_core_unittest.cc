@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -21,16 +21,16 @@ extern "C" {
 namespace {
 
 TEST_F(VadTest, InitCore) {
+  // Test WebRtcVad_InitCore().
   VadInstT* self = reinterpret_cast<VadInstT*>(malloc(sizeof(VadInstT)));
 
-  // TODO(bjornv): Add NULL pointer check if we take care of it in
-  // vad_core.c
+  // NULL pointer test.
+  EXPECT_EQ(-1, WebRtcVad_InitCore(NULL));
 
-  // Test WebRtcVad_InitCore().
-  // Verify return = 0 for all modes.
-  for (size_t j = 0; j < kModesSize; ++j) {
-    EXPECT_EQ(0, WebRtcVad_InitCore(self, kModes[j]));
-  }
+  // Verify return = 0 for non-NULL pointer.
+  EXPECT_EQ(0, WebRtcVad_InitCore(self));
+  // Verify init_flag is set.
+  EXPECT_EQ(42, self->init_flag);
 
   free(self);
 }
@@ -41,11 +41,12 @@ TEST_F(VadTest, set_mode_core) {
   // TODO(bjornv): Add NULL pointer check if we take care of it in
   // vad_core.c
 
-  ASSERT_EQ(0, WebRtcVad_InitCore(self, 0));
+  ASSERT_EQ(0, WebRtcVad_InitCore(self));
   // Test WebRtcVad_set_mode_core().
   // Invalid modes should return -1.
   EXPECT_EQ(-1, WebRtcVad_set_mode_core(self, -1));
-  EXPECT_EQ(-1, WebRtcVad_set_mode_core(self, (short) kModesSize));
+  EXPECT_EQ(-1, WebRtcVad_set_mode_core(self,
+                                        static_cast<int16_t>(kModesSize)));
   // Valid modes should return 0.
   for (size_t j = 0; j < kModesSize; ++j) {
     EXPECT_EQ(0, WebRtcVad_set_mode_core(self, kModes[j]));
@@ -64,7 +65,7 @@ TEST_F(VadTest, CalcVad) {
   // Test WebRtcVad_CalcVadXXkhz()
   // Verify that all zeros in gives VAD = 0 out.
   memset(speech, 0, sizeof(speech));
-  ASSERT_EQ(0, WebRtcVad_InitCore(self, 0));
+  ASSERT_EQ(0, WebRtcVad_InitCore(self));
   for (size_t j = 0; j < kFrameLengthsSize; ++j) {
     if (ValidRatesAndFrameLengths(8000, kFrameLengths[j])) {
       EXPECT_EQ(0, WebRtcVad_CalcVad8khz(self, speech, kFrameLengths[j]));

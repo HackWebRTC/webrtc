@@ -101,16 +101,9 @@ WebRtc_Word16 WebRtcVad_Free(VadInst *vad_inst)
     return 0;
 }
 
-int WebRtcVad_Init(VadInst *vad_inst)
-{
-    short mode = 0; // Default high quality
-
-    if (vad_inst == NULL)
-    {
-        return -1;
-    }
-
-    return WebRtcVad_InitCore((VadInstT*)vad_inst, mode);
+int WebRtcVad_Init(VadInst* handle) {
+  // Initialize the core VAD component.
+  return WebRtcVad_InitCore((VadInstT*) handle);
 }
 
 int WebRtcVad_set_mode(VadInst *vad_inst, WebRtc_Word16 mode)

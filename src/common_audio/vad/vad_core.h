@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -45,27 +45,18 @@ typedef struct VadInstT_
     WebRtc_Word16 individual[3];
     WebRtc_Word16 total[3];
 
-    short init_flag;
+    int init_flag;
 
 } VadInstT;
 
-/****************************************************************************
- * WebRtcVad_InitCore(...)
- *
- * This function initializes a VAD instance
- *
- * Input:
- *      - inst      : Instance that should be initialized
- *      - mode      : Aggressiveness degree
- *                    0 (High quality) - 3 (Highly aggressive)
- *
- * Output:
- *      - inst      : Initialized instance
- *
- * Return value     :  0 - Ok
- *                    -1 - Error
- */
-int WebRtcVad_InitCore(VadInstT* inst, short mode);
+// Initializes the core VAD component. The default aggressiveness mode is
+// controlled by |kDefaultMode| in vad_core.c.
+//
+// - self [i/o] : Instance that should be initialized
+//
+// returns      : 0 (OK), -1 (NULL pointer in or if the default mode can't be
+//                set)
+int WebRtcVad_InitCore(VadInstT* self);
 
 /****************************************************************************
  * WebRtcVad_set_mode_core(...)

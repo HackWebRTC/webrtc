@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -44,7 +44,7 @@ TEST_F(VadTest, vad_filterbank) {
   }
 
   int frame_length_index = 0;
-  ASSERT_EQ(0, WebRtcVad_InitCore(self, 0));
+  ASSERT_EQ(0, WebRtcVad_InitCore(self));
   for (size_t j = 0; j < kFrameLengthsSize; ++j) {
     if (ValidRatesAndFrameLengths(8000, kFrameLengths[j])) {
       EXPECT_EQ(kReference[frame_length_index],
@@ -61,7 +61,7 @@ TEST_F(VadTest, vad_filterbank) {
 
   // Verify that all zeros in gives kOffsetVector out.
   memset(speech, 0, sizeof(speech));
-  ASSERT_EQ(0, WebRtcVad_InitCore(self, 0));
+  ASSERT_EQ(0, WebRtcVad_InitCore(self));
   for (size_t j = 0; j < kFrameLengthsSize; ++j) {
     if (ValidRatesAndFrameLengths(8000, kFrameLengths[j])) {
       EXPECT_EQ(0, WebRtcVad_CalculateFeatures(self, speech, kFrameLengths[j],
@@ -79,7 +79,7 @@ TEST_F(VadTest, vad_filterbank) {
   }
   for (size_t j = 0; j < kFrameLengthsSize; ++j) {
     if (ValidRatesAndFrameLengths(8000, kFrameLengths[j])) {
-      ASSERT_EQ(0, WebRtcVad_InitCore(self, 0));
+      ASSERT_EQ(0, WebRtcVad_InitCore(self));
       EXPECT_EQ(0, WebRtcVad_CalculateFeatures(self, speech, kFrameLengths[j],
                                                features));
       for (int k = 0; k < NUM_CHANNELS; ++k) {
