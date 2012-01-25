@@ -556,10 +556,11 @@ WebRtc_Word32 AudioConferenceMixerImpl::SetMixabilityStatus(
             return -1;
         }
 
-        const int numMixedNonAnonymous = (_participantList.GetSize() <
-            kMaximumAmountOfMixedParticipants) ? _participantList.GetSize() :
-            kMaximumAmountOfMixedParticipants;
-
+        int numMixedNonAnonymous = _participantList.GetSize();
+        if (numMixedNonAnonymous > kMaximumAmountOfMixedParticipants)
+        {
+            numMixedNonAnonymous = kMaximumAmountOfMixedParticipants;
+        }
         numMixedParticipants = numMixedNonAnonymous +
                                _additionalParticipantList.GetSize();
     }
