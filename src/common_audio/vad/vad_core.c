@@ -527,7 +527,7 @@ int WebRtcVad_InitCore(VadInstT* self) {
 }
 
 // Set aggressiveness mode
-int WebRtcVad_set_mode_core(VadInstT *inst, short mode)
+int WebRtcVad_set_mode_core(VadInstT *inst, int mode)
 {
 
     if (mode == 0)

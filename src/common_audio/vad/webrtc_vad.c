@@ -106,7 +106,7 @@ int WebRtcVad_Init(VadInst* handle) {
   return WebRtcVad_InitCore((VadInstT*) handle);
 }
 
-int WebRtcVad_set_mode(VadInst *vad_inst, WebRtc_Word16 mode)
+int WebRtcVad_set_mode(VadInst *vad_inst, int mode)
 {
     VadInstT* vad_ptr;
 

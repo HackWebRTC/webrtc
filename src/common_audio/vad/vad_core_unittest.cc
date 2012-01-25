@@ -45,8 +45,7 @@ TEST_F(VadTest, set_mode_core) {
   // Test WebRtcVad_set_mode_core().
   // Invalid modes should return -1.
   EXPECT_EQ(-1, WebRtcVad_set_mode_core(self, -1));
-  EXPECT_EQ(-1, WebRtcVad_set_mode_core(self,
-                                        static_cast<int16_t>(kModesSize)));
+  EXPECT_EQ(-1, WebRtcVad_set_mode_core(self, 1000));
   // Valid modes should return 0.
   for (size_t j = 0; j < kModesSize; ++j) {
     EXPECT_EQ(0, WebRtcVad_set_mode_core(self, kModes[j]));

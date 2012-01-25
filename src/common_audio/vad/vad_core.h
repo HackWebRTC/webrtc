@@ -75,7 +75,7 @@ int WebRtcVad_InitCore(VadInstT* self);
  *                    -1 - Error
  */
 
-int WebRtcVad_set_mode_core(VadInstT* inst, short mode);
+int WebRtcVad_set_mode_core(VadInstT* inst, int mode);
 
 /****************************************************************************
  * WebRtcVad_CalcVad32khz(...) 

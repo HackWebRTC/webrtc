@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -19,7 +19,7 @@
 namespace {
 
 // Modes we support
-const int16_t kModes[] = { 0, 1, 2, 3 };
+const int kModes[] = { 0, 1, 2, 3 };
 const size_t kModesSize = sizeof(kModes) / sizeof(*kModes);
 
 // Rates we support.

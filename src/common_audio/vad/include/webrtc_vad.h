@@ -127,7 +127,7 @@ int WebRtcVad_Init(VadInst *vad_inst);
  * Return value         :  0 - Ok
  *                        -1 - Error
  */
-int WebRtcVad_set_mode(VadInst *vad_inst, WebRtc_Word16 mode);
+int WebRtcVad_set_mode(VadInst *vad_inst, int mode);
 
 /****************************************************************************
  * WebRtcVad_Process(...)

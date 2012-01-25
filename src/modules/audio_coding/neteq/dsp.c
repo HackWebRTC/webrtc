@@ -471,8 +471,7 @@ int WebRtcNetEQ_InitVAD(PostDecodeVAD_t *VADInst, WebRtc_UWord16 fs)
  *						  -1 - Error
  */
 
-int WebRtcNetEQ_SetVADModeInternal(PostDecodeVAD_t *VADInst,
-    WebRtc_Word16 mode)
+int WebRtcNetEQ_SetVADModeInternal(PostDecodeVAD_t *VADInst, int mode)
 {
 
     int res = 0;
