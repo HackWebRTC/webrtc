@@ -51,11 +51,10 @@ ViEChannelManager::~ViEChannelManager() {
                "ViEChannelManager Destructor, engine_id: %d", engine_id_);
 
   module_process_thread_->DeRegisterModule(remb_.get());
-  ChannelMap::iterator it = channel_map_.begin();
-  while (it != channel_map_.end()) {
+  while (channel_map_.size() > 0) {
+    ChannelMap::iterator it = channel_map_.begin();
+    // DeleteChannel will erase this channel from the map and invalidate |it|.
     DeleteChannel(it->first);
-    channel_map_.erase(it);
-    it = channel_map_.begin();
   }
 
   if (voice_sync_interface_) {
