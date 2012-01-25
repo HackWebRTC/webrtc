@@ -13,13 +13,13 @@
 
 #include "video_engine/include/vie_external_codec.h"
 #include "video_engine/vie_ref_count.h"
-#include "video_engine/vie_shared_data.h"
 
 namespace webrtc {
 
+class ViESharedData;
+
 class ViEExternalCodecImpl
-    : public virtual ViESharedData,
-      public ViEExternalCodec,
+    : public ViEExternalCodec,
       public ViERefCount {
  public:
   // Implements ViEExternalCodec.
@@ -36,6 +36,13 @@ class ViEExternalCodecImpl
                                            int render_delay = 0);
   virtual int DeRegisterExternalReceiveCodec(const int video_channel,
                                              const unsigned char pl_type);
+
+ protected:
+  ViEExternalCodecImpl(ViESharedData* shared_data);
+  virtual ~ViEExternalCodecImpl();
+
+ private:
+  ViESharedData* shared_data_;
 };
 
 }  // namespace webrtc

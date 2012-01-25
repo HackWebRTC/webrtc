@@ -14,8 +14,8 @@
 #ifndef WEBRTC_VIDEO_ENGINE_VIE_SHARED_DATA_H_
 #define WEBRTC_VIDEO_ENGINE_VIE_SHARED_DATA_H_
 
-#include "vie_defines.h"
-#include "vie_performance_monitor.h"
+#include "video_engine/vie_defines.h"
+#include "video_engine/vie_performance_monitor.h"
 
 namespace webrtc {
 
@@ -25,7 +25,7 @@ class ViEInputManager;
 class ViERenderManager;
 
 class ViESharedData {
- protected:
+ public:
   ViESharedData();
   ~ViESharedData();
 
@@ -37,6 +37,14 @@ class ViESharedData {
 
   int NumberOfCores() const;
 
+  int instance_id() { return instance_id_;}
+  ViEPerformanceMonitor* vie_performance_monitor() {
+    return &vie_performance_monitor_; }
+  ViEChannelManager* channel_manager() { return &channel_manager_; }
+  ViEInputManager* input_manager() { return &input_manager_; }
+  ViERenderManager* render_manager() { return &render_manager_; }
+
+ private:
   static int instance_counter_;
   const int instance_id_;
   bool initialized_;
@@ -47,8 +55,6 @@ class ViESharedData {
   ViEInputManager& input_manager_;
   ViERenderManager& render_manager_;
   ProcessThread* module_process_thread_;
-
- private:
   mutable int last_error_;
 };
 

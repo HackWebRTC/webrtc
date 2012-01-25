@@ -14,13 +14,13 @@
 #include "typedefs.h"
 #include "video_engine/include/vie_network.h"
 #include "video_engine/vie_ref_count.h"
-#include "video_engine/vie_shared_data.h"
 
 namespace webrtc {
 
+class ViESharedData;
+
 class ViENetworkImpl
-    : public virtual ViESharedData,
-      public ViENetwork,
+    : public ViENetwork,
       public ViERefCount {
  public:
   // Implements ViENetwork.
@@ -102,8 +102,11 @@ class ViENetworkImpl
                             bool use_rtcp_socket);
 
  protected:
-  ViENetworkImpl();
+  ViENetworkImpl(ViESharedData* shared_data);
   virtual ~ViENetworkImpl();
+
+ private:
+  ViESharedData* shared_data_;
 };
 
 }  // namespace webrtc

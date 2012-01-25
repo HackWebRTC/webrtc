@@ -14,13 +14,13 @@
 #include "typedefs.h"
 #include "video_engine/include/vie_encryption.h"
 #include "video_engine/vie_ref_count.h"
-#include "video_engine/vie_shared_data.h"
 
 namespace webrtc {
 
+class ViESharedData;
+
 class ViEEncryptionImpl
-    : public virtual ViESharedData,
-      public ViEEncryption,
+    : public ViEEncryption,
       public ViERefCount {
  public:
   virtual int Release();
@@ -31,8 +31,11 @@ class ViEEncryptionImpl
   virtual int DeregisterExternalEncryption(const int video_channel);
 
  protected:
-  ViEEncryptionImpl();
+  ViEEncryptionImpl(ViESharedData* shared_data);
   virtual ~ViEEncryptionImpl();
+
+ private:
+  ViESharedData* shared_data_;
 };
 
 }  // namespace webrtc

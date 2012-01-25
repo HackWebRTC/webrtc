@@ -14,13 +14,13 @@
 #include "typedefs.h"
 #include "video_engine/include/vie_image_process.h"
 #include "video_engine/vie_ref_count.h"
-#include "video_engine/vie_shared_data.h"
 
 namespace webrtc {
 
+class ViESharedData;
+
 class ViEImageProcessImpl
-    : public virtual ViESharedData,
-      public ViEImageProcess,
+    : public ViEImageProcess,
       public ViERefCount {
  public:
   // Implements ViEImageProcess.
@@ -40,8 +40,11 @@ class ViEImageProcessImpl
                                      const bool enable);
 
  protected:
-  ViEImageProcessImpl();
+  ViEImageProcessImpl(ViESharedData* shared_data);
   virtual ~ViEImageProcessImpl();
+
+ private:
+  ViESharedData* shared_data_;
 };
 
 }  // namespace webrtc

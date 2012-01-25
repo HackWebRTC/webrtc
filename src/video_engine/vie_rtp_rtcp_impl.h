@@ -15,16 +15,16 @@
 #include "typedefs.h"
 #include "video_engine/include/vie_rtp_rtcp.h"
 #include "video_engine/vie_ref_count.h"
-#include "video_engine/vie_shared_data.h"
 
 namespace webrtc {
 
+class ViESharedData;
+
 class ViERTP_RTCPImpl
-    : public virtual ViESharedData,
-      public ViERTP_RTCP,
+    : public ViERTP_RTCP,
       public ViERefCount {
  public:
-  // Implements ViERTP_RTCP
+  // Implements ViERTP_RTCP.
   virtual int Release();
   virtual int SetLocalSSRC(const int video_channel,
                            const unsigned int SSRC,
@@ -87,8 +87,9 @@ class ViERTP_RTCPImpl
                                 unsigned int& video_bitrate_sent,
                                 unsigned int& fec_bitrate_sent,
                                 unsigned int& nackBitrateSent) const;
-  virtual int SetRTPKeepAliveStatus(
-      const int video_channel, bool enable, const char unknown_payload_type,
+  virtual int SetRTPKeepAliveStatus(const int video_channel,
+                                    bool enable,
+                                    const char unknown_payload_type,
       const unsigned int delta_transmit_time_seconds);
   virtual int GetRTPKeepAliveStatus(
       const int video_channel,
@@ -107,8 +108,11 @@ class ViERTP_RTCPImpl
   virtual int DeregisterRTCPObserver(const int video_channel);
 
  protected:
-  ViERTP_RTCPImpl();
+  ViERTP_RTCPImpl(ViESharedData* shared_data);
   virtual ~ViERTP_RTCPImpl();
+
+ private:
+  ViESharedData* shared_data_;
 };
 
 }  // namespace webrtc

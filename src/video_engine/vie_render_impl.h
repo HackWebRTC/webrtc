@@ -15,13 +15,13 @@
 #include "typedefs.h"
 #include "video_engine/include/vie_render.h"
 #include "video_engine/vie_ref_count.h"
-#include "video_engine/vie_shared_data.h"
 
 namespace webrtc {
 
+class ViESharedData;
+
 class ViERenderImpl
-    : public virtual ViESharedData,
-      public ViERender,
+    : public ViERender,
       public ViERefCount {
  public:
   // Implements ViERender
@@ -45,9 +45,13 @@ class ViERenderImpl
                           ExternalRenderer* renderer);
 
  protected:
-  ViERenderImpl();
+  ViERenderImpl(ViESharedData* shared_data);
   virtual ~ViERenderImpl();
+
+ private:
+  ViESharedData* shared_data_;
 };
 
 }  // namespace webrtc
+
 #endif  // WEBRTC_VIDEO_ENGINE_VIE_RENDER_IMPL_H_

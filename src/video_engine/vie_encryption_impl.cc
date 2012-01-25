@@ -16,6 +16,7 @@
 #include "video_engine/vie_channel_manager.h"
 #include "video_engine/vie_defines.h"
 #include "video_engine/vie_impl.h"
+#include "video_engine/vie_shared_data.h"
 
 namespace webrtc {
 
@@ -35,69 +36,73 @@ ViEEncryption* ViEEncryption::GetInterface(VideoEngine* video_engine) {
 }
 
 int ViEEncryptionImpl::Release() {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, instance_id_,
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, shared_data_->instance_id(),
                "ViEEncryptionImpl::Release()");
   // Decrease ref count.
   (*this)--;
 
   WebRtc_Word32 ref_count = GetCount();
   if (ref_count < 0) {
-    WEBRTC_TRACE(kTraceWarning, kTraceVideo, instance_id_,
+    WEBRTC_TRACE(kTraceWarning, kTraceVideo, shared_data_->instance_id(),
                  "ViEEncryptionImpl release too many times");
-    SetLastError(kViEAPIDoesNotExist);
+    shared_data_->SetLastError(kViEAPIDoesNotExist);
     return -1;
   }
-  WEBRTC_TRACE(kTraceInfo, kTraceVideo, instance_id_,
+  WEBRTC_TRACE(kTraceInfo, kTraceVideo, shared_data_->instance_id(),
                "ViEEncryptionImpl reference count: %d", ref_count);
   return ref_count;
 }
 
-ViEEncryptionImpl::ViEEncryptionImpl() {
-  WEBRTC_TRACE(kTraceMemory, kTraceVideo, instance_id_,
+ViEEncryptionImpl::ViEEncryptionImpl(ViESharedData* shared_data)
+    : shared_data_(shared_data) {
+  WEBRTC_TRACE(kTraceMemory, kTraceVideo, shared_data_->instance_id(),
                "ViEEncryptionImpl::ViEEncryptionImpl() Ctor");
 }
 
 ViEEncryptionImpl::~ViEEncryptionImpl() {
-  WEBRTC_TRACE(kTraceMemory, kTraceVideo, instance_id_,
+  WEBRTC_TRACE(kTraceMemory, kTraceVideo, shared_data_->instance_id(),
                "ViEEncryptionImpl::~ViEEncryptionImpl() Dtor");
 }
 
 int ViEEncryptionImpl::RegisterExternalEncryption(const int video_channel,
                                                   Encryption& encryption) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
+               ViEId(shared_data_->instance_id(), video_channel),
                "RegisterExternalEncryption(video_channel=%d)", video_channel);
 
-  ViEChannelManagerScoped cs(channel_manager_);
+  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEChannel* vie_channel = cs.Channel(video_channel);
   if (vie_channel == NULL) {
     WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(instance_id_, video_channel), "%s: No channel %d",
-                 __FUNCTION__, video_channel);
-    SetLastError(kViEEncryptionInvalidChannelId);
+                 ViEId(shared_data_->instance_id(), video_channel),
+                 "%s: No channel %d", __FUNCTION__, video_channel);
+    shared_data_->SetLastError(kViEEncryptionInvalidChannelId);
     return -1;
   }
   if (vie_channel->RegisterExternalEncryption(&encryption) != 0) {
-    SetLastError(kViEEncryptionUnknownError);
+    shared_data_->SetLastError(kViEEncryptionUnknownError);
     return -1;
   }
   return 0;
 }
 
 int ViEEncryptionImpl::DeregisterExternalEncryption(const int video_channel) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVideo, ViEId(instance_id_, video_channel),
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
+               ViEId(shared_data_->instance_id(), video_channel),
                "RegisterExternalEncryption(video_channel=%d)", video_channel);
 
-  ViEChannelManagerScoped cs(channel_manager_);
+  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
   ViEChannel* vie_channel = cs.Channel(video_channel);
   if (vie_channel == NULL) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(instance_id_, video_channel),
+    WEBRTC_TRACE(kTraceError, kTraceVideo,
+                 ViEId(shared_data_->instance_id(), video_channel),
                  "%s: No channel %d", __FUNCTION__, video_channel);
-    SetLastError(kViEEncryptionInvalidChannelId);
+    shared_data_->SetLastError(kViEEncryptionInvalidChannelId);
     return -1;
   }
 
   if (vie_channel->DeRegisterExternalEncryption() != 0) {
-    SetLastError(kViEEncryptionUnknownError);
+    shared_data_->SetLastError(kViEEncryptionUnknownError);
     return -1;
   }
   return 0;

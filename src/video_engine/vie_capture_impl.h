@@ -15,13 +15,13 @@
 #include "video_engine/include/vie_capture.h"
 #include "video_engine/vie_defines.h"
 #include "video_engine/vie_ref_count.h"
-#include "video_engine/vie_shared_data.h"
 
 namespace webrtc {
 
+class ViESharedData;
+
 class ViECaptureImpl
-    : public virtual ViESharedData,
-      public ViECapture,
+    : public ViECapture,
       public ViERefCount {
  public:
   // Implements ViECapture.
@@ -69,8 +69,11 @@ class ViECaptureImpl
   virtual int DeregisterObserver(const int capture_id);
 
  protected:
-  ViECaptureImpl();
+  ViECaptureImpl(ViESharedData* shared_data);
   virtual ~ViECaptureImpl();
+
+ private:
+  ViESharedData* shared_data_;
 };
 
 }  // namespace webrtc

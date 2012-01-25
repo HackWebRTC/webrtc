@@ -23,6 +23,7 @@ namespace webrtc {
 
 class ConditionVariableWrapper;
 class CriticalSectionWrapper;
+class ViESharedData;
 
 class ViECaptureSnapshot : public ViEFrameCallback {
  public:
@@ -48,8 +49,7 @@ class ViECaptureSnapshot : public ViEFrameCallback {
 };
 
 class ViEFileImpl
-    : public virtual ViESharedData,
-      public ViEFile,
+    : public ViEFile,
       public ViERefCount {
  public:
   // Implements ViEFile.
@@ -116,12 +116,14 @@ class ViEFileImpl
                                     const unsigned int timeout_ms);
 
  protected:
-  ViEFileImpl();
+  ViEFileImpl(ViESharedData* shared_data);
   virtual ~ViEFileImpl();
 
  private:
   WebRtc_Word32 GetNextCapturedFrame(WebRtc_Word32 capture_id,
                                      VideoFrame& video_frame);
+
+  ViESharedData* shared_data_;
 };
 
 }  // namespace webrtc

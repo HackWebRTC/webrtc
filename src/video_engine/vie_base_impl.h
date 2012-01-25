@@ -22,8 +22,7 @@ class Module;
 class VoiceEngine;
 
 class ViEBaseImpl
-    : public virtual ViESharedData,
-      public ViEBase,
+    : public ViEBase,
       public ViERefCount {
  public:
   virtual int Release();
@@ -70,7 +69,7 @@ class ViEBaseImpl
   // Deregisters the observer.
   virtual int DeregisterObserver();
 
-  // Prints version information into |verson|.
+  // Prints version information into |version|.
   virtual int GetVersion(char version[1024]);
 
   // Returns the error code for the last registered error.
@@ -80,11 +79,16 @@ class ViEBaseImpl
   ViEBaseImpl();
   virtual ~ViEBaseImpl();
 
+  ViESharedData* shared_data() { return &shared_data_; }
+
  private:
   // Version functions.
   WebRtc_Word32 AddViEVersion(char* str) const;
   WebRtc_Word32 AddBuildInfo(char* str) const;
   WebRtc_Word32 AddExternalTransportBuild(char* str) const;
+
+  // ViEBaseImpl owns ViESharedData used by all interface implementations.
+  ViESharedData shared_data_;
 };
 
 }  // namespace webrtc

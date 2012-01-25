@@ -77,7 +77,36 @@ class VideoEngineImpl
 #endif
 {  // NOLINT
  public:
-  VideoEngineImpl() {}
+  VideoEngineImpl()
+      :
+#ifdef WEBRTC_VIDEO_ENGINE_CODEC_API
+        ViECodecImpl(ViEBaseImpl::shared_data())
+#endif
+#ifdef WEBRTC_VIDEO_ENGINE_CAPTURE_API
+        , ViECaptureImpl(ViEBaseImpl::shared_data())
+#endif
+#ifdef WEBRTC_VIDEO_ENGINE_ENCRYPTION_API
+        , ViEEncryptionImpl(ViEBaseImpl::shared_data())
+#endif
+#ifdef WEBRTC_VIDEO_ENGINE_FILE_API
+        , ViEFileImpl(ViEBaseImpl::shared_data())
+#endif
+#ifdef WEBRTC_VIDEO_ENGINE_IMAGE_PROCESS_API
+        , ViEImageProcessImpl(ViEBaseImpl::shared_data())
+#endif
+#ifdef WEBRTC_VIDEO_ENGINE_NETWORK_API
+        , ViENetworkImpl(ViEBaseImpl::shared_data())
+#endif
+#ifdef WEBRTC_VIDEO_ENGINE_RENDER_API
+        , ViERenderImpl(ViEBaseImpl::shared_data())
+#endif
+#ifdef WEBRTC_VIDEO_ENGINE_RTP_RTCP_API
+        , ViERTP_RTCPImpl(ViEBaseImpl::shared_data())
+#endif
+#ifdef WEBRTC_VIDEO_ENGINE_EXTERNAL_CODEC_API
+        , ViEExternalCodecImpl(ViEBaseImpl::shared_data())
+#endif
+  {}
   virtual ~VideoEngineImpl() {}
 };
 
