@@ -107,6 +107,19 @@ WebRtc_UWord16 WebRtcNetEQ_BufstatsDecision(BufstatsInst_t *inst, WebRtc_Word16 
         {
             /* signed difference between wanted and available TS */
             WebRtc_Word32 diffTS = (inst->uw32_CNGplayedTS + targetTS) - availableTS;
+            int32_t optimal_level_samp = (inst->Automode_inst.optBufLevel *
+                inst->Automode_inst.packetSpeechLenSamp) >> 8;
+            int32_t excess_waiting_time_samp = -diffTS - optimal_level_samp;
+
+            if (excess_waiting_time_samp > optimal_level_samp / 2)
+            {
+                /* The waiting time for this packet will be longer than 1.5
+                 * times the wanted buffer delay. Advance the clock by to cut
+                 * waiting time down to the optimal.
+                 */
+                inst->uw32_CNGplayedTS += excess_waiting_time_samp;
+                diffTS += excess_waiting_time_samp;
+            }
 
             if ((diffTS) < 0 && (prevPlayMode == MODE_RFC3389CNG))
             {

@@ -40,6 +40,7 @@ public:
     int recIn(NETEQTEST_RTPpacket & rtp);
     WebRtc_Word16 recOut(WebRtc_Word16 *outData, void *msInfo = NULL, enum WebRtcNetEQOutputType *outputType = NULL);
     WebRtc_UWord32 getSpeechTimeStamp();
+    WebRtcNetEQOutputType getOutputType();
 
     void * instance() { return (_inst); };
     void usePreparseRTP( bool useIt = true ) { _preparseRTP = useIt; };

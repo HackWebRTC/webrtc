@@ -345,6 +345,18 @@ WebRtc_UWord32 NETEQTEST_NetEQClass::getSpeechTimeStamp()
 
 }
 
+WebRtcNetEQOutputType NETEQTEST_NetEQClass::getOutputType() {
+  WebRtcNetEQOutputType type;
+
+  int err = WebRtcNetEQ_GetSpeechOutputType(_inst, &type);
+  if (err)
+  {
+    printError();
+    type = kOutputNormal;
+  }
+  return (type);
+}
+
 //NETEQTEST_NetEQVector::NETEQTEST_NetEQVector(int numChannels)
 //:
 //channels(numChannels, new NETEQTEST_NetEQClass())

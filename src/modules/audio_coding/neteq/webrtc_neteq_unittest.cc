@@ -184,8 +184,13 @@ class NetEqDecodingTest : public ::testing::Test {
                            const std::string &stat_ref_file,
                            const std::string &rtcp_ref_file);
   static void PopulateRtpInfo(int frame_index,
-                              int samples_per_frame,
+                              int timestamp,
                               WebRtcNetEQ_RTPInfo* rtp_info);
+  static void PopulateCng(int frame_index,
+                          int timestamp,
+                          WebRtcNetEQ_RTPInfo* rtp_info,
+                          uint8_t* payload,
+                          int* payload_len);
 
   NETEQTEST_NetEQClass* neteq_inst_;
   std::vector<NETEQTEST_Decoder*> dec_;
@@ -240,7 +245,9 @@ void NetEqDecodingTest::SelectDecoders(WebRtcNetEQDecoder* used_codec) {
   *used_codec++ = kDecoderPCM16Bswb32kHz;
   dec_.push_back(new decoder_PCM16B_SWB32(95));
   *used_codec++ = kDecoderCNG;
-  dec_.push_back(new decoder_CNG(13));
+  dec_.push_back(new decoder_CNG(13, 8000));
+  *used_codec++ = kDecoderCNG;
+  dec_.push_back(new decoder_CNG(98, 16000));
 }
 
 void NetEqDecodingTest::LoadDecoders() {
@@ -337,13 +344,27 @@ void NetEqDecodingTest::DecodeAndCheckStats(const std::string &rtp_file,
 }
 
 void NetEqDecodingTest::PopulateRtpInfo(int frame_index,
-                                        int samples_per_frame,
+                                        int timestamp,
                                         WebRtcNetEQ_RTPInfo* rtp_info) {
   rtp_info->sequenceNumber = frame_index;
-  rtp_info->timeStamp = frame_index * samples_per_frame;
+  rtp_info->timeStamp = timestamp;
   rtp_info->SSRC = 0x1234;  // Just an arbitrary SSRC.
   rtp_info->payloadType = 94;  // PCM16b WB codec.
   rtp_info->markerBit = 0;
+}
+
+void NetEqDecodingTest::PopulateCng(int frame_index,
+                                    int timestamp,
+                                    WebRtcNetEQ_RTPInfo* rtp_info,
+                                    uint8_t* payload,
+                                    int* payload_len) {
+  rtp_info->sequenceNumber = frame_index;
+  rtp_info->timeStamp = timestamp;
+  rtp_info->SSRC = 0x1234;  // Just an arbitrary SSRC.
+  rtp_info->payloadType = 98;  // WB CNG.
+  rtp_info->markerBit = 0;
+  payload[0] = 64;  // Noise level -64 dBov, quite arbitrarily chosen.
+  *payload_len = 1;  // Only noise level, no spectral parameters.
 }
 
 TEST_F(NetEqDecodingTest, TestBitExactness) {
@@ -439,7 +460,7 @@ TEST_F(NetEqDecodingTest, TestAverageInterArrivalTimeNegative) {
     for (int n = 0; n < num_packets; ++n) {
       uint8_t payload[kPayloadBytes] = {0};
       WebRtcNetEQ_RTPInfo rtp_info;
-      PopulateRtpInfo(frame_index, kSamples, &rtp_info);
+      PopulateRtpInfo(frame_index, frame_index * kSamples, &rtp_info);
       ASSERT_EQ(0,
                 WebRtcNetEQ_RecInRTPStruct(neteq_inst_->instance(),
                                            &rtp_info,
@@ -470,7 +491,7 @@ TEST_F(NetEqDecodingTest, TestAverageInterArrivalTimePositive) {
     for (int n = 0; n < num_packets; ++n) {
       uint8_t payload[kPayloadBytes] = {0};
       WebRtcNetEQ_RTPInfo rtp_info;
-      PopulateRtpInfo(frame_index, kSamples, &rtp_info);
+      PopulateRtpInfo(frame_index, frame_index * kSamples, &rtp_info);
       ASSERT_EQ(0,
                 WebRtcNetEQ_RecInRTPStruct(neteq_inst_->instance(),
                                            &rtp_info,
@@ -487,6 +508,98 @@ TEST_F(NetEqDecodingTest, TestAverageInterArrivalTimePositive) {
   ASSERT_EQ(0, WebRtcNetEQ_GetNetworkStatistics(neteq_inst_->instance(),
                                                 &network_stats));
   EXPECT_EQ(108352, network_stats.clockDriftPPM);
+}
+
+TEST_F(NetEqDecodingTest, LongCngWithClockDrift) {
+  uint16_t seq_no = 0;
+  uint32_t timestamp = 0;
+  const int kFrameSizeMs = 30;
+  const int kSamples = kFrameSizeMs * 16;
+  const int kPayloadBytes = kSamples * 2;
+  // Apply a clock drift of -25 ms / s (sender faster than receiver).
+  const double kDriftFactor = 1000.0 / (1000.0 + 25.0);
+  double next_input_time_ms = 0.0;
+  double t_ms;
+
+  // Insert speech for 5 seconds.
+  const int kSpeechDurationMs = 5000;
+  for (t_ms = 0; t_ms < kSpeechDurationMs; t_ms += 10) {
+    // Each turn in this for loop is 10 ms.
+    while (next_input_time_ms <= t_ms) {
+      // Insert one 30 ms speech frame.
+      uint8_t payload[kPayloadBytes] = {0};
+      WebRtcNetEQ_RTPInfo rtp_info;
+      PopulateRtpInfo(seq_no, timestamp, &rtp_info);
+      ASSERT_EQ(0,
+                WebRtcNetEQ_RecInRTPStruct(neteq_inst_->instance(),
+                                           &rtp_info,
+                                           payload,
+                                           kPayloadBytes, 0));
+      ++seq_no;
+      timestamp += kSamples;
+      next_input_time_ms += static_cast<double>(kFrameSizeMs) * kDriftFactor;
+    }
+    // Pull out data once.
+    ASSERT_TRUE(kBlockSize16kHz == neteq_inst_->recOut(out_data_));
+  }
+
+  EXPECT_EQ(kOutputNormal, neteq_inst_->getOutputType());
+  int32_t delay_before = timestamp - neteq_inst_->getSpeechTimeStamp();
+
+  // Insert CNG for 1 minute (= 60000 ms).
+  const int kCngPeriodMs = 100;
+  const int kCngPeriodSamples = kCngPeriodMs * 16;  // Period in 16 kHz samples.
+  const int kCngDurationMs = 60000;
+  for (; t_ms < kSpeechDurationMs + kCngDurationMs; t_ms += 10) {
+    // Each turn in this for loop is 10 ms.
+    while (next_input_time_ms <= t_ms) {
+      // Insert one CNG frame each 100 ms.
+      uint8_t payload[kPayloadBytes];
+      int payload_len;
+      WebRtcNetEQ_RTPInfo rtp_info;
+      PopulateCng(seq_no, timestamp, &rtp_info, payload, &payload_len);
+      ASSERT_EQ(0,
+                WebRtcNetEQ_RecInRTPStruct(neteq_inst_->instance(),
+                                           &rtp_info,
+                                           payload,
+                                           payload_len, 0));
+      ++seq_no;
+      timestamp += kCngPeriodSamples;
+      next_input_time_ms += static_cast<double>(kCngPeriodMs) * kDriftFactor;
+    }
+    // Pull out data once.
+    ASSERT_TRUE(kBlockSize16kHz == neteq_inst_->recOut(out_data_));
+  }
+
+  EXPECT_EQ(kOutputCNG, neteq_inst_->getOutputType());
+
+  // Insert speech again until output type is speech.
+  while (neteq_inst_->getOutputType() != kOutputNormal) {
+    // Each turn in this for loop is 10 ms.
+    while (next_input_time_ms <= t_ms) {
+      // Insert one 30 ms speech frame.
+      uint8_t payload[kPayloadBytes] = {0};
+      WebRtcNetEQ_RTPInfo rtp_info;
+      PopulateRtpInfo(seq_no, timestamp, &rtp_info);
+      ASSERT_EQ(0,
+                WebRtcNetEQ_RecInRTPStruct(neteq_inst_->instance(),
+                                           &rtp_info,
+                                           payload,
+                                           kPayloadBytes, 0));
+      ++seq_no;
+      timestamp += kSamples;
+      next_input_time_ms += static_cast<double>(kFrameSizeMs) * kDriftFactor;
+    }
+    // Pull out data once.
+    ASSERT_TRUE(kBlockSize16kHz == neteq_inst_->recOut(out_data_));
+    // Increase clock.
+    t_ms += 10;
+  }
+
+  int32_t delay_after = timestamp - neteq_inst_->getSpeechTimeStamp();
+  // Compare delay before and after, and make sure it differs less than 20 ms.
+  EXPECT_LE(delay_after, delay_before + 20 * 16);
+  EXPECT_GE(delay_after, delay_before - 20 * 16);
 }
 
 }  // namespace
