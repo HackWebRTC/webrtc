@@ -114,7 +114,7 @@ WebRtc_UWord16 WebRtcNetEQ_BufstatsDecision(BufstatsInst_t *inst, WebRtc_Word16 
             if (excess_waiting_time_samp > optimal_level_samp / 2)
             {
                 /* The waiting time for this packet will be longer than 1.5
-                 * times the wanted buffer delay. Advance the clock by to cut
+                 * times the wanted buffer delay. Advance the clock to cut
                  * waiting time down to the optimal.
                  */
                 inst->uw32_CNGplayedTS += excess_waiting_time_samp;
