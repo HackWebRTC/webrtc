@@ -1,4 +1,4 @@
-# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+# Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
@@ -20,15 +20,15 @@
         '<(webrtc_root)/common_audio/common_audio.gyp:signal_processing',
       ],
       'include_dirs': [
-        'interface',
+        'include',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          'interface',
+          'include',
         ],
       },
       'sources': [
-        'interface/echo_cancellation.h',
+        'include/echo_cancellation.h',
         'echo_cancellation.c',
         'aec_core.h',
         'aec_core.c',

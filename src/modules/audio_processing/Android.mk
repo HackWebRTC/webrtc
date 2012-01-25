@@ -1,4 +1,4 @@
-# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+# Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
@@ -38,11 +38,11 @@ LOCAL_CFLAGS := \
 #   -DWEBRTC_NS_FLOAT'
 
 LOCAL_C_INCLUDES := \
-    $(LOCAL_PATH)/interface \
-    $(LOCAL_PATH)/aec/interface \
-    $(LOCAL_PATH)/aecm/interface \
-    $(LOCAL_PATH)/agc/interface \
-    $(LOCAL_PATH)/ns/interface \
+    $(LOCAL_PATH)/include \
+    $(LOCAL_PATH)/aec/include \
+    $(LOCAL_PATH)/aecm/include \
+    $(LOCAL_PATH)/agc/include \
+    $(LOCAL_PATH)/ns/include \
     $(LOCAL_PATH)/../interface \
     $(LOCAL_PATH)/../.. \
     $(LOCAL_PATH)/../../common_audio/signal_processing/include \
@@ -75,7 +75,7 @@ LOCAL_CFLAGS := \
     $(MY_WEBRTC_COMMON_DEFS)
 
 LOCAL_C_INCLUDES := \
-    $(LOCAL_PATH)/interface \
+    $(LOCAL_PATH)/include \
     $(LOCAL_PATH)/../interface \
     $(LOCAL_PATH)/../.. \
     $(LOCAL_PATH)/../../system_wrappers/interface \
@@ -116,7 +116,7 @@ LOCAL_CFLAGS := \
     '-DWEBRTC_APM_UNIT_TEST_FIXED_PROFILE'
 
 LOCAL_C_INCLUDES := \
-    $(LOCAL_PATH)/interface \
+    $(LOCAL_PATH)/include \
     $(LOCAL_PATH)/../interface \
     $(LOCAL_PATH)/../.. \
     $(LOCAL_PATH)/../../../test \

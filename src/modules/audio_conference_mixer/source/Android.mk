@@ -1,4 +1,4 @@
-# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+# Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
@@ -29,9 +29,9 @@ LOCAL_CFLAGS := \
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../interface \
     $(LOCAL_PATH)/../../interface \
-    $(LOCAL_PATH)/../../audio_processing/interface \
+    $(LOCAL_PATH)/../../audio_processing/include \
     $(LOCAL_PATH)/../../.. \
-    $(LOCAL_PATH)/../../../system_wrappers/interface 
+    $(LOCAL_PATH)/../../../system_wrappers/interface
 
 LOCAL_SHARED_LIBRARIES := \
     libcutils \

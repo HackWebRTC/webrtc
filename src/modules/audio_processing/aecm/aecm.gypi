@@ -1,4 +1,4 @@
-# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+# Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
@@ -17,15 +17,15 @@
         'apm_util'
       ],
       'include_dirs': [
-        'interface',
+        'include',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          'interface',
+          'include',
         ],
       },
       'sources': [
-        'interface/echo_control_mobile.h',
+        'include/echo_control_mobile.h',
         'echo_control_mobile.c',
         'aecm_core.c',
         'aecm_core.h',

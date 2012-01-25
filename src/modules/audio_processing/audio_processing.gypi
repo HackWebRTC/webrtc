@@ -1,4 +1,4 @@
-# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+# Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
@@ -33,17 +33,17 @@
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
       'include_dirs': [
-        'interface',
+        'include',
         '../interface',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          'interface',
+          'include',
           '../interface',
         ],
       },
       'sources': [
-        'interface/audio_processing.h',
+        'include/audio_processing.h',
         'audio_buffer.cc',
         'audio_buffer.h',
         'audio_processing_impl.cc',

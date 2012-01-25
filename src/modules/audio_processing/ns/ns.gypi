@@ -1,4 +1,4 @@
-# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+# Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
@@ -16,15 +16,15 @@
         'apm_util'
       ],
       'include_dirs': [
-        'interface',
+        'include',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          'interface',
+          'include',
         ],
       },
       'sources': [
-        'interface/noise_suppression.h',
+        'include/noise_suppression.h',
         'noise_suppression.c',
         'windows_private.h',
         'defines.h',
@@ -40,15 +40,15 @@
         '<(webrtc_root)/system_wrappers/source/system_wrappers.gyp:system_wrappers',
       ],
       'include_dirs': [
-        'interface',
+        'include',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          'interface',
+          'include',
         ],
       },
       'sources': [
-        'interface/noise_suppression_x.h',
+        'include/noise_suppression_x.h',
         'noise_suppression_x.c',
         'nsx_defines.h',
         'nsx_core.c',

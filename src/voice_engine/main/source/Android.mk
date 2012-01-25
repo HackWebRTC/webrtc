@@ -1,4 +1,4 @@
-# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+# Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
@@ -62,7 +62,7 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../../../modules/audio_conference_mixer/interface \
     $(LOCAL_PATH)/../../../modules/audio_device/main/interface \
     $(LOCAL_PATH)/../../../modules/audio_device/main/source \
-    $(LOCAL_PATH)/../../../modules/audio_processing/interface \
+    $(LOCAL_PATH)/../../../modules/audio_processing/include \
     $(LOCAL_PATH)/../../../modules/media_file/interface \
     $(LOCAL_PATH)/../../../modules/rtp_rtcp/interface \
     $(LOCAL_PATH)/../../../modules/udp_transport/interface \
