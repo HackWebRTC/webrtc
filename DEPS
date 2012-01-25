@@ -54,7 +54,7 @@ deps = {
     Var("chromium_trunk") + "/src/third_party/libjpeg@" + Var("chromium_revision"),
 
   "trunk/third_party/libsrtp/":
-    Var("chromium_trunk") + "/deps/third_party/libsrtp@115467",
+    Var("chromium_trunk") + "/deps/third_party/libsrtp@118928",
 
   "trunk/third_party/yasm/":
     Var("chromium_trunk") + "/src/third_party/yasm@" + Var("chromium_revision"),
@@ -73,7 +73,7 @@ deps = {
 
   "trunk/third_party/yasm/source/patched-yasm":
     Var("chromium_trunk") + "/deps/third_party/yasm/patched-yasm@73761",
-    
+
   # Used by libjpeg-turbo
   "trunk/third_party/yasm/binaries":
     Var("chromium_trunk") + "/deps/third_party/yasm/binaries@74228",
