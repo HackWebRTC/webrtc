@@ -6,8 +6,9 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
-def CheckChangeOnUpload(input_api, output_api):
-  webrtc_license_header = (
+def _LicenseHeader(input_api):
+  """Returns the license header regexp."""
+  license_header = (
       r'.*? Copyright \(c\) %(year)s The WebRTC project authors\. '
         r'All Rights Reserved\.\n'
       r'.*?\n'
@@ -20,19 +21,34 @@ def CheckChangeOnUpload(input_api, output_api):
   ) % {
       'year': input_api.time.strftime('%Y'),
   }
+  return license_header
 
+def _CommonChecks(input_api, output_api):
+  """Checks common to both upload and commit."""
   results = []
-  # Ideally, maxlen would be 80.
   results.extend(input_api.canned_checks.CheckLongLines(
-      input_api, output_api, maxlen=95))
+      input_api, output_api))
   results.extend(input_api.canned_checks.CheckChangeHasNoTabs(
       input_api, output_api))
+  results.extend(input_api.canned_checks.CheckChangeHasNoStrayWhitespace(
+      input_api, output_api))
+  results.extend(input_api.canned_checks.CheckChangeTodoHasOwner(
+      input_api, output_api))
   results.extend(input_api.canned_checks.CheckLicense(
-      input_api, output_api, webrtc_license_header))
+      input_api, output_api, _LicenseHeader(input_api)))
+  return results
 
+def CheckChangeOnUpload(input_api, output_api):
+  results = []
+  results.extend(_CommonChecks(input_api, output_api))
   return results
 
 def CheckChangeOnCommit(input_api, output_api):
   results = []
+  results.extend(_CommonChecks(input_api, output_api))
   results.extend(input_api.canned_checks.CheckOwners(input_api, output_api))
+  results.extend(input_api.canned_checks.CheckChangeWasUploaded(
+      input_api, output_api))
+  results.extend(input_api.canned_checks.CheckChangeHasDescription(
+      input_api, output_api))
   return results
