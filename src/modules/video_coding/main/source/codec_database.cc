@@ -495,7 +495,7 @@ VCMCodecDataBase::ResetReceiver()
         it = _decMap.begin();
     }
     ExternalDecoderMap::iterator exterit = _decExternalMap.begin();
-    while (exterit != _decExternalMap.begin()) {
+    while (exterit != _decExternalMap.end()) {
         delete (*exterit).second;
         _decExternalMap.erase(exterit);
         exterit = _decExternalMap.begin();
