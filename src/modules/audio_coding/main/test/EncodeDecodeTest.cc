@@ -151,7 +151,7 @@ void Receiver::Setup(AudioCodingModule *acm, RTPStream *rtpStream) {
       exit(1);
     }
   }
-     
+
   char filename[128];
   _rtpStream = rtpStream;
   int playSampFreq;
@@ -177,7 +177,7 @@ void Receiver::Setup(AudioCodingModule *acm, RTPStream *rtpStream) {
     sprintf(filename,  "%s/outFile.pcm", webrtc::test::OutputPath().c_str());
     _pcmFile.Open(filename, 32000, "wb+");
   }
-     
+
   _realPayloadSizeBytes = 0;
   _playoutBuffer = new WebRtc_Word16[WEBRTC_10MS_PCM_AUDIO];
   _frequency = playSampFreq;
@@ -291,7 +291,6 @@ void EncodeDecodeTest::Perform() {
 
   int numCodecs = 1;
   int codePars[3]; //freq, pacsize, rate
-  int playoutFreq[3]; //8, 16, 32k
   int numPars[52]; //number of codec parameters sets (rate,freq,pacsize)to test,
                    //for a given codec
 
@@ -318,7 +317,6 @@ void EncodeDecodeTest::Perform() {
       }
     }
     AudioCodingModule::Destroy(acmTmp);
-    playoutFreq[1] = 16000;
   } else if (_testMode == 0) {
     AudioCodingModule *acmTmp = AudioCodingModule::Create(0);
     numCodecs = acmTmp->NumberOfCodecs();
@@ -337,11 +335,9 @@ void EncodeDecodeTest::Perform() {
         numPars[i] = 0;
       }
     }
-    playoutFreq[1] = 16000;
   } else {
     numCodecs = 1;
     numPars[0] = 1;
-    playoutFreq[1]=16000;
   }
 
   _receiver.testMode = _testMode;

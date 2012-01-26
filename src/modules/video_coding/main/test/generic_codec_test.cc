@@ -275,7 +275,6 @@ GenericCodecTest::Perform(CmdArgs& args)
     const float nBitrates = sizeof(bitRate)/sizeof(*bitRate);
     float _bitRate = 0;
     int _frameCnt = 0;
-    WebRtc_Word64 startTime, currentTime, oneSecTime;
     float totalBytesOneSec;//, totalBytesTenSec;
     float totalBytes, actualBitrate;
     VCMFrameCount frameCount; // testing frame type counters
@@ -309,7 +308,6 @@ GenericCodecTest::Perform(CmdArgs& args)
             _vcm->SetChannelParameters((WebRtc_UWord32)_bitRate, 0, 20);
             _frameCnt = 0;
             totalBytes = 0;
-            startTime = _clock->MicrosecondTimestamp();
             _encodeCompleteCallback->Initialize();
             sendStats.SetTargetFrameRate(static_cast<WebRtc_UWord32>(_frameRate));
             _vcm->RegisterSendStatisticsCallback(&sendStats);
@@ -333,7 +331,6 @@ GenericCodecTest::Perform(CmdArgs& args)
                 //currentTime = VCMTickTime::MillisecondTimestamp();//clock()/(double)CLOCKS_PER_SEC;
                 if (_frameCnt == _frameRate)// @ 1sec
                 {
-                    oneSecTime = _clock->MicrosecondTimestamp();
                     totalBytesOneSec =  _encodeCompleteCallback->EncodedBytes();//totalBytes;
                 }
                 TEST(_vcm->TimeUntilNextProcess() >= 0);
@@ -343,7 +340,6 @@ GenericCodecTest::Perform(CmdArgs& args)
             // estimating rates
             // complete sequence
             // bit rate assumes input frame rate is as specified
-            currentTime = _clock->MicrosecondTimestamp();
             totalBytes = _encodeCompleteCallback->EncodedBytes();
             actualBitrate = (float)(8.0/1000)*(totalBytes / (_frameCnt / _frameRate));
 
@@ -367,7 +363,6 @@ GenericCodecTest::Perform(CmdArgs& args)
     /********************************/
     /* Encoder Pipeline Delay Test */
     /******************************/
-    WebRtc_Word32 retVal;
     _vcm->InitializeSender();
     sourceFrame.Free();
     sourceFrame.VerifyAndAllocate(_lengthSourceFrame);
@@ -376,11 +371,11 @@ GenericCodecTest::Perform(CmdArgs& args)
     // going over all available codecs
     for (int k = 0; k < NumberOfCodecs; k++)
     {
-        retVal = _vcm->Codec(k, &_sendCodec);
-        retVal = _vcm->InitializeSender();
+        _vcm->Codec(k, &_sendCodec);
+        _vcm->InitializeSender();
         _sendCodec.maxBitrate = 8000;
-        retVal = _vcm->RegisterSendCodec(&_sendCodec, 4, 1440);
-        retVal = _vcm->RegisterTransportCallback(_encodeCompleteCallback);
+        _vcm->RegisterSendCodec(&_sendCodec, 4, 1440);
+        _vcm->RegisterTransportCallback(_encodeCompleteCallback);
 
         _frameCnt = 0;
         encodeComplete = false;
@@ -393,7 +388,7 @@ GenericCodecTest::Perform(CmdArgs& args)
             sourceFrame.SetWidth(_width);
             _timeStamp += (WebRtc_UWord32)(9e4 / static_cast<float>(_frameRate));
             sourceFrame.SetTimeStamp(_timeStamp);
-            retVal = _vcm->AddVideoFrame(sourceFrame);
+            _vcm->AddVideoFrame(sourceFrame);
             encodeComplete = _encodeCompleteCallback->EncodeComplete();
         } // first frame encoded
         printf ("\n Codec type = %s \n", _sendCodec.plName);

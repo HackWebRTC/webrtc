@@ -53,7 +53,6 @@ TestVADDTX::~TestVADDTX()
 
 void TestVADDTX::Perform()
 {
-
     if(_testMode == 0)
     {
         printf("Running VAD/DTX Test");
@@ -86,7 +85,7 @@ void TestVADDTX::Perform()
     }
 
     // Create and connect the channel
-    _channelA2B = new Channel;    
+    _channelA2B = new Channel;
     _acmA->RegisterTransportCallback(_channelA2B);
     _channelA2B->RegisterReceiverACM(_acmB);
 
@@ -167,14 +166,14 @@ void TestVADDTX::runTestCases()
     SetVAD(false, true, VADNormal);
     Run();
     _testResults += VerifyTest();
-     
+
     // #2 DTX = OFF, VAD = ON, VADAggr
     if(_testMode != 0)
         printf("Test #2 ");
     SetVAD(false, true, VADAggr);
     Run();
     _testResults += VerifyTest();
-    
+
     // #3 DTX = ON, VAD = ON, VADLowBitrate
     if(_testMode != 0)
         printf("Test #3 ");
@@ -213,30 +212,33 @@ void TestVADDTX::runTestInternalDTX()
 
 void TestVADDTX::SetVAD(bool statusDTX, bool statusVAD, WebRtc_Word16 vadMode)
 {
-    WebRtc_Word32 status;
     bool dtxEnabled, vadEnabled;
     ACMVADMode vadModeSet;
- 
-    status = _acmA->SetVAD(statusDTX, statusVAD, (ACMVADMode) vadMode);
-    status = _acmA->VAD(dtxEnabled, vadEnabled, vadModeSet);
+
+    if (_acmA->SetVAD(statusDTX, statusVAD, (ACMVADMode) vadMode) < 0) {
+      assert(false);
+    }
+    if (_acmA->VAD(dtxEnabled, vadEnabled, vadModeSet) < 0) {
+      assert(false);
+    }
 
     if(_testMode != 0)
     {
-        if(statusDTX != dtxEnabled) 
+        if(statusDTX != dtxEnabled)
         {
-            printf("DTX: %s not the same as requested: %s\n", 
+            printf("DTX: %s not the same as requested: %s\n",
             dtxEnabled? "ON":"OFF", dtxEnabled? "OFF":"ON");
         }
         if(((statusVAD == true) && (vadEnabled == false)) ||
            ((statusVAD == false) && (vadEnabled == false) &&
                (statusDTX == true)))
         {
-            printf("VAD: %s not the same as requested: %s\n", 
+            printf("VAD: %s not the same as requested: %s\n",
             vadEnabled? "ON":"OFF", vadEnabled? "OFF":"ON");
         }
-        if(vadModeSet != vadMode) 
+        if(vadModeSet != vadMode)
         {
-            printf("VAD mode: %d not the same as requested: %d\n", 
+            printf("VAD mode: %d not the same as requested: %d\n",
             (WebRtc_Word16)vadModeSet, (WebRtc_Word16)vadMode);
         }
     }
@@ -256,11 +258,12 @@ void TestVADDTX::SetVAD(bool statusDTX, bool statusVAD, WebRtc_Word16 vadMode)
 VADDTXstruct TestVADDTX::GetVAD()
 {
     VADDTXstruct retStruct;
-    WebRtc_Word32 status;
     bool dtxEnabled, vadEnabled;
     ACMVADMode vadModeSet;
 
-    status = _acmA->VAD(dtxEnabled, vadEnabled, vadModeSet);
+    if (_acmA->VAD(dtxEnabled, vadEnabled, vadModeSet) < 0) {
+      assert(false);
+    }
 
     retStruct.statusDTX = dtxEnabled;
     retStruct.statusVAD = vadEnabled;
@@ -268,8 +271,8 @@ VADDTXstruct TestVADDTX::GetVAD()
     return retStruct;
 }
 
-WebRtc_Word16 TestVADDTX::RegisterSendCodec(char side, 
-                                          char* codecName, 
+WebRtc_Word16 TestVADDTX::RegisterSendCodec(char side,
+                                          char* codecName,
                                           WebRtc_Word32 samplingFreqHz,
                                           WebRtc_Word32 rateKbps)
 {
@@ -299,9 +302,9 @@ WebRtc_Word16 TestVADDTX::RegisterSendCodec(char side,
     {
         return -1;
     }
-    
+
     CodecInst myCodecParam;
-    for(WebRtc_Word16 codecCntr = 0; codecCntr < myACM->NumberOfCodecs(); 
+    for(WebRtc_Word16 codecCntr = 0; codecCntr < myACM->NumberOfCodecs();
         codecCntr++)
     {
         CHECK_ERROR(myACM->Codec((WebRtc_UWord8)codecCntr, myCodecParam));
@@ -382,7 +385,7 @@ WebRtc_Word16 TestVADDTX::VerifyTest()
         (STR_CASE_CMP(myCodecParam.plname,"G723") == 0) ||
         (STR_CASE_CMP(myCodecParam.plname,"AMR") == 0) ||
         (STR_CASE_CMP(myCodecParam.plname,"AMR-wb") == 0) ||
-        (STR_CASE_CMP(myCodecParam.plname,"speex") == 0)) 
+        (STR_CASE_CMP(myCodecParam.plname,"speex") == 0))
     {
         _acmA->IsInternalDTXReplacedWithWebRtc(isReplaced);
         if (!isReplaced)
@@ -390,7 +393,7 @@ WebRtc_Word16 TestVADDTX::VerifyTest()
             dtxInUse = false;
         }
     }
-    
+
     // Check for error in VAD/DTX settings
     if (_getStruct.statusDTX != _setStruct.statusDTX){
         // DTX status doesn't match expected
@@ -398,13 +401,13 @@ WebRtc_Word16 TestVADDTX::VerifyTest()
     }
     if (_getStruct.statusDTX){
         if ((!_getStruct.statusVAD && dtxInUse) || (!dtxInUse && (_getStruct.statusVAD !=_setStruct.statusVAD)))
-        {            
+        {
             // Missmatch in VAD setting
             vadPattern |= 2;
         }
     } else {
         if (_getStruct.statusVAD != _setStruct.statusVAD){
-            // VAD status doesn't match expected    
+            // VAD status doesn't match expected
             vadPattern |= 2;
         }
     }

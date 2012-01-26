@@ -65,7 +65,7 @@ class VerifyingAudioReceiver : public RtpData {
           return 0;
         }
       }
-      EXPECT_EQ(false, true) << "This code path should never happen.";
+      ADD_FAILURE() << "This code path should never happen.";
       return -1;
     }
     return 0;
@@ -192,7 +192,7 @@ TEST_F(RtpRtcpAudioTest, Basic) {
   EXPECT_EQ(0, module1->SetSSRC(test_ssrc));
   EXPECT_EQ(0, module1->SetStartTimestamp(test_timestamp));
 
-  EXPECT_EQ(false, module1->TelephoneEvent());
+  EXPECT_FALSE(module1->TelephoneEvent());
 
   // Test detection at the end of a DTMF tone.
   EXPECT_EQ(0, module2->SetTelephoneEventStatus(true, true, true));

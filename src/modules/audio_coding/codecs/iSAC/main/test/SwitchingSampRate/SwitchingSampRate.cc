@@ -58,7 +58,6 @@ int main(int argc, char* argv[])
   BottleNeckModel* packetData[MAX_NUM_CLIENTS];
 
   char versionNumber[100];
-  short bottleneckChange[MAX_NUM_CLIENTS];
   short samplesIn10ms[MAX_NUM_CLIENTS];
   int bottleneck[MAX_NUM_CLIENTS];
 
@@ -108,7 +107,6 @@ int main(int argc, char* argv[])
            (encoderSampRate[clientCntr] == kIsacWideband)
            ? "wideband":"super-wideband");
 
-    bottleneckChange[clientCntr] = 2 * clientCntr - 1;
     // Open output File Name
     OPEN_FILE_WB(outFile[clientCntr], outFileName[clientCntr]);
     printf("Output File...................... %s\n", outFileName[clientCntr]);

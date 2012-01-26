@@ -470,40 +470,6 @@ VCMQMDecodeCompleCallback::SetOriginalFrameDimensions(WebRtc_Word32 width, WebRt
 WebRtc_Word32
 VCMQMDecodeCompleCallback::buildInterpolator()
 {
-//    if (_interpolator != NULL)
-//    {
-//        deleteInterpolator(_interpolator);
-//        _interpolator = NULL;
-//    }
-
-    // create decimator
-    WebRtc_Word32 filterPar = 4; //Lanczos (assuming sampling ratio is 1, 1.5, 2, 4)
-
-    float HeightRatio = 0;
-    float WidthRatio = 0;
-
-    WidthRatio = (float)_origWidth/(float)_decWidth;
-    HeightRatio = (float)_origHeight/(float)_decHeight;
-
-    if ( (HeightRatio == 1.0 || HeightRatio == 1.5 || HeightRatio == 2 || HeightRatio == 4) &&
-         (WidthRatio == 1.0 || WidthRatio == 1.5 || WidthRatio == 2 || WidthRatio == 4))
-    {
-        filterPar = 4; //Lanczos
-    } else
-    {
-        filterPar = 0; //BiCubic
-    }
-
-
-    // define interpolator here
-
-    // create interpolator here
-
-//    if (_interpolator == NULL)
-//    {
-//        return -1;
-//    }
-
     WebRtc_UWord32 decFrameLength  = _origWidth*_origHeight*3 >> 1;
     if (_decBuffer != NULL)
     {

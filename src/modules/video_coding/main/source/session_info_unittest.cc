@@ -145,7 +145,7 @@ TEST_F(TestSessionInfo, TestSimpleAPIs) {
   FillPacket(0);
   ASSERT_EQ(kPacketBufferSize,
             session_.InsertPacket(packet_, frame_buffer_, false, 0));
-  EXPECT_EQ(false, session_.HaveLastPacket());
+  EXPECT_FALSE(session_.HaveLastPacket());
   EXPECT_EQ(kVideoFrameKey, session_.FrameType());
 
   packet_.isFirstPacket = false;
@@ -153,7 +153,7 @@ TEST_F(TestSessionInfo, TestSimpleAPIs) {
   packet_.seqNum += 1;
   ASSERT_EQ(kPacketBufferSize,
             session_.InsertPacket(packet_, frame_buffer_, false, 0));
-  EXPECT_EQ(true, session_.HaveLastPacket());
+  EXPECT_TRUE(session_.HaveLastPacket());
   EXPECT_EQ(packet_.seqNum, session_.HighSequenceNumber());
   EXPECT_EQ(0xFFFE, session_.LowSequenceNumber());
 
@@ -804,7 +804,7 @@ TEST_F(TestNackList, NoLosses) {
   EXPECT_EQ(10 * kPacketBufferSize, session_.SessionLength());
   BuildSeqNumList(low, packet_.seqNum);
   EXPECT_EQ(0, session_.BuildHardNackList(seq_num_list_, seq_num_list_length_));
-  EXPECT_EQ(false, session_.session_nack());
+  EXPECT_FALSE(session_.session_nack());
   SCOPED_TRACE("Calling VerifyAll");
   VerifyAll(-1);
 

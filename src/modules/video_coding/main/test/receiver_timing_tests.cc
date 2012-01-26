@@ -67,7 +67,6 @@ int ReceiverTimingTests(CmdArgs& args)
     WebRtc_UWord32 waitTime = 0;
     WebRtc_UWord32 jitterDelayMs = 0;
     WebRtc_UWord32 maxDecodeTimeMs = 0;
-    WebRtc_UWord32 extraDelayMs = 0;
     WebRtc_UWord32 timeStamp = 0;
 
     timing.Reset(static_cast<WebRtc_Word64>(clockInMs + 0.5));
@@ -170,7 +169,6 @@ int ReceiverTimingTests(CmdArgs& args)
 
     jitterDelayMs = 60;
     maxDecodeTimeMs = 10;
-    extraDelayMs = 0;
 
     timeStamp = static_cast<WebRtc_UWord32>(-10000); // To produce a wrap
     clockInMs = 10000.0f;

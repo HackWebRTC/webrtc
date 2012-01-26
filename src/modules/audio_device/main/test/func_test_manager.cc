@@ -664,58 +664,56 @@ WebRtc_Word32 FuncTestManager::Close()
 
 WebRtc_Word32 FuncTestManager::DoTest(const TestType testType)
 {
-    WebRtc_UWord32 ret(0);
-
     switch (testType)
     {
         case TTAll:
-            ret = TestAudioLayerSelection();
-            ret = TestDeviceEnumeration();
-            ret = TestDeviceSelection();
-            ret = TestAudioTransport();
-            ret = TestSpeakerVolume();
-            ret = TestMicrophoneVolume();
-            ret = TestLoopback();
+            TestAudioLayerSelection();
+            TestDeviceEnumeration();
+            TestDeviceSelection();
+            TestAudioTransport();
+            TestSpeakerVolume();
+            TestMicrophoneVolume();
+            TestLoopback();
         case TTAudioLayerSelection:
             TestAudioLayerSelection();
             break;
         case TTDeviceEnumeration:
-            ret = TestDeviceEnumeration();
+            TestDeviceEnumeration();
             break;
         case TTDeviceSelection:
-            ret = TestDeviceSelection();
+            TestDeviceSelection();
             break;
         case TTAudioTransport:
-            ret = TestAudioTransport();
+            TestAudioTransport();
             break;
         case TTSpeakerVolume:
-            ret = TestSpeakerVolume();
+            TestSpeakerVolume();
             break;
         case TTMicrophoneVolume:
-            ret = TestMicrophoneVolume();
+            TestMicrophoneVolume();
             break;
         case TTSpeakerMute:
-            ret = TestSpeakerMute();
+            TestSpeakerMute();
             break;
         case TTMicrophoneMute:
-            ret = TestMicrophoneMute();
+            TestMicrophoneMute();
             break;
         case TTMicrophoneBoost:
-            ret = TestMicrophoneBoost();
+            TestMicrophoneBoost();
             break;
         case TTMicrophoneAGC:
-            ret = TestMicrophoneAGC();
+            TestMicrophoneAGC();
             break;
         case TTLoopback:
-            ret = TestLoopback();
+            TestLoopback();
             break;
         case TTDeviceRemoval:
-            ret = TestDeviceRemoval();
+            TestDeviceRemoval();
             break;
         case TTMobileAPI:
-            ret = TestAdvancedMBAPI();
+            TestAdvancedMBAPI();
         case TTTest:
-            ret = TestExtra();
+            TestExtra();
             break;
         default:
             break;

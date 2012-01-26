@@ -77,7 +77,6 @@ int func_test(int sel)
         TEST_LOG("- - - - - - - - - - - - - - - - - - - -\n");
         TEST_LOG("\n: ");
 
-        int dummy(0);
         int selection(0);
         enum TestType testType(TTInvalid);
 
@@ -89,7 +88,9 @@ SHOW_MENU:
         }
         else
         {
-            dummy = scanf("%d", &selection);
+            if (scanf("%d", &selection) < 0) {
+              perror("Failed to get selection.");
+            }
         }
 
         switch (selection)
@@ -97,40 +98,40 @@ SHOW_MENU:
             case 0:
                 quit = true;
                 break;
-            case 1: 
+            case 1:
                 testType = TTAll;
                 break;
-            case 2: 
+            case 2:
                 testType = TTAudioLayerSelection;
                 break;
-            case 3: 
+            case 3:
                 testType = TTDeviceEnumeration;
                 break;
-            case 4: 
+            case 4:
                 testType = TTDeviceSelection;
                 break;
-            case 5: 
+            case 5:
                 testType = TTAudioTransport;
                 break;
-            case 6: 
+            case 6:
                 testType = TTSpeakerVolume;
                 break;
-            case 7: 
+            case 7:
                 testType = TTMicrophoneVolume;
                 break;
-            case 8: 
+            case 8:
                 testType = TTSpeakerMute;
                 break;
-            case 9: 
+            case 9:
                 testType = TTMicrophoneMute;
                 break;
-            case 10: 
+            case 10:
                 testType = TTMicrophoneBoost;
                 break;
-            case 11: 
+            case 11:
                 testType = TTMicrophoneAGC;
                 break;
-            case 12: 
+            case 12:
                 testType = TTLoopback;
                 break;
             case 13:

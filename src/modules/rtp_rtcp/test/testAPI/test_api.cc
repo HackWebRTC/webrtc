@@ -58,9 +58,9 @@ TEST_F(RtpRtcpAPITest, Basic) {
   EXPECT_EQ(0, module->SetStartTimestamp(test_timestamp));
   EXPECT_EQ(test_timestamp, module->StartTimestamp());
 
-  EXPECT_EQ(false, module->Sending());
+  EXPECT_FALSE(module->Sending());
   EXPECT_EQ(0, module->SetSendingStatus(true));
-  EXPECT_EQ(true, module->Sending());
+  EXPECT_TRUE(module->Sending());
 }
 
 TEST_F(RtpRtcpAPITest, MTU) {
@@ -108,11 +108,11 @@ TEST_F(RtpRtcpAPITest, RTCP) {
   EXPECT_STRCASEEQ(cName, "john.doe@test.test");
   EXPECT_EQ(-1, module->CNAME(NULL));
 
-  EXPECT_EQ(false, module->TMMBR());
+  EXPECT_FALSE(module->TMMBR());
   EXPECT_EQ(0, module->SetTMMBRStatus(true));
-  EXPECT_EQ(true, module->TMMBR());
+  EXPECT_TRUE(module->TMMBR());
   EXPECT_EQ(0, module->SetTMMBRStatus(false));
-  EXPECT_EQ(false, module->TMMBR());
+  EXPECT_FALSE(module->TMMBR());
 
   EXPECT_EQ(kNackOff, module->NACK());
   EXPECT_EQ(0, module->SetNACKStatus(kNackRtcp));

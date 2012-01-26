@@ -88,11 +88,11 @@ void RtcpFormatRembTest::TearDown() {
 }
 
 TEST_F(RtcpFormatRembTest, TestBasicAPI) {
-  EXPECT_EQ(false, rtcp_sender_->REMB());
+  EXPECT_FALSE(rtcp_sender_->REMB());
   EXPECT_EQ(0, rtcp_sender_->SetREMBStatus(true));
-  EXPECT_EQ(true, rtcp_sender_->REMB());
+  EXPECT_TRUE(rtcp_sender_->REMB());
   EXPECT_EQ(0, rtcp_sender_->SetREMBStatus(false));
-  EXPECT_EQ(false, rtcp_sender_->REMB());
+  EXPECT_FALSE(rtcp_sender_->REMB());
 
   EXPECT_EQ(0, rtcp_sender_->SetREMBData(1234, 0, NULL));
 }

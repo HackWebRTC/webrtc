@@ -336,7 +336,12 @@ int TestSingleStream(VideoRender* renderModule) {
 
     printf("Start render\n");
     error = renderModule->StartRender(streamId0);
-    assert(error == 0);
+    if (error != 0) {
+      // TODO(phoglund): This test will not work if compiled in release mode.
+      // This rather silly construct here is to avoid compilation errors when
+      // compiling in release. Release => no asserts => unused 'error' variable.
+      assert(false);
+    }
 
     // Loop through an I420 file and render each frame
     const WebRtc_UWord32 width = 352;

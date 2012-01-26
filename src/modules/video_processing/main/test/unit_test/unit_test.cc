@@ -204,9 +204,9 @@ TEST_F(VideoProcessingModuleTest, FrameStats)
   ASSERT_EQ(_frameLength, fread(_videoFrame.Buffer(), 1, _frameLength,
                                 _sourceFile));
 
-  EXPECT_EQ(false, _vpm->ValidFrameStats(stats));
+  EXPECT_FALSE(_vpm->ValidFrameStats(stats));
   EXPECT_EQ(0, _vpm->GetFrameStats(stats, _videoFrame));
-  EXPECT_EQ(true, _vpm->ValidFrameStats(stats));
+  EXPECT_TRUE(_vpm->ValidFrameStats(stats));
 
   printf("\nFrameStats\n");
   printf("mean: %u\nnumPixels: %u\nsubSamplWidth: "
@@ -218,7 +218,7 @@ TEST_F(VideoProcessingModuleTest, FrameStats)
          static_cast<unsigned int>(stats.sum));
 
   _vpm->ClearFrameStats(stats);
-  EXPECT_EQ(false, _vpm->ValidFrameStats(stats));
+  EXPECT_FALSE(_vpm->ValidFrameStats(stats));
 }
 
 TEST_F(VideoProcessingModuleTest, PreprocessorLogic)
