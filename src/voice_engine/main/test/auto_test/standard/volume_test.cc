@@ -11,13 +11,6 @@
 #include "after_streaming_fixture.h"
 
 class VolumeTest : public AfterStreamingFixture {
- protected:
-  void SwitchToManualMicrophone() {
-    EXPECT_EQ(0, voe_file_->StopPlayingFileAsMicrophone(channel_));
-
-    TEST_LOG("You need to speak manually into the microphone for this test.\n");
-    Sleep(2000);
-  }
 };
 
 TEST_F(VolumeTest, DefaultSpeakerVolumeIsAtMost255) {

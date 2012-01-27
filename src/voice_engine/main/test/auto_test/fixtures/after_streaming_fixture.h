@@ -26,10 +26,17 @@ class AfterStreamingFixture : public AfterInitializationFixture {
  protected:
   int             channel_;
   ResourceManager resource_manager_;
+  std::string     fake_microphone_input_file_;
+
+  // Shuts off the fake microphone for this test.
+  void SwitchToManualMicrophone();
+
+  // Restarts the fake microphone if it's been shut off earlier.
+  void RestartFakeMicrophone();
 
  private:
   void SetUpLocalPlayback();
-  void StartPlaying(const std::string& input_file);
+  void StartPlaying();
 };
 
 

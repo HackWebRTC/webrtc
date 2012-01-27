@@ -36,6 +36,7 @@
         'auto_test/fixtures/after_streaming_fixture.h',
         'auto_test/fixtures/before_initialization_fixture.cc',
         'auto_test/fixtures/before_initialization_fixture.h',
+        'auto_test/standard/audio_processing_test.cc',
         'auto_test/standard/codec_before_streaming_test.cc',
         'auto_test/standard/codec_test.cc',
         'auto_test/standard/dtmf_test.cc',
