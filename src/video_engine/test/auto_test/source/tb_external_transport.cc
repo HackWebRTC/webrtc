@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -350,7 +350,16 @@ bool TbExternalTransport::ViEExternalTransportProcess()
         // Take first packet in queue
         _crit.Enter();
         packet = _rtcpPackets.front();
-        WebRtc_Word64 timeToReceive = packet->receiveTime - NowMs();
+        WebRtc_Word64 timeToReceive = 0;
+        if (packet)
+        {
+          timeToReceive = packet->receiveTime - NowMs();
+        }
+        else
+        {
+            // There should never be any empty packets in the list.
+            assert(false);
+        }
         if (timeToReceive > 0)
         {
             // No packets to receive yet

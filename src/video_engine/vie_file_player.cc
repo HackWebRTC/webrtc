@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -393,6 +393,11 @@ int ViEFilePlayer::SendAudioOnChannel(const int audio_channel,
 
 int ViEFilePlayer::StopSendAudioOnChannel(const int audio_channel) {
   int result = 0;
+  if (!voe_file_interface_) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, id_),
+                 "ViEFilePlayer::StopSendAudioOnChannel() - no VoE interface");
+    return -1;
+  }
   std::set<int>::iterator it = audio_channels_sending_.find(audio_channel);
   if (it == audio_channels_sending_.end()) {
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, id_),

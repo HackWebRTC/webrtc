@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -376,8 +376,11 @@ int ViEFileImpl::StartRecordOutgoingVideo(const int video_channel,
   VoiceEngine* ve_ptr = NULL;
   if (audio_source != NO_AUDIO) {
     ViEChannel* vie_channel = cs.Channel(video_channel);
-    // Channel should exists since we have a ViEEncoder.
-    assert(vie_channel);
+    if (!vie_channel) {
+      // Channel should exists since we have a ViEEncoder above.
+      assert(false);
+      return -1;
+    }
     ve_channel_id = vie_channel->VoiceChannel();
     ve_ptr = shared_data_->channel_manager()->GetVoiceEngine();
     if (!ve_ptr) {
