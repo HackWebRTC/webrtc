@@ -54,7 +54,7 @@ deps = {
     Var("chromium_trunk") + "/src/third_party/libjpeg@" + Var("chromium_revision"),
 
   "trunk/third_party/libsrtp/":
-    Var("chromium_trunk") + "/deps/third_party/libsrtp@118928",
+    Var("chromium_trunk") + "/deps/third_party/libsrtp@119285",
 
   "trunk/third_party/yasm/":
     Var("chromium_trunk") + "/src/third_party/yasm@" + Var("chromium_revision"),
