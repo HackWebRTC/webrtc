@@ -1337,126 +1337,96 @@ WebRtc_Word32 RTPReceiver::CheckPayloadChanged(
 }
 
 // no criticalsection when called
-void
-RTPReceiver::CheckCSRC(const WebRtcRTPHeader* rtpHeader)
-{
-    bool checkChanged = false;
-    WebRtc_Word32 numCSRCsDiff = 0;
-    WebRtc_UWord32 oldRemoteCSRC[kRtpCsrcSize];
-    WebRtc_UWord8 oldNumCSRCs = 0;
+void RTPReceiver::CheckCSRC(const WebRtcRTPHeader* rtpHeader) {
+  WebRtc_Word32 numCSRCsDiff = 0;
+  WebRtc_UWord32 oldRemoteCSRC[kRtpCsrcSize];
+  WebRtc_UWord8 oldNumCSRCs = 0;
 
-    {
-        CriticalSectionScoped lock(_criticalSectionRTPReceiver);
+  {
+    CriticalSectionScoped lock(_criticalSectionRTPReceiver);
 
-        if(TelephoneEventPayloadType(rtpHeader->header.payloadType))
-        {
-            // don't do this for DTMF packets
-            return ;
-        }
-
-        _numEnergy = rtpHeader->type.Audio.numEnergy;
-        if(rtpHeader->type.Audio.numEnergy > 0 && rtpHeader->type.Audio.numEnergy <= kRtpCsrcSize)
-        {
-            memcpy(_currentRemoteEnergy, rtpHeader->type.Audio.arrOfEnergy, rtpHeader->type.Audio.numEnergy);
-        }
-
-        oldNumCSRCs  = _numCSRCs;
-
-        const WebRtc_UWord8 numCSRCs = rtpHeader->header.numCSRCs;
-
-        if(((numCSRCs > 0) && (numCSRCs <= kRtpCsrcSize)) || oldNumCSRCs)
-        {
-            if(oldNumCSRCs > 0)
-            {
-                // make a copy of old
-                memcpy(oldRemoteCSRC, _currentRemoteCSRC, _numCSRCs * sizeof(WebRtc_UWord32));
-            }
-            if(numCSRCs > 0)
-            {
-                // copy new
-                memcpy(_currentRemoteCSRC, rtpHeader->header.arrOfCSRCs, numCSRCs * sizeof(WebRtc_UWord32));
-            }
-            numCSRCsDiff = numCSRCs - oldNumCSRCs;
-            _numCSRCs = numCSRCs; //update stored CSRCs
-            checkChanged = true;
-
-        }else
-        {
-            if(_numCSRCs != 0)
-            {
-                checkChanged = true;
-                numCSRCsDiff = numCSRCs - oldNumCSRCs;
-            }
-            _numCSRCs = 0;
-        }
+    if (TelephoneEventPayloadType(rtpHeader->header.payloadType)) {
+      // Don't do this for DTMF packets
+      return;
     }
-
-    if(checkChanged )
-    {
-        CriticalSectionScoped lock(_criticalSectionCbs);
-        if(_cbRtpFeedback)
-        {
-            bool haveCalledCallback = false;
-            // search for new CSRC in old array
-            for (WebRtc_UWord8 i = 0; i < rtpHeader->header.numCSRCs; ++i)
-            {
-                const WebRtc_UWord32 csrc = rtpHeader->header.arrOfCSRCs[i];
-
-                bool foundMatch = false;
-                for (WebRtc_UWord8 j = 0; j < oldNumCSRCs; ++j)
-                {
-                    if (csrc == oldRemoteCSRC[j]) // old list
-                    {
-                        foundMatch = true;
-                        break;
-                    }
-                }
-                if (!foundMatch && csrc)
-                {
-                    // didn't find it
-                    // report it as new
-                    haveCalledCallback = true;
-                    _cbRtpFeedback->OnIncomingCSRCChanged(_id, csrc, true);
-                }
-            }
-
-            // search for old CSRC in new array
-            for (WebRtc_UWord8 i = 0; i < oldNumCSRCs; ++i)
-            {
-                const WebRtc_UWord32 csrc = oldRemoteCSRC[i];
-
-                bool foundMatch = false;
-                for (WebRtc_UWord8 j = 0; j < rtpHeader->header.numCSRCs; ++j)
-                {
-                    if (csrc == rtpHeader->header.arrOfCSRCs[j])
-                    {
-                        foundMatch = true;
-                        break;
-                    }
-                }
-                if (!foundMatch && csrc)
-                {
-                    // did not find it
-                    // report as removed
-                    haveCalledCallback = true;
-                    _cbRtpFeedback->OnIncomingCSRCChanged(_id, csrc, false);
-                }
-            }
-            if(!haveCalledCallback)
-            {
-                // Layout change for less mixed streams than slots in the layout
-                // won't trigger a callback above.
-                if (numCSRCsDiff > 0)
-                {
-                    _cbRtpFeedback->OnIncomingCSRCChanged(_id, 0, true);
-                }
-                else if (numCSRCsDiff < 0)
-                {
-                    _cbRtpFeedback->OnIncomingCSRCChanged(_id, 0, false);
-                }
-            }
-        }
+    _numEnergy = rtpHeader->type.Audio.numEnergy;
+    if (rtpHeader->type.Audio.numEnergy > 0 &&
+        rtpHeader->type.Audio.numEnergy <= kRtpCsrcSize) {
+      memcpy(_currentRemoteEnergy,
+             rtpHeader->type.Audio.arrOfEnergy,
+             rtpHeader->type.Audio.numEnergy);
     }
+    oldNumCSRCs  = _numCSRCs;
+    if (oldNumCSRCs > 0) {
+      // Make a copy of old.
+      memcpy(oldRemoteCSRC, _currentRemoteCSRC,
+             _numCSRCs * sizeof(WebRtc_UWord32));
+    }
+    const WebRtc_UWord8 numCSRCs = rtpHeader->header.numCSRCs;
+    if ((numCSRCs > 0) && (numCSRCs <= kRtpCsrcSize)) {
+      // Copy new
+      memcpy(_currentRemoteCSRC,
+             rtpHeader->header.arrOfCSRCs,
+             numCSRCs * sizeof(WebRtc_UWord32));
+    }
+    if (numCSRCs > 0 || oldNumCSRCs > 0) {
+      numCSRCsDiff = numCSRCs - oldNumCSRCs;
+      _numCSRCs = numCSRCs;  // Update stored CSRCs.
+    } else {
+      // No change.
+      return;
+    }
+  }  // End scoped CriticalSection.
+
+  CriticalSectionScoped lock(_criticalSectionCbs);
+  if (_cbRtpFeedback == NULL) {
+    return;
+  }
+  bool haveCalledCallback = false;
+  // Search for new CSRC in old array.
+  for (WebRtc_UWord8 i = 0; i < rtpHeader->header.numCSRCs; ++i) {
+    const WebRtc_UWord32 csrc = rtpHeader->header.arrOfCSRCs[i];
+
+    bool foundMatch = false;
+    for (WebRtc_UWord8 j = 0; j < oldNumCSRCs; ++j) {
+      if (csrc == oldRemoteCSRC[j]) {  // old list
+        foundMatch = true;
+        break;
+      }
+    }
+    if (!foundMatch && csrc) {
+      // Didn't find it, report it as new.
+      haveCalledCallback = true;
+      _cbRtpFeedback->OnIncomingCSRCChanged(_id, csrc, true);
+    }
+  }
+  // Search for old CSRC in new array.
+  for (WebRtc_UWord8 i = 0; i < oldNumCSRCs; ++i) {
+    const WebRtc_UWord32 csrc = oldRemoteCSRC[i];
+
+    bool foundMatch = false;
+    for (WebRtc_UWord8 j = 0; j < rtpHeader->header.numCSRCs; ++j) {
+      if (csrc == rtpHeader->header.arrOfCSRCs[j]) {
+        foundMatch = true;
+        break;
+      }
+    }
+    if (!foundMatch && csrc) {
+      // Did not find it, report as removed.
+      haveCalledCallback = true;
+      _cbRtpFeedback->OnIncomingCSRCChanged(_id, csrc, false);
+    }
+  }
+  if (!haveCalledCallback) {
+    // If the CSRC list contain non-unique entries we will endup here.
+    // Using CSRC 0 to signal this event, not interop safe, other
+    // implementations might have CSRC 0 as avalid value.
+    if (numCSRCsDiff > 0) {
+      _cbRtpFeedback->OnIncomingCSRCChanged(_id, 0, true);
+    } else if (numCSRCsDiff < 0) {
+      _cbRtpFeedback->OnIncomingCSRCChanged(_id, 0, false);
+    }
+  }
 }
 
 WebRtc_Word32
