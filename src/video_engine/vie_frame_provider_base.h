@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -11,8 +11,9 @@
 #ifndef WEBRTC_VIDEO_ENGINE_VIE_FRAME_PROVIDER_BASE_H_
 #define WEBRTC_VIDEO_ENGINE_VIE_FRAME_PROVIDER_BASE_H_
 
-#include "modules/interface/module_common_types.h"
-#include "system_wrappers/interface/map_wrapper.h"
+#include <vector>
+
+#include "common_types.h"
 #include "system_wrappers/interface/scoped_ptr.h"
 #include "typedefs.h"
 
@@ -20,6 +21,7 @@ namespace webrtc {
 
 class CriticalSectionWrapper;
 class VideoEncoder;
+class VideoFrame;
 
 // ViEFrameCallback shall be implemented by all classes receiving frames from a
 // frame provider.
@@ -86,11 +88,12 @@ class ViEFrameProviderBase {
   int engine_id_;
 
   // Frame callbacks.
-  MapWrapper frame_callbacks_;
+  typedef std::vector<ViEFrameCallback*> FrameCallbacks;
+  FrameCallbacks frame_callbacks_;
   scoped_ptr<CriticalSectionWrapper> provider_cs_;
 
  private:
-  VideoFrame* extra_frame_;
+  scoped_ptr<VideoFrame> extra_frame_;
   int frame_delay_;
 };
 
