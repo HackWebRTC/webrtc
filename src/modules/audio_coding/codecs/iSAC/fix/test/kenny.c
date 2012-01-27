@@ -137,8 +137,6 @@ int main(int argc, char* argv[])
   int cur_delay = 0;
   char gns_file[100];
 
-  WebRtc_UWord16 rtp_num_init = 0;
-
   int nbTest = 0;
   WebRtc_Word16 lostFrame;
   float scale = (float)0.7;
@@ -376,7 +374,6 @@ int main(int argc, char* argv[])
 
     /* Set initial RTP number */
     if (!strcmp ("-RTP_INIT", argv[i])) {
-      rtp_num_init = atoi(argv[i + 1]);
       i++;
     }
   }
