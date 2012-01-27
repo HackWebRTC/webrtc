@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,50 +8,51 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "modules/utility/source/frame_scaler.h"
+
 #ifdef WEBRTC_MODULE_UTILITY_VIDEO
 
-#include "frame_scaler.h"
-
 #include "common_video/libyuv/include/scaler.h"
-#include "trace.h"
+#include "system_wrappers/interface/trace.h"
 
 namespace webrtc {
+
 FrameScaler::FrameScaler()
-    : _scaler(new Scaler()),
-      _scalerBuffer(),
-      _outWidth(0),
-      _outHeight(0),
-      _inWidth(0),
-      _inHeight(0) {}
+    : scaler_(new Scaler()),
+      scaled_frame_() {}
 
-FrameScaler::~FrameScaler( ) {}
+FrameScaler::~FrameScaler() {}
 
-WebRtc_Word32 FrameScaler::ResizeFrameIfNeeded(VideoFrame& videoFrame,
-                                               WebRtc_UWord32 outWidth,
-                                               WebRtc_UWord32 outHeight) {
-  if ( videoFrame.Length( ) == 0) {
+int FrameScaler::ResizeFrameIfNeeded(VideoFrame* video_frame,
+                                     WebRtc_UWord32 out_width,
+                                     WebRtc_UWord32 out_height) {
+  if (video_frame->Length() == 0) {
     return -1;
   }
 
-  if ((videoFrame.Width() != outWidth) || (videoFrame.Height() != outHeight)) {
-    _scaler->Set(videoFrame.Width(), videoFrame.Height(),
-                 outWidth, outHeight,
-                 kI420, kI420, kScaleBox);
-
-    int reqSize = CalcBufferSize(kI420, _outWidth, _outHeight);
-    _scalerBuffer.VerifyAndAllocate(reqSize);
-    int ret = _scaler->Scale(videoFrame.Buffer(),
-                             _scalerBuffer.Buffer(),
-                             reqSize);
-    if (ret < 0)
+  if ((video_frame->Width() != out_width) ||
+      (video_frame->Height() != out_height)) {
+    // Set correct scale settings and scale |video_frame| into |scaled_frame_|.
+    scaler_->Set(video_frame->Width(), video_frame->Height(), out_width,
+                 out_height, kI420, kI420, kScaleBox);
+    int out_length = CalcBufferSize(kI420, out_width, out_height);
+    scaled_frame_.VerifyAndAllocate(out_length);
+    int ret = scaler_->Scale(video_frame->Buffer(), scaled_frame_.Buffer(),
+                             out_length);
+    if (ret < 0) {
       return ret;
-    videoFrame.VerifyAndAllocate(reqSize);
-    videoFrame.CopyFrame(videoFrame.Length(), _scalerBuffer.Buffer());
-    videoFrame.SetWidth(_outWidth);
-    videoFrame.SetHeight(_outHeight);
+    }
+
+    scaled_frame_.SetWidth(out_width);
+    scaled_frame_.SetHeight(out_height);
+    scaled_frame_.SetLength(out_length);
+    scaled_frame_.SetRenderTime(video_frame->RenderTimeMs());
+    scaled_frame_.SetTimeStamp(video_frame->TimeStamp());
+    video_frame->SwapFrame(scaled_frame_);
   }
   return 0;
 }
+
 }  // namespace webrtc
 
 #endif  // WEBRTC_MODULE_UTILITY_VIDEO

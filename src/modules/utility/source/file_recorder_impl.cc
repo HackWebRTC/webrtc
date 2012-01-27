@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -672,7 +672,7 @@ WebRtc_Word32 AviRecorder::EncodeAndWriteVideoToFile(VideoFrame& videoFrame)
         return -1;
     }
 
-    if(_frameScaler->ResizeFrameIfNeeded(videoFrame, _videoCodecInst.width,
+    if(_frameScaler->ResizeFrameIfNeeded(&videoFrame, _videoCodecInst.width,
                                          _videoCodecInst.height) != 0)
     {
         return -1;

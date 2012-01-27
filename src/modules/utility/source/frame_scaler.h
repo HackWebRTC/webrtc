@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -9,40 +9,39 @@
  */
 
 // This file implements a class that can be used for scaling frames.
+
 #ifndef WEBRTC_MODULES_UTILITY_SOURCE_FRAME_SCALER_H_
 #define WEBRTC_MODULES_UTILITY_SOURCE_FRAME_SCALER_H_
 
 #ifdef WEBRTC_MODULE_UTILITY_VIDEO
 
 #include "engine_configurations.h"
-#include "module_common_types.h"
+#include "modules/interface/module_common_types.h"
 #include "system_wrappers/interface/scoped_ptr.h"
-#include "typedefs.h"
 
-namespace webrtc
-{
+namespace webrtc {
+
 class Scaler;
 class VideoFrame;
-class FrameScaler
-{
-public:
+
+class FrameScaler {
+ public:
     FrameScaler();
     ~FrameScaler();
 
-    // Re-size videoFrame so that it has the width outWidth and height
-    // outHeight.
-    WebRtc_Word32 ResizeFrameIfNeeded(VideoFrame& videoFrame,
-                                      WebRtc_UWord32 outWidth,
-                                      WebRtc_UWord32 outHeight);
-private:
-    scoped_ptr<Scaler> _scaler;
-    VideoFrame _scalerBuffer;
-    WebRtc_UWord32 _outWidth;
-    WebRtc_UWord32 _outHeight;
-    WebRtc_UWord32 _inWidth;
-    WebRtc_UWord32 _inHeight;
+    // Re-sizes |video_frame| so that it has the width |out_width| and height
+    // |out_height|.
+    int ResizeFrameIfNeeded(VideoFrame* video_frame,
+                            WebRtc_UWord32 out_width,
+                            WebRtc_UWord32 out_height);
 
+ private:
+    scoped_ptr<Scaler> scaler_;
+    VideoFrame scaled_frame_;
 };
-#endif // WEBRTC_MODULE_UTILITY_VIDEO
-} // namespace webrtc
-#endif // WEBRTC_MODULES_UTILITY_SOURCE_FRAME_SCALER_H_
+
+}  // namespace webrtc
+
+#endif  // WEBRTC_MODULE_UTILITY_VIDEO
+
+#endif  // WEBRTC_MODULES_UTILITY_SOURCE_FRAME_SCALER_H_
