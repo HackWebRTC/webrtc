@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -44,7 +44,10 @@ namespace webrtc {
 
 ACMG729_1::ACMG729_1( WebRtc_Word16 /* codecID */)
     : _encoderInstPtr(NULL),
-      _decoderInstPtr(NULL) {
+      _decoderInstPtr(NULL),
+      _myRate(32000),
+      _flag8kHz(0),
+      _flagG729mode(0) {
   return;
 }
 
@@ -163,22 +166,16 @@ ACMG729_1::SetBitRateSafe(
 
 struct G729_1_inst_t_;
 
-ACMG729_1::ACMG729_1(
-    WebRtc_Word16 codecID):
-_encoderInstPtr(NULL),
-_decoderInstPtr(NULL)
-{
-    _codecID = codecID;
-    // Our current G729.1 does not support Annex C
-    // which is DTX.
-    _hasInternalDTX = false;
-
-  // Default rate
-    _myRate = 32000;
-
-  _flag8kHz = 0;
-    _flagG729mode = 0;
-    return;
+ACMG729_1::ACMG729_1(WebRtc_Word16 codecID)
+    : _encoderInstPtr(NULL),
+      _decoderInstPtr(NULL),
+      _myRate(32000),  // Default rate.
+      _flag8kHz(0),
+      _flagG729mode(0) {
+  // TODO(tlegrand): We should add codecID as a input variable to the
+  // constructor of ACMGenericCodec.
+  _codecID = codecID;
+  return;
 }
 
 ACMG729_1::~ACMG729_1()

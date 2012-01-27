@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -1191,9 +1191,8 @@ match");
     } else {
       // Copy payload data for future use.
       size_t length = static_cast<size_t>(
-          audioFrame._payloadDataLengthInSamples * audio_channels *
-          sizeof(WebRtc_UWord16));
-      memcpy(audio, audioFrame._payloadData, length);
+          audioFrame._payloadDataLengthInSamples * audio_channels);
+      memcpy(audio, audioFrame._payloadData, length * sizeof(WebRtc_UWord16));
     }
 
     WebRtc_UWord32 currentTimestamp;

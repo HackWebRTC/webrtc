@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -54,7 +54,12 @@ namespace webrtc {
 #ifndef WEBRTC_CODEC_SPEEX
 ACMSPEEX::ACMSPEEX(WebRtc_Word16 /* codecID*/)
     : _encoderInstPtr(NULL),
-      _decoderInstPtr(NULL) {
+      _decoderInstPtr(NULL),
+      _complMode(0),
+      _vbrEnabled(false),
+      _encodingRate(-1),
+      _samplingFrequency(-1),
+      _samplesIn20MsAudio(-1) {
   return;
 }
 
