@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -128,13 +128,6 @@ int LevelEstimatorImpl::RMS() {
 
   Level* level = static_cast<Level*>(handle(0));
   return level->RMS();
-}
-
-int LevelEstimatorImpl::get_version(char* version,
-                                    int version_len_bytes) const {
-  // An empty string is used to indicate no version information.
-  memset(version, 0, version_len_bytes);
-  return apm_->kNoError;
 }
 
 void* LevelEstimatorImpl::CreateHandle() const {

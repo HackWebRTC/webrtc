@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_MAIN_SOURCE_VOICE_DETECTION_IMPL_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_MAIN_SOURCE_VOICE_DETECTION_IMPL_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_VOICE_DETECTION_IMPL_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_VOICE_DETECTION_IMPL_H_
 
 #include "audio_processing.h"
 #include "processing_component.h"
@@ -31,7 +31,6 @@ class VoiceDetectionImpl : public VoiceDetection,
 
   // ProcessingComponent implementation.
   virtual int Initialize();
-  virtual int get_version(char* version, int version_len_bytes) const;
 
  private:
   // VoiceDetection implementation.
@@ -60,4 +59,4 @@ class VoiceDetectionImpl : public VoiceDetection,
 };
 }  // namespace webrtc
 
-#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_MAIN_SOURCE_VOICE_DETECTION_IMPL_H_
+#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_VOICE_DETECTION_IMPL_H_

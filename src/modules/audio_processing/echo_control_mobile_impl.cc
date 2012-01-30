@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -246,15 +246,6 @@ int EchoControlMobileImpl::Initialize() {
   }
 
   return ProcessingComponent::Initialize();
-}
-
-int EchoControlMobileImpl::get_version(char* version,
-                                       int version_len_bytes) const {
-  if (WebRtcAecm_get_version(version, version_len_bytes) != 0) {
-    return apm_->kBadParameterError;
-  }
-
-  return apm_->kNoError;
 }
 
 void* EchoControlMobileImpl::CreateHandle() const {

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -14,23 +14,6 @@
 #include "noise_suppression_x.h"
 #include "nsx_core.h"
 #include "nsx_defines.h"
-
-int WebRtcNsx_get_version(char* versionStr, short length) {
-  const char version[] = "NS\t3.1.0";
-  const short versionLen = (short)strlen(version) + 1; // +1: null-termination
-
-  if (versionStr == NULL) {
-    return -1;
-  }
-
-  if (versionLen > length) {
-    return -1;
-  }
-
-  strncpy(versionStr, version, versionLen);
-
-  return 0;
-}
 
 int WebRtcNsx_Create(NsxHandle** nsxInst) {
   *nsxInst = (NsxHandle*)malloc(sizeof(NsxInst_t));

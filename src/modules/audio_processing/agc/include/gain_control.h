@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AGC_MAIN_INTERFACE_GAIN_CONTROL_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_AGC_MAIN_INTERFACE_GAIN_CONTROL_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AGC_INCLUDE_GAIN_CONTROL_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_AGC_INCLUDE_GAIN_CONTROL_H_
 
 #include "typedefs.h"
 
@@ -252,22 +252,8 @@ int WebRtcAgc_Init(void *agcInst,
                    WebRtc_Word16 agcMode,
                    WebRtc_UWord32 fs);
 
-/*
- * This function returns a text string containing the version.
- *
- * Input:
- *      - length            : Length of the char array pointed to by version
- * Output:
- *      - version           : Pointer to a char array of to which the version
- *                          : string will be copied.
- *
- * Return value             :  0 - OK
- *                            -1 - Error
- */
-int WebRtcAgc_Version(WebRtc_Word8 *versionStr, WebRtc_Word16 length);
-
 #if defined(__cplusplus)
 }
 #endif
 
-#endif // WEBRTC_MODULES_AUDIO_PROCESSING_AGC_MAIN_INTERFACE_GAIN_CONTROL_H_
+#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AGC_INCLUDE_GAIN_CONTROL_H_

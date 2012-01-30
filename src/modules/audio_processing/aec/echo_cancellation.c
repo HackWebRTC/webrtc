@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -865,23 +865,6 @@ int WebRtcAec_GetDelayMetrics(void* handle, int* median, int* std) {
   memset(self->aec->delay_histogram, 0, sizeof(self->aec->delay_histogram));
 
   return 0;
-}
-
-WebRtc_Word32 WebRtcAec_get_version(WebRtc_Word8 *versionStr, WebRtc_Word16 len)
-{
-    const char version[] = "AEC 2.5.0";
-    const short versionLen = (short)strlen(version) + 1; // +1 for null-termination
-
-    if (versionStr == NULL) {
-        return -1;
-    }
-
-    if (versionLen > len) {
-        return -1;
-    }
-
-    strncpy(versionStr, version, versionLen);
-    return 0;
 }
 
 WebRtc_Word32 WebRtcAec_get_error_code(void *aecInst)

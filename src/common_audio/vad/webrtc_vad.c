@@ -22,24 +22,6 @@
 
 static const int kInitCheck = 42;
 
-WebRtc_Word16 WebRtcVad_get_version(char *version, size_t size_bytes)
-{
-    const char my_version[] = "VAD 1.2.0";
-
-    if (version == NULL)
-    {
-        return -1;
-    }
-
-    if (size_bytes < sizeof(my_version))
-    {
-        return -1;
-    }
-
-    memcpy(version, my_version, sizeof(my_version));
-    return 0;
-}
-
 WebRtc_Word16 WebRtcVad_AssignSize(int *size_in_bytes)
 {
     *size_in_bytes = sizeof(VadInstT) * 2 / sizeof(WebRtc_Word16);

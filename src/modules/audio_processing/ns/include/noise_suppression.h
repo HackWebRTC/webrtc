@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_NS_MAIN_INTERFACE_NOISE_SUPPRESSION_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_NS_MAIN_INTERFACE_NOISE_SUPPRESSION_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_NS_INCLUDE_NOISE_SUPPRESSION_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_NS_INCLUDE_NOISE_SUPPRESSION_H_
 
 #include "typedefs.h"
 
@@ -18,20 +18,6 @@ typedef struct NsHandleT NsHandle;
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/*
- * This function returns the version number of the code.
- *
- * Input:
- *      - version       : Pointer to a character array where the version
- *                        info is stored.
- *      - length        : Length of version.
- *
- * Return value         :  0 - Ok
- *                        -1 - Error (probably length is not sufficient)
- */
-int WebRtcNs_get_version(char* version, short length);
-
 
 /*
  * This function creates an instance to the noise reduction structure
@@ -121,4 +107,4 @@ int WebRtcNs_Process(NsHandle* NS_inst,
 }
 #endif
 
-#endif // WEBRTC_MODULES_AUDIO_PROCESSING_NS_MAIN_INTERFACE_NOISE_SUPPRESSION_H_
+#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_NS_INCLUDE_NOISE_SUPPRESSION_H_

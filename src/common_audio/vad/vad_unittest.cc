@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -60,12 +60,6 @@ TEST_F(VadTest, ApiTest) {
   for (int16_t i = 0; i < kMaxFrameLength; i++) {
     speech[i] = (i * i);
   }
-
-  // WebRtcVad_get_version() tests
-  char version[32];
-  EXPECT_EQ(-1, WebRtcVad_get_version(NULL, sizeof(version)));
-  EXPECT_EQ(-1, WebRtcVad_get_version(version, 1));
-  EXPECT_EQ(0, WebRtcVad_get_version(version, sizeof(version)));
 
   // Null instance tests
   EXPECT_EQ(-1, WebRtcVad_Create(NULL));

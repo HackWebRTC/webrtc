@@ -13,8 +13,8 @@
  * This header file includes the VAD API calls. Specific function calls are given below.
  */
 
-#ifndef WEBRTC_VAD_WEBRTC_VAD_H_
-#define WEBRTC_VAD_WEBRTC_VAD_H_
+#ifndef WEBRTC_COMMON_AUDIO_VAD_INCLUDE_WEBRTC_VAD_H_
+#define WEBRTC_COMMON_AUDIO_VAD_INCLUDE_WEBRTC_VAD_H_
 
 #include "typedefs.h"
 
@@ -24,20 +24,6 @@ typedef struct WebRtcVadInst VadInst;
 extern "C"
 {
 #endif
-
-/****************************************************************************
- * WebRtcVad_get_version(...)
- *
- * This function returns the version number of the code.
- *
- * Output:
- *      - version       : Pointer to a buffer where the version info will
- *                        be stored.
- * Input:
- *      - size_bytes    : Size of the buffer.
- *
- */
-WebRtc_Word16 WebRtcVad_get_version(char *version, size_t size_bytes);
 
 /****************************************************************************
  * WebRtcVad_AssignSize(...) 
@@ -156,4 +142,4 @@ WebRtc_Word16 WebRtcVad_Process(VadInst *vad_inst,
 }
 #endif
 
-#endif // WEBRTC_VAD_WEBRTC_VAD_H_
+#endif  // WEBRTC_COMMON_AUDIO_VAD_INCLUDE_WEBRTC_VAD_H_

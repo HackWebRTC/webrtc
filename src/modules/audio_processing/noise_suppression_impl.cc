@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -108,20 +108,6 @@ int NoiseSuppressionImpl::set_level(Level level) {
 
 NoiseSuppression::Level NoiseSuppressionImpl::level() const {
   return level_;
-}
-
-int NoiseSuppressionImpl::get_version(char* version,
-                                      int version_len_bytes) const {
-#if defined(WEBRTC_NS_FLOAT)
-  if (WebRtcNs_get_version(version, version_len_bytes) != 0)
-#elif defined(WEBRTC_NS_FIXED)
-  if (WebRtcNsx_get_version(version, version_len_bytes) != 0)
-#endif
-  {
-      return apm_->kBadParameterError;
-  }
-
-  return apm_->kNoError;
 }
 
 void* NoiseSuppressionImpl::CreateHandle() const {

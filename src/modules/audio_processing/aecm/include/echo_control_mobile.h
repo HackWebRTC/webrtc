@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AECM_MAIN_INTERFACE_ECHO_CONTROL_MOBILE_H_
-#define WEBRTC_MODULES_AUDIO_PROCESSING_AECM_MAIN_INTERFACE_ECHO_CONTROL_MOBILE_H_
+#ifndef WEBRTC_MODULES_AUDIO_PROCESSING_AECM_INCLUDE_ECHO_CONTROL_MOBILE_H_
+#define WEBRTC_MODULES_AUDIO_PROCESSING_AECM_INCLUDE_ECHO_CONTROL_MOBILE_H_
 
 #include "typedefs.h"
 
@@ -227,24 +227,7 @@ size_t WebRtcAecm_echo_path_size_bytes();
  */
 WebRtc_Word32 WebRtcAecm_get_error_code(void *aecmInst);
 
-/*
- * Gets a version string
- *
- * Inputs                       Description
- * -------------------------------------------------------------------
- * char           *versionStr   Pointer to a string array
- * WebRtc_Word16  len           The maximum length of the string
- *
- * Outputs                      Description
- * -------------------------------------------------------------------
- * WebRtc_Word8   *versionStr   Pointer to a string array
- * WebRtc_Word32  return        0: OK
- *                             -1: error
- */
-WebRtc_Word32 WebRtcAecm_get_version(WebRtc_Word8 *versionStr,
-                                     WebRtc_Word16 len);
-
 #ifdef __cplusplus
 }
 #endif
-#endif /* WEBRTC_MODULES_AUDIO_PROCESSING_AECM_MAIN_INTERFACE_ECHO_CONTROL_MOBILE_H_ */
+#endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AECM_INCLUDE_ECHO_CONTROL_MOBILE_H_

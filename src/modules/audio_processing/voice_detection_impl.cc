@@ -157,15 +157,6 @@ int VoiceDetectionImpl::Initialize() {
   return apm_->kNoError;
 }
 
-int VoiceDetectionImpl::get_version(char* version,
-                                    int version_len_bytes) const {
-  if (WebRtcVad_get_version(version, version_len_bytes) != 0) {
-    return apm_->kBadParameterError;
-  }
-
-  return apm_->kNoError;
-}
-
 void* VoiceDetectionImpl::CreateHandle() const {
   Handle* handle = NULL;
   if (WebRtcVad_Create(&handle) != apm_->kNoError) {

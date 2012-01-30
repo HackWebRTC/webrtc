@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -329,14 +329,6 @@ int GainControlImpl::Initialize() {
       (maximum_capture_level_ - minimum_capture_level_) >> 1;
   capture_levels_.assign(num_handles(), analog_capture_level_);
   was_analog_level_set_ = false;
-
-  return apm_->kNoError;
-}
-
-int GainControlImpl::get_version(char* version, int version_len_bytes) const {
-  if (WebRtcAgc_Version(version, version_len_bytes) != 0) {
-      return apm_->kBadParameterError;
-  }
 
   return apm_->kNoError;
 }

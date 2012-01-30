@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -1691,23 +1691,4 @@ int WebRtcAgc_Init(void *agcInst, WebRtc_Word32 minLevel, WebRtc_Word32 maxLevel
 #endif
         return 0;
     }
-}
-
-int WebRtcAgc_Version(WebRtc_Word8 *versionStr, WebRtc_Word16 length)
-{
-    const WebRtc_Word8 version[] = "AGC 1.7.0";
-    const WebRtc_Word16 versionLen = (WebRtc_Word16)strlen(version) + 1;
-
-    if (versionStr == NULL)
-    {
-        return -1;
-    }
-
-    if (versionLen > length)
-    {
-        return -1;
-    }
-
-    strncpy(versionStr, version, versionLen);
-    return 0;
 }
