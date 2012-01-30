@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -47,7 +47,8 @@ void FitSubMask(WebRtc_UWord16 numMaskBytes,
     if (numMaskBytes == numSubMaskBytes)
     {
         memcpy(packetMask,subMask,
-               numRows * numSubMaskBytes);
+               static_cast<WebRtc_UWord32>(numRows) *
+               static_cast<WebRtc_UWord32>(numSubMaskBytes));
     }
     else
     {
@@ -369,7 +370,8 @@ void GeneratePacketMasks(int numMediaPackets,
         // Mask = (k,n-k), with protection factor = (n-k)/k,
         // where k = numMediaPackets, n=total#packets, (n-k)=numFecPackets.
         memcpy(packetMask, packetMaskTbl[numMediaPackets - 1][numFecPackets - 1],
-            numFecPackets * numMaskBytes);
+            static_cast<WebRtc_UWord32>(numFecPackets) *
+            static_cast<WebRtc_UWord32>(numMaskBytes));
     }
     else  //UEP case
     {

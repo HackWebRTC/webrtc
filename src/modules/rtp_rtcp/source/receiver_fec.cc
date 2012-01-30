@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -101,13 +101,17 @@ WebRtc_Word32 ReceiverFEC::AddReceivedFECPacket(
       incomingRtpPacket[rtpHeader->header.headerLength] & 0x7f;
 
   // use the payloadType to decide if it's FEC or coded data
-  if(_payloadTypeFEC == payloadType) {
+  if (_payloadTypeFEC == payloadType) {
     receivedPacket->isFec = true;
     FECpacket = true;
     // We don't need to parse old FEC packets.
     // Old FEC packets are sent to jitter buffer as empty packets in the
     // callback in rtp_receiver_video.
-    if (oldPacket)  return 0;
+    if (oldPacket) {
+      delete receivedPacket->pkt;
+      delete receivedPacket;
+      return 0;
+    }
   } else {
     receivedPacket->isFec = false;
     FECpacket = false;
@@ -126,6 +130,8 @@ WebRtc_Word32 ReceiverFEC::AddReceivedFECPacket(
     if(timestampOffset != 0) {
       // timestampOffset should be 0, however, this is a valid error case in
       // the event of garbage payload.
+      delete receivedPacket->pkt;
+      delete receivedPacket;
       return -1;
     }
 
@@ -136,11 +142,15 @@ WebRtc_Word32 ReceiverFEC::AddReceivedFECPacket(
     // check next RED header
     if(incomingRtpPacket[rtpHeader->header.headerLength+4] & 0x80) {
       // more than 2 blocks in packet not supported
+      delete receivedPacket->pkt;
+      delete receivedPacket;
       assert(false);
       return -1;
     }
     if(blockLength > payloadDataLength - REDHeaderLength) {
       // block length longer than packet
+      delete receivedPacket->pkt;
+      delete receivedPacket;
       assert(false);
       return -1;
     }
@@ -216,6 +226,10 @@ WebRtc_Word32 ReceiverFEC::AddReceivedFECPacket(
   }
 
   if(receivedPacket->pkt->length == 0) {
+    if (secondReceivedPacket) {
+      delete secondReceivedPacket->pkt;
+    }
+    delete secondReceivedPacket;
     delete receivedPacket->pkt;
     delete receivedPacket;
     return 0;
@@ -225,9 +239,18 @@ WebRtc_Word32 ReceiverFEC::AddReceivedFECPacket(
   // received list for FEC decoding (we don't do FEC decoding on old packets).
   if (oldPacket && receivedPacket->isFec == false) {
     if (ParseAndReceivePacket(receivedPacket->pkt) != 0) {
+      if (secondReceivedPacket) {
+        delete secondReceivedPacket->pkt;
+      }
+      delete secondReceivedPacket;
+      delete receivedPacket->pkt;
+      delete receivedPacket;
       return -1;
     }
-
+    if (secondReceivedPacket) {
+      delete secondReceivedPacket->pkt;
+    }
+    delete secondReceivedPacket;
     delete receivedPacket->pkt;
     delete receivedPacket;
   } else {
