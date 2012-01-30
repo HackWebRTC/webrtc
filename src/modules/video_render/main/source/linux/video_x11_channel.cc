@@ -13,7 +13,6 @@
 #include "critical_section_wrapper.h"
 #include "trace.h"
 
-
 namespace webrtc {
 
 #define DISP_MAX 128
@@ -37,7 +36,7 @@ VideoX11Channel::~VideoX11Channel()
     if (_prepared)
     {
         _crit.Enter();
-        RemoveRenderer();
+        ReleaseWindow();
         _crit.Leave();
     }
     delete &_crit;
@@ -68,7 +67,6 @@ WebRtc_Word32 VideoX11Channel::FrameSizeChange(WebRtc_Word32 width,
     {
         RemoveRenderer();
     }
-
     if (CreateLocalRenderer(width, height) == -1)
     {
         return -1;
@@ -101,8 +99,7 @@ WebRtc_Word32 VideoX11Channel::DeliverFrame(unsigned char* buffer,
                  _height, True);
 
     // very important for the image to update properly!
-    XSync(_display, false);
-
+    XSync(_display, False);
     return 0;
 
 }
@@ -171,6 +168,13 @@ WebRtc_Word32 VideoX11Channel::Init(Window window, float left, float top,
     if (_outHeight % 2)
         _outHeight++;
 
+    _gc = XCreateGC(_display, _window, 0, 0);
+    if (!_gc) {
+      // Failed to create the graphics context.
+      assert(false);
+      return -1;
+    }
+
     if (CreateLocalRenderer(winWidth, winHeight) == -1)
     {
         return -1;
@@ -222,6 +226,10 @@ WebRtc_Word32 VideoX11Channel::ReleaseWindow()
     CriticalSectionScoped cs(_crit);
 
     RemoveRenderer();
+    if (_gc) {
+      XFreeGC(_display, _gc);
+      _gc = NULL;
+    }
     if (_display)
     {
         XCloseDisplay(_display);
@@ -252,9 +260,6 @@ WebRtc_Word32 VideoX11Channel::CreateLocalRenderer(WebRtc_Word32 width,
     _width = width;
     _height = height;
 
-    // create a graphics context in the window
-    _gc = XCreateGC(_display, _window, 0, 0);
-
     // create shared memory image
     _image = XShmCreateImage(_display, CopyFromParent, 24, ZPixmap, NULL,
                              &_shminfo, _width, _height); // this parameter needs to be the same for some reason.
@@ -274,6 +279,7 @@ WebRtc_Word32 VideoX11Channel::CreateLocalRenderer(WebRtc_Word32 width,
         //printf("XShmAttach failed !\n");
         return -1;
     }
+    XSync(_display, False);
 
     _prepared = true;
     return 0;
@@ -290,12 +296,15 @@ WebRtc_Word32 VideoX11Channel::RemoveRenderer()
     }
     _prepared = false;
 
-    // free and closse Xwindow and XShm
+    // Free the memory.
     XShmDetach(_display, &_shminfo);
     XDestroyImage( _image );
+    _image = NULL;
     shmdt(_shminfo.shmaddr);
-    XFreeGC(_display, _gc);
-
+    _shminfo.shmaddr = NULL;
+    _buffer = NULL;
+    shmctl(_shminfo.shmid, IPC_RMID, 0);
+    _shminfo.shmid = 0;
     return 0;
 }
 
