@@ -303,7 +303,16 @@ bool TbExternalTransport::ViEExternalTransportProcess()
         // Take first packet in queue
         _crit.Enter();
         packet = _rtpPackets.front();
-        WebRtc_Word64 timeToReceive = packet->receiveTime - NowMs();
+        WebRtc_Word64 timeToReceive = 0;
+        if (packet)
+        {
+          timeToReceive = packet->receiveTime - NowMs();
+        }
+        else
+        {
+          // There should never be any empty packets in the list.
+          assert(false);
+        }
         if (timeToReceive > 0)
         {
             // No packets to receive yet
