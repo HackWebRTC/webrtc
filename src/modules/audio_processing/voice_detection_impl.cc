@@ -92,7 +92,7 @@ int VoiceDetectionImpl::ProcessCaptureAudio(AudioBuffer* audio) {
 }
 
 int VoiceDetectionImpl::Enable(bool enable) {
-  CriticalSectionScoped crit_scoped(*apm_->crit());
+  CriticalSectionScoped crit_scoped(apm_->crit());
   return EnableComponent(enable);
 }
 
@@ -113,7 +113,7 @@ bool VoiceDetectionImpl::stream_has_voice() const {
 }
 
 int VoiceDetectionImpl::set_likelihood(VoiceDetection::Likelihood likelihood) {
-  CriticalSectionScoped crit_scoped(*apm_->crit());
+  CriticalSectionScoped crit_scoped(apm_->crit());
   if (MapSetting(likelihood) == -1) {
     return apm_->kBadParameterError;
   }
@@ -127,7 +127,7 @@ VoiceDetection::Likelihood VoiceDetectionImpl::likelihood() const {
 }
 
 int VoiceDetectionImpl::set_frame_size_ms(int size) {
-  CriticalSectionScoped crit_scoped(*apm_->crit());
+  CriticalSectionScoped crit_scoped(apm_->crit());
   assert(size == 10); // TODO(ajm): remove when supported.
   if (size != 10 &&
       size != 20 &&

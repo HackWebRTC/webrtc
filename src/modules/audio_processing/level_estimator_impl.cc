@@ -113,7 +113,7 @@ int LevelEstimatorImpl::ProcessStream(AudioBuffer* audio) {
 }
 
 int LevelEstimatorImpl::Enable(bool enable) {
-  CriticalSectionScoped crit_scoped(*apm_->crit());
+  CriticalSectionScoped crit_scoped(apm_->crit());
   return EnableComponent(enable);
 }
 

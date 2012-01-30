@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -139,7 +139,7 @@ int AudioProcessingImpl::split_sample_rate_hz() const {
 }
 
 int AudioProcessingImpl::Initialize() {
-  CriticalSectionScoped crit_scoped(*crit_);
+  CriticalSectionScoped crit_scoped(crit_);
   return InitializeLocked();
 }
 
@@ -183,7 +183,7 @@ int AudioProcessingImpl::InitializeLocked() {
 }
 
 int AudioProcessingImpl::set_sample_rate_hz(int rate) {
-  CriticalSectionScoped crit_scoped(*crit_);
+  CriticalSectionScoped crit_scoped(crit_);
   if (rate != kSampleRate8kHz &&
       rate != kSampleRate16kHz &&
       rate != kSampleRate32kHz) {
@@ -207,7 +207,7 @@ int AudioProcessingImpl::sample_rate_hz() const {
 }
 
 int AudioProcessingImpl::set_num_reverse_channels(int channels) {
-  CriticalSectionScoped crit_scoped(*crit_);
+  CriticalSectionScoped crit_scoped(crit_);
   // Only stereo supported currently.
   if (channels > 2 || channels < 1) {
     return kBadParameterError;
@@ -225,7 +225,7 @@ int AudioProcessingImpl::num_reverse_channels() const {
 int AudioProcessingImpl::set_num_channels(
     int input_channels,
     int output_channels) {
-  CriticalSectionScoped crit_scoped(*crit_);
+  CriticalSectionScoped crit_scoped(crit_);
   if (output_channels > input_channels) {
     return kBadParameterError;
   }
@@ -254,7 +254,7 @@ int AudioProcessingImpl::num_output_channels() const {
 }
 
 int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
-  CriticalSectionScoped crit_scoped(*crit_);
+  CriticalSectionScoped crit_scoped(crit_);
   int err = kNoError;
 
   if (frame == NULL) {
@@ -385,7 +385,7 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
 }
 
 int AudioProcessingImpl::AnalyzeReverseStream(AudioFrame* frame) {
-  CriticalSectionScoped crit_scoped(*crit_);
+  CriticalSectionScoped crit_scoped(crit_);
   int err = kNoError;
 
   if (frame == NULL) {
@@ -478,7 +478,7 @@ bool AudioProcessingImpl::was_stream_delay_set() const {
 
 int AudioProcessingImpl::StartDebugRecording(
     const char filename[AudioProcessing::kMaxFilenameSize]) {
-  CriticalSectionScoped crit_scoped(*crit_);
+  CriticalSectionScoped crit_scoped(crit_);
   assert(kMaxFilenameSize == FileWrapper::kMaxFileNameSize);
 
   if (filename == NULL) {
@@ -509,7 +509,7 @@ int AudioProcessingImpl::StartDebugRecording(
 }
 
 int AudioProcessingImpl::StopDebugRecording() {
-  CriticalSectionScoped crit_scoped(*crit_);
+  CriticalSectionScoped crit_scoped(crit_);
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
   // We just return if recording hasn't started.
@@ -553,7 +553,7 @@ VoiceDetection* AudioProcessingImpl::voice_detection() const {
 }
 
 WebRtc_Word32 AudioProcessingImpl::ChangeUniqueId(const WebRtc_Word32 id) {
-  CriticalSectionScoped crit_scoped(*crit_);
+  CriticalSectionScoped crit_scoped(crit_);
   /*WEBRTC_TRACE(webrtc::kTraceModuleCall,
              webrtc::kTraceAudioProcessing,
              id_,

@@ -135,7 +135,7 @@ int HighPassFilterImpl::ProcessCaptureAudio(AudioBuffer* audio) {
 }
 
 int HighPassFilterImpl::Enable(bool enable) {
-  CriticalSectionScoped crit_scoped(*apm_->crit());
+  CriticalSectionScoped crit_scoped(apm_->crit());
   return EnableComponent(enable);
 }
 

@@ -155,7 +155,7 @@ int EchoControlMobileImpl::ProcessCaptureAudio(AudioBuffer* audio) {
 }
 
 int EchoControlMobileImpl::Enable(bool enable) {
-  CriticalSectionScoped crit_scoped(*apm_->crit());
+  CriticalSectionScoped crit_scoped(apm_->crit());
   // Ensure AEC and AECM are not both enabled.
   if (enable && apm_->echo_cancellation()->is_enabled()) {
     return apm_->kBadParameterError;
@@ -169,7 +169,7 @@ bool EchoControlMobileImpl::is_enabled() const {
 }
 
 int EchoControlMobileImpl::set_routing_mode(RoutingMode mode) {
-  CriticalSectionScoped crit_scoped(*apm_->crit());
+  CriticalSectionScoped crit_scoped(apm_->crit());
   if (MapSetting(mode) == -1) {
     return apm_->kBadParameterError;
   }
@@ -184,7 +184,7 @@ EchoControlMobile::RoutingMode EchoControlMobileImpl::routing_mode()
 }
 
 int EchoControlMobileImpl::enable_comfort_noise(bool enable) {
-  CriticalSectionScoped crit_scoped(*apm_->crit());
+  CriticalSectionScoped crit_scoped(apm_->crit());
   comfort_noise_enabled_ = enable;
   return Configure();
 }
@@ -195,7 +195,7 @@ bool EchoControlMobileImpl::is_comfort_noise_enabled() const {
 
 int EchoControlMobileImpl::SetEchoPath(const void* echo_path,
                                        size_t size_bytes) {
-  CriticalSectionScoped crit_scoped(*apm_->crit());
+  CriticalSectionScoped crit_scoped(apm_->crit());
   if (echo_path == NULL) {
     return apm_->kNullPointerError;
   }
@@ -214,7 +214,7 @@ int EchoControlMobileImpl::SetEchoPath(const void* echo_path,
 
 int EchoControlMobileImpl::GetEchoPath(void* echo_path,
                                        size_t size_bytes) const {
-  CriticalSectionScoped crit_scoped(*apm_->crit());
+  CriticalSectionScoped crit_scoped(apm_->crit());
   if (echo_path == NULL) {
     return apm_->kNullPointerError;
   }
