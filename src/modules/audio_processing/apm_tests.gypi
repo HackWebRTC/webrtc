@@ -13,9 +13,9 @@
       'type': 'executable',
       'conditions': [
         ['prefer_fixed_point==1', {
-          'defines': [ 'WEBRTC_APM_UNIT_TEST_FIXED_PROFILE' ],
+          'defines': [ 'WEBRTC_AUDIOPROC_FIXED_PROFILE' ],
         }, {
-          'defines': [ 'WEBRTC_APM_UNIT_TEST_FLOAT_PROFILE' ],
+          'defines': [ 'WEBRTC_AUDIOPROC_FLOAT_PROFILE' ],
         }],
         ['enable_protobuf==1', {
           'defines': [ 'WEBRTC_AUDIOPROC_DEBUG_DUMP' ],

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -24,6 +24,11 @@
 #include "external/webrtc/src/modules/audio_processing/test/unittest.pb.h"
 #else
 #include "webrtc/audio_processing/unittest.pb.h"
+#endif
+
+#if (defined(WEBRTC_AUDIOPROC_FIXED_PROFILE)) || \
+    (defined(WEBRTC_LINUX) && defined(WEBRTC_ARCH_X86_64) && !defined(NDEBUG))
+#  define WEBRTC_AUDIOPROC_BIT_EXACT
 #endif
 
 using webrtc::AudioProcessing;
@@ -74,9 +79,9 @@ class ApmTest : public ::testing::Test {
 ApmTest::ApmTest()
     : resource_path(webrtc::test::ProjectRootPath() +
                     "test/data/audio_processing/"),
-#if defined(WEBRTC_APM_UNIT_TEST_FIXED_PROFILE)
+#if defined(WEBRTC_AUDIOPROC_FIXED_PROFILE)
       output_filename(resource_path + "output_data_fixed.pb"),
-#elif defined(WEBRTC_APM_UNIT_TEST_FLOAT_PROFILE)
+#elif defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
       output_filename(resource_path + "output_data_float.pb"),
 #endif
       apm_(NULL),
@@ -1003,7 +1008,7 @@ TEST_F(ApmTest, DebugDump) {
 
 // TODO(andrew): Make this test more robust such that it can be run on multiple
 // platforms. It currently requires bit-exactness.
-#if defined(WEBRTC_LINUX) && defined(WEBRTC_ARCH_X86_64) && !defined(NDEBUG)
+#ifdef WEBRTC_AUDIOPROC_BIT_EXACT
 TEST_F(ApmTest, Process) {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
   webrtc::audioproc::OutputData output_data;
@@ -1015,10 +1020,10 @@ TEST_F(ApmTest, Process) {
     // TODO(ajm): vary the output channels as well?
     const int channels[] = {1, 2};
     const size_t channels_size = sizeof(channels) / sizeof(*channels);
-#if defined(WEBRTC_APM_UNIT_TEST_FIXED_PROFILE)
+#if defined(WEBRTC_AUDIOPROC_FIXED_PROFILE)
     // AECM doesn't support super-wb.
     const int sample_rates[] = {8000, 16000};
-#elif defined(WEBRTC_APM_UNIT_TEST_FLOAT_PROFILE)
+#elif defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
     const int sample_rates[] = {8000, 16000, 32000};
 #endif
     const size_t sample_rates_size = sizeof(sample_rates) / sizeof(*sample_rates);
@@ -1035,14 +1040,14 @@ TEST_F(ApmTest, Process) {
     }
   }
 
-#if defined(WEBRTC_APM_UNIT_TEST_FIXED_PROFILE)
+#if defined(WEBRTC_AUDIOPROC_FIXED_PROFILE)
   EXPECT_EQ(apm_->kNoError, apm_->set_sample_rate_hz(16000));
   EXPECT_EQ(apm_->kNoError, apm_->echo_control_mobile()->Enable(true));
 
   EXPECT_EQ(apm_->kNoError,
             apm_->gain_control()->set_mode(GainControl::kAdaptiveDigital));
   EXPECT_EQ(apm_->kNoError, apm_->gain_control()->Enable(true));
-#elif defined(WEBRTC_APM_UNIT_TEST_FLOAT_PROFILE)
+#elif defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
   EXPECT_EQ(apm_->kNoError,
             apm_->echo_cancellation()->enable_drift_compensation(true));
   EXPECT_EQ(apm_->kNoError,
@@ -1165,7 +1170,7 @@ TEST_F(ApmTest, Process) {
     max_output_average /= frame_count;
     analog_level_average /= frame_count;
 
-#if defined(WEBRTC_APM_UNIT_TEST_FLOAT_PROFILE)
+#if defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
     EchoCancellation::Metrics echo_metrics;
     EXPECT_EQ(apm_->kNoError,
               apm_->echo_cancellation()->GetMetrics(&echo_metrics));
@@ -1187,7 +1192,7 @@ TEST_F(ApmTest, Process) {
       EXPECT_EQ(test->analog_level_average(), analog_level_average);
       EXPECT_EQ(test->max_output_average(), max_output_average);
 
-#if defined(WEBRTC_APM_UNIT_TEST_FLOAT_PROFILE)
+#if defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
       webrtc::audioproc::Test::EchoMetrics reference =
           test->echo_metrics();
       TestStats(echo_metrics.residual_echo_return_loss,
@@ -1214,7 +1219,7 @@ TEST_F(ApmTest, Process) {
       test->set_analog_level_average(analog_level_average);
       test->set_max_output_average(max_output_average);
 
-#if defined(WEBRTC_APM_UNIT_TEST_FLOAT_PROFILE)
+#if defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
       webrtc::audioproc::Test::EchoMetrics* message =
           test->mutable_echo_metrics();
       WriteStatsMessage(echo_metrics.residual_echo_return_loss,
@@ -1243,8 +1248,7 @@ TEST_F(ApmTest, Process) {
     WriteMessageLiteToFile(output_filename, output_data);
   }
 }
-#endif  // defined(WEBRTC_LINUX) && defined(WEBRTC_ARCH_X86_64) &&
-        // !defined(NDEBUG)
+#endif  // WEBRTC_AUDIOPROC_BIT_EXACT
 
 }  // namespace
 
