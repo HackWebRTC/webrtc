@@ -25,10 +25,31 @@ WebRtc_UWord32 BitRateBPS(WebRtc_UWord16 x )
     return (x & 0x3fff) * WebRtc_UWord32(pow(10.0f,(2 + (x >> 14))));
 }
 
+RTPReceiverVideo::RTPReceiverVideo():
+    _id(0),
+    _rtpRtcp(NULL),
+    _criticalSectionFeedback(CriticalSectionWrapper::CreateCriticalSection()),
+    _cbVideoFeedback(NULL),
+    _criticalSectionReceiverVideo(
+        CriticalSectionWrapper::CreateCriticalSection()),
+    _completeFrame(false),
+    _packetStartTimeMs(0),
+    _receivedBW(),
+    _estimatedBW(0),
+    _currentFecFrameDecoded(false),
+    _receiveFEC(NULL),
+    _overUseDetector(),
+    _videoBitRate(),
+    _lastBitRateChange(0),
+    _packetOverHead(28)
+{
+    memset(_receivedBW, 0,sizeof(_receivedBW));
+}
+
 RTPReceiverVideo::RTPReceiverVideo(const WebRtc_Word32 id,
                                    ModuleRtpRtcpImpl* owner):
     _id(id),
-    _rtpRtcp(*owner),
+    _rtpRtcp(owner),
     _criticalSectionFeedback(CriticalSectionWrapper::CreateCriticalSection()),
     _cbVideoFeedback(NULL),
     _criticalSectionReceiverVideo(
@@ -317,11 +338,13 @@ RTPReceiverVideo::ParseVideoCodecSpecific(WebRtcRTPHeader* rtpHeader,
     _criticalSectionReceiverVideo->Leave();
 
     // Call the callback outside critical section
-    const RateControlRegion region = _rtpRtcp.OnOverUseStateUpdate(input);
+    if (_rtpRtcp) {
+      const RateControlRegion region = _rtpRtcp->OnOverUseStateUpdate(input);
 
-    _criticalSectionReceiverVideo->Enter();
-    _overUseDetector.SetRateControlRegion(region);
-    _criticalSectionReceiverVideo->Leave();
+      _criticalSectionReceiverVideo->Enter();
+      _overUseDetector.SetRateControlRegion(region);
+      _criticalSectionReceiverVideo->Leave();
+    }
 
     return retVal;
 }

@@ -28,6 +28,7 @@ class CriticalSectionWrapper;
 class RTPReceiverVideo
 {
 public:
+    RTPReceiverVideo();
     RTPReceiverVideo(const WebRtc_Word32 id, ModuleRtpRtcpImpl* owner);
 
     virtual ~RTPReceiverVideo();
@@ -58,7 +59,7 @@ public:
         const WebRtc_UWord16 incomingRtpPacketSize,
         const WebRtc_Word64 nowMS);
 
-    WebRtc_Word32 ReceiveRecoveredPacketCallback(
+    virtual WebRtc_Word32 ReceiveRecoveredPacketCallback(
         WebRtcRTPHeader* rtpHeader,
         const WebRtc_UWord8* payloadData,
         const WebRtc_UWord16 payloadDataLength);
@@ -110,7 +111,7 @@ protected:
 
 private:
     WebRtc_Word32             _id;
-    ModuleRtpRtcpImpl&        _rtpRtcp;
+    ModuleRtpRtcpImpl*        _rtpRtcp;
 
     CriticalSectionWrapper*   _criticalSectionFeedback;
     RtpVideoFeedback*         _cbVideoFeedback;
