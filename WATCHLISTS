@@ -53,8 +53,8 @@
     'audio_coding': {
       'filepath': 'src/modules/audio_coding/.*',
     },
-    'NetEQ': {
-      'filepath': 'src/modules/audio_coding/NetEQ/.*',
+    'neteq': {
+      'filepath': 'src/modules/audio_coding/neteq/.*',
     },
     'audio_processing': {
       'filepath': 'src/modules/audio_processing/.*',
@@ -97,7 +97,7 @@
     'audio_device': ['henrika@webrtc.org',
                      'leozwang@webrtc.org'],
     'audio_coding': ['tina.legrand@webrtc.org'],
-    'NetEQ': ['henrik.lundin@webrtc.org'],
+    'neteq': ['henrik.lundin@webrtc.org'],
     'audio_processing': ['andrew@webrtc.org',
                          'bjornv@webrtc.org'],
     'video_codecs': ['henrik.lundin@webrtc.org',
