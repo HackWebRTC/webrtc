@@ -388,89 +388,99 @@ int WebRtcNetEQ_PacketBufferExtract(PacketBuf_t *bufferInst, RTPPacket_t *RTPpac
     return (0);
 }
 
+int WebRtcNetEQ_PacketBufferFindLowestTimestamp(PacketBuf_t* buffer_inst,
+                                                uint32_t current_time_stamp,
+                                                uint32_t* time_stamp,
+                                                int* buffer_position,
+                                                int erase_old_packets,
+                                                int16_t* payload_type) {
+  int32_t time_stamp_diff = WEBRTC_SPL_WORD32_MAX;  /* Smallest diff found. */
+  int32_t new_diff;
+  int i;
+  int16_t rcu_payload_cntr;
 
-int WebRtcNetEQ_PacketBufferFindLowestTimestamp(PacketBuf_t *bufferInst,
-                                                WebRtc_UWord32 currentTS,
-                                                WebRtc_UWord32 *timestamp,
-                                                int *bufferPosition, int eraseOldPkts,
-                                                WebRtc_Word16 *payloadType)
-{
-    WebRtc_Word32 timeStampDiff = WEBRTC_SPL_WORD32_MAX; /* Smallest diff found */
-    WebRtc_Word32 newDiff;
-    int i;
-    WebRtc_Word16 rcuPlCntr;
+  if (buffer_inst->startPayloadMemory == NULL) {
+    /* Packet buffer has not been initialized. */
+    return PBUFFER_NOT_INITIALIZED;
+  }
 
-    /* Sanity check */
-    if (bufferInst->startPayloadMemory == NULL)
-    {
-        /* packet buffer has not been initialized */
-        return (PBUFFER_NOT_INITIALIZED);
-    }
+  /* Initialize all return values. */
+  *time_stamp = 0;
+  *payload_type = -1;  /* Indicates that no packet was found. */
+  *buffer_position = -1;  /* Indicates that no packet was found. */
+  rcu_payload_cntr = WEBRTC_SPL_WORD16_MAX;  /* Indicates no packet found. */
 
-    /* Initialize all return values */
-    *timestamp = 0;
-    *payloadType = -1; /* indicates that no packet was found */
-    *bufferPosition = -1; /* indicates that no packet was found */
-    rcuPlCntr = WEBRTC_SPL_WORD16_MAX; /* indicates that no packet was found */
-
-    /* Check if buffer is empty */
-    if (bufferInst->numPacketsInBuffer <= 0)
-    {
-        /* Empty buffer */
-        return (0);
-    }
-
-    /* Loop through all slots in buffer */
-    for (i = 0; i < bufferInst->maxInsertPositions; i++)
-    {
-        /* Calculate difference between this slot and currentTS */
-        newDiff = (WebRtc_Word32) (bufferInst->timeStamp[i] - currentTS);
-
-        /* Check if payload should be discarded */
-        if ((newDiff < 0) /* payload is too old */
-            && (newDiff > -30000) /* account for TS wrap-around */
-            && (eraseOldPkts) /* old payloads should be discarded */
-            && (bufferInst->payloadLengthBytes[i] > 0)) /* the payload exists */
-        {
-            /* Throw away old packet */
-
-            /* Clear the position in the buffer */
-            bufferInst->payloadType[i] = -1;
-            bufferInst->payloadLengthBytes[i] = 0;
-
-            /* Reduce packet counter by one */
-            bufferInst->numPacketsInBuffer--;
-
-            /* Increase discard counter for in-call statistics */
-            bufferInst->discardedPackets++;
-        }
-        else if (((newDiff < timeStampDiff) || ((newDiff == timeStampDiff)
-            && (bufferInst->rcuPlCntr[i] < rcuPlCntr))) && (bufferInst->payloadLengthBytes[i]
-            > 0))
-        {
-            /*
-             * New diff is smaller than previous diffs or we have a candidate with a timestamp
-             * as previous candidate but better RCU-counter; and the payload exists.
-             */
-
-            /* Save this position as the best candidate */
-            *bufferPosition = i;
-            timeStampDiff = newDiff;
-            *payloadType = bufferInst->payloadType[i];
-            rcuPlCntr = bufferInst->rcuPlCntr[i];
-        }
-    } /* end of for loop */
-
-    /* check that we did find a real position */
-    if (*bufferPosition >= 0)
-    {
-        /* get the timestamp for the best position */
-        *timestamp = bufferInst->timeStamp[*bufferPosition];
-    }
-
+  /* Check if buffer is empty. */
+  if (buffer_inst->numPacketsInBuffer <= 0) {
     return 0;
-}
+  }
 
+  /* Loop through all slots in buffer. */
+  if (erase_old_packets) {  /* If old payloads should be discarded. */
+    for (i = 0; i < buffer_inst->maxInsertPositions; ++i) {
+      /* Calculate difference between this slot and current_time_stamp. */
+      new_diff = (int32_t)(buffer_inst->timeStamp[i] - current_time_stamp);
+
+      /* Check if payload should be discarded. */
+      if ((new_diff < 0)  /* Payload is too old */
+          && (new_diff > -30000)  /* Account for TS wrap-around. */
+          && (buffer_inst->payloadLengthBytes[i] > 0)) {  /* Payload exists. */
+        /* Throw away old packet. */
+
+        /* Clear the position in the buffer. */
+        buffer_inst->payloadType[i] = -1;
+        buffer_inst->payloadLengthBytes[i] = 0;
+
+        /* Reduce packet counter by one. */
+        buffer_inst->numPacketsInBuffer--;
+        /* Increase discard counter for in-call statistics. */
+        buffer_inst->discardedPackets++;
+      } else if (((new_diff < time_stamp_diff) 
+                  || ((new_diff == time_stamp_diff)
+                      && (buffer_inst->rcuPlCntr[i] < rcu_payload_cntr)))
+                      && (buffer_inst->payloadLengthBytes[i] > 0)) {
+        /* New diff is smaller than previous diffs or we have a candidate with a
+         * time stamp as previous candidate but better RCU-counter; 
+         * and the payload exists. 
+         */ 
+        /* Save this position as the best candidate. */
+        *buffer_position = i;
+        time_stamp_diff = new_diff;
+        *payload_type = buffer_inst->payloadType[i];
+        rcu_payload_cntr = buffer_inst->rcuPlCntr[i];
+      }
+    }
+  } else {
+    for (i = 0; i < buffer_inst->maxInsertPositions; ++i) {
+      /* Calculate difference between this slot and current_time_stamp. */
+      new_diff = (int32_t)(buffer_inst->timeStamp[i] - current_time_stamp);
+
+      /* Check if this is the oldest packet. */
+      if (((new_diff < time_stamp_diff) 
+           || ((new_diff == time_stamp_diff)
+               && (buffer_inst->rcuPlCntr[i] < rcu_payload_cntr)))
+               && (buffer_inst->payloadLengthBytes[i] > 0)) {
+        /* New diff is smaller than previous diffs or we have a candidate with a
+         * time_stamp as previous candidate but better RCU-counter; 
+         * and the payload exists. 
+         */ 
+        /* Save this position as the best candidate. */
+        *buffer_position = i;
+        time_stamp_diff = new_diff;
+        *payload_type = buffer_inst->payloadType[i];
+        rcu_payload_cntr = buffer_inst->rcuPlCntr[i];
+      }
+    }
+  }
+
+  /* Check that we did find a real position. */
+  if (*buffer_position >= 0) {
+    /* Get the time_stamp for the best position. */
+    *time_stamp = buffer_inst->timeStamp[*buffer_position];
+  }
+
+  return 0;
+}
 
 WebRtc_Word32 WebRtcNetEQ_PacketBufferGetSize(const PacketBuf_t *bufferInst)
 {
@@ -718,4 +728,3 @@ int WebRtcNetEQ_GetDefaultCodecSettings(const enum WebRtcNetEQDecoder *codecID,
 
     return ok;
 }
-

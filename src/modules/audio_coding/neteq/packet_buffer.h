@@ -146,25 +146,26 @@ int WebRtcNetEQ_PacketBufferExtract(PacketBuf_t *bufferInst, RTPPacket_t *RTPpac
  * This function finds the next packet with the lowest timestamp.
  *
  * Input:
- *		- bufferInst	: Buffer instance
- *		- currentTS     : The timestamp to compare packet timestamps with
- *		- eraseOldPkts  : If non-zero, erase packets older than currentTS
+ *       - buffer_inst        : Buffer instance.
+ *       - current_time_stamp : The timestamp to compare packet timestamps with.
+ *       - erase_old_packets  : If non-zero, erase packets older than currentTS.
  *
  * Output:
- *		- timestamp		: Lowest timestamp that was found
- *		- bufferPosition: Position of this packet (-1 if there are no packets
- *						  in the buffer)
- *      - payloadType   : Payload type of the found payload
+ *       - time_stamp         : Lowest timestamp that was found.
+ *       - buffer_position    : Position of this packet (-1 if there are no
+ *                              packets in the buffer).
+ *       - payload_type       : Payload type of the found payload.
  *
- * Return value			:  0 - Ok
- *						  <0 - Error
+ * Return value               :  0 - Ok;
+ *                             < 0 - Error.
  */
 
-int WebRtcNetEQ_PacketBufferFindLowestTimestamp(PacketBuf_t *bufferInst,
-                                                WebRtc_UWord32 currentTS,
-                                                WebRtc_UWord32 *timestamp,
-                                                int *bufferPosition, int eraseOldPkts,
-                                                WebRtc_Word16 *payloadType);
+int WebRtcNetEQ_PacketBufferFindLowestTimestamp(PacketBuf_t* buffer_inst,
+                                                uint32_t current_time_stamp,
+                                                uint32_t* time_stamp,
+                                                int* buffer_position,
+                                                int erase_old_packets,
+                                                int16_t* payload_type);
 
 /****************************************************************************
  * WebRtcNetEQ_PacketBufferGetSize(...)
