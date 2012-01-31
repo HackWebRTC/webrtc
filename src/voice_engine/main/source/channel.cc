@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -1120,6 +1120,8 @@ Channel::Channel(const WebRtc_Word32 channelId,
     _playoutTimeStampRTCP(0),
     _numberOfDiscardedPackets(0),
     _engineStatisticsPtr(NULL),
+    _outputMixerPtr(NULL),
+    _transmitMixerPtr(NULL),
     _moduleProcessThreadPtr(NULL),
     _audioDeviceModulePtr(NULL),
     _voiceEngineObserverPtr(NULL),
