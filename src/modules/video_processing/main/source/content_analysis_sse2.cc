@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -80,15 +80,22 @@ VPMContentAnalysis::TemporalDiffMetric_SSE2()
         numPixels += (width_end - _border);
     }
 
-    WebRtc_Word64 sad_final_64[2];
-    WebRtc_Word64 sum_final_64[2];
-    WebRtc_Word64 sqsum_final_64[2];
+    __m128i sad_final_128;
+    __m128i sum_final_128;
+    __m128i sqsum_final_128;
 
     // bring sums out of vector registers and into integer register
     // domain, summing them along the way
-    _mm_store_si128 ((__m128i*)sad_final_64, sad_64);
-    _mm_store_si128 ((__m128i*)sum_final_64, sum_64);
-    _mm_store_si128 ((__m128i*)sqsum_final_64, sqsum_64);
+    _mm_store_si128 (&sad_final_128, sad_64);
+    _mm_store_si128 (&sum_final_128, sum_64);
+    _mm_store_si128 (&sqsum_final_128, sqsum_64);
+
+    WebRtc_UWord64 *sad_final_64 =
+                   reinterpret_cast<WebRtc_UWord64*>(&sad_final_128);
+    WebRtc_UWord64 *sum_final_64 =
+                   reinterpret_cast<WebRtc_UWord64*>(&sum_final_128);
+    WebRtc_UWord64 *sqsum_final_64 =
+                   reinterpret_cast<WebRtc_UWord64*>(&sqsum_final_128);
 
     const WebRtc_UWord32 pixelSum = sum_final_64[0] + sum_final_64[1];
     const WebRtc_UWord64 pixelSqSum = sqsum_final_64[0] + sqsum_final_64[1];
@@ -238,25 +245,34 @@ VPMContentAnalysis::ComputeSpatialMetrics_SSE2()
         imgBuf += _width * _skipNum;
     }
 
-    WebRtc_Word64 se_64[2];
-    WebRtc_Word64 sev_64[2];
-    WebRtc_Word64 seh_64[2];
-    WebRtc_Word64 msa_64[2];
+    __m128i se_128;
+    __m128i sev_128;
+    __m128i seh_128;
+    __m128i msa_128;
 
     // bring sums out of vector registers and into integer register
     // domain, summing them along the way
-    _mm_store_si128 ((__m128i*)se_64,
+    _mm_store_si128 (&se_128,
                      _mm_add_epi64(_mm_unpackhi_epi32(se_32,z),
                                    _mm_unpacklo_epi32(se_32,z)));
-    _mm_store_si128 ((__m128i*)sev_64,
+    _mm_store_si128 (&sev_128,
                      _mm_add_epi64(_mm_unpackhi_epi32(sev_32,z),
                                    _mm_unpacklo_epi32(sev_32,z)));
-    _mm_store_si128 ((__m128i*)seh_64,
+    _mm_store_si128 (&seh_128,
                      _mm_add_epi64(_mm_unpackhi_epi32(seh_32,z),
                                    _mm_unpacklo_epi32(seh_32,z)));
-    _mm_store_si128 ((__m128i*)msa_64,
+    _mm_store_si128 (&msa_128,
                      _mm_add_epi64(_mm_unpackhi_epi32(msa_32,z),
                                    _mm_unpacklo_epi32(msa_32,z)));
+
+    WebRtc_UWord64 *se_64 =
+                   reinterpret_cast<WebRtc_UWord64*>(&se_128);
+    WebRtc_UWord64 *sev_64 =
+                   reinterpret_cast<WebRtc_UWord64*>(&sev_128);
+    WebRtc_UWord64 *seh_64 =
+                   reinterpret_cast<WebRtc_UWord64*>(&seh_128);
+    WebRtc_UWord64 *msa_64 =
+                   reinterpret_cast<WebRtc_UWord64*>(&msa_128);
 
     const WebRtc_UWord32 spatialErrSum  = se_64[0] + se_64[1];
     const WebRtc_UWord32 spatialErrVSum = sev_64[0] + sev_64[1];
