@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -112,7 +112,7 @@ int WebRtcNetEQ_Merge(DSPInst_t *inst,
     WebRtc_Word16 pw16_corrVec[4+60+4];
 #endif
     WebRtc_Word16 *pw16_corr = &pw16_corrVec[4];
-    WebRtc_Word16 w16_stopPos, w16_bestIndex, w16_interpLen;
+    WebRtc_Word16 w16_stopPos = 0, w16_bestIndex, w16_interpLen;
     WebRtc_Word16 w16_bestVal; /* bestVal is dummy */
     WebRtc_Word16 w16_startfact, w16_inc;
     WebRtc_Word16 w16_expandedLen;
