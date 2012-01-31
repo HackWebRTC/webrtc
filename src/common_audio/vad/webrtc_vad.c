@@ -46,41 +46,34 @@ WebRtc_Word16 WebRtcVad_Assign(VadInst **vad_inst, void *vad_inst_addr)
     }
 }
 
-WebRtc_Word16 WebRtcVad_Create(VadInst **vad_inst)
-{
+int WebRtcVad_Create(VadInst** handle) {
+  VadInstT* self = NULL;
 
-    VadInstT *vad_ptr = NULL;
+  if (handle == NULL) {
+    return -1;
+  }
 
-    if (vad_inst == NULL)
-    {
-        return -1;
-    }
+  *handle = NULL;
+  self = (VadInstT*) malloc(sizeof(VadInstT));
+  *handle = (VadInst*) self;
 
-    *vad_inst = NULL;
+  if (self == NULL) {
+    return -1;
+  }
 
-    vad_ptr = (VadInstT *)malloc(sizeof(VadInstT));
-    *vad_inst = (VadInst *)vad_ptr;
+  self->init_flag = 0;
 
-    if (vad_ptr == NULL)
-    {
-        return -1;
-    }
-
-    vad_ptr->init_flag = 0;
-
-    return 0;
+  return 0;
 }
 
-WebRtc_Word16 WebRtcVad_Free(VadInst *vad_inst)
-{
+int WebRtcVad_Free(VadInst* handle) {
+  if (handle == NULL) {
+    return -1;
+  }
 
-    if (vad_inst == NULL)
-    {
-        return -1;
-    }
+  free(handle);
 
-    free(vad_inst);
-    return 0;
+  return 0;
 }
 
 int WebRtcVad_Init(VadInst* handle) {

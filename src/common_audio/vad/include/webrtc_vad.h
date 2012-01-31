@@ -53,34 +53,19 @@ WebRtc_Word16 WebRtcVad_AssignSize(int *size_in_bytes);
  */
 WebRtc_Word16 WebRtcVad_Assign(VadInst **vad_inst, void *vad_inst_addr);
 
-/****************************************************************************
- * WebRtcVad_Create(...)
- *
- * This function creates an instance to the VAD structure
- *
- * Input:
- *      - vad_inst      : Pointer to VAD instance that should be created
- *
- * Output:
- *      - vad_inst      : Pointer to created VAD instance
- *
- * Return value         :  0 - Ok
- *                        -1 - Error
- */
-WebRtc_Word16 WebRtcVad_Create(VadInst **vad_inst);
+// Creates an instance to the VAD structure.
+//
+// - handle [o] : Pointer to the VAD instance that should be created.
+//
+// returns      : 0 - (OK), -1 - (Error)
+int WebRtcVad_Create(VadInst** handle);
 
-/****************************************************************************
- * WebRtcVad_Free(...)
- *
- * This function frees the dynamic memory of a specified VAD instance
- *
- * Input:
- *      - vad_inst      : Pointer to VAD instance that should be freed
- *
- * Return value         :  0 - Ok
- *                        -1 - Error
- */
-WebRtc_Word16 WebRtcVad_Free(VadInst *vad_inst);
+// Frees the dynamic memory of a specified VAD instance.
+//
+// - handle [i] : Pointer to VAD instance that should be freed.
+//
+// returns      : 0 - (OK), -1 - (NULL pointer in)
+int WebRtcVad_Free(VadInst* handle);
 
 /****************************************************************************
  * WebRtcVad_Init(...)
