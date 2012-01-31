@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -397,8 +397,11 @@ int VoEHardwareImpl::SetRecordingDevice(int index,
             return -1;
     }
 
-    // Cannot return error because of sanity above
-    _audioDevicePtr->RecordingChannel(&recCh);
+    if (_audioDevicePtr->SetRecordingChannel(recCh) != 0) {
+      _engineStatistics.SetLastError(
+          VE_AUDIO_DEVICE_MODULE_ERROR, kTraceWarning,
+          "SetRecordingChannel() unable to set the recording channel");
+    }
 
     // Map indices to unsigned since underlying functions need that
     WebRtc_UWord16 indexU = static_cast<WebRtc_UWord16> (index);
@@ -438,7 +441,12 @@ int VoEHardwareImpl::SetRecordingDevice(int index,
 
     // Set number of channels
     bool available(false);
-    _audioDevicePtr->StereoRecordingIsAvailable(&available);
+    if (_audioDevicePtr->StereoRecordingIsAvailable(&available) != 0) {
+      _engineStatistics.SetLastError(
+          VE_SOUNDCARD_ERROR, kTraceWarning,
+          "StereoRecordingIsAvailable() failed to query stereo recording");
+    }
+
     if (_audioDevicePtr->SetStereoRecording(available ? true : false) != 0)
     {
         _engineStatistics.SetLastError(

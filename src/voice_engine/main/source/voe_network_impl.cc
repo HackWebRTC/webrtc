@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -290,6 +290,7 @@ int VoENetworkImpl::GetLocalIP(char ipAddr[64], bool ipv6)
             _engineStatistics.SetLastError(
                 VE_INVALID_IP_ADDRESS, kTraceError,
                 "GetLocalIP() failed to retrieve local IP - 1");
+            UdpTransport::Destroy(socketPtr);
             return -1;
         }
         // Convert 128-bit address to character string (a:b:c:d:e:f:g:h)
@@ -310,6 +311,7 @@ int VoENetworkImpl::GetLocalIP(char ipAddr[64], bool ipv6)
             _engineStatistics.SetLastError(
                 VE_INVALID_IP_ADDRESS, kTraceError,
                 "GetLocalIP() failed to retrieve local IP - 2");
+            UdpTransport::Destroy(socketPtr);
             return -1;
         }
         // Convert 32-bit address to character string (x.y.z.w)

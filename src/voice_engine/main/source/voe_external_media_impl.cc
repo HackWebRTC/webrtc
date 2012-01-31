@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -270,7 +270,11 @@ int VoEExternalMediaImpl::ExternalRecordingInsertData(
         if (!_externalPlayout)
         {
             // Use real playout delay if external playout is not enabled.
-            _audioDevicePtr->PlayoutDelay(&playoutDelayMS);
+            if (_audioDevicePtr->PlayoutDelay(&playoutDelayMS) != 0) {
+              _engineStatistics.SetLastError(
+                  VE_AUDIO_DEVICE_MODULE_ERROR, kTraceWarning,
+                  "PlayoutDelay() unable to get the playout delay");
+            }
             totalDelayMS = current_delay_ms + playoutDelayMS;
         }
         else

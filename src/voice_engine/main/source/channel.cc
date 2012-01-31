@@ -5366,16 +5366,20 @@ Channel::GetRemoteRTCPData(
           remoteSSRC = it->remoteSSRC;
         }
 
-        *jitter = it->jitter;
-        WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
-                     VoEId(_instanceId, _channelId),
-                     "GetRemoteRTCPData() => jitter = %lu", *jitter);
+        if (jitter) {
+          *jitter = it->jitter;
+          WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
+                       VoEId(_instanceId, _channelId),
+                       "GetRemoteRTCPData() => jitter = %lu", *jitter);
+        }
 
-        *fractionLost = it->fractionLost;
-        WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
-                     VoEId(_instanceId, _channelId),
-                     "GetRemoteRTCPData() => fractionLost = %lu",
-                     *fractionLost);
+        if (fractionLost) {
+          *fractionLost = it->fractionLost;
+          WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
+                       VoEId(_instanceId, _channelId),
+                       "GetRemoteRTCPData() => fractionLost = %lu",
+                       *fractionLost);
+        }
     }
     return 0;
 }

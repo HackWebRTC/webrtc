@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -201,7 +201,7 @@ void ChannelManagerBase::GetItemIds(WebRtc_Word32* channelsArray,
     MapItem* it = _items.First();
     numOfChannels = (numOfChannels <= _items.Size()) ?
         numOfChannels : _items.Size();
-    for (int i = 0; i < numOfChannels; i++)
+    for (int i = 0; i < numOfChannels && it != NULL; i++)
     {
         channelsArray[i] = it->GetId();
         it = _items.Next(it);

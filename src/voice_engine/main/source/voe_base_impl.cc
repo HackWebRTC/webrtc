@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -393,7 +393,8 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm)
 
     // Register the ADM to the process thread, which will drive the error
     // callback mechanism
-    if (_moduleProcessThreadPtr->RegisterModule(_audioDevicePtr) != 0)
+    if (_moduleProcessThreadPtr &&
+        _moduleProcessThreadPtr->RegisterModule(_audioDevicePtr) != 0)
     {
         _engineStatistics.SetLastError(VE_AUDIO_DEVICE_MODULE_ERROR,
                                        kTraceError,
@@ -407,10 +408,20 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm)
     // Reinitialize the ADM
 
     // Register the AudioObserver implementation
-    _audioDevicePtr->RegisterEventObserver(this);
+    if (_audioDevicePtr->RegisterEventObserver(this) != 0) {
+      _engineStatistics.SetLastError(VE_AUDIO_DEVICE_MODULE_ERROR,
+                                     kTraceWarning,
+                                     "Init() failed to register event observer "
+                                     "for the ADM");
+    }
 
     // Register the AudioTransport implementation
-    _audioDevicePtr->RegisterAudioCallback(this);
+    if (_audioDevicePtr->RegisterAudioCallback(this) != 0) {
+      _engineStatistics.SetLastError(VE_AUDIO_DEVICE_MODULE_ERROR,
+                                     kTraceWarning,
+                                     "Init() failed to register audio callback "
+                                     "for the ADM");
+    }
 
     // ADM initialization
     if (_audioDevicePtr->Init() != 0)
@@ -472,7 +483,11 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm)
     }
 
     // Set number of channels
-    _audioDevicePtr->StereoPlayoutIsAvailable(&available);
+    if (_audioDevicePtr->StereoPlayoutIsAvailable(&available) != 0) {
+      _engineStatistics.SetLastError(VE_SOUNDCARD_ERROR, kTraceWarning,
+                                     "Init() failed to query stereo playout "
+                                     "mode");
+    }
     if (_audioDevicePtr->SetStereoPlayout(available) != 0)
     {
         _engineStatistics.SetLastError(VE_SOUNDCARD_ERROR, kTraceWarning,
@@ -1626,8 +1641,18 @@ WebRtc_Word32 VoEBaseImpl::TerminateInternal()
                                            "TerminateInternal() failed to stop "
                                            "recording");
         }
-        _audioDevicePtr->RegisterEventObserver(NULL);
-        _audioDevicePtr->RegisterAudioCallback(NULL);
+        if (_audioDevicePtr->RegisterEventObserver(NULL) != 0) {
+          _engineStatistics.SetLastError(VE_AUDIO_DEVICE_MODULE_ERROR,
+                                         kTraceWarning,
+                                         "TerminateInternal() failed to de-"
+                                         "register event observer for the ADM");
+        }
+        if (_audioDevicePtr->RegisterAudioCallback(NULL) != 0) {
+          _engineStatistics.SetLastError(VE_AUDIO_DEVICE_MODULE_ERROR,
+                                         kTraceWarning,
+                                         "TerminateInternal() failed to de-"
+                                         "register audio callback for the ADM");
+        }
         if (_audioDevicePtr->Terminate() != 0)
         {
             _engineStatistics.SetLastError(VE_AUDIO_DEVICE_MODULE_ERROR,
