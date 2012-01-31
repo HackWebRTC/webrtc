@@ -1,7 +1,16 @@
-/**
- * Test application for core FEC algorithm. Calls encoding and decoding functions in
- * ForwardErrorCorrection directly.
+/*
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
+ *  Use of this source code is governed by a BSD-style license
+ *  that can be found in the LICENSE file in the root of the source
+ *  tree. An additional intellectual property rights grant can be found
+ *  in the file PATENTS.  All contributing project authors may
+ *  be found in the AUTHORS file in the root of the source tree.
+ */
+
+/*
+ * Test application for core FEC algorithm. Calls encoding and decoding
+ * functions in ForwardErrorCorrection directly.
  */
 
 #include <cassert>
@@ -15,6 +24,7 @@
 #include "forward_error_correction_internal.h"
 
 #include "rtp_utility.h"
+#include "testsupport/fileutils.h"
 
 //#define VERBOSE_OUTPUT
 
@@ -46,7 +56,8 @@ int main() {
   std::list<WebRtc_UWord8*> fecMaskList;
 
   ForwardErrorCorrection::Packet* mediaPacket;
-  const float lossRate[] = {0, 0.05f, 0.1f, 0.25f, 0.5f, 0.75f, 0.9f};
+  // Running over only one loss rate to limit execution time.
+  const float lossRate[] = {0.5f};
   const WebRtc_UWord32 lossRateSize = sizeof(lossRate)/sizeof(*lossRate);
   const float reorderRate = 0.1f;
   const float duplicateRate = 0.1f;
@@ -59,7 +70,8 @@ int main() {
   // reproduce past results.
   const unsigned int randomSeed = static_cast<unsigned int>(time(NULL));
   srand(randomSeed);
-  FILE* randomSeedFile = fopen("randomSeedLog.txt", "a");
+  std::string filename = webrtc::test::OutputPath() + "randomSeedLog.txt";
+  FILE* randomSeedFile = fopen(filename.c_str(), "a");
   fprintf(randomSeedFile, "%u\n", randomSeed);
   fclose(randomSeedFile);
   randomSeedFile = NULL;
@@ -83,10 +95,12 @@ int main() {
           numFecPackets <= kMaxNumberFecPackets;
           numFecPackets++) {
 
-        // loop over all possible numImpPackets
+        // Loop over numImpPackets: these are usually <= (0.3*numMediaPackets).
+        // For this test we check up to ~ (0.5*numMediaPackets).
+        WebRtc_UWord32 maxNumImpPackets = numMediaPackets / 2 + 1;
         for (WebRtc_UWord32 numImpPackets = 0;
-            numImpPackets <= numMediaPackets &&
-                numImpPackets <= kMaxNumberMediaPackets;
+            numImpPackets <= maxNumImpPackets &&
+            numImpPackets <= kMaxNumberMediaPackets;
             numImpPackets++) {
 
           WebRtc_UWord8 protectionFactor = static_cast<WebRtc_UWord8>
