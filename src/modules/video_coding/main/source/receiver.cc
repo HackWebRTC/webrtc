@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "receiver.h"
-
-#include "encoded_frame.h"
-#include "internal_defines.h"
-#include "media_opt_util.h"
-#include "tick_time_base.h"
-#include "trace.h"
-#include "video_coding.h"
+#include "modules/video_coding/main/source/receiver.h"
 
 #include <assert.h>
+
+#include "modules/video_coding/main/interface/video_coding.h"
+#include "modules/video_coding/main/source/encoded_frame.h"
+#include "modules/video_coding/main/source/internal_defines.h"
+#include "modules/video_coding/main/source/media_opt_util.h"
+#include "modules/video_coding/main/source/tick_time_base.h"
+#include "system_wrappers/interface/trace.h"
 
 namespace webrtc {
 
@@ -26,18 +26,15 @@ VCMReceiver::VCMReceiver(VCMTiming& timing,
                          WebRtc_Word32 vcmId,
                          WebRtc_Word32 receiverId,
                          bool master)
-:
-_critSect(CriticalSectionWrapper::CreateCriticalSection()),
-_vcmId(vcmId),
-_clock(clock),
-_receiverId(receiverId),
-_master(master),
-_jitterBuffer(_clock, vcmId, receiverId, master),
-_timing(timing),
-_renderWaitEvent(*new VCMEvent()),
-_state(kPassive)
-{
-}
+    : _critSect(CriticalSectionWrapper::CreateCriticalSection()),
+      _vcmId(vcmId),
+      _clock(clock),
+      _receiverId(receiverId),
+      _master(master),
+      _jitterBuffer(_clock, vcmId, receiverId, master),
+      _timing(timing),
+      _renderWaitEvent(*new VCMEvent()),
+      _state(kPassive) {}
 
 VCMReceiver::~VCMReceiver()
 {
@@ -98,11 +95,11 @@ VCMReceiver::InsertPacket(const VCMPacket& packet,
     {
         return VCM_OK;
     }
-    else if (error < 0)
+    else if (error != VCM_OK)
     {
         return error;
     }
-
+    assert(buffer);
     {
         CriticalSectionScoped cs(_critSect);
 
@@ -193,9 +190,10 @@ VCMReceiver::InsertPacket(const VCMPacket& packet,
     return VCM_OK;
 }
 
-VCMEncodedFrame*
-VCMReceiver::FrameForDecoding(WebRtc_UWord16 maxWaitTimeMs, WebRtc_Word64& nextRenderTimeMs,
-                              bool renderTiming, VCMReceiver* dualReceiver)
+VCMEncodedFrame* VCMReceiver::FrameForDecoding(WebRtc_UWord16 maxWaitTimeMs,
+                                               WebRtc_Word64& nextRenderTimeMs,
+                                               bool renderTiming,
+                                               VCMReceiver* dualReceiver)
 {
     // No need to enter the critical section here since the jitter buffer
     // is thread-safe.
