@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -1478,10 +1478,14 @@ static int TimeToFrequencyDomain(const WebRtc_Word16* time_signal,
                 (WebRtc_UWord16)tmp16no2;
 #else
 #ifdef WEBRTC_ARCH_ARM_V7A
-           __asm__("smulbb %0, %1, %2" : "=r"(tmp32no1) : "r"(freq_signal[i].real),
-                                                "r"(freq_signal[i].real));
-           __asm__("smlabb %0, %1, %2, %3" :: "r"(tmp32no2), "r"(freq_signal[i].imag), 
-                                                "r"(freq_signal[i].imag), "r"(tmp32no1));
+            __asm __volatile(
+              "smulbb %[tmp32no1], %[real], %[real]\n\t"
+              "smlabb %[tmp32no2], %[imag], %[imag], %[tmp32no1]\n\t"
+              :[tmp32no1]"=r"(tmp32no1),
+               [tmp32no2]"=r"(tmp32no2)
+              :[real]"r"(freq_signal[i].real),
+               [imag]"r"(freq_signal[i].imag)
+            );
 #else
             tmp16no1 = WEBRTC_SPL_ABS_W16(freq_signal[i].real);
             tmp16no2 = WEBRTC_SPL_ABS_W16(freq_signal[i].imag);
@@ -2123,4 +2127,5 @@ void WebRtcAecm_FetchFarFrame(AecmCore_t * const aecm, WebRtc_Word16 * const far
            sizeof(WebRtc_Word16) * readLen);
     aecm->farBufReadPos += readLen;
 }
+
 
