@@ -28,7 +28,7 @@ ACCESS_TOKEN_URL = DASHBOARD_SERVER_HTTP + '/_ah/OAuthGetAccessToken'
 
 # The build master URL.
 BUILD_MASTER_SERVER = 'webrtc-cb-linux-master.cbf.corp.google.com:8010'
-BUILD_MASTER_LATEST_BUILD_URL = '/one_box_per_builder'
+BUILD_MASTER_TRANSPOSED_GRID_URL = '/tgrid'
 
 # The build-bot user which runs build bot jobs.
 BUILD_BOT_USER = 'phoglund'
