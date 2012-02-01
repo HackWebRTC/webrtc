@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -369,6 +369,8 @@ private:
 #ifdef TIMED_LOGGING
     TimedTrace                     _trace;
 #endif
+
+    AudioFrame                     _audioFrame;
 
 #ifdef ACM_QA_TEST
     FILE* _outgoingPL;

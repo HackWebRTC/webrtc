@@ -2002,25 +2002,24 @@ AudioCodingModuleImpl::PlayoutData10Ms(
     AudioFrame&         audioFrame)
 {
     bool stereoMode;
-    AudioFrame audioFrameTmp;
 
      // recOut always returns 10 ms
-    if (_netEq.RecOut(audioFrameTmp) != 0)
+    if (_netEq.RecOut(_audioFrame) != 0)
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
             "PlayoutData failed, RecOut Failed");
         return -1;
     }
 
-    audioFrame._audioChannel = audioFrameTmp._audioChannel;
-    audioFrame._vadActivity  = audioFrameTmp._vadActivity;
-    audioFrame._speechType   = audioFrameTmp._speechType;
+    audioFrame._audioChannel = _audioFrame._audioChannel;
+    audioFrame._vadActivity  = _audioFrame._vadActivity;
+    audioFrame._speechType   = _audioFrame._speechType;
 
-    stereoMode =  (audioFrameTmp._audioChannel > 1);
+    stereoMode =  (_audioFrame._audioChannel > 1);
     //For stereo playout:
     // Master and Slave samples are interleaved starting with Master
 
-    const WebRtc_UWord16 recvFreq = static_cast<WebRtc_UWord16>(audioFrameTmp._frequencyInHz);
+    const WebRtc_UWord16 recvFreq = static_cast<WebRtc_UWord16>(_audioFrame._frequencyInHz);
     bool toneDetected = false;
     WebRtc_Word16 lastDetectedTone;
     WebRtc_Word16 tone;
@@ -2036,8 +2035,8 @@ AudioCodingModuleImpl::PlayoutData10Ms(
         {
             // resample payloadData
             WebRtc_Word16 tmpLen = _outputResampler.Resample10Msec(
-                audioFrameTmp._payloadData, recvFreq, audioFrame._payloadData, desiredFreqHz,
-                audioFrameTmp._audioChannel);
+                _audioFrame._payloadData, recvFreq, audioFrame._payloadData, desiredFreqHz,
+                _audioFrame._audioChannel);
 
             if(tmpLen < 0)
             {
@@ -2053,11 +2052,11 @@ AudioCodingModuleImpl::PlayoutData10Ms(
         }
         else
         {
-            memcpy(audioFrame._payloadData, audioFrameTmp._payloadData,
-              audioFrameTmp._payloadDataLengthInSamples * audioFrame._audioChannel
+            memcpy(audioFrame._payloadData, _audioFrame._payloadData,
+              _audioFrame._payloadDataLengthInSamples * audioFrame._audioChannel
               * sizeof(WebRtc_Word16));
             // set the payload length
-            audioFrame._payloadDataLengthInSamples = audioFrameTmp._payloadDataLengthInSamples;
+            audioFrame._payloadDataLengthInSamples = _audioFrame._payloadDataLengthInSamples;
             // set the sampling frequency
             audioFrame._frequencyInHz = recvFreq;
         }
@@ -2091,22 +2090,22 @@ AudioCodingModuleImpl::PlayoutData10Ms(
             }
             else
             {
-                // Do the detection on the audio that we got from NetEQ (audioFrameTmp).
+                // Do the detection on the audio that we got from NetEQ (_audioFrame).
                 if(!stereoMode)
                 {
-                    _dtmfDetector->Detect(audioFrameTmp._payloadData,
-                        audioFrameTmp._payloadDataLengthInSamples, recvFreq,
+                    _dtmfDetector->Detect(_audioFrame._payloadData,
+                        _audioFrame._payloadDataLengthInSamples, recvFreq,
                         toneDetected, tone);
                 }
                 else
                 {
                     WebRtc_Word16 masterChannel[WEBRTC_10MS_PCM_AUDIO];
-                    for(int n = 0; n < audioFrameTmp._payloadDataLengthInSamples; n++)
+                    for(int n = 0; n < _audioFrame._payloadDataLengthInSamples; n++)
                     {
-                        masterChannel[n] = audioFrameTmp._payloadData[n<<1];
+                        masterChannel[n] = _audioFrame._payloadData[n<<1];
                     }
                     _dtmfDetector->Detect(masterChannel,
-                        audioFrameTmp._payloadDataLengthInSamples, recvFreq,
+                        _audioFrame._payloadDataLengthInSamples, recvFreq,
                         toneDetected, tone);
                 }
             }

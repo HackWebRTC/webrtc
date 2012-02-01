@@ -259,8 +259,6 @@ WebRtc_Word32 VoEBaseImpl::NeedMorePlayData(
 
     assert(_outputMixerPtr != NULL);
 
-    AudioFrame audioFrame;
-
     // Perform mixing of all active participants (channel-based mixing)
     _outputMixerPtr->MixActiveChannels();
 
@@ -268,20 +266,20 @@ WebRtc_Word32 VoEBaseImpl::NeedMorePlayData(
     _outputMixerPtr->DoOperationsOnCombinedSignal();
 
     // Retrieve the final output mix (resampled to match the ADM)
-    _outputMixerPtr->GetMixedAudio(samplesPerSec, nChannels, audioFrame);
+    _outputMixerPtr->GetMixedAudio(samplesPerSec, nChannels, _audioFrame);
 
-    assert(nSamples == audioFrame._payloadDataLengthInSamples);
+    assert(nSamples == _audioFrame._payloadDataLengthInSamples);
     assert(samplesPerSec ==
-        static_cast<WebRtc_UWord32>(audioFrame._frequencyInHz));
+        static_cast<WebRtc_UWord32>(_audioFrame._frequencyInHz));
 
     // Deliver audio (PCM) samples to the ADM
     memcpy(
            (WebRtc_Word16*) audioSamples,
-           (const WebRtc_Word16*) audioFrame._payloadData,
-           sizeof(WebRtc_Word16) * (audioFrame._payloadDataLengthInSamples
-                   * audioFrame._audioChannel));
+           (const WebRtc_Word16*) _audioFrame._payloadData,
+           sizeof(WebRtc_Word16) * (_audioFrame._payloadDataLengthInSamples
+                   * _audioFrame._audioChannel));
 
-    nSamplesOut = audioFrame._payloadDataLengthInSamples;
+    nSamplesOut = _audioFrame._payloadDataLengthInSamples;
 
     return 0;
 }
