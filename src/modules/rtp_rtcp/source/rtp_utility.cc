@@ -823,6 +823,12 @@ ModuleRTPUtility::RTPPayloadParser::ParseVP8(RTPPayload& parsedPacket) const
     vp8->beginningOfPartition = (*dataPtr & 0x10) ? true : false; // S bit
     vp8->partitionID =          (*dataPtr & 0x0F); // PartID field
 
+    if (vp8->partitionID > 8)
+    {
+        // Weak check for corrupt data: PartID MUST NOT be larger than 8.
+        return false;
+    }
+
     // Advance dataPtr and decrease remaining payload size
     dataPtr++;
     dataLength--;

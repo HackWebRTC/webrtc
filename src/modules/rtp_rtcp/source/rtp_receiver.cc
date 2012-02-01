@@ -1228,6 +1228,13 @@ WebRtc_Word32 RTPReceiver::CheckPayloadChanged(
         payloadType = firstPayloadByte & 0x7f;
         isRED = true;
 
+        if (REDPayloadType(payloadType)) {
+            // Invalid payload type, traced by caller. If we proceeded here,
+            // this would be set as |_lastReceivedPayloadType|, and we would no
+            // longer catch corrupt packets at this level.
+            return -1;
+        }
+
         //when we receive RED we need to check the real payload type
         if (payloadType == _lastReceivedPayloadType) {
           if(_audio)

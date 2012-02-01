@@ -8,16 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "receiver_fec.h"
+
 #include <cassert>
 
-#include "receiver_fec.h"
 #include "rtp_receiver_video.h"
 #include "rtp_utility.h"
+#include "trace.h"
 
 // RFC 5109
 namespace webrtc {
 ReceiverFEC::ReceiverFEC(const WebRtc_Word32 id, RTPReceiverVideo* owner)
-    : _owner(owner),
+    : _id(id),
+      _owner(owner),
       _fec(new ForwardErrorCorrection(id)),
       _payloadTypeFEC(-1),
       _lastFECSeqNum(0),
@@ -128,8 +131,10 @@ WebRtc_Word32 ReceiverFEC::AddReceivedFECPacket(
     timestampOffset += incomingRtpPacket[rtpHeader->header.headerLength+2];
     timestampOffset = timestampOffset >> 2;
     if(timestampOffset != 0) {
-      // timestampOffset should be 0, however, this is a valid error case in
-      // the event of garbage payload.
+      // |timestampOffset| should be 0. However, it's possible this is the first
+      // location a corrupt payload can be caught, so don't assert.
+      WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, _id,
+                   "Corrupt payload found in %s", __FUNCTION__);
       delete receivedPacket->pkt;
       delete receivedPacket;
       return -1;
