@@ -15,8 +15,9 @@ modules/audio_device/main/source/Mac/portaudio/pa_memorybarrier.h
 modules/audio_device/main/source/Mac/portaudio/pa_ringbuffer.h
 modules/audio_device/main/source/Mac/portaudio/pa_ringbuffer.c
 modules/audio_processing/utility/fft4g.c
-modules/audio_processing/aec/aec_core_rdft.c
+modules/audio_processing/aec/aec_rdft.c
 system_wrappers/interface/fix_interlocked_exchange_pointer_windows.h
+system_wrappers/interface/scoped_ptr.h
 system_wrappers/interface/scoped_refptr.h
 system_wrappers/source/condition_variable_windows.cc
 system_wrappers/source/spreadsortlib/constants.hpp
