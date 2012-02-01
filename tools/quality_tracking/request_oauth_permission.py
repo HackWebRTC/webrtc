@@ -19,7 +19,7 @@
    script. This script will present a link during its execution, which the new
    administrator should follow and then click approve on the web page that
    appears. The new administrator should have admin rights on the coverage
-   dashboard, otherwise the track_coverage.py will not work.
+   dashboard, otherwise track_coverage.py will not work.
 
    If successful, this script will write the access token to a file access.token
    in the current directory, which later can be read by track_coverage.py.
@@ -34,20 +34,10 @@ import sys
 import urlparse
 import oauth2 as oauth
 
+import constants
 
 class FailedToRequestPermissionException(Exception):
   pass
-
-
-# This identifies our application using the information we got when we
-# registered the application on Google appengine.
-# TODO(phoglund): update to the right value when we have registered the app.
-DASHBOARD_SERVER = 'http://127.0.0.1:8080'
-CONSUMER_KEY = DASHBOARD_SERVER
-
-REQUEST_TOKEN_URL = DASHBOARD_SERVER + '/_ah/OAuthGetRequestToken'
-AUTHORIZE_TOKEN_URL = DASHBOARD_SERVER + '/_ah/OAuthAuthorizeToken'
-ACCESS_TOKEN_URL = DASHBOARD_SERVER + '/_ah/OAuthGetAccessToken'
 
 
 def _ensure_token_response_is_200(response, queried_url, token_type):
@@ -59,8 +49,9 @@ def _ensure_token_response_is_200(response, queried_url, token_type):
                                               response.status,
                                               response.reason))
 
+
 def _request_unauthorized_token(consumer, request_token_url):
-  """Requests the initial token from the dashboard service. 
+  """Requests the initial token from the dashboard service.
 
      Given that the response from the server is correct, we will return a
      dictionary containing oauth_token and oauth_token_secret mapped to the
@@ -73,12 +64,12 @@ def _request_unauthorized_token(consumer, request_token_url):
   except AttributeError as error:
     # This catch handler is here since we'll get very confusing messages
     # if the target server is down for some reason.
-    raise FailedToRequestPermissionException("Failed to request token: "
-                                             "the dashboard is likely down.",
+    raise FailedToRequestPermissionException('Failed to request token: '
+                                             'the dashboard is likely down.',
                                              error)
 
   _ensure_token_response_is_200(response, request_token_url,
-                                "unauthorized token")
+                                'unauthorized token')
 
   return dict(urlparse.parse_qsl(content))
 
@@ -86,7 +77,7 @@ def _request_unauthorized_token(consumer, request_token_url):
 def _ask_user_to_authorize_us(unauthorized_token):
   """This function will block until the user enters y + newline."""
   print 'Go to the following link in your browser:'
-  print '%s?oauth_token=%s' % (AUTHORIZE_TOKEN_URL,
+  print '%s?oauth_token=%s' % (constants.AUTHORIZE_TOKEN_URL,
                                unauthorized_token['oauth_token'])
 
   accepted = 'n'
@@ -98,9 +89,10 @@ def _request_access_token(consumer, unauthorized_token):
   token = oauth.Token(unauthorized_token['oauth_token'],
                       unauthorized_token['oauth_token_secret'])
   client = oauth.Client(consumer, token)
-  response, content = client.request(ACCESS_TOKEN_URL, 'POST')
+  response, content = client.request(constants.ACCESS_TOKEN_URL, 'POST')
 
-  _ensure_token_response_is_200(response, ACCESS_TOKEN_URL, "access token")
+  _ensure_token_response_is_200(response, constants.ACCESS_TOKEN_URL,
+                                'access token')
 
   return content
 
@@ -121,15 +113,16 @@ def _main():
     return
 
   consumer_secret = sys.argv[1]
-  consumer = oauth.Consumer(CONSUMER_KEY, consumer_secret)
+  consumer = oauth.Consumer(constants.CONSUMER_KEY, consumer_secret)
 
-  unauthorized_token = _request_unauthorized_token(consumer, REQUEST_TOKEN_URL)
+  unauthorized_token = _request_unauthorized_token(consumer,
+                                                   constants.REQUEST_TOKEN_URL)
 
   _ask_user_to_authorize_us(unauthorized_token)
 
   access_token_string = _request_access_token(consumer, unauthorized_token)
 
-  _write_access_token_to_file(access_token_string, 'access.token')
+  _write_access_token_to_file(access_token_string, constants.ACCESS_TOKEN_FILE)
 
 if __name__ == '__main__':
   _main()
