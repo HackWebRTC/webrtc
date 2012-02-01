@@ -8,9 +8,8 @@ or newer.)
 - A peerconnection_server binary (make peerconnection_server).
 
 It can be used in two scenarios:
-1. Single client calling itself with the server test page
-(peerconnection/samples/server/server_test.html) in loopback mode as a fake
-client.
+1. Single client calling itself with the server test page in loopback mode as a
+fake client.
 2. Call between two clients.
 
 To start the test for scenario (1):
@@ -20,6 +19,10 @@ $ <path_to_chrome_binary>/chrome --enable-media-stream
 The --enable-media-stream flag is required for the time being.
 3. Open the server test page, ensure loopback is enabled, choose a name (for
 example "loopback") and connect to the server.
+For version 18.0.1008 to 18.0.1020, use:
+http://libjingle.googlecode.com/svn-history/r103/trunk/talk/examples/peerconnection/server/server_test.html
+For version 18.0.1021 and later, use:
+http://libjingle.googlecode.com/svn/trunk/talk/examples/peerconnection/server/server_test.html
 4. Open the test page, connect to the server, select the loopback peer, click
 call.
 
@@ -27,19 +30,17 @@ To start the test for scenario (2):
 1. Start peerconnection_server.
 2. Start the WebRTC Chrome build, see scenario (1).
 3. Open the test page, connect to the server.
-4. On another machine, start the WebRTC Chrome build.
-5. Open the test page, connect to the server, select the other peer, click call.
+4. Open a new new tab, open the test page, connect to the server.
+     OR
+   On another machine, repeat 2 and 3.
+5. Select the other peer, click call.
 
-Note 1: There is currently a limitation so that the camera device can only be
-accessed once, even if in the same browser instance. Hence the need to use two
-machines for scenario (2).
-
-Note 2: The web page must normally be on a web server to be able to access the
+Note: The web page must normally be on a web server to be able to access the
 camera for security reasons.
 See http://blog.chromium.org/2008/12/security-in-depth-local-web-pages.html
 for more details on this topic. This can be overridden with the flag
 --allow-file-access-from-files, in which case running it over the file://
 URI scheme works.
 
-Note 3: It's possible to specify the server and name in the url:
+Note: It's possible to specify the server and name in the url:
 .../webrtc.html?server=my_server&name=my_name
