@@ -1,3 +1,13 @@
+/*
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
+ *
+ *  Use of this source code is governed by a BSD-style license
+ *  that can be found in the LICENSE file in the root of the source
+ *  tree. An additional intellectual property rights grant can be found
+ *  in the file PATENTS.  All contributing project authors may
+ *  be found in the AUTHORS file in the root of the source tree.
+ */
+
 #include "../testing/gmock/include/gmock/gmock.h"
 
 #include "modules/interface/module.h"
@@ -132,6 +142,8 @@ class MockRtpRtcp : public RtpRtcp {
       bool());
   MOCK_CONST_METHOD4(BitrateSent,
       void(WebRtc_UWord32* totalRate, WebRtc_UWord32* videoRate, WebRtc_UWord32* fecRate, WebRtc_UWord32* nackRate));
+  MOCK_CONST_METHOD1(EstimatedBandwidth,
+      int(WebRtc_UWord32* available_bandwidth));
   MOCK_METHOD7(SendOutgoingData,
       WebRtc_Word32(const FrameType frameType, const WebRtc_Word8 payloadType, const WebRtc_UWord32 timeStamp, const WebRtc_UWord8* payloadData, const WebRtc_UWord32 payloadSize, const RTPFragmentationHeader* fragmentation, const RTPVideoHeader* rtpVideoHdr));
   MOCK_METHOD1(RegisterIncomingRTCPCallback,

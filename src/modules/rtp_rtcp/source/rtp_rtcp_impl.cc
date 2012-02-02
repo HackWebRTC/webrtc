@@ -2501,6 +2501,11 @@ void ModuleRtpRtcpImpl::BitrateSent(WebRtc_UWord32* totalRate,
         *nackRate = _rtpSender.NackOverheadRate();
 }
 
+int ModuleRtpRtcpImpl::EstimatedBandwidth(
+    WebRtc_UWord32* available_bandwidth) const {
+  return _bandwidthManagement.AvailableBandwidth(available_bandwidth);
+}
+
 // for lip sync
 void ModuleRtpRtcpImpl::OnReceivedNTP() {
     // don't do anything if we are the audio module

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -180,6 +180,19 @@ WebRtc_Word32 BandwidthManagement::UpdatePacketLoss(
     _bitRate = bitRate;
     *newBitrate = bitRate;
     return 0;
+}
+
+WebRtc_Word32 BandwidthManagement::AvailableBandwidth(
+    WebRtc_UWord32* bandwidthKbit) const {
+  CriticalSectionScoped cs(_critsect);
+  if (_bitRate == 0) {
+    return -1;
+  }
+  if (!bandwidthKbit) {
+    return -1;
+  }
+  *bandwidthKbit = _bitRate;
+  return 0;
 }
 
 /* Calculate the rate that TCP-Friendly Rate Control (TFRC) would apply.

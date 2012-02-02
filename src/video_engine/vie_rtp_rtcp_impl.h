@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -87,9 +87,13 @@ class ViERTP_RTCPImpl
                                 unsigned int& video_bitrate_sent,
                                 unsigned int& fec_bitrate_sent,
                                 unsigned int& nackBitrateSent) const;
-  virtual int SetRTPKeepAliveStatus(const int video_channel,
-                                    bool enable,
-                                    const char unknown_payload_type,
+  virtual int GetEstimatedBandwidth(
+      const int video_channel,
+      unsigned int* estimated_bandwidth) const;
+  virtual int SetRTPKeepAliveStatus(
+      const int video_channel,
+      bool enable,
+      const char unknown_payload_type,
       const unsigned int delta_transmit_time_seconds);
   virtual int GetRTPKeepAliveStatus(
       const int video_channel,

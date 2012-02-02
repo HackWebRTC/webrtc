@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -241,6 +241,12 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
                                 unsigned int& video_bitrate_sent,
                                 unsigned int& fec_bitrate_sent,
                                 unsigned int& nackBitrateSent) const = 0;
+
+  // This function gets the send-side estimated bandwidth available for video,
+  // including overhead, in bits/s.
+  virtual int GetEstimatedBandwidth(
+      const int video_channel,
+      unsigned int* estimated_bandwidth) const = 0;
 
   // This function enables or disables an RTP keep-alive mechanism which can
   // be used to maintain an existing Network Address Translator (NAT) mapping

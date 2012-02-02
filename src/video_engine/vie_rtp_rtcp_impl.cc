@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -731,6 +731,26 @@ int ViERTP_RTCPImpl::GetBandwidthUsage(const int video_channel,
       static_cast<WebRtc_UWord32&>(fec_bitrate_sent),
       static_cast<WebRtc_UWord32&>(nackBitrateSent));
   return 0;
+}
+
+int ViERTP_RTCPImpl::GetEstimatedBandwidth(
+    const int video_channel,
+    unsigned int* estimated_bandwidth) const {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
+               ViEId(shared_data_->instance_id(), video_channel),
+               "%s(channel: %d)", __FUNCTION__, video_channel);
+  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
+  ViEEncoder* vie_encoder = cs.Encoder(video_channel);
+  if (!vie_encoder) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo,
+                 ViEId(shared_data_->instance_id(), video_channel),
+                 "%s: Could not get encoder for channel %d", __FUNCTION__,
+                 video_channel);
+    shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
+    return -1;
+  }
+  return vie_encoder->EstimatedBandwidth(
+      static_cast<WebRtc_UWord32*>(estimated_bandwidth));
 }
 
 int ViERTP_RTCPImpl::SetRTPKeepAliveStatus(

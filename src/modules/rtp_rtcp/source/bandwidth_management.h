@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -41,7 +41,9 @@ public:
         WebRtc_UWord32* newBitrate,
         WebRtc_Word64 nowMS);
 
-    WebRtc_Word32 AvailableBandwidth(WebRtc_UWord16* bandwidthKbit) const;
+    // If no bandwidth estimate is available or if |bandwidthKbit| is NULL,
+    // -1 is returned.
+    WebRtc_Word32 AvailableBandwidth(WebRtc_UWord32* bandwidthKbit) const;
 
     void SetSendBitrate(const WebRtc_UWord32 startBitrate,
                         const WebRtc_UWord16 minBitrateKbit,

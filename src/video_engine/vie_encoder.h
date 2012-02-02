@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -88,6 +88,7 @@ class ViEEncoder
   WebRtc_Word32 SendKeyFrame();
   WebRtc_Word32 SendCodecStatistics(WebRtc_UWord32& num_key_frames,
                                     WebRtc_UWord32& num_delta_frames);
+  WebRtc_Word32 EstimatedBandwidth(WebRtc_UWord32* available_bandwidth) const;
   // Loss protection.
   WebRtc_Word32 UpdateProtectionMethod();
 

@@ -567,6 +567,12 @@ public:
                              WebRtc_UWord32* nackRate) const = 0;
 
     /*
+     *  Get the send-side estimate of the available bandwidth.
+     */
+    virtual int EstimatedBandwidth(
+        WebRtc_UWord32* available_bandwidth) const = 0;
+
+    /*
     *   Used by the codec module to deliver a video or audio frame for packetization
     *
     *   frameType       - type of frame to send
