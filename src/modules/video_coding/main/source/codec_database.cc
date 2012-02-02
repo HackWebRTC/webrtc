@@ -141,9 +141,9 @@ VCMGenericEncoder* VCMCodecDataBase::CreateEncoder(
 
     switch(type)
     {
-#ifdef  VIDEOCODEC_VP8
+#ifdef VIDEOCODEC_VP8
         case kVideoCodecVP8:
-            return new VCMGenericEncoder(*(new VP8Encoder));
+            return new VCMGenericEncoder(*(VP8Encoder::Create()));
 #endif
 #ifdef VIDEOCODEC_I420
         case kVideoCodecI420:
@@ -739,7 +739,7 @@ VCMCodecDataBase::CreateDecoder(VideoCodecType type) const
     {
 #ifdef VIDEOCODEC_VP8
     case kVideoCodecVP8:
-        return new VCMGenericDecoder(*(new VP8Decoder), _id);
+        return new VCMGenericDecoder(*(VP8Decoder::Create()), _id);
 #endif
 #ifdef VIDEOCODEC_I420
     case kVideoCodecI420:

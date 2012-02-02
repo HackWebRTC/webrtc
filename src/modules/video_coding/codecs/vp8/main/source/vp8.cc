@@ -1,15 +1,11 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
  *  tree. An additional intellectual property rights grant can be found
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
- */
-
-/*
- * vp8.cc
  *
  * This file contains the WEBRTC VP8 wrapper implementation
  *
@@ -34,478 +30,383 @@ enum { kVp8ErrorPropagationTh = 30 };
 namespace webrtc
 {
 
-VP8Encoder::VP8Encoder():
-    _encodedImage(),
-    _encodedCompleteCallback(NULL),
-    _width(0),
-    _height(0),
-    _maxBitRateKbit(0),
-    _maxFrameRate(30),
-    _inited(false),
-    _timeStamp(0),
-    _pictureID(0),
-    _simulcastIdx(0),
-    _feedbackModeOn(false),
-    _cpuSpeed(-6), // default value
-    _rcMaxIntraTarget(0),
-    _tokenPartitions(VP8_ONE_TOKENPARTITION),
-    _rps(new ReferencePictureSelection),
+VP8Encoder* VP8Encoder::Create() {
+  return new VP8Encoder();
+}
+
+VP8Encoder::VP8Encoder()
+    : encoded_image_(),
+      encoded_complete_callback_(NULL),
+      inited_(false),
+      timestamp_(0),
+      picture_id_(0),
+      feedback_mode_(false),
+      cpu_speed_(-6), // default value
+      rc_max_intra_target_(0),
+      token_partitions_(VP8_ONE_TOKENPARTITION),
+      rps_(new ReferencePictureSelection),
 #if WEBRTC_LIBVPX_VERSION >= 971
-    _temporalLayers(NULL),
+      temporal_layers_(NULL),
 #endif
-    _encoder(NULL),
-    _cfg(NULL),
-    _raw(NULL)
-{
-    WebRtc_UWord32 seed = (WebRtc_UWord32)TickTime::MillisecondTimestamp();
-    srand(seed);
+      encoder_(NULL),
+      config_(NULL),
+      raw_(NULL) {
+  uint32_t seed = static_cast<uint32_t>(TickTime::MillisecondTimestamp());
+  srand(seed);
 }
 
-VP8Encoder::~VP8Encoder()
-{
-    Release();
-    delete _rps;
+VP8Encoder::~VP8Encoder() {
+  Release();
+  delete rps_;
 }
 
-WebRtc_Word32
-VP8Encoder::VersionStatic(WebRtc_Word8* version, WebRtc_Word32 length)
-{
-    const char* str = vpx_codec_iface_name(vpx_codec_vp8_cx());
-    WebRtc_Word32 verLen = (WebRtc_Word32)strlen(str);
-    // Accounting for "\0" and "\n" (to be added a bit later)
-    if (verLen + 2 > length)
-    {
-        return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
-    }
-    strcpy(version, str);
-    strcat(version, "\n");
-    return (verLen + 2);
+int VP8Encoder::VersionStatic(char* version, int length) {
+  const char* str = vpx_codec_iface_name(vpx_codec_vp8_cx());
+  int verLen = (int)strlen(str);
+  // Accounting for "\0" and "\n" (to be added a bit later)
+  if (verLen + 2 > length) {
+    return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
+  }
+  strcpy(version, str);
+  strcat(version, "\n");
+  return (verLen + 2);
 }
 
-WebRtc_Word32
-VP8Encoder::Version(WebRtc_Word8 *version, WebRtc_Word32 length) const
-{
-    return VersionStatic(version, length);
+int VP8Encoder::Version(char *version, int length) const {
+  return VersionStatic(version, length);
 }
 
-WebRtc_Word32
-VP8Encoder::Release()
-{
-    if (_encodedImage._buffer != NULL)
-    {
-        delete [] _encodedImage._buffer;
-        _encodedImage._buffer = NULL;
+int VP8Encoder::Release() {
+  if (encoded_image_._buffer != NULL) {
+    delete [] encoded_image_._buffer;
+    encoded_image_._buffer = NULL;
+  }
+  if (encoder_ != NULL) {
+    if (vpx_codec_destroy(encoder_)) {
+      return WEBRTC_VIDEO_CODEC_MEMORY;
     }
-    if (_encoder != NULL)
-    {
-        if (vpx_codec_destroy(_encoder))
-        {
-            return WEBRTC_VIDEO_CODEC_MEMORY;
-        }
-        delete _encoder;
-        _encoder = NULL;
-    }
-    if (_cfg != NULL)
-    {
-        delete _cfg;
-        _cfg = NULL;
-    }
-    if (_raw != NULL)
-    {
-        vpx_img_free(_raw);
-        delete _raw;
-        _raw = NULL;
-    }
+    delete encoder_;
+    encoder_ = NULL;
+  }
+  if (config_ != NULL) {
+    delete config_;
+    config_ = NULL;
+  }
+  if (raw_ != NULL) {
+    vpx_img_free(raw_);
+    delete raw_;
+    raw_ = NULL;
+  }
 #if WEBRTC_LIBVPX_VERSION >= 971
-    if (_temporalLayers != NULL)
-    {
-        delete _temporalLayers;
-        _temporalLayers = NULL;
-    }
+  if (temporal_layers_ != NULL) {
+    delete temporal_layers_;
+    temporal_layers_ = NULL;
+  }
 #endif
-    _inited = false;
-
-    return WEBRTC_VIDEO_CODEC_OK;
+  inited_ = false;
+  return WEBRTC_VIDEO_CODEC_OK;
 }
 
-WebRtc_Word32
-VP8Encoder::Reset()
-{
-    if (!_inited)
-    {
-        return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
+int VP8Encoder::Reset() {
+  if (!inited_) {
+    return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
+  }
+  if (encoder_ != NULL) {
+    if (vpx_codec_destroy(encoder_)) {
+      return WEBRTC_VIDEO_CODEC_MEMORY;
     }
+    delete encoder_;
+    encoder_ = NULL;
+  }
+  timestamp_ = 0;
+  encoder_ = new vpx_codec_ctx_t;
+  rps_->Init();
 
-    if (_encoder != NULL)
-    {
-        if (vpx_codec_destroy(_encoder))
-        {
-            return WEBRTC_VIDEO_CODEC_MEMORY;
-        }
-        delete _encoder;
-        _encoder = NULL;
-    }
-
-    _timeStamp = 0;
-    _encoder = new vpx_codec_ctx_t;
-    _rps->Init();
-
-    return InitAndSetControlSettings();
+  return InitAndSetControlSettings();
 }
 
-WebRtc_Word32
-VP8Encoder::SetRates(WebRtc_UWord32 newBitRateKbit, WebRtc_UWord32 newFrameRate)
-{
-    if (!_inited)
-    {
-        return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
-    }
-    if (_encoder->err)
-    {
-        return WEBRTC_VIDEO_CODEC_ERROR;
-    }
-    if (newFrameRate < 1)
-    {
-        return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
-    }
-
-    // update bit rate
-    if (_maxBitRateKbit > 0 &&
-        newBitRateKbit > static_cast<WebRtc_UWord32>(_maxBitRateKbit))
-    {
-        newBitRateKbit = _maxBitRateKbit;
-    }
-    _cfg->rc_target_bitrate = newBitRateKbit; // in kbit/s
+int VP8Encoder::SetRates(uint32_t new_bitrate_kbit, uint32_t new_framerate) {
+  if (!inited_) {
+    return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
+  }
+  if (encoder_->err) {
+    return WEBRTC_VIDEO_CODEC_ERROR;
+  }
+  if (new_framerate < 1) {
+    return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
+  }
+  // update bit rate
+  if (codec_.maxBitrate > 0 && new_bitrate_kbit > codec_.maxBitrate) {
+    new_bitrate_kbit = codec_.maxBitrate;
+  }
+  config_->rc_target_bitrate = new_bitrate_kbit; // in kbit/s
 
 #if WEBRTC_LIBVPX_VERSION >= 971
-    if (_temporalLayers)
-    {
-        _temporalLayers->ConfigureBitrates(newBitRateKbit, _cfg);
-    }
+  if (temporal_layers_) {
+    temporal_layers_->ConfigureBitrates(new_bitrate_kbit, config_);
+  }
 #endif
-    _maxFrameRate = newFrameRate;
+  codec_.maxFramerate = new_framerate;
 
-    // update encoder context
-    if (vpx_codec_enc_config_set(_encoder, _cfg))
-    {
-        return WEBRTC_VIDEO_CODEC_ERROR;
-    }
-    return WEBRTC_VIDEO_CODEC_OK;
+  // update encoder context
+  if (vpx_codec_enc_config_set(encoder_, config_)) {
+    return WEBRTC_VIDEO_CODEC_ERROR;
+  }
+  return WEBRTC_VIDEO_CODEC_OK;
 }
 
-WebRtc_Word32
-VP8Encoder::InitEncode(const VideoCodec* inst,
-                       WebRtc_Word32 numberOfCores,
-                       WebRtc_UWord32 /*maxPayloadSize */)
-{
-    if (inst == NULL)
-    {
-        return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
-    }
-    if (inst->maxFramerate < 1)
-    {
-        return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
-    }
-    // allow zero to represent an unspecified maxBitRate
-    if (inst->maxBitrate > 0 && inst->startBitrate > inst->maxBitrate)
-    {
-        return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
-    }
-    if (inst->width < 1 || inst->height < 1)
-    {
-        return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
-    }
-    if (numberOfCores < 1)
-    {
-        return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
-    }
-    _feedbackModeOn = inst->codecSpecific.VP8.feedbackModeOn;
+int VP8Encoder::InitEncode(const VideoCodec* inst,
+                           int number_of_cores,
+                           uint32_t /*max_payload_size*/) {
+  if (inst == NULL) {
+    return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
+  }
+  if (inst->maxFramerate < 1) {
+    return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
+  }
+  // allow zero to represent an unspecified maxBitRate
+  if (inst->maxBitrate > 0 && inst->startBitrate > inst->maxBitrate) {
+    return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
+  }
+  if (inst->width < 1 || inst->height < 1) {
+    return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
+  }
+  if (number_of_cores < 1) {
+    return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
+  }
+  feedback_mode_ = inst->codecSpecific.VP8.feedbackModeOn;
 
-    WebRtc_Word32 retVal = Release();
-    if (retVal < 0)
-    {
-        return retVal;
-    }
-    if (_encoder == NULL)
-    {
-        _encoder = new vpx_codec_ctx_t;
-    }
-    if (_cfg == NULL)
-    {
-        _cfg = new vpx_codec_enc_cfg_t;
-    }
-    if (_raw == NULL)
-    {
-        _raw = new vpx_image_t;
-    }
+  int retVal = Release();
+  if (retVal < 0) {
+    return retVal;
+  }
+  if (encoder_ == NULL) {
+    encoder_ = new vpx_codec_ctx_t;
+  }
+  if (config_ == NULL) {
+    config_ = new vpx_codec_enc_cfg_t;
+  }
+  if (raw_ == NULL) {
+    raw_ = new vpx_image_t;
+  }
+  timestamp_ = 0;
 
-    _timeStamp = 0;
-    _maxBitRateKbit = inst->maxBitrate;
-    _maxFrameRate = inst->maxFramerate;
-    _width = inst->width;
-    _height = inst->height;
+  codec_ = *inst;
 
 #if WEBRTC_LIBVPX_VERSION >= 971
-    if (inst->codecSpecific.VP8.numberOfTemporalLayers > 1)
-    {
-      assert(_temporalLayers == NULL);
-      _temporalLayers =
-          new TemporalLayers(inst->codecSpecific.VP8.numberOfTemporalLayers);
-    }
+  if (inst->codecSpecific.VP8.numberOfTemporalLayers > 1) {
+    assert(temporal_layers_ == NULL);
+    temporal_layers_ =
+        new TemporalLayers(inst->codecSpecific.VP8.numberOfTemporalLayers);
+  }
 #endif
+  // random start 16 bits is enough.
+  picture_id_ = static_cast<uint16_t>(rand()) & 0x7FFF;
 
-    // random start 16 bits is enough.
-    _pictureID = ((WebRtc_UWord16)rand()) & 0x7FFF;
+  // allocate memory for encoded image
+  if (encoded_image_._buffer != NULL) {
+    delete [] encoded_image_._buffer;
+  }
+  encoded_image_._size = (3 * codec_.width * codec_.height) >> 1;
+  encoded_image_._buffer = new uint8_t[encoded_image_._size];
+  encoded_image_._completeFrame = true;
 
-    // allocate memory for encoded image
-    if (_encodedImage._buffer != NULL)
-    {
-        delete [] _encodedImage._buffer;
-    }
-    _encodedImage._size = (3 * inst->width * inst->height) >> 1;
-    _encodedImage._buffer = new WebRtc_UWord8[_encodedImage._size];
-    _encodedImage._completeFrame = true;
-
-    vpx_img_alloc(_raw, IMG_FMT_I420, inst->width, inst->height, 1);
-    // populate encoder configuration with default values
-    if (vpx_codec_enc_config_default(vpx_codec_vp8_cx(), _cfg, 0))
-    {
-         return WEBRTC_VIDEO_CODEC_ERROR;
-    }
-    _cfg->g_w = inst->width;
-    _cfg->g_h = inst->height;
-    if (_maxBitRateKbit > 0 &&
-        inst->startBitrate > static_cast<unsigned int>(_maxBitRateKbit))
-    {
-        _cfg->rc_target_bitrate = _maxBitRateKbit;
-    }
-    else
-    {
-      _cfg->rc_target_bitrate = inst->startBitrate;  // in kbit/s
-    }
-#if WEBRTC_LIBVPX_VERSION >= 971
-    if (_temporalLayers)
-    {
-        _temporalLayers->ConfigureBitrates(inst->startBitrate, _cfg);
-    }
-#endif
-    // setting the time base of the codec
-    _cfg->g_timebase.num = 1;
-    _cfg->g_timebase.den = 90000;
-
-    // Set the error resilience mode according to user settings.
-    switch (inst->codecSpecific.VP8.resilience) {
-      case kResilienceOff:
-        _cfg->g_error_resilient = 0;
-        break;
-      case kResilientStream:
-        _cfg->g_error_resilient = 1;  // TODO(holmer): Replace with
-                                      // VPX_ERROR_RESILIENT_DEFAULT when we
-                                      // drop support for libvpx 9.6.0.
-        break;
-      case kResilientFrames:
-#ifdef INDEPENDENT_PARTITIONS
-        _cfg->g_error_resilient = VPX_ERROR_RESILIENT_DEFAULT |
-                                  VPX_ERROR_RESILIENT_PARTITIONS;
-#else
-        return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;  // Not supported
-#endif
-        break;
-    }
-
-    _cfg->g_lag_in_frames = 0; // 0- no frame lagging
-
-    // Determining number of threads based on the image size
-
-    if (_width * _height > 704 * 576 && numberOfCores > 1)
-      // 2 threads when larger than 4CIF
-      _cfg->g_threads = 2;
-    else
-      _cfg->g_threads = 1;
-
-    // rate control settings
-    _cfg->rc_dropframe_thresh = 30;
-    _cfg->rc_end_usage = VPX_CBR;
-    _cfg->g_pass = VPX_RC_ONE_PASS;
-    _cfg->rc_resize_allowed = 0;
-    _cfg->rc_min_quantizer = 8;
-    _cfg->rc_max_quantizer = 56;
-    _cfg->rc_undershoot_pct = 100;
-    _cfg->rc_overshoot_pct = 15;
-    _cfg->rc_buf_initial_sz = 500;
-    _cfg->rc_buf_optimal_sz = 600;
-    _cfg->rc_buf_sz = 1000;
-     // set the maximum target size of any key-frame.
-    _rcMaxIntraTarget = MaxIntraTarget(_cfg->rc_buf_optimal_sz);
-
-    if (_feedbackModeOn)
-    {
-        // Disable periodic key frames if we get feedback from the decoder
-        // through SLI and RPSI.
-        _cfg->kf_mode = VPX_KF_DISABLED;
-    }
-    else
-    {
-        _cfg->kf_mode = VPX_KF_AUTO;
-        _cfg->kf_max_dist = 3000;
-    }
-    switch (inst->codecSpecific.VP8.complexity)
-    {
-        case kComplexityHigh:
-        {
-            _cpuSpeed = -5;
-            break;
-        }
-        case kComplexityHigher:
-        {
-            _cpuSpeed = -4;
-            break;
-        }
-        case kComplexityMax:
-        {
-            _cpuSpeed = -3;
-            break;
-        }
-        default:
-        {
-            _cpuSpeed = -6;
-            break;
-        }
-    }
-    _rps->Init();
-
-    return InitAndSetControlSettings();
-}
-
-
-WebRtc_Word32
-VP8Encoder::InitAndSetControlSettings()
-{
-    // construct encoder context
-    vpx_codec_enc_cfg_t cfg_copy = *_cfg;
-    vpx_codec_flags_t flags = 0;
-    // TODO(holmer): We should make a smarter decision on the number of
-    // partitions. Eight is probably not the optimal number for low resolution
-    // video.
+  vpx_img_alloc(raw_, IMG_FMT_I420, codec_.width, codec_.height, 1);
+  // populate encoder configuration with default values
+  if (vpx_codec_enc_config_default(vpx_codec_vp8_cx(), config_, 0)) {
+    return WEBRTC_VIDEO_CODEC_ERROR;
+  }
+  config_->g_w = codec_.width;
+  config_->g_h = codec_.height;
+  config_->rc_target_bitrate = inst->startBitrate;  // in kbit/s
 
 #if WEBRTC_LIBVPX_VERSION >= 971
-    flags |= VPX_CODEC_USE_OUTPUT_PARTITION;
+  if (temporal_layers_) {
+    temporal_layers_->ConfigureBitrates(inst->startBitrate, config_);
+  }
 #endif
-    if (vpx_codec_enc_init(_encoder, vpx_codec_vp8_cx(), _cfg, flags))
-    {
-        return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
-    }
-    vpx_codec_control(_encoder, VP8E_SET_STATIC_THRESHOLD, 800);
-    vpx_codec_control(_encoder, VP8E_SET_CPUUSED, _cpuSpeed);
-    vpx_codec_control(_encoder, VP8E_SET_TOKEN_PARTITIONS,
-                      static_cast<vp8e_token_partitions>(_tokenPartitions));
-    vpx_codec_control(_encoder, VP8E_SET_NOISE_SENSITIVITY, 2);
+  // setting the time base of the codec
+  config_->g_timebase.num = 1;
+  config_->g_timebase.den = 90000;
+
+  // Set the error resilience mode according to user settings.
+  switch (inst->codecSpecific.VP8.resilience) {
+    case kResilienceOff:
+      config_->g_error_resilient = 0;
 #if WEBRTC_LIBVPX_VERSION >= 971
-    vpx_codec_control(_encoder, VP8E_SET_MAX_INTRA_BITRATE_PCT,
-                      _rcMaxIntraTarget);
-#endif
-    *_cfg = cfg_copy;
-
-    _inited = true;
-    return WEBRTC_VIDEO_CODEC_OK;
-}
-
-WebRtc_UWord32
-VP8Encoder::MaxIntraTarget(WebRtc_UWord32 optimalBuffersize)
-{
-    // Set max to the optimal buffer level (normalized by target BR),
-    // and scaled by a scalePar.
-    // Max target size = scalePar * optimalBufferSize * targetBR[Kbps].
-    // This values is presented in percentage of perFrameBw:
-    // perFrameBw = targetBR[Kbps] * 1000 / frameRate.
-    // The target in % is as follows:
-
-    float scalePar = 0.5;
-    WebRtc_UWord32 targetPct = (optimalBuffersize * scalePar) *
-                              _maxFrameRate / 10;
-
-    // Don't go below 3 times the per frame bandwidth.
-    const WebRtc_UWord32 minIntraTh = 300;
-    targetPct = (targetPct < minIntraTh) ? minIntraTh: targetPct;
-
-    return  targetPct;
-}
-
-WebRtc_Word32
-VP8Encoder::Encode(const RawImage& inputImage,
-                   const CodecSpecificInfo* codecSpecificInfo,
-                   const VideoFrameType* frameTypes)
-{
-    if (!_inited)
-    {
-        return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
-    }
-    if (inputImage._buffer == NULL)
-    {
-        return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
-    }
-    if (_encodedCompleteCallback == NULL)
-    {
-        return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
-    }
-    if (codecSpecificInfo) 
-    {
-        _simulcastIdx = codecSpecificInfo->codecSpecific.VP8.simulcastIdx;
-    }
-    else
-    {
-        _simulcastIdx = 0; 
-    }
-    // image in vpx_image_t format
-    _raw->planes[PLANE_Y] =  inputImage._buffer;
-    _raw->planes[PLANE_U] =  &inputImage._buffer[_height * _width];
-    _raw->planes[PLANE_V] =  &inputImage._buffer[_height * _width * 5 >> 2];
-
-    int flags = 0;
-#if WEBRTC_LIBVPX_VERSION >= 971
-    if (_temporalLayers) {
-      flags |= _temporalLayers->EncodeFlags();
-    }
-#endif
-    bool sendKeyFrame = frameTypes && (*frameTypes == kKeyFrame);
-    if (sendKeyFrame)
-    {
-      // Key frame request from caller.
-      // Will update both golden and alt-ref.
-      flags = VPX_EFLAG_FORCE_KF;
-    } else if (_feedbackModeOn && codecSpecificInfo) {
-      // Handle RPSI and SLI messages and set up the appropriate encode flags.
-      bool sendRefresh = false;
-      if (codecSpecificInfo->codecType == kVideoCodecVP8) {
-        if (codecSpecificInfo->codecSpecific.VP8.hasReceivedRPSI) {
-          _rps->ReceivedRPSI(
-              codecSpecificInfo->codecSpecific.VP8.pictureIdRPSI);
-        }
-        if (codecSpecificInfo->codecSpecific.VP8.hasReceivedSLI) {
-          sendRefresh = _rps->ReceivedSLI(inputImage._timeStamp);
-        }
+      if (temporal_layers_) {
+        // Must be on for temporal layers.
+        config_->g_error_resilient = 1;
       }
-      flags = _rps->EncodeFlags(_pictureID, sendRefresh, inputImage._timeStamp);
-    }
+#endif
+      break;
+    case kResilientStream:
+      config_->g_error_resilient = 1;  // TODO(holmer): Replace with
+      // VPX_ERROR_RESILIENT_DEFAULT when we
+      // drop support for libvpx 9.6.0.
+      break;
+    case kResilientFrames:
+#ifdef INDEPENDENT_PARTITIONS
+      config_->g_error_resilient = VPX_ERROR_RESILIENT_DEFAULT |
+      VPX_ERROR_RESILIENT_PARTITIONS;
+      break;
+#else
+      return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;  // Not supported
+#endif
+  }
+  config_->g_lag_in_frames = 0; // 0- no frame lagging
 
-    // TODO(holmer): Ideally the duration should be the timestamp diff of this
-    // frame and the next frame to be encoded, which we don't have. Instead we
-    // would like to use the duration of the previous frame. Unfortunately the
-    // rate control seems to be off with that setup. Using the average input
-    // frame rate to calculate an average duration for now.
-    assert(_maxFrameRate > 0);
-    WebRtc_UWord32 duration = 90000 / _maxFrameRate;
-    if (vpx_codec_encode(_encoder, _raw, _timeStamp, duration, flags,
-                         VPX_DL_REALTIME))
-    {
-        return WEBRTC_VIDEO_CODEC_ERROR;
-    }
-    _timeStamp += duration;
+  // Determining number of threads based on the image size
+  if (codec_.width * codec_.height > 704 * 576 && number_of_cores > 1) {
+    // 2 threads when larger than 4CIF
+    config_->g_threads = 2;
+  } else {
+    config_->g_threads = 1;
+  }
+
+  // rate control settings
+  config_->rc_dropframe_thresh = 30;
+  config_->rc_end_usage = VPX_CBR;
+  config_->g_pass = VPX_RC_ONE_PASS;
+  config_->rc_resize_allowed = 0;
+  config_->rc_min_quantizer = 8;
+  config_->rc_max_quantizer = 56;
+  config_->rc_undershoot_pct = 100;
+  config_->rc_overshoot_pct = 15;
+  config_->rc_buf_initial_sz = 500;
+  config_->rc_buf_optimal_sz = 600;
+  config_->rc_buf_sz = 1000;
+  // set the maximum target size of any key-frame.
+  rc_max_intra_target_ = MaxIntraTarget(config_->rc_buf_optimal_sz);
+
+  if (feedback_mode_) {
+    // Disable periodic key frames if we get feedback from the decoder
+    // through SLI and RPSI.
+    config_->kf_mode = VPX_KF_DISABLED;
+  } else {
+    config_->kf_mode = VPX_KF_AUTO;
+    config_->kf_max_dist = 3000;
+  }
+  switch (inst->codecSpecific.VP8.complexity) {
+    case kComplexityHigh:
+      cpu_speed_ = -5;
+      break;
+    case kComplexityHigher:
+      cpu_speed_ = -4;
+      break;
+    case kComplexityMax:
+      cpu_speed_ = -3;
+      break;
+    default:
+      cpu_speed_ = -6;
+      break;
+  }
+  rps_->Init();
+  return InitAndSetControlSettings();
+}
+
+int VP8Encoder::InitAndSetControlSettings() {
+  vpx_codec_flags_t flags = 0;
+  // TODO(holmer): We should make a smarter decision on the number of
+  // partitions. Eight is probably not the optimal number for low resolution
+  // video.
 
 #if WEBRTC_LIBVPX_VERSION >= 971
-    return GetEncodedPartitions(inputImage);
+  flags |= VPX_CODEC_USE_OUTPUT_PARTITION;
+#endif
+  if (vpx_codec_enc_init(encoder_, vpx_codec_vp8_cx(), config_, flags)) {
+    return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
+  }
+  vpx_codec_control(encoder_, VP8E_SET_STATIC_THRESHOLD, 800);
+  vpx_codec_control(encoder_, VP8E_SET_CPUUSED, cpu_speed_);
+  vpx_codec_control(encoder_, VP8E_SET_TOKEN_PARTITIONS,
+                    static_cast<vp8e_token_partitions>(token_partitions_));
+  vpx_codec_control(encoder_, VP8E_SET_NOISE_SENSITIVITY, 2);
+#if WEBRTC_LIBVPX_VERSION >= 971
+  vpx_codec_control(encoder_, VP8E_SET_MAX_INTRA_BITRATE_PCT,
+                    rc_max_intra_target_);
+#endif
+  inited_ = true;
+  return WEBRTC_VIDEO_CODEC_OK;
+}
+
+uint32_t VP8Encoder::MaxIntraTarget(uint32_t optimalBuffersize) {
+  // Set max to the optimal buffer level (normalized by target BR),
+  // and scaled by a scalePar.
+  // Max target size = scalePar * optimalBufferSize * targetBR[Kbps].
+  // This values is presented in percentage of perFrameBw:
+  // perFrameBw = targetBR[Kbps] * 1000 / frameRate.
+  // The target in % is as follows:
+
+  float scalePar = 0.5;
+  uint32_t targetPct = optimalBuffersize * scalePar * codec_.maxFramerate / 10;
+
+  // Don't go below 3 times the per frame bandwidth.
+  const uint32_t minIntraTh = 300;
+  return (targetPct < minIntraTh) ? minIntraTh: targetPct;
+}
+
+int VP8Encoder::Encode(const RawImage& input_image,
+                       const CodecSpecificInfo* codec_specific_info,
+                       const VideoFrameType* frame_types) {
+  if (!inited_) {
+    return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
+  }
+  if (input_image._buffer == NULL) {
+    return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
+  }
+  if (encoded_complete_callback_ == NULL) {
+    return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
+  }
+  // image in vpx_image_t format
+  raw_->planes[PLANE_Y] = input_image._buffer;
+  raw_->planes[PLANE_U] = &input_image._buffer[codec_.height * codec_.width];
+  raw_->planes[PLANE_V] =
+      &input_image._buffer[codec_.height * codec_.width * 5 >> 2];
+
+  int flags = 0;
+#if WEBRTC_LIBVPX_VERSION >= 971
+  if (temporal_layers_) {
+    flags |= temporal_layers_->EncodeFlags();
+  }
+#endif
+  bool send_keyframe = frame_types && (*frame_types == kKeyFrame);
+  if (send_keyframe) {
+    // Key frame request from caller.
+    // Will update both golden and alt-ref.
+    flags = VPX_EFLAG_FORCE_KF;
+  } else if (feedback_mode_ && codec_specific_info) {
+    // Handle RPSI and SLI messages and set up the appropriate encode flags.
+    bool sendRefresh = false;
+    if (codec_specific_info->codecType == kVideoCodecVP8) {
+      if (codec_specific_info->codecSpecific.VP8.hasReceivedRPSI) {
+        rps_->ReceivedRPSI(
+            codec_specific_info->codecSpecific.VP8.pictureIdRPSI);
+      }
+      if (codec_specific_info->codecSpecific.VP8.hasReceivedSLI) {
+        sendRefresh = rps_->ReceivedSLI(input_image._timeStamp);
+      }
+    }
+    flags = rps_->EncodeFlags(picture_id_, sendRefresh, input_image._timeStamp);
+  }
+
+  // TODO(holmer): Ideally the duration should be the timestamp diff of this
+  // frame and the next frame to be encoded, which we don't have. Instead we
+  // would like to use the duration of the previous frame. Unfortunately the
+  // rate control seems to be off with that setup. Using the average input
+  // frame rate to calculate an average duration for now.
+  assert(codec_.maxFramerate > 0);
+  uint32_t duration = 90000 / codec_.maxFramerate;
+  if (vpx_codec_encode(encoder_, raw_, timestamp_, duration, flags,
+                       VPX_DL_REALTIME)) {
+    return WEBRTC_VIDEO_CODEC_ERROR;
+  }
+  timestamp_ += duration;
+
+#if WEBRTC_LIBVPX_VERSION >= 971
+  return GetEncodedPartitions(input_image);
 #else
-    return GetEncodedFrame(inputImage);
+  return GetEncodedFrame(input_image);
 #endif
 }
 
@@ -514,13 +415,13 @@ void VP8Encoder::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
   assert(codec_specific != NULL);
   codec_specific->codecType = kVideoCodecVP8;
   CodecSpecificInfoVP8 *vp8Info = &(codec_specific->codecSpecific.VP8);
-  vp8Info->pictureId = _pictureID;
-  vp8Info->simulcastIdx = _simulcastIdx;
+  vp8Info->pictureId = picture_id_;
+  vp8Info->simulcastIdx = 0;
   vp8Info->keyIdx = kNoKeyIdx;  // TODO(hlundin) populate this
   vp8Info->nonReference = (pkt.data.frame.flags & VPX_FRAME_IS_DROPPABLE);
 #if WEBRTC_LIBVPX_VERSION >= 971
-  if (_temporalLayers) {
-    _temporalLayers->PopulateCodecSpecific(
+  if (temporal_layers_) {
+    temporal_layers_->PopulateCodecSpecific(
         (pkt.data.frame.flags & VPX_FRAME_IS_KEY) ? true : false, vp8Info);
   } else {
 #endif
@@ -530,97 +431,91 @@ void VP8Encoder::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
 #if WEBRTC_LIBVPX_VERSION >= 971
   }
 #endif
-  _pictureID = (_pictureID + 1) & 0x7FFF;  // prepare next
+  picture_id_ = (picture_id_ + 1) & 0x7FFF;  // prepare next
 }
 
-WebRtc_Word32
-VP8Encoder::GetEncodedFrame(const RawImage& input_image)
-{
-    vpx_codec_iter_t iter = NULL;
-    _encodedImage._frameType = kDeltaFrame;
-    const vpx_codec_cx_pkt_t *pkt= vpx_codec_get_cx_data(_encoder, &iter);
-    if (pkt == NULL) {
-      if (!_encoder->err) {
-        // dropped frame
-        return WEBRTC_VIDEO_CODEC_OK;
-      } else {
-        return WEBRTC_VIDEO_CODEC_ERROR;
-      }
+int VP8Encoder::GetEncodedFrame(const RawImage& input_image) {
+  vpx_codec_iter_t iter = NULL;
+  encoded_image_._frameType = kDeltaFrame;
+  const vpx_codec_cx_pkt_t *pkt= vpx_codec_get_cx_data(encoder_, &iter);
+  if (pkt == NULL) {
+    if (!encoder_->err) {
+      // dropped frame
+      return WEBRTC_VIDEO_CODEC_OK;
+    } else {
+      return WEBRTC_VIDEO_CODEC_ERROR;
     }
-    else if (pkt->kind == VPX_CODEC_CX_FRAME_PKT)
-    {
-        CodecSpecificInfo codecSpecific;
-        PopulateCodecSpecific(&codecSpecific, *pkt);
+  } else if (pkt->kind == VPX_CODEC_CX_FRAME_PKT) {
+    CodecSpecificInfo codecSpecific;
+    PopulateCodecSpecific(&codecSpecific, *pkt);
 
-        assert(pkt->data.frame.sz <= _encodedImage._size);
-        memcpy(_encodedImage._buffer, pkt->data.frame.buf, pkt->data.frame.sz);
-        _encodedImage._length = WebRtc_UWord32(pkt->data.frame.sz);
-        _encodedImage._encodedHeight = _raw->h;
-        _encodedImage._encodedWidth = _raw->w;
+    assert(pkt->data.frame.sz <= encoded_image_._size);
+    memcpy(encoded_image_._buffer, pkt->data.frame.buf, pkt->data.frame.sz);
+    encoded_image_._length = uint32_t(pkt->data.frame.sz);
+    encoded_image_._encodedHeight = raw_->h;
+    encoded_image_._encodedWidth = raw_->w;
 
-        // check if encoded frame is a key frame
-        if (pkt->data.frame.flags & VPX_FRAME_IS_KEY)
-        {
-            _encodedImage._frameType = kKeyFrame;
-            _rps->EncodedKeyFrame(_pictureID);
-        }
-
-        if (_encodedImage._length > 0)
-        {
-            _encodedImage._timeStamp = input_image._timeStamp;
-
-            // Figure out where partition boundaries are located.
-            RTPFragmentationHeader fragInfo;
-            fragInfo.VerifyAndAllocateFragmentationHeader(2); // two partitions: 1st and 2nd
-
-            // First partition
-            fragInfo.fragmentationOffset[0] = 0;
-            WebRtc_UWord8 *firstByte = _encodedImage._buffer;
-            WebRtc_UWord32 tmpSize = (firstByte[2] << 16) | (firstByte[1] << 8)
-                | firstByte[0];
-            fragInfo.fragmentationLength[0] = (tmpSize >> 5) & 0x7FFFF;
-            fragInfo.fragmentationPlType[0] = 0; // not known here
-            fragInfo.fragmentationTimeDiff[0] = 0;
-
-            // Second partition
-            fragInfo.fragmentationOffset[1] = fragInfo.fragmentationLength[0];
-            fragInfo.fragmentationLength[1] = _encodedImage._length -
-                fragInfo.fragmentationLength[0];
-            fragInfo.fragmentationPlType[1] = 0; // not known here
-            fragInfo.fragmentationTimeDiff[1] = 0;
-
-            _encodedCompleteCallback->Encoded(_encodedImage, &codecSpecific,
-                &fragInfo);
-        }
-        return WEBRTC_VIDEO_CODEC_OK;
+    // check if encoded frame is a key frame
+    if (pkt->data.frame.flags & VPX_FRAME_IS_KEY) {
+      encoded_image_._frameType = kKeyFrame;
+      rps_->EncodedKeyFrame(picture_id_);
     }
-    return WEBRTC_VIDEO_CODEC_ERROR;
+
+    if (encoded_image_._length > 0) {
+      encoded_image_._timeStamp = input_image._timeStamp;
+
+      // Figure out where partition boundaries are located.
+      RTPFragmentationHeader fragInfo;
+      fragInfo.VerifyAndAllocateFragmentationHeader(2);
+      // two partitions: 1st and 2nd
+
+      // First partition
+      fragInfo.fragmentationOffset[0] = 0;
+      uint8_t *firstByte = encoded_image_._buffer;
+      uint32_t tmpSize = (firstByte[2] << 16) | (firstByte[1] << 8)
+                    | firstByte[0];
+      fragInfo.fragmentationLength[0] = (tmpSize >> 5) & 0x7FFFF;
+      fragInfo.fragmentationPlType[0] = 0; // not known here
+      fragInfo.fragmentationTimeDiff[0] = 0;
+
+      // Second partition
+      fragInfo.fragmentationOffset[1] = fragInfo.fragmentationLength[0];
+      fragInfo.fragmentationLength[1] = encoded_image_._length -
+          fragInfo.fragmentationLength[0];
+      fragInfo.fragmentationPlType[1] = 0; // not known here
+      fragInfo.fragmentationTimeDiff[1] = 0;
+
+      encoded_complete_callback_->Encoded(encoded_image_, &codecSpecific,
+                                        &fragInfo);
+    }
+    return WEBRTC_VIDEO_CODEC_OK;
+  }
+  return WEBRTC_VIDEO_CODEC_ERROR;
 }
 
 #if WEBRTC_LIBVPX_VERSION >= 971
-WebRtc_Word32
-VP8Encoder::GetEncodedPartitions(const RawImage& input_image) {
+int VP8Encoder::GetEncodedPartitions(const RawImage& input_image) {
   vpx_codec_iter_t iter = NULL;
   int part_idx = 0;
-  _encodedImage._length = 0;
-  _encodedImage._frameType = kDeltaFrame;
+  encoded_image_._length = 0;
+  encoded_image_._frameType = kDeltaFrame;
   RTPFragmentationHeader frag_info;
-  frag_info.VerifyAndAllocateFragmentationHeader((1 << _tokenPartitions) + 1);
-  CodecSpecificInfo codecSpecific;
+  frag_info.VerifyAndAllocateFragmentationHeader((1 << token_partitions_) + 1);
+  CodecSpecificInfo codec_specific;
 
   const vpx_codec_cx_pkt_t *pkt = NULL;
-  while ((pkt = vpx_codec_get_cx_data(_encoder, &iter)) != NULL) {
+  while ((pkt = vpx_codec_get_cx_data(encoder_, &iter)) != NULL) {
     switch(pkt->kind) {
       case VPX_CODEC_CX_FRAME_PKT: {
-        memcpy(&_encodedImage._buffer[_encodedImage._length],
+        memcpy(&encoded_image_._buffer[encoded_image_._length],
                pkt->data.frame.buf,
                pkt->data.frame.sz);
-        frag_info.fragmentationOffset[part_idx] = _encodedImage._length;
+        frag_info.fragmentationOffset[part_idx] = encoded_image_._length;
         frag_info.fragmentationLength[part_idx] =  pkt->data.frame.sz;
         frag_info.fragmentationPlType[part_idx] = 0;  // not known here
         frag_info.fragmentationTimeDiff[part_idx] = 0;
-        _encodedImage._length += pkt->data.frame.sz;
-        assert(_encodedImage._length <= _encodedImage._size);
+        encoded_image_._length += pkt->data.frame.sz;
+        assert(encoded_image_._length <= encoded_image_._size);
         ++part_idx;
         break;
       }
@@ -631,334 +526,286 @@ VP8Encoder::GetEncodedPartitions(const RawImage& input_image) {
     // End of frame
     if ((pkt->data.frame.flags & VPX_FRAME_IS_FRAGMENT) == 0) {
       // check if encoded frame is a key frame
-      if (pkt->data.frame.flags & VPX_FRAME_IS_KEY)
-      {
-          _encodedImage._frameType = kKeyFrame;
-          _rps->EncodedKeyFrame(_pictureID);
+      if (pkt->data.frame.flags & VPX_FRAME_IS_KEY) {
+          encoded_image_._frameType = kKeyFrame;
+          rps_->EncodedKeyFrame(picture_id_);
       }
-      PopulateCodecSpecific(&codecSpecific, *pkt);
+      PopulateCodecSpecific(&codec_specific, *pkt);
       break;
     }
   }
-  if (_encodedImage._length > 0) {
-    _encodedImage._timeStamp = input_image._timeStamp;
-    _encodedImage._encodedHeight = _raw->h;
-    _encodedImage._encodedWidth = _raw->w;
-    _encodedCompleteCallback->Encoded(_encodedImage, &codecSpecific,
-        &frag_info);
+  if (encoded_image_._length > 0) {
+    encoded_image_._timeStamp = input_image._timeStamp;
+    encoded_image_._encodedHeight = raw_->h;
+    encoded_image_._encodedWidth = raw_->w;
+    encoded_complete_callback_->Encoded(encoded_image_, &codec_specific,
+                                      &frag_info);
   }
   return WEBRTC_VIDEO_CODEC_OK;
 }
 #endif
 
-WebRtc_Word32
-VP8Encoder::SetChannelParameters(WebRtc_UWord32 packetLoss, int rtt) {
-  _rps->SetRtt(rtt);
+int VP8Encoder::SetChannelParameters(uint32_t /*packet_loss*/, int rtt) {
+  rps_->SetRtt(rtt);
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-WebRtc_Word32
-VP8Encoder::RegisterEncodeCompleteCallback(EncodedImageCallback* callback)
-{
-    _encodedCompleteCallback = callback;
-    return WEBRTC_VIDEO_CODEC_OK;
+int VP8Encoder::RegisterEncodeCompleteCallback(
+    EncodedImageCallback* callback) {
+  encoded_complete_callback_ = callback;
+  return WEBRTC_VIDEO_CODEC_OK;
 }
 
-VP8Decoder::VP8Decoder():
-    _decodeCompleteCallback(NULL),
-    _inited(false),
-    _feedbackModeOn(false),
-    _decoder(NULL),
-    _inst(NULL),
-    _numCores(1),
-    _lastKeyFrame(),
-    _imageFormat(VPX_IMG_FMT_NONE),
-    _refFrame(NULL),
-    _propagationCnt(-1),
-    _latestKeyFrameComplete(false)
-{
+VP8Decoder* VP8Decoder::Create() {
+  return new VP8Decoder();
 }
 
-VP8Decoder::~VP8Decoder()
-{
-    _inited = true; // in order to do the actual release
-    Release();
+VP8Decoder::VP8Decoder()
+    : decode_complete_callback_(NULL),
+      inited_(false),
+      feedback_mode_(false),
+      decoder_(NULL),
+      last_keyframe_(),
+      image_format_(VPX_IMG_FMT_NONE),
+      ref_frame_(NULL),
+      propagation_cnt_(-1),
+      latest_keyframe_complete_(false) {
 }
 
-WebRtc_Word32
-VP8Decoder::Reset()
-{
-    if (!_inited)
-    {
-        return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
-    }
-    if (_inst != NULL)
-    {
-        VideoCodec inst;
-        inst = *_inst;
-        InitDecode(&inst, _numCores);
-    }
-    else
-    {
-        InitDecode(NULL, _numCores);
-    }
-    _propagationCnt = -1;
-    _latestKeyFrameComplete = false;
-    return WEBRTC_VIDEO_CODEC_OK;
+VP8Decoder::~VP8Decoder() {
+  inited_ = true; // in order to do the actual release
+  Release();
 }
 
-WebRtc_Word32
-VP8Decoder::InitDecode(const VideoCodec* inst,
-                       WebRtc_Word32 numberOfCores)
-{
-    WebRtc_Word32 retVal = Release();
-    if (retVal < 0 )
-    {
-        return retVal;
-    }
-    if (_decoder == NULL)
-    {
-        _decoder = new vpx_dec_ctx_t;
-    }
-    if (inst && inst->codecType == kVideoCodecVP8) {
-      _feedbackModeOn = inst->codecSpecific.VP8.feedbackModeOn;
-    }
+int VP8Decoder::Reset() {
+  if (!inited_) {
+    return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
+  }
+  InitDecode(&codec_, 1);
+  propagation_cnt_ = -1;
+  latest_keyframe_complete_ = false;
+  return WEBRTC_VIDEO_CODEC_OK;
+}
 
-    vpx_codec_dec_cfg_t  cfg;
-    // Setting number of threads to a constant value (1)
-    cfg.threads = 1;
-    cfg.h = cfg.w = 0; // set after decode
+int VP8Decoder::InitDecode(const VideoCodec* inst, int number_of_cores) {
+  int ret_val = Release();
+  if (ret_val < 0 ) {
+    return ret_val;
+  }
+  if (decoder_ == NULL) {
+    decoder_ = new vpx_dec_ctx_t;
+  }
+  if (inst && inst->codecType == kVideoCodecVP8) {
+    feedback_mode_ = inst->codecSpecific.VP8.feedbackModeOn;
+  }
+  vpx_codec_dec_cfg_t  cfg;
+  // Setting number of threads to a constant value (1)
+  cfg.threads = 1;
+  cfg.h = cfg.w = 0; // set after decode
 
-    vpx_codec_flags_t flags = 0;
+  vpx_codec_flags_t flags = 0;
 #if WEBRTC_LIBVPX_VERSION >= 971
-    flags = VPX_CODEC_USE_ERROR_CONCEALMENT | VPX_CODEC_USE_POSTPROC;
+  flags = VPX_CODEC_USE_ERROR_CONCEALMENT | VPX_CODEC_USE_POSTPROC;
 #ifdef INDEPENDENT_PARTITIONS
-    flags |= VPX_CODEC_USE_INPUT_PARTITION;
+  flags |= VPX_CODEC_USE_INPUT_PARTITION;
 #endif
 #endif
 
-    if (vpx_codec_dec_init(_decoder, vpx_codec_vp8_dx(), &cfg, flags))
-    {
-        return WEBRTC_VIDEO_CODEC_MEMORY;
-    }
+  if (vpx_codec_dec_init(decoder_, vpx_codec_vp8_dx(), &cfg, flags)) {
+    return WEBRTC_VIDEO_CODEC_MEMORY;
+  }
 
 #if WEBRTC_LIBVPX_VERSION >= 971
-
-    vp8_postproc_cfg_t  ppcfg;
-    // Disable deblocking for now due to uninitialized memory being returned.
-    ppcfg.post_proc_flag = 0;
-    // Strength of deblocking filter. Valid range:[0,16]
-    //ppcfg.deblocking_level = 3;
-    vpx_codec_control(_decoder, VP8_SET_POSTPROC, &ppcfg);
+  vp8_postproc_cfg_t  ppcfg;
+  // Disable deblocking for now due to uninitialized memory being returned.
+  ppcfg.post_proc_flag = 0;
+  // Strength of deblocking filter. Valid range:[0,16]
+  //ppcfg.deblocking_level = 3;
+  vpx_codec_control(decoder_, VP8_SET_POSTPROC, &ppcfg);
 #endif
 
-    // Save VideoCodec instance for later; mainly for duplicating the decoder.
-    if (inst && inst != _inst)
-    {
-        if (!_inst)
-        {
-            _inst = new VideoCodec;
-        }
-        *_inst = *inst;
-    }
-    _numCores = numberOfCores;
-    _propagationCnt = -1;
-    _latestKeyFrameComplete = false;
+  // Save VideoCodec instance for later; mainly for duplicating the decoder.
+  codec_ = *inst;
+  propagation_cnt_ = -1;
+  latest_keyframe_complete_ = false;
 
-    _inited = true;
-    return WEBRTC_VIDEO_CODEC_OK;
+  inited_ = true;
+  return WEBRTC_VIDEO_CODEC_OK;
 }
 
-WebRtc_Word32
-VP8Decoder::Decode(const EncodedImage& inputImage,
-                   bool missingFrames,
-                   const RTPFragmentationHeader* fragmentation,
-                   const CodecSpecificInfo* codecSpecificInfo,
-                   WebRtc_Word64 /*renderTimeMs*/)
-{
-    if (!_inited)
-    {
-        return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
-    }
-    if (_decodeCompleteCallback == NULL)
-    {
-        return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
-    }
-    if (inputImage._buffer == NULL && inputImage._length > 0)
-    {
-        // Reset to avoid requesting key frames too often.
-        if (_propagationCnt > 0)
-            _propagationCnt = 0;
-        return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
-    }
+int VP8Decoder::Decode(const EncodedImage& input_image,
+                       bool missing_frames,
+                       const RTPFragmentationHeader* fragmentation,
+                       const CodecSpecificInfo* codec_specific_info,
+                       int64_t /*render_time_ms*/) {
+  if (!inited_) {
+    return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
+  }
+  if (decode_complete_callback_ == NULL) {
+    return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
+  }
+  if (input_image._buffer == NULL && input_image._length > 0) {
+    // Reset to avoid requesting key frames too often.
+    if (propagation_cnt_ > 0)
+      propagation_cnt_ = 0;
+    return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
+  }
 
 #ifdef INDEPENDENT_PARTITIONS
-    if (fragmentation == NULL)
-    {
-        return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
-    }
+  if (fragmentation == NULL) {
+    return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
+  }
 #endif
 
-    // Restrict error propagation using key frame requests. Disabled when
-    // the feedback mode is enabled (RPS).
-    // Reset on a key frame refresh.
-    if (!_feedbackModeOn) {
-      if (inputImage._frameType == kKeyFrame && inputImage._completeFrame)
-        _propagationCnt = -1;
-      // Start count on first loss.
-      else if ((!inputImage._completeFrame || missingFrames) &&
-                _propagationCnt == -1)
-        _propagationCnt = 0;
-      if (_propagationCnt >= 0)
-        _propagationCnt++;
-    }
+  // Restrict error propagation using key frame requests. Disabled when
+  // the feedback mode is enabled (RPS).
+  // Reset on a key frame refresh.
+  if (!feedback_mode_) {
+    if (input_image._frameType == kKeyFrame && input_image._completeFrame)
+      propagation_cnt_ = -1;
+    // Start count on first loss.
+    else if ((!input_image._completeFrame || missing_frames) &&
+        propagation_cnt_ == -1)
+      propagation_cnt_ = 0;
+    if (propagation_cnt_ >= 0)
+      propagation_cnt_++;
+  }
 
-    vpx_dec_iter_t iter = NULL;
-    vpx_image_t* img;
-    WebRtc_Word32 ret;
+  vpx_dec_iter_t iter = NULL;
+  vpx_image_t* img;
+  int ret;
 
-    // Check for missing frames.
-    if (missingFrames)
-    {
-        // Call decoder with zero data length to signal missing frames.
-        if (vpx_codec_decode(_decoder, NULL, 0, 0, VPX_DL_REALTIME))
-        {
-            // Reset to avoid requesting key frames too often.
-            if (_propagationCnt > 0)
-                _propagationCnt = 0;
-            return WEBRTC_VIDEO_CODEC_ERROR;
-        }
-        img = vpx_codec_get_frame(_decoder, &iter);
-        iter = NULL;
+  // Check for missing frames.
+  if (missing_frames) {
+    // Call decoder with zero data length to signal missing frames.
+    if (vpx_codec_decode(decoder_, NULL, 0, 0, VPX_DL_REALTIME)) {
+      // Reset to avoid requesting key frames too often.
+      if (propagation_cnt_ > 0)
+        propagation_cnt_ = 0;
+      return WEBRTC_VIDEO_CODEC_ERROR;
     }
+    img = vpx_codec_get_frame(decoder_, &iter);
+    iter = NULL;
+  }
 
 #ifdef INDEPENDENT_PARTITIONS
-    if (DecodePartitions(inputImage, fragmentation))
-    {
-        // Reset to avoid requesting key frames too often.
-        if (_propagationCnt > 0)
-            _propagationCnt = 0;
-        return WEBRTC_VIDEO_CODEC_ERROR;
+  if (DecodePartitions(inputImage, fragmentation)) {
+    // Reset to avoid requesting key frames too often.
+    if (propagation_cnt_ > 0) {
+      propagation_cnt_ = 0;
     }
+    return WEBRTC_VIDEO_CODEC_ERROR;
+  }
 #else
-    WebRtc_UWord8* buffer = inputImage._buffer;
-    if (inputImage._length == 0)
-    {
-        buffer = NULL; // Triggers full frame concealment.
-    }
-    if (vpx_codec_decode(_decoder,
-                         buffer,
-                         inputImage._length,
-                         0,
-                         VPX_DL_REALTIME))
-    {
-        // Reset to avoid requesting key frames too often.
-        if (_propagationCnt > 0)
-            _propagationCnt = 0;
-        return WEBRTC_VIDEO_CODEC_ERROR;
-    }
+  uint8_t* buffer = input_image._buffer;
+  if (input_image._length == 0) {
+    buffer = NULL; // Triggers full frame concealment.
+  }
+  if (vpx_codec_decode(decoder_,
+                       buffer,
+                       input_image._length,
+                       0,
+                       VPX_DL_REALTIME)) {
+    // Reset to avoid requesting key frames too often.
+    if (propagation_cnt_ > 0)
+      propagation_cnt_ = 0;
+    return WEBRTC_VIDEO_CODEC_ERROR;
+  }
 #endif
 
-    // Store encoded frame if key frame. (Used in Copy method.)
-    if (inputImage._frameType == kKeyFrame && inputImage._buffer != NULL)
-    {
-        const WebRtc_UWord32 bytesToCopy = inputImage._length;
-        if (_lastKeyFrame._size < bytesToCopy)
-        {
-            delete [] _lastKeyFrame._buffer;
-            _lastKeyFrame._buffer = NULL;
-            _lastKeyFrame._size = 0;
-        }
-
-        WebRtc_UWord8* tempBuffer = _lastKeyFrame._buffer; // Save buffer ptr.
-        WebRtc_UWord32 tempSize = _lastKeyFrame._size; // Save size.
-        _lastKeyFrame = inputImage; // Shallow copy.
-        _lastKeyFrame._buffer = tempBuffer; // Restore buffer ptr.
-        _lastKeyFrame._size = tempSize; // Restore buffer size.
-        if (!_lastKeyFrame._buffer)
-        {
-            // Allocate memory.
-            _lastKeyFrame._size = bytesToCopy;
-            _lastKeyFrame._buffer = new WebRtc_UWord8[_lastKeyFrame._size];
-        }
-        // Copy encoded frame.
-        memcpy(_lastKeyFrame._buffer, inputImage._buffer, bytesToCopy);
-        _lastKeyFrame._length = bytesToCopy;
+  // Store encoded frame if key frame. (Used in Copy method.)
+  if (input_image._frameType == kKeyFrame && input_image._buffer != NULL) {
+    const uint32_t bytes_to_copy = input_image._length;
+    if (last_keyframe_._size < bytes_to_copy) {
+      delete [] last_keyframe_._buffer;
+      last_keyframe_._buffer = NULL;
+      last_keyframe_._size = 0;
     }
 
-    img = vpx_codec_get_frame(_decoder, &iter);
-    ret = ReturnFrame(img, inputImage._timeStamp);
-    if (ret != 0)
-    {
-        // Reset to avoid requesting key frames too often.
-        if (ret < 0 && _propagationCnt > 0)
-            _propagationCnt = 0;
-        return ret;
+    uint8_t* temp_buffer = last_keyframe_._buffer; // Save buffer ptr.
+    uint32_t temp_size = last_keyframe_._size; // Save size.
+    last_keyframe_ = input_image; // Shallow copy.
+    last_keyframe_._buffer = temp_buffer; // Restore buffer ptr.
+    last_keyframe_._size = temp_size; // Restore buffer size.
+    if (!last_keyframe_._buffer) {
+      // Allocate memory.
+      last_keyframe_._size = bytes_to_copy;
+      last_keyframe_._buffer = new uint8_t[last_keyframe_._size];
     }
+    // Copy encoded frame.
+    memcpy(last_keyframe_._buffer, input_image._buffer, bytes_to_copy);
+    last_keyframe_._length = bytes_to_copy;
+  }
 
-    if (_feedbackModeOn) {
-      // Whenever we receive an incomplete key frame all reference buffers will
-      // be corrupt. If that happens we must request new key frames until we
-      // decode a complete.
-      if (inputImage._frameType == kKeyFrame)
-        _latestKeyFrameComplete = inputImage._completeFrame;
-      if (!_latestKeyFrameComplete)
-        return WEBRTC_VIDEO_CODEC_ERROR;
+  img = vpx_codec_get_frame(decoder_, &iter);
+  ret = ReturnFrame(img, input_image._timeStamp);
+  if (ret != 0) {
+    // Reset to avoid requesting key frames too often.
+    if (ret < 0 && propagation_cnt_ > 0)
+      propagation_cnt_ = 0;
+    return ret;
+  }
+  if (feedback_mode_) {
+    // Whenever we receive an incomplete key frame all reference buffers will
+    // be corrupt. If that happens we must request new key frames until we
+    // decode a complete.
+    if (input_image._frameType == kKeyFrame)
+      latest_keyframe_complete_ = input_image._completeFrame;
+    if (!latest_keyframe_complete_)
+      return WEBRTC_VIDEO_CODEC_ERROR;
 
-      // Check for reference updates and last reference buffer corruption and
-      // signal successful reference propagation or frame corruption to the
-      // encoder.
-      int referenceUpdates = 0;
-      if (vpx_codec_control(_decoder, VP8D_GET_LAST_REF_UPDATES,
-                            &referenceUpdates)) {
-        // Reset to avoid requesting key frames too often.
-        if (_propagationCnt > 0)
-          _propagationCnt = 0;
-        return WEBRTC_VIDEO_CODEC_ERROR;
-      }
-      int corrupted = 0;
-      if (vpx_codec_control(_decoder, VP8D_GET_FRAME_CORRUPTED, &corrupted)) {
-        // Reset to avoid requesting key frames too often.
-        if (_propagationCnt > 0)
-          _propagationCnt = 0;
-        return WEBRTC_VIDEO_CODEC_ERROR;
-      }
-      WebRtc_Word16 pictureId = -1;
-      if (codecSpecificInfo) {
-        pictureId = codecSpecificInfo->codecSpecific.VP8.pictureId;
-      }
-      if (pictureId > -1) {
-        if (((referenceUpdates & VP8_GOLD_FRAME) ||
-             (referenceUpdates & VP8_ALTR_FRAME)) && !corrupted) {
-          _decodeCompleteCallback->ReceivedDecodedReferenceFrame(pictureId);
-        }
-        _decodeCompleteCallback->ReceivedDecodedFrame(pictureId);
-      }
-      if (corrupted) {
-        // we can decode but with artifacts
-        return WEBRTC_VIDEO_CODEC_REQUEST_SLI;
-      }
+    // Check for reference updates and last reference buffer corruption and
+    // signal successful reference propagation or frame corruption to the
+    // encoder.
+    int reference_updates = 0;
+    if (vpx_codec_control(decoder_, VP8D_GET_LAST_REF_UPDATES,
+                          &reference_updates)) {
+      // Reset to avoid requesting key frames too often.
+      if (propagation_cnt_ > 0)
+        propagation_cnt_ = 0;
+      return WEBRTC_VIDEO_CODEC_ERROR;
     }
-
-    // Check Vs. threshold
-    if (_propagationCnt > kVp8ErrorPropagationTh)
-    {
-        // Reset to avoid requesting key frames too often.
-        _propagationCnt = 0;
-        return WEBRTC_VIDEO_CODEC_ERROR;
+    int corrupted = 0;
+    if (vpx_codec_control(decoder_, VP8D_GET_FRAME_CORRUPTED, &corrupted)) {
+      // Reset to avoid requesting key frames too often.
+      if (propagation_cnt_ > 0)
+        propagation_cnt_ = 0;
+      return WEBRTC_VIDEO_CODEC_ERROR;
     }
-    return WEBRTC_VIDEO_CODEC_OK;
+    int16_t picture_id = -1;
+    if (codec_specific_info) {
+      picture_id = codec_specific_info->codecSpecific.VP8.pictureId;
+    }
+    if (picture_id > -1) {
+      if (((reference_updates & VP8_GOLD_FRAME) ||
+          (reference_updates & VP8_ALTR_FRAME)) && !corrupted) {
+        decode_complete_callback_->ReceivedDecodedReferenceFrame(picture_id);
+      }
+      decode_complete_callback_->ReceivedDecodedFrame(picture_id);
+    }
+    if (corrupted) {
+      // we can decode but with artifacts
+      return WEBRTC_VIDEO_CODEC_REQUEST_SLI;
+    }
+  }
+  // Check Vs. threshold
+  if (propagation_cnt_ > kVp8ErrorPropagationTh) {
+    // Reset to avoid requesting key frames too often.
+    propagation_cnt_ = 0;
+    return WEBRTC_VIDEO_CODEC_ERROR;
+  }
+  return WEBRTC_VIDEO_CODEC_OK;
 }
 
-WebRtc_Word32
-VP8Decoder::DecodePartitions(const EncodedImage& input_image,
-                             const RTPFragmentationHeader* fragmentation) {
+int VP8Decoder::DecodePartitions(
+    const EncodedImage& input_image,
+    const RTPFragmentationHeader* fragmentation) {
   for (int i = 0; i < fragmentation->fragmentationVectorSize; ++i) {
-    const WebRtc_UWord8* partition = input_image._buffer +
+    const uint8_t* partition = input_image._buffer +
         fragmentation->fragmentationOffset[i];
-    const WebRtc_UWord32 partition_length =
+    const uint32_t partition_length =
         fragmentation->fragmentationLength[i];
-    if (vpx_codec_decode(_decoder,
+    if (vpx_codec_decode(decoder_,
                          partition,
                          partition_length,
                          0,
@@ -966,230 +813,184 @@ VP8Decoder::DecodePartitions(const EncodedImage& input_image,
       return WEBRTC_VIDEO_CODEC_ERROR;
     }
   }
-
   // Signal end of frame data. If there was no frame data this will trigger
   // a full frame concealment.
-  if (vpx_codec_decode(_decoder, NULL, 0, 0, VPX_DL_REALTIME))
+  if (vpx_codec_decode(decoder_, NULL, 0, 0, VPX_DL_REALTIME))
     return WEBRTC_VIDEO_CODEC_ERROR;
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-WebRtc_Word32
-VP8Decoder::ReturnFrame(const vpx_image_t* img, WebRtc_UWord32 timeStamp)
-{
-    if (img == NULL)
-    {
-        // Decoder OK and NULL image => No show frame
-        return WEBRTC_VIDEO_CODEC_NO_OUTPUT;
+int VP8Decoder::ReturnFrame(const vpx_image_t* img, uint32_t timestamp) {
+  if (img == NULL) {
+    // Decoder OK and NULL image => No show frame
+    return WEBRTC_VIDEO_CODEC_NO_OUTPUT;
+  }
+
+  // Allocate memory for decoded image
+  uint32_t required_size = (3 * img->d_h * img->d_w) >> 1;
+  if (required_size > decoded_image_._size) {
+    delete [] decoded_image_._buffer;
+    decoded_image_._buffer = NULL;
+  }
+  if (decoded_image_._buffer == NULL) {
+    decoded_image_._size = required_size;
+    decoded_image_._buffer = new uint8_t[decoded_image_._size];
+  }
+  uint8_t* buf;
+  uint32_t pos = 0;
+  uint32_t plane, y;
+
+  for (plane = 0; plane < 3; plane++) {
+    unsigned int width = (plane ? (img->d_w + 1) >> 1 : img->d_w);
+    unsigned int height = (plane ? (img->d_h + 1) >> 1 : img->d_h);
+    buf = img->planes[plane];
+    for(y = 0; y < height; y++) {
+      memcpy(&decoded_image_._buffer[pos], buf, width);
+      pos += width;
+      buf += img->stride[plane];
     }
+  }
 
-    // Allocate memory for decoded image
-    WebRtc_UWord32 requiredSize = (3 * img->d_h * img->d_w) >> 1;
-    if (requiredSize > _decodedImage._size)
-    {
-        delete [] _decodedImage._buffer;
-        _decodedImage._buffer = NULL;
-    }
-    if (_decodedImage._buffer == NULL)
-    {
-        _decodedImage._size = requiredSize;
-        _decodedImage._buffer = new WebRtc_UWord8[_decodedImage._size];
-    }
+  // Set image parameters
+  decoded_image_._height = img->d_h;
+  decoded_image_._width = img->d_w;
+  decoded_image_._length = (3 * img->d_h * img->d_w) >> 1;
+  decoded_image_._timeStamp = timestamp;
+  int ret = decode_complete_callback_->Decoded(decoded_image_);
+  if (ret != 0)
+    return ret;
 
-    WebRtc_UWord8* buf;
-    WebRtc_UWord32 pos = 0;
-    WebRtc_UWord32 plane, y;
-
-    for (plane = 0; plane < 3; plane++)
-    {
-        unsigned int width = (plane ? (img->d_w + 1) >> 1 : img->d_w);
-        unsigned int height = (plane ? (img->d_h + 1) >> 1 : img->d_h);
-        buf = img->planes[plane];
-        for(y = 0; y < height; y++)
-        {
-            memcpy(&_decodedImage._buffer[pos], buf, width);
-            pos += width;
-            buf += img->stride[plane];
-        }
-    }
-
-    // Set image parameters
-    _decodedImage._height = img->d_h;
-    _decodedImage._width = img->d_w;
-    _decodedImage._length = (3 * img->d_h * img->d_w) >> 1;
-    _decodedImage._timeStamp = timeStamp;
-    WebRtc_Word32 ret = _decodeCompleteCallback->Decoded(_decodedImage);
-    if (ret != 0)
-        return ret;
-
-    // Remember image format for later
-    _imageFormat = img->fmt;
-    return WEBRTC_VIDEO_CODEC_OK;
+  // Remember image format for later
+  image_format_ = img->fmt;
+  return WEBRTC_VIDEO_CODEC_OK;
 }
 
-WebRtc_Word32
-VP8Decoder::RegisterDecodeCompleteCallback(DecodedImageCallback* callback)
-{
-    _decodeCompleteCallback = callback;
-    return WEBRTC_VIDEO_CODEC_OK;
+int VP8Decoder::RegisterDecodeCompleteCallback(
+    DecodedImageCallback* callback) {
+  decode_complete_callback_ = callback;
+  return WEBRTC_VIDEO_CODEC_OK;
 }
 
-WebRtc_Word32
-VP8Decoder::Release()
-{
-    if (_decodedImage._buffer != NULL)
-    {
-        delete [] _decodedImage._buffer;
-        _decodedImage._buffer = NULL;
+int VP8Decoder::Release() {
+  if (decoded_image_._buffer != NULL) {
+    delete [] decoded_image_._buffer;
+    decoded_image_._buffer = NULL;
+  }
+  if (last_keyframe_._buffer != NULL) {
+    delete [] last_keyframe_._buffer;
+    last_keyframe_._buffer = NULL;
+  }
+  if (decoder_ != NULL) {
+    if(vpx_codec_destroy(decoder_)) {
+      return WEBRTC_VIDEO_CODEC_MEMORY;
     }
-    if (_lastKeyFrame._buffer != NULL)
-    {
-        delete [] _lastKeyFrame._buffer;
-        _lastKeyFrame._buffer = NULL;
-    }
-    if (_decoder != NULL)
-    {
-        if(vpx_codec_destroy(_decoder))
-        {
-            return WEBRTC_VIDEO_CODEC_MEMORY;
-        }
-        delete _decoder;
-        _decoder = NULL;
-    }
-    if (_inst != NULL)
-    {
-        delete _inst;
-        _inst = NULL;
-    }
-    if (_refFrame != NULL)
-    {
-        vpx_img_free(&_refFrame->img);
-        delete _refFrame;
-        _refFrame = NULL;
-    }
-
-    _inited = false;
-    return WEBRTC_VIDEO_CODEC_OK;
+    delete decoder_;
+    decoder_ = NULL;
+  }
+  if (ref_frame_ != NULL) {
+    vpx_img_free(&ref_frame_->img);
+    delete ref_frame_;
+    ref_frame_ = NULL;
+  }
+  inited_ = false;
+  return WEBRTC_VIDEO_CODEC_OK;
 }
 
-VideoDecoder*
-VP8Decoder::Copy()
-{
-    // Sanity checks.
-    if (!_inited)
-    {
-        // Not initialized.
-        assert(false);
-        return NULL;
+VideoDecoder* VP8Decoder::Copy() {
+  // Sanity checks.
+  if (!inited_) {
+    // Not initialized.
+    assert(false);
+    return NULL;
+  }
+  if (decoded_image_._buffer == NULL) {
+    // Nothing has been decoded before; cannot clone.
+    return NULL;
+  }
+  if (last_keyframe_._buffer == NULL) {
+    // Cannot clone if we have no key frame to start with.
+    return NULL;
+  }
+  // Create a new VideoDecoder object
+  VP8Decoder *copy = new VP8Decoder;
+
+  // Initialize the new decoder
+  if (copy->InitDecode(&codec_, 1) != WEBRTC_VIDEO_CODEC_OK) {
+    delete copy;
+    return NULL;
+  }
+  // Inject last key frame into new decoder.
+  if (vpx_codec_decode(copy->decoder_, last_keyframe_._buffer,
+                       last_keyframe_._length, NULL, VPX_DL_REALTIME)) {
+    delete copy;
+    return NULL;
+  }
+  // Allocate memory for reference image copy
+  assert(decoded_image_._width > 0);
+  assert(decoded_image_._height > 0);
+  assert(image_format_ > VPX_IMG_FMT_NONE);
+  // Check if frame format has changed.
+  if (ref_frame_ &&
+      (decoded_image_._width != ref_frame_->img.d_w ||
+          decoded_image_._height != ref_frame_->img.d_h ||
+          image_format_ != ref_frame_->img.fmt)) {
+    vpx_img_free(&ref_frame_->img);
+    delete ref_frame_;
+    ref_frame_ = NULL;
+  }
+
+
+  if (!ref_frame_) {
+    ref_frame_ = new vpx_ref_frame_t;
+
+    if (!vpx_img_alloc(&ref_frame_->img,
+                       static_cast<vpx_img_fmt_t>(image_format_),
+                       decoded_image_._width, decoded_image_._height, 1)) {
+      assert(false);
+      delete copy;
+      return NULL;
     }
-    if (_decodedImage._buffer == NULL)
-    {
-        // Nothing has been decoded before; cannot clone.
-        return NULL;
+  }
+  const vpx_ref_frame_type_t type_vec[] = { VP8_LAST_FRAME, VP8_GOLD_FRAME,
+      VP8_ALTR_FRAME };
+  for (uint32_t ix = 0;
+      ix < sizeof(type_vec) / sizeof(vpx_ref_frame_type_t); ++ix) {
+    ref_frame_->frame_type = type_vec[ix];
+    if (CopyReference(copy) < 0) {
+      delete copy;
+      return NULL;
     }
-    if (_lastKeyFrame._buffer == NULL)
-    {
-        // Cannot clone if we have no key frame to start with.
-        return NULL;
-    }
+  }
+  // Copy all member variables (that are not set in initialization).
+  copy->feedback_mode_ = feedback_mode_;
+  copy->image_format_ = image_format_;
+  copy->last_keyframe_ = last_keyframe_; // Shallow copy.
+  // Allocate memory. (Discard copied _buffer pointer.)
+  copy->last_keyframe_._buffer = new uint8_t[last_keyframe_._size];
+  memcpy(copy->last_keyframe_._buffer, last_keyframe_._buffer,
+         last_keyframe_._length);
 
-    // Create a new VideoDecoder object
-    VP8Decoder *copyTo = new VP8Decoder;
-
-    // Initialize the new decoder
-    if (copyTo->InitDecode(_inst, _numCores) != WEBRTC_VIDEO_CODEC_OK)
-    {
-        delete copyTo;
-        return NULL;
-    }
-
-    // Inject last key frame into new decoder.
-    if (vpx_codec_decode(copyTo->_decoder, _lastKeyFrame._buffer,
-        _lastKeyFrame._length, NULL, VPX_DL_REALTIME))
-    {
-        delete copyTo;
-        return NULL;
-    }
-
-    // Allocate memory for reference image copy
-    assert(_decodedImage._width > 0);
-    assert(_decodedImage._height > 0);
-    assert(_imageFormat > VPX_IMG_FMT_NONE);
-    // Check if frame format has changed.
-    if (_refFrame &&
-        (_decodedImage._width != _refFrame->img.d_w ||
-            _decodedImage._height != _refFrame->img.d_h ||
-            _imageFormat != _refFrame->img.fmt))
-    {
-        vpx_img_free(&_refFrame->img);
-        delete _refFrame;
-        _refFrame = NULL;
-    }
-
-
-    if (!_refFrame)
-    {
-        _refFrame = new vpx_ref_frame_t;
-
-        if(!vpx_img_alloc(&_refFrame->img,
-            static_cast<vpx_img_fmt_t>(_imageFormat),
-            _decodedImage._width, _decodedImage._height, 1))
-        {
-            assert(false);
-            delete copyTo;
-            return NULL;
-        }
-    }
-
-    const vpx_ref_frame_type_t typeVec[] = { VP8_LAST_FRAME, VP8_GOLD_FRAME,
-                                             VP8_ALTR_FRAME };
-    for (WebRtc_UWord32 ix = 0;
-         ix < sizeof(typeVec) / sizeof(vpx_ref_frame_type_t); ++ix)
-    {
-        _refFrame->frame_type = typeVec[ix];
-        if (CopyReference(copyTo) < 0)
-        {
-            delete copyTo;
-            return NULL;
-        }
-    }
-
-    // Copy all member variables (that are not set in initialization).
-    copyTo->_feedbackModeOn = _feedbackModeOn;
-    copyTo->_imageFormat = _imageFormat;
-    copyTo->_lastKeyFrame = _lastKeyFrame; // Shallow copy.
-    // Allocate memory. (Discard copied _buffer pointer.)
-    copyTo->_lastKeyFrame._buffer = new WebRtc_UWord8[_lastKeyFrame._size];
-    memcpy(copyTo->_lastKeyFrame._buffer, _lastKeyFrame._buffer,
-           _lastKeyFrame._length);
-
-    // Initialize _decodedImage.
-    copyTo->_decodedImage = _decodedImage;  // Shallow copy
-    copyTo->_decodedImage._buffer = NULL;
-    if (_decodedImage._size)
-    {
-        copyTo->_decodedImage._buffer = new WebRtc_UWord8[_decodedImage._size];
-    }
-
-    return static_cast<VideoDecoder*>(copyTo);
+  // Initialize decoded_image_.
+  copy->decoded_image_ = decoded_image_;  // Shallow copy
+  copy->decoded_image_._buffer = NULL;
+  if (decoded_image_._size) {
+    copy->decoded_image_._buffer = new uint8_t[decoded_image_._size];
+  }
+  return static_cast<VideoDecoder*>(copy);
 }
 
-int VP8Decoder::CopyReference(VP8Decoder* copyTo)
-{
-    // The type of frame to copy should be set in _refFrame->frame_type
-    // before the call to this function.
-    if (vpx_codec_control(_decoder, VP8_COPY_REFERENCE, _refFrame)
-        != VPX_CODEC_OK)
-    {
-        return -1;
-    }
-    if (vpx_codec_control(copyTo->_decoder, VP8_SET_REFERENCE, _refFrame)
-        != VPX_CODEC_OK)
-    {
-        return -1;
-    }
-    return 0;
+int VP8Decoder::CopyReference(VP8Decoder* copyTo) {
+  // The type of frame to copy should be set in ref_frame_->frame_type
+  // before the call to this function.
+  if (vpx_codec_control(decoder_, VP8_COPY_REFERENCE, ref_frame_)
+      != VPX_CODEC_OK) {
+    return -1;
+  }
+  if (vpx_codec_control(copyTo->decoder_, VP8_SET_REFERENCE, ref_frame_)
+      != VPX_CODEC_OK) {
+    return -1;
+  }
+  return 0;
 }
-
 
 } // namespace webrtc

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -51,8 +51,8 @@ class VideoProcessorIntegrationTest: public testing::Test {
   virtual ~VideoProcessorIntegrationTest() {}
 
   void SetUp() {
-    encoder_ = new VP8Encoder();
-    decoder_ = new VP8Decoder();
+    encoder_ = VP8Encoder::Create();
+    decoder_ = VP8Decoder::Create();
 
     // Setup the TestConfig struct for processing of a clip in CIF resolution.
     config_.input_filename =

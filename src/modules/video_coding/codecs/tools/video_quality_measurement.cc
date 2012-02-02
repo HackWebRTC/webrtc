@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -462,8 +462,8 @@ int main(int argc, char* argv[]) {
 
   PrintConfigurationSummary(config);
 
-  webrtc::VP8Encoder encoder;
-  webrtc::VP8Decoder decoder;
+  webrtc::VP8Encoder* encoder = webrtc::VP8Encoder::Create();
+  webrtc::VP8Decoder* decoder = webrtc::VP8Decoder::Create();
   webrtc::test::Stats stats;
   webrtc::test::FrameReaderImpl frame_reader(config.input_filename,
                                              config.frame_length_in_bytes);
@@ -475,7 +475,7 @@ int main(int argc, char* argv[]) {
 
   webrtc::test::PacketManipulatorImpl packet_manipulator(
       &packet_reader, config.networking_config, config.verbose);
-  webrtc::test::VideoProcessorImpl processor(&encoder, &decoder,
+  webrtc::test::VideoProcessorImpl processor(encoder, decoder,
                                              &frame_reader,
                                              &frame_writer,
                                              &packet_manipulator,
@@ -494,8 +494,8 @@ int main(int argc, char* argv[]) {
   Log("Processed %d frames\n", frame_number);
 
   // Release encoder and decoder to make sure they have finished processing.
-  encoder.Release();
-  decoder.Release();
+  encoder->Release();
+  decoder->Release();
 
   // Verify statistics are correct:
   assert(frame_number == static_cast<int>(stats.stats_.size()));
@@ -517,6 +517,8 @@ int main(int argc, char* argv[]) {
   if (FLAGS_python) {
     PrintPythonOutput(config, stats, ssim_result, psnr_result);
   }
+  delete encoder;
+  delete decoder;
   Log("Quality test finished!");
   return 0;
 }

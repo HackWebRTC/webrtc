@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -18,14 +18,14 @@
 
 VP8RpsTest::VP8RpsTest(float bitRate)
     : VP8NormalAsyncTest(bitRate),
-      decoder2_(new webrtc::VP8Decoder),
+      decoder2_(webrtc::VP8Decoder::Create()),
       sli_(false) {
 }
 
 VP8RpsTest::VP8RpsTest()
     : VP8NormalAsyncTest("VP8 Reference Picture Selection Test",
                          "VP8 Reference Picture Selection Test", 1),
-      decoder2_(new webrtc::VP8Decoder),
+      decoder2_(webrtc::VP8Decoder::Create()),
       sli_(false) {
 }
 
