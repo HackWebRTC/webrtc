@@ -80,39 +80,6 @@ VCMCodecDataBase::~VCMCodecDataBase()
 }
 
 WebRtc_Word32
-VCMCodecDataBase::Version(WebRtc_Word8* version,
-                                WebRtc_UWord32& remainingBufferInBytes,
-                                WebRtc_UWord32& position) const
-{
-    VCMGenericEncoder* encoder = NULL;
-    VideoCodec settings;
-    WebRtc_Word32 ret;
-    for (int i = 0; i < VCMCodecDataBase::NumberOfCodecs(); i++)
-    {
-        ret = VCMCodecDataBase::Codec(i, &settings);
-        if (ret < 0)
-        {
-            return ret;
-        }
-        encoder = CreateEncoder(settings.codecType);
-        if (encoder == NULL)
-        {
-            return VCM_MEMORY;
-        }
-        ret = encoder->_encoder.Version(&version[position], remainingBufferInBytes);
-        if (ret < 0)
-        {
-            return ret;
-        }
-        remainingBufferInBytes -= ret;
-        position += ret;
-        delete &encoder->_encoder;
-        delete encoder;
-    }
-    return VCM_OK;
-}
-
-WebRtc_Word32
 VCMCodecDataBase::Reset()
 {
     WebRtc_Word32 ret = ResetReceiver();

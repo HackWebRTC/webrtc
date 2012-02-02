@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -31,27 +31,6 @@ I420Encoder::~I420Encoder()
         _encodedImage._buffer = NULL;
     }
 }
-
-WebRtc_Word32
-I420Encoder::VersionStatic(WebRtc_Word8* version, WebRtc_Word32 length)
-{
-    const WebRtc_Word8* str= "I420 version 1.1.0\n";
-    WebRtc_Word32 verLen = (WebRtc_Word32)strlen(str);
-    if(verLen > length)
-    {
-        return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
-    }
-    strncpy(version, str,length);
-    return verLen;
-}
-
-WebRtc_Word32
-I420Encoder::Version(WebRtc_Word8 *version, WebRtc_Word32 length) const
-{
-    return VersionStatic(version, length);
-}
-
-
 
 WebRtc_Word32
 I420Encoder::Release()

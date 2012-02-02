@@ -60,22 +60,6 @@ VP8Encoder::~VP8Encoder() {
   delete rps_;
 }
 
-int VP8Encoder::VersionStatic(char* version, int length) {
-  const char* str = vpx_codec_iface_name(vpx_codec_vp8_cx());
-  int verLen = (int)strlen(str);
-  // Accounting for "\0" and "\n" (to be added a bit later)
-  if (verLen + 2 > length) {
-    return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
-  }
-  strcpy(version, str);
-  strcat(version, "\n");
-  return (verLen + 2);
-}
-
-int VP8Encoder::Version(char *version, int length) const {
-  return VersionStatic(version, length);
-}
-
 int VP8Encoder::Release() {
   if (encoded_image_._buffer != NULL) {
     delete [] encoded_image_._buffer;

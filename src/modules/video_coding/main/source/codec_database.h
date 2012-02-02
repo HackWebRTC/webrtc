@@ -58,12 +58,6 @@ public:
     VCMCodecDataBase(WebRtc_Word32 id);
     ~VCMCodecDataBase();
     /**
-    * Fills "version" with the version of all codecs supported.
-    */
-    WebRtc_Word32 Version(WebRtc_Word8* version,
-                        WebRtc_UWord32& remainingBufferInBytes,
-                        WebRtc_UWord32& position) const;
-    /**
     * Release codecdatabase - release all memory for both send and receive side
     */
     WebRtc_Word32 Reset();

@@ -111,21 +111,6 @@ class VP8Encoder : public VideoEncoder {
   // Return value                : WEBRTC_VIDEO_CODEC_OK if OK, < 0 otherwise.
   virtual int SetRates(uint32_t new_bitrate_kbit, uint32_t frame_rate);
 
-  // Get version number for the codec.
-  //
-  // Input:
-  //      - version       : Pointer to allocated char buffer.
-  //      - length        : Length of provided char buffer.
-  //
-  // Output:
-  //      - version       : Version number string written to char buffer.
-  //
-  // Return value         : >0 - Length of written string.
-  //                        <0 - WEBRTC_VIDEO_CODEC_ERR_SIZE
-  virtual int Version(char *version, int length) const;
-
-  static int  VersionStatic(char *version, int length);
-
  private:
   VP8Encoder();
 

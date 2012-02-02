@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -76,18 +76,6 @@ class VideoEncoder
 {
 public:
     virtual ~VideoEncoder() {};
-
-    // Get the encoder version.
-    //
-    // Input:
-    //          - length            : Length of the version buffer.
-    //
-    // Output:
-    //          - version           : Buffer where the version string will be written.
-    //
-    // Return value                 : Number of bytes written to the version buffer.
-    //                                < 0 on failure.
-    virtual WebRtc_Word32 Version(WebRtc_Word8 *version, WebRtc_Word32 length) const = 0;
 
     // Initialize the encoder with the information from the VideoCodec.
     //

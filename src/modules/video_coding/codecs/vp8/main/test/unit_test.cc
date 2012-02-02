@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -29,18 +29,6 @@ VP8UnitTest::VP8UnitTest(std::string name, std::string description)
 :
 UnitTest(name, description)
 {
-}
-
-void
-VP8UnitTest::Print()
-{
-    WebRtc_Word8 versionStr[64];
-
-    // GetVersion tests.
-
-      EXPECT_TRUE(_encoder->Version(versionStr, sizeof(versionStr)) > 0);
-//    printf("\n%s", versionStr);
-//    UnitTest::Print();
 }
 
 WebRtc_UWord32
