@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -7,6 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+
+#include <vector>
 
 #include "gflags/gflags.h"
 #include "gtest/gtest.h"
@@ -30,17 +32,18 @@ class ViEVideoVerificationTest : public testing::Test {
  protected:
   void SetUp() {
     input_file_ = webrtc::test::ResourcePath("paris_qcif", "yuv");
-    local_file_renderer_ = new ViEToFileRenderer();
-    remote_file_renderer_ = new ViEToFileRenderer();
-    SetUpLocalFileRenderer(local_file_renderer_);
-    SetUpRemoteFileRenderer(remote_file_renderer_);
   }
 
   void TearDown() {
     TearDownFileRenderer(local_file_renderer_);
-    delete local_file_renderer_;
     TearDownFileRenderer(remote_file_renderer_);
-    delete remote_file_renderer_;
+  }
+
+  void InitializeFileRenderers() {
+    local_file_renderer_ = new ViEToFileRenderer();
+    remote_file_renderer_ = new ViEToFileRenderer();
+    SetUpLocalFileRenderer(local_file_renderer_);
+    SetUpRemoteFileRenderer(remote_file_renderer_);
   }
 
   void SetUpLocalFileRenderer(ViEToFileRenderer* file_renderer) {
@@ -58,6 +61,7 @@ class ViEVideoVerificationTest : public testing::Test {
   }
 
   void TearDownFileRenderer(ViEToFileRenderer* file_renderer) {
+    assert(file_renderer);
     bool test_failed = ::testing::UnitTest::GetInstance()->
         current_test_info()->result()->Failed();
     if (test_failed) {
@@ -67,6 +71,7 @@ class ViEVideoVerificationTest : public testing::Test {
       // No reason to keep the files if we succeeded.
       file_renderer->DeleteOutputFile();
     }
+    delete file_renderer;
   }
 
   void CompareFiles(const std::string& reference_file,
@@ -115,7 +120,8 @@ class ViEVideoVerificationTest : public testing::Test {
   }
 };
 
-TEST_F(ViEVideoVerificationTest, RunsBaseStandardTestWithoutErrors) {
+TEST_F(ViEVideoVerificationTest, RunsBaseStandardTestWithoutErrors)  {
+  InitializeFileRenderers();
   ASSERT_TRUE(tests_.TestCallSetup(input_file_, kInputWidth, kInputHeight,
                                    local_file_renderer_,
                                    remote_file_renderer_));
@@ -132,6 +138,7 @@ TEST_F(ViEVideoVerificationTest, RunsBaseStandardTestWithoutErrors) {
 }
 
 TEST_F(ViEVideoVerificationTest, RunsCodecTestWithoutErrors)  {
+  InitializeFileRenderers();
   ASSERT_TRUE(tests_.TestCodecs(input_file_, kInputWidth, kInputHeight,
                                 local_file_renderer_,
                                 remote_file_renderer_));
@@ -157,34 +164,41 @@ TEST_F(ViEVideoVerificationTest, RunsCodecTestWithoutErrors)  {
 // in the encoder. The local and remote file will not be of equal size because
 // of unknown reasons. Tests show that they start at the same frame, which is
 // the important thing when doing frame-to-frame comparison with PSNR/SSIM.
-TEST_F(ViEVideoVerificationTest, RunsFullStackWithoutErrors) {
-  // Use our own FrameDropMonitoringRemoteFileRenderer instead of the
-  // ViEToFileRenderer from the test fixture:
-  // TODO(kjellander): Find a better way to reuse this code without duplication.
-  remote_file_renderer_->StopRendering();
-  TearDownFileRenderer(remote_file_renderer_);
-  delete remote_file_renderer_;
-
+TEST_F(ViEVideoVerificationTest, RunsFullStackWithoutErrors)  {
   FrameDropDetector detector;
+  local_file_renderer_ = new ViEToFileRenderer();
   remote_file_renderer_ = new FrameDropMonitoringRemoteFileRenderer(&detector);
+  SetUpLocalFileRenderer(local_file_renderer_);
   SetUpRemoteFileRenderer(remote_file_renderer_);
 
   // Set a low bit rate so the encoder budget will be tight, causing it to drop
   // frames every now and then.
   const int kBitRateKbps = 50;
-  ViETest::Log("Bit rate: %d kbps.\n", kBitRateKbps);
+  const int kPacketLossPercent = 10;
+  const int kNetworkDelayMs = 100;
+  ViETest::Log("Bit rate     : %5d kbps", kBitRateKbps);
+  ViETest::Log("Packet loss  : %5d %%", kPacketLossPercent);
+  ViETest::Log("Network delay: %5d ms", kNetworkDelayMs);
   tests_.TestFullStack(input_file_, kInputWidth, kInputHeight, kBitRateKbps,
+                       kPacketLossPercent, kNetworkDelayMs,
                        local_file_renderer_, remote_file_renderer_, &detector);
   const std::string reference_file = local_file_renderer_->GetFullOutputPath();
   const std::string output_file = remote_file_renderer_->GetFullOutputPath();
   StopRenderers();
 
-  ASSERT_EQ(detector.GetFramesDroppedAtRenderStep().size(),
-      detector.GetFramesDroppedAtDecodeStep().size())
-      << "The number of dropped frames on the decode and render are not equal, "
-      "this may be because we have a major problem in the jitter buffer?";
-
+  detector.CalculateResults();
   detector.PrintReport();
+
+  if (detector.GetNumberOfFramesDroppedAt(FrameDropDetector::kRendered) !=
+      detector.GetNumberOfFramesDroppedAt(FrameDropDetector::kDecoded)) {
+    detector.PrintDebugDump();
+  }
+
+  ASSERT_EQ(detector.GetNumberOfFramesDroppedAt(FrameDropDetector::kRendered),
+      detector.GetNumberOfFramesDroppedAt(FrameDropDetector::kDecoded))
+      << "The number of dropped frames on the decode and render steps are not "
+      "equal. This may be because we have a major problem in the buffers of "
+      "the ViEToFileRenderer?";
 
   // We may have dropped frames during the processing, which means the output
   // file does not contain all the frames that are present in the input file.
@@ -192,23 +206,21 @@ TEST_F(ViEVideoVerificationTest, RunsFullStackWithoutErrors) {
   // that by copying the last successful frame into the place where the dropped
   // frame would be, for all dropped frames.
   const int frame_length_in_bytes = 3 * kInputHeight * kInputWidth / 2;
-  int num_frames = detector.NumberSentFrames();
-  ViETest::Log("Frame length: %d bytes\n", frame_length_in_bytes);
-  FixOutputFileForComparison(output_file, num_frames, frame_length_in_bytes,
-                             detector.GetFramesDroppedAtDecodeStep());
+  ViETest::Log("Frame length: %d bytes", frame_length_in_bytes);
+  std::vector<Frame*> all_frames = detector.GetAllFrames();
+  FixOutputFileForComparison(output_file, frame_length_in_bytes, all_frames);
 
   // Verify all sent frames are present in the output file.
   size_t output_file_size = webrtc::test::GetFileSize(output_file);
-  EXPECT_EQ(num_frames,
-      static_cast<int>(output_file_size / frame_length_in_bytes))
-      << "The output file size is incorrect. It should be equal to the number"
+  EXPECT_EQ(all_frames.size(), output_file_size / frame_length_in_bytes)
+      << "The output file size is incorrect. It should be equal to the number "
       "of frames multiplied by the frame size. This will likely affect "
       "PSNR/SSIM calculations in a bad way.";
 
   // We are running on a lower bitrate here so we need to settle for somewhat
   // lower PSNR and SSIM values.
-  const double kExpectedMinimumPSNR = 25;
-  const double kExpectedMinimumSSIM = 0.8;
+  const double kExpectedMinimumPSNR = 24;
+  const double kExpectedMinimumSSIM = 0.7;
   CompareFiles(reference_file, output_file, kExpectedMinimumPSNR,
                kExpectedMinimumSSIM);
 }

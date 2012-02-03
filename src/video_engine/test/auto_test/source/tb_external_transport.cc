@@ -8,10 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-//
-// tb_external_transport.cc
-//
-
 #include "tb_external_transport.h"
 
 #include <stdio.h> // printf
@@ -48,6 +44,10 @@ TbExternalTransport::TbExternalTransport(webrtc::ViENetwork& vieNetwork) :
         _rtpCount(0),
         _rtcpCount(0),
         _dropCount(0),
+        _rtpPackets(),
+        _rtcpPackets(),
+        _send_frame_callback(NULL),
+        _receive_frame_callback(NULL),
         _temporalLayers(0),
         _seqNum(0),
         _sendPID(0),
@@ -60,7 +60,10 @@ TbExternalTransport::TbExternalTransport(webrtc::ViENetwork& vieNetwork) :
         _filterSSRC(false),
         _SSRC(0),
         _checkSequenceNumber(0),
-        _firstSequenceNumber(0)
+        _firstSequenceNumber(0),
+        _firstRTPTimestamp(0),
+        _lastSendRTPTimestamp(0),
+        _lastReceiveRTPTimestamp(0)
 {
     srand((int) webrtc::TickTime::MicrosecondTimestamp());
     unsigned int tId = 0;
@@ -82,6 +85,23 @@ TbExternalTransport::~TbExternalTransport()
 
 int TbExternalTransport::SendPacket(int channel, const void *data, int len)
 {
+  // Parse timestamp from RTP header according to RFC 3550, section 5.1.
+    WebRtc_UWord8* ptr = (WebRtc_UWord8*)data;
+    WebRtc_UWord32 rtp_timestamp = ptr[4] << 24;
+    rtp_timestamp += ptr[5] << 16;
+    rtp_timestamp += ptr[6] << 8;
+    rtp_timestamp += ptr[7];
+    _crit.Enter();
+    if (_firstRTPTimestamp == 0) {
+      _firstRTPTimestamp = rtp_timestamp;
+    }
+    _crit.Leave();
+    if (_send_frame_callback != NULL &&
+        _lastSendRTPTimestamp != rtp_timestamp) {
+      _send_frame_callback->FrameSent(rtp_timestamp);
+    }
+    _lastSendRTPTimestamp = rtp_timestamp;
+
     if (_filterSSRC)
     {
         WebRtc_UWord8* ptr = (WebRtc_UWord8*)data;
@@ -159,9 +179,10 @@ int TbExternalTransport::SendPacket(int channel, const void *data, int len)
     _rtpCount++;
     _statCrit.Leave();
 
-    // Packet loss
+    // Packet loss. Never drop packets from the first RTP timestamp, i.e. the
+    // first frame being transmitted.
     int dropThis = rand() % 100;
-    if (dropThis < _lossRate)
+    if (dropThis < _lossRate && _firstRTPTimestamp != rtp_timestamp)
     {
         _statCrit.Enter();
         _dropCount++;
@@ -198,6 +219,16 @@ int TbExternalTransport::SendPacket(int channel, const void *data, int len)
     _event.Set();
     _crit.Leave();
     return len;
+}
+
+void TbExternalTransport::RegisterSendFrameCallback(
+    SendFrameCallback* callback) {
+  _send_frame_callback = callback;
+}
+
+void TbExternalTransport::RegisterReceiveFrameCallback(
+    ReceiveFrameCallback* callback) {
+  _receive_frame_callback = callback;
 }
 
 // Set to 0 to disable.
@@ -348,6 +379,18 @@ bool TbExternalTransport::ViEExternalTransportProcess()
                     _checkSequenceNumber = false;
                 }
             }
+            // Signal received packet of frame
+            WebRtc_UWord8* ptr = (WebRtc_UWord8*)packet->packetBuffer;
+            WebRtc_UWord32 rtp_timestamp = ptr[4] << 24;
+            rtp_timestamp += ptr[5] << 16;
+            rtp_timestamp += ptr[6] << 8;
+            rtp_timestamp += ptr[7];
+            if (_receive_frame_callback != NULL &&
+                _lastReceiveRTPTimestamp != rtp_timestamp) {
+              _receive_frame_callback->FrameReceived(rtp_timestamp);
+            }
+            _lastReceiveRTPTimestamp = rtp_timestamp;
+
             _vieNetwork.ReceivedRTPPacket(packet->channel,
                                           packet->packetBuffer, packet->length);
             delete packet;
