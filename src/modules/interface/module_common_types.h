@@ -1,3 +1,13 @@
+/*
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
+ *
+ *  Use of this source code is governed by a BSD-style license
+ *  that can be found in the LICENSE file in the root of the source
+ *  tree. An additional intellectual property rights grant can be found
+ *  in the file PATENTS.  All contributing project authors may
+ *  be found in the AUTHORS file in the root of the source tree.
+ */
+
 #ifndef MODULE_COMMON_TYPES_H
 #define MODULE_COMMON_TYPES_H
 
@@ -737,7 +747,7 @@ public:
 
     AudioFrame& Append(const AudioFrame& rhs);
 
-    void Mute() const;
+    void Mute();
 
     AudioFrame& operator=(const AudioFrame& rhs);
     AudioFrame& operator>>=(const WebRtc_Word32 rhs);
@@ -748,7 +758,7 @@ public:
     WebRtc_UWord32 _timeStamp;
 
     // Supporting Stereo, stereo samples are interleaved
-    mutable WebRtc_Word16 _payloadData[kMaxAudioFrameSizeSamples];
+    WebRtc_Word16 _payloadData[kMaxAudioFrameSizeSamples];
     WebRtc_UWord16 _payloadDataLengthInSamples;
     int _frequencyInHz;
     WebRtc_UWord8  _audioChannel;
@@ -825,7 +835,7 @@ AudioFrame::UpdateFrame(
 
 inline
 void
-AudioFrame::Mute() const
+AudioFrame::Mute()
 {
   memset(_payloadData, 0, _payloadDataLengthInSamples * sizeof(WebRtc_Word16));
 }
