@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -91,7 +91,7 @@ int WebRtcNetEQ_PreEmptiveExpand(DSPInst_t *inst,
     WebRtc_Word16 pw16_corr[PREEMPTIVE_CORR_LEN];
 #endif
     WebRtc_Word16 w16_decodedMax = 0;
-    WebRtc_Word16 w16_tmp;
+    WebRtc_Word16 w16_tmp = 0;
     WebRtc_Word16 w16_tmp2;
     WebRtc_Word32 w32_tmp;
     WebRtc_Word32 w32_tmp2;
@@ -522,4 +522,3 @@ int WebRtcNetEQ_PreEmptiveExpand(DSPInst_t *inst,
 #undef     SCRATCH_PW16_DS_SPEECH
 #undef     SCRATCH_PW32_CORR
 #undef     SCRATCH_PW16_CORR
-
