@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -249,9 +249,9 @@ int main(int argc, char* argv[])
 	WebRtc_UWord16 length, plen;
 	WebRtc_UWord32 offset;
 	double sendtime = 0;
-    int red_PT[2];
-    WebRtc_UWord32 red_TS[2];
-    WebRtc_UWord16 red_len[2];
+    int red_PT[2] = {0};
+    WebRtc_UWord32 red_TS[2] = {0};
+    WebRtc_UWord16 red_len[2] = {0};
     int RTPheaderLen=12;
 	unsigned char red_data[8000];
 #ifdef INSERT_OLD_PACKETS
