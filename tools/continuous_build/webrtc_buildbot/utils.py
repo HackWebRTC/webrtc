@@ -17,6 +17,9 @@ from buildbot.process.properties import WithProperties
 import os
 import sys
 
+# Defines the order of the booleans of the supported platforms in the test
+# dictionaries in master.cfg.
+SUPPORTED_PLATFORMS = ("Linux", "Mac", "Windows")
 
 SVN_LOCATION = "http://webrtc.googlecode.com/svn/trunk"
 
@@ -29,7 +32,6 @@ class WebRTCFactory(factory.BuildFactory):
     self.properties = properties.Properties()
     self.enable_build = False
     self.force_sync = False
-    self.headless_tests = []
     self.enable_coverage = enable_coverage
     self.gyp_params = []
     self.account = account
@@ -86,31 +88,25 @@ class WebRTCFactory(factory.BuildFactory):
                                     name="gyp_%s" % descriptor))
 
   def EnableTest(self, test):
-    """Enable Test to be run. [must be overridden]
+    """Enable Test to be run. May be overridden.
+
+    Override to handle special cases for specific platforms.
 
        test: test to be run.
     """
-    pass
+    self.AddCommonTestRunStep(test)
 
   def EnableTests(self, tests):
     """Enable Test to be run.
 
        tests: list of test to be run.
     """
-    print "Headless tests:%s" % self.headless_tests
     if self.enable_coverage:
       self.EnableBaseCoverage()
     for test in tests:
       self.EnableTest(test)
     if self.enable_coverage:
       self.EnableCoverage()
-
-  def EnableHeadLess(self, tests):
-    """Add headless (build only) tests.
-
-       tests: list of headless test.
-    """
-    self.headless_tests += tests
 
   def EnableBaseCoverage(self):
     """Enable base coverage data [must be overridden]."""
@@ -178,7 +174,7 @@ class WebRTCAndroidFactory(WebRTCFactory):
                  description=["cleanup", "running..."], haltOnFailure=False,
                  warnOnFailure=True, flunkOnFailure =False,
                  descriptionDone=["cleanup", "done..."], name="cleanup"))
-    cmd = "svn checkout http://webrtc.googlecode.com/svn/trunk/ external/webrtc"
+    cmd = "svn checkout %s external/webrtc" % SVN_LOCATION
     self.addStep(shell.Compile(command=(cmd),
         workdir="build/trunk", description=["svn", "running..."],
         haltOnFailure=False, descriptionDone=["svn", "done..."], name="svn"))
@@ -263,8 +259,6 @@ class WebRTCLinuxFactory(WebRTCFactory):
 
   def AddCommonTestRunStep(self, test, descriptor="", cmd=None,
                            workdir="build/trunk"):
-    if test in self.headless_tests:
-      return
     test_folder = "Release" if self.release else "Debug"
     test_descriptor = [test, descriptor]
     if cmd is None:
@@ -340,58 +334,6 @@ class WebRTCLinuxFactory(WebRTCFactory):
                             descriptor="fixed_point")
       self.AddCommonMakeStep(test, descriptor="make_fixed_point")
       self.AddCommonTestRunStep(test, descriptor="fixed_point")
-    elif test == "signal_processing_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "resampler_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "vad_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "rtp_rtcp_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "video_coding_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "test_bwe":
-      self.AddCommonTestRunStep(test)
-    elif test == "audio_device_test_api":
-      self.AddCommonTestRunStep(test)
-    elif test == "audio_device_test_func":
-      self.AddCommonTestRunStep(test)
-    elif test == "audio_coding_module_test":
-      self.AddCommonTestRunStep(test)
-    elif test == "video_processing_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "test_fec":
-      self.AddCommonTestRunStep(test)
-    elif test == "system_wrappers_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "cng_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "g711_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "g722_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "pcm16b_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "audio_conference_mixer_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "media_file_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "udp_transport_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "webrtc_utility_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "neteq_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "vp8_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "libyuv_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "voice_engine_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "video_engine_core_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "audio_coding_unittests":
-      self.AddCommonTestRunStep(test)
     elif test == "vie_auto_test":
       self.addStep(shell.Compile(command=('xvfb-run --server-args="-screen 0 '
         '800x600x24 -extension Composite" out/Debug/vie_auto_test --automated '
@@ -405,7 +347,7 @@ class WebRTCLinuxFactory(WebRTCFactory):
         workdir="build/trunk", description=[test, "running..."],
         descriptionDone=[test, "done..."], name="%s" % test))
     else:
-      print "[Linux]: No supported tests are found for [%s]" % test
+      self.AddCommonTestRunStep(test)
 
 
 ################################################################################
@@ -443,8 +385,6 @@ class WebRTCMacFactory(WebRTCFactory):
 
   def AddCommonTestRunStep(self, test, descriptor="", cmd=None,
                            workdir="build/trunk"):
-    if test in self.headless_tests:
-      return
     test_folder = "Release" if self.release else "Debug"
     test_descriptor = [test, descriptor]
     if cmd is None:
@@ -471,60 +411,6 @@ class WebRTCMacFactory(WebRTCFactory):
              "Debug", "-target", "All"]
       self.AddCommonStep(cmd, descriptor=make_descriptor+["(xcode)"],
                          workdir="build/trunk")
-
-  def EnableTest(self, test):
-    """Enable Test to be run.
-
-       test: test to be run.
-    """
-    if test == "audioproc_unittest":
-      self.AddCommonTestRunStep(test)
-    elif test == "signal_processing_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "resampler_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "vad_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "rtp_rtcp_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "video_coding_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "test_bwe":
-      self.AddCommonTestRunStep(test)
-    elif test == "audio_device_test_api":
-      self.AddCommonTestRunStep(test)
-    elif test == "audio_device_test_func":
-      self.AddCommonTestRunStep(test)
-    elif test == "audio_coding_module_test":
-      self.AddCommonTestRunStep(test)
-    elif test == "video_processing_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "test_fec":
-      self.AddCommonTestRunStep(test)
-    elif test == "system_wrappers_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "audio_conference_mixer_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "media_file_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "udp_transport_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "webrtc_utility_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "neteq_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "vp8_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "libyuv_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "voice_engine_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "video_engine_core_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "audio_coding_unittests":
-      self.AddCommonTestRunStep(test)
-    else:
-      print "[Mac]: No supported tests are found for [%s]" % test
 
 ################################################################################
 class WebRTCWinFactory(WebRTCFactory):
@@ -580,8 +466,6 @@ class WebRTCWinFactory(WebRTCFactory):
 
   def AddCommonTestRunStep(self, test, descriptor="", cmd=None,
                            workdir="build/trunk"):
-    if test in self.headless_tests:
-      return
     test_descriptor = [test, descriptor]
     if cmd is None:
       if self.configuration == "Debug" or self.configuration == "both":
@@ -593,35 +477,36 @@ class WebRTCWinFactory(WebRTCFactory):
         self.AddCommonStep(cmd, descriptor=test_descriptor+["Release"],
                            workdir=workdir)
 
+################################################################################
+# Utility functions
 
-  def EnableTest(self, test):
-    """Enable Test to be run.
-
-       test: test to be run.
-    """
-    if test == "audioproc_unittest":
-      self.AddCommonTestRunStep(test)
-    elif test == "resampler_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "vad_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "system_wrappers_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "neteq_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "vp8_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "libyuv_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "voice_engine_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "video_engine_core_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "video_processing_unittests":
-      self.AddCommonTestRunStep(test)
-    elif test == "audio_coding_unittests":
-      self.AddCommonTestRunStep(test)
-    else:
-      print "[Win]: No supported tests are found for [%s]" % test
+class UnsupportedPlatformError(Exception):
+  pass
 
 
+def GetEnabledTests(test_dict, platform):
+  """Returns a list of enabled test names for the provided platform.
+
+     Args:
+       test_dict: Dictionary mapping test names to tuples representing if the
+         test shall be enabled on each platform. Each tuple contains one boolean
+         for each platform. The platforms are in the order specified by
+         SUPPORTED_PLATFORMS.
+       platform: The platform we're looking to get the tests for.
+
+     Returns:
+       A list of test names, sorted alphabetically.
+
+     Raises:
+       UnsupportedPlatformError: if the platform supplied is not supported.
+  """
+  if platform not in SUPPORTED_PLATFORMS:
+    raise UnsupportedPlatformError("*** UNSUPPORTED PLATFORM (%s)!!! ***" %
+                                   platform)
+  result = []
+  platform_index = SUPPORTED_PLATFORMS.index(platform)
+  for test_name, enabled_platforms in test_dict.iteritems():
+    if enabled_platforms[platform_index]:
+      result.append(test_name)
+  result.sort()
+  return result
