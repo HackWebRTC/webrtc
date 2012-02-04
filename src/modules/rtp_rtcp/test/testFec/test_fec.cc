@@ -255,7 +255,7 @@ int main() {
                   (mediaPacket->data[1] & 0x80) != 0;
             }
             mediaPacketIdx++;
-            mediaPacketListItem++;
+            ++mediaPacketListItem;
           }
           memset(fecLossMask, 0, sizeof(fecLossMask));
           std::list<ForwardErrorCorrection::Packet*>::iterator
@@ -288,7 +288,7 @@ int main() {
             }
             fecPacketIdx++;
             seqNum++;
-            fecPacketListItem++;
+            ++fecPacketListItem;
           }
 
 #ifdef VERBOSE_OUTPUT
@@ -318,7 +318,7 @@ int main() {
               }
             }
             std::list<WebRtc_UWord8*>::iterator itemToDelete = fecMaskIt;
-            fecMaskIt++;
+            ++fecMaskIt;
 
             if (hammingDist == 1) {
               // Recovery possible. Restart search.
@@ -356,7 +356,7 @@ int main() {
                 if (receivedPacket->isFec) {
                   fecPacketReceived = true;
                 }
-                toDecodeIt++;
+                ++toDecodeIt;
               }
             }
             if (fec.DecodeFEC(&toDecodeList, &recoveredPacketList, seqNum,
@@ -422,7 +422,7 @@ int main() {
               recoveredPacketList.pop_front();
             }
             mediaPacketIdx++;
-            mediaPacketListItem++;
+            ++mediaPacketListItem;
           }
           if (!recoveredPacketList.empty()) {
             printf("Error: excessive number of recovered packets.\n");
@@ -434,14 +434,14 @@ int main() {
           mediaPacketListItem = mediaPacketList.begin();
           while (mediaPacketListItem != mediaPacketList.end()) {
             delete *mediaPacketListItem;
-            mediaPacketListItem++;
+            ++mediaPacketListItem;
             mediaPacketList.pop_front();
           }
           assert(mediaPacketList.empty());
 
           fecPacketListItem = fecPacketList.begin();
           while (fecPacketListItem != fecPacketList.end()) {
-            fecPacketListItem++;
+            ++fecPacketListItem;
             fecPacketList.pop_front();
           }
 
@@ -453,7 +453,7 @@ int main() {
             receivedPacket = *receivedPacketIt;
             delete receivedPacket->pkt;
             delete receivedPacket;
-            receivedPacketIt++;
+            ++receivedPacketIt;
             receivedPacketList.pop_front();
           }
           assert(receivedPacketList.empty());
@@ -492,9 +492,9 @@ void ReceivePackets(
     // Reorder packets.
     float randomVariable = static_cast<float>(rand()) / RAND_MAX;
     while (randomVariable < reorderRate) {
-      it++;
+      ++it;
       if (it == receivedPacketList->end()) {
-        it++;
+        --it;
         break;
       }
       randomVariable = static_cast<float>(rand()) / RAND_MAX;
