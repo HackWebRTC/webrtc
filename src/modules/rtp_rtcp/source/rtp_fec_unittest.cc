@@ -507,9 +507,9 @@ void RtpFecTest:: ReceivedPackets(
   }
 }
 
-
 int RtpFecTest::ConstructMediaPackets(int num_media_packets) {
-  ForwardErrorCorrection::Packet* media_packet;
+  assert(num_media_packets > 0);
+  ForwardErrorCorrection::Packet* media_packet = NULL;
   int sequence_number = rand();
   int time_stamp = rand();
 
@@ -555,6 +555,7 @@ int RtpFecTest::ConstructMediaPackets(int num_media_packets) {
     sequence_number++;
   }
   // Last packet, set marker bit.
+  assert(media_packet != NULL);
   media_packet->data[1] |= 0x80;
   return sequence_number;
 }
