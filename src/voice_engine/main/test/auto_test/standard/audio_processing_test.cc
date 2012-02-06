@@ -13,7 +13,8 @@
 
 class AudioProcessingTest : public AfterStreamingFixture {
  protected:
-  // Note: Be careful with this one, it is used in the Android / iPhone part too.
+  // Note: Be careful with this one, it is used in the
+  // Android / iPhone part too.
   void TryEnablingAgcWithMode(webrtc::AgcModes agc_mode_to_set) {
     EXPECT_EQ(0, voe_apm_->SetAgcStatus(true, agc_mode_to_set));
 
@@ -95,8 +96,11 @@ class AudioProcessingTest : public AfterStreamingFixture {
     EXPECT_EQ(0, voe_file_->StopPlayingFileAsMicrophone(channel_));
 
     // We should detect the silence after a short time.
-    Sleep(500);
-    EXPECT_EQ(0, voe_apm_->VoiceActivityIndicator(channel_));
+    Sleep(50);
+    for (int i = 0; i < 25; i++) {
+      EXPECT_EQ(0, voe_apm_->VoiceActivityIndicator(channel_));
+      Sleep(10);
+    }
   }
 
   void TryDetectingSpeechAfterSilence() {
@@ -106,12 +110,18 @@ class AudioProcessingTest : public AfterStreamingFixture {
     EXPECT_EQ(0, voe_volume_control_->SetInputMute(channel_, false));
 
     // We should detect the speech after a short time.
-    Sleep(500);
-    EXPECT_EQ(1, voe_apm_->VoiceActivityIndicator(channel_));
+    for (int i = 0; i < 50; i++) {
+      if (voe_apm_->VoiceActivityIndicator(channel_) == 1) {
+        return;
+      }
+      Sleep(10);
+    }
+
+    ADD_FAILURE() << "Failed to detect speech within 500 ms.";
   }
 };
 
-#if !(defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID))
+#if !defined(MAC_IPHONE) && !defined(WEBRTC_ANDROID)
 
 TEST_F(AudioProcessingTest, AgcIsOnByDefault) {
   bool agc_enabled = false;
@@ -151,9 +161,6 @@ TEST_F(AudioProcessingTest, EcMetricsAreOffByDefault) {
   EXPECT_FALSE(enabled);
 }
 
-// TODO(phoglund): Apparently, the part of the code we're testing here has
-// never seen production use, but this test will stick around while we
-// investigate whether to delete the production code.
 TEST_F(AudioProcessingTest, ManualTestEcMetrics) {
   SwitchToManualMicrophone();
 
@@ -183,11 +190,15 @@ TEST_F(AudioProcessingTest, TestVoiceActivityDetectionWithObserver) {
   voetest::RxCallback rx_callback;
   EXPECT_EQ(0, voe_apm_->RegisterRxVadObserver(channel_, rx_callback));
 
+  // The extra sleeps are to allow decisions some time to propagate to the
+  // observer.
   TryDetectingSilence();
+  Sleep(100);
 
   EXPECT_EQ(0, rx_callback._vadDecision);
 
   TryDetectingSpeechAfterSilence();
+  Sleep(100);
 
   EXPECT_EQ(1, rx_callback._vadDecision);
 
@@ -223,9 +234,6 @@ TEST_F(AudioProcessingTest, CanSetAecmMode) {
   TryEnablingAecmWithMode(webrtc::kAecmSpeakerphone, false);
 }
 
-// TODO(phoglund): rx-agc test are included when testing Android and iPhone, but
-// it is unclear if they will work on those platforms. Remove this notice if
-// they turn out to work, move into appropriate #ifdefs above otherwise.
 TEST_F(AudioProcessingTest, RxAgcShouldBeOffByDefault) {
   bool rx_agc_enabled = true;
   webrtc::AgcModes agc_mode = webrtc::kAgcDefault;
@@ -240,7 +248,7 @@ TEST_F(AudioProcessingTest, CanTurnOnDigitalRxAcg) {
   TryEnablingRxAgcWithMode(webrtc::kAgcFixedDigital);
 }
 
-TEST_F(AudioProcessingTest, CannotTurnOnAdaptiveDigitalRxAcg) {
+TEST_F(AudioProcessingTest, CannotTurnOnAdaptiveAnalogRxAgc) {
   EXPECT_EQ(-1, voe_apm_->SetRxAgcStatus(
       channel_, true, webrtc::kAgcAdaptiveAnalog));
 }
@@ -317,15 +325,15 @@ TEST_F(AudioProcessingTest, VoiceActivityIndicatorReturns1WithSpeechOn) {
   EXPECT_EQ(1, voe_apm_->VoiceActivityIndicator(channel_));
 }
 
-#if (defined(MAC_IPHONE) || defined(WEBRTC_ANDROID))
+#if defined(MAC_IPHONE) || defined(WEBRTC_ANDROID)
 
 TEST_F(AudioProcessingTest, AgcIsOffByDefaultAndDigital) {
   bool agc_enabled = true;
-  webrtc::AgcModes acg_mode = webrtc::kAgcAdaptiveAnalog;
+  webrtc::AgcModes agc_mode = webrtc::kAgcAdaptiveAnalog;
 
-  EXPECT_EQ(0, voe_apm_->GetAgcStatus(agc_enabled, acg_mode));
+  EXPECT_EQ(0, voe_apm_->GetAgcStatus(agc_enabled, agc_mode));
   EXPECT_FALSE(agc_enabled);
-  EXPECT_EQ(webrtc::kAgcAdaptiveDigital, acg_mode);
+  EXPECT_EQ(webrtc::kAgcAdaptiveDigital, agc_mode);
 }
 
 TEST_F(AudioProcessingTest, CanEnableAgcInAdaptiveDigitalMode) {
