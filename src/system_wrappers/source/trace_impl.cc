@@ -283,9 +283,6 @@ WebRtc_Word32 TraceImpl::AddModuleAndId(char* traceMessage,
                 sprintf(traceMessage, "  VIDEO PROC:%5ld %5ld;", idEngine,
                         idChannel);
                 break;
-            default:
-                assert(false);
-                return 0;
         }
     } else {
         switch (module)
@@ -341,9 +338,6 @@ WebRtc_Word32 TraceImpl::AddModuleAndId(char* traceMessage,
             case kTraceVideoPreocessing:
                 sprintf (traceMessage, "  VIDEO PROC:%11ld;", idl);
                 break;
-            default:
-                assert(false);
-                return 0;
         }
     }
     // All messages are 25 characters.

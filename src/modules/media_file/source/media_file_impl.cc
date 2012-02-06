@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -202,9 +202,9 @@ WebRtc_Word32 MediaFileImpl::PlayoutData(WebRtc_Word8* buffer,
                     return 0;
                 }
                 break;
-#ifdef WEBRTC_MODULE_UTILITY_VIDEO
             case kFileFormatAviFile:
             {
+#ifdef WEBRTC_MODULE_UTILITY_VIDEO
                 if(video)
                 {
                     bytesRead = _ptrFileUtilityObj->ReadAviVideoData(
@@ -218,13 +218,13 @@ WebRtc_Word32 MediaFileImpl::PlayoutData(WebRtc_Word8* buffer,
                         bufferLengthInBytes);
                 }
                 break;
-            }
-#endif
-            default:
+#else
                 WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                             "Playing file, but file format invalid!");
+                             "Invalid file format: %d", kFileFormatAviFile);
                 assert(false);
                 break;
+#endif
+            }
         }
 
         if( bytesRead > 0)
@@ -630,9 +630,9 @@ WebRtc_Word32 MediaFileImpl::StartPlayingStream(
             _fileFormat = kFileFormatPreencodedFile;
             break;
         }
-#ifdef WEBRTC_MODULE_UTILITY_VIDEO
         case kFileFormatAviFile:
         {
+#ifdef WEBRTC_MODULE_UTILITY_VIDEO
             if(_ptrFileUtilityObj->InitAviReading( filename, videoOnly, loop))
             {
                 WEBRTC_TRACE(kTraceError, kTraceFile, _id,
@@ -646,14 +646,12 @@ WebRtc_Word32 MediaFileImpl::StartPlayingStream(
 
             _fileFormat = kFileFormatAviFile;
             break;
-        }
-#endif
-        default:
-        {
+#else
             WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                         "Invalid file format specified!");
-            StopPlaying();
-            return -1;
+                         "Invalid file format: %d", kFileFormatAviFile);
+            assert(false);
+            break;
+#endif
         }
     }
     if(_ptrFileUtilityObj->codec_info(codec_info_) == -1)
@@ -813,8 +811,8 @@ WebRtc_Word32 MediaFileImpl::IncomingAudioVideoData(
                     bytesWritten = _ptrFileUtilityObj->WritePreEncodedData(
                         *_ptrOutStream, buffer, bufferLengthInBytes);
                     break;
-#ifdef WEBRTC_MODULE_UTILITY_VIDEO
                 case kFileFormatAviFile:
+#ifdef WEBRTC_MODULE_UTILITY_VIDEO
                     if(video)
                     {
                         bytesWritten = _ptrFileUtilityObj->WriteAviVideoData(
@@ -825,11 +823,12 @@ WebRtc_Word32 MediaFileImpl::IncomingAudioVideoData(
                             buffer, bufferLengthInBytes);
                     }
                     break;
-#endif
-                default:
+#else
                     WEBRTC_TRACE(kTraceError, kTraceFile, _id,
-                                 "recording active, but file format invalid!");
+                                 "Invalid file format: %d", kFileFormatAviFile);
+                    assert(false);
                     break;
+#endif
             }
         } else {
             // TODO (hellner): quick look at the code makes me think that this

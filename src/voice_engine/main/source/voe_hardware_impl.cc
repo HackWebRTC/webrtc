@@ -115,10 +115,6 @@ int VoEHardwareImpl::SetAudioDeviceLayer(AudioLayers audioLayer)
         case kAudioLinuxPulse:
             wantedLayer = AudioDeviceModule::kLinuxPulseAudio;
             break;
-        default:
-            _engineStatistics.SetLastError(VE_INVALID_ARGUMENT, kTraceError,
-                                           "  invalid audio layer");
-            return -1;
     }
 
     // Save the audio device layer for Init()
@@ -390,11 +386,6 @@ int VoEHardwareImpl::SetRecordingDevice(int index,
         case kStereoBoth:
             // default setting kChannelBoth (<=> mono)
             break;
-        default:
-            _engineStatistics.SetLastError(
-                VE_INVALID_ARGUMENT, kTraceError,
-                "SetRecordingDevice() unknown recording channel");
-            return -1;
     }
 
     if (_audioDevicePtr->SetRecordingChannel(recCh) != 0) {

@@ -396,13 +396,6 @@ AudioCodingModuleImpl::Process()
                     _isFirstRED = true;
                     break;
                 }
-
-            default:
-                {
-                    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
-                        "Process(): Wrong Encoding-Type");
-                    return -1;
-                }
             }
             hasDataToSend = true;
             _previousPayloadType = currentPayloadType;

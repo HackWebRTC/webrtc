@@ -37,8 +37,6 @@ int MapSetting(VoiceDetection::Likelihood likelihood) {
     case VoiceDetection::kHighLikelihood:
       return 0;
       break;
-    default:
-      return -1;
   }
 }
 }  // namespace

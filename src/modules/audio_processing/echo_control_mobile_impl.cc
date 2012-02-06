@@ -36,8 +36,6 @@ WebRtc_Word16 MapSetting(EchoControlMobile::RoutingMode mode) {
       return 3;
     case EchoControlMobile::kLoudSpeakerphone:
       return 4;
-    default:
-      return -1;
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -417,10 +417,6 @@ ACMNetEQ::SetPlayoutMode(
             case streaming:
                 playoutMode = kPlayoutStreaming;
                 break;
-            default:
-                WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
-                    "SetPlayoutMode: NetEq Error playout mode not recognized");
-                return -1;
             }
             if(WebRtcNetEQ_SetPlayoutMode(_inst[idx], playoutMode) < 0)
             {
@@ -1243,10 +1239,6 @@ ACMNetEQ::AddSlave(
         case streaming:
             playoutMode = kPlayoutStreaming;
             break;
-        default:
-            WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
-                "AddSlave: NetEq Error, playout mode not recognized");
-            return -1;
         }
         if(WebRtcNetEQ_SetPlayoutMode(_inst[slaveIdx], playoutMode) < 0)
         {

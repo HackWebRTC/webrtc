@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -1979,7 +1979,6 @@ void AudioDeviceLinuxPulse::PaContextStateCallbackHandler(pa_context *c)
         case PA_CONTEXT_CONNECTING:
         case PA_CONTEXT_AUTHORIZING:
         case PA_CONTEXT_SETTING_NAME:
-        default:
             WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice, _id,
                          "  no state");
             break;
@@ -2126,10 +2125,6 @@ void AudioDeviceLinuxPulse::PaStreamStateCallbackHandler(pa_stream *p)
         case PA_STREAM_CREATING:
             WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice, _id,
                          "  creating");
-            break;
-        default:
-            WEBRTC_TRACE(kTraceDebug, kTraceAudioDevice, _id,
-                         "  no state");
             break;
         case PA_STREAM_FAILED:
         case PA_STREAM_TERMINATED:

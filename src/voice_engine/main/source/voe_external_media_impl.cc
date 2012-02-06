@@ -112,15 +112,8 @@ int VoEExternalMediaImpl::RegisterExternalMediaProcessing(
             return _transmitMixerPtr->RegisterExternalMediaProcessing(
                 processObject);
         }
-        default:
-        {
-            _engineStatistics.SetLastError(
-                VE_INVALID_ARGUMENT, kTraceError,
-                "RegisterExternalMediaProcessing() invalid process type");
-            return -1;
-        }
     }
-    return 0;
+    return -1;
 }
 
 int VoEExternalMediaImpl::DeRegisterExternalMediaProcessing(
@@ -161,14 +154,8 @@ int VoEExternalMediaImpl::DeRegisterExternalMediaProcessing(
         {
             return _transmitMixerPtr->DeRegisterExternalMediaProcessing();
         }
-        default:
-        {
-            _engineStatistics.SetLastError(
-                VE_INVALID_ARGUMENT, kTraceError,
-                "RegisterExternalMediaProcessing() invalid process type");
-            return -1;
-        }
     }
+    return -1;
 }
 
 int VoEExternalMediaImpl::SetExternalRecordingStatus(bool enable)

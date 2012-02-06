@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -182,8 +182,6 @@ bool ThreadPosix::Start(unsigned int& /*threadID*/)
     case kRealtimePriority:
         param.sched_priority = maxPrio - 1;
         break;
-    default:
-        return false;
     }
     result = pthread_setschedparam(_thread, policy, &param);
     if (result == EINVAL)

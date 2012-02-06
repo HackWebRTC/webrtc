@@ -41,8 +41,6 @@ int MapSetting(NoiseSuppression::Level level) {
       return 2;
     case NoiseSuppression::kVeryHigh:
       return 3;
-    default:
-      return -1;
   }
 }
 }  // namespace

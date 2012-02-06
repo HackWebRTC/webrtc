@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -105,11 +105,6 @@ int VoEAudioProcessingImpl::SetNsStatus(bool enable, NsModes mode)
     case kNsVeryHighSuppression:
         nsLevel = NoiseSuppression::kVeryHigh;
         break;
-    default:
-        _engineStatistics.SetLastError(
-            VE_INVALID_ARGUMENT, kTraceError,
-            "SetNsStatus() invalid Ns mode");
-        return -1;
     }
 
     if (_audioProcessingModulePtr->noise_suppression()->set_level(nsLevel) != 0)
@@ -169,11 +164,6 @@ int VoEAudioProcessingImpl::GetNsStatus(bool& enabled, NsModes& mode)
         case NoiseSuppression::kVeryHigh:
         mode = kNsVeryHighSuppression;
         break;
-        default:
-            _engineStatistics.SetLastError(
-                            VE_APM_ERROR, kTraceError,
-                            "GetNsStatus() invalid Ns mode");
-            return -1;
     }
 
     WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_instanceId,-1),
@@ -227,10 +217,6 @@ int VoEAudioProcessingImpl::SetAgcStatus(bool enable, AgcModes mode)
     case kAgcAdaptiveDigital:
         agcMode = GainControl::kAdaptiveDigital;
         break;
-    default:
-        _engineStatistics.SetLastError(VE_INVALID_ARGUMENT, kTraceError,
-                                       "SetAgcStatus() invalid Agc mode");
-        return -1;
     }
 
     if (_audioProcessingModulePtr->gain_control()->set_mode(agcMode) != 0)
@@ -302,10 +288,6 @@ int VoEAudioProcessingImpl::GetAgcStatus(bool& enabled, AgcModes& mode)
         case GainControl::kAdaptiveDigital:
             mode = kAgcAdaptiveDigital;
             break;
-        default:
-            _engineStatistics.SetLastError(VE_APM_ERROR, kTraceError,
-                                           "GetAgcStatus() invalid Agc mode");
-            return -1;
     }
 
     WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_instanceId,-1),
@@ -786,10 +768,6 @@ int VoEAudioProcessingImpl::SetAecmMode(AecmModes mode, bool enableCNG)
         case kAecmLoudSpeakerphone:
             aecmMode = EchoControlMobile::kLoudSpeakerphone;
             break;
-        default:
-            _engineStatistics.SetLastError(VE_APM_ERROR, kTraceError,
-                                           "GetEcStatus() invalid EC mode");
-            return -1;
     }
 
 
@@ -854,11 +832,6 @@ int VoEAudioProcessingImpl::GetAecmMode(AecmModes& mode, bool& enabledCNG)
         case EchoControlMobile::kLoudSpeakerphone:
             mode = kAecmLoudSpeakerphone;
             break;
-        default:
-            _engineStatistics.SetLastError(
-                VE_APM_ERROR, kTraceError,
-                "GetAECMMode() invalid EC mode");
-            return -1;
 	}
 
     return 0;

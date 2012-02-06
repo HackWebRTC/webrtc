@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -613,10 +613,6 @@ int VoECodecImpl::SetVADStatus(int channel, bool enable, VadModes mode,
         case kVadAggressiveHigh:
             vadMode = VADVeryAggr;
             break;
-        default:
-            _engineStatistics.SetLastError(VE_INVALID_ARGUMENT, kTraceError,
-                                           "SetVADStatus() invalid VAD mode");
-            return -1;
     }
     return channelPtr->SetVADStatus(enable, vadMode, disableDTX);
 }
@@ -664,11 +660,6 @@ int VoECodecImpl::GetVADStatus(int channel, bool& enabled, VadModes& mode,
         case VADVeryAggr:
             mode = kVadAggressiveHigh;
             break;
-        default:
-            _engineStatistics.SetLastError(VE_AUDIO_CODING_MODULE_ERROR,
-                                           kTraceError,
-                                           "GetVADStatus() invalid VAD mode");
-            return -1;
     }
 
     return 0;

@@ -2143,11 +2143,6 @@ Channel::SetNetEQPlayoutMode(NetEqModes mode)
         case kNetEqFax:
             playoutMode = fax;
             break;
-        default:
-            _engineStatisticsPtr->SetLastError(
-                VE_INVALID_ARGUMENT, kTraceError,
-                "SetNetEQPlayoutMode() invalid mode");
-            return -1;
     }
     if (_audioCodingModule.SetPlayoutMode(playoutMode) != 0)
     {
@@ -2174,11 +2169,6 @@ Channel::GetNetEQPlayoutMode(NetEqModes& mode)
         case fax:
             mode = kNetEqFax;
             break;
-        default:
-            _engineStatisticsPtr->SetLastError(
-                VE_INVALID_ARGUMENT, kTraceError,
-                "GetNetEQPlayoutMode() invalid mode");
-            return -1;
     }
     WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
                  VoEId(_instanceId,_channelId),
@@ -2203,11 +2193,6 @@ Channel::SetNetEQBGNMode(NetEqBgnModes mode)
         case kBgnOff:
             noiseMode = Off;
             break;
-        default:
-            _engineStatisticsPtr->SetLastError(
-                VE_INVALID_ARGUMENT, kTraceError,
-                "SetNetEQBGNMode() invalid mode");
-            return -1;
     }
     if (_audioCodingModule.SetBackgroundNoiseMode(noiseMode) != 0)
     {
@@ -2316,12 +2301,6 @@ Channel::GetNetEQBGNMode(NetEqBgnModes& mode)
         case Off:
             mode = kBgnOff;
             break;
-        default:
-            _engineStatisticsPtr->SetLastError(
-                    VE_INVALID_ARGUMENT,
-                    kTraceError,
-                    "GetNetEQBGNMode() invalid mode");
-            return -1;
     }
     WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::GetNetEQBGNMode() => mode=%u", mode);
@@ -4944,11 +4923,6 @@ Channel::SetRxNsStatus(const bool enable, const NsModes mode)
         case kNsVeryHighSuppression:
             nsLevel = NoiseSuppression::kVeryHigh;
             break;
-        default:
-            _engineStatisticsPtr->SetLastError(
-                VE_INVALID_ARGUMENT, kTraceError,
-                "SetRxNsStatus() invalid Ns mode");
-            return -1;
     }
 
     if (_rxAudioProcessingModulePtr->noise_suppression()->set_level(nsLevel)
@@ -5000,11 +4974,6 @@ Channel::GetRxNsStatus(bool& enabled, NsModes& mode)
         case NoiseSuppression::kVeryHigh:
             mode = kNsVeryHighSuppression;
             break;
-        default:
-            _engineStatisticsPtr->SetLastError(
-                VE_APM_ERROR, kTraceError,
-                "GetRxNsStatus() invalid Ns mode");
-            return -1;
     }
 
     WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -229,9 +229,6 @@ libyuv::RotationMode ConvertRotationMode(VideoRotationMode rotation) {
       return libyuv::kRotate180;
     case kRotate270:
       return libyuv::kRotate270;
-    default:
-      assert(false);
-      return libyuv::kRotate0;
   }
 }
 
@@ -268,9 +265,6 @@ int ConvertVideoType(VideoType video_type) {
       return libyuv::FOURCC_ARGB;
     case kBGRA:
       return libyuv::FOURCC_BGRA;
-    default:
-      assert(false);
-      return libyuv::FOURCC_ANY;
   }
 }
 

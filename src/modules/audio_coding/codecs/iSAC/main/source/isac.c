@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -676,8 +676,6 @@ WebRtc_Word16 WebRtcIsac_Encode(
 	    streamLenUB = 0;
 	    break;
 	  }
-	default:
-	  return -1;
 	}
 
       if((streamLenUB < 0) &&
@@ -1666,8 +1664,6 @@ WebRtc_Word16 WebRtcIsac_DecodePlc(
         numSamples = 960 * noOfLostFrames;
         break;
       }
-    default:
-      return -1;
     }
 
   /* Set output samples to zero */

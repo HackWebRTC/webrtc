@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -127,8 +127,6 @@ int CalculateMetrics(VideoMetricsType video_metrics_type,
         CalculateFrame(kSSIM, ref, test, width, height, frame_number,
                        ssim_result);
         break;
-      default:
-        assert(false);
     }
     frame_number++;
     ref_bytes = fread(ref, 1, frame_length, ref_fp);

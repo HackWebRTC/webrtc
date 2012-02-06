@@ -39,12 +39,15 @@ FilePlayer* FilePlayer::CreateFilePlayer(WebRtc_UWord32 instanceID,
     case kFileFormatPcm32kHzFile:
         // audio formats
         return new FilePlayerImpl(instanceID, fileFormat);
-#ifdef WEBRTC_MODULE_UTILITY_VIDEO
     case kFileFormatAviFile:
+#ifdef WEBRTC_MODULE_UTILITY_VIDEO
         return new VideoFilePlayerImpl(instanceID, fileFormat);
-#endif
-    default:
+#else
+        WEBRTC_TRACE(kTraceError, kTraceFile, -1,
+                     "Invalid file format: %d", kFileFormatAviFile);
+        assert(false);
         return NULL;
+#endif
     }
 }
 

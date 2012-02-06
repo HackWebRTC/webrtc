@@ -41,12 +41,15 @@ FileRecorder* FileRecorder::CreateFileRecorder(WebRtc_UWord32 instanceID,
     case kFileFormatPcm8kHzFile:
     case kFileFormatPcm32kHzFile:
         return new FileRecorderImpl(instanceID, fileFormat);
-#ifdef WEBRTC_MODULE_UTILITY_VIDEO
     case kFileFormatAviFile:
+#ifdef WEBRTC_MODULE_UTILITY_VIDEO
         return new AviRecorder(instanceID, fileFormat);
-#endif
-    default:
+#else
+        WEBRTC_TRACE(kTraceError, kTraceFile, -1,
+                             "Invalid file format: %d", kFileFormatAviFile);
+        assert(false);
         return NULL;
+#endif
     }
 }
 

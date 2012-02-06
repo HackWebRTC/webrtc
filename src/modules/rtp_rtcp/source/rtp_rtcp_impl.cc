@@ -2033,8 +2033,6 @@ ModuleRtpRtcpImpl::SendNACK(const WebRtc_UWord16* nackList,
         return _rtcpSender.SendRTCP(kRtcpNack, size, nackList);
     case kNackOff:
         return -1;
-    default:
-        assert(false);
     };
     return -1;
 }
@@ -2259,9 +2257,6 @@ WebRtc_Word32 ModuleRtpRtcpImpl::RequestKeyFrame(const FrameType frameType) {
             _rtcpReceiver.RTT(_rtpReceiver.SSRC(), &RTT, NULL, NULL, NULL);
             return _rtcpSender.SendRTCP(kRtcpFir, 0, NULL, RTT);
         }
-    default:
-        assert(false);
-        return -1;
     }
 }
 

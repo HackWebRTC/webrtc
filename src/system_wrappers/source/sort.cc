@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -412,8 +412,6 @@ namespace webrtc
         case TYPE_Float64:
             StdSort<double>(data, numOfElements);
             break;
-        default:
-            return -1;
         }
 #endif
         return 0;
@@ -543,8 +541,6 @@ namespace webrtc
             return StdKeySort<float>(data, key, numOfElements, sizeOfElement);
         case TYPE_Float64:
             return StdKeySort<double>(data, key, numOfElements, sizeOfElement);
-        default:
-            return -1;
         }
 #endif
     }

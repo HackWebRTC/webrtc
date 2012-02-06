@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -756,9 +756,6 @@ VideoCodingModuleImpl::SetVideoProtection(VCMVideoProtection videoProtection,
             return _codecDataBase.SetPeriodicKeyFrames(enable);
             break;
         }
-
-    default:
-        return VCM_PARAMETER_ERROR;
     }
     return VCM_OK;
 }
