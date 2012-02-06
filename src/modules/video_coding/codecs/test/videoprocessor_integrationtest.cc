@@ -141,7 +141,8 @@ TEST_F(VideoProcessorIntegrationTest, ProcessZeroPacketLoss) {
 }
 
 // Run with 5% packet loss. Quality should be a bit lower.
-TEST_F(VideoProcessorIntegrationTest, Process5PercentPacketLoss) {
+// TODO(mflodman): Reenable this once it's not flaky.
+TEST_F(VideoProcessorIntegrationTest, DISABLED_Process5PercentPacketLoss) {
   config_.networking_config.packet_loss_probability = 0.05;
   double minimum_psnr = 14;
   double minimum_ssim = 0.3;
