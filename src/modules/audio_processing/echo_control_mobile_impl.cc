@@ -37,7 +37,8 @@ WebRtc_Word16 MapSetting(EchoControlMobile::RoutingMode mode) {
     case EchoControlMobile::kLoudSpeakerphone:
       return 4;
   }
-  assert(false);
+  // TODO(mflodman) Needed for gcc to compile and assert can't be added due to
+  // ApmTest triggers this.
   return -1;
 }
 

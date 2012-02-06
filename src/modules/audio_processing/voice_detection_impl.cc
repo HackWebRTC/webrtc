@@ -38,6 +38,9 @@ int MapSetting(VoiceDetection::Likelihood likelihood) {
       return 0;
       break;
   }
+  // TODO(mflodman) Needed for gcc to compile and assert can't be added due to
+  // ApmTest triggers this.
+  return -1;
 }
 }  // namespace
 

@@ -42,6 +42,9 @@ int MapSetting(NoiseSuppression::Level level) {
     case NoiseSuppression::kVeryHigh:
       return 3;
   }
+  // TODO(mflodman) Needed for gcc to compile and assert can't be added due to
+  // ApmTest triggers this.
+  return -1;
 }
 }  // namespace
 

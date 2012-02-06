@@ -33,7 +33,8 @@ WebRtc_Word16 MapSetting(EchoCancellation::SuppressionLevel level) {
     case EchoCancellation::kHighSuppression:
       return kAecNlpAggressive;
   }
-  assert(false);
+  // TODO(mflodman) Needed for gcc to compile and assert can't be added due to
+  // ApmTest triggers this.
   return -1;
 }
 

@@ -48,7 +48,8 @@ WebRtc_Word16 MapSetting(GainControl::Mode mode) {
       return kAgcModeFixedDigital;
       break;
   }
-  assert(false);
+  // TODO(mflodman) Needed for gcc to compile and assert can't be added due to
+  // ApmTest triggers this.
   return -1;
 }
 }  // namespace
