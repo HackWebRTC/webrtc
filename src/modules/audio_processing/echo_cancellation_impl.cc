@@ -33,6 +33,8 @@ WebRtc_Word16 MapSetting(EchoCancellation::SuppressionLevel level) {
     case EchoCancellation::kHighSuppression:
       return kAecNlpAggressive;
   }
+  assert(false);
+  return -1;
 }
 
 int MapError(int err) {

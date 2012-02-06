@@ -542,6 +542,8 @@ namespace webrtc
         case TYPE_Float64:
             return StdKeySort<double>(data, key, numOfElements, sizeOfElement);
         }
+        assert(false);
+        return -1;
 #endif
     }
 } // namespace webrtc

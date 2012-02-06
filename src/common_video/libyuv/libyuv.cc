@@ -230,6 +230,8 @@ libyuv::RotationMode ConvertRotationMode(VideoRotationMode rotation) {
     case kRotate270:
       return libyuv::kRotate270;
   }
+  assert(false);
+  return libyuv::kRotate0;
 }
 
 int ConvertVideoType(VideoType video_type) {
@@ -266,6 +268,8 @@ int ConvertVideoType(VideoType video_type) {
     case kBGRA:
       return libyuv::FOURCC_BGRA;
   }
+  assert(false);
+  return libyuv::FOURCC_ANY;
 }
 
 int ConvertToI420(VideoType src_video_type,

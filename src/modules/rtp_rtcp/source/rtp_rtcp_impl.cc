@@ -2258,6 +2258,8 @@ WebRtc_Word32 ModuleRtpRtcpImpl::RequestKeyFrame(const FrameType frameType) {
             return _rtcpSender.SendRTCP(kRtcpFir, 0, NULL, RTT);
         }
     }
+    assert(false);
+    return -1;
 }
 
 WebRtc_Word32 ModuleRtpRtcpImpl::SendRTCPSliceLossIndication(

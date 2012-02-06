@@ -36,6 +36,8 @@ static RTCPMethod ViERTCPModeToRTCPMethod(ViERTCPMode api_mode) {
     case kRtcpNonCompound_RFC5506:
       return kRtcpNonCompound;
   }
+  assert(false);
+  return kRtcpOff;
 }
 
 static ViERTCPMode RTCPMethodToViERTCPMode(RTCPMethod module_method) {
@@ -49,6 +51,8 @@ static ViERTCPMode RTCPMethodToViERTCPMode(RTCPMethod module_method) {
     case kRtcpNonCompound:
       return kRtcpNonCompound_RFC5506;
   }
+  assert(false);
+  return kRtcpNone;
 }
 
 static KeyFrameRequestMethod APIRequestToModuleRequest(
@@ -66,6 +70,8 @@ static KeyFrameRequestMethod APIRequestToModuleRequest(
     case kViEKeyFrameRequestFirRtcp:
       return kKeyFrameReqFirRtcp;
   }
+  assert(false);
+  return kKeyFrameReqFirRtp;
 }
 
 ViERTP_RTCP* ViERTP_RTCP::GetInterface(VideoEngine* video_engine) {

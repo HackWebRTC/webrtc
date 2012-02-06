@@ -49,6 +49,8 @@ FilePlayer* FilePlayer::CreateFilePlayer(WebRtc_UWord32 instanceID,
         return NULL;
 #endif
     }
+    assert(false);
+    return NULL;
 }
 
 void FilePlayer::DestroyFilePlayer(FilePlayer* player)

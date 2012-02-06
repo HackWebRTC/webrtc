@@ -264,8 +264,6 @@ void FrameDropDetector::ReportFrameState(State state, unsigned int timestamp) {
       rendered_frames_[timestamp] = webrtc::TickTime::MicrosecondTimestamp();
       num_rendered_frames_++;
       break;
-    default:
-      assert(false);
   }
 }
 

@@ -48,6 +48,8 @@ WebRtc_Word16 MapSetting(GainControl::Mode mode) {
       return kAgcModeFixedDigital;
       break;
   }
+  assert(false);
+  return -1;
 }
 }  // namespace
 

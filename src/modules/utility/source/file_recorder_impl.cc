@@ -51,6 +51,8 @@ FileRecorder* FileRecorder::CreateFileRecorder(WebRtc_UWord32 instanceID,
         return NULL;
 #endif
     }
+    assert(false);
+    return NULL;
 }
 
 void FileRecorder::DestroyFileRecorder(FileRecorder* recorder)
