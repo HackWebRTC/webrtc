@@ -23,9 +23,14 @@ namespace webrtc {
 // QM-METHOD class
 
 VCMQmMethod::VCMQmMethod()
-{
-    _contentMetrics = new VideoContentMetrics();
-    ResetQM();
+    : _contentMetrics(new VideoContentMetrics()),
+      _width(0),
+      _height(0),
+      _nativeWidth(0),
+      _nativeHeight(0),
+      _nativeFrameRate(0),
+      _init(false) {
+  ResetQM();
 }
 
 VCMQmMethod::~VCMQmMethod()
@@ -727,6 +732,7 @@ VCMQmRobustness::Reset()
     _prevTotalRate = 0.0f;
     _prevRttTime = 0;
     _prevPacketLoss = 0;
+    _prevCodeRateDelta = 0;
     ResetQM();
     return;
 }
