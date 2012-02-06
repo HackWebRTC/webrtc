@@ -405,7 +405,7 @@ ACMNetEQ::SetPlayoutMode(
                 return -1;
             }
 
-            enum WebRtcNetEQPlayoutMode playoutMode;
+            enum WebRtcNetEQPlayoutMode playoutMode = kPlayoutOff;
             switch(mode)
             {
             case voice:
@@ -1227,7 +1227,7 @@ ACMNetEQ::AddSlave(
            return -1;
         }
 
-        enum WebRtcNetEQPlayoutMode playoutMode;
+        enum WebRtcNetEQPlayoutMode playoutMode = kPlayoutOff;
         switch(_playoutMode)
         {
         case voice:
