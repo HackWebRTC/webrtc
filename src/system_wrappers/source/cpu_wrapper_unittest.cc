@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -42,7 +42,7 @@ TEST(CpuWrapperTest, Usage) {
   // Initializing the CPU measurements may take a couple of seconds on Windows.
   // Since the initialization is lazy we need to wait until it is completed.
   // Should not take more than 10000 ms.
-  while (cpu_usage_available && (++num_iterations < 10000)) {
+  while (!cpu_usage_available && (++num_iterations < 10000)) {
     if (cores != NULL) {
       ASSERT_GT(num_cores, 0u);
       break;
