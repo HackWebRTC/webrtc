@@ -566,13 +566,13 @@ WebRtc_Word16 WebRtcIsac_Encode(
   float        inFrame[FRAMESAMPLES_10ms];
   WebRtc_Word16  speechInLB[FRAMESAMPLES_10ms];
   WebRtc_Word16  speechInUB[FRAMESAMPLES_10ms];
-  WebRtc_Word16  streamLenLB;
-  WebRtc_Word16  streamLenUB;
-  WebRtc_Word16  streamLen;
-  WebRtc_Word16  k;
+  WebRtc_Word16  streamLenLB = 0;
+  WebRtc_Word16  streamLenUB = 0;
+  WebRtc_Word16  streamLen = 0;
+  WebRtc_Word16  k = 0;
   WebRtc_UWord8* ptrEncodedUW8 = (WebRtc_UWord8*)encoded;
-  int          garbageLen;
-  WebRtc_Word32  bottleneck;
+  int          garbageLen = 0;
+  WebRtc_Word32  bottleneck = 0;
   WebRtc_Word16  bottleneckIdx = 0;
   WebRtc_Word16  jitterInfo = 0;
 
@@ -1638,7 +1638,7 @@ WebRtc_Word16 WebRtcIsac_DecodePlc(
 				  WebRtc_Word16*        decoded,
 				  WebRtc_Word16         noOfLostFrames)
 {
-  WebRtc_Word16 numSamples;
+  WebRtc_Word16 numSamples = 0;
   ISACMainStruct* instISAC;
 
 

@@ -330,7 +330,7 @@ AudioCodingModuleImpl::Process()
     WebRtc_Word16 status;
     WebRtcACMEncodingType encodingType;
     FrameType frameType = kAudioFrameSpeech;
-    WebRtc_UWord8 currentPayloadType;
+    WebRtc_UWord8 currentPayloadType = 0;
     bool hasDataToSend = false;
     bool fecActive = false;
 
