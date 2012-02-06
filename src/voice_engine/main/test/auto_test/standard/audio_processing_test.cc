@@ -186,7 +186,8 @@ TEST_F(AudioProcessingTest, ManualTestEcMetrics) {
   EXPECT_EQ(0, voe_apm_->SetEcMetricsStatus(false));
 }
 
-TEST_F(AudioProcessingTest, TestVoiceActivityDetectionWithObserver) {
+// TODO(phoglund): Reenable below test when it's no longer flaky.
+TEST_F(AudioProcessingTest, DISABLED_TestVoiceActivityDetectionWithObserver) {
   voetest::RxCallback rx_callback;
   EXPECT_EQ(0, voe_apm_->RegisterRxVadObserver(channel_, rx_callback));
 
