@@ -66,7 +66,7 @@ def parse_tgrid_page(html):
     result.update(_parse_builds(revision, builds_for_revision_html))
 
   if not result:
-   raise FailedToParseBuildStatus('Could not find any build statuses in %s.' %
-                                  html)
+    raise FailedToParseBuildStatus('Could not find any build statuses in %s.' %
+                                   html)
 
   return result

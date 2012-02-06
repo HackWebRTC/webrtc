@@ -43,7 +43,7 @@ class AddCoverageData(oauth_post_request_handler.OAuthPostRequestHandler):
      function_coverage: A float percentage in the interval 0-100.0.
   """
 
-  def post(self):
+  def _parse_and_store_data(self):
     try:
       posix_time = int(self.request.get('date'))
       parsed_date = datetime.datetime.fromtimestamp(posix_time)

@@ -28,7 +28,6 @@ __author__ = 'phoglund@webrtc.org (Patrik Höglund)'
 
 import os
 import re
-import sys
 import time
 
 import constants
@@ -90,15 +89,7 @@ def _report_coverage_to_dashboard(dashboard, now, line_coverage,
                 'function_coverage': '%f' % function_coverage
                }
 
-  response = dashboard.send_post_request(constants.ADD_COVERAGE_DATA_URL,
-                                         parameters)
-
-  # The response content should be empty on success, so check that:
-  response_content = response.read()
-  if response_content:
-    message = ('Error: Dashboard reported the following error: %s.' %
-               response_content)
-    raise dashboard_connection.FailedToReportToDashboard(message)
+  dashboard.send_post_request(constants.ADD_COVERAGE_DATA_URL, parameters)
 
 
 def _main():

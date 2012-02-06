@@ -84,13 +84,17 @@ deps = {
   "trunk/third_party/libyuv":
     (Var("googlecode_url") % "libyuv") + "/trunk@121",
 
-  # Used by tools/coverage/dashboard and tools/python_charts
+  # Used by tools/quality_tracking/dashboard and tools/python_charts
   "trunk/third_party/google-visualization-python":
     (Var("googlecode_url") % "google-visualization-python") + "/trunk@15",
 
-  # Used by tools/coverage
+  # Used by tools/quality_tracking
   "trunk/third_party/oauth2":
-    "https://github.com/simplegeo/python-oauth2.git@a83f4a297336b631e75cba102910c19231518159"
+    "https://github.com/simplegeo/python-oauth2.git@a83f4a29",
+
+  # Used by tools/quality_tracking
+  "trunk/third_party/gaeunit":
+    "https://code.google.com/p/gaeunit.git@e16d5bd4",
 }
 
 deps_os = {

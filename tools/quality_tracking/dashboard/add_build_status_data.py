@@ -12,6 +12,8 @@
 
 __author__ = 'phoglund@webrtc.org (Patrik Höglund)'
 
+import datetime
+
 from google.appengine.ext import db
 
 import oauth_post_request_handler
@@ -24,12 +26,13 @@ class OrphanedBuildStatusesExistException(Exception):
 
 
 class BuildStatusRoot(db.Model):
-  """Exists solely to be the root parent for all build status data.
+  """Exists solely to be the root parent for all build status data and to keep
+     track of when the last update was made.
 
      Since all build status data will refer to this as their parent,
      we can run transactions on the build status data as a whole.
   """
-  pass
+  last_updated_at = db.DateTimeProperty()
 
 
 class BuildStatusData(db.Model):
@@ -121,7 +124,7 @@ class AddBuildStatusData(oauth_post_request_handler.OAuthPostRequestHandler):
     combination. Now we will effectively update the bot's status instead.
   """
 
-  def post(self):
+  def _parse_and_store_data(self):
     build_status_root = _ensure_build_status_root_exists()
     build_status_data = _filter_oauth_parameters(self.request.arguments())
 
@@ -130,6 +133,7 @@ class AddBuildStatusData(oauth_post_request_handler.OAuthPostRequestHandler):
 
   def _parse_and_store_data_in_transaction(self, build_status_root,
                                            build_status_data):
+
     encountered_revisions = set()
     for revision_and_bot_name in build_status_data:
       build_number_and_status = self.request.get(revision_and_bot_name)
@@ -154,3 +158,8 @@ class AddBuildStatusData(oauth_post_request_handler.OAuthPostRequestHandler):
                              build_number=build_number,
                              status=status)
       item.put()
+
+    request_posix_timestamp = float(self.request.get('oauth_timestamp'))
+    request_datetime = datetime.datetime.fromtimestamp(request_posix_timestamp)
+    build_status_root.last_updated_at = request_datetime
+    build_status_root.put()

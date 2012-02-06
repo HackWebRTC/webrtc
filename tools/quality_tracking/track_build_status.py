@@ -16,7 +16,6 @@ __author__ = 'phoglund@webrtc.org (Patrik Höglund)'
 
 
 import httplib
-import re
 
 import constants
 import dashboard_connection
@@ -50,10 +49,9 @@ def _main():
 
   bot_to_status_mapping = _download_and_parse_build_status()
 
-  response = dashboard.send_post_request(constants.ADD_BUILD_STATUS_DATA_URL,
-                                         bot_to_status_mapping)
+  dashboard.send_post_request(constants.ADD_BUILD_STATUS_DATA_URL,
+                              bot_to_status_mapping)
 
-  print response.read()
 
 if __name__ == '__main__':
   _main()

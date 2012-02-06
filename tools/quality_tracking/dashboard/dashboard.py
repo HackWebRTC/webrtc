@@ -12,12 +12,13 @@
 
 __author__ = 'phoglund@webrtc.org (Patrik Höglund)'
 
-from google.appengine.ext import db
-import gviz_api
+from google.appengine.ext.webapp import template
 import webapp2
 
 import add_build_status_data
 import add_coverage_data
+import load_build_status
+import load_coverage
 
 
 class ShowDashboard(webapp2.RequestHandler):
@@ -28,38 +29,18 @@ class ShowDashboard(webapp2.RequestHandler):
   """
 
   def get(self):
-    page_template_filename = 'templates/dashboard_template.html'
+    build_status_loader = load_build_status.BuildStatusLoader()
+    build_status_data = build_status_loader.load_build_status_data()
+    last_updated_at = build_status_loader.load_last_modified_at()
+    last_updated_at = last_updated_at.strftime("%Y-%m-%d %H:%M")
+    lkgr = build_status_loader.compute_lkgr()
 
-    # Load the page HTML template.
-    try:
-      template_file = open(page_template_filename)
-      page_template = template_file.read()
-      template_file.close()
-    except IOError as exception:
-      self._show_error_page('Cannot open page template file: %s<br>Details: %s'
-                            % (page_template_filename, exception))
-      return
-
-    coverage_entries = db.GqlQuery('SELECT * '
-                                   'FROM CoverageData '
-                                   'ORDER BY date ASC')
-    data = []
-    for coverage_entry in coverage_entries:
-      data.append({'date': coverage_entry.date,
-                   'line_coverage': coverage_entry.line_coverage,
-                   'function_coverage': coverage_entry.function_coverage,
-                  })
-
-    description = {
-        'date': ('datetime', 'Date'),
-        'line_coverage': ('number', 'Line Coverage'),
-        'function_coverage': ('number', 'Function Coverage')
-    }
-    coverage_data = gviz_api.DataTable(description, data)
-    coverage_json_data = coverage_data.ToJSon(order_by='date')
+    coverage_loader = load_coverage.CoverageDataLoader()
+    coverage_json_data = coverage_loader.load_coverage_json_data()
 
     # Fill in the template with the data and respond:
-    self.response.write(page_template % vars())
+    page_template_filename = 'templates/dashboard_template.html'
+    self.response.write(template.render(page_template_filename, vars()))
 
   def _show_error_page(self, error_message):
     self.response.write('<html><body>%s</body></html>' % error_message)

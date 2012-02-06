@@ -67,17 +67,18 @@ class DashboardConnection:
        make the OAuth request. These concepts are described in the class
        description.
 
+       The server is expected to respond with HTTP status 200 and a completely
+       empty response if the call failed. The server may put diagnostic
+       information in the response.
+
        Args:
            sub_url: A relative url within the dashboard domain, for example
                /add_coverage_data.
            parameters: A dict which maps from POST parameter names to values.
 
-       Returns:
-           A httplib response object.
-
        Raises:
            FailedToReportToDashboard: If the dashboard didn't respond
-               with HTTP 200 to our request.
+               with HTTP 200 to our request or if the response is non-empty.
     """
     consumer = oauth.OAuthConsumer(self.consumer_key_, self.consumer_secret_)
     create_oauth_request = oauth.OAuthRequest.from_consumer_and_token
@@ -101,12 +102,17 @@ class DashboardConnection:
     connection.close()
 
     if response.status != 200:
-      message = ('Error: Failed to report to %s%s: got response %d (%s)' %
+      message = ('Failed to report to %s%s: got response %d (%s)' %
                  (constants.DASHBOARD_SERVER, sub_url, response.status,
                   response.reason))
       raise FailedToReportToDashboard(message)
 
-    return response
+    # The response content should be empty on success, so check that:
+    response_content = response.read()
+    if response_content:
+      message = ('Dashboard reported the following error: %s.' %
+                 response_content)
+      raise FailedToReportToDashboard(message)
 
   def _read_access_token(self, filename):
     input_file = shelve.open(filename)
