@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -421,7 +421,8 @@ int VCMSessionInfo::BuildSoftNackList(int* seq_num_list,
       base_available = true;
     }
   }
-  bool allow_nack = (!packets_.front().isFirstPacket || !base_available);
+  bool allow_nack = ((packets_.size() > 0 && !packets_.front().isFirstPacket)
+    || !base_available);
 
   // Zero out between first entry and end point.
 
@@ -447,36 +448,38 @@ int VCMSessionInfo::BuildSoftNackList(int* seq_num_list,
   float rtt_score = 1.0f;
   float score_multiplier = rtt_score * layer_score;
   // Zero out between first entry and end point.
-  PacketIterator it = packets_.begin();
-  PacketIterator prev_it = it;
-  ++index;
-  ++it;
-  // TODO(holmer): Rewrite this in a way which better makes use of the list.
-  while (it != packets_.end() && index < seq_num_list_length) {
-    // Only process media packet sequence numbers.
-    if (LatestSequenceNumber((*it).seqNum, media_high_seq_num, NULL) ==
-        (*it).seqNum && (*it).seqNum != media_high_seq_num)
-      break;
-    if (!InSequence(it, prev_it)) {
-      // Found a sequence number gap due to packet loss.
-      int num_lost = PacketsMissing(it, prev_it);
-      for (int i = 0 ; i < num_lost; ++i) {
-        // Compute score of the packet.
-        float score = 1.0f;
-        // Multiply internal score (packet) by score multiplier.
-        score *= score_multiplier;
-        if (score > nack_score_threshold) {
-          allow_nack = true;
-        } else {
-          seq_num_list[index] = -1;
-        }
-        ++index;
-      }
-    }
-    seq_num_list[index] = -1;
+  if (!packets_.empty()) {
+    PacketIterator it = packets_.begin();
+    PacketIterator prev_it = it;
     ++index;
-    prev_it = it;
     ++it;
+    // TODO(holmer): Rewrite this in a way which better makes use of the list.
+    while (it != packets_.end() && index < seq_num_list_length) {
+    // Only process media packet sequence numbers.
+      if (LatestSequenceNumber((*it).seqNum, media_high_seq_num, NULL) ==
+        (*it).seqNum && (*it).seqNum != media_high_seq_num)
+        break;
+      if (!InSequence(it, prev_it)) {
+        // Found a sequence number gap due to packet loss.
+        int num_lost = PacketsMissing(it, prev_it);
+        for (int i = 0 ; i < num_lost; ++i) {
+          // Compute score of the packet.
+          float score = 1.0f;
+          // Multiply internal score (packet) by score multiplier.
+          score *= score_multiplier;
+          if (score > nack_score_threshold) {
+            allow_nack = true;
+          } else {
+            seq_num_list[index] = -1;
+          }
+          ++index;
+        }
+      }
+      seq_num_list[index] = -1;
+      ++index;
+      prev_it = it;
+      ++it;
+    }
   }
 
   // Empty packets follow the data packets, and therefore have a higher
