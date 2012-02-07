@@ -83,8 +83,10 @@ deps = {
   "trunk/third_party/jsoncpp/":
     "http://jsoncpp.svn.sourceforge.net/svnroot/jsoncpp/trunk/jsoncpp@248",
 
+  # TODO(andrew): roll to 164 after fixing:
+  # http://code.google.com/p/webrtc/issues/detail?id=267
   "trunk/third_party/libyuv":
-    (Var("googlecode_url") % "libyuv") + "/trunk@164",
+    (Var("googlecode_url") % "libyuv") + "/trunk@121",
 
   # Used by tools/quality_tracking/dashboard and tools/python_charts
   "trunk/third_party/google-visualization-python":
