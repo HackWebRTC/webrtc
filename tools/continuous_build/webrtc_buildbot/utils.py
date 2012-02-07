@@ -22,17 +22,50 @@ import sys
 SUPPORTED_PLATFORMS = ("Linux", "Mac", "Windows")
 
 SVN_LOCATION = "http://webrtc.googlecode.com/svn/trunk"
+VALGRIND_CMD = ["tools/valgrind-webrtc/webrtc_tests.sh", "-t", "cmdline"]
+
+# Copied from Chromium's
+# trunk/tools/build/scripts/master/factory/chromium_factory.py
+# but converted to a list since we set defines instead of using an environment
+# variable.
+#
+# On valgrind bots, override the optimizer settings so we don't inline too
+# much and make the stacks harder to figure out. Use the same settings
+# on all buildbot masters to make it easier to move bots.
+MEMORY_TOOLS_GYP_DEFINES = [
+  # GCC flags
+  'mac_debug_optimization=1 ',
+  'mac_release_optimization=1 ',
+  'release_optimize=1 ',
+  'no_gc_sections=1 ',
+  'debug_extra_cflags="-g -fno-inline -fno-omit-frame-pointer '
+  '-fno-builtin -fno-optimize-sibling-calls" ',
+  'release_extra_cflags="-g -fno-inline -fno-omit-frame-pointer '
+  '-fno-builtin -fno-optimize-sibling-calls" ',
+  # MSVS flags
+  'win_debug_RuntimeChecks=0 ',
+  'win_debug_disable_iterator_debugging=1 ',
+  'win_debug_Optimization=1 ',
+  'win_debug_InlineFunctionExpansion=0 ',
+  'win_release_InlineFunctionExpansion=0 ',
+  'win_release_OmitFramePointers=0 ',
+
+  'linux_use_tcmalloc=1 ',
+  'release_valgrind_build=1 ',
+  'werror= ',
+]
 
 class WebRTCFactory(factory.BuildFactory):
   """A Build Factory affected by properties."""
 
   def __init__(self, build_factory_properties=None, steps=None,
-               enable_coverage=False, account=None):
+               enable_coverage=False, enable_valgrind=False, account=None):
     factory.BuildFactory.__init__(self, steps)
     self.properties = properties.Properties()
     self.enable_build = False
     self.force_sync = False
     self.enable_coverage = enable_coverage
+    self.enable_valgrind = enable_valgrind
     self.gyp_params = []
     self.account = account
     self.coverage_dir = ""
@@ -217,9 +250,9 @@ class WebRTCLinuxFactory(WebRTCFactory):
   """A Build Factory affected by properties."""
 
   def __init__(self, build_factory_properties=None, steps=None,
-               enable_coverage=False, account=None):
+               enable_coverage=False, enable_valgrind=False, account=None):
     WebRTCFactory.__init__(self, build_factory_properties, steps,
-                           enable_coverage, account)
+                           enable_coverage, enable_valgrind, account)
 
   def EnableBuild(self, force_sync=False, release=False, build32=False,
                   chrome_os=False, clang=False):
@@ -231,8 +264,16 @@ class WebRTCLinuxFactory(WebRTCFactory):
     """Linux specific Build"""
     self.release = release
     self.AddCommonStep(["rm", "-rf", "trunk"], descriptor="Cleanup")
-    self.AddCommonStep(["gclient", "config", SVN_LOCATION],
-                       descriptor="gclient_config")
+    # Valgrind bots need special GYP defines to enable memory profiling
+    # friendly compilation. They already has a custom .gclient
+    # configuration file created so they don't need one being
+    # generated like the other bots.
+    if self.enable_valgrind:
+      for gyp_define in MEMORY_TOOLS_GYP_DEFINES:
+        self.gyp_params.append("-D" + gyp_define)
+    else:
+      self.AddCommonStep(["gclient", "config", SVN_LOCATION],
+                         descriptor="gclient_config")
 
     cmd = ["gclient", "sync"]
     if force_sync:
@@ -263,6 +304,8 @@ class WebRTCLinuxFactory(WebRTCFactory):
     test_descriptor = [test, descriptor]
     if cmd is None:
       cmd = ["out/%s/%s" % (test_folder, test)]
+    if self.enable_valgrind:
+      cmd = VALGRIND_CMD + cmd
     self.addStep(shell.ShellCommand(command=cmd,
         workdir=workdir, description=["Running"]+test_descriptor,
         descriptionDone=test_descriptor+["finished"],
