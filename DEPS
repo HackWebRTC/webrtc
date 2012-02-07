@@ -3,7 +3,9 @@ vars = {
   # If you do not know, use the full path while defining your new deps entry.
   "googlecode_url": "http://%s.googlecode.com/svn",
   "chromium_trunk" : "http://src.chromium.org/svn/trunk",
-  "chromium_revision": "114939",
+  "chromium_revision": "120526",
+  # TODO(andrew): libjingle should be rolled to 114 (or later) after fixing:
+  # http://code.google.com/p/webrtc/issues/detail?id=264
   "libjingle_revision": "101",
 
   # External resources like video and audio files used for testing purposes.
@@ -26,7 +28,7 @@ deps = {
     (Var("googlecode_url") % "googlemock") + "/trunk@386",
 
   "trunk/tools/gyp":
-    (Var("googlecode_url") % "gyp") + "/trunk@1107",
+    (Var("googlecode_url") % "gyp") + "/trunk@1187",
 
   # Needed by build/common.gypi.
   "trunk/tools/win/supalink":
@@ -48,7 +50,7 @@ deps = {
     "http://git.chromium.org/webm/libvpx.git@e479379a",
 
   "trunk/third_party/libjpeg_turbo/":
-    Var("chromium_trunk") + "/deps/third_party/libjpeg_turbo@95800",
+    Var("chromium_trunk") + "/deps/third_party/libjpeg_turbo@119959",
 
   "trunk/third_party/libjpeg/":
     Var("chromium_trunk") + "/src/third_party/libjpeg@" + Var("chromium_revision"),
@@ -79,10 +81,10 @@ deps = {
     Var("chromium_trunk") + "/deps/third_party/yasm/binaries@74228",
 
   "trunk/third_party/jsoncpp/":
-    "http://jsoncpp.svn.sourceforge.net/svnroot/jsoncpp/trunk/jsoncpp@246",
+    "http://jsoncpp.svn.sourceforge.net/svnroot/jsoncpp/trunk/jsoncpp@248",
 
   "trunk/third_party/libyuv":
-    (Var("googlecode_url") % "libyuv") + "/trunk@121",
+    (Var("googlecode_url") % "libyuv") + "/trunk@164",
 
   # Used by tools/quality_tracking/dashboard and tools/python_charts
   "trunk/third_party/google-visualization-python":
