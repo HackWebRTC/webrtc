@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -205,7 +205,7 @@ BOOL CDXChannelDlg::OnInitDialog()
     m_ctrlMinFrameRate.SetCurSel(25);
 
     // Codec sizes
-    for(VideoSize i=VideoSize::UNDEFINED;i<VideoSize::NUMBER_OF_VIDEO_SIZE;i=VideoSize(i+1))
+    for(VideoSize i=UNDEFINED;i<NUMBER_OF_VIDEO_SIZE;i=VideoSize(i+1))
     {
         char sizeStr[64];
         int width=0;

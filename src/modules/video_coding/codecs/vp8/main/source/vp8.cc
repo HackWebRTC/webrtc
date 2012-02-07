@@ -402,7 +402,7 @@ void VP8Encoder::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
   vp8Info->pictureId = picture_id_;
   vp8Info->simulcastIdx = 0;
   vp8Info->keyIdx = kNoKeyIdx;  // TODO(hlundin) populate this
-  vp8Info->nonReference = (pkt.data.frame.flags & VPX_FRAME_IS_DROPPABLE);
+  vp8Info->nonReference = (pkt.data.frame.flags & VPX_FRAME_IS_DROPPABLE) != 0;
 #if WEBRTC_LIBVPX_VERSION >= 971
   if (temporal_layers_) {
     temporal_layers_->PopulateCodecSpecific(

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -139,8 +139,8 @@ void RtpFormatVp8TestHelper::CheckHeader(bool frag_start) {
     EXPECT_BIT_X_EQ(buffer_[0], 0);
   }
 
-  EXPECT_BIT_N_EQ(buffer_[0], hdr_info_->nonReference);
-  EXPECT_BIT_S_EQ(buffer_[0], frag_start);
+  EXPECT_BIT_N_EQ(buffer_[0], hdr_info_->nonReference ? 1 : 0);
+  EXPECT_BIT_S_EQ(buffer_[0], frag_start ? 1 : 0);
 
   // Check partition index.
   if (!sloppy_partitioning_) {
@@ -201,11 +201,11 @@ void RtpFormatVp8TestHelper::CheckTIDAndKeyIdx() {
   if (hdr_info_->temporalIdx != kNoTemporalIdx) {
     EXPECT_BIT_T_EQ(buffer_[1], 1);
     EXPECT_TID_EQ(buffer_[payload_start_], hdr_info_->temporalIdx);
-    EXPECT_BIT_Y_EQ(buffer_[payload_start_], hdr_info_->layerSync);
+    EXPECT_BIT_Y_EQ(buffer_[payload_start_], hdr_info_->layerSync ? 1 : 0);
   } else {
     EXPECT_BIT_T_EQ(buffer_[1], 0);
     EXPECT_TID_EQ(buffer_[payload_start_], 0);
-    EXPECT_BIT_Y_EQ(buffer_[payload_start_], false);
+    EXPECT_BIT_Y_EQ(buffer_[payload_start_], 0);
   }
   if (hdr_info_->keyIdx != kNoKeyIdx) {
     EXPECT_BIT_K_EQ(buffer_[1], 1);

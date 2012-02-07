@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -57,7 +57,7 @@ void TransmissionBucket::UpdateBytesPerInterval(
     const uint16_t target_bitrate_kbps) {
   webrtc::CriticalSectionScoped cs(*critsect_);
 
-  const float kMargin = 1.05;
+  const float kMargin = 1.05f;
   uint32_t bytes_per_interval = 
       kMargin * (target_bitrate_kbps * delta_time_ms / 8);
 
@@ -93,7 +93,7 @@ int32_t TransmissionBucket::GetNextPacket() {
     return seq_num;
   }
 
-  const float kFrameComplete = 0.80;
+  const float kFrameComplete = 0.80f;
   if (num_bytes * kFrameComplete > bytes_rem_total_) {
     // Packet does not fit.
     return -1;

@@ -147,12 +147,11 @@
           'WEBRTC_TARGET_PC',
         ],
         # TODO(andrew): remove this block when possible.
-        'msvs_disabled_warnings': [4389], # Signed/unsigned mismatch.
-        'msvs_settings': {
-          'VCCLCompilerTool': {
-            'WarnAsError': 'false',
-          },
-        },
+        # 4389: Signed/unsigned mismatch.
+        # 4373: MSVC legacy warning for ignoring const / volatile in
+        # signatures. TODO(phoglund): get rid of 4373 supression when
+        # http://code.google.com/p/webrtc/issues/detail?id=261 is solved.
+        'msvs_disabled_warnings': [4389, 4373],
       }],
     ], # conditions
   }, # target_defaults

@@ -72,7 +72,7 @@ class TestTransport : public Transport,
                                          (WebRtc_Word32)packet_len,
                                          true); // Allow non-compound RTCP
 
-    EXPECT_EQ(true, rtcpParser.IsValid());
+    EXPECT_TRUE(rtcpParser.IsValid());
     RTCPHelp::RTCPPacketInformation rtcpPacketInformation;
     EXPECT_EQ(0, rtcp_receiver_->IncomingRTCPPacket(rtcpPacketInformation,
                                                    &rtcpParser));
