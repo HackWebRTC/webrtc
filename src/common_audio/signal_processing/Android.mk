@@ -24,7 +24,6 @@ LOCAL_SRC_FILES := \
     copy_set_operations.c \
     division_operations.c \
     dot_product_with_scale.c \
-    downsample_fast.c \
     energy.c \
     filter_ar.c \
     filter_ma_fast_q12.c \
@@ -58,12 +57,14 @@ LOCAL_C_INCLUDES := \
 ifeq ($(ARCH_ARM_HAVE_NEON),true)
 LOCAL_SRC_FILES += \
     min_max_operations_neon.c \
-    cross_correlation_neon.s
+    cross_correlation_neon.s \
+    downsample_fast_neon.s
 LOCAL_CFLAGS += \
     $(MY_ARM_CFLAGS_NEON)
 else
 LOCAL_SRC_FILES += \
-    cross_correlation.c
+    cross_correlation.c \
+    downsample_fast.c
 endif
 
 ifeq ($(ARCH_ARM_HAVE_ARMV7A),true)

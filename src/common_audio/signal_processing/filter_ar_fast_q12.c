@@ -13,9 +13,9 @@
 
 // TODO(bjornv): Change the return type to report errors.
 
-void WebRtcSpl_FilterARFastQ12(int16_t* data_in,
+void WebRtcSpl_FilterARFastQ12(const int16_t* data_in,
                                int16_t* data_out,
-                               int16_t* __restrict coefficients,
+                               const int16_t* __restrict coefficients,
                                int coefficients_length,
                                int data_length) {
   int i = 0;

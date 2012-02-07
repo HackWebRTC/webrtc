@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,52 +8,40 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-
-/*
- * This file contains the function WebRtcSpl_DownsampleFast().
- * The description header can be found in signal_processing_library.h
- *
- */
-
 #include "signal_processing_library.h"
 
-int WebRtcSpl_DownsampleFast(WebRtc_Word16 *in_ptr, WebRtc_Word16 in_length,
-                             WebRtc_Word16 *out_ptr, WebRtc_Word16 out_length,
-                             WebRtc_Word16 *B, WebRtc_Word16 B_length, WebRtc_Word16 factor,
-                             WebRtc_Word16 delay)
-{
-    WebRtc_Word32 o;
-    int i, j;
+// TODO(Bjornv): Change the function parameter order to WebRTC code style.
+int WebRtcSpl_DownsampleFast(const int16_t* data_in,
+                             int data_in_length,
+                             int16_t* data_out,
+                             int data_out_length,
+                             const int16_t* __restrict coefficients,
+                             int coefficients_length,
+                             int factor,
+                             int delay) {
+  int i = 0;
+  int j = 0;
+  int32_t out_s32 = 0;
+  int endpos = delay + factor * (data_out_length - 1) + 1;
 
-    WebRtc_Word16 *downsampled_ptr = out_ptr;
-    WebRtc_Word16 *b_ptr;
-    WebRtc_Word16 *x_ptr;
-    WebRtc_Word16 endpos = delay
-            + (WebRtc_Word16)WEBRTC_SPL_MUL_16_16(factor, (out_length - 1)) + 1;
+  // Return error if any of the running conditions doesn't meet.
+  if (data_out_length <= 0 || coefficients_length <= 0
+                           || data_in_length < endpos) {
+    return -1;
+  }
 
-    if (in_length < endpos)
-    {
-        return -1;
+  for (i = delay; i < endpos; i += factor) {
+    out_s32 = 2048;  // Round value, 0.5 in Q12.
+
+    for (j = 0; j < coefficients_length; j++) {
+      out_s32 += coefficients[j] * data_in[i - j];  // Q12.
     }
 
-    for (i = delay; i < endpos; i += factor)
-    {
-        b_ptr = &B[0];
-        x_ptr = &in_ptr[i];
+    out_s32 >>= 12;  // Q0.
 
-        o = (WebRtc_Word32)2048; // Round val
+    // Saturate and store the output.
+    *data_out++ = WebRtcSpl_SatW32ToW16(out_s32);
+  }
 
-        for (j = 0; j < B_length; j++)
-        {
-            o += WEBRTC_SPL_MUL_16_16(*b_ptr++, *x_ptr--);
-        }
-
-        o = WEBRTC_SPL_RSHIFT_W32(o, 12);
-
-        // If output is higher than 32768, saturate it. Same with negative side
-
-        *downsampled_ptr++ = WebRtcSpl_SatW32ToW16(o);
-    }
-
-    return 0;
+  return 0;
 }

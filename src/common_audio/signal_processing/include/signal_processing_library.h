@@ -386,35 +386,46 @@ void WebRtcSpl_FilterMAFastQ12(WebRtc_Word16* in_vector,
                                WebRtc_Word16 ma_coef_length,
                                WebRtc_Word16 vector_length);
 
-// WebRtcSpl_FilterARFastQ12(...)
-//
 // Performs a AR filtering on a vector in Q12
-//
 // Input:
-//      - data_in                : Input samples
-//      - data_out               : State information in positions
-//                                   data_out[-order] .. data_out[-1]
-//      - coefficients           : Filter coefficients (in Q12)
-//      - coefficients_length    : Number of coefficients (order+1)
-//      - data_length            : Number of samples to be filtered
-//
+//      - data_in            : Input samples
+//      - data_out           : State information in positions
+//                               data_out[-order] .. data_out[-1]
+//      - coefficients       : Filter coefficients (in Q12)
+//      - coefficients_length: Number of coefficients (order+1)
+//      - data_length        : Number of samples to be filtered
 // Output:
-//      - data_out               : Filtered samples
-
-void WebRtcSpl_FilterARFastQ12(int16_t* data_in,
+//      - data_out           : Filtered samples
+void WebRtcSpl_FilterARFastQ12(const int16_t* data_in,
                                int16_t* data_out,
-                               int16_t* __restrict coefficients,
+                               const int16_t* __restrict coefficients,
                                int coefficients_length,
                                int data_length);
 
-int WebRtcSpl_DownsampleFast(WebRtc_Word16* in_vector,
-                             WebRtc_Word16 in_vector_length,
-                             WebRtc_Word16* out_vector,
-                             WebRtc_Word16 out_vector_length,
-                             WebRtc_Word16* ma_coef,
-                             WebRtc_Word16 ma_coef_length,
-                             WebRtc_Word16 factor,
-                             WebRtc_Word16 delay);
+// Performs a MA down sampling filter on a vector
+// Input:
+//      - data_in            : Input samples (state in positions
+//                               data_in[-order] .. data_in[-1])
+//      - data_in_length     : Number of samples in |data_in| to be filtered.
+//                               This must be at least
+//                               |delay| + |factor|*(|out_vector_length|-1) + 1)
+//      - data_out_length    : Number of down sampled samples desired
+//      - coefficients       : Filter coefficients (in Q12)
+//      - coefficients_length: Number of coefficients (order+1)
+//      - factor             : Decimation factor
+//      - delay              : Delay of filter (compensated for in out_vector)
+// Output:
+//      - data_out           : Filtered samples
+// Return value              : 0 if OK, -1 if |in_vector| is too short
+int WebRtcSpl_DownsampleFast(const int16_t* data_in,
+                             int data_in_length,
+                             int16_t* data_out,
+                             int data_out_length,
+                             const int16_t* __restrict coefficients,
+                             int coefficients_length,
+                             int factor,
+                             int delay);
+
 // End: Filter operations.
 
 // FFT operations
@@ -1454,28 +1465,6 @@ void WebRtcSpl_SynthesisQMF(const WebRtc_Word16* low_band,
 //      - out_vector        : Filtered samples
 //
 
-//
-// WebRtcSpl_DownsampleFast(...)
-//
-// Performs a MA down sampling filter on a vector
-//
-// Input:
-//      - in_vector         : Input samples (state in positions
-//                            in_vector[-order] .. in_vector[-1])
-//      - in_vector_length  : Number of samples in |in_vector| to be filtered.
-//                            This must be at least
-//                            |delay| + |factor|*(|out_vector_length|-1) + 1)
-//      - out_vector_length : Number of down sampled samples desired
-//      - ma_coef           : Filter coefficients (in Q12)
-//      - ma_coef_length    : Number of B coefficients (order+1)
-//      - factor            : Decimation factor
-//      - delay             : Delay of filter (compensated for in out_vector)
-//
-// Output:
-//      - out_vector        : Filtered samples
-//
-// Return value             : 0 if OK, -1 if |in_vector| is too short
-//
 
 //
 // WebRtcSpl_DotProductWithScale(...)
