@@ -335,15 +335,21 @@ class WebRTCLinuxFactory(WebRTCFactory):
       self.AddCommonMakeStep(test, descriptor="make_fixed_point")
       self.AddCommonTestRunStep(test, descriptor="fixed_point")
     elif test == "vie_auto_test":
+      # TODO(phoglund): Enable the full stack test once it is completed and
+      # nonflaky.
       self.addStep(shell.Compile(command=('xvfb-run --server-args="-screen 0 '
         '800x600x24 -extension Composite" out/Debug/vie_auto_test --automated '
-        '--gtest_filter="ViEStandardIntegrationTest.*:ViEApiIntegrationTest.*" '
+        '--gtest_filter="-ViEVideoVerificationTest.RunsFullStackWithoutErrors:'
+        '-ViEExtendedIntegrationTest.* '
         '--capture_test_ensure_resolution_alignment_in_capture_device=false'),
         workdir="build/trunk", description=[test, "running..."],
         descriptionDone=[test, "done..."], name="%s" % test))
     elif test == "voe_auto_test":
-      self.addStep(shell.Compile(command=('out/Debug/voe_auto_test --automated '
-                                          '--gtest_filter="-*Manual*"'),
+      # TODO(phoglund): Remove this notice and take appropriate action when
+      # http://code.google.com/p/webrtc/issues/detail?id=266 is concluded.
+      self.addStep(shell.Compile(
+        command=('out/Debug/voe_auto_test --automated '
+                 '--gtest_filter="-VolumeTest.*"'),
         workdir="build/trunk", description=[test, "running..."],
         descriptionDone=[test, "done..."], name="%s" % test))
     else:
