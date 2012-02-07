@@ -204,8 +204,10 @@ WebRtc_Word32 FileRecorderImpl::RecordAudioToFile(
         // Recording mono but incoming audio is (interleaved) stereo.
         tempAudioFrame._audioChannel = 1;
         tempAudioFrame._frequencyInHz = incomingAudioFrame._frequencyInHz;
+        tempAudioFrame._payloadDataLengthInSamples =
+          incomingAudioFrame._payloadDataLengthInSamples;
         for (WebRtc_UWord16 i = 0;
-             i < (incomingAudioFrame._payloadDataLengthInSamples >> 1); i++)
+             i < (incomingAudioFrame._payloadDataLengthInSamples); i++)
         {
             // Sample value is the average of left and right buffer rounded to
             // closest integer value. Note samples can be either 1 or 2 byte.
@@ -213,8 +215,24 @@ WebRtc_Word32 FileRecorderImpl::RecordAudioToFile(
                  ((incomingAudioFrame._payloadData[2 * i] +
                    incomingAudioFrame._payloadData[(2 * i) + 1] + 1) >> 1);
         }
+    }
+    else if( incomingAudioFrame._audioChannel == 1 &&
+        _moduleFile->IsStereo())
+    {
+        // Recording stereo but incoming audio is mono.
+        tempAudioFrame._audioChannel = 2;
+        tempAudioFrame._frequencyInHz = incomingAudioFrame._frequencyInHz;
         tempAudioFrame._payloadDataLengthInSamples =
-            incomingAudioFrame._payloadDataLengthInSamples / 2;
+          incomingAudioFrame._payloadDataLengthInSamples;
+        for (WebRtc_UWord16 i = 0;
+             i < (incomingAudioFrame._payloadDataLengthInSamples); i++)
+        {
+            // Duplicate sample to both channels
+             tempAudioFrame._payloadData[2*i] =
+               incomingAudioFrame._payloadData[i];
+             tempAudioFrame._payloadData[2*i+1] =
+               incomingAudioFrame._payloadData[i];
+        }
     }
 
     const AudioFrame* ptrAudioFrame = &incomingAudioFrame;
@@ -254,7 +272,8 @@ WebRtc_Word32 FileRecorderImpl::RecordAudioToFile(
                                           codec_info_.plfreq,
                                           kResamplerSynchronousStereo);
             _audioResampler.Push(ptrAudioFrame->_payloadData,
-                                 ptrAudioFrame->_payloadDataLengthInSamples,
+                                 ptrAudioFrame->_payloadDataLengthInSamples *
+                                 ptrAudioFrame->_audioChannel,
                                  (WebRtc_Word16*)_audioBuffer,
                                  MAX_AUDIO_BUFFER_IN_BYTES, outLen);
         } else {
@@ -266,7 +285,7 @@ WebRtc_Word32 FileRecorderImpl::RecordAudioToFile(
                                  (WebRtc_Word16*)_audioBuffer,
                                  MAX_AUDIO_BUFFER_IN_BYTES, outLen);
         }
-        encodedLenInBytes = outLen*2;
+        encodedLenInBytes = outLen * sizeof(WebRtc_Word16);
     }
 
     // Codec may not be operating at a frame rate of 10 ms. Whenever enough

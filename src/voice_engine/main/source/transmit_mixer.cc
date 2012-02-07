@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -722,7 +722,8 @@ int TransmitMixer::StartRecordingMicrophone(const WebRtc_Word8* fileName,
     const WebRtc_UWord32 notificationTime(0); // Not supported in VoE
     CodecInst dummyCodec = { 100, "L16", 16000, 320, 1, 320000 };
 
-    if (codecInst != NULL && codecInst->channels != 1)
+    if (codecInst != NULL &&
+      (codecInst->channels < 0 || codecInst->channels > 2))
     {
         _engineStatisticsPtr->SetLastError(
             VE_BAD_ARGUMENT, kTraceError,
@@ -1194,8 +1195,6 @@ TransmitMixer::GenerateAudioFrame(const WebRtc_Word16 audioSamples[],
 WebRtc_Word32 TransmitMixer::RecordAudioToFile(
     const WebRtc_UWord32 mixingFrequency)
 {
-    assert(_audioFrame._audioChannel == 1);
-
     CriticalSectionScoped cs(_critSect);
     if (_fileRecorderPtr == NULL)
     {

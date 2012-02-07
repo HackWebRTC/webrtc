@@ -1150,9 +1150,9 @@ WebRtc_Word32 MediaFileImpl::StartRecordingStream(
             StopRecording();
             return -1;
         }
-        if((STR_NCASE_CMP(codec_info_.plname, "L16", 4) != 0) &&
-           (STR_NCASE_CMP(codec_info_.plname, "PCMU", 5) != 0) &&
-           (STR_NCASE_CMP(codec_info_.plname, "PCMA", 5) != 0))
+        if((STR_NCASE_CMP(tmpAudioCodec.plname, "L16", 4) != 0) &&
+           (STR_NCASE_CMP(tmpAudioCodec.plname, "PCMU", 5) != 0) &&
+           (STR_NCASE_CMP(tmpAudioCodec.plname, "PCMA", 5) != 0))
         {
             WEBRTC_TRACE(
                 kTraceWarning,
