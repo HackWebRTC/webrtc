@@ -337,10 +337,10 @@ WebRtc_Word32 WebRtcAecm_Process(void *aecmInst, const WebRtc_Word16 *nearendNoi
 
     if (aecm->ECstartup)
     {
-        if (nearendClean == NULL)
+        if ((nearendClean == NULL) && (nearendNoisy != out))
         {
             memcpy(out, nearendNoisy, sizeof(short) * nrOfSamples);
-        } else
+        } else if (nearendClean != out)
         {
             memcpy(out, nearendClean, sizeof(short) * nrOfSamples);
         }
