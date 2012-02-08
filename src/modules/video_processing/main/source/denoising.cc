@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -16,8 +16,8 @@
 namespace webrtc {
 
 enum { kSubsamplingTime = 0 };       // Down-sampling in time (unit: number of frames)
-enum { kSubsamplingWidth = 3 };      // Sub-sampling in width (unit: power of 2)
-enum { kSubsamplingHeight = 2 };     // Sub-sampling in height (unit: power of 2)
+enum { kSubsamplingWidth = 0 };      // Sub-sampling in width (unit: power of 2)
+enum { kSubsamplingHeight = 0 };     // Sub-sampling in height (unit: power of 2)
 enum { kDenoiseFiltParam = 179 };    // (Q8) De-noising filter parameter
 enum { kDenoiseFiltParamRec = 77 };  // (Q8) 1 - filter parameter
 enum { kDenoiseThreshold = 19200 };  // (Q8) De-noising threshold level
