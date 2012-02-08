@@ -64,15 +64,19 @@ ThreadPosix::ThreadPosix(ThreadRunFunction func, ThreadObj obj,
       _dead(true),
       _prio(prio),
       _event(EventWrapper::Create()),
-      _setThreadName(false)
-{
+      _name(),
+      _setThreadName(false),
 #if (defined(WEBRTC_LINUX) || defined(WEBRTC_ANDROID))
-    _pid = -1;
+      _pid(-1),
 #endif
+      _attr(),
+      _thread(NULL)
+{
     if (threadName != NULL)
     {
         _setThreadName = true;
         strncpy(_name, threadName, kThreadMaxNameLength);
+        _name[kThreadMaxNameLength - 1] = '\0';
     }
 }
 

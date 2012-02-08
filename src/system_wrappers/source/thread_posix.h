@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -57,11 +57,11 @@ private:
     bool                    _setThreadName;
 
     // handle to thread
-    pthread_attr_t          _attr;
-    pthread_t               _thread;
 #if (defined(WEBRTC_LINUX) || defined(WEBRTC_ANDROID))
     pid_t                   _pid;
 #endif
+    pthread_attr_t          _attr;
+    pthread_t               _thread;
 };
 } // namespace webrtc
 
