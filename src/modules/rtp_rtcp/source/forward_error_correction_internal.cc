@@ -38,25 +38,23 @@ enum ProtectionMode
   * \param[out] packetMask      A pointer to hold the output mask, of size
   *                             [0, x * numMaskBytes], where x >= numRows.
   */
-void FitSubMask(WebRtc_UWord16 numMaskBytes,
-                WebRtc_UWord16 numSubMaskBytes,
-                WebRtc_UWord16 numRows,
-                const WebRtc_UWord8* subMask,
-                WebRtc_UWord8* packetMask)
+void FitSubMask(int numMaskBytes,
+                int numSubMaskBytes,
+                int numRows,
+                const uint8_t* subMask,
+                uint8_t* packetMask)
 {
     if (numMaskBytes == numSubMaskBytes)
     {
-        memcpy(packetMask,subMask,
-               static_cast<WebRtc_UWord32>(numRows) *
-               static_cast<WebRtc_UWord32>(numSubMaskBytes));
+        memcpy(packetMask, subMask, numRows * numSubMaskBytes);
     }
     else
     {
-        for (WebRtc_UWord32 i = 0; i < numRows; i++)
+        for (int i = 0; i < numRows; i++)
         {
-            WebRtc_UWord32 pktMaskIdx = i * numMaskBytes;
-            WebRtc_UWord32 pktMaskIdx2 = i * numSubMaskBytes;
-            for (WebRtc_UWord32 j = 0; j < numSubMaskBytes; j++)
+            int pktMaskIdx = i * numMaskBytes;
+            int pktMaskIdx2 = i * numSubMaskBytes;
+            for (int j = 0; j < numSubMaskBytes; j++)
             {
                 packetMask[pktMaskIdx] = subMask[pktMaskIdx2];
                 pktMaskIdx++;
@@ -85,34 +83,33 @@ void FitSubMask(WebRtc_UWord16 numMaskBytes,
 // TODO (marpan): This function is doing three things at the same time:
 // shift within a byte, byte shift and resizing.
 // Split up into subroutines.
-void ShiftFitSubMask(WebRtc_UWord16 numMaskBytes,
-                     WebRtc_UWord16 resMaskBytes,
-                     WebRtc_UWord16 numColumnShift,
-                     WebRtc_UWord16 endRow,
-                     const WebRtc_UWord8* subMask,
-                     WebRtc_UWord8* packetMask)
+void ShiftFitSubMask(int numMaskBytes,
+                     int resMaskBytes,
+                     int numColumnShift,
+                     int endRow,
+                     const uint8_t* subMask,
+                     uint8_t* packetMask)
 {
 
     // Number of bit shifts within a byte
-    const WebRtc_UWord8 numBitShifts = (numColumnShift % 8);
-    const WebRtc_UWord8 numByteShifts = numColumnShift >> 3;
+    const int numBitShifts = (numColumnShift % 8);
+    const int numByteShifts = numColumnShift >> 3;
 
     // Modify new mask with sub-mask21.
 
     // Loop over the remaining FEC packets.
-    for (WebRtc_UWord32 i = numColumnShift; i < endRow; i++)
+    for (int i = numColumnShift; i < endRow; i++)
     {
         // Byte index of new mask, for row i and column resMaskBytes,
         // offset by the number of bytes shifts
-        WebRtc_UWord32 pktMaskIdx = i * numMaskBytes + resMaskBytes - 1
-            + numByteShifts;
+        int pktMaskIdx = i * numMaskBytes + resMaskBytes - 1 + numByteShifts;
         // Byte index of subMask, for row i and column resMaskBytes
-        WebRtc_UWord32 pktMaskIdx2 =
+        int pktMaskIdx2 =
             (i - numColumnShift) * resMaskBytes + resMaskBytes - 1;
 
-        WebRtc_UWord8  shiftRightCurrByte = 0;
-        WebRtc_UWord8  shiftLeftPrevByte = 0;
-        WebRtc_UWord8  combNewByte = 0;
+        uint8_t shiftRightCurrByte = 0;
+        uint8_t shiftLeftPrevByte = 0;
+        uint8_t combNewByte = 0;
 
         // Handle case of numMaskBytes > resMaskBytes:
         // For a given row, copy the rightmost "numBitShifts" bits
@@ -127,7 +124,7 @@ void ShiftFitSubMask(WebRtc_UWord16 numMaskBytes,
         // For each row i (FEC packet), shift the bit-mask of the subMask.
         // Each row of the mask contains "resMaskBytes" of bytes.
         // We start from the last byte of the subMask and move to first one.
-        for (WebRtc_Word32 j = resMaskBytes - 1; j > 0; j--)
+        for (int j = resMaskBytes - 1; j > 0; j--)
         {
             // Shift current byte of sub21 to the right by "numBitShifts".
             shiftRightCurrByte =
@@ -159,24 +156,24 @@ namespace webrtc {
 namespace internal {
 
 // Remaining protection after important (first partition) packet protection
-void RemainingPacketProtection(WebRtc_UWord16 numMediaPackets,
-                               WebRtc_UWord16 numFecRemaining,
-                               WebRtc_UWord16 numFecForImpPackets,
-                               WebRtc_UWord16 numMaskBytes,
+void RemainingPacketProtection(int numMediaPackets,
+                               int numFecRemaining,
+                               int numFecForImpPackets,
+                               int numMaskBytes,
                                ProtectionMode mode,
-                               WebRtc_UWord8* packetMask)
+                               uint8_t* packetMask)
 {
     if (mode == kModeNoOverlap)
     {
         // subMask21
 
-        const WebRtc_UWord8 lBit =
+        const int lBit =
             (numMediaPackets - numFecForImpPackets) > 16 ? 1 : 0;
 
-        const WebRtc_UWord16 resMaskBytes =
-            (lBit == 1)? kMaskSizeLBitSet : kMaskSizeLBitClear;
+        const int resMaskBytes =
+            (lBit == 1) ? kMaskSizeLBitSet : kMaskSizeLBitClear;
 
-        const WebRtc_UWord8* packetMaskSub21 =
+        const uint8_t* packetMaskSub21 =
             packetMaskTbl[numMediaPackets - numFecForImpPackets - 1]
                          [numFecRemaining - 1];
 
@@ -189,7 +186,7 @@ void RemainingPacketProtection(WebRtc_UWord16 numMediaPackets,
     {
         // subMask22
 
-        const WebRtc_UWord8* packetMaskSub22 =
+        const uint8_t* packetMaskSub22 =
             packetMaskTbl[numMediaPackets - 1][numFecRemaining - 1];
 
         FitSubMask(numMaskBytes, numMaskBytes, numFecRemaining, packetMaskSub22,
@@ -197,9 +194,9 @@ void RemainingPacketProtection(WebRtc_UWord16 numMediaPackets,
 
         if (mode == kModeBiasFirstPacket)
         {
-            for (WebRtc_UWord32 i = 0; i < numFecRemaining; i++)
+            for (int i = 0; i < numFecRemaining; i++)
             {
-                WebRtc_UWord32 pktMaskIdx = i * numMaskBytes;
+                int pktMaskIdx = i * numMaskBytes;
                 packetMask[pktMaskIdx] = packetMask[pktMaskIdx] | (1 << 7);
             }
         }
@@ -212,19 +209,18 @@ void RemainingPacketProtection(WebRtc_UWord16 numMediaPackets,
 }
 
 // Protection for important (first partition) packets
-void ImportantPacketProtection(WebRtc_UWord16 numFecForImpPackets,
-                               WebRtc_UWord16 numImpPackets,
-                               WebRtc_UWord16 numMaskBytes,
-                               WebRtc_UWord8* packetMask)
+void ImportantPacketProtection(int numFecForImpPackets,
+                               int numImpPackets,
+                               int numMaskBytes,
+                               uint8_t* packetMask)
 {
-    const WebRtc_UWord8 lBit = numImpPackets > 16 ? 1 : 0;
-    const WebRtc_UWord16 numImpMaskBytes =
-    (lBit == 1)? kMaskSizeLBitSet : kMaskSizeLBitClear;
-
+    const int lBit = numImpPackets > 16 ? 1 : 0;
+    const int numImpMaskBytes =
+        (lBit == 1) ? kMaskSizeLBitSet : kMaskSizeLBitClear;
 
     // Get subMask1 from table
-    const WebRtc_UWord8* packetMaskSub1 =
-    packetMaskTbl[numImpPackets - 1][numFecForImpPackets - 1];
+    const uint8_t* packetMaskSub1 =
+        packetMaskTbl[numImpPackets - 1][numFecForImpPackets - 1];
 
     FitSubMask(numMaskBytes, numImpMaskBytes,
                numFecForImpPackets, packetMaskSub1, packetMask);
@@ -234,20 +230,19 @@ void ImportantPacketProtection(WebRtc_UWord16 numFecForImpPackets,
 // This function sets the protection allocation: i.e., how many FEC packets
 // to use for numImp (1st partition) packets, given the: number of media
 // packets, number of FEC packets, and number of 1st partition packets.
-WebRtc_UWord32 SetProtectionAllocation(const WebRtc_UWord16 numMediaPackets,
-                                       const WebRtc_UWord16 numFecPackets,
-                                       const WebRtc_UWord16 numImpPackets)
+int SetProtectionAllocation(int numMediaPackets,
+                            int numFecPackets,
+                            int numImpPackets)
 {
 
     // TODO (marpan): test different cases for protection allocation:
 
     // Use at most (allocPar * numFecPackets) for important packets.
     float allocPar = 0.5;
-    WebRtc_UWord16 maxNumFecForImp =  static_cast<WebRtc_UWord16>
-                                      (allocPar * numFecPackets);
+    int maxNumFecForImp = allocPar * numFecPackets;
 
-    WebRtc_UWord16 numFecForImpPackets = (numImpPackets < maxNumFecForImp) ?
-                                          numImpPackets : maxNumFecForImp;
+    int numFecForImpPackets = (numImpPackets < maxNumFecForImp) ?
+        numImpPackets : maxNumFecForImp;
 
     // Fall back to equal protection in this case
     if (numFecPackets == 1 && (numMediaPackets > 2 * numImpPackets))
@@ -303,18 +298,18 @@ WebRtc_UWord32 SetProtectionAllocation(const WebRtc_UWord16 numMediaPackets,
 // Protection Mode 2 may be extended for a sort of sliding protection
 // (i.e., vary the number/density of "1s" across columns) across packets.
 
-void UnequalProtectionMask(const WebRtc_UWord16 numMediaPackets,
-                           const WebRtc_UWord16 numFecPackets,
-                           const WebRtc_UWord16 numImpPackets,
-                           const WebRtc_UWord16 numMaskBytes,
-                           WebRtc_UWord8* packetMask)
+void UnequalProtectionMask(int numMediaPackets,
+                           int numFecPackets,
+                           int numImpPackets,
+                           int numMaskBytes,
+                           uint8_t* packetMask)
 {
 
     // Set Protection type and allocation
     // TODO (marpan): test/update for best mode and some combinations thereof.
 
     ProtectionMode mode = kModeOverlap;
-    WebRtc_UWord16 numFecForImpPackets = 0;
+    int numFecForImpPackets = 0;
 
     if (mode != kModeBiasFirstPacket)
     {
@@ -323,7 +318,7 @@ void UnequalProtectionMask(const WebRtc_UWord16 numMediaPackets,
                                                       numImpPackets);
     }
 
-    WebRtc_UWord16 numFecRemaining = numFecPackets - numFecForImpPackets;
+    int numFecRemaining = numFecPackets - numFecForImpPackets;
     // Done with setting protection type and allocation
 
     //
@@ -351,7 +346,7 @@ void GeneratePacketMasks(int numMediaPackets,
                          int numFecPackets,
                          int numImpPackets,
                          bool useUnequalProtection,
-                         WebRtc_UWord8* packetMask)
+                         uint8_t* packetMask)
 {
     assert(numMediaPackets <= static_cast<int>(sizeof(packetMaskTbl) /
             sizeof(*packetMaskTbl)));
@@ -359,9 +354,9 @@ void GeneratePacketMasks(int numMediaPackets,
     assert(numFecPackets <= numMediaPackets && numFecPackets > 0);
     assert(numImpPackets <= numMediaPackets && numImpPackets >= 0);
 
-    WebRtc_UWord8 lBit = numMediaPackets > 16 ? 1 : 0;
-    const WebRtc_UWord16 numMaskBytes =
-        (lBit == 1)? kMaskSizeLBitSet : kMaskSizeLBitClear;
+    int lBit = numMediaPackets > 16 ? 1 : 0;
+    const int numMaskBytes =
+        (lBit == 1) ? kMaskSizeLBitSet : kMaskSizeLBitClear;
 
     // Equal-protection for these cases
     if (!useUnequalProtection || numImpPackets == 0)
@@ -369,9 +364,9 @@ void GeneratePacketMasks(int numMediaPackets,
         // Retrieve corresponding mask table directly:for equal-protection case.
         // Mask = (k,n-k), with protection factor = (n-k)/k,
         // where k = numMediaPackets, n=total#packets, (n-k)=numFecPackets.
-        memcpy(packetMask, packetMaskTbl[numMediaPackets - 1][numFecPackets - 1],
-            static_cast<WebRtc_UWord32>(numFecPackets) *
-            static_cast<WebRtc_UWord32>(numMaskBytes));
+        memcpy(packetMask,
+               packetMaskTbl[numMediaPackets - 1][numFecPackets - 1],
+               numFecPackets * numMaskBytes);
     }
     else  //UEP case
     {

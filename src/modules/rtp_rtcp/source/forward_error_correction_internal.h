@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -13,9 +13,9 @@
 namespace webrtc {
 
 // Packet mask size in bytes (L bit is set).
-const WebRtc_UWord8 kMaskSizeLBitSet = 6;
+static const int kMaskSizeLBitSet = 6;
 // Packet mask size in bytes (L bit is cleared).
-const WebRtc_UWord8 kMaskSizeLBitClear = 2;
+static const int kMaskSizeLBitClear = 2;
 
 namespace internal {
 
@@ -42,6 +42,7 @@ void GeneratePacketMasks(int numMediaPackets,
                          int numFecPackets,
                          int numImpPackets,
                          bool useUnequalProtection,
-                         WebRtc_UWord8* packetMask);
+                         uint8_t* packetMask);
+
 } // namespace internal
 } // namespace webrtc
