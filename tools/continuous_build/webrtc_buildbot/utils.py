@@ -383,7 +383,7 @@ class WebRTCLinuxFactory(WebRTCFactory):
       self.addStep(shell.Compile(command=('xvfb-run --server-args="-screen 0 '
         '800x600x24 -extension Composite" out/Debug/vie_auto_test --automated '
         '--gtest_filter="-ViEVideoVerificationTest.RunsFullStackWithoutErrors:'
-        '-ViEExtendedIntegrationTest.* '
+        '-ViEExtendedIntegrationTest.*" '
         '--capture_test_ensure_resolution_alignment_in_capture_device=false'),
         workdir="build/trunk", description=[test, "running..."],
         descriptionDone=[test, "done..."], name="%s" % test))
