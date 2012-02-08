@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -78,6 +78,8 @@
  * NETEQ_G722_1C_CODEC            Enable G722.1 Annex C
  *
  * NETEQ_SPEEX_CODEC              Enable Speex (at 8 and 16 kHz sample rate)
+ *
+ * NETEQ_CELT_CODEC               Enable Celt (at 32 kHz sample rate)
  *
  * NETEQ_GSMFR_CODEC              Enable GSM-FR
  *
@@ -259,6 +261,7 @@
     #define NETEQ_ISAC_SWB_CODEC
     #define NETEQ_32KHZ_WIDEBAND
     #define NETEQ_G722_1C_CODEC
+    #define NETEQ_CELT_CODEC
 #endif
 
 #if (defined(NETEQ_VOICEENGINE_CODECS))
@@ -290,6 +293,7 @@
     #define NETEQ_ISAC_SWB_CODEC
     #define NETEQ_32KHZ_WIDEBAND
     #define NETEQ_G722_1C_CODEC
+    #define NETEQ_CELT_CODEC
 
 #endif 
 
@@ -323,6 +327,7 @@
     #define NETEQ_ISAC_SWB_CODEC
     #define NETEQ_32KHZ_WIDEBAND
     #define NETEQ_G722_1C_CODEC
+    #define NETEQ_CELT_CODEC
 
     /* Super wideband 48kHz codecs */
     #define NETEQ_48KHZ_WIDEBAND

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -664,6 +664,7 @@ ACMGenericCodec::InitEncoderSafe(
         }
     }
     _frameLenSmpl = (codecParams->codecInstant).pacsize;
+    _noChannels = codecParams->codecInstant.channels;
     status = InternalInitEncoder(codecParams);
     if(status < 0)
     {
@@ -699,8 +700,6 @@ ACMGenericCodec::InitEncoderSafe(
     }
     status = SetVADSafe(codecParams->enableDTX, codecParams->enableVAD,
         codecParams->vadMode);
-
-    _noChannels = codecParams->codecInstant.channels;
 
     return status;
 }

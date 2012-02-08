@@ -42,6 +42,7 @@ namespace ModuleRTPUtility
         WebRtc_UWord8     channels;
         WebRtc_UWord8     bitsPerSample;
         WebRtc_UWord32    rate;
+        bool              trueStereoCodec;
     };
     struct VideoPayload
     {

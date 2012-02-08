@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -575,6 +575,31 @@ int decoder_SPEEX::loadToNetEQ(NETEQTEST_NetEQClass & neteq)
     WebRtcNetEQ_CodecDef codecInst;
 
     SET_SPEEX_FUNCTIONS(codecInst);
+
+    return(NETEQTEST_Decoder::loadToNetEQ(neteq, codecInst));
+}
+#endif
+
+#ifdef CODEC_CELT_32
+#include "celt_interface.h"
+decoder_CELT::decoder_CELT(WebRtc_UWord8 pt, WebRtc_UWord16 fs)
+:
+NETEQTEST_Decoder(kDecoderCELT_32, fs, "CELT", pt)
+{
+   if (WebRtcCelt_CreateDec((CELT_decinst_t **) &_decoder, 1))
+        exit(EXIT_FAILURE);
+}
+
+decoder_CELT::~decoder_CELT()
+{
+    WebRtcCelt_FreeDec((CELT_decinst_t *) _decoder);
+}
+
+int decoder_CELT::loadToNetEQ(NETEQTEST_NetEQClass & neteq)
+{
+    WebRtcNetEQ_CodecDef codecInst;
+
+    SET_CELT_FUNCTIONS(codecInst);
 
     return(NETEQTEST_Decoder::loadToNetEQ(neteq, codecInst));
 }

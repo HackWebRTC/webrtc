@@ -225,6 +225,7 @@ ModuleRTPUtility::Payload* RTPReceiverAudio::RegisterReceiveAudioPayload(
     }
   }
   WebRtc_UWord8 bitsPerSample = 0; // zero implies frame based
+  bool isTrueStereo = false; // Default value
   if (ModuleRTPUtility::StringCompare(payloadName, "DVI4", 4)) {
     bitsPerSample = 4;
   } else if(ModuleRTPUtility::StringCompare(payloadName, "G722", 4)) {
@@ -250,6 +251,9 @@ ModuleRTPUtility::Payload* RTPReceiverAudio::RegisterReceiveAudioPayload(
     bitsPerSample = 8;
   } else if(ModuleRTPUtility::StringCompare(payloadName,"PCMA",4)) {
     bitsPerSample = 8;
+  } else if(ModuleRTPUtility::StringCompare(payloadName,"CELT",4))
+  {
+    isTrueStereo = true;
   }
   ModuleRTPUtility::Payload* payload = new ModuleRTPUtility::Payload;
   payload->name[RTP_PAYLOAD_NAME_SIZE - 1] = 0;
@@ -258,6 +262,7 @@ ModuleRTPUtility::Payload* RTPReceiverAudio::RegisterReceiveAudioPayload(
   payload->typeSpecific.Audio.channels = channels;
   payload->typeSpecific.Audio.bitsPerSample = bitsPerSample;
   payload->typeSpecific.Audio.rate = rate;
+  payload->typeSpecific.Audio.trueStereoCodec = isTrueStereo;
   payload->audio = true;
   return payload;
 }
@@ -538,6 +543,18 @@ RTPReceiverAudio::ParseAudioCodecSpecific(WebRtcRTPHeader* rtpHeader,
                                                            channelLength,
                                                            rtpHeader);
                 }
+            }
+        } else if (audioSpecific.trueStereoCodec)
+        {
+            // One callback with the whole payload for each channel.
+            for(int channel = 1; (channel <= audioSpecific.channels) &&
+                (retVal == 0); channel++)
+            {
+                // One callback per channel.
+                rtpHeader->type.Audio.channel = channel;
+                retVal = CallbackOfReceivedPayloadData(payloadData,
+                                                       payloadLength,
+                                                       rtpHeader);
             }
         } else
         {

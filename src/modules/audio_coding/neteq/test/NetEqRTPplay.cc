@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -1027,6 +1027,12 @@ void parsePtypeFile(FILE *ptypeFile, std::map<WebRtc_UWord8, decoderStruct>* dec
                 tempDecoder.fs = 16000;
             }
 #endif
+#ifdef CODEC_CELT_32
+            else if(strcmp(codec, "celt32") == 0) {
+                tempDecoder.codec = kDecoderCELT_32;
+                tempDecoder.fs = 32000;
+            }
+#endif
 #ifdef CODEC_SILK_NB
             else if(strcmp(codec, "silk8") == 0) {
                 tempDecoder.codec = NETEQ_CODEC_SILK_8;
@@ -1419,6 +1425,11 @@ void createAndInsertDecoders (NETEQTEST_NetEQClass *neteq, std::map<WebRtc_UWord
 #ifdef CODEC_SPEEX_16
             case kDecoderSPEEX_16:
                 *dec = new decoder_SPEEX( pt, 16000 );
+                break;
+#endif
+#ifdef CODEC_CELT_32
+            case kDecoderCELT_32:
+                *dec = new decoder_CELT( pt, 32000 );
                 break;
 #endif
 #ifdef CODEC_RED

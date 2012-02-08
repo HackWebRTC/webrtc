@@ -17,3 +17,4 @@ pcm16b_swb32khz 95
 //pcm16b_swb48khz 96
 //mpeg4aac 122
 g722 9
+celt32 114

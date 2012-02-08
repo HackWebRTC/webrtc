@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -674,6 +674,11 @@ int WebRtcNetEQ_GetDefaultCodecSettings(const enum WebRtcNetEQDecoder *codecID,
             codecBuffers = 10;
         }
         else if (codecID[i] == kDecoderSPEEX_16)
+        {
+            codecBytes = 1250; /* 210ms @ 50kbps */
+            codecBuffers = 10;
+        }
+        else if (codecID[i] == kDecoderCELT_32)
         {
             codecBytes = 1250; /* 210ms @ 50kbps */
             codecBuffers = 10;

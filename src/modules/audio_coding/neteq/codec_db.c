@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -160,6 +160,9 @@ int WebRtcNetEQ_DbAdd(CodecDbInst_t *inst, enum WebRtcNetEQDecoder codec,
 #ifdef NETEQ_SPEEX_CODEC
         case kDecoderSPEEX_8 :
         case kDecoderSPEEX_16 :
+#endif
+#ifdef NETEQ_CELT_CODEC
+        case kDecoderCELT_32 :
 #endif
 #ifdef NETEQ_GSMFR_CODEC
         case kDecoderGSMFR :
@@ -467,6 +470,9 @@ int WebRtcNetEQ_DbGetSplitInfo(SplitInfo_t *inst, enum WebRtcNetEQDecoder codecI
 #ifdef NETEQ_SPEEX_CODEC
         case kDecoderSPEEX_8:
         case kDecoderSPEEX_16:
+#endif
+#ifdef NETEQ_CELT_CODEC
+        case kDecoderCELT_32 :
 #endif
 #ifdef NETEQ_G729_1_CODEC
         case kDecoderG729_1:

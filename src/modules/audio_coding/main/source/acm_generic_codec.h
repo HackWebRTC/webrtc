@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -811,6 +811,18 @@ public:
         WebRtc_UWord8*      payload,
         WebRtc_Word16*      payloadLenBytes);
 
+    ///////////////////////////////////////////////////////////////////////////
+    // IsTrueStereoCodec()
+    // Call to see if current encoder is a true stereo codec. This function
+    // should be overwritten for codecs which are true stereo codecs
+    // Return value:
+    //   -true  if stereo codec
+    //   -false if not stereo codec.
+    //
+    virtual bool IsTrueStereoCodec() {
+      return false;
+    }
+
 protected:
     ///////////////////////////////////////////////////////////////////////////
     // All the functions with FunctionNameSafe(...) contain the actual
@@ -1261,7 +1273,6 @@ protected:
 
     virtual void SaveDecoderParamSafe(
         const WebRtcACMCodecParams* codecParams);
-
 
     // &_inAudio[_inAudioIxWrite] always point to where new audio can be
     // written to

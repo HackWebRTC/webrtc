@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -583,7 +583,7 @@ void TestAllCodecs::Perform()
     } else {
         printf(".");
     }
-    _testCntr++; 
+    _testCntr++;
     OpenOutFile(_testCntr);
     char codecPCMA[] = "PCMA";
     RegisterSendCodec('A', codecPCMA, 8000, 64000, 80, 0);
@@ -597,13 +597,12 @@ void TestAllCodecs::Perform()
     RegisterSendCodec('A', codecPCMA, 8000, 64000, 400, 0);
     Run(_channelA2B);
     RegisterSendCodec('A', codecPCMA, 8000, 64000, 480, 0);
+    Run(_channelA2B);
     if(_testMode != 0) {
         printf("=======================================================================\n");
     } else {
         printf(".");
     }
-    _testCntr++;
-    Run(_channelA2B);
     char codecPCMU[] = "PCMU";
     RegisterSendCodec('A', codecPCMU, 8000, 64000, 80, 0);
     Run(_channelA2B);
@@ -650,7 +649,19 @@ void TestAllCodecs::Perform()
     Run(_channelA2B);
     _outFileB.Close();
 #endif
-
+#ifdef WEBRTC_CODEC_CELT
+    if(_testMode != 0) {
+        printf("=======================================================================\n");
+    } else {
+        printf(".");
+    }
+    _testCntr++;
+    OpenOutFile(_testCntr);
+    char codecCELT_32[] = "CELT";
+    RegisterSendCodec('A', codecCELT_32, 32000, 48000, 320, 0);
+    Run(_channelA2B);
+    _outFileB.Close();
+#endif
     if(_testMode != 0) {
         printf("=======================================================================\n");
     } else {

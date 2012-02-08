@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -262,6 +262,14 @@ class decoder_SPEEX : public NETEQTEST_Decoder
 public:
     decoder_SPEEX(WebRtc_UWord8 pt = 0, WebRtc_UWord16 fs = 8000);
     virtual ~decoder_SPEEX();
+    int loadToNetEQ(NETEQTEST_NetEQClass & neteq);
+};
+
+class decoder_CELT : public NETEQTEST_Decoder
+{
+public:
+    decoder_CELT(WebRtc_UWord8 pt = 0, WebRtc_UWord16 fs = 32000);
+    virtual ~decoder_CELT();
     int loadToNetEQ(NETEQTEST_NetEQClass & neteq);
 };
 

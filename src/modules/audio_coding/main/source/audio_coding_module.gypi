@@ -1,4 +1,4 @@
-# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+# Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
@@ -42,6 +42,8 @@
         'acm_amr.h',
         'acm_amrwb.cc',
         'acm_amrwb.h',
+        'acm_celt.cc',
+        'acm_celt.h',
         'acm_cng.cc',
         'acm_cng.h',
         'acm_codec_database.cc',

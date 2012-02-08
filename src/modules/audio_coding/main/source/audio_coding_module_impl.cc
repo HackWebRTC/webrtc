@@ -1642,6 +1642,12 @@ AudioCodingModuleImpl::RegisterRecCodecMSSafe(
     else if(jitterBuffer == ACMNetEQ::slaveJB)
     {
         codecArray = &_slaveCodecs[0];
+        if (_codecs[codecId]->IsTrueStereoCodec()) {
+          // True stereo codecs need to use the same codec memory
+          // for both master and slave.
+          _slaveCodecs[mirrorId] = _codecs[mirrorId];
+          _mirrorCodecIdx[mirrorId] = mirrorId;
+        }
     }
     else
     {
@@ -1827,6 +1833,8 @@ AudioCodingModuleImpl::IncomingPacket(
                         // current payload type.
                         if (_stereoReceive[i]) {
                           _expected_channels = 2;
+                        } else {
+                          _expected_channels = 1;
                         }
 
                         // Reset previous received channel

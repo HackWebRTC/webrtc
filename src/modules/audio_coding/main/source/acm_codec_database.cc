@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -58,6 +58,10 @@
     #include "acm_amrwb.h"
     #include "amrwb_interface.h"
 #endif
+#ifdef WEBRTC_CODEC_CELT
+    #include "acm_celt.h"
+    #include "celt_interface.h"
+#endif
 #ifdef WEBRTC_CODEC_G722
     #include "acm_g722.h"
     #include "g722_interface.h"
@@ -111,8 +115,9 @@ const int kDynamicPayloadtypes[ACMCodecDB::kMaxNumCodecs] = {
 // default channel support, and default rate.
 #if (defined(WEBRTC_CODEC_PCM16) || \
      defined(WEBRTC_CODEC_AMR) || defined(WEBRTC_CODEC_AMRWB) || \
-     defined(WEBRTC_CODEC_G729_1) || defined(WEBRTC_CODEC_SPEEX) || \
-     defined(WEBRTC_CODEC_G722_1) || defined(WEBRTC_CODEC_G722_1C))
+     defined(WEBRTC_CODEC_CELT) || defined(WEBRTC_CODEC_G729_1) || \
+     defined(WEBRTC_CODEC_SPEEX) || defined(WEBRTC_CODEC_G722_1) || \
+     defined(WEBRTC_CODEC_G722_1C))
 static int count_database = 0;
 #endif
 
@@ -139,6 +144,9 @@ const CodecInst ACMCodecDB::database_[] = {
 #endif
 #ifdef WEBRTC_CODEC_AMRWB
   {kDynamicPayloadtypes[count_database++], "AMR-WB", 16000, 320, 1, 20000},
+#endif
+#ifdef WEBRTC_CODEC_CELT
+  {kDynamicPayloadtypes[count_database++], "CELT", 32000, 320, 1, 48000},
 #endif
 #ifdef WEBRTC_CODEC_G722
   {9, "G722", 16000, 320, 1, 64000},
@@ -208,6 +216,9 @@ const ACMCodecDB::CodecSettings ACMCodecDB::codec_settings_[] = {
 #ifdef WEBRTC_CODEC_AMRWB
   {3, {320, 640, 960}, 0, 1},
 #endif
+#ifdef WEBRTC_CODEC_CELT
+  {1, {320}, 0, 2},
+#endif
 #ifdef WEBRTC_CODEC_G722
   {6, {160, 320, 480, 640, 800, 960}, 0, 2},
 #endif
@@ -272,6 +283,9 @@ const WebRtcNetEQDecoder ACMCodecDB::neteq_decoders_[] = {
 #endif
 #ifdef WEBRTC_CODEC_AMRWB
   kDecoderAMRWB,
+#endif
+#ifdef WEBRTC_CODEC_CELT
+  kDecoderCELT_32,
 #endif
 #ifdef WEBRTC_CODEC_G722
   kDecoderG722,
@@ -698,6 +712,10 @@ ACMGenericCodec* ACMCodecDB::CreateCodecInstance(const CodecInst* codec_inst) {
   } else if (!STR_CASE_CMP(codec_inst->plname, "AMR-WB")) {
 #ifdef WEBRTC_CODEC_AMRWB
     return new ACMAMRwb(kGSMAMRWB);
+#endif
+  } else if (!STR_CASE_CMP(codec_inst->plname, "CELT")) {
+#ifdef WEBRTC_CODEC_CELT
+    return new ACMCELT(kCELT32);
 #endif
   } else if (!STR_CASE_CMP(codec_inst->plname, "G722")) {
 #ifdef WEBRTC_CODEC_G722

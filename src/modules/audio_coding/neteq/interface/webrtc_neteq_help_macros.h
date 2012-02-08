@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -322,6 +322,28 @@
                     inst.funcDecodeRCU=NULL; \
                     inst.funcDecodePLC=(WebRtcNetEQ_FuncDecodePLC)WebRtcSpeex_DecodePlc; \
                     inst.funcDecodeInit=(WebRtcNetEQ_FuncDecodeInit)WebRtcSpeex_DecoderInit; \
+                    inst.funcAddLatePkt=NULL; \
+                    inst.funcGetMDinfo=NULL; \
+                    inst.funcGetPitch=NULL; \
+                    inst.funcUpdBWEst=NULL; \
+                    inst.funcGetErrorCode=NULL;
+
+#define SET_CELT_FUNCTIONS(inst) \
+                    inst.funcDecode=(WebRtcNetEQ_FuncDecode)WebRtcCelt_Decode; \
+                    inst.funcDecodeRCU=NULL; \
+                    inst.funcDecodePLC=(WebRtcNetEQ_FuncDecodePLC)WebRtcCelt_DecodePlc; \
+                    inst.funcDecodeInit=(WebRtcNetEQ_FuncDecodeInit)WebRtcCelt_DecoderInit; \
+                    inst.funcAddLatePkt=NULL; \
+                    inst.funcGetMDinfo=NULL; \
+                    inst.funcGetPitch=NULL; \
+                    inst.funcUpdBWEst=NULL; \
+                    inst.funcGetErrorCode=NULL;
+
+#define SET_CELTSLAVE_FUNCTIONS(inst) \
+                    inst.funcDecode=(WebRtcNetEQ_FuncDecode)WebRtcCelt_DecodeSlave; \
+                    inst.funcDecodeRCU=NULL; \
+                    inst.funcDecodePLC=(WebRtcNetEQ_FuncDecodePLC)WebRtcCelt_DecodePlc; \
+                    inst.funcDecodeInit=(WebRtcNetEQ_FuncDecodeInit)WebRtcCelt_DecoderInit; \
                     inst.funcAddLatePkt=NULL; \
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \

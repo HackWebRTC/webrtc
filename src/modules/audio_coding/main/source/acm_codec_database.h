@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -50,6 +50,9 @@ class ACMCodecDB {
 #endif
 #ifdef WEBRTC_CODEC_AMRWB
     , kGSMAMRWB
+#endif
+#ifdef WEBRTC_CODEC_CELT
+    , kCELT32
 #endif
 #ifdef WEBRTC_CODEC_G722
     , kG722
@@ -111,6 +114,9 @@ class ACMCodecDB {
 #endif
 #ifndef WEBRTC_CODEC_AMRWB
   enum {kGSMAMRWB = -1};
+#endif
+#ifndef WEBRTC_CODEC_CELT
+  enum {kCELT32 = -1};
 #endif
 #ifndef WEBRTC_CODEC_G722
   enum {kG722 = -1};
