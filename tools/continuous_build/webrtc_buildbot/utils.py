@@ -453,11 +453,14 @@ class WebRTCMacFactory(WebRTCFactory):
       cmd = ["make", make, "-j100"]
       if make_extra is not None:
         cmd.append(make_extra)
+      if self.release:
+        cmd.append("BUILDTYPE=Release")
       self.AddCommonStep(cmd, descriptor=make_descriptor+["(make)"],
                          workdir="build/trunk")
     if self.build_type == "xcode" or self.build_type == "both":
+      configuration = "Release" if self.release else "Debug"
       cmd = ["xcodebuild", "-project", "webrtc.xcodeproj", "-configuration", 
-             "Debug", "-target", "All"]
+             configuration, "-target", "All"]
       self.AddCommonStep(cmd, descriptor=make_descriptor+["(xcode)"],
                          workdir="build/trunk")
 
