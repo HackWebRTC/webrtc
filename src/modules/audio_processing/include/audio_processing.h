@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -216,8 +216,8 @@ class AudioProcessing : public Module {
     int minimum;  // Long-term minimum.
   };
 
-  // Fatal errors.
-  enum Errors {
+  enum Error {
+    // Fatal errors.
     kNoError = 0,
     kUnspecifiedError = -1,
     kCreationFailedError = -2,
@@ -230,14 +230,12 @@ class AudioProcessing : public Module {
     kBadNumberChannelsError = -9,
     kFileError = -10,
     kStreamParameterNotSetError = -11,
-    kNotEnabledError = -12
-  };
+    kNotEnabledError = -12,
 
-  // Warnings are non-fatal.
-  enum Warnings {
+    // Warnings are non-fatal.
     // This results when a set_stream_ parameter is out of range. Processing
     // will continue, but the parameter may have been truncated.
-    kBadStreamParameterWarning = -13,
+    kBadStreamParameterWarning = -13
   };
 
   // Inherited from Module.

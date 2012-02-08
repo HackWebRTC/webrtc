@@ -33,22 +33,18 @@ WebRtc_Word16 MapSetting(EchoCancellation::SuppressionLevel level) {
     case EchoCancellation::kHighSuppression:
       return kAecNlpAggressive;
   }
-  // TODO(mflodman) Needed for gcc to compile and assert can't be added due to
-  // ApmTest triggers this.
+  assert(false);
   return -1;
 }
 
-int MapError(int err) {
+AudioProcessing::Error MapError(int err) {
   switch (err) {
     case AEC_UNSUPPORTED_FUNCTION_ERROR:
       return AudioProcessing::kUnsupportedFunctionError;
-      break;
     case AEC_BAD_PARAMETER_ERROR:
       return AudioProcessing::kBadParameterError;
-      break;
     case AEC_BAD_PARAMETER_WARNING:
       return AudioProcessing::kBadStreamParameterWarning;
-      break;
     default:
       // AEC_UNSPECIFIED_ERROR
       // AEC_UNINITIALIZED_ERROR

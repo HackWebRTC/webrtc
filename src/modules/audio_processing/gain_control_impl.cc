@@ -22,34 +22,17 @@ namespace webrtc {
 
 typedef void Handle;
 
-/*template <class T>
-class GainControlHandle : public ComponentHandle<T> {
-  public:
-    GainControlHandle();
-    virtual ~GainControlHandle();
-
-    virtual int Create();
-    virtual T* ptr() const;
-
-  private:
-    T* handle;
-};*/
-
 namespace {
 WebRtc_Word16 MapSetting(GainControl::Mode mode) {
   switch (mode) {
     case GainControl::kAdaptiveAnalog:
       return kAgcModeAdaptiveAnalog;
-      break;
     case GainControl::kAdaptiveDigital:
       return kAgcModeAdaptiveDigital;
-      break;
     case GainControl::kFixedDigital:
       return kAgcModeFixedDigital;
-      break;
   }
-  // TODO(mflodman) Needed for gcc to compile and assert can't be added due to
-  // ApmTest triggers this.
+  assert(false);
   return -1;
 }
 }  // namespace

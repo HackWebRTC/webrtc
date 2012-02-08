@@ -27,23 +27,17 @@ int MapSetting(VoiceDetection::Likelihood likelihood) {
   switch (likelihood) {
     case VoiceDetection::kVeryLowLikelihood:
       return 3;
-      break;
     case VoiceDetection::kLowLikelihood:
       return 2;
-      break;
     case VoiceDetection::kModerateLikelihood:
       return 1;
-      break;
     case VoiceDetection::kHighLikelihood:
       return 0;
-      break;
   }
-  // TODO(mflodman) Needed for gcc to compile and assert can't be added due to
-  // ApmTest triggers this.
+  assert(false);
   return -1;
 }
 }  // namespace
-
 
 VoiceDetectionImpl::VoiceDetectionImpl(const AudioProcessingImpl* apm)
   : ProcessingComponent(apm),

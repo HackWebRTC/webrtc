@@ -37,12 +37,11 @@ WebRtc_Word16 MapSetting(EchoControlMobile::RoutingMode mode) {
     case EchoControlMobile::kLoudSpeakerphone:
       return 4;
   }
-  // TODO(mflodman) Needed for gcc to compile and assert can't be added due to
-  // ApmTest triggers this.
+  assert(false);
   return -1;
 }
 
-int MapError(int err) {
+AudioProcessing::Error MapError(int err) {
   switch (err) {
     case AECM_UNSUPPORTED_FUNCTION_ERROR:
       return AudioProcessing::kUnsupportedFunctionError;

@@ -573,14 +573,6 @@ TEST_F(ApmTest, EchoCancellation) {
         apm_->echo_cancellation()->device_sample_rate_hz());
   }
 
-  EXPECT_EQ(apm_->kBadParameterError,
-      apm_->echo_cancellation()->set_suppression_level(
-          static_cast<EchoCancellation::SuppressionLevel>(-1)));
-
-  EXPECT_EQ(apm_->kBadParameterError,
-      apm_->echo_cancellation()->set_suppression_level(
-          static_cast<EchoCancellation::SuppressionLevel>(4)));
-
   EchoCancellation::SuppressionLevel level[] = {
     EchoCancellation::kLowSuppression,
     EchoCancellation::kModerateSuppression,
@@ -630,13 +622,6 @@ TEST_F(ApmTest, EchoControlMobile) {
   // Turn AECM on (and AEC off)
   EXPECT_EQ(apm_->kNoError, apm_->echo_control_mobile()->Enable(true));
   EXPECT_TRUE(apm_->echo_control_mobile()->is_enabled());
-
-  EXPECT_EQ(apm_->kBadParameterError,
-      apm_->echo_control_mobile()->set_routing_mode(
-      static_cast<EchoControlMobile::RoutingMode>(-1)));
-  EXPECT_EQ(apm_->kBadParameterError,
-      apm_->echo_control_mobile()->set_routing_mode(
-      static_cast<EchoControlMobile::RoutingMode>(5)));
 
   // Toggle routing modes
   EchoControlMobile::RoutingMode mode[] = {
@@ -694,12 +679,6 @@ TEST_F(ApmTest, EchoControlMobile) {
 
 TEST_F(ApmTest, GainControl) {
   // Testing gain modes
-  EXPECT_EQ(apm_->kBadParameterError,
-      apm_->gain_control()->set_mode(static_cast<GainControl::Mode>(-1)));
-
-  EXPECT_EQ(apm_->kBadParameterError,
-      apm_->gain_control()->set_mode(static_cast<GainControl::Mode>(3)));
-
   EXPECT_EQ(apm_->kNoError,
       apm_->gain_control()->set_mode(
       apm_->gain_control()->mode()));
@@ -795,18 +774,7 @@ TEST_F(ApmTest, GainControl) {
 }
 
 TEST_F(ApmTest, NoiseSuppression) {
-  // Tesing invalid suppression levels
-
-    // TODO(mflodman) Check at these failures.
-//  EXPECT_EQ(apm_->kBadParameterError,
-//      apm_->noise_suppression()->set_level(
-//          static_cast<NoiseSuppression::Level>(-1)));
-
-//  EXPECT_EQ(apm_->kBadParameterError,
-//      apm_->noise_suppression()->set_level(
-//          static_cast<NoiseSuppression::Level>(5)));
-
-  // Tesing valid suppression levels
+  // Test valid suppression levels.
   NoiseSuppression::Level level[] = {
     NoiseSuppression::kLow,
     NoiseSuppression::kModerate,
@@ -819,7 +787,7 @@ TEST_F(ApmTest, NoiseSuppression) {
     EXPECT_EQ(level[i], apm_->noise_suppression()->level());
   }
 
-  // Turing NS on/off
+  // Turn NS on/off
   EXPECT_EQ(apm_->kNoError, apm_->noise_suppression()->Enable(true));
   EXPECT_TRUE(apm_->noise_suppression()->is_enabled());
   EXPECT_EQ(apm_->kNoError, apm_->noise_suppression()->Enable(false));
@@ -827,7 +795,7 @@ TEST_F(ApmTest, NoiseSuppression) {
 }
 
 TEST_F(ApmTest, HighPassFilter) {
-  // Turing HP filter on/off
+  // Turn HP filter on/off
   EXPECT_EQ(apm_->kNoError, apm_->high_pass_filter()->Enable(true));
   EXPECT_TRUE(apm_->high_pass_filter()->is_enabled());
   EXPECT_EQ(apm_->kNoError, apm_->high_pass_filter()->Enable(false));
@@ -835,7 +803,7 @@ TEST_F(ApmTest, HighPassFilter) {
 }
 
 TEST_F(ApmTest, LevelEstimator) {
-  // Turning level estimator on/off
+  // Turn level estimator on/off
   EXPECT_EQ(apm_->kNoError, apm_->level_estimator()->Enable(false));
   EXPECT_FALSE(apm_->level_estimator()->is_enabled());
 
@@ -918,17 +886,7 @@ TEST_F(ApmTest, VoiceDetection) {
             apm_->voice_detection()->set_stream_has_voice(false));
   EXPECT_FALSE(apm_->voice_detection()->stream_has_voice());
 
-  // Tesing invalid likelihoods
-  // TODO(mflodman) Check at these failures.
-//  EXPECT_EQ(apm_->kBadParameterError,
-//      apm_->voice_detection()->set_likelihood(
-//          static_cast<VoiceDetection::Likelihood>(-1)));
-
-//  EXPECT_EQ(apm_->kBadParameterError,
-//      apm_->voice_detection()->set_likelihood(
-//          static_cast<VoiceDetection::Likelihood>(5)));
-
-  // Tesing valid likelihoods
+  // Test valid likelihoods
   VoiceDetection::Likelihood likelihood[] = {
       VoiceDetection::kVeryLowLikelihood,
       VoiceDetection::kLowLikelihood,
@@ -942,11 +900,11 @@ TEST_F(ApmTest, VoiceDetection) {
   }
 
   /* TODO(bjornv): Enable once VAD supports other frame lengths than 10 ms
-  // Tesing invalid frame sizes
+  // Test invalid frame sizes
   EXPECT_EQ(apm_->kBadParameterError,
       apm_->voice_detection()->set_frame_size_ms(12));
 
-  // Tesing valid frame sizes
+  // Test valid frame sizes
   for (int i = 10; i <= 30; i += 10) {
     EXPECT_EQ(apm_->kNoError,
         apm_->voice_detection()->set_frame_size_ms(i));
@@ -954,7 +912,7 @@ TEST_F(ApmTest, VoiceDetection) {
   }
   */
 
-  // Turing VAD on/off
+  // Turn VAD on/off
   EXPECT_EQ(apm_->kNoError, apm_->voice_detection()->Enable(true));
   EXPECT_TRUE(apm_->voice_detection()->is_enabled());
   EXPECT_EQ(apm_->kNoError, apm_->voice_detection()->Enable(false));
