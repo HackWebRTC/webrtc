@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -117,7 +117,6 @@ UdpTransportImpl::UdpTransportImpl(const WebRtc_Word32 id,
       _useSetSockOpt(false),
       _qos(false),
       _pcp(0),
-      _IpV6EnabledRead(false),
       _ipV6Enabled(false),
       _serviceType(0),
       _overrideDSCP(0),
@@ -1075,22 +1074,21 @@ bool UdpTransportImpl::SetSockOptUsed()
     return _useSetSockOpt;
 }
 
-WebRtc_Word32 UdpTransportImpl::EnableIpV6()
-{
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id, "%s", __FUNCTION__);
-    CriticalSectionScoped cs(_crit);
-    if(_IpV6EnabledRead)
-    {
-        if(_ipV6Enabled)
-        {
-            return 0;
-        }else {
-            _lastError = kIpVersion6Error;
-            return -1;
-        }
-    }
-    _ipV6Enabled=true;
+WebRtc_Word32 UdpTransportImpl::EnableIpV6() {
+  WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id, "%s", __FUNCTION__);
+
+  CriticalSectionScoped cs(_crit);
+  const bool initialized = (_ptrSendRtpSocket || _ptrRtpSocket);
+
+  if (_ipV6Enabled) {
     return 0;
+  }
+  if (initialized) {
+    _lastError = kIpVersion6Error;
+    return -1;
+  }
+  _ipV6Enabled = true;
+  return 0;
 }
 
 WebRtc_Word32 UdpTransportImpl::FilterIP(
@@ -1208,7 +1206,6 @@ bool UdpTransportImpl::SourcePortsInitialized() const
 bool UdpTransportImpl::IpV6Enabled() const
 {
     WEBRTC_TRACE(kTraceStream, kTraceTransport, _id, "%s", __FUNCTION__);
-    _IpV6EnabledRead=true;
     return _ipV6Enabled;
 }
 
