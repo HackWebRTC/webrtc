@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -13,6 +13,7 @@
 #include "modules/video_coding/codecs/test/mock/mock_packet_manipulator.h"
 #include "modules/video_coding/codecs/test/videoprocessor.h"
 #include "modules/video_coding/codecs/interface/mock/mock_video_codec_interface.h"
+#include "modules/video_coding/main/interface/video_coding.h"
 #include "testsupport/mock/mock_frame_reader.h"
 #include "testsupport/mock/mock_frame_writer.h"
 #include "testsupport/packet_reader.h"
@@ -37,10 +38,18 @@ class VideoProcessorTest: public testing::Test {
   MockPacketManipulator packet_manipulator_mock_;
   Stats stats_;
   TestConfig config_;
+  VideoCodec codec_settings_;
 
   VideoProcessorTest() {}
   virtual ~VideoProcessorTest() {}
-  void SetUp() {}
+  void SetUp() {
+    // Get a codec configuration struct and configure it.
+    VideoCodingModule::Codec(kVideoCodecVP8, &codec_settings_);
+    config_.codec_settings = &codec_settings_;
+    config_.codec_settings->startBitrate = 100;
+    config_.codec_settings->width = 352;
+    config_.codec_settings->height = 288;
+  }
   void TearDown() {}
 
   void ExpectInit() {
