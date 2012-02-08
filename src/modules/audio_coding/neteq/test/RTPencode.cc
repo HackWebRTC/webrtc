@@ -756,8 +756,10 @@ int main(int argc, char* argv[])
             stereoDeInterleave(org_data, len * numChannels);
         }
 
-		if (payloadType==NETEQ_CODEC_G722_PT)
-			timestamp+=len>>1;
+        if (payloadType==NETEQ_CODEC_G722_PT)
+            timestamp+=len>>1;
+        else
+            timestamp+=len;
 
 		sendtime += (double) len/(fs/1000);
 	}
