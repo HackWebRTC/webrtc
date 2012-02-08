@@ -233,7 +233,9 @@ namespace ModuleRTPUtility
         const WebRtc_UWord16        _dataLength;
         const RtpVideoCodecTypes    _videoType;
     };
-}
-} // namespace webrtc
+
+}  // namespace ModuleRTPUtility
+
+}  // namespace webrtc
 
 #endif // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTP_UTILITY_H_
