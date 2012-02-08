@@ -1,4 +1,4 @@
-# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+# Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
@@ -26,7 +26,6 @@ LOCAL_SRC_FILES := \
     exp_filter.cc \
     frame_buffer.cc \
     frame_dropper.cc \
-    frame_list.cc \
     generic_decoder.cc \
     generic_encoder.cc \
     inter_frame_delay.cc \
