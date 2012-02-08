@@ -23,10 +23,11 @@ static int dispCount = 0;
 
 VideoX11Channel::VideoX11Channel(WebRtc_Word32 id) :
     _crit(*CriticalSectionWrapper::CreateCriticalSection()), _display(NULL),
-          _shminfo(), _image(NULL), _window(0L),
+          _shminfo(), _image(NULL), _window(0L), _gc(NULL),
           _width(DEFAULT_RENDER_FRAME_WIDTH),
           _height(DEFAULT_RENDER_FRAME_HEIGHT), _outWidth(0), _outHeight(0),
           _xPos(0), _yPos(0), _prepared(false), _dispCount(0), _buffer(NULL),
+          _top(0.0), _left(0.0), _right(0.0), _bottom(0.0),
           _Id(id)
 {
 }
@@ -122,9 +123,9 @@ WebRtc_Word32 VideoX11Channel::Init(Window window, float left, float top,
 
     _window = window;
     _left = left;
-    _right = _right;
+    _right = right;
     _top = top;
-    _bottom = _bottom;
+    _bottom = bottom;
 
     _display = XOpenDisplay(NULL); // Use default display
     if (!_window || !_display)

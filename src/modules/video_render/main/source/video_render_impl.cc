@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -482,16 +482,6 @@ ModuleVideoRenderImpl::AddIncomingRenderStream(const WebRtc_UWord32 streamId,
         return NULL;
     }
 
-    // Create platform independant code
-    IncomingVideoStream* ptrIncomingStream = new IncomingVideoStream(_id,
-                                                                     streamId);
-    if (ptrIncomingStream == NULL)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
-                     "%s: Can't create incoming stream", __FUNCTION__);
-        return NULL;
-    }
-
     VideoRenderCallback* ptrRenderCallback =
             _ptrRenderer->AddIncomingRenderStream(streamId, zOrder, left, top,
                                                   right, bottom);
@@ -502,6 +492,17 @@ ModuleVideoRenderImpl::AddIncomingRenderStream(const WebRtc_UWord32 streamId,
                      __FUNCTION__);
         return NULL;
     }
+
+    // Create platform independant code
+    IncomingVideoStream* ptrIncomingStream = new IncomingVideoStream(_id,
+                                                                     streamId);
+    if (ptrIncomingStream == NULL)
+    {
+        WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
+                     "%s: Can't create incoming stream", __FUNCTION__);
+        return NULL;
+    }
+
 
     if (ptrIncomingStream->SetRenderCallback(ptrRenderCallback) == -1)
     {
@@ -572,10 +573,10 @@ WebRtc_Word32 ModuleVideoRenderImpl::AddExternalRenderCallback(
 
     IncomingVideoStream* ptrIncomingStream =
             static_cast<IncomingVideoStream*> (mapItem->GetItem());
-    if (!ptrIncomingStream)
-    {
+    if (!ptrIncomingStream) {
         WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
                      "%s: could not get stream", __FUNCTION__);
+        return -1;
     }
     return ptrIncomingStream->SetExternalCallback(renderObject);
 }
