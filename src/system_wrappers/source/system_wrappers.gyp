@@ -159,6 +159,8 @@
           ],
           'sources': [
             'cpu_wrapper_unittest.cc',
+            'cpu_measurement_harness.h',
+            'cpu_measurement_harness.cc',
             'list_unittest.cc',
             'map_unittest.cc',
             'data_log_unittest.cc',
@@ -166,6 +168,7 @@
             'data_log_helpers_unittest.cc',
             'data_log_c_helpers_unittest.c',
             'data_log_c_helpers_unittest.h',
+            'trace_unittest.cc',
           ],
           'conditions': [
             ['enable_data_logging==1', {

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -14,6 +14,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/time.h>
 #include <time.h>
 #ifdef WEBRTC_ANDROID
     #include <pthread.h>
@@ -38,8 +39,9 @@
 namespace webrtc {
 TracePosix::TracePosix()
 {
-    _prevAPITickCount = time(NULL);
-    _prevTickCount = _prevAPITickCount;
+    struct timeval systemTimeHighRes;
+    gettimeofday(&systemTimeHighRes, 0);
+    _prevAPITickCount = _prevTickCount = systemTimeHighRes.tv_sec;
 }
 
 TracePosix::~TracePosix()
@@ -50,53 +52,43 @@ TracePosix::~TracePosix()
 WebRtc_Word32 TracePosix::AddTime(char* traceMessage,
                                   const TraceLevel level) const
 {
-    time_t dwCurrentTimeInSeconds = time(NULL);
-    struct tm systemTime;
-    gmtime_r(&dwCurrentTimeInSeconds, &systemTime);
-
-    if(level == kTraceApiCall)
+    struct timeval systemTimeHighRes;
+    if (gettimeofday(&systemTimeHighRes, 0) == -1)
     {
-        WebRtc_UWord32 dwDeltaTime = dwCurrentTimeInSeconds - _prevTickCount;
-        _prevTickCount = dwCurrentTimeInSeconds;
-
-        if(_prevTickCount == 0)
-        {
-            dwDeltaTime = 0;
-        }
-        if(dwDeltaTime > 0x0fffffff)
-        {
-            // Either wraparound or data race.
-            dwDeltaTime = 0;
-        }
-        if(dwDeltaTime > 99999)
-        {
-            dwDeltaTime = 99999;
-        }
-
-        sprintf(traceMessage, "(%2u:%2u:%2u:%3u |%5lu) ", systemTime.tm_hour,
-                systemTime.tm_min, systemTime.tm_sec, 0,
-                static_cast<unsigned long>(dwDeltaTime));
-    } else {
-        WebRtc_UWord32 dwDeltaTime = dwCurrentTimeInSeconds - _prevAPITickCount;
-        _prevAPITickCount = dwCurrentTimeInSeconds;
-        if(_prevAPITickCount == 0)
-        {
-            dwDeltaTime = 0;
-        }
-        if(dwDeltaTime > 0x0fffffff)
-        {
-            // Either wraparound or data race.
-            dwDeltaTime = 0;
-        }
-        if(dwDeltaTime > 99999)
-        {
-            dwDeltaTime = 99999;
-        }
-        sprintf(traceMessage, "(%2u:%2u:%2u:%3u |%5lu) ", systemTime.tm_hour,
-                systemTime.tm_min, systemTime.tm_sec, 0,
-                static_cast<unsigned long>(dwDeltaTime));
+        return -1;
     }
-    // Messages is 22 characters.
+    const struct tm* systemTime =
+        localtime(&systemTimeHighRes.tv_sec);
+
+    const WebRtc_UWord32 ms_time = systemTimeHighRes.tv_usec / 1000;
+    WebRtc_UWord32 prevTickCount = 0;
+    if (level == kTraceApiCall)
+    {
+        prevTickCount = _prevTickCount;
+        _prevTickCount = ms_time;
+    } else {
+        prevTickCount = _prevAPITickCount;
+        _prevAPITickCount = ms_time;
+    }
+    WebRtc_UWord32 dwDeltaTime = ms_time - prevTickCount;
+    if (prevTickCount == 0)
+    {
+        dwDeltaTime = 0;
+    }
+    if (dwDeltaTime > 0x0fffffff)
+    {
+        // Either wraparound or data race.
+        dwDeltaTime = 0;
+    }
+    if(dwDeltaTime > 99999)
+    {
+        dwDeltaTime = 99999;
+    }
+
+    sprintf(traceMessage, "(%2u:%2u:%2u:%3u |%5lu) ", systemTime->tm_hour,
+            systemTime->tm_min, systemTime->tm_sec, ms_time,
+            static_cast<unsigned long>(dwDeltaTime));
+    // Messages are 22 characters.
     return 22;
 }
 
