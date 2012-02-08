@@ -479,6 +479,7 @@ VCMJitterBuffer::GetFrame(const VCMPacket& packet, VCMEncodedFrame*& frame)
 
     if (it != _frameList.end()) {
       frame = *it;
+      _critSect->Leave();
       return VCM_OK;
     }
 
