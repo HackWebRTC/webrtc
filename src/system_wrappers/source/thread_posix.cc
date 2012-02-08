@@ -70,7 +70,7 @@ ThreadPosix::ThreadPosix(ThreadRunFunction func, ThreadObj obj,
       _pid(-1),
 #endif
       _attr(),
-      _thread(NULL)
+      _thread(0)
 {
     if (threadName != NULL)
     {
