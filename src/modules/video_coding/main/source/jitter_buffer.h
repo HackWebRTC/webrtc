@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -11,16 +11,18 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_JITTER_BUFFER_H_
 #define WEBRTC_MODULES_VIDEO_CODING_JITTER_BUFFER_H_
 
+#include <list>
+
+#include "modules/interface/module_common_types.h"
+#include "modules/video_coding/main/interface/video_coding_defines.h"
+#include "modules/video_coding/main/source/decoding_state.h"
+#include "modules/video_coding/main/source/event.h"
+#include "modules/video_coding/main/source/inter_frame_delay.h"
+#include "modules/video_coding/main/source/jitter_buffer_common.h"
+#include "modules/video_coding/main/source/jitter_estimator.h"
+#include "system_wrappers/interface/constructor_magic.h"
+#include "system_wrappers/interface/critical_section_wrapper.h"
 #include "typedefs.h"
-#include "critical_section_wrapper.h"
-#include "decoding_state.h"
-#include "module_common_types.h"
-#include "video_coding_defines.h"
-#include "inter_frame_delay.h"
-#include "event.h"
-#include "frame_list.h"
-#include "jitter_buffer_common.h"
-#include "jitter_estimator.h"
 
 namespace webrtc
 {
@@ -31,6 +33,8 @@ enum VCMNackMode
     kNackHybrid,
     kNoNack
 };
+
+typedef std::list<VCMFrameBuffer*> FrameList;
 
 // forward declarations
 class TickTimeBase;
@@ -160,7 +164,7 @@ private:
     // Help functions for getting a frame
     // Find oldest complete frame, used for getting next frame to decode
     // When enabled, will return a decodable frame
-    VCMFrameListItem* FindOldestCompleteContinuousFrame(bool enableDecodable);
+    FrameList::iterator FindOldestCompleteContinuousFrame(bool enableDecodable);
 
     void CleanUpOldFrames();
 
@@ -184,10 +188,6 @@ private:
     WebRtc_Word32 GetLowHighSequenceNumbers(WebRtc_Word32& lowSeqNum,
                                             WebRtc_Word32& highSeqNum) const;
 
-    static bool FrameEqualTimestamp(VCMFrameBuffer* frame,
-                                    const void* timestamp);
-    static bool CompleteDecodableKeyFrameCriteria(VCMFrameBuffer* frame,
-                                                  const void* notUsed);
     // Decide whether should wait for NACK (mainly relevant for hybrid mode)
     bool WaitForNack();
 
@@ -206,7 +206,7 @@ private:
     WebRtc_Word32                 _maxNumberOfFrames;
     // Array of pointers to the frames in JB
     VCMFrameBuffer*               _frameBuffers[kMaxNumberOfFrames];
-    VCMFrameListTimestampOrderAsc _frameBuffersTSOrder;
+    FrameList _frameList;
 
     // timing
     VCMDecodingState       _lastDecodedState;

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <stdio.h>
 #include <math.h>
+#include <stdio.h>
 
 #include "common_types.h"
 #include "../source/event.h"
@@ -24,6 +24,7 @@
 #include "test_util.h"
 #include "test_macros.h"
 
+// TODO(holmer): Get rid of this to conform with style guide.
 using namespace webrtc;
 
 // TODO (Mikhal/Stefan): Update as gtest and separate to specific tests.
@@ -104,37 +105,6 @@ int JitterBufferTest(CmdArgs& args)
     int size = 1400;
     WebRtc_UWord8 data[1500];
     VCMPacket packet(data, size, seqNum, timeStamp, true);
-
-    VCMFrameListTimestampOrderAsc frameList;
-    VCMFrameBuffer* fb = NULL;
-    for (int i=0; i < 100; i++)
-    {
-        fb = new VCMFrameBuffer();
-        fb->SetState(kStateEmpty);
-        packet.timestamp = 0xfffffff0 + i;
-        packet.seqNum = seqNum;
-        packet.payloadType = 126;
-        seqNum++;
-        fb->InsertPacket(packet, clock.MillisecondTimestamp(), false, 0);
-        TEST(frameList.Insert(fb) == 0);
-    }
-    VCMFrameListItem* item = NULL;
-    WebRtc_UWord32 prevTimestamp = 0;
-    int i = 0;
-    for (i=0; !frameList.Empty(); i++)
-    {
-        item = frameList.First();
-        fb = static_cast<VCMFrameBuffer*>(item->GetItem());
-        TEST(i > 0 || fb->TimeStamp() == 0xfffffff0); // Frame 0 has no prev
-        TEST(prevTimestamp - fb->TimeStamp() == static_cast<WebRtc_UWord32>(-1)
-             || i == 0);
-        prevTimestamp = fb->TimeStamp();
-        frameList.Erase(item);
-        delete fb;
-    }
-    TEST(i == 100);
-
-    //printf("DONE timestamp ordered frame list\n");
 
     VCMJitterBuffer jb(&clock);
 

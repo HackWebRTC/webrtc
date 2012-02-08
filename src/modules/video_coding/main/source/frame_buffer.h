@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -11,13 +11,11 @@
 #ifndef WEBRTC_MODULES_VIDEO_CODING_FRAME_BUFFER_H_
 #define WEBRTC_MODULES_VIDEO_CODING_FRAME_BUFFER_H_
 
+#include "modules/interface/module_common_types.h"
+#include "modules/video_coding/main/source/encoded_frame.h"
+#include "modules/video_coding/main/source/jitter_buffer_common.h"
+#include "modules/video_coding/main/source/session_info.h"
 #include "typedefs.h"
-#include "module_common_types.h"
-
-#include "encoded_frame.h"
-#include "frame_list.h"
-#include "jitter_buffer_common.h"
-#include "session_info.h"
 
 namespace webrtc
 {
