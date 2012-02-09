@@ -41,7 +41,7 @@ class ForwardErrorCorrection {
   // and receiver_fec.cc to be refactored into the packet classes.
   class Packet {
    public:
-    Packet() : ref_count_(0) {}
+    Packet() : length(0), data(), ref_count_(0) {}
     virtual ~Packet() {}
 
     // Add a reference.
