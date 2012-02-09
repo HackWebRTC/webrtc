@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -14,6 +14,7 @@
 
 #include "gtest/gtest.h"
 #include "modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "modules/video_coding/codecs/test/predictive_packet_manipulator.h"
 #include "testsupport/unittest_utils.h"
 #include "typedefs.h"
 
@@ -69,35 +70,6 @@ class PacketManipulatorTest: public PacketRelatedTest {
   }
 };
 
-// Predictive packet manipulator that allows for setup of the result of
-// the random invocations.
-class PredictivePacketManipulatorImpl : public PacketManipulatorImpl {
- public:
-  PredictivePacketManipulatorImpl(PacketReader* packet_reader,
-                                  const NetworkingConfig& config)
-    : PacketManipulatorImpl(packet_reader, config, false) {
-  }
-  // Adds a result. You must add at least the same number of results as the
-  // expected calls to the RandomUniform method. The results are added to a
-  // FIFO queue so they will be returned in the same order they were added.
-  void AddRandomResult(double result) {
-    ASSERT_TRUE(result >= 0.0 || result <= 1.0)
-        << "Cannot add results outside the range 0.0 - 1.0, was:" << result;
-    random_results_.push(result);
-  }
- protected:
-  double RandomUniform() {
-    EXPECT_GT(random_results_.size(), 0u) << "No more stored results, please "
-        "make sure AddRandomResult() is called same amount of times you're "
-        "going to invoke the RandomUniform() function, i.e. once per packet.";
-    double result = random_results_.front();
-    random_results_.pop();
-    return result;
-  }
- private:
-  std::queue<double> random_results_;
-};
-
 TEST_F(PacketManipulatorTest, Constructor) {
   PacketManipulatorImpl manipulator(&packet_reader_, no_drop_config_, false);
 }
@@ -129,7 +101,7 @@ TEST_F(PacketManipulatorTest, UniformDropAll) {
 // Use our customized test class to make the second packet being lost
 TEST_F(PacketManipulatorTest, UniformDropSinglePacket) {
   drop_config_.packet_loss_probability = 0.5;
-  PredictivePacketManipulatorImpl manipulator(&packet_reader_, drop_config_);
+  PredictivePacketManipulator manipulator(&packet_reader_, drop_config_);
   manipulator.AddRandomResult(1.0);
   manipulator.AddRandomResult(0.3);  // less than 0.5 will cause packet loss
   manipulator.AddRandomResult(1.0);
@@ -163,7 +135,7 @@ TEST_F(PacketManipulatorTest, BurstDropNinePackets) {
   drop_config_.packet_loss_probability = 0.5;
   drop_config_.packet_loss_burst_length = 5;
   drop_config_.packet_loss_mode = kBurst;
-  PredictivePacketManipulatorImpl manipulator(&packet_reader_, drop_config_);
+  PredictivePacketManipulator manipulator(&packet_reader_, drop_config_);
   manipulator.AddRandomResult(1.0);
   manipulator.AddRandomResult(0.3);  // less than 0.5 will cause packet loss
   for (int i = 0; i < kNbrPackets - 2; ++i) {

@@ -21,6 +21,8 @@
             'mock/mock_packet_manipulator.h',
             'packet_manipulator.h',
             'packet_manipulator.cc',
+            'predictive_packet_manipulator.h',
+            'predictive_packet_manipulator.cc',
             'stats.h',
             'stats.cc',
             'videoprocessor.h',

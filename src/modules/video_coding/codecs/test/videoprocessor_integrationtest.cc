@@ -61,6 +61,8 @@ class VideoProcessorIntegrationTest: public testing::Test {
         "foreman_cif_short_video_codecs_test_framework_integrationtests.yuv";
     config_.frame_length_in_bytes = 3 * kCIFWidth * kCIFHeight / 2;
     config_.verbose = false;
+    // Only allow encoder/decoder to use single core, for predictability.
+    config_.use_single_core = true;
 
     // Get a codec configuration struct and configure it.
     VideoCodingModule::Codec(kVideoCodecVP8, &codec_settings_);
@@ -98,11 +100,10 @@ class VideoProcessorIntegrationTest: public testing::Test {
   }
 
   // Processes all frames in the clip and verifies the result.
-  // The average PSNR for all frames is required to be 2.0 higher than the
-  // minimum_psnr parameter.
-  // The minimum SSIM for all frames is required to be 0.1 higher than the
-  // minimum_ssim parameter.
-  void ProcessFramesAndVerify(double minimum_psnr, double minimum_ssim) {
+  void ProcessFramesAndVerify(double minimum_avg_psnr,
+                              double minimum_min_psnr,
+                              double minimum_avg_ssim,
+                              double minimum_min_ssim) {
     int frame_number = 0;
     while (processor_->ProcessFrame(frame_number)) {
       frame_number++;
@@ -125,36 +126,48 @@ class VideoProcessorIntegrationTest: public testing::Test {
         config_.codec_settings->height,
         &psnr_result,
         &ssim_result));
-    EXPECT_GT(psnr_result.average, minimum_psnr + 2.0);
-    EXPECT_GT(psnr_result.min, minimum_psnr);
-    EXPECT_GT(ssim_result.average, minimum_ssim + 0.1);
-    EXPECT_GT(ssim_result.min, minimum_ssim);
+    printf("PSNR avg: %f, min: %f    SSIM avg: %f, min: %f\n",
+           psnr_result.average, psnr_result.min,
+           ssim_result.average, ssim_result.min);
+    EXPECT_GT(psnr_result.average, minimum_avg_psnr);
+    EXPECT_GT(psnr_result.min, minimum_min_psnr);
+    EXPECT_GT(ssim_result.average, minimum_avg_ssim);
+    EXPECT_GT(ssim_result.min, minimum_min_ssim);
   }
 };
 
 // Run with no packet loss. Quality should be very high.
 TEST_F(VideoProcessorIntegrationTest, ProcessZeroPacketLoss) {
   config_.networking_config.packet_loss_probability = 0;
-  double minimum_psnr = 30;
-  double minimum_ssim = 0.7;
-  ProcessFramesAndVerify(minimum_psnr, minimum_ssim);
+  double minimum_avg_psnr = 36;
+  double minimum_min_psnr = 34;
+  double minimum_avg_ssim = 0.9;
+  double minimum_min_ssim = 0.9;
+  ProcessFramesAndVerify(minimum_avg_psnr, minimum_min_psnr,
+                         minimum_avg_ssim, minimum_min_ssim);
 }
 
 // Run with 5% packet loss. Quality should be a bit lower.
 // TODO(mflodman): Reenable this once it's not flaky.
-TEST_F(VideoProcessorIntegrationTest, DISABLED_Process5PercentPacketLoss) {
+TEST_F(VideoProcessorIntegrationTest, Process5PercentPacketLoss) {
   config_.networking_config.packet_loss_probability = 0.05;
-  double minimum_psnr = 14;
-  double minimum_ssim = 0.3;
-  ProcessFramesAndVerify(minimum_psnr, minimum_ssim);
+  double minimum_avg_psnr = 21;
+  double minimum_min_psnr = 17;
+  double minimum_avg_ssim = 0.6;
+  double minimum_min_ssim = 0.4;
+  ProcessFramesAndVerify(minimum_avg_psnr, minimum_min_psnr,
+                         minimum_avg_ssim, minimum_min_ssim);
 }
 
 // Run with 10% packet loss. Quality should be even lower.
 TEST_F(VideoProcessorIntegrationTest, Process10PercentPacketLoss) {
   config_.networking_config.packet_loss_probability = 0.10;
-  double minimum_psnr = 12;
-  double minimum_ssim = 0.2;
-  ProcessFramesAndVerify(minimum_psnr, minimum_ssim);
+  double minimum_avg_psnr = 19;
+  double minimum_min_psnr = 16;
+  double minimum_avg_ssim = 0.6;
+  double minimum_min_ssim = 0.4;
+  ProcessFramesAndVerify(minimum_avg_psnr, minimum_min_psnr,
+                         minimum_avg_ssim, minimum_min_ssim);
 }
 
 }  // namespace webrtc

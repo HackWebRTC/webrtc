@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -22,11 +22,14 @@ PacketManipulatorImpl::PacketManipulatorImpl(PacketReader* packet_reader,
     : packet_reader_(packet_reader),
       config_(config),
       active_burst_packets_(0),
+      critsect_(CriticalSectionWrapper::CreateCriticalSection()),
+      random_seed_(1),
       verbose_(verbose) {
   assert(packet_reader);
 }
 
 PacketManipulatorImpl::~PacketManipulatorImpl() {
+  delete critsect_;
 }
 
 int PacketManipulatorImpl::ManipulatePackets(
@@ -77,8 +80,19 @@ int PacketManipulatorImpl::ManipulatePackets(
   return nbr_packets_dropped;
 }
 
+void PacketManipulatorImpl::InitializeRandomSeed(unsigned int seed) {
+  random_seed_ = seed;
+}
+
 inline double PacketManipulatorImpl::RandomUniform() {
-  return (std::rand() + 1.0)/(RAND_MAX + 1.0);
+  // Use the previous result as new seed before each rand() call. Doing this
+  // it doesn't matter if other threads are calling rand() since we'll always
+  // get the same behavior as long as we're using a fixed initial seed.
+  critsect_->Enter();
+  srand(random_seed_);
+  random_seed_ = std::rand();
+  critsect_->Leave();
+  return (random_seed_ + 1.0)/(RAND_MAX + 1.0);
 }
 
 const char* PacketLossModeToStr(PacketLossMode e) {

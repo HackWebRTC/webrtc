@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -14,6 +14,7 @@
 #include <cstdlib>
 
 #include "modules/video_coding/codecs/interface/video_codec_interface.h"
+#include "system_wrappers/interface/critical_section_wrapper.h"
 #include "testsupport/packet_reader.h"
 
 namespace webrtc {
@@ -70,8 +71,8 @@ struct NetworkingConfig {
 // when CL 172001 has been submitted. This also requires a correct
 // fragmentation header to be passed to the decoder.
 //
-// To get a deterministic behavior of the packet dropping, initialize the
-// random generator with a fixed value before using this class, e.g. srand(0);
+// To get a repeatable packet drop pattern, re-initialize the random seed
+// using InitializeRandomSeed before each test run.
 class PacketManipulator {
  public:
   virtual ~PacketManipulator() {}
@@ -88,9 +89,11 @@ class PacketManipulator {
 class PacketManipulatorImpl : public PacketManipulator {
  public:
   PacketManipulatorImpl(PacketReader* packet_reader,
-                        const NetworkingConfig& config, bool verbose);
+                        const NetworkingConfig& config,
+                        bool verbose);
   virtual ~PacketManipulatorImpl();
   virtual int ManipulatePackets(webrtc::EncodedImage* encoded_image);
+  virtual void InitializeRandomSeed(unsigned int seed);
  protected:
   // Returns a uniformly distributed random value between 0.0 and 1.0
   virtual double RandomUniform();
@@ -99,6 +102,8 @@ class PacketManipulatorImpl : public PacketManipulator {
   const NetworkingConfig& config_;
   // Used to simulate a burst over several frames.
   int active_burst_packets_;
+  CriticalSectionWrapper* critsect_;
+  unsigned int random_seed_;
   bool verbose_;
 };
 

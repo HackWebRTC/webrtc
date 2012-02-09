@@ -75,7 +75,7 @@ TEST_F(VideoProcessorTest, Init) {
                                      &frame_writer_mock_,
                                      &packet_manipulator_mock_, config_,
                                      &stats_);
-  video_processor.Init();
+  ASSERT_TRUE(video_processor.Init());
 }
 
 TEST_F(VideoProcessorTest, ProcessFrame) {
@@ -91,7 +91,7 @@ TEST_F(VideoProcessorTest, ProcessFrame) {
                                      &frame_writer_mock_,
                                      &packet_manipulator_mock_, config_,
                                      &stats_);
-  video_processor.Init();
+  ASSERT_TRUE(video_processor.Init());
   video_processor.ProcessFrame(0);
 }
 
