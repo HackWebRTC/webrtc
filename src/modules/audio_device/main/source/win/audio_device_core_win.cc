@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -2991,7 +2991,10 @@ WebRtc_Word32 AudioDeviceWindowsCore::StopRecording()
 
     _UnLock();
 
-   return err;
+    // Reset the recording delay value.
+    _sndCardRecDelay = 0;
+
+    return err;
 }
 
 // ----------------------------------------------------------------------------
@@ -3166,6 +3169,9 @@ WebRtc_Word32 AudioDeviceWindowsCore::StopPlayout()
         }
     }  // critScoped
 
+    // Reset the playout delay value.
+    _sndCardPlayDelay = 0;
+
     return 0;
 }
 
@@ -3175,8 +3181,7 @@ WebRtc_Word32 AudioDeviceWindowsCore::StopPlayout()
 
 WebRtc_Word32 AudioDeviceWindowsCore::PlayoutDelay(WebRtc_UWord16& delayMS) const
 {
-    CriticalSectionScoped lock(_critSect);
-    delayMS = (WebRtc_UWord16)_sndCardPlayDelay;
+    delayMS = static_cast<WebRtc_UWord16>(_sndCardPlayDelay.Value());
     return 0;
 }
 
@@ -3186,8 +3191,7 @@ WebRtc_Word32 AudioDeviceWindowsCore::PlayoutDelay(WebRtc_UWord16& delayMS) cons
 
 WebRtc_Word32 AudioDeviceWindowsCore::RecordingDelay(WebRtc_UWord16& delayMS) const
 {
-    CriticalSectionScoped lock(_critSect);
-    delayMS = (WebRtc_UWord16)_sndCardRecDelay;
+    delayMS = static_cast<WebRtc_UWord16>(_sndCardRecDelay.Value());
     return 0;
 }
 
@@ -3226,19 +3230,21 @@ WebRtc_Word32 AudioDeviceWindowsCore::SetPlayoutBuffer(const AudioDeviceModule::
 
 WebRtc_Word32 AudioDeviceWindowsCore::PlayoutBuffer(AudioDeviceModule::BufferType& type, WebRtc_UWord16& sizeMS) const
 {
+  {
     CriticalSectionScoped lock(_critSect);
-
     type = _playBufType;
+  }
 
-    if (type == AudioDeviceModule::kFixedBufferSize)
-    {
-        sizeMS = _playBufDelayFixed;
-    }
-    else
-    {
-        // Use same value as for PlayoutDelay
-        sizeMS = (WebRtc_UWord16)_sndCardPlayDelay;
-    }
+  if (type == AudioDeviceModule::kFixedBufferSize)
+  {
+    CriticalSectionScoped lock(_critSect);
+    sizeMS = _playBufDelayFixed;
+  }
+  else
+  {
+    // Use same value as for PlayoutDelay
+    sizeMS = static_cast<WebRtc_UWord16>(_sndCardPlayDelay.Value());
+  }
 
     return 0;
 }
@@ -3527,9 +3533,12 @@ DWORD AudioDeviceWindowsCore::DoRenderThread()
     // Derive inital rendering delay.
     // Example: 10*(960/480) + 15 = 20 + 15 = 35ms
     //
-    _sndCardPlayDelay = 10 * (bufferLength / _playBlockSize) + (int)((latency + devPeriod) / 10000);
+    int playout_delay = 10 * (bufferLength / _playBlockSize) +
+        (int)((latency + devPeriod) / 10000);
+    _sndCardPlayDelay = playout_delay;
     _writtenSamples = 0;
-    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "[REND] initial delay        : %u", _sndCardPlayDelay);
+    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
+                 "[REND] initial delay        : %u", playout_delay);
 
     double endpointBufferSizeMS = 10.0 * ((double)bufferLength / (double)_devicePlayBlockSize);
     WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id, "[REND] endpointBufferSizeMS : %3.2f", endpointBufferSizeMS);
@@ -3545,8 +3554,14 @@ DWORD AudioDeviceWindowsCore::DoRenderThread()
 
     _writtenSamples += bufferLength;
 
+    IAudioClock* clock = NULL;
+    hr = _ptrClientOut->GetService(__uuidof(IAudioClock), (void**)&clock);
+    if (FAILED(hr)) {
+      WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
+                   "failed to get IAudioClock interface from the IAudioClient");
+    }
+
     // Start up the rendering audio stream.
-    //
     hr = _ptrClientOut->Start();
     EXIT_ON_ERROR(hr);
 
@@ -3655,6 +3670,17 @@ DWORD AudioDeviceWindowsCore::DoRenderThread()
                 _writtenSamples += _playBlockSize;
             }
 
+            // Check the current delay on the playout side.
+            if (clock) {
+              UINT64 pos = 0;
+              UINT64 freq = 1;
+              clock->GetPosition(&pos, NULL);
+              clock->GetFrequency(&freq);
+              playout_delay = ROUND((double(_writtenSamples) /
+                  _devicePlaySampleRate - double(pos) / freq) * 1000.0);
+              _sndCardPlayDelay = playout_delay;
+            }
+
             _UnLock();
         }
     }
@@ -3665,6 +3691,8 @@ DWORD AudioDeviceWindowsCore::DoRenderThread()
     hr = _ptrClientOut->Stop();
 
 Exit:
+    SAFE_RELEASE(clock);
+
     if (FAILED(hr))
     {
         _UnLock();
@@ -4070,28 +4098,15 @@ DWORD AudioDeviceWindowsCore::DoCaptureThread()
 
                 QueryPerformanceCounter(&t1);
 
-                // Check the current delay on the recording side
-                //
-                _sndCardRecDelay = (WebRtc_UWord32)((((UINT64)t1.QuadPart * _perfCounterFactor) - recTime) / 10000) + (10*syncBufIndex) / _recBlockSize - 10;
+                // Get the current recording and playout delay.
+                WebRtc_UWord32 sndCardRecDelay = (WebRtc_UWord32)
+                    (((((UINT64)t1.QuadPart * _perfCounterFactor) - recTime)
+                        / 10000) + (10*syncBufIndex) / _recBlockSize - 10);
+                WebRtc_UWord32 sndCardPlayDelay =
+                    static_cast<WebRtc_UWord32>(_sndCardPlayDelay.Value());
 
-                // Check the current delay on the playout side
-                //
-                if (_ptrClientOut)
-                {
-                    IAudioClock* clock = NULL;
-                    UINT64 pos = 0;
-                    UINT64 freq = 1;
-                    hr = _ptrClientOut->GetService(__uuidof(IAudioClock), (void**)&clock);
-                    EXIT_ON_ERROR(hr);
-                    clock->GetPosition(&pos, NULL);
-                    clock->GetFrequency(&freq);
-                    _sndCardPlayDelay = ROUND((double(_writtenSamples) / _devicePlaySampleRate - double(pos) / freq) * 1000.0);
-                    SAFE_RELEASE(clock);
-                }
+                _sndCardRecDelay = sndCardRecDelay;
 
-                // Send the captured data to the registered consumer
-                //
-                WebRtc_UWord32 sndCardRecDelay = _sndCardRecDelay;  // avoid modifying the "correct" delay
                 while (syncBufIndex >= _recBlockSize)
                 {
                     if (_ptrAudioBuffer)
@@ -4099,10 +4114,13 @@ DWORD AudioDeviceWindowsCore::DoCaptureThread()
                         _ptrAudioBuffer->SetRecordedBuffer((const WebRtc_Word8*)syncBuffer, _recBlockSize);
 
                         _driftAccumulator += _sampleDriftAt48kHz;
-                        const WebRtc_Word32 clockDrift = static_cast<WebRtc_Word32>(_driftAccumulator);
+                        const WebRtc_Word32 clockDrift =
+                            static_cast<WebRtc_Word32>(_driftAccumulator);
                         _driftAccumulator -= clockDrift;
 
-                        _ptrAudioBuffer->SetVQEData(_sndCardPlayDelay, sndCardRecDelay, clockDrift);
+                        _ptrAudioBuffer->SetVQEData(sndCardPlayDelay,
+                                                    sndCardRecDelay,
+                                                    clockDrift);
 
                         QueryPerformanceCounter(&t1);    // measure time: START
 

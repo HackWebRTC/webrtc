@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -25,6 +25,7 @@
 #include <mediaobj.h>        // IMediaObject
 #include <Mmdeviceapi.h>     // MMDevice
 
+#include "atomic32_wrapper.h"
 #include "critical_section_wrapper.h"
 #include "scoped_refptr.h"
 
@@ -319,7 +320,7 @@ private:  // WASAPI
     WebRtc_UWord32                          _playBlockSize;
     WebRtc_UWord32                          _devicePlayBlockSize;
     WebRtc_UWord32                          _playChannels;
-    WebRtc_UWord32                          _sndCardPlayDelay;
+    Atomic32Wrapper                         _sndCardPlayDelay;
     UINT64                                  _writtenSamples;
     LONGLONG                                _playAcc;
 
@@ -328,7 +329,7 @@ private:  // WASAPI
     WebRtc_UWord32                          _recBlockSize;
     WebRtc_UWord32                          _recChannels;
     UINT64                                  _readSamples;
-    WebRtc_UWord32                          _sndCardRecDelay;
+    Atomic32Wrapper                         _sndCardRecDelay;
 
     float                                   _sampleDriftAt48kHz;
     float                                   _driftAccumulator;
