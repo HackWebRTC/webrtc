@@ -46,6 +46,7 @@
         'auto_test/standard/manual_hold_test.cc',
         'auto_test/standard/neteq_test.cc',
         'auto_test/standard/network_before_streaming_test.cc',
+        'auto_test/standard/network_test.cc',
         'auto_test/standard/rtp_rtcp_before_streaming_test.cc',
         'auto_test/standard/rtp_rtcp_test.cc',
         'auto_test/standard/voe_base_misc_test.cc',
