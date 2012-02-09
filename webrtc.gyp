@@ -13,7 +13,6 @@
       'target_name': 'All',
       'type': 'none',
       'dependencies': [
-        'peerconnection/peerconnection.gyp:*',
         'src/common_audio/common_audio.gyp:*',
         'src/common_video/common_video.gyp:*',
         'src/modules/modules.gyp:*',

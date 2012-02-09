@@ -4,9 +4,6 @@ vars = {
   "googlecode_url": "http://%s.googlecode.com/svn",
   "chromium_trunk" : "http://src.chromium.org/svn/trunk",
   "chromium_revision": "120526",
-  # TODO(andrew): libjingle should be rolled to 114 (or later) after fixing:
-  # http://code.google.com/p/webrtc/issues/detail?id=264
-  "libjingle_revision": "101",
 
   # External resources like video and audio files used for testing purposes.
   # Downloaded on demand when needed.
@@ -55,23 +52,14 @@ deps = {
   "trunk/third_party/libjpeg/":
     Var("chromium_trunk") + "/src/third_party/libjpeg@" + Var("chromium_revision"),
 
-  "trunk/third_party/libsrtp/":
-    Var("chromium_trunk") + "/deps/third_party/libsrtp@119742",
-
   "trunk/third_party/yasm/":
     Var("chromium_trunk") + "/src/third_party/yasm@" + Var("chromium_revision"),
 
   "trunk/third_party/expat/":
     Var("chromium_trunk") + "/src/third_party/expat@" + Var("chromium_revision"),
 
-  "trunk/third_party/libjingle/":
-    Var("chromium_trunk") + "/src/third_party/libjingle@" + Var("chromium_revision"),
-
   "trunk/third_party/google-gflags/src":
     (Var("googlecode_url") % "google-gflags") + "/trunk/src@45",
-
-  "trunk/third_party/libjingle/source":
-    (Var("googlecode_url") % "libjingle") + "/trunk@" + Var("libjingle_revision"),
 
   "trunk/third_party/yasm/source/patched-yasm":
     Var("chromium_trunk") + "/deps/third_party/yasm/patched-yasm@73761",
@@ -79,9 +67,6 @@ deps = {
   # Used by libjpeg-turbo
   "trunk/third_party/yasm/binaries":
     Var("chromium_trunk") + "/deps/third_party/yasm/binaries@74228",
-
-  "trunk/third_party/jsoncpp/":
-    "http://jsoncpp.svn.sourceforge.net/svnroot/jsoncpp/trunk/jsoncpp@248",
 
   # TODO(andrew): roll to 164 after fixing:
   # http://code.google.com/p/webrtc/issues/detail?id=267
