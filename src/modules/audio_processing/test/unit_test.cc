@@ -618,8 +618,8 @@ TEST_F(ApmTest, EchoControlMobile) {
   // AECM won't use super-wideband.
   EXPECT_EQ(apm_->kNoError, apm_->set_sample_rate_hz(32000));
   EXPECT_EQ(apm_->kBadSampleRateError, apm_->echo_control_mobile()->Enable(true));
-  EXPECT_EQ(apm_->kNoError, apm_->set_sample_rate_hz(16000));
   // Turn AECM on (and AEC off)
+  Init(16000, 2, 2, 2, false);
   EXPECT_EQ(apm_->kNoError, apm_->echo_control_mobile()->Enable(true));
   EXPECT_TRUE(apm_->echo_control_mobile()->is_enabled());
 
@@ -672,6 +672,14 @@ TEST_F(ApmTest, EchoControlMobile) {
   for (size_t i = 0; i < echo_path_size; i++) {
     EXPECT_EQ(echo_path_in[i], echo_path_out[i]);
   }
+
+  // Process a few frames with NS in the default disabled state. This exercises
+  // a different codepath than with it enabled.
+  EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(0));
+  EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
+  EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(0));
+  EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
+
   // Turn AECM off
   EXPECT_EQ(apm_->kNoError, apm_->echo_control_mobile()->Enable(false));
   EXPECT_FALSE(apm_->echo_control_mobile()->is_enabled());
@@ -1045,6 +1053,9 @@ TEST_F(ApmTest, DebugDump) {
   ASSERT_TRUE(fopen(filename.c_str(), "r") == NULL);
 #endif  // WEBRTC_AUDIOPROC_DEBUG_DUMP
 }
+
+// TODO(andrew): Add a test to process a few frames with different combinations
+// of enabled components.
 
 // TODO(andrew): Make this test more robust such that it can be run on multiple
 // platforms. It currently requires bit-exactness.
