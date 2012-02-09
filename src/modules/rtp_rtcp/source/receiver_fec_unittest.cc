@@ -124,12 +124,39 @@ class ReceiverFecTest : public ::testing::Test {
     fec_ = new ForwardErrorCorrection(0);
     receiver_fec_ = new ReceiverFEC(0, &rtp_receiver_video_);
     generator_ = new FrameGenerator();
+    receiver_fec_->SetPayloadTypeFEC(kFecPayloadType);
   }
 
   virtual void TearDown() {
     delete fec_;
     delete receiver_fec_;
     delete generator_;
+  }
+
+  void GenerateAndAddFrames(int num_frames,
+                            int num_packets_per_frame,
+                            std::list<RtpPacket*>* media_rtp_packets,
+                            std::list<Packet*>* media_packets) {
+    for (int i = 0; i < num_frames; ++i) {
+      GenerateFrame(num_packets_per_frame, i, media_rtp_packets,
+                    media_packets);
+    }
+    for (std::list<RtpPacket*>::iterator it = media_rtp_packets->begin();
+        it != media_rtp_packets->end(); ++it) {
+      BuildAndAddRedMediaPacket(*it);
+    }
+  }
+
+  void GenerateFEC(std::list<Packet*>* media_packets,
+                   std::list<Packet*>* fec_packets,
+                   unsigned int num_fec_packets) {
+    EXPECT_EQ(0, fec_->GenerateFEC(
+        *media_packets,
+        num_fec_packets * 255 / media_packets->size(),
+        0,
+        false,
+        fec_packets));
+    ASSERT_EQ(num_fec_packets, fec_packets->size());
   }
 
   void GenerateFrame(int num_media_packets,
@@ -163,8 +190,7 @@ class ReceiverFecTest : public ::testing::Test {
                                                      red_packet->data,
                                                      red_packet->length -
                                                      kRtpHeaderSize,
-                                                     is_fec,
-                                                     false));
+                                                     is_fec));
     delete red_packet;
     EXPECT_FALSE(is_fec);
   }
@@ -176,8 +202,7 @@ class ReceiverFecTest : public ::testing::Test {
                                                      red_packet->data,
                                                      red_packet->length -
                                                      kRtpHeaderSize,
-                                                     is_fec,
-                                                     false));
+                                                     is_fec));
     delete red_packet;
     EXPECT_TRUE(is_fec);
   }
@@ -197,20 +222,13 @@ void DeletePackets(std::list<Packet*>* packets) {
 
 TEST_F(ReceiverFecTest, TwoMediaOneFec) {
   const unsigned int kNumFecPackets = 1u;
-  const unsigned int kNumMediaPackets = 2u;
   std::list<RtpPacket*> media_rtp_packets;
   std::list<Packet*> media_packets;
   GenerateFrame(2, 0, &media_rtp_packets, &media_packets);
   std::list<Packet*> fec_packets;
-  EXPECT_EQ(0, fec_->GenerateFEC(media_packets,
-                                 kNumFecPackets * 255 / kNumMediaPackets,
-                                 0,
-                                 false,
-                                 &fec_packets));
-  ASSERT_EQ(kNumFecPackets, fec_packets.size());
+  GenerateFEC(&media_packets, &fec_packets, kNumFecPackets);
 
   // Recovery
-  receiver_fec_->SetPayloadTypeFEC(kFecPayloadType);
   std::list<RtpPacket*>::iterator media_it = media_rtp_packets.begin();
   BuildAndAddRedMediaPacket(*media_it);
   // Drop one media packet.
@@ -223,27 +241,21 @@ TEST_F(ReceiverFecTest, TwoMediaOneFec) {
     ++it;
     VerifyReconstructedMediaPacket(*it, 1);
   }
-  EXPECT_EQ(0, receiver_fec_->ProcessReceivedFEC(false));
+  EXPECT_EQ(0, receiver_fec_->ProcessReceivedFEC());
 
   DeletePackets(&media_packets);
 }
 
 TEST_F(ReceiverFecTest, TwoMediaTwoFec) {
   const unsigned int kNumFecPackets = 2u;
-  const unsigned int kNumMediaPackets = 2u;
   std::list<RtpPacket*> media_rtp_packets;
   std::list<Packet*> media_packets;
   GenerateFrame(2, 0, &media_rtp_packets, &media_packets);
   std::list<Packet*> fec_packets;
-  EXPECT_EQ(0, fec_->GenerateFEC(media_packets,
-                                 kNumFecPackets * 255 / kNumMediaPackets,
-                                 0,
-                                 false, &fec_packets));
-  ASSERT_EQ(kNumFecPackets, fec_packets.size());
+  GenerateFEC(&media_packets, &fec_packets, kNumFecPackets);
 
   // Recovery
   // Drop both media packets.
-  receiver_fec_->SetPayloadTypeFEC(kFecPayloadType);
   std::list<Packet*>::iterator fec_it = fec_packets.begin();
   BuildAndAddRedFecPacket(*fec_it);
   ++fec_it;
@@ -255,28 +267,21 @@ TEST_F(ReceiverFecTest, TwoMediaTwoFec) {
     ++it;
     VerifyReconstructedMediaPacket(*it, 1);
   }
-  EXPECT_EQ(0, receiver_fec_->ProcessReceivedFEC(false));
+  EXPECT_EQ(0, receiver_fec_->ProcessReceivedFEC());
 
   DeletePackets(&media_packets);
 }
 
 TEST_F(ReceiverFecTest, TwoFramesOneFec) {
   const unsigned int kNumFecPackets = 1u;
-  const unsigned int kNumMediaPackets = 2u;
   std::list<RtpPacket*> media_rtp_packets;
   std::list<Packet*> media_packets;
   GenerateFrame(1, 0, &media_rtp_packets, &media_packets);
   GenerateFrame(1, 1, &media_rtp_packets, &media_packets);
   std::list<Packet*> fec_packets;
-  EXPECT_EQ(0, fec_->GenerateFEC(media_packets,
-                                 kNumFecPackets * 255 / kNumMediaPackets,
-                                 0,
-                                 false,
-                                 &fec_packets));
-  ASSERT_EQ(kNumFecPackets, fec_packets.size());
+  GenerateFEC(&media_packets, &fec_packets, kNumFecPackets);
 
   // Recovery
-  receiver_fec_->SetPayloadTypeFEC(kFecPayloadType);
   BuildAndAddRedMediaPacket(media_rtp_packets.front());
   // Drop one media packet.
   BuildAndAddRedFecPacket(fec_packets.front());
@@ -287,7 +292,27 @@ TEST_F(ReceiverFecTest, TwoFramesOneFec) {
     ++it;
     VerifyReconstructedMediaPacket(*it, 1);
   }
-  EXPECT_EQ(0, receiver_fec_->ProcessReceivedFEC(false));
+  EXPECT_EQ(0, receiver_fec_->ProcessReceivedFEC());
+
+  DeletePackets(&media_packets);
+}
+
+TEST_F(ReceiverFecTest, OneCompleteOneUnrecoverableFrame) {
+  const unsigned int kNumFecPackets = 1u;
+  std::list<RtpPacket*> media_rtp_packets;
+  std::list<Packet*> media_packets;
+  GenerateFrame(1, 0, &media_rtp_packets, &media_packets);
+  GenerateFrame(2, 1, &media_rtp_packets, &media_packets);
+  std::list<Packet*> fec_packets;
+  GenerateFEC(&media_packets, &fec_packets, kNumFecPackets);
+
+  // Recovery
+  std::list<RtpPacket*>::iterator it = media_rtp_packets.begin();
+  BuildAndAddRedMediaPacket(*it);  // First frame
+  BuildAndAddRedMediaPacket(*it);  // First packet of second frame.
+  EXPECT_CALL(rtp_receiver_video_, ReceiveRecoveredPacketCallback(_, _, _))
+      .Times(1);
+  EXPECT_EQ(0, receiver_fec_->ProcessReceivedFEC());
 
   DeletePackets(&media_packets);
 }
@@ -300,15 +325,9 @@ TEST_F(ReceiverFecTest, MaxFramesOneFec) {
   for (unsigned int i = 0; i < kNumMediaPackets; ++i)
     GenerateFrame(1, i, &media_rtp_packets, &media_packets);
   std::list<Packet*> fec_packets;
-  EXPECT_EQ(0, fec_->GenerateFEC(media_packets,
-                                 kNumFecPackets * 255 / kNumMediaPackets,
-                                 0,
-                                 false,
-                                 &fec_packets));
-  ASSERT_EQ(kNumFecPackets, fec_packets.size());
+  GenerateFEC(&media_packets, &fec_packets, kNumFecPackets);
 
   // Recovery
-  receiver_fec_->SetPayloadTypeFEC(kFecPayloadType);
   std::list<RtpPacket*>::iterator it = media_rtp_packets.begin();
   ++it;  // Drop first packet.
   for (; it != media_rtp_packets.end(); ++it)
@@ -320,7 +339,7 @@ TEST_F(ReceiverFecTest, MaxFramesOneFec) {
     for (; it != media_rtp_packets.end(); ++it)
       VerifyReconstructedMediaPacket(*it, 1);
   }
-  EXPECT_EQ(0, receiver_fec_->ProcessReceivedFEC(false));
+  EXPECT_EQ(0, receiver_fec_->ProcessReceivedFEC());
 
   DeletePackets(&media_packets);
 }
@@ -338,6 +357,165 @@ TEST_F(ReceiverFecTest, TooManyFrames) {
                                   0,
                                   false,
                                   &fec_packets));
+
+  DeletePackets(&media_packets);
+}
+
+TEST_F(ReceiverFecTest, PacketNotDroppedTooEarly) {
+  // 1 frame with 2 media packets and one FEC packet. One media packet missing.
+  // Delay the FEC packet.
+  Packet* delayed_fec = NULL;
+  const unsigned int kNumFecPacketsBatch1 = 1u;
+  const unsigned int kNumMediaPacketsBatch1 = 2u;
+  std::list<RtpPacket*> media_rtp_packets_batch1;
+  std::list<Packet*> media_packets_batch1;
+  GenerateFrame(kNumMediaPacketsBatch1, 0, &media_rtp_packets_batch1,
+                &media_packets_batch1);
+  std::list<Packet*> fec_packets;
+  GenerateFEC(&media_packets_batch1, &fec_packets, kNumFecPacketsBatch1);
+
+  BuildAndAddRedMediaPacket(media_rtp_packets_batch1.front());
+  EXPECT_CALL(rtp_receiver_video_, ReceiveRecoveredPacketCallback(_,_,_))
+      .Times(1);
+  EXPECT_EQ(0, receiver_fec_->ProcessReceivedFEC());
+  delayed_fec = fec_packets.front();
+
+  // Fill the FEC decoder. No packets should be dropped.
+  const unsigned int kNumMediaPacketsBatch2 = 47u;
+  std::list<RtpPacket*> media_rtp_packets_batch2;
+  std::list<Packet*> media_packets_batch2;
+  GenerateAndAddFrames(kNumMediaPacketsBatch2, 1, &media_rtp_packets_batch2,
+                       &media_packets_batch2);
+  EXPECT_CALL(rtp_receiver_video_, ReceiveRecoveredPacketCallback(_,_,_))
+      .Times(media_packets_batch2.size());
+  EXPECT_EQ(0, receiver_fec_->ProcessReceivedFEC());
+
+  // Add the delayed FEC packet. One packet should be reconstructed.
+  BuildAndAddRedFecPacket(delayed_fec);
+  EXPECT_CALL(rtp_receiver_video_, ReceiveRecoveredPacketCallback(_,_,_))
+      .Times(1);
+  EXPECT_EQ(0, receiver_fec_->ProcessReceivedFEC());
+
+  DeletePackets(&media_packets_batch1);
+  DeletePackets(&media_packets_batch2);
+}
+
+TEST_F(ReceiverFecTest, PacketDroppedWhenTooOld) {
+  // 1 frame with 2 media packets and one FEC packet. One media packet missing.
+  // Delay the FEC packet.
+  Packet* delayed_fec = NULL;
+  const unsigned int kNumFecPacketsBatch1 = 1u;
+  const unsigned int kNumMediaPacketsBatch1 = 2u;
+  std::list<RtpPacket*> media_rtp_packets_batch1;
+  std::list<Packet*> media_packets_batch1;
+  GenerateFrame(kNumMediaPacketsBatch1, 0, &media_rtp_packets_batch1,
+                &media_packets_batch1);
+  std::list<Packet*> fec_packets;
+  GenerateFEC(&media_packets_batch1, &fec_packets, kNumFecPacketsBatch1);
+
+  BuildAndAddRedMediaPacket(media_rtp_packets_batch1.front());
+  EXPECT_CALL(rtp_receiver_video_, ReceiveRecoveredPacketCallback(_,_,_))
+      .Times(1);
+  EXPECT_EQ(0, receiver_fec_->ProcessReceivedFEC());
+  delayed_fec = fec_packets.front();
+
+  // Fill the FEC decoder and force the last packet to be dropped.
+  const unsigned int kNumMediaPacketsBatch2 = 48u;
+  std::list<RtpPacket*> media_rtp_packets_batch2;
+  std::list<Packet*> media_packets_batch2;
+  GenerateAndAddFrames(kNumMediaPacketsBatch2, 1, &media_rtp_packets_batch2,
+                       &media_packets_batch2);
+  EXPECT_CALL(rtp_receiver_video_, ReceiveRecoveredPacketCallback(_,_,_))
+      .Times(media_packets_batch2.size());
+  EXPECT_EQ(0, receiver_fec_->ProcessReceivedFEC());
+
+  // Add the delayed FEC packet. No packet should be reconstructed since the
+  // first media packet of that frame has been dropped due to being too old.
+  BuildAndAddRedFecPacket(delayed_fec);
+  EXPECT_CALL(rtp_receiver_video_, ReceiveRecoveredPacketCallback(_,_,_))
+      .Times(0);
+  EXPECT_EQ(0, receiver_fec_->ProcessReceivedFEC());
+
+  DeletePackets(&media_packets_batch1);
+  DeletePackets(&media_packets_batch2);
+}
+
+TEST_F(ReceiverFecTest, OldFecPacketDropped) {
+  // 49 frames with 2 media packets and one FEC packet. All media packets
+  // missing.
+  const unsigned int kNumMediaPackets = 49 * 2;
+  std::list<RtpPacket*> media_rtp_packets;
+  std::list<Packet*> media_packets;
+  for (unsigned int i = 0; i < kNumMediaPackets / 2; ++i) {
+    std::list<RtpPacket*> frame_media_rtp_packets;
+    std::list<Packet*> frame_media_packets;
+    std::list<Packet*> fec_packets;
+    GenerateFrame(2, 0, &frame_media_rtp_packets, &frame_media_packets);
+    GenerateFEC(&frame_media_packets, &fec_packets, 1);
+    for (std::list<Packet*>::iterator it = fec_packets.begin();
+        it != fec_packets.end(); ++it) {
+      BuildAndAddRedFecPacket(*it);
+    }
+    media_packets.insert(media_packets.end(),
+                         frame_media_packets.begin(),
+                         frame_media_packets.end());
+    media_rtp_packets.insert(media_rtp_packets.end(),
+                             frame_media_rtp_packets.begin(),
+                             frame_media_rtp_packets.end());
+  }
+  // Don't insert any media packets.
+  // Only FEC packets inserted. No packets should be recoverable at this time.
+  EXPECT_CALL(rtp_receiver_video_, ReceiveRecoveredPacketCallback(_,_,_))
+        .Times(0);
+  EXPECT_EQ(0, receiver_fec_->ProcessReceivedFEC());
+
+  // Insert the oldest media packet. The corresponding FEC packet is too old
+  // and should've been dropped. Only the media packet we inserted will be
+  // returned.
+  BuildAndAddRedMediaPacket(media_rtp_packets.front());
+  EXPECT_CALL(rtp_receiver_video_, ReceiveRecoveredPacketCallback(_,_,_))
+        .Times(1);
+  EXPECT_EQ(0, receiver_fec_->ProcessReceivedFEC());
+
+  DeletePackets(&media_packets);
+}
+
+TEST_F(ReceiverFecTest, PacketsOnlyReturnedOnce) {
+  const unsigned int kNumFecPackets = 1u;
+  std::list<RtpPacket*> media_rtp_packets;
+  std::list<Packet*> media_packets;
+  GenerateFrame(1, 0, &media_rtp_packets, &media_packets);
+  GenerateFrame(2, 1, &media_rtp_packets, &media_packets);
+  std::list<Packet*> fec_packets;
+  GenerateFEC(&media_packets, &fec_packets, kNumFecPackets);
+
+  // Recovery
+  std::list<RtpPacket*>::iterator media_it = media_rtp_packets.begin();
+  BuildAndAddRedMediaPacket(*media_it);  // First frame.
+  {
+    std::list<RtpPacket*>::iterator verify_it = media_rtp_packets.begin();
+    VerifyReconstructedMediaPacket(*verify_it, 1);  // First frame
+  }
+  EXPECT_EQ(0, receiver_fec_->ProcessReceivedFEC());
+
+  ++media_it;
+  BuildAndAddRedMediaPacket(*media_it);  // 1st packet of 2nd frame.
+  BuildAndAddRedFecPacket(fec_packets.front());  // Insert FEC packet.
+  {
+    InSequence s;
+    std::list<RtpPacket*>::iterator verify_it = media_rtp_packets.begin();
+    ++verify_it;  // First frame has already been returned.
+    VerifyReconstructedMediaPacket(*verify_it, 1);  // 1st packet of 2nd frame.
+    ++verify_it;
+    VerifyReconstructedMediaPacket(*verify_it, 1);  // 2nd packet of 2nd frame.
+  }
+  EXPECT_EQ(0, receiver_fec_->ProcessReceivedFEC());
+
+  ++media_it;
+  BuildAndAddRedMediaPacket(*media_it);  // 2nd packet of 2nd frame.
+  EXPECT_CALL(rtp_receiver_video_, ReceiveRecoveredPacketCallback(_,_,_))
+      .Times(0);
+  EXPECT_EQ(0, receiver_fec_->ProcessReceivedFEC());
 
   DeletePackets(&media_packets);
 }

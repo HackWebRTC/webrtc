@@ -131,7 +131,6 @@ TEST_F(RtpFecTest, HandleIncorrectInputs) {
 }
 
 TEST_F(RtpFecTest, FecRecoveryNoLoss) {
-  bool frame_complete = true;
   const int num_important_packets = 0;
   const bool use_unequal_protection =  false;
   const int num_media_packets = 4;
@@ -153,15 +152,14 @@ TEST_F(RtpFecTest, FecRecoveryNoLoss) {
   memset(fec_loss_mask_, 0, sizeof(fec_loss_mask_));
   NetworkReceivedPackets();
 
-  EXPECT_EQ(0, fec_->DecodeFEC(&received_packet_list_ , &recovered_packet_list_,
-                               fec_seq_num_, frame_complete));
+  EXPECT_EQ(0, fec_->DecodeFEC(&received_packet_list_ ,
+                               &recovered_packet_list_));
 
   // No packets lost, expect complete recovery.
   EXPECT_TRUE(IsRecoveryComplete());
 }
 
 TEST_F(RtpFecTest, FecRecoveryWithLoss) {
-  bool frame_complete = true;
   const int num_important_packets = 0;
   const bool use_unequal_protection = false;
   const int num_media_packets = 4;
@@ -184,8 +182,8 @@ TEST_F(RtpFecTest, FecRecoveryWithLoss) {
   media_loss_mask_[3] = 1;
   NetworkReceivedPackets();
 
-  EXPECT_EQ(0, fec_->DecodeFEC(&received_packet_list_ , &recovered_packet_list_,
-                               fec_seq_num_, frame_complete));
+  EXPECT_EQ(0, fec_->DecodeFEC(&received_packet_list_ ,
+                               &recovered_packet_list_));
 
   // One packet lost, one FEC packet, expect complete recovery.
   EXPECT_TRUE(IsRecoveryComplete());
@@ -198,15 +196,14 @@ TEST_F(RtpFecTest, FecRecoveryWithLoss) {
   media_loss_mask_[3] = 1;
   NetworkReceivedPackets();
 
-  EXPECT_EQ(0, fec_->DecodeFEC(&received_packet_list_ , &recovered_packet_list_,
-                               fec_seq_num_, frame_complete));
+  EXPECT_EQ(0, fec_->DecodeFEC(&received_packet_list_ ,
+                               &recovered_packet_list_));
 
   // 2 packets lost, one FEC packet, cannot get complete recovery.
   EXPECT_FALSE(IsRecoveryComplete());
 }
 
 TEST_F(RtpFecTest, FecRecoveryWithLoss50perc) {
-  bool frame_complete = true;
   const int num_important_packets = 0;
   const bool use_unequal_protection =  false;
   const int num_media_packets = 4;
@@ -243,8 +240,8 @@ TEST_F(RtpFecTest, FecRecoveryWithLoss50perc) {
 
   NetworkReceivedPackets();
 
-  EXPECT_EQ(0, fec_->DecodeFEC(&received_packet_list_ , &recovered_packet_list_,
-                               fec_seq_num_, frame_complete));
+  EXPECT_EQ(0, fec_->DecodeFEC(&received_packet_list_ ,
+                               &recovered_packet_list_));
 
   // With media packet#1 and FEC packets #0, #1, #3, expect complete recovery.
   EXPECT_TRUE(IsRecoveryComplete());
@@ -259,15 +256,14 @@ TEST_F(RtpFecTest, FecRecoveryWithLoss50perc) {
   media_loss_mask_[3] = 1;
   NetworkReceivedPackets();
 
-  EXPECT_EQ(0, fec_->DecodeFEC(&received_packet_list_ , &recovered_packet_list_,
-                               fec_seq_num_, frame_complete));
+  EXPECT_EQ(0, fec_->DecodeFEC(&received_packet_list_ ,
+                               &recovered_packet_list_));
 
   // Cannot get complete recovery for this loss configuration.
   EXPECT_FALSE(IsRecoveryComplete());
 }
 
 TEST_F(RtpFecTest, FecRecoveryNoLossUep) {
-  bool frame_complete = true;
   const int num_important_packets = 2;
   const bool use_unequal_protection =  true;
   const int num_media_packets = 4;
@@ -289,15 +285,14 @@ TEST_F(RtpFecTest, FecRecoveryNoLossUep) {
   memset(fec_loss_mask_, 0, sizeof(fec_loss_mask_));
   NetworkReceivedPackets();
 
-  EXPECT_EQ(0, fec_->DecodeFEC(&received_packet_list_ , &recovered_packet_list_,
-                               fec_seq_num_, frame_complete));
+  EXPECT_EQ(0, fec_->DecodeFEC(&received_packet_list_ ,
+                               &recovered_packet_list_));
 
   // No packets lost, expect complete recovery.
   EXPECT_TRUE(IsRecoveryComplete());
 }
 
 TEST_F(RtpFecTest, FecRecoveryWithLossUep) {
-  bool frame_complete = true;
   const int num_important_packets = 2;
   const bool use_unequal_protection =  true;
   const int num_media_packets = 4;
@@ -320,8 +315,8 @@ TEST_F(RtpFecTest, FecRecoveryWithLossUep) {
   media_loss_mask_[3] = 1;
   NetworkReceivedPackets();
 
-  EXPECT_EQ(0, fec_->DecodeFEC(&received_packet_list_ , &recovered_packet_list_,
-                               fec_seq_num_, frame_complete));
+  EXPECT_EQ(0, fec_->DecodeFEC(&received_packet_list_ ,
+                               &recovered_packet_list_));
 
   // One packet lost, one FEC packet, expect complete recovery.
   EXPECT_TRUE(IsRecoveryComplete());
@@ -334,15 +329,14 @@ TEST_F(RtpFecTest, FecRecoveryWithLossUep) {
   media_loss_mask_[3] = 1;
   NetworkReceivedPackets();
 
-  EXPECT_EQ(0, fec_->DecodeFEC(&received_packet_list_ , &recovered_packet_list_,
-                               fec_seq_num_, frame_complete));
+  EXPECT_EQ(0, fec_->DecodeFEC(&received_packet_list_ ,
+                               &recovered_packet_list_));
 
   // 2 packets lost, one FEC packet, cannot get complete recovery.
   EXPECT_FALSE(IsRecoveryComplete());
 }
 
 TEST_F(RtpFecTest, FecRecoveryWithLoss50percUep) {
-  bool frame_complete = true;
   const int num_important_packets = 1;
   const bool use_unequal_protection =  true;
   const int num_media_packets = 4;
@@ -378,8 +372,8 @@ TEST_F(RtpFecTest, FecRecoveryWithLoss50percUep) {
   media_loss_mask_[3] = 1;
   NetworkReceivedPackets();
 
-  EXPECT_EQ(0, fec_->DecodeFEC(&received_packet_list_ , &recovered_packet_list_,
-                               fec_seq_num_, frame_complete));
+  EXPECT_EQ(0, fec_->DecodeFEC(&received_packet_list_ ,
+                               &recovered_packet_list_));
 
   // With media packet#1 and FEC packets #0, #2, #3, expect complete recovery.
   EXPECT_TRUE(IsRecoveryComplete());
@@ -394,8 +388,8 @@ TEST_F(RtpFecTest, FecRecoveryWithLoss50percUep) {
   media_loss_mask_[3] = 1;
   NetworkReceivedPackets();
 
-  EXPECT_EQ(0, fec_->DecodeFEC(&received_packet_list_ , &recovered_packet_list_,
-                               fec_seq_num_, frame_complete));
+  EXPECT_EQ(0, fec_->DecodeFEC(&received_packet_list_ ,
+                               &recovered_packet_list_));
 
   // Cannot get complete recovery for this loss configuration.
   EXPECT_FALSE(IsRecoveryComplete());
@@ -404,11 +398,11 @@ TEST_F(RtpFecTest, FecRecoveryWithLoss50percUep) {
 // TODO(marpan): Add more test cases.
 
 void RtpFecTest::TearDown() {
+  fec_->ResetState(&recovered_packet_list_);
+  delete fec_;
   FreeRecoveredPacketList();
   ClearList(&media_packet_list_);
   EXPECT_TRUE(media_packet_list_.empty());
-
-  fec_packet_list_.clear();
 }
 
 void RtpFecTest::FreeRecoveredPacketList() {
@@ -482,18 +476,13 @@ void RtpFecTest:: ReceivedPackets(
         // obtained from RTP header. These were set in ConstructMediaPackets().
         received_packet->seqNum =
             webrtc::ModuleRTPUtility::BufferToUWord16(&packet->data[2]);
-        received_packet->lastMediaPktInFrame = (packet->data[1] & 0x80) != 0;
       }
       else {
         // The sequence number, marker bit, and ssrc number are defined in the
         // RTP header of the FEC packet, which is not constructed in this test.
         // So we set these values below based on the values generated in
         // ConstructMediaPackets().
-
         received_packet->seqNum = seq_num;
-        // The marker bit (last media packet of frame) for FEC packets is
-        // always zero.
-        received_packet->lastMediaPktInFrame = false;
         // The ssrc value for FEC packets is set to the one used for the
         // media packets in ConstructMediaPackets().
         received_packet->ssrc = ssrc_;

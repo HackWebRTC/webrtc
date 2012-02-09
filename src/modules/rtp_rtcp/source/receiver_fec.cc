@@ -8,13 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "receiver_fec.h"
+#include "modules/rtp_rtcp/source/receiver_fec.h"
 
 #include <cassert>
 
-#include "rtp_receiver_video.h"
-#include "rtp_utility.h"
-#include "trace.h"
+#include "modules/rtp_rtcp/source/rtp_receiver_video.h"
+#include "modules/rtp_rtcp/source/rtp_utility.h"
+#include "system_wrappers/interface/scoped_ptr.h"
+#include "system_wrappers/interface/trace.h"
 
 // RFC 5109
 namespace webrtc {
@@ -22,9 +23,7 @@ ReceiverFEC::ReceiverFEC(const WebRtc_Word32 id, RTPReceiverVideo* owner)
     : _id(id),
       _owner(owner),
       _fec(new ForwardErrorCorrection(id)),
-      _payloadTypeFEC(-1),
-      _lastFECSeqNum(0),
-      _frameComplete(true) {
+      _payloadTypeFEC(-1) {
 }
 
 ReceiverFEC::~ReceiverFEC() {
@@ -32,16 +31,13 @@ ReceiverFEC::~ReceiverFEC() {
   while (!_receivedPacketList.empty()){
     ForwardErrorCorrection::ReceivedPacket* receivedPacket =
         _receivedPacketList.front();
-    delete receivedPacket->pkt;
     delete receivedPacket;
     _receivedPacketList.pop_front();
   }
   assert(_receivedPacketList.empty());
 
   if (_fec != NULL) {
-    bool frameComplete = true;
-    _fec->DecodeFEC(&_receivedPacketList, &_recoveredPacketList,_lastFECSeqNum,
-                    frameComplete);
+    _fec->ResetState(&_recoveredPacketList);
     delete _fec;
   }
 }
@@ -84,8 +80,7 @@ WebRtc_Word32 ReceiverFEC::AddReceivedFECPacket(
     const WebRtcRTPHeader* rtpHeader,
     const WebRtc_UWord8* incomingRtpPacket,
     const WebRtc_UWord16 payloadDataLength,
-    bool& FECpacket,
-    bool oldPacket) {
+    bool& FECpacket) {
   if (_payloadTypeFEC == -1) {
     return -1;
   }
@@ -107,19 +102,10 @@ WebRtc_Word32 ReceiverFEC::AddReceivedFECPacket(
   if (_payloadTypeFEC == payloadType) {
     receivedPacket->isFec = true;
     FECpacket = true;
-    // We don't need to parse old FEC packets.
-    // Old FEC packets are sent to jitter buffer as empty packets in the
-    // callback in rtp_receiver_video.
-    if (oldPacket) {
-      delete receivedPacket->pkt;
-      delete receivedPacket;
-      return 0;
-    }
   } else {
     receivedPacket->isFec = false;
     FECpacket = false;
   }
-  receivedPacket->lastMediaPktInFrame = rtpHeader->header.markerBit;
   receivedPacket->seqNum = rtpHeader->header.sequenceNumber;
 
   WebRtc_UWord16 blockLength = 0;
@@ -135,7 +121,6 @@ WebRtc_Word32 ReceiverFEC::AddReceivedFECPacket(
       // location a corrupt payload can be caught, so don't assert.
       WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, _id,
                    "Corrupt payload found in %s", __FUNCTION__);
-      delete receivedPacket->pkt;
       delete receivedPacket;
       return -1;
     }
@@ -147,14 +132,12 @@ WebRtc_Word32 ReceiverFEC::AddReceivedFECPacket(
     // check next RED header
     if(incomingRtpPacket[rtpHeader->header.headerLength+4] & 0x80) {
       // more than 2 blocks in packet not supported
-      delete receivedPacket->pkt;
       delete receivedPacket;
       assert(false);
       return -1;
     }
     if(blockLength > payloadDataLength - REDHeaderLength) {
       // block length longer than packet
-      delete receivedPacket->pkt;
       delete receivedPacket;
       assert(false);
       return -1;
@@ -186,7 +169,6 @@ WebRtc_Word32 ReceiverFEC::AddReceivedFECPacket(
     secondReceivedPacket->pkt = new ForwardErrorCorrection::Packet;
 
     secondReceivedPacket->isFec = true;
-    secondReceivedPacket->lastMediaPktInFrame = false;
     secondReceivedPacket->seqNum = rtpHeader->header.sequenceNumber;
 
     // copy the FEC payload data
@@ -226,105 +208,35 @@ WebRtc_Word32 ReceiverFEC::AddReceivedFECPacket(
         payloadDataLength - REDHeaderLength;
   }
 
-  if(receivedPacket->isFec) {
-    AddReceivedFECInfo(rtpHeader, NULL, FECpacket);
-  }
-
   if(receivedPacket->pkt->length == 0) {
-    if (secondReceivedPacket) {
-      delete secondReceivedPacket->pkt;
-    }
     delete secondReceivedPacket;
-    delete receivedPacket->pkt;
     delete receivedPacket;
     return 0;
   }
 
-  // Send any old media packets to jitter buffer, don't push them onto
-  // received list for FEC decoding (we don't do FEC decoding on old packets).
-  if (oldPacket && receivedPacket->isFec == false) {
-    if (ParseAndReceivePacket(receivedPacket->pkt) != 0) {
-      if (secondReceivedPacket) {
-        delete secondReceivedPacket->pkt;
-      }
-      delete secondReceivedPacket;
-      delete receivedPacket->pkt;
-      delete receivedPacket;
-      return -1;
-    }
-    if (secondReceivedPacket) {
-      delete secondReceivedPacket->pkt;
-    }
-    delete secondReceivedPacket;
-    delete receivedPacket->pkt;
-    delete receivedPacket;
-  } else {
-    _receivedPacketList.push_back(receivedPacket);
-    if (secondReceivedPacket) {
-      _receivedPacketList.push_back(secondReceivedPacket);
-    }
+  _receivedPacketList.push_back(receivedPacket);
+  if (secondReceivedPacket) {
+    _receivedPacketList.push_back(secondReceivedPacket);
   }
   return 0;
 }
 
-void ReceiverFEC::AddReceivedFECInfo(const WebRtcRTPHeader* rtpHeader,
-                                     const WebRtc_UWord8* incomingRtpPacket,
-                                     bool& FECpacket) {
-  // store the highest FEC seq num received
-  if (_lastFECSeqNum >= rtpHeader->header.sequenceNumber) {
-    if (_lastFECSeqNum > 0xff00 && rtpHeader->header.sequenceNumber < 0x0ff ) {
-      // wrap
-      _lastFECSeqNum = rtpHeader->header.sequenceNumber;
-    } else {
-      // old seqNum
-    }
-  } else {
-    // check for a wrap
-    if(rtpHeader->header.sequenceNumber > 0xff00 && _lastFECSeqNum < 0x0ff ) {
-      // old seqNum
-    } else {
-      _lastFECSeqNum = rtpHeader->header.sequenceNumber;
-    }
-  }
-
-  if (incomingRtpPacket) {
-    // get payload type from RED header
-    WebRtc_UWord8 payloadType =
-        incomingRtpPacket[rtpHeader->header.headerLength] & 0x7f;
-
-    // use the payloadType to decide if it's FEC or coded data
-    if(_payloadTypeFEC == payloadType) {
-      FECpacket = true;
-    } else {
-      FECpacket = false;
-    }
-  }
-}
-
-WebRtc_Word32 ReceiverFEC::ProcessReceivedFEC(const bool forceFrameDecode) {
+WebRtc_Word32 ReceiverFEC::ProcessReceivedFEC() {
   if (!_receivedPacketList.empty()) {
-    if (_fec->DecodeFEC(&_receivedPacketList, &_recoveredPacketList,
-                        _lastFECSeqNum, _frameComplete) != 0) {
+    if (_fec->DecodeFEC(&_receivedPacketList, &_recoveredPacketList) != 0) {
       return -1;
     }
     assert(_receivedPacketList.empty());
   }
-  if (forceFrameDecode) {
-    _frameComplete = true;
-  }
-  if (_frameComplete) {
-    while (!_recoveredPacketList.empty()) {
-      ForwardErrorCorrection::RecoveredPacket* recoveredPacket =
-          _recoveredPacketList.front();
-
-      if (ParseAndReceivePacket(recoveredPacket->pkt) != 0) {
-        return -1;
-      }
-      delete recoveredPacket->pkt;
-      delete recoveredPacket;
-      _recoveredPacketList.pop_front();
+  ForwardErrorCorrection::RecoveredPacketList::iterator it =
+      _recoveredPacketList.begin();
+  for (; it != _recoveredPacketList.end(); ++it) {
+    if ((*it)->returned)  // Already sent to the VCM and the jitter buffer.
+      continue;
+    if (ParseAndReceivePacket((*it)->pkt) != 0) {
+      return -1;
     }
-    assert(_recoveredPacketList.empty());
+    (*it)->returned = true;
   }
   return 0;
 }
@@ -346,4 +258,5 @@ int ReceiverFEC::ParseAndReceivePacket(
   }
   return 0;
 }
+
 } // namespace webrtc

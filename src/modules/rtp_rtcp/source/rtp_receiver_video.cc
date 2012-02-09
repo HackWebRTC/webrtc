@@ -247,62 +247,14 @@ RTPReceiverVideo::ParseVideoCodecSpecific(WebRtcRTPHeader* rtpHeader,
             _criticalSectionReceiverVideo->Leave();
             return -1;
         }
-        bool oldPacket = false;
         bool FECpacket = false;
-        bool wrapped = false;  // Not used; just for OldTimeStamp().
-
-        // Check for old packets.
-        if (ModuleRTPUtility::OldTimestamp(rtpHeader->header.timestamp,
-                                           TimeStamp(),
-                                           &wrapped))
-        {
-            // We have an old packet.
-            // FEC receiver holds a list of packets with current timestamp.
-            // Setting "oldPacket = true" will send old packets directly
-            // to the jitter buffer.
-            oldPacket = true;
-            retVal = _receiveFEC->AddReceivedFECPacket(rtpHeader,
-                                                       incomingRtpPacket,
-                                                       payloadDataLength,
-                                                       FECpacket,
-                                                       oldPacket);
-        }
-        else
-        {
-            // Check for future packets.
-            if (rtpHeader->header.timestamp != TimeStamp())
-            {
-                // We have a packet from next frame.
-                // Force a decode with the existing packets.
-                retVal = _receiveFEC->ProcessReceivedFEC(true);
-                _currentFecFrameDecoded = false;
-            }
-            if(retVal != -1)
-            {
-                if (!_currentFecFrameDecoded)
-                {
-                    retVal = _receiveFEC->AddReceivedFECPacket(
-                        rtpHeader,
-                        incomingRtpPacket,
-                        payloadDataLength,
-                        FECpacket,
-                        oldPacket);
-
-                    if (retVal != -1 && (FECpacket ||
-                        rtpHeader->header.markerBit))
-                    {
-                        // Only attempt a decode after receiving the
-                        // last media packet or an FEC packet.
-                        retVal = _receiveFEC->ProcessReceivedFEC(false);
-                    }
-                }else
-                {
-                    _receiveFEC->AddReceivedFECInfo(rtpHeader,
-                                                    incomingRtpPacket,
-                                                    FECpacket);
-                }
-            }
-        }
+        retVal = _receiveFEC->AddReceivedFECPacket(
+            rtpHeader,
+            incomingRtpPacket,
+            payloadDataLength,
+            FECpacket);
+        if (retVal != -1)
+          retVal = _receiveFEC->ProcessReceivedFEC();
         _criticalSectionReceiverVideo->Leave();
 
         if(retVal == 0 && FECpacket)

@@ -31,8 +31,8 @@
 using namespace webrtc;
 
 void ReceivePackets(
-    std::list<ForwardErrorCorrection::ReceivedPacket*>* toDecodeList,
-    std::list<ForwardErrorCorrection::ReceivedPacket*>* receivedPacketList,
+    ForwardErrorCorrection::ReceivedPacketList* toDecodeList,
+    ForwardErrorCorrection::ReceivedPacketList* receivedPacketList,
     WebRtc_UWord32 numPacketsToDecode, float reorderRate, float duplicateRate);
 
 int main() {
@@ -48,11 +48,11 @@ int main() {
   WebRtc_UWord32 id = 0;
   ForwardErrorCorrection fec(id);
 
-  std::list<ForwardErrorCorrection::Packet*> mediaPacketList;
-  std::list<ForwardErrorCorrection::Packet*> fecPacketList;
-  std::list<ForwardErrorCorrection::ReceivedPacket*> toDecodeList;
-  std::list<ForwardErrorCorrection::ReceivedPacket*> receivedPacketList;
-  std::list<ForwardErrorCorrection::RecoveredPacket*> recoveredPacketList;
+  ForwardErrorCorrection::PacketList mediaPacketList;
+  ForwardErrorCorrection::PacketList fecPacketList;
+  ForwardErrorCorrection::ReceivedPacketList toDecodeList;
+  ForwardErrorCorrection::ReceivedPacketList receivedPacketList;
+  ForwardErrorCorrection::RecoveredPacketList recoveredPacketList;
   std::list<WebRtc_UWord8*> fecMaskList;
 
   ForwardErrorCorrection::Packet* mediaPacket;
@@ -226,7 +226,7 @@ int main() {
             return -1;
           }
           memset(mediaLossMask, 0, sizeof(mediaLossMask));
-          std::list<ForwardErrorCorrection::Packet*>::iterator
+          ForwardErrorCorrection::PacketList::iterator
               mediaPacketListItem = mediaPacketList.begin();
           ForwardErrorCorrection::ReceivedPacket* receivedPacket;
           WebRtc_UWord32 mediaPacketIdx = 0;
@@ -241,8 +241,7 @@ int main() {
               mediaLossMask[mediaPacketIdx] = 1;
               receivedPacket =
                   new ForwardErrorCorrection::ReceivedPacket;
-              receivedPacket->pkt =
-                  new ForwardErrorCorrection::Packet;
+              receivedPacket->pkt = new ForwardErrorCorrection::Packet;
               receivedPacketList.push_back(receivedPacket);
 
               receivedPacket->pkt->length = mediaPacket->length;
@@ -251,14 +250,12 @@ int main() {
               receivedPacket->seqNum =
                   ModuleRTPUtility::BufferToUWord16(&mediaPacket->data[2]);
               receivedPacket->isFec = false;
-              receivedPacket->lastMediaPktInFrame =
-                  (mediaPacket->data[1] & 0x80) != 0;
             }
             mediaPacketIdx++;
             ++mediaPacketListItem;
           }
           memset(fecLossMask, 0, sizeof(fecLossMask));
-          std::list<ForwardErrorCorrection::Packet*>::iterator
+          ForwardErrorCorrection::PacketList::iterator
               fecPacketListItem = fecPacketList.begin();
           ForwardErrorCorrection::Packet* fecPacket;
           WebRtc_UWord32 fecPacketIdx = 0;
@@ -270,8 +267,7 @@ int main() {
               fecLossMask[fecPacketIdx] = 1;
               receivedPacket =
                   new ForwardErrorCorrection::ReceivedPacket;
-              receivedPacket->pkt =
-                  new ForwardErrorCorrection::Packet;
+              receivedPacket->pkt = new ForwardErrorCorrection::Packet;
 
               receivedPacketList.push_back(receivedPacket);
 
@@ -281,7 +277,6 @@ int main() {
 
               receivedPacket->seqNum = seqNum;
               receivedPacket->isFec = true;
-              receivedPacket->lastMediaPktInFrame = false;
               receivedPacket->ssrc = ssrc;
 
               fecMaskList.push_back(fecPacketMasks[fecPacketIdx]);
@@ -336,7 +331,6 @@ int main() {
           }
           printf("\n\n");
 #endif
-          bool complete = true; // Marks start of new frame.
           bool fecPacketReceived = false; // For error-checking frame completion.
           while (!receivedPacketList.empty()) {
             WebRtc_UWord32 numPacketsToDecode = static_cast<WebRtc_UWord32>
@@ -349,7 +343,7 @@ int main() {
                            numPacketsToDecode, reorderRate, duplicateRate);
 
             if (fecPacketReceived == false) {
-              std::list<ForwardErrorCorrection::ReceivedPacket*>::iterator
+              ForwardErrorCorrection::ReceivedPacketList::iterator
                   toDecodeIt = toDecodeList.begin();
               while (toDecodeIt != toDecodeList.end()) {
                 receivedPacket = *toDecodeIt;
@@ -359,8 +353,8 @@ int main() {
                 ++toDecodeIt;
               }
             }
-            if (fec.DecodeFEC(&toDecodeList, &recoveredPacketList, seqNum,
-                              complete) != 0) {
+            if (fec.DecodeFEC(&toDecodeList, &recoveredPacketList)
+                != 0) {
               printf("Error: DecodeFEC() failed\n");
               return -1;
             }
@@ -368,34 +362,13 @@ int main() {
               printf("Error: received packet list is not empty\n");
               return -1;
             }
-            if (recoveredPacketList.size() == numMediaPackets &&
-                fecPacketReceived == true) {
-              if (complete == true) {
-#ifdef VERBOSE_OUTPUT
-                printf("Full frame recovery correctly marked\n\n");
-#endif
-                break;
-              } else {
-                printf("Error: "
-                    "it should be possible to verify full frame recovery,"
-                    " but complete parameter was set to false\n");
-                return -1;
-              }
-            } else {
-              if (complete) {
-                printf("Error: "
-                    "it should not be possible to verify full frame recovery,"
-                    " but complete parameter was set to true\n");
-                return -1;
-              }
-            }
           }
           mediaPacketListItem = mediaPacketList.begin();
           mediaPacketIdx = 0;
           while (mediaPacketListItem != mediaPacketList.end()) {
             if (mediaLossMask[mediaPacketIdx] == 1) {
               // Should have recovered this packet.
-              std::list<ForwardErrorCorrection::RecoveredPacket*>::iterator
+              ForwardErrorCorrection::RecoveredPacketList::iterator
                   recoveredPacketListItem = recoveredPacketList.begin();
 
               if (recoveredPacketListItem == recoveredPacketList.end()) {
@@ -417,13 +390,13 @@ int main() {
                     "original media packet\n");
                 return -1;
               }
-              delete recoveredPacket->pkt;
               delete recoveredPacket;
               recoveredPacketList.pop_front();
             }
             mediaPacketIdx++;
             ++mediaPacketListItem;
           }
+          fec.ResetState(&recoveredPacketList);
           if (!recoveredPacketList.empty()) {
             printf("Error: excessive number of recovered packets.\n");
             printf("\t size is:%u\n",
@@ -447,11 +420,10 @@ int main() {
 
           // Delete received packets we didn't pass to DecodeFEC(), due to early
           // frame completion.
-          std::list<ForwardErrorCorrection::ReceivedPacket*>::iterator
+          ForwardErrorCorrection::ReceivedPacketList::iterator
               receivedPacketIt = receivedPacketList.begin();
           while (receivedPacketIt != receivedPacketList.end()) {
             receivedPacket = *receivedPacketIt;
-            delete receivedPacket->pkt;
             delete receivedPacket;
             ++receivedPacketIt;
             receivedPacketList.pop_front();
@@ -469,8 +441,7 @@ int main() {
   } // loop over loss rates
 
   // Have DecodeFEC free allocated memory.
-  bool complete = true;
-  fec.DecodeFEC(&receivedPacketList, &recoveredPacketList, seqNum, complete);
+  fec.ResetState(&recoveredPacketList);
   if (!recoveredPacketList.empty()) {
     printf("Error: recovered packet list is not empty\n");
     return -1;
@@ -480,13 +451,13 @@ int main() {
 }
 
 void ReceivePackets(
-    std::list<ForwardErrorCorrection::ReceivedPacket*>* toDecodeList,
-    std::list<ForwardErrorCorrection::ReceivedPacket*>* receivedPacketList,
+    ForwardErrorCorrection::ReceivedPacketList* toDecodeList,
+    ForwardErrorCorrection::ReceivedPacketList* receivedPacketList,
     WebRtc_UWord32 numPacketsToDecode, float reorderRate, float duplicateRate) {
   assert(toDecodeList->empty());
   assert(numPacketsToDecode <= receivedPacketList->size());
 
-  std::list<ForwardErrorCorrection::ReceivedPacket*>::iterator it;
+  ForwardErrorCorrection::ReceivedPacketList::iterator it;
   for (WebRtc_UWord32 i = 0; i < numPacketsToDecode; i++) {
     it = receivedPacketList->begin();
     // Reorder packets.
@@ -507,9 +478,7 @@ void ReceivePackets(
     while (randomVariable < duplicateRate) {
       ForwardErrorCorrection::ReceivedPacket* duplicatePacket =
           new ForwardErrorCorrection::ReceivedPacket;
-      memcpy(duplicatePacket, receivedPacket,
-             sizeof(ForwardErrorCorrection::ReceivedPacket));
-
+      *duplicatePacket = *receivedPacket;
       duplicatePacket->pkt = new ForwardErrorCorrection::Packet;
       memcpy(duplicatePacket->pkt->data, receivedPacket->pkt->data,
              receivedPacket->pkt->length);

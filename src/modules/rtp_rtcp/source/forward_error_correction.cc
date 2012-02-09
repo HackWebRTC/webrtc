@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,13 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <algorithm>
 #include <cassert>
 #include <cstring>
+#include <iterator>
 
-#include "forward_error_correction.h"
-#include "forward_error_correction_internal.h"
-#include "rtp_utility.h"
-#include "trace.h"
+#include "modules/rtp_rtcp/source/forward_error_correction.h"
+#include "modules/rtp_rtcp/source/forward_error_correction_internal.h"
+#include "modules/rtp_rtcp/source/rtp_utility.h"
+#include "system_wrappers/interface/trace.h"
 
 namespace webrtc {
 
@@ -33,42 +35,39 @@ const uint8_t kUlpHeaderSizeLBitClear = (2 + kMaskSizeLBitClear);
 // Transport header size in bytes. Assume UDP/IPv4 as a reasonable minimum.
 const uint8_t kTransportOverhead = 28;
 
+enum { kMaxFecPackets = ForwardErrorCorrection::kMaxMediaPackets };
+
 // Used to link media packets to their protecting FEC packets.
 //
-struct ProtectedPacket {
-  uint16_t seqNum;
-  ForwardErrorCorrection::Packet* pkt;
+// TODO(holmer): Refactor into a proper class.
+class ProtectedPacket : public ForwardErrorCorrection::SortablePacket {
+ public:
+  scoped_refptr<ForwardErrorCorrection::Packet> pkt;
 };
+
+typedef std::list<ProtectedPacket*> ProtectedPacketList;
 
 //
 // Used for internal storage of FEC packets in a list.
 //
-struct FecPacket {
-    std::list<ProtectedPacket*> protectedPktList;
-    uint16_t seqNum;
+// TODO(holmer): Refactor into a proper class.
+class FecPacket : public ForwardErrorCorrection::SortablePacket {
+ public:
+    ProtectedPacketList protectedPktList;
     uint32_t ssrc;  // SSRC of the current frame.
-    ForwardErrorCorrection::Packet* pkt;
+    scoped_refptr<ForwardErrorCorrection::Packet> pkt;
 };
 
-bool ForwardErrorCorrection::CompareRecoveredPackets(RecoveredPacket* first,
-                                                     RecoveredPacket* second) {
-  if ((first->seqNum > second->seqNum &&
-      (first->seqNum - kMaxMediaPackets) < second->seqNum) ||
-      // We have a wrap in sequence number if the first sequence number is low,
-      // defined and lower than kMaxMediaPackets and second sequence number is
-      // high defined as max sequence number (65535) - kMaxMediaPackets.
-      (first->seqNum < kMaxMediaPackets &&   // Wrap guard.
-          second->seqNum > (65535 - kMaxMediaPackets))) {
-    return false;
-  }
-  return true;
+bool ForwardErrorCorrection::SortablePacket::LessThan(
+    const SortablePacket* first,
+    const SortablePacket* second) {
+  return (first->seqNum != second->seqNum &&
+      LatestSequenceNumber(first->seqNum, second->seqNum) == second->seqNum);
 }
 
 ForwardErrorCorrection::ForwardErrorCorrection(int32_t id)
     : _id(id),
       _generatedFecPackets(kMaxMediaPackets),
-      _seqNumBase(0),
-      _lastMediaPacketReceived(false),
       _fecPacketReceived(false) {
 }
 
@@ -93,11 +92,11 @@ ForwardErrorCorrection::~ForwardErrorCorrection() {
 //   |                                                               |
 //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 int32_t ForwardErrorCorrection::GenerateFEC(
-    const std::list<Packet*>& mediaPacketList,
+    const PacketList& mediaPacketList,
     uint8_t protectionFactor,
     int numImportantPackets,
     bool useUnequalProtection,
-    std::list<Packet*>* fecPacketList) {
+    PacketList* fecPacketList) {
   if (mediaPacketList.empty()) {
     WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
                  "%s media packet list is empty", __FUNCTION__);
@@ -135,7 +134,7 @@ int32_t ForwardErrorCorrection::GenerateFEC(
     return -1;
   }
   // Do some error checking on the media packets.
-  std::list<Packet*>::const_iterator mediaListIt = mediaPacketList.begin();
+  PacketList::const_iterator mediaListIt = mediaPacketList.begin();
   while (mediaListIt != mediaPacketList.end()) {
     Packet* mediaPacket = *mediaListIt;
     assert(mediaPacket);
@@ -192,7 +191,7 @@ int32_t ForwardErrorCorrection::GenerateFEC(
 }
 
 void ForwardErrorCorrection::GenerateFecBitStrings(
-    const std::list<Packet*>& mediaPacketList,
+    const PacketList& mediaPacketList,
     uint8_t* packetMask,
     uint32_t numFecPackets) {
   uint8_t mediaPayloadLength[2];
@@ -204,7 +203,7 @@ void ForwardErrorCorrection::GenerateFecBitStrings(
   const uint16_t fecRtpOffset = kFecHeaderSize + ulpHeaderSize - kRtpHeaderSize;
 
   for (uint32_t i = 0; i < numFecPackets; i++) {
-    std::list<Packet*>::const_iterator mediaListIt = mediaPacketList.begin();
+    PacketList::const_iterator mediaListIt = mediaPacketList.begin();
     uint32_t pktMaskIdx = i * numMaskBytes;
     uint32_t mediaPktIdx = 0;
     uint16_t fecPacketLength = 0;
@@ -271,7 +270,7 @@ void ForwardErrorCorrection::GenerateFecBitStrings(
 }
 
 void ForwardErrorCorrection::GenerateFecUlpHeaders(
-    const std::list<Packet*>& mediaPacketList,
+    const PacketList& mediaPacketList,
     uint8_t* packetMask,
     uint32_t numFecPackets) {
   // -- Generate FEC and ULP headers --
@@ -295,7 +294,7 @@ void ForwardErrorCorrection::GenerateFecUlpHeaders(
   //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
   //   |              mask cont. (present only when L = 1)             |
   //   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-  std::list<Packet*>::const_iterator mediaListIt = mediaPacketList.begin();
+  PacketList::const_iterator mediaListIt = mediaPacketList.begin();
   Packet* mediaPacket = *mediaListIt;
   assert(mediaPacket != NULL);
   const uint8_t lBit = mediaPacketList.size() > 16 ? 1 : 0;
@@ -330,35 +329,28 @@ void ForwardErrorCorrection::GenerateFecUlpHeaders(
 }
 
 void ForwardErrorCorrection::ResetState(
-    std::list<RecoveredPacket*>* recoveredPacketList) {
-  _seqNumBase = 0;
-  _lastMediaPacketReceived = false;
+    RecoveredPacketList* recoveredPacketList) {
   _fecPacketReceived = false;
 
   // Free the memory for any existing recovered packets, if the user hasn't.
   while (!recoveredPacketList->empty()) {
-    std::list<RecoveredPacket*>::iterator recoveredPacketListIt =
-        recoveredPacketList->begin();
-    RecoveredPacket* recPacket = *recoveredPacketListIt;
-    delete recPacket->pkt;
-    delete recPacket;
+    delete recoveredPacketList->front();
     recoveredPacketList->pop_front();
   }
   assert(recoveredPacketList->empty());
 
   // Free the FEC packet list.
   while (!_fecPacketList.empty()) {
-    std::list<FecPacket*>::iterator fecPacketListIt = _fecPacketList.begin();
+    FecPacketList::iterator fecPacketListIt = _fecPacketList.begin();
     FecPacket* fecPacket = *fecPacketListIt;
-    std::list<ProtectedPacket*>::iterator protectedPacketListIt;
+    ProtectedPacketList::iterator protectedPacketListIt;
     protectedPacketListIt = fecPacket->protectedPktList.begin();
     while (protectedPacketListIt != fecPacket->protectedPktList.end()) {
       delete *protectedPacketListIt;
-      protectedPacketListIt++;
-      fecPacket->protectedPktList.pop_front();
+      protectedPacketListIt =
+          fecPacket->protectedPktList.erase(protectedPacketListIt);
     }
     assert(fecPacket->protectedPktList.empty());
-    delete fecPacket->pkt;
     delete fecPacket;
     _fecPacketList.pop_front();
   }
@@ -367,74 +359,75 @@ void ForwardErrorCorrection::ResetState(
 
 void ForwardErrorCorrection::InsertMediaPacket(
     ReceivedPacket* rxPacket,
-    std::list<RecoveredPacket*>* recoveredPacketList) {
-  if (rxPacket->lastMediaPktInFrame) {
-    if (_lastMediaPacketReceived) {
-      // We already received the last packet.
-      WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, _id,
-                   "%s last media packet marked more than once per frame",
-                   __FUNCTION__);
-    }
-    _lastMediaPacketReceived = true;
-  }
-  bool duplicatePacket = false;
-  std::list<RecoveredPacket*>::iterator recoveredPacketListIt =
+    RecoveredPacketList* recoveredPacketList) {
+  RecoveredPacketList::iterator recoveredPacketListIt =
       recoveredPacketList->begin();
 
+  // Search for duplicate packets.
   while (recoveredPacketListIt != recoveredPacketList->end()) {
-    RecoveredPacket* recPacket = *recoveredPacketListIt;
-    if (rxPacket->seqNum == recPacket->seqNum) {
+    if (rxPacket->seqNum == (*recoveredPacketListIt)->seqNum) {
       // Duplicate packet, no need to add to list.
-      duplicatePacket = true;
-      break;
+      // Delete duplicate media packet data.
+      rxPacket->pkt = NULL;
+      return;
     }
     recoveredPacketListIt++;
   }
-  if (duplicatePacket) {
-    // Delete duplicate media packet data.
-    delete rxPacket->pkt;
-    return;
-  }
   RecoveredPacket* recoverdPacketToInsert = new RecoveredPacket;
   recoverdPacketToInsert->wasRecovered = false;
+  recoverdPacketToInsert->returned = false;
   recoverdPacketToInsert->seqNum = rxPacket->seqNum;
   recoverdPacketToInsert->pkt = rxPacket->pkt;
   recoverdPacketToInsert->pkt->length = rxPacket->pkt->length;
 
+  // TODO(holmer): Consider replacing this with a binary search for the right
+  // position, and then just insert the new packet. Would get rid of the sort.
   recoveredPacketList->push_back(recoverdPacketToInsert);
+  recoveredPacketList->sort(SortablePacket::LessThan);
+  UpdateCoveringFECPackets(recoverdPacketToInsert);
 }
 
-void ForwardErrorCorrection::InsertFECPacket(ReceivedPacket* rxPacket) {
+void ForwardErrorCorrection::UpdateCoveringFECPackets(RecoveredPacket* packet) {
+  for (FecPacketList::iterator it = _fecPacketList.begin();
+      it != _fecPacketList.end(); ++it) {
+    // Is this FEC packet protecting the media packet |packet|?
+    ProtectedPacketList::iterator protected_it = std::lower_bound(
+        (*it)->protectedPktList.begin(),
+        (*it)->protectedPktList.end(),
+        packet,
+        SortablePacket::LessThan);
+    if (protected_it != (*it)->protectedPktList.end() &&
+        (*protected_it)->seqNum == packet->seqNum) {
+      // Found an FEC packet which is protecting |packet|.
+      (*protected_it)->pkt = packet->pkt;
+    }
+  }
+}
+
+void ForwardErrorCorrection::InsertFECPacket(
+    ReceivedPacket* rxPacket,
+    const RecoveredPacketList* recoveredPacketList) {
   _fecPacketReceived = true;
 
   // Check for duplicate.
-  bool duplicatePacket = false;
-  std::list<FecPacket*>::iterator fecPacketListIt = _fecPacketList.begin();
+  FecPacketList::iterator fecPacketListIt = _fecPacketList.begin();
   while (fecPacketListIt != _fecPacketList.end()) {
-    FecPacket* fecPacket = *fecPacketListIt;
-    if (rxPacket->seqNum == fecPacket->seqNum) {
-      duplicatePacket = true;
-      break;
+    if (rxPacket->seqNum == (*fecPacketListIt)->seqNum) {
+      // Delete duplicate FEC packet data.
+      rxPacket->pkt = NULL;
+      return;
     }
     fecPacketListIt++;
-  }
-  if (duplicatePacket) {
-    // Delete duplicate FEC packet data.
-    delete rxPacket->pkt;
-    rxPacket->pkt = NULL;
-    return;
   }
   FecPacket* fecPacket = new FecPacket;
   fecPacket->pkt = rxPacket->pkt;
   fecPacket->seqNum = rxPacket->seqNum;
   fecPacket->ssrc = rxPacket->ssrc;
 
-  // We store this for determining frame completion later.
-  _seqNumBase = ModuleRTPUtility::BufferToUWord16(
+  const uint16_t seqNumBase = ModuleRTPUtility::BufferToUWord16(
       &fecPacket->pkt->data[2]);
-
   const uint16_t maskSizeBytes = (fecPacket->pkt->data[0] & 0x40) ?
-      kMaskSizeLBitSet : kMaskSizeLBitClear; // L bit set?
+      kMaskSizeLBitSet : kMaskSizeLBitClear;  // L bit set?
 
   for (uint16_t byteIdx = 0; byteIdx < maskSizeBytes; byteIdx++) {
     uint8_t packetMask = fecPacket->pkt->data[12 + byteIdx];
@@ -443,7 +436,7 @@ void ForwardErrorCorrection::InsertFECPacket(ReceivedPacket* rxPacket) {
         ProtectedPacket* protectedPacket = new ProtectedPacket;
         fecPacket->protectedPktList.push_back(protectedPacket);
         // This wraps naturally with the sequence number.
-        protectedPacket->seqNum = static_cast<uint16_t>(_seqNumBase +
+        protectedPacket->seqNum = static_cast<uint16_t>(seqNumBase +
             (byteIdx << 3) + bitIdx);
         protectedPacket->pkt = NULL;
       }
@@ -451,24 +444,60 @@ void ForwardErrorCorrection::InsertFECPacket(ReceivedPacket* rxPacket) {
   }
   if (fecPacket->protectedPktList.empty()) {
     // All-zero packet mask; we can discard this FEC packet.
-    delete fecPacket->pkt;
+    WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, _id,
+                 "FEC packet %u has an all-zero packet mask.",
+                 fecPacket->seqNum, __FUNCTION__);
     delete fecPacket;
   } else {
+    AssignRecoveredPackets(fecPacket,
+                           recoveredPacketList);
+    // TODO(holmer): Consider replacing this with a binary search for the right
+    // position, and then just insert the new packet. Would get rid of the sort.
     _fecPacketList.push_back(fecPacket);
+    _fecPacketList.sort(SortablePacket::LessThan);
+    if (_fecPacketList.size() > kMaxFecPackets) {
+      DiscardFECPacket(_fecPacketList.front());
+      _fecPacketList.pop_front();
+    }
+    assert(_fecPacketList.size() <= kMaxFecPackets);
+  }
+}
+
+void ForwardErrorCorrection::AssignRecoveredPackets(
+    FecPacket* fec_packet,
+    const RecoveredPacketList* recovered_packets) {
+  // Search for missing packets which have arrived or have been recovered by
+  // another FEC packet.
+  ProtectedPacketList* not_recovered = &fec_packet->protectedPktList;
+  RecoveredPacketList already_recovered;
+  std::set_intersection(
+      recovered_packets->begin(), recovered_packets->end(),
+      not_recovered->begin(), not_recovered->end(),
+      std::inserter(already_recovered, already_recovered.end()),
+      SortablePacket::LessThan);
+  // Set the FEC pointers to all recovered packets so that we don't have to
+  // search for them when we are doing recovery.
+  ProtectedPacketList::iterator not_recovered_it = not_recovered->begin();
+  for (RecoveredPacketList::iterator it = already_recovered.begin();
+      it != already_recovered.end(); ++it) {
+    // Search for the next recovered packet in |not_recovered|.
+    while ((*not_recovered_it)->seqNum != (*it)->seqNum)
+      ++not_recovered_it;
+    (*not_recovered_it)->pkt = (*it)->pkt;
   }
 }
 
 void ForwardErrorCorrection::InsertPackets(
-    std::list<ReceivedPacket*>* receivedPacketList,
-    std::list<RecoveredPacket*>* recoveredPacketList) {
+    ReceivedPacketList* receivedPacketList,
+    RecoveredPacketList* recoveredPacketList) {
 
   while (!receivedPacketList->empty()) {
     ReceivedPacket* rxPacket = receivedPacketList->front();
 
     if (rxPacket->isFec) {
-      InsertFECPacket(rxPacket);
+      InsertFECPacket(rxPacket, recoveredPacketList);
     } else {
-      // Insert packet in end of list.
+      // Insert packet at the end of |recoveredPacketList|.
       InsertMediaPacket(rxPacket, recoveredPacketList);
     }
     // Delete the received packet "wrapper", but not the packet data.
@@ -476,247 +505,195 @@ void ForwardErrorCorrection::InsertPackets(
     receivedPacketList->pop_front();
   }
   assert(receivedPacketList->empty());
-  // Sort our recovered packet list.
-  recoveredPacketList->sort(CompareRecoveredPackets);
+  DiscardOldPackets(recoveredPacketList);
+}
+
+void ForwardErrorCorrection::InitRecovery(
+    const FecPacket* fec_packet,
+    RecoveredPacket* recovered) {
+  // This is the first packet which we try to recover with.
+  const uint16_t ulpHeaderSize = fec_packet->pkt->data[0] & 0x40 ?
+      kUlpHeaderSizeLBitSet : kUlpHeaderSizeLBitClear;  // L bit set?
+  recovered->pkt = new Packet;
+  memset(recovered->pkt->data, 0, IP_PACKET_SIZE);
+  recovered->returned = false;
+  recovered->wasRecovered = true;
+  uint8_t protectionLength[2];
+  // Copy the protection length from the ULP header.
+  memcpy(protectionLength, &fec_packet->pkt->data[10], 2);
+  // Copy FEC payload, skipping the ULP header.
+  memcpy(&recovered->pkt->data[kRtpHeaderSize],
+         &fec_packet->pkt->data[kFecHeaderSize + ulpHeaderSize],
+         ModuleRTPUtility::BufferToUWord16(protectionLength));
+  // Copy the length recovery field.
+  memcpy(recovered->length_recovery, &fec_packet->pkt->data[8], 2);
+  // Copy the first 2 bytes of the FEC header.
+  memcpy(recovered->pkt->data, fec_packet->pkt->data, 2);
+  // Copy the 5th to 8th bytes of the FEC header.
+  memcpy(&recovered->pkt->data[4], &fec_packet->pkt->data[4], 4);
+  // Set the SSRC field.
+  ModuleRTPUtility::AssignUWord32ToBuffer(&recovered->pkt->data[8],
+                                          fec_packet->ssrc);
+}
+
+void ForwardErrorCorrection::FinishRecovery(RecoveredPacket* recovered) {
+  // Set the RTP version to 2.
+  recovered->pkt->data[0] |= 0x80;  // Set the 1st bit.
+  recovered->pkt->data[0] &= 0xbf;  // Clear the 2nd bit.
+
+  // Set the SN field.
+  ModuleRTPUtility::AssignUWord16ToBuffer(&recovered->pkt->data[2],
+                                          recovered->seqNum);
+  // Recover the packet length.
+  recovered->pkt->length = ModuleRTPUtility::BufferToUWord16(
+      recovered->length_recovery) + kRtpHeaderSize;
+}
+
+void ForwardErrorCorrection::XorPackets(const Packet* src_packet,
+                                        RecoveredPacket* dst_packet) {
+  // XOR with the first 2 bytes of the RTP header.
+  for (uint32_t i = 0; i < 2; i++) {
+    dst_packet->pkt->data[i] ^= src_packet->data[i];
+  }
+  // XOR with the 5th to 8th bytes of the RTP header.
+  for (uint32_t i = 4; i < 8; i++) {
+    dst_packet->pkt->data[i] ^= src_packet->data[i];
+  }
+  // XOR with the network-ordered payload size.
+  uint8_t mediaPayloadLength[2];
+  ModuleRTPUtility::AssignUWord16ToBuffer(
+      mediaPayloadLength,
+      src_packet->length - kRtpHeaderSize);
+  dst_packet->length_recovery[0] ^= mediaPayloadLength[0];
+  dst_packet->length_recovery[1] ^= mediaPayloadLength[1];
+
+  // XOR with RTP payload.
+  // TODO(marpan/ajm): Are we doing more XORs than required here?
+  for (int32_t i = kRtpHeaderSize; i < src_packet->length; i++) {
+    dst_packet->pkt->data[i] ^= src_packet->data[i];
+  }
 }
 
 void ForwardErrorCorrection::RecoverPacket(
-    const FecPacket& fecPacket,
+    const FecPacket* fecPacket,
     RecoveredPacket* recPacketToInsert) {
-  uint8_t lengthRecovery[2];
-  const uint16_t ulpHeaderSize = fecPacket.pkt->data[0] & 0x40 ?
-      kUlpHeaderSizeLBitSet : kUlpHeaderSizeLBitClear;  // L bit set?
-
-  recPacketToInsert->wasRecovered = true;
-  recPacketToInsert->pkt = new Packet;
-  memset(recPacketToInsert->pkt->data, 0, IP_PACKET_SIZE);
-
-  uint8_t protectionLength[2];
-  // Copy the protection length from the ULP header.
-  memcpy(&protectionLength, &fecPacket.pkt->data[10], 2);
-
-  // Copy the first 2 bytes of the FEC header.
-  memcpy(recPacketToInsert->pkt->data, fecPacket.pkt->data, 2);
-
-  // Copy the 5th to 8th bytes of the FEC header.
-  memcpy(&recPacketToInsert->pkt->data[4], &fecPacket.pkt->data[4], 4);
-
-  // Set the SSRC field.
-  ModuleRTPUtility::AssignUWord32ToBuffer(&recPacketToInsert->pkt->data[8],
-                                          fecPacket.ssrc);
-
-  // Copy the length recovery field.
-  memcpy(&lengthRecovery, &fecPacket.pkt->data[8], 2);
-
-  // Copy FEC payload, skipping the ULP header.
-  memcpy(&recPacketToInsert->pkt->data[kRtpHeaderSize],
-         &fecPacket.pkt->data[kFecHeaderSize + ulpHeaderSize],
-         ModuleRTPUtility::BufferToUWord16(protectionLength));
-
-  std::list<ProtectedPacket*>::const_iterator protectedPacketListIt =
-      fecPacket.protectedPktList.begin();
-
-  while (protectedPacketListIt != fecPacket.protectedPktList.end()) {
-    ProtectedPacket* protectedPacket = *protectedPacketListIt;
-    if (protectedPacket->pkt == NULL) {
+  InitRecovery(fecPacket, recPacketToInsert);
+  ProtectedPacketList::const_iterator protected_it =
+      fecPacket->protectedPktList.begin();
+  while (protected_it != fecPacket->protectedPktList.end()) {
+    if ((*protected_it)->pkt == NULL) {
       // This is the packet we're recovering.
-      recPacketToInsert->seqNum = protectedPacket->seqNum;
+      recPacketToInsert->seqNum = (*protected_it)->seqNum;
     } else {
-      // XOR with the first 2 bytes of the RTP header.
-      for (uint32_t i = 0; i < 2; i++) {
-        recPacketToInsert->pkt->data[i] ^= protectedPacket->pkt->data[i];
-      }
-      // XOR with the 5th to 8th bytes of the RTP header.
-      for (uint32_t i = 4; i < 8; i++) {
-        recPacketToInsert->pkt->data[i] ^= protectedPacket->pkt->data[i];
-      }
-      // XOR with the network-ordered payload size.
-      uint8_t mediaPayloadLength[2];
-      ModuleRTPUtility::AssignUWord16ToBuffer(
-          mediaPayloadLength,
-          protectedPacket->pkt->length - kRtpHeaderSize);
-      lengthRecovery[0] ^= mediaPayloadLength[0];
-      lengthRecovery[1] ^= mediaPayloadLength[1];
-
-      // XOR with RTP payload.
-      // TODO: Are we doing more XORs than required here?
-      for (int32_t i = kRtpHeaderSize;
-          i < protectedPacket->pkt->length;
-          i++) {
-        recPacketToInsert->pkt->data[i] ^= protectedPacket->pkt->data[i];
-      }
+      XorPackets((*protected_it)->pkt, recPacketToInsert);
     }
-    protectedPacketListIt++;
+    ++protected_it;
   }
-  // Set the RTP version to 2.
-  recPacketToInsert->pkt->data[0] |= 0x80;  // Set the 1st bit.
-  recPacketToInsert->pkt->data[0] &= 0xbf;  // Clear the 2nd bit.
-
-  // Assume a recovered marker bit indicates the last media packet in a frame.
-  if (recPacketToInsert->pkt->data[1] & 0x80) {
-    if (_lastMediaPacketReceived) {
-      // Multiple marker bits are illegal.
-      WEBRTC_TRACE(kTraceWarning, kTraceRtpRtcp, _id,
-          "%s recovered media packet contains a marker bit, but the last "
-          "media packet in this frame has already been marked",
-          __FUNCTION__);
-    }
-    _lastMediaPacketReceived = true;
-  }
-  // Set the SN field.
-  ModuleRTPUtility::AssignUWord16ToBuffer(&recPacketToInsert->pkt->data[2],
-                                          recPacketToInsert->seqNum);
-  // Recover the packet length.
-  recPacketToInsert->pkt->length =
-      ModuleRTPUtility::BufferToUWord16(lengthRecovery) + kRtpHeaderSize;
-}
-
-uint32_t ForwardErrorCorrection::NumberOfProtectedPackets(
-    const FecPacket& fecPacket,
-    std::list<RecoveredPacket*>* recoveredPacketList) {
-  uint32_t protectedPacketsFound = 0;
-  std::list<ProtectedPacket*>::const_iterator protectedPacketListIt =
-      fecPacket.protectedPktList.begin();
-
-  while (protectedPacketListIt != fecPacket.protectedPktList.end()) {
-    ProtectedPacket* protectedPacket = *protectedPacketListIt;
-    if (protectedPacket->pkt != NULL) {
-      // We already have the required packet.
-      protectedPacketsFound++;
-    } else {
-      // Search for the required packet.
-      std::list<RecoveredPacket*>::iterator recoveredPacketListIt =
-          recoveredPacketList->begin();
-
-      while (recoveredPacketListIt != recoveredPacketList->end()) {
-        RecoveredPacket* recPacket = *recoveredPacketListIt;
-        recoveredPacketListIt++;
-        if (protectedPacket->seqNum == recPacket->seqNum) {
-          protectedPacket->pkt = recPacket->pkt;
-          protectedPacketsFound++;
-          break;
-        }
-      }
-      // Since the recovered packet list is already sorted, we don't need to
-      // restart at the beginning of the list unless the previous protected
-      // packet wasn't found.
-      if (protectedPacket->pkt == NULL) {
-        recoveredPacketListIt = recoveredPacketList->begin();
-      }
-    }
-    protectedPacketListIt++;
-  }
-  return protectedPacketsFound;
+  FinishRecovery(recPacketToInsert);
 }
 
 void ForwardErrorCorrection::AttemptRecover(
-    std::list<RecoveredPacket*>* recoveredPacketList) {
-  std::list<FecPacket*>::iterator fecPacketListIt = _fecPacketList.begin();
+    RecoveredPacketList* recoveredPacketList) {
+  FecPacketList::iterator fecPacketListIt = _fecPacketList.begin();
   while (fecPacketListIt != _fecPacketList.end()) {
-    // Store this in case a discard is required.
-    std::list<FecPacket*>::iterator fecPacketListItToDiscard = fecPacketListIt;
-
     // Search for each FEC packet's protected media packets.
-    FecPacket* fecPacket = *fecPacketListIt;
-    uint32_t protectedPacketsFound =
-        NumberOfProtectedPackets(*fecPacket, recoveredPacketList);
+    int packets_missing = NumCoveredPacketsMissing(*fecPacketListIt);
 
-    if (protectedPacketsFound == fecPacket->protectedPktList.size() - 1) {
+    // We can only recover one packet with an FEC packet.
+   if (packets_missing == 1) {
       // Recovery possible.
       RecoveredPacket* packetToInsert = new RecoveredPacket;
-      RecoverPacket(*fecPacket, packetToInsert);
+      packetToInsert->pkt = NULL;
+      RecoverPacket(*fecPacketListIt, packetToInsert);
 
-      // Add recovered packet in back of list.
+      // Add recovered packet to the list of recovered packets and update any
+      // FEC packets covering this packet with a pointer to the data.
+      // TODO(holmer): Consider replacing this with a binary search for the
+      // right position, and then just insert the new packet. Would get rid of
+      // the sort.
       recoveredPacketList->push_back(packetToInsert);
-
-      // Sort our recovered packet list.
-      recoveredPacketList->sort(CompareRecoveredPackets);
-
-      protectedPacketsFound++;
-      assert(protectedPacketsFound == fecPacket->protectedPktList.size());
+      recoveredPacketList->sort(SortablePacket::LessThan);
+      UpdateCoveringFECPackets(packetToInsert);
+      DiscardOldPackets(recoveredPacketList);
+      DiscardFECPacket(*fecPacketListIt);
+      fecPacketListIt = _fecPacketList.erase(fecPacketListIt);
 
       // A packet has been recovered. We need to check the FEC list again, as
       // this may allow additional packets to be recovered.
       // Restart for first FEC packet.
       fecPacketListIt = _fecPacketList.begin();
-      if (_fecPacketList.begin() == fecPacketListItToDiscard) {
-        // If we're deleting the first item, we need to get the next first.
-        fecPacketListIt++;
-      }
+    } else if (packets_missing == 0) {
+        // Either all protected packets arrived or have been recovered. We can
+        // discard this FEC packet.
+        DiscardFECPacket(*fecPacketListIt);
+        fecPacketListIt = _fecPacketList.erase(fecPacketListIt);
     } else {
       fecPacketListIt++;
-    }
-    if (protectedPacketsFound == fecPacket->protectedPktList.size()) {
-      // Either all protected packets arrived or have been recovered.
-      // We can discard this FEC packet.
-      std::list<ProtectedPacket*>::iterator protectedPacketListIt =
-          fecPacket->protectedPktList.begin();
-      while (protectedPacketListIt != fecPacket->protectedPktList.end()) {
-        delete *protectedPacketListIt;
-        protectedPacketListIt++;
-        fecPacket->protectedPktList.pop_front();
-      }
-      assert(fecPacket->protectedPktList.empty());
-      delete fecPacket->pkt;
-      delete fecPacket;
-      _fecPacketList.erase(fecPacketListItToDiscard);
     }
   }
 }
 
-int32_t ForwardErrorCorrection::DecodeFEC(
-    std::list<ReceivedPacket*>* receivedPacketList,
-    std::list<RecoveredPacket*>* recoveredPacketList,
-    uint16_t lastFECSeqNum,
-    bool& frameComplete) {
-  // TODO: can we check for multiple ULP headers, and return an error?
-
-  // Allow an empty received packet list when complete is true as a teardown
-  // indicator.
-  if (receivedPacketList->empty() && !frameComplete) {
-    WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
-        "%s received packet list is empty, but we're not tearing down here",
-        __FUNCTION__);
-    return -1;
-  }
-
-  if (frameComplete) {
-    // We have a new frame.
-    ResetState(recoveredPacketList);
-  }
-  InsertPackets(receivedPacketList, recoveredPacketList);
-
-  AttemptRecover(recoveredPacketList);
-
-  // Check if we have a complete frame.
-  frameComplete = false;
-
-  if (_lastMediaPacketReceived) {
-    frameComplete = true;
-    if(!_fecPacketReceived) {
-      // best estimate we have if we have not received a FEC packet
-      _seqNumBase = lastFECSeqNum + 1;
-    }
-    // With this we assume the user is attempting to decode a FEC stream.
-    uint16_t seqNumIdx = 0;
-    std::list<RecoveredPacket*>::iterator recPacketListIt =
-        recoveredPacketList->begin();
-    while (recPacketListIt != recoveredPacketList->end() &&
-        frameComplete == true) {
-      RecoveredPacket* recPacket = *recPacketListIt;
-      if (recPacket->seqNum !=
-          static_cast<uint16_t>(_seqNumBase + seqNumIdx)) {
-        frameComplete = false;
-        break;
+int ForwardErrorCorrection::NumCoveredPacketsMissing(
+    const FecPacket* fec_packet) {
+  int packets_missing = 0;
+  ProtectedPacketList::const_iterator it = fec_packet->protectedPktList.begin();
+  for (; it != fec_packet->protectedPktList.end(); ++it) {
+    if ((*it)->pkt == NULL) {
+      ++packets_missing;
+      if (packets_missing > 1) {
+        break;  // We can't recover more than one packet.
       }
-      recPacketListIt++;
-      seqNumIdx++;
     }
   }
+  return packets_missing;
+}
+
+void ForwardErrorCorrection::DiscardFECPacket(FecPacket* fec_packet) {
+  while (!fec_packet->protectedPktList.empty()) {
+    delete fec_packet->protectedPktList.front();
+    fec_packet->protectedPktList.pop_front();
+  }
+  assert(fec_packet->protectedPktList.empty());
+  delete fec_packet;
+}
+
+void ForwardErrorCorrection::DiscardOldPackets(
+    RecoveredPacketList* recoveredPacketList) {
+  while (recoveredPacketList->size() > kMaxMediaPackets) {
+    ForwardErrorCorrection::RecoveredPacket* packet =
+        recoveredPacketList->front();
+    delete packet;
+    recoveredPacketList->pop_front();
+  }
+  assert(recoveredPacketList->size() <= kMaxMediaPackets);
+}
+
+int32_t ForwardErrorCorrection::DecodeFEC(
+    ReceivedPacketList* receivedPacketList,
+    RecoveredPacketList* recoveredPacketList) {
+  // TODO(marpan/ajm): can we check for multiple ULP headers, and return an
+  // error?
+  InsertPackets(receivedPacketList, recoveredPacketList);
+  AttemptRecover(recoveredPacketList);
   return 0;
 }
 
 uint16_t ForwardErrorCorrection::PacketOverhead() {
   return kFecHeaderSize + kUlpHeaderSizeLBitSet;
 }
+
+uint16_t ForwardErrorCorrection::LatestSequenceNumber(uint16_t first,
+                                                      uint16_t second) {
+  bool wrap = (first < 0x00ff && second > 0xff00) ||
+          (first > 0xff00 && second < 0x00ff);
+  if (second > first && !wrap)
+    return second;
+  else if (second <= first && !wrap)
+    return first;
+  else if (second < first && wrap)
+    return second;
+  else
+    return first;
+}
+
 } // namespace webrtc
