@@ -152,7 +152,7 @@ RTPSenderVideo::SendVideoPacket(const FrameType frameType,
         // Add packet to FEC list
         _rtpPacketListFec.push_back(ptrGenericFEC);
         // FEC can only protect up to kMaxMediaPackets packets
-        if (static_cast<int>(_mediaPacketListFec.size()) <
+        if (_mediaPacketListFec.size() <
             ForwardErrorCorrection::kMaxMediaPackets)
         {
             _mediaPacketListFec.push_back(ptrGenericFEC->pkt);

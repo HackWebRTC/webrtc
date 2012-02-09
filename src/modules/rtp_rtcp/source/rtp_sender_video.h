@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -135,7 +135,7 @@ private:
     bool                      _useUepProtectionDelta;
     WebRtc_UWord8             _fecProtectionFactor;
     bool                      _fecUseUepProtection;
-    int                       _numberFirstPartition;
+    unsigned int              _numberFirstPartition;
     std::list<ForwardErrorCorrection::Packet*> _mediaPacketListFec;
     std::list<RtpPacket*> _rtpPacketListFec;
     // Bitrate used for FEC payload, RED headers, RTP headers for FEC packets

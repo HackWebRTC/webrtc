@@ -33,7 +33,7 @@ class FecPacket;
 class ForwardErrorCorrection {
  public:
   // Maximum number of media packets we can protect
-  static const int kMaxMediaPackets = 48;
+  static const unsigned int kMaxMediaPackets = 48u;
 
   // TODO(holmer): As a next step all these struct-like packet classes should be
   // refactored into proper classes, and their members should be made private.
