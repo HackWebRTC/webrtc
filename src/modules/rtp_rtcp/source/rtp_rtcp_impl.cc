@@ -387,7 +387,7 @@ WebRtc_Word32 ModuleRtpRtcpImpl::Process() {
     } else if (TMMBR()) {
       _rtcpSender.CalculateNewTargetBitrate(RTT);
     }
-    _rtcpSender.SendRTCP(kRtcpReport, 0, 0, RTT);
+    _rtcpSender.SendRTCP(kRtcpReport);
   }
 
   if (_rtpSender.RTPKeepalive()) {
@@ -1167,9 +1167,7 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SendOutgoingData(
   if (!haveChildModules) {
     // Don't sent RTCP from default module
     if (_rtcpSender.TimeToSendRTCPReport(kVideoFrameKey == frameType)) {
-      WebRtc_UWord16 RTT = 0;
-      _rtcpReceiver.RTT(_rtpReceiver.SSRC(), &RTT, NULL, NULL, NULL);
-      _rtcpSender.SendRTCP(kRtcpReport, 0, 0, RTT);
+      _rtcpSender.SendRTCP(kRtcpReport);
     }
     return _rtpSender.SendOutgoingData(frameType,
                                        payloadType,
@@ -1800,7 +1798,7 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SendNACK(const WebRtc_UWord16* nackList,
                "SendNACK(size:%u)", size);
 
   if (size > NACK_PACKETS_MAX_SIZE) {
-    RequestKeyFrame(kVideoFrameKey);
+    RequestKeyFrame();
     return -1;
   }
   WebRtc_UWord16 avgRTT = 0;
@@ -2040,28 +2038,20 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SetKeyFrameRequestMethod(
   return 0;
 }
 
-WebRtc_Word32 ModuleRtpRtcpImpl::RequestKeyFrame(const FrameType frameType) {
+WebRtc_Word32 ModuleRtpRtcpImpl::RequestKeyFrame() {
   WEBRTC_TRACE(kTraceModuleCall,
                kTraceRtpRtcp,
                _id,
-               "RequestKeyFrame(frameType:%d)",
-               frameType);
+               "RequestKeyFrame");
 
   switch (_keyFrameReqMethod) {
     case kKeyFrameReqFirRtp:
       return _rtpSender.SendRTPIntraRequest();
-
     case kKeyFrameReqPliRtcp:
       return _rtcpSender.SendRTCP(kRtcpPli);
-
-    case kKeyFrameReqFirRtcp: {
-      // conference scenario
-      WebRtc_UWord16 RTT = 0;
-      _rtcpReceiver.RTT(_rtpReceiver.SSRC(), &RTT, NULL, NULL, NULL);
-      return _rtcpSender.SendRTCP(kRtcpFir, 0, NULL, RTT);
-    }
+    case kKeyFrameReqFirRtcp:
+      return _rtcpSender.SendRTCP(kRtcpFir);
   }
-  assert(false);
   return -1;
 }
 
@@ -2072,7 +2062,7 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SendRTCPSliceLossIndication(
                _id,
                "SendRTCPSliceLossIndication (pictureID:%d)",
                pictureID);
-  return _rtcpSender.SendRTCP(kRtcpSli, 0, 0, 0, pictureID);
+  return _rtcpSender.SendRTCP(kRtcpSli, 0, 0, false, pictureID);
 }
 
 WebRtc_Word32 ModuleRtpRtcpImpl::SetCameraDelay(const WebRtc_Word32 delayMS) {
@@ -2432,8 +2422,8 @@ RateControlRegion ModuleRtpRtcpImpl::OnOverUseStateUpdate(
 }
 
 // bad state of RTP receiver request a keyframe
-void ModuleRtpRtcpImpl::OnRequestIntraFrame(const FrameType frameType) {
-  RequestKeyFrame(frameType);
+void ModuleRtpRtcpImpl::OnRequestIntraFrame() {
+  RequestKeyFrame();
 }
 
 void ModuleRtpRtcpImpl::OnReceivedIntraFrameRequest(const RtpRtcp* caller) {
@@ -2794,7 +2784,7 @@ void ModuleRtpRtcpImpl::OnRequestSendReport() {
 
 WebRtc_Word32 ModuleRtpRtcpImpl::SendRTCPReferencePictureSelection(
   const WebRtc_UWord64 pictureID) {
-  return _rtcpSender.SendRTCP(kRtcpRpsi, 0, 0, 0, pictureID);
+  return _rtcpSender.SendRTCP(kRtcpRpsi, 0, 0, false, pictureID);
 }
 
 WebRtc_UWord32 ModuleRtpRtcpImpl::SendTimeOfSendReport(

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -135,7 +135,7 @@ TEST_F(VCMRobustnessTest, TestHardNack) {
 TEST_F(VCMRobustnessTest, TestHardNackNoneDecoded) {
   EXPECT_CALL(request_callback_, ResendPackets(_, _))
       .Times(0);
-  EXPECT_CALL(frame_type_callback_, FrameTypeRequest(kVideoFrameKey))
+  EXPECT_CALL(frame_type_callback_, RequestKeyFrame())
         .Times(1);
 
   ASSERT_EQ(VCM_OK, vcm_->SetReceiverRobustnessMode(
@@ -358,7 +358,7 @@ TEST_F(VCMRobustnessTest, TestModeNoneWithoutErrors) {
                                false, _, _, _))
         .Times(1)
         .InSequence(s1);
-  EXPECT_CALL(frame_type_callback_, FrameTypeRequest(kVideoFrameKey))
+  EXPECT_CALL(frame_type_callback_, RequestKeyFrame())
         .Times(1);
 
   ASSERT_EQ(VCM_OK, vcm_->SetReceiverRobustnessMode(

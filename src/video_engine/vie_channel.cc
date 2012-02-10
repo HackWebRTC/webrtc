@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -2175,16 +2175,16 @@ WebRtc_Word32 ViEChannel::ReceiveStatistics(const WebRtc_UWord32 bit_rate,
   return 0;
 }
 
-WebRtc_Word32 ViEChannel::FrameTypeRequest(const FrameType frame_type) {
+WebRtc_Word32 ViEChannel::RequestKeyFrame() {
   WEBRTC_TRACE(kTraceStream, kTraceVideo, ViEId(engine_id_, channel_id_),
-               "%s(frame_type: %d)", __FUNCTION__, frame_type);
+               "%s", __FUNCTION__);
   {
     CriticalSectionScoped cs(callback_cs_.get());
     if (codec_observer_ && do_key_frame_callbackRequest_) {
       codec_observer_->RequestNewKeyFrame(channel_id_);
     }
   }
-  return rtp_rtcp_.RequestKeyFrame(frame_type);
+  return rtp_rtcp_.RequestKeyFrame();
 }
 
 WebRtc_Word32 ViEChannel::SliceLossIndicationRequest(

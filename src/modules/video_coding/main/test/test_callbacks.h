@@ -211,7 +211,7 @@ private:
 class KeyFrameReqTest: public VCMFrameTypeCallback
 {
 public:
-    WebRtc_Word32 FrameTypeRequest(const FrameType frameType);
+    WebRtc_Word32 RequestKeyFrame();
 };
 
 

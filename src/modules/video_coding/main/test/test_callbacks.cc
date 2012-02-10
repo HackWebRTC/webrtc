@@ -405,19 +405,9 @@ SendStatsTest::SendStatistics(const WebRtc_UWord32 bitRate,
     return 0;
 }
 
-WebRtc_Word32
-KeyFrameReqTest::FrameTypeRequest(const FrameType frameType)
-{
-    TEST(frameType == kVideoFrameKey);
-    if (frameType == kVideoFrameKey)
-    {
-        printf("Key frame requested\n");
-    }
-    else
-    {
-        printf("Non-key frame requested: %d\n", frameType);
-    }
-    return 0;
+WebRtc_Word32 KeyFrameReqTest::RequestKeyFrame() {
+  printf("Key frame requested\n");
+  return 0;
 }
 
 

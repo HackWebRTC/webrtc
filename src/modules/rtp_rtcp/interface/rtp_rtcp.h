@@ -1078,7 +1078,7 @@ public:
     *
     *   return -1 on failure else 0
     */
-    virtual WebRtc_Word32 RequestKeyFrame(const FrameType frameType = kVideoFrameKey) = 0;
+    virtual WebRtc_Word32 RequestKeyFrame() = 0;
 };
 } // namespace webrtc
 #endif // WEBRTC_MODULES_RTP_RTCP_INTERFACE_RTP_RTCP_H_

@@ -61,7 +61,6 @@ RTCPSender::RTCPSender(const WebRtc_Word32 id,
     _includeCSRCs(true),
 
     _sequenceNumberFIR(0),
-    _lastTimeFIR(0),
 
     _lengthRembSSRC(0),
     _sizeRembSSRC(0),
@@ -877,67 +876,46 @@ RTCPSender::BuildPLI(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos)
     return 0;
 }
 
-WebRtc_Word32
-RTCPSender::BuildFIR(WebRtc_UWord8* rtcpbuffer, WebRtc_UWord32& pos, const WebRtc_UWord32 RTT)
-{
-    bool firRepeat = false;
-    WebRtc_UWord32 diff = _clock.GetTimeInMS() - _lastTimeFIR;
-    if(diff < RTT + 3) // 3 is processing jitter
-    {
-        // we have recently sent a FIR
-        // don't send another
-        return 0;
+WebRtc_Word32 RTCPSender::BuildFIR(WebRtc_UWord8* rtcpbuffer,
+                                   WebRtc_UWord32& pos,
+                                   bool repeat) {
+  // sanity
+  if(pos + 20 >= IP_PACKET_SIZE)  {
+    return -2;
+  }
+  if (!repeat) {
+    _sequenceNumberFIR++;   // do not increase if repetition
+  }
 
-    } else
-    {
-        if(diff < (RTT*2 + RTCP_MIN_FRAME_LENGTH_MS))
-        {
-            // send a FIR_REPEAT instead of a FIR
-            firRepeat = true;
-        }
-    }
-    _lastTimeFIR = _clock.GetTimeInMS();
-    if(!firRepeat)
-    {
-        _sequenceNumberFIR++;   // do not increase if repetition
-    }
+  // add full intra request indicator
+  WebRtc_UWord8 FMT = 4;
+  rtcpbuffer[pos++] = (WebRtc_UWord8)0x80 + FMT;
+  rtcpbuffer[pos++] = (WebRtc_UWord8)206;
 
-    // sanity
-    if(pos + 20 >= IP_PACKET_SIZE)
-    {
-        return -2;
-    }
+  //Length of 4
+  rtcpbuffer[pos++] = (WebRtc_UWord8)0;
+  rtcpbuffer[pos++] = (WebRtc_UWord8)(4);
 
-    // add full intra request indicator
-    WebRtc_UWord8 FMT = 4;
-    rtcpbuffer[pos++]=(WebRtc_UWord8)0x80 + FMT;
-    rtcpbuffer[pos++]=(WebRtc_UWord8)206;
+  // Add our own SSRC
+  ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, _SSRC);
+  pos += 4;
 
-    //Length of 4
-    rtcpbuffer[pos++]=(WebRtc_UWord8)0;
-    rtcpbuffer[pos++]=(WebRtc_UWord8)(4);
+  // RFC 5104     4.3.1.2.  Semantics
+  // SSRC of media source
+  rtcpbuffer[pos++] = (WebRtc_UWord8)0;
+  rtcpbuffer[pos++] = (WebRtc_UWord8)0;
+  rtcpbuffer[pos++] = (WebRtc_UWord8)0;
+  rtcpbuffer[pos++] = (WebRtc_UWord8)0;
 
-    // Add our own SSRC
-    ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer+pos, _SSRC);
-    pos += 4;
+  // Additional Feedback Control Information (FCI)
+  ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer + pos, _remoteSSRC);
+  pos += 4;
 
-    // RFC 5104     4.3.1.2.  Semantics
-
-    // SSRC of media source
-    rtcpbuffer[pos++]=(WebRtc_UWord8)0;
-    rtcpbuffer[pos++]=(WebRtc_UWord8)0;
-    rtcpbuffer[pos++]=(WebRtc_UWord8)0;
-    rtcpbuffer[pos++]=(WebRtc_UWord8)0;
-
-    // Additional Feedback Control Information (FCI)
-    ModuleRTPUtility::AssignUWord32ToBuffer(rtcpbuffer+pos, _remoteSSRC);
-    pos += 4;
-
-    rtcpbuffer[pos++]=(WebRtc_UWord8)(_sequenceNumberFIR);
-    rtcpbuffer[pos++]=(WebRtc_UWord8)0;
-    rtcpbuffer[pos++]=(WebRtc_UWord8)0;
-    rtcpbuffer[pos++]=(WebRtc_UWord8)0;
-    return 0;
+  rtcpbuffer[pos++] = (WebRtc_UWord8)(_sequenceNumberFIR);
+  rtcpbuffer[pos++] = (WebRtc_UWord8)0;
+  rtcpbuffer[pos++] = (WebRtc_UWord8)0;
+  rtcpbuffer[pos++] = (WebRtc_UWord8)0;
+  return 0;
 }
 
 /*
@@ -1589,7 +1567,7 @@ WebRtc_Word32
 RTCPSender::SendRTCP(const WebRtc_UWord32 packetTypeFlags,
                      const WebRtc_Word32 nackSize,       // NACK
                      const WebRtc_UWord16* nackList,     // NACK
-                     const WebRtc_UWord32 RTT,           // FIR
+                     const bool repeat,                  // FIR
                      const WebRtc_UWord64 pictureID)     // SLI & RPSI
 {
     WebRtc_UWord32 rtcpPacketTypeFlags = packetTypeFlags;
@@ -1848,7 +1826,7 @@ RTCPSender::SendRTCP(const WebRtc_UWord32 packetTypeFlags,
         }
         if(rtcpPacketTypeFlags & kRtcpFir)
         {
-            buildVal = BuildFIR(rtcpbuffer, pos, RTT);
+            buildVal = BuildFIR(rtcpbuffer, pos, repeat);
             if(buildVal == -1)
             {
                 return -1; // error

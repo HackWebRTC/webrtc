@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -312,7 +312,7 @@ class ViEChannel
                                           const WebRtc_UWord32 frame_rate);
 
   // Implements VideoFrameTypeCallback.
-  virtual WebRtc_Word32 FrameTypeRequest(const FrameType frame_type);
+  virtual WebRtc_Word32 RequestKeyFrame();
 
   // Implements VideoFrameTypeCallback.
   virtual WebRtc_Word32 SliceLossIndicationRequest(

@@ -266,10 +266,8 @@ class MockRtpRtcp : public RtpRtcp {
       WebRtc_Word32(const bool keyUseUepProtection, const bool deltaUseUepProtection));
   MOCK_METHOD1(SetKeyFrameRequestMethod,
       WebRtc_Word32(const KeyFrameRequestMethod method));
-  MOCK_METHOD1(RequestKeyFrame,
-      WebRtc_Word32(const FrameType frameType));
-  MOCK_METHOD1(SetH263InverseLogic,
-      WebRtc_Word32(const bool enable));
+  MOCK_METHOD0(RequestKeyFrame,
+      WebRtc_Word32());
 
   MOCK_CONST_METHOD3(Version,
       int32_t(char* version, uint32_t& remaining_buffer_in_bytes, uint32_t& position));

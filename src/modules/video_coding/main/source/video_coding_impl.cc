@@ -1125,8 +1125,7 @@ VideoCodingModuleImpl::RequestKeyFrame()
 {
     if (_frameTypeCallback != NULL)
     {
-        const WebRtc_Word32 ret = _frameTypeCallback->FrameTypeRequest(
-                                                                kVideoFrameKey);
+        const WebRtc_Word32 ret = _frameTypeCallback->RequestKeyFrame();
         if (ret < 0)
         {
             WEBRTC_TRACE(webrtc::kTraceError,

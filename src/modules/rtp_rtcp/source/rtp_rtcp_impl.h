@@ -456,7 +456,7 @@ public:
     virtual WebRtc_Word32 SetKeyFrameRequestMethod(const KeyFrameRequestMethod method);
 
     // send a request for a keyframe
-    virtual WebRtc_Word32 RequestKeyFrame(const FrameType frameType);
+    virtual WebRtc_Word32 RequestKeyFrame();
 
     virtual WebRtc_Word32 SetCameraDelay(const WebRtc_Word32 delayMS);
 
@@ -519,7 +519,7 @@ public:
     void OnReceivedBandwidthEstimateUpdate(const WebRtc_UWord16 bwEstimateKbit);
 
     // bad state of RTP receiver request a keyframe
-    void OnRequestIntraFrame(const FrameType frameType);
+    void OnRequestIntraFrame();
 
     void OnReceivedIntraFrameRequest(const RtpRtcp* caller);
 

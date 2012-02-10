@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -18,7 +18,7 @@ namespace webrtc {
 
 class MockVCMFrameTypeCallback : public VCMFrameTypeCallback {
  public:
-  MOCK_METHOD1(FrameTypeRequest, int32_t(const FrameType frameType));
+  MOCK_METHOD0(RequestKeyFrame, int32_t());
   MOCK_METHOD1(SliceLossIndicationRequest,
                WebRtc_Word32(const WebRtc_UWord64 pictureId));
 };
