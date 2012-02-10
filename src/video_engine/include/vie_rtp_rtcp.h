@@ -210,7 +210,8 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
                             bool sender,
                             bool receiver) = 0;
 
-  // The function gets statistics from the received RTCP report.
+  // This function returns our locally created statistics of the received RTP
+  // stream.
   virtual int GetReceivedRTCPStatistics(
       const int video_channel,
       unsigned short& fraction_lost,
@@ -219,7 +220,8 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
       unsigned int& jitter,
       int& rtt_ms) const = 0;
 
-  // The function gets statistics from the RTCP report sent to the receiver.
+  // This function returns statistics reported by the remote client in a RTCP
+  // packet.
   virtual int GetSentRTCPStatistics(const int video_channel,
                                     unsigned short& fraction_lost,
                                     unsigned int& cumulative_lost,
