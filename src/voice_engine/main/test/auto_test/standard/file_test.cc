@@ -15,7 +15,10 @@ class FileTest : public AfterStreamingFixture {
  protected:
   // Creates the string åäö.pcm.
   std::string CreateTrickyFilenameInUtf8() {
-    char filename[16] = { 0xc3, 0xa5, 0xc3, 0xa4, 0xc3, 0xb6, 0 };
+    char filename[16] = { static_cast<char>(0xc3), static_cast<char>(0xa5),
+                          static_cast<char>(0xc3), static_cast<char>(0xa4),
+                          static_cast<char>(0xc3), static_cast<char>(0xb6),
+                          static_cast<char>(0) };
     return std::string(filename) + ".pcm";
   }
 };
