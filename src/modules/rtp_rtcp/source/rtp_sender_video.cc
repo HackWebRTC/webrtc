@@ -221,7 +221,12 @@ RTPSenderVideo::SendVideoPacket(const FrameType frameType,
                            packetToSend->rtpHeaderLength);
 
                 _rtpPacketListFec.pop_front();
-                _mediaPacketListFec.pop_front();
+                // Check if _mediaPacketListFec is non-empty.
+                // This list may be smaller than rtpPacketList, if the frame
+                // has more than kMaxMediaPackets.
+                if (!_mediaPacketListFec.empty()) {
+                  _mediaPacketListFec.pop_front();
+                }
 
                 // Send normal packet with RED header
                 int packetSuccess = _rtpSender.SendToNetwork(
