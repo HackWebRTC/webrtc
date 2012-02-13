@@ -59,7 +59,9 @@ class WebRTCFactory(factory.BuildFactory):
   """A Build Factory affected by properties."""
 
   def __init__(self, build_factory_properties=None, steps=None,
-               enable_coverage=False, enable_valgrind=False, account=None):
+               enable_coverage=False, enable_valgrind=False,
+               account='webrtc-cb', coverage_url=None,
+               coverage_dir="/var/www"):
     factory.BuildFactory.__init__(self, steps)
     self.properties = properties.Properties()
     self.enable_build = False
@@ -67,16 +69,9 @@ class WebRTCFactory(factory.BuildFactory):
     self.enable_coverage = enable_coverage
     self.enable_valgrind = enable_valgrind
     self.gyp_params = []
-    self.account = account
-    self.coverage_dir = ""
-    self.coverage_url = ""
     self.release = False
-    if self.account is None:
-      self.coverage_url = "http://www.corp.google.com/~webrtc-cb"
-      self.coverage_dir = "/home/webrtc-cb/www"
-    else:
-      self.coverage_url = "http://www.corp.google.com/~%s" % self.account
-      self.coverage_dir = "/home/%s/www" % self.account
+    self.coverage_url = coverage_url
+    self.coverage_dir = coverage_dir
 
   def EnableBuild(self, force_sync):
     """Build the binary [must be overridden]."""
@@ -98,8 +93,8 @@ class WebRTCFactory(factory.BuildFactory):
     warn = warnOnFailure
     flunkOnFailure = not warn
     self.addStep(shell.ShellCommand(command=cmd, workdir=workdir,
-                                    description=descriptor+["running..."],
-                                    descriptionDone=descriptor+["done..."],
+                                    description=descriptor + ["running..."],
+                                    descriptionDone=descriptor + ["done..."],
                                     warnOnFailure=warn,
                                     flunkOnFailure=flunkOnFailure,
                                     name="".join(descriptor)))
@@ -151,35 +146,25 @@ class WebRTCFactory(factory.BuildFactory):
 
 
 class GenerateCodeCoverage(ShellCommand):
-  command = ["genhtml", "final.info", "--output-directory",
-      WithProperties("/home/webrtc-cb/www/%(buildername)s_%(buildnumber)s")]
-  name = "LCOV_GenHTML"
   warnOnFailure = True
 
   def __init__(self, coverage_url=None, coverage_dir=None, **kwargs):
     if coverage_url is None or coverage_dir is None:
       raise TypeError("coverage location required")
-    print coverage_url, coverage_dir
     ShellCommand.__init__(self, **kwargs)
     self.addFactoryArguments(coverage_url=coverage_url,
                              coverage_dir=coverage_dir)
     self.setDefaultWorkdir("build/trunk")
     self.coverage_url = coverage_url
     self.coverage_dir = coverage_dir
-    self.setCommand(["genhtml", "final.info", "--output-directory",
+    self.description = "Coverage Report"
+    self.setCommand(["./tools/continuous_build/generate_coverage_html.sh",
+                     "final.info",
       WithProperties(coverage_dir + "/%(buildername)s_%(buildnumber)s")])
 
   def createSummary(self, log):
     coverage_url = "%s/%s_%s" % (self.coverage_url,
         self.getProperty("buildername"), self.getProperty("buildnumber"))
-    coverage_dir = "%s/%s_%s" % (self.coverage_dir,
-        self.getProperty("buildername"), self.getProperty("buildnumber"))
-    os.chmod(coverage_dir,0777)
-    for root, dirs, files in os.walk(coverage_dir):
-      for d in dirs:
-        os.chmod(os.path.join(root, d), 0777)
-      for f in files:
-        os.chmod(os.path.join(root, f), 0777)
     self.addURL("coverage", coverage_url)
 
   def start(self):
@@ -205,7 +190,7 @@ class WebRTCAndroidFactory(WebRTCFactory):
     cmd = " ; ".join(cleanup_list)
     self.addStep(shell.Compile(command=(cmd), workdir="build/trunk",
                  description=["cleanup", "running..."], haltOnFailure=False,
-                 warnOnFailure=True, flunkOnFailure =False,
+                 warnOnFailure=True, flunkOnFailure=False,
                  descriptionDone=["cleanup", "done..."], name="cleanup"))
     cmd = "svn checkout %s external/webrtc" % SVN_LOCATION
     self.addStep(shell.Compile(command=(cmd),
@@ -241,8 +226,8 @@ class WebRTCChromeFactory(WebRTCFactory):
     if make_extra is not None:
       cmd.append(make_extra)
     self.addStep(shell.ShellCommand(command=cmd,
-        workdir="build/src", description=["Making"]+make_descriptor,
-        descriptionDone=make_descriptor+["built"],
+        workdir="build/src", description=["Making"] + make_descriptor,
+        descriptionDone=make_descriptor + ["built"],
         name="_".join(make_descriptor)))
 
 ################################################################################
@@ -250,9 +235,11 @@ class WebRTCLinuxFactory(WebRTCFactory):
   """A Build Factory affected by properties."""
 
   def __init__(self, build_factory_properties=None, steps=None,
-               enable_coverage=False, enable_valgrind=False, account=None):
+               enable_coverage=False, enable_valgrind=False, account=None,
+               coverage_url=None, coverage_dir=None):
     WebRTCFactory.__init__(self, build_factory_properties, steps,
-                           enable_coverage, enable_valgrind, account)
+                           enable_coverage, enable_valgrind, account,
+                           coverage_url, coverage_dir)
 
   def EnableBuild(self, force_sync=False, release=False, build32=False,
                   chrome_os=False, clang=False):
@@ -263,7 +250,9 @@ class WebRTCLinuxFactory(WebRTCFactory):
     self.force_sync = force_sync
     """Linux specific Build"""
     self.release = release
+
     self.AddCommonStep(["rm", "-rf", "trunk"], descriptor="Cleanup")
+
     # Valgrind bots need special GYP defines to enable memory profiling
     # friendly compilation. They already has a custom .gclient
     # configuration file created so they don't need one being
@@ -307,8 +296,8 @@ class WebRTCLinuxFactory(WebRTCFactory):
     if self.enable_valgrind:
       cmd = VALGRIND_CMD + cmd
     self.addStep(shell.ShellCommand(command=cmd,
-        workdir=workdir, description=["Running"]+test_descriptor,
-        descriptionDone=test_descriptor+["finished"],
+        workdir=workdir, description=["Running"] + test_descriptor,
+        descriptionDone=test_descriptor + ["finished"],
         name="_".join(test_descriptor)))
 
   def AddCommonMakeStep(self, make, descriptor="", make_extra=None):
@@ -318,8 +307,8 @@ class WebRTCLinuxFactory(WebRTCFactory):
     if make_extra is not None:
       cmd.append(make_extra)
     self.addStep(shell.ShellCommand(command=cmd,
-        workdir="build/trunk", description=["Making"]+make_descriptor,
-        descriptionDone=make_descriptor+["built"],
+        workdir="build/trunk", description=["Making"] + make_descriptor,
+        descriptionDone=make_descriptor + ["built"],
         name="_".join(make_descriptor)))
 
   def EnableBaseCoverage(self):
@@ -348,6 +337,14 @@ class WebRTCLinuxFactory(WebRTCFactory):
 
   def EnableCoverage(self):
     """Enable coverage data."""
+
+    # Delete all third-party .gcda files to save time and work around a bug
+    # in lcov which tends to hang when capturing on libjpgturbo.
+    self.AddCommonStep(["./tools/continuous_build/clean_third_party_gcda.sh"],
+                       warnOnFailure=True,
+                       workdir="build/trunk", descriptor=["LCOV",
+                                                          "Delete 3rd party"])
+
     self.AddCommonStep(["lcov", "--directory", ".", "--capture", "-b",
                         ".", "--output-file", "webrtc.info"],
                        warnOnFailure=True,
@@ -355,7 +352,7 @@ class WebRTCLinuxFactory(WebRTCFactory):
     self.AddCommonStep(['lcov', '--extract', 'webrtc.info', '*/src/*',
                         '--output', 'test.info'], warnOnFailure=True,
                        workdir="build/trunk", descriptor=["LCOV", "Extract"])
-    self.AddCommonStep(["lcov", "--remove", "test.info", "*/usr/include/*", 
+    self.AddCommonStep(["lcov", "--remove", "test.info", "*/usr/include/*",
                         "/third*", "/testing/*", "*/test/*", "*_unittest.*",
                         "*/mock/*", "--output",
                         "final.info"], warnOnFailure=True,
@@ -439,11 +436,11 @@ class WebRTCMacFactory(WebRTCFactory):
     if cmd is None:
       if self.build_type == "xcode" or self.build_type == "both":
         cmd = ["xcodebuild/%s/%s" % (test_folder, test)]
-        self.AddCommonStep(cmd, descriptor=test_descriptor+["(xcode)"],
+        self.AddCommonStep(cmd, descriptor=test_descriptor + ["(xcode)"],
                            workdir="build/trunk")
       if self.build_type == "make" or self.build_type == "both":
         cmd = ["out/%s/%s" % (test_folder, test)]
-        self.AddCommonStep(cmd, descriptor=test_descriptor+["(make)"],
+        self.AddCommonStep(cmd, descriptor=test_descriptor + ["(make)"],
                            workdir="build/trunk")
 
   def AddCommonMakeStep(self, make, descriptor="", make_extra=None):
@@ -455,13 +452,13 @@ class WebRTCMacFactory(WebRTCFactory):
         cmd.append(make_extra)
       if self.release:
         cmd.append("BUILDTYPE=Release")
-      self.AddCommonStep(cmd, descriptor=make_descriptor+["(make)"],
+      self.AddCommonStep(cmd, descriptor=make_descriptor + ["(make)"],
                          workdir="build/trunk")
     if self.build_type == "xcode" or self.build_type == "both":
       configuration = "Release" if self.release else "Debug"
-      cmd = ["xcodebuild", "-project", "webrtc.xcodeproj", "-configuration", 
+      cmd = ["xcodebuild", "-project", "webrtc.xcodeproj", "-configuration",
              configuration, "-target", "All"]
-      self.AddCommonStep(cmd, descriptor=make_descriptor+["(xcode)"],
+      self.AddCommonStep(cmd, descriptor=make_descriptor + ["(xcode)"],
                          workdir="build/trunk")
 
 ################################################################################
@@ -505,14 +502,14 @@ class WebRTCWinFactory(WebRTCFactory):
       cmd = ["msbuild", "webrtc.sln", "/t:Clean",
              "/p:Configuration=Debug;Platform=%s" % (self.platform)]
       self.AddCommonStep(cmd, descriptor="Build_Clean", workdir="build/trunk")
-      cmd = ["msbuild", "webrtc.sln", 
+      cmd = ["msbuild", "webrtc.sln",
              "/p:Configuration=Debug;Platform=%s" % (self.platform)]
       self.AddCommonStep(cmd, descriptor="Build_Debug", workdir="build/trunk")
     if self.configuration == "Release" or self.configuration == "both":
       cmd = ["msbuild", "webrtc.sln", "/t:Clean",
              "/p:Configuration=Release;Platform=%s" % (self.platform)]
       self.AddCommonStep(cmd, descriptor="Build_Clean", workdir="build/trunk")
-      cmd = ["msbuild", "webrtc.sln", 
+      cmd = ["msbuild", "webrtc.sln",
              "/p:Configuration=Release;Platform=%s" % (self.platform)]
       self.AddCommonStep(cmd, descriptor="Build_Release", workdir="build/trunk")
 
@@ -522,11 +519,11 @@ class WebRTCWinFactory(WebRTCFactory):
     if cmd is None:
       if self.configuration == "Debug" or self.configuration == "both":
         cmd = ["build\Debug\%s.exe" % test]
-        self.AddCommonStep(cmd, descriptor=test_descriptor+["Debug"],
+        self.AddCommonStep(cmd, descriptor=test_descriptor + ["Debug"],
                            workdir=workdir)
       if self.configuration == "Release" or self.configuration == "both":
         cmd = ["build\Release\%s.exe" % test]
-        self.AddCommonStep(cmd, descriptor=test_descriptor+["Release"],
+        self.AddCommonStep(cmd, descriptor=test_descriptor + ["Release"],
                            workdir=workdir)
 
 ################################################################################
