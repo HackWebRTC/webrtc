@@ -527,7 +527,7 @@ WebRtc_Word32 VideoFilePlayerImpl::StopPlayingFile()
     CriticalSectionScoped lock( _critSec);
 
     _decodedVideoFrames = 0;
-    _videoDecoder.Reset();
+    _videoDecoder.ResetDecoder();
 
     return FilePlayerImpl::StopPlayingFile();
 }

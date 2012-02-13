@@ -65,12 +65,6 @@ public:
 // Return value                : WEBRTC_VIDEO_CODEC_OK if OK, < 0 otherwise.
     virtual WebRtc_Word32 Release();
 
-// Reset encoder state and prepare for a new call.
-//
-// Return value                : WEBRTC_VIDEO_CODEC_OK if OK, < 0 otherwise.
-//                               <0 - Error
-    virtual WebRtc_Word32 Reset();
-
     virtual WebRtc_Word32 SetRates(WebRtc_UWord32 /*newBitRate*/,
                                    WebRtc_UWord32 /*frameRate*/)
     {return WEBRTC_VIDEO_CODEC_OK;}

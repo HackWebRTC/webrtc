@@ -344,22 +344,6 @@ VideoCodingModuleImpl::InitializeSender()
     return VCM_OK;
 }
 
-// Makes sure the encoder is in its initial state.
-WebRtc_Word32
-VideoCodingModuleImpl::ResetEncoder()
-{
-    WEBRTC_TRACE(webrtc::kTraceModuleCall,
-                 webrtc::kTraceVideoCoding,
-                 VCMId(_id),
-                 "ResetEncoder()");
-    CriticalSectionScoped cs(_sendCritSect);
-    if (_encoder != NULL)
-    {
-        return _encoder->Reset();
-    }
-    return VCM_OK;
-}
-
 // Register the send codec to be used.
 WebRtc_Word32
 VideoCodingModuleImpl::RegisterSendCodec(const VideoCodec* sendCodec,

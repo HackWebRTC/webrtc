@@ -91,24 +91,6 @@ int VP8Encoder::Release() {
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int VP8Encoder::Reset() {
-  if (!inited_) {
-    return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
-  }
-  if (encoder_ != NULL) {
-    if (vpx_codec_destroy(encoder_)) {
-      return WEBRTC_VIDEO_CODEC_MEMORY;
-    }
-    delete encoder_;
-    encoder_ = NULL;
-  }
-  timestamp_ = 0;
-  encoder_ = new vpx_codec_ctx_t;
-  rps_->Init();
-
-  return InitAndSetControlSettings();
-}
-
 int VP8Encoder::SetRates(uint32_t new_bitrate_kbit, uint32_t new_framerate) {
   if (!inited_) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;

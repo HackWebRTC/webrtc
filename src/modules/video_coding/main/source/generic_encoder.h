@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -80,10 +80,6 @@ class VCMGenericEncoder
 public:
     VCMGenericEncoder(VideoEncoder& encoder, bool internalSource = false);
     ~VCMGenericEncoder();
-    /**
-    *	Reset the encoder state, prepare for a new call
-    */
-    WebRtc_Word32 Reset();
     /**
     *	Free encoder memory
     */

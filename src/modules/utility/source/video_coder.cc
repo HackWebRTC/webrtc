@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -30,10 +30,9 @@ VideoCoder::~VideoCoder()
     VideoCodingModule::Destroy(_vcm);
 }
 
-WebRtc_Word32 VideoCoder::Reset()
+WebRtc_Word32 VideoCoder::ResetDecoder()
 {
     _vcm->ResetDecoder();
-    _vcm->ResetEncoder();
 
     _vcm->InitializeSender();
     _vcm->InitializeReceiver();
@@ -108,7 +107,7 @@ WebRtc_Word32 VideoCoder::Encode(const VideoFrame& videoFrame,
     return 0;
 }
 
-WebRtc_Word8 VideoCoder::DefaultPayloadType(const WebRtc_Word8* plName)
+WebRtc_Word8 VideoCoder::DefaultPayloadType(const char* plName)
 {
     VideoCodec tmpCodec;
     WebRtc_Word32 numberOfCodecs = _vcm->NumberOfCodecs();

@@ -39,14 +39,6 @@ class VP8Encoder : public VideoEncoder {
   // Return value                : WEBRTC_VIDEO_CODEC_OK if OK, < 0 otherwise.
   virtual int Release();
 
-  // Reset encoder state and prepare for a new call.
-  //
-  // Return value                : WEBRTC_VIDEO_CODEC_OK if OK, < 0 otherwise.
-  //                               <0 - Errors:
-  //                                 WEBRTC_VIDEO_CODEC_ERR_PARAMETER
-  //                                 WEBRTC_VIDEO_CODEC_ERROR
-  virtual int Reset();
-
   // Initialize the encoder with the information from the codecSettings
   //
   // Input:

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -373,7 +373,6 @@ UnitTest::Perform()
     VideoBufferToRawImage(_inputVideoBuffer, inputImage);
     EXPECT_TRUE(_encoder->Encode(inputImage, NULL, &videoFrameType )
                == WEBRTC_VIDEO_CODEC_UNINITIALIZED);
-    EXPECT_TRUE(_encoder->Reset() == WEBRTC_VIDEO_CODEC_UNINITIALIZED);
 
     //-- InitEncode() errors --
     // Null pointer.
@@ -475,7 +474,6 @@ UnitTest::Perform()
     EXPECT_TRUE(_encoder->Encode(inputImage, NULL, &videoFrameType) ==
         WEBRTC_VIDEO_CODEC_OK);
     WaitForEncodedFrame();
-    EXPECT_TRUE(_encoder->Reset() == WEBRTC_VIDEO_CODEC_OK);
     EXPECT_TRUE(_encoder->InitEncode(&_inst, 1, 1440) == WEBRTC_VIDEO_CODEC_OK);
     _encoder->Encode(inputImage, NULL, &videoFrameType);
     frameLength = WaitForEncodedFrame();
@@ -679,7 +677,6 @@ UnitTest::Perform()
     _inst.maxBitrate = 0;
 
     //-- Timestamp propagation --
-    EXPECT_TRUE(_encoder->Reset() == WEBRTC_VIDEO_CODEC_OK);
     EXPECT_TRUE(_encoder->InitEncode(&_inst, 1, 1440) == WEBRTC_VIDEO_CODEC_OK);
     EXPECT_TRUE(_decoder->Reset() == WEBRTC_VIDEO_CODEC_OK);
     EXPECT_TRUE(_decoder->InitDecode(&_inst, 1) == WEBRTC_VIDEO_CODEC_OK);
@@ -745,7 +742,6 @@ UnitTest::RateControlTests()
     // Do not specify maxBitRate (as in ViE).
     _inst.maxBitrate = 0;
     //-- Verify rate control --
-    EXPECT_TRUE(_encoder->Reset() == WEBRTC_VIDEO_CODEC_OK);
     EXPECT_TRUE(_encoder->InitEncode(&_inst, 1, 1440) == WEBRTC_VIDEO_CODEC_OK);
     EXPECT_TRUE(_decoder->Reset() == WEBRTC_VIDEO_CODEC_OK);
     EXPECT_TRUE(_decoder->InitDecode(&_inst, 1) == WEBRTC_VIDEO_CODEC_OK);
@@ -759,7 +755,6 @@ UnitTest::RateControlTests()
     {
         _bitRate = bitRate[i];
         int totalBytes = 0;
-        _encoder->Reset();
         _inst.startBitrate = _bitRate;
         _encoder->InitEncode(&_inst, 4, 1440);
         _decoder->Reset();

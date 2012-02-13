@@ -447,7 +447,6 @@ WebRtc_Word32 AviRecorder::StopRecording()
     _timeEvent.StopTimer();
 
     StopThread();
-    _videoEncoder->Reset();
     return FileRecorderImpl::StopRecording();
 }
 

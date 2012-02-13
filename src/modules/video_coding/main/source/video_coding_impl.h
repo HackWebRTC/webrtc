@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -80,9 +80,6 @@ public:
 
     // Initialize send codec
     virtual WebRtc_Word32 InitializeSender();
-
-    // Makes sure the encoder is in its initial state.
-    virtual WebRtc_Word32 ResetEncoder();
 
     // Register the send codec to be used.
     virtual WebRtc_Word32 RegisterSendCodec(const VideoCodec* sendCodec,

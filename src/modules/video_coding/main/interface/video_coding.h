@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -90,13 +90,6 @@ public:
     // Return value      : VCM_OK, on success.
     //                     < 0,         on error.
     virtual WebRtc_Word32 InitializeSender() = 0;
-
-    // Resets the encoder state to the same state as when the encoder
-    // was created.
-    //
-    // Return value      : VCM_OK, on success.
-    //                     < 0,         on error.
-    virtual WebRtc_Word32 ResetEncoder() = 0;
 
     // Registers a codec to be used for encoding. Calling this
     // API multiple times overwrites any previously registered codecs.

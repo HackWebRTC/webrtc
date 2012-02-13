@@ -46,17 +46,6 @@ I420Encoder::Release()
 }
 
 WebRtc_Word32
-I420Encoder::Reset()
-{
-    if (!_inited)
-    {
-        return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
-    }
-    return WEBRTC_VIDEO_CODEC_OK;
-
-}
-
-WebRtc_Word32
 I420Encoder::InitEncode(const VideoCodec* codecSettings,
                               WebRtc_Word32 /*numberOfCores*/,
                               WebRtc_UWord32 /*maxPayloadSize */)

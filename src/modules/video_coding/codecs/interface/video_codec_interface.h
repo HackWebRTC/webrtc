@@ -115,11 +115,6 @@ public:
     // Return value                : WEBRTC_VIDEO_CODEC_OK if OK, < 0 otherwise.
     virtual WebRtc_Word32 Release() = 0;
 
-    // Reset encoder state and prepare for a new call.
-    //
-    // Return value                : WEBRTC_VIDEO_CODEC_OK if OK, < 0 otherwise.
-    virtual WebRtc_Word32 Reset() = 0;
-
     // Inform the encoder about the packet loss and round trip time on the
     // network used to decide the best pattern and signaling.
     //

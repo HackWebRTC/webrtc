@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -31,15 +31,6 @@ _internalSource(false)
 
 VCMGenericEncoder::~VCMGenericEncoder()
 {
-}
-
-WebRtc_Word32
-VCMGenericEncoder::Reset()
-{
-    _bitRate = 0;
-    _frameRate = 0;
-    _VCMencodedFrameCallback = NULL;
-    return _encoder.Reset();
 }
 
 WebRtc_Word32 VCMGenericEncoder::Release()
