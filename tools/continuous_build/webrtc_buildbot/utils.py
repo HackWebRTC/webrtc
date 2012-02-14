@@ -24,6 +24,8 @@ SUPPORTED_PLATFORMS = ("Linux", "Mac", "Windows")
 SVN_LOCATION = "http://webrtc.googlecode.com/svn/trunk"
 VALGRIND_CMD = ["tools/valgrind-webrtc/webrtc_tests.sh", "-t", "cmdline"]
 
+DEFAULT_COVERAGE_DIR = "/var/www"
+
 # Copied from Chromium's
 # trunk/tools/build/scripts/master/factory/chromium_factory.py
 # but converted to a list since we set defines instead of using an environment
@@ -61,7 +63,7 @@ class WebRTCFactory(factory.BuildFactory):
   def __init__(self, build_factory_properties=None, steps=None,
                enable_coverage=False, enable_valgrind=False,
                account='webrtc-cb', coverage_url=None,
-               coverage_dir="/var/www"):
+               coverage_dir=DEFAULT_COVERAGE_DIR):
     factory.BuildFactory.__init__(self, steps)
     self.properties = properties.Properties()
     self.enable_build = False
@@ -157,7 +159,7 @@ class GenerateCodeCoverage(ShellCommand):
     self.setDefaultWorkdir("build/trunk")
     self.coverage_url = coverage_url
     self.coverage_dir = coverage_dir
-    self.description = "Coverage Report"
+    self.description = ["Coverage Report"]
     self.setCommand(["./tools/continuous_build/generate_coverage_html.sh",
                      "final.info",
       WithProperties(coverage_dir + "/%(buildername)s_%(buildnumber)s")])
@@ -236,7 +238,7 @@ class WebRTCLinuxFactory(WebRTCFactory):
 
   def __init__(self, build_factory_properties=None, steps=None,
                enable_coverage=False, enable_valgrind=False, account=None,
-               coverage_url=None, coverage_dir=None):
+               coverage_url=None, coverage_dir=DEFAULT_COVERAGE_DIR):
     WebRTCFactory.__init__(self, build_factory_properties, steps,
                            enable_coverage, enable_valgrind, account,
                            coverage_url, coverage_dir)
