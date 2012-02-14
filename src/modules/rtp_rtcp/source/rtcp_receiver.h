@@ -69,6 +69,10 @@ public:
                       WebRtc_UWord16* minRTT,
                       WebRtc_UWord16* maxRTT) const;
 
+    WebRtc_UWord16 RTT() const;
+
+    int SetRTT(WebRtc_UWord16 rtt);
+
     WebRtc_Word32 ResetRTT(const WebRtc_UWord32 remoteSSRC);
 
     void UpdateLipSync(const WebRtc_Word32 audioVideoOffset) const;
@@ -219,6 +223,11 @@ protected:
       _receivedCnameMap;
 
   WebRtc_UWord32            _packetTimeOutMS;
+
+  // Externally set RTT. This value can only be used if there are no valid
+  // RTT estimates.
+  WebRtc_UWord16 _rtt;
+
 };
 } // namespace webrtc
 #endif // WEBRTC_MODULES_RTP_RTCP_SOURCE_RTCP_RECEIVER_H_

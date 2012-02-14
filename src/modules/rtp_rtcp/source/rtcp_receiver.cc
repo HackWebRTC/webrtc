@@ -46,7 +46,8 @@ RTCPReceiver::RTCPReceiver(const WebRtc_Word32 id,
     _lastReceivedSRNTPsecs(0),
     _lastReceivedSRNTPfrac(0),
     _receivedInfoMap(),
-    _packetTimeOutMS(0)
+    _packetTimeOutMS(0),
+    _rtt(0)
 {
     memset(&_remoteSenderInfo, 0, sizeof(_remoteSenderInfo));
     WEBRTC_TRACE(kTraceMemory, kTraceRtpRtcp, id, "%s created", __FUNCTION__);
@@ -188,6 +189,23 @@ WebRtc_Word32 RTCPReceiver::RTT(const WebRtc_UWord32 remoteSSRC,
   if (maxRTT) {
     *maxRTT = reportBlock->maxRTT;
   }
+  return 0;
+}
+
+WebRtc_UWord16 RTCPReceiver::RTT() const {
+  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+  if (!_receivedReportBlockMap.empty()) {
+    return 0;
+  }
+  return _rtt;
+}
+
+int RTCPReceiver::SetRTT(WebRtc_UWord16 rtt) {
+  CriticalSectionScoped lock(_criticalSectionRTCPReceiver);
+  if (!_receivedReportBlockMap.empty()) {
+    return -1;
+  }
+  _rtt = rtt;
   return 0;
 }
 

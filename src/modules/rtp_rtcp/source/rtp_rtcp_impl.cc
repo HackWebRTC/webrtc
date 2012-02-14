@@ -34,6 +34,8 @@ const float FracMS = 4.294967296E6f;
 
 namespace webrtc {
 
+const WebRtc_UWord16 kDefaultRtt = 200;
+
 RtpRtcp* RtpRtcp::CreateRtpRtcp(const WebRtc_Word32 id,
                                 const bool audio) {
   return CreateRtpRtcp(id, audio, ModuleRTPUtility::GetSystemClock());
@@ -378,14 +380,33 @@ WebRtc_Word32 ModuleRtpRtcpImpl::Process() {
 
   const bool defaultInstance(_childModules.empty() ? false : true);
   if (!defaultInstance && _rtcpSender.TimeToSendRTCPReport()) {
-    WebRtc_UWord16 RTT = 0;
-    _rtcpReceiver.RTT(_rtpReceiver.SSRC(), &RTT, NULL, NULL, NULL);
+    WebRtc_UWord16 max_rtt = 0;
+    if (_rtcpSender.Sending()) {
+      std::vector<RTCPReportBlock> receive_blocks;
+      _rtcpReceiver.StatisticsReceived(&receive_blocks);
+      for (std::vector<RTCPReportBlock>::iterator it = receive_blocks.begin();
+           it != receive_blocks.end(); ++it) {
+        WebRtc_UWord16 rtt = 0;
+        _rtcpReceiver.RTT(it->remoteSSRC, &max_rtt, NULL, NULL, NULL);
+        max_rtt = (rtt > max_rtt) ? rtt : max_rtt;
+      }
+    } else {
+      // We're only receiving, i.e. this module doesn't have its own RTT
+      // estimate. Use the RTT set by a sending channel using the same default
+      // module.
+      max_rtt = _rtcpReceiver.RTT();
+    }
+    if (max_rtt == 0) {
+      // No valid estimate available, i.e. no sending channel using the same
+      // default module or no RTCP received yet.
+      max_rtt = kDefaultRtt;
+    }
     if (REMB() && _rtcpSender.ValidBitrateEstimate()) {
       unsigned int target_bitrate =
-        _rtcpSender.CalculateNewTargetBitrate(RTT);
+        _rtcpSender.CalculateNewTargetBitrate(max_rtt);
       _rtcpSender.UpdateRemoteBitrateEstimate(target_bitrate);
     } else if (TMMBR()) {
-      _rtcpSender.CalculateNewTargetBitrate(RTT);
+      _rtcpSender.CalculateNewTargetBitrate(max_rtt);
     }
     _rtcpSender.SendRTCP(kRtcpReport);
   }
@@ -2758,6 +2779,20 @@ void ModuleRtpRtcpImpl::ProcessDefaultModuleBandwidth() {
     // No sending modules and no bitrate estimate.
     return;
   }
+
+  // Update RTT to all receive only child modules, they won't have their own RTT
+  // estimate. Assume the receive only channels are on similar links as the
+  // sending channel and have approximately the same RTT.
+  {
+    CriticalSectionScoped lock(_criticalSectionModulePtrs);
+    for (std::list<ModuleRtpRtcpImpl*>::iterator it = _childModules.begin();
+        it != _childModules.end(); ++it) {
+      if (!(*it)->Sending()) {
+        (*it)->_rtcpReceiver.SetRTT(maxRoundTripTime);
+      }
+    }
+  }
+
   _bandwidthManagement.SetSendBitrate(minBitrateBps, 0, 0);
 
   // Update default module bitrate. Don't care about min max.
