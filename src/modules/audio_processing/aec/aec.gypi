@@ -46,23 +46,29 @@
         }],
       ],
     },
-    {
-      'target_name': 'aec_sse2',
-      'type': '<(library)',
-      'sources': [
-        'aec_core_sse2.c',
-        'aec_rdft_sse2.c',
+  ],
+  'conditions': [
+    ['target_arch=="ia32" or target_arch=="x64"', {
+      'targets': [
+        {
+          'target_name': 'aec_sse2',
+          'type': '<(library)',
+          'sources': [
+            'aec_core_sse2.c',
+            'aec_rdft_sse2.c',
+          ],
+          'conditions': [
+            ['os_posix==1 and OS!="mac"', {
+              'cflags': [ '-msse2', ],
+            }],
+            ['OS=="mac"', {
+              'xcode_settings': {
+                'OTHER_CFLAGS': [ '-msse2', ],
+              },
+            }],
+          ],
+        },
       ],
-      'conditions': [
-        ['os_posix==1 and OS!="mac"', {
-          'cflags': [ '-msse2', ],
-        }],
-        ['OS=="mac"', {
-          'xcode_settings': {
-            'OTHER_CFLAGS': [ '-msse2', ],
-          },
-        }],
-      ],
-    },
+    }],
   ],
 }

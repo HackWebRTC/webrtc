@@ -56,27 +56,33 @@
         }],
       ],
     },
-    {
-      'target_name': 'video_processing_sse2',
-      'type': '<(library)',
-      'sources': [
-        'content_analysis_sse2.cc',
+  ],
+  'conditions': [
+    ['target_arch=="ia32" or target_arch=="x64"', {
+      'targets': [
+        {
+          'target_name': 'video_processing_sse2',
+          'type': '<(library)',
+          'sources': [
+            'content_analysis_sse2.cc',
+          ],
+          'include_dirs': [
+            '../interface',
+            '../../../interface',
+          ],
+          'conditions': [
+            ['os_posix==1 and OS!="mac"', {
+              'cflags': [ '-msse2', ],
+            }],
+            ['OS=="mac"', {
+              'xcode_settings': {
+                'OTHER_CFLAGS': [ '-msse2', ],
+              },
+            }],
+          ],
+        },
       ],
-      'include_dirs': [
-        '../interface',
-        '../../../interface',
-      ],
-      'conditions': [
-        ['os_posix==1 and OS!="mac"', {
-          'cflags': [ '-msse2', ],
-        }],
-        ['OS=="mac"', {
-          'xcode_settings': {
-            'OTHER_CFLAGS': [ '-msse2', ],
-          },
-        }],
-      ],
-    },
+    }],
   ],
 }
 
