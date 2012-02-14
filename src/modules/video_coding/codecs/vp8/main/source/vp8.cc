@@ -324,11 +324,24 @@ int VP8Encoder::Encode(const RawImage& input_image,
   if (encoded_complete_callback_ == NULL) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
-  // image in vpx_image_t format
-  raw_->planes[PLANE_Y] = input_image._buffer;
-  raw_->planes[PLANE_U] = &input_image._buffer[codec_.height * codec_.width];
-  raw_->planes[PLANE_V] =
-      &input_image._buffer[codec_.height * codec_.width * 5 >> 2];
+
+   // Check for change in frame size.
+   if (input_image._width != codec_.width ||
+       input_image._height != codec_.height) {
+     codec_.width = input_image._width;
+     codec_.height = input_image._height;
+
+     // Update encoder context for new frame size.
+     // Change of frame size will automatically trigger a key frame.
+     config_->g_w = codec_.width;
+     config_->g_h = codec_.height;
+     if (vpx_codec_enc_config_set(encoder_, config_)) {
+       return WEBRTC_VIDEO_CODEC_ERROR;
+     }
+   }
+
+   vpx_img_wrap(raw_, IMG_FMT_I420, codec_.width, codec_.height, 1,
+                input_image._buffer);
 
   int flags = 0;
 #if WEBRTC_LIBVPX_VERSION >= 971
