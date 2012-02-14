@@ -18,6 +18,7 @@ _id(0),
 _contentMetrics(NULL),
 _nativeHeight(0),
 _nativeWidth(0),
+_maxFrameRate(0),
 _resampledFrame(),
 _enableCA(false)
 {
