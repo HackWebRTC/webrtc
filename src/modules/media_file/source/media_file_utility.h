@@ -233,8 +233,8 @@ public:
     WebRtc_Word32 codec_info(CodecInst& codecInst);
 
 private:
-    // Biggest WAV frame supported is 10 ms at 32kHz of 2 channel, 16 bit audio.
-    enum{WAV_MAX_BUFFER_SIZE = 320*2*2};
+    // Biggest WAV frame supported is 10 ms at 48kHz of 2 channel, 16 bit audio.
+    enum{WAV_MAX_BUFFER_SIZE = 480*2*2};
 
 
     WebRtc_Word32 InitWavCodec(WebRtc_UWord32 samplesPerSec,

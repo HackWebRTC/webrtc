@@ -2382,7 +2382,8 @@ void CWinTestDlg::OnBnClickedCheckPlayFileIn2()
 
 void CWinTestDlg::OnBnClickedCheckPlayFileOut1()
 {
-    const FileFormats formats[7]  = {{kFileFormatPcm16kHzFile},
+    const FileFormats formats[8]  = {{kFileFormatPcm16kHzFile},
+                                          {kFileFormatWavFile},
                                           {kFileFormatWavFile},
                                           {kFileFormatWavFile},
                                           {kFileFormatWavFile},
@@ -2390,14 +2391,14 @@ void CWinTestDlg::OnBnClickedCheckPlayFileOut1()
                                           {kFileFormatWavFile},
                                           {kFileFormatWavFile}};
     // File path is relative to the location of 'voice_engine.gyp'.
-    const char spkrFiles[8][64] = {{"../test/data/voice_engine/audio_short16.pcm"},
-                                   {"../test/data/voice_engine/audio_tiny8.wav"},
-                                   {"../test/data/voice_engine/audio_tiny11.wav"},
-                                   {"../test/data/voice_engine/audio_tiny16.wav"},
-                                   {"../test/data/voice_engine/audio_tiny22.wav"},
-                                   {"../test/data/voice_engine/audio_tiny32.wav"},
-                                   {"../test/data/voice_engine/audio_tiny44.wav"},
-                                   {"../test/data/voice_engine/audio_tiny48.wav"}};
+    const char spkrFiles[8][64] = {{"../../test/data/voice_engine/audio_short16.pcm"},
+                                   {"../../test/data/voice_engine/audio_tiny8.wav"},
+                                   {"../../test/data/voice_engine/audio_tiny11.wav"},
+                                   {"../../test/data/voice_engine/audio_tiny16.wav"},
+                                   {"../../test/data/voice_engine/audio_tiny22.wav"},
+                                   {"../../test/data/voice_engine/audio_tiny32.wav"},
+                                   {"../../test/data/voice_engine/audio_tiny44.wav"},
+                                   {"../../test/data/voice_engine/audio_tiny48.wav"}};
     int ret(0);
     int channel = GetDlgItemInt(IDC_EDIT_1);
     CButton* button = (CButton*)GetDlgItem(IDC_CHECK_PLAY_FILE_OUT_1);
@@ -2409,11 +2410,11 @@ void CWinTestDlg::OnBnClickedCheckPlayFileOut1()
         const float volumeScaling(1.0);
         const int startPointMs(0);
         const int stopPointMs(0);
-        const FileFormats format = formats[_checkPlayFileOut1 % 7];
-        const char* spkrFile = spkrFiles[_checkPlayFileOut1 % 7];
+        const FileFormats format = formats[_checkPlayFileOut1 % 8];
+        const char* spkrFile = spkrFiles[_checkPlayFileOut1 % 8];
 
         CString str;
-        if (_checkPlayFileOut1 % 7 == 0)
+        if (_checkPlayFileOut1 % 8 == 0)
         {
             str = _T("kFileFormatPcm16kHzFile");
         }
