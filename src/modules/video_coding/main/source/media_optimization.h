@@ -168,8 +168,6 @@ private:
     VideoCodecType                    _sendCodecType;
     WebRtc_UWord16                    _codecWidth;
     WebRtc_UWord16                    _codecHeight;
-    WebRtc_UWord16                    _initCodecWidth;
-    WebRtc_UWord16                    _initCodecHeight;
     float                             _userFrameRate;
 
     VCMFrameDropper*                  _frameDropper;
