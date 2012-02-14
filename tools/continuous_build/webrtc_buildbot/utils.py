@@ -302,6 +302,13 @@ class WebRTCLinuxFactory(WebRTCFactory):
         descriptionDone=test_descriptor + ["finished"],
         name="_".join(test_descriptor)))
 
+  def AddXvfbTestRunStep(self, test_name, test_binary, test_arguments=''):
+    """ Adds a test to be run inside a XVFB window manager."""
+    cmd = ('xvfb-run '
+           '--server-args="-screen 0 800x600x24 -extension Composite" '
+           '%s %s' % (test_binary, test_arguments))
+    self.AddCommonTestRunStep(test=test_name, cmd=cmd)
+
   def AddCommonMakeStep(self, make, descriptor="", make_extra=None):
     make_descriptor = [make, descriptor]
     #cpu = `grep -i \"processor\" /proc/cpuinfo | sort -u | wc -l`
@@ -379,13 +386,17 @@ class WebRTCLinuxFactory(WebRTCFactory):
     elif test == "vie_auto_test":
       # TODO(phoglund): Enable the full stack test once it is completed and
       # nonflaky.
-      self.addStep(shell.Compile(command=('xvfb-run --server-args="-screen 0 '
-        '800x600x24 -extension Composite" out/Debug/vie_auto_test --automated '
-        '--gtest_filter="-ViEVideoVerificationTest.RunsFullStackWithoutErrors:'
-        'ViEExtendedIntegrationTest.*" '
-        '--capture_test_ensure_resolution_alignment_in_capture_device=false'),
-        workdir="build/trunk", description=[test, "running..."],
-        descriptionDone=[test, "done..."], name="%s" % test))
+      binary = "out/Debug/vie_auto_test"
+      args = (
+          '--automated --gtest_filter="'
+          '-ViEVideoVerificationTest.RunsFullStackWithoutErrors:'
+          'ViEExtendedIntegrationTest.*" '
+          '--capture_test_ensure_resolution_alignment_in_capture_device=false')
+      self.AddXvfbTestRunStep(test_name=test, test_binary=binary,
+                              test_arguments=args)
+    elif test == "video_render_module_test":
+      self.AddXvfbTestRunStep(test_name=test,
+                              test_binary='out/Debug/video_render_module_test');
     elif test == "voe_auto_test":
       # TODO(phoglund): Remove this notice and take appropriate action when
       # http://code.google.com/p/webrtc/issues/detail?id=266 is concluded.
@@ -447,7 +458,6 @@ class WebRTCMacFactory(WebRTCFactory):
 
   def AddCommonMakeStep(self, make, descriptor="", make_extra=None):
     make_descriptor = [make, descriptor]
-    cpu = "`sysctl -n hw.logicalcpu`"
     if self.build_type == "make" or self.build_type == "both":
       cmd = ["make", make, "-j100"]
       if make_extra is not None:
