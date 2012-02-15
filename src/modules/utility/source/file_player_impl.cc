@@ -64,10 +64,12 @@ FilePlayerImpl::FilePlayerImpl(const WebRtc_UWord32 instanceID,
       _fileFormat(fileFormat),
       _fileModule(*MediaFile::CreateMediaFile(instanceID)),
       _decodedLengthInMS(0),
+      _decodedAudioBuffer(),
       _audioDecoder(instanceID),
       _codec(),
       _numberOf10MsPerFrame(0),
       _numberOf10MsInDecoder(0),
+      _resampler(),
       _scaling(1.0)
 {
     _codec.plfreq = 0;
@@ -466,11 +468,14 @@ VideoFilePlayerImpl::VideoFilePlayerImpl(WebRtc_UWord32 instanceID,
                                          FileFormats fileFormat)
     : FilePlayerImpl(instanceID,fileFormat),
       _videoDecoder(*new VideoCoder(instanceID)),
+      video_codec_info_(),
       _decodedVideoFrames(0),
       _encodedData(*new EncodedVideoData()),
       _frameScaler(*new FrameScaler()),
       _critSec(CriticalSectionWrapper::CreateCriticalSection()),
+      _startTime(),
       _accumulatedRenderTimeMs(0),
+      _frameLengthMS(0),
       _numberOfFramesRead(0),
       _videoOnly(false)
 {

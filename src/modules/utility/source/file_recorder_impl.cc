@@ -65,8 +65,12 @@ FileRecorderImpl::FileRecorderImpl(WebRtc_UWord32 instanceID,
     : _instanceID(instanceID),
       _fileFormat(fileFormat),
       _moduleFile(MediaFile::CreateMediaFile(_instanceID)),
+      _stream(NULL),
+      codec_info_(),
       _amrFormat(AMRFileStorage),
-      _audioEncoder(instanceID)
+      _audioBuffer(),
+      _audioEncoder(instanceID),
+      _audioResampler()
 {
 }
 
@@ -353,7 +357,8 @@ class AudioFrameFileInfo
                      const WebRtc_UWord16 audioSize,
                      const WebRtc_UWord16 audioMS,
                      const TickTime& playoutTS)
-           : _audioSize(audioSize), _audioMS(audioMS) ,_playoutTS(playoutTS)
+           : _audioData(), _audioSize(audioSize), _audioMS(audioMS),
+             _playoutTS(playoutTS)
        {
            if(audioSize > MAX_AUDIO_BUFFER_IN_BYTES)
            {
