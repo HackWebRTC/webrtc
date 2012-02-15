@@ -195,7 +195,9 @@ bool ThreadPosix::Start(unsigned int& /*threadID*/)
     return true;
 }
 
-#if (defined(WEBRTC_LINUX) || defined(WEBRTC_ANDROID))
+// CPU_ZERO and CPU_SET are not available in NDK r7, so disable
+// SetAffinity on Android for now.
+#if (defined(WEBRTC_LINUX) && (!defined(WEBRTC_ANDROID)))
 bool ThreadPosix::SetAffinity(const int* processorNumbers,
                               const unsigned int amountOfProcessors) {
   if (!processorNumbers || (amountOfProcessors == 0)) {
