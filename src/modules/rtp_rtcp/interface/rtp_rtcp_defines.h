@@ -251,15 +251,14 @@ protected:
 // timestamps in an RTP/RTCP module.
 class RtpRtcpClock {
 public:
+    virtual ~RtpRtcpClock() {}
+
     // Return a timestamp in milliseconds relative to some arbitrary
     // source; the source is fixed for this clock.
     virtual WebRtc_UWord32 GetTimeInMS() = 0;
 
     // Retrieve an NTP absolute timestamp.
     virtual void CurrentNTP(WebRtc_UWord32& secs, WebRtc_UWord32& frac) = 0;
-
-protected:
-    virtual ~RtpRtcpClock() {}
 };
 
 // RtpReceiveBitrateUpdate is used to signal changes in bitrate estimates for

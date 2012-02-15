@@ -37,8 +37,19 @@ namespace webrtc {
 const WebRtc_UWord16 kDefaultRtt = 200;
 
 RtpRtcp* RtpRtcp::CreateRtpRtcp(const WebRtc_Word32 id,
-                                const bool audio) {
-  return CreateRtpRtcp(id, audio, ModuleRTPUtility::GetSystemClock());
+                                bool audio) {
+  if(audio) {
+    WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id, "CreateRtpRtcp(audio)");
+  } else {
+    WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, id, "CreateRtpRtcp(video)");
+  }
+  // ModuleRTPUtility::GetSystemClock() creates a new instance of a system
+  // clock implementation. The OwnsClock() function informs the module that
+  // it is responsible for deleting the instance.
+  ModuleRtpRtcpImpl* rtp_rtcp_instance = new ModuleRtpRtcpImpl(id,
+      audio, ModuleRTPUtility::GetSystemClock());
+  rtp_rtcp_instance->OwnsClock();
+  return rtp_rtcp_instance;
 }
 
 RtpRtcp* RtpRtcp::CreateRtpRtcp(const WebRtc_Word32 id,
@@ -76,6 +87,7 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const WebRtc_Word32 id,
   _rtpReceiver(id, audio, clock, this),
   _rtcpSender(id, audio, clock, this),
   _rtcpReceiver(id, clock, this),
+  _owns_clock(false),
   _clock(*clock),
   _id(id),
   _audio(audio),
@@ -83,7 +95,6 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const WebRtc_Word32 id,
   _lastProcessTime(clock->GetTimeInMS()),
   _lastBitrateProcessTime(clock->GetTimeInMS()),
   _lastPacketTimeoutProcessTime(clock->GetTimeInMS()),
-
   _packetOverHead(28), // IPV4 UDP
   _criticalSectionModulePtrs(CriticalSectionWrapper::CreateCriticalSection()),
   _criticalSectionModulePtrsFeedback(
@@ -156,6 +167,9 @@ ModuleRtpRtcpImpl::~ModuleRtpRtcpImpl() {
 
   delete _criticalSectionModulePtrs;
   delete _criticalSectionModulePtrsFeedback;
+  if (_owns_clock) {
+    delete &_clock;
+  }
 }
 
 WebRtc_Word32 ModuleRtpRtcpImpl::ChangeUniqueId(const WebRtc_Word32 id) {

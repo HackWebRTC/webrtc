@@ -65,6 +65,10 @@ namespace ModuleRTPUtility
     // system. The returned instances are guaranteed to read the same
     // times; in particular, they return relative times relative to
     // the same base.
+    // Note that even though the instances returned by this function
+    // read the same times a new object is created every time this
+    // API is called. The ownership of this object belongs to the
+    // caller.
     RtpRtcpClock* GetSystemClock();
 
     // Return the current RTP timestamp from the NTP timestamp

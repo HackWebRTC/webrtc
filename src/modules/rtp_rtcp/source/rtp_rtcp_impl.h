@@ -535,6 +535,10 @@ public:
 
     void OnRequestSendReport();
 
+    // Following function is only called when constructing the object so no
+    // need to worry about data race.
+    void OwnsClock() { _owns_clock = true; }
+
 protected:
     void RegisterChildModule(RtpRtcp* module);
 
@@ -560,6 +564,7 @@ protected:
     RTCPSender                _rtcpSender;
     RTCPReceiver              _rtcpReceiver;
 
+    bool                      _owns_clock;
     RtpRtcpClock&             _clock;
 private:
     void SendKeyFrame();
