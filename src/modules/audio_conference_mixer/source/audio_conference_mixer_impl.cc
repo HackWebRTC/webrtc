@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -803,27 +803,37 @@ void AudioConferenceMixerImpl::UpdateToMix(
                     bool replaceWasMixed = false;
                     MapItem* replaceParticipant = mixParticipantList.Find(
                         replaceFrame->_id);
-                    static_cast<MixerParticipant*>(
-                        replaceParticipant->GetItem())->_mixHistory->WasMixed(
-                            replaceWasMixed);
-
-                    mixParticipantList.Erase(replaceFrame->_id);
-                    activeList.Erase(replaceItem);
-
-                    activeList.PushFront(static_cast<void*>(audioFrame));
-                    mixParticipantList.Insert(audioFrame->_id,
-                                              static_cast<void*>(participant));
-                    assert(mixParticipantList.Size() <=
-                           kMaximumAmountOfMixedParticipants);
-
-                    if(replaceWasMixed)
+                    // When a frame is pushed to |activeList| it is also pushed
+                    // to mixParticipantList with the frame's id. This means
+                    // that the Find call above should never fail.
+                    if(replaceParticipant == NULL)
                     {
-                        RampOut(*replaceFrame);
-                        rampOutList.PushBack(static_cast<void*>(replaceFrame));
-                        assert(rampOutList.GetSize() <=
-                               kMaximumAmountOfMixedParticipants);
+                        assert(false);
                     } else {
-                        _audioFramePool->PushMemory(replaceFrame);
+                        static_cast<MixerParticipant*>(
+                            replaceParticipant->GetItem())->_mixHistory->
+                            WasMixed(replaceWasMixed);
+
+                        mixParticipantList.Erase(replaceFrame->_id);
+                        activeList.Erase(replaceItem);
+
+                        activeList.PushFront(static_cast<void*>(audioFrame));
+                        mixParticipantList.Insert(
+                            audioFrame->_id,
+                            static_cast<void*>(participant));
+                        assert(mixParticipantList.Size() <=
+                               kMaximumAmountOfMixedParticipants);
+
+                        if(replaceWasMixed)
+                        {
+                            RampOut(*replaceFrame);
+                            rampOutList.PushBack(
+                                static_cast<void*>(replaceFrame));
+                            assert(rampOutList.GetSize() <=
+                                   kMaximumAmountOfMixedParticipants);
+                        } else {
+                            _audioFramePool->PushMemory(replaceFrame);
+                        }
                     }
                 } else {
                     if(wasMixed)
