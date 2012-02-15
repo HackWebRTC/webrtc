@@ -239,7 +239,7 @@ class WebRTCAndroidFactory(WebRTCFactory):
     cmd = ' ; '.join(cleanup_list)
     self.addStep(shell.Compile(command=(cmd), workdir='build/trunk',
                  description=['cleanup', 'running...'], haltOnFailure=False,
-                 warn_on_failure=True, flunkOnFailure=False,
+                 warnOnFailure=True, flunkOnFailure=False,
                  descriptionDone=['cleanup', 'done...'], name='cleanup'))
     cmd = 'svn checkout %s external/webrtc' % SVN_LOCATION
     self.addStep(shell.Compile(command=(cmd),
