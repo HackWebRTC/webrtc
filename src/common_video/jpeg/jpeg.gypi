@@ -1,4 +1,4 @@
-# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+# Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
@@ -18,14 +18,14 @@
         'webrtc_libyuv',
       ],
       'include_dirs': [
-        '../../../interface',
-        '../interface',
-        '../../../../../../',
+        'include',
+        '<(webrtc_root)',
+        '<(webrtc_root)/common_video/interface',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          '../interface',
-          '../../../interface',
+          'include',
+          '<(webrtc_root)/common_video/interface',
         ],
       },
       'conditions': [
@@ -55,7 +55,7 @@
         }],
       ],
       'sources': [
-        '../interface/jpeg.h',
+        'include/jpeg.h',
         'data_manager.cc',
         'data_manager.h',
         'jpeg.cc',
@@ -67,17 +67,15 @@
     ['build_with_chromium==0', {
       'targets': [
         {
-          'target_name': 'jpeg_test',
+          'target_name': 'jpeg_unittests',
           'type': 'executable',
           'dependencies': [
              'webrtc_jpeg',
-          ],
-          'include_dirs': [
-            '../interface',
-            '../source',
+             '<(webrtc_root)/../testing/gtest.gyp:gtest',
+             '<(webrtc_root)/../test/test.gyp:test_support_main',
           ],
           'sources': [
-            '../test/test_jpeg.cc',
+            'jpeg_unittest.cc',
           ],
         },
       ] # targets

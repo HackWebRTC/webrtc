@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -18,7 +18,7 @@
 #include <stdio.h>
 
 #include "common_video/interface/video_image.h"
-#include "common_video/jpeg/main/interface/jpeg.h"
+#include "common_video/jpeg/include/jpeg.h"
 #include "system_wrappers/interface/trace.h"
 
 namespace webrtc {

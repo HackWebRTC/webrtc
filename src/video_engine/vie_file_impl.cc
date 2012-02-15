@@ -13,7 +13,7 @@
 #include "video_engine/vie_file_impl.h"
 
 #ifdef WEBRTC_VIDEO_ENGINE_FILE_API
-#include "common_video/jpeg/main/interface/jpeg.h"
+#include "common_video/jpeg/include/jpeg.h"
 #include "system_wrappers/interface/condition_variable_wrapper.h"
 #include "system_wrappers/interface/critical_section_wrapper.h"
 #include "system_wrappers/interface/trace.h"

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,11 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * jpeg.cc
- */
-
-
 #if defined(WIN32)
  #include <basetsd.h>
 #endif
@@ -20,8 +15,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "jpeg.h"
-#include "data_manager.h"
+#include "common_video/jpeg/include/jpeg.h"
+#include "common_video/jpeg/data_manager.h"
+
 extern "C" {
 #if defined(USE_SYSTEM_LIBJPEG)
 #include <jpeglib.h>

@@ -1,4 +1,4 @@
-# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+# Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
@@ -37,7 +37,7 @@ include $(MY_WEBRTC_ROOT_PATH)/src/system_wrappers/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/voice_engine/main/source/Android.mk
 
 # video
-include $(MY_WEBRTC_ROOT_PATH)/src/common_video/jpeg/main/source/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/src/common_video/jpeg/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/common_video/libyuv/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/video_capture/main/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/src/modules/video_coding/codecs/i420/main/source/Android.mk

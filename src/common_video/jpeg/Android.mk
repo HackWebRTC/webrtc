@@ -1,4 +1,4 @@
-# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+# Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
@@ -10,7 +10,7 @@ LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
 
-include $(LOCAL_PATH)/../../../../../android-webrtc.mk
+include $(LOCAL_PATH)/../../../android-webrtc.mk
 
 LOCAL_MODULE_CLASS := STATIC_LIBRARIES
 LOCAL_MODULE := libwebrtc_jpeg
@@ -25,11 +25,9 @@ LOCAL_CFLAGS := \
     $(MY_WEBRTC_COMMON_DEFS)
 
 LOCAL_C_INCLUDES := \
+    $(LOCAL_PATH)/include \
     $(LOCAL_PATH)/../interface \
-    $(LOCAL_PATH)/../../../.. \
-    $(LOCAL_PATH)/../../../vplib/main/interface \
-    $(LOCAL_PATH)/../../../interface \
-    $(LOCAL_PATH)/../../../../../../ \
+    $(LOCAL_PATH)/../../../../ \
     external/jpeg
 
 LOCAL_SHARED_LIBRARIES := \

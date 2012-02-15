@@ -10,6 +10,6 @@
   'includes': [
     '../common_settings.gypi', # Common settings
     'libyuv/libyuv.gypi',
-    'jpeg/main/source/jpeg.gypi',
+    'jpeg/jpeg.gypi',
   ],
 }
