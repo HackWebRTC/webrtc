@@ -2555,6 +2555,10 @@ WebRtc_Word32 UdpTransport::LocalHostAddressIPV6(WebRtc_UWord8 n_localIP[16])
     struct in6_addr* in6p;
 
     int fd = socket(PF_NETLINK, SOCK_DGRAM, NETLINK_ROUTE);
+    if (fd == -1)
+    {
+        return -1;
+    }
 
     // RTM_GETADDR is used to fetch the ip address from the kernel interface
     // table. Populate the msg structure (req) the size of the message buffer

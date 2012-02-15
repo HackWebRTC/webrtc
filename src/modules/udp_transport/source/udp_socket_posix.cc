@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -52,12 +52,20 @@ UdpSocketPosix::UdpSocketPosix(const WebRtc_Word32 id, UdpSocketManager* mgr,
         _socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     }
 
-    // Non-blocking mode
-    int iMode = 1;
-    ioctl(_socket, FIONBIO, &iMode);
+    // Set socket to nonblocking mode.
+    int enable_non_blocking = 1;
+    if(ioctl(_socket, FIONBIO, &enable_non_blocking) == -1)
+    {
+        WEBRTC_TRACE(kTraceWarning, kTraceTransport, id,
+                     "Failed to make socket nonblocking");
+    }
     // Enable close on fork for file descriptor so that it will not block until
     // forked process terminates.
-    fcntl(_socket,F_SETFD,FD_CLOEXEC);
+    if(fcntl(_socket, F_SETFD, FD_CLOEXEC) == -1)
+    {
+        WEBRTC_TRACE(kTraceWarning, kTraceTransport, id,
+                     "Failed to set FD_CLOEXEC for socket");
+    }
 }
 
 UdpSocketPosix::~UdpSocketPosix()

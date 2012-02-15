@@ -219,7 +219,6 @@ private:
     SocketAddress _localRTCPAddr;
 
     WebRtc_Word32 _tos;
-    bool _inCallbackMode;
     bool _receiving;
     bool _useSetSockOpt;
     bool _qos;
