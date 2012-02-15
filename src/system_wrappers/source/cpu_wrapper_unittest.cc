@@ -23,7 +23,14 @@ using webrtc::EventWrapper;
 using webrtc::scoped_ptr;
 using webrtc::Trace;
 
-TEST(CpuWrapperTest, Usage) {
+// This test is flaky on Windows/Release.
+// http://code.google.com/p/webrtc/issues/detail?id=290
+#ifdef _WIN32
+#define MAYBE_Usage DISABLED_Usage
+#else
+#define MAYBE_Usage Usage
+#endif
+TEST(CpuWrapperTest, MAYBE_Usage) {
   Trace::CreateTrace();
   std::string trace_file = webrtc::test::OutputPath() +
       "cpu_wrapper_unittest.txt";
