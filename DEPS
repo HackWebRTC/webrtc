@@ -10,7 +10,8 @@ vars = {
   "webrtc_resources_revision": "8",
 }
 
-# NOTE: Prefer revision numbers to tags for svn deps.
+# NOTE: Prefer revision numbers to tags for svn deps. Use http rather than
+# https; the latter can cause problems for users behind proxies.
 deps = {
   "trunk/build":
     Var("chromium_trunk") + "/src/build@" + Var("chromium_revision"),
@@ -79,11 +80,11 @@ deps = {
 
   # Used by tools/quality_tracking
   "trunk/third_party/oauth2":
-    "https://github.com/simplegeo/python-oauth2.git@a83f4a29",
+    "http://github.com/simplegeo/python-oauth2.git@a83f4a29",
 
   # Used by tools/quality_tracking
   "trunk/third_party/gaeunit":
-    "https://code.google.com/p/gaeunit.git@e16d5bd4",
+    "http://code.google.com/p/gaeunit.git@e16d5bd4",
 }
 
 deps_os = {
