@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -92,12 +92,10 @@ class TestTransport : public Transport,
 class RtcpSenderTest : public ::testing::Test {
  protected:
   RtcpSenderTest() {
-    rtp_rtcp_impl_ = new ModuleRtpRtcpImpl(0, false,
-        ModuleRTPUtility::GetSystemClock());
-    rtcp_sender_ = new RTCPSender(0, false, ModuleRTPUtility::GetSystemClock(),
-        rtp_rtcp_impl_);
-    rtcp_receiver_ = new RTCPReceiver(0, ModuleRTPUtility::GetSystemClock(),
-        rtp_rtcp_impl_);
+    system_clock_ = ModuleRTPUtility::GetSystemClock();
+    rtp_rtcp_impl_ = new ModuleRtpRtcpImpl(0, false, system_clock_);
+    rtcp_sender_ = new RTCPSender(0, false, system_clock_, rtp_rtcp_impl_);
+    rtcp_receiver_ = new RTCPReceiver(0, system_clock_, rtp_rtcp_impl_);
     test_transport_ = new TestTransport(rtcp_receiver_);
     // Initialize
     EXPECT_EQ(0, rtcp_sender_->Init());
@@ -109,8 +107,10 @@ class RtcpSenderTest : public ::testing::Test {
     delete rtcp_receiver_;
     delete rtp_rtcp_impl_;
     delete test_transport_;
+    delete system_clock_;
   }
 
+  RtpRtcpClock* system_clock_;
   ModuleRtpRtcpImpl* rtp_rtcp_impl_;
   RTCPSender* rtcp_sender_;
   RTCPReceiver* rtcp_receiver_;

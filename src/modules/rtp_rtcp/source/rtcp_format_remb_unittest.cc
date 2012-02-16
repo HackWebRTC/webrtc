@@ -61,6 +61,7 @@ class RtcpFormatRembTest : public ::testing::Test {
   virtual void SetUp();
   virtual void TearDown();
 
+  RtpRtcpClock* system_clock_;
   ModuleRtpRtcpImpl* dummy_rtp_rtcp_impl_;
   RTCPSender* rtcp_sender_;
   RTCPReceiver* rtcp_receiver_;
@@ -68,12 +69,10 @@ class RtcpFormatRembTest : public ::testing::Test {
 };
 
 void RtcpFormatRembTest::SetUp() {
-  dummy_rtp_rtcp_impl_ =
-      new ModuleRtpRtcpImpl(0, false, ModuleRTPUtility::GetSystemClock());
-  rtcp_sender_ = new RTCPSender(0, false, ModuleRTPUtility::GetSystemClock(),
-                                dummy_rtp_rtcp_impl_);
-  rtcp_receiver_ = new RTCPReceiver(0, ModuleRTPUtility::GetSystemClock(),
-                                    dummy_rtp_rtcp_impl_);
+  system_clock_ = ModuleRTPUtility::GetSystemClock();
+  dummy_rtp_rtcp_impl_ = new ModuleRtpRtcpImpl(0, false, system_clock_);
+  rtcp_sender_ = new RTCPSender(0, false, system_clock_, dummy_rtp_rtcp_impl_);
+  rtcp_receiver_ = new RTCPReceiver(0, system_clock_, dummy_rtp_rtcp_impl_);
   test_transport_ = new TestTransport(rtcp_receiver_);
 
   EXPECT_EQ(0, rtcp_sender_->Init());
@@ -85,6 +84,7 @@ void RtcpFormatRembTest::TearDown() {
   delete rtcp_receiver_;
   delete dummy_rtp_rtcp_impl_;
   delete test_transport_;
+  delete system_clock_;
 }
 
 TEST_F(RtcpFormatRembTest, TestBasicAPI) {
