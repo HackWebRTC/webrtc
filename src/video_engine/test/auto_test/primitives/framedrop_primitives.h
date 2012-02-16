@@ -220,7 +220,8 @@ class FrameDropMonitoringRemoteFileRenderer : public ViEToFileRenderer {
   int FrameSizeChange(unsigned int width, unsigned int height,
                       unsigned int number_of_streams);
   int DeliverFrame(unsigned char* buffer, int buffer_size,
-                   unsigned int time_stamp);
+                   uint32_t time_stamp,
+                   int64_t render_time);
  private:
   FrameDropDetector* frame_drop_detector_;
 };

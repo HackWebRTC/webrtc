@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -56,7 +56,8 @@ public:
     }
 
     virtual int DeliverFrame(unsigned char* buffer, int bufferSize,
-                             unsigned int time_stamp)
+                             uint32_t time_stamp,
+                             int64_t render_time)
     {
         if (bufferSize != _width * _height * 3 / 2)
         {

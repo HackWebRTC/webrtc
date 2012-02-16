@@ -498,11 +498,13 @@ int FrameDropDetector::GetNumberOfFramesDroppedAt(State state) {
 }
 
 int FrameDropMonitoringRemoteFileRenderer::DeliverFrame(
-    unsigned char *buffer, int buffer_size, unsigned int time_stamp) {
+    unsigned char *buffer, int buffer_size, uint32_t time_stamp,
+    int64_t render_time) {
   // Register that this frame has been rendered:
   frame_drop_detector_->ReportFrameState(FrameDropDetector::kRendered,
                                          time_stamp);
-  return ViEToFileRenderer::DeliverFrame(buffer, buffer_size, time_stamp);
+  return ViEToFileRenderer::DeliverFrame(buffer, buffer_size,
+                                         time_stamp, render_time);
 }
 
 int FrameDropMonitoringRemoteFileRenderer::FrameSizeChange(
