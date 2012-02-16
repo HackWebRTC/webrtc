@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -99,7 +99,7 @@ int VoEVolumeControlImpl::SetSpeakerVolume(unsigned int volume)
             "SetSpeakerVolume() failed to get max volume");
         return -1;
     }
-    // round the value and avoid floating computation
+    // Round the value and avoid floating computation.
     spkrVol = (WebRtc_UWord32)((volume * maxVol +
         (int)(kMaxVolumeLevel / 2)) / (kMaxVolumeLevel));
 
@@ -145,7 +145,7 @@ int VoEVolumeControlImpl::GetSpeakerVolume(unsigned int& volume)
             "GetSpeakerVolume() unable to get max speaker volume");
         return -1;
     }
-    // round the value and avoid floating computation
+    // Round the value and avoid floating computation.
     volume = (WebRtc_UWord32) ((spkrVol * kMaxVolumeLevel +
         (int)(maxVol / 2)) / (maxVol));
 
@@ -230,11 +230,28 @@ int VoEVolumeControlImpl::SetMicVolume(unsigned int volume)
             "SetMicVolume() failed to get max volume");
         return -1;
     }
-    // round the value and avoid floating point computation
+
+    if (volume == kMaxVolumeLevel) {
+      // On Linux running pulse, users are able to set the volume above 100%
+      // through the volume control panel, where the +100% range is digital
+      // scaling. WebRTC does not support setting the volume above 100%, and
+      // simply ignores changing the volume if the user tries to set it to
+      // |kMaxVolumeLevel| while the current volume is higher than |maxVol|.
+      if (_audioDevicePtr->MicrophoneVolume(&micVol) != 0) {
+        _engineStatistics.SetLastError(
+            VE_GET_MIC_VOL_ERROR, kTraceError,
+            "SetMicVolume() unable to get microphone volume");
+        return -1;
+      }
+      if (micVol >= maxVol)
+        return 0;
+    }
+
+    // Round the value and avoid floating point computation.
     micVol = (WebRtc_UWord32) ((volume * maxVol +
         (int)(kMaxVolumeLevel / 2)) / (kMaxVolumeLevel));
 
-	// set the actual volume using the audio mixer
+    // set the actual volume using the audio mixer
     if (_audioDevicePtr->SetMicrophoneVolume(micVol) != 0)
     {
         _engineStatistics.SetLastError(
@@ -269,7 +286,7 @@ int VoEVolumeControlImpl::GetMicVolume(unsigned int& volume)
         return -1;
     }
 
-	// scale: [0, MaxMicrophoneVolume] -> [0, kMaxVolumeLevel]
+    // scale: [0, MaxMicrophoneVolume] -> [0, kMaxVolumeLevel]
     if (_audioDevicePtr->MaxMicrophoneVolume(&maxVol) != 0)
     {
         _engineStatistics.SetLastError(
@@ -277,9 +294,14 @@ int VoEVolumeControlImpl::GetMicVolume(unsigned int& volume)
             "GetMicVolume() unable to get max microphone volume");
         return -1;
     }
-    // round the value and avoid floating point calculation
-    volume = (WebRtc_UWord32) ((micVol * kMaxVolumeLevel +
-        (int)(maxVol / 2)) / (maxVol));
+    if (micVol < maxVol) {
+      // Round the value and avoid floating point calculation.
+      volume = (WebRtc_UWord32) ((micVol * kMaxVolumeLevel +
+          (int)(maxVol / 2)) / (maxVol));
+    } else {
+      // Truncate the value to the kMaxVolumeLevel.
+      volume = kMaxVolumeLevel;
+    }
 
     WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_instanceId,-1),
                "GetMicVolume() => volume=%d", volume);

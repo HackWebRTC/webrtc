@@ -187,11 +187,12 @@ WebRtc_Word32 VoEBaseImpl::RecordedDataIsAvailable(
         // We learned that on certain systems (e.g Linux) the currentVoEMicLevel
         // can be greater than the maxVolumeLevel therefore
         // we are going to cap the currentVoEMicLevel to the maxVolumeLevel
-        // if it turns out that the currentVoEMicLevel is indeed greater
-        // than the maxVolumeLevel
+        // and change the maxVolume to currentMicLevel if it turns out that
+        // the currentVoEMicLevel is indeed greater than the maxVolumeLevel.
         if (currentVoEMicLevel > kMaxVolumeLevel)
         {
             currentVoEMicLevel = kMaxVolumeLevel;
+            maxVolume = currentMicLevel;
         }
     }
 
