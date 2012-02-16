@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -110,7 +110,7 @@ WebRtc_Word32 VideoCaptureMacQuickTimeInfo::GetCapability(
 
 WebRtc_Word32 VideoCaptureMacQuickTimeInfo::GetBestMatchedCapability(
     const WebRtc_UWord8*deviceUniqueIdUTF8,
-    const VideoCaptureCapability requested, VideoCaptureCapability& resulting)
+    const VideoCaptureCapability& requested, VideoCaptureCapability& resulting)
 {
     WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, _id,
                  "NumberOfCapabilities is not supported on the Mac platform.");
