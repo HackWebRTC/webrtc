@@ -162,6 +162,7 @@ class ViEChannel
                          WebRtc_UWord32& video_bitrate_sent,
                          WebRtc_UWord32& fec_bitrate_sent,
                          WebRtc_UWord32& nackBitrateSent) const;
+  int GetEstimatedReceiveBandwidth(WebRtc_UWord32* estimated_bandwidth) const;
   WebRtc_Word32 SetKeepAliveStatus(const bool enable,
                                    const WebRtc_Word8 unknown_payload_type,
                                    const WebRtc_UWord16 delta_transmit_timeMS);

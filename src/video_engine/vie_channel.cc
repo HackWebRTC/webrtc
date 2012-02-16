@@ -1054,6 +1054,11 @@ void ViEChannel::GetBandwidthUsage(WebRtc_UWord32& total_bitrate_sent,
   }
 }
 
+int ViEChannel::GetEstimatedReceiveBandwidth(
+    WebRtc_UWord32* estimated_bandwidth) const {
+  return rtp_rtcp_.EstimatedReceiveBandwidth(estimated_bandwidth);
+}
+
 WebRtc_Word32 ViEChannel::SetKeepAliveStatus(
     const bool enable,
     const WebRtc_Word8 unknown_payload_type,

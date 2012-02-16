@@ -2326,9 +2326,17 @@ void ModuleRtpRtcpImpl::BitrateSent(WebRtc_UWord32* totalRate,
     *nackRate = _rtpSender.NackOverheadRate();
 }
 
-int ModuleRtpRtcpImpl::EstimatedBandwidth(
-  WebRtc_UWord32* available_bandwidth) const {
+int ModuleRtpRtcpImpl::EstimatedSendBandwidth(
+    WebRtc_UWord32* available_bandwidth) const {
   return _bandwidthManagement.AvailableBandwidth(available_bandwidth);
+}
+
+int ModuleRtpRtcpImpl::EstimatedReceiveBandwidth(
+    WebRtc_UWord32* available_bandwidth) const {
+  if (!_rtcpSender.ValidBitrateEstimate())
+    return -1;
+  *available_bandwidth = _rtcpSender.LatestBandwidthEstimate();
+  return 0;
 }
 
 // for lip sync

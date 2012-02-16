@@ -569,7 +569,13 @@ public:
     /*
      *  Get the send-side estimate of the available bandwidth.
      */
-    virtual int EstimatedBandwidth(
+    virtual int EstimatedSendBandwidth(
+        WebRtc_UWord32* available_bandwidth) const = 0;
+
+    /*
+     *  Get the receive-side estimate of the available bandwidth.
+     */
+    virtual int EstimatedReceiveBandwidth(
         WebRtc_UWord32* available_bandwidth) const = 0;
 
     /*

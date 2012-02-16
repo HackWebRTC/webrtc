@@ -246,7 +246,14 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
 
   // This function gets the send-side estimated bandwidth available for video,
   // including overhead, in bits/s.
-  virtual int GetEstimatedBandwidth(
+  virtual int GetEstimatedSendBandwidth(
+      const int video_channel,
+      unsigned int* estimated_bandwidth) const = 0;
+
+  // This function gets the receive-side estimated bandwidth available for
+  // video, including overhead, in bits/s.
+  // Returns -1 when no valid estimate is available.
+  virtual int GetEstimatedReceiveBandwidth(
       const int video_channel,
       unsigned int* estimated_bandwidth) const = 0;
 

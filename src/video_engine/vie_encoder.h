@@ -25,7 +25,7 @@ namespace webrtc {
 
 class CriticalSectionWrapper;
 class ProcessThread;
-class QMTestVideoSettingsCallback;
+class QMVideoSettingsCallback;
 class RtpRtcp;
 class VideoCodingModule;
 class ViEEffectFilter;
@@ -88,7 +88,9 @@ class ViEEncoder
   WebRtc_Word32 SendKeyFrame();
   WebRtc_Word32 SendCodecStatistics(WebRtc_UWord32& num_key_frames,
                                     WebRtc_UWord32& num_delta_frames);
-  WebRtc_Word32 EstimatedBandwidth(WebRtc_UWord32* available_bandwidth) const;
+  WebRtc_Word32 EstimatedSendBandwidth(
+      WebRtc_UWord32* available_bandwidth) const;
+  int CodecTargetBitrate(WebRtc_UWord32* bitrate) const;
   // Loss protection.
   WebRtc_Word32 UpdateProtectionMethod();
 
@@ -172,7 +174,7 @@ class ViEEncoder
   ViEFileRecorder file_recorder_;
 
   // Quality modes callback
-  QMTestVideoSettingsCallback* qm_callback_;
+  QMVideoSettingsCallback* qm_callback_;
 };
 
 }  // namespace webrtc

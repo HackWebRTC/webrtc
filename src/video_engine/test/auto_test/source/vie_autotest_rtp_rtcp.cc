@@ -222,8 +222,14 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     EXPECT_GT(recRttMs, 0);
 
     unsigned int estimated_bandwidth = 0;
-    EXPECT_EQ(0, ViE.rtp_rtcp->GetEstimatedBandwidth(tbChannel.videoChannel,
-                                                     &estimated_bandwidth));
+    EXPECT_EQ(0, ViE.rtp_rtcp->GetEstimatedSendBandwidth(
+        tbChannel.videoChannel,
+        &estimated_bandwidth));
+    EXPECT_GT(estimated_bandwidth, 0u);
+
+    EXPECT_EQ(0, ViE.rtp_rtcp->GetEstimatedReceiveBandwidth(
+        tbChannel.videoChannel,
+        &estimated_bandwidth));
     EXPECT_GT(estimated_bandwidth, 0u);
 
     // Check that rec stats extended max is greater than what we've sent.

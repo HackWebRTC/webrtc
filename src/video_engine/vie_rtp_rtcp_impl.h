@@ -87,7 +87,10 @@ class ViERTP_RTCPImpl
                                 unsigned int& video_bitrate_sent,
                                 unsigned int& fec_bitrate_sent,
                                 unsigned int& nackBitrateSent) const;
-  virtual int GetEstimatedBandwidth(
+  virtual int GetEstimatedSendBandwidth(
+      const int video_channel,
+      unsigned int* estimated_bandwidth) const;
+  virtual int GetEstimatedReceiveBandwidth(
       const int video_channel,
       unsigned int* estimated_bandwidth) const;
   virtual int SetRTPKeepAliveStatus(

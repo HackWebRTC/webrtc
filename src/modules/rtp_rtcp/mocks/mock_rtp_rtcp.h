@@ -142,7 +142,9 @@ class MockRtpRtcp : public RtpRtcp {
       bool());
   MOCK_CONST_METHOD4(BitrateSent,
       void(WebRtc_UWord32* totalRate, WebRtc_UWord32* videoRate, WebRtc_UWord32* fecRate, WebRtc_UWord32* nackRate));
-  MOCK_CONST_METHOD1(EstimatedBandwidth,
+  MOCK_CONST_METHOD1(EstimatedSendBandwidth,
+      int(WebRtc_UWord32* available_bandwidth));
+  MOCK_CONST_METHOD1(EstimatedReceiveBandwidth,
       int(WebRtc_UWord32* available_bandwidth));
   MOCK_METHOD7(SendOutgoingData,
       WebRtc_Word32(const FrameType frameType, const WebRtc_Word8 payloadType, const WebRtc_UWord32 timeStamp, const WebRtc_UWord8* payloadData, const WebRtc_UWord32 payloadSize, const RTPFragmentationHeader* fragmentation, const RTPVideoHeader* rtpVideoHdr));

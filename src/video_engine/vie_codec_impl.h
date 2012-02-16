@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -49,6 +49,8 @@ class ViECodecImpl
   virtual int GetReceiveCodecStastistics(const int video_channel,
                                          unsigned int& key_frames,
                                          unsigned int& delta_frames) const;
+  virtual int GetCodecTargetBitrate(const int video_channel,
+                                    unsigned int* bitrate) const;
   virtual unsigned int GetDiscardedPackets(const int video_channel) const;
   virtual int SetKeyFrameRequestCallbackStatus(const int video_channel,
                                                const bool enable);

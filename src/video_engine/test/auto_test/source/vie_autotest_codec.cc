@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -359,6 +359,11 @@ void ViEAutoTest::ViECodecAPITest()
     memset(&videoCodec, 0, sizeof(videoCodec));
     EXPECT_EQ(0, ptrViECodec->GetSendCodec(videoChannel, videoCodec));
     EXPECT_EQ(webrtc::kVideoCodecVP8, videoCodec.codecType);
+    // Verify that the target bit rate is equal to the start bitrate.
+    unsigned int target_bitrate = 0;
+    EXPECT_EQ(0, ptrViECodec->GetCodecTargetBitrate(videoChannel,
+                                                    &target_bitrate));
+    EXPECT_EQ(videoCodec.startBitrate, target_bitrate);
 
     SetSendCodec(webrtc::kVideoCodecI420, ptrViECodec, videoChannel,
                  kDoNotForceResolution, kDoNotForceResolution);

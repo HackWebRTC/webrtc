@@ -471,37 +471,35 @@ VideoCodingModuleImpl::CodecConfigParameters(WebRtc_UWord8* buffer,
 }
 
 // Get encode bitrate
-WebRtc_UWord32
-VideoCodingModuleImpl::Bitrate() const
+int VideoCodingModuleImpl::Bitrate(unsigned int* bitrate) const
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall,
-                 webrtc::kTraceVideoCoding,
-                 VCMId(_id),
-                 "Bitrate()");
-    CriticalSectionScoped cs(_sendCritSect);
-    // return the bit rate which the encoder is set to
-    if (_encoder != NULL)
-    {
-        return _encoder->BitRate();
-    }
+  WEBRTC_TRACE(webrtc::kTraceModuleCall,
+               webrtc::kTraceVideoCoding,
+               VCMId(_id),
+               "Bitrate()");
+  CriticalSectionScoped cs(_sendCritSect);
+  // return the bit rate which the encoder is set to
+  if (!_encoder) {
     return VCM_UNINITIALIZED;
+  }
+  *bitrate = _encoder->BitRate();
+  return 0;
 }
 
 // Get encode frame rate
-WebRtc_UWord32
-VideoCodingModuleImpl::FrameRate() const
+int VideoCodingModuleImpl::FrameRate(unsigned int* framerate) const
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall,
-                 webrtc::kTraceVideoCoding,
-                 VCMId(_id),
-                 "FrameRate()");
-    CriticalSectionScoped cs(_sendCritSect);
-    // input frame rate, not compensated
-    if (_encoder != NULL)
-    {
-        return _encoder->FrameRate();
-    }
+  WEBRTC_TRACE(webrtc::kTraceModuleCall,
+               webrtc::kTraceVideoCoding,
+               VCMId(_id),
+               "FrameRate()");
+  CriticalSectionScoped cs(_sendCritSect);
+  // input frame rate, not compensated
+  if (!_encoder) {
     return VCM_UNINITIALIZED;
+  }
+  *framerate = _encoder->FrameRate();
+  return 0;
 }
 
 // Set channel parameters

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -24,22 +24,28 @@ class RemoteRateControl
 public:
     RemoteRateControl();
     ~RemoteRateControl();
-    WebRtc_Word32 SetConfiguredBitRates(WebRtc_UWord32 minBitRate, WebRtc_UWord32 maxBitRate);
-    WebRtc_UWord32 TargetBitRate(WebRtc_UWord32 RTT, WebRtc_Word64 nowMS);
+    WebRtc_Word32 SetConfiguredBitRates(WebRtc_UWord32 minBitRate,
+                                        WebRtc_UWord32 maxBitRate);
+    WebRtc_UWord32 LatestEstimate() const;
+    WebRtc_UWord32 UpdateBandwidthEstimate(WebRtc_UWord32 RTT,
+                                           WebRtc_Word64 nowMS);
     RateControlRegion Update(const RateControlInput& input, bool& firstOverUse,
                              WebRtc_Word64 nowMS);
     void Reset();
 
     // Returns true if there is a valid estimate of the incoming bitrate, false
     // otherwise.
-    bool ValidEstimate();
+    bool ValidEstimate() const;
 
 private:
     WebRtc_UWord32 ChangeBitRate(WebRtc_UWord32 currentBitRate,
                                  WebRtc_UWord32 incomingBitRate,
                                  double delayFactor, WebRtc_UWord32 RTT,
                                  WebRtc_Word64 nowMS);
-    double RateIncreaseFactor(WebRtc_Word64 nowMs, WebRtc_Word64 lastMs, WebRtc_UWord32 reactionTimeMs, double noiseVar) const;
+    double RateIncreaseFactor(WebRtc_Word64 nowMs,
+                              WebRtc_Word64 lastMs,
+                              WebRtc_UWord32 reactionTimeMs,
+                              double noiseVar) const;
     void UpdateChangePeriod(WebRtc_Word64 nowMs);
     void UpdateMaxBitRateEstimate(float incomingBitRateKbps);
     void ChangeState(const RateControlInput& input, WebRtc_Word64 nowMs);

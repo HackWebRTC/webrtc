@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -79,7 +79,7 @@ void RemoteRateControl::Reset()
     _initializedBitRate = false;
 }
 
-bool RemoteRateControl::ValidEstimate() {
+bool RemoteRateControl::ValidEstimate() const {
   return _initializedBitRate;
 }
 
@@ -95,8 +95,12 @@ WebRtc_Word32 RemoteRateControl::SetConfiguredBitRates(WebRtc_UWord32 minBitRate
     return 0;
 }
 
-WebRtc_UWord32 RemoteRateControl::TargetBitRate(WebRtc_UWord32 RTT,
-                                                WebRtc_Word64 nowMS)
+WebRtc_UWord32 RemoteRateControl::LatestEstimate() const {
+  return _currentBitRate;
+}
+
+WebRtc_UWord32 RemoteRateControl::UpdateBandwidthEstimate(WebRtc_UWord32 RTT,
+                                                          WebRtc_Word64 nowMS)
 {
     _currentBitRate = ChangeBitRate(_currentBitRate, _currentInput._incomingBitRate,
         _currentInput._noiseVar, RTT, nowMS);

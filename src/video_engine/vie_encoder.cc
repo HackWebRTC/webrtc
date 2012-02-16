@@ -26,13 +26,15 @@
 
 namespace webrtc {
 
-class QMTestVideoSettingsCallback : public VCMQMSettingsCallback {
+class QMVideoSettingsCallback : public VCMQMSettingsCallback {
  public:
-  QMTestVideoSettingsCallback(VideoProcessingModule* vpm,
-                              VideoCodingModule* vcm,
-                              WebRtc_Word32 num_of_cores,
-                              WebRtc_Word32 max_payload_length);
-  ~QMTestVideoSettingsCallback();
+  QMVideoSettingsCallback(WebRtc_Word32 engine_id,
+                          WebRtc_Word32 channel_id,
+                          VideoProcessingModule* vpm,
+                          VideoCodingModule* vcm,
+                          WebRtc_Word32 num_of_cores,
+                          WebRtc_Word32 max_payload_length);
+  ~QMVideoSettingsCallback();
 
   // Update VPM with QM (quality modes: frame size & frame rate) settings.
   WebRtc_Word32 SetVideoQMSettings(const WebRtc_UWord32 frame_rate,
@@ -42,6 +44,8 @@ class QMTestVideoSettingsCallback : public VCMQMSettingsCallback {
   void SetMaxPayloadLength(WebRtc_Word32 max_payload_length);
 
  private:
+  WebRtc_Word32 engine_id_;
+  WebRtc_Word32 channel_id_;
   VideoProcessingModule* vpm_;
   VideoCodingModule* vcm_;
   WebRtc_Word32 num_cores_;
@@ -100,8 +104,13 @@ ViEEncoder::ViEEncoder(WebRtc_Word32 engine_id, WebRtc_Word32 channel_id,
   default_rtp_rtcp_.RegisterIncomingRTCPCallback(this);
   module_process_thread_.RegisterModule(&default_rtp_rtcp_);
 
-  qm_callback_ = new QMTestVideoSettingsCallback(
-      &vpm_, &vcm_, number_of_cores, default_rtp_rtcp_.MaxDataPayloadLength());
+  qm_callback_ = new QMVideoSettingsCallback(
+      engine_id_,
+      channel_id_,
+      &vpm_,
+      &vcm_,
+      number_of_cores,
+      default_rtp_rtcp_.MaxDataPayloadLength());
 
 #ifdef VIDEOCODEC_VP8
   VideoCodec video_codec;
@@ -240,7 +249,11 @@ WebRtc_Word32 ViEEncoder::DeRegisterExternalEncoder(WebRtc_UWord8 pl_type) {
 
   webrtc::VideoCodec current_send_codec;
   if (vcm_.SendCodec(&current_send_codec) == VCM_OK) {
-    current_send_codec.startBitrate = vcm_.Bitrate();
+    if (vcm_.Bitrate(&current_send_codec.startBitrate) != 0) {
+      WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideo,
+                   ViEId(engine_id_, channel_id_),
+                   "Failed to get the current encoder target bitrate.");
+    }
   }
 
   if (vcm_.RegisterExternalEncoder(NULL, pl_type) != VCM_OK) {
@@ -560,11 +573,19 @@ WebRtc_Word32 ViEEncoder::SendCodecStatistics(
   return 0;
 }
 
-WebRtc_Word32 ViEEncoder::EstimatedBandwidth(
+WebRtc_Word32 ViEEncoder::EstimatedSendBandwidth(
     WebRtc_UWord32* available_bandwidth) const {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
-  return default_rtp_rtcp_.EstimatedBandwidth(available_bandwidth);
+  return default_rtp_rtcp_.EstimatedSendBandwidth(available_bandwidth);
+}
+
+int ViEEncoder::CodecTargetBitrate(WebRtc_UWord32* bitrate) const {
+  WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
+               __FUNCTION__);
+  if (vcm_.Bitrate(bitrate) != 0)
+    return -1;
+  return 0;
 }
 
 WebRtc_Word32 ViEEncoder::UpdateProtectionMethod() {
@@ -607,7 +628,11 @@ WebRtc_Word32 ViEEncoder::UpdateProtectionMethod() {
     webrtc::VideoCodec codec;
     if (vcm_.SendCodec(&codec) == 0) {
       WebRtc_UWord16 max_pay_load = default_rtp_rtcp_.MaxDataPayloadLength();
-      codec.startBitrate = vcm_.Bitrate();
+      if (vcm_.Bitrate(&codec.startBitrate) != 0) {
+        WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideo,
+                     ViEId(engine_id_, channel_id_),
+                     "Failed to get the current encoder target bitrate.");
+      }
       if (vcm_.RegisterSendCodec(&codec, number_of_cores_, max_pay_load) != 0) {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
                      ViEId(engine_id_, channel_id_),
@@ -805,21 +830,25 @@ ViEFileRecorder& ViEEncoder::GetOutgoingFileRecorder() {
   return file_recorder_;
 }
 
-QMTestVideoSettingsCallback::QMTestVideoSettingsCallback(
+QMVideoSettingsCallback::QMVideoSettingsCallback(
+    WebRtc_Word32 engine_id,
+    WebRtc_Word32 channel_id,
     VideoProcessingModule* vpm,
     VideoCodingModule* vcm,
     WebRtc_Word32 num_cores,
     WebRtc_Word32 max_payload_length)
-    : vpm_(vpm),
+    : engine_id_(engine_id),
+      channel_id_(channel_id),
+      vpm_(vpm),
       vcm_(vcm),
       num_cores_(num_cores),
       max_payload_length_(max_payload_length) {
 }
 
-QMTestVideoSettingsCallback::~QMTestVideoSettingsCallback() {
+QMVideoSettingsCallback::~QMVideoSettingsCallback() {
 }
 
-WebRtc_Word32 QMTestVideoSettingsCallback::SetVideoQMSettings(
+WebRtc_Word32 QMVideoSettingsCallback::SetVideoQMSettings(
     const WebRtc_UWord32 frame_rate,
     const WebRtc_UWord32 width,
     const WebRtc_UWord32 height) {
@@ -830,9 +859,14 @@ WebRtc_Word32 QMTestVideoSettingsCallback::SetVideoQMSettings(
     // Get current settings.
     VideoCodec current_codec;
     vcm_->SendCodec(&current_codec);
-    WebRtc_UWord32 current_bit_rate = vcm_->Bitrate();
+    WebRtc_UWord32 current_bit_rate;
+    if (vcm_->Bitrate(&current_bit_rate) != 0) {
+      WEBRTC_TRACE(webrtc::kTraceWarning, webrtc::kTraceVideo,
+                   ViEId(engine_id_, channel_id_),
+                   "Failed to get the current encoder target bitrate.");
+    }
 
-    // Set the new calues.
+    // Set the new values.
     current_codec.height = static_cast<WebRtc_UWord16>(height);
     current_codec.width = static_cast<WebRtc_UWord16>(width);
     current_codec.maxFramerate = static_cast<WebRtc_UWord8>(frame_rate);
@@ -845,7 +879,7 @@ WebRtc_Word32 QMTestVideoSettingsCallback::SetVideoQMSettings(
   return ret_val;
 }
 
-void QMTestVideoSettingsCallback::SetMaxPayloadLength(
+void QMVideoSettingsCallback::SetMaxPayloadLength(
     WebRtc_Word32 max_payload_length) {
   max_payload_length_ = max_payload_length;
 }

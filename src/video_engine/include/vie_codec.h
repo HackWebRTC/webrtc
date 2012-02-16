@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -123,6 +123,10 @@ class WEBRTC_DLLEXPORT ViECodec {
   virtual int GetReceiveCodecStastistics(const int video_channel,
                                          unsigned int& key_frames,
                                          unsigned int& delta_frames) const = 0;
+
+  // Gets the bitrate targeted by the video codec rate control in kbit/s.
+  virtual int GetCodecTargetBitrate(const int video_channel,
+                                    unsigned int* bitrate) const = 0;
 
   // Gets the number of packets discarded by the jitter buffer because they
   // arrived too late.

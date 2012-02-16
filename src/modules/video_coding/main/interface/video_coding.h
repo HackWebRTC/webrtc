@@ -146,17 +146,17 @@ public:
     //                     < 0,                     on error.
     virtual WebRtc_Word32 CodecConfigParameters(WebRtc_UWord8* buffer, WebRtc_Word32 size) = 0;
 
-    // API to get currently configured encoder target bit rate.
+    // API to get currently configured encoder target bitrate in kbit/s.
     //
-    // Return value      : The encoder target bit rate, on success.
-    //                     < 0,                         on error.
-    virtual WebRtc_UWord32 Bitrate() const = 0;
+    // Return value      : 0,   on success.
+    //                     < 0, on error.
+    virtual int Bitrate(unsigned int* bitrate) const = 0;
 
     // API to get currently configured encoder target frame rate.
     //
-    // Return value      : The encoder target frame rate, on success.
-    //                     < 0,                           on error.
-    virtual WebRtc_UWord32 FrameRate() const = 0;
+    // Return value      : 0,   on success.
+    //                     < 0, on error.
+    virtual int FrameRate(unsigned int* framerate) const = 0;
 
     // Sets the parameters describing the send channel. These parameters are inputs to the
     // Media Optimization inside the VCM and also specifies the target bit rate for the

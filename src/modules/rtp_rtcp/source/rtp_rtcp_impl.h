@@ -491,7 +491,11 @@ public:
                              WebRtc_UWord32* fecRate,
                              WebRtc_UWord32* nackRate) const;
 
-    virtual int EstimatedBandwidth(WebRtc_UWord32* available_bandwidth) const;
+    virtual int EstimatedSendBandwidth(
+        WebRtc_UWord32* available_bandwidth) const;
+
+    virtual int EstimatedReceiveBandwidth(
+        WebRtc_UWord32* available_bandwidth) const;
 
     virtual void SetRemoteSSRC(const WebRtc_UWord32 SSRC);
     

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -457,6 +457,26 @@ int ViECodecImpl::GetReceiveCodecStastistics(const int video_channel,
     return -1;
   }
   return 0;
+}
+
+int ViECodecImpl::GetCodecTargetBitrate(const int video_channel,
+                                        unsigned int* bitrate) const {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
+               ViEId(shared_data_->instance_id(), video_channel),
+               "%s(video_channel: %d, codec_type: %d)", __FUNCTION__,
+               video_channel);
+
+  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
+  ViEEncoder* vie_encoder = cs.Encoder(video_channel);
+  if (!vie_encoder) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo,
+                 ViEId(shared_data_->instance_id(), video_channel),
+                 "%s: No send codec for channel %d", __FUNCTION__,
+                 video_channel);
+    shared_data_->SetLastError(kViECodecInvalidChannelId);
+    return -1;
+  }
+  return vie_encoder->CodecTargetBitrate(static_cast<WebRtc_UWord32*>(bitrate));
 }
 
 unsigned int ViECodecImpl::GetDiscardedPackets(const int video_channel) const {

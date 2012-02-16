@@ -135,13 +135,15 @@ public:
 
     WebRtc_UWord32 CalculateNewTargetBitrate(WebRtc_UWord32 RTT);
 
+    WebRtc_UWord32 LatestBandwidthEstimate() const;
+
     // Returns true if there is a valid estimate of the incoming bitrate, false
     // otherwise.
-    bool ValidBitrateEstimate();
+    bool ValidBitrateEstimate() const;
 
 private:
     WebRtc_Word32 SendToNetwork(const WebRtc_UWord8* dataBuffer,
-                              const WebRtc_UWord16 length);
+                                const WebRtc_UWord16 length);
 
     void UpdatePacketRate();
 

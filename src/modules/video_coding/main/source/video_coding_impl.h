@@ -102,10 +102,10 @@ public:
                                                 WebRtc_Word32 size);
 
     // Get encode bitrate
-    virtual WebRtc_UWord32 Bitrate() const;
+    virtual int Bitrate(unsigned int* bitrate) const;
 
     // Get encode frame rate
-    virtual WebRtc_UWord32 FrameRate() const;
+    virtual int FrameRate(unsigned int* framerate) const;
 
     // Set channel parameters
     virtual WebRtc_Word32 SetChannelParameters(
