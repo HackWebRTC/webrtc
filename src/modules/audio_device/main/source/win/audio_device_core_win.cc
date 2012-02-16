@@ -191,7 +191,46 @@ bool AudioDeviceWindowsCore::CoreAudioIsSupported()
     TCHAR buf[MAXERRORLENGTH];
     TCHAR errorText[MAXERRORLENGTH];
 
-    // 1) Initializes the COM library for use by the calling thread.
+    // 1) Check if Windows version is Vista SP1 or later.
+    //
+    // CoreAudio is only available on Vista SP1 and later.
+    //
+    OSVERSIONINFOEX osvi;
+    DWORDLONG dwlConditionMask = 0;
+    int op = VER_LESS_EQUAL;
+
+    // Initialize the OSVERSIONINFOEX structure.
+    ZeroMemory(&osvi, sizeof(OSVERSIONINFOEX));
+    osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+    osvi.dwMajorVersion = 6;
+    osvi.dwMinorVersion = 0;
+    osvi.wServicePackMajor = 0;
+    osvi.wServicePackMinor = 0;
+    osvi.wProductType = VER_NT_WORKSTATION;
+
+    // Initialize the condition mask.
+    VER_SET_CONDITION(dwlConditionMask, VER_MAJORVERSION, op);
+    VER_SET_CONDITION(dwlConditionMask, VER_MINORVERSION, op);
+    VER_SET_CONDITION(dwlConditionMask, VER_SERVICEPACKMAJOR, op);
+    VER_SET_CONDITION(dwlConditionMask, VER_SERVICEPACKMINOR, op);
+    VER_SET_CONDITION(dwlConditionMask, VER_PRODUCT_TYPE, VER_EQUAL);
+
+    DWORD dwTypeMask = VER_MAJORVERSION | VER_MINORVERSION |
+                       VER_SERVICEPACKMAJOR | VER_SERVICEPACKMINOR |
+                       VER_PRODUCT_TYPE;
+
+    // Perform the test.
+    BOOL isVistaRTMorXP = VerifyVersionInfo(&osvi, dwTypeMask,
+                                            dwlConditionMask);
+    if (isVistaRTMorXP != 0)
+    {
+        WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, -1,
+            "*** Windows Core Audio is only supported on Vista SP1 or later "
+            "=> will revert to the Wave API ***");
+        return false;
+    }
+
+    // 2) Initializes the COM library for use by the calling thread.
 
     // The COM init wrapper sets the thread's concurrency model to MTA,
     // and creates a new apartment for the thread if one is required. The
@@ -205,7 +244,7 @@ bool AudioDeviceWindowsCore::CoreAudioIsSupported()
       return false;
     }
  
-    // 2) Check if the MMDevice API is available.
+    // 3) Check if the MMDevice API is available.
     //
     // The Windows Multimedia Device (MMDevice) API enables audio clients to
     // discover audio endpoint devices, determine their capabilities, and create
@@ -278,7 +317,7 @@ bool AudioDeviceWindowsCore::CoreAudioIsSupported()
         SAFE_RELEASE(pIMMD);
     }
 
-    // 3) Verify that we can create and initialize our Core Audio class.
+    // 4) Verify that we can create and initialize our Core Audio class.
     //
     // Also, perform a limited "API test" to ensure that Core Audio is supported for all devices.
     //
