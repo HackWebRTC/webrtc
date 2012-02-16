@@ -333,6 +333,9 @@ public:
                                       const WebRtc_UWord8 numberOfSSRC,
                                       const WebRtc_UWord32* SSRC);
 
+    virtual WebRtc_Word32 SetMaximumBitrateEstimate(
+        const WebRtc_UWord32 bitrate);
+
     virtual bool SetRemoteBitrateObserver(RtpRemoteBitrateObserver* observer);
     /*
     *   (IJ) Extended jitter report.

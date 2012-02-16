@@ -266,8 +266,14 @@ public:
 class RtpRemoteBitrateObserver
 {
 public:
+    // Called when a receive channel has a new bitrate estimate for the incoming
+    // stream.
     virtual void OnReceiveBitrateChanged(unsigned int ssrc,
                                          unsigned int bitrate) = 0;
+
+    // Called when a REMB packet has been received.
+    virtual void OnReceivedRemb(unsigned int bitrate) = 0;
+
     virtual ~RtpRemoteBitrateObserver() {}
 };
 

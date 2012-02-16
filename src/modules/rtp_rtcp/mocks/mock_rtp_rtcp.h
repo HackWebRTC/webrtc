@@ -204,6 +204,8 @@ class MockRtpRtcp : public RtpRtcp {
       WebRtc_Word32(const bool enable));
   MOCK_METHOD3(SetREMBData,
       WebRtc_Word32(const WebRtc_UWord32 bitrate, const WebRtc_UWord8 numberOfSSRC, const WebRtc_UWord32* SSRC));
+  MOCK_METHOD1(SetMaximumBitrateEstimate,
+       WebRtc_Word32(const WebRtc_UWord32 bitrate));
   MOCK_METHOD1(SetRemoteBitrateObserver,
       bool(RtpRemoteBitrateObserver*));
   MOCK_CONST_METHOD0(IJ,

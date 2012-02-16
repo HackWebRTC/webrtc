@@ -813,6 +813,10 @@ public:
                                       const WebRtc_UWord8 numberOfSSRC,
                                       const WebRtc_UWord32* SSRC) = 0;
 
+    // Used to set maximum bitrate estimate received in a REMB packet.
+    virtual WebRtc_Word32 SetMaximumBitrateEstimate(
+        const WebRtc_UWord32 bitrate) = 0;
+
     // Registers an observer to call when the estimate of the incoming channel
     // changes.
     virtual bool SetRemoteBitrateObserver(

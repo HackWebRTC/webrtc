@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -41,7 +41,14 @@ class VieRemb : public RtpRemoteBitrateObserver, public Module {
   // Removes the specified channel from REMB estimate.
   void RemoveReceiveChannel(RtpRtcp* rtp_rtcp);
 
-  // Called to add a send channel to include in the REMB packet.
+  // Called to add a module that can generate and send REMB RTCP.
+  void AddRembSender(RtpRtcp* rtp_rtcp);
+
+  // Removes a REMB RTCP sender.
+  void RemoveRembSender(RtpRtcp* rtp_rtcp);
+
+  // Called to add a send channel encoding and sending data, affected by
+  // received  REMB packets.
   void AddSendChannel(RtpRtcp* rtp_rtcp);
 
   // Removes the specified channel from receiving REMB packet estimates.
@@ -54,10 +61,11 @@ class VieRemb : public RtpRemoteBitrateObserver, public Module {
   // Implements RtpReceiveBitrateUpdate.
   virtual void OnReceiveBitrateChanged(unsigned int ssrc, unsigned int bitrate);
 
+  // Called for every new receive REMB packet and distributes the estmate
+  // between all sending modules.
+  virtual void OnReceivedRemb(unsigned int bitrate);
+
   // Implements Module.
-  virtual WebRtc_Word32 Version(WebRtc_Word8* version,
-                                WebRtc_UWord32& remaining_buffer_in_bytes,
-                                WebRtc_UWord32& position) const;
   virtual WebRtc_Word32 ChangeUniqueId(const WebRtc_Word32 id);
   virtual WebRtc_Word32 TimeUntilNextProcess();
   virtual WebRtc_Word32 Process();
@@ -78,6 +86,9 @@ class VieRemb : public RtpRemoteBitrateObserver, public Module {
 
   // All modules encoding and sending data.
   RtpModules send_modules_;
+
+  // All modules that can send REMB RTCP.
+  RtpModules rtcp_sender_;
 
   // The last bitrate update for each SSRC.
   SsrcBitrate bitrates_;

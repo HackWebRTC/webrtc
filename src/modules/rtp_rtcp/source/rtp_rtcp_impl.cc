@@ -1661,6 +1661,17 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SetREMBData(const WebRtc_UWord32 bitrate,
   return _rtcpSender.SetREMBData(bitrate, numberOfSSRC, SSRC);
 }
 
+WebRtc_Word32 ModuleRtpRtcpImpl::SetMaximumBitrateEstimate(
+        const WebRtc_UWord32 bitrate) {
+  if(!_rtcpSender.REMB()) {
+    WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
+                 "SetMaximumBitrateEstimate - REMB not enabled.");
+    return -1;
+  }
+  OnReceivedEstimatedMaxBitrate(bitrate);
+  return 0;
+}
+
 bool ModuleRtpRtcpImpl::SetRemoteBitrateObserver(
   RtpRemoteBitrateObserver* observer) {
   return _rtcpSender.SetRemoteBitrateObserver(observer);
@@ -2499,17 +2510,16 @@ void ModuleRtpRtcpImpl::OnReceivedIntraFrameRequest(const RtpRtcp* caller) {
 
 void ModuleRtpRtcpImpl::OnReceivedEstimatedMaxBitrate(
   const WebRtc_UWord32 maxBitrate) {
+  // TODO(mflodman) Split this function in two parts. One for the child module
+  // and one for the default module.
 
   // We received a REMB.
   if (_defaultModule) {
-    // Let the default module handle this.
-    CriticalSectionScoped lock(_criticalSectionModulePtrs);
-    if (_defaultModule) {
-      // if we use a default module pass this info to the default module
-      _defaultModule->OnReceivedEstimatedMaxBitrate(maxBitrate);
-      return;
-    }
+    // Send this update to the REMB instance to take actions.
+    _rtcpSender.ReceivedRemb(maxBitrate);
+    return;
   }
+
   WebRtc_UWord32 newBitrate = 0;
   WebRtc_UWord8 fractionLost = 0;
   WebRtc_UWord16 roundTripTime = 0;
@@ -2518,8 +2528,6 @@ void ModuleRtpRtcpImpl::OnReceivedEstimatedMaxBitrate(
                                                    &newBitrate,
                                                    &fractionLost,
                                                    &roundTripTime) == 0) {
-    // TODO(mflodman) When encoding two streams, we need to split the
-    // bitrate between REMB sending channels.
     _rtpReceiver.UpdateBandwidthManagement(newBitrate,
                                            fractionLost,
                                            roundTripTime);

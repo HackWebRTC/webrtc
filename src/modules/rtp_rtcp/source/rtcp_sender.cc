@@ -277,6 +277,13 @@ void RTCPSender::UpdateRemoteBitrateEstimate(unsigned int target_bitrate) {
   }
 }
 
+void RTCPSender::ReceivedRemb(unsigned int estimated_bitrate) {
+  CriticalSectionScoped lock(_criticalSectionRTCPSender);
+  if (_bitrate_observer) {
+    _bitrate_observer->OnReceivedRemb(estimated_bitrate);
+  }
+}
+
 bool
 RTCPSender::TMMBR() const
 {

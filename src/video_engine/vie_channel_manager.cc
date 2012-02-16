@@ -226,7 +226,7 @@ int ViEChannelManager::DeleteChannel(int channel_id) {
 
     // Deregister possible remb modules.
     RtpRtcp* rtp_module = vie_channel->rtp_rtcp();
-    remb_->RemoveSendChannel(rtp_module);
+    remb_->RemoveRembSender(rtp_module);
     remb_->RemoveReceiveChannel(rtp_module);
 
     // Deregister the channel from the ViEEncoder to stop the media flow.
@@ -237,6 +237,8 @@ int ViEChannelManager::DeleteChannel(int channel_id) {
     EncoderMap::iterator e_it = vie_encoder_map_.find(channel_id);
     assert(e_it != vie_encoder_map_.end());
     vie_encoder = e_it->second;
+
+    remb_->RemoveSendChannel(vie_encoder->SendRtpRtcpModule());
 
     // Check if other channels are using the same encoder.
     if (ChannelUsingViEEncoder(channel_id)) {
@@ -338,6 +340,8 @@ bool ViEChannelManager::SetRembStatus(int channel_id, bool sender,
     return false;
   }
 
+  ViEEncoder* encoder = ViEEncoderPtr(channel_id);
+
   if (sender || receiver) {
     if (!channel->EnableRemb(true)) {
       return false;
@@ -347,15 +351,20 @@ bool ViEChannelManager::SetRembStatus(int channel_id, bool sender,
   }
   RtpRtcp* rtp_module = channel->rtp_rtcp();
   if (sender) {
-    remb_->AddSendChannel(rtp_module);
+    remb_->AddRembSender(rtp_module);
+    remb_->AddSendChannel(encoder->SendRtpRtcpModule());
   } else {
-    remb_->RemoveSendChannel(rtp_module);
+    remb_->RemoveRembSender(rtp_module);
+    remb_->RemoveSendChannel(encoder->SendRtpRtcpModule());
   }
   if (receiver) {
     remb_->AddReceiveChannel(rtp_module);
-    rtp_module->SetRemoteBitrateObserver(remb_.get());
   } else {
     remb_->RemoveReceiveChannel(rtp_module);
+  }
+  if (sender || receiver) {
+    rtp_module->SetRemoteBitrateObserver(remb_.get());
+  } else {
     rtp_module->SetRemoteBitrateObserver(NULL);
   }
   return true;
