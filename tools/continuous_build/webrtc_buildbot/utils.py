@@ -25,7 +25,7 @@ SUPPORTED_PLATFORMS = ('Linux', 'Mac', 'Windows')
 SVN_LOCATION = 'http://webrtc.googlecode.com/svn/trunk'
 VALGRIND_CMD = ['tools/valgrind-webrtc/webrtc_tests.sh', '-t', 'cmdline']
 
-DEFAULT_COVERAGE_DIR = '/var/www/'
+DEFAULT_COVERAGE_DIR = '/var/www/coverage/'
 
 # Copied from trunk/tools/build/scripts/master/factory/chromium_factory.py
 # but converted to a list since we set defines instead of using an environment
@@ -181,10 +181,10 @@ class GenerateCodeCoverage(ShellCommand):
 
      The command will dump the HTML output into coverage_dir, in a directory
      whose name is generated from the build number and slave name. We will
-     expect that the coverage directory is the web server root (i.e. public html
-     root) corresponding to the web server URL. That is, if we write Foo to
-     the coverage directory we expect that directory to be reachable from
-     url/Foo.
+     expect that the coverage directory is somewhere under the web server root
+     (i.e. public html root) that corresponds to the web server URL. That is, if
+     we write Foo to the coverage directory we expect that directory to be
+     reachable from url/Foo.
   """
 
   def __init__(self, coverage_url, coverage_dir, coverage_file, **kwargs):
