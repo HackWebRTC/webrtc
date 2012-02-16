@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -10,7 +10,6 @@
 
 #include "device_info_linux.h"
 
-#include <sys/stat.h>
 #include <errno.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
@@ -68,15 +67,11 @@ WebRtc_UWord32 DeviceInfoLinux::NumberOfDevices()
     /* detect /dev/video [0-63]VideoCaptureModule entries */
     for (int n = 0; n < 64; n++)
     {
-        struct stat s;
         sprintf(device, "/dev/video%d", n);
-        if (stat(device, &s) == 0) //check validity of path
+        if ((fd = open(device, O_RDONLY)) != -1)
         {
-            if ((fd = open(device, O_RDONLY)) != -1)
-            {
-                close(fd);
-                count++;
-            }
+            close(fd);
+            count++;
         }
     }
 
@@ -101,20 +96,16 @@ WebRtc_Word32 DeviceInfoLinux::GetDeviceName(
     bool found = false;
     for (int n = 0; n < 64; n++)
     {
-        struct stat s;
         sprintf(device, "/dev/video%d", n);
-        if (stat(device, &s) == 0)  // Check validity of path
+        if ((fd = open(device, O_RDONLY)) != -1)
         {
-            if ((fd = open(device, O_RDONLY)) != -1)
-            {
-                if (count == deviceNumber) {
-                    // Found the device
-                    found = true;
-                    break;
-                } else {
-                    close(fd);
-                    count++;
-                }
+            if (count == deviceNumber) {
+                // Found the device
+                found = true;
+                break;
+            } else {
+                close(fd);
+                count++;
             }
         }
     }
@@ -187,41 +178,38 @@ WebRtc_Word32 DeviceInfoLinux::CreateCapabilityMap(
                "CreateCapabilityMap called for device %s", deviceUniqueIdUTF8);
 
     /* detect /dev/video [0-63] entries */
-    for (int n = 0; n < 64; n++)
+    for (int n = 0; n < 64; ++n)
     {
-        struct stat s;
         sprintf(device, "/dev/video%d", n);
-        if (stat(device, &s) == 0) //check validity of path
+        fd = open(device, O_RDONLY);
+        if (fd == -1)
+          continue;
+
+        // query device capabilities
+        struct v4l2_capability cap;
+        if (ioctl(fd, VIDIOC_QUERYCAP, &cap) == 0)
         {
-            if ((fd = open(device, O_RDONLY)) > 0)
+            if (cap.bus_info[0] != 0)
             {
-                // query device capabilities
-                struct v4l2_capability cap;
-                if (ioctl(fd, VIDIOC_QUERYCAP, &cap) == 0)
+                if (strncmp((const char*) cap.bus_info,
+                            (const char*) deviceUniqueIdUTF8,
+                            strlen((const char*) deviceUniqueIdUTF8)) == 0) //match with device id
                 {
-                    if (cap.bus_info[0] != 0)
-                    {
-                        if (strncmp((const char*) cap.bus_info,
-                                    (const char*) deviceUniqueIdUTF8,
-                                    strlen((const char*) deviceUniqueIdUTF8)) == 0) //match with device id
-                        {
-                            found = true;
-                            break; // fd matches with device unique id supplied
-                        }
-                    }
-                    else //match for device name
-                    {
-                        if (IsDeviceNameMatches((const char*) cap.card,
-                                                (const char*) deviceUniqueIdUTF8))
-                        {
-                            found = true;
-                            break;
-                        }
-                    }
+                    found = true;
+                    break; // fd matches with device unique id supplied
                 }
-                close(fd); // close since this is not the matching device
+            }
+            else //match for device name
+            {
+                if (IsDeviceNameMatches((const char*) cap.card,
+                                        (const char*) deviceUniqueIdUTF8))
+                {
+                    found = true;
+                    break;
+                }
             }
         }
+        close(fd); // close since this is not the matching device
     }
 
     if (!found)

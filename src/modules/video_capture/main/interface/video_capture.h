@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -61,7 +61,7 @@ class VideoCaptureModule: public RefCountedModule {
     // Returns the deviceCapabilityNumber on success.
     virtual WebRtc_Word32 GetBestMatchedCapability(
         const WebRtc_UWord8*deviceUniqueIdUTF8,
-        const VideoCaptureCapability requested,
+        const VideoCaptureCapability& requested,
         VideoCaptureCapability& resulting) = 0;
 
      // Display OS /capture device specific settings dialog

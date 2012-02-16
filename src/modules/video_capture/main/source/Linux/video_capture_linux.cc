@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -50,7 +50,8 @@ VideoCaptureModuleV4L2::VideoCaptureModuleV4L2(const WebRtc_Word32 id)
     : VideoCaptureImpl(id), _captureThread(NULL),
       _captureCritSect(CriticalSectionWrapper::CreateCriticalSection()),
       _deviceId(-1), _currentWidth(-1), _currentHeight(-1),
-      _currentFrameRate(-1), _captureStarted(false), _captureVideoType(kVideoI420)
+      _currentFrameRate(-1), _captureStarted(false),
+      _captureVideoType(kVideoI420), pool(NULL)
 {
 }
 
@@ -71,30 +72,26 @@ WebRtc_Word32 VideoCaptureModuleV4L2::Init(const WebRtc_UWord8* deviceUniqueIdUT
     int n;
     for (n = 0; n < 64; n++)
     {
-        struct stat s;
         sprintf(device, "/dev/video%d", n);
-        if (stat(device, &s) == 0) //check validity of path
+        if ((fd = open(device, O_RDONLY)) != -1)
         {
-            if ((fd = open(device, O_RDONLY)) > 0)
+            // query device capabilities
+            struct v4l2_capability cap;
+            if (ioctl(fd, VIDIOC_QUERYCAP, &cap) == 0)
             {
-                // query device capabilities
-                struct v4l2_capability cap;
-                if (ioctl(fd, VIDIOC_QUERYCAP, &cap) == 0)
+                if (cap.bus_info[0] != 0)
                 {
-                    if (cap.bus_info[0] != 0)
+                    if (strncmp((const char*) cap.bus_info,
+                                (const char*) deviceUniqueIdUTF8,
+                                strlen((const char*) deviceUniqueIdUTF8)) == 0) //match with device id
                     {
-                        if (strncmp((const char*) cap.bus_info,
-                                    (const char*) deviceUniqueIdUTF8,
-                                    strlen((const char*) deviceUniqueIdUTF8)) == 0) //match with device id
-                        {
-                            close(fd);
-                            found = true;
-                            break; // fd matches with device unique id supplied
-                        }
+                        close(fd);
+                        found = true;
+                        break; // fd matches with device unique id supplied
                     }
                 }
-                close(fd); // close since this is not the matching device
             }
+            close(fd); // close since this is not the matching device
         }
     }
     if (!found)

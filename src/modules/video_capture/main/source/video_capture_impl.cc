@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -136,7 +136,9 @@ VideoCaptureImpl::VideoCaptureImpl(const WebRtc_Word32 id)
       _lastProcessTime(TickTime::Now()),
       _lastFrameRateCallbackTime(TickTime::Now()), _frameRateCallBack(false),
       _noPictureAlarmCallBack(false), _captureAlarm(Cleared), _setCaptureDelay(0),
-      _dataCallBack(NULL), _captureCallBack(NULL), _startImageFrameIntervall(0),
+      _dataCallBack(NULL), _captureCallBack(NULL),
+      _startImage(), _startImageFrameIntervall(0),
+      _lastSentStartImageTime(TickTime::Now()),
       _lastProcessFrameCount(TickTime::Now()), _rotateFrame(kRotateNone),
       last_capture_time_(TickTime::MillisecondTimestamp())
 
