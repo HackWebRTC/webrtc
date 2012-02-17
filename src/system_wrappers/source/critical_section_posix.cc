@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,31 +8,39 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+// General note: return values for the various pthread synchronization APIs
+// are explicitly ignored here. In Chromium, the same thing is done for release.
+// However, in debugging, failure in these APIs are logged. There is currently
+// no equivalent to DCHECK_EQ in WebRTC code so this is the best we can do here.
+// TODO(henrike): add logging when pthread synchronization APIs are failing.
+
 #include "critical_section_posix.h"
 
 namespace webrtc {
+
 CriticalSectionPosix::CriticalSectionPosix()
 {
     pthread_mutexattr_t attr;
-    pthread_mutexattr_init(&attr);
-    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-    pthread_mutex_init(&_mutex, &attr);
+    (void) pthread_mutexattr_init(&attr);
+    (void) pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+    (void) pthread_mutex_init(&_mutex, &attr);
 }
 
 CriticalSectionPosix::~CriticalSectionPosix()
 {
-    pthread_mutex_destroy(&_mutex);
+    (void) pthread_mutex_destroy(&_mutex);
 }
 
 void
 CriticalSectionPosix::Enter()
 {
-    pthread_mutex_lock(&_mutex);
+    (void) pthread_mutex_lock(&_mutex);
 }
 
 void
 CriticalSectionPosix::Leave()
 {
-    pthread_mutex_unlock(&_mutex);
+    (void) pthread_mutex_unlock(&_mutex);
 }
+
 } // namespace webrtc
