@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -71,14 +71,8 @@ public:
     // Compute spatial texture magnitude and level
     void Spatial();
 
-    // Compute motion magnitude and level
-    void Motion();
-
     // Compute motion magnitude and level for NFD metric
     void MotionNFD();
-
-    // Compute coherence magnitude and level
-    void Coherence();
 
     // Get the imageType (CIF, VGA, HD, etc) for the system width/height
     WebRtc_Word8 GetImageType(WebRtc_UWord32 width, WebRtc_UWord32 height);
@@ -91,7 +85,6 @@ public:
     WebRtc_UWord32               _height;
     WebRtc_UWord32               _nativeWidth;
     WebRtc_UWord32               _nativeHeight;
-    WebRtc_UWord32               _nativeFrameRate;
     float                        _aspectRatio;
     // Image type for the current encoder system size.
     WebRtc_UWord8                _imageType;
@@ -99,8 +92,6 @@ public:
     // Content L/M/H values. stationary flag
     VCMContFeature               _motion;
     VCMContFeature               _spatial;
-    VCMContFeature               _coherence;
-    bool                         _stationaryMotion;
     bool                         _init;
 
 };
@@ -122,6 +113,9 @@ public:
     // Initialize rate control quantities after re-init of encoder.
     WebRtc_Word32 Initialize(float bitRate, float userFrameRate,
                              WebRtc_UWord32 width, WebRtc_UWord32 height);
+
+    // Update the encoder frame size.
+    void UpdateCodecFrameSize(uint32_t width, uint32_t height);
 
     // Update QM with actual bit rate (size of the latest encoded frame)
     // and frame type, after every encoded frame.
@@ -152,7 +146,6 @@ private:
     float                        _sumTargetRate;
     float                        _sumIncomingFrameRate;
     float                        _sumSeqRateMM;
-    float                        _sumFrameRateMM;
     float                        _sumPacketLoss;
     WebRtc_Word64                _sumEncodedBytes;
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -60,14 +60,12 @@ private:
     // Update the recursive averaged metrics: longer time average (~5/10 secs).
     void UpdateRecursiveAvg(const VideoContentMetrics *contentMetrics);
 
-    // Update the uniform averaged metrics: shorter time average (~RTCP reports).
+    // Update the uniform averaged metrics: shorter time average (~RTCP report).
     void UpdateUniformAvg(const VideoContentMetrics *contentMetrics);
 
     VideoContentMetrics*    _recursiveAvg;
     VideoContentMetrics*    _uniformAvg;
-    WebRtc_UWord32          _frameRate;
     float                   _recAvgFactor;
-    WebRtc_UWord32          _frameCntRecursiveAvg;
     WebRtc_UWord32          _frameCntUniformAvg;
     float                   _avgMotionLevel;
     float                   _avgSpatialLevel;

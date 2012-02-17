@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -27,10 +27,6 @@ _motionMagnitudeNZ(0.0f),
 _spatialPredErr(0.0f),
 _spatialPredErrH(0.0f),
 _spatialPredErrV(0.0f),
-_sizeZeroMotion(0.0f),
-_motionPredErr(0.0f),
-_motionHorizontalness(0.0f),
-_motionClusterDistortion(0.0f),
 _firstFrame(true),
 _CAInit(false),
 _cMetrics(NULL)
@@ -329,18 +325,11 @@ VPMContentAnalysis::ContentMetrics()
         return NULL;
     }
 
-
     _cMetrics->spatialPredErr = _spatialPredErr;
     _cMetrics->spatialPredErrH = _spatialPredErrH;
     _cMetrics->spatialPredErrV = _spatialPredErrV;
-    // normalized temporal difference (MAD)
+    // Motion metric: normalized temporal difference (MAD)
     _cMetrics->motionMagnitudeNZ = _motionMagnitudeNZ;
-
-    // Set to zero: not computed
-    _cMetrics->motionPredErr = _motionPredErr;
-    _cMetrics->sizeZeroMotion = _sizeZeroMotion;
-    _cMetrics->motionHorizontalness = _motionHorizontalness;
-    _cMetrics->motionClusterDistortion = _motionClusterDistortion;
 
     return _cMetrics;
 

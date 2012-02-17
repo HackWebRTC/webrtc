@@ -394,29 +394,23 @@ public:
 };
 
 // Video Content Metrics
-struct VideoContentMetrics
-{
-    VideoContentMetrics(): motionMagnitudeNZ(0), sizeZeroMotion(0), spatialPredErr(0),
-            spatialPredErrH(0), spatialPredErrV(0), motionPredErr(0),
-            motionHorizontalness(0), motionClusterDistortion(0),
-            nativeWidth(0), nativeHeight(0), contentChange(false) {   }
-    void Reset(){ motionMagnitudeNZ = 0; sizeZeroMotion = 0; spatialPredErr = 0;
-            spatialPredErrH = 0; spatialPredErrV = 0; motionPredErr = 0;
-            motionHorizontalness = 0; motionClusterDistortion = 0;
-            nativeWidth = 0; nativeHeight = 0; contentChange = false; }
-
-    float            motionMagnitudeNZ;
-    float            sizeZeroMotion;
-    float            spatialPredErr;
-    float            spatialPredErrH;
-    float            spatialPredErrV;
-    float            motionPredErr;
-    float            motionHorizontalness;
-    float            motionClusterDistortion;
-    WebRtc_UWord32   nativeWidth;
-    WebRtc_UWord32   nativeHeight;
-    WebRtc_UWord32   nativeFrameRate;
-    bool             contentChange;
+struct VideoContentMetrics {
+  VideoContentMetrics()
+      : motionMagnitudeNZ(0.0f),
+        spatialPredErr(0.0f),
+        spatialPredErrH(0.0f),
+        spatialPredErrV(0.0f) {
+  }
+  void Reset() {
+    motionMagnitudeNZ = 0.0f;
+    spatialPredErr = 0.0f;
+    spatialPredErrH = 0.0f;
+    spatialPredErrV = 0.0f;
+  }
+  float  motionMagnitudeNZ;
+  float  spatialPredErr;
+  float  spatialPredErrH;
+  float  spatialPredErrV;
 };
 
 /*************************************************
