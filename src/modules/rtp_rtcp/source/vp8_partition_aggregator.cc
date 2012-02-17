@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -259,7 +259,8 @@ int Vp8PartitionAggregator::CalcNumberOfFragments(int large_partition_size,
     }
   }
   assert(num_fragments > 0);
-  assert(large_partition_size / num_fragments + 1 <= max_payload_size);
+  // TODO(mflodman) Assert disabled since it's falsely triggered, see issue 293.
+  //assert(large_partition_size / num_fragments + 1 <= max_payload_size);
   return num_fragments;
 }
 
