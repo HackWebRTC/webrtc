@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -19,17 +19,17 @@
 
 #include "gflags/gflags.h"
 #include "gtest/gtest.h"
+#include "legacy_fixture.h"
 #include "testsupport/metrics/video_metrics.h"
 #include "vie_autotest.h"
 #include "vie_autotest_window_manager_interface.h"
-#include "vie_integration_test_base.h"
 #include "vie_to_file_renderer.h"
 #include "vie_window_creator.h"
 #include "testsupport/metrics/video_metrics.h"
 
 namespace {
 
-class ViEStandardIntegrationTest: public ViEIntegrationTest {
+class ViEStandardIntegrationTest : public LegacyFixture {
 };
 
 TEST_F(ViEStandardIntegrationTest, RunsBaseTestWithoutErrors)  {

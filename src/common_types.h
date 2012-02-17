@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -149,32 +149,61 @@ enum SecurityLevels
     kEncryptionAndAuthentication     = 3
 };
 
+// Interface for encrypting and decrypting regular data and rtp/rtcp packets.
+// Implement this interface if you wish to provide an encryption scheme to
+// the voice or video engines.
 class Encryption
 {
 public:
+    // Encrypt the given data.
+    //
+    // Args:
+    //   channel: The channel to encrypt data for.
+    //   in_data: The data to encrypt. This data is bytes_in bytes long.
+    //   out_data: The buffer to write the encrypted data to. You may write more
+    //       bytes of encrypted data than what you got as input, up to a maximum
+    //       of webrtc::kViEMaxMtu if you are encrypting in the video engine, or
+    //       webrtc::kVoiceEngineMaxIpPacketSizeBytes for the voice engine.
+    //   bytes_in: The number of bytes in the input buffer.
+    //   bytes_out: The number of bytes written in out_data.
     virtual void encrypt(
-        int channel_no,
+        int channel,
         unsigned char* in_data,
         unsigned char* out_data,
         int bytes_in,
         int* bytes_out) = 0;
 
+    // Decrypts the given data. This should reverse the effects of encrypt().
+    //
+    // Args:
+    //   channel_no: The channel to decrypt data for.
+    //   in_data: The data to decrypt. This data is bytes_in bytes long.
+    //   out_data: The buffer to write the decrypted data to. You may write more
+    //       bytes of decrypted data than what you got as input, up to a maximum
+    //       of webrtc::kViEMaxMtu if you are encrypting in the video engine, or
+    //       webrtc::kVoiceEngineMaxIpPacketSizeBytes for the voice engine.
+    //   bytes_in: The number of bytes in the input buffer.
+    //   bytes_out: The number of bytes written in out_data.
     virtual void decrypt(
-        int channel_no,
+        int channel,
         unsigned char* in_data,
         unsigned char* out_data,
         int bytes_in,
         int* bytes_out) = 0;
 
+    // Encrypts a RTCP packet. Otherwise, this method has the same contract as
+    // encrypt().
     virtual void encrypt_rtcp(
-        int channel_no,
+        int channel,
         unsigned char* in_data,
         unsigned char* out_data,
         int bytes_in,
         int* bytes_out) = 0;
 
+    // Decrypts a RTCP packet. Otherwise, this method has the same contract as
+    // decrypt().
     virtual void decrypt_rtcp(
-        int channel_no,
+        int channel,
         unsigned char* in_data,
         unsigned char* out_data,
         int bytes_in,
@@ -507,10 +536,9 @@ union VideoCodecUnion
     VideoCodecGeneric   Generic;
 };
 
-/*
-*  Simulcast is when the same stream is encoded multiple times with different
-*  settings such as resolution.  
-*/
+
+// Simulcast is when the same stream is encoded multiple times with different
+// settings such as resolution.
 struct SimulcastStream
 {
     unsigned short      width;

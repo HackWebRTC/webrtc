@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -39,7 +39,9 @@
 #include <string>
 #endif
 
+class TbCaptureDevice;
 class TbInterfaces;
+class TbVideoChannel;
 class ViEToFileRenderer;
 
 // This class provides a bunch of methods, implemented across several .cc
@@ -58,7 +60,8 @@ public:
     int ViESimulcastCall();
     int ViECustomCall();
 
-    // All following functions are meant to run in a googletest harness.
+    // All functions except the three above are meant to run in a
+    // googletest harness.
     void ViEStandardTest();
     void ViEExtendedTest();
     void ViEAPITest();
@@ -110,9 +113,18 @@ public:
     void ViERtpRtcpExtendedTest();
     void ViERtpRtcpAPITest();
 
+    // vie_autotest_rtp_fuzz.cc
+    void ViERtpTryInjectingRandomPacketsIntoRtpStream(long rand_seed);
+
 private:
     void PrintAudioCodec(const webrtc::CodecInst audioCodec);
     void PrintVideoCodec(const webrtc::VideoCodec videoCodec);
+
+    // Sets up rendering so the capture device output goes to window 1 and
+    // the video engine output goes to window 2.
+    void RenderCaptureDeviceAndOutputStream(TbInterfaces* video_engine,
+                                            TbVideoChannel* video_channel,
+                                            TbCaptureDevice* capture_device);
 
     void* _window1;
     void* _window2;

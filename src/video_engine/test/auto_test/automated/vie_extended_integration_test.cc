@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -13,12 +13,12 @@
  */
 
 #include "gtest/gtest.h"
-#include "vie_integration_test_base.h"
+#include "legacy_fixture.h"
 #include "vie_autotest.h"
 
 namespace {
 
-class ViEExtendedIntegrationTest: public ViEIntegrationTest {
+class ViEExtendedIntegrationTest : public LegacyFixture {
 };
 
 TEST_F(ViEExtendedIntegrationTest, RunsBaseTestWithoutErrors) {

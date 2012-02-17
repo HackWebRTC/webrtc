@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -93,12 +93,7 @@ void ViEAutoTest::ViEEncryptionStandardTest()
 
     tbChannel.StartSend();
 
-    EXPECT_EQ(0, ViE.render->AddRenderer(
-        tbCapture.captureId, _window1, 0, 0.0, 0.0, 1.0, 1.0));
-    EXPECT_EQ(0, ViE.render->StartRender(tbCapture.captureId));
-    EXPECT_EQ(0, ViE.render->AddRenderer(
-        tbChannel.videoChannel, _window2, 1, 0.0, 0.0, 1.0, 1.0));
-    EXPECT_EQ(0, ViE.render->StartRender(tbChannel.videoChannel));
+    RenderCaptureDeviceAndOutputStream(&ViE, &tbChannel, &tbCapture);
 
 #ifdef WEBRTC_SRTP
     //***************************************************************
@@ -190,12 +185,7 @@ void ViEAutoTest::ViEEncryptionExtendedTest()
     tbChannel.StartReceive();
     tbChannel.StartSend();
 
-    EXPECT_EQ(0, ViE.render->AddRenderer(
-        tbCapture.captureId, _window1, 0, 0.0, 0.0, 1.0, 1.0));
-    EXPECT_EQ(0, ViE.render->StartRender(tbCapture.captureId));
-    EXPECT_EQ(0, ViE.render->AddRenderer(
-        tbChannel.videoChannel, _window2, 1, 0.0, 0.0, 1.0, 1.0));
-    EXPECT_EQ(0, ViE.render->StartRender(tbChannel.videoChannel));
+    RenderCaptureDeviceAndOutputStream(&ViE, &tbChannel, &tbCapture);
 
     //***************************************************************
     //	Engine ready. Begin testing class

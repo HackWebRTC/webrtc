@@ -17,6 +17,10 @@
 #include <stdio.h>
 
 #include "engine_configurations.h"
+#include "general_primitives.h"
+#include "tb_interfaces.h"
+#include "tb_video_channel.h"
+#include "tb_capture_device.h"
 #include "testsupport/fileutils.h"
 #include "video_render.h"
 #include "vie_autotest_defines.h"
@@ -142,4 +146,14 @@ void ViEAutoTest::PrintAudioCodec(const webrtc::CodecInst audioCodec)
     ViETest::Log("\t: %u", audioCodec.pltype);
     ViETest::Log("\t: %u", audioCodec.rate);
     ViETest::Log("");
+}
+
+void ViEAutoTest::RenderCaptureDeviceAndOutputStream(
+    TbInterfaces* video_engine,
+    TbVideoChannel* video_channel,
+    TbCaptureDevice* capture_device) {
+  RenderInWindow(
+      video_engine->render, capture_device->captureId, _window1, 0);
+  RenderInWindow(
+      video_engine->render, video_channel->videoChannel, _window1, 1);
 }

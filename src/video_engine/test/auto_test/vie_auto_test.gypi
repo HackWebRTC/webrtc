@@ -59,10 +59,12 @@
         'helpers/vie_window_creator.h',
 
         # New, fully automated tests
+        'automated/legacy_fixture.cc',
+        'automated/two_windows_fixture.cc',
         'automated/vie_api_integration_test.cc',
         'automated/vie_extended_integration_test.cc',
-        'automated/vie_integration_test_base.cc',
         'automated/vie_integration_test_base.h',
+        'automated/vie_rtp_fuzz_test.cc',
         'automated/vie_standard_integration_test.cc',
         'automated/vie_video_verification_test.cc',
 

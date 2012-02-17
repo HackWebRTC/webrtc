@@ -14,7 +14,6 @@
 #include "gtest/gtest.h"
 #include "testsupport/fileutils.h"
 #include "testsupport/metrics/video_metrics.h"
-#include "video_engine/test/auto_test/automated/vie_integration_test_base.h"
 #include "video_engine/test/auto_test/helpers/vie_to_file_renderer.h"
 #include "video_engine/test/auto_test/interface/vie_autotest.h"
 #include "video_engine/test/auto_test/interface/vie_file_based_comparison_tests.h"
