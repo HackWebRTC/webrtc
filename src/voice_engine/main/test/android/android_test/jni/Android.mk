@@ -1,4 +1,4 @@
-# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+# Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
@@ -15,22 +15,22 @@ MY_WEBRTC_SRC_PATH := ../../../../../../..
 include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/common_audio/resampler/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/common_audio/signal_processing/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/common_audio/vad/Android.mk
-include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/modules/audio_coding/NetEQ/main/source/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/modules/audio_coding/neteq/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/modules/audio_coding/codecs/cng/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/modules/audio_coding/codecs/g711/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/modules/audio_coding/codecs/g722/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/modules/audio_coding/codecs/pcm16b/Android.mk
-include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/modules/audio_coding/codecs/iLBC/main/source/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/modules/audio_coding/codecs/ilbc/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/modules/audio_coding/codecs/iSAC/fix/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/modules/audio_coding/codecs/iSAC/main/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/modules/audio_coding/main/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/modules/audio_conference_mixer/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/modules/audio_device/main/source/Android.mk
-include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/modules/audio_processing/aec/main/source/Android.mk
-include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/modules/audio_processing/aecm/main/source/Android.mk
-include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/modules/audio_processing/agc/main/source/Android.mk
-include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/modules/audio_processing/main/Android.mk
-include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/modules/audio_processing/ns/main/source/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/modules/audio_processing/aec/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/modules/audio_processing/aecm/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/modules/audio_processing/agc/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/modules/audio_processing/Android.mk
+include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/modules/audio_processing/ns/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/modules/audio_processing/utility/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/modules/media_file/source/Android.mk
 include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/modules/rtp_rtcp/source/Android.mk
@@ -61,8 +61,11 @@ LOCAL_WHOLE_STATIC_LIBRARIES := \
 
 LOCAL_SHARED_LIBRARIES := \
     libcutils \
-    libdl \
-    libstlport 
+    libstlport_shared
+
+LOCAL_LDLIBS := \
+    -lgcc \
+    -llog
 
 LOCAL_PRELINK_MODULE := false
 
@@ -75,7 +78,7 @@ LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
 LOCAL_ARM_MODE := arm
-LOCAL_MODULE := libwebrtc-voice-demo-jni
+LOCAL_MODULE := libwebrtc-voice-jni
 LOCAL_MODULE_TAGS := optional
 
 LOCAL_WHOLE_STATIC_LIBRARIES := \
@@ -99,16 +102,21 @@ LOCAL_WHOLE_STATIC_LIBRARIES := \
 
 LOCAL_SHARED_LIBRARIES := \
     libcutils \
-    libdl \
-    libstlport \
-    libjpeg \
-    libGLESv2 \
-    libOpenSLES \
+    libstlport_shared \
     libwebrtc_audio_preprocessing
+
+LOCAL_LDLIBS := \
+    -lgcc \
+    -llog \
+    -lOpenSLES
 
 LOCAL_PRELINK_MODULE := false
 
 include $(BUILD_SHARED_LIBRARY)
+
+###
+
+include $(MY_WEBRTC_ROOT_PATH)/$(MY_WEBRTC_SRC_PATH)/src/voice_engine/main/test/cmd_test/Android.mk
 
 else
 

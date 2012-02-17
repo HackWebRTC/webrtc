@@ -1,4 +1,4 @@
-#  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+#  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
 #
 #  Use of this source code is governed by a BSD-style license
 #  that can be found in the LICENSE file in the root of the source
@@ -34,8 +34,6 @@ LOCAL_C_INCLUDES := \
 
 LOCAL_SHARED_LIBRARIES := \
     libutils \
-    libstlport \
-    libwebrtc \
     libmedia \
     libcamera_client \
     libgui \
@@ -48,8 +46,15 @@ LOCAL_SHARED_LIBRARIES := \
 LOCAL_MODULE:= webrtc_voe_cmd
 
 ifdef NDK_ROOT
+LOCAL_SHARED_LIBRARIES += \
+    libstlport_shared \
+    libwebrtc-voice-jni \
+    libwebrtc_audio_preprocessing
 include $(BUILD_EXECUTABLE)
 else
+LOCAL_SHARED_LIBRARIES += \
+    libstlport \
+    libwebrtc
 include external/stlport/libstlport.mk
 include $(BUILD_NATIVE_TEST)
 endif
