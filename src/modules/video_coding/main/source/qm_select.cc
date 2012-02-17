@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -28,6 +28,7 @@ VCMQmMethod::VCMQmMethod()
       _height(0),
       _nativeWidth(0),
       _nativeHeight(0),
+      _nativeFrameRate(0),
       _init(false) {
   ResetQM();
 }
@@ -42,6 +43,8 @@ VCMQmMethod::ResetQM()
 {
     _motion.Reset();
     _spatial.Reset();
+    _coherence.Reset();
+    _stationaryMotion = 0;
     _aspectRatio = 1;
     _imageType = 2;
     return;
@@ -75,6 +78,40 @@ VCMQmMethod::MotionNFD()
 }
 
 void
+VCMQmMethod::Motion()
+{
+
+    float sizeZeroMotion = _contentMetrics->sizeZeroMotion;
+    float motionMagNZ = _contentMetrics->motionMagnitudeNZ;
+
+    // Take product of size and magnitude with equal weight
+    _motion.value = (1.0f - sizeZeroMotion) * motionMagNZ;
+
+    // Stabilize: motionMagNZ could be large when only a
+    // few motion blocks are non-zero
+    _stationaryMotion = false;
+    if (sizeZeroMotion > HIGH_ZERO_MOTION_SIZE)
+    {
+        _motion.value = 0.0f;
+        _stationaryMotion = true;
+    }
+    // Determine motion level
+    if (_motion.value < LOW_MOTION)
+    {
+        _motion.level = kLow;
+    }
+    else if (_motion.value > HIGH_MOTION)
+    {
+        _motion.level  = kHigh;
+    }
+    else
+    {
+        _motion.level = kDefault;
+    }
+}
+
+
+void
 VCMQmMethod::Spatial()
 {
     float spatialErr =  _contentMetrics->spatialPredErr;
@@ -102,6 +139,31 @@ VCMQmMethod::Spatial()
     {
          _spatial.level = kDefault;
     }
+}
+
+void
+VCMQmMethod::Coherence()
+{
+    float horizNZ  = _contentMetrics->motionHorizontalness;
+    float distortionNZ  = _contentMetrics->motionClusterDistortion;
+
+    // Coherence measure: combine horizontalness with cluster distortion
+    _coherence.value = COH_MAX;
+    if (distortionNZ > 0.)
+    {
+        _coherence.value = horizNZ / distortionNZ;
+    }
+    _coherence.value = VCM_MIN(COH_MAX, _coherence.value);
+
+    if (_coherence.value < COHERENCE_THR)
+    {
+        _coherence.level = kLow;
+    }
+    else
+    {
+        _coherence.level = kHigh;
+    }
+
 }
 
 WebRtc_Word8
@@ -165,6 +227,7 @@ VCMQmResolution::ResetRates()
     _sumEncodedBytes = 0;
     _sumTargetRate = 0.0f;
     _sumIncomingFrameRate = 0.0f;
+    _sumFrameRateMM = 0.0f;
     _sumSeqRateMM = 0.0f;
     _sumPacketLoss = 0.0f;
     _frameCnt = 0;
@@ -190,32 +253,48 @@ VCMQmResolution::Reset()
 }
 
 // Initialize rate control quantities after reset of encoder
-WebRtc_Word32 VCMQmResolution::Initialize(float bitRate,
-                                          float userFrameRate,
-                                          WebRtc_UWord32 width,
-                                          WebRtc_UWord32 height) {
-  if (userFrameRate == 0.0f || width == 0 || height == 0) {
-    return VCM_PARAMETER_ERROR;
-  }
-  _targetBitRate = bitRate;
-  _userFrameRate = userFrameRate;
-  // Native width and height.
-  _nativeWidth = width;
-  _nativeHeight = height;
-  UpdateCodecFrameSize(width, height);
-  // Initial buffer level.
-  _bufferLevel = INIT_BUFFER_LEVEL * _targetBitRate;
-  // Per-frame bandwidth.
-  _perFrameBandwidth = _targetBitRate / _userFrameRate;
-  _init  = true;
-  return VCM_OK;
-}
+WebRtc_Word32
+VCMQmResolution::Initialize(float bitRate, float userFrameRate,
+                        WebRtc_UWord32 width, WebRtc_UWord32 height)
+{
+    if (userFrameRate == 0.0f || width == 0 || height == 0)
+    {
+        return VCM_PARAMETER_ERROR;
+    }
+    _targetBitRate = bitRate;
+    _userFrameRate = userFrameRate;
 
-void VCMQmResolution::UpdateCodecFrameSize(uint32_t width, uint32_t height) {
-  _width = width;
-  _height = height;
-  // Set the imageType for the encoder width/height.
-  _imageType = GetImageType(_width, _height);
+    // Encoder width and height
+    _width = width;
+    _height = height;
+
+    // Aspect ratio: used for selection of 1x2,2x1,2x2
+    _aspectRatio = static_cast<float>(_width) / static_cast<float>(_height);
+
+    // Set the imageType for the encoder width/height.
+    _imageType = GetImageType(_width, _height);
+
+    // Initial buffer level
+    _bufferLevel = INIT_BUFFER_LEVEL * _targetBitRate;
+
+    // Per-frame bandwidth
+    if ( _incomingFrameRate == 0 )
+    {
+        _perFrameBandwidth = _targetBitRate / _userFrameRate;
+        _incomingFrameRate = _userFrameRate;
+    }
+    else
+    {
+    // Take average: this is due to delay in update of new encoder frame rate:
+    // userFrameRate is the new one,
+    // incomingFrameRate is the old one (based on previous ~ 1sec/RTCP report)
+        _perFrameBandwidth = 0.5 *( _targetBitRate / _userFrameRate +
+            _targetBitRate / _incomingFrameRate );
+    }
+    _init  = true;
+
+
+    return VCM_OK;
 }
 
 // Update after every encoded frame
@@ -234,15 +313,34 @@ VCMQmResolution::UpdateEncodedSize(WebRtc_Word64 encodedSize,
     // per_frame_BW is updated when encoder is updated, every RTCP reports
     _bufferLevel += _perFrameBandwidth - encodedSizeKbits;
 
+    // Mismatch here is based on difference of actual encoded frame size and
+    // per-frame bandwidth, for delta frames
+    // This is a much stronger condition on rate mismatch than sumSeqRateMM
+    // Note: not used in this version
+    /*
+    const bool deltaFrame = (encodedFrameType != kVideoFrameKey &&
+                             encodedFrameType != kVideoFrameGolden);
+
+    // Sum the frame mismatch:
+    if (deltaFrame)
+    {
+         _frameCntDelta++;
+         if (encodedSizeKbits > 0)
+            _sumFrameRateMM +=
+            (float) (fabs(encodedSizeKbits - _perFrameBandwidth) /
+            encodedSizeKbits);
+    }
+    */
+
     // Counter for occurrences of low buffer level
     if (_bufferLevel <= PERC_BUFFER_THR * OPT_BUFFER_LEVEL * _targetBitRate)
     {
         _lowBufferCnt++;
     }
+
 }
 
 // Update various quantities after SetTargetRates in MediaOpt
-// TODO (marpan): use sent_video_rate_bps from mediaOPt for avgSentBitRate.
 void
 VCMQmResolution::UpdateRates(float targetBitRate, float avgSentBitRate,
                          float incomingFrameRate, WebRtc_UWord8 packetLoss)
@@ -284,11 +382,11 @@ VCMQmResolution::UpdateRates(float targetBitRate, float avgSentBitRate,
     {
         _perFrameBandwidth = _targetBitRate / _incomingFrameRate;
     }
+
 }
 
 // Select the resolution factors: frame size and frame rate change: (QM modes)
 // Selection is for going back up in resolution, or going down in.
-// TODO (marpan): break up into small routines/clean-up and update.
 WebRtc_Word32
 VCMQmResolution::SelectResolution(VCMResolutionScale** qm)
 {
@@ -308,6 +406,11 @@ VCMQmResolution::SelectResolution(VCMResolutionScale** qm)
     _qm->spatialHeightFact = 1;
     _qm->temporalFact = 1;
 
+    // Update native values
+    _nativeWidth = _contentMetrics->nativeWidth;
+    _nativeHeight = _contentMetrics->nativeHeight;
+    _nativeFrameRate = _contentMetrics->nativeFrameRate;
+
     float avgTargetRate = 0.0f;
     float avgIncomingFrameRate = 0.0f;
     float ratioBufferLow = 0.0f;
@@ -321,6 +424,8 @@ VCMQmResolution::SelectResolution(VCMResolutionScale** qm)
     {
         // Use seq-rate mismatch for now
         rateMisMatch = (float)_sumSeqRateMM / (float)_updateRateCnt;
+        //rateMisMatch = (float)_sumFrameRateMM / (float)_frameCntDelta;
+
         // Average target and incoming frame rates
         avgTargetRate = (float)_sumTargetRate / (float)_updateRateCnt;
         avgIncomingFrameRate = (float)_sumIncomingFrameRate /
@@ -399,7 +504,7 @@ VCMQmResolution::SelectResolution(VCMResolutionScale** qm)
     if (_stateDecFactorSpatial > 1)
     {
         // Check conditions on buffer level and rate_mismatch
-        if ((avgTargetRate > estimatedTransRateUpS) &&
+        if ( (avgTargetRate > estimatedTransRateUpS) &&
              (ratioBufferLow < MAX_BUFFER_LOW) && (rateMisMatch < MAX_RATE_MM))
         {
             // width/height scaled back up:
@@ -459,6 +564,7 @@ VCMQmResolution::SelectResolution(VCMResolutionScale** qm)
     {
         estimatedTransRateDown = LOSS_RATE_FAC * estimatedTransRateDown;
     }
+
     if ((avgTargetRate < estimatedTransRateDown ) ||
         (ratioBufferLow > MAX_BUFFER_LOW)
         || (rateMisMatch > MAX_RATE_MM))
@@ -551,13 +657,14 @@ VCMQmResolution::SelectResolution(VCMResolutionScale** qm)
 
     *qm = _qm;
     return VCM_OK;
+
+
 }
 
 WebRtc_Word32
 VCMQmResolution::SelectSpatialDirectionMode(float transRate)
 {
     // Default is 1x2 (H)
-    _aspectRatio = static_cast<float>(_width) / static_cast<float>(_height);
 
     // For bit rates well below transitional rate, we select 2x2
     if ( _targetBitRate < transRate * RATE_RED_SPATIAL_2X2 )
@@ -568,6 +675,7 @@ VCMQmResolution::SelectSpatialDirectionMode(float transRate)
     }
 
     // Otherwise check prediction errors, aspect ratio, horizontalness
+
     float spatialErr = _contentMetrics->spatialPredErr;
     float spatialErrH = _contentMetrics->spatialPredErrH;
     float spatialErrV = _contentMetrics->spatialPredErrV;
@@ -599,6 +707,7 @@ VCMQmResolution::SelectSpatialDirectionMode(float transRate)
         _qm->spatialHeightFact = 2;
          return VCM_OK;
     }
+
     return VCM_OK;
 }
 
@@ -655,9 +764,11 @@ VCMQmRobustness::AdjustFecFactor(WebRtc_UWord8 codeRateDelta, float totalRate,
     _prevTotalRate = totalRate;
     _prevRttTime = rttTime;
     _prevPacketLoss = packetLoss;
+
     _prevCodeRateDelta = codeRateDelta;
 
     return adjustFec;
+
 }
 
 // Set the UEP (unequal-protection) on/off for the FEC
@@ -673,6 +784,8 @@ VCMQmRobustness::SetUepProtection(WebRtc_UWord8 codeRateDelta, float totalRate,
         return uepProtection;
     }
 
+
     return uepProtection;
 }
+
 } // end of namespace

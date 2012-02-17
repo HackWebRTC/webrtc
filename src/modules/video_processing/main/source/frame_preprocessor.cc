@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -16,6 +16,8 @@ namespace webrtc {
 VPMFramePreprocessor::VPMFramePreprocessor():
 _id(0),
 _contentMetrics(NULL),
+_nativeHeight(0),
+_nativeWidth(0),
 _maxFrameRate(0),
 _resampledFrame(),
 _enableCA(false)
@@ -44,6 +46,8 @@ VPMFramePreprocessor::ChangeUniqueId(const WebRtc_Word32 id)
 void 
 VPMFramePreprocessor::Reset()
 {
+    _nativeWidth = 0;
+    _nativeHeight = 0;
     _ca->Release();
     _vd->Reset();
     _contentMetrics = NULL;
@@ -168,6 +172,11 @@ VPMFramePreprocessor::PreprocessFrame(const VideoFrame* frame, VideoFrame** proc
         } else {
           _contentMetrics = _ca->ComputeContentMetrics(&_resampledFrame);
         }
+        // Update native values:
+        _contentMetrics->nativeHeight = frame->Height();
+        _contentMetrics->nativeWidth = frame->Width();
+        // Max value as set by user
+        _contentMetrics->nativeFrameRate = _maxFrameRate;
     }
     return VPM_OK;
 }

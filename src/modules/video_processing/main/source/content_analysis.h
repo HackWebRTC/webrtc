@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -78,6 +78,11 @@ private:
     float                  _spatialPredErr;     // spatial class
     float                  _spatialPredErrH;    // spatial class
     float                  _spatialPredErrV;    // spatial class
+    float                  _sizeZeroMotion;     // motion class
+    float                  _motionPredErr;      // complexity class:
+    float                  _motionHorizontalness;     // coherence class
+    float                  _motionClusterDistortion;  // coherence class
+
     bool                   _firstFrame;
     bool                   _CAInit;
 

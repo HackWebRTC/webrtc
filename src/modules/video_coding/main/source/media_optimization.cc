@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -24,8 +24,6 @@ _maxBitRate(0),
 _sendCodecType(kVideoCodecUnknown),
 _codecWidth(0),
 _codecHeight(0),
-_initCodecWidth(0),
-_initCodecHeight(0),
 _userFrameRate(0),
 _packetLossEnc(0),
 _fractionLost(0),
@@ -66,7 +64,7 @@ WebRtc_Word32
 VCMMediaOptimization::Reset()
 {
     memset(_incomingFrameTimes, -1, sizeof(_incomingFrameTimes));
-    _incomingFrameRate = 0.0;
+    InputFrameRate(); // Resets _incomingFrameRate
     _frameDropper->Reset();
     _lossProtLogic->Reset(_clock->MillisecondTimestamp());
     _frameDropper->SetRates(0, 0);
@@ -284,8 +282,6 @@ VCMMediaOptimization::SetEncodingData(VideoCodecType sendCodecType,
     _userFrameRate = static_cast<float>(frameRate);
     _codecWidth = width;
     _codecHeight = height;
-    _initCodecWidth = width;
-    _initCodecHeight = height;
     _numLayers = (numLayers <= 1) ? 1 : numLayers;  // Can also be zero.
     WebRtc_Word32 ret = VCM_OK;
     ret = _qmResolution->Initialize((float)_targetBitRate, _userFrameRate,
@@ -579,50 +575,43 @@ VCMMediaOptimization::QMUpdate(VCMResolutionScale* qm)
     // Check for no change
     if (qm->spatialHeightFact == 1 &&
         qm->spatialWidthFact == 1 &&
-        qm->temporalFact == 1) {
+        qm->temporalFact == 1)
+    {
         return false;
     }
+
+    // Content metrics hold native values
+    VideoContentMetrics* cm = _content->LongTermAvgData();
 
     // Temporal
     WebRtc_UWord32 frameRate = static_cast<WebRtc_UWord32>
                                (_incomingFrameRate + 0.5f);
 
     // Check if go back up in temporal resolution
-    if (qm->temporalFact == 0) {
-      // Currently only allow for 1/2 frame rate reduction per action.
-      // TODO (marpan): allow for 2/3 reduction.
-      frameRate = (WebRtc_UWord32) 2 * _incomingFrameRate;
+    if (qm->temporalFact == 0)
+    {
+        frameRate = (WebRtc_UWord32) 2 * _incomingFrameRate;
     }
     // go down in temporal resolution
-    else {
-      frameRate = (WebRtc_UWord32)(_incomingFrameRate / qm->temporalFact + 1);
-    }
-    // Reset _incomingFrameRate if temporal action was selected.
-    if  (qm->temporalFact != 1) {
-      memset(_incomingFrameTimes, -1, sizeof(_incomingFrameTimes));
-      _incomingFrameRate = frameRate;
+    else
+    {
+        frameRate = (WebRtc_UWord32)(_incomingFrameRate / qm->temporalFact + 1);
     }
 
     // Spatial
     WebRtc_UWord32 height = _codecHeight;
     WebRtc_UWord32 width = _codecWidth;
-    // Check if go back up in spatial resolution, and update frame sizes.
-    // Currently only allow for 2x2 spatial down-sampling.
-    // TODO (marpan): allow for 1x2, 2x1, and 4/3x4/3 (or 3/2x3/2).
-    if (qm->spatialHeightFact == 0 && qm->spatialWidthFact == 0) {
-      width = _codecWidth * 2;
-      height = _codecHeight * 2;
-    } else {
-      width = _codecWidth / qm->spatialWidthFact;
-      height = _codecHeight / qm->spatialHeightFact;
+    // Check if go back up in spatial resolution
+    if (qm->spatialHeightFact == 0 && qm->spatialWidthFact == 0)
+    {
+       height = cm->nativeHeight;
+       width = cm->nativeWidth;
     }
-    _codecWidth = width;
-    _codecHeight = height;
-
-    // New frame sizes should never exceed the original sizes
-    // from SetEncodingData().
-    assert(_codecWidth <= _initCodecWidth);
-    assert(_codecHeight <= _initCodecHeight);
+    else
+    {
+        height = _codecHeight / qm->spatialHeightFact;
+        width = _codecWidth / qm->spatialWidthFact;
+    }
 
     WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, _id,
                "Quality Mode Update: W = %d, H = %d, FR = %f",
@@ -631,11 +620,10 @@ VCMMediaOptimization::QMUpdate(VCMResolutionScale* qm)
     // Update VPM with new target frame rate and size
     _videoQMSettingsCallback->SetVideoQMSettings(frameRate, width, height);
 
-    _content->UpdateFrameRate(frameRate);
-    _qmResolution->UpdateCodecFrameSize(width, height);
-
     return true;
 }
+
+
 
 void
 VCMMediaOptimization::UpdateIncomingFrameRate()
@@ -682,6 +670,10 @@ VCMMediaOptimization::ProcessIncomingFrameRate(WebRtc_Word64 now)
         {
             _incomingFrameRate = nrOfFrames * 1000.0f / static_cast<float>(diff);
         }
+    }
+    else
+    {
+        _incomingFrameRate = static_cast<float>(nrOfFrames);
     }
 }
 
