@@ -282,6 +282,7 @@ class ACMCodecDB {
   static bool IsAMRwbRateValid(int rate);
   static bool IsG7291RateValid(int rate);
   static bool IsSpeexRateValid(int rate);
+  static bool IsCeltRateValid(int rate);
 
   // Check if the payload type is valid, meaning that it is in the valid range
   // of 0 to 127.

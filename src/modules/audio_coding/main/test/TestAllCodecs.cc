@@ -660,6 +660,10 @@ void TestAllCodecs::Perform()
     char codecCELT_32[] = "CELT";
     RegisterSendCodec('A', codecCELT_32, 32000, 48000, 320, 0);
     Run(_channelA2B);
+    RegisterSendCodec('A', codecCELT_32, 32000, 64000, 320, 0);
+    Run(_channelA2B);
+    RegisterSendCodec('A', codecCELT_32, 32000, 128000, 320, 0);
+    Run(_channelA2B);
     _outFileB.Close();
 #endif
     if(_testMode != 0) {
@@ -669,8 +673,6 @@ void TestAllCodecs::Perform()
     }
 
     /* Print out all codecs that were not tested in the run */
-
-
     if(_testMode != 0) {
         printf("The following codecs was not included in the test:\n");
 #ifndef WEBRTC_CODEC_GSMAMR

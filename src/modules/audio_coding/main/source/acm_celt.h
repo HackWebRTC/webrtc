@@ -62,7 +62,7 @@ class ACMCELT : public ACMGenericCodec {
   CELT_encinst_t_* enc_inst_ptr_;
   CELT_decinst_t_* dec_inst_ptr_;
   uint16_t sampling_freq_;
-  uint16_t bitrate_;
+  int32_t bitrate_;
   uint16_t channels_;
   uint16_t dec_channels_;
 };

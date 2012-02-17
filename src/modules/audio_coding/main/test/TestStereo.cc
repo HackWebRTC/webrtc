@@ -434,6 +434,10 @@ void TestStereo::Perform()
     char codecCELT[] = "CELT";
     RegisterSendCodec('A', codecCELT, 32000, 48000, 320, codec_channels);
     Run(_channelA2B, audio_channels, codec_channels);
+    RegisterSendCodec('A', codecCELT, 32000, 64000, 320, codec_channels);
+    Run(_channelA2B, audio_channels, codec_channels);
+    RegisterSendCodec('A', codecCELT, 32000, 128000, 320, codec_channels);
+    Run(_channelA2B, audio_channels, codec_channels);
     _acmA->SetVAD(true, true, VADNormal);
     RegisterSendCodec('A', codecCELT, 32000, 48000, 320, codec_channels);
     Run(_channelA2B, audio_channels, codec_channels);
@@ -516,7 +520,7 @@ void TestStereo::Perform()
   _testCntr++;
   _channelA2B->SetCodecType(4);
   OpenOutFile(_testCntr);
-  RegisterSendCodec('A', codecCELT, 32000, 48000, 320, codec_channels);
+  RegisterSendCodec('A', codecCELT, 32000, 64000, 320, codec_channels);
   Run(_channelA2B, audio_channels, codec_channels);
   _outFileB.Close();
 #endif
@@ -607,7 +611,7 @@ void TestStereo::Perform()
   }
   _testCntr++;
   OpenOutFile(_testCntr);
-  RegisterSendCodec('A', codecCELT, 32000, 48000, 320, codec_channels);
+  RegisterSendCodec('A', codecCELT, 32000, 64000, 320, codec_channels);
   Run(_channelA2B, audio_channels, codec_channels);
   _outFileB.Close();
 #endif

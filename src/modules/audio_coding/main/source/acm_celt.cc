@@ -109,7 +109,7 @@ ACMCELT::ACMCELT(int16_t codecID)
     : enc_inst_ptr_(NULL),
       dec_inst_ptr_(NULL),
       sampling_freq_(32000),  // Default sampling frequency.
-      bitrate_(48000),  // Default rate.
+      bitrate_(64000),  // Default rate.
       channels_(1),  // Default send mono.
       dec_channels_(1) {  // Default receive mono.
   // TODO(tlegrand): remove later when ACMGenericCodec has a new constructor.
@@ -162,7 +162,7 @@ int16_t ACMCELT::DecodeSafe(uint8_t* /* bitStream */,
 }
 
 int16_t ACMCELT::InternalInitEncoder(WebRtcACMCodecParams* codecParams) {
-  // Set bitrate and check that it is withing the valid range.
+  // Set bitrate and check that it is within the valid range.
   int16_t status = SetBitRateSafe((codecParams->codecInstant).rate);
   if (status < 0) {
     return -1;
@@ -302,7 +302,7 @@ bool ACMCELT::IsTrueStereoCodec() {
 
 int16_t ACMCELT::SetBitRateSafe(const int32_t rate) {
   // Check that rate is in the valid range.
-  if ((rate >= 48000) && (rate <= 96000)) {
+  if ((rate >= 48000) && (rate <= 128000)) {
     bitrate_ = rate;
     return 0;
   } else {
