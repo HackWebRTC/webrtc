@@ -117,7 +117,7 @@ const int kDynamicPayloadtypes[ACMCodecDB::kMaxNumCodecs] = {
      defined(WEBRTC_CODEC_AMR) || defined(WEBRTC_CODEC_AMRWB) || \
      defined(WEBRTC_CODEC_CELT) || defined(WEBRTC_CODEC_G729_1) || \
      defined(WEBRTC_CODEC_SPEEX) || defined(WEBRTC_CODEC_G722_1) || \
-     defined(WEBRTC_CODEC_G722_1C) || defined(WEBRTC_CODEC_CELT))
+     defined(WEBRTC_CODEC_G722_1C))
 static int count_database = 0;
 #endif
 
@@ -146,7 +146,7 @@ const CodecInst ACMCodecDB::database_[] = {
   {kDynamicPayloadtypes[count_database++], "AMR-WB", 16000, 320, 1, 20000},
 #endif
 #ifdef WEBRTC_CODEC_CELT
-  {kDynamicPayloadtypes[count_database++], "CELT", 32000, 320, 1, 64000},
+  {kDynamicPayloadtypes[count_database++], "CELT", 32000, 320, 2, 64000},
 #endif
 #ifdef WEBRTC_CODEC_G722
   {9, "G722", 16000, 320, 1, 64000},
