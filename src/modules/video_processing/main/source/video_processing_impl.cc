@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -49,8 +49,6 @@ namespace
 VideoProcessingModule*
 VideoProcessingModule::Create(const WebRtc_Word32 id)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoPreocessing, id, 
-               "VideoProcessingModule::Create()");
 
     return new VideoProcessingModuleImpl(id);
 }
@@ -60,9 +58,6 @@ VideoProcessingModule::Destroy(VideoProcessingModule* module)
 {
     if (module)
     {
-        WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoPreocessing,
-            static_cast<VideoProcessingModuleImpl*>(module)->Id(),
-                "VideoProcessingModule::destroy()");
         delete static_cast<VideoProcessingModuleImpl*>(module);
     }
 }
@@ -71,7 +66,6 @@ WebRtc_Word32
 VideoProcessingModuleImpl::ChangeUniqueId(const WebRtc_Word32 id)
 {
     CriticalSectionScoped mutex(_mutex);
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoPreocessing, _id, "ChangeUniqueId(new id:%d)", id);   
     _id = id;
     _brightnessDetection.ChangeUniqueId(id);
     _deflickering.ChangeUniqueId(id);
