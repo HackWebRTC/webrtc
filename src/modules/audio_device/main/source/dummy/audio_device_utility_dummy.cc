@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -45,8 +45,6 @@ AudioDeviceUtilityDummy::~AudioDeviceUtilityDummy()
 
 WebRtc_Word32 AudioDeviceUtilityDummy::Init()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id,
                  "  OS info: %s", "Dummy");

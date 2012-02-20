@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -242,8 +242,6 @@ AudioDeviceMac::~AudioDeviceMac()
 
 void AudioDeviceMac::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     CriticalSectionScoped lock(_critSect);
 
@@ -259,16 +257,12 @@ void AudioDeviceMac::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer)
 WebRtc_Word32 AudioDeviceMac::ActiveAudioLayer(
     AudioDeviceModule::AudioLayer& audioLayer) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
     audioLayer = AudioDeviceModule::kPlatformDefaultAudio;
     return 0;
 }
 
 WebRtc_Word32 AudioDeviceMac::Init()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     CriticalSectionScoped lock(_critSect);
 
@@ -432,8 +426,6 @@ WebRtc_Word32 AudioDeviceMac::Init()
 
 WebRtc_Word32 AudioDeviceMac::Terminate()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     if (!_initialized)
     {
@@ -487,15 +479,11 @@ WebRtc_Word32 AudioDeviceMac::Terminate()
 
 bool AudioDeviceMac::Initialized() const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
     return (_initialized);
 }
 
 WebRtc_Word32 AudioDeviceMac::SpeakerIsAvailable(bool& available)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     bool wasInitialized = _mixerManager.SpeakerIsInitialized();
 
@@ -524,8 +512,6 @@ WebRtc_Word32 AudioDeviceMac::SpeakerIsAvailable(bool& available)
 
 WebRtc_Word32 AudioDeviceMac::InitSpeaker()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     CriticalSectionScoped lock(_critSect);
 
@@ -557,8 +543,6 @@ WebRtc_Word32 AudioDeviceMac::InitSpeaker()
 
 WebRtc_Word32 AudioDeviceMac::MicrophoneIsAvailable(bool& available)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     bool wasInitialized = _mixerManager.MicrophoneIsInitialized();
 
@@ -588,8 +572,6 @@ WebRtc_Word32 AudioDeviceMac::MicrophoneIsAvailable(bool& available)
 
 WebRtc_Word32 AudioDeviceMac::InitMicrophone()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     CriticalSectionScoped lock(_critSect);
 
@@ -621,22 +603,16 @@ WebRtc_Word32 AudioDeviceMac::InitMicrophone()
 
 bool AudioDeviceMac::SpeakerIsInitialized() const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
     return (_mixerManager.SpeakerIsInitialized());
 }
 
 bool AudioDeviceMac::MicrophoneIsInitialized() const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
     return (_mixerManager.MicrophoneIsInitialized());
 }
 
 WebRtc_Word32 AudioDeviceMac::SpeakerVolumeIsAvailable(bool& available)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     bool wasInitialized = _mixerManager.SpeakerIsInitialized();
 
@@ -667,16 +643,12 @@ WebRtc_Word32 AudioDeviceMac::SpeakerVolumeIsAvailable(bool& available)
 
 WebRtc_Word32 AudioDeviceMac::SetSpeakerVolume(WebRtc_UWord32 volume)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "AudioDeviceMac::SetSpeakerVolume(volume=%u)", volume);
 
     return (_mixerManager.SetSpeakerVolume(volume));
 }
 
 WebRtc_Word32 AudioDeviceMac::SpeakerVolume(WebRtc_UWord32& volume) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     WebRtc_UWord32 level(0);
 
@@ -692,12 +664,6 @@ WebRtc_Word32 AudioDeviceMac::SpeakerVolume(WebRtc_UWord32& volume) const
 WebRtc_Word32 AudioDeviceMac::SetWaveOutVolume(WebRtc_UWord16 volumeLeft,
                                                WebRtc_UWord16 volumeRight)
 {
-    WEBRTC_TRACE(
-                 kTraceModuleCall,
-                 kTraceAudioDevice,
-                 _id,
-                 "AudioDeviceMac::SetWaveOutVolume(volumeLeft=%u, volumeRight=%u)",
-                 volumeLeft, volumeRight);
 
     WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
                  "  API call not supported on this platform");
@@ -708,8 +674,6 @@ WebRtc_Word32
 AudioDeviceMac::WaveOutVolume(WebRtc_UWord16& /*volumeLeft*/,
                               WebRtc_UWord16& /*volumeRight*/) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
                  "  API call not supported on this platform");
@@ -718,8 +682,6 @@ AudioDeviceMac::WaveOutVolume(WebRtc_UWord16& /*volumeLeft*/,
 
 WebRtc_Word32 AudioDeviceMac::MaxSpeakerVolume(WebRtc_UWord32& maxVolume) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     WebRtc_UWord32 maxVol(0);
 
@@ -734,8 +696,6 @@ WebRtc_Word32 AudioDeviceMac::MaxSpeakerVolume(WebRtc_UWord32& maxVolume) const
 
 WebRtc_Word32 AudioDeviceMac::MinSpeakerVolume(WebRtc_UWord32& minVolume) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     WebRtc_UWord32 minVol(0);
 
@@ -751,8 +711,6 @@ WebRtc_Word32 AudioDeviceMac::MinSpeakerVolume(WebRtc_UWord32& minVolume) const
 WebRtc_Word32
 AudioDeviceMac::SpeakerVolumeStepSize(WebRtc_UWord16& stepSize) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     WebRtc_UWord16 delta(0);
 
@@ -767,8 +725,6 @@ AudioDeviceMac::SpeakerVolumeStepSize(WebRtc_UWord16& stepSize) const
 
 WebRtc_Word32 AudioDeviceMac::SpeakerMuteIsAvailable(bool& available)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     bool isAvailable(false);
     bool wasInitialized = _mixerManager.SpeakerIsInitialized();
@@ -803,15 +759,11 @@ WebRtc_Word32 AudioDeviceMac::SpeakerMuteIsAvailable(bool& available)
 
 WebRtc_Word32 AudioDeviceMac::SetSpeakerMute(bool enable)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "AudioDeviceMac::SetSpeakerMute(enable=%u)", enable);
     return (_mixerManager.SetSpeakerMute(enable));
 }
 
 WebRtc_Word32 AudioDeviceMac::SpeakerMute(bool& enabled) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     bool muted(0);
 
@@ -826,8 +778,6 @@ WebRtc_Word32 AudioDeviceMac::SpeakerMute(bool& enabled) const
 
 WebRtc_Word32 AudioDeviceMac::MicrophoneMuteIsAvailable(bool& available)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     bool isAvailable(false);
     bool wasInitialized = _mixerManager.MicrophoneIsInitialized();
@@ -861,15 +811,11 @@ WebRtc_Word32 AudioDeviceMac::MicrophoneMuteIsAvailable(bool& available)
 
 WebRtc_Word32 AudioDeviceMac::SetMicrophoneMute(bool enable)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "AudioDeviceWindowsWave::SetMicrophoneMute(enable=%u)", enable);
     return (_mixerManager.SetMicrophoneMute(enable));
 }
 
 WebRtc_Word32 AudioDeviceMac::MicrophoneMute(bool& enabled) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     bool muted(0);
 
@@ -884,8 +830,6 @@ WebRtc_Word32 AudioDeviceMac::MicrophoneMute(bool& enabled) const
 
 WebRtc_Word32 AudioDeviceMac::MicrophoneBoostIsAvailable(bool& available)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     bool isAvailable(false);
     bool wasInitialized = _mixerManager.MicrophoneIsInitialized();
@@ -919,16 +863,12 @@ WebRtc_Word32 AudioDeviceMac::MicrophoneBoostIsAvailable(bool& available)
 
 WebRtc_Word32 AudioDeviceMac::SetMicrophoneBoost(bool enable)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "AudioDeviceMac::SetMicrophoneBoost(enable=%u)", enable);
 
     return (_mixerManager.SetMicrophoneBoost(enable));
 }
 
 WebRtc_Word32 AudioDeviceMac::MicrophoneBoost(bool& enabled) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     bool onOff(0);
 
@@ -943,8 +883,6 @@ WebRtc_Word32 AudioDeviceMac::MicrophoneBoost(bool& enabled) const
 
 WebRtc_Word32 AudioDeviceMac::StereoRecordingIsAvailable(bool& available)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     bool isAvailable(false);
     bool wasInitialized = _mixerManager.MicrophoneIsInitialized();
@@ -973,8 +911,6 @@ WebRtc_Word32 AudioDeviceMac::StereoRecordingIsAvailable(bool& available)
 
 WebRtc_Word32 AudioDeviceMac::SetStereoRecording(bool enable)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "AudioDeviceMac::SetStereoRecording(enable=%u)", enable);
 
     if (enable)
         _recChannels = 2;
@@ -986,8 +922,6 @@ WebRtc_Word32 AudioDeviceMac::SetStereoRecording(bool enable)
 
 WebRtc_Word32 AudioDeviceMac::StereoRecording(bool& enabled) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     if (_recChannels == 2)
         enabled = true;
@@ -999,8 +933,6 @@ WebRtc_Word32 AudioDeviceMac::StereoRecording(bool& enabled) const
 
 WebRtc_Word32 AudioDeviceMac::StereoPlayoutIsAvailable(bool& available)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     bool isAvailable(false);
     bool wasInitialized = _mixerManager.SpeakerIsInitialized();
@@ -1029,8 +961,6 @@ WebRtc_Word32 AudioDeviceMac::StereoPlayoutIsAvailable(bool& available)
 
 WebRtc_Word32 AudioDeviceMac::SetStereoPlayout(bool enable)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "AudioDeviceMac::SetStereoPlayout(enable=%u)", enable);
 
     if (enable)
         _playChannels = 2;
@@ -1042,8 +972,6 @@ WebRtc_Word32 AudioDeviceMac::SetStereoPlayout(bool enable)
 
 WebRtc_Word32 AudioDeviceMac::StereoPlayout(bool& enabled) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     if (_playChannels == 2)
         enabled = true;
@@ -1055,8 +983,6 @@ WebRtc_Word32 AudioDeviceMac::StereoPlayout(bool& enabled) const
 
 WebRtc_Word32 AudioDeviceMac::SetAGC(bool enable)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "AudioDeviceMac::SetAGC(enable=%d)", enable);
 
     _AGC = enable;
 
@@ -1065,16 +991,12 @@ WebRtc_Word32 AudioDeviceMac::SetAGC(bool enable)
 
 bool AudioDeviceMac::AGC() const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     return _AGC;
 }
 
 WebRtc_Word32 AudioDeviceMac::MicrophoneVolumeIsAvailable(bool& available)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     bool wasInitialized = _mixerManager.MicrophoneIsInitialized();
 
@@ -1106,16 +1028,12 @@ WebRtc_Word32 AudioDeviceMac::MicrophoneVolumeIsAvailable(bool& available)
 
 WebRtc_Word32 AudioDeviceMac::SetMicrophoneVolume(WebRtc_UWord32 volume)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "AudioDeviceMac::SetMicrophoneVolume(volume=%u)", volume);
 
     return (_mixerManager.SetMicrophoneVolume(volume));
 }
 
 WebRtc_Word32 AudioDeviceMac::MicrophoneVolume(WebRtc_UWord32& volume) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     WebRtc_UWord32 level(0);
 
@@ -1133,8 +1051,6 @@ WebRtc_Word32 AudioDeviceMac::MicrophoneVolume(WebRtc_UWord32& volume) const
 WebRtc_Word32
 AudioDeviceMac::MaxMicrophoneVolume(WebRtc_UWord32& maxVolume) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     WebRtc_UWord32 maxVol(0);
 
@@ -1150,8 +1066,6 @@ AudioDeviceMac::MaxMicrophoneVolume(WebRtc_UWord32& maxVolume) const
 WebRtc_Word32
 AudioDeviceMac::MinMicrophoneVolume(WebRtc_UWord32& minVolume) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     WebRtc_UWord32 minVol(0);
 
@@ -1167,8 +1081,6 @@ AudioDeviceMac::MinMicrophoneVolume(WebRtc_UWord32& minVolume) const
 WebRtc_Word32
 AudioDeviceMac::MicrophoneVolumeStepSize(WebRtc_UWord16& stepSize) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     WebRtc_UWord16 delta(0);
 
@@ -1183,8 +1095,6 @@ AudioDeviceMac::MicrophoneVolumeStepSize(WebRtc_UWord16& stepSize) const
 
 WebRtc_Word16 AudioDeviceMac::PlayoutDevices()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     AudioDeviceID playDevices[MaxNumberDevices];
     return GetNumberDevices(kAudioDevicePropertyScopeOutput, playDevices,
@@ -1193,8 +1103,6 @@ WebRtc_Word16 AudioDeviceMac::PlayoutDevices()
 
 WebRtc_Word32 AudioDeviceMac::SetPlayoutDevice(WebRtc_UWord16 index)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "AudioDeviceMac::SetPlayoutDevice(index=%u)", index);
 
     if (_playIsInitialized)
     {
@@ -1234,8 +1142,6 @@ WebRtc_Word32 AudioDeviceMac::PlayoutDeviceName(
     WebRtc_Word8 name[kAdmMaxDeviceNameSize],
     WebRtc_Word8 guid[kAdmMaxGuidSize])
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "AudioDeviceMac::PlayoutDeviceName(index=%u)", index);
 
     const WebRtc_UWord16 nDevices(PlayoutDevices());
 
@@ -1259,8 +1165,6 @@ WebRtc_Word32 AudioDeviceMac::RecordingDeviceName(
     WebRtc_Word8 name[kAdmMaxDeviceNameSize],
     WebRtc_Word8 guid[kAdmMaxGuidSize])
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "AudioDeviceMac::RecordingDeviceName(index=%u)", index);
 
     const WebRtc_UWord16 nDevices(RecordingDevices());
 
@@ -1281,8 +1185,6 @@ WebRtc_Word32 AudioDeviceMac::RecordingDeviceName(
 
 WebRtc_Word16 AudioDeviceMac::RecordingDevices()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     AudioDeviceID recDevices[MaxNumberDevices];
     return GetNumberDevices(kAudioDevicePropertyScopeInput, recDevices,
@@ -1291,8 +1193,6 @@ WebRtc_Word16 AudioDeviceMac::RecordingDevices()
 
 WebRtc_Word32 AudioDeviceMac::SetRecordingDevice(WebRtc_UWord16 index)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "AudioDeviceMac::SetRecordingDevice(index=%u)", index);
 
     if (_recIsInitialized)
     {
@@ -1330,8 +1230,6 @@ AudioDeviceMac::SetRecordingDevice(AudioDeviceModule::WindowsDeviceType /*device
 
 WebRtc_Word32 AudioDeviceMac::PlayoutIsAvailable(bool& available)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     available = true;
 
@@ -1360,8 +1258,6 @@ WebRtc_Word32 AudioDeviceMac::PlayoutIsAvailable(bool& available)
 
 WebRtc_Word32 AudioDeviceMac::RecordingIsAvailable(bool& available)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     available = true;
 
@@ -1390,8 +1286,6 @@ WebRtc_Word32 AudioDeviceMac::RecordingIsAvailable(bool& available)
 
 WebRtc_Word32 AudioDeviceMac::InitPlayout()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     CriticalSectionScoped lock(_critSect);
 
@@ -1655,8 +1549,6 @@ WebRtc_Word32 AudioDeviceMac::InitPlayout()
 
 WebRtc_Word32 AudioDeviceMac::InitRecording()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     CriticalSectionScoped lock(_critSect);
 
@@ -1873,8 +1765,6 @@ WebRtc_Word32 AudioDeviceMac::InitRecording()
 
 WebRtc_Word32 AudioDeviceMac::StartRecording()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     CriticalSectionScoped lock(_critSect);
 
@@ -1919,8 +1809,6 @@ WebRtc_Word32 AudioDeviceMac::StartRecording()
 
 WebRtc_Word32 AudioDeviceMac::StopRecording()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     CriticalSectionScoped lock(_critSect);
 
@@ -2029,29 +1917,21 @@ WebRtc_Word32 AudioDeviceMac::StopRecording()
 
 bool AudioDeviceMac::RecordingIsInitialized() const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
     return (_recIsInitialized);
 }
 
 bool AudioDeviceMac::Recording() const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
     return (_recording);
 }
 
 bool AudioDeviceMac::PlayoutIsInitialized() const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
     return (_playIsInitialized);
 }
 
 WebRtc_Word32 AudioDeviceMac::StartPlayout()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
     
     CriticalSectionScoped lock(_critSect);
 
@@ -2085,8 +1965,6 @@ WebRtc_Word32 AudioDeviceMac::StartPlayout()
 
 WebRtc_Word32 AudioDeviceMac::StopPlayout()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     CriticalSectionScoped lock(_critSect);
 
@@ -2193,8 +2071,6 @@ WebRtc_Word32 AudioDeviceMac::RecordingDelay(WebRtc_UWord16& delayMS) const
 
 bool AudioDeviceMac::Playing() const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
     return (_playing);
 }
 
@@ -2202,9 +2078,6 @@ WebRtc_Word32 AudioDeviceMac::SetPlayoutBuffer(
     const AudioDeviceModule::BufferType type,
     WebRtc_UWord16 sizeMS)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "AudioDeviceMac::SetPlayoutBuffer(type=%u, sizeMS=%u)", type,
-                 sizeMS);
 
     if (type != AudioDeviceModule::kFixedBufferSize)
     {
@@ -2222,8 +2095,6 @@ WebRtc_Word32 AudioDeviceMac::PlayoutBuffer(
     AudioDeviceModule::BufferType& type,
     WebRtc_UWord16& sizeMS) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     type = _playBufType;
     sizeMS = _playBufDelayFixed;
@@ -2234,8 +2105,6 @@ WebRtc_Word32 AudioDeviceMac::PlayoutBuffer(
 // Not implemented for Mac.
 WebRtc_Word32 AudioDeviceMac::CPULoad(WebRtc_UWord16& /*load*/) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
                  "  API call not supported on this platform");

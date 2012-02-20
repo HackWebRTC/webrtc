@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -100,7 +100,6 @@ void AudioDeviceBuffer::SetId(WebRtc_UWord32 id)
 
 WebRtc_Word32 AudioDeviceBuffer::RegisterAudioCallback(AudioTransport* audioCallback)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id, "AudioDeviceBuffer::RegisterAudioCallback(AudioTransport=0x%x)", audioCallback);
 
     CriticalSectionScoped lock(_critSectCb);
     _ptrCbAudioTransport = audioCallback;

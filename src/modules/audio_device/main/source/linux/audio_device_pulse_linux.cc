@@ -174,8 +174,6 @@ AudioDeviceLinuxPulse::~AudioDeviceLinuxPulse()
 
 void AudioDeviceLinuxPulse::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     CriticalSectionScoped lock(_critSect);
 
@@ -197,16 +195,12 @@ void AudioDeviceLinuxPulse::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer)
 WebRtc_Word32 AudioDeviceLinuxPulse::ActiveAudioLayer(
     AudioDeviceModule::AudioLayer& audioLayer) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
     audioLayer = AudioDeviceModule::kLinuxPulseAudio;
     return 0;
 }
 
 WebRtc_Word32 AudioDeviceLinuxPulse::Init()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     CriticalSectionScoped lock(_critSect);
 
@@ -288,8 +282,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::Init()
 
 WebRtc_Word32 AudioDeviceLinuxPulse::Terminate()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     if (!_initialized)
     {
@@ -357,15 +349,11 @@ WebRtc_Word32 AudioDeviceLinuxPulse::Terminate()
 
 bool AudioDeviceLinuxPulse::Initialized() const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
     return (_initialized);
 }
 
 WebRtc_Word32 AudioDeviceLinuxPulse::SpeakerIsAvailable(bool& available)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     bool wasInitialized = _mixerManager.SpeakerIsInitialized();
 
@@ -394,8 +382,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::SpeakerIsAvailable(bool& available)
 
 WebRtc_Word32 AudioDeviceLinuxPulse::InitSpeaker()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     CriticalSectionScoped lock(_critSect);
 
@@ -441,8 +427,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::InitSpeaker()
 
 WebRtc_Word32 AudioDeviceLinuxPulse::MicrophoneIsAvailable(bool& available)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     bool wasInitialized = _mixerManager.MicrophoneIsInitialized();
 
@@ -471,8 +455,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::MicrophoneIsAvailable(bool& available)
 
 WebRtc_Word32 AudioDeviceLinuxPulse::InitMicrophone()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     CriticalSectionScoped lock(_critSect);
 
@@ -518,22 +500,16 @@ WebRtc_Word32 AudioDeviceLinuxPulse::InitMicrophone()
 
 bool AudioDeviceLinuxPulse::SpeakerIsInitialized() const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
     return (_mixerManager.SpeakerIsInitialized());
 }
 
 bool AudioDeviceLinuxPulse::MicrophoneIsInitialized() const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
     return (_mixerManager.MicrophoneIsInitialized());
 }
 
 WebRtc_Word32 AudioDeviceLinuxPulse::SpeakerVolumeIsAvailable(bool& available)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     bool wasInitialized = _mixerManager.SpeakerIsInitialized();
 
@@ -561,16 +537,12 @@ WebRtc_Word32 AudioDeviceLinuxPulse::SpeakerVolumeIsAvailable(bool& available)
 
 WebRtc_Word32 AudioDeviceLinuxPulse::SetSpeakerVolume(WebRtc_UWord32 volume)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "AudioDeviceLinuxPulse::SetSpeakerVolume(volume=%u)", volume);
 
     return (_mixerManager.SetSpeakerVolume(volume));
 }
 
 WebRtc_Word32 AudioDeviceLinuxPulse::SpeakerVolume(WebRtc_UWord32& volume) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     WebRtc_UWord32 level(0);
 
@@ -588,10 +560,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::SetWaveOutVolume(
     WebRtc_UWord16 volumeLeft,
     WebRtc_UWord16 volumeRight)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "SetWaveOutVolume(volumeLeft=%u, volumeRight=%u)",
-                 volumeLeft,
-                 volumeRight);
 
     WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
                  "  API call not supported on this platform");
@@ -602,8 +570,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::WaveOutVolume(
     WebRtc_UWord16& /*volumeLeft*/,
     WebRtc_UWord16& /*volumeRight*/) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
                  "  API call not supported on this platform");
@@ -613,8 +579,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::WaveOutVolume(
 WebRtc_Word32 AudioDeviceLinuxPulse::MaxSpeakerVolume(
     WebRtc_UWord32& maxVolume) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     WebRtc_UWord32 maxVol(0);
 
@@ -631,8 +595,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::MaxSpeakerVolume(
 WebRtc_Word32 AudioDeviceLinuxPulse::MinSpeakerVolume(
     WebRtc_UWord32& minVolume) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     WebRtc_UWord32 minVol(0);
 
@@ -649,8 +611,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::MinSpeakerVolume(
 WebRtc_Word32 AudioDeviceLinuxPulse::SpeakerVolumeStepSize(
     WebRtc_UWord16& stepSize) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     WebRtc_UWord16 delta(0);
 
@@ -666,8 +626,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::SpeakerVolumeStepSize(
 
 WebRtc_Word32 AudioDeviceLinuxPulse::SpeakerMuteIsAvailable(bool& available)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     bool isAvailable(false);
     bool wasInitialized = _mixerManager.SpeakerIsInitialized();
@@ -700,16 +658,12 @@ WebRtc_Word32 AudioDeviceLinuxPulse::SpeakerMuteIsAvailable(bool& available)
 
 WebRtc_Word32 AudioDeviceLinuxPulse::SetSpeakerMute(bool enable)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "AudioDeviceLinuxPulse::SetSpeakerMute(enable=%u)", enable);
 
     return (_mixerManager.SetSpeakerMute(enable));
 }
 
 WebRtc_Word32 AudioDeviceLinuxPulse::SpeakerMute(bool& enabled) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     bool muted(0);
     if (_mixerManager.SpeakerMute(muted) == -1)
@@ -723,8 +677,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::SpeakerMute(bool& enabled) const
 
 WebRtc_Word32 AudioDeviceLinuxPulse::MicrophoneMuteIsAvailable(bool& available)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     bool isAvailable(false);
     bool wasInitialized = _mixerManager.MicrophoneIsInitialized();
@@ -758,16 +710,12 @@ WebRtc_Word32 AudioDeviceLinuxPulse::MicrophoneMuteIsAvailable(bool& available)
 
 WebRtc_Word32 AudioDeviceLinuxPulse::SetMicrophoneMute(bool enable)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "SetMicrophoneMute(enable=%u)", enable);
 
     return (_mixerManager.SetMicrophoneMute(enable));
 }
 
 WebRtc_Word32 AudioDeviceLinuxPulse::MicrophoneMute(bool& enabled) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     bool muted(0);
     if (_mixerManager.MicrophoneMute(muted) == -1)
@@ -781,8 +729,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::MicrophoneMute(bool& enabled) const
 
 WebRtc_Word32 AudioDeviceLinuxPulse::MicrophoneBoostIsAvailable(bool& available)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     bool isAvailable(false);
     bool wasInitialized = _mixerManager.MicrophoneIsInitialized();
@@ -814,16 +760,12 @@ WebRtc_Word32 AudioDeviceLinuxPulse::MicrophoneBoostIsAvailable(bool& available)
 
 WebRtc_Word32 AudioDeviceLinuxPulse::SetMicrophoneBoost(bool enable)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "AudioDeviceLinuxPulse::SetMicrophoneBoost(enable=%u)", enable);
 
     return (_mixerManager.SetMicrophoneBoost(enable));
 }
 
 WebRtc_Word32 AudioDeviceLinuxPulse::MicrophoneBoost(bool& enabled) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     bool onOff(0);
 
@@ -839,8 +781,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::MicrophoneBoost(bool& enabled) const
 
 WebRtc_Word32 AudioDeviceLinuxPulse::StereoRecordingIsAvailable(bool& available)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     bool wasInitialized = _mixerManager.MicrophoneIsInitialized();
 
@@ -869,8 +809,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::StereoRecordingIsAvailable(bool& available)
 
 WebRtc_Word32 AudioDeviceLinuxPulse::SetStereoRecording(bool enable)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "AudioDeviceLinuxPulse::SetStereoRecording(enable=%u)", enable);
 
 #ifndef WEBRTC_PA_GTALK
     if (enable)
@@ -884,8 +822,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::SetStereoRecording(bool enable)
 
 WebRtc_Word32 AudioDeviceLinuxPulse::StereoRecording(bool& enabled) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     if (_recChannels == 2)
         enabled = true;
@@ -897,8 +833,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::StereoRecording(bool& enabled) const
 
 WebRtc_Word32 AudioDeviceLinuxPulse::StereoPlayoutIsAvailable(bool& available)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     bool wasInitialized = _mixerManager.SpeakerIsInitialized();
 
@@ -927,8 +861,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::StereoPlayoutIsAvailable(bool& available)
 
 WebRtc_Word32 AudioDeviceLinuxPulse::SetStereoPlayout(bool enable)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "AudioDeviceLinuxPulse::SetStereoPlayout(enable=%u)", enable);
 
 #ifndef WEBRTC_PA_GTALK
     if (enable)
@@ -942,8 +874,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::SetStereoPlayout(bool enable)
 
 WebRtc_Word32 AudioDeviceLinuxPulse::StereoPlayout(bool& enabled) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     if (_playChannels == 2)
         enabled = true;
@@ -955,8 +885,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::StereoPlayout(bool& enabled) const
 
 WebRtc_Word32 AudioDeviceLinuxPulse::SetAGC(bool enable)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "AudioDeviceLinuxPulse::SetAGC(enable=%d)", enable);
 
     _AGC = enable;
 
@@ -965,8 +893,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::SetAGC(bool enable)
 
 bool AudioDeviceLinuxPulse::AGC() const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     return _AGC;
 }
@@ -974,8 +900,6 @@ bool AudioDeviceLinuxPulse::AGC() const
 WebRtc_Word32 AudioDeviceLinuxPulse::MicrophoneVolumeIsAvailable(
     bool& available)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     bool wasInitialized = _mixerManager.MicrophoneIsInitialized();
 
@@ -1004,9 +928,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::MicrophoneVolumeIsAvailable(
 
 WebRtc_Word32 AudioDeviceLinuxPulse::SetMicrophoneVolume(WebRtc_UWord32 volume)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "AudioDeviceLinuxPulse::SetMicrophoneVolume(volume=%u)",
-                 volume);
 
     return (_mixerManager.SetMicrophoneVolume(volume));
 }
@@ -1014,8 +935,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::SetMicrophoneVolume(WebRtc_UWord32 volume)
 WebRtc_Word32 AudioDeviceLinuxPulse::MicrophoneVolume(
     WebRtc_UWord32& volume) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     WebRtc_UWord32 level(0);
 
@@ -1034,8 +953,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::MicrophoneVolume(
 WebRtc_Word32 AudioDeviceLinuxPulse::MaxMicrophoneVolume(
     WebRtc_UWord32& maxVolume) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     WebRtc_UWord32 maxVol(0);
 
@@ -1052,8 +969,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::MaxMicrophoneVolume(
 WebRtc_Word32 AudioDeviceLinuxPulse::MinMicrophoneVolume(
     WebRtc_UWord32& minVolume) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     WebRtc_UWord32 minVol(0);
 
@@ -1070,8 +985,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::MinMicrophoneVolume(
 WebRtc_Word32 AudioDeviceLinuxPulse::MicrophoneVolumeStepSize(
     WebRtc_UWord16& stepSize) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     WebRtc_UWord16 delta(0);
 
@@ -1087,8 +1000,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::MicrophoneVolumeStepSize(
 
 WebRtc_Word16 AudioDeviceLinuxPulse::PlayoutDevices()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     PaLock();
 
@@ -1109,8 +1020,6 @@ WebRtc_Word16 AudioDeviceLinuxPulse::PlayoutDevices()
 
 WebRtc_Word32 AudioDeviceLinuxPulse::SetPlayoutDevice(WebRtc_UWord16 index)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "AudioDeviceLinuxPulse::SetPlayoutDevice(index=%u)", index);
 
     if (_playIsInitialized)
     {
@@ -1148,8 +1057,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::PlayoutDeviceName(
     WebRtc_Word8 name[kAdmMaxDeviceNameSize],
     WebRtc_Word8 guid[kAdmMaxGuidSize])
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "AudioDeviceLinuxPulse::PlayoutDeviceName(index=%u)", index);
 
     const WebRtc_UWord16 nDevices = PlayoutDevices();
 
@@ -1192,8 +1099,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::RecordingDeviceName(
     WebRtc_Word8 name[kAdmMaxDeviceNameSize],
     WebRtc_Word8 guid[kAdmMaxGuidSize])
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "AudioDeviceLinuxPulse::RecordingDeviceName(index=%u)", index);
 
     const WebRtc_UWord16 nDevices(RecordingDevices());
 
@@ -1233,8 +1138,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::RecordingDeviceName(
 
 WebRtc_Word16 AudioDeviceLinuxPulse::RecordingDevices()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     PaLock();
 
@@ -1255,8 +1158,6 @@ WebRtc_Word16 AudioDeviceLinuxPulse::RecordingDevices()
 
 WebRtc_Word32 AudioDeviceLinuxPulse::SetRecordingDevice(WebRtc_UWord16 index)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "AudioDeviceLinuxPulse::SetRecordingDevice(index=%u)", index);
 
     if (_recIsInitialized)
     {
@@ -1291,8 +1192,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::SetRecordingDevice(
 
 WebRtc_Word32 AudioDeviceLinuxPulse::PlayoutIsAvailable(bool& available)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     available = false;
 
@@ -1312,8 +1211,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::PlayoutIsAvailable(bool& available)
 
 WebRtc_Word32 AudioDeviceLinuxPulse::RecordingIsAvailable(bool& available)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     available = false;
 
@@ -1333,8 +1230,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::RecordingIsAvailable(bool& available)
 
 WebRtc_Word32 AudioDeviceLinuxPulse::InitPlayout()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     CriticalSectionScoped lock(_critSect);
 
@@ -1461,8 +1356,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::InitPlayout()
 
 WebRtc_Word32 AudioDeviceLinuxPulse::InitRecording()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     CriticalSectionScoped lock(_critSect);
 
@@ -1580,8 +1473,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::InitRecording()
 
 WebRtc_Word32 AudioDeviceLinuxPulse::StartRecording()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     if (!_recIsInitialized)
     {
@@ -1610,8 +1501,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::StartRecording()
     if (_recording)
     {
         // the recording state is set by the audio thread after recording has started
-        WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                     "  recording is now active");
     } else
     {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
@@ -1624,8 +1513,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::StartRecording()
 
 WebRtc_Word32 AudioDeviceLinuxPulse::StopRecording()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     CriticalSectionScoped lock(_critSect);
 
@@ -1689,29 +1576,21 @@ WebRtc_Word32 AudioDeviceLinuxPulse::StopRecording()
 
 bool AudioDeviceLinuxPulse::RecordingIsInitialized() const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
     return (_recIsInitialized);
 }
 
 bool AudioDeviceLinuxPulse::Recording() const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
     return (_recording);
 }
 
 bool AudioDeviceLinuxPulse::PlayoutIsInitialized() const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
     return (_playIsInitialized);
 }
 
 WebRtc_Word32 AudioDeviceLinuxPulse::StartPlayout()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     if (!_playIsInitialized)
     {
@@ -1740,8 +1619,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::StartPlayout()
     if (_playing)
     {
         // the playing state is set by the audio thread after playout has started
-        WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                     "  playing is now active");
     } else
     {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
@@ -1754,8 +1631,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::StartPlayout()
 
 WebRtc_Word32 AudioDeviceLinuxPulse::StopPlayout()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     CriticalSectionScoped lock(_critSect);
 
@@ -1833,8 +1708,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::RecordingDelay(WebRtc_UWord16& delayMS) con
 
 bool AudioDeviceLinuxPulse::Playing() const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
     return (_playing);
 }
 
@@ -1842,9 +1715,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::SetPlayoutBuffer(
     const AudioDeviceModule::BufferType type,
     WebRtc_UWord16 sizeMS)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "AudioDeviceLinuxPulse::SetPlayoutBuffer(type=%u, sizeMS=%u)",
-                 type, sizeMS);
 
     if (type != AudioDeviceModule::kFixedBufferSize)
     {
@@ -1863,8 +1733,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::PlayoutBuffer(
     AudioDeviceModule::BufferType& type,
     WebRtc_UWord16& sizeMS) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     type = _playBufType;
     sizeMS = _playBufDelayFixed;
@@ -1874,8 +1742,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::PlayoutBuffer(
 
 WebRtc_Word32 AudioDeviceLinuxPulse::CPULoad(WebRtc_UWord16& /*load*/) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
                  "  API call not supported on this platform");

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -301,8 +301,6 @@ WebRtc_Word32 AudioMixerManagerMac::SetSpeakerVolume(WebRtc_UWord32 volume)
 
 WebRtc_Word32 AudioMixerManagerMac::SpeakerVolume(WebRtc_UWord32& volume) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     if (_outputDeviceID == kAudioObjectUnknown)
     {
@@ -374,8 +372,6 @@ WebRtc_Word32 AudioMixerManagerMac::SpeakerVolume(WebRtc_UWord32& volume) const
 WebRtc_Word32
 AudioMixerManagerMac::MaxSpeakerVolume(WebRtc_UWord32& maxVolume) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     if (_outputDeviceID == kAudioObjectUnknown)
     {
@@ -394,8 +390,6 @@ AudioMixerManagerMac::MaxSpeakerVolume(WebRtc_UWord32& maxVolume) const
 WebRtc_Word32
 AudioMixerManagerMac::MinSpeakerVolume(WebRtc_UWord32& minVolume) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     if (_outputDeviceID == kAudioObjectUnknown)
     {
@@ -414,8 +408,6 @@ AudioMixerManagerMac::MinSpeakerVolume(WebRtc_UWord32& minVolume) const
 WebRtc_Word32
 AudioMixerManagerMac::SpeakerVolumeStepSize(WebRtc_UWord16& stepSize) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     if (_outputDeviceID == kAudioObjectUnknown)
     {
@@ -585,8 +577,6 @@ WebRtc_Word32 AudioMixerManagerMac::SetSpeakerMute(bool enable)
 
 WebRtc_Word32 AudioMixerManagerMac::SpeakerMute(bool& enabled) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     if (_outputDeviceID == kAudioObjectUnknown)
     {
@@ -787,8 +777,6 @@ WebRtc_Word32 AudioMixerManagerMac::SetMicrophoneMute(bool enable)
 
 WebRtc_Word32 AudioMixerManagerMac::MicrophoneMute(bool& enabled) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     if (_inputDeviceID == kAudioObjectUnknown)
     {
@@ -900,8 +888,6 @@ WebRtc_Word32 AudioMixerManagerMac::SetMicrophoneBoost(bool enable)
 
 WebRtc_Word32 AudioMixerManagerMac::MicrophoneBoost(bool& enabled) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     if (_inputDeviceID == kAudioObjectUnknown)
     {
@@ -1031,8 +1017,6 @@ WebRtc_Word32 AudioMixerManagerMac::SetMicrophoneVolume(WebRtc_UWord32 volume)
 WebRtc_Word32
 AudioMixerManagerMac::MicrophoneVolume(WebRtc_UWord32& volume) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     if (_inputDeviceID == kAudioObjectUnknown)
     {
@@ -1106,8 +1090,6 @@ AudioMixerManagerMac::MicrophoneVolume(WebRtc_UWord32& volume) const
 WebRtc_Word32
 AudioMixerManagerMac::MaxMicrophoneVolume(WebRtc_UWord32& maxVolume) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     if (_inputDeviceID == kAudioObjectUnknown)
     {
@@ -1126,8 +1108,6 @@ AudioMixerManagerMac::MaxMicrophoneVolume(WebRtc_UWord32& maxVolume) const
 WebRtc_Word32
 AudioMixerManagerMac::MinMicrophoneVolume(WebRtc_UWord32& minVolume) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     if (_inputDeviceID == kAudioObjectUnknown)
     {
@@ -1146,8 +1126,6 @@ AudioMixerManagerMac::MinMicrophoneVolume(WebRtc_UWord32& minVolume) const
 WebRtc_Word32
 AudioMixerManagerMac::MicrophoneVolumeStepSize(WebRtc_UWord16& stepSize) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     if (_inputDeviceID == kAudioObjectUnknown)
     {

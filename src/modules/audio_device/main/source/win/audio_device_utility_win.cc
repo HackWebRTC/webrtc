@@ -68,7 +68,6 @@ AudioDeviceUtilityWindows::~AudioDeviceUtilityWindows()
 
 WebRtc_Word32 AudioDeviceUtilityWindows::Init()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id, "%s", __FUNCTION__);
 
     TCHAR szOS[STRING_MAX_SIZE];
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -190,8 +190,6 @@ AudioDeviceAndroidJni::~AudioDeviceAndroidJni()
 
 void AudioDeviceAndroidJni::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     CriticalSectionScoped lock(_critSect);
 
@@ -211,8 +209,6 @@ void AudioDeviceAndroidJni::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer)
 WebRtc_Word32 AudioDeviceAndroidJni::ActiveAudioLayer(
         AudioDeviceModule::AudioLayer& audioLayer) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     audioLayer = AudioDeviceModule::kPlatformDefaultAudio;
 
@@ -225,8 +221,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::ActiveAudioLayer(
 
 WebRtc_Word32 AudioDeviceAndroidJni::Init()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     CriticalSectionScoped lock(_critSect);
 
@@ -314,8 +308,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::Init()
 
 WebRtc_Word32 AudioDeviceAndroidJni::Terminate()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     CriticalSectionScoped lock(_critSect);
 
@@ -477,8 +469,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::Terminate()
 
 bool AudioDeviceAndroidJni::Initialized() const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     return (_initialized);
 }
@@ -489,8 +479,6 @@ bool AudioDeviceAndroidJni::Initialized() const
 
 WebRtc_Word32 AudioDeviceAndroidJni::SpeakerIsAvailable(bool& available)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     // We always assume it's available
     available = true;
@@ -504,8 +492,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::SpeakerIsAvailable(bool& available)
 
 WebRtc_Word32 AudioDeviceAndroidJni::InitSpeaker()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     CriticalSectionScoped lock(_critSect);
 
@@ -536,8 +522,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::InitSpeaker()
 
 WebRtc_Word32 AudioDeviceAndroidJni::MicrophoneIsAvailable(bool& available)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     // We always assume it's available
     available = true;
@@ -551,8 +535,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::MicrophoneIsAvailable(bool& available)
 
 WebRtc_Word32 AudioDeviceAndroidJni::InitMicrophone()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     CriticalSectionScoped lock(_critSect);
 
@@ -583,8 +565,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::InitMicrophone()
 
 bool AudioDeviceAndroidJni::SpeakerIsInitialized() const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     return _speakerIsInitialized;
 }
@@ -595,8 +575,6 @@ bool AudioDeviceAndroidJni::SpeakerIsInitialized() const
 
 bool AudioDeviceAndroidJni::MicrophoneIsInitialized() const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     return _micIsInitialized;
 }
@@ -607,8 +585,6 @@ bool AudioDeviceAndroidJni::MicrophoneIsInitialized() const
 
 WebRtc_Word32 AudioDeviceAndroidJni::SpeakerVolumeIsAvailable(bool& available)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     available = true; // We assume we are always be able to set/get volume
 
@@ -621,8 +597,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::SpeakerVolumeIsAvailable(bool& available)
 
 WebRtc_Word32 AudioDeviceAndroidJni::SetSpeakerVolume(WebRtc_UWord32 volume)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "SetSpeakerVolume(volume=%u)", volume);
 
     if (!_speakerIsInitialized)
     {
@@ -688,8 +662,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::SetSpeakerVolume(WebRtc_UWord32 volume)
 
 WebRtc_Word32 AudioDeviceAndroidJni::SpeakerVolume(WebRtc_UWord32& volume) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     if (!_speakerIsInitialized)
     {
@@ -758,8 +730,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::SetWaveOutVolume(
     WebRtc_UWord16 /*volumeLeft*/,
     WebRtc_UWord16 /*volumeRight*/)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s)", __FUNCTION__);
 
     WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
                  "  API call not supported on this platform");
@@ -774,8 +744,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::WaveOutVolume(
     WebRtc_UWord16& /*volumeLeft*/,
     WebRtc_UWord16& /*volumeRight*/) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
                  "  API call not supported on this platform");
@@ -789,8 +757,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::WaveOutVolume(
 WebRtc_Word32 AudioDeviceAndroidJni::MaxSpeakerVolume(
         WebRtc_UWord32& maxVolume) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     if (!_speakerIsInitialized)
     {
@@ -811,8 +777,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::MaxSpeakerVolume(
 WebRtc_Word32 AudioDeviceAndroidJni::MinSpeakerVolume(
         WebRtc_UWord32& minVolume) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     if (!_speakerIsInitialized)
     {
@@ -833,8 +797,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::MinSpeakerVolume(
 WebRtc_Word32 AudioDeviceAndroidJni::SpeakerVolumeStepSize(
         WebRtc_UWord16& stepSize) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     if (!_speakerIsInitialized)
     {
@@ -854,8 +816,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::SpeakerVolumeStepSize(
 
 WebRtc_Word32 AudioDeviceAndroidJni::SpeakerMuteIsAvailable(bool& available)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     available = false; // Speaker mute not supported on Android
 
@@ -868,8 +828,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::SpeakerMuteIsAvailable(bool& available)
 
 WebRtc_Word32 AudioDeviceAndroidJni::SetSpeakerMute(bool /*enable*/)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
                  "  API call not supported on this platform");
@@ -882,8 +840,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::SetSpeakerMute(bool /*enable*/)
 
 WebRtc_Word32 AudioDeviceAndroidJni::SpeakerMute(bool& /*enabled*/) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
                  "  API call not supported on this platform");
@@ -896,8 +852,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::SpeakerMute(bool& /*enabled*/) const
 
 WebRtc_Word32 AudioDeviceAndroidJni::MicrophoneMuteIsAvailable(bool& available)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     available = false; // Mic mute not supported on Android
 
@@ -910,8 +864,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::MicrophoneMuteIsAvailable(bool& available)
 
 WebRtc_Word32 AudioDeviceAndroidJni::SetMicrophoneMute(bool /*enable*/)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
                  "  API call not supported on this platform");
@@ -924,8 +876,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::SetMicrophoneMute(bool /*enable*/)
 
 WebRtc_Word32 AudioDeviceAndroidJni::MicrophoneMute(bool& /*enabled*/) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
                  "  API call not supported on this platform");
@@ -938,8 +888,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::MicrophoneMute(bool& /*enabled*/) const
 
 WebRtc_Word32 AudioDeviceAndroidJni::MicrophoneBoostIsAvailable(bool& available)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     available = false; // Mic boost not supported on Android
 
@@ -952,8 +900,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::MicrophoneBoostIsAvailable(bool& available)
 
 WebRtc_Word32 AudioDeviceAndroidJni::SetMicrophoneBoost(bool enable)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     if (!_micIsInitialized)
     {
@@ -978,8 +924,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::SetMicrophoneBoost(bool enable)
 
 WebRtc_Word32 AudioDeviceAndroidJni::MicrophoneBoost(bool& enabled) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     if (!_micIsInitialized)
     {
@@ -999,8 +943,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::MicrophoneBoost(bool& enabled) const
 
 WebRtc_Word32 AudioDeviceAndroidJni::StereoRecordingIsAvailable(bool& available)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     available = false; // Stereo recording not supported on Android
 
@@ -1015,8 +957,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::StereoRecordingIsAvailable(bool& available)
 
 WebRtc_Word32 AudioDeviceAndroidJni::SetStereoRecording(bool enable)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     if (enable)
     {
@@ -1034,8 +974,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::SetStereoRecording(bool enable)
 
 WebRtc_Word32 AudioDeviceAndroidJni::StereoRecording(bool& enabled) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     enabled = false;
 
@@ -1048,8 +986,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::StereoRecording(bool& enabled) const
 
 WebRtc_Word32 AudioDeviceAndroidJni::StereoPlayoutIsAvailable(bool& available)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     available = false; // Stereo playout not supported on Android
 
@@ -1062,8 +998,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::StereoPlayoutIsAvailable(bool& available)
 
 WebRtc_Word32 AudioDeviceAndroidJni::SetStereoPlayout(bool enable)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     if (enable)
     {
@@ -1081,8 +1015,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::SetStereoPlayout(bool enable)
 
 WebRtc_Word32 AudioDeviceAndroidJni::StereoPlayout(bool& enabled) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     enabled = false;
 
@@ -1095,8 +1027,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::StereoPlayout(bool& enabled) const
 
 WebRtc_Word32 AudioDeviceAndroidJni::SetAGC(bool enable)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "SetAGC(enable=%d)", enable);
 
     _AGC = enable;
 
@@ -1109,8 +1039,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::SetAGC(bool enable)
 
 bool AudioDeviceAndroidJni::AGC() const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     return _AGC;
 }
@@ -1122,8 +1050,6 @@ bool AudioDeviceAndroidJni::AGC() const
 WebRtc_Word32 AudioDeviceAndroidJni::MicrophoneVolumeIsAvailable(
         bool& available)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     available = false; // Mic volume not supported on Android
 
@@ -1137,8 +1063,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::MicrophoneVolumeIsAvailable(
 WebRtc_Word32 AudioDeviceAndroidJni::SetMicrophoneVolume(
         WebRtc_UWord32 /*volume*/)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
                  "  API call not supported on this platform");
@@ -1152,8 +1076,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::SetMicrophoneVolume(
 WebRtc_Word32 AudioDeviceAndroidJni::MicrophoneVolume(
         WebRtc_UWord32& /*volume*/) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
                  "  API call not supported on this platform");
@@ -1167,8 +1089,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::MicrophoneVolume(
 WebRtc_Word32 AudioDeviceAndroidJni::MaxMicrophoneVolume(
         WebRtc_UWord32& /*maxVolume*/) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
                  "  API call not supported on this platform");
@@ -1182,8 +1102,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::MaxMicrophoneVolume(
 WebRtc_Word32 AudioDeviceAndroidJni::MinMicrophoneVolume(
         WebRtc_UWord32& /*minVolume*/) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
                  "  API call not supported on this platform");
@@ -1197,8 +1115,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::MinMicrophoneVolume(
 WebRtc_Word32 AudioDeviceAndroidJni::MicrophoneVolumeStepSize(
         WebRtc_UWord16& /*stepSize*/) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
                  "  API call not supported on this platform");
@@ -1211,8 +1127,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::MicrophoneVolumeStepSize(
 
 WebRtc_Word16 AudioDeviceAndroidJni::PlayoutDevices()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     // There is one device only
     return 1;
@@ -1224,8 +1138,6 @@ WebRtc_Word16 AudioDeviceAndroidJni::PlayoutDevices()
 
 WebRtc_Word32 AudioDeviceAndroidJni::SetPlayoutDevice(WebRtc_UWord16 index)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     if (_playIsInitialized)
     {
@@ -1255,8 +1167,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::SetPlayoutDevice(WebRtc_UWord16 index)
 WebRtc_Word32 AudioDeviceAndroidJni::SetPlayoutDevice(
         AudioDeviceModule::WindowsDeviceType /*device*/)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
                  "  API call not supported on this platform");
@@ -1272,8 +1182,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::PlayoutDeviceName(
         WebRtc_Word8 name[kAdmMaxDeviceNameSize],
         WebRtc_Word8 guid[kAdmMaxGuidSize])
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     if (0 != index)
     {
@@ -1302,8 +1210,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::RecordingDeviceName(
         WebRtc_Word8 name[kAdmMaxDeviceNameSize],
         WebRtc_Word8 guid[kAdmMaxGuidSize])
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     if (0 != index)
     {
@@ -1329,8 +1235,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::RecordingDeviceName(
 
 WebRtc_Word16 AudioDeviceAndroidJni::RecordingDevices()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     // There is one device only
     return 1;
@@ -1342,8 +1246,6 @@ WebRtc_Word16 AudioDeviceAndroidJni::RecordingDevices()
 
 WebRtc_Word32 AudioDeviceAndroidJni::SetRecordingDevice(WebRtc_UWord16 index)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     if (_recIsInitialized)
     {
@@ -1367,8 +1269,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::SetRecordingDevice(WebRtc_UWord16 index)
 WebRtc_Word32 AudioDeviceAndroidJni::SetRecordingDevice(
         AudioDeviceModule::WindowsDeviceType /*device*/)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
                  "  API call not supported on this platform");
@@ -1381,8 +1281,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::SetRecordingDevice(
 
 WebRtc_Word32 AudioDeviceAndroidJni::PlayoutIsAvailable(bool& available)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     available = false;
 
@@ -1406,8 +1304,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::PlayoutIsAvailable(bool& available)
 
 WebRtc_Word32 AudioDeviceAndroidJni::RecordingIsAvailable(bool& available)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     available = false;
 
@@ -1431,8 +1327,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::RecordingIsAvailable(bool& available)
 
 WebRtc_Word32 AudioDeviceAndroidJni::InitPlayout()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     CriticalSectionScoped lock(_critSect);
 
@@ -1541,8 +1435,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::InitPlayout()
 
 WebRtc_Word32 AudioDeviceAndroidJni::InitRecording()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     CriticalSectionScoped lock(_critSect);
 
@@ -1651,8 +1543,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::InitRecording()
 
 WebRtc_Word32 AudioDeviceAndroidJni::StartRecording()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     CriticalSectionScoped lock(_critSect);
 
@@ -1738,8 +1628,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::StartRecording()
 WebRtc_Word32 AudioDeviceAndroidJni::StopRecording()
 
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     CriticalSectionScoped lock(_critSect);
 
@@ -1809,8 +1697,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::StopRecording()
 
 bool AudioDeviceAndroidJni::RecordingIsInitialized() const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     return _recIsInitialized;
 }
@@ -1821,8 +1707,6 @@ bool AudioDeviceAndroidJni::RecordingIsInitialized() const
 
 bool AudioDeviceAndroidJni::Recording() const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     return _recording;
 }
@@ -1833,8 +1717,6 @@ bool AudioDeviceAndroidJni::Recording() const
 
 bool AudioDeviceAndroidJni::PlayoutIsInitialized() const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     return _playIsInitialized;
 }
@@ -1845,8 +1727,6 @@ bool AudioDeviceAndroidJni::PlayoutIsInitialized() const
 
 WebRtc_Word32 AudioDeviceAndroidJni::StartPlayout()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     CriticalSectionScoped lock(_critSect);
 
@@ -1931,8 +1811,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::StartPlayout()
 
 WebRtc_Word32 AudioDeviceAndroidJni::StopPlayout()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     CriticalSectionScoped lock(_critSect);
 
@@ -2025,8 +1903,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::RecordingDelay(
 
 bool AudioDeviceAndroidJni::Playing() const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     return _playing;
 }
@@ -2039,8 +1915,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::SetPlayoutBuffer(
         const AudioDeviceModule::BufferType /*type*/,
         WebRtc_UWord16 /*sizeMS*/)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
                  "  API call not supported on this platform");
@@ -2055,8 +1929,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::PlayoutBuffer(
         AudioDeviceModule::BufferType& type,
         WebRtc_UWord16& sizeMS) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     type = AudioDeviceModule::kAdaptiveBufferSize;
     sizeMS = _delayPlayout; // Set to current playout delay
@@ -2070,8 +1942,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::PlayoutBuffer(
 
 WebRtc_Word32 AudioDeviceAndroidJni::CPULoad(WebRtc_UWord16& /*load*/) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
                  "  API call not supported on this platform");
@@ -2157,8 +2027,6 @@ void AudioDeviceAndroidJni::ClearRecordingError()
 WebRtc_Word32 AudioDeviceAndroidJni::SetRecordingSampleRate(
         const WebRtc_UWord32 samplesPerSec)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s(%d)", __FUNCTION__, samplesPerSec);
 
     if (samplesPerSec > 48000 || samplesPerSec < 8000)
     {
@@ -2190,8 +2058,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::SetRecordingSampleRate(
 WebRtc_Word32 AudioDeviceAndroidJni::SetPlayoutSampleRate(
         const WebRtc_UWord32 samplesPerSec)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s(%d)", __FUNCTION__, samplesPerSec);
 
     if (samplesPerSec > 48000 || samplesPerSec < 8000)
     {
@@ -2222,8 +2088,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::SetPlayoutSampleRate(
 
 WebRtc_Word32 AudioDeviceAndroidJni::SetLoudspeakerStatus(bool enable)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s(%d)", __FUNCTION__, enable);
 
     if (!_javaContext)
     {
@@ -2287,8 +2151,6 @@ WebRtc_Word32 AudioDeviceAndroidJni::SetLoudspeakerStatus(bool enable)
 
 WebRtc_Word32 AudioDeviceAndroidJni::GetLoudspeakerStatus(bool& enabled) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioDevice, _id,
-                 "%s", __FUNCTION__);
 
     enabled = _loudSpeakerOn;
 
