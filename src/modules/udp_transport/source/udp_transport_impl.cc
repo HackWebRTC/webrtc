@@ -69,8 +69,6 @@ namespace webrtc {
 UdpTransport* UdpTransport::Create(const WebRtc_Word32 id,
                                    WebRtc_UWord8& numSocketThreads)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, id,
-                 "Create(numSocketThreads:%d)",numSocketThreads);
     return new UdpTransportImpl(id, numSocketThreads);
 }
 
@@ -78,8 +76,6 @@ void UdpTransport::Destroy(UdpTransport* module)
 {
     if(module)
     {
-        WEBRTC_TRACE(kTraceModuleCall, kTraceTransport,
-                     static_cast<UdpTransportImpl*>(module)->Id(), "Destroy");
         delete module;
     }
 }
@@ -166,8 +162,6 @@ UdpTransportImpl::~UdpTransportImpl()
 
 WebRtc_Word32 UdpTransportImpl::ChangeUniqueId(const WebRtc_Word32 id)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id,
-                 "ChangeUniqueId(new id:%d)", id);
 
     CriticalSectionScoped cs(_crit);
     _id = id;
@@ -262,7 +256,6 @@ WebRtc_Word32 UdpTransportImpl::InitializeReceiveSockets(
     const WebRtc_Word8* multicastIpAddr,
     const WebRtc_UWord16 rtcpPort)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id, "%s", __FUNCTION__);
 
     {
         CriticalSectionScoped cs(_critPacketCallback);
@@ -391,7 +384,6 @@ WebRtc_Word32 UdpTransportImpl::ReceiveSocketInformation(
     WebRtc_UWord16& rtcpPort,
     WebRtc_Word8 multicastIpAddr[kIpAddressVersion6Length]) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id, "%s", __FUNCTION__);
     CriticalSectionScoped cs(_crit);
     rtpPort = _localPort;
     rtcpPort = _localPortRTCP;
@@ -415,7 +407,6 @@ WebRtc_Word32 UdpTransportImpl::SendSocketInformation(
     WebRtc_UWord16& rtpPort,
     WebRtc_UWord16& rtcpPort) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id, "%s", __FUNCTION__);
     CriticalSectionScoped cs(_crit);
     rtpPort = _destPort;
     rtcpPort = _destPortRTCP;
@@ -430,7 +421,6 @@ WebRtc_Word32 UdpTransportImpl::RemoteSocketInformation(
     WebRtc_UWord16& rtpPort,
     WebRtc_UWord16& rtcpPort) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id, "%s", __FUNCTION__);
     CriticalSectionScoped cs(_crit);
     rtpPort = _fromPort;
     rtcpPort = _fromPortRTCP;
@@ -447,7 +437,6 @@ WebRtc_Word32 UdpTransportImpl::FilterPorts(
     WebRtc_UWord16& rtpFilterPort,
     WebRtc_UWord16& rtcpFilterPort) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id, "%s", __FUNCTION__);
     CriticalSectionScoped cs(_critFilter);
     rtpFilterPort = _rtpFilterPort;
     rtcpFilterPort = _rtcpFilterPort;
@@ -458,7 +447,6 @@ WebRtc_Word32 UdpTransportImpl::SetQoS(bool QoS, WebRtc_Word32 serviceType,
                                        WebRtc_UWord32 maxBitrate,
                                        WebRtc_Word32 overrideDSCP, bool audio)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id, "%s", __FUNCTION__);
     if(QoS)
     {
         return EnableQoS(serviceType, audio, maxBitrate, overrideDSCP);
@@ -748,7 +736,6 @@ WebRtc_Word32 UdpTransportImpl::DisableQoS()
 WebRtc_Word32 UdpTransportImpl::QoS(bool& QoS, WebRtc_Word32& serviceType,
                                     WebRtc_Word32& overrideDSCP) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id, "%s", __FUNCTION__);
     CriticalSectionScoped cs(_crit);
     QoS = _qos;
     serviceType = _serviceType;
@@ -758,7 +745,6 @@ WebRtc_Word32 UdpTransportImpl::QoS(bool& QoS, WebRtc_Word32& serviceType,
 
 WebRtc_Word32 UdpTransportImpl::SetToS(WebRtc_Word32 DSCP, bool useSetSockOpt)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id, "%s", __FUNCTION__);
     if (_qos)
     {
         WEBRTC_TRACE(kTraceError, kTraceTransport, _id, "QoS already enabled");
@@ -956,7 +942,6 @@ WebRtc_Word32 UdpTransportImpl::SetToS(WebRtc_Word32 DSCP, bool useSetSockOpt)
 WebRtc_Word32 UdpTransportImpl::ToS(WebRtc_Word32& DSCP,
                                     bool& useSetSockOpt) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id, "%s", __FUNCTION__);
     CriticalSectionScoped cs(_crit);
     DSCP = _tos;
     useSetSockOpt = _useSetSockOpt;
@@ -965,7 +950,6 @@ WebRtc_Word32 UdpTransportImpl::ToS(WebRtc_Word32& DSCP,
 
 WebRtc_Word32 UdpTransportImpl::SetPCP(WebRtc_Word32 PCP)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id, "%s", __FUNCTION__);
 
     if (_qos)
     {
@@ -1062,7 +1046,6 @@ WebRtc_Word32 UdpTransportImpl::SetPCP(WebRtc_Word32 PCP)
 
 WebRtc_Word32 UdpTransportImpl::PCP(WebRtc_Word32& PCP) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id, "%s", __FUNCTION__);
     CriticalSectionScoped cs(_crit);
     PCP = _pcp;
     return 0;
@@ -1070,12 +1053,10 @@ WebRtc_Word32 UdpTransportImpl::PCP(WebRtc_Word32& PCP) const
 
 bool UdpTransportImpl::SetSockOptUsed()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id, "%s", __FUNCTION__);
     return _useSetSockOpt;
 }
 
 WebRtc_Word32 UdpTransportImpl::EnableIpV6() {
-  WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id, "%s", __FUNCTION__);
 
   CriticalSectionScoped cs(_crit);
   const bool initialized = (_ptrSendRtpSocket || _ptrRtpSocket);
@@ -1094,7 +1075,6 @@ WebRtc_Word32 UdpTransportImpl::EnableIpV6() {
 WebRtc_Word32 UdpTransportImpl::FilterIP(
     WebRtc_Word8 filterIPAddress[kIpAddressVersion6Length]) const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id, "%s", __FUNCTION__);
 
     if(filterIPAddress == NULL)
     {
@@ -1116,7 +1096,6 @@ WebRtc_Word32 UdpTransportImpl::FilterIP(
 WebRtc_Word32 UdpTransportImpl::SetFilterIP(
     const WebRtc_Word8 filterIPAddress[kIpAddressVersion6Length])
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id, "%s", __FUNCTION__);
     if(filterIPAddress == NULL)
     {
         memset(&_filterIPAddress, 0, sizeof(_filterIPAddress));
@@ -1161,7 +1140,6 @@ WebRtc_Word32 UdpTransportImpl::SetFilterIP(
 WebRtc_Word32 UdpTransportImpl::SetFilterPorts(WebRtc_UWord16 rtpFilterPort,
                                                WebRtc_UWord16 rtcpFilterPort)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id, "%s", __FUNCTION__);
     CriticalSectionScoped cs(_critFilter);
     _rtpFilterPort = rtpFilterPort;
     _rtcpFilterPort = rtcpFilterPort;
@@ -1170,7 +1148,6 @@ WebRtc_Word32 UdpTransportImpl::SetFilterPorts(WebRtc_UWord16 rtpFilterPort,
 
 bool UdpTransportImpl::SendSocketsInitialized() const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id, "%s", __FUNCTION__);
     CriticalSectionScoped cs(_crit);
     if(_ptrSendRtpSocket)
     {
@@ -1185,7 +1162,6 @@ bool UdpTransportImpl::SendSocketsInitialized() const
 
 bool UdpTransportImpl::ReceiveSocketsInitialized() const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id, "%s", __FUNCTION__);
     if(_ptrRtpSocket)
     {
         return true;
@@ -1195,7 +1171,6 @@ bool UdpTransportImpl::ReceiveSocketsInitialized() const
 
 bool UdpTransportImpl::SourcePortsInitialized() const
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id, "%s", __FUNCTION__);
     if(_ptrSendRtpSocket)
     {
         return true;
@@ -1522,7 +1497,6 @@ UdpTransportImpl::ErrorCode UdpTransportImpl::BindLocalRTCPSocket()
 WebRtc_Word32 UdpTransportImpl::InitializeSourcePorts(WebRtc_UWord16 rtpPort,
                                                       WebRtc_UWord16 rtcpPort)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id, "%s", __FUNCTION__);
 
     if(rtpPort == 0)
     {
@@ -1592,7 +1566,6 @@ WebRtc_Word32 UdpTransportImpl::StartReceiving(
     WebRtc_UWord32 /*numberOfSocketBuffers*/)
 #endif
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id, "%s", __FUNCTION__);
     CriticalSectionScoped cs(_crit);
     if(_receiving)
     {
@@ -1636,13 +1609,11 @@ WebRtc_Word32 UdpTransportImpl::StartReceiving(
 
 bool UdpTransportImpl::Receiving() const
 {
-   WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id, "%s", __FUNCTION__);
    return _receiving;
 }
 
 WebRtc_Word32 UdpTransportImpl::StopReceiving()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id, "%s", __FUNCTION__);
 
     CriticalSectionScoped cs(_crit);
 
@@ -1676,7 +1647,6 @@ WebRtc_Word32 UdpTransportImpl::InitializeSendSockets(
     const WebRtc_UWord16 rtpPort,
     const WebRtc_UWord16 rtcpPort)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id, "%s", __FUNCTION__);
     {
         CriticalSectionScoped cs(_crit);
         _destPort = rtpPort;
@@ -1820,7 +1790,6 @@ WebRtc_Word32 UdpTransportImpl::SendRaw(const WebRtc_Word8 *data,
                                         WebRtc_UWord16 portnr,
                                         const WebRtc_Word8 *ip)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id, "%s", __FUNCTION__);
     CriticalSectionScoped cs(_crit);
     if(isRTCP)
     {
@@ -1895,7 +1864,6 @@ WebRtc_Word32 UdpTransportImpl::SendRTPPacketTo(const WebRtc_Word8* data,
                                                 WebRtc_UWord32 length,
                                                 const SocketAddress& to)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id, "%s", __FUNCTION__);
     CriticalSectionScoped cs(_crit);
     if(_ptrSendRtpSocket)
     {
@@ -1912,7 +1880,6 @@ WebRtc_Word32 UdpTransportImpl::SendRTCPPacketTo(const WebRtc_Word8* data,
                                                  WebRtc_UWord32 length,
                                                  const SocketAddress& to)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id, "%s", __FUNCTION__);
 
     CriticalSectionScoped cs(_crit);
 
@@ -1931,7 +1898,6 @@ WebRtc_Word32 UdpTransportImpl::SendRTPPacketTo(const WebRtc_Word8* data,
                                                 WebRtc_UWord32 length,
                                                 const WebRtc_UWord16 rtpPort)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id, "%s", __FUNCTION__);
 
     CriticalSectionScoped cs(_crit);
     // Use the current SocketAdress but update it with rtpPort.
@@ -1961,7 +1927,6 @@ WebRtc_Word32 UdpTransportImpl::SendRTCPPacketTo(const WebRtc_Word8* data,
                                                  WebRtc_UWord32 length,
                                                  const WebRtc_UWord16 rtcpPort)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id, "%s", __FUNCTION__);
     CriticalSectionScoped cs(_crit);
 
     // Use the current SocketAdress but update it with rtcpPort.
@@ -2057,7 +2022,6 @@ int UdpTransportImpl::SendPacket(int /*channel*/, const void* data, int length)
 int UdpTransportImpl::SendRTCPPacket(int /*channel*/, const void* data,
                                      int length)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id, "%s", __FUNCTION__);
 
     CriticalSectionScoped cs(_crit);
     if(_destIP[0] == 0)
@@ -2122,7 +2086,6 @@ int UdpTransportImpl::SendRTCPPacket(int /*channel*/, const void* data,
 
 WebRtc_Word32 UdpTransportImpl::SetSendIP(const WebRtc_Word8* ipaddr)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id, "%s", __FUNCTION__);
     if(!IsIpAddressValid(ipaddr,IpV6Enabled()))
     {
         return kIpAddressInvalid;
@@ -2137,7 +2100,6 @@ WebRtc_Word32 UdpTransportImpl::SetSendIP(const WebRtc_Word8* ipaddr)
 WebRtc_Word32 UdpTransportImpl::SetSendPorts(WebRtc_UWord16 rtpPort,
                                              WebRtc_UWord16 rtcpPort)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, _id, "%s", __FUNCTION__);
     CriticalSectionScoped cs(_crit);
     _destPort = rtpPort;
     if(rtcpPort == 0)
@@ -2437,7 +2399,6 @@ WebRtc_Word32 UdpTransport::InetPresentationToNumeric(WebRtc_Word32 af,
 
 WebRtc_Word32 UdpTransport::LocalHostAddressIPV6(WebRtc_UWord8 n_localIP[16])
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, -1, "%s", __FUNCTION__);
 
 #if defined(_WIN32)
     struct addrinfo *result = NULL;
@@ -2675,7 +2636,6 @@ WebRtc_Word32 UdpTransport::LocalHostAddressIPV6(WebRtc_UWord8 n_localIP[16])
 
 WebRtc_Word32 UdpTransport::LocalHostAddress(WebRtc_UWord32& localIP)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, -1, "%s", __FUNCTION__);
  #if defined(_WIN32)
     hostent* localHost;
     localHost = gethostbyname( "" );
@@ -2875,7 +2835,6 @@ WebRtc_Word32 UdpTransport::IPAddress(const SocketAddress& address,
 
 bool UdpTransport::IsIpAddressValid(const WebRtc_Word8* ipadr, const bool ipV6)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceTransport, -1, "%s", __FUNCTION__);
     if(ipV6)
     {
         WebRtc_Word32 len = (WebRtc_Word32)strlen(ipadr);
