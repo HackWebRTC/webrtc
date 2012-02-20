@@ -118,15 +118,14 @@ class WebRTCFactory(factory.BuildFactory):
     """
     if type(descriptor) is str:
       descriptor = [descriptor]
-
     flunk_on_failure = not warn_on_failure
     self.addStep(shell.ShellCommand(command=cmd, workdir=workdir,
                                     description=descriptor + ['running...'],
-                                    descriptionDone=descriptor + ['done...'],
+                                    descriptionDone=descriptor,
                                     warnOnFailure=warn_on_failure,
                                     flunkOnFailure=flunk_on_failure,
                                     haltOnFailure=halt_build_on_failure,
-                                    name=''.join(descriptor)))
+                                    name='_'.join(descriptor)))
 
   def AddCommonTestRunStep(self, test, descriptor='', cmd=None,
                            workdir='build/trunk'):
@@ -180,7 +179,7 @@ class WebRTCFactory(factory.BuildFactory):
     cmd += gyp_params + self.gyp_params
     self.addStep(shell.ShellCommand(command=cmd, workdir='build/trunk',
                                     description=[descriptor, 'running...'],
-                                    descriptionDone=[descriptor, 'done...'],
+                                    descriptionDone=[descriptor],
                                     haltOnFailure=True,
                                     name='gyp_%s' % descriptor))
 
@@ -209,11 +208,11 @@ class GenerateCodeCoverage(ShellCommand):
     self.addFactoryArguments(coverage_url=coverage_url,
                              coverage_dir=coverage_dir,
                              coverage_file=coverage_file)
-    self.setDefaultWorkdir("build/trunk")
+    self.setDefaultWorkdir('build/trunk')
     self.coverage_url = coverage_url
     self.coverage_dir = coverage_dir
     self.coverage_file = coverage_file
-    self.description = ["Coverage Report"]
+    self.description = ['Coverage Report']
     self.warnOnFailure = True
     self.flunkOnFailure = False
     output_dir = os.path.join(coverage_dir,
@@ -248,16 +247,16 @@ class WebRTCAndroidFactory(WebRTCFactory):
     cmd = ' ; '.join(cleanup_list)
     self.addStep(shell.Compile(command=(cmd), workdir='build/trunk',
                  description=['cleanup', 'running...'],
-                 descriptionDone=['cleanup', 'done...'], name='cleanup'))
+                 descriptionDone=['cleanup'], name='cleanup'))
     cmd = 'svn checkout %s external/webrtc' % SVN_LOCATION
     self.addStep(shell.Compile(command=(cmd),
-        workdir='build/trunk', description=['svn', 'running...'],
-        descriptionDone=['svn', 'done...'], name='svn'))
+        workdir='build/trunk', description=['svn checkout', 'running...'],
+        descriptionDone=['svn checkout'], name='svn (checkout)'))
     cmd = ('source build/envsetup.sh && lunch full_%s-eng '
            '&& mmm external/webrtc showcommands' % product)
     self.addStep(shell.Compile(command=(cmd),
         workdir='build/trunk', description=['build', 'running...'],
-        descriptionDone=['build', 'done...'], name='build'))
+        descriptionDone=['build'], name='build'))
 
 
 class WebRTCChromeFactory(WebRTCFactory):
@@ -272,16 +271,16 @@ class WebRTCChromeFactory(WebRTCFactory):
     self.AddCommonStep(cmd, descriptor='Sync')
     self.AddCommonMakeStep('chrome')
 
-  def AddCommonMakeStep(self, make, descriptor='', make_extra=None):
-    make_descriptor = [make, descriptor]
-    cmd = ['make', make, '-j100']
+  def AddCommonMakeStep(self, target, make_extra=None):
+    descriptor = ['make ' + target]
+    cmd = ['make', target, '-j100']
     if make_extra is not None:
       cmd.append(make_extra)
     self.addStep(shell.ShellCommand(command=cmd,
-        workdir='build/src', description=['Making'] + make_descriptor,
-        descriptionDone=make_descriptor + ['built'],
+        workdir='build/src', description=descriptor + ['running...'],
+        descriptionDone=descriptor,
         haltOnFailure=True,
-        name='_'.join(make_descriptor)))
+        name='_'.join(descriptor)))
 
 
 class WebRTCLinuxFactory(WebRTCFactory):
@@ -358,18 +357,18 @@ class WebRTCLinuxFactory(WebRTCFactory):
     else:
       self.AddCommonMakeStep('all')
 
-  def AddCommonTestRunStep(self, test, descriptor='', cmd=None,
+  def AddCommonTestRunStep(self, test, extra_text=None, cmd=None,
                            workdir='build/trunk'):
-    test_folder = 'Release' if self.release else 'Debug'
-    test_descriptor = [test, descriptor]
+    descriptor = [test, extra_text] if extra_text else [test]
     if cmd is None:
+      test_folder = 'Release' if self.release else 'Debug'
       cmd = ['out/%s/%s' % (test_folder, test)]
     if self.valgrind_enabled:
       cmd = VALGRIND_CMD + cmd
     self.addStep(shell.ShellCommand(command=cmd,
-        workdir=workdir, description=['Running'] + test_descriptor,
-        descriptionDone=test_descriptor + ['finished'],
-        name='_'.join(test_descriptor)))
+        workdir=workdir, description=['Running'] + descriptor,
+        descriptionDone=descriptor,
+        name='_'.join(descriptor)))
 
   def AddXvfbTestRunStep(self, test_name, test_binary, test_arguments=''):
     """ Adds a test to be run inside a XVFB window manager."""
@@ -378,16 +377,17 @@ class WebRTCLinuxFactory(WebRTCFactory):
            '%s %s' % (test_binary, test_arguments))
     self.AddCommonTestRunStep(test=test_name, cmd=cmd)
 
-  def AddCommonMakeStep(self, make, descriptor='', make_extra=None):
-    make_descriptor = [make, descriptor]
-    cmd = ['make', make, '-j100']
-    if make_extra is not None:
+  def AddCommonMakeStep(self, target, extra_text=None, make_extra=None):
+    descriptor = ['make ' + target, extra_text] if extra_text else ['make ' +
+                                                                    target]
+    cmd = ['make', target, '-j100']
+    if make_extra:
       cmd.append(make_extra)
     self.addStep(shell.ShellCommand(command=cmd,
-        workdir='build/trunk', description=['Making'] + make_descriptor,
+        workdir='build/trunk', description=descriptor + ['running...'],
         haltOnFailure=True,
-        descriptionDone=make_descriptor + ['built'],
-        name='_'.join(make_descriptor)))
+        descriptionDone=descriptor,
+        name='_'.join(descriptor)))
 
   def AddStepsToEstablishCoverageBaseline(self):
     self.AddCommonStep(['lcov', '--directory', '.', '--capture', '-b',
@@ -396,13 +396,13 @@ class WebRTCLinuxFactory(WebRTCFactory):
                        workdir='build/trunk',
                        warn_on_failure=True,
                        halt_build_on_failure=False,
-                       descriptor=['LCOV', 'Baseline', 'Capture'])
+                       descriptor='LCOV (Baseline Capture)')
     self.AddCommonStep(['lcov', '--extract', 'webrtc_base.info', '*/src/*',
                         '--output', 'filtered.info'],
                        workdir='build/trunk',
                        warn_on_failure=True,
                        halt_build_on_failure=False,
-                       descriptor=['LCOV', 'Baseline', 'Extract'])
+                       descriptor='LCOV (Baseline Extract)')
     self.AddCommonStep(['lcov', '--remove', 'filtered.info', '*/usr/include/*',
                         '/third*', '/testing/*', '*/test/*', '*_unittest.*',
                         '*/mock/*', '--output',
@@ -410,7 +410,7 @@ class WebRTCLinuxFactory(WebRTCFactory):
                        workdir='build/trunk',
                        warn_on_failure=True,
                        halt_build_on_failure=False,
-                       descriptor=['LCOV', 'Baseline', 'Filter'])
+                       descriptor='LCOV (Baseline Filter)')
 
   def AddStepsToComputeCoverage(self):
     """Enable coverage data."""
@@ -420,31 +420,34 @@ class WebRTCLinuxFactory(WebRTCFactory):
     self.AddCommonStep(['./tools/continuous_build/clean_third_party_gcda.sh'],
                        warn_on_failure=True,
                        halt_build_on_failure=False,
-                       workdir='build/trunk', descriptor=['LCOV',
-                                                          'Delete 3rd party'])
-
+                       workdir='build/trunk',
+                       descriptor='LCOV (Delete 3rd party)')
     self.AddCommonStep(['lcov', '--directory', '.', '--capture', '-b',
                         '.', '--output-file', 'webrtc.info'],
                        warn_on_failure=True,
                        halt_build_on_failure=False,
-                       workdir='build/trunk', descriptor=['LCOV', 'Capture'])
+                       workdir='build/trunk',
+                       descriptor='LCOV (Capture)')
     self.AddCommonStep(['lcov', '--extract', 'webrtc.info', '*/src/*',
                         '--output', 'test.info'],
                        warn_on_failure=True,
                        halt_build_on_failure=False,
-                       workdir='build/trunk', descriptor=['LCOV', 'Extract'])
+                       workdir='build/trunk',
+                       descriptor='LCOV (Extract)')
     self.AddCommonStep(['lcov', '--remove', 'test.info', '*/usr/include/*',
                         '/third*', '/testing/*', '*/test/*', '*_unittest.*',
                         '*/mock/*', '--output',
                         'final.info'],
                        warn_on_failure=True,
                        halt_build_on_failure=False,
-                       workdir='build/trunk', descriptor=['LCOV', 'Filter'])
+                       workdir='build/trunk',
+                       descriptor='LCOV (Filter)')
     self.AddCommonStep(['lcov', '-a', 'webrtc_base_filtered_final.info', '-a',
                         'final.info', '-o', 'final.info'],
                        warn_on_failure=True,
                        halt_build_on_failure=False,
-                       workdir='build/trunk', descriptor=['LCOV', 'Merge'])
+                       workdir='build/trunk',
+                       descriptor='LCOV (Merge)')
     self.addStep(GenerateCodeCoverage(coverage_url=self.coverage_url,
                                       coverage_dir=self.coverage_dir,
                                       coverage_file='final.info'))
@@ -471,13 +474,13 @@ class WebRTCLinuxFactory(WebRTCFactory):
     if test == 'audioproc_unittest':
       self.AddCommonTestRunStep(test)
       self.AddCommonGYPStep('webrtc.gyp', gyp_params=['-Dprefer_fixed_point=1'],
-                            descriptor='fixed_point')
-      self.AddCommonMakeStep(test, descriptor='make_fixed_point')
-      self.AddCommonTestRunStep(test, descriptor='fixed_point')
+                            descriptor='GYP fixed point')
+      self.AddCommonMakeStep(test, extra_text='(fixed point)')
+      self.AddCommonTestRunStep(test, extra_text='(fixed point)')
     elif test == 'vie_auto_test':
       # TODO(phoglund): Enable the full stack test once it is completed and
       # nonflaky.
-      binary = "out/Debug/vie_auto_test"
+      binary = 'out/Debug/vie_auto_test'
       args = (
           '--automated --gtest_filter="'
           '-ViEVideoVerificationTest.RunsFullStackWithoutErrors:'
@@ -485,17 +488,17 @@ class WebRTCLinuxFactory(WebRTCFactory):
           '--capture_test_ensure_resolution_alignment_in_capture_device=false')
       self.AddXvfbTestRunStep(test_name=test, test_binary=binary,
                               test_arguments=args)
-    elif test == "video_render_module_test":
+    elif test == 'video_render_module_test':
       self.AddXvfbTestRunStep(test_name=test,
                               test_binary='out/Debug/video_render_module_test')
-    elif test == "voe_auto_test":
+    elif test == 'voe_auto_test':
       # TODO(phoglund): Remove this notice and take appropriate action when
       # http://code.google.com/p/webrtc/issues/detail?id=266 is concluded.
       self.addStep(shell.ShellCommand(
         command=('out/Debug/voe_auto_test --automated '
                  '--gtest_filter="-VolumeTest.*"'),
         workdir='build/trunk', description=[test, 'running...'],
-        descriptionDone=[test, 'done...'], name='%s' % test))
+        descriptionDone=[test], name=test))
     else:
       self.AddCommonTestRunStep(test)
 
@@ -530,44 +533,44 @@ class WebRTCMacFactory(WebRTCFactory):
                             descriptor='EnableMake')
     self.AddCommonMakeStep('all')
 
-  def AddCommonTestRunStep(self, test, descriptor='', cmd=None,
+  def AddCommonTestRunStep(self, test, extra_text=None, cmd=None,
                            workdir='build/trunk'):
-    test_folder = 'Release' if self.release else 'Debug'
-    test_descriptor = [test, descriptor]
+    descriptor = [test, extra_text] if extra_text else [test]
     if cmd is None:
+      test_folder = 'Release' if self.release else 'Debug'
       if self.build_type == 'xcode' or self.build_type == 'both':
         cmd = ['xcodebuild/%s/%s' % (test_folder, test)]
-        self.AddCommonStep(cmd, descriptor=test_descriptor + ['(xcode)'],
+        self.AddCommonStep(cmd, descriptor=descriptor + ['(xcode)'],
                            workdir='build/trunk')
       if self.build_type == 'make' or self.build_type == 'both':
         cmd = ['out/%s/%s' % (test_folder, test)]
-        self.AddCommonStep(cmd, descriptor=test_descriptor + ['(make)'],
+        self.AddCommonStep(cmd, descriptor=descriptor + ['(make)'],
                            workdir='build/trunk')
 
-  def AddCommonMakeStep(self, make, descriptor='', make_extra=None):
-    make_descriptor = [make, descriptor]
+  def AddCommonMakeStep(self, target, extra_text=None, make_extra=None):
+    descriptor = [target, extra_text] if extra_text else [target]
     if self.build_type == 'make' or self.build_type == 'both':
-      cmd = ['make', make, '-j100']
+      cmd = ['make', target, '-j100']
       if make_extra is not None:
         cmd.append(make_extra)
       if self.release:
         cmd.append('BUILDTYPE=Release')
-      self.AddCommonStep(cmd, descriptor=make_descriptor + ['(make)'],
+      self.AddCommonStep(cmd, descriptor=descriptor + ['(make)'],
                          workdir='build/trunk')
     if self.build_type == 'xcode' or self.build_type == 'both':
       configuration = 'Release' if self.release else 'Debug'
       cmd = ['xcodebuild', '-project', 'webrtc.xcodeproj', '-configuration',
              configuration, '-target', 'All']
-      self.AddCommonStep(cmd, descriptor=make_descriptor + ['(xcode)'],
+      self.AddCommonStep(cmd, descriptor=descriptor + ['(xcode)'],
                          workdir='build/trunk')
 
-
 class WebRTCWinFactory(WebRTCFactory):
-  """Sets up the Windows build."""
+  """Sets up the Windows build.
+
+     Allows building with Debug, Release or both in sequence."""
 
   def __init__(self):
     WebRTCFactory.__init__(self)
-
     self.configuration = 'Debug'
     self.platform = 'x64'
     self.allowed_platforms = ['x64', 'Win32']
@@ -600,30 +603,30 @@ class WebRTCWinFactory(WebRTCFactory):
     if self.configuration == 'Debug' or self.configuration == 'both':
       cmd = ['msbuild', 'webrtc.sln', '/t:Clean',
              '/p:Configuration=Debug;Platform=%s' % (self.platform)]
-      self.AddCommonStep(cmd, descriptor='Build_Clean', workdir='build/trunk')
+      self.AddCommonStep(cmd, descriptor='Build(Clean)', workdir='build/trunk')
       cmd = ['msbuild', 'webrtc.sln',
              '/p:Configuration=Debug;Platform=%s' % (self.platform)]
-      self.AddCommonStep(cmd, descriptor='Build_Debug', workdir='build/trunk')
+      self.AddCommonStep(cmd, descriptor='Build(Debug)', workdir='build/trunk')
     if self.configuration == 'Release' or self.configuration == 'both':
       cmd = ['msbuild', 'webrtc.sln', '/t:Clean',
              '/p:Configuration=Release;Platform=%s' % (self.platform)]
-      self.AddCommonStep(cmd, descriptor='Build_Clean', workdir='build/trunk')
+      self.AddCommonStep(cmd, descriptor='Build(Clean)', workdir='build/trunk')
       cmd = ['msbuild', 'webrtc.sln',
              '/p:Configuration=Release;Platform=%s' % (self.platform)]
-      self.AddCommonStep(cmd, descriptor='Build_Release', workdir='build/trunk')
+      self.AddCommonStep(cmd, descriptor='Build(Release)',
+                         workdir='build/trunk')
 
-  def AddCommonTestRunStep(self, test, descriptor='', cmd=None,
-                           workdir='build/trunk'):
-    test_descriptor = [test, descriptor]
+  def AddCommonTestRunStep(self, test, cmd=None, workdir='build/trunk'):
+    descriptor = [test]
     if cmd is None:
       if self.configuration == 'Debug' or self.configuration == 'both':
         cmd = ['build\Debug\%s.exe' % test]
-        self.AddCommonStep(cmd, descriptor=test_descriptor + ['Debug'],
+        self.AddCommonStep(cmd, descriptor=descriptor,
                            halt_build_on_failure=False,
                            workdir=workdir)
       if self.configuration == 'Release' or self.configuration == 'both':
         cmd = ['build\Release\%s.exe' % test]
-        self.AddCommonStep(cmd, descriptor=test_descriptor + ['Release'],
+        self.AddCommonStep(cmd, descriptor=descriptor,
                            halt_build_on_failure=False,
                            workdir=workdir)
 
