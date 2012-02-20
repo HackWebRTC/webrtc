@@ -1,6 +1,12 @@
-//
-//  CocoaFullScreenWindow.m
-//
+/*
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
+ *
+ *  Use of this source code is governed by a BSD-style license
+ *  that can be found in the LICENSE file in the root of the source
+ *  tree. An additional intellectual property rights grant can be found
+ *  in the file PATENTS.  All contributing project authors may
+ *  be found in the AUTHORS file in the root of the source tree.
+ */
 
 #import "cocoa_full_screen_window.h"
 #include "trace.h"
@@ -9,10 +15,7 @@ using namespace webrtc;
 
 @implementation CocoaFullScreenWindow
 
-
-
 -(id)init{	
-	WEBRTC_TRACE(kTraceModuleCall, kTraceVideoRenderer, 0, "%s:%d", __FUNCTION__, __LINE__); 
 	
 	self = [super init];
 	if(!self){
@@ -26,7 +29,6 @@ using namespace webrtc;
 }
 
 -(void)grabFullScreen{
-	WEBRTC_TRACE(kTraceModuleCall, kTraceVideoRenderer, 0, "%s:%d", __FUNCTION__, __LINE__); 
 	
 #ifdef GRAB_ALL_SCREENS
 	if(CGCaptureAllDisplays() != kCGErrorSuccess)
@@ -57,7 +59,6 @@ using namespace webrtc;
  
 -(void)releaseFullScreen
 {
-	WEBRTC_TRACE(kTraceModuleCall, kTraceVideoRenderer, 0, "%s:%d", __FUNCTION__, __LINE__); 
 	[_window orderOut:self];
 	
 #ifdef GRAB_ALL_SCREENS
@@ -77,7 +78,6 @@ using namespace webrtc;
 
 - (void) dealloc
 {
-	WEBRTC_TRACE(kTraceModuleCall, kTraceVideoRenderer, 0, "%s:%d", __FUNCTION__, __LINE__); 
 	[self releaseFullScreen];
 	[super dealloc];
 }	

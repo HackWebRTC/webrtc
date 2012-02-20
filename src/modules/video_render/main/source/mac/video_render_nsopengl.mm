@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -243,7 +243,6 @@ int VideoChannelNSOpenGL::DeliverFrame(unsigned char* buffer, int bufferSize, un
 
     [_nsglContext makeCurrentContext];
 
-    WEBRTC_TRACE(kTraceModuleCall, kTraceVideoRenderer, _id, "bufferSize=%d _width=%d _height=%d", bufferSize, _width, _height);
 
     glBindTexture(GL_TEXTURE_RECTANGLE_EXT, _texture); // Make sure this texture is the active one
     GLenum glErr = glGetError();
@@ -557,7 +556,6 @@ int VideoRenderNSOpenGL::setRenderTargetWindow()
 {
     LockAGLCntx();
 
-    WEBRTC_TRACE(kTraceModuleCall, kTraceVideoRenderer, _id, "%s:%d", __FUNCTION__, __LINE__);
 
     GLuint attribs[] =
     {
@@ -588,7 +586,6 @@ int VideoRenderNSOpenGL::setRenderTargetWindow()
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    WEBRTC_TRACE(kTraceModuleCall, kTraceVideoRenderer, _id, "setRenderTargetWindow glClearColor 0.5");
 
     DisplayBuffers();
 
@@ -600,7 +597,6 @@ int VideoRenderNSOpenGL::setRenderTargetFullScreen()
 {
     LockAGLCntx();
 
-    WEBRTC_TRACE(kTraceModuleCall, kTraceVideoRenderer, _id, "%s:%d", __FUNCTION__, __LINE__);
 
     GLuint attribs[] =
     {
@@ -654,7 +650,6 @@ int VideoRenderNSOpenGL::setRenderTargetFullScreen()
 
 VideoRenderNSOpenGL::~VideoRenderNSOpenGL()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceVideoRenderer, 0, "%s:%d", __FUNCTION__, __LINE__);
 
     if(_fullScreen)
     {

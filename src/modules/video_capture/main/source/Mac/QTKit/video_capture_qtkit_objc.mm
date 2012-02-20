@@ -1,8 +1,12 @@
-//
-//  VideoCaptureMacQTKitObjC.cpp
-//
-//
-
+/*
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
+ *
+ *  Use of this source code is governed by a BSD-style license
+ *  that can be found in the LICENSE file in the root of the source
+ *  tree. An additional intellectual property rights grant can be found
+ *  in the file PATENTS.  All contributing project authors may
+ *  be found in the AUTHORS file in the root of the source tree.
+ */
 
 #define DEFAULT_CAPTURE_DEVICE_INDEX    1
 #define DEFAULT_FRAME_RATE              30
@@ -10,8 +14,6 @@
 #define DEFAULT_FRAME_HEIGHT            288
 #define ROTATE_CAPTURED_FRAME           1
 #define LOW_QUALITY                     1
-
-
 
 #import "video_capture_qtkit_objc.h"
 #include "video_capture_qtkit_utility.h"
@@ -28,8 +30,6 @@ using namespace videocapturemodule;
 ///       manually.
 /// ***** Potentially returns an instance of self
 -(id)init{
-    WEBRTC_TRACE(kTraceModuleCall, kTraceVideoCapture, 0,
-                 "%s:%d", __FUNCTION__, __LINE__);
     self = [super init];
     if(nil != self)
     {
@@ -46,8 +46,6 @@ using namespace videocapturemodule;
 /// ***** Objective-C. Similar to C++ destructor
 /// ***** Returns nothing
 - (void)dealloc {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceVideoCapture, 0,
-                 "%s:%d", __FUNCTION__, __LINE__);
     if(_captureSession)
     {
         [_captureSession stopRunning];
@@ -64,7 +62,6 @@ using namespace videocapturemodule;
 ///       sent
 /// ***** Returns 0 on success, -1 otherwise.
 - (NSNumber*)registerOwner:(VideoCaptureMacQTKit*)owner{
-    WEBRTC_TRACE(kTraceModuleCall, kTraceVideoCapture, 0, "%s:%d", __FUNCTION__, __LINE__);
     if(!owner){
         return [NSNumber numberWithInt:-1];
     }
@@ -77,8 +74,6 @@ using namespace videocapturemodule;
 ///       occurred
 /// ***** Returns 0 on success, -1 otherwise.
 - (NSNumber*)setCaptureDeviceById:(char*)uniqueId{
-    WEBRTC_TRACE(kTraceModuleCall, kTraceVideoCapture, 0,
-                 "%s:%d name=%s", __FUNCTION__, __LINE__, uniqueId);
     if(NO == _OSSupported)
     {
         WEBRTC_TRACE(kTraceInfo, kTraceVideoCapture, 0,
@@ -183,9 +178,6 @@ using namespace videocapturemodule;
 /// ***** Returns 0 on success, -1 otherwise.
 - (NSNumber*)setCaptureHeight:(int)height AndWidth:(int)width
              AndFrameRate:(int)frameRate{
-    WEBRTC_TRACE(kTraceModuleCall, kTraceVideoCapture, 0,
-                 "%s:%d height=%d width=%d frameRate=%d", __FUNCTION__,
-                 __LINE__, height, width, frameRate);
     if(NO == _OSSupported)
     {
         return [NSNumber numberWithInt:0];
@@ -219,8 +211,6 @@ using namespace videocapturemodule;
 /// ***** Sets member variables _capturing
 /// ***** Returns 0 on success, -1 otherwise.
 - (NSNumber*)startCapture{
-    WEBRTC_TRACE(kTraceModuleCall, kTraceVideoCapture, 0,
-                 "%s:%d", __FUNCTION__, __LINE__);
     if(NO == _OSSupported)
     {
         return [NSNumber numberWithInt:0];
@@ -252,8 +242,6 @@ using namespace videocapturemodule;
 /// ***** Sets member variables _capturing
 /// ***** Returns 0 on success, -1 otherwise.
 - (NSNumber*)stopCapture{
-    WEBRTC_TRACE(kTraceModuleCall, kTraceVideoCapture, 0,
-                 "%s:%d", __FUNCTION__, __LINE__);
 
     if(NO == _OSSupported)
     {
@@ -285,8 +273,6 @@ using namespace videocapturemodule;
 /// ***** Class member variables are initialized here
 /// ***** Returns 0 on success, -1 otherwise.
 - (NSNumber*)initializeVariables{
-    WEBRTC_TRACE(kTraceModuleCall, kTraceVideoCapture, 0,
-                 "%s:%d", __FUNCTION__, __LINE__);
 
     if(NO == _OSSupported)
     {
@@ -327,8 +313,6 @@ using namespace videocapturemodule;
 // versions of the OS. I.E. Backwards compaitibility
 // Returns nothing. Sets member variable
 - (void)checkOSSupported{
-    WEBRTC_TRACE(kTraceModuleCall, kTraceVideoCapture, 0,
-                 "%s:%d", __FUNCTION__, __LINE__);
 
     Class osSupportedTest = NSClassFromString(@"QTCaptureSession");
     _OSSupported = NO;
@@ -342,8 +326,6 @@ using namespace videocapturemodule;
 /// ***** Stores them in an NSArray instance
 /// ***** Returns 0 on success, -1 otherwise.
 - (NSNumber*)getCaptureDevices{
-    WEBRTC_TRACE(kTraceModuleCall, kTraceVideoCapture, 0,
-                 "%s:%d", __FUNCTION__, __LINE__);
 
     if(NO == _OSSupported)
     {
@@ -371,8 +353,6 @@ using namespace videocapturemodule;
 // The image format and frequency are setup here
 // Returns 0 on success, -1 otherwise.
 - (NSNumber*)initializeVideoCapture{
-    WEBRTC_TRACE(kTraceModuleCall, kTraceVideoCapture, 0,
-                 "%s:%d", __FUNCTION__, __LINE__);
 
     if(YES == _captureInitialized)
     {

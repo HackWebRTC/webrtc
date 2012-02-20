@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -171,9 +171,6 @@ WebRtc_Word32 VideoCaptureDS::Init(const WebRtc_Word32 id,
 WebRtc_Word32 VideoCaptureDS::StartCapture(
                                       const VideoCaptureCapability& capability)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, _id,
-                 "StartCapture widht %d, height %d, frameRate %d",
-                 capability.width, capability.height, capability.maxFPS);
     CriticalSectionScoped cs(_apiCs);
 
     if (capability != _requestedCapability)
@@ -197,8 +194,6 @@ WebRtc_Word32 VideoCaptureDS::StartCapture(
 
 WebRtc_Word32 VideoCaptureDS::StopCapture()
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, _id,
-                 "StopCapture");
     CriticalSectionScoped cs(_apiCs);
 
     HRESULT hr = _mediaControl->Pause();

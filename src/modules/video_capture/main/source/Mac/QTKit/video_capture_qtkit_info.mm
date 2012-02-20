@@ -22,15 +22,11 @@ namespace videocapturemodule
 VideoCaptureMacQTKitInfo::VideoCaptureMacQTKitInfo(const WebRtc_Word32 id) :
     DeviceInfoImpl(id)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, 0,
-                 "%s:%d", __FUNCTION__, __LINE__);
     _captureInfo = [[VideoCaptureMacQTKitInfoObjC alloc] init];
 }
 
 VideoCaptureMacQTKitInfo::~VideoCaptureMacQTKitInfo()
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, 0,
-                 "%s:%d", __FUNCTION__, __LINE__);
     [_captureInfo release];
 
 }
@@ -38,16 +34,12 @@ VideoCaptureMacQTKitInfo::~VideoCaptureMacQTKitInfo()
 WebRtc_Word32 VideoCaptureMacQTKitInfo::Init()
 {
 
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, 0,
-                 "%s:%d", __FUNCTION__, __LINE__);
     return 0;
 }
 
 WebRtc_UWord32 VideoCaptureMacQTKitInfo::NumberOfDevices()
 {
 
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, 0,
-                 "%s:%d", __FUNCTION__, __LINE__);
     WebRtc_UWord32 captureDeviceCount =
         [[_captureInfo getCaptureDeviceCount]intValue];
     return captureDeviceCount;
@@ -60,8 +52,6 @@ WebRtc_Word32 VideoCaptureMacQTKitInfo::GetDeviceName(
     WebRtc_UWord32 deviceUniqueIdUTF8Length, WebRtc_UWord8* productUniqueIdUTF8,
     WebRtc_UWord32 productUniqueIdUTF8Length)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, 0,
-                 "%s:%d", __FUNCTION__, __LINE__);
     int errNum = [[_captureInfo getDeviceNamesFromIndex:deviceNumber
                    DefaultName:deviceNameUTF8 WithLength:deviceNameLength
                    AndUniqueID:deviceUniqueIdUTF8
@@ -74,8 +64,6 @@ WebRtc_Word32 VideoCaptureMacQTKitInfo::GetDeviceName(
 WebRtc_Word32 VideoCaptureMacQTKitInfo::NumberOfCapabilities(
     const WebRtc_UWord8* deviceUniqueIdUTF8)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, 0,
-                 "%s:%d", __FUNCTION__, __LINE__);
     // Not implemented. Mac doesn't use discrete steps in capabilities, rather
     // "analog". QTKit will do it's best to convert frames to what ever format
     // you ask for.
@@ -90,8 +78,6 @@ WebRtc_Word32 VideoCaptureMacQTKitInfo::GetCapability(
     const WebRtc_UWord32 deviceCapabilityNumber,
     VideoCaptureCapability& capability)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, 0,
-                 "%s:%d", __FUNCTION__, __LINE__);
     // Not implemented. Mac doesn't use discrete steps in capabilities, rather
     // "analog". QTKit will do it's best to convert frames to what ever format
     // you ask for.
@@ -118,8 +104,6 @@ WebRtc_Word32 VideoCaptureMacQTKitInfo::DisplayCaptureSettingsDialogBox(
     const WebRtc_UWord8* dialogTitleUTF8, void* parentWindow,
     WebRtc_UWord32 positionX, WebRtc_UWord32 positionY)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, 0,
-                 "%s:%d", __FUNCTION__, __LINE__);
 
     return [[_captureInfo
              displayCaptureSettingsDialogBoxWithDevice:deviceUniqueIdUTF8
@@ -131,8 +115,6 @@ WebRtc_Word32 VideoCaptureMacQTKitInfo::DisplayCaptureSettingsDialogBox(
 WebRtc_Word32 VideoCaptureMacQTKitInfo::CreateCapabilityMap(
     const WebRtc_UWord8* deviceUniqueIdUTF8)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, 0,
-                 "%s:%d", __FUNCTION__, __LINE__);
     // Not implemented. Mac doesn't use discrete steps in capabilities, rather
     // "analog". QTKit will do it's best to convert frames to what ever format
     // you ask for.

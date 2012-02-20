@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -106,8 +106,6 @@ WebRtc_Word32 DeviceInfoWindows::Init()
 WebRtc_UWord32 DeviceInfoWindows::NumberOfDevices()
 {
     ReadLockScoped cs(_apiLock);
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, _id,
-                 "NumberOfDevices");
     return GetDeviceInfo(0, 0, 0, 0, 0, 0, 0);
 
 }
@@ -120,8 +118,6 @@ WebRtc_Word32 DeviceInfoWindows::GetDeviceName(
                                        WebRtc_UWord8* productUniqueIdUTF8,
                                        WebRtc_UWord32 productUniqueIdUTF8Length)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, _id,
-                 "GetDeviceName");
     ReadLockScoped cs(_apiLock);
     const WebRtc_Word32 result = GetDeviceInfo(deviceNumber, deviceNameUTF8,
                                                deviceNameLength,

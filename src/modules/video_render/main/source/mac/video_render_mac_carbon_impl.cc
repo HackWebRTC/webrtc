@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -126,7 +126,6 @@ VideoRenderMacCarbonImpl::ChangeWindow(void* window)
     }
     _ptrWindow = window;
 
-    WEBRTC_TRACE(kTraceModuleCall, kTraceVideoRenderer, _id, "%s:%d", __FUNCTION__, __LINE__);
 
     _ptrWindow = window;
 
@@ -148,7 +147,6 @@ VideoRenderMacCarbonImpl::AddIncomingRenderStream(const WebRtc_UWord32 streamId,
 
     if(!_ptrWindow)
     {
-        WEBRTC_TRACE(kTraceModuleCall, kTraceVideoRenderer, _id, "%s, no window", __FUNCTION__);
     }
 
     if(!AGLChannel)

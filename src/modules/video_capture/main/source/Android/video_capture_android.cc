@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -23,8 +23,6 @@ VideoCaptureModule* VideoCaptureImpl::Create(
     const WebRtc_Word32 id,
     const WebRtc_UWord8* deviceUniqueIdUTF8)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, -1,
-                 "%s:", __FUNCTION__);
 
     RefCountImpl<videocapturemodule::VideoCaptureAndroid>* implementation =
         new RefCountImpl<videocapturemodule::VideoCaptureAndroid>(id);
@@ -54,8 +52,6 @@ jobject VideoCaptureAndroid::g_javaContext = NULL;
 WebRtc_Word32 VideoCaptureAndroid::SetAndroidObjects(void* javaVM,
                                                      void* javaContext)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, -1,
-                 "%s:", __FUNCTION__);
 
     g_jvm = static_cast<JavaVM*> (javaVM);
     g_javaContext = static_cast<jobject> (javaContext);

@@ -30,28 +30,20 @@ VideoCaptureMacQuickTimeInfo::VideoCaptureMacQuickTimeInfo(
     DeviceInfoImpl(iID), _id(iID),
     _grabberCritsect(CriticalSectionWrapper::CreateCriticalSection())
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, _id,
-                 "%s:%d", __FUNCTION__, __LINE__);
 }
 
 VideoCaptureMacQuickTimeInfo::~VideoCaptureMacQuickTimeInfo()
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, _id,
-                 "%s:%d", __FUNCTION__, __LINE__);
 }
 
 WebRtc_Word32 VideoCaptureMacQuickTimeInfo::Init()
 {
 
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, _id,
-                 "%s:%d", __FUNCTION__, __LINE__);
     return 0;
 }
 
 WebRtc_UWord32 VideoCaptureMacQuickTimeInfo::NumberOfDevices()
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, _id,
-                 "%s:%d", __FUNCTION__, __LINE__);
     int numOfDevices = 0;
 
     // don't care about these variables... dummy vars to call GetCaptureDevices
@@ -76,8 +68,6 @@ WebRtc_Word32 VideoCaptureMacQuickTimeInfo::GetDeviceName(
     WebRtc_UWord32 deviceUniqueIdUTF8Length, WebRtc_UWord8* productUniqueIdUTF8,
     WebRtc_UWord32 productUniqueIdUTF8Length)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, _id,
-                 "%s:%d deviceNumber=\%d", __FUNCTION__, __LINE__);
 
     int numOfDevices = 0; // not needed for this function
     return GetCaptureDevices(deviceNumber, deviceNameUTF8,
@@ -89,8 +79,6 @@ WebRtc_Word32 VideoCaptureMacQuickTimeInfo::GetDeviceName(
 WebRtc_Word32 VideoCaptureMacQuickTimeInfo::NumberOfCapabilities(
     const WebRtc_UWord8* deviceUniqueIdUTF8)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, 0,
-                 "%s:%d", __FUNCTION__, __LINE__);
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
                  "NumberOfCapabilities is not supported on the Mac platform.");
     return -1;
@@ -101,8 +89,6 @@ WebRtc_Word32 VideoCaptureMacQuickTimeInfo::GetCapability(
     const WebRtc_UWord32 deviceCapabilityNumber,
     VideoCaptureCapability& capability)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, 0,
-                 "%s:%d", __FUNCTION__, __LINE__);
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
                  "NumberOfCapabilities is not supported on the Mac platform.");
     return -1;
@@ -122,16 +108,12 @@ WebRtc_Word32 VideoCaptureMacQuickTimeInfo::DisplayCaptureSettingsDialogBox(
     const WebRtc_UWord8* dialogTitleUTF8, void* parentWindow,
     WebRtc_UWord32 positionX, WebRtc_UWord32 positionY)
 {
-     WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, 0,
-                 "%s:%d", __FUNCTION__, __LINE__);
      return -1;
 }
 
 WebRtc_Word32 VideoCaptureMacQuickTimeInfo::CreateCapabilityMap(
     const WebRtc_UWord8* deviceUniqueIdUTF8)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, 0,
-                 "%s:%d", __FUNCTION__, __LINE__);
     WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, _id,
                  "NumberOfCapabilities is not supported on the Mac platform.");
     return -1;
@@ -144,9 +126,6 @@ int VideoCaptureMacQuickTimeInfo::GetCaptureDevices(
     WebRtc_UWord32 productUniqueIdUTF8Length, int& numberOfDevices)
 {
 
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, 0,
-                 "%s(wrapped):%d deviceNumber: %d", __FUNCTION__, __LINE__,
-                 deviceNumber);
 
     numberOfDevices = 0;
     memset(deviceNameUTF8, 0, deviceNameUTF8Length);

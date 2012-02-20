@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -42,8 +42,6 @@ VideoCaptureMacQuickTime::VideoCaptureMacQuickTime(WebRtc_Word32 iID) :
     _captureDeviceListTime(0), _captureCapabilityList()
 
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, _id,
-                 "%s:%d", __FUNCTION__, __LINE__);
     _captureCapability.width = START_CODEC_WIDTH;
     _captureCapability.height = START_CODEC_HEIGHT;
     memset(_captureDeviceDisplayName, 0, sizeof(_captureDeviceDisplayName));
@@ -52,8 +50,6 @@ VideoCaptureMacQuickTime::VideoCaptureMacQuickTime(WebRtc_Word32 iID) :
 VideoCaptureMacQuickTime::~VideoCaptureMacQuickTime()
 {
 
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, _id,
-                 "%s:%d", __FUNCTION__, __LINE__);
 
     VideoCaptureTerminate();
 
@@ -71,8 +67,6 @@ VideoCaptureMacQuickTime::~VideoCaptureMacQuickTime()
 WebRtc_Word32 VideoCaptureMacQuickTime::Init(
     const WebRtc_Word32 id, const WebRtc_UWord8* deviceUniqueIdUTF8)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, _id,
-                 "%s:%d", __FUNCTION__, __LINE__);
 
     const WebRtc_Word32 nameLength =
         (WebRtc_Word32) strlen((char*) deviceUniqueIdUTF8);
@@ -133,9 +127,6 @@ WebRtc_Word32 VideoCaptureMacQuickTime::Init(
     if (version < 0x07000000) // QT v. 7.x or newer (QT 5.0.2 0x05020000)
     {
         _videoMacCritsect->Leave();
-        WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, _id,
-                     "%s:%d QuickTime version too old. Need 7 or newer",
-                     __FUNCTION__, __LINE__);
         return -1;
     }
 
@@ -210,8 +201,6 @@ WebRtc_Word32 VideoCaptureMacQuickTime::CaptureSettings(
 
 int VideoCaptureMacQuickTime::VideoCaptureTerminate()
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, _id,
-                 "%s:%d", __FUNCTION__, __LINE__);
     VideoCaptureStop();
 
     _videoMacCritsect->Enter();
@@ -289,8 +278,6 @@ int VideoCaptureMacQuickTime::UpdateCaptureSettings(int channel,
                                                     webrtc::VideoCodec& inst,
                                                     bool def)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, _id,
-                 "%s:%d channel: %d", __FUNCTION__, __LINE__, channel);
 
     if (channel < 0)
     {
@@ -368,9 +355,6 @@ int VideoCaptureMacQuickTime::CreateLocalGWorld(int width, int height)
     }
     if (width == 0 || height == 0)
     {
-        WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, _id,
-                     "%s:%d Invalid dimensions width:%d height:%d",
-                     __FUNCTION__, __LINE__, width, height);
         return -1;
     }
 
@@ -493,9 +477,6 @@ int VideoCaptureMacQuickTime::ConnectCaptureDevice()
     if (SGNewChannel(_captureGrabber, VideoMediaType, &_captureChannel)
         != noErr) // Takes time!!!
     {
-        WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, _id,
-                     "%s:%d Could not create sequence grabber channel",
-                     __FUNCTION__, __LINE__);
         return -1;
     }
 
@@ -1200,9 +1181,6 @@ int VideoCaptureMacQuickTime::VideoCaptureSetCaptureDevice(
     const char* deviceName, int size)
 {
 
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, _id,
-                 "%s:%d deviceName=%s, size=%d", __FUNCTION__, __LINE__,
-                 deviceName, size);
 
     _videoMacCritsect->Enter();
     bool wasCapturing = false;

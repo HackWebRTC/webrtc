@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -96,8 +96,6 @@ VideoRenderAndroid::AddIncomingRenderStream(const WebRtc_UWord32 streamId,
                                             const float right,
                                             const float bottom)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceVideoRenderer, _id, "%s",
-                 __FUNCTION__);
     CriticalSectionScoped cs(_critSect);
 
     AndroidStream* renderStream = NULL;
@@ -131,8 +129,6 @@ VideoRenderAndroid::AddIncomingRenderStream(const WebRtc_UWord32 streamId,
 WebRtc_Word32 VideoRenderAndroid::DeleteIncomingRenderStream(
                                                              const WebRtc_UWord32 streamId)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceVideoRenderer, _id, "%s",
-                 __FUNCTION__);
     CriticalSectionScoped cs(_critSect);
 
     MapItem* item = _streamsMap.Find(streamId);
@@ -158,12 +154,6 @@ WebRtc_Word32 VideoRenderAndroid::GetIncomingRenderStreamProperties(
                                                                     float& right,
                                                                     float& bottom) const
 {
-    WEBRTC_TRACE(
-                 kTraceModuleCall,
-                 kTraceVideoRenderer,
-                 _id,
-                 "%s: streamId - %d zOrder - %d left - %d top - %d right -%d and bottm - %d",
-                 streamId, zOrder, left, top, right, bottom);
 
     return -1;
 }
@@ -214,8 +204,6 @@ WebRtc_Word32 VideoRenderAndroid::StopRender()
         CriticalSectionScoped cs(_critSect);
         if (!_javaRenderThread)
         {
-            WEBRTC_TRACE(kTraceModuleCall, kTraceVideoRenderer, _id,
-                         "%s, no renderer", __FUNCTION__);
             return -1;
         }
         _javaShutDownFlag = true;

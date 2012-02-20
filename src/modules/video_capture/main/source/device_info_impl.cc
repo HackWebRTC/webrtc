@@ -45,8 +45,6 @@ DeviceInfoImpl::~DeviceInfoImpl(void)
 WebRtc_Word32 DeviceInfoImpl::NumberOfCapabilities(
                                         const WebRtc_UWord8* deviceUniqueIdUTF8)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, _id,
-               "NumberOfCapabilities, uniqueID %s", deviceUniqueIdUTF8);
 
     if (!deviceUniqueIdUTF8)
         return -1;
@@ -83,8 +81,6 @@ WebRtc_Word32 DeviceInfoImpl::GetCapability(const WebRtc_UWord8* deviceUniqueIdU
                                             const WebRtc_UWord32 deviceCapabilityNumber,
                                             VideoCaptureCapability& capability)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, _id,
-               "GetCapability capability number %d", deviceCapabilityNumber);
 
     if (!deviceUniqueIdUTF8)
     {
@@ -153,8 +149,6 @@ WebRtc_Word32 DeviceInfoImpl::GetBestMatchedCapability(
                                         VideoCaptureCapability& resulting)
 {
 
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, _id,
-               "GetBestMatchedCapability unique ID %s", deviceUniqueIdUTF8);
 
     if (!deviceUniqueIdUTF8)
         return -1;

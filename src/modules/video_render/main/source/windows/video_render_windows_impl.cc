@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -109,8 +109,6 @@ WebRtc_Word32 VideoRenderWindowsImpl::ChangeWindow(void* window)
     CriticalSectionScoped cs(_renderWindowsCritsect);
     if (!_ptrRendererWin)
     {
-        WEBRTC_TRACE(kTraceModuleCall, kTraceVideoRenderer,
-                     _id, "%s, no renderer", __FUNCTION__);
         return -1;
     }
     else
@@ -132,8 +130,6 @@ VideoRenderWindowsImpl::AddIncomingRenderStream(const WebRtc_UWord32 streamId,
 
     if (!_ptrRendererWin)
     {
-        WEBRTC_TRACE(kTraceModuleCall, kTraceVideoRenderer,
-                     _id, "%s, no renderer", __FUNCTION__);
     }
     else
     {
@@ -151,8 +147,6 @@ WebRtc_Word32 VideoRenderWindowsImpl::DeleteIncomingRenderStream(
     WebRtc_Word32 error = -1;
     if (!_ptrRendererWin)
     {
-        WEBRTC_TRACE(kTraceModuleCall, kTraceVideoRenderer,
-                     _id, "%s, no renderer", __FUNCTION__);
     }
     else
     {
@@ -179,8 +173,6 @@ WebRtc_Word32 VideoRenderWindowsImpl::GetIncomingRenderStreamProperties(
     WebRtc_Word32 error = -1;
     if (!_ptrRendererWin)
     {
-        WEBRTC_TRACE(kTraceModuleCall, kTraceVideoRenderer,
-                     _id, "%s, no renderer", __FUNCTION__);
     }
     else
     {
@@ -196,8 +188,6 @@ WebRtc_Word32 VideoRenderWindowsImpl::StartRender()
     WebRtc_Word32 error = -1;
     if (!_ptrRendererWin)
     {
-        WEBRTC_TRACE(kTraceModuleCall, kTraceVideoRenderer,
-                     _id, "%s, no renderer", __FUNCTION__);
     }
     else
     {
@@ -212,8 +202,6 @@ WebRtc_Word32 VideoRenderWindowsImpl::StopRender()
     WebRtc_Word32 error = -1;
     if (!_ptrRendererWin)
     {
-        WEBRTC_TRACE(kTraceModuleCall, kTraceVideoRenderer,
-                     _id, "%s, no renderer", __FUNCTION__);
     }
     else
     {
@@ -238,8 +226,6 @@ bool VideoRenderWindowsImpl::FullScreen()
     bool fullscreen = false;
     if (!_ptrRendererWin)
     {
-        WEBRTC_TRACE(kTraceModuleCall, kTraceVideoRenderer,
-                     _id, "%s, no renderer", __FUNCTION__);
     }
     else
     {
@@ -291,8 +277,6 @@ WebRtc_Word32 VideoRenderWindowsImpl::SetStreamCropping(
     WebRtc_Word32 error = -1;
     if (!_ptrRendererWin)
     {
-        WEBRTC_TRACE(kTraceModuleCall, kTraceVideoRenderer,
-                     _id, "%s, no renderer", __FUNCTION__);
     }
     else
     {
@@ -314,8 +298,6 @@ WebRtc_Word32 VideoRenderWindowsImpl::ConfigureRenderer(
     WebRtc_Word32 error = -1;
     if (!_ptrRendererWin)
     {
-        WEBRTC_TRACE(kTraceModuleCall, kTraceVideoRenderer,
-                     _id, "%s, no renderer", __FUNCTION__);
     }
     else
     {
@@ -333,8 +315,6 @@ WebRtc_Word32 VideoRenderWindowsImpl::SetTransparentBackground(
     WebRtc_Word32 error = -1;
     if (!_ptrRendererWin)
     {
-        WEBRTC_TRACE(kTraceModuleCall, kTraceVideoRenderer,
-                     _id, "%s, no renderer", __FUNCTION__);
     }
     else
     {
@@ -358,8 +338,6 @@ WebRtc_Word32 VideoRenderWindowsImpl::SetText(
     WebRtc_Word32 error = -1;
     if (!_ptrRendererWin)
     {
-        WEBRTC_TRACE(kTraceModuleCall, kTraceVideoRenderer,
-                     _id, "%s, no renderer", __FUNCTION__);
     }
     else
     {
@@ -382,8 +360,6 @@ WebRtc_Word32 VideoRenderWindowsImpl::SetBitmap(const void* bitMap,
     WebRtc_Word32 error = -1;
     if (!_ptrRendererWin)
     {
-        WEBRTC_TRACE(kTraceModuleCall, kTraceVideoRenderer,
-                     _id, "%s, no renderer", __FUNCTION__);
     }
     else
     {

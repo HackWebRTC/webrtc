@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -23,8 +23,6 @@ namespace videocapturemodule
 VideoCaptureModule::DeviceInfo* VideoCaptureImpl::CreateDeviceInfo (
     const WebRtc_Word32 id)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, id,
-                 "%s", __FUNCTION__);
     videocapturemodule::DeviceInfoAndroid *deviceInfo =
                                 new videocapturemodule::DeviceInfoAndroid(id);
     if (deviceInfo && deviceInfo->Init() != 0) // Failed to init
@@ -51,8 +49,6 @@ DeviceInfoAndroid::~DeviceInfoAndroid()
 
 WebRtc_UWord32 DeviceInfoAndroid::NumberOfDevices()
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, _id,
-                 "%s", __FUNCTION__);
 
     JNIEnv *env;
     jclass javaCmDevInfoClass;
@@ -97,8 +93,6 @@ WebRtc_Word32 DeviceInfoAndroid::GetDeviceName(
                                        WebRtc_UWord8* /*productUniqueIdUTF8*/,
                                        WebRtc_UWord32 /*productUniqueIdUTF8Length*/)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, _id,
-                 "%s", __FUNCTION__);
 
     JNIEnv *env;
     jclass javaCmDevInfoClass;
@@ -180,8 +174,6 @@ WebRtc_Word32 DeviceInfoAndroid::GetDeviceName(
 WebRtc_Word32 DeviceInfoAndroid::CreateCapabilityMap(
                                         const WebRtc_UWord8* deviceUniqueIdUTF8)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, _id,
-                 "%s", __FUNCTION__);
 
     MapItem* item = NULL;
     while ((item = _captureCapabilities.Last()))
@@ -302,8 +294,6 @@ WebRtc_Word32 DeviceInfoAndroid::GetOrientation(
                                             const WebRtc_UWord8* deviceUniqueIdUTF8,
                                             VideoCaptureRotation& orientation)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceVideoCapture, _id,
-                 "%s", __FUNCTION__);
 
     JNIEnv *env;
     jclass javaCmDevInfoClass;

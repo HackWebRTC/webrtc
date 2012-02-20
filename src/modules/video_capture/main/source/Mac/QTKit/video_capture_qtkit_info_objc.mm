@@ -1,10 +1,14 @@
-//
-//  VideoCaptureMacQTKitInfoObjC.cpp
-//
-//
+/*
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
+ *
+ *  Use of this source code is governed by a BSD-style license
+ *  that can be found in the LICENSE file in the root of the source
+ *  tree. An additional intellectual property rights grant can be found
+ *  in the file PATENTS.  All contributing project authors may
+ *  be found in the AUTHORS file in the root of the source tree.
+ */
 
 #pragma mark **** imports/includes
-
 
 #import "video_capture_qtkit_info_objc.h"
 
@@ -13,7 +17,6 @@
 using namespace webrtc;
 
 #pragma mark **** hidden class interface
-
 
 @implementation VideoCaptureMacQTKitInfoObjC
 
@@ -38,8 +41,6 @@ using namespace webrtc;
 /// ***** Objective-C. Similar to C++ destructor
 /// ***** Returns nothing
 - (void)dealloc {
-     WEBRTC_TRACE(kTraceModuleCall, kTraceVideoCapture, 0,
-                  "%s:%d", __FUNCTION__, __LINE__);
     [super dealloc];
 }
 
