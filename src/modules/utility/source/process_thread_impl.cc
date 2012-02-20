@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -19,13 +19,11 @@ ProcessThread::~ProcessThread()
 
 ProcessThread* ProcessThread::CreateProcessThread()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceUtility, -1, "CreateProcessThread()");
     return new ProcessThreadImpl();
 }
 
 void ProcessThread::DestroyProcessThread(ProcessThread* module)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceUtility, -1, "DestroyProcessThread()");
     delete module;
 }
 
@@ -91,8 +89,6 @@ WebRtc_Word32 ProcessThreadImpl::Stop()
 
 WebRtc_Word32 ProcessThreadImpl::RegisterModule(const Module* module)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceUtility, -1,
-                 "RegisterModule(module:0x%x)", module);
     CriticalSectionScoped lock(_critSectModules);
 
     // Only allow module to be registered once.
@@ -119,8 +115,6 @@ WebRtc_Word32 ProcessThreadImpl::RegisterModule(const Module* module)
 
 WebRtc_Word32 ProcessThreadImpl::DeRegisterModule(const Module* module)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceUtility, -1,
-                 "DeRegisterModule(module:0x%x)", module);
     CriticalSectionScoped lock(_critSectModules);
 
     ListItem* item = _modules.First();

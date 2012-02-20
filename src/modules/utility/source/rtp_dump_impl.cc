@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -58,13 +58,11 @@ typedef struct
 
 RtpDump* RtpDump::CreateRtpDump()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceUtility, -1, "CreateRtpDump()");
     return new RtpDumpImpl();
 }
 
 void RtpDump::DestroyRtpDump(RtpDump* object)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceUtility, -1, "DestroyRtpDump()");
     delete object;
 }
 
@@ -91,7 +89,6 @@ RtpDumpImpl::~RtpDumpImpl()
 
 WebRtc_Word32 RtpDumpImpl::Start(const WebRtc_Word8* fileNameUTF8)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceUtility, -1, "Start()");
 
     if (fileNameUTF8 == NULL)
     {
@@ -141,7 +138,6 @@ WebRtc_Word32 RtpDumpImpl::Start(const WebRtc_Word8* fileNameUTF8)
 
 WebRtc_Word32 RtpDumpImpl::Stop()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceUtility, -1, "Stop()");
     CriticalSectionScoped lock(_critSect);
     _file.Flush();
     _file.CloseFile();
