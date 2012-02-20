@@ -2221,8 +2221,14 @@ bool ViEChannel::ChannelDecodeProcess() {
     if (rtp_rtcp_.RTT(rtp_rtcp_.RemoteSSRC(), &RTT, &avgRTT, &minRTT, &maxRTT)
         == 0) {
       vcm_.SetReceiveChannelParameters(RTT);
+      vcm_rttreported_ = TickTime::Now();
+    } else if (!rtp_rtcp_.Sending() &&
+               (TickTime::Now() - vcm_rttreported_).Milliseconds() > 5000) {
+      // Wait at least 5 seconds before faking a 200 ms RTT. This is to
+      // make sure we have a chance to start sending before we decide to fake.
+      vcm_.SetReceiveChannelParameters(200);
+      vcm_rttreported_ = TickTime::Now();
     }
-    vcm_rttreported_ = TickTime::Now();
   }
   return true;
 }
@@ -2250,6 +2256,10 @@ WebRtc_Word32 ViEChannel::StartDecodeThread() {
                  "%s: could not start decode thread", __FUNCTION__);
     return -1;
   }
+
+  // Used to make sure that we don't give the VCM a faked RTT
+  // too early.
+  vcm_rttreported_ = TickTime::Now();
 
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s: decode thread with id %u started", __FUNCTION__);
