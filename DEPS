@@ -45,7 +45,7 @@ deps = {
     Var("chromium_trunk") + "/src/third_party/protobuf@" + Var("chromium_revision"),
 
   "trunk/third_party/libvpx/source/libvpx":
-    "http://git.chromium.org/webm/libvpx.git@e479379a",
+    "http://git.chromium.org/webm/libvpx.git@v1.0.0",
 
   "trunk/third_party/libjpeg_turbo/":
     Var("chromium_trunk") + "/deps/third_party/libjpeg_turbo@119959",
