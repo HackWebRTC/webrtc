@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -452,8 +452,6 @@ WebRtc_Word32 ModuleFileUtility::ReadWavHeader(InStream& wav)
     bool fmtFound = false;
     WebRtc_Word8 dummyRead;
 
-    WEBRTC_TRACE(kTraceModuleCall, kTraceFile, _id,
-               "ModuleFileUtility::ReadWavHeader(wav= 0x%x)", &wav);
 
     _dataSize = 0;
     len = wav.Read(&RIFFheaderObj, sizeof(WAVE_RIFF_header));
@@ -636,18 +634,6 @@ WebRtc_Word32 ModuleFileUtility::ReadWavHeader(InStream& wav)
         _readSizeBytes = (_wavFormatObj.nSamplesPerSec/100) *
             _wavFormatObj.nChannels * (_wavFormatObj.nBitsPerSample / 8);
     }
-    WEBRTC_TRACE(
-        kTraceModuleCall,
-        kTraceFile,
-        _id,
-        "ModuleFileUtility::ReadWavHeader: format=PCM %d KHz, sampleSize=%d,\
- nChannels=%d, readSize=%d, dataSize=%d, rate=%d",
-        _wavFormatObj.nSamplesPerSec/1000,
-        _wavFormatObj.nBitsPerSample,
-        _wavFormatObj.nChannels,
-        _readSizeBytes,
-        _dataSize,
-        _wavFormatObj.nAvgBytesPerSec * 8);
     return 0;
 }
 
@@ -743,14 +729,6 @@ WebRtc_Word32 ModuleFileUtility::InitWavReading(InStream& wav,
                                                 const WebRtc_UWord32 start,
                                                 const WebRtc_UWord32 stop)
 {
-    WEBRTC_TRACE(
-        kTraceModuleCall,
-        kTraceFile,
-        _id,
-        "ModuleFileUtility::InitWavReading(wav= 0x%x, start= %d, stop=%d)",
-        &wav,
-        start,
-        stop);
 
     _reading = false;
 
@@ -799,9 +777,6 @@ WebRtc_Word32 ModuleFileUtility::InitWavReading(InStream& wav,
     }
     _bytesPerSample = _wavFormatObj.nBitsPerSample / 8;
 
-    WEBRTC_TRACE(kTraceModuleCall, kTraceFile, _id,
-                    "WAV header: codecName= %s, sampleSize= %d, freq= %d",
-                    codec_info_.plname, _bytesPerSample, codec_info_.plfreq);
 
     _startPointInMs = start;
     _stopPointInMs = stop;
@@ -1071,9 +1046,6 @@ WebRtc_Word32 ModuleFileUtility::ReadWavData(
 WebRtc_Word32 ModuleFileUtility::InitWavWriting(OutStream& wav,
                                                 const CodecInst& codecInst)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceFile, _id,
-               "ModuleFileUtility::InitWavWriting(wav= 0x%x, codec=%s)",
-               &wav, codecInst.plname);
 
     if(set_codec_info(codecInst) != 0)
     {
@@ -1159,17 +1131,6 @@ WebRtc_Word32 ModuleFileUtility::WriteWavHeader(
     const WebRtc_UWord32 format,
     const WebRtc_UWord32 lengthInBytes)
 {
-    WEBRTC_TRACE(
-        kTraceModuleCall,
-        kTraceFile,
-        _id,
-        "ModuleFileUtility::WriteWavHeader(format= PCM %d KHz,\
- bytesPerSample= %d, channels= %d, format= %d, dataLength= %d)",
-        freq / 1000,
-        bytesPerSample,
-        channels,
-        format,
-        lengthInBytes);
 
     // Frame size in bytes for 10 ms of audio.
     // TODO (hellner): 44.1 kHz has 440 samples frame size. Doesn't seem to
@@ -1302,9 +1263,6 @@ WebRtc_Word32 ModuleFileUtility::UpdateWavHeader(OutStream& wav)
 WebRtc_Word32 ModuleFileUtility::InitPreEncodedReading(InStream& in,
                                                        const CodecInst& cinst)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceFile, _id,
-               "ModuleFileUtility::InitPreEncodedReading(in=0x%x, codec='%s')",
-               &in, cinst.plname);
 
     WebRtc_UWord8 preEncodedID;
     in.Read(&preEncodedID, 1);
@@ -1384,13 +1342,6 @@ WebRtc_Word32 ModuleFileUtility::InitPreEncodedWriting(
     OutStream& out,
     const CodecInst& codecInst)
 {
-    WEBRTC_TRACE(
-        kTraceModuleCall,
-        kTraceFile,
-        _id,
-        "ModuleFileUtility::InitFormatedWriting(out=0x%x, codecInst= %s)",
-        &out,
-        codecInst.plname);
 
     if(set_codec_info(codecInst) != 0)
     {
@@ -2105,9 +2056,6 @@ WebRtc_Word32 ModuleFileUtility::ReadPCMData(InStream& pcm,
 WebRtc_Word32 ModuleFileUtility::InitPCMWriting(OutStream& out,
                                                 WebRtc_UWord32 freq)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceFile, _id,
-               "ModuleFileUtility::InitPCMWriting(out=0x%x, freq= %ld)", &out,
-                 freq);
 
     if(freq == 8000)
     {
@@ -2199,9 +2147,6 @@ WebRtc_Word32 ModuleFileUtility::codec_info(CodecInst& codecInst)
 
 WebRtc_Word32 ModuleFileUtility::set_codec_info(const CodecInst& codecInst)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceFile, _id,
-                 "ModuleFileUtility::set_codec_info(codecName= %s)",
-                 codecInst.plname);
 
     _codecId = kCodecNoCodec;
     if(STR_CASE_CMP(codecInst.plname, "PCMU") == 0)
@@ -2369,14 +2314,6 @@ WebRtc_Word32 ModuleFileUtility::FileDurationMs(const WebRtc_Word8* fileName,
                                                 const FileFormats  fileFormat,
                                                 const WebRtc_UWord32 freqInHz)
 {
-    WEBRTC_TRACE(
-        kTraceModuleCall,
-        kTraceFile,
-        _id,
-        "ModuleFileUtility::FileDuration(%s, format= %d, frequency %d)",
-        fileName,
-        fileFormat,
-        freqInHz);
 
     if(fileName == NULL)
     {
