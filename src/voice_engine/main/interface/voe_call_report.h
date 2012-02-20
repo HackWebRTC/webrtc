@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -56,7 +56,8 @@ public:
     virtual int Release() = 0;
 
     // Performs a combined reset of all components involved in generating
-    // the call report for a specified |channel|.
+    // the call report for a specified |channel|. Pass in -1 to reset
+    // all channels.
     virtual int ResetCallReportStatistics(int channel) = 0;
 
     // Gets minimum, maximum and average levels for long-term echo metrics.
