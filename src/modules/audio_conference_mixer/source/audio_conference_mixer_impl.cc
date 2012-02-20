@@ -76,8 +76,6 @@ void MixHistory::ResetMixedStatus()
 
 AudioConferenceMixer* AudioConferenceMixer::Create(int id)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioMixerServer, id,
-                 "Create");
     AudioConferenceMixerImpl* mixer = new AudioConferenceMixerImpl(id);
     if(!mixer->Init())
     {
@@ -171,8 +169,6 @@ AudioConferenceMixerImpl::~AudioConferenceMixerImpl()
 
 WebRtc_Word32 AudioConferenceMixerImpl::ChangeUniqueId(const WebRtc_Word32 id)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioMixerServer, _id,
-                 "ChangeUniqueId(new id:%d)", id);
     _id = id;
     return 0;
 }
@@ -180,8 +176,6 @@ WebRtc_Word32 AudioConferenceMixerImpl::ChangeUniqueId(const WebRtc_Word32 id)
 // Process should be called every kProcessPeriodicityInMs ms
 WebRtc_Word32 AudioConferenceMixerImpl::TimeUntilNextProcess()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioMixerServer, _id,
-                 "TimeUntilNextProcess()");
     WebRtc_Word32 timeUntilNextProcess = 0;
     CriticalSectionScoped cs(_crit.get());
     if(_timeScheduler.TimeToNextUpdate(timeUntilNextProcess) != 0)
@@ -386,8 +380,6 @@ WebRtc_Word32 AudioConferenceMixerImpl::Process()
 WebRtc_Word32 AudioConferenceMixerImpl::RegisterMixedStreamCallback(
     AudioMixerOutputReceiver& mixReceiver)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioMixerServer, _id,
-                 "RegisterMixedStreamCallback(mixReceiver)");
     CriticalSectionScoped cs(_cbCrit.get());
     if(_mixReceiver != NULL)
     {
@@ -399,8 +391,6 @@ WebRtc_Word32 AudioConferenceMixerImpl::RegisterMixedStreamCallback(
 
 WebRtc_Word32 AudioConferenceMixerImpl::UnRegisterMixedStreamCallback()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioMixerServer, _id,
-                 "UnRegisterMixedStreamCallback()");
     CriticalSectionScoped cs(_cbCrit.get());
     if(_mixReceiver == NULL)
     {
@@ -457,12 +447,6 @@ WebRtc_Word32 AudioConferenceMixerImpl::RegisterMixerStatusCallback(
     AudioMixerStatusReceiver& mixerStatusCallback,
     const WebRtc_UWord32 amountOf10MsBetweenCallbacks)
 {
-    WEBRTC_TRACE(
-        kTraceModuleCall,
-        kTraceAudioMixerServer,
-        _id,
-        "RegisterMixerStatusCallback(mixerStatusCallback,%d)",
-        amountOf10MsBetweenCallbacks);
     if(amountOf10MsBetweenCallbacks == 0)
     {
         WEBRTC_TRACE(
@@ -493,8 +477,6 @@ WebRtc_Word32 AudioConferenceMixerImpl::RegisterMixerStatusCallback(
 
 WebRtc_Word32 AudioConferenceMixerImpl::UnRegisterMixerStatusCallback()
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioMixerServer, _id,
-                 "UnRegisterMixerStatusCallback()");
     {
         CriticalSectionScoped cs(_crit.get());
         if(!_mixerStatusCb)
@@ -516,9 +498,6 @@ WebRtc_Word32 AudioConferenceMixerImpl::SetMixabilityStatus(
     MixerParticipant& participant,
     const bool mixable)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioMixerServer, _id,
-                 "SetMixabilityStatus(participant,mixable:%s)",
-                 mixable ? "true" : "false");
     if (!mixable)
     {
         // Anonymous participants are in a separate list. Make sure that the
@@ -576,8 +555,6 @@ WebRtc_Word32 AudioConferenceMixerImpl::MixabilityStatus(
     MixerParticipant& participant,
     bool& mixable)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioMixerServer, _id,
-                 "MixabilityStatus(participant,mixable)");
     CriticalSectionScoped cs(_cbCrit.get());
     mixable = IsParticipantInList(participant, _participantList);
     return 0;
@@ -586,9 +563,6 @@ WebRtc_Word32 AudioConferenceMixerImpl::MixabilityStatus(
 WebRtc_Word32 AudioConferenceMixerImpl::SetAnonymousMixabilityStatus(
     MixerParticipant& participant, const bool anonymous)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioMixerServer, _id,
-                 "SetAnonymousMixabilityStatus(participant,anonymous:%s)",
-                 anonymous ? "true" : "false");
     CriticalSectionScoped cs(_cbCrit.get());
     if(IsParticipantInList(participant, _additionalParticipantList))
     {
@@ -629,8 +603,6 @@ WebRtc_Word32 AudioConferenceMixerImpl::SetAnonymousMixabilityStatus(
 WebRtc_Word32 AudioConferenceMixerImpl::AnonymousMixabilityStatus(
     MixerParticipant& participant, bool& mixable)
 {
-    WEBRTC_TRACE(kTraceModuleCall, kTraceAudioMixerServer, _id,
-                 "AnonymousMixabilityStatus(participant,mixable)");
     CriticalSectionScoped cs(_cbCrit.get());
     mixable = IsParticipantInList(participant,
                                   _additionalParticipantList);
