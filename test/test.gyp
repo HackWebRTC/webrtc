@@ -41,6 +41,7 @@
         'testsupport/frame_reader.cc',
         'testsupport/frame_writer.h',
         'testsupport/frame_writer.cc',
+        'testsupport/gtest_prod_util.h',
         'testsupport/packet_reader.h',
         'testsupport/packet_reader.cc',
         'testsupport/mock/mock_frame_reader.h',
