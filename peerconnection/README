@@ -1,0 +1,10 @@
+This folder can be used to pull together the chromium version of webrtc
+and libjingle, and build the peerconnection sample client and server.
+
+Follow the instructions for WebRTC here:
+http://www.webrtc.org/reference/getting-started
+
+but substitute this "gclient config" command:
+gclient config --name trunk
+http://webrtc.googlecode.com/svn/trunk/peerconnection
+
