@@ -9,14 +9,14 @@
 
 __author__ = 'ivinnichenko@webrtc.org (Illya Vinnichenko)'
 
-from buildbot.process import factory
-from buildbot.steps import shell
-from buildbot.steps.shell import ShellCommand
-from buildbot.process import properties
-from buildbot.process.properties import WithProperties
 import os
 import sys
 import urlparse
+from buildbot.process import factory
+from buildbot.process import properties
+from buildbot.process.properties import WithProperties
+from buildbot.steps import shell
+from buildbot.steps.shell import ShellCommand
 
 # Defines the order of the booleans of the supported platforms in the test
 # dictionaries in master.cfg.
@@ -35,27 +35,28 @@ DEFAULT_COVERAGE_DIR = '/var/www/coverage/'
 # much and make the stacks harder to figure out. Use the same settings
 # on all buildbot masters to make it easier to move bots.
 MEMORY_TOOLS_GYP_DEFINES = [
-  # GCC flags
-  'mac_debug_optimization=1 ',
-  'mac_release_optimization=1 ',
-  'release_optimize=1 ',
-  'no_gc_sections=1 ',
-  'debug_extra_cflags="-g -fno-inline -fno-omit-frame-pointer '
-  '-fno-builtin -fno-optimize-sibling-calls" ',
-  'release_extra_cflags="-g -fno-inline -fno-omit-frame-pointer '
-  '-fno-builtin -fno-optimize-sibling-calls" ',
-  # MSVS flags
-  'win_debug_RuntimeChecks=0 ',
-  'win_debug_disable_iterator_debugging=1 ',
-  'win_debug_Optimization=1 ',
-  'win_debug_InlineFunctionExpansion=0 ',
-  'win_release_InlineFunctionExpansion=0 ',
-  'win_release_OmitFramePointers=0 ',
+    # GCC flags
+    'mac_debug_optimization=1 ',
+    'mac_release_optimization=1 ',
+    'release_optimize=1 ',
+    'no_gc_sections=1 ',
+    'debug_extra_cflags="-g -fno-inline -fno-omit-frame-pointer '
+    '-fno-builtin -fno-optimize-sibling-calls" ',
+    'release_extra_cflags="-g -fno-inline -fno-omit-frame-pointer '
+    '-fno-builtin -fno-optimize-sibling-calls" ',
+    # MSVS flags
+    'win_debug_RuntimeChecks=0 ',
+    'win_debug_disable_iterator_debugging=1 ',
+    'win_debug_Optimization=1 ',
+    'win_debug_InlineFunctionExpansion=0 ',
+    'win_release_InlineFunctionExpansion=0 ',
+    'win_release_OmitFramePointers=0 ',
 
-  'linux_use_tcmalloc=1 ',
-  'release_valgrind_build=1 ',
-  'werror= ',
+    'linux_use_tcmalloc=1 ',
+    'release_valgrind_build=1 ',
+    'werror= ',
 ]
+
 
 class WebRTCFactory(factory.BuildFactory):
   """Abstract superclass for all build factories.
@@ -116,12 +117,16 @@ class WebRTCFactory(factory.BuildFactory):
          warn_on_failure: If true, this step isn't that important and will not
              cause a failed build on failure.
     """
+    flunk_on_failure = not warn_on_failure
+
     if type(descriptor) is str:
       descriptor = [descriptor]
-    flunk_on_failure = not warn_on_failure
+    # Add spaces to wrap long test names to make waterfall output more compact.
+    wrapped_text = self._WrapLongLines(descriptor)
+
     self.addStep(shell.ShellCommand(command=cmd, workdir=workdir,
-                                    description=descriptor + ['running...'],
-                                    descriptionDone=descriptor,
+                                    description=wrapped_text + ['running...'],
+                                    descriptionDone=wrapped_text,
                                     warnOnFailure=warn_on_failure,
                                     flunkOnFailure=flunk_on_failure,
                                     haltOnFailure=halt_build_on_failure,
@@ -177,11 +182,38 @@ class WebRTCFactory(factory.BuildFactory):
     """
     cmd = ['./build/gyp_chromium', '--depth=.', gyp_file]
     cmd += gyp_params + self.gyp_params
-    self.addStep(shell.ShellCommand(command=cmd, workdir='build/trunk',
-                                    description=[descriptor, 'running...'],
-                                    descriptionDone=[descriptor],
-                                    haltOnFailure=True,
-                                    name='gyp_%s' % descriptor))
+    self.AddCommonStep(cmd=cmd, workdir='build/trunk', descriptor=descriptor)
+
+  def _WrapLongLines(self, string_list, max_line_length=25, wrap_character='_'):
+    """ Creates a list with wrapped strings for lines that are too long.
+
+       This is done by inserting spaces to long lines with the wrap character
+       in. It's a simple way to make long test targets wrap nicer in the
+       waterfall display.
+
+       This method should only be used for lists that are displayed in the web
+       interface!
+
+       Args:
+           string_list: List of strings where each string represents one line.
+           max_line_length: Number of characters a line may have to avoid
+             getting wrapped.
+           wrap_character: The character we're looking for when inserting a
+             space if a string is larger than max_line_length. If no such
+             character is found, no space will be inserted.
+        Returns:
+            A new list of the same length as the input list, but with strings
+            that may contain extra spaces in them, if longer than the max
+            length.
+    """
+    result = []
+    for line in string_list:
+      if len(line) > max_line_length:
+        index = line.rfind(wrap_character)
+        if index != -1:
+          line = line[:index] + ' ' + line[index:]
+      result.append(line)
+    return result
 
 class GenerateCodeCoverage(ShellCommand):
   """This custom shell command generates coverage HTML using genhtml.
@@ -239,11 +271,11 @@ class WebRTCAndroidFactory(WebRTCFactory):
   def EnableBuild(self, product='toro'):
     prefix = 'rm -rf out/target/product/%s/obj/' % product
     cleanup_list = [
-                    'rm -rf external/webrtc',
-                    prefix + 'STATIC_LIBRARIES/libwebrtc_*',
-                    prefix + 'SHARE_LIBRARIES/libwebrtc_*',
-                    prefix + 'EXECUTABLES/webrtc_*'
-                    ]
+        'rm -rf external/webrtc',
+        prefix + 'STATIC_LIBRARIES/libwebrtc_*',
+        prefix + 'SHARE_LIBRARIES/libwebrtc_*',
+        prefix + 'EXECUTABLES/webrtc_*'
+        ]
     cmd = ' ; '.join(cleanup_list)
     self.addStep(shell.Compile(command=(cmd), workdir='build/trunk',
                  description=['cleanup', 'running...'],
@@ -276,11 +308,7 @@ class WebRTCChromeFactory(WebRTCFactory):
     cmd = ['make', target, '-j100']
     if make_extra is not None:
       cmd.append(make_extra)
-    self.addStep(shell.ShellCommand(command=cmd,
-        workdir='build/src', description=descriptor + ['running...'],
-        descriptionDone=descriptor,
-        haltOnFailure=True,
-        name='_'.join(descriptor)))
+    self.AddCommonStep(cmd=cmd, descriptor=descriptor, workdir='build/src')
 
 
 class WebRTCLinuxFactory(WebRTCFactory):
@@ -365,10 +393,8 @@ class WebRTCLinuxFactory(WebRTCFactory):
       cmd = ['out/%s/%s' % (test_folder, test)]
     if self.valgrind_enabled:
       cmd = VALGRIND_CMD + cmd
-    self.addStep(shell.ShellCommand(command=cmd,
-        workdir=workdir, description=['Running'] + descriptor,
-        descriptionDone=descriptor,
-        name='_'.join(descriptor)))
+    self.AddCommonStep(cmd, descriptor=descriptor, workdir=workdir,
+                       halt_build_on_failure=False)
 
   def AddXvfbTestRunStep(self, test_name, test_binary, test_arguments=''):
     """ Adds a test to be run inside a XVFB window manager."""
@@ -383,11 +409,7 @@ class WebRTCLinuxFactory(WebRTCFactory):
     cmd = ['make', target, '-j100']
     if make_extra:
       cmd.append(make_extra)
-    self.addStep(shell.ShellCommand(command=cmd,
-        workdir='build/trunk', description=descriptor + ['running...'],
-        haltOnFailure=True,
-        descriptionDone=descriptor,
-        name='_'.join(descriptor)))
+    self.AddCommonStep(cmd=cmd, descriptor=descriptor, workdir='build/trunk')
 
   def AddStepsToEstablishCoverageBaseline(self):
     self.AddCommonStep(['lcov', '--directory', '.', '--capture', '-b',
@@ -494,11 +516,8 @@ class WebRTCLinuxFactory(WebRTCFactory):
     elif test == 'voe_auto_test':
       # TODO(phoglund): Remove this notice and take appropriate action when
       # http://code.google.com/p/webrtc/issues/detail?id=266 is concluded.
-      self.addStep(shell.ShellCommand(
-        command=('out/Debug/voe_auto_test --automated '
-                 '--gtest_filter="-VolumeTest.*"'),
-        workdir='build/trunk', description=[test, 'running...'],
-        descriptionDone=[test], name=test))
+      cmd = 'out/Debug/voe_auto_test --automated --gtest_filter="-VolumeTest.*"'
+      self.AddCommonTestRunStep(test=test, cmd=cmd)
     else:
       self.AddCommonTestRunStep(test)
 
@@ -541,11 +560,13 @@ class WebRTCMacFactory(WebRTCFactory):
       if self.build_type == 'xcode' or self.build_type == 'both':
         cmd = ['xcodebuild/%s/%s' % (test_folder, test)]
         self.AddCommonStep(cmd, descriptor=descriptor + ['(xcode)'],
-                           workdir='build/trunk')
+                           halt_build_on_failure=False,
+                           workdir=workdir)
       if self.build_type == 'make' or self.build_type == 'both':
         cmd = ['out/%s/%s' % (test_folder, test)]
         self.AddCommonStep(cmd, descriptor=descriptor + ['(make)'],
-                           workdir='build/trunk')
+                           halt_build_on_failure=False,
+                           workdir=workdir)
 
   def AddCommonMakeStep(self, target, extra_text=None, make_extra=None):
     descriptor = [target, extra_text] if extra_text else [target]
@@ -567,7 +588,8 @@ class WebRTCMacFactory(WebRTCFactory):
 class WebRTCWinFactory(WebRTCFactory):
   """Sets up the Windows build.
 
-     Allows building with Debug, Release or both in sequence."""
+     Allows building with Debug, Release or both in sequence.
+  """
 
   def __init__(self):
     WebRTCFactory.__init__(self)
@@ -580,7 +602,6 @@ class WebRTCWinFactory(WebRTCFactory):
                   configuration='Debug', build_only=False):
     self.build_enabled = True
     self.force_sync = force_sync
-    """Win specific Build"""
     if platform not in self.allowed_platforms:
       print '*** INCORRECT PLATFORM (%s)!!! ***' % platform
       sys.exit(0)
