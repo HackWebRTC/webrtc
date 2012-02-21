@@ -37,10 +37,6 @@
 
 namespace webrtc {
 AudioProcessing* AudioProcessing::Create(int id) {
-  /*WEBRTC_TRACE(webrtc::kTraceModuleCall,
-             webrtc::kTraceAudioProcessing,
-             id,
-             "AudioProcessing::Create()");*/
 
   AudioProcessingImpl* apm = new AudioProcessingImpl(id);
   if (apm->Initialize() != kNoError) {
@@ -554,11 +550,6 @@ VoiceDetection* AudioProcessingImpl::voice_detection() const {
 
 WebRtc_Word32 AudioProcessingImpl::ChangeUniqueId(const WebRtc_Word32 id) {
   CriticalSectionScoped crit_scoped(crit_);
-  /*WEBRTC_TRACE(webrtc::kTraceModuleCall,
-             webrtc::kTraceAudioProcessing,
-             id_,
-             "ChangeUniqueId(new id = %d)",
-             id);*/
   id_ = id;
 
   return kNoError;
