@@ -47,11 +47,18 @@ VideoCaptureModule* VideoCaptureImpl::Create(const WebRtc_Word32 id,
 }
 
 VideoCaptureModuleV4L2::VideoCaptureModuleV4L2(const WebRtc_Word32 id)
-    : VideoCaptureImpl(id), _captureThread(NULL),
+    : VideoCaptureImpl(id), 
+      _captureThread(NULL),
       _captureCritSect(CriticalSectionWrapper::CreateCriticalSection()),
-      _deviceId(-1), _currentWidth(-1), _currentHeight(-1),
-      _currentFrameRate(-1), _captureStarted(false),
-      _captureVideoType(kVideoI420), pool(NULL)
+      _deviceId(-1), 
+      _deviceFd(-1),
+      _buffersAllocatedByDevice(-1),
+      _currentWidth(-1), 
+      _currentHeight(-1),
+      _currentFrameRate(-1), 
+      _captureStarted(false),
+      _captureVideoType(kVideoI420), 
+      _pool(NULL)
 {
 }
 
@@ -288,7 +295,7 @@ bool VideoCaptureModuleV4L2::AllocateVideoBuffers()
     _buffersAllocatedByDevice = rbuffer.count;
 
     //Map the buffers
-    pool = new Buffer[rbuffer.count];
+    _pool = new Buffer[rbuffer.count];
 
     for (unsigned int i = 0; i < rbuffer.count; i++)
     {
@@ -303,17 +310,17 @@ bool VideoCaptureModuleV4L2::AllocateVideoBuffers()
             return false;
         }
 
-        pool[i].start = mmap(NULL, buffer.length, PROT_READ | PROT_WRITE, MAP_SHARED,
-                             _deviceFd, buffer.m.offset);
+        _pool[i].start = mmap(NULL, buffer.length, PROT_READ | PROT_WRITE, MAP_SHARED,
+                              _deviceFd, buffer.m.offset);
 
-        if (MAP_FAILED == pool[i].start)
+        if (MAP_FAILED == _pool[i].start)
         {
             for (unsigned int j = 0; j < i; j++)
-                munmap(pool[j].start, pool[j].length);
+                munmap(_pool[j].start, _pool[j].length);
             return false;
         }
 
-        pool[i].length = buffer.length;
+        _pool[i].length = buffer.length;
 
         if (ioctl(_deviceFd, VIDIOC_QBUF, &buffer) < 0)
         {
@@ -327,9 +334,9 @@ bool VideoCaptureModuleV4L2::DeAllocateVideoBuffers()
 {
     // unmap buffers
     for (int i = 0; i < _buffersAllocatedByDevice; i++)
-        munmap(pool[i].start, pool[i].length);
+        munmap(_pool[i].start, _pool[i].length);
 
-    delete[] pool;
+    delete[] _pool;
 
     // turn off stream
     enum v4l2_buf_type type;
@@ -414,7 +421,7 @@ bool VideoCaptureModuleV4L2::CaptureProcess()
         frameInfo.rawType = _captureVideoType;
 
         // convert to to I420 if needed
-        IncomingFrame((unsigned char*) pool[buf.index].start,
+        IncomingFrame((unsigned char*) _pool[buf.index].start,
                       buf.bytesused, frameInfo);
         // enqueue the buffer again
         if (ioctl(_deviceFd, VIDIOC_QBUF, &buf) == -1)
