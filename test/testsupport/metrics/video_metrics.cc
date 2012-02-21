@@ -35,7 +35,7 @@ void CalculateFrame(VideoMetricsType video_metrics_type,
                     int height,
                     int frame_number,
                     QualityMetricsResult* result) {
-  FrameResult frame_result;
+  FrameResult frame_result = {0, 0};
   frame_result.frame_number = frame_number;
   switch (video_metrics_type) {
     case kPSNR:
@@ -64,11 +64,11 @@ void CalculateStats(QualityMetricsResult* result) {
   result->average = metrics_values_sum / result->frames.size();
 
   // Calculate min/max statistics
-  iter = min_element(result->frames.begin(), result->frames.end(),
+  iter = std::min_element(result->frames.begin(), result->frames.end(),
                      LessForFrameResultValue);
   result->min = iter->value;
   result->min_frame_number = iter->frame_number;
-  iter = max_element(result->frames.begin(), result->frames.end(),
+  iter = std::max_element(result->frames.begin(), result->frames.end(),
                      LessForFrameResultValue);
   result->max = iter->value;
   result->max_frame_number = iter->frame_number;
