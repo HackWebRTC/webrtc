@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -130,7 +130,7 @@ TEST_F(TestLibYuv, ConvertTest) {
   fwrite(res_i420_buffer, frame_length_, 1, output_file);
   psnr = I420PSNR(orig_buffer, res_i420_buffer, width_, height_);
   // Optimization Speed- quality trade-off => 45 dB only (platform dependant).
-  EXPECT_GT(ceil(psnr), 45);
+  EXPECT_GT(ceil(psnr), 44);
   j++;
   delete [] res_rgb_buffer2;
 
