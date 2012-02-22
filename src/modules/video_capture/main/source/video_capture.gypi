@@ -184,6 +184,17 @@
                 },
               },
             }],  # win
+            ['OS=="android"', {
+              'include_dirs': [
+                'Android',
+              ],
+              'sources': [
+                'Android/device_info_android.cc',
+                'Android/device_info_android.h',
+                'Android/video_capture_android.cc',
+                'Android/video_capture_android.h',
+              ],
+            }],  # android
           ], # conditions
         }],  # include_internal_video_capture
       ], # conditions
