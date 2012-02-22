@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -36,8 +36,6 @@ AudioCodingModule::Destroy(
 // Get number of supported codecs
 WebRtc_UWord8 AudioCodingModule::NumberOfCodecs()
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, -1,
-        "NumberOfCodecs()");
     return static_cast<WebRtc_UWord8>(ACMCodecDB::kNumCodecs);
 }
 
@@ -47,9 +45,6 @@ AudioCodingModule::Codec(
     const WebRtc_UWord8 listId,
     CodecInst&          codec)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, -1,
-        "Codec(const WebRtc_UWord8 listId, CodecInst& codec)");
-
     // Get the codec settings for the codec with the given list ID
     return ACMCodecDB::Codec(listId, &codec);
 }
@@ -61,9 +56,6 @@ AudioCodingModule::Codec(
     CodecInst&          codec,
     const WebRtc_Word32 samplingFreqHz)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, -1,
-        "Codec(const WebRtc_Word8* payloadName, CodecInst& codec)");
-
     // Search through codec list for a matching name
     for(int codecCntr = 0; codecCntr < ACMCodecDB::kNumCodecs; codecCntr++)
     {
@@ -97,8 +89,6 @@ AudioCodingModule::Codec(
     const WebRtc_Word8* payloadName,
     const WebRtc_Word32 samplingFreqHz)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, -1,
-        "Codec(const WebRtc_Word8* payloadName)");
     CodecInst codec;
 
     // Search through codec list for a matching name
@@ -130,8 +120,6 @@ AudioCodingModule::IsCodecValid(
     int mirrorID;
     char errMsg[500];
 
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, -1,
-               "IsCodecValid(const CodecInst& codec)");
     int codecNumber = ACMCodecDB::CodecNumber(&codec, &mirrorID, errMsg, 500);
 
     if(codecNumber < 0)

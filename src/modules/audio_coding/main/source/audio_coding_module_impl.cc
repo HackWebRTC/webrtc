@@ -227,7 +227,6 @@ AudioCodingModuleImpl::~AudioCodingModuleImpl()
         }
     }
 
-
 #ifdef ACM_QA_TEST
         if(_incomingPL != NULL)
         {
@@ -252,8 +251,6 @@ WebRtc_Word32
 AudioCodingModuleImpl::ChangeUniqueId(
     const WebRtc_Word32 id)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "ChangeUniqueId(new id:%d)", id);
     {
         CriticalSectionScoped lock(*_acmCritSect);
         _id = id;
@@ -550,9 +547,6 @@ AudioCodingModuleImpl::Process()
 WebRtc_Word32
 AudioCodingModuleImpl::InitializeSender()
 {
-   WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "InitializeSender()");
-
     CriticalSectionScoped lock(*_acmCritSect);
 
     _sendCodecRegistered = false;
@@ -592,9 +586,6 @@ AudioCodingModuleImpl::InitializeSender()
 WebRtc_Word32
 AudioCodingModuleImpl::ResetEncoder()
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "ResetEncoder()");
-
     CriticalSectionScoped lock(*_acmCritSect);
     if(!HaveValidEncoder("ResetEncoder"))
     {
@@ -617,9 +608,6 @@ ACMGenericCodec*
 AudioCodingModuleImpl::CreateCodec(
     const CodecInst& codec)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "CreateCodec()");
-
     ACMGenericCodec* myCodec = NULL;
 
     myCodec = ACMCodecDB::CreateCodecInstance(&codec);
@@ -644,9 +632,6 @@ WebRtc_Word32
 AudioCodingModuleImpl::RegisterSendCodec(
     const CodecInst& sendCodec)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "Registering Send Codec");
-
     if((sendCodec.channels != 1) && (sendCodec.channels != 2))
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
@@ -704,7 +689,6 @@ mono codecs are supported, i.e. channels=1.", sendCodec.channels);
     if(!STR_CASE_CMP(sendCodec.plname, "CN"))
     {
         // CNG is registered
-
         switch(sendCodec.plfreq)
         {
         case 8000:
@@ -998,9 +982,6 @@ AudioCodingModuleImpl::SendFrequency() const
 WebRtc_Word32
 AudioCodingModuleImpl::SendBitrate() const
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "SendBitrate()");
-
     CriticalSectionScoped lock(*_acmCritSect);
 
     if(!_sendCodecRegistered)
@@ -1023,8 +1004,6 @@ WebRtc_Word32
 AudioCodingModuleImpl::SetReceivedEstimatedBandwidth(
     const WebRtc_Word32  bw )
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "SetReceivedEstimatedBandwidth()");
     return _codecs[_currentSendCodecIdx]->SetEstimatedBandwidth(bw);
 }
 
@@ -1034,8 +1013,6 @@ WebRtc_Word32
 AudioCodingModuleImpl::RegisterTransportCallback(
     AudioPacketizationCallback* transport)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "RegisterTransportCallback()");
     CriticalSectionScoped lock(*_callbackCritSect);
     _packetizationCallback = transport;
     return 0;
@@ -1049,8 +1026,6 @@ AudioCodingModuleImpl::RegisterIncomingMessagesCallback(
     AudioCodingFeedback* /* incomingMessagesCallback */,
     const ACMCountries   /* cpt                      */)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "RegisterIncomingMessagesCallback()");
     return -1;
 #else
     AudioCodingFeedback* incomingMessagesCallback,
@@ -1245,8 +1220,6 @@ match");
 bool
 AudioCodingModuleImpl::FECStatus() const
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-                    "FECStatus()");
     CriticalSectionScoped lock(*_acmCritSect);
     return _fecEnabled;
 }
@@ -1257,8 +1230,6 @@ AudioCodingModuleImpl::SetFECStatus(
 #ifdef WEBRTC_CODEC_RED
     const bool enableFEC)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-                    "SetFECStatus()");
     CriticalSectionScoped lock(*_acmCritSect);
 
     if (_fecEnabled != enableFEC)
@@ -1300,8 +1271,6 @@ AudioCodingModuleImpl::SetVAD(
     const bool       enableVAD,
     const ACMVADMode vadMode)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "SetVAD()");
     CriticalSectionScoped lock(*_acmCritSect);
 
     // sanity check of the mode
@@ -1352,8 +1321,6 @@ AudioCodingModuleImpl::VAD(
     bool&       vadEnabled,
     ACMVADMode& vadMode) const
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "VAD()");
     CriticalSectionScoped lock(*_acmCritSect);
 
     dtxEnabled = _dtxEnabled;
@@ -1378,9 +1345,6 @@ AudioCodingModuleImpl::InitializeReceiver()
 WebRtc_Word32
 AudioCodingModuleImpl::InitializeReceiverSafe()
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "InitializeReceiver()");
-
     // If the receiver is already initialized then we
     // also like to destruct decoders if any exist. After a call
     // to this function, we should have a clean start-up.
@@ -1441,8 +1405,6 @@ AudioCodingModuleImpl::InitializeReceiverSafe()
 WebRtc_Word32
 AudioCodingModuleImpl::ResetDecoder()
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "ResetDecoder()");
     CriticalSectionScoped lock(*_acmCritSect);
 
     for(int codecCntr = 0; codecCntr < ACMCodecDB::kMaxNumCodecs; codecCntr++)
@@ -1500,9 +1462,6 @@ AudioCodingModuleImpl::RegisterReceiveCodec(
 {
     CriticalSectionScoped lock(*_acmCritSect);
 
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "RegisterReceiveCodec()");
-
     if(receiveCodec.channels > 2)
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
@@ -1556,7 +1515,6 @@ AudioCodingModuleImpl::RegisterReceiveCodec(
             "Cannot register master codec.");
         return -1;
     }
-
 
     // If receive stereo, make sure we have two instances of NetEQ, one for each channel
     if(receiveCodec.channels == 2)
@@ -1631,9 +1589,6 @@ AudioCodingModuleImpl::RegisterRecCodecMSSafe(
     WebRtc_Word16    mirrorId,
     ACMNetEQ::JB     jitterBuffer)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "RegisterReceiveCodecMSSafe()");
-
     ACMGenericCodec** codecArray;
     if(jitterBuffer == ACMNetEQ::masterJB)
     {
@@ -1729,8 +1684,6 @@ WebRtc_Word32
 AudioCodingModuleImpl::ReceiveCodec(
     CodecInst& currentReceiveCodec) const
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "ReceiveCodec()");
     WebRtcACMCodecParams decoderParam;
     CriticalSectionScoped lock(*_acmCritSect);
 
@@ -1765,7 +1718,6 @@ AudioCodingModuleImpl::IncomingPacket(
     const WebRtc_Word32    payloadLength,
     const WebRtcRTPHeader& rtpInfo)
 {
-
     if (payloadLength < 0)
     {
         // Log error
@@ -1877,8 +1829,6 @@ WebRtc_Word32
 AudioCodingModuleImpl::SetMinimumPlayoutDelay(
     const WebRtc_Word32 timeMs)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-            "SetMinimumPlayoutDelay()");
     if((timeMs < 0) || (timeMs > 1000))
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
@@ -1892,8 +1842,6 @@ AudioCodingModuleImpl::SetMinimumPlayoutDelay(
 bool
 AudioCodingModuleImpl::DtmfPlayoutStatus() const
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "DtmfPlayoutStatus()");
 #ifndef WEBRTC_CODEC_AVT
     return false;
 #else
@@ -1914,8 +1862,6 @@ AudioCodingModuleImpl::SetDtmfPlayoutStatus(
 #else
     const bool enable)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "SetDtmfPlayoutStatus()");
     return _netEq.SetAVTPlayout(enable);
 #endif
 }
@@ -1926,9 +1872,6 @@ AudioCodingModuleImpl::SetDtmfPlayoutStatus(
 WebRtc_Word32
 AudioCodingModuleImpl::DecoderEstimatedBandwidth() const
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "DecoderEstimatedBandwidth()");
-
     CodecInst codecInst;
     WebRtc_Word16 codecID = -1;
     int plTypWB;
@@ -1972,8 +1915,6 @@ WebRtc_Word32
 AudioCodingModuleImpl::SetPlayoutMode(
     const AudioPlayoutMode mode)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "SetPlayoutMode()");
     if((mode  != voice) &&
         (mode != fax)   &&
         (mode != streaming))
@@ -1989,8 +1930,6 @@ AudioCodingModuleImpl::SetPlayoutMode(
 AudioPlayoutMode
 AudioCodingModuleImpl::PlayoutMode() const
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "PlayoutMode()");
     return _netEq.PlayoutMode();
 }
 
@@ -2155,8 +2094,6 @@ AudioCodingModuleImpl::PlayoutData10Ms(
     return 0;
 }
 
-
-
 /////////////////////////////////////////
 //   (CNG) Comfort Noise Generation
 //   Generate comfort noise when receiving DTX packets
@@ -2166,8 +2103,6 @@ AudioCodingModuleImpl::PlayoutData10Ms(
 ACMVADMode
 AudioCodingModuleImpl::ReceiveVADMode() const
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "ReceiveVADMode()");
     return _netEq.VADMode();
 }
 
@@ -2176,8 +2111,6 @@ WebRtc_Word16
 AudioCodingModuleImpl::SetReceiveVADMode(
     const ACMVADMode mode)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "SetReceiveVADMode()");
     return _netEq.SetVADMode(mode);
 }
 
@@ -2189,8 +2122,6 @@ WebRtc_Word32
 AudioCodingModuleImpl::NetworkStatistics(
     ACMNetworkStatistics& statistics) const
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "NetworkStatistics()");
     WebRtc_Word32 status;
     status = _netEq.NetworkStatistics(&statistics);
     return status;
@@ -2423,8 +2354,6 @@ AudioCodingModuleImpl::DecoderListIDByPlName(
 WebRtc_Word32
 AudioCodingModuleImpl::LastEncodedTimestamp(WebRtc_UWord32& timestamp) const
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "LastEncodedTimestamp()");
     CriticalSectionScoped lock(*_acmCritSect);
     if(!HaveValidEncoder("LastEncodedTimestamp"))
     {
@@ -2437,8 +2366,6 @@ AudioCodingModuleImpl::LastEncodedTimestamp(WebRtc_UWord32& timestamp) const
 WebRtc_Word32
 AudioCodingModuleImpl::ReplaceInternalDTXWithWebRtc(bool useWebRtcDTX)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "ReplaceInternalDTXWithWebRtc()");
     CriticalSectionScoped lock(*_acmCritSect);
 
     if(!HaveValidEncoder("ReplaceInternalDTXWithWebRtc"))
@@ -2466,8 +2393,6 @@ AudioCodingModuleImpl::ReplaceInternalDTXWithWebRtc(bool useWebRtcDTX)
 WebRtc_Word32
 AudioCodingModuleImpl::IsInternalDTXReplacedWithWebRtc(bool& usesWebRtcDTX)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "IsInternalDTXReplacedWithWebRtc()");
     CriticalSectionScoped lock(*_acmCritSect);
 
     if(!HaveValidEncoder("IsInternalDTXReplacedWithWebRtc"))
@@ -2486,8 +2411,6 @@ WebRtc_Word32
 AudioCodingModuleImpl::SetISACMaxRate(
     const WebRtc_UWord32 maxRateBitPerSec)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "SetISACMaxRate()");
     CriticalSectionScoped lock(*_acmCritSect);
 
     if(!HaveValidEncoder("SetISACMaxRate"))
@@ -2503,8 +2426,6 @@ WebRtc_Word32
 AudioCodingModuleImpl::SetISACMaxPayloadSize(
     const WebRtc_UWord16 maxPayloadLenBytes)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "SetISACPayloadSize()");
     CriticalSectionScoped lock(*_acmCritSect);
 
     if(!HaveValidEncoder("SetISACMaxPayloadSize"))
@@ -2521,8 +2442,6 @@ AudioCodingModuleImpl::ConfigISACBandwidthEstimator(
     const WebRtc_UWord16 initRateBitPerSec,
     const bool           enforceFrameSize)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "ConfigISACBandwidthEstimator()");
     CriticalSectionScoped lock(*_acmCritSect);
 
     if(!HaveValidEncoder("ConfigISACBandwidthEstimator"))
@@ -2538,8 +2457,6 @@ WebRtc_Word32
 AudioCodingModuleImpl::SetBackgroundNoiseMode(
     const ACMBackgroundNoiseMode mode)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "SetBackgroundNoiseMode()");
     if((mode < On) ||
         (mode > Off))
     {
@@ -2554,8 +2471,6 @@ WebRtc_Word32
 AudioCodingModuleImpl::BackgroundNoiseMode(
     ACMBackgroundNoiseMode& mode)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "BackgroundNoiseMode()");
     return _netEq.BackgroundNoiseMode(mode);
 }
 
@@ -2567,10 +2482,6 @@ AudioCodingModuleImpl::PlayoutTimestamp(
         "PlayoutTimestamp()");
     return _netEq.PlayoutTimestamp(timestamp);
 }
-
-
-
-
 
 bool
 AudioCodingModuleImpl::HaveValidEncoder(
@@ -2604,8 +2515,6 @@ WebRtc_Word32
 AudioCodingModuleImpl::UnregisterReceiveCodec(
     const WebRtc_Word16 payloadType)
 {
-    WEBRTC_TRACE(webrtc::kTraceModuleCall, webrtc::kTraceAudioCoding, _id,
-        "UnregisterReceiveCodec()");
     CriticalSectionScoped lock(*_acmCritSect);
     WebRtc_Word16 codecID;
 
@@ -2693,7 +2602,6 @@ AudioCodingModuleImpl::UnregisterReceiveCodecSafe(
     return 0;
 }
 
-
 WebRtc_Word32
 AudioCodingModuleImpl::REDPayloadISAC(
     const WebRtc_Word32  isacRate,
@@ -2701,7 +2609,6 @@ AudioCodingModuleImpl::REDPayloadISAC(
     WebRtc_UWord8*       payload,
     WebRtc_Word16*       payloadLenByte)
 {
-
    if(!HaveValidEncoder("EncodeData"))
    {
        return -1;
