@@ -64,6 +64,11 @@
               '../../../../../..',
             ],
         }],
+        ['OS=="android"', {
+            'include_dirs': [
+              'android',
+            ],
+        }], # OS==android
         ['include_internal_audio_device==0', {
           'defines': [
             'WEBRTC_DUMMY_AUDIO_BUILD',
@@ -98,6 +103,10 @@
             'win/audio_device_utility_win.h',
             'win/audio_mixer_manager_win.cc',
             'win/audio_mixer_manager_win.h',
+            'android/audio_device_android_opensles.cc',
+            'android/audio_device_android_opensles.h',
+            'android/audio_device_utility_android.cc',
+            'android/audio_device_utility_android.h',
           ],
           'conditions': [
             ['OS=="linux"', {
