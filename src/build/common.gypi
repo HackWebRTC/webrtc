@@ -153,6 +153,23 @@
         # http://code.google.com/p/webrtc/issues/detail?id=261 is solved.
         'msvs_disabled_warnings': [4389, 4373],
       }],
+      ['OS=="android"', {
+        'defines': [
+          'WEBRTC_TARGET_PC',
+          'WEBRTC_LINUX',
+          # TODO(leozwang): Investigate CLOCK_REALTIME and CLOCK_MONOTONIC
+          # support on Android. Keep WEBRTC_CLOCK_TYPE_REALTIME for now,
+          # remove it after I verify that CLOCK_MONOTONIC is fully functional
+          # with condition and event functions in system_wrappers.
+          'WEBRTC_CLOCK_TYPE_REALTIME',
+          'WEBRTC_THREAD_RR',
+          'WEBRTC_ANDROID',
+          'WEBRTC_ARM_INLINE_CALLS',
+          # TODO(leozwang): move WEBRTC_ARCH_ARM to typedefs.h.
+          'WEBRTC_ARCH_ARM',
+          'WEBRTC_ANDROID_OPENSLES',
+         ],
+      }],
     ], # conditions
   }, # target_defaults
 }
