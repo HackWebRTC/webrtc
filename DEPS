@@ -69,10 +69,8 @@ deps = {
   "trunk/third_party/yasm/binaries":
     Var("chromium_trunk") + "/deps/third_party/yasm/binaries@74228",
 
-  # TODO(andrew): roll to 164 after fixing:
-  # http://code.google.com/p/webrtc/issues/detail?id=267
   "trunk/third_party/libyuv":
-    (Var("googlecode_url") % "libyuv") + "/trunk@182",
+    (Var("googlecode_url") % "libyuv") + "/trunk@186",
 
   # Used by tools/quality_tracking/dashboard and tools/python_charts
   "trunk/third_party/google-visualization-python":
