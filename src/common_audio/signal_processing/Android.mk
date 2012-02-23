@@ -20,7 +20,6 @@ LOCAL_SRC_FILES := \
     auto_corr_to_refl_coef.c \
     auto_correlation.c \
     complex_fft.c \
-    complex_bit_reverse.c \
     copy_set_operations.c \
     division_operations.c \
     dot_product_with_scale.c \
@@ -77,9 +76,11 @@ endif
 
 ifeq ($(TARGET_ARCH),arm)
 LOCAL_SRC_FILES += \
+    complex_bit_reverse_arm.s \
     spl_sqrt_floor.s
 else
 LOCAL_SRC_FILES += \
+    complex_bit_reverse.c \
     spl_sqrt_floor.c
 endif
 

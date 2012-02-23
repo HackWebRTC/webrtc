@@ -15,6 +15,9 @@
 #ifndef WEBRTC_SPL_SPL_INL_ARMV7_H_
 #define WEBRTC_SPL_SPL_INL_ARMV7_H_
 
+// TODO(kma): Replace some assembly code with GCC intrinsics
+// (e.g. __builtin_clz).
+
 static __inline WebRtc_Word32 WEBRTC_SPL_MUL_16_32_RSFT16(WebRtc_Word16 a,
                                                           WebRtc_Word32 b) {
   WebRtc_Word32 tmp;

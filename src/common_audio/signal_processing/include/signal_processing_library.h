@@ -429,9 +429,26 @@ int WebRtcSpl_DownsampleFast(const int16_t* data_in,
 // End: Filter operations.
 
 // FFT operations
+
 int WebRtcSpl_ComplexFFT(WebRtc_Word16 vector[], int stages, int mode);
 int WebRtcSpl_ComplexIFFT(WebRtc_Word16 vector[], int stages, int mode);
-void WebRtcSpl_ComplexBitReverse(WebRtc_Word16 vector[], int stages);
+
+// Treat a 16-bit complex data buffer |complex_data| as an array of 32-bit
+// values, and swap elements whose indexes are bit-reverses of each other.
+//
+// Input:
+//      - complex_data  : Complex data buffer containing 2^|stages| real
+//                        elements interleaved with 2^|stages| imaginary
+//                        elements: [Re Im Re Im Re Im....]
+//      - stages        : Number of FFT stages. Must be at least 3 and at most
+//                        10, since the table WebRtcSpl_kSinTable1024[] is 1024
+//                        elements long.
+//
+// Output:
+//      - complex_data  : The complex data buffer.
+
+void WebRtcSpl_ComplexBitReverse(int16_t* __restrict complex_data, int stages);
+
 // End: FFT operations
 
 /************************************************************
@@ -1571,31 +1588,6 @@ void WebRtcSpl_SynthesisQMF(const WebRtc_Word16* low_band,
 //
 // Return value     : The scale parameter is always 0, except if N>1024,
 //                    which returns a scale value of -1, indicating error.
-//
-
-//
-// WebRtcSpl_ComplexBitReverse(...)
-//
-// Complex Bit Reverse
-//
-// This function bit-reverses the position of elements in the complex input
-// vector into the output vector.
-//
-// If you bit-reverse a linear-order array, you obtain a bit-reversed order
-// array. If you bit-reverse a bit-reversed order array, you obtain a
-// linear-order array.
-//
-// Input:
-//      - vector    : In pointer to complex vector containing 2^|stages| real
-//                    elements interleaved with 2^|stages| imaginary elements.
-//                    [ReImReImReIm....]
-//      - stages    : Number of FFT stages. Must be at least 3 and at most 10,
-//                    since the table WebRtcSpl_kSinTable1024[] is 1024
-//                    elements long.
-//
-// Output:
-//      - vector    : Out pointer to complex vector in bit-reversed order.
-//                    The input vector is over written.
 //
 
 //
