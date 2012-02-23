@@ -288,7 +288,7 @@ WebRtc_Word32 AudioDeviceLinuxPulse::Terminate()
         return 0;
     }
 
-    _critSect.Enter();
+    Lock();
 
     _mixerManager.Close();
 
@@ -297,11 +297,10 @@ WebRtc_Word32 AudioDeviceLinuxPulse::Terminate()
     {
         ThreadWrapper* tmpThread = _ptrThreadRec;
         _ptrThreadRec = NULL;
-        _critSect.Leave();
+        UnLock();
 
         tmpThread->SetNotAlive();
         _timeEventRec.Set();
-
         if (tmpThread->Stop())
         {
             delete tmpThread;
@@ -310,6 +309,8 @@ WebRtc_Word32 AudioDeviceLinuxPulse::Terminate()
             WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
                          "  failed to close down the rec audio thread");
         }
+        // Lock again since we need to protect _ptrThreadPlay.
+        Lock();
     }
 
     // PLAYOUT
@@ -321,7 +322,6 @@ WebRtc_Word32 AudioDeviceLinuxPulse::Terminate()
 
         tmpThread->SetNotAlive();
         _timeEventPlay.Set();
-
         if (tmpThread->Stop())
         {
             delete tmpThread;
@@ -330,6 +330,8 @@ WebRtc_Word32 AudioDeviceLinuxPulse::Terminate()
             WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
                          "  failed to close down the play audio thread");
         }
+    } else {
+      UnLock();
     }
 
     // Terminate PulseAudio
@@ -1750,42 +1752,50 @@ WebRtc_Word32 AudioDeviceLinuxPulse::CPULoad(WebRtc_UWord16& /*load*/) const
 
 bool AudioDeviceLinuxPulse::PlayoutWarning() const
 {
-    return (_playWarning > 0);
+  CriticalSectionScoped lock(_critSect);
+  return (_playWarning > 0);
 }
 
 bool AudioDeviceLinuxPulse::PlayoutError() const
 {
-    return (_playError > 0);
+  CriticalSectionScoped lock(_critSect);
+  return (_playError > 0);
 }
 
 bool AudioDeviceLinuxPulse::RecordingWarning() const
 {
-    return (_recWarning > 0);
+  CriticalSectionScoped lock(_critSect);
+  return (_recWarning > 0);
 }
 
 bool AudioDeviceLinuxPulse::RecordingError() const
 {
-    return (_recError > 0);
+  CriticalSectionScoped lock(_critSect);
+  return (_recError > 0);
 }
 
 void AudioDeviceLinuxPulse::ClearPlayoutWarning()
 {
-    _playWarning = 0;
+  CriticalSectionScoped lock(_critSect);
+  _playWarning = 0;
 }
 
 void AudioDeviceLinuxPulse::ClearPlayoutError()
 {
-    _playError = 0;
+  CriticalSectionScoped lock(_critSect);
+  _playError = 0;
 }
 
 void AudioDeviceLinuxPulse::ClearRecordingWarning()
 {
-    _recWarning = 0;
+  CriticalSectionScoped lock(_critSect);
+  _recWarning = 0;
 }
 
 void AudioDeviceLinuxPulse::ClearRecordingError()
 {
-    _recError = 0;
+  CriticalSectionScoped lock(_critSect);
+  _recError = 0;
 }
 
 // ============================================================================
