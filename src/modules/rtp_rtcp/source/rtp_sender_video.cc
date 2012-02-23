@@ -545,8 +545,10 @@ RTPSenderVideo::SendVP8(const FrameType frameType,
     WebRtc_UWord16 maxPayloadLengthVP8 = _rtpSender.MaxDataPayloadLength();
 
     assert(rtpTypeHdr);
+    // Initialize disregarding partition boundaries: this will use kEqualSize
+    // packetization mode, which produces ~equal size packets for each frame.
     RtpFormatVp8 packetizer(data, payloadBytesToSend, rtpTypeHdr->VP8,
-                            maxPayloadLengthVP8, *fragmentation, kAggregate);
+                            maxPayloadLengthVP8);
 
     StorageType storage = kAllowRetransmission;
     if (rtpTypeHdr->VP8.temporalIdx == 0 &&

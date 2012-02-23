@@ -20,11 +20,11 @@
 namespace webrtc {
 
 // Define how the VP8PacketizerModes are implemented.
-// Modes are: kStrict, kAggregate, kSloppy.
+// Modes are: kStrict, kAggregate, kEqualSize.
 const RtpFormatVp8::AggregationMode RtpFormatVp8::aggr_modes_[kNumModes] =
     { kAggrNone, kAggrPartitions, kAggrFragments };
 const bool RtpFormatVp8::balance_modes_[kNumModes] =
-    { true, true, false };
+    { true, true, true };
 const bool RtpFormatVp8::separate_first_modes_[kNumModes] =
     { true, false, false };
 
@@ -55,9 +55,9 @@ RtpFormatVp8::RtpFormatVp8(const WebRtc_UWord8* payload_data,
       payload_size_(static_cast<int>(payload_size)),
       part_info_(),
       vp8_fixed_payload_descriptor_bytes_(1),
-      aggr_mode_(aggr_modes_[kSloppy]),
-      balance_(balance_modes_[kSloppy]),
-      separate_first_(separate_first_modes_[kSloppy]),
+      aggr_mode_(aggr_modes_[kEqualSize]),
+      balance_(balance_modes_[kEqualSize]),
+      separate_first_(separate_first_modes_[kEqualSize]),
       hdr_info_(hdr_info),
       num_partitions_(1),
       max_payload_len_(max_payload_len),

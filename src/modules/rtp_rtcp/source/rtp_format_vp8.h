@@ -15,7 +15,7 @@
  * together with the fragmentation information and a packetizer mode
  * of choice. Alternatively, if no fragmentation info is available, the
  * second constructor can be used with only payload data and size; in that
- * case the mode kSloppy is used.
+ * case the mode kEqualSize is used.
  *
  * After creating the packetizer, the method NextPacket is called
  * repeatedly to get all packets for the frame. The method returns
@@ -38,7 +38,8 @@ enum VP8PacketizerMode {
   kStrict = 0,  // Split partitions if too large;
                 // never aggregate, balance size.
   kAggregate,   // Split partitions if too large; aggregate whole partitions.
-  kSloppy,      // Split entire payload without considering partition limits.
+  kEqualSize,   // Split entire payload without considering partition limits.
+                // This will produce equal size packets for the whole frame.
   kNumModes,
 };
 
@@ -54,7 +55,7 @@ class RtpFormatVp8 {
                const RTPFragmentationHeader& fragmentation,
                VP8PacketizerMode mode);
 
-  // Initialize without fragmentation info. Mode kSloppy will be used.
+  // Initialize without fragmentation info. Mode kEqualSize will be used.
   // The payload_data must be exactly one encoded VP8 frame.
   RtpFormatVp8(const WebRtc_UWord8* payload_data,
                WebRtc_UWord32 payload_size,
@@ -67,9 +68,11 @@ class RtpFormatVp8 {
   // bytes_to_send is an output variable that will contain number of bytes
   // written to buffer. Parameter last_packet is true for the last packet of
   // the frame, false otherwise (i.e., call the function again to get the
-  // next packet). Returns the partition index from which the first payload
-  // byte in the packet is taken, with the first partition having index 0;
-  // returns negative on error.
+  // next packet).
+  // For the kStrict and kAggregate mode: returns the partition index from which
+  // the first payload byte in the packet is taken, with the first partition
+  // having index 0; returns negative on error.
+  // For the kEqualSize mode: returns 0 on success, return negative on error.
   int NextPacket(WebRtc_UWord8* buffer,
                  int* bytes_to_send,
                  bool* last_packet);

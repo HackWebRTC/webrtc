@@ -200,38 +200,8 @@ TEST_F(RtpFormatVp8Test, TestAggregateModeTwoLargePartitions) {
                                  kExpectedFragStart, kExpectedNum);
 }
 
-TEST_F(RtpFormatVp8Test, TestSloppyMode) {
-  const int kSizeVector[] = {10, 10, 10};
-  const int kNumPartitions = sizeof(kSizeVector) / sizeof(kSizeVector[0]);
-  ASSERT_TRUE(Init(kSizeVector, kNumPartitions));
-
-  hdr_info_.pictureId = kNoPictureId;  // No PictureID.
-  const int kMaxSize = 9;
-  RtpFormatVp8 packetizer(helper_->payload_data(),
-                          helper_->payload_size(),
-                          hdr_info_,
-                          kMaxSize,
-                          *(helper_->fragmentation()),
-                          kSloppy);
-
-  // The expected sizes are obtained by running a verified good implementation.
-  const int kExpectedSizes[] = {9, 9, 9, 7};
-  const int kExpectedPart[] = {0, 0, 1, 2};
-  const bool kExpectedFragStart[] = {true, false, false, false};
-  const int kExpectedNum = sizeof(kExpectedSizes) / sizeof(kExpectedSizes[0]);
-  COMPILE_ASSERT(kExpectedNum ==
-      sizeof(kExpectedPart) / sizeof(kExpectedPart[0]),
-      kExpectedPart_wrong_size);
-  COMPILE_ASSERT(kExpectedNum ==
-      sizeof(kExpectedFragStart) / sizeof(kExpectedFragStart[0]),
-      kExpectedFragStart_wrong_size);
-
-  helper_->GetAllPacketsAndCheck(&packetizer, kExpectedSizes, kExpectedPart,
-                                 kExpectedFragStart, kExpectedNum);
-}
-
-// Verify that sloppy mode is forced if fragmentation info is missing.
-TEST_F(RtpFormatVp8Test, TestSloppyModeFallback) {
+// Verify that EqualSize mode is forced if fragmentation info is missing.
+TEST_F(RtpFormatVp8Test, TestEqualSizeModeFallback) {
   const int kSizeVector[] = {10, 10, 10};
   const int kNumPartitions = sizeof(kSizeVector) / sizeof(kSizeVector[0]);
   ASSERT_TRUE(Init(kSizeVector, kNumPartitions));
@@ -244,9 +214,9 @@ TEST_F(RtpFormatVp8Test, TestSloppyModeFallback) {
                           kMaxSize);
 
   // Expecting three full packets, and one with the remainder.
-  const int kExpectedSizes[] = {12, 12, 12, 10};
-  const int kExpectedPart[] = {0, 0, 0, 0};  // Always 0 for sloppy mode.
-  // Frag start only true for first packet in sloppy mode.
+  const int kExpectedSizes[] = {12, 11, 12, 11};
+  const int kExpectedPart[] = {0, 0, 0, 0};  // Always 0 for equal size mode.
+  // Frag start only true for first packet in equal size mode.
   const bool kExpectedFragStart[] = {true, false, false, false};
   const int kExpectedNum = sizeof(kExpectedSizes) / sizeof(kExpectedSizes[0]);
   COMPILE_ASSERT(kExpectedNum ==
@@ -261,7 +231,7 @@ TEST_F(RtpFormatVp8Test, TestSloppyModeFallback) {
                                  kExpectedFragStart, kExpectedNum);
 }
 
-// Verify that non-reference bit is set. Sloppy mode fallback is expected.
+// Verify that non-reference bit is set. EqualSize mode fallback is expected.
 TEST_F(RtpFormatVp8Test, TestNonReferenceBit) {
   const int kSizeVector[] = {10, 10, 10};
   const int kNumPartitions = sizeof(kSizeVector) / sizeof(kSizeVector[0]);
@@ -274,10 +244,10 @@ TEST_F(RtpFormatVp8Test, TestNonReferenceBit) {
                           hdr_info_,
                           kMaxSize);
 
-  // Sloppy mode => First packet full; other not.
-  const int kExpectedSizes[] = {25, 7};
-  const int kExpectedPart[] = {0, 0};  // Always 0 for sloppy mode.
-  // Frag start only true for first packet in sloppy mode.
+  // EqualSize mode => First packet full; other not.
+  const int kExpectedSizes[] = {16, 16};
+  const int kExpectedPart[] = {0, 0};  // Always 0 for equal size mode.
+  // Frag start only true for first packet in equal size mode.
   const bool kExpectedFragStart[] = {true, false};
   const int kExpectedNum = sizeof(kExpectedSizes) / sizeof(kExpectedSizes[0]);
   COMPILE_ASSERT(kExpectedNum ==
