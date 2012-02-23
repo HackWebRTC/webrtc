@@ -9,6 +9,7 @@
 
 __author__ = 'ivinnichenko@webrtc.org (Illya Vinnichenko)'
 
+import buildbot
 import os
 import sys
 import urlparse
@@ -26,6 +27,7 @@ SVN_LOCATION = 'http://webrtc.googlecode.com/svn/trunk'
 VALGRIND_CMD = ['tools/valgrind-webrtc/webrtc_tests.sh', '-t', 'cmdline']
 
 DEFAULT_COVERAGE_DIR = '/var/www/coverage/'
+DEFAULT_MASTER_WORK_DIR = '.'
 
 # Copied from trunk/tools/build/scripts/master/factory/chromium_factory.py
 # but converted to a list since we set defines instead of using an environment
@@ -66,9 +68,16 @@ class WebRTCFactory(factory.BuildFactory):
      can be overridden to create customized build sequences.
   """
 
-  def __init__(self):
+  def __init__(self, build_status_oracle):
+    """Creates the abstract factory.
+
+       Args:
+         build_status_oracle: An instance of BuildStatusOracle which is used to
+             keep track of our build state.
+    """
     factory.BuildFactory.__init__(self)
 
+    self.build_status_oracle = build_status_oracle
     self.properties = properties.Properties()
     self.build_enabled = False
     self.force_sync = False
@@ -101,9 +110,13 @@ class WebRTCFactory(factory.BuildFactory):
 
   def AddCommonStep(self, cmd, descriptor='', workdir='build',
                     halt_build_on_failure=True, warn_on_failure=False):
-    """Adds a common step which will run as a shell command on the slave.
+    """Adds a step which will run as a shell command on the slave.
 
-       A common step can be anything except a test execution step.
+       NOTE: you are recommended to use this method to add new shell commands
+       instead of the base-class addStep method, since steps added here will
+       work with the smart-clean system (e.g. only do a full rebuild if the
+       previous build failed). Steps handled outside this method will not lead
+       to a full rebuild on the next build if they fail.
 
        Args:
          cmd: The command to run. This command follows the contract for
@@ -124,13 +137,20 @@ class WebRTCFactory(factory.BuildFactory):
     # Add spaces to wrap long test names to make waterfall output more compact.
     wrapped_text = self._WrapLongLines(descriptor)
 
-    self.addStep(shell.ShellCommand(command=cmd, workdir=workdir,
-                                    description=wrapped_text + ['running...'],
-                                    descriptionDone=wrapped_text,
-                                    warnOnFailure=warn_on_failure,
-                                    flunkOnFailure=flunk_on_failure,
-                                    haltOnFailure=halt_build_on_failure,
-                                    name='_'.join(descriptor)))
+    self.addStep(MonitoredShellCommand(
+        build_status_oracle=self.build_status_oracle, command=cmd,
+        workdir=workdir, description=wrapped_text + ['running...'],
+        descriptionDone=wrapped_text, warnOnFailure=warn_on_failure,
+        flunkOnFailure=flunk_on_failure, haltOnFailure=halt_build_on_failure,
+        name='_'.join(descriptor)))
+
+  def AddSmartCleanStep(self):
+    """Adds a smart clean step.
+
+       Smart clean only cleans the whole repository if the build status oracle
+       thinks the last build failed. Otherwise it cleans just the build output.
+    """
+    self.addStep(SmartClean(self.build_status_oracle))
 
   def AddCommonTestRunStep(self, test, descriptor='', cmd=None,
                            workdir='build/trunk'):
@@ -138,6 +158,9 @@ class WebRTCFactory(factory.BuildFactory):
 
        In general, failing tests should not halt the build and allow other tests
        to execute. A failing test should fail, or 'flunk', the build though.
+
+       Implementations of this method must add new steps through AddCommonStep
+       and not by calling addStep.
 
        Args:
          test: The test binary name. The step will attempt to execute this
@@ -173,6 +196,9 @@ class WebRTCFactory(factory.BuildFactory):
 
        GYP will generate makefiles or its equivalent in a platform-specific
        manner. A failed GYP step will halt the build.
+
+       Implementations of this method must add new steps through AddCommonStep
+       and not by calling addStep.
 
        Args:
          gyp_file: The root GYP file to use.
@@ -214,6 +240,80 @@ class WebRTCFactory(factory.BuildFactory):
           line = line[:index] + ' ' + line[index:]
       result.append(line)
     return result
+
+
+class BuildStatusOracle:
+  """Keeps track of a particular build's state.
+
+     The oracle uses files in the default master work directory to keep track
+     of whether a build has failed. It only keeps track of the most recent build
+     until told to forget it.
+  """
+
+  def __init__(self, builder_name):
+    """Creates the oracle.
+
+       Args:
+         builder_name: The name of the associated builder. This name is used
+             in the filename on disk. This name should be unique.
+    """
+    self.builder_name = builder_name
+    self.master_work_dir = DEFAULT_MASTER_WORK_DIR
+
+  def LastBuildFailed(self):
+    failure_file_path = self._GetFailureBuildPath()
+    return os.path.exists(failure_file_path)
+
+  def ForgetLastBuild(self):
+    if self.LastBuildFailed():
+      os.remove(self._GetFailureBuildPath())
+
+  def SetLastBuildAsFailed(self):
+    open(self._GetFailureBuildPath(), 'w').close()
+
+  def _GetFailureBuildPath(self):
+    return os.path.join(self.master_work_dir, self.builder_name + ".failed")
+
+
+class MonitoredShellCommand(ShellCommand):
+  """Wraps a shell command and notifies the oracle if the command fails."""
+
+  def __init__(self, build_status_oracle, **kwargs):
+    ShellCommand.__init__(self, **kwargs)
+
+    self.addFactoryArguments(build_status_oracle=build_status_oracle)
+    self.build_status_oracle = build_status_oracle
+
+  def finished(self, results):
+    if (results == buildbot.status.builder.FAILURE or
+        results == buildbot.status.builder.EXCEPTION):
+      self.build_status_oracle.SetLastBuildAsFailed()
+
+    ShellCommand.finished(self, results)
+
+
+class SmartClean(ShellCommand):
+  """Cleans the repository fully or partially depending on the build state."""
+  def __init__(self, build_status_oracle, **kwargs):
+    ShellCommand.__init__(self, **kwargs)
+
+    self.addFactoryArguments(build_status_oracle=build_status_oracle)
+    self.haltOnFailure = True
+    self.build_status_oracle = build_status_oracle
+
+  def start(self):
+    if self.build_status_oracle.LastBuildFailed():
+      self.build_status_oracle.ForgetLastBuild()
+      self.description = ['Nuke Repository', '(Previous Failed)']
+      self.setCommand(['rm', '-rf', 'trunk'])
+    else:
+      self.description = ['Clean']
+      self.setCommand('rm -rf trunk/out && '
+                      'rm -rf trunk/xcodebuild &&'
+                      'rm -rf trunk/build/Debug &&'
+                      'rm -rf trunk/build/Release')
+    ShellCommand.start(self)
+
 
 class GenerateCodeCoverage(ShellCommand):
   """This custom shell command generates coverage HTML using genhtml.
@@ -265,8 +365,8 @@ class GenerateCodeCoverage(ShellCommand):
 class WebRTCAndroidFactory(WebRTCFactory):
   """Sets up the Android build."""
 
-  def __init__(self):
-    WebRTCFactory.__init__(self)
+  def __init__(self, build_status_oracle):
+    WebRTCFactory.__init__(self, build_status_oracle)
 
   def EnableBuild(self, product='toro'):
     prefix = 'rm -rf out/target/product/%s/obj/' % product
@@ -277,25 +377,21 @@ class WebRTCAndroidFactory(WebRTCFactory):
         prefix + 'EXECUTABLES/webrtc_*'
         ]
     cmd = ' ; '.join(cleanup_list)
-    self.addStep(shell.Compile(command=(cmd), workdir='build/trunk',
-                 description=['cleanup', 'running...'],
-                 descriptionDone=['cleanup'], name='cleanup'))
+    self.AddCommonStep(cmd, descriptor='cleanup', workdir='build/trunk')
+
     cmd = 'svn checkout %s external/webrtc' % SVN_LOCATION
-    self.addStep(shell.Compile(command=(cmd),
-        workdir='build/trunk', description=['svn checkout', 'running...'],
-        descriptionDone=['svn checkout'], name='svn (checkout)'))
+    self.AddCommonStep(cmd, descriptor='svn (checkout)', workdir='build/trunk')
+
     cmd = ('source build/envsetup.sh && lunch full_%s-eng '
            '&& mmm external/webrtc showcommands' % product)
-    self.addStep(shell.Compile(command=(cmd),
-        workdir='build/trunk', description=['build', 'running...'],
-        descriptionDone=['build'], name='build'))
+    self.AddCommonStep(cmd, descriptor='build', workdir='build/trunk')
 
 
 class WebRTCChromeFactory(WebRTCFactory):
   """Sets up the Chrome OS build."""
 
-  def __init__(self):
-    WebRTCFactory.__init__(self)
+  def __init__(self, build_status_oracle):
+    WebRTCFactory.__init__(self, build_status_oracle)
 
   def EnableBuild(self):
     self.AddCommonStep(['rm', '-rf', 'src'], descriptor='Cleanup')
@@ -317,8 +413,8 @@ class WebRTCLinuxFactory(WebRTCFactory):
      This factory is quite configurable and can run a variety of builds.
   """
 
-  def __init__(self, valgrind_enabled=False):
-    WebRTCFactory.__init__(self)
+  def __init__(self, build_status_oracle, valgrind_enabled=False):
+    WebRTCFactory.__init__(self, build_status_oracle)
 
     self.coverage_enabled = False
     self.valgrind_enabled = valgrind_enabled
@@ -349,8 +445,7 @@ class WebRTCLinuxFactory(WebRTCFactory):
     self.force_sync = force_sync
     self.release = release
 
-    self.AddCommonStep(['rm', '-rf', 'trunk'], descriptor='Cleanup',
-                       warn_on_failure=True, halt_build_on_failure=False)
+    self.AddSmartCleanStep()
 
     # Valgrind bots need special GYP defines to enable memory profiling
     # friendly compilation. They already has a custom .gclient configuration
@@ -525,8 +620,8 @@ class WebRTCLinuxFactory(WebRTCFactory):
 class WebRTCMacFactory(WebRTCFactory):
   """Sets up the Mac build, both for make and xcode."""
 
-  def __init__(self):
-    WebRTCFactory.__init__(self)
+  def __init__(self, build_status_oracle):
+    WebRTCFactory.__init__(self, build_status_oracle)
     self.build_type = 'both'
     self.allowed_build_types = ['both', 'xcode', 'make']
 
@@ -540,7 +635,7 @@ class WebRTCMacFactory(WebRTCFactory):
       sys.exit(0)
     else:
       self.build_type = build_type
-    self.AddCommonStep(['rm', '-rf', 'trunk'], descriptor='Cleanup')
+    self.AddSmartCleanStep()
     self.AddCommonStep(['gclient', 'config', SVN_LOCATION],
                        descriptor='gclient_config')
     cmd = ['gclient', 'sync']
@@ -591,8 +686,8 @@ class WebRTCWinFactory(WebRTCFactory):
      Allows building with Debug, Release or both in sequence.
   """
 
-  def __init__(self):
-    WebRTCFactory.__init__(self)
+  def __init__(self, build_status_oracle):
+    WebRTCFactory.__init__(self, build_status_oracle)
     self.configuration = 'Debug'
     self.platform = 'x64'
     self.allowed_platforms = ['x64', 'Win32']
@@ -613,7 +708,7 @@ class WebRTCWinFactory(WebRTCFactory):
     else:
       self.configuration = configuration
     if not build_only:
-      self.AddCommonStep(['rm', '-rf', 'trunk'], descriptor='Cleanup')
+      self.AddSmartCleanStep()
       self.AddCommonStep(['gclient', 'config', SVN_LOCATION],
                          descriptor='gclient_config')
       cmd = ['gclient', 'sync']

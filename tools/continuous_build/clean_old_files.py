@@ -14,7 +14,7 @@ import os
 import sys
 import time
 
-# The path is considered whitelisted if any of these entries appear 
+# The path is considered whitelisted if any of these entries appear
 # at some point in the path
 WHITELIST = ["buildbot.tac", "master.cfg", "public_html", "changes.pck",
              "webrtc_buildbot"]
