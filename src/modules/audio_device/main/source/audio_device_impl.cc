@@ -66,6 +66,12 @@
 namespace webrtc
 {
 
+AudioDeviceModule* CreateAudioDeviceModule(
+    WebRtc_Word32 id, AudioDeviceModule::AudioLayer audioLayer) {
+  return AudioDeviceModuleImpl::Create(id, audioLayer);
+}
+
+
 // ============================================================================
 //                                   Static methods
 // ============================================================================
