@@ -30,6 +30,7 @@
 .pydevproject
 .settings
 /build
+/chromium_deps
 /gyp-mac-tool
 /Makefile
 /out
@@ -40,6 +41,7 @@
 /third_party/cygwin
 /third_party/expat
 /third_party/gaeunit
+/third_party/gold
 /third_party/google-gflags/src
 /third_party/google-visualization-python
 /third_party/jsoncpp

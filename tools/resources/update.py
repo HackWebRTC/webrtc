@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+# Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
@@ -39,18 +39,18 @@ def main():
   extension = '.tgz'
 
   # Variables used by the script.
-  project_root_dir = os.path.normpath(sys.path[0] + '/../../') 
+  project_root_dir = os.path.normpath(sys.path[0] + '/../../')
   deps_file = os.path.join(project_root_dir, 'DEPS')
   downloads_dir = os.path.join(project_root_dir, 'resources')
   current_version_file = os.path.join(downloads_dir, version_filename)
-  
+
   # Ensure the downloads dir is created.
   if not os.path.isdir(downloads_dir):
     os.mkdir(downloads_dir)
 
   # Define and parse arguments.
   parser = OptionParser()
-  parser.add_option('-f', '--force', action='store_true', dest='force', 
+  parser.add_option('-f', '--force', action='store_true', dest='force',
                     help='forces download and removes all existing resources.')
   (options, unused_args) = parser.parse_args()
 
@@ -66,13 +66,13 @@ def main():
   deps_vars = EvalDepsFile(deps_file)['vars']
   latest_version = int(deps_vars[deps_key])
   print 'Version in DEPS file: %d' % latest_version
-  
+
   # Download archive if forced or DEPS version is different than our current.
   if latest_version != current_version or options.force:
     temp_dir = tempfile.mkdtemp(prefix='webrtc-resources-')
     archive_name = '%s%s%s' % (filename_prefix, latest_version, extension)
     remote_archive_url = urljoin(remote_url_base, archive_name)
-    # Download into the temporary directory with display of progress, inspired  
+    # Download into the temporary directory with display of progress, inspired
     # by the Stack Overflow post at http://goo.gl/JIrbo
     temp_file = os.path.join(temp_dir, archive_name)
     print 'Downloading: %s' % remote_archive_url
@@ -108,7 +108,7 @@ def main():
     f = open(new_version_file, 'w')
     f.write('%d' % latest_version)
     f.close()
-  
+
     # Extract the archive.
     archive = tarfile.open(temp_file, 'r:gz')
     archive.extractall(downloads_dir)
@@ -121,8 +121,9 @@ def main():
 
 
 def EvalDepsFile(path):
-  scope = {'Var': lambda name: scope['vars'][name], 
-           'File': lambda name: name}
+  scope = {'Var': lambda name: scope['vars'][name],
+           'File': lambda name: name,
+           'From': lambda deps, definition: deps}
   execfile(path, {}, scope)
   return scope
 

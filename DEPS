@@ -3,7 +3,7 @@ vars = {
   # If you do not know, use the full path while defining your new deps entry.
   "googlecode_url": "http://%s.googlecode.com/svn",
   "chromium_trunk" : "http://src.chromium.org/svn/trunk",
-  "chromium_revision": "120526",
+  "chromium_revision": "122775",
 
   # External resources like video and audio files used for testing purposes.
   # Downloaded on demand when needed.
@@ -13,27 +13,65 @@ vars = {
 # NOTE: Prefer revision numbers to tags for svn deps. Use http rather than
 # https; the latter can cause problems for users behind proxies.
 deps = {
+  "trunk/chromium_deps":
+    File(Var("chromium_trunk") + "/src/DEPS@" + Var("chromium_revision")),
+
   "trunk/build":
     Var("chromium_trunk") + "/src/build@" + Var("chromium_revision"),
 
   "trunk/testing":
     Var("chromium_trunk") + "/src/testing@" + Var("chromium_revision"),
 
-  "trunk/testing/gtest":
-    (Var("googlecode_url") % "googletest") + "/trunk@573",
-
   "trunk/testing/gmock":
-    (Var("googlecode_url") % "googlemock") + "/trunk@386",
+    From("trunk/chromium_deps", "src/testing/gmock"),
+
+  "trunk/testing/gtest":
+    From("trunk/chromium_deps", "src/testing/gtest"),
+
+  "trunk/third_party/expat":
+    Var("chromium_trunk") + "/src/third_party/expat@" + Var("chromium_revision"),
+
+  # Used by tools/quality_tracking.
+  "trunk/third_party/gaeunit":
+    "http://code.google.com/p/gaeunit.git@e16d5bd4",
+
+  "trunk/third_party/google-gflags/src":
+    (Var("googlecode_url") % "google-gflags") + "/trunk/src@45",
+
+  # Used by tools/quality_tracking/dashboard and tools/python_charts.
+  "trunk/third_party/google-visualization-python":
+    (Var("googlecode_url") % "google-visualization-python") + "/trunk@15",
+
+  "trunk/third_party/libjpeg":
+    Var("chromium_trunk") + "/src/third_party/libjpeg@" + Var("chromium_revision"),
+
+  "trunk/third_party/libjpeg_turbo":
+    From("trunk/chromium_deps", "src/third_party/libjpeg_turbo"),
+
+  "trunk/third_party/libvpx/source/libvpx":
+    "http://git.chromium.org/webm/libvpx.git@v1.0.0",
+
+  "trunk/third_party/libyuv":
+    (Var("googlecode_url") % "libyuv") + "/trunk@182",
+
+  "trunk/third_party/protobuf":
+    Var("chromium_trunk") + "/src/third_party/protobuf@" + Var("chromium_revision"),
+
+  # Used by tools/quality_tracking.
+  "trunk/third_party/oauth2":
+    "http://github.com/simplegeo/python-oauth2.git@a83f4a29",
+
+  "trunk/third_party/yasm":
+    Var("chromium_trunk") + "/src/third_party/yasm@" + Var("chromium_revision"),
+
+  "trunk/third_party/yasm/source/patched-yasm":
+    From("trunk/chromium_deps", "src/third_party/yasm/source/patched-yasm"),
+
+  "trunk/tools/clang":
+    Var("chromium_trunk") + "/src/tools/clang@" + Var("chromium_revision"),
 
   "trunk/tools/gyp":
-    (Var("googlecode_url") % "gyp") + "/trunk@1187",
-
-  # Needed by build/common.gypi.
-  "trunk/tools/win/supalink":
-    Var("chromium_trunk") + "/src/tools/win/supalink@" + Var("chromium_revision"),
-
-  "trunk/tools/clang/scripts":
-    Var("chromium_trunk") + "/src/tools/clang/scripts@" + Var("chromium_revision"),
+    From("trunk/chromium_deps", "src/tools/gyp"),
 
   "trunk/tools/python":
     Var("chromium_trunk") + "/src/tools/python@" + Var("chromium_revision"),
@@ -41,57 +79,24 @@ deps = {
   "trunk/tools/valgrind":
     Var("chromium_trunk") + "/src/tools/valgrind@" + Var("chromium_revision"),
 
-  "trunk/third_party/protobuf/":
-    Var("chromium_trunk") + "/src/third_party/protobuf@" + Var("chromium_revision"),
-
-  "trunk/third_party/libvpx/source/libvpx":
-    "http://git.chromium.org/webm/libvpx.git@v1.0.0",
-
-  "trunk/third_party/libjpeg_turbo/":
-    Var("chromium_trunk") + "/deps/third_party/libjpeg_turbo@119959",
-
-  "trunk/third_party/libjpeg/":
-    Var("chromium_trunk") + "/src/third_party/libjpeg@" + Var("chromium_revision"),
-
-  "trunk/third_party/yasm/":
-    Var("chromium_trunk") + "/src/third_party/yasm@" + Var("chromium_revision"),
-
-  "trunk/third_party/expat/":
-    Var("chromium_trunk") + "/src/third_party/expat@" + Var("chromium_revision"),
-
-  "trunk/third_party/google-gflags/src":
-    (Var("googlecode_url") % "google-gflags") + "/trunk/src@45",
-
-  "trunk/third_party/yasm/source/patched-yasm":
-    Var("chromium_trunk") + "/deps/third_party/yasm/patched-yasm@73761",
-
-  # Used by libjpeg-turbo
-  "trunk/third_party/yasm/binaries":
-    Var("chromium_trunk") + "/deps/third_party/yasm/binaries@74228",
-
-  # TODO(andrew): roll to 164 after fixing:
-  # http://code.google.com/p/webrtc/issues/detail?id=267
-  "trunk/third_party/libyuv":
-    (Var("googlecode_url") % "libyuv") + "/trunk@182",
-
-  # Used by tools/quality_tracking/dashboard and tools/python_charts
-  "trunk/third_party/google-visualization-python":
-    (Var("googlecode_url") % "google-visualization-python") + "/trunk@15",
-
-  # Used by tools/quality_tracking
-  "trunk/third_party/oauth2":
-    "http://github.com/simplegeo/python-oauth2.git@a83f4a29",
-
-  # Used by tools/quality_tracking
-  "trunk/third_party/gaeunit":
-    "http://code.google.com/p/gaeunit.git@e16d5bd4",
+  # Needed by build/common.gypi.
+  "trunk/tools/win/supalink":
+    Var("chromium_trunk") + "/src/tools/win/supalink@" + Var("chromium_revision"),
 }
 
 deps_os = {
   "win": {
-    "trunk/third_party/cygwin/":
+    "trunk/third_party/cygwin":
       Var("chromium_trunk") + "/deps/third_party/cygwin@66844",
-  }
+
+    # Used by libjpeg-turbo.
+    "trunk/third_party/yasm/binaries":
+      From("trunk/chromium_deps", "src/third_party/yasm/binaries"),
+  },
+  "unix": {
+    "trunk/third_party/gold":
+      From("trunk/chromium_deps", "src/third_party/gold"),
+  },
 }
 
 hooks = [
