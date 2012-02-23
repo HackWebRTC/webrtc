@@ -49,8 +49,6 @@ VideoType RawVideoTypeToCommonVideoVideoType(RawVideoType type) {
       return kNV12;
     case kVideoBGRA:
       return kBGRA;
-    case kVideoMJPEG:
-      return kMJPG;
     default:
       assert(false);
   }
