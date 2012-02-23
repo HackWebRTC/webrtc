@@ -247,10 +247,11 @@ WebRtc_Word32 VideoCaptureImpl::DeliverCapturedFrame(VideoFrame& captureFrame,
   return 0;
 }
 
-WebRtc_Word32 VideoCaptureImpl::IncomingFrame(WebRtc_UWord8* videoFrame,
-                                                    WebRtc_Word32 videoFrameLength,
-                                                    const VideoCaptureCapability& frameInfo,
-                                                    WebRtc_Word64 captureTime/*=0*/)
+WebRtc_Word32 VideoCaptureImpl::IncomingFrame(
+    WebRtc_UWord8* videoFrame,
+    WebRtc_Word32 videoFrameLength,
+    const VideoCaptureCapability& frameInfo,
+    WebRtc_Word64 captureTime/*=0*/)
 {
     WEBRTC_TRACE(webrtc::kTraceStream, webrtc::kTraceVideoCapture, _id,
                "IncomingFrame width %d, height %d", (int) frameInfo.width,
@@ -263,19 +264,21 @@ WebRtc_Word32 VideoCaptureImpl::IncomingFrame(WebRtc_UWord8* videoFrame,
     const WebRtc_Word32 width = frameInfo.width;
     const WebRtc_Word32 height = frameInfo.height;
 
-    if (frameInfo.codecType == kVideoCodecUnknown) // None encoded. Convert to I420.
+    if (frameInfo.codecType == kVideoCodecUnknown)
     {
+        // Not encoded, convert to I420.
         const VideoType commonVideoType =
-            RawVideoTypeToCommonVideoVideoType(frameInfo.rawType);
-        int size = CalcBufferSize(commonVideoType, width, height);
-        if (size != videoFrameLength)
+                  RawVideoTypeToCommonVideoVideoType(frameInfo.rawType);
+
+        if (frameInfo.rawType != kVideoMJPEG &&
+            CalcBufferSize(commonVideoType, width, height) != videoFrameLength)
         {
             WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
-                       "Wrong incoming frame length.");
+                         "Wrong incoming frame length.");
             return -1;
         }
 
-        // Allocate I420 buffer
+        // Allocate I420 buffer.
         int requiredLength = CalcBufferSize(kI420, width, height);
         _captureFrame.VerifyAndAllocate(requiredLength);
         if (!_captureFrame.Buffer())
@@ -286,7 +289,8 @@ WebRtc_Word32 VideoCaptureImpl::IncomingFrame(WebRtc_UWord8* videoFrame,
         }
 
         memset(_captureFrame.Buffer(), 0, _captureFrame.Size());
-        int dstStride  = width;  // Keeping stride = width for I420 destination.
+        // Keeping stride = width for I420 destination.
+        int dstStride  = width;
         const int conversionResult = ConvertToI420(commonVideoType,
                                                    videoFrame,
                                                    0, 0,  // No cropping

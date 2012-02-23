@@ -27,6 +27,8 @@
 #include "critical_section_wrapper.h"
 #include "video_capture_linux.h"
 
+// #define WEBRTC_MJPEG
+
 namespace webrtc
 {
 namespace videocapturemodule
@@ -150,8 +152,25 @@ WebRtc_Word32 VideoCaptureModuleV4L2::StartCapture(
         return -1;
     }
 
-    int nFormats = 2;
-    unsigned int fmts[2] = { V4L2_PIX_FMT_YUV420, V4L2_PIX_FMT_YUYV };
+    // Supported video formats in preferred order.
+#ifndef WEBRTC_MJPEG
+    const int nFormats = 2;
+    unsigned int fmts[nFormats] = { V4L2_PIX_FMT_YUV420, V4L2_PIX_FMT_YUYV };
+#else
+    // If the requested resolution is larger than VGA, we prefer MJPEG. Go for
+    // I420 otherwise.
+    const int nFormats = 3;
+    unsigned int fmts[nFormats];
+    if (capability.width > 640 || capability.height > 480) {
+        fmts[0] = V4L2_PIX_FMT_MJPEG;
+        fmts[1] = V4L2_PIX_FMT_YUV420;
+        fmts[2] = V4L2_PIX_FMT_YUYV;
+    } else {
+        fmts[0] = V4L2_PIX_FMT_YUV420;
+        fmts[1] = V4L2_PIX_FMT_YUYV;
+        fmts[2] = V4L2_PIX_FMT_MJPEG;
+    }
+#endif
 
     struct v4l2_format video_fmt;
     memset(&video_fmt, 0, sizeof(struct v4l2_format));
@@ -180,10 +199,13 @@ WebRtc_Word32 VideoCaptureModuleV4L2::StartCapture(
                    "no supporting video formats found");
         return -1;
     }
+
     if (video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_YUYV)
         _captureVideoType = kVideoYUY2;
-    else
+    else if (video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_YUV420)
         _captureVideoType = kVideoI420;
+    else if (video_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_MJPEG)
+        _captureVideoType = kVideoMJPEG;
 
     //set format and frame size now
     if (ioctl(_deviceFd, VIDIOC_S_FMT, &video_fmt) < 0)
@@ -197,10 +219,11 @@ WebRtc_Word32 VideoCaptureModuleV4L2::StartCapture(
     _currentWidth = video_fmt.fmt.pix.width;
     _currentHeight = video_fmt.fmt.pix.height;
     _captureDelay = 120;
-    if(_currentWidth >= 800)
+    // No way of knowing frame rate, make a guess.
+    if(_currentWidth >= 800 && _captureVideoType != kVideoMJPEG)
       _currentFrameRate = 15;
     else
-      _currentFrameRate = 30; // No way of knowing on Linux.
+      _currentFrameRate = 30;
 
     if (!AllocateVideoBuffers())
     {

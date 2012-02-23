@@ -260,8 +260,11 @@ WebRtc_Word32 DeviceInfoLinux::FillCapabilityMap(int fd)
     video_fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     video_fmt.fmt.pix.sizeimage = 0;
 
-    int totalFmts = 2;
-    unsigned int videoFormats[] = { V4L2_PIX_FMT_YUV420, V4L2_PIX_FMT_YUYV };
+    int totalFmts = 3;
+    unsigned int videoFormats[] = {
+        V4L2_PIX_FMT_MJPEG,
+        V4L2_PIX_FMT_YUV420,
+        V4L2_PIX_FMT_YUYV };
 
     int sizes = 13;
     unsigned int size[][2] = { { 128, 96 }, { 160, 120 }, { 176, 144 },
@@ -292,10 +295,14 @@ WebRtc_Word32 DeviceInfoLinux::FillCapabilityMap(int fd)
                     {
                         cap->rawType = kVideoYUY2;
                     }
+                    else if (videoFormats[fmts] == V4L2_PIX_FMT_MJPEG)
+                    {
+                        cap->rawType = kVideoMJPEG;
+                    }
 
                     // get fps of current camera mode
                     // V4l2 does not have a stable method of knowing so we just guess.
-                    if(cap->width>=800)
+                    if(cap->width >= 800 && cap->rawType != kVideoMJPEG)
                     {
                         cap->maxFPS = 15;
                     }
