@@ -404,7 +404,8 @@ class WebRTCChromeFactory(WebRTCFactory):
     cmd = ['make', target, '-j100']
     if make_extra is not None:
       cmd.append(make_extra)
-    self.AddCommonStep(cmd=cmd, descriptor=descriptor, workdir='build/src')
+    self.AddCommonStep(cmd=cmd, descriptor=descriptor,
+                       warn_on_failure=True, workdir='build/src')
 
 
 class WebRTCLinuxFactory(WebRTCFactory):
