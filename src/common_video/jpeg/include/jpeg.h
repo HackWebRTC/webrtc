@@ -34,7 +34,7 @@ public:
 //    Output:
 //    - 0             : OK
 //    - (-1)          : Error
-    WebRtc_Word32 SetFileName(const WebRtc_Word8* fileName);
+    WebRtc_Word32 SetFileName(const char* fileName);
 
 // Encode an I420 image. The encoded image is saved to a file
 //
@@ -49,7 +49,7 @@ public:
 private:
 
     jpeg_compress_struct*   _cinfo;
-    WebRtc_Word8            _fileName[256];
+    char                    _fileName[256];
 };
 
 class JpegDecoder

@@ -64,7 +64,7 @@ JpegEncoder::~JpegEncoder()
 
 
 WebRtc_Word32
-JpegEncoder::SetFileName(const WebRtc_Word8* fileName)
+JpegEncoder::SetFileName(const char* fileName)
 {
     if (!fileName)
     {
