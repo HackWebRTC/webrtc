@@ -418,7 +418,7 @@ void ViEAutoTest::ViERtpRtcpExtendedTest()
 
     unsigned char subType = 3;
     unsigned int name = static_cast<unsigned int> (0x41424344); // 'ABCD';
-    const char* data = "ViEAutoTest Data of length 32 --";
+    const char* data = "ViEAutoTest Data of length 32 -\0";
     const unsigned short numBytes = 32;
 
     EXPECT_EQ(0, ViE.rtp_rtcp->SendApplicationDefinedRTCPPacket(
