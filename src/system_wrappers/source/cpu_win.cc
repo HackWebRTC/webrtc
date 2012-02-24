@@ -165,10 +165,6 @@ bool CpuWindows::StopPollingCpu()
         }
     }
 
-    if (!has_initialized_)
-    {
-        return false;
-    }
     CriticalSectionScoped cs(terminate_crit_);
     terminate_ = true;
     sleep_event->Set();
