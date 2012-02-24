@@ -651,17 +651,18 @@ class WebRTCMacFactory(WebRTCFactory):
                            workdir='build/trunk'):
     descriptor = [test, extra_text] if extra_text else [test]
     if cmd is None:
+      out_path = 'xcodebuild' if self.build_type == 'xcode' else 'out'
       test_folder = 'Release' if self.release else 'Debug'
-      if self.build_type == 'xcode' or self.build_type == 'both':
-        cmd = ['xcodebuild/%s/%s' % (test_folder, test)]
-        self.AddCommonStep(cmd, descriptor=descriptor + ['(xcode)'],
-                           halt_build_on_failure=False,
-                           workdir=workdir)
-      if self.build_type == 'make' or self.build_type == 'both':
-        cmd = ['out/%s/%s' % (test_folder, test)]
-        self.AddCommonStep(cmd, descriptor=descriptor + ['(make)'],
-                           halt_build_on_failure=False,
-                           workdir=workdir)
+      cmd = ['%s/%s/%s' % (out_path, test_folder, test)]
+
+    if self.build_type == 'xcode' or self.build_type == 'both':
+      self.AddCommonStep(cmd, descriptor=descriptor + ['(xcode)'],
+                         halt_build_on_failure=False, workdir=workdir)
+    # Execute test only for 'make' build type.
+    # If 'both' is enabled we'll only execute the 'xcode' built ones.
+    if self.build_type == 'make':
+      self.AddCommonStep(cmd, descriptor=descriptor + ['(make)'],
+                         halt_build_on_failure=False, workdir=workdir)
 
   def AddCommonMakeStep(self, target, extra_text=None, make_extra=None):
     descriptor = [target, extra_text] if extra_text else [target]
@@ -734,17 +735,16 @@ class WebRTCWinFactory(WebRTCFactory):
 
   def AddCommonTestRunStep(self, test, cmd=None, workdir='build/trunk'):
     descriptor = [test]
-    if cmd is None:
-      if self.configuration == 'Debug' or self.configuration == 'both':
+    if self.configuration == 'Debug' or self.configuration == 'both':
+      if cmd is None:
         cmd = ['build\Debug\%s.exe' % test]
-        self.AddCommonStep(cmd, descriptor=descriptor,
-                           halt_build_on_failure=False,
-                           workdir=workdir)
-      if self.configuration == 'Release' or self.configuration == 'both':
+      self.AddCommonStep(cmd, descriptor=descriptor,
+                         halt_build_on_failure=False, workdir=workdir)
+    if self.configuration == 'Release' or self.configuration == 'both':
+      if cmd is None:
         cmd = ['build\Release\%s.exe' % test]
-        self.AddCommonStep(cmd, descriptor=descriptor,
-                           halt_build_on_failure=False,
-                           workdir=workdir)
+      self.AddCommonStep(cmd, descriptor=descriptor,
+                         halt_build_on_failure=False, workdir=workdir)
 
 # Utility functions
 
