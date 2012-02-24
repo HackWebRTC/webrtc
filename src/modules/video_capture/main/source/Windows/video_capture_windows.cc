@@ -25,8 +25,7 @@ namespace videocapturemodule
 VideoCaptureDS::VideoCaptureDS(const WebRtc_Word32 id)
     : VideoCaptureImpl(id), _dsInfo(id), _captureFilter(NULL),
       _graphBuilder(NULL), _mediaControl(NULL), _sinkFilter(NULL),
-      _inputSendPin(NULL), _outputCapturePin(NULL), _mjpgJPGFilter(NULL),
-      _inputMjpgPin(NULL), _outputMjpgPin(NULL), _dvFilter(NULL),
+      _inputSendPin(NULL), _outputCapturePin(NULL), _dvFilter(NULL),
       _inputDvPin(NULL), _outputDvPin(NULL)
 {
 }
@@ -43,22 +42,16 @@ VideoCaptureDS::~VideoCaptureDS()
             _graphBuilder->RemoveFilter(_sinkFilter);
         if (_captureFilter)
             _graphBuilder->RemoveFilter(_captureFilter);
-        if (_mjpgJPGFilter)
-            _graphBuilder->RemoveFilter(_mjpgJPGFilter);
         if (_dvFilter)
             _graphBuilder->RemoveFilter(_dvFilter);
     }
     RELEASE_AND_CLEAR(_captureFilter); // release the capture device
     RELEASE_AND_CLEAR(_sinkFilter);
-    RELEASE_AND_CLEAR(_mjpgJPGFilter);
     RELEASE_AND_CLEAR(_dvFilter);
 
     RELEASE_AND_CLEAR(_mediaControl);
     RELEASE_AND_CLEAR(_inputSendPin);
     RELEASE_AND_CLEAR(_outputCapturePin);
-
-    RELEASE_AND_CLEAR(_inputMjpgPin);
-    RELEASE_AND_CLEAR(_outputMjpgPin);
 
     RELEASE_AND_CLEAR(_inputDvPin);
     RELEASE_AND_CLEAR(_outputDvPin);
@@ -140,15 +133,6 @@ WebRtc_Word32 VideoCaptureDS::Init(const WebRtc_Word32 id,
     }
     _inputSendPin = GetInputPin(_sinkFilter);
 
-    // Create MJPG filter
-    hr = CoCreateInstance(CLSID_MjpegDec, NULL, CLSCTX_INPROC, IID_IBaseFilter,
-                          (void **) &_mjpgJPGFilter);
-    if (hr == S_OK)
-    {
-        _inputMjpgPin = GetInputPin(_mjpgJPGFilter);
-        _outputMjpgPin = GetOutputPin(_mjpgJPGFilter);
-        _graphBuilder->AddFilter(_mjpgJPGFilter, NULL);
-    }
     // Temporary connect here.
     // This is done so that no one else can use the capture device.
     if (SetCameraOutput(_requestedCapability) != 0)
@@ -323,15 +307,7 @@ WebRtc_Word32 VideoCaptureDS::SetCameraOutput(
         return -1;
     }
 
-    if (capability.rawType == kVideoMJPEG && _mjpgJPGFilter)
-    {
-        // Connect the camera to the MJPEG decoder
-        hr = _graphBuilder->ConnectDirect(_outputCapturePin, _inputMjpgPin,
-                                          NULL);
-        // Connect the MJPEG filter to the Capture filter
-        hr += _graphBuilder->ConnectDirect(_outputMjpgPin, _inputSendPin, NULL);
-    }
-    else if (isDVCamera)
+    if (isDVCamera)
     {
         hr = ConnectDVCamera();
     }
@@ -354,13 +330,6 @@ WebRtc_Word32 VideoCaptureDS::DisconnectGraph()
     HRESULT hr = _mediaControl->Stop();
     hr += _graphBuilder->Disconnect(_outputCapturePin);
     hr += _graphBuilder->Disconnect(_inputSendPin);
-
-    // If the _mjpg filter exist
-    if (_mjpgJPGFilter)
-    {
-        _graphBuilder->Disconnect(_inputMjpgPin);
-        _graphBuilder->Disconnect(_outputMjpgPin);
-    }
 
     //if the DV camera filter exist
     if (_dvFilter)

@@ -17,6 +17,9 @@
 #define abs(a) (a>=0?a:-a)
 #endif
 
+// TODO(mflodman) Remove WEBRTC_MJPEG when MJPG->I420 conversion is available.
+// #define WEBRTC_MJPEG
+
 namespace webrtc
 {
 namespace videocapturemodule
@@ -192,6 +195,11 @@ WebRtc_Word32 DeviceInfoImpl::GetBestMatchedCapability(
 
         VideoCaptureCapability& capability = *static_cast<VideoCaptureCapability*>
                                               (item->GetItem());
+
+//#ifndef WEBRTC_MJPEG
+//        if (capability.rawType == kVideoMJPEG)
+//            continue;
+//#endif
 
         const WebRtc_Word32 diffWidth = capability.width - requested.width;
         const WebRtc_Word32 diffHeight = capability.height - requested.height;
