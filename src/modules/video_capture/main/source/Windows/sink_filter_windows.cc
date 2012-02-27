@@ -18,9 +18,6 @@
 
 #define DELETE_RESET(p) { delete (p) ; (p) = NULL ;}
 
-// TODO(mflodman) Remove WEBRTC_MJPEG when MJPG->I420 conversion is available.
-// #define WEBRTC_MJPEG
-
 namespace webrtc
 {
 namespace videocapturemodule
@@ -139,7 +136,6 @@ CaptureInputPin::GetMediaType (IN int iPosition, OUT CMediaType * pmt)
             pmt->SetSubtype(&MEDIASUBTYPE_UYVY);
         }
         break;
-#ifdef WEBRTC_MJPEG
         case 4:
         {
             pvi->bmiHeader.biCompression = MAKEFOURCC('M','J','P','G');
@@ -151,7 +147,6 @@ CaptureInputPin::GetMediaType (IN int iPosition, OUT CMediaType * pmt)
             pmt->SetSubtype(&MEDIASUBTYPE_MJPG);
         }
         break;
-#endif
         default :
         return VFW_S_NO_MORE_ITEMS;
     }
@@ -198,14 +193,12 @@ CaptureInputPin::CheckMediaType ( IN const CMediaType * pMediaType)
                      pvi->bmiHeader.biWidth,pvi->bmiHeader.biHeight,
                      pvi->bmiHeader.biCompression);
 
-#ifdef WEBRTC_MJPEG
         if(*SubType == MEDIASUBTYPE_MJPG
             && pvi->bmiHeader.biCompression == MAKEFOURCC('M','J','P','G'))
         {
             _resultingCapability.rawType = kVideoMJPEG;
             return S_OK; // This format is acceptable.
         }
-#endif
         if(*SubType == MEDIASUBTYPE_I420
             && pvi->bmiHeader.biCompression == MAKEFOURCC('I','4','2','0'))
         {
@@ -256,14 +249,12 @@ CaptureInputPin::CheckMediaType ( IN const CMediaType * pMediaType)
         _resultingCapability.width = pvi->bmiHeader.biWidth;
         _resultingCapability.height = abs(pvi->bmiHeader.biHeight);
 
-#ifdef WEBRTC_MJPEG
         if(*SubType == MEDIASUBTYPE_MJPG
             && pvi->bmiHeader.biCompression == MAKEFOURCC('M','J','P','G'))
         {
             _resultingCapability.rawType = kVideoMJPEG;
             return S_OK; // This format is acceptable.
         }
-#endif
         if(*SubType == MEDIASUBTYPE_I420
             && pvi->bmiHeader.biCompression == MAKEFOURCC('I','4','2','0'))
         {
