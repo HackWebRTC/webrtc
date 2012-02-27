@@ -27,8 +27,6 @@
 #include "critical_section_wrapper.h"
 #include "video_capture_linux.h"
 
-// #define WEBRTC_MJPEG
-
 namespace webrtc
 {
 namespace videocapturemodule
@@ -153,10 +151,6 @@ WebRtc_Word32 VideoCaptureModuleV4L2::StartCapture(
     }
 
     // Supported video formats in preferred order.
-#ifndef WEBRTC_MJPEG
-    const int nFormats = 2;
-    unsigned int fmts[nFormats] = { V4L2_PIX_FMT_YUV420, V4L2_PIX_FMT_YUYV };
-#else
     // If the requested resolution is larger than VGA, we prefer MJPEG. Go for
     // I420 otherwise.
     const int nFormats = 3;
@@ -170,7 +164,6 @@ WebRtc_Word32 VideoCaptureModuleV4L2::StartCapture(
         fmts[1] = V4L2_PIX_FMT_YUYV;
         fmts[2] = V4L2_PIX_FMT_MJPEG;
     }
-#endif
 
     struct v4l2_format video_fmt;
     memset(&video_fmt, 0, sizeof(struct v4l2_format));

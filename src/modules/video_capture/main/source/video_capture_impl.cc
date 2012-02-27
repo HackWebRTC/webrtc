@@ -295,7 +295,7 @@ WebRtc_Word32 VideoCaptureImpl::IncomingFrame(
                                                    videoFrame,
                                                    0, 0,  // No cropping
                                                    width, height,
-                                                   0,  // Ignored for non-JPG.
+                                                   videoFrameLength,
                                                    width, height, dstStride,
                                                    _rotateFrame,
                                                    _captureFrame.Buffer());
