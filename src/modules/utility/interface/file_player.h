@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -45,7 +45,7 @@ public:
     // API for playing audio from fileName to channel.
     // Note: codecInst is used for pre-encoded files.
     virtual WebRtc_Word32 StartPlayingFile(
-        const WebRtc_Word8* fileName,
+        const char* fileName,
         bool loop,
         WebRtc_UWord32 startPosition,
         float volumeScaling,
@@ -83,7 +83,7 @@ public:
     virtual WebRtc_Word32 TimeUntilNextVideoFrame() { return -1;}
 
     virtual WebRtc_Word32 StartPlayingVideoFile(
-        const WebRtc_Word8* /*fileName*/,
+        const char* /*fileName*/,
         bool /*loop*/,
         bool /*videoOnly*/) { return -1;}
 

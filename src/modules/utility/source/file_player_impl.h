@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -39,7 +39,7 @@ public:
         const WebRtc_UWord32 frequencyInHz);
     virtual WebRtc_Word32 RegisterModuleFileCallback(FileCallback* callback);
     virtual WebRtc_Word32 StartPlayingFile(
-        const WebRtc_Word8* fileName,
+        const char* fileName,
         bool loop,
         WebRtc_UWord32 startPosition,
         float volumeScaling,
@@ -90,7 +90,7 @@ public:
 
     // FilePlayer functions.
     virtual WebRtc_Word32 TimeUntilNextVideoFrame();
-    virtual WebRtc_Word32 StartPlayingVideoFile(const WebRtc_Word8* fileName,
+    virtual WebRtc_Word32 StartPlayingVideoFile(const char* fileName,
                                                 bool loop,
                                                 bool videoOnly);
     virtual WebRtc_Word32 StopPlayingFile();

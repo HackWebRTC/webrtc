@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -50,7 +50,7 @@ public:
     virtual WebRtc_Word32 RegisterModuleFileCallback(FileCallback* callback);
     virtual FileFormats RecordingFileFormat() const;
     virtual WebRtc_Word32 StartRecordingAudioFile(
-        const WebRtc_Word8* fileName,
+        const char* fileName,
         const CodecInst& codecInst,
         WebRtc_UWord32 notificationTimeMs,
         ACMAMRPackingFormat amrFormat = AMRFileStorage);
@@ -66,7 +66,7 @@ public:
         const AudioFrame& frame,
         const TickTime* playoutTS = NULL);
     virtual WebRtc_Word32 StartRecordingVideoFile(
-        const WebRtc_Word8* fileName,
+        const char* fileName,
         const CodecInst& audioCodecInst,
         const VideoCodec& videoCodecInst,
         ACMAMRPackingFormat amrFormat = AMRFileStorage,
@@ -112,7 +112,7 @@ public:
 
     // FileRecorder functions.
     virtual WebRtc_Word32 StartRecordingVideoFile(
-        const WebRtc_Word8* fileName,
+        const char* fileName,
         const CodecInst& audioCodecInst,
         const VideoCodec& videoCodecInst,
         ACMAMRPackingFormat amrFormat = AMRFileStorage,

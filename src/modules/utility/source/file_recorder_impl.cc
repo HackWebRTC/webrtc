@@ -95,7 +95,7 @@ WebRtc_Word32 FileRecorderImpl::RegisterModuleFileCallback(
 }
 
 WebRtc_Word32 FileRecorderImpl::StartRecordingAudioFile(
-    const WebRtc_Word8* fileName,
+    const char* fileName,
     const CodecInst& codecInst,
     WebRtc_UWord32 notificationTimeMs,
     ACMAMRPackingFormat amrFormat)
@@ -405,7 +405,7 @@ AviRecorder::~AviRecorder( )
 }
 
 WebRtc_Word32 AviRecorder::StartRecordingVideoFile(
-    const WebRtc_Word8* fileName,
+    const char* fileName,
     const CodecInst& audioCodecInst,
     const VideoCodec& videoCodecInst,
     ACMAMRPackingFormat amrFormat,

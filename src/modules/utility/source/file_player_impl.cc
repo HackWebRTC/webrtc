@@ -228,7 +228,7 @@ WebRtc_Word32 FilePlayerImpl::SetAudioScaling(float scaleFactor)
     return -1;
 }
 
-WebRtc_Word32 FilePlayerImpl::StartPlayingFile(const WebRtc_Word8* fileName,
+WebRtc_Word32 FilePlayerImpl::StartPlayingFile(const char* fileName,
                                                bool loop,
                                                WebRtc_UWord32 startPosition,
                                                float volumeScaling,
@@ -491,7 +491,7 @@ VideoFilePlayerImpl::~VideoFilePlayerImpl()
 }
 
 WebRtc_Word32 VideoFilePlayerImpl::StartPlayingVideoFile(
-    const WebRtc_Word8* fileName,
+    const char* fileName,
     bool loop,
     bool videoOnly)
 {

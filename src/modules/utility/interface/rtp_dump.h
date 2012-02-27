@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -31,7 +31,7 @@ public:
 
     // Open the file fileNameUTF8 for writing RTP/RTCP packets.
     // Note: this API also adds the rtpplay header.
-    virtual WebRtc_Word32 Start(const WebRtc_Word8* fileNameUTF8) = 0;
+    virtual WebRtc_Word32 Start(const char* fileNameUTF8) = 0;
 
     // Close the existing file. No more packets will be recorded.
     virtual WebRtc_Word32 Stop() = 0;

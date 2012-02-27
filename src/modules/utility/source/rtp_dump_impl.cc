@@ -39,7 +39,7 @@
 #endif  // defined(_DEBUG) && defined(_WIN32)
 
 namespace webrtc {
-const WebRtc_Word8 RTPFILE_VERSION[] = "1.0";
+const char RTPFILE_VERSION[] = "1.0";
 const WebRtc_UWord32 MAX_UWORD32 = 0xffffffff;
 
 // This stucture is specified in the rtpdump documentation.
@@ -87,7 +87,7 @@ RtpDumpImpl::~RtpDumpImpl()
     WEBRTC_TRACE(kTraceMemory, kTraceUtility, -1, "%s deleted", __FUNCTION__);
 }
 
-WebRtc_Word32 RtpDumpImpl::Start(const WebRtc_Word8* fileNameUTF8)
+WebRtc_Word32 RtpDumpImpl::Start(const char* fileNameUTF8)
 {
 
     if (fileNameUTF8 == NULL)
@@ -109,7 +109,7 @@ WebRtc_Word32 RtpDumpImpl::Start(const WebRtc_Word8* fileNameUTF8)
     _startTime = GetTimeInMS();
 
     // All rtp dump files start with #!rtpplay.
-    WebRtc_Word8 magic[16];
+    char magic[16];
     sprintf(magic, "#!rtpplay%s \n", RTPFILE_VERSION);
     if (_file.WriteText(magic) == -1)
     {
@@ -125,7 +125,7 @@ WebRtc_Word32 RtpDumpImpl::Start(const WebRtc_Word8* fileNameUTF8)
     // as Wireshark since it makes more sense.
     // http://wiki.wireshark.org/rtpdump explains that an additional 2 bytes
     // of padding should be added to the header.
-    WebRtc_Word8 dummyHdr[16];
+    char dummyHdr[16];
     memset(dummyHdr, 0, 16);
     if (!_file.Write(dummyHdr, sizeof(dummyHdr)))
     {
