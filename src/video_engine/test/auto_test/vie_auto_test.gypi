@@ -49,6 +49,10 @@
         'interface/vie_window_manager_factory.h',
 
         # Helper classes
+        'helpers/bit_flip_encryption.cc',
+        'helpers/bit_flip_encryption.h',
+        'helpers/random_encryption.cc',
+        'helpers/random_encryption.h',
         'helpers/vie_fake_camera.cc',
         'helpers/vie_fake_camera.h',
         'helpers/vie_file_capture_device.cc',
