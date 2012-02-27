@@ -13,18 +13,21 @@
    The script is intended to be run manually whenever we wish to change which
    dashboard administrator we act on behalf of when running the
    track_coverage.py script. For example, this will be useful if the current
-   dashboard administrator leaves the project.
+   dashboard administrator leaves the project. This script can also be used to
+   launch a new dashboard if that is desired.
 
    This script should be run on the build bot which runs the track_coverage.py
    script. This script will present a link during its execution, which the new
    administrator should follow and then click approve on the web page that
    appears. The new administrator should have admin rights on the coverage
-   dashboard, otherwise track_coverage.py will not work.
+   dashboard, otherwise the track_* scripts will not work.
 
    If successful, this script will write the access token to a file access.token
-   in the current directory, which later can be read by track_coverage.py.
+   in the current directory, which later can be read by the track_* scripts.
    The token is stored in string form (as reported by the web server) using the
-   shelve module.
+   shelve module. The consumer secret passed in as an argument to this script
+   will also similarly be stored in a file consumer.secret. The shelve keys
+   will be 'access_token' and 'consumer_secret', respectively.
 """
 
 __author__ = 'phoglund@webrtc.org (Patrik Höglund)'
@@ -106,11 +109,19 @@ def _write_access_token_to_file(access_token, filename):
   print 'Wrote the access token to the file %s.' % filename
 
 
+def _write_consumer_secret_to_file(consumer_secret, filename):
+  output = shelve.open(filename)
+  output['consumer_secret'] = consumer_secret
+  output.close()
+
+  print 'Wrote the consumer secret to the file %s.' % filename
+
+
 def _main():
   if len(sys.argv) != 2:
     print ('Usage: %s <consumer secret>.\n\nThe consumer secret is an OAuth '
-           'concept and is obtained from the appengine running the dashboard.' %
-           sys.argv[0])
+           'concept and is obtained from the Google Accounts domain dashboard.'
+           % sys.argv[0])
     return
 
   consumer_secret = sys.argv[1]
@@ -124,6 +135,8 @@ def _main():
   access_token_string = _request_access_token(consumer, unauthorized_token)
 
   _write_access_token_to_file(access_token_string, constants.ACCESS_TOKEN_FILE)
+  _write_consumer_secret_to_file(consumer_secret,
+                                 constants.CONSUMER_SECRET_FILE)
 
 if __name__ == '__main__':
   _main()

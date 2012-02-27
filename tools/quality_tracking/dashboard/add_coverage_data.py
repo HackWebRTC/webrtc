@@ -13,6 +13,7 @@
 __author__ = 'phoglund@webrtc.org (Patrik Höglund)'
 
 import datetime
+import logging
 
 from google.appengine.ext import db
 
@@ -53,9 +54,9 @@ class AddCoverageData(oauth_post_request_handler.OAuthPostRequestHandler):
       function_coverage_string = self.request.get('function_coverage')
       function_coverage = _parse_percentage(function_coverage_string)
 
-    except ValueError as exception:
-      self._show_error_page('Invalid parameter in request. Details: %s' %
-                            exception)
+    except ValueError as error:
+      logger.warn('Invalid parameter in request: %s.' % error)
+      self.response.set_status(400)
       return
 
     item = CoverageData(date=parsed_date,

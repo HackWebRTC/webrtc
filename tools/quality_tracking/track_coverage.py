@@ -55,7 +55,7 @@ def _find_latest_32bit_debug_build(www_directory_contents, coverage_www_dir):
   www_directory_contents.sort(reverse=True)
 
   for entry in www_directory_contents:
-    match = re.match('Linux32bitDBG_\d+', entry)
+    match = re.match('Linux32DBG_\d+', entry)
     if match is not None:
       return entry
 
@@ -97,9 +97,7 @@ def _main():
   dashboard.read_required_files(constants.CONSUMER_SECRET_FILE,
                                 constants.ACCESS_TOKEN_FILE)
 
-  coverage_www_dir = os.path.join('/home', constants.BUILD_BOT_USER, 'www')
-
-  www_dir_contents = os.listdir(coverage_www_dir)
+  www_dir_contents = os.listdir(BUILD_BOT_COVERAGE_WWW_DIRECTORY)
   latest_build_directory = _find_latest_32bit_debug_build(www_dir_contents,
                                                           coverage_www_dir)
 

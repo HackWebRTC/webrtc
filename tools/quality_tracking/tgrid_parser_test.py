@@ -34,6 +34,9 @@ SAMPLE_FILE = """
 <table class="Grid" border="0" cellspacing="0">
 <tr>
 <td valign="bottom" class="sourcestamp">1570</td>
+<td class="build warnings"><a href="builders/Chrome/builds/109">warnings</a>
+<br />
+make chrome</td>
 <td class="build success">
   <a href="builders/Android/builds/121">OK</a></td>
 <td class="build success">
@@ -61,6 +64,9 @@ SAMPLE_FILE = """
 </tr>
 <tr>
 <td valign="bottom" class="sourcestamp">1571</td>
+<td class="build warnings"><a href="builders/Chrome/builds/109">warnings</a>
+<br />
+make chrome</td>
 <td class="build success">
   <a href="builders/Android/builds/122">OK</a></td>
 <td class="build success">
@@ -118,6 +124,15 @@ voe_auto_test</td>
 </tr>
 """
 
+MINIMAL_WARNED = """
+<tr>
+<td valign="bottom" class="sourcestamp">1576</td>
+<td class="build warnings">
+<a href="builders/Chrome/builds/109">warnings</a><br />
+make chrome</td>
+</tr>
+"""
+
 class TGridParserTest(unittest.TestCase):
   def test_parser_throws_exception_on_empty_html(self):
     self.assertRaises(tgrid_parser.FailedToParseBuildStatus,
@@ -150,15 +165,27 @@ class TGridParserTest(unittest.TestCase):
     self.assertEqual('1576--Win32Debug', first_mapping[0])
     self.assertEqual('434--building', first_mapping[1])
 
+  def test_parser_finds_warned_bot(self):
+    result = tgrid_parser.parse_tgrid_page(MINIMAL_WARNED)
+
+    self.assertEqual(1, len(result), 'There is only one bot in the sample.')
+    first_mapping = result.items()[0]
+
+    self.assertEqual('1576--Chrome', first_mapping[0])
+    self.assertEqual('109--warnings', first_mapping[1])
+
   def test_parser_finds_all_bots_and_revisions(self):
     result = tgrid_parser.parse_tgrid_page(SAMPLE_FILE)
 
-    # 2 * 12 = 24 bots in sample
-    self.assertEqual(24, len(result))
+    # 2 * 13 = 26 bots in sample
+    self.assertEqual(26, len(result))
 
     # Make some samples
     self.assertTrue(result.has_key('1570--ChromeOS'))
     self.assertEquals('578--OK', result['1570--ChromeOS'])
+
+    self.assertTrue(result.has_key('1570--Chrome'))
+    self.assertEquals('109--warnings', result['1570--Chrome'])
 
     self.assertTrue(result.has_key('1570--LinuxCLANG'))
     self.assertEquals('259--OK', result['1570--LinuxCLANG'])

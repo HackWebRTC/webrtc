@@ -13,6 +13,7 @@
 __author__ = 'phoglund@webrtc.org (Patrik Höglund)'
 
 from google.appengine.api import oauth
+import logging
 import webapp2
 
 
@@ -38,7 +39,8 @@ class OAuthPostRequestHandler(webapp2.RequestHandler):
     try:
       self._authenticate_user()
     except UserNotAuthenticatedException as exception:
-      self._show_error_page('Failed to authenticate user: %s' % exception)
+      logging.warn('Failed to authenticate: %s.' % exception)
+      self.response.set_status(403)
       return
 
     # Do the actual work.
@@ -46,7 +48,6 @@ class OAuthPostRequestHandler(webapp2.RequestHandler):
 
   def _parse_and_store_data(self):
     """Reads data from POST request and responds accordingly."""
-
     raise NotImplementedError('You must override this method!')
 
   def _authenticate_user(self):
@@ -54,6 +55,8 @@ class OAuthPostRequestHandler(webapp2.RequestHandler):
       if oauth.is_current_user_admin():
         # The user on whose behalf we are acting is indeed an administrator
         # of this application, so we're good to go.
+        logging.info('Authenticated on behalf of user %s.' %
+                     oauth.get_current_user())
         return
       else:
         raise UserNotAuthenticatedException('We are acting on behalf of '
@@ -62,7 +65,4 @@ class OAuthPostRequestHandler(webapp2.RequestHandler):
                                             oauth.get_current_user())
     except oauth.OAuthRequestError as exception:
       raise UserNotAuthenticatedException('Invalid OAuth request: %s' %
-                                          exception)
-
-  def _show_error_page(self, error_message):
-    self.response.write('<html><body>%s</body></html>' % error_message)
+                                          exception.__class__.__name__)

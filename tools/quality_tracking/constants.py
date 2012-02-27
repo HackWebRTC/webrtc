@@ -14,8 +14,7 @@ __author__ = 'phoglund@webrtc.org (Patrik Höglund)'
 
 # This identifies our application using the information we got when we
 # registered the application on Google appengine.
-# TODO(phoglund): update to the right value when we have registered the app.
-DASHBOARD_SERVER = 'localhost:8080'
+DASHBOARD_SERVER = 'webrtc-dashboard.appspot.com'
 DASHBOARD_SERVER_HTTP = 'http://' + DASHBOARD_SERVER
 CONSUMER_KEY = DASHBOARD_SERVER
 CONSUMER_SECRET_FILE = 'consumer.secret'
@@ -30,9 +29,9 @@ ACCESS_TOKEN_URL = DASHBOARD_SERVER_HTTP + '/_ah/OAuthGetAccessToken'
 BUILD_MASTER_SERVER = 'webrtc-cb-linux-master.cbf.corp.google.com:8010'
 BUILD_MASTER_TRANSPOSED_GRID_URL = '/tgrid'
 
-# The build-bot user which runs build bot jobs.
-BUILD_BOT_USER = 'phoglund'
+# Build bot constants.
+BUILD_BOT_COVERAGE_WWW_DIRECTORY = '/var/www/'
 
 # Dashboard data input URLs.
-ADD_COVERAGE_DATA_URL = '/add_coverage_data'
-ADD_BUILD_STATUS_DATA_URL = '/add_build_status_data'
+ADD_COVERAGE_DATA_URL = DASHBOARD_SERVER_HTTP + '/add_coverage_data'
+ADD_BUILD_STATUS_DATA_URL = DASHBOARD_SERVER_HTTP + '/add_build_status_data'

@@ -15,8 +15,12 @@ __author__ = 'phoglund@webrtc.org (Patrik Höglund)'
 from google.appengine.ext import db
 
 
+def _status_not_ok(status):
+  return status not in ('OK', 'warnings')
+
+
 def _all_ok(statuses):
-  return filter(lambda status: status != "OK", statuses) == []
+  return filter(_status_not_ok, statuses) == []
 
 
 def _get_first_entry(iterable):
@@ -32,7 +36,7 @@ class BuildStatusLoader:
   def load_build_status_data(self):
     """Returns the latest conclusive build status for each bot.
 
-       The statuses OK or failed are considered to be conclusive.
+       The statuses OK, failed and warnings are considered to be conclusive.
 
        The two most recent revisions are considered. The set of bots returned
        will therefore be the bots that were reported the two most recent
@@ -49,7 +53,7 @@ class BuildStatusLoader:
 
     bots_to_latest_conclusive_entry = dict()
     for entry in build_status_entries:
-      if entry.status == "building":
+      if entry.status == 'building':
         # The 'building' status it not conclusive, so discard this entry and
         # pick up the entry for this bot on the next revision instead. That
         # entry is guaranteed to have a status != 'building' since a bot cannot

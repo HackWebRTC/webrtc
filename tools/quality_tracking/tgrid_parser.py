@@ -29,7 +29,8 @@ def _parse_builds(revision, html):
   result = {}
 
   for match in re.finditer('<td.*?>.*?<a href="builders/(.+?)/builds/(\d+)">'
-                           '(OK|failed|building)</a>.*?</td>', html, re.DOTALL):
+                           '(OK|failed|building|warnings)</a>.*?</td>',
+                           html, re.DOTALL):
     revision_and_bot_name = revision + "--" + match.group(1)
     build_number_and_status = match.group(2) + "--" + match.group(3)
 
@@ -54,8 +55,8 @@ def parse_tgrid_page(html):
          html: The raw HTML from the tgrid page.
 
      Returns: A dictionary with <svn revision>--<bot name> mapped to
-         <bot build number>--<status>, where status is either OK, failed or
-         building.
+         <bot build number>--<status>, where status is either OK, failed,
+         building or warnings.
   """
   result = {}
 

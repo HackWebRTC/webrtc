@@ -25,6 +25,11 @@
   background-color: #fffc6c;
 }
 
+.status_warnings {
+  color: #000000;
+  background-color: #FFC343;
+}
+
 .last_known_good_revision {
   font-size: 800%;
 }

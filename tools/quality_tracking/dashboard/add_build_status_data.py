@@ -13,12 +13,13 @@
 __author__ = 'phoglund@webrtc.org (Patrik Höglund)'
 
 import datetime
+import logging
 
 from google.appengine.ext import db
 
 import oauth_post_request_handler
 
-VALID_STATUSES = ['OK', 'failed', 'building']
+VALID_STATUSES = ['OK', 'failed', 'building', 'warnings']
 
 
 class OrphanedBuildStatusesExistException(Exception):
@@ -85,6 +86,8 @@ def _parse_name(revision_and_bot_name):
 
   revision = parsed_name[0]
   bot_name = parsed_name[1]
+  if '\n' in bot_name:
+    raise ValueError('Bot name %s can not contain newlines.' % bot_name)
 
   return (int(revision), bot_name)
 
@@ -142,7 +145,9 @@ class AddBuildStatusData(oauth_post_request_handler.OAuthPostRequestHandler):
         (build_number, status) = _parse_status(build_number_and_status)
         (revision, bot_name) = _parse_name(revision_and_bot_name)
       except ValueError as error:
-        self._show_error_page('Invalid parameter in request: %s.' % error)
+        logger.warn('Invalid parameter in request: %s.' % error)
+        self.response.set_status(400)
+        return
 
       if revision not in encountered_revisions:
         # There's new data on this revision in this update, so clear all status
@@ -163,3 +168,4 @@ class AddBuildStatusData(oauth_post_request_handler.OAuthPostRequestHandler):
     request_datetime = datetime.datetime.fromtimestamp(request_posix_timestamp)
     build_status_root.last_updated_at = request_datetime
     build_status_root.put()
+
