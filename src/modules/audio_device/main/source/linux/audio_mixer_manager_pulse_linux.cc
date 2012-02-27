@@ -24,6 +24,8 @@ extern webrtc_adm_linux_pulse::PulseAudioSymbolTable PaSymbolTable;
 namespace webrtc
 {
 
+enum { kMaxRetryOnFailure = 2 };
+
 AudioMixerManagerLinuxPulse::AudioMixerManagerLinuxPulse(const WebRtc_Word32 id) :
     _critSect(*CriticalSectionWrapper::CreateCriticalSection()),
     _id(id),
@@ -315,27 +317,8 @@ AudioMixerManagerLinuxPulse::SpeakerVolume(WebRtc_UWord32& volume) const
         != PA_STREAM_UNCONNECTED))
     {
         // We can only get the volume if we have a connected stream
-        pa_operation* paOperation = NULL;
-        ResetCallbackVariables();
-        PaLock();
-
-        // Get info for this stream (sink input)
-        paOperation = LATE(pa_context_get_sink_input_info)(
-                           _paContext,
-                           LATE(pa_stream_get_index)(_paPlayStream),
-                           PaSinkInputInfoCallback,
-                           (void*) this);
-
-        WaitForOperationCompletion(paOperation);
-        PaUnLock();
-
-        if (!_callbackValues)
-        {
-            WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                         "Error getting output volume: %d",
-                         LATE(pa_context_errno)(_paContext));
-            return -1;
-        }
+        if (!GetSinkInputInfo())
+          return -1;
 
         volume = static_cast<WebRtc_UWord32> (_paVolume);
         ResetCallbackVariables();
@@ -513,27 +496,8 @@ WebRtc_Word32 AudioMixerManagerLinuxPulse::SpeakerMute(bool& enabled) const
         != PA_STREAM_UNCONNECTED))
     {
         // We can only get the mute status if we have a connected stream
-        pa_operation* paOperation = NULL;
-        ResetCallbackVariables();
-        PaLock();
-
-        // Get info for this stream (sink input)
-        paOperation = LATE(pa_context_get_sink_input_info)(
-            _paContext,
-            LATE(pa_stream_get_index)(_paPlayStream),
-            PaSinkInputInfoCallback,
-            (void*) this);
-
-        WaitForOperationCompletion(paOperation);
-        PaUnLock();
-
-        if (!_callbackValues)
-        {
-            WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                         "Error getting output volume: %d",
-                         LATE(pa_context_errno)(_paContext));
-            return -1;
-        }
+        if (!GetSinkInputInfo())
+          return -1;
 
         enabled = static_cast<bool> (_paMute);
         ResetCallbackVariables();
@@ -572,32 +536,12 @@ AudioMixerManagerLinuxPulse::StereoPlayoutIsAvailable(bool& available)
         deviceIndex = LATE(pa_stream_get_device_index)(_paPlayStream);
     }
 
-    pa_operation* paOperation = NULL;
-    ResetCallbackVariables();
-
-    // Get info for this sink
-    // We want to know if the actual device can play out in stereo
-    paOperation = LATE(pa_context_get_sink_info_by_index)(_paContext,
-                                                          deviceIndex,
-                                                          PaSinkInfoCallback,
-                                                          (void*) this);
-
-    WaitForOperationCompletion(paOperation);
     PaUnLock();
 
-    if (!_callbackValues)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "Error getting number of output channels: %d",
-                     LATE(pa_context_errno)(_paContext));
-        return -1;
-    }
+    if (!GetSinkInfoByIndex(deviceIndex))
+      return -1;
 
     available = static_cast<bool> (_paChannels == 2);
-
-    WEBRTC_TRACE(kTraceInfo, kTraceAudioDevice, _id,
-                 "     AudioMixerManagerLinuxPulse::StereoPlayoutIsAvailable() "
-                 "=> available=%i, available");
 
     // Reset members modified by callback
     ResetCallbackVariables();
@@ -762,26 +706,10 @@ WebRtc_Word32 AudioMixerManagerLinuxPulse::MicrophoneMute(bool& enabled) const
         deviceIndex = LATE(pa_stream_get_device_index)(_paRecStream);
     }
 
-    pa_operation* paOperation = NULL;
-    ResetCallbackVariables();
-
-    // Get info for this source
-    paOperation
-        = LATE(pa_context_get_source_info_by_index)(_paContext, deviceIndex,
-                                                    PaSourceInfoCallback,
-                                                    (void*) this);
-
-    WaitForOperationCompletion(paOperation);
-
     PaUnLock();
 
-    if (!_callbackValues)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "Error getting input mute status: %d",
-                     LATE(pa_context_errno)(_paContext));
-        return -1;
-    }
+    if (!GetSourceInfoByIndex(deviceIndex))
+      return -1;
 
     enabled = static_cast<bool> (_paMute);
 
@@ -997,26 +925,10 @@ AudioMixerManagerLinuxPulse::MicrophoneVolume(WebRtc_UWord32& volume) const
         deviceIndex = LATE(pa_stream_get_device_index)(_paRecStream);
     }
 
-    pa_operation* paOperation = NULL;
-    ResetCallbackVariables();
-
-    // Get info for this source
-    paOperation
-        = LATE(pa_context_get_source_info_by_index)(_paContext, deviceIndex,
-                                                    PaSourceInfoCallback,
-                                                    (void*) this);
-
-    WaitForOperationCompletion(paOperation);
-
     PaUnLock();
 
-    if (!_callbackValues)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
-                     "Error getting input volume: %d",
-                     LATE(pa_context_errno)(_paContext));
-        return -1;
-    }
+    if (!GetSourceInfoByIndex(deviceIndex))
+      return -1;
 
     volume = static_cast<WebRtc_UWord32> (_paVolume);
 
@@ -1197,7 +1109,7 @@ void AudioMixerManagerLinuxPulse::PaSinkInputInfoCallbackHandler(
 {
     if (eol)
     {
-        // Signal that we are done
+        // Signal that we are done.
         LATE(pa_threaded_mainloop_signal)(_paMainloop, 0);
         return;
     }
@@ -1276,4 +1188,84 @@ void AudioMixerManagerLinuxPulse::PaUnLock() const
     LATE(pa_threaded_mainloop_unlock)(_paMainloop);
 }
 
+bool AudioMixerManagerLinuxPulse::GetSinkInputInfo() const {
+  pa_operation* paOperation = NULL;
+  ResetCallbackVariables();
+
+  PaLock();
+  for (int retries = 0; retries < kMaxRetryOnFailure && !_callbackValues;
+       retries ++) {
+    // Get info for this stream (sink input).
+    paOperation = LATE(pa_context_get_sink_input_info)(
+        _paContext,
+        LATE(pa_stream_get_index)(_paPlayStream),
+        PaSinkInputInfoCallback,
+        (void*) this);
+
+    WaitForOperationCompletion(paOperation);
+  }
+  PaUnLock();
+
+  if (!_callbackValues) {
+    WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+                 "GetSinkInputInfo failed to get volume info : %d",
+                 LATE(pa_context_errno)(_paContext));
+    return false;
+  }
+
+  return true;
 }
+
+bool AudioMixerManagerLinuxPulse::GetSinkInfoByIndex(
+    int device_index) const {
+  pa_operation* paOperation = NULL;
+  ResetCallbackVariables();
+
+  PaLock();
+  for (int retries = 0; retries < kMaxRetryOnFailure && !_callbackValues;
+       retries ++) {
+    paOperation = LATE(pa_context_get_sink_info_by_index)(_paContext,
+        device_index, PaSinkInfoCallback, (void*) this);
+
+    WaitForOperationCompletion(paOperation);
+  }
+  PaUnLock();
+
+  if (!_callbackValues) {
+    WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+                 "GetSinkInfoByIndex failed to get volume info: %d",
+                 LATE(pa_context_errno)(_paContext));
+    return false;
+  }
+
+  return true;
+}
+
+bool AudioMixerManagerLinuxPulse::GetSourceInfoByIndex(
+    int device_index) const {
+  pa_operation* paOperation = NULL;
+  ResetCallbackVariables();
+
+  PaLock();
+  for (int retries = 0; retries < kMaxRetryOnFailure && !_callbackValues;
+       retries ++) {
+  paOperation  = LATE(pa_context_get_source_info_by_index)(
+      _paContext, device_index, PaSourceInfoCallback, (void*) this);
+
+  WaitForOperationCompletion(paOperation);
+  }
+
+  PaUnLock();
+
+  if (!_callbackValues) {
+    WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
+                 "GetSourceInfoByIndex error: %d",
+                 LATE(pa_context_errno)(_paContext));
+    return false;
+  }
+
+  return true;
+}
+
+}
+

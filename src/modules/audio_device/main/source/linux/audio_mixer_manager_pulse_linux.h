@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -86,6 +86,10 @@ private:
     void WaitForOperationCompletion(pa_operation* paOperation) const;
     void PaLock() const;
     void PaUnLock() const;
+
+    bool GetSinkInputInfo() const;
+    bool GetSinkInfoByIndex(int device_index)const ;
+    bool GetSourceInfoByIndex(int device_index) const;
 
 private:
     CriticalSectionWrapper& _critSect;

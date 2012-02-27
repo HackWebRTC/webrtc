@@ -784,7 +784,14 @@ WebRtc_Word32 AudioDeviceLinuxPulse::MicrophoneBoost(bool& enabled) const
 WebRtc_Word32 AudioDeviceLinuxPulse::StereoRecordingIsAvailable(bool& available)
 {
 
+    if (_recChannels == 2 && _recording) {
+      available = true;
+      return 0;
+    }
+
+    available = false;
     bool wasInitialized = _mixerManager.MicrophoneIsInitialized();
+    int error = 0;
 
     if (!wasInitialized && InitMicrophone() == -1)
     {
@@ -794,10 +801,11 @@ WebRtc_Word32 AudioDeviceLinuxPulse::StereoRecordingIsAvailable(bool& available)
     }
 
 #ifndef WEBRTC_PA_GTALK
-    // Check if the selected microphone can record stereo
+    // Check if the selected microphone can record stereo.
     bool isAvailable(false);
-    _mixerManager.StereoRecordingIsAvailable(isAvailable);
-    available = isAvailable;
+    error = _mixerManager.StereoRecordingIsAvailable(isAvailable);
+    if (!error)
+      available = isAvailable;
 #endif
 
     // Close the initialized input mixer
@@ -806,7 +814,7 @@ WebRtc_Word32 AudioDeviceLinuxPulse::StereoRecordingIsAvailable(bool& available)
         _mixerManager.CloseMicrophone();
     }
 
-    return 0;
+    return error;
 }
 
 WebRtc_Word32 AudioDeviceLinuxPulse::SetStereoRecording(bool enable)
@@ -836,20 +844,27 @@ WebRtc_Word32 AudioDeviceLinuxPulse::StereoRecording(bool& enabled) const
 WebRtc_Word32 AudioDeviceLinuxPulse::StereoPlayoutIsAvailable(bool& available)
 {
 
+    if (_playChannels == 2 && _playing) {
+      available = true;
+      return 0;
+    }
+
+    available = false;
     bool wasInitialized = _mixerManager.SpeakerIsInitialized();
+    int error = 0;
 
     if (!wasInitialized && InitSpeaker() == -1)
     {
-        // Cannot open the specified device
-        available = false;
-        return 0;
+        // Cannot open the specified device.
+        return -1;
     }
 
 #ifndef WEBRTC_PA_GTALK
-    // Check if the selected microphone can record stereo
+    // Check if the selected speaker can play stereo.
     bool isAvailable(false);
-    _mixerManager.StereoPlayoutIsAvailable(isAvailable);
-    available = isAvailable;
+    error = _mixerManager.StereoPlayoutIsAvailable(isAvailable);
+    if (!error)
+      available = isAvailable;
 #endif
 
     // Close the initialized input mixer
@@ -858,7 +873,7 @@ WebRtc_Word32 AudioDeviceLinuxPulse::StereoPlayoutIsAvailable(bool& available)
         _mixerManager.CloseSpeaker();
     }
 
-    return 0;
+    return error;
 }
 
 WebRtc_Word32 AudioDeviceLinuxPulse::SetStereoPlayout(bool enable)
