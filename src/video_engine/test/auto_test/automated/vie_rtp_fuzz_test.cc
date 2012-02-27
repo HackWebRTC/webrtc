@@ -95,35 +95,35 @@ class ViERtpFuzzTest : public TwoWindowsFixture {
 
 TEST_F(ViERtpFuzzTest, VideoEngineDealsWithASmallNumberOfTamperedPackets) {
   // Try 0.005% bit flip chance per byte.
-  BitFlipFuzzTest(0.00005);
+  BitFlipFuzzTest(0.00005f);
 }
 
 TEST_F(ViERtpFuzzTest, VideoEngineDealsWithAMediumNumberOfTamperedPackets) {
   // Try 0.05% bit flip chance per byte.
-  BitFlipFuzzTest(0.0005);
+  BitFlipFuzzTest(0.0005f);
 }
 
 TEST_F(ViERtpFuzzTest, VideoEngineDealsWithALargeNumberOfTamperedPackets) {
   // Try 0.5% bit flip chance per byte.
-  BitFlipFuzzTest(0.005);
+  BitFlipFuzzTest(0.005f);
 }
 
 TEST_F(ViERtpFuzzTest, VideoEngineDealsWithAVeryLargeNumberOfTamperedPackets) {
   // Try 5% bit flip chance per byte.
-  BitFlipFuzzTest(0.05);
+  BitFlipFuzzTest(0.05f);
 }
 
 TEST_F(ViERtpFuzzTest,
        VideoEngineDealsWithAExtremelyLargeNumberOfTamperedPackets) {
   // Try 25% bit flip chance per byte (madness!)
-  BitFlipFuzzTest(0.25);
+  BitFlipFuzzTest(0.25f);
 }
 
 TEST_F(ViERtpFuzzTest, VideoEngineDealsWithSeveralPeriodsOfTamperedPackets) {
   // Try 0.05% bit flip chance per byte.
-  BitFlipFuzzTest(0.0005);
-  BitFlipFuzzTest(0.0005);
-  BitFlipFuzzTest(0.0005);
+  BitFlipFuzzTest(0.0005f);
+  BitFlipFuzzTest(0.0005f);
+  BitFlipFuzzTest(0.0005f);
 }
 
 TEST_F(ViERtpFuzzTest, VideoEngineRecoversAfterSomeCompletelyRandomPackets) {
