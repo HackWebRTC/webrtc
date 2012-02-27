@@ -816,8 +816,8 @@ WebRtc_Word32 AudioDeviceAndroidOpenSLES::SetPlayoutDevice(
 
 WebRtc_Word32 AudioDeviceAndroidOpenSLES::PlayoutDeviceName(
     WebRtc_UWord16 index,
-    WebRtc_Word8 name[kAdmMaxDeviceNameSize],
-    WebRtc_Word8 guid[kAdmMaxGuidSize]) {
+    char name[kAdmMaxDeviceNameSize],
+    char guid[kAdmMaxGuidSize]) {
 
     if (0 != index) {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,
@@ -837,8 +837,8 @@ WebRtc_Word32 AudioDeviceAndroidOpenSLES::PlayoutDeviceName(
 
 WebRtc_Word32 AudioDeviceAndroidOpenSLES::RecordingDeviceName(
     WebRtc_UWord16 index,
-    WebRtc_Word8 name[kAdmMaxDeviceNameSize],
-    WebRtc_Word8 guid[kAdmMaxGuidSize]) {
+    char name[kAdmMaxDeviceNameSize],
+    char guid[kAdmMaxGuidSize]) {
 
     if (0 != index) {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id,

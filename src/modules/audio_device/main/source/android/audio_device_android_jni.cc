@@ -1179,8 +1179,8 @@ WebRtc_Word32 AudioDeviceAndroidJni::SetPlayoutDevice(
 
 WebRtc_Word32 AudioDeviceAndroidJni::PlayoutDeviceName(
         WebRtc_UWord16 index,
-        WebRtc_Word8 name[kAdmMaxDeviceNameSize],
-        WebRtc_Word8 guid[kAdmMaxGuidSize])
+        char name[kAdmMaxDeviceNameSize],
+        char guid[kAdmMaxGuidSize])
 {
 
     if (0 != index)
@@ -1207,8 +1207,8 @@ WebRtc_Word32 AudioDeviceAndroidJni::PlayoutDeviceName(
 
 WebRtc_Word32 AudioDeviceAndroidJni::RecordingDeviceName(
         WebRtc_UWord16 index,
-        WebRtc_Word8 name[kAdmMaxDeviceNameSize],
-        WebRtc_Word8 guid[kAdmMaxGuidSize])
+        char name[kAdmMaxDeviceNameSize],
+        char guid[kAdmMaxGuidSize])
 {
 
     if (0 != index)
