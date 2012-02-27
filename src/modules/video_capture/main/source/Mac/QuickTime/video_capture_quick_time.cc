@@ -65,7 +65,7 @@ VideoCaptureMacQuickTime::~VideoCaptureMacQuickTime()
 }
 
 WebRtc_Word32 VideoCaptureMacQuickTime::Init(
-    const WebRtc_Word32 id, const WebRtc_UWord8* deviceUniqueIdUTF8)
+    const WebRtc_Word32 id, const char* deviceUniqueIdUTF8)
 {
 
     const WebRtc_Word32 nameLength =
@@ -74,7 +74,7 @@ WebRtc_Word32 VideoCaptureMacQuickTime::Init(
         return -1;
 
     // Store the device name
-    _deviceUniqueId = new WebRtc_UWord8[nameLength + 1];
+    _deviceUniqueId = new char[nameLength + 1];
     memset(_deviceUniqueId, 0, nameLength + 1);
     memcpy(_deviceUniqueId, deviceUniqueIdUTF8, nameLength + 1);
 

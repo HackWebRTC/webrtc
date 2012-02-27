@@ -48,9 +48,9 @@ WebRtc_UWord32 VideoCaptureMacQuickTimeInfo::NumberOfDevices()
 
     // don't care about these variables... dummy vars to call GetCaptureDevices
     const int kNameLength = 1024;
-    WebRtc_UWord8 deviceNameUTF8[kNameLength] = "";
-    WebRtc_UWord8 deviceUniqueIdUTF8[kNameLength] = "";
-    WebRtc_UWord8 productUniqueIdUTF8[kNameLength] = "";
+    char deviceNameUTF8[kNameLength] = "";
+    char deviceUniqueIdUTF8[kNameLength] = "";
+    char productUniqueIdUTF8[kNameLength] = "";
 
     if (GetCaptureDevices(0, deviceNameUTF8, kNameLength, deviceUniqueIdUTF8,
                           kNameLength, productUniqueIdUTF8, kNameLength,
@@ -63,9 +63,9 @@ WebRtc_UWord32 VideoCaptureMacQuickTimeInfo::NumberOfDevices()
 }
 
 WebRtc_Word32 VideoCaptureMacQuickTimeInfo::GetDeviceName(
-    WebRtc_UWord32 deviceNumber, WebRtc_UWord8* deviceNameUTF8,
-    WebRtc_UWord32 deviceNameUTF8Length, WebRtc_UWord8* deviceUniqueIdUTF8,
-    WebRtc_UWord32 deviceUniqueIdUTF8Length, WebRtc_UWord8* productUniqueIdUTF8,
+    WebRtc_UWord32 deviceNumber, char* deviceNameUTF8,
+    WebRtc_UWord32 deviceNameUTF8Length, char* deviceUniqueIdUTF8,
+    WebRtc_UWord32 deviceUniqueIdUTF8Length, char* productUniqueIdUTF8,
     WebRtc_UWord32 productUniqueIdUTF8Length)
 {
 
@@ -77,7 +77,7 @@ WebRtc_Word32 VideoCaptureMacQuickTimeInfo::GetDeviceName(
 }
 
 WebRtc_Word32 VideoCaptureMacQuickTimeInfo::NumberOfCapabilities(
-    const WebRtc_UWord8* deviceUniqueIdUTF8)
+    const char* deviceUniqueIdUTF8)
 {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
                  "NumberOfCapabilities is not supported on the Mac platform.");
@@ -85,7 +85,7 @@ WebRtc_Word32 VideoCaptureMacQuickTimeInfo::NumberOfCapabilities(
 }
 
 WebRtc_Word32 VideoCaptureMacQuickTimeInfo::GetCapability(
-    const WebRtc_UWord8* deviceUniqueIdUTF8,
+    const char* deviceUniqueIdUTF8,
     const WebRtc_UWord32 deviceCapabilityNumber,
     VideoCaptureCapability& capability)
 {
@@ -95,7 +95,7 @@ WebRtc_Word32 VideoCaptureMacQuickTimeInfo::GetCapability(
 }
 
 WebRtc_Word32 VideoCaptureMacQuickTimeInfo::GetBestMatchedCapability(
-    const WebRtc_UWord8*deviceUniqueIdUTF8,
+    const char*deviceUniqueIdUTF8,
     const VideoCaptureCapability& requested, VideoCaptureCapability& resulting)
 {
     WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, _id,
@@ -104,15 +104,15 @@ WebRtc_Word32 VideoCaptureMacQuickTimeInfo::GetBestMatchedCapability(
 }
 
 WebRtc_Word32 VideoCaptureMacQuickTimeInfo::DisplayCaptureSettingsDialogBox(
-    const WebRtc_UWord8* deviceUniqueIdUTF8,
-    const WebRtc_UWord8* dialogTitleUTF8, void* parentWindow,
+    const char* deviceUniqueIdUTF8,
+    const char* dialogTitleUTF8, void* parentWindow,
     WebRtc_UWord32 positionX, WebRtc_UWord32 positionY)
 {
      return -1;
 }
 
 WebRtc_Word32 VideoCaptureMacQuickTimeInfo::CreateCapabilityMap(
-    const WebRtc_UWord8* deviceUniqueIdUTF8)
+    const char* deviceUniqueIdUTF8)
 {
     WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, _id,
                  "NumberOfCapabilities is not supported on the Mac platform.");
@@ -120,9 +120,9 @@ WebRtc_Word32 VideoCaptureMacQuickTimeInfo::CreateCapabilityMap(
 }
 
 int VideoCaptureMacQuickTimeInfo::GetCaptureDevices(
-    WebRtc_UWord32 deviceNumber, WebRtc_UWord8* deviceNameUTF8,
-    WebRtc_UWord32 deviceNameUTF8Length, WebRtc_UWord8* deviceUniqueIdUTF8,
-    WebRtc_UWord32 deviceUniqueIdUTF8Length, WebRtc_UWord8* productUniqueIdUTF8,
+    WebRtc_UWord32 deviceNumber, char* deviceNameUTF8,
+    WebRtc_UWord32 deviceNameUTF8Length, char* deviceUniqueIdUTF8,
+    WebRtc_UWord32 deviceUniqueIdUTF8Length, char* productUniqueIdUTF8,
     WebRtc_UWord32 productUniqueIdUTF8Length, int& numberOfDevices)
 {
 

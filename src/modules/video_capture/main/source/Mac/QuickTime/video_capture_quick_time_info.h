@@ -56,10 +56,10 @@ public:
      *                       otherwise.
      */
     virtual WebRtc_Word32 GetDeviceName(
-        WebRtc_UWord32 deviceNumber, WebRtc_UWord8* deviceNameUTF8,
-        WebRtc_UWord32 deviceNameLength, WebRtc_UWord8* deviceUniqueIdUTF8,
+        WebRtc_UWord32 deviceNumber, char* deviceNameUTF8,
+        WebRtc_UWord32 deviceNameLength, char* deviceUniqueIdUTF8,
         WebRtc_UWord32 deviceUniqueIdUTF8Length,
-        WebRtc_UWord8* productUniqueIdUTF8 = 0,
+        char* productUniqueIdUTF8 = 0,
         WebRtc_UWord32 productUniqueIdUTF8Length = 0);
 
 
@@ -68,13 +68,13 @@ public:
     /*
      *   Returns the number of capabilities for this device
      */
-    virtual WebRtc_Word32 NumberOfCapabilities(const WebRtc_UWord8* deviceUniqueIdUTF8);
+    virtual WebRtc_Word32 NumberOfCapabilities(const char* deviceUniqueIdUTF8);
 
     /*
      *   Gets the capabilities of the named device
      */
     virtual WebRtc_Word32 GetCapability(
-        const WebRtc_UWord8* deviceUniqueIdUTF8,
+        const char* deviceUniqueIdUTF8,
         const WebRtc_UWord32 deviceCapabilityNumber,
         VideoCaptureCapability& capability);
 
@@ -83,7 +83,7 @@ public:
      *  Returns the deviceCapabilityNumber on success.
      */
     virtual WebRtc_Word32 GetBestMatchedCapability(
-        const WebRtc_UWord8*deviceUniqueIdUTF8,
+        const char*deviceUniqueIdUTF8,
         const VideoCaptureCapability& requested,
         VideoCaptureCapability& resulting);
 
@@ -91,13 +91,13 @@ public:
      * Display OS /capture device specific settings dialog
      */
     virtual WebRtc_Word32 DisplayCaptureSettingsDialogBox(
-        const WebRtc_UWord8* deviceUniqueIdUTF8,
-        const WebRtc_UWord8* dialogTitleUTF8, void* parentWindow,
+        const char* deviceUniqueIdUTF8,
+        const char* dialogTitleUTF8, void* parentWindow,
         WebRtc_UWord32 positionX, WebRtc_UWord32 positionY);
 
 protected:
     virtual WebRtc_Word32 CreateCapabilityMap(
-        const WebRtc_UWord8* deviceUniqueIdUTF8);
+        const char* deviceUniqueIdUTF8);
 
 private:
 
@@ -126,11 +126,11 @@ private:
     // private methods
 
     int GetCaptureDevices(WebRtc_UWord32 deviceNumber,
-                          WebRtc_UWord8* deviceNameUTF8,
+                          char* deviceNameUTF8,
                           WebRtc_UWord32 deviceNameUTF8Length,
-                          WebRtc_UWord8* deviceUniqueIdUTF8,
+                          char* deviceUniqueIdUTF8,
                           WebRtc_UWord32 deviceUniqueIdUTF8Length,
-                          WebRtc_UWord8* productUniqueIdUTF8,
+                          char* productUniqueIdUTF8,
                           WebRtc_UWord32 productUniqueIdUTF8Length,
                           int& numberOfDevices);
 
