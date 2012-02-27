@@ -2318,6 +2318,7 @@ WebRtc_Word32 ModuleFileUtility::FileDurationMs(const WebRtc_Word8* fileName,
     if(fileName == NULL)
     {
         WEBRTC_TRACE(kTraceError, kTraceFile, _id, "filename NULL");
+        return -1;
     }
 
     WebRtc_Word32 time_in_ms = -1;

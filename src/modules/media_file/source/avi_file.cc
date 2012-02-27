@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -7,6 +7,10 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+
+// TODO(henrike): reassess the error handling in this class. Currently failure
+// is detected by asserts in many places. Also a refactoring of this class would
+// be beneficial.
 
 #include "avi_file.h"
 
@@ -134,11 +138,51 @@ AviFile::AVIINDEXENTRY::AVIINDEXENTRY(WebRtc_UWord32 inckid,
 }
 
 AviFile::AviFile()
+    : _crit(CriticalSectionWrapper::CreateCriticalSection()),
+      _aviFile(NULL),
+      _aviHeader(),
+      _videoStreamHeader(),
+      _audioStreamHeader(),
+      _videoFormatHeader(),
+      _audioFormatHeader(),
+      _videoConfigParameters(),
+      _videoConfigLength(0),
+      _videoStreamName(),
+      _videoStreamNameLength(0),
+      _audioConfigParameters(),
+      _audioStreamName(),
+      _videoStream(),
+      _audioStream(),
+      _nrStreams(0),
+      _aviLength(0),
+      _dataLength(0),
+      _bytesRead(0),
+      _dataStartByte(0),
+      _framesRead(0),
+      _videoFrames(0),
+      _audioFrames(0),
+      _reading(false),
+      _openedAs(AVI_AUDIO),
+      _loop(false),
+      _writing(false),
+      _bytesWritten(0),
+      _riffSizeMark(0),
+      _moviSizeMark(0),
+      _totNumFramesMark(0),
+      _videoStreamLengthMark(0),
+      _audioStreamLengthMark(0),
+      _moviListOffset(0),
+      _writeAudioStream(false),
+      _writeVideoStream(false),
+      _aviMode(NotSet),
+      _videoCodecConfigParams(NULL),
+      _videoCodecConfigParamsLength(0),
+      _videoStreamDataChunkPrefix(0),
+      _audioStreamDataChunkPrefix(0),
+      _created(false),
+      _indexList(new ListWrapper())
 {
-    _crit      = CriticalSectionWrapper::CreateCriticalSection();
-    _indexList = new ListWrapper();
-
-    ResetMembers();
+  ResetComplexMembers();
 }
 
 AviFile::~AviFile()
@@ -275,7 +319,7 @@ WebRtc_Word32 AviFile::GetVideoStreamInfo(AVISTREAMHEADER& videoStreamHeader,
     memcpy(&videoStreamHeader, &_videoStreamHeader, sizeof(_videoStreamHeader));
     memcpy(&bitmapInfo, &_videoFormatHeader, sizeof(_videoFormatHeader));
 
-    if (_videoConfigParameters && configLength <= _videoConfigLength)
+    if (configLength <= _videoConfigLength)
     {
         memcpy(codecConfigParameters, _videoConfigParameters,
                _videoConfigLength);
@@ -1139,6 +1183,9 @@ size_t AviFile::PutBufferZ(const char* str)
 long AviFile::PutLE32LengthFromCurrent(long startPos)
 {
     const long endPos = ftell(_aviFile);
+    if (endPos < 0) {
+        return 0;
+    }
     bool success = (0 == fseek(_aviFile, startPos - 4, SEEK_SET));
     if (!success) {
         assert(false);
@@ -1159,6 +1206,10 @@ long AviFile::PutLE32LengthFromCurrent(long startPos)
 void AviFile::PutLE32AtPos(long pos, WebRtc_UWord32 word)
 {
     const long currPos = ftell(_aviFile);
+    if (currPos < 0) {
+        assert(false);
+        return;
+    }
     bool success = (0 == fseek(_aviFile, pos, SEEK_SET));
     if (!success) {
       assert(false);
@@ -1214,18 +1265,9 @@ void AviFile::CloseWrite()
 
 void AviFile::ResetMembers()
 {
-    _aviFile = NULL;
+    ResetComplexMembers();
 
-    memset(&_aviHeader, 0, sizeof(AVIMAINHEADER));
-    memset(&_videoStreamHeader, 0, sizeof(AVISTREAMHEADER));
-    memset(&_audioStreamHeader, 0, sizeof(AVISTREAMHEADER));
-    memset(&_videoFormatHeader, 0, sizeof(BITMAPINFOHEADER));
-    memset(&_audioFormatHeader, 0, sizeof(WAVEFORMATEX));
-    memset(_videoConfigParameters, 0, CODEC_CONFIG_LENGTH);
-    memset(_videoStreamName, 0, STREAM_NAME_LENGTH);
-    memset(_audioStreamName, 0, STREAM_NAME_LENGTH);
-    memset(&_videoStream, 0, sizeof(AVIStream));
-    memset(&_audioStream, 0, sizeof(AVIStream));
+    _aviFile = NULL;
 
     _nrStreams     = 0;
     _aviLength     = 0;
@@ -1264,6 +1306,20 @@ void AviFile::ResetMembers()
     _moviListOffset = 0;
 
     _videoConfigLength = 0;
+}
+
+void AviFile::ResetComplexMembers()
+{
+    memset(&_aviHeader, 0, sizeof(AVIMAINHEADER));
+    memset(&_videoStreamHeader, 0, sizeof(AVISTREAMHEADER));
+    memset(&_audioStreamHeader, 0, sizeof(AVISTREAMHEADER));
+    memset(&_videoFormatHeader, 0, sizeof(BITMAPINFOHEADER));
+    memset(&_audioFormatHeader, 0, sizeof(WAVEFORMATEX));
+    memset(_videoConfigParameters, 0, CODEC_CONFIG_LENGTH);
+    memset(_videoStreamName, 0, STREAM_NAME_LENGTH);
+    memset(_audioStreamName, 0, STREAM_NAME_LENGTH);
+    memset(&_videoStream, 0, sizeof(AVIStream));
+    memset(&_audioStream, 0, sizeof(AVIStream));
 }
 
 size_t AviFile::GetByte(WebRtc_UWord8& word)

@@ -501,7 +501,6 @@ WebRtc_Word32 MediaFileImpl::StartPlayingStream(
     const WebRtc_UWord32 stopPointMs,
     bool videoOnly)
 {
-
     if(!ValidFileFormat(format,codecInst))
     {
         return -1;
@@ -520,7 +519,7 @@ WebRtc_Word32 MediaFileImpl::StartPlayingStream(
             kTraceFile,
             _id,
             "StartPlaying called, but already playing or recording file %s",
-            (_fileName == NULL) ? "NULL" : _fileName);
+            (_fileName[0] == '\0') ? "(name not set)" : _fileName);
         return -1;
     }
 
@@ -574,6 +573,9 @@ WebRtc_Word32 MediaFileImpl::StartPlayingStream(
         case kFileFormatPcm16kHzFile:
         case kFileFormatPcm32kHzFile:
         {
+            // ValidFileFormat() called in the beginneing of this function
+            // prevents codecInst from being NULL here.
+            assert(codecInst != NULL);
             if(!ValidFrequency(codecInst->plfreq) ||
                _ptrFileUtilityObj->InitPCMReading(stream, startPointMs,
                                                   stopPointMs,
@@ -590,6 +592,9 @@ WebRtc_Word32 MediaFileImpl::StartPlayingStream(
         }
         case kFileFormatPreencodedFile:
         {
+            // ValidFileFormat() called in the beginneing of this function
+            // prevents codecInst from being NULL here.
+            assert(codecInst != NULL);
             if(_ptrFileUtilityObj->InitPreEncodedReading(stream, *codecInst) ==
                -1)
             {
