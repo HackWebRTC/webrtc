@@ -49,12 +49,11 @@ using namespace webrtc;
 
 /// ***** Creates a message box with Cocoa framework
 /// ***** Returns 0 on success, -1 otherwise.
-- (NSNumber*)displayCaptureSettingsDialogBoxWithDevice:
-        (const char*)deviceUniqueIdUTF8
-        AndTitle:(const char*)dialogTitleUTF8
-        AndParentWindow:(void*) parentWindow
-        AtX:(WebRtc_UWord32)positionX
-        AndY:(WebRtc_UWord32) positionY
+- (NSNumber*)displayCaptureSettingsDialogBoxWithDevice:(const WebRtc_UWord8*)deviceUniqueIdUTF8
+                    AndTitle:(const WebRtc_UWord8*)dialogTitleUTF8
+                    AndParentWindow:(void*) parentWindow
+                    AtX:(WebRtc_UWord32)positionX
+                    AndY:(WebRtc_UWord32) positionY
 {
     NSString* strTitle = [NSString stringWithFormat:@"%s", dialogTitleUTF8];
     NSString* strButton = @"Alright";
@@ -75,11 +74,11 @@ using namespace webrtc;
 
 
 - (NSNumber*)getDeviceNamesFromIndex:(WebRtc_UWord32)index
-    DefaultName:(char*)deviceName
+    DefaultName:(WebRtc_UWord8*)deviceName
     WithLength:(WebRtc_UWord32)deviceNameLength
-    AndUniqueID:(char*)deviceUniqueID
+    AndUniqueID:(WebRtc_UWord8*)deviceUniqueID
     WithLength:(WebRtc_UWord32)deviceUniqueIDLength
-    AndProductID:(char*)deviceProductID
+    AndProductID:(WebRtc_UWord8*)deviceProductID
     WithLength:(WebRtc_UWord32)deviceProductIDLength
 {
     if(NO == _OSSupportedInfo)

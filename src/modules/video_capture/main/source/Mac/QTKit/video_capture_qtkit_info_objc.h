@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -49,16 +49,16 @@
 - (NSNumber*)getCaptureDeviceCount;
 
 - (NSNumber*)getDeviceNamesFromIndex:(WebRtc_UWord32)index
-    DefaultName:(char*)deviceName
+    DefaultName:(WebRtc_UWord8*)deviceName
     WithLength:(WebRtc_UWord32)deviceNameLength
-    AndUniqueID:(char*)deviceUniqueID
+    AndUniqueID:(WebRtc_UWord8*)deviceUniqueID
     WithLength:(WebRtc_UWord32)deviceUniqueIDLength
-    AndProductID:(char*)deviceProductID
+    AndProductID:(WebRtc_UWord8*)deviceProductID
     WithLength:(WebRtc_UWord32)deviceProductIDLength;
 
 - (NSNumber*)displayCaptureSettingsDialogBoxWithDevice:
-        (const char*)deviceUniqueIdUTF8
-    AndTitle:(const char*)dialogTitleUTF8
+        (const WebRtc_UWord8*)deviceUniqueIdUTF8
+    AndTitle:(const WebRtc_UWord8*)dialogTitleUTF8
     AndParentWindow:(void*) parentWindow AtX:(WebRtc_UWord32)positionX
     AndY:(WebRtc_UWord32) positionY;
 @end

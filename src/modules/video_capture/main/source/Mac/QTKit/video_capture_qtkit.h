@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -46,7 +46,7 @@ public:
     static void Destroy(VideoCaptureModule* module);
 
     WebRtc_Word32 Init(const WebRtc_Word32 id,
-                       const char* deviceUniqueIdUTF8);
+                       const WebRtc_UWord8* deviceUniqueIdUTF8);
 
 
     // Start/Stop
@@ -72,9 +72,9 @@ private:
     WebRtc_Word32            _captureWidth;
     WebRtc_Word32            _captureHeight;
     WebRtc_Word32            _captureFrameRate;
-    char                     _currentDeviceNameUTF8[MAX_NAME_LENGTH];
-    char                     _currentDeviceUniqueIdUTF8[MAX_NAME_LENGTH];
-    char                     _currentDeviceProductUniqueIDUTF8[MAX_NAME_LENGTH];
+    WebRtc_UWord8            _currentDeviceNameUTF8[MAX_NAME_LENGTH];
+    WebRtc_UWord8            _currentDeviceUniqueIdUTF8[MAX_NAME_LENGTH];
+    WebRtc_UWord8            _currentDeviceProductUniqueIDUTF8[MAX_NAME_LENGTH];
     WebRtc_Word32            _frameCount;
 };
 }  // namespace videocapturemodule

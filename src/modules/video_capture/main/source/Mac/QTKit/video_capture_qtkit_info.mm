@@ -47,9 +47,9 @@ WebRtc_UWord32 VideoCaptureMacQTKitInfo::NumberOfDevices()
 }
 
 WebRtc_Word32 VideoCaptureMacQTKitInfo::GetDeviceName(
-    WebRtc_UWord32 deviceNumber, char* deviceNameUTF8,
-    WebRtc_UWord32 deviceNameLength, char* deviceUniqueIdUTF8,
-    WebRtc_UWord32 deviceUniqueIdUTF8Length, char* productUniqueIdUTF8,
+    WebRtc_UWord32 deviceNumber, WebRtc_UWord8* deviceNameUTF8,
+    WebRtc_UWord32 deviceNameLength, WebRtc_UWord8* deviceUniqueIdUTF8,
+    WebRtc_UWord32 deviceUniqueIdUTF8Length, WebRtc_UWord8* productUniqueIdUTF8,
     WebRtc_UWord32 productUniqueIdUTF8Length)
 {
     int errNum = [[_captureInfo getDeviceNamesFromIndex:deviceNumber
@@ -62,7 +62,7 @@ WebRtc_Word32 VideoCaptureMacQTKitInfo::GetDeviceName(
 }
 
 WebRtc_Word32 VideoCaptureMacQTKitInfo::NumberOfCapabilities(
-    const char* deviceUniqueIdUTF8)
+    const WebRtc_UWord8* deviceUniqueIdUTF8)
 {
     // Not implemented. Mac doesn't use discrete steps in capabilities, rather
     // "analog". QTKit will do it's best to convert frames to what ever format
@@ -74,7 +74,7 @@ WebRtc_Word32 VideoCaptureMacQTKitInfo::NumberOfCapabilities(
 
 
 WebRtc_Word32 VideoCaptureMacQTKitInfo::GetCapability(
-    const char* deviceUniqueIdUTF8,
+    const WebRtc_UWord8* deviceUniqueIdUTF8,
     const WebRtc_UWord32 deviceCapabilityNumber,
     VideoCaptureCapability& capability)
 {
@@ -88,7 +88,7 @@ WebRtc_Word32 VideoCaptureMacQTKitInfo::GetCapability(
 
 
 WebRtc_Word32 VideoCaptureMacQTKitInfo::GetBestMatchedCapability(
-    const char* deviceUniqueIdUTF8,
+    const WebRtc_UWord8*deviceUniqueIdUTF8,
     const VideoCaptureCapability& requested, VideoCaptureCapability& resulting)
 {
     // Not implemented. Mac doesn't use discrete steps in capabilities, rather
@@ -100,8 +100,8 @@ WebRtc_Word32 VideoCaptureMacQTKitInfo::GetBestMatchedCapability(
 }
 
 WebRtc_Word32 VideoCaptureMacQTKitInfo::DisplayCaptureSettingsDialogBox(
-    const char* deviceUniqueIdUTF8,
-    const char* dialogTitleUTF8, void* parentWindow,
+    const WebRtc_UWord8* deviceUniqueIdUTF8,
+    const WebRtc_UWord8* dialogTitleUTF8, void* parentWindow,
     WebRtc_UWord32 positionX, WebRtc_UWord32 positionY)
 {
 
@@ -113,7 +113,7 @@ WebRtc_Word32 VideoCaptureMacQTKitInfo::DisplayCaptureSettingsDialogBox(
 }
 
 WebRtc_Word32 VideoCaptureMacQTKitInfo::CreateCapabilityMap(
-    const char* deviceUniqueIdUTF8)
+    const WebRtc_UWord8* deviceUniqueIdUTF8)
 {
     // Not implemented. Mac doesn't use discrete steps in capabilities, rather
     // "analog". QTKit will do it's best to convert frames to what ever format

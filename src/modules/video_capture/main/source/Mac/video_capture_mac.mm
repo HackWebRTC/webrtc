@@ -113,7 +113,7 @@ bool CheckQTVersion()
  */
 
 VideoCaptureModule* VideoCaptureImpl::Create(
-    const WebRtc_Word32 id, const char* deviceUniqueIdUTF8)
+    const WebRtc_Word32 id, const WebRtc_UWord8* deviceUniqueIdUTF8)
 {
 
     if (webrtc::videocapturemodule::CheckOSVersion() == false)
