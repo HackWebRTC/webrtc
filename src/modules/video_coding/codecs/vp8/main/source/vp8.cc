@@ -535,7 +535,8 @@ VP8Decoder::VP8Decoder()
       image_format_(VPX_IMG_FMT_NONE),
       ref_frame_(NULL),
       propagation_cnt_(-1),
-      latest_keyframe_complete_(false) {
+      latest_keyframe_complete_(false),
+      mfqe_enabled_(false) {
 }
 
 VP8Decoder::~VP8Decoder() {
@@ -550,6 +551,7 @@ int VP8Decoder::Reset() {
   InitDecode(&codec_, 1);
   propagation_cnt_ = -1;
   latest_keyframe_complete_ = false;
+  mfqe_enabled_ = false;
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
@@ -620,6 +622,19 @@ int VP8Decoder::Decode(const EncodedImage& input_image,
 #ifdef INDEPENDENT_PARTITIONS
   if (fragmentation == NULL) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
+  }
+#endif
+
+#if WEBRTC_LIBVPX_VERSION >= 971
+  if (!mfqe_enabled_ && codec_specific_info &&
+      codec_specific_info->codecSpecific.VP8.temporalIdx > 0) {
+    // Enable MFQE if we are receiving layers.
+    // temporalIdx is set in the jitter buffer according to what the RTP
+    // header says.
+    mfqe_enabled_ = true;
+    vp8_postproc_cfg_t  ppcfg;
+    ppcfg.post_proc_flag = VP8_MFQE;
+    vpx_codec_control(decoder_, VP8_SET_POSTPROC, &ppcfg);
   }
 #endif
 

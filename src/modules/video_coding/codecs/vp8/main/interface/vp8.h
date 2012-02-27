@@ -229,6 +229,7 @@ class VP8Decoder : public VideoDecoder {
   vpx_ref_frame_t* ref_frame_;
   int propagation_cnt_;
   bool latest_keyframe_complete_;
+  bool mfqe_enabled_;
 };  // end of VP8Decoder class
 }  // namespace webrtc
 
