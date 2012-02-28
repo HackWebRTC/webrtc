@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -14,9 +14,6 @@
 
 #if defined(_WIN32)
     #include "rw_lock_win.h"
-#elif defined(WEBRTC_ANDROID)
-    #include <stdlib.h>
-    #include "rw_lock_generic.h"
 #else
     #include "rw_lock_posix.h"
 #endif
@@ -26,8 +23,6 @@ RWLockWrapper* RWLockWrapper::CreateRWLock()
 {
 #ifdef _WIN32
     RWLockWrapper* lock =  new RWLockWindows();
-#elif defined(WEBRTC_ANDROID)
-    RWLockWrapper* lock =  new RWLockWrapperGeneric();
 #else
     RWLockWrapper* lock =  new RWLockPosix();
 #endif
