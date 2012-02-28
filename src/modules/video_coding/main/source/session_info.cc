@@ -325,6 +325,9 @@ bool VCMSessionInfo::InSequence(const PacketIterator& packet_it,
 
 int VCMSessionInfo::MakeDecodable() {
   int return_length = 0;
+  if (packets_.empty()) {
+    return 0;
+  }
   PacketIterator it = packets_.begin();
   // Make sure we remove the first NAL unit if it's not decodable.
   if ((*it).completeNALU == kNaluIncomplete ||

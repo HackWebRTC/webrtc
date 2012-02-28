@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -620,6 +620,20 @@ TEST_F(TestVP8Partitions, AggregationOverTwoPackets) {
   EXPECT_TRUE(VerifyPartition(1, 0, 0));
   SCOPED_TRACE("Calling VerifyPartition");
   EXPECT_TRUE(VerifyPartition(2, 1, 2));
+}
+
+TEST_F(TestNalUnits, OnlyReceivedEmptyPacket) {
+  packet_.isFirstPacket = false;
+  packet_.completeNALU = kNaluComplete;
+  packet_.frameType = kFrameEmpty;
+  packet_.sizeBytes = 0;
+  packet_.seqNum = 0;
+  packet_.markerBit = false;
+  ASSERT_EQ(0, session_.InsertPacket(packet_, frame_buffer_, false, 0));
+
+  EXPECT_EQ(0, session_.MakeDecodable());
+  EXPECT_EQ(0, session_.SessionLength());
+  EXPECT_EQ(0, session_.packets_not_decodable());
 }
 
 TEST_F(TestNalUnits, OneIsolatedNaluLoss) {
