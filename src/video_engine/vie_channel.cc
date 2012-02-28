@@ -306,11 +306,8 @@ WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
                      "%s: RTP::RegisterSendTransport failure", __FUNCTION__);
         return -1;
       }
-      if (module_process_thread_.RegisterModule(rtp_rtcp) != 0) {
-        WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id_),
-                     "%s: RTP::RegisterModule failure", __FUNCTION__);
-        return -1;
-      }
+      // Silently ignore error.
+      module_process_thread_.RegisterModule(rtp_rtcp);
       if (rtp_rtcp->SetRTCPStatus(rtp_rtcp_.RTCP()) != 0) {
         WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(engine_id_, channel_id_),
                      "%s: RTP::SetRTCPStatus failure", __FUNCTION__);
