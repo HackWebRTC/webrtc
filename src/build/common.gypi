@@ -118,6 +118,10 @@
               '-Wno-unused-parameter',
               '-Wno-missing-field-initializers',
             ],
+            'cflags_cc': [
+              # This is enabled for clang; enable for gcc as well.
+              '-Woverloaded-virtual',
+            ],
           }],
         ],
       }],
