@@ -39,7 +39,9 @@ class ACMCELT : public ACMGenericCodec {
       int16_t /* bitStreamLenByte */,
       int16_t* /* audio */,
       int16_t* /* audioSamples */,
-      int8_t* /* speechType */);
+      // TODO(leozwang): use int8_t here when WebRtc_Word8 is properly typed.
+      // http://code.google.com/p/webrtc/issues/detail?id=311
+      WebRtc_Word8* /* speechType */);
 
   int32_t CodecDef(WebRtcNetEQ_CodecDef& codecDef, const CodecInst& codecInst);
 

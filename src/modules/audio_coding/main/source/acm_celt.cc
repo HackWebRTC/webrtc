@@ -49,7 +49,7 @@ int16_t ACMCELT::DecodeSafe(uint8_t* /* bitStream */,
                             int16_t /* bitStreamLenByte */,
                             int16_t* /* audio */,
                             int16_t* /* audioSamples */,
-                            int8_t* /* speechType */) {
+                            WebRtc_Word8* /* speechType */) {
   return -1;
 }
 
@@ -157,7 +157,7 @@ int16_t ACMCELT::DecodeSafe(uint8_t* /* bitStream */,
                             int16_t /* bitStreamLenByte */,
                             int16_t* /* audio */,
                             int16_t* /* audioSamples */,
-                            int8_t* /* speechType */) {
+                            WebRtc_Word8* /* speechType */) {
   return 0;
 }
 
