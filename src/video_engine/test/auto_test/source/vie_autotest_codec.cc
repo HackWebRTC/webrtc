@@ -227,96 +227,11 @@ void ViEAutoTest::ViECodecExtendedTest()
             videoChannel2, "127.0.0.1", rtpPort2));
 
         EXPECT_EQ(0, ViE.base->StartReceive(videoChannel2));
-        EXPECT_EQ(0, ViE.base->StartSend(videoChannel2));
+        EXPECT_EQ(-1, ViE.base->StartSend(videoChannel2));
 
-        ViETest::Log("\nTest using one encoder on several channels");
-        ViETest::Log("Channel 1 is rendered in Window1, channel 2 in Window 2."
-                     "\nSending VP8 on both channels");
-
-        AutoTestSleep(KAutoTestSleepTimeMs);
-
-        EXPECT_EQ(webrtc::kVideoCodecVP8,
-                  codecObserver1.incomingCodec.codecType);
-        EXPECT_EQ(send_codec.width, codecObserver1.incomingCodec.width);
-        EXPECT_EQ(webrtc::kVideoCodecVP8,
-                  codecObserver2.incomingCodec.codecType);
-        EXPECT_EQ(send_codec.width, codecObserver2.incomingCodec.width);
-
-        // Change resolution on one of the channels and verify it changes for
-        // the other channel too.
-        send_codec.width = 2 * codecWidth;
-        send_codec.height = 2 * codecHeight;
-        EXPECT_EQ(0, ViE.codec->SetSendCodec(videoChannel1, send_codec));
-
-        // We need to verify using render effect filter since we won't trigger
-        // a decode reset in loopback (due to using the same SSRC).
-        RenderFilter filter1;
-        RenderFilter filter2;
-        EXPECT_EQ(0,
-                  ViE.image_process->RegisterRenderEffectFilter(videoChannel1,
-                                                                filter1));
-        EXPECT_EQ(0,
-                  ViE.image_process->RegisterRenderEffectFilter(videoChannel2,
-                                                                filter2));
-
-        AutoTestSleep(KAutoTestSleepTimeMs);
-
-        EXPECT_EQ(0, ViE.image_process->DeregisterRenderEffectFilter(
-            videoChannel1));
-        EXPECT_EQ(0, ViE.image_process->DeregisterRenderEffectFilter(
-            videoChannel2));
-        EXPECT_EQ(send_codec.width, filter1.last_render_width_);
-        EXPECT_EQ(send_codec.height, filter1.last_render_height_);
-        EXPECT_EQ(send_codec.width, filter2.last_render_width_);
-        EXPECT_EQ(send_codec.height, filter2.last_render_height_);
-
-        // Delete the first channel and keep the second
         EXPECT_EQ(0, ViE.base->DeleteChannel(videoChannel1));
-        ViETest::Log("Channel 1 deleted, "
-                     "you should only see video in Window 2");
-
-        AutoTestSleep(KAutoTestSleepTimeMs);
-
-        // Create another channel
-        int videoChannel3 = -1;
-        EXPECT_EQ(0, ViE.base->CreateChannel(videoChannel3, videoChannel2));
-        EXPECT_NE(videoChannel3, videoChannel2);
-
-        EXPECT_EQ(0, ViE.rtp_rtcp->SetKeyFrameRequestMethod(
-            videoChannel3, webrtc::kViEKeyFrameRequestPliRtcp));
-
-        // Prepare receive codecs
-        for (int idx = 0; idx < ViE.codec->NumberOfCodecs(); idx++)
-        {
-            EXPECT_EQ(0, ViE.codec->GetCodec(idx, videoCodec));
-            EXPECT_EQ(0, ViE.codec->SetReceiveCodec(
-                videoChannel3, videoCodec));
-        }
-
-        ViEAutotestCodecObserver codecObserver3;
-        EXPECT_EQ(0, ViE.codec->RegisterDecoderObserver(
-            videoChannel3, codecObserver3));
-
-        EXPECT_EQ(0, ViE.render->AddRenderer(
-            videoChannel3, _window1, 0, 0.0, 0.0, 1.0, 1.0));
-        EXPECT_EQ(0, ViE.render->StartRender(videoChannel3));
-
-        unsigned short rtpPort3 = 14000;
-        EXPECT_EQ(0, ViE.network->SetLocalReceiver(videoChannel3, rtpPort3));
-        EXPECT_EQ(0, ViE.network->SetSendDestination(
-            videoChannel3, "127.0.0.1", rtpPort3));
-
-        EXPECT_EQ(0, ViE.base->StartReceive(videoChannel3));
-        EXPECT_EQ(0, ViE.base->StartSend(videoChannel3));
-
         EXPECT_EQ(0, ViE.base->DeleteChannel(videoChannel2));
 
-        ViETest::Log("A third channel created and rendered in Window 1,\n"
-            "channel 2 is deleted and you should only see video in Window 1");
-
-        AutoTestSleep(KAutoTestSleepTimeMs);
-
-        EXPECT_EQ(0, ViE.base->DeleteChannel(videoChannel3));
     }
 }
 

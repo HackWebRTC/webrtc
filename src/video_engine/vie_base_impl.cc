@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -269,6 +269,21 @@ int ViEBaseImpl::StartSend(const int video_channel) {
     shared_data_.SetLastError(kViEBaseInvalidChannelId);
     return -1;
   }
+
+  // Verify no other channel using the same encoder is sending.
+  ChannelList channels;
+  cs.ChannelsUsingViEEncoder(video_channel, &channels);
+  for (ChannelList::iterator it = channels.begin(); it != channels.end();
+       ++it) {
+    if ((*it)->Sending()) {
+      WEBRTC_TRACE(kTraceError, kTraceVideo,
+                   ViEId(shared_data_.instance_id(), video_channel),
+                   "A channel using this encoder is already synding");
+      shared_data_.SetLastError(kViEBaseAlreadySending);
+      return -1;
+    }
+  }
+
   ViEEncoder* vie_encoder = cs.Encoder(video_channel);
   if (!vie_encoder) {
     assert(false);

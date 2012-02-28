@@ -147,15 +147,7 @@ int ViEChannelManager::CreateChannel(int& channel_id, int original_channel) {
     return -1;
   }
   VideoCodec video_codec;
-  if (vie_encoder->GetEncoder(video_codec) == 0) {
-    if (video_codec.numberOfSimulcastStreams > 0) {
-      WEBRTC_TRACE(kTraceError, kTraceVideo,
-                   ViEId(engine_id_, original_channel),
-                   "%s: Can't share a simulcast encoder",
-                   __FUNCTION__);
-      return -1;
-    }
-  }
+  vie_encoder->GetEncoder(video_codec);
 
   // Get a free id for the new channel.
   if (GetFreeChannelId(channel_id) == false) {
