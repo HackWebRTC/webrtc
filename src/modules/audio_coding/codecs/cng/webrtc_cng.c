@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -19,7 +19,7 @@
 
 
 typedef struct WebRtcCngDecInst_t_ {
-    
+
     WebRtc_UWord32 dec_seed;
     WebRtc_Word32 dec_target_energy;
     WebRtc_Word32 dec_used_energy;
@@ -90,9 +90,9 @@ const WebRtc_Word16 WebRtcCng_kCorrWindow[WEBRTC_CNG_MAX_LPC_ORDER] = {
  *
  * Return value         :  0 - Ok
  *                        -1 - Error
- */ 
+ */
 
-WebRtc_Word16 WebRtcCng_Version(WebRtc_Word8 *version)
+WebRtc_Word16 WebRtcCng_Version(char *version)
 {
     strcpy((char*)version,(const char*)"1.2.0\n");
     return(0);
@@ -201,7 +201,7 @@ WebRtc_Word16 WebRtcCng_CreateDec(CNG_dec_inst **cng_inst)
     }
     else {
         /* The memory could not be allocated */
-        return(-1);    
+        return(-1);
     }
 }
 
@@ -234,7 +234,7 @@ WebRtc_Word16 WebRtcCng_InitEnc(CNG_enc_inst *cng_inst,
     int i;
 
     WebRtcCngEncInst_t* inst=(WebRtcCngEncInst_t*)cng_inst;
-    
+
     memset(inst, 0, sizeof(WebRtcCngEncInst_t));
 
      /* Check LPC order */
@@ -248,7 +248,7 @@ WebRtc_Word16 WebRtcCng_InitEnc(CNG_enc_inst *cng_inst,
         inst->errorcode = CNG_DISALLOWED_SAMPLING_FREQUENCY;
         return (-1);
     }
-    
+
     inst->enc_sampfreq=fs;
     inst->enc_interval=interval;
     inst->enc_nrOfCoefs=quality;
@@ -287,7 +287,7 @@ WebRtc_Word16 WebRtcCng_InitDec(CNG_dec_inst *cng_inst)
 
     return(0);
 }
- 
+
 /****************************************************************************
  * WebRtcCng_FreeEnc/Dec(...)
  *

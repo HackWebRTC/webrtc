@@ -156,9 +156,9 @@ typedef struct
 /* Info functions */
 
 #define WEBRTC_NETEQ_MAX_ERROR_NAME 40
-int WebRtcNetEQ_GetVersion(WebRtc_Word8 *version);
+int WebRtcNetEQ_GetVersion(char *version);
 int WebRtcNetEQ_GetErrorCode(void *inst);
-int WebRtcNetEQ_GetErrorName(int errorCode, WebRtc_Word8 *errorName, int maxStrLen);
+int WebRtcNetEQ_GetErrorName(int errorCode, char *errorName, int maxStrLen);
 
 /* Instance memory assign functions */
 
@@ -213,4 +213,3 @@ int WebRtcNetEQ_VQmonGetRxStatistics(void *inst, WebRtc_UWord16 *avgDelayMs,
 #endif
 
 #endif
-

@@ -2314,7 +2314,7 @@ AudioCodingModuleImpl::DecoderParamByPlType(
 
 WebRtc_Word16
 AudioCodingModuleImpl::DecoderListIDByPlName(
-    const WebRtc_Word8*  payloadName,
+    const char*  payloadName,
     const WebRtc_UWord16 sampFreqHz) const
 {
     WebRtcACMCodecParams codecParams;
@@ -2485,7 +2485,7 @@ AudioCodingModuleImpl::PlayoutTimestamp(
 
 bool
 AudioCodingModuleImpl::HaveValidEncoder(
-    const WebRtc_Word8* callerName) const
+    const char* callerName) const
 {
     if((!_sendCodecRegistered) ||
         (_currentSendCodecIdx < 0) ||

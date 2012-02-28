@@ -35,11 +35,11 @@ class ACMCELT : public ACMGenericCodec {
  protected:
 
   WebRtc_Word16 DecodeSafe(
-      WebRtc_UWord8* bitStream,
-      WebRtc_Word16  bitStreamLenByte,
-      WebRtc_Word16* audio,
-      WebRtc_Word16* audioSamples,
-      WebRtc_Word8*  speechType);
+      uint8_t* /* bitStream */,
+      int16_t /* bitStreamLenByte */,
+      int16_t* /* audio */,
+      int16_t* /* audioSamples */,
+      int8_t* /* speechType */);
 
   int32_t CodecDef(WebRtcNetEQ_CodecDef& codecDef, const CodecInst& codecInst);
 

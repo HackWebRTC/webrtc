@@ -986,7 +986,7 @@ ACMNetEQ::FlushBuffers()
 
 WebRtc_Word32
 ACMNetEQ::GetVersion(
-    WebRtc_Word8*   version,
+    char*   version,
     WebRtc_UWord32& remainingBufferInBytes,
     WebRtc_UWord32& position)
 {
@@ -996,7 +996,7 @@ ACMNetEQ::GetVersion(
     remainingBufferInBytes -= (position - len);
     len = position;
 
-    WebRtc_Word8 myVersion[100];
+    char myVersion[100];
     if(WebRtcNetEQ_GetVersion(myVersion) < 0)
     {
         return -1;
@@ -1111,11 +1111,11 @@ ACMNetEQ::SetUniqueId(
 
 void
 ACMNetEQ::LogError(
-    const WebRtc_Word8* neteqFuncName,
+    const char* neteqFuncName,
     const WebRtc_Word16 idx) const
 {
-    WebRtc_Word8 errorName[NETEQ_ERR_MSG_LEN_BYTE];
-    WebRtc_Word8 myFuncName[50];
+    char errorName[NETEQ_ERR_MSG_LEN_BYTE];
+    char myFuncName[50];
     int neteqErrorCode = WebRtcNetEQ_GetErrorCode(_inst[idx]);
     WebRtcNetEQ_GetErrorName(neteqErrorCode, errorName, NETEQ_ERR_MSG_LEN_BYTE - 1);
     strncpy(myFuncName, neteqFuncName, 49);

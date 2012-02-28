@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -56,7 +56,7 @@ public:
     //                            -1 if NetEQ returned an error.
     //
     static WebRtc_Word32 GetVersion(
-        WebRtc_Word8*   version,
+        char*   version,
         WebRtc_UWord32& remainingBuffInBytes,
         WebRtc_UWord32& position);
 
@@ -330,7 +330,7 @@ private:
         const WebRtcRTPHeader& rtpInfo);
 
     void LogError(
-        const WebRtc_Word8* neteqFuncName,
+        const char* neteqFuncName,
         const WebRtc_Word16 idx) const;
 
     WebRtc_Word16 InitByIdxSafe(

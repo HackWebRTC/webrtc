@@ -52,7 +52,7 @@ AudioCodingModule::Codec(
 // Get supported codec Param with name
 WebRtc_Word32
 AudioCodingModule::Codec(
-    const WebRtc_Word8* payloadName,
+    const char* payloadName,
     CodecInst&          codec,
     const WebRtc_Word32 samplingFreqHz)
 {
@@ -86,7 +86,7 @@ AudioCodingModule::Codec(
 // Get supported codec Index with name, and frequency if needed
 WebRtc_Word32
 AudioCodingModule::Codec(
-    const WebRtc_Word8* payloadName,
+    const char* payloadName,
     const WebRtc_Word32 samplingFreqHz)
 {
     CodecInst codec;

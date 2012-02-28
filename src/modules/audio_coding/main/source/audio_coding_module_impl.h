@@ -46,7 +46,7 @@ public:
 
     // get version information for ACM and all components
     WebRtc_Word32 Version(
-        WebRtc_Word8*   version,
+        char*   version,
         WebRtc_UWord32& remainingBufferInBytes,
         WebRtc_UWord32& position) const;
 
@@ -292,12 +292,12 @@ protected:
         WebRtcACMCodecParams&  codecParams) const;
 
     WebRtc_Word16 DecoderListIDByPlName(
-        const WebRtc_Word8*  payloadName,
+        const char*  payloadName,
         const WebRtc_UWord16 sampFreqHz = 0) const;
 
     WebRtc_Word32 InitializeReceiverSafe();
 
-    bool HaveValidEncoder(const WebRtc_Word8* callerName) const;
+    bool HaveValidEncoder(const char* callerName) const;
 
     WebRtc_Word32 RegisterRecCodecMSSafe(
         const CodecInst& receiveCodec,

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -53,7 +53,7 @@ SpatialAudio::Setup()
     // Register the receiver ACM in channel
     _channel->RegisterReceiverACM(_acmReceiver);
 
-    WebRtc_Word8 audioFileName[MAX_FILE_NAME_LENGTH_BYTE];
+    char audioFileName[MAX_FILE_NAME_LENGTH_BYTE];
     WebRtc_UWord16 sampFreqHz = 32000;
 
     strncpy(audioFileName, "./test/data/audio_coding/testfile32kHz.pcm",

@@ -1,6 +1,5 @@
-
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -53,7 +52,7 @@ PCMFile::ChooseFile(
     char*       fileName, 
     WebRtc_Word16 maxLen)
 {
-    WebRtc_Word8 tmpName[MAX_FILE_NAME_LENGTH_BYTE];
+    char tmpName[MAX_FILE_NAME_LENGTH_BYTE];
     //strcpy(_fileName, "in.pcm");
     //printf("\n\nPlease enter the input file: ");
     EXPECT_TRUE(fgets(tmpName, MAX_FILE_NAME_LENGTH_BYTE, stdin) != NULL);
@@ -105,7 +104,7 @@ PCMFile::ChooseFile(
     WebRtc_Word16   maxLen, 
     WebRtc_UWord16* frequencyHz)
 {
-    WebRtc_Word8 tmpName[MAX_FILE_NAME_LENGTH_BYTE];
+    char tmpName[MAX_FILE_NAME_LENGTH_BYTE];
     //strcpy(_fileName, "in.pcm");
     //printf("\n\nPlease enter the input file: ");
     EXPECT_TRUE(fgets(tmpName, MAX_FILE_NAME_LENGTH_BYTE, stdin) != NULL);
