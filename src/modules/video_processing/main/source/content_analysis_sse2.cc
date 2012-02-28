@@ -102,7 +102,7 @@ VPMContentAnalysis::TemporalDiffMetric_SSE2()
     const WebRtc_UWord32 tempDiffSum = sad_final_64[0] + sad_final_64[1];
 
     // default
-    _motionMagnitudeNZ = 0.0f;
+    _motionMagnitude = 0.0f;
 
     if (tempDiffSum == 0)
     {
@@ -118,7 +118,7 @@ VPMContentAnalysis::TemporalDiffMetric_SSE2()
     if (contrast > 0.0)
     {
         contrast = sqrt(contrast);
-       _motionMagnitudeNZ = tempDiffAvg/contrast;
+       _motionMagnitude = tempDiffAvg/contrast;
     }
 
     return VPM_OK;

@@ -29,10 +29,10 @@ TEST_F(VideoProcessingModuleTest, ContentAnalysis)
         _cM_c   = _ca_c.ComputeContentMetrics(&_videoFrame);
         _cM_SSE = _ca_sse.ComputeContentMetrics(&_videoFrame);
 
-        ASSERT_EQ(_cM_c->spatialPredErr,    _cM_SSE->spatialPredErr);
-        ASSERT_EQ(_cM_c->spatialPredErrV,   _cM_SSE->spatialPredErrV);
-        ASSERT_EQ(_cM_c->spatialPredErrH,   _cM_SSE->spatialPredErrH);
-        ASSERT_EQ(_cM_c->motionMagnitudeNZ, _cM_SSE->motionMagnitudeNZ);
+        ASSERT_EQ(_cM_c->spatial_pred_err, _cM_SSE->spatial_pred_err);
+        ASSERT_EQ(_cM_c->spatial_pred_err_v, _cM_SSE->spatial_pred_err_v);
+        ASSERT_EQ(_cM_c->spatial_pred_err_h, _cM_SSE->spatial_pred_err_h);
+        ASSERT_EQ(_cM_c->motion_magnitude, _cM_SSE->motion_magnitude);
     }
     ASSERT_NE(0, feof(_sourceFile)) << "Error reading source file";
 }

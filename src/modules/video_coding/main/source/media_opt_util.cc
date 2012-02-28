@@ -20,8 +20,6 @@
 #include "modules/video_coding/main/source/er_tables_xor.h"
 #include "modules/video_coding/main/source/fec_tables_xor.h"
 #include "modules/video_coding/main/source/nack_fec_tables.h"
-#include "modules/video_coding/main/source/qm_select_data.h"
-
 
 namespace webrtc {
 
