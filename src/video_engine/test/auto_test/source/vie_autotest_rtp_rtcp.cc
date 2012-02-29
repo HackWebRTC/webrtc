@@ -18,6 +18,7 @@
 #include "tb_external_transport.h"
 #include "tb_interfaces.h"
 #include "tb_video_channel.h"
+#include "testsupport/fileutils.h"
 #include "vie_autotest.h"
 #include "vie_autotest_defines.h"
 
@@ -612,7 +613,9 @@ void ViEAutoTest::ViERtpRtcpAPITest()
 #ifdef WEBRTC_ANDROID
         const char* dumpName = "/sdcard/DumpFileName.rtp";
 #else
-        const char* dumpName = "DumpFileName.rtp";
+        std::string output_file = webrtc::test::OutputPath() +
+            "DumpFileName.rtp";
+        const char* dumpName = output_file.c_str();
 #endif
         EXPECT_EQ(0, ViE.rtp_rtcp->StartRTPDump(
             tbChannel.videoChannel, dumpName, webrtc::kRtpIncoming));

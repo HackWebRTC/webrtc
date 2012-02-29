@@ -113,6 +113,13 @@
             'mac/cocoa_full_screen_window.mm',
           ],
         }],
+        ['OS=="mac"', {
+          'direct_dependent_settings': {
+            'include_dirs': [
+              'mac',
+            ],
+          },
+        }],
         ['OS!="win" or include_internal_video_render==0', {
           'sources!': [
             'windows/i_video_render_win.h',

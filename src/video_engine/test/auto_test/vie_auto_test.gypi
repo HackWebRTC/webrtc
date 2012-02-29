@@ -109,45 +109,14 @@
         'source/vie_autotest_linux.cc',
         'source/vie_window_manager_factory_linux.cc',
         # Mac
-        'source/vie_autotest_mac_cocoa.mm',
-        'source/vie_autotest_mac_carbon.cc',
+        'source/vie_autotest_cocoa_mac.mm',
+        'source/vie_autotest_carbon_mac.cc',
         'source/vie_window_manager_factory_mac.mm',
         # Windows
-        'source/vie_autotest_windows.cc',
+        'source/vie_autotest_win.cc',
         'source/vie_window_manager_factory_win.cc',
       ],
-      'copies': [{
-        'destination': '/tmp',
-        'files': [
-          'media/captureDeviceImage.bmp',
-          'media/captureDeviceImage.jpg',
-          'media/renderStartImage.bmp',
-          'media/renderStartImage.jpg',
-          'media/renderTimeoutImage.bmp',
-          'media/renderTimeoutImage.jpg',
-        ],
-      }],
       'conditions': [
-        # TODO(andrew): rename these to be suffixed with _mac and _win. They
-        # will then be automatically excluded.
-        ['OS!="mac"', {
-          'sources!': [
-            'source/vie_autotest_mac_cocoa.cc',
-            'source/vie_autotest_mac_carbon.cc',
-            'source/vie_window_manager_factory_mac.mm',
-          ],
-        }],
-        ['OS!="win"', {
-          'sources!': [
-            'source/vie_autotest_windows.cc',
-          ],
-        }],
-        ['OS!="linux"', {
-          'sources!': [
-            'source/vie_window_manager_factory_linux.cc',
-          ],
-        }],
-
         # TODO(andrew): this likely isn't an actual dependency. It should be
         # included in webrtc.gyp or video_engine.gyp instead.
         ['OS=="win"', {
@@ -155,18 +124,7 @@
             'vie_win_test',
           ],
         }],
-        ['OS=="linux"', {
-          # TODO(andrew): these should be provided directly by the projects
-          # which require them instead.
-          'libraries': [
-            '-lXext',
-            '-lX11',
-          ],
-        }],
         ['OS=="mac"', {
-          'include_dirs': [
-            '../../../modules/video_render/main/source/mac',
-          ],
           'xcode_settings': {
             'OTHER_LDFLAGS': [
               '-framework Foundation -framework AppKit -framework Cocoa -framework OpenGL -framework CoreVideo -framework CoreAudio -framework AudioToolbox',

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,12 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- *  vie_autotest_mac_carbon.cc
- *
- */
-
-#include	"engine_configurations.h"
+#include "engine_configurations.h"
 
 #if defined(CARBON_RENDERING)
 #include "vie_autotest_mac_carbon.h"
@@ -305,7 +300,8 @@ int main(int argc, const char * argv[])
 
     [NSApplication sharedApplication];
 
-    // we have to run the test in a secondary thread because we need to run a runloop, which blocks
+    // We have to run the test in a secondary thread because we need to run a
+    // runloop, which blocks.
     if (argc > 1)
     {
 AutoTestClass    * autoTestClass = [[AutoTestClass alloc]init];

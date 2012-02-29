@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -217,16 +217,6 @@ namespace {
 }
 
 #define AutoTestSleep ::Sleep
-#define VIE_TEST_FILES_ROOT "/sdcard/vie_auto_test/"
-#else
-#define VIE_TEST_FILES_ROOT "/tmp/"
 #endif
 
-namespace {
-FILE* OpenTestFile(const char* fileName) {
-  char filePath[256];
-  sprintf(filePath, "%s%s", VIE_TEST_FILES_ROOT, fileName);
-  return fopen(filePath, "rb");
-}
-}
 #endif  // WEBRTC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_INTERFACE_VIE_AUTOTEST_DEFINES_H_

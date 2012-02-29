@@ -459,13 +459,6 @@ void ViEAutoTest::ViECaptureExternalCaptureTest()
     unsigned char* videoFrame = new unsigned char[videoFrameLength];
     memset(videoFrame, 128, 176 * 144);
 
-    // TODO: Find a file to use for testing.
-    // FILE* foreman = OpenTestFile("akiyo_qcif.yuv");
-    // if (foreman == NULL)
-    // {
-    //     ViETest::Log("Failed to open file akiyo_qcif.yuv");
-    // }
-
     int frameCount = 0;
     webrtc::VideoCaptureCapability capability;
     capability.width = 176;

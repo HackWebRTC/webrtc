@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,14 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-//
-// vie_autotest_file.cc
-//
-
 #include "vie_autotest_defines.h"
 #include "vie_autotest.h"
 #include "engine_configurations.h"
 
+#include "testsupport/fileutils.h"
 #include "tb_interfaces.h"
 #include "tb_capture_device.h"
 
@@ -149,21 +146,19 @@ void ViEAutoTest::ViEFileStandardTest()
         const int TEST_SPACING = 1000;
         const int VIDEO_LENGTH = 5000;
 
+        const std::string root = webrtc::test::ProjectRootPath() +
+            "src/video_engine/test/auto_test/media/";
+        const std::string renderStartImage = root + "renderStartImage.jpg";
+        const std::string captureDeviceImage = root + "captureDeviceImage.jpg";
+        const std::string renderTimeoutFile = root + "renderTimeoutImage.jpg";
 
-        const char renderStartImage[1024] =
-            VIE_TEST_FILES_ROOT "renderStartImage.jpg";
-        const char captureDeviceImage[1024] =
-            VIE_TEST_FILES_ROOT "captureDeviceImage.jpg";
-        const char renderTimeoutFile[1024] =
-            VIE_TEST_FILES_ROOT "renderTimeoutImage.jpg";
-        const char snapshotCaptureDeviceFileName[256] =
-            VIE_TEST_FILES_ROOT "snapshotCaptureDevice.jpg";
-        const char incomingVideo[1024] =
-            VIE_TEST_FILES_ROOT "incomingVideo.avi";
-        const char outgoingVideo[1024] =
-            VIE_TEST_FILES_ROOT "outgoingVideo.avi";
-        char snapshotRenderFileName[256] =
-            VIE_TEST_FILES_ROOT "snapshotRenderer.jpg";
+        const std::string output = webrtc::test::OutputPath();
+        const std::string snapshotCaptureDeviceFileName =
+            output + "snapshotCaptureDevice.jpg";
+        const std::string incomingVideo = output + "incomingVideo.avi";
+        const std::string outgoingVideo = output + "outgoingVideo.avi";
+        const std::string snapshotRenderFileName =
+            output + "snapshotRenderer.jpg";
 
         webrtc::ViEPicture capturePicture;
         webrtc::ViEPicture renderPicture;
@@ -180,7 +175,7 @@ void ViEAutoTest::ViEFileStandardTest()
                          "seconds", VIDEO_LENGTH);
 
             EXPECT_EQ(0, ptrViEFile->StartRecordIncomingVideo(
-                videoChannel, incomingVideo, webrtc::NO_AUDIO,
+                videoChannel, incomingVideo.c_str(), webrtc::NO_AUDIO,
                 audioCodec2, videoCodec));
 
             AutoTestSleep(VIDEO_LENGTH);
@@ -199,15 +194,17 @@ void ViEAutoTest::ViEFileStandardTest()
             ViETest::Log("Reading video file information");
 
             EXPECT_EQ(0, ptrViEFile->GetFileInformation(
-                incomingVideo, fileVideoCodec, fileAudioCodec));
+                incomingVideo.c_str(), fileVideoCodec, fileAudioCodec));
             PrintAudioCodec(fileAudioCodec);
             PrintVideoCodec(fileVideoCodec);
         }
 
         // testing StartPlayFile and RegisterObserver
         {
-            ViETest::Log("Start playing file: %s with observer", incomingVideo);
-            EXPECT_EQ(0, ptrViEFile->StartPlayFile(incomingVideo, fileId));
+            ViETest::Log("Start playing file: %s with observer",
+                         incomingVideo.c_str());
+            EXPECT_EQ(0, ptrViEFile->StartPlayFile(incomingVideo.c_str(),
+                                                   fileId));
 
             ViETest::Log("Registering file observer");
             EXPECT_EQ(0, ptrViEFile->RegisterObserver(fileId, fileObserver));
@@ -250,7 +247,7 @@ void ViEAutoTest::ViEFileStandardTest()
             ViETest::Log("Recording outgoing video (currently no audio) for %d "
                          "seconds", VIDEO_LENGTH);
             EXPECT_EQ(0, ptrViEFile->StartRecordOutgoingVideo(
-                videoChannel, outgoingVideo, webrtc::NO_AUDIO,
+                videoChannel, outgoingVideo.c_str(), webrtc::NO_AUDIO,
                 audioCodec2, videoCodec));
 
             AutoTestSleep(VIDEO_LENGTH);
@@ -262,7 +259,7 @@ void ViEAutoTest::ViEFileStandardTest()
         // again testing GetFileInformation
         {
             EXPECT_EQ(0, ptrViEFile->GetFileInformation(
-                incomingVideo, videoCodec, audioCodec2));
+                incomingVideo.c_str(), videoCodec, audioCodec2));
             PrintAudioCodec(audioCodec2);
             PrintVideoCodec(videoCodec);
         }
@@ -299,8 +296,9 @@ void ViEAutoTest::ViEFileStandardTest()
 
             ViETest::Log("Taking snapshot of videoChannel %d", captureId);
             EXPECT_EQ(0, ptrViEFile->GetRenderSnapshot(
-                captureId, snapshotRenderFileName));
-            ViETest::Log("Wrote image to file %s", snapshotRenderFileName);
+                captureId, snapshotRenderFileName.c_str()));
+            ViETest::Log("Wrote image to file %s",
+                         snapshotRenderFileName.c_str());
             ViETest::Log("Done\n");
             AutoTestSleep(TEST_SPACING);
         }
@@ -320,9 +318,9 @@ void ViEAutoTest::ViEFileStandardTest()
             ViETest::Log("Testing GetCaptureDeviceSnapshot(int, char*)");
             ViETest::Log("Taking snapshot from capture device %d", captureId);
             EXPECT_EQ(0, ptrViEFile->GetCaptureDeviceSnapshot(
-                captureId, snapshotCaptureDeviceFileName));
+                captureId, snapshotCaptureDeviceFileName.c_str()));
             ViETest::Log("Wrote image to file %s",
-                         snapshotCaptureDeviceFileName);
+                         snapshotCaptureDeviceFileName.c_str());
             ViETest::Log("Done\n");
         }
 
@@ -333,7 +331,7 @@ void ViEAutoTest::ViEFileStandardTest()
             ViETest::Log("Testing SetCaptureDeviceImage(int, char*)");
             EXPECT_EQ(0, ptrViECapture->StopCapture(captureId));
             EXPECT_EQ(0, ptrViEFile->SetCaptureDeviceImage(
-                captureId, captureDeviceImage));
+                captureId, captureDeviceImage.c_str()));
 
             ViETest::Log("you should see the capture device image now");
             AutoTestSleep(2 * RENDER_TIMEOUT);
@@ -365,7 +363,7 @@ void ViEAutoTest::ViEFileStandardTest()
             ViETest::Log("Stoping renderer, setting start image, then "
                          "restarting");
             EXPECT_EQ(0, ptrViEFile->SetRenderStartImage(
-                videoChannel, renderStartImage));
+                videoChannel, renderStartImage.c_str()));
             EXPECT_EQ(0, ptrViECapture->StopCapture(captureId));
             EXPECT_EQ(0, ptrViERender->StopRender(videoChannel));
 
@@ -409,7 +407,7 @@ void ViEAutoTest::ViEFileStandardTest()
             ViETest::Log("Stopping capture device to induce timeout of %d ms",
                          RENDER_TIMEOUT);
             EXPECT_EQ(0, ptrViEFile->SetRenderTimeoutImage(
-                videoChannel, renderTimeoutFile, RENDER_TIMEOUT));
+                videoChannel, renderTimeoutFile.c_str(), RENDER_TIMEOUT));
 
             // now stop sending frames to the remote renderer and wait for
             // timeout
