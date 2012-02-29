@@ -280,11 +280,11 @@ int VoENetworkImpl::GetLocalIP(char ipAddr[64], bool ipv6)
         return -1;
     }
 
-    WebRtc_Word8 localIPAddr[64];
+    char localIPAddr[64];
 
     if (ipv6)
     {
-        WebRtc_UWord8 localIP[16];
+        char localIP[16];
         if (socketPtr->LocalHostAddressIPV6(localIP) != 0)
         {
             _engineStatistics.SetLastError(

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -39,7 +39,7 @@ public:
     };
     virtual void IncomingRTPPacket(const WebRtc_Word8* incommingRtpPacket,
                                    const WebRtc_Word32 rtpPacketLength,
-                                   const WebRtc_Word8* fromIP,
+                                   const char* fromIP,
                                    const WebRtc_UWord16 fromPort)
     {
         _counterRTP++;
@@ -47,7 +47,7 @@ public:
 
     virtual void IncomingRTCPPacket(const WebRtc_Word8* incommingRtcpPacket,
                                     const WebRtc_Word32 rtcpPacketLength,
-                                    const WebRtc_Word8* fromIP,
+                                    const char* fromIP,
                                     const WebRtc_UWord16 fromPort)
     {
         _counterRTCP++;
@@ -66,7 +66,7 @@ public:
     };
     virtual void IncomingRTPPacket(const WebRtc_Word8* incommingRtpPacket,
                                    const WebRtc_Word32 rtpPacketLength,
-                                   const WebRtc_Word8* fromIP,
+                                   const char* fromIP,
                                    const WebRtc_UWord16 fromPort)
     {
         _counterRTP++;
@@ -74,7 +74,7 @@ public:
 
     virtual void IncomingRTCPPacket(const WebRtc_Word8* incommingRtcpPacket,
                                     const WebRtc_Word32 rtcpPacketLength,
-                                    const WebRtc_Word8* fromIP,
+                                    const char* fromIP,
                                     const WebRtc_UWord16 fromPort)
     {
         _counterRTCP++;
@@ -106,21 +106,21 @@ int main(int argc, char* argv[])
     UdpTransportDataB* client2Callback = new UdpTransportDataB();
 
     WebRtc_UWord32 localIP = 0;
-    WebRtc_Word8 localIPAddr[64];
+    char localIPAddr[64];
     assert( 0 == client1->LocalHostAddress(localIP)); // network host order aka big-endian
 
     sprintf(localIPAddr,"%lu.%lu.%lu.%lu",(localIP>>24)& 0x0ff,(localIP>>16)& 0x0ff ,(localIP>>8)& 0x0ff, localIP & 0x0ff);
     printf("\tLocal IP:%s\n", localIPAddr);
 
-    WebRtc_UWord8 localIPV6[16];
-    WebRtc_Word8 localIPAddrV6[128];
+    char localIPV6[16];
+    char localIPAddrV6[128];
     if( 0 == client1->LocalHostAddressIPV6(localIPV6))
     {
         sprintf(localIPAddrV6,"%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x:%.2x%.2x", localIPV6[0],localIPV6[1],localIPV6[2],localIPV6[3],localIPV6[4],localIPV6[5],localIPV6[6],localIPV6[7], localIPV6[8],localIPV6[9],localIPV6[10],localIPV6[11],localIPV6[12],localIPV6[13],localIPV6[14],localIPV6[15]);
         printf("\tLocal IPV6:%s\n", localIPAddrV6);
     }
 
-    WebRtc_Word8 test[9] = "testtest";
+    char test[9] = "testtest";
     assert( 0 == client1->InitializeReceiveSockets(client1Callback,1234, localIPAddr));
 
 #if defined QOS_TEST_WITH_OVERRIDE || defined QOS_TEST || defined TOS_TEST || defined TOS_TEST_USING_SETSOCKOPT
@@ -273,9 +273,9 @@ int main(int argc, char* argv[])
 
     printf("Sent 1 packet on one socket \n");
 
-    WebRtc_Word8 ipAddr[64];
-    WebRtc_Word8 tempIpAddr[64];
-    WebRtc_Word8 ipMulticastAddr[64];
+    char ipAddr[64];
+    char tempIpAddr[64];
+    char ipMulticastAddr[64];
     WebRtc_UWord16 rtpPort = 0;
     WebRtc_UWord16 rtcpPort = 0;
     bool reusableSocket = true;

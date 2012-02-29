@@ -208,7 +208,7 @@ bool SameAddress(const SocketAddress& address1, const SocketAddress& address2)
     return (memcmp(&address1,&address2,sizeof(address1)) == 0);
 }
 
-void UdpTransportImpl::GetCachedAddress(WebRtc_Word8* ip,
+void UdpTransportImpl::GetCachedAddress(char* ip,
                                         WebRtc_UWord32& ipSize,
                                         WebRtc_UWord16& sourcePort)
 {
@@ -222,7 +222,7 @@ void UdpTransportImpl::GetCachedAddress(WebRtc_Word8* ip,
 }
 
 WebRtc_Word32 UdpTransportImpl::IPAddressCached(const SocketAddress& address,
-                                                WebRtc_Word8* ip,
+                                                char* ip,
                                                 WebRtc_UWord32& ipSize,
                                                 WebRtc_UWord16& sourcePort)
 {
@@ -252,8 +252,8 @@ WebRtc_Word32 UdpTransportImpl::IPAddressCached(const SocketAddress& address,
 WebRtc_Word32 UdpTransportImpl::InitializeReceiveSockets(
     UdpTransportData* const packetCallback,
     const WebRtc_UWord16 portnr,
-    const WebRtc_Word8* ip,
-    const WebRtc_Word8* multicastIpAddr,
+    const char* ip,
+    const char* multicastIpAddr,
     const WebRtc_UWord16 rtcpPort)
 {
 
@@ -379,10 +379,10 @@ WebRtc_Word32 UdpTransportImpl::InitializeReceiveSockets(
 }
 
 WebRtc_Word32 UdpTransportImpl::ReceiveSocketInformation(
-    WebRtc_Word8 ipAddr[kIpAddressVersion6Length],
+    char ipAddr[kIpAddressVersion6Length],
     WebRtc_UWord16& rtpPort,
     WebRtc_UWord16& rtcpPort,
-    WebRtc_Word8 multicastIpAddr[kIpAddressVersion6Length]) const
+    char multicastIpAddr[kIpAddressVersion6Length]) const
 {
     CriticalSectionScoped cs(_crit);
     rtpPort = _localPort;
@@ -403,7 +403,7 @@ WebRtc_Word32 UdpTransportImpl::ReceiveSocketInformation(
 }
 
 WebRtc_Word32 UdpTransportImpl::SendSocketInformation(
-    WebRtc_Word8 ipAddr[kIpAddressVersion6Length],
+    char ipAddr[kIpAddressVersion6Length],
     WebRtc_UWord16& rtpPort,
     WebRtc_UWord16& rtcpPort) const
 {
@@ -417,7 +417,7 @@ WebRtc_Word32 UdpTransportImpl::SendSocketInformation(
 }
 
 WebRtc_Word32 UdpTransportImpl::RemoteSocketInformation(
-    WebRtc_Word8 ipAddr[kIpAddressVersion6Length],
+    char ipAddr[kIpAddressVersion6Length],
     WebRtc_UWord16& rtpPort,
     WebRtc_UWord16& rtcpPort) const
 {
@@ -1073,7 +1073,7 @@ WebRtc_Word32 UdpTransportImpl::EnableIpV6() {
 }
 
 WebRtc_Word32 UdpTransportImpl::FilterIP(
-    WebRtc_Word8 filterIPAddress[kIpAddressVersion6Length]) const
+    char filterIPAddress[kIpAddressVersion6Length]) const
 {
 
     if(filterIPAddress == NULL)
@@ -1094,7 +1094,7 @@ WebRtc_Word32 UdpTransportImpl::FilterIP(
 }
 
 WebRtc_Word32 UdpTransportImpl::SetFilterIP(
-    const WebRtc_Word8 filterIPAddress[kIpAddressVersion6Length])
+    const char filterIPAddress[kIpAddressVersion6Length])
 {
     if(filterIPAddress == NULL)
     {
@@ -1643,7 +1643,7 @@ WebRtc_Word32 UdpTransportImpl::StopReceiving()
 }
 
 WebRtc_Word32 UdpTransportImpl::InitializeSendSockets(
-    const WebRtc_Word8* ipaddr,
+    const char* ipaddr,
     const WebRtc_UWord16 rtpPort,
     const WebRtc_UWord16 rtcpPort)
 {
@@ -1754,7 +1754,7 @@ WebRtc_Word32 UdpTransportImpl::InitializeSendSockets(
 }
 
 void UdpTransportImpl::BuildSockaddrIn(WebRtc_UWord16 portnr,
-                                       const WebRtc_Word8* ip,
+                                       const char* ip,
                                        SocketAddress& remoteAddr) const
 {
     if(_ipV6Enabled)
@@ -1780,7 +1780,7 @@ void UdpTransportImpl::BuildSockaddrIn(WebRtc_UWord16 portnr,
 #endif
         remoteAddr._sockaddr_in.sin_port = Htons(portnr);
         remoteAddr._sockaddr_in.sin_addr= InetAddrIPV4(
-            const_cast<WebRtc_Word8*>(ip));
+            const_cast<char*>(ip));
     }
 }
 
@@ -1788,7 +1788,7 @@ WebRtc_Word32 UdpTransportImpl::SendRaw(const WebRtc_Word8 *data,
                                         WebRtc_UWord32 length,
                                         WebRtc_Word32 isRTCP,
                                         WebRtc_UWord16 portnr,
-                                        const WebRtc_Word8 *ip)
+                                        const char* ip)
 {
     CriticalSectionScoped cs(_crit);
     if(isRTCP)
@@ -2084,7 +2084,7 @@ int UdpTransportImpl::SendRTCPPacket(int /*channel*/, const void* data,
     return -1;
 }
 
-WebRtc_Word32 UdpTransportImpl::SetSendIP(const WebRtc_Word8* ipaddr)
+WebRtc_Word32 UdpTransportImpl::SetSendIP(const char* ipaddr)
 {
     if(!IsIpAddressValid(ipaddr,IpV6Enabled()))
     {
@@ -2143,7 +2143,7 @@ void UdpTransportImpl::IncomingRTPFunction(const WebRtc_Word8* rtpPacket,
                                            WebRtc_Word32 rtpPacketLength,
                                            const SocketAddress* fromSocket)
 {
-    WebRtc_Word8 ipAddress[kIpAddressVersion6Length];
+    char ipAddress[kIpAddressVersion6Length];
     WebRtc_UWord32 ipAddressLength = kIpAddressVersion6Length;
     WebRtc_UWord16 portNr = 0;
 
@@ -2204,7 +2204,7 @@ void UdpTransportImpl::IncomingRTCPFunction(const WebRtc_Word8* rtcpPacket,
                                             WebRtc_Word32 rtcpPacketLength,
                                             const SocketAddress* fromSocket)
 {
-    WebRtc_Word8 ipAddress[kIpAddressVersion6Length];
+    char ipAddress[kIpAddressVersion6Length];
     WebRtc_UWord32 ipAddressLength = kIpAddressVersion6Length;
     WebRtc_UWord16 portNr = 0;
 
@@ -2339,13 +2339,13 @@ WebRtc_UWord32 UdpTransport::Htonl(const WebRtc_UWord32 a)
     return htonl(a);
 }
 
-WebRtc_UWord32 UdpTransport::InetAddrIPV4(const WebRtc_Word8* ip)
+WebRtc_UWord32 UdpTransport::InetAddrIPV4(const char* ip)
 {
     return ::inet_addr(ip);
 }
 
 WebRtc_Word32 UdpTransport::InetPresentationToNumeric(WebRtc_Word32 af,
-                                                      const WebRtc_Word8* src,
+                                                      const char* src,
                                                       void* dst)
 {
 #if defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
@@ -2397,7 +2397,7 @@ WebRtc_Word32 UdpTransport::InetPresentationToNumeric(WebRtc_Word32 af,
 #endif
 }
 
-WebRtc_Word32 UdpTransport::LocalHostAddressIPV6(WebRtc_UWord8 n_localIP[16])
+WebRtc_Word32 UdpTransport::LocalHostAddressIPV6(char n_localIP[16])
 {
 
 #if defined(_WIN32)
@@ -2620,7 +2620,8 @@ WebRtc_Word32 UdpTransport::LocalHostAddressIPV6(WebRtc_UWord8 n_localIP[16])
                     {
                         n_localIP[i] = in6p->s6_addr[i];
                     }
-                    if(n_localIP[0] == 0xfe && n_localIP[1] == 0x80)
+                    if(n_localIP[0] == static_cast<char> (0xfe)
+                       && n_localIP[1] == static_cast<char>(0x80) )
                     {
                         // Auto configured IP.
                         continue;
@@ -2742,7 +2743,7 @@ WebRtc_Word32 UdpTransport::LocalHostAddress(WebRtc_UWord32& localIP)
 }
 
 WebRtc_Word32 UdpTransport::IPAddress(const SocketAddress& address,
-                                      WebRtc_Word8* ip,
+                                      char* ip,
                                       WebRtc_UWord32& ipSize,
                                       WebRtc_UWord16& sourcePort)
 {
@@ -2833,7 +2834,7 @@ WebRtc_Word32 UdpTransport::IPAddress(const SocketAddress& address,
  #endif
 }
 
-bool UdpTransport::IsIpAddressValid(const WebRtc_Word8* ipadr, const bool ipV6)
+bool UdpTransport::IsIpAddressValid(const char* ipadr, const bool ipV6)
 {
     if(ipV6)
     {
@@ -2850,7 +2851,7 @@ bool UdpTransport::IsIpAddressValid(const WebRtc_Word8* ipadr, const bool ipV6)
         WebRtc_Word32 nDubbleColons = 0;
         WebRtc_Word32 nDots = 0;
         WebRtc_Word32 error = 0;
-        WebRtc_Word8 c;
+        char c;
         for(i = 0; i < len ; i++)
         {
             c=ipadr[i];
@@ -2933,7 +2934,7 @@ bool UdpTransport::IsIpAddressValid(const WebRtc_Word8* ipadr, const bool ipV6)
 
         for (i = 0; (i < len) && (nDots < 4); i++)
         {
-            if (ipadr[i] == (WebRtc_Word8)'.')
+            if (ipadr[i] == (char)'.')
             {
                 // Store index of dots and count number of dots.
                 iDotPos[nDots++] = i;
@@ -2954,7 +2955,7 @@ bool UdpTransport::IsIpAddressValid(const WebRtc_Word8* ipadr, const bool ipV6)
 
             if (iDotPos[0] <= 3)
             {
-                WebRtc_Word8 nr[4];
+                char nr[4];
                 memset(nr,0,4);
                 strncpy(nr,&ipadr[0],iDotPos[0]);
                 WebRtc_Word32 num = atoi(nr);
@@ -2968,7 +2969,7 @@ bool UdpTransport::IsIpAddressValid(const WebRtc_Word8* ipadr, const bool ipV6)
 
             if (iDotPos[1] - iDotPos[0] <= 4)
             {
-                WebRtc_Word8 nr[4];
+                char nr[4];
                 memset(nr,0,4);
                 strncpy(nr,&ipadr[iDotPos[0]+1], iDotPos[1] - iDotPos[0] - 1);
                 WebRtc_Word32 num = atoi(nr);
@@ -2980,7 +2981,7 @@ bool UdpTransport::IsIpAddressValid(const WebRtc_Word8* ipadr, const bool ipV6)
 
             if (iDotPos[2] - iDotPos[1] <= 4)
             {
-                WebRtc_Word8 nr[4];
+                char nr[4];
                 memset(nr,0,4);
                 strncpy(nr,&ipadr[iDotPos[1]+1], iDotPos[1] - iDotPos[0] - 1);
                 WebRtc_Word32 num = atoi(nr);

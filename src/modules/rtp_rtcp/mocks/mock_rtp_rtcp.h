@@ -155,11 +155,12 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_METHOD1(SetRTCPStatus,
       WebRtc_Word32(const RTCPMethod method));
   MOCK_METHOD1(SetCNAME,
-      WebRtc_Word32(const WebRtc_Word8 cName[RTCP_CNAME_SIZE]));
+      WebRtc_Word32(const char cName[RTCP_CNAME_SIZE]));
   MOCK_METHOD1(CNAME,
-      WebRtc_Word32(WebRtc_Word8 cName[RTCP_CNAME_SIZE]));
+      WebRtc_Word32(char cName[RTCP_CNAME_SIZE]));
   MOCK_CONST_METHOD2(RemoteCNAME,
-      WebRtc_Word32(const WebRtc_UWord32 remoteSSRC, WebRtc_Word8 cName[RTCP_CNAME_SIZE]));
+      WebRtc_Word32(const WebRtc_UWord32 remoteSSRC,
+                    char cName[RTCP_CNAME_SIZE]));
   MOCK_CONST_METHOD4(RemoteNTP,
       WebRtc_Word32(WebRtc_UWord32 *ReceivedNTPsecs, WebRtc_UWord32 *ReceivedNTPfrac, WebRtc_UWord32 *RTCPArrivalTimeSecs, WebRtc_UWord32 *RTCPArrivalTimeFrac));
   MOCK_METHOD2(AddMixedCNAME,

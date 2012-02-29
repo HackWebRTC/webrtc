@@ -1319,8 +1319,8 @@ WebRtc_Word32 ViEChannel::SetSendDestination(
                    "Running in loopback. Forcing fixed SSRC");
     }
   } else {
-    WebRtc_UWord8 local_host_address[16];
-    WebRtc_UWord8 current_ip_address[16];
+    char local_host_address[16];
+    char current_ip_address[16];
 
     WebRtc_Word32 conv_result =
       UdpTransport::LocalHostAddressIPV6(local_host_address);

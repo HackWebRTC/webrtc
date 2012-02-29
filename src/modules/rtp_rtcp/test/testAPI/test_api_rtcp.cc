@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -223,7 +223,7 @@ TEST_F(RtpRtcpRtcpTest, RTCP) {
   WebRtc_UWord32 receivedNTPfrac = 0;
   WebRtc_UWord32 RTCPArrivalTimeSecs = 0;
   WebRtc_UWord32 RTCPArrivalTimeFrac = 0;
-  WebRtc_Word8 cName[RTCP_CNAME_SIZE];
+  char cName[RTCP_CNAME_SIZE];
 
   EXPECT_EQ(0, module2->RemoteNTP(&receivedNTPsecs, &receivedNTPfrac,
                                   &RTCPArrivalTimeSecs, &RTCPArrivalTimeFrac));

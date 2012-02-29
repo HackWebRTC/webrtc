@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -373,9 +373,9 @@ int ViENetworkImpl::GetLocalIP(char ip_address[64], bool ipv6) {
     return -1;
   }
 
-  WebRtc_Word8 local_ip_address[64];
+  char local_ip_address[64];
   if (ipv6) {
-    WebRtc_UWord8 local_ip[16];
+    char local_ip[16];
     if (socket_transport->LocalHostAddressIPV6(local_ip) != 0) {
       UdpTransport::Destroy(socket_transport);
       WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(shared_data_->instance_id()),

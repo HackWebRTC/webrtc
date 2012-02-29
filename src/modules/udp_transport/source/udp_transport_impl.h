@@ -33,14 +33,14 @@ public:
 
     // UdpTransport functions
     virtual WebRtc_Word32 InitializeSendSockets(
-        const WebRtc_Word8* ipAddr,
+        const char* ipAddr,
         const WebRtc_UWord16 rtpPort,
         const WebRtc_UWord16 rtcpPort = 0);
     virtual WebRtc_Word32 InitializeReceiveSockets(
         UdpTransportData* const packetCallback,
         const WebRtc_UWord16 rtpPort,
-        const WebRtc_Word8* ipAddr = NULL,
-        const WebRtc_Word8* multicastIpAddr = NULL,
+        const char* ipAddr = NULL,
+        const char* multicastIpAddr = NULL,
         const WebRtc_UWord16 rtcpPort = 0);
     virtual WebRtc_Word32 InitializeSourcePorts(
         const WebRtc_UWord16 rtpPort,
@@ -48,16 +48,16 @@ public:
     virtual WebRtc_Word32 SourcePorts(WebRtc_UWord16& rtpPort,
                                       WebRtc_UWord16& rtcpPort) const;
     virtual WebRtc_Word32 ReceiveSocketInformation(
-        WebRtc_Word8 ipAddr[kIpAddressVersion6Length],
+        char ipAddr[kIpAddressVersion6Length],
         WebRtc_UWord16& rtpPort,
         WebRtc_UWord16& rtcpPort,
-        WebRtc_Word8 multicastIpAddr[kIpAddressVersion6Length]) const;
+        char multicastIpAddr[kIpAddressVersion6Length]) const;
     virtual WebRtc_Word32 SendSocketInformation(
-        WebRtc_Word8 ipAddr[kIpAddressVersion6Length],
+        char ipAddr[kIpAddressVersion6Length],
         WebRtc_UWord16& rtpPort,
         WebRtc_UWord16& rtcpPort) const;
     virtual WebRtc_Word32 RemoteSocketInformation(
-        WebRtc_Word8 ipAddr[kIpAddressVersion6Length],
+        char ipAddr[kIpAddressVersion6Length],
         WebRtc_UWord16& rtpPort,
         WebRtc_UWord16& rtcpPort) const;
     virtual WebRtc_Word32 SetQoS(const bool QoS,
@@ -76,9 +76,9 @@ public:
     virtual WebRtc_Word32 EnableIpV6();
     virtual bool IpV6Enabled() const;
     virtual WebRtc_Word32 SetFilterIP(
-        const WebRtc_Word8 filterIPAddress[kIpAddressVersion6Length]);
+        const char filterIPAddress[kIpAddressVersion6Length]);
     virtual WebRtc_Word32 FilterIP(
-        WebRtc_Word8 filterIPAddress[kIpAddressVersion6Length]) const;
+        char filterIPAddress[kIpAddressVersion6Length]) const;
     virtual WebRtc_Word32 SetFilterPorts(const WebRtc_UWord16 rtpFilterPort,
                                          const WebRtc_UWord16 rtcpFilterPort);
     virtual WebRtc_Word32 FilterPorts(WebRtc_UWord16& rtpFilterPort,
@@ -93,7 +93,7 @@ public:
     virtual WebRtc_Word32 SendRaw(const WebRtc_Word8* data,
                                   WebRtc_UWord32 length, WebRtc_Word32 isRTCP,
                                   WebRtc_UWord16 portnr = 0,
-                                  const WebRtc_Word8* ip = NULL);
+                                  const char* ip = NULL);
     virtual WebRtc_Word32 SendRTPPacketTo(const WebRtc_Word8 *data,
                                           WebRtc_UWord32 length,
                                           const SocketAddress& to);
@@ -111,14 +111,14 @@ public:
     virtual int SendRTCPPacket(int channel, const void* data, int length);
 
     // UdpTransport functions continue.
-    virtual WebRtc_Word32 SetSendIP(const WebRtc_Word8* ipaddr);
+    virtual WebRtc_Word32 SetSendIP(const char* ipaddr);
     virtual WebRtc_Word32 SetSendPorts(const WebRtc_UWord16 rtpPort,
                                        const WebRtc_UWord16 rtcpPort = 0);
 
     virtual ErrorCode LastError() const;
 
     virtual WebRtc_Word32 IPAddressCached(const SocketAddress& address,
-                                          WebRtc_Word8* ip,
+                                          char* ip,
                                           WebRtc_UWord32& ipSize,
                                           WebRtc_UWord16& sourcePort);
 
@@ -143,7 +143,7 @@ protected:
     // Update _remoteRTCPAddr according to _destPortRTCP and _destIP
     void BuildRemoteRTCPAddr();
 
-    void BuildSockaddrIn(WebRtc_UWord16 portnr, const WebRtc_Word8* ip,
+    void BuildSockaddrIn(WebRtc_UWord16 portnr, const char* ip,
                          SocketAddress& remoteAddr) const;
 
     ErrorCode BindLocalRTPSocket();
@@ -170,7 +170,7 @@ protected:
     WebRtc_Word32 DisableQoS();
 
 private:
-    void GetCachedAddress(WebRtc_Word8* ip, WebRtc_UWord32& ipSize,
+    void GetCachedAddress(char* ip, WebRtc_UWord32& ipSize,
                           WebRtc_UWord16& sourcePort);
 
     WebRtc_Word32 _id;
@@ -199,10 +199,10 @@ private:
     WebRtc_UWord16 _fromPort;
     WebRtc_UWord16 _fromPortRTCP;
 
-    WebRtc_Word8 _fromIP[kIpAddressVersion6Length];
-    WebRtc_Word8 _destIP[kIpAddressVersion6Length];
-    WebRtc_Word8 _localIP[kIpAddressVersion6Length];
-    WebRtc_Word8 _localMulticastIP[kIpAddressVersion6Length];
+    char _fromIP[kIpAddressVersion6Length];
+    char _destIP[kIpAddressVersion6Length];
+    char _localIP[kIpAddressVersion6Length];
+    char _localMulticastIP[kIpAddressVersion6Length];
 
     UdpSocketWrapper* _ptrRtpSocket;
     UdpSocketWrapper* _ptrRtcpSocket;
@@ -231,7 +231,7 @@ private:
     // Cache used by GetCachedAddress(..).
     RWLockWrapper* _cachLock;
     SocketAddress _previousAddress;
-    WebRtc_Word8 _previousIP[kIpAddressVersion6Length];
+    char _previousIP[kIpAddressVersion6Length];
     WebRtc_UWord32 _previousIPSize;
     WebRtc_UWord16 _previousSourcePort;
 

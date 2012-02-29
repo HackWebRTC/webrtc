@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -98,12 +98,12 @@ public:
 
     virtual void IncomingRTPPacket(const WebRtc_Word8* incomingRtpPacket,
                                    const WebRtc_Word32 rtpPacketLength,
-                                   const WebRtc_Word8* fromIP,
+                                   const char* fromIP,
                                    const WebRtc_UWord16 fromPort) = 0;
 
     virtual void IncomingRTCPPacket(const WebRtc_Word8* incomingRtcpPacket,
                                     const WebRtc_Word32 rtcpPacketLength,
-                                    const WebRtc_Word8* fromIP,
+                                    const char* fromIP,
                                     const WebRtc_UWord16 fromPort) = 0;
 };
 
@@ -147,7 +147,7 @@ public:
     // packets to ipAddr:rtpPort+1 if rtcpPort is zero. Otherwise to
     // ipAddr:rtcpPort.
     virtual WebRtc_Word32 InitializeSendSockets(
-        const WebRtc_Word8* ipAddr,
+        const char* ipAddr,
         const WebRtc_UWord16 rtpPort,
         const WebRtc_UWord16 rtcpPort = 0) = 0;
 
@@ -158,8 +158,8 @@ public:
     virtual WebRtc_Word32 InitializeReceiveSockets(
         UdpTransportData* const packetCallback,
         const WebRtc_UWord16 rtpPort,
-        const WebRtc_Word8* ipAddr = NULL,
-        const WebRtc_Word8* multicastIpAddr = NULL,
+        const char* ipAddr = NULL,
+        const char* multicastIpAddr = NULL,
         const WebRtc_UWord16 rtcpPort = 0) = 0;
 
     // Set local RTP port to rtpPort and RTCP port to rtcpPort or rtpPort + 1 if
@@ -180,23 +180,23 @@ public:
     // multicastIpAddr to the multicast IP address group joined (the address
     // is NULL terminated).
     virtual WebRtc_Word32 ReceiveSocketInformation(
-        WebRtc_Word8 ipAddr[kIpAddressVersion6Length],
+        char ipAddr[kIpAddressVersion6Length],
         WebRtc_UWord16& rtpPort,
         WebRtc_UWord16& rtcpPort,
-        WebRtc_Word8 multicastIpAddr[kIpAddressVersion6Length]) const = 0;
+        char multicastIpAddr[kIpAddressVersion6Length]) const = 0;
 
     // Set ipAddr to the IP address being sent from. rtpPort to the local RTP
     // port used for sending and rtcpPort to the local RTCP port used for
     // sending.
     virtual WebRtc_Word32 SendSocketInformation(
-        WebRtc_Word8 ipAddr[kIpAddressVersion6Length],
+        char ipAddr[kIpAddressVersion6Length],
         WebRtc_UWord16& rtpPort,
         WebRtc_UWord16& rtcpPort) const = 0;
 
     // Put the IP address, RTP port and RTCP port from the last received packet
     // into ipAddr, rtpPort and rtcpPort respectively.
     virtual WebRtc_Word32 RemoteSocketInformation(
-        WebRtc_Word8 ipAddr[kIpAddressVersion6Length],
+        char ipAddr[kIpAddressVersion6Length],
         WebRtc_UWord16& rtpPort,
         WebRtc_UWord16& rtcpPort) const = 0;
 
@@ -246,11 +246,11 @@ public:
     // Only allow packets received from filterIPAddress to be processed.
     // Note: must be called after EnableIPv6(), if IPv6 is used.
     virtual WebRtc_Word32 SetFilterIP(
-        const WebRtc_Word8 filterIPAddress[kIpAddressVersion6Length]) = 0;
+        const char filterIPAddress[kIpAddressVersion6Length]) = 0;
 
     // Write the filter IP address (if any) to filterIPAddress.
     virtual WebRtc_Word32 FilterIP(
-        WebRtc_Word8 filterIPAddress[kIpAddressVersion6Length]) const = 0;
+        char filterIPAddress[kIpAddressVersion6Length]) const = 0;
 
     // Only allow RTP packets from rtpFilterPort and RTCP packets from
     // rtcpFilterPort be processed.
@@ -294,7 +294,7 @@ public:
                                   WebRtc_UWord32 length,
                                   WebRtc_Word32 isRTCP,
                                   WebRtc_UWord16 portnr = 0,
-                                  const WebRtc_Word8* ip = NULL) = 0;
+                                  const char* ip = NULL) = 0;
 
     // Send RTP data with size length to the address specified by to.
     virtual WebRtc_Word32 SendRTPPacketTo(const WebRtc_Word8* data,
@@ -322,7 +322,7 @@ public:
 
     // Set the IP address to which packets are sent to ipaddr.
     virtual WebRtc_Word32 SetSendIP(
-        const WebRtc_Word8 ipaddr[kIpAddressVersion6Length]) = 0;
+        const char ipaddr[kIpAddressVersion6Length]) = 0;
 
     // Set the send RTP and RTCP port to rtpPort and rtcpPort respectively.
     virtual WebRtc_Word32 SetSendPorts(const WebRtc_UWord16 rtpPort,
@@ -337,7 +337,7 @@ public:
 
     // Put the local IP6 address in localIP.
     // Note: this API is for IPv6 only.
-    static WebRtc_Word32 LocalHostAddressIPV6(WebRtc_UWord8 localIP[16]);
+    static WebRtc_Word32 LocalHostAddressIPV6(char localIP[16]);
 
     // Return a copy of hostOrder (host order) in network order.
     static WebRtc_UWord16 Htons(WebRtc_UWord16 hostOrder);
@@ -346,13 +346,13 @@ public:
     static WebRtc_UWord32 Htonl(WebRtc_UWord32 hostOrder);
 
     // Return IPv4 address in ip as 32 bit integer.
-    static WebRtc_UWord32 InetAddrIPV4(const WebRtc_Word8* ip);
+    static WebRtc_UWord32 InetAddrIPV4(const char* ip);
 
     // Convert the character string src into a network address structure in
     // the af address family and put it in dst.
     // Note: same functionality as inet_pton(..)
     static WebRtc_Word32 InetPresentationToNumeric(WebRtc_Word32 af,
-                                                   const WebRtc_Word8* src,
+                                                   const char* src,
                                                    void* dst);
 
     // Set ip and sourcePort according to address. As input parameter ipSize
@@ -360,7 +360,7 @@ public:
     // written to ip (not counting the '\0' character).
     // Note: this API is only implemented on Windows and Linux.
     static WebRtc_Word32 IPAddress(const SocketAddress& address,
-                                   WebRtc_Word8* ip,
+                                   char* ip,
                                    WebRtc_UWord32& ipSize,
                                    WebRtc_UWord16& sourcePort);
 
@@ -372,14 +372,14 @@ public:
     // address is likley to be the same for multiple calls it may be beneficial
     // to call this API instead of IPAddress().
     virtual WebRtc_Word32 IPAddressCached(const SocketAddress& address,
-                                          WebRtc_Word8* ip,
+                                          char* ip,
                                           WebRtc_UWord32& ipSize,
                                           WebRtc_UWord16& sourcePort) = 0;
 
     // Return true if ipaddr is a valid IP address.
     // If ipV6 is false ipaddr is interpreted as an IPv4 address otherwise it
     // is interptreted as IPv6.
-    static bool IsIpAddressValid(const WebRtc_Word8* ipaddr, const bool ipV6);
+    static bool IsIpAddressValid(const char* ipaddr, const bool ipV6);
 };
 } // namespace webrtc
 
