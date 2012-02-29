@@ -193,13 +193,20 @@ int VoECodecImpl::SetSendCodec(int channel, const CodecInst& codec)
     // This will happen with a stereo codec and a device which doesn't support
     // stereo. AudioCoding should probably do the faking; look into how to
     // handle this case properly.
-    if (_audioProcessingModulePtr->set_num_channels(
-            _audioProcessingModulePtr->num_input_channels(),
-            maxNumChannels) != 0)
+    //
+    // Check if the number of channels has changed to avoid an unnecessary
+    // reset.
+    // TODO(andrew): look at handling this logic in AudioProcessing.
+    if (_audioProcessingModulePtr->num_output_channels() != maxNumChannels)
     {
-        _engineStatistics.SetLastError(VE_SOUNDCARD_ERROR, kTraceError,
-            "Init() failed to set APM channels for the send audio stream");
-        return -1;
+        if (_audioProcessingModulePtr->set_num_channels(
+                _audioProcessingModulePtr->num_input_channels(),
+                maxNumChannels) != 0)
+        {
+            _engineStatistics.SetLastError(VE_SOUNDCARD_ERROR, kTraceError,
+                "Init() failed to set APM channels for the send audio stream");
+            return -1;
+        }
     }
 
     return 0;
