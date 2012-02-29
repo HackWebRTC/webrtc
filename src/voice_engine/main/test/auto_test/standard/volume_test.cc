@@ -44,7 +44,9 @@ TEST_F(VolumeTest, ManualSetVolumeWorks) {
 
 #if !defined(MAC_IPHONE)
 
-TEST_F(VolumeTest, DefaultMicrophoneVolumeIsAtMost255) {
+// NOTE(phoglund): This test is flaky because of how the OS works, and is hence
+// disabled by default.
+TEST_F(VolumeTest, DISABLED_DefaultMicrophoneVolumeIsAtMost255) {
   unsigned int volume = 1000;
   EXPECT_EQ(0, voe_volume_control_->GetMicVolume(volume));
   EXPECT_LE(volume, 255u);
@@ -121,7 +123,9 @@ TEST_F(VolumeTest, ManualInputMutingMutesMicrophone) {
   Sleep(2000);
 }
 
-TEST_F(VolumeTest, SystemInputMutingIsNotEnabledByDefault) {
+// NOTE(phoglund): This test is flaky because of how the OS works, and is hence
+// disabled by default.
+TEST_F(VolumeTest, DISABLED_SystemInputMutingIsNotEnabledByDefault) {
   bool is_muted = true;
   EXPECT_EQ(0, voe_volume_control_->GetSystemInputMute(is_muted));
   EXPECT_FALSE(is_muted);

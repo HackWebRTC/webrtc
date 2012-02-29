@@ -621,8 +621,7 @@ class WebRTCLinuxFactory(WebRTCFactory):
       binary = 'out/Debug/vie_auto_test'
       args = (
           '--automated --gtest_filter="'
-          '-ViEVideoVerificationTest.RunsFullStackWithoutErrors:'
-          'ViEExtendedIntegrationTest.*" '
+          '-ViEVideoVerificationTest.RunsFullStackWithoutErrors" '
           '--capture_test_ensure_resolution_alignment_in_capture_device=false')
       self.AddXvfbTestRunStep(test_name=test, test_binary=binary,
                               test_arguments=args)
@@ -630,9 +629,7 @@ class WebRTCLinuxFactory(WebRTCFactory):
       self.AddXvfbTestRunStep(test_name=test,
                               test_binary='out/Debug/video_render_module_test')
     elif test == 'voe_auto_test':
-      # TODO(phoglund): Remove this notice and take appropriate action when
-      # http://code.google.com/p/webrtc/issues/detail?id=266 is concluded.
-      cmd = 'out/Debug/voe_auto_test --automated --gtest_filter="-VolumeTest.*"'
+      cmd = 'out/Debug/voe_auto_test --automated'
       self.AddCommonTestRunStep(test=test, cmd=cmd)
     else:
       self.AddCommonTestRunStep(test)
