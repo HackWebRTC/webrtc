@@ -95,7 +95,7 @@ TEST_F(QmSelectTest, NoActionHighRate) {
                    fraction_lost, 3);
 
   // Update content: motion level, and 3 spatial prediction errors.
-  UpdateQmContentData(0.01, 0.01, 0.01, 0.01);
+  UpdateQmContentData(0.01f, 0.01f, 0.01f, 0.01f);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(0, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
@@ -124,7 +124,7 @@ TEST_F(QmSelectTest, DownActionLowRate) {
 
   // Update content: motion level, and 3 spatial prediction errors.
   // High motion, low spatial: 2x2 spatial expected.
-  UpdateQmContentData(0.1, 0.01, 0.01, 0.01);
+  UpdateQmContentData(0.1f, 0.01f, 0.01f, 0.01f);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(3, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
@@ -132,56 +132,56 @@ TEST_F(QmSelectTest, DownActionLowRate) {
 
   qm_resolution_->ResetDownSamplingState();
   // Low motion, low spatial: no action expected: content is too low.
-  UpdateQmContentData(0.01, 0.01, 0.01, 0.01);
+  UpdateQmContentData(0.01f, 0.01f, 0.01f, 0.01f);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(0, qm_resolution_->ComputeContentClass());
   EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1, 1, 1));
 
   qm_resolution_->ResetDownSamplingState();
   // Medium motion, low spatial: 2x2 spatial expected.
-  UpdateQmContentData(0.06, 0.01, 0.01, 0.01);
+  UpdateQmContentData(0.06f, 0.01f, 0.01f, 0.01f);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(6, qm_resolution_->ComputeContentClass());
   EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 2, 2, 1));
 
   qm_resolution_->ResetDownSamplingState();
   // High motion, high spatial: 1/2 temporal expected.
-  UpdateQmContentData(0.1, 0.1, 0.1, 0.1);
+  UpdateQmContentData(0.1f, 0.1f, 0.1f, 0.1f);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(4, qm_resolution_->ComputeContentClass());
   EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1, 1, 2));
 
   qm_resolution_->ResetDownSamplingState();
   // Low motion, high spatial: 1/2 temporal expected.
-  UpdateQmContentData(0.01, 0.1, 0.1, 0.1);
+  UpdateQmContentData(0.01f, 0.1f, 0.1f, 0.1f);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(1, qm_resolution_->ComputeContentClass());
   EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1, 1, 2));
 
   qm_resolution_->ResetDownSamplingState();
   // Medium motion, high spatial: 1/2 temporal expected.
-  UpdateQmContentData(0.06, 0.1, 0.1, 0.1);
+  UpdateQmContentData(0.06f, 0.1f, 0.1f, 0.1f);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(7, qm_resolution_->ComputeContentClass());
   EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1, 1, 2));
 
   qm_resolution_->ResetDownSamplingState();
   // High motion, medium spatial: 2x2 spatial expected.
-  UpdateQmContentData(0.1, 0.03, 0.03, 0.03);
+  UpdateQmContentData(0.1f, 0.03f, 0.03f, 0.03f);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(5, qm_resolution_->ComputeContentClass());
   EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 2, 2, 1));
 
   qm_resolution_->ResetDownSamplingState();
   // Low motion, medium spatial: high frame rate, so 1/2 temporal expected.
-  UpdateQmContentData(0.01, 0.03, 0.03, 0.03);
+  UpdateQmContentData(0.01f, 0.03f, 0.03f, 0.03f);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(2, qm_resolution_->ComputeContentClass());
   EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1, 1, 2));
 
   qm_resolution_->ResetDownSamplingState();
   // Medium motion, medium spatial: high frame rate, so 1/2 temporal expected.
-  UpdateQmContentData(0.06, 0.03, 0.03, 0.03);
+  UpdateQmContentData(0.06f, 0.03f, 0.03f, 0.03f);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(8, qm_resolution_->ComputeContentClass());
   EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1, 1, 2));
@@ -209,7 +209,7 @@ TEST_F(QmSelectTest, DownActionHighRateMMOvershoot) {
 
   // Update content: motion level, and 3 spatial prediction errors.
   // High motion, low spatial.
-  UpdateQmContentData(0.1, 0.01, 0.01, 0.01);
+  UpdateQmContentData(0.1f, 0.01f, 0.01f, 0.01f);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(3, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kStressedEncoding, qm_resolution_->GetEncoderState());
@@ -217,7 +217,7 @@ TEST_F(QmSelectTest, DownActionHighRateMMOvershoot) {
 
   qm_resolution_->ResetDownSamplingState();
   // Low motion, high spatial
-  UpdateQmContentData(0.01, 0.1, 0.1, 0.1);
+  UpdateQmContentData(0.01f, 0.1f, 0.1f, 0.1f);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(1, qm_resolution_->ComputeContentClass());
   EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1, 1, 2));
@@ -245,7 +245,7 @@ TEST_F(QmSelectTest, NoActionHighRateMMUndershoot) {
 
   // Update content: motion level, and 3 spatial prediction errors.
   // High motion, low spatial.
-  UpdateQmContentData(0.1, 0.01, 0.01, 0.01);
+  UpdateQmContentData(0.1f, 0.01f, 0.01f, 0.01f);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(3, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kEasyEncoding, qm_resolution_->GetEncoderState());
@@ -253,7 +253,7 @@ TEST_F(QmSelectTest, NoActionHighRateMMUndershoot) {
 
   qm_resolution_->ResetDownSamplingState();
   // Low motion, high spatial
-  UpdateQmContentData(0.01, 0.1, 0.1, 0.1);
+  UpdateQmContentData(0.01f, 0.1f, 0.1f, 0.1f);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(1, qm_resolution_->ComputeContentClass());
   EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1, 1, 1));
@@ -286,7 +286,7 @@ TEST_F(QmSelectTest, DownActionBufferUnderflow) {
 
   // Update content: motion level, and 3 spatial prediction errors.
   // High motion, low spatial.
-  UpdateQmContentData(0.1, 0.01, 0.01, 0.01);
+  UpdateQmContentData(0.1f, 0.01f, 0.01f, 0.01f);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(3, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kStressedEncoding, qm_resolution_->GetEncoderState());
@@ -294,7 +294,7 @@ TEST_F(QmSelectTest, DownActionBufferUnderflow) {
 
   qm_resolution_->ResetDownSamplingState();
   // Low motion, high spatial
-  UpdateQmContentData(0.01, 0.1, 0.1, 0.1);
+  UpdateQmContentData(0.01f, 0.1f, 0.1f, 0.1f);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(1, qm_resolution_->ComputeContentClass());
   EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1, 1, 2));
@@ -327,7 +327,7 @@ TEST_F(QmSelectTest, NoActionBufferStable) {
 
   // Update content: motion level, and 3 spatial prediction errors.
   // High motion, low spatial.
-  UpdateQmContentData(0.1, 0.01, 0.01, 0.01);
+  UpdateQmContentData(0.1f, 0.01f, 0.01f, 0.01f);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(3, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
@@ -335,7 +335,7 @@ TEST_F(QmSelectTest, NoActionBufferStable) {
 
   qm_resolution_->ResetDownSamplingState();
   // Low motion, high spatial
-  UpdateQmContentData(0.01, 0.1, 0.1, 0.1);
+  UpdateQmContentData(0.01f, 0.1f, 0.1f, 0.1f);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(1, qm_resolution_->ComputeContentClass());
   EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1, 1, 1));
@@ -362,7 +362,7 @@ TEST_F(QmSelectTest, LimitDownSpatialAction) {
 
   // Update content: motion level, and 3 spatial prediction errors.
   // High motion, low spatial.
-  UpdateQmContentData(0.1, 0.01, 0.01, 0.01);
+  UpdateQmContentData(0.1f, 0.01f, 0.01f, 0.01f);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(3, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
@@ -390,7 +390,7 @@ TEST_F(QmSelectTest, LimitDownTemporalAction) {
 
   // Update content: motion level, and 3 spatial prediction errors.
   // Low motion, medium spatial.
-  UpdateQmContentData(0.01, 0.03, 0.03, 0.03);
+  UpdateQmContentData(0.01f, 0.03f, 0.03f, 0.03f);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(2, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
@@ -419,7 +419,7 @@ TEST_F(QmSelectTest, 2StageDownSpatialUpSpatial) {
 
   // Update content: motion level, and 3 spatial prediction errors.
   // High motion, low spatial.
-  UpdateQmContentData(0.1, 0.01, 0.01, 0.01);
+  UpdateQmContentData(0.1f, 0.01f, 0.01f, 0.01f);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(3, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
@@ -463,7 +463,7 @@ TEST_F(QmSelectTest, 2StageDownSpatialUpSpatialUndershoot) {
 
   // Update content: motion level, and 3 spatial prediction errors.
   // High motion, low spatial.
-  UpdateQmContentData(0.1, 0.01, 0.01, 0.01);
+  UpdateQmContentData(0.1f, 0.01f, 0.01f, 0.01f);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(3, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
@@ -507,7 +507,7 @@ TEST_F(QmSelectTest, 2StageDownSpatialNoActionUp) {
 
   // Update content: motion level, and 3 spatial prediction errors.
   // High motion, low spatial.
-  UpdateQmContentData(0.1, 0.01, 0.01, 0.01);
+  UpdateQmContentData(0.1f, 0.01f, 0.01f, 0.01f);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(3, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
@@ -550,7 +550,7 @@ TEST_F(QmSelectTest, 2StatgeDownTemporalUpTemporal) {
 
   // Update content: motion level, and 3 spatial prediction errors.
   // Low motion, high spatial.
-  UpdateQmContentData(0.01, 0.1, 0.1, 0.1);
+  UpdateQmContentData(0.01f, 0.1f, 0.1f, 0.1f);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(1, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
@@ -592,7 +592,7 @@ TEST_F(QmSelectTest, 2StatgeDownTemporalUpTemporalUndershoot) {
 
   // Update content: motion level, and 3 spatial prediction errors.
   // Low motion, high spatial.
-  UpdateQmContentData(0.01, 0.1, 0.1, 0.1);
+  UpdateQmContentData(0.01f, 0.1f, 0.1f, 0.1f);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(1, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
@@ -634,7 +634,7 @@ TEST_F(QmSelectTest, 2StageDownTemporalNoActionUp) {
 
   // Update content: motion level, and 3 spatial prediction errors.
   // Low motion, high spatial.
-  UpdateQmContentData(0.01, 0.1, 0.1, 0.1);
+  UpdateQmContentData(0.01f, 0.1f, 0.1f, 0.1f);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(1, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
@@ -675,7 +675,7 @@ TEST_F(QmSelectTest, 3StageDownSpatialTemporlaUpSpatialTemporal) {
 
   // Update content: motion level, and 3 spatial prediction errors.
   // High motion, low spatial.
-  UpdateQmContentData(0.1, 0.01, 0.01, 0.01);
+  UpdateQmContentData(0.1f, 0.01f, 0.01f, 0.01f);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(3, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
@@ -688,7 +688,7 @@ TEST_F(QmSelectTest, 3StageDownSpatialTemporlaUpSpatialTemporal) {
 
   // Update content: motion level, and 3 spatial prediction errors.
   // Low motion, high spatial.
-  UpdateQmContentData(0.01, 0.1, 0.1, 0.1);
+  UpdateQmContentData(0.01f, 0.1f, 0.1f, 0.1f);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(1, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
@@ -732,7 +732,7 @@ TEST_F(QmSelectTest, NoActionTooMuchDownSampling) {
 
   // Update content: motion level, and 3 spatial prediction errors.
   // High motion, low spatial: 2x2 spatial expected.
-  UpdateQmContentData(0.1, 0.01, 0.01, 0.01);
+  UpdateQmContentData(0.1f, 0.01f, 0.01f, 0.01f);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(3, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
