@@ -588,7 +588,13 @@ void ViEAutoTest::ViERtpRtcpAPITest()
         EXPECT_EQ(setPT, getPT);
         EXPECT_EQ(setDeltaTime, getDeltaTime);
 
+        EXPECT_EQ(0, ViE.rtp_rtcp->SetRTPKeepAliveStatus(
+                    tbChannel.videoChannel, false, setPT, setDeltaTime));
+
         EXPECT_EQ(0, ViE.base->StartSend(tbChannel.videoChannel));
+
+        EXPECT_EQ(0, ViE.rtp_rtcp->SetRTPKeepAliveStatus(
+                    tbChannel.videoChannel, true, setPT, setDeltaTime));
 
         EXPECT_NE(0, ViE.rtp_rtcp->SetRTPKeepAliveStatus(
             tbChannel.videoChannel, true, setPT, setDeltaTime));
