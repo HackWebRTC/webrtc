@@ -124,6 +124,14 @@
             'vie_win_test',
           ],
         }],
+        ['OS=="linux"', {
+          # TODO(andrew): these should be provided directly by the projects
+          #   # which require them instead.
+          'libraries': [
+            '-lXext',
+            '-lX11',
+          ],
+        }],
         ['OS=="mac"', {
           'xcode_settings': {
             'OTHER_LDFLAGS': [
