@@ -56,7 +56,7 @@ VideoCaptureMacQTKit::~VideoCaptureMacQTKit()
 }
 
 WebRtc_Word32 VideoCaptureMacQTKit::Init(
-    const WebRtc_Word32 id, const WebRtc_UWord8* iDeviceUniqueIdUTF8)
+    const WebRtc_Word32 id, const char* iDeviceUniqueIdUTF8)
 {
     CriticalSectionScoped cs(_apiCs);
 
@@ -67,7 +67,7 @@ WebRtc_Word32 VideoCaptureMacQTKit::Init(
         return -1;
 
     // Store the device name
-    _deviceUniqueId = new WebRtc_UWord8[nameLength+1];
+    _deviceUniqueId = new char[nameLength+1];
     memcpy(_deviceUniqueId, iDeviceUniqueIdUTF8,nameLength+1);
 
     _captureDevice = [[VideoCaptureMacQTKitObjC alloc] init];
@@ -108,9 +108,9 @@ WebRtc_Word32 VideoCaptureMacQTKit::Init(
     }
 
     const int NAME_LENGTH = 1024;
-    WebRtc_UWord8 deviceNameUTF8[1024] = "";
-    WebRtc_UWord8 deviceUniqueIdUTF8[1024] = "";
-    WebRtc_UWord8 deviceProductUniqueIDUTF8[1024] = "";
+    char deviceNameUTF8[1024] = "";
+    char deviceUniqueIdUTF8[1024] = "";
+    char deviceProductUniqueIDUTF8[1024] = "";
 
     bool captureDeviceFound = false;
     for(int index = 0; index < captureDeviceCount; index++){

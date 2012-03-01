@@ -56,10 +56,10 @@ public:
      *                       otherwise.
      */
     virtual WebRtc_Word32 GetDeviceName(
-        WebRtc_UWord32 deviceNumber, WebRtc_UWord8* deviceNameUTF8,
-        WebRtc_UWord32 deviceNameLength, WebRtc_UWord8* deviceUniqueIdUTF8,
+        WebRtc_UWord32 deviceNumber, char* deviceNameUTF8,
+        WebRtc_UWord32 deviceNameLength, char* deviceUniqueIdUTF8,
         WebRtc_UWord32 deviceUniqueIdUTF8Length,
-        WebRtc_UWord8* productUniqueIdUTF8 = 0,
+        char* productUniqueIdUTF8 = 0,
         WebRtc_UWord32 productUniqueIdUTF8Length = 0);
 
 
@@ -68,7 +68,7 @@ public:
     /*
      *   Returns the number of capabilities for this device
      */
-    virtual WebRtc_Word32 NumberOfCapabilities(const WebRtc_UWord8* deviceUniqueIdUTF8);
+    virtual WebRtc_Word32 NumberOfCapabilities(const char* deviceUniqueIdUTF8);
 
     /*
      *   Gets the capabilities of the named device
@@ -126,11 +126,11 @@ private:
     // private methods
 
     int GetCaptureDevices(WebRtc_UWord32 deviceNumber,
-                          WebRtc_UWord8* deviceNameUTF8,
+                          char* deviceNameUTF8,
                           WebRtc_UWord32 deviceNameUTF8Length,
-                          WebRtc_UWord8* deviceUniqueIdUTF8,
+                          char* deviceUniqueIdUTF8,
                           WebRtc_UWord32 deviceUniqueIdUTF8Length,
-                          WebRtc_UWord8* productUniqueIdUTF8,
+                          char* productUniqueIdUTF8,
                           WebRtc_UWord32 productUniqueIdUTF8Length,
                           int& numberOfDevices);
 
