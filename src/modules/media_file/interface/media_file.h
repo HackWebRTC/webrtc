@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -77,7 +77,7 @@ public:
     // Note: codecInst.channels should be set to 2 for stereo (and 1 for
     // mono). Stereo audio is only supported for WAV files.
     virtual WebRtc_Word32 StartPlayingAudioFile(
-        const WebRtc_Word8* fileName,
+        const char* fileName,
         const WebRtc_UWord32 notificationTimeMs = 0,
         const bool loop                         = false,
         const FileFormats format                = kFileFormatPcm16kHzFile,
@@ -90,7 +90,7 @@ public:
     // called. When end of file is reached the file is read from the start.
     // format specifies the type of file fileName refers to. Only video will be
     // read if videoOnly is true.
-    virtual WebRtc_Word32 StartPlayingVideoFile(const WebRtc_Word8* fileName,
+    virtual WebRtc_Word32 StartPlayingVideoFile(const char* fileName,
                                                 const bool loop,
                                                 bool videoOnly,
                                                 const FileFormats format) = 0;
@@ -154,7 +154,7 @@ public:
     // Note: codecInst.channels should be set to 2 for stereo (and 1 for
     // mono). Stereo is only supported for WAV files.
     virtual WebRtc_Word32 StartRecordingAudioFile(
-        const WebRtc_Word8*  fileName,
+        const char*  fileName,
         const FileFormats    format,
         const CodecInst&     codecInst,
         const WebRtc_UWord32 notificationTimeMs = 0,
@@ -166,7 +166,7 @@ public:
     // videoCodecInst specifies the encoding of the video data. Only video data
     // will be recorded if videoOnly is true.
     virtual WebRtc_Word32 StartRecordingVideoFile(
-        const WebRtc_Word8* fileName,
+        const char* fileName,
         const FileFormats   format,
         const CodecInst&    codecInst,
         const VideoCodec&   videoCodecInst,
@@ -206,7 +206,7 @@ public:
     // format specifies the type of file fileName refers to. freqInHz specifies
     // the sampling frequency of the file.
     virtual WebRtc_Word32 FileDurationMs(
-        const WebRtc_Word8*  fileName,
+        const char*  fileName,
         WebRtc_UWord32&      durationMs,
         const FileFormats    format,
         const WebRtc_UWord32 freqInHz = 16000) = 0;

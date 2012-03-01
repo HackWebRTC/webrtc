@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -34,7 +34,7 @@ public:
     // allowed). If loop is true the file will be played until StopPlaying() is
     // called. When end of file is reached the file is read from the start.
     // Only video will be read if videoOnly is true.
-    WebRtc_Word32 InitAviReading(const WebRtc_Word8* fileName, bool videoOnly,
+    WebRtc_Word32 InitAviReading(const char* fileName, bool videoOnly,
                                  bool loop);
 
     // Put 10-60ms of audio data from file into the outBuffer depending on
@@ -56,7 +56,7 @@ public:
     // (relative path is allowed). codecInst specifies the encoding of the audio
     // data. videoCodecInst specifies the encoding of the video data. Only video
     // data will be recorded if videoOnly is true.
-    WebRtc_Word32 InitAviWriting(const WebRtc_Word8* filename,
+    WebRtc_Word32 InitAviWriting(const char* filename,
                                  const CodecInst& codecInst,
                                  const VideoCodec& videoCodecInst,
                                  const bool videoOnly);
@@ -221,7 +221,7 @@ public:
 
     // Set durationMs to the size of the file (in ms) specified by fileName.
     // freqInHz specifies the sampling frequency of the file.
-    WebRtc_Word32 FileDurationMs(const WebRtc_Word8* fileName,
+    WebRtc_Word32 FileDurationMs(const char* fileName,
                                  const FileFormats fileFormat,
                                  const WebRtc_UWord32 freqInHz = 16000);
 

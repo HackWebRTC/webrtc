@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -38,14 +38,14 @@ public:
                                     WebRtc_Word8* audioBufferRight,
                                     WebRtc_UWord32& dataLengthInBytes);
     virtual WebRtc_Word32 StartPlayingAudioFile(
-        const WebRtc_Word8*  fileName,
+        const char*  fileName,
         const WebRtc_UWord32 notificationTimeMs = 0,
         const bool           loop = false,
         const FileFormats    format = kFileFormatPcm16kHzFile,
         const CodecInst*     codecInst = NULL,
         const WebRtc_UWord32 startPointMs = 0,
         const WebRtc_UWord32 stopPointMs = 0);
-    WebRtc_Word32 StartPlayingVideoFile(const WebRtc_Word8* fileName,
+    WebRtc_Word32 StartPlayingVideoFile(const char* fileName,
                                         const bool          loop,
                                         bool                videoOnly,
                                         const FileFormats   format);
@@ -64,13 +64,13 @@ public:
     WebRtc_Word32 IncomingAVIVideoData(const WebRtc_Word8*  audioBuffer,
                                        const WebRtc_UWord32 bufferLength);
     WebRtc_Word32 StartRecordingAudioFile(
-        const WebRtc_Word8*  fileName,
+        const char*  fileName,
         const FileFormats    format,
         const CodecInst&     codecInst,
         const WebRtc_UWord32 notificationTimeMs = 0,
         const WebRtc_UWord32 maxSizeBytes = 0);
     WebRtc_Word32 StartRecordingVideoFile(
-        const WebRtc_Word8* fileName,
+        const char* fileName,
         const FileFormats   format,
         const CodecInst&    codecInst,
         const VideoCodec&   videoCodecInst,
@@ -86,7 +86,7 @@ public:
     bool IsStereo();
     WebRtc_Word32 SetModuleFileCallback(FileCallback* callback);
     WebRtc_Word32 FileDurationMs(
-        const WebRtc_Word8*  fileName,
+        const char*  fileName,
         WebRtc_UWord32&      durationMs,
         const FileFormats    format,
         const WebRtc_UWord32 freqInHz = 16000);
@@ -100,7 +100,7 @@ private:
 
 
     // Returns true if the filename is valid
-    static bool ValidFileName(const WebRtc_Word8* fileName);
+    static bool ValidFileName(const char* fileName);
 
   // Returns true if the combination of startPointMs and stopPointMs is valid.
     static bool ValidFilePositions(const WebRtc_UWord32 startPointMs,
@@ -119,7 +119,7 @@ private:
     // specify what part of the file should be read. From startPointMs ms to
     // stopPointMs ms.
     WebRtc_Word32 StartPlayingFile(
-        const WebRtc_Word8*  fileName,
+        const char*  fileName,
         const WebRtc_UWord32 notificationTimeMs = 0,
         const bool           loop               = false,
         bool                 videoOnly          = false,
@@ -144,7 +144,7 @@ private:
     // TODO (hellner): there is no reason why fileName should be needed here.
     WebRtc_Word32 StartPlayingStream(
         InStream&            stream,
-        const WebRtc_Word8*  fileName,
+        const char*          fileName,
         bool                 loop,
         const WebRtc_UWord32 notificationTimeMs = 0,
         const FileFormats    format             = kFileFormatPcm16kHzFile,
@@ -182,7 +182,7 @@ private:
     // Note: codecInst.channels should be set to 2 for stereo (and 1 for
     // mono). Stereo is only supported for WAV files.
     WebRtc_Word32 StartRecordingFile(
-        const WebRtc_Word8*  fileName,
+        const char*  fileName,
         const FileFormats    format,
         const CodecInst&     codecInst,
         const VideoCodec&    videoCodecInst,
@@ -205,7 +205,7 @@ private:
     // TODO (hellner): there is no reason why fileName should be needed here.
     WebRtc_Word32 StartRecordingStream(
         OutStream&           stream,
-        const WebRtc_Word8*  fileName,
+        const char*  fileName,
         const FileFormats    format,
         const CodecInst&     codecInst,
         const VideoCodec&    videoCodecInst,
@@ -237,7 +237,7 @@ private:
     bool _isStereo;
     bool _openFile;
 
-    WebRtc_Word8 _fileName[512];
+    char _fileName[512];
 
     FileCallback* _ptrCallback;
 };

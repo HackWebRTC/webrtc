@@ -102,7 +102,7 @@ ModuleFileUtility::~ModuleFileUtility()
 
 #ifdef WEBRTC_MODULE_UTILITY_VIDEO
 WebRtc_Word32 ModuleFileUtility::InitAviWriting(
-    const WebRtc_Word8* filename,
+    const char* filename,
     const CodecInst& audioCodecInst,
     const VideoCodec& videoCodecInst,
     const bool videoOnly /*= false*/)
@@ -302,7 +302,7 @@ WebRtc_Word32 ModuleFileUtility::CloseAviFile( )
 }
 
 
-WebRtc_Word32 ModuleFileUtility::InitAviReading(const WebRtc_Word8* filename,
+WebRtc_Word32 ModuleFileUtility::InitAviReading(const char* filename,
                                                 bool videoOnly, bool loop)
 {
     _reading = false;
@@ -445,8 +445,8 @@ WebRtc_Word32 ModuleFileUtility::ReadWavHeader(InStream& wav)
     WAVE_RIFF_header RIFFheaderObj;
     WAVE_CHUNK_header CHUNKheaderObj;
     // TODO (hellner): tmpStr and tmpStr2 seems unnecessary here.
-    WebRtc_Word8  tmpStr[6] = "FOUR";
-    WebRtc_UWord8 tmpStr2[4];
+    char tmpStr[6] = "FOUR";
+    char tmpStr2[4];
     WebRtc_Word32 i, len;
     bool dataFound = false;
     bool fmtFound = false;
@@ -1427,7 +1427,7 @@ WebRtc_Word32 ModuleFileUtility::InitCompressedReading(
 
     // Read the codec name
     WebRtc_Word32 cnt = 0;
-    WebRtc_Word8 buf[64];
+    char buf[64];
     do
     {
         in.Read(&buf[cnt++], 1);
@@ -2310,7 +2310,7 @@ WebRtc_Word32 ModuleFileUtility::set_codec_info(const CodecInst& codecInst)
     return 0;
 }
 
-WebRtc_Word32 ModuleFileUtility::FileDurationMs(const WebRtc_Word8* fileName,
+WebRtc_Word32 ModuleFileUtility::FileDurationMs(const char* fileName,
                                                 const FileFormats  fileFormat,
                                                 const WebRtc_UWord32 freqInHz)
 {
@@ -2376,7 +2376,7 @@ WebRtc_Word32 ModuleFileUtility::FileDurationMs(const WebRtc_Word8* fileName,
         {
             WebRtc_Word32 cnt = 0;
             WebRtc_Word32 read_len = 0;
-            WebRtc_Word8 buf[64];
+            char buf[64];
             do
             {
                 read_len = inStreamObj->Read(&buf[cnt++], 1);
