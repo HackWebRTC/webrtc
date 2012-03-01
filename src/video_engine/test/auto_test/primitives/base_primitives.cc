@@ -19,7 +19,7 @@ void TestI420CallSetup(webrtc::ViECodec* codec_interface,
                        webrtc::ViEBase* base_interface,
                        webrtc::ViENetwork* network_interface,
                        int video_channel,
-                       const char *device_name) {
+                       const char* device_name) {
   webrtc::VideoCodec video_codec;
   memset(&video_codec, 0, sizeof(webrtc::VideoCodec));
 

@@ -33,7 +33,7 @@ public:
         VideoCaptureCapability& capability);
 
     virtual WebRtc_Word32 GetBestMatchedCapability(
-        const char*deviceUniqueIdUTF8,
+        const char* deviceUniqueIdUTF8,
         const VideoCaptureCapability& requested,
         VideoCaptureCapability& resulting);
     virtual WebRtc_Word32 GetOrientation(

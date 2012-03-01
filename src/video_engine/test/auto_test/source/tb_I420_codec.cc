@@ -48,7 +48,7 @@ WebRtc_Word32 TbI420Encoder::VersionStatic(char* version,
     return verLen;
 }
 
-WebRtc_Word32 TbI420Encoder::Version(char *version,
+WebRtc_Word32 TbI420Encoder::Version(char* version,
                                      WebRtc_Word32 length) const
 {
     return VersionStatic(version, length);
@@ -321,4 +321,3 @@ TbI420Decoder::FunctionCalls TbI420Decoder::GetFunctionCalls()
 {
     return _functionCalls;
 }
-
