@@ -42,7 +42,7 @@ void ViEAutoTest::ViEBaseStandardTest() {
 
   webrtc::VideoCaptureModule* video_capture_module(NULL);
   const unsigned int kMaxDeviceNameLength = 128;
-  WebRtc_UWord8 device_name[kMaxDeviceNameLength];
+  char device_name[kMaxDeviceNameLength];
   memset(device_name, 0, kMaxDeviceNameLength);
   int capture_id;
 

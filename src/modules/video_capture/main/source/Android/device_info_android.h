@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -12,8 +12,8 @@
 #define WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_ANDROID_DEVICE_INFO_ANDROID_H_
 
 #include <jni.h>
-#include "video_capture_impl.h"
-#include "device_info_impl.h"
+#include "../video_capture_impl.h"
+#include "../device_info_impl.h"
 
 #define AndroidJavaCaptureDeviceInfoClass "org/webrtc/videoengine/VideoCaptureDeviceInfoAndroid"
 #define AndroidJavaCaptureCapabilityClass "org/webrtc/videoengine/CaptureCapabilityAndroid"
@@ -36,21 +36,21 @@ public:
     virtual ~DeviceInfoAndroid();
     virtual WebRtc_UWord32 NumberOfDevices();
     virtual WebRtc_Word32 GetDeviceName(WebRtc_UWord32 deviceNumber,
-                                  WebRtc_UWord8* deviceNameUTF8,
+                                  char* deviceNameUTF8,
                                   WebRtc_UWord32 deviceNameLength,
-                                  WebRtc_UWord8* deviceUniqueIdUTF8,
+                                  char* deviceUniqueIdUTF8,
                                   WebRtc_UWord32 deviceUniqueIdUTF8Length,
-                                  WebRtc_UWord8* productUniqueIdUTF8 = 0,
+                                  char* productUniqueIdUTF8 = 0,
                                   WebRtc_UWord32 productUniqueIdUTF8Length = 0);
-    virtual WebRtc_Word32 CreateCapabilityMap(const WebRtc_UWord8* deviceUniqueIdUTF8);
+    virtual WebRtc_Word32 CreateCapabilityMap(const char* deviceUniqueIdUTF8);
 
     virtual WebRtc_Word32 DisplayCaptureSettingsDialogBox(
-                                      const WebRtc_UWord8* /*deviceUniqueIdUTF8*/,
-                                      const WebRtc_UWord8* /*dialogTitleUTF8*/,
+                                      const char* /*deviceUniqueIdUTF8*/,
+                                      const char* /*dialogTitleUTF8*/,
                                       void* /*parentWindow*/,
                                       WebRtc_UWord32 /*positionX*/,
                                       WebRtc_UWord32 /*positionY*/){return -1;}
-    virtual WebRtc_Word32 GetOrientation(const WebRtc_UWord8* deviceUniqueIdUTF8,
+    virtual WebRtc_Word32 GetOrientation(const char* deviceUniqueIdUTF8,
                                          VideoCaptureRotation& orientation);
 private:
     bool IsDeviceNameMatches(const char* name, const char* deviceUniqueIdUTF8);

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -37,7 +37,7 @@ public:
      *   deviceUniqueIdUTF8 -  name of the device. Available names can be found by using GetDeviceName
      */
     static VideoCaptureModule* Create(const WebRtc_Word32 id,
-                                      const WebRtc_UWord8* deviceUniqueIdUTF8);
+                                      const char* deviceUniqueIdUTF8);
 
     /*
      *   Create a video capture module object used for external capture.
@@ -70,7 +70,7 @@ public:
     virtual WebRtc_Word32 EnableFrameRateCallback(const bool enable);
     virtual WebRtc_Word32 EnableNoPictureAlarm(const bool enable);
 
-    virtual const WebRtc_UWord8* CurrentDeviceName() const;
+    virtual const char* CurrentDeviceName() const;
 
     // Module handling
     virtual WebRtc_Word32 TimeUntilNextProcess();
@@ -106,7 +106,7 @@ protected:
         WebRtc_Word64 capture_time, VideoCodecType codec_type);
 
     WebRtc_Word32 _id; // Module ID
-    WebRtc_UWord8* _deviceUniqueId; // current Device unique name;
+    char* _deviceUniqueId; // current Device unique name;
     CriticalSectionWrapper& _apiCs;
     WebRtc_Word32 _captureDelay; // Current capture delay. May be changed of platform dependent parts.
     VideoCaptureCapability _requestedCapability; // Should be set by platform dependent code in StartCapture.

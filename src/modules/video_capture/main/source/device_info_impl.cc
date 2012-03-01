@@ -43,7 +43,7 @@ DeviceInfoImpl::~DeviceInfoImpl(void)
     delete &_apiLock;
 }
 WebRtc_Word32 DeviceInfoImpl::NumberOfCapabilities(
-                                        const WebRtc_UWord8* deviceUniqueIdUTF8)
+                                        const char* deviceUniqueIdUTF8)
 {
 
     if (!deviceUniqueIdUTF8)
@@ -77,7 +77,7 @@ WebRtc_Word32 DeviceInfoImpl::NumberOfCapabilities(
     return ret;
 }
 
-WebRtc_Word32 DeviceInfoImpl::GetCapability(const WebRtc_UWord8* deviceUniqueIdUTF8,
+WebRtc_Word32 DeviceInfoImpl::GetCapability(const char* deviceUniqueIdUTF8,
                                             const WebRtc_UWord32 deviceCapabilityNumber,
                                             VideoCaptureCapability& capability)
 {
@@ -144,7 +144,7 @@ WebRtc_Word32 DeviceInfoImpl::GetCapability(const WebRtc_UWord8* deviceUniqueIdU
 }
 
 WebRtc_Word32 DeviceInfoImpl::GetBestMatchedCapability(
-                                        const WebRtc_UWord8*deviceUniqueIdUTF8,
+                                        const char*deviceUniqueIdUTF8,
                                         const VideoCaptureCapability& requested,
                                         VideoCaptureCapability& resulting)
 {
@@ -314,7 +314,7 @@ WebRtc_Word32 DeviceInfoImpl::GetBestMatchedCapability(
 WebRtc_Word32 DeviceInfoImpl::GetExpectedCaptureDelay(
                                           const DelayValues delayValues[],
                                           const WebRtc_UWord32 sizeOfDelayValues,
-                                          const WebRtc_UWord8* productId,
+                                          const char* productId,
                                           const WebRtc_UWord32 width,
                                           const WebRtc_UWord32 height)
 {
@@ -388,7 +388,7 @@ WebRtc_Word32 DeviceInfoImpl::GetExpectedCaptureDelay(
 }
 
 //Default implementation. This should be overridden by Mobile implementations.
-WebRtc_Word32 DeviceInfoImpl::GetOrientation(const WebRtc_UWord8* deviceUniqueIdUTF8,
+WebRtc_Word32 DeviceInfoImpl::GetOrientation(const char* deviceUniqueIdUTF8,
                                              VideoCaptureRotation& orientation)
 {
     orientation = kCameraRotate0;

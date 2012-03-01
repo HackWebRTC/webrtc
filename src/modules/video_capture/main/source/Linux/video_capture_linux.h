@@ -25,7 +25,7 @@ class VideoCaptureModuleV4L2: public VideoCaptureImpl
 public:
     VideoCaptureModuleV4L2(WebRtc_Word32 id);
     virtual ~VideoCaptureModuleV4L2();
-    virtual WebRtc_Word32 Init(const WebRtc_UWord8* deviceUniqueId);
+    virtual WebRtc_Word32 Init(const char* deviceUniqueId);
     virtual WebRtc_Word32 StartCapture(const VideoCaptureCapability& capability);
     virtual WebRtc_Word32 StopCapture();
     virtual bool CaptureStarted();

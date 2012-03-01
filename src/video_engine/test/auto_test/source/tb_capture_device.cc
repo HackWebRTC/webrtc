@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -17,9 +17,9 @@ TbCaptureDevice::TbCaptureDevice(TbInterfaces& Engine) :
 {
     const unsigned int KMaxDeviceNameLength = 128;
     const unsigned int KMaxUniqueIdLength = 256;
-    WebRtc_UWord8 deviceName[KMaxDeviceNameLength];
+    char deviceName[KMaxDeviceNameLength];
     memset(deviceName, 0, KMaxDeviceNameLength);
-    WebRtc_UWord8 uniqueId[KMaxUniqueIdLength];
+    char uniqueId[KMaxUniqueIdLength];
     memset(uniqueId, 0, KMaxUniqueIdLength);
 
     bool captureDeviceSet = false;

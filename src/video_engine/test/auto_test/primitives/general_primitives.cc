@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -16,7 +16,7 @@
 #include "vie_to_file_renderer.h"
 
 void FindCaptureDeviceOnSystem(webrtc::ViECapture* capture,
-                               unsigned char* device_name,
+                               char* device_name,
                                unsigned int device_name_length,
                                int* device_id,
                                webrtc::VideoCaptureModule** device_video) {
@@ -26,7 +26,7 @@ void FindCaptureDeviceOnSystem(webrtc::ViECapture* capture,
       webrtc::VideoCaptureFactory::CreateDeviceInfo(0);
 
   const unsigned int kMaxUniqueIdLength = 256;
-  WebRtc_UWord8 unique_id[kMaxUniqueIdLength];
+  char unique_id[kMaxUniqueIdLength];
   memset(unique_id, 0, kMaxUniqueIdLength);
 
   for (unsigned int i = 0; i < dev_info->NumberOfDevices(); i++) {

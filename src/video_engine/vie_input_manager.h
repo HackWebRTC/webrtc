@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -43,32 +43,32 @@ class ViEInputManager : private ViEManagerBase {
 
   // Gets name and id for a capture device.
   int GetDeviceName(WebRtc_UWord32 device_number,
-                    WebRtc_UWord8* device_nameUTF8,
+                    char* device_nameUTF8,
                     WebRtc_UWord32 device_name_length,
-                    WebRtc_UWord8* device_unique_idUTF8,
+                    char* device_unique_idUTF8,
                     WebRtc_UWord32 device_unique_idUTF8Length);
 
   // Returns the number of capture capabilities for a specified device.
-  int NumberOfCaptureCapabilities(const WebRtc_UWord8* device_unique_idUTF8);
+  int NumberOfCaptureCapabilities(const char* device_unique_idUTF8);
 
   // Gets a specific capability for a capture device.
-  int GetCaptureCapability(const WebRtc_UWord8* device_unique_idUTF8,
+  int GetCaptureCapability(const char* device_unique_idUTF8,
                            const WebRtc_UWord32 device_capability_number,
                            CaptureCapability& capability);
 
   // Show OS specific Capture settings.
-  int DisplayCaptureSettingsDialogBox(const WebRtc_UWord8* device_unique_idUTF8,
-                                      const WebRtc_UWord8* dialog_titleUTF8,
+  int DisplayCaptureSettingsDialogBox(const char* device_unique_idUTF8,
+                                      const char* dialog_titleUTF8,
                                       void* parent_window,
                                       WebRtc_UWord32 positionX,
                                       WebRtc_UWord32 positionY);
-  int GetOrientation(const WebRtc_UWord8* device_unique_idUTF8,
+  int GetOrientation(const char* device_unique_idUTF8,
                      RotateCapturedFrame& orientation);
 
   // Creates a capture module for the specified capture device and assigns
   // a capture device id for the device.
   // Return zero on success, ViEError on failure.
-  int CreateCaptureDevice(const WebRtc_UWord8* device_unique_idUTF8,
+  int CreateCaptureDevice(const char* device_unique_idUTF8,
                           const WebRtc_UWord32 device_unique_idUTF8Length,
                           int& capture_id);
   int CreateCaptureDevice(VideoCaptureModule& capture_module,
@@ -77,7 +77,7 @@ class ViEInputManager : private ViEManagerBase {
                                   int& capture_id);
   int DestroyCaptureDevice(int capture_id);
 
-  int CreateFilePlayer(const WebRtc_Word8* file_nameUTF8, const bool loop,
+  int CreateFilePlayer(const char* file_nameUTF8, const bool loop,
                        const FileFormats file_format,
                        VoiceEngine* voe_ptr,
                        int& file_id);

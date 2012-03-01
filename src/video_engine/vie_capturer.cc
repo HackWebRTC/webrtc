@@ -152,7 +152,7 @@ WebRtc_Word32 ViECapturer::Init(VideoCaptureModule& capture_module) {
 ViECapturer* ViECapturer::CreateViECapture(
     int capture_id,
     int engine_id,
-    const WebRtc_UWord8* device_unique_idUTF8,
+    const char* device_unique_idUTF8,
     const WebRtc_UWord32 device_unique_idUTF8Length,
     ProcessThread& module_process_thread) {
   ViECapturer* capture = new ViECapturer(capture_id, engine_id,
@@ -166,7 +166,7 @@ ViECapturer* ViECapturer::CreateViECapture(
 }
 
 WebRtc_Word32 ViECapturer::Init(
-    const WebRtc_UWord8* device_unique_idUTF8,
+    const char* device_unique_idUTF8,
     const WebRtc_UWord32 device_unique_idUTF8Length) {
   assert(capture_module_ == NULL);
   if (device_unique_idUTF8 == NULL) {
@@ -269,7 +269,7 @@ bool ViECapturer::Started() {
   return capture_module_->CaptureStarted();
 }
 
-const WebRtc_UWord8* ViECapturer::CurrentDeviceName() const {
+const char* ViECapturer::CurrentDeviceName() const {
   return capture_module_->CurrentDeviceName();
 }
 
@@ -712,7 +712,7 @@ bool ViECapturer::CaptureCapabilityFixed() {
       requested_capability_.maxFPS != 0;
 }
 
-WebRtc_Word32 ViECapturer::Version(WebRtc_Word8* version,
+WebRtc_Word32 ViECapturer::Version(char* version,
                                    WebRtc_Word32 length) const {
   return 0;
 }

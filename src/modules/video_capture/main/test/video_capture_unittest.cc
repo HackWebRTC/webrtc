@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -203,8 +203,8 @@ class VideoCaptureTest : public testing::Test {
   webrtc::scoped_refptr<VideoCaptureModule> OpenVideoCaptureDevice(
       unsigned int device,
       VideoCaptureDataCallback* callback) {
-    WebRtc_UWord8 device_name[256];
-    WebRtc_UWord8 unique_name[256];
+    char device_name[256];
+    char unique_name[256];
 
     EXPECT_EQ(0, device_info_->GetDeviceName(
         device, device_name, 256, unique_name, 256));

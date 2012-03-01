@@ -86,11 +86,11 @@ WebRtc_UWord32 DeviceInfoAndroid::NumberOfDevices()
 
 WebRtc_Word32 DeviceInfoAndroid::GetDeviceName(
                                        WebRtc_UWord32 deviceNumber,
-                                       WebRtc_UWord8* deviceNameUTF8,
+                                       char* deviceNameUTF8,
                                        WebRtc_UWord32 deviceNameLength,
-                                       WebRtc_UWord8* deviceUniqueIdUTF8,
+                                       char* deviceUniqueIdUTF8,
                                        WebRtc_UWord32 deviceUniqueIdUTF8Length,
-                                       WebRtc_UWord8* /*productUniqueIdUTF8*/,
+                                       char* /*productUniqueIdUTF8*/,
                                        WebRtc_UWord32 /*productUniqueIdUTF8Length*/)
 {
 
@@ -172,7 +172,7 @@ WebRtc_Word32 DeviceInfoAndroid::GetDeviceName(
 }
 
 WebRtc_Word32 DeviceInfoAndroid::CreateCapabilityMap(
-                                        const WebRtc_UWord8* deviceUniqueIdUTF8)
+                                        const char* deviceUniqueIdUTF8)
 {
 
     MapItem* item = NULL;
@@ -277,7 +277,7 @@ WebRtc_Word32 DeviceInfoAndroid::CreateCapabilityMap(
     }
 
     _lastUsedDeviceNameLength = strlen((char*) deviceUniqueIdUTF8);
-    _lastUsedDeviceName = (WebRtc_UWord8*) realloc(_lastUsedDeviceName,
+    _lastUsedDeviceName = (char*) realloc(_lastUsedDeviceName,
                                                    _lastUsedDeviceNameLength + 1);
     memcpy(_lastUsedDeviceName,
            deviceUniqueIdUTF8,
@@ -291,7 +291,7 @@ WebRtc_Word32 DeviceInfoAndroid::CreateCapabilityMap(
 }
 
 WebRtc_Word32 DeviceInfoAndroid::GetOrientation(
-                                            const WebRtc_UWord8* deviceUniqueIdUTF8,
+                                            const char* deviceUniqueIdUTF8,
                                             VideoCaptureRotation& orientation)
 {
 

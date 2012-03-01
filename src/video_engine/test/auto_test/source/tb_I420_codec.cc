@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -35,10 +35,10 @@ TbI420Encoder::~TbI420Encoder()
     }
 }
 
-WebRtc_Word32 TbI420Encoder::VersionStatic(WebRtc_Word8* version,
+WebRtc_Word32 TbI420Encoder::VersionStatic(char* version,
                                            WebRtc_Word32 length)
 {
-    const WebRtc_Word8* str = "I420 version 1.0.0\n";
+    const char* str = "I420 version 1.0.0\n";
     WebRtc_Word32 verLen = (WebRtc_Word32) strlen(str);
     if (verLen > length)
     {
@@ -48,7 +48,7 @@ WebRtc_Word32 TbI420Encoder::VersionStatic(WebRtc_Word8* version,
     return verLen;
 }
 
-WebRtc_Word32 TbI420Encoder::Version(WebRtc_Word8 *version,
+WebRtc_Word32 TbI420Encoder::Version(char *version,
                                      WebRtc_Word32 length) const
 {
     return VersionStatic(version, length);

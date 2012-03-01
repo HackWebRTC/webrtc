@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -97,8 +97,8 @@ int ViECaptureImpl::GetCaptureDevice(unsigned int list_number,
   }
   return shared_data_->input_manager()->GetDeviceName(
       list_number,
-      reinterpret_cast<WebRtc_UWord8*>(device_nameUTF8), device_nameUTF8Length,
-      reinterpret_cast<WebRtc_UWord8*>(unique_idUTF8), unique_idUTF8Length);
+      device_nameUTF8, device_nameUTF8Length,
+      unique_idUTF8, unique_idUTF8Length);
 }
 
 int ViECaptureImpl::AllocateCaptureDevice(
@@ -116,8 +116,9 @@ int ViECaptureImpl::AllocateCaptureDevice(
   }
   const WebRtc_Word32 result =
       shared_data_->input_manager()->CreateCaptureDevice(
-          reinterpret_cast<const WebRtc_UWord8*>(unique_idUTF8),
-      static_cast<const WebRtc_UWord32>(unique_idUTF8Length), capture_id);
+          unique_idUTF8,
+          static_cast<const WebRtc_UWord32>(unique_idUTF8Length),
+          capture_id);
   if (result != 0) {
     shared_data_->SetLastError(result);
     return -1;
@@ -431,7 +432,7 @@ int ViECaptureImpl::NumberOfCapabilities(
     return -1;
   }
   return shared_data_->input_manager()->NumberOfCaptureCapabilities(
-      reinterpret_cast<const WebRtc_UWord8*>(unique_idUTF8));
+      unique_idUTF8);
 }
 
 
@@ -461,8 +462,7 @@ int ViECaptureImpl::GetCaptureCapability(const char* unique_idUTF8,
     return -1;
   }
   if (shared_data_->input_manager()->GetCaptureCapability(
-      reinterpret_cast<const WebRtc_UWord8*>(unique_idUTF8),
-      capability_number, capability) != 0) {
+          unique_idUTF8, capability_number, capability) != 0) {
     shared_data_->SetLastError(kViECaptureDeviceUnknownError);
     return -1;
   }
@@ -492,8 +492,7 @@ int ViECaptureImpl::ShowCaptureSettingsDialogBox(
                unique_idUTF8);
 
   return shared_data_->input_manager()->DisplayCaptureSettingsDialogBox(
-           reinterpret_cast<const WebRtc_UWord8*>(unique_idUTF8),
-           reinterpret_cast<const WebRtc_UWord8*>(dialog_title),
+           unique_idUTF8, dialog_title,
            parent_window, x, y);
 }
 
@@ -510,7 +509,7 @@ int ViECaptureImpl::GetOrientation(const char* unique_idUTF8,
     return -1;
   }
   if (shared_data_->input_manager()->GetOrientation(
-      reinterpret_cast<const WebRtc_UWord8*>(unique_idUTF8),
+      unique_idUTF8,
       orientation) != 0) {
     shared_data_->SetLastError(kViECaptureDeviceUnknownError);
     return -1;

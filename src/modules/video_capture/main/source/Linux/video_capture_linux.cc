@@ -32,7 +32,7 @@ namespace webrtc
 namespace videocapturemodule
 {
 VideoCaptureModule* VideoCaptureImpl::Create(const WebRtc_Word32 id,
-                                             const WebRtc_UWord8* deviceUniqueId)
+                                             const char* deviceUniqueId)
 {
     RefCountImpl<videocapturemodule::VideoCaptureModuleV4L2>* implementation =
         new RefCountImpl<videocapturemodule::VideoCaptureModuleV4L2>(id);
@@ -62,10 +62,10 @@ VideoCaptureModuleV4L2::VideoCaptureModuleV4L2(const WebRtc_Word32 id)
 {
 }
 
-WebRtc_Word32 VideoCaptureModuleV4L2::Init(const WebRtc_UWord8* deviceUniqueIdUTF8)
+WebRtc_Word32 VideoCaptureModuleV4L2::Init(const char* deviceUniqueIdUTF8)
 {
     int len = strlen((const char*) deviceUniqueIdUTF8);
-    _deviceUniqueId = new (std::nothrow) WebRtc_UWord8[len + 1];
+    _deviceUniqueId = new (std::nothrow) char[len + 1];
     if (_deviceUniqueId)
     {
         memcpy(_deviceUniqueId, deviceUniqueIdUTF8, len + 1);

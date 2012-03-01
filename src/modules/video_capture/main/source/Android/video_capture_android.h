@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -13,7 +13,7 @@
 
 #include <jni.h>
 #include "device_info_android.h"
-#include "video_capture_impl.h"
+#include "../video_capture_impl.h"
 
 #define AndroidJavaCaptureClass "org/webrtc/videoengine/VideoCaptureAndroid"
 
@@ -33,7 +33,7 @@ public:
 
     VideoCaptureAndroid(const WebRtc_Word32 id);
     virtual WebRtc_Word32 Init(const WebRtc_Word32 id,
-                               const WebRtc_UWord8* deviceUniqueIdUTF8);
+                               const char* deviceUniqueIdUTF8);
 
 
     virtual WebRtc_Word32 StartCapture(const VideoCaptureCapability& capability);

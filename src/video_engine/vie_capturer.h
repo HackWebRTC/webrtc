@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -49,7 +49,7 @@ class ViECapturer
   static ViECapturer* CreateViECapture(
       int capture_id,
       int engine_id,
-      const WebRtc_UWord8* device_unique_idUTF8,
+      const char* device_unique_idUTF8,
       WebRtc_UWord32 device_unique_idUTF8Length,
       ProcessThread& module_process_thread);
 
@@ -100,7 +100,7 @@ class ViECapturer
   bool IsObserverRegistered();
 
   // Information.
-  const WebRtc_UWord8* CurrentDeviceName() const;
+  const char* CurrentDeviceName() const;
 
   // Set device image.
   WebRtc_Word32 SetCaptureDeviceImage(const VideoFrame& capture_device_image);
@@ -111,7 +111,7 @@ class ViECapturer
               ProcessThread& module_process_thread);
 
   WebRtc_Word32 Init(VideoCaptureModule& capture_module);
-  WebRtc_Word32 Init(const WebRtc_UWord8* device_unique_idUTF8,
+  WebRtc_Word32 Init(const char* device_unique_idUTF8,
                      const WebRtc_UWord32 device_unique_idUTF8Length);
 
   // Implements VideoCaptureDataCallback.
@@ -134,7 +134,7 @@ class ViECapturer
   WebRtc_Word32 DecImageProcRefCount();
 
   // Implements VideoEncoder.
-  virtual WebRtc_Word32 Version(WebRtc_Word8* version,
+  virtual WebRtc_Word32 Version(char* version,
                                 WebRtc_Word32 length) const;
   virtual WebRtc_Word32 InitEncode(const VideoCodec* codec_settings,
                                    WebRtc_Word32 number_of_cores,

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -34,7 +34,7 @@ const int kDoNotForceResolution = 0;
 // parameters. If this operation fails, device_id is assigned a negative value
 // and number_of_errors is incremented.
 void FindCaptureDeviceOnSystem(webrtc::ViECapture* capture,
-                               unsigned char* device_name,
+                               char* device_name,
                                const unsigned int kDeviceNameLength,
                                int* device_id,
                                webrtc::VideoCaptureModule** device_video);

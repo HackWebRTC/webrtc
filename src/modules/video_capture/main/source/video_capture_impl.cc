@@ -36,7 +36,7 @@ VideoCaptureModule* VideoCaptureImpl::Create(
     return implementation;
 }
 
-const WebRtc_UWord8* VideoCaptureImpl::CurrentDeviceName() const
+const char* VideoCaptureImpl::CurrentDeviceName() const
 {
     return _deviceUniqueId;
 }

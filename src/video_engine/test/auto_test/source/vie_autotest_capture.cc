@@ -138,8 +138,8 @@ void ViEAutoTest::ViECaptureStandardTest()
          deviceIndex < numberOfCaptureDevices;
          ++deviceIndex)
     {
-        WebRtc_UWord8 deviceName[128];
-        WebRtc_UWord8 deviceUniqueName[512];
+        char deviceName[128];
+        char deviceUniqueName[512];
 
         EXPECT_EQ(0, devInfo->GetDeviceName(deviceIndex,
                                             deviceName,
@@ -182,8 +182,8 @@ void ViEAutoTest::ViECaptureStandardTest()
          deviceIndex < numberOfCaptureDevices;
          ++deviceIndex)
     {
-        WebRtc_UWord8 deviceName[128];
-        WebRtc_UWord8 deviceUniqueName[512];
+        char deviceName[128];
+        char deviceUniqueName[512];
 
         EXPECT_EQ(0, devInfo->GetDeviceName(deviceIndex,
                                             deviceName,
@@ -290,8 +290,8 @@ void ViEAutoTest::ViECaptureAPITest()
 
     ViE.capture->NumberOfCaptureDevices();
 
-    WebRtc_UWord8 deviceName[128];
-    WebRtc_UWord8 deviceUniqueName[512];
+    char deviceName[128];
+    char deviceUniqueName[512];
     int captureId = 0;
 
     webrtc::VideoCaptureModule::DeviceInfo* devInfo =
@@ -370,7 +370,7 @@ void ViEAutoTest::ViECaptureAPITest()
 
     // Test GetOrientation.
     webrtc::VideoCaptureRotation orientation;
-    WebRtc_UWord8 dummy_name[5];
+    char dummy_name[5];
     EXPECT_NE(0, devInfo->GetOrientation(dummy_name, orientation));
 
     // Test SetRotation.

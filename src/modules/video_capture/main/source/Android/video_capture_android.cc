@@ -21,7 +21,7 @@ namespace videocapturemodule
 {
 VideoCaptureModule* VideoCaptureImpl::Create(
     const WebRtc_Word32 id,
-    const WebRtc_UWord8* deviceUniqueIdUTF8)
+    const char* deviceUniqueIdUTF8)
 {
 
     RefCountImpl<videocapturemodule::VideoCaptureAndroid>* implementation =
@@ -299,16 +299,16 @@ VideoCaptureAndroid::VideoCaptureAndroid(const WebRtc_Word32 id)
 //  VideoCaptureAndroid.java
 // ----------------------------------------------------------------------------
 WebRtc_Word32 VideoCaptureAndroid::Init(const WebRtc_Word32 id,
-                                        const WebRtc_UWord8* deviceUniqueIdUTF8)
+                                        const char* deviceUniqueIdUTF8)
 {
-    const int nameLength = strlen((char*) deviceUniqueIdUTF8);
+    const int nameLength = strlen(deviceUniqueIdUTF8);
     if (nameLength >= kVideoCaptureUniqueNameLength)
     {
         return -1;
     }
 
     // Store the device name
-    _deviceUniqueId = new WebRtc_UWord8[nameLength + 1];
+    _deviceUniqueId = new char[nameLength + 1];
     memcpy(_deviceUniqueId, deviceUniqueIdUTF8, nameLength + 1);
 
     if (_capInfo.Init() != 0)

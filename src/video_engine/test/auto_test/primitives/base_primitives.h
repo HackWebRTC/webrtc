@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -27,6 +27,6 @@ void TestI420CallSetup(webrtc::ViECodec* codec_interface,
                        webrtc::ViEBase* base_interface,
                        webrtc::ViENetwork* network_interface,
                        int video_channel,
-                       const unsigned char *device_name);
+                       const char *device_name);
 
 #endif  // SRC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_SOURCE_BASE_PRIMITIVES_H_

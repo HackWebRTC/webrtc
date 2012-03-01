@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -47,11 +47,11 @@ public:
      */
     virtual WebRtc_Word32
         GetDeviceName(WebRtc_UWord32 deviceNumber,
-                      WebRtc_UWord8* deviceNameUTF8,
+                      char* deviceNameUTF8,
                       WebRtc_UWord32 deviceNameLength,
-                      WebRtc_UWord8* deviceUniqueIdUTF8,
+                      char* deviceUniqueIdUTF8,
                       WebRtc_UWord32 deviceUniqueIdUTF8Length,
-                      WebRtc_UWord8* productUniqueIdUTF8,
+                      char* productUniqueIdUTF8,
                       WebRtc_UWord32 productUniqueIdUTF8Length);
 
     /* 
@@ -59,8 +59,8 @@ public:
      */
     virtual WebRtc_Word32
         DisplayCaptureSettingsDialogBox(
-                                        const WebRtc_UWord8* deviceUniqueIdUTF8,
-                                        const WebRtc_UWord8* dialogTitleUTF8,
+                                        const char* deviceUniqueIdUTF8,
+                                        const char* dialogTitleUTF8,
                                         void* parentWindow,
                                         WebRtc_UWord32 positionX,
                                         WebRtc_UWord32 positionY);
@@ -70,29 +70,29 @@ public:
     /* Gets a capture device filter
      The user of this API is responsible for releasing the filter when it not needed.
      */
-    IBaseFilter * GetDeviceFilter(const WebRtc_UWord8* deviceUniqueIdUTF8,
-                                  WebRtc_UWord8* productUniqueIdUTF8 = NULL,
+    IBaseFilter * GetDeviceFilter(const char* deviceUniqueIdUTF8,
+                                  char* productUniqueIdUTF8 = NULL,
                                   WebRtc_UWord32 productUniqueIdUTF8Length = 0);
 
     WebRtc_Word32
         GetWindowsCapability(const WebRtc_Word32 capabilityIndex,
                              VideoCaptureCapabilityWindows& windowsCapability);
 
-    static void GetProductId(const WebRtc_UWord8* devicePath,
-                             WebRtc_UWord8* productUniqueIdUTF8,
+    static void GetProductId(const char* devicePath,
+                             char* productUniqueIdUTF8,
                              WebRtc_UWord32 productUniqueIdUTF8Length);
 protected:
 
     WebRtc_Word32 GetDeviceInfo(WebRtc_UWord32 deviceNumber,
-                                WebRtc_UWord8* deviceNameUTF8,
+                                char* deviceNameUTF8,
                                 WebRtc_UWord32 deviceNameLength,
-                                WebRtc_UWord8* deviceUniqueIdUTF8,
+                                char* deviceUniqueIdUTF8,
                                 WebRtc_UWord32 deviceUniqueIdUTF8Length,
-                                WebRtc_UWord8* productUniqueIdUTF8,
+                                char* productUniqueIdUTF8,
                                 WebRtc_UWord32 productUniqueIdUTF8Length);
 
     virtual WebRtc_Word32
-        CreateCapabilityMap(const WebRtc_UWord8* deviceUniqueIdUTF8);
+        CreateCapabilityMap(const char* deviceUniqueIdUTF8);
 
 private:
     ICreateDevEnum* _dsDevEnum;

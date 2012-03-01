@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -30,16 +30,16 @@ class ExternalDeviceInfo : public DeviceInfoImpl {
       WebRtc_UWord32 /*positionY*/) { return -1; }
   virtual WebRtc_Word32 GetDeviceName(
       WebRtc_UWord32 deviceNumber,
-      WebRtc_UWord8* deviceNameUTF8,
+      char* deviceNameUTF8,
       WebRtc_UWord32 deviceNameLength,
-      WebRtc_UWord8* deviceUniqueIdUTF8,
+      char* deviceUniqueIdUTF8,
       WebRtc_UWord32 deviceUniqueIdUTF8Length,
-      WebRtc_UWord8* productUniqueIdUTF8=0,
+      char* productUniqueIdUTF8=0,
       WebRtc_UWord32 productUniqueIdUTF8Length=0) {
     return -1;
   }
   virtual WebRtc_Word32 CreateCapabilityMap(
-      const WebRtc_UWord8* deviceUniqueIdUTF8) { return 0; }
+      const char* deviceUniqueIdUTF8) { return 0; }
   virtual WebRtc_Word32 Init() { return 0; }
 };
 

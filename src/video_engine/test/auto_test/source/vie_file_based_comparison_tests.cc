@@ -55,8 +55,7 @@ bool ViEFileBasedComparisonTests::TestCallSetup(
   RenderToFile(render_interface, video_channel, remote_file_renderer);
 
   // Run the test itself:
-  const WebRtc_UWord8* device_name =
-      reinterpret_cast<const WebRtc_UWord8*>("Fake Capture Device");
+  const char* device_name = "Fake Capture Device";
 
   ::TestI420CallSetup(interfaces.codec, interfaces.video_engine,
                       interfaces.base, interfaces.network, video_channel,

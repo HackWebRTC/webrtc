@@ -62,8 +62,8 @@ public:
      *   Gets the capabilities of the named device
      */
     virtual WebRtc_Word32 GetCapability(
-        const WebRtc_UWord8* deviceUniqueIdUTF8,
-        const WebRtc_UWord32 deviceCapabilityNumber,
+        const char* deviceUniqueIdUTF8,
+        const char deviceCapabilityNumber,
         VideoCaptureCapability& capability);
 
     /*
@@ -71,7 +71,7 @@ public:
      *  Returns the deviceCapabilityNumber on success.
      */
     virtual WebRtc_Word32 GetBestMatchedCapability(
-        const WebRtc_UWord8*deviceUniqueIdUTF8,
+        const char* deviceUniqueIdUTF8,
         const VideoCaptureCapability& requested,
         VideoCaptureCapability& resulting);
 
@@ -79,13 +79,13 @@ public:
      * Display OS /capture device specific settings dialog
      */
     virtual WebRtc_Word32 DisplayCaptureSettingsDialogBox(
-        const WebRtc_UWord8* deviceUniqueIdUTF8,
-        const WebRtc_UWord8* dialogTitleUTF8, void* parentWindow,
+        const char* deviceUniqueIdUTF8,
+        const char* dialogTitleUTF8, void* parentWindow,
         WebRtc_UWord32 positionX, WebRtc_UWord32 positionY);
 
 protected:
     virtual WebRtc_Word32 CreateCapabilityMap(
-        const WebRtc_UWord8* deviceUniqueIdUTF8);
+        const char* deviceUniqueIdUTF8);
 
     VideoCaptureMacQTKitInfoObjC*    _captureInfo;
 };
