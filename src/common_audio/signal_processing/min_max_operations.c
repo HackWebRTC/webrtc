@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -28,28 +28,30 @@
 
 #include "signal_processing_library.h"
 
+#include <stdlib.h>
+
 #if !(defined(WEBRTC_ANDROID) && defined(WEBRTC_ARCH_ARM_NEON))
 
 // Maximum absolute value of word16 vector.
-WebRtc_Word16 WebRtcSpl_MaxAbsValueW16(const WebRtc_Word16 *vector, WebRtc_Word16 length)
-{
-    WebRtc_Word32 tempMax = 0;
-    WebRtc_Word32 absVal;
-    WebRtc_Word16 totMax;
-    int i;
-    G_CONST WebRtc_Word16 *tmpvector = vector;
+int16_t WebRtcSpl_MaxAbsValueW16(const int16_t* vector, int length) {
+  int i = 0;
+  int absolute = 0;
+  int maximum = -1;  // Return -1 if length <= 0.
 
-    for (i = 0; i < length; i++)
-    {
-        absVal = WEBRTC_SPL_ABS_W32((*tmpvector));
-        if (absVal > tempMax)
-        {
-            tempMax = absVal;
-        }
-        tmpvector++;
+  for (i = 0; i < length; i++) {
+    absolute = abs((int)vector[i]);
+
+    if (absolute > maximum) {
+      maximum = absolute;
     }
-    totMax = (WebRtc_Word16)WEBRTC_SPL_MIN(tempMax, WEBRTC_SPL_WORD16_MAX);
-    return totMax;
+  }
+
+  // Guard the case for abs(-32768).
+  if (maximum > WEBRTC_SPL_WORD16_MAX) {
+    maximum = WEBRTC_SPL_WORD16_MAX;
+  }
+
+  return (int16_t)maximum;
 }
 
 #endif

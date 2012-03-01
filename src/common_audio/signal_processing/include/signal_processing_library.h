@@ -211,9 +211,17 @@ WebRtc_Word16 WebRtcSpl_OnesArrayW32(WebRtc_Word32* vector,
 // End: Copy and set operations.
 
 // Minimum and maximum operations. Implementation in min_max_operations.c.
-// Descriptions at bottom of file.
-WebRtc_Word16 WebRtcSpl_MaxAbsValueW16(const WebRtc_Word16* vector,
-                                       WebRtc_Word16 length);
+
+// Returns the largest absolute value in a signed 16-bit vector.
+//
+// Input:
+//      - vector :   Input vector.
+//      - length :   Number of samples in vector.
+//
+// Return value  :   Maximum absolute value in vector.
+
+int16_t WebRtcSpl_MaxAbsValueW16(const int16_t* vector, int length);
+
 WebRtc_Word32 WebRtcSpl_MaxAbsValueW32(G_CONST WebRtc_Word32* vector,
                                        WebRtc_Word16 length);
 WebRtc_Word16 WebRtcSpl_MinValueW16(G_CONST WebRtc_Word16* vector,
@@ -855,8 +863,6 @@ void WebRtcSpl_SynthesisQMF(const WebRtc_Word16* low_band,
 // Return value         : Maximum sample value in vector
 //
 
-//
-// WebRtcSpl_MaxAbsValueW16(...)
 // WebRtcSpl_MaxAbsValueW32(...)
 //
 // Returns the largest absolute value of a vector
