@@ -36,7 +36,7 @@ public:
     VideoCaptureDS(const WebRtc_Word32 id);
 
     virtual WebRtc_Word32 Init(const WebRtc_Word32 id,
-                               const WebRtc_UWord8* deviceUniqueIdUTF8);
+                               const char* deviceUniqueIdUTF8);
 
     /*************************************************************************
      *

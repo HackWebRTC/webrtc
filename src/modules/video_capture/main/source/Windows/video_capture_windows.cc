@@ -60,7 +60,7 @@ VideoCaptureDS::~VideoCaptureDS()
 }
 
 WebRtc_Word32 VideoCaptureDS::Init(const WebRtc_Word32 id,
-                                          const WebRtc_UWord8* deviceUniqueIdUTF8)
+                                          const char* deviceUniqueIdUTF8)
 {
     WebRtc_Word32 result = 0;
 
@@ -70,7 +70,7 @@ WebRtc_Word32 VideoCaptureDS::Init(const WebRtc_Word32 id,
         return -1;
 
     // Store the device name
-    _deviceUniqueId = new (std::nothrow) WebRtc_UWord8[nameLength + 1];
+    _deviceUniqueId = new (std::nothrow) char[nameLength + 1];
     memcpy(_deviceUniqueId, deviceUniqueIdUTF8, nameLength + 1);
 
     if (_dsInfo.Init() != 0)

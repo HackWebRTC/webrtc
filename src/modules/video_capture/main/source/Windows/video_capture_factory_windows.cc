@@ -18,7 +18,7 @@ namespace videocapturemodule
 {
 VideoCaptureModule* VideoCaptureImpl::Create(
     const WebRtc_Word32 id,
-    const WebRtc_UWord8* deviceUniqueIdUTF8)
+    const char* deviceUniqueIdUTF8)
 {
 
     if (deviceUniqueIdUTF8 == NULL)
@@ -26,7 +26,7 @@ VideoCaptureModule* VideoCaptureImpl::Create(
         return NULL;
     }
 
-    WebRtc_UWord8 productId[kVideoCaptureProductIdLength];
+    char productId[kVideoCaptureProductIdLength];
     videocapturemodule::DeviceInfoWindows::GetProductId(deviceUniqueIdUTF8,
                                                         productId,
                                                         sizeof(productId));
