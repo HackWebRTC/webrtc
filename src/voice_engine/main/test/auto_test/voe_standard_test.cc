@@ -1437,8 +1437,7 @@ void createSummary(VoiceEngine* ve) {
   sprintf(str, "WebRTc VoiceEngine ");
 #if defined(_WIN32)
   strcat(str, "Win");
-#elif defined(WEBRTC_LINUX) && defined(WEBRTC_TARGET_PC) && \
-     !defined(WEBRTC_ANDROID)
+#elif defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID)
   strcat(str, "Linux");
 #elif defined(WEBRTC_MAC) && !defined(MAC_IPHONE)
   strcat(str, "Mac");

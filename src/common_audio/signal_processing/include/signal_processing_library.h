@@ -39,25 +39,17 @@
 #define WEBRTC_SPL_ABS_W32(a) \
     (((WebRtc_Word32)a >= 0) ? ((WebRtc_Word32)a) : -((WebRtc_Word32)a))
 
-#if (defined WEBRTC_TARGET_PC)||(defined __TARGET_XSCALE)
+#ifdef WEBRTC_ARCH_LITTLE_ENDIAN
 #define WEBRTC_SPL_GET_BYTE(a, nr)  (((WebRtc_Word8 *)a)[nr])
 #define WEBRTC_SPL_SET_BYTE(d_ptr, val, index) \
     (((WebRtc_Word8 *)d_ptr)[index] = (val))
-#elif defined WEBRTC_BIG_ENDIAN
+#else
 #define WEBRTC_SPL_GET_BYTE(a, nr) \
     ((((WebRtc_Word16 *)a)[nr >> 1]) >> (((nr + 1) & 0x1) * 8) & 0x00ff)
 #define WEBRTC_SPL_SET_BYTE(d_ptr, val, index) \
     ((WebRtc_Word16 *)d_ptr)[index >> 1] = \
     ((((WebRtc_Word16 *)d_ptr)[index >> 1]) \
     & (0x00ff << (8 * ((index) & 0x1)))) | (val << (8 * ((index + 1) & 0x1)))
-#else
-#define WEBRTC_SPL_GET_BYTE(a,nr) \
-    ((((WebRtc_Word16 *)(a))[(nr) >> 1]) >> (((nr) & 0x1) * 8) & 0x00ff)
-#define WEBRTC_SPL_SET_BYTE(d_ptr, val, index) \
-    ((WebRtc_Word16 *)(d_ptr))[(index) >> 1] = \
-    ((((WebRtc_Word16 *)(d_ptr))[(index) >> 1]) \
-    & (0x00ff << (8 * (((index) + 1) & 0x1)))) | \
-    ((val) << (8 * ((index) & 0x1)))
 #endif
 
 #define WEBRTC_SPL_MUL(a, b) \

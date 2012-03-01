@@ -1,4 +1,4 @@
-# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+# Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
@@ -127,7 +127,6 @@
       }],
       ['OS=="linux"', {
         'defines': [
-          'WEBRTC_TARGET_PC',
           'WEBRTC_LINUX',
           'WEBRTC_THREAD_RR',
           # TODO(andrew): can we select this automatically?
@@ -136,19 +135,16 @@
         ],
       }],
       ['OS=="mac"', {
-        # TODO(andrew): what about PowerPC?
-        # Setup for Intel
         'defines': [
-          'WEBRTC_TARGET_MAC_INTEL',
-          'WEBRTC_MAC_INTEL',
           'WEBRTC_MAC',
+          'WEBRTC_MAC_INTEL',  # TODO(andrew): remove this.
           'WEBRTC_THREAD_RR',
           'WEBRTC_CLOCK_TYPE_REALTIME',
         ],
       }],
       ['OS=="win"', {
         'defines': [
-          'WEBRTC_TARGET_PC',
+          'WEBRTC_WIN',
         ],
         # TODO(andrew): remove this block when possible.
         # 4389: Signed/unsigned mismatch.
@@ -159,18 +155,17 @@
       }],
       ['OS=="android"', {
         'defines': [
-          'WEBRTC_TARGET_PC',
           'WEBRTC_LINUX',
+          'WEBRTC_ANDROID',
+          # TODO(leozwang): move WEBRTC_ARCH_ARM to typedefs.h.
+          'WEBRTC_ARCH_ARM',
           # TODO(leozwang): Investigate CLOCK_REALTIME and CLOCK_MONOTONIC
           # support on Android. Keep WEBRTC_CLOCK_TYPE_REALTIME for now,
           # remove it after I verify that CLOCK_MONOTONIC is fully functional
           # with condition and event functions in system_wrappers.
           'WEBRTC_CLOCK_TYPE_REALTIME',
           'WEBRTC_THREAD_RR',
-          'WEBRTC_ANDROID',
           'WEBRTC_ARM_INLINE_CALLS',
-          # TODO(leozwang): move WEBRTC_ARCH_ARM to typedefs.h.
-          'WEBRTC_ARCH_ARM',
           'WEBRTC_ANDROID_OPENSLES',
          ],
       }],
