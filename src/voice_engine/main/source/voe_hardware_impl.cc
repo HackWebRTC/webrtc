@@ -250,8 +250,8 @@ int VoEHardwareImpl::GetRecordingDeviceName(int index,
     assert(strLen == kAdmMaxDeviceNameSize);
     assert(strLen == kAdmMaxGuidSize);
 
-    WebRtc_Word8 name[strLen];
-    WebRtc_Word8 guid[strLen];
+    char name[strLen];
+    char guid[strLen];
 
     // Get names from module
     if (_audioDevicePtr->RecordingDeviceName(index, name, guid) != 0)
@@ -308,8 +308,8 @@ int VoEHardwareImpl::GetPlayoutDeviceName(int index,
     assert(strLen == kAdmMaxDeviceNameSize);
     assert(strLen == kAdmMaxGuidSize);
 
-    WebRtc_Word8 name[strLen];
-    WebRtc_Word8 guid[strLen];
+    char name[strLen];
+    char guid[strLen];
 
     // Get names from module
     if (_audioDevicePtr->PlayoutDeviceName(index, name, guid) != 0)

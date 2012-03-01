@@ -23,7 +23,7 @@
 #include "utility.h"
 #include "voe_base.h"
 #include "voe_external_media.h"
-#include "voe_rtp_rtcp.h" 
+#include "voe_rtp_rtcp.h"
 
 #if defined(_WIN32)
 #include <Qos.h>
@@ -349,7 +349,7 @@ Channel::SendRTCPPacket(int channel, const void *data, int len)
 void
 Channel::IncomingRTPPacket(const WebRtc_Word8* incomingRtpPacket,
                            const WebRtc_Word32 rtpPacketLength,
-                           const WebRtc_Word8* fromIP,
+                           const char* fromIP,
                            const WebRtc_UWord16 fromPort)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
@@ -428,7 +428,7 @@ Channel::IncomingRTPPacket(const WebRtc_Word8* incomingRtpPacket,
 void
 Channel::IncomingRTCPPacket(const WebRtc_Word8* incomingRtcpPacket,
                             const WebRtc_Word32 rtcpPacketLength,
-                            const WebRtc_Word8* fromIP,
+                            const char* fromIP,
                             const WebRtc_UWord16 fromPort)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
@@ -633,7 +633,7 @@ WebRtc_Word32
 Channel::OnInitializeDecoder(
     const WebRtc_Word32 id,
     const WebRtc_Word8 payloadType,
-    const WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
+    const char payloadName[RTP_PAYLOAD_NAME_SIZE],
     const int frequency,
     const WebRtc_UWord8 channels,
     const WebRtc_UWord32 rate)
@@ -1824,8 +1824,8 @@ Channel::StopReceiving()
 WebRtc_Word32
 Channel::SetLocalReceiver(const WebRtc_UWord16 rtpPort,
                           const WebRtc_UWord16 rtcpPort,
-                          const WebRtc_Word8 ipAddr[64],
-                          const WebRtc_Word8 multicastIpAddr[64])
+                          const char ipAddr[64],
+                          const char multicastIpAddr[64])
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::SetLocalReceiver()");
@@ -1910,12 +1910,10 @@ Channel::GetLocalReceiver(int& port, int& RTCPport, char ipAddr[64])
         return -1;
     }
 
-    WebRtc_Word8 ipAddrTmp[UdpTransport::
-                           kIpAddressVersion6Length] = {0};
+    char ipAddrTmp[UdpTransport::kIpAddressVersion6Length] = {0};
     WebRtc_UWord16 rtpPort(0);
     WebRtc_UWord16 rtcpPort(0);
-    WebRtc_Word8 multicastIpAddr[UdpTransport::
-                                 kIpAddressVersion6Length] = {0};
+    char multicastIpAddr[UdpTransport::kIpAddressVersion6Length] = {0};
 
     // Acquire socket information from the socket module
     if (_socketTransportModule.ReceiveSocketInformation(ipAddrTmp,
@@ -1943,7 +1941,7 @@ Channel::GetLocalReceiver(int& port, int& RTCPport, char ipAddr[64])
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
 WebRtc_Word32
 Channel::SetSendDestination(const WebRtc_UWord16 rtpPort,
-                            const WebRtc_Word8 ipAddr[64],
+                            const char ipAddr[64],
                             const int sourcePort,
                             const WebRtc_UWord16 rtcpPort)
 {
@@ -2102,7 +2100,7 @@ Channel::GetSendDestination(int& port,
         return -1;
     }
 
-    WebRtc_Word8 ipAddrTmp[UdpTransport::kIpAddressVersion6Length] = {0};
+    char ipAddrTmp[UdpTransport::kIpAddressVersion6Length] = {0};
     WebRtc_UWord16 rtpPort(0);
     WebRtc_UWord16 rtcpPort(0);
     WebRtc_UWord16 rtpSourcePort(0);
@@ -2837,7 +2835,7 @@ Channel::ReceivedRTPPacket(const WebRtc_Word8* data, WebRtc_Word32 length)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::ReceivedRTPPacket()");
-    const WebRtc_Word8 dummyIP[] = "127.0.0.1";
+    const char dummyIP[] = "127.0.0.1";
     IncomingRTPPacket(data, length, dummyIP, 0);
     return 0;
 }
@@ -2847,7 +2845,7 @@ Channel::ReceivedRTCPPacket(const WebRtc_Word8* data, WebRtc_Word32 length)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId,_channelId),
                  "Channel::ReceivedRTCPPacket()");
-    const WebRtc_Word8 dummyIP[] = "127.0.0.1";
+    const char dummyIP[] = "127.0.0.1";
     IncomingRTCPPacket(data, length, dummyIP, 0);
     return 0;
 }
@@ -2861,7 +2859,7 @@ Channel::GetSourceInfo(int& rtpPort, int& rtcpPort, char ipAddr[64])
 
     WebRtc_UWord16 rtpPortModule;
     WebRtc_UWord16 rtcpPortModule;
-    WebRtc_Word8 ipaddr[UdpTransport::kIpAddressVersion6Length] = {0};
+    char ipaddr[UdpTransport::kIpAddressVersion6Length] = {0};
 
     if (_socketTransportModule.RemoteSocketInformation(ipaddr,
                                                        rtpPortModule,
@@ -2937,8 +2935,7 @@ Channel::SetSourceFilter(int rtpPort, int rtcpPort, const char ipAddr[64])
                      lastError);
         return -1;
     }
-    const WebRtc_Word8* filterIpAddress =
-        static_cast<const WebRtc_Word8*> (ipAddr);
+    const char* filterIpAddress = ipAddr;
     if (_socketTransportModule.SetFilterIP(filterIpAddress) != 0)
     {
         _engineStatisticsPtr->SetLastError(
@@ -2966,7 +2963,7 @@ Channel::GetSourceFilter(int& rtpPort, int& rtcpPort, char ipAddr[64])
             VE_SOCKET_TRANSPORT_MODULE_ERROR, kTraceWarning,
             "GetSourceFilter() failed to retrieve filter ports");
     }
-    WebRtc_Word8 ipAddrTmp[UdpTransport::kIpAddressVersion6Length] = {0};
+    char ipAddrTmp[UdpTransport::kIpAddressVersion6Length] = {0};
     if (_socketTransportModule.FilterIP(ipAddrTmp) != 0)
     {
         // no filter has been configured (not seen as an error)
@@ -3890,7 +3887,7 @@ int Channel::ScaleFileAsMicrophonePlayout(const float scale)
     return 0;
 }
 
-int Channel::StartRecordingPlayout(const WebRtc_Word8* fileName,
+int Channel::StartRecordingPlayout(const char* fileName,
                                    const CodecInst* codecInst)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,_channelId),
@@ -5244,7 +5241,7 @@ Channel::GetRemoteRTCP_CNAME(char cName[256])
             "GetRemoteRTCP_CNAME() invalid CNAME input buffer");
         return -1;
     }
-    WebRtc_Word8 cname[RTCP_CNAME_SIZE];
+    char cname[RTCP_CNAME_SIZE];
     const WebRtc_UWord32 remoteSSRC = _rtpRtcpModule.RemoteSSRC();
     if (_rtpRtcpModule.RemoteCNAME(remoteSSRC, cname) != 0)
     {

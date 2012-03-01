@@ -704,7 +704,7 @@ int TransmitMixer::ScaleFileAsMicrophonePlayout(const float scale)
     return 0;
 }
 
-int TransmitMixer::StartRecordingMicrophone(const WebRtc_Word8* fileName,
+int TransmitMixer::StartRecordingMicrophone(const char* fileName,
                                             const CodecInst* codecInst)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, -1),
@@ -891,7 +891,7 @@ int TransmitMixer::StopRecordingMicrophone()
     return 0;
 }
 
-int TransmitMixer::StartRecordingCall(const WebRtc_Word8* fileName,
+int TransmitMixer::StartRecordingCall(const char* fileName,
                                       const CodecInst* codecInst)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, -1),

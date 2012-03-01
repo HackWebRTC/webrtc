@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -110,11 +110,11 @@ public:
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
     WebRtc_Word32 SetLocalReceiver(const WebRtc_UWord16 rtpPort,
                                    const WebRtc_UWord16 rtcpPort,
-                                   const WebRtc_Word8 ipAddr[64],
-                                   const WebRtc_Word8 multicastIpAddr[64]);
+                                   const char ipAddr[64],
+                                   const char multicastIpAddr[64]);
     WebRtc_Word32 GetLocalReceiver(int& port, int& RTCPport, char ipAddr[]);
     WebRtc_Word32 SetSendDestination(const WebRtc_UWord16 rtpPort,
-                                     const WebRtc_Word8 ipAddr[64],
+                                     const char ipAddr[64],
                                      const int sourcePort,
                                      const WebRtc_UWord16 rtcpPort);
     WebRtc_Word32 GetSendDestination(int& port, char ipAddr[64],
@@ -384,7 +384,7 @@ public:
     WebRtc_Word32 OnInitializeDecoder(
             const WebRtc_Word32 id,
             const WebRtc_Word8 payloadType,
-            const WebRtc_Word8 payloadName[RTP_PAYLOAD_NAME_SIZE],
+            const char payloadName[RTP_PAYLOAD_NAME_SIZE],
             const int frequency,
             const WebRtc_UWord8 channels,
             const WebRtc_UWord32 rate);
@@ -426,12 +426,12 @@ public:
     // From UdpTransportData in the Socket Transport module
     void IncomingRTPPacket(const WebRtc_Word8* incomingRtpPacket,
                            const WebRtc_Word32 rtpPacketLength,
-                           const WebRtc_Word8* fromIP,
+                           const char* fromIP,
                            const WebRtc_UWord16 fromPort);
 
     void IncomingRTCPPacket(const WebRtc_Word8* incomingRtcpPacket,
                             const WebRtc_Word32 rtcpPacketLength,
-                            const WebRtc_Word8* fromIP,
+                            const char* fromIP,
                             const WebRtc_UWord16 fromPort);
 
 public:
