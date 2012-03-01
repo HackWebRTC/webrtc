@@ -22,7 +22,8 @@ from buildbot.steps.shell import ShellCommand
 # dictionaries in master.cfg.
 SUPPORTED_PLATFORMS = ('Linux', 'Mac', 'Windows')
 
-SVN_LOCATION = 'http://webrtc.googlecode.com/svn/trunk'
+WEBRTC_SVN_LOCATION = 'http://webrtc.googlecode.com/svn/trunk'
+
 VALGRIND_CMD = ['tools/valgrind-webrtc/webrtc_tests.sh', '-t', 'cmdline']
 
 DEFAULT_COVERAGE_DIR = '/var/www/coverage/'
@@ -403,7 +404,7 @@ class WebRTCAndroidFactory(WebRTCFactory):
     cmd = ' ; '.join(cleanup_list)
     self.AddCommonStep(cmd, descriptor='cleanup', workdir='build/trunk')
 
-    cmd = 'svn checkout %s external/webrtc' % SVN_LOCATION
+    cmd = 'svn checkout %s external/webrtc' % WEBRTC_SVN_LOCATION
     self.AddCommonStep(cmd, descriptor='svn (checkout)', workdir='build/trunk')
 
     cmd = ('source build/envsetup.sh && lunch full_%s-eng '
@@ -478,7 +479,7 @@ class WebRTCLinuxFactory(WebRTCFactory):
       for gyp_define in MEMORY_TOOLS_GYP_DEFINES:
         self.gyp_params.append('-D' + gyp_define)
     else:
-      self.AddCommonStep(['gclient', 'config', SVN_LOCATION],
+      self.AddCommonStep(['gclient', 'config', WEBRTC_SVN_LOCATION],
                          descriptor='gclient_config')
     self.AddGclientSyncStep(force_sync=False)
 
@@ -652,7 +653,7 @@ class WebRTCMacFactory(WebRTCFactory):
     else:
       self.build_type = build_type
     self.AddSmartCleanStep()
-    self.AddCommonStep(['gclient', 'config', SVN_LOCATION],
+    self.AddCommonStep(['gclient', 'config', WEBRTC_SVN_LOCATION],
                        descriptor='gclient_config')
     self.AddGclientSyncStep(force_sync=True)
 
@@ -710,33 +711,43 @@ class WebRTCWinFactory(WebRTCFactory):
 
   def EnableBuild(self, platform='Win32', configuration='Debug'):
     if platform not in self.allowed_platforms:
-      print '*** INCORRECT PLATFORM (%s)!!! ***' % platform
-      sys.exit(0)
-    else:
-      self.platform = platform
+      raise UnsupportedConfigurationError('Platform %s is not supported.'
+                                          % platform)
     if configuration not in self.allowed_configurations:
-      print '*** INCORRECT CONFIGURATION (%s)!!! ***' % configuration
-      sys.exit(0)
-    else:
-      self.configuration = configuration
+      raise UnsupportedConfigurationError('Configuration %s is not supported.'
+                                          % configuration)
+    self.platform = platform
+    self.configuration = configuration
 
+    # List possible interfering processes here to make it easier to debug what
+    # processes can interfere with us.
+    cmd = '%WINDIR%\\system32\\tasklist || set ERRORLEVEL=0'
+    self.AddCommonStep(cmd, 'list_processes')
+
+    # Since Windows is very picky about locking files, make sure to kill
+    # any interfering processes. Feel free to add more process kill steps if
+    # necessary.
+    cmd = '%WINDIR%\\system32\\taskkill /f /im svn.exe || set ERRORLEVEL=0'
+    self.AddCommonStep(cmd, 'svnkill')
+
+    # Now do the clean + build.
     self.AddSmartCleanStep()
-    self.AddCommonStep(['gclient', 'config', SVN_LOCATION],
+    self.AddCommonStep(['gclient', 'config', WEBRTC_SVN_LOCATION],
                        descriptor='gclient_config')
     self.AddGclientSyncStep(force_sync=True)
 
     if self.configuration == 'Debug' or self.configuration == 'both':
-      cmd = ['msbuild', 'webrtc.sln', '/t:Clean',
+      cmd = ['msbuild', 'webrtc.sln', '/t:Clean', '/verbosity:diagnostic',
              '/p:Configuration=Debug;Platform=%s' % (self.platform)]
       self.AddCommonStep(cmd, descriptor='Build(Clean)', workdir='build/trunk')
-      cmd = ['msbuild', 'webrtc.sln',
+      cmd = ['msbuild', 'webrtc.sln', '/verbosity:diagnostic',
              '/p:Configuration=Debug;Platform=%s' % (self.platform)]
       self.AddCommonStep(cmd, descriptor='Build(Debug)', workdir='build/trunk')
     if self.configuration == 'Release' or self.configuration == 'both':
-      cmd = ['msbuild', 'webrtc.sln', '/t:Clean',
+      cmd = ['msbuild', 'webrtc.sln', '/t:Clean', '/verbosity:diagnostic',
              '/p:Configuration=Release;Platform=%s' % (self.platform)]
       self.AddCommonStep(cmd, descriptor='Build(Clean)', workdir='build/trunk')
-      cmd = ['msbuild', 'webrtc.sln',
+      cmd = ['msbuild', 'webrtc.sln', '/verbosity:diagnostic',
              '/p:Configuration=Release;Platform=%s' % (self.platform)]
       self.AddCommonStep(cmd, descriptor='Build(Release)',
                          workdir='build/trunk')
@@ -757,7 +768,7 @@ class WebRTCWinFactory(WebRTCFactory):
 # Utility functions
 
 
-class UnsupportedPlatformError(Exception):
+class UnsupportedConfigurationError(Exception):
   pass
 
 
@@ -775,11 +786,11 @@ def GetEnabledTests(test_dict, platform):
        A list of test names, sorted alphabetically.
 
      Raises:
-       UnsupportedPlatformError: if the platform supplied is not supported.
+       UnsupportedConfigurationError: if the platform supplied is not supported.
   """
   if platform not in SUPPORTED_PLATFORMS:
-    raise UnsupportedPlatformError('*** UNSUPPORTED PLATFORM (%s)!!! ***' %
-                                   platform)
+    raise UnsupportedConfigurationError('Platform %s is not supported.'
+                                        % platform)
   result = []
   platform_index = SUPPORTED_PLATFORMS.index(platform)
   for test_name, enabled_platforms in test_dict.iteritems():
