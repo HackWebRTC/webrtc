@@ -182,17 +182,27 @@ AudioCodingModuleImpl::~AudioCodingModuleImpl()
         {
             if (_codecs[i] != NULL)
             {
+                // True stereo codecs share the same memory for master and
+                // slave, so slave codec need to be nullified here, since the
+                // memory will be deleted.
+                if(_slaveCodecs[i] == _codecs[i]) {
+                    _slaveCodecs[i] = NULL;
+                }
+
+                // Mirror index holds the address of the codec memory.
                 assert(_mirrorCodecIdx[i] > -1);
                 if(_codecs[_mirrorCodecIdx[i]] != NULL)
                 {
                     delete _codecs[_mirrorCodecIdx[i]];
                     _codecs[_mirrorCodecIdx[i]] = NULL;
                 }
+
                 _codecs[i] = NULL;
             }
 
             if(_slaveCodecs[i] != NULL)
             {
+                // Delete memory for stereo usage of mono codecs.
                 assert(_mirrorCodecIdx[i] > -1);
                 if(_slaveCodecs[_mirrorCodecIdx[i]] != NULL)
                 {
