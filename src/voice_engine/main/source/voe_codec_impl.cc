@@ -203,7 +203,7 @@ int VoECodecImpl::SetSendCodec(int channel, const CodecInst& codec)
                 _audioProcessingModulePtr->num_input_channels(),
                 maxNumChannels) != 0)
         {
-            _engineStatistics.SetLastError(VE_SOUNDCARD_ERROR, kTraceError,
+            _engineStatistics.SetLastError(VE_APM_ERROR, kTraceError,
                 "Init() failed to set APM channels for the send audio stream");
             return -1;
         }
