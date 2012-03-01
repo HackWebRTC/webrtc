@@ -1071,8 +1071,8 @@ WebRtc_Word32 AudioDeviceLinuxPulse::SetPlayoutDevice(
 
 WebRtc_Word32 AudioDeviceLinuxPulse::PlayoutDeviceName(
     WebRtc_UWord16 index,
-    WebRtc_Word8 name[kAdmMaxDeviceNameSize],
-    WebRtc_Word8 guid[kAdmMaxGuidSize])
+    char name[kAdmMaxDeviceNameSize],
+    char guid[kAdmMaxGuidSize])
 {
 
     const WebRtc_UWord16 nDevices = PlayoutDevices();
@@ -1113,8 +1113,8 @@ WebRtc_Word32 AudioDeviceLinuxPulse::PlayoutDeviceName(
 
 WebRtc_Word32 AudioDeviceLinuxPulse::RecordingDeviceName(
     WebRtc_UWord16 index,
-    WebRtc_Word8 name[kAdmMaxDeviceNameSize],
-    WebRtc_Word8 guid[kAdmMaxGuidSize])
+    char name[kAdmMaxDeviceNameSize],
+    char guid[kAdmMaxGuidSize])
 {
 
     const WebRtc_UWord16 nDevices(RecordingDevices());
@@ -2124,13 +2124,13 @@ WebRtc_Word32 AudioDeviceLinuxPulse::InitSamplingFrequency()
 }
 
 WebRtc_Word32 AudioDeviceLinuxPulse::GetDefaultDeviceInfo(bool recDevice,
-                                                          WebRtc_Word8* name,
+                                                          char* name,
                                                           WebRtc_UWord16& index)
 {
-    WebRtc_Word8 tmpName[kAdmMaxDeviceNameSize] = {0};
+    char tmpName[kAdmMaxDeviceNameSize] = {0};
     // subtract length of "default: "
     WebRtc_UWord16 nameLen = kAdmMaxDeviceNameSize - 9;
-    WebRtc_Word8* pName = NULL;
+    char* pName = NULL;
 
     if (name)
     {
@@ -2792,7 +2792,7 @@ bool AudioDeviceLinuxPulse::PlayThreadProcess()
         if (_outputDeviceIndex > 0)
         {
             // Get the playout device name
-            _playDeviceName = new WebRtc_Word8[kAdmMaxDeviceNameSize];
+            _playDeviceName = new char[kAdmMaxDeviceNameSize];
             _deviceIndex = _outputDeviceIndex;
             PlayoutDevices();
         }
@@ -3026,7 +3026,7 @@ bool AudioDeviceLinuxPulse::RecThreadProcess()
         if (_inputDeviceIndex > 0)
         {
             // Get the recording device name
-            _recDeviceName = new WebRtc_Word8[kAdmMaxDeviceNameSize];
+            _recDeviceName = new char[kAdmMaxDeviceNameSize];
             _deviceIndex = _inputDeviceIndex;
             RecordingDevices();
         }

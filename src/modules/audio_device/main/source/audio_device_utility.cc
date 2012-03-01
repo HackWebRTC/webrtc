@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -42,7 +42,9 @@ WebRtc_UWord32 AudioDeviceUtility::GetTimeInMS()
 	return timeGetTime();
 }
 
-bool AudioDeviceUtility::StringCompare(const WebRtc_Word8* str1 , const WebRtc_Word8* str2, const WebRtc_UWord32 length)
+bool AudioDeviceUtility::StringCompare(
+    const char* str1 , const char* str2,
+    const WebRtc_UWord32 length)
 {
 	return ((_strnicmp(str1, str2, length) == 0) ? true : false);
 }
@@ -61,7 +63,7 @@ bool AudioDeviceUtility::StringCompare(const WebRtc_Word8* str1 , const WebRtc_W
 #include <stdio.h>      // getchar
 #include <termios.h>    // tcgetattr
 
-#include <unistd.h> 
+#include <unistd.h>
 
 namespace webrtc
 {
@@ -112,7 +114,8 @@ void AudioDeviceUtility::Sleep(WebRtc_UWord32 milliseconds)
     nanosleep(&t,NULL);
 }
 
-bool AudioDeviceUtility::StringCompare(const WebRtc_Word8* str1 , const WebRtc_Word8* str2, const WebRtc_UWord32 length)
+bool AudioDeviceUtility::StringCompare(
+    const char* str1 , const char* str2, const WebRtc_UWord32 length)
 {
     return (strncasecmp(str1, str2, length) == 0)?true: false;
 }

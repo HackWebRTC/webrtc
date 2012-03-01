@@ -932,8 +932,8 @@ WebRtc_Word32 AudioDeviceLinuxALSA::SetPlayoutDevice(
 
 WebRtc_Word32 AudioDeviceLinuxALSA::PlayoutDeviceName(
     WebRtc_UWord16 index,
-    WebRtc_Word8 name[kAdmMaxDeviceNameSize],
-    WebRtc_Word8 guid[kAdmMaxGuidSize])
+    char name[kAdmMaxDeviceNameSize],
+    char guid[kAdmMaxGuidSize])
 {
 
     const WebRtc_UWord16 nDevices(PlayoutDevices());
@@ -955,8 +955,8 @@ WebRtc_Word32 AudioDeviceLinuxALSA::PlayoutDeviceName(
 
 WebRtc_Word32 AudioDeviceLinuxALSA::RecordingDeviceName(
     WebRtc_UWord16 index,
-    WebRtc_Word8 name[kAdmMaxDeviceNameSize],
-    WebRtc_Word8 guid[kAdmMaxGuidSize])
+    char name[kAdmMaxDeviceNameSize],
+    char guid[kAdmMaxGuidSize])
 {
 
     const WebRtc_UWord16 nDevices(RecordingDevices());

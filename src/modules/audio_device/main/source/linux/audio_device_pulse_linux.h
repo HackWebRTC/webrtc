@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -113,12 +113,12 @@ public:
     virtual WebRtc_Word16 RecordingDevices();
     virtual WebRtc_Word32 PlayoutDeviceName(
         WebRtc_UWord16 index,
-        WebRtc_Word8 name[kAdmMaxDeviceNameSize],
-        WebRtc_Word8 guid[kAdmMaxGuidSize]);
+        char name[kAdmMaxDeviceNameSize],
+        char guid[kAdmMaxGuidSize]);
     virtual WebRtc_Word32 RecordingDeviceName(
         WebRtc_UWord16 index,
-        WebRtc_Word8 name[kAdmMaxDeviceNameSize],
-        WebRtc_Word8 guid[kAdmMaxGuidSize]);
+        char name[kAdmMaxDeviceNameSize],
+        char guid[kAdmMaxGuidSize]);
 
     // Device selection
     virtual WebRtc_Word32 SetPlayoutDevice(WebRtc_UWord16 index);
@@ -278,7 +278,7 @@ private:
 
     WebRtc_Word32 CheckPulseAudioVersion();
     WebRtc_Word32 InitSamplingFrequency();
-    WebRtc_Word32 GetDefaultDeviceInfo(bool recDevice, WebRtc_Word8* name,
+    WebRtc_Word32 GetDefaultDeviceInfo(bool recDevice, char* name,
                                        WebRtc_UWord16& index);
     WebRtc_Word32 InitPulseAudio();
     WebRtc_Word32 TerminatePulseAudio();
@@ -346,11 +346,11 @@ private:
     WebRtc_UWord16 _deviceIndex;
     WebRtc_Word16 _numPlayDevices;
     WebRtc_Word16 _numRecDevices;
-    WebRtc_Word8* _playDeviceName;
-    WebRtc_Word8* _recDeviceName;
-    WebRtc_Word8* _playDisplayDeviceName;
-    WebRtc_Word8* _recDisplayDeviceName;
-    WebRtc_Word8 _paServerVersion[32];
+    char* _playDeviceName;
+    char* _recDeviceName;
+    char* _playDisplayDeviceName;
+    char* _recDisplayDeviceName;
+    char _paServerVersion[32];
 
     WebRtc_Word8* _playBuffer;
     size_t _playbackBufferSize;

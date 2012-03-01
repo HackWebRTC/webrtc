@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -44,21 +44,28 @@ public:
     WebRtc_Word32 SetPlayoutChannels(WebRtc_UWord8 channels);
     WebRtc_UWord8 RecordingChannels() const;
     WebRtc_UWord8 PlayoutChannels() const;
-    WebRtc_Word32 SetRecordingChannel(const AudioDeviceModule::ChannelType channel);
-    WebRtc_Word32 RecordingChannel(AudioDeviceModule::ChannelType& channel) const;
+    WebRtc_Word32 SetRecordingChannel(
+        const AudioDeviceModule::ChannelType channel);
+    WebRtc_Word32 RecordingChannel(
+        AudioDeviceModule::ChannelType& channel) const;
 
-    WebRtc_Word32 SetRecordedBuffer(const WebRtc_Word8* audioBuffer, WebRtc_UWord32 nSamples);
+    WebRtc_Word32 SetRecordedBuffer(const WebRtc_Word8* audioBuffer,
+                                    WebRtc_UWord32 nSamples);
     WebRtc_Word32 SetCurrentMicLevel(WebRtc_UWord32 level);
-    WebRtc_Word32 SetVQEData(WebRtc_UWord32 playDelayMS, WebRtc_UWord32 recDelayMS, WebRtc_Word32 clockDrift);
+    WebRtc_Word32 SetVQEData(WebRtc_UWord32 playDelayMS,
+                             WebRtc_UWord32 recDelayMS,
+                             WebRtc_Word32 clockDrift);
     WebRtc_Word32 DeliverRecordedData();
     WebRtc_UWord32 NewMicLevel() const;
 
     WebRtc_Word32 RequestPlayoutData(WebRtc_UWord32 nSamples);
     WebRtc_Word32 GetPlayoutData(WebRtc_Word8* audioBuffer);
 
-    WebRtc_Word32 StartInputFileRecording(const WebRtc_Word8 fileName[kAdmMaxFileNameSize]);
+    WebRtc_Word32 StartInputFileRecording(
+        const char fileName[kAdmMaxFileNameSize]);
     WebRtc_Word32 StopInputFileRecording();
-    WebRtc_Word32 StartOutputFileRecording(const WebRtc_Word8 fileName[kAdmMaxFileNameSize]);
+    WebRtc_Word32 StartOutputFileRecording(
+        const char fileName[kAdmMaxFileNameSize]);
     WebRtc_Word32 StopOutputFileRecording();
 
     AudioDeviceBuffer();

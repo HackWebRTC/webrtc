@@ -1139,8 +1139,8 @@ WebRtc_Word32 AudioDeviceMac::SetPlayoutDevice(
 
 WebRtc_Word32 AudioDeviceMac::PlayoutDeviceName(
     WebRtc_UWord16 index,
-    WebRtc_Word8 name[kAdmMaxDeviceNameSize],
-    WebRtc_Word8 guid[kAdmMaxGuidSize])
+    char name[kAdmMaxDeviceNameSize],
+    char guid[kAdmMaxGuidSize])
 {
 
     const WebRtc_UWord16 nDevices(PlayoutDevices());
@@ -1162,8 +1162,8 @@ WebRtc_Word32 AudioDeviceMac::PlayoutDeviceName(
 
 WebRtc_Word32 AudioDeviceMac::RecordingDeviceName(
     WebRtc_UWord16 index,
-    WebRtc_Word8 name[kAdmMaxDeviceNameSize],
-    WebRtc_Word8 guid[kAdmMaxGuidSize])
+    char name[kAdmMaxDeviceNameSize],
+    char guid[kAdmMaxGuidSize])
 {
 
     const WebRtc_UWord16 nDevices(RecordingDevices());

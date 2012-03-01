@@ -1109,7 +1109,7 @@ void AudioMixerManagerLinuxPulse::PaSinkInputInfoCallbackHandler(
 {
     if (eol)
     {
-        // Signal that we are done.
+        // Signal that we are done
         LATE(pa_threaded_mainloop_signal)(_paMainloop, 0);
         return;
     }

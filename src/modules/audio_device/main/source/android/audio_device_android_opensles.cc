@@ -138,8 +138,9 @@ WebRtc_Word32 AudioDeviceAndroidOpenSLES::Init() {
     _recWarning = 0;
     _recError = 0;
 
-    SLEngineOption EngineOption[] = { (SLuint32) SL_ENGINEOPTION_THREADSAFE,
-            (SLuint32) SL_BOOLEAN_TRUE };
+    SLEngineOption EngineOption[] = {
+      { (SLuint32) SL_ENGINEOPTION_THREADSAFE, (SLuint32) SL_BOOLEAN_TRUE },
+    };
     WebRtc_Word32 res = slCreateEngine(&_slEngineObject, 1, EngineOption, 0,
                                        NULL, NULL);
     //WebRtc_Word32 res = slCreateEngine( &_slEngineObject, 0, NULL, 0, NULL,
@@ -964,7 +965,7 @@ WebRtc_Word32 AudioDeviceAndroidOpenSLES::InitPlayout() {
         return -1;
     }
 
-    WebRtc_Word32 res(-1);
+    WebRtc_Word32 res = -1;
     SLDataFormat_PCM pcm;
     SLDataSource audioSource;
     SLDataLocator_AndroidSimpleBufferQueue simpleBufferQueue;
@@ -1120,17 +1121,13 @@ WebRtc_Word32 AudioDeviceAndroidOpenSLES::InitRecording() {
                      "  Recording object is NULL");
         return -1;
     }
-    WebRtc_Word32 res(-1);
-    WebRtc_Word32 numInputs(0);
-    WebRtc_UWord32 inputDeviceIDs[N_MAX_INPUT_DEVICES];
-    SLAudioInputDescriptor audioInputDescriptor;
-    SLDataSource audioSource;
-    SLDataLocator_IODevice micLocator;
-    SLDataSink audioSink;
-    SLDataFormat_PCM pcm;
-    SLDataLocator_AndroidSimpleBufferQueue simpleBufferQueue;
-    bool micAvailable(false);
-    WebRtc_UWord32 micDeviceID(0);
+
+    // TODO(leozwang) clean up following commented out code
+    // WebRtc_Word32 numInputs(0);
+    // WebRtc_UWord32 inputDeviceIDs[N_MAX_INPUT_DEVICES];
+    // SLAudioInputDescriptor audioInputDescriptor;
+    // bool micAvailable(false);
+    // WebRtc_UWord32 micDeviceID(0);
 
     /*    // Get the Audio IO DEVICE CAPABILITIES interface, which is also implicit
      res = (*_slEngineObject)->GetInterface(_slEngineObject,
@@ -1202,6 +1199,14 @@ WebRtc_Word32 AudioDeviceAndroidOpenSLES::InitRecording() {
      return -1;
      }
      */
+
+    WebRtc_Word32 res(-1);
+    SLDataSource audioSource;
+    SLDataLocator_IODevice micLocator;
+    SLDataSink audioSink;
+    SLDataFormat_PCM pcm;
+    SLDataLocator_AndroidSimpleBufferQueue simpleBufferQueue;
+
     // Setup the data source structure
     micLocator.locatorType = SL_DATALOCATOR_IODEVICE;
     micLocator.deviceType = SL_IODEVICE_AUDIOINPUT;
@@ -1932,15 +1937,16 @@ void AudioDeviceAndroidOpenSLES::UpdateRecordingDelay() {
 
 WebRtc_Word32 AudioDeviceAndroidOpenSLES::InitSampleRate() {
 
-    WebRtc_Word32 res(-1);
-    WebRtc_Word32 numOutputs(0);
-    WebRtc_UWord32 headsetDeviceID(0);
-    WebRtc_UWord32 earpieceDeviceID(0);
-    bool headsetAvailable(false);
-    bool earpieceAvailable(false);
-    bool foundSampleRate(false);
-    WebRtc_UWord32 outputDeviceIDs[N_MAX_OUTPUT_DEVICES];
-    SLAudioOutputDescriptor audioOutputDescriptor;
+    // TODO(leozwang) clean up following commented out code
+    // WebRtc_Word32 res(-1);
+    // WebRtc_Word32 numOutputs(0);
+    // WebRtc_UWord32 headsetDeviceID(0);
+    // WebRtc_UWord32 earpieceDeviceID(0);
+    // bool headsetAvailable(false);
+    // bool earpieceAvailable(false);
+    // bool foundSampleRate(false);
+    // WebRtc_UWord32 outputDeviceIDs[N_MAX_OUTPUT_DEVICES];
+    // SLAudioOutputDescriptor audioOutputDescriptor;
 
     if (_slEngineObject == NULL) {
         WEBRTC_TRACE(kTraceError, kTraceAudioDevice, _id, "  SL Object is NULL");

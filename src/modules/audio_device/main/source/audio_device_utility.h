@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -22,8 +22,8 @@ public:
     static WebRtc_UWord32 GetTimeInMS();
 	static void Sleep(WebRtc_UWord32 milliseconds);
 	static void WaitForKey();
-    static bool StringCompare(const WebRtc_Word8* str1,
-                              const WebRtc_Word8* str2,
+    static bool StringCompare(const char* str1,
+                              const char* str2,
                               const WebRtc_UWord32 length);
 	virtual WebRtc_Word32 Init() = 0;
 

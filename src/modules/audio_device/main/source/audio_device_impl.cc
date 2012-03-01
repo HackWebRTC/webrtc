@@ -1468,7 +1468,10 @@ WebRtc_Word32 AudioDeviceModuleImpl::SetPlayoutDevice(WindowsDeviceType device)
 //  PlayoutDeviceName
 // ----------------------------------------------------------------------------
 
-WebRtc_Word32 AudioDeviceModuleImpl::PlayoutDeviceName(WebRtc_UWord16 index, WebRtc_Word8 name[kAdmMaxDeviceNameSize], WebRtc_Word8 guid[kAdmMaxGuidSize])
+WebRtc_Word32 AudioDeviceModuleImpl::PlayoutDeviceName(
+    WebRtc_UWord16 index,
+    char name[kAdmMaxDeviceNameSize],
+    char guid[kAdmMaxGuidSize])
 {
     CHECK_INITIALIZED();
 
@@ -1499,7 +1502,10 @@ WebRtc_Word32 AudioDeviceModuleImpl::PlayoutDeviceName(WebRtc_UWord16 index, Web
 //  RecordingDeviceName
 // ----------------------------------------------------------------------------
 
-WebRtc_Word32 AudioDeviceModuleImpl::RecordingDeviceName(WebRtc_UWord16 index, WebRtc_Word8 name[kAdmMaxDeviceNameSize], WebRtc_Word8 guid[kAdmMaxGuidSize])
+WebRtc_Word32 AudioDeviceModuleImpl::RecordingDeviceName(
+    WebRtc_UWord16 index,
+    char name[kAdmMaxDeviceNameSize],
+    char guid[kAdmMaxGuidSize])
 {
     CHECK_INITIALIZED();
 
@@ -1536,7 +1542,8 @@ WebRtc_Word16 AudioDeviceModuleImpl::RecordingDevices()
 
     WebRtc_UWord16 nRecordingDevices = _ptrAudioDevice->RecordingDevices();
 
-    WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id, "output: #recording devices=%d", nRecordingDevices);
+    WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id,
+                 "output: #recording devices=%d", nRecordingDevices);
     return ((WebRtc_Word16)nRecordingDevices);
 }
 
@@ -1698,7 +1705,8 @@ WebRtc_Word32 AudioDeviceModuleImpl::RegisterAudioCallback(AudioTransport* audio
 //  StartRawInputFileRecording
 // ----------------------------------------------------------------------------
 
-WebRtc_Word32 AudioDeviceModuleImpl::StartRawInputFileRecording(const WebRtc_Word8 pcmFileNameUTF8[kAdmMaxFileNameSize])
+WebRtc_Word32 AudioDeviceModuleImpl::StartRawInputFileRecording(
+    const char pcmFileNameUTF8[kAdmMaxFileNameSize])
 {
     CHECK_INITIALIZED();
 
@@ -1725,7 +1733,8 @@ WebRtc_Word32 AudioDeviceModuleImpl::StopRawInputFileRecording()
 //  StartRawOutputFileRecording
 // ----------------------------------------------------------------------------
 
-WebRtc_Word32 AudioDeviceModuleImpl::StartRawOutputFileRecording(const WebRtc_Word8 pcmFileNameUTF8[kAdmMaxFileNameSize])
+WebRtc_Word32 AudioDeviceModuleImpl::StartRawOutputFileRecording(
+    const char pcmFileNameUTF8[kAdmMaxFileNameSize])
 {
     CHECK_INITIALIZED();
 
@@ -2037,22 +2046,28 @@ AudioDeviceModule::AudioLayer AudioDeviceModuleImpl::PlatformAudioLayer() const
     switch (_platformAudioLayer)
     {
     case kPlatformDefaultAudio:
-        WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id, "output: kPlatformDefaultAudio");
+        WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id,
+                     "output: kPlatformDefaultAudio");
         break;
     case kWindowsWaveAudio:
-        WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id, "output: kWindowsWaveAudio");
+        WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id,
+                     "output: kWindowsWaveAudio");
         break;
     case kWindowsCoreAudio:
-        WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id, "output: kWindowsCoreAudio");
+        WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id,
+                     "output: kWindowsCoreAudio");
         break;
     case kLinuxAlsaAudio:
-        WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id, "output: kLinuxAlsaAudio");
+        WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id,
+                     "output: kLinuxAlsaAudio");
         break;
     case kDummyAudio:
-        WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id, "output: kDummyAudio");
+        WEBRTC_TRACE(kTraceStateInfo, kTraceAudioDevice, _id,
+                     "output: kDummyAudio");
         break;
     default:
-        WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id, "output: INVALID");
+        WEBRTC_TRACE(kTraceWarning, kTraceAudioDevice, _id,
+                     "output: INVALID");
         break;
     }
 

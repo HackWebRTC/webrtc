@@ -100,8 +100,14 @@ public:
     // Device enumeration
     virtual WebRtc_Word16 PlayoutDevices();
     virtual WebRtc_Word16 RecordingDevices();
-    virtual WebRtc_Word32 PlayoutDeviceName(WebRtc_UWord16 index, WebRtc_Word8 name[kAdmMaxDeviceNameSize], WebRtc_Word8 guid[kAdmMaxGuidSize]);
-    virtual WebRtc_Word32 RecordingDeviceName(WebRtc_UWord16 index, WebRtc_Word8 name[kAdmMaxDeviceNameSize], WebRtc_Word8 guid[kAdmMaxGuidSize]);
+    virtual WebRtc_Word32 PlayoutDeviceName(
+        WebRtc_UWord16 index,
+        char name[kAdmMaxDeviceNameSize],
+        char guid[kAdmMaxGuidSize]);
+    virtual WebRtc_Word32 RecordingDeviceName(
+        WebRtc_UWord16 index,
+        char name[kAdmMaxDeviceNameSize],
+        char guid[kAdmMaxGuidSize]);
 
     // Device selection
     virtual WebRtc_Word32 SetPlayoutDevice(WebRtc_UWord16 index);

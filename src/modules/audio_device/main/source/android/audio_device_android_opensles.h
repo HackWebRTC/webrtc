@@ -247,6 +247,7 @@ private:
     SLDeviceVolumeItf _slMicVolume;
 
     WebRtc_UWord32 _micDeviceId;
+    WebRtc_UWord32 _recQueueSeq;
 
     // Events
     EventWrapper& _timeEventRec;
@@ -263,7 +264,6 @@ private:
     // Recording buffer
     WebRtc_Word8 _recQueueBuffer[N_REC_QUEUE_BUFFERS][2
             * REC_BUF_SIZE_IN_SAMPLES];
-    WebRtc_UWord32 _recQueueSeq;
     WebRtc_Word8 _recBuffer[N_REC_BUFFERS][2*REC_BUF_SIZE_IN_SAMPLES];
     WebRtc_UWord32 _recLength[N_REC_BUFFERS];
     WebRtc_UWord32 _recSeqNumber[N_REC_BUFFERS];

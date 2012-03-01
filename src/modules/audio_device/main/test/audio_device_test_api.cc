@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -20,7 +20,9 @@
 // Helper functions
 #if defined(ANDROID)
 char filenameStr[2][256] =
-{   0}; // Allow two buffers for those API calls taking two filenames
+{ {0},
+  {0},
+}; // Allow two buffers for those API calls taking two filenames
 int currentStr = 0;
 
 char* GetFilename(char* filename)
@@ -192,10 +194,7 @@ private:
     WebRtc_UWord32 _playCount;
 };
 
-int api_test();
-
-
-#if !defined(MAC_IPHONE) && !defined(ANDROID)
+#if !defined(MAC_IPHONE)
 int api_test();
 
 int main(int /*argc*/, char* /*argv*/[])
@@ -2122,7 +2121,7 @@ int api_test()
     TEST(audioDevice->SetPlayoutDevice(MACRO_DEFAULT_DEVICE) == 0);
     TEST(audioDevice->SetRecordingDevice(MACRO_DEFAULT_DEVICE) == 0);
 
-#if defined(MAC_IPHONE) 
+#if defined(MAC_IPHONE)
     // Not playing or recording, should just return 0
     TEST(audioDevice->ResetAudioDevice() == 0);
 

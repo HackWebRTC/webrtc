@@ -322,7 +322,8 @@ WebRtc_Word32 AudioDeviceBuffer::SetVQEData(WebRtc_UWord32 playDelayMS, WebRtc_U
 //  StartInputFileRecording
 // ----------------------------------------------------------------------------
 
-WebRtc_Word32 AudioDeviceBuffer::StartInputFileRecording(const WebRtc_Word8 fileName[kAdmMaxFileNameSize])
+WebRtc_Word32 AudioDeviceBuffer::StartInputFileRecording(
+    const char fileName[kAdmMaxFileNameSize])
 {
     WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, _id, "%s", __FUNCTION__);
 
@@ -354,7 +355,8 @@ WebRtc_Word32 AudioDeviceBuffer::StopInputFileRecording()
 //  StartOutputFileRecording
 // ----------------------------------------------------------------------------
 
-WebRtc_Word32 AudioDeviceBuffer::StartOutputFileRecording(const WebRtc_Word8 fileName[kAdmMaxFileNameSize])
+WebRtc_Word32 AudioDeviceBuffer::StartOutputFileRecording(
+    const char fileName[kAdmMaxFileNameSize])
 {
     WEBRTC_TRACE(kTraceMemory, kTraceAudioDevice, _id, "%s", __FUNCTION__);
 
@@ -618,8 +620,8 @@ WebRtc_Word32 AudioDeviceBuffer::GetPlayoutData(WebRtc_Word8* audioBuffer)
        WEBRTC_TRACE(kTraceError, kTraceUtility, _id, "_playSize %i exceeds "
        "kMaxBufferSizeBytes in AudioDeviceBuffer::GetPlayoutData", _playSize);
        assert(false);
-       return -1;       
-    } 
+       return -1;
+    }
 
     memcpy(audioBuffer, &_playBuffer[0], _playSize);
 
