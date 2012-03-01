@@ -145,7 +145,7 @@ class AddBuildStatusData(oauth_post_request_handler.OAuthPostRequestHandler):
         (build_number, status) = _parse_status(build_number_and_status)
         (revision, bot_name) = _parse_name(revision_and_bot_name)
       except ValueError as error:
-        logger.warn('Invalid parameter in request: %s.' % error)
+        logging.warn('Invalid parameter in request: %s.' % error)
         self.response.set_status(400)
         return
 

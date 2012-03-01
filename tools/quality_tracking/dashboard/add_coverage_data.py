@@ -55,7 +55,7 @@ class AddCoverageData(oauth_post_request_handler.OAuthPostRequestHandler):
       function_coverage = _parse_percentage(function_coverage_string)
 
     except ValueError as error:
-      logger.warn('Invalid parameter in request: %s.' % error)
+      logging.warn('Invalid parameter in request: %s.' % error)
       self.response.set_status(400)
       return
 

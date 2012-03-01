@@ -47,21 +47,23 @@ def _find_latest_32bit_debug_build(www_directory_contents, coverage_www_dir):
 
      Coverage directories have the form Linux32bitDBG_<number>. There may be
      other directories in the list though, for instance for other build
-     configurations.
+     configurations. We assume here that build numbers keep rising and never
+     wrap around or anything like that.
   """
 
-  # This sort ensures we will encounter the directory with the highest number
-  # first.
-  www_directory_contents.sort(reverse=True)
-
+  found_build_numbers = []
   for entry in www_directory_contents:
-    match = re.match('Linux32DBG_\d+', entry)
+    match = re.match('Linux32DBG_(\d+)', entry)
     if match is not None:
-      return entry
+      found_build_numbers.append(int(match.group(1)))
 
-  raise CouldNotFindCoverageDirectory('Error: Found no 32-bit '
-                                      'debug build in directory %s.' %
-                                      coverage_www_dir)
+  if not found_build_numbers:
+    raise CouldNotFindCoverageDirectory('Error: Found no 32-bit '
+                                        'debug build in directory %s.' %
+                                         coverage_www_dir)
+
+  most_recent = max(found_build_numbers)
+  return 'Linux32DBG_' + str(most_recent)
 
 
 def _grab_coverage_percentage(label, index_html_contents):
@@ -97,7 +99,8 @@ def _main():
   dashboard.read_required_files(constants.CONSUMER_SECRET_FILE,
                                 constants.ACCESS_TOKEN_FILE)
 
-  www_dir_contents = os.listdir(BUILD_BOT_COVERAGE_WWW_DIRECTORY)
+  coverage_www_dir = constants.BUILD_BOT_COVERAGE_WWW_DIRECTORY
+  www_dir_contents = os.listdir(coverage_www_dir)
   latest_build_directory = _find_latest_32bit_debug_build(www_dir_contents,
                                                           coverage_www_dir)
 
