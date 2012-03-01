@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -66,7 +66,7 @@ class ViEFilePlayer
 
  protected:
   ViEFilePlayer(int Id, int engine_id, ViEInputManager& input_manager);
-  int Init(const WebRtc_Word8* file_nameUTF8,
+  int Init(const char* file_nameUTF8,
            const bool loop,
            const FileFormats file_format,
            VoiceEngine* voe_ptr);
@@ -113,7 +113,7 @@ class ViEFilePlayer
   int local_audio_channel_;
 
   ViEFileObserver* observer_;
-  WebRtc_Word8 file_name_[FileWrapper::kMaxFileNameSize];
+  char file_name_[FileWrapper::kMaxFileNameSize];
 
   // VoE Interface.
   VoEFile* voe_file_interface_;

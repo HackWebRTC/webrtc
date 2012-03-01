@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -38,7 +38,7 @@ class ViESyncModule : public Module {
   void SetNetworkDelay(int network_delay);
 
   // Implements Module.
-  virtual WebRtc_Word32 Version(WebRtc_Word8* version,
+  virtual WebRtc_Word32 Version(char* version,
                                 WebRtc_UWord32& remaining_buffer_in_bytes,
                                 WebRtc_UWord32& position) const;
   virtual WebRtc_Word32 ChangeUniqueId(const WebRtc_Word32 id);

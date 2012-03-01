@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -65,7 +65,7 @@ void ViESyncModule::SetNetworkDelay(int network_delay) {
   channel_delay_.network_delay = network_delay;
 }
 
-WebRtc_Word32 ViESyncModule::Version(WebRtc_Word8* version,
+WebRtc_Word32 ViESyncModule::Version(char* version,
                                      WebRtc_UWord32& remaining_buffer_in_bytes,
                                      WebRtc_UWord32& position) const {
   if (version == NULL) {
@@ -73,7 +73,7 @@ WebRtc_Word32 ViESyncModule::Version(WebRtc_Word8* version,
                  "Invalid in argument to ViESyncModule Version()");
     return -1;
   }
-  WebRtc_Word8 our_version[] = "ViESyncModule 1.1.0";
+  char our_version[] = "ViESyncModule 1.1.0";
   WebRtc_UWord32 our_length = (WebRtc_UWord32) strlen(our_version);
   if (remaining_buffer_in_bytes < our_length + 1) {
     return -1;

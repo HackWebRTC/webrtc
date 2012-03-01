@@ -124,13 +124,13 @@ class ViEChannel
   WebRtc_Word32 SetStartSequenceNumber(WebRtc_UWord16 sequence_number);
 
   // Sets the CName for the outgoing stream on the channel.
-  WebRtc_Word32 SetRTCPCName(const WebRtc_Word8 rtcp_cname[]);
+  WebRtc_Word32 SetRTCPCName(const char rtcp_cname[]);
 
   // Gets the CName for the outgoing stream on the channel.
-  WebRtc_Word32 GetRTCPCName(WebRtc_Word8 rtcp_cname[]);
+  WebRtc_Word32 GetRTCPCName(char rtcp_cname[]);
 
   // Gets the CName of the incoming stream.
-  WebRtc_Word32 GetRemoteRTCPCName(WebRtc_Word8 rtcp_cname[]);
+  WebRtc_Word32 GetRemoteRTCPCName(char rtcp_cname[]);
   WebRtc_Word32 RegisterRtpObserver(ViERTPObserver* observer);
   WebRtc_Word32 RegisterRtcpObserver(ViERTCPObserver* observer);
   WebRtc_Word32 SendApplicationDefinedRTCPPacket(
@@ -186,7 +186,7 @@ class ViEChannel
   virtual WebRtc_Word32 OnInitializeDecoder(
       const WebRtc_Word32 id,
       const WebRtc_Word8 payload_type,
-      const WebRtc_Word8 payload_name[RTP_PAYLOAD_NAME_SIZE],
+      const char payload_name[RTP_PAYLOAD_NAME_SIZE],
       const int frequency,
       const WebRtc_UWord8 channels,
       const WebRtc_UWord32 rate);
@@ -203,23 +203,23 @@ class ViEChannel
 
   WebRtc_Word32 SetLocalReceiver(const WebRtc_UWord16 rtp_port,
                                  const WebRtc_UWord16 rtcp_port,
-                                 const WebRtc_Word8* ip_address);
+                                 const char* ip_address);
   WebRtc_Word32 GetLocalReceiver(WebRtc_UWord16& rtp_port,
                                  WebRtc_UWord16& rtcp_port,
-                                 WebRtc_Word8* ip_address) const;
-  WebRtc_Word32 SetSendDestination(const WebRtc_Word8* ip_address,
+                                 char* ip_address) const;
+  WebRtc_Word32 SetSendDestination(const char* ip_address,
                                    const WebRtc_UWord16 rtp_port,
                                    const WebRtc_UWord16 rtcp_port,
                                    const WebRtc_UWord16 source_rtp_port,
                                    const WebRtc_UWord16 source_rtcp_port);
-  WebRtc_Word32 GetSendDestination(WebRtc_Word8* ip_address,
+  WebRtc_Word32 GetSendDestination(char* ip_address,
                                    WebRtc_UWord16& rtp_port,
                                    WebRtc_UWord16& rtcp_port,
                                    WebRtc_UWord16& source_rtp_port,
                                    WebRtc_UWord16& source_rtcp_port) const;
   WebRtc_Word32 GetSourceInfo(WebRtc_UWord16& rtp_port,
                               WebRtc_UWord16& rtcp_port,
-                              WebRtc_Word8* ip_address,
+                              char* ip_address,
                               WebRtc_UWord32 ip_address_length);
 
   WebRtc_Word32 SetRemoteSSRCType(const StreamType usage,
@@ -247,10 +247,10 @@ class ViEChannel
   bool IsIPv6Enabled();
   WebRtc_Word32 SetSourceFilter(const WebRtc_UWord16 rtp_port,
                                 const WebRtc_UWord16 rtcp_port,
-                                const WebRtc_Word8* ip_address);
+                                const char* ip_address);
   WebRtc_Word32 GetSourceFilter(WebRtc_UWord16& rtp_port,
                                 WebRtc_UWord16& rtcp_port,
-                                WebRtc_Word8* ip_address) const;
+                                char* ip_address) const;
 
   WebRtc_Word32 SetToS(const WebRtc_Word32 DSCP, const bool use_set_sockOpt);
   WebRtc_Word32 GetToS(WebRtc_Word32& DSCP, bool& use_set_sockOpt) const;

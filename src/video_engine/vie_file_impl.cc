@@ -542,8 +542,7 @@ int ViEFileImpl::GetFileInformation(const char* file_name,
                                     const FileFormats file_format) {
   return ViEFilePlayer::GetFileInformation(
            shared_data_->instance_id(),
-           static_cast<const WebRtc_Word8*>(file_name),
-           video_codec, audio_codec, file_format);
+           file_name, video_codec, audio_codec, file_format);
 }
 
 int ViEFileImpl::GetRenderSnapshot(const int video_channel,

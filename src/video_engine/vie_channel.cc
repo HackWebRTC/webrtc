@@ -799,7 +799,7 @@ WebRtc_Word32 ViEChannel::SetStartSequenceNumber(
   return rtp_rtcp_.SetSequenceNumber(sequence_number);
 }
 
-WebRtc_Word32 ViEChannel::SetRTCPCName(const WebRtc_Word8 rtcp_cname[]) {
+WebRtc_Word32 ViEChannel::SetRTCPCName(const char rtcp_cname[]) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s", __FUNCTION__);
   if (rtp_rtcp_.Sending()) {
@@ -810,13 +810,13 @@ WebRtc_Word32 ViEChannel::SetRTCPCName(const WebRtc_Word8 rtcp_cname[]) {
   return rtp_rtcp_.SetCNAME(rtcp_cname);
 }
 
-WebRtc_Word32 ViEChannel::GetRTCPCName(WebRtc_Word8 rtcp_cname[]) {
+WebRtc_Word32 ViEChannel::GetRTCPCName(char rtcp_cname[]) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s", __FUNCTION__);
   return rtp_rtcp_.CNAME(rtcp_cname);
 }
 
-WebRtc_Word32 ViEChannel::GetRemoteRTCPCName(WebRtc_Word8 rtcp_cname[]) {
+WebRtc_Word32 ViEChannel::GetRemoteRTCPCName(char rtcp_cname[]) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
 
@@ -1165,7 +1165,7 @@ WebRtc_Word32 ViEChannel::StopRTPDump(RTPDirections direction) {
 
 WebRtc_Word32 ViEChannel::SetLocalReceiver(const WebRtc_UWord16 rtp_port,
                                            const WebRtc_UWord16 rtcp_port,
-                                           const WebRtc_Word8* ip_address) {
+                                           const char* ip_address) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
 
@@ -1185,7 +1185,7 @@ WebRtc_Word32 ViEChannel::SetLocalReceiver(const WebRtc_UWord16 rtp_port,
     return -1;
   }
 
-  const WebRtc_Word8* multicast_ip_address = NULL;
+  const char* multicast_ip_address = NULL;
   if (socket_transport_.InitializeReceiveSockets(&vie_receiver_, rtp_port,
                                                  ip_address,
                                                  multicast_ip_address,
@@ -1206,7 +1206,7 @@ WebRtc_Word32 ViEChannel::SetLocalReceiver(const WebRtc_UWord16 rtp_port,
 
 WebRtc_Word32 ViEChannel::GetLocalReceiver(WebRtc_UWord16& rtp_port,
                                            WebRtc_UWord16& rtcp_port,
-                                           WebRtc_Word8* ip_address) const {
+                                           char* ip_address) const {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
 
@@ -1226,7 +1226,7 @@ WebRtc_Word32 ViEChannel::GetLocalReceiver(WebRtc_UWord16& rtp_port,
     return -1;
   }
 
-  WebRtc_Word8 multicast_ip_address[UdpTransport::kIpAddressVersion6Length];
+  char multicast_ip_address[UdpTransport::kIpAddressVersion6Length];
   if (socket_transport_.ReceiveSocketInformation(ip_address, rtp_port,
                                                  rtcp_port,
                                                  multicast_ip_address) != 0) {
@@ -1245,7 +1245,7 @@ WebRtc_Word32 ViEChannel::GetLocalReceiver(WebRtc_UWord16& rtp_port,
 }
 
 WebRtc_Word32 ViEChannel::SetSendDestination(
-    const WebRtc_Word8* ip_address,
+    const char* ip_address,
     const WebRtc_UWord16 rtp_port,
     const WebRtc_UWord16 rtcp_port,
     const WebRtc_UWord16 source_rtp_port,
@@ -1364,7 +1364,7 @@ WebRtc_Word32 ViEChannel::SetSendDestination(
 }
 
 WebRtc_Word32 ViEChannel::GetSendDestination(
-    WebRtc_Word8* ip_address,
+    char* ip_address,
     WebRtc_UWord16& rtp_port,
     WebRtc_UWord16& rtcp_port,
     WebRtc_UWord16& source_rtp_port,
@@ -1576,7 +1576,7 @@ bool ViEChannel::Receiving() {
 
 WebRtc_Word32 ViEChannel::GetSourceInfo(WebRtc_UWord16& rtp_port,
                                         WebRtc_UWord16& rtcp_port,
-                                        WebRtc_Word8* ip_address,
+                                        char* ip_address,
                                         WebRtc_UWord32 ip_address_length) {
   {
     CriticalSectionScoped cs(callback_cs_.get());
@@ -1748,7 +1748,7 @@ bool ViEChannel::IsIPv6Enabled() {
 
 WebRtc_Word32 ViEChannel::SetSourceFilter(const WebRtc_UWord16 rtp_port,
                                           const WebRtc_UWord16 rtcp_port,
-                                          const WebRtc_Word8* ip_address) {
+                                          const char* ip_address) {
   callback_cs_->Enter();
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
@@ -1780,7 +1780,7 @@ WebRtc_Word32 ViEChannel::SetSourceFilter(const WebRtc_UWord16 rtp_port,
 
 WebRtc_Word32 ViEChannel::GetSourceFilter(WebRtc_UWord16& rtp_port,
                                           WebRtc_UWord16& rtcp_port,
-                                          WebRtc_Word8* ip_address) const {
+                                          char* ip_address) const {
   callback_cs_->Enter();
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);
@@ -2415,7 +2415,7 @@ void ViEChannel::OnApplicationDataReceived(const WebRtc_Word32 id,
 WebRtc_Word32 ViEChannel::OnInitializeDecoder(
     const WebRtc_Word32 id,
     const WebRtc_Word8 payload_type,
-    const WebRtc_Word8 payload_name[RTP_PAYLOAD_NAME_SIZE],
+    const char payload_name[RTP_PAYLOAD_NAME_SIZE],
     const int frequency,
     const WebRtc_UWord8 channels,
     const WebRtc_UWord32 rate) {

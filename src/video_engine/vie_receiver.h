@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -48,11 +48,11 @@ class ViEReceiver : public UdpTransportData, public RtpData {
   // Implements UdpTransportData.
   virtual void IncomingRTPPacket(const WebRtc_Word8* rtp_packet,
                                  const WebRtc_Word32 rtp_packet_length,
-                                 const WebRtc_Word8* from_ip,
+                                 const char* from_ip,
                                  const WebRtc_UWord16 from_port);
   virtual void IncomingRTCPPacket(const WebRtc_Word8* rtcp_packet,
                                   const WebRtc_Word32 rtcp_packet_length,
-                                  const WebRtc_Word8* from_ip,
+                                  const char* from_ip,
                                   const WebRtc_UWord16 from_port);
 
   // Receives packets from external transport.
