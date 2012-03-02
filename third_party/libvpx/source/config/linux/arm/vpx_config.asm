@@ -8,10 +8,8 @@
 .equ ARCH_PPC32 ,  0
 .equ ARCH_PPC64 ,  0
 .equ HAVE_ARMV5TE ,  1
-.equ HAVE_ARMV6 ,  1
+.equ HAVE_ARMV6 ,  0
 .equ HAVE_ARMV7 ,  0
-.equ HAVE_IWMMXT ,  0
-.equ HAVE_IWMMXT2 ,  0
 .equ HAVE_MIPS32 ,  0
 .equ HAVE_MMX ,  0
 .equ HAVE_SSE ,  0
@@ -25,7 +23,7 @@
 .equ HAVE_ALT_TREE_LAYOUT ,  0
 .equ HAVE_PTHREAD_H ,  1
 .equ HAVE_SYS_MMAN_H ,  1
-.equ HAVE_UNISTD_H ,  0
+.equ HAVE_UNISTD_H ,  1
 .equ CONFIG_EXTERNAL_BUILD ,  0
 .equ CONFIG_INSTALL_DOCS ,  0
 .equ CONFIG_INSTALL_BINS ,  0
@@ -66,6 +64,8 @@
 .equ CONFIG_SMALL ,  0
 .equ CONFIG_POSTPROC_VISUALIZER ,  0
 .equ CONFIG_OS_SUPPORT ,  1
+.equ CONFIG_UNIT_TESTS ,  0
+.equ CONFIG_MULTI_RES_ENCODING ,  0
 	.section	.note.GNU-stack,"",%progbits
 @ This file was created from a .asm file
 @  using the ads2gas.pl script.
