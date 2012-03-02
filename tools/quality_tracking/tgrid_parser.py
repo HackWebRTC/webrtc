@@ -19,8 +19,17 @@ class FailedToParseBuildStatus(Exception):
   pass
 
 
+def _map_status(status):
+  if status == 'exception':
+    return 'failed'
+  return status
+
+
 def _parse_builds(revision, html):
   """Parses the bot list, which is a sequence of <td></td> lines.
+
+     See contract for parse_tgrid_page for more information on how this function
+     behaves.
 
      Example input:
      <td class="build success"><a href="builders/Android/builds/119">OK</a></td>
@@ -29,10 +38,12 @@ def _parse_builds(revision, html):
   result = {}
 
   for match in re.finditer('<td.*?>.*?<a href="builders/(.+?)/builds/(\d+)">'
-                           '(OK|failed|building|warnings)</a>.*?</td>',
+                           '(OK|failed|building|warnings|exception)'
+                           '</a>.*?</td>',
                            html, re.DOTALL):
     revision_and_bot_name = revision + "--" + match.group(1)
-    build_number_and_status = match.group(2) + "--" + match.group(3)
+    build_number_and_status = match.group(2) + "--" + _map_status(
+                                                          match.group(3))
 
     result[revision_and_bot_name] = build_number_and_status
 
@@ -56,7 +67,8 @@ def parse_tgrid_page(html):
 
      Returns: A dictionary with <svn revision>--<bot name> mapped to
          <bot build number>--<status>, where status is either OK, failed,
-         building or warnings.
+         building or warnings. The status may be 'exception' in the input, but
+         we simply map that to failed.
   """
   result = {}
 

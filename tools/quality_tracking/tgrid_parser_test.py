@@ -133,6 +133,15 @@ make chrome</td>
 </tr>
 """
 
+MINIMAL_EXCEPTION = """
+<tr>
+<td valign="bottom" class="sourcestamp">1576</td>
+<td class="build exception">
+<a href="builders/Chrome/builds/109">exception</a><br />
+Sync</td>
+</tr>
+"""
+
 class TGridParserTest(unittest.TestCase):
   def test_parser_throws_exception_on_empty_html(self):
     self.assertRaises(tgrid_parser.FailedToParseBuildStatus,
@@ -165,7 +174,7 @@ class TGridParserTest(unittest.TestCase):
     self.assertEqual('1576--Win32Debug', first_mapping[0])
     self.assertEqual('434--building', first_mapping[1])
 
-  def test_parser_finds_warned_bot(self):
+  def test_parser_finds_warnings(self):
     result = tgrid_parser.parse_tgrid_page(MINIMAL_WARNED)
 
     self.assertEqual(1, len(result), 'There is only one bot in the sample.')
@@ -173,6 +182,16 @@ class TGridParserTest(unittest.TestCase):
 
     self.assertEqual('1576--Chrome', first_mapping[0])
     self.assertEqual('109--warnings', first_mapping[1])
+
+  def test_parser_finds_exception_and_maps_to_failed(self):
+    result = tgrid_parser.parse_tgrid_page(MINIMAL_EXCEPTION)
+
+    self.assertEqual(1, len(result), 'There is only one bot in the sample.')
+    first_mapping = result.items()[0]
+
+    self.assertEqual('1576--Chrome', first_mapping[0])
+    self.assertEqual('109--failed', first_mapping[1])
+
 
   def test_parser_finds_all_bots_and_revisions(self):
     result = tgrid_parser.parse_tgrid_page(SAMPLE_FILE)
