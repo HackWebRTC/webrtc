@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -19,7 +19,7 @@
 #include "rtp_rtcp_defines.h"
 
 using namespace webrtc;
- 
+
 const int kVideoNackListSize = 10;
 const int kTestId = 123;
 const WebRtc_UWord32 kTestSsrc = 3456;
@@ -36,9 +36,9 @@ class VerifyingNackReceiver : public RtpData
       const WebRtc_UWord8* data,
       const WebRtc_UWord16 size,
       const webrtc::WebRtcRTPHeader* rtp_header) {
-    
+
     EXPECT_EQ(kTestSsrc, rtp_header->header.ssrc);
-    EXPECT_EQ(find(sequence_numbers_.begin(),
+    EXPECT_EQ(std::find(sequence_numbers_.begin(),
                     sequence_numbers_.end(),
                     rtp_header->header.sequenceNumber),
               sequence_numbers_.end());
@@ -246,4 +246,3 @@ TEST_F(RtpRtcpNackTest, RTX) {
   EXPECT_EQ(kTestNumberOfPackets, nack_receiver_->sequence_numbers_.size());
   EXPECT_EQ(kTestNumberOfRtxPackets, transport_->count_rtx_ssrc_);
 }
-
