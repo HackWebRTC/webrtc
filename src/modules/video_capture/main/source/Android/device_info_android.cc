@@ -298,7 +298,6 @@ WebRtc_Word32 DeviceInfoAndroid::GetOrientation(
     JNIEnv *env;
     jclass javaCmDevInfoClass;
     jobject javaCmDevInfoObject;
-    WebRtc_Word32 result = 0;
     bool attached = false;
     if (VideoCaptureAndroid::AttachAndUseAndroidDeviceInfoObjects(
                                                               env,
