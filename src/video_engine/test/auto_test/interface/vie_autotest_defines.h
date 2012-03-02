@@ -206,17 +206,4 @@ namespace {
 #define AutoTestSleep ::Sleep
 #endif
 
-#ifdef WEBRTC_ANDROID
-namespace {
-  void Sleep(unsigned long x) {
-    timespec t;
-    t.tv_sec = x/1000;
-    t.tv_nsec = (x-(x/1000)*1000)*1000000;
-    nanosleep(&t,NULL);
-  }
-}
-
-#define AutoTestSleep ::Sleep
-#endif
-
 #endif  // WEBRTC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_INTERFACE_VIE_AUTOTEST_DEFINES_H_

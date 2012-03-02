@@ -87,9 +87,8 @@ bool GetVideoDevice(webrtc::ViEBase* ptrViEBase,
                     webrtc::ViECapture* ptrViECapture,
                     char* captureDeviceName, char* captureDeviceUniqueId);
 bool GetIPAddress(char* IP);
-#ifndef WEBRTC_ANDROID
 bool ValidateIP(std::string iStr);
-#endif
+
 // The following are Print to stdout functions.
 void PrintCallInformation(char* IP, char* videoCaptureDeviceName,
                           char* videoCaptureUniqueId,
