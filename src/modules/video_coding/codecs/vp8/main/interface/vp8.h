@@ -109,6 +109,10 @@ class VP8Encoder : public VideoEncoder {
   // Call encoder initialize function and set control settings.
   int InitAndSetControlSettings();
 
+  // Update frame size for codec.
+  int UpdateCodecFrameSize(WebRtc_UWord32 input_image_width,
+                           WebRtc_UWord32 input_image_height);
+
   void PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
                              const vpx_codec_cx_pkt& pkt);
 

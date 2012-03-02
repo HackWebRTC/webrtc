@@ -324,6 +324,15 @@ int VP8Encoder::Encode(const RawImage& input_image,
   if (encoded_complete_callback_ == NULL) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
+
+  // Check for change in frame size.
+  if (input_image._width != codec_.width ||
+      input_image._height != codec_.height) {
+    int ret = UpdateCodecFrameSize(input_image._width, input_image._height);
+    if (ret < 0) {
+      return ret;
+    }
+  }
   // image in vpx_image_t format
   raw_->planes[PLANE_Y] = input_image._buffer;
   raw_->planes[PLANE_U] = &input_image._buffer[codec_.height * codec_.width];
@@ -374,6 +383,30 @@ int VP8Encoder::Encode(const RawImage& input_image,
 #else
   return GetEncodedFrame(input_image);
 #endif
+}
+
+int VP8Encoder::UpdateCodecFrameSize(WebRtc_UWord32 input_image_width,
+                                     WebRtc_UWord32 input_image_height) {
+  codec_.width = input_image_width;
+  codec_.height = input_image_height;
+
+  raw_->w = codec_.width;
+  raw_->h = codec_.height;
+  raw_->d_w = codec_.width;
+  raw_->d_h = codec_.height;
+  raw_->stride[VPX_PLANE_Y] = codec_.width;
+  raw_->stride[VPX_PLANE_U] = codec_.width / 2;
+  raw_->stride[VPX_PLANE_V] = codec_.width / 2;
+  vpx_img_set_rect(raw_, 0, 0, codec_.width, codec_.height);
+
+  // Update encoder context for new frame size.
+  // Change of frame size will automatically trigger a key frame.
+  config_->g_w = codec_.width;
+  config_->g_h = codec_.height;
+  if (vpx_codec_enc_config_set(encoder_, config_)) {
+    return WEBRTC_VIDEO_CODEC_ERROR;
+  }
+  return WEBRTC_VIDEO_CODEC_OK;
 }
 
 void VP8Encoder::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
