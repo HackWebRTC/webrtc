@@ -109,6 +109,14 @@
             'android/audio_device_utility_android.h',
           ],
           'conditions': [
+            ['OS=="android"', {
+              'link_settings': {
+                'libraries': [
+                  '-llog',
+                  '-lOpenSLES',
+                ],
+              },
+            }],
             ['OS=="linux"', {
               'defines': [
                 'LINUX_ALSA',
