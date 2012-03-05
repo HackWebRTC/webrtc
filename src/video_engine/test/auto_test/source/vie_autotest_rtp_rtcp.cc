@@ -375,6 +375,8 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     // Deregister external transport
     EXPECT_EQ(0, ViE.network->DeregisterSendTransport(tbChannel.videoChannel));
 
+    // Temporarily disabling flaky test.
+#if 0
     {
       // Create three channels. 1 and 2 are grouped together and will get a
       // common REMB packet. 3 is in its own group and will get a separate REMB
@@ -462,6 +464,7 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
       EXPECT_EQ(0, ViE.base->DeleteChannel(channel_2));
       EXPECT_EQ(0, ViE.base->DeleteChannel(channel_3));
     }
+#endif
 
     //***************************************************************
     //  Testing finished. Tear down Video Engine
