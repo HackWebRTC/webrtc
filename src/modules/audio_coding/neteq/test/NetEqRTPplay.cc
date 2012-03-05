@@ -22,6 +22,9 @@
 #include "NETEQTEST_NetEQClass.h"
 #include "NETEQTEST_CodecClass.h"
 
+#ifdef WEBRTC_ANDROID
+#include <ctype.h> // isalpha
+#endif
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>

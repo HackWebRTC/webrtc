@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -79,12 +79,12 @@ void Stats::PrintSummary() {
 
   // ENCODING
   printf("Encoding time:\n");
-  frame = min_element(stats_.begin(),
+  frame = std::min_element(stats_.begin(),
                       stats_.end(), LessForEncodeTime);
   printf("  Min     : %7d us (frame %d)\n",
          frame->encode_time_in_us, frame->frame_number);
 
-  frame = max_element(stats_.begin(),
+  frame = std::max_element(stats_.begin(),
                       stats_.end(), LessForEncodeTime);
   printf("  Max     : %7d us (frame %d)\n",
          frame->encode_time_in_us, frame->frame_number);
@@ -106,12 +106,12 @@ void Stats::PrintSummary() {
   if (decoded_frames.size() == 0) {
     printf("No successfully decoded frames exist in this statistics.\n");
   } else {
-    frame = min_element(decoded_frames.begin(),
+    frame = std::min_element(decoded_frames.begin(),
                         decoded_frames.end(), LessForDecodeTime);
     printf("  Min     : %7d us (frame %d)\n",
            frame->decode_time_in_us, frame->frame_number);
 
-    frame = max_element(decoded_frames.begin(),
+    frame = std::max_element(decoded_frames.begin(),
                         decoded_frames.end(), LessForDecodeTime);
     printf("  Max     : %7d us (frame %d)\n",
            frame->decode_time_in_us, frame->frame_number);
@@ -124,12 +124,12 @@ void Stats::PrintSummary() {
 
   // SIZE
   printf("Frame sizes:\n");
-  frame = min_element(stats_.begin(),
+  frame = std::min_element(stats_.begin(),
                       stats_.end(), LessForEncodedSize);
   printf("  Min     : %7d bytes (frame %d)\n",
          frame->encoded_frame_length_in_bytes, frame->frame_number);
 
-  frame = max_element(stats_.begin(),
+  frame = std::max_element(stats_.begin(),
                       stats_.end(), LessForEncodedSize);
   printf("  Max     : %7d bytes (frame %d)\n",
          frame->encoded_frame_length_in_bytes, frame->frame_number);
@@ -149,12 +149,12 @@ void Stats::PrintSummary() {
 
   // BIT RATE
   printf("Bit rates:\n");
-  frame = min_element(stats_.begin(),
+  frame = std::min_element(stats_.begin(),
                       stats_.end(), LessForBitRate);
   printf("  Min bit rate: %7d kbps (frame %d)\n",
          frame->bit_rate_in_kbps, frame->frame_number);
 
-  frame = max_element(stats_.begin(),
+  frame = std::max_element(stats_.begin(),
                       stats_.end(), LessForBitRate);
   printf("  Max bit rate: %7d kbps (frame %d)\n",
          frame->bit_rate_in_kbps, frame->frame_number);
