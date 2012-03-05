@@ -38,7 +38,7 @@ VoEAudioProcessing* VoEAudioProcessing::GetInterface(
 
 #ifdef WEBRTC_VOICE_ENGINE_AUDIO_PROCESSING_API
 VoEAudioProcessingImpl::VoEAudioProcessingImpl():
-    _isAecMode(WEBRTC_VOICE_ENGINE_EC_DEFAULT_MODE == EcAec?
+    _isAecMode(static_cast<int>(WEBRTC_VOICE_ENGINE_EC_DEFAULT_MODE) == EcAec?
         true : false)
 {
     WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId,-1),
