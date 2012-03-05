@@ -144,7 +144,7 @@ AudioTransportImpl::~AudioTransportImpl()
 // ----------------------------------------------------------------------------
 
 WebRtc_Word32 AudioTransportImpl::SetFilePlayout(bool enable,
-                                                 const WebRtc_Word8* fileName)
+                                                 const char* fileName)
 {
     _playFromFile = enable;
     if (enable)
@@ -916,8 +916,8 @@ WebRtc_Word32 FuncTestManager::TestDeviceEnumeration()
     TEST(audioDevice->Init() == 0);
     TEST(audioDevice->Initialized() == true);
 
-    WebRtc_Word8 name[kAdmMaxDeviceNameSize];
-    WebRtc_Word8 guid[kAdmMaxGuidSize];
+    char name[kAdmMaxDeviceNameSize];
+    char guid[kAdmMaxGuidSize];
 
     const WebRtc_Word16 nPlayoutDevices(audioDevice->PlayoutDevices());
     TEST(nPlayoutDevices >= 0);
@@ -1008,8 +1008,8 @@ WebRtc_Word32 FuncTestManager::TestDeviceSelection()
 
     bool available(false);
     WebRtc_Word16 nDevices(-1);
-    WebRtc_Word8 name[kAdmMaxDeviceNameSize];
-    WebRtc_Word8 guid[kAdmMaxGuidSize];
+    char name[kAdmMaxDeviceNameSize];
+    char guid[kAdmMaxGuidSize];
 
     // =======
     // Playout
@@ -2512,8 +2512,8 @@ WebRtc_Word32 FuncTestManager::TestExtra()
 WebRtc_Word32 FuncTestManager::SelectRecordingDevice()
 {
     WebRtc_Word16 nDevices = _audioDevice->RecordingDevices();
-    WebRtc_Word8 name[kAdmMaxDeviceNameSize];
-    WebRtc_Word8 guid[kAdmMaxGuidSize];
+    char name[kAdmMaxDeviceNameSize];
+    char guid[kAdmMaxGuidSize];
     WebRtc_Word32 ret(-1);
 
 #ifdef _WIN32
@@ -2574,8 +2574,8 @@ WebRtc_Word32 FuncTestManager::SelectRecordingDevice()
 WebRtc_Word32 FuncTestManager::SelectPlayoutDevice()
 {
     WebRtc_Word16 nDevices = _audioDevice->PlayoutDevices();
-    WebRtc_Word8 name[kAdmMaxDeviceNameSize];
-    WebRtc_Word8 guid[kAdmMaxGuidSize];
+    char name[kAdmMaxDeviceNameSize];
+    char guid[kAdmMaxGuidSize];
 
 #ifdef _WIN32
     TEST_LOG("\nSelect Playout Device\n \n");

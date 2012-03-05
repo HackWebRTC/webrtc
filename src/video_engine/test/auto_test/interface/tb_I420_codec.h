@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -27,9 +27,9 @@ public:
     TbI420Encoder();
     virtual ~TbI420Encoder();
 
-    static WebRtc_Word32 VersionStatic(WebRtc_Word8* version,
+    static WebRtc_Word32 VersionStatic(char* version,
                                        WebRtc_Word32 length);
-    virtual WebRtc_Word32  Version(WebRtc_Word8 *version,
+    virtual WebRtc_Word32  Version(char* version,
                                    WebRtc_Word32 length) const;
 
     virtual WebRtc_Word32 InitEncode(const webrtc::VideoCodec* codecSettings,

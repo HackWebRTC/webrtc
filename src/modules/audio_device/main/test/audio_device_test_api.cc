@@ -411,8 +411,8 @@ int api_test()
     // PlayoutDeviceName
     // =================
 
-    WebRtc_Word8 name[kAdmMaxDeviceNameSize];
-    WebRtc_Word8 guid[kAdmMaxGuidSize];
+    char name[kAdmMaxDeviceNameSize];
+    char guid[kAdmMaxGuidSize];
 
     nDevices = audioDevice->PlayoutDevices();
 
