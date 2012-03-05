@@ -37,6 +37,11 @@
         'video_render_frames.h',
         'video_render_impl.h',
         'i_video_render.h',
+        # Android
+        'Android/video_render_android_impl.h',
+        'Android/video_render_android_native_opengl2.h',
+        'Android/video_render_android_surface_view.h',
+        'Android/video_render_opengles20.h',
         # Linux
         'linux/video_render_linux_impl.h',
         'linux/video_x11_channel.h',
@@ -61,6 +66,11 @@
         'video_render_frames.cc',
         'video_render_impl.cc',
         # PLATFORM SPECIFIC SOURCE FILES - Will be filtered below
+        # Android
+        'Android/video_render_android_impl.cc',
+        'Android/video_render_android_native_opengl2.cc',
+        'Android/video_render_android_surface_view.cc',
+        'Android/video_render_opengles20.cc',
         # Linux
         'linux/video_render_linux_impl.cc',
         'linux/video_x11_channel.cc',
@@ -85,6 +95,19 @@
         ['include_internal_video_render==1', {
           'defines': [
             'WEBRTC_INCLUDE_INTERNAL_VIDEO_RENDER',
+          ],
+        }],
+        ['OS!="android" or include_internal_video_render==0', {
+          'sources!': [
+            # Android
+            'Android/video_render_android_impl.h',
+            'Android/video_render_android_native_opengl2.h',
+            'Android/video_render_android_surface_view.h',
+            'Android/video_render_opengles20.h',
+            'Android/video_render_android_impl.cc',
+            'Android/video_render_android_native_opengl2.cc',
+            'Android/video_render_android_surface_view.cc',
+            'Android/video_render_opengles20.cc',
           ],
         }],
         ['OS!="linux" or include_internal_video_render==0', {

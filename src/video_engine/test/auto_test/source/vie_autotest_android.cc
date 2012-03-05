@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -26,30 +26,21 @@ int ViEAutoTestAndroid::RunAutotest(int testSelection, int subTestSelection,
   // voice engine calls into ADM directly
   webrtc::VoiceEngine::SetAndroidAudioDeviceObjects(javaVM, env, context);
 #endif
-  int testErrors = 0;
 
   if (subTestSelection == 0) {
     // Run all selected test
     switch (testSelection) {
       case 0:
-        testErrors += vieAutoTest.ViEStandardTest();
-        if (testErrors == 0) {
-          // No errors found in delivery test, create delivery
-          ViETest::Log("Standard/delivery passed. ");
-        }
-        else {
-          // Didn't pass
-          ViETest::Log("\nStandard/delivery test failed.");
-        }
+        vieAutoTest.ViEStandardTest();
         break;
       case 1:
-        testErrors += vieAutoTest.ViEAPITest();
+        vieAutoTest.ViEAPITest();
         break;
       case 2:
-        testErrors += vieAutoTest.ViEExtendedTest();
+        vieAutoTest.ViEExtendedTest();
         break;
       case 3:
-        testErrors += vieAutoTest.ViELoopbackCall();
+        vieAutoTest.ViELoopbackCall();
         break;
       default:
         break;
@@ -60,39 +51,39 @@ int ViEAutoTestAndroid::RunAutotest(int testSelection, int subTestSelection,
     case 0: // Specific standard test
       switch (subTestSelection) {
         case 1: // base
-          testErrors += vieAutoTest.ViEBaseStandardTest();
+          vieAutoTest.ViEBaseStandardTest();
           break;
 
         case 2: // capture
-          testErrors += vieAutoTest.ViECaptureStandardTest();
+          vieAutoTest.ViECaptureStandardTest();
           break;
 
         case 3: // codec
-          testErrors += vieAutoTest.ViECodecStandardTest();
+          vieAutoTest.ViECodecStandardTest();
           break;
 
         case 5: //encryption
-          testErrors += vieAutoTest.ViEEncryptionStandardTest();
+          vieAutoTest.ViEEncryptionStandardTest();
           break;
 
         case 6: // file
-          testErrors += vieAutoTest.ViEFileStandardTest();
+          vieAutoTest.ViEFileStandardTest();
           break;
 
         case 7: // image process
-          testErrors += vieAutoTest.ViEImageProcessStandardTest();
+          vieAutoTest.ViEImageProcessStandardTest();
           break;
 
         case 8: // network
-          testErrors += vieAutoTest.ViENetworkStandardTest();
+          vieAutoTest.ViENetworkStandardTest();
           break;
 
         case 9: // Render
-          testErrors += vieAutoTest.ViERenderStandardTest();
+          vieAutoTest.ViERenderStandardTest();
           break;
 
         case 10: // RTP/RTCP
-          testErrors += vieAutoTest.ViERtpRtcpStandardTest();
+          vieAutoTest.ViERtpRtcpStandardTest();
           break;
 
         default:
@@ -103,39 +94,39 @@ int ViEAutoTestAndroid::RunAutotest(int testSelection, int subTestSelection,
     case 1:// specific API
       switch (subTestSelection) {
         case 1: // base
-          testErrors += vieAutoTest.ViEBaseAPITest();
+          vieAutoTest.ViEBaseAPITest();
           break;
 
         case 2: // capture
-          testErrors += vieAutoTest.ViECaptureAPITest();
+          vieAutoTest.ViECaptureAPITest();
           break;
 
         case 3: // codec
-          testErrors += vieAutoTest.ViECodecAPITest();
+          vieAutoTest.ViECodecAPITest();
           break;
 
         case 5: //encryption
-          testErrors += vieAutoTest.ViEEncryptionAPITest();
+          vieAutoTest.ViEEncryptionAPITest();
           break;
 
         case 6: // file
-          testErrors += vieAutoTest.ViEFileAPITest();
+          vieAutoTest.ViEFileAPITest();
           break;
 
         case 7: // image process
-          testErrors += vieAutoTest.ViEImageProcessAPITest();
+          vieAutoTest.ViEImageProcessAPITest();
           break;
 
         case 8: // network
-          testErrors += vieAutoTest.ViENetworkAPITest();
+          vieAutoTest.ViENetworkAPITest();
           break;
 
         case 9: // Render
-          testErrors += vieAutoTest.ViERenderAPITest();
+          vieAutoTest.ViERenderAPITest();
           break;
 
         case 10: // RTP/RTCP
-          testErrors += vieAutoTest.ViERtpRtcpAPITest();
+          vieAutoTest.ViERtpRtcpAPITest();
           break;
         case 11:
           break;
@@ -148,39 +139,39 @@ int ViEAutoTestAndroid::RunAutotest(int testSelection, int subTestSelection,
     case 2:// specific extended
       switch (subTestSelection) {
         case 1: // base
-          testErrors += vieAutoTest.ViEBaseExtendedTest();
+          vieAutoTest.ViEBaseExtendedTest();
           break;
 
         case 2: // capture
-          testErrors += vieAutoTest.ViECaptureExtendedTest();
+          vieAutoTest.ViECaptureExtendedTest();
           break;
 
         case 3: // codec
-          testErrors += vieAutoTest.ViECodecExtendedTest();
+          vieAutoTest.ViECodecExtendedTest();
           break;
 
         case 5: //encryption
-          testErrors += vieAutoTest.ViEEncryptionExtendedTest();
+          vieAutoTest.ViEEncryptionExtendedTest();
           break;
 
         case 6: // file
-          testErrors += vieAutoTest.ViEFileExtendedTest();
+          vieAutoTest.ViEFileExtendedTest();
           break;
 
         case 7: // image process
-          testErrors += vieAutoTest.ViEImageProcessExtendedTest();
+          vieAutoTest.ViEImageProcessExtendedTest();
           break;
 
         case 8: // network
-          testErrors += vieAutoTest.ViENetworkExtendedTest();
+          vieAutoTest.ViENetworkExtendedTest();
           break;
 
         case 9: // Render
-          testErrors += vieAutoTest.ViERenderExtendedTest();
+          vieAutoTest.ViERenderExtendedTest();
           break;
 
         case 10: // RTP/RTCP
-          testErrors += vieAutoTest.ViERtpRtcpExtendedTest();
+          vieAutoTest.ViERtpRtcpExtendedTest();
           break;
 
         case 11:
@@ -192,18 +183,17 @@ int ViEAutoTestAndroid::RunAutotest(int testSelection, int subTestSelection,
       break;
 
     case 3:
-      testErrors += vieAutoTest.ViELoopbackCall();
+      vieAutoTest.ViELoopbackCall();
       break;
 
     default:
       break;
     }
 
-  if (testErrors) {
-    ViETest::Log("Test done with %d errors!\n", testErrors);
-  }
-  else {
-    ViETest::Log("Test passed!\n");
-  }
-  return testErrors;
+  return 0;
+}
+
+int main(int argc, char** argv) {
+  // TODO(leozwang): Add real tests here
+  return 0;
 }

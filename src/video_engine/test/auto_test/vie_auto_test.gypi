@@ -105,6 +105,8 @@
         'source/vie_file_based_comparison_tests.cc',
 
         # Platform dependent
+        # Android
+        'source/vie_autotest_android.cc',
         # Linux
         'source/vie_autotest_linux.cc',
         'source/vie_window_manager_factory_linux.cc',
@@ -119,6 +121,12 @@
       'conditions': [
         # TODO(andrew): this likely isn't an actual dependency. It should be
         # included in webrtc.gyp or video_engine.gyp instead.
+        ['OS=="android"', {
+          'libraries': [
+            '-lGLESv2',
+            '-llog',
+          ],
+        }],
         ['OS=="win"', {
           'dependencies': [
             'vie_win_test',

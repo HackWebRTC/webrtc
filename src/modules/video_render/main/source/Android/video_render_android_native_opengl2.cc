@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -387,14 +387,14 @@ WebRtc_Word32 AndroidNativeOpenGl2Channel::Init(WebRtc_Word32 zOrder,
         return -1;
     }
 
-    JNINativeMethod
-            nativeFunctions[2] = {
-                    "DrawNative",
-                    "(J)V",
-                    (void*) &AndroidNativeOpenGl2Channel::DrawNativeStatic,
-                    "CreateOpenGLNative",
-                    "(JII)I",
-                    (void*) &AndroidNativeOpenGl2Channel::CreateOpenGLNativeStatic };
+    JNINativeMethod nativeFunctions[2] = {
+      { "DrawNative",
+        "(J)V",
+        (void*) &AndroidNativeOpenGl2Channel::DrawNativeStatic, },
+      { "CreateOpenGLNative",
+        "(JII)I",
+        (void*) &AndroidNativeOpenGl2Channel::CreateOpenGLNativeStatic },
+    };
     if (env->RegisterNatives(javaRenderClass, nativeFunctions, 2) == 0)
     {
         WEBRTC_TRACE(kTraceDebug, kTraceVideoRenderer, -1,
@@ -492,4 +492,3 @@ jint AndroidNativeOpenGl2Channel::CreateOpenGLNative(int width, int height)
 }
 
 } //namespace webrtc
-
