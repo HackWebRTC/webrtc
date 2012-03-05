@@ -67,6 +67,14 @@
         'auto_test/voe_unit_test.cc',
         'auto_test/voe_unit_test.h',
       ],
+      'conditions': [
+        ['OS=="android"', {
+          # some tests are not supported on android yet, exclude these tests.
+          'sources!': [
+            'auto_test/standard/hardware_before_streaming_test.cc',
+          ],
+        }],
+      ],
     },
     {
       # command line test that should work on linux/mac/win
