@@ -282,7 +282,7 @@ bool ViEChannelManager::SetRembStatus(int channel_id, bool sender,
   CriticalSectionScoped cs(*channel_id_critsect_);
   ChannelGroup* group = FindGroup(channel_id);
   if (!group) {
-    return -1;
+    return false;
   }
   ViEChannel* channel = ViEChannelPtr(channel_id);
   assert(channel);
