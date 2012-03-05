@@ -1,4 +1,4 @@
-# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+# Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
@@ -32,6 +32,7 @@ LOCAL_SRC_FILES := \
     vie_shared_data.cc \
     vie_capturer.cc \
     vie_channel.cc \
+    vie_channel_group.cc \
     vie_channel_manager.cc \
     vie_encoder.cc \
     vie_file_image.cc \
