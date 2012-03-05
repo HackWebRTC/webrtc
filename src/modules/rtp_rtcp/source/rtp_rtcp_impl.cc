@@ -1662,7 +1662,7 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SetREMBData(const WebRtc_UWord32 bitrate,
 }
 
 WebRtc_Word32 ModuleRtpRtcpImpl::SetMaximumBitrateEstimate(
-        const WebRtc_UWord32 bitrate) {
+    const WebRtc_UWord32 bitrate) {
   if (_defaultModule) {
     WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,
                  "SetMaximumBitrateEstimate - Should be called on default "

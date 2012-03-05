@@ -144,6 +144,16 @@ int ViECodecImpl::SetSendCodec(const int video_channel,
     return -1;
   }
 
+  ViEEncoder* vie_encoder = cs.Encoder(video_channel);
+  assert(vie_encoder);
+  if (vie_encoder->Owner() != video_channel) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo,
+                 ViEId(shared_data_->instance_id(), video_channel),
+                 "%s: Receive only channel %d", __FUNCTION__, video_channel);
+    shared_data_->SetLastError(kViECodecReceiveOnlyChannel);
+    return -1;
+  }
+
   // Set a max_bitrate if the user hasn't set one.
   VideoCodec video_codec_internal;
   memcpy(&video_codec_internal, &video_codec, sizeof(VideoCodec));
@@ -163,28 +173,9 @@ int ViECodecImpl::SetSendCodec(const int video_channel,
                  video_codec_internal.maxBitrate);
   }
 
-  ViEEncoder* vie_encoder = cs.Encoder(video_channel);
-  if (!vie_encoder) {
-    assert(false);
-    WEBRTC_TRACE(kTraceInfo, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: No encoder found for channel %d", __FUNCTION__);
-    shared_data_->SetLastError(kViECodecInvalidChannelId);
-    return -1;
-  }
-
   VideoCodec encoder;
   vie_encoder->GetEncoder(encoder);
-  if (encoder.codecType != video_codec_internal.codecType &&
-      cs.ChannelUsingViEEncoder(video_channel)) {
-      // We don't allow changing codec type when several channels share encoder.
-      WEBRTC_TRACE(kTraceInfo, kTraceVideo,
-                   ViEId(shared_data_->instance_id(), video_channel),
-                   "%s: Settings differs from other channels using encoder",
-                   __FUNCTION__);
-      shared_data_->SetLastError(kViECodecInUse);
-      return -1;
-  }
+
   // Make sure to generate a new SSRC if the codec type and/or resolution has
   // changed. This won't have any effect if the user has set an SSRC.
   bool new_rtp_stream = false;
@@ -192,17 +183,6 @@ int ViECodecImpl::SetSendCodec(const int video_channel,
       encoder.width != video_codec_internal.width ||
       encoder.height != video_codec_internal.height) {
     new_rtp_stream = true;
-  }
-  if (video_codec_internal.numberOfSimulcastStreams > 1) {
-    if (cs.ChannelUsingViEEncoder(video_channel)) {
-      // We don't allow simulcast channels to share encoder.
-      WEBRTC_TRACE(kTraceInfo, kTraceVideo,
-                   ViEId(shared_data_->instance_id(), video_channel),
-                   "%s: Can't share simulcast encoder",
-                   __FUNCTION__);
-      shared_data_->SetLastError(kViECodecInUse);
-      return -1;
-    }
   }
 
   ViEInputManagerScoped is(*(shared_data_->input_manager()));

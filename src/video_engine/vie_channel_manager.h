@@ -17,8 +17,10 @@
 #include "engine_configurations.h"
 #include "system_wrappers/interface/scoped_ptr.h"
 #include "typedefs.h"
+#include "video_engine/vie_channel_group.h"
 #include "video_engine/vie_defines.h"
 #include "video_engine/vie_manager_base.h"
+#include "video_engine/vie_remb.h"
 
 namespace webrtc {
 
@@ -28,10 +30,10 @@ class ProcessThread;
 class ViEChannel;
 class ViEEncoder;
 class ViEPerformanceMonitor;
-class VieRemb;
 class VoEVideoSync;
 class VoiceEngine;
 
+typedef std::list<ChannelGroup*> ChannelGroups;
 typedef std::list<ViEChannel*> ChannelList;
 typedef std::map<int, ViEChannel*> ChannelMap;
 typedef std::map<int, ViEEncoder*> EncoderMap;
@@ -49,8 +51,10 @@ class ViEChannelManager: private ViEManagerBase {
   // Creates a new channel. 'channelId' will be the id of the created channel.
   int CreateChannel(int& channel_id);
 
-  // Creates a channel and attaches to an already existing ViEEncoder.
-  int CreateChannel(int& channel_id, int original_channel);
+  // Creates a new channel grouped with |original_channel|. The new channel
+  // will get its own |ViEEncoder| if |sender| is set to true. It will be a
+  // receive only channel, without an own |ViEEncoder| if |sender| is false.
+  int CreateChannel(int& channel_id, int original_channel, bool sender);
 
   // Deletes a channel.
   int DeleteChannel(int channel_id);
@@ -70,6 +74,10 @@ class ViEChannelManager: private ViEManagerBase {
   bool SetRembStatus(int channel_id, bool sender, bool receiver);
 
  private:
+  // Creates a channel object connected to |vie_encoder|. Assumed to be called
+  // protected.
+  bool CreateChannelObject(int channel_id, ViEEncoder* vie_encoder);
+
   // Used by ViEChannelScoped, forcing a manager user to use scoped.
   // Returns a pointer to the channel with id 'channelId'.
   ViEChannel* ViEChannelPtr(int channel_id) const;
@@ -81,12 +89,14 @@ class ViEChannelManager: private ViEManagerBase {
   // Gets the ViEEncoder used as input for video_channel_id
   ViEEncoder* ViEEncoderPtr(int video_channel_id) const;
 
-  // Returns true if we found a new channel id, free_channel_id, false
-  // otherwise.
-  bool GetFreeChannelId(int& free_channel_id);
+  // Returns a free channel id, -1 if failing.
+  int FreeChannelId();
 
   // Returns a previously allocated channel id.
   void ReturnChannelId(int channel_id);
+
+  // Returns the iterator to the ChannelGroup containing |channel_id|.
+  ChannelGroup* FindGroup(int channel_id);
 
   // Returns true if at least one other channels uses the same ViEEncoder as
   // channel_id.
@@ -98,14 +108,20 @@ class ViEChannelManager: private ViEManagerBase {
   int engine_id_;
   int number_of_cores_;
   ViEPerformanceMonitor& vie_performance_monitor_;
+
+  // TODO(mflodman) Make part of channel group.
   ChannelMap channel_map_;
   bool* free_channel_ids_;
   int free_channel_ids_size_;
 
+  // List with all channel groups.
+  std::list<ChannelGroup*> channel_groups_;
+
+  // TODO(mflodman) Make part of channel group.
   // Maps Channel id -> ViEEncoder.
   EncoderMap vie_encoder_map_;
   VoEVideoSync* voice_sync_interface_;
-  scoped_ptr<VieRemb> remb_;
+
   VoiceEngine* voice_engine_;
   ProcessThread* module_process_thread_;
 };

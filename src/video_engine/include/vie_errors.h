@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -21,6 +21,7 @@ enum ViEErrors {
   kViEBaseInvalidArgument,
   kViEBaseAlreadySending,            // StartSend called on channel that is already sending.
   kViEBaseNotSending,                // StopSend called on channel that is not sending.
+  kViEBaseReceiveOnlyChannel,        // Can't send on a receive only channel.
   kViEBaseAlreadyReceiving,          // StartReceive called on channel that is already receiving.
   kViEBaseObserverAlreadyRegistered,  // RegisterObserver- an observer has already been set.
   kViEBaseObserverNotRegistered,     // DeregisterObserver - no observer has been registered.
@@ -33,6 +34,7 @@ enum ViEErrors {
   kViECodecInvalidCodec,                // SetSendCodec,SetReceiveCodec- The codec structure is invalid.
   kViECodecInvalidChannelId,            // The channel does not exist.
   kViECodecInUse,                       // SetSendCodec- Can't change codec size or type when multiple channels use the same encoder.
+  kViECodecReceiveOnlyChannel,          // SetSendCodec, can't change receive only channel.
   kViECodecUnknownError,                // An unknown error has occurred. Check the log file.
 
   // ViERender.

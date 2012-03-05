@@ -219,6 +219,13 @@ int ViECaptureImpl::ConnectCaptureDevice(const int capture_id,
     shared_data_->SetLastError(kViECaptureDeviceInvalidChannelId);
     return -1;
   }
+  if (vie_encoder->Owner() != video_channel) {
+    WEBRTC_TRACE(kTraceError, kTraceVideo,
+                 ViEId(shared_data_->instance_id(), video_channel),
+                 "Can't connect capture device to a receive only channel.");
+    shared_data_->SetLastError(kViECaptureDeviceInvalidChannelId);
+    return -1;
+  }
   //  Check if the encoder already has a connected frame provider
   if (is.FrameProvider(vie_encoder) != NULL) {
     WEBRTC_TRACE(kTraceError, kTraceVideo,

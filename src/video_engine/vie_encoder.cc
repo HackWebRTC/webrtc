@@ -172,6 +172,10 @@ ViEEncoder::~ViEEncoder() {
   delete qm_callback_;
 }
 
+int ViEEncoder::Owner() const {
+  return channel_id_;
+}
+
 void ViEEncoder::Pause() {
   WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideo,
                ViEId(engine_id_, channel_id_),

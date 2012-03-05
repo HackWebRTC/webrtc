@@ -139,99 +139,116 @@ void ViEAutoTest::ViECodecExtendedTest()
     }
 
     //
-    // Default channel
+    // Multiple send channels.
     //
     {
-        // Create VIE
+        // Create two channels, where the second channel is created from the
+        // first channel. Send different resolutions on the channels and verify
+        // the received streams.
+
         TbInterfaces ViE("ViECodecExtendedTest2");
-        // Create a capture device
         TbCaptureDevice tbCapture(ViE);
 
-        // Create channel 1
+        // Create channel 1.
         int videoChannel1 = -1;
         EXPECT_EQ(0, ViE.base->CreateChannel(videoChannel1));
 
+        // Create channel 2 based on the first channel.
+        int videoChannel2 = -1;
+        EXPECT_EQ(0, ViE.base->CreateChannel(videoChannel2, videoChannel1));
+        EXPECT_NE(videoChannel1, videoChannel2) <<
+            "Channel 2 should be unique.";
+
         unsigned short rtpPort1 = 12000;
+        unsigned short rtpPort2 = 13000;
         EXPECT_EQ(0, ViE.network->SetLocalReceiver(
             videoChannel1, rtpPort1));
         EXPECT_EQ(0, ViE.network->SetSendDestination(
             videoChannel1, "127.0.0.1", rtpPort1));
+        EXPECT_EQ(0, ViE.network->SetLocalReceiver(
+            videoChannel2, rtpPort2));
+        EXPECT_EQ(0, ViE.network->SetSendDestination(
+            videoChannel2, "127.0.0.1", rtpPort2));
+
         tbCapture.ConnectTo(videoChannel1);
+        tbCapture.ConnectTo(videoChannel2);
 
         EXPECT_EQ(0, ViE.rtp_rtcp->SetKeyFrameRequestMethod(
             videoChannel1, webrtc::kViEKeyFrameRequestPliRtcp));
+        EXPECT_EQ(0, ViE.rtp_rtcp->SetKeyFrameRequestMethod(
+            videoChannel2, webrtc::kViEKeyFrameRequestPliRtcp));
         EXPECT_EQ(0, ViE.render->AddRenderer(
             videoChannel1, _window1, 0, 0.0, 0.0, 1.0, 1.0));
         EXPECT_EQ(0, ViE.render->StartRender(videoChannel1));
-
-        ViEAutotestCodecObserver codecObserver1;
-        EXPECT_EQ(0, ViE.codec->RegisterEncoderObserver(
-            videoChannel1, codecObserver1));
-        EXPECT_EQ(0, ViE.codec->RegisterDecoderObserver(
-            videoChannel1, codecObserver1));
+        EXPECT_EQ(0, ViE.render->AddRenderer(
+            videoChannel2, _window2, 0, 0.0, 0.0, 1.0, 1.0));
+        EXPECT_EQ(0, ViE.render->StartRender(videoChannel2));
 
         // Set Send codec
-        unsigned short codecWidth = 176;
-        unsigned short codecHeight = 144;
+        unsigned short codecWidth = 320;
+        unsigned short codecHeight = 240;
         bool codecSet = false;
         webrtc::VideoCodec videoCodec;
+        webrtc::VideoCodec sendCodec1;
+        webrtc::VideoCodec sendCodec2;
         for (int idx = 0; idx < ViE.codec->NumberOfCodecs(); idx++)
         {
             EXPECT_EQ(0, ViE.codec->GetCodec(idx, videoCodec));
             EXPECT_EQ(0, ViE.codec->SetReceiveCodec(videoChannel1, videoCodec));
             if (videoCodec.codecType == webrtc::kVideoCodecVP8)
             {
-                videoCodec.width = codecWidth;
-                videoCodec.height = codecHeight;
-                videoCodec.startBitrate = 200;
-                videoCodec.maxBitrate = 300;
-                EXPECT_EQ(0, ViE.codec->SetSendCodec(
-                    videoChannel1, videoCodec));
+                memcpy(&sendCodec1, &videoCodec, sizeof(videoCodec));
+                sendCodec1.width = codecWidth;
+                sendCodec1.height = codecHeight;
+                EXPECT_EQ(0, ViE.codec->SetSendCodec(videoChannel1,
+                                                     sendCodec1));
+                memcpy(&sendCodec2, &videoCodec, sizeof(videoCodec));
+                sendCodec2.width = 2 * codecWidth;
+                sendCodec2.height = 2 * codecHeight;
+                EXPECT_EQ(0, ViE.codec->SetSendCodec(videoChannel2,
+                                                     sendCodec2));
                 codecSet = true;
                 break;
             }
         }
         EXPECT_TRUE(codecSet);
-        webrtc::VideoCodec send_codec;
-        memcpy(&send_codec, &videoCodec, sizeof(videoCodec));
 
-        EXPECT_EQ(0, ViE.base->StartSend(videoChannel1));
+
+        // We need to verify using render effect filter since we won't trigger
+        // a decode reset in loopback (due to using the same SSRC).
+        RenderFilter filter1;
+        RenderFilter filter2;
+        EXPECT_EQ(0,
+                  ViE.image_process->RegisterRenderEffectFilter(videoChannel1,
+                                                                filter1));
+        EXPECT_EQ(0,
+                  ViE.image_process->RegisterRenderEffectFilter(videoChannel2,
+                                                                filter2));
+
         EXPECT_EQ(0, ViE.base->StartReceive(videoChannel1));
-
-        // Create channel 2, based on channel 1
-        int videoChannel2 = -1;
-        EXPECT_EQ(0, ViE.base->CreateChannel(videoChannel2, videoChannel1));
-        EXPECT_NE(videoChannel1, videoChannel2) <<
-            "Channel 2 should be seop";
-
-        EXPECT_EQ(0, ViE.rtp_rtcp->SetKeyFrameRequestMethod(
-            videoChannel2, webrtc::kViEKeyFrameRequestPliRtcp));
-
-        // Prepare receive codecs
-        for (int idx = 0; idx < ViE.codec->NumberOfCodecs(); idx++)
-        {
-            EXPECT_EQ(0, ViE.codec->GetCodec(idx, videoCodec));
-            EXPECT_EQ(0, ViE.codec->SetReceiveCodec(videoChannel2, videoCodec));
-        }
-
-        ViEAutotestCodecObserver codecObserver2;
-        EXPECT_EQ(0, ViE.codec->RegisterDecoderObserver(
-            videoChannel2, codecObserver2));
-        EXPECT_EQ(0, ViE.render->AddRenderer(
-            videoChannel2, _window2, 0, 0.0, 0.0, 1.0, 1.0));
-        EXPECT_EQ(0, ViE.render->StartRender(videoChannel2));
-
-        unsigned short rtpPort2 = 13000;
-        EXPECT_EQ(0, ViE.network->SetLocalReceiver(videoChannel2, rtpPort2));
-        EXPECT_EQ(0, ViE.network->SetSendDestination(
-            videoChannel2, "127.0.0.1", rtpPort2));
-
+        EXPECT_EQ(0, ViE.base->StartSend(videoChannel1));
         EXPECT_EQ(0, ViE.base->StartReceive(videoChannel2));
-        EXPECT_EQ(-1, ViE.base->StartSend(videoChannel2));
+        EXPECT_EQ(0, ViE.base->StartSend(videoChannel2));
+
+
+        AutoTestSleep(KAutoTestSleepTimeMs);
+
+        EXPECT_EQ(0, ViE.base->StopReceive(videoChannel1));
+        EXPECT_EQ(0, ViE.base->StopSend(videoChannel1));
+        EXPECT_EQ(0, ViE.base->StopReceive(videoChannel2));
+        EXPECT_EQ(0, ViE.base->StopSend(videoChannel2));
+
+        EXPECT_EQ(0, ViE.image_process->DeregisterRenderEffectFilter(
+            videoChannel1));
+        EXPECT_EQ(0, ViE.image_process->DeregisterRenderEffectFilter(
+            videoChannel2));
+        EXPECT_EQ(sendCodec1.width, filter1.last_render_width_);
+        EXPECT_EQ(sendCodec1.height, filter1.last_render_height_);
+        EXPECT_EQ(sendCodec2.width, filter2.last_render_width_);
+        EXPECT_EQ(sendCodec2.height, filter2.last_render_height_);
 
         EXPECT_EQ(0, ViE.base->DeleteChannel(videoChannel1));
         EXPECT_EQ(0, ViE.base->DeleteChannel(videoChannel2));
-
     }
 }
 

@@ -14,6 +14,7 @@
 #include <cassert>
 
 #include "modules/rtp_rtcp/interface/rtp_rtcp.h"
+#include "modules/utility/interface/process_thread.h"
 #include "system_wrappers/interface/critical_section_wrapper.h"
 #include "system_wrappers/interface/tick_util.h"
 #include "system_wrappers/interface/trace.h"
@@ -25,19 +26,21 @@ const int kRembSendIntervallMs = 1000;
 // % threshold for if we should send a new REMB asap.
 const int kSendThresholdPercent = 97;
 
-VieRemb::VieRemb(int engine_id)
-    : engine_id_(engine_id),
+VieRemb::VieRemb(ProcessThread* process_thread)
+    : process_thread_(process_thread),
       list_crit_(CriticalSectionWrapper::CreateCriticalSection()),
       last_remb_time_(TickTime::MillisecondTimestamp()),
       last_send_bitrate_(0) {
+  process_thread->RegisterModule(this);
 }
 
 VieRemb::~VieRemb() {
+  process_thread_->DeRegisterModule(this);
 }
 
 void VieRemb::AddReceiveChannel(RtpRtcp* rtp_rtcp) {
   assert(rtp_rtcp);
-  WEBRTC_TRACE(kTraceStateInfo, kTraceVideo, engine_id_,
+  WEBRTC_TRACE(kTraceStateInfo, kTraceVideo, -1,
                "VieRemb::AddReceiveChannel(%p)", rtp_rtcp);
 
   CriticalSectionScoped cs(list_crit_.get());
@@ -45,7 +48,7 @@ void VieRemb::AddReceiveChannel(RtpRtcp* rtp_rtcp) {
       receive_modules_.end())
     return;
 
-  WEBRTC_TRACE(kTraceInfo, kTraceVideo, engine_id_, "AddRembChannel");
+  WEBRTC_TRACE(kTraceInfo, kTraceVideo, -1, "AddRembChannel");
   // The module probably doesn't have a remote SSRC yet, so don't add it to the
   // map.
   receive_modules_.push_back(rtp_rtcp);
@@ -53,7 +56,7 @@ void VieRemb::AddReceiveChannel(RtpRtcp* rtp_rtcp) {
 
 void VieRemb::RemoveReceiveChannel(RtpRtcp* rtp_rtcp) {
   assert(rtp_rtcp);
-  WEBRTC_TRACE(kTraceStateInfo, kTraceVideo, engine_id_,
+  WEBRTC_TRACE(kTraceStateInfo, kTraceVideo, -1,
                "VieRemb::RemoveReceiveChannel(%p)", rtp_rtcp);
 
   CriticalSectionScoped cs(list_crit_.get());
@@ -70,7 +73,7 @@ void VieRemb::RemoveReceiveChannel(RtpRtcp* rtp_rtcp) {
 
 void VieRemb::AddRembSender(RtpRtcp* rtp_rtcp) {
   assert(rtp_rtcp);
-  WEBRTC_TRACE(kTraceStateInfo, kTraceVideo, engine_id_,
+  WEBRTC_TRACE(kTraceStateInfo, kTraceVideo, -1,
                "VieRemb::AddRembSender(%p)", rtp_rtcp);
 
   CriticalSectionScoped cs(list_crit_.get());
@@ -84,7 +87,7 @@ void VieRemb::AddRembSender(RtpRtcp* rtp_rtcp) {
 
 void VieRemb::RemoveRembSender(RtpRtcp* rtp_rtcp) {
   assert(rtp_rtcp);
-  WEBRTC_TRACE(kTraceStateInfo, kTraceVideo, engine_id_,
+  WEBRTC_TRACE(kTraceStateInfo, kTraceVideo, -1,
                "VieRemb::RemoveRembSender(%p)", rtp_rtcp);
 
   CriticalSectionScoped cs(list_crit_.get());
@@ -99,7 +102,7 @@ void VieRemb::RemoveRembSender(RtpRtcp* rtp_rtcp) {
 
 void VieRemb::AddSendChannel(RtpRtcp* rtp_rtcp) {
   assert(rtp_rtcp);
-  WEBRTC_TRACE(kTraceStateInfo, kTraceVideo, engine_id_,
+  WEBRTC_TRACE(kTraceStateInfo, kTraceVideo, -1,
                "VieRemb::AddSendChannel(%p)", rtp_rtcp);
 
   CriticalSectionScoped cs(list_crit_.get());
@@ -113,7 +116,7 @@ void VieRemb::AddSendChannel(RtpRtcp* rtp_rtcp) {
 
 void VieRemb::RemoveSendChannel(RtpRtcp* rtp_rtcp) {
   assert(rtp_rtcp);
-  WEBRTC_TRACE(kTraceStateInfo, kTraceVideo, engine_id_,
+  WEBRTC_TRACE(kTraceStateInfo, kTraceVideo, -1,
                "VieRemb::RemoveSendChannel(%p)", rtp_rtcp);
 
   CriticalSectionScoped cs(list_crit_.get());
@@ -126,8 +129,16 @@ void VieRemb::RemoveSendChannel(RtpRtcp* rtp_rtcp) {
   }
 }
 
+bool VieRemb::InUse() const {
+  CriticalSectionScoped cs(list_crit_.get());
+  if(receive_modules_.empty() && send_modules_.empty() && rtcp_sender_.empty())
+    return false;
+  else
+    return true;
+}
+
 void VieRemb::OnReceiveBitrateChanged(unsigned int ssrc, unsigned int bitrate) {
-  WEBRTC_TRACE(kTraceStream, kTraceVideo, engine_id_,
+  WEBRTC_TRACE(kTraceStream, kTraceVideo, -1,
                "VieRemb::UpdateBitrateEstimate(ssrc: %u, bitrate: %u)",
                ssrc, bitrate);
   CriticalSectionScoped cs(list_crit_.get());
@@ -147,7 +158,7 @@ void VieRemb::OnReceiveBitrateChanged(unsigned int ssrc, unsigned int bitrate) {
 }
 
 void VieRemb::OnReceivedRemb(unsigned int bitrate) {
-  WEBRTC_TRACE(kTraceStream, kTraceVideo, engine_id_,
+  WEBRTC_TRACE(kTraceStream, kTraceVideo, -1,
                "VieRemb::OnReceivedRemb(bitrate: %u)", bitrate);
   // TODO(mflodman) Should be extended to allow different split of bitrate.
   // TODO(mflodman) Do we want to call |SetMaximumBitrateEstimate| from

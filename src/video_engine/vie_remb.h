@@ -28,11 +28,12 @@
 namespace webrtc {
 
 class CriticalSectionWrapper;
+class ProcessThread;
 class RtpRtcp;
 
 class VieRemb : public RtpRemoteBitrateObserver, public Module {
  public:
-  explicit VieRemb(int engine_id);
+  VieRemb(ProcessThread* process_thread);
   ~VieRemb();
 
   // Called to add a receive channel to include in the REMB packet.
@@ -54,6 +55,9 @@ class VieRemb : public RtpRemoteBitrateObserver, public Module {
   // Removes the specified channel from receiving REMB packet estimates.
   void RemoveSendChannel(RtpRtcp* rtp_rtcp);
 
+  // Returns true if the instance is in use, false otherwise.
+  bool InUse() const;
+
   // Called every time there is a new bitrate estimate for the received stream
   // with given SSRC. This call will trigger a new RTCP REMB packet if the
   // bitrate estimate has decreased or if no RTCP REMB packet has been sent for
@@ -74,7 +78,7 @@ class VieRemb : public RtpRemoteBitrateObserver, public Module {
   typedef std::list<RtpRtcp*> RtpModules;
   typedef std::map<unsigned int, unsigned int> SsrcBitrate;
 
-  int engine_id_;
+  ProcessThread* process_thread_;
   scoped_ptr<CriticalSectionWrapper> list_crit_;
 
   // The last time a REMB was sent.

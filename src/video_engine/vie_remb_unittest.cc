@@ -19,6 +19,7 @@
 
 #include "modules/rtp_rtcp/interface/rtp_rtcp.h"
 #include "modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
+#include "modules/utility/interface/process_thread.h"
 #include "system_wrappers/interface/scoped_ptr.h"
 #include "video_engine/vie_remb.h"
 
@@ -28,11 +29,25 @@ using ::testing::Return;
 
 namespace webrtc {
 
+// TODO(mflodman) Make a trigger function for this class to fake a clock and
+// remove sleeps in the test.
+class TestProcessThread : public ProcessThread {
+ public:
+  explicit TestProcessThread() {}
+  ~TestProcessThread() {}
+  virtual WebRtc_Word32 Start() { return 0; }
+  virtual WebRtc_Word32 Stop() { return 0; }
+  virtual WebRtc_Word32 RegisterModule(const Module* module) { return 0; }
+  virtual WebRtc_Word32 DeRegisterModule(const Module* module) { return 0; }
+};
+
 class ViERembTest : public ::testing::Test {
  protected:
   virtual void SetUp() {
-    vie_remb_.reset(new VieRemb(1234));
+    process_thread_.reset(new TestProcessThread);
+    vie_remb_.reset(new VieRemb(process_thread_.get()));
   }
+  scoped_ptr<TestProcessThread> process_thread_;
   scoped_ptr<VieRemb> vie_remb_;
 
   void TestSleep(unsigned int time_ms) {

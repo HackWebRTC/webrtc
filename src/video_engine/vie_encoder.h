@@ -45,6 +45,9 @@ class ViEEncoder
              ProcessThread& module_process_thread);
   ~ViEEncoder();
 
+  // Returns the id of the owning channel.
+  int Owner() const;
+
   // Drops incoming packets before they get to the encoder.
   void Pause();
   void Restart();
@@ -144,7 +147,7 @@ class ViEEncoder
 
  private:
   WebRtc_Word32 engine_id_;
-  WebRtc_Word32 channel_id_;
+  const int channel_id_;
   const WebRtc_UWord32 number_of_cores_;
 
   VideoCodingModule& vcm_;

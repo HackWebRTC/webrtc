@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -85,10 +85,22 @@ class WEBRTC_DLLEXPORT ViEBase {
   // synchronization.
   virtual int SetVoiceEngine(VoiceEngine* voice_engine) = 0;
 
-  // Creates a new channel, either with a new encoder instance or by sharing
-  // encoder instance with an already created channel.
+  // Creates a new channel.
   virtual int CreateChannel(int& video_channel) = 0;
-  virtual int CreateChannel(int& video_channel, int original_channel) = 0;
+
+  // Creates a new channel grouped together with |original_channel|. The channel
+  // can both send and receive video. It is assumed the channel is sending
+  // and/or receiving video to the same end-point.
+  // Note: |CreateReceiveChannel| will give better performance and network
+  // properties for receive only channels.
+  virtual int CreateChannel(int& video_channel,
+                            int original_channel) = 0;
+
+  // Creates a new channel grouped together with |original_channel|. The channel
+  // can only receive video and it is assumed the remote end-point is the same
+  // as for |original_channel|.
+  virtual int CreateReceiveChannel(int& video_channel,
+                                   int original_channel) = 0;
 
   // Deletes an existing channel and releases the utilized resources.
   virtual int DeleteChannel(const int video_channel) = 0;
