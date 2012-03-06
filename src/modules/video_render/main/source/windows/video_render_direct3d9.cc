@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -116,7 +116,7 @@ int D3D9Channel::FrameSizeChange(int width, int height, int numberOfStreams)
                  "FrameSizeChange, wifth: %d, height: %d, streams: %d", width,
                  height, numberOfStreams);
 
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
     _width = width;
     _height = height;
 
@@ -145,7 +145,7 @@ int D3D9Channel::FrameSizeChange(int width, int height, int numberOfStreams)
 WebRtc_Word32 D3D9Channel::RenderFrame(const WebRtc_UWord32 streamId,
                                            VideoFrame& videoFrame)
 {
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
     if (_width != videoFrame.Width() || _height != videoFrame.Height())
     {
         if (FrameSizeChange(videoFrame.Width(), videoFrame.Height(), 1) == -1)
@@ -165,7 +165,7 @@ int D3D9Channel::DeliverFrame(unsigned char* buffer,
     WEBRTC_TRACE(kTraceStream, kTraceVideo, -1,
                  "DeliverFrame to D3D9Channel");
 
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
 
     //FIXME if _bufferIsUpdated is still true (not be renderred), do we what to update the texture?)
     //probably not
@@ -219,7 +219,7 @@ int D3D9Channel::RenderOffFrame()
 {
     WEBRTC_TRACE(kTraceStream, kTraceVideo, -1,
                  "Frame has been rendered to the screen.");
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
     _bufferIsUpdated = false;
     return 0;
 }
@@ -227,7 +227,7 @@ int D3D9Channel::RenderOffFrame()
 // Called by d3d channel owner to check if the texture is updated
 int D3D9Channel::IsUpdated(bool& isUpdated)
 {
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
     isUpdated = _bufferIsUpdated;
     return 0;
 }
@@ -235,13 +235,13 @@ int D3D9Channel::IsUpdated(bool& isUpdated)
 // Called by d3d channel owner to get the texture
 LPDIRECT3DTEXTURE9 D3D9Channel::GetTexture()
 {
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
     return _pTexture;
 }
 
 int D3D9Channel::ReleaseTexture()
 {
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
 
     //release the texture
     if (_pTexture != NULL)
@@ -255,7 +255,7 @@ int D3D9Channel::ReleaseTexture()
 
 int D3D9Channel::RecreateTexture(LPDIRECT3DDEVICE9 pd3DDevice)
 {
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
 
     _pd3dDevice = pd3DDevice;
 
@@ -421,7 +421,7 @@ int VideoRenderDirect3D9::ResetDevice()
     WEBRTC_TRACE(kTraceInfo, kTraceVideo, -1,
                  "VideoRenderDirect3D9::ResetDevice");
 
-    CriticalSectionScoped cs(_refD3DCritsect);
+    CriticalSectionScoped cs(&_refD3DCritsect);
 
     //release the channel texture
     std::map<int, D3D9Channel*>::iterator it;
@@ -552,7 +552,7 @@ WebRtc_Word32 VideoRenderDirect3D9::Init()
     WEBRTC_TRACE(kTraceInfo, kTraceVideo, -1,
                  "VideoRenderDirect3D9::Init");
 
-    CriticalSectionScoped cs(_refD3DCritsect);
+    CriticalSectionScoped cs(&_refD3DCritsect);
 
     // Start rendering thread...
     if (!_screenUpdateThread)
@@ -586,7 +586,7 @@ WebRtc_Word32 VideoRenderDirect3D9::ChangeWindow(void* window)
 
 int VideoRenderDirect3D9::UpdateRenderSurface()
 {
-    CriticalSectionScoped cs(_refD3DCritsect);
+    CriticalSectionScoped cs(&_refD3DCritsect);
 
     // Check if there are any updated buffers
     bool updated = false;
@@ -692,7 +692,7 @@ int VideoRenderDirect3D9::SetTransparentColor(LPDIRECT3DTEXTURE9 pTexture,
     if (!pTexture)
         return -1;
 
-    CriticalSectionScoped cs(_refD3DCritsect);
+    CriticalSectionScoped cs(&_refD3DCritsect);
     if (SUCCEEDED(pTexture->LockRect(0, &lr, NULL, D3DLOCK_DISCARD)))
     {
         for (DWORD y = 0; y < height; y++)
@@ -774,7 +774,7 @@ bool VideoRenderDirect3D9::ScreenUpdateProcess()
 
 int VideoRenderDirect3D9::CloseDevice()
 {
-    CriticalSectionScoped cs(_refD3DCritsect);
+    CriticalSectionScoped cs(&_refD3DCritsect);
     WEBRTC_TRACE(kTraceInfo, kTraceVideo, -1,
                  "VideoRenderDirect3D9::CloseDevice");
 
@@ -827,7 +827,7 @@ D3D9Channel* VideoRenderDirect3D9::GetD3DChannel(int channel)
 
 WebRtc_Word32 VideoRenderDirect3D9::DeleteChannel(const WebRtc_UWord32 streamId)
 {
-    CriticalSectionScoped cs(_refD3DCritsect);
+    CriticalSectionScoped cs(&_refD3DCritsect);
 
 
     std::multimap<int, unsigned int>::iterator it;
@@ -861,7 +861,7 @@ VideoRenderCallback* VideoRenderDirect3D9::CreateChannel(const WebRtc_UWord32 ch
                                                                  const float right,
                                                                  const float bottom)
 {
-    CriticalSectionScoped cs(_refD3DCritsect);
+    CriticalSectionScoped cs(&_refD3DCritsect);
 
     //FIXME this should be done in VideoAPIWindows? stop the frame deliver first
     //remove the old channel	
@@ -1036,7 +1036,7 @@ WebRtc_Word32 VideoRenderDirect3D9::SetBitmap(const void* bitMap,
         return -1;
     }
 
-    CriticalSectionScoped cs(_refD3DCritsect);
+    CriticalSectionScoped cs(&_refD3DCritsect);
 
     unsigned char* srcPtr;
     HGDIOBJ oldhand;

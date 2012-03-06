@@ -42,7 +42,7 @@ VideoRenderMacCarbonImpl::~VideoRenderMacCarbonImpl()
 WebRtc_Word32
 VideoRenderMacCarbonImpl::Init()
 {
-    CriticalSectionScoped cs(_renderMacCarbonCritsect);
+    CriticalSectionScoped cs(&_renderMacCarbonCritsect);
     WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id, "%s:%d", __FUNCTION__, __LINE__);
 
     if (!_ptrWindow)
@@ -101,7 +101,7 @@ VideoRenderMacCarbonImpl::ChangeUniqueId(const WebRtc_Word32 id)
 {
     return -1;
 
-    CriticalSectionScoped cs(_renderMacCarbonCritsect);
+    CriticalSectionScoped cs(&_renderMacCarbonCritsect);
     WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id, "%s", __FUNCTION__);
     _id = id;
 
@@ -117,7 +117,7 @@ WebRtc_Word32
 VideoRenderMacCarbonImpl::ChangeWindow(void* window)
 {
     return -1;
-    CriticalSectionScoped cs(_renderMacCarbonCritsect);
+    CriticalSectionScoped cs(&_renderMacCarbonCritsect);
     WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id, "%s changing ID to ", __FUNCTION__, window);
 
     if (window == NULL)
@@ -141,7 +141,7 @@ VideoRenderMacCarbonImpl::AddIncomingRenderStream(const WebRtc_UWord32 streamId,
         const float bottom)
 {
 
-    CriticalSectionScoped cs(_renderMacCarbonCritsect);
+    CriticalSectionScoped cs(&_renderMacCarbonCritsect);
     WEBRTC_TRACE(kTraceDebug, kTraceVideoRenderer, _id, "%s", __FUNCTION__);
     VideoChannelAGL* AGLChannel = NULL;
 
@@ -163,7 +163,7 @@ VideoRenderMacCarbonImpl::DeleteIncomingRenderStream(const WebRtc_UWord32 stream
 {
 
     WEBRTC_TRACE(kTraceDebug, kTraceVideoRenderer, _id, "%s:%d", __FUNCTION__, __LINE__);
-    CriticalSectionScoped cs(_renderMacCarbonCritsect);
+    CriticalSectionScoped cs(&_renderMacCarbonCritsect);
     _ptrCarbonRender->DeleteAGLChannel(streamId);
 
     return 0;
@@ -224,7 +224,7 @@ WebRtc_Word32
 VideoRenderMacCarbonImpl::GetScreenResolution(WebRtc_UWord32& screenWidth,
         WebRtc_UWord32& screenHeight) const
 {
-    CriticalSectionScoped cs(_renderMacCarbonCritsect);
+    CriticalSectionScoped cs(&_renderMacCarbonCritsect);
     //NSScreen* mainScreen = [NSScreen mainScreen];
 
     //NSRect frame = [mainScreen frame];
@@ -237,7 +237,7 @@ VideoRenderMacCarbonImpl::GetScreenResolution(WebRtc_UWord32& screenWidth,
 WebRtc_UWord32
 VideoRenderMacCarbonImpl::RenderFrameRate(const WebRtc_UWord32 streamId)
 {
-    CriticalSectionScoped cs(_renderMacCarbonCritsect);
+    CriticalSectionScoped cs(&_renderMacCarbonCritsect);
     return 0;
 }
 

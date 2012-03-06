@@ -99,14 +99,14 @@ WebRtc_Word32 VideoRenderWindowsImpl::Init()
 
 WebRtc_Word32 VideoRenderWindowsImpl::ChangeUniqueId(const WebRtc_Word32 id)
 {
-    CriticalSectionScoped cs(_renderWindowsCritsect);
+    CriticalSectionScoped cs(&_renderWindowsCritsect);
     _id = id;
     return 0;
 }
 
 WebRtc_Word32 VideoRenderWindowsImpl::ChangeWindow(void* window)
 {
-    CriticalSectionScoped cs(_renderWindowsCritsect);
+    CriticalSectionScoped cs(&_renderWindowsCritsect);
     if (!_ptrRendererWin)
     {
         return -1;
@@ -125,7 +125,7 @@ VideoRenderWindowsImpl::AddIncomingRenderStream(const WebRtc_UWord32 streamId,
                                                 const float right,
                                                 const float bottom)
 {
-    CriticalSectionScoped cs(_renderWindowsCritsect);
+    CriticalSectionScoped cs(&_renderWindowsCritsect);
     VideoRenderCallback* renderCallback = NULL;
 
     if (!_ptrRendererWin)
@@ -143,7 +143,7 @@ VideoRenderWindowsImpl::AddIncomingRenderStream(const WebRtc_UWord32 streamId,
 WebRtc_Word32 VideoRenderWindowsImpl::DeleteIncomingRenderStream(
                                                                  const WebRtc_UWord32 streamId)
 {
-    CriticalSectionScoped cs(_renderWindowsCritsect);
+    CriticalSectionScoped cs(&_renderWindowsCritsect);
     WebRtc_Word32 error = -1;
     if (!_ptrRendererWin)
     {
@@ -163,7 +163,7 @@ WebRtc_Word32 VideoRenderWindowsImpl::GetIncomingRenderStreamProperties(
                                                                         float& right,
                                                                         float& bottom) const
 {
-    CriticalSectionScoped cs(_renderWindowsCritsect);
+    CriticalSectionScoped cs(&_renderWindowsCritsect);
     zOrder = 0;
     left = 0;
     top = 0;
@@ -184,7 +184,7 @@ WebRtc_Word32 VideoRenderWindowsImpl::GetIncomingRenderStreamProperties(
 
 WebRtc_Word32 VideoRenderWindowsImpl::StartRender()
 {
-    CriticalSectionScoped cs(_renderWindowsCritsect);
+    CriticalSectionScoped cs(&_renderWindowsCritsect);
     WebRtc_Word32 error = -1;
     if (!_ptrRendererWin)
     {
@@ -198,7 +198,7 @@ WebRtc_Word32 VideoRenderWindowsImpl::StartRender()
 
 WebRtc_Word32 VideoRenderWindowsImpl::StopRender()
 {
-    CriticalSectionScoped cs(_renderWindowsCritsect);
+    CriticalSectionScoped cs(&_renderWindowsCritsect);
     WebRtc_Word32 error = -1;
     if (!_ptrRendererWin)
     {
@@ -222,7 +222,7 @@ RawVideoType VideoRenderWindowsImpl::PerferedVideoType()
 
 bool VideoRenderWindowsImpl::FullScreen()
 {
-    CriticalSectionScoped cs(_renderWindowsCritsect);
+    CriticalSectionScoped cs(&_renderWindowsCritsect);
     bool fullscreen = false;
     if (!_ptrRendererWin)
     {
@@ -253,7 +253,7 @@ WebRtc_Word32 VideoRenderWindowsImpl::GetScreenResolution(
                                                           WebRtc_UWord32& screenWidth,
                                                           WebRtc_UWord32& screenHeight) const
 {
-    CriticalSectionScoped cs(_renderWindowsCritsect);
+    CriticalSectionScoped cs(&_renderWindowsCritsect);
     screenWidth = 0;
     screenHeight = 0;
     return 0;
@@ -262,7 +262,7 @@ WebRtc_Word32 VideoRenderWindowsImpl::GetScreenResolution(
 WebRtc_UWord32 VideoRenderWindowsImpl::RenderFrameRate(
                                                        const WebRtc_UWord32 streamId)
 {
-    CriticalSectionScoped cs(_renderWindowsCritsect);
+    CriticalSectionScoped cs(&_renderWindowsCritsect);
     return 0;
 }
 
@@ -273,7 +273,7 @@ WebRtc_Word32 VideoRenderWindowsImpl::SetStreamCropping(
                                                         const float right,
                                                         const float bottom)
 {
-    CriticalSectionScoped cs(_renderWindowsCritsect);
+    CriticalSectionScoped cs(&_renderWindowsCritsect);
     WebRtc_Word32 error = -1;
     if (!_ptrRendererWin)
     {
@@ -294,7 +294,7 @@ WebRtc_Word32 VideoRenderWindowsImpl::ConfigureRenderer(
                                                         const float right,
                                                         const float bottom)
 {
-    CriticalSectionScoped cs(_renderWindowsCritsect);
+    CriticalSectionScoped cs(&_renderWindowsCritsect);
     WebRtc_Word32 error = -1;
     if (!_ptrRendererWin)
     {
@@ -311,7 +311,7 @@ WebRtc_Word32 VideoRenderWindowsImpl::ConfigureRenderer(
 WebRtc_Word32 VideoRenderWindowsImpl::SetTransparentBackground(
                                                                const bool enable)
 {
-    CriticalSectionScoped cs(_renderWindowsCritsect);
+    CriticalSectionScoped cs(&_renderWindowsCritsect);
     WebRtc_Word32 error = -1;
     if (!_ptrRendererWin)
     {
@@ -334,7 +334,7 @@ WebRtc_Word32 VideoRenderWindowsImpl::SetText(
                                               const float right,
                                               const float bottom)
 {
-    CriticalSectionScoped cs(_renderWindowsCritsect);
+    CriticalSectionScoped cs(&_renderWindowsCritsect);
     WebRtc_Word32 error = -1;
     if (!_ptrRendererWin)
     {
@@ -356,7 +356,7 @@ WebRtc_Word32 VideoRenderWindowsImpl::SetBitmap(const void* bitMap,
                                                 const float right,
                                                 const float bottom)
 {
-    CriticalSectionScoped cs(_renderWindowsCritsect);
+    CriticalSectionScoped cs(&_renderWindowsCritsect);
     WebRtc_Word32 error = -1;
     if (!_ptrRendererWin)
     {

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -422,7 +422,7 @@ DirectDrawChannel::~DirectDrawChannel()
 
 void DirectDrawChannel::AddRef()
 {
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
     _refCount++;
 }
 
@@ -454,7 +454,7 @@ void DirectDrawChannel::SetStreamSettings(VideoRenderDirectDraw* DDobj,
     lookupID <<= 11;
     lookupID += streamId;
 
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
 
     DirectDrawStreamSettings* streamSettings = NULL;
 
@@ -490,7 +490,7 @@ void DirectDrawChannel::SetStreamCropSettings(VideoRenderDirectDraw* DDObj,
     lookupID <<= 11;
     lookupID += streamId;
 
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
 
     DirectDrawStreamSettings* streamSettings = NULL;
     std::map<unsigned long long, DirectDrawStreamSettings*>::iterator it =
@@ -516,7 +516,7 @@ int DirectDrawChannel::GetStreamSettings(VideoRenderDirectDraw* DDObj,
                                              float& stopWidth,
                                              float& stopHeight)
 {
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
 
     unsigned long long lookupID = reinterpret_cast<unsigned long long> (DDObj);
     lookupID &= 0xffffffffffffffe0;
@@ -542,13 +542,13 @@ int DirectDrawChannel::GetStreamSettings(VideoRenderDirectDraw* DDObj,
 
 bool DirectDrawChannel::IsOffScreenSurfaceUpdated(VideoRenderDirectDraw* DDobj)
 {
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
     return _offScreenSurfaceUpdated;
 }
 
 void DirectDrawChannel::GetLargestSize(RECT* mixingRect)
 {
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
     if (mixingRect)
     {
         if (mixingRect->bottom < _height)
@@ -571,7 +571,7 @@ int DirectDrawChannel::ChangeDeliverColorFormat(bool useScreenType)
 WebRtc_Word32 DirectDrawChannel::RenderFrame(const WebRtc_UWord32 streamId,
                                                  VideoFrame& videoFrame)
 {
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
     if (_width != videoFrame.Width() || _height != videoFrame.Height())
     {
         if (FrameSizeChange(videoFrame.Width(), videoFrame.Height(), 1) == -1)
@@ -586,7 +586,7 @@ WebRtc_Word32 DirectDrawChannel::RenderFrame(const WebRtc_UWord32 streamId,
 int DirectDrawChannel::FrameSizeChange(int width, int height,
                                            int numberOfStreams)
 {
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
 
     if (_directDraw == NULL)
     {
@@ -899,7 +899,7 @@ int DirectDrawChannel::FrameSizeChange(int width, int height,
 int DirectDrawChannel::DeliverFrame(unsigned char* buffer, int bufferSize,
                                         unsigned int /*timeStamp90KHz*/)
 {
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
 
     if (CalcBufferSize(_incomingVideoType, _width, _height)
             != bufferSize)
@@ -1086,7 +1086,7 @@ int DirectDrawChannel::BlitFromOffscreenBufferToMixingBuffer(
     lookupID <<= 11;
     lookupID += streamID;
 
-    CriticalSectionScoped cs(*_critSect);
+    CriticalSectionScoped cs(_critSect);
 
     if (_offScreenSurface == NULL)
     {
@@ -1674,7 +1674,7 @@ WebRtc_Word32 VideoRenderDirectDraw::GetGraphicsMemory(
                                                            WebRtc_UWord64& totalMemory,
                                                            WebRtc_UWord64& availableMemory)
 {
-    CriticalSectionScoped cs(*_confCritSect);
+    CriticalSectionScoped cs(_confCritSect);
 
     if (_totalMemory == -1 || _availableMemory == -1)
     {
@@ -1690,7 +1690,7 @@ WebRtc_Word32 VideoRenderDirectDraw::GetGraphicsMemory(
 int VideoRenderDirectDraw::GetScreenResolution(int& screenWidth,
                                                    int& screenHeight)
 {
-    CriticalSectionScoped cs(*_confCritSect);
+    CriticalSectionScoped cs(_confCritSect);
 
     screenWidth = _screenRect.right - _screenRect.left;
     screenHeight = _screenRect.bottom - _screenRect.top;
@@ -1699,7 +1699,7 @@ int VideoRenderDirectDraw::GetScreenResolution(int& screenWidth,
 
 int VideoRenderDirectDraw::UpdateSystemCPUUsage(int systemCPU)
 {
-    CriticalSectionScoped cs(*_confCritSect);
+    CriticalSectionScoped cs(_confCritSect);
     if (systemCPU <= 100 && systemCPU >= 0)
     {
         _systemCPUUsage = systemCPU;
@@ -2395,7 +2395,7 @@ int VideoRenderDirectDraw::AddDirectDrawChannel(int channel,
 DirectDrawChannel* VideoRenderDirectDraw::ShareDirectDrawChannel(
                                                                          int channel)
 {
-    CriticalSectionScoped cs(*_confCritSect);
+    CriticalSectionScoped cs(_confCritSect);
 
     DirectDrawChannel* obj = NULL;
 
@@ -2411,7 +2411,7 @@ DirectDrawChannel* VideoRenderDirectDraw::ShareDirectDrawChannel(
 
 WebRtc_Word32 VideoRenderDirectDraw::DeleteChannel(const WebRtc_UWord32 channel)
 {
-    CriticalSectionScoped cs(*_confCritSect);
+    CriticalSectionScoped cs(_confCritSect);
 
     // Remove the old z order
 
@@ -2449,7 +2449,7 @@ WebRtc_Word32 VideoRenderDirectDraw::GetStreamSettings(const WebRtc_UWord32 chan
                                                            float& stopWidth,
                                                            float& stopHeight)
 {
-    CriticalSectionScoped cs(*_confCritSect);
+    CriticalSectionScoped cs(_confCritSect);
 
     std::map<int, DirectDrawChannel*>::iterator ddIt;
     ddIt = _directDrawChannels.find(channel & 0x0000ffff);
@@ -2488,7 +2488,7 @@ WebRtc_Word32 VideoRenderDirectDraw::GetStreamSettings(const WebRtc_UWord32 chan
 
 int VideoRenderDirectDraw::GetChannels(std::list<int>& channelList)
 {
-    CriticalSectionScoped cs(*_confCritSect);
+    CriticalSectionScoped cs(_confCritSect);
 
     std::map<int, DirectDrawChannel*>::iterator ddIt;
     ddIt = _directDrawChannels.begin();
@@ -2508,7 +2508,7 @@ int VideoRenderDirectDraw::GetChannels(std::list<int>& channelList)
 
 bool VideoRenderDirectDraw::HasChannel(int channel)
 {
-    CriticalSectionScoped cs(*_confCritSect);
+    CriticalSectionScoped cs(_confCritSect);
 
     std::map<int, DirectDrawChannel*>::iterator ddIt;
     ddIt = _directDrawChannels.find(channel & 0x0000ffff);
@@ -2521,7 +2521,7 @@ bool VideoRenderDirectDraw::HasChannel(int channel)
 
 bool VideoRenderDirectDraw::HasChannels()
 {
-    CriticalSectionScoped cs(*_confCritSect);
+    CriticalSectionScoped cs(_confCritSect);
 
     if (_directDrawChannels.begin() != _directDrawChannels.end())
     {
@@ -2552,7 +2552,7 @@ DirectDrawChannel* VideoRenderDirectDraw::ConfigureDirectDrawChannel(int channel
     // Only support one stream per channel, is demuxing done outside if DD.
     streamID = 0;
 
-    CriticalSectionScoped cs(*_confCritSect);
+    CriticalSectionScoped cs(_confCritSect);
 
     if (!_canStretch)
     {
@@ -2625,7 +2625,7 @@ WebRtc_Word32 VideoRenderDirectDraw::SetCropping(const WebRtc_UWord32 channel,
                                                      float left, float top,
                                                      float right, float bottom)
 {
-    CriticalSectionScoped cs(*_confCritSect);
+    CriticalSectionScoped cs(_confCritSect);
     if (!_canStretch)
     {
         if (left != 0.0f || top != 0.0f || right != 1.0f || bottom != 1.0f)
@@ -2696,7 +2696,7 @@ WebRtc_Word32 VideoRenderDirectDraw::SetText(const WebRtc_UWord8 textId,
 {
     DirectDrawTextSettings* textSetting = NULL;
 
-    CriticalSectionScoped cs(*_confCritSect);
+    CriticalSectionScoped cs(_confCritSect);
 
     _frameChanged = true;
 
@@ -2784,7 +2784,7 @@ WebRtc_Word32 VideoRenderDirectDraw::SetBitmap(const void* bitMap,
 {
     DirectDrawBitmapSettings* bitmapSetting = NULL;
 
-    CriticalSectionScoped cs(*_confCritSect);
+    CriticalSectionScoped cs(_confCritSect);
 
     _frameChanged = true;
     std::map<unsigned char, DirectDrawBitmapSettings*>::iterator it;
@@ -2905,7 +2905,7 @@ WebRtc_Word32 VideoRenderDirectDraw::SetBitmap(const void* bitMap,
 WebRtc_Word32 VideoRenderDirectDraw::SetTransparentBackground(
                                                                   const bool enable)
 {
-    CriticalSectionScoped cs(*_confCritSect);
+    CriticalSectionScoped cs(_confCritSect);
 
     if (_supportTransparency)
     {

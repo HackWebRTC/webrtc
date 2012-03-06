@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -43,7 +43,7 @@ WebRtc_Word32 VideoRenderLinuxImpl::Init()
     WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id, "%s",
                  __FUNCTION__);
 
-    CriticalSectionScoped cs(_renderLinuxCritsect);
+    CriticalSectionScoped cs(&_renderLinuxCritsect);
     _ptrX11Render = new VideoX11Render((Window) _ptrWindow);
     if (!_ptrX11Render)
     {
@@ -64,7 +64,7 @@ WebRtc_Word32 VideoRenderLinuxImpl::Init()
 
 WebRtc_Word32 VideoRenderLinuxImpl::ChangeUniqueId(const WebRtc_Word32 id)
 {
-    CriticalSectionScoped cs(_renderLinuxCritsect);
+    CriticalSectionScoped cs(&_renderLinuxCritsect);
 
     _id = id;
     return 0;
@@ -75,7 +75,7 @@ WebRtc_Word32 VideoRenderLinuxImpl::ChangeWindow(void* window)
     WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id, "%s",
                  __FUNCTION__);
 
-    CriticalSectionScoped cs(_renderLinuxCritsect);
+    CriticalSectionScoped cs(&_renderLinuxCritsect);
     _ptrWindow = window;
 
     if (_ptrX11Render)
@@ -96,7 +96,7 @@ VideoRenderCallback* VideoRenderLinuxImpl::AddIncomingRenderStream(
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id, "%s",
                  __FUNCTION__);
-    CriticalSectionScoped cs(_renderLinuxCritsect);
+    CriticalSectionScoped cs(&_renderLinuxCritsect);
 
     VideoRenderCallback* renderCallback = NULL;
     if (_ptrX11Render)
@@ -127,7 +127,7 @@ WebRtc_Word32 VideoRenderLinuxImpl::DeleteIncomingRenderStream(
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id, "%s",
                  __FUNCTION__);
-    CriticalSectionScoped cs(_renderLinuxCritsect);
+    CriticalSectionScoped cs(&_renderLinuxCritsect);
 
     if (_ptrX11Render)
     {
@@ -146,7 +146,7 @@ WebRtc_Word32 VideoRenderLinuxImpl::GetIncomingRenderStreamProperties(
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id, "%s",
                  __FUNCTION__);
-    CriticalSectionScoped cs(_renderLinuxCritsect);
+    CriticalSectionScoped cs(&_renderLinuxCritsect);
 
     if (_ptrX11Render)
     {

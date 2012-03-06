@@ -46,7 +46,7 @@ VideoX11Channel::~VideoX11Channel()
 WebRtc_Word32 VideoX11Channel::RenderFrame(const WebRtc_UWord32 streamId,
                                                VideoFrame& videoFrame)
 {
-    CriticalSectionScoped cs(_crit);
+    CriticalSectionScoped cs(&_crit);
     if (_width != (WebRtc_Word32) videoFrame.Width() || _height
             != (WebRtc_Word32) videoFrame.Height())
     {
@@ -63,7 +63,7 @@ WebRtc_Word32 VideoX11Channel::FrameSizeChange(WebRtc_Word32 width,
                                                    WebRtc_Word32 height,
                                                    WebRtc_Word32 /*numberOfStreams */)
 {
-    CriticalSectionScoped cs(_crit);
+    CriticalSectionScoped cs(&_crit);
     if (_prepared)
     {
         RemoveRenderer();
@@ -80,7 +80,7 @@ WebRtc_Word32 VideoX11Channel::DeliverFrame(unsigned char* buffer,
                                                 WebRtc_Word32 bufferSize,
                                                 unsigned WebRtc_Word32 /*timeStamp90kHz*/)
 {
-    CriticalSectionScoped cs(_crit);
+    CriticalSectionScoped cs(&_crit);
     if (!_prepared)
     {
         return 0;
@@ -119,7 +119,7 @@ WebRtc_Word32 VideoX11Channel::Init(Window window, float left, float top,
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _Id, "%s",
                  __FUNCTION__);
-    CriticalSectionScoped cs(_crit);
+    CriticalSectionScoped cs(&_crit);
 
     _window = window;
     _left = left;
@@ -188,7 +188,7 @@ WebRtc_Word32 VideoX11Channel::ChangeWindow(Window window)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _Id, "%s",
                  __FUNCTION__);
-    CriticalSectionScoped cs(_crit);
+    CriticalSectionScoped cs(&_crit);
 
     // Stop the rendering, if we are rendering...
     RemoveRenderer();
@@ -224,7 +224,7 @@ WebRtc_Word32 VideoX11Channel::ReleaseWindow()
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _Id, "%s",
                  __FUNCTION__);
-    CriticalSectionScoped cs(_crit);
+    CriticalSectionScoped cs(&_crit);
 
     RemoveRenderer();
     if (_gc) {
@@ -244,7 +244,7 @@ WebRtc_Word32 VideoX11Channel::CreateLocalRenderer(WebRtc_Word32 width,
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _Id, "%s",
                  __FUNCTION__);
-    CriticalSectionScoped cs(_crit);
+    CriticalSectionScoped cs(&_crit);
 
     if (!_window || !_display)
     {

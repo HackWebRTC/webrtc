@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -82,7 +82,7 @@ IncomingVideoStream::~IncomingVideoStream()
 
 WebRtc_Word32 IncomingVideoStream::ChangeModuleId(const WebRtc_Word32 id)
 {
-    CriticalSectionScoped cs(_streamCritsect);
+    CriticalSectionScoped cs(&_streamCritsect);
 
     _moduleId = id;
     return 0;
@@ -91,7 +91,7 @@ WebRtc_Word32 IncomingVideoStream::ChangeModuleId(const WebRtc_Word32 id)
 VideoRenderCallback*
 IncomingVideoStream::ModuleCallback()
 {
-    CriticalSectionScoped cs(_streamCritsect);
+    CriticalSectionScoped cs(&_streamCritsect);
     return this;
 }
 
@@ -99,7 +99,7 @@ WebRtc_Word32 IncomingVideoStream::RenderFrame(const WebRtc_UWord32 streamId,
                                                VideoFrame& videoFrame)
 {
 
-    CriticalSectionScoped csS(_streamCritsect);
+    CriticalSectionScoped csS(&_streamCritsect);
     WEBRTC_TRACE(kTraceStream, kTraceVideoRenderer, _moduleId,
                  "%s for stream %d, render time: %u", __FUNCTION__, _streamId,
                  videoFrame.RenderTimeMs());
@@ -148,7 +148,7 @@ WebRtc_Word32 IncomingVideoStream::RenderFrame(const WebRtc_UWord32 streamId,
     }
 
     // Insert frame
-    CriticalSectionScoped csB(_bufferCritsect);
+    CriticalSectionScoped csB(&_bufferCritsect);
     if (_renderBuffers.AddFrame(&videoFrame) == 1)
         _deliverBufferEvent.Set();
 
@@ -157,21 +157,21 @@ WebRtc_Word32 IncomingVideoStream::RenderFrame(const WebRtc_UWord32 streamId,
 
 WebRtc_Word32 IncomingVideoStream::SetStartImage(const VideoFrame& videoFrame)
 {
-    CriticalSectionScoped csS(_threadCritsect);
+    CriticalSectionScoped csS(&_threadCritsect);
     return _startImage.CopyFrame(videoFrame);
 }
 
 WebRtc_Word32 IncomingVideoStream::SetTimeoutImage(const VideoFrame& videoFrame,
                                                    const WebRtc_UWord32 timeout)
 {
-    CriticalSectionScoped csS(_threadCritsect);
+    CriticalSectionScoped csS(&_threadCritsect);
     _timeoutTime = timeout;
     return _timeoutImage.CopyFrame(videoFrame);
 }
 
 WebRtc_Word32 IncomingVideoStream::SetRenderCallback(VideoRenderCallback* renderCallback)
 {
-    CriticalSectionScoped cs(_streamCritsect);
+    CriticalSectionScoped cs(&_streamCritsect);
 
     WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _moduleId,
                  "%s(%x) for stream %d", __FUNCTION__, renderCallback,
@@ -184,7 +184,7 @@ WebRtc_Word32 IncomingVideoStream::EnableMirroring(const bool enable,
                                                    const bool mirrorXAxis,
                                                    const bool mirrorYAxis)
 {
-    CriticalSectionScoped cs(_streamCritsect);
+    CriticalSectionScoped cs(&_streamCritsect);
     _mirrorFramesEnabled = enable;
     _mirroring.mirrorXAxis = mirrorXAxis;
     _mirroring.mirrorYAxis = mirrorYAxis;
@@ -194,7 +194,7 @@ WebRtc_Word32 IncomingVideoStream::EnableMirroring(const bool enable,
 
 WebRtc_Word32 IncomingVideoStream::SetExternalCallback(VideoRenderCallback* externalCallback)
 {
-    CriticalSectionScoped cs(_streamCritsect);
+    CriticalSectionScoped cs(&_streamCritsect);
 
     WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _moduleId,
                  "%s(%x) for stream %d", __FUNCTION__, externalCallback,
@@ -208,7 +208,7 @@ WebRtc_Word32 IncomingVideoStream::SetExternalCallback(VideoRenderCallback* exte
 
 WebRtc_Word32 IncomingVideoStream::Start()
 {
-    CriticalSectionScoped csS(_streamCritsect);
+    CriticalSectionScoped csS(&_streamCritsect);
     WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _moduleId,
                  "%s for stream %d", __FUNCTION__, _streamId);
     if (_running)
@@ -218,7 +218,7 @@ WebRtc_Word32 IncomingVideoStream::Start()
         return 0;
     }
 
-    CriticalSectionScoped csT(_threadCritsect);
+    CriticalSectionScoped csT(&_threadCritsect);
     assert(_ptrIncomingRenderThread == NULL);
 
     _ptrIncomingRenderThread
@@ -252,7 +252,7 @@ WebRtc_Word32 IncomingVideoStream::Start()
 
 WebRtc_Word32 IncomingVideoStream::Stop()
 {
-    CriticalSectionScoped csStream(_streamCritsect);
+    CriticalSectionScoped csStream(&_streamCritsect);
     WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _moduleId,
                  "%s for stream %d", __FUNCTION__, _streamId);
 
@@ -294,8 +294,8 @@ WebRtc_Word32 IncomingVideoStream::Stop()
 
 WebRtc_Word32 IncomingVideoStream::Reset()
 {
-    CriticalSectionScoped csStream(_streamCritsect);
-    CriticalSectionScoped csBuffer(_bufferCritsect);
+    CriticalSectionScoped csStream(&_streamCritsect);
+    CriticalSectionScoped csBuffer(&_bufferCritsect);
 
     _renderBuffers.ReleaseAllFrames();
     return 0;
@@ -303,13 +303,13 @@ WebRtc_Word32 IncomingVideoStream::Reset()
 
 WebRtc_UWord32 IncomingVideoStream::StreamId() const
 {
-    CriticalSectionScoped csStream(_streamCritsect);
+    CriticalSectionScoped csStream(&_streamCritsect);
     return _streamId;
 }
 
 WebRtc_UWord32 IncomingVideoStream::IncomingRate() const
 {
-    CriticalSectionScoped cs(_streamCritsect);
+    CriticalSectionScoped cs(&_streamCritsect);
     return _incomingRate;
 }
 
@@ -396,7 +396,7 @@ bool IncomingVideoStream::IncomingVideoStreamProcess()
         // We're done with this frame, delete it.
         if (ptrFrameToRender)
         {
-            CriticalSectionScoped cs(_bufferCritsect);
+            CriticalSectionScoped cs(&_bufferCritsect);
             _lastRenderedFrame.SwapFrame(*ptrFrameToRender);
             _renderBuffers.ReturnFrame(ptrFrameToRender);
         }
@@ -405,7 +405,7 @@ bool IncomingVideoStream::IncomingVideoStreamProcess()
 }
 WebRtc_Word32 IncomingVideoStream::GetLastRenderedFrame(VideoFrame& videoFrame) const
 {
-    CriticalSectionScoped cs(_bufferCritsect);
+    CriticalSectionScoped cs(&_bufferCritsect);
     return videoFrame.CopyFrame(_lastRenderedFrame);
 }
 

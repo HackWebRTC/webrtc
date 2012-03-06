@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -34,14 +34,14 @@ WebRtc_Word32 VideoRenderExternalImpl::Init()
 
 WebRtc_Word32 VideoRenderExternalImpl::ChangeUniqueId(const WebRtc_Word32 id)
 {
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
     _id = id;
     return 0;
 }
 
 WebRtc_Word32 VideoRenderExternalImpl::ChangeWindow(void* window)
 {
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
     return 0;
 }
 
@@ -53,14 +53,14 @@ VideoRenderExternalImpl::AddIncomingRenderStream(const WebRtc_UWord32 streamId,
                                                  const float right,
                                                  const float bottom)
 {
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
     return this;
 }
 
 WebRtc_Word32 VideoRenderExternalImpl::DeleteIncomingRenderStream(
                                                                   const WebRtc_UWord32 streamId)
 {
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
     return 0;
 }
 
@@ -72,7 +72,7 @@ WebRtc_Word32 VideoRenderExternalImpl::GetIncomingRenderStreamProperties(
                                                                          float& right,
                                                                          float& bottom) const
 {
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
 
     zOrder = 0;
     left = 0;
@@ -85,13 +85,13 @@ WebRtc_Word32 VideoRenderExternalImpl::GetIncomingRenderStreamProperties(
 
 WebRtc_Word32 VideoRenderExternalImpl::StartRender()
 {
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
     return 0;
 }
 
 WebRtc_Word32 VideoRenderExternalImpl::StopRender()
 {
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
     return 0;
 }
 
@@ -107,7 +107,7 @@ RawVideoType VideoRenderExternalImpl::PerferedVideoType()
 
 bool VideoRenderExternalImpl::FullScreen()
 {
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
     return _fullscreen;
 }
 
@@ -124,7 +124,7 @@ WebRtc_Word32 VideoRenderExternalImpl::GetScreenResolution(
                                                            WebRtc_UWord32& screenWidth,
                                                            WebRtc_UWord32& screenHeight) const
 {
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
     screenWidth = 0;
     screenHeight = 0;
     return 0;
@@ -133,7 +133,7 @@ WebRtc_Word32 VideoRenderExternalImpl::GetScreenResolution(
 WebRtc_UWord32 VideoRenderExternalImpl::RenderFrameRate(
                                                         const WebRtc_UWord32 streamId)
 {
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
     return 0;
 }
 
@@ -144,7 +144,7 @@ WebRtc_Word32 VideoRenderExternalImpl::SetStreamCropping(
                                                          const float right,
                                                          const float bottom)
 {
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
     return 0;
 }
 
@@ -156,14 +156,14 @@ WebRtc_Word32 VideoRenderExternalImpl::ConfigureRenderer(
                                                          const float right,
                                                          const float bottom)
 {
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
     return 0;
 }
 
 WebRtc_Word32 VideoRenderExternalImpl::SetTransparentBackground(
                                                                 const bool enable)
 {
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
     return 0;
 }
 
@@ -178,7 +178,7 @@ WebRtc_Word32 VideoRenderExternalImpl::SetText(
                                                const float right,
                                                const float bottom)
 {
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
     return 0;
 }
 
@@ -190,7 +190,7 @@ WebRtc_Word32 VideoRenderExternalImpl::SetBitmap(const void* bitMap,
                                                  const float right,
                                                  const float bottom)
 {
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
     return 0;
 }
 

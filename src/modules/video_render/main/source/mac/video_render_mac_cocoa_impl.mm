@@ -48,7 +48,7 @@ WebRtc_Word32
 VideoRenderMacCocoaImpl::Init()
 {
 
-    CriticalSectionScoped cs(_renderMacCocoaCritsect);
+    CriticalSectionScoped cs(&_renderMacCocoaCritsect);
     WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id, "%s:%d", __FUNCTION__, __LINE__);
 
     // cast ptrWindow from void* to CocoaRenderer. Void* was once NSOpenGLView, and CocoaRenderer is NSOpenGLView.
@@ -71,7 +71,7 @@ VideoRenderMacCocoaImpl::Init()
 WebRtc_Word32
 VideoRenderMacCocoaImpl::ChangeUniqueId(const WebRtc_Word32 id)
 {
-    CriticalSectionScoped cs(_renderMacCocoaCritsect);
+    CriticalSectionScoped cs(&_renderMacCocoaCritsect);
     WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id, "%s", __FUNCTION__);
     _id = id;
 
@@ -87,7 +87,7 @@ WebRtc_Word32
 VideoRenderMacCocoaImpl::ChangeWindow(void* window)
 {
 
-    CriticalSectionScoped cs(_renderMacCocoaCritsect);
+    CriticalSectionScoped cs(&_renderMacCocoaCritsect);
     WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id, "%s changing ID to ", __FUNCTION__, window);
 
     if (window == NULL)
@@ -111,7 +111,7 @@ VideoRenderMacCocoaImpl::AddIncomingRenderStream(const WebRtc_UWord32 streamId,
         const float right,
         const float bottom)
 {
-    CriticalSectionScoped cs(_renderMacCocoaCritsect);
+    CriticalSectionScoped cs(&_renderMacCocoaCritsect);
     WEBRTC_TRACE(kTraceDebug, kTraceVideoRenderer, _id, "%s", __FUNCTION__);
     VideoChannelNSOpenGL* nsOpenGLChannel = NULL;
 
@@ -132,7 +132,7 @@ WebRtc_Word32
 VideoRenderMacCocoaImpl::DeleteIncomingRenderStream(const WebRtc_UWord32 streamId)
 {
     WEBRTC_TRACE(kTraceDebug, kTraceVideoRenderer, _id, "Constructor %s:%d", __FUNCTION__, __LINE__);
-    CriticalSectionScoped cs(_renderMacCocoaCritsect);
+    CriticalSectionScoped cs(&_renderMacCocoaCritsect);
     _ptrCocoaRender->DeleteNSGLChannel(streamId);
 
     return 0;
@@ -192,7 +192,7 @@ WebRtc_Word32
 VideoRenderMacCocoaImpl::GetScreenResolution(WebRtc_UWord32& screenWidth,
         WebRtc_UWord32& screenHeight) const
 {
-    CriticalSectionScoped cs(_renderMacCocoaCritsect);
+    CriticalSectionScoped cs(&_renderMacCocoaCritsect);
     NSScreen* mainScreen = [NSScreen mainScreen];
 
     NSRect frame = [mainScreen frame];
@@ -205,7 +205,7 @@ VideoRenderMacCocoaImpl::GetScreenResolution(WebRtc_UWord32& screenWidth,
 WebRtc_UWord32
 VideoRenderMacCocoaImpl::RenderFrameRate(const WebRtc_UWord32 streamId)
 {
-    CriticalSectionScoped cs(_renderMacCocoaCritsect);
+    CriticalSectionScoped cs(&_renderMacCocoaCritsect);
     return 0;
 }
 

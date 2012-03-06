@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -29,7 +29,7 @@ VideoX11Render::~VideoX11Render()
 
 WebRtc_Word32 VideoX11Render::Init()
 {
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
 
     _streamIdToX11ChannelMap.clear();
 
@@ -38,7 +38,7 @@ WebRtc_Word32 VideoX11Render::Init()
 
 WebRtc_Word32 VideoX11Render::ChangeWindow(Window window)
 {
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
     VideoX11Channel* renderChannel = NULL;
 
     std::map<int, VideoX11Channel*>::iterator iter =
@@ -67,7 +67,7 @@ VideoX11Channel* VideoX11Render::CreateX11RenderChannel(
                                                                 const float right,
                                                                 const float bottom)
 {
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
     VideoX11Channel* renderChannel = NULL;
 
     std::map<int, VideoX11Channel*>::iterator iter =
@@ -101,7 +101,7 @@ VideoX11Channel* VideoX11Render::CreateX11RenderChannel(
 
 WebRtc_Word32 VideoX11Render::DeleteX11RenderChannel(WebRtc_Word32 streamId)
 {
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
 
     std::map<int, VideoX11Channel*>::iterator iter =
             _streamIdToX11ChannelMap.find(streamId);
@@ -131,7 +131,7 @@ WebRtc_Word32 VideoX11Render::GetIncomingStreamProperties(
                                                               float& right,
                                                               float& bottom)
 {
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
 
     std::map<int, VideoX11Channel*>::iterator iter =
             _streamIdToX11ChannelMap.find(streamId);

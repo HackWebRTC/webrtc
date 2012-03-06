@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -813,7 +813,7 @@ k
 
 int VideoRenderAGL::DeleteAllAGLChannels()
 {
-    CriticalSectionScoped cs(_renderCritSec);
+    CriticalSectionScoped cs(&_renderCritSec);
 
     //WEBRTC_TRACE(kTraceInfo, "%s:%d Deleting all AGL channels", __FUNCTION__, __LINE__);
     //int i = 0 ;
@@ -835,7 +835,7 @@ int VideoRenderAGL::DeleteAllAGLChannels()
 
 int VideoRenderAGL::DeleteAGLChannel(int channel)
 {
-    CriticalSectionScoped cs(_renderCritSec);
+    CriticalSectionScoped cs(&_renderCritSec);
     //WEBRTC_TRACE(kTraceDebug, "%s:%d Deleting AGL channel %d", __FUNCTION__, __LINE__, channel);
 
     std::map<int, VideoChannelAGL*>::iterator it;
@@ -867,7 +867,7 @@ int VideoRenderAGL::DeleteAGLChannel(int channel)
 
 int VideoRenderAGL::StopThread()
 {
-    CriticalSectionScoped cs(_renderCritSec);
+    CriticalSectionScoped cs(&_renderCritSec);
     ThreadWrapper* tmpPtr = _screenUpdateThread;
     //_screenUpdateThread = NULL;
 
@@ -889,14 +889,14 @@ int VideoRenderAGL::StopThread()
 
 bool VideoRenderAGL::IsFullScreen()
 {
-    CriticalSectionScoped cs(_renderCritSec);
+    CriticalSectionScoped cs(&_renderCritSec);
     return _fullScreen;
 }
 
 bool VideoRenderAGL::HasChannels()
 {
 
-    CriticalSectionScoped cs(_renderCritSec);
+    CriticalSectionScoped cs(&_renderCritSec);
 
     if (_aglChannels.begin() != _aglChannels.end())
     {
@@ -908,7 +908,7 @@ bool VideoRenderAGL::HasChannels()
 
 bool VideoRenderAGL::HasChannel(int channel)
 {
-    CriticalSectionScoped cs(_renderCritSec);
+    CriticalSectionScoped cs(&_renderCritSec);
 
     std::map<int, VideoChannelAGL*>::iterator it = _aglChannels.find(channel);
     if (it != _aglChannels.end())
@@ -922,7 +922,7 @@ bool VideoRenderAGL::HasChannel(int channel)
 int VideoRenderAGL::GetChannels(std::list<int>& channelList)
 {
 
-    CriticalSectionScoped cs(_renderCritSec);
+    CriticalSectionScoped cs(&_renderCritSec);
     std::map<int, VideoChannelAGL*>::iterator it = _aglChannels.begin();
 
     while (it != _aglChannels.end())
@@ -937,7 +937,7 @@ int VideoRenderAGL::GetChannels(std::list<int>& channelList)
 VideoChannelAGL* VideoRenderAGL::ConfigureAGLChannel(int channel, int zOrder, float startWidth, float startHeight, float stopWidth, float stopHeight)
 {
 
-    CriticalSectionScoped cs(_renderCritSec);
+    CriticalSectionScoped cs(&_renderCritSec);
 
     std::map<int, VideoChannelAGL*>::iterator it = _aglChannels.find(channel);
 

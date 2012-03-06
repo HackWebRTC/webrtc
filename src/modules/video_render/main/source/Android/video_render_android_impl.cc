@@ -78,7 +78,7 @@ VideoRenderAndroid::~VideoRenderAndroid()
 
 WebRtc_Word32 VideoRenderAndroid::ChangeUniqueId(const WebRtc_Word32 id)
 {
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
     _id = id;
 
     return 0;
@@ -96,7 +96,7 @@ VideoRenderAndroid::AddIncomingRenderStream(const WebRtc_UWord32 streamId,
                                             const float right,
                                             const float bottom)
 {
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
 
     AndroidStream* renderStream = NULL;
     MapItem* item = _streamsMap.Find(streamId);
@@ -129,7 +129,7 @@ VideoRenderAndroid::AddIncomingRenderStream(const WebRtc_UWord32 streamId,
 WebRtc_Word32 VideoRenderAndroid::DeleteIncomingRenderStream(
                                                              const WebRtc_UWord32 streamId)
 {
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
 
     MapItem* item = _streamsMap.Find(streamId);
     if (item)
@@ -160,7 +160,7 @@ WebRtc_Word32 VideoRenderAndroid::GetIncomingRenderStreamProperties(
 
 WebRtc_Word32 VideoRenderAndroid::StartRender()
 {
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
 
     if (_javaRenderThread)
     {
@@ -201,7 +201,7 @@ WebRtc_Word32 VideoRenderAndroid::StopRender()
 
     WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id, "%s:", __FUNCTION__);
     {
-        CriticalSectionScoped cs(_critSect);
+        CriticalSectionScoped cs(&_critSect);
         if (!_javaRenderThread)
         {
             return -1;
@@ -211,7 +211,7 @@ WebRtc_Word32 VideoRenderAndroid::StopRender()
     }
 
     _javaShutdownEvent.Wait(3000);
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
     _javaRenderThread->SetNotAlive();
     if (_javaRenderThread->Stop())
     {
@@ -230,7 +230,7 @@ WebRtc_Word32 VideoRenderAndroid::StopRender()
 
 void VideoRenderAndroid::ReDraw()
 {
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
     if (_lastJavaRenderEvent < TickTime::MillisecondTimestamp() - 20) // Allow redraw if it was more than 20ms since last.
     {
         _lastJavaRenderEvent = TickTime::MillisecondTimestamp();
@@ -247,7 +247,7 @@ bool VideoRenderAndroid::JavaRenderThreadProcess()
 {
     _javaRenderEvent.Wait(1000);
 
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
     if (!_javaRenderJniEnv)
     {
         // try to attach the thread and get the env
