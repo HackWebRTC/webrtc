@@ -148,13 +148,15 @@ public:
     */
     virtual WebRtc_Word32 InitSender();
 
-    virtual WebRtc_Word32 SetRTPKeepaliveStatus(const bool enable,
-                                              const WebRtc_Word8 unknownPayloadType,
-                                              const WebRtc_UWord16 deltaTransmitTimeMS);
+    virtual WebRtc_Word32 SetRTPKeepaliveStatus(
+        const bool enable,
+        const int unknownPayloadType,
+        const WebRtc_UWord16 deltaTransmitTimeMS);
 
-    virtual WebRtc_Word32 RTPKeepaliveStatus(bool* enable,
-                                           WebRtc_Word8* unknownPayloadType,
-                                           WebRtc_UWord16* deltaTransmitTimeMS) const;
+    virtual WebRtc_Word32 RTPKeepaliveStatus(
+        bool* enable,
+        int* unknownPayloadType,
+        WebRtc_UWord16* deltaTransmitTimeMS) const;
 
     virtual bool RTPKeepalive() const;
 

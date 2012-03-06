@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -7149,7 +7149,7 @@ int VoEExtendedTest::TestRTP_RTCP() {
   ANL();
 
   TEST(GetRTPKeepaliveStatus);
-  unsigned char pt;
+  int pt;
   int dT;
   TEST_MUSTPASS(!rtp_rtcp->GetRTPKeepaliveStatus(-1, enabled, pt, dT));
   MARK();
@@ -7609,8 +7609,7 @@ int VoEExtendedTest::TestVolumeControl()
 
   TEST_MUSTPASS(voe_base_->Init());
   TEST_MUSTPASS(voe_base_->CreateChannel());
-#if (defined _TEST_HARDWARE_ && (!defined(MAC_IPHONE) && \
-    !defined(WEBRTC_ANDROID)))
+#if (defined _TEST_HARDWARE_ && (!defined(MAC_IPHONE)))
 #if defined(_WIN32)
   TEST_MUSTPASS(hardware->SetRecordingDevice(-1));
   TEST_MUSTPASS(hardware->SetPlayoutDevice(-1));

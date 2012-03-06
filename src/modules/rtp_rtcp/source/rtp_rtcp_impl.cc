@@ -870,7 +870,7 @@ bool ModuleRtpRtcpImpl::RTPKeepalive() const {
 
 WebRtc_Word32 ModuleRtpRtcpImpl::RTPKeepaliveStatus(
     bool* enable,
-    WebRtc_Word8* unknownPayloadType,
+    int* unknownPayloadType,
     WebRtc_UWord16* deltaTransmitTimeMS) const {
   WEBRTC_TRACE(kTraceModuleCall, kTraceRtpRtcp, _id, "RTPKeepaliveStatus()");
 
@@ -881,7 +881,7 @@ WebRtc_Word32 ModuleRtpRtcpImpl::RTPKeepaliveStatus(
 
 WebRtc_Word32 ModuleRtpRtcpImpl::SetRTPKeepaliveStatus(
   bool enable,
-  WebRtc_Word8 unknownPayloadType,
+  const int unknownPayloadType,
   WebRtc_UWord16 deltaTransmitTimeMS) {
   if (enable) {
     WEBRTC_TRACE(

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -43,7 +43,7 @@ TEST_F(RtpRtcpBeforeStreamingTest,
 }
 
 TEST_F(RtpRtcpBeforeStreamingTest, RtpKeepAliveStatusIsOffByDefault) {
-  unsigned char payload_type;
+  int payload_type;
   int delta_seconds;
   bool on;
 
@@ -56,7 +56,7 @@ TEST_F(RtpRtcpBeforeStreamingTest, RtpKeepAliveStatusIsOffByDefault) {
 }
 
 TEST_F(RtpRtcpBeforeStreamingTest, SetRtpKeepAliveDealsWithInvalidParameters) {
-  unsigned char payload_type;
+  int payload_type;
   int delta_seconds;
   bool on;
 
@@ -90,7 +90,7 @@ TEST_F(RtpRtcpBeforeStreamingTest,
   EXPECT_EQ(0, voe_rtp_rtcp_->SetRTPKeepaliveStatus(
       channel_, true, 1));
 
-  unsigned char payload_type;
+  int payload_type;
   int delta_seconds;
   bool on;
 

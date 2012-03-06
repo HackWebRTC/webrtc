@@ -96,12 +96,12 @@ class ViERTP_RTCPImpl
   virtual int SetRTPKeepAliveStatus(
       const int video_channel,
       bool enable,
-      const char unknown_payload_type,
+      const int unknown_payload_type,
       const unsigned int delta_transmit_time_seconds);
   virtual int GetRTPKeepAliveStatus(
       const int video_channel,
       bool& enabled,
-      char& unkown_payload_type,
+      int& unkown_payload_type,
       unsigned int& delta_transmit_time_seconds) const;
   virtual int StartRTPDump(const int video_channel,
                            const char file_nameUTF8[1024],

@@ -661,10 +661,10 @@ void ViEAutoTest::ViERtpRtcpAPITest()
     // RTP Keepalive
     //
     {
-        char setPT = 123;
+        int setPT = 123;
         unsigned int setDeltaTime = 10;
         bool enabled = false;
-        char getPT = 0;
+        int getPT = 0;
         unsigned int getDeltaTime = 0;
         EXPECT_EQ(0, ViE.rtp_rtcp->SetRTPKeepAliveStatus(
             tbChannel.videoChannel, true, 119));

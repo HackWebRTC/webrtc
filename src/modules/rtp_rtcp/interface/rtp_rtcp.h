@@ -377,7 +377,7 @@ public:
     */
     virtual WebRtc_Word32 SetRTPKeepaliveStatus(
         const bool enable,
-        const WebRtc_Word8 unknownPayloadType,
+        const int unknownPayloadType,
         const WebRtc_UWord16 deltaTransmitTimeMS) = 0;
 
     /*
@@ -391,7 +391,7 @@ public:
     */
     virtual WebRtc_Word32 RTPKeepaliveStatus(
         bool* enable,
-        WebRtc_Word8* unknownPayloadType,
+        int* unknownPayloadType,
         WebRtc_UWord16* deltaTransmitTimeMS) const = 0;
 
     /*

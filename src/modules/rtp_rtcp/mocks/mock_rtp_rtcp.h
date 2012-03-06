@@ -77,7 +77,10 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_METHOD2(IncomingPacket,
       WebRtc_Word32(const WebRtc_UWord8* incomingPacket, const WebRtc_UWord16 packetLength));
   MOCK_METHOD4(IncomingAudioNTP,
-      WebRtc_Word32(const WebRtc_UWord32 audioReceivedNTPsecs, const WebRtc_UWord32 audioReceivedNTPfrac, const WebRtc_UWord32 audioRTCPArrivalTimeSecs, const WebRtc_UWord32 audioRTCPArrivalTimeFrac));
+      WebRtc_Word32(const WebRtc_UWord32 audioReceivedNTPsecs,
+                    const WebRtc_UWord32 audioReceivedNTPfrac,
+                    const WebRtc_UWord32 audioRTCPArrivalTimeSecs,
+                    const WebRtc_UWord32 audioRTCPArrivalTimeFrac));
   MOCK_METHOD0(InitSender,
       WebRtc_Word32());
   MOCK_METHOD1(RegisterSendTransport,
@@ -85,15 +88,20 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_METHOD1(SetMaxTransferUnit,
       WebRtc_Word32(const WebRtc_UWord16 size));
   MOCK_METHOD3(SetTransportOverhead,
-      WebRtc_Word32(const bool TCP, const bool IPV6, const WebRtc_UWord8 authenticationOverhead));
+      WebRtc_Word32(const bool TCP, const bool IPV6,
+                    const WebRtc_UWord8 authenticationOverhead));
   MOCK_CONST_METHOD0(MaxPayloadLength,
       WebRtc_UWord16());
   MOCK_CONST_METHOD0(MaxDataPayloadLength,
       WebRtc_UWord16());
   MOCK_METHOD3(SetRTPKeepaliveStatus,
-      WebRtc_Word32(const bool enable, const WebRtc_Word8 unknownPayloadType, const WebRtc_UWord16 deltaTransmitTimeMS));
+      WebRtc_Word32(const bool enable,
+                    const int unknownPayloadType,
+                    const WebRtc_UWord16 deltaTransmitTimeMS));
   MOCK_CONST_METHOD3(RTPKeepaliveStatus,
-      WebRtc_Word32(bool* enable, WebRtc_Word8* unknownPayloadType, WebRtc_UWord16* deltaTransmitTimeMS));
+      WebRtc_Word32(bool* enable,
+                    int* unknownPayloadType,
+                    WebRtc_UWord16* deltaTransmitTimeMS));
   MOCK_CONST_METHOD0(RTPKeepalive,
       bool());
   MOCK_METHOD1(RegisterSendPayload,
@@ -147,7 +155,13 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_CONST_METHOD1(EstimatedReceiveBandwidth,
       int(WebRtc_UWord32* available_bandwidth));
   MOCK_METHOD7(SendOutgoingData,
-      WebRtc_Word32(const FrameType frameType, const WebRtc_Word8 payloadType, const WebRtc_UWord32 timeStamp, const WebRtc_UWord8* payloadData, const WebRtc_UWord32 payloadSize, const RTPFragmentationHeader* fragmentation, const RTPVideoHeader* rtpVideoHdr));
+      WebRtc_Word32(const FrameType frameType,
+                    const WebRtc_Word8 payloadType,
+                    const WebRtc_UWord32 timeStamp,
+                    const WebRtc_UWord8* payloadData,
+                    const WebRtc_UWord32 payloadSize,
+                    const RTPFragmentationHeader* fragmentation,
+                    const RTPVideoHeader* rtpVideoHdr));
   MOCK_METHOD1(RegisterIncomingRTCPCallback,
       WebRtc_Word32(RtcpFeedback* incomingMessagesCallback));
   MOCK_CONST_METHOD0(RTCP,
@@ -164,7 +178,8 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_CONST_METHOD4(RemoteNTP,
       WebRtc_Word32(WebRtc_UWord32 *ReceivedNTPsecs, WebRtc_UWord32 *ReceivedNTPfrac, WebRtc_UWord32 *RTCPArrivalTimeSecs, WebRtc_UWord32 *RTCPArrivalTimeFrac));
   MOCK_METHOD2(AddMixedCNAME,
-      WebRtc_Word32(const WebRtc_UWord32 SSRC, const WebRtc_Word8 cName[RTCP_CNAME_SIZE]));
+      WebRtc_Word32(const WebRtc_UWord32 SSRC,
+                    const char cName[RTCP_CNAME_SIZE]));
   MOCK_METHOD1(RemoveMixedCNAME,
       WebRtc_Word32(const WebRtc_UWord32 SSRC));
   MOCK_CONST_METHOD5(RTT,

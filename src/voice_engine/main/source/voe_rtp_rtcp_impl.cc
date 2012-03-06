@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -575,7 +575,7 @@ int VoERTP_RTCPImpl::GetFECStatus(int channel,
 
 int VoERTP_RTCPImpl::SetRTPKeepaliveStatus(int channel,
                                            bool enable,
-                                           unsigned char unknownPayloadType,
+                                           int unknownPayloadType,
                                            int deltaTransmitTimeSeconds)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1), 
@@ -603,7 +603,7 @@ int VoERTP_RTCPImpl::SetRTPKeepaliveStatus(int channel,
 
 int VoERTP_RTCPImpl::GetRTPKeepaliveStatus(int channel,
                                            bool& enabled,
-                                           unsigned char& unknownPayloadType,
+                                           int& unknownPayloadType,
                                            int& deltaTransmitTimeSeconds)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1),

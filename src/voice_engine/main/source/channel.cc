@@ -5646,7 +5646,7 @@ Channel::GetFECStatus(bool& enabled, int& redPayloadtype)
 
 int
 Channel::SetRTPKeepaliveStatus(bool enable,
-                               unsigned char unknownPayloadType,
+                               int unknownPayloadType,
                                int deltaTransmitTimeSeconds)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
@@ -5673,11 +5673,11 @@ Channel::SetRTPKeepaliveStatus(bool enable,
 
 int
 Channel::GetRTPKeepaliveStatus(bool& enabled,
-                               unsigned char& unknownPayloadType,
+                               int& unknownPayloadType,
                                int& deltaTransmitTimeSeconds)
 {
     bool onOff(false);
-    WebRtc_Word8 payloadType(0);
+    int payloadType(0);
     WebRtc_UWord16 deltaTransmitTimeMS(0);
     if (_rtpRtcpModule.RTPKeepaliveStatus(&onOff, &payloadType,
                                           &deltaTransmitTimeMS) != 0)

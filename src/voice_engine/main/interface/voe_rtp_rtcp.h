@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -191,12 +191,12 @@ public:
     // This functionality can maintain an existing Network Address Translator
     // (NAT) mapping while regular RTP is no longer transmitted.
     virtual int SetRTPKeepaliveStatus(
-        int channel, bool enable, unsigned char unknownPayloadType,
+        int channel, bool enable, int unknownPayloadType,
         int deltaTransmitTimeSeconds = 15) = 0;
 
     // Gets the RTP keepalive mechanism status.
     virtual int GetRTPKeepaliveStatus(
-        int channel, bool& enabled, unsigned char& unknownPayloadType,
+        int channel, bool& enabled, int& unknownPayloadType,
         int& deltaTransmitTimeSeconds) = 0;
 
     // Enables capturing of RTP packets to a binary file on a specific

@@ -361,7 +361,7 @@ RTPSender::RTPKeepalive() const
 
 WebRtc_Word32
 RTPSender::RTPKeepaliveStatus(bool* enable,
-                              WebRtc_Word8* unknownPayloadType,
+                              int* unknownPayloadType,
                               WebRtc_UWord16* deltaTransmitTimeMS) const
 {
     CriticalSectionScoped cs(_sendCritsect);
@@ -382,7 +382,7 @@ RTPSender::RTPKeepaliveStatus(bool* enable,
 }
 
 WebRtc_Word32 RTPSender::EnableRTPKeepalive(
-    const WebRtc_Word8 unknownPayloadType,
+    const int unknownPayloadType,
     const WebRtc_UWord16 deltaTransmitTimeMS) {
   CriticalSectionScoped cs(_sendCritsect);
 

@@ -1058,7 +1058,7 @@ int ViEChannel::GetEstimatedReceiveBandwidth(
 
 WebRtc_Word32 ViEChannel::SetKeepAliveStatus(
     const bool enable,
-    const WebRtc_Word8 unknown_payload_type,
+    const int unknown_payload_type,
     const WebRtc_UWord16 delta_transmit_timeMS) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_),
                "%s", __FUNCTION__);
@@ -1109,7 +1109,7 @@ WebRtc_Word32 ViEChannel::SetKeepAliveStatus(
 
 WebRtc_Word32 ViEChannel::GetKeepAliveStatus(
     bool& enabled,
-    WebRtc_Word8& unknown_payload_type,
+    int& unknown_payload_type,
     WebRtc_UWord16& delta_transmit_time_ms) {
   WEBRTC_TRACE(kTraceInfo, kTraceVideo, ViEId(engine_id_, channel_id_), "%s",
                __FUNCTION__);

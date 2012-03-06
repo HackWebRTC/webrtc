@@ -263,7 +263,7 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
   virtual int SetRTPKeepAliveStatus(
       const int video_channel,
       bool enable,
-      const char unknown_payload_type,
+      const int unknown_payload_type,
       const unsigned int delta_transmit_time_seconds =
           KDefaultDeltaTransmitTimeSeconds) = 0;
 
@@ -271,7 +271,7 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
   virtual int GetRTPKeepAliveStatus(
       const int video_channel,
       bool& enabled,
-      char& unkown_payload_type,
+      int& unkown_payload_type,
       unsigned int& delta_transmit_time_seconds) const = 0;
 
   // This function enables capturing of RTP packets to a binary file on a

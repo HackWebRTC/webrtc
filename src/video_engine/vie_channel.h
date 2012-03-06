@@ -164,10 +164,10 @@ class ViEChannel
                          WebRtc_UWord32& nackBitrateSent) const;
   int GetEstimatedReceiveBandwidth(WebRtc_UWord32* estimated_bandwidth) const;
   WebRtc_Word32 SetKeepAliveStatus(const bool enable,
-                                   const WebRtc_Word8 unknown_payload_type,
+                                   const int unknown_payload_type,
                                    const WebRtc_UWord16 delta_transmit_timeMS);
   WebRtc_Word32 GetKeepAliveStatus(bool& enable,
-                                   WebRtc_Word8& unknown_payload_type,
+                                   int& unknown_payload_type,
                                    WebRtc_UWord16& delta_transmit_timeMS);
   WebRtc_Word32 StartRTPDump(const char file_nameUTF8[1024],
                              RTPDirections direction);

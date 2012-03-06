@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -90,12 +90,12 @@ public:
     // RTP keepalive mechanism (maintains NAT mappings associated to RTP flows)
     virtual int SetRTPKeepaliveStatus(int channel,
                                       bool enable,
-                                      unsigned char unknownPayloadType,
+                                      int unknownPayloadType,
                                       int deltaTransmitTimeSeconds = 15);
 
     virtual int GetRTPKeepaliveStatus(int channel,
                                       bool& enabled,
-                                      unsigned char& unknownPayloadType,
+                                      int& unknownPayloadType,
                                       int& deltaTransmitTimeSeconds);
 
     // FEC

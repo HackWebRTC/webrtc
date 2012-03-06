@@ -770,7 +770,7 @@ int ViERTP_RTCPImpl::GetEstimatedReceiveBandwidth(
 int ViERTP_RTCPImpl::SetRTPKeepAliveStatus(
     const int video_channel,
     bool enable,
-    const char unknown_payload_type,
+    const int unknown_payload_type,
     const unsigned int delta_transmit_time_seconds) {
   WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
                ViEId(shared_data_->instance_id(), video_channel),
@@ -801,7 +801,7 @@ int ViERTP_RTCPImpl::SetRTPKeepAliveStatus(
 int ViERTP_RTCPImpl::GetRTPKeepAliveStatus(
     const int video_channel,
     bool& enabled,
-    char& unknown_payload_type,
+    int& unknown_payload_type,
     unsigned int& delta_transmit_time_seconds) const {
   WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
                ViEId(shared_data_->instance_id(), video_channel),

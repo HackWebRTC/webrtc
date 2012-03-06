@@ -199,12 +199,12 @@ public:
     /*
     *    Keep alive
     */
-    WebRtc_Word32 EnableRTPKeepalive( const WebRtc_Word8 unknownPayloadType,
-                                    const WebRtc_UWord16 deltaTransmitTimeMS);
+    WebRtc_Word32 EnableRTPKeepalive( const int unknownPayloadType,
+                                      const WebRtc_UWord16 deltaTransmitTimeMS);
 
     WebRtc_Word32 RTPKeepaliveStatus(bool* enable,
-                                   WebRtc_Word8* unknownPayloadType,
-                                   WebRtc_UWord16* deltaTransmitTimeMS) const;
+                                     int* unknownPayloadType,
+                                     WebRtc_UWord16* deltaTransmitTimeMS) const;
 
     WebRtc_Word32 DisableRTPKeepalive();
 
