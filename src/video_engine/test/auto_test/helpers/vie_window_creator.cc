@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -21,8 +21,10 @@
 #endif
 
 ViEWindowCreator::ViEWindowCreator() {
+#ifndef WEBRTC_ANDROID
   window_manager_ =
       ViEWindowManagerFactory::CreateWindowManagerForCurrentPlatform();
+#endif
 }
 
 ViEWindowCreator::~ViEWindowCreator() {
@@ -51,4 +53,3 @@ ViEAutoTestWindowManagerInterface*
 void ViEWindowCreator::TerminateWindows() {
   window_manager_->TerminateWindows();
 }
-
