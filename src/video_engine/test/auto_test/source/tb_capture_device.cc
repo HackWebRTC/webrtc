@@ -57,6 +57,7 @@ TbCaptureDevice::TbCaptureDevice(TbInterfaces& Engine) :
         return;
     }
 
+    device_name_ = deviceName;
     ViETest::Log("Starting capture device %s with captureId %d\n", deviceName,
                  captureId);
     EXPECT_EQ(0, ViE.capture->StartCapture(captureId));
@@ -78,4 +79,8 @@ void TbCaptureDevice::ConnectTo(int videoChannel)
 void TbCaptureDevice::Disconnect(int videoChannel)
 {
     EXPECT_EQ(0, ViE.capture->DisconnectCaptureDevice(videoChannel));
+}
+
+std::string TbCaptureDevice::device_name() const {
+  return device_name_;
 }
