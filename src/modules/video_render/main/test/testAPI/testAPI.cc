@@ -22,7 +22,7 @@
 #include <windows.h>
 #include <ddraw.h>
 
-#elif defined(WEBRTC_LINUX)
+#elif defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID)
 
 #include <iostream>
 #include <X11/Xlib.h>
@@ -177,7 +177,7 @@ int WebRtcCreateWindow(HWND &hwndMain,int winNum, int width, int height)
     return 0;
 }
 
-#elif defined(WEBRTC_LINUX)
+#elif defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID)
 
 int WebRtcCreateWindow(Window *outWindow, Display **outDisplay, int winNum, int width, int height) // unsigned char* title, int titleLength)
 
