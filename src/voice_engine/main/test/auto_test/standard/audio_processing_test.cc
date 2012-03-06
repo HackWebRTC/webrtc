@@ -326,6 +326,13 @@ TEST_F(AudioProcessingTest, VoiceActivityIndicatorReturns1WithSpeechOn) {
   EXPECT_EQ(1, voe_apm_->VoiceActivityIndicator(channel_));
 }
 
+TEST_F(AudioProcessingTest, CanSetDelayOffset) {
+  voe_apm_->SetDelayOffsetMs(50);
+  EXPECT_EQ(50, voe_apm_->DelayOffsetMs());
+  voe_apm_->SetDelayOffsetMs(-50);
+  EXPECT_EQ(-50, voe_apm_->DelayOffsetMs());
+}
+
 #if defined(MAC_IPHONE) || defined(WEBRTC_ANDROID)
 
 TEST_F(AudioProcessingTest, AgcIsOffByDefaultAndDigital) {

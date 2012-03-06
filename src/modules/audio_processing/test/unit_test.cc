@@ -174,7 +174,6 @@ std::string ApmTest::OutputFilePath(std::string name,
   return output_path_ + ss.str();
 }
 
-
 void ApmTest::Init(int sample_rate_hz, int num_reverse_channels,
                    int num_input_channels, int num_output_channels,
                    bool open_output_file) {
@@ -514,6 +513,20 @@ TEST_F(ApmTest, StreamParameters) {
   EXPECT_EQ(apm_->kNoError,
             apm_->gain_control()->set_stream_analog_level(127));
   EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
+}
+
+TEST_F(ApmTest, DelayOffset) {
+  apm_->set_delay_offset_ms(100);
+  EXPECT_EQ(100, apm_->delay_offset_ms());
+  EXPECT_EQ(apm_->kBadStreamParameterWarning, apm_->set_stream_delay_ms(450));
+  EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(100));
+  EXPECT_EQ(200, apm_->stream_delay_ms());
+
+  apm_->set_delay_offset_ms(-50);
+  EXPECT_EQ(-50, apm_->delay_offset_ms());
+  EXPECT_EQ(apm_->kBadParameterError, apm_->set_stream_delay_ms(20));
+  EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(100));
+  EXPECT_EQ(50, apm_->stream_delay_ms());
 }
 
 TEST_F(ApmTest, Channels) {

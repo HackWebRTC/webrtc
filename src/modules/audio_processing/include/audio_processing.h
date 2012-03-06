@@ -187,6 +187,14 @@ class AudioProcessing : public Module {
   virtual int set_stream_delay_ms(int delay) = 0;
   virtual int stream_delay_ms() const = 0;
 
+  // Sets a delay |offset| in ms to add to the values passed in through
+  // set_stream_delay_ms(). May be positive or negative.
+  //
+  // Note that this could cause an otherwise valid value passed to
+  // set_stream_delay_ms() to return an error.
+  virtual void set_delay_offset_ms(int offset) = 0;
+  virtual int delay_offset_ms() const = 0;
+
   // Starts recording debugging information to a file specified by |filename|,
   // a NULL-terminated string. If there is an ongoing recording, the old file
   // will be closed, and recording will continue in the newly specified file.

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -57,6 +57,10 @@ public:
     virtual int SetEcStatus(bool enable, EcModes mode = kEcUnchanged);
 
     virtual int GetEcStatus(bool& enabled, EcModes& mode);
+
+    virtual void SetDelayOffsetMs(int offset);
+
+    virtual int DelayOffsetMs();
 
     virtual int SetAecmMode(AecmModes mode = kAecmSpeakerphone,
                             bool enableCNG = true);

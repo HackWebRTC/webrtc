@@ -71,6 +71,7 @@ AudioProcessingImpl::AudioProcessingImpl(int id)
       split_sample_rate_hz_(kSampleRate16kHz),
       samples_per_channel_(sample_rate_hz_ / 100),
       stream_delay_ms_(0),
+      delay_offset_ms_(0),
       was_stream_delay_set_(false),
       num_reverse_channels_(1),
       num_input_channels_(1),
@@ -450,6 +451,8 @@ int AudioProcessingImpl::AnalyzeReverseStream(AudioFrame* frame) {
 
 int AudioProcessingImpl::set_stream_delay_ms(int delay) {
   was_stream_delay_set_ = true;
+  delay += delay_offset_ms_;
+
   if (delay < 0) {
     return kBadParameterError;
   }
@@ -470,6 +473,15 @@ int AudioProcessingImpl::stream_delay_ms() const {
 
 bool AudioProcessingImpl::was_stream_delay_set() const {
   return was_stream_delay_set_;
+}
+
+void AudioProcessingImpl::set_delay_offset_ms(int offset) {
+  CriticalSectionScoped crit_scoped(crit_);
+  delay_offset_ms_ = offset;
+}
+
+int AudioProcessingImpl::delay_offset_ms() const {
+  return delay_offset_ms_;
 }
 
 int AudioProcessingImpl::StartDebugRecording(

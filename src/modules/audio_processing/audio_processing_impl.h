@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -69,6 +69,8 @@ class AudioProcessingImpl : public AudioProcessing {
   virtual int AnalyzeReverseStream(AudioFrame* frame);
   virtual int set_stream_delay_ms(int delay);
   virtual int stream_delay_ms() const;
+  virtual void set_delay_offset_ms(int offset);
+  virtual int delay_offset_ms() const;
   virtual int StartDebugRecording(const char filename[kMaxFilenameSize]);
   virtual int StopDebugRecording();
   virtual EchoCancellation* echo_cancellation() const;
@@ -115,6 +117,7 @@ class AudioProcessingImpl : public AudioProcessing {
   int split_sample_rate_hz_;
   int samples_per_channel_;
   int stream_delay_ms_;
+  int delay_offset_ms_;
   bool was_stream_delay_set_;
 
   int num_reverse_channels_;

@@ -174,7 +174,7 @@ int VoEAudioProcessingImpl::GetNsStatus(bool& enabled, NsModes& mode)
         VE_FUNC_NOT_SUPPORTED, kTraceError,
         "GetNsStatus() Ns is not supported");
     return -1;
-#endif	
+#endif
 }
 
 int VoEAudioProcessingImpl::SetAgcStatus(bool enable, AgcModes mode)
@@ -204,7 +204,7 @@ int VoEAudioProcessingImpl::SetAgcStatus(bool enable, AgcModes mode)
     {
     case kAgcDefault:
         agcMode = (GainControl::Mode)WEBRTC_VOICE_ENGINE_AGC_DEFAULT_MODE;
-        break; 
+        break;
     case kAgcUnchanged:
         agcMode = _audioProcessingModulePtr->gain_control()->mode();;
         break;
@@ -369,9 +369,9 @@ int VoEAudioProcessingImpl::GetAgcConfig(AgcConfig &config)
     WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_instanceId,-1),
                "GetAgcConfig() => targetLeveldBOv=%u, "
                "digitalCompressionGaindB=%u, limiterEnable=%d",
-		config.targetLeveldBOv,
-		config.digitalCompressionGaindB,
-		config.limiterEnable);
+    config.targetLeveldBOv,
+    config.digitalCompressionGaindB,
+    config.limiterEnable);
 
     return 0;
 #else
@@ -724,17 +724,31 @@ int VoEAudioProcessingImpl::GetEcStatus(bool& enabled, EcModes& mode)
         enabled = _audioProcessingModulePtr->echo_control_mobile()->
             is_enabled();
     }
-    
+
     WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_instanceId,-1),
                  "GetEcStatus() => enabled=%i, mode=%i",
                  enabled, (int)mode);
-	return 0;
+    return 0;
 #else
-	_engineStatistics.SetLastError(
-	    VE_FUNC_NOT_SUPPORTED, kTraceError,
-	    "GetEcStatus() EC is not supported");
-	return -1;
+    _engineStatistics.SetLastError(
+        VE_FUNC_NOT_SUPPORTED, kTraceError,
+        "GetEcStatus() EC is not supported");
+    return -1;
 #endif
+}
+
+void VoEAudioProcessingImpl::SetDelayOffsetMs(int offset)
+{
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
+                 "SetDelayOffsetMs(offset = %d)", offset);
+    _audioProcessingModulePtr->set_delay_offset_ms(offset);
+}
+
+int VoEAudioProcessingImpl::DelayOffsetMs()
+{
+    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
+                 "DelayOffsetMs()");
+    return _audioProcessingModulePtr->delay_offset_ms();
 }
 
 int VoEAudioProcessingImpl::SetAecmMode(AecmModes mode, bool enableCNG)
@@ -747,7 +761,7 @@ int VoEAudioProcessingImpl::SetAecmMode(AecmModes mode, bool enableCNG)
         _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-	
+
     EchoControlMobile::RoutingMode aecmMode(
         EchoControlMobile::kQuietEarpieceOrHeadset);
 
@@ -807,7 +821,7 @@ int VoEAudioProcessingImpl::GetAecmMode(AecmModes& mode, bool& enabledCNG)
         _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-	
+
     enabledCNG = false;
 
     EchoControlMobile::RoutingMode aecmMode =
@@ -832,7 +846,7 @@ int VoEAudioProcessingImpl::GetAecmMode(AecmModes& mode, bool& enabledCNG)
         case EchoControlMobile::kLoudSpeakerphone:
             mode = kAecmLoudSpeakerphone;
             break;
-	}
+    }
 
     return 0;
 #else
@@ -1157,7 +1171,7 @@ int VoEAudioProcessingImpl::GetTypingDetectionStatus(bool& enabled)
         _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
         return -1;
     }
-  	// Just use the VAD state to determine if we should enable typing
+    // Just use the VAD state to determine if we should enable typing
     // detection or not
 
     enabled = _audioProcessingModulePtr->voice_detection()->is_enabled();
