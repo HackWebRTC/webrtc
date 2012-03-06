@@ -731,8 +731,7 @@ class WebRTCWinFactory(WebRTCFactory):
     self.AddCommonStep(cmd, 'svnkill')
 
     # Now do the clean + build.
-    self.AddCommonStep(['rm', '-rf', 'trunk'],
-        descriptor=['Nuke Repository', '(Always for now)'])
+    self.AddSmartCleanStep()
     self.AddCommonStep(['gclient', 'config', WEBRTC_SVN_LOCATION],
                        descriptor='gclient_config')
     self.AddGclientSyncStep(force_sync=True)
