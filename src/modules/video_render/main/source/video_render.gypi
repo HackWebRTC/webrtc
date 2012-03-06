@@ -179,6 +179,7 @@
           'sources': [
             '../test/testAPI/testAPI.cc',
             '../test/testAPI/testAPI.h',
+            '../test/testAPI/testAPI_android.cc',
             '../test/testAPI/testAPI_mac.mm',
           ],
           'conditions': [

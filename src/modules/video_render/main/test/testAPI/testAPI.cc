@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -654,10 +654,10 @@ void RunVideoRenderTests(void* window, VideoRenderType windowType) {
 // Note: The Mac main is implemented in testApi_mac.mm.
 #if defined(_WIN32)
 int _tmain(int argc, _TCHAR* argv[])
-#elif defined(WEBRTC_LINUX)
+#elif defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID)
 int main(int argc, char* argv[])
 #endif
-#if !defined(WEBRTC_MAC)
+#if !defined(WEBRTC_MAC) && !defined(WEBRTC_ANDROID)
 {
     // Create a window for testing.
     void* window = NULL;
