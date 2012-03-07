@@ -23,11 +23,8 @@ namespace webrtc {
 // PARAMETERS FOR RESOLUTION ADAPTATION
 //
 
-// Initial level of buffer in secs: should corresponds to wrapper settings.
-const float kInitBufferLevel = 0.5f;
-
 // Optimal level of buffer in secs: should corresponds to wrapper settings.
-const float kOptBufferLevel = 0.6f;
+const float kOptBufferLevel = 0.5f;
 
 // Threshold of (max) buffer size below which we consider too low (underflow).
 const float kPercBufferThr = 0.10f;
@@ -42,6 +39,9 @@ const float kMaxRateMisMatch = 0.5f;
 const float kRateOverShoot = 0.75f;
 const float kRateUnderShoot = 0.75f;
 
+// Factor to favor weighting the average rates with the current/last data.
+const float kWeightRate = 0.70f;
+
 // Factor for transitional rate for going back up in resolution.
 const float kTransRateScaleUpSpatial = 1.25f;
 const float kTransRateScaleUpTemp = 1.25f;
@@ -53,16 +53,19 @@ const float kPacketLossThr = 0.1f;
 // Factor for reducing transitonal bitrate under packet loss.
 const float kPacketLossRateFac = 1.0f;
 
+
 // Maximum possible transitional rate for down-sampling:
 // (units in kbps), for 30fps.
-const uint16_t kMaxRateQm[7] = {
-    100,   // QCIF
+const uint16_t kMaxRateQm[9] = {
+    50,    // QCIF
+    100,   // kHCIF
+    175,   // kQVGA
     250,   // CIF
+    350,   // HVGA
     500,   // VGA
-    800,   // 4CIF
-    1000,  // 720 HD 4:3,
-    1500,  // 720 HD 16:9
-    2000   // 1080HD
+    1000,  // QFULLHD
+    1500,  // WHD
+    2000   // FULLHD
 };
 
 // Frame rate scale for maximum transition rate.
@@ -75,32 +78,37 @@ const float kFrameRateFac[3] = {
 // Scale for transitional rate: based on content class
 // motion=L/H/D,spatial==L/H/D: for low, high, middle levels
 const float kScaleTransRateQm[18] = {
-    // 4CIF and lower
+    // VGA and lower
     0.50f,       // L, L
     0.50f,       // L, H
     0.50f,       // L, D
     0.50f,       // H ,L
-    0.25f,       // H, H
-    0.25f,       // H, D
+    0.35f,       // H, H
+    0.35f,       // H, D
     0.50f,       // D, L
     0.50f,       // D, D
-    0.25f,       // D, H
+    0.35f,       // D, H
 
-    // over 4CIF: WHD, HD
+    // over VGA
     0.50f,       // L, L
     0.50f,       // L, H
     0.50f,       // L, D
     0.50f,       // H ,L
-    0.25f,       // H, H
-    0.25f,       // H, D
+    0.35f,       // H, H
+    0.35f,       // H, D
     0.50f,       // D, L
     0.50f,       // D, D
-    0.25f,       // D, H
+    0.35f,       // D, H
 };
 
+// Threshold on the target rate relative to transitional rate.
+const float kFacLowRate = 0.75f;
+
 // Action for down-sampling:
-// motion=L/H/D,spatial==L/H/D: for low, high, middle levels
-const uint8_t kSpatialAction[9] = {
+// motion=L/H/D,spatial==L/H/D, for low, high, middle levels;
+// rate = 0/1/2, for target rate state relative to transition rate.
+const uint8_t kSpatialAction[27] = {
+// rateClass = 0:
     1,       // L, L
     1,       // L, H
     1,       // L, D
@@ -109,25 +117,70 @@ const uint8_t kSpatialAction[9] = {
     4,       // H, D
     4,       // D, L
     1,       // D, H
-    1,       // D, D
+    2,       // D, D
+
+// rateClass = 1:
+    1,       // L, L
+    1,       // L, H
+    1,       // L, D
+    4,       // H ,L
+    1,       // H, H
+    2,       // H, D
+    2,       // D, L
+    1,       // D, H
+    2,       // D, D
+
+// rateClass = 2:
+    1,       // L, L
+    1,       // L, H
+    1,       // L, D
+    2,       // H ,L
+    1,       // H, H
+    2,       // H, D
+    2,       // D, L
+    1,       // D, H
+    2,       // D, D
 };
 
-const uint8_t kTemporalAction[9] = {
-    1,       // L, L
+const uint8_t kTemporalAction[27] = {
+// rateClass = 0:
+    3,       // L, L
     2,       // L, H
     2,       // L, D
     1,       // H ,L
-    2,       // H, H
+    3,       // H, H
     1,       // H, D
     1,       // D, L
     2,       // D, H
     1,       // D, D
+
+// rateClass = 1:
+    3,       // L, L
+    2,       // L, H
+    3,       // L, D
+    1,       // H ,L
+    3,       // H, H
+    1,       // H, D
+    1,       // D, L
+    3,       // D, H
+    1,       // D, D
+
+// rateClass = 2:
+    1,       // L, L
+    3,       // L, H
+    3,       // L, D
+    1,       // H ,L
+    3,       // H, H
+    1,       // H, D
+    1,       // D, L
+    3,       // D, H
+    1,       // D, D
 };
 
 // Control the total amount of down-sampling allowed.
-const int kMaxSpatialDown = 16;
-const int kMaxTempDown = 4;
-const int kMaxDownSample = 16;
+const float kMaxSpatialDown = 8.0f;
+const float kMaxTempDown = 4.0f;
+const float kMaxDownSample = 16.0f;
 
 // Minimum image size for a spatial down-sampling.
 const int kMinImageSize= 176 * 144;
@@ -135,16 +188,6 @@ const int kMinImageSize= 176 * 144;
 // Minimum frame rate for temporal down-sampling:
 // no frame rate reduction if incomingFrameRate <= MIN_FRAME_RATE
 const int kMinFrameRate = 8;
-
-// Boundaries for the closest standard frame size
-const uint32_t kFrameSizeTh[6] = {
-    63360,    // between 176*144 and 352*288
-    204288,   // between 352*288 and 640*480
-    356352,   // between 640*480 and 704*576
-    548352,   // between 704*576 and 960*720
-    806400,   // between 960*720 and 1280*720
-    1497600,  // between 1280*720 and 1920*1080
-};
 
 //
 // PARAMETERS FOR FEC ADJUSTMENT: TODO (marpan)

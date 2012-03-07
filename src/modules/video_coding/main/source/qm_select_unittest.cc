@@ -20,6 +20,15 @@
 
 namespace webrtc {
 
+// Representative values of content metrics for: low/high/medium(default) state,
+// based on parameters settings in qm_select_data.h.
+const float kSpatialLow = 0.01f;
+const float kSpatialMedium = 0.03f;
+const float kSpatialHigh = 0.1f;
+const float kTemporalLow = 0.01f;
+const float kTemporalMedium = 0.06f;
+const float kTemporalHigh = 0.1f;
+
 class QmSelectTest : public ::testing::Test {
  protected:
   QmSelectTest()
@@ -31,8 +40,11 @@ class QmSelectTest : public ::testing::Test {
   VideoContentMetrics* content_metrics_;
   VCMResolutionScale* qm_scale_;
 
-  void InitQmNativeData(float initial_bit_rate, int user_frame_rate,
-                        int native_width, int native_height);
+  void InitQmNativeData(float initial_bit_rate,
+                        int user_frame_rate,
+                        int native_width,
+                        int native_height,
+                        int num_layers);
 
   void UpdateQmEncodedFrame(int* encoded_size, int num_updates);
 
@@ -48,9 +60,9 @@ class QmSelectTest : public ::testing::Test {
                            float spatial_metric_vert);
 
   bool IsSelectedActionCorrect(VCMResolutionScale* qm_scale,
-                               uint8_t fac_width,
-                               uint8_t fac_height,
-                               uint8_t fac_temp);
+                               float fac_width,
+                               float fac_height,
+                               float fac_temp);
 
   void TearDown() {
     delete qm_resolution_;
@@ -60,31 +72,31 @@ class QmSelectTest : public ::testing::Test {
 
 TEST_F(QmSelectTest, HandleInputs) {
   // Expect parameter error. Initialize with invalid inputs.
-  EXPECT_EQ(-4, qm_resolution_->Initialize(1000, 0, 640, 480));
-  EXPECT_EQ(-4, qm_resolution_->Initialize(1000, 30, 640, 0));
-  EXPECT_EQ(-4, qm_resolution_->Initialize(1000, 30, 0, 480));
+  EXPECT_EQ(-4, qm_resolution_->Initialize(1000, 0, 640, 480, 1));
+  EXPECT_EQ(-4, qm_resolution_->Initialize(1000, 30, 640, 0, 1));
+  EXPECT_EQ(-4, qm_resolution_->Initialize(1000, 30, 0, 480, 1));
 
   // Expect uninitialized error.: No valid initialization before selection.
   EXPECT_EQ(-7, qm_resolution_->SelectResolution(&qm_scale_));
 
   VideoContentMetrics* content_metrics = NULL;
-  EXPECT_EQ(0, qm_resolution_->Initialize(1000, 30, 640, 480));
+  EXPECT_EQ(0, qm_resolution_->Initialize(1000, 30, 640, 480, 1));
   qm_resolution_->UpdateContent(content_metrics);
   // Content metrics are NULL: Expect success and no down-sampling action.
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1, 1, 1));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1.0, 1.0, 1.0));
 }
 
 // No down-sampling action at high rates.
 TEST_F(QmSelectTest, NoActionHighRate) {
   // Initialize with bitrate, frame rate, and native system width/height.
-  InitQmNativeData(800, 30, 640, 480);
+  InitQmNativeData(800, 30, 640, 480, 1);
 
   // Update with encoder frame size.
   uint16_t codec_width = 640;
   uint16_t codec_height = 480;
   qm_resolution_->UpdateCodecFrameSize(codec_width, codec_height);
-  EXPECT_EQ(2, qm_resolution_->GetImageType(codec_width, codec_height));
+  EXPECT_EQ(5, qm_resolution_->GetImageType(codec_width, codec_height));
 
   // Update rates for a sequence of intervals.
   int target_rate[] = {800, 800, 800};
@@ -95,24 +107,24 @@ TEST_F(QmSelectTest, NoActionHighRate) {
                    fraction_lost, 3);
 
   // Update content: motion level, and 3 spatial prediction errors.
-  UpdateQmContentData(0.01f, 0.01f, 0.01f, 0.01f);
+  UpdateQmContentData(kTemporalLow, kSpatialLow, kSpatialLow, kSpatialLow);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(0, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1, 1, 1));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1.0f, 1.0f, 1.0f));
 }
 
 // Rate is well below transition, down-sampling action is taken,
 // depending on the content state.
 TEST_F(QmSelectTest, DownActionLowRate) {
   // Initialize with bitrate, frame rate, and native system width/height.
-  InitQmNativeData(100, 30, 640, 480);
+  InitQmNativeData(100, 30, 640, 480, 1);
 
   // Update with encoder frame size.
   uint16_t codec_width = 640;
   uint16_t codec_height = 480;
   qm_resolution_->UpdateCodecFrameSize(codec_width, codec_height);
-  EXPECT_EQ(2, qm_resolution_->GetImageType(codec_width, codec_height));
+  EXPECT_EQ(5, qm_resolution_->GetImageType(codec_width, codec_height));
 
   // Update rates for a sequence of intervals.
   int target_rate[] = {100, 100, 100};
@@ -124,80 +136,84 @@ TEST_F(QmSelectTest, DownActionLowRate) {
 
   // Update content: motion level, and 3 spatial prediction errors.
   // High motion, low spatial: 2x2 spatial expected.
-  UpdateQmContentData(0.1f, 0.01f, 0.01f, 0.01f);
+  UpdateQmContentData(kTemporalHigh, kSpatialLow, kSpatialLow, kSpatialLow);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(3, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 2, 2, 1));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 2.0f, 2.0f, 1.0f));
 
   qm_resolution_->ResetDownSamplingState();
-  // Low motion, low spatial: no action expected: content is too low.
-  UpdateQmContentData(0.01f, 0.01f, 0.01f, 0.01f);
+  // Low motion, low spatial: 2/3 temporal is expected.
+  UpdateQmContentData(kTemporalLow, kSpatialLow, kSpatialLow, kSpatialLow);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(0, qm_resolution_->ComputeContentClass());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1, 1, 1));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1.0f, 1.0f, 1.5f));
 
   qm_resolution_->ResetDownSamplingState();
   // Medium motion, low spatial: 2x2 spatial expected.
-  UpdateQmContentData(0.06f, 0.01f, 0.01f, 0.01f);
+  UpdateQmContentData(kTemporalMedium, kSpatialLow, kSpatialLow, kSpatialLow);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(6, qm_resolution_->ComputeContentClass());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 2, 2, 1));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 2.0f, 2.0f, 1.0f));
 
   qm_resolution_->ResetDownSamplingState();
   // High motion, high spatial: 1/2 temporal expected.
-  UpdateQmContentData(0.1f, 0.1f, 0.1f, 0.1f);
+  UpdateQmContentData(kTemporalHigh, kSpatialHigh, kSpatialHigh, kSpatialHigh);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(4, qm_resolution_->ComputeContentClass());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1, 1, 2));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1.0f, 1.0f, 1.5f));
 
   qm_resolution_->ResetDownSamplingState();
   // Low motion, high spatial: 1/2 temporal expected.
-  UpdateQmContentData(0.01f, 0.1f, 0.1f, 0.1f);
+  UpdateQmContentData(kTemporalLow, kSpatialHigh, kSpatialHigh, kSpatialHigh);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(1, qm_resolution_->ComputeContentClass());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1, 1, 2));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1.0f, 1.0f, 2.0f));
 
   qm_resolution_->ResetDownSamplingState();
   // Medium motion, high spatial: 1/2 temporal expected.
-  UpdateQmContentData(0.06f, 0.1f, 0.1f, 0.1f);
+  UpdateQmContentData(kTemporalMedium, kSpatialHigh, kSpatialHigh,
+                      kSpatialHigh);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(7, qm_resolution_->ComputeContentClass());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1, 1, 2));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1.0f, 1.0f, 2.0f));
 
   qm_resolution_->ResetDownSamplingState();
   // High motion, medium spatial: 2x2 spatial expected.
-  UpdateQmContentData(0.1f, 0.03f, 0.03f, 0.03f);
+  UpdateQmContentData(kTemporalHigh, kSpatialMedium, kSpatialMedium,
+                      kSpatialMedium);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(5, qm_resolution_->ComputeContentClass());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 2, 2, 1));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 2.0f, 2.0f, 1.0f));
 
   qm_resolution_->ResetDownSamplingState();
   // Low motion, medium spatial: high frame rate, so 1/2 temporal expected.
-  UpdateQmContentData(0.01f, 0.03f, 0.03f, 0.03f);
+  UpdateQmContentData(kTemporalLow, kSpatialMedium, kSpatialMedium,
+                      kSpatialMedium);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(2, qm_resolution_->ComputeContentClass());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1, 1, 2));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1.0f, 1.0f, 2.0f));
 
   qm_resolution_->ResetDownSamplingState();
   // Medium motion, medium spatial: high frame rate, so 1/2 temporal expected.
-  UpdateQmContentData(0.06f, 0.03f, 0.03f, 0.03f);
+  UpdateQmContentData(kTemporalMedium, kSpatialMedium, kSpatialMedium,
+                      kSpatialMedium);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(8, qm_resolution_->ComputeContentClass());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1, 1, 2));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1.0f, 1.0f, 2.0f));
 }
 
 // Rate mis-match is high, and we have over-shooting.
 // since target rate is below max for down-sampling, down-sampling is selected.
 TEST_F(QmSelectTest, DownActionHighRateMMOvershoot) {
   // Initialize with bitrate, frame rate, and native system width/height.
-  InitQmNativeData(450, 30, 640, 480);
+  InitQmNativeData(450, 30, 640, 480, 1);
 
   // Update with encoder frame size.
   uint16_t codec_width = 640;
   uint16_t codec_height = 480;
   qm_resolution_->UpdateCodecFrameSize(codec_width, codec_height);
-  EXPECT_EQ(2, qm_resolution_->GetImageType(codec_width, codec_height));
+  EXPECT_EQ(5, qm_resolution_->GetImageType(codec_width, codec_height));
 
   // Update rates for a sequence of intervals.
   int target_rate[] = {450, 450, 450};
@@ -209,31 +225,32 @@ TEST_F(QmSelectTest, DownActionHighRateMMOvershoot) {
 
   // Update content: motion level, and 3 spatial prediction errors.
   // High motion, low spatial.
-  UpdateQmContentData(0.1f, 0.01f, 0.01f, 0.01f);
+  UpdateQmContentData(kTemporalHigh, kSpatialLow, kSpatialLow, kSpatialLow);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(3, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kStressedEncoding, qm_resolution_->GetEncoderState());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 2, 2, 1));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 4.0f / 3.0f, 4.0f / 3.0f,
+                                      1.0f));
 
   qm_resolution_->ResetDownSamplingState();
   // Low motion, high spatial
-  UpdateQmContentData(0.01f, 0.1f, 0.1f, 0.1f);
+  UpdateQmContentData(kTemporalLow, kSpatialHigh, kSpatialHigh, kSpatialHigh);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(1, qm_resolution_->ComputeContentClass());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1, 1, 2));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1.0f, 1.0f, 1.5f));
 }
 
 // Rate mis-match is high, target rate is below max for down-sampling,
 // but since we have consistent under-shooting, no down-sampling action.
 TEST_F(QmSelectTest, NoActionHighRateMMUndershoot) {
   // Initialize with bitrate, frame rate, and native system width/height.
-  InitQmNativeData(450, 30, 640, 480);
+  InitQmNativeData(450, 30, 640, 480, 1);
 
   // Update with encoder frame size.
   uint16_t codec_width = 640;
   uint16_t codec_height = 480;
   qm_resolution_->UpdateCodecFrameSize(codec_width, codec_height);
-  EXPECT_EQ(2, qm_resolution_->GetImageType(codec_width, codec_height));
+  EXPECT_EQ(5, qm_resolution_->GetImageType(codec_width, codec_height));
 
   // Update rates for a sequence of intervals.
   int target_rate[] = {450, 450, 450};
@@ -245,31 +262,31 @@ TEST_F(QmSelectTest, NoActionHighRateMMUndershoot) {
 
   // Update content: motion level, and 3 spatial prediction errors.
   // High motion, low spatial.
-  UpdateQmContentData(0.1f, 0.01f, 0.01f, 0.01f);
+  UpdateQmContentData(kTemporalHigh, kSpatialLow, kSpatialLow, kSpatialLow);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(3, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kEasyEncoding, qm_resolution_->GetEncoderState());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1, 1, 1));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1.0f, 1.0f, 1.0f));
 
   qm_resolution_->ResetDownSamplingState();
   // Low motion, high spatial
-  UpdateQmContentData(0.01f, 0.1f, 0.1f, 0.1f);
+  UpdateQmContentData(kTemporalLow, kSpatialHigh, kSpatialHigh, kSpatialHigh);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(1, qm_resolution_->ComputeContentClass());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1, 1, 1));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1.0f, 1.0f, 1.0f));
 }
 
 // Buffer is underflowing, and target rate is below max for down-sampling,
 // so action is taken.
 TEST_F(QmSelectTest, DownActionBufferUnderflow) {
   // Initialize with bitrate, frame rate, and native system width/height.
-  InitQmNativeData(450, 30, 640, 480);
+  InitQmNativeData(450, 30, 640, 480, 1);
 
   // Update with encoder frame size.
   uint16_t codec_width = 640;
   uint16_t codec_height = 480;
   qm_resolution_->UpdateCodecFrameSize(codec_width, codec_height);
-  EXPECT_EQ(2, qm_resolution_->GetImageType(codec_width, codec_height));
+  EXPECT_EQ(5, qm_resolution_->GetImageType(codec_width, codec_height));
 
   // Update with encoded size over a number of frames.
   // per-frame bandwidth = 15 = 450/30: simulate (decoder) buffer underflow:
@@ -286,31 +303,32 @@ TEST_F(QmSelectTest, DownActionBufferUnderflow) {
 
   // Update content: motion level, and 3 spatial prediction errors.
   // High motion, low spatial.
-  UpdateQmContentData(0.1f, 0.01f, 0.01f, 0.01f);
+  UpdateQmContentData(kTemporalHigh, kSpatialLow, kSpatialLow, kSpatialLow);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(3, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kStressedEncoding, qm_resolution_->GetEncoderState());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 2, 2, 1));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 4.0f / 3.0f, 4.0f / 3.0f,
+                                      1.0f));
 
   qm_resolution_->ResetDownSamplingState();
   // Low motion, high spatial
-  UpdateQmContentData(0.01f, 0.1f, 0.1f, 0.1f);
+  UpdateQmContentData(kTemporalLow, kSpatialHigh, kSpatialHigh, kSpatialHigh);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(1, qm_resolution_->ComputeContentClass());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1, 1, 2));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1.0f, 1.0f, 1.5f));
 }
 
 // Target rate is below max for down-sampling, but buffer level is stable,
 // so no action is taken.
 TEST_F(QmSelectTest, NoActionBufferStable) {
   // Initialize with bitrate, frame rate, and native system width/height.
-  InitQmNativeData(450, 30, 640, 480);
+  InitQmNativeData(450, 30, 640, 480, 1);
 
   // Update with encoder frame size.
   uint16_t codec_width = 640;
   uint16_t codec_height = 480;
   qm_resolution_->UpdateCodecFrameSize(codec_width, codec_height);
-  EXPECT_EQ(2, qm_resolution_->GetImageType(codec_width, codec_height));
+  EXPECT_EQ(5, qm_resolution_->GetImageType(codec_width, codec_height));
 
   // Update with encoded size over a number of frames.
   // per-frame bandwidth = 15 = 450/30: simulate stable (decoder) buffer levels.
@@ -327,24 +345,24 @@ TEST_F(QmSelectTest, NoActionBufferStable) {
 
   // Update content: motion level, and 3 spatial prediction errors.
   // High motion, low spatial.
-  UpdateQmContentData(0.1f, 0.01f, 0.01f, 0.01f);
+  UpdateQmContentData(kTemporalHigh, kSpatialLow, kSpatialLow, kSpatialLow);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(3, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1, 1, 1));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1.0f, 1.0f, 1.0f));
 
   qm_resolution_->ResetDownSamplingState();
   // Low motion, high spatial
-  UpdateQmContentData(0.01f, 0.1f, 0.1f, 0.1f);
+  UpdateQmContentData(kTemporalLow, kSpatialHigh, kSpatialHigh, kSpatialHigh);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(1, qm_resolution_->ComputeContentClass());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1, 1, 1));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1.0f, 1.0f, 1.0f));
 }
 
 // Very low rate, but no spatial down-sampling below some size (QCIF).
 TEST_F(QmSelectTest, LimitDownSpatialAction) {
   // Initialize with bitrate, frame rate, and native system width/height.
-  InitQmNativeData(10, 30, 176, 144);
+  InitQmNativeData(10, 30, 176, 144, 1);
 
   // Update with encoder frame size.
   uint16_t codec_width = 176;
@@ -362,23 +380,23 @@ TEST_F(QmSelectTest, LimitDownSpatialAction) {
 
   // Update content: motion level, and 3 spatial prediction errors.
   // High motion, low spatial.
-  UpdateQmContentData(0.1f, 0.01f, 0.01f, 0.01f);
+  UpdateQmContentData(kTemporalHigh, kSpatialLow, kSpatialLow, kSpatialLow);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(3, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1, 1, 1));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1.0f, 1.0f, 1.0f));
 }
 
 // Very low rate, but no frame reduction below some frame_rate (8fps).
 TEST_F(QmSelectTest, LimitDownTemporalAction) {
   // Initialize with bitrate, frame rate, and native system width/height.
-  InitQmNativeData(10, 8, 640, 480);
+  InitQmNativeData(10, 8, 640, 480, 1);
 
   // Update with encoder frame size.
   uint16_t codec_width = 640;
   uint16_t codec_height = 480;
   qm_resolution_->UpdateCodecFrameSize(codec_width, codec_height);
-  EXPECT_EQ(2, qm_resolution_->GetImageType(codec_width, codec_height));
+  EXPECT_EQ(5, qm_resolution_->GetImageType(codec_width, codec_height));
 
   // Update rates for a sequence of intervals.
   int target_rate[] = {10, 10, 10};
@@ -390,24 +408,25 @@ TEST_F(QmSelectTest, LimitDownTemporalAction) {
 
   // Update content: motion level, and 3 spatial prediction errors.
   // Low motion, medium spatial.
-  UpdateQmContentData(0.01f, 0.03f, 0.03f, 0.03f);
+  UpdateQmContentData(kTemporalLow, kSpatialMedium, kSpatialMedium,
+                      kSpatialMedium);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(2, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1, 1, 1));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1.0f, 1.0f, 1.0f));
 }
 
 // Two stages: spatial down-sample and then back up spatially,
 // as rate as increased.
 TEST_F(QmSelectTest, 2StageDownSpatialUpSpatial) {
   // Initialize with bitrate, frame rate, and native system width/height.
-  InitQmNativeData(100, 30, 640, 480);
+  InitQmNativeData(100, 30, 640, 480, 1);
 
   // Update with encoder frame size.
   uint16_t codec_width = 640;
   uint16_t codec_height = 480;
   qm_resolution_->UpdateCodecFrameSize(codec_width, codec_height);
-  EXPECT_EQ(2, qm_resolution_->GetImageType(codec_width, codec_height));
+  EXPECT_EQ(5, qm_resolution_->GetImageType(codec_width, codec_height));
 
   // Update rates for a sequence of intervals.
   int target_rate[] = {100, 100, 100};
@@ -419,16 +438,16 @@ TEST_F(QmSelectTest, 2StageDownSpatialUpSpatial) {
 
   // Update content: motion level, and 3 spatial prediction errors.
   // High motion, low spatial.
-  UpdateQmContentData(0.1f, 0.01f, 0.01f, 0.01f);
+  UpdateQmContentData(kTemporalHigh, kSpatialLow, kSpatialLow, kSpatialLow);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(3, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 2, 2, 1));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 2.0f, 2.0f, 1.0f));
 
   // Reset and go up in rate: expected to go back up.
   qm_resolution_->ResetRates();
   qm_resolution_->UpdateCodecFrameSize(320, 240);
-  EXPECT_EQ(1, qm_resolution_->GetImageType(320, 240));
+  EXPECT_EQ(2, qm_resolution_->GetImageType(320, 240));
   // Update rates for a sequence of intervals.
   int target_rate2[] = {400, 400, 400, 400, 400};
   int encoder_sent_rate2[] = {400, 400, 400, 400, 400};
@@ -438,20 +457,20 @@ TEST_F(QmSelectTest, 2StageDownSpatialUpSpatial) {
                    fraction_lost2, 5);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 0, 0, 1));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 0.5f, 0.5f, 1.0f));
 }
 
 // Two stages: spatial down-sample and then back up spatially, since encoder
 // is under-shooting target even though rate has not increased much.
 TEST_F(QmSelectTest, 2StageDownSpatialUpSpatialUndershoot) {
   // Initialize with bitrate, frame rate, and native system width/height.
-  InitQmNativeData(100, 30, 640, 480);
+  InitQmNativeData(100, 30, 640, 480, 1);
 
   // Update with encoder frame size.
   uint16_t codec_width = 640;
   uint16_t codec_height = 480;
   qm_resolution_->UpdateCodecFrameSize(codec_width, codec_height);
-  EXPECT_EQ(2, qm_resolution_->GetImageType(codec_width, codec_height));
+  EXPECT_EQ(5, qm_resolution_->GetImageType(codec_width, codec_height));
 
   // Update rates for a sequence of intervals.
   int target_rate[] = {100, 100, 100};
@@ -463,16 +482,16 @@ TEST_F(QmSelectTest, 2StageDownSpatialUpSpatialUndershoot) {
 
   // Update content: motion level, and 3 spatial prediction errors.
   // High motion, low spatial.
-  UpdateQmContentData(0.1f, 0.01f, 0.01f, 0.01f);
+  UpdateQmContentData(kTemporalHigh, kSpatialLow, kSpatialLow, kSpatialLow);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(3, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 2, 2, 1));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 2.0f, 2.0f, 1.0f));
 
   // Reset rates and simulate under-shooting scenario.: expect to go back up.
   qm_resolution_->ResetRates();
   qm_resolution_->UpdateCodecFrameSize(320, 240);
-  EXPECT_EQ(1, qm_resolution_->GetImageType(320, 240));
+  EXPECT_EQ(2, qm_resolution_->GetImageType(320, 240));
   // Update rates for a sequence of intervals.
   int target_rate2[] = {200, 200, 200, 200, 200};
   int encoder_sent_rate2[] = {50, 50, 50, 50, 50};
@@ -482,20 +501,20 @@ TEST_F(QmSelectTest, 2StageDownSpatialUpSpatialUndershoot) {
                    fraction_lost2, 5);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(kEasyEncoding, qm_resolution_->GetEncoderState());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 0, 0, 1));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 0.5f, 0.5f, 1.0f));
 }
 
 // Two stages: spatial down-sample and then no action to go up,
 // as encoding rate mis-match is too high.
 TEST_F(QmSelectTest, 2StageDownSpatialNoActionUp) {
   // Initialize with bitrate, frame rate, and native system width/height.
-  InitQmNativeData(100, 30, 640, 480);
+  InitQmNativeData(100, 30, 640, 480, 1);
 
   // Update with encoder frame size.
   uint16_t codec_width = 640;
   uint16_t codec_height = 480;
   qm_resolution_->UpdateCodecFrameSize(codec_width, codec_height);
-  EXPECT_EQ(2, qm_resolution_->GetImageType(codec_width, codec_height));
+  EXPECT_EQ(5, qm_resolution_->GetImageType(codec_width, codec_height));
 
   // Update rates for a sequence of intervals.
   int target_rate[] = {100, 100, 100};
@@ -507,16 +526,16 @@ TEST_F(QmSelectTest, 2StageDownSpatialNoActionUp) {
 
   // Update content: motion level, and 3 spatial prediction errors.
   // High motion, low spatial.
-  UpdateQmContentData(0.1f, 0.01f, 0.01f, 0.01f);
+  UpdateQmContentData(kTemporalHigh, kSpatialLow, kSpatialLow, kSpatialLow);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(3, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 2, 2, 1));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 2.0f, 2.0f, 1.0f));
 
   // Reset and simulate large rate mis-match: expect no action to go back up.
   qm_resolution_->ResetRates();
   qm_resolution_->UpdateCodecFrameSize(320, 240);
-  EXPECT_EQ(1, qm_resolution_->GetImageType(320, 240));
+  EXPECT_EQ(2, qm_resolution_->GetImageType(320, 240));
   // Update rates for a sequence of intervals.
   int target_rate2[] = {400, 400, 400, 400, 400};
   int encoder_sent_rate2[] = {1000, 1000, 1000, 1000, 1000};
@@ -526,19 +545,19 @@ TEST_F(QmSelectTest, 2StageDownSpatialNoActionUp) {
                    fraction_lost2, 5);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(kStressedEncoding, qm_resolution_->GetEncoderState());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1, 1, 1));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1.0f, 1.0f, 1.0f));
 }
 // Two stages: temporally down-sample and then back up temporally,
 // as rate as increased.
 TEST_F(QmSelectTest, 2StatgeDownTemporalUpTemporal) {
   // Initialize with bitrate, frame rate, and native system width/height.
-  InitQmNativeData(100, 30, 640, 480);
+  InitQmNativeData(100, 30, 640, 480, 1);
 
   // Update with encoder frame size.
   uint16_t codec_width = 640;
   uint16_t codec_height = 480;
   qm_resolution_->UpdateCodecFrameSize(codec_width, codec_height);
-  EXPECT_EQ(2, qm_resolution_->GetImageType(codec_width, codec_height));
+  EXPECT_EQ(5, qm_resolution_->GetImageType(codec_width, codec_height));
 
   // Update rates for a sequence of intervals.
   int target_rate[] = {100, 100, 100};
@@ -550,11 +569,11 @@ TEST_F(QmSelectTest, 2StatgeDownTemporalUpTemporal) {
 
   // Update content: motion level, and 3 spatial prediction errors.
   // Low motion, high spatial.
-  UpdateQmContentData(0.01f, 0.1f, 0.1f, 0.1f);
+  UpdateQmContentData(kTemporalLow, kSpatialHigh, kSpatialHigh, kSpatialHigh);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(1, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1, 1, 2));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1.0f, 1.0f, 2.0f));
 
   // Reset rates and go up in rate: expect to go back up.
   qm_resolution_->ResetRates();
@@ -567,20 +586,20 @@ TEST_F(QmSelectTest, 2StatgeDownTemporalUpTemporal) {
                    fraction_lost2, 5);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1, 1, 0));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1.0f, 1.0f, 0.5f));
 }
 
 // Two stages: temporal down-sample and then back up temporally, since encoder
 // is under-shooting target even though rate has not increased much.
 TEST_F(QmSelectTest, 2StatgeDownTemporalUpTemporalUndershoot) {
   // Initialize with bitrate, frame rate, and native system width/height.
-  InitQmNativeData(100, 30, 640, 480);
+  InitQmNativeData(100, 30, 640, 480, 1);
 
   // Update with encoder frame size.
   uint16_t codec_width = 640;
   uint16_t codec_height = 480;
   qm_resolution_->UpdateCodecFrameSize(codec_width, codec_height);
-  EXPECT_EQ(2, qm_resolution_->GetImageType(codec_width, codec_height));
+  EXPECT_EQ(5, qm_resolution_->GetImageType(codec_width, codec_height));
 
   // Update rates for a sequence of intervals.
   int target_rate[] = {100, 100, 100};
@@ -592,11 +611,11 @@ TEST_F(QmSelectTest, 2StatgeDownTemporalUpTemporalUndershoot) {
 
   // Update content: motion level, and 3 spatial prediction errors.
   // Low motion, high spatial.
-  UpdateQmContentData(0.01f, 0.1f, 0.1f, 0.1f);
+  UpdateQmContentData(kTemporalLow, kSpatialHigh, kSpatialHigh, kSpatialHigh);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(1, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1, 1, 2));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1.0f, 1.0f, 2.0f));
 
   // Reset rates and simulate under-shooting scenario.: expect to go back up.
   qm_resolution_->ResetRates();
@@ -609,20 +628,20 @@ TEST_F(QmSelectTest, 2StatgeDownTemporalUpTemporalUndershoot) {
                    fraction_lost2, 5);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(kEasyEncoding, qm_resolution_->GetEncoderState());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1, 1, 0));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1.0f, 1.0f, 0.5f));
 }
 
 // Two stages: temporal down-sample and then no action to go up,
 // as encoding rate mis-match is too high.
 TEST_F(QmSelectTest, 2StageDownTemporalNoActionUp) {
   // Initialize with bitrate, frame rate, and native system width/height.
-  InitQmNativeData(100, 30, 640, 480);
+  InitQmNativeData(100, 30, 640, 480, 1);
 
   // Update with encoder frame size.
   uint16_t codec_width = 640;
   uint16_t codec_height = 480;
   qm_resolution_->UpdateCodecFrameSize(codec_width, codec_height);
-  EXPECT_EQ(2, qm_resolution_->GetImageType(codec_width, codec_height));
+  EXPECT_EQ(5, qm_resolution_->GetImageType(codec_width, codec_height));
 
   // Update rates for a sequence of intervals.
   int target_rate[] = {100, 100, 100};
@@ -634,7 +653,7 @@ TEST_F(QmSelectTest, 2StageDownTemporalNoActionUp) {
 
   // Update content: motion level, and 3 spatial prediction errors.
   // Low motion, high spatial.
-  UpdateQmContentData(0.01f, 0.1f, 0.1f, 0.1f);
+  UpdateQmContentData(kTemporalLow, kSpatialHigh, kSpatialHigh, kSpatialHigh);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(1, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
@@ -651,23 +670,23 @@ TEST_F(QmSelectTest, 2StageDownTemporalNoActionUp) {
                    fraction_lost2, 5);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(kStressedEncoding, qm_resolution_->GetEncoderState());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1, 1, 1));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1.0f, 1.0f, 1.0f));
 }
 // 3 stages: spatial down-sample, followed by temporal down-sample,
 // and then go up to full state, as encoding rate has increased.
 TEST_F(QmSelectTest, 3StageDownSpatialTemporlaUpSpatialTemporal) {
   // Initialize with bitrate, frame rate, and native system width/height.
-  InitQmNativeData(100, 30, 640, 480);
+  InitQmNativeData(100, 30, 640, 480, 1);
 
   // Update with encoder frame size.
   uint16_t codec_width = 640;
   uint16_t codec_height = 480;
   qm_resolution_->UpdateCodecFrameSize(codec_width, codec_height);
-  EXPECT_EQ(2, qm_resolution_->GetImageType(codec_width, codec_height));
+  EXPECT_EQ(5, qm_resolution_->GetImageType(codec_width, codec_height));
 
   // Update rates for a sequence of intervals.
-  int target_rate[] = {100, 100, 100};
-  int encoder_sent_rate[] = {100, 100, 100};
+  int target_rate[] = {80, 80, 80};
+  int encoder_sent_rate[] = {80, 80, 80};
   int incoming_frame_rate[] = {30, 30, 30};
   uint8_t fraction_lost[] = {10, 10, 10};
   UpdateQmRateData(target_rate, encoder_sent_rate, incoming_frame_rate,
@@ -675,24 +694,23 @@ TEST_F(QmSelectTest, 3StageDownSpatialTemporlaUpSpatialTemporal) {
 
   // Update content: motion level, and 3 spatial prediction errors.
   // High motion, low spatial.
-  UpdateQmContentData(0.1f, 0.01f, 0.01f, 0.01f);
+  UpdateQmContentData(kTemporalHigh, kSpatialLow, kSpatialLow, kSpatialLow);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(3, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 2, 2, 1));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 2.0f, 2.0f, 1.0f));
 
-  // Reset rate and change content data: expect temporal down-sample.
-  qm_resolution_->ResetRates();
+  // Change content data: expect temporal down-sample.
   qm_resolution_->UpdateCodecFrameSize(320, 240);
-  EXPECT_EQ(1, qm_resolution_->GetImageType(320, 240));
+  EXPECT_EQ(2, qm_resolution_->GetImageType(320, 240));
 
   // Update content: motion level, and 3 spatial prediction errors.
   // Low motion, high spatial.
-  UpdateQmContentData(0.01f, 0.1f, 0.1f, 0.1f);
+  UpdateQmContentData(kTemporalLow, kSpatialHigh, kSpatialHigh, kSpatialHigh);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(1, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1, 1, 2));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1.0f, 1.0f, 2.0f));
 
   // Reset rates and go high up in rate: expect to go back up both spatial
   // and temporally.
@@ -708,57 +726,63 @@ TEST_F(QmSelectTest, 3StageDownSpatialTemporlaUpSpatialTemporal) {
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(1, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 0, 0, 0));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 0.5f, 0.5f, 0.5f));
 }
 
-// No down-sampling below some totol amount (factor of 16)
+// No down-sampling below some total amount.
 TEST_F(QmSelectTest, NoActionTooMuchDownSampling) {
   // Initialize with bitrate, frame rate, and native system width/height.
-  InitQmNativeData(400, 30, 1280, 720);
+  InitQmNativeData(400, 30, 1280, 720, 1);
 
   // Update with encoder frame size.
   uint16_t codec_width = 1280;
   uint16_t codec_height = 720;
   qm_resolution_->UpdateCodecFrameSize(codec_width, codec_height);
-  EXPECT_EQ(5, qm_resolution_->GetImageType(codec_width, codec_height));
+  EXPECT_EQ(7, qm_resolution_->GetImageType(codec_width, codec_height));
 
   // Update rates for a sequence of intervals.
-  int target_rate[] = {400, 400, 400};
-  int encoder_sent_rate[] = {400, 400, 400};
+  int target_rate[] = {200, 200, 200};
+  int encoder_sent_rate[] = {200, 200, 200};
   int incoming_frame_rate[] = {30, 30, 30};
   uint8_t fraction_lost[] = {10, 10, 10};
   UpdateQmRateData(target_rate, encoder_sent_rate, incoming_frame_rate,
                    fraction_lost, 3);
 
   // Update content: motion level, and 3 spatial prediction errors.
-  // High motion, low spatial: 2x2 spatial expected.
-  UpdateQmContentData(0.1f, 0.01f, 0.01f, 0.01f);
+  // High motion, low spatial.
+  UpdateQmContentData(kTemporalHigh, kSpatialLow, kSpatialLow, kSpatialLow);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(3, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 2, 2, 1));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 2.0f, 2.0f, 1.0f));
 
-  // Reset and lower rates to get another spatial action.
+  // Reset and lower rates to get another spatial action (3/4x3/4)
   qm_resolution_->ResetRates();
   qm_resolution_->UpdateCodecFrameSize(640, 360);
-  EXPECT_EQ(2, qm_resolution_->GetImageType(640, 360));
+  EXPECT_EQ(4, qm_resolution_->GetImageType(640, 360));
   // Update rates for a sequence of intervals.
-  int target_rate2[] = {100, 100, 100, 100, 100};
-  int encoder_sent_rate2[] = {100, 100, 100, 100, 100};
+  int target_rate2[] = {80, 80, 80, 80, 80};
+  int encoder_sent_rate2[] = {80, 80, 80, 80, 80};
   int incoming_frame_rate2[] = {30, 30, 30, 30, 30};
   uint8_t fraction_lost2[] = {10, 10, 10, 10, 10};
   UpdateQmRateData(target_rate2, encoder_sent_rate2, incoming_frame_rate2,
                    fraction_lost2, 5);
-  EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
-  EXPECT_EQ(3, qm_resolution_->ComputeContentClass());
-  EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 2, 2, 1));
 
-  // Reset and go to low rate: no action should be taken,
+  // Update content: motion level, and 3 spatial prediction errors.
+  // High motion, medium spatial.
+  UpdateQmContentData(kTemporalHigh, kSpatialMedium, kSpatialMedium,
+                      kSpatialMedium);
+  EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
+  EXPECT_EQ(5, qm_resolution_->ComputeContentClass());
+  EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 4.0f / 3.0f, 4.0f / 3.0f,
+                                      1.0f));
+
+  // Reset and go to very low rate: no action should be taken,
   // we went down too much already.
   qm_resolution_->ResetRates();
   qm_resolution_->UpdateCodecFrameSize(320, 180);
-  EXPECT_EQ(0, qm_resolution_->GetImageType(320, 180));
+  EXPECT_EQ(1, qm_resolution_->GetImageType(320, 180));
   // Update rates for a sequence of intervals.
   int target_rate3[] = {10, 10, 10, 10, 10};
   int encoder_sent_rate3[] = {10, 10, 10, 10, 10};
@@ -767,17 +791,331 @@ TEST_F(QmSelectTest, NoActionTooMuchDownSampling) {
   UpdateQmRateData(target_rate3, encoder_sent_rate3, incoming_frame_rate3,
                    fraction_lost3, 5);
   EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
+  EXPECT_EQ(5, qm_resolution_->ComputeContentClass());
+  EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1.0f, 1.0f, 1.0f));
+}
+
+// Multiple down-sampling stages and then undo all of them.
+// Spatial down-sample 3/4x3/4, followed by temporal down-sample 2/3,
+// followed by spatial 1/2x1/2. Then go up to full state,
+// as encoding rate has increased.
+TEST_F(QmSelectTest, MultipleStagesCheckActionHistory1) {
+  // Initialize with bitrate, frame rate, and native system width/height.
+  InitQmNativeData(200, 30, 640, 480, 1);
+
+  // Update with encoder frame size.
+  uint16_t codec_width = 640;
+  uint16_t codec_height = 480;
+  qm_resolution_->UpdateCodecFrameSize(codec_width, codec_height);
+  EXPECT_EQ(5, qm_resolution_->GetImageType(codec_width, codec_height));
+
+  // Go down spatial 3/4x3/4.
+  // Update rates for a sequence of intervals.
+  int target_rate[] = {200, 200, 200};
+  int encoder_sent_rate[] = {200, 200, 200};
+  int incoming_frame_rate[] = {30, 30, 30};
+  uint8_t fraction_lost[] = {10, 10, 10};
+  UpdateQmRateData(target_rate, encoder_sent_rate, incoming_frame_rate,
+                   fraction_lost, 3);
+
+  // Update content: motion level, and 3 spatial prediction errors.
+  // Medium motion, low spatial.
+  UpdateQmContentData(kTemporalMedium, kSpatialLow, kSpatialLow, kSpatialLow);
+  EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
+  EXPECT_EQ(6, qm_resolution_->ComputeContentClass());
+  EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 4.0f / 3.0f, 4.0f / 3.0f,
+                                      1.0f));
+  // Go down 1/2 temporal.
+  qm_resolution_->UpdateCodecFrameSize(480, 360);
+  EXPECT_EQ(4, qm_resolution_->GetImageType(480, 360));
+  qm_resolution_->ResetRates();
+  int target_rate2[] = {100, 100, 100, 100, 100};
+  int encoder_sent_rate2[] = {100, 100, 100, 100, 100};
+  int incoming_frame_rate2[] = {30, 30, 30, 30, 30};
+  uint8_t fraction_lost2[] = {10, 10, 10, 10, 10};
+  UpdateQmRateData(target_rate2, encoder_sent_rate2, incoming_frame_rate2,
+                   fraction_lost2, 5);
+
+  // Update content: motion level, and 3 spatial prediction errors.
+  // Low motion, high spatial.
+  UpdateQmContentData(kTemporalLow, kSpatialHigh, kSpatialHigh, kSpatialHigh);
+  EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
+  EXPECT_EQ(1, qm_resolution_->ComputeContentClass());
+  EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1.0f, 1.0f, 2.0f));
+
+  // Go down 1/2x1/2 spatial.
+  qm_resolution_->ResetRates();
+  int target_rate3[] = {50, 50, 50, 50, 50};
+  int encoder_sent_rate3[] = {50, 50, 50, 50, 50};
+  int incoming_frame_rate3[] = {15, 15, 15, 15, 15};
+  uint8_t fraction_lost3[] = {10, 10, 10, 10, 10};
+  UpdateQmRateData(target_rate3, encoder_sent_rate3, incoming_frame_rate3,
+                    fraction_lost3, 5);
+
+  // Update content: motion level, and 3 spatial prediction errors.
+  // High motion, low spatial.
+  UpdateQmContentData(kTemporalHigh, kSpatialLow, kSpatialLow, kSpatialLow);
+  EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
   EXPECT_EQ(3, qm_resolution_->ComputeContentClass());
   EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
-  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1, 1, 1));
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 2.0f, 2.0f, 1.0f));
+
+  // Reset rates and go high up in rate: expect to go up:
+  // should go up first: 1/2x1x2 and 1/2 temporally,
+  // and second: 3/4x3/4 spatial.
+
+  // Go up 1/2x1/2 spatially and 1/2 temporally
+  qm_resolution_->UpdateCodecFrameSize(240, 180);
+  EXPECT_EQ(1, qm_resolution_->GetImageType(240, 180));
+  qm_resolution_->ResetRates();
+  // Update rates for a sequence of intervals.
+  int target_rate4[] = {1000, 1000, 1000, 1000, 1000};
+  int encoder_sent_rate4[] = {1000, 1000, 1000, 1000, 1000};
+  int incoming_frame_rate4[] = {15, 15, 15, 15, 15};
+  uint8_t fraction_lost4[] = {10, 10, 10, 10, 10};
+  UpdateQmRateData(target_rate4, encoder_sent_rate4, incoming_frame_rate4,
+                   fraction_lost4, 5);
+
+  EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
+  EXPECT_EQ(3, qm_resolution_->ComputeContentClass());
+  EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 0.5f, 0.5f, 0.5f));
+
+  // Go up 3/4x3/4 spatially.
+  qm_resolution_->UpdateCodecFrameSize(480, 360);
+  EXPECT_EQ(4, qm_resolution_->GetImageType(480, 360));
+  qm_resolution_->ResetRates();
+  // Update rates for a sequence of intervals.
+  int target_rate5[] = {1000, 1000, 1000, 1000, 1000};
+  int encoder_sent_rate5[] = {1000, 1000, 1000, 1000, 1000};
+  int incoming_frame_rate5[] = {30, 30, 30, 30, 30};
+  uint8_t fraction_lost5[] = {10, 10, 10, 10, 10};
+  UpdateQmRateData(target_rate5, encoder_sent_rate5, incoming_frame_rate5,
+                   fraction_lost5, 5);
+
+  EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
+  EXPECT_EQ(3, qm_resolution_->ComputeContentClass());
+  EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 3.0f / 4.0f, 3.0f / 4.0f,
+                                      1.0f));
+}
+
+// Multiple down-sampling and up-sample stages, with partial undoing.
+// Spatial down-sample 1/2x1/2, followed by temporal down-sample 2/3,
+// undo the spatial 1/2x1/2, then another temporal 1/2, and undo
+// the 1/2 temporal.
+TEST_F(QmSelectTest, MultipleStagesCheckActionHistory2) {
+  // Initialize with bitrate, frame rate, and native system width/height.
+  InitQmNativeData(100, 30, 640, 480, 1);
+
+  // Update with encoder frame size.
+  uint16_t codec_width = 640;
+  uint16_t codec_height = 480;
+  qm_resolution_->UpdateCodecFrameSize(codec_width, codec_height);
+  EXPECT_EQ(5, qm_resolution_->GetImageType(codec_width, codec_height));
+
+  // Go down 1/2x1/2 spatial.
+  // Update rates for a sequence of intervals.
+  int target_rate[] = {100, 100, 100};
+  int encoder_sent_rate[] = {100, 100, 100};
+  int incoming_frame_rate[] = {30, 30, 30};
+  uint8_t fraction_lost[] = {10, 10, 10};
+  UpdateQmRateData(target_rate, encoder_sent_rate, incoming_frame_rate,
+                   fraction_lost, 3);
+
+  // Update content: motion level, and 3 spatial prediction errors.
+  // Medium motion, low spatial.
+  UpdateQmContentData(kTemporalMedium, kSpatialLow, kSpatialLow, kSpatialLow);
+  EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
+  EXPECT_EQ(6, qm_resolution_->ComputeContentClass());
+  EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 2.0f, 2.0f, 1.0f));
+
+  // Go down 2/3 temporal.
+  qm_resolution_->UpdateCodecFrameSize(320, 240);
+  EXPECT_EQ(2, qm_resolution_->GetImageType(320, 240));
+  qm_resolution_->ResetRates();
+  int target_rate2[] = {80, 80, 80, 80, 80};
+  int encoder_sent_rate2[] = {80, 80, 80, 80, 80};
+  int incoming_frame_rate2[] = {30, 30, 30, 30, 30};
+  uint8_t fraction_lost2[] = {10, 10, 10, 10, 10};
+  UpdateQmRateData(target_rate2, encoder_sent_rate2, incoming_frame_rate2,
+                   fraction_lost2, 5);
+
+  // Update content: motion level, and 3 spatial prediction errors.
+  // Medium motion, high spatial.
+  UpdateQmContentData(kTemporalMedium, kSpatialHigh, kSpatialHigh,
+                      kSpatialHigh);
+  EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
+  EXPECT_EQ(7, qm_resolution_->ComputeContentClass());
+  EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1.0f, 1.0f, 1.5f));
+
+  // Go up 1/2x1/2 spatially.
+  qm_resolution_->ResetRates();
+  // Update rates for a sequence of intervals.
+  int target_rate3[] = {300, 300, 300, 300, 300};
+  int encoder_sent_rate3[] = {300, 300, 300, 300, 300};
+  int incoming_frame_rate3[] = {20, 20, 20, 20, 20};
+  uint8_t fraction_lost3[] = {10, 10, 10, 10, 10};
+  UpdateQmRateData(target_rate3, encoder_sent_rate3, incoming_frame_rate3,
+                   fraction_lost3, 5);
+
+  EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
+  EXPECT_EQ(7, qm_resolution_->ComputeContentClass());
+  EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 0.5f, 0.5f, 1.0f));
+
+  // Go down 1/2 temporal.
+  qm_resolution_->UpdateCodecFrameSize(640, 480);
+  EXPECT_EQ(5, qm_resolution_->GetImageType(640, 480));
+  qm_resolution_->ResetRates();
+  int target_rate4[] = {100, 100, 100, 100, 100};
+  int encoder_sent_rate4[] = {100, 100, 100, 100, 100};
+  int incoming_frame_rate4[] = {20, 20, 20, 20, 20};
+  uint8_t fraction_lost4[] = {10, 10, 10, 10, 10};
+  UpdateQmRateData(target_rate4, encoder_sent_rate4, incoming_frame_rate4,
+                   fraction_lost4, 5);
+
+  // Update content: motion level, and 3 spatial prediction errors.
+  // Low motion, high spatial.
+  UpdateQmContentData(kTemporalLow, kSpatialHigh, kSpatialHigh, kSpatialHigh);
+  EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
+  EXPECT_EQ(1, qm_resolution_->ComputeContentClass());
+  EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1.0f, 1.0f, 2.0f));
+
+  // Go up 1/2 temporal.
+  qm_resolution_->ResetRates();
+  // Update rates for a sequence of intervals.
+  int target_rate5[] = {1000, 1000, 1000, 1000, 1000};
+  int encoder_sent_rate5[] = {1000, 1000, 1000, 1000, 1000};
+  int incoming_frame_rate5[] = {10, 10, 10, 10, 10};
+  uint8_t fraction_lost5[] = {10, 10, 10, 10, 10};
+  UpdateQmRateData(target_rate5, encoder_sent_rate5, incoming_frame_rate5,
+                   fraction_lost5, 5);
+
+  EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
+  EXPECT_EQ(1, qm_resolution_->ComputeContentClass());
+  EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1.0f, 1.0f, 0.5f));
+}
+
+// Multiple down-sampling and up-sample stages, with partial undoing.
+// Spatial down-sample 3/4x3/4, followed by temporal down-sample 1/2,
+// undo the temporal 1/2, then another temporal 2/3 down, and undo
+// the 2/3 temporal.
+TEST_F(QmSelectTest, MultipleStagesCheckActionHistory3) {
+  // Initialize with bitrate, frame rate, and native system width/height.
+  InitQmNativeData(200, 30, 640, 480, 1);
+
+  // Update with encoder frame size.
+  uint16_t codec_width = 640;
+  uint16_t codec_height = 480;
+  qm_resolution_->UpdateCodecFrameSize(codec_width, codec_height);
+  EXPECT_EQ(5, qm_resolution_->GetImageType(codec_width, codec_height));
+
+  // Go down 3/4x3/4 spatial.
+  // Update rates for a sequence of intervals.
+  int target_rate[] = {200, 200, 200};
+  int encoder_sent_rate[] = {200, 200, 200};
+  int incoming_frame_rate[] = {30, 30, 30};
+  uint8_t fraction_lost[] = {10, 10, 10};
+  UpdateQmRateData(target_rate, encoder_sent_rate, incoming_frame_rate,
+                   fraction_lost, 3);
+
+  // Update content: motion level, and 3 spatial prediction errors.
+  // Medium motion, low spatial.
+  UpdateQmContentData(kTemporalMedium, kSpatialLow, kSpatialLow, kSpatialLow);
+  EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
+  EXPECT_EQ(6, qm_resolution_->ComputeContentClass());
+  EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 4.0f / 3.0f, 4.0f / 3.0f,
+                                      1.0f));
+
+  // Go down 1/2 temporal.
+  qm_resolution_->UpdateCodecFrameSize(480, 360);
+  EXPECT_EQ(4, qm_resolution_->GetImageType(480, 360));
+  qm_resolution_->ResetRates();
+  int target_rate2[] = {100, 100, 100, 100, 100};
+  int encoder_sent_rate2[] = {100, 100, 100, 100, 100};
+  int incoming_frame_rate2[] = {30, 30, 30, 30, 30};
+  uint8_t fraction_lost2[] = {10, 10, 10, 10, 10};
+  UpdateQmRateData(target_rate2, encoder_sent_rate2, incoming_frame_rate2,
+                   fraction_lost2, 5);
+
+  // Update content: motion level, and 3 spatial prediction errors.
+  // Low motion, high spatial.
+  UpdateQmContentData(kTemporalLow, kSpatialHigh, kSpatialHigh, kSpatialHigh);
+  EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
+  EXPECT_EQ(1, qm_resolution_->ComputeContentClass());
+  EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1.0f, 1.0f, 2.0f));
+
+  // Go up 1/2 temporal.
+  qm_resolution_->ResetRates();
+  // Update rates for a sequence of intervals.
+  int target_rate3[] = {300, 300, 300, 300, 300};
+  int encoder_sent_rate3[] = {300, 300, 300, 300, 300};
+  int incoming_frame_rate3[] = {15, 15, 15, 15, 15};
+  uint8_t fraction_lost3[] = {10, 10, 10, 10, 10};
+  UpdateQmRateData(target_rate3, encoder_sent_rate3, incoming_frame_rate3,
+                   fraction_lost3, 5);
+
+  EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
+  EXPECT_EQ(1, qm_resolution_->ComputeContentClass());
+  EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1.0f, 1.0f, 0.5f));
+
+  // Go down 2/3 temporal.
+  qm_resolution_->UpdateCodecFrameSize(640, 480);
+  EXPECT_EQ(5, qm_resolution_->GetImageType(640, 480));
+  qm_resolution_->ResetRates();
+  int target_rate4[] = {150, 150, 150, 150, 150};
+  int encoder_sent_rate4[] = {150, 150, 150, 150, 150};
+  int incoming_frame_rate4[] = {20, 20, 20, 20, 20};
+  uint8_t fraction_lost4[] = {30, 30, 30, 30, 30};
+  UpdateQmRateData(target_rate4, encoder_sent_rate4, incoming_frame_rate4,
+                   fraction_lost4, 5);
+
+  // Update content: motion level, and 3 spatial prediction errors.
+  // Medium motion, high spatial.
+  UpdateQmContentData(kTemporalMedium, kSpatialHigh, kSpatialHigh,
+                      kSpatialHigh);
+  EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
+  EXPECT_EQ(7, qm_resolution_->ComputeContentClass());
+  EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1.0f, 1.0f, 1.5f));
+
+  // Go up 2/3 temporal.
+  qm_resolution_->ResetRates();
+  // Update rates for a sequence of intervals.
+  int target_rate5[] = {500, 500, 500, 500, 500};
+  int encoder_sent_rate5[] = {500, 500, 500, 500, 500};
+  int incoming_frame_rate5[] = {20, 20, 20, 20, 20};
+  uint8_t fraction_lost5[] = {10, 10, 10, 10, 10};
+  UpdateQmRateData(target_rate5, encoder_sent_rate5, incoming_frame_rate5,
+                   fraction_lost5, 5);
+
+  EXPECT_EQ(0, qm_resolution_->SelectResolution(&qm_scale_));
+  EXPECT_EQ(7, qm_resolution_->ComputeContentClass());
+  EXPECT_EQ(kStableEncoding, qm_resolution_->GetEncoderState());
+  EXPECT_TRUE(IsSelectedActionCorrect(qm_scale_, 1.0f, 1.0f, 2.0f / 3.0f));
 }
 
 void QmSelectTest::InitQmNativeData(float initial_bit_rate,
                                     int user_frame_rate,
                                     int native_width,
-                                    int native_height) {
-  EXPECT_EQ(0, qm_resolution_->Initialize(initial_bit_rate, user_frame_rate,
-                                          native_width, native_height));
+                                    int native_height,
+                                    int num_layers) {
+  EXPECT_EQ(0, qm_resolution_->Initialize(initial_bit_rate,
+                                          user_frame_rate,
+                                          native_width,
+                                          native_height,
+                                          num_layers));
 }
 
 void QmSelectTest::UpdateQmContentData(float motion_metric,
@@ -793,7 +1131,7 @@ void QmSelectTest::UpdateQmContentData(float motion_metric,
 
 void QmSelectTest::UpdateQmEncodedFrame(int* encoded_size, int num_updates) {
   FrameType frame_type = kVideoFrameDelta;
-  for (int i = 0; i < num_updates; i++) {
+  for (int i = 0; i < num_updates; ++i) {
     // Convert to bytes.
     int32_t encoded_size_update = 1000 * encoded_size[i] / 8;
     qm_resolution_->UpdateEncodedSize(encoded_size_update, frame_type);
@@ -805,7 +1143,7 @@ void QmSelectTest::UpdateQmRateData(int* target_rate,
                                     int* incoming_frame_rate,
                                     uint8_t* fraction_lost,
                                     int num_updates) {
-  for (int i = 0; i < num_updates; i++) {
+  for (int i = 0; i < num_updates; ++i) {
     float target_rate_update = target_rate[i];
     float encoder_sent_rate_update = encoder_sent_rate[i];
     float incoming_frame_rate_update = incoming_frame_rate[i];
@@ -820,12 +1158,12 @@ void QmSelectTest::UpdateQmRateData(int* target_rate,
 // Check is the selected action from the QmResolution class is the same
 // as the expected scales from |fac_width|, |fac_height|, |fac_temp|.
 bool QmSelectTest::IsSelectedActionCorrect(VCMResolutionScale* qm_scale,
-                                           uint8_t fac_width,
-                                           uint8_t fac_height,
-                                           uint8_t fac_temp) {
-  if (qm_scale->spatialWidthFact == fac_width &&
-      qm_scale->spatialHeightFact == fac_height &&
-      qm_scale->temporalFact == fac_temp) {
+                                           float fac_width,
+                                           float fac_height,
+                                           float fac_temp) {
+  if (qm_scale->spatial_width_fact == fac_width &&
+      qm_scale->spatial_height_fact == fac_height &&
+      qm_scale->temporal_fact == fac_temp) {
     return true;
   } else {
     return false;

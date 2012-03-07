@@ -23,14 +23,32 @@ struct VideoContentMetrics;
 
 struct VCMResolutionScale {
   VCMResolutionScale()
-      : spatialWidthFact(1),
-        spatialHeightFact(1),
-        temporalFact(1) {
+      : spatial_width_fact(1.0f),
+        spatial_height_fact(1.0f),
+        temporal_fact(1.0f),
+        change_resolution(false) {
   }
-  uint8_t spatialWidthFact;
-  uint8_t spatialHeightFact;
-  uint8_t temporalFact;
+  float spatial_width_fact;
+  float spatial_height_fact;
+  float temporal_fact;
+  bool change_resolution;
 };
+
+enum ImageType {
+  kQCIF = 0,            // 176x144
+  kHCIF,                // 264x216 = half(~3/4x3/4) CIF.
+  kQVGA,                // 320x240 = quarter VGA.
+  kCIF,                 // 352x288
+  kHVGA,                // 480x360 = half(~3/4x3/4) VGA.
+  kVGA,                 // 640x480
+  kQFULLHD,             // 960x540 = quarter FULLHD, and half(~3/4x3/4) WHD.
+  kWHD,                 // 1280x720
+  kFULLHD,              // 1920x1080
+  kNumImageTypes
+};
+
+const uint32_t kSizeOfImageType[kNumImageTypes] =
+{ 25344, 57024, 76800, 101376, 172800, 307200, 518400, 921600, 2073600 };
 
 enum LevelClass {
   kLow,
@@ -51,11 +69,43 @@ struct VCMContFeature {
   LevelClass level;
 };
 
-enum ResolutionAction {
-  kDownResolution,
+enum UpDownAction {
   kUpResolution,
-  kNoChangeResolution
+  kDownResolution
 };
+
+enum SpatialAction {
+  kNoChangeSpatial,
+  kOneHalfSpatialUniform,        // 3/4 x 3/4: 9/6 ~1/2 pixel reduction.
+  kOneQuarterSpatialUniform,     // 1/2 x 1/2: 1/4 pixel reduction.
+  kNumModesSpatial
+};
+
+enum TemporalAction {
+  kNoChangeTemporal,
+  kTwoThirdsTemporal,     // 2/3 frame rate reduction
+  kOneHalfTemporal,       // 1/2 frame rate reduction
+  kNumModesTemporal
+};
+
+struct ResolutionAction {
+  ResolutionAction()
+      : spatial(kNoChangeSpatial),
+        temporal(kNoChangeTemporal) {
+  }
+  SpatialAction spatial;
+  TemporalAction temporal;
+};
+
+// Down-sampling factors for spatial (width and height), and temporal.
+const float kFactorWidthSpatial[kNumModesSpatial] =
+    { 1.0f, 4.0f / 3.0f, 2.0f };
+
+const float kFactorHeightSpatial[kNumModesSpatial] =
+    { 1.0f, 4.0f / 3.0f, 2.0f };
+
+const float kFactorTemporal[kNumModesTemporal] =
+    { 1.0f, 1.5f, 2.0f };
 
 enum EncoderState {
   kStableEncoding,    // Low rate mis-match, stable buffer levels.
@@ -79,7 +129,7 @@ class VCMQmMethod {
   uint8_t ComputeContentClass();
 
   // Update with the content metrics.
-  void UpdateContent(const VideoContentMetrics* contentMetrics);
+  void UpdateContent(const VideoContentMetrics* content_metrics);
 
   // Compute spatial texture magnitude and level.
   // Spatial texture is a spatial prediction error measure.
@@ -90,29 +140,32 @@ class VCMQmMethod {
   void ComputeMotionNFD();
 
   // Get the imageType (CIF, VGA, HD, etc) for the system width/height.
-  uint8_t GetImageType(uint16_t width, uint16_t height);
+  ImageType GetImageType(uint16_t width, uint16_t height);
+
+  // Return the closest image type.
+  ImageType FindClosestImageType(uint16_t width, uint16_t height);
 
   // Get the frame rate level.
   LevelClass FrameRateLevel(float frame_rate);
 
  protected:
   // Content Data.
-  const VideoContentMetrics* _contentMetrics;
+  const VideoContentMetrics* content_metrics_;
 
   // Encoder frame sizes and native frame sizes.
-  uint16_t _width;
-  uint16_t _height;
-  uint16_t _nativeWidth;
-  uint16_t _nativeHeight;
-  float _aspectRatio;
+  uint16_t width_;
+  uint16_t height_;
+  uint16_t native_width_;
+  uint16_t native_height_;
+  float aspect_ratio_;
   // Image type and frame rate leve, for the current encoder resolution.
-  uint8_t _imageType;
-  LevelClass _frameRateLevel;
+  ImageType image_type_;
+  LevelClass framerate_level_;
   // Content class data.
-  VCMContFeature _motion;
-  VCMContFeature _spatial;
-  uint8_t _contentClass;
-  bool _init;
+  VCMContFeature motion_;
+  VCMContFeature spatial_;
+  uint8_t content_class_;
+  bool init_;
 };
 
 // Resolution settings class
@@ -135,26 +188,34 @@ class VCMQmResolution : public VCMQmMethod {
   EncoderState GetEncoderState();
 
   // Initialize after SetEncodingData in media_opt.
-  int Initialize(float bitRate, float userFrameRate,
-                 uint16_t width, uint16_t height);
+  int Initialize(float bitrate,
+                 float user_framerate,
+                 uint16_t width,
+                 uint16_t height,
+                 int num_layers);
 
   // Update the encoder frame size.
   void UpdateCodecFrameSize(uint16_t width, uint16_t height);
 
   // Update with actual bit rate (size of the latest encoded frame)
   // and frame type, after every encoded frame.
-  void UpdateEncodedSize(int encodedSize,
-                         FrameType encodedFrameType);
+  void UpdateEncodedSize(int encoded_size,
+                         FrameType encoded_frame_type);
 
   // Update with new target bitrate, actual encoder sent rate, frame_rate,
   // loss rate: every ~1 sec from SetTargetRates in media_opt.
-  void UpdateRates(float targetBitRate, float encoderSentRate,
-                   float incomingFrameRate, uint8_t packetLoss);
+  void UpdateRates(float target_bitrate,
+                   float encoder_sent_rate,
+                   float incoming_framerate,
+                   uint8_t packet_loss);
 
   // Extract ST (spatio-temporal) resolution action.
   // Inputs: qm: Reference to the quality modes pointer.
   // Output: the spatial and/or temporal scale change.
   int SelectResolution(VCMResolutionScale** qm);
+
+  // Set the default resolution action.
+  void SetDefaultAction();
 
   // Compute rates for the selection of down-sampling action.
   void ComputeRatesForSelection();
@@ -171,57 +232,89 @@ class VCMQmResolution : public VCMQmMethod {
   // Check the condition for going up in resolution by the scale factors:
   // |facWidth|, |facHeight|, |facTemp|.
   // |scaleFac| is a scale factor for the transition rate.
-  bool ConditionForGoingUp(uint8_t facWidth, uint8_t facHeight,
-                           uint8_t facTemp,
-                           float scaleFac);
+  bool ConditionForGoingUp(float fac_width,
+                           float fac_height,
+                           float fac_temp,
+                           float scale_fac);
 
   // Get the bitrate threshold for the resolution action.
   // The case |facWidth|=|facHeight|=|facTemp|==1 is for down-sampling action.
   // |scaleFac| is a scale factor for the transition rate.
-  float GetTransitionRate(uint8_t facWidth, uint8_t facHeight,
-                          uint8_t facTemp, float scaleFac);
+  float GetTransitionRate(float fac_width,
+                          float fac_height,
+                          float fac_temp,
+                          float scale_fac);
 
-  // Update the downsampling state.
-  void UpdateDownsamplingState(ResolutionAction action);
+  // Update the down-sampling state.
+  void UpdateDownsamplingState(UpDownAction up_down);
 
+  // Return a state based on average target rate relative transition rate.
+  uint8_t RateClass(float transition_rate);
+
+  // Adjust the action selected from the table.
   void AdjustAction();
 
+  // Check if the new frame sizes are still divisible by 2.
+  void CheckForEvenFrameSize();
+
+  // Insert latest down-sampling action into the history list.
+  void InsertLatestDownAction();
+
+  // Remove the last (first element) down-sampling action from the list.
+  void RemoveLastDownAction();
+
+  // Check constraints on the amount of down-sampling allowed.
+  void ConstrainAmountOfDownSampling();
+
+  // For going up in resolution: pick spatial or temporal action,
+  // if both actions were separately selected.
+  void PickSpatialOrTemporal();
+
   // Select the directional (1x2 or 2x1) spatial down-sampling action.
-  void SelectSpatialDirectionMode(float transRate);
+  void SelectSpatialDirectionMode(float transition_rate);
 
  private:
-  VCMResolutionScale* _qm;
+  enum { kDownActionHistorySize = 10};
+
+  VCMResolutionScale* qm_;
   // Encoder rate control parameters.
-  float _targetBitRate;
-  float _userFrameRate;
-  float _incomingFrameRate;
-  float _perFrameBandwidth;
-  float _bufferLevel;
+  float target_bitrate_;
+  float user_framerate_;
+  float incoming_framerate_;
+  float per_frame_bandwidth_;
+  float buffer_level_;
 
   // Data accumulated every ~1sec from MediaOpt.
-  float _sumTargetRate;
-  float _sumIncomingFrameRate;
-  float _sumRateMM;
-  float _sumRateMMSgn;
-  float  _sumPacketLoss;
+  float sum_target_rate_;
+  float sum_incoming_framerate_;
+  float sum_rate_MM_;
+  float sum_rate_MM_sgn_;
+  float sum_packet_loss_;
   // Counters.
-  uint32_t _frameCnt;
-  uint32_t _frameCntDelta;
-  uint32_t _updateRateCnt;
-  uint32_t _lowBufferCnt;
+  uint32_t frame_cnt_;
+  uint32_t frame_cnt_delta_;
+  uint32_t update_rate_cnt_;
+  uint32_t low_buffer_cnt_;
 
   // Resolution state parameters.
-  uint8_t _stateDecFactorSpatial;
-  uint8_t _stateDecFactorTemp;
+  float state_dec_factor_spatial_;
+  float state_dec_factor_temporal_;
 
   // Quantities used for selection.
-  float _avgTargetRate;
-  float _avgIncomingFrameRate;
-  float _avgRatioBufferLow;
-  float _avgRateMisMatch;
-  float _avgRateMisMatchSgn;
-  float _avgPacketLoss;
-  EncoderState _encoderState;
+  float avg_target_rate_;
+  float avg_incoming_framerate_;
+  float avg_ratio_buffer_low_;
+  float avg_rate_mismatch_;
+  float avg_rate_mismatch_sgn_;
+  float avg_packet_loss_;
+  EncoderState encoder_state_;
+  ResolutionAction action_;
+  // Short history of the down-sampling actions from the Initialize() state.
+  // This is needed for going up in resolution. Since the total amount of
+  // down-sampling actions are constrained, the length of the list need not be
+  // large: i.e., (4/3) ^{kDownActionHistorySize} <= kMaxDownSample.
+  ResolutionAction down_action_history_[kDownActionHistorySize];
+  int num_layers_;
 };
 
 // Robustness settings class.
@@ -235,24 +328,24 @@ class VCMQmRobustness : public VCMQmMethod {
 
   // Adjust FEC rate based on content: every ~1 sec from SetTargetRates.
   // Returns an adjustment factor.
-  float AdjustFecFactor(uint8_t codeRateDelta,
-                        float totalRate,
-                        float frameRate,
-                        uint32_t rttTime,
-                        uint8_t packetLoss);
+  float AdjustFecFactor(uint8_t code_rate_delta,
+                        float total_rate,
+                        float framerate,
+                        uint32_t rtt_time,
+                        uint8_t packet_loss);
 
   // Set the UEP protection on/off.
-  bool SetUepProtection(uint8_t codeRateDelta,
-                        float totalRate,
-                        uint8_t packetLoss,
-                        bool frameType);
+  bool SetUepProtection(uint8_t code_rate_delta,
+                        float total_rate,
+                        uint8_t packet_loss,
+                        bool frame_type);
 
  private:
   // Previous state of network parameters.
-  float _prevTotalRate;
-  uint32_t _prevRttTime;
-  uint8_t _prevPacketLoss;
-  uint8_t _prevCodeRateDelta;
+  float prev_total_rate_;
+  uint32_t prev_rtt_time_;
+  uint8_t prev_packet_loss_;
+  uint8_t prev_code_rate_delta_;
 };
 }   // namespace webrtc
 #endif  // WEBRTC_MODULES_VIDEO_CODING_QM_SELECT_H_

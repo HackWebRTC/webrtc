@@ -180,7 +180,7 @@ VCMMediaOptimization::SetTargetRates(WebRtc_UWord32 bitRate,
     // Update encoding rates following protection settings
     _frameDropper->SetRates(static_cast<float>(_targetBitRate), 0);
 
-    if (_enableQm && _numLayers == 1)
+    if (_enableQm)
     {
         // Update QM with rates
         _qmResolution->UpdateRates((float)_targetBitRate, sent_video_rate,
@@ -291,7 +291,7 @@ VCMMediaOptimization::SetEncodingData(VideoCodecType sendCodecType,
     _numLayers = (numLayers <= 1) ? 1 : numLayers;  // Can also be zero.
     WebRtc_Word32 ret = VCM_OK;
     ret = _qmResolution->Initialize((float)_targetBitRate, _userFrameRate,
-                                    _codecWidth, _codecHeight);
+                                    _codecWidth, _codecHeight, _numLayers);
     return ret;
 }
 
@@ -575,68 +575,44 @@ VCMMediaOptimization::checkStatusForQMchange()
 
 }
 
-bool
-VCMMediaOptimization::QMUpdate(VCMResolutionScale* qm)
-{
-    // Check for no change
-    if (qm->spatialHeightFact == 1 &&
-        qm->spatialWidthFact == 1 &&
-        qm->temporalFact == 1) {
-        return false;
-    }
+bool VCMMediaOptimization::QMUpdate(VCMResolutionScale* qm) {
+  // Check for no change
+  if (!qm->change_resolution) {
+    return false;
+  }
 
-    // Temporal
-    WebRtc_UWord32 frameRate = static_cast<WebRtc_UWord32>
-                               (_incomingFrameRate + 0.5f);
+  // Check for change in frame rate.
+  if (qm->temporal_fact != 1.0f) {
+    _incomingFrameRate = _incomingFrameRate / qm->temporal_fact + 0.5f;
+    memset(_incomingFrameTimes, -1, sizeof(_incomingFrameTimes));
+  }
 
-    // Check if go back up in temporal resolution
-    if (qm->temporalFact == 0) {
-      // Currently only allow for 1/2 frame rate reduction per action.
-      // TODO (marpan): allow for 2/3 reduction.
-      frameRate = (WebRtc_UWord32) 2 * _incomingFrameRate;
-    }
-    // go down in temporal resolution
-    else {
-      frameRate = (WebRtc_UWord32)(_incomingFrameRate / qm->temporalFact + 1);
-    }
-    // Reset _incomingFrameRate if temporal action was selected.
-    if  (qm->temporalFact != 1) {
-      memset(_incomingFrameTimes, -1, sizeof(_incomingFrameTimes));
-      _incomingFrameRate = frameRate;
-    }
-
-    // Spatial
-    WebRtc_UWord32 height = _codecHeight;
-    WebRtc_UWord32 width = _codecWidth;
-    // Check if go back up in spatial resolution, and update frame sizes.
-    // Currently only allow for 2x2 spatial down-sampling.
-    // TODO (marpan): allow for 1x2, 2x1, and 4/3x4/3 (or 3/2x3/2).
-    if (qm->spatialHeightFact == 0 && qm->spatialWidthFact == 0) {
-      width = _codecWidth * 2;
-      height = _codecHeight * 2;
-    } else {
-      width = _codecWidth / qm->spatialWidthFact;
-      height = _codecHeight / qm->spatialHeightFact;
-    }
-    _codecWidth = width;
-    _codecHeight = height;
-
-    // New frame sizes should never exceed the original sizes
-    // from SetEncodingData().
+  // Check for change in frame size.
+  if (qm->spatial_height_fact != 1.0 || qm->spatial_width_fact != 1.0) {
+    _codecWidth = static_cast<uint16_t>(_codecWidth /
+        qm->spatial_width_fact);
+    _codecHeight = static_cast<uint16_t>(_codecHeight /
+        qm->spatial_height_fact);
+    // New frame sizes should not exceed original size from SetEncodingData().
     assert(_codecWidth <= _initCodecWidth);
     assert(_codecHeight <= _initCodecHeight);
+    // Check that new frame sizes are multiples of two.
+    assert(_codecWidth % 2 == 0);
+    assert(_codecHeight % 2 == 0);
+  }
 
-    WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, _id,
+  WEBRTC_TRACE(webrtc::kTraceDebug, webrtc::kTraceVideoCoding, _id,
                "Quality Mode Update: W = %d, H = %d, FR = %f",
-               width, height, frameRate);
+               _codecWidth, _codecHeight, _incomingFrameRate);
 
-    // Update VPM with new target frame rate and size
-    _videoQMSettingsCallback->SetVideoQMSettings(frameRate, width, height);
+  // Update VPM with new target frame rate and size
+  _videoQMSettingsCallback->SetVideoQMSettings(_incomingFrameRate,
+                                               _codecWidth,
+                                               _codecHeight);
 
-    _content->UpdateFrameRate(frameRate);
-    _qmResolution->UpdateCodecFrameSize(width, height);
-
-    return true;
+  _content->UpdateFrameRate(_incomingFrameRate);
+  _qmResolution->UpdateCodecFrameSize(_codecWidth, _codecHeight);
+  return true;
 }
 
 void
