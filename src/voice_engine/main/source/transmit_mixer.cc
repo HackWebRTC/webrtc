@@ -36,7 +36,7 @@ TransmitMixer::OnPeriodicProcess()
 #if defined(WEBRTC_VOICE_ENGINE_TYPING_DETECTION)
     if (_typingNoiseWarning > 0)
     {
-        CriticalSectionScoped cs(_callbackCritSect);
+        CriticalSectionScoped cs(&_callbackCritSect);
         if (_voiceEngineObserverPtr)
         {
             WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, -1),
@@ -51,7 +51,7 @@ TransmitMixer::OnPeriodicProcess()
 
     if (_saturationWarning > 0)
     {
-        CriticalSectionScoped cs(_callbackCritSect);
+        CriticalSectionScoped cs(&_callbackCritSect);
         if (_voiceEngineObserverPtr)
         {
             WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, -1),
@@ -64,7 +64,7 @@ TransmitMixer::OnPeriodicProcess()
 
     if (_noiseWarning > 0)
     {
-        CriticalSectionScoped cs(_callbackCritSect);
+        CriticalSectionScoped cs(&_callbackCritSect);
         if (_voiceEngineObserverPtr)
         {
             WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, -1),
@@ -104,7 +104,7 @@ void TransmitMixer::PlayFileEnded(const WebRtc_Word32 id)
 
     assert(id == _filePlayerId);
 
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
 
     _filePlaying = false;
     WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_instanceId, -1),
@@ -120,14 +120,14 @@ TransmitMixer::RecordFileEnded(const WebRtc_Word32 id)
 
     if (id == _fileRecorderId)
     {
-        CriticalSectionScoped cs(_critSect);
+        CriticalSectionScoped cs(&_critSect);
         _fileRecording = false;
         WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_instanceId, -1),
                      "TransmitMixer::RecordFileEnded() => fileRecorder module"
                      "is shutdown");
     } else if (id == _fileCallRecorderId)
     {
-        CriticalSectionScoped cs(_critSect);
+        CriticalSectionScoped cs(&_critSect);
         _fileCallRecording = false;
         WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_instanceId, -1),
                      "TransmitMixer::RecordFileEnded() => fileCallRecorder"
@@ -216,7 +216,7 @@ TransmitMixer::~TransmitMixer()
         DeRegisterExternalMediaProcessing();
     }
     {
-        CriticalSectionScoped cs(_critSect);
+        CriticalSectionScoped cs(&_critSect);
         if (_fileRecorderPtr)
         {
             _fileRecorderPtr->RegisterModuleFileCallback(NULL);
@@ -273,7 +273,7 @@ TransmitMixer::RegisterVoiceEngineObserver(VoiceEngineObserver& observer)
 {
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, -1),
                  "TransmitMixer::RegisterVoiceEngineObserver()");
-    CriticalSectionScoped cs(_callbackCritSect);
+    CriticalSectionScoped cs(&_callbackCritSect);
 
     if (_voiceEngineObserverPtr)
     {
@@ -394,7 +394,7 @@ TransmitMixer::PrepareDemux(const WebRtc_Word8* audioSamples,
 
     if (_externalMedia)
     {
-        CriticalSectionScoped cs(_callbackCritSect);
+        CriticalSectionScoped cs(&_callbackCritSect);
         const bool isStereo = (_audioFrame._audioChannel == 2);
         if (_externalMediaCallbackPtr)
         {
@@ -514,7 +514,7 @@ int TransmitMixer::StartPlayingFileAsMicrophone(const char* fileName,
         return 0;
     }
 
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
 
     // Destroy the old instance
     if (_filePlayerPtr)
@@ -591,7 +591,7 @@ int TransmitMixer::StartPlayingFileAsMicrophone(InStream* stream,
         return 0;
     }
 
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
 
     // Destroy the old instance
     if (_filePlayerPtr)
@@ -651,7 +651,7 @@ int TransmitMixer::StopPlayingFileAsMicrophone()
         return 0;
     }
 
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
 
     if (_filePlayerPtr->StopPlayingFile() != 0)
     {
@@ -682,7 +682,7 @@ int TransmitMixer::ScaleFileAsMicrophonePlayout(const float scale)
                  "TransmitMixer::ScaleFileAsMicrophonePlayout(scale=%5.3f)",
                  scale);
 
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
 
     if (!_filePlaying)
     {
@@ -744,7 +744,7 @@ int TransmitMixer::StartRecordingMicrophone(const char* fileName,
         format = kFileFormatCompressedFile;
     }
 
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
 
     // Destroy the old instance
     if (_fileRecorderPtr)
@@ -822,7 +822,7 @@ int TransmitMixer::StartRecordingMicrophone(OutStream* stream,
         format = kFileFormatCompressedFile;
     }
 
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
 
     // Destroy the old instance
     if (_fileRecorderPtr)
@@ -874,7 +874,7 @@ int TransmitMixer::StopRecordingMicrophone()
         return -1;
     }
 
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
 
     if (_fileRecorderPtr->StopRecording() != 0)
     {
@@ -929,7 +929,7 @@ int TransmitMixer::StartRecordingCall(const char* fileName,
         format = kFileFormatCompressedFile;
     }
 
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
 
     // Destroy the old instance
     if (_fileCallRecorderPtr)
@@ -1007,7 +1007,7 @@ int TransmitMixer::StartRecordingCall(OutStream* stream,
         format = kFileFormatCompressedFile;
     }
 
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
 
     // Destroy the old instance
     if (_fileCallRecorderPtr)
@@ -1058,7 +1058,7 @@ int TransmitMixer::StopRecordingCall()
         return -1;
     }
 
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
 
     if (_fileCallRecorderPtr->StopRecording() != 0)
     {
@@ -1088,7 +1088,7 @@ int TransmitMixer::RegisterExternalMediaProcessing(
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, -1),
                  "TransmitMixer::RegisterExternalMediaProcessing()");
 
-    CriticalSectionScoped cs(_callbackCritSect);
+    CriticalSectionScoped cs(&_callbackCritSect);
     _externalMediaCallbackPtr = &proccess_object;
     _externalMedia = true;
 
@@ -1100,7 +1100,7 @@ int TransmitMixer::DeRegisterExternalMediaProcessing()
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, -1),
                  "TransmitMixer::DeRegisterExternalMediaProcessing()");
 
-    CriticalSectionScoped cs(_callbackCritSect);
+    CriticalSectionScoped cs(&_callbackCritSect);
     _externalMedia = false;
     _externalMediaCallbackPtr = NULL;
 
@@ -1195,7 +1195,7 @@ TransmitMixer::GenerateAudioFrame(const WebRtc_Word16 audioSamples[],
 WebRtc_Word32 TransmitMixer::RecordAudioToFile(
     const WebRtc_UWord32 mixingFrequency)
 {
-    CriticalSectionScoped cs(_critSect);
+    CriticalSectionScoped cs(&_critSect);
     if (_fileRecorderPtr == NULL)
     {
         WEBRTC_TRACE(kTraceWarning, kTraceVoice, VoEId(_instanceId, -1),
@@ -1223,7 +1223,7 @@ WebRtc_Word32 TransmitMixer::MixOrReplaceAudioWithFile(
     WebRtc_UWord32 fileSamples(0);
 
     {
-        CriticalSectionScoped cs(_critSect);
+        CriticalSectionScoped cs(&_critSect);
         if (_filePlayerPtr == NULL)
         {
             WEBRTC_TRACE(kTraceWarning, kTraceVoice,

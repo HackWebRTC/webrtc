@@ -30,7 +30,7 @@ MonitorModule::~MonitorModule()
 WebRtc_Word32 
 MonitorModule::RegisterObserver(MonitorObserver& observer)
 {
-    CriticalSectionScoped lock(_callbackCritSect);
+    CriticalSectionScoped lock(&_callbackCritSect);
     if (_observerPtr)
     {
         return -1;
@@ -42,7 +42,7 @@ MonitorModule::RegisterObserver(MonitorObserver& observer)
 WebRtc_Word32 
 MonitorModule::DeRegisterObserver()
 {
-    CriticalSectionScoped lock(_callbackCritSect);
+    CriticalSectionScoped lock(&_callbackCritSect);
     if (!_observerPtr)
     {
         return 0;
@@ -80,7 +80,7 @@ MonitorModule::Process()
     _lastProcessTime = GET_TIME_IN_MS();
     if (_observerPtr)
     {
-        CriticalSectionScoped lock(_callbackCritSect);
+        CriticalSectionScoped lock(&_callbackCritSect);
         _observerPtr->OnPeriodicProcess();
     }
     return 0;

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -129,7 +129,7 @@ DtmfInband::AddTone(const WebRtc_UWord8 eventCode,
                     WebRtc_Word32 lengthMs,
                     WebRtc_Word32 attenuationDb)
 {
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (attenuationDb > 36 || eventCode > 15)
     {
@@ -158,7 +158,7 @@ DtmfInband::AddTone(const WebRtc_UWord8 eventCode,
 int
 DtmfInband::ResetTone()
 {
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     ReInit();
 
@@ -173,7 +173,7 @@ int
 DtmfInband::StartTone(const WebRtc_UWord8 eventCode,
                       WebRtc_Word32 attenuationDb)
 {
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (attenuationDb > 36 || eventCode > 15)
     {
@@ -199,7 +199,7 @@ DtmfInband::StartTone(const WebRtc_UWord8 eventCode,
 int
 DtmfInband::StopTone()
 {
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
 
     if (!_playing)
     {
@@ -221,7 +221,7 @@ DtmfInband::ReInit()
 bool 
 DtmfInband::IsAddingTone()
 {
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
     return (_remainingSamples > 0 || _playing);
 }
 
@@ -229,7 +229,7 @@ int
 DtmfInband::Get10msTone(WebRtc_Word16 output[320],
                         WebRtc_UWord16& outputSizeInSamples)
 {
-    CriticalSectionScoped lock(_critSect);
+    CriticalSectionScoped lock(&_critSect);
     if (DtmfFix_generate(output,
                          _eventCode,
                          _attenuationDb,

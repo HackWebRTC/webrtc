@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -94,7 +94,7 @@ void OutputMixer::RecordFileEnded(const WebRtc_Word32 id)
                  "OutputMixer::RecordFileEnded(id=%d)", id);
     assert(id == _instanceId);
 
-    CriticalSectionScoped cs(_fileCritSect);
+    CriticalSectionScoped cs(&_fileCritSect);
     _outputFileRecording = false;
     WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_instanceId,-1),
                  "OutputMixer::RecordFileEnded() =>"
@@ -165,7 +165,7 @@ OutputMixer::~OutputMixer()
         DeRegisterExternalMediaProcessing();
     }
     {
-        CriticalSectionScoped cs(_fileCritSect);
+        CriticalSectionScoped cs(&_fileCritSect);
         if (_outputFileRecorderPtr)
         {
             _outputFileRecorderPtr->RegisterModuleFileCallback(NULL);
@@ -207,7 +207,7 @@ int OutputMixer::RegisterExternalMediaProcessing(
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,-1),
                "OutputMixer::RegisterExternalMediaProcessing()");
 
-    CriticalSectionScoped cs(_callbackCritSect);
+    CriticalSectionScoped cs(&_callbackCritSect);
     _externalMediaCallbackPtr = &proccess_object;
     _externalMedia = true;
 
@@ -219,7 +219,7 @@ int OutputMixer::DeRegisterExternalMediaProcessing()
     WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId,-1),
                  "OutputMixer::DeRegisterExternalMediaProcessing()");
 
-    CriticalSectionScoped cs(_callbackCritSect);
+    CriticalSectionScoped cs(&_callbackCritSect);
     _externalMedia = false;
     _externalMediaCallbackPtr = NULL;
 
@@ -365,7 +365,7 @@ int OutputMixer::StartRecordingPlayout(const char* fileName,
         format = kFileFormatCompressedFile;
     }
 
-    CriticalSectionScoped cs(_fileCritSect);
+    CriticalSectionScoped cs(&_fileCritSect);
     
     // Destroy the old instance
     if (_outputFileRecorderPtr)
@@ -445,7 +445,7 @@ int OutputMixer::StartRecordingPlayout(OutStream* stream,
         format = kFileFormatCompressedFile;
     }
 
-    CriticalSectionScoped cs(_fileCritSect);
+    CriticalSectionScoped cs(&_fileCritSect);
 
     // Destroy the old instance
     if (_outputFileRecorderPtr)
@@ -496,7 +496,7 @@ int OutputMixer::StopRecordingPlayout()
         return -1;
     }
 
-    CriticalSectionScoped cs(_fileCritSect);
+    CriticalSectionScoped cs(&_fileCritSect);
 
     if (_outputFileRecorderPtr->StopRecording() != 0)
     {
@@ -526,7 +526,7 @@ OutputMixer::GetMixedAudio(const WebRtc_Word32 desiredFreqHz,
 
     // --- Record playout if enabled
     {
-        CriticalSectionScoped cs(_fileCritSect);
+        CriticalSectionScoped cs(&_fileCritSect);
         if (_outputFileRecording)
         {
             assert(audioFrame._audioChannel == 1);
@@ -632,7 +632,7 @@ OutputMixer::DoOperationsOnCombinedSignal()
 
     if (_externalMedia)
     {
-        CriticalSectionScoped cs(_callbackCritSect);
+        CriticalSectionScoped cs(&_callbackCritSect);
         const bool isStereo = (_audioFrame._audioChannel == 2);
         if (_externalMediaCallbackPtr)
         {

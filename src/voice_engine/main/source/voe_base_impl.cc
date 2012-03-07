@@ -84,7 +84,7 @@ int VoEBaseImpl::Release()
 
 void VoEBaseImpl::OnErrorIsReported(const ErrorCode error)
 {
-    CriticalSectionScoped cs(_callbackCritSect);
+    CriticalSectionScoped cs(&_callbackCritSect);
     if (_voiceEngineObserver)
     {
         if (_voiceEngineObserverPtr)
@@ -112,7 +112,7 @@ void VoEBaseImpl::OnErrorIsReported(const ErrorCode error)
 
 void VoEBaseImpl::OnWarningIsReported(const WarningCode warning)
 {
-    CriticalSectionScoped cs(_callbackCritSect);
+    CriticalSectionScoped cs(&_callbackCritSect);
     if (_voiceEngineObserver)
     {
         if (_voiceEngineObserverPtr)
@@ -289,7 +289,7 @@ int VoEBaseImpl::RegisterVoiceEngineObserver(VoiceEngineObserver& observer)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
                  "RegisterVoiceEngineObserver(observer=0x%d)", &observer);
-    CriticalSectionScoped cs(_callbackCritSect);
+    CriticalSectionScoped cs(&_callbackCritSect);
     if (_voiceEngineObserverPtr)
     {
         _engineStatistics.SetLastError(VE_INVALID_OPERATION, kTraceError,
@@ -319,7 +319,7 @@ int VoEBaseImpl::DeRegisterVoiceEngineObserver()
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
                  "DeRegisterVoiceEngineObserver()");
-    CriticalSectionScoped cs(_callbackCritSect);
+    CriticalSectionScoped cs(&_callbackCritSect);
     if (!_voiceEngineObserverPtr)
     {
         _engineStatistics.SetLastError(VE_INVALID_OPERATION, kTraceError,
@@ -347,7 +347,7 @@ int VoEBaseImpl::Init(AudioDeviceModule* external_adm)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1), 
         "Init(external_adm=0x%p)", external_adm);
-    CriticalSectionScoped cs(*_apiCritPtr);
+    CriticalSectionScoped cs(_apiCritPtr);
 
     if (_engineStatistics.Initialized())
     {
@@ -657,7 +657,7 @@ int VoEBaseImpl::Terminate()
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
                  "Terminate()");
-    CriticalSectionScoped cs(*_apiCritPtr);
+    CriticalSectionScoped cs(_apiCritPtr);
     return TerminateInternal();
 }
 
@@ -675,7 +675,7 @@ int VoEBaseImpl::CreateChannel()
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
                  "CreateChannel()");
-    CriticalSectionScoped cs(*_apiCritPtr);
+    CriticalSectionScoped cs(_apiCritPtr);
 
     if (!_engineStatistics.Initialized())
     {
@@ -741,7 +741,7 @@ int VoEBaseImpl::DeleteChannel(int channel)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
                  "DeleteChannel(channel=%d)", channel);
-    CriticalSectionScoped cs(*_apiCritPtr);
+    CriticalSectionScoped cs(_apiCritPtr);
 
     if (!_engineStatistics.Initialized())
     {
@@ -796,7 +796,7 @@ int VoEBaseImpl::SetLocalReceiver(int channel, int port, int RTCPport,
     //  SetSendDestination and StartSend without having called SetLocalReceiver
     // first. The sockets are then created at the first packet transmission.
 
-    CriticalSectionScoped cs(*_apiCritPtr);
+    CriticalSectionScoped cs(_apiCritPtr);
     if (ipAddr == NULL && multiCastAddr == NULL)
     {
         WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
@@ -924,7 +924,7 @@ int VoEBaseImpl::SetSendDestination(int channel, int port, const char* ipaddr,
                  "SetSendDestination(channel=%d, port=%d, ipaddr=%s,"
                  "sourcePort=%d, RTCPport=%d)",
                  channel, port, ipaddr, sourcePort, RTCPport);
-    CriticalSectionScoped cs(*_apiCritPtr);
+    CriticalSectionScoped cs(_apiCritPtr);
 #ifndef WEBRTC_EXTERNAL_TRANSPORT
     if (!_engineStatistics.Initialized())
     {
@@ -1050,7 +1050,7 @@ int VoEBaseImpl::StartReceive(int channel)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
                  "StartReceive(channel=%d)", channel);
-    CriticalSectionScoped cs(*_apiCritPtr);
+    CriticalSectionScoped cs(_apiCritPtr);
     if (!_engineStatistics.Initialized())
     {
         _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
@@ -1072,7 +1072,7 @@ int VoEBaseImpl::StopReceive(int channel)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
                  "StopListen(channel=%d)", channel);
-    CriticalSectionScoped cs(*_apiCritPtr);
+    CriticalSectionScoped cs(_apiCritPtr);
     if (!_engineStatistics.Initialized())
     {
         _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
@@ -1094,7 +1094,7 @@ int VoEBaseImpl::StartPlayout(int channel)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
                  "StartPlayout(channel=%d)", channel);
-    CriticalSectionScoped cs(*_apiCritPtr);
+    CriticalSectionScoped cs(_apiCritPtr);
     if (!_engineStatistics.Initialized())
     {
         _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
@@ -1128,7 +1128,7 @@ int VoEBaseImpl::StopPlayout(int channel)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
                  "StopPlayout(channel=%d)", channel);
-    CriticalSectionScoped cs(*_apiCritPtr);
+    CriticalSectionScoped cs(_apiCritPtr);
     if (!_engineStatistics.Initialized())
     {
         _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
@@ -1156,7 +1156,7 @@ int VoEBaseImpl::StartSend(int channel)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
                  "StartSend(channel=%d)", channel);
-    CriticalSectionScoped cs(*_apiCritPtr);
+    CriticalSectionScoped cs(_apiCritPtr);
     if (!_engineStatistics.Initialized())
     {
         _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
@@ -1198,7 +1198,7 @@ int VoEBaseImpl::StopSend(int channel)
 {
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId, -1),
                  "StopSend(channel=%d)", channel);
-    CriticalSectionScoped cs(*_apiCritPtr);
+    CriticalSectionScoped cs(_apiCritPtr);
     if (!_engineStatistics.Initialized())
     {
         _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);

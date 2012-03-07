@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -395,7 +395,7 @@ int VoEDtmfImpl::SetDtmfFeedbackStatus(bool enable, bool directFeedback)
                  "SetDtmfFeedbackStatus(enable=%d, directFeeback=%d)",
                  (int)enable, (int)directFeedback);
 
-    CriticalSectionScoped sc(*_apiCritPtr);
+    CriticalSectionScoped sc(_apiCritPtr);
 
     _dtmfFeedback = enable;
     _dtmfDirectFeedback = directFeedback;
@@ -408,7 +408,7 @@ int VoEDtmfImpl::GetDtmfFeedbackStatus(bool& enabled, bool& directFeedback)
     WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1),
                  "GetDtmfFeedbackStatus()");
 
-    CriticalSectionScoped sc(*_apiCritPtr);
+    CriticalSectionScoped sc(_apiCritPtr);
 
     enabled = _dtmfFeedback;
     directFeedback = _dtmfDirectFeedback;

@@ -476,7 +476,7 @@ public:
         // A lock is needed because |_sending| is accessed by both
         // TransmitMixer::PrepareDemux() and StartSend()/StopSend(), which
         // are called by different threads.
-        CriticalSectionScoped cs(_callbackCritSect);
+        CriticalSectionScoped cs(&_callbackCritSect);
         return _sending;
     }
     bool Receiving() const
@@ -534,7 +534,6 @@ private:
 private:
     CriticalSectionWrapper& _fileCritSect;
     CriticalSectionWrapper& _callbackCritSect;
-    CriticalSectionWrapper& _transmitCritSect;
     WebRtc_UWord32 _instanceId;
     WebRtc_Word32 _channelId;
 

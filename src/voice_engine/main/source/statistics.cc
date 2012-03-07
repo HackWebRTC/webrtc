@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -56,7 +56,7 @@ bool Statistics::Initialized() const
 
 WebRtc_Word32 Statistics::SetLastError(const WebRtc_Word32 error) const
 {
-    CriticalSectionScoped cs(*_critPtr);
+    CriticalSectionScoped cs(_critPtr);
     _lastError = error;
     return 0;
 }
@@ -64,7 +64,7 @@ WebRtc_Word32 Statistics::SetLastError(const WebRtc_Word32 error) const
 WebRtc_Word32 Statistics::SetLastError(const WebRtc_Word32 error,
                                        const TraceLevel level) const
 {
-    CriticalSectionScoped cs(*_critPtr);
+    CriticalSectionScoped cs(_critPtr);
     _lastError = error;
     WEBRTC_TRACE(level, kTraceVoice, VoEId(_instanceId,-1),
                  "error code is set to %d",
@@ -76,7 +76,7 @@ WebRtc_Word32 Statistics::SetLastError(
     const WebRtc_Word32 error,
     const TraceLevel level, const char* msg) const
 {
-    CriticalSectionScoped cs(*_critPtr);
+    CriticalSectionScoped cs(_critPtr);
     char traceMessage[KTraceMaxMessageSize];
     assert(strlen(msg) < KTraceMaxMessageSize);
     _lastError = error;
@@ -88,7 +88,7 @@ WebRtc_Word32 Statistics::SetLastError(
 
 WebRtc_Word32 Statistics::LastError() const
 {
-    CriticalSectionScoped cs(*_critPtr);
+    CriticalSectionScoped cs(_critPtr);
     WEBRTC_TRACE(kTraceStateInfo, kTraceVoice, VoEId(_instanceId,-1),
                "LastError() => %d", _lastError);
     return _lastError;

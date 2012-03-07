@@ -46,7 +46,7 @@ ChannelManagerBase::~ChannelManagerBase()
 
 bool ChannelManagerBase::GetFreeItemId(WebRtc_Word32& itemId)
 {
-    CriticalSectionScoped cs(*_itemsCritSectPtr);
+    CriticalSectionScoped cs(_itemsCritSectPtr);
     WebRtc_Word32 i(0);
     while (i < KMaxNumberOfItems)
     {
@@ -100,7 +100,7 @@ bool ChannelManagerBase::CreateItem(WebRtc_Word32& itemId)
 
 void ChannelManagerBase::InsertItem(WebRtc_Word32 itemId, void* item)
 {
-    CriticalSectionScoped cs(*_itemsCritSectPtr);
+    CriticalSectionScoped cs(_itemsCritSectPtr);
     assert(!_items.Find(itemId));
     _items.Insert(itemId, item);
 }
@@ -108,7 +108,7 @@ void ChannelManagerBase::InsertItem(WebRtc_Word32 itemId, void* item)
 void*
 ChannelManagerBase::RemoveItem(WebRtc_Word32 itemId)
 {
-    CriticalSectionScoped cs(*_itemsCritSectPtr);
+    CriticalSectionScoped cs(_itemsCritSectPtr);
     WriteLockScoped wlock(*_itemsRWLockPtr);
     MapItem* it = _items.Find(itemId);
     if (!it)
@@ -124,7 +124,7 @@ ChannelManagerBase::RemoveItem(WebRtc_Word32 itemId)
 
 void ChannelManagerBase::DestroyAllItems()
 {
-    CriticalSectionScoped cs(*_itemsCritSectPtr);
+    CriticalSectionScoped cs(_itemsCritSectPtr);
     MapItem* it = _items.First();
     while (it)
     {
@@ -148,7 +148,7 @@ WebRtc_Word32 ChannelManagerBase::MaxNumOfItems() const
 void*
 ChannelManagerBase::GetItem(WebRtc_Word32 itemId) const
 {
-    CriticalSectionScoped cs(*_itemsCritSectPtr);
+    CriticalSectionScoped cs(_itemsCritSectPtr);
     MapItem* it = _items.Find(itemId);
     if (!it)
     {
@@ -161,7 +161,7 @@ ChannelManagerBase::GetItem(WebRtc_Word32 itemId) const
 void*
 ChannelManagerBase::GetFirstItem(void*& iterator) const
 {
-    CriticalSectionScoped cs(*_itemsCritSectPtr);
+    CriticalSectionScoped cs(_itemsCritSectPtr);
     MapItem* it = _items.First();
     iterator = (void*) it;
     if (!it)
@@ -174,7 +174,7 @@ ChannelManagerBase::GetFirstItem(void*& iterator) const
 void*
 ChannelManagerBase::GetNextItem(void*& iterator) const
 {
-    CriticalSectionScoped cs(*_itemsCritSectPtr);
+    CriticalSectionScoped cs(_itemsCritSectPtr);
     MapItem* it = (MapItem*) iterator;
     if (!it)
     {
@@ -210,7 +210,7 @@ void ChannelManagerBase::GetItemIds(WebRtc_Word32* channelsArray,
 
 void ChannelManagerBase::GetChannels(MapWrapper& channels) const
 {
-    CriticalSectionScoped cs(*_itemsCritSectPtr);
+    CriticalSectionScoped cs(_itemsCritSectPtr);
     if (_items.Size() == 0)
     {
         return;

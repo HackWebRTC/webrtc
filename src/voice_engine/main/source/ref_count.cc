@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -29,7 +29,7 @@ RefCount::~RefCount()
 RefCount&
 RefCount::operator++(int)
 {
-    CriticalSectionScoped lock(_crit);
+    CriticalSectionScoped lock(&_crit);
     _count++;
     return *this;
 }
@@ -37,7 +37,7 @@ RefCount::operator++(int)
 RefCount&
 RefCount::operator--(int)
 {
-    CriticalSectionScoped lock(_crit);
+    CriticalSectionScoped lock(&_crit);
     _count--;
     return *this;
 }
@@ -45,7 +45,7 @@ RefCount::operator--(int)
 void 
 RefCount::Reset()
 {
-    CriticalSectionScoped lock(_crit);
+    CriticalSectionScoped lock(&_crit);
     _count = 0;
 }
 
