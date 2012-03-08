@@ -41,14 +41,26 @@ var pc = null;
 var localStream = null;
 var disconnecting = false;
 var callState = 0; // 0 - Not started, 1 - Call ongoing
+var startupAction = "";
+var autoCallName = "";
+var autoCallTries = 0;
 
 
 // General
 
-function setElementValuesFromURL() {
+function parseUrlParameters() {
   window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi,
     function(m, key, value) {
-      document.getElementById(key).value = unescape(value);
+      // Some specific parameters.
+      if ((key == "autoconnect") && (value == "yes")) {
+        startupAction = "connect";
+      } else if (key == "autocall") {
+        startupAction = "call";
+        autoCallName = unescape(value);
+      // The rest are set to elements with corresponding id.
+      } else {
+        document.getElementById(key).value = unescape(value);
+      }
     });
 }
 
@@ -88,6 +100,8 @@ function gotStream(s) {
   document.getElementById("localView").src = url;
   trace("User has granted access to local media. url = " + url);
   localStream = s;
+  if (startupAction == "connect" || startupAction == "call")
+    connect();
 }
 
 function gotStreamFailed(error) {
@@ -184,6 +198,21 @@ function getPeerName(id) {
   return;
 }
 
+function getPeerId(peer_name) {
+  try {
+    var peerList = document.getElementById("peers");
+    for (var i = 0; i < peerList.length; i++) {
+      if (peerList.options[i].text == peer_name) {
+        return parseInt(peerList.options[i].value);
+      }
+    }
+  } catch (e) {
+    trace_exception(e, "Error finding peer ID");
+    return -1;
+  }
+  return -1;
+}
+
 function storeRemoteInfo() {
   try {
     var peerList = document.getElementById("peers");
@@ -250,6 +279,21 @@ function closeCall() {
   document.getElementById("call").disabled = false;
   document.getElementById("peers").disabled = false;
   setCallState(0);
+}
+
+function autoCall() {
+  var peer_id = getPeerId(autoCallName);
+  if (peer_id < 0) {
+    // Retry a couple of times before giving up.
+    if (autoCallTries < 3)
+      window.setTimeout(autoCall, ++autoCallTries * 1000);
+    else
+      trace_warning("Could not find a peer with name " + autoCallName +
+          ", giving up");
+    return;
+  }
+  setSelectedPeer(peer_id);
+  doCall(0);
 }
 
 
@@ -444,6 +488,10 @@ function signInCallback() {
         request = null;
         document.getElementById("connect").disabled = true;
         document.getElementById("disconnect").disabled = false;
+        if (startupAction == "call") {
+          startupAction = "";
+          window.setTimeout(autoCall, 1000);
+        }
       }
     }
   } catch (e) {
@@ -517,7 +565,7 @@ function disconnect() {
 window.onload = function() {
   if (navigator.webkitGetUserMedia) {
     document.getElementById('testApp').hidden = false;
-    setElementValuesFromURL();
+    parseUrlParameters();
     getUserMedia();
   } else {
     document.getElementById('errorText').hidden = false;
