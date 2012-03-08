@@ -31,10 +31,6 @@ deps = {
   "trunk/third_party/expat":
     Var("chromium_trunk") + "/src/third_party/expat@" + Var("chromium_revision"),
 
-  # Used by tools/quality_tracking.
-  "trunk/third_party/gaeunit":
-    "http://code.google.com/p/gaeunit.git@e16d5bd4",
-
   "trunk/third_party/google-gflags/src":
     (Var("googlecode_url") % "google-gflags") + "/trunk/src@45",
 
@@ -56,10 +52,6 @@ deps = {
 
   "trunk/third_party/protobuf":
     Var("chromium_trunk") + "/src/third_party/protobuf@" + Var("chromium_revision"),
-
-  # Used by tools/quality_tracking.
-  "trunk/third_party/oauth2":
-    "http://github.com/simplegeo/python-oauth2.git@a83f4a29",
 
   "trunk/third_party/yasm":
     Var("chromium_trunk") + "/src/third_party/yasm@" + Var("chromium_revision"),
