@@ -138,7 +138,7 @@ WebRtc_Word32 VideoCaptureModuleV4L2::StartCapture(
         }
     }
 
-    CriticalSectionScoped cs(*_captureCritSect);
+    CriticalSectionScoped cs(_captureCritSect);
     //first open /dev/video device
     char device[20];
     sprintf(device, "/dev/video%d", (int) _deviceId);
@@ -254,7 +254,7 @@ WebRtc_Word32 VideoCaptureModuleV4L2::StopCapture()
         _captureThread->SetNotAlive();// Make sure the capture thread stop stop using the critsect.
 
 
-    CriticalSectionScoped cs(*_captureCritSect);
+    CriticalSectionScoped cs(_captureCritSect);
 
     WEBRTC_TRACE(webrtc::kTraceInfo, webrtc::kTraceVideoCapture, -1, "StopCapture(), was running: %d",
                _captureStarted);

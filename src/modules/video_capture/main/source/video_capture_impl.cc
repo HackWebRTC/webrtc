@@ -71,7 +71,7 @@ WebRtc_Word32 VideoCaptureImpl::TimeUntilNextProcess()
 // Process any pending tasks such as timeouts
 WebRtc_Word32 VideoCaptureImpl::Process()
 {
-    CriticalSectionScoped cs(_callBackCs);
+    CriticalSectionScoped cs(&_callBackCs);
 
     const TickTime now = TickTime::Now();
     _lastProcessTime = TickTime::Now();
@@ -165,8 +165,8 @@ VideoCaptureImpl::~VideoCaptureImpl()
 WebRtc_Word32 VideoCaptureImpl::RegisterCaptureDataCallback(
                                         VideoCaptureDataCallback& dataCallBack)
 {
-    CriticalSectionScoped cs(_apiCs);
-    CriticalSectionScoped cs2(_callBackCs);
+    CriticalSectionScoped cs(&_apiCs);
+    CriticalSectionScoped cs2(&_callBackCs);
     _dataCallBack = &dataCallBack;
 
     return 0;
@@ -174,37 +174,37 @@ WebRtc_Word32 VideoCaptureImpl::RegisterCaptureDataCallback(
 
 WebRtc_Word32 VideoCaptureImpl::DeRegisterCaptureDataCallback()
 {
-    CriticalSectionScoped cs(_apiCs);
-    CriticalSectionScoped cs2(_callBackCs);
+    CriticalSectionScoped cs(&_apiCs);
+    CriticalSectionScoped cs2(&_callBackCs);
     _dataCallBack = NULL;
     return 0;
 }
 WebRtc_Word32 VideoCaptureImpl::RegisterCaptureCallback(VideoCaptureFeedBack& callBack)
 {
 
-    CriticalSectionScoped cs(_apiCs);
-    CriticalSectionScoped cs2(_callBackCs);
+    CriticalSectionScoped cs(&_apiCs);
+    CriticalSectionScoped cs2(&_callBackCs);
     _captureCallBack = &callBack;
     return 0;
 }
 WebRtc_Word32 VideoCaptureImpl::DeRegisterCaptureCallback()
 {
 
-    CriticalSectionScoped cs(_apiCs);
-    CriticalSectionScoped cs2(_callBackCs);
+    CriticalSectionScoped cs(&_apiCs);
+    CriticalSectionScoped cs2(&_callBackCs);
     _captureCallBack = NULL;
     return 0;
 
 }
 WebRtc_Word32 VideoCaptureImpl::SetCaptureDelay(WebRtc_Word32 delayMS)
 {
-    CriticalSectionScoped cs(_apiCs);
+    CriticalSectionScoped cs(&_apiCs);
     _captureDelay = delayMS;
     return 0;
 }
 WebRtc_Word32 VideoCaptureImpl::CaptureDelay()
 {
-    CriticalSectionScoped cs(_apiCs);
+    CriticalSectionScoped cs(&_apiCs);
     return _setCaptureDelay;
 }
 
@@ -259,7 +259,7 @@ WebRtc_Word32 VideoCaptureImpl::IncomingFrame(
 
     TickTime startProcessTime = TickTime::Now();
 
-    CriticalSectionScoped cs(_callBackCs);
+    CriticalSectionScoped cs(&_callBackCs);
 
     const WebRtc_Word32 width = frameInfo.width;
     const WebRtc_Word32 height = frameInfo.height;
@@ -335,7 +335,7 @@ WebRtc_Word32 VideoCaptureImpl::IncomingFrame(
 WebRtc_Word32 VideoCaptureImpl::IncomingFrameI420(
     const VideoFrameI420& video_frame, WebRtc_Word64 captureTime) {
 
-  CriticalSectionScoped cs(_callBackCs);
+  CriticalSectionScoped cs(&_callBackCs);
 
   // Allocate I420 buffer
   int frame_size = CalcBufferSize(kI420,
@@ -388,8 +388,8 @@ WebRtc_Word32 VideoCaptureImpl::IncomingFrameI420(
 
 WebRtc_Word32 VideoCaptureImpl::SetCaptureRotation(VideoCaptureRotation rotation)
 {
-    CriticalSectionScoped cs(_apiCs);
-    CriticalSectionScoped cs2(_callBackCs);
+    CriticalSectionScoped cs(&_apiCs);
+    CriticalSectionScoped cs2(&_callBackCs);
     switch (rotation)
     {
         case kCameraRotate0:
@@ -411,8 +411,8 @@ WebRtc_Word32 VideoCaptureImpl::SetCaptureRotation(VideoCaptureRotation rotation
 WebRtc_Word32 VideoCaptureImpl::StartSendImage(const VideoFrame& videoFrame,
                                                      WebRtc_Word32 frameRate)
 {
-    CriticalSectionScoped cs(_apiCs);
-    CriticalSectionScoped cs2(_callBackCs);
+    CriticalSectionScoped cs(&_apiCs);
+    CriticalSectionScoped cs2(&_callBackCs);
     if (frameRate < 1 || frameRate > kMaxFrameRate)
     {
         WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideoCapture, _id,
@@ -427,16 +427,16 @@ WebRtc_Word32 VideoCaptureImpl::StartSendImage(const VideoFrame& videoFrame,
 }
 WebRtc_Word32 VideoCaptureImpl::StopSendImage()
 {
-    CriticalSectionScoped cs(_apiCs);
-    CriticalSectionScoped cs2(_callBackCs);
+    CriticalSectionScoped cs(&_apiCs);
+    CriticalSectionScoped cs2(&_callBackCs);
     _startImageFrameIntervall = 0;
     return 0;
 }
 
 WebRtc_Word32 VideoCaptureImpl::EnableFrameRateCallback(const bool enable)
 {
-    CriticalSectionScoped cs(_apiCs);
-    CriticalSectionScoped cs2(_callBackCs);
+    CriticalSectionScoped cs(&_apiCs);
+    CriticalSectionScoped cs2(&_callBackCs);
     _frameRateCallBack = enable;
     if (enable)
     {
@@ -447,8 +447,8 @@ WebRtc_Word32 VideoCaptureImpl::EnableFrameRateCallback(const bool enable)
 
 WebRtc_Word32 VideoCaptureImpl::EnableNoPictureAlarm(const bool enable)
 {
-    CriticalSectionScoped cs(_apiCs);
-    CriticalSectionScoped cs2(_callBackCs);
+    CriticalSectionScoped cs(&_apiCs);
+    CriticalSectionScoped cs2(&_callBackCs);
     _noPictureAlarmCallBack = enable;
     return 0;
 }

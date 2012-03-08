@@ -155,7 +155,7 @@ WebRtc_Word32 VideoCaptureDS::Init(const WebRtc_Word32 id,
 WebRtc_Word32 VideoCaptureDS::StartCapture(
                                       const VideoCaptureCapability& capability)
 {
-    CriticalSectionScoped cs(_apiCs);
+    CriticalSectionScoped cs(&_apiCs);
 
     if (capability != _requestedCapability)
     {
@@ -178,7 +178,7 @@ WebRtc_Word32 VideoCaptureDS::StartCapture(
 
 WebRtc_Word32 VideoCaptureDS::StopCapture()
 {
-    CriticalSectionScoped cs(_apiCs);
+    CriticalSectionScoped cs(&_apiCs);
 
     HRESULT hr = _mediaControl->Pause();
     if (FAILED(hr))

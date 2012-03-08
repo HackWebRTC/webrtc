@@ -58,7 +58,7 @@ VideoCaptureMacQTKit::~VideoCaptureMacQTKit()
 WebRtc_Word32 VideoCaptureMacQTKit::Init(
     const WebRtc_Word32 id, const char* iDeviceUniqueIdUTF8)
 {
-    CriticalSectionScoped cs(_apiCs);
+    CriticalSectionScoped cs(&_apiCs);
 
 
     const WebRtc_Word32 nameLength =
