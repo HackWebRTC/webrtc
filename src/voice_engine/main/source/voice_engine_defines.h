@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -16,6 +16,7 @@
 #ifndef WEBRTC_VOICE_ENGINE_VOICE_ENGINE_DEFINES_H
 #define WEBRTC_VOICE_ENGINE_VOICE_ENGINE_DEFINES_H
 
+#include "common_types.h"
 #include "engine_configurations.h"
 
 // ----------------------------------------------------------------------------
@@ -48,10 +49,6 @@ enum { kMinTelephoneEventAttenuation = 0 };     // 0 dBm0
 enum { kMaxTelephoneEventAttenuation = 36 };    // -36 dBm0
 enum { kMinTelephoneEventSeparationMs = 100 };  // Min delta time between two
                                                 // telephone events
-
-enum { EcAec = 0 };                             // AEC mode
-enum { EcAecm = 1 };                            // AECM mode
-
 enum { kVoiceEngineMaxIpPacketSizeBytes = 1500 };       // assumes Ethernet
 
 enum { kVoiceEngineMaxModuleVersionSize = 960 };
@@ -150,15 +147,13 @@ enum { kVoiceEngineMaxRtpExtensionId = 14 };
 #define WEBRTC_VOICE_ENGINE_RX_HP_DEFAULT_STATE WEBRTC_AUDIO_PROCESSING_OFF
     // AudioProcessing RX High Pass Filter off
 
-#define WEBRTC_VOICE_ENGINE_NS_DEFAULT_MODE  NoiseSuppression::kModerate
+#define WEBRTC_VOICE_ENGINE_NS_DEFAULT_MODE NoiseSuppression::kModerate
     // AudioProcessing NS moderate suppression
 #define WEBRTC_VOICE_ENGINE_AGC_DEFAULT_MODE GainControl::kAdaptiveAnalog
     // AudioProcessing AGC analog digital combined
-#define WEBRTC_VOICE_ENGINE_EC_DEFAULT_MODE  EcAec
-    // AudioProcessing EC AEC
 #define WEBRTC_VOICE_ENGINE_RX_AGC_DEFAULT_MODE GainControl::kAdaptiveDigital
     // AudioProcessing AGC mode
-#define WEBRTC_VOICE_ENGINE_RX_NS_DEFAULT_MODE  NoiseSuppression::kModerate
+#define WEBRTC_VOICE_ENGINE_RX_NS_DEFAULT_MODE NoiseSuppression::kModerate
     // AudioProcessing RX NS mode
 
 // Macros
@@ -406,12 +401,10 @@ namespace webrtc
   // Default audio processing modes
   #undef  WEBRTC_VOICE_ENGINE_NS_DEFAULT_MODE
   #undef  WEBRTC_VOICE_ENGINE_AGC_DEFAULT_MODE
-  #undef  WEBRTC_VOICE_ENGINE_EC_DEFAULT_MODE
   #define WEBRTC_VOICE_ENGINE_NS_DEFAULT_MODE  \
       NoiseSuppression::kModerate
   #define WEBRTC_VOICE_ENGINE_AGC_DEFAULT_MODE \
       GainControl::kAdaptiveDigital
-  #define WEBRTC_VOICE_ENGINE_EC_DEFAULT_MODE  EcAecm
 
   #define ANDROID_NOT_SUPPORTED(stat)                         \
       stat.SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError,   \
@@ -555,12 +548,10 @@ namespace webrtc
 
   #undef  WEBRTC_VOICE_ENGINE_NS_DEFAULT_MODE
   #undef  WEBRTC_VOICE_ENGINE_AGC_DEFAULT_MODE
-  #undef  WEBRTC_VOICE_ENGINE_EC_DEFAULT_MODE
   #define WEBRTC_VOICE_ENGINE_NS_DEFAULT_MODE \
       NoiseSuppression::kModerate
   #define WEBRTC_VOICE_ENGINE_AGC_DEFAULT_MODE \
       GainControl::kAdaptiveDigital
-  #define WEBRTC_VOICE_ENGINE_EC_DEFAULT_MODE EcAecm
 
   #define IPHONE_NOT_SUPPORTED() \
     _engineStatistics.SetLastError(VE_FUNC_NOT_SUPPORTED, kTraceError, \

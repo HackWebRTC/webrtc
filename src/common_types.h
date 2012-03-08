@@ -360,7 +360,7 @@ enum AgcModes                  // type of Automatic Gain Control
     // scaling takes place in the digital domain (e.g. for conference servers
     // and embedded devices)
     kAgcAdaptiveDigital,
-    // can be used on embedded devices where the the capture signal is level
+    // can be used on embedded devices where the capture signal level
     // is predictable
     kAgcFixedDigital
 };

@@ -116,17 +116,17 @@
 // ----------------------------------------------------------------------------
 
 #if defined(_WIN32)
-	// #define DIRECTDRAW_RENDERING
-	#define DIRECT3D9_RENDERING  // Requires DirectX 9.
-#endif 
+// #define DIRECTDRAW_RENDERING
+#define DIRECT3D9_RENDERING  // Requires DirectX 9.
+#endif
 
 // ----------------------------------------------------------------------------
 //  VideoEngine MAC
 // ----------------------------------------------------------------------------
 
 #if defined(WEBRTC_MAC) && !defined(MAC_IPHONE)
-	// #define CARBON_RENDERING
-	#define COCOA_RENDERING
+// #define CARBON_RENDERING
+#define COCOA_RENDERING
 #endif
 
 // ----------------------------------------------------------------------------
@@ -134,7 +134,7 @@
 // ----------------------------------------------------------------------------
 
 #if defined(MAC_IPHONE)
-    #define EAGL_RENDERING
+#define EAGL_RENDERING
 #endif
 
 // ----------------------------------------------------------------------------

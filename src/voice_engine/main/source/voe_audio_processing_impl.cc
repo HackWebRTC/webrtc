@@ -19,6 +19,12 @@
 
 namespace webrtc {
 
+#if defined(WEBRTC_ANDROID) || defined(MAC_IPHONE) || defined(MAC_IPHONE_SIM)
+static const EcModes kDefaultEcMode = kEcAecm;
+#else
+static const EcModes kDefaultEcMode = kEcAec;
+#endif
+
 VoEAudioProcessing* VoEAudioProcessing::GetInterface(VoiceEngine* voiceEngine) {
 #ifndef WEBRTC_VOICE_ENGINE_AUDIO_PROCESSING_API
   return NULL;
@@ -34,9 +40,8 @@ VoEAudioProcessing* VoEAudioProcessing::GetInterface(VoiceEngine* voiceEngine) {
 }
 
 #ifdef WEBRTC_VOICE_ENGINE_AUDIO_PROCESSING_API
-VoEAudioProcessingImpl::VoEAudioProcessingImpl():
-  _isAecMode(static_cast<int>(WEBRTC_VOICE_ENGINE_EC_DEFAULT_MODE) == EcAec ?
-             true : false) {
+VoEAudioProcessingImpl::VoEAudioProcessingImpl()
+    : _isAecMode(kDefaultEcMode == kEcAec ? true : false) {
   WEBRTC_TRACE(kTraceMemory, kTraceVoice, VoEId(_instanceId, -1),
                "VoEAudioProcessingImpl::VoEAudioProcessingImpl() - ctor");
 }
