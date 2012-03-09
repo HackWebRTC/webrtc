@@ -49,7 +49,7 @@ public:
     WebRtc_Word32 RecordingChannel(
         AudioDeviceModule::ChannelType& channel) const;
 
-    WebRtc_Word32 SetRecordedBuffer(const WebRtc_Word8* audioBuffer,
+    WebRtc_Word32 SetRecordedBuffer(const void* audioBuffer,
                                     WebRtc_UWord32 nSamples);
     WebRtc_Word32 SetCurrentMicLevel(WebRtc_UWord32 level);
     WebRtc_Word32 SetVQEData(WebRtc_UWord32 playDelayMS,
@@ -59,7 +59,7 @@ public:
     WebRtc_UWord32 NewMicLevel() const;
 
     WebRtc_Word32 RequestPlayoutData(WebRtc_UWord32 nSamples);
-    WebRtc_Word32 GetPlayoutData(WebRtc_Word8* audioBuffer);
+    WebRtc_Word32 GetPlayoutData(void* audioBuffer);
 
     WebRtc_Word32 StartInputFileRecording(
         const char fileName[kAdmMaxFileNameSize]);
@@ -95,14 +95,14 @@ private:
     WebRtc_UWord8                   _playBytesPerSample;
 
     // 10ms in stereo @ 96kHz
-    WebRtc_Word8                    _recBuffer[kMaxBufferSizeBytes];
+    int8_t                          _recBuffer[kMaxBufferSizeBytes];
 
     // one sample <=> 2 or 4 bytes
     WebRtc_UWord32                  _recSamples;
     WebRtc_UWord32                  _recSize;           // in bytes
 
     // 10ms in stereo @ 96kHz
-    WebRtc_Word8                    _playBuffer[kMaxBufferSizeBytes];
+    int8_t                          _playBuffer[kMaxBufferSizeBytes];
 
     // one sample <=> 2 or 4 bytes
     WebRtc_UWord32                  _playSamples;

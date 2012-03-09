@@ -191,7 +191,7 @@ private:
 
     WebRtc_Word32 GetPlayoutBufferDelay(WebRtc_UWord32& writtenSamples, WebRtc_UWord32& playedSamples);
     WebRtc_Word32 GetRecordingBufferDelay(WebRtc_UWord32& readSamples, WebRtc_UWord32& recSamples);
-    WebRtc_Word32 Write(WebRtc_Word8* data, WebRtc_UWord16 nSamples);
+    WebRtc_Word32 Write(int8_t* data, WebRtc_UWord16 nSamples);
     WebRtc_Word32 GetClockDrift(const WebRtc_UWord32 plSamp, const WebRtc_UWord32 rcSamp);
     WebRtc_Word32 MonitorRecording(const WebRtc_UWord32 time);
     WebRtc_Word32 RestartTimerIfNeeded(const WebRtc_UWord32 time);
@@ -253,8 +253,8 @@ private:
     WebRtc_UWord16                          _recDelayCount;
     WebRtc_UWord16                          _recPutBackDelay;
 
-    WebRtc_Word8    _recBuffer[N_BUFFERS_IN][4*REC_BUF_SIZE_IN_SAMPLES];
-    WebRtc_Word8    _playBuffer[N_BUFFERS_OUT][4*PLAY_BUF_SIZE_IN_SAMPLES];
+    int8_t                                  _recBuffer[N_BUFFERS_IN][4*REC_BUF_SIZE_IN_SAMPLES];
+    int8_t                                  _playBuffer[N_BUFFERS_OUT][4*PLAY_BUF_SIZE_IN_SAMPLES];
 
     AudioDeviceModule::BufferType           _playBufType;
 

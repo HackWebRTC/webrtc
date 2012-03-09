@@ -97,7 +97,7 @@ public:
 
     // AudioTransport
     virtual WebRtc_Word32
-        RecordedDataIsAvailable(const WebRtc_Word8* audioSamples,
+        RecordedDataIsAvailable(const void* audioSamples,
                                 const WebRtc_UWord32 nSamples,
                                 const WebRtc_UWord8 nBytesPerSample,
                                 const WebRtc_UWord8 nChannels,
@@ -111,7 +111,7 @@ public:
                                            const WebRtc_UWord8 nBytesPerSample,
                                            const WebRtc_UWord8 nChannels,
                                            const WebRtc_UWord32 samplesPerSec,
-                                           WebRtc_Word8* audioSamples,
+                                           void* audioSamples,
                                            WebRtc_UWord32& nSamplesOut);
 
     // AudioDeviceObserver

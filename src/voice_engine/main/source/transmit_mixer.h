@@ -52,7 +52,7 @@ public:
     WebRtc_Word32 SetAudioProcessingModule(
         AudioProcessing* audioProcessingModule);
 
-    WebRtc_Word32 PrepareDemux(const WebRtc_Word8* audioSamples,
+    WebRtc_Word32 PrepareDemux(const void* audioSamples,
                                const WebRtc_UWord32 nSamples,
                                const WebRtc_UWord8  nChannels,
                                const WebRtc_UWord32 samplesPerSec,

@@ -139,7 +139,7 @@ void VoEBaseImpl::OnWarningIsReported(const WarningCode warning)
 }
 
 WebRtc_Word32 VoEBaseImpl::RecordedDataIsAvailable(
-        const WebRtc_Word8* audioSamples,
+        const void* audioSamples,
         const WebRtc_UWord32 nSamples,
         const WebRtc_UWord8 nBytesPerSample,
         const WebRtc_UWord8 nChannels,
@@ -250,7 +250,7 @@ WebRtc_Word32 VoEBaseImpl::NeedMorePlayData(
         const WebRtc_UWord8 nBytesPerSample,
         const WebRtc_UWord8 nChannels,
         const WebRtc_UWord32 samplesPerSec,
-        WebRtc_Word8* audioSamples,
+        void* audioSamples,
         WebRtc_UWord32& nSamplesOut)
 {
     WEBRTC_TRACE(kTraceStream, kTraceVoice, VoEId(_instanceId, -1),

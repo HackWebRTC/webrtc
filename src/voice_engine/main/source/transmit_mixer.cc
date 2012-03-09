@@ -298,7 +298,7 @@ TransmitMixer::SetAudioProcessingModule(AudioProcessing* audioProcessingModule)
 }
 
 WebRtc_Word32 
-TransmitMixer::PrepareDemux(const WebRtc_Word8* audioSamples,
+TransmitMixer::PrepareDemux(const void* audioSamples,
                             const WebRtc_UWord32 nSamples,
                             const WebRtc_UWord8 nChannels,
                             const WebRtc_UWord32 samplesPerSec,

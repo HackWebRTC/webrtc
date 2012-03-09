@@ -54,7 +54,7 @@ protected:
 class AudioTransport
 {
 public:
-    virtual int32_t RecordedDataIsAvailable(const char* audioSamples,
+    virtual int32_t RecordedDataIsAvailable(const void* audioSamples,
                                             const uint32_t nSamples,
                                             const uint8_t nBytesPerSample,
                                             const uint8_t nChannels,
@@ -68,7 +68,7 @@ public:
                                      const uint8_t nBytesPerSample,
                                      const uint8_t nChannels,
                                      const uint32_t samplesPerSec,
-                                     char* audioSamples,
+                                     void* audioSamples,
                                      uint32_t& nSamplesOut) = 0;
 
 protected:

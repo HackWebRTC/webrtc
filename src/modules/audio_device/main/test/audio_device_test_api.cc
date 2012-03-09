@@ -84,7 +84,7 @@ class AudioTransportAPI: public AudioTransport {
   ~AudioTransportAPI() {}
 
   virtual WebRtc_Word32 RecordedDataIsAvailable(
-      const WebRtc_Word8* audioSamples,
+      const void* audioSamples,
       const WebRtc_UWord32 nSamples,
       const WebRtc_UWord8 nBytesPerSample,
       const WebRtc_UWord8 nChannels,
@@ -114,7 +114,7 @@ class AudioTransportAPI: public AudioTransport {
       const WebRtc_UWord8 nBytesPerSample,
       const WebRtc_UWord8 nChannels,
       const WebRtc_UWord32 sampleRate,
-      WebRtc_Word8* audioSamples,
+      void* audioSamples,
       WebRtc_UWord32& nSamplesOut) {
     play_count_++;
     if (play_count_ % 100 == 0) {
