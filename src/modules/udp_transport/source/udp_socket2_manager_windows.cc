@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -591,7 +591,7 @@ WebRtc_Word32 UdpSocket2WorkerWindows::Init()
 {
     if(!_init)
     {
-        const WebRtc_Word8* threadName = "UdpSocket2ManagerWindows_thread";
+        const char* threadName = "UdpSocket2ManagerWindows_thread";
         _pThread = ThreadWrapper::CreateThread(Run, this, kRealtimePriority,
                                                threadName);
         if(_pThread == NULL)

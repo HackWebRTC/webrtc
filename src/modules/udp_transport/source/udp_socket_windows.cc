@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -76,7 +76,7 @@ public:
     }
 
     SocketAddress _remoteAddr;
-    WebRtc_Word8 _buffer[MAX_PACKET_SIZE];
+    char _buffer[MAX_PACKET_SIZE];
     WebRtc_Word32 _length;
 };
 
@@ -214,7 +214,8 @@ bool UdpSocketWindows::SetSockopt(WebRtc_Word32 level, WebRtc_Word32 optname,
                                   const WebRtc_Word8* optval,
                                   WebRtc_Word32 optlen)
 {
-    if(0 == setsockopt(_socket, level, optname, optval, optlen))
+    if(0 == setsockopt(_socket, level, optname,
+                       reinterpret_cast<const char*>(optval), optlen))
     {
         return true;
     }
@@ -256,7 +257,7 @@ WebRtc_Word32 UdpSocketWindows::SendTo(const WebRtc_Word8* buf,
     }
 
     WebRtc_Word32 retVal;
-    retVal = sendto(_socket, buf, len, 0,
+    retVal = sendto(_socket, reinterpret_cast<const char*>(buf), len, 0,
                     reinterpret_cast<const struct sockaddr*>(&to),
                     sizeof(SocketAddress));
 
@@ -276,10 +277,11 @@ WebRtc_Word32 UdpSocketWindows::SendTo(const WebRtc_Word8* buf,
 
 void UdpSocketWindows::HasIncoming()
 {
-    WebRtc_Word8 buf[MAX_PACKET_SIZE];
+    char buf[MAX_PACKET_SIZE];
     SocketAddress from;
     int fromlen = sizeof(from);
-    WebRtc_Word32 retval = recvfrom(_socket,buf, sizeof(buf), 0,
+    WebRtc_Word32 retval = recvfrom(_socket, buf,
+                                    sizeof(buf), 0,
                                     reinterpret_cast<struct sockaddr*>(&from),
                                     &fromlen);
 
@@ -293,7 +295,8 @@ void UdpSocketWindows::HasIncoming()
         break;
     default:
         if(_wantsIncoming && _incomingCb)
-            _incomingCb(_obj,buf, retval, &from);
+            _incomingCb(_obj, reinterpret_cast<WebRtc_Word8*>(buf),
+                        retval, &from);
         break;
     }
 }
@@ -362,7 +365,7 @@ void UdpSocketWindows::SetWritable()
             break;
         }
         if(sendto(
-               _socket,packet->_buffer,
+               _socket, packet->_buffer,
                packet->_length,
                0,
                reinterpret_cast<const struct sockaddr*>(
@@ -445,7 +448,7 @@ bool UdpSocketWindows::SetQos(WebRtc_Word32 serviceType,
     QosDestaddr->SocketAddress = (SOCKADDR*)&stRemName;
     QosDestaddr->SocketAddressLength = sizeof(SocketAddress);
     Qos.ProviderSpecific.len = QosDestaddr->ObjectHdr.ObjectLength;
-    Qos.ProviderSpecific.buf = (WebRtc_Word8*)p;
+    Qos.ProviderSpecific.buf = (char*)p;
 
     // Socket must be bound for this call to be successfull. If socket is not
     // bound WSAGetLastError() will return 10022.
@@ -604,7 +607,7 @@ WebRtc_Word32 UdpSocketWindows::SetTOSByte(WebRtc_Word32 serviceType,
             ((WebRtc_Word8*)oneinterface + oneinterface->Length))
     {
 
-        WebRtc_Word8 interfaceName[500];
+        char interfaceName[500];
         WideCharToMultiByte(CP_ACP, 0, oneinterface->pInterfaceName, -1,
                             interfaceName, sizeof(interfaceName), 0, 0);
 

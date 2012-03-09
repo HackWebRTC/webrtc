@@ -2763,7 +2763,7 @@ WebRtc_Word32 UdpTransport::IPAddress(const SocketAddress& address,
     if(address._sockaddr_storage.sin_family == AF_INET)
     {
         // Parse IP assuming format "a.b.c.d:port".
-        WebRtc_Word8* ipEnd = strchr(ip,':');
+        char* ipEnd = strchr(ip,':');
         if(ipEnd != NULL)
         {
             *ipEnd = '\0';
@@ -2778,7 +2778,7 @@ WebRtc_Word32 UdpTransport::IPAddress(const SocketAddress& address,
     else
     {
         // Parse IP assuming format "[address]:port".
-        WebRtc_Word8* ipEnd = strchr(ip,']');
+        char* ipEnd = strchr(ip,']');
         if(ipEnd != NULL)
         {
           // Calculate length

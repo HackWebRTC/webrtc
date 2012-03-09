@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -163,7 +163,7 @@ UdpSocket2Windows::UdpSocket2Windows(const WebRtc_Word32 id,
     // This is done by setting SO_SNDBUF to 0.
     WebRtc_Word32 nZero = 0;
     WebRtc_Word32 nRet = setsockopt(_socket, SOL_SOCKET, SO_SNDBUF,
-                                    (WebRtc_Word8*)&nZero, sizeof(nZero));
+                                    (char*)&nZero, sizeof(nZero));
     if( nRet == SOCKET_ERROR )
     {
         WEBRTC_TRACE(
@@ -269,7 +269,8 @@ bool UdpSocket2Windows::SetSockopt(WebRtc_Word32 level, WebRtc_Word32 optname,
     {
         return false;
     }
-    if(0 != setsockopt(_socket, level, optname, optval, optlen ))
+    if(0 != setsockopt(_socket, level, optname,
+                       reinterpret_cast<const char*>(optval), optlen ))
     {
         WEBRTC_TRACE(kTraceError, kTraceTransport, _id,
                      "UdpSocket2Windows::SetSockopt(), WSAerror:%d",
@@ -548,7 +549,10 @@ void UdpSocket2Windows::IOCompleted(PerIoContext* pIOContext,
             _ptrCbRWLock->AcquireLockShared();
             if(_wantsIncoming && _incomingCb)
             {
-                _incomingCb(_obj,pIOContext->wsabuf.buf, ioSize,
+                _incomingCb(_obj,
+                            reinterpret_cast<const WebRtc_Word8*>(
+                                pIOContext->wsabuf.buf),
+                            ioSize,
                             &pIOContext->from);
             }
             _ptrCbRWLock->ReleaseLockShared();
@@ -697,7 +701,8 @@ void UdpSocket2Windows::CloseBlocking()
     if(AquireSocket())
     {
         setsockopt(_socket, SOL_SOCKET, SO_LINGER,
-                   (WebRtc_Word8 *)&lingerStruct, sizeof(lingerStruct));
+                   reinterpret_cast<const char*>(&lingerStruct),
+                   sizeof(lingerStruct));
         ReleaseSocket();
     }
 
@@ -823,7 +828,7 @@ bool UdpSocket2Windows::SetQos(WebRtc_Word32 serviceType,
         }
 
         Qos.ProviderSpecific.len = QosDestaddr.ObjectHdr.ObjectLength;
-        Qos.ProviderSpecific.buf = (WebRtc_Word8*)&QosDestaddr;
+        Qos.ProviderSpecific.buf = (char*)&QosDestaddr;
     }
 
     if(AquireSocket())
@@ -1015,7 +1020,7 @@ WebRtc_Word32 UdpSocket2Windows::SetTrafficControl(
             ((WebRtc_Word8 *)oneinterface + oneinterface->Length))
     {
 
-        WebRtc_Word8 interfaceName[500];
+        char interfaceName[500];
         WideCharToMultiByte(CP_ACP, 0, oneinterface->pInterfaceName, -1,
                             interfaceName, sizeof(interfaceName), 0, 0 );
 

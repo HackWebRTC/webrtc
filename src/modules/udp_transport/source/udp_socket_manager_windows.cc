@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -18,7 +18,7 @@ UdpSocketManagerWindows::UdpSocketManagerWindows()
     : UdpSocketManager(),
       _id(-1)
 {
-    const WebRtc_Word8* threadName = "UdpSocketManagerWindows_Thread";
+    const char* threadName = "UdpSocketManagerWindows_Thread";
     _critSectList = CriticalSectionWrapper::CreateCriticalSection();
     _thread = ThreadWrapper::CreateThread(UdpSocketManagerWindows::Run,
                                           this, kRealtimePriority, threadName);

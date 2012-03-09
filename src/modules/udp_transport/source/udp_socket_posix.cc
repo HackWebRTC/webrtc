@@ -178,7 +178,9 @@ bool UdpSocketPosix::ValidHandle()
 
 void UdpSocketPosix::HasIncoming()
 {
-    char buf[2048];
+    // replace 2048 with a mcro define and figure out
+    // where 2048 comes from
+    WebRtc_Word8 buf[2048];
     int retval;
     SocketAddress from;
 #if defined(WEBRTC_MAC_INTEL) || defined(WEBRTC_MAC)
@@ -211,7 +213,7 @@ void UdpSocketPosix::HasIncoming()
     default:
         if(_wantsIncoming && _incomingCb)
         {
-                _incomingCb(_obj,buf, retval, &from);
+          _incomingCb(_obj, buf, retval, &from);
         }
         break;
     }
