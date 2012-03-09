@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -11,8 +11,8 @@
 #ifndef WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_TEST_DEFINES_H
 #define WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_TEST_DEFINES_H
 
-#include "common_types.h"
 #include "audio_device.h"
+#include "common_types.h"
 #include "process_thread.h"
 #include "trace.h"
 
@@ -34,14 +34,10 @@
 #define TEST_LOG_ERROR(...) fprintf(stderr, __VA_ARGS__)
 #endif
 
-static int testCount = 0;
-static int errorCount = 0;
 static int warningCount = 0;
 
 #define RESET_TEST                                              \
     do {                                                        \
-        testCount = 0;                                          \
-        errorCount = 0;                                         \
         warningCount = 0;                                       \
     } while(0)                                                  \
 
@@ -53,52 +49,19 @@ static int warningCount = 0;
 
 #define WARNING(expr)                                           \
     do {                                                        \
-        testCount++;                                            \
         if (!(expr)) {                                          \
-		TEST_LOG_ERROR("WARNING #%d: at line %i\n\n",			\
-				warningCount+1, __LINE__);						\
+            TEST_LOG_ERROR("WARNING #%d: at line %i\n\n",       \
+                           warningCount+1, __LINE__);           \
             warningCount++;                                     \
         }                                                       \
     } while(0)
 
-
-#define TEST(expr)                                              \
-    do {                                                        \
-        testCount++;                                            \
-        if (!(expr)) {                                          \
-            PRINT_ERR_MSG("Assertion failed: " #expr "\n\n");   \
-            errorCount++;                                       \
-        }                                                       \
-    } while(0)
-
-#define TEST_ERR(expr, err)                                     \
-    do {                                                        \
-        testCount++;                                            \
-        if (!(expr)) {                                          \
-            PRINT_ERR_MSG("Assertion failed: " #expr "\n\n");   \
-            errorCount++;                                       \
-        }                                                       \
-		if (audioDevice->LastError() != err) {					\
-			PRINT_ERR_MSG("Assertion failed: " #err "\n\n");    \
-            errorCount++;                                       \
-        }                                                       \
-    } while(0)
-
-
 #define PRINT_TEST_RESULTS                                      \
     do {                                                        \
-        TEST_LOG("\n>> %i tests completed <<\n", testCount);    \
-        if (errorCount > 0) {                                   \
-            TEST_LOG(">> %i FAILED! <<\n\n", errorCount);       \
-        }                                                       \
-        else if (warningCount > 0)                              \
-		{														\
-			TEST_LOG(">> ALL PASSED (with %d warnings) <<\n\n",	\
-				warningCount);									\
-		}														\
-		else													\
-		{														\
-            TEST_LOG(">> ALL PASSED <<\n\n");                   \
+        if (warningCount > 0)                                   \
+        {                                                       \
+            TEST_LOG(">> %d warnings <<\n\n",                   \
+                     warningCount);                             \
         }                                                       \
     } while(0)
 
@@ -107,9 +70,7 @@ static int warningCount = 0;
 // For Android, they are defined in API test only (since both
 //   API and Func tests are built into the same lib).
 // For other, they are defined in both API test and Func test.
-char* GetFilename(char* filename);
 const char* GetFilename(const char* filename);
-char* GetResource(char* resource);
 const char* GetResource(const char* resource);
 
 #endif  // WEBRTC_AUDIO_DEVICE_AUDIO_DEVICE_TEST_DEFINES_H

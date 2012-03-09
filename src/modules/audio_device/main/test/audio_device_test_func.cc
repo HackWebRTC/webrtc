@@ -43,8 +43,6 @@ int func_test(int sel)
     TEST_LOG("=========================================\n\n");
 
     // Initialize the counters here to get rid of "unused variables" warnings.
-    testCount = 0;
-    errorCount = 0;
     warningCount = 0;
 
     FuncTestManager funcMgr;
