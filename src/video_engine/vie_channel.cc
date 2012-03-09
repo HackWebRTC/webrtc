@@ -277,12 +277,6 @@ WebRtc_Word32 ViEChannel::SetSendCodec(const VideoCodec& video_codec,
       RtpRtcp::DestroyRtpRtcp(rtp_rtcp);
       simulcast_rtp_rtcp_.pop_back();
     }
-    VideoCodec video_codec;
-    if (vcm_.Codec(kVideoCodecVP8, &video_codec) != VCM_OK) {
-      WEBRTC_TRACE(kTraceWarning, kTraceVideo, ViEId(engine_id_, channel_id_),
-                   "%s: VCM: failure geting default VP8 pl_type", __FUNCTION__);
-      return -1;
-    }
     WebRtc_UWord8 idx = 0;
     // Configure all simulcast modules.
     for (std::list<RtpRtcp*>::iterator it = simulcast_rtp_rtcp_.begin();
