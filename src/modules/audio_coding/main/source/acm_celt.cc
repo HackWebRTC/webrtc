@@ -303,21 +303,11 @@ bool ACMCELT::IsTrueStereoCodec() {
 int16_t ACMCELT::SetBitRateSafe(const int32_t rate) {
   // Check that rate is in the valid range.
   if ((rate >= 48000) && (rate <= 128000)) {
-    // Store new rate.
     bitrate_ = rate;
-
-    // Initiate encoder with new rate.
-    if (WebRtcCelt_EncoderInit(enc_inst_ptr_, channels_, bitrate_) >= 0) {
-      return 0;
-    } else {
-      WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
-                   "SetBitRateSafe: Failed to initiate Celt with rate %d",
-                   rate);
-      return -1;
-    }
+    return 0;
   } else {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
-                 "SetBitRateSafe: Invalid rate Celt, %d", rate);
+                 "SetBitRateSafe: Invalid rate Celt");
     return -1;
   }
 }

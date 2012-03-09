@@ -50,15 +50,9 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(
     _id(id),
     _lastTimestamp(0),
     _lastInTimestamp(0),
-    _cng_nb_pltype(255),
-    _cng_wb_pltype(255),
-    _cng_swb_pltype(255),
-    _red_pltype(255),
-    _cng_reg_receiver(false),
     _vadEnabled(false),
     _dtxEnabled(false),
     _vadMode(VADNormal),
-    _stereoReceiveRegistered(false),
     _stereoSend(false),
     _prev_received_channel(0),
     _expected_channels(1),
@@ -71,6 +65,7 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(
     _fecEnabled(false),
     _fragmentation(NULL),
     _lastFECTimestamp(0),
+    _redPayloadType(255),
     _receiveREDPayloadType(255),  // invalid value
     _previousPayloadType(255),
     _dummyRTPHeader(NULL),
@@ -89,6 +84,13 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(
     memset(&_sendCodecInst, 0, sizeof(CodecInst));
     strncpy(_sendCodecInst.plname, "noCodecRegistered", 31);
     _sendCodecInst.pltype = -1;
+
+    // Nullify memory for CNG, DTMF and RED.
+    memset(&_cngNB, 0, sizeof(CodecInst));
+    memset(&_cngWB, 0, sizeof(CodecInst));
+    memset(&_cngSWB, 0, sizeof(CodecInst));
+    memset(&_RED, 0, sizeof(CodecInst));
+    memset(&_DTMF, 0, sizeof(CodecInst));
 
     for (int i = 0; i < ACMCodecDB::kMaxNumCodecs; i++)
     {
@@ -116,23 +118,20 @@ AudioCodingModuleImpl::AudioCodingModuleImpl(
     {
         if((STR_CASE_CMP(ACMCodecDB::database_[i].plname, "red") == 0))
         {
-          _red_pltype = static_cast<uint8_t>(ACMCodecDB::database_[i].pltype);
+            _redPayloadType = ACMCodecDB::database_[i].pltype;
         }
         else if ((STR_CASE_CMP(ACMCodecDB::database_[i].plname, "CN") == 0))
         {
             if (ACMCodecDB::database_[i].plfreq == 8000)
             {
-              _cng_nb_pltype =
-                  static_cast<uint8_t>(ACMCodecDB::database_[i].pltype);
+                memcpy(&_cngNB, &ACMCodecDB::database_[i], sizeof(_cngNB));
             }
             else if (ACMCodecDB::database_[i].plfreq == 16000)
             {
-                _cng_wb_pltype =
-                    static_cast<uint8_t>(ACMCodecDB::database_[i].pltype);
+                memcpy(&_cngWB, &ACMCodecDB::database_[i], sizeof(_cngWB));
             } else if (ACMCodecDB::database_[i].plfreq == 32000)
             {
-                _cng_swb_pltype =
-                    static_cast<uint8_t>(ACMCodecDB::database_[i].pltype);
+                memcpy(&_cngSWB, &ACMCodecDB::database_[i], sizeof(_cngSWB));
             }
         }
     }
@@ -385,21 +384,21 @@ AudioCodingModuleImpl::Process()
                 }
             case kPassiveDTXNB:
                 {
-                    currentPayloadType =  _cng_nb_pltype;
+                    currentPayloadType = (WebRtc_UWord8)_cngNB.pltype;
                     frameType = kAudioFrameCN;
                     _isFirstRED = true;
                     break;
                 }
             case kPassiveDTXWB:
                 {
-                    currentPayloadType =  _cng_wb_pltype;
+                    currentPayloadType = (WebRtc_UWord8)_cngWB.pltype;
                     frameType = kAudioFrameCN;
                     _isFirstRED = true;
                     break;
                 }
             case kPassiveDTXSWB:
                 {
-                    currentPayloadType =  _cng_swb_pltype;
+                    currentPayloadType = (WebRtc_UWord8)_cngSWB.pltype;
                     frameType = kAudioFrameCN;
                     _isFirstRED = true;
                     break;
@@ -507,7 +506,7 @@ AudioCodingModuleImpl::Process()
 
                 _isFirstRED = false;
                 // Update payload type with RED payload type
-                currentPayloadType = _red_pltype;
+                currentPayloadType = _redPayloadType;
             }
         }
     }
@@ -682,8 +681,6 @@ mono codecs are supported, i.e. channels=1.", sendCodec.channels);
     // payload type is used.
     if(!STR_CASE_CMP(sendCodec.plname, "red"))
     {
-        // TODO(tlegrand): Remove this check. Already taken care of in
-        // ACMCodecDB::CodecNumber().
         // Check if the payload-type is valid
         if(!ACMCodecDB::ValidPayloadType(sendCodec.pltype))
         {
@@ -693,12 +690,12 @@ mono codecs are supported, i.e. channels=1.", sendCodec.channels);
             return -1;
         }
         // Set RED payload type
-        _red_pltype = static_cast<uint8_t>(sendCodec.pltype);
+        _redPayloadType = (WebRtc_UWord8)sendCodec.pltype;
         return 0;
     }
 
     // CNG can be registered with other payload type. If not registered the
-    // default payload types from codec database will be used.
+    // default payload types will be used: CNNB=13 (fixed), CNWB=97, CNSWB=98
     if(!STR_CASE_CMP(sendCodec.plname, "CN"))
     {
         // CNG is registered
@@ -706,17 +703,17 @@ mono codecs are supported, i.e. channels=1.", sendCodec.channels);
         {
         case 8000:
             {
-                _cng_nb_pltype = static_cast<uint8_t>(sendCodec.pltype);
+                memcpy(&_cngNB, &sendCodec, sizeof(_cngNB));
                 break;
             }
         case 16000:
             {
-                _cng_wb_pltype = static_cast<uint8_t>(sendCodec.pltype);
+                memcpy(&_cngWB, &sendCodec, sizeof(_cngWB));
                 break;
             }
         case 32000:
             {
-                _cng_swb_pltype = static_cast<uint8_t>(sendCodec.pltype);
+                memcpy(&_cngSWB, &sendCodec, sizeof(_cngSWB));
                 break;
             }
         default :
@@ -730,8 +727,6 @@ mono codecs are supported, i.e. channels=1.", sendCodec.channels);
         return 0;
     }
 
-    // TODO(tlegrand): Remove this check. Already taken care of in
-    // ACMCodecDB::CodecNumber().
     // Check if the payload-type is valid
     if(!ACMCodecDB::ValidPayloadType(sendCodec.pltype))
     {
@@ -1411,7 +1406,6 @@ AudioCodingModuleImpl::InitializeReceiverSafe()
             regInNeteq = 0;
         }
     }
-    _cng_reg_receiver = true;
 
     _receiverInitialized = true;
     return 0;
@@ -1513,15 +1507,11 @@ AudioCodingModuleImpl::RegisterReceiveCodec(
         }
     }
 
-    // If codec already registered, unregister. Except for CN where we only
-    // unregister if payload type is changing.
-    if ((_registeredPlTypes[codecId] == receiveCodec.pltype) &&
-        (STR_CASE_CMP(receiveCodec.plname, "CN") == 0)) {
-      // Codec already registered as receiver with this payload type. Nothing
-      // to be done.
-      return 0;
-    } else if (_registeredPlTypes[codecId] != -1) {
-        if(UnregisterReceiveCodecSafe(codecId) < 0) {
+    // If codec already registered, start with unregistering
+    if(_registeredPlTypes[codecId] != -1)
+    {
+        if(UnregisterReceiveCodecSafe(codecId) < 0)
+        {
             WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
                 "Cannot register master codec.");
             return -1;
@@ -1536,27 +1526,7 @@ AudioCodingModuleImpl::RegisterReceiveCodec(
         return -1;
     }
 
-    // If CN is being registered in master, and we have at least one stereo
-    // codec registered in receiver, register CN in slave.
-    if (STR_CASE_CMP(receiveCodec.plname, "CN") == 0) {
-        _cng_reg_receiver = true;
-        if (_stereoReceiveRegistered) {
-            // At least one of the registered receivers is stereo, so go
-            // a head and add CN to the slave.
-            if(RegisterRecCodecMSSafe(receiveCodec, codecId, mirrorId,
-                                      ACMNetEQ::slaveJB) < 0) {
-               WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding,
-                            _id, "Cannot register slave codec.");
-               return -1;
-            }
-            _stereoReceive[codecId] = true;
-            _registeredPlTypes[codecId] = receiveCodec.pltype;
-            return 0;
-        }
-    }
-
-    // If receive stereo, make sure we have two instances of NetEQ, one for each
-    // channel. Mark CN and RED as stereo.
+    // If receive stereo, make sure we have two instances of NetEQ, one for each channel
     if(receiveCodec.channels == 2)
     {
         if(_netEq.NumSlaves() < 1)
@@ -1564,48 +1534,28 @@ AudioCodingModuleImpl::RegisterReceiveCodec(
             if(_netEq.AddSlave(ACMCodecDB::NetEQDecoders(),
                    ACMCodecDB::kNumCodecs) < 0)
             {
-                WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding,
-                             _id, "Cannot Add Slave jitter buffer to NetEQ.");
+                WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
+                    "Cannot Add Slave jitter buffer to NetEQ.");
                 return -1;
             }
-        }
 
-        // If this is the first time a stereo codec is registered, RED and CN
-        // should be register in slave, if they are registered in master.
-        if (!_stereoReceiveRegistered) {
+            // Register RED and CN in slave.
             bool reg_in_neteq = false;
             for (int i = (ACMCodecDB::kNumCodecs - 1); i > -1; i--) {
-                if (STR_CASE_CMP(ACMCodecDB::database_[i].plname, "RED") == 0) {
-                    if (_registeredPlTypes[i] != -1) {
-                        // Mark RED as stereo, since we have registered at least
-                        // one stereo receive codec.
-                        _stereoReceive[i] = true;
-                        reg_in_neteq = true;
-                    }
-                } else if (STR_CASE_CMP(ACMCodecDB::database_[i].plname, "CN")
-                    == 0) {
-                    if (_cng_reg_receiver) {
-                        // Mark CN as stereo, since we have registered at least
-                        // one stereo receive codec.
-                        _stereoReceive[i] = true;
-                        reg_in_neteq = true;
-                    }
+                if((STR_CASE_CMP(ACMCodecDB::database_[i].plname, "RED") == 0)) {
+                    reg_in_neteq = true;
+                } else if ((STR_CASE_CMP(ACMCodecDB::database_[i].plname, "CN") == 0)) {
+                    reg_in_neteq = true;
                 }
 
                 if (reg_in_neteq) {
-                    CodecInst tmp_codec;
-                    memcpy(&tmp_codec, &ACMCodecDB::database_[i],
-                           sizeof(CodecInst));
-                    tmp_codec.pltype = _registeredPlTypes[i];
-                    // Register RED of CN in slave, with the same payload type
-                    // as in master.
-                    if(RegisterRecCodecMSSafe(tmp_codec, i, i,
-                                              ACMNetEQ::slaveJB) < 0) {
-                        WEBRTC_TRACE(webrtc::kTraceError,
-                                     webrtc::kTraceAudioCoding, _id,
-                                     "Cannot register slave codec.");
+                   if(RegisterRecCodecMSSafe(ACMCodecDB::database_[i], i, i,
+                        ACMNetEQ::slaveJB) < 0) {
+                        WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _id,
+                            "Cannot register slave codec.");
                         return -1;
                     }
+                    _registeredPlTypes[i] = ACMCodecDB::database_[i].pltype;
                     reg_in_neteq = false;
                 }
             }
@@ -1619,15 +1569,12 @@ AudioCodingModuleImpl::RegisterReceiveCodec(
             return -1;
         }
 
-        // Last received payload type equal the current one, but was marked
-        // as mono. Reset to avoid problems.
         if((_stereoReceive[codecId] == false) &&
             (_lastRecvAudioCodecPlType == receiveCodec.pltype))
         {
             _lastRecvAudioCodecPlType = -1;
         }
         _stereoReceive[codecId] = true;
-        _stereoReceiveRegistered = true;
     }
     else
     {
@@ -1814,9 +1761,11 @@ AudioCodingModuleImpl::IncomingPacket(
             myPayloadType = rtpInfo.header.payloadType;
         }
 
-        // If payload is audio, check if received payload is different from
-        // previous.
-        if(!rtpInfo.type.Audio.isCNG)
+        // If payload is audio, check if received payload is different from previous
+        if((!rtpInfo.type.Audio.isCNG)       &&
+            (myPayloadType != _cngNB.pltype) &&
+            (myPayloadType != _cngWB.pltype) &&
+            (myPayloadType != _cngSWB.pltype))
         {
             // This is Audio not CNG
 
@@ -2605,16 +2554,12 @@ AudioCodingModuleImpl::UnregisterReceiveCodecSafe(
 {
     const WebRtcNetEQDecoder *neteqDecoder = ACMCodecDB::NetEQDecoders();
     WebRtc_Word16 mirrorID = ACMCodecDB::MirrorID(codecID);
-    bool stereo_receiver = false;
-
     if(_codecs[codecID] != NULL)
     {
         if(_registeredPlTypes[codecID] != -1)
         {
-            // Store stereo information for future use.
-            stereo_receiver = _stereoReceive[codecID];
-
-            // Before deleting the decoder instance unregister from NetEQ.
+            // before deleting the decoder instance unregister
+            // from NetEQ.
             if(_netEq.RemoveCodec(neteqDecoder[codecID], _stereoReceive[codecID]) < 0)
             {
                 CodecInst codecInst;
@@ -2630,8 +2575,6 @@ AudioCodingModuleImpl::UnregisterReceiveCodecSafe(
             if(STR_CASE_CMP(ACMCodecDB::database_[codecID].plname, "CN") == 0)
             {
                 // Search codecs nearby in the database to unregister all CN.
-                // TODO(tlegrand): do this search in a safe way. We can search
-                // outside the database.
                 for (int i=-2; i<3; i++)
                 {
                     if (STR_CASE_CMP(ACMCodecDB::database_[codecID+i].plname, "CN") == 0)
@@ -2640,13 +2583,10 @@ AudioCodingModuleImpl::UnregisterReceiveCodecSafe(
                         if(_stereoReceive[codecID+i])
                         {
                             _slaveCodecs[codecID+i]->DestructDecoder();
-                            _stereoReceive[codecID+i] = false;
-
                         }
                         _registeredPlTypes[codecID+i] = -1;
                     }
                 }
-                _cng_reg_receiver = false;
             } else
             {
                 if(codecID == mirrorID)
@@ -2655,27 +2595,7 @@ AudioCodingModuleImpl::UnregisterReceiveCodecSafe(
                     if(_stereoReceive[codecID])
                     {
                         _slaveCodecs[codecID]->DestructDecoder();
-                        _stereoReceive[codecID] = false;
-
                     }
-                }
-            }
-
-            // Check if this is the last registered stereo receive codec.
-            if (stereo_receiver) {
-                bool no_stereo = true;
-
-                for (int i = 0; i < ACMCodecDB::kNumCodecs; i++) {
-                    if (_stereoReceive[i]) {
-                        // We still have stereo codecs registered.
-                        no_stereo = false;
-                       break;
-                    }
-                }
-
-                // If we don't have any stereo codecs left, change status.
-                if (no_stereo) {
-                  _stereoReceiveRegistered = false;
                 }
             }
         }

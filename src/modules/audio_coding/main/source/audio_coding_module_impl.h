@@ -311,11 +311,11 @@ private:
     WebRtc_UWord32                 _lastTimestamp;
     WebRtc_UWord32                 _lastInTimestamp;
     CodecInst                      _sendCodecInst;
-    uint8_t                        _cng_nb_pltype;
-    uint8_t                        _cng_wb_pltype;
-    uint8_t                        _cng_swb_pltype;
-    uint8_t                        _red_pltype;
-    bool                           _cng_reg_receiver;
+    CodecInst                      _cngNB;
+    CodecInst                      _cngWB;
+    CodecInst                      _cngSWB;
+    CodecInst                      _RED;
+    CodecInst                      _DTMF;
     bool                           _vadEnabled;
     bool                           _dtxEnabled;
     ACMVADMode                     _vadMode;
@@ -323,7 +323,6 @@ private:
     ACMGenericCodec*               _slaveCodecs[ACMCodecDB::kMaxNumCodecs];
     WebRtc_Word16                  _mirrorCodecIdx[ACMCodecDB::kMaxNumCodecs];
     bool                           _stereoReceive[ACMCodecDB::kMaxNumCodecs];
-    bool                           _stereoReceiveRegistered;
     bool                           _stereoSend;
     int                            _prev_received_channel;
     int                            _expected_channels;
@@ -342,6 +341,7 @@ private:
     WebRtc_UWord8*                 _redBuffer;
     RTPFragmentationHeader*        _fragmentation;
     WebRtc_UWord32                 _lastFECTimestamp;
+    WebRtc_UWord8                  _redPayloadType;
     // if no RED is registered as receive codec this
     // will have an invalid value.
     WebRtc_UWord8                  _receiveREDPayloadType;
