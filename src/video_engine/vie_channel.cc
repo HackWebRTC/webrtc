@@ -720,6 +720,9 @@ WebRtc_Word32 ViEChannel::SetSSRC(const WebRtc_UWord32 SSRC,
   if (simulcast_idx == 0) {
     return rtp_rtcp_.SetSSRC(SSRC);
   }
+  if (simulcast_idx > simulcast_rtp_rtcp_.size()) {
+      return -1;
+  }
   std::list<RtpRtcp*>::const_iterator it = simulcast_rtp_rtcp_.begin();
   for (int i = 1; i < simulcast_idx; ++i, ++it) {
     if (it ==  simulcast_rtp_rtcp_.end()) {
