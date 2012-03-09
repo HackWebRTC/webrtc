@@ -125,14 +125,29 @@ def _perform_download(base_url, desired_version, downloads_dir):
       base_url += '/'
     remote_archive_url = urljoin(base_url, archive_name)
     # Download into the temporary directory with display of progress, inspired
-    # by the Stack Overflow post at
-    # http://stackoverflow.com/questions/2028517/python-urllib2-progress-hook
+    # by the Stack Overflow post at http://goo.gl/JIrbo
     temp_filename = os.path.join(temp_dir, archive_name)
     print 'Downloading: %s' % remote_archive_url
 
     response = urllib2.urlopen(remote_archive_url)
     temp_file = open(temp_filename, 'wb')
-    _read_chunks(temp_file, response)
+    meta = response.info()
+    file_size_kb = int(meta.getheaders('Content-Length')[0]) / 1024
+    print 'Progress: %s : %s kB' % (archive_name, file_size_kb)
+
+    file_size_dl_kb = 0
+    block_size = 65536
+    while True:
+      file_buffer = response.read(block_size)
+      if not file_buffer:
+        break
+      file_size_dl_kb += len(file_buffer) / 1024
+      temp_file.write(file_buffer)
+      status = r'%10d kB [%3.2f%%]' % (file_size_dl_kb,
+                                       file_size_dl_kb * 100. / file_size_kb)
+      status += chr(8) * (len(status) + 1)
+      print status,
+    print
     temp_file.close()
 
     # Clean up the existing resources dir.
@@ -148,52 +163,14 @@ def _perform_download(base_url, desired_version, downloads_dir):
 
     # Write the downloaded version to a text file in the resources dir to avoid
     # re-download of the same version in the future.
-    new_version_file = os.path.join(downloads_dir, VERSION_FILENAME)
-    f = open(new_version_file, 'w')
-    f.write('%d' % desired_version)
-    f.close()
+    new_version_filename = os.path.join(downloads_dir, VERSION_FILENAME)
+    version_file = open(new_version_filename, 'w')
+    version_file.write('%d' % desired_version)
+    version_file.close()
 
   finally:
     # Clean up the temp dir.
     shutil.rmtree(temp_dir)
-
-
-def _print_progress(bytes_so_far, total_size):
-  """Prints a chunk report of the download progress so far.
-
-  Args:
-    bytes_so_far: The number of bytes read so far.
-    total_size: Total file size of download.
-  """
-  percent = (float(bytes_so_far) / total_size) * 100
-  percent = round(percent, 2)
-  sys.stdout.write('Downloaded %d of %d kB (%0.2f%%)\r' %
-                   (bytes_so_far/1024, total_size/1024, percent))
-  if bytes_so_far >= total_size:
-    sys.stdout.write('\n')
-
-
-def _read_chunks(output_file, response, chunk_size=10*1024):
-  """Reads data chunks from the response until we're done downloading.
-
-  Args:
-    output_file: The file to write the data into.
-    response: The HTTP response to read data from.
-    chunk_size: How much to read between each UI update.
-  Returns:
-    The total number of bytes read."""
-  total_size = response.info().getheader('Content-Length').strip()
-  total_size = int(total_size)
-  bytes_so_far = 0
-  while True:
-    chunk = response.read(chunk_size)
-    output_file.write(chunk)
-    bytes_so_far += len(chunk)
-    if not chunk:
-      break
-    _print_progress(bytes_so_far, total_size)
-  return bytes_so_far
-
 
 if __name__ == '__main__':
   main()
