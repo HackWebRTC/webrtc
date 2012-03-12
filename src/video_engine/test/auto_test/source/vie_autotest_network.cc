@@ -235,13 +235,13 @@ void ViEAutoTest::ViENetworkAPITest()
 
         // Create a empty RTP packet.
         unsigned char packet[3000];
-        memset(packet, sizeof(packet), 0);
+        memset(packet, 0, sizeof(packet));
         packet[0] = 0x80; // V=2, P=0, X=0, CC=0
         packet[1] = 0x7C; // M=0, PT = 124 (I420)
 
         // Create a empty RTCP app packet.
         unsigned char rtcpacket[3000];
-        memset(rtcpacket, sizeof(rtcpacket), 0);
+        memset(rtcpacket,0, sizeof(rtcpacket));
         rtcpacket[0] = 0x80; // V=2, P=0, X=0, CC=0
         rtcpacket[1] = 0xCC; // M=0, PT = 204 (RTCP app)
         rtcpacket[2] = 0x0;
