@@ -23,8 +23,8 @@ class ExternalDeviceInfo : public DeviceInfoImpl {
   virtual ~ExternalDeviceInfo() {}
   virtual WebRtc_UWord32 NumberOfDevices() { return 0; }
   virtual WebRtc_Word32 DisplayCaptureSettingsDialogBox(
-      const WebRtc_UWord8* /*deviceUniqueIdUTF8*/,
-      const WebRtc_UWord8* /*dialogTitleUTF8*/,
+      const char* /*deviceUniqueIdUTF8*/,
+      const char* /*dialogTitleUTF8*/,
       void* /*parentWindow*/,
       WebRtc_UWord32 /*positionX*/,
       WebRtc_UWord32 /*positionY*/) { return -1; }
