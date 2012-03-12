@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -19,6 +19,9 @@
 #include <mmsystem.h>
 #elif WEBRTC_LINUX
 #include <ctime>
+#elif WEBRTC_MAC
+#include <mach/mach_time.h>
+#include <string.h>
 #else
 #include <sys/time.h>
 #include <time.h>
@@ -133,6 +136,7 @@ inline TickTime TickTime::Now()
 {
     TickTime result;
 #if _WIN32
+    // TODO(wu): Remove QueryPerformanceCounter implementation.
     #ifdef USE_QUERY_PERFORMANCE_COUNTER
         // QueryPerformanceCounter returns the value from the TSC which is
         // incremented at the CPU frequency. The algorithm used requires
@@ -164,12 +168,27 @@ inline TickTime TickTime::Now()
     #endif
 #elif defined(WEBRTC_LINUX)
     struct timespec ts;
+    // TODO(wu): Remove CLOCK_REALTIME implementation.
     #ifdef WEBRTC_CLOCK_TYPE_REALTIME
         clock_gettime(CLOCK_REALTIME, &ts);
     #else
         clock_gettime(CLOCK_MONOTONIC, &ts);
     #endif
     result._ticks = 1000000000LL * static_cast<WebRtc_Word64>(ts.tv_sec) + static_cast<WebRtc_Word64>(ts.tv_nsec);
+#elif defined(WEBRTC_MAC)
+    static mach_timebase_info_data_t timebase;
+    if (timebase.denom == 0) {
+      // Get the timebase if this is the first time we run.
+      // Recommended by Apple's QA1398.
+      kern_return_t retval = mach_timebase_info(&timebase);
+      if (retval != KERN_SUCCESS) {
+        // TODO(wu): Implement CHECK similar to chrome for all the platforms.
+        // Then replace this with a CHECK(retval == KERN_SUCCESS);
+        asm("int3");
+      }
+    }
+    // Use timebase to convert absolute time tick units into nanoseconds.
+    result._ticks = mach_absolute_time() * timebase.numer / timebase.denom;
 #else
     struct timeval tv;
     gettimeofday(&tv, NULL);
@@ -189,7 +208,7 @@ inline WebRtc_Word64 TickTime::MillisecondTimestamp()
     #else
         return now._ticks;
     #endif
-#elif WEBRTC_LINUX
+#elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
     return now._ticks / 1000000LL;
 #else
     return now._ticks / 1000LL;
@@ -208,7 +227,7 @@ inline WebRtc_Word64 TickTime::MicrosecondTimestamp()
     #else
         return now._ticks *1000LL;
     #endif
-#elif WEBRTC_LINUX
+#elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
     return now._ticks / 1000LL;
 #else
     return now._ticks;
@@ -230,7 +249,7 @@ inline WebRtc_Word64 TickTime::MillisecondsToTicks(const WebRtc_Word64 ms)
     #else
         return ms;
     #endif
-#elif WEBRTC_LINUX
+#elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
     return ms * 1000000LL;
 #else
     return ms * 1000LL;
@@ -247,7 +266,7 @@ inline WebRtc_Word64 TickTime::TicksToMilliseconds(const WebRtc_Word64 ticks)
     #else
         return ticks;
     #endif
-#elif WEBRTC_LINUX
+#elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
     return ticks / 1000000LL;
 #else
     return ticks / 1000LL;
@@ -280,7 +299,7 @@ inline WebRtc_Word64 TickInterval::Milliseconds() const
 	// _interval is in ms
         return _interval;
     #endif
-#elif WEBRTC_LINUX
+#elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
     // _interval is in ns
     return _interval / 1000000;
 #else
@@ -300,7 +319,7 @@ inline WebRtc_Word64 TickInterval::Microseconds() const
 	// _interval is in ms
         return _interval *1000LL;
     #endif
-#elif WEBRTC_LINUX
+#elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
     // _interval is in ns
     return _interval / 1000;
 #else
