@@ -23,6 +23,8 @@ from buildbot.steps.shell import ShellCommand
 SUPPORTED_PLATFORMS = ('Linux', 'Mac', 'Windows')
 
 WEBRTC_SVN_LOCATION = 'http://webrtc.googlecode.com/svn/trunk'
+WEBRTC_TRUNK_DIR = 'build/trunk/'
+WEBRTC_BUILD_DIR = 'build/'
 
 VALGRIND_CMD = ['tools/valgrind-webrtc/webrtc_tests.sh', '-t', 'cmdline']
 
@@ -103,7 +105,7 @@ class WebRTCFactory(factory.BuildFactory):
     for test in tests:
       self.EnableTest(test)
 
-  def AddCommonStep(self, cmd, descriptor='', workdir='build',
+  def AddCommonStep(self, cmd, descriptor='', workdir=WEBRTC_TRUNK_DIR,
                     number_of_retries=0, halt_build_on_failure=True,
                     warn_on_failure=False):
     """Adds a step which will run as a shell command on the slave.
@@ -119,7 +121,12 @@ class WebRTCFactory(factory.BuildFactory):
              ShellCommand, so see that documentation for more details.
          descriptor: A string, or a list of strings, describing what the step
              does. The descriptor gets printed in the waterfall display.
-         workdir: The working directory to run the command in.
+         workdir: The working directory to run the command in, relative to
+             the bot's build name directory. The WebRTC root will generally be
+             in build/trunk/ relative to that directory. The caller is
+             responsible for making sure that the slashes are flipped the right
+             way depending on platform, which means you can't use the default
+             value if the step will run on a Windows machine.
          number_of_retries: Number of times to retry the command, if it fails.
          halt_build_on_failure: Stops the build dead in its tracks if this step
              fails. Use for critical steps. This option does not make sense with
@@ -131,6 +138,7 @@ class WebRTCFactory(factory.BuildFactory):
 
     if type(descriptor) is str:
       descriptor = [descriptor]
+
     # Add spaces to wrap long test names to make waterfall output more compact.
     wrapped_text = self._WrapLongLines(descriptor)
 
@@ -152,14 +160,17 @@ class WebRTCFactory(factory.BuildFactory):
        Smart clean only cleans the whole repository if the build status oracle
        thinks the last build failed. Otherwise it cleans just the build output.
     """
-    self.addStep(SmartClean(self.build_status_oracle))
+    self.addStep(SmartClean(self.build_status_oracle,
+                            workdir=WEBRTC_BUILD_DIR))
 
-  def AddCommonTestRunStep(self, test, descriptor='', cmd=None,
-                           workdir='build/trunk'):
+  def AddCommonTestRunStep(self, test, descriptor='', cmd=None):
     """Adds a step for running a single test [must be overridden].
 
        In general, failing tests should not halt the build and allow other tests
        to execute. A failing test should fail, or 'flunk', the build though.
+
+       The working directory for this command will be the WebRTC root directory
+       (generally build/trunk).
 
        Implementations of this method must add new steps through AddCommonStep
        and not by calling addStep.
@@ -175,10 +186,6 @@ class WebRTCFactory(factory.BuildFactory):
          cmd: If necessary, you can specify this argument to override the
              default behavior, which is to just run the binary specified in
              test without arguments.
-         workdir: The base working directory to run the command in. This
-             directory will map to the WebRTC project root, e.g. the trunk
-             directory. This method will make sure that the test binary is run
-             in the correct output directory for the platform.
     """
     pass
 
@@ -195,7 +202,7 @@ class WebRTCFactory(factory.BuildFactory):
 
   def AddGclientSyncStep(self, force_sync):
     """Helper method for invoking gclient sync. Will retry if the operation
-       fails.
+       fails. Runs in the bot's build directory (e.g. one step above trunk).
 
        Args:
            force_sync: If the sync should be forced, i.e. update even for
@@ -205,6 +212,7 @@ class WebRTCFactory(factory.BuildFactory):
     if force_sync:
       cmd.append('--force')
     self.AddCommonStep(cmd, descriptor='Sync',
+                       workdir=WEBRTC_BUILD_DIR,
                        number_of_retries=GCLIENT_RETRIES)
 
   def AddCommonGYPStep(self, gyp_file, gyp_params=[], descriptor='gyp'):
@@ -213,8 +221,8 @@ class WebRTCFactory(factory.BuildFactory):
        GYP will generate makefiles or its equivalent in a platform-specific
        manner. A failed GYP step will halt the build.
 
-       Implementations of this method must add new steps through AddCommonStep
-       and not by calling addStep.
+       This command will run in the WebRTC root directory
+       (generally build/trunk).
 
        Args:
          gyp_file: The root GYP file to use.
@@ -224,7 +232,7 @@ class WebRTCFactory(factory.BuildFactory):
     """
     cmd = ['./build/gyp_chromium', '--depth=.', gyp_file]
     cmd += gyp_params + self.gyp_params
-    self.AddCommonStep(cmd=cmd, workdir='build/trunk', descriptor=descriptor)
+    self.AddCommonStep(cmd=cmd, descriptor=descriptor)
 
   def _WrapLongLines(self, string_list, max_line_length=25, wrap_character='_'):
     """ Creates a list with wrapped strings for lines that are too long.
@@ -365,7 +373,6 @@ class GenerateCodeCoverage(ShellCommand):
     self.addFactoryArguments(coverage_url=coverage_url,
                              coverage_dir=coverage_dir,
                              coverage_file=coverage_file)
-    self.setDefaultWorkdir('build/trunk')
     self.coverage_url = coverage_url
     self.coverage_dir = coverage_dir
     self.coverage_file = coverage_file
@@ -402,14 +409,14 @@ class WebRTCAndroidFactory(WebRTCFactory):
         prefix + 'EXECUTABLES/webrtc_*'
         ]
     cmd = ' ; '.join(cleanup_list)
-    self.AddCommonStep(cmd, descriptor='cleanup', workdir='build/trunk')
+    self.AddCommonStep(cmd, descriptor='cleanup')
 
     cmd = 'svn checkout %s external/webrtc' % WEBRTC_SVN_LOCATION
-    self.AddCommonStep(cmd, descriptor='svn (checkout)', workdir='build/trunk')
+    self.AddCommonStep(cmd, descriptor='svn (checkout)')
 
     cmd = ('source build/envsetup.sh && lunch full_%s-eng '
            '&& mmm external/webrtc showcommands' % product)
-    self.AddCommonStep(cmd, descriptor='build', workdir='build/trunk')
+    self.AddCommonStep(cmd, descriptor='build')
 
 
 class WebRTCChromeFactory(WebRTCFactory):
@@ -419,7 +426,8 @@ class WebRTCChromeFactory(WebRTCFactory):
     WebRTCFactory.__init__(self, build_status_oracle)
 
   def EnableBuild(self):
-    self.AddCommonStep(['rm', '-rf', 'src'], descriptor='Cleanup')
+    self.AddCommonStep(['rm', '-rf', 'src'], workdir=WEBRTC_BUILD_DIR,
+                       descriptor='Cleanup')
     self.AddGclientSyncStep(force_sync=True)
     self.AddCommonMakeStep('chrome')
 
@@ -480,6 +488,7 @@ class WebRTCLinuxFactory(WebRTCFactory):
         self.gyp_params.append('-D' + gyp_define)
     else:
       self.AddCommonStep(['gclient', 'config', WEBRTC_SVN_LOCATION],
+                         workdir=WEBRTC_BUILD_DIR,
                          descriptor='gclient_config')
     self.AddGclientSyncStep(force_sync=False)
 
@@ -495,23 +504,22 @@ class WebRTCLinuxFactory(WebRTCFactory):
 
     if clang:
       self.AddCommonStep(['trunk/tools/clang/scripts/update.sh'],
-                          descriptor='Update_Clang')
+                         workdir=WEBRTC_BUILD_DIR,
+                         descriptor='Update_Clang')
 
     if self.release:
       self.AddCommonMakeStep('all', make_extra='BUILDTYPE=Release')
     else:
       self.AddCommonMakeStep('all')
 
-  def AddCommonTestRunStep(self, test, extra_text=None, cmd=None,
-                           workdir='build/trunk'):
+  def AddCommonTestRunStep(self, test, extra_text=None, cmd=None):
     descriptor = [test, extra_text] if extra_text else [test]
     if cmd is None:
       test_folder = 'Release' if self.release else 'Debug'
       cmd = ['out/%s/%s' % (test_folder, test)]
     if self.valgrind_enabled:
       cmd = VALGRIND_CMD + cmd
-    self.AddCommonStep(cmd, descriptor=descriptor, workdir=workdir,
-                       halt_build_on_failure=False)
+    self.AddCommonStep(cmd, descriptor=descriptor, halt_build_on_failure=False)
 
   def AddXvfbTestRunStep(self, test_name, test_binary, test_arguments=''):
     """ Adds a test to be run inside a XVFB window manager."""
@@ -526,19 +534,17 @@ class WebRTCLinuxFactory(WebRTCFactory):
     cmd = ['make', target, '-j100']
     if make_extra:
       cmd.append(make_extra)
-    self.AddCommonStep(cmd=cmd, descriptor=descriptor, workdir='build/trunk')
+    self.AddCommonStep(cmd=cmd, descriptor=descriptor)
 
   def AddStepsToEstablishCoverageBaseline(self):
     self.AddCommonStep(['lcov', '--directory', '.', '--capture', '-b',
                         '.', '--initial',
                         '--output-file', 'webrtc_base.info'],
-                       workdir='build/trunk',
                        warn_on_failure=True,
                        halt_build_on_failure=False,
                        descriptor='LCOV (Baseline Capture)')
     self.AddCommonStep(['lcov', '--extract', 'webrtc_base.info', '*/src/*',
                         '--output', 'filtered.info'],
-                       workdir='build/trunk',
                        warn_on_failure=True,
                        halt_build_on_failure=False,
                        descriptor='LCOV (Baseline Extract)')
@@ -546,7 +552,6 @@ class WebRTCLinuxFactory(WebRTCFactory):
                         '/third*', '/testing/*', '*/test/*', '*_unittest.*',
                         '*/mock/*', '--output',
                         'webrtc_base_filtered_final.info'],
-                       workdir='build/trunk',
                        warn_on_failure=True,
                        halt_build_on_failure=False,
                        descriptor='LCOV (Baseline Filter)')
@@ -559,19 +564,16 @@ class WebRTCLinuxFactory(WebRTCFactory):
     self.AddCommonStep(['./tools/continuous_build/clean_third_party_gcda.sh'],
                        warn_on_failure=True,
                        halt_build_on_failure=False,
-                       workdir='build/trunk',
                        descriptor='LCOV (Delete 3rd party)')
     self.AddCommonStep(['lcov', '--directory', '.', '--capture', '-b',
                         '.', '--output-file', 'webrtc.info'],
                        warn_on_failure=True,
                        halt_build_on_failure=False,
-                       workdir='build/trunk',
                        descriptor='LCOV (Capture)')
     self.AddCommonStep(['lcov', '--extract', 'webrtc.info', '*/src/*',
                         '--output', 'test.info'],
                        warn_on_failure=True,
                        halt_build_on_failure=False,
-                       workdir='build/trunk',
                        descriptor='LCOV (Extract)')
     self.AddCommonStep(['lcov', '--remove', 'test.info', '*/usr/include/*',
                         '/third*', '/testing/*', '*/test/*', '*_unittest.*',
@@ -579,17 +581,18 @@ class WebRTCLinuxFactory(WebRTCFactory):
                         'final.info'],
                        warn_on_failure=True,
                        halt_build_on_failure=False,
-                       workdir='build/trunk',
                        descriptor='LCOV (Filter)')
     self.AddCommonStep(['lcov', '-a', 'webrtc_base_filtered_final.info', '-a',
                         'final.info', '-o', 'final.info'],
                        warn_on_failure=True,
                        halt_build_on_failure=False,
-                       workdir='build/trunk',
                        descriptor='LCOV (Merge)')
+
+    # This step isn't monitored but it's fine since it's not critical.
     self.addStep(GenerateCodeCoverage(coverage_url=self.coverage_url,
                                       coverage_dir=self.coverage_dir,
-                                      coverage_file='final.info'))
+                                      coverage_file='final.info',
+                                      workdir=WEBRTC_TRUNK_DIR))
 
   def EnableTests(self, tests):
     if self.coverage_enabled:
@@ -654,6 +657,7 @@ class WebRTCMacFactory(WebRTCFactory):
       self.build_type = build_type
     self.AddSmartCleanStep()
     self.AddCommonStep(['gclient', 'config', WEBRTC_SVN_LOCATION],
+                       workdir=WEBRTC_BUILD_DIR,
                        descriptor='gclient_config')
     self.AddGclientSyncStep(force_sync=True)
 
@@ -662,8 +666,7 @@ class WebRTCMacFactory(WebRTCFactory):
                             descriptor='EnableMake')
     self.AddCommonMakeStep('all')
 
-  def AddCommonTestRunStep(self, test, extra_text=None, cmd=None,
-                           workdir='build/trunk'):
+  def AddCommonTestRunStep(self, test, extra_text=None, cmd=None):
     descriptor = [test, extra_text] if extra_text else [test]
     if cmd is None:
       out_path = 'xcodebuild' if self.build_type == 'xcode' else 'out'
@@ -672,12 +675,12 @@ class WebRTCMacFactory(WebRTCFactory):
 
     if self.build_type == 'xcode' or self.build_type == 'both':
       self.AddCommonStep(cmd, descriptor=descriptor + ['(xcode)'],
-                         halt_build_on_failure=False, workdir=workdir)
+                         halt_build_on_failure=False)
     # Execute test only for 'make' build type.
     # If 'both' is enabled we'll only execute the 'xcode' built ones.
     if self.build_type == 'make':
       self.AddCommonStep(cmd, descriptor=descriptor + ['(make)'],
-                         halt_build_on_failure=False, workdir=workdir)
+                         halt_build_on_failure=False)
 
   def AddCommonMakeStep(self, target, extra_text=None, make_extra=None):
     descriptor = [target, extra_text] if extra_text else [target]
@@ -687,14 +690,12 @@ class WebRTCMacFactory(WebRTCFactory):
         cmd.append(make_extra)
       if self.release:
         cmd.append('BUILDTYPE=Release')
-      self.AddCommonStep(cmd, descriptor=descriptor + ['(make)'],
-                         workdir='build/trunk')
+      self.AddCommonStep(cmd, descriptor=descriptor + ['(make)'])
     if self.build_type == 'xcode' or self.build_type == 'both':
       configuration = 'Release' if self.release else 'Debug'
       cmd = ['xcodebuild', '-project', 'webrtc.xcodeproj', '-configuration',
              configuration, '-target', 'All']
-      self.AddCommonStep(cmd, descriptor=descriptor + ['(xcode)'],
-                         workdir='build/trunk')
+      self.AddCommonStep(cmd, descriptor=descriptor + ['(xcode)'])
 
 class WebRTCWinFactory(WebRTCFactory):
   """Sets up the Windows build.
@@ -708,6 +709,14 @@ class WebRTCWinFactory(WebRTCFactory):
     self.platform = 'x64'
     self.allowed_platforms = ['x64', 'Win32']
     self.allowed_configurations = ['Debug', 'Release', 'both']
+
+  def AddCommonStep(self, cmd, descriptor='', workdir=WEBRTC_TRUNK_DIR,
+                    number_of_retries=0, halt_build_on_failure=True,
+                    warn_on_failure=False):
+    workdir = workdir.replace('/', '\\')
+    WebRTCFactory.AddCommonStep(self, cmd, descriptor, workdir,
+                                number_of_retries, halt_build_on_failure,
+                                warn_on_failure)
 
   def EnableBuild(self, platform='Win32', configuration='Debug'):
     if platform not in self.allowed_platforms:
@@ -733,37 +742,37 @@ class WebRTCWinFactory(WebRTCFactory):
     # Now do the clean + build.
     self.AddSmartCleanStep()
     self.AddCommonStep(['gclient', 'config', WEBRTC_SVN_LOCATION],
-                       descriptor='gclient_config')
+                       descriptor='gclient_config',
+                       workdir=WEBRTC_BUILD_DIR)
     self.AddGclientSyncStep(force_sync=True)
 
     if self.configuration == 'Debug' or self.configuration == 'both':
       cmd = ['msbuild', 'webrtc.sln', '/t:Clean', '/verbosity:diagnostic',
              '/p:Configuration=Debug;Platform=%s' % (self.platform)]
-      self.AddCommonStep(cmd, descriptor='Build(Clean)', workdir='build/trunk')
+      self.AddCommonStep(cmd, descriptor='Build(Clean)')
       cmd = ['msbuild', 'webrtc.sln', '/verbosity:diagnostic',
              '/p:Configuration=Debug;Platform=%s' % (self.platform)]
-      self.AddCommonStep(cmd, descriptor='Build(Debug)', workdir='build/trunk')
+      self.AddCommonStep(cmd, descriptor='Build(Debug)')
     if self.configuration == 'Release' or self.configuration == 'both':
       cmd = ['msbuild', 'webrtc.sln', '/t:Clean', '/verbosity:diagnostic',
              '/p:Configuration=Release;Platform=%s' % (self.platform)]
-      self.AddCommonStep(cmd, descriptor='Build(Clean)', workdir='build/trunk')
+      self.AddCommonStep(cmd, descriptor='Build(Clean)')
       cmd = ['msbuild', 'webrtc.sln', '/verbosity:diagnostic',
              '/p:Configuration=Release;Platform=%s' % (self.platform)]
-      self.AddCommonStep(cmd, descriptor='Build(Release)',
-                         workdir='build/trunk')
+      self.AddCommonStep(cmd, descriptor='Build(Release)')
 
-  def AddCommonTestRunStep(self, test, cmd=None, workdir='build/trunk'):
+  def AddCommonTestRunStep(self, test, cmd=None):
     descriptor = [test]
     if self.configuration == 'Debug' or self.configuration == 'both':
       if cmd is None:
         cmd = ['build\Debug\%s.exe' % test]
       self.AddCommonStep(cmd, descriptor=descriptor,
-                         halt_build_on_failure=False, workdir=workdir)
+                         halt_build_on_failure=False)
     if self.configuration == 'Release' or self.configuration == 'both':
       if cmd is None:
         cmd = ['build\Release\%s.exe' % test]
       self.AddCommonStep(cmd, descriptor=descriptor,
-                         halt_build_on_failure=False, workdir=workdir)
+                         halt_build_on_failure=False)
 
 # Utility functions
 
