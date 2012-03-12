@@ -32,16 +32,29 @@
           coverage table JSON data otherwise.
         {% endcomment %}
         {% autoescape off %}
-        var coverage_data_table =
-          new google.visualization.DataTable({{ coverage_json_data }});
+        var small_medium_coverage_data_table =
+          new google.visualization.DataTable(
+              {{ small_medium_coverage_json_data }});
+        var large_coverage_data_table =
+          new google.visualization.DataTable(
+              {{ large_coverage_json_data }});
         {% endautoescape %}
 
         /* Display tables and charts */
-        var coverage_chart = new google.visualization.LineChart(
-          document.getElementById('table_div_coverage'));
-        coverage_chart.draw(coverage_data_table, {
-          colors: ['blue', 'red'],
-          vAxis: {title: 'Coverage'},
+        var small_medium_coverage_chart = new google.visualization.LineChart(
+          document.getElementById('table_div_small_medium_coverage'));
+        small_medium_coverage_chart.draw(small_medium_coverage_data_table, {
+          colors: ['blue', 'red', 'black'],
+          vAxis: {title: 'Coverage (%)'},
+          hAxis: {title: 'Date'},
+          width: 1200, height: 300,
+        });
+
+        var large_coverage_chart = new google.visualization.LineChart(
+          document.getElementById('table_div_large_coverage'));
+        large_coverage_chart.draw(large_coverage_data_table, {
+          colors: ['blue', 'red', 'black'],
+          vAxis: {title: 'Coverage (%)'},
           hAxis: {title: 'Date'},
           width: 1200, height: 300,
         });
@@ -49,7 +62,6 @@
     </script>
   </head>
   <body>
-
     <h1>WebRTC Quality Dashboard</h1>
     <h2>Current Build Status</h2>
     <div>(as of {{ last_updated_at }} UTC)</div>
@@ -80,7 +92,9 @@
       {% endif %}
     </div>
 
-    <h2>Code Coverage History</h2>
-    <div id="table_div_coverage"></div>
+    <h2>Code Coverage History (Small / Medium Tests)</h2>
+    <div id="table_div_small_medium_coverage"></div>
+    <h2>Code Coverage History (Large Tests)</h2>
+    <div id="table_div_large_coverage"></div>
   </body>
 </html>

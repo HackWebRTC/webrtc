@@ -28,6 +28,7 @@ __author__ = 'phoglund@webrtc.org (Patrik Höglund)'
 
 import os
 import re
+import sys
 import time
 
 import constants
@@ -42,28 +43,39 @@ class CouldNotFindCoverageDirectory(Exception):
   pass
 
 
-def _find_latest_32bit_debug_build(www_directory_contents, coverage_www_dir):
-  """Finds the latest 32-bit coverage directory in the directory listing.
+def _find_latest_build_coverage(www_directory_contents, coverage_www_dir,
+                                directory_prefix):
+  """Finds the most recent coverage directory in the directory listing.
 
-     Coverage directories have the form Linux32bitDBG_<number>. There may be
-     other directories in the list though, for instance for other build
-     configurations. We assume here that build numbers keep rising and never
-     wrap around or anything like that.
+     We assume here that build numbers keep rising and never wrap around.
+
+     Args:
+       www_directory_contents: A list of entries in the coverage directory.
+       coverage_www_dir: The coverage directory on the bot.
+       directory_prefix: Coverage directories have the form <prefix><number>,
+           and the prefix is different on different bots. The prefix is
+           generally the builder name, such as Linux32DBG.
+
+     Returns:
+       The most recent directory name.
+
+     Raises:
+       CouldNotFindCoverageDirectory: if we failed to find coverage data.
   """
 
   found_build_numbers = []
   for entry in www_directory_contents:
-    match = re.match('Linux32DBG_(\d+)', entry)
+    match = re.match(directory_prefix + '(\d+)', entry)
     if match is not None:
       found_build_numbers.append(int(match.group(1)))
 
   if not found_build_numbers:
-    raise CouldNotFindCoverageDirectory('Error: Found no 32-bit '
-                                        'debug build in directory %s.' %
-                                         coverage_www_dir)
+    raise CouldNotFindCoverageDirectory('Error: Found no directories %s* '
+                                        'in directory %s.' %
+                                         (directory_prefix, coverage_www_dir))
 
   most_recent = max(found_build_numbers)
-  return 'Linux32DBG_' + str(most_recent)
+  return directory_prefix + str(most_recent)
 
 
 def _grab_coverage_percentage(label, index_html_contents):
@@ -84,25 +96,37 @@ def _grab_coverage_percentage(label, index_html_contents):
     raise FailedToParseCoverageHtml('%s is not a float.' % match.group(1))
 
 
-def _report_coverage_to_dashboard(dashboard, now, line_coverage,
-                                  function_coverage):
-  parameters = {'date': '%d' % now,
-                'line_coverage': '%f' % line_coverage,
-                'function_coverage': '%f' % function_coverage
+def _report_coverage_to_dashboard(dashboard, line_coverage, function_coverage,
+                                  branch_coverage, report_category):
+  parameters = {'line_coverage': '%f' % line_coverage,
+                'function_coverage': '%f' % function_coverage,
+                'branch_coverage': '%f' % branch_coverage,
+                'report_category': report_category,
                }
 
   dashboard.send_post_request(constants.ADD_COVERAGE_DATA_URL, parameters)
 
 
-def _main():
+def _main(report_category, directory_prefix):
+  """Grabs coverage data from disk on a bot and publishes it.
+
+     Args:
+       report_category: The kind of coverage to report. The dashboard
+           application decides what is acceptable here (see
+           dashboard/add_coverage_data.py for more information).
+      directory_prefix: This bot's coverage directory prefix. Generally a bot's
+          coverage directories will have the form <prefix><build number>,
+          like Linux32DBG_345.
+  """
   dashboard = dashboard_connection.DashboardConnection(constants.CONSUMER_KEY)
   dashboard.read_required_files(constants.CONSUMER_SECRET_FILE,
                                 constants.ACCESS_TOKEN_FILE)
 
   coverage_www_dir = constants.BUILD_BOT_COVERAGE_WWW_DIRECTORY
   www_dir_contents = os.listdir(coverage_www_dir)
-  latest_build_directory = _find_latest_32bit_debug_build(www_dir_contents,
-                                                          coverage_www_dir)
+  latest_build_directory = _find_latest_build_coverage(www_dir_contents,
+                                                       coverage_www_dir,
+                                                       directory_prefix)
 
   index_html_path = os.path.join(coverage_www_dir, latest_build_directory,
                                  'index.html')
@@ -111,12 +135,26 @@ def _main():
 
   line_coverage = _grab_coverage_percentage('Lines:', whole_file)
   function_coverage = _grab_coverage_percentage('Functions:', whole_file)
-  now = int(time.time())
+  branch_coverage = _grab_coverage_percentage('Branches:', whole_file)
 
-  _report_coverage_to_dashboard(dashboard, now, line_coverage,
-                                function_coverage)
+  _report_coverage_to_dashboard(dashboard, line_coverage, function_coverage,
+      branch_coverage, report_category)
+
+
+def _parse_args():
+  if len(sys.argv) != 3:
+    print ('Usage: %s <coverage category> <directory prefix>\n\n'
+           'The coverage category describes the kind of coverage you are '
+           'uploading. Known acceptable values are small_medium_tests and'
+           'large_tests. The directory prefix is what the directories in %s '
+           'are prefixed on this bot (such as Linux32DBG_).' %
+               (sys.argv[0], constants.BUILD_BOT_COVERAGE_WWW_DIRECTORY))
+    return (None, None)
+  return (sys.argv[1], sys.argv[2])
 
 
 if __name__ == '__main__':
-  _main()
+  report_category, directory_prefix = _parse_args()
+  if report_category:
+    _main(report_category, directory_prefix)
 

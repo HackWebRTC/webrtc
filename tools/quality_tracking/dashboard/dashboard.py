@@ -40,7 +40,10 @@ class ShowDashboard(webapp2.RequestHandler):
     lkgr = build_status_loader.compute_lkgr()
 
     coverage_loader = load_coverage.CoverageDataLoader()
-    coverage_json_data = coverage_loader.load_coverage_json_data()
+    small_medium_coverage_json_data = (
+        coverage_loader.load_coverage_json_data('small_medium_tests'))
+    large_coverage_json_data = (
+        coverage_loader.load_coverage_json_data('large_tests'))
 
     page_template_filename = 'templates/dashboard_template.html'
     self.response.write(template.render(page_template_filename, vars()))
