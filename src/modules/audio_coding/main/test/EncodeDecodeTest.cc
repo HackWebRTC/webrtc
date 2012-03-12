@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -85,6 +85,9 @@ void Sender::Setup(AudioCodingModule *acm, RTPStream *rtpStream) {
   }
 
   acm->Codec(codecNo, sendCodec);
+  if (!strcmp(sendCodec.plname, "CELT")) {
+    sendCodec.channels = 1;
+  }
   acm->RegisterSendCodec(sendCodec);
   _packetization = new TestPacketization(rtpStream, sendCodec.plfreq);
   if (acm->RegisterTransportCallback(_packetization) < 0) {
@@ -146,6 +149,9 @@ void Receiver::Setup(AudioCodingModule *acm, RTPStream *rtpStream) {
   noOfCodecs = acm->NumberOfCodecs();
   for (int i = 0; i < noOfCodecs; i++) {
     acm->Codec((WebRtc_UWord8) i, recvCodec);
+    if (!strcmp(recvCodec.plname, "CELT")) {
+      recvCodec.channels = 1;
+    }
     if (acm->RegisterReceiveCodec(recvCodec) != 0) {
       printf("Unable to register codec: for run: codecId: %d\n", codeId);
       exit(1);

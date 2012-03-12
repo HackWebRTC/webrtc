@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -66,7 +66,8 @@ private:
         WebRtc_Word32 sampFreqHz,
         int rate,
         int packSize,
-        int channels);
+        int channels,
+        int payload_type);
 
     void Run(TestPackStereo* channel, int in_channels, int out_channels);
     void OpenOutFile(WebRtc_Word16 testNumber);
@@ -95,6 +96,18 @@ private:
     WebRtc_UWord16         _packSizeBytes;
     int                    _counter;
     int                    _codecType;
+
+    // Payload types for stereo codecs and CNG
+    int g722_pltype_;
+    int l16_8khz_pltype_;
+    int l16_16khz_pltype_;
+    int l16_32khz_pltype_;
+    int pcma_pltype_;
+    int pcmu_pltype_;
+    int celt_pltype_;
+    int cn_8khz_pltype_;
+    int cn_16khz_pltype_;
+    int cn_32khz_pltype_;
 };
 
 } // namespace webrtc
