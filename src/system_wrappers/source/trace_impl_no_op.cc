@@ -31,12 +31,12 @@ WebRtc_Word32 Trace::LevelFilter(WebRtc_UWord32& /*filter*/)
 }
 
 WebRtc_Word32 Trace::TraceFile(
-    WebRtc_Word8 /*fileName*/[1024])
+    char/*fileName*/[1024])
 {
     return -1;
 }
 
-WebRtc_Word32 Trace::SetTraceFile(const WebRtc_Word8* /*fileName*/,
+WebRtc_Word32 Trace::SetTraceFile(const char* /*fileName*/,
                                   const bool /*addFileCounter*/)
 {
     return -1;
