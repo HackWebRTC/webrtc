@@ -69,15 +69,15 @@ TEST_F(VadTest, ApiTest) {
   EXPECT_EQ(-1, WebRtcVad_set_mode(NULL, kModes[0]));
   EXPECT_EQ(-1, WebRtcVad_Process(NULL, kRates[0], speech, kFrameLengths[0]));
 
-  // WebRtcVad_AssignSize tests
-  int handle_size_bytes = 0;
-  EXPECT_EQ(0, WebRtcVad_AssignSize(&handle_size_bytes));
-  EXPECT_EQ(576, handle_size_bytes);
+  // WebRtcVad_AssignSize() test.
+  size_t handle_size_bytes = WebRtcVad_AssignSize();
+  EXPECT_EQ(576u, handle_size_bytes);
 
-  // WebRtcVad_Assign tests
+  // WebRtcVad_Assign() tests.
   void* tmp_handle = malloc(handle_size_bytes);
-  EXPECT_EQ(-1, WebRtcVad_Assign(&handle, NULL));
-  EXPECT_EQ(0, WebRtcVad_Assign(&handle, tmp_handle));
+  EXPECT_EQ(-1, WebRtcVad_Assign(NULL, &handle));
+  EXPECT_EQ(-1, WebRtcVad_Assign(tmp_handle, NULL));
+  EXPECT_EQ(0, WebRtcVad_Assign(tmp_handle, &handle));
   EXPECT_EQ(handle, tmp_handle);
   free(tmp_handle);
 

@@ -8,12 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-
-/*
- * This file includes the VAD API calls. For a specific function call description,
- * see webrtc_vad.h
- */
-
 #include <stdlib.h>
 #include <string.h>
 
@@ -22,28 +16,17 @@
 
 static const int kInitCheck = 42;
 
-WebRtc_Word16 WebRtcVad_AssignSize(int *size_in_bytes)
-{
-    *size_in_bytes = sizeof(VadInstT) * 2 / sizeof(WebRtc_Word16);
-    return 0;
+size_t WebRtcVad_AssignSize() {
+  return sizeof(VadInstT);
 }
 
-WebRtc_Word16 WebRtcVad_Assign(VadInst **vad_inst, void *vad_inst_addr)
-{
+int WebRtcVad_Assign(void* memory, VadInst** handle) {
+  if (handle == NULL || memory == NULL) {
+    return -1;
+  }
 
-    if (vad_inst == NULL)
-    {
-        return -1;
-    }
-
-    if (vad_inst_addr != NULL)
-    {
-        *vad_inst = (VadInst*)vad_inst_addr;
-        return 0;
-    } else
-    {
-        return -1;
-    }
+  *handle = (VadInst*) memory;
+  return 0;
 }
 
 int WebRtcVad_Create(VadInst** handle) {
@@ -76,6 +59,7 @@ int WebRtcVad_Free(VadInst* handle) {
   return 0;
 }
 
+// TODO(bjornv): Move WebRtcVad_InitCore() code here.
 int WebRtcVad_Init(VadInst* handle) {
   // Initialize the core VAD component.
   return WebRtcVad_InitCore((VadInstT*) handle);

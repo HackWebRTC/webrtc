@@ -16,42 +16,32 @@
 #ifndef WEBRTC_COMMON_AUDIO_VAD_INCLUDE_WEBRTC_VAD_H_
 #define WEBRTC_COMMON_AUDIO_VAD_INCLUDE_WEBRTC_VAD_H_
 
+#include <stdlib.h>
+
 #include "typedefs.h"
 
 typedef struct WebRtcVadInst VadInst;
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
-/****************************************************************************
- * WebRtcVad_AssignSize(...) 
- *
- * This functions get the size needed for storing the instance for encoder
- * and decoder, respectively
- *
- * Input/Output:
- *      - size_in_bytes : Pointer to integer where the size is returned
- *
- * Return value         : 0
- */
-WebRtc_Word16 WebRtcVad_AssignSize(int *size_in_bytes);
+// TODO(bjornv): Investigate if we need the Assign calls below at all.
 
-/****************************************************************************
- * WebRtcVad_Assign(...) 
- *
- * This functions Assigns memory for the instances.
- *
- * Input:
- *        - vad_inst_addr :  Address to where to assign memory
- * Output:
- *        - vad_inst      :  Pointer to the instance that should be created
- *
- * Return value           :  0 - Ok
- *                          -1 - Error
- */
-WebRtc_Word16 WebRtcVad_Assign(VadInst **vad_inst, void *vad_inst_addr);
+// Gets the size needed for storing the instance for the VAD.
+//
+// returns  : The size in bytes needed to allocate memory for the VAD instance.
+size_t WebRtcVad_AssignSize();
+
+// Assigns memory for the instances at a given address. It is assumed that the
+// memory for the VAD instance is allocated at |memory| in accordance with
+// WebRtcVad_AssignSize().
+//
+// - memory [i] : Address to where the memory is assigned.
+// - handle [o] : Pointer to the instance that should be created.
+//
+// returns      : 0 - (OK), -1 (NULL pointer in)
+int WebRtcVad_Assign(void* memory, VadInst** handle);
 
 // Creates an instance to the VAD structure.
 //
@@ -67,21 +57,13 @@ int WebRtcVad_Create(VadInst** handle);
 // returns      : 0 - (OK), -1 - (NULL pointer in)
 int WebRtcVad_Free(VadInst* handle);
 
-/****************************************************************************
- * WebRtcVad_Init(...)
- *
- * This function initializes a VAD instance
- *
- * Input:
- *      - vad_inst      : Instance that should be initialized
- *
- * Output:
- *      - vad_inst      : Initialized instance
- *
- * Return value         :  0 - Ok
- *                        -1 - Error
- */
-int WebRtcVad_Init(VadInst *vad_inst);
+// Initializes a VAD instance.
+//
+// - handle [i/o] : Instance that should be initialized.
+//
+// returns        : 0 - (OK),
+//                 -1 - (NULL pointer or Default mode could not be set)
+int WebRtcVad_Init(VadInst* handle);
 
 /****************************************************************************
  * WebRtcVad_set_mode(...)
