@@ -72,9 +72,7 @@ typedef unsigned __int64    uint64_t;
 
 // TODO(andrew): remove WebRtc_ types:
 // http://code.google.com/p/webrtc/issues/detail?id=314
-// TODO(leozwang): change to WebRtc_Word8 to use int8_t:
-// http://code.google.com/p/webrtc/issues/detail?id=311
-typedef char                WebRtc_Word8;
+typedef int8_t              WebRtc_Word8;
 typedef int16_t             WebRtc_Word16;
 typedef int32_t             WebRtc_Word32;
 typedef int64_t             WebRtc_Word64;
