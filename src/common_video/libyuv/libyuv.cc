@@ -13,11 +13,7 @@
 #include <assert.h>
 
 // LibYuv includes
-#ifdef WEBRTC_ANDROID
-#include "libyuv/files/include/libyuv.h"
-#else
 #include "third_party/libyuv/include/libyuv.h"
-#endif
 
 namespace webrtc {
 

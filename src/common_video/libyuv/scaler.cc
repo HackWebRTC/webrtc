@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -11,11 +11,7 @@
 #include "common_video/libyuv/include/scaler.h"
 
 // LibYuv
-#ifdef WEBRTC_ANDROID
-#include "libyuv/files/include/libyuv.h"
-#else
 #include "third_party/libyuv/include/libyuv.h"
-#endif
 
 namespace webrtc {
 
