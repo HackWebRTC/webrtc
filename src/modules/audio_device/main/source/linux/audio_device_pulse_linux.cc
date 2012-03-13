@@ -2712,8 +2712,16 @@ WebRtc_Word32 AudioDeviceLinuxPulse::ProcessRecordedData(
         }
     }
 
-    // Set vqe data
     const WebRtc_UWord32 clockDrift(0);
+    // TODO(andrew): this is a temporary hack, to avoid non-causal far- and
+    // near-end signals at the AEC for PulseAudio. I think the system delay is
+    // being correctly calculated here, but for legacy reasons we add +10 ms to
+    // the value in the AEC. The real fix will be part of a larger investigation
+    // into managing system delay in the AEC.
+    if (recDelay > 10)
+        recDelay -= 10;
+    else
+        recDelay = 0;
     _ptrAudioBuffer->SetVQEData(_sndCardPlayDelay, recDelay, clockDrift);
 
     // Deliver recorded samples at specified sample rate,
