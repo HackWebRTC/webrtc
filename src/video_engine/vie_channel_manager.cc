@@ -304,20 +304,21 @@ bool ViEChannelManager::CreateChannelObject(int channel_id,
     delete vie_channel;
     return false;
   }
-
-  VideoCodec encoder;
-  vie_encoder->GetEncoder(encoder);
-  if (vie_channel->SetSendCodec(encoder) != 0) {
-    vie_encoder = NULL;
-  }
-
   // Register the channel at the encoder.
+  // Need to call RegisterSendRtpRtcpModule before SetSendCodec since
+  // the SetSendCodec call use the default rtp/rtcp module.
   RtpRtcp* send_rtp_rtcp_module = vie_encoder->SendRtpRtcpModule();
   if (vie_channel->RegisterSendRtpRtcpModule(*send_rtp_rtcp_module) != 0) {
     delete vie_channel;
     WEBRTC_TRACE(kTraceError, kTraceVideo, ViEId(engine_id_, channel_id),
                  "%s: Could not register RTP module", __FUNCTION__);
     return false;
+  }
+
+  VideoCodec encoder;
+  vie_encoder->GetEncoder(encoder);
+  if (vie_channel->SetSendCodec(encoder) != 0) {
+    vie_encoder = NULL;
   }
 
   // Store the channel, add it to the channel group and save the vie_encoder.
