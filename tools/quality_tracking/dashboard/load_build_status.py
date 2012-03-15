@@ -116,5 +116,5 @@ class BuildStatusLoader:
       # There was only one revision and it was OK.
       return current_lkgr
 
-    # There is no all-green revision in the database.
+    # There are no all-green revision in the database.
     return None
