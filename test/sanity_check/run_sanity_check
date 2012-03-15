@@ -3,18 +3,19 @@
 # Run a test with the WebRTC Chromium build.
 # Should work on any machine with a camera.
 #
-# Method:
-# - Start server
-# - Start 2 browser tabs
-# - Browser tab 1 captures camera
-# - Both browsers sign in
-# - Browser 1 calls browser 2
-# - Browser 2 displays camera feed from browser 1
+# Pass the argument --xvfb-and-screenshots to run in a xvfb environment and
+# capture screenshots from inside the virtual environment. If you don't what
+# that is, never mind and run this script without arguments.
 #
-
-# Feel free to tweak this locally if your chrome build is somewhere else.
-# The default assumes that it is in a folder called chromium two levels
-# up from the project root ('trunk').
+# Method:
+# - Start peerconnection server.
+# - Start serving webrtc_test.html off a local web server.
+# - Start 2 browser tabs.
+# - Tab 1 connects to the server.
+# - Tab 2 connects to the server and calls tab 1.
+# - Both tabs will capture the webcam you have on the system and start
+#   sending to each other.
+#
 
 set -e
 
@@ -23,12 +24,37 @@ if [ ! -x run_sanity_check ]; then
   exit 1
 fi
 
-URLBASE=127.0.0.1:3000
-CALLER=$URLBASE/call_client.html
-CALLEE=$URLBASE/call_responder.html
-FLAGS="--enable-media-stream --enable-p2papi"
+# Tweakable parameters:
+URLBASE=localhost:3000
+CHROME_BINARY=google-chrome
+CALLEE="$URLBASE/webrtc_test.html?name=test1&autoconnect=yes"
+CALLER="$URLBASE/webrtc_test.html?name=test2&autocall=test1"
+FLAGS="--enable-media-stream"
+
+run_chrome_for_user() {
+  # Run the binary straight up and proceed with cleanup when the user closes
+  # the browser.
+  ${CHROME_BINARY} $CALLEE $CALLER $FLAGS --user-data-dir=temp/user1
+}
+
+run_chrome_in_xvfb_with_screenshots() {
+  # Run chrome in a virtual window environment and capture screenshots.
+  # It will run for 30 seconds and then exit.
+  Xvfb :17 -screen 0 1024x768x24 &
+  DISPLAY=:17 ${CHROME_BINARY} $CALLEE $CALLER $FLAGS --user-data-dir=temp/user1 &
+  CHROME=$!
+
+  sleep 2
+
+  for (( i = 0; i < 6; i++ )) do
+    FILENAME="IMAGE${i}.png"
+    DISPLAY=:17 import -window root $FILENAME
+    sleep 5
+  done
+  kill $CHROME || echo "No Chrome process."
+}
+
 PROJECT_ROOT=../..
-CHROME_BINARY=$PROJECT_ROOT/../../chromium/src/out/Debug/chrome
 
 if which lighttpd; then
   LOCAL_WEB_SERVER_BINARY=$(which lighttpd)
@@ -37,15 +63,10 @@ else
   exit 1
 fi
 
-SERVER_BINARY=${PROJECT_ROOT}/out/Debug/peerconnection_server
+SERVER_BINARY=${PROJECT_ROOT}/../../peerconnection/trunk/out/Debug/peerconnection_server
 if [ ! -e "$SERVER_BINARY" ]; then
   echo "Error: You must build peerconnection_server first."
-  exit 1
-fi
-
-CHROME_BINARY=$PROJECT_ROOT/../../chromium/src/out/Debug/chrome
-if [ ! -e "$CHROME_BINARY" ]; then
-  echo "Error: You must build chrome (could not open $CHROME_BINARY)."
+  echo "I expected to find a binary at $SERVER_BINARY but found none."
   exit 1
 fi
 
@@ -57,16 +78,14 @@ ${SERVER_BINARY} &
 SERVER=$!
 echo "Started server as $SERVER"
 
-# We can make 2 browsers
-#${CHROME_BINARY} $CALLER $FLAGS --user-data-dir=temp/user1 &
-#USER1=$!
-#echo "Started first user as $USER1"
-#${CHROME_BINARY} $CALLEE $FLAGS --user-data-dir=temp/user2 
-
-# But it also works with separate tabs in one browser.
-${CHROME_BINARY} $CALLER $CALLEE $FLAGS --user-data-dir=temp/user1
+# Launch a browser with two tabs:
+if [ "$1" == "--xvfb-and-screenshots" ]; then
+  run_chrome_in_xvfb_with_screenshots
+else
+  run_chrome_for_user
+fi
 
 echo "Test finished, cleaning up"
 
-kill $SERVER || echo "No server"
+kill $SERVER || echo "No peerconnection_server"
 kill $LOCAL_WEB_SERVER || echo "No local web server"

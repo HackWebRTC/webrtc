@@ -28,7 +28,7 @@ h1 {font-size: 40 px;}
 
 <script type="text/javascript">
 
-// TODO: Catch more exceptions
+// TODO(henrikg): Catch more exceptions
 
 var server;
 var myId = -1;
@@ -317,7 +317,7 @@ function onSignalingMessage(msg) {
   sendToPeer(remoteId, msg);
 }
 
-// TODO: Add callbacks onconnecting, onopen and onstatechange.
+// TODO(henrikg): Add callbacks onconnecting, onopen and onstatechange.
 
 
 // Server interaction
@@ -354,8 +354,8 @@ function handlePeerMessage(peer_id, msg) {
   }
   trace("Received message from " + peerName + " (ID " + peer_id + "):\n" + msg);
   // Assuming we receive the message from the peer we want to communicate with.
-  // TODO: Only accept messages from peer we communicate with with if call is
-  // ongoing.
+  // TODO(henrikg): Only accept messages from peer we communicate with with if
+  // call is ongoing.
   if (msg.search("BYE") == 0) {
     // Other side has hung up.
     document.getElementById("hangup").disabled = true;
@@ -439,7 +439,7 @@ function startHangingGet() {
     hangingGet.onreadystatechange = hangingGetCallback;
     hangingGet.ontimeout = onHangingGetTimeout;
     hangingGet.open("GET", server + "/wait?peer_id=" + myId, true);
-    hangingGet.send();  
+    hangingGet.send();
   } catch (e) {
     trace_exception(e, "Start hanging get error");
   }
@@ -519,8 +519,8 @@ function connect() {
     alert("I need a name please.");
     document.getElementById("local").focus();
   } else {
-    // TODO: Disable connect button here, but we need a timeout and check if we
-    // have connected, if so enable it again.
+    // TODO(henrikg): Disable connect button here, but we need a timeout and
+    // check if we have connected, if so enable it again.
     signIn();
   }
 }
@@ -530,7 +530,7 @@ function disconnect() {
     hangUp();
 
   disconnecting = true;
-  
+
   if (request) {
     request.abort();
     request = null;
