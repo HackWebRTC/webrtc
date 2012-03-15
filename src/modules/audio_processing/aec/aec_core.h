@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -176,5 +176,10 @@ void WebRtcAec_ProcessFrame(aec_t* aec,
                             const short *nearend,
                             const short *nearendH,
                             int knownDelay);
+
+// A helper function to call WebRtc_MoveReadPtr() for all far-end buffers.
+// Returns the number of elements moved, and adjusts |system_delay| by the
+// corresponding amount in ms.
+int WebRtcAec_MoveFarReadPtr(aec_t* aec, int elements);
 
 #endif  // WEBRTC_MODULES_AUDIO_PROCESSING_AEC_MAIN_SOURCE_AEC_CORE_H_

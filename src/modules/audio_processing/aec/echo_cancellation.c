@@ -526,18 +526,12 @@ WebRtc_Word32 WebRtcAec_Process(void *aecInst, const WebRtc_Word16 *nearend,
                 // Enable the AEC
                 aecpc->ECstartup = 0;
             } else if (overhead_elements > 0) {
-                WebRtc_MoveReadPtr(aecpc->aec->far_buf_windowed,
-                                   overhead_elements);
-                WebRtc_MoveReadPtr(aecpc->aec->far_buf, overhead_elements);
-#ifdef WEBRTC_AEC_DEBUG_DUMP
-                WebRtc_MoveReadPtr(aecpc->aec->far_time_buf, overhead_elements);
-#endif
                 // TODO(bjornv): Do we need a check on how much we actually
                 // moved the read pointer? It should always be possible to move
                 // the pointer |overhead_elements| since we have only added data
                 // to the buffer and no delay compensation nor AEC processing
                 // has been done.
-                aecpc->aec->system_delay -= overhead_elements * PART_LEN;
+                WebRtcAec_MoveFarReadPtr(aecpc->aec, overhead_elements);
 
                 // Enable the AEC
                 aecpc->ECstartup = 0;
@@ -893,6 +887,10 @@ static int EstBufDelay(aecpc_t* aecpc) {
   // 2) Account for resampling frame delay.
   if (aecpc->skewMode == kAecTrue && aecpc->resample == kAecTrue) {
     current_delay -= kResamplingDelay;
+  }
+
+  if (current_delay < PART_LEN) {
+    current_delay += WebRtcAec_MoveFarReadPtr(aecpc->aec, 1) * PART_LEN;
   }
 
   aecpc->filtDelay = WEBRTC_SPL_MAX(0, (short) (0.8 * aecpc->filtDelay +
