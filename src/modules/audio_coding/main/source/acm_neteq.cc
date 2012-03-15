@@ -669,7 +669,7 @@ ACMNetEQ::RecOut(
 
                 // Check for errors that can be recovered from:
                 // RECOUT_ERROR_SAMPLEUNDERRUN = 2003
-                int errorCode = WebRtcNetEQ_GetErrorCode(_inst[0]);
+                int errorCode = WebRtcNetEQ_GetErrorCode(_inst[1]);
                 if(errorCode != 2003)
                 {
                     // Cannot recover; return an error

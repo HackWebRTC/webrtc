@@ -1842,6 +1842,13 @@ AudioCodingModuleImpl::IncomingPacket(
                         _codecs[i]->UpdateDecoderSampFreq(i);
                         _netEq.SetReceivedStereo(_stereoReceive[i]);
 
+                        // If we have a change in expected number of channels,
+                        // flush packet buffers in NetEQ.
+                        if ((_stereoReceive[i] && (_expected_channels == 1)) ||
+                            (!_stereoReceive[i] && (_expected_channels == 2))) {
+                          _netEq.FlushBuffers();
+                        }
+
                         // Store number of channels we expect to receive for the
                         // current payload type.
                         if (_stereoReceive[i]) {
