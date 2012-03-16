@@ -33,7 +33,9 @@ LOCAL_SRC_FILES := \
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \
     $(MY_WEBRTC_COMMON_DEFS) \
-    '-DWEBRTC_NS_FIXED'
+    '-DWEBRTC_NS_FIXED' \
+    '-DWEBRTC_ANDROID_PLATFORM_BUILD' \
+    '-DWEBRTC_AUDIOPROC_DEBUG_DUMP'
 #   floating point
 #   -DWEBRTC_NS_FLOAT'
 
@@ -59,3 +61,89 @@ ifndef NDK_ROOT
 include external/stlport/libstlport.mk
 endif
 include $(BUILD_STATIC_LIBRARY)
+
+# apm process test app
+
+include $(CLEAR_VARS)
+
+LOCAL_MODULE_TAGS := tests
+LOCAL_CPP_EXTENSION := .cc
+LOCAL_SRC_FILES:= \
+    $(call all-proto-files-under, .) \
+    test/process_test.cc
+
+# Flags passed to both C and C++ files.
+LOCAL_CFLAGS := \
+    $(MY_WEBRTC_COMMON_DEFS) \
+    '-DWEBRTC_ANDROID_PLATFORM_BUILD' \
+    '-DWEBRTC_AUDIOPROC_DEBUG_DUMP'
+
+LOCAL_C_INCLUDES := \
+    $(LOCAL_PATH)/include \
+    $(LOCAL_PATH)/../interface \
+    $(LOCAL_PATH)/../.. \
+    $(LOCAL_PATH)/../../system_wrappers/interface \
+    external/gtest/include
+
+LOCAL_STATIC_LIBRARIES := \
+    libgtest \
+    libprotobuf-cpp-2.3.0-lite
+
+LOCAL_SHARED_LIBRARIES := \
+    libutils \
+    libstlport \
+    libwebrtc_audio_preprocessing
+
+LOCAL_MODULE:= webrtc_audioproc
+
+ifdef NDK_ROOT
+include $(BUILD_EXECUTABLE)
+else
+include external/stlport/libstlport.mk
+include $(BUILD_NATIVE_TEST)
+endif
+
+# apm unit test app
+
+include $(CLEAR_VARS)
+
+LOCAL_MODULE_TAGS := tests
+LOCAL_CPP_EXTENSION := .cc
+LOCAL_SRC_FILES:= \
+    $(call all-proto-files-under, test) \
+    test/unit_test.cc \
+    ../../../test/testsupport/fileutils.cc
+
+# Flags passed to both C and C++ files.
+LOCAL_CFLAGS := \
+    $(MY_WEBRTC_COMMON_DEFS) \
+    '-DWEBRTC_AUDIOPROC_FIXED_PROFILE' \
+    '-DWEBRTC_ANDROID_PLATFORM_BUILD' \
+    '-DWEBRTC_AUDIOPROC_DEBUG_DUMP'
+
+LOCAL_C_INCLUDES := \
+    $(LOCAL_PATH)/include \
+    $(LOCAL_PATH)/../interface \
+    $(LOCAL_PATH)/../.. \
+    $(LOCAL_PATH)/../../../test \
+    $(LOCAL_PATH)/../../system_wrappers/interface \
+    $(LOCAL_PATH)/../../common_audio/signal_processing/include \
+    external/gtest/include \
+    external/protobuf/src
+
+LOCAL_STATIC_LIBRARIES := \
+    libgtest \
+    libprotobuf-cpp-2.3.0-lite
+
+LOCAL_SHARED_LIBRARIES := \
+    libstlport \
+    libwebrtc_audio_preprocessing
+
+LOCAL_MODULE:= webrtc_audioproc_unittest
+
+ifdef NDK_ROOT
+include $(BUILD_EXECUTABLE)
+else
+include external/stlport/libstlport.mk
+include $(BUILD_NATIVE_TEST)
+endif

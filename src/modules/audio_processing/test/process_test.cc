@@ -21,9 +21,11 @@
 #include "module_common_types.h"
 #include "scoped_ptr.h"
 #include "tick_util.h"
-
+#ifdef WEBRTC_ANDROID_PLATFORM_BUILD
+#include "external/webrtc/src/modules/audio_processing/debug.pb.h"
+#else
 #include "webrtc/audio_processing/debug.pb.h"
-
+#endif
 
 using webrtc::AudioFrame;
 using webrtc::AudioProcessing;

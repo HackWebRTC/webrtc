@@ -28,7 +28,7 @@
 
 #ifdef WEBRTC_AUDIOPROC_DEBUG_DUMP
 // Files generated at build-time by the protobuf compiler.
-#ifdef WEBRTC_ANDROID
+#ifdef WEBRTC_ANDROID_PLATFORM_BUILD
 #include "external/webrtc/src/modules/audio_processing/debug.pb.h"
 #else
 #include "webrtc/audio_processing/debug.pb.h"
