@@ -1,4 +1,4 @@
-#  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+#  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
 #
 #  Use of this source code is governed by a BSD-style license
 #  that can be found in the LICENSE file in the root of the source
@@ -10,26 +10,18 @@ LOCAL_PATH:= $(call my-dir)
 
 include $(CLEAR_VARS)
 
-MY_CAPTURE_FOLDER := ../../../../modules/video_capture/main/source
-MY_CAPTURE_JAVA_FOLDER := Android/java/org/webrtc/videoengine
-MY_CAPTURE_PATH := $(MY_CAPTURE_FOLDER)/$(MY_CAPTURE_JAVA_FOLDER)
-
-MY_RENDER_FOLDER := ../../../../modules/video_render/main/source
-MY_RENDER_JAVA_FOLDER := Android/java/org/webrtc/videoengine
-MY_RENDER_PATH := $(MY_RENDER_FOLDER)/$(MY_RENDER_JAVA_FOLDER)
-
 LOCAL_MODULE_TAGS := tests
 
 LOCAL_SRC_FILES := \
     src/org/webrtc/videoengineapp/ViEAndroidDemo.java \
     src/org/webrtc/videoengineapp/ViEAndroidJavaAPI.java \
     src/org/webrtc/videoengineapp/IViEAndroidCallback.java \
-    $(MY_CAPTURE_PATH)/CaptureCapabilityAndroid.java \
-    $(MY_CAPTURE_PATH)/VideoCaptureAndroid.java \
-    $(MY_CAPTURE_PATH)/VideoCaptureDeviceInfoAndroid.java \
-    $(MY_RENDER_PATH)/ViEAndroidGLES20.java \
-    $(MY_RENDER_PATH)/ViERenderer.java \
-    $(MY_RENDER_PATH)/ViESurfaceRenderer.java 
+    src/org/webrtc/videoengine/CaptureCapabilityAndroid.java \
+    src/org/webrtc/videoengine/VideoCaptureAndroid.java \
+    src/org/webrtc/videoengine/VideoCaptureDeviceInfoAndroid.java \
+    src/org/webrtc/videoengine/ViEAndroidGLES20.java \
+    src/org/webrtc/videoengine/ViERenderer.java \
+    src/org/webrtc/videoengine/ViESurfaceRenderer.java
 
 LOCAL_PACKAGE_NAME := webrtc-video-demo
 LOCAL_CERTIFICATE := platform
