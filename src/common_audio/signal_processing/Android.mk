@@ -57,7 +57,8 @@ ifeq ($(ARCH_ARM_HAVE_NEON),true)
 LOCAL_SRC_FILES += \
     cross_correlation_neon.s \
     downsample_fast_neon.s \
-    min_max_operations_neon.s
+    min_max_operations_neon.s \
+    vector_scaling_operations_neon.s
 LOCAL_CFLAGS += \
     $(MY_ARM_CFLAGS_NEON)
 else

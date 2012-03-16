@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -17,9 +17,7 @@
  * WebRtcSpl_ScaleVector()
  * WebRtcSpl_ScaleVectorWithSat()
  * WebRtcSpl_ScaleAndAddVectors()
- *
- * The description header can be found in signal_processing_library.h
- *
+ * WebRtcSpl_ScaleAndAddVectorsWithRound()
  */
 
 #include "signal_processing_library.h"
@@ -149,3 +147,30 @@ void WebRtcSpl_ScaleAndAddVectors(G_CONST WebRtc_Word16 *in1, WebRtc_Word16 gain
                 + (WebRtc_Word16)WEBRTC_SPL_MUL_16_16_RSFT(gain2, *in2ptr++, shift2);
     }
 }
+
+#if !(defined(WEBRTC_ANDROID) && defined(WEBRTC_ARCH_ARM_NEON))
+int WebRtcSpl_ScaleAndAddVectorsWithRound(const int16_t* in_vector1,
+                                          int16_t in_vector1_scale,
+                                          const int16_t* in_vector2,
+                                          int16_t in_vector2_scale,
+                                          int right_shifts,
+                                          int16_t* out_vector,
+                                          int length) {
+  int i = 0;
+  int round_value = (1 << right_shifts) >> 1;
+
+  if (in_vector1 == NULL || in_vector2 == NULL || out_vector == NULL ||
+      length <= 0 || right_shifts < 0) {
+    return -1;
+  }
+
+  for (i = 0; i < length; i++) {
+    out_vector[i] = (int16_t)((
+        WEBRTC_SPL_MUL_16_16(in_vector1[i], in_vector1_scale)
+        + WEBRTC_SPL_MUL_16_16(in_vector2[i], in_vector2_scale)
+        + round_value) >> right_shifts);
+  }
+
+  return 0;
+}
+#endif

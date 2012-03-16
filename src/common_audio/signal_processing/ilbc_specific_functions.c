@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -11,34 +11,15 @@
 
 /*
  * This file contains implementations of the iLBC specific functions
- * WebRtcSpl_ScaleAndAddVectorsWithRound()
  * WebRtcSpl_ReverseOrderMultArrayElements()
  * WebRtcSpl_ElementwiseVectorMult()
  * WebRtcSpl_AddVectorsAndShift()
  * WebRtcSpl_AddAffineVectorToVector()
  * WebRtcSpl_AffineTransformVector()
  *
- * The description header can be found in signal_processing_library.h
- *
  */
 
 #include "signal_processing_library.h"
-
-void WebRtcSpl_ScaleAndAddVectorsWithRound(WebRtc_Word16 *vector1, WebRtc_Word16 scale1,
-                                           WebRtc_Word16 *vector2, WebRtc_Word16 scale2,
-                                           WebRtc_Word16 right_shifts, WebRtc_Word16 *out,
-                                           WebRtc_Word16 vector_length)
-{
-    int i;
-    WebRtc_Word16 roundVal;
-    roundVal = 1 << right_shifts;
-    roundVal = roundVal >> 1;
-    for (i = 0; i < vector_length; i++)
-    {
-        out[i] = (WebRtc_Word16)((WEBRTC_SPL_MUL_16_16(vector1[i], scale1)
-                + WEBRTC_SPL_MUL_16_16(vector2[i], scale2) + roundVal) >> right_shifts);
-    }
-}
 
 void WebRtcSpl_ReverseOrderMultArrayElements(WebRtc_Word16 *out, G_CONST WebRtc_Word16 *in,
                                              G_CONST WebRtc_Word16 *win,

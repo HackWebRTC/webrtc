@@ -268,17 +268,37 @@ void WebRtcSpl_ScaleAndAddVectors(G_CONST WebRtc_Word16* in_vector1,
                                   WebRtc_Word16 gain2, int right_shifts2,
                                   WebRtc_Word16* out_vector,
                                   int vector_length);
+
+// Performs the vector operation:
+//   out_vector[k] = ((scale1 * in_vector1[k]) + (scale2 * in_vector2[k])
+//        + round_value) >> right_shifts,
+//   where  round_value = (1 << right_shifts) >> 1.
+//
+// Input:
+//      - in_vector1       : Input vector 1
+//      - in_vector1_scale : Gain to be used for vector 1
+//      - in_vector2       : Input vector 2
+//      - in_vector2_scale : Gain to be used for vector 2
+//      - right_shifts     : Number of right bit shifts to be applied
+//      - length           : Number of elements in the input vectors
+//
+// Output:
+//      - out_vector       : Output vector
+// Return value            : 0 if OK, -1 if (in_vector1 == NULL
+//                           || in_vector2 == NULL || out_vector == NULL
+//                           || length <= 0 || right_shift < 0).
+int WebRtcSpl_ScaleAndAddVectorsWithRound(const int16_t* in_vector1,
+                                          int16_t in_vector1_scale,
+                                          const int16_t* in_vector2,
+                                          int16_t in_vector2_scale,
+                                          int right_shifts,
+                                          int16_t* out_vector,
+                                          int length);
+
 // End: Vector scaling operations.
 
 // iLBC specific functions. Implementations in ilbc_specific_functions.c.
 // Description at bottom of file.
-void WebRtcSpl_ScaleAndAddVectorsWithRound(WebRtc_Word16* in_vector1,
-                                           WebRtc_Word16 scale1,
-                                           WebRtc_Word16* in_vector2,
-                                           WebRtc_Word16 scale2,
-                                           WebRtc_Word16 right_shifts,
-                                           WebRtc_Word16* out_vector,
-                                           WebRtc_Word16 vector_length);
 void WebRtcSpl_ReverseOrderMultArrayElements(WebRtc_Word16* out_vector,
                                              G_CONST WebRtc_Word16* in_vector,
                                              G_CONST WebRtc_Word16* window,
@@ -986,30 +1006,6 @@ void WebRtcSpl_SynthesisQMF(const WebRtc_Word16* low_band,
 //      - gain2         : Gain to be used for vector 2
 //      - right_shifts2 : Right bit shift to be used for vector 2
 //      - vector_length : Elements in the input vectors
-//
-// Output:
-//      - out_vector    : Output vector
-//
-
-//
-// WebRtcSpl_ScaleAndAddVectorsWithRound(...)
-//
-// Performs the vector operation:
-//
-//  out_vector[k] = ((scale1*in_vector1[k]) + (scale2*in_vector2[k])
-//                      + round_value) >> right_shifts
-//
-//      where:
-//
-//  round_value = (1<<right_shifts)>>1
-//
-// Input:
-//      - in_vector1    : Input vector 1
-//      - scale1        : Gain to be used for vector 1
-//      - in_vector2    : Input vector 2
-//      - scale2        : Gain to be used for vector 2
-//      - right_shifts  : Number of right bit shifts to be applied
-//      - vector_length : Number of elements in the input vectors
 //
 // Output:
 //      - out_vector    : Output vector
