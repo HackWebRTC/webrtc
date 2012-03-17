@@ -287,7 +287,7 @@ int VP8Encoder::InitAndSetControlSettings() {
   vpx_codec_control(encoder_, VP8E_SET_CPUUSED, cpu_speed_);
   vpx_codec_control(encoder_, VP8E_SET_TOKEN_PARTITIONS,
                     static_cast<vp8e_token_partitions>(token_partitions_));
-  vpx_codec_control(encoder_, VP8E_SET_NOISE_SENSITIVITY, 1);
+  vpx_codec_control(encoder_, VP8E_SET_NOISE_SENSITIVITY, 2);
 #if WEBRTC_LIBVPX_VERSION >= 971
   vpx_codec_control(encoder_, VP8E_SET_MAX_INTRA_BITRATE_PCT,
                     rc_max_intra_target_);
