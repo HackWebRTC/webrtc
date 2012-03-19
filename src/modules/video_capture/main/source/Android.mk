@@ -1,4 +1,4 @@
-# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+# Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
@@ -21,15 +21,15 @@ LOCAL_SRC_FILES := \
     video_capture_impl.cc \
     device_info_impl.cc \
     video_capture_factory.cc \
-    Android/video_capture_android.cc \
-    Android/device_info_android.cc
+    android/video_capture_android.cc \
+    android/device_info_android.cc
 
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \
     $(MY_WEBRTC_COMMON_DEFS)
 
 LOCAL_C_INCLUDES := \
-    $(LOCAL_PATH)/Android \
+    $(LOCAL_PATH)/android \
     $(LOCAL_PATH)/../interface \
     $(LOCAL_PATH)/../source \
     $(LOCAL_PATH)/../../../interface \

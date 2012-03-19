@@ -40,9 +40,9 @@
 #endif
 
 #elif defined(WEBRTC_ANDROID)
-#include "Android/video_render_android_impl.h"
-#include "Android/video_render_android_surface_view.h"
-#include "Android/video_render_android_native_opengl2.h"
+#include "android/video_render_android_impl.h"
+#include "android/video_render_android_surface_view.h"
+#include "android/video_render_android_native_opengl2.h"
 #define STANDARD_RENDERING	kRenderAndroid
 
 #elif defined(WEBRTC_LINUX)
@@ -978,4 +978,3 @@ WebRtc_Word32 ModuleVideoRenderImpl::MirrorRenderStream(const int renderId,
 }
 
 } //namespace webrtc
-

@@ -25,10 +25,10 @@
 namespace webrtc {
 
 AndroidNativeOpenGl2Renderer::AndroidNativeOpenGl2Renderer(
-                                                                   const WebRtc_Word32 id,
-                                                                   const VideoRenderType videoRenderType,
-                                                                   void* window,
-                                                                   const bool fullscreen) :
+    const WebRtc_Word32 id,
+    const VideoRenderType videoRenderType,
+    void* window,
+    const bool fullscreen) :
     VideoRenderAndroid(id, videoRenderType, window, fullscreen),
     _javaRenderObj(NULL),
     _javaRenderClass(NULL)
@@ -54,12 +54,12 @@ bool AndroidNativeOpenGl2Renderer::UseOpenGL2(void* window)
         // Get the JNI env for this thread
         if ((res < 0) || !env)
         {
-            WEBRTC_TRACE(
-                         kTraceError,
-                         kTraceVideoRenderer,
-                         -1,
-                         "RendererAndroid(): Could not attach thread to JVM (%d, %p)",
-                         res, env);
+          WEBRTC_TRACE(
+              kTraceError,
+              kTraceVideoRenderer,
+              -1,
+              "RendererAndroid(): Could not attach thread to JVM (%d, %p)",
+              res, env);
             return false;
         }
         isAttached = true;
@@ -191,9 +191,10 @@ WebRtc_Word32 AndroidNativeOpenGl2Renderer::Init()
         return -1;
     }
 
-    // create a global reference to the class (to tell JNI that we are referencing it after this function has returned)
-    _javaRenderClass
-            = reinterpret_cast<jclass> (env->NewGlobalRef(javaRenderClassLocal));
+    // create a global reference to the class (to tell JNI that
+    // we are referencing it after this function has returned)
+    _javaRenderClass =
+        reinterpret_cast<jclass> (env->NewGlobalRef(javaRenderClassLocal));
     if (!_javaRenderClass)
     {
         WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
@@ -211,11 +212,11 @@ WebRtc_Word32 AndroidNativeOpenGl2Renderer::Init()
     if (!_javaRenderObj)
     {
         WEBRTC_TRACE(
-                     kTraceError,
-                     kTraceVideoRenderer,
-                     _id,
-                     "%s: could not create Java SurfaceRender object reference",
-                     __FUNCTION__);
+            kTraceError,
+            kTraceVideoRenderer,
+            _id,
+            "%s: could not create Java SurfaceRender object reference",
+            __FUNCTION__);
         return -1;
     }
 
@@ -236,13 +237,13 @@ WebRtc_Word32 AndroidNativeOpenGl2Renderer::Init()
 }
 AndroidStream*
 AndroidNativeOpenGl2Renderer::CreateAndroidRenderChannel(
-                                                             WebRtc_Word32 streamId,
-                                                             WebRtc_Word32 zOrder,
-                                                             const float left,
-                                                             const float top,
-                                                             const float right,
-                                                             const float bottom,
-                                                             VideoRenderAndroid& renderer)
+    WebRtc_Word32 streamId,
+    WebRtc_Word32 zOrder,
+    const float left,
+    const float top,
+    const float right,
+    const float bottom,
+    VideoRenderAndroid& renderer)
 {
     WEBRTC_TRACE(kTraceDebug, kTraceVideoRenderer, _id, "%s: Id %d",
                  __FUNCTION__, streamId);
@@ -258,9 +259,10 @@ AndroidNativeOpenGl2Renderer::CreateAndroidRenderChannel(
     return NULL;
 }
 
-AndroidNativeOpenGl2Channel::AndroidNativeOpenGl2Channel(WebRtc_UWord32 streamId,
-                                                                 JavaVM* jvm,
-                                                                 VideoRenderAndroid& renderer,jobject javaRenderObj):
+AndroidNativeOpenGl2Channel::AndroidNativeOpenGl2Channel(
+    WebRtc_UWord32 streamId,
+    JavaVM* jvm,
+    VideoRenderAndroid& renderer,jobject javaRenderObj):
     _id(streamId),
     _renderCritSect(*CriticalSectionWrapper::CreateCriticalSection()),
     _renderer(renderer), _jvm(jvm), _javaRenderObj(javaRenderObj),
@@ -428,8 +430,9 @@ WebRtc_Word32 AndroidNativeOpenGl2Channel::Init(WebRtc_Word32 zOrder,
     return 0;
 }
 
-WebRtc_Word32 AndroidNativeOpenGl2Channel::RenderFrame(const WebRtc_UWord32 /*streamId*/,
-                                                           VideoFrame& videoFrame)
+WebRtc_Word32 AndroidNativeOpenGl2Channel::RenderFrame(
+    const WebRtc_UWord32 /*streamId*/,
+    VideoFrame& videoFrame)
 {
     //   WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer,_id, "%s:" ,__FUNCTION__);
     _renderCritSect.Enter();
@@ -449,46 +452,50 @@ void AndroidNativeOpenGl2Channel::DeliverFrame(JNIEnv* jniEnv)
     //Draw the Surface
     jniEnv->CallVoidMethod(_javaRenderObj, _redrawCid);
 
-    //WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer,_id, "%s: time to deliver %lld" ,__FUNCTION__,(TickTime::Now()-timeNow).Milliseconds());
+    // WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer,_id,
+    // "%s: time to deliver %lld" ,__FUNCTION__,
+    // (TickTime::Now()-timeNow).Milliseconds());
 }
 
 /*
- * JNI callback from Java class. Called when the render want to render a frame. Called from the GLRenderThread
+ * JNI callback from Java class. Called when the render
+ * want to render a frame. Called from the GLRenderThread
  * Method:    DrawNative
  * Signature: (J)V
  */
-void JNICALL AndroidNativeOpenGl2Channel::DrawNativeStatic
-(JNIEnv * env, jobject, jlong context)
-{
-    AndroidNativeOpenGl2Channel* renderChannel=reinterpret_cast<AndroidNativeOpenGl2Channel*>(context);
-    renderChannel->DrawNative();
+void JNICALL AndroidNativeOpenGl2Channel::DrawNativeStatic(
+    JNIEnv * env, jobject, jlong context) {
+  AndroidNativeOpenGl2Channel* renderChannel =
+      reinterpret_cast<AndroidNativeOpenGl2Channel*>(context);
+  renderChannel->DrawNative();
 }
 
 void AndroidNativeOpenGl2Channel::DrawNative()
 {
-    _openGLRenderer.Render(_bufferToRender);
+  _openGLRenderer.Render(_bufferToRender);
 }
+
 /*
- * JNI callback from Java class. Called when the GLSurfaceview have created a surface. Called from the GLRenderThread
+ * JNI callback from Java class. Called when the GLSurfaceview
+ * have created a surface. Called from the GLRenderThread
  * Method:    CreateOpenGLNativeStatic
  * Signature: (JII)I
  */
-jint JNICALL AndroidNativeOpenGl2Channel::CreateOpenGLNativeStatic(JNIEnv * env,
-                                                                       jobject,
-                                                                       jlong context,
-                                                                       jint width,
-                                                                       jint height)
-{
-    AndroidNativeOpenGl2Channel* renderChannel =
-            reinterpret_cast<AndroidNativeOpenGl2Channel*> (context);
-    WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, -1, "%s:", __FUNCTION__);
-    return renderChannel->CreateOpenGLNative(width, height);
+jint JNICALL AndroidNativeOpenGl2Channel::CreateOpenGLNativeStatic(
+    JNIEnv * env,
+    jobject,
+    jlong context,
+    jint width,
+    jint height) {
+  AndroidNativeOpenGl2Channel* renderChannel =
+      reinterpret_cast<AndroidNativeOpenGl2Channel*> (context);
+  WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, -1, "%s:", __FUNCTION__);
+  return renderChannel->CreateOpenGLNative(width, height);
 }
 
-jint AndroidNativeOpenGl2Channel::CreateOpenGLNative(int width, int height)
-{
-
-    return _openGLRenderer.Setup(width, height);
+jint AndroidNativeOpenGl2Channel::CreateOpenGLNative(
+    int width, int height) {
+  return _openGLRenderer.Setup(width, height);
 }
 
 } //namespace webrtc

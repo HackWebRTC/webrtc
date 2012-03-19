@@ -186,13 +186,13 @@
             }],  # win
             ['OS=="android"', {
               'include_dirs': [
-                'Android',
+                'android',
               ],
               'sources': [
-                'Android/device_info_android.cc',
-                'Android/device_info_android.h',
-                'Android/video_capture_android.cc',
-                'Android/video_capture_android.h',
+                'android/device_info_android.cc',
+                'android/device_info_android.h',
+                'android/video_capture_android.cc',
+                'android/video_capture_android.h',
               ],
             }],  # android
           ], # conditions

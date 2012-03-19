@@ -1,4 +1,4 @@
-# Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+# Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
@@ -21,10 +21,10 @@ LOCAL_SRC_FILES := \
     video_render_frames.cc \
     video_render_impl.cc \
     external/video_render_external_impl.cc \
-    Android/video_render_android_impl.cc \
-    Android/video_render_android_native_opengl2.cc \
-    Android/video_render_android_surface_view.cc \
-    Android/video_render_opengles20.cc 
+    android/video_render_android_impl.cc \
+    android/video_render_android_native_opengl2.cc \
+    android/video_render_android_surface_view.cc \
+    android/video_render_opengles20.cc
 
 # Flags passed to both C and C++ files.
 LOCAL_CFLAGS := \
@@ -33,7 +33,7 @@ LOCAL_CFLAGS := \
 
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH) \
-    $(LOCAL_PATH)/Android \
+    $(LOCAL_PATH)/android \
     $(LOCAL_PATH)/../interface \
     $(LOCAL_PATH)/../../../.. \
     $(LOCAL_PATH)/../../../audio_coding/main/interface \

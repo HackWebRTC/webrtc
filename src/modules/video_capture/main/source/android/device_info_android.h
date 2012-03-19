@@ -23,9 +23,11 @@ namespace webrtc
 namespace videocapturemodule
 {
 
-// Android logging, uncomment to print trace to logcat instead of trace file/callback
-//#include <android/log.h>
-//#define WEBRTC_TRACE(a,b,c,...)  __android_log_print(ANDROID_LOG_DEBUG, "*WEBRTCN*", __VA_ARGS__)
+// Android logging, uncomment to print trace to
+// logcat instead of trace file/callback
+// #include <android/log.h>
+// #define WEBRTC_TRACE(a,b,c,...)
+// __android_log_print(ANDROID_LOG_DEBUG, "*WEBRTCN*", __VA_ARGS__)
 
 class DeviceInfoAndroid: public DeviceInfoImpl
 {

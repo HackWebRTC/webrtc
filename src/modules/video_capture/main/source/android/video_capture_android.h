@@ -36,7 +36,8 @@ public:
                                const char* deviceUniqueIdUTF8);
 
 
-    virtual WebRtc_Word32 StartCapture(const VideoCaptureCapability& capability);
+    virtual WebRtc_Word32 StartCapture(
+        const VideoCaptureCapability& capability);
     virtual WebRtc_Word32 StopCapture();
     virtual bool CaptureStarted();
     virtual WebRtc_Word32 CaptureSettings(VideoCaptureCapability& settings);
@@ -56,7 +57,8 @@ protected:
     static JavaVM* g_jvm;
     static jclass g_javaCmClass;
     static jclass g_javaCmDevInfoClass;
-    static jobject g_javaCmDevInfoObject; //Static java object implementing the needed device info functions;
+  //Static java object implementing the needed device info functions;
+    static jobject g_javaCmDevInfoObject;
     static jobject g_javaContext; // Java Application context
 };
 } // namespace videocapturemodule

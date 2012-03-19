@@ -39,10 +39,10 @@ WebRtc_Word32 VideoRenderAndroid::SetAndroidEnvVariables(void* javaVM)
 }
 
 VideoRenderAndroid::VideoRenderAndroid(
-                                       const WebRtc_Word32 id,
-                                       const VideoRenderType videoRenderType,
-									   void* window,
-									   const bool /*fullscreen*/):
+    const WebRtc_Word32 id,
+    const VideoRenderType videoRenderType,
+    void* window,
+    const bool /*fullscreen*/):
     _id(id),
     _critSect(*CriticalSectionWrapper::CreateCriticalSection()),
     _renderType(videoRenderType),
@@ -127,7 +127,7 @@ VideoRenderAndroid::AddIncomingRenderStream(const WebRtc_UWord32 streamId,
 }
 
 WebRtc_Word32 VideoRenderAndroid::DeleteIncomingRenderStream(
-                                                             const WebRtc_UWord32 streamId)
+    const WebRtc_UWord32 streamId)
 {
     CriticalSectionScoped cs(&_critSect);
 
@@ -147,53 +147,47 @@ WebRtc_Word32 VideoRenderAndroid::DeleteIncomingRenderStream(
 }
 
 WebRtc_Word32 VideoRenderAndroid::GetIncomingRenderStreamProperties(
-                                                                    const WebRtc_UWord32 streamId,
-                                                                    WebRtc_UWord32& zOrder,
-                                                                    float& left,
-                                                                    float& top,
-                                                                    float& right,
-                                                                    float& bottom) const
-{
-
-    return -1;
+    const WebRtc_UWord32 streamId,
+    WebRtc_UWord32& zOrder,
+    float& left,
+    float& top,
+    float& right,
+    float& bottom) const {
+  return -1;
 }
 
-WebRtc_Word32 VideoRenderAndroid::StartRender()
-{
-    CriticalSectionScoped cs(&_critSect);
+WebRtc_Word32 VideoRenderAndroid::StartRender() {
+  CriticalSectionScoped cs(&_critSect);
 
-    if (_javaRenderThread)
-    {
-        // StartRender is called when this stream should start render.
-        // However StopRender is not called when the streams stop rendering. Thus the the thread  is only deleted when the renderer is removed.
-        WEBRTC_TRACE(kTraceDebug, kTraceVideoRenderer, _id,
-                     "%s, Render thread already exist", __FUNCTION__);
-        return 0;
-    }
-
-    _javaRenderThread = ThreadWrapper::CreateThread(JavaRenderThreadFun, this,
-                                                    kRealtimePriority,
-                                                    "AndroidRenderThread");
-    if (!_javaRenderThread)
-    {
-        WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
-                     "%s: No thread", __FUNCTION__);
-        return -1;
-    }
-
-    unsigned int tId = 0;
-    if (_javaRenderThread->Start(tId))
-    {
-        WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id,
-                     "%s: thread started: %u", __FUNCTION__, tId);
-    }
-    else
-    {
-        WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
-                     "%s: Could not start send thread", __FUNCTION__);
-        return -1;
-    }
+  if (_javaRenderThread) {
+    // StartRender is called when this stream should start render.
+    // However StopRender is not called when the streams stop rendering.
+    // Thus the the thread  is only deleted when the renderer is removed.
+    WEBRTC_TRACE(kTraceDebug, kTraceVideoRenderer, _id,
+                 "%s, Render thread already exist", __FUNCTION__);
     return 0;
+  }
+
+  _javaRenderThread = ThreadWrapper::CreateThread(JavaRenderThreadFun, this,
+                                                  kRealtimePriority,
+                                                  "AndroidRenderThread");
+  if (!_javaRenderThread) {
+    WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
+                 "%s: No thread", __FUNCTION__);
+    return -1;
+  }
+
+  unsigned int tId = 0;
+  if (_javaRenderThread->Start(tId)) {
+    WEBRTC_TRACE(kTraceInfo, kTraceVideoRenderer, _id,
+                 "%s: thread started: %u", __FUNCTION__, tId);
+  }
+  else {
+    WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
+                 "%s: Could not start send thread", __FUNCTION__);
+    return -1;
+  }
+  return 0;
 }
 
 WebRtc_Word32 VideoRenderAndroid::StopRender()
@@ -228,19 +222,17 @@ WebRtc_Word32 VideoRenderAndroid::StopRender()
     return 0;
 }
 
-void VideoRenderAndroid::ReDraw()
-{
-    CriticalSectionScoped cs(&_critSect);
-    if (_lastJavaRenderEvent < TickTime::MillisecondTimestamp() - 20) // Allow redraw if it was more than 20ms since last.
-    {
-        _lastJavaRenderEvent = TickTime::MillisecondTimestamp();
-        _javaRenderEvent.Set();
-    }
+void VideoRenderAndroid::ReDraw() {
+  CriticalSectionScoped cs(&_critSect);
+  // Allow redraw if it was more than 20ms since last.
+  if (_lastJavaRenderEvent < TickTime::MillisecondTimestamp() - 20) {
+    _lastJavaRenderEvent = TickTime::MillisecondTimestamp();
+    _javaRenderEvent.Set();
+  }
 }
 
-bool VideoRenderAndroid::JavaRenderThreadFun(void* obj)
-{
-    return static_cast<VideoRenderAndroid*> (obj)->JavaRenderThreadProcess();
+bool VideoRenderAndroid::JavaRenderThreadFun(void* obj) {
+  return static_cast<VideoRenderAndroid*> (obj)->JavaRenderThreadProcess();
 }
 
 bool VideoRenderAndroid::JavaRenderThreadProcess()
@@ -268,7 +260,7 @@ bool VideoRenderAndroid::JavaRenderThreadProcess()
             = _streamsMap.Next(item))
     {
         static_cast<AndroidStream*> (item->GetItem())->DeliverFrame(
-                                                                    _javaRenderJniEnv);
+            _javaRenderJniEnv);
     }
 
     if (_javaShutDownFlag)
@@ -307,74 +299,68 @@ bool VideoRenderAndroid::FullScreen()
 }
 
 WebRtc_Word32 VideoRenderAndroid::GetGraphicsMemory(
-                                                    WebRtc_UWord64& /*totalGraphicsMemory*/,
-                                                    WebRtc_UWord64& /*availableGraphicsMemory*/) const
-{
-    WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
-                 "%s - not supported on Android", __FUNCTION__);
-    return -1;
+    WebRtc_UWord64& /*totalGraphicsMemory*/,
+    WebRtc_UWord64& /*availableGraphicsMemory*/) const {
+  WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
+               "%s - not supported on Android", __FUNCTION__);
+  return -1;
 }
 
 WebRtc_Word32 VideoRenderAndroid::GetScreenResolution(
-                                                      WebRtc_UWord32& /*screenWidth*/,
-                                                      WebRtc_UWord32& /*screenHeight*/) const
-{
-    WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
-                 "%s - not supported on Android", __FUNCTION__);
-    return -1;
+    WebRtc_UWord32& /*screenWidth*/,
+    WebRtc_UWord32& /*screenHeight*/) const {
+  WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
+               "%s - not supported on Android", __FUNCTION__);
+  return -1;
 }
 
-WebRtc_UWord32 VideoRenderAndroid::RenderFrameRate(const WebRtc_UWord32 /*streamId*/)
-{
-    WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
-                 "%s - not supported on Android", __FUNCTION__);
-    return -1;
+WebRtc_UWord32 VideoRenderAndroid::RenderFrameRate(
+    const WebRtc_UWord32 /*streamId*/) {
+  WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
+               "%s - not supported on Android", __FUNCTION__);
+  return -1;
 }
 
 WebRtc_Word32 VideoRenderAndroid::SetStreamCropping(
-                                                    const WebRtc_UWord32 /*streamId*/,
-                                                    const float /*left*/,
-                                                    const float /*top*/,
-                                                    const float /*right*/,
-                                                    const float /*bottom*/)
-{
-    WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
-                 "%s - not supported on Android", __FUNCTION__);
-    return -1;
+    const WebRtc_UWord32 /*streamId*/,
+    const float /*left*/,
+    const float /*top*/,
+    const float /*right*/,
+    const float /*bottom*/) {
+  WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
+               "%s - not supported on Android", __FUNCTION__);
+  return -1;
 }
 
-WebRtc_Word32 VideoRenderAndroid::SetTransparentBackground(const bool enable)
-{
-    WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
-                 "%s - not supported on Android", __FUNCTION__);
-    return -1;
+WebRtc_Word32 VideoRenderAndroid::SetTransparentBackground(const bool enable) {
+  WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
+               "%s - not supported on Android", __FUNCTION__);
+  return -1;
 }
 
 WebRtc_Word32 VideoRenderAndroid::ConfigureRenderer(
-                                                    const WebRtc_UWord32 streamId,
-                                                    const unsigned int zOrder,
-                                                    const float left,
-                                                    const float top,
-                                                    const float right,
-                                                    const float bottom)
-{
-    WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
-                 "%s - not supported on Android", __FUNCTION__);
-    return -1;
+    const WebRtc_UWord32 streamId,
+    const unsigned int zOrder,
+    const float left,
+    const float top,
+    const float right,
+    const float bottom) {
+  WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
+               "%s - not supported on Android", __FUNCTION__);
+  return -1;
 }
 
 WebRtc_Word32 VideoRenderAndroid::SetText(
-                                          const WebRtc_UWord8 textId,
-                                          const WebRtc_UWord8* text,
-                                          const WebRtc_Word32 textLength,
-                                          const WebRtc_UWord32 textColorRef,
-                                          const WebRtc_UWord32 backgroundColorRef,
-                                          const float left, const float top,
-                                          const float rigth, const float bottom)
-{
-    WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
-                 "%s - not supported on Android", __FUNCTION__);
-    return -1;
+    const WebRtc_UWord8 textId,
+    const WebRtc_UWord8* text,
+    const WebRtc_Word32 textLength,
+    const WebRtc_UWord32 textColorRef,
+    const WebRtc_UWord32 backgroundColorRef,
+    const float left, const float top,
+    const float rigth, const float bottom) {
+  WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
+               "%s - not supported on Android", __FUNCTION__);
+  return -1;
 }
 
 WebRtc_Word32 VideoRenderAndroid::SetBitmap(const void* bitMap,
@@ -382,11 +368,10 @@ WebRtc_Word32 VideoRenderAndroid::SetBitmap(const void* bitMap,
                                             const void* colorKey,
                                             const float left, const float top,
                                             const float right,
-                                            const float bottom)
-{
-    WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
-                 "%s - not supported on Android", __FUNCTION__);
-    return -1;
+                                            const float bottom) {
+  WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
+               "%s - not supported on Android", __FUNCTION__);
+  return -1;
 }
-} //namespace webrtc
 
+} //namespace webrtc

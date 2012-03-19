@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -37,7 +37,8 @@ private:
     void printGLString(const char *name, GLenum s);
     void checkGlError(const char* op);
     GLuint loadShader(GLenum shaderType, const char* pSource);
-    GLuint createProgram(const char* pVertexSource, const char* pFragmentSource);
+    GLuint createProgram(const char* pVertexSource,
+                         const char* pFragmentSource);
     void SetupTextures(const VideoFrame& frameToRender);
     void UpdateTextures(const VideoFrame& frameToRender);
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -139,7 +139,8 @@ WebRtc_Word32 VideoRenderOpenGles20::Setup(WebRtc_Word32 width,
     }
 
     // set the vertices array in the shader
-    // _vertices contains 4 vertices with 5 coordinates. 3 for (xyz) for the vertices and 2 for the texture
+    // _vertices contains 4 vertices with 5 coordinates.
+    // 3 for (xyz) for the vertices and 2 for the texture
     glVertexAttribPointer(positionHandle, 3, GL_FLOAT, false, 5
             * sizeof(GLfloat), _vertices);
     checkGlError("glVertexAttribPointer aPosition");
@@ -148,7 +149,8 @@ WebRtc_Word32 VideoRenderOpenGles20::Setup(WebRtc_Word32 width,
     checkGlError("glEnableVertexAttribArray positionHandle");
 
     // set the texture coordinate array in the shader
-    // _vertices contains 4 vertices with 5 coordinates. 3 for (xyz) for the vertices and 2 for the texture
+    // _vertices contains 4 vertices with 5 coordinates.
+    // 3 for (xyz) for the vertices and 2 for the texture
     glVertexAttribPointer(textureHandle, 2, GL_FLOAT, false, 5
             * sizeof(GLfloat), &_vertices[3]);
     checkGlError("glVertexAttribPointer maTextureHandle");
@@ -178,13 +180,14 @@ WebRtc_Word32 VideoRenderOpenGles20::Setup(WebRtc_Word32 width,
 }
 /*
  * SetCoordinates
- * Sets the coordinates where the stream shall be rendered. Values must be between 0 and 1.
+ * Sets the coordinates where the stream shall be rendered.
+ * Values must be between 0 and 1.
  */
 WebRtc_Word32 VideoRenderOpenGles20::SetCoordinates(WebRtc_Word32 zOrder,
-                                                        const float left,
-                                                        const float top,
-                                                        const float right,
-                                                        const float bottom)
+                                                    const float left,
+                                                    const float top,
+                                                    const float right,
+                                                    const float bottom)
 {
     if ((top > 1 || top < 0) || (right > 1 || right < 0) || (bottom > 1
             || bottom < 0) || (left > 1 || left < 0))
@@ -344,16 +347,14 @@ void VideoRenderOpenGles20::printGLString(const char *name, GLenum s)
                  name, v);
 }
 
-void VideoRenderOpenGles20::checkGlError(const char* op)
-{
+void VideoRenderOpenGles20::checkGlError(const char* op) {
 #ifdef ANDROID_LOG
-    for (GLint error = glGetError(); error; error
-            = glGetError())
-    {
-        WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id, "after %s() glError (0x%x)\n", op, error);
-    }
+  for (GLint error = glGetError(); error; error = glGetError()) {
+    WEBRTC_TRACE(kTraceError, kTraceVideoRenderer, _id,
+                 "after %s() glError (0x%x)\n", op, error);
+  }
 #else
-    return;
+  return;
 #endif
 }
 
@@ -443,4 +444,3 @@ void VideoRenderOpenGles20::UpdateTextures(const VideoFrame& frameToRender)
 }
 
 } //namespace webrtc
-
