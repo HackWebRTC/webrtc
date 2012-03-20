@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -19,7 +19,7 @@
 #include "vad_core.h"
 
 // Takes |data_length| samples of |data_in| and calculates the logarithm of the
-// energy of each of the |NUM_CHANNELS| = 6 frequency bands used by the VAD:
+// energy of each of the |kNumChannels| = 6 frequency bands used by the VAD:
 //        80 Hz - 250 Hz
 //        250 Hz - 500 Hz
 //        500 Hz - 1000 Hz
@@ -30,7 +30,7 @@
 // The values are given in Q4 and written to |features|. Further, an approximate
 // overall energy is returned. The return value is used in
 // WebRtcVad_GmmProbability() as a signal indicator, hence it is arbitrary above
-// the threshold MIN_ENERGY.
+// the threshold |kMinEnergy|.
 //
 // - self         [i/o] : State information of the VAD.
 // - data_in      [i]   : Input audio data, for feature extraction.

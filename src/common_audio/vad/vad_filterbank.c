@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -14,7 +14,6 @@
 
 #include "signal_processing_library.h"
 #include "typedefs.h"
-#include "vad_defines.h"
 
 // Constants used in LogOfEnergy().
 static const int16_t kLogConst = 24660;  // 160*log10(2) in Q9.
@@ -151,7 +150,7 @@ static void SplitFilter(const int16_t* data_in, int data_length,
 // - total_energy [i/o] : An external energy updated with the energy of
 //                        |data_in|.
 //                        NOTE: |total_energy| is only updated if
-//                        |total_energy| <= MIN_ENERGY.
+//                        |total_energy| <= |kMinEnergy|.
 // - log_energy   [o]   : 10 * log10("energy of |data_in|") given in Q4.
 static void LogOfEnergy(const int16_t* data_in, int data_length,
                         int16_t offset, int16_t* total_energy,
@@ -228,18 +227,18 @@ static void LogOfEnergy(const int16_t* data_in, int data_length,
   *log_energy += offset;
 
   // Update the approximate |total_energy| with the energy of |data_in|, if
-  // |total_energy| has not exceeded MIN_ENERGY. |total_energy| is used as an
+  // |total_energy| has not exceeded |kMinEnergy|. |total_energy| is used as an
   // energy indicator in WebRtcVad_GmmProbability() in vad_core.c.
-  if (*total_energy <= MIN_ENERGY) {
+  if (*total_energy <= kMinEnergy) {
     if (tot_rshifts >= 0) {
-      // We know by construction that the |energy| > MIN_ENERGY in Q0, so add an
-      // arbitrary value such that |total_energy| exceeds MIN_ENERGY.
-      *total_energy += MIN_ENERGY + 1;
+      // We know by construction that the |energy| > |kMinEnergy| in Q0, so add
+      // an arbitrary value such that |total_energy| exceeds |kMinEnergy|.
+      *total_energy += kMinEnergy + 1;
     } else {
       // By construction |energy| is represented by 15 bits, hence any number of
       // right shifted |energy| will fit in an int16_t. In addition, adding the
       // value to |total_energy| is wrap around safe as long as
-      // MIN_ENERGY < 8192.
+      // |kMinEnergy| < 8192.
       *total_energy += (int16_t) (energy >> -tot_rshifts);  // Q0.
     }
   }
@@ -266,7 +265,7 @@ int16_t WebRtcVad_CalculateFeatures(VadInstT* self, const int16_t* data_in,
 
   assert(data_length >= 0);
   assert(data_length <= 240);
-  assert(4 < NUM_CHANNELS - 1);  // Checking maximum |frequency_band|.
+  assert(4 < kNumChannels - 1);  // Checking maximum |frequency_band|.
 
   // Split at 2000 Hz and downsample.
   SplitFilter(in_ptr, data_length, &self->upper_state[frequency_band],

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -14,11 +14,13 @@
 
 #include "signal_processing_library.h"
 #include "typedefs.h"
-#include "vad_defines.h"
+#include "vad_core.h"
 
 // Allpass filter coefficients, upper and lower, in Q13.
 // Upper: 0.64, Lower: 0.17.
-static const int16_t kAllPassCoefsQ13[2] = { 5243, 1392 };  // Q13
+static const int16_t kAllPassCoefsQ13[2] = { 5243, 1392 };  // Q13.
+static const int16_t kSmoothingDown = 6553;  // 0.2 in Q15.
+static const int16_t kSmoothingUp = 32439;  // 0.99 in Q15.
 
 // TODO(bjornv): Move this function to vad_filterbank.c.
 // Downsampling filter based on splitting filter and allpass functions.
@@ -72,7 +74,7 @@ int16_t WebRtcVad_FindMinimum(VadInstT* self,
   int16_t* value_ptr = &self->low_value_vector[offset];
   int16_t *p1, *p2, *p3;
 
-  assert(channel < NUM_CHANNELS);
+  assert(channel < kNumChannels);
 
   // Each value in |low_value_vector| is getting 1 loop older.
   // Update age of each value in |age_ptr|, and remove old values.
@@ -167,9 +169,9 @@ int16_t WebRtcVad_FindMinimum(VadInstT* self,
   // Smooth the median value.
   if (self->frame_counter > 0) {
     if (current_median < self->mean_value[channel]) {
-      alpha = (int16_t) ALPHA1;  // 0.2 in Q15.
+      alpha = kSmoothingDown;  // 0.2 in Q15.
     } else {
-      alpha = (int16_t) ALPHA2;  // 0.99 in Q15.
+      alpha = kSmoothingUp;  // 0.99 in Q15.
     }
   }
   tmp32 = WEBRTC_SPL_MUL_16_16(alpha + 1, self->mean_value[channel]);

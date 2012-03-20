@@ -16,7 +16,6 @@
 
 extern "C" {
 #include "vad_core.h"
-#include "vad_defines.h"
 #include "vad_sp.h"
 }
 
@@ -63,7 +62,7 @@ TEST_F(VadTest, vad_sp) {
   // ordered.
   for (int16_t i = 0; i < 16; ++i) {
     int16_t value = 500 * (i + 1);
-    for (int j = 0; j < NUM_CHANNELS; ++j) {
+    for (int j = 0; j < kNumChannels; ++j) {
       // Use values both above and below initialized value.
       EXPECT_EQ(kReferenceMin[i], WebRtcVad_FindMinimum(self, value, j));
       EXPECT_EQ(kReferenceMin[i + 16], WebRtcVad_FindMinimum(self, 12000, j));
