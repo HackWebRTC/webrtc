@@ -395,8 +395,9 @@ void VCMQmResolution::ComputeRatesForSelection() {
   avg_incoming_framerate_ = kWeightRate * avg_incoming_framerate_ +
       (1.0 - kWeightRate) * incoming_framerate_;
   // Use base layer frame rate for temporal layers: this will favor spatial.
-  framerate_level_ = FrameRateLevel(avg_incoming_framerate_ /
-                                    pow(2, num_layers_ -  1));
+  assert(num_layers_ > 0);
+  framerate_level_ = FrameRateLevel(
+      avg_incoming_framerate_ / static_cast<float>(1 << (num_layers_ - 1)));
 }
 
 void VCMQmResolution::ComputeEncoderState() {
