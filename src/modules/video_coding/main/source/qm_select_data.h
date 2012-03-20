@@ -53,7 +53,6 @@ const float kPacketLossThr = 0.1f;
 // Factor for reducing transitonal bitrate under packet loss.
 const float kPacketLossRateFac = 1.0f;
 
-
 // Maximum possible transitional rate for down-sampling:
 // (units in kbps), for 30fps.
 const uint16_t kMaxRateQm[9] = {
@@ -69,10 +68,11 @@ const uint16_t kMaxRateQm[9] = {
 };
 
 // Frame rate scale for maximum transition rate.
-const float kFrameRateFac[3] = {
-    0.7f,  // L
-    1.0f,  // H
-    0.8f   // D
+const float kFrameRateFac[4] = {
+    0.5f,    // Low
+    0.7f,    // Middle level 1
+    0.85f,   // Middle level 2
+    1.0f,    // High
 };
 
 // Scale for transitional rate: based on content class
@@ -180,7 +180,7 @@ const uint8_t kTemporalAction[27] = {
 // Control the total amount of down-sampling allowed.
 const float kMaxSpatialDown = 8.0f;
 const float kMaxTempDown = 4.0f;
-const float kMaxDownSample = 16.0f;
+const float kMaxDownSample = 12.0f;
 
 // Minimum image size for a spatial down-sampling.
 const int kMinImageSize= 176 * 144;
@@ -199,6 +199,7 @@ const int kMinFrameRate = 8;
 
 // Thresholds for frame rate:
 const int kLowFrameRate = 10;
+const int kMiddleFrameRate = 15;
 const int kHighFrameRate = 25;
 
 // Thresholds for motion: motion level is from NFD

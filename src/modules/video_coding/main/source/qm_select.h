@@ -23,15 +23,23 @@ struct VideoContentMetrics;
 
 struct VCMResolutionScale {
   VCMResolutionScale()
-      : spatial_width_fact(1.0f),
+      : codec_width(640),
+        codec_height(480),
+        frame_rate(30.0f),
+        spatial_width_fact(1.0f),
         spatial_height_fact(1.0f),
         temporal_fact(1.0f),
-        change_resolution(false) {
+        change_resolution_spatial(false),
+        change_resolution_temporal(false) {
   }
+  uint16_t codec_width;
+  uint16_t codec_height;
+  float frame_rate;
   float spatial_width_fact;
   float spatial_height_fact;
   float temporal_fact;
-  bool change_resolution;
+  bool change_resolution_spatial;
+  bool change_resolution_temporal;
 };
 
 enum ImageType {
@@ -50,7 +58,14 @@ enum ImageType {
 const uint32_t kSizeOfImageType[kNumImageTypes] =
 { 25344, 57024, 76800, 101376, 172800, 307200, 518400, 921600, 2073600 };
 
-enum LevelClass {
+enum FrameRateLevelClass {
+  kFrameRateLow,
+  kFrameRateMiddle1,
+  kFrameRateMiddle2,
+  kFrameRateHigh
+};
+
+enum ContentLevelClass {
   kLow,
   kHigh,
   kDefault
@@ -66,7 +81,7 @@ struct VCMContFeature {
     level = kDefault;
   }
   float value;
-  LevelClass level;
+  ContentLevelClass level;
 };
 
 enum UpDownAction {
@@ -146,7 +161,7 @@ class VCMQmMethod {
   ImageType FindClosestImageType(uint16_t width, uint16_t height);
 
   // Get the frame rate level.
-  LevelClass FrameRateLevel(float frame_rate);
+  FrameRateLevelClass FrameRateLevel(float frame_rate);
 
  protected:
   // Content Data.
@@ -155,12 +170,14 @@ class VCMQmMethod {
   // Encoder frame sizes and native frame sizes.
   uint16_t width_;
   uint16_t height_;
+  float user_frame_rate_;
   uint16_t native_width_;
   uint16_t native_height_;
+  float native_frame_rate_;
   float aspect_ratio_;
   // Image type and frame rate leve, for the current encoder resolution.
   ImageType image_type_;
-  LevelClass framerate_level_;
+  FrameRateLevelClass framerate_level_;
   // Content class data.
   VCMContFeature motion_;
   VCMContFeature spatial_;
@@ -195,7 +212,7 @@ class VCMQmResolution : public VCMQmMethod {
                  int num_layers);
 
   // Update the encoder frame size.
-  void UpdateCodecFrameSize(uint16_t width, uint16_t height);
+  void UpdateCodecParameters(float frame_rate, uint16_t width, uint16_t height);
 
   // Update with actual bit rate (size of the latest encoded frame)
   // and frame type, after every encoded frame.
@@ -214,6 +231,7 @@ class VCMQmResolution : public VCMQmMethod {
   // Output: the spatial and/or temporal scale change.
   int SelectResolution(VCMResolutionScale** qm);
 
+ private:
   // Set the default resolution action.
   void SetDefaultAction();
 
@@ -248,11 +266,17 @@ class VCMQmResolution : public VCMQmMethod {
   // Update the down-sampling state.
   void UpdateDownsamplingState(UpDownAction up_down);
 
+  // Update the codec frame size and frame rate.
+  void UpdateCodecResolution();
+
   // Return a state based on average target rate relative transition rate.
   uint8_t RateClass(float transition_rate);
 
   // Adjust the action selected from the table.
   void AdjustAction();
+
+  // Covert 2 stages of 3/4 (=9/16) spatial decimation to 1/2.
+  void ConvertSpatialFractionalToWhole();
 
   // Check if the new frame sizes are still divisible by 2.
   void CheckForEvenFrameSize();
@@ -273,13 +297,11 @@ class VCMQmResolution : public VCMQmMethod {
   // Select the directional (1x2 or 2x1) spatial down-sampling action.
   void SelectSpatialDirectionMode(float transition_rate);
 
- private:
   enum { kDownActionHistorySize = 10};
 
   VCMResolutionScale* qm_;
   // Encoder rate control parameters.
   float target_bitrate_;
-  float user_framerate_;
   float incoming_framerate_;
   float per_frame_bandwidth_;
   float buffer_level_;

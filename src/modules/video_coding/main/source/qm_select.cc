@@ -26,9 +26,11 @@ VCMQmMethod::VCMQmMethod()
     : content_metrics_(NULL),
       width_(0),
       height_(0),
+      user_frame_rate_(0.0f),
       native_width_(0),
       native_height_(0),
-      framerate_level_(kDefault),
+      native_frame_rate_(0.0f),
+      framerate_level_(kFrameRateHigh),
       init_(false) {
   ResetQM();
 }
@@ -134,13 +136,15 @@ ImageType VCMQmMethod::FindClosestImageType(uint16_t width, uint16_t height) {
   return static_cast<ImageType>(isel);
 }
 
-LevelClass VCMQmMethod::FrameRateLevel(float avg_framerate) {
+FrameRateLevelClass VCMQmMethod::FrameRateLevel(float avg_framerate) {
   if (avg_framerate < kLowFrameRate) {
-    return kLow;
-  } else if (avg_framerate > kHighFrameRate) {
-    return kHigh;
+    return kFrameRateLow;
+  } else if (avg_framerate < kMiddleFrameRate) {
+    return kFrameRateMiddle1;
+  } else if (avg_framerate < kHighFrameRate) {
+     return kFrameRateMiddle2;
   } else {
-    return kDefault;
+    return kFrameRateHigh;
   }
 }
 
@@ -179,7 +183,6 @@ void VCMQmResolution::ResetDownSamplingState() {
 
 void VCMQmResolution::Reset() {
   target_bitrate_ = 0.0f;
-  user_framerate_ = 0.0f;
   incoming_framerate_ = 0.0f;
   buffer_level_ = 0.0f;
   per_frame_bandwidth_ =0.0f;
@@ -212,23 +215,26 @@ int VCMQmResolution::Initialize(float bitrate,
   }
   Reset();
   target_bitrate_ = bitrate;
-  user_framerate_ = user_framerate;
   incoming_framerate_ = user_framerate;
-  UpdateCodecFrameSize(width, height);
+  UpdateCodecParameters(user_framerate, width, height);
   native_width_ = width;
   native_height_ = height;
+  native_frame_rate_ = user_framerate;
   num_layers_ = num_layers;
   // Initial buffer level.
   buffer_level_ = kOptBufferLevel * target_bitrate_;
   // Per-frame bandwidth.
-  per_frame_bandwidth_ = target_bitrate_ / user_framerate_;
+  per_frame_bandwidth_ = target_bitrate_ / user_framerate;
   init_  = true;
   return VCM_OK;
 }
 
-void VCMQmResolution::UpdateCodecFrameSize(uint16_t width, uint16_t height) {
+void VCMQmResolution::UpdateCodecParameters(float frame_rate, uint16_t width,
+                                            uint16_t height) {
   width_ = width;
   height_ = height;
+  // |user_frame_rate| is the target frame rate for VPM frame dropper.
+  user_frame_rate_ = frame_rate;
   image_type_ = GetImageType(width, height);
 }
 
@@ -256,11 +262,9 @@ void VCMQmResolution::UpdateRates(float target_bitrate,
                                   float encoder_sent_rate,
                                   float incoming_framerate,
                                   uint8_t packet_loss) {
-  // Sum the target bitrate and incoming frame rate:
-  // these values are the encoder rates (from previous update ~1sec),
-  // i.e, before the update for next ~1sec.
+  // Sum the target bitrate: this is the encoder rate from previous update
+  // (~1sec), i.e, before the update for next ~1sec.
   sum_target_rate_ += target_bitrate_;
-  sum_incoming_framerate_ += incoming_framerate_;
   update_rate_cnt_++;
 
   // Sum the received (from RTCP reports) packet loss rates.
@@ -281,6 +285,7 @@ void VCMQmResolution::UpdateRates(float target_bitrate,
   // these values are ones the encoder will use for the current/next ~1sec
   target_bitrate_ =  target_bitrate;
   incoming_framerate_ = incoming_framerate;
+  sum_incoming_framerate_ += incoming_framerate_;
 
   // Update the per_frame_bandwidth:
   // this is the per_frame_bw for the current/next ~1sec
@@ -296,8 +301,8 @@ void VCMQmResolution::UpdateRates(float target_bitrate,
 
 // In the current version the following constraints are imposed:
 // 1) We only allow for one action, either down or up, at a given time.
-// 2) The possible down-sampling actions are: spatial 1/2x1/2, 3/4x3/4;
-//    temporal 1/2 and 2/3.
+// 2) The possible down-sampling actions are: spatial by 1/2x1/2, 3/4x3/4;
+//    temporal/frame rate reduction by 1/2 and 2/3.
 // 3) The action for going back up is the reverse of last (spatial or temporal)
 //    down-sampling action. The list of down-sampling actions from the
 //    Initialize() state are kept in |down_action_history_|.
@@ -313,10 +318,6 @@ int VCMQmResolution::SelectResolution(VCMResolutionScale** qm) {
     return VCM_OK;
   }
 
-  // Default settings: no action.
-  SetDefaultAction();
-  *qm = qm_;
-
   // Compute content class for selection.
   content_class_ = ComputeContentClass();
 
@@ -325,6 +326,10 @@ int VCMQmResolution::SelectResolution(VCMResolutionScale** qm) {
 
   // Get the encoder state.
   ComputeEncoderState();
+
+  // Default settings: no action.
+  SetDefaultAction();
+  *qm = qm_;
 
   // Check for going back up in resolution, if we have had some down-sampling
   // relative to native state in Initialize().
@@ -348,10 +353,14 @@ int VCMQmResolution::SelectResolution(VCMResolutionScale** qm) {
 }
 
 void VCMQmResolution::SetDefaultAction() {
+  qm_->codec_width = width_;
+  qm_->codec_height = height_;
+  qm_->frame_rate = user_frame_rate_;
+  qm_->change_resolution_spatial = false;
+  qm_->change_resolution_temporal = false;
   qm_->spatial_width_fact = 1.0f;
   qm_->spatial_height_fact = 1.0f;
   qm_->temporal_fact = 1.0f;
-  qm_->change_resolution = false;
   action_.spatial = kNoChangeSpatial;
   action_.temporal = kNoChangeTemporal;
 }
@@ -385,7 +394,9 @@ void VCMQmResolution::ComputeRatesForSelection() {
       (1.0 - kWeightRate) * target_bitrate_;
   avg_incoming_framerate_ = kWeightRate * avg_incoming_framerate_ +
       (1.0 - kWeightRate) * incoming_framerate_;
-  framerate_level_ = FrameRateLevel(avg_incoming_framerate_);
+  // Use base layer frame rate for temporal layers: this will favor spatial.
+  framerate_level_ = FrameRateLevel(avg_incoming_framerate_ /
+                                    pow(2, num_layers_ -  1));
 }
 
 void VCMQmResolution::ComputeEncoderState() {
@@ -461,6 +472,7 @@ bool VCMQmResolution::ConditionForGoingUp(float fac_width,
                                           float scale_fac) {
   float estimated_transition_rate_up = GetTransitionRate(fac_width, fac_height,
                                                          fac_temp, scale_fac);
+
   // Go back up if:
   // 1) target rate is above threshold and current encoder state is stable, or
   // 2) encoder state is easy (encoder is significantly under-shooting target).
@@ -527,10 +539,14 @@ bool VCMQmResolution::GoingDownResolution() {
       }
     }
 
-    // TODO(marpan): If num_layers_ > 1, adjust/favor spatial over temporal ?
+    // Only allow for one action (spatial or temporal) at a given time.
+    assert(action_.temporal == kNoChangeTemporal ||
+           action_.spatial == kNoChangeSpatial);
 
     // Adjust cases not captured in tables, mainly based on frame rate.
     AdjustAction();
+
+    ConvertSpatialFractionalToWhole();
 
     CheckForEvenFrameSize();
 
@@ -552,8 +568,14 @@ float VCMQmResolution::GetTransitionRate(float fac_width,
       static_cast<uint16_t>(fac_width * width_),
       static_cast<uint16_t>(fac_height * height_));
 
-  LevelClass framerate_level =
+  FrameRateLevelClass framerate_level =
       FrameRateLevel(fac_temp * avg_incoming_framerate_);
+  // If we are checking for going up temporally, and this is the last
+  // temporal action, then use native frame rate.
+  if (down_action_history_[1].temporal == kNoChangeTemporal &&
+      fac_temp > 1.0f) {
+    framerate_level = FrameRateLevel(native_frame_rate_);
+  }
 
   // The maximum allowed rate below which down-sampling is allowed:
   // Nominal values based on image format (frame size and frame rate).
@@ -570,7 +592,6 @@ float VCMQmResolution::GetTransitionRate(float fac_width,
 }
 
 void VCMQmResolution::UpdateDownsamplingState(UpDownAction up_down) {
-  qm_->change_resolution = true;
   if (up_down == kUpResolution) {
     qm_->spatial_width_fact = 1.0f / kFactorWidthSpatial[action_.spatial];
     qm_->spatial_height_fact = 1.0f / kFactorHeightSpatial[action_.spatial];
@@ -587,14 +608,41 @@ void VCMQmResolution::UpdateDownsamplingState(UpDownAction up_down) {
     // has been selected.
     assert(false);
   }
+  UpdateCodecResolution();
   state_dec_factor_spatial_ = state_dec_factor_spatial_ *
-      qm_->spatial_width_fact *
-      qm_->spatial_height_fact;
+      qm_->spatial_width_fact * qm_->spatial_height_fact;
   state_dec_factor_temporal_ = state_dec_factor_temporal_ * qm_->temporal_fact;
   assert(state_dec_factor_spatial_ >= 1.0f);
   assert(state_dec_factor_spatial_ <= kMaxSpatialDown);
   assert(state_dec_factor_temporal_ >= 1.0f);
   assert(state_dec_factor_temporal_ <= kMaxTempDown);
+}
+
+void  VCMQmResolution::UpdateCodecResolution() {
+  if (action_.spatial != kNoChangeSpatial) {
+    qm_->change_resolution_spatial = true;
+    qm_->codec_width = static_cast<uint16_t>(width_ / qm_->spatial_width_fact);
+    qm_->codec_height = static_cast<uint16_t>
+    (height_ / qm_->spatial_height_fact);
+    // Size can never exceed native sizes.
+    assert(qm_->codec_width <= native_width_);
+    assert(qm_->codec_height <= native_height_);
+    // Size should be multiple of 2.
+    assert(qm_->codec_width % 2 == 0);
+    assert(qm_->codec_height % 2 == 0);
+  }
+  if (action_.temporal != kNoChangeTemporal) {
+    qm_->change_resolution_temporal = true;
+    // Update the frame rate based on the average incoming frame rate.
+    qm_->frame_rate = avg_incoming_framerate_ / qm_->temporal_fact + 0.5f;
+    if (down_action_history_[0].temporal == 0) {
+      // When we undo the last temporal-down action, make sure we go back up
+      // to the native frame rate. Since the incoming frame rate may
+      // fluctuate over time, |avg_incoming_framerate_| scaled back up may
+      // be smaller than |native_frame rate_|.
+      qm_->frame_rate = native_frame_rate_;
+    }
+  }
 }
 
 uint8_t VCMQmResolution::RateClass(float transition_rate) {
@@ -607,16 +655,66 @@ void VCMQmResolution::AdjustAction() {
   // is not high, then safer to take frame rate reduction if the
   // average incoming frame rate is high.
   if (spatial_.level == kDefault && motion_.level != kHigh &&
-      framerate_level_ == kHigh) {
+      framerate_level_ == kFrameRateHigh) {
     action_.spatial = kNoChangeSpatial;
     action_.temporal = kOneHalfTemporal;
   }
-  // If both motion and spatial level are low, and temporal down-action
+  // If both motion and spatial level are low, and temporal down action
   // was selected, switch to spatial 3/4x3/4 if the frame rate is low.
   if (motion_.level == kLow && spatial_.level == kLow &&
-      framerate_level_ == kLow && action_.temporal != kNoChangeTemporal) {
+      framerate_level_ == kFrameRateLow &&
+      action_.temporal != kNoChangeTemporal) {
     action_.spatial = kOneHalfSpatialUniform;
     action_.temporal = kNoChangeTemporal;
+  }
+
+  // If too much spatial action, and temporal action has not yet been chosen,
+  // then change to temporal action if the average frame rate is not low.
+  if (action_.spatial == kOneQuarterSpatialUniform &&
+      down_action_history_[0].spatial == kOneQuarterSpatialUniform &&
+      down_action_history_[0].temporal == kNoChangeTemporal &&
+      framerate_level_ != kFrameRateLow) {
+    action_.spatial = kNoChangeSpatial;
+    action_.temporal = kOneHalfTemporal;
+  }
+
+  // Never use temporal action if number of temporal layers is above 2.
+  if (num_layers_ > 2) {
+    if (action_.temporal !=  kNoChangeTemporal) {
+      action_.spatial = kOneHalfSpatialUniform;
+    }
+    action_.temporal = kNoChangeTemporal;
+  }
+}
+
+void VCMQmResolution::ConvertSpatialFractionalToWhole() {
+  // If 3/4 spatial is selected, check if there has been another 3/4,
+  // and if so, combine them into 1/2. 1/2 scaling is more efficient than 9/16.
+  // Note we define 3/4x3/4 spatial as kOneHalfSpatialUniform.
+  if (action_.spatial == kOneHalfSpatialUniform) {
+    bool found = false;
+    int isel = kDownActionHistorySize;
+    for (int i = 0; i < kDownActionHistorySize; ++i) {
+      if (down_action_history_[i].spatial ==  kOneHalfSpatialUniform) {
+        isel = i;
+        found = true;
+        break;
+      }
+    }
+    if (found) {
+      // Update state for removing 3/4 spatial.
+      state_dec_factor_spatial_ = state_dec_factor_spatial_ /
+          (kFactorWidthSpatial[kOneHalfSpatialUniform] *
+           kFactorHeightSpatial[kOneHalfSpatialUniform]);
+      width_ = width_ * kFactorWidthSpatial[kOneHalfSpatialUniform];
+      height_ = height_ * kFactorHeightSpatial[kOneHalfSpatialUniform];
+      // Remove 3/4 from the history.
+      for (int i = isel; i < kDownActionHistorySize - 1; ++i) {
+        down_action_history_[i].spatial = down_action_history_[i + 1].spatial;
+      }
+      // Update current selection action to be 1/2x1/2 (=1/4) spatial.
+      action_.spatial = kOneQuarterSpatialUniform;
+    }
   }
 }
 
@@ -669,11 +767,11 @@ void VCMQmResolution::ConstrainAmountOfDownSampling() {
   // No spatial sampling if current frame size is too small (QCIF),
   // or if the amount of spatial down-sampling will be too much.
   float new_dec_factor_spatial = state_dec_factor_spatial_ *
-      qm_->spatial_width_fact *
-      qm_->spatial_height_fact;
+      qm_->spatial_width_fact * qm_->spatial_height_fact;
   if ((width_ * height_) <= kMinImageSize ||
       new_dec_factor_spatial > kMaxSpatialDown) {
     action_.spatial = kNoChangeSpatial;
+    qm_->change_resolution_spatial = false;
     qm_->spatial_width_fact = 1.0f;
     qm_->spatial_height_fact = 1.0f;
   }
@@ -683,6 +781,7 @@ void VCMQmResolution::ConstrainAmountOfDownSampling() {
   if (avg_incoming_framerate_ <= kMinFrameRate ||
       new_dec_factor_temp >= kMaxTempDown) {
     action_.temporal = kNoChangeTemporal;
+    qm_->change_resolution_temporal = false;
     qm_->temporal_fact = 1.0f;
   }
 }
@@ -698,7 +797,7 @@ void VCMQmResolution::PickSpatialOrTemporal() {
   }
 }
 
-// TODO(marpan): Update this when we allow for 1/2 spatial down-sampling.
+// TODO(marpan): Update when we allow for directional spatial down-sampling.
 void VCMQmResolution::SelectSpatialDirectionMode(float transition_rate) {
   // Default is 4/3x4/3
   // For bit rates well below transitional rate, we select 2x2.
