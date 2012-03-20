@@ -235,26 +235,18 @@ public:
     VideoProtectionCallback();
     virtual ~VideoProtectionCallback();
     void RegisterRtpModule(RtpRtcp* rtp) {_rtp = rtp;}
-    WebRtc_Word32 ProtectionRequest(WebRtc_UWord8 deltaFECRate,
-                                    WebRtc_UWord8 keyFECRate,
-                                    bool deltaUseUepProtection,
-                                    bool keyUseUepProtection,
-                                    bool nack_enabled,
-                                    WebRtc_UWord32* sent_video_rate_bps,
-                                    WebRtc_UWord32* sent_nack_rate_bps,
-                                    WebRtc_UWord32* sent_fec_rate_bps);
-    enum NACKMethod   NACKMethod();
-    WebRtc_UWord8     FECDeltaRate();
-    WebRtc_UWord8     FECKeyRate();
-    bool              FECDeltaUepProtection();
-    bool              FECKeyUepProtection();
+    WebRtc_Word32 ProtectionRequest(
+        const FecProtectionParams* delta_fec_params,
+        const FecProtectionParams* key_fec_params,
+        WebRtc_UWord32* sent_video_rate_bps,
+        WebRtc_UWord32* sent_nack_rate_bps,
+        WebRtc_UWord32* sent_fec_rate_bps);
+    FecProtectionParams DeltaFecParameters() const;
+    FecProtectionParams KeyFecParameters() const;
 private:
-    RtpRtcp*             _rtp;
-    WebRtc_UWord8        _deltaFECRate;
-    WebRtc_UWord8        _keyFECRate;
-    bool                 _deltaUseUepProtection;
-    bool                 _keyUseUepProtection;
-    enum NACKMethod      _nack;
+    RtpRtcp* _rtp;
+    FecProtectionParams delta_fec_params_;
+    FecProtectionParams key_fec_params_;
 };
 
 // Feed back from the RTP Module callback

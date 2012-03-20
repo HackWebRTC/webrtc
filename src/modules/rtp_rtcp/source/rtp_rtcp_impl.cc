@@ -2196,16 +2196,9 @@ WebRtc_Word32 ModuleRtpRtcpImpl::GenericFECStatus(
   return retVal;
 }
 
-WebRtc_Word32 ModuleRtpRtcpImpl::SetFECCodeRate(
-  const WebRtc_UWord8 keyFrameCodeRate,
-  const WebRtc_UWord8 deltaFrameCodeRate) {
-  WEBRTC_TRACE(kTraceModuleCall,
-               kTraceRtpRtcp,
-               _id,
-               "SetFECCodeRate(%u, %u)",
-               keyFrameCodeRate,
-               deltaFrameCodeRate);
-
+WebRtc_Word32 ModuleRtpRtcpImpl::SetFecParameters(
+    const FecProtectionParams* delta_params,
+    const FecProtectionParams* key_params) {
   const bool defaultInstance(_childModules.empty() ? false : true);
   if (defaultInstance)  {
     // for default we need to update all child modules too
@@ -2215,42 +2208,13 @@ WebRtc_Word32 ModuleRtpRtcpImpl::SetFECCodeRate(
     while (it != _childModules.end()) {
       RtpRtcp* module = *it;
       if (module) {
-        module->SetFECCodeRate(keyFrameCodeRate, deltaFrameCodeRate);
+        module->SetFecParameters(delta_params, key_params);
       }
       it++;
     }
     return 0;
   }
-  return _rtpSender.SetFECCodeRate(keyFrameCodeRate, deltaFrameCodeRate);
-}
-
-WebRtc_Word32 ModuleRtpRtcpImpl::SetFECUepProtection(
-  const bool keyUseUepProtection,
-  const bool deltaUseUepProtection) {
-  WEBRTC_TRACE(kTraceModuleCall,
-               kTraceRtpRtcp, _id,
-               "SetFECUepProtection(%d, %d)",
-               keyUseUepProtection,
-               deltaUseUepProtection);
-
-  const bool defaultInstance(_childModules.empty() ? false : true);
-  if (defaultInstance)  {
-    // for default we need to update all child modules too
-    CriticalSectionScoped lock(_criticalSectionModulePtrs);
-
-    std::list<ModuleRtpRtcpImpl*>::iterator it = _childModules.begin();
-    while (it != _childModules.end()) {
-      RtpRtcp* module = *it;
-      if (module) {
-        module->SetFECUepProtection(keyUseUepProtection,
-                                    deltaUseUepProtection);
-      }
-      it++;
-    }
-    return 0;
-  }
-  return _rtpSender.SetFECUepProtection(keyUseUepProtection,
-                                        deltaUseUepProtection);
+  return _rtpSender.SetFecParameters(delta_params, key_params);
 }
 
 void ModuleRtpRtcpImpl::SetRemoteSSRC(const WebRtc_UWord32 SSRC) {

@@ -412,13 +412,11 @@ WebRtc_Word32 KeyFrameReqTest::RequestKeyFrame() {
 
 
 VideoProtectionCallback::VideoProtectionCallback():
-_deltaFECRate(0),
-_keyFECRate(0),
-_deltaUseUepProtection(0),
-_keyUseUepProtection(0),
-_nack(kNackOff)
+delta_fec_params_(),
+key_fec_params_()
 {
-    //
+    memset(&delta_fec_params_, 0, sizeof(delta_fec_params_));
+    memset(&key_fec_params_, 0, sizeof(key_fec_params_));
 }
 
 VideoProtectionCallback::~VideoProtectionCallback()
@@ -427,72 +425,36 @@ VideoProtectionCallback::~VideoProtectionCallback()
 }
 
 WebRtc_Word32
-VideoProtectionCallback::ProtectionRequest(WebRtc_UWord8 deltaFECRate,
-                                           WebRtc_UWord8 keyFECRate,
-                                           bool deltaUseUepProtection,
-                                           bool keyUseUepProtection,
-                                           bool nack_enabled,
-                                           WebRtc_UWord32* sent_video_rate_bps,
-                                           WebRtc_UWord32* sent_nack_rate_bps,
-                                           WebRtc_UWord32* sent_fec_rate_bps)
+VideoProtectionCallback::ProtectionRequest(
+    const FecProtectionParams* delta_fec_params,
+    const FecProtectionParams* key_fec_params,
+    WebRtc_UWord32* sent_video_rate_bps,
+    WebRtc_UWord32* sent_nack_rate_bps,
+    WebRtc_UWord32* sent_fec_rate_bps)
 {
-    _deltaFECRate = deltaFECRate;
-    _keyFECRate = keyFECRate;
-    _deltaUseUepProtection = deltaUseUepProtection;
-    _keyUseUepProtection = keyUseUepProtection;
-    if (nack_enabled)
-    {
-        _nack = kNackRtcp;
-    }
-    else
-    {
-        _nack = kNackOff;
-    }
+    key_fec_params_ = *key_fec_params;
+    delta_fec_params_ = *delta_fec_params;
 
     // Update RTP
-    if (_rtp->SetFECCodeRate(keyFECRate, deltaFECRate) != 0)
+    if (_rtp->SetFecParameters(&delta_fec_params_,
+                               &key_fec_params_) != 0)
     {
         printf("Error in Setting FEC rate\n");
         return -1;
 
     }
-    if (_rtp->SetFECUepProtection(keyUseUepProtection,
-                                  deltaUseUepProtection) != 0)
-    {
-        printf("Error in Setting FEC UEP protection\n");
-        return -1;
-    }
     return 0;
 
 }
-NACKMethod
-VideoProtectionCallback::NACKMethod()
+
+FecProtectionParams VideoProtectionCallback::DeltaFecParameters() const
 {
-    return _nack;
+    return delta_fec_params_;
 }
 
-WebRtc_UWord8
-VideoProtectionCallback::FECDeltaRate()
+FecProtectionParams VideoProtectionCallback::KeyFecParameters() const
 {
-    return _deltaFECRate;
-}
-
-WebRtc_UWord8
-VideoProtectionCallback::FECKeyRate()
-{
-    return _keyFECRate;
-}
-
-bool
-VideoProtectionCallback::FECDeltaUepProtection()
-{
-    return _deltaUseUepProtection;
-}
-
-bool
-VideoProtectionCallback::FECKeyUepProtection()
-{
-    return _keyUseUepProtection;
+    return key_fec_params_;
 }
 
 void

@@ -280,10 +280,9 @@ class MockRtpRtcp : public RtpRtcp {
       WebRtc_Word32(const bool enable, const WebRtc_UWord8 payloadTypeRED, const WebRtc_UWord8 payloadTypeFEC));
   MOCK_METHOD3(GenericFECStatus,
       WebRtc_Word32(bool& enable, WebRtc_UWord8& payloadTypeRED, WebRtc_UWord8& payloadTypeFEC));
-  MOCK_METHOD2(SetFECCodeRate,
-      WebRtc_Word32(const WebRtc_UWord8 keyFrameCodeRate, const WebRtc_UWord8 deltaFrameCodeRate));
-  MOCK_METHOD2(SetFECUepProtection,
-      WebRtc_Word32(const bool keyUseUepProtection, const bool deltaUseUepProtection));
+  MOCK_METHOD2(SetFecParameters,
+      WebRtc_Word32(const FecProtectionParams* delta_params,
+                    const FecProtectionParams* key_params));
   MOCK_METHOD1(SetKeyFrameRequestMethod,
       WebRtc_Word32(const KeyFrameRequestMethod method));
   MOCK_METHOD0(RequestKeyFrame,

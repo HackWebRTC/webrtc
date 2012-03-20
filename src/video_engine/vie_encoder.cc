@@ -684,11 +684,8 @@ WebRtc_Word32 ViEEncoder::SendData(
 }
 
 WebRtc_Word32 ViEEncoder::ProtectionRequest(
-    WebRtc_UWord8 delta_fecrate,
-    WebRtc_UWord8 key_fecrate,
-    bool delta_use_uep_protection,
-    bool key_use_uep_protection,
-    bool nack_enabled,
+    const FecProtectionParams* delta_fec_params,
+    const FecProtectionParams* key_fec_params,
     WebRtc_UWord32* sent_video_rate_bps,
     WebRtc_UWord32* sent_nack_rate_bps,
     WebRtc_UWord32* sent_fec_rate_bps) {
@@ -696,19 +693,17 @@ WebRtc_Word32 ViEEncoder::ProtectionRequest(
                ViEId(engine_id_, channel_id_),
                "%s, deltaFECRate: %u, key_fecrate: %u, "
                "delta_use_uep_protection: %d, key_use_uep_protection: %d, ",
-               __FUNCTION__, delta_fecrate, key_fecrate,
-               delta_use_uep_protection, key_use_uep_protection);
+               __FUNCTION__,
+               delta_fec_params->fec_rate,
+               key_fec_params->fec_rate,
+               delta_fec_params->use_uep_protection,
+               key_fec_params->use_uep_protection);
 
-  if (default_rtp_rtcp_.SetFECCodeRate(key_fecrate, delta_fecrate) != 0) {
+  if (default_rtp_rtcp_.SetFecParameters(delta_fec_params,
+                                         key_fec_params) != 0) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
                  ViEId(engine_id_, channel_id_),
-                 "%s: Could not update FEC code rate", __FUNCTION__);
-  }
-  if (default_rtp_rtcp_.SetFECUepProtection(key_use_uep_protection,
-                                            delta_use_uep_protection) != 0) {
-    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceVideo,
-                 ViEId(engine_id_, channel_id_),
-                 "%s: Could not update FEC-UEP protection", __FUNCTION__);
+                 "%s: Could not update FEC parameters", __FUNCTION__);
   }
   default_rtp_rtcp_.BitrateSent(NULL,
                                 sent_video_rate_bps,

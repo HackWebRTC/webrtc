@@ -477,12 +477,9 @@ public:
                                          WebRtc_UWord8& payloadTypeRED,
                                          WebRtc_UWord8& payloadTypeFEC);
 
-
-    virtual WebRtc_Word32 SetFECCodeRate(const WebRtc_UWord8 keyFrameCodeRate,
-                                         const WebRtc_UWord8 deltaFrameCodeRate);
-
-    virtual WebRtc_Word32 SetFECUepProtection(const bool keyUseUepProtection,
-                                              const bool deltaUseUepProtection);
+    virtual WebRtc_Word32 SetFecParameters(
+        const FecProtectionParams* delta_params,
+        const FecProtectionParams* key_params);
 
     virtual WebRtc_Word32 LastReceivedNTP(WebRtc_UWord32& NTPsecs,
                                           WebRtc_UWord32& NTPfrac,

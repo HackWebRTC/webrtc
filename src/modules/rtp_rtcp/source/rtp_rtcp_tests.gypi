@@ -22,6 +22,9 @@
         '../../../',
       ],
       'sources': [
+        'fec_test_helper.cc',
+        'fec_test_helper.h',
+        'producer_fec_unittest.cc',
         'receiver_fec_unittest.cc',
         'rtp_fec_unittest.cc',
         'rtp_format_vp8_unittest.cc',

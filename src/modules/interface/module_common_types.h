@@ -297,6 +297,13 @@ struct RTCPVoIPMetric
     WebRtc_UWord16    JBabsMax;
 };
 
+// Struct containing forward error correction settings.
+struct FecProtectionParams {
+  int fec_rate;
+  bool use_uep_protection;
+  int max_fec_frames;
+};
+
 // class describing a complete, or parts of an encoded frame.
 class EncodedVideoData
 {

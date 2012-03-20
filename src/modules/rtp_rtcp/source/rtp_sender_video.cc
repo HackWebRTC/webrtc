@@ -19,10 +19,16 @@
 #include <cassert>  // assert
 #include <cstdlib>  // srand
 
+#include "producer_fec.h"
 #include "rtp_format_vp8.h"
 
 namespace webrtc {
 enum { REDForFECHeaderLength = 1 };
+
+struct RtpPacket {
+  WebRtc_UWord16 rtpHeaderLength;
+  ForwardErrorCorrection::Packet* pkt;
+};
 
 RTPSenderVideo::RTPSenderVideo(const WebRtc_Word32 id,
                                RtpRtcpClock* clock,
@@ -41,15 +47,15 @@ RTPSenderVideo::RTPSenderVideo(const WebRtc_Word32 id,
     _fecEnabled(false),
     _payloadTypeRED(-1),
     _payloadTypeFEC(-1),
-    _codeRateKey(0),
-    _codeRateDelta(0),
-    _useUepProtectionKey(false),
-    _useUepProtectionDelta(false),
-    _fecProtectionFactor(0),
-    _fecUseUepProtection(false),
     _numberFirstPartition(0),
+    delta_fec_params_(),
+    key_fec_params_(),
+    producer_fec_(&_fec),
     _fecOverheadRate(clock),
     _videoBitrate(clock) {
+  memset(&delta_fec_params_, 0, sizeof(delta_fec_params_));
+  memset(&key_fec_params_, 0, sizeof(key_fec_params_));
+  delta_fec_params_.max_fec_frames = key_fec_params_.max_fec_frames = 1;
 }
 
 RTPSenderVideo::~RTPSenderVideo()
@@ -70,13 +76,10 @@ RTPSenderVideo::Init()
     _fecEnabled = false;
     _payloadTypeRED = -1;
     _payloadTypeFEC = -1;
-    _codeRateKey = 0;
-    _codeRateDelta = 0;
-    _useUepProtectionKey = false;
-    _useUepProtectionDelta = false;
-    _fecProtectionFactor = 0;
-    _fecUseUepProtection = false;
     _numberFirstPartition = 0;
+    memset(&delta_fec_params_, 0, sizeof(delta_fec_params_));
+    memset(&key_fec_params_, 0, sizeof(key_fec_params_));
+    delta_fec_params_.max_fec_frames = key_fec_params_.max_fec_frames = 1;
     _fecOverheadRate.Init();
     return 0;
 }
@@ -124,199 +127,77 @@ WebRtc_Word32 RTPSenderVideo::RegisterVideoPayload(
   return 0;
 }
 
-struct RtpPacket
-{
-    WebRtc_UWord16 rtpHeaderLength;
-    ForwardErrorCorrection::Packet* pkt;
-};
-
 WebRtc_Word32
-RTPSenderVideo::SendVideoPacket(const FrameType frameType,
-                                const WebRtc_UWord8* dataBuffer,
-                                const WebRtc_UWord16 payloadLength,
-                                const WebRtc_UWord16 rtpHeaderLength,
-                                StorageType storage)
-{
-    if(_fecEnabled)
-    {
-        WebRtc_Word32 retVal = 0;
+RTPSenderVideo::SendVideoPacket(const WebRtc_UWord8* data_buffer,
+                                const WebRtc_UWord16 payload_length,
+                                const WebRtc_UWord16 rtp_header_length,
+                                StorageType storage) {
+  if(_fecEnabled) {
+    int ret = 0;
+    int fec_overhead_sent = 0;
+    int video_sent = 0;
 
-        const bool markerBit = (dataBuffer[1] & kRtpMarkerBitMask)?true:false;
-        RtpPacket* ptrGenericFEC = new RtpPacket;
-        ptrGenericFEC->pkt = new ForwardErrorCorrection::Packet;
-        ptrGenericFEC->pkt->length = payloadLength + rtpHeaderLength;
-        ptrGenericFEC->rtpHeaderLength = rtpHeaderLength;
-        memcpy(ptrGenericFEC->pkt->data, dataBuffer,
-               ptrGenericFEC->pkt->length);
+    RedPacket* red_packet = producer_fec_.BuildRedPacket(data_buffer,
+                                                         payload_length,
+                                                         rtp_header_length,
+                                                         _payloadTypeRED);
+    // Sending the media packet with RED header.
+    int packet_success = _rtpSender.SendToNetwork(
+        red_packet->data(),
+        red_packet->length() - rtp_header_length,
+        rtp_header_length,
+        storage);
 
-        // Add packet to FEC list
-        _rtpPacketListFec.push_back(ptrGenericFEC);
-        // FEC can only protect up to kMaxMediaPackets packets
-        if (_mediaPacketListFec.size() <
-            ForwardErrorCorrection::kMaxMediaPackets)
-        {
-            _mediaPacketListFec.push_back(ptrGenericFEC->pkt);
-        }
+    ret |= packet_success;
 
-        // Last packet in frame
-        if (markerBit)
-        {
-
-            // Retain the RTP header of the last media packet to construct FEC
-            // packet RTP headers.
-            ForwardErrorCorrection::Packet lastMediaRtpHeader;
-            memcpy(lastMediaRtpHeader.data,
-                   ptrGenericFEC->pkt->data,
-                   ptrGenericFEC->rtpHeaderLength);
-
-            lastMediaRtpHeader.length = ptrGenericFEC->rtpHeaderLength;
-            // Replace payload and clear marker bit.
-            lastMediaRtpHeader.data[1] = _payloadTypeRED;
-
-            // Number of first partition packets cannot exceed kMaxMediaPackets
-            if (_numberFirstPartition >
-                ForwardErrorCorrection::kMaxMediaPackets)
-            {
-                _numberFirstPartition =
-                    ForwardErrorCorrection::kMaxMediaPackets;
-            }
-
-            std::list<ForwardErrorCorrection::Packet*> fecPacketList;
-            retVal = _fec.GenerateFEC(_mediaPacketListFec,
-                                      _fecProtectionFactor,
-                                      _numberFirstPartition,
-                                      _fecUseUepProtection,
-                                      &fecPacketList);
-
-            int fecOverheadSent = 0;
-            int videoSent = 0;
-
-            while(!_rtpPacketListFec.empty())
-            {
-                WebRtc_UWord8 newDataBuffer[IP_PACKET_SIZE];
-                memset(newDataBuffer, 0, sizeof(newDataBuffer));
-
-                RtpPacket* packetToSend = _rtpPacketListFec.front();
-
-                // Copy RTP header
-                memcpy(newDataBuffer, packetToSend->pkt->data,
-                       packetToSend->rtpHeaderLength);
-
-                // Get codec pltype
-                WebRtc_UWord8 payloadType = newDataBuffer[1] & 0x7f;
-
-                // Replace pltype
-                newDataBuffer[1] &= 0x80;            // reset
-                newDataBuffer[1] += _payloadTypeRED; // replace
-
-                // Add RED header
-                // f-bit always 0
-                newDataBuffer[packetToSend->rtpHeaderLength] = payloadType;
-
-                // Copy payload data
-                memcpy(newDataBuffer + packetToSend->rtpHeaderLength +
-                           REDForFECHeaderLength,
-                       packetToSend->pkt->data + packetToSend->rtpHeaderLength,
-                       packetToSend->pkt->length -
-                           packetToSend->rtpHeaderLength);
-
-                _rtpPacketListFec.pop_front();
-                // Check if _mediaPacketListFec is non-empty.
-                // This list may be smaller than rtpPacketList, if the frame
-                // has more than kMaxMediaPackets.
-                if (!_mediaPacketListFec.empty()) {
-                  _mediaPacketListFec.pop_front();
-                }
-
-                // Send normal packet with RED header
-                int packetSuccess = _rtpSender.SendToNetwork(
-                    newDataBuffer,
-                    packetToSend->pkt->length - packetToSend->rtpHeaderLength +
-                    REDForFECHeaderLength,
-                    packetToSend->rtpHeaderLength,
-                    storage);
-
-                retVal |= packetSuccess;
-
-                if (packetSuccess == 0)
-                {
-                    videoSent += packetToSend->pkt->length +
-                        REDForFECHeaderLength;
-                }
-
-                delete packetToSend->pkt;
-                delete packetToSend;
-                packetToSend = NULL;
-            }
-            assert(_mediaPacketListFec.empty());
-            assert(_rtpPacketListFec.empty());
-
-            while(!fecPacketList.empty())
-            {
-                WebRtc_UWord8 newDataBuffer[IP_PACKET_SIZE];
-
-                // Build FEC packets
-                ForwardErrorCorrection::Packet* packetToSend = fecPacketList.front();
-
-                // The returned FEC packets have no RTP headers.
-                // Copy the last media packet's modified RTP header.
-                memcpy(newDataBuffer, lastMediaRtpHeader.data,
-                       lastMediaRtpHeader.length);
-
-                // Add sequence number
-                ModuleRTPUtility::AssignUWord16ToBuffer(
-                    &newDataBuffer[2], _rtpSender.IncrementSequenceNumber());
-
-                // Add RED header
-                // f-bit always 0
-                newDataBuffer[lastMediaRtpHeader.length] = _payloadTypeFEC;
-
-                // Copy payload data
-                memcpy(newDataBuffer + lastMediaRtpHeader.length +
-                           REDForFECHeaderLength,
-                       packetToSend->data,
-                       packetToSend->length);
-
-                fecPacketList.pop_front();
-
-                // Invalid FEC packet
-                assert(packetToSend->length != 0);
-
-                StorageType storage = kDontRetransmit;
-                if (_retransmissionSettings & kRetransmitFECPackets) {
-                  storage = kAllowRetransmission;
-                }
-
-                // No marker bit on FEC packets, last media packet have the
-                // marker send FEC packet with RED header
-                int packetSuccess = _rtpSender.SendToNetwork(
-                        newDataBuffer,
-                        packetToSend->length + REDForFECHeaderLength,
-                        lastMediaRtpHeader.length,
-                        storage);
-
-                retVal |= packetSuccess;
-
-                if (packetSuccess == 0)
-                {
-                    fecOverheadSent += packetToSend->length +
-                      REDForFECHeaderLength + lastMediaRtpHeader.length;
-                }
-            }
-            _videoBitrate.Update(videoSent);
-            _fecOverheadRate.Update(fecOverheadSent);
-        }
-        return retVal;
+    if (packet_success == 0) {
+      video_sent += red_packet->length();
     }
-    int retVal = _rtpSender.SendToNetwork(dataBuffer,
-                                          payloadLength,
-                                          rtpHeaderLength,
-                                          storage);
-    if (retVal == 0)
-    {
-        _videoBitrate.Update(payloadLength + rtpHeaderLength);
+    delete red_packet;
+    red_packet = NULL;
+
+    ret = producer_fec_.AddRtpPacketAndGenerateFec(data_buffer,
+                                                   payload_length,
+                                                   rtp_header_length);
+    if (ret != 0)
+      return ret;
+
+    while (producer_fec_.FecAvailable()) {
+      red_packet = producer_fec_.GetFecPacket(
+          _payloadTypeRED,
+          _payloadTypeFEC,
+          _rtpSender.IncrementSequenceNumber());
+      StorageType storage = kDontRetransmit;
+      if (_retransmissionSettings & kRetransmitFECPackets) {
+        storage = kAllowRetransmission;
+      }
+      // Sending FEC packet with RED header.
+      int packet_success = _rtpSender.SendToNetwork(
+          red_packet->data(),
+          red_packet->length() - rtp_header_length,
+          rtp_header_length,
+          storage);
+
+      ret |= packet_success;
+
+      if (packet_success == 0) {
+        fec_overhead_sent += red_packet->length();
+      }
+      delete red_packet;
+      red_packet = NULL;
     }
-    return retVal;
+    _videoBitrate.Update(video_sent);
+    _fecOverheadRate.Update(fec_overhead_sent);
+    return ret;
+  }
+  int ret = _rtpSender.SendToNetwork(data_buffer,
+                                     payload_length,
+                                     rtp_header_length,
+                                     storage);
+  if (ret == 0) {
+    _videoBitrate.Update(payload_length + rtp_header_length);
+  }
+  return ret;
 }
 
 WebRtc_Word32
@@ -345,10 +226,9 @@ RTPSenderVideo::SetGenericFECStatus(const bool enable,
     _fecEnabled = enable;
     _payloadTypeRED = payloadTypeRED;
     _payloadTypeFEC = payloadTypeFEC;
-    _codeRateKey = 0;
-    _codeRateDelta = 0;
-    _useUepProtectionKey = false;
-    _useUepProtectionDelta = false;
+    memset(&delta_fec_params_, 0, sizeof(delta_fec_params_));
+    memset(&key_fec_params_, 0, sizeof(key_fec_params_));
+    delta_fec_params_.max_fec_frames = key_fec_params_.max_fec_frames = 1;
     return 0;
 }
 
@@ -374,22 +254,14 @@ RTPSenderVideo::FECPacketOverhead() const
     return 0;
 }
 
-WebRtc_Word32
-RTPSenderVideo::SetFECCodeRate(const WebRtc_UWord8 keyFrameCodeRate,
-                               const WebRtc_UWord8 deltaFrameCodeRate)
-{
-    _codeRateKey = keyFrameCodeRate;
-    _codeRateDelta = deltaFrameCodeRate;
-    return 0;
-}
-
-WebRtc_Word32
-RTPSenderVideo::SetFECUepProtection(const bool keyUseUepProtection,
-                                    const bool deltaUseUepProtection)
-{
-    _useUepProtectionKey = keyUseUepProtection;
-    _useUepProtectionDelta = deltaUseUepProtection;
-    return 0;
+WebRtc_Word32 RTPSenderVideo::SetFecParameters(
+    const FecProtectionParams* delta_params,
+    const FecProtectionParams* key_params) {
+  assert(delta_params);
+  assert(key_params);
+  delta_fec_params_ = *delta_params;
+  key_fec_params_ = *key_params;
+  return 0;
 }
 
 WebRtc_Word32
@@ -408,19 +280,19 @@ RTPSenderVideo::SendVideo(const RtpVideoCodecTypes videoType,
         return -1;
     }
 
-    if (frameType == kVideoFrameKey)
-    {
-        _fecProtectionFactor = _codeRateKey;
-        _fecUseUepProtection = _useUepProtectionKey;
-    } else if (videoType == kRtpVp8Video && rtpTypeHdr->VP8.temporalIdx > 0)
-    {
+    if (frameType == kVideoFrameKey) {
+      producer_fec_.SetFecParameters(&key_fec_params_,
+                                     _numberFirstPartition);
+    } else if (videoType == kRtpVp8Video && rtpTypeHdr->VP8.temporalIdx > 0) {
         // In current version, we only apply FEC on the base layer.
-        _fecProtectionFactor = 0;
-        _fecUseUepProtection = false;
-    } else
-    {
-        _fecProtectionFactor = _codeRateDelta;
-        _fecUseUepProtection = _useUepProtectionDelta;
+      FecProtectionParams params;
+      params.fec_rate = 0;
+      params.max_fec_frames = 0;
+      params.use_uep_protection = false;
+      producer_fec_.SetFecParameters(&params, _numberFirstPartition);
+    } else {
+      producer_fec_.SetFecParameters(&delta_fec_params_,
+                                     _numberFirstPartition);
     }
 
     // Default setting for number of first partition packets:
@@ -498,8 +370,7 @@ RTPSenderVideo::SendGeneric(const WebRtc_Word8 payloadType,
                payloadBytesInPacket);
         bytesSent += payloadBytesInPacket;
 
-        if(-1 == SendVideoPacket(kVideoFrameKey,
-                                 dataBuffer,
+        if(-1 == SendVideoPacket(dataBuffer,
                                  payloadBytesInPacket,
                                  rtpHeaderLength,
                                  kAllowRetransmission))
@@ -583,7 +454,7 @@ RTPSenderVideo::SendVP8(const FrameType frameType,
         // Set marker bit true if this is the last packet in frame.
         _rtpSender.BuildRTPheader(dataBuffer, payloadType, last,
             captureTimeStamp);
-        if (-1 == SendVideoPacket(frameType, dataBuffer, payloadBytesInPacket,
+        if (-1 == SendVideoPacket(dataBuffer, payloadBytesInPacket,
             rtpHeaderLength, storage))
         {
           WEBRTC_TRACE(kTraceError, kTraceRtpRtcp, _id,

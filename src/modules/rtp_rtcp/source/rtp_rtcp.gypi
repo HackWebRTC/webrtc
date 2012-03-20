@@ -71,6 +71,8 @@
         'forward_error_correction_internal.h',
         'overuse_detector.cc',
         'overuse_detector.h',
+        'producer_fec.cc',
+        'producer_fec.h',
         'remote_rate_control.cc',
         'remote_rate_control.h',
         'rtp_packet_history.cc',

@@ -1742,27 +1742,12 @@ RTPSender::GenericFECStatus(bool& enable,
     return _video->GenericFECStatus(enable, payloadTypeRED, payloadTypeFEC);
 }
 
-WebRtc_Word32
-RTPSender::SetFECCodeRate(const WebRtc_UWord8 keyFrameCodeRate,
-                          const WebRtc_UWord8 deltaFrameCodeRate)
-{
-    if(_audioConfigured)
-    {
-        return -1;
-    }
-    return _video->SetFECCodeRate(keyFrameCodeRate, deltaFrameCodeRate);
-}
-
-WebRtc_Word32
-RTPSender::SetFECUepProtection(const bool keyUseUepProtection,
-                               const bool deltaUseUepProtection)
-
-{
-    if(_audioConfigured)
-    {
-        return -1;
-    }
-    return _video->SetFECUepProtection(keyUseUepProtection,
-                                       deltaUseUepProtection);
+WebRtc_Word32 RTPSender::SetFecParameters(
+    const FecProtectionParams* delta_params,
+    const FecProtectionParams* key_params) {
+  if (_audioConfigured) {
+    return -1;
+  }
+  return _video->SetFecParameters(delta_params, key_params);
 }
 } // namespace webrtc

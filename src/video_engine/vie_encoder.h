@@ -108,12 +108,9 @@ class ViEEncoder
     const RTPVideoHeader* rtp_video_hdr);
 
   // Implements VideoProtectionCallback.
-  virtual WebRtc_Word32 ProtectionRequest(
-      WebRtc_UWord8 delta_fecrate,
-      WebRtc_UWord8 key_fecrate,
-      bool delta_use_uep_protection,
-      bool key_use_uep_protection,
-      bool nack_enabled,
+  virtual int ProtectionRequest(
+      const FecProtectionParams* delta_fec_params,
+      const FecProtectionParams* key_fec_params,
       WebRtc_UWord32* sent_video_rate_bps,
       WebRtc_UWord32* sent_nack_rate_bps,
       WebRtc_UWord32* sent_fec_rate_bps);

@@ -14,8 +14,7 @@
 #include "typedefs.h"
 #include "modules/interface/module_common_types.h"
 
-namespace webrtc
-{
+namespace webrtc {
 
 // Error codes
 #define VCM_FRAME_NOT_READY      3
@@ -41,155 +40,148 @@ namespace webrtc
 #define VCM_VP8_PAYLOAD_TYPE       120
 #define VCM_I420_PAYLOAD_TYPE      124
 
-enum VCMNackProperties
-{
-    kNackHistoryLength = 450
+enum VCMNackProperties {
+  kNackHistoryLength = 450
 };
 
-enum VCMVideoProtection
-{
-    kProtectionNack,                // Both send-side and receive-side
-    kProtectionNackSender,          // Send-side only
-    kProtectionNackReceiver,        // Receive-side only
-    kProtectionDualDecoder,
-    kProtectionFEC,
-    kProtectionNackFEC,
-    kProtectionKeyOnLoss,
-    kProtectionKeyOnKeyLoss,
-    kProtectionPeriodicKeyFrames
+enum VCMVideoProtection {
+  kProtectionNack,                // Both send-side and receive-side
+  kProtectionNackSender,          // Send-side only
+  kProtectionNackReceiver,        // Receive-side only
+  kProtectionDualDecoder,
+  kProtectionFEC,
+  kProtectionNackFEC,
+  kProtectionKeyOnLoss,
+  kProtectionKeyOnKeyLoss,
+  kProtectionPeriodicKeyFrames
 };
 
-enum VCMTemporalDecimation
-{
-    kBitrateOverUseDecimation,
+enum VCMTemporalDecimation {
+  kBitrateOverUseDecimation,
 };
 
-struct VCMFrameCount
-{
-    WebRtc_UWord32 numKeyFrames;
-    WebRtc_UWord32 numDeltaFrames;
+struct VCMFrameCount {
+  WebRtc_UWord32 numKeyFrames;
+  WebRtc_UWord32 numDeltaFrames;
 };
-
 
 // Callback class used for sending data ready to be packetized
-class VCMPacketizationCallback
-{
-public:
-    virtual WebRtc_Word32 SendData(
-        const FrameType frameType,
-        const WebRtc_UWord8 payloadType,
-        const WebRtc_UWord32 timeStamp,
-        const WebRtc_UWord8* payloadData,
-        const WebRtc_UWord32 payloadSize,
-        const RTPFragmentationHeader& fragmentationHeader,
-        const RTPVideoHeader* rtpVideoHdr) = 0;
-protected:
-    virtual ~VCMPacketizationCallback() {}
+class VCMPacketizationCallback {
+ public:
+  virtual WebRtc_Word32 SendData(
+      const FrameType frameType, const WebRtc_UWord8 payloadType,
+      const WebRtc_UWord32 timeStamp, const WebRtc_UWord8* payloadData,
+      const WebRtc_UWord32 payloadSize,
+      const RTPFragmentationHeader& fragmentationHeader,
+      const RTPVideoHeader* rtpVideoHdr) = 0;
+ protected:
+  virtual ~VCMPacketizationCallback() {
+  }
 };
 
 // Callback class used for passing decoded frames which are ready to be rendered.
-class VCMFrameStorageCallback
-{
-public:
-    virtual WebRtc_Word32 StoreReceivedFrame(const EncodedVideoData& frameToStore) = 0;
+class VCMFrameStorageCallback {
+ public:
+  virtual WebRtc_Word32 StoreReceivedFrame(
+      const EncodedVideoData& frameToStore) = 0;
 
-protected:
-    virtual ~VCMFrameStorageCallback() {}
+ protected:
+  virtual ~VCMFrameStorageCallback() {
+  }
 };
 
 // Callback class used for passing decoded frames which are ready to be rendered.
-class VCMReceiveCallback
-{
-public:
-    virtual WebRtc_Word32 FrameToRender(VideoFrame& videoFrame) = 0;
-    virtual WebRtc_Word32 ReceivedDecodedReferenceFrame(const WebRtc_UWord64 pictureId) {return -1;}
+class VCMReceiveCallback {
+ public:
+  virtual WebRtc_Word32 FrameToRender(VideoFrame& videoFrame) = 0;
+  virtual WebRtc_Word32 ReceivedDecodedReferenceFrame(
+      const WebRtc_UWord64 pictureId) {
+    return -1;
+  }
 
-protected:
-    virtual ~VCMReceiveCallback() {}
+ protected:
+  virtual ~VCMReceiveCallback() {
+  }
 };
 
 // Callback class used for informing the user of the bit rate and frame rate produced by the
 // encoder.
-class VCMSendStatisticsCallback
-{
-public:
-    virtual WebRtc_Word32 SendStatistics(const WebRtc_UWord32 bitRate,
-                                         const WebRtc_UWord32 frameRate) = 0;
+class VCMSendStatisticsCallback {
+ public:
+  virtual WebRtc_Word32 SendStatistics(const WebRtc_UWord32 bitRate,
+                                       const WebRtc_UWord32 frameRate) = 0;
 
-protected:
-    virtual ~VCMSendStatisticsCallback() {}
+ protected:
+  virtual ~VCMSendStatisticsCallback() {
+  }
 };
 
 // Callback class used for informing the user of the incoming bit rate and frame rate.
-class VCMReceiveStatisticsCallback
-{
-public:
-    virtual WebRtc_Word32 ReceiveStatistics(const WebRtc_UWord32 bitRate,
-                                            const WebRtc_UWord32 frameRate) = 0;
+class VCMReceiveStatisticsCallback {
+ public:
+  virtual WebRtc_Word32 ReceiveStatistics(const WebRtc_UWord32 bitRate,
+                                          const WebRtc_UWord32 frameRate) = 0;
 
-protected:
-    virtual ~VCMReceiveStatisticsCallback() {}
+ protected:
+  virtual ~VCMReceiveStatisticsCallback() {
+  }
 };
 
-// Callback class used for telling the user about the requested amount of
-// bit stream protection: FEC rate for key and delta frame;
-// whether the FEC uses unequal protection (UEP) across packets,
-// for key and delta frame;
-// and whether NACK should be on or off.
-class VCMProtectionCallback
-{
-public:
-    virtual int ProtectionRequest(
-        uint8_t delta_fec_rate,
-        uint8_t key_fec_rate,
-        bool delta_use_uep_protection,
-        bool key_use_uep_protection,
-        bool nack_enabled,
-        uint32_t* sent_video_rate_bps,
-        uint32_t* sent_nack_rate_bps,
-        uint32_t* sent_fec_rate_bps) = 0;
+// Callback class used for telling the user about how to configure the FEC,
+// and the rates sent the last second is returned to the VCM.
+class VCMProtectionCallback {
+ public:
+  virtual int ProtectionRequest(const FecProtectionParams* delta_params,
+                                const FecProtectionParams* key_params,
+                                uint32_t* sent_video_rate_bps,
+                                uint32_t* sent_nack_rate_bps,
+                                uint32_t* sent_fec_rate_bps) = 0;
 
-protected:
-    virtual ~VCMProtectionCallback() {}
+ protected:
+  virtual ~VCMProtectionCallback() {
+  }
 };
 
 // Callback class used for telling the user about what frame type needed to continue decoding.
 // Typically a key frame when the stream has been corrupted in some way.
-class VCMFrameTypeCallback
-{
-public:
-    virtual WebRtc_Word32 RequestKeyFrame() = 0;
-    virtual WebRtc_Word32 SliceLossIndicationRequest(const WebRtc_UWord64 pictureId) {return -1;}
+class VCMFrameTypeCallback {
+ public:
+  virtual WebRtc_Word32 RequestKeyFrame() = 0;
+  virtual WebRtc_Word32 SliceLossIndicationRequest(
+      const WebRtc_UWord64 pictureId) {
+    return -1;
+  }
 
-protected:
-    virtual ~VCMFrameTypeCallback() {}
+ protected:
+  virtual ~VCMFrameTypeCallback() {
+  }
 };
 
 // Callback class used for telling the user about which packet sequence numbers are currently
 // missing and need to be resent.
-class VCMPacketRequestCallback
-{
-public:
-    virtual WebRtc_Word32 ResendPackets(const WebRtc_UWord16* sequenceNumbers,
-                                        WebRtc_UWord16 length) = 0;
+class VCMPacketRequestCallback {
+ public:
+  virtual WebRtc_Word32 ResendPackets(const WebRtc_UWord16* sequenceNumbers,
+                                      WebRtc_UWord16 length) = 0;
 
-protected:
-    virtual ~VCMPacketRequestCallback() {}
+ protected:
+  virtual ~VCMPacketRequestCallback() {
+  }
 };
 
 // Callback used to inform the user of the the desired resolution
 // as subscribed by Media Optimization (Quality Modes)
-class VCMQMSettingsCallback
-{
-public:
-    virtual WebRtc_Word32 SetVideoQMSettings(const WebRtc_UWord32 frameRate,
-                                             const WebRtc_UWord32 width,
-                                             const WebRtc_UWord32 height) = 0;
+class VCMQMSettingsCallback {
+ public:
+  virtual WebRtc_Word32 SetVideoQMSettings(const WebRtc_UWord32 frameRate,
+                                           const WebRtc_UWord32 width,
+                                           const WebRtc_UWord32 height) = 0;
 
-protected:
-    virtual ~VCMQMSettingsCallback() {}
+ protected:
+  virtual ~VCMQMSettingsCallback() {
+  }
 };
 
-} // namespace webrtc
+}  // namespace webrtc
 
 #endif // WEBRTC_MODULES_INTERFACE_VIDEO_CODING_DEFINES_H_

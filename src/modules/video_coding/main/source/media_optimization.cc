@@ -9,6 +9,7 @@
  */
 
 #include "media_optimization.h"
+
 #include "content_metrics_processing.h"
 #include "frame_dropper.h"
 #include "qm_select.h"
@@ -206,33 +207,29 @@ int VCMMediaOptimization::UpdateProtectionCallback(
     {
         return VCM_OK;
     }
+    FecProtectionParams delta_fec_params;
+    FecProtectionParams key_fec_params;
     // Get the FEC code rate for Key frames (set to 0 when NA)
-    const WebRtc_UWord8
-    codeRateKeyRTP  = selected_method->RequiredProtectionFactorK();
+    key_fec_params.fec_rate = selected_method->RequiredProtectionFactorK();
 
     // Get the FEC code rate for Delta frames (set to 0 when NA)
-    const WebRtc_UWord8
-    codeRateDeltaRTP = selected_method->RequiredProtectionFactorD();
+    delta_fec_params.fec_rate =
+        selected_method->RequiredProtectionFactorD();
 
     // Get the FEC-UEP protection status for Key frames: UEP on/off
-    const bool
-    useUepProtectionKeyRTP  = selected_method->RequiredUepProtectionK();
+    key_fec_params.use_uep_protection =
+        selected_method->RequiredUepProtectionK();
 
     // Get the FEC-UEP protection status for Delta frames: UEP on/off
-    const bool
-    useUepProtectionDeltaRTP = selected_method->RequiredUepProtectionD();
+    delta_fec_params.use_uep_protection =
+        selected_method->RequiredUepProtectionD();
 
-    // NACK is on for NACK and NackFec protection method: off for FEC method
-    bool nackStatus = (selected_method->Type() == kNackFec ||
-                       selected_method->Type() == kNack);
+    delta_fec_params.max_fec_frames = 1;
+    key_fec_params.max_fec_frames = 1;
 
     // TODO(Marco): Pass FEC protection values per layer.
-
-    return _videoProtectionCallback->ProtectionRequest(codeRateDeltaRTP,
-                                                       codeRateKeyRTP,
-                                                       useUepProtectionDeltaRTP,
-                                                       useUepProtectionKeyRTP,
-                                                       nackStatus,
+    return _videoProtectionCallback->ProtectionRequest(&delta_fec_params,
+                                                       &key_fec_params,
                                                        video_rate_bps,
                                                        nack_overhead_rate_bps,
                                                        fec_overhead_rate_bps);
