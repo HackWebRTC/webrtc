@@ -200,9 +200,17 @@ class WebRTCFactory(factory.BuildFactory):
     """
     self.AddCommonTestRunStep(test)
 
+  def AddGclientConfigStep(self):
+    """Helper method for adding a gclient config step."""
+    self.AddCommonStep(['gclient', 'config', WEBRTC_SVN_LOCATION],
+                       workdir=WEBRTC_BUILD_DIR,
+                       descriptor='gclient_config')
+
   def AddGclientSyncStep(self, force_sync):
-    """Helper method for invoking gclient sync. Will retry if the operation
-       fails. Runs in the bot's build directory (e.g. one step above trunk).
+    """Helper method for invoking gclient sync.
+
+       Will retry if the operation fails. Runs in the bot's build directory
+       (e.g. one step above trunk).
 
        Args:
            force_sync: If the sync should be forced, i.e. update even for
@@ -414,9 +422,27 @@ class WebRTCAndroidFactory(WebRTCFactory):
     cmd = 'svn checkout %s external/webrtc' % WEBRTC_SVN_LOCATION
     self.AddCommonStep(cmd, descriptor='svn (checkout)')
 
-    cmd = ('source build/envsetup.sh && lunch full_%s-eng '
-           '&& mmm external/webrtc showcommands' % product)
-    self.AddCommonStep(cmd, descriptor='build')
+    cmd = ('source build/envsetup.sh && lunch full_%s-eng ' % product)
+    self.AddCommonStep(cmd, descriptor='make_android')
+
+    cmd = 'source build/envsetup.sh && mmm external/webrtc showcommands'
+    self.AddCommonStep(cmd, descriptor='make_webrtc')
+
+
+class WebRTCAndroidNDKFactory(WebRTCFactory):
+  """Sets up the Android NDK build."""
+
+  def __init__(self, build_status_oracle):
+    WebRTCFactory.__init__(self, build_status_oracle)
+
+  def EnableBuild(self):
+    self.AddSmartCleanStep()
+    self.AddGclientConfigStep()
+    self.AddGclientSyncStep(force_sync=True)
+    cmd = 'source ./build/android/envsetup.sh && gclient runhooks'
+    self.AddCommonStep(cmd, descriptor='gen_android_makefiles')
+    cmd = 'source ./build/android/envsetup.sh && make -j8'
+    self.AddCommonStep(cmd, descriptor='make')
 
 
 class WebRTCChromeFactory(WebRTCFactory):
@@ -487,9 +513,7 @@ class WebRTCLinuxFactory(WebRTCFactory):
       for gyp_define in MEMORY_TOOLS_GYP_DEFINES:
         self.gyp_params.append('-D' + gyp_define)
     else:
-      self.AddCommonStep(['gclient', 'config', WEBRTC_SVN_LOCATION],
-                         workdir=WEBRTC_BUILD_DIR,
-                         descriptor='gclient_config')
+      self.AddGclientConfigStep()
     self.AddGclientSyncStep(force_sync=False)
 
     if chrome_os:
@@ -656,9 +680,7 @@ class WebRTCMacFactory(WebRTCFactory):
     else:
       self.build_type = build_type
     self.AddSmartCleanStep()
-    self.AddCommonStep(['gclient', 'config', WEBRTC_SVN_LOCATION],
-                       workdir=WEBRTC_BUILD_DIR,
-                       descriptor='gclient_config')
+    self.AddGclientConfigStep()
     self.AddGclientSyncStep(force_sync=True)
 
     if self.build_type == 'make' or self.build_type == 'both':
@@ -741,9 +763,7 @@ class WebRTCWinFactory(WebRTCFactory):
 
     # Now do the clean + build.
     self.AddSmartCleanStep()
-    self.AddCommonStep(['gclient', 'config', WEBRTC_SVN_LOCATION],
-                       descriptor='gclient_config',
-                       workdir=WEBRTC_BUILD_DIR)
+    self.AddGclientConfigStep()
     self.AddGclientSyncStep(force_sync=True)
 
     if self.configuration == 'Debug' or self.configuration == 'both':
