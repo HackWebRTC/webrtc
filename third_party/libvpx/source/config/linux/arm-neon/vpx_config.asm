@@ -7,9 +7,9 @@
 .equ ARCH_X86_64 ,  0
 .equ ARCH_PPC32 ,  0
 .equ ARCH_PPC64 ,  0
-.equ HAVE_ARMV5TE ,  1
-.equ HAVE_ARMV6 ,  1
-.equ HAVE_ARMV7 ,  1
+.equ HAVE_EDSP ,  1
+.equ HAVE_MEDIA ,  1
+.equ HAVE_NEON ,  1
 .equ HAVE_MIPS32 ,  0
 .equ HAVE_MMX ,  0
 .equ HAVE_SSE ,  0
@@ -58,6 +58,7 @@
 .equ CONFIG_STATIC_MSVCRT ,  0
 .equ CONFIG_SPATIAL_RESAMPLING ,  1
 .equ CONFIG_REALTIME_ONLY ,  1
+.equ CONFIG_ONTHEFLY_BITPACKING ,  0
 .equ CONFIG_ERROR_CONCEALMENT ,  1
 .equ CONFIG_SHARED ,  0
 .equ CONFIG_STATIC ,  1
@@ -66,6 +67,7 @@
 .equ CONFIG_OS_SUPPORT ,  1
 .equ CONFIG_UNIT_TESTS ,  0
 .equ CONFIG_MULTI_RES_ENCODING ,  0
+.equ CONFIG_TEMPORAL_DENOISING ,  1
 	.section	.note.GNU-stack,"",%progbits
 @ This file was created from a .asm file
 @  using the ads2gas.pl script.
