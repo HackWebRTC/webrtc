@@ -622,9 +622,10 @@ void VCMQmResolution::UpdateDownsamplingState(UpDownAction up_down) {
 void  VCMQmResolution::UpdateCodecResolution() {
   if (action_.spatial != kNoChangeSpatial) {
     qm_->change_resolution_spatial = true;
-    qm_->codec_width = static_cast<uint16_t>(width_ / qm_->spatial_width_fact);
-    qm_->codec_height = static_cast<uint16_t>
-    (height_ / qm_->spatial_height_fact);
+    qm_->codec_width = static_cast<uint16_t>(width_ /
+                                             qm_->spatial_width_fact + 0.5f);
+    qm_->codec_height = static_cast<uint16_t>(height_ /
+                                              qm_->spatial_height_fact + 0.5f);
     // Size can never exceed native sizes.
     assert(qm_->codec_width <= native_width_);
     assert(qm_->codec_height <= native_height_);
