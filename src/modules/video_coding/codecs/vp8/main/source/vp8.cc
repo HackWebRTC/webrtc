@@ -268,10 +268,10 @@ int VP8Encoder::InitEncode(const VideoCodec* inst,
       break;
   }
   rps_->Init();
-  return InitAndSetControlSettings();
+  return InitAndSetControlSettings(inst);
 }
 
-int VP8Encoder::InitAndSetControlSettings() {
+int VP8Encoder::InitAndSetControlSettings(const VideoCodec* inst) {
   vpx_codec_flags_t flags = 0;
   // TODO(holmer): We should make a smarter decision on the number of
   // partitions. Eight is probably not the optimal number for low resolution
@@ -287,7 +287,8 @@ int VP8Encoder::InitAndSetControlSettings() {
   vpx_codec_control(encoder_, VP8E_SET_CPUUSED, cpu_speed_);
   vpx_codec_control(encoder_, VP8E_SET_TOKEN_PARTITIONS,
                     static_cast<vp8e_token_partitions>(token_partitions_));
-  vpx_codec_control(encoder_, VP8E_SET_NOISE_SENSITIVITY, 2);
+  vpx_codec_control(encoder_, VP8E_SET_NOISE_SENSITIVITY,
+                    inst->codecSpecific.VP8.denoisingOn ? 1 : 0);
 #if WEBRTC_LIBVPX_VERSION >= 971
   vpx_codec_control(encoder_, VP8E_SET_MAX_INTRA_BITRATE_PCT,
                     rc_max_intra_target_);

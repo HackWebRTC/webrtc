@@ -173,6 +173,7 @@ VCMCodecDataBase::Codec(WebRtc_UWord8 listId, VideoCodec *settings)
             settings->numberOfSimulcastStreams = 0;
             settings->codecSpecific.VP8.resilience = kResilientStream;
             settings->codecSpecific.VP8.numberOfTemporalLayers = 1;
+            settings->codecSpecific.VP8.denoisingOn = false;
             break;
         }
 #endif

@@ -9,7 +9,7 @@ vp8_block_quant_shift EQU 16
 vp8_blockd_qcoeff EQU 0
 vp8_blockd_dequant EQU 12
 vp8_blockd_dqcoeff EQU 4
-vp8_blockd_eob EQU 40
+vp8_blockd_eob EQU 20
 vp8_block_base_src EQU 36
 vp8_block_src EQU 40
 vp8_block_src_diff EQU 0
@@ -35,9 +35,9 @@ vp8_extra_bit_struct_tree EQU 0
 vp8_extra_bit_struct_prob EQU 4
 vp8_extra_bit_struct_len EQU 8
 vp8_extra_bit_struct_base_val EQU 12
-vp8_comp_tplist EQU 170332
-vp8_comp_common EQU 104544
-vp8_comp_bc EQU 116896
+vp8_comp_tplist EQU 170732
+vp8_comp_common EQU 104032
+vp8_comp_bc EQU 116240
 vp8_writer_sz EQU 40
 tokenlist_start EQU 0
 tokenlist_stop EQU 4
