@@ -193,7 +193,8 @@ TEST_F(CodecTest, ManualExtendedISACApisBehaveAsExpected) {
    EXPECT_EQ(0, voe_base_->StartSend(channel_));
 }
 
-TEST_F(CodecTest, ManualVerifySendCodecsForAllPacketSizes) {
+// TODO(xians, phoglund): Re-enable when issue 372 is resolved.
+TEST_F(CodecTest, DISABLED_ManualVerifySendCodecsForAllPacketSizes) {
   for (int i = 0; i < voe_codec_->NumOfCodecs(); ++i) {
     voe_codec_->GetCodec(i, codec_instance_);
     if (IsNotViableSendCodec(codec_instance_.plname)) {
