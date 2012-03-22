@@ -144,11 +144,7 @@ int main() {
 
   MyObserver my_observer;
 
-#if defined(WEBRTC_ANDROID)
-  const std::string out_path = "/sdcard/";
-#else
   const std::string out_path = webrtc::test::OutputPath();
-#endif
   const std::string trace_filename = out_path + "webrtc_trace.txt";
 
   printf("Set trace filenames (enable trace)\n");

@@ -8,7 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "tb_capture_device.h"
+#include "video_engine/test/libvietest/include/tb_capture_device.h"
+
+#include "gtest/gtest.h"
+#include "video_engine/test/libvietest/include/tb_interfaces.h"
 
 TbCaptureDevice::TbCaptureDevice(TbInterfaces& Engine) :
     captureId(-1),
@@ -45,8 +48,6 @@ TbCaptureDevice::TbCaptureDevice(TbInterfaces& Engine) :
         int error = ViE.capture->AllocateCaptureDevice(*vcpm_, captureId);
         if (error == 0)
         {
-            ViETest::Log("Using capture device: %s, captureId: %d", deviceName,
-                         captureId);
             captureDeviceSet = true;
             break;
         }
@@ -58,14 +59,11 @@ TbCaptureDevice::TbCaptureDevice(TbInterfaces& Engine) :
     }
 
     device_name_ = deviceName;
-    ViETest::Log("Starting capture device %s with captureId %d\n", deviceName,
-                 captureId);
     EXPECT_EQ(0, ViE.capture->StartCapture(captureId));
 }
 
 TbCaptureDevice::~TbCaptureDevice(void)
 {
-    ViETest::Log("Stopping capture device with id %d\n", captureId);
     EXPECT_EQ(0, ViE.capture->StopCapture(captureId));
     EXPECT_EQ(0, ViE.capture->ReleaseCaptureDevice(captureId));
     vcpm_->Release();

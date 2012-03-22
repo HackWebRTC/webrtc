@@ -10,7 +10,7 @@
 
 #include "video_engine/test/auto_test/automated/two_windows_fixture.h"
 
-#include "video_engine/test/auto_test/helpers/vie_window_creator.h"
+#include "video_engine/test/auto_test/interface/vie_window_creator.h"
 #include "video_engine/test/auto_test/interface/vie_autotest_window_manager_interface.h"
 
 void TwoWindowsFixture::SetUpTestCase() {

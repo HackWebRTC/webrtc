@@ -13,8 +13,9 @@
 
 #include <string>
 
-#include "tb_interfaces.h"
-#include "video_capture_factory.h"
+#include "modules/video_capture/main/interface/video_capture_factory.h"
+
+class TbInterfaces;
 
 class TbCaptureDevice
 {

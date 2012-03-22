@@ -16,13 +16,13 @@
 #include "testsupport/fileutils.h"
 #include "testsupport/frame_reader.h"
 #include "testsupport/frame_writer.h"
-#include "video_engine/test/auto_test/helpers/vie_to_file_renderer.h"
-#include "video_engine/test/auto_test/interface/tb_interfaces.h"
-#include "video_engine/test/auto_test/interface/tb_external_transport.h"
 #include "video_engine/test/auto_test/interface/vie_autotest.h"
 #include "video_engine/test/auto_test/interface/vie_autotest_defines.h"
 #include "video_engine/test/auto_test/primitives/framedrop_primitives.h"
 #include "video_engine/test/auto_test/primitives/general_primitives.h"
+#include "video_engine/test/libvietest/include/tb_interfaces.h"
+#include "video_engine/test/libvietest/include/tb_external_transport.h"
+#include "video_engine/test/libvietest/include/vie_to_file_renderer.h"
 
 // Tracks which frames are created on the local side and reports them to the
 // FrameDropDetector class.

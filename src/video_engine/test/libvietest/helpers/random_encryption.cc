@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "video_engine/test/auto_test/helpers/random_encryption.h"
+#include "video_engine/test/libvietest/include/random_encryption.h"
 
 #include <algorithm>
 #include <cstdlib>

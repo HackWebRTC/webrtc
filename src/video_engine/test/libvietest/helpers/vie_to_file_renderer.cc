@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "vie_to_file_renderer.h"
+#include "video_engine/test/libvietest/include/vie_to_file_renderer.h"
 
 #include <assert.h>
 

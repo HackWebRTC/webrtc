@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,20 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "tb_interfaces.h"
+#include "video_engine/test/libvietest/include/tb_interfaces.h"
 
 #include "gtest/gtest.h"
+#include "testsupport/fileutils.h"
 
-TbInterfaces::TbInterfaces(const char* test_name) {
-    std::string trace_file_path =
-        (ViETest::GetResultOutputPath() + test_name) + "_trace.txt";
-
-    ViETest::Log("Creating ViE Interfaces for test %s\n", test_name);
+TbInterfaces::TbInterfaces(std::string test_name) {
+    std::string complete_path =
+        webrtc::test::OutputPath() + test_name + "_trace.txt";
 
     video_engine = webrtc::VideoEngine::Create();
     EXPECT_TRUE(video_engine != NULL);
 
-    EXPECT_EQ(0, video_engine->SetTraceFile(trace_file_path.c_str()));
+    EXPECT_EQ(0, video_engine->SetTraceFile(complete_path.c_str()));
     EXPECT_EQ(0, video_engine->SetTraceFilter(webrtc::kTraceAll));
 
     base = webrtc::ViEBase::GetInterface(video_engine);

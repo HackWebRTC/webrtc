@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -7,17 +7,16 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "vie_file_capture_device.h"
+#include "video_engine/test/libvietest/include/vie_file_capture_device.h"
 
 #include <assert.h>
 
 #include "common_types.h"
-#include "critical_section_wrapper.h"
-#include "event_wrapper.h"
-#include "module_common_types.h"
-#include "vie_autotest_defines.h"
-#include "vie_capture.h"
-#include "tick_util.h"
+#include "modules/interface/module_common_types.h"
+#include "system_wrappers/interface/critical_section_wrapper.h"
+#include "system_wrappers/interface/event_wrapper.h"
+#include "system_wrappers/interface/tick_util.h"
+#include "video_engine/include/vie_capture.h"
 
 // This class ensures we are not exceeding the max FPS.
 class FramePacemaker {

@@ -10,14 +10,14 @@
 
 #include "video_engine/test/auto_test/interface/vie_file_based_comparison_tests.h"
 
-#include "video_engine/test/auto_test/interface/tb_interfaces.h"
 #include "video_engine/test/auto_test/interface/vie_autotest_defines.h"
-#include "video_engine/test/auto_test/helpers/vie_fake_camera.h"
-#include "video_engine/test/auto_test/helpers/vie_to_file_renderer.h"
 #include "video_engine/test/auto_test/primitives/base_primitives.h"
 #include "video_engine/test/auto_test/primitives/codec_primitives.h"
 #include "video_engine/test/auto_test/primitives/framedrop_primitives.h"
 #include "video_engine/test/auto_test/primitives/general_primitives.h"
+#include "video_engine/test/libvietest/include/tb_interfaces.h"
+#include "video_engine/test/libvietest/include/vie_fake_camera.h"
+#include "video_engine/test/libvietest/include/vie_to_file_renderer.h"
 
 bool ViEFileBasedComparisonTests::TestCallSetup(
     const std::string& i420_video_file,

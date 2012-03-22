@@ -21,6 +21,7 @@
         '<(webrtc_root)/../test/metrics.gyp:metrics',
         '<(webrtc_root)/../test/test.gyp:test_support',
         'video_engine_core',
+        'libvietest',
       ],
       'include_dirs': [
         'interface/',
@@ -32,11 +33,6 @@
         '../../../common_video/interface',
       ],
       'sources': [
-        'interface/tb_capture_device.h',
-        'interface/tb_external_transport.h',
-        'interface/tb_I420_codec.h',
-        'interface/tb_interfaces.h',
-        'interface/tb_video_channel.h',
         'interface/vie_autotest.h',
         'interface/vie_autotest_defines.h',
         'interface/vie_autotest_linux.h',
@@ -47,20 +43,7 @@
         'interface/vie_autotest_windows.h',
         'interface/vie_file_based_comparison_tests.h',
         'interface/vie_window_manager_factory.h',
-
-        # Helper classes
-        'helpers/bit_flip_encryption.cc',
-        'helpers/bit_flip_encryption.h',
-        'helpers/random_encryption.cc',
-        'helpers/random_encryption.h',
-        'helpers/vie_fake_camera.cc',
-        'helpers/vie_fake_camera.h',
-        'helpers/vie_file_capture_device.cc',
-        'helpers/vie_file_capture_device.h',
-        'helpers/vie_to_file_renderer.cc',
-        'helpers/vie_to_file_renderer.h',
-        'helpers/vie_window_creator.cc',
-        'helpers/vie_window_creator.h',
+        'interface/vie_window_creator.h',
 
         # New, fully automated tests
         'automated/legacy_fixture.cc',
@@ -83,11 +66,6 @@
         'primitives/general_primitives.h',
 
         # Platform independent
-        'source/tb_capture_device.cc',
-        'source/tb_external_transport.cc',
-        'source/tb_I420_codec.cc',
-        'source/tb_interfaces.cc',
-        'source/tb_video_channel.cc',
         'source/vie_autotest.cc',
         'source/vie_autotest_base.cc',
         'source/vie_autotest_capture.cc',
@@ -103,6 +81,7 @@
         'source/vie_autotest_custom_call.cc',
         'source/vie_autotest_simulcast.cc',
         'source/vie_file_based_comparison_tests.cc',
+        'source/vie_window_creator.cc',
 
         # Platform dependent
         # Android

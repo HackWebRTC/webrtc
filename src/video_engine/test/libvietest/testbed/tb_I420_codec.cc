@@ -8,12 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- * tb_I420_codec.cc
- *
- */
+#include "video_engine/test/libvietest/include/tb_I420_codec.h"
 
-#include "tb_I420_codec.h"
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>

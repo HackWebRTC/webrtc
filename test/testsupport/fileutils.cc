@@ -68,6 +68,16 @@ std::string ProjectRootPath() {
   return kCannotFindProjectRootDir;
 }
 
+#ifdef WEBRTC_ANDROID
+
+std::string OutputPath() {
+  // We need to touch this variable so it doesn't get flagged as unused.
+  (void)kOutputDirName;
+  return "/sdcard/";
+}
+
+#else  // WEBRTC_ANDROID
+
 std::string OutputPath() {
   std::string path = ProjectRootPath();
   if (path == kCannotFindProjectRootDir) {
@@ -79,6 +89,8 @@ std::string OutputPath() {
   }
   return path + kPathDelimiter;
 }
+
+#endif  // !WEBRTC_ANDROID
 
 std::string WorkingDir() {
   char path_buffer[FILENAME_MAX];

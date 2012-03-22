@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -7,13 +7,13 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "vie_fake_camera.h"
+#include "video_engine/test/libvietest/include/vie_fake_camera.h"
 
 #include <assert.h>
 
-#include "vie_capture.h"
-#include "vie_file_capture_device.h"
-#include "thread_wrapper.h"
+#include "system_wrappers/interface/thread_wrapper.h"
+#include "video_engine/include/vie_capture.h"
+#include "video_engine/test/libvietest/include/vie_file_capture_device.h"
 
 // This callback runs the camera thread:
 bool StreamVideoFileRepeatedlyIntoCaptureDevice(void* data) {

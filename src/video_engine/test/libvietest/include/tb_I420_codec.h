@@ -9,17 +9,14 @@
  */
 
 /*
- * tb_I420_codec.h
- *
  * This file contains the interface to I420 "codec"
  * This is a dummy wrapper to allow VCM deal with raw I420 sequences
- *
  */
 
 #ifndef WEBRTC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_INTERFACE_TB_I420_CODEC_H_
 #define WEBRTC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_INTERFACE_TB_I420_CODEC_H_
 
-#include "video_codec_interface.h"
+#include "modules/video_coding/codecs/interface/video_codec_interface.h"
 
 class TbI420Encoder: public webrtc::VideoEncoder
 {

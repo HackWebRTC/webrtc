@@ -14,10 +14,10 @@
 #include "gtest/gtest.h"
 #include "testsupport/fileutils.h"
 #include "testsupport/metrics/video_metrics.h"
-#include "video_engine/test/auto_test/helpers/vie_to_file_renderer.h"
 #include "video_engine/test/auto_test/interface/vie_autotest.h"
 #include "video_engine/test/auto_test/interface/vie_file_based_comparison_tests.h"
 #include "video_engine/test/auto_test/primitives/framedrop_primitives.h"
+#include "video_engine/test/libvietest/include/vie_to_file_renderer.h"
 
 namespace {
 

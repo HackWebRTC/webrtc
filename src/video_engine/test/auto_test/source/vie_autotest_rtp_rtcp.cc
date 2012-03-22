@@ -702,13 +702,10 @@ void ViEAutoTest::ViERtpRtcpAPITest()
     // RTP Dump
     //
     {
-#ifdef WEBRTC_ANDROID
-        const char* dumpName = "/sdcard/DumpFileName.rtp";
-#else
         std::string output_file = webrtc::test::OutputPath() +
             "DumpFileName.rtp";
         const char* dumpName = output_file.c_str();
-#endif
+
         EXPECT_EQ(0, ViE.rtp_rtcp->StartRTPDump(
             tbChannel.videoChannel, dumpName, webrtc::kRtpIncoming));
         EXPECT_EQ(0, ViE.rtp_rtcp->StopRTPDump(

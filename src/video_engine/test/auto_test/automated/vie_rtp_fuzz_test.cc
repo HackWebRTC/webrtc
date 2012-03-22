@@ -13,14 +13,14 @@
 #include "gtest/gtest.h"
 #include "gflags/gflags.h"
 #include "video_engine/test/auto_test/automated/two_windows_fixture.h"
-#include "video_engine/test/auto_test/helpers/bit_flip_encryption.h"
-#include "video_engine/test/auto_test/helpers/random_encryption.h"
-#include "video_engine/test/auto_test/helpers/vie_window_creator.h"
-#include "video_engine/test/auto_test/interface/tb_capture_device.h"
-#include "video_engine/test/auto_test/interface/tb_interfaces.h"
-#include "video_engine/test/auto_test/interface/tb_video_channel.h"
+#include "video_engine/test/auto_test/interface/vie_window_creator.h"
 #include "video_engine/test/auto_test/interface/vie_autotest_window_manager_interface.h"
 #include "video_engine/test/auto_test/primitives/general_primitives.h"
+#include "video_engine/test/libvietest/include/bit_flip_encryption.h"
+#include "video_engine/test/libvietest/include/random_encryption.h"
+#include "video_engine/test/libvietest/include/tb_capture_device.h"
+#include "video_engine/test/libvietest/include/tb_interfaces.h"
+#include "video_engine/test/libvietest/include/tb_video_channel.h"
 
 namespace {
 

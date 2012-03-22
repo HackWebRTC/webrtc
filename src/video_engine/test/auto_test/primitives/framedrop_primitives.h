@@ -17,7 +17,7 @@
 #include "video_engine/include/vie_codec.h"
 #include "video_engine/include/vie_image_process.h"
 #include "video_engine/test/auto_test/interface/vie_autotest_defines.h"
-#include "video_engine/test/auto_test/helpers/vie_to_file_renderer.h"
+#include "video_engine/test/libvietest/include/vie_to_file_renderer.h"
 
 class FrameDropDetector;
 class TbInterfaces;

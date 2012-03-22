@@ -8,11 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "video_engine/test/auto_test/helpers/bit_flip_encryption.h"
+#include "video_engine/test/libvietest/include/bit_flip_encryption.h"
 
 #include <cstdlib>
-
-#include "video_engine/test/auto_test/interface/vie_autotest_defines.h"
 
 float NormalizedRand() {
   return static_cast<float>(rand()) /

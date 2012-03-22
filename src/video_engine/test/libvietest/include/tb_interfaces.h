@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2011 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -11,26 +11,27 @@
 #ifndef WEBRTC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_INTERFACE_TB_INTERFACES_H_
 #define WEBRTC_VIDEO_ENGINE_MAIN_TEST_AUTOTEST_INTERFACE_TB_INTERFACES_H_
 
-#include "vie_autotest_defines.h"
+#include <string>
 
 #include "common_types.h"
-#include "vie_base.h"
-#include "vie_capture.h"
-#include "vie_codec.h"
-#include "vie_image_process.h"
-#include "vie_network.h"
-#include "vie_render.h"
-#include "vie_rtp_rtcp.h"
-#include "vie_encryption.h"
-#include "vie_defines.h"
+#include "video_engine/include/vie_base.h"
+#include "video_engine/include/vie_capture.h"
+#include "video_engine/include/vie_codec.h"
+#include "video_engine/include/vie_image_process.h"
+#include "video_engine/include/vie_network.h"
+#include "video_engine/include/vie_render.h"
+#include "video_engine/include/vie_rtp_rtcp.h"
+#include "video_engine/include/vie_encryption.h"
+#include "video_engine/vie_defines.h"
 
 // This class deals with all the tedium of setting up video engine interfaces.
 // It does its work in constructor and destructor, so keeping it in scope is
-// enough.
+// enough. It also sets up tracing.
 class TbInterfaces
 {
 public:
-    TbInterfaces(const char* test_name);
+    // Sets up all interfaces and creates a trace file
+    TbInterfaces(std::string test_name);
     ~TbInterfaces(void);
 
     webrtc::VideoEngine* video_engine;

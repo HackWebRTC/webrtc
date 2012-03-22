@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "tb_external_transport.h"
+#include "video_engine/test/libvietest/include/tb_external_transport.h"
 
 #include <stdio.h> // printf
 #include <stdlib.h> // rand
@@ -21,11 +21,11 @@
 #include <cstring>
 #endif
 
-#include "critical_section_wrapper.h"
-#include "event_wrapper.h"
-#include "thread_wrapper.h"
-#include "tick_util.h"
-#include "vie_network.h"
+#include "system_wrappers/interface/critical_section_wrapper.h"
+#include "system_wrappers/interface/event_wrapper.h"
+#include "system_wrappers/interface/thread_wrapper.h"
+#include "system_wrappers/interface/tick_util.h"
+#include "video_engine/include/vie_network.h"
 
 #if defined(_WIN32)
 #pragma warning(disable: 4355) // 'this' : used in base member initializer list
@@ -110,7 +110,7 @@ int TbExternalTransport::SendPacket(int channel, const void *data, int len)
         ssrc += ptr[10] << 8;
         ssrc += ptr[11];
         if (ssrc != _SSRC)
-        {  
+        {
             return len; // return len to avoid error in trace file
         }
     }
