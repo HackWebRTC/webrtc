@@ -7,8 +7,10 @@
 # capture screenshots from inside the virtual environment. If you don't what
 # that is, never mind and run this script without arguments.
 #
+# Pass the argument --chrome-binary <binary> to provide a custom chrome binary.
+#
 # Method:
-# - Start peerconnection server.
+# - Start peerconnection_server.
 # - Start serving webrtc_test.html off a local web server.
 # - Start 2 browser tabs.
 # - Tab 1 connects to the server.
@@ -26,10 +28,22 @@ fi
 
 # Tweakable parameters:
 URLBASE=localhost:3000
-CHROME_BINARY=google-chrome
 CALLEE="$URLBASE/webrtc_test.html?name=test1&autoconnect=yes"
 CALLER="$URLBASE/webrtc_test.html?name=test2&autocall=test1"
 FLAGS="--enable-media-stream"
+CHROME_BINARY=google-chrome
+
+# Parse parameters:
+while (( "$#" )); do
+  if [ "$1" == "--xvfb-and-screenshots" ]; then
+    RUN_WITH_XVFB_AND_SCREENSHOTS=1
+  fi
+  if [ "$1" == "--chrome-binary" ]; then
+    shift
+    CHROME_BINARY=$1
+  fi
+  shift
+done
 
 run_chrome_for_user() {
   # Run the binary straight up and proceed with cleanup when the user closes
@@ -41,6 +55,7 @@ run_chrome_in_xvfb_with_screenshots() {
   # Run chrome in a virtual window environment and capture screenshots.
   # It will run for 30 seconds and then exit.
   Xvfb :17 -screen 0 1024x768x24 &
+  XVFB=$!
   DISPLAY=:17 ${CHROME_BINARY} $CALLEE $CALLER $FLAGS --user-data-dir=temp/user1 &
   CHROME=$!
 
@@ -52,6 +67,7 @@ run_chrome_in_xvfb_with_screenshots() {
     sleep 5
   done
   kill $CHROME || echo "No Chrome process."
+  kill $XVFB || echo "No XVFB process."
 }
 
 PROJECT_ROOT=../..
@@ -79,10 +95,10 @@ SERVER=$!
 echo "Started server as $SERVER"
 
 # Launch a browser with two tabs:
-if [ "$1" == "--xvfb-and-screenshots" ]; then
-  run_chrome_in_xvfb_with_screenshots
-else
+if [ -z "$RUN_WITH_XVFB_AND_SCREENSHOTS" ]; then
   run_chrome_for_user
+else
+  run_chrome_in_xvfb_with_screenshots
 fi
 
 echo "Test finished, cleaning up"
