@@ -673,6 +673,16 @@ int32_t ForwardErrorCorrection::DecodeFEC(
     RecoveredPacketList* recoveredPacketList) {
   // TODO(marpan/ajm): can we check for multiple ULP headers, and return an
   // error?
+  if (recoveredPacketList->size() == kMaxMediaPackets) {
+    const unsigned int seq_num_diff = abs(
+        static_cast<int>(receivedPacketList->front()->seqNum)  -
+        static_cast<int>(recoveredPacketList->back()->seqNum));
+    if (seq_num_diff > kMaxMediaPackets) {
+      // A big gap in sequence numbers. The old recovered packets
+      // are now useless, so it's safe to do a reset.
+      ResetState(recoveredPacketList);
+    }
+  }
   InsertPackets(receivedPacketList, recoveredPacketList);
   AttemptRecover(recoveredPacketList);
   return 0;

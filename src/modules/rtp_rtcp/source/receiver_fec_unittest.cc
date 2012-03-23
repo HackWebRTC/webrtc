@@ -288,7 +288,7 @@ TEST_F(ReceiverFecTest, PacketNotDroppedTooEarly) {
   delayed_fec = fec_packets.front();
 
   // Fill the FEC decoder. No packets should be dropped.
-  const unsigned int kNumMediaPacketsBatch2 = 47u;
+  const unsigned int kNumMediaPacketsBatch2 = 46u;
   std::list<RtpPacket*> media_rtp_packets_batch2;
   std::list<Packet*> media_packets_batch2;
   GenerateAndAddFrames(kNumMediaPacketsBatch2, 1, &media_rtp_packets_batch2,
