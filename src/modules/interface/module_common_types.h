@@ -309,11 +309,19 @@ class EncodedVideoData
 {
 public:
     EncodedVideoData() :
+        payloadType(0),
+        timeStamp(0),
+        renderTimeMs(0),
+        encodedWidth(0),
+        encodedHeight(0),
         completeFrame(false),
         missingFrame(false),
         payloadData(NULL),
         payloadSize(0),
-        bufferSize(0)
+        bufferSize(0),
+        fragmentationHeader(),
+        frameType(kVideoFrameDelta),
+        codec(kVideoCodecUnknown)
     {};
 
     EncodedVideoData(const EncodedVideoData& data)

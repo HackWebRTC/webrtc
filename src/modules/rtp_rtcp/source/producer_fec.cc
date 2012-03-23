@@ -120,11 +120,11 @@ int ProducerFec::AddRtpPacketAndGenerateFec(const uint8_t* data_buffer,
   assert(fec_packets_.empty());
   incomplete_frame_ = true;
   const bool marker_bit = (data_buffer[1] & kRtpMarkerBitMask) ? true : false;
-  ForwardErrorCorrection::Packet* packet = new ForwardErrorCorrection::Packet;
-  packet->length = payload_length + rtp_header_length;
-  memcpy(packet->data, data_buffer, packet->length);
-  // FEC can only protect up to kMaxMediaPackets packets
   if (media_packets_fec_.size() < ForwardErrorCorrection::kMaxMediaPackets) {
+    // Generic FEC can only protect up to kMaxMediaPackets packets.
+    ForwardErrorCorrection::Packet* packet = new ForwardErrorCorrection::Packet;
+    packet->length = payload_length + rtp_header_length;
+    memcpy(packet->data, data_buffer, packet->length);
     media_packets_fec_.push_back(packet);
   }
   if (marker_bit) {

@@ -40,7 +40,7 @@ RtpPacket* FrameGenerator::NextPacket(int offset, size_t length) {
   rtp_packet->header.header.sequenceNumber = seq_num_;
   rtp_packet->header.header.timestamp = timestamp_;
   rtp_packet->header.header.payloadType = kVp8PayloadType;
-  BuildRtpHeader(rtp_packet->data, rtp_packet->header.header);
+  BuildRtpHeader(rtp_packet->data, &rtp_packet->header.header);
   ++seq_num_;
   --num_packets_;
   return rtp_packet;
@@ -87,13 +87,13 @@ void FrameGenerator::SetRedHeader(Packet* red_packet, uint8_t payload_type,
   red_packet->data[header_length] = payload_type;
 }
 
-void FrameGenerator::BuildRtpHeader(uint8_t* data, RTPHeader header) {
+void FrameGenerator::BuildRtpHeader(uint8_t* data, const RTPHeader* header) {
   data[0] = 0x80;  // Version 2.
-  data[1] = header.payloadType;
-  data[1] |= (header.markerBit ? kRtpMarkerBitMask : 0);
-  ModuleRTPUtility::AssignUWord16ToBuffer(data+2, header.sequenceNumber);
-  ModuleRTPUtility::AssignUWord32ToBuffer(data+4, header.timestamp);
-  ModuleRTPUtility::AssignUWord32ToBuffer(data+8, header.ssrc);
+  data[1] = header->payloadType;
+  data[1] |= (header->markerBit ? kRtpMarkerBitMask : 0);
+  ModuleRTPUtility::AssignUWord16ToBuffer(data+2, header->sequenceNumber);
+  ModuleRTPUtility::AssignUWord32ToBuffer(data+4, header->timestamp);
+  ModuleRTPUtility::AssignUWord32ToBuffer(data+8, header->ssrc);
 }
 
 }  // namespace webrtc

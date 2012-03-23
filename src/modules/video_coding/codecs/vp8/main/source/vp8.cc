@@ -51,6 +51,7 @@ VP8Encoder::VP8Encoder()
       encoder_(NULL),
       config_(NULL),
       raw_(NULL) {
+  memset(&codec_, 0, sizeof(codec_));
   uint32_t seed = static_cast<uint32_t>(TickTime::MillisecondTimestamp());
   srand(seed);
 }
@@ -571,6 +572,7 @@ VP8Decoder::VP8Decoder()
       propagation_cnt_(-1),
       latest_keyframe_complete_(false),
       mfqe_enabled_(false) {
+  memset(&codec_, 0, sizeof(codec_));
 }
 
 VP8Decoder::~VP8Decoder() {
@@ -590,6 +592,9 @@ int VP8Decoder::Reset() {
 }
 
 int VP8Decoder::InitDecode(const VideoCodec* inst, int number_of_cores) {
+  if (inst == NULL) {
+    return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
+  }
   int ret_val = Release();
   if (ret_val < 0 ) {
     return ret_val;
@@ -597,7 +602,7 @@ int VP8Decoder::InitDecode(const VideoCodec* inst, int number_of_cores) {
   if (decoder_ == NULL) {
     decoder_ = new vpx_dec_ctx_t;
   }
-  if (inst && inst->codecType == kVideoCodecVP8) {
+  if (inst->codecType == kVideoCodecVP8) {
     feedback_mode_ = inst->codecSpecific.VP8.feedbackModeOn;
   }
   vpx_codec_dec_cfg_t  cfg;

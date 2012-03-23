@@ -74,6 +74,7 @@ JpegEncoder::SetFileName(const char* fileName)
     if (fileName)
     {
         strncpy(_fileName, fileName, 256);
+        _fileName[256] = 0;
     }
     return 0;
 }

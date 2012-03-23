@@ -1652,7 +1652,7 @@ VCMJitterBuffer::UpdateOldJitterSample(const VCMPacket& packet)
 bool
 VCMJitterBuffer::IsPacketRetransmitted(const VCMPacket& packet) const
 {
-    if (_NACKSeqNum && _NACKSeqNumLength > 0)
+    if (_NACKSeqNumLength > 0)
     {
         for (WebRtc_UWord16 i = 0; i < _NACKSeqNumLength; i++)
         {

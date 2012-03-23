@@ -49,7 +49,7 @@ class FrameGenerator {
                     int header_length) const;
 
  private:
-  void BuildRtpHeader(uint8_t* data, RTPHeader header);
+  static void BuildRtpHeader(uint8_t* data, const RTPHeader* header);
 
   int num_packets_;
   uint16_t seq_num_;
