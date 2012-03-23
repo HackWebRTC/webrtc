@@ -767,65 +767,6 @@ int ViERTP_RTCPImpl::GetEstimatedReceiveBandwidth(
       static_cast<WebRtc_UWord32*>(estimated_bandwidth));
 }
 
-int ViERTP_RTCPImpl::SetRTPKeepAliveStatus(
-    const int video_channel,
-    bool enable,
-    const int unknown_payload_type,
-    const unsigned int delta_transmit_time_seconds) {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
-               ViEId(shared_data_->instance_id(), video_channel),
-               "%s(channel: %d, enable: %d, unknown_payload_type: %d, "
-               "deltaTransmitTimeMS: %ul)",
-               __FUNCTION__, video_channel, enable,
-               static_cast<int>(unknown_payload_type),
-               delta_transmit_time_seconds);
-  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
-  ViEChannel* vie_channel = cs.Channel(video_channel);
-  if (!vie_channel) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: Channel %d doesn't exist", __FUNCTION__,
-                 video_channel);
-    shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
-    return -1;
-  }
-  WebRtc_UWord16 delta_transmit_time_ms = 1000 * delta_transmit_time_seconds;
-  if (vie_channel->SetKeepAliveStatus(enable, unknown_payload_type,
-                                      delta_transmit_time_ms) != 0) {
-    shared_data_->SetLastError(kViERtpRtcpUnknownError);
-    return -1;
-  }
-  return 0;
-}
-
-int ViERTP_RTCPImpl::GetRTPKeepAliveStatus(
-    const int video_channel,
-    bool& enabled,
-    int& unknown_payload_type,
-    unsigned int& delta_transmit_time_seconds) const {
-  WEBRTC_TRACE(kTraceApiCall, kTraceVideo,
-               ViEId(shared_data_->instance_id(), video_channel),
-               "%s(channel: %d)", __FUNCTION__, video_channel);
-  ViEChannelManagerScoped cs(*(shared_data_->channel_manager()));
-  ViEChannel* vie_channel = cs.Channel(video_channel);
-  if (!vie_channel) {
-    WEBRTC_TRACE(kTraceError, kTraceVideo,
-                 ViEId(shared_data_->instance_id(), video_channel),
-                 "%s: Channel %d doesn't exist", __FUNCTION__, video_channel);
-    shared_data_->SetLastError(kViERtpRtcpInvalidChannelId);
-    return -1;
-  }
-
-  WebRtc_UWord16 delta_time_ms = 0;
-  int ret_val = vie_channel->GetKeepAliveStatus(enabled, unknown_payload_type,
-                                                delta_time_ms);
-  delta_transmit_time_seconds = delta_time_ms / 1000;
-  if (ret_val != 0) {
-    shared_data_->SetLastError(kViERtpRtcpUnknownError);
-  }
-  return ret_val;
-}
-
 int ViERTP_RTCPImpl::StartRTPDump(const int video_channel,
                                   const char file_nameUTF8[1024],
                                   RTPDirections direction) {

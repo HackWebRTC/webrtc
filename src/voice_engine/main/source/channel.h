@@ -343,10 +343,6 @@ public:
     int GetRTPStatistics(CallStatistics& stats);
     int SetFECStatus(bool enable, int redPayloadtype);
     int GetFECStatus(bool& enabled, int& redPayloadtype);
-    int SetRTPKeepaliveStatus(bool enable, int unknownPayloadType,
-                              int deltaTransmitTimeSeconds);
-    int GetRTPKeepaliveStatus(bool& enabled, int& unknownPayloadType,
-                              int& deltaTransmitTimeSeconds);
     int StartRTPDump(const char fileNameUTF8[1024], RTPDirections direction);
     int StopRTPDump(RTPDirections direction);
     bool RTPDumpIsActive(RTPDirections direction);

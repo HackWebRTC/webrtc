@@ -5643,60 +5643,6 @@ Channel::GetFECStatus(bool& enabled, int& redPayloadtype)
 }
 
 int
-Channel::SetRTPKeepaliveStatus(bool enable,
-                               int unknownPayloadType,
-                               int deltaTransmitTimeSeconds)
-{
-    WEBRTC_TRACE(kTraceInfo, kTraceVoice, VoEId(_instanceId, _channelId),
-                 "Channel::SetRTPKeepaliveStatus()");
-    if (_sending)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_ALREADY_SENDING, kTraceError,
-            "SetRTPKeepaliveStatus() already sending");
-        return -1;
-    }
-    if (_rtpRtcpModule.SetRTPKeepaliveStatus(
-        enable,
-        unknownPayloadType,
-        1000 * deltaTransmitTimeSeconds) != 0)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_RTP_RTCP_MODULE_ERROR, kTraceError,
-            "SetRTPKeepaliveStatus() failed to set RTP keepalive status");
-        return -1;
-    }
-    return 0;
-}
-
-int
-Channel::GetRTPKeepaliveStatus(bool& enabled,
-                               int& unknownPayloadType,
-                               int& deltaTransmitTimeSeconds)
-{
-    bool onOff(false);
-    int payloadType(0);
-    WebRtc_UWord16 deltaTransmitTimeMS(0);
-    if (_rtpRtcpModule.RTPKeepaliveStatus(&onOff, &payloadType,
-                                          &deltaTransmitTimeMS) != 0)
-    {
-        _engineStatisticsPtr->SetLastError(
-            VE_RTP_RTCP_MODULE_ERROR, kTraceError,
-            "GetRTPKeepaliveStatus() failed to retrieve RTP keepalive status");
-        return -1;
-    }
-    enabled = onOff;
-    unknownPayloadType = payloadType;
-    deltaTransmitTimeSeconds = static_cast<int> (deltaTransmitTimeMS / 1000);
-    WEBRTC_TRACE(kTraceStateInfo, kTraceVoice,
-                 VoEId(_instanceId, _channelId),
-                 "GetRTPKeepaliveStatus() => enabled=%d, "
-                 "unknownPayloadType=%u, deltaTransmitTimeSeconds=%d",
-                 enabled, unknownPayloadType, deltaTransmitTimeSeconds);
-    return 0;
-}
-
-int
 Channel::StartRTPDump(const char fileNameUTF8[1024],
                       RTPDirections direction)
 {

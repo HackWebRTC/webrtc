@@ -7148,49 +7148,6 @@ int VoEExtendedTest::TestRTP_RTCP() {
   TEST_MUSTPASS(rtp_rtcp->DeRegisterRTPObserver(0));
   ANL();
 
-  TEST(GetRTPKeepaliveStatus);
-  int pt;
-  int dT;
-  TEST_MUSTPASS(!rtp_rtcp->GetRTPKeepaliveStatus(-1, enabled, pt, dT));
-  MARK();
-  TEST_MUSTPASS(rtp_rtcp->GetRTPKeepaliveStatus(0, enabled, pt, dT));
-  MARK(); // should be off by default
-  TEST_MUSTPASS(enabled != false);
-  TEST_MUSTPASS(pt != 255);
-  TEST_MUSTPASS(dT != 0);
-  ANL();
-
-  TEST(SetRTPKeepaliveStatus);
-  // stop send before changing the settings
-  TEST_MUSTPASS(voe_base_->StopSend(0));
-  // verify invalid input parameters
-  TEST_MUSTPASS(!rtp_rtcp->SetRTPKeepaliveStatus(-1, true, 0, 15));
-  MARK();
-  TEST_MUSTPASS(!rtp_rtcp->SetRTPKeepaliveStatus(0, true, -1, 15));
-  MARK();
-  TEST_MUSTPASS(!rtp_rtcp->SetRTPKeepaliveStatus(0, true, 0, 61));
-  MARK();
-  TEST_MUSTPASS(rtp_rtcp->GetRTPKeepaliveStatus(0, enabled, pt, dT));
-  MARK(); // should still be off
-  TEST_MUSTPASS(enabled != false);
-  // try valid settings
-  TEST_MUSTPASS(rtp_rtcp->SetRTPKeepaliveStatus(0, true, 117));
-  MARK();
-  TEST_MUSTPASS(rtp_rtcp->GetRTPKeepaliveStatus(0, enabled, pt, dT));
-  MARK(); // should be on now
-  TEST_MUSTPASS(enabled != true);
-  TEST_MUSTPASS(pt != 117);
-  TEST_MUSTPASS(dT != 15);
-  // change from PT 99 to 121, as 99 is occupied
-  TEST_MUSTPASS(rtp_rtcp->SetRTPKeepaliveStatus(0, true, 121, 3));
-  MARK(); // on, PT=99, dT=3
-  TEST_MUSTPASS(rtp_rtcp->GetRTPKeepaliveStatus(0, enabled, pt, dT));
-  MARK();
-  TEST_MUSTPASS(enabled != true);
-  TEST_MUSTPASS(pt != 121);
-  TEST_MUSTPASS(dT != 3);
-  ANL();
-
   // Make fresh restart (ensures that SSRC is randomized)
   TEST_MUSTPASS(file->StopPlayingFileAsMicrophone(0));
   TEST_MUSTPASS(voe_base_->StopSend(0));

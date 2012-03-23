@@ -573,60 +573,6 @@ int VoERTP_RTCPImpl::GetFECStatus(int channel,
 #endif
 }
 
-int VoERTP_RTCPImpl::SetRTPKeepaliveStatus(int channel,
-                                           bool enable,
-                                           int unknownPayloadType,
-                                           int deltaTransmitTimeSeconds)
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1), 
-                 "SetRTPKeepaliveStatus(channel=%d, enable=%d,"
-                 " unknownPayloadType=%u, deltaTransmitTimeSeconds=%d)",
-                 channel, enable, unknownPayloadType, deltaTransmitTimeSeconds);
-    if (!_engineStatistics.Initialized())
-    {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
-        return -1;
-    }
-    voe::ScopedChannel sc(_channelManager, channel);
-    voe::Channel* channelPtr = sc.ChannelPtr();
-    if (channelPtr == NULL)
-    {
-        _engineStatistics.SetLastError(
-            VE_CHANNEL_NOT_VALID, kTraceError,
-            "SetRTPKeepaliveStatus() failed to locate channel");
-        return -1;
-    }
-    return channelPtr->SetRTPKeepaliveStatus(enable,
-                                             unknownPayloadType,
-                                             deltaTransmitTimeSeconds);
-}
-
-int VoERTP_RTCPImpl::GetRTPKeepaliveStatus(int channel,
-                                           bool& enabled,
-                                           int& unknownPayloadType,
-                                           int& deltaTransmitTimeSeconds)
-{
-    WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_instanceId,-1),
-                 "GetRTPKeepaliveStatus(channel=%d)", channel);
-    if (!_engineStatistics.Initialized())
-    {
-        _engineStatistics.SetLastError(VE_NOT_INITED, kTraceError);
-        return -1;
-    }
-    voe::ScopedChannel sc(_channelManager, channel);
-    voe::Channel* channelPtr = sc.ChannelPtr();
-    if (channelPtr == NULL)
-    {
-        _engineStatistics.SetLastError(
-            VE_CHANNEL_NOT_VALID, kTraceError,
-            "GetRTPKeepaliveStatus() failed to locate channel");
-        return -1;
-    }
-    return channelPtr->GetRTPKeepaliveStatus(enabled,
-                                             unknownPayloadType,
-                                             deltaTransmitTimeSeconds);
-}
-
 int VoERTP_RTCPImpl::StartRTPDump(int channel,
                                   const char fileNameUTF8[1024],
                                   RTPDirections direction)

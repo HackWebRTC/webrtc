@@ -93,16 +93,6 @@ class ViERTP_RTCPImpl
   virtual int GetEstimatedReceiveBandwidth(
       const int video_channel,
       unsigned int* estimated_bandwidth) const;
-  virtual int SetRTPKeepAliveStatus(
-      const int video_channel,
-      bool enable,
-      const int unknown_payload_type,
-      const unsigned int delta_transmit_time_seconds);
-  virtual int GetRTPKeepAliveStatus(
-      const int video_channel,
-      bool& enabled,
-      int& unkown_payload_type,
-      unsigned int& delta_transmit_time_seconds) const;
   virtual int StartRTPDump(const int video_channel,
                            const char file_nameUTF8[1024],
                            RTPDirections direction);

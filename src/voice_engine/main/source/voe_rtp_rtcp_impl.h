@@ -87,17 +87,6 @@ public:
 
     virtual int GetRTCPStatistics(int channel, CallStatistics& stats);
 
-    // RTP keepalive mechanism (maintains NAT mappings associated to RTP flows)
-    virtual int SetRTPKeepaliveStatus(int channel,
-                                      bool enable,
-                                      int unknownPayloadType,
-                                      int deltaTransmitTimeSeconds = 15);
-
-    virtual int GetRTPKeepaliveStatus(int channel,
-                                      bool& enabled,
-                                      int& unknownPayloadType,
-                                      int& deltaTransmitTimeSeconds);
-
     // FEC
     virtual int SetFECStatus(int channel,
                              bool enable,

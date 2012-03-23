@@ -282,34 +282,10 @@ void ViEAutoTest::ViERtpRtcpStandardTest()
     EXPECT_EQ(0, ViE.rtp_rtcp->SetNACKStatus(tbChannel.videoChannel, false));
 
 
-    //
-    // Keepalive
-    //
-    ViETest::Log("Testing RTP keep alive...\n");
-    EXPECT_EQ(0, ViE.base->StartReceive(tbChannel.videoChannel));
-
+    // Test to set SSRC
     myTransport.SetPacketLoss(0);
     myTransport.ClearStats();
 
-    const char keepAlivePT = 109;
-    unsigned int deltaTimeSeconds = 2;
-    EXPECT_EQ(0, ViE.rtp_rtcp->SetRTPKeepAliveStatus(
-        tbChannel.videoChannel, true, keepAlivePT, deltaTimeSeconds));
-
-    AutoTestSleep(KAutoTestSleepTimeMs);
-
-    EXPECT_EQ(0, ViE.rtp_rtcp->SetRTPKeepAliveStatus(
-        tbChannel.videoChannel, false, keepAlivePT, deltaTimeSeconds));
-
-    WebRtc_Word32 numRtpPackets = 0;
-    WebRtc_Word32 numDroppedPackets = 0;
-    WebRtc_Word32 numRtcpPackets = 0;
-    myTransport.GetStats(numRtpPackets, numDroppedPackets, numRtcpPackets);
-    WebRtc_Word32 expectedPackets = KAutoTestSleepTimeMs / (1000 *
-        static_cast<WebRtc_Word32>(deltaTimeSeconds));
-    EXPECT_EQ(expectedPackets, numRtpPackets);
-
-    // Test to set SSRC
     unsigned int setSSRC = 0x01234567;
     ViETest::Log("Set SSRC %u", setSSRC);
     EXPECT_EQ(0, ViE.rtp_rtcp->SetLocalSSRC(tbChannel.videoChannel, setSSRC));
@@ -657,47 +633,6 @@ void ViEAutoTest::ViERtpRtcpAPITest()
     // Tested in SimpleTest(), we'll get errors if we haven't received a RTCP
     // packet.
 
-    //
-    // RTP Keepalive
-    //
-    {
-        int setPT = 123;
-        unsigned int setDeltaTime = 10;
-        bool enabled = false;
-        int getPT = 0;
-        unsigned int getDeltaTime = 0;
-        EXPECT_EQ(0, ViE.rtp_rtcp->SetRTPKeepAliveStatus(
-            tbChannel.videoChannel, true, 119));
-        EXPECT_NE(0, ViE.rtp_rtcp->SetRTPKeepAliveStatus(
-            tbChannel.videoChannel, true, setPT, setDeltaTime));
-        EXPECT_EQ(0, ViE.rtp_rtcp->SetRTPKeepAliveStatus(
-            tbChannel.videoChannel, false, setPT, setDeltaTime));
-        EXPECT_EQ(0, ViE.rtp_rtcp->SetRTPKeepAliveStatus(
-            tbChannel.videoChannel, true, setPT, setDeltaTime));
-        EXPECT_EQ(0, ViE.rtp_rtcp->GetRTPKeepAliveStatus(
-            tbChannel.videoChannel, enabled, getPT, getDeltaTime));
-
-        EXPECT_TRUE(enabled);
-        EXPECT_EQ(setPT, getPT);
-        EXPECT_EQ(setDeltaTime, getDeltaTime);
-
-        EXPECT_EQ(0, ViE.rtp_rtcp->SetRTPKeepAliveStatus(
-                    tbChannel.videoChannel, false, setPT, setDeltaTime));
-
-        EXPECT_EQ(0, ViE.base->StartSend(tbChannel.videoChannel));
-
-        EXPECT_EQ(0, ViE.rtp_rtcp->SetRTPKeepAliveStatus(
-                    tbChannel.videoChannel, true, setPT, setDeltaTime));
-
-        EXPECT_NE(0, ViE.rtp_rtcp->SetRTPKeepAliveStatus(
-            tbChannel.videoChannel, true, setPT, setDeltaTime));
-
-        tbChannel.StopSend();
-        EXPECT_NE(0, ViE.rtp_rtcp->SetRTPKeepAliveStatus(
-            tbChannel.videoChannel, enabled, getPT, 0));
-        EXPECT_NE(0, ViE.rtp_rtcp->SetRTPKeepAliveStatus(
-            tbChannel.videoChannel, enabled, getPT, 61));
-    }
     //
     // RTP Dump
     //

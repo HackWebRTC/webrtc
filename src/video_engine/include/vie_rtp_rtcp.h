@@ -15,7 +15,6 @@
 //  - Obtaining RTCP data from incoming RTCP sender reports.
 //  - RTP and RTCP statistics (jitter, packet loss, RTT etc.).
 //  - Forward Error Correction (FEC).
-//  - RTP Keep‐alive for maintaining the NAT mappings associated to RTP flows.
 //  - Writing RTP and RTCP packets to binary files for off‐line analysis of the
 //    call quality.
 //  - Inserting extra RTP packets into active audio stream.
@@ -256,23 +255,6 @@ class WEBRTC_DLLEXPORT ViERTP_RTCP {
   virtual int GetEstimatedReceiveBandwidth(
       const int video_channel,
       unsigned int* estimated_bandwidth) const = 0;
-
-  // This function enables or disables an RTP keep-alive mechanism which can
-  // be used to maintain an existing Network Address Translator (NAT) mapping
-  // while regular RTP is no longer transmitted.
-  virtual int SetRTPKeepAliveStatus(
-      const int video_channel,
-      bool enable,
-      const int unknown_payload_type,
-      const unsigned int delta_transmit_time_seconds =
-          KDefaultDeltaTransmitTimeSeconds) = 0;
-
-  // This function gets the RTP keep-alive status.
-  virtual int GetRTPKeepAliveStatus(
-      const int video_channel,
-      bool& enabled,
-      int& unkown_payload_type,
-      unsigned int& delta_transmit_time_seconds) const = 0;
 
   // This function enables capturing of RTP packets to a binary file on a
   // specific channel and for a given direction. The file can later be

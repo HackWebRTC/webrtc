@@ -16,7 +16,6 @@
 //  - Obtaining RTCP data from incoming RTCP sender reports.
 //  - RTP and RTCP statistics (jitter, packet loss, RTT etc.).
 //  - Forward Error Correction (FEC).
-//  - RTP Keepalive for maintaining the NAT mappings associated to RTP flows.
 //  - Writing RTP and RTCP packets to binary files for off-line analysis of
 //    the call quality.
 //  - Inserting extra RTP packets into active audio stream.
@@ -187,21 +186,9 @@ public:
     virtual int GetFECStatus(
         int channel, bool& enabled, int& redPayloadtype) = 0;
 
-    // Sets the RTP keepalive mechanism status.
-    // This functionality can maintain an existing Network Address Translator
-    // (NAT) mapping while regular RTP is no longer transmitted.
-    virtual int SetRTPKeepaliveStatus(
-        int channel, bool enable, int unknownPayloadType,
-        int deltaTransmitTimeSeconds = 15) = 0;
-
-    // Gets the RTP keepalive mechanism status.
-    virtual int GetRTPKeepaliveStatus(
-        int channel, bool& enabled, int& unknownPayloadType,
-        int& deltaTransmitTimeSeconds) = 0;
-
     // Enables capturing of RTP packets to a binary file on a specific
     // |channel| and for a given |direction|. The file can later be replayed
-    // using e.g. RTP Tools’ rtpplay since the binary file format is
+    // using e.g. RTP Tools rtpplay since the binary file format is
     // compatible with the rtpdump format.
     virtual int StartRTPDump(
         int channel, const char fileNameUTF8[1024],
