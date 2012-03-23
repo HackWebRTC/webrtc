@@ -2168,7 +2168,9 @@ void UdpTransportImpl::IncomingRTPFunction(const WebRtc_Word8* rtpPacket,
  information");
         }else
         {
-            strncpy(_fromIP, ipAddress, kIpAddressVersion6Length);
+            // Make sure ipAddress is null terminated.
+            ipAddress[kIpAddressVersion6Length - 1] = 0;
+            strncpy(_fromIP, ipAddress, kIpAddressVersion6Length - 1);
         }
 
         // Filter based on port.
@@ -2226,7 +2228,9 @@ void UdpTransportImpl::IncomingRTCPFunction(const WebRtc_Word8* rtcpPacket,
                 "UdpTransportImpl::IncomingRTCPFunction - Cannot get sender\
  information");
         }else {
-            strncpy(_fromIP, ipAddress, kIpAddressVersion6Length);
+            // Make sure ipAddress is null terminated.
+            ipAddress[kIpAddressVersion6Length - 1] = 0;
+            strncpy(_fromIP, ipAddress, kIpAddressVersion6Length - 1);
         }
 
         // Filter based on port.
