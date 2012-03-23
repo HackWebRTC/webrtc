@@ -331,7 +331,7 @@
 #define SET_CELT_FUNCTIONS(inst) \
                     inst.funcDecode=(WebRtcNetEQ_FuncDecode)WebRtcCelt_Decode; \
                     inst.funcDecodeRCU=NULL; \
-                    inst.funcDecodePLC=(WebRtcNetEQ_FuncDecodePLC)WebRtcCelt_DecodePlc; \
+                    inst.funcDecodePLC=NULL; \
                     inst.funcDecodeInit=(WebRtcNetEQ_FuncDecodeInit)WebRtcCelt_DecoderInit; \
                     inst.funcAddLatePkt=NULL; \
                     inst.funcGetMDinfo=NULL; \
@@ -342,8 +342,8 @@
 #define SET_CELTSLAVE_FUNCTIONS(inst) \
                     inst.funcDecode=(WebRtcNetEQ_FuncDecode)WebRtcCelt_DecodeSlave; \
                     inst.funcDecodeRCU=NULL; \
-                    inst.funcDecodePLC=(WebRtcNetEQ_FuncDecodePLC)WebRtcCelt_DecodePlc; \
-                    inst.funcDecodeInit=(WebRtcNetEQ_FuncDecodeInit)WebRtcCelt_DecoderInit; \
+                    inst.funcDecodePLC=NULL; \
+                    inst.funcDecodeInit=(WebRtcNetEQ_FuncDecodeInit)WebRtcCelt_DecoderInitSlave; \
                     inst.funcAddLatePkt=NULL; \
                     inst.funcGetMDinfo=NULL; \
                     inst.funcGetPitch=NULL; \

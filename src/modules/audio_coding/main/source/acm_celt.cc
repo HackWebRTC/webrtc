@@ -199,8 +199,13 @@ int16_t ACMCELT::InternalInitDecoder(WebRtcACMCodecParams* codecParams) {
     }
   }
 
-  // Initiate decoder.
+  // Initiate decoder, both master and slave parts.
   if (WebRtcCelt_DecoderInit(dec_inst_ptr_) < 0) {
+    WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
+                 "InternalInitDecoder: init decoder failed for Celt.");
+    return -1;
+  }
+  if (WebRtcCelt_DecoderInitSlave(dec_inst_ptr_) < 0) {
     WEBRTC_TRACE(webrtc::kTraceError, webrtc::kTraceAudioCoding, _uniqueID,
                  "InternalInitDecoder: init decoder failed for Celt.");
     return -1;
